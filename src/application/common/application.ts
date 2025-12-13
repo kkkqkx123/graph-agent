@@ -2,7 +2,7 @@
  * 应用程序主类
  */
 
-import { Container } from '@infrastructure/common/container';
+import { IContainer } from '../../infrastructure/container/container';
 import { ILogger } from '@shared/types/logger';
 import { IConfigManager } from '@shared/types/config';
 import { IService } from '@shared/types/common';
@@ -11,12 +11,12 @@ import { IService } from '@shared/types/common';
  * 应用程序类
  */
 export class Application implements IService {
-  private readonly container: Container;
+  private readonly container: IContainer;
   private readonly services: IService[] = [];
   private isInitialized = false;
   private isStarted = false;
 
-  constructor(container: Container) {
+  constructor(container: IContainer) {
     this.container = container;
   }
 
@@ -135,7 +135,7 @@ export class Application implements IService {
   /**
    * 获取依赖注入容器
    */
-  getContainer(): Container {
+  getContainer(): IContainer {
     return this.container;
   }
 
@@ -147,10 +147,10 @@ export class Application implements IService {
     logger: ILogger
   ): Promise<void> {
     logger.info('正在初始化配置管理器...');
-    
+
     // TODO: 实现配置管理器初始化逻辑
     // await _configManager.initialize();
-    
+
     logger.info('配置管理器初始化完成');
   }
 
