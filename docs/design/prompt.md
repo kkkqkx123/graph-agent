@@ -1,0 +1,1 @@
+旧架构中thread是对workflow的包装，session则是threads的协调器，是最顶层的概念。而workflow的底层执行引擎是graph，prompt、llm等模块作为graph的组成部分，history作为session的子模块，checkpoint作为thread的子模块。请分析这一架构设计是否合理，需要作出哪些修改
