@@ -65,9 +65,16 @@ impl WorkflowExecutor {
     }
 
     /// 执行工作流
-    pub async fn execute(&self, workflow_id: &WorkflowId, input: WorkflowInput) -> ExecutionResult<WorkflowOutput> {
+    pub async fn execute(
+        &self,
+        workflow_id: &WorkflowId,
+        input: WorkflowInput,
+    ) -> ExecutionResult<WorkflowOutput> {
         // 获取工作流图
-        let graph = self.execution_context.get_workflow_graph(workflow_id).await?
+        let graph = self
+            .execution_context
+            .get_workflow_graph(workflow_id)
+            .await?
             .ok_or(ExecutionError::WorkflowNotFound(workflow_id.clone()))?;
 
         // 初始化执行上下文
@@ -93,7 +100,8 @@ impl WorkflowExecutor {
         context: &mut ExecutionContext,
     ) -> ExecutionResult<NodeExecutionResult> {
         // 找到所有开始节点
-        let start_nodes: Vec<_> = graph.nodes
+        let start_nodes: Vec<_> = graph
+            .nodes
             .values()
             .filter(|node| matches!(node.node_type, NodeType::Start))
             .map(|node| node.id.clone())
@@ -119,7 +127,7 @@ impl WorkflowExecutor {
             for node_id in current_nodes {
                 if let Some(node) = graph.get_node(&node_id) {
                     let result = self.execute_node(node, context).await?;
-                    
+
                     // 更新上下文
                     for (key, value) in &result.output_variables {
                         context.set_variable(key.clone(), value.clone());
@@ -147,7 +155,9 @@ impl WorkflowExecutor {
         node: &Node,
         context: &ExecutionContext,
     ) -> ExecutionResult<NodeExecutionResult> {
-        let executor = self.node_executors.get(&node.node_type)
+        let executor = self
+            .node_executors
+            .get(&node.node_type)
             .ok_or(ExecutionError::UnsupportedNodeType(node.node_type.clone()))?;
 
         executor.execute(node, context).await
@@ -161,7 +171,7 @@ impl WorkflowExecutor {
         context: &ExecutionContext,
     ) -> Vec<NodeId> {
         let mut next_nodes = Vec::new();
-        
+
         for edge in graph.get_edges_from(current_node_id) {
             match &edge.edge_type {
                 EdgeType::Simple => {
@@ -248,7 +258,11 @@ pub struct NodeExecutionResult {
 // 节点执行器接口
 #[async_trait::async_trait]
 pub trait NodeExecutor: Send + Sync {
-    async fn execute(&self, node: &Node, context: &ExecutionContext) -> ExecutionResult<NodeExecutionResult>;
+    async fn execute(
+        &self,
+        node: &Node,
+        context: &ExecutionContext,
+    ) -> ExecutionResult<NodeExecutionResult>;
 }
 
 // 执行上下文提供者接口
@@ -270,11 +284,18 @@ impl LLMNodeExecutor {
 
 #[async_trait::async_trait]
 impl NodeExecutor for LLMNodeExecutor {
-    async fn execute(&self, node: &Node, context: &ExecutionContext) -> ExecutionResult<NodeExecutionResult> {
+    async fn execute(
+        &self,
+        node: &Node,
+        context: &ExecutionContext,
+    ) -> ExecutionResult<NodeExecutionResult> {
         let start_time = std::time::Instant::now();
-        
+
         // 从节点配置中获取提示词
-        let prompt = node.config.parameters.get("prompt")
+        let prompt = node
+            .config
+            .parameters
+            .get("prompt")
             .and_then(|p| p.as_str())
             .ok_or_else(|| ExecutionError::ContextError("LLM节点缺少提示词".to_string()))?;
 
@@ -282,7 +303,10 @@ impl NodeExecutor for LLMNodeExecutor {
         let processed_prompt = self.process_prompt_template(prompt, context)?;
 
         // 调用LLM
-        let response = self.llm_client.generate(&processed_prompt).await
+        let response = self
+            .llm_client
+            .generate(&processed_prompt)
+            .await
             .map_err(|e| ExecutionError::NodeExecutionFailed(format!("LLM调用失败: {}", e)))?;
 
         let execution_time = start_time.elapsed().as_millis() as u64;
@@ -301,9 +325,13 @@ impl NodeExecutor for LLMNodeExecutor {
 }
 
 impl LLMNodeExecutor {
-    fn process_prompt_template(&self, prompt: &str, context: &ExecutionContext) -> ExecutionResult<String> {
+    fn process_prompt_template(
+        &self,
+        prompt: &str,
+        context: &ExecutionContext,
+    ) -> ExecutionResult<String> {
         let mut result = prompt.to_string();
-        
+
         // 简单的变量替换，格式为 {{variable_name}}
         for (key, value) in &context.variables {
             let placeholder = format!("{{{{{}}}}}", key);
@@ -331,15 +359,25 @@ impl ToolNodeExecutor {
 
 #[async_trait::async_trait]
 impl NodeExecutor for ToolNodeExecutor {
-    async fn execute(&self, node: &Node, context: &ExecutionContext) -> ExecutionResult<NodeExecutionResult> {
+    async fn execute(
+        &self,
+        node: &Node,
+        context: &ExecutionContext,
+    ) -> ExecutionResult<NodeExecutionResult> {
         let start_time = std::time::Instant::now();
-        
+
         // 从节点配置中获取工具名称和参数
-        let tool_name = node.config.parameters.get("tool_name")
+        let tool_name = node
+            .config
+            .parameters
+            .get("tool_name")
             .and_then(|t| t.as_str())
             .ok_or_else(|| ExecutionError::ContextError("工具节点缺少工具名称".to_string()))?;
 
-        let tool_params = node.config.parameters.get("parameters")
+        let tool_params = node
+            .config
+            .parameters
+            .get("parameters")
             .and_then(|p| p.as_object())
             .ok_or_else(|| ExecutionError::ContextError("工具节点缺少参数".to_string()))?;
 
@@ -352,9 +390,10 @@ impl NodeExecutor for ToolNodeExecutor {
                     if let Some(context_value) = context.get_variable(var_name) {
                         processed_params.insert(key.clone(), context_value.clone());
                     } else {
-                        return Err(ExecutionError::ContextError(
-                            format!("上下文中找不到变量: {}", var_name)
-                        ));
+                        return Err(ExecutionError::ContextError(format!(
+                            "上下文中找不到变量: {}",
+                            var_name
+                        )));
                     }
                 } else {
                     processed_params.insert(key.clone(), value.clone());
@@ -365,7 +404,10 @@ impl NodeExecutor for ToolNodeExecutor {
         }
 
         // 执行工具
-        let result = self.tool_registry.execute_tool(tool_name, serde_json::Value::Object(processed_params)).await
+        let result = self
+            .tool_registry
+            .execute_tool(tool_name, serde_json::Value::Object(processed_params))
+            .await
             .map_err(|e| ExecutionError::NodeExecutionFailed(format!("工具执行失败: {}", e)))?;
 
         let execution_time = start_time.elapsed().as_millis() as u64;
@@ -388,11 +430,18 @@ pub struct ConditionNodeExecutor;
 
 #[async_trait::async_trait]
 impl NodeExecutor for ConditionNodeExecutor {
-    async fn execute(&self, node: &Node, context: &ExecutionContext) -> ExecutionResult<NodeExecutionResult> {
+    async fn execute(
+        &self,
+        node: &Node,
+        context: &ExecutionContext,
+    ) -> ExecutionResult<NodeExecutionResult> {
         let start_time = std::time::Instant::now();
-        
+
         // 从节点配置中获取条件表达式
-        let condition = node.config.parameters.get("condition")
+        let condition = node
+            .config
+            .parameters
+            .get("condition")
             .and_then(|c| c.as_str())
             .ok_or_else(|| ExecutionError::ContextError("条件节点缺少条件表达式".to_string()))?;
 
@@ -405,7 +454,10 @@ impl NodeExecutor for ConditionNodeExecutor {
             success: true,
             output_variables: {
                 let mut vars = HashMap::new();
-                vars.insert("condition_result".to_string(), serde_json::Value::Bool(result));
+                vars.insert(
+                    "condition_result".to_string(),
+                    serde_json::Value::Bool(result),
+                );
                 vars
             },
             error_message: None,
@@ -415,15 +467,18 @@ impl NodeExecutor for ConditionNodeExecutor {
 }
 
 impl ConditionNodeExecutor {
-    fn evaluate_condition_expression(&self, expression: &str, context: &ExecutionContext) -> ExecutionResult<bool> {
+    fn evaluate_condition_expression(
+        &self,
+        expression: &str,
+        context: &ExecutionContext,
+    ) -> ExecutionResult<bool> {
         // 简单的条件表达式评估
         // 支持格式: variable == value, variable != value, etc.
-        
+
         if let Some((left, op, right)) = self.parse_simple_condition(expression) {
-            let left_value = context.get_variable(&left)
-                .ok_or_else(|| ExecutionError::ContextError(
-                    format!("条件表达式中找不到变量: {}", left)
-                ))?;
+            let left_value = context.get_variable(&left).ok_or_else(|| {
+                ExecutionError::ContextError(format!("条件表达式中找不到变量: {}", left))
+            })?;
 
             let right_value = if right.starts_with('"') && right.ends_with('"') {
                 serde_json::Value::String(right.trim_matches('"').to_string())
@@ -433,10 +488,11 @@ impl ConditionNodeExecutor {
                 serde_json::Value::Bool(bool_val)
             } else {
                 // 尝试作为变量
-                context.get_variable(&right)
-                    .ok_or_else(|| ExecutionError::ContextError(
-                        format!("条件表达式中找不到变量: {}", right)
-                    ))?
+                context
+                    .get_variable(&right)
+                    .ok_or_else(|| {
+                        ExecutionError::ContextError(format!("条件表达式中找不到变量: {}", right))
+                    })?
                     .clone()
             };
 
@@ -444,40 +500,57 @@ impl ConditionNodeExecutor {
                 "==" => Ok(*left_value == right_value),
                 "!=" => Ok(*left_value != right_value),
                 ">" => {
-                    if let (Some(left_num), Some(right_num)) = (left_value.as_f64(), right_value.as_f64()) {
+                    if let (Some(left_num), Some(right_num)) =
+                        (left_value.as_f64(), right_value.as_f64())
+                    {
                         Ok(left_num > right_num)
                     } else {
-                        Err(ExecutionError::ContextError("数值比较需要数值类型".to_string()))
+                        Err(ExecutionError::ContextError(
+                            "数值比较需要数值类型".to_string(),
+                        ))
                     }
                 }
                 "<" => {
-                    if let (Some(left_num), Some(right_num)) = (left_value.as_f64(), right_value.as_f64()) {
+                    if let (Some(left_num), Some(right_num)) =
+                        (left_value.as_f64(), right_value.as_f64())
+                    {
                         Ok(left_num < right_num)
                     } else {
-                        Err(ExecutionError::ContextError("数值比较需要数值类型".to_string()))
+                        Err(ExecutionError::ContextError(
+                            "数值比较需要数值类型".to_string(),
+                        ))
                     }
                 }
                 ">=" => {
-                    if let (Some(left_num), Some(right_num)) = (left_value.as_f64(), right_value.as_f64()) {
+                    if let (Some(left_num), Some(right_num)) =
+                        (left_value.as_f64(), right_value.as_f64())
+                    {
                         Ok(left_num >= right_num)
                     } else {
-                        Err(ExecutionError::ContextError("数值比较需要数值类型".to_string()))
+                        Err(ExecutionError::ContextError(
+                            "数值比较需要数值类型".to_string(),
+                        ))
                     }
                 }
                 "<=" => {
-                    if let (Some(left_num), Some(right_num)) = (left_value.as_f64(), right_value.as_f64()) {
+                    if let (Some(left_num), Some(right_num)) =
+                        (left_value.as_f64(), right_value.as_f64())
+                    {
                         Ok(left_num <= right_num)
                     } else {
-                        Err(ExecutionError::ContextError("数值比较需要数值类型".to_string()))
+                        Err(ExecutionError::ContextError(
+                            "数值比较需要数值类型".to_string(),
+                        ))
                     }
                 }
-                _ => Err(ExecutionError::ContextError(
-                    format!("不支持的操作符: {}", op)
-                )),
+                _ => Err(ExecutionError::ContextError(format!(
+                    "不支持的操作符: {}",
+                    op
+                ))),
             }
         } else {
             Err(ExecutionError::ContextError(
-                "无法解析条件表达式".to_string()
+                "无法解析条件表达式".to_string(),
             ))
         }
     }
@@ -496,11 +569,18 @@ impl ConditionNodeExecutor {
 // LLM客户端接口
 #[async_trait::async_trait]
 pub trait LLMClient: Send + Sync {
-    async fn generate(&self, prompt: &str) -> Result<String, Box<dyn std::error::Error + Send + Sync>>;
+    async fn generate(
+        &self,
+        prompt: &str,
+    ) -> Result<String, Box<dyn std::error::Error + Send + Sync>>;
 }
 
 // 工具注册表接口
 #[async_trait::async_trait]
 pub trait ToolRegistry: Send + Sync {
-    async fn execute_tool(&self, tool_name: &str, parameters: serde_json::Value) -> Result<serde_json::Value, Box<dyn std::error::Error + Send + Sync>>;
+    async fn execute_tool(
+        &self,
+        tool_name: &str,
+        parameters: serde_json::Value,
+    ) -> Result<serde_json::Value, Box<dyn std::error::Error + Send + Sync>>;
 }
