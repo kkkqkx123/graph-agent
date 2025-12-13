@@ -11,9 +11,32 @@ import {
   IConfigCache,
   ConfigManagerConfig,
   ConfigValidationResult,
-  ConfigValidationError
+  ConfigValidationError,
+  ConfigSourceType,
+  ConfigProcessorConfig,
+  ConfigValidatorConfig,
+  FileConfigSourceOptions,
+  EnvironmentConfigSourceOptions,
+  RemoteConfigSourceOptions,
+  EnvironmentProcessorOptions,
+  InheritanceProcessorOptions,
+  SchemaValidatorOptions,
+  BusinessValidatorOptions
 } from '@shared/types/config';
 import { ILogger } from '@shared/types/logger';
+
+// 导入配置源实现
+import { FileConfigSource } from './sources/file-source';
+import { EnvironmentConfigSource } from './sources/environment-source';
+import { MemoryConfigSource, MemoryConfigSourceOptions } from './sources/memory-source';
+
+// 导入配置处理器实现
+import { EnvironmentProcessor } from './processors/environment-processor';
+import { InheritanceProcessor } from './processors/inheritance-processor';
+
+// 导入配置验证器实现
+import { SchemaValidator } from './validators/schema-validator';
+import { BusinessValidator } from './validators/business-validator';
 
 /**
  * 配置管理器实现
@@ -219,10 +242,14 @@ export class ConfigManager extends EventEmitter implements IConfigManager {
    * 初始化配置源
    */
   private async initializeSources(): Promise<void> {
-    for (const _sourceConfig of this.configManagerConfig.sources) {
-      // TODO: 根据配置创建配置源实例
-      // const source = this.createConfigSource(sourceConfig);
-      // this.sources.push(source);
+    for (const sourceConfig of this.configManagerConfig.sources) {
+      try {
+        const source = this.createConfigSource(sourceConfig);
+        this.sources.push(source);
+        this.logger.debug('配置源初始化成功', { type: sourceConfig.type, priority: sourceConfig.priority });
+      } catch (error) {
+        this.logger.error(`配置源初始化失败: ${(error as Error).message}, 类型: ${sourceConfig.type}`);
+      }
     }
 
     // 按优先级排序
@@ -230,17 +257,132 @@ export class ConfigManager extends EventEmitter implements IConfigManager {
   }
 
   /**
+   * 创建配置源实例
+   */
+  private createConfigSource(sourceConfig: any): IConfigSource {
+    switch (sourceConfig.type) {
+      case ConfigSourceType.FILE:
+        return new FileConfigSource(
+          sourceConfig.options as FileConfigSourceOptions,
+          sourceConfig.priority,
+          this.logger
+        );
+      
+      case ConfigSourceType.ENVIRONMENT:
+        return new EnvironmentConfigSource(
+          sourceConfig.options as EnvironmentConfigSourceOptions,
+          sourceConfig.priority,
+          this.logger
+        );
+      
+      case ConfigSourceType.MEMORY:
+        return new MemoryConfigSource(
+          sourceConfig.options as MemoryConfigSourceOptions,
+          sourceConfig.priority,
+          this.logger
+        );
+      
+      case ConfigSourceType.REMOTE:
+        // TODO: 实现远程配置源
+        throw new Error('远程配置源尚未实现');
+      
+      default:
+        throw new Error(`不支持的配置源类型: ${sourceConfig.type}`);
+    }
+  }
+
+  /**
    * 初始化处理器
    */
   private async initializeProcessors(): Promise<void> {
-    // TODO: 根据配置创建处理器实例
+    if (!this.configManagerConfig.processors) {
+      return;
+    }
+
+    for (const processorConfig of this.configManagerConfig.processors) {
+      try {
+        const processor = this.createConfigProcessor(processorConfig);
+        this.processors.push(processor);
+        this.logger.debug('配置处理器初始化成功', { type: processorConfig.type });
+      } catch (error) {
+        this.logger.error(`配置处理器初始化失败: ${(error as Error).message}, 类型: ${processorConfig.type}`);
+      }
+    }
+  }
+
+  /**
+   * 创建配置处理器实例
+   */
+  private createConfigProcessor(processorConfig: ConfigProcessorConfig): IConfigProcessor {
+    switch (processorConfig.type) {
+      case 'environment':
+        return new EnvironmentProcessor(
+          processorConfig.options as EnvironmentProcessorOptions,
+          this.logger
+        );
+      
+      case 'inheritance':
+        return new InheritanceProcessor(
+          processorConfig.options as InheritanceProcessorOptions,
+          this.logger
+        );
+      
+      case 'transformation':
+        // TODO: 实现转换处理器
+        throw new Error('转换处理器尚未实现');
+      
+      case 'custom':
+        // TODO: 实现自定义处理器
+        throw new Error('自定义处理器尚未实现');
+      
+      default:
+        throw new Error(`不支持的配置处理器类型: ${processorConfig.type}`);
+    }
   }
 
   /**
    * 初始化验证器
    */
   private async initializeValidators(): Promise<void> {
-    // TODO: 根据配置创建验证器实例
+    if (!this.configManagerConfig.validators) {
+      return;
+    }
+
+    for (const validatorConfig of this.configManagerConfig.validators) {
+      try {
+        const validator = this.createConfigValidator(validatorConfig);
+        this.validators.push(validator);
+        this.logger.debug('配置验证器初始化成功', { type: validatorConfig.type });
+      } catch (error) {
+        this.logger.error(`配置验证器初始化失败: ${(error as Error).message}, 类型: ${validatorConfig.type}`);
+      }
+    }
+  }
+
+  /**
+   * 创建配置验证器实例
+   */
+  private createConfigValidator(validatorConfig: ConfigValidatorConfig): IConfigValidator {
+    switch (validatorConfig.type) {
+      case 'schema':
+        return new SchemaValidator(
+          validatorConfig.options as SchemaValidatorOptions,
+          this.logger
+        );
+      
+      case 'business':
+        return new BusinessValidator(
+          validatorConfig.options as BusinessValidatorOptions,
+          this.logger
+        );
+      
+      case 'custom':
+        // TODO: 实现自定义验证器
+        throw new Error('自定义验证器尚未实现');
+      
+      default:
+        throw new Error(`不支持的配置验证器类型: ${validatorConfig.type}`);
+    }
   }
 
   /**

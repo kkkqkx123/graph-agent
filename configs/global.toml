@@ -1,0 +1,84 @@
+# 全局配置
+log_level = "DEBUG"
+env = "development"
+debug = true
+env_prefix = "AGENT_"
+
+# 热重载配置
+hot_reload = true
+watch_interval = 5  # 5秒
+
+# 日志输出配置
+[[log_outputs]]
+type = "console"
+level = "DEBUG"
+format = "text"
+
+[[log_outputs]]
+type = "file"
+level = "DEBUG"
+format = "json"
+path = "logs/agent.log"
+rotation = "daily"
+max_size = "10MB"
+
+# 秘密模式
+secret_patterns = [
+  "sk-[a-zA-Z0-9]{20,}",
+  "ms-[a-zA-Z0-9]{15,}",
+  "\\w+@\\w+\\.\\w+",
+  "1\\d{10}"
+]
+
+# Checkpoint配置
+[checkpoint]
+enabled = true
+storage_type = "sqlite"
+auto_save = true
+save_interval = 5
+max_checkpoints = 100
+retention_days = 30
+db_path = "storage/checkpoints.db"
+compression = false
+
+# Checkpoint触发条件
+checkpoint.trigger_conditions = [
+  "tool_call",
+  "state_change"
+]
+
+# LLM全局配置
+[llm]
+default_timeout = 30
+default_max_retries = 3
+
+# 全局重试配置
+[llm.retry_config]
+base_delay = 1.0
+max_delay = 60.0
+jitter = true
+exponential_base = 2.0
+
+# 需要重试的HTTP状态码
+llm.retry_config.retry_on_status_codes = [429, 500, 502, 503, 504]
+
+# 需要重试的错误类型
+llm.retry_config.retry_on_errors = [
+  "timeout",
+  "rate_limit",
+  "service_unavailable"
+]
+
+# 全局超时配置
+[llm.timeout_config]
+request_timeout = 60
+connect_timeout = 10
+read_timeout = 45
+write_timeout = 15
+
+# 性能优化配置
+[llm.performance]
+max_concurrent_requests = 10
+request_queue_size = 100
+connection_pool_size = 20
+connection_keep_alive = true
