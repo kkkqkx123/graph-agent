@@ -214,8 +214,8 @@ impl Hook for LoggingHook {
     fn execute(&self, hook_point: HookPoint, context: &HookContext) -> HookExecutionResult {
         let start_time = std::time::Instant::now();
         
-        let log_level = self.base.get_config()
-            .get("log_level")
+        let config = self.base.get_config();
+        let log_level = config.get("log_level")
             .and_then(|v| v.as_str())
             .unwrap_or("INFO");
         

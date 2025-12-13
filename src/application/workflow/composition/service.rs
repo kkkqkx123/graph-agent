@@ -22,10 +22,16 @@ pub enum CompositionError {
 
 pub type CompositionResult<T> = Result<T, CompositionError>;
 
-#[derive(Debug, Clone)]
+#[derive(Clone)]
 pub struct CompositionService {
     workflow_repository: Arc<dyn WorkflowRepository>,
     graph_service: Arc<dyn GraphService>,
+}
+
+impl std::fmt::Debug for CompositionService {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("CompositionService").finish()
+    }
 }
 
 impl CompositionService {

@@ -23,12 +23,22 @@ pub enum AsyncExecutionError {
 
 pub type AsyncExecutionResult<T> = Result<T, AsyncExecutionError>;
 
-#[derive(Debug, Clone)]
+#[derive(Clone)]
 pub struct AsyncExecutionMode {
     node_executors: HashMap<NodeType, Arc<dyn NodeExecutor>>,
     execution_context: Arc<dyn ExecutionContextProvider>,
     timeout_ms: u64,
     max_concurrent_nodes: usize,
+}
+
+impl std::fmt::Debug for AsyncExecutionMode {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("AsyncExecutionMode")
+            .field("node_executors_count", &self.node_executors.len())
+            .field("timeout_ms", &self.timeout_ms)
+            .field("max_concurrent_nodes", &self.max_concurrent_nodes)
+            .finish()
+    }
 }
 
 impl AsyncExecutionMode {
@@ -122,8 +132,8 @@ impl AsyncExecutionMode {
                     executed_nodes.push(node_id.clone());
                     
                     // 更新上下文
-                    for (key, value) in result.output_variables {
-                        context.set_variable(key, value);
+                    for (key, value) in &result.output_variables {
+                        context.set_variable(key.clone(), value.clone());
                     }
 
                     // 如果是结束节点，保存结果
@@ -131,8 +141,8 @@ impl AsyncExecutionMode {
                         if matches!(node.node_type, NodeType::End) {
                             final_result = AsyncNodeExecutionResult {
                                 success: result.success,
-                                output_variables: result.output_variables,
-                                error_message: result.error_message,
+                                output_variables: result.output_variables.clone(),
+                                error_message: result.error_message.clone(),
                                 execution_time_ms: result.execution_time_ms,
                                 executed_nodes: Vec::new(),
                                 parallel_groups: Vec::new(),

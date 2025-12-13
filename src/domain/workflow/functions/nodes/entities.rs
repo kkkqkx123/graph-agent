@@ -87,7 +87,9 @@ impl LLMNodeFunction {
 
 impl NodeFunction for LLMNodeFunction {
     fn function_id(&self) -> &NodeFunctionId {
-        &NodeFunctionId(self.metadata.function_id.0.clone())
+        // 使用静态字符串避免生命周期问题
+        static FUNCTION_ID: std::sync::OnceLock<NodeFunctionId> = std::sync::OnceLock::new();
+        FUNCTION_ID.get_or_init(|| NodeFunctionId("node:llm".to_string()))
     }
     
     fn name(&self) -> &str {
@@ -259,7 +261,9 @@ impl ToolCallNodeFunction {
 
 impl NodeFunction for ToolCallNodeFunction {
     fn function_id(&self) -> &NodeFunctionId {
-        &NodeFunctionId(self.metadata.function_id.0.clone())
+        // 使用静态字符串避免生命周期问题
+        static FUNCTION_ID: std::sync::OnceLock<NodeFunctionId> = std::sync::OnceLock::new();
+        FUNCTION_ID.get_or_init(|| NodeFunctionId("node:tool_call".to_string()))
     }
     
     fn name(&self) -> &str {
@@ -436,7 +440,9 @@ impl ConditionCheckNodeFunction {
 
 impl NodeFunction for ConditionCheckNodeFunction {
     fn function_id(&self) -> &NodeFunctionId {
-        &NodeFunctionId(self.metadata.function_id.0.clone())
+        // 使用静态字符串避免生命周期问题
+        static FUNCTION_ID: std::sync::OnceLock<NodeFunctionId> = std::sync::OnceLock::new();
+        FUNCTION_ID.get_or_init(|| NodeFunctionId("node:condition_check".to_string()))
     }
     
     fn name(&self) -> &str {
@@ -582,8 +588,8 @@ impl ConditionCheckNodeFunction {
             };
 
             match op {
-                "==" => Ok(left_value == right_value),
-                "!=" => Ok(left_value != right_value),
+                "==" => Ok(*left_value == right_value),
+                "!=" => Ok(*left_value != right_value),
                 ">" => {
                     if let (Some(left_num), Some(right_num)) = (left_value.as_f64(), right_value.as_f64()) {
                         Ok(left_num > right_num)
@@ -619,7 +625,7 @@ impl ConditionCheckNodeFunction {
         }
     }
 
-    fn parse_simple_condition(&self, expression: &str) -> Option<(String, &str, String)> {
+    fn parse_simple_condition<'a>(&self, expression: &'a str) -> Option<(String, &'a str, String)> {
         // 简单解析: variable operator value
         let parts: Vec<&str> = expression.split_whitespace().collect();
         if parts.len() == 3 {

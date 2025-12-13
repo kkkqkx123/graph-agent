@@ -38,10 +38,18 @@ impl ExecutionContext {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Clone)]
 pub struct WorkflowExecutor {
     node_executors: HashMap<NodeType, Arc<dyn NodeExecutor>>,
     execution_context: Arc<dyn ExecutionContextProvider>,
+}
+
+impl std::fmt::Debug for WorkflowExecutor {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("WorkflowExecutor")
+            .field("node_executors_count", &self.node_executors.len())
+            .finish()
+    }
 }
 
 impl WorkflowExecutor {
@@ -113,13 +121,13 @@ impl WorkflowExecutor {
                     let result = self.execute_node(node, context).await?;
                     
                     // 更新上下文
-                    for (key, value) in result.output_variables {
-                        context.set_variable(key, value);
+                    for (key, value) in &result.output_variables {
+                        context.set_variable(key.clone(), value.clone());
                     }
 
                     // 如果是结束节点，保存结果
                     if matches!(node.node_type, NodeType::End) {
-                        final_result = result;
+                        final_result = result.clone();
                     }
 
                     // 获取下一个节点
@@ -433,8 +441,8 @@ impl ConditionNodeExecutor {
             };
 
             match op {
-                "==" => Ok(left_value == right_value),
-                "!=" => Ok(left_value != right_value),
+                "==" => Ok(*left_value == right_value),
+                "!=" => Ok(*left_value != right_value),
                 ">" => {
                     if let (Some(left_num), Some(right_num)) = (left_value.as_f64(), right_value.as_f64()) {
                         Ok(left_num > right_num)
@@ -474,7 +482,7 @@ impl ConditionNodeExecutor {
         }
     }
 
-    fn parse_simple_condition(&self, expression: &str) -> Option<(String, &str, String)> {
+    fn parse_simple_condition<'a>(&self, expression: &'a str) -> Option<(String, &'a str, String)> {
         // 简单解析: variable operator value
         let parts: Vec<&str> = expression.split_whitespace().collect();
         if parts.len() == 3 {

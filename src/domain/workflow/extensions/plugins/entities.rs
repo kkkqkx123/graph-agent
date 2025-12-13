@@ -287,7 +287,7 @@ impl Plugin for EnvironmentCheckPlugin {
         self.base.initialize(config)
     }
     
-    fn execute(&self, context: &PluginContext, _params: HashMap<String, serde_json::Value>) -> PluginExecutionResult {
+    fn execute(&self, _context: &PluginContext, _params: HashMap<String, serde_json::Value>) -> PluginExecutionResult {
         let start_time = std::time::Instant::now();
         
         // 模拟环境检查

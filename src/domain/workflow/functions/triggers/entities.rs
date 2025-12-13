@@ -2,7 +2,7 @@
 
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
-use chrono::{DateTime, Utc};
+use chrono::{DateTime, Utc, Timelike};
 
 use crate::domain::workflow::graph::value_objects::ExecutionContext;
 
@@ -114,7 +114,9 @@ impl TimeTriggerFunction {
 
 impl TriggerFunction for TimeTriggerFunction {
     fn function_id(&self) -> &TriggerFunctionId {
-        &TriggerFunctionId(self.metadata.function_id.0.clone())
+        // 使用静态字符串避免生命周期问题
+        static FUNCTION_ID: std::sync::OnceLock<TriggerFunctionId> = std::sync::OnceLock::new();
+        FUNCTION_ID.get_or_init(|| TriggerFunctionId("trigger:time".to_string()))
     }
     
     fn name(&self) -> &str {
@@ -316,7 +318,7 @@ impl TriggerFunction for TimeTriggerFunction {
                             .map(|dt| dt.with_timezone(&Utc));
                         
                         if let Some(last_time) = last_triggered {
-                            if now >= next_trigger && now.date() >= last_time.date() {
+                            if now >= next_trigger && now.date_naive() >= last_time.date_naive() {
                                 let event = self.create_event(
                                     HashMap::from([
                                         ("scheduled_time".to_string(), serde_json::Value::String(next_trigger.to_rfc3339())),
@@ -424,7 +426,9 @@ impl StateTriggerFunction {
 
 impl TriggerFunction for StateTriggerFunction {
     fn function_id(&self) -> &TriggerFunctionId {
-        &TriggerFunctionId(self.metadata.function_id.0.clone())
+        // 使用静态字符串避免生命周期问题
+        static FUNCTION_ID: std::sync::OnceLock<TriggerFunctionId> = std::sync::OnceLock::new();
+        FUNCTION_ID.get_or_init(|| TriggerFunctionId("trigger:state".to_string()))
     }
     
     fn name(&self) -> &str {
@@ -605,8 +609,8 @@ impl StateTriggerFunction {
             
             if let (Some(left_val), Some(right_val)) = (left_value, right_value) {
                 match op {
-                    "==" => left_val == right_val,
-                    "!=" => left_val != right_val,
+                    "==" => *left_val == right_val,
+                    "!=" => *left_val != right_val,
                     ">" => {
                         if let (Some(left_num), Some(right_num)) = (left_val.as_f64(), right_val.as_f64()) {
                             left_num > right_num
@@ -645,7 +649,7 @@ impl StateTriggerFunction {
         }
     }
 
-    fn parse_simple_condition(&self, expression: &str) -> Option<(String, &str, String)> {
+    fn parse_simple_condition<'a>(&self, expression: &'a str) -> Option<(String, &'a str, String)> {
         // 简单解析: variable operator value
         let parts: Vec<&str> = expression.split_whitespace().collect();
         if parts.len() == 3 {

@@ -276,7 +276,7 @@ impl TriggerExtension for ToolErrorTriggerExtension {
     }
     
     fn evaluate(&self, context: &ExecutionContext, _params: HashMap<String, serde_json::Value>) -> TriggerExtensionResult {
-        if !self.can_trigger() {
+        if !self.base.can_trigger() {
             return TriggerExtensionResult {
                 should_trigger: false,
                 success: true,
@@ -410,7 +410,7 @@ impl TriggerExtension for IterationLimitTriggerExtension {
     }
     
     fn evaluate(&self, context: &ExecutionContext, _params: HashMap<String, serde_json::Value>) -> TriggerExtensionResult {
-        if !self.can_trigger() {
+        if !self.base.can_trigger() {
             return TriggerExtensionResult {
                 should_trigger: false,
                 success: true,

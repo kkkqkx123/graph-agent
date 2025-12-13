@@ -167,7 +167,7 @@ impl GraphService {
         }
 
         // 更新时间戳
-        graph.metadata.updated_at = std::time::SystemTime::now();
+        graph.metadata.updated_at = crate::domain::common::timestamp::Timestamp::now();
 
         // 保存更新
         self.graph_repository.save(&graph).await?;

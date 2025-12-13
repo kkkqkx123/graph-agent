@@ -29,12 +29,23 @@ pub enum FunctionExecutorError {
 pub type FunctionExecutorResult<T> = Result<T, FunctionExecutorError>;
 
 /// 函数执行器
-#[derive(Debug, Clone)]
+#[derive(Clone)]
 pub struct FunctionExecutor {
     condition_functions: HashMap<String, Arc<dyn ConditionFunction>>,
     node_functions: HashMap<String, Arc<dyn NodeFunction>>,
     route_functions: HashMap<String, Arc<dyn RouteFunction>>,
     trigger_functions: HashMap<String, Arc<dyn TriggerFunction>>,
+}
+
+impl std::fmt::Debug for FunctionExecutor {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("FunctionExecutor")
+            .field("condition_functions_count", &self.condition_functions.len())
+            .field("node_functions_count", &self.node_functions.len())
+            .field("route_functions_count", &self.route_functions.len())
+            .field("trigger_functions_count", &self.trigger_functions.len())
+            .finish()
+    }
 }
 
 impl FunctionExecutor {
@@ -211,22 +222,22 @@ impl FunctionExecutor {
     pub fn register_builtin_functions(&mut self) {
         // 注册内置条件函数
         for function in crate::domain::workflow::functions::conditions::BuiltinConditionFunctions::get_all_functions() {
-            self.register_condition_function(Arc::new(function));
+            self.register_condition_function(function.into());
         }
 
         // 注册内置节点函数
         for function in crate::domain::workflow::functions::nodes::BuiltinNodeFunctions::get_all_functions() {
-            self.register_node_function(Arc::new(function));
+            self.register_node_function(function.into());
         }
 
         // 注册内置路由函数
         for function in crate::domain::workflow::functions::routing::BuiltinRouteFunctions::get_all_functions() {
-            self.register_route_function(Arc::new(function));
+            self.register_route_function(function.into());
         }
 
         // 注册内置触发器函数
         for function in crate::domain::workflow::functions::triggers::BuiltinTriggerFunctions::get_all_functions() {
-            self.register_trigger_function(Arc::new(function));
+            self.register_trigger_function(function.into());
         }
     }
 

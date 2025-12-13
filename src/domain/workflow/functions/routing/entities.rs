@@ -87,7 +87,9 @@ impl HasToolCallsRouteFunction {
 
 impl RouteFunction for HasToolCallsRouteFunction {
     fn function_id(&self) -> &RouteFunctionId {
-        &RouteFunctionId(self.metadata.function_id.0.clone())
+        // 使用静态字符串避免生命周期问题
+        static FUNCTION_ID: std::sync::OnceLock<RouteFunctionId> = std::sync::OnceLock::new();
+        FUNCTION_ID.get_or_init(|| RouteFunctionId("route:has_tool_calls".to_string()))
     }
     
     fn name(&self) -> &str {
@@ -219,7 +221,9 @@ impl NoToolCallsRouteFunction {
 
 impl RouteFunction for NoToolCallsRouteFunction {
     fn function_id(&self) -> &RouteFunctionId {
-        &RouteFunctionId(self.metadata.function_id.0.clone())
+        // 使用静态字符串避免生命周期问题
+        static FUNCTION_ID: std::sync::OnceLock<RouteFunctionId> = std::sync::OnceLock::new();
+        FUNCTION_ID.get_or_init(|| RouteFunctionId("route:no_tool_calls".to_string()))
     }
     
     fn name(&self) -> &str {
@@ -351,7 +355,9 @@ impl HasToolResultsRouteFunction {
 
 impl RouteFunction for HasToolResultsRouteFunction {
     fn function_id(&self) -> &RouteFunctionId {
-        &RouteFunctionId(self.metadata.function_id.0.clone())
+        // 使用静态字符串避免生命周期问题
+        static FUNCTION_ID: std::sync::OnceLock<RouteFunctionId> = std::sync::OnceLock::new();
+        FUNCTION_ID.get_or_init(|| RouteFunctionId("route:has_tool_results".to_string()))
     }
     
     fn name(&self) -> &str {
@@ -479,7 +485,9 @@ impl MaxIterationsReachedRouteFunction {
 
 impl RouteFunction for MaxIterationsReachedRouteFunction {
     fn function_id(&self) -> &RouteFunctionId {
-        &RouteFunctionId(self.metadata.function_id.0.clone())
+        // 使用静态字符串避免生命周期问题
+        static FUNCTION_ID: std::sync::OnceLock<RouteFunctionId> = std::sync::OnceLock::new();
+        FUNCTION_ID.get_or_init(|| RouteFunctionId("route:max_iterations_reached".to_string()))
     }
     
     fn name(&self) -> &str {
@@ -612,7 +620,9 @@ impl HasErrorsRouteFunction {
 
 impl RouteFunction for HasErrorsRouteFunction {
     fn function_id(&self) -> &RouteFunctionId {
-        &RouteFunctionId(self.metadata.function_id.0.clone())
+        // 使用静态字符串避免生命周期问题
+        static FUNCTION_ID: std::sync::OnceLock<RouteFunctionId> = std::sync::OnceLock::new();
+        FUNCTION_ID.get_or_init(|| RouteFunctionId("route:has_errors".to_string()))
     }
     
     fn name(&self) -> &str {

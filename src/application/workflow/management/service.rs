@@ -24,10 +24,16 @@ pub enum ManagementError {
 
 pub type ManagementResult<T> = Result<T, ManagementError>;
 
-#[derive(Debug, Clone)]
+#[derive(Clone)]
 pub struct ManagementService {
     lifecycle_manager: Arc<dyn LifecycleManager>,
     workflow_registry: Arc<dyn WorkflowRegistry>,
+}
+
+impl std::fmt::Debug for ManagementService {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("ManagementService").finish()
+    }
 }
 
 impl ManagementService {
@@ -53,7 +59,7 @@ impl ManagementService {
         let instance = WorkflowInstance::new(
             request.workflow_id.clone(),
             workflow_metadata.name.clone(),
-            request.initial_context,
+            request.initial_context.clone(),
         );
 
         // 启动工作流实例

@@ -8,7 +8,7 @@ use crate::domain::workflow::{
     graph::{entities::*, value_objects::*},
 };
 
-#[derive(Debug, Error)]
+#[derive(Debug, Error, Clone)]
 pub enum CoordinationError {
     #[error("工作流执行失败: {0}")]
     ExecutionFailed(String),
@@ -22,10 +22,16 @@ pub enum CoordinationError {
 
 pub type CoordinationResult<T> = Result<T, CoordinationError>;
 
-#[derive(Debug, Clone)]
+#[derive(Clone)]
 pub struct CoordinationService {
     workflow_executor: Arc<dyn WorkflowExecutor>,
     state_manager: Arc<dyn StateManager>,
+}
+
+impl std::fmt::Debug for CoordinationService {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("CoordinationService").finish()
+    }
 }
 
 impl CoordinationService {
@@ -98,7 +104,7 @@ impl CoordinationService {
 
         // 继续执行
         let mut mutable_state = graph_state;
-        let execution_result = self.execute_workflow_loop(&graph, &mut mutable_state).await?;
+        let _execution_result = self.execute_workflow_loop(&graph, &mut mutable_state).await?;
 
         // 保存状态
         self.state_manager.save_state(workflow_id, &mutable_state).await?;
@@ -157,7 +163,9 @@ impl CoordinationService {
             
             for node_id in current_nodes {
                 if let Some(node) = graph.get_node(&node_id) {
-                    let future = self.execute_node(node, graph_state);
+                    // 克隆执行上下文以避免借用冲突
+                    let execution_context = graph_state.execution_context.clone();
+                    let future = self.execute_node_with_context(node, execution_context);
                     node_futures.push((node_id.clone(), future));
                 }
             }
@@ -170,11 +178,12 @@ impl CoordinationService {
                         
                         // 更新节点状态
                         graph_state.set_node_state(node_id.clone(), NodeState::Completed);
-                        completed_nodes.push(node_id);
+                        let node_id_clone = node_id.clone();
+                        completed_nodes.push(node_id_clone);
 
                         // 处理执行结果，更新执行上下文
-                        for (key, value) in result.output_variables {
-                            graph_state.execution_context.set_variable(key, value);
+                        for (key, value) in &result.output_variables {
+                            graph_state.execution_context.set_variable(key.clone(), value.clone());
                         }
 
                         // 找到下一个要执行的节点
@@ -185,7 +194,8 @@ impl CoordinationService {
                     }
                     Err(error) => {
                         graph_state.set_node_state(node_id.clone(), NodeState::Failed);
-                        failed_nodes.push((node_id, error));
+                        let node_id_clone = node_id.clone();
+                        failed_nodes.push((node_id_clone, error));
                         
                         // 如果是关键节点失败，停止执行
                         if self.is_critical_node(graph, &node_id) {
@@ -215,6 +225,14 @@ impl CoordinationService {
         graph_state: &GraphState,
     ) -> CoordinationResult<NodeExecutionResult> {
         self.workflow_executor.execute_node(node, &graph_state.execution_context).await
+    }
+
+    async fn execute_node_with_context(
+        &self,
+        node: &Node,
+        execution_context: ExecutionContext,
+    ) -> CoordinationResult<NodeExecutionResult> {
+        self.workflow_executor.execute_node(node, &execution_context).await
     }
 
     fn get_next_nodes(

@@ -20,11 +20,20 @@ pub enum SyncExecutionError {
 
 pub type SyncExecutionResult<T> = Result<T, SyncExecutionError>;
 
-#[derive(Debug, Clone)]
+#[derive(Clone)]
 pub struct SyncExecutionMode {
     node_executors: HashMap<NodeType, Arc<dyn NodeExecutor>>,
     execution_context: Arc<dyn ExecutionContextProvider>,
     timeout_ms: u64,
+}
+
+impl std::fmt::Debug for SyncExecutionMode {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("SyncExecutionMode")
+            .field("node_executors_count", &self.node_executors.len())
+            .field("timeout_ms", &self.timeout_ms)
+            .finish()
+    }
 }
 
 impl SyncExecutionMode {
@@ -107,13 +116,13 @@ impl SyncExecutionMode {
                     executed_nodes.push(node_id.clone());
                     
                     // 更新上下文
-                    for (key, value) in result.output_variables {
-                        context.set_variable(key, value);
+                    for (key, value) in &result.output_variables {
+                        context.set_variable(key.clone(), value.clone());
                     }
 
                     // 如果是结束节点，保存结果
                     if matches!(node.node_type, NodeType::End) {
-                        final_result = result;
+                        final_result = result.clone();
                     }
 
                     // 获取下一个节点
