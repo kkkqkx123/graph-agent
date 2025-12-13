@@ -1,16 +1,12 @@
-//! State domain module
+//! State history domain module
 
 pub mod entities;
 pub mod value_objects;
 pub mod events;
 pub mod errors;
-pub mod history;
-pub mod snapshots;
 
 // Re-export public types
 pub use entities::*;
 pub use value_objects::*;
 pub use events::*;
 pub use errors::*;
-pub use history::*;
-pub use snapshots::*;
