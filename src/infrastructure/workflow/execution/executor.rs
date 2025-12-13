@@ -23,6 +23,21 @@ pub enum ExecutionError {
 
 pub type ExecutionResult<T> = Result<T, ExecutionError>;
 
+#[derive(Debug, Clone, Default)]
+pub struct ExecutionContext {
+    pub variables: HashMap<String, serde_json::Value>,
+}
+
+impl ExecutionContext {
+    pub fn set_variable(&mut self, key: String, value: serde_json::Value) {
+        self.variables.insert(key, value);
+    }
+
+    pub fn get_variable(&self, key: &str) -> Option<&serde_json::Value> {
+        self.variables.get(key)
+    }
+}
+
 #[derive(Debug, Clone)]
 pub struct WorkflowExecutor {
     node_executors: HashMap<NodeType, Arc<dyn NodeExecutor>>,

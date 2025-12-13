@@ -18,42 +18,25 @@ The Modular Agent Framework is a Rust-based multi-agent system built on Graph Wo
 ## Development Environment Setup
 
 ### Prerequisites
-- Rust 1.70.0+
-- Cargo (included with Rust)
 
-### Environment Setup
+- rustc: 1.88.0
+- cargo: 1.88.0
+- rustup:
+Default host: x86_64-pc-windows-msvc
 
+### Build commands
 ```bash
-# Check Rust installation
-rustc --version
-cargo --version
-
-# Build the project
-cargo build --release
-
-# Run the project
-cargo run --release
+cargo build # Debug build (development)
+cargo build --release # Release build (optimized for performance)
 ```
 
-## Development Commands
-
-You can use the following commands to check code quality:
-
+### Type check and compile check
 ```bash
-# Check code formatting
-cargo fmt --check
-
-# Run clippy for linting
-cargo clippy -- -D warnings
-
-# Run tests
-cargo test
-
-# Run tests with output
-cargo test -- --nocapture
+cargo check --message-format=short # Default Type check
+cargo check # Detailed Type check(Only use it when you need that. when use this, always add filter logic, like `cargo check 2>&1 | Select-String "error\[E" | Select-Object -First 10`)
 ```
 
-**Testing**
+### Testing
 ```bash
 # Run all tests
 cargo test

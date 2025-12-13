@@ -192,7 +192,7 @@ impl FunctionExecutor {
         ));
         params.insert("config".to_string(), serde_json::Value::Object(
             config.iter()
-                .map(|k, v)| (k.clone(), v.clone()))
+                .map(|(k, v)| (k.clone(), v.clone()))
                 .collect()
         ));
 

@@ -14,3 +14,7 @@ pub use workflow::*;
 pub use messaging::*;
 pub use config::*;
 pub use common::*;
+
+// Re-export specific types to avoid ambiguity
+pub use llm::LLMClient as BaseLLMClient;
+pub use workflow::execution::executor::LLMClient as WorkflowLLMClient;

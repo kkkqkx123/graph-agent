@@ -1,7 +1,19 @@
 //! Common domain timestamp utilities
 
 use chrono::{DateTime, Utc};
+use serde::{Deserialize, Serialize};
 
-pub fn now() -> DateTime<Utc> {
-    Utc::now()
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct Timestamp(pub DateTime<Utc>);
+
+impl Timestamp {
+    pub fn now() -> Self {
+        Self(Utc::now())
+    }
+}
+
+impl Default for Timestamp {
+    fn default() -> Self {
+        Self::now()
+    }
 }

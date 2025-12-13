@@ -5,7 +5,7 @@ use std::collections::HashMap;
 use uuid::Uuid;
 
 use crate::domain::common::timestamp::Timestamp;
-use super::entities::WorkflowId;
+use crate::domain::workflow::entities::WorkflowId;
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub struct TemplateId(pub Uuid);

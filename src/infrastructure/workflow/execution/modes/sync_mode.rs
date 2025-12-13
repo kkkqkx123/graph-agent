@@ -8,7 +8,7 @@ use crate::domain::workflow::{
     entities::WorkflowId,
     graph::{entities::*, value_objects::*},
 };
-use super::executor::{NodeExecutor, ExecutionContextProvider, ExecutionError, ExecutionResult, NodeExecutionResult};
+use super::super::executor::{NodeExecutor, ExecutionContextProvider, ExecutionError, ExecutionResult, NodeExecutionResult, ExecutionContext};
 
 #[derive(Debug, Error)]
 pub enum SyncExecutionError {

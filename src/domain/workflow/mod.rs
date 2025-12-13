@@ -9,12 +9,15 @@ pub mod registry;
 pub mod functions;
 pub mod extensions;
 
-// Re-export public types
-pub use entities::*;
-pub use value_objects::*;
+// Re-export specific types to avoid ambiguity
+pub use entities::{WorkflowId, Workflow};
+pub use value_objects::NodeConfig as WorkflowNodeConfig;
 pub use events::*;
 pub use errors::*;
-pub use graph::*;
 pub use registry::*;
-pub use functions::*;
-pub use extensions::*;
+pub use graph::{GraphId, Graph, Node, Edge, NodeType, EdgeType, Position, NodeMetadata, GraphMetadata, NodeId as GraphNodeId, EdgeId as GraphEdgeId, NodeConfig as GraphNodeConfig};
+pub use extensions::{hooks, plugins, triggers as extension_triggers};
+pub use functions::{conditions, routing, triggers as function_triggers};
+
+// Also provide the workflow-specific IDs
+pub use entities::{NodeId as WorkflowNodeId, EdgeId as WorkflowEdgeId};
