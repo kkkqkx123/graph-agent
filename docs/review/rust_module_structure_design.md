@@ -5,7 +5,7 @@
 ### 1.1 项目目录结构
 
 ```
-modular-agent-rust/
+src/
 ├── Cargo.toml
 ├── README.md
 ├── src/
