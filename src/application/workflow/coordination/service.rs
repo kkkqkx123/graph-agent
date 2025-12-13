@@ -23,21 +23,33 @@ pub enum CoordinationError {
 pub type CoordinationResult<T> = Result<T, CoordinationError>;
 
 #[derive(Clone)]
-pub struct CoordinationService {
-    workflow_executor: Arc<dyn WorkflowExecutor>,
-    state_manager: Arc<dyn StateManager>,
+pub struct CoordinationService<WE, SM>
+where
+    WE: WorkflowExecutor + Send + Sync,
+    SM: StateManager + Send + Sync,
+{
+    workflow_executor: Arc<WE>,
+    state_manager: Arc<SM>,
 }
 
-impl std::fmt::Debug for CoordinationService {
+impl<WE, SM> std::fmt::Debug for CoordinationService<WE, SM>
+where
+    WE: WorkflowExecutor + Send + Sync,
+    SM: StateManager + Send + Sync,
+{
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("CoordinationService").finish()
     }
 }
 
-impl CoordinationService {
+impl<WE, SM> CoordinationService<WE, SM>
+where
+    WE: WorkflowExecutor + Send + Sync,
+    SM: StateManager + Send + Sync,
+{
     pub fn new(
-        workflow_executor: Arc<dyn WorkflowExecutor>,
-        state_manager: Arc<dyn StateManager>,
+        workflow_executor: Arc<WE>,
+        state_manager: Arc<SM>,
     ) -> Self {
         Self {
             workflow_executor,

@@ -32,17 +32,17 @@ impl ToolFactory {
         if self.executors.contains_key(&tool_type) {
             warn!("执行器已存在，将被覆盖: {:?}", tool_type);
         }
-        self.executors.insert(tool_type, executor);
+        self.executors.insert(tool_type.clone(), executor);
         info!("注册执行器: {:?}", tool_type);
     }
 
     /// 注册内置工具
     pub fn register_builtin_tool(&mut self, tool: Arc<dyn BuiltinTool>) {
-        let name = tool.name();
-        if self.builtin_tools.contains_key(name) {
+        let name = tool.name().to_string();
+        if self.builtin_tools.contains_key(&name) {
             warn!("内置工具已存在，将被覆盖: {}", name);
         }
-        self.builtin_tools.insert(name.to_string(), tool);
+        self.builtin_tools.insert(name.clone(), tool);
         info!("注册内置工具: {}", name);
     }
 
@@ -206,16 +206,18 @@ impl ToolInterface for BuiltinToolInstance {
     }
     
     async fn execute(&self, parameters: HashMap<String, SerializedValue>) -> Result<ToolExecutionResult, ToolExecutionError> {
-        self.builtin_tool.execute(parameters).await.map_err(|e| {
-            // 转换错误类型
-            match e {
-                ToolExecutionError::EnvironmentError(msg) =>
-                    ToolExecutionError::environment_error(msg),
-                ToolExecutionError::SerializationError(msg) =>
-                    ToolExecutionError::serialization_error(msg),
-                _ => e,
-            }
-        })
+        self.builtin_tool.execute(parameters).await
+            .map(|result| ToolExecutionResult::success(result, std::time::Duration::from_millis(0)))
+            .map_err(|e| {
+                // 转换错误类型
+                match e {
+                    ToolExecutionError::EnvironmentError(msg) =>
+                        ToolExecutionError::environment_error(msg),
+                    ToolExecutionError::SerializationError(msg) =>
+                        ToolExecutionError::serialization_error(msg),
+                    _ => e,
+                }
+            })
     }
     
     async fn can_execute(&self) -> Result<bool, ToolExecutionError> {

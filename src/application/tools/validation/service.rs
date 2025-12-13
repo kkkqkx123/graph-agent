@@ -5,8 +5,9 @@ use tracing::{debug, warn};
 
 use crate::domain::tools::{
     Tool, ToolConfig, ToolMetadata, ParameterDefinition, ParameterType,
-    SerializedValue, ValidationError, ToolValidationError
+    SerializedValue, ValidationError, ToolValidationError, ToolType
 };
+use crate::application::tools::service::ToolValidationService as ToolValidationServiceTrait;
 
 /// 工具验证服务
 pub struct ToolValidationService {
@@ -328,8 +329,8 @@ impl Default for ToolValidationService {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::domain::tools::value_objects::ToolError as ToolExecutionErrorValue;
-    use semver::Version;
+    use crate::application::tools::service::ToolValidationService as ToolValidationServiceTrait;
+    use crate::domain::tools::ToolType;
 
     #[tokio::test]
     async fn test_validate_tool_config() {

@@ -3,10 +3,7 @@
 use std::sync::Arc;
 use thiserror::Error;
 
-use crate::domain::workflow::{
-    entities::WorkflowId,
-    registry::entities::*,
-};
+use crate::domain::workflow::{entities::WorkflowId, registry::entities::*};
 
 #[derive(Debug, Error)]
 pub enum ManagementError {
@@ -25,22 +22,31 @@ pub enum ManagementError {
 pub type ManagementResult<T> = Result<T, ManagementError>;
 
 #[derive(Clone)]
-pub struct ManagementService {
-    lifecycle_manager: Arc<dyn LifecycleManager>,
-    workflow_registry: Arc<dyn WorkflowRegistry>,
+pub struct ManagementService<LM, WR>
+where
+    LM: LifecycleManager + Send + Sync,
+    WR: WorkflowRegistry + Send + Sync,
+{
+    lifecycle_manager: Arc<LM>,
+    workflow_registry: Arc<WR>,
 }
 
-impl std::fmt::Debug for ManagementService {
+impl<LM, WR> std::fmt::Debug for ManagementService<LM, WR>
+where
+    LM: LifecycleManager + Send + Sync,
+    WR: WorkflowRegistry + Send + Sync,
+{
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("ManagementService").finish()
     }
 }
 
-impl ManagementService {
-    pub fn new(
-        lifecycle_manager: Arc<dyn LifecycleManager>,
-        workflow_registry: Arc<dyn WorkflowRegistry>,
-    ) -> Self {
+impl<LM, WR> ManagementService<LM, WR>
+where
+    LM: LifecycleManager + Send + Sync,
+    WR: WorkflowRegistry + Send + Sync,
+{
+    pub fn new(lifecycle_manager: Arc<LM>, workflow_registry: Arc<WR>) -> Self {
         Self {
             lifecycle_manager,
             workflow_registry,
@@ -48,12 +54,18 @@ impl ManagementService {
     }
 
     /// 启动工作流
-    pub async fn start_workflow(&self, request: StartWorkflowRequest) -> ManagementResult<WorkflowInstance> {
+    pub async fn start_workflow(
+        &self,
+        request: StartWorkflowRequest,
+    ) -> ManagementResult<WorkflowInstance> {
         // 验证工作流是否存在
-        let workflow_metadata = self.workflow_registry
+        let workflow_metadata = self
+            .workflow_registry
             .get_workflow(&request.workflow_id)
             .await?
-            .ok_or(ManagementError::WorkflowNotFound(request.workflow_id.clone()))?;
+            .ok_or(ManagementError::WorkflowNotFound(
+                request.workflow_id.clone(),
+            ))?;
 
         // 创建工作流实例
         let instance = WorkflowInstance::new(
@@ -78,17 +90,17 @@ impl ManagementService {
     /// 停止工作流
     pub async fn stop_workflow(&self, request: StopWorkflowRequest) -> ManagementResult<()> {
         // 验证工作流实例是否存在
-        let instance = self.workflow_registry
+        let instance = self
+            .workflow_registry
             .get_instance(&request.instance_id)
             .await?
-            .ok_or(ManagementError::LifecycleError(
-                format!("工作流实例不存在: {:?}", request.instance_id)
-            ))?;
+            .ok_or(ManagementError::LifecycleError(format!(
+                "工作流实例不存在: {:?}",
+                request.instance_id
+            )))?;
 
         // 停止工作流实例
-        self.lifecycle_manager
-            .stop_instance(&instance.id)
-            .await?;
+        self.lifecycle_manager.stop_instance(&instance.id).await?;
 
         // 更新实例状态
         self.workflow_registry
@@ -101,17 +113,17 @@ impl ManagementService {
     /// 暂停工作流
     pub async fn pause_workflow(&self, instance_id: &WorkflowInstanceId) -> ManagementResult<()> {
         // 验证工作流实例是否存在
-        let instance = self.workflow_registry
+        let instance = self
+            .workflow_registry
             .get_instance(instance_id)
             .await?
-            .ok_or(ManagementError::LifecycleError(
-                format!("工作流实例不存在: {:?}", instance_id)
-            ))?;
+            .ok_or(ManagementError::LifecycleError(format!(
+                "工作流实例不存在: {:?}",
+                instance_id
+            )))?;
 
         // 暂停工作流实例
-        self.lifecycle_manager
-            .pause_instance(&instance.id)
-            .await?;
+        self.lifecycle_manager.pause_instance(&instance.id).await?;
 
         // 更新实例状态
         self.workflow_registry
@@ -124,17 +136,17 @@ impl ManagementService {
     /// 恢复工作流
     pub async fn resume_workflow(&self, instance_id: &WorkflowInstanceId) -> ManagementResult<()> {
         // 验证工作流实例是否存在
-        let instance = self.workflow_registry
+        let instance = self
+            .workflow_registry
             .get_instance(instance_id)
             .await?
-            .ok_or(ManagementError::LifecycleError(
-                format!("工作流实例不存在: {:?}", instance_id)
-            ))?;
+            .ok_or(ManagementError::LifecycleError(format!(
+                "工作流实例不存在: {:?}",
+                instance_id
+            )))?;
 
         // 恢复工作流实例
-        self.lifecycle_manager
-            .resume_instance(&instance.id)
-            .await?;
+        self.lifecycle_manager.resume_instance(&instance.id).await?;
 
         // 更新实例状态
         self.workflow_registry
@@ -145,64 +157,86 @@ impl ManagementService {
     }
 
     /// 获取工作流实例状态
-    pub async fn get_workflow_status(&self, instance_id: &WorkflowInstanceId) -> ManagementResult<WorkflowInstanceStatus> {
-        let instance = self.workflow_registry
+    pub async fn get_workflow_status(
+        &self,
+        instance_id: &WorkflowInstanceId,
+    ) -> ManagementResult<WorkflowInstanceStatus> {
+        let instance = self
+            .workflow_registry
             .get_instance(instance_id)
             .await?
-            .ok_or(ManagementError::LifecycleError(
-                format!("工作流实例不存在: {:?}", instance_id)
-            ))?;
+            .ok_or(ManagementError::LifecycleError(format!(
+                "工作流实例不存在: {:?}",
+                instance_id
+            )))?;
 
         Ok(instance.status)
     }
 
     /// 列出所有工作流实例
-    pub async fn list_workflow_instances(&self, workflow_id: Option<&WorkflowId>) -> ManagementResult<Vec<WorkflowInstance>> {
+    pub async fn list_workflow_instances(
+        &self,
+        workflow_id: Option<&WorkflowId>,
+    ) -> ManagementResult<Vec<WorkflowInstance>> {
         self.workflow_registry.list_instances(workflow_id).await
     }
 
     /// 获取工作流实例详情
-    pub async fn get_workflow_instance(&self, instance_id: &WorkflowInstanceId) -> ManagementResult<Option<WorkflowInstance>> {
+    pub async fn get_workflow_instance(
+        &self,
+        instance_id: &WorkflowInstanceId,
+    ) -> ManagementResult<Option<WorkflowInstance>> {
         self.workflow_registry.get_instance(instance_id).await
     }
 
     /// 删除工作流实例
-    pub async fn delete_workflow_instance(&self, instance_id: &WorkflowInstanceId) -> ManagementResult<()> {
+    pub async fn delete_workflow_instance(
+        &self,
+        instance_id: &WorkflowInstanceId,
+    ) -> ManagementResult<()> {
         // 验证工作流实例是否存在
-        let instance = self.workflow_registry
+        let instance = self
+            .workflow_registry
             .get_instance(instance_id)
             .await?
-            .ok_or(ManagementError::LifecycleError(
-                format!("工作流实例不存在: {:?}", instance_id)
-            ))?;
+            .ok_or(ManagementError::LifecycleError(format!(
+                "工作流实例不存在: {:?}",
+                instance_id
+            )))?;
 
         // 只有已停止或已完成的工作流实例才能删除
         match instance.status {
-            WorkflowInstanceStatus::Stopped | WorkflowInstanceStatus::Completed | WorkflowInstanceStatus::Failed => {
+            WorkflowInstanceStatus::Stopped
+            | WorkflowInstanceStatus::Completed
+            | WorkflowInstanceStatus::Failed => {
                 // 删除实例
                 self.workflow_registry
                     .unregister_instance(instance_id)
                     .await?;
 
                 // 清理生命周期管理器中的实例
-                self.lifecycle_manager
-                    .cleanup_instance(instance_id)
-                    .await?;
+                self.lifecycle_manager.cleanup_instance(instance_id).await?;
 
                 Ok(())
             }
             _ => Err(ManagementError::LifecycleError(
-                "只能删除已停止、已完成或失败的工作流实例".to_string()
+                "只能删除已停止、已完成或失败的工作流实例".to_string(),
             )),
         }
     }
 
     /// 获取工作流实例统计信息
-    pub async fn get_workflow_statistics(&self, workflow_id: &WorkflowId) -> ManagementResult<WorkflowStatistics> {
-        let instances = self.workflow_registry.list_instances(Some(workflow_id)).await?;
-        
+    pub async fn get_workflow_statistics(
+        &self,
+        workflow_id: &WorkflowId,
+    ) -> ManagementResult<WorkflowStatistics> {
+        let instances = self
+            .workflow_registry
+            .list_instances(Some(workflow_id))
+            .await?;
+
         let mut statistics = WorkflowStatistics::default();
-        
+
         for instance in instances {
             match instance.status {
                 WorkflowInstanceStatus::Running => statistics.running_count += 1,
@@ -211,7 +245,7 @@ impl ManagementService {
                 WorkflowInstanceStatus::Failed => statistics.failed_count += 1,
                 WorkflowInstanceStatus::Stopped => statistics.stopped_count += 1,
             }
-            
+
             statistics.total_count += 1;
         }
 
@@ -297,28 +331,37 @@ pub trait LifecycleManager: Send + Sync {
         workflow_id: &WorkflowId,
         context: &std::collections::HashMap<String, serde_json::Value>,
     ) -> ManagementResult<()>;
-    
+
     async fn stop_instance(&self, instance_id: &WorkflowInstanceId) -> ManagementResult<()>;
-    
+
     async fn pause_instance(&self, instance_id: &WorkflowInstanceId) -> ManagementResult<()>;
-    
+
     async fn resume_instance(&self, instance_id: &WorkflowInstanceId) -> ManagementResult<()>;
-    
+
     async fn cleanup_instance(&self, instance_id: &WorkflowInstanceId) -> ManagementResult<()>;
 }
 
 #[async_trait::async_trait]
 pub trait WorkflowRegistry: Send + Sync {
-    async fn get_workflow(&self, workflow_id: &WorkflowId) -> ManagementResult<Option<WorkflowMetadata>>;
-    
+    async fn get_workflow(
+        &self,
+        workflow_id: &WorkflowId,
+    ) -> ManagementResult<Option<WorkflowMetadata>>;
+
     async fn register_instance(&self, instance: WorkflowInstance) -> ManagementResult<()>;
-    
+
     async fn unregister_instance(&self, instance_id: &WorkflowInstanceId) -> ManagementResult<()>;
-    
-    async fn get_instance(&self, instance_id: &WorkflowInstanceId) -> ManagementResult<Option<WorkflowInstance>>;
-    
-    async fn list_instances(&self, workflow_id: Option<&WorkflowId>) -> ManagementResult<Vec<WorkflowInstance>>;
-    
+
+    async fn get_instance(
+        &self,
+        instance_id: &WorkflowInstanceId,
+    ) -> ManagementResult<Option<WorkflowInstance>>;
+
+    async fn list_instances(
+        &self,
+        workflow_id: Option<&WorkflowId>,
+    ) -> ManagementResult<Vec<WorkflowInstance>>;
+
     async fn update_instance_status(
         &self,
         instance_id: &WorkflowInstanceId,

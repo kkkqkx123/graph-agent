@@ -14,11 +14,11 @@ use crate::application::tools::commands::{
     ExecuteToolCommand, RegisterToolCommand, UnregisterToolCommand, UpdateToolConfigCommand
 };
 use crate::application::tools::queries::{
-    GetToolQuery, ListToolsQuery, GetToolsByTypeQuery
+    GetToolQuery, ListToolsQuery, GetToolsByTypeQuery, ToolFilters
 };
 use crate::application::tools::dto::{
     ExecuteToolRequest, ExecuteToolResponse, RegisterToolRequest, RegisterToolResponse,
-    UpdateToolConfigRequest, UpdateToolConfigResponse, ToolDto, ToolFilters
+    UpdateToolConfigRequest, UpdateToolConfigResponse, ToolDto
 };
 
 /// 工具仓储接口
@@ -87,19 +87,29 @@ pub trait ToolValidationService: Send + Sync {
 }
 
 /// 工具服务
-pub struct ToolService {
-    tool_repository: Arc<dyn ToolRepository>,
-    tool_executor: Arc<dyn ToolExecutor>,
-    validation_service: Arc<dyn ToolValidationService>,
+pub struct ToolService<TR, TE, TV>
+where
+    TR: ToolRepository + Send + Sync,
+    TE: ToolExecutor + Send + Sync,
+    TV: ToolValidationService + Send + Sync,
+{
+    tool_repository: Arc<TR>,
+    tool_executor: Arc<TE>,
+    validation_service: Arc<TV>,
     tool_registry: Arc<tokio::sync::RwLock<ToolRegistry>>,
 }
 
-impl ToolService {
+impl<TR, TE, TV> ToolService<TR, TE, TV>
+where
+    TR: ToolRepository + Send + Sync,
+    TE: ToolExecutor + Send + Sync,
+    TV: ToolValidationService + Send + Sync,
+{
     /// 创建新的工具服务
     pub fn new(
-        tool_repository: Arc<dyn ToolRepository>,
-        tool_executor: Arc<dyn ToolExecutor>,
-        validation_service: Arc<dyn ToolValidationService>,
+        tool_repository: Arc<TR>,
+        tool_executor: Arc<TE>,
+        validation_service: Arc<TV>,
     ) -> Self {
         Self {
             tool_repository,
@@ -190,15 +200,15 @@ impl ToolService {
             let mut registry = self.tool_registry.write().await;
             registry.register_tool(tool.clone()).map_err(|e| {
                 match e {
-                    crate::domain::tools::ToolRegistryError::ToolNameAlreadyExists(_) =>
+                    ToolRegistryError::ToolNameAlreadyExists(_) =>
                         ToolError::registration_failed("工具名称已存在于内存注册表"),
-                    crate::domain::tools::ToolRegistryError::ToolIdAlreadyExists(_) =>
+                    ToolRegistryError::ToolIdAlreadyExists(_) =>
                         ToolError::registration_failed("工具ID已存在于内存注册表"),
-                    crate::domain::tools::ToolRegistryError::ToolNotFound(_) =>
+                    ToolRegistryError::ToolNotFound(_) =>
                         ToolError::internal_error("内存注册表状态不一致"),
-                    crate::domain::tools::ToolRegistryError::RegistryFull =>
+                    ToolRegistryError::RegistryFull =>
                         ToolError::internal_error("内存注册表已满"),
-                    crate::domain::tools::ToolRegistryError::RegistryUnavailable(msg) =>
+                    ToolRegistryError::RegistryUnavailable(msg) =>
                         ToolError::internal_error(format!("内存注册表不可用: {}", msg)),
                 }
             })?;
@@ -228,7 +238,7 @@ impl ToolService {
             let mut registry = self.tool_registry.write().await;
             registry.unregister_tool(&command.tool_id).map_err(|e| {
                 match e {
-                    crate::domain::tools::ToolRegistryError::ToolNotFound(_) =>
+                    ToolRegistryError::ToolNotFound(_) =>
                         warn!("工具不存在于内存注册表中: {}", command.tool_id),
                     _ =>
                         error!("从内存注册表删除工具失败: {:?}", e),
@@ -299,7 +309,7 @@ impl ToolService {
 
     /// 列出工具
     pub async fn list_tools(&self, query: ListToolsQuery) -> Result<Vec<ToolDto>, ToolError> {
-        let tools = if let Some(tool_type) = query.filters.tool_type {
+        let tools = if let Some(ref tool_type) = query.filters.tool_type {
             self.tool_repository.find_by_type(&tool_type).await?
         } else {
             self.tool_repository.find_all().await?
@@ -518,7 +528,7 @@ mod tests {
         let executor = Arc::new(MockToolExecutor);
         let validation_service = Arc::new(MockToolValidationService);
         
-        let service = ToolService::new(repository, executor, validation_service);
+        let service = ToolService::<MockToolRepository, MockToolExecutor, MockToolValidationService>::new(repository, executor, validation_service);
         
         let request = RegisterToolRequest {
             name: "test_tool".to_string(),
@@ -549,7 +559,7 @@ mod tests {
         let executor = Arc::new(MockToolExecutor);
         let validation_service = Arc::new(MockToolValidationService);
         
-        let service = ToolService::new(repository, executor, validation_service);
+        let service = ToolService::<MockToolRepository, MockToolExecutor, MockToolValidationService>::new(repository, executor, validation_service);
         
         // 先注册工具
         let register_request = RegisterToolRequest {

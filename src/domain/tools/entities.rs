@@ -1,10 +1,11 @@
-use std::collections::HashMap;
-use serde::{Deserialize, Serialize};
 use crate::domain::common::id::ToolId;
 use crate::domain::common::timestamp::Timestamp;
+use crate::domain::tools::errors::ToolRegistryError;
 use crate::domain::tools::value_objects::{
-    ToolConfig, ToolMetadata, ToolExecutionResult, ParameterDefinition
+    ParameterDefinition, ToolConfig, ToolExecutionResult, ToolMetadata,
 };
+use serde::{Deserialize, Serialize};
+use std::collections::HashMap;
 
 /// 工具实体
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -90,9 +91,7 @@ impl ToolRegistry {
 
     /// 根据名称获取工具
     pub fn get_tool_by_name(&self, name: &str) -> Option<&Tool> {
-        self.name_to_id
-            .get(name)
-            .and_then(|id| self.tools.get(id))
+        self.name_to_id.get(name).and_then(|id| self.tools.get(id))
     }
 
     /// 获取所有工具
@@ -110,27 +109,16 @@ impl ToolRegistry {
 
     /// 注销工具
     pub fn unregister_tool(&mut self, id: &ToolId) -> Result<(), ToolRegistryError> {
-        let tool = self.tools.remove(id)
+        let tool = self
+            .tools
+            .remove(id)
             .ok_or(ToolRegistryError::ToolNotFound(*id))?;
-        
+
         self.name_to_id.remove(&tool.name);
         self.updated_at = Timestamp::now();
 
         Ok(())
     }
-}
-
-/// 工具注册表错误
-#[derive(Debug, Clone, PartialEq, thiserror::Error)]
-pub enum ToolRegistryError {
-    #[error("工具名称已存在: {0}")]
-    ToolNameAlreadyExists(String),
-    
-    #[error("工具ID已存在: {0}")]
-    ToolIdAlreadyExists(ToolId),
-    
-    #[error("工具未找到: {0}")]
-    ToolNotFound(ToolId),
 }
 
 impl Default for ToolRegistry {
@@ -146,7 +134,7 @@ mod tests {
     #[test]
     fn test_tool_registry() {
         let mut registry = ToolRegistry::new();
-        
+
         // 创建测试工具
         let tool = Tool {
             id: ToolId::new(),
@@ -169,14 +157,14 @@ mod tests {
 
         // 测试注册工具
         assert!(registry.register_tool(tool.clone()).is_ok());
-        
+
         // 测试重复注册
         assert!(registry.register_tool(tool.clone()).is_err());
-        
+
         // 测试获取工具
         assert_eq!(registry.get_tool_by_name("test_tool"), Some(&tool));
         assert_eq!(registry.get_tool_by_id(&tool.id), Some(&tool));
-        
+
         // 测试注销工具
         assert!(registry.unregister_tool(&tool.id).is_ok());
         assert_eq!(registry.get_tool_by_name("test_tool"), None);

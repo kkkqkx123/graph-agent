@@ -25,11 +25,11 @@ impl BuiltinToolExecutor {
 
     /// 注册内置工具
     pub fn register_tool(&mut self, tool: Arc<dyn BuiltinTool>) {
-        let name = tool.name();
-        if self.builtin_tools.contains_key(name) {
+        let name = tool.name().to_string();
+        if self.builtin_tools.contains_key(&name) {
             warn!("内置工具已存在，将被覆盖: {}", name);
         }
-        self.builtin_tools.insert(name.to_string(), tool);
+        self.builtin_tools.insert(name.clone(), tool);
         info!("注册内置工具: {}", name);
     }
 
