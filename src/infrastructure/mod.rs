@@ -6,7 +6,9 @@ pub mod database;
 pub mod llm;
 pub mod messaging;
 pub mod state;
+pub mod tools;
 pub mod workflow;
 
 // Re-export public types
 pub use state::*;
+pub use tools::*;
