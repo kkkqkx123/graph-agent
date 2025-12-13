@@ -1,12 +1,9 @@
 //! Graph service implementation
 
-use std::collections::HashMap;
 use std::sync::Arc;
 use thiserror::Error;
 
-use crate::domain::workflow::{
-    graph::{entities::*, value_objects::*},
-};
+use crate::domain::workflow::graph::{entities::*, value_objects::*};
 
 #[derive(Debug, Error)]
 pub enum GraphServiceError {
@@ -26,11 +23,17 @@ pub enum GraphServiceError {
 
 pub type GraphServiceResult<T> = Result<T, GraphServiceError>;
 
-#[derive(Debug, Clone)]
+#[derive(Clone)]
 pub struct GraphService {
     graph_repository: Arc<dyn GraphRepository>,
     node_registry: Arc<dyn NodeRegistry>,
     edge_registry: Arc<dyn EdgeRegistry>,
+}
+
+impl std::fmt::Debug for GraphService {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("GraphService").finish()
+    }
 }
 
 impl GraphService {
@@ -53,7 +56,7 @@ impl GraphService {
 
         // 创建新图
         let mut graph = Graph::new();
-        
+
         // 设置元数据
         if let Some(name) = request.name {
             graph.metadata.name = Some(name);
@@ -140,9 +143,16 @@ impl GraphService {
     }
 
     /// 更新图
-    pub async fn update_graph(&self, graph_id: &GraphId, request: UpdateGraphRequest) -> GraphServiceResult<Graph> {
+    pub async fn update_graph(
+        &self,
+        graph_id: &GraphId,
+        request: UpdateGraphRequest,
+    ) -> GraphServiceResult<Graph> {
         // 获取现有图
-        let mut graph = self.graph_repository.find_by_id(graph_id).await?
+        let mut graph = self
+            .graph_repository
+            .find_by_id(graph_id)
+            .await?
             .ok_or(GraphServiceError::GraphNotFound(graph_id.clone()))?;
 
         // 更新元数据
@@ -157,7 +167,7 @@ impl GraphService {
         }
 
         // 更新时间戳
-        graph.metadata.updated_at = crate::domain::common::timestamp::Timestamp::now();
+        graph.metadata.updated_at = std::time::SystemTime::now();
 
         // 保存更新
         self.graph_repository.save(&graph).await?;
@@ -168,7 +178,10 @@ impl GraphService {
     /// 删除图
     pub async fn delete_graph(&self, graph_id: &GraphId) -> GraphServiceResult<()> {
         // 验证图是否存在
-        let _graph = self.graph_repository.find_by_id(graph_id).await?
+        let _graph = self
+            .graph_repository
+            .find_by_id(graph_id)
+            .await?
             .ok_or(GraphServiceError::GraphNotFound(graph_id.clone()))?;
 
         // 删除图
@@ -178,14 +191,24 @@ impl GraphService {
     }
 
     /// 列出所有图
-    pub async fn list_graphs(&self, filters: Option<GraphFilters>) -> GraphServiceResult<Vec<Graph>> {
+    pub async fn list_graphs(
+        &self,
+        filters: Option<GraphFilters>,
+    ) -> GraphServiceResult<Vec<Graph>> {
         self.graph_repository.find_all(filters).await
     }
 
     /// 添加节点到图
-    pub async fn add_node(&self, graph_id: &GraphId, request: AddNodeRequest) -> GraphServiceResult<Node> {
+    pub async fn add_node(
+        &self,
+        graph_id: &GraphId,
+        request: AddNodeRequest,
+    ) -> GraphServiceResult<Node> {
         // 获取图
-        let mut graph = self.graph_repository.find_by_id(graph_id).await?
+        let mut graph = self
+            .graph_repository
+            .find_by_id(graph_id)
+            .await?
             .ok_or(GraphServiceError::GraphNotFound(graph_id.clone()))?;
 
         // 创建节点
@@ -196,9 +219,10 @@ impl GraphService {
 
         // 检查节点ID是否已存在
         if graph.nodes.contains_key(&node.id) {
-            return Err(GraphServiceError::CreationFailed(
-                format!("节点ID已存在: {:?}", node.id)
-            ));
+            return Err(GraphServiceError::CreationFailed(format!(
+                "节点ID已存在: {:?}",
+                node.id
+            )));
         }
 
         // 添加节点
@@ -211,20 +235,30 @@ impl GraphService {
     }
 
     /// 从图中移除节点
-    pub async fn remove_node(&self, graph_id: &GraphId, node_id: &NodeId) -> GraphServiceResult<()> {
+    pub async fn remove_node(
+        &self,
+        graph_id: &GraphId,
+        node_id: &NodeId,
+    ) -> GraphServiceResult<()> {
         // 获取图
-        let mut graph = self.graph_repository.find_by_id(graph_id).await?
+        let mut graph = self
+            .graph_repository
+            .find_by_id(graph_id)
+            .await?
             .ok_or(GraphServiceError::GraphNotFound(graph_id.clone()))?;
 
         // 检查节点是否存在
         if !graph.nodes.contains_key(node_id) {
-            return Err(GraphServiceError::NodeNotFound(
-                format!("节点不存在: {:?}", node_id)
-            ));
+            return Err(GraphServiceError::NodeNotFound(format!(
+                "节点不存在: {:?}",
+                node_id
+            )));
         }
 
         // 移除相关的边
-        graph.edges.retain(|edge| &edge.source != node_id && &edge.target != node_id);
+        graph
+            .edges
+            .retain(|edge| &edge.source != node_id && &edge.target != node_id);
 
         // 移除节点
         graph.nodes.remove(node_id);
@@ -236,9 +270,16 @@ impl GraphService {
     }
 
     /// 添加边到图
-    pub async fn add_edge(&self, graph_id: &GraphId, request: AddEdgeRequest) -> GraphServiceResult<Edge> {
+    pub async fn add_edge(
+        &self,
+        graph_id: &GraphId,
+        request: AddEdgeRequest,
+    ) -> GraphServiceResult<Edge> {
         // 获取图
-        let mut graph = self.graph_repository.find_by_id(graph_id).await?
+        let mut graph = self
+            .graph_repository
+            .find_by_id(graph_id)
+            .await?
             .ok_or(GraphServiceError::GraphNotFound(graph_id.clone()))?;
 
         // 创建边
@@ -249,9 +290,10 @@ impl GraphService {
 
         // 检查边ID是否已存在
         if graph.edges.iter().any(|e| e.id == edge.id) {
-            return Err(GraphServiceError::CreationFailed(
-                format!("边ID已存在: {:?}", edge.id)
-            ));
+            return Err(GraphServiceError::CreationFailed(format!(
+                "边ID已存在: {:?}",
+                edge.id
+            )));
         }
 
         // 添加边
@@ -264,16 +306,24 @@ impl GraphService {
     }
 
     /// 从图中移除边
-    pub async fn remove_edge(&self, graph_id: &GraphId, edge_id: &EdgeId) -> GraphServiceResult<()> {
+    pub async fn remove_edge(
+        &self,
+        graph_id: &GraphId,
+        edge_id: &EdgeId,
+    ) -> GraphServiceResult<()> {
         // 获取图
-        let mut graph = self.graph_repository.find_by_id(graph_id).await?
+        let mut graph = self
+            .graph_repository
+            .find_by_id(graph_id)
+            .await?
             .ok_or(GraphServiceError::GraphNotFound(graph_id.clone()))?;
 
         // 检查边是否存在
-        let edge_index = graph.edges.iter().position(|e| &e.id == edge_id)
-            .ok_or_else(|| GraphServiceError::NodeNotFound(
-                format!("边不存在: {:?}", edge_id)
-            ))?;
+        let edge_index = graph
+            .edges
+            .iter()
+            .position(|e| &e.id == edge_id)
+            .ok_or_else(|| GraphServiceError::NodeNotFound(format!("边不存在: {:?}", edge_id)))?;
 
         // 移除边
         graph.edges.remove(edge_index);
@@ -289,9 +339,10 @@ impl GraphService {
         let mut node_ids = std::collections::HashSet::new();
         for node in &request.nodes {
             if !node_ids.insert(&node.id) {
-                return Err(GraphServiceError::CreationFailed(
-                    format!("节点ID重复: {}", node.id)
-                ));
+                return Err(GraphServiceError::CreationFailed(format!(
+                    "节点ID重复: {}",
+                    node.id
+                )));
             }
         }
 
@@ -299,9 +350,10 @@ impl GraphService {
         let mut edge_ids = std::collections::HashSet::new();
         for edge in &request.edges {
             if !edge_ids.insert(&edge.id) {
-                return Err(GraphServiceError::CreationFailed(
-                    format!("边ID重复: {}", edge.id)
-                ));
+                return Err(GraphServiceError::CreationFailed(format!(
+                    "边ID重复: {}",
+                    edge.id
+                )));
             }
         }
 
@@ -309,11 +361,7 @@ impl GraphService {
     }
 
     fn create_node_from_request(&self, request: NodeRequest) -> GraphServiceResult<Node> {
-        let node = Node::new(
-            request.id,
-            request.node_type,
-            request.config,
-        );
+        let node = Node::new(request.id, request.node_type, request.config);
 
         Ok(node)
     }
@@ -333,30 +381,38 @@ impl GraphService {
         // 检查边的源节点和目标节点是否存在
         for edge in &graph.edges {
             if !graph.nodes.contains_key(&edge.source) {
-                return Err(GraphServiceError::NodeNotFound(
-                    format!("源节点不存在: {:?}", edge.source)
-                ));
+                return Err(GraphServiceError::NodeNotFound(format!(
+                    "源节点不存在: {:?}",
+                    edge.source
+                )));
             }
             if !graph.nodes.contains_key(&edge.target) {
-                return Err(GraphServiceError::NodeNotFound(
-                    format!("目标节点不存在: {:?}", edge.target)
-                ));
+                return Err(GraphServiceError::NodeNotFound(format!(
+                    "目标节点不存在: {:?}",
+                    edge.target
+                )));
             }
         }
 
         // 检查是否有开始节点
-        let has_start_node = graph.nodes.values().any(|node| matches!(node.node_type, NodeType::Start));
+        let has_start_node = graph
+            .nodes
+            .values()
+            .any(|node| matches!(node.node_type, NodeType::Start));
         if !has_start_node {
             return Err(GraphServiceError::InvalidGraphStructure(
-                "工作流必须包含至少一个开始节点".to_string()
+                "工作流必须包含至少一个开始节点".to_string(),
             ));
         }
 
         // 检查是否有结束节点
-        let has_end_node = graph.nodes.values().any(|node| matches!(node.node_type, NodeType::End));
+        let has_end_node = graph
+            .nodes
+            .values()
+            .any(|node| matches!(node.node_type, NodeType::End));
         if !has_end_node {
             return Err(GraphServiceError::InvalidGraphStructure(
-                "工作流必须包含至少一个结束节点".to_string()
+                "工作流必须包含至少一个结束节点".to_string(),
             ));
         }
 
@@ -368,7 +424,8 @@ impl GraphService {
 
     fn validate_graph_connectivity(&self, graph: &Graph) -> GraphServiceResult<()> {
         // 找到所有开始节点
-        let start_nodes: Vec<_> = graph.nodes
+        let start_nodes: Vec<_> = graph
+            .nodes
             .values()
             .filter(|node| matches!(node.node_type, NodeType::Start))
             .map(|node| node.id.clone())
@@ -376,16 +433,17 @@ impl GraphService {
 
         if start_nodes.is_empty() {
             return Err(GraphServiceError::InvalidGraphStructure(
-                "没有找到开始节点".to_string()
+                "没有找到开始节点".to_string(),
             ));
         }
 
         // 从每个开始节点开始，检查是否可以到达结束节点
         for start_node in &start_nodes {
             if !self.can_reach_end_node(graph, start_node) {
-                return Err(GraphServiceError::InvalidGraphStructure(
-                    format!("从开始节点 {:?} 无法到达任何结束节点", start_node)
-                ));
+                return Err(GraphServiceError::InvalidGraphStructure(format!(
+                    "从开始节点 {:?} 无法到达任何结束节点",
+                    start_node
+                )));
             }
         }
 

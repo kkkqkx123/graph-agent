@@ -3,12 +3,12 @@
 use std::sync::Arc;
 use thiserror::Error;
 
+use crate::domain::common::timestamp::Timestamp;
 use crate::domain::workflow::{
     entities::Workflow,
     graph::{entities::*, value_objects::*},
     registry::entities::*,
 };
-use crate::domain::common::timestamp::Timestamp;
 
 #[derive(Debug, Error)]
 pub enum CompositionError {
@@ -42,20 +42,19 @@ impl CompositionService {
     }
 
     /// 组合工作流
-    pub async fn compose_workflow(&self, request: ComposeWorkflowRequest) -> CompositionResult<Workflow> {
+    pub async fn compose_workflow(
+        &self,
+        request: ComposeWorkflowRequest,
+    ) -> CompositionResult<Workflow> {
         // 验证组合请求
         self.validate_composition_request(&request)?;
 
         // 创建图
         let mut graph = Graph::new();
-        
+
         // 添加节点
         for node_request in request.nodes {
-            let node = Node::new(
-                node_request.id,
-                node_request.node_type,
-                node_request.config,
-            );
+            let node = Node::new(node_request.id, node_request.node_type, node_request.config);
             graph.add_node(node);
         }
 
@@ -85,12 +84,15 @@ impl CompositionService {
     }
 
     /// 验证组合逻辑
-    pub async fn validate_composition(&self, request: &ComposeWorkflowRequest) -> CompositionResult<()> {
+    pub async fn validate_composition(
+        &self,
+        request: &ComposeWorkflowRequest,
+    ) -> CompositionResult<()> {
         self.validate_composition_request(request)?;
 
         // 创建临时图进行验证
         let mut graph = Graph::new();
-        
+
         // 添加节点
         for node_request in &request.nodes {
             let node = Node::new(
@@ -117,22 +119,30 @@ impl CompositionService {
         Ok(())
     }
 
-    fn validate_composition_request(&self, request: &ComposeWorkflowRequest) -> CompositionResult<()> {
+    fn validate_composition_request(
+        &self,
+        request: &ComposeWorkflowRequest,
+    ) -> CompositionResult<()> {
         if request.name.is_empty() {
-            return Err(CompositionError::ValidationFailed("工作流名称不能为空".to_string()));
+            return Err(CompositionError::ValidationFailed(
+                "工作流名称不能为空".to_string(),
+            ));
         }
 
         if request.nodes.is_empty() {
-            return Err(CompositionError::ValidationFailed("工作流必须包含至少一个节点".to_string()));
+            return Err(CompositionError::ValidationFailed(
+                "工作流必须包含至少一个节点".to_string(),
+            ));
         }
 
         // 检查节点ID唯一性
         let mut node_ids = std::collections::HashSet::new();
         for node in &request.nodes {
             if !node_ids.insert(&node.id) {
-                return Err(CompositionError::ValidationFailed(
-                    format!("节点ID重复: {}", node.id)
-                ));
+                return Err(CompositionError::ValidationFailed(format!(
+                    "节点ID重复: {}",
+                    node.id
+                )));
             }
         }
 
@@ -140,9 +150,10 @@ impl CompositionService {
         let mut edge_ids = std::collections::HashSet::new();
         for edge in &request.edges {
             if !edge_ids.insert(&edge.id) {
-                return Err(CompositionError::ValidationFailed(
-                    format!("边ID重复: {}", edge.id)
-                ));
+                return Err(CompositionError::ValidationFailed(format!(
+                    "边ID重复: {}",
+                    edge.id
+                )));
             }
         }
 
@@ -153,30 +164,38 @@ impl CompositionService {
         // 检查边的源节点和目标节点是否存在
         for edge in &graph.edges {
             if !graph.nodes.contains_key(&edge.source) {
-                return Err(CompositionError::NodeNotFound(
-                    format!("源节点不存在: {:?}", edge.source)
-                ));
+                return Err(CompositionError::NodeNotFound(format!(
+                    "源节点不存在: {:?}",
+                    edge.source
+                )));
             }
             if !graph.nodes.contains_key(&edge.target) {
-                return Err(CompositionError::NodeNotFound(
-                    format!("目标节点不存在: {:?}", edge.target)
-                ));
+                return Err(CompositionError::NodeNotFound(format!(
+                    "目标节点不存在: {:?}",
+                    edge.target
+                )));
             }
         }
 
         // 检查是否有开始节点
-        let has_start_node = graph.nodes.values().any(|node| matches!(node.node_type, NodeType::Start));
+        let has_start_node = graph
+            .nodes
+            .values()
+            .any(|node| matches!(node.node_type, NodeType::Start));
         if !has_start_node {
             return Err(CompositionError::InvalidGraphStructure(
-                "工作流必须包含至少一个开始节点".to_string()
+                "工作流必须包含至少一个开始节点".to_string(),
             ));
         }
 
         // 检查是否有结束节点
-        let has_end_node = graph.nodes.values().any(|node| matches!(node.node_type, NodeType::End));
+        let has_end_node = graph
+            .nodes
+            .values()
+            .any(|node| matches!(node.node_type, NodeType::End));
         if !has_end_node {
             return Err(CompositionError::InvalidGraphStructure(
-                "工作流必须包含至少一个结束节点".to_string()
+                "工作流必须包含至少一个结束节点".to_string(),
             ));
         }
 
@@ -188,7 +207,8 @@ impl CompositionService {
 
     fn validate_graph_connectivity(&self, graph: &Graph) -> CompositionResult<()> {
         // 找到所有开始节点
-        let start_nodes: Vec<_> = graph.nodes
+        let start_nodes: Vec<_> = graph
+            .nodes
             .values()
             .filter(|node| matches!(node.node_type, NodeType::Start))
             .map(|node| node.id.clone())
@@ -196,16 +216,17 @@ impl CompositionService {
 
         if start_nodes.is_empty() {
             return Err(CompositionError::InvalidGraphStructure(
-                "没有找到开始节点".to_string()
+                "没有找到开始节点".to_string(),
             ));
         }
 
         // 从每个开始节点开始，检查是否可以到达结束节点
         for start_node in &start_nodes {
             if !self.can_reach_end_node(graph, start_node) {
-                return Err(CompositionError::InvalidGraphStructure(
-                    format!("从开始节点 {:?} 无法到达任何结束节点", start_node)
-                ));
+                return Err(CompositionError::InvalidGraphStructure(format!(
+                    "从开始节点 {:?} 无法到达任何结束节点",
+                    start_node
+                )));
             }
         }
 
