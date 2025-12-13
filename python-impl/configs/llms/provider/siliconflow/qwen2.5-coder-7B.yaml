@@ -1,0 +1,35 @@
+# SiliconFlow Qwen/Qwen2.5-Coder-7B-Instruct 配置
+# 继承自 provider/siliconflow/common.yaml
+inherits_from: "provider/siliconflow/common"
+
+model_type: siliconflow
+model_name: Qwen/Qwen2.5-Coder-7B-Instruct
+provider: siliconflow
+token_counter: siliconflow_qwen_qwen2_5_coder_7b_instruct
+
+# 覆盖特定参数
+parameters:
+  max_tokens: 32000  # 32K上下文
+
+# 降级配置
+fallback_enabled: true
+fallback_models:
+  - silicon-Qwen2.5-7B
+max_fallback_attempts: 3
+
+# 元数据
+metadata:
+  provider: siliconflow
+  version: "1.0"
+  description: "SiliconFlow Qwen/Qwen2.5-Coder-7B-Instruct 模型 (支持补全和FIM补全)"
+  model_family: "qwen2.5-coder"
+  capabilities:
+    - text_generation
+    - function_calling
+    - code_completion
+    - fim_completion
+  limitations:
+    - no_api_caching
+  context_length: 32000
+  rpm_limit: 1000
+  tpm_limit: 50000
