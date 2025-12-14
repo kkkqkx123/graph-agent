@@ -4,7 +4,7 @@ import { LLMRequest } from '../../../../domain/llm/entities/llm-request';
 import { LLMResponse } from '../../../../domain/llm/entities/llm-response';
 import { ModelConfig } from '../../../../domain/llm/value-objects/model-config';
 import { HttpClient } from '../../../common/http/http-client';
-import { RateLimiter } from '../rate-limiters/token-bucket-limiter';
+import { TokenBucketLimiter } from '../rate-limiters/token-bucket-limiter';
 import { TokenCalculator } from '../utils/token-calculator';
 
 @injectable()
@@ -14,7 +14,7 @@ export class AnthropicClient implements ILLMClient {
 
   constructor(
     @inject('HttpClient') private httpClient: HttpClient,
-    @inject('RateLimiter') private rateLimiter: RateLimiter,
+    @inject('TokenBucketLimiter') private rateLimiter: TokenBucketLimiter,
     @inject('TokenCalculator') private tokenCalculator: TokenCalculator,
     @inject('ConfigManager') private configManager: any
   ) {
@@ -45,7 +45,8 @@ export class AnthropicClient implements ILLMClient {
       // Convert to domain response
       return this.toLLMResponse(anthropicResponse, request);
     } catch (error) {
-      throw new Error(`Anthropic API error: ${error.message}`);
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      throw new Error(`Anthropic API error: ${errorMessage}`);
     }
   }
 
@@ -56,10 +57,10 @@ export class AnthropicClient implements ILLMClient {
   async calculateCost(request: LLMRequest, response: LLMResponse): Promise<number> {
     const modelConfig = this.getModelConfig(request.model);
     const promptTokens = await this.calculateTokens(request);
-    const completionTokens = response.tokenUsage?.completionTokens || 0;
+    const completionTokens = response.usage?.completionTokens || 0;
     
-    return (promptTokens * modelConfig.promptTokenPrice + 
-            completionTokens * modelConfig.completionTokenPrice) / 1000;
+    return (promptTokens * modelConfig.getPromptCostPer1KTokens() +
+            completionTokens * modelConfig.getCompletionCostPer1KTokens()) / 1000;
   }
 
   private prepareRequest(request: LLMRequest): any {
@@ -93,16 +94,24 @@ export class AnthropicClient implements ILLMClient {
     const content = anthropicResponse.content[0]?.text || '';
     const usage = anthropicResponse.usage;
 
-    return new LLMResponse(
-      request.id,
-      content,
+    return LLMResponse.create(
+      request.requestId,
+      request.model,
+      [{
+        index: 0,
+        message: {
+          role: 'assistant',
+          content: content
+        },
+        finish_reason: anthropicResponse.stop_reason
+      }],
       {
         promptTokens: usage.input_tokens,
         completionTokens: usage.output_tokens,
         totalTokens: usage.input_tokens + usage.output_tokens
       },
       anthropicResponse.stop_reason,
-      new Date()
+      0 // duration - would need to be calculated
     );
   }
 
@@ -114,11 +123,25 @@ export class AnthropicClient implements ILLMClient {
       throw new Error(`Model configuration not found for ${model}`);
     }
 
-    return new ModelConfig(
+    return ModelConfig.create({
       model,
-      config.promptTokenPrice || 0.003,
-      config.completionTokenPrice || 0.015,
-      config.maxTokens || 100000
-    );
+      provider: 'anthropic',
+      maxTokens: config.maxTokens || 4096,
+      contextWindow: config.contextWindow || 200000,
+      temperature: config.temperature || 0.7,
+      topP: config.topP || 1.0,
+      frequencyPenalty: config.frequencyPenalty || 0.0,
+      presencePenalty: config.presencePenalty || 0.0,
+      costPer1KTokens: {
+        prompt: config.promptTokenPrice || 0.003,
+        completion: config.completionTokenPrice || 0.015
+      },
+      supportsStreaming: config.supportsStreaming ?? true,
+      supportsTools: config.supportsTools ?? true,
+      supportsImages: config.supportsImages ?? true,
+      supportsAudio: config.supportsAudio ?? false,
+      supportsVideo: config.supportsVideo ?? false,
+      metadata: config.metadata || {}
+    });
   }
 }

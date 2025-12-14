@@ -4,7 +4,7 @@ import { LLMRequest } from '../../../../domain/llm/entities/llm-request';
 import { LLMResponse } from '../../../../domain/llm/entities/llm-response';
 import { ModelConfig } from '../../../../domain/llm/value-objects/model-config';
 import { HttpClient } from '../../../common/http/http-client';
-import { RateLimiter } from '../rate-limiters/token-bucket-limiter';
+import { TokenBucketLimiter } from '../rate-limiters/token-bucket-limiter';
 import { TokenCalculator } from '../utils/token-calculator';
 
 @injectable()
@@ -14,7 +14,7 @@ export class OpenAIClient implements ILLMClient {
 
   constructor(
     @inject('HttpClient') private httpClient: HttpClient,
-    @inject('RateLimiter') private rateLimiter: RateLimiter,
+    @inject('TokenBucketLimiter') private rateLimiter: TokenBucketLimiter,
     @inject('TokenCalculator') private tokenCalculator: TokenCalculator,
     @inject('ConfigManager') private configManager: any
   ) {
@@ -44,7 +44,8 @@ export class OpenAIClient implements ILLMClient {
       // Convert to domain response
       return this.toLLMResponse(openaiResponse, request);
     } catch (error) {
-      throw new Error(`OpenAI API error: ${error.message}`);
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      throw new Error(`OpenAI API error: ${errorMessage}`);
     }
   }
 
@@ -55,10 +56,10 @@ export class OpenAIClient implements ILLMClient {
   async calculateCost(request: LLMRequest, response: LLMResponse): Promise<number> {
     const modelConfig = this.getModelConfig(request.model);
     const promptTokens = await this.calculateTokens(request);
-    const completionTokens = response.tokenUsage?.completionTokens || 0;
+    const completionTokens = response.usage?.completionTokens || 0;
     
-    return (promptTokens * modelConfig.promptTokenPrice + 
-            completionTokens * modelConfig.completionTokenPrice) / 1000;
+    return (promptTokens * modelConfig.getPromptCostPer1KTokens() +
+            completionTokens * modelConfig.getCompletionCostPer1KTokens()) / 1000;
   }
 
   private prepareRequest(request: LLMRequest): any {
@@ -78,16 +79,24 @@ export class OpenAIClient implements ILLMClient {
     const choice = openaiResponse.choices[0];
     const usage = openaiResponse.usage;
 
-    return new LLMResponse(
-      request.id,
-      choice.message.content,
+    return LLMResponse.create(
+      request.requestId,
+      request.model,
+      [{
+        index: 0,
+        message: {
+          role: choice.message.role,
+          content: choice.message.content
+        },
+        finish_reason: choice.finish_reason
+      }],
       {
         promptTokens: usage.prompt_tokens,
         completionTokens: usage.completion_tokens,
         totalTokens: usage.total_tokens
       },
       choice.finish_reason,
-      new Date()
+      0 // duration - would need to be calculated
     );
   }
 
@@ -99,11 +108,25 @@ export class OpenAIClient implements ILLMClient {
       throw new Error(`Model configuration not found for ${model}`);
     }
 
-    return new ModelConfig(
+    return ModelConfig.create({
       model,
-      config.promptTokenPrice || 0.001,
-      config.completionTokenPrice || 0.002,
-      config.maxTokens || 4096
-    );
+      provider: 'openai',
+      maxTokens: config.maxTokens || 4096,
+      contextWindow: config.contextWindow || 16384,
+      temperature: config.temperature || 0.7,
+      topP: config.topP || 1.0,
+      frequencyPenalty: config.frequencyPenalty || 0.0,
+      presencePenalty: config.presencePenalty || 0.0,
+      costPer1KTokens: {
+        prompt: config.promptTokenPrice || 0.001,
+        completion: config.completionTokenPrice || 0.002
+      },
+      supportsStreaming: config.supportsStreaming ?? true,
+      supportsTools: config.supportsTools ?? true,
+      supportsImages: config.supportsImages ?? false,
+      supportsAudio: config.supportsAudio ?? false,
+      supportsVideo: config.supportsVideo ?? false,
+      metadata: config.metadata || {}
+    });
   }
 }

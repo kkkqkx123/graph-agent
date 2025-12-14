@@ -6,7 +6,7 @@ import { HistoryType } from '../../../../domain/history/value-objects/history-ty
 import { ConnectionManager } from '../../connections/connection-manager';
 import { HistoryMapper } from './history-mapper';
 import { HistoryModel } from '../../models/history.model';
-import { Between, LessThan } from 'typeorm';
+import { Between, LessThan, In } from 'typeorm';
 
 @injectable()
 export class HistoryRepository implements IHistoryRepository {
@@ -117,7 +117,7 @@ export class HistoryRepository implements IHistoryRepository {
     
     const typeValues = types.map(type => type.getValue());
     const models = await repository.find({
-      where: { action: { In: typeValues } },
+      where: { action: In(typeValues) },
       order: { timestamp: 'DESC' }
     });
     

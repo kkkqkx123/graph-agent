@@ -48,19 +48,28 @@ export class MockClient implements ILLMClient {
       const promptTokens = await this.calculateTokens(request);
       const completionTokens = Math.floor(responseText.length / 4);
 
-      return new LLMResponse(
-        request.id,
-        responseText,
+      return LLMResponse.create(
+        request.requestId,
+        request.model,
+        [{
+          index: 0,
+          message: {
+            role: 'assistant',
+            content: responseText
+          },
+          finish_reason: 'stop'
+        }],
         {
           promptTokens,
           completionTokens,
           totalTokens: promptTokens + completionTokens
         },
         'stop',
-        new Date()
+        0 // duration - would need to be calculated
       );
     } catch (error) {
-      throw new Error(`Mock client error: ${error.message}`);
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      throw new Error(`Mock client error: ${errorMessage}`);
     }
   }
 
@@ -71,10 +80,10 @@ export class MockClient implements ILLMClient {
   async calculateCost(request: LLMRequest, response: LLMResponse): Promise<number> {
     const modelConfig = this.getModelConfig(request.model);
     const promptTokens = await this.calculateTokens(request);
-    const completionTokens = response.tokenUsage?.completionTokens || 0;
+    const completionTokens = response.usage?.completionTokens || 0;
     
-    return (promptTokens * modelConfig.promptTokenPrice + 
-            completionTokens * modelConfig.completionTokenPrice) / 1000;
+    return (promptTokens * modelConfig.getPromptCostPer1KTokens() +
+            completionTokens * modelConfig.getCompletionCostPer1KTokens()) / 1000;
   }
 
   setMockResponse(key: string, response: string): void {
@@ -99,19 +108,47 @@ export class MockClient implements ILLMClient {
     
     if (!config) {
       // Return default mock configuration
-      return new ModelConfig(
+      return ModelConfig.create({
         model,
-        0.0001, // $0.0001 per 1K prompt tokens
-        0.0002, // $0.0002 per 1K completion tokens
-        4096    // Max tokens
-      );
+        provider: 'mock',
+        maxTokens: 4096,
+        contextWindow: 8192,
+        temperature: 0.7,
+        topP: 1.0,
+        frequencyPenalty: 0.0,
+        presencePenalty: 0.0,
+        costPer1KTokens: {
+          prompt: 0.0001, // $0.0001 per 1K prompt tokens
+          completion: 0.0002 // $0.0002 per 1K completion tokens
+        },
+        supportsStreaming: true,
+        supportsTools: true,
+        supportsImages: false,
+        supportsAudio: false,
+        supportsVideo: false,
+        metadata: {}
+      });
     }
 
-    return new ModelConfig(
+    return ModelConfig.create({
       model,
-      config.promptTokenPrice || 0.0001,
-      config.completionTokenPrice || 0.0002,
-      config.maxTokens || 4096
-    );
+      provider: 'mock',
+      maxTokens: config.maxTokens || 4096,
+      contextWindow: 8192,
+      temperature: config.temperature || 0.7,
+      topP: config.topP || 1.0,
+      frequencyPenalty: config.frequencyPenalty || 0.0,
+      presencePenalty: config.presencePenalty || 0.0,
+      costPer1KTokens: {
+        prompt: config.promptTokenPrice || 0.0001,
+        completion: config.completionTokenPrice || 0.0002
+      },
+      supportsStreaming: config.supportsStreaming ?? true,
+      supportsTools: config.supportsTools ?? true,
+      supportsImages: config.supportsImages ?? false,
+      supportsAudio: config.supportsAudio ?? false,
+      supportsVideo: config.supportsVideo ?? false,
+      metadata: config.metadata || {}
+    });
   }
 }

@@ -16,12 +16,14 @@ export class ThreadRepository implements IThreadRepository {
     @inject('ThreadMapper') private mapper: ThreadMapper
   ) {}
 
-  async save(thread: Thread): Promise<void> {
+  async save(thread: Thread): Promise<Thread> {
     const connection = await this.connectionManager.getConnection();
     const repository = connection.getRepository(ThreadModel);
     
     const model = this.mapper.toModel(thread);
     await repository.save(model);
+    
+    return thread;
   }
 
   async findById(id: ID): Promise<Thread | null> {
@@ -44,11 +46,11 @@ export class ThreadRepository implements IThreadRepository {
     return models.map(model => this.mapper.toEntity(model));
   }
 
-  async delete(id: ID): Promise<void> {
+  async delete(entity: Thread): Promise<void> {
     const connection = await this.connectionManager.getConnection();
     const repository = connection.getRepository(ThreadModel);
     
-    await repository.delete(id.getValue());
+    await repository.delete(entity.threadId.value);
   }
 
   async exists(id: ID): Promise<boolean> {
@@ -90,8 +92,8 @@ export class ThreadRepository implements IThreadRepository {
       queryBuilder.skip(options.offset);
     }
 
-    if (options?.orderBy) {
-      queryBuilder.orderBy(`thread.${options.orderBy}`, options.orderDirection || 'ASC');
+    if (options?.sortBy) {
+      queryBuilder.orderBy(`thread.${options.sortBy}`, (options.sortOrder || 'ASC').toUpperCase() as 'ASC' | 'DESC');
     } else {
       queryBuilder.orderBy('thread.createdAt', 'DESC');
     }
@@ -127,8 +129,8 @@ export class ThreadRepository implements IThreadRepository {
       queryBuilder.skip(options.offset);
     }
 
-    if (options?.orderBy) {
-      queryBuilder.orderBy(`thread.${options.orderBy}`, options.orderDirection || 'ASC');
+    if (options?.sortBy) {
+      queryBuilder.orderBy(`thread.${options.sortBy}`, (options.sortOrder || 'ASC').toUpperCase() as 'ASC' | 'DESC');
     } else {
       queryBuilder.orderBy('thread.createdAt', 'DESC');
     }
@@ -201,8 +203,8 @@ export class ThreadRepository implements IThreadRepository {
       queryBuilder.skip(options.offset);
     }
 
-    if (options?.orderBy) {
-      queryBuilder.orderBy(`thread.${options.orderBy}`, options.orderDirection || 'ASC');
+    if (options?.sortBy) {
+      queryBuilder.orderBy(`thread.${options.sortBy}`, (options.sortOrder || 'ASC').toUpperCase() as 'ASC' | 'DESC');
     } else {
       queryBuilder.orderBy('thread.priority', 'DESC');
     }
@@ -231,8 +233,8 @@ export class ThreadRepository implements IThreadRepository {
       queryBuilder.skip(options.offset);
     }
 
-    if (options?.orderBy) {
-      queryBuilder.orderBy(`thread.${options.orderBy}`, options.orderDirection || 'ASC');
+    if (options?.sortBy) {
+      queryBuilder.orderBy(`thread.${options.sortBy}`, (options.sortOrder || 'ASC').toUpperCase() as 'ASC' | 'DESC');
     } else {
       queryBuilder.orderBy('thread.createdAt', 'DESC');
     }
@@ -268,8 +270,8 @@ export class ThreadRepository implements IThreadRepository {
       queryBuilder.skip(options.offset);
     }
 
-    if (options?.orderBy) {
-      queryBuilder.orderBy(`thread.${options.orderBy}`, options.orderDirection || 'ASC');
+    if (options?.sortBy) {
+      queryBuilder.orderBy(`thread.${options.sortBy}`, (options.sortOrder || 'ASC').toUpperCase() as 'ASC' | 'DESC');
     } else {
       queryBuilder.orderBy('thread.priority', 'DESC');
     }
@@ -317,8 +319,8 @@ export class ThreadRepository implements IThreadRepository {
       queryBuilder.skip(options.offset);
     }
 
-    if (options?.orderBy) {
-      queryBuilder.orderBy(`thread.${options.orderBy}`, options.orderDirection || 'ASC');
+    if (options?.sortBy) {
+      queryBuilder.orderBy(`thread.${options.sortBy}`, (options.sortOrder || 'ASC').toUpperCase() as 'ASC' | 'DESC');
     } else {
       queryBuilder.orderBy('thread.createdAt', 'DESC');
     }
@@ -358,8 +360,8 @@ export class ThreadRepository implements IThreadRepository {
       queryBuilder.skip(options.offset);
     }
 
-    if (options?.orderBy) {
-      queryBuilder.orderBy(`thread.${options.orderBy}`, options.orderDirection || 'ASC');
+    if (options?.sortBy) {
+      queryBuilder.orderBy(`thread.${options.sortBy}`, (options.sortOrder || 'ASC').toUpperCase() as 'ASC' | 'DESC');
     } else {
       queryBuilder.orderBy('thread.createdAt', 'DESC');
     }
@@ -398,8 +400,8 @@ export class ThreadRepository implements IThreadRepository {
       queryBuilder.andWhere('thread.title LIKE :title', { title: `%${options.title}%` });
     }
 
-    if (options?.orderBy) {
-      queryBuilder.orderBy(`thread.${options.orderBy}`, options.orderDirection || 'ASC');
+    if (options?.sortBy) {
+      queryBuilder.orderBy(`thread.${options.sortBy}`, options.sortOrder || 'ASC');
     } else {
       queryBuilder.orderBy('thread.createdAt', 'DESC');
     }
@@ -565,8 +567,8 @@ export class ThreadRepository implements IThreadRepository {
     
     const result = await repository.createQueryBuilder()
       .update(ThreadModel)
-      .set({ 
-        status: status.getValue(),
+      .set({
+        state: status.getValue(),
         updatedAt: new Date()
       })
       .where('id IN (:...threadIds)', { threadIds: threadIds.map(id => id.value) })
@@ -662,8 +664,8 @@ export class ThreadRepository implements IThreadRepository {
       queryBuilder.skip(options.offset);
     }
 
-    if (options?.orderBy) {
-      queryBuilder.orderBy(`thread.${options.orderBy}`, options.orderDirection || 'ASC');
+    if (options?.sortBy) {
+      queryBuilder.orderBy(`thread.${options.sortBy}`, (options.sortOrder || 'ASC').toUpperCase() as 'ASC' | 'DESC');
     } else {
       queryBuilder.orderBy('thread.deletedAt', 'DESC');
     }
