@@ -1,7 +1,9 @@
-import { Edge } from './edge';
+import { Edge, EdgeProps } from './edge';
 import { ID } from '../../common/value-objects/id';
 import { EdgeType } from '../value-objects/edge-type';
 import { WorkflowState } from './workflow-state';
+import { Timestamp } from '../../common/value-objects/timestamp';
+import { Version } from '../../common/value-objects/version';
 import { DomainError } from '../../common/errors/domain-error';
 
 /**
@@ -30,25 +32,13 @@ export interface ConditionEvaluationResult {
 /**
  * 条件边属性接口
  */
-export interface ConditionalEdgeProps {
-  id: ID;
-  graphId: ID;
-  type: EdgeType;
-  fromNodeId: ID;
-  toNodeId: ID;
-  condition?: string;
-  weight?: number;
-  properties: Record<string, unknown>;
+export interface ConditionalEdgeProps extends EdgeProps {
   expressions: ConditionExpression[];
   evaluationStrategy?: 'first_match' | 'all_match' | 'majority' | 'weighted';
   fallbackEnabled?: boolean;
   fallbackTarget?: ID;
   cacheEnabled?: boolean;
   cacheTimeout?: number;
-  createdAt: Date;
-  updatedAt: Date;
-  version: string;
-  isDeleted: boolean;
 }
 
 /**
@@ -59,7 +49,7 @@ export interface ConditionalEdgeProps {
 export class ConditionalEdge extends Edge {
   private readonly conditionalProps: ConditionalEdgeProps;
 
-  constructor(props: ConditionalEdgeProps) {
+  private constructor(props: ConditionalEdgeProps) {
     super(props);
     this.conditionalProps = Object.freeze(props);
   }
@@ -67,15 +57,16 @@ export class ConditionalEdge extends Edge {
   /**
    * 创建条件边
    */
-  public static create(
+  public static override create(
     graphId: ID,
+    type: EdgeType,
     fromNodeId: ID,
     toNodeId: ID,
-    expressions: ConditionExpression[],
+    condition?: string,
+    weight?: number,
+    properties?: Record<string, unknown>,
+    expressions?: ConditionExpression[],
     options?: {
-      condition?: string;
-      weight?: number;
-      properties?: Record<string, unknown>;
       evaluationStrategy?: 'first_match' | 'all_match' | 'majority' | 'weighted';
       fallbackEnabled?: boolean;
       fallbackTarget?: ID;
@@ -83,28 +74,32 @@ export class ConditionalEdge extends Edge {
       cacheTimeout?: number;
     }
   ): ConditionalEdge {
+    const now = Timestamp.now();
     const edgeId = ID.generate();
-    const now = new Date();
 
-    const props: ConditionalEdgeProps = {
+    const edgeProps: EdgeProps = {
       id: edgeId,
       graphId,
-      type: EdgeType.conditional(),
+      type,
       fromNodeId,
       toNodeId,
-      condition: options?.condition,
-      weight: options?.weight,
-      properties: options?.properties || {},
+      condition,
+      weight,
+      properties: properties || {},
+      createdAt: now,
+      updatedAt: now,
+      version: Version.initial(),
+      isDeleted: false
+    };
+
+    const props: ConditionalEdgeProps = {
+      ...edgeProps,
       expressions: expressions || [],
       evaluationStrategy: options?.evaluationStrategy ?? 'first_match',
       fallbackEnabled: options?.fallbackEnabled ?? false,
       fallbackTarget: options?.fallbackTarget,
       cacheEnabled: options?.cacheEnabled ?? false,
-      cacheTimeout: options?.cacheTimeout ?? 300000, // 5分钟
-      createdAt: now,
-      updatedAt: now,
-      version: '1.0.0',
-      isDeleted: false
+      cacheTimeout: options?.cacheTimeout ?? 300000 // 5分钟
     };
 
     return new ConditionalEdge(props);
@@ -113,7 +108,7 @@ export class ConditionalEdge extends Edge {
   /**
    * 从已有属性重建条件边
    */
-  public static fromProps(props: ConditionalEdgeProps): ConditionalEdge {
+  public static override fromProps(props: ConditionalEdgeProps): ConditionalEdge {
     return new ConditionalEdge(props);
   }
 
@@ -171,7 +166,7 @@ export class ConditionalEdge extends Edge {
     return new ConditionalEdge({
       ...this.conditionalProps,
       expressions: newExpressions,
-      updatedAt: new Date()
+      updatedAt: Timestamp.now()
     });
   }
 
@@ -190,7 +185,7 @@ export class ConditionalEdge extends Edge {
     return new ConditionalEdge({
       ...this.conditionalProps,
       expressions: newExpressions,
-      updatedAt: new Date()
+      updatedAt: Timestamp.now()
     });
   }
 
@@ -207,12 +202,24 @@ export class ConditionalEdge extends Edge {
     }
 
     const newExpressions = [...this.conditionalProps.expressions];
-    newExpressions[expressionIndex] = { ...newExpressions[expressionIndex], ...updates };
+    // 确保 expressionId 不被更新
+    const { expressionId: _, ...safeUpdates } = updates;
+    // 确保 expressionId 不为 undefined
+    const originalExpression = newExpressions[expressionIndex];
+    if (!originalExpression) {
+      throw new DomainError(`条件表达式不存在: ${expressionId}`);
+    }
+    const updatedExpression: ConditionExpression = {
+      ...originalExpression,
+      ...safeUpdates,
+      expressionId: originalExpression.expressionId // 确保 expressionId 始终是字符串
+    };
+    newExpressions[expressionIndex] = updatedExpression;
 
     return new ConditionalEdge({
       ...this.conditionalProps,
       expressions: newExpressions,
-      updatedAt: new Date()
+      updatedAt: Timestamp.now()
     });
   }
 
@@ -258,7 +265,7 @@ export class ConditionalEdge extends Edge {
     return new ConditionalEdge({
       ...this.conditionalProps,
       evaluationStrategy: strategy,
-      updatedAt: new Date()
+      updatedAt: Timestamp.now()
     });
   }
 
@@ -270,7 +277,7 @@ export class ConditionalEdge extends Edge {
       ...this.conditionalProps,
       fallbackEnabled: true,
       fallbackTarget,
-      updatedAt: new Date()
+      updatedAt: Timestamp.now()
     });
   }
 
@@ -281,7 +288,7 @@ export class ConditionalEdge extends Edge {
     return new ConditionalEdge({
       ...this.conditionalProps,
       fallbackEnabled: false,
-      updatedAt: new Date()
+      updatedAt: Timestamp.now()
     });
   }
 
@@ -293,7 +300,7 @@ export class ConditionalEdge extends Edge {
       ...this.conditionalProps,
       cacheEnabled: true,
       cacheTimeout: timeout ?? this.cacheTimeout,
-      updatedAt: new Date()
+      updatedAt: Timestamp.now()
     });
   }
 
@@ -304,7 +311,7 @@ export class ConditionalEdge extends Edge {
     return new ConditionalEdge({
       ...this.conditionalProps,
       cacheEnabled: false,
-      updatedAt: new Date()
+      updatedAt: Timestamp.now()
     });
   }
 
@@ -444,9 +451,11 @@ export class ConditionalEdge extends Edge {
     
     for (const op of operators) {
       if (expression.includes(op)) {
-        const [left, right] = expression.split(op).map(s => s.trim());
-        const leftValue = this.parseValue(left);
-        const rightValue = this.parseValue(right);
+        const parts = expression.split(op).map(s => s.trim());
+        if (parts.length !== 2) continue;
+        const [left, right] = parts;
+        const leftValue = this.parseValue(left || '');
+        const rightValue = this.parseValue(right || '');
         
         switch (op) {
           case '==':
@@ -454,13 +463,13 @@ export class ConditionalEdge extends Edge {
           case '!=':
             return leftValue !== rightValue;
           case '>':
-            return leftValue > rightValue;
+            return typeof leftValue === 'number' && typeof rightValue === 'number' && leftValue > rightValue;
           case '<':
-            return leftValue < rightValue;
+            return typeof leftValue === 'number' && typeof rightValue === 'number' && leftValue < rightValue;
           case '>=':
-            return leftValue >= rightValue;
+            return typeof leftValue === 'number' && typeof rightValue === 'number' && leftValue >= rightValue;
           case '<=':
-            return leftValue <= rightValue;
+            return typeof leftValue === 'number' && typeof rightValue === 'number' && leftValue <= rightValue;
         }
       }
     }
@@ -473,7 +482,7 @@ export class ConditionalEdge extends Edge {
   /**
    * 解析值
    */
-  private parseValue(value: string): any {
+  private parseValue(value: string): unknown {
     // 移除引号
     if (value.startsWith('"') && value.endsWith('"')) {
       return value.slice(1, -1);

@@ -1,4 +1,4 @@
-import { GraphId } from '../../entities/graph';
+import { ID } from '../../../common/value-objects/id';
 import { TriggerType } from './trigger-type';
 import { TriggerState } from './trigger-state';
 
@@ -17,7 +17,7 @@ export interface TriggerContext {
   readonly triggerState: TriggerState;
   
   /** 关联的图ID */
-  readonly graphId: GraphId;
+  readonly graphId: ID;
   
   /** 触发时间 */
   readonly triggeredAt: Date;
@@ -42,14 +42,14 @@ export class TriggerContextBuilder {
   private triggerId: string;
   private triggerType: TriggerType;
   private triggerState: TriggerState;
-  private graphId: GraphId;
+  private graphId: ID;
   private triggeredAt: Date;
   private triggerData: Record<string, any>;
   private triggerSource: string;
   private metadata: Record<string, any>;
   private executionParams: Record<string, any>;
 
-  constructor(triggerId: string, triggerType: TriggerType, graphId: GraphId) {
+  constructor(triggerId: string, triggerType: TriggerType, graphId: ID) {
     this.triggerId = triggerId;
     this.triggerType = triggerType;
     this.triggerState = TriggerState.ACTIVE;
@@ -116,7 +116,7 @@ export class TriggerContextUtils {
   static create(
     triggerId: string,
     triggerType: TriggerType,
-    graphId: GraphId
+    graphId: ID
   ): TriggerContextBuilder {
     return new TriggerContextBuilder(triggerId, triggerType, graphId);
   }

@@ -16,7 +16,12 @@ export * from './session';
 export * from './thread';
 
 // 导出工作流领域模块
-export * from './workflow';
+export {
+  Workflow,
+  WorkflowType,
+  WorkflowConfig,
+  WorkflowStatus as WorkflowStatusEnum
+} from './workflow';
 
 // 导出图领域模块
 export * from './graph';

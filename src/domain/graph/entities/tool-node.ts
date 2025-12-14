@@ -1,8 +1,10 @@
-import { Node } from './node';
+import { Node, NodeProps } from './node';
 import { ID } from '../../common/value-objects/id';
 import { NodeType } from '../value-objects/node-type';
 import { NodePosition } from './node';
 import { WorkflowState } from './workflow-state';
+import { Timestamp } from '../../common/value-objects/timestamp';
+import { Version } from '../../common/value-objects/version';
 import { DomainError } from '../../common/errors/domain-error';
 
 /**
@@ -33,14 +35,7 @@ export interface ToolNodeExecutionResult {
 /**
  * 工具节点属性接口
  */
-export interface ToolNodeProps {
-  id: ID;
-  graphId: ID;
-  type: NodeType;
-  name?: string;
-  description?: string;
-  position?: NodePosition;
-  properties: Record<string, unknown>;
+export interface ToolNodeProps extends NodeProps {
   timeout?: number;
   maxParallelCalls?: number;
   continueOnError?: boolean;
@@ -48,10 +43,6 @@ export interface ToolNodeProps {
   maxRetries?: number;
   retryDelay?: number;
   toolCallStrategy?: 'sequential' | 'parallel' | 'conditional';
-  createdAt: Date;
-  updatedAt: Date;
-  version: string;
-  isDeleted: boolean;
 }
 
 /**
@@ -62,7 +53,7 @@ export interface ToolNodeProps {
 export class ToolNode extends Node {
   private readonly toolProps: ToolNodeProps;
 
-  constructor(props: ToolNodeProps) {
+  protected constructor(props: ToolNodeProps) {
     super(props);
     this.toolProps = Object.freeze(props);
   }
@@ -70,8 +61,9 @@ export class ToolNode extends Node {
   /**
    * 创建工具节点
    */
-  public static create(
+  public static override create(
     graphId: ID,
+    type: NodeType,
     name?: string,
     description?: string,
     position?: NodePosition,
@@ -86,28 +78,32 @@ export class ToolNode extends Node {
       toolCallStrategy?: 'sequential' | 'parallel' | 'conditional';
     }
   ): ToolNode {
+    const now = Timestamp.now();
     const nodeId = ID.generate();
-    const now = new Date();
 
-    const props: ToolNodeProps = {
+    const nodeProps: NodeProps = {
       id: nodeId,
       graphId,
-      type: NodeType.tool(),
+      type,
       name,
       description,
       position,
       properties: properties || {},
+      createdAt: now,
+      updatedAt: now,
+      version: Version.initial(),
+      isDeleted: false
+    };
+
+    const props: ToolNodeProps = {
+      ...nodeProps,
       timeout: options?.timeout ?? 30,
       maxParallelCalls: options?.maxParallelCalls ?? 1,
       continueOnError: options?.continueOnError ?? true,
       retryOnFailure: options?.retryOnFailure ?? false,
       maxRetries: options?.maxRetries ?? 3,
       retryDelay: options?.retryDelay ?? 1000,
-      toolCallStrategy: options?.toolCallStrategy ?? 'sequential',
-      createdAt: now,
-      updatedAt: now,
-      version: '1.0.0',
-      isDeleted: false
+      toolCallStrategy: options?.toolCallStrategy ?? 'sequential'
     };
 
     return new ToolNode(props);
@@ -116,7 +112,7 @@ export class ToolNode extends Node {
   /**
    * 从已有属性重建工具节点
    */
-  public static fromProps(props: ToolNodeProps): ToolNode {
+  public static override fromProps(props: ToolNodeProps): ToolNode {
     return new ToolNode(props);
   }
 
@@ -179,7 +175,7 @@ export class ToolNode extends Node {
     return new ToolNode({
       ...this.toolProps,
       timeout,
-      updatedAt: new Date()
+      updatedAt: Timestamp.now()
     });
   }
 
@@ -193,7 +189,7 @@ export class ToolNode extends Node {
     return new ToolNode({
       ...this.toolProps,
       maxParallelCalls,
-      updatedAt: new Date()
+      updatedAt: Timestamp.now()
     });
   }
 
@@ -204,7 +200,7 @@ export class ToolNode extends Node {
     return new ToolNode({
       ...this.toolProps,
       continueOnError,
-      updatedAt: new Date()
+      updatedAt: Timestamp.now()
     });
   }
 
@@ -215,7 +211,7 @@ export class ToolNode extends Node {
     return new ToolNode({
       ...this.toolProps,
       retryOnFailure,
-      updatedAt: new Date()
+      updatedAt: Timestamp.now()
     });
   }
 
@@ -229,7 +225,7 @@ export class ToolNode extends Node {
     return new ToolNode({
       ...this.toolProps,
       maxRetries,
-      updatedAt: new Date()
+      updatedAt: Timestamp.now()
     });
   }
 
@@ -243,7 +239,7 @@ export class ToolNode extends Node {
     return new ToolNode({
       ...this.toolProps,
       retryDelay,
-      updatedAt: new Date()
+      updatedAt: Timestamp.now()
     });
   }
 
@@ -254,15 +250,15 @@ export class ToolNode extends Node {
     return new ToolNode({
       ...this.toolProps,
       toolCallStrategy: strategy,
-      updatedAt: new Date()
+      updatedAt: Timestamp.now()
     });
   }
 
   /**
    * 提取工具调用
    */
-  public extractToolCalls(state: WorkflowState): ToolCall[] {
-    const toolCalls: ToolCall[] = [];
+  public extractToolCalls(state: WorkflowState): ToolNodeToolCall[] {
+    const toolCalls: ToolNodeToolCall[] = [];
 
     // 从最后一条消息中提取工具调用
     const messages = state.getData('messages') as any[] || [];
@@ -297,23 +293,23 @@ export class ToolNode extends Node {
   /**
    * 解析工具调用
    */
-  private parseToolCall(toolCall: any): ToolCall | null {
+  private parseToolCall(toolCall: any): ToolNodeToolCall | null {
     try {
       let name: string;
-      let arguments: Record<string, unknown>;
+      let args: Record<string, unknown>;
       let id: string;
 
       if (toolCall.function) {
         // OpenAI格式
         name = toolCall.function.name;
-        arguments = typeof toolCall.function.arguments === 'string' 
+        args = typeof toolCall.function.arguments === 'string'
           ? JSON.parse(toolCall.function.arguments)
           : toolCall.function.arguments;
         id = toolCall.id;
       } else {
         // 自定义格式
         name = toolCall.name;
-        arguments = toolCall.arguments || {};
+        args = toolCall.arguments || {};
         id = toolCall.id || this.generateToolCallId();
       }
 
@@ -324,7 +320,7 @@ export class ToolNode extends Node {
       return {
         id,
         name,
-        arguments,
+        arguments: args,
         timeout: this.timeout,
         retryCount: 0
       };
@@ -344,9 +340,9 @@ export class ToolNode extends Node {
    * 执行工具调用
    */
   public async executeToolCall(
-    toolCall: ToolCall,
-    toolExecutor: (name: string, arguments: Record<string, unknown>) => Promise<unknown>
-  ): Promise<ToolExecutionResult> {
+    toolCall: ToolNodeToolCall,
+    toolExecutor: (name: string, args: Record<string, unknown>) => Promise<unknown>
+  ): Promise<ToolNodeExecutionResult> {
     const startTime = new Date();
     
     try {
@@ -393,10 +389,10 @@ export class ToolNode extends Node {
    * 执行工具调用（带重试）
    */
   public async executeToolCallWithRetry(
-    toolCall: ToolCall,
-    toolExecutor: (name: string, arguments: Record<string, unknown>) => Promise<unknown>
-  ): Promise<ToolExecutionResult> {
-    let lastResult: ToolExecutionResult | null = null;
+    toolCall: ToolNodeToolCall,
+    toolExecutor: (name: string, args: Record<string, unknown>) => Promise<unknown>
+  ): Promise<ToolNodeExecutionResult> {
+    let lastResult: ToolNodeExecutionResult | null = null;
     let retryCount = 0;
 
     while (retryCount <= (this.maxRetries || 0)) {
@@ -436,9 +432,9 @@ export class ToolNode extends Node {
    * 执行所有工具调用
    */
   public async executeAllToolCalls(
-    toolCalls: ToolCall[],
-    toolExecutor: (name: string, arguments: Record<string, unknown>) => Promise<unknown>
-  ): Promise<ToolExecutionResult[]> {
+    toolCalls: ToolNodeToolCall[],
+    toolExecutor: (name: string, args: Record<string, unknown>) => Promise<unknown>
+  ): Promise<ToolNodeExecutionResult[]> {
     if (this.toolCallStrategy === 'parallel') {
       return this.executeToolCallsParallel(toolCalls, toolExecutor);
     } else {
@@ -450,10 +446,10 @@ export class ToolNode extends Node {
    * 顺序执行工具调用
    */
   private async executeToolCallsSequential(
-    toolCalls: ToolCall[],
-    toolExecutor: (name: string, arguments: Record<string, unknown>) => Promise<unknown>
-  ): Promise<ToolExecutionResult[]> {
-    const results: ToolExecutionResult[] = [];
+    toolCalls: ToolNodeToolCall[],
+    toolExecutor: (name: string, args: Record<string, unknown>) => Promise<unknown>
+  ): Promise<ToolNodeExecutionResult[]> {
+    const results: ToolNodeExecutionResult[] = [];
 
     for (const toolCall of toolCalls) {
       const result = await this.executeToolCallWithRetry(toolCall, toolExecutor);
@@ -472,11 +468,11 @@ export class ToolNode extends Node {
    * 并行执行工具调用
    */
   private async executeToolCallsParallel(
-    toolCalls: ToolCall[],
-    toolExecutor: (name: string, arguments: Record<string, unknown>) => Promise<unknown>
-  ): Promise<ToolExecutionResult[]> {
+    toolCalls: ToolNodeToolCall[],
+    toolExecutor: (name: string, args: Record<string, unknown>) => Promise<unknown>
+  ): Promise<ToolNodeExecutionResult[]> {
     const maxParallel = Math.min(this.maxParallelCalls, toolCalls.length);
-    const results: ToolExecutionResult[] = [];
+    const results: ToolNodeExecutionResult[] = [];
 
     // 分批执行
     for (let i = 0; i < toolCalls.length; i += maxParallel) {
@@ -489,7 +485,7 @@ export class ToolNode extends Node {
       results.push(...batchResults);
 
       // 如果有失败且不继续执行，则停止
-      const hasFailure = batchResults.some(result => !result.success);
+      const hasFailure = batchResults.some((result: ToolNodeExecutionResult) => !result.success);
       if (hasFailure && !this.continueOnError) {
         break;
       }
@@ -502,11 +498,11 @@ export class ToolNode extends Node {
    * 处理工具执行结果
    */
   public processToolResults(
-    results: ToolExecutionResult[],
+    results: ToolNodeExecutionResult[],
     state: WorkflowState
   ): WorkflowState {
     // 获取现有的工具结果
-    const existingResults = state.getData('toolResults') as ToolExecutionResult[] || [];
+    const existingResults = state.getData('toolResults') as ToolNodeExecutionResult[] || [];
     
     // 添加新的结果
     const allResults = [...existingResults, ...results];
@@ -518,7 +514,7 @@ export class ToolNode extends Node {
   /**
    * 获取工具执行统计
    */
-  public getToolExecutionStats(results: ToolExecutionResult[]): {
+  public getToolExecutionStats(results: ToolNodeExecutionResult[]): {
     total: number;
     successful: number;
     failed: number;

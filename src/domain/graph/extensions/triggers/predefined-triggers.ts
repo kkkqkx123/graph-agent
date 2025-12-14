@@ -1,6 +1,6 @@
 import { BaseTrigger, TriggerConfig } from './base-trigger';
 import { TriggerType } from './trigger-type';
-import { TriggerContext } from './trigger-context';
+import { TriggerContext, TriggerContextUtils } from './trigger-context';
 import { TriggerExecutionResult, TriggerExecutionResultUtils } from './trigger-execution-result';
 
 /**
@@ -39,7 +39,7 @@ export class TimeTrigger extends BaseTrigger {
   /**
    * 激活触发器
    */
-  protected async onActivate(): Promise<void> {
+  protected override async onActivate(): Promise<void> {
     if (this.timeConfig.triggerImmediately) {
       // 立即触发一次
       const context = TriggerContextUtils.create(
@@ -58,35 +58,35 @@ export class TimeTrigger extends BaseTrigger {
   /**
    * 停用触发器
    */
-  protected async onDeactivate(): Promise<void> {
+  protected override async onDeactivate(): Promise<void> {
     this.clearTimer();
   }
 
   /**
    * 暂停触发器
    */
-  protected async onPause(): Promise<void> {
+  protected override async onPause(): Promise<void> {
     this.clearTimer();
   }
 
   /**
    * 恢复触发器
    */
-  protected async onResume(): Promise<void> {
+  protected override async onResume(): Promise<void> {
     this.setupTimer();
   }
 
   /**
    * 禁用触发器
    */
-  protected async onDisable(): Promise<void> {
+  protected override async onDisable(): Promise<void> {
     this.clearTimer();
   }
 
   /**
    * 触发执行
    */
-  protected async onTrigger(context: TriggerContext): Promise<TriggerExecutionResult> {
+  protected override async onTrigger(context: TriggerContext): Promise<TriggerExecutionResult> {
     try {
       // 执行时间触发器的具体逻辑
       const result = await this.executeTimeTrigger(context);
@@ -99,7 +99,7 @@ export class TimeTrigger extends BaseTrigger {
   /**
    * 重置触发器
    */
-  protected async onReset(): Promise<void> {
+  protected override async onReset(): Promise<void> {
     this.clearTimer();
   }
 
@@ -186,12 +186,12 @@ export class EventTrigger extends BaseTrigger {
     const eventData = context.triggerData;
     
     // 检查事件类型
-    if (eventData.eventType !== this.eventConfig.eventType) {
+    if (eventData['eventType'] !== this.eventConfig.eventType) {
       return false;
     }
 
     // 检查事件源
-    if (this.eventConfig.eventSource && eventData.eventSource !== this.eventConfig.eventSource) {
+    if (this.eventConfig.eventSource && eventData['eventSource'] !== this.eventConfig.eventSource) {
       return false;
     }
 
@@ -210,42 +210,42 @@ export class EventTrigger extends BaseTrigger {
   /**
    * 激活触发器
    */
-  protected async onActivate(): Promise<void> {
+  protected override async onActivate(): Promise<void> {
     this.setupEventListeners();
   }
 
   /**
    * 停用触发器
    */
-  protected async onDeactivate(): Promise<void> {
+  protected override async onDeactivate(): Promise<void> {
     this.clearEventListeners();
   }
 
   /**
    * 暂停触发器
    */
-  protected async onPause(): Promise<void> {
+  protected override async onPause(): Promise<void> {
     this.clearEventListeners();
   }
 
   /**
    * 恢复触发器
    */
-  protected async onResume(): Promise<void> {
+  protected override async onResume(): Promise<void> {
     this.setupEventListeners();
   }
 
   /**
    * 禁用触发器
    */
-  protected async onDisable(): Promise<void> {
+  protected override async onDisable(): Promise<void> {
     this.clearEventListeners();
   }
 
   /**
    * 触发执行
    */
-  protected async onTrigger(context: TriggerContext): Promise<TriggerExecutionResult> {
+  protected override async onTrigger(context: TriggerContext): Promise<TriggerExecutionResult> {
     try {
       // 执行事件触发器的具体逻辑
       const result = await this.executeEventTrigger(context);
@@ -258,7 +258,7 @@ export class EventTrigger extends BaseTrigger {
   /**
    * 重置触发器
    */
-  protected async onReset(): Promise<void> {
+  protected override async onReset(): Promise<void> {
     this.clearEventListeners();
   }
 
@@ -343,42 +343,42 @@ export class ConditionTrigger extends BaseTrigger {
   /**
    * 激活触发器
    */
-  protected async onActivate(): Promise<void> {
+  protected override async onActivate(): Promise<void> {
     this.setupEvaluationTimer();
   }
 
   /**
    * 停用触发器
    */
-  protected async onDeactivate(): Promise<void> {
+  protected override async onDeactivate(): Promise<void> {
     this.clearEvaluationTimer();
   }
 
   /**
    * 暂停触发器
    */
-  protected async onPause(): Promise<void> {
+  protected override async onPause(): Promise<void> {
     this.clearEvaluationTimer();
   }
 
   /**
    * 恢复触发器
    */
-  protected async onResume(): Promise<void> {
+  protected override async onResume(): Promise<void> {
     this.setupEvaluationTimer();
   }
 
   /**
    * 禁用触发器
    */
-  protected async onDisable(): Promise<void> {
+  protected override async onDisable(): Promise<void> {
     this.clearEvaluationTimer();
   }
 
   /**
    * 触发执行
    */
-  protected async onTrigger(context: TriggerContext): Promise<TriggerExecutionResult> {
+  protected override async onTrigger(context: TriggerContext): Promise<TriggerExecutionResult> {
     try {
       // 执行条件触发器的具体逻辑
       const result = await this.executeConditionTrigger(context);
@@ -391,7 +391,7 @@ export class ConditionTrigger extends BaseTrigger {
   /**
    * 重置触发器
    */
-  protected async onReset(): Promise<void> {
+  protected override async onReset(): Promise<void> {
     this.clearEvaluationTimer();
   }
 
@@ -489,7 +489,7 @@ export class ManualTrigger extends BaseTrigger {
   /**
    * 触发执行
    */
-  protected async onTrigger(context: TriggerContext): Promise<TriggerExecutionResult> {
+  protected override async onTrigger(context: TriggerContext): Promise<TriggerExecutionResult> {
     try {
       // 检查是否需要确认
       if (this.manualConfig.requireConfirmation) {

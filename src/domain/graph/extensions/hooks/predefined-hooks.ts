@@ -73,7 +73,7 @@ export class CacheHook extends BaseHook {
   constructor(
     id: string,
     hookPoint: HookPoint,
-    keyGenerator: (context: HookContext) => (ctx) => `${ctx.graphId}_${ctx.nodeId}`,
+    keyGenerator: (context: HookContext) => string,
     ttl: number = 300000 // 默认5分钟
   ) {
     super(id, hookPoint);
@@ -231,7 +231,7 @@ export class FilterHook extends BaseHook {
     };
   }
 
-  public shouldExecute(context: HookContext): boolean {
+  public override shouldExecute(context: HookContext): boolean {
     // 同步版本的过滤检查
     try {
       const result = this.filter(context);

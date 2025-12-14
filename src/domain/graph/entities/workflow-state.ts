@@ -379,7 +379,7 @@ export class WorkflowState extends Entity {
    * 恢复到检查点
    */
   public restoreFromCheckpoint(): WorkflowState {
-    const checkpoint = this.props.metadata.checkpoint as any;
+    const checkpoint = this.props.metadata['checkpoint'] as any;
     if (!checkpoint) {
       throw new DomainError('没有可用的检查点');
     }
@@ -430,16 +430,16 @@ export class WorkflowState extends Entity {
   public static fromDict(dict: Record<string, unknown>): WorkflowState {
     try {
       return new WorkflowState({
-        id: ID.fromString(dict.id as string),
-        workflowId: ID.fromString(dict.workflowId as string),
-        threadId: dict.threadId as string,
-        sessionId: dict.sessionId as string,
-        data: dict.data as Record<string, unknown>,
-        status: dict.status as WorkflowStatus,
-        createdAt: Timestamp.fromISOString(dict.createdAt as string),
-        updatedAt: Timestamp.fromISOString(dict.updatedAt as string),
-        version: Version.fromString(dict.version as string),
-        metadata: dict.metadata as Record<string, unknown>
+        id: ID.fromString(dict['id'] as string),
+        workflowId: ID.fromString(dict['workflowId'] as string),
+        threadId: dict['threadId'] as string,
+        sessionId: dict['sessionId'] as string,
+        data: dict['data'] as Record<string, unknown>,
+        status: dict['status'] as WorkflowStatus,
+        createdAt: Timestamp.fromString(dict['createdAt'] as string),
+        updatedAt: Timestamp.fromString(dict['updatedAt'] as string),
+        version: Version.fromString(dict['version'] as string),
+        metadata: dict['metadata'] as Record<string, unknown>
       });
     } catch (error) {
       throw new DomainError(`无法从字典创建工作流状态: ${error}`);

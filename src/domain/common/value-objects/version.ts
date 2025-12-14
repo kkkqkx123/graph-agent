@@ -24,6 +24,15 @@ export class Version extends ValueObject<VersionProps> {
   }
 
   /**
+   * 从字符串创建版本
+   * @param value 版本字符串
+   * @returns 版本实例
+   */
+  public static fromString(value: string): Version {
+    return Version.create(value);
+  }
+
+  /**
    * 创建初始版本
    * @returns 初始版本实例
    */

@@ -45,6 +45,15 @@ export class Timestamp extends ValueObject<TimestampProps> {
   }
 
   /**
+   * 从ISO字符串创建时间戳
+   * @param dateString ISO日期字符串
+   * @returns 时间戳实例
+   */
+  public static fromISOString(dateString: string): Timestamp {
+    return Timestamp.fromString(dateString);
+  }
+
+  /**
    * 从时间戳毫秒数创建时间戳
    * @param milliseconds 毫秒数
    * @returns 时间戳实例

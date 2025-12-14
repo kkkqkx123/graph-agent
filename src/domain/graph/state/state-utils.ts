@@ -1,5 +1,4 @@
-import { GraphId } from '../entities/graph';
-import { NodeId } from '../entities/node';
+import { ID } from '../../common/value-objects/id';
 import { StateValue, StateValueUtils } from './state-value';
 import { 
   StateKey, 
@@ -17,9 +16,9 @@ export class StateUtils {
    * 创建状态键
    */
   static createStateKey(
-    graphId: GraphId,
+    graphId: ID,
     key: string,
-    nodeId?: NodeId,
+    nodeId?: ID,
     namespace?: string
   ): StateKey {
     return StateKeyUtils.create(graphId, key, nodeId, namespace);
@@ -29,7 +28,7 @@ export class StateUtils {
    * 创建图级别状态键
    */
   static createGraphStateKey(
-    graphId: GraphId,
+    graphId: ID,
     key: string,
     namespace?: string
   ): StateKey {
@@ -40,8 +39,8 @@ export class StateUtils {
    * 创建节点级别状态键
    */
   static createNodeStateKey(
-    graphId: GraphId,
-    nodeId: NodeId,
+    graphId: ID,
+    nodeId: ID,
     key: string,
     namespace?: string
   ): StateKey {
@@ -59,8 +58,8 @@ export class StateUtils {
    * 创建状态查询
    */
   static createStateQuery(
-    graphId?: GraphId,
-    nodeId?: NodeId,
+    graphId?: ID,
+    nodeId?: ID,
     namespace?: string,
     keyPattern?: string
   ): StateQuery {
@@ -76,7 +75,7 @@ export class StateUtils {
    * 创建图状态查询
    */
   static createGraphStateQuery(
-    graphId: GraphId,
+    graphId: ID,
     namespace?: string,
     keyPattern?: string
   ): StateQuery {
@@ -87,8 +86,8 @@ export class StateUtils {
    * 创建节点状态查询
    */
   static createNodeStateQuery(
-    graphId: GraphId,
-    nodeId: NodeId,
+    graphId: ID,
+    nodeId: ID,
     namespace?: string,
     keyPattern?: string
   ): StateQuery {
@@ -99,7 +98,7 @@ export class StateUtils {
    * 创建命名空间状态查询
    */
   static createNamespaceStateQuery(
-    graphId: GraphId,
+    graphId: ID,
     namespace: string,
     keyPattern?: string
   ): StateQuery {
@@ -110,7 +109,7 @@ export class StateUtils {
    * 创建时间范围状态查询
    */
   static createTimeRangeStateQuery(
-    graphId: GraphId,
+    graphId: ID,
     timeRange: 'created' | 'updated',
     start?: Date,
     end?: Date,
@@ -126,7 +125,7 @@ export class StateUtils {
    * 创建版本范围状态查询
    */
   static createVersionRangeStateQuery(
-    graphId: GraphId,
+    graphId: ID,
     minVersion?: number,
     maxVersion?: number,
     namespace?: string
@@ -141,7 +140,7 @@ export class StateUtils {
    * 创建元数据过滤状态查询
    */
   static createMetadataStateQuery(
-    graphId: GraphId,
+    graphId: ID,
     metadataFilter: Record<string, any>,
     namespace?: string
   ): StateQuery {
@@ -292,15 +291,16 @@ export class StateUtils {
   /**
    * 按图分组状态存储结果
    */
-  static groupStateStoreResultsByGraph(results: StateStoreResult[]): Record<GraphId, StateStoreResult[]> {
-    const grouped: Record<GraphId, StateStoreResult[]> = {} as any;
+  static groupStateStoreResultsByGraph(results: StateStoreResult[]): Record<string, StateStoreResult[]> {
+    const grouped: Record<string, StateStoreResult[]> = {};
     
     for (const result of results) {
       const graphId = result.stateKey.graphId;
-      if (!grouped[graphId]) {
-        grouped[graphId] = [];
+      const graphIdStr = graphId.toString();
+      if (!grouped[graphIdStr]) {
+        grouped[graphIdStr] = [];
       }
-      grouped[graphId].push(result);
+      grouped[graphIdStr].push(result);
     }
     
     return grouped;
@@ -314,10 +314,11 @@ export class StateUtils {
     
     for (const result of results) {
       const nodeId = result.stateKey.nodeId || 'graph';
-      if (!grouped[nodeId]) {
-        grouped[nodeId] = [];
+      const nodeIdStr = nodeId.toString();
+      if (!grouped[nodeIdStr]) {
+        grouped[nodeIdStr] = [];
       }
-      grouped[nodeId].push(result);
+      grouped[nodeIdStr].push(result);
     }
     
     return grouped;
@@ -384,7 +385,7 @@ export class StateUtils {
     start?: Date,
     end?: Date
   ): StateStoreResult[] {
-    return this.filterStateStoreResults(result => {
+    return this.filterStateStoreResults(results, result => {
       const time = timeRange === 'created' ? 
         result.stateValue.createdAt : 
         result.stateValue.updatedAt;
@@ -404,7 +405,7 @@ export class StateUtils {
     minVersion?: number,
     maxVersion?: number
   ): StateStoreResult[] {
-    return this.filterStateStoreResults(result => {
+    return this.filterStateStoreResults(results, result => {
       const version = result.stateValue.version;
       
       if (minVersion !== undefined && version < minVersion) return false;
@@ -493,7 +494,7 @@ export class StateUtils {
    */
   static calculateStateStoreResultsStatistics(results: StateStoreResult[]): {
     totalCount: number;
-    countByGraph: Record<GraphId, number>;
+    countByGraph: Record<string, number>;
     countByNode: Record<string, number>;
     countByNamespace: Record<string, number>;
     countByType: Record<string, number>;
@@ -501,7 +502,7 @@ export class StateUtils {
     oldestStateTime: Date | undefined;
     newestStateTime: Date | undefined;
   } {
-    const countByGraph: Record<GraphId, number> = {} as any;
+    const countByGraph: Record<string, number> = {};
     const countByNode: Record<string, number> = {};
     const countByNamespace: Record<string, number> = {};
     const countByType: Record<string, number> = {};
@@ -512,11 +513,11 @@ export class StateUtils {
     
     for (const result of results) {
       // 统计图
-      const graphId = result.stateKey.graphId;
+      const graphId = result.stateKey.graphId.toString();
       countByGraph[graphId] = (countByGraph[graphId] || 0) + 1;
       
       // 统计节点
-      const nodeId = result.stateKey.nodeId || 'graph';
+      const nodeId = result.stateKey.nodeId?.toString() || 'graph';
       countByNode[nodeId] = (countByNode[nodeId] || 0) + 1;
       
       // 统计命名空间

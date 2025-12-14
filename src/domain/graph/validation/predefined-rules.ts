@@ -1,7 +1,5 @@
-import { GraphId } from '../entities/graph';
-import { NodeId } from '../entities/node';
-import { EdgeId } from '../entities/edge';
-import { 
+import { ID } from '../../common/value-objects/id';
+import {
   ValidationRule, 
   ValidationContext, 
   ValidationError, 
@@ -137,7 +135,7 @@ export class CycleDetectionRule implements ValidationRule {
     const { allowSelfCycles } = this.config;
 
     // 构建邻接表
-    const adjacencyList = new Map<NodeId, NodeId[]>();
+    const adjacencyList = new Map<ID, ID[]>();
     
     // 初始化邻接表
     for (const nodeId of nodes.keys()) {
@@ -155,13 +153,13 @@ export class CycleDetectionRule implements ValidationRule {
     }
 
     // 检测循环
-    const visited = new Set<NodeId>();
-    const recursionStack = new Set<NodeId>();
-    const cycles: NodeId[][] = [];
+    const visited = new Set<ID>();
+    const recursionStack = new Set<ID>();
+    const cycles: ID[][] = [];
 
     for (const nodeId of nodes.keys()) {
       if (!visited.has(nodeId)) {
-        const path: NodeId[] = [];
+        const path: ID[] = [];
         this.detectCycles(
           nodeId,
           adjacencyList,
@@ -190,12 +188,12 @@ export class CycleDetectionRule implements ValidationRule {
   }
 
   private detectCycles(
-    nodeId: NodeId,
-    adjacencyList: Map<NodeId, NodeId[]>,
-    visited: Set<NodeId>,
-    recursionStack: Set<NodeId>,
-    path: NodeId[],
-    cycles: NodeId[][],
+    nodeId: ID,
+    adjacencyList: Map<ID, ID[]>,
+    visited: Set<ID>,
+    recursionStack: Set<ID>,
+    path: ID[],
+    cycles: ID[][],
     allowSelfCycles: boolean
   ): void {
     visited.add(nodeId);
@@ -345,8 +343,8 @@ export class IsolatedNodeRule implements ValidationRule {
     const { allowStartEndNodes } = this.config;
 
     // 计算每个节点的入度和出度
-    const inDegree = new Map<NodeId, number>();
-    const outDegree = new Map<NodeId, number>();
+    const inDegree = new Map<ID, number>();
+    const outDegree = new Map<ID, number>();
 
     // 初始化度数
     for (const nodeId of nodes.keys()) {
@@ -417,8 +415,8 @@ export class DegreeValidationRule implements ValidationRule {
     const { degreeConstraints } = this.config;
 
     // 计算每个节点的入度和出度
-    const inDegree = new Map<NodeId, number>();
-    const outDegree = new Map<NodeId, number>();
+    const inDegree = new Map<ID, number>();
+    const outDegree = new Map<ID, number>();
 
     // 初始化度数
     for (const nodeId of nodes.keys()) {
@@ -441,13 +439,13 @@ export class DegreeValidationRule implements ValidationRule {
       const nodeInDegree = inDegree.get(nodeId) || 0;
       const nodeOutDegree = outDegree.get(nodeId) || 0;
 
-      const constraints = degreeConstraints[nodeType];
+      const constraints = degreeConstraints[nodeType.toString() as keyof typeof degreeConstraints];
       if (!constraints) {
         continue; // 没有约束的节点类型跳过检查
       }
 
       // 检查入度约束
-      if (constraints.maxInDegree !== undefined && nodeInDegree > constraints.maxInDegree) {
+      if ('maxInDegree' in constraints && constraints.maxInDegree !== undefined && nodeInDegree > constraints.maxInDegree) {
         errors.push(
           ValidationUtils.createSemanticError(
             `节点 ${nodeId} 的入度 ${nodeInDegree} 超过了最大值 ${constraints.maxInDegree}`
@@ -459,7 +457,7 @@ export class DegreeValidationRule implements ValidationRule {
         );
       }
 
-      if (constraints.minInDegree !== undefined && nodeInDegree < constraints.minInDegree) {
+      if ('minInDegree' in constraints && constraints.minInDegree !== undefined && nodeInDegree < constraints.minInDegree) {
         errors.push(
           ValidationUtils.createSemanticError(
             `节点 ${nodeId} 的入度 ${nodeInDegree} 小于最小值 ${constraints.minInDegree}`
@@ -472,7 +470,7 @@ export class DegreeValidationRule implements ValidationRule {
       }
 
       // 检查出度约束
-      if (constraints.maxOutDegree !== undefined && nodeOutDegree > constraints.maxOutDegree) {
+      if ('maxOutDegree' in constraints && constraints.maxOutDegree !== undefined && nodeOutDegree > constraints.maxOutDegree) {
         errors.push(
           ValidationUtils.createSemanticError(
             `节点 ${nodeId} 的出度 ${nodeOutDegree} 超过了最大值 ${constraints.maxOutDegree}`
@@ -484,7 +482,7 @@ export class DegreeValidationRule implements ValidationRule {
         );
       }
 
-      if (constraints.minOutDegree !== undefined && nodeOutDegree < constraints.minOutDegree) {
+      if ('minOutDegree' in constraints && constraints.minOutDegree !== undefined && nodeOutDegree < constraints.minOutDegree) {
         errors.push(
           ValidationUtils.createSemanticError(
             `节点 ${nodeId} 的出度 ${nodeOutDegree} 小于最小值 ${constraints.minOutDegree}`
@@ -532,7 +530,7 @@ export class ConfigurationCompletenessRule implements ValidationRule {
     // 验证节点配置
     for (const [nodeId, nodeData] of nodes) {
       const nodeType = nodeData.type;
-      const requiredFields = requiredNodeFields[nodeType];
+      const requiredFields = requiredNodeFields[nodeType.toString() as keyof typeof requiredNodeFields];
 
       if (!requiredFields) {
         continue; // 没有必需字段的节点类型跳过检查
@@ -556,7 +554,7 @@ export class ConfigurationCompletenessRule implements ValidationRule {
     // 验证边配置
     for (const [edgeId, edgeData] of edges) {
       const edgeType = edgeData.type;
-      const requiredFields = requiredEdgeFields[edgeType];
+      const requiredFields = requiredEdgeFields[edgeType.toString() as keyof typeof requiredEdgeFields];
 
       if (!requiredFields) {
         continue; // 没有必需字段的边类型跳过检查
@@ -661,11 +659,11 @@ export class PerformanceRule implements ValidationRule {
   }
 
   private calculateGraphDepth(
-    nodes: Map<NodeId, any>,
-    edges: Map<EdgeId, any>
+    nodes: Map<ID, any>,
+    edges: Map<ID, any>
   ): number {
     // 构建邻接表
-    const adjacencyList = new Map<NodeId, NodeId[]>();
+    const adjacencyList = new Map<ID, ID[]>();
     
     // 初始化邻接表
     for (const nodeId of nodes.keys()) {
@@ -683,7 +681,7 @@ export class PerformanceRule implements ValidationRule {
     }
 
     // 找到所有起始节点（入度为0的节点）
-    const inDegree = new Map<NodeId, number>();
+    const inDegree = new Map<ID, number>();
     for (const nodeId of nodes.keys()) {
       inDegree.set(nodeId, 0);
     }
@@ -704,8 +702,8 @@ export class PerformanceRule implements ValidationRule {
 
     // BFS计算最大深度
     let maxDepth = 0;
-    const visited = new Set<NodeId>();
-    const queue: Array<{ nodeId: NodeId; depth: number }> = startNodes.map(nodeId => ({ nodeId, depth: 1 }));
+    const visited = new Set<ID>();
+    const queue: Array<{ nodeId: ID; depth: number }> = startNodes.map(nodeId => ({ nodeId, depth: 1 }));
 
     while (queue.length > 0) {
       const { nodeId, depth } = queue.shift()!;
@@ -729,11 +727,11 @@ export class PerformanceRule implements ValidationRule {
   }
 
   private calculateMaxBranchingFactor(
-    nodes: Map<NodeId, any>,
-    edges: Map<EdgeId, any>
+    nodes: Map<ID, any>,
+    edges: Map<ID, any>
   ): number {
     // 计算每个节点的出度
-    const outDegree = new Map<NodeId, number>();
+    const outDegree = new Map<ID, number>();
     
     for (const nodeId of nodes.keys()) {
       outDegree.set(nodeId, 0);

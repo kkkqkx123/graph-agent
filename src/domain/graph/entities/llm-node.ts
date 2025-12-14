@@ -1,8 +1,10 @@
-import { Node } from './node';
+import { Node, NodeProps } from './node';
 import { ID } from '../../common/value-objects/id';
 import { NodeType } from '../value-objects/node-type';
 import { NodePosition } from './node';
 import { WorkflowState } from './workflow-state';
+import { Timestamp } from '../../common/value-objects/timestamp';
+import { Version } from '../../common/value-objects/version';
 import { DomainError } from '../../common/errors/domain-error';
 
 /**
@@ -62,14 +64,7 @@ export interface TokenUsage {
 /**
  * LLM节点属性接口
  */
-export interface LLMNodeProps {
-  id: ID;
-  graphId: ID;
-  type: NodeType;
-  name?: string;
-  description?: string;
-  position?: NodePosition;
-  properties: Record<string, unknown>;
+export interface LLMNodeProps extends NodeProps {
   systemPrompt?: string;
   temperature?: number;
   maxTokens?: number;
@@ -82,10 +77,6 @@ export interface LLMNodeProps {
   model?: string;
   responseFormat?: 'text' | 'json';
   stopSequences?: string[];
-  createdAt: Date;
-  updatedAt: Date;
-  version: string;
-  isDeleted: boolean;
 }
 
 /**
@@ -96,7 +87,7 @@ export interface LLMNodeProps {
 export class LLMNode extends Node {
   private readonly llmProps: LLMNodeProps;
 
-  constructor(props: LLMNodeProps) {
+  protected constructor(props: LLMNodeProps) {
     super(props);
     this.llmProps = Object.freeze(props);
   }
@@ -104,8 +95,9 @@ export class LLMNode extends Node {
   /**
    * 创建LLM节点
    */
-  public static create(
+  public static override create(
     graphId: ID,
+    type: NodeType,
     name?: string,
     description?: string,
     position?: NodePosition,
@@ -125,17 +117,25 @@ export class LLMNode extends Node {
       stopSequences?: string[];
     }
   ): LLMNode {
+    const now = Timestamp.now();
     const nodeId = ID.generate();
-    const now = new Date();
 
-    const props: LLMNodeProps = {
+    const nodeProps: NodeProps = {
       id: nodeId,
       graphId,
-      type: NodeType.llm(),
+      type,
       name,
       description,
       position,
       properties: properties || {},
+      createdAt: now,
+      updatedAt: now,
+      version: Version.initial(),
+      isDeleted: false
+    };
+
+    const props: LLMNodeProps = {
+      ...nodeProps,
       systemPrompt: options?.systemPrompt,
       temperature: options?.temperature ?? 0.7,
       maxTokens: options?.maxTokens ?? 1000,
@@ -147,11 +147,7 @@ export class LLMNode extends Node {
       promptVariables: options?.promptVariables || {},
       model: options?.model,
       responseFormat: options?.responseFormat ?? 'text',
-      stopSequences: options?.stopSequences,
-      createdAt: now,
-      updatedAt: now,
-      version: '1.0.0',
-      isDeleted: false
+      stopSequences: options?.stopSequences
     };
 
     return new LLMNode(props);
@@ -160,7 +156,7 @@ export class LLMNode extends Node {
   /**
    * 从已有属性重建LLM节点
    */
-  public static fromProps(props: LLMNodeProps): LLMNode {
+  public static override fromProps(props: LLMNodeProps): LLMNode {
     return new LLMNode(props);
   }
 
@@ -255,7 +251,7 @@ export class LLMNode extends Node {
     return new LLMNode({
       ...this.llmProps,
       systemPrompt,
-      updatedAt: new Date()
+      updatedAt: Timestamp.now()
     });
   }
 
@@ -269,7 +265,7 @@ export class LLMNode extends Node {
     return new LLMNode({
       ...this.llmProps,
       temperature,
-      updatedAt: new Date()
+      updatedAt: Timestamp.now()
     });
   }
 
@@ -283,7 +279,7 @@ export class LLMNode extends Node {
     return new LLMNode({
       ...this.llmProps,
       maxTokens,
-      updatedAt: new Date()
+      updatedAt: Timestamp.now()
     });
   }
 
@@ -299,7 +295,7 @@ export class LLMNode extends Node {
     return new LLMNode({
       ...this.llmProps,
       tools: newTools,
-      updatedAt: new Date()
+      updatedAt: Timestamp.now()
     });
   }
 
@@ -311,7 +307,7 @@ export class LLMNode extends Node {
     return new LLMNode({
       ...this.llmProps,
       tools: newTools,
-      updatedAt: new Date()
+      updatedAt: Timestamp.now()
     });
   }
 
@@ -326,11 +322,23 @@ export class LLMNode extends Node {
       throw new DomainError(`工具不存在: ${toolId}`);
     }
 
-    tools[index] = { ...tools[index], ...updates };
+    // 确保 toolId 不被更新
+    const { toolId: _, ...safeUpdates } = updates;
+    // 确保 toolId 不为 undefined
+    const originalTool = tools[index];
+    if (!originalTool) {
+      throw new DomainError(`工具不存在: ${toolId}`);
+    }
+    const updatedTool: ToolConfig = {
+      ...originalTool,
+      ...safeUpdates,
+      toolId: originalTool.toolId // 确保 toolId 始终是字符串
+    };
+    tools[index] = updatedTool;
     return new LLMNode({
       ...this.llmProps,
       tools,
-      updatedAt: new Date()
+      updatedAt: Timestamp.now()
     });
   }
 
@@ -376,7 +384,7 @@ export class LLMNode extends Node {
     return new LLMNode({
       ...this.llmProps,
       promptTemplate: template,
-      updatedAt: new Date()
+      updatedAt: Timestamp.now()
     });
   }
 
@@ -387,7 +395,7 @@ export class LLMNode extends Node {
     return new LLMNode({
       ...this.llmProps,
       promptVariables: { ...variables },
-      updatedAt: new Date()
+      updatedAt: Timestamp.now()
     });
   }
 
@@ -401,7 +409,7 @@ export class LLMNode extends Node {
     return new LLMNode({
       ...this.llmProps,
       promptVariables: newVariables,
-      updatedAt: new Date()
+      updatedAt: Timestamp.now()
     });
   }
 
@@ -415,7 +423,7 @@ export class LLMNode extends Node {
     return new LLMNode({
       ...this.llmProps,
       promptVariables: newVariables,
-      updatedAt: new Date()
+      updatedAt: Timestamp.now()
     });
   }
 
@@ -426,7 +434,7 @@ export class LLMNode extends Node {
     return new LLMNode({
       ...this.llmProps,
       model,
-      updatedAt: new Date()
+      updatedAt: Timestamp.now()
     });
   }
 
@@ -437,7 +445,7 @@ export class LLMNode extends Node {
     return new LLMNode({
       ...this.llmProps,
       responseFormat: format,
-      updatedAt: new Date()
+      updatedAt: Timestamp.now()
     });
   }
 
@@ -448,7 +456,7 @@ export class LLMNode extends Node {
     return new LLMNode({
       ...this.llmProps,
       stopSequences: [...sequences],
-      updatedAt: new Date()
+      updatedAt: Timestamp.now()
     });
   }
 

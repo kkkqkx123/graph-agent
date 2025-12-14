@@ -1,6 +1,6 @@
-import { GraphId } from '../entities/graph';
-import { NodeId } from '../entities/node';
-import { EdgeId } from '../entities/edge';
+import { ID } from '../../common/value-objects/id';
+import { Timestamp } from '../../common/value-objects/timestamp';
+import { Version } from '../../common/value-objects/version';
 import { ExecutionStatus, ExecutionMode, ExecutionPriority } from '../execution';
 
 /**
@@ -12,24 +12,24 @@ export abstract class GraphExecutionEvent {
   /** 执行ID */
   readonly executionId: string;
   /** 图ID */
-  readonly graphId: GraphId;
+  readonly graphId: ID;
   /** 事件时间 */
-  readonly timestamp: Date;
+  readonly timestamp: Timestamp;
   /** 事件版本 */
-  readonly version: number;
+  readonly version: Version;
   /** 事件元数据 */
   readonly metadata: Record<string, any>;
 
   constructor(
     executionId: string,
-    graphId: GraphId,
+    graphId: ID,
     metadata: Record<string, any> = {}
   ) {
     this.eventId = this.generateEventId();
     this.executionId = executionId;
     this.graphId = graphId;
-    this.timestamp = new Date();
-    this.version = 1;
+    this.timestamp = Timestamp.now();
+    this.version = Version.initial();
     this.metadata = metadata;
   }
 
@@ -73,7 +73,7 @@ export abstract class GraphExecutionEvent {
 export class GraphExecutionStartedEvent extends GraphExecutionEvent {
   constructor(
     executionId: string,
-    graphId: GraphId,
+    graphId: ID,
     readonly mode: ExecutionMode,
     readonly priority: ExecutionPriority,
     readonly inputData: Record<string, any>,
@@ -103,11 +103,11 @@ export class GraphExecutionStartedEvent extends GraphExecutionEvent {
 export class GraphExecutionCompletedEvent extends GraphExecutionEvent {
   constructor(
     executionId: string,
-    graphId: GraphId,
+    graphId: ID,
     readonly outputData: Record<string, any>,
     readonly duration: number,
-    readonly executedNodes: NodeId[],
-    readonly executedEdges: EdgeId[],
+    readonly executedNodes: ID[],
+    readonly executedEdges: ID[],
     readonly statistics: Record<string, any>,
     metadata: Record<string, any> = {}
   ) {
@@ -135,14 +135,14 @@ export class GraphExecutionCompletedEvent extends GraphExecutionEvent {
 export class GraphExecutionFailedEvent extends GraphExecutionEvent {
   constructor(
     executionId: string,
-    graphId: GraphId,
+    graphId: ID,
     readonly error: Error,
     readonly duration: number,
-    readonly executedNodes: NodeId[],
-    readonly executedEdges: EdgeId[],
+    readonly executedNodes: ID[],
+    readonly executedEdges: ID[],
     readonly failurePoint: {
-      nodeId?: NodeId;
-      edgeId?: EdgeId;
+      nodeId?: ID;
+      edgeId?: ID;
       phase: string;
     },
     metadata: Record<string, any> = {}
@@ -175,9 +175,9 @@ export class GraphExecutionFailedEvent extends GraphExecutionEvent {
 export class GraphExecutionPausedEvent extends GraphExecutionEvent {
   constructor(
     executionId: string,
-    graphId: GraphId,
+    graphId: ID,
     readonly pauseReason: string,
-    readonly currentNodeId: NodeId,
+    readonly currentNodeId: ID,
     readonly progress: number,
     metadata: Record<string, any> = {}
   ) {
@@ -203,9 +203,9 @@ export class GraphExecutionPausedEvent extends GraphExecutionEvent {
 export class GraphExecutionResumedEvent extends GraphExecutionEvent {
   constructor(
     executionId: string,
-    graphId: GraphId,
+    graphId: ID,
     readonly resumeReason: string,
-    readonly currentNodeId: NodeId,
+    readonly currentNodeId: ID,
     metadata: Record<string, any> = {}
   ) {
     super(executionId, graphId, metadata);
@@ -229,7 +229,7 @@ export class GraphExecutionResumedEvent extends GraphExecutionEvent {
 export class GraphExecutionCancelledEvent extends GraphExecutionEvent {
   constructor(
     executionId: string,
-    graphId: GraphId,
+    graphId: ID,
     readonly cancelReason: string,
     readonly cancelledBy: string,
     readonly progress: number,
@@ -257,9 +257,9 @@ export class GraphExecutionCancelledEvent extends GraphExecutionEvent {
 export class GraphExecutionTimeoutEvent extends GraphExecutionEvent {
   constructor(
     executionId: string,
-    graphId: GraphId,
+    graphId: ID,
     readonly timeoutDuration: number,
-    readonly currentNodeId: NodeId,
+    readonly currentNodeId: ID,
     readonly progress: number,
     metadata: Record<string, any> = {}
   ) {
@@ -285,11 +285,11 @@ export class GraphExecutionTimeoutEvent extends GraphExecutionEvent {
 export class GraphExecutionProgressEvent extends GraphExecutionEvent {
   constructor(
     executionId: string,
-    graphId: GraphId,
+    graphId: ID,
     readonly progress: number,
-    readonly currentNodeId: NodeId,
-    readonly executedNodes: NodeId[],
-    readonly pendingNodes: NodeId[],
+    readonly currentNodeId: ID,
+    readonly executedNodes: ID[],
+    readonly pendingNodes: ID[],
     readonly estimatedTimeRemaining?: number,
     metadata: Record<string, any> = {}
   ) {

@@ -43,7 +43,10 @@ export class HookUtils {
     ttl?: number
   ): BaseHook {
     const id = `cache_${hookPoint}_${Date.now()}`;
-    return new CacheHook(id, hookPoint, keyGenerator, ttl);
+    // 如果没有提供 keyGenerator，使用默认的键生成函数
+    const defaultKeyGenerator = (context: HookContext) =>
+      `${context.graphId?.toString() || 'unknown'}_${context.nodeId || 'unknown'}`;
+    return new CacheHook(id, hookPoint, keyGenerator || defaultKeyGenerator, ttl);
   }
 
   /**

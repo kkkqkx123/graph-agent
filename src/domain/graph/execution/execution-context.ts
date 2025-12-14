@@ -1,6 +1,4 @@
-import { GraphId } from '../entities/graph';
-import { NodeId } from '../entities/node';
-import { EdgeId } from '../entities/edge';
+import { ID } from '../../common/value-objects/id';
 
 /**
  * 执行状态枚举
@@ -58,7 +56,7 @@ export interface ExecutionContext {
   readonly executionId: string;
   
   /** 图ID */
-  readonly graphId: GraphId;
+  readonly graphId: ID;
   
   /** 执行状态 */
   readonly status: ExecutionStatus;
@@ -79,13 +77,13 @@ export interface ExecutionContext {
   readonly duration?: number;
   
   /** 当前节点ID */
-  readonly currentNodeId?: NodeId;
+  readonly currentNodeId?: ID;
   
   /** 已执行节点列表 */
-  readonly executedNodes: NodeId[];
+  readonly executedNodes: ID[];
   
   /** 待执行节点列表 */
-  readonly pendingNodes: NodeId[];
+  readonly pendingNodes: ID[];
   
   /** 执行数据 */
   readonly data: Map<string, any>;
@@ -126,7 +124,7 @@ export interface ExecutionConfig {
   readonly enableBreakpoints?: boolean;
   
   /** 断点列表 */
-  readonly breakpoints?: NodeId[];
+  readonly breakpoints?: ID[];
   
   /** 是否启用性能监控 */
   readonly enableProfiling?: boolean;
@@ -158,10 +156,10 @@ export interface ExecutionLog {
   readonly timestamp: Date;
   
   /** 相关节点ID */
-  readonly nodeId?: NodeId;
+  readonly nodeId?: ID;
   
   /** 相关边ID */
-  readonly edgeId?: EdgeId;
+  readonly edgeId?: ID;
   
   /** 日志上下文 */
   readonly context?: Record<string, any>;
@@ -193,10 +191,10 @@ export interface ExecutionError {
   readonly timestamp: Date;
   
   /** 相关节点ID */
-  readonly nodeId?: NodeId;
+  readonly nodeId?: ID;
   
   /** 相关边ID */
-  readonly edgeId?: EdgeId;
+  readonly edgeId?: ID;
   
   /** 是否可重试 */
   readonly retryable?: boolean;
@@ -216,7 +214,7 @@ export interface ExecutionError {
  */
 export interface NodeExecutionContext {
   /** 节点ID */
-  readonly nodeId: NodeId;
+  readonly nodeId: ID;
   
   /** 节点类型 */
   readonly nodeType: string;
@@ -260,7 +258,7 @@ export interface NodeExecutionContext {
  */
 export interface EdgeExecutionContext {
   /** 边ID */
-  readonly edgeId: EdgeId;
+  readonly edgeId: ID;
   
   /** 边类型 */
   readonly edgeType: string;
@@ -269,10 +267,10 @@ export interface EdgeExecutionContext {
   readonly edgeConfig: Record<string, any>;
   
   /** 源节点ID */
-  readonly sourceNodeId: NodeId;
+  readonly sourceNodeId: ID;
   
   /** 目标节点ID */
-  readonly targetNodeId: NodeId;
+  readonly targetNodeId: ID;
   
   /** 传递的数据 */
   readonly data: Map<string, any>;
@@ -304,16 +302,16 @@ export interface EdgeExecutionContext {
  */
 export class ExecutionContextBuilder {
   private executionId: string;
-  private graphId: GraphId;
+  private graphId: ID;
   private status: ExecutionStatus = ExecutionStatus.PENDING;
   private mode: ExecutionMode = ExecutionMode.SYNC;
   private priority: ExecutionPriority = ExecutionPriority.NORMAL;
   private startTime: Date = new Date();
   private endTime?: Date;
   private duration?: number;
-  private currentNodeId?: NodeId;
-  private executedNodes: NodeId[] = [];
-  private pendingNodes: NodeId[] = [];
+  private currentNodeId?: ID;
+  private executedNodes: ID[] = [];
+  private pendingNodes: ID[] = [];
   private data: Map<string, any> = new Map();
   private variables: Map<string, any> = new Map();
   private config: ExecutionConfig = {};
@@ -321,7 +319,7 @@ export class ExecutionContextBuilder {
   private logs: ExecutionLog[] = [];
   private errors: ExecutionError[] = [];
 
-  constructor(executionId: string, graphId: GraphId) {
+  constructor(executionId: string, graphId: ID) {
     this.executionId = executionId;
     this.graphId = graphId;
   }
@@ -352,17 +350,17 @@ export class ExecutionContextBuilder {
     return this;
   }
 
-  withCurrentNodeId(nodeId: NodeId): ExecutionContextBuilder {
+  withCurrentNodeId(nodeId: ID): ExecutionContextBuilder {
     this.currentNodeId = nodeId;
     return this;
   }
 
-  withExecutedNodes(nodes: NodeId[]): ExecutionContextBuilder {
+  withExecutedNodes(nodes: ID[]): ExecutionContextBuilder {
     this.executedNodes = nodes;
     return this;
   }
 
-  withPendingNodes(nodes: NodeId[]): ExecutionContextBuilder {
+  withPendingNodes(nodes: ID[]): ExecutionContextBuilder {
     this.pendingNodes = nodes;
     return this;
   }
@@ -444,7 +442,7 @@ export class ExecutionContextBuilder {
  * 节点执行上下文构建器
  */
 export class NodeExecutionContextBuilder {
-  private nodeId: NodeId;
+  private nodeId: ID;
   private nodeType: string;
   private nodeConfig: Record<string, any> = {};
   private inputs: Map<string, any> = new Map();
@@ -458,7 +456,7 @@ export class NodeExecutionContextBuilder {
   private logs: ExecutionLog[] = [];
   private metadata: Record<string, any> = {};
 
-  constructor(nodeId: NodeId, nodeType: string) {
+  constructor(nodeId: ID, nodeType: string) {
     this.nodeId = nodeId;
     this.nodeType = nodeType;
   }
@@ -552,11 +550,11 @@ export class NodeExecutionContextBuilder {
  * 边执行上下文构建器
  */
 export class EdgeExecutionContextBuilder {
-  private edgeId: EdgeId;
+  private edgeId: ID;
   private edgeType: string;
   private edgeConfig: Record<string, any> = {};
-  private sourceNodeId: NodeId;
-  private targetNodeId: NodeId;
+  private sourceNodeId: ID;
+  private targetNodeId: ID;
   private data: Map<string, any> = new Map();
   private conditionResult?: boolean;
   private startTime: Date = new Date();
@@ -567,10 +565,10 @@ export class EdgeExecutionContextBuilder {
   private metadata: Record<string, any> = {};
 
   constructor(
-    edgeId: EdgeId,
+    edgeId: ID,
     edgeType: string,
-    sourceNodeId: NodeId,
-    targetNodeId: NodeId
+    sourceNodeId: ID,
+    targetNodeId: ID
   ) {
     this.edgeId = edgeId;
     this.edgeType = edgeType;
@@ -655,14 +653,14 @@ export class ExecutionContextUtils {
   /**
    * 创建执行上下文
    */
-  static create(executionId: string, graphId: GraphId): ExecutionContextBuilder {
+  static create(executionId: string, graphId: ID): ExecutionContextBuilder {
     return new ExecutionContextBuilder(executionId, graphId);
   }
 
   /**
    * 创建节点执行上下文
    */
-  static createNodeContext(nodeId: NodeId, nodeType: string): NodeExecutionContextBuilder {
+  static createNodeContext(nodeId: ID, nodeType: string): NodeExecutionContextBuilder {
     return new NodeExecutionContextBuilder(nodeId, nodeType);
   }
 
@@ -670,10 +668,10 @@ export class ExecutionContextUtils {
    * 创建边执行上下文
    */
   static createEdgeContext(
-    edgeId: EdgeId,
+    edgeId: ID,
     edgeType: string,
-    sourceNodeId: NodeId,
-    targetNodeId: NodeId
+    sourceNodeId: ID,
+    targetNodeId: ID
   ): EdgeExecutionContextBuilder {
     return new EdgeExecutionContextBuilder(edgeId, edgeType, sourceNodeId, targetNodeId);
   }
@@ -703,75 +701,153 @@ export class ExecutionContextUtils {
   /**
    * 更新执行状态
    */
-  static withStatus(context: ExecutionContext, status: ExecutionStatus): ExecutionContext {
-    const updated = this.clone(context);
+  static withStatus(context: ExecutionContext, status: ExecutionStatus, endTime?: Date): ExecutionContext {
+    const builder = this.create(context.executionId, context.graphId)
+      .withStatus(context.status)
+      .withMode(context.mode)
+      .withPriority(context.priority)
+      .withStartTime(context.startTime)
+      .withCurrentNodeId(context.currentNodeId || ID.generate())
+      .withExecutedNodes(context.executedNodes)
+      .withPendingNodes(context.pendingNodes)
+      .withData(context.data)
+      .withVariables(context.variables)
+      .withConfig(context.config)
+      .withMetadata(context.metadata)
+      .withLogs(context.logs)
+      .withErrors(context.errors);
     
-    if (status === ExecutionStatus.COMPLETED || 
-        status === ExecutionStatus.CANCELLED || 
-        status === ExecutionStatus.FAILED || 
-        status === ExecutionStatus.TIMEOUT) {
-      updated.endTime = new Date();
-      updated.duration = updated.endTime.getTime() - updated.startTime.getTime();
+    if (endTime) {
+      builder.withEndTime(endTime);
     }
     
-    updated.status = status;
-    return updated;
+    return builder.withStatus(status).build();
   }
 
   /**
    * 添加执行日志
    */
   static withLog(context: ExecutionContext, log: ExecutionLog): ExecutionContext {
-    const updated = this.clone(context);
-    updated.logs.push(log);
-    return updated;
+    const newLogs = [...context.logs, log];
+    return this.create(context.executionId, context.graphId)
+      .withStatus(context.status)
+      .withMode(context.mode)
+      .withPriority(context.priority)
+      .withStartTime(context.startTime)
+      .withEndTime(context.endTime || new Date())
+      .withCurrentNodeId(context.currentNodeId || ID.generate())
+      .withExecutedNodes(context.executedNodes)
+      .withPendingNodes(context.pendingNodes)
+      .withData(context.data)
+      .withVariables(context.variables)
+      .withConfig(context.config)
+      .withMetadata(context.metadata)
+      .withLogs(newLogs)
+      .withErrors(context.errors)
+      .build();
   }
 
   /**
    * 添加执行错误
    */
   static withError(context: ExecutionContext, error: ExecutionError): ExecutionContext {
-    const updated = this.clone(context);
-    updated.errors.push(error);
-    return updated;
+    const newErrors = [...context.errors, error];
+    return this.create(context.executionId, context.graphId)
+      .withStatus(context.status)
+      .withMode(context.mode)
+      .withPriority(context.priority)
+      .withStartTime(context.startTime)
+      .withEndTime(context.endTime || new Date())
+      .withCurrentNodeId(context.currentNodeId || ID.generate())
+      .withExecutedNodes(context.executedNodes)
+      .withPendingNodes(context.pendingNodes)
+      .withData(context.data)
+      .withVariables(context.variables)
+      .withConfig(context.config)
+      .withMetadata(context.metadata)
+      .withLogs(context.logs)
+      .withErrors(newErrors)
+      .build();
   }
 
   /**
    * 设置当前节点
    */
-  static withCurrentNode(context: ExecutionContext, nodeId: NodeId): ExecutionContext {
-    const updated = this.clone(context);
-    updated.currentNodeId = nodeId;
-    
+  static withCurrentNode(context: ExecutionContext, nodeId: ID): ExecutionContext {
     // 将节点从待执行列表移到已执行列表
-    const pendingIndex = updated.pendingNodes.indexOf(nodeId);
-    if (pendingIndex !== -1) {
-      updated.pendingNodes.splice(pendingIndex, 1);
-    }
+    const pendingIndex = context.pendingNodes.indexOf(nodeId);
+    const newPendingNodes = pendingIndex !== -1
+      ? context.pendingNodes.filter((_, i) => i !== pendingIndex)
+      : context.pendingNodes;
     
-    if (!updated.executedNodes.includes(nodeId)) {
-      updated.executedNodes.push(nodeId);
-    }
+    const newExecutedNodes = context.executedNodes.includes(nodeId)
+      ? context.executedNodes
+      : [...context.executedNodes, nodeId];
     
-    return updated;
+    return this.create(context.executionId, context.graphId)
+      .withStatus(context.status)
+      .withMode(context.mode)
+      .withPriority(context.priority)
+      .withStartTime(context.startTime)
+      .withEndTime(context.endTime || new Date())
+      .withCurrentNodeId(nodeId)
+      .withExecutedNodes(newExecutedNodes)
+      .withPendingNodes(newPendingNodes)
+      .withData(context.data)
+      .withVariables(context.variables)
+      .withConfig(context.config)
+      .withMetadata(context.metadata)
+      .withLogs(context.logs)
+      .withErrors(context.errors)
+      .build();
   }
 
   /**
    * 设置数据
    */
   static withData(context: ExecutionContext, key: string, value: any): ExecutionContext {
-    const updated = this.clone(context);
-    updated.data.set(key, value);
-    return updated;
+    const newData = new Map(context.data);
+    newData.set(key, value);
+    return this.create(context.executionId, context.graphId)
+      .withStatus(context.status)
+      .withMode(context.mode)
+      .withPriority(context.priority)
+      .withStartTime(context.startTime)
+      .withEndTime(context.endTime || new Date())
+      .withCurrentNodeId(context.currentNodeId || ID.generate())
+      .withExecutedNodes(context.executedNodes)
+      .withPendingNodes(context.pendingNodes)
+      .withData(newData)
+      .withVariables(context.variables)
+      .withConfig(context.config)
+      .withMetadata(context.metadata)
+      .withLogs(context.logs)
+      .withErrors(context.errors)
+      .build();
   }
 
   /**
    * 设置变量
    */
   static withVariable(context: ExecutionContext, key: string, value: any): ExecutionContext {
-    const updated = this.clone(context);
-    updated.variables.set(key, value);
-    return updated;
+    const newVariables = new Map(context.variables);
+    newVariables.set(key, value);
+    return this.create(context.executionId, context.graphId)
+      .withStatus(context.status)
+      .withMode(context.mode)
+      .withPriority(context.priority)
+      .withStartTime(context.startTime)
+      .withEndTime(context.endTime || new Date())
+      .withCurrentNodeId(context.currentNodeId || ID.generate())
+      .withExecutedNodes(context.executedNodes)
+      .withPendingNodes(context.pendingNodes)
+      .withData(context.data)
+      .withVariables(newVariables)
+      .withConfig(context.config)
+      .withMetadata(context.metadata)
+      .withLogs(context.logs)
+      .withErrors(context.errors)
+      .build();
   }
 
   /**
@@ -884,8 +960,8 @@ export class ExecutionContextUtils {
   static createLog(
     level: 'debug' | 'info' | 'warn' | 'error',
     message: string,
-    nodeId?: NodeId,
-    edgeId?: EdgeId,
+    nodeId?: ID,
+    edgeId?: ID,
     context?: Record<string, any>,
     source?: string
   ): ExecutionLog {
@@ -907,8 +983,8 @@ export class ExecutionContextUtils {
   static createError(
     message: string,
     type: string,
-    nodeId?: NodeId,
-    edgeId?: EdgeId,
+    nodeId?: ID,
+    edgeId?: ID,
     retryable: boolean = false,
     context?: Record<string, any>
   ): ExecutionError {

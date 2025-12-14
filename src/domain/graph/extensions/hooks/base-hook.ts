@@ -1,6 +1,6 @@
 import { HookPoint } from '../../value-objects/hook-point';
 import { HookContext } from './hook-context';
-import { HookExecutionResult } from './hook-execution-result';
+import { HookExecutionResult, HookExecutionResultBuilder } from './hook-execution-result';
 
 /**
  * 基础钩子抽象类

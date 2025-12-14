@@ -1,4 +1,4 @@
-import { GraphId } from '../../entities/graph';
+import { ID } from '../../../common/value-objects/id';
 import { TriggerType } from './trigger-type';
 import { TriggerState } from './trigger-state';
 import { TriggerContext } from './trigger-context';
@@ -21,7 +21,7 @@ export interface TriggerConfig {
   readonly type: TriggerType;
   
   /** 关联的图ID */
-  readonly graphId: GraphId;
+  readonly graphId: ID;
   
   /** 是否启用 */
   readonly enabled: boolean;
@@ -95,7 +95,7 @@ export abstract class BaseTrigger {
   /**
    * 获取关联的图ID
    */
-  getGraphId(): GraphId {
+  getGraphId(): ID {
     return this.config.graphId;
   }
 

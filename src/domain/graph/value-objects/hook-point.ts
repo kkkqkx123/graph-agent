@@ -1,4 +1,4 @@
-import { ValueObject } from '../../common/base/value-object';
+import { ValueObject } from '../../common/value-objects/value-object';
 import { DomainError } from '../../common/errors/domain-error';
 
 /**
@@ -21,25 +21,29 @@ export enum HookPoint {
 }
 
 /**
+ * 钩子点值对象属性接口
+ */
+export interface HookPointValueProps {
+  value: HookPoint;
+}
+
+/**
  * 钩子点值对象
- * 
+ *
  * 表示钩子执行的时机点
  */
-export class HookPointValue extends ValueObject {
-  private readonly value: HookPoint;
-
-  constructor(value: HookPoint) {
-    super();
-    this.value = value;
+export class HookPointValue extends ValueObject<HookPointValueProps> {
+  constructor(props: HookPointValueProps) {
+    super(props);
     this.validate();
   }
 
   /**
    * 验证钩子点
    */
-  private validate(): void {
-    if (!Object.values(HookPoint).includes(this.value)) {
-      throw new DomainError(`无效的钩子点: ${this.value}`);
+  public validate(): void {
+    if (!Object.values(HookPoint).includes(this.props.value)) {
+      throw new DomainError(`无效的钩子点: ${this.props.value}`);
     }
   }
 
@@ -47,35 +51,35 @@ export class HookPointValue extends ValueObject {
    * 获取钩子点值
    */
   public getValue(): HookPoint {
-    return this.value;
+    return this.props.value;
   }
 
   /**
    * 检查是否为执行前钩子
    */
   public isBeforeExecute(): boolean {
-    return this.value === HookPoint.BEFORE_EXECUTE;
+    return this.props.value === HookPoint.BEFORE_EXECUTE;
   }
 
   /**
    * 检查是否为执行后钩子
    */
   public isAfterExecute(): boolean {
-    return this.value === HookPoint.AFTER_EXECUTE;
+    return this.props.value === HookPoint.AFTER_EXECUTE;
   }
 
   /**
    * 检查是否为错误钩子
    */
   public isError(): boolean {
-    return this.value === HookPoint.ON_ERROR || this.value === HookPoint.ON_NODE_ERROR;
+    return this.props.value === HookPoint.ON_ERROR || this.props.value === HookPoint.ON_NODE_ERROR;
   }
 
   /**
    * 检查是否为编译相关钩子
    */
   public isCompilation(): boolean {
-    return this.value === HookPoint.BEFORE_COMPILE || this.value === HookPoint.AFTER_COMPILE;
+    return this.props.value === HookPoint.BEFORE_COMPILE || this.props.value === HookPoint.AFTER_COMPILE;
   }
 
   /**
@@ -86,7 +90,7 @@ export class HookPointValue extends ValueObject {
       HookPoint.BEFORE_NODE_EXECUTE,
       HookPoint.AFTER_NODE_EXECUTE,
       HookPoint.ON_NODE_ERROR
-    ].includes(this.value);
+    ].includes(this.props.value);
   }
 
   /**
@@ -96,7 +100,7 @@ export class HookPointValue extends ValueObject {
     return [
       HookPoint.BEFORE_EDGE_TRAVERSE,
       HookPoint.AFTER_EDGE_TRAVERSE
-    ].includes(this.value);
+    ].includes(this.props.value);
   }
 
   /**
@@ -107,98 +111,98 @@ export class HookPointValue extends ValueObject {
       HookPoint.ON_STATE_CHANGE,
       HookPoint.ON_CHECKPOINT,
       HookPoint.ON_RESTORE
-    ].includes(this.value);
+    ].includes(this.props.value);
   }
 
   /**
    * 创建执行前钩子点
    */
   public static beforeExecute(): HookPointValue {
-    return new HookPointValue(HookPoint.BEFORE_EXECUTE);
+    return new HookPointValue({ value: HookPoint.BEFORE_EXECUTE });
   }
 
   /**
    * 创建执行后钩子点
    */
   public static afterExecute(): HookPointValue {
-    return new HookPointValue(HookPoint.AFTER_EXECUTE);
+    return new HookPointValue({ value: HookPoint.AFTER_EXECUTE });
   }
 
   /**
    * 创建错误钩子点
    */
   public static onError(): HookPointValue {
-    return new HookPointValue(HookPoint.ON_ERROR);
+    return new HookPointValue({ value: HookPoint.ON_ERROR });
   }
 
   /**
    * 创建编译前钩子点
    */
   public static beforeCompile(): HookPointValue {
-    return new HookPointValue(HookPoint.BEFORE_COMPILE);
+    return new HookPointValue({ value: HookPoint.BEFORE_COMPILE });
   }
 
   /**
    * 创建编译后钩子点
    */
   public static afterCompile(): HookPointValue {
-    return new HookPointValue(HookPoint.AFTER_COMPILE);
+    return new HookPointValue({ value: HookPoint.AFTER_COMPILE });
   }
 
   /**
    * 创建节点执行前钩子点
    */
   public static beforeNodeExecute(): HookPointValue {
-    return new HookPointValue(HookPoint.BEFORE_NODE_EXECUTE);
+    return new HookPointValue({ value: HookPoint.BEFORE_NODE_EXECUTE });
   }
 
   /**
    * 创建节点执行后钩子点
    */
   public static afterNodeExecute(): HookPointValue {
-    return new HookPointValue(HookPoint.AFTER_NODE_EXECUTE);
+    return new HookPointValue({ value: HookPoint.AFTER_NODE_EXECUTE });
   }
 
   /**
    * 创建节点错误钩子点
    */
   public static onNodeError(): HookPointValue {
-    return new HookPointValue(HookPoint.ON_NODE_ERROR);
+    return new HookPointValue({ value: HookPoint.ON_NODE_ERROR });
   }
 
   /**
    * 创建边遍历前钩子点
    */
   public static beforeEdgeTraverse(): HookPointValue {
-    return new HookPointValue(HookPoint.BEFORE_EDGE_TRAVERSE);
+    return new HookPointValue({ value: HookPoint.BEFORE_EDGE_TRAVERSE });
   }
 
   /**
    * 创建边遍历后钩子点
    */
   public static afterEdgeTraverse(): HookPointValue {
-    return new HookPointValue(HookPoint.AFTER_EDGE_TRAVERSE);
+    return new HookPointValue({ value: HookPoint.AFTER_EDGE_TRAVERSE });
   }
 
   /**
    * 创建状态变化钩子点
    */
   public static onStateChange(): HookPointValue {
-    return new HookPointValue(HookPoint.ON_STATE_CHANGE);
+    return new HookPointValue({ value: HookPoint.ON_STATE_CHANGE });
   }
 
   /**
    * 创建检查点钩子点
    */
   public static onCheckpoint(): HookPointValue {
-    return new HookPointValue(HookPoint.ON_CHECKPOINT);
+    return new HookPointValue({ value: HookPoint.ON_CHECKPOINT });
   }
 
   /**
    * 创建恢复钩子点
    */
   public static onRestore(): HookPointValue {
-    return new HookPointValue(HookPoint.ON_RESTORE);
+    return new HookPointValue({ value: HookPoint.ON_RESTORE });
   }
 
   /**
@@ -209,7 +213,7 @@ export class HookPointValue extends ValueObject {
     if (!hookPoint) {
       throw new DomainError(`无法识别的钩子点字符串: ${value}`);
     }
-    return new HookPointValue(hookPoint);
+    return new HookPointValue({ value: hookPoint });
   }
 
   /**
@@ -275,21 +279,22 @@ export class HookPointValue extends ValueObject {
   /**
    * 比较两个钩子点是否相等
    */
-  public equals(other: HookPointValue): boolean {
-    return this.value === other.value;
+  public override equals(vo?: ValueObject<HookPointValueProps>): boolean {
+    if (!vo) return false;
+    return this.props.value === (vo as HookPointValue).props.value;
   }
 
   /**
    * 转换为字符串
    */
-  public toString(): string {
-    return this.value;
+  public override toString(): string {
+    return this.props.value;
   }
 
   /**
    * 转换为JSON
    */
   public toJSON(): string {
-    return this.value;
+    return this.props.value;
   }
 }

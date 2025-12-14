@@ -1,4 +1,4 @@
-import { ValueObject } from '../../common/base/value-object';
+import { ValueObject } from '../../common/value-objects/value-object';
 import { DomainError } from '../../common/errors/domain-error';
 
 /**
@@ -11,25 +11,29 @@ export enum ExecutionMode {
 }
 
 /**
+ * 执行模式值对象属性接口
+ */
+export interface ExecutionModeValueProps {
+  value: ExecutionMode;
+}
+
+/**
  * 执行模式值对象
- * 
+ *
  * 表示图的执行模式
  */
-export class ExecutionModeValue extends ValueObject {
-  private readonly value: ExecutionMode;
-
-  constructor(value: ExecutionMode) {
-    super();
-    this.value = value;
+export class ExecutionModeValue extends ValueObject<ExecutionModeValueProps> {
+  constructor(props: ExecutionModeValueProps) {
+    super(props);
     this.validate();
   }
 
   /**
    * 验证执行模式
    */
-  private validate(): void {
-    if (!Object.values(ExecutionMode).includes(this.value)) {
-      throw new DomainError(`无效的执行模式: ${this.value}`);
+  public validate(): void {
+    if (!Object.values(ExecutionMode).includes(this.props.value)) {
+      throw new DomainError(`无效的执行模式: ${this.props.value}`);
     }
   }
 
@@ -37,49 +41,49 @@ export class ExecutionModeValue extends ValueObject {
    * 获取执行模式值
    */
   public getValue(): ExecutionMode {
-    return this.value;
+    return this.props.value;
   }
 
   /**
    * 检查是否为同步模式
    */
   public isSync(): boolean {
-    return this.value === ExecutionMode.SYNC;
+    return this.props.value === ExecutionMode.SYNC;
   }
 
   /**
    * 检查是否为异步模式
    */
   public isAsync(): boolean {
-    return this.value === ExecutionMode.ASYNC;
+    return this.props.value === ExecutionMode.ASYNC;
   }
 
   /**
    * 检查是否为流式模式
    */
   public isStream(): boolean {
-    return this.value === ExecutionMode.STREAM;
+    return this.props.value === ExecutionMode.STREAM;
   }
 
   /**
    * 创建同步执行模式
    */
   public static sync(): ExecutionModeValue {
-    return new ExecutionModeValue(ExecutionMode.SYNC);
+    return new ExecutionModeValue({ value: ExecutionMode.SYNC });
   }
 
   /**
    * 创建异步执行模式
    */
   public static async(): ExecutionModeValue {
-    return new ExecutionModeValue(ExecutionMode.ASYNC);
+    return new ExecutionModeValue({ value: ExecutionMode.ASYNC });
   }
 
   /**
    * 创建流式执行模式
    */
   public static stream(): ExecutionModeValue {
-    return new ExecutionModeValue(ExecutionMode.STREAM);
+    return new ExecutionModeValue({ value: ExecutionMode.STREAM });
   }
 
   /**
@@ -90,7 +94,7 @@ export class ExecutionModeValue extends ValueObject {
     if (!mode) {
       throw new DomainError(`无法识别的执行模式字符串: ${value}`);
     }
-    return new ExecutionModeValue(mode);
+    return new ExecutionModeValue({ value: mode });
   }
 
   /**
@@ -103,21 +107,22 @@ export class ExecutionModeValue extends ValueObject {
   /**
    * 比较两个执行模式是否相等
    */
-  public equals(other: ExecutionModeValue): boolean {
-    return this.value === other.value;
+  public override equals(vo?: ValueObject<ExecutionModeValueProps>): boolean {
+    if (!vo) return false;
+    return this.props.value === (vo as ExecutionModeValue).props.value;
   }
 
   /**
    * 转换为字符串
    */
-  public toString(): string {
-    return this.value;
+  public override toString(): string {
+    return this.props.value;
   }
 
   /**
    * 转换为JSON
    */
   public toJSON(): string {
-    return this.value;
+    return this.props.value;
   }
 }

@@ -1,5 +1,6 @@
-import { GraphId } from '../entities/graph';
-import { NodeId } from '../entities/node';
+import { ID } from '../../common/value-objects/id';
+import { Timestamp } from '../../common/value-objects/timestamp';
+import { Version } from '../../common/value-objects/version';
 import { ExecutionStatus } from '../execution';
 
 /**
@@ -11,22 +12,22 @@ export abstract class NodeExecutionEvent {
   /** 执行ID */
   readonly executionId: string;
   /** 图ID */
-  readonly graphId: GraphId;
+  readonly graphId: ID;
   /** 节点ID */
-  readonly nodeId: NodeId;
+  readonly nodeId: ID;
   /** 节点类型 */
   readonly nodeType: string;
   /** 事件时间 */
-  readonly timestamp: Date;
+  readonly timestamp: Timestamp;
   /** 事件版本 */
-  readonly version: number;
+  readonly version: Version;
   /** 事件元数据 */
   readonly metadata: Record<string, any>;
 
   constructor(
     executionId: string,
-    graphId: GraphId,
-    nodeId: NodeId,
+    graphId: ID,
+    nodeId: ID,
     nodeType: string,
     metadata: Record<string, any> = {}
   ) {
@@ -35,8 +36,8 @@ export abstract class NodeExecutionEvent {
     this.graphId = graphId;
     this.nodeId = nodeId;
     this.nodeType = nodeType;
-    this.timestamp = new Date();
-    this.version = 1;
+    this.timestamp = Timestamp.now();
+    this.version = Version.initial();
     this.metadata = metadata;
   }
 
@@ -82,8 +83,8 @@ export abstract class NodeExecutionEvent {
 export class NodeExecutionStartedEvent extends NodeExecutionEvent {
   constructor(
     executionId: string,
-    graphId: GraphId,
-    nodeId: NodeId,
+    graphId: ID,
+    nodeId: ID,
     nodeType: string,
     readonly inputData: Record<string, any>,
     readonly config: Record<string, any>,
@@ -110,8 +111,8 @@ export class NodeExecutionStartedEvent extends NodeExecutionEvent {
 export class NodeExecutionCompletedEvent extends NodeExecutionEvent {
   constructor(
     executionId: string,
-    graphId: GraphId,
-    nodeId: NodeId,
+    graphId: ID,
+    nodeId: ID,
     nodeType: string,
     readonly outputData: Record<string, any>,
     readonly duration: number,
@@ -140,8 +141,8 @@ export class NodeExecutionCompletedEvent extends NodeExecutionEvent {
 export class NodeExecutionFailedEvent extends NodeExecutionEvent {
   constructor(
     executionId: string,
-    graphId: GraphId,
-    nodeId: NodeId,
+    graphId: ID,
+    nodeId: ID,
     nodeType: string,
     readonly error: Error,
     readonly duration: number,
@@ -176,8 +177,8 @@ export class NodeExecutionFailedEvent extends NodeExecutionEvent {
 export class NodeExecutionSkippedEvent extends NodeExecutionEvent {
   constructor(
     executionId: string,
-    graphId: GraphId,
-    nodeId: NodeId,
+    graphId: ID,
+    nodeId: ID,
     nodeType: string,
     readonly skipReason: string,
     readonly condition: string,
@@ -206,8 +207,8 @@ export class NodeExecutionSkippedEvent extends NodeExecutionEvent {
 export class NodeExecutionRetryEvent extends NodeExecutionEvent {
   constructor(
     executionId: string,
-    graphId: GraphId,
-    nodeId: NodeId,
+    graphId: ID,
+    nodeId: ID,
     nodeType: string,
     readonly retryCount: number,
     readonly maxRetries: number,
@@ -242,8 +243,8 @@ export class NodeExecutionRetryEvent extends NodeExecutionEvent {
 export class NodeExecutionTimeoutEvent extends NodeExecutionEvent {
   constructor(
     executionId: string,
-    graphId: GraphId,
-    nodeId: NodeId,
+    graphId: ID,
+    nodeId: ID,
     nodeType: string,
     readonly timeoutDuration: number,
     readonly progress: number,
@@ -270,8 +271,8 @@ export class NodeExecutionTimeoutEvent extends NodeExecutionEvent {
 export class NodeExecutionPausedEvent extends NodeExecutionEvent {
   constructor(
     executionId: string,
-    graphId: GraphId,
-    nodeId: NodeId,
+    graphId: ID,
+    nodeId: ID,
     nodeType: string,
     readonly pauseReason: string,
     readonly progress: number,
@@ -300,8 +301,8 @@ export class NodeExecutionPausedEvent extends NodeExecutionEvent {
 export class NodeExecutionResumedEvent extends NodeExecutionEvent {
   constructor(
     executionId: string,
-    graphId: GraphId,
-    nodeId: NodeId,
+    graphId: ID,
+    nodeId: ID,
     nodeType: string,
     readonly resumeReason: string,
     readonly checkpoint: any,
@@ -328,8 +329,8 @@ export class NodeExecutionResumedEvent extends NodeExecutionEvent {
 export class NodeExecutionProgressEvent extends NodeExecutionEvent {
   constructor(
     executionId: string,
-    graphId: GraphId,
-    nodeId: NodeId,
+    graphId: ID,
+    nodeId: ID,
     nodeType: string,
     readonly progress: number,
     readonly message?: string,
@@ -358,8 +359,8 @@ export class NodeExecutionProgressEvent extends NodeExecutionEvent {
 export class NodeExecutionLogEvent extends NodeExecutionEvent {
   constructor(
     executionId: string,
-    graphId: GraphId,
-    nodeId: NodeId,
+    graphId: ID,
+    nodeId: ID,
     nodeType: string,
     readonly level: 'debug' | 'info' | 'warn' | 'error',
     readonly message: string,

@@ -1,7 +1,5 @@
-import { GraphId } from '../entities/graph';
-import { NodeId } from '../entities/node';
-import { EdgeId } from '../entities/edge';
-import { 
+import { ID } from '../../common/value-objects/id';
+import {
   ExecutionContext,
   ExecutionStatus,
   ExecutionMode,
@@ -20,7 +18,7 @@ export interface ExecutionRequest {
   /** 执行ID */
   readonly executionId: string;
   /** 图ID */
-  readonly graphId: GraphId;
+  readonly graphId: ID;
   /** 执行模式 */
   readonly mode: ExecutionMode;
   /** 执行优先级 */
@@ -42,7 +40,7 @@ export interface ExecutionResult {
   /** 执行ID */
   readonly executionId: string;
   /** 图ID */
-  readonly graphId: GraphId;
+  readonly graphId: ID;
   /** 执行状态 */
   readonly status: ExecutionStatus;
   /** 执行开始时间 */
@@ -60,8 +58,8 @@ export interface ExecutionResult {
     level: 'debug' | 'info' | 'warn' | 'error';
     message: string;
     timestamp: Date;
-    nodeId?: NodeId;
-    edgeId?: EdgeId;
+    nodeId?: ID;
+    edgeId?: ID;
   }>;
   /** 执行统计信息 */
   readonly statistics: {
@@ -74,7 +72,7 @@ export interface ExecutionResult {
     /** 总边数 */
     totalEdges: number;
     /** 执行路径 */
-    executionPath: NodeId[];
+    executionPath: ID[];
   };
   /** 执行元数据 */
   readonly metadata: Record<string, any>;
@@ -100,7 +98,7 @@ export interface IGraphExecutionService {
   executeStream(
     request: ExecutionRequest,
     onProgress?: (progress: ExecutionProgress) => void,
-    onNodeComplete?: (nodeId: NodeId, result: any) => void,
+    onNodeComplete?: (nodeId: ID, result: any) => void,
     onError?: (error: Error) => void
   ): Promise<ExecutionResult>;
 
@@ -150,14 +148,14 @@ export interface IGraphExecutionService {
   getExecutionLogs(
     executionId: string,
     level?: 'debug' | 'info' | 'warn' | 'error',
-    nodeId?: NodeId,
-    edgeId?: EdgeId
+    nodeId?: ID,
+    edgeId?: ID
   ): Promise<Array<{
     level: 'debug' | 'info' | 'warn' | 'error';
     message: string;
     timestamp: Date;
-    nodeId?: NodeId;
-    edgeId?: EdgeId;
+    nodeId?: ID;
+    edgeId?: ID;
   }>>;
 
   /**
@@ -169,7 +167,7 @@ export interface IGraphExecutionService {
    * 获取执行统计信息
    */
   getExecutionStatistics(
-    graphId?: GraphId,
+    graphId?: ID,
     startTime?: Date,
     endTime?: Date
   ): Promise<ExecutionStatistics>;
@@ -207,13 +205,13 @@ export interface ExecutionProgress {
   /** 执行ID */
   readonly executionId: string;
   /** 图ID */
-  readonly graphId: GraphId;
+  readonly graphId: ID;
   /** 执行状态 */
   readonly status: ExecutionStatus;
   /** 进度百分比 */
   readonly progress: number;
   /** 当前节点ID */
-  readonly currentNodeId?: NodeId;
+  readonly currentNodeId?: ID;
   /** 已执行节点数 */
   readonly executedNodes: number;
   /** 总节点数 */
@@ -253,7 +251,7 @@ export interface ExecutionStatistics {
   /** 按优先级分组的执行数 */
   readonly executionsByPriority: Record<ExecutionPriority, number>;
   /** 按图分组的执行数 */
-  readonly executionsByGraph: Record<GraphId, number>;
+  readonly executionsByGraph: Record<string, number>;
   /** 成功率 */
   readonly successRate: number;
   /** 失败率 */
@@ -269,13 +267,13 @@ export interface ExecutionEvent {
   /** 执行ID */
   readonly executionId: string;
   /** 图ID */
-  readonly graphId: GraphId;
+  readonly graphId: ID;
   /** 事件时间 */
   readonly timestamp: Date;
   /** 相关节点ID */
-  readonly nodeId?: NodeId;
+  readonly nodeId?: ID;
   /** 相关边ID */
-  readonly edgeId?: EdgeId;
+  readonly edgeId?: ID;
   /** 事件数据 */
   readonly data?: Record<string, any>;
   /** 事件元数据 */
@@ -388,7 +386,7 @@ export class DefaultGraphExecutionService implements IGraphExecutionService {
   async executeStream(
     request: ExecutionRequest,
     onProgress?: (progress: ExecutionProgress) => void,
-    onNodeComplete?: (nodeId: NodeId, result: any) => void,
+    onNodeComplete?: (nodeId: ID, result: any) => void,
     onError?: (error: Error) => void
   ): Promise<ExecutionResult> {
     // 简化实现，实际中应该支持真正的流式执行
@@ -558,14 +556,14 @@ export class DefaultGraphExecutionService implements IGraphExecutionService {
   async getExecutionLogs(
     executionId: string,
     level?: 'debug' | 'info' | 'warn' | 'error',
-    nodeId?: NodeId,
-    edgeId?: EdgeId
+    nodeId?: ID,
+    edgeId?: ID
   ): Promise<Array<{
     level: 'debug' | 'info' | 'warn' | 'error';
     message: string;
     timestamp: Date;
-    nodeId?: NodeId;
-    edgeId?: EdgeId;
+    nodeId?: ID;
+    edgeId?: ID;
   }>> {
     const context = await this.contextManager.getContext(executionId);
     if (!context) {
@@ -622,7 +620,7 @@ export class DefaultGraphExecutionService implements IGraphExecutionService {
    * 获取执行统计信息
    */
   async getExecutionStatistics(
-    graphId?: GraphId,
+    graphId?: ID,
     startTime?: Date,
     endTime?: Date
   ): Promise<ExecutionStatistics> {

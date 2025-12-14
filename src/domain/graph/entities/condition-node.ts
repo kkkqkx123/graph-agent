@@ -1,8 +1,10 @@
-import { Node } from './node';
+import { Node, NodeProps } from './node';
 import { ID } from '../../common/value-objects/id';
 import { NodeType } from '../value-objects/node-type';
 import { NodePosition } from './node';
 import { WorkflowState } from './workflow-state';
+import { Timestamp } from '../../common/value-objects/timestamp';
+import { Version } from '../../common/value-objects/version';
 import { DomainError } from '../../common/errors/domain-error';
 
 /**
@@ -34,20 +36,9 @@ export interface ConditionEvaluationResult {
 /**
  * 条件节点属性接口
  */
-export interface ConditionNodeProps {
-  id: ID;
-  graphId: ID;
-  type: NodeType;
-  name?: string;
-  description?: string;
-  position?: NodePosition;
-  properties: Record<string, unknown>;
+export interface ConditionNodeProps extends NodeProps {
   conditions: ConditionConfig[];
   defaultNextNodeId?: ID;
-  createdAt: Date;
-  updatedAt: Date;
-  version: string;
-  isDeleted: boolean;
 }
 
 /**
@@ -58,7 +49,7 @@ export interface ConditionNodeProps {
 export class ConditionNode extends Node {
   private readonly conditionProps: ConditionNodeProps;
 
-  constructor(props: ConditionNodeProps) {
+  private constructor(props: ConditionNodeProps) {
     super(props);
     this.conditionProps = Object.freeze(props);
   }
@@ -66,8 +57,9 @@ export class ConditionNode extends Node {
   /**
    * 创建条件节点
    */
-  public static create(
+  public static override create(
     graphId: ID,
+    type: NodeType,
     name?: string,
     description?: string,
     position?: NodePosition,
@@ -75,23 +67,27 @@ export class ConditionNode extends Node {
     conditions?: ConditionConfig[],
     defaultNextNodeId?: ID
   ): ConditionNode {
+    const now = Timestamp.now();
     const nodeId = ID.generate();
-    const now = new Date();
 
-    const props: ConditionNodeProps = {
+    const nodeProps: NodeProps = {
       id: nodeId,
       graphId,
-      type: NodeType.condition(),
+      type,
       name,
       description,
       position,
       properties: properties || {},
-      conditions: conditions || [],
-      defaultNextNodeId,
       createdAt: now,
       updatedAt: now,
-      version: '1.0.0',
+      version: Version.initial(),
       isDeleted: false
+    };
+
+    const props: ConditionNodeProps = {
+      ...nodeProps,
+      conditions: conditions || [],
+      defaultNextNodeId
     };
 
     return new ConditionNode(props);
@@ -100,7 +96,7 @@ export class ConditionNode extends Node {
   /**
    * 从已有属性重建条件节点
    */
-  public static fromProps(props: ConditionNodeProps): ConditionNode {
+  public static override fromProps(props: ConditionNodeProps): ConditionNode {
     return new ConditionNode(props);
   }
 
@@ -130,7 +126,7 @@ export class ConditionNode extends Node {
     return new ConditionNode({
       ...this.conditionProps,
       conditions: newConditions,
-      updatedAt: new Date()
+      updatedAt: Timestamp.now()
     });
   }
 
@@ -149,7 +145,7 @@ export class ConditionNode extends Node {
     return new ConditionNode({
       ...this.conditionProps,
       conditions: newConditions,
-      updatedAt: new Date()
+      updatedAt: Timestamp.now()
     });
   }
 
@@ -166,12 +162,24 @@ export class ConditionNode extends Node {
     }
 
     const newConditions = [...this.conditionProps.conditions];
-    newConditions[conditionIndex] = { ...newConditions[conditionIndex], ...updates };
+    // 确保 conditionId 不被更新
+    const { conditionId: _, ...safeUpdates } = updates;
+    // 确保 conditionId 不为 undefined
+    const originalCondition = newConditions[conditionIndex];
+    if (!originalCondition) {
+      throw new DomainError(`条件不存在: ${conditionId}`);
+    }
+    const updatedCondition: ConditionConfig = {
+      ...originalCondition,
+      ...safeUpdates,
+      conditionId: originalCondition.conditionId // 确保 conditionId 始终是字符串
+    };
+    newConditions[conditionIndex] = updatedCondition;
 
     return new ConditionNode({
       ...this.conditionProps,
       conditions: newConditions,
-      updatedAt: new Date()
+      updatedAt: Timestamp.now()
     });
   }
 
@@ -182,7 +190,7 @@ export class ConditionNode extends Node {
     return new ConditionNode({
       ...this.conditionProps,
       defaultNextNodeId: nextNodeId,
-      updatedAt: new Date()
+      updatedAt: Timestamp.now()
     });
   }
 
@@ -193,7 +201,7 @@ export class ConditionNode extends Node {
     return new ConditionNode({
       ...this.conditionProps,
       defaultNextNodeId: undefined,
-      updatedAt: new Date()
+      updatedAt: Timestamp.now()
     });
   }
 
@@ -321,9 +329,11 @@ export class ConditionNode extends Node {
     
     for (const op of operators) {
       if (expression.includes(op)) {
-        const [left, right] = expression.split(op).map(s => s.trim());
-        const leftValue = this.parseValue(left);
-        const rightValue = this.parseValue(right);
+        const parts = expression.split(op).map(s => s.trim());
+        if (parts.length !== 2) continue;
+        const [left, right] = parts;
+        const leftValue = this.parseValue(left || '');
+        const rightValue = this.parseValue(right || '');
         
         switch (op) {
           case '==':
@@ -331,13 +341,13 @@ export class ConditionNode extends Node {
           case '!=':
             return leftValue !== rightValue;
           case '>':
-            return leftValue > rightValue;
+            return typeof leftValue === 'number' && typeof rightValue === 'number' && leftValue > rightValue;
           case '<':
-            return leftValue < rightValue;
+            return typeof leftValue === 'number' && typeof rightValue === 'number' && leftValue < rightValue;
           case '>=':
-            return leftValue >= rightValue;
+            return typeof leftValue === 'number' && typeof rightValue === 'number' && leftValue >= rightValue;
           case '<=':
-            return leftValue <= rightValue;
+            return typeof leftValue === 'number' && typeof rightValue === 'number' && leftValue <= rightValue;
         }
       }
     }
@@ -350,7 +360,7 @@ export class ConditionNode extends Node {
   /**
    * 解析值
    */
-  private parseValue(value: string): any {
+  private parseValue(value: string): unknown {
     // 移除引号
     if (value.startsWith('"') && value.endsWith('"')) {
       return value.slice(1, -1);

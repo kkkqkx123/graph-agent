@@ -258,7 +258,7 @@ export class DefaultTriggerManager implements ITriggerManager {
    */
   getTriggersByGraph(graphId: string): BaseTrigger[] {
     return Array.from(this.triggers.values()).filter(
-      trigger => trigger.getGraphId() === graphId
+      trigger => trigger.getGraphId().toString() === graphId
     );
   }
 

@@ -4,6 +4,7 @@ import { TriggerState, TriggerStateUtils } from './trigger-state';
 import { TriggerContext, TriggerContextUtils } from './trigger-context';
 import { TriggerExecutionResult, TriggerExecutionResultUtils } from './trigger-execution-result';
 import { DefaultTriggerFactory } from './trigger-manager';
+import { ID } from '../../../common/value-objects/id';
 
 /**
  * 触发器工具类
@@ -16,7 +17,7 @@ export class TriggerUtils {
     id: string,
     name: string,
     type: TriggerType,
-    graphId: string,
+    graphId: ID,
     config: Record<string, any> = {},
     enabled: boolean = true,
     description?: string,
@@ -48,7 +49,7 @@ export class TriggerUtils {
   static createTimeTriggerConfig(
     id: string,
     name: string,
-    graphId: string,
+    graphId: ID,
     cronExpression: string,
     timezone?: string,
     triggerImmediately?: boolean,
@@ -76,7 +77,7 @@ export class TriggerUtils {
   static createEventTriggerConfig(
     id: string,
     name: string,
-    graphId: string,
+    graphId: ID,
     eventType: string,
     eventSource?: string,
     eventFilter?: Record<string, any>,
@@ -104,7 +105,7 @@ export class TriggerUtils {
   static createConditionTriggerConfig(
     id: string,
     name: string,
-    graphId: string,
+    graphId: ID,
     condition: string,
     evaluationInterval?: number,
     enabled: boolean = true,
@@ -130,7 +131,7 @@ export class TriggerUtils {
   static createManualTriggerConfig(
     id: string,
     name: string,
-    graphId: string,
+    graphId: ID,
     requireConfirmation?: boolean,
     confirmationMessage?: string,
     enabled: boolean = true,
@@ -156,7 +157,7 @@ export class TriggerUtils {
   static createExternalTriggerConfig(
     id: string,
     name: string,
-    graphId: string,
+    graphId: ID,
     externalSource: string,
     authentication?: Record<string, any>,
     enabled: boolean = true,
@@ -182,7 +183,7 @@ export class TriggerUtils {
   static createStateTriggerConfig(
     id: string,
     name: string,
-    graphId: string,
+    graphId: ID,
     statePath: string,
     expectedValue: any,
     comparisonOperator: 'equals' | 'not_equals' | 'greater_than' | 'less_than' | 'contains' = 'equals',
@@ -241,21 +242,21 @@ export class TriggerUtils {
    * 验证时间触发器配置
    */
   private static validateTimeTriggerConfig(config: Record<string, any>): boolean {
-    return !!config.cronExpression;
+    return !!config['cronExpression'];
   }
 
   /**
    * 验证事件触发器配置
    */
   private static validateEventTriggerConfig(config: Record<string, any>): boolean {
-    return !!config.eventType;
+    return !!config['eventType'];
   }
 
   /**
    * 验证条件触发器配置
    */
   private static validateConditionTriggerConfig(config: Record<string, any>): boolean {
-    return !!config.condition;
+    return !!config['condition'];
   }
 
   /**
@@ -269,14 +270,14 @@ export class TriggerUtils {
    * 验证外部触发器配置
    */
   private static validateExternalTriggerConfig(config: Record<string, any>): boolean {
-    return !!config.externalSource;
+    return !!config['externalSource'];
   }
 
   /**
    * 验证状态触发器配置
    */
   private static validateStateTriggerConfig(config: Record<string, any>): boolean {
-    return !!(config.statePath && config.expectedValue !== undefined);
+    return !!(config['statePath'] && config['expectedValue'] !== undefined);
   }
 
   /**
@@ -370,7 +371,7 @@ export class TriggerUtils {
   static createContext(
     triggerId: string,
     triggerType: TriggerType,
-    graphId: string,
+    graphId: ID,
     triggerData: Record<string, any> = {},
     triggerSource: string = '',
     metadata: Record<string, any> = {},
@@ -514,7 +515,8 @@ export class TriggerUtils {
 
       // 统计图
       const graphId = trigger.getGraphId();
-      byGraph[graphId] = (byGraph[graphId] || 0) + 1;
+      const graphIdStr = graphId.toString();
+      byGraph[graphIdStr] = (byGraph[graphIdStr] || 0) + 1;
 
       // 统计性能
       const triggerCount = trigger.getTriggerCount();

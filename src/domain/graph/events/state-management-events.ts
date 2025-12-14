@@ -1,5 +1,6 @@
-import { GraphId } from '../entities/graph';
-import { NodeId } from '../entities/node';
+import { ID } from '../../common/value-objects/id';
+import { Timestamp } from '../../common/value-objects/timestamp';
+import { Version } from '../../common/value-objects/version';
 import { StateValue } from '../state';
 
 /**
@@ -9,22 +10,22 @@ export abstract class StateManagementEvent {
   /** 事件ID */
   readonly eventId: string;
   /** 图ID */
-  readonly graphId: GraphId;
+  readonly graphId: ID;
   /** 事件时间 */
-  readonly timestamp: Date;
+  readonly timestamp: Timestamp;
   /** 事件版本 */
-  readonly version: number;
+  readonly version: Version;
   /** 事件元数据 */
   readonly metadata: Record<string, any>;
 
   constructor(
-    graphId: GraphId,
+    graphId: ID,
     metadata: Record<string, any> = {}
   ) {
     this.eventId = this.generateEventId();
     this.graphId = graphId;
-    this.timestamp = new Date();
-    this.version = 1;
+    this.timestamp = Timestamp.now();
+    this.version = Version.initial();
     this.metadata = metadata;
   }
 
@@ -66,11 +67,11 @@ export abstract class StateManagementEvent {
  */
 export class StateSetEvent extends StateManagementEvent {
   constructor(
-    graphId: GraphId,
+    graphId: ID,
     readonly key: string,
     readonly value: StateValue,
     readonly oldValue?: StateValue,
-    readonly nodeId?: NodeId,
+    readonly nodeId?: ID,
     readonly namespace?: string,
     metadata: Record<string, any> = {}
   ) {
@@ -97,10 +98,10 @@ export class StateSetEvent extends StateManagementEvent {
  */
 export class StateDeletedEvent extends StateManagementEvent {
   constructor(
-    graphId: GraphId,
+    graphId: ID,
     readonly key: string,
     readonly deletedValue: StateValue,
-    readonly nodeId?: NodeId,
+    readonly nodeId?: ID,
     readonly namespace?: string,
     metadata: Record<string, any> = {}
   ) {
@@ -126,12 +127,12 @@ export class StateDeletedEvent extends StateManagementEvent {
  */
 export class StateBatchSetEvent extends StateManagementEvent {
   constructor(
-    graphId: GraphId,
+    graphId: ID,
     readonly entries: Array<{
       key: string;
       value: StateValue;
       oldValue?: StateValue;
-      nodeId?: NodeId;
+      nodeId?: ID;
       namespace?: string;
     }>,
     metadata: Record<string, any> = {}
@@ -155,11 +156,11 @@ export class StateBatchSetEvent extends StateManagementEvent {
  */
 export class StateBatchDeletedEvent extends StateManagementEvent {
   constructor(
-    graphId: GraphId,
+    graphId: ID,
     readonly entries: Array<{
       key: string;
       deletedValue: StateValue;
-      nodeId?: NodeId;
+      nodeId?: ID;
       namespace?: string;
     }>,
     metadata: Record<string, any> = {}
@@ -183,11 +184,11 @@ export class StateBatchDeletedEvent extends StateManagementEvent {
  */
 export class StateSnapshotCreatedEvent extends StateManagementEvent {
   constructor(
-    graphId: GraphId,
+    graphId: ID,
     readonly snapshotId: string,
-    readonly description?: string,
     readonly stateCount: number,
     readonly size: number,
+    readonly description?: string,
     metadata: Record<string, any> = {}
   ) {
     super(graphId, metadata);
@@ -212,7 +213,7 @@ export class StateSnapshotCreatedEvent extends StateManagementEvent {
  */
 export class StateSnapshotRestoredEvent extends StateManagementEvent {
   constructor(
-    graphId: GraphId,
+    graphId: ID,
     readonly snapshotId: string,
     readonly restoredStateCount: number,
     metadata: Record<string, any> = {}
@@ -237,7 +238,7 @@ export class StateSnapshotRestoredEvent extends StateManagementEvent {
  */
 export class StateSnapshotDeletedEvent extends StateManagementEvent {
   constructor(
-    graphId: GraphId,
+    graphId: ID,
     readonly snapshotId: string,
     metadata: Record<string, any> = {}
   ) {
@@ -260,10 +261,10 @@ export class StateSnapshotDeletedEvent extends StateManagementEvent {
  */
 export class StateClearedEvent extends StateManagementEvent {
   constructor(
-    graphId: GraphId,
+    graphId: ID,
     readonly clearedCount: number,
     readonly scope: 'graph' | 'node' | 'namespace',
-    readonly nodeId?: NodeId,
+    readonly nodeId?: ID,
     readonly namespace?: string,
     metadata: Record<string, any> = {}
   ) {
@@ -289,7 +290,7 @@ export class StateClearedEvent extends StateManagementEvent {
  */
 export class StateExportedEvent extends StateManagementEvent {
   constructor(
-    graphId: GraphId,
+    graphId: ID,
     readonly exportId: string,
     readonly format: string,
     readonly stateCount: number,
@@ -318,7 +319,7 @@ export class StateExportedEvent extends StateManagementEvent {
  */
 export class StateImportedEvent extends StateManagementEvent {
   constructor(
-    graphId: GraphId,
+    graphId: ID,
     readonly importId: string,
     readonly format: string,
     readonly importedStateCount: number,
@@ -347,7 +348,7 @@ export class StateImportedEvent extends StateManagementEvent {
  */
 export class StateValidatedEvent extends StateManagementEvent {
   constructor(
-    graphId: GraphId,
+    graphId: ID,
     readonly validationId: string,
     readonly validationResult: {
       valid: boolean;
@@ -386,7 +387,7 @@ export class StateValidatedEvent extends StateManagementEvent {
  */
 export class StateRepairedEvent extends StateManagementEvent {
   constructor(
-    graphId: GraphId,
+    graphId: ID,
     readonly repairId: string,
     readonly repairResult: {
       repairedCount: number;

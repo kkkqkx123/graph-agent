@@ -13,7 +13,7 @@ export interface CompilationConfig extends GraphCompilationConfig {
 /**
  * 验证结果
  */
-export interface ValidationResult {
+export interface GraphCompilerValidationResult {
   isValid: boolean;
   errors: ValidationError[];
   warnings: ValidationWarning[];
@@ -78,11 +78,11 @@ export interface IGraphCompiler {
 
   /**
    * 验证图结构
-   * 
+   *
    * @param graph 要验证的图
    * @returns 验证结果
    */
-  validate(graph: Graph): Promise<ValidationResult>;
+  validate(graph: Graph): Promise<GraphCompilerValidationResult>;
 
   /**
    * 优化图结构
@@ -141,13 +141,13 @@ export interface ExecutionStep {
   type: 'sequential' | 'parallel' | 'conditional';
   dependencies: string[];
   estimatedDuration: number;
-  retryPolicy?: RetryPolicy;
+  retryPolicy?: GraphCompilerRetryPolicy;
 }
 
 /**
  * 重试策略
  */
-export interface RetryPolicy {
+export interface GraphCompilerRetryPolicy {
   maxRetries: number;
   retryDelay: number;
   backoffMultiplier: number;

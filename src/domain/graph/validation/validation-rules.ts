@@ -1,6 +1,4 @@
-import { GraphId } from '../entities/graph';
-import { NodeId } from '../entities/node';
-import { EdgeId } from '../entities/edge';
+import { ID } from '../../common/value-objects/id';
 
 /**
  * 验证严重程度枚举
@@ -55,11 +53,11 @@ export interface ValidationError {
   /** 错误描述 */
   readonly description?: string;
   /** 相关图ID */
-  readonly graphId?: GraphId;
+  readonly graphId?: ID;
   /** 相关节点ID */
-  readonly nodeId?: NodeId;
+  readonly nodeId?: ID;
   /** 相关边ID */
-  readonly edgeId?: EdgeId;
+  readonly edgeId?: ID;
   /** 错误位置 */
   readonly location?: {
     /** 文件路径 */
@@ -110,11 +108,11 @@ export interface ValidationStatistics {
   /** 按类型分组的错误数 */
   readonly errorsByType: Record<ValidationErrorType, number>;
   /** 按图分组的错误数 */
-  readonly errorsByGraph: Record<GraphId, number>;
+  readonly errorsByGraph: Record<string, number>;
   /** 按节点分组的错误数 */
-  readonly errorsByNode: Record<NodeId, number>;
+  readonly errorsByNode: Record<string, number>;
   /** 按边分组的错误数 */
-  readonly errorsByEdge: Record<EdgeId, number>;
+  readonly errorsByEdge: Record<string, number>;
 }
 
 /**
@@ -144,13 +142,13 @@ export interface ValidationRule {
  */
 export interface ValidationContext {
   /** 图ID */
-  readonly graphId: GraphId;
+  readonly graphId: ID;
   /** 图数据 */
   readonly graphData: any;
   /** 节点数据 */
-  readonly nodes: Map<NodeId, any>;
+  readonly nodes: Map<ID, any>;
   /** 边数据 */
-  readonly edges: Map<EdgeId, any>;
+  readonly edges: Map<ID, any>;
   /** 验证配置 */
   readonly config: ValidationConfig;
   /** 验证规则 */
@@ -192,23 +190,23 @@ export interface IValidator {
   /**
    * 验证图
    */
-  validate(graphId: GraphId, graphData: any, config?: ValidationConfig): Promise<ValidationResult>;
+  validate(graphId: ID, graphData: any, config?: ValidationConfig): Promise<ValidationResult>;
 
   /**
    * 验证节点
    */
-  validateNode(graphId: GraphId, nodeId: NodeId, nodeData: any, config?: ValidationConfig): Promise<ValidationResult>;
+  validateNode(graphId: ID, nodeId: ID, nodeData: any, config?: ValidationConfig): Promise<ValidationResult>;
 
   /**
    * 验证边
    */
-  validateEdge(graphId: GraphId, edgeId: EdgeId, edgeData: any, config?: ValidationConfig): Promise<ValidationResult>;
+  validateEdge(graphId: ID, edgeId: ID, edgeData: any, config?: ValidationConfig): Promise<ValidationResult>;
 
   /**
    * 批量验证
    */
   validateBatch(requests: Array<{
-    graphId: GraphId;
+    graphId: ID;
     graphData: any;
     config?: ValidationConfig;
   }>): Promise<ValidationResult[]>;
@@ -258,9 +256,9 @@ export class ValidationErrorBuilder {
   private severity: ValidationSeverity;
   private message: string;
   private description?: string;
-  private graphId?: GraphId;
-  private nodeId?: NodeId;
-  private edgeId?: EdgeId;
+  private graphId?: ID;
+  private nodeId?: ID;
+  private edgeId?: ID;
   private location?: {
     filePath?: string;
     line?: number;
@@ -288,17 +286,17 @@ export class ValidationErrorBuilder {
     return this;
   }
 
-  withGraphId(graphId: GraphId): ValidationErrorBuilder {
+  withGraphId(graphId: ID): ValidationErrorBuilder {
     this.graphId = graphId;
     return this;
   }
 
-  withNodeId(nodeId: NodeId): ValidationErrorBuilder {
+  withNodeId(nodeId: ID): ValidationErrorBuilder {
     this.nodeId = nodeId;
     return this;
   }
 
-  withEdgeId(edgeId: EdgeId): ValidationErrorBuilder {
+  withEdgeId(edgeId: ID): ValidationErrorBuilder {
     this.edgeId = edgeId;
     return this;
   }
@@ -406,9 +404,9 @@ export class ValidationResultBuilder {
   private calculateStatistics(): ValidationStatistics {
     const errorsBySeverity: Record<ValidationSeverity, number> = {} as any;
     const errorsByType: Record<ValidationErrorType, number> = {} as any;
-    const errorsByGraph: Record<GraphId, number> = {} as any;
-    const errorsByNode: Record<NodeId, number> = {};
-    const errorsByEdge: Record<EdgeId, number> = {};
+    const errorsByGraph: Record<string, number> = {};
+    const errorsByNode: Record<string, number> = {};
+    const errorsByEdge: Record<string, number> = {};
 
     // 初始化计数器
     for (const severity of Object.values(ValidationSeverity)) {
@@ -424,15 +422,18 @@ export class ValidationResultBuilder {
       errorsByType[error.type]++;
       
       if (error.graphId) {
-        errorsByGraph[error.graphId] = (errorsByGraph[error.graphId] || 0) + 1;
+        const graphIdStr = error.graphId.toString();
+        errorsByGraph[graphIdStr] = (errorsByGraph[graphIdStr] || 0) + 1;
       }
       
       if (error.nodeId) {
-        errorsByNode[error.nodeId] = (errorsByNode[error.nodeId] || 0) + 1;
+        const nodeIdStr = error.nodeId.toString();
+        errorsByNode[nodeIdStr] = (errorsByNode[nodeIdStr] || 0) + 1;
       }
       
       if (error.edgeId) {
-        errorsByEdge[error.edgeId] = (errorsByEdge[error.edgeId] || 0) + 1;
+        const edgeIdStr = error.edgeId.toString();
+        errorsByEdge[edgeIdStr] = (errorsByEdge[edgeIdStr] || 0) + 1;
       }
     }
 
@@ -629,7 +630,7 @@ export class ValidationUtils {
    */
   static filterErrorsByGraph(
     errors: ValidationError[],
-    graphId: GraphId
+    graphId: ID
   ): ValidationError[] {
     return this.filterErrors(errors, error => error.graphId === graphId);
   }
@@ -639,7 +640,7 @@ export class ValidationUtils {
    */
   static filterErrorsByNode(
     errors: ValidationError[],
-    nodeId: NodeId
+    nodeId: ID
   ): ValidationError[] {
     return this.filterErrors(errors, error => error.nodeId === nodeId);
   }
@@ -649,7 +650,7 @@ export class ValidationUtils {
    */
   static filterErrorsByEdge(
     errors: ValidationError[],
-    edgeId: EdgeId
+    edgeId: ID
   ): ValidationError[] {
     return this.filterErrors(errors, error => error.edgeId === edgeId);
   }
@@ -665,11 +666,11 @@ export class ValidationUtils {
     ];
 
     if (error.nodeId) {
-      parts.push(`(node: ${error.nodeId})`);
+      parts.push(`(node: ${error.nodeId.toString()})`);
     }
 
     if (error.edgeId) {
-      parts.push(`(edge: ${error.edgeId})`);
+      parts.push(`(edge: ${error.edgeId.toString()})`);
     }
 
     return parts.join(' ');

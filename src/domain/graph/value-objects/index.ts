@@ -6,7 +6,21 @@
 
 export * from './node-type';
 export * from './edge-type';
-export * from './execution-mode';
-export * from './hook-point';
-export * from './node-execution-result';
-export * from './graph-execution-context';
+export {
+  ExecutionMode as ValueObjectExecutionMode,
+  ExecutionModeValue,
+  ExecutionModeValueProps
+} from './execution-mode';
+export {
+  HookPoint,
+  HookPointValue,
+  HookPointValueProps
+} from './hook-point';
+export {
+  NodeExecutionResultValue,
+  NodeExecutionResultProps
+} from './node-execution-result';
+export {
+  GraphExecutionContextValue,
+  GraphExecutionContextProps
+} from './graph-execution-context';

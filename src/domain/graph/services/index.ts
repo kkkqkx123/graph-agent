@@ -8,7 +8,15 @@
 export * from './graph-domain-service';
 
 // 图执行服务
-export * from './graph-execution-service';
+export {
+  IGraphExecutionService,
+  DefaultGraphExecutionService,
+  ExecutionRequest,
+  ExecutionResult,
+  ExecutionProgress,
+  ExecutionStatistics as ServiceExecutionStatistics,
+  ExecutionEvent
+} from './graph-execution-service';
 
 // 图构建服务
 export * from './graph-build-service';

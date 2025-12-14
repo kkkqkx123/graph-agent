@@ -1,5 +1,4 @@
-import { GraphId } from '../entities/graph';
-import { NodeId } from '../entities/node';
+import { ID } from '../../common/value-objects/id';
 import { StateValue } from './state-value';
 
 /**
@@ -7,9 +6,9 @@ import { StateValue } from './state-value';
  */
 export interface StateKey {
   /** 图ID */
-  readonly graphId: GraphId;
+  readonly graphId: ID;
   /** 节点ID（可选，用于节点级别状态） */
-  readonly nodeId?: NodeId;
+  readonly nodeId?: ID;
   /** 键名 */
   readonly key: string;
   /** 命名空间（可选，用于状态分组） */
@@ -21,9 +20,9 @@ export interface StateKey {
  */
 export interface StateQuery {
   /** 图ID */
-  readonly graphId?: GraphId;
+  readonly graphId?: ID;
   /** 节点ID */
-  readonly nodeId?: NodeId;
+  readonly nodeId?: ID;
   /** 键名模式 */
   readonly keyPattern?: string;
   /** 命名空间 */
@@ -112,17 +111,17 @@ export interface IStateStore {
   /**
    * 清空指定图的所有状态
    */
-  clearGraph(graphId: GraphId): Promise<number>;
+  clearGraph(graphId: ID): Promise<number>;
 
   /**
    * 清空指定节点的所有状态
    */
-  clearNode(graphId: GraphId, nodeId: NodeId): Promise<number>;
+  clearNode(graphId: ID, nodeId: ID): Promise<number>;
 
   /**
    * 清空指定命名空间的所有状态
    */
-  clearNamespace(graphId: GraphId, namespace: string): Promise<number>;
+  clearNamespace(graphId: ID, namespace: string): Promise<number>;
 
   /**
    * 获取状态数量
@@ -142,12 +141,12 @@ export interface IStateStore {
   /**
    * 创建状态快照
    */
-  createSnapshot(graphId: GraphId, description?: string): Promise<string>;
+  createSnapshot(graphId: ID, description?: string): Promise<string>;
 
   /**
    * 恢复状态快照
    */
-  restoreSnapshot(graphId: GraphId, snapshotId: string): Promise<void>;
+  restoreSnapshot(graphId: ID, snapshotId: string): Promise<void>;
 
   /**
    * 删除状态快照
@@ -157,7 +156,7 @@ export interface IStateStore {
   /**
    * 获取快照列表
    */
-  listSnapshots(graphId?: GraphId): Promise<StateSnapshot[]>;
+  listSnapshots(graphId?: ID): Promise<StateSnapshot[]>;
 
   /**
    * 导出状态
@@ -187,7 +186,7 @@ export interface StateStoreStatistics {
   /** 总状态数量 */
   totalCount: number;
   /** 按图分组统计 */
-  countByGraph: Record<GraphId, number>;
+  countByGraph: Record<string, number>;
   /** 按节点分组统计 */
   countByNode: Record<string, number>;
   /** 按命名空间分组统计 */
@@ -209,7 +208,7 @@ export interface StateSnapshot {
   /** 快照ID */
   readonly id: string;
   /** 图ID */
-  readonly graphId: GraphId;
+  readonly graphId: ID;
   /** 描述 */
   readonly description?: string;
   /** 创建时间 */
@@ -269,9 +268,9 @@ export class StateKeyUtils {
    * 创建状态键
    */
   static create(
-    graphId: GraphId,
+    graphId: ID,
     key: string,
-    nodeId?: NodeId,
+    nodeId?: ID,
     namespace?: string
   ): StateKey {
     return {
@@ -286,7 +285,7 @@ export class StateKeyUtils {
    * 创建图级别状态键
    */
   static createGraphKey(
-    graphId: GraphId,
+    graphId: ID,
     key: string,
     namespace?: string
   ): StateKey {
@@ -297,8 +296,8 @@ export class StateKeyUtils {
    * 创建节点级别状态键
    */
   static createNodeKey(
-    graphId: GraphId,
-    nodeId: NodeId,
+    graphId: ID,
+    nodeId: ID,
     key: string,
     namespace?: string
   ): StateKey {
@@ -328,10 +327,10 @@ export class StateKeyUtils {
     }
 
     return {
-      graphId: parts[0],
-      nodeId: parts[1] || undefined,
+      graphId: parts[0] ? ID.fromString(parts[0]) : ID.generate(),
+      nodeId: parts[1] ? ID.fromString(parts[1]) : undefined,
       namespace: parts[2] || undefined,
-      key: parts[3]
+      key: parts[3] || ''
     };
   }
 
@@ -414,28 +413,28 @@ export class StateQueryUtils {
   /**
    * 创建图查询
    */
-  static byGraph(graphId: GraphId): StateQuery {
+  static byGraph(graphId: ID): StateQuery {
     return { graphId };
   }
 
   /**
    * 创建节点查询
    */
-  static byNode(graphId: GraphId, nodeId: NodeId): StateQuery {
+  static byNode(graphId: ID, nodeId: ID): StateQuery {
     return { graphId, nodeId };
   }
 
   /**
    * 创建命名空间查询
    */
-  static byNamespace(graphId: GraphId, namespace: string): StateQuery {
+  static byNamespace(graphId: ID, namespace: string): StateQuery {
     return { graphId, namespace };
   }
 
   /**
    * 创建键模式查询
    */
-  static byKeyPattern(graphId: GraphId, keyPattern: string): StateQuery {
+  static byKeyPattern(graphId: ID, keyPattern: string): StateQuery {
     return { graphId, keyPattern };
   }
 
@@ -443,7 +442,7 @@ export class StateQueryUtils {
    * 创建时间范围查询
    */
   static byTimeRange(
-    graphId: GraphId,
+    graphId: ID,
     timeRange: 'created' | 'updated',
     start?: Date,
     end?: Date
@@ -451,9 +450,12 @@ export class StateQueryUtils {
     const query: StateQuery = { graphId };
     
     if (timeRange === 'created') {
-      query.createdTimeRange = { start, end };
+      // 创建新的查询对象而不是修改只读属性
+      const newQuery = { ...query, createdTimeRange: { start, end } };
+      return newQuery;
     } else {
-      query.updatedTimeRange = { start, end };
+      const newQuery2 = { ...query, updatedTimeRange: { start, end } };
+      return newQuery2;
     }
     
     return query;
@@ -463,7 +465,7 @@ export class StateQueryUtils {
    * 创建版本范围查询
    */
   static byVersionRange(
-    graphId: GraphId,
+    graphId: ID,
     minVersion?: number,
     maxVersion?: number
   ): StateQuery {
@@ -477,7 +479,7 @@ export class StateQueryUtils {
    * 创建元数据过滤查询
    */
   static byMetadata(
-    graphId: GraphId,
+    graphId: ID,
     metadataFilter: Record<string, any>
   ): StateQuery {
     return {

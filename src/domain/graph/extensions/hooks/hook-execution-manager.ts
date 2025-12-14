@@ -326,7 +326,7 @@ export class DefaultHookExecutionManager implements HookExecutionManager {
     // 检查是否有失败的钩子
     const failedResults = results.filter(r => !r.success);
     if (failedResults.length > 0 && chain.errorHandlingStrategy === HookChainErrorHandlingStrategy.STOP_ON_ERROR) {
-      const firstError = failedResults[0].error;
+      const firstError = failedResults[0]?.error;
       throw firstError || new Error('钩子执行失败');
     }
   }

@@ -1,7 +1,5 @@
-import { GraphId } from '../entities/graph';
-import { NodeId } from '../entities/node';
-import { EdgeId } from '../entities/edge';
-import { 
+import { ID } from '../../common/value-objects/id';
+import {
   ExecutionContext,
   NodeExecutionContext,
   EdgeExecutionContext,
@@ -23,7 +21,7 @@ export interface IExecutionContextManager {
    */
   createContext(
     executionId: string,
-    graphId: GraphId,
+    graphId: ID,
     config?: ExecutionConfig
   ): Promise<ExecutionContext>;
 
@@ -50,7 +48,7 @@ export interface IExecutionContextManager {
   /**
    * 获取指定图的执行上下文
    */
-  getContextsByGraph(graphId: GraphId): Promise<ExecutionContext[]>;
+  getContextsByGraph(graphId: ID): Promise<ExecutionContext[]>;
 
   /**
    * 获取指定状态的执行上下文
@@ -75,7 +73,7 @@ export interface IExecutionContextManager {
   /**
    * 设置当前节点
    */
-  setCurrentNode(executionId: string, nodeId: NodeId): Promise<void>;
+  setCurrentNode(executionId: string, nodeId: ID): Promise<void>;
 
   /**
    * 添加执行日志
@@ -112,7 +110,7 @@ export interface IExecutionContextManager {
    */
   createNodeContext(
     executionId: string,
-    nodeId: NodeId,
+    nodeId: ID,
     nodeType: string,
     nodeConfig: Record<string, any>
   ): Promise<NodeExecutionContext>;
@@ -120,14 +118,14 @@ export interface IExecutionContextManager {
   /**
    * 获取节点执行上下文
    */
-  getNodeContext(executionId: string, nodeId: NodeId): Promise<NodeExecutionContext | undefined>;
+  getNodeContext(executionId: string, nodeId: ID): Promise<NodeExecutionContext | undefined>;
 
   /**
    * 更新节点执行上下文
    */
   updateNodeContext(
     executionId: string,
-    nodeId: NodeId,
+    nodeId: ID,
     context: NodeExecutionContext
   ): Promise<void>;
 
@@ -136,24 +134,24 @@ export interface IExecutionContextManager {
    */
   createEdgeContext(
     executionId: string,
-    edgeId: EdgeId,
+    edgeId: ID,
     edgeType: string,
-    sourceNodeId: NodeId,
-    targetNodeId: NodeId,
+    sourceNodeId: ID,
+    targetNodeId: ID,
     edgeConfig: Record<string, any>
   ): Promise<EdgeExecutionContext>;
 
   /**
    * 获取边执行上下文
    */
-  getEdgeContext(executionId: string, edgeId: EdgeId): Promise<EdgeExecutionContext | undefined>;
+  getEdgeContext(executionId: string, edgeId: ID): Promise<EdgeExecutionContext | undefined>;
 
   /**
    * 更新边执行上下文
    */
   updateEdgeContext(
     executionId: string,
-    edgeId: EdgeId,
+    edgeId: ID,
     context: EdgeExecutionContext
   ): Promise<void>;
 
@@ -201,7 +199,7 @@ export interface ExecutionStatistics {
   /** 按优先级分组的执行数 */
   executionsByPriority: Record<ExecutionPriority, number>;
   /** 按图分组的执行数 */
-  executionsByGraph: Record<GraphId, number>;
+  executionsByGraph: Record<string, number>;
   /** 平均执行时间 */
   averageExecutionTime: number;
   /** 最长执行时间 */
@@ -240,8 +238,8 @@ export type ContextChangeCallback = (event: ContextChangeEvent) => void;
  */
 export class MemoryExecutionContextManager implements IExecutionContextManager {
   private contexts: Map<string, ExecutionContext> = new Map();
-  private nodeContexts: Map<string, Map<NodeId, NodeExecutionContext>> = new Map();
-  private edgeContexts: Map<string, Map<EdgeId, EdgeExecutionContext>> = new Map();
+  private nodeContexts: Map<string, Map<ID, NodeExecutionContext>> = new Map();
+  private edgeContexts: Map<string, Map<ID, EdgeExecutionContext>> = new Map();
   private subscriptions: Map<string, ContextChangeCallback> = new Map();
 
   /**
@@ -249,7 +247,7 @@ export class MemoryExecutionContextManager implements IExecutionContextManager {
    */
   async createContext(
     executionId: string,
-    graphId: GraphId,
+    graphId: ID,
     config: ExecutionConfig = {}
   ): Promise<ExecutionContext> {
     const context = ExecutionContextUtils.create(executionId, graphId)
@@ -333,7 +331,7 @@ export class MemoryExecutionContextManager implements IExecutionContextManager {
   /**
    * 获取指定图的执行上下文
    */
-  async getContextsByGraph(graphId: GraphId): Promise<ExecutionContext[]> {
+  async getContextsByGraph(graphId: ID): Promise<ExecutionContext[]> {
     return Array.from(this.contexts.values()).filter(
       context => context.graphId === graphId
     );
@@ -382,7 +380,7 @@ export class MemoryExecutionContextManager implements IExecutionContextManager {
   /**
    * 设置当前节点
    */
-  async setCurrentNode(executionId: string, nodeId: NodeId): Promise<void> {
+  async setCurrentNode(executionId: string, nodeId: ID): Promise<void> {
     const context = await this.getContext(executionId);
     if (!context) {
       throw new Error(`执行上下文不存在: ${executionId}`);
@@ -473,7 +471,7 @@ export class MemoryExecutionContextManager implements IExecutionContextManager {
    */
   async createNodeContext(
     executionId: string,
-    nodeId: NodeId,
+    nodeId: ID,
     nodeType: string,
     nodeConfig: Record<string, any>
   ): Promise<NodeExecutionContext> {
@@ -493,7 +491,7 @@ export class MemoryExecutionContextManager implements IExecutionContextManager {
   /**
    * 获取节点执行上下文
    */
-  async getNodeContext(executionId: string, nodeId: NodeId): Promise<NodeExecutionContext | undefined> {
+  async getNodeContext(executionId: string, nodeId: ID): Promise<NodeExecutionContext | undefined> {
     const nodeContexts = this.nodeContexts.get(executionId);
     return nodeContexts?.get(nodeId);
   }
@@ -503,7 +501,7 @@ export class MemoryExecutionContextManager implements IExecutionContextManager {
    */
   async updateNodeContext(
     executionId: string,
-    nodeId: NodeId,
+    nodeId: ID,
     context: NodeExecutionContext
   ): Promise<void> {
     const nodeContexts = this.nodeContexts.get(executionId);
@@ -519,10 +517,10 @@ export class MemoryExecutionContextManager implements IExecutionContextManager {
    */
   async createEdgeContext(
     executionId: string,
-    edgeId: EdgeId,
+    edgeId: ID,
     edgeType: string,
-    sourceNodeId: NodeId,
-    targetNodeId: NodeId,
+    sourceNodeId: ID,
+    targetNodeId: ID,
     edgeConfig: Record<string, any>
   ): Promise<EdgeExecutionContext> {
     const edgeContext = ExecutionContextUtils.createEdgeContext(
@@ -544,7 +542,7 @@ export class MemoryExecutionContextManager implements IExecutionContextManager {
   /**
    * 获取边执行上下文
    */
-  async getEdgeContext(executionId: string, edgeId: EdgeId): Promise<EdgeExecutionContext | undefined> {
+  async getEdgeContext(executionId: string, edgeId: ID): Promise<EdgeExecutionContext | undefined> {
     const edgeContexts = this.edgeContexts.get(executionId);
     return edgeContexts?.get(edgeId);
   }
@@ -554,7 +552,7 @@ export class MemoryExecutionContextManager implements IExecutionContextManager {
    */
   async updateEdgeContext(
     executionId: string,
-    edgeId: EdgeId,
+    edgeId: ID,
     context: EdgeExecutionContext
   ): Promise<void> {
     const edgeContexts = this.edgeContexts.get(executionId);
@@ -575,7 +573,7 @@ export class MemoryExecutionContextManager implements IExecutionContextManager {
     const executionsByStatus: Record<ExecutionStatus, number> = {} as any;
     const executionsByMode: Record<ExecutionMode, number> = {} as any;
     const executionsByPriority: Record<ExecutionPriority, number> = {} as any;
-    const executionsByGraph: Record<GraphId, number> = {} as any;
+    const executionsByGraph: Record<string, number> = {} as any;
 
     // 初始化计数器
     for (const status of Object.values(ExecutionStatus)) {
@@ -585,7 +583,7 @@ export class MemoryExecutionContextManager implements IExecutionContextManager {
       executionsByMode[mode] = 0;
     }
     for (const priority of Object.values(ExecutionPriority)) {
-      executionsByPriority[priority] = 0;
+      executionsByPriority[priority as ExecutionPriority] = 0;
     }
 
     // 统计执行数据
@@ -605,7 +603,8 @@ export class MemoryExecutionContextManager implements IExecutionContextManager {
       executionsByPriority[context.priority]++;
       
       // 统计图
-      executionsByGraph[context.graphId] = (executionsByGraph[context.graphId] || 0) + 1;
+      const graphIdStr = context.graphId.toString();
+      executionsByGraph[graphIdStr] = (executionsByGraph[graphIdStr] || 0) + 1;
 
       // 统计执行时间
       if (context.duration) {

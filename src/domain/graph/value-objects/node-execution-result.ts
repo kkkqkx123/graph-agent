@@ -1,4 +1,4 @@
-import { ValueObject } from '../../common/base/value-object';
+import { ValueObject } from '../../common/value-objects/value-object';
 import { ID } from '../../common/value-objects/id';
 import { DomainError } from '../../common/errors/domain-error';
 
@@ -20,19 +20,16 @@ export interface NodeExecutionResultProps {
  * 
  * 表示节点执行的结果
  */
-export class NodeExecutionResultValue extends ValueObject {
-  private readonly props: NodeExecutionResultProps;
-
+export class NodeExecutionResultValue extends ValueObject<NodeExecutionResultProps> {
   constructor(props: NodeExecutionResultProps) {
-    super();
-    this.props = Object.freeze({ ...props });
+    super(props);
     this.validate();
   }
 
   /**
    * 验证节点执行结果
    */
-  private validate(): void {
+  public validate(): void {
     if (!this.props.nodeId) {
       throw new DomainError('节点ID不能为空');
     }
@@ -256,12 +253,14 @@ export class NodeExecutionResultValue extends ValueObject {
   /**
    * 比较两个执行结果是否相等
    */
-  public equals(other: NodeExecutionResultValue): boolean {
+  public override equals(vo?: ValueObject<NodeExecutionResultProps>): boolean {
+    if (!vo) return false;
+    const other = vo as NodeExecutionResultValue;
     return (
       this.props.nodeId.equals(other.props.nodeId) &&
       this.props.success === other.props.success &&
       this.props.executionTime === other.props.executionTime &&
-      this.props.nextNodeId?.equals(other.props.nextNodeId ?? ID.empty()) === true
+      this.props.nextNodeId?.equals(other.props.nextNodeId ?? ID.generate()) === true
     );
   }
 
@@ -289,13 +288,13 @@ export class NodeExecutionResultValue extends ValueObject {
   public static fromJSON(json: Record<string, unknown>): NodeExecutionResultValue {
     try {
       return new NodeExecutionResultValue({
-        nodeId: ID.fromString(json.nodeId as string),
-        state: json.state,
-        nextNodeId: json.nextNodeId ? ID.fromString(json.nextNodeId as string) : undefined,
-        metadata: json.metadata as Record<string, unknown>,
-        executionTime: json.executionTime as number,
-        success: json.success as boolean,
-        error: json.error ? new Error((json.error as any).message) : undefined
+        nodeId: ID.fromString(json['nodeId'] as string),
+        state: json['state'],
+        nextNodeId: json['nextNodeId'] ? ID.fromString(json['nextNodeId'] as string) : undefined,
+        metadata: json['metadata'] as Record<string, unknown>,
+        executionTime: json['executionTime'] as number,
+        success: json['success'] as boolean,
+        error: json['error'] ? new Error((json['error'] as any).message) : undefined
       });
     } catch (error) {
       throw new DomainError(`无法从JSON创建节点执行结果: ${error}`);

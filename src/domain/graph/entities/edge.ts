@@ -35,7 +35,7 @@ export class Edge extends Entity {
    * 构造函数
    * @param props 边属性
    */
-  private constructor(props: EdgeProps) {
+  protected constructor(props: EdgeProps) {
     super(props.id, props.createdAt, props.updatedAt, props.version);
     this.props = Object.freeze(props);
   }

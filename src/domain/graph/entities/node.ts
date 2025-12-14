@@ -42,7 +42,7 @@ export class Node extends Entity {
    * 构造函数
    * @param props 节点属性
    */
-  private constructor(props: NodeProps) {
+  protected constructor(props: NodeProps) {
     super(props.id, props.createdAt, props.updatedAt, props.version);
     this.props = Object.freeze(props);
   }

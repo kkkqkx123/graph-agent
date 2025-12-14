@@ -1,4 +1,4 @@
-import { ValueObject } from '../../common/base/value-object';
+import { ValueObject } from '../../common/value-objects/value-object';
 import { ID } from '../../common/value-objects/id';
 import { ExecutionModeValue } from './execution-mode';
 import { DomainError } from '../../common/errors/domain-error';
@@ -27,19 +27,16 @@ export interface GraphExecutionContextProps {
  * 
  * 表示图执行的上下文信息
  */
-export class GraphExecutionContextValue extends ValueObject {
-  private readonly props: GraphExecutionContextProps;
-
+export class GraphExecutionContextValue extends ValueObject<GraphExecutionContextProps> {
   constructor(props: GraphExecutionContextProps) {
-    super();
-    this.props = Object.freeze({ ...props });
+    super(props);
     this.validate();
   }
 
   /**
    * 验证执行上下文
    */
-  private validate(): void {
+  public validate(): void {
     if (!this.props.executionId) {
       throw new DomainError('执行ID不能为空');
     }
@@ -371,7 +368,9 @@ export class GraphExecutionContextValue extends ValueObject {
   /**
    * 比较两个执行上下文是否相等
    */
-  public equals(other: GraphExecutionContextValue): boolean {
+  public override equals(vo?: ValueObject<GraphExecutionContextProps>): boolean {
+    if (!vo) return false;
+    const other = vo as GraphExecutionContextValue;
     return (
       this.props.executionId.equals(other.props.executionId) &&
       this.props.graphId.equals(other.props.graphId) &&
@@ -406,19 +405,19 @@ export class GraphExecutionContextValue extends ValueObject {
   public static fromJSON(json: Record<string, unknown>): GraphExecutionContextValue {
     try {
       return new GraphExecutionContextValue({
-        executionId: ID.fromString(json.executionId as string),
-        graphId: ID.fromString(json.graphId as string),
-        mode: ExecutionModeValue.fromString(json.mode as string),
-        threadId: json.threadId as string,
-        sessionId: json.sessionId as string,
-        userId: json.userId ? ID.fromString(json.userId as string) : undefined,
-        startTime: new Date(json.startTime as string),
-        endTime: json.endTime ? new Date(json.endTime as string) : undefined,
-        timeout: json.timeout as number,
-        maxRetries: json.maxRetries as number,
-        currentRetry: json.currentRetry as number,
-        metadata: json.metadata as Record<string, unknown>,
-        config: json.config as Record<string, unknown>
+        executionId: ID.fromString(json['executionId'] as string),
+        graphId: ID.fromString(json['graphId'] as string),
+        mode: ExecutionModeValue.fromString(json['mode'] as string),
+        threadId: json['threadId'] as string,
+        sessionId: json['sessionId'] as string,
+        userId: json['userId'] ? ID.fromString(json['userId'] as string) : undefined,
+        startTime: new Date(json['startTime'] as string),
+        endTime: json['endTime'] ? new Date(json['endTime'] as string) : undefined,
+        timeout: json['timeout'] as number,
+        maxRetries: json['maxRetries'] as number,
+        currentRetry: json['currentRetry'] as number,
+        metadata: json['metadata'] as Record<string, unknown>,
+        config: json['config'] as Record<string, unknown>
       });
     } catch (error) {
       throw new DomainError(`无法从JSON创建图执行上下文: ${error}`);

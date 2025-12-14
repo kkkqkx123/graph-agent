@@ -21,7 +21,8 @@ nodejs v22.14.0
 
 ### Type check
 ```bash
-tsc --noEmit
+tsc --noEmit 2>&1 | Select-Object -First 100 //or more
+tsc --noEmit //not recommended
 ```
 
 ### Testing

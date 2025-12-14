@@ -1,4 +1,4 @@
-import { GraphId } from '../entities/graph';
+import { ID } from '../../common/value-objects/id';
 import { ValidationResult, ValidationConfig } from './validation-rules';
 
 /**
@@ -136,7 +136,7 @@ export interface CompilationStatistics {
  */
 export interface CompilationContext {
   /** 图ID */
-  readonly graphId: GraphId;
+  readonly graphId: ID;
   /** 图数据 */
   readonly graphData: any;
   /** 编译选项 */
@@ -258,7 +258,7 @@ export interface IGraphCompiler {
    * 编译图
    */
   compile(
-    graphId: GraphId,
+    graphId: ID,
     graphData: any,
     options: CompilationOptions
   ): Promise<CompilationResult>;
@@ -267,7 +267,7 @@ export interface IGraphCompiler {
    * 验证图
    */
   validate(
-    graphId: GraphId,
+    graphId: ID,
     graphData: any,
     config?: ValidationConfig
   ): Promise<ValidationResult>;
@@ -276,7 +276,7 @@ export interface IGraphCompiler {
    * 解析图
    */
   parse(
-    graphId: GraphId,
+    graphId: ID,
     source: string,
     format?: string
   ): Promise<any>;
@@ -285,7 +285,7 @@ export interface IGraphCompiler {
    * 优化图
    */
   optimize(
-    graphId: GraphId,
+    graphId: ID,
     graphData: any,
     options?: Record<string, any>
   ): Promise<any>;
@@ -294,7 +294,7 @@ export interface IGraphCompiler {
    * 生成代码
    */
   generateCode(
-    graphId: GraphId,
+    graphId: ID,
     graphData: any,
     target: CompilationTarget,
     options?: Record<string, any>
@@ -304,7 +304,7 @@ export interface IGraphCompiler {
    * 批量编译
    */
   compileBatch(requests: Array<{
-    graphId: GraphId;
+    graphId: ID;
     graphData: any;
     options: CompilationOptions;
   }>): Promise<CompilationResult[]>;

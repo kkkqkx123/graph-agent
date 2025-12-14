@@ -1,8 +1,10 @@
-import { Node } from './node';
+import { Node, NodeProps } from './node';
 import { ID } from '../../common/value-objects/id';
 import { NodeType } from '../value-objects/node-type';
 import { NodePosition } from './node';
 import { WorkflowState } from './workflow-state';
+import { Timestamp } from '../../common/value-objects/timestamp';
+import { Version } from '../../common/value-objects/version';
 import { DomainError } from '../../common/errors/domain-error';
 
 /**
@@ -40,14 +42,7 @@ export interface EventWaitConfig {
 /**
  * 等待节点属性接口
  */
-export interface WaitNodeProps {
-  id: ID;
-  graphId: ID;
-  type: NodeType;
-  name?: string;
-  description?: string;
-  position?: NodePosition;
-  properties: Record<string, unknown>;
+export interface WaitNodeProps extends NodeProps {
   waitType: WaitType;
   duration?: number;
   condition?: WaitCondition;
@@ -55,10 +50,6 @@ export interface WaitNodeProps {
   externalSignal?: string;
   checkInterval?: number;
   timeout?: number;
-  createdAt: Date;
-  updatedAt: Date;
-  version: string;
-  isDeleted: boolean;
 }
 
 /**
@@ -69,7 +60,7 @@ export interface WaitNodeProps {
 export class WaitNode extends Node {
   private readonly waitProps: WaitNodeProps;
 
-  constructor(props: WaitNodeProps) {
+  protected constructor(props: WaitNodeProps) {
     super(props);
     this.waitProps = Object.freeze(props);
   }
@@ -77,13 +68,14 @@ export class WaitNode extends Node {
   /**
    * 创建等待节点
    */
-  public static create(
+  public static override create(
     graphId: ID,
-    waitType: WaitType,
+    type: NodeType,
     name?: string,
     description?: string,
     position?: NodePosition,
     properties?: Record<string, unknown>,
+    waitType?: WaitType,
     options?: {
       duration?: number;
       condition?: WaitCondition;
@@ -93,28 +85,32 @@ export class WaitNode extends Node {
       timeout?: number;
     }
   ): WaitNode {
+    const now = Timestamp.now();
     const nodeId = ID.generate();
-    const now = new Date();
 
-    const props: WaitNodeProps = {
+    const nodeProps: NodeProps = {
       id: nodeId,
       graphId,
-      type: NodeType.wait(),
+      type,
       name,
       description,
       position,
       properties: properties || {},
-      waitType,
+      createdAt: now,
+      updatedAt: now,
+      version: Version.initial(),
+      isDeleted: false
+    };
+
+    const props: WaitNodeProps = {
+      ...nodeProps,
+      waitType: waitType ?? WaitType.TIME,
       duration: options?.duration,
       condition: options?.condition,
       eventConfig: options?.eventConfig,
       externalSignal: options?.externalSignal,
       checkInterval: options?.checkInterval ?? 1000,
-      timeout: options?.timeout,
-      createdAt: now,
-      updatedAt: now,
-      version: '1.0.0',
-      isDeleted: false
+      timeout: options?.timeout
     };
 
     return new WaitNode(props);
@@ -123,7 +119,7 @@ export class WaitNode extends Node {
   /**
    * 从已有属性重建等待节点
    */
-  public static fromProps(props: WaitNodeProps): WaitNode {
+  public static override fromProps(props: WaitNodeProps): WaitNode {
     return new WaitNode(props);
   }
 
@@ -186,7 +182,7 @@ export class WaitNode extends Node {
     return new WaitNode({
       ...this.waitProps,
       duration,
-      updatedAt: new Date()
+      updatedAt: Timestamp.now()
     });
   }
 
@@ -197,7 +193,7 @@ export class WaitNode extends Node {
     return new WaitNode({
       ...this.waitProps,
       condition,
-      updatedAt: new Date()
+      updatedAt: Timestamp.now()
     });
   }
 
@@ -208,7 +204,7 @@ export class WaitNode extends Node {
     return new WaitNode({
       ...this.waitProps,
       eventConfig,
-      updatedAt: new Date()
+      updatedAt: Timestamp.now()
     });
   }
 
@@ -219,7 +215,7 @@ export class WaitNode extends Node {
     return new WaitNode({
       ...this.waitProps,
       externalSignal,
-      updatedAt: new Date()
+      updatedAt: Timestamp.now()
     });
   }
 
@@ -233,7 +229,7 @@ export class WaitNode extends Node {
     return new WaitNode({
       ...this.waitProps,
       checkInterval,
-      updatedAt: new Date()
+      updatedAt: Timestamp.now()
     });
   }
 
@@ -247,7 +243,7 @@ export class WaitNode extends Node {
     return new WaitNode({
       ...this.waitProps,
       timeout,
-      updatedAt: new Date()
+      updatedAt: Timestamp.now()
     });
   }
 
@@ -469,8 +465,8 @@ export class WaitNode extends Node {
     for (const op of operators) {
       if (expression.includes(op)) {
         const [left, right] = expression.split(op).map(s => s.trim());
-        const leftValue = this.parseValue(left);
-        const rightValue = this.parseValue(right);
+        const leftValue = this.parseValue(left || '');
+        const rightValue = this.parseValue(right || '');
         
         switch (op) {
           case '==':
@@ -478,13 +474,13 @@ export class WaitNode extends Node {
           case '!=':
             return leftValue !== rightValue;
           case '>':
-            return leftValue > rightValue;
+            return typeof leftValue === 'number' && typeof rightValue === 'number' && leftValue > rightValue;
           case '<':
-            return leftValue < rightValue;
+            return typeof leftValue === 'number' && typeof rightValue === 'number' && leftValue < rightValue;
           case '>=':
-            return leftValue >= rightValue;
+            return typeof leftValue === 'number' && typeof rightValue === 'number' && leftValue >= rightValue;
           case '<=':
-            return leftValue <= rightValue;
+            return typeof leftValue === 'number' && typeof rightValue === 'number' && leftValue <= rightValue;
         }
       }
     }
@@ -497,7 +493,7 @@ export class WaitNode extends Node {
   /**
    * 解析值
    */
-  private parseValue(value: string): any {
+  private parseValue(value: string): unknown {
     // 移除引号
     if (value.startsWith('"') && value.endsWith('"')) {
       return value.slice(1, -1);

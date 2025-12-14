@@ -1,7 +1,9 @@
-import { Edge } from './edge';
+import { Edge, EdgeProps } from './edge';
 import { ID } from '../../common/value-objects/id';
 import { EdgeType } from '../value-objects/edge-type';
 import { WorkflowState } from './workflow-state';
+import { Timestamp } from '../../common/value-objects/timestamp';
+import { Version } from '../../common/value-objects/version';
 import { DomainError } from '../../common/errors/domain-error';
 
 /**
@@ -48,15 +50,7 @@ export interface FlexibleConditionEvaluationResult {
 /**
  * 灵活条件边属性接口
  */
-export interface FlexibleConditionalEdgeProps {
-  id: ID;
-  graphId: ID;
-  type: EdgeType;
-  fromNodeId: ID;
-  toNodeId: ID;
-  condition?: string;
-  weight?: number;
-  properties: Record<string, unknown>;
+export interface FlexibleConditionalEdgeProps extends EdgeProps {
   conditions: ComplexCondition[];
   evaluationMode?: 'eager' | 'lazy' | 'parallel';
   combinationLogic?: 'any' | 'all' | 'weighted' | 'custom';
@@ -69,10 +63,6 @@ export interface FlexibleConditionalEdgeProps {
   evaluationTimeout?: number;
   retryOnFailure?: boolean;
   maxRetries?: number;
-  createdAt: Date;
-  updatedAt: Date;
-  version: string;
-  isDeleted: boolean;
 }
 
 /**
@@ -83,7 +73,7 @@ export interface FlexibleConditionalEdgeProps {
 export class FlexibleConditionalEdge extends Edge {
   private readonly flexibleProps: FlexibleConditionalEdgeProps;
 
-  constructor(props: FlexibleConditionalEdgeProps) {
+  private constructor(props: FlexibleConditionalEdgeProps) {
     super(props);
     this.flexibleProps = Object.freeze(props);
   }
@@ -91,15 +81,16 @@ export class FlexibleConditionalEdge extends Edge {
   /**
    * 创建灵活条件边
    */
-  public static create(
+  public static override create(
     graphId: ID,
+    type: EdgeType,
     fromNodeId: ID,
     toNodeId: ID,
-    conditions: ComplexCondition[],
+    condition?: string,
+    weight?: number,
+    properties?: Record<string, unknown>,
+    conditions?: ComplexCondition[],
     options?: {
-      condition?: string;
-      weight?: number;
-      properties?: Record<string, unknown>;
       evaluationMode?: 'eager' | 'lazy' | 'parallel';
       combinationLogic?: 'any' | 'all' | 'weighted' | 'custom';
       customLogic?: string;
@@ -113,18 +104,26 @@ export class FlexibleConditionalEdge extends Edge {
       maxRetries?: number;
     }
   ): FlexibleConditionalEdge {
+    const now = Timestamp.now();
     const edgeId = ID.generate();
-    const now = new Date();
 
-    const props: FlexibleConditionalEdgeProps = {
+    const edgeProps: EdgeProps = {
       id: edgeId,
       graphId,
-      type: EdgeType.flexibleConditional(),
+      type,
       fromNodeId,
       toNodeId,
-      condition: options?.condition,
-      weight: options?.weight,
-      properties: options?.properties || {},
+      condition,
+      weight,
+      properties: properties || {},
+      createdAt: now,
+      updatedAt: now,
+      version: Version.initial(),
+      isDeleted: false
+    };
+
+    const props: FlexibleConditionalEdgeProps = {
+      ...edgeProps,
       conditions: conditions || [],
       evaluationMode: options?.evaluationMode ?? 'eager',
       combinationLogic: options?.combinationLogic ?? 'any',
@@ -136,11 +135,7 @@ export class FlexibleConditionalEdge extends Edge {
       maxParallelEvaluations: options?.maxParallelEvaluations ?? 5,
       evaluationTimeout: options?.evaluationTimeout ?? 30000,
       retryOnFailure: options?.retryOnFailure ?? false,
-      maxRetries: options?.maxRetries ?? 3,
-      createdAt: now,
-      updatedAt: now,
-      version: '1.0.0',
-      isDeleted: false
+      maxRetries: options?.maxRetries ?? 3
     };
 
     return new FlexibleConditionalEdge(props);
@@ -149,7 +144,7 @@ export class FlexibleConditionalEdge extends Edge {
   /**
    * 从已有属性重建灵活条件边
    */
-  public static fromProps(props: FlexibleConditionalEdgeProps): FlexibleConditionalEdge {
+  public static override fromProps(props: FlexibleConditionalEdgeProps): FlexibleConditionalEdge {
     return new FlexibleConditionalEdge(props);
   }
 
@@ -249,7 +244,7 @@ export class FlexibleConditionalEdge extends Edge {
     return new FlexibleConditionalEdge({
       ...this.flexibleProps,
       conditions: newConditions,
-      updatedAt: new Date()
+      updatedAt: Timestamp.now()
     });
   }
 
@@ -268,14 +263,14 @@ export class FlexibleConditionalEdge extends Edge {
     return new FlexibleConditionalEdge({
       ...this.flexibleProps,
       conditions: newConditions,
-      updatedAt: new Date()
+      updatedAt: Timestamp.now()
     });
   }
 
   /**
    * 更新复杂条件
    */
-  public updateCondition(conditionId: string, updates: Partial<ComplexCondition>): FlexibleConditionalEdge {
+  public updateComplexCondition(conditionId: string, updates: Partial<ComplexCondition>): FlexibleConditionalEdge {
     const conditionIndex = this.flexibleProps.conditions.findIndex(
       c => c.conditionId === conditionId
     );
@@ -285,12 +280,24 @@ export class FlexibleConditionalEdge extends Edge {
     }
 
     const newConditions = [...this.flexibleProps.conditions];
-    newConditions[conditionIndex] = { ...newConditions[conditionIndex], ...updates };
+    // 确保 conditionId 不被更新
+    const { conditionId: _, ...safeUpdates } = updates;
+    // 确保 conditionId 不为 undefined
+    const originalCondition = newConditions[conditionIndex];
+    if (!originalCondition) {
+      throw new DomainError(`条件不存在: ${conditionId}`);
+    }
+    const updatedCondition: ComplexCondition = {
+      ...originalCondition,
+      ...safeUpdates,
+      conditionId: originalCondition.conditionId // 确保 conditionId 始终是字符串
+    };
+    newConditions[conditionIndex] = updatedCondition;
 
     return new FlexibleConditionalEdge({
       ...this.flexibleProps,
       conditions: newConditions,
-      updatedAt: new Date()
+      updatedAt: Timestamp.now()
     });
   }
 
@@ -319,14 +326,14 @@ export class FlexibleConditionalEdge extends Edge {
    * 启用条件
    */
   public enableCondition(conditionId: string): FlexibleConditionalEdge {
-    return this.updateCondition(conditionId, { enabled: true });
+    return this.updateComplexCondition(conditionId, { enabled: true });
   }
 
   /**
    * 禁用条件
    */
   public disableCondition(conditionId: string): FlexibleConditionalEdge {
-    return this.updateCondition(conditionId, { enabled: false });
+    return this.updateComplexCondition(conditionId, { enabled: false });
   }
 
   /**
@@ -336,7 +343,7 @@ export class FlexibleConditionalEdge extends Edge {
     return new FlexibleConditionalEdge({
       ...this.flexibleProps,
       evaluationMode: mode,
-      updatedAt: new Date()
+      updatedAt: Timestamp.now()
     });
   }
 
@@ -347,7 +354,7 @@ export class FlexibleConditionalEdge extends Edge {
     return new FlexibleConditionalEdge({
       ...this.flexibleProps,
       combinationLogic: logic,
-      updatedAt: new Date()
+      updatedAt: Timestamp.now()
     });
   }
 
@@ -358,7 +365,7 @@ export class FlexibleConditionalEdge extends Edge {
     return new FlexibleConditionalEdge({
       ...this.flexibleProps,
       customLogic: logic,
-      updatedAt: new Date()
+      updatedAt: Timestamp.now()
     });
   }
 
@@ -526,7 +533,8 @@ export class FlexibleConditionalEdge extends Edge {
           ({ result, confidence } = this.evaluateSimpleCondition(condition, context));
           break;
         case 'composite':
-          ({ result, confidence } = this.evaluateCompositeCondition(condition, context));
+          const compositeResult = await this.evaluateCompositeCondition(condition, context);
+          ({ result, confidence } = compositeResult);
           break;
         case 'function':
           ({ result, confidence } = this.evaluateFunctionCondition(condition, context));
@@ -601,10 +609,10 @@ export class FlexibleConditionalEdge extends Edge {
   /**
    * 评估复合条件
    */
-  private evaluateCompositeCondition(
+  private async evaluateCompositeCondition(
     condition: ComplexCondition,
     context: ConditionEvaluationContext
-  ): { result: boolean; confidence: number } {
+  ): Promise<{ result: boolean; confidence: number }> {
     if (!condition.conditions || condition.conditions.length === 0) {
       return { result: false, confidence: 0 };
     }
@@ -757,9 +765,11 @@ export class FlexibleConditionalEdge extends Edge {
     
     for (const op of operators) {
       if (expression.includes(op)) {
-        const [left, right] = expression.split(op).map(s => s.trim());
-        const leftValue = this.parseValue(left);
-        const rightValue = this.parseValue(right);
+        const parts = expression.split(op).map(s => s.trim());
+        if (parts.length !== 2) continue;
+        const [left, right] = parts;
+        const leftValue = this.parseValue(left || '');
+        const rightValue = this.parseValue(right || '');
         
         switch (op) {
           case '==':
@@ -767,13 +777,13 @@ export class FlexibleConditionalEdge extends Edge {
           case '!=':
             return leftValue !== rightValue;
           case '>':
-            return leftValue > rightValue;
+            return typeof leftValue === 'number' && typeof rightValue === 'number' && leftValue > rightValue;
           case '<':
-            return leftValue < rightValue;
+            return typeof leftValue === 'number' && typeof rightValue === 'number' && leftValue < rightValue;
           case '>=':
-            return leftValue >= rightValue;
+            return typeof leftValue === 'number' && typeof rightValue === 'number' && leftValue >= rightValue;
           case '<=':
-            return leftValue <= rightValue;
+            return typeof leftValue === 'number' && typeof rightValue === 'number' && leftValue <= rightValue;
         }
       }
     }
@@ -786,7 +796,7 @@ export class FlexibleConditionalEdge extends Edge {
   /**
    * 解析值
    */
-  private parseValue(value: string): any {
+  private parseValue(value: string): unknown {
     // 移除引号
     if (value.startsWith('"') && value.endsWith('"')) {
       return value.slice(1, -1);

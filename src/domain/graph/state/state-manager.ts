@@ -1,5 +1,4 @@
-import { GraphId } from '../entities/graph';
-import { NodeId } from '../entities/node';
+import { ID } from '../../common/value-objects/id';
 import { StateValue, StateValueUtils } from './state-value';
 import { 
   StateKey, 
@@ -20,10 +19,10 @@ export interface IStateManager {
    * 设置状态值
    */
   setState(
-    graphId: GraphId,
+    graphId: ID,
     key: string,
     value: any,
-    nodeId?: NodeId,
+    nodeId?: ID,
     namespace?: string
   ): Promise<void>;
 
@@ -31,9 +30,9 @@ export interface IStateManager {
    * 获取状态值
    */
   getState(
-    graphId: GraphId,
+    graphId: ID,
     key: string,
-    nodeId?: NodeId,
+    nodeId?: ID,
     namespace?: string
   ): Promise<StateValue | undefined>;
 
@@ -41,9 +40,9 @@ export interface IStateManager {
    * 删除状态值
    */
   deleteState(
-    graphId: GraphId,
+    graphId: ID,
     key: string,
-    nodeId?: NodeId,
+    nodeId?: ID,
     namespace?: string
   ): Promise<boolean>;
 
@@ -51,9 +50,9 @@ export interface IStateManager {
    * 检查状态值是否存在
    */
   hasState(
-    graphId: GraphId,
+    graphId: ID,
     key: string,
-    nodeId?: NodeId,
+    nodeId?: ID,
     namespace?: string
   ): Promise<boolean>;
 
@@ -67,10 +66,10 @@ export interface IStateManager {
    */
   setStates(
     entries: Array<{
-      graphId: GraphId;
+      graphId: ID;
       key: string;
       value: any;
-      nodeId?: NodeId;
+      nodeId?: ID;
       namespace?: string;
     }>
   ): Promise<void>;
@@ -80,15 +79,15 @@ export interface IStateManager {
    */
   getStates(
     requests: Array<{
-      graphId: GraphId;
+      graphId: ID;
       key: string;
-      nodeId?: NodeId;
+      nodeId?: ID;
       namespace?: string;
     }>
   ): Promise<Array<{
-    graphId: GraphId;
+    graphId: ID;
     key: string;
-    nodeId?: NodeId;
+    nodeId?: ID;
     namespace?: string;
     stateValue?: StateValue;
   }>>;
@@ -98,9 +97,9 @@ export interface IStateManager {
    */
   deleteStates(
     requests: Array<{
-      graphId: GraphId;
+      graphId: ID;
       key: string;
-      nodeId?: NodeId;
+      nodeId?: ID;
       namespace?: string;
     }>
   ): Promise<number>;
@@ -108,17 +107,17 @@ export interface IStateManager {
   /**
    * 清空图的所有状态
    */
-  clearGraphStates(graphId: GraphId): Promise<number>;
+  clearGraphStates(graphId: ID): Promise<number>;
 
   /**
    * 清空节点的所有状态
    */
-  clearNodeStates(graphId: GraphId, nodeId: NodeId): Promise<number>;
+  clearNodeStates(graphId: ID, nodeId: ID): Promise<number>;
 
   /**
    * 清空命名空间的所有状态
    */
-  clearNamespaceStates(graphId: GraphId, namespace: string): Promise<number>;
+  clearNamespaceStates(graphId: ID, namespace: string): Promise<number>;
 
   /**
    * 获取状态数量
@@ -138,12 +137,12 @@ export interface IStateManager {
   /**
    * 创建状态快照
    */
-  createStateSnapshot(graphId: GraphId, description?: string): Promise<string>;
+  createStateSnapshot(graphId: ID, description?: string): Promise<string>;
 
   /**
    * 恢复状态快照
    */
-  restoreStateSnapshot(graphId: GraphId, snapshotId: string): Promise<void>;
+  restoreStateSnapshot(graphId: ID, snapshotId: string): Promise<void>;
 
   /**
    * 删除状态快照
@@ -153,7 +152,7 @@ export interface IStateManager {
   /**
    * 获取快照列表
    */
-  listStateSnapshots(graphId?: GraphId): Promise<any[]>;
+  listStateSnapshots(graphId?: ID): Promise<any[]>;
 
   /**
    * 导出状态
@@ -179,9 +178,9 @@ export interface IStateManager {
    * 获取状态历史
    */
   getStateHistory(
-    graphId: GraphId,
+    graphId: ID,
     key: string,
-    nodeId?: NodeId,
+    nodeId?: ID,
     namespace?: string,
     limit?: number
   ): Promise<StateValue[]>;
@@ -190,10 +189,10 @@ export interface IStateManager {
    * 回滚状态到指定版本
    */
   rollbackState(
-    graphId: GraphId,
+    graphId: ID,
     key: string,
     version: number,
-    nodeId?: NodeId,
+    nodeId?: ID,
     namespace?: string
   ): Promise<boolean>;
 
@@ -201,8 +200,8 @@ export interface IStateManager {
    * 合并状态
    */
   mergeStates(
-    targetGraphId: GraphId,
-    sourceGraphId: GraphId,
+    targetGraphId: ID,
+    sourceGraphId: ID,
     options?: MergeOptions
   ): Promise<number>;
 
@@ -211,7 +210,7 @@ export interface IStateManager {
    */
   copyStates(
     sourceQuery: StateQuery,
-    targetGraphId: GraphId,
+    targetGraphId: ID,
     options?: CopyOptions
   ): Promise<number>;
 
@@ -314,10 +313,10 @@ export class DefaultStateManager implements IStateManager {
    * 设置状态值
    */
   async setState(
-    graphId: GraphId,
+    graphId: ID,
     key: string,
     value: any,
-    nodeId?: NodeId,
+    nodeId?: ID,
     namespace?: string
   ): Promise<void> {
     const stateKey = StateKeyUtils.create(graphId, key, nodeId, namespace);
@@ -341,9 +340,9 @@ export class DefaultStateManager implements IStateManager {
    * 获取状态值
    */
   async getState(
-    graphId: GraphId,
+    graphId: ID,
     key: string,
-    nodeId?: NodeId,
+    nodeId?: ID,
     namespace?: string
   ): Promise<StateValue | undefined> {
     const stateKey = StateKeyUtils.create(graphId, key, nodeId, namespace);
@@ -354,9 +353,9 @@ export class DefaultStateManager implements IStateManager {
    * 删除状态值
    */
   async deleteState(
-    graphId: GraphId,
+    graphId: ID,
     key: string,
-    nodeId?: NodeId,
+    nodeId?: ID,
     namespace?: string
   ): Promise<boolean> {
     const stateKey = StateKeyUtils.create(graphId, key, nodeId, namespace);
@@ -382,9 +381,9 @@ export class DefaultStateManager implements IStateManager {
    * 检查状态值是否存在
    */
   async hasState(
-    graphId: GraphId,
+    graphId: ID,
     key: string,
-    nodeId?: NodeId,
+    nodeId?: ID,
     namespace?: string
   ): Promise<boolean> {
     const stateKey = StateKeyUtils.create(graphId, key, nodeId, namespace);
@@ -403,10 +402,10 @@ export class DefaultStateManager implements IStateManager {
    */
   async setStates(
     entries: Array<{
-      graphId: GraphId;
+      graphId: ID;
       key: string;
       value: any;
-      nodeId?: NodeId;
+      nodeId?: ID;
       namespace?: string;
     }>
   ): Promise<void> {
@@ -439,15 +438,15 @@ export class DefaultStateManager implements IStateManager {
    */
   async getStates(
     requests: Array<{
-      graphId: GraphId;
+      graphId: ID;
       key: string;
-      nodeId?: NodeId;
+      nodeId?: ID;
       namespace?: string;
     }>
   ): Promise<Array<{
-    graphId: GraphId;
+    graphId: ID;
     key: string;
-    nodeId?: NodeId;
+    nodeId?: ID;
     namespace?: string;
     stateValue?: StateValue;
   }>> {
@@ -462,10 +461,19 @@ export class DefaultStateManager implements IStateManager {
 
     const results = await this.stateStore.getBatch(stateKeys);
 
-    return results.map((result, index) => ({
-      ...requests[index],
-      stateValue: result.stateValue
-    }));
+    return results.map((result, index) => {
+      const request = requests[index];
+      if (!request) {
+        throw new Error('请求对象未定义');
+      }
+      return {
+        graphId: request.graphId,
+        key: request.key,
+        nodeId: request.nodeId,
+        namespace: request.namespace,
+        stateValue: result.stateValue
+      };
+    });
   }
 
   /**
@@ -473,9 +481,9 @@ export class DefaultStateManager implements IStateManager {
    */
   async deleteStates(
     requests: Array<{
-      graphId: GraphId;
+      graphId: ID;
       key: string;
-      nodeId?: NodeId;
+      nodeId?: ID;
       namespace?: string;
     }>
   ): Promise<number> {
@@ -506,21 +514,21 @@ export class DefaultStateManager implements IStateManager {
   /**
    * 清空图的所有状态
    */
-  async clearGraphStates(graphId: GraphId): Promise<number> {
+  async clearGraphStates(graphId: ID): Promise<number> {
     return await this.stateStore.clearGraph(graphId);
   }
 
   /**
    * 清空节点的所有状态
    */
-  async clearNodeStates(graphId: GraphId, nodeId: NodeId): Promise<number> {
+  async clearNodeStates(graphId: ID, nodeId: ID): Promise<number> {
     return await this.stateStore.clearNode(graphId, nodeId);
   }
 
   /**
    * 清空命名空间的所有状态
    */
-  async clearNamespaceStates(graphId: GraphId, namespace: string): Promise<number> {
+  async clearNamespaceStates(graphId: ID, namespace: string): Promise<number> {
     return await this.stateStore.clearNamespace(graphId, namespace);
   }
 
@@ -548,14 +556,14 @@ export class DefaultStateManager implements IStateManager {
   /**
    * 创建状态快照
    */
-  async createStateSnapshot(graphId: GraphId, description?: string): Promise<string> {
+  async createStateSnapshot(graphId: ID, description?: string): Promise<string> {
     return await this.stateStore.createSnapshot(graphId, description);
   }
 
   /**
    * 恢复状态快照
    */
-  async restoreStateSnapshot(graphId: GraphId, snapshotId: string): Promise<void> {
+  async restoreStateSnapshot(graphId: ID, snapshotId: string): Promise<void> {
     await this.stateStore.restoreSnapshot(graphId, snapshotId);
   }
 
@@ -569,7 +577,7 @@ export class DefaultStateManager implements IStateManager {
   /**
    * 获取快照列表
    */
-  async listStateSnapshots(graphId?: GraphId): Promise<any[]> {
+  async listStateSnapshots(graphId?: ID): Promise<any[]> {
     return await this.stateStore.listSnapshots(graphId);
   }
 
@@ -611,9 +619,9 @@ export class DefaultStateManager implements IStateManager {
    * 获取状态历史
    */
   async getStateHistory(
-    graphId: GraphId,
+    graphId: ID,
     key: string,
-    nodeId?: NodeId,
+    nodeId?: ID,
     namespace?: string,
     limit?: number
   ): Promise<StateValue[]> {
@@ -627,10 +635,10 @@ export class DefaultStateManager implements IStateManager {
    * 回滚状态到指定版本
    */
   async rollbackState(
-    graphId: GraphId,
+    graphId: ID,
     key: string,
     version: number,
-    nodeId?: NodeId,
+    nodeId?: ID,
     namespace?: string
   ): Promise<boolean> {
     // 这里应该实现状态回滚逻辑
@@ -642,8 +650,8 @@ export class DefaultStateManager implements IStateManager {
    * 合并状态
    */
   async mergeStates(
-    targetGraphId: GraphId,
-    sourceGraphId: GraphId,
+    targetGraphId: ID,
+    sourceGraphId: ID,
     options?: MergeOptions
   ): Promise<number> {
     const sourceQuery = StateQueryUtils.byGraph(sourceGraphId);
@@ -689,7 +697,7 @@ export class DefaultStateManager implements IStateManager {
    */
   async copyStates(
     sourceQuery: StateQuery,
-    targetGraphId: GraphId,
+    targetGraphId: ID,
     options?: CopyOptions
   ): Promise<number> {
     const sourceStates = await this.queryStates(sourceQuery);
