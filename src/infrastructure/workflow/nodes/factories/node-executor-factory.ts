@@ -1,5 +1,5 @@
 import { injectable, inject } from 'inversify';
-import { INodeExecutor } from '../../../../domain/workflow/submodules/graph/interfaces/node-executor.interface';
+import { INodeExecutor } from '../../../../domain/workflow/graph/interfaces/node-executor.interface';
 import { LLMNodeExecutor } from '../executors/llm-node-executor';
 import { ToolNodeExecutor } from '../executors/tool-node-executor';
 import { ConditionNodeExecutor } from '../executors/condition-node-executor';

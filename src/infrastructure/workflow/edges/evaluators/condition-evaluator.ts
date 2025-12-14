@@ -1,6 +1,6 @@
 import { injectable } from 'inversify';
-import { IConditionEvaluator } from '../../../../domain/workflow/submodules/graph/interfaces/condition-evaluator.interface';
-import { Edge } from '../../../../domain/workflow/submodules/graph/entities/edge';
+import { IConditionEvaluator } from '../../../../domain/workflow/graph/interfaces/condition-evaluator.interface';
+import { Edge } from '../../../../domain/workflow/graph/entities/edge';
 import { ExecutionContext } from '../../engine/execution-context';
 
 @injectable()
@@ -14,24 +14,37 @@ export class ConditionEvaluator implements IConditionEvaluator {
         return true;
       }
       
+      // Parse condition if it's a string
+      let parsedCondition;
+      if (typeof condition === 'string') {
+        try {
+          parsedCondition = JSON.parse(condition);
+        } catch (parseError) {
+          // If it's not valid JSON, treat it as a simple expression
+          return this.evaluateExpression(condition, context);
+        }
+      } else {
+        parsedCondition = condition;
+      }
+      
       // Evaluate based on condition type
-      switch (condition.type) {
+      switch (parsedCondition.type) {
         case 'expression':
-          return this.evaluateExpression(condition.expression, context);
+          return this.evaluateExpression(parsedCondition.expression, context);
         case 'comparison':
-          return this.evaluateComparison(condition, context);
+          return this.evaluateComparison(parsedCondition, context);
         case 'logical':
-          return this.evaluateLogical(condition, context);
+          return this.evaluateLogical(parsedCondition, context);
         case 'existence':
-          return this.evaluateExistence(condition, context);
+          return this.evaluateExistence(parsedCondition, context);
         case 'custom':
-          return this.evaluateCustom(condition, context);
+          return this.evaluateCustom(parsedCondition, context);
         case 'node_result':
-          return this.evaluateNodeResult(condition, context);
+          return this.evaluateNodeResult(parsedCondition, context);
         case 'variable':
-          return this.evaluateVariable(condition, context);
+          return this.evaluateVariable(parsedCondition, context);
         default:
-          throw new Error(`Unknown condition type: ${condition.type}`);
+          throw new Error(`Unknown condition type: ${parsedCondition.type}`);
       }
     } catch (error) {
       throw new Error(`Condition evaluation failed: ${error instanceof Error ? error.message : String(error)}`);
@@ -292,57 +305,170 @@ export class ConditionEvaluator implements IConditionEvaluator {
       return { valid: true, errors };
     }
     
+    // Parse condition if it's a string
+    let parsedCondition;
+    if (typeof condition === 'string') {
+      try {
+        parsedCondition = JSON.parse(condition);
+      } catch (parseError) {
+        // If it's not valid JSON, treat it as a simple expression
+        // Just check if it's a non-empty string
+        if (condition.trim().length === 0) {
+          errors.push('Expression condition cannot be empty');
+        }
+        return { valid: errors.length === 0, errors };
+      }
+    } else {
+      parsedCondition = condition;
+    }
+    
     // Validate condition based on type
-    switch (condition.type) {
+    switch (parsedCondition.type) {
       case 'expression':
-        if (!condition.expression) {
+        if (!parsedCondition.expression) {
           errors.push('Expression condition requires an expression');
         }
         break;
         
       case 'comparison':
-        if (!condition.left || !condition.right || !condition.operator) {
+        if (!parsedCondition.left || !parsedCondition.right || !parsedCondition.operator) {
           errors.push('Comparison condition requires left, right, and operator');
         }
         break;
         
       case 'logical':
-        if (!condition.operator || !condition.operands) {
+        if (!parsedCondition.operator || !parsedCondition.operands) {
           errors.push('Logical condition requires operator and operands');
         }
         break;
         
       case 'existence':
-        if (!condition.path || !condition.check) {
+        if (!parsedCondition.path || !parsedCondition.check) {
           errors.push('Existence condition requires path and check');
         }
         break;
         
       case 'custom':
-        if (!condition.function) {
+        if (!parsedCondition.function) {
           errors.push('Custom condition requires a function name');
         }
         break;
         
       case 'node_result':
-        if (!condition.nodeId) {
+        if (!parsedCondition.nodeId) {
           errors.push('Node result condition requires a nodeId');
         }
         break;
         
       case 'variable':
-        if (!condition.variable) {
+        if (!parsedCondition.variable) {
           errors.push('Variable condition requires a variable name');
         }
         break;
         
       default:
-        errors.push(`Unknown condition type: ${condition.type}`);
+        errors.push(`Unknown condition type: ${parsedCondition.type}`);
     }
     
     return {
       valid: errors.length === 0,
       errors
     };
+  }
+
+  extractVariables(edge: Edge): string[] {
+    const condition = edge.condition;
+    if (!condition) {
+      return [];
+    }
+    
+    const variables = new Set<string>();
+    
+    // Parse condition if it's a string
+    let parsedCondition;
+    if (typeof condition === 'string') {
+      try {
+        parsedCondition = JSON.parse(condition);
+      } catch (parseError) {
+        // If it's not valid JSON, extract variables from the string expression
+        const matches = condition.match(/\{\{(\w+(?:\.\w+)*)\}\}/g);
+        if (matches) {
+          matches.forEach(match => {
+            const variable = match.slice(2, -2).trim();
+            variables.add(variable);
+          });
+        }
+        return Array.from(variables);
+      }
+    } else {
+      parsedCondition = condition;
+    }
+    
+    // Extract variables based on condition type
+    switch (parsedCondition.type) {
+      case 'expression':
+        const matches = parsedCondition.expression.match(/\{\{(\w+(?:\.\w+)*)\}\}/g);
+        if (matches) {
+          matches.forEach((match: string) => {
+            const variable = match.slice(2, -2).trim();
+            variables.add(variable);
+          });
+        }
+        break;
+        
+      case 'comparison':
+        this.extractVariablesFromValue(parsedCondition.left, variables);
+        this.extractVariablesFromValue(parsedCondition.right, variables);
+        break;
+        
+      case 'logical':
+        if (parsedCondition.operands) {
+          parsedCondition.operands.forEach((operand: any) => {
+            this.extractVariablesFromCondition(operand, variables);
+          });
+        }
+        break;
+        
+      case 'existence':
+        variables.add(parsedCondition.path);
+        break;
+        
+      case 'variable':
+        variables.add(parsedCondition.variable);
+        break;
+        
+      case 'node_result':
+        variables.add(parsedCondition.nodeId);
+        break;
+    }
+    
+    return Array.from(variables);
+  }
+
+  private extractVariablesFromCondition(condition: any, variables: Set<string>): void {
+    if (typeof condition === 'string') {
+      const matches = condition.match(/\{\{(\w+(?:\.\w+)*)\}\}/g);
+      if (matches) {
+        matches.forEach((match: string) => {
+          const variable = match.slice(2, -2).trim();
+          variables.add(variable);
+        });
+      }
+    } else if (condition && typeof condition === 'object') {
+      Object.values(condition).forEach(value => {
+        this.extractVariablesFromValue(value, variables);
+      });
+    }
+  }
+
+  private extractVariablesFromValue(value: any, variables: Set<string>): void {
+    if (typeof value === 'string' && value.startsWith('{{') && value.endsWith('}}')) {
+      const variable = value.slice(2, -2).trim();
+      variables.add(variable);
+    } else if (Array.isArray(value)) {
+      value.forEach(item => this.extractVariablesFromValue(item, variables));
+    } else if (value && typeof value === 'object') {
+      Object.values(value).forEach(item => this.extractVariablesFromValue(item, variables));
+    }
   }
 }

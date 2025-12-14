@@ -1,5 +1,5 @@
 import { injectable } from 'inversify';
-import { IExpressionEvaluator } from '../../../../domain/workflow/submodules/graph/interfaces/expression-evaluator.interface';
+import { IExpressionEvaluator } from '../../../../domain/workflow/graph/interfaces/expression-evaluator.interface';
 import { ExecutionContext } from '../../engine/execution-context';
 
 @injectable()
@@ -36,48 +36,48 @@ export class ExpressionEvaluator implements IExpressionEvaluator {
     evalContext['abs'] = Math.abs;
     evalContext['ceil'] = Math.ceil;
     evalContext['floor'] = Math.floor;
-    evalContext.max = Math.max;
-    evalContext.min = Math.min;
-    evalContext.pow = Math.pow;
-    evalContext.round = Math.round;
-    evalContext.sqrt = Math.sqrt;
-    evalContext.random = Math.random;
+    evalContext['max'] = Math.max;
+    evalContext['min'] = Math.min;
+    evalContext['pow'] = Math.pow;
+    evalContext['round'] = Math.round;
+    evalContext['sqrt'] = Math.sqrt;
+    evalContext['random'] = Math.random;
     
     // Add string utility functions
-    evalContext.startsWith = (str: string, prefix: string) => str.startsWith(prefix);
-    evalContext.endsWith = (str: string, suffix: string) => str.endsWith(suffix);
-    evalContext.includes = (str: string, search: string) => str.includes(search);
-    evalContext.split = (str: string, separator: string) => str.split(separator);
-    evalContext.join = (arr: string[], separator: string) => arr.join(separator);
-    evalContext.toLowerCase = (str: string) => str.toLowerCase();
-    evalContext.toUpperCase = (str: string) => str.toUpperCase();
-    evalContext.trim = (str: string) => str.trim();
+    evalContext['startsWith'] = (str: string, prefix: string) => str.startsWith(prefix);
+    evalContext['endsWith'] = (str: string, suffix: string) => str.endsWith(suffix);
+    evalContext['includes'] = (str: string, search: string) => str.includes(search);
+    evalContext['split'] = (str: string, separator: string) => str.split(separator);
+    evalContext['join'] = (arr: string[], separator: string) => arr.join(separator);
+    evalContext['toLowerCase'] = (str: string) => str.toLowerCase();
+    evalContext['toUpperCase'] = (str: string) => str.toUpperCase();
+    evalContext['trim'] = (str: string) => str.trim();
     
     // Add array utility functions
-    evalContext.isArray = Array.isArray;
-    evalContext.length = (arr: any[]) => arr.length;
-    evalContext.first = (arr: any[]) => arr[0];
-    evalContext.last = (arr: any[]) => arr[arr.length - 1];
-    evalContext.sum = (arr: number[]) => arr.reduce((a, b) => a + b, 0);
-    evalContext.avg = (arr: number[]) => arr.length > 0 ? arr.reduce((a, b) => a + b, 0) / arr.length : 0;
+    evalContext['isArray'] = Array.isArray;
+    evalContext['length'] = (arr: any[]) => arr.length;
+    evalContext['first'] = (arr: any[]) => arr[0];
+    evalContext['last'] = (arr: any[]) => arr[arr.length - 1];
+    evalContext['sum'] = (arr: number[]) => arr.reduce((a, b) => a + b, 0);
+    evalContext['avg'] = (arr: number[]) => arr.length > 0 ? arr.reduce((a, b) => a + b, 0) / arr.length : 0;
     
     // Add date utility functions
-    evalContext.now = () => new Date();
-    evalContext.timestamp = () => Date.now();
-    evalContext.date = (dateString?: string) => dateString ? new Date(dateString) : new Date();
-    evalContext.formatDate = (date: Date, format: string) => {
+    evalContext['now'] = () => new Date();
+    evalContext['timestamp'] = () => Date.now();
+    evalContext['date'] = (dateString?: string) => dateString ? new Date(dateString) : new Date();
+    evalContext['formatDate'] = (date: Date, format: string) => {
       // Simple date formatting - in production, use a proper date library
       return date.toISOString();
     };
     
     // Add type checking functions
-    evalContext.isString = (value: any) => typeof value === 'string';
-    evalContext.isNumber = (value: any) => typeof value === 'number';
-    evalContext.isBoolean = (value: any) => typeof value === 'boolean';
-    evalContext.isObject = (value: any) => typeof value === 'object' && value !== null && !Array.isArray(value);
+    evalContext['isString'] = (value: any) => typeof value === 'string';
+    evalContext['isNumber'] = (value: any) => typeof value === 'number';
+    evalContext['isBoolean'] = (value: any) => typeof value === 'boolean';
+    evalContext['isObject'] = (value: any) => typeof value === 'object' && value !== null && !Array.isArray(value);
     evalContext['isArray'] = Array['isArray'];
-    evalContext.isNull = (value: any) => value === null;
-    evalContext.isUndefined = (value: any) => value === undefined;
+    evalContext['isNull'] = (value: any) => value === null;
+    evalContext['isUndefined'] = (value: any) => value === undefined;
     
     // Add context variables
     for (const [key, value] of context.getAllVariables()) {
@@ -90,10 +90,10 @@ export class ExpressionEvaluator implements IExpressionEvaluator {
     }
     
     // Add special context values
-    evalContext.input = context.getInput();
-    evalContext.executionId = context.getExecutionId();
-    evalContext.elapsedTime = context.getElapsedTime();
-    evalContext.executedNodes = Array.from(context.getExecutedNodes());
+    evalContext['input'] = context.getInput();
+    evalContext['executionId'] = context.getExecutionId();
+    evalContext['elapsedTime'] = context.getElapsedTime();
+    evalContext['executedNodes'] = Array.from(context.getExecutedNodes());
     
     return evalContext;
   }
@@ -226,9 +226,9 @@ export class ExpressionEvaluator implements IExpressionEvaluator {
   }
 
   // Compile expression for repeated evaluation
-  compile(expression: string): (context: ExecutionContext) => any {
+  async compile(expression: string): Promise<(context: ExecutionContext) => any> {
     // Pre-validate expression
-    const validation = this.validate(expression);
+    const validation = await this.validate(expression);
     if (!validation.valid) {
       throw new Error(`Cannot compile invalid expression: ${validation.errors.join(', ')}`);
     }
@@ -239,5 +239,49 @@ export class ExpressionEvaluator implements IExpressionEvaluator {
       const func = new Function(...Object.keys(evalContext), `return ${evaluatedExpression}`);
       return func(...Object.values(evalContext));
     };
+  }
+
+  extractVariables(expression: string): string[] {
+    const variables = new Set<string>();
+    
+    // Extract variables from template syntax {{variable.path}}
+    const matches = expression.match(/\{\{(\w+(?:\.\w+)*)\}\}/g);
+    if (matches) {
+      matches.forEach((match: string) => {
+        const variable = match.slice(2, -2).trim();
+        variables.add(variable);
+      });
+    }
+    
+    // Extract variables from function calls and property access
+    // This is a simplified implementation - in production, use a proper parser
+    const functionMatches = expression.match(/(\w+)\(/g);
+    if (functionMatches) {
+      functionMatches.forEach((match: string) => {
+        const functionName = match.slice(0, -1);
+        // Only add if it's not a known function
+        const knownFunctions = [
+          'abs', 'ceil', 'floor', 'max', 'min', 'pow', 'round', 'sqrt', 'random',
+          'startsWith', 'endsWith', 'includes', 'split', 'join', 'toLowerCase', 'toUpperCase', 'trim',
+          'isArray', 'length', 'first', 'last', 'sum', 'avg',
+          'now', 'timestamp', 'date', 'formatDate',
+          'isString', 'isNumber', 'isBoolean', 'isObject', 'isNull', 'isUndefined'
+        ];
+        if (!knownFunctions.includes(functionName)) {
+          variables.add(functionName);
+        }
+      });
+    }
+    
+    // Extract property access patterns
+    const propertyMatches = expression.match(/(\w+)\./g);
+    if (propertyMatches) {
+      propertyMatches.forEach((match: string) => {
+        const propertyName = match.slice(0, -1);
+        variables.add(propertyName);
+      });
+    }
+    
+    return Array.from(variables);
   }
 }

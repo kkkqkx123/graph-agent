@@ -1,6 +1,6 @@
 import { injectable } from 'inversify';
-import { INodeExecutor } from '../../../../domain/workflow/submodules/graph/interfaces/node-executor.interface';
-import { Node } from '../../../../domain/workflow/submodules/graph/entities/node';
+import { INodeExecutor } from '../../../../domain/workflow/graph/interfaces/node-executor.interface';
+import { Node } from '../../../../domain/workflow/graph/entities/node';
 import { ExecutionContext } from '../../engine/execution-context';
 
 @injectable()

@@ -1,6 +1,6 @@
 import { injectable } from 'inversify';
-import { ITransitionEvaluator } from '../../../../domain/workflow/submodules/graph/interfaces/transition-evaluator.interface';
-import { Edge } from '../../../../domain/workflow/submodules/graph/entities/edge';
+import { ITransitionEvaluator } from '../../../../domain/workflow/graph/interfaces/transition-evaluator.interface';
+import { Edge } from '../../../../domain/workflow/graph/entities/edge';
 import { ExecutionContext } from '../../engine/execution-context';
 
 @injectable()
@@ -14,31 +14,44 @@ export class TransitionEvaluator implements ITransitionEvaluator {
         return true;
       }
       
+      // Parse transition if it's a string
+      let parsedTransition;
+      if (typeof transition === 'string') {
+        try {
+          parsedTransition = JSON.parse(transition);
+        } catch (parseError) {
+          // If it's not valid JSON, treat it as a simple expression
+          return true; // Default to true for simple expressions
+        }
+      } else {
+        parsedTransition = transition;
+      }
+      
       // Evaluate based on transition type
-      switch (transition.type) {
+      switch (parsedTransition.type) {
         case 'always':
           return true;
         case 'never':
           return false;
         case 'probability':
-          return this.evaluateProbability(transition, context);
+          return this.evaluateProbability(parsedTransition, context);
         case 'timeout':
-          return this.evaluateTimeout(transition, context);
+          return this.evaluateTimeout(parsedTransition, context);
         case 'retry':
-          return this.evaluateRetry(transition, context);
+          return this.evaluateRetry(parsedTransition, context);
         case 'rate_limit':
-          return this.evaluateRateLimit(transition, context);
+          return this.evaluateRateLimit(parsedTransition, context);
         case 'schedule':
-          return this.evaluateSchedule(transition, context);
+          return this.evaluateSchedule(parsedTransition, context);
         case 'state':
-          return this.evaluateState(transition, context);
+          return this.evaluateState(parsedTransition, context);
         case 'custom':
-          return this.evaluateCustom(transition, context);
+          return this.evaluateCustom(parsedTransition, context);
         default:
-          throw new Error(`Unknown transition type: ${transition.type}`);
+          throw new Error(`Unknown transition type: ${parsedTransition.type}`);
       }
     } catch (error) {
-      throw new Error(`Transition evaluation failed: ${error.message}`);
+      throw new Error(`Transition evaluation failed: ${error instanceof Error ? error.message : String(error)}`);
     }
   }
 
@@ -206,23 +219,23 @@ export class TransitionEvaluator implements ITransitionEvaluator {
     const [minute, hour, day, month, dayOfWeek] = parts;
     
     // Check each field (simplified)
-    if (minute !== '*' && parseInt(minute) !== now.minute) {
+    if (minute !== '*' && minute !== undefined && parseInt(minute) !== now.minute) {
       return false;
     }
     
-    if (hour !== '*' && parseInt(hour) !== now.hour) {
+    if (hour !== '*' && hour !== undefined && parseInt(hour) !== now.hour) {
       return false;
     }
     
-    if (day !== '*' && parseInt(day) !== now.day) {
+    if (day !== '*' && day !== undefined && parseInt(day) !== now.day) {
       return false;
     }
     
-    if (month !== '*' && parseInt(month) !== now.month) {
+    if (month !== '*' && month !== undefined && parseInt(month) !== now.month) {
       return false;
     }
     
-    if (dayOfWeek !== '*' && parseInt(dayOfWeek) !== now.dayOfWeek) {
+    if (dayOfWeek !== '*' && dayOfWeek !== undefined && parseInt(dayOfWeek) !== now.dayOfWeek) {
       return false;
     }
     
@@ -309,7 +322,7 @@ export class TransitionEvaluator implements ITransitionEvaluator {
       
       return result;
     } catch (error) {
-      throw new Error(`Custom transition function execution failed: ${error.message}`);
+      throw new Error(`Custom transition function execution failed: ${error instanceof Error ? error.message : String(error)}`);
     }
   }
 
@@ -356,71 +369,98 @@ export class TransitionEvaluator implements ITransitionEvaluator {
       return { valid: true, errors };
     }
     
+    // Parse transition if it's a string
+    let parsedTransition;
+    if (typeof transition === 'string') {
+      try {
+        parsedTransition = JSON.parse(transition);
+      } catch (parseError) {
+        // If it's not valid JSON, it's valid as a simple expression
+        return { valid: true, errors };
+      }
+    } else {
+      parsedTransition = transition;
+    }
+    
     // Validate transition based on type
-    switch (transition.type) {
+    switch (parsedTransition.type) {
       case 'probability':
-        if (transition.probability === undefined || 
-            typeof transition.probability !== 'number' || 
-            transition.probability < 0 || 
-            transition.probability > 1) {
+        if (parsedTransition.probability === undefined ||
+            typeof parsedTransition.probability !== 'number' ||
+            parsedTransition.probability < 0 ||
+            parsedTransition.probability > 1) {
           errors.push('Probability transition requires a probability between 0 and 1');
         }
         break;
         
       case 'timeout':
-        if (transition.timeout === undefined || 
-            typeof transition.timeout !== 'number' || 
-            transition.timeout < 0) {
+        if (parsedTransition.timeout === undefined ||
+            typeof parsedTransition.timeout !== 'number' ||
+            parsedTransition.timeout < 0) {
           errors.push('Timeout transition requires a non-negative timeout');
         }
         break;
         
       case 'retry':
-        if (transition.maxRetries === undefined || 
-            typeof transition.maxRetries !== 'number' || 
-            transition.maxRetries < 0) {
+        if (parsedTransition.maxRetries === undefined ||
+            typeof parsedTransition.maxRetries !== 'number' ||
+            parsedTransition.maxRetries < 0) {
           errors.push('Retry transition requires a non-negative maxRetries');
         }
         break;
         
       case 'rate_limit':
-        if (transition.limit === undefined || 
-            typeof transition.limit !== 'number' || 
-            transition.limit < 0) {
+        if (parsedTransition.limit === undefined ||
+            typeof parsedTransition.limit !== 'number' ||
+            parsedTransition.limit < 0) {
           errors.push('Rate limit transition requires a non-negative limit');
         }
-        if (transition.window === undefined || 
-            typeof transition.window !== 'number' || 
-            transition.window < 0) {
+        if (parsedTransition.window === undefined ||
+            typeof parsedTransition.window !== 'number' ||
+            parsedTransition.window < 0) {
           errors.push('Rate limit transition requires a non-negative window');
         }
         break;
         
       case 'schedule':
-        if (!transition.schedule) {
+        if (!parsedTransition.schedule) {
           errors.push('Schedule transition requires a schedule configuration');
         }
         break;
         
       case 'state':
-        if (transition.state === undefined) {
+        if (parsedTransition.state === undefined) {
           errors.push('State transition requires a state value');
         }
         break;
         
       case 'custom':
-        if (!transition.function) {
+        if (!parsedTransition.function) {
           errors.push('Custom transition requires a function name');
         }
         break;
         
       default:
-        errors.push(`Unknown transition type: ${transition.type}`);
+        errors.push(`Unknown transition type: ${parsedTransition.type}`);
     }
     
     return {
       valid: errors.length === 0,
       errors
     };
+  }
+
+  getSupportedEdgeTypes(): string[] {
+    return [
+      'always',
+      'never',
+      'probability',
+      'timeout',
+      'retry',
+      'rate_limit',
+      'schedule',
+      'state',
+      'custom'
+    ];
   }
 }

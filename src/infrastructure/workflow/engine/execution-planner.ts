@@ -1,8 +1,8 @@
 import { injectable } from 'inversify';
-import { Graph } from '../../../../domain/workflow/submodules/graph/entities/graph';
-import { Node } from '../../../../domain/workflow/submodules/graph/entities/node';
-import { Edge } from '../../../../domain/workflow/submodules/graph/entities/edge';
-import { NodeId } from '../../../../domain/workflow/submodules/graph/value-objects/node-id';
+import { Graph } from '../../../../domain/workflow/graph/entities/graph';
+import { Node } from '../../../../domain/workflow/graph/entities/node';
+import { Edge } from '../../../../domain/workflow/graph/entities/edge';
+import { NodeId } from '../../../../domain/workflow/graph/value-objects/node-id';
 
 export interface ExecutionPlan {
   steps: ExecutionStep[];

@@ -24,4 +24,18 @@ export {
 } from './workflow';
 
 // 导出图领域模块
-export * from './workflow/graph';
+export {
+  Graph,
+  Node,
+  Edge,
+  GraphDomainService,
+  NodeType,
+  EdgeType,
+  HookPoint
+} from './workflow/graph';
+
+// 重新导出有冲突的值对象，使用别名
+export {
+  NodeId as GraphNodeId,
+  EdgeId as GraphEdgeId
+} from './workflow/graph';

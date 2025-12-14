@@ -1,6 +1,6 @@
 import { injectable, inject } from 'inversify';
-import { INodeExecutor } from '../../../../domain/workflow/submodules/graph/interfaces/node-executor.interface';
-import { Node } from '../../../../domain/workflow/submodules/graph/entities/node';
+import { INodeExecutor } from '../../../../domain/workflow/graph/interfaces/node-executor.interface';
+import { Node } from '../../../../domain/workflow/graph/entities/node';
 import { ExecutionContext } from '../../engine/execution-context';
 import { ILLMClient } from '../../../../domain/llm/interfaces/llm-client.interface';
 import { LLMRequest } from '../../../../domain/llm/entities/llm-request';

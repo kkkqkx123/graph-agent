@@ -1,6 +1,6 @@
-import { Graph } from '../../../../domain/workflow/submodules/graph/entities/graph';
-import { NodeId } from '../../../../domain/workflow/submodules/graph/value-objects/node-id';
-import { EdgeId } from '../../../../domain/workflow/submodules/graph/value-objects/edge-id';
+import { Graph } from '../../../../domain/workflow/graph/entities/graph';
+import { NodeId } from '../../../../domain/workflow/graph/value-objects/node-id';
+import { EdgeId } from '../../../../domain/workflow/graph/value-objects/edge-id';
 
 export class ExecutionContext {
   private readonly graph: Graph;

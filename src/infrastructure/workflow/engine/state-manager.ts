@@ -1,7 +1,7 @@
 import { injectable, inject } from 'inversify';
 import { ExecutionContext } from './execution-context';
-import { NodeId } from '../../../../domain/workflow/submodules/graph/value-objects/node-id';
-import { EdgeId } from '../../../../domain/workflow/submodules/graph/value-objects/edge-id';
+import { NodeId } from '../../../../domain/workflow/graph/value-objects/node-id';
+import { EdgeId } from '../../../../domain/workflow/graph/value-objects/edge-id';
 import { CheckpointRepository } from '../../../database/repositories/checkpoint/checkpoint-repository';
 import { HistoryRepository } from '../../../database/repositories/history/history-repository';
 import { Checkpoint } from '../../../../domain/checkpoint/entities/checkpoint';
