@@ -1,0 +1,1 @@
+export { HistoryDomainService } from './history-domain-service';
