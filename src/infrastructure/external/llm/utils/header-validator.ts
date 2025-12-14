@@ -87,7 +87,7 @@ export class HeaderValidator {
           // 其他敏感标头必须使用环境变量引用
           if (!this.isEnvVarReference(headerValue)) {
             this.validationErrors.push(
-              `敏感标头 '${headerName}' 必须使用环境变量引用格式 ${ENV_VAR}`
+              `敏感标头 '${headerName}' 必须使用环境变量引用格式 \${ENV_VAR}`
             );
           } else {
             // 验证环境变量是否存在
@@ -183,7 +183,7 @@ export class HeaderValidator {
 
   private extractEnvVarName(value: string): string | null {
     const match = HeaderValidator.ENV_VAR_PATTERN.exec(value.trim());
-    if (match) {
+    if (match && match[1]) {
       // 只返回环境变量名称，不包括默认值部分
       return match[1];
     }
@@ -192,14 +192,14 @@ export class HeaderValidator {
 
   private resolveEnvVar(value: string): string | null {
     const match = HeaderValidator.ENV_VAR_PATTERN.exec(value.trim());
-    if (!match) {
+    if (!match || !match[1]) {
       return value;
     }
 
     const envVarName = match[1];
     const defaultValue = match[2] !== undefined ? match[2] : '';
 
-    return process.env[envVarName] ?? defaultValue;
+    return process.env[envVarName] || defaultValue;
   }
 
   /**
@@ -217,7 +217,7 @@ export class HeaderValidator {
     if (value.toLowerCase().startsWith('bearer ')) {
       // 确保有token，不仅仅是"Bearer "
       const parts = value.split(' ', 2);
-      return parts.length > 1 && parts[1].trim() !== '';
+      return parts.length > 1 && !!parts[1] && parts[1].trim() !== '';
     }
 
     // 如果只是"Bearer"而没有token，则无效

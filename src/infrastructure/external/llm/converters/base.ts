@@ -4,7 +4,7 @@
  * 提供转换器系统的核心抽象和基础实现
  */
 
-import { IBaseMessage } from '@/domain';
+import { LLMMessage } from '../../../../domain/llm/entities/llm-request';
 
 /**
  * 消息角色枚举
@@ -55,7 +55,7 @@ export interface IProvider {
    * 转换请求格式
    */
   convertRequest(
-    messages: IBaseMessage[],
+    messages: LLMMessage[],
     parameters: Record<string, any>
   ): Record<string, any>;
 
@@ -73,7 +73,7 @@ export interface IProvider {
    * 验证请求参数
    */
   validateRequest(
-    messages: IBaseMessage[],
+    messages: LLMMessage[],
     parameters: Record<string, any>
   ): string[];
 
@@ -112,8 +112,17 @@ export abstract class BaseProvider implements IProvider {
     return this.name;
   }
 
+  abstract convertRequest(
+    messages: LLMMessage[],
+    parameters: Record<string, any>
+  ): Record<string, any>;
+
+  abstract convertResponse(response: Record<string, any>): any;
+
+  abstract convertStreamResponse(events: Record<string, any>[]): any;
+
   validateRequest(
-    messages: IBaseMessage[],
+    messages: LLMMessage[],
     parameters: Record<string, any>
   ): string[] {
     const errors: string[] = [];
@@ -168,8 +177,8 @@ export abstract class BaseProvider implements IProvider {
   protected extractTextFromContent(content: Array<Record<string, any>>): string {
     const textParts: string[] = [];
     for (const item of content) {
-      if (item.type === 'text') {
-        textParts.push(item.text || '');
+      if (item['type'] === 'text') {
+        textParts.push(item['text'] || '');
       }
     }
     return textParts.join(' ');
@@ -190,7 +199,7 @@ export abstract class BaseProvider implements IProvider {
         continue;
       }
 
-      const contentType = item.type;
+      const contentType = item['type'];
       if (!contentType) {
         errors.push(`内容项 ${i} 缺少type字段`);
         continue;

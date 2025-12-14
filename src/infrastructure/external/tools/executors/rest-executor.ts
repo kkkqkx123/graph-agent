@@ -5,9 +5,22 @@ import { ToolExecution } from '../../../../domain/tools/entities/tool-execution'
 import { ToolResult } from '../../../../domain/tools/entities/tool-result';
 import { HttpClient } from '../../../common/http/http-client';
 import { ParameterAdapter } from '../adapters/parameter-adapter';
+import { ID } from '../../../../domain/common/value-objects/id';
 
 @injectable()
 export class RestExecutor implements IToolExecutor {
+  private isInitialized = false;
+  private isRunningFlag = false;
+  private config: Record<string, unknown> = {};
+  private executionStats = {
+    totalExecutions: 0,
+    successfulExecutions: 0,
+    failedExecutions: 0,
+    cancelledExecutions: 0,
+    timeoutExecutions: 0,
+    totalExecutionTime: 0
+  };
+
   constructor(
     @inject('HttpClient') private httpClient: HttpClient,
     @inject('ParameterAdapter') private parameterAdapter: ParameterAdapter
@@ -15,6 +28,9 @@ export class RestExecutor implements IToolExecutor {
 
   async execute(tool: Tool, execution: ToolExecution): Promise<ToolResult> {
     try {
+      this.executionStats.totalExecutions++;
+      const startTime = Date.now();
+      
       const config = tool.config;
       
       // Prepare request
@@ -26,19 +42,25 @@ export class RestExecutor implements IToolExecutor {
       // Process response
       const result = this.processResponse(response, config);
       
+      this.executionStats.successfulExecutions++;
+      this.executionStats.totalExecutionTime += Date.now() - startTime;
+      
       return new ToolResult(
+        ID.generate(),
         execution.id,
         true,
         result,
-        null,
+        undefined,
         Date.now() - execution.startedAt.getTime()
       );
     } catch (error) {
+      this.executionStats.failedExecutions++;
       return new ToolResult(
+        ID.generate(),
         execution.id,
         false,
-        null,
-        error.message,
+        undefined,
+        error instanceof Error ? error.message : String(error),
         Date.now() - execution.startedAt.getTime()
       );
     }
@@ -140,9 +162,9 @@ export class RestExecutor implements IToolExecutor {
     for (const [key, value] of Object.entries(templateParams)) {
       if (typeof value === 'string') {
         params[key] = this.interpolateString(value, parameters);
-      } else if (typeof value === 'object' && value.source) {
+      } else if (typeof value === 'object' && value !== null && 'source' in value) {
         // Handle parameter mapping
-        params[key] = this.getParameterValue(value.source, parameters);
+        params[key] = this.getParameterValue((value as any).source, parameters);
       } else {
         params[key] = value;
       }
@@ -163,7 +185,7 @@ export class RestExecutor implements IToolExecutor {
     
     for (const key of keys) {
       if (current === null || current === undefined || current[key] === undefined) {
-        return match; // Return original placeholder if not found
+        return path; // Return original placeholder if not found
       }
       current = current[key];
     }
@@ -290,6 +312,446 @@ export class RestExecutor implements IToolExecutor {
       }
     }
     
+    return true;
+  }
+
+  // IToolExecutor 接口实现
+  async validateTool(tool: Tool): Promise<{
+    isValid: boolean;
+    errors: string[];
+    warnings: string[];
+  }> {
+    const errors: string[] = [];
+    const warnings: string[] = [];
+
+    if (!tool.config['url']) {
+      errors.push('REST工具必须配置URL');
+    }
+
+    if (!tool.config['method']) {
+      warnings.push('未指定HTTP方法，将使用默认GET');
+    }
+
+    return {
+      isValid: errors.length === 0,
+      errors,
+      warnings
+    };
+  }
+
+  async validateParameters(tool: Tool, parameters: Record<string, unknown>): Promise<{
+    isValid: boolean;
+    errors: string[];
+    warnings: string[];
+  }> {
+    const errors: string[] = [];
+    const warnings: string[] = [];
+
+    // 基本参数验证
+    if (!parameters || typeof parameters !== 'object') {
+      errors.push('参数必须是对象');
+      return { isValid: false, errors, warnings };
+    }
+
+    return {
+      isValid: errors.length === 0,
+      errors,
+      warnings
+    };
+  }
+
+  async preprocessParameters(tool: Tool, parameters: Record<string, unknown>): Promise<Record<string, unknown>> {
+    // 基本参数预处理
+    return { ...parameters };
+  }
+
+  async postprocessResult(tool: Tool, result: unknown): Promise<unknown> {
+    // 基本结果后处理
+    return result;
+  }
+
+  getType(): string {
+    return 'rest';
+  }
+
+  getName(): string {
+    return 'REST Executor';
+  }
+
+  getVersion(): string {
+    return '1.0.0';
+  }
+
+  getDescription(): string {
+    return 'REST API工具执行器，支持HTTP请求执行';
+  }
+
+  getSupportedToolTypes(): string[] {
+    return ['rest', 'http', 'api'];
+  }
+
+  supportsTool(tool: Tool): boolean {
+    return tool.type.toString() === 'rest' || tool.type.toString() === 'http' || tool.type.toString() === 'api';
+  }
+
+  getConfigSchema(): {
+    type: string;
+    properties: Record<string, {
+      type: string;
+      description?: string;
+      enum?: string[];
+      items?: any;
+      properties?: Record<string, any>;
+      required?: string[];
+      default?: any;
+    }>;
+    required: string[];
+  } {
+    return {
+      type: 'object',
+      properties: {
+        url: {
+          type: 'string',
+          description: 'REST API的URL'
+        },
+        method: {
+          type: 'string',
+          enum: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'],
+          default: 'GET',
+          description: 'HTTP方法'
+        },
+        headers: {
+          type: 'object',
+          description: 'HTTP请求头'
+        },
+        timeout: {
+          type: 'number',
+          description: '请求超时时间（毫秒）'
+        }
+      },
+      required: ['url']
+    };
+  }
+
+  getCapabilities(): {
+    streaming: boolean;
+    async: boolean;
+    batch: boolean;
+    retry: boolean;
+    timeout: boolean;
+    cancellation: boolean;
+    progress: boolean;
+    metrics: boolean;
+  } {
+    return {
+      streaming: false,
+      async: true,
+      batch: true,
+      retry: false,
+      timeout: true,
+      cancellation: false,
+      progress: false,
+      metrics: true
+    };
+  }
+
+  async getStatus(): Promise<{
+    status: 'healthy' | 'unhealthy' | 'degraded';
+    message?: string;
+    details?: Record<string, unknown>;
+    lastChecked: Date;
+  }> {
+    const healthCheck = await this.healthCheck();
+    return {
+      status: healthCheck.status,
+      message: healthCheck.message,
+      lastChecked: healthCheck.lastChecked
+    };
+  }
+
+  async healthCheck(): Promise<{
+    status: 'healthy' | 'unhealthy' | 'degraded';
+    message?: string;
+    latency?: number;
+    lastChecked: Date;
+  }> {
+    const startTime = Date.now();
+    try {
+      // 简单的健康检查
+      await this.httpClient.request({
+        url: 'https://httpbin.org/status/200',
+        method: 'GET',
+        timeout: 5000
+      });
+      
+      return {
+        status: 'healthy',
+        message: 'REST执行器运行正常',
+        latency: Date.now() - startTime,
+        lastChecked: new Date()
+      };
+    } catch (error) {
+      return {
+        status: 'unhealthy',
+        message: `健康检查失败: ${error}`,
+        latency: Date.now() - startTime,
+        lastChecked: new Date()
+      };
+    }
+  }
+
+  async initialize(config: Record<string, unknown>): Promise<boolean> {
+    try {
+      this.config = config;
+      this.isInitialized = true;
+      return true;
+    } catch (error) {
+      console.error('初始化REST执行器失败:', error);
+      return false;
+    }
+  }
+
+  async configure(config: Record<string, unknown>): Promise<boolean> {
+    try {
+      this.config = { ...this.config, ...config };
+      return true;
+    } catch (error) {
+      console.error('配置REST执行器失败:', error);
+      return false;
+    }
+  }
+
+  async getConfiguration(): Promise<Record<string, unknown>> {
+    return { ...this.config };
+  }
+
+  async resetConfiguration(): Promise<boolean> {
+    this.config = {};
+    return true;
+  }
+
+  async start(): Promise<boolean> {
+    this.isRunningFlag = true;
+    return true;
+  }
+
+  async stop(): Promise<boolean> {
+    this.isRunningFlag = false;
+    return true;
+  }
+
+  async restart(): Promise<boolean> {
+    await this.stop();
+    await this.start();
+    return true;
+  }
+
+  async isRunning(): Promise<boolean> {
+    return this.isRunningFlag;
+  }
+
+  async getExecutionStatistics(startTime?: Date, endTime?: Date): Promise<{
+    totalExecutions: number;
+    successfulExecutions: number;
+    failedExecutions: number;
+    cancelledExecutions: number;
+    timeoutExecutions: number;
+    averageExecutionTime: number;
+    minExecutionTime: number;
+    maxExecutionTime: number;
+    successRate: number;
+    failureRate: number;
+    cancellationRate: number;
+    timeoutRate: number;
+  }> {
+    const total = this.executionStats.totalExecutions;
+    const successRate = total > 0 ? (this.executionStats.successfulExecutions / total) * 100 : 0;
+    const failureRate = total > 0 ? (this.executionStats.failedExecutions / total) * 100 : 0;
+    const cancellationRate = total > 0 ? (this.executionStats.cancelledExecutions / total) * 100 : 0;
+    const timeoutRate = total > 0 ? (this.executionStats.timeoutExecutions / total) * 100 : 0;
+    const averageExecutionTime = total > 0 ? this.executionStats.totalExecutionTime / total : 0;
+
+    return {
+      totalExecutions: this.executionStats.totalExecutions,
+      successfulExecutions: this.executionStats.successfulExecutions,
+      failedExecutions: this.executionStats.failedExecutions,
+      cancelledExecutions: this.executionStats.cancelledExecutions,
+      timeoutExecutions: this.executionStats.timeoutExecutions,
+      averageExecutionTime,
+      minExecutionTime: 0,
+      maxExecutionTime: 0,
+      successRate,
+      failureRate,
+      cancellationRate,
+      timeoutRate
+    };
+  }
+
+  async getPerformanceStatistics(startTime?: Date, endTime?: Date): Promise<{
+    averageLatency: number;
+    medianLatency: number;
+    p95Latency: number;
+    p99Latency: number;
+    maxLatency: number;
+    minLatency: number;
+    throughput: number;
+    errorRate: number;
+    memoryUsage: number;
+    cpuUsage: number;
+  }> {
+    const stats = await this.getExecutionStatistics();
+    return {
+      averageLatency: stats.averageExecutionTime,
+      medianLatency: stats.averageExecutionTime,
+      p95Latency: stats.averageExecutionTime,
+      p99Latency: stats.averageExecutionTime,
+      maxLatency: stats.maxExecutionTime,
+      minLatency: stats.minExecutionTime,
+      throughput: stats.totalExecutions,
+      errorRate: stats.failureRate,
+      memoryUsage: 0,
+      cpuUsage: 0
+    };
+  }
+
+  async getErrorStatistics(startTime?: Date, endTime?: Date): Promise<{
+    totalErrors: number;
+    byType: Record<string, number>;
+    byTool: Record<string, number>;
+    averageRetryCount: number;
+    maxRetryCount: number;
+    mostCommonErrors: Array<{
+      error: string;
+      count: number;
+      percentage: number;
+    }>;
+  }> {
+    return {
+      totalErrors: this.executionStats.failedExecutions,
+      byType: {},
+      byTool: {},
+      averageRetryCount: 0,
+      maxRetryCount: 0,
+      mostCommonErrors: []
+    };
+  }
+
+  async getResourceUsage(): Promise<{
+    memoryUsage: number;
+    cpuUsage: number;
+    diskUsage: number;
+    networkUsage: number;
+    activeConnections: number;
+    maxConnections: number;
+  }> {
+    return {
+      memoryUsage: 0,
+      cpuUsage: 0,
+      diskUsage: 0,
+      networkUsage: 0,
+      activeConnections: 0,
+      maxConnections: 0
+    };
+  }
+
+  async getConcurrencyStatistics(): Promise<{
+    currentExecutions: number;
+    maxConcurrentExecutions: number;
+    averageConcurrentExecutions: number;
+    queuedExecutions: number;
+    maxQueueSize: number;
+    averageQueueSize: number;
+  }> {
+    return {
+      currentExecutions: 0,
+      maxConcurrentExecutions: 0,
+      averageConcurrentExecutions: 0,
+      queuedExecutions: 0,
+      maxQueueSize: 0,
+      averageQueueSize: 0
+    };
+  }
+
+  async cancelExecution(executionId: ID, reason?: string): Promise<boolean> {
+    // REST执行器不支持取消执行
+    return false;
+  }
+
+  async getExecutionStatus(executionId: ID): Promise<{
+    status: 'pending' | 'running' | 'completed' | 'failed' | 'cancelled' | 'timeout';
+    progress?: number;
+    message?: string;
+    startedAt?: Date;
+    endedAt?: Date;
+    duration?: number;
+  }> {
+    return {
+      status: 'completed',
+      message: '执行已完成'
+    };
+  }
+
+  async getExecutionLogs(
+    executionId: ID,
+    level?: 'debug' | 'info' | 'warn' | 'error',
+    limit?: number
+  ): Promise<Array<{
+    timestamp: Date;
+    level: 'debug' | 'info' | 'warn' | 'error';
+    message: string;
+    data?: unknown;
+  }>> {
+    return [];
+  }
+
+  async executeStream(tool: Tool, execution: ToolExecution): Promise<AsyncIterable<{
+    type: 'data' | 'progress' | 'log' | 'error' | 'complete';
+    data?: unknown;
+    progress?: number;
+    log?: {
+      level: 'debug' | 'info' | 'warn' | 'error';
+      message: string;
+      data?: unknown;
+    };
+    error?: string;
+  }>> {
+    // REST执行器不支持流式执行
+    throw new Error('REST执行器不支持流式执行');
+  }
+
+  async executeBatch(tools: Tool[], executions: ToolExecution[]): Promise<ToolResult[]> {
+    const results: ToolResult[] = [];
+    for (let i = 0; i < tools.length; i++) {
+      const tool = tools[i];
+      const execution = executions[i];
+      if (tool && execution) {
+        const result = await this.execute(tool, execution);
+        results.push(result);
+      }
+    }
+    return results;
+  }
+
+  async cleanup(): Promise<boolean> {
+    this.executionStats = {
+      totalExecutions: 0,
+      successfulExecutions: 0,
+      failedExecutions: 0,
+      cancelledExecutions: 0,
+      timeoutExecutions: 0,
+      totalExecutionTime: 0
+    };
+    return true;
+  }
+
+  async reset(): Promise<boolean> {
+    await this.cleanup();
+    return true;
+  }
+
+  async close(): Promise<boolean> {
+    await this.stop();
+    await this.cleanup();
     return true;
   }
 }

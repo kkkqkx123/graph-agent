@@ -18,7 +18,7 @@ export class ContentExtractor {
     if (typeof content === 'string') {
       return content;
     } else if (typeof content === 'object' && content !== null) {
-      return content.text || null;
+      return content['text'] || null;
     }
     return null;
   }
@@ -39,15 +39,15 @@ export class ContentExtractor {
     // 尝试从常见字段提取内容
     if (typeof response === 'object' && response !== null) {
       if ('text' in response) {
-        extracted.text = response.text;
+        extracted.text = response['text'];
       }
       if ('content' in response) {
-        extracted.content = response.content;
+        extracted.content = response['content'];
       }
       if ('message' in response) {
-        const message = response.message;
+        const message = response['message'];
         if (typeof message === 'object' && message !== null && 'content' in message) {
-          extracted.content = message.content;
+          extracted.content = message['content'];
         }
       }
     }
@@ -65,12 +65,12 @@ export class ContentExtractor {
     const messages: Record<string, any>[] = [];
 
     if (typeof response === 'object' && response !== null) {
-      if ('messages' in response && Array.isArray(response.messages)) {
-        return response.messages;
-      } else if ('choices' in response && Array.isArray(response.choices)) {
-        for (const choice of response.choices) {
+      if ('messages' in response && Array.isArray(response['messages'])) {
+        return response['messages'];
+      } else if ('choices' in response && Array.isArray(response['choices'])) {
+        for (const choice of response['choices']) {
           if (typeof choice === 'object' && choice !== null && 'message' in choice) {
-            messages.push(choice.message);
+            messages.push(choice['message']);
           }
         }
       }

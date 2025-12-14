@@ -144,7 +144,7 @@ export class RetryConfig {
   }
 
   static fromDict(configDict: Record<string, any>): RetryConfig {
-    const strategyStr = configDict.strategy || 'exponential_backoff';
+    const strategyStr = configDict['strategy'] || 'exponential_backoff';
     let strategy: RetryStrategy;
     
     try {
@@ -154,22 +154,22 @@ export class RetryConfig {
     }
 
     return new RetryConfig({
-      enabled: configDict.enabled ?? true,
-      maxAttempts: configDict.max_attempts ?? 3,
-      baseDelay: configDict.base_delay ?? 1.0,
-      maxDelay: configDict.max_delay ?? 60.0,
-      exponentialBase: configDict.exponential_base ?? 2.0,
-      jitter: configDict.jitter ?? true,
-      retryOnStatusCodes: new Set(configDict.retry_on_status_codes || [429, 500, 502, 503, 504]),
-      retryOnErrors: configDict.retry_on_errors || [
+      enabled: configDict['enabled'] ?? true,
+      maxAttempts: configDict['max_attempts'] ?? 3,
+      baseDelay: configDict['base_delay'] ?? 1.0,
+      maxDelay: configDict['max_delay'] ?? 60.0,
+      exponentialBase: configDict['exponential_base'] ?? 2.0,
+      jitter: configDict['jitter'] ?? true,
+      retryOnStatusCodes: new Set(configDict['retry_on_status_codes'] || [429, 500, 502, 503, 504]),
+      retryOnErrors: configDict['retry_on_errors'] || [
         'timeout', 'rate_limit', 'service_unavailable', 'overloaded_error',
         'connection_error', 'read_timeout', 'write_timeout'
       ],
-      retryableExceptions: configDict.retryable_exceptions || [],
+      retryableExceptions: configDict['retryable_exceptions'] || [],
       strategy,
-      totalTimeout: configDict.total_timeout,
-      perAttemptTimeout: configDict.per_attempt_timeout,
-      providerConfig: configDict.provider_config || {}
+      totalTimeout: configDict['total_timeout'],
+      perAttemptTimeout: configDict['per_attempt_timeout'],
+      providerConfig: configDict['provider_config'] || {}
     });
   }
 

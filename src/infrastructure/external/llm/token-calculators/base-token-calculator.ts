@@ -154,7 +154,7 @@ export abstract class BaseTokenCalculator implements ITokenCalculator {
   }
 
   isModelSupported(modelName: string): boolean {
-    return modelName in this.getSupportedModels();
+    return this.getSupportedModels().includes(modelName);
   }
 
   getStats(): TokenCalculationStats {
@@ -194,8 +194,8 @@ export abstract class BaseTokenCalculator implements ITokenCalculator {
     }
 
     try {
-      const promptCost = tokenUsage.promptTokens * pricing.get("prompt", 0);
-      const completionCost = tokenUsage.completionTokens * pricing.get("completion", 0);
+      const promptCost = tokenUsage.promptTokens * (pricing["prompt"] || 0);
+      const completionCost = tokenUsage.completionTokens * (pricing["completion"] || 0);
       return promptCost + completionCost;
     } catch (error) {
       console.error(`计算成本失败: ${error}`);

@@ -6,4 +6,5 @@
 
 export { BaseTokenCalculator } from './base-token-calculator';
 export { OpenAITokenCalculator } from './openai-token-calculator';
-export { ITokenCalculator } from './token-calculator';
+export { ITokenCalculator } from './base-token-calculator';
+export { TokenCalculator } from './token-calculator';

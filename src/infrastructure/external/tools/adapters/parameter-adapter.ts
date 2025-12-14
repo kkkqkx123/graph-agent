@@ -205,10 +205,12 @@ export class ParameterAdapter {
     let result = { ...parameters };
 
     for (const [targetPath, transformation] of Object.entries(transformations)) {
-      const value = this.getParameterValue(transformation.source, parameters);
-      
-      if (value !== null) {
-        this.setParameterValue(result, targetPath, this.applyTransformation(value, transformation));
+      if (transformation && typeof transformation === 'object' && 'source' in transformation) {
+        const value = this.getParameterValue((transformation as any).source, parameters);
+        
+        if (value !== null) {
+          this.setParameterValue(result, targetPath, this.applyTransformation(value, transformation));
+        }
       }
     }
 
@@ -222,18 +224,24 @@ export class ParameterAdapter {
     for (let i = 0; i < keys.length - 1; i++) {
       const key = keys[i];
       
-      if (!current[key] || typeof current[key] !== 'object') {
+      if (key && (!current[key] || typeof current[key] !== 'object')) {
         current[key] = {};
       }
       
-      current = current[key];
+      if (key) {
+        current = current[key];
+      }
     }
     
-    current[keys[keys.length - 1]] = value;
+    const lastKey = keys[keys.length - 1];
+    if (lastKey) {
+      current[lastKey] = value;
+    }
   }
 
   private applyTransformation(value: any, transformation: any): any {
-    const { type, options } = transformation;
+    const type = transformation['type'];
+    const options = transformation['options'];
 
     switch (type) {
       case 'toString':

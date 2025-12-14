@@ -46,7 +46,7 @@ export class GeminiClient extends BaseLLMClient {
     // Convert OpenAI-style messages to Gemini format
     const systemInstruction = request.messages.find(msg => msg.role === 'system');
     const messages = request.messages.filter(msg => msg.role !== 'system');
-    
+
     const contents = messages.map(msg => ({
       role: msg.role === 'assistant' ? 'model' : 'user',
       parts: [{ text: msg.content }]
@@ -54,7 +54,7 @@ export class GeminiClient extends BaseLLMClient {
 
     // 获取模型配置以使用正确的默认值
     const modelConfig = this.getModelConfig();
-    
+
     const geminiRequest: any = {
       contents,
       generationConfig: {
@@ -127,7 +127,7 @@ export class GeminiClient extends BaseLLMClient {
       model,
       provider: 'google',
       maxTokens: config.maxTokens || 8192,
-      contextWindow: config.contextWindow || 150000,
+      contextWindow: config.contextWindow || 125000,
       temperature: config.temperature || 0.7,
       topP: config.topP || 1.0,
       frequencyPenalty: config.frequencyPenalty || 0.0,

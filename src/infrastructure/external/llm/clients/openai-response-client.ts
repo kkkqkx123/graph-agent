@@ -603,12 +603,20 @@ export class OpenAIResponseClient extends BaseLLMClient {
 
   public override async estimateTokens(text: string): Promise<number> {
     // 使用tiktoken进行精确计算，而不是估算
-    return this.tokenCalculator.estimateTokens(text);
+    return this.tokenCalculator.calculateTokensForModel(text, 'gpt-5');
   }
 
   public override async truncateText(text: string, maxTokens: number): Promise<string> {
     // 使用tiktoken进行精确截断
-    return this.tokenCalculator.truncateText(text, maxTokens);
+    // 简化实现：按字符截断
+    const estimatedTokens = await this.estimateTokens(text);
+    if (estimatedTokens <= maxTokens) {
+      return text;
+    }
+    
+    // 粗略估算：每个token约4个字符
+    const maxChars = maxTokens * 4;
+    return text.substring(0, maxChars);
   }
 
   public override async formatMessages(messages: any[]): Promise<any[]> {

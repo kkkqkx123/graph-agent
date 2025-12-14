@@ -1,6 +1,7 @@
 import { injectable, inject } from 'inversify';
 import { Tool } from '../../../../domain/tools/entities/tool';
-import { ToolId } from '../../../../domain/tools/value-objects/tool-id';
+import { ToolType } from '../../../../domain/tools/value-objects/tool-type';
+import { ToolStatus } from '../../../../domain/tools/value-objects/tool-status';
 import { ToolAdapter } from '../adapters/tool-adapter';
 
 @injectable()
@@ -19,8 +20,24 @@ export class ToolRegistry {
       tool.id,
       tool.name,
       tool.description,
+      tool.type,
+      tool.status,
       adaptedConfig,
-      tool.metadata
+      tool.parameters,
+      tool.returns,
+      tool.metadata,
+      tool.createdAt,
+      tool.updatedAt,
+      tool.createdBy,
+      tool.version,
+      tool.tags,
+      tool.category,
+      tool.isBuiltin,
+      tool.isEnabled,
+      tool.timeout,
+      tool.maxRetries,
+      tool.permissions,
+      tool.dependencies
     );
 
     // Validate tool configuration
@@ -33,7 +50,7 @@ export class ToolRegistry {
     this.tools.set(tool.id.value, adaptedTool);
 
     // Add to category if specified
-    const category = adaptedTool.metadata?.category || 'default';
+    const category = adaptedTool.metadata?.['category'] as string || 'default';
     if (!this.toolCategories.has(category)) {
       this.toolCategories.set(category, []);
     }
@@ -44,20 +61,20 @@ export class ToolRegistry {
     }
   }
 
-  unregisterTool(toolId: ToolId): void {
-    const tool = this.tools.get(toolId.value);
+  unregisterTool(toolId: Tool): void {
+    const tool = this.tools.get(toolId.id.value);
     if (!tool) {
       return;
     }
 
     // Remove from tools map
-    this.tools.delete(toolId.value);
+    this.tools.delete(toolId.id.value);
 
     // Remove from category
-    const category = tool.metadata?.category || 'default';
+    const category = tool.metadata?.['category'] as string || 'default';
     const categoryTools = this.toolCategories.get(category);
     if (categoryTools) {
-      const index = categoryTools.indexOf(toolId.value);
+      const index = categoryTools.indexOf(toolId.id.value);
       if (index > -1) {
         categoryTools.splice(index, 1);
       }
@@ -69,8 +86,8 @@ export class ToolRegistry {
     }
   }
 
-  getTool(toolId: ToolId): Tool | null {
-    return this.tools.get(toolId.value) || null;
+  getTool(toolId: Tool): Tool | null {
+    return this.tools.get(toolId.id.value) || null;
   }
 
   getToolByName(name: string): Tool | null {
@@ -103,7 +120,7 @@ export class ToolRegistry {
       if (
         tool.name.toLowerCase().includes(lowerQuery) ||
         tool.description.toLowerCase().includes(lowerQuery) ||
-        (tool.metadata?.tags && tool.metadata.tags.some((tag: string) => 
+        (tool.metadata?.['tags'] && Array.isArray(tool.metadata['tags']) && (tool.metadata['tags'] as string[]).some((tag: string) => 
           tag.toLowerCase().includes(lowerQuery)
         ))
       ) {
@@ -115,25 +132,25 @@ export class ToolRegistry {
   }
 
   getToolsByType(type: string): Tool[] {
-    return Array.from(this.tools.values()).filter(tool => tool.config.type === type);
+    return Array.from(this.tools.values()).filter(tool => tool.config['type'] === type);
   }
 
-  validateTool(toolId: ToolId): { valid: boolean; errors: string[] } {
-    const tool = this.tools.get(toolId.value);
+  validateTool(toolId: Tool): { valid: boolean; errors: string[] } {
+    const tool = this.tools.get(toolId.id.value);
     if (!tool) {
       return {
         valid: false,
-        errors: [`Tool with ID '${toolId.value}' not found`]
+        errors: [`Tool with ID '${toolId.id.value}' not found`]
       };
     }
 
     return this.toolAdapter.validateToolConfiguration(tool.config);
   }
 
-  updateTool(toolId: ToolId, updates: Partial<Tool>): void {
-    const existingTool = this.tools.get(toolId.value);
+  updateTool(toolId: Tool, updates: Partial<Tool>): void {
+    const existingTool = this.tools.get(toolId.id.value);
     if (!existingTool) {
-      throw new Error(`Tool with ID '${toolId.value}' not found`);
+      throw new Error(`Tool with ID '${toolId.id.value}' not found`);
     }
 
     // Create updated tool
@@ -142,8 +159,24 @@ export class ToolRegistry {
       existingTool.id,
       updates.name || existingTool.name,
       updates.description || existingTool.description,
+      updates.type || existingTool.type,
+      updates.status || existingTool.status,
       updatedConfig,
-      { ...existingTool.metadata, ...updates.metadata }
+      updates.parameters || existingTool.parameters,
+      updates.returns || existingTool.returns,
+      { ...existingTool.metadata, ...updates.metadata },
+      existingTool.createdAt,
+      new Date(),
+      existingTool.createdBy,
+      updates.version || existingTool.version,
+      updates.tags || existingTool.tags,
+      updates.category || existingTool.category,
+      updates.isBuiltin !== undefined ? updates.isBuiltin : existingTool.isBuiltin,
+      updates.isEnabled !== undefined ? updates.isEnabled : existingTool.isEnabled,
+      updates.timeout !== undefined ? updates.timeout : existingTool.timeout,
+      updates.maxRetries !== undefined ? updates.maxRetries : existingTool.maxRetries,
+      updates.permissions || existingTool.permissions,
+      updates.dependencies || existingTool.dependencies
     );
 
     // Validate updated configuration
@@ -153,17 +186,17 @@ export class ToolRegistry {
     }
 
     // Update the tool
-    this.tools.set(toolId.value, updatedTool);
+    this.tools.set(toolId.id.value, updatedTool);
 
     // Update category if changed
-    const oldCategory = existingTool.metadata?.category || 'default';
-    const newCategory = updatedTool.metadata?.category || 'default';
+    const oldCategory = existingTool.metadata?.['category'] as string || 'default';
+    const newCategory = updatedTool.metadata?.['category'] as string || 'default';
 
     if (oldCategory !== newCategory) {
       // Remove from old category
       const oldCategoryTools = this.toolCategories.get(oldCategory);
       if (oldCategoryTools) {
-        const index = oldCategoryTools.indexOf(toolId.value);
+        const index = oldCategoryTools.indexOf(toolId.id.value);
         if (index > -1) {
           oldCategoryTools.splice(index, 1);
         }
@@ -179,8 +212,8 @@ export class ToolRegistry {
       }
       
       const newCategoryTools = this.toolCategories.get(newCategory)!;
-      if (!newCategoryTools.includes(toolId.value)) {
-        newCategoryTools.push(toolId.value);
+      if (!newCategoryTools.includes(toolId.id.value)) {
+        newCategoryTools.push(toolId.id.value);
       }
     }
   }
@@ -201,7 +234,7 @@ export class ToolRegistry {
 
     // Count tools by type
     for (const tool of this.tools.values()) {
-      const type = tool.config.type;
+      const type = tool.config['type'] as string;
       toolsByType[type] = (toolsByType[type] || 0) + 1;
     }
 

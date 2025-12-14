@@ -60,7 +60,7 @@ export class FunctionRegistry {
     try {
       return await func(...args);
     } catch (error) {
-      throw new Error(`Error calling function '${name}': ${error.message}`);
+      throw new Error(`Error calling function '${name}': ${error instanceof Error ? error.message : String(error)}`);
     }
   }
 

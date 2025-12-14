@@ -39,10 +39,10 @@ export class ToolAdapter {
     const adaptedParameters = { ...rawParameters };
 
     // Apply parameter transformations if configured
-    if (tool.config.parameterTransformations) {
+    if (tool.config['parameterTransformations']) {
       return this.parameterAdapter.transformParameters(
         adaptedParameters,
-        tool.config.parameterTransformations
+        tool.config['parameterTransformations']
       );
     }
 
@@ -51,10 +51,10 @@ export class ToolAdapter {
 
   adaptExecutionResult(tool: Tool, rawResult: any): ToolResult {
     // Apply result transformations if configured
-    if (tool.config.resultTransformations) {
+    if (tool.config['resultTransformations']) {
       const transformedResult = this.parameterAdapter.transformParameters(
         rawResult,
-        tool.config.resultTransformations
+        tool.config['resultTransformations']
       );
       
       return new ToolResult(
@@ -106,7 +106,7 @@ export class ToolAdapter {
   }
 
   private inferToolType(toolConfig: any): string {
-    if (toolConfig.functionName) {
+    if (toolConfig['functionName']) {
       return 'builtin';
     }
 
@@ -126,8 +126,8 @@ export class ToolAdapter {
   }
 
   private generateToolName(toolConfig: any): string {
-    if (toolConfig.functionName) {
-      return toolConfig.functionName;
+    if (toolConfig['functionName']) {
+      return toolConfig['functionName'];
     }
 
     if (toolConfig.command) {
@@ -223,7 +223,7 @@ export class ToolAdapter {
   }
 
   private validateBuiltinToolConfig(toolConfig: any, errors: string[]): void {
-    if (!toolConfig.functionName) {
+    if (!toolConfig['functionName']) {
       errors.push('Builtin tool requires functionName');
     }
   }

@@ -1,8 +1,8 @@
 import { injectable, inject } from 'inversify';
-import { RateLimiter as IRateLimiter } from '../../../../domain/llm/interfaces/rate-limiter.interface';
+import { RateLimiter } from '../../../../domain/llm/interfaces/rate-limiter.interface';
 
 @injectable()
-export class TokenBucketLimiter implements IRateLimiter {
+export class TokenBucketLimiter implements RateLimiter {
   private tokens: number;
   private lastRefill: number;
   private readonly capacity: number;
@@ -34,7 +34,8 @@ export class TokenBucketLimiter implements IRateLimiter {
         await this.checkLimit();
         break;
       } catch (error) {
-        const waitTime = this.extractWaitTime(error.message);
+        const errorMessage = error instanceof Error ? error.message : String(error);
+        const waitTime = this.extractWaitTime(errorMessage);
         if (waitTime > 0) {
           await this.delay(waitTime);
         } else {
@@ -73,7 +74,7 @@ export class TokenBucketLimiter implements IRateLimiter {
 
   private extractWaitTime(errorMessage: string): number {
     const match = errorMessage.match(/wait (\d+)ms/);
-    return match ? parseInt(match[1], 10) : 0;
+    return match && match[1] ? parseInt(match[1], 10) : 0;
   }
 
   private delay(ms: number): Promise<void> {

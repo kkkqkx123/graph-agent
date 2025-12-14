@@ -28,7 +28,7 @@ export class OpenAITokenCalculator extends BaseTokenCalculator {
     try {
       // 动态导入tiktoken
       const tiktoken = await import('tiktoken');
-      this.encoding = tiktoken.get_encoding(this.encodingName);
+      this.encoding = tiktoken.get_encoding(this.encodingName as any);
       console.debug(`OpenAI计算器使用编码器: ${this.encoding.name}`);
     } catch (error) {
       console.error('加载tiktoken编码器失败:', error);
@@ -150,42 +150,42 @@ export class OpenAITokenCalculator extends BaseTokenCalculator {
       const extendedTokens: Record<string, number> = {};
 
       // 音频token
-      const audioTokens = promptDetails.audio_tokens || 0;
+      const audioTokens = promptDetails['audio_tokens'] || 0;
       if (audioTokens > 0) {
-        extendedTokens.prompt_audio_tokens = audioTokens;
+        extendedTokens['prompt_audio_tokens'] = audioTokens;
       }
 
-      const completionAudioTokens = completionDetails.audio_tokens || 0;
+      const completionAudioTokens = completionDetails['audio_tokens'] || 0;
       if (completionAudioTokens > 0) {
-        extendedTokens.completion_audio_tokens = completionAudioTokens;
+        extendedTokens['completion_audio_tokens'] = completionAudioTokens;
       }
 
       // 推理token
-      const reasoningTokens = completionDetails.reasoning_tokens || 0;
+      const reasoningTokens = completionDetails['reasoning_tokens'] || 0;
       if (reasoningTokens > 0) {
-        extendedTokens.reasoning_tokens = reasoningTokens;
+        extendedTokens['reasoning_tokens'] = reasoningTokens;
       }
 
       // 预测token
-      const acceptedPredictionTokens = completionDetails.accepted_prediction_tokens || 0;
-      const rejectedPredictionTokens = completionDetails.rejected_prediction_tokens || 0;
+      const acceptedPredictionTokens = completionDetails['accepted_prediction_tokens'] || 0;
+      const rejectedPredictionTokens = completionDetails['rejected_prediction_tokens'] || 0;
       if (acceptedPredictionTokens > 0) {
-        extendedTokens.accepted_prediction_tokens = acceptedPredictionTokens;
+        extendedTokens['accepted_prediction_tokens'] = acceptedPredictionTokens;
       }
       if (rejectedPredictionTokens > 0) {
-        extendedTokens.rejected_prediction_tokens = rejectedPredictionTokens;
+        extendedTokens['rejected_prediction_tokens'] = rejectedPredictionTokens;
       }
 
       // 思考token
-      const thoughtsTokens = completionDetails.thoughts_tokens || 0;
+      const thoughtsTokens = completionDetails['thoughts_tokens'] || 0;
       if (thoughtsTokens > 0) {
-        extendedTokens.thoughts_tokens = thoughtsTokens;
+        extendedTokens['thoughts_tokens'] = thoughtsTokens;
       }
 
       // 工具调用token
-      const toolCallTokens = completionDetails.tool_call_tokens || 0;
+      const toolCallTokens = completionDetails['tool_call_tokens'] || 0;
       if (toolCallTokens > 0) {
-        extendedTokens.tool_call_tokens = toolCallTokens;
+        extendedTokens['tool_call_tokens'] = toolCallTokens;
       }
 
       const tokenUsage: TokenUsage = {
@@ -230,7 +230,7 @@ export class OpenAITokenCalculator extends BaseTokenCalculator {
     }
   }
 
-  getSupportedModels(): string[] {
+  override getSupportedModels(): string[] {
     // 从配置文件获取支持的模型
     const models = this.configManager.get('llm.openai.supportedModels', []);
     if (models.length > 0) {
@@ -249,7 +249,7 @@ export class OpenAITokenCalculator extends BaseTokenCalculator {
     ];
   }
 
-  getModelPricing(modelName: string): Record<string, number> | null {
+  override getModelPricing(modelName: string): Record<string, number> | null {
     // 从配置文件获取定价信息
     const pricing = this.configManager.get(`llm.openai.pricing.${modelName}`, null);
     if (pricing) {
@@ -334,12 +334,12 @@ export class OpenAITokenCalculator extends BaseTokenCalculator {
 
     for (let i = 0; i < texts.length; i++) {
       const text = texts[i];
-      const cachedResult = this.cache.get(text);
+      const cachedResult = this.cache.get(text!);
       if (cachedResult !== undefined) {
         results[i] = cachedResult;
       } else {
         results[i] = null;
-        uncachedTexts.push(text);
+        uncachedTexts.push(text!);
         uncachedIndices.push(i);
       }
     }
@@ -356,14 +356,19 @@ export class OpenAITokenCalculator extends BaseTokenCalculator {
         for (let i = 0; i < uncachedTexts.length; i++) {
           const tokenCount = uncachedTokens[i];
           const originalIndex = uncachedIndices[i];
-          results[originalIndex] = tokenCount;
-          this.cache.set(uncachedTexts[i], tokenCount);
+          const text = uncachedTexts[i];
+          if (originalIndex !== undefined && text !== undefined) {
+            results[originalIndex] = tokenCount;
+            this.cache.set(text, tokenCount);
+          }
         }
       } catch (error) {
         console.error(`批量计算OpenAI token失败: ${error}`);
         // 设置失败的结果为null
         for (const originalIndex of uncachedIndices) {
-          results[originalIndex] = null;
+          if (originalIndex !== undefined) {
+            results[originalIndex] = null;
+          }
         }
       }
     }

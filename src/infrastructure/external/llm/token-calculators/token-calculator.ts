@@ -25,7 +25,7 @@ export class TokenCalculator {
       totalTokens += 1;
     }
     if (request.stop) {
-      totalTokens += this.calculateTextTokens(request.stop);
+      totalTokens += this.calculateTextTokens(request.stop.join(' '));
     }
 
     return Math.ceil(totalTokens);
@@ -106,8 +106,10 @@ export class TokenCalculator {
     let totalTokens = 0;
     
     for (const message of messages) {
-      totalTokens += this.calculateTextTokens(message.content);
-      totalTokens += 4; // 格式开销
+      if (message && message.content) {
+        totalTokens += this.calculateTextTokens(message.content);
+        totalTokens += 4; // 格式开销
+      }
     }
     
     return totalTokens;
@@ -149,13 +151,15 @@ export class TokenCalculator {
     // 从最新消息开始添加，直到达到限制
     for (let i = otherMessages.length - 1; i >= 0; i--) {
       const message = otherMessages[i];
-      const messageTokens = this.calculateTextTokens(message.content) + 4;
-      
-      if (currentTokens + messageTokens <= maxTokens) {
-        truncatedMessages.unshift(message);
-        currentTokens += messageTokens;
-      } else {
-        break;
+      if (message && message.content) {
+        const messageTokens = this.calculateTextTokens(message.content) + 4;
+        
+        if (currentTokens + messageTokens <= maxTokens) {
+          truncatedMessages.unshift(message);
+          currentTokens += messageTokens;
+        } else {
+          break;
+        }
       }
     }
     

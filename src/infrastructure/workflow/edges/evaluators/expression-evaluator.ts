@@ -12,7 +12,7 @@ export class ExpressionEvaluator implements IExpressionEvaluator {
       // Evaluate the expression
       return this.evaluateExpression(evaluatedExpression, context);
     } catch (error) {
-      throw new Error(`Expression evaluation failed: ${error.message}`);
+      throw new Error(`Expression evaluation failed: ${error instanceof Error ? error.message : String(error)}`);
     }
   }
 
@@ -25,7 +25,7 @@ export class ExpressionEvaluator implements IExpressionEvaluator {
       const func = new Function(...Object.keys(evalContext), `return ${expression}`);
       return func(...Object.values(evalContext));
     } catch (error) {
-      throw new Error(`Failed to evaluate expression: ${error.message}`);
+      throw new Error(`Failed to evaluate expression: ${error instanceof Error ? error.message : String(error)}`);
     }
   }
 
@@ -33,9 +33,9 @@ export class ExpressionEvaluator implements IExpressionEvaluator {
     const evalContext: Record<string, any> = {};
     
     // Add common utility functions
-    evalContext.abs = Math.abs;
-    evalContext.ceil = Math.ceil;
-    evalContext.floor = Math.floor;
+    evalContext['abs'] = Math.abs;
+    evalContext['ceil'] = Math.ceil;
+    evalContext['floor'] = Math.floor;
     evalContext.max = Math.max;
     evalContext.min = Math.min;
     evalContext.pow = Math.pow;
@@ -75,7 +75,7 @@ export class ExpressionEvaluator implements IExpressionEvaluator {
     evalContext.isNumber = (value: any) => typeof value === 'number';
     evalContext.isBoolean = (value: any) => typeof value === 'boolean';
     evalContext.isObject = (value: any) => typeof value === 'object' && value !== null && !Array.isArray(value);
-    evalContext.isArray = Array.isArray;
+    evalContext['isArray'] = Array['isArray'];
     evalContext.isNull = (value: any) => value === null;
     evalContext.isUndefined = (value: any) => value === undefined;
     
@@ -169,7 +169,7 @@ export class ExpressionEvaluator implements IExpressionEvaluator {
       // This is a simplified validation - in production, use a proper parser
       new Function(`return ${expression}`);
     } catch (error) {
-      errors.push(`Invalid expression syntax: ${error.message}`);
+      errors.push(`Invalid expression syntax: ${error instanceof Error ? error.message : String(error)}`);
     }
     
     return {
@@ -198,7 +198,7 @@ export class ExpressionEvaluator implements IExpressionEvaluator {
       const func = new Function(...Object.keys(evalContext), `return ${evaluatedExpression}`);
       return func(...Object.values(evalContext));
     } catch (error) {
-      throw new Error(`Expression evaluation failed: ${error.message}`);
+      throw new Error(`Expression evaluation failed: ${error instanceof Error ? error.message : String(error)}`);
     }
   }
 
@@ -214,7 +214,7 @@ export class ExpressionEvaluator implements IExpressionEvaluator {
       try {
         results[expression] = await this.evaluate(expression, context);
       } catch (error) {
-        errors[expression] = error.message;
+        errors[expression] = error instanceof Error ? error.message : String(error);
       }
     }
     

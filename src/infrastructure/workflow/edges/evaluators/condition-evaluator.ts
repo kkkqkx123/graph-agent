@@ -34,7 +34,7 @@ export class ConditionEvaluator implements IConditionEvaluator {
           throw new Error(`Unknown condition type: ${condition.type}`);
       }
     } catch (error) {
-      throw new Error(`Condition evaluation failed: ${error.message}`);
+      throw new Error(`Condition evaluation failed: ${error instanceof Error ? error.message : String(error)}`);
     }
   }
 
@@ -47,7 +47,7 @@ export class ConditionEvaluator implements IConditionEvaluator {
       // In production, use a proper expression evaluator
       return Function('"use strict"; return (' + evaluatedExpression + ')')();
     } catch (error) {
-      throw new Error(`Failed to evaluate expression: ${error.message}`);
+      throw new Error(`Failed to evaluate expression: ${error instanceof Error ? error.message : String(error)}`);
     }
   }
 
@@ -92,9 +92,9 @@ export class ConditionEvaluator implements IConditionEvaluator {
     
     switch (operator) {
       case 'and':
-        return operands.every(operand => this.evaluateCondition(operand, context));
+        return operands.every((operand: any) => this.evaluateCondition(operand, context));
       case 'or':
-        return operands.some(operand => this.evaluateCondition(operand, context));
+        return operands.some((operand: any) => this.evaluateCondition(operand, context));
       case 'not':
         if (operands.length !== 1) {
           throw new Error('NOT operator requires exactly one operand');
@@ -144,7 +144,7 @@ export class ConditionEvaluator implements IConditionEvaluator {
     try {
       return func(preparedParameters, context);
     } catch (error) {
-      throw new Error(`Custom function execution failed: ${error.message}`);
+      throw new Error(`Custom function execution failed: ${error instanceof Error ? error.message : String(error)}`);
     }
   }
 
@@ -155,7 +155,7 @@ export class ConditionEvaluator implements IConditionEvaluator {
     const expectedValue = condition.value;
     
     // Get node result from context
-    const nodeResult = context.getNodeResult(new NodeId(nodeId));
+    const nodeResult = context.getNodeResult(nodeId);
     
     if (nodeResult === undefined) {
       throw new Error(`Node result not found for node: ${nodeId}`);
