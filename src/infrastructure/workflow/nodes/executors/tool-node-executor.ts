@@ -1,5 +1,6 @@
 import { injectable, inject } from 'inversify';
 import { INodeExecutor } from '../../../../domain/workflow/graph/interfaces/node-executor.interface';
+import { IExecutionContext } from '../../../../domain/workflow/graph/interfaces/execution-context.interface';
 import { Node } from '../../../../domain/workflow/graph/entities/node';
 import { ExecutionContext } from '../../engine/execution-context';
 import { IToolExecutor } from '../../../../domain/tools/interfaces/tool-executor.interface';
@@ -15,7 +16,7 @@ export class ToolNodeExecutor implements INodeExecutor {
     @inject('ToolExecutorFactory') private toolExecutorFactory: any
   ) {}
 
-  async execute(node: Node, context: ExecutionContext): Promise<any> {
+  async execute(node: Node, context: IExecutionContext): Promise<any> {
     try {
       // Get tool
       const tool = await this.getTool(node);
@@ -78,7 +79,7 @@ export class ToolNodeExecutor implements INodeExecutor {
     throw new Error('Tool node requires either toolId or toolName configuration');
   }
 
-  private prepareExecution(node: Node, context: ExecutionContext): ToolExecution {
+  private prepareExecution(node: Node, context: IExecutionContext): ToolExecution {
     const config = node.config;
     
     // Prepare parameters
@@ -92,7 +93,7 @@ export class ToolNodeExecutor implements INodeExecutor {
     );
   }
 
-  private prepareParameters(node: Node, context: ExecutionContext): any {
+  private prepareParameters(node: Node, context: IExecutionContext): any {
     const config = node.config;
     let parameters: any = {};
     
@@ -127,7 +128,7 @@ export class ToolNodeExecutor implements INodeExecutor {
     return parameters;
   }
 
-  private getContextValue(path: string, context: ExecutionContext): any {
+  private getContextValue(path: string, context: IExecutionContext): any {
     const parts = path.split('.');
     let current: any = context;
     
@@ -321,7 +322,7 @@ export class ToolNodeExecutor implements INodeExecutor {
     return this.toolExecutorFactory.createExecutor(tool.config.type);
   }
 
-  private processResult(result: any, node: Node, context: ExecutionContext): any {
+  private processResult(result: any, node: Node, context: IExecutionContext): any {
     const config = node.config;
     let processedResult = result.data;
     
@@ -392,6 +393,32 @@ export class ToolNodeExecutor implements INodeExecutor {
     return `exec_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
   }
 
+  async canExecute(node: Node, context: IExecutionContext): Promise<boolean> {
+    // Check if node has required configuration
+    const config = node.config;
+    
+    if (!config.toolId && !config.toolName) {
+      return false;
+    }
+    
+    // Check if tool exists
+    if (config.toolId) {
+      const tool = this.toolRegistry.getTool(new ToolId(config.toolId));
+      if (!tool) {
+        return false;
+      }
+    }
+    
+    if (config.toolName) {
+      const tool = this.toolRegistry.getToolByName(config.toolName);
+      if (!tool) {
+        return false;
+      }
+    }
+    
+    return true;
+  }
+
   async validate(node: Node): Promise<{ valid: boolean; errors: string[] }> {
     const errors: string[] = [];
     const config = node.config;
@@ -429,5 +456,8 @@ export class ToolNodeExecutor implements INodeExecutor {
       valid: errors.length === 0,
       errors
     };
+  }
+  getSupportedNodeTypes(): string[] {
+    return ['tool'];
   }
 }

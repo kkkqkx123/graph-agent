@@ -1,5 +1,6 @@
 import { injectable, inject } from 'inversify';
 import { INodeExecutor } from '../../../../domain/workflow/graph/interfaces/node-executor.interface';
+import { IExecutionContext } from '../../../../domain/workflow/graph/interfaces/execution-context.interface';
 import { Node } from '../../../../domain/workflow/graph/entities/node';
 import { ExecutionContext } from '../../engine/execution-context';
 import { ILLMClient } from '../../../../domain/llm/interfaces/llm-client.interface';
@@ -13,7 +14,7 @@ export class LLMNodeExecutor implements INodeExecutor {
     @inject('LLMClientFactory') private llmClientFactory: any
   ) {}
 
-  async execute(node: Node, context: ExecutionContext): Promise<any> {
+  async execute(node: Node, context: IExecutionContext): Promise<any> {
     try {
       // Get LLM client
       const client = await this.getLLMClient(node);
@@ -44,7 +45,7 @@ export class LLMNodeExecutor implements INodeExecutor {
     return this.llmClientFactory.getClient(provider);
   }
 
-  private prepareRequest(node: Node, context: ExecutionContext): LLMRequest {
+  private prepareRequest(node: Node, context: IExecutionContext): LLMRequest {
     const config = node.config;
     
     // Prepare messages
@@ -61,7 +62,7 @@ export class LLMNodeExecutor implements INodeExecutor {
     );
   }
 
-  private prepareMessages(node: Node, context: ExecutionContext): any[] {
+  private prepareMessages(node: Node, context: IExecutionContext): any[] {
     const config = node.config;
     const messages: any[] = [];
     
@@ -96,7 +97,7 @@ export class LLMNodeExecutor implements INodeExecutor {
     return messages;
   }
 
-  private interpolateTemplate(template: string, context: ExecutionContext): string {
+  private interpolateTemplate(template: string, context: IExecutionContext): string {
     // Replace variables in template with context values
     return template.replace(/\{\{(\w+(?:\.\w+)*)\}\}/g, (match, path) => {
       const value = this.getContextValue(path, context);
@@ -104,7 +105,7 @@ export class LLMNodeExecutor implements INodeExecutor {
     });
   }
 
-  private getContextValue(path: string, context: ExecutionContext): any {
+  private getContextValue(path: string, context: IExecutionContext): any {
     const parts = path.split('.');
     let current: any = context;
     
@@ -123,7 +124,7 @@ export class LLMNodeExecutor implements INodeExecutor {
     return current;
   }
 
-  private getHistoryMessages(context: ExecutionContext, limit: number): any[] {
+  private getHistoryMessages(context: IExecutionContext, limit: number): any[] {
     // Get conversation history from context
     const history = context.getVariable('conversation_history') || [];
     const recentHistory = history.slice(-limit);
@@ -134,7 +135,7 @@ export class LLMNodeExecutor implements INodeExecutor {
     }));
   }
 
-  private getContextMessages(node: Node, context: ExecutionContext): any[] {
+  private getContextMessages(node: Node, context: IExecutionContext): any[] {
     const messages: any[] = [];
     const config = node.config;
     
@@ -157,7 +158,7 @@ export class LLMNodeExecutor implements INodeExecutor {
     return messages;
   }
 
-  private processResponse(response: LLMResponse, node: Node, context: ExecutionContext): any {
+  private processResponse(response: LLMResponse, node: Node, context: IExecutionContext): any {
     const config = node.config;
     
     // Parse response based on expected format
@@ -306,6 +307,21 @@ export class LLMNodeExecutor implements INodeExecutor {
     return `req_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
   }
 
+  async canExecute(node: Node, context: IExecutionContext): Promise<boolean> {
+    // Check if node has required configuration
+    const config = node.config;
+    
+    if (!config.provider && !config.model) {
+      return false;
+    }
+    
+    if (!config.userMessage && !config.systemMessage) {
+      return false;
+    }
+    
+    return true;
+  }
+
   async validate(node: Node): Promise<{ valid: boolean; errors: string[] }> {
     const errors: string[] = [];
     const config = node.config;
@@ -337,5 +353,8 @@ export class LLMNodeExecutor implements INodeExecutor {
       valid: errors.length === 0,
       errors
     };
+  }
+  getSupportedNodeTypes(): string[] {
+    return ['llm'];
   }
 }

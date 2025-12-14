@@ -1,8 +1,9 @@
 import { Graph } from '../../../../domain/workflow/graph/entities/graph';
 import { NodeId } from '../../../../domain/workflow/graph/value-objects/node-id';
 import { EdgeId } from '../../../../domain/workflow/graph/value-objects/edge-id';
+import { IExecutionContext } from '../../../../domain/workflow/graph/interfaces/execution-context.interface';
 
-export class ExecutionContext {
+export class ExecutionContext implements IExecutionContext {
   private readonly graph: Graph;
   private readonly input: any;
   private readonly startTime: number;

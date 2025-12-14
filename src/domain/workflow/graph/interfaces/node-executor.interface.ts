@@ -1,19 +1,19 @@
 import { Node } from '../entities/node';
+import { IExecutionContext } from './execution-context.interface';
 
 /**
  * 节点执行器接口
  *
- * 注意：这里的 ExecutionContext 使用基础设施层的定义，
- * 因为节点执行器是在基础设施层实现的
+ * 定义了节点执行的标准契约，包括执行、验证和类型支持
  */
 export interface INodeExecutor {
   /**
    * 执行节点
    * @param node 节点实例
-   * @param context 执行上下文（基础设施层）
+   * @param context 执行上下文
    * @returns 执行结果
    */
-  execute(node: Node, context: any): Promise<any>;
+  execute(node: Node, context: IExecutionContext): Promise<any>;
 
   /**
    * 验证节点是否可以执行
@@ -21,7 +21,7 @@ export interface INodeExecutor {
    * @param context 执行上下文
    * @returns 是否可以执行
    */
-  canExecute(node: Node, context: any): Promise<boolean>;
+  canExecute(node: Node, context: IExecutionContext): Promise<boolean>;
 
   /**
    * 获取执行器支持的节点类型

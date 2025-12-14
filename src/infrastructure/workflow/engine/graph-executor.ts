@@ -6,7 +6,7 @@ import { NodeId } from '../../../../domain/workflow/graph/value-objects/node-id'
 import { ExecutionContext } from './execution-context';
 import { StateManager } from './state-manager';
 import { NodeExecutorFactory } from '../nodes/factories/node-executor-factory';
-import { ConditionEvaluator } from '../edges/evaluators/condition-evaluator';
+import { EdgeEvaluator } from '../edges/evaluators/edge-evaluator';
 import { ExecutionStrategy } from '../strategies/execution-strategy';
 import { ParallelStrategy } from '../strategies/parallel-strategy';
 import { SequentialStrategy } from '../strategies/sequential-strategy';
@@ -15,7 +15,7 @@ import { SequentialStrategy } from '../strategies/sequential-strategy';
 export class GraphExecutor {
   constructor(
     @inject('NodeExecutorFactory') private nodeExecutorFactory: NodeExecutorFactory,
-    @inject('ConditionEvaluator') private conditionEvaluator: ConditionEvaluator,
+    @inject('EdgeEvaluator') private edgeEvaluator: EdgeEvaluator,
     @inject('StateManager') private stateManager: StateManager
   ) {}
 
@@ -58,8 +58,8 @@ export class GraphExecutor {
   }
 
   async evaluateEdge(edge: Edge, context: ExecutionContext): Promise<boolean> {
-    // Evaluate condition
-    const result = await this.conditionEvaluator.evaluate(edge, context);
+    // Evaluate edge condition/transition
+    const result = await this.edgeEvaluator.evaluate(edge, context);
     
     // Update state
     await this.stateManager.updateEdgeState(context, edge.id, result);

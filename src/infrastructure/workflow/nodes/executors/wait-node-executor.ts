@@ -1,11 +1,12 @@
 import { injectable } from 'inversify';
 import { INodeExecutor } from '../../../../domain/workflow/graph/interfaces/node-executor.interface';
+import { IExecutionContext } from '../../../../domain/workflow/graph/interfaces/execution-context.interface';
 import { Node } from '../../../../domain/workflow/graph/entities/node';
 import { ExecutionContext } from '../../engine/execution-context';
 
 @injectable()
 export class WaitNodeExecutor implements INodeExecutor {
-  async execute(node: Node, context: ExecutionContext): Promise<any> {
+  async execute(node: Node, context: IExecutionContext): Promise<any> {
     try {
       const config = node.config;
       const waitTime = this.calculateWaitTime(config, context);
@@ -42,7 +43,7 @@ export class WaitNodeExecutor implements INodeExecutor {
     }
   }
 
-  private calculateWaitTime(config: any, context: ExecutionContext): number {
+  private calculateWaitTime(config: any, context: IExecutionContext): number {
     const waitType = config.type || 'fixed';
     
     switch (waitType) {
@@ -71,7 +72,7 @@ export class WaitNodeExecutor implements INodeExecutor {
     return duration;
   }
 
-  private getDynamicWaitTime(config: any, context: ExecutionContext): number {
+  private getDynamicWaitTime(config: any, context: IExecutionContext): number {
     const source = config.source;
     
     if (!source) {
@@ -112,7 +113,7 @@ export class WaitNodeExecutor implements INodeExecutor {
     return waitTime;
   }
 
-  private getExponentialWaitTime(config: any, context: ExecutionContext): number {
+  private getExponentialWaitTime(config: any, context: IExecutionContext): number {
     const baseTime = config.baseTime || 1000;
     const multiplier = config.multiplier || 2;
     const maxTime = config.maxTime || 60000;
@@ -149,7 +150,7 @@ export class WaitNodeExecutor implements INodeExecutor {
     return Math.floor(Math.random() * (max - min + 1)) + min;
   }
 
-  private getScheduledWaitTime(config: any, context: ExecutionContext): number {
+  private getScheduledWaitTime(config: any, context: IExecutionContext): number {
     const scheduledTime = config.scheduledTime;
     const timezone = config.timezone || 'UTC';
     
@@ -200,7 +201,7 @@ export class WaitNodeExecutor implements INodeExecutor {
     return waitTime;
   }
 
-  private getContextValue(path: string, context: ExecutionContext): any {
+  private getContextValue(path: string, context: IExecutionContext): any {
     const parts = path.split('.');
     let current: any = context;
     
@@ -221,6 +222,27 @@ export class WaitNodeExecutor implements INodeExecutor {
 
   private wait(milliseconds: number): Promise<void> {
     return new Promise(resolve => setTimeout(resolve, milliseconds));
+  }
+
+  async canExecute(node: Node, context: IExecutionContext): Promise<boolean> {
+    // Wait nodes can always execute if they have valid configuration
+    const config = node.config;
+    const waitType = config.type || 'fixed';
+    
+    switch (waitType) {
+      case 'fixed':
+        return config.duration !== undefined && typeof config.duration === 'number' && config.duration >= 0;
+      case 'dynamic':
+        return config.source !== undefined;
+      case 'exponential':
+        return true; // Can always execute, will use defaults
+      case 'random':
+        return config.min !== undefined && config.max !== undefined && config.min < config.max;
+      case 'scheduled':
+        return config.scheduledTime !== undefined;
+      default:
+        return false;
+    }
   }
 
   async validate(node: Node): Promise<{ valid: boolean; errors: string[] }> {
@@ -283,5 +305,8 @@ export class WaitNodeExecutor implements INodeExecutor {
       valid: errors.length === 0,
       errors
     };
+  }
+  getSupportedNodeTypes(): string[] {
+    return ['wait'];
   }
 }

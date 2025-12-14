@@ -1,11 +1,12 @@
 import { injectable } from 'inversify';
 import { INodeExecutor } from '../../../../domain/workflow/graph/interfaces/node-executor.interface';
+import { IExecutionContext } from '../../../../domain/workflow/graph/interfaces/execution-context.interface';
 import { Node } from '../../../../domain/workflow/graph/entities/node';
 import { ExecutionContext } from '../../engine/execution-context';
 
 @injectable()
 export class ConditionNodeExecutor implements INodeExecutor {
-  async execute(node: Node, context: ExecutionContext): Promise<any> {
+  async execute(node: Node, context: IExecutionContext): Promise<any> {
     try {
       // Evaluate condition
       const result = this.evaluateCondition(node, context);
@@ -28,7 +29,7 @@ export class ConditionNodeExecutor implements INodeExecutor {
     }
   }
 
-  private evaluateCondition(node: Node, context: ExecutionContext): boolean {
+  private evaluateCondition(node: Node, context: IExecutionContext): boolean {
     const config = node.config;
     const condition = config.condition;
     
@@ -52,7 +53,7 @@ export class ConditionNodeExecutor implements INodeExecutor {
     }
   }
 
-  private evaluateExpression(expression: string, context: ExecutionContext): boolean {
+  private evaluateExpression(expression: string, context: IExecutionContext): boolean {
     // Simple expression evaluation
     // In a real implementation, you would use a proper expression parser
     
@@ -69,7 +70,7 @@ export class ConditionNodeExecutor implements INodeExecutor {
     }
   }
 
-  private evaluateComparison(condition: any, context: ExecutionContext): boolean {
+  private evaluateComparison(condition: any, context: IExecutionContext): boolean {
     const left = this.getValue(condition.left, context);
     const right = this.getValue(condition.right, context);
     const operator = condition.operator;
@@ -104,7 +105,7 @@ export class ConditionNodeExecutor implements INodeExecutor {
     }
   }
 
-  private evaluateLogical(condition: any, context: ExecutionContext): boolean {
+  private evaluateLogical(condition: any, context: IExecutionContext): boolean {
     const operator = condition.operator;
     const operands = condition.operands || [];
     
@@ -123,7 +124,7 @@ export class ConditionNodeExecutor implements INodeExecutor {
     }
   }
 
-  private evaluateExistence(condition: any, context: ExecutionContext): boolean {
+  private evaluateExistence(condition: any, context: IExecutionContext): boolean {
     const path = condition.path;
     const value = this.getContextValue(path, context);
     
@@ -145,7 +146,7 @@ export class ConditionNodeExecutor implements INodeExecutor {
     }
   }
 
-  private evaluateCustom(condition: any, context: ExecutionContext): boolean {
+  private evaluateCustom(condition: any, context: IExecutionContext): boolean {
     // Custom condition evaluation
     // This would typically involve calling a custom function
     
@@ -169,7 +170,7 @@ export class ConditionNodeExecutor implements INodeExecutor {
     }
   }
 
-  private getValue(value: any, context: ExecutionContext): any {
+  private getValue(value: any, context: IExecutionContext): any {
     if (typeof value === 'string' && value.startsWith('{{') && value.endsWith('}}')) {
       // Extract variable path
       const path = value.slice(2, -2).trim();
@@ -179,7 +180,7 @@ export class ConditionNodeExecutor implements INodeExecutor {
     return value;
   }
 
-  private getContextValue(path: string, context: ExecutionContext): any {
+  private getContextValue(path: string, context: IExecutionContext): any {
     const parts = path.split('.');
     let current: any = context;
     
@@ -198,14 +199,14 @@ export class ConditionNodeExecutor implements INodeExecutor {
     return current;
   }
 
-  private interpolateTemplate(template: string, context: ExecutionContext): string {
+  private interpolateTemplate(template: string, context: IExecutionContext): string {
     return template.replace(/\{\{(\w+(?:\.\w+)*)\}\}/g, (match, path) => {
       const value = this.getContextValue(path, context);
       return value !== undefined ? String(value) : 'undefined';
     });
   }
 
-  private prepareParameters(parameters: any, context: ExecutionContext): any {
+  private prepareParameters(parameters: any, context: IExecutionContext): any {
     const prepared: any = {};
     
     for (const [key, value] of Object.entries(parameters)) {
@@ -218,6 +219,17 @@ export class ConditionNodeExecutor implements INodeExecutor {
     }
     
     return prepared;
+  }
+
+  async canExecute(node: Node, context: IExecutionContext): Promise<boolean> {
+    // Check if node has required configuration
+    const config = node.config;
+    
+    if (!config.condition) {
+      return false;
+    }
+    
+    return true;
   }
 
   async validate(node: Node): Promise<{ valid: boolean; errors: string[] }> {
@@ -272,5 +284,8 @@ export class ConditionNodeExecutor implements INodeExecutor {
       valid: errors.length === 0,
       errors
     };
+  }
+  getSupportedNodeTypes(): string[] {
+    return ['condition'];
   }
 }
