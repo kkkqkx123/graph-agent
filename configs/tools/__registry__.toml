@@ -14,8 +14,7 @@ description = "原生工具类型 - 项目内实现"
 enabled = true
 config_directory = "native"
 config_files = [
-  "sequentialthinking.toml",
-  "time_tool.toml"
+  "sequentialthinking.toml"
 ]
 
 [tool_types.builtin]
@@ -25,7 +24,8 @@ enabled = true
 config_directory = "builtin"
 config_files = [
   "calculator.toml",
-  "hash_convert.toml"
+  "hash_convert.toml",
+  "time_tool.toml"
 ]
 
 [tool_types.rest]

@@ -1,14 +1,10 @@
-# OpenAI GPT-4o HTTP客户端配置
+# OpenAI GPT-4.1 HTTP客户端配置
 # 继承自通用配置
 
 inherits_from = "common.toml"
 
 # 模型特定配置
-models = [
-    "gpt-4o",
-    "gpt-4o-2024-05-13",
-    "gpt-4o-2024-08-06"
-]
+models = ["gpt-4.1"]
 
 # 模型特定参数
 [parameters]
@@ -21,7 +17,7 @@ timeout = 30
 function_calling = true
 streaming = true
 vision = true
-responses_api = false  # GPT-4o不支持Responses API
+responses_api = false  # GPT-4.1不支持Responses API
 
 # API端点配置
 [api_endpoints]

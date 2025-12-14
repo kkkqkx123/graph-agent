@@ -1,4 +1,7 @@
 # OpenAI HTTP客户端通用配置
+# 此文件包含所有OpenAI HTTP客户端的通用配置
+
+# 基础配置
 provider = "openai"
 model_type = "openai"
 
@@ -6,7 +9,7 @@ model_type = "openai"
 base_url = "https://api.openai.com/v1"
 api_version = "v1"
 api_key = "${OPENAI_API_KEY}"
-api_format = "chat_completion"
+api_format = "chat_completion"  # 支持 "chat_completion" 或 "responses"
 
 # HTTP客户端配置
 timeout = 30
@@ -43,12 +46,12 @@ max_retry_backoff = 60.0
 
 # 支持的模型列表
 models = [
-  "gpt-4",
-  "gpt-4-turbo",
-  "gpt-4o",
-  "gpt-4o-mini",
-  "gpt-3.5-turbo",
-  "gpt-5"
+    "gpt-4",
+    "gpt-4-turbo",
+    "gpt-4o",
+    "gpt-4o-mini",
+    "gpt-3.5-turbo",
+    "gpt-5"  # 未来模型
 ]
 
 # 限流配置
