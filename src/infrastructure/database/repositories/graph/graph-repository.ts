@@ -1,9 +1,9 @@
 import { injectable, inject } from 'inversify';
-import { GraphRepository as IGraphRepository } from '../../../../domain/workflow/submodules/graph/repositories/graph-repository';
-import { Graph } from '../../../../domain/workflow/submodules/graph/entities/graph';
-import { GraphId } from '../../../../domain/workflow/submodules/graph/value-objects/graph-id';
-import { NodeId } from '../../../../domain/workflow/submodules/graph/value-objects/node-id';
-import { EdgeId } from '../../../../domain/workflow/submodules/graph/value-objects/edge-id';
+import { GraphRepository as IGraphRepository } from '../../../../domain/graph/repositories/graph-repository';
+import { Graph } from '../../../../domain/graph/entities/graph';
+import { GraphId } from '../../../../domain/graph/value-objects/graph-id';
+import { NodeId } from '../../../../domain/graph/value-objects/node-id';
+import { EdgeId } from '../../../../domain/graph/value-objects/edge-id';
 import { ConnectionManager } from '../../connections/connection-manager';
 import { GraphMapper } from './graph-mapper';
 import { GraphModel } from '../../models/graph.model';

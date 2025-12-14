@@ -1,23 +1,25 @@
-import { Graph } from '../../../../domain/workflow/submodules/graph/entities/graph';
-import { GraphId } from '../../../../domain/workflow/submodules/graph/value-objects/graph-id';
-import { Node } from '../../../../domain/workflow/submodules/graph/entities/node';
-import { NodeId } from '../../../../domain/workflow/submodules/graph/value-objects/node-id';
-import { Edge } from '../../../../domain/workflow/submodules/graph/entities/edge';
-import { EdgeId } from '../../../../domain/workflow/submodules/graph/value-objects/edge-id';
+import { Graph } from '../../../../domain/graph/entities/graph';
+import { ID } from '../../../../domain/common/value-objects/id';
+import { Timestamp } from '../../../../domain/common/value-objects/timestamp';
+import { Version } from '../../../../domain/common/value-objects/version';
+import { NodeType } from '../../../../domain/graph/value-objects/node-type';
+import { EdgeType } from '../../../../domain/graph/value-objects/edge-type';
+import { Node } from '../../../../domain/graph/entities/node';
+import { Edge } from '../../../../domain/graph/entities/edge';
 import { GraphModel } from '../../models/graph.model';
 import { NodeModel } from '../../models/node.model';
 import { EdgeModel } from '../../models/edge.model';
 
 export class GraphMapper {
   toEntity(model: GraphModel): Graph {
-    const nodes = new Map<NodeId, Node>();
-    const edges = new Map<EdgeId, Edge>();
+    const nodes = new Map<string, Node>();
+    const edges = new Map<string, Edge>();
 
     // Convert nodes
     if (model.nodes) {
       for (const nodeModel of model.nodes) {
         const node = this.nodeToEntity(nodeModel);
-        nodes.set(node.id, node);
+        nodes.set(node.nodeId.value, node);
       }
     }
 
@@ -25,81 +27,110 @@ export class GraphMapper {
     if (model.edges) {
       for (const edgeModel of model.edges) {
         const edge = this.edgeToEntity(edgeModel);
-        edges.set(edge.id, edge);
+        edges.set(edge.edgeId.value, edge);
       }
     }
 
-    return new Graph(
-      new GraphId(model.id),
-      model.name,
-      model.description,
+    const props = {
+      id: ID.fromString(model.id),
+      name: model.name,
+      description: model.description,
       nodes,
       edges,
-      model.metadata,
-      new Date(model.createdAt),
-      new Date(model.updatedAt)
-    );
+      metadata: model.metadata || {},
+      createdAt: Timestamp.create(model.createdAt),
+      updatedAt: Timestamp.create(model.updatedAt),
+      version: Version.fromString(model.version.toString()),
+      isDeleted: false
+    };
+
+    return Graph.fromProps(props);
   }
 
   toModel(entity: Graph): GraphModel {
     const model = new GraphModel();
-    model.id = entity.id.value;
+    model.id = entity.graphId.value;
     model.name = entity.name;
     model.description = entity.description;
     model.metadata = entity.metadata;
-    model.createdAt = entity.createdAt;
-    model.updatedAt = entity.updatedAt;
+    model.createdAt = entity.createdAt.getDate();
+    model.updatedAt = entity.updatedAt.getDate();
+    model.version = parseInt(entity.version.getValue());
     
     return model;
   }
 
   nodeToEntity(model: NodeModel): Node {
-    return new Node(
-      new NodeId(model.id),
-      model.type,
-      model.name,
-      model.description,
-      model.config,
-      model.metadata,
-      model.position ? {
-        x: model.position.x,
-        y: model.position.y
-      } : undefined
-    );
+    const props = {
+      id: ID.fromString(model.id),
+      graphId: ID.fromString(model.graphId),
+      type: NodeType.fromString(model.type),
+      name: model.name,
+      description: model.configuration?.description,
+      position: model.position,
+      properties: model.configuration?.properties || {},
+      createdAt: Timestamp.create(model.createdAt),
+      updatedAt: Timestamp.create(model.updatedAt),
+      version: Version.fromString(model.version.toString()),
+      isDeleted: false
+    };
+
+    return Node.fromProps(props);
   }
 
   nodeToModel(entity: Node, graphId: string): NodeModel {
     const model = new NodeModel();
-    model.id = entity.id.value;
+    model.id = entity.nodeId.value;
     model.graphId = graphId;
-    model.type = entity.type;
-    model.name = entity.name;
-    model.description = entity.description;
-    model.config = entity.config;
-    model.metadata = entity.metadata;
-    model.position = entity.position;
+    model.type = entity.type.getValue();
+    model.name = entity.name || '';
+    model.configuration = {
+      description: entity.description,
+      properties: entity.properties
+    };
+    model.position = entity.position || { x: 0, y: 0 };
+    model.metadata = entity.properties;
+    model.createdAt = entity.createdAt.getDate();
+    model.updatedAt = entity.updatedAt.getDate();
+    model.version = parseInt(entity.version.getValue());
     
     return model;
   }
 
   edgeToEntity(model: EdgeModel): Edge {
-    return new Edge(
-      new EdgeId(model.id),
-      new NodeId(model.sourceNodeId),
-      new NodeId(model.targetNodeId),
-      model.condition,
-      model.metadata
-    );
+    const props = {
+      id: ID.fromString(model.id),
+      graphId: ID.fromString(model.graphId),
+      type: EdgeType.fromString(model.type),
+      fromNodeId: ID.fromString(model.sourceNodeId),
+      toNodeId: ID.fromString(model.targetNodeId),
+      condition: model.condition?.expression,
+      weight: model.condition?.weight,
+      properties: model.metadata || {},
+      createdAt: Timestamp.create(model.createdAt),
+      updatedAt: Timestamp.create(model.updatedAt),
+      version: Version.fromString(model.version.toString()),
+      isDeleted: false
+    };
+
+    return Edge.fromProps(props);
   }
 
   edgeToModel(entity: Edge, graphId: string): EdgeModel {
     const model = new EdgeModel();
-    model.id = entity.id.value;
+    model.id = entity.edgeId.value;
     model.graphId = graphId;
-    model.sourceNodeId = entity.sourceNodeId.value;
-    model.targetNodeId = entity.targetNodeId.value;
-    model.condition = entity.condition;
-    model.metadata = entity.metadata;
+    model.sourceNodeId = entity.fromNodeId.value;
+    model.targetNodeId = entity.toNodeId.value;
+    model.type = entity.type.getValue();
+    model.condition = {
+      expression: entity.condition,
+      weight: entity.weight
+    };
+    model.metadata = entity.properties;
+    model.createdAt = entity.createdAt.getDate();
+    model.updatedAt = entity.updatedAt.getDate();
+    model.version = parseInt(entity.version.getValue());
     
     return model;
   }

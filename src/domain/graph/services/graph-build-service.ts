@@ -386,8 +386,8 @@ export class DefaultGraphBuildService implements IGraphBuildService {
 
     // 克隆边
     for (const [oldEdgeId, edge] of sourceGraph.edges) {
-      const newFromNodeId = nodeIdMapping.get(edge.fromNodeId.getValue());
-      const newToNodeId = nodeIdMapping.get(edge.toNodeId.getValue());
+      const newFromNodeId = nodeIdMapping.get(edge.fromNodeId.value);
+      const newToNodeId = nodeIdMapping.get(edge.toNodeId.value);
       
       if (newFromNodeId && newToNodeId) {
         const newEdge = Edge.create(
@@ -860,8 +860,8 @@ export class DefaultGraphBuildService implements IGraphBuildService {
       for (const edgeData of graphData.edges) {
         await this.addEdge(graph.graphId, {
           edgeType: edgeData.type,
-          fromNodeId: ID.create(edgeData.fromNodeId),
-          toNodeId: ID.create(edgeData.toNodeId),
+          fromNodeId: ID.fromString(edgeData.fromNodeId),
+          toNodeId: ID.fromString(edgeData.toNodeId),
           condition: edgeData.condition,
           weight: edgeData.weight,
           properties: edgeData.properties,

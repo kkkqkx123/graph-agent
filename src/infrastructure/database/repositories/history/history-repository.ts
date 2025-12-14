@@ -1,12 +1,12 @@
 import { injectable, inject } from 'inversify';
 import { HistoryRepository as IHistoryRepository } from '../../../../domain/history/repositories/history-repository';
 import { History } from '../../../../domain/history/entities/history';
-import { HistoryId } from '../../../../domain/history/value-objects/history-id';
-import { SessionId } from '../../../../domain/session/value-objects/session-id';
-import { ThreadId } from '../../../../domain/thread/value-objects/thread-id';
+import { ID } from '../../../../domain/common/value-objects/id';
+import { HistoryType } from '../../../../domain/history/value-objects/history-type';
 import { ConnectionManager } from '../../connections/connection-manager';
 import { HistoryMapper } from './history-mapper';
 import { HistoryModel } from '../../models/history.model';
+import { Between, LessThan } from 'typeorm';
 
 @injectable()
 export class HistoryRepository implements IHistoryRepository {
@@ -15,15 +15,17 @@ export class HistoryRepository implements IHistoryRepository {
     @inject('HistoryMapper') private mapper: HistoryMapper
   ) {}
 
-  async save(history: History): Promise<void> {
+  async save(history: History): Promise<History> {
     const connection = await this.connectionManager.getConnection();
     const repository = connection.getRepository(HistoryModel);
     
     const model = this.mapper.toModel(history);
-    await repository.save(model);
+    const savedModel = await repository.save(model);
+    
+    return this.mapper.toEntity(savedModel);
   }
 
-  async findById(id: HistoryId): Promise<History | null> {
+  async findById(id: ID): Promise<History | null> {
     const connection = await this.connectionManager.getConnection();
     const repository = connection.getRepository(HistoryModel);
     
@@ -46,14 +48,14 @@ export class HistoryRepository implements IHistoryRepository {
     return models.map(model => this.mapper.toEntity(model));
   }
 
-  async delete(id: HistoryId): Promise<void> {
+  async delete(history: History): Promise<void> {
     const connection = await this.connectionManager.getConnection();
     const repository = connection.getRepository(HistoryModel);
     
-    await repository.delete({ id: id.value });
+    await repository.delete({ id: history.historyId.value });
   }
 
-  async exists(id: HistoryId): Promise<boolean> {
+  async exists(id: ID): Promise<boolean> {
     const connection = await this.connectionManager.getConnection();
     const repository = connection.getRepository(HistoryModel);
     
@@ -61,7 +63,7 @@ export class HistoryRepository implements IHistoryRepository {
     return count > 0;
   }
 
-  async findBySessionId(sessionId: SessionId): Promise<History[]> {
+  async findBySessionId(sessionId: ID): Promise<History[]> {
     const connection = await this.connectionManager.getConnection();
     const repository = connection.getRepository(HistoryModel);
     
@@ -73,7 +75,7 @@ export class HistoryRepository implements IHistoryRepository {
     return models.map(model => this.mapper.toEntity(model));
   }
 
-  async findByThreadId(threadId: ThreadId): Promise<History[]> {
+  async findByThreadId(threadId: ID): Promise<History[]> {
     const connection = await this.connectionManager.getConnection();
     const repository = connection.getRepository(HistoryModel);
     
@@ -85,43 +87,50 @@ export class HistoryRepository implements IHistoryRepository {
     return models.map(model => this.mapper.toEntity(model));
   }
 
-  async findBySessionIdAndThreadId(sessionId: SessionId, threadId: ThreadId): Promise<History[]> {
+  async findByWorkflowId(workflowId: ID): Promise<History[]> {
     const connection = await this.connectionManager.getConnection();
     const repository = connection.getRepository(HistoryModel);
     
     const models = await repository.find({
-      where: { 
-        sessionId: sessionId.value,
-        threadId: threadId.value 
-      },
+      where: { workflowId: workflowId.value },
       order: { timestamp: 'DESC' }
     });
     
     return models.map(model => this.mapper.toEntity(model));
   }
 
-  async findByType(type: string): Promise<History[]> {
+  async findByType(type: HistoryType): Promise<History[]> {
     const connection = await this.connectionManager.getConnection();
     const repository = connection.getRepository(HistoryModel);
     
     const models = await repository.find({
-      where: { type },
+      where: { action: type.getValue() },
       order: { timestamp: 'DESC' }
     });
     
     return models.map(model => this.mapper.toEntity(model));
   }
 
-  async findByDateRange(startDate: Date, endDate: Date): Promise<History[]> {
+  async findByTypes(types: HistoryType[]): Promise<History[]> {
+    const connection = await this.connectionManager.getConnection();
+    const repository = connection.getRepository(HistoryModel);
+    
+    const typeValues = types.map(type => type.getValue());
+    const models = await repository.find({
+      where: { action: { In: typeValues } },
+      order: { timestamp: 'DESC' }
+    });
+    
+    return models.map(model => this.mapper.toEntity(model));
+  }
+
+  async findByTimeRange(startTime: Date, endTime: Date): Promise<History[]> {
     const connection = await this.connectionManager.getConnection();
     const repository = connection.getRepository(HistoryModel);
     
     const models = await repository.find({
       where: {
-        timestamp: {
-          $gte: startDate,
-          $lte: endDate
-        }
+        timestamp: Between(startTime.getTime(), endTime.getTime())
       },
       order: { timestamp: 'DESC' }
     });
@@ -129,7 +138,19 @@ export class HistoryRepository implements IHistoryRepository {
     return models.map(model => this.mapper.toEntity(model));
   }
 
-  async findLatestBySessionId(sessionId: SessionId, limit: number = 10): Promise<History[]> {
+  async findLatest(limit?: number): Promise<History[]> {
+    const connection = await this.connectionManager.getConnection();
+    const repository = connection.getRepository(HistoryModel);
+    
+    const models = await repository.find({
+      order: { timestamp: 'DESC' },
+      take: limit || 10
+    });
+    
+    return models.map(model => this.mapper.toEntity(model));
+  }
+
+  async findLatestBySessionId(sessionId: ID, limit: number = 10): Promise<History[]> {
     const connection = await this.connectionManager.getConnection();
     const repository = connection.getRepository(HistoryModel);
     
@@ -142,7 +163,7 @@ export class HistoryRepository implements IHistoryRepository {
     return models.map(model => this.mapper.toEntity(model));
   }
 
-  async findLatestByThreadId(threadId: ThreadId, limit: number = 10): Promise<History[]> {
+  async findLatestByThreadId(threadId: ID, limit: number = 10): Promise<History[]> {
     const connection = await this.connectionManager.getConnection();
     const repository = connection.getRepository(HistoryModel);
     
@@ -162,42 +183,133 @@ export class HistoryRepository implements IHistoryRepository {
     return repository.count();
   }
 
-  async countBySessionId(sessionId: SessionId): Promise<number> {
+  async countBySessionId(sessionId: ID): Promise<number> {
     const connection = await this.connectionManager.getConnection();
     const repository = connection.getRepository(HistoryModel);
     
     return repository.count({ where: { sessionId: sessionId.value } });
   }
 
-  async countByThreadId(threadId: ThreadId): Promise<number> {
+  async countByThreadId(threadId: ID): Promise<number> {
     const connection = await this.connectionManager.getConnection();
     const repository = connection.getRepository(HistoryModel);
     
     return repository.count({ where: { threadId: threadId.value } });
   }
 
-  async deleteBySessionId(sessionId: SessionId): Promise<void> {
+  async countByWorkflowId(workflowId: ID): Promise<number> {
     const connection = await this.connectionManager.getConnection();
     const repository = connection.getRepository(HistoryModel);
     
-    await repository.delete({ sessionId: sessionId.value });
+    return repository.count({ where: { workflowId: workflowId.value } });
   }
 
-  async deleteByThreadId(threadId: ThreadId): Promise<void> {
+  async countByCriteria(options?: {
+    sessionId?: ID;
+    threadId?: ID;
+    workflowId?: ID;
+    type?: HistoryType;
+    startTime?: Date;
+    endTime?: Date;
+  }): Promise<number> {
     const connection = await this.connectionManager.getConnection();
     const repository = connection.getRepository(HistoryModel);
     
-    await repository.delete({ threadId: threadId.value });
+    const where: any = {};
+    
+    if (options?.sessionId) {
+      where.sessionId = options.sessionId.value;
+    }
+    if (options?.threadId) {
+      where.threadId = options.threadId.value;
+    }
+    if (options?.workflowId) {
+      where.workflowId = options.workflowId.value;
+    }
+    if (options?.type) {
+      where.action = options.type.getValue();
+    }
+    if (options?.startTime && options?.endTime) {
+      where.timestamp = Between(options.startTime.getTime(), options.endTime.getTime());
+    }
+    
+    return repository.count({ where });
   }
 
-  async deleteOlderThan(date: Date): Promise<void> {
+  async countByType(options?: {
+    sessionId?: ID;
+    threadId?: ID;
+    workflowId?: ID;
+    startTime?: Date;
+    endTime?: Date;
+  }): Promise<Record<string, number>> {
     const connection = await this.connectionManager.getConnection();
     const repository = connection.getRepository(HistoryModel);
     
-    await repository.delete({
-      timestamp: {
-        $lt: date
-      }
+    const where: any = {};
+    
+    if (options?.sessionId) {
+      where.sessionId = options.sessionId.value;
+    }
+    if (options?.threadId) {
+      where.threadId = options.threadId.value;
+    }
+    if (options?.workflowId) {
+      where.workflowId = options.workflowId.value;
+    }
+    if (options?.startTime && options?.endTime) {
+      where.timestamp = Between(options.startTime.getTime(), options.endTime.getTime());
+    }
+    
+    const histories = await repository.find({ where });
+    const byType: Record<string, number> = {};
+    
+    histories.forEach(history => {
+      byType[history.action] = (byType[history.action] || 0) + 1;
     });
+    
+    return byType;
+  }
+
+  async deleteBySessionId(sessionId: ID): Promise<number> {
+    const connection = await this.connectionManager.getConnection();
+    const repository = connection.getRepository(HistoryModel);
+    
+    const result = await repository.delete({ sessionId: sessionId.value });
+    return result.affected || 0;
+  }
+
+  async deleteByThreadId(threadId: ID): Promise<number> {
+    const connection = await this.connectionManager.getConnection();
+    const repository = connection.getRepository(HistoryModel);
+    
+    const result = await repository.delete({ threadId: threadId.value });
+    return result.affected || 0;
+  }
+
+  async deleteByEntityId(entityId: ID): Promise<number> {
+    const connection = await this.connectionManager.getConnection();
+    const repository = connection.getRepository(HistoryModel);
+    
+    const result = await repository.delete({ entityId: entityId.value });
+    return result.affected || 0;
+  }
+
+  async deleteByType(type: HistoryType): Promise<number> {
+    const connection = await this.connectionManager.getConnection();
+    const repository = connection.getRepository(HistoryModel);
+    
+    const result = await repository.delete({ action: type.getValue() });
+    return result.affected || 0;
+  }
+
+  async deleteBeforeTime(beforeTime: Date): Promise<number> {
+    const connection = await this.connectionManager.getConnection();
+    const repository = connection.getRepository(HistoryModel);
+    
+    const result = await repository.delete({
+      timestamp: LessThan(beforeTime.getTime())
+    });
+    return result.affected || 0;
   }
 }

@@ -1,12 +1,11 @@
 import { injectable, inject } from 'inversify';
 import { CheckpointRepository as ICheckpointRepository } from '../../../../domain/checkpoint/repositories/checkpoint-repository';
 import { Checkpoint } from '../../../../domain/checkpoint/entities/checkpoint';
-import { CheckpointId } from '../../../../domain/checkpoint/value-objects/checkpoint-id';
-import { SessionId } from '../../../../domain/session/value-objects/session-id';
-import { ThreadId } from '../../../../domain/thread/value-objects/thread-id';
+import { ID } from '../../../../domain/common/value-objects/id';
 import { ConnectionManager } from '../../connections/connection-manager';
 import { CheckpointMapper } from './checkpoint-mapper';
 import { CheckpointModel } from '../../models/checkpoint.model';
+import { Between, MoreThan, LessThan } from 'typeorm';
 
 @injectable()
 export class CheckpointRepository implements ICheckpointRepository {
@@ -15,15 +14,17 @@ export class CheckpointRepository implements ICheckpointRepository {
     @inject('CheckpointMapper') private mapper: CheckpointMapper
   ) {}
 
-  async save(checkpoint: Checkpoint): Promise<void> {
+  async save(checkpoint: Checkpoint): Promise<Checkpoint> {
     const connection = await this.connectionManager.getConnection();
     const repository = connection.getRepository(CheckpointModel);
     
     const model = this.mapper.toModel(checkpoint);
-    await repository.save(model);
+    const savedModel = await repository.save(model);
+    
+    return this.mapper.toEntity(savedModel);
   }
 
-  async findById(id: CheckpointId): Promise<Checkpoint | null> {
+  async findById(id: ID): Promise<Checkpoint | null> {
     const connection = await this.connectionManager.getConnection();
     const repository = connection.getRepository(CheckpointModel);
     
@@ -46,14 +47,14 @@ export class CheckpointRepository implements ICheckpointRepository {
     return models.map(model => this.mapper.toEntity(model));
   }
 
-  async delete(id: CheckpointId): Promise<void> {
+  async delete(checkpoint: Checkpoint): Promise<void> {
     const connection = await this.connectionManager.getConnection();
     const repository = connection.getRepository(CheckpointModel);
     
-    await repository.delete({ id: id.value });
+    await repository.delete({ id: checkpoint.checkpointId.value });
   }
 
-  async exists(id: CheckpointId): Promise<boolean> {
+  async exists(id: ID): Promise<boolean> {
     const connection = await this.connectionManager.getConnection();
     const repository = connection.getRepository(CheckpointModel);
     
@@ -61,19 +62,7 @@ export class CheckpointRepository implements ICheckpointRepository {
     return count > 0;
   }
 
-  async findBySessionId(sessionId: SessionId): Promise<Checkpoint[]> {
-    const connection = await this.connectionManager.getConnection();
-    const repository = connection.getRepository(CheckpointModel);
-    
-    const models = await repository.find({
-      where: { sessionId: sessionId.value },
-      order: { createdAt: 'DESC' }
-    });
-    
-    return models.map(model => this.mapper.toEntity(model));
-  }
-
-  async findByThreadId(threadId: ThreadId): Promise<Checkpoint[]> {
+  async findByThreadId(threadId: ID): Promise<Checkpoint[]> {
     const connection = await this.connectionManager.getConnection();
     const repository = connection.getRepository(CheckpointModel);
     
@@ -85,38 +74,7 @@ export class CheckpointRepository implements ICheckpointRepository {
     return models.map(model => this.mapper.toEntity(model));
   }
 
-  async findBySessionIdAndThreadId(sessionId: SessionId, threadId: ThreadId): Promise<Checkpoint[]> {
-    const connection = await this.connectionManager.getConnection();
-    const repository = connection.getRepository(CheckpointModel);
-    
-    const models = await repository.find({
-      where: { 
-        sessionId: sessionId.value,
-        threadId: threadId.value 
-      },
-      order: { createdAt: 'DESC' }
-    });
-    
-    return models.map(model => this.mapper.toEntity(model));
-  }
-
-  async findLatestBySessionId(sessionId: SessionId): Promise<Checkpoint | null> {
-    const connection = await this.connectionManager.getConnection();
-    const repository = connection.getRepository(CheckpointModel);
-    
-    const model = await repository.findOne({
-      where: { sessionId: sessionId.value },
-      order: { createdAt: 'DESC' }
-    });
-    
-    if (!model) {
-      return null;
-    }
-    
-    return this.mapper.toEntity(model);
-  }
-
-  async findLatestByThreadId(threadId: ThreadId): Promise<Checkpoint | null> {
+  async findLatestByThreadId(threadId: ID): Promise<Checkpoint | null> {
     const connection = await this.connectionManager.getConnection();
     const repository = connection.getRepository(CheckpointModel);
     
@@ -132,28 +90,14 @@ export class CheckpointRepository implements ICheckpointRepository {
     return this.mapper.toEntity(model);
   }
 
-  async findByType(type: string): Promise<Checkpoint[]> {
-    const connection = await this.connectionManager.getConnection();
-    const repository = connection.getRepository(CheckpointModel);
-    
-    const models = await repository.find({
-      where: { type },
-      order: { createdAt: 'DESC' }
-    });
-    
-    return models.map(model => this.mapper.toEntity(model));
-  }
-
-  async findByDateRange(startDate: Date, endDate: Date): Promise<Checkpoint[]> {
+  async findByTimeRange(threadId: ID, startTime: Date, endTime: Date): Promise<Checkpoint[]> {
     const connection = await this.connectionManager.getConnection();
     const repository = connection.getRepository(CheckpointModel);
     
     const models = await repository.find({
       where: {
-        createdAt: {
-          $gte: startDate,
-          $lte: endDate
-        }
+        threadId: threadId.value,
+        createdAt: Between(startTime, endTime)
       },
       order: { createdAt: 'DESC' }
     });
@@ -168,55 +112,105 @@ export class CheckpointRepository implements ICheckpointRepository {
     return repository.count();
   }
 
-  async countBySessionId(sessionId: SessionId): Promise<number> {
-    const connection = await this.connectionManager.getConnection();
-    const repository = connection.getRepository(CheckpointModel);
-    
-    return repository.count({ where: { sessionId: sessionId.value } });
-  }
-
-  async countByThreadId(threadId: ThreadId): Promise<number> {
+  async countByThreadId(threadId: ID): Promise<number> {
     const connection = await this.connectionManager.getConnection();
     const repository = connection.getRepository(CheckpointModel);
     
     return repository.count({ where: { threadId: threadId.value } });
   }
 
-  async deleteBySessionId(sessionId: SessionId): Promise<void> {
+  async countByThreadIdAndType(threadId: ID, type: string): Promise<number> {
     const connection = await this.connectionManager.getConnection();
     const repository = connection.getRepository(CheckpointModel);
     
-    await repository.delete({ sessionId: sessionId.value });
-  }
-
-  async deleteByThreadId(threadId: ThreadId): Promise<void> {
-    const connection = await this.connectionManager.getConnection();
-    const repository = connection.getRepository(CheckpointModel);
-    
-    await repository.delete({ threadId: threadId.value });
-  }
-
-  async deleteOlderThan(date: Date): Promise<void> {
-    const connection = await this.connectionManager.getConnection();
-    const repository = connection.getRepository(CheckpointModel);
-    
-    await repository.delete({
-      createdAt: {
-        $lt: date
+    return repository.count({
+      where: {
+        threadId: threadId.value,
+        checkpointType: type
       }
     });
   }
 
-  async findWithPagination(offset: number, limit: number): Promise<Checkpoint[]> {
+  async deleteByThreadId(threadId: ID): Promise<number> {
+    const connection = await this.connectionManager.getConnection();
+    const repository = connection.getRepository(CheckpointModel);
+    
+    const result = await repository.delete({ threadId: threadId.value });
+    return result.affected || 0;
+  }
+
+  async deleteByThreadIdBeforeTime(threadId: ID, beforeTime: Date): Promise<number> {
+    const connection = await this.connectionManager.getConnection();
+    const repository = connection.getRepository(CheckpointModel);
+    
+    const result = await repository.delete({
+      threadId: threadId.value,
+      createdAt: LessThan(beforeTime)
+    });
+    return result.affected || 0;
+  }
+
+  async deleteByThreadIdAndType(threadId: ID, type: string): Promise<number> {
+    const connection = await this.connectionManager.getConnection();
+    const repository = connection.getRepository(CheckpointModel);
+    
+    const result = await repository.delete({
+      threadId: threadId.value,
+      checkpointType: type
+    });
+    return result.affected || 0;
+  }
+
+  async getCheckpointHistory(threadId: ID, limit?: number, offset?: number): Promise<Checkpoint[]> {
     const connection = await this.connectionManager.getConnection();
     const repository = connection.getRepository(CheckpointModel);
     
     const models = await repository.find({
+      where: { threadId: threadId.value },
       order: { createdAt: 'DESC' },
-      skip: offset,
-      take: limit
+      skip: offset || 0,
+      take: limit || 10
     });
     
     return models.map(model => this.mapper.toEntity(model));
+  }
+
+  async getCheckpointStatistics(threadId: ID): Promise<{
+    total: number;
+    byType: Record<string, number>;
+    latestAt?: Date;
+    oldestAt?: Date;
+  }> {
+    const connection = await this.connectionManager.getConnection();
+    const repository = connection.getRepository(CheckpointModel);
+    
+    const checkpoints = await repository.find({
+      where: { threadId: threadId.value },
+      order: { createdAt: 'DESC' }
+    });
+    
+    const byType: Record<string, number> = {};
+    let latestAt: Date | undefined;
+    let oldestAt: Date | undefined;
+    
+    checkpoints.forEach(checkpoint => {
+      // 统计类型
+      byType[checkpoint.checkpointType] = (byType[checkpoint.checkpointType] || 0) + 1;
+      
+      // 更新最新和最旧时间
+      if (!latestAt || checkpoint.createdAt > latestAt) {
+        latestAt = checkpoint.createdAt;
+      }
+      if (!oldestAt || checkpoint.createdAt < oldestAt) {
+        oldestAt = checkpoint.createdAt;
+      }
+    });
+    
+    return {
+      total: checkpoints.length,
+      byType,
+      latestAt,
+      oldestAt
+    };
   }
 }
