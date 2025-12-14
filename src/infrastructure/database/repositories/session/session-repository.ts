@@ -64,12 +64,24 @@ export class SessionRepository implements ISessionRepository {
     const connection = await this.connectionManager.getConnection();
     const repository = connection.getRepository(SessionModel);
     
-    const models = await repository.find({
-      where: { userId: userId.value },
-      skip: options?.offset,
-      take: options?.limit,
-      order: options?.sortBy ? { [options.sortBy]: options.sortOrder || 'asc' } : undefined
-    });
+    const queryBuilder = repository.createQueryBuilder('session');
+    
+    queryBuilder.where('session.userId = :userId', { userId: userId.value });
+    
+    if (options?.sortBy) {
+      const order = options.sortOrder === 'desc' ? 'DESC' : 'ASC';
+      queryBuilder.orderBy(`session.${options.sortBy}`, order);
+    }
+    
+    if (options?.offset) {
+      queryBuilder.skip(options.offset);
+    }
+    
+    if (options?.limit) {
+      queryBuilder.take(options.limit);
+    }
+    
+    const models = await queryBuilder.getMany();
     return models.map(model => this.mapper.toEntity(model));
   }
 
@@ -123,11 +135,7 @@ export class SessionRepository implements ISessionRepository {
       where: options.filters || {}
     });
     
-    if (!model) {
-      return null;
-    }
-    
-    return this.mapper.toEntity(model);
+    return model ? this.mapper.toEntity(model) : null;
   }
 
   async findByIdOrFail(id: ID): Promise<Session> {
@@ -276,7 +284,7 @@ export class SessionRepository implements ISessionRepository {
       sortOrder: 'desc',
       limit: 1
     });
-    return sessions.length > 0 ? sessions[0] : null;
+    return sessions[0] ?? null;
   }
 
   async batchUpdateStatus(sessionIds: ID[], status: SessionStatus): Promise<number> {

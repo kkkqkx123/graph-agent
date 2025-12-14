@@ -5,8 +5,10 @@ import { ID } from '../../../../domain/common/value-objects/id';
 import { ConnectionManager } from '../../connections/connection-manager';
 import { CheckpointMapper } from './checkpoint-mapper';
 import { CheckpointModel } from '../../models/checkpoint.model';
-import { Between, MoreThan, LessThan, In, ArrayContains, ArrayOverlap } from 'typeorm';
+import { Between, MoreThan, LessThan, In } from 'typeorm';
 import { CheckpointType } from '../../../../domain/checkpoint/value-objects/checkpoint-type';
+import { QueryOptions } from '../../../../domain/common/repositories/repository';
+import { RepositoryError } from '../../../../domain/common/errors/repository-error';
 
 @injectable()
 export class CheckpointRepository implements ICheckpointRepository {
@@ -37,6 +39,14 @@ export class CheckpointRepository implements ICheckpointRepository {
     return this.mapper.toEntity(model);
   }
 
+  async findByIdOrFail(id: ID): Promise<Checkpoint> {
+    const checkpoint = await this.findById(id);
+    if (!checkpoint) {
+      throw new RepositoryError(`Checkpoint with ID ${id.value} not found`);
+    }
+    return checkpoint;
+  }
+
   async findAll(): Promise<Checkpoint[]> {
     const connection = await this.connectionManager.getConnection();
     const repository = connection.getRepository(CheckpointModel);
@@ -48,11 +58,141 @@ export class CheckpointRepository implements ICheckpointRepository {
     return models.map(model => this.mapper.toEntity(model));
   }
 
+  async find(options: QueryOptions): Promise<Checkpoint[]> {
+    const connection = await this.connectionManager.getConnection();
+    const repository = connection.getRepository(CheckpointModel);
+    
+    const queryBuilder = repository.createQueryBuilder('checkpoint');
+    
+    if (options.filters) {
+      Object.entries(options.filters).forEach(([key, value]) => {
+        if (value !== undefined) {
+          queryBuilder.andWhere(`checkpoint.${key} = :${key}`, { [key]: value });
+        }
+      });
+    }
+    
+    if (options.sortBy) {
+      const order = options.sortOrder === 'desc' ? 'DESC' : 'ASC';
+      queryBuilder.orderBy(`checkpoint.${options.sortBy}`, order);
+    } else {
+      queryBuilder.orderBy('checkpoint.createdAt', 'DESC');
+    }
+    
+    if (options.offset) {
+      queryBuilder.skip(options.offset);
+    }
+    
+    if (options.limit) {
+      queryBuilder.take(options.limit);
+    }
+    
+    const models = await queryBuilder.getMany();
+    return models.map(model => this.mapper.toEntity(model));
+  }
+
+  async findOne(options: QueryOptions): Promise<Checkpoint | null> {
+    const results = await this.find({ ...options, limit: 1 });
+    return results[0] ?? null;
+  }
+
+  async findOneOrFail(options: QueryOptions): Promise<Checkpoint> {
+    const checkpoint = await this.findOne(options);
+    if (!checkpoint) {
+      throw new RepositoryError('Checkpoint not found with given criteria');
+    }
+    return checkpoint;
+  }
+
+  async findWithPagination(options: QueryOptions): Promise<{
+    items: Checkpoint[];
+    total: number;
+    page: number;
+    pageSize: number;
+    totalPages: number;
+  }> {
+    const connection = await this.connectionManager.getConnection();
+    const repository = connection.getRepository(CheckpointModel);
+    
+    const page = options.offset ? Math.floor(options.offset / (options.limit || 10)) + 1 : 1;
+    const pageSize = options.limit || 10;
+    const skip = (page - 1) * pageSize;
+    
+    const queryBuilder = repository.createQueryBuilder('checkpoint');
+    
+    if (options.filters) {
+      Object.entries(options.filters).forEach(([key, value]) => {
+        if (value !== undefined) {
+          queryBuilder.andWhere(`checkpoint.${key} = :${key}`, { [key]: value });
+        }
+      });
+    }
+    
+    const [models, total] = await queryBuilder
+      .skip(skip)
+      .take(pageSize)
+      .orderBy('checkpoint.createdAt', 'DESC')
+      .getManyAndCount();
+    
+    const totalPages = Math.ceil(total / pageSize);
+    
+    return {
+      items: models.map(model => this.mapper.toEntity(model)),
+      total,
+      page,
+      pageSize,
+      totalPages
+    };
+  }
+
+  async saveBatch(checkpoints: Checkpoint[]): Promise<Checkpoint[]> {
+    const connection = await this.connectionManager.getConnection();
+    const repository = connection.getRepository(CheckpointModel);
+    
+    const models = checkpoints.map(checkpoint => this.mapper.toModel(checkpoint));
+    const savedModels = await repository.save(models);
+    
+    return savedModels.map(model => this.mapper.toEntity(model));
+  }
+
   async delete(checkpoint: Checkpoint): Promise<void> {
     const connection = await this.connectionManager.getConnection();
     const repository = connection.getRepository(CheckpointModel);
     
     await repository.delete({ id: checkpoint.checkpointId.value });
+  }
+
+  async deleteById(id: ID): Promise<void> {
+    const connection = await this.connectionManager.getConnection();
+    const repository = connection.getRepository(CheckpointModel);
+    
+    await repository.delete({ id: id.value });
+  }
+
+  async deleteBatch(checkpoints: Checkpoint[]): Promise<void> {
+    const connection = await this.connectionManager.getConnection();
+    const repository = connection.getRepository(CheckpointModel);
+    
+    const ids = checkpoints.map(checkpoint => checkpoint.checkpointId.value);
+    await repository.delete({ id: In(ids) });
+  }
+
+  async deleteWhere(options: QueryOptions): Promise<number> {
+    const connection = await this.connectionManager.getConnection();
+    const repository = connection.getRepository(CheckpointModel);
+    
+    const queryBuilder = repository.createQueryBuilder('checkpoint').delete();
+    
+    if (options.filters) {
+      Object.entries(options.filters).forEach(([key, value]) => {
+        if (value !== undefined) {
+          queryBuilder.andWhere(`checkpoint.${key} = :${key}`, { [key]: value });
+        }
+      });
+    }
+    
+    const result = await queryBuilder.execute();
+    return result.affected || 0;
   }
 
   async exists(id: ID): Promise<boolean> {
@@ -61,6 +201,27 @@ export class CheckpointRepository implements ICheckpointRepository {
     
     const count = await repository.count({ where: { id: id.value } });
     return count > 0;
+  }
+
+  async count(options?: QueryOptions): Promise<number> {
+    const connection = await this.connectionManager.getConnection();
+    const repository = connection.getRepository(CheckpointModel);
+    
+    if (!options || !options.filters) {
+      return repository.count();
+    }
+    
+    const queryBuilder = repository.createQueryBuilder('checkpoint');
+    
+    if (options.filters) {
+      Object.entries(options.filters).forEach(([key, value]) => {
+        if (value !== undefined) {
+          queryBuilder.andWhere(`checkpoint.${key} = :${key}`, { [key]: value });
+        }
+      });
+    }
+    
+    return queryBuilder.getCount();
   }
 
   async findByThreadId(threadId: ID): Promise<Checkpoint[]> {
@@ -104,13 +265,6 @@ export class CheckpointRepository implements ICheckpointRepository {
     });
     
     return models.map(model => this.mapper.toEntity(model));
-  }
-
-  async count(): Promise<number> {
-    const connection = await this.connectionManager.getConnection();
-    const repository = connection.getRepository(CheckpointModel);
-    
-    return repository.count();
   }
 
   async countByThreadId(threadId: ID): Promise<number> {
@@ -162,60 +316,6 @@ export class CheckpointRepository implements ICheckpointRepository {
     return result.affected || 0;
   }
 
-  async getCheckpointHistory(threadId: ID, limit?: number, offset?: number): Promise<Checkpoint[]> {
-    const connection = await this.connectionManager.getConnection();
-    const repository = connection.getRepository(CheckpointModel);
-    
-    const models = await repository.find({
-      where: { threadId: threadId.value },
-      order: { createdAt: 'DESC' },
-      skip: offset || 0,
-      take: limit || 10
-    });
-    
-    return models.map(model => this.mapper.toEntity(model));
-  }
-
-  async getCheckpointStatistics(threadId: ID): Promise<{
-    total: number;
-    byType: Record<string, number>;
-    latestAt?: Date;
-    oldestAt?: Date;
-  }> {
-    const connection = await this.connectionManager.getConnection();
-    const repository = connection.getRepository(CheckpointModel);
-    
-    const checkpoints = await repository.find({
-      where: { threadId: threadId.value },
-      order: { createdAt: 'DESC' }
-    });
-    
-    const byType: Record<string, number> = {};
-    let latestAt: Date | undefined;
-    let oldestAt: Date | undefined;
-    
-    checkpoints.forEach(checkpoint => {
-      // 统计类型
-      byType[checkpoint.checkpointType] = (byType[checkpoint.checkpointType] || 0) + 1;
-      
-      // 更新最新和最旧时间
-      if (!latestAt || checkpoint.createdAt > latestAt) {
-        latestAt = checkpoint.createdAt;
-      }
-      if (!oldestAt || checkpoint.createdAt < oldestAt) {
-        oldestAt = checkpoint.createdAt;
-      }
-    });
-    
-    return {
-      total: checkpoints.length,
-      byType,
-      latestAt,
-      oldestAt
-    };
-  }
-
-  // 实现缺失的方法
   async findByThreadIdAndType(threadId: ID, type: CheckpointType): Promise<Checkpoint[]> {
     const connection = await this.connectionManager.getConnection();
     const repository = connection.getRepository(CheckpointModel);
@@ -254,10 +354,12 @@ export class CheckpointRepository implements ICheckpointRepository {
     const connection = await this.connectionManager.getConnection();
     const repository = connection.getRepository(CheckpointModel);
     
-    const models = await repository.find({
-      where: { tags: ArrayContains([tag]) },
-      order: { createdAt: 'DESC' }
-    });
+    // 由于 CheckpointModel 没有 tags 字段，我们需要在 metadata 中查找
+    const models = await repository
+      .createQueryBuilder('checkpoint')
+      .where("checkpoint.metadata::jsonb->'tags' @> :tag", { tag: JSON.stringify([tag]) })
+      .orderBy('checkpoint.createdAt', 'DESC')
+      .getMany();
     
     return models.map(model => this.mapper.toEntity(model));
   }
@@ -266,25 +368,16 @@ export class CheckpointRepository implements ICheckpointRepository {
     const connection = await this.connectionManager.getConnection();
     const repository = connection.getRepository(CheckpointModel);
     
-    const models = await repository.find({
-      where: { tags: ArrayOverlap(tags) },
-      order: { createdAt: 'DESC' }
+    // 由于 CheckpointModel 没有 tags 字段，我们需要在 metadata 中查找
+    const queryBuilder = repository.createQueryBuilder('checkpoint');
+    
+    tags.forEach((tag, index) => {
+      queryBuilder.andWhere(`checkpoint.metadata::jsonb->'tags' @> :tag${index}`, { [`tag${index}`]: JSON.stringify([tag]) });
     });
     
-    return models.map(model => this.mapper.toEntity(model));
-  }
-
-  async findByTimeRange(threadId: ID, startTime: Date, endTime: Date): Promise<Checkpoint[]> {
-    const connection = await this.connectionManager.getConnection();
-    const repository = connection.getRepository(CheckpointModel);
-    
-    const models = await repository.find({
-      where: {
-        threadId: threadId.value,
-        createdAt: Between(startTime, endTime)
-      },
-      order: { createdAt: 'DESC' }
-    });
+    const models = await queryBuilder
+      .orderBy('checkpoint.createdAt', 'DESC')
+      .getMany();
     
     return models.map(model => this.mapper.toEntity(model));
   }

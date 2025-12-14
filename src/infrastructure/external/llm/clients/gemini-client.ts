@@ -57,7 +57,7 @@ export class GeminiClient implements ILLMClient {
   }
 
   async calculateCost(request: LLMRequest, response: LLMResponse): Promise<number> {
-    const modelConfig = this.getModelConfig(request.model);
+    const modelConfig = this.getModelConfig();
     const promptTokens = await this.calculateTokens(request);
     const completionTokens = response.usage?.completionTokens || 0;
     
@@ -118,7 +118,8 @@ export class GeminiClient implements ILLMClient {
     );
   }
 
-  private getModelConfig(model: string): ModelConfig {
+  getModelConfig(): ModelConfig {
+    const model = 'gemini-pro'; // 默认模型
     const configs = this.configManager.get('llm.gemini.models', {});
     const config = configs[model];
     

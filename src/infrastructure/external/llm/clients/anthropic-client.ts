@@ -55,7 +55,7 @@ export class AnthropicClient implements ILLMClient {
   }
 
   async calculateCost(request: LLMRequest, response: LLMResponse): Promise<number> {
-    const modelConfig = this.getModelConfig(request.model);
+    const modelConfig = this.getModelConfig();
     const promptTokens = await this.calculateTokens(request);
     const completionTokens = response.usage?.completionTokens || 0;
     
@@ -115,7 +115,8 @@ export class AnthropicClient implements ILLMClient {
     );
   }
 
-  private getModelConfig(model: string): ModelConfig {
+  getModelConfig(): ModelConfig {
+    const model = 'claude-3-sonnet-20240229'; // 默认模型
     const configs = this.configManager.get('llm.anthropic.models', {});
     const config = configs[model];
     

@@ -12,17 +12,17 @@ import { WorkflowModel } from '../../models/workflow.model';
 export class WorkflowMapper {
   toEntity(model: WorkflowModel): Workflow {
     const props = {
-      id: new ID(model.id),
+      id: ID.fromString(model.id),
       name: model.name,
       description: model.description || undefined,
       status: this.mapStateToStatus(model.state),
       type: this.mapExecutionModeToType(model.executionMode),
       config: this.mapConfigurationToConfig(model.configuration),
-      graphId: model.graphId ? new ID(model.graphId) : undefined,
-      createdAt: new Timestamp(model.createdAt),
-      updatedAt: new Timestamp(model.updatedAt),
-      version: new Version(model.revision),
-      lastExecutedAt: model.metadata?.lastExecutedAt ? new Timestamp(model.metadata.lastExecutedAt) : undefined,
+      graphId: model.graphId ? ID.fromString(model.graphId) : undefined,
+      createdAt: Timestamp.create(model.createdAt),
+      updatedAt: Timestamp.create(model.updatedAt),
+      version: Version.fromString(model.revision.toString()),
+      lastExecutedAt: model.metadata?.lastExecutedAt ? Timestamp.create(model.metadata.lastExecutedAt) : undefined,
       executionCount: model.metadata?.executionCount || 0,
       successCount: model.metadata?.successCount || 0,
       failureCount: model.metadata?.failureCount || 0,
@@ -30,8 +30,8 @@ export class WorkflowMapper {
       tags: model.metadata?.tags || [],
       metadata: model.metadata || {},
       isDeleted: model.metadata?.isDeleted || false,
-      createdBy: model.createdBy ? new ID(model.createdBy) : undefined,
-      updatedBy: model.updatedBy ? new ID(model.updatedBy) : undefined
+      createdBy: model.createdBy ? ID.fromString(model.createdBy) : undefined,
+      updatedBy: model.updatedBy ? ID.fromString(model.updatedBy) : undefined
     };
 
     return Workflow.fromProps(props);
@@ -41,8 +41,8 @@ export class WorkflowMapper {
     const model = new WorkflowModel();
     model.id = entity.workflowId.value;
     model.name = entity.name;
-    model.description = entity.description || null;
-    model.graphId = entity.graphId?.value || null;
+    model.description = entity.description || undefined;
+    model.graphId = entity.graphId?.value ?? undefined;
     model.state = this.mapStatusToState(entity.status);
     model.executionMode = this.mapTypeToExecutionMode(entity.type);
     model.metadata = {
@@ -51,17 +51,17 @@ export class WorkflowMapper {
       successCount: entity.successCount,
       failureCount: entity.failureCount,
       averageExecutionTime: entity.averageExecutionTime,
-      lastExecutedAt: entity.lastExecutedAt?.toDate(),
+      lastExecutedAt: entity.lastExecutedAt?.getDate() || null,
       tags: entity.tags,
       isDeleted: entity.isDeleted()
     };
     model.configuration = this.mapConfigToConfiguration(entity.config);
     model.version = entity.version.toString();
-    model.revision = entity.version.getValue();
-    model.createdBy = entity.createdBy?.value || null;
-    model.updatedBy = entity.updatedBy?.value || null;
-    model.createdAt = entity.createdAt.toDate();
-    model.updatedAt = entity.updatedAt.toDate();
+    model.revision = parseInt(entity.version.getValue());
+    model.createdBy = entity.createdBy?.value ?? undefined;
+    model.updatedBy = entity.updatedBy?.value ?? undefined;
+    model.createdAt = entity.createdAt.getDate();
+    model.updatedAt = entity.updatedAt.getDate();
     return model;
   }
 
@@ -113,7 +113,7 @@ export class WorkflowMapper {
       return WorkflowConfig.default();
     }
     
-    return new WorkflowConfig(configuration);
+    return WorkflowConfig.create(configuration);
   }
 
   private mapConfigToConfiguration(config: WorkflowConfig): any {

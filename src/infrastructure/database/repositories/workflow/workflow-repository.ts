@@ -8,6 +8,8 @@ import { ConnectionManager } from '../../connections/connection-manager';
 import { WorkflowMapper } from './workflow-mapper';
 import { WorkflowModel } from '../../models/workflow.model';
 import { QueryOptions, PaginatedResult } from '../../../../domain/common/repositories/repository';
+import { RepositoryError } from '../../../../domain/common/errors/repository-error';
+import { In } from 'typeorm';
 
 @injectable()
 export class WorkflowRepository implements IWorkflowRepository {
@@ -16,12 +18,14 @@ export class WorkflowRepository implements IWorkflowRepository {
     @inject('WorkflowMapper') private mapper: WorkflowMapper
   ) {}
 
-  async save(workflow: Workflow): Promise<void> {
+  async save(workflow: Workflow): Promise<Workflow> {
     const connection = await this.connectionManager.getConnection();
     const repository = connection.getRepository(WorkflowModel);
     
     const model = this.mapper.toModel(workflow);
-    await repository.save(model);
+    const savedModel = await repository.save(model);
+    
+    return this.mapper.toEntity(savedModel);
   }
 
   async findById(id: ID): Promise<Workflow | null> {
@@ -29,11 +33,15 @@ export class WorkflowRepository implements IWorkflowRepository {
     const repository = connection.getRepository(WorkflowModel);
     
     const model = await repository.findOne({ where: { id: id.value } });
-    if (!model) {
-      return null;
+    return model ? this.mapper.toEntity(model) : null;
+  }
+
+  async findByIdOrFail(id: ID): Promise<Workflow> {
+    const workflow = await this.findById(id);
+    if (!workflow) {
+      throw new RepositoryError(`Workflow with ID ${id.value} not found`);
     }
-    
-    return this.mapper.toEntity(model);
+    return workflow;
   }
 
   async findAll(): Promise<Workflow[]> {
@@ -44,11 +52,133 @@ export class WorkflowRepository implements IWorkflowRepository {
     return models.map(model => this.mapper.toEntity(model));
   }
 
-  async delete(id: ID): Promise<void> {
+  async find(options: QueryOptions): Promise<Workflow[]> {
     const connection = await this.connectionManager.getConnection();
     const repository = connection.getRepository(WorkflowModel);
     
-    await repository.delete(id.getValue());
+    const queryBuilder = repository.createQueryBuilder('workflow');
+    
+    if (options.filters) {
+      Object.entries(options.filters).forEach(([key, value]) => {
+        if (value !== undefined) {
+          queryBuilder.andWhere(`workflow.${key} = :${key}`, { [key]: value });
+        }
+      });
+    }
+    
+    if (options.sortBy) {
+      const order = options.sortOrder === 'desc' ? 'DESC' : 'ASC';
+      queryBuilder.orderBy(`workflow.${options.sortBy}`, order);
+    }
+    
+    if (options.offset) {
+      queryBuilder.skip(options.offset);
+    }
+    
+    if (options.limit) {
+      queryBuilder.take(options.limit);
+    }
+    
+    const models = await queryBuilder.getMany();
+    return models.map(model => this.mapper.toEntity(model));
+  }
+
+  async findOne(options: QueryOptions): Promise<Workflow | null> {
+    const results = await this.find({ ...options, limit: 1 });
+    return results[0] ?? null;
+  }
+
+  async findOneOrFail(options: QueryOptions): Promise<Workflow> {
+    const workflow = await this.findOne(options);
+    if (!workflow) {
+      throw new RepositoryError('Workflow not found with given criteria');
+    }
+    return workflow;
+  }
+
+  async findWithPaginationBase(options: QueryOptions): Promise<PaginatedResult<Workflow>> {
+    const connection = await this.connectionManager.getConnection();
+    const repository = connection.getRepository(WorkflowModel);
+    
+    const page = options.offset ? Math.floor(options.offset / (options.limit || 10)) + 1 : 1;
+    const pageSize = options.limit || 10;
+    const skip = (page - 1) * pageSize;
+    
+    const queryBuilder = repository.createQueryBuilder('workflow');
+    
+    if (options.filters) {
+      Object.entries(options.filters).forEach(([key, value]) => {
+        if (value !== undefined) {
+          queryBuilder.andWhere(`workflow.${key} = :${key}`, { [key]: value });
+        }
+      });
+    }
+    
+    const [models, total] = await queryBuilder
+      .skip(skip)
+      .take(pageSize)
+      .orderBy('workflow.createdAt', 'DESC')
+      .getManyAndCount();
+    
+    const totalPages = Math.ceil(total / pageSize);
+    
+    return {
+      items: models.map(model => this.mapper.toEntity(model)),
+      total,
+      page,
+      pageSize,
+      totalPages
+    };
+  }
+
+  async saveBatch(workflows: Workflow[]): Promise<Workflow[]> {
+    const connection = await this.connectionManager.getConnection();
+    const repository = connection.getRepository(WorkflowModel);
+    
+    const models = workflows.map(workflow => this.mapper.toModel(workflow));
+    const savedModels = await repository.save(models);
+    
+    return savedModels.map(model => this.mapper.toEntity(model));
+  }
+
+  async delete(entity: Workflow): Promise<void> {
+    const connection = await this.connectionManager.getConnection();
+    const repository = connection.getRepository(WorkflowModel);
+    
+    await repository.delete({ id: entity.workflowId.value });
+  }
+
+  async deleteById(id: ID): Promise<void> {
+    const connection = await this.connectionManager.getConnection();
+    const repository = connection.getRepository(WorkflowModel);
+    
+    await repository.delete({ id: id.value });
+  }
+
+  async deleteBatch(entities: Workflow[]): Promise<void> {
+    const connection = await this.connectionManager.getConnection();
+    const repository = connection.getRepository(WorkflowModel);
+    
+    const ids = entities.map(entity => entity.workflowId.value);
+    await repository.delete({ id: In(ids) });
+  }
+
+  async deleteWhere(options: QueryOptions): Promise<number> {
+    const connection = await this.connectionManager.getConnection();
+    const repository = connection.getRepository(WorkflowModel);
+    
+    const queryBuilder = repository.createQueryBuilder('workflow').delete();
+    
+    if (options.filters) {
+      Object.entries(options.filters).forEach(([key, value]) => {
+        if (value !== undefined) {
+          queryBuilder.andWhere(`workflow.${key} = :${key}`, { [key]: value });
+        }
+      });
+    }
+    
+    const result = await queryBuilder.execute();
+    return result.affected || 0;
   }
 
   async exists(id: ID): Promise<boolean> {
@@ -57,6 +187,27 @@ export class WorkflowRepository implements IWorkflowRepository {
     
     const count = await repository.count({ where: { id: id.value } });
     return count > 0;
+  }
+
+  async count(options?: QueryOptions): Promise<number> {
+    const connection = await this.connectionManager.getConnection();
+    const repository = connection.getRepository(WorkflowModel);
+    
+    if (!options || !options.filters) {
+      return repository.count();
+    }
+    
+    const queryBuilder = repository.createQueryBuilder('workflow');
+    
+    if (options.filters) {
+      Object.entries(options.filters).forEach(([key, value]) => {
+        if (value !== undefined) {
+          queryBuilder.andWhere(`workflow.${key} = :${key}`, { [key]: value });
+        }
+      });
+    }
+    
+    return queryBuilder.getCount();
   }
 
   async findByName(name: string, options?: WorkflowQueryOptions): Promise<Workflow[]> {
@@ -90,8 +241,8 @@ export class WorkflowRepository implements IWorkflowRepository {
       queryBuilder.skip(options.offset);
     }
 
-    if (options?.orderBy) {
-      queryBuilder.orderBy(`workflow.${options.orderBy}`, options.orderDirection || 'ASC');
+    if (options?.sortBy) {
+      queryBuilder.orderBy(`workflow.${options.sortBy}`, (options.sortOrder || 'ASC').toUpperCase() as 'ASC' | 'DESC');
     } else {
       queryBuilder.orderBy('workflow.createdAt', 'DESC');
     }
@@ -131,8 +282,8 @@ export class WorkflowRepository implements IWorkflowRepository {
       queryBuilder.skip(options.offset);
     }
 
-    if (options?.orderBy) {
-      queryBuilder.orderBy(`workflow.${options.orderBy}`, options.orderDirection || 'ASC');
+    if (options?.sortBy) {
+      queryBuilder.orderBy(`workflow.${options.sortBy}`, (options.sortOrder || 'ASC').toUpperCase() as 'ASC' | 'DESC');
     } else {
       queryBuilder.orderBy('workflow.createdAt', 'DESC');
     }
@@ -172,8 +323,8 @@ export class WorkflowRepository implements IWorkflowRepository {
       queryBuilder.skip(options.offset);
     }
 
-    if (options?.orderBy) {
-      queryBuilder.orderBy(`workflow.${options.orderBy}`, options.orderDirection || 'ASC');
+    if (options?.sortBy) {
+      queryBuilder.orderBy(`workflow.${options.sortBy}`, (options.sortOrder || 'ASC').toUpperCase() as 'ASC' | 'DESC');
     } else {
       queryBuilder.orderBy('workflow.createdAt', 'DESC');
     }
@@ -217,8 +368,8 @@ export class WorkflowRepository implements IWorkflowRepository {
       queryBuilder.skip(options.offset);
     }
 
-    if (options?.orderBy) {
-      queryBuilder.orderBy(`workflow.${options.orderBy}`, options.orderDirection || 'ASC');
+    if (options?.sortBy) {
+      queryBuilder.orderBy(`workflow.${options.sortBy}`, (options.sortOrder || 'ASC').toUpperCase() as 'ASC' | 'DESC');
     } else {
       queryBuilder.orderBy('workflow.createdAt', 'DESC');
     }
@@ -232,7 +383,7 @@ export class WorkflowRepository implements IWorkflowRepository {
     const repository = connection.getRepository(WorkflowModel);
     
     const queryBuilder = repository.createQueryBuilder('workflow')
-      .where('workflow.createdBy = :createdBy', { createdBy: createdBy.getValue() });
+      .where('workflow.createdBy = :createdBy', { createdBy: createdBy.value });
 
     if (options?.includeDeleted === false) {
       queryBuilder.andWhere('workflow.isDeleted = false');
@@ -258,8 +409,8 @@ export class WorkflowRepository implements IWorkflowRepository {
       queryBuilder.skip(options.offset);
     }
 
-    if (options?.orderBy) {
-      queryBuilder.orderBy(`workflow.${options.orderBy}`, options.orderDirection || 'ASC');
+    if (options?.sortBy) {
+      queryBuilder.orderBy(`workflow.${options.sortBy}`, (options.sortOrder || 'ASC').toUpperCase() as 'ASC' | 'DESC');
     } else {
       queryBuilder.orderBy('workflow.createdAt', 'DESC');
     }
@@ -315,8 +466,8 @@ export class WorkflowRepository implements IWorkflowRepository {
       queryBuilder.skip(options.offset);
     }
 
-    if (options?.orderBy) {
-      queryBuilder.orderBy(`workflow.${options.orderBy}`, options.orderDirection || 'ASC');
+    if (options?.sortBy) {
+      queryBuilder.orderBy(`workflow.${options.sortBy}`, (options.sortOrder || 'ASC').toUpperCase() as 'ASC' | 'DESC');
     } else {
       queryBuilder.orderBy('workflow.createdAt', 'DESC');
     }
@@ -360,8 +511,8 @@ export class WorkflowRepository implements IWorkflowRepository {
       queryBuilder.skip(options.offset);
     }
 
-    if (options?.orderBy) {
-      queryBuilder.orderBy(`workflow.${options.orderBy}`, options.orderDirection || 'ASC');
+    if (options?.sortBy) {
+      queryBuilder.orderBy(`workflow.${options.sortBy}`, (options.sortOrder || 'ASC').toUpperCase() as 'ASC' | 'DESC');
     } else {
       queryBuilder.orderBy('workflow.createdAt', 'DESC');
     }
@@ -408,8 +559,8 @@ export class WorkflowRepository implements IWorkflowRepository {
       });
     }
 
-    if (options?.orderBy) {
-      queryBuilder.orderBy(`workflow.${options.orderBy}`, options.orderDirection || 'ASC');
+    if (options?.sortBy) {
+      queryBuilder.orderBy(`workflow.${options.sortBy}`, (options.sortOrder || 'ASC').toUpperCase() as 'ASC' | 'DESC');
     } else {
       queryBuilder.orderBy('workflow.createdAt', 'DESC');
     }
@@ -508,7 +659,7 @@ export class WorkflowRepository implements IWorkflowRepository {
       .where('workflow.name = :name', { name });
 
     if (excludeId) {
-      queryBuilder.andWhere('workflow.id != :excludeId', { excludeId: excludeId.getValue() });
+      queryBuilder.andWhere('workflow.id != :excludeId', { excludeId: excludeId.value });
     }
 
     const count = await queryBuilder.getCount();
@@ -615,13 +766,13 @@ export class WorkflowRepository implements IWorkflowRepository {
     };
 
     if (changedBy) {
-      updateData.updatedBy = changedBy.getValue();
+      updateData.updatedBy = changedBy.value;
     }
 
     const result = await repository.createQueryBuilder()
       .update(WorkflowModel)
       .set(updateData)
-      .where('id IN (:...workflowIds)', { workflowIds: workflowIds.map(id => id.getValue()) })
+      .where('id IN (:...workflowIds)', { workflowIds: workflowIds.map(id => id.value) })
       .execute();
 
     return result.affected || 0;
@@ -631,7 +782,7 @@ export class WorkflowRepository implements IWorkflowRepository {
     const connection = await this.connectionManager.getConnection();
     const repository = connection.getRepository(WorkflowModel);
     
-    const result = await repository.delete(workflowIds.map(id => id.getValue()));
+    const result = await repository.delete({ id: In(workflowIds.map(id => id.value)) });
     return result.affected || 0;
   }
 
@@ -639,7 +790,7 @@ export class WorkflowRepository implements IWorkflowRepository {
     const connection = await this.connectionManager.getConnection();
     const repository = connection.getRepository(WorkflowModel);
     
-    await repository.update({ id: workflowId.getValue() }, {
+    await repository.update({ id: workflowId.value }, {
       state: 'archived',
       updatedAt: new Date()
     });
@@ -655,7 +806,7 @@ export class WorkflowRepository implements IWorkflowRepository {
         state: 'archived',
         updatedAt: new Date()
       })
-      .where('id IN (:...workflowIds)', { workflowIds: workflowIds.map(id => id.getValue()) })
+      .where('id IN (:...workflowIds)', { workflowIds: workflowIds.map(id => id.value) })
       .execute();
 
     return result.affected || 0;
@@ -665,7 +816,7 @@ export class WorkflowRepository implements IWorkflowRepository {
     const connection = await this.connectionManager.getConnection();
     const repository = connection.getRepository(WorkflowModel);
     
-    await repository.update({ id: workflowId.getValue() }, {
+    await repository.update({ id: workflowId.value }, {
       state: 'draft',
       updatedAt: new Date()
     });
@@ -702,8 +853,8 @@ export class WorkflowRepository implements IWorkflowRepository {
       queryBuilder.skip(options.offset);
     }
 
-    if (options?.orderBy) {
-      queryBuilder.orderBy(`workflow.${options.orderBy}`, options.orderDirection || 'ASC');
+    if (options?.sortBy) {
+      queryBuilder.orderBy(`workflow.${options.sortBy}`, (options.sortOrder || 'ASC').toUpperCase() as 'ASC' | 'DESC');
     } else {
       queryBuilder.orderBy('workflow.updatedAt', 'DESC');
     }

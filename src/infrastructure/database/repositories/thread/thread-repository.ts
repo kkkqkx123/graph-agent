@@ -8,6 +8,8 @@ import { ConnectionManager } from '../../connections/connection-manager';
 import { ThreadMapper } from './thread-mapper';
 import { ThreadModel } from '../../models/thread.model';
 import { QueryOptions, PaginatedResult } from '../../../../domain/common/repositories/repository';
+import { RepositoryError } from '../../../../domain/common/errors/repository-error';
+import { In } from 'typeorm';
 
 @injectable()
 export class ThreadRepository implements IThreadRepository {
@@ -31,11 +33,15 @@ export class ThreadRepository implements IThreadRepository {
     const repository = connection.getRepository(ThreadModel);
     
     const model = await repository.findOne({ where: { id: id.value } });
-    if (!model) {
-      return null;
+    return model ? this.mapper.toEntity(model) : null;
+  }
+
+  async findByIdOrFail(id: ID): Promise<Thread> {
+    const thread = await this.findById(id);
+    if (!thread) {
+      throw new RepositoryError(`Thread with ID ${id.value} not found`);
     }
-    
-    return this.mapper.toEntity(model);
+    return thread;
   }
 
   async findAll(): Promise<Thread[]> {
@@ -46,11 +52,133 @@ export class ThreadRepository implements IThreadRepository {
     return models.map(model => this.mapper.toEntity(model));
   }
 
+  async find(options: QueryOptions): Promise<Thread[]> {
+    const connection = await this.connectionManager.getConnection();
+    const repository = connection.getRepository(ThreadModel);
+    
+    const queryBuilder = repository.createQueryBuilder('thread');
+    
+    if (options.filters) {
+      Object.entries(options.filters).forEach(([key, value]) => {
+        if (value !== undefined) {
+          queryBuilder.andWhere(`thread.${key} = :${key}`, { [key]: value });
+        }
+      });
+    }
+    
+    if (options.sortBy) {
+      const order = options.sortOrder === 'desc' ? 'DESC' : 'ASC';
+      queryBuilder.orderBy(`thread.${options.sortBy}`, order);
+    }
+    
+    if (options.offset) {
+      queryBuilder.skip(options.offset);
+    }
+    
+    if (options.limit) {
+      queryBuilder.take(options.limit);
+    }
+    
+    const models = await queryBuilder.getMany();
+    return models.map(model => this.mapper.toEntity(model));
+  }
+
+  async findOne(options: QueryOptions): Promise<Thread | null> {
+    const results = await this.find({ ...options, limit: 1 });
+    return results[0] ?? null;
+  }
+
+  async findOneOrFail(options: QueryOptions): Promise<Thread> {
+    const thread = await this.findOne(options);
+    if (!thread) {
+      throw new RepositoryError('Thread not found with given criteria');
+    }
+    return thread;
+  }
+
+  async findWithPaginationBase(options: QueryOptions): Promise<PaginatedResult<Thread>> {
+    const connection = await this.connectionManager.getConnection();
+    const repository = connection.getRepository(ThreadModel);
+    
+    const page = options.offset ? Math.floor(options.offset / (options.limit || 10)) + 1 : 1;
+    const pageSize = options.limit || 10;
+    const skip = (page - 1) * pageSize;
+    
+    const queryBuilder = repository.createQueryBuilder('thread');
+    
+    if (options.filters) {
+      Object.entries(options.filters).forEach(([key, value]) => {
+        if (value !== undefined) {
+          queryBuilder.andWhere(`thread.${key} = :${key}`, { [key]: value });
+        }
+      });
+    }
+    
+    const [models, total] = await queryBuilder
+      .skip(skip)
+      .take(pageSize)
+      .orderBy('thread.createdAt', 'DESC')
+      .getManyAndCount();
+    
+    const totalPages = Math.ceil(total / pageSize);
+    
+    return {
+      items: models.map(model => this.mapper.toEntity(model)),
+      total,
+      page,
+      pageSize,
+      totalPages
+    };
+  }
+
+  async saveBatch(threads: Thread[]): Promise<Thread[]> {
+    const connection = await this.connectionManager.getConnection();
+    const repository = connection.getRepository(ThreadModel);
+    
+    const models = threads.map(thread => this.mapper.toModel(thread));
+    const savedModels = await repository.save(models);
+    
+    return savedModels.map(model => this.mapper.toEntity(model));
+  }
+
   async delete(entity: Thread): Promise<void> {
     const connection = await this.connectionManager.getConnection();
     const repository = connection.getRepository(ThreadModel);
     
     await repository.delete(entity.threadId.value);
+  }
+
+  async deleteById(id: ID): Promise<void> {
+    const connection = await this.connectionManager.getConnection();
+    const repository = connection.getRepository(ThreadModel);
+    
+    await repository.delete({ id: id.value });
+  }
+
+  async deleteBatch(threads: Thread[]): Promise<void> {
+    const connection = await this.connectionManager.getConnection();
+    const repository = connection.getRepository(ThreadModel);
+    
+    const ids = threads.map(thread => thread.threadId.value);
+    await repository.delete({ id: In(ids) });
+  }
+
+  async deleteWhere(options: QueryOptions): Promise<number> {
+    const connection = await this.connectionManager.getConnection();
+    const repository = connection.getRepository(ThreadModel);
+    
+    const queryBuilder = repository.createQueryBuilder('thread').delete();
+    
+    if (options.filters) {
+      Object.entries(options.filters).forEach(([key, value]) => {
+        if (value !== undefined) {
+          queryBuilder.andWhere(`thread.${key} = :${key}`, { [key]: value });
+        }
+      });
+    }
+    
+    const result = await queryBuilder.execute();
+    return result.affected || 0;
   }
 
   async exists(id: ID): Promise<boolean> {
@@ -59,6 +187,27 @@ export class ThreadRepository implements IThreadRepository {
     
     const count = await repository.count({ where: { id: id.value } });
     return count > 0;
+  }
+
+  async count(options?: QueryOptions): Promise<number> {
+    const connection = await this.connectionManager.getConnection();
+    const repository = connection.getRepository(ThreadModel);
+    
+    if (!options || !options.filters) {
+      return repository.count();
+    }
+    
+    const queryBuilder = repository.createQueryBuilder('thread');
+    
+    if (options.filters) {
+      Object.entries(options.filters).forEach(([key, value]) => {
+        if (value !== undefined) {
+          queryBuilder.andWhere(`thread.${key} = :${key}`, { [key]: value });
+        }
+      });
+    }
+    
+    return queryBuilder.getCount();
   }
 
   async findBySessionId(sessionId: ID, options?: ThreadQueryOptions): Promise<Thread[]> {
@@ -166,8 +315,8 @@ export class ThreadRepository implements IThreadRepository {
       queryBuilder.skip(options.offset);
     }
 
-    if (options?.orderBy) {
-      queryBuilder.orderBy(`thread.${options.orderBy}`, options.orderDirection || 'ASC');
+    if (options?.sortBy) {
+      queryBuilder.orderBy(`thread.${options.sortBy}`, (options.sortOrder || 'ASC').toUpperCase() as 'ASC' | 'DESC');
     } else {
       queryBuilder.orderBy('thread.createdAt', 'DESC');
     }
@@ -401,7 +550,7 @@ export class ThreadRepository implements IThreadRepository {
     }
 
     if (options?.sortBy) {
-      queryBuilder.orderBy(`thread.${options.sortBy}`, options.sortOrder || 'ASC');
+      queryBuilder.orderBy(`thread.${options.sortBy}`, (options.sortOrder || 'ASC').toUpperCase() as 'ASC' | 'DESC');
     } else {
       queryBuilder.orderBy('thread.createdAt', 'DESC');
     }
@@ -581,7 +730,7 @@ export class ThreadRepository implements IThreadRepository {
     const connection = await this.connectionManager.getConnection();
     const repository = connection.getRepository(ThreadModel);
     
-    const result = await repository.delete(threadIds.map(id => id.getValue()));
+    const result = await repository.delete({ id: In(threadIds.map(id => id.value)) });
     return result.affected || 0;
   }
 
@@ -589,7 +738,7 @@ export class ThreadRepository implements IThreadRepository {
     const connection = await this.connectionManager.getConnection();
     const repository = connection.getRepository(ThreadModel);
     
-    const result = await repository.delete({ sessionId: sessionId.getValue() });
+    const result = await repository.delete({ sessionId: sessionId.value });
     return result.affected || 0;
   }
 
@@ -597,7 +746,7 @@ export class ThreadRepository implements IThreadRepository {
     const connection = await this.connectionManager.getConnection();
     const repository = connection.getRepository(ThreadModel);
     
-    await repository.update({ id: threadId.getValue() }, {
+    await repository.update({ id: threadId.value }, {
       state: 'archived',
       updatedAt: new Date()
     });
@@ -609,8 +758,8 @@ export class ThreadRepository implements IThreadRepository {
     
     const result = await repository.createQueryBuilder()
       .update(ThreadModel)
-      .set({ 
-        isDeleted: true,
+      .set({
+        state: 'archived',
         updatedAt: new Date()
       })
       .where('id IN (:...threadIds)', { threadIds: threadIds.map(id => id.value) })
@@ -623,7 +772,7 @@ export class ThreadRepository implements IThreadRepository {
     const connection = await this.connectionManager.getConnection();
     const repository = connection.getRepository(ThreadModel);
     
-    await repository.update({ id: threadId.getValue() }, {
+    await repository.update({ id: threadId.value }, {
       state: 'active',
       updatedAt: new Date()
     });

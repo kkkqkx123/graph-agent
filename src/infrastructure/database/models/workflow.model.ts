@@ -12,8 +12,8 @@ export class WorkflowModel {
   @Column({ nullable: true })
   description?: string;
 
-  @Column()
-  graphId!: string;
+  @Column({ nullable: true })
+  graphId?: string;
 
   @Column({
     type: 'enum',
