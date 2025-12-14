@@ -10,7 +10,11 @@ export enum EdgeTypeValue {
   DEFAULT = 'default',
   ERROR = 'error',
   TIMEOUT = 'timeout',
-  CUSTOM = 'custom'
+  CUSTOM = 'custom',
+  FLEXIBLE_CONDITIONAL = 'flexible_conditional',
+  ASYNC = 'async',
+  SYNC = 'sync',
+  EVENT_DRIVEN = 'event_driven'
 }
 
 /**
@@ -64,6 +68,38 @@ export class EdgeType extends ValueObject<EdgeTypeProps> {
    */
   public static timeout(): EdgeType {
     return new EdgeType({ value: EdgeTypeValue.TIMEOUT });
+  }
+
+  /**
+   * 创建灵活条件边类型
+   * @returns 灵活条件边类型实例
+   */
+  public static flexibleConditional(): EdgeType {
+    return new EdgeType({ value: EdgeTypeValue.FLEXIBLE_CONDITIONAL });
+  }
+
+  /**
+   * 创建异步边类型
+   * @returns 异步边类型实例
+   */
+  public static async(): EdgeType {
+    return new EdgeType({ value: EdgeTypeValue.ASYNC });
+  }
+
+  /**
+   * 创建同步边类型
+   * @returns 同步边类型实例
+   */
+  public static sync(): EdgeType {
+    return new EdgeType({ value: EdgeTypeValue.SYNC });
+  }
+
+  /**
+   * 创建事件驱动边类型
+   * @returns 事件驱动边类型实例
+   */
+  public static eventDriven(): EdgeType {
+    return new EdgeType({ value: EdgeTypeValue.EVENT_DRIVEN });
   }
 
   /**
@@ -135,6 +171,38 @@ export class EdgeType extends ValueObject<EdgeTypeProps> {
   }
 
   /**
+   * 检查是否为灵活条件边
+   * @returns 是否为灵活条件边
+   */
+  public isFlexibleConditional(): boolean {
+    return this.props.value === EdgeTypeValue.FLEXIBLE_CONDITIONAL;
+  }
+
+  /**
+   * 检查是否为异步边
+   * @returns 是否为异步边
+   */
+  public isAsync(): boolean {
+    return this.props.value === EdgeTypeValue.ASYNC;
+  }
+
+  /**
+   * 检查是否为同步边
+   * @returns 是否为同步边
+   */
+  public isSync(): boolean {
+    return this.props.value === EdgeTypeValue.SYNC;
+  }
+
+  /**
+   * 检查是否为事件驱动边
+   * @returns 是否为事件驱动边
+   */
+  public isEventDriven(): boolean {
+    return this.props.value === EdgeTypeValue.EVENT_DRIVEN;
+  }
+
+  /**
    * 检查是否为自定义边
    * @returns 是否为自定义边
    */
@@ -155,7 +223,7 @@ export class EdgeType extends ValueObject<EdgeTypeProps> {
    * @returns 是否需要条件评估
    */
   public requiresConditionEvaluation(): boolean {
-    return this.isConditional();
+    return this.isConditional() || this.isFlexibleConditional();
   }
 
   /**
@@ -163,7 +231,15 @@ export class EdgeType extends ValueObject<EdgeTypeProps> {
    * @returns 是否为正常流程边
    */
   public isNormalFlow(): boolean {
-    return this.isSequence() || this.isDefault();
+    return this.isSequence() || this.isDefault() || this.isSync();
+  }
+
+  /**
+   * 检查是否为异步边
+   * @returns 是否为异步边
+   */
+  public isAsynchronous(): boolean {
+    return this.isAsync() || this.isEventDriven();
   }
 
   /**
@@ -210,6 +286,10 @@ export class EdgeType extends ValueObject<EdgeTypeProps> {
       [EdgeTypeValue.DEFAULT]: '默认边，条件不满足时的默认路径',
       [EdgeTypeValue.ERROR]: '错误边，处理异常情况',
       [EdgeTypeValue.TIMEOUT]: '超时边，处理超时情况',
+      [EdgeTypeValue.FLEXIBLE_CONDITIONAL]: '灵活条件边，支持复杂条件逻辑',
+      [EdgeTypeValue.ASYNC]: '异步边，支持异步执行',
+      [EdgeTypeValue.SYNC]: '同步边，同步执行流程',
+      [EdgeTypeValue.EVENT_DRIVEN]: '事件驱动边，由事件触发执行',
       [EdgeTypeValue.CUSTOM]: '自定义边，根据特定逻辑执行'
     };
 

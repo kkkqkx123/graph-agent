@@ -13,7 +13,11 @@ export enum NodeTypeValue {
   FORK = 'fork',
   JOIN = 'join',
   SUBGRAPH = 'subgraph',
-  CUSTOM = 'custom'
+  CUSTOM = 'custom',
+  CONDITION = 'condition',
+  LLM = 'llm',
+  TOOL = 'tool',
+  WAIT = 'wait'
 }
 
 /**
@@ -91,6 +95,38 @@ export class NodeType extends ValueObject<NodeTypeProps> {
    */
   public static subgraph(): NodeType {
     return new NodeType({ value: NodeTypeValue.SUBGRAPH });
+  }
+
+  /**
+   * 创建条件节点类型
+   * @returns 条件节点类型实例
+   */
+  public static condition(): NodeType {
+    return new NodeType({ value: NodeTypeValue.CONDITION });
+  }
+
+  /**
+   * 创建LLM节点类型
+   * @returns LLM节点类型实例
+   */
+  public static llm(): NodeType {
+    return new NodeType({ value: NodeTypeValue.LLM });
+  }
+
+  /**
+   * 创建工具节点类型
+   * @returns 工具节点类型实例
+   */
+  public static tool(): NodeType {
+    return new NodeType({ value: NodeTypeValue.TOOL });
+  }
+
+  /**
+   * 创建等待节点类型
+   * @returns 等待节点类型实例
+   */
+  public static wait(): NodeType {
+    return new NodeType({ value: NodeTypeValue.WAIT });
   }
 
   /**
@@ -186,6 +222,38 @@ export class NodeType extends ValueObject<NodeTypeProps> {
   }
 
   /**
+   * 检查是否为条件节点
+   * @returns 是否为条件节点
+   */
+  public isCondition(): boolean {
+    return this.props.value === NodeTypeValue.CONDITION;
+  }
+
+  /**
+   * 检查是否为LLM节点
+   * @returns 是否为LLM节点
+   */
+  public isLLM(): boolean {
+    return this.props.value === NodeTypeValue.LLM;
+  }
+
+  /**
+   * 检查是否为工具节点
+   * @returns 是否为工具节点
+   */
+  public isTool(): boolean {
+    return this.props.value === NodeTypeValue.TOOL;
+  }
+
+  /**
+   * 检查是否为等待节点
+   * @returns 是否为等待节点
+   */
+  public isWait(): boolean {
+    return this.props.value === NodeTypeValue.WAIT;
+  }
+
+  /**
    * 检查是否为自定义节点
    * @returns 是否为自定义节点
    */
@@ -207,7 +275,8 @@ export class NodeType extends ValueObject<NodeTypeProps> {
    * @returns 是否为执行节点
    */
   public isExecutable(): boolean {
-    return this.isTask() || this.isSubgraph() || this.isCustom();
+    return this.isTask() || this.isSubgraph() || this.isCustom() ||
+           this.isCondition() || this.isLLM() || this.isTool() || this.isWait();
   }
 
   /**
@@ -223,7 +292,7 @@ export class NodeType extends ValueObject<NodeTypeProps> {
    * @returns 是否可以有多个输出边
    */
   public canHaveMultipleOutputs(): boolean {
-    return this.isDecision() || this.isFork() || this.isStart();
+    return this.isDecision() || this.isFork() || this.isStart() || this.isCondition();
   }
 
   /**
@@ -273,6 +342,10 @@ export class NodeType extends ValueObject<NodeTypeProps> {
       [NodeTypeValue.FORK]: '分支节点，分支出多个执行路径',
       [NodeTypeValue.JOIN]: '连接节点，等待多个输入路径完成',
       [NodeTypeValue.SUBGRAPH]: '子图节点，表示一个子图的执行',
+      [NodeTypeValue.CONDITION]: '条件节点，根据状态进行条件判断和路由决策',
+      [NodeTypeValue.LLM]: 'LLM节点，调用大语言模型进行文本生成',
+      [NodeTypeValue.TOOL]: '工具节点，执行工具调用并处理结果',
+      [NodeTypeValue.WAIT]: '等待节点，处理等待和延迟逻辑',
       [NodeTypeValue.CUSTOM]: '自定义节点，根据特定逻辑执行'
     };
 
