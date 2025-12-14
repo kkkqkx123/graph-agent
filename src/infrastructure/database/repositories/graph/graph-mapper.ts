@@ -1,11 +1,11 @@
-import { Graph } from '../../../../domain/graph/entities/graph';
+import { Graph } from '../../../../domain/workflow/graph/entities/graph';
 import { ID } from '../../../../domain/common/value-objects/id';
 import { Timestamp } from '../../../../domain/common/value-objects/timestamp';
 import { Version } from '../../../../domain/common/value-objects/version';
-import { NodeType } from '../../../../domain/graph/value-objects/node-type';
-import { EdgeType } from '../../../../domain/graph/value-objects/edge-type';
-import { Node } from '../../../../domain/graph/entities/node';
-import { Edge } from '../../../../domain/graph/entities/edge';
+import { NodeType } from '../../../../domain/workflow/graph/value-objects/node-type';
+import { EdgeType } from '../../../../domain/workflow/graph/value-objects/edge-type';
+import { Node } from '../../../../domain/workflow/graph/entities/node';
+import { Edge } from '../../../../domain/workflow/graph/entities/edge';
 import { GraphModel } from '../../models/graph.model';
 import { NodeModel } from '../../models/node.model';
 import { EdgeModel } from '../../models/edge.model';
@@ -56,7 +56,7 @@ export class GraphMapper {
     model.createdAt = entity.createdAt.getDate();
     model.updatedAt = entity.updatedAt.getDate();
     model.version = parseInt(entity.version.getValue());
-    
+
     return model;
   }
 
@@ -93,7 +93,7 @@ export class GraphMapper {
     model.createdAt = entity.createdAt.getDate();
     model.updatedAt = entity.updatedAt.getDate();
     model.version = parseInt(entity.version.getValue());
-    
+
     return model;
   }
 
@@ -131,7 +131,7 @@ export class GraphMapper {
     model.createdAt = entity.createdAt.getDate();
     model.updatedAt = entity.updatedAt.getDate();
     model.version = parseInt(entity.version.getValue());
-    
+
     return model;
   }
 }

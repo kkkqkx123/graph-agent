@@ -24,4 +24,4 @@ export {
 } from './workflow';
 
 // 导出图领域模块
-export * from './graph';
+export * from './workflow/graph';
