@@ -14,6 +14,7 @@ export interface TokenUsage {
   promptTokensCost?: number;
   completionTokensCost?: number;
   totalCost?: number;
+  reasoningTokens?: number;
 }
 
 /**

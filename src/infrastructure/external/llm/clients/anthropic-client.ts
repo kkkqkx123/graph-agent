@@ -1,69 +1,41 @@
 import { injectable, inject } from 'inversify';
-import { ILLMClient } from '../../../../domain/llm/interfaces/llm-client.interface';
 import { LLMRequest } from '../../../../domain/llm/entities/llm-request';
 import { LLMResponse } from '../../../../domain/llm/entities/llm-response';
 import { ModelConfig } from '../../../../domain/llm/value-objects/model-config';
-import { HttpClient } from '../../../common/http/http-client';
-import { TokenBucketLimiter } from '../rate-limiters/token-bucket-limiter';
-import { TokenCalculator } from '../utils/token-calculator';
+import { BaseLLMClient } from './base-llm-client';
 
 @injectable()
-export class AnthropicClient implements ILLMClient {
-  private readonly apiKey: string;
-  private readonly baseURL: string;
-
+export class AnthropicClient extends BaseLLMClient {
   constructor(
-    @inject('HttpClient') private httpClient: HttpClient,
-    @inject('TokenBucketLimiter') private rateLimiter: TokenBucketLimiter,
-    @inject('TokenCalculator') private tokenCalculator: TokenCalculator,
-    @inject('ConfigManager') private configManager: any
+    @inject('HttpClient') httpClient: any,
+    @inject('TokenBucketLimiter') rateLimiter: any,
+    @inject('TokenCalculator') tokenCalculator: any,
+    @inject('ConfigManager') configManager: any
   ) {
-    this.apiKey = this.configManager.get('llm.anthropic.apiKey');
-    this.baseURL = this.configManager.get('llm.anthropic.baseURL', 'https://api.anthropic.com');
+    super(
+      httpClient,
+      rateLimiter,
+      tokenCalculator,
+      configManager,
+      'Anthropic',
+      'anthropic',
+      'https://api.anthropic.com'
+    );
   }
 
-  async generateResponse(request: LLMRequest): Promise<LLMResponse> {
-    // Check rate limit
-    await this.rateLimiter.checkLimit();
-
-    try {
-      // Prepare request
-      const anthropicRequest = this.prepareRequest(request);
-      
-      // Make API call
-      const response = await this.httpClient.post(`${this.baseURL}/v1/messages`, anthropicRequest, {
-        headers: {
-          'x-api-key': this.apiKey,
-          'Content-Type': 'application/json',
-          'anthropic-version': '2023-06-01'
-        }
-      });
-
-      // Parse response
-      const anthropicResponse = response.data;
-      
-      // Convert to domain response
-      return this.toLLMResponse(anthropicResponse, request);
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : String(error);
-      throw new Error(`Anthropic API error: ${errorMessage}`);
-    }
+  protected getEndpoint(): string {
+    return `${this.baseURL}/v1/messages`;
   }
 
-  async calculateTokens(request: LLMRequest): Promise<number> {
-    return this.tokenCalculator.calculateTokens(request);
+  protected getHeaders(): Record<string, string> {
+    return {
+      'x-api-key': this.apiKey,
+      'Content-Type': 'application/json',
+      'anthropic-version': '2023-06-01'
+    };
   }
 
-  async calculateCost(request: LLMRequest, response: LLMResponse): Promise<number> {
-    const modelConfig = this.getModelConfig();
-    const promptTokens = await this.calculateTokens(request);
-    const completionTokens = response.usage?.completionTokens || 0;
-    
-    return (promptTokens * modelConfig.getPromptCostPer1KTokens() +
-            completionTokens * modelConfig.getCompletionCostPer1KTokens()) / 1000;
-  }
-
-  private prepareRequest(request: LLMRequest): any {
+  protected prepareRequest(request: LLMRequest): any {
     // Convert OpenAI-style messages to Anthropic format
     const systemMessage = request.messages.find(msg => msg.role === 'system');
     const messages = request.messages
@@ -73,9 +45,12 @@ export class AnthropicClient implements ILLMClient {
         content: msg.content
       }));
 
+    // 获取模型配置以使用正确的默认值
+    const modelConfig = this.getModelConfig();
+    
     const anthropicRequest: any = {
       model: request.model,
-      max_tokens: request.maxTokens || 1000,
+      max_tokens: request.maxTokens ?? modelConfig.getMaxTokens(),
       messages
     };
 
@@ -85,12 +60,15 @@ export class AnthropicClient implements ILLMClient {
 
     if (request.temperature !== undefined) {
       anthropicRequest.temperature = request.temperature;
+    } else {
+      // 只有在请求中没有指定温度时才使用配置中的默认值
+      anthropicRequest.temperature = modelConfig.getTemperature();
     }
 
     return anthropicRequest;
   }
 
-  private toLLMResponse(anthropicResponse: any, request: LLMRequest): LLMResponse {
+  protected toLLMResponse(anthropicResponse: any, request: LLMRequest): LLMResponse {
     const content = anthropicResponse.content[0]?.text || '';
     const usage = anthropicResponse.usage;
 
@@ -113,6 +91,23 @@ export class AnthropicClient implements ILLMClient {
       anthropicResponse.stop_reason,
       0 // duration - would need to be calculated
     );
+  }
+
+  getSupportedModelsList(): string[] {
+    return [
+      // Claude 3.5系列
+      "claude-3-5-sonnet-20241022",
+      "claude-3-5-haiku-20241022",
+      
+      // Claude 4系列
+      "claude-4.1-opus",
+      "claude-4.0-sonnet",
+      
+      // 4.5系列
+      "claude-4.5-opus",
+      "claude-4.5-sonnet",
+      "claude-4.5-haiku"
+    ];
   }
 
   getModelConfig(): ModelConfig {

@@ -1,71 +1,48 @@
 import { injectable, inject } from 'inversify';
-import { ILLMClient } from '../../../../domain/llm/interfaces/llm-client.interface';
 import { LLMRequest } from '../../../../domain/llm/entities/llm-request';
 import { LLMResponse } from '../../../../domain/llm/entities/llm-response';
 import { ModelConfig } from '../../../../domain/llm/value-objects/model-config';
-import { HttpClient } from '../../../common/http/http-client';
-import { TokenBucketLimiter } from '../rate-limiters/token-bucket-limiter';
-import { TokenCalculator } from '../utils/token-calculator';
+import { BaseLLMClient } from './base-llm-client';
 
 @injectable()
-export class GeminiClient implements ILLMClient {
-  private readonly apiKey: string;
-  private readonly baseURL: string;
-
+export class GeminiClient extends BaseLLMClient {
   constructor(
-    @inject('HttpClient') private httpClient: HttpClient,
-    @inject('TokenBucketLimiter') private rateLimiter: TokenBucketLimiter,
-    @inject('TokenCalculator') private tokenCalculator: TokenCalculator,
-    @inject('ConfigManager') private configManager: any
+    @inject('HttpClient') httpClient: any,
+    @inject('TokenBucketLimiter') rateLimiter: any,
+    @inject('TokenCalculator') tokenCalculator: any,
+    @inject('ConfigManager') configManager: any
   ) {
-    this.apiKey = this.configManager.get('llm.gemini.apiKey');
-    this.baseURL = this.configManager.get('llm.gemini.baseURL', 'https://generativelanguage.googleapis.com');
+    super(
+      httpClient,
+      rateLimiter,
+      tokenCalculator,
+      configManager,
+      'Gemini',
+      'gemini',
+      'https://generativelanguage.googleapis.com'
+    );
   }
 
-  async generateResponse(request: LLMRequest): Promise<LLMResponse> {
-    // Check rate limit
-    await this.rateLimiter.checkLimit();
-
-    try {
-      // Prepare request
-      const geminiRequest = this.prepareRequest(request);
-      
-      // Make API call
-      const response = await this.httpClient.post(
-        `${this.baseURL}/v1beta/models/${request.model}:generateContent?key=${this.apiKey}`,
-        geminiRequest,
-        {
-          headers: {
-            'Content-Type': 'application/json'
-          }
-        }
-      );
-
-      // Parse response
-      const geminiResponse = response.data;
-      
-      // Convert to domain response
-      return this.toLLMResponse(geminiResponse, request);
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : String(error);
-      throw new Error(`Gemini API error: ${errorMessage}`);
-    }
+  protected getEndpoint(): string {
+    // Gemini的端点需要动态构建，因为包含模型名称
+    return '';
   }
 
-  async calculateTokens(request: LLMRequest): Promise<number> {
-    return this.tokenCalculator.calculateTokens(request);
+  protected getHeaders(): Record<string, string> {
+    return {
+      'Content-Type': 'application/json'
+    };
   }
 
-  async calculateCost(request: LLMRequest, response: LLMResponse): Promise<number> {
-    const modelConfig = this.getModelConfig();
-    const promptTokens = await this.calculateTokens(request);
-    const completionTokens = response.usage?.completionTokens || 0;
-    
-    return (promptTokens * modelConfig.getPromptCostPer1KTokens() +
-            completionTokens * modelConfig.getCompletionCostPer1KTokens()) / 1000;
+  protected override async makeRequest(data: any, endpoint?: string): Promise<any> {
+    // Gemini需要特殊的请求处理，因为API密钥在URL中
+    const url = endpoint || `${this.baseURL}/v1beta/models/${data.model}:generateContent?key=${this.apiKey}`;
+    const headers = this.getHeaders();
+
+    return this.httpClient.post(url, data, { headers });
   }
 
-  private prepareRequest(request: LLMRequest): any {
+  protected prepareRequest(request: LLMRequest): any {
     // Convert OpenAI-style messages to Gemini format
     const systemInstruction = request.messages.find(msg => msg.role === 'system');
     const messages = request.messages.filter(msg => msg.role !== 'system');
@@ -75,11 +52,17 @@ export class GeminiClient implements ILLMClient {
       parts: [{ text: msg.content }]
     }));
 
+    // 获取模型配置以使用正确的默认值
+    const modelConfig = this.getModelConfig();
+    
     const geminiRequest: any = {
       contents,
       generationConfig: {
-        temperature: request.temperature || 0.7,
-        maxOutputTokens: request.maxTokens || 1000,
+        temperature: request.temperature ?? modelConfig.getTemperature(),
+        maxOutputTokens: request.maxTokens ?? modelConfig.getMaxTokens(),
+        topP: request.topP ?? modelConfig.getTopP(),
+        frequencyPenalty: request.frequencyPenalty ?? modelConfig.getFrequencyPenalty(),
+        presencePenalty: request.presencePenalty ?? modelConfig.getPresencePenalty()
       }
     };
 
@@ -92,7 +75,7 @@ export class GeminiClient implements ILLMClient {
     return geminiRequest;
   }
 
-  private toLLMResponse(geminiResponse: any, request: LLMRequest): LLMResponse {
+  protected toLLMResponse(geminiResponse: any, request: LLMRequest): LLMResponse {
     const candidate = geminiResponse.candidates?.[0];
     const content = candidate?.content?.parts?.[0]?.text || '';
     const usage = geminiResponse.usageMetadata;
@@ -118,11 +101,24 @@ export class GeminiClient implements ILLMClient {
     );
   }
 
+  getSupportedModelsList(): string[] {
+    return [
+      // Gemini 2.5系列
+      "gemini-2.5-pro",
+      "gemini-2.5-flash",
+      "gemini-2.5-flash-lite",
+
+      // 3.0系列
+      "gemini-3.0-pro",
+      "gemini-3.0-flash"
+    ];
+  }
+
   getModelConfig(): ModelConfig {
-    const model = 'gemini-pro'; // 默认模型
+    const model = 'gemini-2.5-pro'; // 默认模型
     const configs = this.configManager.get('llm.gemini.models', {});
     const config = configs[model];
-    
+
     if (!config) {
       throw new Error(`Model configuration not found for ${model}`);
     }
@@ -131,7 +127,7 @@ export class GeminiClient implements ILLMClient {
       model,
       provider: 'google',
       maxTokens: config.maxTokens || 8192,
-      contextWindow: config.contextWindow || 32768,
+      contextWindow: config.contextWindow || 150000,
       temperature: config.temperature || 0.7,
       topP: config.topP || 1.0,
       frequencyPenalty: config.frequencyPenalty || 0.0,

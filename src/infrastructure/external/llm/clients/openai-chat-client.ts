@@ -1,82 +1,60 @@
 import { injectable, inject } from 'inversify';
-import { ILLMClient } from '../../../../domain/llm/interfaces/llm-client.interface';
 import { LLMRequest } from '../../../../domain/llm/entities/llm-request';
 import { LLMResponse } from '../../../../domain/llm/entities/llm-response';
 import { ModelConfig } from '../../../../domain/llm/value-objects/model-config';
 import { ID } from '../../../../domain/common/value-objects/id';
-import { HttpClient } from '../../../common/http/http-client';
-import { TokenBucketLimiter } from '../rate-limiters/token-bucket-limiter';
-import { TokenCalculator } from '../utils/token-calculator';
+import { BaseLLMClient } from './base-llm-client';
 
 @injectable()
-export class OpenAIClient implements ILLMClient {
-  private readonly apiKey: string;
-  private readonly baseURL: string;
-
+export class OpenAIChatClient extends BaseLLMClient {
   constructor(
-    @inject('HttpClient') private httpClient: HttpClient,
-    @inject('TokenBucketLimiter') private rateLimiter: TokenBucketLimiter,
-    @inject('TokenCalculator') private tokenCalculator: TokenCalculator,
-    @inject('ConfigManager') private configManager: any
+    @inject('HttpClient') httpClient: any,
+    @inject('TokenBucketLimiter') rateLimiter: any,
+    @inject('TokenCalculator') tokenCalculator: any,
+    @inject('ConfigManager') configManager: any
   ) {
-    this.apiKey = this.configManager.get('llm.openai.apiKey');
-    this.baseURL = this.configManager.get('llm.openai.baseURL', 'https://api.openai.com/v1');
+    super(
+      httpClient,
+      rateLimiter,
+      tokenCalculator,
+      configManager,
+      'OpenAI',
+      'openai',
+      'https://api.openai.com/v1'
+    );
   }
 
-  async generateResponse(request: LLMRequest): Promise<LLMResponse> {
-    // Check rate limit
-    await this.rateLimiter.checkLimit();
-
-    try {
-      // Prepare request
-      const openaiRequest = this.prepareRequest(request);
-      
-      // Make API call
-      const response = await this.httpClient.post(`${this.baseURL}/chat/completions`, openaiRequest, {
-        headers: {
-          'Authorization': `Bearer ${this.apiKey}`,
-          'Content-Type': 'application/json'
-        }
-      });
-
-      // Parse response
-      const openaiResponse = response.data;
-      
-      // Convert to domain response
-      return this.toLLMResponse(openaiResponse, request);
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : String(error);
-      throw new Error(`OpenAI API error: ${errorMessage}`);
-    }
+  protected getEndpoint(): string {
+    return `${this.baseURL}/chat/completions`;
   }
 
-  async calculateTokens(request: LLMRequest): Promise<number> {
-    return this.tokenCalculator.calculateTokens(request);
+  protected getHeaders(): Record<string, string> {
+    return {
+      'Authorization': `Bearer ${this.apiKey}`,
+      'Content-Type': 'application/json'
+    };
   }
 
-  async calculateCost(request: LLMRequest, response: LLMResponse): Promise<number> {
+  protected prepareRequest(request: LLMRequest): any {
+    // 获取模型配置以使用正确的默认值
     const modelConfig = this.getModelConfig();
-    const promptTokens = await this.calculateTokens(request);
-    const completionTokens = response.usage?.completionTokens || 0;
     
-    return (promptTokens * modelConfig.getPromptCostPer1KTokens() +
-            completionTokens * modelConfig.getCompletionCostPer1KTokens()) / 1000;
-  }
-
-  private prepareRequest(request: LLMRequest): any {
     return {
       model: request.model,
       messages: request.messages.map(msg => ({
         role: msg.role,
         content: msg.content
       })),
-      temperature: request.temperature || 0.7,
-      max_tokens: request.maxTokens || 1000,
+      temperature: request.temperature ?? modelConfig.getTemperature(),
+      max_tokens: request.maxTokens ?? modelConfig.getMaxTokens(),
+      top_p: request.topP ?? modelConfig.getTopP(),
+      frequency_penalty: request.frequencyPenalty ?? modelConfig.getFrequencyPenalty(),
+      presence_penalty: request.presencePenalty ?? modelConfig.getPresencePenalty(),
       stream: false
     };
   }
 
-  private toLLMResponse(openaiResponse: any, request: LLMRequest): LLMResponse {
+  protected toLLMResponse(openaiResponse: any, request: LLMRequest): LLMResponse {
     const choice = openaiResponse.choices[0];
     const usage = openaiResponse.usage;
 
@@ -101,7 +79,25 @@ export class OpenAIClient implements ILLMClient {
     );
   }
 
-  getModelConfig(): ModelConfig {
+  getSupportedModelsList(): string[] {
+    return [
+      // GPT-4系列
+      "gpt-4", "gpt-4-32k", "gpt-4-0613", "gpt-4-32k-0613",
+      "gpt-4-turbo", "gpt-4-turbo-2024-04-09", "gpt-4-turbo-preview",
+      "gpt-4o", "gpt-4o-2024-05-13", "gpt-4o-2024-08-06",
+      "gpt-4o-mini", "gpt-4o-mini-2024-07-18",
+      
+      // GPT-3.5系列
+      "gpt-3.5-turbo", "gpt-3.5-turbo-16k", "gpt-3.5-turbo-0613",
+      "gpt-3.5-turbo-16k-0613", "gpt-3.5-turbo-0301",
+      
+      // 其他模型
+      "text-davinci-003", "text-davinci-002", "text-curie-001",
+      "text-babbage-001", "text-ada-001"
+    ];
+  }
+
+  public getModelConfig(): ModelConfig {
     const model = 'gpt-3.5-turbo'; // 默认模型
     const configs = this.configManager.get('llm.openai.models', {});
     const config = configs[model];
@@ -132,34 +128,84 @@ export class OpenAIClient implements ILLMClient {
     });
   }
 
-  async generateResponseStream(request: LLMRequest): Promise<AsyncIterable<LLMResponse>> {
-    // Check rate limit
+  public override async generateResponseStream(request: LLMRequest): Promise<AsyncIterable<LLMResponse>> {
     await this.rateLimiter.checkLimit();
 
     try {
-      // Prepare request with streaming enabled
+      // 准备请求，启用流式模式
       const openaiRequest = {
         ...this.prepareRequest(request),
         stream: true
       };
       
-      // Make streaming API call
-      const response = await this.httpClient.post(`${this.baseURL}/chat/completions`, openaiRequest, {
-        headers: {
-          'Authorization': `Bearer ${this.apiKey}`,
-          'Content-Type': 'application/json'
-        }
+      // 发送流式请求
+      const response = await this.httpClient.post(this.getEndpoint(), openaiRequest, {
+        headers: this.getHeaders(),
+        responseType: 'stream' // 确保获取流式响应
       });
 
-      // Convert to domain response stream
-      return this.toLLMResponseStream(response, request);
+      // 解析流式响应
+      return this.parseStreamResponse(response, request);
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : String(error);
-      throw new Error(`OpenAI API streaming error: ${errorMessage}`);
+      this.handleError(error);
     }
   }
 
-  async isModelAvailable(): Promise<boolean> {
+  protected override async parseStreamResponse(response: any, request: LLMRequest): Promise<AsyncIterable<LLMResponse>> {
+    const self = this;
+    
+    async function* streamGenerator() {
+      // 处理流式响应数据
+      for await (const chunk of response.data) {
+        const lines = chunk.toString().split('\n').filter((line: string) => line.trim() !== '');
+        
+        for (const line of lines) {
+          if (line.startsWith('data: ')) {
+            const dataStr = line.slice(6);
+            
+            // 跳过结束标记
+            if (dataStr.trim() === '[DONE]') {
+              return;
+            }
+            
+            try {
+              const data = JSON.parse(dataStr);
+              const choice = data.choices[0];
+              
+              if (choice) {
+                yield LLMResponse.create(
+                  request.requestId,
+                  request.model,
+                  [{
+                    index: choice.index || 0,
+                    message: {
+                      role: 'assistant',
+                      content: choice.delta?.content || ''
+                    },
+                    finish_reason: choice.finish_reason || ''
+                  }],
+                  {
+                    promptTokens: data.usage?.prompt_tokens || 0,
+                    completionTokens: data.usage?.completion_tokens || 0,
+                    totalTokens: data.usage?.total_tokens || 0
+                  },
+                  choice.finish_reason || '',
+                  0
+                );
+              }
+            } catch (e) {
+              // 跳过无效JSON
+              continue;
+            }
+          }
+        }
+      }
+    }
+    
+    return streamGenerator();
+  }
+
+  public override async isModelAvailable(): Promise<boolean> {
     try {
       const response = await this.httpClient.get(`${this.baseURL}/models`, {
         headers: {
@@ -172,7 +218,7 @@ export class OpenAIClient implements ILLMClient {
     }
   }
 
-  async getModelInfo(): Promise<{
+  public override async getModelInfo(): Promise<{
     name: string;
     provider: string;
     version: string;
@@ -210,7 +256,7 @@ export class OpenAIClient implements ILLMClient {
     }
   }
 
-  async validateRequest(request: LLMRequest): Promise<{
+  public override async validateRequest(request: LLMRequest): Promise<{
     isValid: boolean;
     errors: string[];
     warnings: string[];
@@ -236,22 +282,22 @@ export class OpenAIClient implements ILLMClient {
     };
   }
 
-  async validateParameters(parameters: any): Promise<boolean> {
+  public override async validateParameters(parameters: any): Promise<boolean> {
     // Basic parameter validation
     return parameters && typeof parameters === 'object';
   }
 
-  async preprocessRequest(request: LLMRequest): Promise<LLMRequest> {
+  public override async preprocessRequest(request: LLMRequest): Promise<LLMRequest> {
     // Apply any preprocessing logic here
     return request;
   }
 
-  async postprocessResponse(response: LLMResponse): Promise<LLMResponse> {
+  public override async postprocessResponse(response: LLMResponse): Promise<LLMResponse> {
     // Apply any postprocessing logic here
     return response;
   }
 
-  async healthCheck(): Promise<{
+  public override async healthCheck(): Promise<{
     status: 'healthy' | 'unhealthy' | 'degraded';
     message?: string;
     latency?: number;
@@ -282,15 +328,15 @@ export class OpenAIClient implements ILLMClient {
     }
   }
 
-  getClientName(): string {
-    return 'OpenAI';
+  public override getClientName(): string {
+    return 'OpenAI Chat';
   }
 
-  getClientVersion(): string {
+  public override getClientVersion(): string {
     return '1.0.0';
   }
 
-  async getSupportedModels(): Promise<string[]> {
+  public override async getSupportedModels(): Promise<string[]> {
     try {
       const response = await this.httpClient.get(`${this.baseURL}/models`, {
         headers: {
@@ -303,7 +349,7 @@ export class OpenAIClient implements ILLMClient {
     }
   }
 
-  async getRateLimitInfo(): Promise<{
+  public override async getRateLimitInfo(): Promise<{
     requestsPerMinute: number;
     tokensPerMinute: number;
     requestsPerHour: number;
@@ -327,15 +373,15 @@ export class OpenAIClient implements ILLMClient {
     };
   }
 
-  async resetRateLimit(): Promise<boolean> {
+  public override async resetRateLimit(): Promise<boolean> {
     return true;
   }
 
-  async waitForRateLimitReset(timeout?: number): Promise<boolean> {
+  public override async waitForRateLimitReset(timeout?: number): Promise<boolean> {
     return true;
   }
 
-  async getCacheStatistics(): Promise<{
+  public override async getCacheStatistics(): Promise<{
     hits: number;
     misses: number;
     hitRate: number;
@@ -353,11 +399,11 @@ export class OpenAIClient implements ILLMClient {
     };
   }
 
-  async clearCache(): Promise<boolean> {
+  public override async clearCache(): Promise<boolean> {
     return true;
   }
 
-  async getErrorStatistics(startTime?: Date, endTime?: Date): Promise<{
+  public override async getErrorStatistics(startTime?: Date, endTime?: Date): Promise<{
     totalErrors: number;
     byType: Record<string, number>;
     byStatusCode: Record<string, number>;
@@ -373,7 +419,7 @@ export class OpenAIClient implements ILLMClient {
     };
   }
 
-  async getPerformanceStatistics(startTime?: Date, endTime?: Date): Promise<{
+  public override async getPerformanceStatistics(startTime?: Date, endTime?: Date): Promise<{
     averageLatency: number;
     medianLatency: number;
     p95Latency: number;
@@ -399,7 +445,7 @@ export class OpenAIClient implements ILLMClient {
     };
   }
 
-  async getUsageStatistics(startTime?: Date, endTime?: Date): Promise<{
+  public override async getUsageStatistics(startTime?: Date, endTime?: Date): Promise<{
     totalRequests: number;
     totalTokens: number;
     totalCost: number;
@@ -421,7 +467,7 @@ export class OpenAIClient implements ILLMClient {
     };
   }
 
-  async exportStatistics(
+  public override async exportStatistics(
     format: 'json' | 'csv' | 'xml',
     startTime?: Date,
     endTime?: Date
@@ -429,24 +475,24 @@ export class OpenAIClient implements ILLMClient {
     return JSON.stringify({});
   }
 
-  async configure(config: Record<string, unknown>): Promise<boolean> {
+  public override async configure(config: Record<string, unknown>): Promise<boolean> {
     return true;
   }
 
-  async getConfiguration(): Promise<Record<string, unknown>> {
+  public override async getConfiguration(): Promise<Record<string, unknown>> {
     return {};
   }
 
-  async resetConfiguration(): Promise<boolean> {
+  public override async resetConfiguration(): Promise<boolean> {
     return true;
   }
 
-  async close(): Promise<boolean> {
+  public override async close(): Promise<boolean> {
     // Clean up resources if needed
     return true;
   }
 
-  async getModelCapabilities(model: string): Promise<any> {
+  public override async getModelCapabilities(model: string): Promise<any> {
     const config = this.getModelConfig();
     return {
       supportsStreaming: config.supportsStreaming(),
@@ -459,22 +505,23 @@ export class OpenAIClient implements ILLMClient {
     };
   }
 
-  async estimateTokens(text: string): Promise<number> {
-    return Math.ceil(text.length / 4); // 简单估算
+  public override async estimateTokens(text: string): Promise<number> {
+    // 使用token计算器进行精确计算
+    return this.tokenCalculator.calculateTokensForModel(text, 'gpt-3.5-turbo');
   }
 
-  async truncateText(text: string, maxTokens: number): Promise<string> {
-    const estimatedTokens = Math.ceil(text.length / 4);
+  public override async truncateText(text: string, maxTokens: number): Promise<string> {
+    // 简单的文本截断实现
+    const estimatedTokens = await this.estimateTokens(text);
     if (estimatedTokens <= maxTokens) {
       return text;
     }
     
-    // 简单截断
     const ratio = maxTokens / estimatedTokens;
     return text.substring(0, Math.floor(text.length * ratio));
   }
 
-  async formatMessages(messages: any[]): Promise<any[]> {
+  public override async formatMessages(messages: any[]): Promise<any[]> {
     // Format messages for OpenAI API
     return messages.map(msg => ({
       role: msg.role,
@@ -482,7 +529,7 @@ export class OpenAIClient implements ILLMClient {
     }));
   }
 
-  async parseResponse(response: any): Promise<LLMResponse> {
+  public override async parseResponse(response: any): Promise<LLMResponse> {
     // 简单返回错误响应
     return LLMResponse.create(
       ID.fromString('error-request-id'),
@@ -495,7 +542,7 @@ export class OpenAIClient implements ILLMClient {
     );
   }
 
-  async handleError(error: any): Promise<LLMResponse> {
+  public override async handleErrorWithResponse(error: any): Promise<LLMResponse> {
     // Create error response
     return LLMResponse.create(
       ID.fromString('error-request-id'),
@@ -504,54 +551,9 @@ export class OpenAIClient implements ILLMClient {
       { promptTokens: 0, completionTokens: 0, totalTokens: 0 },
       'error',
       0,
-      { metadata: { error: error instanceof Error ? error.message : String(error) } }
-    );
-  }
-
-  private async toLLMResponseStream(response: any, request: LLMRequest): Promise<AsyncIterable<LLMResponse>> {
-    async function* streamGenerator() {
-      for await (const chunk of response) {
-        const lines = chunk.toString().split('\n').filter((line: string) => line.trim() !== '');
-        
-        for (const line of lines) {
-          if (line.startsWith('data: ')) {
-            const data = line.slice(6);
-            
-            if (data === '[DONE]') {
-              return;
-            }
-            
-            try {
-              const parsed = JSON.parse(data);
-              const choice = parsed.choices[0];
-              
-              if (choice) {
-                yield LLMResponse.create(
-                  request.requestId,
-                  request.model,
-                  [{
-                    index: choice.index || 0,
-                    message: choice.message || { role: 'assistant', content: '' },
-                    finish_reason: choice.finish_reason || 'stop'
-                  }],
-                  {
-                    promptTokens: parsed.usage?.prompt_tokens || 0,
-                    completionTokens: parsed.usage?.completion_tokens || 0,
-                    totalTokens: parsed.usage?.total_tokens || 0
-                  },
-                  choice.finish_reason || 'stop',
-                  0
-                );
-              }
-            } catch (e) {
-              // Skip invalid JSON
-              continue;
-            }
-          }
-        }
+      {
+        metadata: { error: error instanceof Error ? error.message : String(error) }
       }
-    }
-    
-    return streamGenerator();
+    );
   }
 }

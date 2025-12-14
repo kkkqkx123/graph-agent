@@ -49,6 +49,9 @@ export interface LLMRequestProps {
   }>;
   toolChoice?: 'none' | 'auto' | 'required' | { type: string; function: { name: string } };
   stream?: boolean;
+  reasoningEffort?: 'low' | 'medium' | 'high';
+  verbosity?: 'concise' | 'normal' | 'detailed';
+  previousResponseId?: string;
   metadata: Record<string, unknown>;
   createdAt: Timestamp;
   updatedAt: Timestamp;
@@ -104,6 +107,9 @@ export class LLMRequest extends Entity {
       }>;
       toolChoice?: 'none' | 'auto' | 'required' | { type: string; function: { name: string } };
       stream?: boolean;
+      reasoningEffort?: 'low' | 'medium' | 'high';
+      verbosity?: 'concise' | 'normal' | 'detailed';
+      previousResponseId?: string;
       metadata?: Record<string, unknown>;
     }
   ): LLMRequest {
@@ -127,6 +133,9 @@ export class LLMRequest extends Entity {
       tools: options?.tools,
       toolChoice: options?.toolChoice,
       stream: options?.stream ?? false,
+      reasoningEffort: options?.reasoningEffort,
+      verbosity: options?.verbosity,
+      previousResponseId: options?.previousResponseId,
       metadata: options?.metadata || {},
       createdAt: now,
       updatedAt: now,
@@ -279,6 +288,30 @@ export class LLMRequest extends Entity {
    */
   public get stream(): boolean | undefined {
     return this.props.stream;
+  }
+
+  /**
+   * 获取推理努力程度
+   * @returns 推理努力程度
+   */
+  public get reasoningEffort(): 'low' | 'medium' | 'high' | undefined {
+    return this.props.reasoningEffort;
+  }
+
+  /**
+   * 获取详细程度
+   * @returns 详细程度
+   */
+  public get verbosity(): 'concise' | 'normal' | 'detailed' | undefined {
+    return this.props.verbosity;
+  }
+
+  /**
+   * 获取前一个响应ID
+   * @returns 前一个响应ID
+   */
+  public get previousResponseId(): string | undefined {
+    return this.props.previousResponseId;
   }
 
   /**
