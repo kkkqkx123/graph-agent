@@ -1,15 +1,16 @@
 /**
  * OpenAI提供商实现
- * 
+ *
  * 提供OpenAI API的格式转换功能
  */
 
 import { LLMMessage } from '../../../../../domain/llm/entities/llm-request';
 import { BaseProvider, ConversionContext } from '../base';
+import { OpenAIToolProcessor, OpenAIContentProcessor } from '../processors';
 
 export class OpenAIProvider extends BaseProvider {
   constructor() {
-    super('openai');
+    super('openai', new OpenAIToolProcessor(), new OpenAIContentProcessor());
   }
 
   override getDefaultModel(): string {
@@ -240,37 +241,6 @@ export class OpenAIProvider extends BaseProvider {
     }
   }
 
-  /**
-   * 转换工具格式
-   */
-  override convertTools(
-    tools: any[],
-    context: ConversionContext
-  ): any[] {
-    // OpenAI工具格式已经是标准格式，直接返回
-    return tools;
-  }
-
-  /**
-   * 处理工具选择策略
-   */
-  override processToolChoice(
-    toolChoice: any,
-    context: ConversionContext
-  ): any {
-    // OpenAI支持的工具选择策略
-    if (toolChoice === 'required') {
-      return 'required';
-    } else if (toolChoice === 'auto') {
-      return 'auto';
-    } else if (toolChoice === 'none') {
-      return 'none';
-    } else if (typeof toolChoice === 'object') {
-      return toolChoice;
-    } else {
-      return 'auto';
-    }
-  }
 
   /**
    * 验证响应格式

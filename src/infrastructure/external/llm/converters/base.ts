@@ -1,10 +1,11 @@
 /**
  * 转换器基础类和接口定义
- * 
+ *
  * 提供转换器系统的核心抽象和基础实现
  */
 
 import { LLMMessage } from '../../../../domain/llm/entities/llm-request';
+import { IToolProcessor, IContentProcessor } from './processors';
 
 /**
  * 消息角色枚举
@@ -103,9 +104,66 @@ export interface IConverter {
  */
 export abstract class BaseProvider implements IProvider {
   protected logger: any;
+  protected toolProcessor: IToolProcessor;
+  protected contentProcessor: IContentProcessor;
 
-  constructor(protected name: string) {
+  constructor(
+    protected name: string,
+    toolProcessor?: IToolProcessor,
+    contentProcessor?: IContentProcessor
+  ) {
     this.logger = this.getLogger();
+    this.toolProcessor = toolProcessor || this.createDefaultToolProcessor();
+    this.contentProcessor = contentProcessor || this.createDefaultContentProcessor();
+  }
+
+  /**
+   * 创建默认工具处理器
+   */
+  protected createDefaultToolProcessor(): IToolProcessor {
+    return {
+      validateTools: (tools: any[]) => {
+        const errors: string[] = [];
+
+        if (!Array.isArray(tools)) {
+          errors.push('工具必须是数组格式');
+          return errors;
+        }
+
+        for (let i = 0; i < tools.length; i++) {
+          const tool = tools[i];
+          if (typeof tool !== 'object') {
+            errors.push(`工具项 ${i} 必须是对象`);
+            continue;
+          }
+
+          if (!tool['type']) {
+            errors.push(`工具项 ${i} 缺少type字段`);
+          }
+
+          if (tool['type'] === 'function' && !tool['function']) {
+            errors.push(`函数工具项 ${i} 缺少function字段`);
+          }
+        }
+
+        return errors;
+      },
+      convertTools: (tools: any[], context: ConversionContext) => tools,
+      processToolChoice: (toolChoice: any, context: ConversionContext) => toolChoice,
+      extractToolCalls: (response: Record<string, any>, context: ConversionContext) => []
+    };
+  }
+
+  /**
+   * 创建默认内容处理器
+   */
+  protected createDefaultContentProcessor(): IContentProcessor {
+    return {
+      processContent: (content: string | Array<string | Record<string, any>>, context?: ConversionContext) => this.processContent(content, context),
+      processImageContent: (imageItem: Record<string, any>, context?: ConversionContext) => this.processImageContent(imageItem, context),
+      isSupportedImageFormat: (mediaType: string) => this.isSupportedImageFormat(mediaType),
+      extractTextFromContent: (content: Array<Record<string, any>>) => this.extractTextFromContent(content)
+    };
   }
 
   getName(): string {
@@ -157,31 +215,11 @@ export abstract class BaseProvider implements IProvider {
     content: string | Array<string | Record<string, any>>,
     context?: ConversionContext
   ): Array<Record<string, any>> {
-    if (typeof content === 'string') {
-      return [{ type: 'text', text: content }];
-    } else if (Array.isArray(content)) {
-      const processed: Array<Record<string, any>> = [];
-      for (const item of content) {
-        if (typeof item === 'string') {
-          processed.push({ type: 'text', text: item });
-        } else if (typeof item === 'object') {
-          processed.push(item);
-        }
-      }
-      return processed;
-    } else {
-      return [{ type: 'text', text: String(content) }];
-    }
+    return this.contentProcessor.processContent(content, context);
   }
 
   protected extractTextFromContent(content: Array<Record<string, any>>): string {
-    const textParts: string[] = [];
-    for (const item of content) {
-      if (item['type'] === 'text') {
-        textParts.push(item['text'] || '');
-      }
-    }
-    return textParts.join(' ');
+    return this.contentProcessor.extractTextFromContent(content);
   }
 
   protected validateContent(content: Array<Record<string, any>>): string[] {
@@ -245,47 +283,14 @@ export abstract class BaseProvider implements IProvider {
     imageItem: Record<string, any>,
     context?: ConversionContext
   ): Record<string, any> | null {
-    const source = imageItem['source'] || {};
-
-    if (!source || typeof source !== 'object') {
-      this.logger.warn('图像内容缺少source字段');
-      return null;
-    }
-
-    const mediaType = source['media_type'] || '';
-    const imageData = source['data'] || '';
-
-    if (!this.isSupportedImageFormat(mediaType)) {
-      this.logger.warn(`不支持的图像格式: ${mediaType}`);
-      return null;
-    }
-
-    if (!imageData) {
-      this.logger.warn('图像内容缺少数据');
-      return null;
-    }
-
-    return {
-      type: 'image',
-      source: {
-        type: source['type'] || 'base64',
-        media_type: mediaType,
-        data: imageData
-      }
-    };
+    return this.contentProcessor.processImageContent(imageItem, context);
   }
 
   /**
    * 检查是否为支持的图像格式
    */
   protected isSupportedImageFormat(mediaType: string): boolean {
-    const supportedFormats = new Set([
-      'image/jpeg',
-      'image/png',
-      'image/gif',
-      'image/webp'
-    ]);
-    return supportedFormats.has(mediaType);
+    return this.contentProcessor.isSupportedImageFormat(mediaType);
   }
 
   /**
@@ -320,47 +325,18 @@ export abstract class BaseProvider implements IProvider {
     if ('tools' in parameters) {
       const tools = parameters['tools'];
       if (Array.isArray(tools)) {
-        const toolErrors = this.validateTools(tools);
+        const toolErrors = this.toolProcessor.validateTools(tools);
         if (toolErrors.length === 0) {
-          requestData['tools'] = this.convertTools(tools, context);
+          requestData['tools'] = this.toolProcessor.convertTools(tools, context);
           
           if ('tool_choice' in parameters) {
-            requestData['tool_choice'] = this.processToolChoice(parameters['tool_choice'], context);
+            requestData['tool_choice'] = this.toolProcessor.processToolChoice(parameters['tool_choice'], context);
           }
         }
       }
     }
   }
 
-  /**
-   * 验证工具
-   */
-  protected validateTools(tools: any[]): string[] {
-    const errors: string[] = [];
-
-    if (!Array.isArray(tools)) {
-      errors.push('工具必须是数组格式');
-      return errors;
-    }
-
-    for (let i = 0; i < tools.length; i++) {
-      const tool = tools[i];
-      if (typeof tool !== 'object') {
-        errors.push(`工具项 ${i} 必须是对象`);
-        continue;
-      }
-
-      if (!tool['type']) {
-        errors.push(`工具项 ${i} 缺少type字段`);
-      }
-
-      if (tool['type'] === 'function' && !tool['function']) {
-        errors.push(`函数工具项 ${i} 缺少function字段`);
-      }
-    }
-
-    return errors;
-  }
 
   /**
    * 转换工具格式
@@ -415,13 +391,7 @@ export abstract class BaseProvider implements IProvider {
       arguments: string;
     };
   }> {
-    const choices = response['choices'] || [];
-    if (choices.length === 0) {
-      return [];
-    }
-
-    const message = choices[0]['message'] || {};
-    return message['tool_calls'] || [];
+    return this.toolProcessor.extractToolCalls(response, context);
   }
 
   /**

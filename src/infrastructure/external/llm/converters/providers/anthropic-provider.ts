@@ -1,15 +1,16 @@
 /**
  * Anthropic提供商实现
- * 
+ *
  * 提供Anthropic API的格式转换功能
  */
 
 import { LLMMessage } from '../../../../../domain/llm/entities/llm-request';
 import { BaseProvider, ConversionContext } from '../base';
+import { AnthropicToolProcessor, AnthropicContentProcessor } from '../processors';
 
 export class AnthropicProvider extends BaseProvider {
   constructor() {
-    super('anthropic');
+    super('anthropic', new AnthropicToolProcessor(), new AnthropicContentProcessor());
   }
 
   override getDefaultModel(): string {
@@ -331,14 +332,14 @@ export class AnthropicProvider extends BaseProvider {
     if ('tools' in parameters) {
       const tools = parameters['tools'];
       if (Array.isArray(tools)) {
-        const toolErrors = this.validateTools(tools);
+        const toolErrors = this.toolProcessor.validateTools(tools);
         if (toolErrors.length === 0) {
-          const anthropicTools = this.convertTools(tools, context);
+          const anthropicTools = this.toolProcessor.convertTools(tools, context);
           if (anthropicTools.length > 0) {
             requestData['tools'] = anthropicTools;
 
             if ('tool_choice' in parameters) {
-              requestData['tool_choice'] = this.processToolChoice(parameters['tool_choice'], context);
+              requestData['tool_choice'] = this.toolProcessor.processToolChoice(parameters['tool_choice'], context);
             }
           }
         }
@@ -346,47 +347,6 @@ export class AnthropicProvider extends BaseProvider {
     }
   }
 
-  /**
-   * 转换工具格式
-   */
-  override convertTools(
-    tools: any[],
-    context: ConversionContext
-  ): any[] {
-    const anthropicTools: any[] = [];
-
-    for (const tool of tools) {
-      if (tool['type'] === 'function') {
-        const functionDef = tool['function'] || {};
-        const anthropicTool = {
-          name: functionDef['name'] || '',
-          description: functionDef['description'] || '',
-          input_schema: functionDef['parameters'] || {}
-        };
-        anthropicTools.push(anthropicTool);
-      }
-    }
-
-    return anthropicTools;
-  }
-
-  /**
-   * 处理工具选择策略
-   */
-  override processToolChoice(
-    toolChoice: any,
-    context: ConversionContext
-  ): any {
-    if (toolChoice === 'auto') {
-      return { type: 'auto' };
-    } else if (toolChoice === 'any') {
-      return { type: 'any' };
-    } else if (typeof toolChoice === 'object' && 'name' in toolChoice) {
-      return { type: 'tool', name: toolChoice['name'] };
-    } else {
-      return { type: 'auto' };
-    }
-  }
 
   /**
    * 验证响应格式

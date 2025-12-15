@@ -1,15 +1,16 @@
 /**
  * Gemini提供商实现
- * 
+ *
  * 提供Gemini API的格式转换功能
  */
 
 import { LLMMessage } from '../../../../../domain/llm/entities/llm-request';
 import { BaseProvider, ConversionContext } from '../base';
+import { GeminiToolProcessor, GeminiContentProcessor } from '../processors';
 
 export class GeminiProvider extends BaseProvider {
   constructor() {
-    super('gemini');
+    super('gemini', new GeminiToolProcessor(), new GeminiContentProcessor());
   }
 
   override getDefaultModel(): string {
@@ -365,14 +366,14 @@ export class GeminiProvider extends BaseProvider {
     if ('tools' in parameters) {
       const tools = parameters['tools'];
       if (Array.isArray(tools)) {
-        const toolErrors = this.validateTools(tools);
+        const toolErrors = this.toolProcessor.validateTools(tools);
         if (toolErrors.length === 0) {
-          const geminiTools = this.convertTools(tools, context);
+          const geminiTools = this.toolProcessor.convertTools(tools, context);
           if (geminiTools.length > 0) {
             requestData['tools'] = geminiTools;
 
             if ('tool_choice' in parameters) {
-              requestData['tool_config'] = this.processToolChoice(parameters['tool_choice'], context);
+              requestData['tool_config'] = this.toolProcessor.processToolChoice(parameters['tool_choice'], context);
             }
           }
         }
@@ -380,54 +381,6 @@ export class GeminiProvider extends BaseProvider {
     }
   }
 
-  /**
-   * 转换工具格式
-   */
-  override convertTools(
-    tools: any[],
-    context: ConversionContext
-  ): any[] {
-    const geminiTools: any[] = [];
-
-    for (const tool of tools) {
-      if (tool['type'] === 'function') {
-        const functionDef = tool['function'] || {};
-        const geminiTool = {
-          functionDeclarations: [{
-            name: functionDef['name'] || '',
-            description: functionDef['description'] || '',
-            parameters: functionDef['parameters'] || {}
-          }]
-        };
-        geminiTools.push(geminiTool);
-      }
-    }
-
-    return geminiTools;
-  }
-
-  /**
-   * 处理工具选择策略
-   */
-  override processToolChoice(
-    toolChoice: any,
-    context: ConversionContext
-  ): Record<string, any> {
-    if (toolChoice === 'auto') {
-      return { mode: 'AUTO' };
-    } else if (toolChoice === 'any') {
-      return { mode: 'ANY' };
-    } else if (toolChoice === 'none') {
-      return { mode: 'NONE' };
-    } else if (typeof toolChoice === 'object' && 'name' in toolChoice) {
-      return {
-        mode: 'ANY',
-        allowedFunctionNames: [toolChoice['name']]
-      };
-    } else {
-      return { mode: 'AUTO' };
-    }
-  }
 
   /**
    * 验证响应格式
