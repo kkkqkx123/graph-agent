@@ -1,5 +1,5 @@
-import { Node } from '../entities/node';
-import { IExecutionContext } from './execution-context.interface';
+import { Node } from '@domain/workflow/graph/entities/nodes/base/node';
+import { IExecutionContext } from '@domain/workflow/graph/interfaces/execution-context.interface';
 
 /**
  * 节点执行器接口

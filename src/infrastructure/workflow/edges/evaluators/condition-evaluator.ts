@@ -1,10 +1,9 @@
 import { injectable } from 'inversify';
-import { IConditionEvaluator } from '../../../../domain/workflow/graph/interfaces/condition-evaluator.interface';
-import { Edge } from '../../../../domain/workflow/graph/entities/edge';
+import { Edge } from '@domain/workflow/graph/entities/edges/base/edge';
 import { ExecutionContext } from '../../engine/execution-context';
 
 @injectable()
-export class ConditionEvaluator implements IConditionEvaluator {
+export class ConditionEvaluator {
   async evaluate(edge: Edge, context: ExecutionContext): Promise<boolean> {
     try {
       const condition = edge.condition;

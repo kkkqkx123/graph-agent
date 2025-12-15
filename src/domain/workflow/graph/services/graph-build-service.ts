@@ -1,10 +1,10 @@
-import { ID } from '../../../common/value-objects/id';
-import { Graph } from '../entities/graph';
-import { Node } from '../entities/node';
-import { Edge } from '../entities/edge';
-import { GraphRepository, NodeRepository, EdgeRepository } from '../repositories/graph-repository';
-import { DomainError } from '../../../common/errors/domain-error';
-import { ValidationResult, ValidationUtils } from '../validation';
+import { ID } from '@domain/common/value-objects/id';
+import { Graph } from '@domain/workflow/graph/entities/graph';
+import { Node } from '@domain/workflow/graph/entities/nodes/base/node';
+import { Edge } from '@domain/workflow/graph/entities/edges/base/edge';
+import { GraphRepository, NodeRepository, EdgeRepository } from '@domain/workflow/graph/repositories/graph-repository';
+import { DomainError } from '@domain/common/errors/domain-error';
+import { ValidationResult, ValidationUtils } from '@domain/workflow/graph/validation';
 
 /**
  * 图构建配置接口

@@ -1,14 +1,12 @@
 import { injectable } from 'inversify';
-import { INodeExecutor } from '../../../../domain/workflow/graph/interfaces/node-executor.interface';
-import { IExecutionContext } from '../../../../domain/workflow/graph/interfaces/execution-context.interface';
-import { Node } from '../../../../domain/workflow/graph/entities/node';
+import { Node } from '../../../../domain/workflow/graph/entities/nodes/base/node';
 import { ExecutionContext } from '../../engine/execution-context';
 
 @injectable()
-export class WaitNodeExecutor implements INodeExecutor {
-  async execute(node: Node, context: IExecutionContext): Promise<any> {
+export class WaitNodeExecutor {
+  async execute(node: Node, context: ExecutionContext): Promise<any> {
     try {
-      const config = node.config;
+      const config = node.properties;
       const waitTime = this.calculateWaitTime(config, context);
       
       // Store wait start time
@@ -39,11 +37,11 @@ export class WaitNodeExecutor implements INodeExecutor {
         completedAt: Date.now()
       };
     } catch (error) {
-      throw new Error(`Wait node execution failed: ${error.message}`);
+      throw new Error(`Wait node execution failed: ${error instanceof Error ? error.message : String(error)}`);
     }
   }
 
-  private calculateWaitTime(config: any, context: IExecutionContext): number {
+  private calculateWaitTime(config: any, context: ExecutionContext): number {
     const waitType = config.type || 'fixed';
     
     switch (waitType) {
@@ -72,7 +70,7 @@ export class WaitNodeExecutor implements INodeExecutor {
     return duration;
   }
 
-  private getDynamicWaitTime(config: any, context: IExecutionContext): number {
+  private getDynamicWaitTime(config: any, context: ExecutionContext): number {
     const source = config.source;
     
     if (!source) {
@@ -113,7 +111,7 @@ export class WaitNodeExecutor implements INodeExecutor {
     return waitTime;
   }
 
-  private getExponentialWaitTime(config: any, context: IExecutionContext): number {
+  private getExponentialWaitTime(config: any, context: ExecutionContext): number {
     const baseTime = config.baseTime || 1000;
     const multiplier = config.multiplier || 2;
     const maxTime = config.maxTime || 60000;
@@ -150,7 +148,7 @@ export class WaitNodeExecutor implements INodeExecutor {
     return Math.floor(Math.random() * (max - min + 1)) + min;
   }
 
-  private getScheduledWaitTime(config: any, context: IExecutionContext): number {
+  private getScheduledWaitTime(config: any, context: ExecutionContext): number {
     const scheduledTime = config.scheduledTime;
     const timezone = config.timezone || 'UTC';
     
@@ -201,7 +199,7 @@ export class WaitNodeExecutor implements INodeExecutor {
     return waitTime;
   }
 
-  private getContextValue(path: string, context: IExecutionContext): any {
+  private getContextValue(path: string, context: ExecutionContext): any {
     const parts = path.split('.');
     let current: any = context;
     
@@ -224,22 +222,22 @@ export class WaitNodeExecutor implements INodeExecutor {
     return new Promise(resolve => setTimeout(resolve, milliseconds));
   }
 
-  async canExecute(node: Node, context: IExecutionContext): Promise<boolean> {
+  async canExecute(node: Node, context: ExecutionContext): Promise<boolean> {
     // Wait nodes can always execute if they have valid configuration
-    const config = node.config;
-    const waitType = config.type || 'fixed';
+    const config = node.properties;
+    const waitType = config['type'] || 'fixed';
     
     switch (waitType) {
       case 'fixed':
-        return config.duration !== undefined && typeof config.duration === 'number' && config.duration >= 0;
+        return config['duration'] !== undefined && typeof config['duration'] === 'number' && config['duration'] >= 0;
       case 'dynamic':
-        return config.source !== undefined;
+        return config['source'] !== undefined;
       case 'exponential':
         return true; // Can always execute, will use defaults
       case 'random':
-        return config.min !== undefined && config.max !== undefined && config.min < config.max;
+        return config['min'] !== undefined && config['max'] !== undefined && (config['min'] as number) < (config['max'] as number);
       case 'scheduled':
-        return config.scheduledTime !== undefined;
+        return config['scheduledTime'] !== undefined;
       default:
         return false;
     }
@@ -247,52 +245,52 @@ export class WaitNodeExecutor implements INodeExecutor {
 
   async validate(node: Node): Promise<{ valid: boolean; errors: string[] }> {
     const errors: string[] = [];
-    const config = node.config;
+    const config = node.properties;
     
     // Check wait type
-    const waitType = config.type || 'fixed';
+    const waitType = config['type'] || 'fixed';
     
     switch (waitType) {
       case 'fixed':
-        if (config.duration === undefined) {
+        if (config['duration'] === undefined) {
           errors.push('Fixed wait requires a duration');
-        } else if (typeof config.duration !== 'number' || config.duration < 0) {
+        } else if (typeof config['duration'] !== 'number' || (config['duration'] as number) < 0) {
           errors.push('Fixed wait duration must be a non-negative number');
         }
         break;
         
       case 'dynamic':
-        if (!config.source) {
+        if (!config['source']) {
           errors.push('Dynamic wait requires a source');
         }
         break;
         
       case 'exponential':
-        if (config.baseTime !== undefined && (typeof config.baseTime !== 'number' || config.baseTime < 0)) {
+        if (config['baseTime'] !== undefined && (typeof config['baseTime'] !== 'number' || (config['baseTime'] as number) < 0)) {
           errors.push('Exponential wait baseTime must be a non-negative number');
         }
-        if (config.multiplier !== undefined && (typeof config.multiplier !== 'number' || config.multiplier <= 0)) {
+        if (config['multiplier'] !== undefined && (typeof config['multiplier'] !== 'number' || (config['multiplier'] as number) <= 0)) {
           errors.push('Exponential wait multiplier must be a positive number');
         }
-        if (config.maxTime !== undefined && (typeof config.maxTime !== 'number' || config.maxTime < 0)) {
+        if (config['maxTime'] !== undefined && (typeof config['maxTime'] !== 'number' || (config['maxTime'] as number) < 0)) {
           errors.push('Exponential wait maxTime must be a non-negative number');
         }
         break;
         
       case 'random':
-        if (config.min !== undefined && (typeof config.min !== 'number' || config.min < 0)) {
+        if (config['min'] !== undefined && (typeof config['min'] !== 'number' || (config['min'] as number) < 0)) {
           errors.push('Random wait min must be a non-negative number');
         }
-        if (config.max !== undefined && (typeof config.max !== 'number' || config.max < 0)) {
+        if (config['max'] !== undefined && (typeof config['max'] !== 'number' || (config['max'] as number) < 0)) {
           errors.push('Random wait max must be a non-negative number');
         }
-        if (config.min !== undefined && config.max !== undefined && config.min >= config.max) {
+        if (config['min'] !== undefined && config['max'] !== undefined && (config['min'] as number) >= (config['max'] as number)) {
           errors.push('Random wait min must be less than max');
         }
         break;
         
       case 'scheduled':
-        if (!config.scheduledTime) {
+        if (!config['scheduledTime']) {
           errors.push('Scheduled wait requires a scheduledTime');
         }
         break;

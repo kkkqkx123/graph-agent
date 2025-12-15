@@ -1,6 +1,5 @@
 import { injectable } from 'inversify';
-import { IRoutingFunction, WorkflowFunctionType } from '../../../../domain/workflow/functions/interfaces';
-import { IExecutionContext } from '../../../../domain/workflow/graph/interfaces/execution-context.interface';
+import { IRoutingFunction, WorkflowFunctionType } from '../../../../../domain/workflow/graph/interfaces/workflow-functions';
 import { BaseWorkflowFunction } from '../../base/base-workflow-function';
 
 /**
@@ -19,7 +18,7 @@ export class HasToolCallsRoutingFunction extends BaseWorkflowFunction implements
     );
   }
 
-  getParameters() {
+  override getParameters() {
     return [
       ...super.getParameters(),
       {
@@ -39,11 +38,11 @@ export class HasToolCallsRoutingFunction extends BaseWorkflowFunction implements
     ];
   }
 
-  async route(context: IExecutionContext, params: any): Promise<string | null> {
+  async route(context: any, config: any): Promise<string | string[]> {
     this.checkInitialized();
     
-    const targetNodeId = params.targetNodeId || 'tools';
-    const defaultNodeId = params.defaultNodeId || 'end';
+    const targetNodeId = config.targetNodeId || 'tools';
+    const defaultNodeId = config.defaultNodeId || 'end';
     
     const messages = context.getVariable('messages') || [];
     for (const message of messages) {

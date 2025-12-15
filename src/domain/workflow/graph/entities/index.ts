@@ -6,21 +6,13 @@
 
 // 基础实体
 export * from './graph';
-export * from './node';
-export * from './edge';
-
-// 工作流状态
 export * from './workflow-state';
 
 // 节点实体
-export * from './condition-node';
-export * from './llm-node';
-export * from './tool-node';
-export * from './wait-node';
+export * from './nodes';
 
 // 边实体
-export { ConditionalEdge } from './conditional-edge';
-export { FlexibleConditionalEdge } from './flexible-conditional-edge';
+export * from './edges';
 
 // 类型定义，解决命名冲突
 export type {
@@ -28,24 +20,24 @@ export type {
   Message,
   LLMResponse,
   TokenUsage
-} from './llm-node';
+} from './nodes/specialized/llm-node';
 
 export type {
   ToolNodeToolCall,
   ToolNodeExecutionResult
-} from './tool-node';
+} from './nodes/specialized/tool-node';
 
 export type {
   ConditionEvaluationResult as NodeConditionEvaluationResult
-} from './condition-node';
+} from './nodes/specialized/condition-node';
 
 export type {
   ConditionEvaluationResult as EdgeConditionEvaluationResult,
   ConditionExpression
-} from './conditional-edge';
+} from './edges/specialized/conditional-edge';
 
 export type {
   FlexibleConditionEvaluationResult,
   ComplexCondition,
   ConditionEvaluationContext
-} from './flexible-conditional-edge';
+} from './edges/specialized/flexible-conditional-edge';

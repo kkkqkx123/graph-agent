@@ -1,5 +1,5 @@
 import { injectable } from 'inversify';
-import { ExecutionContext } from '../../engine/execution-context';
+import { ExecutionContext } from '../engine/execution-context';
 import { GraphExecutor } from '../engine/graph-executor';
 import { ExecutionStrategy } from './execution-strategy';
 
@@ -80,11 +80,15 @@ export class ConditionalStrategy extends ExecutionStrategy {
     } else if (validEdges.length === 1) {
       // Single valid edge, continue down this path
       const graph = context.getGraph();
-      const edge = graph.edges.get(validEdges[0]);
+      const edgeId = validEdges[0];
+      if (edgeId === undefined) {
+        return nodeResults.get(nodeId);
+      }
+      const edge = graph.edges.get(edgeId);
       
       if (edge) {
         return await this.executeConditionalPath(
-          edge.targetNodeId.value,
+          edge.toNodeId.value,
           context,
           graphExecutor,
           executedNodes,
@@ -172,11 +176,15 @@ export class ConditionalStrategy extends ExecutionStrategy {
     nodeResults: Map<string, any>
   ): Promise<any> {
     const graph = context.getGraph();
-    const edge = graph.edges.get(edgeIds[0]);
+    const edgeId = edgeIds[0];
+    if (edgeId === undefined) {
+      return null;
+    }
+    const edge = graph.edges.get(edgeId);
     
     if (edge) {
       return await this.executeConditionalPath(
-        edge.targetNodeId.value,
+        edge.toNodeId.value,
         context,
         graphExecutor,
         executedNodes,
@@ -202,7 +210,7 @@ export class ConditionalStrategy extends ExecutionStrategy {
       
       if (edge) {
         const result = await this.executeConditionalPath(
-          edge.targetNodeId.value,
+          edge.toNodeId.value,
           context,
           graphExecutor,
           executedNodes,
@@ -230,7 +238,7 @@ export class ConditionalStrategy extends ExecutionStrategy {
       
       if (edge) {
         return await this.executeConditionalPath(
-          edge.targetNodeId.value,
+          edge.toNodeId.value,
           context,
           graphExecutor,
           new Set(executedNodes), // Create copy for parallel execution
@@ -272,8 +280,8 @@ export class ConditionalStrategy extends ExecutionStrategy {
     for (const edgeId of edgeIds) {
       const edge = graph.edges.get(edgeId);
       
-      if (edge && edge.condition && edge.condition.weight) {
-        weights.push(edge.condition.weight);
+      if (edge && edge.weight) {
+        weights.push(edge.weight);
       } else {
         weights.push(1); // Default weight
       }
@@ -282,11 +290,14 @@ export class ConditionalStrategy extends ExecutionStrategy {
     // Select edge based on weights
     const selectedEdgeIndex = this.selectWeightedIndex(weights);
     const selectedEdgeId = edgeIds[selectedEdgeIndex];
+    if (selectedEdgeId === undefined) {
+      return null;
+    }
     const selectedEdge = graph.edges.get(selectedEdgeId);
     
     if (selectedEdge) {
       return await this.executeConditionalPath(
-        selectedEdge.targetNodeId.value,
+        selectedEdge.toNodeId.value,
         context,
         graphExecutor,
         executedNodes,
@@ -298,11 +309,15 @@ export class ConditionalStrategy extends ExecutionStrategy {
   }
 
   private selectWeightedIndex(weights: number[]): number {
+    if (weights.length === 0) {
+      return -1;
+    }
+    
     const totalWeight = weights.reduce((sum, weight) => sum + weight, 0);
     let random = Math.random() * totalWeight;
     
     for (let i = 0; i < weights.length; i++) {
-      random -= weights[i];
+      random -= weights[i]!;
       if (random <= 0) {
         return i;
       }
@@ -317,7 +332,7 @@ export class ConditionalStrategy extends ExecutionStrategy {
     
     // Find all nodes that have incoming edges
     for (const edge of graph.edges.values()) {
-      nodesWithIncomingEdges.add(edge.targetNodeId.value);
+      nodesWithIncomingEdges.add(edge.toNodeId.value);
     }
     
     // Nodes without incoming edges are start nodes
@@ -409,10 +424,14 @@ export class ConditionalStrategy extends ExecutionStrategy {
     if (selectedEdgeIds.length === 0) {
       return nodeResults.get(nodeId);
     } else if (selectedEdgeIds.length === 1) {
-      const edge = graph.edges.get(selectedEdgeIds[0]);
+      const edgeId = selectedEdgeIds[0];
+      if (edgeId === undefined) {
+        return nodeResults.get(nodeId);
+      }
+      const edge = graph.edges.get(edgeId);
       if (edge) {
         return await this.executeConditionalPathWithCustomLogic(
-          edge.targetNodeId.value,
+          edge.toNodeId.value,
           context,
           graphExecutor,
           executedNodes,
@@ -426,7 +445,7 @@ export class ConditionalStrategy extends ExecutionStrategy {
         const edge = graph.edges.get(edgeId);
         if (edge) {
           return await this.executeConditionalPathWithCustomLogic(
-            edge.targetNodeId.value,
+            edge.toNodeId.value,
             context,
             graphExecutor,
             new Set(executedNodes),

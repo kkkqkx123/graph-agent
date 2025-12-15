@@ -1,9 +1,8 @@
-import { Graph } from '../../../../domain/workflow/graph/entities/graph';
-import { NodeId } from '../../../../domain/workflow/graph/value-objects/node-id';
-import { EdgeId } from '../../../../domain/workflow/graph/value-objects/edge-id';
-import { IExecutionContext } from '../../../../domain/workflow/graph/interfaces/execution-context.interface';
+import { Graph } from '@domain/workflow/graph/entities/graph';
+import { NodeId } from '@domain/workflow/graph/value-objects/node-id';
+import { EdgeId } from '@domain/workflow/graph/value-objects/edge-id';
 
-export class ExecutionContext implements IExecutionContext {
+export class ExecutionContext {
   private readonly graph: Graph;
   private readonly input: any;
   private readonly startTime: number;
@@ -288,8 +287,8 @@ export class ExecutionContext implements IExecutionContext {
       if (edge) {
         summary.push({
           edgeId,
-          sourceNodeId: edge.sourceNodeId.value,
-          targetNodeId: edge.targetNodeId.value,
+          sourceNodeId: edge.fromNodeId.value,
+          targetNodeId: edge.toNodeId.value,
           evaluated: true,
           result: result
         });

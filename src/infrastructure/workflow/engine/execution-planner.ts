@@ -1,8 +1,8 @@
 import { injectable } from 'inversify';
-import { Graph } from '../../../../domain/workflow/graph/entities/graph';
-import { Node } from '../../../../domain/workflow/graph/entities/node';
-import { Edge } from '../../../../domain/workflow/graph/entities/edge';
-import { NodeId } from '../../../../domain/workflow/graph/value-objects/node-id';
+import { Graph } from '@domain/workflow/graph/entities/graph';
+import { Node } from '@domain/workflow/graph/entities/nodes/base/node';
+import { Edge } from '@domain/workflow/graph/entities/edges/base/edge';
+import { NodeId } from '@domain/workflow/graph/value-objects/node-id';
 
 export interface ExecutionPlan {
   steps: ExecutionStep[];
@@ -66,12 +66,12 @@ export class ExecutionPlanner {
 
     // Check if all edges reference valid nodes
     for (const edge of graph.edges.values()) {
-      if (!graph.nodes.has(edge.sourceNodeId.value)) {
-        errors.push(`Edge references non-existent source node: ${edge.sourceNodeId.value}`);
+      if (!graph.nodes.has(edge.fromNodeId.value)) {
+        errors.push(`Edge references non-existent source node: ${edge.fromNodeId.value}`);
       }
 
-      if (!graph.nodes.has(edge.targetNodeId.value)) {
-        errors.push(`Edge references non-existent target node: ${edge.targetNodeId.value}`);
+      if (!graph.nodes.has(edge.toNodeId.value)) {
+        errors.push(`Edge references non-existent target node: ${edge.toNodeId.value}`);
       }
     }
 
@@ -96,9 +96,9 @@ export class ExecutionPlanner {
 
     // Calculate dependencies based on edges
     for (const edge of graph.edges.values()) {
-      const targetDeps = dependencies.get(edge.targetNodeId.value) || [];
-      targetDeps.push(edge.sourceNodeId.value);
-      dependencies.set(edge.targetNodeId.value, targetDeps);
+      const targetDeps = dependencies.get(edge.toNodeId.value) || [];
+      targetDeps.push(edge.fromNodeId.value);
+      dependencies.set(edge.toNodeId.value, targetDeps);
     }
 
     return dependencies;
@@ -122,7 +122,7 @@ export class ExecutionPlanner {
 
       groups.push({
         id: groupId++,
-        nodeIds: currentGroup.map(node => node.id),
+        nodeIds: currentGroup.map(node => NodeId.fromString(node.id.value)),
         canStartAfter: groups.length > 0 ? groups.length - 1 : 0
       });
 
@@ -178,8 +178,8 @@ export class ExecutionPlanner {
       const parallelGroup = nodeToGroup.get(node.id.value);
 
       steps.push({
-        nodeId: node.id,
-        dependencies: nodeDeps.map(dep => new NodeId(dep)),
+        nodeId: NodeId.fromString(node.id.value),
+        dependencies: nodeDeps.map(dep => NodeId.fromString(dep)),
         parallelGroup,
         estimatedDuration: this.estimateNodeDuration(node)
       });
@@ -286,7 +286,7 @@ export class ExecutionPlanner {
     let currentNodeId = endNodeId;
 
     while (currentNodeId) {
-      criticalPath.unshift(new NodeId(currentNodeId));
+      criticalPath.unshift(NodeId.fromString(currentNodeId));
       
       // Find the predecessor that contributed to the earliest start time
       const deps = dependencies.get(currentNodeId) || [];
@@ -325,15 +325,15 @@ export class ExecutionPlanner {
       'output': 100        // 100ms for output nodes
     };
 
-    let duration = baseDurations[node.type] || 1000;
+    let duration = baseDurations[node.type.value.toString()] || 1000;
 
     // Adjust based on node configuration
-    if (node.config.timeout) {
-      duration = Math.min(duration, node.config.timeout);
+    if (node.properties['timeout']) {
+      duration = Math.min(duration, node.properties['timeout'] as number);
     }
 
-    if (node.metadata.estimatedDuration) {
-      duration = node.metadata.estimatedDuration;
+    if (node.properties['estimatedDuration']) {
+      duration = node.properties['estimatedDuration'] as number;
     }
 
     return duration;
@@ -363,8 +363,8 @@ export class ExecutionPlanner {
 
     // Find outgoing edges
     for (const edge of graph.edges.values()) {
-      if (edge.sourceNodeId.value === node.id.value) {
-        const targetNode = graph.nodes.get(edge.targetNodeId.value);
+      if (edge.fromNodeId.value === node.id.value) {
+        const targetNode = graph.nodes.get(edge.toNodeId.value);
         if (!targetNode) continue;
 
         if (!visited.has(targetNode.id.value)) {

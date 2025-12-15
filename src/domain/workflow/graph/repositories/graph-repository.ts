@@ -1,11 +1,10 @@
-import { Repository } from '../../../common/repositories/repository';
-import { Graph } from '../entities/graph';
-import { Node } from '../entities/node';
-import { Edge } from '../entities/edge';
-import { ID } from '../../../common/value-objects/id';
-import { NodeType } from '../value-objects/node-type';
-import { EdgeType } from '../value-objects/edge-type';
-import { QueryOptions, PaginatedResult } from '../../../common/repositories/repository';
+import { Repository, QueryOptions, PaginatedResult } from '@domain/common/repositories/repository';
+import { Graph } from '@domain/workflow/graph/entities/graph';
+import { Node } from '@domain/workflow/graph/entities/nodes/base/node';
+import { Edge } from '@domain/workflow/graph/entities/edges/base/edge';
+import { ID } from '@domain/common/value-objects/id';
+import { NodeType } from '@domain/workflow/graph/value-objects/node-type';
+import { EdgeType } from '@domain/workflow/graph/value-objects/edge-type';
 
 /**
  * 图查询选项接口

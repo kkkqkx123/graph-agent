@@ -1,19 +1,18 @@
 import { injectable } from 'inversify';
-import { 
-  IFunctionRegistry, 
-  IWorkflowFunction, 
+import {
+  IWorkflowFunction,
   WorkflowFunctionType,
   IConditionFunction,
   INodeFunction,
   IRoutingFunction,
   ITriggerFunction
-} from '../../../../domain/workflow/functions/interfaces';
+} from '../../../../domain/workflow/graph/interfaces/workflow-functions';
 
 /**
  * 函数注册表实现
  */
 @injectable()
-export class FunctionRegistry implements IFunctionRegistry {
+export class FunctionRegistry {
   private functions: Map<string, IWorkflowFunction> = new Map();
   private functionsByName: Map<string, IWorkflowFunction> = new Map();
 
@@ -62,7 +61,7 @@ export class FunctionRegistry implements IFunctionRegistry {
   }
 
   // 便捷方法
-  getConditionFunction(name: string): IConditionFunction | null {
+  getConditionFunction(name: string): any | null {
     const func = this.getFunctionByName(name);
     if (func && func.type === WorkflowFunctionType.CONDITION) {
       return func as IConditionFunction;
@@ -70,7 +69,7 @@ export class FunctionRegistry implements IFunctionRegistry {
     return null;
   }
 
-  getNodeFunction(name: string): INodeFunction | null {
+  getNodeFunction(name: string): any | null {
     const func = this.getFunctionByName(name);
     if (func && func.type === WorkflowFunctionType.NODE) {
       return func as INodeFunction;
@@ -78,7 +77,7 @@ export class FunctionRegistry implements IFunctionRegistry {
     return null;
   }
 
-  getRoutingFunction(name: string): IRoutingFunction | null {
+  getRoutingFunction(name: string): any | null {
     const func = this.getFunctionByName(name);
     if (func && func.type === WorkflowFunctionType.ROUTING) {
       return func as IRoutingFunction;
@@ -86,7 +85,7 @@ export class FunctionRegistry implements IFunctionRegistry {
     return null;
   }
 
-  getTriggerFunction(name: string): ITriggerFunction | null {
+  getTriggerFunction(name: string): any | null {
     const func = this.getFunctionByName(name);
     if (func && func.type === WorkflowFunctionType.TRIGGER) {
       return func as ITriggerFunction;

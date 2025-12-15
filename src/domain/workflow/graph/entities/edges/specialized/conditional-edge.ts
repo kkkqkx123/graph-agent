@@ -1,10 +1,10 @@
-import { Edge, EdgeProps } from './edge';
-import { ID } from '../../../common/value-objects/id';
-import { EdgeType } from '../value-objects/edge-type';
-import { WorkflowState } from './workflow-state';
-import { Timestamp } from '../../../common/value-objects/timestamp';
-import { Version } from '../../../common/value-objects/version';
-import { DomainError } from '../../../common/errors/domain-error';
+import { Edge, EdgeProps } from '@domain/workflow/graph/entities/edges/base/edge';
+import { ID } from '@domain/common/value-objects/id';
+import { EdgeType } from '@domain/workflow/graph/value-objects/edge-type';
+import { WorkflowState } from '@domain/workflow/graph/entities/workflow-state';
+import { Timestamp } from '@domain/common/value-objects/timestamp';
+import { Version } from '@domain/common/value-objects/version';
+import { DomainError } from '@domain/common/errors/domain-error';
 
 /**
  * 条件表达式接口

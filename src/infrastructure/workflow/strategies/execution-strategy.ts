@@ -1,4 +1,4 @@
-import { ExecutionContext } from '../../engine/execution-context';
+import { ExecutionContext } from '../engine/execution-context';
 import { GraphExecutor } from '../engine/graph-executor';
 
 export abstract class ExecutionStrategy {
@@ -31,7 +31,7 @@ export abstract class ExecutionStrategy {
     const outgoingEdges: string[] = [];
     
     for (const [edgeId, edge] of graph.edges.entries()) {
-      if (edge.sourceNodeId.value === nodeId) {
+      if (edge.fromNodeId.value === nodeId) {
         outgoingEdges.push(edgeId);
       }
     }
@@ -44,7 +44,7 @@ export abstract class ExecutionStrategy {
     const incomingEdges: string[] = [];
     
     for (const [edgeId, edge] of graph.edges.entries()) {
-      if (edge.targetNodeId.value === nodeId) {
+      if (edge.toNodeId.value === nodeId) {
         incomingEdges.push(edgeId);
       }
     }

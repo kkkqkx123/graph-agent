@@ -1,6 +1,5 @@
 import { injectable } from 'inversify';
-import { ITriggerFunction, WorkflowFunctionType } from '../../../../domain/workflow/functions/interfaces';
-import { IExecutionContext } from '../../../../domain/workflow/graph/interfaces/execution-context.interface';
+import { ITriggerFunction, WorkflowFunctionType } from '../../../../../domain/workflow/graph/interfaces/workflow-functions';
 import { BaseWorkflowFunction } from '../../base/base-workflow-function';
 
 /**
@@ -19,7 +18,7 @@ export class TimeTriggerFunction extends BaseWorkflowFunction implements ITrigge
     );
   }
 
-  getParameters() {
+  override getParameters() {
     return [
       ...super.getParameters(),
       {
@@ -37,7 +36,7 @@ export class TimeTriggerFunction extends BaseWorkflowFunction implements ITrigge
     ];
   }
 
-  protected validateCustomConfig(config: any): string[] {
+  protected override validateCustomConfig(config: any): string[] {
     const errors: string[] = [];
     
     if (!config.triggerTime) {
@@ -47,7 +46,7 @@ export class TimeTriggerFunction extends BaseWorkflowFunction implements ITrigge
     return errors;
   }
 
-  async shouldTrigger(context: IExecutionContext, config: any): Promise<boolean> {
+  async check(context: any, config: any): Promise<boolean> {
     this.checkInitialized();
     
     const triggerTime = config.triggerTime;

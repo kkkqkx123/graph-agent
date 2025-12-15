@@ -1,4 +1,4 @@
-import { ID } from '../../../common/value-objects/id';
+import { ID } from '@domain/common/value-objects/id';
 
 /**
  * 边ID值对象
@@ -17,7 +17,7 @@ export class EdgeId extends ID {
    * 生成新的边ID
    * @returns 新的边ID实例
    */
-  static generate(): EdgeId {
+  static override generate(): EdgeId {
     return new EdgeId(ID.generate().value);
   }
 
@@ -26,7 +26,7 @@ export class EdgeId extends ID {
    * @param value 字符串值
    * @returns 边ID实例
    */
-  static fromString(value: string): EdgeId {
+  static override fromString(value: string): EdgeId {
     return new EdgeId(value);
   }
 

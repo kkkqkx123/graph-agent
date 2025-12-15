@@ -1,8 +1,8 @@
 import { injectable, inject } from 'inversify';
-import { Graph } from '../../../../domain/workflow/graph/entities/graph';
-import { Node } from '../../../../domain/workflow/graph/entities/node';
-import { Edge } from '../../../../domain/workflow/graph/entities/edge';
-import { NodeId } from '../../../../domain/workflow/graph/value-objects/node-id';
+import { Graph } from '@domain/workflow/graph/entities/graph';
+import { Node } from '@domain/workflow/graph/entities/nodes/base/node';
+import { Edge } from '@domain/workflow/graph/entities/edges/base/edge';
+import { NodeId } from '@domain/workflow/graph/value-objects/node-id';
 import { ExecutionContext } from './execution-context';
 import { StateManager } from './state-manager';
 import { NodeExecutorFactory } from '../nodes/factories/node-executor-factory';
@@ -39,14 +39,14 @@ export class GraphExecutor {
       return result;
     } catch (error) {
       // Save error state
-      await this.stateManager.saveErrorState(context, error);
+      await this.stateManager.saveErrorState(context, error instanceof Error ? error : new Error(String(error)));
       throw error;
     }
   }
 
   async executeNode(node: Node, context: ExecutionContext): Promise<any> {
     // Get node executor
-    const executor = this.nodeExecutorFactory.createExecutor(node.type);
+    const executor = this.nodeExecutorFactory.createExecutor(node.type.getValue());
     
     // Execute node
     const result = await executor.execute(node, context);
@@ -81,7 +81,7 @@ export class GraphExecutor {
   private hasParallelExecutionNodes(graph: Graph): boolean {
     // Check if any node has parallel execution configuration
     for (const node of graph.nodes.values()) {
-      if (node.metadata.parallel === true) {
+      if (node.properties['parallel'] === true) {
         return true;
       }
     }
@@ -89,7 +89,7 @@ export class GraphExecutor {
   }
 
   async getExecutableNodes(context: ExecutionContext): Promise<Node[]> {
-    const graph = context.graph;
+    const graph = context.getGraph();
     const executedNodes = context.getExecutedNodes();
     const executableNodes: Node[] = [];
 
@@ -105,7 +105,7 @@ export class GraphExecutor {
 
       for (const edge of incomingEdges) {
         // Skip if source node hasn't been executed
-        if (!executedNodes.has(edge.sourceNodeId.value)) {
+        if (!executedNodes.has(edge.fromNodeId.value)) {
           canExecute = false;
           break;
         }
@@ -130,7 +130,7 @@ export class GraphExecutor {
     const incomingEdges: Edge[] = [];
     
     for (const edge of graph.edges.values()) {
-      if (edge.targetNodeId.value === node.id.value) {
+      if (edge.toNodeId.value === node.id.value) {
         incomingEdges.push(edge);
       }
     }
@@ -142,7 +142,7 @@ export class GraphExecutor {
     const outgoingEdges: Edge[] = [];
     
     for (const edge of graph.edges.values()) {
-      if (edge.sourceNodeId.value === node.id.value) {
+      if (edge.fromNodeId.value === node.id.value) {
         outgoingEdges.push(edge);
       }
     }
@@ -151,7 +151,7 @@ export class GraphExecutor {
   }
 
   async isExecutionComplete(context: ExecutionContext): Promise<boolean> {
-    const graph = context.graph;
+    const graph = context.getGraph();
     const executedNodes = context.getExecutedNodes();
     
     // Check if all nodes have been executed
@@ -169,7 +169,7 @@ export class GraphExecutor {
   }
 
   async getExecutionPath(context: ExecutionContext): Promise<NodeId[]> {
-    const graph = context.graph;
+    const graph = context.getGraph();
     const executedNodes = context.getExecutedNodes();
     const path: NodeId[] = [];
     
@@ -190,7 +190,7 @@ export class GraphExecutor {
     
     // Find all nodes that have incoming edges
     for (const edge of graph.edges.values()) {
-      nodesWithIncomingEdges.add(edge.targetNodeId.value);
+      nodesWithIncomingEdges.add(edge.toNodeId.value);
     }
     
     // Nodes without incoming edges are start nodes
@@ -219,13 +219,13 @@ export class GraphExecutor {
     
     // Add node to path if it was executed
     if (executedNodes.has(node.id.value)) {
-      path.push(node.id);
+      path.push(NodeId.create(node.id.value));
     }
     
     // Follow outgoing edges
     const outgoingEdges = this.getOutgoingEdges(node, graph);
     for (const edge of outgoingEdges) {
-      const targetNode = graph.nodes.get(edge.targetNodeId.value);
+      const targetNode = graph.nodes.get(edge.toNodeId.value);
       if (targetNode) {
         await this.buildExecutionPath(targetNode, graph, executedNodes, path, visited);
       }
@@ -242,12 +242,12 @@ export class GraphExecutor {
     
     // Check if all edges reference valid nodes
     for (const edge of graph.edges.values()) {
-      if (!graph.nodes.has(edge.sourceNodeId.value)) {
-        errors.push(`Edge references non-existent source node: ${edge.sourceNodeId.value}`);
+      if (!graph.nodes.has(edge.fromNodeId.value)) {
+        errors.push(`Edge references non-existent source node: ${edge.fromNodeId.value}`);
       }
       
-      if (!graph.nodes.has(edge.targetNodeId.value)) {
-        errors.push(`Edge references non-existent target node: ${edge.targetNodeId.value}`);
+      if (!graph.nodes.has(edge.toNodeId.value)) {
+        errors.push(`Edge references non-existent target node: ${edge.toNodeId.value}`);
       }
     }
     
@@ -293,7 +293,7 @@ export class GraphExecutor {
     
     const outgoingEdges = this.getOutgoingEdges(node, graph);
     for (const edge of outgoingEdges) {
-      const targetNode = graph.nodes.get(edge.targetNodeId.value);
+      const targetNode = graph.nodes.get(edge.toNodeId.value);
       if (!targetNode) continue;
       
       if (!visited.has(targetNode.id.value)) {
@@ -318,10 +318,13 @@ export class GraphExecutor {
     const startNodes = this.findStartNodes(graph);
     
     // If no start nodes, pick any node as starting point
-    const startNode = startNodes.length > 0 ? startNodes[0] : graph.nodes.values().next().value;
+    const startNodeArray = Array.from(graph.nodes.values());
+    const startNode = startNodes.length > 0 ? startNodes[0] : startNodeArray[0];
     
     // DFS to find all reachable nodes
-    this.dfsVisit(startNode, graph, visited);
+    if (startNode) {
+      this.dfsVisit(startNode, graph, visited);
+    }
     
     // Nodes not visited are disconnected
     const disconnectedNodes: Node[] = [];
@@ -339,7 +342,7 @@ export class GraphExecutor {
     
     const outgoingEdges = this.getOutgoingEdges(node, graph);
     for (const edge of outgoingEdges) {
-      const targetNode = graph.nodes.get(edge.targetNodeId.value);
+      const targetNode = graph.nodes.get(edge.toNodeId.value);
       if (targetNode && !visited.has(targetNode.id.value)) {
         this.dfsVisit(targetNode, graph, visited);
       }

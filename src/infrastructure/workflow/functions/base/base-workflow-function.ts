@@ -4,7 +4,7 @@ import {
   FunctionParameter, 
   ValidationResult, 
   FunctionMetadata 
-} from '../../../../domain/workflow/functions/interfaces';
+} from '../../../../domain/workflow/graph/interfaces/workflow-functions';
 
 /**
  * 工作流函数基础抽象类

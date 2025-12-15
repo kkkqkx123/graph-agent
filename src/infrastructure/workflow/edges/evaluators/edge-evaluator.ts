@@ -1,10 +1,9 @@
 import { injectable } from 'inversify';
-import { IEdgeEvaluator } from '../../../../domain/workflow/graph/interfaces/edge-evaluator.interface';
-import { Edge } from '../../../../domain/workflow/graph/entities/edge';
+import { Edge } from '@domain/workflow/graph/entities/edges/base/edge';
 import { ExecutionContext } from '../../engine/execution-context';
 
 @injectable()
-export class EdgeEvaluator implements IEdgeEvaluator {
+export class EdgeEvaluator {
   async evaluate(edge: Edge, context: ExecutionContext): Promise<boolean> {
     try {
       const condition = edge.condition;
@@ -815,21 +814,6 @@ export class EdgeEvaluator implements IEdgeEvaluator {
     }
   }
 
-  private extractVariablesFromCondition(condition: any, variables: Set<string>): void {
-    if (typeof condition === 'string') {
-      const matches = condition.match(/\{\{(\w+(?:\.\w+)*)\}\}/g);
-      if (matches) {
-        matches.forEach((match: string) => {
-          const variable = match.slice(2, -2).trim();
-          variables.add(variable);
-        });
-      }
-    } else if (condition && typeof condition === 'object') {
-      Object.values(condition).forEach(value => {
-        this.extractVariablesFromValue(value, variables);
-      });
-    }
-  }
 
   private extractVariablesFromValue(value: any, variables: Set<string>): void {
     if (typeof value === 'string' && value.startsWith('{{') && value.endsWith('}}')) {

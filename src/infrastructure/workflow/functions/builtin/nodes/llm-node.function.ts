@@ -1,6 +1,5 @@
 import { injectable } from 'inversify';
-import { INodeFunction, WorkflowFunctionType } from '../../../../domain/workflow/functions/interfaces';
-import { IExecutionContext } from '../../../../domain/workflow/graph/interfaces/execution-context.interface';
+import { INodeFunction, WorkflowFunctionType } from '../../../../../domain/workflow/graph/interfaces/workflow-functions';
 import { BaseWorkflowFunction } from '../../base/base-workflow-function';
 
 /**
@@ -19,7 +18,7 @@ export class LLMNodeFunction extends BaseWorkflowFunction implements INodeFuncti
     );
   }
 
-  getParameters() {
+  override getParameters() {
     return [
       ...super.getParameters(),
       {
@@ -52,7 +51,7 @@ export class LLMNodeFunction extends BaseWorkflowFunction implements INodeFuncti
     ];
   }
 
-  protected validateCustomConfig(config: any): string[] {
+  protected override validateCustomConfig(config: any): string[] {
     const errors: string[] = [];
     
     if (!config.prompt || typeof config.prompt !== 'string') {
@@ -75,7 +74,7 @@ export class LLMNodeFunction extends BaseWorkflowFunction implements INodeFuncti
     return errors;
   }
 
-  async canExecute(context: IExecutionContext, config: any): Promise<boolean> {
+  async canExecute(context: any, config: any): Promise<boolean> {
     this.checkInitialized();
     
     // 检查必需的配置
@@ -87,7 +86,7 @@ export class LLMNodeFunction extends BaseWorkflowFunction implements INodeFuncti
     return true;
   }
 
-  async execute(context: IExecutionContext, config: any): Promise<any> {
+  async execute(context: any, config: any): Promise<any> {
     this.checkInitialized();
     
     const prompt = config.prompt;

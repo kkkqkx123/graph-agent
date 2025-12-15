@@ -1,4 +1,4 @@
-import { ID } from '../../../common/value-objects/id';
+import { ID } from '@domain/common/value-objects/id';
 
 /**
  * 节点ID值对象
@@ -17,7 +17,7 @@ export class NodeId extends ID {
    * 生成新的节点ID
    * @returns 新的节点ID实例
    */
-  static generate(): NodeId {
+  static override generate(): NodeId {
     return new NodeId(ID.generate().value);
   }
 
@@ -26,7 +26,7 @@ export class NodeId extends ID {
    * @param value 字符串值
    * @returns 节点ID实例
    */
-  static fromString(value: string): NodeId {
+  static override fromString(value: string): NodeId {
     return new NodeId(value);
   }
 

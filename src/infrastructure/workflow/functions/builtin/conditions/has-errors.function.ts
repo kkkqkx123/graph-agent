@@ -1,6 +1,5 @@
 import { injectable } from 'inversify';
-import { IConditionFunction, WorkflowFunctionType } from '../../../../domain/workflow/functions/interfaces';
-import { IExecutionContext } from '../../../../domain/workflow/graph/interfaces/execution-context.interface';
+import { IConditionFunction, WorkflowFunctionType } from '../../../../../domain/workflow/graph/interfaces/workflow-functions';
 import { BaseWorkflowFunction } from '../../base/base-workflow-function';
 
 /**
@@ -19,7 +18,7 @@ export class HasErrorsConditionFunction extends BaseWorkflowFunction implements 
     );
   }
 
-  async evaluate(context: IExecutionContext, config: any): Promise<boolean> {
+  async evaluate(context: any, config: any): Promise<boolean> {
     this.checkInitialized();
     
     // 检查工具结果中的错误

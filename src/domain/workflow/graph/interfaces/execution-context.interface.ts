@@ -1,6 +1,6 @@
-import { Graph } from '../entities/graph';
-import { NodeId } from '../value-objects/node-id';
-import { EdgeId } from '../value-objects/edge-id';
+import { Graph } from '@domain/workflow/graph/entities/graph';
+import { NodeId } from '@domain/workflow/graph/value-objects/node-id';
+import { EdgeId } from '@domain/workflow/graph/value-objects/edge-id';
 
 /**
  * 执行上下文接口

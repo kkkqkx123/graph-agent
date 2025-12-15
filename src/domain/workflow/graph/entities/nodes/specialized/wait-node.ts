@@ -1,11 +1,10 @@
-import { Node, NodeProps } from './node';
-import { ID } from '../../../common/value-objects/id';
-import { NodeType } from '../value-objects/node-type';
-import { NodePosition } from './node';
-import { WorkflowState } from './workflow-state';
-import { Timestamp } from '../../../common/value-objects/timestamp';
-import { Version } from '../../../common/value-objects/version';
-import { DomainError } from '../../../common/errors/domain-error';
+import { Node, NodeProps, NodePosition } from '@domain/workflow/graph/entities/nodes/base/node';
+import { ID } from '@domain/common/value-objects/id';
+import { NodeType } from '@domain/workflow/graph/value-objects/node-type';
+import { WorkflowState } from '@domain/workflow/graph/entities/workflow-state';
+import { Timestamp } from '@domain/common/value-objects/timestamp';
+import { Version } from '@domain/common/value-objects/version';
+import { DomainError } from '@domain/common/errors/domain-error';
 
 /**
  * 等待类型枚举

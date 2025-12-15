@@ -1,45 +1,43 @@
 import { injectable } from 'inversify';
-import { INodeExecutor } from '../../../../domain/workflow/graph/interfaces/node-executor.interface';
-import { IExecutionContext } from '../../../../domain/workflow/graph/interfaces/execution-context.interface';
-import { Node } from '../../../../domain/workflow/graph/entities/node';
+import { Node } from '../../../../domain/workflow/graph/entities/nodes/base/node';
 import { ExecutionContext } from '../../engine/execution-context';
 
 @injectable()
-export class ConditionNodeExecutor implements INodeExecutor {
-  async execute(node: Node, context: IExecutionContext): Promise<any> {
+export class ConditionNodeExecutor {
+  async execute(node: Node, context: ExecutionContext): Promise<any> {
     try {
       // Evaluate condition
       const result = this.evaluateCondition(node, context);
       
       // Store result in context
-      context.setVariable(`condition_result_${node.id.value}`, result);
+      context.setVariable(`condition_result_${node.nodeId.value}`, result);
       
       // Store condition metadata
-      context.setVariable(`condition_metadata_${node.id.value}`, {
-        nodeId: node.id.value,
+      context.setVariable(`condition_metadata_${node.nodeId.value}`, {
+        nodeId: node.nodeId.value,
         nodeName: node.name,
-        condition: node.config.condition,
+        condition: node.properties['condition'],
         result: result,
         evaluatedAt: new Date().toISOString()
       });
       
       return result;
     } catch (error) {
-      throw new Error(`Condition node execution failed: ${error.message}`);
+      throw new Error(`Condition node execution failed: ${error instanceof Error ? error.message : String(error)}`);
     }
   }
 
-  private evaluateCondition(node: Node, context: IExecutionContext): boolean {
-    const config = node.config;
-    const condition = config.condition;
+  private evaluateCondition(node: Node, context: ExecutionContext): boolean {
+    const condition = node.properties['condition'];
     
     if (!condition) {
       throw new Error('Condition node requires a condition configuration');
     }
     
-    switch (condition.type) {
+    const conditionObj = condition as any;
+    switch (conditionObj.type) {
       case 'expression':
-        return this.evaluateExpression(condition.expression, context);
+        return this.evaluateExpression(conditionObj.expression, context);
       case 'comparison':
         return this.evaluateComparison(condition, context);
       case 'logical':
@@ -49,11 +47,11 @@ export class ConditionNodeExecutor implements INodeExecutor {
       case 'custom':
         return this.evaluateCustom(condition, context);
       default:
-        throw new Error(`Unknown condition type: ${condition.type}`);
+        throw new Error(`Unknown condition type: ${conditionObj.type}`);
     }
   }
 
-  private evaluateExpression(expression: string, context: IExecutionContext): boolean {
+  private evaluateExpression(expression: string, context: ExecutionContext): boolean {
     // Simple expression evaluation
     // In a real implementation, you would use a proper expression parser
     
@@ -66,11 +64,11 @@ export class ConditionNodeExecutor implements INodeExecutor {
       // In production, use a proper expression evaluator like mathjs or similar
       return Function('"use strict"; return (' + evaluatedExpression + ')')();
     } catch (error) {
-      throw new Error(`Failed to evaluate expression: ${error.message}`);
+      throw new Error(`Failed to evaluate expression: ${error instanceof Error ? error.message : String(error)}`);
     }
   }
 
-  private evaluateComparison(condition: any, context: IExecutionContext): boolean {
+  private evaluateComparison(condition: any, context: ExecutionContext): boolean {
     const left = this.getValue(condition.left, context);
     const right = this.getValue(condition.right, context);
     const operator = condition.operator;
@@ -105,26 +103,26 @@ export class ConditionNodeExecutor implements INodeExecutor {
     }
   }
 
-  private evaluateLogical(condition: any, context: IExecutionContext): boolean {
+  private evaluateLogical(condition: any, context: ExecutionContext): boolean {
     const operator = condition.operator;
     const operands = condition.operands || [];
     
     switch (operator) {
       case 'and':
-        return operands.every(operand => this.evaluateCondition({ config: operand } as Node, context));
+        return operands.every((operand: any) => this.evaluateCondition({ properties: { condition: operand } } as any, context));
       case 'or':
-        return operands.some(operand => this.evaluateCondition({ config: operand } as Node, context));
+        return operands.some((operand: any) => this.evaluateCondition({ properties: { condition: operand } } as any, context));
       case 'not':
         if (operands.length !== 1) {
           throw new Error('NOT operator requires exactly one operand');
         }
-        return !this.evaluateCondition({ config: operands[0] } as Node, context);
+        return !this.evaluateCondition({ properties: { condition: operands[0] } } as any, context);
       default:
         throw new Error(`Unknown logical operator: ${operator}`);
     }
   }
 
-  private evaluateExistence(condition: any, context: IExecutionContext): boolean {
+  private evaluateExistence(condition: any, context: ExecutionContext): boolean {
     const path = condition.path;
     const value = this.getContextValue(path, context);
     
@@ -146,7 +144,7 @@ export class ConditionNodeExecutor implements INodeExecutor {
     }
   }
 
-  private evaluateCustom(condition: any, context: IExecutionContext): boolean {
+  private evaluateCustom(condition: any, context: ExecutionContext): boolean {
     // Custom condition evaluation
     // This would typically involve calling a custom function
     
@@ -166,11 +164,11 @@ export class ConditionNodeExecutor implements INodeExecutor {
     try {
       return func(preparedParameters, context);
     } catch (error) {
-      throw new Error(`Custom function execution failed: ${error.message}`);
+      throw new Error(`Custom function execution failed: ${error instanceof Error ? error.message : String(error)}`);
     }
   }
 
-  private getValue(value: any, context: IExecutionContext): any {
+  private getValue(value: any, context: ExecutionContext): any {
     if (typeof value === 'string' && value.startsWith('{{') && value.endsWith('}}')) {
       // Extract variable path
       const path = value.slice(2, -2).trim();
@@ -180,7 +178,7 @@ export class ConditionNodeExecutor implements INodeExecutor {
     return value;
   }
 
-  private getContextValue(path: string, context: IExecutionContext): any {
+  private getContextValue(path: string, context: ExecutionContext): any {
     const parts = path.split('.');
     let current: any = context;
     
@@ -199,14 +197,14 @@ export class ConditionNodeExecutor implements INodeExecutor {
     return current;
   }
 
-  private interpolateTemplate(template: string, context: IExecutionContext): string {
+  private interpolateTemplate(template: string, context: ExecutionContext): string {
     return template.replace(/\{\{(\w+(?:\.\w+)*)\}\}/g, (match, path) => {
       const value = this.getContextValue(path, context);
       return value !== undefined ? String(value) : 'undefined';
     });
   }
 
-  private prepareParameters(parameters: any, context: IExecutionContext): any {
+  private prepareParameters(parameters: any, context: ExecutionContext): any {
     const prepared: any = {};
     
     for (const [key, value] of Object.entries(parameters)) {
@@ -221,11 +219,11 @@ export class ConditionNodeExecutor implements INodeExecutor {
     return prepared;
   }
 
-  async canExecute(node: Node, context: IExecutionContext): Promise<boolean> {
+  async canExecute(node: Node, context: ExecutionContext): Promise<boolean> {
     // Check if node has required configuration
-    const config = node.config;
+    const config = node.properties;
     
-    if (!config.condition) {
+    if (!config['condition']) {
       return false;
     }
     
@@ -234,15 +232,15 @@ export class ConditionNodeExecutor implements INodeExecutor {
 
   async validate(node: Node): Promise<{ valid: boolean; errors: string[] }> {
     const errors: string[] = [];
-    const config = node.config;
+    const config = node.properties;
     
     // Check required fields
-    if (!config.condition) {
+    if (!config['condition']) {
       errors.push('Condition node requires a condition configuration');
       return { valid: false, errors };
     }
     
-    const condition = config.condition;
+    const condition = config['condition'] as any;
     
     // Validate condition based on type
     switch (condition.type) {

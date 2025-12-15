@@ -1,9 +1,9 @@
-import { Entity } from '../../../common/base/entity';
-import { ID } from '../../../common/value-objects/id';
-import { Timestamp } from '../../../common/value-objects/timestamp';
-import { Version } from '../../../common/value-objects/version';
-import { DomainError } from '../../../common/errors/domain-error';
-import { EdgeType } from '../value-objects/edge-type';
+import { Entity } from '@domain/common/base/entity';
+import { ID } from '@domain/common/value-objects/id';
+import { Timestamp } from '@domain/common/value-objects/timestamp';
+import { Version } from '@domain/common/value-objects/version';
+import { DomainError } from '@domain/common/errors/domain-error';
+import { EdgeType } from '@domain/workflow/graph/value-objects/edge-type';
 
 /**
  * Edge实体接口
@@ -171,7 +171,7 @@ export class Edge extends Entity {
     };
 
     (this as any).props = Object.freeze(newProps);
-    this.update();
+    super.update();
   }
 
   /**
@@ -191,7 +191,7 @@ export class Edge extends Entity {
     };
 
     (this as any).props = Object.freeze(newProps);
-    this.update();
+    super.update();
   }
 
   /**
@@ -211,7 +211,7 @@ export class Edge extends Entity {
     };
 
     (this as any).props = Object.freeze(newProps);
-    this.update();
+    super.update();
   }
 
   /**
@@ -231,7 +231,7 @@ export class Edge extends Entity {
     };
 
     (this as any).props = Object.freeze(newProps);
-    this.update();
+    super.update();
   }
 
   /**
@@ -255,7 +255,7 @@ export class Edge extends Entity {
     };
 
     (this as any).props = Object.freeze(newProps);
-    this.update();
+    super.update();
   }
 
   /**
@@ -278,7 +278,7 @@ export class Edge extends Entity {
     };
 
     (this as any).props = Object.freeze(newProps);
-    this.update();
+    super.update();
   }
 
   /**
@@ -366,7 +366,7 @@ export class Edge extends Entity {
     };
 
     (this as any).props = Object.freeze(newProps);
-    this.update();
+    super.update();
   }
 
   /**

@@ -1,9 +1,8 @@
 import { injectable } from 'inversify';
-import { IExpressionEvaluator } from '../../../../domain/workflow/graph/interfaces/expression-evaluator.interface';
 import { ExecutionContext } from '../../engine/execution-context';
 
 @injectable()
-export class ExpressionEvaluator implements IExpressionEvaluator {
+export class ExpressionEvaluator {
   async evaluate(expression: string, context: ExecutionContext): Promise<any> {
     try {
       // Replace variables in expression

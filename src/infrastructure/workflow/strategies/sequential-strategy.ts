@@ -1,5 +1,5 @@
 import { injectable } from 'inversify';
-import { ExecutionContext } from '../../engine/execution-context';
+import { ExecutionContext } from '../engine/execution-context';
 import { GraphExecutor } from '../engine/graph-executor';
 import { ExecutionStrategy } from './execution-strategy';
 
@@ -76,7 +76,7 @@ export class SequentialStrategy extends ExecutionStrategy {
         const edge = graph.edges.get(edgeId);
         
         if (edge) {
-          const targetNodeId = edge.targetNodeId.value;
+          const targetNodeId = edge.toNodeId.value;
           await this.executeFromNode(
             targetNodeId,
             context,
@@ -97,7 +97,7 @@ export class SequentialStrategy extends ExecutionStrategy {
     
     // Find all nodes that have incoming edges
     for (const edge of graph.edges.values()) {
-      nodesWithIncomingEdges.add(edge.targetNodeId.value);
+      nodesWithIncomingEdges.add(edge.toNodeId.value);
     }
     
     // Nodes without incoming edges are start nodes

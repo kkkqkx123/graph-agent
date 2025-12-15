@@ -1,20 +1,14 @@
 import { injectable, inject } from 'inversify';
-import { INodeExecutor } from '../../../../domain/workflow/graph/interfaces/node-executor.interface';
-import { IExecutionContext } from '../../../../domain/workflow/graph/interfaces/execution-context.interface';
-import { Node } from '../../../../domain/workflow/graph/entities/node';
+import { Node } from '../../../../domain/workflow/graph/entities/nodes/base/node';
 import { ExecutionContext } from '../../engine/execution-context';
-import { ILLMClient } from '../../../../domain/llm/interfaces/llm-client.interface';
-import { LLMRequest } from '../../../../domain/llm/entities/llm-request';
-import { LLMResponse } from '../../../../domain/llm/entities/llm-request';
-import { LLMRequestId } from '../../../../domain/llm/value-objects/llm-request-id';
 
 @injectable()
-export class LLMNodeExecutor implements INodeExecutor {
+export class LLMNodeExecutor {
   constructor(
     @inject('LLMClientFactory') private llmClientFactory: any
   ) {}
 
-  async execute(node: Node, context: IExecutionContext): Promise<any> {
+  async execute(node: Node, context: ExecutionContext): Promise<any> {
     try {
       // Get LLM client
       const client = await this.getLLMClient(node);
@@ -29,67 +23,67 @@ export class LLMNodeExecutor implements INodeExecutor {
       const result = this.processResponse(response, node, context);
       
       // Store response in context
-      context.setVariable(`llm_response_${node.id.value}`, result);
-      context.setVariable(`llm_tokens_${node.id.value}`, response.tokenUsage);
+      context.setVariable(`llm_response_${node.nodeId.value}`, result);
+      context.setVariable(`llm_tokens_${node.nodeId.value}`, response.tokenUsage || {});
       
       return result;
     } catch (error) {
-      throw new Error(`LLM node execution failed: ${error.message}`);
+      throw new Error(`LLM node execution failed: ${error instanceof Error ? error.message : String(error)}`);
     }
   }
 
-  private async getLLMClient(node: Node): Promise<ILLMClient> {
-    const config = node.config;
-    const provider = config.provider || 'openai';
+  private async getLLMClient(node: Node): Promise<any> {
+    const config = node.properties;
+    const provider = config['provider'] || 'openai';
     
     return this.llmClientFactory.getClient(provider);
   }
 
-  private prepareRequest(node: Node, context: IExecutionContext): LLMRequest {
-    const config = node.config;
+  private prepareRequest(node: Node, context: ExecutionContext): any {
+    const config = node.properties;
     
     // Prepare messages
     const messages = this.prepareMessages(node, context);
     
     // Create LLM request
-    return new LLMRequest(
-      new LLMRequestId(this.generateRequestId()),
+    return {
+      id: this.generateRequestId(),
       messages,
-      config.model || 'gpt-3.5-turbo',
-      config.temperature,
-      config.maxTokens,
-      config.stop
-    );
+      model: config['model'] || 'gpt-3.5-turbo',
+      temperature: config['temperature'],
+      maxTokens: config['maxTokens'],
+      stop: config['stop']
+    };
   }
 
-  private prepareMessages(node: Node, context: IExecutionContext): any[] {
-    const config = node.config;
+  private prepareMessages(node: Node, context: ExecutionContext): any[] {
+    const config = node.properties;
     const messages: any[] = [];
     
     // Add system message if provided
-    if (config.systemMessage) {
+    if (config['systemMessage']) {
       messages.push({
         role: 'system',
-        content: this.interpolateTemplate(config.systemMessage, context)
+        content: this.interpolateTemplate(config['systemMessage'] as string, context)
       });
     }
     
     // Add conversation history if configured
-    if (config.includeHistory) {
-      const historyMessages = this.getHistoryMessages(context, config.historyLimit || 10);
+    if (config['includeHistory']) {
+      const historyMessages = this.getHistoryMessages(context, config['historyLimit'] as number || 10);
       messages.push(...historyMessages);
     }
     
     // Add user message
-    if (config.userMessage) {
+    if (config['userMessage']) {
       messages.push({
         role: 'user',
-        content: this.interpolateTemplate(config.userMessage, context)
+        content: this.interpolateTemplate(config['userMessage'] as string, context)
       });
     }
     
     // Add context from previous nodes if configured
-    if (config.includeContext) {
+    if (config['includeContext']) {
       const contextMessages = this.getContextMessages(node, context);
       messages.push(...contextMessages);
     }
@@ -97,7 +91,7 @@ export class LLMNodeExecutor implements INodeExecutor {
     return messages;
   }
 
-  private interpolateTemplate(template: string, context: IExecutionContext): string {
+  private interpolateTemplate(template: string, context: ExecutionContext): string {
     // Replace variables in template with context values
     return template.replace(/\{\{(\w+(?:\.\w+)*)\}\}/g, (match, path) => {
       const value = this.getContextValue(path, context);
@@ -105,7 +99,7 @@ export class LLMNodeExecutor implements INodeExecutor {
     });
   }
 
-  private getContextValue(path: string, context: IExecutionContext): any {
+  private getContextValue(path: string, context: ExecutionContext): any {
     const parts = path.split('.');
     let current: any = context;
     
@@ -124,7 +118,7 @@ export class LLMNodeExecutor implements INodeExecutor {
     return current;
   }
 
-  private getHistoryMessages(context: IExecutionContext, limit: number): any[] {
+  private getHistoryMessages(context: ExecutionContext, limit: number): any[] {
     // Get conversation history from context
     const history = context.getVariable('conversation_history') || [];
     const recentHistory = history.slice(-limit);
@@ -135,17 +129,17 @@ export class LLMNodeExecutor implements INodeExecutor {
     }));
   }
 
-  private getContextMessages(node: Node, context: IExecutionContext): any[] {
+  private getContextMessages(node: Node, context: ExecutionContext): any[] {
     const messages: any[] = [];
-    const config = node.config;
+    const config = node.properties;
     
     // Get results from previous nodes
     const executedNodes = context.getExecutedNodes();
-    const contextNodes = config.contextNodes || [];
+    const contextNodes = config['contextNodes'] || [];
     
-    for (const nodeId of contextNodes) {
+    for (const nodeId of contextNodes as string[]) {
       if (executedNodes.has(nodeId)) {
-        const nodeResult = context.getNodeResult(new NodeId(nodeId));
+        const nodeResult = context.getNodeResult({ value: nodeId } as any);
         if (nodeResult) {
           messages.push({
             role: 'system',
@@ -158,38 +152,38 @@ export class LLMNodeExecutor implements INodeExecutor {
     return messages;
   }
 
-  private processResponse(response: LLMResponse, node: Node, context: IExecutionContext): any {
-    const config = node.config;
+  private processResponse(response: any, node: Node, context: ExecutionContext): any {
+    const config = node.properties;
     
     // Parse response based on expected format
     let parsedResponse = response.content;
     
-    if (config.outputFormat === 'json') {
+    if (config['outputFormat'] === 'json') {
       try {
         parsedResponse = JSON.parse(response.content);
       } catch (error) {
-        throw new Error(`Failed to parse JSON response: ${error.message}`);
+        throw new Error(`Failed to parse JSON response: ${error instanceof Error ? error.message : String(error)}`);
       }
     }
     
     // Extract specific fields if configured
-    if (config.outputFields) {
-      parsedResponse = this.extractFields(parsedResponse, config.outputFields);
+    if (config['outputFields']) {
+      parsedResponse = this.extractFields(parsedResponse, config['outputFields'] as string[]);
     }
     
     // Apply transformations if configured
-    if (config.outputTransformations) {
-      parsedResponse = this.applyTransformations(parsedResponse, config.outputTransformations);
+    if (config['outputTransformations']) {
+      parsedResponse = this.applyTransformations(parsedResponse, config['outputTransformations'] as any[]);
     }
     
     // Store raw response if configured
-    if (config.storeRawResponse) {
-      context.setVariable(`llm_raw_response_${node.id.value}`, response.content);
+    if (config['storeRawResponse']) {
+      context.setVariable(`llm_raw_response_${node.nodeId.value}`, response.content);
     }
     
     // Store token usage if configured
-    if (config.storeTokenUsage) {
-      context.setVariable(`llm_token_usage_${node.id.value}`, response.tokenUsage);
+    if (config['storeTokenUsage']) {
+      context.setVariable(`llm_token_usage_${node.nodeId.value}`, response.tokenUsage);
     }
     
     return parsedResponse;
@@ -307,15 +301,15 @@ export class LLMNodeExecutor implements INodeExecutor {
     return `req_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
   }
 
-  async canExecute(node: Node, context: IExecutionContext): Promise<boolean> {
+  async canExecute(node: Node, context: ExecutionContext): Promise<boolean> {
     // Check if node has required configuration
-    const config = node.config;
+    const config = node.properties;
     
-    if (!config.provider && !config.model) {
+    if (!config['provider'] && !config['model']) {
       return false;
     }
     
-    if (!config.userMessage && !config.systemMessage) {
+    if (!config['userMessage'] && !config['systemMessage']) {
       return false;
     }
     
@@ -324,28 +318,28 @@ export class LLMNodeExecutor implements INodeExecutor {
 
   async validate(node: Node): Promise<{ valid: boolean; errors: string[] }> {
     const errors: string[] = [];
-    const config = node.config;
+    const config = node.properties;
     
     // Check required fields
-    if (!config.provider && !config.model) {
+    if (!config['provider'] && !config['model']) {
       errors.push('LLM node requires either provider or model configuration');
     }
     
-    if (!config.userMessage && !config.systemMessage) {
+    if (!config['userMessage'] && !config['systemMessage']) {
       errors.push('LLM node requires at least a user message or system message');
     }
     
     // Validate message templates
-    if (config.userMessage && typeof config.userMessage !== 'string') {
+    if (config['userMessage'] && typeof config['userMessage'] !== 'string') {
       errors.push('User message must be a string');
     }
     
-    if (config.systemMessage && typeof config.systemMessage !== 'string') {
+    if (config['systemMessage'] && typeof config['systemMessage'] !== 'string') {
       errors.push('System message must be a string');
     }
     
     // Validate output format
-    if (config.outputFormat && !['text', 'json'].includes(config.outputFormat)) {
+    if (config['outputFormat'] && !['text', 'json'].includes(config['outputFormat'] as string)) {
       errors.push('Output format must be either "text" or "json"');
     }
     

@@ -1,6 +1,6 @@
 import { Graph } from '../entities/graph';
-import { Node } from '../entities/node';
-import { Edge } from '../entities/edge';
+import { Node } from '../entities/nodes';
+import { Edge } from '../entities/edges';
 import { GraphRepository, NodeRepository, EdgeRepository } from '../repositories/graph-repository';
 import { ID } from '../../../common/value-objects/id';
 import { NodeType } from '../value-objects/node-type';

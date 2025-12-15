@@ -1,10 +1,9 @@
 import { injectable } from 'inversify';
-import { ITransitionEvaluator } from '../../../../domain/workflow/graph/interfaces/transition-evaluator.interface';
-import { Edge } from '../../../../domain/workflow/graph/entities/edge';
+import { Edge } from '@domain/workflow/graph/entities/edges/base/edge';
 import { ExecutionContext } from '../../engine/execution-context';
 
 @injectable()
-export class TransitionEvaluator implements ITransitionEvaluator {
+export class TransitionEvaluator {
   async evaluate(edge: Edge, context: ExecutionContext): Promise<boolean> {
     try {
       const transition = edge.condition;

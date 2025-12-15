@@ -1,22 +1,16 @@
 import { injectable, inject } from 'inversify';
-import { INodeExecutor } from '../../../../domain/workflow/graph/interfaces/node-executor.interface';
-import { IExecutionContext } from '../../../../domain/workflow/graph/interfaces/execution-context.interface';
-import { Node } from '../../../../domain/workflow/graph/entities/node';
+import { Node } from '../../../../domain/workflow/graph/entities/nodes/base/node';
 import { ExecutionContext } from '../../engine/execution-context';
-import { IToolExecutor } from '../../../../domain/tools/interfaces/tool-executor.interface';
-import { Tool } from '../../../../domain/tools/entities/tool';
-import { ToolExecution } from '../../../../domain/tools/entities/tool-execution';
-import { ToolExecutionId } from '../../../../domain/tools/value-objects/tool-execution-id';
 import { ToolRegistry } from '../../../external/tools/registries/tool-registry';
 
 @injectable()
-export class ToolNodeExecutor implements INodeExecutor {
+export class ToolNodeExecutor {
   constructor(
     @inject('ToolRegistry') private toolRegistry: ToolRegistry,
     @inject('ToolExecutorFactory') private toolExecutorFactory: any
   ) {}
 
-  async execute(node: Node, context: IExecutionContext): Promise<any> {
+  async execute(node: Node, context: ExecutionContext): Promise<any> {
     try {
       // Get tool
       const tool = await this.getTool(node);
@@ -34,13 +28,13 @@ export class ToolNodeExecutor implements INodeExecutor {
       const processedResult = this.processResult(result, node, context);
       
       // Store result in context
-      context.setVariable(`tool_result_${node.id.value}`, processedResult);
+      context.setVariable(`tool_result_${node.nodeId.value}`, processedResult);
       
       // Store execution metadata
-      context.setVariable(`tool_execution_${node.id.value}`, {
+      context.setVariable(`tool_execution_${node.nodeId.value}`, {
         toolId: tool.id.value,
         toolName: tool.name,
-        executionTime: result.executionTime,
+        executionTime: result.executionTime || 0,
         success: result.success,
         error: result.error
       });
@@ -51,17 +45,17 @@ export class ToolNodeExecutor implements INodeExecutor {
       
       return processedResult;
     } catch (error) {
-      throw new Error(`Tool node execution failed: ${error.message}`);
+      throw new Error(`Tool node execution failed: ${error instanceof Error ? error.message : String(error)}`);
     }
   }
 
-  private async getTool(node: Node): Promise<Tool> {
-    const config = node.config;
-    const toolId = config.toolId;
-    const toolName = config.toolName;
+  private async getTool(node: Node): Promise<any> {
+    const config = node.properties;
+    const toolId = config['toolId'];
+    const toolName = config['toolName'];
     
     if (toolId) {
-      const tool = this.toolRegistry.getTool(new ToolId(toolId));
+      const tool = this.toolRegistry.getTool({ value: toolId } as any);
       if (!tool) {
         throw new Error(`Tool with ID '${toolId}' not found`);
       }
@@ -69,9 +63,9 @@ export class ToolNodeExecutor implements INodeExecutor {
     }
     
     if (toolName) {
-      const tool = this.toolRegistry.getToolByName(toolName);
+      const tool = this.toolRegistry.getToolByName(String(toolName));
       if (!tool) {
-        throw new Error(`Tool with name '${toolName}' not found`);
+        throw new Error(`Tool with name '${String(toolName)}' not found`);
       }
       return tool;
     }
@@ -79,32 +73,32 @@ export class ToolNodeExecutor implements INodeExecutor {
     throw new Error('Tool node requires either toolId or toolName configuration');
   }
 
-  private prepareExecution(node: Node, context: IExecutionContext): ToolExecution {
-    const config = node.config;
+  private prepareExecution(node: Node, context: ExecutionContext): any {
+    const config = node.properties;
     
     // Prepare parameters
     const parameters = this.prepareParameters(node, context);
     
     // Create tool execution
-    return new ToolExecution(
-      new ToolExecutionId(this.generateExecutionId()),
+    return {
+      id: this.generateExecutionId(),
       parameters,
-      new Date()
-    );
+      timestamp: new Date()
+    };
   }
 
-  private prepareParameters(node: Node, context: IExecutionContext): any {
-    const config = node.config;
+  private prepareParameters(node: Node, context: ExecutionContext): any {
+    const config = node.properties;
     let parameters: any = {};
     
     // Use static parameters if provided
-    if (config.parameters) {
-      parameters = { ...config.parameters };
+    if (config['parameters']) {
+      parameters = { ...config['parameters'] };
     }
     
     // Override with dynamic parameters from context
-    if (config.parameterMappings) {
-      for (const [targetParam, sourcePath] of Object.entries(config.parameterMappings)) {
+    if (config['parameterMappings']) {
+      for (const [targetParam, sourcePath] of Object.entries(config['parameterMappings'])) {
         const value = this.getContextValue(sourcePath as string, context);
         if (value !== undefined) {
           parameters[targetParam] = value;
@@ -113,13 +107,13 @@ export class ToolNodeExecutor implements INodeExecutor {
     }
     
     // Apply parameter transformations if configured
-    if (config.parameterTransformations) {
-      parameters = this.applyParameterTransformations(parameters, config.parameterTransformations);
+    if (config['parameterTransformations']) {
+      parameters = this.applyParameterTransformations(parameters, config['parameterTransformations'] as any[]);
     }
     
     // Validate parameters if schema is provided
-    if (config.parameterSchema) {
-      const validation = this.validateParameters(parameters, config.parameterSchema);
+    if (config['parameterSchema']) {
+      const validation = this.validateParameters(parameters, config['parameterSchema']);
       if (!validation.valid) {
         throw new Error(`Parameter validation failed: ${validation.errors.join(', ')}`);
       }
@@ -128,7 +122,7 @@ export class ToolNodeExecutor implements INodeExecutor {
     return parameters;
   }
 
-  private getContextValue(path: string, context: IExecutionContext): any {
+  private getContextValue(path: string, context: ExecutionContext): any {
     const parts = path.split('.');
     let current: any = context;
     
@@ -318,32 +312,32 @@ export class ToolNodeExecutor implements INodeExecutor {
     return null;
   }
 
-  private async getToolExecutor(tool: Tool): Promise<IToolExecutor> {
-    return this.toolExecutorFactory.createExecutor(tool.config.type);
+  private async getToolExecutor(tool: any): Promise<any> {
+    return this.toolExecutorFactory.createExecutor(tool.type || tool.config?.type);
   }
 
-  private processResult(result: any, node: Node, context: IExecutionContext): any {
-    const config = node.config;
+  private processResult(result: any, node: Node, context: ExecutionContext): any {
+    const config = node.properties;
     let processedResult = result.data;
     
     // Extract specific fields if configured
-    if (config.outputFields) {
-      processedResult = this.extractFields(processedResult, config.outputFields);
+    if (config['outputFields']) {
+      processedResult = this.extractFields(processedResult, config['outputFields'] as string[]);
     }
     
     // Apply result transformations if configured
-    if (config.outputTransformations) {
-      processedResult = this.applyResultTransformations(processedResult, config.outputTransformations);
+    if (config['outputTransformations']) {
+      processedResult = this.applyResultTransformations(processedResult, config['outputTransformations'] as any[]);
     }
     
     // Store raw result if configured
-    if (config.storeRawResult) {
-      context.setVariable(`tool_raw_result_${node.id.value}`, result.data);
+    if (config['storeRawResult']) {
+      context.setVariable(`tool_raw_result_${node.nodeId.value}`, result.data);
     }
     
     // Store execution metadata if configured
-    if (config.storeExecutionMetadata) {
-      context.setVariable(`tool_metadata_${node.id.value}`, {
+    if (config['storeExecutionMetadata']) {
+      context.setVariable(`tool_metadata_${node.nodeId.value}`, {
         executionTime: result.executionTime,
         success: result.success,
         error: result.error,
@@ -393,24 +387,24 @@ export class ToolNodeExecutor implements INodeExecutor {
     return `exec_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
   }
 
-  async canExecute(node: Node, context: IExecutionContext): Promise<boolean> {
+  async canExecute(node: Node, context: ExecutionContext): Promise<boolean> {
     // Check if node has required configuration
-    const config = node.config;
+    const config = node.properties;
     
-    if (!config.toolId && !config.toolName) {
+    if (!config['toolId'] && !config['toolName']) {
       return false;
     }
     
     // Check if tool exists
-    if (config.toolId) {
-      const tool = this.toolRegistry.getTool(new ToolId(config.toolId));
+    if (config['toolId']) {
+      const tool = this.toolRegistry.getTool({ value: config['toolId'] } as any);
       if (!tool) {
         return false;
       }
     }
     
-    if (config.toolName) {
-      const tool = this.toolRegistry.getToolByName(config.toolName);
+    if (config['toolName']) {
+      const tool = this.toolRegistry.getToolByName(String(config['toolName']));
       if (!tool) {
         return false;
       }
@@ -421,31 +415,31 @@ export class ToolNodeExecutor implements INodeExecutor {
 
   async validate(node: Node): Promise<{ valid: boolean; errors: string[] }> {
     const errors: string[] = [];
-    const config = node.config;
+    const config = node.properties;
     
     // Check required fields
-    if (!config.toolId && !config.toolName) {
+    if (!config['toolId'] && !config['toolName']) {
       errors.push('Tool node requires either toolId or toolName configuration');
     }
     
     // Validate tool exists
-    if (config.toolId) {
-      const tool = this.toolRegistry.getTool(new ToolId(config.toolId));
+    if (config['toolId']) {
+      const tool = this.toolRegistry.getTool({ value: config['toolId'] } as any);
       if (!tool) {
-        errors.push(`Tool with ID '${config.toolId}' not found`);
+        errors.push(`Tool with ID '${config['toolId']}' not found`);
       }
     }
     
-    if (config.toolName) {
-      const tool = this.toolRegistry.getToolByName(config.toolName);
+    if (config['toolName']) {
+      const tool = this.toolRegistry.getToolByName(String(config['toolName']));
       if (!tool) {
-        errors.push(`Tool with name '${config.toolName}' not found`);
+        errors.push(`Tool with name '${config['toolName']}' not found`);
       }
     }
     
     // Validate parameter mappings
-    if (config.parameterMappings) {
-      for (const [targetParam, sourcePath] of Object.entries(config.parameterMappings)) {
+    if (config['parameterMappings']) {
+      for (const [targetParam, sourcePath] of Object.entries(config['parameterMappings'])) {
         if (typeof sourcePath !== 'string') {
           errors.push(`Parameter mapping for '${targetParam}' must be a string`);
         }

@@ -1,5 +1,5 @@
 import { injectable } from 'inversify';
-import { ExecutionContext } from '../../engine/execution-context';
+import { ExecutionContext } from '../engine/execution-context';
 import { GraphExecutor } from '../engine/graph-executor';
 import { ExecutionStrategy } from './execution-strategy';
 
@@ -38,7 +38,7 @@ export class ParallelStrategy extends ExecutionStrategy {
       // Check for errors
       const errors = batchResults.filter(r => !r.success);
       if (errors.length > 0) {
-        const errorMessages = errors.map(e => `Node ${e.nodeId}: ${e.error.message}`);
+        const errorMessages = errors.map(e => `Node ${e.nodeId}: ${(e.error instanceof Error ? e.error.message : String(e.error))}`);
         throw new Error(`Parallel execution failed: ${errorMessages.join(', ')}`);
       }
       
