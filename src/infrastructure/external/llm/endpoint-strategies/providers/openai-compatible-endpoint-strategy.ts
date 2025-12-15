@@ -23,15 +23,15 @@ export class OpenAICompatibleEndpointStrategy extends BaseEndpointStrategy {
   /**
    * 构建请求头
    */
-  buildHeaders(config: ProviderConfig): Record<string, string> {
+  override buildHeaders(config: ProviderConfig): Record<string, string> {
     const headers = super.buildHeaders(config);
     
     // 添加 Bearer token 认证
     headers['Authorization'] = `Bearer ${config.apiKey}`;
     
     // 添加可选的版本头
-    if (config.extraConfig?.apiVersion) {
-      headers['api-version'] = config.extraConfig.apiVersion;
+    if (config.extraConfig?.['apiVersion']) {
+      headers['api-version'] = config.extraConfig['apiVersion'];
     }
     
     return headers;
@@ -40,7 +40,7 @@ export class OpenAICompatibleEndpointStrategy extends BaseEndpointStrategy {
   /**
    * 处理认证
    */
-  handleAuthentication(request: any, config: ProviderConfig): any {
+  override handleAuthentication(request: any, config: ProviderConfig): any {
     // OpenAI 兼容端点通过 Authorization 头部进行认证
     // 这里不需要修改请求体
     return request;
@@ -49,7 +49,7 @@ export class OpenAICompatibleEndpointStrategy extends BaseEndpointStrategy {
   /**
    * 验证配置
    */
-  validateConfig(config: ProviderConfig): {
+  override validateConfig(config: ProviderConfig): {
     isValid: boolean;
     errors: string[];
   } {

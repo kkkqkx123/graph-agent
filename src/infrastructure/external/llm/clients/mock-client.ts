@@ -5,6 +5,10 @@ import { ModelConfig } from '../../../../domain/llm/value-objects/model-config';
 import { ID } from '../../../../domain/common/value-objects/id';
 import { BaseLLMClient } from './base-llm-client';
 import { TokenCalculator } from '../token-calculators/token-calculator';
+import { ProviderConfig, ApiType, ProviderConfigBuilder } from '../parameter-mappers';
+import { MockParameterMapper } from '../parameter-mappers/providers/mock-parameter-mapper';
+import { MockEndpointStrategy } from '../endpoint-strategies/providers/mock-endpoint-strategy';
+import { BaseFeatureSupport } from '../parameter-mappers/interfaces/feature-support.interface';
 
 @injectable()
 export class MockClient extends BaseLLMClient {
@@ -16,43 +20,43 @@ export class MockClient extends BaseLLMClient {
     @inject('TokenCalculator') tokenCalculator: TokenCalculator,
     @inject('ConfigManager') configManager: any
   ) {
+    // 创建功能支持配置
+    const featureSupport = new BaseFeatureSupport();
+    featureSupport.supportsStreaming = true;
+    featureSupport.supportsTools = true;
+    featureSupport.supportsImages = false;
+    featureSupport.supportsAudio = false;
+    featureSupport.supportsVideo = false;
+    featureSupport.supportsSystemMessages = true;
+    featureSupport.supportsTemperature = true;
+    featureSupport.supportsTopP = true;
+    featureSupport.supportsMaxTokens = true;
+
+    // 创建提供商配置
+    const providerConfig = new ProviderConfigBuilder()
+      .name('Mock')
+      .apiType(ApiType.CUSTOM)
+      .baseURL('https://mock.api.example.com')
+      .apiKey('mock-key')
+      .endpointStrategy(new MockEndpointStrategy())
+      .parameterMapper(new MockParameterMapper())
+      .featureSupport(featureSupport)
+      .defaultModel('mock-model')
+      .timeout(30000)
+      .retryCount(3)
+      .retryDelay(1000)
+      .build();
+
     super(
       httpClient,
       rateLimiter,
       tokenCalculator,
       configManager,
-      'Mock',
-      'mock',
-      'https://mock.api.example.com'
+      providerConfig
     );
     
     // Initialize some default mock responses
     this.setupDefaultResponses();
-  }
-
-  protected getEndpoint(): string {
-    return `${this.baseURL}/mock/generate`;
-  }
-
-  protected getHeaders(): Record<string, string> {
-    return {
-      'Content-Type': 'application/json',
-      'x-mock-api-key': this.apiKey || 'mock-key'
-    };
-  }
-
-  protected prepareRequest(request: LLMRequest): any {
-    return {
-      model: request.model,
-      messages: request.messages,
-      temperature: request.temperature || 0.7,
-      max_tokens: request.maxTokens || 1000
-    };
-  }
-
-  protected toLLMResponse(mockResponse: any, request: LLMRequest): LLMResponse {
-    // Mock客户端直接使用自己的响应生成逻辑
-    return this.generateMockResponse(request);
   }
 
   public override async generateResponse(request: LLMRequest): Promise<LLMResponse> {
@@ -275,19 +279,6 @@ export class MockClient extends BaseLLMClient {
     return response;
   }
 
-  public override async healthCheck(): Promise<{
-    status: 'healthy' | 'unhealthy' | 'degraded';
-    message?: string;
-    latency?: number;
-    lastChecked: Date;
-  }> {
-    // Mock implementation - always return true
-    return {
-      status: 'healthy',
-      message: 'Mock service is operational',
-      lastChecked: new Date()
-    };
-  }
 
   public async getMetrics(): Promise<any> {
     // Mock implementation

@@ -5,6 +5,10 @@ import { ModelConfig } from '../../../../domain/llm/value-objects/model-config';
 import { ID } from '../../../../domain/common/value-objects/id';
 import { BaseLLMClient } from './base-llm-client';
 import { OpenAIProvider, getMessageConverter } from '../converters';
+import { ProviderConfig, ApiType } from '../parameter-mappers/interfaces/provider-config.interface';
+import { OpenAIParameterMapper } from '../parameter-mappers/providers/openai-parameter-mapper';
+import { OpenAICompatibleEndpointStrategy } from '../endpoint-strategies/providers/openai-compatible-endpoint-strategy';
+import { BaseFeatureSupport } from '../parameter-mappers/interfaces/feature-support.interface';
 
 @injectable()
 export class OpenAIChatClient extends BaseLLMClient {
@@ -14,138 +18,41 @@ export class OpenAIChatClient extends BaseLLMClient {
     @inject('TokenCalculator') tokenCalculator: any,
     @inject('ConfigManager') configManager: any
   ) {
+    // 创建 OpenAI 功能支持
+    const featureSupport = new BaseFeatureSupport();
+    featureSupport.supportsStreaming = true;
+    featureSupport.supportsTools = true;
+    featureSupport.supportsImages = true;
+    featureSupport.supportsAudio = true;
+    featureSupport.supportsVideo = false;
+    featureSupport.supportsJsonMode = true;
+    featureSupport.supportsSeed = true;
+    featureSupport.supportsLogProbs = true;
+    featureSupport.supportsLogitBias = true;
+    featureSupport.supportsFunctionCalling = true;
+    featureSupport.supportsParallelToolCalling = true;
+    
+    // 创建 OpenAI 供应商配置
+    const providerConfig: ProviderConfig = {
+      name: 'OpenAI',
+      apiType: ApiType.OPENAI_COMPATIBLE,
+      apiKey: configManager.get('llm.openai.apiKey', ''),
+      baseURL: 'https://api.openai.com/v1',
+      parameterMapper: new OpenAIParameterMapper(),
+      endpointStrategy: new OpenAICompatibleEndpointStrategy(),
+      featureSupport: featureSupport,
+      defaultModel: 'gpt-3.5-turbo'
+    };
+
     super(
       httpClient,
       rateLimiter,
       tokenCalculator,
       configManager,
-      'OpenAI',
-      'openai',
-      'https://api.openai.com/v1'
+      providerConfig
     );
   }
 
-  protected getEndpoint(): string {
-    return `${this.baseURL}/chat/completions`;
-  }
-
-  protected getHeaders(): Record<string, string> {
-    return {
-      'Authorization': `Bearer ${this.apiKey}`,
-      'Content-Type': 'application/json'
-    };
-  }
-
-  protected prepareRequest(request: LLMRequest): any {
-    // 获取模型配置以使用正确的默认值
-    const modelConfig = this.getModelConfig();
-    
-    // 使用转换器准备请求
-    const converter = getMessageConverter();
-    const provider = new OpenAIProvider();
-    
-    // 转换消息格式
-    const parameters: Record<string, any> = {
-      model: request.model,
-      temperature: request.temperature ?? modelConfig.getTemperature(),
-      max_tokens: request.maxTokens ?? modelConfig.getMaxTokens(),
-      top_p: request.topP ?? modelConfig.getTopP(),
-      frequency_penalty: request.frequencyPenalty ?? modelConfig.getFrequencyPenalty(),
-      presence_penalty: request.presencePenalty ?? modelConfig.getPresencePenalty(),
-      stream: false
-    };
-    
-    // 添加高级参数
-    if (request.reasoningEffort) {
-      parameters['reasoning_effort'] = request.reasoningEffort;
-    }
-    
-    // 停止序列
-    if (request.stop && request.stop.length > 0) {
-      parameters['stop'] = request.stop;
-    }
-    
-    // 响应格式
-    if (request.metadata && 'responseFormat' in request.metadata) {
-      parameters['response_format'] = request.metadata['responseFormat'];
-    }
-    
-    // 确定性种子
-    if (request.metadata && 'seed' in request.metadata) {
-      parameters['seed'] = request.metadata['seed'];
-    }
-    
-    // 服务层级
-    if (request.metadata && 'serviceTier' in request.metadata) {
-      parameters['service_tier'] = request.metadata['serviceTier'];
-    }
-    
-    // 用户标识符
-    if (request.metadata && 'user' in request.metadata) {
-      parameters['user'] = request.metadata['user'];
-    }
-    
-    // 生成数量
-    if (request.metadata && 'n' in request.metadata) {
-      parameters['n'] = request.metadata['n'];
-    }
-    
-    // Logit bias
-    if (request.metadata && 'logitBias' in request.metadata) {
-      parameters['logit_bias'] = request.metadata['logitBias'];
-    }
-    
-    // Top logprobs
-    if (request.metadata && 'topLogprobs' in request.metadata) {
-      parameters['top_logprobs'] = request.metadata['topLogprobs'];
-    }
-    
-    // 存储选项
-    if (request.metadata && 'store' in request.metadata) {
-      parameters['store'] = request.metadata['store'];
-    }
-    
-    // 流式选项 - 从元数据中获取
-    if (request.metadata && 'streamOptions' in request.metadata) {
-      parameters['stream_options'] = request.metadata['streamOptions'];
-    }
-    
-    // 添加工具相关参数
-    if (request.tools) {
-      parameters['tools'] = request.tools;
-    }
-    
-    if (request.toolChoice) {
-      parameters['tool_choice'] = request.toolChoice;
-    }
-    
-    return provider.convertRequest(request.messages, parameters);
-  }
-
-  protected toLLMResponse(openaiResponse: any, request: LLMRequest): LLMResponse {
-    const choice = openaiResponse.choices[0];
-    const usage = openaiResponse.usage;
-
-    return LLMResponse.create(
-      request.requestId,
-      request.model,
-      [{
-        index: 0,
-        message: {
-          role: choice.message.role,
-          content: choice.message.content
-        },
-        finish_reason: choice.finish_reason
-      }],
-      {
-        promptTokens: usage.prompt_tokens,
-        completionTokens: usage.completion_tokens,
-        totalTokens: usage.total_tokens
-      },
-      choice.finish_reason,
-      0 // duration - would need to be calculated
-    );
-  }
 
   getSupportedModelsList(): string[] {
     return [
@@ -194,29 +101,6 @@ export class OpenAIChatClient extends BaseLLMClient {
       supportsVideo: config.supportsVideo ?? false,
       metadata: config.metadata || {}
     });
-  }
-
-  public override async generateResponseStream(request: LLMRequest): Promise<AsyncIterable<LLMResponse>> {
-    await this.rateLimiter.checkLimit();
-
-    try {
-      // 准备请求，启用流式模式
-      const openaiRequest = {
-        ...this.prepareRequest(request),
-        stream: true
-      };
-      
-      // 发送流式请求
-      const response = await this.httpClient.post(this.getEndpoint(), openaiRequest, {
-        headers: this.getHeaders(),
-        responseType: 'stream' // 确保获取流式响应
-      });
-
-      // 解析流式响应
-      return this.parseStreamResponse(response, request);
-    } catch (error) {
-      this.handleError(error);
-    }
   }
 
   protected override async parseStreamResponse(response: any, request: LLMRequest): Promise<AsyncIterable<LLMResponse>> {
@@ -273,57 +157,6 @@ export class OpenAIChatClient extends BaseLLMClient {
     return streamGenerator();
   }
 
-  public override async isModelAvailable(): Promise<boolean> {
-    try {
-      const response = await this.httpClient.get(`${this.baseURL}/models`, {
-        headers: {
-          'Authorization': `Bearer ${this.apiKey}`
-        }
-      });
-      return response.status === 200;
-    } catch (error) {
-      return false;
-    }
-  }
-
-  public override async getModelInfo(): Promise<{
-    name: string;
-    provider: string;
-    version: string;
-    maxTokens: number;
-    contextWindow: number;
-    supportsStreaming: boolean;
-    supportsTools: boolean;
-    supportsImages: boolean;
-    supportsAudio: boolean;
-    supportsVideo: boolean;
-  }> {
-    try {
-      const response = await this.httpClient.get(`${this.baseURL}/models`, {
-        headers: {
-          'Authorization': `Bearer ${this.apiKey}`
-        }
-      });
-      const model = 'gpt-3.5-turbo'; // 默认模型
-      const config = this.getModelConfig();
-      
-      return {
-        name: model,
-        provider: 'openai',
-        version: '1.0',
-        maxTokens: config.getMaxTokens(),
-        contextWindow: config.getContextWindow(),
-        supportsStreaming: config.supportsStreaming(),
-        supportsTools: config.supportsTools(),
-        supportsImages: config.supportsImages(),
-        supportsAudio: config.supportsAudio(),
-        supportsVideo: config.supportsVideo()
-      };
-    } catch (error) {
-      throw new Error(`Failed to get model info: ${error instanceof Error ? error.message : String(error)}`);
-    }
-  }
-
   public override async validateRequest(request: LLMRequest): Promise<{
     isValid: boolean;
     errors: string[];
@@ -338,9 +171,13 @@ export class OpenAIChatClient extends BaseLLMClient {
     }
     
     // Check if model is available
-    const isAvailable = await this.isModelAvailable();
-    if (!isAvailable) {
-      errors.push('Model is not available');
+    try {
+      const isAvailable = await this.isModelAvailable();
+      if (!isAvailable) {
+        errors.push('Model is not available');
+      }
+    } catch (error) {
+      errors.push('Failed to check model availability');
     }
     
     return {
@@ -365,36 +202,6 @@ export class OpenAIChatClient extends BaseLLMClient {
     return response;
   }
 
-  public override async healthCheck(): Promise<{
-    status: 'healthy' | 'unhealthy' | 'degraded';
-    message?: string;
-    latency?: number;
-    lastChecked: Date;
-  }> {
-    try {
-      const startTime = Date.now();
-      const response = await this.httpClient.get(`${this.baseURL}/models`, {
-        headers: {
-          'Authorization': `Bearer ${this.apiKey}`
-        }
-      });
-      const isHealthy = response.status === 200;
-      const latency = Date.now() - startTime;
-      
-      return {
-        status: isHealthy ? 'healthy' : 'unhealthy',
-        message: isHealthy ? 'Service is operational' : 'Service is unavailable',
-        latency,
-        lastChecked: new Date()
-      };
-    } catch (error) {
-      return {
-        status: 'unhealthy',
-        message: 'Service is unavailable',
-        lastChecked: new Date()
-      };
-    }
-  }
 
   public override getClientName(): string {
     return 'OpenAI Chat';
@@ -404,18 +211,6 @@ export class OpenAIChatClient extends BaseLLMClient {
     return '1.0.0';
   }
 
-  public override async getSupportedModels(): Promise<string[]> {
-    try {
-      const response = await this.httpClient.get(`${this.baseURL}/models`, {
-        headers: {
-          'Authorization': `Bearer ${this.apiKey}`
-        }
-      });
-      return response.data.data.map((model: any) => model.id);
-    } catch (error) {
-      throw new Error(`Failed to get supported models: ${error instanceof Error ? error.message : String(error)}`);
-    }
-  }
 
   public override async getRateLimitInfo(): Promise<{
     requestsPerMinute: number;
@@ -574,8 +369,8 @@ export class OpenAIChatClient extends BaseLLMClient {
   }
 
   public override async estimateTokens(text: string): Promise<number> {
-    // 使用token计算器进行精确计算
-    return this.tokenCalculator.calculateTokensForModel(text, 'gpt-3.5-turbo');
+    // 简单的token估算实现
+    return Math.ceil(text.length / 4);
   }
 
   public override async truncateText(text: string, maxTokens: number): Promise<string> {

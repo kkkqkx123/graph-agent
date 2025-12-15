@@ -1,6 +1,10 @@
 import { LLMRequest } from '../../../../../domain/llm/entities/llm-request';
 import { LLMResponse } from '../../../../../domain/llm/entities/llm-response';
 import { ProviderConfig } from './provider-config.interface';
+import { ParameterDefinition } from './parameter-definition.interface';
+
+// 重新导出以保持向后兼容性
+export { ParameterDefinition, ProviderConfig };
 
 /**
  * 提供商请求接口
@@ -66,64 +70,4 @@ export interface IParameterMapper {
    * @returns 映射器版本
    */
   getVersion(): string;
-}
-
-/**
- * 参数定义接口
- */
-export interface ParameterDefinition {
-  /**
-   * 参数名称
-   */
-  name: string;
-
-  /**
-   * 参数类型
-   */
-  type: 'string' | 'number' | 'boolean' | 'object' | 'array';
-
-  /**
-   * 是否必需
-   */
-  required: boolean;
-
-  /**
-   * 默认值
-   */
-  defaultValue?: any;
-
-  /**
-   * 参数描述
-   */
-  description?: string;
-
-  /**
-   * 验证函数
-   */
-  validation?: (value: any) => boolean;
-
-  /**
-   * 最小值（适用于数字）
-   */
-  min?: number;
-
-  /**
-   * 最大值（适用于数字）
-   */
-  max?: number;
-
-  /**
-   * 可选值列表
-   */
-  options?: any[];
-
-  /**
-   * 是否为提供商特有参数
-   */
-  isProviderSpecific?: boolean;
-
-  /**
-   * 参数分组
-   */
-  group?: 'basic' | 'advanced' | 'provider-specific';
 }

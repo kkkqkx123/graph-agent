@@ -5,6 +5,10 @@ import { ModelConfig } from '../../../../domain/llm/value-objects/model-config';
 import { ID } from '../../../../domain/common/value-objects/id';
 import { BaseLLMClient } from './base-llm-client';
 import { OpenAIProvider } from '../converters/providers/openai-provider';
+import { ProviderConfig, ApiType, ProviderConfigBuilder } from '../parameter-mappers';
+import { OpenAIParameterMapper } from '../parameter-mappers/providers/openai-parameter-mapper';
+import { OpenAICompatibleEndpointStrategy } from '../endpoint-strategies/providers/openai-compatible-endpoint-strategy';
+import { BaseFeatureSupport } from '../parameter-mappers/interfaces/feature-support.interface';
 
 @injectable()
 export class OpenAIResponseClient extends BaseLLMClient {
@@ -14,115 +18,45 @@ export class OpenAIResponseClient extends BaseLLMClient {
     @inject('TokenCalculator') tokenCalculator: any,
     @inject('ConfigManager') configManager: any
   ) {
+    // 创建功能支持配置
+    const featureSupport = new BaseFeatureSupport();
+    featureSupport.supportsStreaming = true;
+    featureSupport.supportsTools = true;
+    featureSupport.supportsImages = false;
+    featureSupport.supportsAudio = false;
+    featureSupport.supportsVideo = false;
+    featureSupport.supportsSystemMessages = true;
+    featureSupport.supportsTemperature = true;
+    featureSupport.supportsTopP = true;
+    featureSupport.supportsMaxTokens = true;
+    featureSupport.setProviderSpecificFeature('reasoning_effort', true);
+    featureSupport.setProviderSpecificFeature('previous_response_id', true);
+    featureSupport.setProviderSpecificFeature('verbosity', true);
+
+    // 创建提供商配置
+    const providerConfig = new ProviderConfigBuilder()
+      .name('OpenAI Response')
+      .apiType(ApiType.OPENAI_COMPATIBLE)
+      .baseURL('https://api.openai.com/v1')
+      .apiKey(configManager.get('llm.openai.apiKey'))
+      .endpointStrategy(new OpenAICompatibleEndpointStrategy())
+      .parameterMapper(new OpenAIParameterMapper())
+      .featureSupport(featureSupport)
+      .defaultModel('gpt-5')
+      .timeout(30000)
+      .retryCount(3)
+      .retryDelay(1000)
+      .build();
+
     super(
       httpClient,
       rateLimiter,
       tokenCalculator,
       configManager,
-      'OpenAI Response',
-      'openai',
-      'https://api.openai.com/v1'
+      providerConfig
     );
   }
 
-  protected getEndpoint(): string {
-    return `${this.baseURL}/responses`;
-  }
-
-  protected getHeaders(): Record<string, string> {
-    return {
-      'Authorization': `Bearer ${this.apiKey}`,
-      'Content-Type': 'application/json'
-    };
-  }
-
-  protected prepareRequest(request: LLMRequest): any {
-    // 获取模型配置以使用正确的默认值
-    const modelConfig = this.getModelConfig();
-    
-    // 使用转换器准备请求
-    const provider = new OpenAIProvider();
-    
-    // 转换消息格式
-    const parameters: Record<string, any> = {
-      model: request.model,
-      stream: false
-    };
-
-    // 处理推理配置
-    if (request.reasoningEffort) {
-      parameters['reasoning'] = {
-        effort: request.reasoningEffort
-      };
-    }
-
-    // 处理文本配置
-    if (request.verbosity) {
-      parameters['text'] = {
-        verbosity: request.verbosity
-      };
-    }
-
-    // 处理对话连续性
-    if (request.previousResponseId) {
-      parameters['previous_response_id'] = request.previousResponseId;
-    }
-
-    // 添加其他参数
-    if (request.temperature !== undefined) {
-      parameters['temperature'] = request.temperature;
-    } else {
-      parameters['temperature'] = modelConfig.getTemperature();
-    }
-
-    if (request.maxTokens !== undefined) {
-      parameters['max_tokens'] = request.maxTokens;
-    } else {
-      parameters['max_tokens'] = modelConfig.getMaxTokens();
-    }
-
-    // Responses API使用不同的格式，需要特殊处理
-    const responseRequest = provider.convertRequest(request.messages, parameters);
-    
-    // Responses API需要将消息转换为input字段
-    if (responseRequest['messages']) {
-      responseRequest['input'] = this.messagesToInput(responseRequest['messages']);
-      delete responseRequest['messages'];
-    }
-
-    return responseRequest;
-  }
-
-  protected toLLMResponse(response: any, request: LLMRequest): LLMResponse {
-    const choices = response.choices;
-    if (!choices || choices.length === 0) {
-      throw new Error("Responses API响应中没有choices字段");
-    }
-
-    const choice = choices[0];
-    const messageData = choice.message;
-
-    return LLMResponse.create(
-      request.requestId,
-      request.model,
-      [{
-        index: 0,
-        message: {
-          role: 'assistant',
-          content: messageData.content
-        },
-        finish_reason: choice.finish_reason
-      }],
-      {
-        promptTokens: response.usage?.prompt_tokens || 0,
-        completionTokens: response.usage?.completion_tokens || 0,
-        totalTokens: response.usage?.total_tokens || 0,
-        reasoningTokens: response.usage?.reasoning_tokens || 0
-      },
-      choice.finish_reason,
-      0
-    );
-  }
 
   getSupportedModelsList(): string[] {
     return [
@@ -160,29 +94,6 @@ export class OpenAIResponseClient extends BaseLLMClient {
       supportsVideo: config.supportsVideo ?? false,
       metadata: config.metadata || {}
     });
-  }
-
-  public override async generateResponseStream(request: LLMRequest): Promise<AsyncIterable<LLMResponse>> {
-    await this.rateLimiter.checkLimit();
-
-    try {
-      // 准备请求，启用流式模式
-      const responseRequest = {
-        ...this.prepareRequest(request),
-        stream: true
-      };
-      
-      // 发送流式请求
-      const response = await this.httpClient.post(this.getEndpoint(), responseRequest, {
-        headers: this.getHeaders(),
-        responseType: 'stream' // 确保获取流式响应
-      });
-
-      // 解析流式响应
-      return this.parseStreamResponse(response, request);
-    } catch (error) {
-      this.handleError(error);
-    }
   }
 
   protected override async parseStreamResponse(response: any, request: LLMRequest): Promise<AsyncIterable<LLMResponse>> {
@@ -306,57 +217,6 @@ export class OpenAIResponseClient extends BaseLLMClient {
     return responsesTools;
   }
 
-  public override async isModelAvailable(): Promise<boolean> {
-    try {
-      const response = await this.httpClient.get(`${this.baseURL}/models`, {
-        headers: {
-          'Authorization': `Bearer ${this.apiKey}`
-        }
-      });
-      return response.status === 200;
-    } catch (error) {
-      return false;
-    }
-  }
-
-  public override async getModelInfo(): Promise<{
-    name: string;
-    provider: string;
-    version: string;
-    maxTokens: number;
-    contextWindow: number;
-    supportsStreaming: boolean;
-    supportsTools: boolean;
-    supportsImages: boolean;
-    supportsAudio: boolean;
-    supportsVideo: boolean;
-  }> {
-    try {
-      const response = await this.httpClient.get(`${this.baseURL}/models`, {
-        headers: {
-          'Authorization': `Bearer ${this.apiKey}`
-        }
-      });
-      const model = 'gpt-5'; // 默认模型
-      const config = this.getModelConfig();
-      
-      return {
-        name: model,
-        provider: 'openai',
-        version: '1.0',
-        maxTokens: config.getMaxTokens(),
-        contextWindow: config.getContextWindow(),
-        supportsStreaming: config.supportsStreaming(),
-        supportsTools: config.supportsTools(),
-        supportsImages: config.supportsImages(),
-        supportsAudio: config.supportsAudio(),
-        supportsVideo: config.supportsVideo()
-      };
-    } catch (error) {
-      throw new Error(`Failed to get model info: ${error instanceof Error ? error.message : String(error)}`);
-    }
-  }
-
   public override async validateRequest(request: LLMRequest): Promise<{
     isValid: boolean;
     errors: string[];
@@ -371,9 +231,13 @@ export class OpenAIResponseClient extends BaseLLMClient {
     }
     
     // Check if model is available
-    const isAvailable = await this.isModelAvailable();
-    if (!isAvailable) {
-      errors.push('Model is not available');
+    try {
+      const isAvailable = await this.isModelAvailable();
+      if (!isAvailable) {
+        errors.push('Model is not available');
+      }
+    } catch (error) {
+      errors.push('Failed to check model availability');
     }
     
     return {
@@ -398,36 +262,6 @@ export class OpenAIResponseClient extends BaseLLMClient {
     return response;
   }
 
-  public override async healthCheck(): Promise<{
-    status: 'healthy' | 'unhealthy' | 'degraded';
-    message?: string;
-    latency?: number;
-    lastChecked: Date;
-  }> {
-    try {
-      const startTime = Date.now();
-      const response = await this.httpClient.get(`${this.baseURL}/models`, {
-        headers: {
-          'Authorization': `Bearer ${this.apiKey}`
-        }
-      });
-      const isHealthy = response.status === 200;
-      const latency = Date.now() - startTime;
-      
-      return {
-        status: isHealthy ? 'healthy' : 'unhealthy',
-        message: isHealthy ? 'Service is operational' : 'Service is unavailable',
-        latency,
-        lastChecked: new Date()
-      };
-    } catch (error) {
-      return {
-        status: 'unhealthy',
-        message: 'Service is unavailable',
-        lastChecked: new Date()
-      };
-    }
-  }
 
   public override getClientName(): string {
     return 'OpenAI Response';
@@ -437,18 +271,6 @@ export class OpenAIResponseClient extends BaseLLMClient {
     return '1.0.0';
   }
 
-  public override async getSupportedModels(): Promise<string[]> {
-    try {
-      const response = await this.httpClient.get(`${this.baseURL}/models`, {
-        headers: {
-          'Authorization': `Bearer ${this.apiKey}`
-        }
-      });
-      return response.data.data.map((model: any) => model.id);
-    } catch (error) {
-      throw new Error(`Failed to get supported models: ${error instanceof Error ? error.message : String(error)}`);
-    }
-  }
 
   public override async getRateLimitInfo(): Promise<{
     requestsPerMinute: number;
@@ -607,8 +429,8 @@ export class OpenAIResponseClient extends BaseLLMClient {
   }
 
   public override async estimateTokens(text: string): Promise<number> {
-    // 使用tiktoken进行精确计算，而不是估算
-    return this.tokenCalculator.calculateTokensForModel(text, 'gpt-5');
+    // 简单的token估算实现
+    return Math.ceil(text.length / 4);
   }
 
   public override async truncateText(text: string, maxTokens: number): Promise<string> {

@@ -1,7 +1,7 @@
 import { LLMRequest } from '../../../../../domain/llm/entities/llm-request';
 import { LLMResponse } from '../../../../../domain/llm/entities/llm-response';
 import { BaseParameterMapper } from '../base/base-parameter-mapper';
-import { ProviderConfig, ProviderRequest, ProviderResponse } from '../interfaces/parameter-mapper.interface';
+import { ProviderConfig, ProviderRequest, ProviderResponse, ParameterDefinition } from '../interfaces/parameter-mapper.interface';
 import { ParameterDefinitionBuilder, CommonParameterDefinitions } from '../interfaces/parameter-definition.interface';
 
 /**
@@ -17,7 +17,7 @@ export class OpenAIParameterMapper extends BaseParameterMapper {
   /**
    * 初始化支持的参数列表
    */
-  protected initializeSupportedParameters(): ParameterDefinition[] {
+  protected override initializeSupportedParameters(): ParameterDefinition[] {
     const baseParams = super.initializeSupportedParameters();
     
     // 添加 OpenAI 特有参数
@@ -135,85 +135,85 @@ export class OpenAIParameterMapper extends BaseParameterMapper {
     };
 
     // 基本参数映射
-    if (baseParams.temperature !== undefined) {
-      openaiRequest.temperature = baseParams.temperature;
+    if (baseParams['temperature'] !== undefined) {
+      openaiRequest['temperature'] = baseParams['temperature'];
     }
 
-    if (baseParams.maxTokens !== undefined) {
-      openaiRequest.max_tokens = baseParams.maxTokens;
+    if (baseParams['maxTokens'] !== undefined) {
+      openaiRequest['max_tokens'] = baseParams['maxTokens'];
     }
 
-    if (baseParams.topP !== undefined) {
-      openaiRequest.top_p = baseParams.topP;
+    if (baseParams['topP'] !== undefined) {
+      openaiRequest['top_p'] = baseParams['topP'];
     }
 
-    if (baseParams.frequencyPenalty !== undefined) {
-      openaiRequest.frequency_penalty = baseParams.frequencyPenalty;
+    if (baseParams['frequencyPenalty'] !== undefined) {
+      openaiRequest['frequency_penalty'] = baseParams['frequencyPenalty'];
     }
 
-    if (baseParams.presencePenalty !== undefined) {
-      openaiRequest.presence_penalty = baseParams.presencePenalty;
+    if (baseParams['presencePenalty'] !== undefined) {
+      openaiRequest['presence_penalty'] = baseParams['presencePenalty'];
     }
 
-    if (baseParams.stop && baseParams.stop.length > 0) {
-      openaiRequest.stop = baseParams.stop;
+    if (baseParams['stop'] && baseParams['stop'].length > 0) {
+      openaiRequest['stop'] = baseParams['stop'];
     }
 
-    if (baseParams.stream !== undefined) {
-      openaiRequest.stream = baseParams.stream;
+    if (baseParams['stream'] !== undefined) {
+      openaiRequest['stream'] = baseParams['stream'];
     }
 
     // OpenAI 特有参数
     if (request.reasoningEffort) {
-      openaiRequest.reasoning_effort = request.reasoningEffort;
+      openaiRequest['reasoning_effort'] = request.reasoningEffort;
     }
 
     // 从元数据中获取 OpenAI 特有参数
     if (request.metadata) {
-      if (request.metadata.responseFormat) {
-        openaiRequest.response_format = request.metadata.responseFormat;
+      if (request.metadata?.['responseFormat']) {
+        openaiRequest['response_format'] = request.metadata['responseFormat'];
       }
 
-      if (request.metadata.seed !== undefined) {
-        openaiRequest.seed = request.metadata.seed;
+      if (request.metadata?.['seed'] !== undefined) {
+        openaiRequest['seed'] = request.metadata['seed'];
       }
 
-      if (request.metadata.serviceTier) {
-        openaiRequest.service_tier = request.metadata.serviceTier;
+      if (request.metadata?.['serviceTier']) {
+        openaiRequest['service_tier'] = request.metadata['serviceTier'];
       }
 
-      if (request.metadata.user) {
-        openaiRequest.user = request.metadata.user;
+      if (request.metadata?.['user']) {
+        openaiRequest['user'] = request.metadata['user'];
       }
 
-      if (request.metadata.n !== undefined) {
-        openaiRequest.n = request.metadata.n;
+      if (request.metadata?.['n'] !== undefined) {
+        openaiRequest['n'] = request.metadata['n'];
       }
 
-      if (request.metadata.logitBias) {
-        openaiRequest.logit_bias = request.metadata.logitBias;
+      if (request.metadata?.['logitBias']) {
+        openaiRequest['logit_bias'] = request.metadata['logitBias'];
       }
 
-      if (request.metadata.topLogprobs !== undefined) {
-        openaiRequest.top_logprobs = request.metadata.topLogprobs;
+      if (request.metadata?.['topLogprobs'] !== undefined) {
+        openaiRequest['top_logprobs'] = request.metadata['topLogprobs'];
       }
 
-      if (request.metadata.store !== undefined) {
-        openaiRequest.store = request.metadata.store;
+      if (request.metadata?.['store'] !== undefined) {
+        openaiRequest['store'] = request.metadata['store'];
       }
 
-      if (request.metadata.streamOptions) {
-        openaiRequest.stream_options = request.metadata.streamOptions;
+      if (request.metadata?.['streamOptions']) {
+        openaiRequest['stream_options'] = request.metadata['streamOptions'];
       }
     }
 
     // 工具相关参数
     if (request.tools) {
-      openaiRequest.tools = request.tools;
+      openaiRequest['tools'] = request.tools;
     }
 
     if (request.toolChoice) {
-      openaiRequest.tool_choice = request.toolChoice;
+      openaiRequest['tool_choice'] = request.toolChoice;
     }
 
     return openaiRequest;
@@ -223,8 +223,8 @@ export class OpenAIParameterMapper extends BaseParameterMapper {
    * 将 OpenAI 响应映射为标准 LLM 响应格式
    */
   mapFromResponse(response: ProviderResponse, originalRequest: LLMRequest): LLMResponse {
-    const choice = response.choices?.[0];
-    const usage = response.usage;
+    const choice = response['choices']?.[0];
+    const usage = response['usage'];
 
     if (!choice) {
       throw new Error('Invalid OpenAI response: no choices found');

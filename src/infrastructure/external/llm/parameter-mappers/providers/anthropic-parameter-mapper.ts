@@ -1,7 +1,7 @@
 import { LLMRequest } from '../../../../../domain/llm/entities/llm-request';
 import { LLMResponse } from '../../../../../domain/llm/entities/llm-response';
 import { BaseParameterMapper } from '../base/base-parameter-mapper';
-import { ProviderConfig, ProviderRequest, ProviderResponse } from '../interfaces/parameter-mapper.interface';
+import { ProviderConfig, ProviderRequest, ProviderResponse, ParameterDefinition } from '../interfaces/parameter-mapper.interface';
 import { ParameterDefinitionBuilder, CommonParameterDefinitions } from '../interfaces/parameter-definition.interface';
 
 /**
@@ -17,9 +17,9 @@ export class AnthropicParameterMapper extends BaseParameterMapper {
   /**
    * 初始化支持的参数列表
    */
-  protected initializeSupportedParameters(): ParameterDefinition[] {
+  protected override initializeSupportedParameters(): ParameterDefinition[] {
     const baseParams = super.initializeSupportedParameters();
-    
+
     // 添加 Anthropic 特有参数
     const anthropicSpecificParams = [
       new ParameterDefinitionBuilder()
@@ -59,62 +59,62 @@ export class AnthropicParameterMapper extends BaseParameterMapper {
    */
   mapToProvider(request: LLMRequest, providerConfig: ProviderConfig): ProviderRequest {
     const baseParams = this.applyDefaultValues(request);
-    
+
     // 构建 Anthropic 请求
     const anthropicRequest: ProviderRequest = {
       model: request.model,
-      max_tokens: baseParams.maxTokens || 1000
+      max_tokens: baseParams['maxTokens'] || 1000
     };
 
     // 基本参数映射
-    if (baseParams.temperature !== undefined) {
-      anthropicRequest.temperature = baseParams.temperature;
+    if (baseParams['temperature'] !== undefined) {
+      anthropicRequest['temperature'] = baseParams['temperature'];
     }
 
-    if (baseParams.topP !== undefined) {
-      anthropicRequest.top_p = baseParams.topP;
+    if (baseParams['topP'] !== undefined) {
+      anthropicRequest['top_p'] = baseParams['topP'];
     }
 
-    if (baseParams.stop && baseParams.stop.length > 0) {
-      anthropicRequest.stop_sequences = baseParams.stop;
+    if (baseParams['stop'] && baseParams['stop'].length > 0) {
+      anthropicRequest['stop_sequences'] = baseParams['stop'];
     }
 
     // Anthropic 特有参数
-    if (request.metadata?.topK !== undefined) {
-      anthropicRequest.top_k = request.metadata.topK;
+    if (request.metadata?.['topK'] !== undefined) {
+      anthropicRequest['top_k'] = request.metadata['topK'];
     }
 
     // 从消息中提取系统提示
     const systemMessages = request.messages.filter(msg => msg.role === 'system');
     if (systemMessages.length > 0) {
-      anthropicRequest.system = systemMessages.map(msg => msg.content).join('\n');
+      anthropicRequest['system'] = systemMessages.map(msg => msg.content).join('\n');
     }
 
     // 过滤掉系统消息，因为 Anthropic 使用单独的 system 参数
     const nonSystemMessages = request.messages.filter(msg => msg.role !== 'system');
-    anthropicRequest.messages = nonSystemMessages;
+    anthropicRequest['messages'] = nonSystemMessages;
 
     // 元数据处理
     if (request.metadata && Object.keys(request.metadata).length > 0) {
       // 过滤掉已经处理的特殊参数
       const { topK, ...otherMetadata } = request.metadata;
       if (Object.keys(otherMetadata).length > 0) {
-        anthropicRequest.metadata = otherMetadata;
+        anthropicRequest['metadata'] = otherMetadata;
       }
     }
 
     // 工具相关参数
     if (request.tools && request.tools.length > 0) {
-      anthropicRequest.tools = request.tools;
+      anthropicRequest['tools'] = request.tools;
     }
 
     if (request.toolChoice) {
-      anthropicRequest.tool_choice = request.toolChoice;
+      anthropicRequest['tool_choice'] = request.toolChoice;
     }
 
     // 流式响应
     if (request.stream) {
-      anthropicRequest.stream = request.stream;
+      anthropicRequest['stream'] = request.stream;
     }
 
     return anthropicRequest;
@@ -124,10 +124,10 @@ export class AnthropicParameterMapper extends BaseParameterMapper {
    * 将 Anthropic 响应映射为标准 LLM 响应格式
    */
   mapFromResponse(response: ProviderResponse, originalRequest: LLMRequest): LLMResponse {
-    const content = response.content?.[0]?.text || '';
-    const usage = response.usage;
+    const content = response['content']?.[0]?.['text'] || '';
+    const usage = response['usage'];
 
-    if (!content && !response.content) {
+    if (!content && !response['content']) {
       throw new Error('Invalid Anthropic response: no content found');
     }
 
@@ -141,14 +141,14 @@ export class AnthropicParameterMapper extends BaseParameterMapper {
           role: 'assistant',
           content: content
         },
-        finish_reason: response.stop_reason || 'stop'
+        finish_reason: response['stop_reason'] || 'stop'
       }],
       {
         promptTokens: usage?.input_tokens || 0,
         completionTokens: usage?.output_tokens || 0,
         totalTokens: (usage?.input_tokens || 0) + (usage?.output_tokens || 0)
       },
-      response.stop_reason || 'stop',
+      response['stop_reason'] || 'stop',
       0 // duration - would need to be calculated
     );
   }

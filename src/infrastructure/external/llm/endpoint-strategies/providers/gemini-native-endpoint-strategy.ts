@@ -17,22 +17,22 @@ export class GeminiNativeEndpointStrategy extends BaseEndpointStrategy {
    */
   buildEndpoint(config: ProviderConfig, request: ProviderRequest): string {
     // Gemini 原生 API 需要在 URL 中包含 API 密钥和模型名称
-    const endpoint = this.buildPath(config.baseURL, 'v1beta', 'models', `${request.model}:generateContent`);
+    const endpoint = this.buildPath(config.baseURL, 'v1beta', 'models', `${request['model']}:generateContent`);
     return this.addQueryParams(endpoint, { key: config.apiKey });
   }
 
   /**
    * 构建请求头
    */
-  buildHeaders(config: ProviderConfig): Record<string, string> {
+  override buildHeaders(config: ProviderConfig): Record<string, string> {
     const headers = super.buildHeaders(config);
     
     // Gemini 原生 API 不需要在请求头中包含 API 密钥
     // 因为 API 密钥已经在 URL 中
     
     // 添加可选的版本头
-    if (config.extraConfig?.apiVersion) {
-      headers['x-goog-api-version'] = config.extraConfig.apiVersion;
+    if (config.extraConfig?.['apiVersion']) {
+      headers['x-goog-api-version'] = config.extraConfig['apiVersion'];
     }
     
     return headers;
@@ -41,7 +41,7 @@ export class GeminiNativeEndpointStrategy extends BaseEndpointStrategy {
   /**
    * 处理认证
    */
-  handleAuthentication(request: any, config: ProviderConfig): any {
+  override handleAuthentication(request: any, config: ProviderConfig): any {
     // Gemini 原生 API 通过 URL 参数进行认证
     // 这里不需要修改请求体
     return request;
@@ -50,7 +50,7 @@ export class GeminiNativeEndpointStrategy extends BaseEndpointStrategy {
   /**
    * 验证配置
    */
-  validateConfig(config: ProviderConfig): {
+  override validateConfig(config: ProviderConfig): {
     isValid: boolean;
     errors: string[];
   } {

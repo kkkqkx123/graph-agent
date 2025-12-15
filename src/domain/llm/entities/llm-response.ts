@@ -38,6 +38,7 @@ export interface LLMChoice {
     role: string;
     content: string;
     tool_calls?: LLMToolCall[];
+    thoughts?: any;
   };
   finish_reason: string;
 }

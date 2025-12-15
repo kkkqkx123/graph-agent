@@ -1,7 +1,7 @@
 import { LLMRequest } from '../../../../../domain/llm/entities/llm-request';
 import { LLMResponse } from '../../../../../domain/llm/entities/llm-response';
 import { BaseParameterMapper } from '../base/base-parameter-mapper';
-import { ProviderConfig, ProviderRequest, ProviderResponse } from '../interfaces/parameter-mapper.interface';
+import { ProviderConfig, ProviderRequest, ProviderResponse, ParameterDefinition } from '../interfaces/parameter-mapper.interface';
 import { ParameterDefinitionBuilder, CommonParameterDefinitions } from '../interfaces/parameter-definition.interface';
 
 /**
@@ -17,7 +17,7 @@ export class GeminiParameterMapper extends BaseParameterMapper {
   /**
    * 初始化支持的参数列表
    */
-  protected initializeSupportedParameters(): ParameterDefinition[] {
+  protected override initializeSupportedParameters(): ParameterDefinition[] {
     const baseParams = super.initializeSupportedParameters();
     
     // 添加 Gemini 特有参数
@@ -90,67 +90,67 @@ export class GeminiParameterMapper extends BaseParameterMapper {
     };
 
     // 基本参数映射
-    if (baseParams.temperature !== undefined) {
-      geminiRequest.temperature = baseParams.temperature;
+    if (baseParams['temperature'] !== undefined) {
+      geminiRequest['temperature'] = baseParams['temperature'];
     }
 
-    if (baseParams.maxTokens !== undefined) {
-      geminiRequest.max_tokens = baseParams.maxTokens;
+    if (baseParams['maxTokens'] !== undefined) {
+      geminiRequest['max_tokens'] = baseParams['maxTokens'];
     }
 
-    if (baseParams.topP !== undefined) {
-      geminiRequest.top_p = baseParams.topP;
+    if (baseParams['topP'] !== undefined) {
+      geminiRequest['top_p'] = baseParams['topP'];
     }
 
-    if (baseParams.stop && baseParams.stop.length > 0) {
-      geminiRequest.stop = baseParams.stop;
+    if (baseParams['stop'] && baseParams['stop'].length > 0) {
+      geminiRequest['stop'] = baseParams['stop'];
     }
 
     // Gemini 特有参数
     if (request.reasoningEffort) {
-      geminiRequest.reasoning_effort = request.reasoningEffort;
+      geminiRequest['reasoning_effort'] = request.reasoningEffort;
     }
 
-    if (request.metadata?.topK !== undefined) {
-      geminiRequest.top_k = request.metadata.topK;
+    if (request.metadata?.['topK'] !== undefined) {
+      geminiRequest['top_k'] = request.metadata['topK'];
     }
 
     // 思考预算配置（通过 extra_body）
-    if (request.metadata?.thinkingBudget || request.metadata?.includeThoughts) {
-      geminiRequest.extra_body = {
+    if (request.metadata?.['thinkingBudget'] || request.metadata?.['includeThoughts']) {
+      geminiRequest['extra_body'] = {
         google: {
           thinking_config: {
-            thinking_budget: request.metadata?.thinkingBudget || 'medium',
-            include_thoughts: request.metadata?.includeThoughts || false
+            thinking_budget: request.metadata?.['thinkingBudget'] || 'medium',
+            include_thoughts: request.metadata?.['includeThoughts'] || false
           }
         }
       };
     }
 
     // 缓存内容支持
-    if (request.metadata?.cachedContent) {
-      if (!geminiRequest.extra_body) {
-        geminiRequest.extra_body = { google: {} };
+    if (request.metadata?.['cachedContent']) {
+      if (!geminiRequest['extra_body']) {
+        geminiRequest['extra_body'] = { google: {} };
       }
-      geminiRequest.extra_body.google.cached_content = request.metadata.cachedContent;
+      geminiRequest['extra_body'].google.cached_content = request.metadata['cachedContent'];
     }
 
     // 工具相关参数
     if (request.tools) {
-      geminiRequest.tools = request.tools;
+      geminiRequest['tools'] = request.tools;
     }
 
     if (request.toolChoice) {
-      geminiRequest.tool_choice = request.toolChoice;
+      geminiRequest['tool_choice'] = request.toolChoice;
     }
 
     // 流式选项
     if (request.stream) {
-      geminiRequest.stream = request.stream;
+      geminiRequest['stream'] = request.stream;
     }
 
-    if (request.metadata?.streamOptions) {
-      geminiRequest.stream_options = request.metadata.streamOptions;
+    if (request.metadata?.['streamOptions']) {
+      geminiRequest['stream_options'] = request.metadata['streamOptions'];
     }
 
     return geminiRequest;
@@ -160,8 +160,8 @@ export class GeminiParameterMapper extends BaseParameterMapper {
    * 将 Gemini 响应映射为标准 LLM 响应格式
    */
   mapFromResponse(response: ProviderResponse, originalRequest: LLMRequest): LLMResponse {
-    const choice = response.choices?.[0];
-    const usage = response.usage;
+    const choice = response['choices']?.[0];
+    const usage = response['usage'];
 
     if (!choice) {
       throw new Error('Invalid Gemini response: no choices found');

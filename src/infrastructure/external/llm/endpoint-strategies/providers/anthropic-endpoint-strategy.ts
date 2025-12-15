@@ -23,18 +23,18 @@ export class AnthropicEndpointStrategy extends BaseEndpointStrategy {
   /**
    * 构建请求头
    */
-  buildHeaders(config: ProviderConfig): Record<string, string> {
+  override buildHeaders(config: ProviderConfig): Record<string, string> {
     const headers = super.buildHeaders(config);
     
     // Anthropic 使用 x-api-key 头部进行认证
     headers['x-api-key'] = config.apiKey;
     
     // 添加 Anthropic 版本头
-    headers['anthropic-version'] = config.extraConfig?.apiVersion || '2023-06-01';
+    headers['anthropic-version'] = config.extraConfig?.['apiVersion'] || '2023-06-01';
     
     // 添加可选的客户端信息
-    if (config.extraConfig?.clientName) {
-      headers['anthropic-client'] = config.extraConfig.clientName;
+    if (config.extraConfig?.['clientName']) {
+      headers['anthropic-client'] = config.extraConfig['clientName'];
     }
     
     return headers;
@@ -43,7 +43,7 @@ export class AnthropicEndpointStrategy extends BaseEndpointStrategy {
   /**
    * 处理认证
    */
-  handleAuthentication(request: any, config: ProviderConfig): any {
+  override handleAuthentication(request: any, config: ProviderConfig): any {
     // Anthropic 通过 x-api-key 头部进行认证
     // 这里不需要修改请求体
     return request;
@@ -52,7 +52,7 @@ export class AnthropicEndpointStrategy extends BaseEndpointStrategy {
   /**
    * 验证配置
    */
-  validateConfig(config: ProviderConfig): {
+  override validateConfig(config: ProviderConfig): {
     isValid: boolean;
     errors: string[];
   } {
