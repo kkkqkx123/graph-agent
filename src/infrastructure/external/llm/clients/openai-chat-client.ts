@@ -55,6 +55,61 @@ export class OpenAIChatClient extends BaseLLMClient {
       stream: false
     };
     
+    // 添加高级参数
+    if (request.reasoningEffort) {
+      parameters['reasoning_effort'] = request.reasoningEffort;
+    }
+    
+    // 停止序列
+    if (request.stop && request.stop.length > 0) {
+      parameters['stop'] = request.stop;
+    }
+    
+    // 响应格式
+    if (request.metadata && 'responseFormat' in request.metadata) {
+      parameters['response_format'] = request.metadata['responseFormat'];
+    }
+    
+    // 确定性种子
+    if (request.metadata && 'seed' in request.metadata) {
+      parameters['seed'] = request.metadata['seed'];
+    }
+    
+    // 服务层级
+    if (request.metadata && 'serviceTier' in request.metadata) {
+      parameters['service_tier'] = request.metadata['serviceTier'];
+    }
+    
+    // 用户标识符
+    if (request.metadata && 'user' in request.metadata) {
+      parameters['user'] = request.metadata['user'];
+    }
+    
+    // 生成数量
+    if (request.metadata && 'n' in request.metadata) {
+      parameters['n'] = request.metadata['n'];
+    }
+    
+    // Logit bias
+    if (request.metadata && 'logitBias' in request.metadata) {
+      parameters['logit_bias'] = request.metadata['logitBias'];
+    }
+    
+    // Top logprobs
+    if (request.metadata && 'topLogprobs' in request.metadata) {
+      parameters['top_logprobs'] = request.metadata['topLogprobs'];
+    }
+    
+    // 存储选项
+    if (request.metadata && 'store' in request.metadata) {
+      parameters['store'] = request.metadata['store'];
+    }
+    
+    // 流式选项 - 从元数据中获取
+    if (request.metadata && 'streamOptions' in request.metadata) {
+      parameters['stream_options'] = request.metadata['streamOptions'];
+    }
+    
     // 添加工具相关参数
     if (request.tools) {
       parameters['tools'] = request.tools;
