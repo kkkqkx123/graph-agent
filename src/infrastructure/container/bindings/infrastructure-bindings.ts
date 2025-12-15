@@ -3,18 +3,47 @@
  */
 
 import { ServiceBindings, IContainer, ContainerConfiguration, ServiceLifetime } from '../container';
+import { ILogger } from '@shared/types/logger';
+import { LoggerFactory, LoggerConfigManager } from '../../logging';
 
 /**
  * 日志服务绑定
  */
 export class LoggerServiceBindings extends ServiceBindings {
   registerServices(container: IContainer, config: ContainerConfiguration): void {
-    // TODO: 注册日志服务
-    // container.registerFactory<ILogger>(
-    //   'ILogger',
-    //   () => new Logger(config.logger),
-    //   { lifetime: ServiceLifetime.SINGLETON }
-    // );
+    // 注册日志配置管理器
+    container.registerFactory<LoggerConfigManager>(
+      'LoggerConfigManager',
+      () => LoggerConfigManager.getInstance(),
+      { lifetime: ServiceLifetime.SINGLETON }
+    );
+
+    // 注册日志工厂
+    container.registerFactory<LoggerFactory>(
+      'LoggerFactory',
+      () => LoggerFactory.getInstance(),
+      { lifetime: ServiceLifetime.SINGLETON }
+    );
+
+    // 注册默认日志记录器
+    container.registerFactory<ILogger>(
+      'ILogger',
+      () => {
+        const loggerFactory = LoggerFactory.getInstance();
+        
+        // 根据环境创建不同的日志记录器
+        const env = process.env['NODE_ENV'] || 'development';
+        switch (env.toLowerCase()) {
+          case 'production':
+            return loggerFactory.createProductionLogger();
+          case 'test':
+            return loggerFactory.createTestLogger();
+          default:
+            return loggerFactory.createDevelopmentLogger();
+        }
+      },
+      { lifetime: ServiceLifetime.SINGLETON }
+    );
   }
 }
 
