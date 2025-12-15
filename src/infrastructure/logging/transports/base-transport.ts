@@ -4,6 +4,7 @@
 
 import { ILoggerTransport, LogEntry, LogOutputConfig } from '../interfaces';
 import { LogLevelUtils } from '../utils';
+import { LogLevel } from '@shared/types/logger';
 
 /**
  * 基础日志传输器抽象类
@@ -19,7 +20,7 @@ export abstract class BaseTransport implements ILoggerTransport {
   /**
    * 检查是否应该记录指定级别的日志
    */
-  shouldLog(level: string): boolean {
+  shouldLog(level: LogLevel): boolean {
     return LogLevelUtils.shouldLog(this.config.level, level);
   }
 

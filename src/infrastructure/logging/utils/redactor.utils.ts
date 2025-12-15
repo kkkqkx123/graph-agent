@@ -2,19 +2,19 @@
  * 敏感数据脱敏工具类
  */
 
-import { SensitiveDataConfig } from '../interfaces';
+import { RedactorConfig } from '../interfaces';
 
 /**
  * 敏感数据脱敏工具类
  */
-export class SensitiveDataUtils {
+export class RedactorUtils {
   /**
    * 脱敏字符串中的敏感信息
    * @param input 输入字符串
    * @param config 敏感数据配置
    * @returns 脱敏后的字符串
    */
-  static sanitize(input: string, config: SensitiveDataConfig): string {
+  static sanitize(input: string, config: RedactorConfig): string {
     if (!config.enabled || !config.patterns || config.patterns.length === 0) {
       return input;
     }
@@ -41,7 +41,7 @@ export class SensitiveDataUtils {
    * @param config 敏感数据配置
    * @returns 脱敏后的对象
    */
-  static sanitizeObject(obj: any, config: SensitiveDataConfig): any {
+  static sanitizeObject(obj: any, config: RedactorConfig): any {
     if (!config.enabled) {
       return obj;
     }
@@ -78,7 +78,7 @@ export class SensitiveDataUtils {
    * @param config 敏感数据配置
    * @returns 脱敏后的错误对象
    */
-  static sanitizeError(error: Error, config: SensitiveDataConfig): Error {
+  static sanitizeError(error: Error, config: RedactorConfig): Error {
     if (!config.enabled) {
       return error;
     }
@@ -114,7 +114,7 @@ export class SensitiveDataUtils {
    * @param config 敏感数据配置
    * @returns 如果包含敏感信息返回 true
    */
-  static containsSensitiveData(input: string, config: SensitiveDataConfig): boolean {
+  static containsSensitiveData(input: string, config: RedactorConfig): boolean {
     if (!config.enabled || !config.patterns || config.patterns.length === 0) {
       return false;
     }
@@ -138,7 +138,7 @@ export class SensitiveDataUtils {
    * 创建默认的敏感数据配置
    * @returns 默认配置
    */
-  static createDefaultConfig(): SensitiveDataConfig {
+  static createDefaultConfig(): RedactorConfig {
     return {
       patterns: [
         'sk-[a-zA-Z0-9]{20,}',
@@ -162,11 +162,11 @@ export class SensitiveDataUtils {
    * 从环境变量加载敏感数据模式
    * @returns 敏感数据配置
    */
-  static loadFromEnv(): SensitiveDataConfig {
+  static loadFromEnv(): RedactorConfig {
     const config = this.createDefaultConfig();
 
     // 从环境变量加载自定义模式
-    const customPatterns = process.env.AGENT_SENSITIVE_PATTERNS;
+    const customPatterns = process.env['AGENT_SENSITIVE_PATTERNS'];
     if (customPatterns) {
       try {
         const patterns = JSON.parse(customPatterns);
@@ -179,13 +179,13 @@ export class SensitiveDataUtils {
     }
 
     // 从环境变量加载替换字符串
-    const replacement = process.env.AGENT_SENSITIVE_REPLACEMENT;
+    const replacement = process.env['AGENT_SENSITIVE_REPLACEMENT'];
     if (replacement) {
       config.replacement = replacement;
     }
 
     // 从环境变量加载启用状态
-    const enabled = process.env.AGENT_SENSITIVE_ENABLED;
+    const enabled = process.env['AGENT_SENSITIVE_ENABLED'];
     if (enabled !== undefined) {
       config.enabled = enabled.toLowerCase() === 'true';
     }

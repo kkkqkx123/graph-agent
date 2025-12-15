@@ -2,12 +2,12 @@
  * 日志系统使用示例
  */
 
-import { 
-  LoggerFactory, 
-  LoggerConfigBuilder, 
-  LogLevel, 
-  LogOutputType, 
-  LogFormatType 
+import { LogLevel } from '@shared/types/logger';
+import {
+  LoggerFactory,
+  LoggerConfigBuilder,
+  LogOutputType,
+  LogFormatType
 } from './index';
 
 /**
@@ -31,8 +31,8 @@ async function basicUsageExample(): Promise<void> {
   const childLogger = logger.child({ module: 'UserService', requestId: 'req-123' });
   childLogger.info('子日志记录器消息');
   
-  await logger.flush();
-  await logger.close();
+  await logger.flush?.();
+  await logger.close?.();
 }
 
 /**
@@ -79,8 +79,8 @@ async function customConfigExample(): Promise<void> {
     token: 'sk-1234567890abcdef1234567890abcdef'
   });
   
-  await logger.flush();
-  await logger.close();
+  await logger.flush?.();
+  await logger.close?.();
 }
 
 /**
@@ -101,13 +101,13 @@ async function environmentSpecificExample(): Promise<void> {
   const testLogger = LoggerFactory.getInstance().createTestLogger();
   testLogger.error('测试环境错误');
   
-  await devLogger.flush();
-  await prodLogger.flush();
-  await testLogger.flush();
+  await devLogger.flush?.();
+  await prodLogger.flush?.();
+  await testLogger.flush?.();
   
-  await devLogger.close();
-  await prodLogger.close();
-  await testLogger.close();
+  await devLogger.close?.();
+  await prodLogger.close?.();
+  await testLogger.close?.();
 }
 
 /**
@@ -145,8 +145,8 @@ async function customTransportExample(): Promise<void> {
   logger.info('自定义配置日志', { custom: true });
   logger.warn('自定义警告');
   
-  await logger.flush();
-  await logger.close();
+  await logger.flush?.();
+  await logger.close?.();
 }
 
 /**
@@ -169,14 +169,14 @@ async function performanceTest(): Promise<void> {
     });
   }
   
-  await logger.flush();
+  await logger.flush?.();
   const endTime = Date.now();
   const duration = endTime - startTime;
   
   console.log(`记录 ${messageCount} 条日志耗时: ${duration}ms`);
   console.log(`平均每条日志耗时: ${(duration / messageCount).toFixed(2)}ms`);
   
-  await logger.close();
+  await logger.close?.();
 }
 
 /**
@@ -209,8 +209,8 @@ async function errorHandlingExample(): Promise<void> {
     logger.error('嵌套错误', outerError as Error);
   }
   
-  await logger.flush();
-  await logger.close();
+  await logger.flush?.();
+  await logger.close?.();
 }
 
 /**

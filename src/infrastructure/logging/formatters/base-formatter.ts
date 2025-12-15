@@ -43,7 +43,7 @@ export abstract class BaseFormatter implements ILoggerFormatter {
   /**
    * 格式化错误对象
    */
-  protected formatError(error?: Error): string {
+  public formatError(error?: Error): string {
     if (!error) {
       return '';
     }
@@ -75,12 +75,12 @@ export abstract class BaseFormatter implements ILoggerFormatter {
    */
   protected getLevelColorCode(level: string): string {
     const colors: Record<string, string> = {
-      [LogLevelUtils.getLowestLevel()]: '\x1b[90m', // 灰色
-      [LogLevelUtils.getAllLevels()[1]]: '\x1b[94m', // 蓝色
-      [LogLevelUtils.getAllLevels()[2]]: '\x1b[92m', // 绿色
-      [LogLevelUtils.getAllLevels()[3]]: '\x1b[93m', // 黄色
-      [LogLevelUtils.getAllLevels()[4]]: '\x1b[91m', // 红色
-      [LogLevelUtils.getHighestLevel()]: '\x1b[95m'  // 紫色
+      [LogLevelUtils.getLowestLevel() as string]: '\x1b[90m', // 灰色
+      [LogLevelUtils.getAllLevels()[1] as string]: '\x1b[94m', // 蓝色
+      [LogLevelUtils.getAllLevels()[2] as string]: '\x1b[92m', // 绿色
+      [LogLevelUtils.getAllLevels()[3] as string]: '\x1b[93m', // 黄色
+      [LogLevelUtils.getAllLevels()[4] as string]: '\x1b[91m', // 红色
+      [LogLevelUtils.getHighestLevel() as string]: '\x1b[95m'  // 紫色
     };
 
     return colors[level] || '\x1b[0m';

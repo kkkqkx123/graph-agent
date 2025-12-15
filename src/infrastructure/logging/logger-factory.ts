@@ -192,7 +192,7 @@ export class LoggerFactory {
    */
   resetDefaultLogger(): void {
     if (this.defaultLogger) {
-      this.defaultLogger.close();
+      this.defaultLogger.close?.();
       this.defaultLogger = null;
     }
   }
@@ -217,7 +217,7 @@ export class LoggerFactory {
    */
   async closeAll(): Promise<void> {
     if (this.defaultLogger) {
-      await this.defaultLogger.close();
+      await this.defaultLogger.close?.();
       this.defaultLogger = null;
     }
   }

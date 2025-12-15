@@ -34,4 +34,10 @@ export interface ILogger {
   
   // 创建子日志记录器
   child(context: LogContext): ILogger;
+
+  // 刷新缓冲区
+  flush?(): Promise<void>;
+
+  // 关闭日志记录器
+  close?(): Promise<void>;
 }

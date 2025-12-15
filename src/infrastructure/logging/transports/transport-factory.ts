@@ -57,7 +57,7 @@ export class TransportFactory implements ILoggerTransportFactory {
    */
   private registerConsoleTransport(): void {
     this.transportFactories.set(LogOutputType.CONSOLE, (config) => {
-      return new ConsoleTransport(config);
+      return new ConsoleTransport(config as any);
     });
   }
 
@@ -66,7 +66,7 @@ export class TransportFactory implements ILoggerTransportFactory {
    */
   private registerFileTransport(): void {
     this.transportFactories.set(LogOutputType.FILE, (config) => {
-      return new FileTransport(config);
+      return new FileTransport(config as any);
     });
   }
 
@@ -92,7 +92,7 @@ export class TransportFactory implements ILoggerTransportFactory {
     if (config.type !== LogOutputType.CONSOLE) {
       throw new Error('配置类型不匹配，期望: console');
     }
-    return new ConsoleTransport(config);
+    return new ConsoleTransport(config as any);
   }
 
   /**
@@ -102,6 +102,6 @@ export class TransportFactory implements ILoggerTransportFactory {
     if (config.type !== LogOutputType.FILE) {
       throw new Error('配置类型不匹配，期望: file');
     }
-    return new FileTransport(config);
+    return new FileTransport(config as any);
   }
 }

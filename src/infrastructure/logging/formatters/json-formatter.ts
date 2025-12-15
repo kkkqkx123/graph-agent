@@ -4,7 +4,7 @@
 
 import { LogEntry } from '../interfaces';
 import { BaseFormatter } from './base-formatter';
-import { SensitiveDataUtils } from '../utils';
+import { RedactorUtils } from '../utils';
 
 /**
  * JSON格式化器选项
@@ -74,37 +74,37 @@ export class JsonFormatter extends BaseFormatter {
 
     // 添加时间戳
     if (this.options.includeTimestamp) {
-      logObject.timestamp = this.formatTimestamp(entry.timestamp);
+      logObject['timestamp'] = this.formatTimestamp(entry.timestamp);
     }
 
     // 添加日志级别
     if (this.options.includeLevel) {
-      logObject.level = entry.level;
+      logObject['level'] = entry.level;
     }
 
     // 添加消息
-    logObject.message = entry.message;
+    logObject['message'] = entry.message;
 
     // 添加上下文
     if (this.options.includeContext && entry.context) {
-      logObject.context = entry.context;
+      logObject['context'] = entry.context;
     }
 
     // 添加错误信息
     if (entry.error) {
-      logObject.error = {
+      logObject['error'] = {
         name: entry.error.name,
         message: entry.error.message
       };
 
       if (this.options.includeStack && entry.error.stack) {
-        logObject.error.stack = entry.error.stack;
+        logObject['error']['stack'] = entry.error.stack;
       }
     }
 
     // 添加元数据
     if (entry.meta) {
-      logObject.meta = entry.meta;
+      logObject['meta'] = entry.meta;
     }
 
     // 添加自定义字段
@@ -114,8 +114,8 @@ export class JsonFormatter extends BaseFormatter {
 
     // 脱敏敏感数据
     if (this.options.sanitize) {
-      const sensitiveConfig = SensitiveDataUtils.createDefaultConfig();
-      return JSON.stringify(SensitiveDataUtils.sanitizeObject(logObject, sensitiveConfig), null, this.options.pretty ? 2 : 0);
+      const sensitiveConfig = RedactorUtils.createDefaultConfig();
+      return JSON.stringify(RedactorUtils.sanitizeObject(logObject, sensitiveConfig), null, this.options.pretty ? 2 : 0);
     }
 
     return JSON.stringify(logObject, null, this.options.pretty ? 2 : 0);
@@ -124,14 +124,14 @@ export class JsonFormatter extends BaseFormatter {
   /**
    * 格式化错误对象
    */
-  formatError(error: Error): string {
+  override formatError(error: Error): string {
     const errorObject: Record<string, any> = {
       name: error.name,
       message: error.message
     };
 
     if (error.stack) {
-      errorObject.stack = error.stack;
+      errorObject['stack'] = error.stack;
     }
 
     // 添加其他属性

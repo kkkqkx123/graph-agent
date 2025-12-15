@@ -3,12 +3,12 @@
  */
 
 import { LogLevel } from '@shared/types/logger';
-import { 
-  LoggerConfig, 
-  LogOutputConfig, 
-  LogOutputType, 
+import {
+  LoggerConfig,
+  LogOutputConfig,
+  LogOutputType,
   LogFormatType,
-  SensitiveDataConfig,
+  RedactorConfig,
   LoggerConfigBuilder
 } from './interfaces';
 
@@ -122,7 +122,7 @@ export class LoggerConfigManager {
 
     // 解析日志输出
     if (tomlConfig.log_outputs && Array.isArray(tomlConfig.log_outputs)) {
-      result.outputs = tomlConfig.log_outputs.map((output: any) => 
+      result.outputs = tomlConfig.log_outputs.map((output: any) =>
         this.parseLogOutput(output)
       );
     }
@@ -181,13 +181,13 @@ export class LoggerConfigManager {
     const result: Partial<LoggerConfig> = {};
 
     // 解析日志级别
-    if (process.env.AGENT_LOG_LEVEL) {
-      result.level = process.env.AGENT_LOG_LEVEL.toUpperCase() as LogLevel;
+    if (process.env['AGENT_LOG_LEVEL']) {
+      result.level = process.env['AGENT_LOG_LEVEL'].toUpperCase() as LogLevel;
     }
 
     // 解析日志格式
-    if (process.env.AGENT_LOG_FORMAT) {
-      const format = process.env.AGENT_LOG_FORMAT.toUpperCase() as LogFormatType;
+    if (process.env['AGENT_LOG_FORMAT']) {
+      const format = process.env['AGENT_LOG_FORMAT'].toUpperCase() as LogFormatType;
       if (result.outputs) {
         result.outputs.forEach(output => {
           output.format = format;
@@ -196,11 +196,11 @@ export class LoggerConfigManager {
     }
 
     // 解析日志文件路径
-    if (process.env.AGENT_LOG_FILE) {
+    if (process.env['AGENT_LOG_FILE']) {
       if (result.outputs) {
         const fileOutput = result.outputs.find(o => o.type === LogOutputType.FILE);
         if (fileOutput) {
-          (fileOutput as any).path = process.env.AGENT_LOG_FILE;
+          (fileOutput as any).path = process.env['AGENT_LOG_FILE'];
         }
       }
     }

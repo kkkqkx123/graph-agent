@@ -77,15 +77,15 @@ export interface RemoteLogOutputConfig extends BaseLogOutputConfig {
 /**
  * 日志输出配置联合类型
  */
-export type LogOutputConfig = 
-  | ConsoleLogOutputConfig 
-  | FileLogOutputConfig 
+export type LogOutputConfig =
+  | ConsoleLogOutputConfig
+  | FileLogOutputConfig
   | RemoteLogOutputConfig;
 
 /**
  * 敏感信息脱敏配置
  */
-export interface SensitiveDataConfig {
+export interface RedactorConfig {
   patterns: string[];
   replacement?: string;
   enabled?: boolean;
@@ -97,7 +97,7 @@ export interface SensitiveDataConfig {
 export interface LoggerConfig {
   level: LogLevel;
   outputs: LogOutputConfig[];
-  sensitive_data?: SensitiveDataConfig;
+  sensitive_data?: RedactorConfig;
   meta?: Record<string, any>;
 }
 
@@ -179,7 +179,7 @@ export class LoggerConfigBuilder {
   /**
    * 设置敏感信息配置
    */
-  setSensitiveData(config: Partial<SensitiveDataConfig>): LoggerConfigBuilder {
+  setSensitiveData(config: Partial<RedactorConfig>): LoggerConfigBuilder {
     this.config.sensitive_data = {
       patterns: [],
       replacement: '***',

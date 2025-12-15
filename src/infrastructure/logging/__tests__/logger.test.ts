@@ -2,12 +2,12 @@
  * 日志系统测试
  */
 
-import { 
-  LoggerFactory, 
-  LoggerConfigBuilder, 
-  LogLevel, 
-  LogOutputType, 
-  LogFormatType 
+import {
+  LoggerFactory,
+  LoggerConfigBuilder,
+  LogLevel,
+  LogOutputType,
+  LogFormatType
 } from '../index';
 
 describe('日志系统测试', () => {
@@ -30,27 +30,27 @@ describe('日志系统测试', () => {
 
     test('应该能够记录不同级别的日志', () => {
       const logger = loggerFactory.createTestLogger();
-      
+
       // 模拟console输出
       const consoleSpy = jest.spyOn(console, 'log').mockImplementation();
-      
+
       logger.trace('跟踪信息');
       logger.debug('调试信息');
       logger.info('一般信息');
       logger.warn('警告信息');
       logger.error('错误信息');
       logger.fatal('致命错误');
-      
+
       // 验证console被调用
       expect(consoleSpy).toHaveBeenCalled();
-      
+
       consoleSpy.mockRestore();
     });
 
     test('应该能够创建子日志记录器', () => {
       const parentLogger = loggerFactory.createTestLogger();
       const childLogger = parentLogger.child({ module: 'TestModule' });
-      
+
       expect(childLogger).toBeDefined();
       expect(childLogger).not.toBe(parentLogger);
     });
@@ -74,7 +74,7 @@ describe('日志系统测试', () => {
     test('应该能够更新日志配置', () => {
       const logger = loggerFactory.createTestLogger();
       const originalLevel = logger.getConfig().level;
-      
+
       logger.updateConfig({ level: LogLevel.ERROR });
       expect(logger.getConfig().level).toBe(LogLevel.ERROR);
       expect(logger.getConfig().level).not.toBe(originalLevel);
@@ -110,16 +110,16 @@ describe('日志系统测试', () => {
           format: LogFormatType.JSON
         }]
       );
-      
+
       expect(logger).toBeDefined();
-      
+
       const consoleSpy = jest.spyOn(console, 'log').mockImplementation();
       logger.info('测试消息', { key: 'value' });
-      
+
       expect(consoleSpy).toHaveBeenCalledWith(
         expect.stringContaining('"message":"测试消息"')
       );
-      
+
       consoleSpy.mockRestore();
     });
 
@@ -131,16 +131,16 @@ describe('日志系统测试', () => {
           format: LogFormatType.TEXT
         }]
       );
-      
+
       expect(logger).toBeDefined();
-      
+
       const consoleSpy = jest.spyOn(console, 'log').mockImplementation();
       logger.info('测试消息');
-      
+
       expect(consoleSpy).toHaveBeenCalledWith(
         expect.stringContaining('测试消息')
       );
-      
+
       consoleSpy.mockRestore();
     });
   });
@@ -154,7 +154,7 @@ describe('日志系统测试', () => {
           format: LogFormatType.TEXT
         }]
       );
-      
+
       expect(logger).toBeDefined();
       expect(logger.hasEnabledTransports()).toBe(true);
     });
@@ -170,7 +170,7 @@ describe('日志系统测试', () => {
           }
         }]
       );
-      
+
       expect(logger).toBeDefined();
       expect(logger.hasEnabledTransports()).toBe(true);
     });
@@ -180,21 +180,21 @@ describe('日志系统测试', () => {
     test('应该能够记录错误信息', () => {
       const logger = loggerFactory.createTestLogger();
       const error = new Error('测试错误');
-      
+
       const consoleSpy = jest.spyOn(console, 'error').mockImplementation();
-      
+
       logger.error('发生错误', error);
-      
+
       expect(consoleSpy).toHaveBeenCalledWith(
         expect.stringContaining('发生错误')
       );
-      
+
       consoleSpy.mockRestore();
     });
 
     test('应该能够处理嵌套错误', () => {
       const logger = loggerFactory.createTestLogger();
-      
+
       try {
         try {
           throw new Error('内部错误');
@@ -203,11 +203,11 @@ describe('日志系统测试', () => {
         }
       } catch (outerError) {
         const consoleSpy = jest.spyOn(console, 'error').mockImplementation();
-        
+
         logger.error('嵌套错误', outerError as Error);
-        
+
         expect(consoleSpy).toHaveBeenCalled();
-        
+
         consoleSpy.mockRestore();
       }
     });
@@ -218,15 +218,15 @@ describe('日志系统测试', () => {
       const logger = loggerFactory.createTestLogger();
       const messageCount = 100;
       const startTime = Date.now();
-      
+
       for (let i = 0; i < messageCount; i++) {
         logger.info(`性能测试消息 ${i}`);
       }
-      
+
       await logger.flush();
       const endTime = Date.now();
       const duration = endTime - startTime;
-      
+
       // 验证性能在合理范围内（每条日志不超过10ms）
       expect(duration).toBeLessThan(messageCount * 10);
     });
@@ -249,20 +249,20 @@ describe('日志系统测试', () => {
 
       const logger = loggerFactory.createLogger(config);
       const consoleSpy = jest.spyOn(console, 'log').mockImplementation();
-      
-      logger.info('用户登录', { 
+
+      logger.info('用户登录', {
         password: 'secret123',
         token: 'abc123',
         username: 'testuser'
       });
-      
+
       expect(consoleSpy).toHaveBeenCalledWith(
         expect.stringContaining('***')
       );
       expect(consoleSpy).not.toHaveBeenCalledWith(
         expect.stringContaining('secret123')
       );
-      
+
       consoleSpy.mockRestore();
     });
   });
@@ -270,24 +270,24 @@ describe('日志系统测试', () => {
   describe('生命周期测试', () => {
     test('应该能够正确关闭日志记录器', async () => {
       const logger = loggerFactory.createTestLogger();
-      
+
       expect(logger.getTransportCount()).toBeGreaterThan(0);
-      
+
       await logger.close();
-      
+
       // 关闭后传输器数量应该为0
       expect(logger.getTransportCount()).toBe(0);
     });
 
     test('应该能够刷新日志缓冲区', async () => {
       const logger = loggerFactory.createTestLogger();
-      
+
       // 记录一些日志
       logger.info('测试消息');
-      
+
       // 刷新应该不会抛出错误
       await expect(logger.flush()).resolves.not.toThrow();
-      
+
       await logger.close();
     });
   });

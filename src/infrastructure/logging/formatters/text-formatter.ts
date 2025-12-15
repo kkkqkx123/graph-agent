@@ -4,7 +4,7 @@
 
 import { LogEntry } from '../interfaces';
 import { BaseFormatter } from './base-formatter';
-import { SensitiveDataUtils } from '../utils';
+import { RedactorUtils } from '../utils';
 
 /**
  * 文本格式化器选项
@@ -106,8 +106,8 @@ export class TextFormatter extends BaseFormatter {
     // 添加消息
     let message = entry.message;
     if (this.options.sanitize) {
-      const sensitiveConfig = SensitiveDataUtils.createDefaultConfig();
-      message = SensitiveDataUtils.sanitize(message, sensitiveConfig);
+      const sensitiveConfig = RedactorUtils.createDefaultConfig();
+      message = RedactorUtils.sanitize(message, sensitiveConfig);
     }
     parts.push(message);
 
@@ -162,14 +162,14 @@ export class TextFormatter extends BaseFormatter {
    */
   private formatErrorInfo(error: Error): string {
     let errorInfo = `${error.name}: ${error.message}`;
-    
+
     if (this.options.includeStack && error.stack) {
       errorInfo += `\n${error.stack}`;
     }
 
     if (this.options.sanitize) {
-      const sensitiveConfig = SensitiveDataUtils.createDefaultConfig();
-      errorInfo = SensitiveDataUtils.sanitize(errorInfo, sensitiveConfig);
+      const sensitiveConfig = RedactorUtils.createDefaultConfig();
+      errorInfo = RedactorUtils.sanitize(errorInfo, sensitiveConfig);
     }
 
     return errorInfo;
@@ -178,7 +178,7 @@ export class TextFormatter extends BaseFormatter {
   /**
    * 格式化错误对象
    */
-  formatError(error: Error): string {
+  override formatError(error: Error): string {
     return this.formatErrorInfo(error);
   }
 }

@@ -39,7 +39,7 @@ export class FileTransport extends BaseTransport {
   /**
    * 刷新缓冲区
    */
-  async flush(): Promise<void> {
+  override async flush(): Promise<void> {
     if (this.fileStream) {
       return new Promise((resolve, reject) => {
         this.fileStream!.write('', () => {
@@ -52,7 +52,7 @@ export class FileTransport extends BaseTransport {
   /**
    * 关闭传输器
    */
-  async close(): Promise<void> {
+  override async close(): Promise<void> {
     if (this.rotationTimer) {
       clearInterval(this.rotationTimer);
       this.rotationTimer = null;
@@ -235,9 +235,9 @@ export class FileTransport extends BaseTransport {
       throw new Error(`无效的文件大小格式: ${sizeStr}`);
     }
 
-    const value = parseInt(match[1], 10);
-    const unit = match[2].toUpperCase();
-    return value * units[unit];
+    const value = parseInt(match[1]!, 10);
+    const unit = match[2]!.toUpperCase();
+    return value * units[unit]!;
   }
 
   /**

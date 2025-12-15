@@ -3,4 +3,4 @@
  */
 
 export * from './log-level.utils';
-export * from './sensitive-data.utils';
+export * from './redactor.utils';
