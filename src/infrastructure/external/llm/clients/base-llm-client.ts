@@ -7,6 +7,8 @@ import { ID } from '../../../../domain/common/value-objects/id';
 import { HttpClient } from '../../../common/http/http-client';
 import { TokenBucketLimiter } from '../rate-limiters/token-bucket-limiter';
 import { TokenCalculator } from '../token-calculators/token-calculator';
+import { ProviderConfig } from '../parameter-mappers/interfaces/provider-config.interface';
+import { FeatureRegistry } from '../features/registry/feature-registry';
 
 /**
  * LLM客户端抽象基类
@@ -15,45 +17,62 @@ import { TokenCalculator } from '../token-calculators/token-calculator';
  */
 @injectable()
 export abstract class BaseLLMClient implements ILLMClient {
-  protected readonly apiKey: string;
-  protected readonly baseURL: string;
   protected readonly providerName: string;
   protected readonly supportedModels: string[];
+  protected readonly providerConfig: ProviderConfig;
+  protected readonly featureRegistry: FeatureRegistry;
 
   constructor(
     @inject('HttpClient') protected httpClient: HttpClient,
     @inject('TokenBucketLimiter') protected rateLimiter: TokenBucketLimiter,
     @inject('TokenCalculator') protected tokenCalculator: TokenCalculator,
     @inject('ConfigManager') protected configManager: any,
-    providerName: string,
-    configKey: string,
-    defaultBaseURL: string
+    providerConfig: ProviderConfig,
+    featureRegistry?: FeatureRegistry
   ) {
-    this.providerName = providerName;
-    this.apiKey = this.configManager.get(`llm.${configKey}.apiKey`);
-    this.baseURL = this.configManager.get(`llm.${configKey}.baseURL`, defaultBaseURL);
+    this.providerName = providerConfig.name;
+    this.providerConfig = providerConfig;
+    this.featureRegistry = featureRegistry || new FeatureRegistry();
     this.supportedModels = this.getSupportedModelsList();
   }
 
   // 抽象方法，由子类实现
-  protected abstract prepareRequest(request: LLMRequest): any;
-  protected abstract toLLMResponse(response: any, request: LLMRequest): LLMResponse;
   protected abstract getSupportedModelsList(): string[];
   public abstract getModelConfig(): ModelConfig;
-  protected abstract getEndpoint(): string;
-  protected abstract getHeaders(): Record<string, string>;
 
   // 通用实现
   public async generateResponse(request: LLMRequest): Promise<LLMResponse> {
     await this.rateLimiter.checkLimit();
     
     try {
-      const providerRequest = this.prepareRequest(request);
-      const response = await this.makeRequest(providerRequest);
-      return this.toLLMResponse(response.data, request);
+      // 1. 参数映射
+      const providerRequest = this.providerConfig.parameterMapper.mapToProvider(request, this.providerConfig);
+      
+      // 2. 应用功能特性
+      const enhancedRequest = this.applyFeatures(providerRequest);
+      
+      // 3. 构建端点和头部
+      const endpoint = this.providerConfig.endpointStrategy.buildEndpoint(this.providerConfig, enhancedRequest);
+      const headers = this.providerConfig.endpointStrategy.buildHeaders(this.providerConfig);
+      
+      // 4. 发送请求
+      const response = await this.httpClient.post(endpoint, enhancedRequest, { headers });
+      
+      // 5. 转换响应
+      return this.providerConfig.parameterMapper.mapFromResponse(response.data, request);
     } catch (error) {
       this.handleError(error);
     }
+  }
+
+  // 应用功能特性
+  private applyFeatures(request: any): any {
+    let enhancedRequest = { ...request };
+    
+    // 使用功能注册表应用所有支持的功能
+    enhancedRequest = this.featureRegistry.applyFeatures(enhancedRequest, this.providerConfig.name, this.providerConfig);
+    
+    return enhancedRequest;
   }
 
   public async calculateTokens(request: LLMRequest): Promise<number> {
@@ -69,13 +88,6 @@ export abstract class BaseLLMClient implements ILLMClient {
             completionTokens * modelConfig.getCompletionCostPer1KTokens()) / 1000;
   }
 
-  // 通用HTTP请求方法
-  protected async makeRequest(data: any, endpoint?: string): Promise<any> {
-    const url = endpoint ? `${this.baseURL}/${endpoint}` : this.getEndpoint();
-    const headers = this.getHeaders();
-    
-    return this.httpClient.post(url, data, { headers });
-  }
 
   // 通用错误处理
   protected handleError(error: any): never {
@@ -88,26 +100,32 @@ export abstract class BaseLLMClient implements ILLMClient {
     await this.rateLimiter.checkLimit();
     
     try {
-      const providerRequest = this.prepareRequest(request);
-      // 启用流式模式
+      // 1. 参数映射
+      const providerRequest = this.providerConfig.parameterMapper.mapToProvider(request, this.providerConfig);
+      
+      // 2. 启用流式模式
       if (typeof providerRequest === 'object' && providerRequest !== null) {
-        providerRequest.stream = true;
+        (providerRequest as any).stream = true;
       }
       
-      const response = await this.makeStreamRequest(providerRequest);
+      // 3. 应用功能特性
+      const enhancedRequest = this.applyFeatures(providerRequest);
+      
+      // 4. 构建端点和头部
+      const endpoint = this.providerConfig.endpointStrategy.buildEndpoint(this.providerConfig, enhancedRequest);
+      const headers = this.providerConfig.endpointStrategy.buildHeaders(this.providerConfig);
+      
+      // 5. 发送流式请求
+      const response = await this.httpClient.post(endpoint, enhancedRequest, {
+        headers,
+        responseType: 'stream'
+      });
+      
+      // 6. 解析流式响应
       return this.parseStreamResponse(response, request);
     } catch (error) {
       this.handleError(error);
     }
-  }
-
-  // 流式请求方法，子类可以覆盖
-  protected async makeStreamRequest(data: any, endpoint?: string): Promise<any> {
-    const url = endpoint ? `${this.baseURL}/${endpoint}` : this.getEndpoint();
-    const headers = this.getHeaders();
-    
-    // 使用标准POST请求，子类可以覆盖以实现真正的流式请求
-    return this.httpClient.post(url, data, { headers });
   }
 
   // 解析流式响应，子类可以覆盖

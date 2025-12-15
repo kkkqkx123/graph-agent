@@ -3,7 +3,12 @@ import { LLMRequest } from '../../../../domain/llm/entities/llm-request';
 import { LLMResponse } from '../../../../domain/llm/entities/llm-response';
 import { ModelConfig } from '../../../../domain/llm/value-objects/model-config';
 import { BaseLLMClient } from './base-llm-client';
-import { GeminiProvider } from '../converters/providers/gemini-provider';
+import { ProviderConfig, ApiType, ProviderConfigBuilder } from '../parameter-mappers';
+import { GeminiParameterMapper } from '../parameter-mappers/providers/gemini-parameter-mapper';
+import { GeminiNativeEndpointStrategy } from '../endpoint-strategies/providers/gemini-native-endpoint-strategy';
+import { BaseFeatureSupport } from '../parameter-mappers/interfaces/feature-support.interface';
+import { FeatureRegistry } from '../features/registry/feature-registry';
+import { GeminiThinkingBudgetFeature } from '../features/providers/gemini-thinking-budget-feature';
 
 @injectable()
 export class GeminiClient extends BaseLLMClient {
@@ -13,85 +18,51 @@ export class GeminiClient extends BaseLLMClient {
     @inject('TokenCalculator') tokenCalculator: any,
     @inject('ConfigManager') configManager: any
   ) {
+    // 创建功能支持配置
+    const featureSupport = new BaseFeatureSupport();
+    featureSupport.supportsStreaming = true;
+    featureSupport.supportsTools = true;
+    featureSupport.supportsImages = true;
+    featureSupport.supportsAudio = false;
+    featureSupport.supportsVideo = false;
+    featureSupport.supportsSystemMessages = false;
+    featureSupport.supportsTemperature = true;
+    featureSupport.supportsTopP = true;
+    featureSupport.supportsTopK = true;
+    featureSupport.supportsStopSequences = true;
+    featureSupport.supportsMaxTokens = true;
+    featureSupport.setProviderSpecificFeature('thinking_budget', true);
+    featureSupport.setProviderSpecificFeature('cached_content', true);
+
+    // 创建功能注册表并注册 Gemini 特有功能
+    const featureRegistry = new FeatureRegistry();
+    featureRegistry.registerFeature(new GeminiThinkingBudgetFeature());
+
+    // 创建提供商配置
+    const providerConfig = new ProviderConfigBuilder()
+      .name('gemini')
+      .apiType(ApiType.NATIVE)
+      .baseURL('https://generativelanguage.googleapis.com')
+      .apiKey(configManager.get('llm.gemini.apiKey'))
+      .endpointStrategy(new GeminiNativeEndpointStrategy())
+      .parameterMapper(new GeminiParameterMapper())
+      .featureSupport(featureSupport)
+      .defaultModel('gemini-2.5-pro')
+      .timeout(30000)
+      .retryCount(3)
+      .retryDelay(1000)
+      .build();
+
     super(
       httpClient,
       rateLimiter,
       tokenCalculator,
       configManager,
-      'Gemini',
-      'gemini',
-      'https://generativelanguage.googleapis.com'
+      providerConfig,
+      featureRegistry
     );
   }
 
-  protected getEndpoint(): string {
-    // Gemini的端点需要动态构建，因为包含模型名称
-    return '';
-  }
-
-  protected getHeaders(): Record<string, string> {
-    return {
-      'Content-Type': 'application/json'
-    };
-  }
-
-  protected override async makeRequest(data: any, endpoint?: string): Promise<any> {
-    // Gemini需要特殊的请求处理，因为API密钥在URL中
-    const url = endpoint || `${this.baseURL}/v1beta/models/${data.model}:generateContent?key=${this.apiKey}`;
-    const headers = this.getHeaders();
-
-    return this.httpClient.post(url, data, { headers });
-  }
-
-  protected prepareRequest(request: LLMRequest): any {
-    // 获取模型配置以使用正确的默认值
-    const modelConfig = this.getModelConfig();
-    
-    // 使用转换器准备请求
-    const provider = new GeminiProvider();
-    
-    // 转换消息格式
-    const parameters: Record<string, any> = {
-      model: request.model
-    };
-
-    // 添加生成配置
-    parameters['generationConfig'] = {
-      temperature: request.temperature ?? modelConfig.getTemperature(),
-      maxOutputTokens: request.maxTokens ?? modelConfig.getMaxTokens(),
-      topP: request.topP ?? modelConfig.getTopP(),
-      frequencyPenalty: request.frequencyPenalty ?? modelConfig.getFrequencyPenalty(),
-      presencePenalty: request.presencePenalty ?? modelConfig.getPresencePenalty()
-    };
-
-    return provider.convertRequest(request.messages, parameters);
-  }
-
-  protected toLLMResponse(geminiResponse: any, request: LLMRequest): LLMResponse {
-    const candidate = geminiResponse.candidates?.[0];
-    const content = candidate?.content?.parts?.[0]?.text || '';
-    const usage = geminiResponse.usageMetadata;
-
-    return LLMResponse.create(
-      request.requestId,
-      request.model,
-      [{
-        index: 0,
-        message: {
-          role: 'assistant',
-          content: content
-        },
-        finish_reason: candidate?.finishReason || 'STOP'
-      }],
-      {
-        promptTokens: usage?.promptTokenCount || 0,
-        completionTokens: usage?.candidatesTokenCount || 0,
-        totalTokens: usage?.totalTokenCount || 0
-      },
-      candidate?.finishReason || 'STOP',
-      0 // duration - would need to be calculated
-    );
-  }
 
   getSupportedModelsList(): string[] {
     return [
