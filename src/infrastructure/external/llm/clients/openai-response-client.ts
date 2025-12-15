@@ -67,7 +67,7 @@ export class OpenAIResponseClient extends BaseLLMClient {
 
   public getModelConfig(): ModelConfig {
     const model = 'gpt-5'; // 默认模型
-    const configs = this.configManager.get('llm.openai.models', {});
+    const configs: Record<string, any> = this.configManager.get('llm.openai.models', {});
     const config = configs[model];
     
     if (!config) {

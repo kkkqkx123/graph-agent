@@ -1,4 +1,4 @@
-import { IEndpointStrategy } from '../../endpoint-strategies/interfaces/endpoint-strategy.interface';
+import { IEndpointStrategy } from '../../endpoint-strategies/endpoint-strategy.interface';
 import { IParameterMapper } from './parameter-mapper.interface';
 import { FeatureSupport } from './feature-support.interface';
 

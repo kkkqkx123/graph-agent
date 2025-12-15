@@ -1,5 +1,5 @@
-import { ProviderConfig } from '../../parameter-mappers/interfaces/provider-config.interface';
-import { ProviderRequest } from '../../parameter-mappers/interfaces/parameter-mapper.interface';
+import { ProviderConfig } from '../parameter-mappers/interfaces/provider-config.interface';
+import { ProviderRequest } from '../parameter-mappers/interfaces/parameter-mapper.interface';
 
 /**
  * 端点策略接口

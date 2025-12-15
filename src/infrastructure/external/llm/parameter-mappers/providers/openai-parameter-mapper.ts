@@ -1,6 +1,6 @@
 import { LLMRequest } from '../../../../../domain/llm/entities/llm-request';
 import { LLMResponse } from '../../../../../domain/llm/entities/llm-response';
-import { BaseParameterMapper } from '../base/base-parameter-mapper';
+import { BaseParameterMapper } from '../base-parameter-mapper';
 import { ProviderConfig, ProviderRequest, ProviderResponse, ParameterDefinition } from '../interfaces/parameter-mapper.interface';
 import { ParameterDefinitionBuilder, CommonParameterDefinitions } from '../interfaces/parameter-definition.interface';
 
@@ -19,7 +19,7 @@ export class OpenAIParameterMapper extends BaseParameterMapper {
    */
   protected override initializeSupportedParameters(): ParameterDefinition[] {
     const baseParams = super.initializeSupportedParameters();
-    
+
     // 添加 OpenAI 特有参数
     const openaiSpecificParams = [
       new ParameterDefinitionBuilder()
@@ -127,7 +127,7 @@ export class OpenAIParameterMapper extends BaseParameterMapper {
    */
   mapToProvider(request: LLMRequest, providerConfig: ProviderConfig): ProviderRequest {
     const baseParams = this.applyDefaultValues(request);
-    
+
     // 构建 OpenAI 请求
     const openaiRequest: ProviderRequest = {
       model: request.model,

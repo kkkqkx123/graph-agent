@@ -1,4 +1,4 @@
-import { IFeature } from '../interfaces/feature.interface';
+import { IFeature } from '../feature.interface';
 
 /**
  * Anthropic 系统消息功能
@@ -22,25 +22,25 @@ export class AnthropicSystemMessageFeature implements IFeature {
    */
   applyToRequest(request: any, config: any): any {
     const enhancedRequest = { ...request };
-    
+
     // 从消息列表中提取系统消息
     if (request.messages && Array.isArray(request.messages)) {
       const systemMessages = request.messages.filter((msg: any) => msg.role === 'system');
-      
+
       if (systemMessages.length > 0) {
         // 将系统消息内容合并
         const systemContent = systemMessages
           .map((msg: any) => msg.content)
           .join('\n');
-        
+
         // 设置系统参数
         enhancedRequest.system = systemContent;
-        
+
         // 从消息列表中移除系统消息
         enhancedRequest.messages = request.messages.filter((msg: any) => msg.role !== 'system');
       }
     }
-    
+
     return enhancedRequest;
   }
 

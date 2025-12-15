@@ -1,4 +1,4 @@
-import { IFeature } from '../interfaces/feature.interface';
+import { IFeature } from '../feature.interface';
 
 /**
  * Gemini 思考预算功能
@@ -22,29 +22,29 @@ export class GeminiThinkingBudgetFeature implements IFeature {
    */
   applyToRequest(request: any, config: any): any {
     const enhancedRequest = { ...request };
-    
+
     // 检查是否有思考预算配置
     const thinkingBudget = config.thinkingBudget || config.metadata?.thinkingBudget;
     const includeThoughts = config.includeThoughts || config.metadata?.includeThoughts;
-    
+
     if (thinkingBudget || includeThoughts) {
       // 初始化 extra_body
       if (!enhancedRequest.extra_body) {
         enhancedRequest.extra_body = {};
       }
-      
+
       // 初始化 google 配置
       if (!enhancedRequest.extra_body.google) {
         enhancedRequest.extra_body.google = {};
       }
-      
+
       // 设置思考配置
       enhancedRequest.extra_body.google.thinking_config = {
         thinking_budget: thinkingBudget || 'medium',
         include_thoughts: includeThoughts || false
       };
     }
-    
+
     return enhancedRequest;
   }
 
@@ -55,14 +55,14 @@ export class GeminiThinkingBudgetFeature implements IFeature {
     // 提取思考过程和努力使用情况
     const thoughts = response.choices?.[0]?.message?.thoughts;
     const effortUsed = response.choices?.[0]?.message?.effort_used;
-    
+
     if (thoughts || effortUsed) {
       return {
         thoughts,
         effortUsed
       };
     }
-    
+
     return undefined;
   }
 
@@ -74,16 +74,16 @@ export class GeminiThinkingBudgetFeature implements IFeature {
     errors: string[];
   } {
     const errors: string[] = [];
-    
+
     const thinkingBudget = config.thinkingBudget || config.metadata?.thinkingBudget;
-    
+
     if (thinkingBudget) {
       const validBudgets = ['low', 'medium', 'high'];
       if (!validBudgets.includes(thinkingBudget)) {
         errors.push(`thinking_budget must be one of: ${validBudgets.join(', ')}`);
       }
     }
-    
+
     return {
       isValid: errors.length === 0,
       errors

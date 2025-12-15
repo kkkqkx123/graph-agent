@@ -1,7 +1,7 @@
-import { IParameterMapper } from '../interfaces/parameter-mapper.interface';
-import { GeminiParameterMapper } from '../providers/gemini-parameter-mapper';
-import { OpenAIParameterMapper } from '../providers/openai-parameter-mapper';
-import { AnthropicParameterMapper } from '../providers/anthropic-parameter-mapper';
+import { IParameterMapper } from './interfaces/parameter-mapper.interface';
+import { GeminiParameterMapper } from './providers/gemini-parameter-mapper';
+import { OpenAIParameterMapper } from './providers/openai-parameter-mapper';
+import { AnthropicParameterMapper } from './providers/anthropic-parameter-mapper';
 
 /**
  * 参数映射器工厂

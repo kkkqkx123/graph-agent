@@ -7,7 +7,7 @@ import { ProviderConfig, ApiType, ProviderConfigBuilder } from '../parameter-map
 import { GeminiParameterMapper } from '../parameter-mappers/providers/gemini-parameter-mapper';
 import { OpenAICompatibleEndpointStrategy } from '../endpoint-strategies/providers/openai-compatible-endpoint-strategy';
 import { BaseFeatureSupport } from '../parameter-mappers/interfaces/feature-support.interface';
-import { FeatureRegistry } from '../features/registry/feature-registry';
+import { FeatureRegistry } from '../features/feature-registry';
 import { GeminiThinkingBudgetFeature } from '../features/providers/gemini-thinking-budget-feature';
 import { GeminiCachedContentFeature } from '../features/providers/gemini-cached-content-feature';
 
@@ -72,11 +72,11 @@ export class GeminiOpenAIClient extends BaseLLMClient {
       "gemini-2.5-pro",
       "gemini-2.5-flash",
       "gemini-2.5-flash-lite",
-      
+
       // Gemini 2.0系列
       "gemini-2.0-flash-exp",
       "gemini-2.0-flash-thinking-exp",
-      
+
       // Gemini 1.5系列
       "gemini-1.5-pro",
       "gemini-1.5-flash",
@@ -86,7 +86,7 @@ export class GeminiOpenAIClient extends BaseLLMClient {
 
   getModelConfig(): ModelConfig {
     const model = 'gemini-2.5-flash'; // 默认模型
-    const configs = this.configManager.get('llm.gemini-openai.models', {});
+    const configs: Record<string, any> = this.configManager.get('llm.gemini-openai.models', {});
     const config = configs[model];
 
     if (!config) {

@@ -1,8 +1,8 @@
-import { LLMRequest } from '../../../../../domain/llm/entities/llm-request';
-import { LLMResponse } from '../../../../../domain/llm/entities/llm-response';
-import { IParameterMapper, ParameterDefinition, ProviderRequest, ProviderResponse } from '../interfaces/parameter-mapper.interface';
-import { ProviderConfig } from '../interfaces/provider-config.interface';
-import { CommonParameterDefinitions } from '../interfaces/parameter-definition.interface';
+import { LLMRequest } from '../../../../domain/llm/entities/llm-request';
+import { LLMResponse } from '../../../../domain/llm/entities/llm-response';
+import { IParameterMapper, ParameterDefinition, ProviderRequest, ProviderResponse } from './interfaces/parameter-mapper.interface';
+import { ProviderConfig } from './interfaces/provider-config.interface';
+import { CommonParameterDefinitions } from './interfaces/parameter-definition.interface';
 
 /**
  * 基础参数映射器
@@ -90,8 +90,7 @@ export abstract class BaseParameterMapper implements IParameterMapper {
         // 检查弃用参数
         if (param.deprecated) {
           warnings.push(
-            `Parameter '${param.name}' is deprecated${
-              param.deprecationMessage ? `: ${param.deprecationMessage}` : ''
+            `Parameter '${param.name}' is deprecated${param.deprecationMessage ? `: ${param.deprecationMessage}` : ''
             }`
           );
         }
@@ -233,7 +232,7 @@ export abstract class BaseParameterMapper implements IParameterMapper {
    */
   protected filterProviderSpecificParams(params: Record<string, any>): Record<string, any> {
     const result: Record<string, any> = {};
-    
+
     for (const [key, value] of Object.entries(params)) {
       const paramDef = this.supportedParameters.find(p => p.name === key);
       if (paramDef && paramDef.isProviderSpecific) {
@@ -249,7 +248,7 @@ export abstract class BaseParameterMapper implements IParameterMapper {
    */
   protected filterCommonParams(params: Record<string, any>): Record<string, any> {
     const result: Record<string, any> = {};
-    
+
     for (const [key, value] of Object.entries(params)) {
       const paramDef = this.supportedParameters.find(p => p.name === key);
       if (!paramDef || !paramDef.isProviderSpecific) {

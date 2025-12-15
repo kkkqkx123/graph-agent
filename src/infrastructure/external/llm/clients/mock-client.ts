@@ -9,16 +9,20 @@ import { ProviderConfig, ApiType, ProviderConfigBuilder } from '../parameter-map
 import { MockParameterMapper } from '../parameter-mappers/providers/mock-parameter-mapper';
 import { MockEndpointStrategy } from '../endpoint-strategies/providers/mock-endpoint-strategy';
 import { BaseFeatureSupport } from '../parameter-mappers/interfaces/feature-support.interface';
+import { LLM_DI_IDENTIFIERS } from '../di-identifiers';
+import { HttpClient } from '../../../common/http/http-client';
+import { TokenBucketLimiter } from '../rate-limiters/token-bucket-limiter';
+import { ConfigManager } from '../../../common/config/config-manager.interface';
 
 @injectable()
 export class MockClient extends BaseLLMClient {
   private responses: Map<string, string> = new Map();
 
   constructor(
-    @inject('HttpClient') httpClient: any,
-    @inject('TokenBucketLimiter') rateLimiter: any,
-    @inject('TokenCalculator') tokenCalculator: TokenCalculator,
-    @inject('ConfigManager') configManager: any
+    @inject(LLM_DI_IDENTIFIERS.HttpClient) httpClient: HttpClient,
+    @inject(LLM_DI_IDENTIFIERS.TokenBucketLimiter) rateLimiter: TokenBucketLimiter,
+    @inject(LLM_DI_IDENTIFIERS.TokenCalculator) tokenCalculator: TokenCalculator,
+    @inject(LLM_DI_IDENTIFIERS.ConfigManager) configManager: ConfigManager
   ) {
     // 创建功能支持配置
     const featureSupport = new BaseFeatureSupport();
@@ -125,7 +129,7 @@ export class MockClient extends BaseLLMClient {
 
   public getModelConfig(): ModelConfig {
     const model = 'mock-model'; // 默认模型
-    const configs = this.configManager.get('llm.mock.models', {});
+    const configs = this.configManager.get<Record<string, any>>('llm.mock.models', {});
     const config = configs[model];
     
     if (!config) {

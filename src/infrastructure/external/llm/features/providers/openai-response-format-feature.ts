@@ -1,4 +1,4 @@
-import { IFeature } from '../interfaces/feature.interface';
+import { IFeature } from '../feature.interface';
 
 /**
  * OpenAI 响应格式功能
@@ -22,14 +22,14 @@ export class OpenAIResponseFormatFeature implements IFeature {
    */
   applyToRequest(request: any, config: any): any {
     const enhancedRequest = { ...request };
-    
+
     // 检查是否有响应格式配置
     const responseFormat = config.responseFormat || config.metadata?.responseFormat;
-    
+
     if (responseFormat) {
       enhancedRequest.response_format = responseFormat;
     }
-    
+
     return enhancedRequest;
   }
 
@@ -49,9 +49,9 @@ export class OpenAIResponseFormatFeature implements IFeature {
     errors: string[];
   } {
     const errors: string[] = [];
-    
+
     const responseFormat = config.responseFormat || config.metadata?.responseFormat;
-    
+
     if (responseFormat) {
       if (typeof responseFormat !== 'object') {
         errors.push('response_format must be an object');
@@ -60,7 +60,7 @@ export class OpenAIResponseFormatFeature implements IFeature {
         if (responseFormat.type && !['text', 'json_object'].includes(responseFormat.type)) {
           errors.push('response_format.type must be either "text" or "json_object"');
         }
-        
+
         if (responseFormat.type === 'json_object' && responseFormat.schema) {
           // 如果提供了 JSON schema，验证其结构
           if (typeof responseFormat.schema !== 'object') {
@@ -69,7 +69,7 @@ export class OpenAIResponseFormatFeature implements IFeature {
         }
       }
     }
-    
+
     return {
       isValid: errors.length === 0,
       errors

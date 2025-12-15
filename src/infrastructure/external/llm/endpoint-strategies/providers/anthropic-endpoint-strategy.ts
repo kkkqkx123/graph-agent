@@ -1,4 +1,4 @@
-import { BaseEndpointStrategy } from '../base/base-endpoint-strategy';
+import { BaseEndpointStrategy } from '../base-endpoint-strategy';
 import { ProviderConfig } from '../../parameter-mappers/interfaces/provider-config.interface';
 import { ProviderRequest } from '../../parameter-mappers/interfaces/parameter-mapper.interface';
 
@@ -25,18 +25,18 @@ export class AnthropicEndpointStrategy extends BaseEndpointStrategy {
    */
   override buildHeaders(config: ProviderConfig): Record<string, string> {
     const headers = super.buildHeaders(config);
-    
+
     // Anthropic 使用 x-api-key 头部进行认证
     headers['x-api-key'] = config.apiKey;
-    
+
     // 添加 Anthropic 版本头
     headers['anthropic-version'] = config.extraConfig?.['apiVersion'] || '2023-06-01';
-    
+
     // 添加可选的客户端信息
     if (config.extraConfig?.['clientName']) {
       headers['anthropic-client'] = config.extraConfig['clientName'];
     }
-    
+
     return headers;
   }
 
@@ -57,17 +57,17 @@ export class AnthropicEndpointStrategy extends BaseEndpointStrategy {
     errors: string[];
   } {
     const result = super.validateConfig(config);
-    
+
     // 验证基础 URL 格式
     if (config.baseURL && !config.baseURL.includes('api.anthropic.com')) {
       result.errors.push('Anthropic API should use api.anthropic.com');
     }
-    
+
     // 验证 API 密钥格式（Anthropic 通常以 sk-ant- 开头）
     if (config.apiKey && !config.apiKey.startsWith('sk-ant-')) {
       result.errors.push('Anthropic API key should start with "sk-ant-"');
     }
-    
+
     return {
       isValid: result.errors.length === 0,
       errors: result.errors

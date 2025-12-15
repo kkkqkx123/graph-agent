@@ -8,7 +8,9 @@ import { HttpClient } from '../../../common/http/http-client';
 import { TokenBucketLimiter } from '../rate-limiters/token-bucket-limiter';
 import { TokenCalculator } from '../token-calculators/token-calculator';
 import { ProviderConfig } from '../parameter-mappers/interfaces/provider-config.interface';
-import { FeatureRegistry } from '../features/registry/feature-registry';
+import { FeatureRegistry } from '../features/feature-registry';
+import { LLM_DI_IDENTIFIERS } from '../di-identifiers';
+import { ConfigManager } from '../../../common/config/config-manager.interface';
 
 /**
  * LLM客户端抽象基类
@@ -23,10 +25,10 @@ export abstract class BaseLLMClient implements ILLMClient {
   protected readonly featureRegistry: FeatureRegistry;
 
   constructor(
-    @inject('HttpClient') protected httpClient: HttpClient,
-    @inject('TokenBucketLimiter') protected rateLimiter: TokenBucketLimiter,
-    @inject('TokenCalculator') protected tokenCalculator: TokenCalculator,
-    @inject('ConfigManager') protected configManager: any,
+    @inject(LLM_DI_IDENTIFIERS.HttpClient) protected httpClient: HttpClient,
+    @inject(LLM_DI_IDENTIFIERS.TokenBucketLimiter) protected rateLimiter: TokenBucketLimiter,
+    @inject(LLM_DI_IDENTIFIERS.TokenCalculator) protected tokenCalculator: TokenCalculator,
+    @inject(LLM_DI_IDENTIFIERS.ConfigManager) protected configManager: ConfigManager,
     providerConfig: ProviderConfig,
     featureRegistry?: FeatureRegistry
   ) {
@@ -43,21 +45,21 @@ export abstract class BaseLLMClient implements ILLMClient {
   // 通用实现
   public async generateResponse(request: LLMRequest): Promise<LLMResponse> {
     await this.rateLimiter.checkLimit();
-    
+
     try {
       // 1. 参数映射
       const providerRequest = this.providerConfig.parameterMapper.mapToProvider(request, this.providerConfig);
-      
+
       // 2. 应用功能特性
       const enhancedRequest = this.applyFeatures(providerRequest);
-      
+
       // 3. 构建端点和头部
       const endpoint = this.providerConfig.endpointStrategy.buildEndpoint(this.providerConfig, enhancedRequest);
       const headers = this.providerConfig.endpointStrategy.buildHeaders(this.providerConfig);
-      
+
       // 4. 发送请求
       const response = await this.httpClient.post(endpoint, enhancedRequest, { headers });
-      
+
       // 5. 转换响应
       return this.providerConfig.parameterMapper.mapFromResponse(response.data, request);
     } catch (error) {
@@ -68,10 +70,10 @@ export abstract class BaseLLMClient implements ILLMClient {
   // 应用功能特性
   private applyFeatures(request: any): any {
     let enhancedRequest = { ...request };
-    
+
     // 使用功能注册表应用所有支持的功能
     enhancedRequest = this.featureRegistry.applyFeatures(enhancedRequest, this.providerConfig.name, this.providerConfig);
-    
+
     return enhancedRequest;
   }
 
@@ -83,9 +85,9 @@ export abstract class BaseLLMClient implements ILLMClient {
     const modelConfig = this.getModelConfig();
     const promptTokens = await this.calculateTokens(request);
     const completionTokens = response.usage?.completionTokens || 0;
-    
+
     return (promptTokens * modelConfig.getPromptCostPer1KTokens() +
-            completionTokens * modelConfig.getCompletionCostPer1KTokens()) / 1000;
+      completionTokens * modelConfig.getCompletionCostPer1KTokens()) / 1000;
   }
 
 
@@ -98,29 +100,29 @@ export abstract class BaseLLMClient implements ILLMClient {
   // 默认实现，子类可覆盖
   public async generateResponseStream(request: LLMRequest): Promise<AsyncIterable<LLMResponse>> {
     await this.rateLimiter.checkLimit();
-    
+
     try {
       // 1. 参数映射
       const providerRequest = this.providerConfig.parameterMapper.mapToProvider(request, this.providerConfig);
-      
+
       // 2. 启用流式模式
       if (typeof providerRequest === 'object' && providerRequest !== null) {
         (providerRequest as any).stream = true;
       }
-      
+
       // 3. 应用功能特性
       const enhancedRequest = this.applyFeatures(providerRequest);
-      
+
       // 4. 构建端点和头部
       const endpoint = this.providerConfig.endpointStrategy.buildEndpoint(this.providerConfig, enhancedRequest);
       const headers = this.providerConfig.endpointStrategy.buildHeaders(this.providerConfig);
-      
+
       // 5. 发送流式请求
       const response = await this.httpClient.post(endpoint, enhancedRequest, {
         headers,
         responseType: 'stream'
       });
-      
+
       // 6. 解析流式响应
       return this.parseStreamResponse(response, request);
     } catch (error) {
@@ -183,11 +185,11 @@ export abstract class BaseLLMClient implements ILLMClient {
   }> {
     const errors: string[] = [];
     const warnings: string[] = [];
-    
+
     if (!request.messages || request.messages.length === 0) {
       errors.push('Messages are required');
     }
-    
+
     return {
       isValid: errors.length === 0,
       errors,
@@ -217,7 +219,7 @@ export abstract class BaseLLMClient implements ILLMClient {
       const startTime = Date.now();
       await this.getSupportedModels();
       const latency = Date.now() - startTime;
-      
+
       return {
         status: 'healthy',
         message: 'Service is operational',
@@ -369,7 +371,7 @@ export abstract class BaseLLMClient implements ILLMClient {
     endTime?: Date
   ): Promise<string> {
     const stats = await this.getUsageStatistics(startTime, endTime);
-    
+
     switch (format) {
       case 'json':
         return JSON.stringify(stats);
@@ -438,7 +440,7 @@ export abstract class BaseLLMClient implements ILLMClient {
     if (estimatedTokens <= maxTokens) {
       return text;
     }
-    
+
     const ratio = maxTokens / estimatedTokens;
     return text.substring(0, Math.floor(text.length * ratio));
   }

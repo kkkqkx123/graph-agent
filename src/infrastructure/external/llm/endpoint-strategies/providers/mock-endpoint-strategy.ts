@@ -1,4 +1,4 @@
-import { BaseEndpointStrategy } from '../base/base-endpoint-strategy';
+import { BaseEndpointStrategy } from '../base-endpoint-strategy';
 import { ProviderConfig } from '../../parameter-mappers/interfaces/provider-config.interface';
 import { ProviderRequest } from '../../parameter-mappers/interfaces/parameter-mapper.interface';
 
@@ -25,10 +25,10 @@ export class MockEndpointStrategy extends BaseEndpointStrategy {
     */
   override buildHeaders(config: ProviderConfig): Record<string, string> {
     const headers = super.buildHeaders(config);
-    
+
     // Mock API 使用自定义头部进行认证
     headers['x-mock-api-key'] = config.apiKey || 'mock-key';
-    
+
     return headers;
   }
 
@@ -49,9 +49,9 @@ export class MockEndpointStrategy extends BaseEndpointStrategy {
     errors: string[];
   } {
     const result = super.validateConfig(config);
-    
+
     // Mock API 不需要特殊验证
-    
+
     return {
       isValid: result.errors.length === 0,
       errors: result.errors

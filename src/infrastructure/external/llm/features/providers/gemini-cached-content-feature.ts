@@ -1,4 +1,4 @@
-import { IFeature } from '../interfaces/feature.interface';
+import { IFeature } from '../feature.interface';
 
 /**
  * Gemini 缓存内容功能
@@ -22,25 +22,25 @@ export class GeminiCachedContentFeature implements IFeature {
    */
   applyToRequest(request: any, config: any): any {
     const enhancedRequest = { ...request };
-    
+
     // 检查是否有缓存内容配置
     const cachedContent = config.cachedContent || config.metadata?.cachedContent;
-    
+
     if (cachedContent) {
       // 初始化 extra_body
       if (!enhancedRequest.extra_body) {
         enhancedRequest.extra_body = {};
       }
-      
+
       // 初始化 google 配置
       if (!enhancedRequest.extra_body.google) {
         enhancedRequest.extra_body.google = {};
       }
-      
+
       // 设置缓存内容
       enhancedRequest.extra_body.google.cached_content = cachedContent;
     }
-    
+
     return enhancedRequest;
   }
 
@@ -51,14 +51,14 @@ export class GeminiCachedContentFeature implements IFeature {
     // 提取缓存使用信息
     const cacheUsage = response.usage?.cache_usage;
     const cachedContentTokenCount = response.usage?.cached_content_token_count;
-    
+
     if (cacheUsage || cachedContentTokenCount) {
       return {
         cacheUsage,
         cachedContentTokenCount
       };
     }
-    
+
     return undefined;
   }
 
@@ -70,13 +70,13 @@ export class GeminiCachedContentFeature implements IFeature {
     errors: string[];
   } {
     const errors: string[] = [];
-    
+
     const cachedContent = config.cachedContent || config.metadata?.cachedContent;
-    
+
     if (cachedContent && typeof cachedContent !== 'string') {
       errors.push('cached_content must be a string');
     }
-    
+
     return {
       isValid: errors.length === 0,
       errors

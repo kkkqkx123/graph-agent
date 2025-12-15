@@ -8,14 +8,19 @@ import { ProviderConfig, ApiType } from '../parameter-mappers/interfaces/provide
 import { AnthropicParameterMapper } from '../parameter-mappers/providers/anthropic-parameter-mapper';
 import { AnthropicEndpointStrategy } from '../endpoint-strategies/providers/anthropic-endpoint-strategy';
 import { BaseFeatureSupport } from '../parameter-mappers/interfaces/feature-support.interface';
+import { LLM_DI_IDENTIFIERS } from '../di-identifiers';
+import { HttpClient } from '../../../common/http/http-client';
+import { TokenBucketLimiter } from '../rate-limiters/token-bucket-limiter';
+import { TokenCalculator } from '../token-calculators/token-calculator';
+import { ConfigManager } from '../../../common/config/config-manager.interface';
 
 @injectable()
 export class AnthropicClient extends BaseLLMClient {
   constructor(
-    @inject('HttpClient') httpClient: any,
-    @inject('TokenBucketLimiter') rateLimiter: any,
-    @inject('TokenCalculator') tokenCalculator: any,
-    @inject('ConfigManager') configManager: any
+    @inject(LLM_DI_IDENTIFIERS.HttpClient) httpClient: HttpClient,
+    @inject(LLM_DI_IDENTIFIERS.TokenBucketLimiter) rateLimiter: TokenBucketLimiter,
+    @inject(LLM_DI_IDENTIFIERS.TokenCalculator) tokenCalculator: TokenCalculator,
+    @inject(LLM_DI_IDENTIFIERS.ConfigManager) configManager: ConfigManager
   ) {
     // 创建 Anthropic 功能支持
     const featureSupport = new BaseFeatureSupport();
@@ -73,7 +78,7 @@ export class AnthropicClient extends BaseLLMClient {
 
   getModelConfig(): ModelConfig {
     const model = 'claude-3-sonnet-20240229'; // 默认模型
-    const configs = this.configManager.get('llm.anthropic.models', {});
+    const configs = this.configManager.get<Record<string, any>>('llm.anthropic.models', {});
     const config = configs[model];
     
     if (!config) {

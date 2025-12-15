@@ -1,7 +1,7 @@
-import { IEndpointStrategy } from '../interfaces/endpoint-strategy.interface';
-import { OpenAICompatibleEndpointStrategy } from '../providers/openai-compatible-endpoint-strategy';
-import { GeminiNativeEndpointStrategy } from '../providers/gemini-native-endpoint-strategy';
-import { AnthropicEndpointStrategy } from '../providers/anthropic-endpoint-strategy';
+import { IEndpointStrategy } from './endpoint-strategy.interface';
+import { OpenAICompatibleEndpointStrategy } from './providers/openai-compatible-endpoint-strategy';
+import { GeminiNativeEndpointStrategy } from './providers/gemini-native-endpoint-strategy';
+import { AnthropicEndpointStrategy } from './providers/anthropic-endpoint-strategy';
 
 /**
  * 端点策略工厂

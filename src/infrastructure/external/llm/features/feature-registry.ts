@@ -1,4 +1,4 @@
-import { IFeature } from '../interfaces/feature.interface';
+import { IFeature } from './feature.interface';
 
 /**
  * 功能注册表
@@ -33,13 +33,13 @@ export class FeatureRegistry {
    */
   getSupportedFeatures(provider: string): string[] {
     const supported: string[] = [];
-    
+
     for (const [name, feature] of this.features) {
       if (feature.isSupported(provider)) {
         supported.push(name);
       }
     }
-    
+
     return supported;
   }
 
@@ -63,7 +63,7 @@ export class FeatureRegistry {
    */
   applyFeatures(request: any, provider: string, config: any): any {
     let enhancedRequest = { ...request };
-    
+
     for (const [name, feature] of this.features) {
       if (feature.isSupported(provider)) {
         // 验证功能配置
@@ -73,7 +73,7 @@ export class FeatureRegistry {
         }
       }
     }
-    
+
     return enhancedRequest;
   }
 
@@ -85,7 +85,7 @@ export class FeatureRegistry {
    */
   extractFeaturesData(response: any, provider: string): Record<string, any> {
     const extractedData: Record<string, any> = {};
-    
+
     for (const [name, feature] of this.features) {
       if (feature.isSupported(provider)) {
         const data = feature.extractFromResponse(response);
@@ -94,7 +94,7 @@ export class FeatureRegistry {
         }
       }
     }
-    
+
     return extractedData;
   }
 

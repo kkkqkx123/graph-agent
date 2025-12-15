@@ -1,6 +1,6 @@
 import { LLMRequest } from '../../../../../domain/llm/entities/llm-request';
 import { LLMResponse } from '../../../../../domain/llm/entities/llm-response';
-import { BaseParameterMapper } from '../base/base-parameter-mapper';
+import { BaseParameterMapper } from '../base-parameter-mapper';
 import { ProviderConfig, ProviderRequest, ProviderResponse, ParameterDefinition } from '../interfaces/parameter-mapper.interface';
 import { ParameterDefinitionBuilder, CommonParameterDefinitions } from '../interfaces/parameter-definition.interface';
 
@@ -19,7 +19,7 @@ export class GeminiParameterMapper extends BaseParameterMapper {
    */
   protected override initializeSupportedParameters(): ParameterDefinition[] {
     const baseParams = super.initializeSupportedParameters();
-    
+
     // 添加 Gemini 特有参数
     const geminiSpecificParams = [
       new ParameterDefinitionBuilder()
@@ -82,7 +82,7 @@ export class GeminiParameterMapper extends BaseParameterMapper {
    */
   mapToProvider(request: LLMRequest, providerConfig: ProviderConfig): ProviderRequest {
     const baseParams = this.applyDefaultValues(request);
-    
+
     // 构建 Gemini 请求
     const geminiRequest: ProviderRequest = {
       model: request.model,

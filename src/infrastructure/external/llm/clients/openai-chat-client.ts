@@ -9,14 +9,19 @@ import { ProviderConfig, ApiType } from '../parameter-mappers/interfaces/provide
 import { OpenAIParameterMapper } from '../parameter-mappers/providers/openai-parameter-mapper';
 import { OpenAICompatibleEndpointStrategy } from '../endpoint-strategies/providers/openai-compatible-endpoint-strategy';
 import { BaseFeatureSupport } from '../parameter-mappers/interfaces/feature-support.interface';
+import { LLM_DI_IDENTIFIERS } from '../di-identifiers';
+import { HttpClient } from '../../../common/http/http-client';
+import { TokenBucketLimiter } from '../rate-limiters/token-bucket-limiter';
+import { TokenCalculator } from '../token-calculators/token-calculator';
+import { ConfigManager } from '../../../common/config/config-manager.interface';
 
 @injectable()
 export class OpenAIChatClient extends BaseLLMClient {
   constructor(
-    @inject('HttpClient') httpClient: any,
-    @inject('TokenBucketLimiter') rateLimiter: any,
-    @inject('TokenCalculator') tokenCalculator: any,
-    @inject('ConfigManager') configManager: any
+    @inject(LLM_DI_IDENTIFIERS.HttpClient) httpClient: HttpClient,
+    @inject(LLM_DI_IDENTIFIERS.TokenBucketLimiter) rateLimiter: TokenBucketLimiter,
+    @inject(LLM_DI_IDENTIFIERS.TokenCalculator) tokenCalculator: TokenCalculator,
+    @inject(LLM_DI_IDENTIFIERS.ConfigManager) configManager: ConfigManager
   ) {
     // 创建 OpenAI 功能支持
     const featureSupport = new BaseFeatureSupport();
@@ -74,7 +79,7 @@ export class OpenAIChatClient extends BaseLLMClient {
 
   public getModelConfig(): ModelConfig {
     const model = 'gpt-3.5-turbo'; // 默认模型
-    const configs = this.configManager.get('llm.openai.models', {});
+    const configs = this.configManager.get<Record<string, any>>('llm.openai.models', {});
     const config = configs[model];
     
     if (!config) {

@@ -1,4 +1,4 @@
-import { BaseEndpointStrategy } from '../base/base-endpoint-strategy';
+import { BaseEndpointStrategy } from '../base-endpoint-strategy';
 import { ProviderConfig } from '../../parameter-mappers/interfaces/provider-config.interface';
 import { ProviderRequest } from '../../parameter-mappers/interfaces/parameter-mapper.interface';
 
@@ -25,15 +25,15 @@ export class OpenAICompatibleEndpointStrategy extends BaseEndpointStrategy {
    */
   override buildHeaders(config: ProviderConfig): Record<string, string> {
     const headers = super.buildHeaders(config);
-    
+
     // 添加 Bearer token 认证
     headers['Authorization'] = `Bearer ${config.apiKey}`;
-    
+
     // 添加可选的版本头
     if (config.extraConfig?.['apiVersion']) {
       headers['api-version'] = config.extraConfig['apiVersion'];
     }
-    
+
     return headers;
   }
 
@@ -54,12 +54,12 @@ export class OpenAICompatibleEndpointStrategy extends BaseEndpointStrategy {
     errors: string[];
   } {
     const result = super.validateConfig(config);
-    
+
     // 验证 API 密钥格式（OpenAI 通常以 sk- 开头）
     if (config.apiKey && !config.apiKey.startsWith('sk-') && config.name === 'openai') {
       result.errors.push('OpenAI API key should start with "sk-"');
     }
-    
+
     return {
       isValid: result.errors.length === 0,
       errors: result.errors

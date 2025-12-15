@@ -1,4 +1,4 @@
-import { BaseEndpointStrategy } from '../base/base-endpoint-strategy';
+import { BaseEndpointStrategy } from '../base-endpoint-strategy';
 import { ProviderConfig } from '../../parameter-mappers/interfaces/provider-config.interface';
 import { ProviderRequest } from '../../parameter-mappers/interfaces/parameter-mapper.interface';
 
@@ -26,15 +26,15 @@ export class GeminiNativeEndpointStrategy extends BaseEndpointStrategy {
    */
   override buildHeaders(config: ProviderConfig): Record<string, string> {
     const headers = super.buildHeaders(config);
-    
+
     // Gemini 原生 API 不需要在请求头中包含 API 密钥
     // 因为 API 密钥已经在 URL 中
-    
+
     // 添加可选的版本头
     if (config.extraConfig?.['apiVersion']) {
       headers['x-goog-api-version'] = config.extraConfig['apiVersion'];
     }
-    
+
     return headers;
   }
 
@@ -55,12 +55,12 @@ export class GeminiNativeEndpointStrategy extends BaseEndpointStrategy {
     errors: string[];
   } {
     const result = super.validateConfig(config);
-    
+
     // 验证基础 URL 格式
     if (config.baseURL && !config.baseURL.includes('generativelanguage.googleapis.com')) {
       result.errors.push('Gemini native API should use generativelanguage.googleapis.com');
     }
-    
+
     return {
       isValid: result.errors.length === 0,
       errors: result.errors

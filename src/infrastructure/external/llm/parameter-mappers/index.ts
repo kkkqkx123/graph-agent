@@ -9,9 +9,9 @@ export { ParameterDefinition, ParameterDefinitionBuilder, CommonParameterDefinit
 export { ProviderConfig, ApiType, ProviderConfigBuilder } from './interfaces/provider-config.interface';
 export { FeatureSupport, BaseFeatureSupport } from './interfaces/feature-support.interface';
 
-export { BaseParameterMapper } from './base/base-parameter-mapper';
+export { BaseParameterMapper } from './base-parameter-mapper';
 export { OpenAIParameterMapper } from './providers/openai-parameter-mapper';
 export { AnthropicParameterMapper } from './providers/anthropic-parameter-mapper';
 export { GeminiParameterMapper } from './providers/gemini-parameter-mapper';
 
-export { ParameterMapperFactory } from './factory/parameter-mapper-factory';
+export { ParameterMapperFactory } from './parameter-mapper-factory';

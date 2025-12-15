@@ -1,6 +1,6 @@
-import { IEndpointStrategy } from '../interfaces/endpoint-strategy.interface';
-import { ProviderConfig } from '../../parameter-mappers/interfaces/provider-config.interface';
-import { ProviderRequest } from '../../parameter-mappers/interfaces/parameter-mapper.interface';
+import { IEndpointStrategy } from './endpoint-strategy.interface';
+import { ProviderConfig } from '../parameter-mappers/interfaces/provider-config.interface';
+import { ProviderRequest } from '../parameter-mappers/interfaces/parameter-mapper.interface';
 
 /**
  * 基础端点策略
@@ -85,14 +85,14 @@ export abstract class BaseEndpointStrategy implements IEndpointStrategy {
   protected buildPath(baseURL: string, ...pathSegments: string[]): string {
     const url = new URL(baseURL);
     const currentPath = url.pathname.endsWith('/') ? url.pathname.slice(0, -1) : url.pathname;
-    const cleanSegments = pathSegments.map(segment => 
+    const cleanSegments = pathSegments.map(segment =>
       segment.startsWith('/') ? segment.slice(1) : segment
     ).filter(segment => segment.length > 0);
-    
-    const newPath = cleanSegments.length > 0 
+
+    const newPath = cleanSegments.length > 0
       ? `${currentPath}/${cleanSegments.join('/')}`
       : currentPath;
-    
+
     url.pathname = newPath;
     return url.toString();
   }

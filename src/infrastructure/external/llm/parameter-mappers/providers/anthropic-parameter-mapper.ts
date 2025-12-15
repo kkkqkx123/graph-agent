@@ -1,6 +1,6 @@
 import { LLMRequest } from '../../../../../domain/llm/entities/llm-request';
 import { LLMResponse } from '../../../../../domain/llm/entities/llm-response';
-import { BaseParameterMapper } from '../base/base-parameter-mapper';
+import { BaseParameterMapper } from '../base-parameter-mapper';
 import { ProviderConfig, ProviderRequest, ProviderResponse, ParameterDefinition } from '../interfaces/parameter-mapper.interface';
 import { ParameterDefinitionBuilder, CommonParameterDefinitions } from '../interfaces/parameter-definition.interface';
 
