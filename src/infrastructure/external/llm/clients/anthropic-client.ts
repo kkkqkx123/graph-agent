@@ -3,6 +3,7 @@ import { LLMRequest } from '../../../../domain/llm/entities/llm-request';
 import { LLMResponse } from '../../../../domain/llm/entities/llm-response';
 import { ModelConfig } from '../../../../domain/llm/value-objects/model-config';
 import { BaseLLMClient } from './base-llm-client';
+import { AnthropicProvider } from '../converters/providers/anthropic-provider';
 
 @injectable()
 export class AnthropicClient extends BaseLLMClient {
@@ -36,36 +37,26 @@ export class AnthropicClient extends BaseLLMClient {
   }
 
   protected prepareRequest(request: LLMRequest): any {
-    // Convert OpenAI-style messages to Anthropic format
-    const systemMessage = request.messages.find(msg => msg.role === 'system');
-    const messages = request.messages
-      .filter(msg => msg.role !== 'system')
-      .map(msg => ({
-        role: msg.role === 'assistant' ? 'assistant' : 'user',
-        content: msg.content
-      }));
-
     // 获取模型配置以使用正确的默认值
     const modelConfig = this.getModelConfig();
     
-    const anthropicRequest: any = {
+    // 使用转换器准备请求
+    const provider = new AnthropicProvider();
+    
+    // 转换消息格式
+    const parameters: Record<string, any> = {
       model: request.model,
-      max_tokens: request.maxTokens ?? modelConfig.getMaxTokens(),
-      messages
+      max_tokens: request.maxTokens ?? modelConfig.getMaxTokens()
     };
 
-    if (systemMessage) {
-      anthropicRequest.system = systemMessage.content;
-    }
-
     if (request.temperature !== undefined) {
-      anthropicRequest.temperature = request.temperature;
+      parameters['temperature'] = request.temperature;
     } else {
       // 只有在请求中没有指定温度时才使用配置中的默认值
-      anthropicRequest.temperature = modelConfig.getTemperature();
+      parameters['temperature'] = modelConfig.getTemperature();
     }
 
-    return anthropicRequest;
+    return provider.convertRequest(request.messages, parameters);
   }
 
   protected toLLMResponse(anthropicResponse: any, request: LLMRequest): LLMResponse {

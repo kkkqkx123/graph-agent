@@ -215,6 +215,229 @@ export abstract class BaseProvider implements IProvider {
     return errors;
   }
 
+  /**
+   * 处理多模态内容
+   */
+  protected processMultimodalContent(
+    content: Array<Record<string, any>>,
+    context?: ConversionContext
+  ): Array<Record<string, any>> {
+    const processed: Array<Record<string, any>> = [];
+
+    for (const item of content) {
+      if (item['type'] === 'text') {
+        processed.push(item);
+      } else if (item['type'] === 'image') {
+        const processedImage = this.processImageContent(item, context);
+        if (processedImage) {
+          processed.push(processedImage);
+        }
+      }
+    }
+
+    return processed;
+  }
+
+  /**
+   * 处理图像内容
+   */
+  protected processImageContent(
+    imageItem: Record<string, any>,
+    context?: ConversionContext
+  ): Record<string, any> | null {
+    const source = imageItem['source'] || {};
+
+    if (!source || typeof source !== 'object') {
+      this.logger.warn('图像内容缺少source字段');
+      return null;
+    }
+
+    const mediaType = source['media_type'] || '';
+    const imageData = source['data'] || '';
+
+    if (!this.isSupportedImageFormat(mediaType)) {
+      this.logger.warn(`不支持的图像格式: ${mediaType}`);
+      return null;
+    }
+
+    if (!imageData) {
+      this.logger.warn('图像内容缺少数据');
+      return null;
+    }
+
+    return {
+      type: 'image',
+      source: {
+        type: source['type'] || 'base64',
+        media_type: mediaType,
+        data: imageData
+      }
+    };
+  }
+
+  /**
+   * 检查是否为支持的图像格式
+   */
+  protected isSupportedImageFormat(mediaType: string): boolean {
+    const supportedFormats = new Set([
+      'image/jpeg',
+      'image/png',
+      'image/gif',
+      'image/webp'
+    ]);
+    return supportedFormats.has(mediaType);
+  }
+
+  /**
+   * 获取可选参数列表
+   */
+  protected getOptionalParameters(): string[] {
+    return [
+      'temperature', 'top_p', 'n', 'stream', 'stop',
+      'max_tokens', 'presence_penalty', 'frequency_penalty'
+    ];
+  }
+
+  /**
+   * 处理特殊参数
+   */
+  protected handleSpecialParameters(
+    requestData: Record<string, any>,
+    parameters: Record<string, any>,
+    context: ConversionContext
+  ): void {
+    // 子类可以重写此方法来处理特殊参数
+  }
+
+  /**
+   * 处理工具配置
+   */
+  protected handleToolsConfiguration(
+    requestData: Record<string, any>,
+    parameters: Record<string, any>,
+    context: ConversionContext
+  ): void {
+    if ('tools' in parameters) {
+      const tools = parameters['tools'];
+      if (Array.isArray(tools)) {
+        const toolErrors = this.validateTools(tools);
+        if (toolErrors.length === 0) {
+          requestData['tools'] = this.convertTools(tools, context);
+          
+          if ('tool_choice' in parameters) {
+            requestData['tool_choice'] = this.processToolChoice(parameters['tool_choice'], context);
+          }
+        }
+      }
+    }
+  }
+
+  /**
+   * 验证工具
+   */
+  protected validateTools(tools: any[]): string[] {
+    const errors: string[] = [];
+
+    if (!Array.isArray(tools)) {
+      errors.push('工具必须是数组格式');
+      return errors;
+    }
+
+    for (let i = 0; i < tools.length; i++) {
+      const tool = tools[i];
+      if (typeof tool !== 'object') {
+        errors.push(`工具项 ${i} 必须是对象`);
+        continue;
+      }
+
+      if (!tool['type']) {
+        errors.push(`工具项 ${i} 缺少type字段`);
+      }
+
+      if (tool['type'] === 'function' && !tool['function']) {
+        errors.push(`函数工具项 ${i} 缺少function字段`);
+      }
+    }
+
+    return errors;
+  }
+
+  /**
+   * 转换工具格式
+   */
+  protected convertTools(
+    tools: any[],
+    context: ConversionContext
+  ): any[] {
+    // 默认返回原格式，子类可以重写
+    return tools;
+  }
+
+  /**
+   * 处理工具选择策略
+   */
+  protected processToolChoice(
+    toolChoice: any,
+    context: ConversionContext
+  ): any {
+    // 默认返回原值，子类可以重写
+    return toolChoice;
+  }
+
+  /**
+   * 构建响应元数据
+   */
+  protected buildResponseMetadata(
+    response: Record<string, any>,
+    choice: Record<string, any>,
+    context: ConversionContext
+  ): Record<string, any> {
+    return {
+      finish_reason: choice['finish_reason'],
+      usage: response['usage'] || {},
+      model: response['model'] || '',
+      id: response['id'] || '',
+      created: response['created']
+    };
+  }
+
+  /**
+   * 提取工具调用
+   */
+  protected extractToolCalls(
+    response: Record<string, any>,
+    context: ConversionContext
+  ): Array<{
+    id: string;
+    type: string;
+    function: {
+      name: string;
+      arguments: string;
+    };
+  }> {
+    const choices = response['choices'] || [];
+    if (choices.length === 0) {
+      return [];
+    }
+
+    const message = choices[0]['message'] || {};
+    return message['tool_calls'] || [];
+  }
+
+  /**
+   * 验证响应格式
+   */
+  protected validateResponse(response: Record<string, any>): string[] {
+    const errors: string[] = [];
+
+    if (!response || typeof response !== 'object') {
+      errors.push('响应必须是对象格式');
+      return errors;
+    }
+
+    return errors;
+  }
+
   private getLogger(): any {
     try {
       // 尝试使用依赖注入获取日志器

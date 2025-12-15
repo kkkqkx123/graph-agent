@@ -4,6 +4,7 @@ import { LLMResponse } from '../../../../domain/llm/entities/llm-response';
 import { ModelConfig } from '../../../../domain/llm/value-objects/model-config';
 import { ID } from '../../../../domain/common/value-objects/id';
 import { BaseLLMClient } from './base-llm-client';
+import { OpenAIProvider, getMessageConverter } from '../converters';
 
 @injectable()
 export class OpenAIChatClient extends BaseLLMClient {
@@ -39,12 +40,13 @@ export class OpenAIChatClient extends BaseLLMClient {
     // 获取模型配置以使用正确的默认值
     const modelConfig = this.getModelConfig();
     
-    return {
+    // 使用转换器准备请求
+    const converter = getMessageConverter();
+    const provider = new OpenAIProvider();
+    
+    // 转换消息格式
+    const parameters: Record<string, any> = {
       model: request.model,
-      messages: request.messages.map(msg => ({
-        role: msg.role,
-        content: msg.content
-      })),
       temperature: request.temperature ?? modelConfig.getTemperature(),
       max_tokens: request.maxTokens ?? modelConfig.getMaxTokens(),
       top_p: request.topP ?? modelConfig.getTopP(),
@@ -52,6 +54,17 @@ export class OpenAIChatClient extends BaseLLMClient {
       presence_penalty: request.presencePenalty ?? modelConfig.getPresencePenalty(),
       stream: false
     };
+    
+    // 添加工具相关参数
+    if (request.tools) {
+      parameters['tools'] = request.tools;
+    }
+    
+    if (request.toolChoice) {
+      parameters['tool_choice'] = request.toolChoice;
+    }
+    
+    return provider.convertRequest(request.messages, parameters);
   }
 
   protected toLLMResponse(openaiResponse: any, request: LLMRequest): LLMResponse {

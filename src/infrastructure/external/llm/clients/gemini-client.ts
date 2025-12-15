@@ -3,6 +3,7 @@ import { LLMRequest } from '../../../../domain/llm/entities/llm-request';
 import { LLMResponse } from '../../../../domain/llm/entities/llm-response';
 import { ModelConfig } from '../../../../domain/llm/value-objects/model-config';
 import { BaseLLMClient } from './base-llm-client';
+import { GeminiProvider } from '../converters/providers/gemini-provider';
 
 @injectable()
 export class GeminiClient extends BaseLLMClient {
@@ -43,36 +44,27 @@ export class GeminiClient extends BaseLLMClient {
   }
 
   protected prepareRequest(request: LLMRequest): any {
-    // Convert OpenAI-style messages to Gemini format
-    const systemInstruction = request.messages.find(msg => msg.role === 'system');
-    const messages = request.messages.filter(msg => msg.role !== 'system');
-
-    const contents = messages.map(msg => ({
-      role: msg.role === 'assistant' ? 'model' : 'user',
-      parts: [{ text: msg.content }]
-    }));
-
     // 获取模型配置以使用正确的默认值
     const modelConfig = this.getModelConfig();
-
-    const geminiRequest: any = {
-      contents,
-      generationConfig: {
-        temperature: request.temperature ?? modelConfig.getTemperature(),
-        maxOutputTokens: request.maxTokens ?? modelConfig.getMaxTokens(),
-        topP: request.topP ?? modelConfig.getTopP(),
-        frequencyPenalty: request.frequencyPenalty ?? modelConfig.getFrequencyPenalty(),
-        presencePenalty: request.presencePenalty ?? modelConfig.getPresencePenalty()
-      }
+    
+    // 使用转换器准备请求
+    const provider = new GeminiProvider();
+    
+    // 转换消息格式
+    const parameters: Record<string, any> = {
+      model: request.model
     };
 
-    if (systemInstruction) {
-      geminiRequest.systemInstruction = {
-        parts: [{ text: systemInstruction.content }]
-      };
-    }
+    // 添加生成配置
+    parameters['generationConfig'] = {
+      temperature: request.temperature ?? modelConfig.getTemperature(),
+      maxOutputTokens: request.maxTokens ?? modelConfig.getMaxTokens(),
+      topP: request.topP ?? modelConfig.getTopP(),
+      frequencyPenalty: request.frequencyPenalty ?? modelConfig.getFrequencyPenalty(),
+      presencePenalty: request.presencePenalty ?? modelConfig.getPresencePenalty()
+    };
 
-    return geminiRequest;
+    return provider.convertRequest(request.messages, parameters);
   }
 
   protected toLLMResponse(geminiResponse: any, request: LLMRequest): LLMResponse {

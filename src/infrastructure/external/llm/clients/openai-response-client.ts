@@ -4,6 +4,7 @@ import { LLMResponse } from '../../../../domain/llm/entities/llm-response';
 import { ModelConfig } from '../../../../domain/llm/value-objects/model-config';
 import { ID } from '../../../../domain/common/value-objects/id';
 import { BaseLLMClient } from './base-llm-client';
+import { OpenAIProvider } from '../converters/providers/openai-provider';
 
 @injectable()
 export class OpenAIResponseClient extends BaseLLMClient {
@@ -39,53 +40,57 @@ export class OpenAIResponseClient extends BaseLLMClient {
     // 获取模型配置以使用正确的默认值
     const modelConfig = this.getModelConfig();
     
-    // 将消息转换为输入文本
-    const inputText = this.messagesToInput(request.messages);
+    // 使用转换器准备请求
+    const provider = new OpenAIProvider();
     
-    const requestData: any = {
+    // 转换消息格式
+    const parameters: Record<string, any> = {
       model: request.model,
-      input: inputText,
       stream: false
     };
 
     // 处理推理配置
     if (request.reasoningEffort) {
-      requestData.reasoning = {
+      parameters['reasoning'] = {
         effort: request.reasoningEffort
       };
     }
 
     // 处理文本配置
     if (request.verbosity) {
-      requestData.text = {
+      parameters['text'] = {
         verbosity: request.verbosity
       };
     }
 
-    // 处理工具
-    if (request.tools) {
-      requestData.tools = this.convertResponsesTools(request.tools);
-    }
-
     // 处理对话连续性
     if (request.previousResponseId) {
-      requestData.previous_response_id = request.previousResponseId;
+      parameters['previous_response_id'] = request.previousResponseId;
     }
 
     // 添加其他参数
     if (request.temperature !== undefined) {
-      requestData.temperature = request.temperature;
+      parameters['temperature'] = request.temperature;
     } else {
-      requestData.temperature = modelConfig.getTemperature();
+      parameters['temperature'] = modelConfig.getTemperature();
     }
 
     if (request.maxTokens !== undefined) {
-      requestData.max_tokens = request.maxTokens;
+      parameters['max_tokens'] = request.maxTokens;
     } else {
-      requestData.max_tokens = modelConfig.getMaxTokens();
+      parameters['max_tokens'] = modelConfig.getMaxTokens();
     }
 
-    return requestData;
+    // Responses API使用不同的格式，需要特殊处理
+    const responseRequest = provider.convertRequest(request.messages, parameters);
+    
+    // Responses API需要将消息转换为input字段
+    if (responseRequest['messages']) {
+      responseRequest['input'] = this.messagesToInput(responseRequest['messages']);
+      delete responseRequest['messages'];
+    }
+
+    return responseRequest;
   }
 
   protected toLLMResponse(response: any, request: LLMRequest): LLMResponse {
