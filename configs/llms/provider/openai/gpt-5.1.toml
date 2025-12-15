@@ -1,29 +1,24 @@
-# OpenAI GPT-5 HTTP客户端配置
+# OpenAI GPT-5.1 HTTP客户端配置
 # 继承自通用配置，支持Responses API
 
 inherits_from = "common.toml"
 
 # 模型特定配置
-models = [
-    "gpt-5.1",
-    "gpt-5.1-codex",
-    "gpt-5",
-    "gpt-5-codex"
-]
+models = ["gpt-5.1", "gpt-5.1-codex"]
 
 # 模型特定参数
 [parameters]
 temperature = 0.7
 max_tokens = 8192
-timeout = 180  # GPT-5可能需要更长时间
-reasoning_effort = "high"  # 推理努力程度
+timeout = 180             # GPT-5可能需要更长时间
+reasoning_effort = "high" # 推理努力程度
 
 # 功能支持
 [features]
 function_calling = true
 streaming = true
 vision = true
-responses_api = true  # GPT-5支持Responses API
+responses_api = true    # GPT-5支持Responses API
 
 # API端点配置
 [api_endpoints]

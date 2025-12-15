@@ -4,6 +4,7 @@ import { OpenAIChatClient } from './openai-chat-client';
 import { OpenAIResponseClient } from './openai-response-client';
 import { AnthropicClient } from './anthropic-client';
 import { GeminiClient } from './gemini-client';
+import { GeminiOpenAIClient } from './gemini-openai-client';
 import { MockClient } from './mock-client';
 import { LLM_DI_IDENTIFIERS } from '../di-identifiers';
 
@@ -20,7 +21,9 @@ export class LLMClientFactory {
     @inject(LLM_DI_IDENTIFIERS.OpenAIResponseClient) private openaiResponseClient: OpenAIResponseClient,
     @inject(LLM_DI_IDENTIFIERS.AnthropicClient) private anthropicClient: AnthropicClient,
     @inject(LLM_DI_IDENTIFIERS.GeminiClient) private geminiClient: GeminiClient,
-    @inject(LLM_DI_IDENTIFIERS.MockClient) private mockClient: MockClient
+    @inject(LLM_DI_IDENTIFIERS.GeminiOpenAIClient) private geminiOpenAIClient: GeminiOpenAIClient,
+    @inject(LLM_DI_IDENTIFIERS.MockClient) private mockClient: MockClient,
+    @inject(LLM_DI_IDENTIFIERS.ConfigManager) private configManager: any
   ) { }
 
   /**
@@ -41,7 +44,7 @@ export class LLMClientFactory {
 
       case 'gemini':
       case 'google':
-        return this.geminiClient;
+        return this.selectGeminiClient(model);
 
       case 'mock':
         return this.mockClient;
@@ -79,6 +82,22 @@ export class LLMClientFactory {
     return responseModels.some(responseModel =>
       normalizedModel.includes(responseModel.toLowerCase())
     );
+  }
+
+  /**
+   * 根据配置选择Gemini客户端
+   * @param model 模型名称
+   * @returns Gemini客户端实例
+   */
+  private selectGeminiClient(model?: string): ILLMClient {
+    // 从配置中获取客户端类型
+    const clientType = this.configManager.get('llm.gemini.clientType', 'native');
+    
+    if (clientType === 'openai-compatible') {
+      return this.geminiOpenAIClient;
+    }
+    
+    return this.geminiClient; // 默认使用原生客户端
   }
 
   /**

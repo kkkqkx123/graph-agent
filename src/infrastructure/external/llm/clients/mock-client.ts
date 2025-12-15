@@ -36,6 +36,13 @@ export class MockClient extends BaseLLMClient {
     featureSupport.supportsTopP = true;
     featureSupport.supportsMaxTokens = true;
 
+    // 从配置中读取支持的模型列表
+    const supportedModels = configManager.get('llm.mock.models', [
+      'mock-model',
+      'mock-model-turbo',
+      'mock-model-pro'
+    ]);
+
     // 创建提供商配置
     const providerConfig = new ProviderConfigBuilder()
       .name('Mock')
@@ -46,6 +53,7 @@ export class MockClient extends BaseLLMClient {
       .parameterMapper(new MockParameterMapper())
       .featureSupport(featureSupport)
       .defaultModel('mock-model')
+      .supportedModels(supportedModels)
       .timeout(30000)
       .retryCount(3)
       .retryDelay(1000)
@@ -124,12 +132,13 @@ export class MockClient extends BaseLLMClient {
   }
 
   getSupportedModelsList(): string[] {
-    return ['mock-model', 'mock-model-turbo', 'mock-model-pro'];
+    // 使用配置中的模型列表，如果没有配置则返回空数组
+    return this.providerConfig.supportedModels || [];
   }
 
   public getModelConfig(): ModelConfig {
     const model = 'mock-model'; // 默认模型
-    const configs = this.configManager.get<Record<string, any>>('llm.mock.models', {});
+    const configs = this.configManager.get<Record<string, any>>('llm.mock.modelConfigs', {});
     const config = configs[model];
     
     if (!config) {

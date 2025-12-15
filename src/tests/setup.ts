@@ -2,6 +2,9 @@
  * Jest测试设置文件
  */
 
+// 设置测试环境变量
+process.env['NODE_ENV'] = 'test';
+
 import 'reflect-metadata';
 
 // 导出测试工具

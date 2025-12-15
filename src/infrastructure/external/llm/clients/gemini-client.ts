@@ -43,6 +43,18 @@ export class GeminiClient extends BaseLLMClient {
     const featureRegistry = new FeatureRegistry();
     featureRegistry.registerFeature(new GeminiThinkingBudgetFeature());
 
+    // 从配置中读取支持的模型列表
+    const supportedModels = configManager.get('llm.gemini.models', [
+      'gemini-2.5-pro',
+      'gemini-2.5-flash',
+      'gemini-2.5-flash-lite',
+      'gemini-2.0-flash-exp',
+      'gemini-2.0-flash-thinking-exp',
+      'gemini-1.5-pro',
+      'gemini-1.5-flash',
+      'gemini-1.5-flash-8b'
+    ]);
+
     // 创建提供商配置
     const providerConfig = new ProviderConfigBuilder()
       .name('gemini')
@@ -53,6 +65,7 @@ export class GeminiClient extends BaseLLMClient {
       .parameterMapper(new GeminiParameterMapper())
       .featureSupport(featureSupport)
       .defaultModel('gemini-2.5-pro')
+      .supportedModels(supportedModels)
       .timeout(30000)
       .retryCount(3)
       .retryDelay(1000)
@@ -70,30 +83,42 @@ export class GeminiClient extends BaseLLMClient {
 
 
   getSupportedModelsList(): string[] {
-    return [
-      // Gemini 2.5系列
-      "gemini-2.5-pro",
-      "gemini-2.5-flash",
-      "gemini-2.5-flash-lite",
-
-      // 3.0系列
-      "gemini-3.0-pro",
-      "gemini-3.0-flash"
-    ];
+    // 使用配置中的模型列表，如果没有配置则返回空数组
+    return this.providerConfig.supportedModels || [];
   }
 
   getModelConfig(): ModelConfig {
     const model = 'gemini-2.5-pro'; // 默认模型
-    const configs = this.configManager.get<Record<string, any>>('llm.gemini.models', {});
+    const configs = this.configManager.get<Record<string, any>>('llm.gemini.modelConfigs', {});
     const config = configs[model];
 
     if (!config) {
-      throw new Error(`Model configuration not found for ${model}`);
+      // 返回默认配置
+      return ModelConfig.create({
+        model,
+        provider: 'gemini',
+        maxTokens: 8192,
+        contextWindow: 125000,
+        temperature: 0.7,
+        topP: 1.0,
+        frequencyPenalty: 0.0,
+        presencePenalty: 0.0,
+        costPer1KTokens: {
+          prompt: 0.0005,
+          completion: 0.0015
+        },
+        supportsStreaming: true,
+        supportsTools: true,
+        supportsImages: true,
+        supportsAudio: false,
+        supportsVideo: false,
+        metadata: {}
+      });
     }
 
     return ModelConfig.create({
       model,
-      provider: 'google',
+      provider: 'gemini',
       maxTokens: config.maxTokens || 8192,
       contextWindow: config.contextWindow || 125000,
       temperature: config.temperature || 0.7,

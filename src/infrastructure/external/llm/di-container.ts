@@ -3,6 +3,9 @@ import { LLM_DI_IDENTIFIERS, ServiceType, DEPENDENCY_GRAPH } from './di-identifi
 import { ConfigManager } from '../../common/config/config-manager.interface';
 import { ConfigManagerImpl } from '../../common/config/config-manager';
 import { HttpClient } from '../../common/http/http-client';
+import { RetryHandler } from '../../common/http/retry-handler';
+import { CircuitBreaker } from '../../common/http/circuit-breaker';
+import { RateLimiter } from '../../common/http/rate-limiter';
 import { TokenBucketLimiter } from './rate-limiters/token-bucket-limiter';
 import { TokenCalculator } from './token-calculators/token-calculator';
 import { FeatureRegistry } from './features/feature-registry';
@@ -10,6 +13,7 @@ import { OpenAIChatClient } from './clients/openai-chat-client';
 import { OpenAIResponseClient } from './clients/openai-response-client';
 import { AnthropicClient } from './clients/anthropic-client';
 import { GeminiClient } from './clients/gemini-client';
+import { GeminiOpenAIClient } from './clients/gemini-openai-client';
 import { MockClient } from './clients/mock-client';
 import { LLMClientFactory } from './clients/llm-client-factory';
 import { ConverterFactory } from './converters/converter-factory';
@@ -63,6 +67,24 @@ export class LLMDIContainer {
       .to(ConfigManagerImpl)
       .inSingletonScope();
 
+    // HTTP相关依赖
+    this.container.bind<RetryHandler>('RetryHandler')
+      .to(RetryHandler)
+      .inSingletonScope();
+    
+    this.container.bind<CircuitBreaker>('CircuitBreaker')
+      .to(CircuitBreaker)
+      .inSingletonScope();
+    
+    this.container.bind<RateLimiter>('RateLimiter')
+      .to(RateLimiter)
+      .inSingletonScope();
+    
+    // 为HttpClient提供ConfigManager
+    this.container.bind<ConfigManager>('ConfigManager')
+      .to(ConfigManagerImpl)
+      .inSingletonScope();
+
     // HTTP客户端
     this.container.bind<HttpClient>(LLM_DI_IDENTIFIERS.HttpClient)
       .to(HttpClient)
@@ -106,6 +128,11 @@ export class LLMDIContainer {
     // Gemini客户端
     this.container.bind<GeminiClient>(LLM_DI_IDENTIFIERS.GeminiClient)
       .to(GeminiClient)
+      .inSingletonScope();
+
+    // Gemini OpenAI兼容客户端
+    this.container.bind<GeminiOpenAIClient>(LLM_DI_IDENTIFIERS.GeminiOpenAIClient)
+      .to(GeminiOpenAIClient)
       .inSingletonScope();
 
     // Mock客户端

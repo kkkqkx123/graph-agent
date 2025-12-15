@@ -9,6 +9,9 @@ module.exports = {
   transform: {
     '^.+\\.ts$': 'ts-jest',
   },
+  transformIgnorePatterns: [
+    'node_modules/(?!(uuid)/)'
+  ],
   collectCoverageFrom: [
     'src/**/*.ts',
     '!src/**/*.d.ts',
@@ -37,7 +40,8 @@ module.exports = {
     '^@application/(.*)$': '<rootDir>/src/application/$1',
     '^@infrastructure/(.*)$': '<rootDir>/src/infrastructure/$1',
     '^@interfaces/(.*)$': '<rootDir>/src/interfaces/$1',
-    '^@shared/(.*)$': '<rootDir>/src/shared/$1'
+    '^@shared/(.*)$': '<rootDir>/src/shared/$1',
+    'uuid': '<rootDir>/src/tests/mocks/uuid.mock.js'
   },
   testTimeout: 30000,
   verbose: true

@@ -42,7 +42,8 @@ db_path = "storage/checkpoints.db"
 compression = false
 
 # Checkpoint触发条件
-checkpoint.trigger_conditions = [
+[checkpoint.trigger_conditions]
+events = [
   "tool_call",
   "state_change"
 ]
@@ -51,6 +52,18 @@ checkpoint.trigger_conditions = [
 [llm]
 default_timeout = 30
 default_max_retries = 3
+default_provider = "openai"
+
+# Gemini配置
+[llm.gemini]
+clientType = "native"  # 可选值: "native" 或 "openai-compatible"
+apiKey = "${GEMINI_API_KEY}"
+default_model = "gemini-2.5-flash"
+
+# Gemini OpenAI兼容配置
+[llm.gemini-openai]
+apiKey = "${GEMINI_API_KEY}"
+default_model = "gemini-2.5-flash"
 
 # 全局重试配置
 [llm.retry_config]
@@ -58,12 +71,11 @@ base_delay = 1.0
 max_delay = 60.0
 jitter = true
 exponential_base = 2.0
-
-# 需要重试的HTTP状态码
-llm.retry_config.retry_on_status_codes = [429, 500, 502, 503, 504]
+retry_on_status_codes = [429, 500, 502, 503, 504]
 
 # 需要重试的错误类型
-llm.retry_config.retry_on_errors = [
+[llm.retry_config.retry_errors]
+types = [
   "timeout",
   "rate_limit",
   "service_unavailable"

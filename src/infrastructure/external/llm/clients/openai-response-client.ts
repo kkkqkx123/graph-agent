@@ -7,7 +7,7 @@ import { BaseLLMClient } from './base-llm-client';
 import { OpenAIProvider } from '../converters/providers/openai-provider';
 import { ProviderConfig, ApiType, ProviderConfigBuilder } from '../parameter-mappers';
 import { OpenAIParameterMapper } from '../parameter-mappers/providers/openai-parameter-mapper';
-import { OpenAICompatibleEndpointStrategy } from '../endpoint-strategies/providers/openai-compatible-endpoint-strategy';
+import { OpenAIResponsesEndpointStrategy } from '../endpoint-strategies/providers/openai-responses-endpoint-strategy';
 import { BaseFeatureSupport } from '../parameter-mappers/interfaces/feature-support.interface';
 
 @injectable()
@@ -39,13 +39,18 @@ export class OpenAIResponseClient extends BaseLLMClient {
       .apiType(ApiType.OPENAI_COMPATIBLE)
       .baseURL('https://api.openai.com/v1')
       .apiKey(configManager.get('llm.openai.apiKey'))
-      .endpointStrategy(new OpenAICompatibleEndpointStrategy())
+      .endpointStrategy(new OpenAIResponsesEndpointStrategy())
       .parameterMapper(new OpenAIParameterMapper())
       .featureSupport(featureSupport)
       .defaultModel('gpt-5')
       .timeout(30000)
       .retryCount(3)
       .retryDelay(1000)
+      .extraConfig({
+        endpointPath: 'responses',  // 使用 Responses API 端点
+        enableBeta: true,
+        betaVersion: 'responses=v1'
+      })
       .build();
 
     super(

@@ -34,6 +34,16 @@ export class AnthropicClient extends BaseLLMClient {
     featureSupport.supportsFunctionCalling = true;
     featureSupport.supportsParallelToolCalling = true;
     
+    // 从配置中读取支持的模型列表
+    const supportedModels = configManager.get('llm.anthropic.models', [
+      'claude-3-opus-20240229',
+      'claude-3-sonnet-20240229',
+      'claude-3-haiku-20240307',
+      'claude-2.1',
+      'claude-2.0',
+      'claude-instant-1.2'
+    ]);
+
     // 创建 Anthropic 供应商配置
     const providerConfig: ProviderConfig = {
       name: 'Anthropic',
@@ -44,6 +54,7 @@ export class AnthropicClient extends BaseLLMClient {
       endpointStrategy: new AnthropicEndpointStrategy(),
       featureSupport: featureSupport,
       defaultModel: 'claude-3-sonnet-20240229',
+      supportedModels: supportedModels,
       extraConfig: {
         apiVersion: '2023-06-01'
       }
@@ -60,20 +71,8 @@ export class AnthropicClient extends BaseLLMClient {
 
 
   getSupportedModelsList(): string[] {
-    return [
-      // Claude 3.5系列
-      "claude-3-5-sonnet-20241022",
-      "claude-3-5-haiku-20241022",
-      
-      // Claude 4系列
-      "claude-4.1-opus",
-      "claude-4.0-sonnet",
-      
-      // 4.5系列
-      "claude-4.5-opus",
-      "claude-4.5-sonnet",
-      "claude-4.5-haiku"
-    ];
+    // 使用配置中的模型列表，如果没有配置则返回空数组
+    return this.providerConfig.supportedModels || [];
   }
 
   getModelConfig(): ModelConfig {

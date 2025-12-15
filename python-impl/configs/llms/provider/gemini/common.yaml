@@ -1,6 +1,6 @@
 # Gemini Provider通用配置模板
 provider_type: gemini
-base_url: "https://generativelanguage.googleapis.com/v1"
+base_url: "https://generativelanguage.googleapis.com"
 headers:
   User-Agent: "ModularAgent/1.0"
 

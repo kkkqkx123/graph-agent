@@ -37,6 +37,16 @@ export class OpenAIChatClient extends BaseLLMClient {
     featureSupport.supportsFunctionCalling = true;
     featureSupport.supportsParallelToolCalling = true;
     
+    // 从配置中读取支持的模型列表
+    const supportedModels = configManager.get('llm.openai.models', [
+      'gpt-4',
+      'gpt-4-turbo',
+      'gpt-4o',
+      'gpt-4o-mini',
+      'gpt-3.5-turbo',
+      'gpt-5'
+    ]);
+
     // 创建 OpenAI 供应商配置
     const providerConfig: ProviderConfig = {
       name: 'OpenAI',
@@ -46,7 +56,8 @@ export class OpenAIChatClient extends BaseLLMClient {
       parameterMapper: new OpenAIParameterMapper(),
       endpointStrategy: new OpenAICompatibleEndpointStrategy(),
       featureSupport: featureSupport,
-      defaultModel: 'gpt-3.5-turbo'
+      defaultModel: 'gpt-3.5-turbo',
+      supportedModels: supportedModels
     };
 
     super(
@@ -60,21 +71,8 @@ export class OpenAIChatClient extends BaseLLMClient {
 
 
   getSupportedModelsList(): string[] {
-    return [
-      // GPT-4系列
-      "gpt-4", "gpt-4-32k", "gpt-4-0613", "gpt-4-32k-0613",
-      "gpt-4-turbo", "gpt-4-turbo-2024-04-09", "gpt-4-turbo-preview",
-      "gpt-4o", "gpt-4o-2024-05-13", "gpt-4o-2024-08-06",
-      "gpt-4o-mini", "gpt-4o-mini-2024-07-18",
-      
-      // GPT-3.5系列
-      "gpt-3.5-turbo", "gpt-3.5-turbo-16k", "gpt-3.5-turbo-0613",
-      "gpt-3.5-turbo-16k-0613", "gpt-3.5-turbo-0301",
-      
-      // 其他模型
-      "text-davinci-003", "text-davinci-002", "text-curie-001",
-      "text-babbage-001", "text-ada-001"
-    ];
+    // 使用配置中的模型列表，如果没有配置则返回空数组
+    return this.providerConfig.supportedModels || [];
   }
 
   public getModelConfig(): ModelConfig {

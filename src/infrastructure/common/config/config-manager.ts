@@ -1,4 +1,4 @@
-import { injectable } from 'inversify';
+import { injectable, unmanaged } from 'inversify';
 import {
   ConfigManager,
   LLMConfig,
@@ -26,9 +26,15 @@ export class ConfigManagerImpl implements ConfigManager {
   private watchers: Map<string, Array<(newValue: any, oldValue: any) => void>> = new Map();
   private configPath: string;
 
-  constructor(configPath?: string) {
+  constructor(@unmanaged() configPath?: string) {
     this.configPath = configPath || './configs';
-    this.loadConfig();
+    // 不在构造函数中直接调用异步方法，而是初始化默认配置
+    this.config = this.getDefaultConfig();
+    this.loadEnvironmentVariables();
+    // 异步加载配置文件，但不阻塞构造函数
+    this.loadConfigFiles().catch(error => {
+      console.error('配置文件加载失败:', error);
+    });
   }
 
   /**
@@ -51,8 +57,8 @@ export class ConfigManagerImpl implements ConfigManager {
    */
   getModelConfig(provider: keyof Pick<LLMConfig, 'openai' | 'anthropic' | 'gemini' | 'mock'>, model: string): ModelConfig {
     const providerConfig = this.getNested(provider);
-    if ('models' in providerConfig) {
-      const modelConfig = providerConfig.models[model];
+    if ('modelConfigs' in providerConfig && providerConfig.modelConfigs) {
+      const modelConfig = providerConfig.modelConfigs[model];
       if (!modelConfig) {
         throw new Error(`模型配置未找到: ${provider}.${model}`);
       }
@@ -111,26 +117,53 @@ export class ConfigManagerImpl implements ConfigManager {
       openai: {
         apiKey: '',
         baseURL: 'https://api.openai.com/v1',
-        models: {},
+        models: [
+          'gpt-4',
+          'gpt-4-turbo',
+          'gpt-4o',
+          'gpt-4o-mini',
+          'gpt-3.5-turbo',
+          'gpt-5'
+        ],
         timeout: 30000,
         retryCount: 3
       },
       anthropic: {
         apiKey: '',
         baseURL: 'https://api.anthropic.com',
-        models: {},
+        models: [
+          'claude-3-opus-20240229',
+          'claude-3-sonnet-20240229',
+          'claude-3-haiku-20240307',
+          'claude-2.1',
+          'claude-2.0',
+          'claude-instant-1.2'
+        ],
         timeout: 30000,
         retryCount: 3
       },
       gemini: {
         apiKey: '',
         baseURL: 'https://generativelanguage.googleapis.com',
-        models: {},
+        models: [
+          'gemini-2.5-pro',
+          'gemini-2.5-flash',
+          'gemini-2.5-flash-lite',
+          'gemini-2.0-flash-exp',
+          'gemini-2.0-flash-thinking-exp',
+          'gemini-1.5-pro',
+          'gemini-1.5-flash',
+          'gemini-1.5-flash-8b'
+        ],
         timeout: 30000,
         retryCount: 3
       },
       mock: {
-        models: {},
+        models: [
+          'mock-model',
+          'mock-model-turbo',
+          'mock-model-pro'
+        ],
         timeout: 30000
       },
       rateLimit: {
@@ -257,7 +290,10 @@ export class ConfigManagerImpl implements ConfigManager {
       // 加载配置文件
       await this.loadConfigFiles();
       
-      console.log('配置加载完成');
+      // 在测试环境中不输出日志
+      if (process.env['NODE_ENV'] !== 'test') {
+        console.log('配置加载完成');
+      }
     } catch (error) {
       console.error('配置加载失败:', error);
       throw error;

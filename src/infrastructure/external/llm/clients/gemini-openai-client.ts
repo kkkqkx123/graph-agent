@@ -95,7 +95,7 @@ export class GeminiOpenAIClient extends BaseLLMClient {
 
     return ModelConfig.create({
       model,
-      provider: 'google',
+      provider: 'gemini',
       maxTokens: config.maxTokens || 8192,
       contextWindow: config.contextWindow || 1048576,
       temperature: config.temperature || 0.7,

@@ -4,7 +4,7 @@
 model_type: gemini
 model_name: gemini-pro
 provider: gemini
-base_url: "https://generativelanguage.googleapis.com/v1"
+base_url: "https://generativelanguage.googleapis.com"
 api_key: "${GEMINI_API_KEY}"
 token_counter: gemini_pro
 

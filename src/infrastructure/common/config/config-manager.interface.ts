@@ -31,7 +31,8 @@ export interface ModelConfig {
 export interface ProviderConfig {
   apiKey: string;
   baseURL: string;
-  models: Record<string, ModelConfig>;
+  models: string[]; // 改为字符串数组，存储支持的模型列表
+  modelConfigs?: Record<string, ModelConfig>; // 可选的详细模型配置
   timeout: number;
   retryCount: number;
 }
@@ -42,7 +43,8 @@ export interface LLMConfig {
   anthropic: ProviderConfig;
   gemini: ProviderConfig;
   mock: {
-    models: Record<string, ModelConfig>;
+    models: string[]; // 改为字符串数组
+    modelConfigs?: Record<string, ModelConfig>; // 可选的详细模型配置
     timeout: number;
   };
   rateLimit: {

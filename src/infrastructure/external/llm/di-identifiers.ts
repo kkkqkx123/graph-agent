@@ -18,6 +18,7 @@ export const LLM_DI_IDENTIFIERS = {
   OpenAIResponseClient: Symbol.for('OpenAIResponseClient'),
   AnthropicClient: Symbol.for('AnthropicClient'),
   GeminiClient: Symbol.for('GeminiClient'),
+  GeminiOpenAIClient: Symbol.for('GeminiOpenAIClient'),
   MockClient: Symbol.for('MockClient'),
   
   // 工厂类
@@ -57,6 +58,7 @@ export interface ServiceTypes {
   OpenAIResponseClient: any;
   AnthropicClient: any;
   GeminiClient: any;
+  GeminiOpenAIClient: any;
   MockClient: any;
   LLMClientFactory: any;
   ConverterFactory: any;
@@ -94,6 +96,7 @@ export const DEPENDENCY_GRAPH: Record<keyof LLMDIIdentifiers, (keyof LLMDIIdenti
   OpenAIResponseClient: ['HttpClient', 'ConfigManager', 'TokenBucketLimiter', 'TokenCalculator'],
   AnthropicClient: ['HttpClient', 'ConfigManager', 'TokenBucketLimiter', 'TokenCalculator'],
   GeminiClient: ['HttpClient', 'ConfigManager', 'TokenBucketLimiter', 'TokenCalculator'],
+  GeminiOpenAIClient: ['HttpClient', 'ConfigManager', 'TokenBucketLimiter', 'TokenCalculator'],
   MockClient: ['HttpClient', 'ConfigManager', 'TokenBucketLimiter', 'TokenCalculator'],
   LLMClientFactory: ['OpenAIChatClient', 'OpenAIResponseClient', 'AnthropicClient', 'GeminiClient', 'MockClient'],
   ConverterFactory: [],
