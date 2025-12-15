@@ -1,5 +1,4 @@
 import { ID } from '../value-objects/id';
-import { RepositoryError } from '../errors/repository-error';
 
 /**
  * 查询选项接口

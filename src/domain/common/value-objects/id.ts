@@ -272,7 +272,7 @@ export class ID {
    */
   toBase64(): string {
     const bytes = this.toBytes();
-    return btoa(String.fromCharCode(...bytes));
+    return btoa(String.fromCharCode.apply(null, Array.from(bytes)));
   }
 
   /**
