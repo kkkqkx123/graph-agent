@@ -4,7 +4,6 @@
  * 负责创建和管理检查点恢复服务的实例
  */
 
-import { IContainer } from '../../../../infrastructure/container/container';
 import { BaseApplicationServiceFactory } from '../../../common/base-service-factory';
 import { CheckpointRestoreService } from '../services/checkpoint-restore-service';
 import { ThreadCheckpointRepository } from '../../../../domain/threads/checkpoints/repositories/thread-checkpoint-repository';

@@ -4,13 +4,10 @@
  * 负责创建和管理会话相关服务的实例
  */
 
-import { IContainer } from '../../../infrastructure/container/container';
 import { BaseApplicationServiceFactory } from '../../common/base-service-factory';
 import { SessionLifecycleService } from '../services/session-lifecycle-service';
 import { SessionRepository } from '../../../domain/session/repositories/session-repository';
 import { SessionDomainService } from '../../../domain/session/services/session-domain-service';
-import { ThreadRepository } from '../../../domain/thread/repositories/thread-repository';
-import { ThreadDomainService } from '../../../domain/thread/services/thread-domain-service';
 
 /**
  * 会话服务工厂

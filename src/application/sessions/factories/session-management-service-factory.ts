@@ -4,7 +4,6 @@
  * 负责创建和管理会话管理服务的实例
  */
 
-import { IContainer } from '../../../infrastructure/container/container';
 import { BaseApplicationServiceFactory } from '../../common/base-service-factory';
 import { SessionManagementService } from '../services/session-management-service';
 import { SessionRepository } from '../../../domain/session/repositories/session-repository';
