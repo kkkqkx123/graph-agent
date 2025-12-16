@@ -570,10 +570,19 @@ export class MemoryExecutionContextManager implements IExecutionContextManager {
     const contexts = Array.from(this.contexts.values());
 
     // 初始化统计对象
-    const executionsByStatus: Record<ExecutionStatus, number> = {} as any;
-    const executionsByMode: Record<ExecutionMode, number> = {} as any;
-    const executionsByPriority: Record<ExecutionPriority, number> = {} as any;
-    const executionsByGraph: Record<string, number> = {} as any;
+    const executionsByStatus: Record<ExecutionStatus, number> = Object.fromEntries(
+      Object.values(ExecutionStatus).map(status => [status, 0])
+    ) as Record<ExecutionStatus, number>;
+    
+    const executionsByMode: Record<ExecutionMode, number> = Object.fromEntries(
+      Object.values(ExecutionMode).map(mode => [mode, 0])
+    ) as Record<ExecutionMode, number>;
+    
+    const executionsByPriority: Record<ExecutionPriority, number> = Object.fromEntries(
+      Object.values(ExecutionPriority).map(priority => [priority, 0])
+    ) as Record<ExecutionPriority, number>;
+    
+    const executionsByGraph: Record<string, number> = {};
 
     // 初始化计数器
     for (const status of Object.values(ExecutionStatus)) {

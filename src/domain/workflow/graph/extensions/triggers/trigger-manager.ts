@@ -182,13 +182,13 @@ export class DefaultTriggerFactory implements ITriggerFactory {
   createTrigger(config: TriggerConfig): BaseTrigger {
     switch (config.type) {
       case TriggerType.TIME:
-        return new TimeTrigger(config as any);
+        return new TimeTrigger(config as TriggerConfig & { config: any });
       case TriggerType.EVENT:
-        return new EventTrigger(config as any);
+        return new EventTrigger(config as TriggerConfig & { config: any });
       case TriggerType.CONDITION:
-        return new ConditionTrigger(config as any);
+        return new ConditionTrigger(config as TriggerConfig & { config: any });
       case TriggerType.MANUAL:
-        return new ManualTrigger(config as any);
+        return new ManualTrigger(config as TriggerConfig & { config: any });
       default:
         throw new Error(`不支持的触发器类型: ${config.type}`);
     }
@@ -547,19 +547,19 @@ export class DefaultTriggerManager implements ITriggerManager {
     const totalTriggers = triggers.length;
     
     // 按类型分组
-    const triggersByType: Record<TriggerType, number> = {} as any;
-    for (const type of Object.values(TriggerType)) {
-      triggersByType[type] = 0;
-    }
+    const triggersByType: Record<TriggerType, number> = Object.fromEntries(
+      Object.values(TriggerType).map(type => [type, 0])
+    ) as Record<TriggerType, number>;
+    
     for (const trigger of triggers) {
       triggersByType[trigger.getType()]++;
     }
     
     // 按状态分组
-    const triggersByState: Record<TriggerState, number> = {} as any;
-    for (const state of Object.values(TriggerState)) {
-      triggersByState[state] = 0;
-    }
+    const triggersByState: Record<TriggerState, number> = Object.fromEntries(
+      Object.values(TriggerState).map(state => [state, 0])
+    ) as Record<TriggerState, number>;
+    
     for (const trigger of triggers) {
       triggersByState[trigger.getState()]++;
     }

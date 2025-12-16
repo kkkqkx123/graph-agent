@@ -1,22 +1,22 @@
 import { injectable, inject } from 'inversify';
-import { Graph } from '../../../domain/workflow/graph/entities/graph';
-import { Node } from '../../../domain/workflow/graph/entities/nodes';
-import { Edge } from '../../../domain/workflow/graph/entities/edges';
-import { GraphRepository, NodeRepository, EdgeRepository } from '../../../domain/workflow/graph/repositories/graph-repository';
-import { GraphDomainService } from '../../../domain/workflow/graph/services/graph-domain-service';
-import { IGraphExecutionService } from '../../../domain/workflow/graph/services/graph-execution-service';
-import { ID } from '../../../domain/common/value-objects/id';
-import { NodeType } from '../../../domain/workflow/graph/value-objects/node-type';
-import { EdgeType } from '../../../domain/workflow/graph/value-objects/edge-type';
-import { DomainError } from '../../../domain/common/errors/domain-error';
+import { Graph } from '@domain/workflow/graph/entities/graph';
+import { Node } from '@domain/workflow/graph/entities/nodes/base/node';
+import { Edge } from '@domain/workflow/graph/entities/edges/base/edge';
+import { GraphRepository, NodeRepository, EdgeRepository } from '@domain/workflow/graph/repositories/graph-repository';
+import { GraphDomainService } from '@domain/workflow/graph/services/graph-domain-service';
+import { IGraphExecutionService } from '@domain/workflow/graph/services/graph-execution-service';
+import { ID } from '@domain/common/value-objects/id';
+import { NodeType } from '@domain/workflow/graph/value-objects/node-type';
+import { EdgeType } from '@domain/workflow/graph/value-objects/edge-type';
+import { DomainError } from '@domain/common/errors/domain-error';
 import { ILogger } from '@shared/types/logger';
 
 // DTOs
 import {
   GraphDto,
+  GraphSummaryDto,
   NodeDto,
-  EdgeDto,
-  GraphSummaryDto
+  EdgeDto
 } from '../dtos/graph.dto';
 
 // Commands - Note: These may not be fully implemented yet
@@ -489,6 +489,7 @@ export class GraphService {
       }
 
       // 构建执行状态DTO
+      const metadata = executionResult.metadata as any;
       const executionStatus: any = {
         graphId: command.graphId,
         executionId,
@@ -496,7 +497,7 @@ export class GraphService {
         startTime: executionResult.startTime.toISOString(),
         endTime: executionResult.endTime?.toISOString(),
         duration: executionResult.duration,
-        currentNodeId: executionResult.metadata?.currentNodeId?.toString(),
+        currentNodeId: metadata?.currentNodeId?.toString?.() || undefined,
         executedNodes: executionResult.statistics.executedNodes,
         totalNodes: executionResult.statistics.totalNodes,
         executedEdges: executionResult.statistics.executedEdges,
@@ -593,6 +594,7 @@ export class GraphService {
       for (const path of executionPaths) {
         for (let i = 0; i < path.length; i++) {
           const nodeId = path[i];
+          if (!nodeId) continue;
           const node = graph.getNode(ID.fromString(nodeId));
           
           if (node && !steps.find(step => step.nodeId === nodeId)) {
@@ -675,11 +677,13 @@ export class GraphService {
   }> {
     try {
       // 构建查询选项
+      const pagination = query.pagination || { page: 1, size: 20 };
       const options: any = {
         filters: query.filters || {},
         sortBy: query.sortBy || 'createdAt',
         sortOrder: query.sortOrder || 'desc',
-        pagination: query.pagination || { page: 1, size: 20 }
+        offset: (pagination.page - 1) * pagination.size,
+        limit: pagination.size
       };
 
       const result = await this.graphRepository.findWithPagination(options);
@@ -692,7 +696,7 @@ export class GraphService {
         graphs,
         total: result.total,
         page: result.page,
-        size: result.size
+        size: result.pageSize
       };
     } catch (error) {
       this.logger.error('列出图失败', error as Error);
@@ -764,11 +768,13 @@ export class GraphService {
       let graphs: Graph[] = [];
 
       if (query.searchIn === 'name' || query.searchIn === 'all') {
+        const pagination = query.pagination;
         const nameResults = await this.graphRepository.searchByName(query.keyword, {
           filters: query.filters,
           sortBy: query.sortBy || 'relevance',
           sortOrder: query.sortOrder || 'desc',
-          pagination: query.pagination
+          offset: pagination ? (pagination.page - 1) * pagination.size : undefined,
+          limit: pagination?.size
         });
         graphs = graphs.concat(nameResults);
       }

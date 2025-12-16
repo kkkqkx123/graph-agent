@@ -279,13 +279,15 @@ export class ExecutionPlanner {
       }
     } else if (executionMode === 'parallel') {
       // 并行执行模式
-      for (const [level, nodeIds] of Object.entries(
-        this.groupNodesByLevel(graphAnalysis.nodeLevels)
-      )) {
-        for (const nodeId of nodeIds) {
-          const node = graph.getNode(ID.fromString(nodeId));
-          if (node) {
-            steps.push(this.createExecutionStep(node, stepOrder++, visited));
+      const levelGroups = this.groupNodesByLevel(graphAnalysis.nodeLevels);
+      for (const level in levelGroups) {
+        const nodeIds = levelGroups[parseInt(level)];
+        if (nodeIds) {
+          for (const nodeId of nodeIds) {
+            const node = graph.getNode(ID.fromString(nodeId));
+            if (node) {
+              steps.push(this.createExecutionStep(node, stepOrder++, visited));
+            }
           }
         }
       }

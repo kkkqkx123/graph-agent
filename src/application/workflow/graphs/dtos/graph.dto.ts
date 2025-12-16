@@ -4,6 +4,8 @@
 import { NodeDto } from './node.dto';
 import { EdgeDto } from './edge.dto';
 
+export { NodeDto, EdgeDto };
+
 export interface GraphDto {
   /** 图ID */
   id: string;

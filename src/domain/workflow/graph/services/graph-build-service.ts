@@ -3,6 +3,8 @@ import { Graph } from '@domain/workflow/graph/entities/graph';
 import { Node } from '@domain/workflow/graph/entities/nodes/base/node';
 import { Edge } from '@domain/workflow/graph/entities/edges/base/edge';
 import { GraphRepository, NodeRepository, EdgeRepository } from '@domain/workflow/graph/repositories/graph-repository';
+import { NodeType } from '@domain/workflow/graph/value-objects/node-type';
+import { EdgeType } from '@domain/workflow/graph/value-objects/edge-type';
 import { DomainError } from '@domain/common/errors/domain-error';
 import { ValidationResult, ValidationUtils } from '@domain/workflow/graph/validation';
 
@@ -424,9 +426,10 @@ export class DefaultGraphBuildService implements IGraphBuildService {
 
     // 创建节点
     const nodeId = request.nodeId || ID.generate();
+    const nodeType = NodeType.fromString(request.nodeType);
     const node = Node.create(
       graphId,
-      { type: request.nodeType } as any, // 简化处理
+      nodeType,
       request.nodeName,
       request.nodeDescription,
       request.position,
@@ -565,9 +568,10 @@ export class DefaultGraphBuildService implements IGraphBuildService {
 
     // 创建边
     const edgeId = request.edgeId || ID.generate();
+    const edgeType = EdgeType.fromString(request.edgeType);
     const edge = Edge.create(
       graphId,
-      { type: request.edgeType } as any, // 简化处理
+      edgeType,
       request.fromNodeId,
       request.toNodeId,
       request.condition,

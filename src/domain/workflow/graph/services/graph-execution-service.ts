@@ -7,7 +7,7 @@ import {
   ExecutionConfig,
   IExecutionContextManager
 } from '../execution';
-import { IGraphCompiler, CompilationOptions, CompilationResult } from '../validation';
+import { IGraphCompiler, CompilationOptions, CompilationResult, CompilationTarget } from '../validation';
 import { ITriggerManager, TriggerContext } from '../extensions';
 import { IStateManager } from '../state';
 
@@ -310,7 +310,7 @@ export class DefaultGraphExecutionService implements IGraphExecutionService {
     try {
       // 编译图
       const compilationOptions: CompilationOptions = {
-        target: 'memory' as any,
+        target: CompilationTarget.MEMORY,
         optimize: true,
         debug: request.config.debug || false,
         validation: {
@@ -632,10 +632,16 @@ export class DefaultGraphExecutionService implements IGraphExecutionService {
       averageExecutionTime: 0,
       maxExecutionTime: 0,
       minExecutionTime: 0,
-      executionsByStatus: {} as any,
-      executionsByMode: {} as any,
-      executionsByPriority: {} as any,
-      executionsByGraph: {} as any,
+      executionsByStatus: Object.fromEntries(
+        Object.values(ExecutionStatus).map(status => [status, 0])
+      ) as Record<ExecutionStatus, number>,
+      executionsByMode: Object.fromEntries(
+        Object.values(ExecutionMode).map(mode => [mode, 0])
+      ) as Record<ExecutionMode, number>,
+      executionsByPriority: Object.fromEntries(
+        Object.values(ExecutionPriority).map(priority => [priority, 0])
+      ) as Record<ExecutionPriority, number>,
+      executionsByGraph: {},
       successRate: 0,
       failureRate: 0
     };

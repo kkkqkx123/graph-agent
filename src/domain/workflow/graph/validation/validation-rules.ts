@@ -402,19 +402,17 @@ export class ValidationResultBuilder {
   }
 
   private calculateStatistics(): ValidationStatistics {
-    const errorsBySeverity: Record<ValidationSeverity, number> = {} as any;
-    const errorsByType: Record<ValidationErrorType, number> = {} as any;
+    const errorsBySeverity: Record<ValidationSeverity, number> = Object.fromEntries(
+      Object.values(ValidationSeverity).map(severity => [severity, 0])
+    ) as Record<ValidationSeverity, number>;
+    
+    const errorsByType: Record<ValidationErrorType, number> = Object.fromEntries(
+      Object.values(ValidationErrorType).map(type => [type, 0])
+    ) as Record<ValidationErrorType, number>;
+    
     const errorsByGraph: Record<string, number> = {};
     const errorsByNode: Record<string, number> = {};
     const errorsByEdge: Record<string, number> = {};
-
-    // 初始化计数器
-    for (const severity of Object.values(ValidationSeverity)) {
-      errorsBySeverity[severity] = 0;
-    }
-    for (const type of Object.values(ValidationErrorType)) {
-      errorsByType[type] = 0;
-    }
 
     // 统计错误
     for (const error of this.errors) {
