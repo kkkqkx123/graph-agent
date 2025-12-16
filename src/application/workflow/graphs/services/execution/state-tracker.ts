@@ -2,7 +2,7 @@ import { injectable, inject } from 'inversify';
 import { Graph } from '../../../../../domain/workflow/graph/entities/graph';
 import { Node } from '../../../../../domain/workflow/graph/entities/nodes';
 import { Edge } from '../../../../../domain/workflow/graph/entities/edges';
-import { GraphRepository, NodeRepository, EdgeRepository } from '../../../../../domain/workflow/graph/repositories/graph-repository';
+import { GraphRepository, NodeRepository, EdgeRepository } from '../../../../../domain/workflow/repositories/graph-repository';
 import { ID } from '../../../../../domain/common/value-objects/id';
 import { DomainError } from '../../../../../domain/common/errors/domain-error';
 import { ILogger } from '@shared/types/logger';
@@ -82,7 +82,7 @@ export class StateTracker {
     @inject('NodeRepository') private readonly nodeRepository: NodeRepository,
     @inject('EdgeRepository') private readonly edgeRepository: EdgeRepository,
     @inject('Logger') private readonly logger: ILogger
-  ) {}
+  ) { }
 
   /**
    * 开始跟踪图执行
@@ -227,7 +227,7 @@ export class StateTracker {
     try {
       const nodeKey = `${executionId}:${nodeId}`;
       const nodeState = this.nodeStates.get(nodeKey);
-      
+
       if (!nodeState) {
         throw new DomainError(`节点执行状态不存在: ${nodeKey}`);
       }
@@ -236,11 +236,11 @@ export class StateTracker {
       nodeState.status = status;
       nodeState.output = output;
       nodeState.error = error;
-      
+
       if (logs) {
         nodeState.logs.push(...logs);
       }
-      
+
       if (metadata) {
         nodeState.metadata = { ...nodeState.metadata, ...metadata };
       }
@@ -257,10 +257,10 @@ export class StateTracker {
       const graphState = this.graphStates.get(executionId);
       if (graphState) {
         graphState.nodeStatuses[nodeId] = nodeState;
-        
+
         // 更新统计信息
         this.updateGraphStatistics(graphState);
-        
+
         // 如果节点完成，更新执行路径
         if (status === 'completed') {
           graphState.executionPath.push(nodeId);
@@ -297,7 +297,7 @@ export class StateTracker {
   ): Promise<boolean> {
     try {
       const graphState = this.graphStates.get(executionId);
-      
+
       if (!graphState) {
         throw new DomainError(`图执行状态不存在: ${executionId}`);
       }
@@ -340,7 +340,7 @@ export class StateTracker {
   ): Promise<any | null> {
     const nodeKey = `${executionId}:${nodeId}`;
     const nodeState = this.nodeStates.get(nodeKey);
-    
+
     if (!nodeState) {
       return null;
     }
@@ -372,7 +372,7 @@ export class StateTracker {
    */
   async getGraphExecutionStatus(executionId: string): Promise<any | null> {
     const graphState = this.graphStates.get(executionId);
-    
+
     if (!graphState) {
       return null;
     }
@@ -499,14 +499,14 @@ export class StateTracker {
 
     const durations = completedNodes.map(state => state.duration!);
     const totalDuration = durations.reduce((sum, duration) => sum + duration, 0);
-    
+
     graphState.statistics.averageNodeExecutionTime = totalDuration / completedNodes.length;
     graphState.statistics.maxNodeExecutionTime = Math.max(...durations);
     graphState.statistics.minNodeExecutionTime = Math.min(...durations);
-    
+
     const successCount = Object.values(graphState.nodeStatuses)
       .filter(state => state.status === 'completed').length;
-    
+
     const nodeStatusesLength = Object.keys(graphState.nodeStatuses).length;
     graphState.statistics.successRate = nodeStatusesLength > 0
       ? successCount / nodeStatusesLength
@@ -520,12 +520,12 @@ export class StateTracker {
    */
   private getNodeTypeStatistics(graph: Graph): Record<string, number> {
     const typeStats: Record<string, number> = {};
-    
+
     for (const node of graph.nodes.values()) {
       const nodeType = node.type.toString();
       typeStats[nodeType] = (typeStats[nodeType] || 0) + 1;
     }
-    
+
     return typeStats;
   }
 
@@ -536,13 +536,13 @@ export class StateTracker {
    */
   private getNodeStatusStatistics(graphId: string): Record<string, number> {
     const statusStats: Record<string, number> = {};
-    
+
     for (const nodeState of this.nodeStates.values()) {
       if (nodeState.graphId === graphId) {
         statusStats[nodeState.status] = (statusStats[nodeState.status] || 0) + 1;
       }
     }
-    
+
     return statusStats;
   }
 
@@ -553,12 +553,12 @@ export class StateTracker {
    */
   private getEdgeTypeStatistics(graph: Graph): Record<string, number> {
     const typeStats: Record<string, number> = {};
-    
+
     for (const edge of graph.edges.values()) {
       const edgeType = edge.type.toString();
       typeStats[edgeType] = (typeStats[edgeType] || 0) + 1;
     }
-    
+
     return typeStats;
   }
 
@@ -572,7 +572,7 @@ export class StateTracker {
       'with_condition': 0,
       'without_condition': 0
     };
-    
+
     for (const edge of graph.edges.values()) {
       if (edge.condition) {
         conditionStats['with_condition'] = (conditionStats['with_condition'] || 0) + 1;
@@ -580,7 +580,7 @@ export class StateTracker {
         conditionStats['without_condition'] = (conditionStats['without_condition'] || 0) + 1;
       }
     }
-    
+
     return conditionStats;
   }
 
@@ -652,11 +652,11 @@ export class StateTracker {
   private calculateGraphDensity(graph: Graph): number {
     const nodeCount = graph.nodes.size;
     const edgeCount = graph.edges.size;
-    
+
     if (nodeCount < 2) {
       return 0;
     }
-    
+
     const maxPossibleEdges = nodeCount * (nodeCount - 1);
     return edgeCount / maxPossibleEdges;
   }
@@ -668,18 +668,18 @@ export class StateTracker {
   async cleanupExpiredStates(maxAge: number = 24 * 60 * 60 * 1000): Promise<void> {
     const now = new Date();
     const expiredExecutionIds: string[] = [];
-    
+
     // 找出过期的图执行状态
     for (const [executionId, graphState] of this.graphStates.entries()) {
       if (graphState.startTime && (now.getTime() - graphState.startTime.getTime()) > maxAge) {
         expiredExecutionIds.push(executionId);
       }
     }
-    
+
     // 清理过期状态
     for (const executionId of expiredExecutionIds) {
       this.graphStates.delete(executionId);
-      
+
       // 清理相关的节点状态
       const nodeKeysToDelete: string[] = [];
       for (const nodeKey of this.nodeStates.keys()) {
@@ -687,12 +687,12 @@ export class StateTracker {
           nodeKeysToDelete.push(nodeKey);
         }
       }
-      
+
       for (const nodeKey of nodeKeysToDelete) {
         this.nodeStates.delete(nodeKey);
       }
     }
-    
+
     if (expiredExecutionIds.length > 0) {
       this.logger.info('清理过期执行状态', {
         expiredCount: expiredExecutionIds.length,
@@ -710,7 +710,7 @@ export class StateTracker {
   async addNodeLog(executionId: string, nodeId: string, log: string): Promise<void> {
     const nodeKey = `${executionId}:${nodeId}`;
     const nodeState = this.nodeStates.get(nodeKey);
-    
+
     if (nodeState) {
       nodeState.logs.push(log);
     }
@@ -733,7 +733,7 @@ export class StateTracker {
   ): Promise<void> {
     const nodeKey = `${executionId}:${nodeId}`;
     const nodeState = this.nodeStates.get(nodeKey);
-    
+
     if (nodeState) {
       nodeState.resourceUsage = {
         ...nodeState.resourceUsage,

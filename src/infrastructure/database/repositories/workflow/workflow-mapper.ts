@@ -112,7 +112,7 @@ export class WorkflowMapper {
     if (!configuration) {
       return WorkflowConfig.default();
     }
-    
+
     return WorkflowConfig.create(configuration);
   }
 

@@ -6,7 +6,7 @@ import {
   INodeFunction,
   IRoutingFunction,
   ITriggerFunction
-} from '../../../../domain/workflow/graph/interfaces/workflow-functions';
+} from '../../../../domain/workflow/interfaces/workflow-functions';
 
 /**
  * 函数注册表实现
@@ -20,11 +20,11 @@ export class FunctionRegistry {
     if (this.functions.has(func.id)) {
       throw new Error(`函数ID ${func.id} 已存在`);
     }
-    
+
     if (this.functionsByName.has(func.name)) {
       throw new Error(`函数名称 ${func.name} 已存在`);
     }
-    
+
     this.functions.set(func.id, func);
     this.functionsByName.set(func.name, func);
   }
@@ -54,7 +54,7 @@ export class FunctionRegistry {
     if (!func) {
       return false;
     }
-    
+
     this.functions.delete(id);
     this.functionsByName.delete(func.name);
     return true;

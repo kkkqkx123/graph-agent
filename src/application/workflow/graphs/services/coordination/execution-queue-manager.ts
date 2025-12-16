@@ -3,7 +3,7 @@ import { Graph } from '../../../../../domain/workflow/graph/entities/graph';
 import { Node } from '../../../../../domain/workflow/graph/entities/nodes';
 import { Edge } from '../../../../../domain/workflow/graph/entities/edges';
 import { ID } from '../../../../../domain/common/value-objects/id';
-import { IEdgeEvaluator } from '../../../../../domain/workflow/graph/interfaces/edge-evaluator.interface';
+import { IEdgeEvaluator } from '../../../../../domain/workflow/interfaces/edge-evaluator.interface';
 import { DomainError } from '../../../../../domain/common/errors/domain-error';
 import { ILogger } from '@shared/types/logger';
 
@@ -43,7 +43,7 @@ export class ExecutionQueueManager {
   constructor(
     @inject('EdgeEvaluatorFactory') private readonly edgeEvaluatorFactory: (edgeType: string) => IEdgeEvaluator,
     @inject('Logger') private readonly logger: ILogger
-  ) {}
+  ) { }
 
   /**
    * 初始化队列管理器
@@ -63,7 +63,7 @@ export class ExecutionQueueManager {
 
     // 这里应该从repository获取图，简化实现
     // this.graph = await this.graphRepository.findByIdOrFail(graphId);
-    
+
     // 重置状态
     this.queue.clear();
     this.completedNodes.clear();
@@ -71,13 +71,13 @@ export class ExecutionQueueManager {
     this.runningNodes.clear();
     this.pausedNodes.clear();
     this.cancelledNodes.clear();
-    
+
     this.startNodeId = startNodeId;
     this.initialInputData = inputData;
-    
+
     // 初始化队列
     await this.initializeQueue();
-    
+
     this.logger.debug('执行队列管理器初始化完成', {
       graphId: graphId.toString(),
       queueSize: this.queue.size
@@ -100,7 +100,7 @@ export class ExecutionQueueManager {
 
     // 添加起始节点到队列
     this.addToQueue(startNode, this.initialInputData, [], 0);
-    
+
     // 预处理所有节点，计算前置条件
     await this.preprocessNodes();
   }
@@ -121,7 +121,7 @@ export class ExecutionQueueManager {
 
       const predecessors = this.getPredecessorIds(node);
       const priority = this.calculateNodePriority(node);
-      
+
       this.addToQueue(node, null, predecessors, priority);
     }
   }
@@ -181,10 +181,10 @@ export class ExecutionQueueManager {
       'data': 2,
       'wait': 1
     };
-    
+
     const basePriority = typePriorities[node.type.toString()] || 0;
     const customPriority = (node.properties['priority'] as number) || 0;
-    
+
     return basePriority + customPriority;
   }
 
@@ -199,7 +199,7 @@ export class ExecutionQueueManager {
         return true;
       }
     }
-    
+
     return false;
   }
 
@@ -209,7 +209,7 @@ export class ExecutionQueueManager {
    */
   async getExecutableNodes(): Promise<Node[]> {
     const executableNodes: Node[] = [];
-    
+
     for (const queueItem of this.queue.values()) {
       if (queueItem.status === 'pending') {
         // 检查前置条件是否满足
@@ -219,14 +219,14 @@ export class ExecutionQueueManager {
         }
       }
     }
-    
+
     // 按优先级排序
     executableNodes.sort((a, b) => {
       const queueItemA = this.queue.get(a.nodeId.toString())!;
       const queueItemB = this.queue.get(b.nodeId.toString())!;
       return queueItemB.priority - queueItemA.priority;
     });
-    
+
     return executableNodes;
   }
 
@@ -247,18 +247,18 @@ export class ExecutionQueueManager {
   async markNodeCompleted(nodeId: ID, output: any): Promise<void> {
     const nodeIdStr = nodeId.toString();
     const queueItem = this.queue.get(nodeIdStr);
-    
+
     if (!queueItem) {
       throw new DomainError(`节点不在队列中: ${nodeIdStr}`);
     }
-    
+
     queueItem.status = 'completed';
     queueItem.completedAt = new Date();
     queueItem.inputData = output; // 保存输出数据供后续节点使用
-    
+
     this.completedNodes.add(nodeIdStr);
     this.runningNodes.delete(nodeIdStr);
-    
+
     this.logger.debug('节点标记为已完成', {
       nodeId: nodeIdStr,
       duration: queueItem.completedAt.getTime() - queueItem.startedAt!.getTime()
@@ -272,16 +272,16 @@ export class ExecutionQueueManager {
   async markNodeRunning(nodeId: ID): Promise<void> {
     const nodeIdStr = nodeId.toString();
     const queueItem = this.queue.get(nodeIdStr);
-    
+
     if (!queueItem) {
       throw new DomainError(`节点不在队列中: ${nodeIdStr}`);
     }
-    
+
     queueItem.status = 'running';
     queueItem.startedAt = new Date();
-    
+
     this.runningNodes.add(nodeIdStr);
-    
+
     this.logger.debug('节点标记为运行中', { nodeId: nodeIdStr });
   }
 
@@ -293,13 +293,13 @@ export class ExecutionQueueManager {
   async markNodeFailed(nodeId: ID, error: Error): Promise<void> {
     const nodeIdStr = nodeId.toString();
     const queueItem = this.queue.get(nodeIdStr);
-    
+
     if (!queueItem) {
       throw new DomainError(`节点不在队列中: ${nodeIdStr}`);
     }
-    
+
     queueItem.retryCount++;
-    
+
     if (queueItem.retryCount < queueItem.maxRetries) {
       // 重试
       queueItem.status = 'pending';
@@ -313,7 +313,7 @@ export class ExecutionQueueManager {
       queueItem.status = 'failed';
       this.failedNodes.add(nodeIdStr);
       this.runningNodes.delete(nodeIdStr);
-      
+
       this.logger.error('节点执行失败', error, {
         nodeId: nodeIdStr,
         retryCount: queueItem.retryCount
@@ -328,16 +328,16 @@ export class ExecutionQueueManager {
   async pauseNode(nodeId: ID): Promise<void> {
     const nodeIdStr = nodeId.toString();
     const queueItem = this.queue.get(nodeIdStr);
-    
+
     if (!queueItem) {
       throw new DomainError(`节点不在队列中: ${nodeIdStr}`);
     }
-    
+
     if (queueItem.status === 'running') {
       queueItem.status = 'paused';
       this.runningNodes.delete(nodeIdStr);
       this.pausedNodes.add(nodeIdStr);
-      
+
       this.logger.debug('节点已暂停', { nodeId: nodeIdStr });
     }
   }
@@ -349,15 +349,15 @@ export class ExecutionQueueManager {
   async resumeNode(nodeId: ID): Promise<void> {
     const nodeIdStr = nodeId.toString();
     const queueItem = this.queue.get(nodeIdStr);
-    
+
     if (!queueItem) {
       throw new DomainError(`节点不在队列中: ${nodeIdStr}`);
     }
-    
+
     if (queueItem.status === 'paused') {
       queueItem.status = 'ready';
       this.pausedNodes.delete(nodeIdStr);
-      
+
       this.logger.debug('节点已恢复', { nodeId: nodeIdStr });
     }
   }
@@ -369,16 +369,16 @@ export class ExecutionQueueManager {
   async cancelNode(nodeId: ID): Promise<void> {
     const nodeIdStr = nodeId.toString();
     const queueItem = this.queue.get(nodeIdStr);
-    
+
     if (!queueItem) {
       throw new DomainError(`节点不在队列中: ${nodeIdStr}`);
     }
-    
+
     queueItem.status = 'cancelled';
     this.cancelledNodes.add(nodeIdStr);
     this.runningNodes.delete(nodeIdStr);
     this.pausedNodes.delete(nodeIdStr);
-    
+
     this.logger.debug('节点已取消', { nodeId: nodeIdStr });
   }
 
@@ -391,10 +391,10 @@ export class ExecutionQueueManager {
     if (this.runningNodes.size === 0) {
       return false;
     }
-    
+
     // 检查是否有pending状态的节点
     const hasPendingNodes = await this.hasPendingNodes();
-    
+
     // 如果有运行中的节点但没有待执行的节点，可能存在死锁
     return !hasPendingNodes;
   }
@@ -420,7 +420,7 @@ export class ExecutionQueueManager {
     let failed = 0;
     let paused = 0;
     let cancelled = 0;
-    
+
     for (const queueItem of this.queue.values()) {
       switch (queueItem.status) {
         case 'pending':
@@ -446,7 +446,7 @@ export class ExecutionQueueManager {
           break;
       }
     }
-    
+
     return {
       total: this.queue.size,
       pending,
@@ -467,11 +467,11 @@ export class ExecutionQueueManager {
   getNodeInputData(nodeId: ID): any {
     const nodeIdStr = nodeId.toString();
     const queueItem = this.queue.get(nodeIdStr);
-    
+
     if (!queueItem) {
       throw new DomainError(`节点不在队列中: ${nodeIdStr}`);
     }
-    
+
     return queueItem.inputData;
   }
 
@@ -483,11 +483,11 @@ export class ExecutionQueueManager {
   setNodeInputData(nodeId: ID, inputData: any): void {
     const nodeIdStr = nodeId.toString();
     const queueItem = this.queue.get(nodeIdStr);
-    
+
     if (!queueItem) {
       throw new DomainError(`节点不在队列中: ${nodeIdStr}`);
     }
-    
+
     queueItem.inputData = inputData;
   }
 }

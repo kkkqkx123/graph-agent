@@ -2,8 +2,8 @@ import { injectable, inject } from 'inversify';
 import { Workflow } from '../../../domain/workflow/entities/workflow';
 import { Graph } from '../../../domain/workflow/graph/entities/graph';
 import { WorkflowRepository } from '../../../domain/workflow/repositories/workflow-repository';
-import { GraphRepository } from '../../../domain/workflow/graph/repositories/graph-repository';
-import { GraphDomainService } from '../../../domain/workflow/graph/services/graph-domain-service';
+import { GraphRepository } from '../../../domain/workflow/repositories/graph-repository';
+import { GraphDomainService } from '../../../domain/workflow/services/graph-domain-service';
 import { ID } from '../../../domain/common/value-objects/id';
 import { DomainError } from '../../../domain/common/errors/domain-error';
 import { ILogger } from '@shared/types/logger';
@@ -50,7 +50,7 @@ export class WorkflowValidator {
     @inject('GraphRepository') private readonly graphRepository: GraphRepository,
     @inject('GraphDomainService') private readonly graphDomainService: GraphDomainService,
     @inject('Logger') private readonly logger: ILogger
-  ) {}
+  ) { }
 
   /**
    * 验证工作流
@@ -573,7 +573,7 @@ export class WorkflowValidator {
     target.errors.push(...source.errors);
     target.warnings.push(...source.warnings);
     target.suggestions.push(...source.suggestions);
-    
+
     if (!source.isValid) {
       target.isValid = false;
     }
@@ -587,7 +587,7 @@ export class WorkflowValidator {
   private calculateGraphComplexity(graph: Graph): number {
     const nodeCount = graph.getNodeCount();
     const edgeCount = graph.getEdgeCount();
-    
+
     // 简单的复杂度计算：节点数 + 边数 * 2
     return nodeCount + edgeCount * 2;
   }
@@ -599,16 +599,16 @@ export class WorkflowValidator {
    */
   private findIsolatedNodes(graph: Graph): any[] {
     const isolatedNodes: any[] = [];
-    
+
     for (const node of graph.nodes.values()) {
       const incomingEdges = graph.getIncomingEdges(node.nodeId);
       const outgoingEdges = graph.getOutgoingEdges(node.nodeId);
-      
+
       if (incomingEdges.length === 0 && outgoingEdges.length === 0) {
         isolatedNodes.push(node);
       }
     }
-    
+
     return isolatedNodes;
   }
 
@@ -629,18 +629,18 @@ export class WorkflowValidator {
    */
   private findDecisionNodesWithoutDefault(graph: Graph): any[] {
     const decisionNodesWithoutDefault: any[] = [];
-    
+
     for (const node of graph.nodes.values()) {
       if (node.type.toString() === 'decision') {
         const outgoingEdges = graph.getOutgoingEdges(node.nodeId);
         const hasDefaultEdge = outgoingEdges.some(edge => edge.type.toString() === 'default');
-        
+
         if (!hasDefaultEdge) {
           decisionNodesWithoutDefault.push(node);
         }
       }
     }
-    
+
     return decisionNodesWithoutDefault;
   }
 
@@ -662,7 +662,7 @@ export class WorkflowValidator {
   private containsSensitiveInfo(config: Record<string, unknown>): boolean {
     const sensitiveKeywords = ['password', 'secret', 'key', 'token', 'credential'];
     const configStr = JSON.stringify(config).toLowerCase();
-    
+
     return sensitiveKeywords.some(keyword => configStr.includes(keyword));
   }
 }

@@ -1,5 +1,5 @@
 import { injectable } from 'inversify';
-import { INodeFunction, WorkflowFunctionType } from '../../../../../domain/workflow/graph/interfaces/workflow-functions';
+import { INodeFunction, WorkflowFunctionType } from '../../../../../domain/workflow/interfaces/workflow-functions';
 import { BaseWorkflowFunction } from '../../base/base-workflow-function';
 
 /**
@@ -53,47 +53,47 @@ export class LLMNodeFunction extends BaseWorkflowFunction implements INodeFuncti
 
   protected override validateCustomConfig(config: any): string[] {
     const errors: string[] = [];
-    
+
     if (!config.prompt || typeof config.prompt !== 'string') {
       errors.push('prompt是必需的字符串参数');
     }
-    
-    if (config.temperature !== undefined && 
-        (typeof config.temperature !== 'number' || 
-         config.temperature < 0 || 
-         config.temperature > 2)) {
+
+    if (config.temperature !== undefined &&
+      (typeof config.temperature !== 'number' ||
+        config.temperature < 0 ||
+        config.temperature > 2)) {
       errors.push('temperature必须是0-2之间的数字');
     }
-    
-    if (config.maxTokens !== undefined && 
-        (typeof config.maxTokens !== 'number' || 
-         config.maxTokens <= 0)) {
+
+    if (config.maxTokens !== undefined &&
+      (typeof config.maxTokens !== 'number' ||
+        config.maxTokens <= 0)) {
       errors.push('maxTokens必须是正数');
     }
-    
+
     return errors;
   }
 
   async canExecute(context: any, config: any): Promise<boolean> {
     this.checkInitialized();
-    
+
     // 检查必需的配置
     if (!config.prompt) {
       return false;
     }
-    
+
     // 可以添加其他执行条件检查
     return true;
   }
 
   async execute(context: any, config: any): Promise<any> {
     this.checkInitialized();
-    
+
     const prompt = config.prompt;
     const model = config.model || 'gpt-3.5-turbo';
     const temperature = config.temperature || 0.7;
     const maxTokens = config.maxTokens || 1000;
-    
+
     // 这里应该调用实际的LLM服务
     // 为了演示，返回模拟结果
     const result = {
@@ -104,7 +104,7 @@ export class LLMNodeFunction extends BaseWorkflowFunction implements INodeFuncti
       tokensUsed: Math.floor(Math.random() * 500) + 100,
       executionTime: Math.random() * 2 + 0.5
     };
-    
+
     // 更新上下文
     const messages = context.getVariable('messages') || [];
     messages.push({
@@ -115,10 +115,10 @@ export class LLMNodeFunction extends BaseWorkflowFunction implements INodeFuncti
       timestamp: new Date().toISOString()
     });
     context.setVariable('messages', messages);
-    
+
     // 存储LLM响应
     context.setVariable(`llm_response_${context.getExecutionId()}`, result);
-    
+
     return result;
   }
 }

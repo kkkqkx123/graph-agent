@@ -1,5 +1,5 @@
 import { injectable } from 'inversify';
-import { IConditionFunction, WorkflowFunctionType } from '../../../../../domain/workflow/graph/interfaces/workflow-functions';
+import { IConditionFunction, WorkflowFunctionType } from '../../../../../domain/workflow/interfaces/workflow-functions';
 import { BaseWorkflowFunction } from '../../base/base-workflow-function';
 
 /**
@@ -20,7 +20,7 @@ export class HasToolCallsConditionFunction extends BaseWorkflowFunction implemen
 
   async evaluate(context: any, config: any): Promise<boolean> {
     this.checkInitialized();
-    
+
     const messages = context.getVariable('messages') || [];
     for (const message of messages) {
       if (message.tool_calls && message.tool_calls.length > 0) {

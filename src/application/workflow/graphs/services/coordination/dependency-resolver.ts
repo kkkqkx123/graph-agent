@@ -3,7 +3,7 @@ import { Graph } from '../../../../../domain/workflow/graph/entities/graph';
 import { Node } from '../../../../../domain/workflow/graph/entities/nodes';
 import { Edge } from '../../../../../domain/workflow/graph/entities/edges';
 import { ID } from '../../../../../domain/common/value-objects/id';
-import { IEdgeEvaluator } from '../../../../../domain/workflow/graph/interfaces/edge-evaluator.interface';
+import { IEdgeEvaluator } from '../../../../../domain/workflow/interfaces/edge-evaluator.interface';
 import { DomainError } from '../../../../../domain/common/errors/domain-error';
 import { ILogger } from '@shared/types/logger';
 
@@ -32,7 +32,7 @@ export class DependencyResolver {
   constructor(
     @inject('EdgeEvaluatorFactory') private readonly edgeEvaluatorFactory: (edgeType: string) => IEdgeEvaluator,
     @inject('Logger') private readonly logger: ILogger
-  ) {}
+  ) { }
 
   /**
    * 初始化依赖解析器
@@ -48,10 +48,10 @@ export class DependencyResolver {
     this.graph = graph;
     this.dependencies.clear();
     this.reverseDependencies.clear();
-    
+
     // 构建依赖关系映射
     await this.buildDependencyMappings();
-    
+
     this.logger.debug('依赖解析器初始化完成', {
       graphId: graph.graphId.toString(),
       dependencyCount: this.getTotalDependencyCount()
@@ -77,7 +77,7 @@ export class DependencyResolver {
     for (const edge of this.graph.edges.values()) {
       const fromNodeIdStr = edge.fromNodeId.toString();
       const toNodeIdStr = edge.toNodeId.toString();
-      
+
       const dependency: Dependency = {
         fromNodeId: fromNodeIdStr,
         toNodeId: toNodeIdStr,
@@ -127,21 +127,21 @@ export class DependencyResolver {
     const nodeIdStr = nodeId.toString();
     const allDeps: Dependency[] = [];
     const visited = new Set<string>();
-    
+
     const collectDependencies = (currentNodeId: string) => {
       if (visited.has(currentNodeId)) {
         return;
       }
-      
+
       visited.add(currentNodeId);
       const directDeps = this.dependencies.get(currentNodeId) || [];
-      
+
       for (const dep of directDeps) {
         allDeps.push(dep);
         collectDependencies(dep.fromNodeId);
       }
     };
-    
+
     collectDependencies(nodeIdStr);
     return allDeps;
   }
@@ -155,21 +155,21 @@ export class DependencyResolver {
     const nodeIdStr = nodeId.toString();
     const allReverseDeps: Dependency[] = [];
     const visited = new Set<string>();
-    
+
     const collectReverseDependencies = (currentNodeId: string) => {
       if (visited.has(currentNodeId)) {
         return;
       }
-      
+
       visited.add(currentNodeId);
       const reverseDeps = this.reverseDependencies.get(currentNodeId) || [];
-      
+
       for (const dep of reverseDeps) {
         allReverseDeps.push(dep);
         collectReverseDependencies(dep.toNodeId);
       }
     };
-    
+
     collectReverseDependencies(nodeIdStr);
     return allReverseDeps;
   }
@@ -183,7 +183,7 @@ export class DependencyResolver {
   hasDependency(fromNodeId: ID, toNodeId: ID): boolean {
     const fromNodeIdStr = fromNodeId.toString();
     const toNodeIdStr = toNodeId.toString();
-    
+
     const directDeps = this.dependencies.get(fromNodeIdStr) || [];
     return directDeps.some(dep => dep.toNodeId === toNodeIdStr);
   }
@@ -197,7 +197,7 @@ export class DependencyResolver {
   hasTransitiveDependency(fromNodeId: ID, toNodeId: ID): boolean {
     const allDeps = this.getAllDependencies(fromNodeId);
     const toNodeIdStr = toNodeId.toString();
-    
+
     return allDeps.some(dep => dep.toNodeId === toNodeIdStr);
   }
 
@@ -210,30 +210,30 @@ export class DependencyResolver {
     const nodeIdStr = nodeId.toString();
     const visited = new Set<string>();
     const recursionStack = new Set<string>();
-    
+
     const hasCycle = (currentNodeId: string): boolean => {
       if (recursionStack.has(currentNodeId)) {
         return true;
       }
-      
+
       if (visited.has(currentNodeId)) {
         return false;
       }
-      
+
       visited.add(currentNodeId);
       recursionStack.add(currentNodeId);
-      
+
       const directDeps = this.dependencies.get(currentNodeId) || [];
       for (const dep of directDeps) {
         if (hasCycle(dep.fromNodeId)) {
           return true;
         }
       }
-      
+
       recursionStack.delete(currentNodeId);
       return false;
     };
-    
+
     return hasCycle(nodeIdStr);
   }
 
@@ -251,7 +251,7 @@ export class DependencyResolver {
         return true;
       }
     }
-    
+
     return false;
   }
 
@@ -265,7 +265,7 @@ export class DependencyResolver {
     const visited = new Set<string>();
     const recursionStack = new Set<string>();
     const path: string[] = [];
-    
+
     const findCycle = (currentNodeId: string): string[] | null => {
       if (recursionStack.has(currentNodeId)) {
         // 找到循环，提取循环路径
@@ -275,15 +275,15 @@ export class DependencyResolver {
         }
         return null;
       }
-      
+
       if (visited.has(currentNodeId)) {
         return null;
       }
-      
+
       visited.add(currentNodeId);
       recursionStack.add(currentNodeId);
       path.push(currentNodeId);
-      
+
       const directDeps = this.dependencies.get(currentNodeId) || [];
       for (const dep of directDeps) {
         const cycle = findCycle(dep.fromNodeId);
@@ -291,12 +291,12 @@ export class DependencyResolver {
           return cycle;
         }
       }
-      
+
       recursionStack.delete(currentNodeId);
       path.pop();
       return null;
     };
-    
+
     return findCycle(nodeIdStr);
   }
 
@@ -311,10 +311,10 @@ export class DependencyResolver {
 
     const cycles: string[][] = [];
     const processedNodes = new Set<string>();
-    
+
     for (const node of this.graph.nodes.values()) {
       const nodeIdStr = node.nodeId.toString();
-      
+
       if (!processedNodes.has(nodeIdStr)) {
         const cycle = this.getCyclicDependency(node.nodeId);
         if (cycle) {
@@ -326,7 +326,7 @@ export class DependencyResolver {
         }
       }
     }
-    
+
     return cycles;
   }
 
@@ -344,17 +344,17 @@ export class DependencyResolver {
   ): Promise<boolean> {
     const fromNodeIdStr = fromNodeId.toString();
     const toNodeIdStr = toNodeId.toString();
-    
+
     const directDeps = this.dependencies.get(fromNodeIdStr) || [];
     const dependency = directDeps.find(dep => dep.toNodeId === toNodeIdStr);
-    
+
     if (!dependency) {
       return false;
     }
-    
+
     try {
       const edgeEvaluator = this.edgeEvaluatorFactory(dependency.edgeType);
-      
+
       // 创建边对象用于评估
       const edge = {
         fromNodeId,
@@ -363,7 +363,7 @@ export class DependencyResolver {
         condition: dependency.condition,
         weight: dependency.weight
       } as unknown as Edge;
-      
+
       return await edgeEvaluator.evaluate(edge, context);
     } catch (error) {
       const errorObj = error as Error;
@@ -371,7 +371,7 @@ export class DependencyResolver {
         fromNodeId: fromNodeIdStr,
         toNodeId: toNodeIdStr
       });
-      
+
       return false;
     }
   }
@@ -384,28 +384,28 @@ export class DependencyResolver {
   getTopologicalLevel(nodeId: ID): number {
     const nodeIdStr = nodeId.toString();
     const visited = new Set<string>();
-    
+
     const calculateLevel = (currentNodeId: string): number => {
       if (visited.has(currentNodeId)) {
         return 0;
       }
-      
+
       visited.add(currentNodeId);
-      
+
       const reverseDeps = this.reverseDependencies.get(currentNodeId) || [];
       if (reverseDeps.length === 0) {
         return 0;
       }
-      
+
       let maxLevel = 0;
       for (const dep of reverseDeps) {
         const level = calculateLevel(dep.fromNodeId);
         maxLevel = Math.max(maxLevel, level);
       }
-      
+
       return maxLevel + 1;
     };
-    
+
     return calculateLevel(nodeIdStr);
   }
 
@@ -421,47 +421,47 @@ export class DependencyResolver {
     const inDegree = new Map<string, number>();
     const result: string[] = [];
     const queue: string[] = [];
-    
+
     // 计算每个节点的入度
     for (const node of this.graph.nodes.values()) {
       const nodeIdStr = node.nodeId.toString();
       inDegree.set(nodeIdStr, 0);
     }
-    
+
     for (const deps of this.dependencies.values()) {
       for (const dep of deps) {
         inDegree.set(dep.toNodeId, (inDegree.get(dep.toNodeId) || 0) + 1);
       }
     }
-    
+
     // 找到入度为0的节点
     for (const [nodeIdStr, degree] of inDegree.entries()) {
       if (degree === 0) {
         queue.push(nodeIdStr);
       }
     }
-    
+
     // 拓扑排序
     while (queue.length > 0) {
       const nodeIdStr = queue.shift()!;
       result.push(nodeIdStr);
-      
+
       const directDeps = this.dependencies.get(nodeIdStr) || [];
       for (const dep of directDeps) {
         const newInDegree = (inDegree.get(dep.toNodeId) || 0) - 1;
         inDegree.set(dep.toNodeId, newInDegree);
-        
+
         if (newInDegree === 0) {
           queue.push(dep.toNodeId);
         }
       }
     }
-    
+
     // 检查是否有环
     if (result.length !== this.graph.nodes.size) {
       throw new DomainError('图中存在循环依赖，无法进行拓扑排序');
     }
-    
+
     return result;
   }
 
@@ -492,27 +492,27 @@ export class DependencyResolver {
     let maxDependencies = 0;
     let minDependencies = Number.MAX_SAFE_INTEGER;
     let nodesWithNoDependencies = 0;
-    
+
     for (const node of this.graph.nodes.values()) {
       const nodeIdStr = node.nodeId.toString();
       const directDeps = this.dependencies.get(nodeIdStr) || [];
       const depCount = directDeps.length;
-      
+
       totalDependencies += depCount;
       maxDependencies = Math.max(maxDependencies, depCount);
       minDependencies = Math.min(minDependencies, depCount);
-      
+
       if (depCount === 0) {
         nodesWithNoDependencies++;
       }
     }
-    
-    const averageDependencies = this.graph.nodes.size > 0 
-      ? totalDependencies / this.graph.nodes.size 
+
+    const averageDependencies = this.graph.nodes.size > 0
+      ? totalDependencies / this.graph.nodes.size
       : 0;
-    
+
     const cyclicDependencies = this.getAllCyclicDependencies().length;
-    
+
     return {
       totalDependencies,
       averageDependenciesPerNode: averageDependencies,
@@ -529,11 +529,11 @@ export class DependencyResolver {
    */
   private getTotalDependencyCount(): number {
     let count = 0;
-    
+
     for (const deps of this.dependencies.values()) {
       count += deps.length;
     }
-    
+
     return count;
   }
 
@@ -554,7 +554,7 @@ export class DependencyResolver {
   ): void {
     const fromNodeIdStr = fromNodeId.toString();
     const toNodeIdStr = toNodeId.toString();
-    
+
     const dependency: Dependency = {
       fromNodeId: fromNodeIdStr,
       toNodeId: toNodeIdStr,
@@ -582,7 +582,7 @@ export class DependencyResolver {
   removeDependency(fromNodeId: ID, toNodeId: ID): void {
     const fromNodeIdStr = fromNodeId.toString();
     const toNodeIdStr = toNodeId.toString();
-    
+
     // 从正向依赖中移除
     const forwardDeps = this.dependencies.get(fromNodeIdStr) || [];
     const filteredForwardDeps = forwardDeps.filter(dep => dep.toNodeId !== toNodeIdStr);

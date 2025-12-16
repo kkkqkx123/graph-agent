@@ -1,5 +1,5 @@
 import { injectable } from 'inversify';
-import { ITriggerFunction, WorkflowFunctionType } from '../../../../../domain/workflow/graph/interfaces/workflow-functions';
+import { ITriggerFunction, WorkflowFunctionType } from '../../../../../domain/workflow/interfaces/workflow-functions';
 import { BaseWorkflowFunction } from '../../base/base-workflow-function';
 
 /**
@@ -38,34 +38,34 @@ export class TimeTriggerFunction extends BaseWorkflowFunction implements ITrigge
 
   protected override validateCustomConfig(config: any): string[] {
     const errors: string[] = [];
-    
+
     if (!config.triggerTime) {
       errors.push('triggerTime是必需的');
     }
-    
+
     return errors;
   }
 
   async check(context: any, config: any): Promise<boolean> {
     this.checkInitialized();
-    
+
     const triggerTime = config.triggerTime;
     const lastTriggered = config.lastTriggered;
-    
+
     if (!triggerTime) {
       return false;
     }
-    
+
     const now = new Date();
-    
+
     // 检查是否为间隔时间（秒数）
     if (typeof triggerTime === 'number' || /^\d+$/.test(triggerTime)) {
       const intervalSeconds = parseInt(String(triggerTime));
-      
+
       if (!lastTriggered) {
         return true;
       }
-      
+
       const lastTime = new Date(lastTriggered);
       return (now.getTime() - lastTime.getTime()) >= intervalSeconds * 1000;
     } else {
@@ -74,16 +74,16 @@ export class TimeTriggerFunction extends BaseWorkflowFunction implements ITrigge
         const [hour, minute] = triggerTime.split(':').map(Number);
         const nextTrigger = new Date(now);
         nextTrigger.setHours(hour, minute, 0, 0);
-        
+
         // 如果今天的时间已过，则设置为明天
         if (nextTrigger <= now) {
           nextTrigger.setDate(nextTrigger.getDate() + 1);
         }
-        
+
         if (!lastTriggered) {
           return true;
         }
-        
+
         const lastTime = new Date(lastTriggered);
         return now >= nextTrigger && now.getDate() !== lastTime.getDate();
       } catch (error) {

@@ -1,13 +1,13 @@
 import { Graph } from '@domain/workflow/graph/entities/graph';
-import { NodeId } from '@domain/workflow/graph/value-objects/node-id';
-import { EdgeId } from '@domain/workflow/graph/value-objects/edge-id';
+import { NodeId } from '@/domain/workflow/value-objects/node-id';
+import { EdgeId } from '@/domain/workflow/value-objects/edge-id';
 
 export class ExecutionContext {
   private readonly graph: Graph;
   private readonly input: any;
   private readonly startTime: number;
   private readonly nodeId: string;
-  
+
   private executedNodes: Set<string> = new Set();
   private nodeResults: Map<string, any> = new Map();
   private edgeResults: Map<string, boolean> = new Map();
@@ -124,32 +124,32 @@ export class ExecutionContext {
   // Utility methods
   clone(): ExecutionContext {
     const cloned = new ExecutionContext(this.graph, this.input, this.nodeId);
-    
+
     // Copy executed nodes
     for (const nodeId of this.executedNodes) {
       cloned.executedNodes.add(nodeId);
     }
-    
+
     // Copy node results
     for (const [nodeId, result] of this.nodeResults.entries()) {
       cloned.nodeResults.set(nodeId, result);
     }
-    
+
     // Copy edge results
     for (const [edgeId, result] of this.edgeResults.entries()) {
       cloned.edgeResults.set(edgeId, result);
     }
-    
+
     // Copy variables
     for (const [name, value] of this.variables.entries()) {
       cloned.variables.set(name, value);
     }
-    
+
     // Copy metadata
     for (const [key, value] of this.metadata.entries()) {
       cloned.metadata.set(key, value);
     }
-    
+
     return cloned;
   }
 
@@ -158,22 +158,22 @@ export class ExecutionContext {
     for (const nodeId of other.executedNodes) {
       this.executedNodes.add(nodeId);
     }
-    
+
     // Merge node results
     for (const [nodeId, result] of other.nodeResults.entries()) {
       this.nodeResults.set(nodeId, result);
     }
-    
+
     // Merge edge results
     for (const [edgeId, result] of other.edgeResults.entries()) {
       this.edgeResults.set(edgeId, result);
     }
-    
+
     // Merge variables
     for (const [name, value] of other.variables.entries()) {
       this.variables.set(name, value);
     }
-    
+
     // Merge metadata
     for (const [key, value] of other.metadata.entries()) {
       this.metadata.set(key, value);
@@ -197,32 +197,32 @@ export class ExecutionContext {
 
   static fromJSON(data: any, graph: Graph): ExecutionContext {
     const context = new ExecutionContext(graph, data.input, data.executionId);
-    
+
     // Restore executed nodes
     for (const nodeId of data.executedNodes || []) {
       context.executedNodes.add(nodeId);
     }
-    
+
     // Restore node results
     for (const [nodeId, result] of Object.entries(data.nodeResults || {})) {
       context.nodeResults.set(nodeId, result);
     }
-    
+
     // Restore edge results
     for (const [edgeId, result] of Object.entries(data.edgeResults || {})) {
       context.edgeResults.set(edgeId, result as boolean);
     }
-    
+
     // Restore variables
     for (const [name, value] of Object.entries(data.variables || {})) {
       context.variables.set(name, value);
     }
-    
+
     // Restore metadata
     for (const [key, value] of Object.entries(data.metadata || {})) {
       context.metadata.set(key, value);
     }
-    
+
     return context;
   }
 
@@ -249,7 +249,7 @@ export class ExecutionContext {
 
   getNodeExecutionSummary(): any[] {
     const summary: any[] = [];
-    
+
     for (const [nodeId, result] of this.nodeResults.entries()) {
       const node = this.graph.nodes.get(nodeId);
       if (node) {
@@ -262,7 +262,7 @@ export class ExecutionContext {
         });
       }
     }
-    
+
     // Add unexecuted nodes
     for (const [nodeId, node] of this.graph.nodes.entries()) {
       if (!this.executedNodes.has(nodeId)) {
@@ -275,13 +275,13 @@ export class ExecutionContext {
         });
       }
     }
-    
+
     return summary;
   }
 
   getEdgeEvaluationSummary(): any[] {
     const summary: any[] = [];
-    
+
     for (const [edgeId, result] of this.edgeResults.entries()) {
       const edge = this.graph.edges.get(edgeId);
       if (edge) {
@@ -294,7 +294,7 @@ export class ExecutionContext {
         });
       }
     }
-    
+
     return summary;
   }
 }

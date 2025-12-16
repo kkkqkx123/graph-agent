@@ -2,7 +2,7 @@ import { injectable, inject } from 'inversify';
 import { Workflow } from '@domain/workflow/entities/workflow';
 import { Node } from '@domain/workflow/graph/entities/nodes/base/node';
 import { Edge } from '@domain/workflow/graph/entities/edges/base/edge';
-import { NodeId } from '@domain/workflow/graph/value-objects/node-id';
+import { NodeId } from '@/domain/workflow/value-objects/node-id';
 import { ExecutionContext } from './execution-context';
 import { StateManager } from './state-manager';
 import { NodeExecutorFactory } from '../nodes/factories/node-executor-factory';
@@ -17,25 +17,25 @@ export class WorkflowExecutor {
     @inject('NodeExecutorFactory') private nodeExecutorFactory: NodeExecutorFactory,
     @inject('EdgeEvaluator') private edgeEvaluator: EdgeEvaluator,
     @inject('StateManager') private stateManager: StateManager
-  ) {}
+  ) { }
 
   async execute(workflow: Workflow, input: any): Promise<any> {
     // Create execution context
     const context = new ExecutionContext(workflow, input);
-    
+
     // Initialize state
     await this.stateManager.initialize(context);
-    
+
     try {
       // Determine execution strategy
       const strategy = this.determineExecutionStrategy(workflow);
-      
+
       // Execute workflow
       const result = await strategy.execute(context, this);
-      
+
       // Save final state
       await this.stateManager.saveFinalState(context, result);
-      
+
       return result;
     } catch (error) {
       // Save error state
@@ -47,30 +47,30 @@ export class WorkflowExecutor {
   async executeNode(node: Node, context: ExecutionContext): Promise<any> {
     // Get node executor
     const executor = this.nodeExecutorFactory.createExecutor(node.type.getValue());
-    
+
     // Execute node
     const result = await executor.execute(node, context);
-    
+
     // Update state
     await this.stateManager.updateNodeState(context, node.id, result);
-    
+
     return result;
   }
 
   async evaluateEdge(edge: Edge, context: ExecutionContext): Promise<boolean> {
     // Evaluate edge condition/transition
     const result = await this.edgeEvaluator.evaluate(edge, context);
-    
+
     // Update state
     await this.stateManager.updateEdgeState(context, edge.id, result);
-    
+
     return result;
   }
 
   private determineExecutionStrategy(workflow: Workflow): ExecutionStrategy {
     // Check if workflow has parallel execution nodes
     const hasParallelNodes = this.hasParallelExecutionNodes(workflow);
-    
+
     if (hasParallelNodes) {
       return new ParallelStrategy();
     } else {
@@ -128,32 +128,32 @@ export class WorkflowExecutor {
 
   private getIncomingEdges(node: Node, workflow: Workflow): Edge[] {
     const incomingEdges: Edge[] = [];
-    
+
     for (const edge of workflow.edges.values()) {
       if (edge.toNodeId.value === node.id.value) {
         incomingEdges.push(edge);
       }
     }
-    
+
     return incomingEdges;
   }
 
   private getOutgoingEdges(node: Node, workflow: Workflow): Edge[] {
     const outgoingEdges: Edge[] = [];
-    
+
     for (const edge of workflow.edges.values()) {
       if (edge.fromNodeId.value === node.id.value) {
         outgoingEdges.push(edge);
       }
     }
-    
+
     return outgoingEdges;
   }
 
   async isExecutionComplete(context: ExecutionContext): Promise<boolean> {
     const workflow = context.getWorkflow();
     const executedNodes = context.getExecutedNodes();
-    
+
     // Check if all nodes have been executed
     for (const node of workflow.nodes.values()) {
       if (!executedNodes.has(node.id.value)) {
@@ -164,7 +164,7 @@ export class WorkflowExecutor {
         }
       }
     }
-    
+
     return true;
   }
 
@@ -172,34 +172,34 @@ export class WorkflowExecutor {
     const workflow = context.getWorkflow();
     const executedNodes = context.getExecutedNodes();
     const path: NodeId[] = [];
-    
+
     // Find start nodes (nodes with no incoming edges)
     const startNodes = this.findStartNodes(workflow);
-    
+
     // Build execution path
     for (const startNode of startNodes) {
       await this.buildExecutionPath(startNode, workflow, executedNodes, path, new Set());
     }
-    
+
     return path;
   }
 
   private findStartNodes(workflow: Workflow): Node[] {
     const startNodes: Node[] = [];
     const nodesWithIncomingEdges = new Set<string>();
-    
+
     // Find all nodes that have incoming edges
     for (const edge of workflow.edges.values()) {
       nodesWithIncomingEdges.add(edge.toNodeId.value);
     }
-    
+
     // Nodes without incoming edges are start nodes
     for (const node of workflow.nodes.values()) {
       if (!nodesWithIncomingEdges.has(node.id.value)) {
         startNodes.push(node);
       }
     }
-    
+
     return startNodes;
   }
 
@@ -214,14 +214,14 @@ export class WorkflowExecutor {
     if (visited.has(node.id.value)) {
       return;
     }
-    
+
     visited.add(node.id.value);
-    
+
     // Add node to path if it was executed
     if (executedNodes.has(node.id.value)) {
       path.push(NodeId.create(node.id.value));
     }
-    
+
     // Follow outgoing edges
     const outgoingEdges = this.getOutgoingEdges(node, workflow);
     for (const edge of outgoingEdges) {
@@ -234,35 +234,35 @@ export class WorkflowExecutor {
 
   async validateWorkflow(workflow: Workflow): Promise<{ valid: boolean; errors: string[] }> {
     const errors: string[] = [];
-    
+
     // Check if workflow has nodes
     if (workflow.nodes.size === 0) {
       errors.push('Workflow must have at least one node');
     }
-    
+
     // Check if all edges reference valid nodes
     for (const edge of workflow.edges.values()) {
       if (!workflow.nodes.has(edge.fromNodeId.value)) {
         errors.push(`Edge references non-existent source node: ${edge.fromNodeId.value}`);
       }
-      
+
       if (!workflow.nodes.has(edge.toNodeId.value)) {
         errors.push(`Edge references non-existent target node: ${edge.toNodeId.value}`);
       }
     }
-    
+
     // Check for cycles
     const hasCycles = await this.detectCycles(workflow);
     if (hasCycles) {
       errors.push('Workflow contains cycles, which are not supported in sequential execution');
     }
-    
+
     // Check for disconnected nodes
     const disconnectedNodes = this.findDisconnectedNodes(workflow);
     if (disconnectedNodes.length > 0) {
       errors.push(`Workflow has disconnected nodes: ${disconnectedNodes.map(n => n.id.value).join(', ')}`);
     }
-    
+
     return {
       valid: errors.length === 0,
       errors
@@ -272,13 +272,13 @@ export class WorkflowExecutor {
   private async detectCycles(workflow: Workflow): Promise<boolean> {
     const visited = new Set<string>();
     const recursionStack = new Set<string>();
-    
+
     for (const node of workflow.nodes.values()) {
       if (await this.hasCycleDFS(node, workflow, visited, recursionStack)) {
         return true;
       }
     }
-    
+
     return false;
   }
 
@@ -290,12 +290,12 @@ export class WorkflowExecutor {
   ): Promise<boolean> {
     visited.add(node.id.value);
     recursionStack.add(node.id.value);
-    
+
     const outgoingEdges = this.getOutgoingEdges(node, workflow);
     for (const edge of outgoingEdges) {
       const targetNode = workflow.nodes.get(edge.toNodeId.value);
       if (!targetNode) continue;
-      
+
       if (!visited.has(targetNode.id.value)) {
         if (await this.hasCycleDFS(targetNode, workflow, visited, recursionStack)) {
           return true;
@@ -304,7 +304,7 @@ export class WorkflowExecutor {
         return true;
       }
     }
-    
+
     recursionStack.delete(node.id.value);
     return false;
   }
@@ -313,19 +313,19 @@ export class WorkflowExecutor {
     if (workflow.nodes.size === 0) {
       return [];
     }
-    
+
     const visited = new Set<string>();
     const startNodes = this.findStartNodes(workflow);
-    
+
     // If no start nodes, pick any node as starting point
     const startNodeArray = Array.from(workflow.nodes.values());
     const startNode = startNodes.length > 0 ? startNodes[0] : startNodeArray[0];
-    
+
     // DFS to find all reachable nodes
     if (startNode) {
       this.dfsVisit(startNode, workflow, visited);
     }
-    
+
     // Nodes not visited are disconnected
     const disconnectedNodes: Node[] = [];
     for (const node of workflow.nodes.values()) {
@@ -333,13 +333,13 @@ export class WorkflowExecutor {
         disconnectedNodes.push(node);
       }
     }
-    
+
     return disconnectedNodes;
   }
 
   private dfsVisit(node: Node, workflow: Workflow, visited: Set<string>): void {
     visited.add(node.id.value);
-    
+
     const outgoingEdges = this.getOutgoingEdges(node, workflow);
     for (const edge of outgoingEdges) {
       const targetNode = workflow.nodes.get(edge.toNodeId.value);

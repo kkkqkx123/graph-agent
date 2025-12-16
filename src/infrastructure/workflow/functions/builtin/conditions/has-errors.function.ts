@@ -1,5 +1,5 @@
 import { injectable } from 'inversify';
-import { IConditionFunction, WorkflowFunctionType } from '../../../../../domain/workflow/graph/interfaces/workflow-functions';
+import { IConditionFunction, WorkflowFunctionType } from '../../../../../domain/workflow/interfaces/workflow-functions';
 import { BaseWorkflowFunction } from '../../base/base-workflow-function';
 
 /**
@@ -20,7 +20,7 @@ export class HasErrorsConditionFunction extends BaseWorkflowFunction implements 
 
   async evaluate(context: any, config: any): Promise<boolean> {
     this.checkInitialized();
-    
+
     // 检查工具结果中的错误
     const toolResults = context.getVariable('tool_results') || [];
     for (const result of toolResults) {
@@ -28,7 +28,7 @@ export class HasErrorsConditionFunction extends BaseWorkflowFunction implements 
         return true;
       }
     }
-    
+
     // 检查消息中的错误
     const messages = context.getVariable('messages') || [];
     for (const message of messages) {
@@ -36,7 +36,7 @@ export class HasErrorsConditionFunction extends BaseWorkflowFunction implements 
         return true;
       }
     }
-    
+
     return false;
   }
 }

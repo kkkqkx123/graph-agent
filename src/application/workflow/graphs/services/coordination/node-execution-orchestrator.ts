@@ -2,10 +2,10 @@ import { injectable, inject } from 'inversify';
 import { Node } from '../../../../../domain/workflow/graph/entities/nodes';
 import { Edge } from '../../../../../domain/workflow/graph/entities/edges';
 import { Graph } from '../../../../../domain/workflow/graph/entities/graph';
-import { INodeExecutor } from '../../../../../domain/workflow/graph/interfaces/node-executor.interface';
-import { IEdgeEvaluator } from '../../../../../domain/workflow/graph/interfaces/edge-evaluator.interface';
+import { INodeExecutor } from '../../../../../domain/workflow/interfaces/node-executor.interface';
+import { IEdgeEvaluator } from '../../../../../domain/workflow/interfaces/edge-evaluator.interface';
 import { ID } from '../../../../../domain/common/value-objects/id';
-import { NodeExecutionResultValue } from '../../../../../domain/workflow/graph/value-objects/node-execution-result';
+import { NodeExecutionResultValue } from '../../../../../domain/workflow/value-objects/node-execution-result';
 import { DomainError } from '../../../../../domain/common/errors/domain-error';
 import { ILogger } from '@shared/types/logger';
 
@@ -45,7 +45,7 @@ export class NodeExecutionOrchestrator {
   constructor(
     @inject('EdgeEvaluatorFactory') private readonly edgeEvaluatorFactory: (edgeType: string) => IEdgeEvaluator,
     @inject('Logger') private readonly logger: ILogger
-  ) {}
+  ) { }
 
   /**
    * 初始化编排器
@@ -61,7 +61,7 @@ export class NodeExecutionOrchestrator {
     this.executionContext = executionContext;
     this.nodeStates.clear();
     this.runningExecutions.clear();
-    
+
     this.logger.debug('节点执行编排器初始化完成', {
       executionId
     });
@@ -92,7 +92,7 @@ export class NodeExecutionOrchestrator {
     // 为每个节点创建执行任务
     for (const node of nodes) {
       const nodeIdStr = node.nodeId.toString();
-      
+
       // 初始化节点状态
       this.nodeStates.set(nodeIdStr, {
         nodeId: nodeIdStr,
@@ -111,7 +111,7 @@ export class NodeExecutionOrchestrator {
           this.logger.error('节点执行失败', error as Error, {
             nodeId: nodeIdStr
           });
-          
+
           const failureResult = NodeExecutionResultValue.failure(
             node.nodeId,
             error as Error,
@@ -148,12 +148,12 @@ export class NodeExecutionOrchestrator {
   ): Promise<NodeExecutionResultValue> {
     const nodeIdStr = node.nodeId.toString();
     const nodeState = this.nodeStates.get(nodeIdStr)!;
-    
+
     try {
       // 更新状态为运行中
       nodeState.status = 'running';
       nodeState.startTime = new Date();
-      
+
       this.logger.debug('开始执行节点', {
         nodeId: nodeIdStr,
         nodeType: node.type.toString()
@@ -161,7 +161,7 @@ export class NodeExecutionOrchestrator {
 
       // 获取节点执行器
       const nodeExecutor = nodeExecutorFactory(node.type.toString());
-      
+
       // 准备执行上下文
       const nodeExecutionContext = {
         ...this.executionContext,
@@ -174,20 +174,20 @@ export class NodeExecutionOrchestrator {
 
       // 获取输入数据
       const inputData = nodeState.input || {};
-      
+
       // 执行节点
       const output = await nodeExecutor.execute(node, inputData);
-      
+
       // 计算执行时间
       const endTime = new Date();
       const duration = endTime.getTime() - nodeState.startTime!.getTime();
-      
+
       // 更新状态
       nodeState.status = 'completed';
       nodeState.endTime = endTime;
       nodeState.duration = duration;
       nodeState.output = output;
-      
+
       this.logger.debug('节点执行成功', {
         nodeId: nodeIdStr,
         duration
@@ -203,13 +203,13 @@ export class NodeExecutionOrchestrator {
       // 计算执行时间
       const endTime = new Date();
       const duration = nodeState.startTime ? endTime.getTime() - nodeState.startTime.getTime() : 0;
-      
+
       // 更新状态
       nodeState.status = 'failed';
       nodeState.endTime = endTime;
       nodeState.duration = duration;
       nodeState.error = error as Error;
-      
+
       this.logger.error('节点执行失败', error as Error, {
         nodeId: nodeIdStr,
         duration
@@ -240,9 +240,9 @@ export class NodeExecutionOrchestrator {
     // 等待所有正在运行的执行完成
     const executionPromises = Array.from(this.runningExecutions.values());
     await Promise.all(executionPromises);
-    
+
     this.runningExecutions.clear();
-    
+
     this.logger.debug('所有运行节点已完成', {
       executionId: this.executionId
     });
@@ -254,13 +254,13 @@ export class NodeExecutionOrchestrator {
    */
   async getRunningNodes(): Promise<string[]> {
     const runningNodes: string[] = [];
-    
+
     for (const [nodeId, state] of this.nodeStates.entries()) {
       if (state.status === 'running') {
         runningNodes.push(nodeId);
       }
     }
-    
+
     return runningNodes;
   }
 
@@ -283,7 +283,7 @@ export class NodeExecutionOrchestrator {
 
     // 清空运行中的执行
     this.runningExecutions.clear();
-    
+
     this.logger.debug('所有节点已取消', {
       executionId: this.executionId
     });
@@ -302,13 +302,13 @@ export class NodeExecutionOrchestrator {
 
     const nodeIdStr = nodeId.toString();
     const nodeState = this.nodeStates.get(nodeIdStr);
-    
+
     if (!nodeState || nodeState.status !== 'running') {
       return false;
     }
 
     nodeState.status = 'paused';
-    
+
     this.logger.debug('节点执行已暂停', {
       executionId,
       nodeId: nodeIdStr
@@ -330,13 +330,13 @@ export class NodeExecutionOrchestrator {
 
     const nodeIdStr = nodeId.toString();
     const nodeState = this.nodeStates.get(nodeIdStr);
-    
+
     if (!nodeState || nodeState.status !== 'paused') {
       return false;
     }
 
     nodeState.status = 'running';
-    
+
     this.logger.debug('节点执行已恢复', {
       executionId,
       nodeId: nodeIdStr
@@ -358,17 +358,17 @@ export class NodeExecutionOrchestrator {
 
     const nodeIdStr = nodeId.toString();
     const nodeState = this.nodeStates.get(nodeIdStr);
-    
+
     if (!nodeState || (nodeState.status !== 'running' && nodeState.status !== 'paused')) {
       return false;
     }
 
     nodeState.status = 'cancelled';
     nodeState.endTime = new Date();
-    
+
     // 从运行中的执行中移除
     this.runningExecutions.delete(nodeIdStr);
-    
+
     this.logger.debug('节点执行已取消', {
       executionId,
       nodeId: nodeIdStr
@@ -393,7 +393,7 @@ export class NodeExecutionOrchestrator {
 
     const nodeIdStr = nodeId.toString();
     const nodeState = this.nodeStates.get(nodeIdStr);
-    
+
     if (!nodeState) {
       return null;
     }
@@ -540,13 +540,13 @@ export class NodeExecutionOrchestrator {
    */
   private getEarliestStartTime(): string {
     let earliestTime: Date | null = null;
-    
+
     for (const state of this.nodeStates.values()) {
       if (state.startTime && (!earliestTime || state.startTime < earliestTime)) {
         earliestTime = state.startTime;
       }
     }
-    
+
     return earliestTime?.toISOString() || new Date().toISOString();
   }
 
@@ -556,13 +556,13 @@ export class NodeExecutionOrchestrator {
    */
   private getLatestEndTime(): string | null {
     let latestTime: Date | null = null;
-    
+
     for (const state of this.nodeStates.values()) {
       if (state.endTime && (!latestTime || state.endTime > latestTime)) {
         latestTime = state.endTime;
       }
     }
-    
+
     return latestTime?.toISOString() || null;
   }
 
@@ -573,11 +573,11 @@ export class NodeExecutionOrchestrator {
   private calculateTotalDuration(): number {
     const earliestTime = this.getEarliestStartTime();
     const latestTime = this.getLatestEndTime();
-    
+
     if (!earliestTime || !latestTime) {
       return 0;
     }
-    
+
     return new Date(latestTime).getTime() - new Date(earliestTime).getTime();
   }
 
@@ -591,7 +591,7 @@ export class NodeExecutionOrchestrator {
         return nodeId;
       }
     }
-    
+
     return null;
   }
 
@@ -601,13 +601,13 @@ export class NodeExecutionOrchestrator {
    */
   private getExecutionPath(): string[] {
     const path: string[] = [];
-    
+
     for (const [nodeId, state] of this.nodeStates.entries()) {
       if (state.status === 'completed' || state.status === 'running') {
         path.push(nodeId);
       }
     }
-    
+
     return path;
   }
 
@@ -619,7 +619,7 @@ export class NodeExecutionOrchestrator {
   setNodeInputData(nodeId: ID, inputData: any): void {
     const nodeIdStr = nodeId.toString();
     const nodeState = this.nodeStates.get(nodeIdStr);
-    
+
     if (nodeState) {
       nodeState.input = inputData;
     }

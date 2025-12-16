@@ -2,7 +2,7 @@ import { injectable } from 'inversify';
 import { Graph } from '@domain/workflow/graph/entities/graph';
 import { Node } from '@domain/workflow/graph/entities/nodes/base/node';
 import { Edge } from '@domain/workflow/graph/entities/edges/base/edge';
-import { NodeId } from '@domain/workflow/graph/value-objects/node-id';
+import { NodeId } from '@/domain/workflow/value-objects/node-id';
 
 export interface ExecutionPlan {
   steps: ExecutionStep[];
@@ -35,16 +35,16 @@ export class ExecutionPlanner {
 
     // Calculate node dependencies
     const dependencies = this.calculateDependencies(graph);
-    
+
     // Identify parallel groups
     const parallelGroups = this.identifyParallelGroups(graph, dependencies);
-    
+
     // Create execution steps
     const steps = this.createExecutionSteps(graph, dependencies, parallelGroups);
-    
+
     // Calculate critical path
     const criticalPath = this.calculateCriticalPath(graph, dependencies);
-    
+
     // Estimate total duration
     const estimatedDuration = this.estimateTotalDuration(steps);
 
@@ -105,7 +105,7 @@ export class ExecutionPlanner {
   }
 
   private identifyParallelGroups(
-    graph: Graph, 
+    graph: Graph,
     dependencies: Map<string, string[]>
   ): ParallelGroup[] {
     const groups: ParallelGroup[] = [];
@@ -115,7 +115,7 @@ export class ExecutionPlanner {
     // Find nodes that can be executed in parallel
     while (processedNodes.size < graph.nodes.size) {
       const currentGroup = this.findParallelGroup(graph, dependencies, processedNodes);
-      
+
       if (currentGroup.length === 0) {
         break; // No more nodes can be processed
       }
@@ -203,7 +203,7 @@ export class ExecutionPlanner {
         }
 
         // Check if all dependencies are processed
-        const allDepsProcessed = step.dependencies.every(dep => 
+        const allDepsProcessed = step.dependencies.every(dep =>
           processed.has(dep.value)
         );
 
@@ -255,7 +255,7 @@ export class ExecutionPlanner {
         if (deps.includes(nodeId) && !processed.has(targetNodeId)) {
           const currentEarliestStart = earliestStart.get(targetNodeId) || 0;
           const newEarliestStart = earliestFinish.get(nodeId) || 0;
-          
+
           if (newEarliestStart > currentEarliestStart) {
             earliestStart.set(targetNodeId, newEarliestStart);
             earliestFinish.set(targetNodeId, newEarliestStart + (nodeDurations.get(targetNodeId) || 0));
@@ -287,7 +287,7 @@ export class ExecutionPlanner {
 
     while (currentNodeId) {
       criticalPath.unshift(NodeId.fromString(currentNodeId));
-      
+
       // Find the predecessor that contributed to the earliest start time
       const deps = dependencies.get(currentNodeId) || [];
       let predecessorId: string | null = null;

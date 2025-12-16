@@ -1,5 +1,5 @@
 import { injectable, inject } from 'inversify';
-import { INodeExecutor } from '../../../../domain/workflow/graph/interfaces/node-executor.interface';
+import { INodeExecutor } from '../../../../domain/workflow/interfaces/node-executor.interface';
 import { LLMNodeExecutor } from '../executors/llm-node-executor';
 import { ToolNodeExecutor } from '../executors/tool-node-executor';
 import { ConditionNodeExecutor } from '../executors/condition-node-executor';
@@ -20,11 +20,11 @@ export class NodeExecutorFactory {
 
   createExecutor(nodeType: string): INodeExecutor {
     const executor = this.executors.get(nodeType);
-    
+
     if (!executor) {
       throw new Error(`No executor found for node type: ${nodeType}`);
     }
-    
+
     return executor;
   }
 

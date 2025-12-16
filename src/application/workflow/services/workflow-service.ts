@@ -1,7 +1,7 @@
 import { injectable, inject } from 'inversify';
 import { Workflow } from '../../../domain/workflow/entities/workflow';
 import { WorkflowRepository } from '../../../domain/workflow/repositories/workflow-repository';
-import { GraphRepository } from '../../../domain/workflow/graph/repositories/graph-repository';
+import { GraphRepository } from '../../../domain/workflow/repositories/graph-repository';
 import { WorkflowDomainService } from '../../../domain/workflow/services/workflow-domain-service';
 import { ID } from '../../../domain/common/value-objects/id';
 import { WorkflowStatus } from '../../../domain/workflow/value-objects/workflow-status';
@@ -232,7 +232,7 @@ export class WorkflowService {
     @inject('GraphRepository') private readonly graphRepository: GraphRepository,
     @inject('WorkflowDomainService') private readonly workflowDomainService: WorkflowDomainService,
     @inject('Logger') private readonly logger: ILogger
-  ) {}
+  ) { }
 
   /**
    * 创建工作流
@@ -489,7 +489,7 @@ export class WorkflowService {
       return result;
     } catch (error) {
       this.logger.error('执行工作流失败', error as Error);
-      
+
       // 记录执行失败
       try {
         const workflowId = ID.fromString(command.workflowId);

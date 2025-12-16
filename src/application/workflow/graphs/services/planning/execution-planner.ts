@@ -1,8 +1,8 @@
 import { injectable, inject } from 'inversify';
 import { Graph } from '../../../../../domain/workflow/graph/entities/graph';
 import { Node } from '../../../../../domain/workflow/graph/entities/nodes';
-import { GraphRepository } from '../../../../../domain/workflow/graph/repositories/graph-repository';
-import { GraphDomainService } from '../../../../../domain/workflow/graph/services/graph-domain-service';
+import { GraphRepository } from '../../../../../domain/workflow/repositories/graph-repository';
+import { GraphDomainService } from '../../../../../domain/workflow/services/graph-domain-service';
 import { ID } from '../../../../../domain/common/value-objects/id';
 import { DomainError } from '../../../../../domain/common/errors/domain-error';
 import { ILogger } from '@shared/types/logger';
@@ -74,7 +74,7 @@ export class ExecutionPlanner {
     @inject('ParallelAnalyzer') private readonly parallelAnalyzer: ParallelAnalyzer,
     @inject('GraphMetricsCalculator') private readonly graphMetricsCalculator: GraphMetricsCalculator,
     @inject('Logger') private readonly logger: ILogger
-  ) {}
+  ) { }
 
   /**
    * 创建执行计划
@@ -112,7 +112,7 @@ export class ExecutionPlanner {
       }
 
       // 确定起始节点
-      const startNodeId = options.startNodeId 
+      const startNodeId = options.startNodeId
         ? ID.fromString(options.startNodeId)
         : this.findStartNode(graph);
 
@@ -122,7 +122,7 @@ export class ExecutionPlanner {
 
       // 分析图结构
       const graphAnalysis = await this.analyzeGraphStructure(graph, startNodeId);
-      
+
       // 生成执行步骤
       const executionSteps = this.generateExecutionSteps(
         graph,
@@ -198,25 +198,25 @@ export class ExecutionPlanner {
   }> {
     // 计算节点层级
     const nodeLevels = this.topologicalSorter.getNodeLevels(graph);
-    
+
     // 找到关键路径
     const criticalPath = this.pathAnalyzer.findCriticalPath(graph, startNodeId, nodeLevels);
-    
+
     // 识别可并行执行的节点组
     const parallelGroups = this.parallelAnalyzer.identifyParallelGroups(graph, nodeLevels);
-    
+
     // 识别条件路径
     const conditionalPaths = this.pathAnalyzer.identifyConditionalPaths(graph);
-    
+
     // 检测循环
     const cycleCount = this.cycleDetector.detectCycles(graph);
-    
+
     // 找到强连通分量
     const stronglyConnectedComponents = this.cycleDetector.findStronglyConnectedComponents(graph);
-    
+
     // 拓扑排序
     const topologicalOrder = this.topologicalSorter.topologicalSort(graph);
-    
+
     // 计算图指标
     const graphMetrics = this.graphMetricsCalculator.calculateGraphMetrics(graph);
 
@@ -249,25 +249,25 @@ export class ExecutionPlanner {
     const steps: ExecutionStepDto[] = [];
     const visited = new Set<string>();
     let stepOrder = 0;
-    
+
     if (executionMode === 'sequential') {
       // 顺序执行模式
       const queue = [startNodeId];
-      
+
       while (queue.length > 0) {
         const nodeId = queue.shift()!;
         const nodeIdStr = nodeId.toString();
-        
+
         if (visited.has(nodeIdStr)) {
           continue;
         }
-        
+
         visited.add(nodeIdStr);
         const node = graph.getNode(nodeId);
-        
+
         if (node) {
           steps.push(this.createExecutionStep(node, stepOrder++, visited));
-          
+
           // 添加后续节点
           const outgoingEdges = graph.getOutgoingEdges(nodeId);
           for (const edge of outgoingEdges) {
@@ -301,7 +301,7 @@ export class ExecutionPlanner {
         }
       }
     }
-    
+
     return steps;
   }
 
@@ -341,14 +341,14 @@ export class ExecutionPlanner {
    */
   private groupNodesByLevel(nodeLevels: Map<string, number>): Record<number, string[]> {
     const groups: Record<number, string[]> = {};
-    
+
     for (const [nodeId, level] of nodeLevels.entries()) {
       if (!groups[level]) {
         groups[level] = [];
       }
       groups[level].push(nodeId);
     }
-    
+
     return groups;
   }
 
@@ -366,10 +366,10 @@ export class ExecutionPlanner {
       'wait': 1000,
       'data': 1000
     };
-    
+
     const nodeType = node.type.toString();
     const baseDuration = baseDurations[nodeType] || 1000;
-    
+
     // 根据节点属性调整估算时间
     const complexityFactor = (node.properties['complexity'] as number) || 1.0;
     return Math.round(baseDuration * complexityFactor);
@@ -386,7 +386,7 @@ export class ExecutionPlanner {
     graph: Graph
   ): ExecutionDependencyDto[] {
     const dependencies: ExecutionDependencyDto[] = [];
-    
+
     for (const step of steps) {
       for (const prerequisite of step.prerequisites) {
         dependencies.push({
@@ -397,7 +397,7 @@ export class ExecutionPlanner {
         });
       }
     }
-    
+
     return dependencies;
   }
 
@@ -421,13 +421,13 @@ export class ExecutionPlanner {
   ): ExecutionStepDto[] {
     // 简化实现，根据优化策略调整步骤顺序
     const optimizedSteps = [...steps];
-    
+
     if (optimizationStrategy === 'speed') {
       // 速度优化：优先执行关键路径上的节点
       optimizedSteps.sort((a, b) => {
         const aOnCriticalPath = this.isOnCriticalPath(a.nodeId);
         const bOnCriticalPath = this.isOnCriticalPath(b.nodeId);
-        
+
         if (aOnCriticalPath && !bOnCriticalPath) {
           return -1;
         } else if (!aOnCriticalPath && bOnCriticalPath) {
@@ -451,12 +451,12 @@ export class ExecutionPlanner {
         return aFailureRate - bFailureRate;
       });
     }
-    
+
     // 重新分配步骤顺序
     optimizedSteps.forEach((step, index) => {
       step.order = index;
     });
-    
+
     return optimizedSteps;
   }
 
@@ -484,7 +484,7 @@ export class ExecutionPlanner {
       'wait': 1,
       'data': 2
     };
-    
+
     const baseCost = typeCosts[step.type] || 1;
     return baseCost * (step.estimatedDuration / 1000);
   }
@@ -503,7 +503,7 @@ export class ExecutionPlanner {
       'wait': 0.01,
       'data': 0.02
     };
-    
+
     return failureRates[step.type] || 0.05;
   }
 
@@ -530,13 +530,13 @@ export class ExecutionPlanner {
         return node.nodeId;
       }
     }
-    
+
     // 如果没有找到，返回第一个节点
     if (graph.nodes.size > 0) {
       const firstNode = graph.nodes.values().next().value;
       return firstNode ? firstNode.nodeId : null;
     }
-    
+
     return null;
   }
 

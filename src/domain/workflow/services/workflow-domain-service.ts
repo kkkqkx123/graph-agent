@@ -20,7 +20,7 @@ export class WorkflowDomainService {
    * 构造函数
    * @param workflowRepository 工作流仓储
    */
-  constructor(private readonly workflowRepository: WorkflowRepository) {}
+  constructor(private readonly workflowRepository: WorkflowRepository) { }
 
   /**
    * 创建新工作流
@@ -425,7 +425,7 @@ export class WorkflowDomainService {
    */
   async canExecuteWorkflow(workflowId: ID): Promise<boolean> {
     const workflow = await this.workflowRepository.findById(workflowId);
-    
+
     if (!workflow) {
       return false;
     }

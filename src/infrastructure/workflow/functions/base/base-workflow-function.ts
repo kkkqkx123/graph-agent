@@ -1,10 +1,10 @@
-import { 
-  IWorkflowFunction, 
-  WorkflowFunctionType, 
-  FunctionParameter, 
-  ValidationResult, 
-  FunctionMetadata 
-} from '../../../../domain/workflow/graph/interfaces/workflow-functions';
+import {
+  IWorkflowFunction,
+  WorkflowFunctionType,
+  FunctionParameter,
+  ValidationResult,
+  FunctionMetadata
+} from '../../../../domain/workflow/interfaces/workflow-functions';
 
 /**
  * 工作流函数基础抽象类
@@ -22,7 +22,7 @@ export abstract class BaseWorkflowFunction implements IWorkflowFunction {
     public readonly type: WorkflowFunctionType,
     public readonly isAsync: boolean,
     public readonly category: string = 'builtin'
-  ) {}
+  ) { }
 
   getParameters(): FunctionParameter[] {
     return [
@@ -58,16 +58,16 @@ export abstract class BaseWorkflowFunction implements IWorkflowFunction {
 
   validateConfig(config: any): ValidationResult {
     const errors: string[] = [];
-    
+
     // 基础验证
     if (config && typeof config !== 'object') {
       errors.push('配置必须是对象类型');
     }
-    
+
     // 子类可以重写此方法进行特定验证
     const customErrors = this.validateCustomConfig(config);
     errors.push(...customErrors);
-    
+
     return {
       valid: errors.length === 0,
       errors

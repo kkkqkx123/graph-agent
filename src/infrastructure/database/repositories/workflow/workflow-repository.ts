@@ -16,22 +16,22 @@ export class WorkflowRepository implements IWorkflowRepository {
   constructor(
     @inject('ConnectionManager') private connectionManager: ConnectionManager,
     @inject('WorkflowMapper') private mapper: WorkflowMapper
-  ) {}
+  ) { }
 
   async save(workflow: Workflow): Promise<Workflow> {
     const connection = await this.connectionManager.getConnection();
     const repository = connection.getRepository(WorkflowModel);
-    
+
     const model = this.mapper.toModel(workflow);
     const savedModel = await repository.save(model);
-    
+
     return this.mapper.toEntity(savedModel);
   }
 
   async findById(id: ID): Promise<Workflow | null> {
     const connection = await this.connectionManager.getConnection();
     const repository = connection.getRepository(WorkflowModel);
-    
+
     const model = await repository.findOne({ where: { id: id.value } });
     return model ? this.mapper.toEntity(model) : null;
   }
@@ -47,7 +47,7 @@ export class WorkflowRepository implements IWorkflowRepository {
   async findAll(): Promise<Workflow[]> {
     const connection = await this.connectionManager.getConnection();
     const repository = connection.getRepository(WorkflowModel);
-    
+
     const models = await repository.find();
     return models.map(model => this.mapper.toEntity(model));
   }
@@ -55,9 +55,9 @@ export class WorkflowRepository implements IWorkflowRepository {
   async find(options: QueryOptions): Promise<Workflow[]> {
     const connection = await this.connectionManager.getConnection();
     const repository = connection.getRepository(WorkflowModel);
-    
+
     const queryBuilder = repository.createQueryBuilder('workflow');
-    
+
     if (options.filters) {
       Object.entries(options.filters).forEach(([key, value]) => {
         if (value !== undefined) {
@@ -65,20 +65,20 @@ export class WorkflowRepository implements IWorkflowRepository {
         }
       });
     }
-    
+
     if (options.sortBy) {
       const order = options.sortOrder === 'desc' ? 'DESC' : 'ASC';
       queryBuilder.orderBy(`workflow.${options.sortBy}`, order);
     }
-    
+
     if (options.offset) {
       queryBuilder.skip(options.offset);
     }
-    
+
     if (options.limit) {
       queryBuilder.take(options.limit);
     }
-    
+
     const models = await queryBuilder.getMany();
     return models.map(model => this.mapper.toEntity(model));
   }
@@ -99,13 +99,13 @@ export class WorkflowRepository implements IWorkflowRepository {
   async findWithPaginationBase(options: QueryOptions): Promise<PaginatedResult<Workflow>> {
     const connection = await this.connectionManager.getConnection();
     const repository = connection.getRepository(WorkflowModel);
-    
+
     const page = options.offset ? Math.floor(options.offset / (options.limit || 10)) + 1 : 1;
     const pageSize = options.limit || 10;
     const skip = (page - 1) * pageSize;
-    
+
     const queryBuilder = repository.createQueryBuilder('workflow');
-    
+
     if (options.filters) {
       Object.entries(options.filters).forEach(([key, value]) => {
         if (value !== undefined) {
@@ -113,15 +113,15 @@ export class WorkflowRepository implements IWorkflowRepository {
         }
       });
     }
-    
+
     const [models, total] = await queryBuilder
       .skip(skip)
       .take(pageSize)
       .orderBy('workflow.createdAt', 'DESC')
       .getManyAndCount();
-    
+
     const totalPages = Math.ceil(total / pageSize);
-    
+
     return {
       items: models.map(model => this.mapper.toEntity(model)),
       total,
@@ -134,31 +134,31 @@ export class WorkflowRepository implements IWorkflowRepository {
   async saveBatch(workflows: Workflow[]): Promise<Workflow[]> {
     const connection = await this.connectionManager.getConnection();
     const repository = connection.getRepository(WorkflowModel);
-    
+
     const models = workflows.map(workflow => this.mapper.toModel(workflow));
     const savedModels = await repository.save(models);
-    
+
     return savedModels.map(model => this.mapper.toEntity(model));
   }
 
   async delete(entity: Workflow): Promise<void> {
     const connection = await this.connectionManager.getConnection();
     const repository = connection.getRepository(WorkflowModel);
-    
+
     await repository.delete({ id: entity.workflowId.value });
   }
 
   async deleteById(id: ID): Promise<void> {
     const connection = await this.connectionManager.getConnection();
     const repository = connection.getRepository(WorkflowModel);
-    
+
     await repository.delete({ id: id.value });
   }
 
   async deleteBatch(entities: Workflow[]): Promise<void> {
     const connection = await this.connectionManager.getConnection();
     const repository = connection.getRepository(WorkflowModel);
-    
+
     const ids = entities.map(entity => entity.workflowId.value);
     await repository.delete({ id: In(ids) });
   }
@@ -166,9 +166,9 @@ export class WorkflowRepository implements IWorkflowRepository {
   async deleteWhere(options: QueryOptions): Promise<number> {
     const connection = await this.connectionManager.getConnection();
     const repository = connection.getRepository(WorkflowModel);
-    
+
     const queryBuilder = repository.createQueryBuilder('workflow').delete();
-    
+
     if (options.filters) {
       Object.entries(options.filters).forEach(([key, value]) => {
         if (value !== undefined) {
@@ -176,7 +176,7 @@ export class WorkflowRepository implements IWorkflowRepository {
         }
       });
     }
-    
+
     const result = await queryBuilder.execute();
     return result.affected || 0;
   }
@@ -184,7 +184,7 @@ export class WorkflowRepository implements IWorkflowRepository {
   async exists(id: ID): Promise<boolean> {
     const connection = await this.connectionManager.getConnection();
     const repository = connection.getRepository(WorkflowModel);
-    
+
     const count = await repository.count({ where: { id: id.value } });
     return count > 0;
   }
@@ -192,13 +192,13 @@ export class WorkflowRepository implements IWorkflowRepository {
   async count(options?: QueryOptions): Promise<number> {
     const connection = await this.connectionManager.getConnection();
     const repository = connection.getRepository(WorkflowModel);
-    
+
     if (!options || !options.filters) {
       return repository.count();
     }
-    
+
     const queryBuilder = repository.createQueryBuilder('workflow');
-    
+
     if (options.filters) {
       Object.entries(options.filters).forEach(([key, value]) => {
         if (value !== undefined) {
@@ -206,14 +206,14 @@ export class WorkflowRepository implements IWorkflowRepository {
         }
       });
     }
-    
+
     return queryBuilder.getCount();
   }
 
   async findByName(name: string, options?: WorkflowQueryOptions): Promise<Workflow[]> {
     const connection = await this.connectionManager.getConnection();
     const repository = connection.getRepository(WorkflowModel);
-    
+
     const queryBuilder = repository.createQueryBuilder('workflow')
       .where('workflow.name = :name', { name });
 
@@ -254,7 +254,7 @@ export class WorkflowRepository implements IWorkflowRepository {
   async findByStatus(status: WorkflowStatus, options?: WorkflowQueryOptions): Promise<Workflow[]> {
     const connection = await this.connectionManager.getConnection();
     const repository = connection.getRepository(WorkflowModel);
-    
+
     const queryBuilder = repository.createQueryBuilder('workflow')
       .where('workflow.state = :state', { state: this.mapStatusToState(status) });
 
@@ -295,7 +295,7 @@ export class WorkflowRepository implements IWorkflowRepository {
   async findByType(type: WorkflowType, options?: WorkflowQueryOptions): Promise<Workflow[]> {
     const connection = await this.connectionManager.getConnection();
     const repository = connection.getRepository(WorkflowModel);
-    
+
     const queryBuilder = repository.createQueryBuilder('workflow')
       .where('workflow.executionMode = :type', { type: this.mapTypeToExecutionMode(type) });
 
@@ -336,7 +336,7 @@ export class WorkflowRepository implements IWorkflowRepository {
   async findByTags(tags: string[], options?: WorkflowQueryOptions): Promise<Workflow[]> {
     const connection = await this.connectionManager.getConnection();
     const repository = connection.getRepository(WorkflowModel);
-    
+
     const queryBuilder = repository.createQueryBuilder('workflow')
       .where('workflow.metadata->>\'tags\' @> :tags', { tags: JSON.stringify(tags) });
 
@@ -381,7 +381,7 @@ export class WorkflowRepository implements IWorkflowRepository {
   async findByCreatedBy(createdBy: ID, options?: WorkflowQueryOptions): Promise<Workflow[]> {
     const connection = await this.connectionManager.getConnection();
     const repository = connection.getRepository(WorkflowModel);
-    
+
     const queryBuilder = repository.createQueryBuilder('workflow')
       .where('workflow.createdBy = :createdBy', { createdBy: createdBy.value });
 
@@ -438,7 +438,7 @@ export class WorkflowRepository implements IWorkflowRepository {
   async searchByName(name: string, options?: WorkflowQueryOptions): Promise<Workflow[]> {
     const connection = await this.connectionManager.getConnection();
     const repository = connection.getRepository(WorkflowModel);
-    
+
     const queryBuilder = repository.createQueryBuilder('workflow')
       .where('workflow.name LIKE :name', { name: `%${name}%` });
 
@@ -479,7 +479,7 @@ export class WorkflowRepository implements IWorkflowRepository {
   async searchByDescription(description: string, options?: WorkflowQueryOptions): Promise<Workflow[]> {
     const connection = await this.connectionManager.getConnection();
     const repository = connection.getRepository(WorkflowModel);
-    
+
     const queryBuilder = repository.createQueryBuilder('workflow')
       .where('workflow.description LIKE :description', { description: `%${description}%` });
 
@@ -524,7 +524,7 @@ export class WorkflowRepository implements IWorkflowRepository {
   async findWithPagination(options: WorkflowQueryOptions): Promise<PaginatedResult<Workflow>> {
     const connection = await this.connectionManager.getConnection();
     const repository = connection.getRepository(WorkflowModel);
-    
+
     const queryBuilder = repository.createQueryBuilder('workflow');
 
     if (options?.includeDeleted === false) {
@@ -548,14 +548,14 @@ export class WorkflowRepository implements IWorkflowRepository {
     }
 
     if (options?.minExecutionCount) {
-      queryBuilder.andWhere('workflow.metadata->>\'executionCount\' >= :minExecutionCount', { 
-        minExecutionCount: options.minExecutionCount 
+      queryBuilder.andWhere('workflow.metadata->>\'executionCount\' >= :minExecutionCount', {
+        minExecutionCount: options.minExecutionCount
       });
     }
 
     if (options?.maxExecutionCount) {
-      queryBuilder.andWhere('workflow.metadata->>\'executionCount\' <= :maxExecutionCount', { 
-        maxExecutionCount: options.maxExecutionCount 
+      queryBuilder.andWhere('workflow.metadata->>\'executionCount\' <= :maxExecutionCount', {
+        maxExecutionCount: options.maxExecutionCount
       });
     }
 
@@ -582,7 +582,7 @@ export class WorkflowRepository implements IWorkflowRepository {
   async countByStatus(status: WorkflowStatus, options?: WorkflowQueryOptions): Promise<number> {
     const connection = await this.connectionManager.getConnection();
     const repository = connection.getRepository(WorkflowModel);
-    
+
     const queryBuilder = repository.createQueryBuilder('workflow')
       .where('workflow.state = :state', { state: this.mapStatusToState(status) });
 
@@ -600,7 +600,7 @@ export class WorkflowRepository implements IWorkflowRepository {
   async countByType(type: WorkflowType, options?: WorkflowQueryOptions): Promise<number> {
     const connection = await this.connectionManager.getConnection();
     const repository = connection.getRepository(WorkflowModel);
-    
+
     const queryBuilder = repository.createQueryBuilder('workflow')
       .where('workflow.executionMode = :type', { type: this.mapTypeToExecutionMode(type) });
 
@@ -618,7 +618,7 @@ export class WorkflowRepository implements IWorkflowRepository {
   async countByCreatedBy(createdBy: ID, options?: WorkflowQueryOptions): Promise<number> {
     const connection = await this.connectionManager.getConnection();
     const repository = connection.getRepository(WorkflowModel);
-    
+
     const queryBuilder = repository.createQueryBuilder('workflow')
       .where('workflow.createdBy = :createdBy', { createdBy: createdBy.value });
 
@@ -636,7 +636,7 @@ export class WorkflowRepository implements IWorkflowRepository {
   async countByTags(tags: string[], options?: WorkflowQueryOptions): Promise<number> {
     const connection = await this.connectionManager.getConnection();
     const repository = connection.getRepository(WorkflowModel);
-    
+
     const queryBuilder = repository.createQueryBuilder('workflow')
       .where('workflow.metadata->>\'tags\' @> :tags', { tags: JSON.stringify(tags) });
 
@@ -654,7 +654,7 @@ export class WorkflowRepository implements IWorkflowRepository {
   async existsByName(name: string, excludeId?: ID): Promise<boolean> {
     const connection = await this.connectionManager.getConnection();
     const repository = connection.getRepository(WorkflowModel);
-    
+
     const queryBuilder = repository.createQueryBuilder('workflow')
       .where('workflow.name = :name', { name });
 
@@ -669,7 +669,7 @@ export class WorkflowRepository implements IWorkflowRepository {
   async getMostActiveWorkflows(limit: number, options?: WorkflowQueryOptions): Promise<Workflow[]> {
     const connection = await this.connectionManager.getConnection();
     const repository = connection.getRepository(WorkflowModel);
-    
+
     const queryBuilder = repository.createQueryBuilder('workflow')
       .orderBy('workflow.metadata->>\'executionCount\'', 'DESC')
       .take(limit);
@@ -689,7 +689,7 @@ export class WorkflowRepository implements IWorkflowRepository {
   async getRecentlyCreatedWorkflows(limit: number, options?: WorkflowQueryOptions): Promise<Workflow[]> {
     const connection = await this.connectionManager.getConnection();
     const repository = connection.getRepository(WorkflowModel);
-    
+
     const queryBuilder = repository.createQueryBuilder('workflow')
       .orderBy('workflow.createdAt', 'DESC')
       .take(limit);
@@ -709,7 +709,7 @@ export class WorkflowRepository implements IWorkflowRepository {
   async getRecentlyExecutedWorkflows(limit: number, options?: WorkflowQueryOptions): Promise<Workflow[]> {
     const connection = await this.connectionManager.getConnection();
     const repository = connection.getRepository(WorkflowModel);
-    
+
     const queryBuilder = repository.createQueryBuilder('workflow')
       .orderBy('workflow.metadata->>\'lastExecutedAt\'', 'DESC')
       .take(limit);
@@ -733,7 +733,7 @@ export class WorkflowRepository implements IWorkflowRepository {
   ): Promise<Workflow[]> {
     const connection = await this.connectionManager.getConnection();
     const repository = connection.getRepository(WorkflowModel);
-    
+
     const queryBuilder = repository.createQueryBuilder('workflow')
       .where('workflow.metadata->>\'executionCount\' >= :minExecutionCount', { minExecutionCount })
       .orderBy('workflow.metadata->>\'successRate\'', 'DESC')
@@ -759,7 +759,7 @@ export class WorkflowRepository implements IWorkflowRepository {
   ): Promise<number> {
     const connection = await this.connectionManager.getConnection();
     const repository = connection.getRepository(WorkflowModel);
-    
+
     const updateData: any = {
       state: this.mapStatusToState(status),
       updatedAt: new Date()
@@ -781,7 +781,7 @@ export class WorkflowRepository implements IWorkflowRepository {
   async batchDelete(workflowIds: ID[]): Promise<number> {
     const connection = await this.connectionManager.getConnection();
     const repository = connection.getRepository(WorkflowModel);
-    
+
     const result = await repository.delete({ id: In(workflowIds.map(id => id.value)) });
     return result.affected || 0;
   }
@@ -789,7 +789,7 @@ export class WorkflowRepository implements IWorkflowRepository {
   async softDelete(workflowId: ID): Promise<void> {
     const connection = await this.connectionManager.getConnection();
     const repository = connection.getRepository(WorkflowModel);
-    
+
     await repository.update({ id: workflowId.value }, {
       state: 'archived',
       updatedAt: new Date()
@@ -799,7 +799,7 @@ export class WorkflowRepository implements IWorkflowRepository {
   async batchSoftDelete(workflowIds: ID[]): Promise<number> {
     const connection = await this.connectionManager.getConnection();
     const repository = connection.getRepository(WorkflowModel);
-    
+
     const result = await repository.createQueryBuilder()
       .update(WorkflowModel)
       .set({
@@ -815,7 +815,7 @@ export class WorkflowRepository implements IWorkflowRepository {
   async restoreSoftDeleted(workflowId: ID): Promise<void> {
     const connection = await this.connectionManager.getConnection();
     const repository = connection.getRepository(WorkflowModel);
-    
+
     await repository.update({ id: workflowId.value }, {
       state: 'draft',
       updatedAt: new Date()
@@ -825,7 +825,7 @@ export class WorkflowRepository implements IWorkflowRepository {
   async findSoftDeleted(options?: WorkflowQueryOptions): Promise<Workflow[]> {
     const connection = await this.connectionManager.getConnection();
     const repository = connection.getRepository(WorkflowModel);
-    
+
     const queryBuilder = repository.createQueryBuilder('workflow')
       .where('workflow.isDeleted = true');
 
@@ -876,7 +876,7 @@ export class WorkflowRepository implements IWorkflowRepository {
   }> {
     const connection = await this.connectionManager.getConnection();
     const repository = connection.getRepository(WorkflowModel);
-    
+
     const queryBuilder = repository.createQueryBuilder('workflow');
 
     if (options?.includeDeleted === false) {
@@ -911,7 +911,7 @@ export class WorkflowRepository implements IWorkflowRepository {
     stats.forEach(stat => {
       const count = parseInt(stat.count);
       result.total += count;
-      
+
       switch (stat.state) {
         case 'draft':
           result.draft = count;
@@ -942,7 +942,7 @@ export class WorkflowRepository implements IWorkflowRepository {
   async getWorkflowTagStats(options?: WorkflowQueryOptions): Promise<Record<string, number>> {
     const connection = await this.connectionManager.getConnection();
     const repository = connection.getRepository(WorkflowModel);
-    
+
     const queryBuilder = repository.createQueryBuilder('workflow')
       .select("jsonb_array_elements_text(workflow.metadata->'tags')", 'tag')
       .addSelect('COUNT(*)', 'count');

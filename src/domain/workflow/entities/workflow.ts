@@ -84,13 +84,13 @@ export class Workflow extends AggregateRoot {
     // 创建节点和边的映射
     const nodeMap = new Map<string, Node>();
     const edgeMap = new Map<string, Edge>();
-    
+
     if (nodes) {
       for (const node of nodes) {
         nodeMap.set(node.nodeId.toString(), node);
       }
     }
-    
+
     if (edges) {
       for (const edge of edges) {
         edgeMap.set(edge.edgeId.toString(), edge);
@@ -117,7 +117,7 @@ export class Workflow extends AggregateRoot {
     };
 
     const workflow = new Workflow(props);
-    
+
     // 添加工作流创建事件
     workflow.addDomainEvent(new WorkflowCreatedEvent(
       workflowId,
@@ -838,23 +838,23 @@ export class Workflow extends AggregateRoot {
     }
 
     // 草稿状态只能激活或归档
-    if (oldStatus.isDraft() && 
-        !newStatus.isActive() && 
-        !newStatus.isArchived()) {
+    if (oldStatus.isDraft() &&
+      !newStatus.isActive() &&
+      !newStatus.isArchived()) {
       throw new DomainError('草稿状态的工作流只能激活或归档');
     }
 
     // 活跃状态只能变为非活跃或归档
-    if (oldStatus.isActive() && 
-        !newStatus.isInactive() && 
-        !newStatus.isArchived()) {
+    if (oldStatus.isActive() &&
+      !newStatus.isInactive() &&
+      !newStatus.isArchived()) {
       throw new DomainError('活跃状态的工作流只能变为非活跃或归档');
     }
 
     // 非活跃状态只能变为活跃或归档
-    if (oldStatus.isInactive() && 
-        !newStatus.isActive() && 
-        !newStatus.isArchived()) {
+    if (oldStatus.isInactive() &&
+      !newStatus.isActive() &&
+      !newStatus.isArchived()) {
       throw new DomainError('非活跃状态的工作流只能变为活跃或归档');
     }
   }

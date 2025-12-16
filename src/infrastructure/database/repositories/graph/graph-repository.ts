@@ -1,5 +1,5 @@
 import { injectable, inject } from 'inversify';
-import { GraphRepository as IGraphRepository, GraphQueryOptions } from '../../../../domain/workflow/graph/repositories/graph-repository';
+import { GraphRepository as IGraphRepository, GraphQueryOptions } from '../../../../domain/workflow/repositories/graph-repository';
 import { Graph } from '../../../../domain/workflow/graph/entities/graph';
 import { ID } from '../../../../domain/common/value-objects/id';
 import { ConnectionManager } from '../../connections/connection-manager';

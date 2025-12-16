@@ -1,10 +1,10 @@
 import { injectable, inject } from 'inversify';
 import { Graph } from '@domain/workflow/graph/entities/graph';
-import { GraphRepository, NodeRepository, EdgeRepository } from '@domain/workflow/graph/repositories/graph-repository';
-import { GraphDomainService } from '@domain/workflow/graph/services/graph-domain-service';
-import { IGraphExecutionService } from '@domain/workflow/graph/services/graph-execution-service';
-import { NodeType } from '@domain/workflow/graph/value-objects/node-type';
-import { EdgeType } from '@domain/workflow/graph/value-objects/edge-type';
+import { GraphRepository, NodeRepository, EdgeRepository } from '@/domain/workflow/repositories/graph-repository';
+import { GraphDomainService } from '@/domain/workflow/services/graph-domain-service';
+import { IGraphExecutionService } from '@/domain/workflow/services/graph-execution-service';
+import { NodeType } from '@/domain/workflow/value-objects/node-type';
+import { EdgeType } from '@/domain/workflow/value-objects/edge-type';
 import { DomainError } from '@domain/common/errors/domain-error';
 import { ILogger } from '@shared/types/logger';
 import { BaseGraphService } from './common/base-graph-service';

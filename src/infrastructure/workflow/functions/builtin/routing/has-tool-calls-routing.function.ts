@@ -1,5 +1,5 @@
 import { injectable } from 'inversify';
-import { IRoutingFunction, WorkflowFunctionType } from '../../../../../domain/workflow/graph/interfaces/workflow-functions';
+import { IRoutingFunction, WorkflowFunctionType } from '../../../../../domain/workflow/interfaces/workflow-functions';
 import { BaseWorkflowFunction } from '../../base/base-workflow-function';
 
 /**
@@ -40,17 +40,17 @@ export class HasToolCallsRoutingFunction extends BaseWorkflowFunction implements
 
   async route(context: any, config: any): Promise<string | string[]> {
     this.checkInitialized();
-    
+
     const targetNodeId = config.targetNodeId || 'tools';
     const defaultNodeId = config.defaultNodeId || 'end';
-    
+
     const messages = context.getVariable('messages') || [];
     for (const message of messages) {
       if (message.tool_calls && message.tool_calls.length > 0) {
         return targetNodeId;
       }
     }
-    
+
     return defaultNodeId;
   }
 }

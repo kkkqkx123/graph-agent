@@ -174,7 +174,7 @@ export class WorkflowConfig extends ValueObject<WorkflowConfigProps> {
   public removeMetadata(key: string): WorkflowConfig {
     const newMetadata = { ...this.props.metadata };
     delete newMetadata[key];
-    
+
     return new WorkflowConfig({
       ...this.props,
       metadata: newMetadata
@@ -190,7 +190,7 @@ export class WorkflowConfig extends ValueObject<WorkflowConfigProps> {
     if (config === null || config === undefined) {
       return false;
     }
-    
+
     return (
       this.props.maxExecutionTime === config.getMaxExecutionTime() &&
       this.props.retryCount === config.getRetryCount() &&

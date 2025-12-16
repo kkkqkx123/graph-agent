@@ -2,8 +2,8 @@ import { injectable, inject } from 'inversify';
 import { Workflow } from '../../../domain/workflow/entities/workflow';
 import { Graph } from '../../../domain/workflow/graph/entities/graph';
 import { WorkflowRepository } from '../../../domain/workflow/repositories/workflow-repository';
-import { GraphRepository } from '../../../domain/workflow/graph/repositories/graph-repository';
-import { IGraphExecutionService } from '../../../domain/workflow/graph/services/graph-execution-service';
+import { GraphRepository } from '../../../domain/workflow/repositories/graph-repository';
+import { IGraphExecutionService } from '../../../domain/workflow/services/graph-execution-service';
 import { ID } from '../../../domain/common/value-objects/id';
 import { DomainError } from '../../../domain/common/errors/domain-error';
 import { ILogger } from '@shared/types/logger';
@@ -100,7 +100,7 @@ export class WorkflowOrchestrator {
     @inject('GraphRepository') private readonly graphRepository: GraphRepository,
     @inject('IGraphExecutionService') private readonly graphExecutionService: IGraphExecutionService,
     @inject('Logger') private readonly logger: ILogger
-  ) {}
+  ) { }
 
   /**
    * 编排工作流执行
@@ -161,7 +161,7 @@ export class WorkflowOrchestrator {
       if (request.async) {
         // 异步执行
         await this.graphExecutionService.executeAsync(executionRequest);
-        
+
         // 返回异步执行结果
         executionResult = {
           executionId,

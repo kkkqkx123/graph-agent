@@ -1,16 +1,19 @@
 import { DomainEvent } from '../../common/events/domain-event';
 import { ID } from '../../common/value-objects/id';
+import { EdgeType } from '../value-objects/edge-type';
 
 /**
  * 边添加事件接口
  */
 export interface EdgeAddedEventData {
-  workflowId: string;
+  graphId: string;
   edgeId: string;
   edgeType: string;
   fromNodeId: string;
   toNodeId: string;
-  edgeData: Record<string, unknown>;
+  condition?: string;
+  weight?: number;
+  properties?: Record<string, unknown>;
   addedBy?: string;
   [key: string]: unknown;
 }
@@ -18,38 +21,44 @@ export interface EdgeAddedEventData {
 /**
  * 边添加事件
  * 
- * 当边被添加到工作流时触发此事件
+ * 当边被添加到图时触发此事件
  */
 export class EdgeAddedEvent extends DomainEvent {
   private readonly data: EdgeAddedEventData;
 
   /**
    * 构造函数
-   * @param workflowId 工作流ID
+   * @param graphId 图ID
    * @param edgeId 边ID
    * @param edgeType 边类型
    * @param fromNodeId 源节点ID
    * @param toNodeId 目标节点ID
-   * @param edgeData 边数据
+   * @param condition 条件表达式
+   * @param weight 权重
+   * @param properties 边属性
    * @param addedBy 添加者ID
    */
   constructor(
-    workflowId: ID,
+    graphId: ID,
     edgeId: ID,
-    edgeType: string,
+    edgeType: EdgeType,
     fromNodeId: ID,
     toNodeId: ID,
-    edgeData: Record<string, unknown>,
+    condition?: string,
+    weight?: number,
+    properties?: Record<string, unknown>,
     addedBy?: ID
   ) {
-    super(workflowId);
+    super(graphId);
     this.data = {
-      workflowId: workflowId.toString(),
+      graphId: graphId.toString(),
       edgeId: edgeId.toString(),
-      edgeType,
+      edgeType: edgeType.toString(),
       fromNodeId: fromNodeId.toString(),
       toNodeId: toNodeId.toString(),
-      edgeData,
+      condition,
+      weight,
+      properties: properties || {},
       addedBy: addedBy?.toString()
     };
   }
@@ -71,11 +80,11 @@ export class EdgeAddedEvent extends DomainEvent {
   }
 
   /**
-   * 获取工作流ID
-   * @returns 工作流ID
+   * 获取图ID
+   * @returns 图ID
    */
-  public getWorkflowId(): string {
-    return this.data.workflowId;
+  public getGraphId(): string {
+    return this.data.graphId;
   }
 
   /**
@@ -111,11 +120,27 @@ export class EdgeAddedEvent extends DomainEvent {
   }
 
   /**
-   * 获取边数据
-   * @returns 边数据
+   * 获取条件表达式
+   * @returns 条件表达式
    */
-  public getEdgeData(): Record<string, unknown> {
-    return { ...this.data.edgeData };
+  public getCondition(): string | undefined {
+    return this.data.condition;
+  }
+
+  /**
+   * 获取权重
+   * @returns 权重
+   */
+  public getWeight(): number | undefined {
+    return this.data.weight;
+  }
+
+  /**
+   * 获取边属性
+   * @returns 边属性
+   */
+  public getProperties(): Record<string, unknown> {
+    return { ...this.data.properties };
   }
 
   /**

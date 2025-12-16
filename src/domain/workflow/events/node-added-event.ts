@@ -1,15 +1,17 @@
 import { DomainEvent } from '../../common/events/domain-event';
 import { ID } from '../../common/value-objects/id';
+import { NodeType } from '../value-objects/node-type';
 
 /**
  * 节点添加事件接口
  */
 export interface NodeAddedEventData {
-  workflowId: string;
+  graphId: string;
   nodeId: string;
   nodeType: string;
-  nodeName: string;
-  nodeData: Record<string, unknown>;
+  nodeName?: string;
+  position?: { x: number; y: number };
+  properties?: Record<string, unknown>;
   addedBy?: string;
   [key: string]: unknown;
 }
@@ -17,35 +19,38 @@ export interface NodeAddedEventData {
 /**
  * 节点添加事件
  * 
- * 当节点被添加到工作流时触发此事件
+ * 当节点被添加到图时触发此事件
  */
 export class NodeAddedEvent extends DomainEvent {
   private readonly data: NodeAddedEventData;
 
   /**
    * 构造函数
-   * @param workflowId 工作流ID
+   * @param graphId 图ID
    * @param nodeId 节点ID
    * @param nodeType 节点类型
    * @param nodeName 节点名称
-   * @param nodeData 节点数据
+   * @param position 节点位置
+   * @param properties 节点属性
    * @param addedBy 添加者ID
    */
   constructor(
-    workflowId: ID,
+    graphId: ID,
     nodeId: ID,
-    nodeType: string,
-    nodeName: string,
-    nodeData: Record<string, unknown>,
+    nodeType: NodeType,
+    nodeName?: string,
+    position?: { x: number; y: number },
+    properties?: Record<string, unknown>,
     addedBy?: ID
   ) {
-    super(workflowId);
+    super(graphId);
     this.data = {
-      workflowId: workflowId.toString(),
+      graphId: graphId.toString(),
       nodeId: nodeId.toString(),
-      nodeType,
+      nodeType: nodeType.toString(),
       nodeName,
-      nodeData,
+      position,
+      properties: properties || {},
       addedBy: addedBy?.toString()
     };
   }
@@ -67,11 +72,11 @@ export class NodeAddedEvent extends DomainEvent {
   }
 
   /**
-   * 获取工作流ID
-   * @returns 工作流ID
+   * 获取图ID
+   * @returns 图ID
    */
-  public getWorkflowId(): string {
-    return this.data.workflowId;
+  public getGraphId(): string {
+    return this.data.graphId;
   }
 
   /**
@@ -94,16 +99,24 @@ export class NodeAddedEvent extends DomainEvent {
    * 获取节点名称
    * @returns 节点名称
    */
-  public getNodeName(): string {
+  public getNodeName(): string | undefined {
     return this.data.nodeName;
   }
 
   /**
-   * 获取节点数据
-   * @returns 节点数据
+   * 获取节点位置
+   * @returns 节点位置
    */
-  public getNodeData(): Record<string, unknown> {
-    return { ...this.data.nodeData };
+  public getPosition(): { x: number; y: number } | undefined {
+    return this.data.position;
+  }
+
+  /**
+   * 获取节点属性
+   * @returns 节点属性
+   */
+  public getProperties(): Record<string, unknown> {
+    return { ...this.data.properties };
   }
 
   /**

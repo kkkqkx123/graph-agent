@@ -2,11 +2,11 @@ import { injectable, inject } from 'inversify';
 import { Node } from '../../../../../domain/workflow/graph/entities/nodes';
 import { Edge } from '../../../../../domain/workflow/graph/entities/edges';
 import { Graph } from '../../../../../domain/workflow/graph/entities/graph';
-import { GraphRepository, NodeRepository, EdgeRepository } from '../../../../../domain/workflow/graph/repositories/graph-repository';
-import { INodeExecutor } from '../../../../../domain/workflow/graph/interfaces/node-executor.interface';
-import { IEdgeEvaluator } from '../../../../../domain/workflow/graph/interfaces/edge-evaluator.interface';
+import { GraphRepository, NodeRepository, EdgeRepository } from '../../../../../domain/workflow/repositories/graph-repository';
+import { INodeExecutor } from '../../../../../domain/workflow/interfaces/node-executor.interface';
+import { IEdgeEvaluator } from '../../../../../domain/workflow/interfaces/edge-evaluator.interface';
 import { ID } from '../../../../../domain/common/value-objects/id';
-import { NodeExecutionResultValue } from '../../../../../domain/workflow/graph/value-objects/node-execution-result';
+import { NodeExecutionResultValue } from '../../../../../domain/workflow/value-objects/node-execution-result';
 import { DomainError } from '../../../../../domain/common/errors/domain-error';
 import { ILogger } from '@shared/types/logger';
 
@@ -35,7 +35,7 @@ export class NodeCoordinator {
     @inject('NodeExecutionOrchestrator') private readonly nodeExecutionOrchestrator: NodeExecutionOrchestrator,
     @inject('DependencyResolver') private readonly dependencyResolver: DependencyResolver,
     @inject('Logger') private readonly logger: ILogger
-  ) {}
+  ) { }
 
   /**
    * 协调节点执行
@@ -65,16 +65,16 @@ export class NodeCoordinator {
 
       const graph = await this.graphRepository.findByIdOrFail(graphId);
       const executionId = `exec_${graphId.toString()}_${Date.now()}`;
-      
+
       // 初始化执行队列管理器
       await this.executionQueueManager.initialize(graphId, startNodeId, inputData);
-      
+
       // 初始化节点执行编排器
       await this.nodeExecutionOrchestrator.initialize(executionId, executionContext);
-      
+
       // 执行节点协调
       const coordinationResult = await this.performCoordination(graph, executionId);
-      
+
       this.logger.info('节点协调执行完成', {
         executionId,
         status: coordinationResult.status,
@@ -115,13 +115,13 @@ export class NodeCoordinator {
       while (await this.executionQueueManager.hasPendingNodes()) {
         // 获取可执行的节点
         const executableNodes = await this.executionQueueManager.getExecutableNodes();
-        
+
         if (executableNodes.length === 0) {
           // 检查是否有死锁
           if (await this.executionQueueManager.hasDeadlock()) {
             throw new DomainError('检测到执行死锁');
           }
-          
+
           // 等待正在执行的节点完成
           await this.nodeExecutionOrchestrator.waitForRunningNodes();
           continue;
@@ -150,7 +150,7 @@ export class NodeCoordinator {
               ID.fromString(nodeId),
               result
             );
-            
+
             if (shouldStop) {
               status = 'failed';
               error = `节点 ${nodeId} 执行失败: ${result.error?.message}`;
@@ -170,7 +170,7 @@ export class NodeCoordinator {
       if (runningNodes.length > 0) {
         status = 'cancelled';
         error = '执行被取消，仍有节点在执行中';
-        
+
         // 取消正在执行的节点
         await this.nodeExecutionOrchestrator.cancelAll();
       }
@@ -178,7 +178,7 @@ export class NodeCoordinator {
     } catch (err) {
       status = 'failed';
       error = (err as Error).message;
-      
+
       // 取消所有正在执行的节点
       await this.nodeExecutionOrchestrator.cancelAll();
     }
@@ -209,7 +209,7 @@ export class NodeCoordinator {
 
     // 检查节点的错误处理策略
     const errorHandlingStrategy = (node.properties['errorHandlingStrategy'] as string) || 'stop';
-    
+
     switch (errorHandlingStrategy) {
       case 'stop':
         return true;
@@ -238,23 +238,23 @@ export class NodeCoordinator {
     try {
       const graphIdObj = ID.fromString(graphId);
       const nodeIdObj = ID.fromString(nodeId);
-      
+
       const graph = await this.graphRepository.findById(graphIdObj);
       if (!graph) {
         return null;
       }
-      
+
       const node = graph.getNode(nodeIdObj);
       if (!node) {
         return null;
       }
-      
+
       // 从节点执行编排器获取状态
       const executionStatus = await this.nodeExecutionOrchestrator.getNodeExecutionStatus(
         nodeIdObj,
         executionId
       );
-      
+
       return executionStatus || {
         nodeId,
         graphId,
@@ -299,7 +299,7 @@ export class NodeCoordinator {
         nodeIdObj,
         executionId
       );
-      
+
       if (success) {
         await this.executionQueueManager.pauseNode(nodeIdObj);
       }
@@ -342,7 +342,7 @@ export class NodeCoordinator {
         nodeIdObj,
         executionId
       );
-      
+
       if (success) {
         await this.executionQueueManager.resumeNode(nodeIdObj);
       }
@@ -385,7 +385,7 @@ export class NodeCoordinator {
         nodeIdObj,
         executionId
       );
-      
+
       if (success) {
         await this.executionQueueManager.cancelNode(nodeIdObj);
       }
@@ -417,17 +417,17 @@ export class NodeCoordinator {
     try {
       const graphIdObj = ID.fromString(graphId);
       const graph = await this.graphRepository.findById(graphIdObj);
-      
+
       if (!graph) {
         return null;
       }
-      
+
       // 从节点执行编排器获取整体执行状态
       const executionStatus = await this.nodeExecutionOrchestrator.getGraphExecutionStatus(
         graphIdObj,
         executionId
       );
-      
+
       return executionStatus || {
         graphId,
         executionId,
