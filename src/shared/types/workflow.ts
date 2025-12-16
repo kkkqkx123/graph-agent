@@ -37,14 +37,14 @@ export interface IWorkflow extends Entity {
   description: string;
   version: string;
   status: WorkflowStatus;
-  definition: IGraphDefinition;
+  definition: IWorkflowDefinition;
   metadata: Record<string, any>;
 }
 
 /**
  * 图定义接口
  */
-export interface IGraphDefinition {
+export interface IWorkflowDefinition {
   nodes: INodeDefinition[];
   edges: IEdgeDefinition[];
 }

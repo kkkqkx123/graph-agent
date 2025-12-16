@@ -45,7 +45,7 @@ export class HookUtils {
     const id = `cache_${hookPoint}_${Date.now()}`;
     // 如果没有提供 keyGenerator，使用默认的键生成函数
     const defaultKeyGenerator = (context: HookContext) =>
-      `${context.graphId?.toString() || 'unknown'}_${context.nodeId || 'unknown'}`;
+      `${context.workflowId?.toString() || 'unknown'}_${context.nodeId || 'unknown'}`;
     return new CacheHook(id, hookPoint, keyGenerator || defaultKeyGenerator, ttl);
   }
 
@@ -94,7 +94,7 @@ export class HookUtils {
     } = {}
   ): BaseHook {
     const id = options.id || `custom_${hookPoint}_${Date.now()}`;
-    
+
     return new class extends BaseHook {
       constructor() {
         super(id, hookPoint);
@@ -132,7 +132,7 @@ export class HookUtils {
     executionMode: HookChainExecutionMode = HookChainExecutionMode.SEQUENTIAL
   ): BaseHook {
     const id = `composite_${hookPoint}_${Date.now()}`;
-    
+
     return new class extends BaseHook {
       constructor() {
         super(id, hookPoint);
@@ -140,7 +140,7 @@ export class HookUtils {
 
       protected async onExecute(context: HookContext): Promise<any> {
         const results: any[] = [];
-        
+
         switch (executionMode) {
           case HookChainExecutionMode.SEQUENTIAL:
             for (const hook of hooks) {
@@ -150,7 +150,7 @@ export class HookUtils {
               }
             }
             break;
-            
+
           case HookChainExecutionMode.PARALLEL:
             const promises = hooks
               .filter(hook => hook.shouldExecute(context))
@@ -158,11 +158,11 @@ export class HookUtils {
             const parallelResults = await Promise.all(promises);
             results.push(...parallelResults);
             break;
-            
+
           default:
             throw new Error(`不支持的执行模式: ${executionMode}`);
         }
-        
+
         return { compositeResults: results };
       }
     }();
@@ -178,7 +178,7 @@ export class HookUtils {
     falseHook?: BaseHook
   ): BaseHook {
     const id = `conditional_${hookPoint}_${Date.now()}`;
-    
+
     return new class extends BaseHook {
       constructor() {
         super(id, hookPoint);
@@ -186,13 +186,13 @@ export class HookUtils {
 
       protected async onExecute(context: HookContext): Promise<any> {
         const shouldExecuteTrue = await condition(context);
-        
+
         if (shouldExecuteTrue) {
           return await trueHook.execute(context);
         } else if (falseHook) {
           return await falseHook.execute(context);
         }
-        
+
         return { conditionMet: shouldExecuteTrue, executed: false };
       }
 
@@ -216,12 +216,12 @@ export class HookUtils {
       if (!hook.getId() || !hook.getHookPoint()) {
         return false;
       }
-      
+
       // 检查钩子点是否有效
       if (!Object.values(HookPoint).includes(hook.getHookPoint())) {
         return false;
       }
-      
+
       return true;
     } catch {
       return false;
@@ -237,19 +237,19 @@ export class HookUtils {
       if (!chain.hookPoint || !chain.hooks || chain.hooks.length === 0) {
         return false;
       }
-      
+
       // 检查钩子点是否有效
       if (!Object.values(HookPoint).includes(chain.hookPoint)) {
         return false;
       }
-      
+
       // 检查所有钩子是否有效
       for (const hook of chain.hooks) {
         if (!this.validateHook(hook)) {
           return false;
         }
       }
-      
+
       return true;
     } catch {
       return false;
@@ -298,14 +298,14 @@ export class HookUtils {
     context: HookContext
   ): string {
     const summary = this.getHookExecutionSummary(results);
-    
+
     let report = `钩子执行报告\n`;
     report += `=============\n`;
     report += `钩子点: ${hookPoint}\n`;
-    report += `图ID: ${context.graphId?.toString() || 'N/A'}\n`;
+    report += `图ID: ${context.workflowId?.toString() || 'N/A'}\n`;
     report += `节点ID: ${context.nodeId || 'N/A'}\n`;
     report += `执行时间: ${context.timestamp.toISOString()}\n\n`;
-    
+
     report += `执行摘要:\n`;
     report += `- 总数: ${summary.total}\n`;
     report += `- 成功: ${summary.successful}\n`;
@@ -313,7 +313,7 @@ export class HookUtils {
     report += `- 跳过: ${summary.skipped}\n`;
     report += `- 总执行时间: ${summary.totalExecutionTime}ms\n`;
     report += `- 平均执行时间: ${summary.averageExecutionTime.toFixed(2)}ms\n\n`;
-    
+
     if (summary.errors.length > 0) {
       report += `错误信息:\n`;
       summary.errors.forEach((error, index) => {
@@ -321,7 +321,7 @@ export class HookUtils {
       });
       report += '\n';
     }
-    
+
     report += `详细结果:\n`;
     results.forEach((result, index) => {
       report += `${index + 1}. 钩子ID: ${result.hookId}\n`;
@@ -334,7 +334,7 @@ export class HookUtils {
       }
       report += '\n';
     });
-    
+
     return report;
   }
 }

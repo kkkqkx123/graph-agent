@@ -19,7 +19,7 @@ export class DependencyResolver implements IDependencyResolver {
    * 解析模块依赖关系并生成加载顺序
    */
   async resolveDependencies(modules: Map<string, ModuleConfig>): Promise<LoadingOrder> {
-    this.logger.debug('开始解析模块依赖关系', { 
+    this.logger.debug('开始解析模块依赖关系', {
       moduleCount: modules.size,
       modules: Array.from(modules.keys())
     });
@@ -32,20 +32,20 @@ export class DependencyResolver implements IDependencyResolver {
       }
 
       // 2. 构建依赖图
-      const dependencyGraph = this.buildDependencyGraph(modules);
-      
+      const dependencyWorkflow = this.buildDependencyWorkflow(modules);
+
       // 3. 拓扑排序生成加载顺序
-      const orderedModules = this.topologicalSort(dependencyGraph);
-      
+      const orderedModules = this.topologicalSort(dependencyWorkflow);
+
       // 4. 识别可并行加载的模块组
-      const parallelGroups = this.identifyParallelGroups(dependencyGraph, orderedModules);
-      
+      const parallelGroups = this.identifyParallelGroups(dependencyWorkflow, orderedModules);
+
       const loadingOrder: LoadingOrder = {
         orderedModules,
         parallelGroups
       };
 
-      this.logger.debug('依赖关系解析完成', { 
+      this.logger.debug('依赖关系解析完成', {
         orderedModules,
         parallelGroupCount: parallelGroups.length
       });
@@ -62,7 +62,7 @@ export class DependencyResolver implements IDependencyResolver {
    */
   checkCircularDependency(modules: Map<string, ModuleConfig>): DependencyError[] {
     this.logger.debug('检查循环依赖');
-    
+
     const errors: DependencyError[] = [];
     const visiting = new Set<string>();
     const visited = new Set<string>();
@@ -70,11 +70,11 @@ export class DependencyResolver implements IDependencyResolver {
     for (const [moduleName, module] of modules) {
       if (!visited.has(moduleName)) {
         const cycleErrors = this.detectCycle(
-          moduleName, 
-          module, 
-          modules, 
-          visiting, 
-          visited, 
+          moduleName,
+          module,
+          modules,
+          visiting,
+          visited,
           []
         );
         errors.push(...cycleErrors);
@@ -91,33 +91,33 @@ export class DependencyResolver implements IDependencyResolver {
   /**
    * 构建依赖图
    */
-  private buildDependencyGraph(modules: Map<string, ModuleConfig>): Map<string, string[]> {
-    const graph = new Map<string, string[]>();
+  private buildDependencyWorkflow(modules: Map<string, ModuleConfig>): Map<string, string[]> {
+    const workflow = new Map<string, string[]>();
 
     for (const [moduleName, module] of modules) {
       const dependencies = module.dependencies || [];
       const validDependencies = dependencies.filter(dep => modules.has(dep));
-      graph.set(moduleName, validDependencies);
+      workflow.set(moduleName, validDependencies);
     }
 
-    return graph;
+    return workflow;
   }
 
   /**
    * 拓扑排序
    */
-  private topologicalSort(graph: Map<string, string[]>): string[] {
+  private topologicalSort(workflow: Map<string, string[]>): string[] {
     const inDegree = new Map<string, number>();
     const queue: string[] = [];
     const result: string[] = [];
 
     // 初始化入度
-    for (const [module] of graph) {
+    for (const [module] of workflow) {
       inDegree.set(module, 0);
     }
 
     // 计算入度
-    for (const [module, dependencies] of graph) {
+    for (const [module, dependencies] of workflow) {
       for (const dep of dependencies) {
         if (inDegree.has(dep)) {
           inDegree.set(dep, (inDegree.get(dep) || 0) + 1);
@@ -138,11 +138,11 @@ export class DependencyResolver implements IDependencyResolver {
       result.push(current);
 
       // 更新依赖当前模块的模块的入度
-      for (const [module, dependencies] of graph) {
+      for (const [module, dependencies] of workflow) {
         if (dependencies.includes(current)) {
           const newDegree = (inDegree.get(module) || 0) - 1;
           inDegree.set(module, newDegree);
-          
+
           if (newDegree === 0) {
             queue.push(module);
           }
@@ -151,7 +151,7 @@ export class DependencyResolver implements IDependencyResolver {
     }
 
     // 检查是否所有模块都被处理（应该没有，因为前面已经检查了循环依赖）
-    if (result.length !== graph.size) {
+    if (result.length !== workflow.size) {
       throw new Error('拓扑排序失败，可能存在未检测到的循环依赖');
     }
 
@@ -162,7 +162,7 @@ export class DependencyResolver implements IDependencyResolver {
    * 识别可并行加载的模块组
    */
   private identifyParallelGroups(
-    graph: Map<string, string[]>, 
+    workflow: Map<string, string[]>,
     orderedModules: string[]
   ): string[][] {
     const groups: string[][] = [];
@@ -175,11 +175,11 @@ export class DependencyResolver implements IDependencyResolver {
       }
 
       // 获取当前模块的所有依赖
-      const dependencies = graph.get(module) || [];
-      
+      const dependencies = workflow.get(module) || [];
+
       // 检查依赖是否都已处理
       const allDependenciesProcessed = dependencies.every(dep => processed.has(dep));
-      
+
       if (allDependenciesProcessed) {
         currentGroup.push(module);
         processed.add(module);

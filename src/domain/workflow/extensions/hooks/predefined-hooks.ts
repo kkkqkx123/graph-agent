@@ -22,7 +22,7 @@ export class LoggingHook extends BaseHook {
   protected async onExecute(context: HookContext): Promise<any> {
     const message = `钩子执行 [${this.getId()}] 在 ${this.getHookPoint()}`;
     this.logger(message, {
-      graphId: context.graphId?.toString(),
+      workflowId: context.workflowId?.toString(),
       nodeId: context.nodeId,
       edgeId: context.edgeId,
       timestamp: context.timestamp
@@ -130,7 +130,7 @@ export class PerformanceHook extends BaseHook {
     const startMemory = this.getMemoryUsage();
 
     // 模拟执行，实际应该由其他钩子或业务逻辑执行
-    const result = { 
+    const result = {
       performanceMonitored: true,
       startTime,
       startMemory
@@ -144,7 +144,7 @@ export class PerformanceHook extends BaseHook {
     const performanceData = {
       hookId: this.getId(),
       hookPoint: this.getHookPoint(),
-      graphId: context.graphId?.toString(),
+      workflowId: context.workflowId?.toString(),
       nodeId: context.nodeId,
       executionTime,
       memoryDelta,
@@ -198,7 +198,7 @@ export class TransformHook extends BaseHook {
 
   protected async onExecute(context: HookContext): Promise<any> {
     const transformedContext = await this.transformer(context);
-    return { 
+    return {
       transformed: true,
       originalContext: context,
       transformedContext
@@ -225,7 +225,7 @@ export class FilterHook extends BaseHook {
 
   protected async onExecute(context: HookContext): Promise<any> {
     const shouldExecute = await this.filter(context);
-    return { 
+    return {
       filtered: true,
       shouldExecute
     };

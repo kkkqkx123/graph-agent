@@ -11,7 +11,7 @@ export interface CreateWorkflowCommand {
   /** 工作流配置 */
   config?: Record<string, unknown>;
   /** 图ID */
-  graphId?: string;
+  workflowId?: string;
   /** 标签 */
   tags?: string[];
   /** 元数据 */
@@ -69,7 +69,7 @@ export interface UpdateWorkflowCommand {
   /** 新配置 */
   config?: Record<string, unknown>;
   /** 新图ID */
-  graphId?: string;
+  workflowId?: string;
   /** 新标签 */
   tags?: string[];
   /** 新元数据 */

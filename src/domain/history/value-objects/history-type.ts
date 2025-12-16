@@ -273,10 +273,10 @@ export class HistoryType extends ValueObject<HistoryTypeProps> {
    * 检查是否为图执行相关类型
    * @returns 是否为图执行相关类型
    */
-  public isGraphExecutionRelated(): boolean {
+  public isWorkflowExecutionRelated(): boolean {
     return this.props.value === HistoryTypeValue.NODE_EXECUTED ||
-           this.props.value === HistoryTypeValue.NODE_FAILED ||
-           this.props.value === HistoryTypeValue.EDGE_TRAVERSED;
+      this.props.value === HistoryTypeValue.NODE_FAILED ||
+      this.props.value === HistoryTypeValue.EDGE_TRAVERSED;
   }
 
   /**
@@ -316,8 +316,8 @@ export class HistoryType extends ValueObject<HistoryTypeProps> {
    * @returns 是否为错误类型
    */
   public isErrorType(): boolean {
-    return this.props.value.endsWith('_failed') || 
-           this.props.value === HistoryTypeValue.ERROR_OCCURRED;
+    return this.props.value.endsWith('_failed') ||
+      this.props.value === HistoryTypeValue.ERROR_OCCURRED;
   }
 
   /**

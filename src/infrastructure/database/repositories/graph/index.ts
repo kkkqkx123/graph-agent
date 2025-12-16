@@ -1,2 +1,2 @@
-export { GraphRepository } from './graph-repository';
-export { GraphMapper } from './graph-mapper';
+export { WorkflowRepository } from './workflow-repository';
+export { WorkflowMapper } from './workflow-mapper';

@@ -69,7 +69,7 @@ export const migration005: Migration = {
             isNullable: true,
           },
           {
-            name: 'graphId',
+            name: 'workflowId',
             type: 'uuid',
             isNullable: true,
           },
@@ -139,8 +139,8 @@ export const migration005: Migration = {
     }));
 
     await queryRunner.createIndex('history', new TableIndex({
-      name: 'IDX_history_graphId',
-      columnNames: ['graphId'],
+      name: 'IDX_history_workflowId',
+      columnNames: ['workflowId'],
     }));
 
     await queryRunner.createIndex('history', new TableIndex({
@@ -209,7 +209,7 @@ export const migration005: Migration = {
             isNullable: true,
           },
           {
-            name: 'graphId',
+            name: 'workflowId',
             type: 'uuid',
             isNullable: true,
           },
@@ -289,8 +289,8 @@ export const migration005: Migration = {
     }));
 
     await queryRunner.createIndex('checkpoints', new TableIndex({
-      name: 'IDX_checkpoints_graphId',
-      columnNames: ['graphId'],
+      name: 'IDX_checkpoints_workflowId',
+      columnNames: ['workflowId'],
     }));
 
     await queryRunner.createIndex('checkpoints', new TableIndex({

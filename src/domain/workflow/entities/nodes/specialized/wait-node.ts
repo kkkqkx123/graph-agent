@@ -68,7 +68,7 @@ export class WaitNode extends Node {
    * 创建等待节点
    */
   public static override create(
-    graphId: ID,
+    workflowId: ID,
     type: NodeType,
     name?: string,
     description?: string,
@@ -89,7 +89,7 @@ export class WaitNode extends Node {
 
     const nodeProps: NodeProps = {
       id: nodeId,
-      graphId,
+      workflowId,
       type,
       name,
       description,

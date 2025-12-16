@@ -53,7 +53,7 @@ export interface ValidationError {
   /** 错误描述 */
   readonly description?: string;
   /** 相关图ID */
-  readonly graphId?: ID;
+  readonly workflowId?: ID;
   /** 相关节点ID */
   readonly nodeId?: ID;
   /** 相关边ID */
@@ -108,7 +108,7 @@ export interface ValidationStatistics {
   /** 按类型分组的错误数 */
   readonly errorsByType: Record<ValidationErrorType, number>;
   /** 按图分组的错误数 */
-  readonly errorsByGraph: Record<string, number>;
+  readonly errorsByWorkflow: Record<string, number>;
   /** 按节点分组的错误数 */
   readonly errorsByNode: Record<string, number>;
   /** 按边分组的错误数 */
@@ -142,9 +142,9 @@ export interface ValidationRule {
  */
 export interface ValidationContext {
   /** 图ID */
-  readonly graphId: ID;
+  readonly workflowId: ID;
   /** 图数据 */
-  readonly graphData: any;
+  readonly workflowData: any;
   /** 节点数据 */
   readonly nodes: Map<ID, any>;
   /** 边数据 */
@@ -190,24 +190,24 @@ export interface IValidator {
   /**
    * 验证图
    */
-  validate(graphId: ID, graphData: any, config?: ValidationConfig): Promise<ValidationResult>;
+  validate(workflowId: ID, workflowData: any, config?: ValidationConfig): Promise<ValidationResult>;
 
   /**
    * 验证节点
    */
-  validateNode(graphId: ID, nodeId: ID, nodeData: any, config?: ValidationConfig): Promise<ValidationResult>;
+  validateNode(workflowId: ID, nodeId: ID, nodeData: any, config?: ValidationConfig): Promise<ValidationResult>;
 
   /**
    * 验证边
    */
-  validateEdge(graphId: ID, edgeId: ID, edgeData: any, config?: ValidationConfig): Promise<ValidationResult>;
+  validateEdge(workflowId: ID, edgeId: ID, edgeData: any, config?: ValidationConfig): Promise<ValidationResult>;
 
   /**
    * 批量验证
    */
   validateBatch(requests: Array<{
-    graphId: ID;
-    graphData: any;
+    workflowId: ID;
+    workflowData: any;
     config?: ValidationConfig;
   }>): Promise<ValidationResult[]>;
 
@@ -256,7 +256,7 @@ export class ValidationErrorBuilder {
   private severity: ValidationSeverity;
   private message: string;
   private description?: string;
-  private graphId?: ID;
+  private workflowId?: ID;
   private nodeId?: ID;
   private edgeId?: ID;
   private location?: {
@@ -286,8 +286,8 @@ export class ValidationErrorBuilder {
     return this;
   }
 
-  withGraphId(graphId: ID): ValidationErrorBuilder {
-    this.graphId = graphId;
+  withWorkflowId(workflowId: ID): ValidationErrorBuilder {
+    this.workflowId = workflowId;
     return this;
   }
 
@@ -337,7 +337,7 @@ export class ValidationErrorBuilder {
       severity: this.severity,
       message: this.message,
       description: this.description,
-      graphId: this.graphId,
+      workflowId: this.workflowId,
       nodeId: this.nodeId,
       edgeId: this.edgeId,
       location: this.location,
@@ -410,7 +410,7 @@ export class ValidationResultBuilder {
       Object.values(ValidationErrorType).map(type => [type, 0])
     ) as Record<ValidationErrorType, number>;
 
-    const errorsByGraph: Record<string, number> = {};
+    const errorsByWorkflow: Record<string, number> = {};
     const errorsByNode: Record<string, number> = {};
     const errorsByEdge: Record<string, number> = {};
 
@@ -419,9 +419,9 @@ export class ValidationResultBuilder {
       errorsBySeverity[error.severity]++;
       errorsByType[error.type]++;
 
-      if (error.graphId) {
-        const graphIdStr = error.graphId.toString();
-        errorsByGraph[graphIdStr] = (errorsByGraph[graphIdStr] || 0) + 1;
+      if (error.workflowId) {
+        const workflowIdStr = error.workflowId.toString();
+        errorsByWorkflow[workflowIdStr] = (errorsByWorkflow[workflowIdStr] || 0) + 1;
       }
 
       if (error.nodeId) {
@@ -439,7 +439,7 @@ export class ValidationResultBuilder {
       totalErrors: this.errors.length,
       errorsBySeverity,
       errorsByType,
-      errorsByGraph,
+      errorsByWorkflow,
       errorsByNode,
       errorsByEdge
     };
@@ -626,11 +626,11 @@ export class ValidationUtils {
   /**
    * 按图ID过滤验证错误
    */
-  static filterErrorsByGraph(
+  static filterErrorsByWorkflow(
     errors: ValidationError[],
-    graphId: ID
+    workflowId: ID
   ): ValidationError[] {
-    return this.filterErrors(errors, error => error.graphId === graphId);
+    return this.filterErrors(errors, error => error.workflowId === workflowId);
   }
 
   /**

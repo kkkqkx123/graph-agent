@@ -16,7 +16,7 @@ export interface HookContext {
   /**
    * 图ID
    */
-  graphId?: ID;
+  workflowId?: ID;
 
   /**
    * 节点ID
@@ -93,8 +93,8 @@ export class HookContextBuilder {
   /**
    * 设置图ID
    */
-  public setGraphId(graphId: ID): HookContextBuilder {
-    this.context.graphId = graphId;
+  public setWorkflowId(workflowId: ID): HookContextBuilder {
+    this.context.workflowId = workflowId;
     return this;
   }
 
@@ -241,14 +241,14 @@ export class HookContextUtils {
    * 创建执行前钩子上下文
    */
   public static createBeforeExecuteContext(
-    graphId: ID,
+    workflowId: ID,
     nodeId?: string,
     state?: WorkflowState,
     config?: Record<string, unknown>
   ): HookContext {
     const builder = HookContextBuilder
       .create(HookPoint.BEFORE_EXECUTE)
-      .setGraphId(graphId);
+      .setWorkflowId(workflowId);
 
     if (nodeId) builder.setNodeId(nodeId);
     if (state) builder.setState(state);
@@ -261,7 +261,7 @@ export class HookContextUtils {
    * 创建执行后钩子上下文
    */
   public static createAfterExecuteContext(
-    graphId: ID,
+    workflowId: ID,
     nodeId?: string,
     state?: WorkflowState,
     config?: Record<string, unknown>,
@@ -269,7 +269,7 @@ export class HookContextUtils {
   ): HookContext {
     const builder = HookContextBuilder
       .create(HookPoint.AFTER_EXECUTE)
-      .setGraphId(graphId);
+      .setWorkflowId(workflowId);
 
     if (nodeId) builder.setNodeId(nodeId);
     if (state) builder.setState(state);
@@ -283,7 +283,7 @@ export class HookContextUtils {
    * 创建错误钩子上下文
    */
   public static createErrorContext(
-    graphId: ID,
+    workflowId: ID,
     error: Error,
     nodeId?: string,
     edgeId?: string,
@@ -292,7 +292,7 @@ export class HookContextUtils {
   ): HookContext {
     const builder = HookContextBuilder
       .create(HookPoint.ON_ERROR)
-      .setGraphId(graphId)
+      .setWorkflowId(workflowId)
       .setError(error);
 
     if (nodeId) builder.setNodeId(nodeId);
@@ -307,14 +307,14 @@ export class HookContextUtils {
    * 创建节点执行前钩子上下文
    */
   public static createBeforeNodeExecuteContext(
-    graphId: ID,
+    workflowId: ID,
     nodeId: string,
     state?: WorkflowState,
     config?: Record<string, unknown>
   ): HookContext {
     const builder = HookContextBuilder
       .create(HookPoint.BEFORE_NODE_EXECUTE)
-      .setGraphId(graphId)
+      .setWorkflowId(workflowId)
       .setNodeId(nodeId);
 
     if (state) builder.setState(state);
@@ -327,7 +327,7 @@ export class HookContextUtils {
    * 创建节点执行后钩子上下文
    */
   public static createAfterNodeExecuteContext(
-    graphId: ID,
+    workflowId: ID,
     nodeId: string,
     state?: WorkflowState,
     config?: Record<string, unknown>,
@@ -335,7 +335,7 @@ export class HookContextUtils {
   ): HookContext {
     const builder = HookContextBuilder
       .create(HookPoint.AFTER_NODE_EXECUTE)
-      .setGraphId(graphId)
+      .setWorkflowId(workflowId)
       .setNodeId(nodeId);
 
     if (state) builder.setState(state);
@@ -372,7 +372,7 @@ export class HookContextUtils {
   public static getSummary(context: HookContext): Record<string, unknown> {
     return {
       hookPoint: context.hookPoint,
-      graphId: context.graphId?.toString(),
+      workflowId: context.workflowId?.toString(),
       nodeId: context.nodeId,
       edgeId: context.edgeId,
       hasState: !!context.state,

@@ -82,7 +82,7 @@ export class FlexibleConditionalEdge extends Edge {
    * 创建灵活条件边
    */
   public static override create(
-    graphId: ID,
+    workflowId: ID,
     type: EdgeType,
     fromNodeId: ID,
     toNodeId: ID,
@@ -109,7 +109,7 @@ export class FlexibleConditionalEdge extends Edge {
 
     const edgeProps: EdgeProps = {
       id: edgeId,
-      graphId,
+      workflowId,
       type,
       fromNodeId,
       toNodeId,

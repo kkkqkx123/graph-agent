@@ -21,7 +21,7 @@ export interface WorkflowCreatedEvent {
   /** 工作流配置 */
   config: Record<string, unknown>;
   /** 图ID */
-  graphId?: string;
+  workflowId?: string;
   /** 创建者ID */
   createdBy?: string;
   /** 事件元数据 */

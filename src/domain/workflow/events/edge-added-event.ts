@@ -6,7 +6,7 @@ import { EdgeType } from '../value-objects/edge-type';
  * 边添加事件接口
  */
 export interface EdgeAddedEventData {
-  graphId: string;
+  workflowId: string;
   edgeId: string;
   edgeType: string;
   fromNodeId: string;
@@ -28,7 +28,7 @@ export class EdgeAddedEvent extends DomainEvent {
 
   /**
    * 构造函数
-   * @param graphId 图ID
+   * @param workflowId 图ID
    * @param edgeId 边ID
    * @param edgeType 边类型
    * @param fromNodeId 源节点ID
@@ -39,7 +39,7 @@ export class EdgeAddedEvent extends DomainEvent {
    * @param addedBy 添加者ID
    */
   constructor(
-    graphId: ID,
+    workflowId: ID,
     edgeId: ID,
     edgeType: EdgeType,
     fromNodeId: ID,
@@ -49,9 +49,9 @@ export class EdgeAddedEvent extends DomainEvent {
     properties?: Record<string, unknown>,
     addedBy?: ID
   ) {
-    super(graphId);
+    super(workflowId);
     this.data = {
-      graphId: graphId.toString(),
+      workflowId: workflowId.toString(),
       edgeId: edgeId.toString(),
       edgeType: edgeType.toString(),
       fromNodeId: fromNodeId.toString(),
@@ -83,8 +83,8 @@ export class EdgeAddedEvent extends DomainEvent {
    * 获取图ID
    * @returns 图ID
    */
-  public getGraphId(): string {
-    return this.data.graphId;
+  public getWorkflowId(): string {
+    return this.data.workflowId;
   }
 
   /**

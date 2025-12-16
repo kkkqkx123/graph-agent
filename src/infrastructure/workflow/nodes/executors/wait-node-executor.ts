@@ -1,5 +1,5 @@
 import { injectable } from 'inversify';
-import { Node } from '../../../../domain/workflow/graph/entities/nodes/base/node';
+import { Node } from '../../../../domain/workflow/workflow/entities/nodes/base/node';
 import { ExecutionContext } from '../../engine/execution-context';
 
 @injectable()
@@ -8,19 +8,19 @@ export class WaitNodeExecutor {
     try {
       const config = node.properties;
       const waitTime = this.calculateWaitTime(config, context);
-      
+
       // Store wait start time
       const startTime = Date.now();
       context.setVariable(`wait_start_${node.id.value}`, startTime);
-      
+
       // Perform the wait
       if (waitTime > 0) {
         await this.wait(waitTime);
       }
-      
+
       // Calculate actual wait time
       const actualWaitTime = Date.now() - startTime;
-      
+
       // Store wait metadata
       context.setVariable(`wait_metadata_${node.id.value}`, {
         nodeId: node.id.value,
@@ -30,7 +30,7 @@ export class WaitNodeExecutor {
         startedAt: new Date(startTime).toISOString(),
         completedAt: new Date().toISOString()
       });
-      
+
       return {
         waitTime: actualWaitTime,
         startedAt: startTime,
@@ -43,7 +43,7 @@ export class WaitNodeExecutor {
 
   private calculateWaitTime(config: any, context: ExecutionContext): number {
     const waitType = config.type || 'fixed';
-    
+
     switch (waitType) {
       case 'fixed':
         return this.getFixedWaitTime(config);
@@ -62,52 +62,52 @@ export class WaitNodeExecutor {
 
   private getFixedWaitTime(config: any): number {
     const duration = config.duration || 1000;
-    
+
     if (typeof duration !== 'number' || duration < 0) {
       throw new Error('Fixed wait duration must be a non-negative number');
     }
-    
+
     return duration;
   }
 
   private getDynamicWaitTime(config: any, context: ExecutionContext): number {
     const source = config.source;
-    
+
     if (!source) {
       throw new Error('Dynamic wait requires a source configuration');
     }
-    
+
     const value = this.getContextValue(source, context);
-    
+
     if (value === undefined || value === null) {
       throw new Error(`Dynamic wait source '${source}' is not defined`);
     }
-    
+
     let waitTime = Number(value);
-    
+
     if (isNaN(waitTime) || waitTime < 0) {
       throw new Error(`Dynamic wait source '${source}' must be a non-negative number`);
     }
-    
+
     // Apply multiplier if configured
     if (config.multiplier) {
       waitTime *= config.multiplier;
     }
-    
+
     // Apply offset if configured
     if (config.offset) {
       waitTime += config.offset;
     }
-    
+
     // Apply bounds if configured
     if (config.min !== undefined) {
       waitTime = Math.max(waitTime, config.min);
     }
-    
+
     if (config.max !== undefined) {
       waitTime = Math.min(waitTime, config.max);
     }
-    
+
     return waitTime;
   }
 
@@ -116,48 +116,48 @@ export class WaitNodeExecutor {
     const multiplier = config.multiplier || 2;
     const maxTime = config.maxTime || 60000;
     const attemptSource = config.attemptSource || 'attempt_count';
-    
+
     const attempt = this.getContextValue(attemptSource, context) || 1;
-    
+
     let waitTime = baseTime * Math.pow(multiplier, attempt - 1);
-    
+
     // Add jitter if configured
     if (config.jitter) {
       const jitterAmount = waitTime * config.jitter;
       waitTime += (Math.random() - 0.5) * jitterAmount;
     }
-    
+
     // Apply bounds
     waitTime = Math.max(0, Math.min(waitTime, maxTime));
-    
+
     return Math.round(waitTime);
   }
 
   private getRandomWaitTime(config: any): number {
     const min = config.min || 0;
     const max = config.max || 1000;
-    
+
     if (min < 0 || max < 0) {
       throw new Error('Random wait bounds must be non-negative');
     }
-    
+
     if (min >= max) {
       throw new Error('Random wait min must be less than max');
     }
-    
+
     return Math.floor(Math.random() * (max - min + 1)) + min;
   }
 
   private getScheduledWaitTime(config: any, context: ExecutionContext): number {
     const scheduledTime = config.scheduledTime;
     const timezone = config.timezone || 'UTC';
-    
+
     if (!scheduledTime) {
       throw new Error('Scheduled wait requires a scheduledTime configuration');
     }
-    
+
     let targetTime: Date;
-    
+
     if (typeof scheduledTime === 'string') {
       // Parse scheduled time string
       targetTime = new Date(scheduledTime);
@@ -175,14 +175,14 @@ export class WaitNodeExecutor {
     } else {
       throw new Error('Invalid scheduledTime configuration');
     }
-    
+
     if (isNaN(targetTime.getTime())) {
       throw new Error('Invalid scheduled time');
     }
-    
+
     const now = new Date();
     const waitTime = targetTime.getTime() - now.getTime();
-    
+
     if (waitTime < 0) {
       // Scheduled time is in the past
       if (config.ifPast === 'skip') {
@@ -195,14 +195,14 @@ export class WaitNodeExecutor {
         throw new Error('Scheduled time is in the past');
       }
     }
-    
+
     return waitTime;
   }
 
   private getContextValue(path: string, context: ExecutionContext): any {
     const parts = path.split('.');
     let current: any = context;
-    
+
     for (const part of parts) {
       if (current && typeof current === 'object' && part in current) {
         current = current[part];
@@ -214,7 +214,7 @@ export class WaitNodeExecutor {
         }
       }
     }
-    
+
     return current;
   }
 
@@ -226,7 +226,7 @@ export class WaitNodeExecutor {
     // Wait nodes can always execute if they have valid configuration
     const config = node.properties;
     const waitType = config['type'] || 'fixed';
-    
+
     switch (waitType) {
       case 'fixed':
         return config['duration'] !== undefined && typeof config['duration'] === 'number' && config['duration'] >= 0;
@@ -246,10 +246,10 @@ export class WaitNodeExecutor {
   async validate(node: Node): Promise<{ valid: boolean; errors: string[] }> {
     const errors: string[] = [];
     const config = node.properties;
-    
+
     // Check wait type
     const waitType = config['type'] || 'fixed';
-    
+
     switch (waitType) {
       case 'fixed':
         if (config['duration'] === undefined) {
@@ -258,13 +258,13 @@ export class WaitNodeExecutor {
           errors.push('Fixed wait duration must be a non-negative number');
         }
         break;
-        
+
       case 'dynamic':
         if (!config['source']) {
           errors.push('Dynamic wait requires a source');
         }
         break;
-        
+
       case 'exponential':
         if (config['baseTime'] !== undefined && (typeof config['baseTime'] !== 'number' || (config['baseTime'] as number) < 0)) {
           errors.push('Exponential wait baseTime must be a non-negative number');
@@ -276,7 +276,7 @@ export class WaitNodeExecutor {
           errors.push('Exponential wait maxTime must be a non-negative number');
         }
         break;
-        
+
       case 'random':
         if (config['min'] !== undefined && (typeof config['min'] !== 'number' || (config['min'] as number) < 0)) {
           errors.push('Random wait min must be a non-negative number');
@@ -288,17 +288,17 @@ export class WaitNodeExecutor {
           errors.push('Random wait min must be less than max');
         }
         break;
-        
+
       case 'scheduled':
         if (!config['scheduledTime']) {
           errors.push('Scheduled wait requires a scheduledTime');
         }
         break;
-        
+
       default:
         errors.push(`Unknown wait type: ${waitType}`);
     }
-    
+
     return {
       valid: errors.length === 0,
       errors

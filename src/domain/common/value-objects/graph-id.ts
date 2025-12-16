@@ -5,7 +5,7 @@ import { ID } from './id';
  * 
  * 表示图的唯一标识符
  */
-export class GraphId {
+export class WorkflowId {
   /**
    * 图ID值
    */
@@ -26,8 +26,8 @@ export class GraphId {
    * @param id ID
    * @returns 图ID
    */
-  static fromId(id: ID): GraphId {
-    return new GraphId(id);
+  static fromId(id: ID): WorkflowId {
+    return new WorkflowId(id);
   }
 
   /**
@@ -36,8 +36,8 @@ export class GraphId {
    * @param value 字符串值
    * @returns 图ID
    */
-  static fromString(value: string): GraphId {
-    return new GraphId(ID.fromString(value));
+  static fromString(value: string): WorkflowId {
+    return new WorkflowId(ID.fromString(value));
   }
 
   /**
@@ -45,8 +45,8 @@ export class GraphId {
    * 
    * @returns 新图ID
    */
-  static generate(): GraphId {
-    return new GraphId(ID.generate());
+  static generate(): WorkflowId {
+    return new WorkflowId(ID.generate());
   }
 
   /**
@@ -55,7 +55,7 @@ export class GraphId {
    * @returns 显示名称
    */
   getDisplayName(): string {
-    return `Graph-${this.value.toShort()}`;
+    return `Workflow-${this.value.toShort()}`;
   }
 
   /**
@@ -82,7 +82,7 @@ export class GraphId {
    * @param other 另一个图ID
    * @returns 是否相等
    */
-  equals(other: GraphId): boolean {
+  equals(other: WorkflowId): boolean {
     return this.value.equals(other.value);
   }
 
@@ -101,7 +101,7 @@ export class GraphId {
    * @param other 另一个图ID
    * @returns 比较结果
    */
-  compareTo(other: GraphId): number {
+  compareTo(other: WorkflowId): number {
     return this.value.compareTo(other.value);
   }
 
@@ -119,18 +119,18 @@ export class GraphId {
    * 
    * @returns 空图ID
    */
-  static empty(): GraphId {
-    return new GraphId(ID.empty());
+  static empty(): WorkflowId {
+    return new WorkflowId(ID.empty());
   }
 
   /**
    * 检查是否为空图ID
    * 
-   * @param graphId 图ID
+   * @param workflowId 图ID
    * @returns 是否为空
    */
-  static isEmpty(graphId: GraphId): boolean {
-    return graphId.isEmpty();
+  static isEmpty(workflowId: WorkflowId): boolean {
+    return workflowId.isEmpty();
   }
 
   /**
@@ -147,8 +147,8 @@ export class GraphId {
    * 
    * @returns 新图ID
    */
-  clone(): GraphId {
-    return new GraphId(this.value.clone());
+  clone(): WorkflowId {
+    return new WorkflowId(this.value.clone());
   }
 
   /**
@@ -157,6 +157,6 @@ export class GraphId {
    * @returns 调试字符串
    */
   toDebugString(): string {
-    return `GraphId(${this.value.toDebugString()})`;
+    return `WorkflowId(${this.value.toDebugString()})`;
   }
 }

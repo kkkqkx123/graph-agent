@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react'
-import { Row, Col, Card, Statistic, Progress, Space, Button, Typography } from 'antd'
+import { Row, Col, Card, Statistic, Progress, Space, Button, Typoworkflowy } from 'antd'
 import {
   DashboardOutlined,
   NodeIndexOutlined,
@@ -21,7 +21,7 @@ import QuickActions from './QuickActions'
 import ActivityFeed from './ActivityFeed'
 import AppContent from '@/components/layout/AppContent'
 
-const { Title, Text } = Typography
+const { Title, Text } = Typoworkflowy
 
 const Dashboard: React.FC = () => {
   const navigate = useNavigate()

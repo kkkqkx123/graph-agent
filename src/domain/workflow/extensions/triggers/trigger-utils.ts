@@ -17,7 +17,7 @@ export class TriggerUtils {
     id: string,
     name: string,
     type: TriggerType,
-    graphId: ID,
+    workflowId: ID,
     config: Record<string, any> = {},
     enabled: boolean = true,
     description?: string,
@@ -28,7 +28,7 @@ export class TriggerUtils {
       name,
       description,
       type,
-      graphId,
+      workflowId,
       enabled,
       config,
       metadata
@@ -49,7 +49,7 @@ export class TriggerUtils {
   static createTimeTriggerConfig(
     id: string,
     name: string,
-    graphId: ID,
+    workflowId: ID,
     cronExpression: string,
     timezone?: string,
     triggerImmediately?: boolean,
@@ -60,7 +60,7 @@ export class TriggerUtils {
       id,
       name,
       TriggerType.TIME,
-      graphId,
+      workflowId,
       {
         cronExpression,
         timezone,
@@ -77,7 +77,7 @@ export class TriggerUtils {
   static createEventTriggerConfig(
     id: string,
     name: string,
-    graphId: ID,
+    workflowId: ID,
     eventType: string,
     eventSource?: string,
     eventFilter?: Record<string, any>,
@@ -88,7 +88,7 @@ export class TriggerUtils {
       id,
       name,
       TriggerType.EVENT,
-      graphId,
+      workflowId,
       {
         eventType,
         eventSource,
@@ -105,7 +105,7 @@ export class TriggerUtils {
   static createConditionTriggerConfig(
     id: string,
     name: string,
-    graphId: ID,
+    workflowId: ID,
     condition: string,
     evaluationInterval?: number,
     enabled: boolean = true,
@@ -115,7 +115,7 @@ export class TriggerUtils {
       id,
       name,
       TriggerType.CONDITION,
-      graphId,
+      workflowId,
       {
         condition,
         evaluationInterval
@@ -131,7 +131,7 @@ export class TriggerUtils {
   static createManualTriggerConfig(
     id: string,
     name: string,
-    graphId: ID,
+    workflowId: ID,
     requireConfirmation?: boolean,
     confirmationMessage?: string,
     enabled: boolean = true,
@@ -141,7 +141,7 @@ export class TriggerUtils {
       id,
       name,
       TriggerType.MANUAL,
-      graphId,
+      workflowId,
       {
         requireConfirmation,
         confirmationMessage
@@ -157,7 +157,7 @@ export class TriggerUtils {
   static createExternalTriggerConfig(
     id: string,
     name: string,
-    graphId: ID,
+    workflowId: ID,
     externalSource: string,
     authentication?: Record<string, any>,
     enabled: boolean = true,
@@ -167,7 +167,7 @@ export class TriggerUtils {
       id,
       name,
       TriggerType.EXTERNAL,
-      graphId,
+      workflowId,
       {
         externalSource,
         authentication
@@ -183,7 +183,7 @@ export class TriggerUtils {
   static createStateTriggerConfig(
     id: string,
     name: string,
-    graphId: ID,
+    workflowId: ID,
     statePath: string,
     expectedValue: any,
     comparisonOperator: 'equals' | 'not_equals' | 'greater_than' | 'less_than' | 'contains' = 'equals',
@@ -194,7 +194,7 @@ export class TriggerUtils {
       id,
       name,
       TriggerType.STATE,
-      graphId,
+      workflowId,
       {
         statePath,
         expectedValue,
@@ -210,7 +210,7 @@ export class TriggerUtils {
    */
   static validateConfig(config: TriggerConfig): boolean {
     // 基本验证
-    if (!config.id || !config.name || !config.type || !config.graphId) {
+    if (!config.id || !config.name || !config.type || !config.workflowId) {
       return false;
     }
 
@@ -311,7 +311,7 @@ export class TriggerUtils {
       config1.id === config2.id &&
       config1.name === config2.name &&
       config1.type === config2.type &&
-      config1.graphId === config2.graphId &&
+      config1.workflowId === config2.workflowId &&
       config1.enabled === config2.enabled &&
       JSON.stringify(config1.config) === JSON.stringify(config2.config) &&
       JSON.stringify(config1.metadata) === JSON.stringify(config2.metadata)
@@ -322,7 +322,7 @@ export class TriggerUtils {
    * 获取触发器配置摘要
    */
   static getConfigSummary(config: TriggerConfig): string {
-    return `Trigger[${config.id}] ${config.name} (${config.type}) for graph ${config.graphId} - ${config.enabled ? 'Enabled' : 'Disabled'}`;
+    return `Trigger[${config.id}] ${config.name} (${config.type}) for workflow ${config.workflowId} - ${config.enabled ? 'Enabled' : 'Disabled'}`;
   }
 
   /**
@@ -371,13 +371,13 @@ export class TriggerUtils {
   static createContext(
     triggerId: string,
     triggerType: TriggerType,
-    graphId: ID,
+    workflowId: ID,
     triggerData: Record<string, any> = {},
     triggerSource: string = '',
     metadata: Record<string, any> = {},
     executionParams: Record<string, any> = {}
   ): TriggerContext {
-    return TriggerContextUtils.create(triggerId, triggerType, graphId)
+    return TriggerContextUtils.create(triggerId, triggerType, workflowId)
       .withTriggerData(triggerData)
       .withTriggerSource(triggerSource)
       .withMetadata(metadata)
@@ -479,7 +479,7 @@ export class TriggerUtils {
       disabled: number;
     };
     byType: Record<TriggerType, number>;
-    byGraph: Record<string, number>;
+    byWorkflow: Record<string, number>;
     performance: {
       averageTriggerCount: number;
       mostActiveTrigger: BaseTrigger | undefined;
@@ -495,7 +495,7 @@ export class TriggerUtils {
     };
 
     const byType: Record<TriggerType, number> = {} as any;
-    const byGraph: Record<string, number> = {};
+    const byWorkflow: Record<string, number> = {};
 
     let totalTriggerCount = 0;
     let mostActiveTrigger: BaseTrigger | undefined;
@@ -514,9 +514,9 @@ export class TriggerUtils {
       byType[type] = (byType[type] || 0) + 1;
 
       // 统计图
-      const graphId = trigger.getGraphId();
-      const graphIdStr = graphId.toString();
-      byGraph[graphIdStr] = (byGraph[graphIdStr] || 0) + 1;
+      const workflowId = trigger.getWorkflowId();
+      const workflowIdStr = workflowId.toString();
+      byWorkflow[workflowIdStr] = (byWorkflow[workflowIdStr] || 0) + 1;
 
       // 统计性能
       const triggerCount = trigger.getTriggerCount();
@@ -534,7 +534,7 @@ export class TriggerUtils {
     return {
       summary,
       byType,
-      byGraph,
+      byWorkflow,
       performance: {
         averageTriggerCount: triggers.length > 0 ? totalTriggerCount / triggers.length : 0,
         mostActiveTrigger,

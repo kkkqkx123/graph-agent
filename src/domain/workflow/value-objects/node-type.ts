@@ -12,7 +12,7 @@ export enum NodeTypeValue {
   MERGE = 'merge',
   FORK = 'fork',
   JOIN = 'join',
-  SUBGRAPH = 'subgraph',
+  SUBGRAPH = 'subworkflow',
   CUSTOM = 'custom',
   CONDITION = 'condition',
   LLM = 'llm',
@@ -93,7 +93,7 @@ export class NodeType extends ValueObject<NodeTypeProps> {
    * 创建子图节点类型
    * @returns 子图节点类型实例
    */
-  public static subgraph(): NodeType {
+  public static subworkflow(): NodeType {
     return new NodeType({ value: NodeTypeValue.SUBGRAPH });
   }
 
@@ -217,7 +217,7 @@ export class NodeType extends ValueObject<NodeTypeProps> {
    * 检查是否为子图节点
    * @returns 是否为子图节点
    */
-  public isSubgraph(): boolean {
+  public isSubworkflow(): boolean {
     return this.props.value === NodeTypeValue.SUBGRAPH;
   }
 
@@ -275,7 +275,7 @@ export class NodeType extends ValueObject<NodeTypeProps> {
    * @returns 是否为执行节点
    */
   public isExecutable(): boolean {
-    return this.isTask() || this.isSubgraph() || this.isCustom() ||
+    return this.isTask() || this.isSubworkflow() || this.isCustom() ||
       this.isCondition() || this.isLLM() || this.isTool() || this.isWait();
   }
 

@@ -6,7 +6,7 @@ import {
   Button,
   Space,
   Divider,
-  Typography,
+  Typoworkflowy,
   Tag,
   Switch,
   Tooltip,
@@ -28,7 +28,7 @@ import {
 import { useNavigate } from 'react-router-dom'
 import { useAppStore } from '@/stores'
 
-const { Title, Text } = Typography
+const { Title, Text } = Typoworkflowy
 
 interface UserMenuProps {
   open: boolean

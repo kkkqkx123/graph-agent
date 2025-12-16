@@ -45,14 +45,14 @@ export class ConnectionManager {
 
   private buildConnectionConfig(): DataSourceOptions {
     const dbConfig = this.configManager.get<DatabaseConfig>('database', {});
-    
+
     const config: any = {
       type: dbConfig.type || 'postgres',
       host: dbConfig.host || 'localhost',
       port: dbConfig.port || 5432,
       username: dbConfig.username || 'postgres',
       password: dbConfig.password || 'password',
-      database: dbConfig.database || 'graph_agent',
+      database: dbConfig.database || 'workflow_agent',
       entities: [__dirname + '/../models/*.model.ts'],
       synchronize: dbConfig.synchronize || false,
       logging: dbConfig.logging || false,
@@ -65,7 +65,7 @@ export class ConnectionManager {
         reconnect: dbConfig.reconnect !== false,
       }
     };
-    
+
     return config as DataSourceOptions;
   }
 

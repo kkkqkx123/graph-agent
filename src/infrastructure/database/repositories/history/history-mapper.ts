@@ -43,14 +43,14 @@ export class HistoryMapper {
     model.sessionId = entity.sessionId?.value;
     model.threadId = entity.threadId?.value;
     model.workflowId = entity.workflowId?.value;
-    model.graphId = (entity.metadata as any)['graphId'];
+    model.workflowId = (entity.metadata as any)['workflowId'];
     model.nodeId = (entity.metadata as any)['nodeId'];
     model.edgeId = (entity.metadata as any)['edgeId'];
     model.timestamp = entity.createdAt.getMilliseconds();
     model.createdAt = entity.createdAt.getDate();
     model.updatedAt = entity.updatedAt.getDate();
     model.version = parseInt(entity.version.getValue());
-    
+
     return model;
   }
 }

@@ -26,7 +26,7 @@ export class HttpClient {
     this.retryHandler = retryHandler;
     this.circuitBreaker = circuitBreaker;
     this.rateLimiter = rateLimiter;
-    
+
     this.axiosInstance = axios.create(this.getDefaultConfig());
     this.setupInterceptors();
   }
@@ -66,10 +66,10 @@ export class HttpClient {
         const startTime = Date.now();
         const result = await this.axiosInstance.request<T>(config);
         const duration = Date.now() - startTime;
-        
+
         // Add duration to response metadata
         (result as any).duration = duration;
-        
+
         return result;
       });
 
@@ -89,7 +89,7 @@ export class HttpClient {
       timeout: this.configManager.get('http.timeout', 30000),
       headers: {
         'Content-Type': 'application/json',
-        'User-Agent': this.configManager.get('http.userAgent', 'GraphAgent/1.0.0')
+        'User-Agent': this.configManager.get('http.userAgent', 'WorkflowAgent/1.0.0')
       },
       validateStatus: (status) => status < 500 // Don't reject on 4xx errors
     };
@@ -101,7 +101,7 @@ export class HttpClient {
       (config: ExtendedAxiosRequestConfig) => {
         // Add request timestamp
         config.metadata = { startTime: Date.now() };
-        
+
         // Log request if enabled
         if (this.configManager.get('http.logging.enabled', false)) {
           console.log(`HTTP Request: ${config.method?.toUpperCase()} ${config.url}`, {
@@ -109,7 +109,7 @@ export class HttpClient {
             data: config.data
           });
         }
-        
+
         return config;
       },
       (error) => {
@@ -124,7 +124,7 @@ export class HttpClient {
         // Calculate request duration
         const duration = Date.now() - ((response.config as ExtendedAxiosRequestConfig).metadata?.startTime || 0);
         (response as any).duration = duration;
-        
+
         // Log response if enabled
         if (this.configManager.get('http.logging.enabled', false)) {
           console.log(`HTTP Response: ${response.status} ${response.config.url}`, {
@@ -133,13 +133,13 @@ export class HttpClient {
             data: response.data
           });
         }
-        
+
         return response;
       },
       (error) => {
         // Calculate request duration for failed requests
         const duration = Date.now() - ((error.config as ExtendedAxiosRequestConfig)?.metadata?.startTime || 0);
-        
+
         // Log error if enabled
         if (this.configManager.get('http.logging.enabled', false)) {
           console.error(`HTTP Error: ${error.response?.status || 'Network Error'} ${error.config?.url}`, {
@@ -148,7 +148,7 @@ export class HttpClient {
             response: error.response?.data
           });
         }
-        
+
         return Promise.reject(error);
       }
     );

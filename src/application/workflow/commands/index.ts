@@ -1,4 +1,4 @@
 // Workflow Commands
 export * from './create-workflow.command';
-// Graph Commands
-export * from './graph.command';
+// Workflow Commands
+export * from './workflow.command';

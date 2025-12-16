@@ -15,7 +15,7 @@ export interface CheckpointTupleProps {
 /**
  * 检查点元组值对象
  * 
- * 用于LangGraph集成的检查点元组结构
+ * 用于LangWorkflow集成的检查点元组结构
  */
 export class CheckpointTuple extends ValueObject<CheckpointTupleProps> {
   protected override readonly props: CheckpointTupleProps;
@@ -148,7 +148,7 @@ export class CheckpointTuple extends ValueObject<CheckpointTupleProps> {
    */
   public addPendingWrite(data: unknown): CheckpointTuple {
     const newPendingWrites = this.props.pendingWrites ? [...this.props.pendingWrites, data] : [data];
-    
+
     return new CheckpointTuple({
       ...this.props,
       pendingWrites: newPendingWrites
@@ -206,7 +206,7 @@ export class CheckpointTuple extends ValueObject<CheckpointTupleProps> {
   public setConfigValue(key: string, value: unknown): CheckpointTuple {
     const newConfig = { ...this.props.config };
     newConfig[key] = value;
-    
+
     return new CheckpointTuple({
       ...this.props,
       config: newConfig
@@ -220,10 +220,10 @@ export class CheckpointTuple extends ValueObject<CheckpointTupleProps> {
     const configurable = this.props.config['configurable'] as Record<string, unknown> || {};
     const newConfigurable = { ...configurable };
     newConfigurable[key] = value;
-    
+
     const newConfig = { ...this.props.config };
     newConfig['configurable'] = newConfigurable;
-    
+
     return new CheckpointTuple({
       ...this.props,
       config: newConfig
@@ -244,7 +244,7 @@ export class CheckpointTuple extends ValueObject<CheckpointTupleProps> {
     if (!this.hasParentConfig()) {
       return 0;
     }
-    
+
     // 简化实现，实际可能需要递归计算
     return 1;
   }
@@ -262,9 +262,9 @@ export class CheckpointTuple extends ValueObject<CheckpointTupleProps> {
   }
 
   /**
-   * 转换为LangGraph格式
+   * 转换为LangWorkflow格式
    */
-  public toLangGraphFormat(): Record<string, unknown> {
+  public toLangWorkflowFormat(): Record<string, unknown> {
     return {
       config: this.props.config,
       checkpoint: {
@@ -276,14 +276,14 @@ export class CheckpointTuple extends ValueObject<CheckpointTupleProps> {
           values: this.props.checkpoint.stateData,
           step: 0,
           metadata: {
-            source: 'graph-agent',
+            source: 'workflow-agent',
             step: 0,
             writes: this.props.pendingWrites || [],
             parents: this.props.parentConfig ? [this.props.parentConfig] : undefined
           }
         },
         metadata: {
-          source: 'graph-agent',
+          source: 'workflow-agent',
           step: 0,
           writes: this.props.pendingWrites || [],
           parents: this.props.parentConfig ? [this.props.parentConfig] : undefined,
@@ -291,7 +291,7 @@ export class CheckpointTuple extends ValueObject<CheckpointTupleProps> {
         }
       },
       metadata: {
-        source: 'graph-agent',
+        source: 'workflow-agent',
         step: 0,
         writes: this.props.pendingWrites || [],
         parents: this.props.parentConfig ? [this.props.parentConfig] : undefined
@@ -300,15 +300,15 @@ export class CheckpointTuple extends ValueObject<CheckpointTupleProps> {
   }
 
   /**
-   * 从LangGraph格式创建
+   * 从LangWorkflow格式创建
    */
-  public static fromLangGraphFormat(data: Record<string, unknown>): CheckpointTuple {
+  public static fromLangWorkflowFormat(data: Record<string, unknown>): CheckpointTuple {
     const config = data['config'] as Record<string, unknown>;
     const checkpointData = data['checkpoint'] as Record<string, unknown>;
-    
-    // 这里需要根据实际的LangGraph格式进行转换
+
+    // 这里需要根据实际的LangWorkflow格式进行转换
     // 简化实现，实际需要更复杂的转换逻辑
-    throw new DomainError('从LangGraph格式创建检查点元组的功能尚未实现');
+    throw new DomainError('从LangWorkflow格式创建检查点元组的功能尚未实现');
   }
 
   /**

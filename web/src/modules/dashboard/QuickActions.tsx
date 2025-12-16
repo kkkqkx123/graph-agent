@@ -1,5 +1,5 @@
 import React from 'react'
-import { Row, Col, Button, Space, Typography } from 'antd'
+import { Row, Col, Button, Space, Typoworkflowy } from 'antd'
 import {
   PlusOutlined,
   BranchesOutlined,
@@ -14,7 +14,7 @@ import {
 } from '@ant-design/icons'
 import { useNavigate } from 'react-router-dom'
 
-const { Title } = Typography
+const { Title } = Typoworkflowy
 
 const QuickActions: React.FC = () => {
   const navigate = useNavigate()

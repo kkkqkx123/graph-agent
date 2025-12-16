@@ -25,7 +25,7 @@ interface WorkflowDto {
   status: string;
   type: string;
   config: any;
-  graphId?: string;
+  workflowId?: string;
   version: string;
   executionCount: number;
   successCount: number;
@@ -113,7 +113,7 @@ interface CreateWorkflowCommand {
   name: string;
   description?: string;
   type?: string;
-  graphId?: string;
+  workflowId?: string;
   tags?: string[];
   metadata?: Record<string, unknown>;
   createdBy?: string;
@@ -143,7 +143,7 @@ interface UpdateWorkflowCommand {
   name?: string;
   description?: string;
   config?: any;
-  graphId?: string;
+  workflowId?: string;
   metadata?: Record<string, unknown>;
 }
 
@@ -242,15 +242,15 @@ export class WorkflowService {
       this.logger.info('正在创建工作流', {
         name: command.name,
         type: command.type,
-        graphId: command.graphId
+        workflowId: command.workflowId
       });
 
       // 验证工作流是否存在
-      if (command.graphId) {
-        const workflowId = ID.fromString(command.graphId);
+      if (command.workflowId) {
+        const workflowId = ID.fromString(command.workflowId);
         const workflowExists = await this.workflowRepository.exists(workflowId);
         if (!workflowExists) {
-          throw new DomainError(`工作流不存在: ${command.graphId}`);
+          throw new DomainError(`工作流不存在: ${command.workflowId}`);
         }
       }
 
@@ -259,7 +259,7 @@ export class WorkflowService {
       // Note: WorkflowConfig.fromObject may not exist, using constructor instead
       // Note: WorkflowConfig constructor may be protected, using any for now
       const config = command.config ? command.config as any : undefined;
-      const graphId = command.graphId ? ID.fromString(command.graphId) : undefined;
+      const workflowId = command.workflowId ? ID.fromString(command.workflowId) : undefined;
       const createdBy = command.createdBy ? ID.fromString(command.createdBy) : undefined;
 
       // 调用领域服务创建工作流
@@ -397,7 +397,7 @@ export class WorkflowService {
         workflow.updateConfig(config, userId);
       }
 
-      // Note: graphId is not a mutable property of Workflow
+      // Note: workflowId is not a mutable property of Workflow
       // 更新工作流ID需要在创建时指定，不支持后续更新
 
       // 更新元数据
@@ -818,7 +818,7 @@ export class WorkflowService {
       status: workflow.status.toString(),
       type: workflow.type.toString(),
       config: workflow.config.value,
-      graphId: undefined,
+      workflowId: undefined,
       version: workflow.version.toString(),
       executionCount: 0,
       successCount: 0,

@@ -3,11 +3,11 @@ import { TriggerType } from './trigger-type';
 import { TriggerState } from './trigger-state';
 import { TriggerContext } from './trigger-context';
 import { TriggerExecutionResult } from './trigger-execution-result';
-import { 
-  TimeTrigger, 
-  EventTrigger, 
-  ConditionTrigger, 
-  ManualTrigger 
+import {
+  TimeTrigger,
+  EventTrigger,
+  ConditionTrigger,
+  ManualTrigger
 } from './predefined-triggers';
 
 /**
@@ -37,7 +37,7 @@ export interface ITriggerManager {
   /**
    * 获取指定图的所有触发器
    */
-  getTriggersByGraph(graphId: string): BaseTrigger[];
+  getTriggersByWorkflow(workflowId: string): BaseTrigger[];
 
   /**
    * 获取指定类型的所有触发器
@@ -256,9 +256,9 @@ export class DefaultTriggerManager implements ITriggerManager {
   /**
    * 获取指定图的所有触发器
    */
-  getTriggersByGraph(graphId: string): BaseTrigger[] {
+  getTriggersByWorkflow(workflowId: string): BaseTrigger[] {
     return Array.from(this.triggers.values()).filter(
-      trigger => trigger.getGraphId().toString() === graphId
+      trigger => trigger.getWorkflowId().toString() === workflowId
     );
   }
 
@@ -545,33 +545,33 @@ export class DefaultTriggerManager implements ITriggerManager {
   getTriggerStatistics(): TriggerStatistics {
     const triggers = Array.from(this.triggers.values());
     const totalTriggers = triggers.length;
-    
+
     // 按类型分组
     const triggersByType: Record<TriggerType, number> = Object.fromEntries(
       Object.values(TriggerType).map(type => [type, 0])
     ) as Record<TriggerType, number>;
-    
+
     for (const trigger of triggers) {
       triggersByType[trigger.getType()]++;
     }
-    
+
     // 按状态分组
     const triggersByState: Record<TriggerState, number> = Object.fromEntries(
       Object.values(TriggerState).map(state => [state, 0])
     ) as Record<TriggerState, number>;
-    
+
     for (const trigger of triggers) {
       triggersByState[trigger.getState()]++;
     }
-    
+
     // 计算总触发次数和平均触发次数
     const totalTriggerCount = triggers.reduce((sum, trigger) => sum + trigger.getTriggerCount(), 0);
     const averageTriggerCount = totalTriggers > 0 ? totalTriggerCount / totalTriggers : 0;
-    
+
     // 找出最活跃的触发器
     let mostActiveTrigger: TriggerStatistics['mostActiveTrigger'] = undefined;
     if (triggers.length > 0) {
-      const activeTrigger = triggers.reduce((max, trigger) => 
+      const activeTrigger = triggers.reduce((max, trigger) =>
         trigger.getTriggerCount() > max.getTriggerCount() ? trigger : max
       );
       mostActiveTrigger = {
@@ -580,7 +580,7 @@ export class DefaultTriggerManager implements ITriggerManager {
         triggerCount: activeTrigger.getTriggerCount()
       };
     }
-    
+
     return {
       totalTriggers,
       triggersByType,

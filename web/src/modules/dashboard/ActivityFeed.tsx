@@ -1,5 +1,5 @@
 import React from 'react'
-import { List, Avatar, Button, Space, Typography, Tag, Tooltip } from 'antd'
+import { List, Avatar, Button, Space, Typoworkflowy, Tag, Tooltip } from 'antd'
 import {
   UserOutlined,
   RobotOutlined,
@@ -14,7 +14,7 @@ import {
 import { useNavigate } from 'react-router-dom'
 import { formatRelativeTime } from '@/utils'
 
-const { Text } = Typography
+const { Text } = Typoworkflowy
 
 interface Activity {
   id: string
@@ -226,7 +226,7 @@ const ActivityFeed: React.FC<ActivityFeedProps> = ({ activities, onViewAll }) =>
         size="small"
         locale={{ emptyText: '暂无活动记录' }}
       />
-      
+
       {displayActivities.length > 0 && (
         <div className="view-all-container">
           <Button

@@ -40,7 +40,7 @@ export class HistoryModel {
   workflowId?: string;
 
   @Column({ nullable: true })
-  graphId?: string;
+  workflowId?: string;
 
   @Column({ nullable: true })
   nodeId?: string;

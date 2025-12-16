@@ -64,7 +64,7 @@ export class ConnectionPool {
     const closePromises = Array.from(this.connections.values()).map(
       connection => connection.close()
     );
-    
+
     await Promise.all(closePromises);
     this.connections.clear();
     this.currentConnections = 0;
@@ -72,13 +72,13 @@ export class ConnectionPool {
 
   private async createConnection(name: string): Promise<DataSource> {
     const { DataSource } = await import('typeorm');
-    
+
     try {
       const dataSource = new DataSource({
         ...this.config,
         name: name,
       });
-      
+
       await dataSource.initialize();
 
       return dataSource;
@@ -91,21 +91,21 @@ export class ConnectionPool {
     // 从连接池中移除有问题的连接
     this.connections.delete(name);
     this.currentConnections--;
-    
+
     // 可以在这里添加重连逻辑
     console.error(`Connection ${name} removed from pool due to error:`, error);
   }
 
   private buildConnectionConfig(): DataSourceOptions {
     const dbConfig = this.configManager.get<DatabaseConfig>('database', {});
-    
+
     const config: any = {
       type: dbConfig.type || 'postgres',
       host: dbConfig.host || 'localhost',
       port: dbConfig.port || 5432,
       username: dbConfig.username || 'postgres',
       password: dbConfig.password || 'password',
-      database: dbConfig.database || 'graph_agent',
+      database: dbConfig.database || 'workflow_agent',
       entities: [__dirname + '/../models/*.model.ts'],
       synchronize: dbConfig.synchronize || false,
       logging: dbConfig.logging || false,
@@ -118,7 +118,7 @@ export class ConnectionPool {
         reconnect: dbConfig.reconnect !== false,
       }
     };
-    
+
     return config as DataSourceOptions;
   }
 
@@ -136,7 +136,7 @@ export class ConnectionPool {
 
   async healthCheck(): Promise<{ [key: string]: boolean }> {
     const results: { [key: string]: boolean } = {};
-    
+
     for (const [name, connection] of this.connections) {
       try {
         await connection.query('SELECT 1');
@@ -145,7 +145,7 @@ export class ConnectionPool {
         results[name] = false;
       }
     }
-    
+
     return results;
   }
 }

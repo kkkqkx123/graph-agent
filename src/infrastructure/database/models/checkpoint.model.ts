@@ -40,7 +40,7 @@ export class CheckpointModel {
   workflowId?: string;
 
   @Column({ nullable: true })
-  graphId?: string;
+  workflowId?: string;
 
   @Column({ nullable: true })
   sessionId?: string;

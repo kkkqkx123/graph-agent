@@ -45,9 +45,9 @@ export class TimeTrigger extends BaseTrigger {
       const context = TriggerContextUtils.create(
         this.getId(),
         this.getType(),
-        this.getGraphId()
+        this.getWorkflowId()
       ).withTriggerSource('immediate').build();
-      
+
       await this.trigger(context);
     }
 
@@ -114,9 +114,9 @@ export class TimeTrigger extends BaseTrigger {
       const context = TriggerContextUtils.create(
         this.getId(),
         this.getType(),
-        this.getGraphId()
+        this.getWorkflowId()
       ).withTriggerSource('timer').build();
-      
+
       await this.trigger(context);
     }, interval);
   }
@@ -184,7 +184,7 @@ export class EventTrigger extends BaseTrigger {
    */
   async checkCondition(context: TriggerContext): Promise<boolean> {
     const eventData = context.triggerData;
-    
+
     // 检查事件类型
     if (eventData['eventType'] !== this.eventConfig.eventType) {
       return false;
@@ -272,11 +272,11 @@ export class EventTrigger extends BaseTrigger {
       const context = TriggerContextUtils.create(
         this.getId(),
         this.getType(),
-        this.getGraphId()
+        this.getWorkflowId()
       ).withTriggerData(eventData)
         .withTriggerSource('event')
         .build();
-      
+
       this.trigger(context);
     };
 
@@ -404,9 +404,9 @@ export class ConditionTrigger extends BaseTrigger {
       const context = TriggerContextUtils.create(
         this.getId(),
         this.getType(),
-        this.getGraphId()
+        this.getWorkflowId()
       ).withTriggerSource('condition-evaluation').build();
-      
+
       const shouldTrigger = await this.checkCondition(context);
       if (shouldTrigger) {
         await this.trigger(context);
@@ -434,7 +434,7 @@ export class ConditionTrigger extends BaseTrigger {
       // 简单的条件评估示例
       const condition = this.conditionConfig.condition;
       const data = context.triggerData;
-      
+
       // 这里应该有更安全的表达式评估逻辑
       // 简化实现，实际项目中应该使用专门的表达式解析库
       return eval(condition);

@@ -15,7 +15,7 @@ export interface WorkflowDto {
   /** 工作流配置 */
   config: Record<string, unknown>;
   /** 图ID */
-  graphId?: string;
+  workflowId?: string;
   /** 工作流版本 */
   version: string;
   /** 执行次数 */

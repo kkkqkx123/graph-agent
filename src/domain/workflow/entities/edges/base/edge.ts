@@ -10,7 +10,7 @@ import { EdgeType } from '../../value-objects/edge-type';
  */
 export interface EdgeProps {
   id: ID;
-  graphId: ID;
+  workflowId: ID;
   type: EdgeType;
   fromNodeId: ID;
   toNodeId: ID;
@@ -42,7 +42,7 @@ export class Edge extends Entity {
 
   /**
    * 创建新边
-   * @param graphId 图ID
+   * @param workflowId 图ID
    * @param type 边类型
    * @param fromNodeId 源节点ID
    * @param toNodeId 目标节点ID
@@ -52,7 +52,7 @@ export class Edge extends Entity {
    * @returns 新边实例
    */
   public static create(
-    graphId: ID,
+    workflowId: ID,
     type: EdgeType,
     fromNodeId: ID,
     toNodeId: ID,
@@ -65,7 +65,7 @@ export class Edge extends Entity {
 
     const props: EdgeProps = {
       id: edgeId,
-      graphId,
+      workflowId,
       type,
       fromNodeId,
       toNodeId,
@@ -102,8 +102,8 @@ export class Edge extends Entity {
    * 获取图ID
    * @returns 图ID
    */
-  public get graphId(): ID {
-    return this.props.graphId;
+  public get workflowId(): ID {
+    return this.props.workflowId;
   }
 
   /**
@@ -340,7 +340,7 @@ export class Edge extends Entity {
    */
   public getReverse(): Edge {
     return Edge.create(
-      this.props.graphId,
+      this.props.workflowId,
       this.props.type,
       this.props.toNodeId,
       this.props.fromNodeId,
@@ -393,7 +393,7 @@ export class Edge extends Entity {
       throw new DomainError('边ID不能为空');
     }
 
-    if (!this.props.graphId) {
+    if (!this.props.workflowId) {
       throw new DomainError('图ID不能为空');
     }
 

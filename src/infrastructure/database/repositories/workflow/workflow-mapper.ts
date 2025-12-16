@@ -11,7 +11,7 @@ import { WorkflowModel } from '../../models/workflow.model';
 @injectable()
 export class WorkflowMapper {
   toEntity(model: WorkflowModel): Workflow {
-    // Note: Workflow no longer has graphId, executionCount, etc. as direct properties
+    // Note: Workflow no longer has workflowId, executionCount, etc. as direct properties
     const props = {
       id: ID.fromString(model.id),
       name: model.name,
@@ -39,7 +39,7 @@ export class WorkflowMapper {
     model.id = entity.workflowId.value;
     model.name = entity.name;
     model.description = entity.description || undefined;
-    model.graphId = undefined;
+    model.workflowId = undefined;
     model.state = this.mapStatusToState(entity.status);
     model.executionMode = this.mapTypeToExecutionMode(entity.type);
     model.metadata = {

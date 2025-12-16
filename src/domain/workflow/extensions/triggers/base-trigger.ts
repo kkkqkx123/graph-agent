@@ -21,7 +21,7 @@ export interface TriggerConfig {
   readonly type: TriggerType;
 
   /** 关联的图ID */
-  readonly graphId: ID;
+  readonly workflowId: ID;
 
   /** 是否启用 */
   readonly enabled: boolean;
@@ -95,8 +95,8 @@ export abstract class BaseTrigger {
   /**
    * 获取关联的图ID
    */
-  getGraphId(): ID {
-    return this.config.graphId;
+  getWorkflowId(): ID {
+    return this.config.workflowId;
   }
 
   /**

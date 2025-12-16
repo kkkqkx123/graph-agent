@@ -17,7 +17,7 @@ export interface TriggerContext {
   readonly triggerState: TriggerState;
 
   /** 关联的图ID */
-  readonly graphId: ID;
+  readonly workflowId: ID;
 
   /** 触发时间 */
   readonly triggeredAt: Date;
@@ -42,18 +42,18 @@ export class TriggerContextBuilder {
   private triggerId: string;
   private triggerType: TriggerType;
   private triggerState: TriggerState;
-  private graphId: ID;
+  private workflowId: ID;
   private triggeredAt: Date;
   private triggerData: Record<string, any>;
   private triggerSource: string;
   private metadata: Record<string, any>;
   private executionParams: Record<string, any>;
 
-  constructor(triggerId: string, triggerType: TriggerType, graphId: ID) {
+  constructor(triggerId: string, triggerType: TriggerType, workflowId: ID) {
     this.triggerId = triggerId;
     this.triggerType = triggerType;
     this.triggerState = TriggerState.ACTIVE;
-    this.graphId = graphId;
+    this.workflowId = workflowId;
     this.triggeredAt = new Date();
     this.triggerData = {};
     this.triggerSource = '';
@@ -96,7 +96,7 @@ export class TriggerContextBuilder {
       triggerId: this.triggerId,
       triggerType: this.triggerType,
       triggerState: this.triggerState,
-      graphId: this.graphId,
+      workflowId: this.workflowId,
       triggeredAt: this.triggeredAt,
       triggerData: this.triggerData,
       triggerSource: this.triggerSource,
@@ -116,9 +116,9 @@ export class TriggerContextUtils {
   static create(
     triggerId: string,
     triggerType: TriggerType,
-    graphId: ID
+    workflowId: ID
   ): TriggerContextBuilder {
-    return new TriggerContextBuilder(triggerId, triggerType, graphId);
+    return new TriggerContextBuilder(triggerId, triggerType, workflowId);
   }
 
   /**
@@ -180,7 +180,7 @@ export class TriggerContextUtils {
     return !!(
       context.triggerId &&
       context.triggerType &&
-      context.graphId &&
+      context.workflowId &&
       context.triggeredAt
     );
   }
@@ -189,6 +189,6 @@ export class TriggerContextUtils {
    * 获取上下文摘要
    */
   static getSummary(context: TriggerContext): string {
-    return `Trigger[${context.triggerId}] of type ${context.triggerType} for graph ${context.graphId} at ${context.triggeredAt.toISOString()}`;
+    return `Trigger[${context.triggerId}] of type ${context.triggerType} for workflow ${context.workflowId} at ${context.triggeredAt.toISOString()}`;
   }
 }

@@ -6,7 +6,7 @@ import { NodeType } from '../value-objects/node-type';
  * 节点添加事件接口
  */
 export interface NodeAddedEventData {
-  graphId: string;
+  workflowId: string;
   nodeId: string;
   nodeType: string;
   nodeName?: string;
@@ -26,7 +26,7 @@ export class NodeAddedEvent extends DomainEvent {
 
   /**
    * 构造函数
-   * @param graphId 图ID
+   * @param workflowId 图ID
    * @param nodeId 节点ID
    * @param nodeType 节点类型
    * @param nodeName 节点名称
@@ -35,7 +35,7 @@ export class NodeAddedEvent extends DomainEvent {
    * @param addedBy 添加者ID
    */
   constructor(
-    graphId: ID,
+    workflowId: ID,
     nodeId: ID,
     nodeType: NodeType,
     nodeName?: string,
@@ -43,9 +43,9 @@ export class NodeAddedEvent extends DomainEvent {
     properties?: Record<string, unknown>,
     addedBy?: ID
   ) {
-    super(graphId);
+    super(workflowId);
     this.data = {
-      graphId: graphId.toString(),
+      workflowId: workflowId.toString(),
       nodeId: nodeId.toString(),
       nodeType: nodeType.toString(),
       nodeName,
@@ -75,8 +75,8 @@ export class NodeAddedEvent extends DomainEvent {
    * 获取图ID
    * @returns 图ID
    */
-  public getGraphId(): string {
-    return this.data.graphId;
+  public getWorkflowId(): string {
+    return this.data.workflowId;
   }
 
   /**

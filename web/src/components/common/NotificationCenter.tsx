@@ -4,7 +4,7 @@ import {
   List,
   Button,
   Empty,
-  Typography,
+  Typoworkflowy,
   Space,
   Tag,
   Divider,
@@ -26,7 +26,7 @@ import { useAppStore } from '@/stores'
 import { formatDateTime, formatRelativeTime } from '@/utils'
 import type { Notification as NotificationType } from '@/types'
 
-const { Title, Text, Paragraph } = Typography
+const { Title, Text, Paraworkflow } = Typoworkflowy
 
 interface NotificationCenterProps {
   open: boolean
@@ -146,12 +146,12 @@ const NotificationCenter: React.FC<NotificationCenterProps> = ({
         description={
           <div>
             {notification.message && (
-              <Paragraph
+              <Paraworkflow
                 ellipsis={{ rows: 2, expandable: false }}
                 style={{ marginBottom: 4 }}
               >
                 {notification.message}
-              </Paragraph>
+              </Paraworkflow>
             )}
             <Text type="secondary" style={{ fontSize: 12 }}>
               {formatRelativeTime(notification.timestamp)}
@@ -250,8 +250,8 @@ const NotificationCenter: React.FC<NotificationCenterProps> = ({
               filter === 'unread'
                 ? '暂无未读通知'
                 : filter === 'read'
-                ? '暂无已读通知'
-                : '暂无通知'
+                  ? '暂无已读通知'
+                  : '暂无通知'
             }
             image={Empty.PRESENTED_IMAGE_SIMPLE}
           />

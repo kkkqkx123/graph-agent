@@ -29,9 +29,9 @@ export interface NodeExecutionStatusDto {
 /**
  * 图执行状态DTO
  */
-export interface GraphExecutionStatusDto {
+export interface WorkflowExecutionStatusDto {
   /** 图ID */
-  graphId: string;
+  workflowId: string;
   /** 执行ID */
   executionId: string;
   /** 执行状态 */

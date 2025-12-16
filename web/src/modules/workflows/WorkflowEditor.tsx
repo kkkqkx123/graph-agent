@@ -1,7 +1,7 @@
 import React from 'react'
-import { Card, Typography } from 'antd'
+import { Card, Typoworkflowy } from 'antd'
 
-const { Title } = Typography
+const { Title } = Typoworkflowy
 
 const WorkflowEditor: React.FC = () => {
   return (

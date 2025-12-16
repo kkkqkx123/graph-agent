@@ -14,7 +14,7 @@ export interface PluginContext {
   /**
    * 图ID
    */
-  graphId?: ID;
+  workflowId?: ID;
 
   /**
    * 节点ID
@@ -116,8 +116,8 @@ export class PluginContextBuilder {
   /**
    * 设置图ID
    */
-  public setGraphId(graphId: ID): PluginContextBuilder {
-    this.context.graphId = graphId;
+  public setWorkflowId(workflowId: ID): PluginContextBuilder {
+    this.context.workflowId = workflowId;
     return this;
   }
 
@@ -381,14 +381,14 @@ export class PluginContextUtils {
    */
   public static createExecutionContext(
     pluginId: string,
-    graphId?: ID,
+    workflowId?: ID,
     nodeId?: string,
     executionId?: string,
     inputData?: any
   ): PluginContext {
     const builder = PluginContextBuilder
       .create(pluginId)
-      .setGraphId(graphId!)
+      .setWorkflowId(workflowId!)
       .setExecutionId(executionId!)
       .setInputData(inputData);
 
@@ -435,7 +435,7 @@ export class PluginContextUtils {
   public static getSummary(context: PluginContext): Record<string, unknown> {
     return {
       pluginId: context.pluginId,
-      graphId: context.graphId?.toString(),
+      workflowId: context.workflowId?.toString(),
       nodeId: context.nodeId,
       edgeId: context.edgeId,
       executionId: context.executionId,

@@ -61,7 +61,7 @@ export class ToolNode extends Node {
    * 创建工具节点
    */
   public static override create(
-    graphId: ID,
+    workflowId: ID,
     type: NodeType,
     name?: string,
     description?: string,
@@ -82,7 +82,7 @@ export class ToolNode extends Node {
 
     const nodeProps: NodeProps = {
       id: nodeId,
-      graphId,
+      workflowId,
       type,
       name,
       description,

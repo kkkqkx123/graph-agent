@@ -7,7 +7,7 @@ import {
   ExecutionConfig,
   IExecutionContextManager
 } from '../execution';
-import { IGraphCompiler, CompilationOptions, CompilationResult, CompilationTarget } from '../validation';
+import { IWorkflowCompiler, CompilationOptions, CompilationResult, CompilationTarget } from '../validation';
 import { ITriggerManager, TriggerContext } from '../extensions';
 import { IStateManager } from '../state';
 
@@ -167,7 +167,7 @@ export interface IWorkflowExecutionService {
    * 获取执行统计信息
    */
   getExecutionStatistics(
-    graphId?: ID,
+    workflowId?: ID,
     startTime?: Date,
     endTime?: Date
   ): Promise<ExecutionStatistics>;
@@ -291,7 +291,7 @@ export type WorkflowExecutionEventCallback = (event: WorkflowExecutionEvent) => 
 export class DefaultWorkflowExecutionService implements IWorkflowExecutionService {
   constructor(
     private readonly contextManager: IExecutionContextManager,
-    private readonly compiler: IGraphCompiler,
+    private readonly compiler: IWorkflowCompiler,
     private readonly triggerManager: ITriggerManager,
     private readonly stateManager: IStateManager
   ) { }
@@ -493,7 +493,7 @@ export class DefaultWorkflowExecutionService implements IWorkflowExecutionServic
 
     return {
       executionId: context.executionId,
-      workflowId: context.graphId,
+      workflowId: context.workflowId,
       status: context.status,
       startTime: context.startTime,
       endTime: context.endTime,
@@ -537,7 +537,7 @@ export class DefaultWorkflowExecutionService implements IWorkflowExecutionServic
 
     return {
       executionId: context.executionId,
-      workflowId: context.graphId,
+      workflowId: context.workflowId,
       status: context.status,
       progress,
       currentNodeId: context.currentNodeId,
@@ -605,7 +605,7 @@ export class DefaultWorkflowExecutionService implements IWorkflowExecutionServic
     // 创建新的执行请求
     const retryRequest: WorkflowExecutionRequest = {
       executionId: `${executionId}_retry_${Date.now()}`,
-      workflowId: context.graphId,
+      workflowId: context.workflowId,
       mode: context.mode,
       priority: context.priority,
       config: context.config,

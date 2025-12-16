@@ -1,5 +1,5 @@
 import React from 'react'
-import { List, Avatar, Button, Tag, Space, Typography, Tooltip } from 'antd'
+import { List, Avatar, Button, Tag, Space, Typoworkflowy, Tooltip } from 'antd'
 import {
   UserOutlined,
   ClockCircleOutlined,
@@ -11,7 +11,7 @@ import { useNavigate } from 'react-router-dom'
 import { formatRelativeTime, formatStatus } from '@/utils'
 import type { Session } from '@/types'
 
-const { Text } = Typography
+const { Text } = Typoworkflowy
 
 interface RecentSessionsProps {
   sessions: Session[]
@@ -135,7 +135,7 @@ const RecentSessions: React.FC<RecentSessionsProps> = ({ sessions, onViewAll }) 
         size="small"
         locale={{ emptyText: '暂无会话数据' }}
       />
-      
+
       {sessions.length > 0 && (
         <div className="view-all-container">
           <Button

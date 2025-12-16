@@ -11,7 +11,7 @@ import { ValidationResult, ValidationUtils } from '../validation';
 /**
  * 工作流图构建配置接口
  */
-export interface WorkflowGraphBuildConfig {
+export interface WorkflowWorkflowBuildConfig {
   /** 是否启用验证 */
   readonly enableValidation?: boolean;
   /** 是否自动保存 */
@@ -71,7 +71,7 @@ export interface EdgeBuildRequest {
 /**
  * 工作流图构建结果接口
  */
-export interface WorkflowGraphBuildResult {
+export interface WorkflowWorkflowBuildResult {
   /** 是否成功 */
   readonly success: boolean;
   /** 工作流ID */
@@ -93,14 +93,14 @@ export interface WorkflowGraphBuildResult {
 /**
  * 工作流图构建服务接口
  */
-export interface IWorkflowGraphBuildService {
+export interface IWorkflowWorkflowBuildService {
   /**
    * 创建新工作流
    */
   createWorkflow(
     name: string,
     description?: string,
-    config?: WorkflowGraphBuildConfig,
+    config?: WorkflowWorkflowBuildConfig,
     metadata?: Record<string, any>,
     createdBy?: ID
   ): Promise<Workflow>;
@@ -113,7 +113,7 @@ export interface IWorkflowGraphBuildService {
     name: string,
     description?: string,
     parameters?: Record<string, any>,
-    config?: WorkflowGraphBuildConfig,
+    config?: WorkflowWorkflowBuildConfig,
     createdBy?: ID
   ): Promise<Workflow>;
 
@@ -124,7 +124,7 @@ export interface IWorkflowGraphBuildService {
     sourceWorkflowId: ID,
     newName: string,
     newDescription?: string,
-    config?: WorkflowGraphBuildConfig,
+    config?: WorkflowWorkflowBuildConfig,
     createdBy?: ID
   ): Promise<Workflow>;
 
@@ -132,7 +132,7 @@ export interface IWorkflowGraphBuildService {
    * 添加节点到图
    */
   addNode(
-    graphId: ID,
+    workflowId: ID,
     request: NodeBuildRequest,
     addedBy?: ID
   ): Promise<Node>;
@@ -141,7 +141,7 @@ export interface IWorkflowGraphBuildService {
    * 批量添加节点到图
    */
   addNodes(
-    graphId: ID,
+    workflowId: ID,
     requests: NodeBuildRequest[],
     addedBy?: ID
   ): Promise<Node[]>;
@@ -150,7 +150,7 @@ export interface IWorkflowGraphBuildService {
    * 更新图中的节点
    */
   updateNode(
-    graphId: ID,
+    workflowId: ID,
     nodeId: ID,
     updates: Partial<NodeBuildRequest>,
     updatedBy?: ID
@@ -160,7 +160,7 @@ export interface IWorkflowGraphBuildService {
    * 从图移除节点
    */
   removeNode(
-    graphId: ID,
+    workflowId: ID,
     nodeId: ID,
     removedBy?: ID
   ): Promise<void>;
@@ -169,7 +169,7 @@ export interface IWorkflowGraphBuildService {
    * 批量从图移除节点
    */
   removeNodes(
-    graphId: ID,
+    workflowId: ID,
     nodeIds: ID[],
     removedBy?: ID
   ): Promise<void>;
@@ -178,7 +178,7 @@ export interface IWorkflowGraphBuildService {
    * 添加边到图
    */
   addEdge(
-    graphId: ID,
+    workflowId: ID,
     request: EdgeBuildRequest,
     addedBy?: ID
   ): Promise<Edge>;
@@ -187,7 +187,7 @@ export interface IWorkflowGraphBuildService {
    * 批量添加边到图
    */
   addEdges(
-    graphId: ID,
+    workflowId: ID,
     requests: EdgeBuildRequest[],
     addedBy?: ID
   ): Promise<Edge[]>;
@@ -196,7 +196,7 @@ export interface IWorkflowGraphBuildService {
    * 更新图中的边
    */
   updateEdge(
-    graphId: ID,
+    workflowId: ID,
     edgeId: ID,
     updates: Partial<EdgeBuildRequest>,
     updatedBy?: ID
@@ -206,7 +206,7 @@ export interface IWorkflowGraphBuildService {
    * 从图移除边
    */
   removeEdge(
-    graphId: ID,
+    workflowId: ID,
     edgeId: ID,
     removedBy?: ID
   ): Promise<void>;
@@ -215,7 +215,7 @@ export interface IWorkflowGraphBuildService {
    * 批量从图移除边
    */
   removeEdges(
-    graphId: ID,
+    workflowId: ID,
     edgeIds: ID[],
     removedBy?: ID
   ): Promise<void>;
@@ -224,7 +224,7 @@ export interface IWorkflowGraphBuildService {
    * 连接两个节点
    */
   connectNodes(
-    graphId: ID,
+    workflowId: ID,
     fromNodeId: ID,
     toNodeId: ID,
     edgeType?: string,
@@ -237,7 +237,7 @@ export interface IWorkflowGraphBuildService {
    * 断开两个节点
    */
   disconnectNodes(
-    graphId: ID,
+    workflowId: ID,
     fromNodeId: ID,
     toNodeId: ID,
     removedBy?: ID
@@ -246,7 +246,7 @@ export interface IWorkflowGraphBuildService {
   /**
    * 验证工作流图结构
    */
-  validateWorkflowGraph(workflowId: ID): Promise<ValidationResult>;
+  validateWorkflowWorkflow(workflowId: ID): Promise<ValidationResult>;
 
   /**
    * 自动布局工作流图
@@ -260,7 +260,7 @@ export interface IWorkflowGraphBuildService {
   /**
    * 优化工作流图结构
    */
-  optimizeWorkflowGraph(
+  optimizeWorkflowWorkflow(
     workflowId: ID,
     options?: {
       removeUnusedNodes?: boolean;
@@ -272,21 +272,21 @@ export interface IWorkflowGraphBuildService {
   /**
    * 导入工作流图数据
    */
-  importWorkflowGraph(
+  importWorkflowWorkflow(
     data: string,
-    format?: 'json' | 'yaml' | 'xml' | 'graphml',
+    format?: 'json' | 'yaml' | 'xml' | 'workflowml',
     name?: string,
     description?: string,
-    config?: WorkflowGraphBuildConfig,
+    config?: WorkflowWorkflowBuildConfig,
     createdBy?: ID
   ): Promise<Workflow>;
 
   /**
    * 导出工作流图数据
    */
-  exportWorkflowGraph(
+  exportWorkflowWorkflow(
     workflowId: ID,
-    format?: 'json' | 'yaml' | 'xml' | 'graphml' | 'dot',
+    format?: 'json' | 'yaml' | 'xml' | 'workflowml' | 'dot',
     options?: Record<string, any>
   ): Promise<string>;
 
@@ -309,7 +309,7 @@ export interface IWorkflowGraphBuildService {
 /**
  * 默认工作流图构建服务实现
  */
-export class DefaultWorkflowGraphBuildService implements IWorkflowGraphBuildService {
+export class DefaultWorkflowWorkflowBuildService implements IWorkflowWorkflowBuildService {
   constructor(
     private readonly workflowRepository: WorkflowRepository
   ) { }
@@ -320,7 +320,7 @@ export class DefaultWorkflowGraphBuildService implements IWorkflowGraphBuildServ
   async createWorkflow(
     name: string,
     description?: string,
-    config: WorkflowGraphBuildConfig = {},
+    config: WorkflowWorkflowBuildConfig = {},
     metadata?: Record<string, any>,
     createdBy?: ID
   ): Promise<Workflow> {
@@ -345,7 +345,7 @@ export class DefaultWorkflowGraphBuildService implements IWorkflowGraphBuildServ
     name: string,
     description?: string,
     parameters: Record<string, any> = {},
-    config: WorkflowGraphBuildConfig = {},
+    config: WorkflowWorkflowBuildConfig = {},
     createdBy?: ID
   ): Promise<Workflow> {
     // 这里应该实现从模板创建工作流的逻辑
@@ -360,7 +360,7 @@ export class DefaultWorkflowGraphBuildService implements IWorkflowGraphBuildServ
     sourceWorkflowId: ID,
     newName: string,
     newDescription?: string,
-    config: WorkflowGraphBuildConfig = {},
+    config: WorkflowWorkflowBuildConfig = {},
     createdBy?: ID
   ): Promise<Workflow> {
     const sourceWorkflow = await this.workflowRepository.findByIdOrFail(sourceWorkflowId);
@@ -723,7 +723,7 @@ export class DefaultWorkflowGraphBuildService implements IWorkflowGraphBuildServ
   /**
    * 验证工作流图结构
    */
-  async validateWorkflowGraph(workflowId: ID): Promise<ValidationResult> {
+  async validateWorkflowWorkflow(workflowId: ID): Promise<ValidationResult> {
     const workflow = await this.workflowRepository.findByIdOrFail(workflowId);
 
     // 简化实现，实际中应该使用完整的验证逻辑
@@ -734,7 +734,7 @@ export class DefaultWorkflowGraphBuildService implements IWorkflowGraphBuildServ
     if (workflow.getNodeCount() === 0) {
       errors.push(
         ValidationUtils.createStructureError('工作流必须包含至少一个节点')
-          .withGraphId(workflowId)
+          .withWorkflowId(workflowId)
           .build()
       );
     }
@@ -796,7 +796,7 @@ export class DefaultWorkflowGraphBuildService implements IWorkflowGraphBuildServ
   /**
    * 优化工作流图结构
    */
-  async optimizeWorkflowGraph(
+  async optimizeWorkflowWorkflow(
     workflowId: ID,
     options: {
       removeUnusedNodes?: boolean;
@@ -824,12 +824,12 @@ export class DefaultWorkflowGraphBuildService implements IWorkflowGraphBuildServ
   /**
    * 导入工作流图数据
    */
-  async importWorkflowGraph(
+  async importWorkflowWorkflow(
     data: string,
-    format: 'json' | 'yaml' | 'xml' | 'graphml' = 'json',
+    format: 'json' | 'yaml' | 'xml' | 'workflowml' = 'json',
     name?: string,
     description?: string,
-    config: WorkflowGraphBuildConfig = {},
+    config: WorkflowWorkflowBuildConfig = {},
     createdBy?: ID
   ): Promise<Workflow> {
     // 简化实现，实际中应该支持多种格式
@@ -878,9 +878,9 @@ export class DefaultWorkflowGraphBuildService implements IWorkflowGraphBuildServ
   /**
    * 导出工作流图数据
    */
-  async exportWorkflowGraph(
+  async exportWorkflowWorkflow(
     workflowId: ID,
-    format: 'json' | 'yaml' | 'xml' | 'graphml' | 'dot' = 'json',
+    format: 'json' | 'yaml' | 'xml' | 'workflowml' | 'dot' = 'json',
     options: Record<string, any> = {}
   ): Promise<string> {
     const workflow = await this.workflowRepository.findByIdOrFail(workflowId);

@@ -96,15 +96,15 @@
   margin-bottom: 16px;
 }
 
-.loading-skeleton .ant-skeleton-paragraph {
+.loading-skeleton .ant-skeleton-paraworkflow {
   margin-bottom: 16px;
 }
 
-.loading-skeleton .ant-skeleton-paragraph > li {
+.loading-skeleton .ant-skeleton-paraworkflow > li {
   width: 100%;
 }
 
-.loading-skeleton .ant-skeleton-paragraph > li:last-child {
+.loading-skeleton .ant-skeleton-paraworkflow > li:last-child {
   width: 80%;
 }
 

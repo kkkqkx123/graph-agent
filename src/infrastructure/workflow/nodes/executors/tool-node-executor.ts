@@ -1,5 +1,5 @@
 import { injectable, inject } from 'inversify';
-import { Node } from '../../../../domain/workflow/graph/entities/nodes/base/node';
+import { Node } from '../../../../domain/workflow/workflow/entities/nodes/base/node';
 import { ExecutionContext } from '../../engine/execution-context';
 import { ToolRegistry } from '../../../external/tools/registries/tool-registry';
 
@@ -8,28 +8,28 @@ export class ToolNodeExecutor {
   constructor(
     @inject('ToolRegistry') private toolRegistry: ToolRegistry,
     @inject('ToolExecutorFactory') private toolExecutorFactory: any
-  ) {}
+  ) { }
 
   async execute(node: Node, context: ExecutionContext): Promise<any> {
     try {
       // Get tool
       const tool = await this.getTool(node);
-      
+
       // Prepare tool execution
       const execution = this.prepareExecution(node, context);
-      
+
       // Get tool executor
       const executor = await this.getToolExecutor(tool);
-      
+
       // Execute tool
       const result = await executor.execute(tool, execution);
-      
+
       // Process result
       const processedResult = this.processResult(result, node, context);
-      
+
       // Store result in context
       context.setVariable(`tool_result_${node.nodeId.value}`, processedResult);
-      
+
       // Store execution metadata
       context.setVariable(`tool_execution_${node.nodeId.value}`, {
         toolId: tool.id.value,
@@ -38,11 +38,11 @@ export class ToolNodeExecutor {
         success: result.success,
         error: result.error
       });
-      
+
       if (!result.success) {
         throw new Error(`Tool execution failed: ${result.error}`);
       }
-      
+
       return processedResult;
     } catch (error) {
       throw new Error(`Tool node execution failed: ${error instanceof Error ? error.message : String(error)}`);
@@ -53,7 +53,7 @@ export class ToolNodeExecutor {
     const config = node.properties;
     const toolId = config['toolId'];
     const toolName = config['toolName'];
-    
+
     if (toolId) {
       const tool = this.toolRegistry.getTool({ value: toolId } as any);
       if (!tool) {
@@ -61,7 +61,7 @@ export class ToolNodeExecutor {
       }
       return tool;
     }
-    
+
     if (toolName) {
       const tool = this.toolRegistry.getToolByName(String(toolName));
       if (!tool) {
@@ -69,16 +69,16 @@ export class ToolNodeExecutor {
       }
       return tool;
     }
-    
+
     throw new Error('Tool node requires either toolId or toolName configuration');
   }
 
   private prepareExecution(node: Node, context: ExecutionContext): any {
     const config = node.properties;
-    
+
     // Prepare parameters
     const parameters = this.prepareParameters(node, context);
-    
+
     // Create tool execution
     return {
       id: this.generateExecutionId(),
@@ -90,12 +90,12 @@ export class ToolNodeExecutor {
   private prepareParameters(node: Node, context: ExecutionContext): any {
     const config = node.properties;
     let parameters: any = {};
-    
+
     // Use static parameters if provided
     if (config['parameters']) {
       parameters = { ...config['parameters'] };
     }
-    
+
     // Override with dynamic parameters from context
     if (config['parameterMappings']) {
       for (const [targetParam, sourcePath] of Object.entries(config['parameterMappings'])) {
@@ -105,12 +105,12 @@ export class ToolNodeExecutor {
         }
       }
     }
-    
+
     // Apply parameter transformations if configured
     if (config['parameterTransformations']) {
       parameters = this.applyParameterTransformations(parameters, config['parameterTransformations'] as any[]);
     }
-    
+
     // Validate parameters if schema is provided
     if (config['parameterSchema']) {
       const validation = this.validateParameters(parameters, config['parameterSchema']);
@@ -118,14 +118,14 @@ export class ToolNodeExecutor {
         throw new Error(`Parameter validation failed: ${validation.errors.join(', ')}`);
       }
     }
-    
+
     return parameters;
   }
 
   private getContextValue(path: string, context: ExecutionContext): any {
     const parts = path.split('.');
     let current: any = context;
-    
+
     for (const part of parts) {
       if (current && typeof current === 'object' && part in current) {
         current = current[part];
@@ -137,13 +137,13 @@ export class ToolNodeExecutor {
         }
       }
     }
-    
+
     return current;
   }
 
   private applyParameterTransformations(parameters: any, transformations: any[]): any {
     let result = { ...parameters };
-    
+
     for (const transformation of transformations) {
       switch (transformation.type) {
         case 'map':
@@ -160,18 +160,18 @@ export class ToolNodeExecutor {
           break;
       }
     }
-    
+
     return result;
   }
 
   private applyMapTransformation(data: any, transformation: any): any {
     const mapping = transformation.mapping;
     const result: any = {};
-    
+
     for (const [targetField, sourceField] of Object.entries(mapping)) {
       result[targetField] = this.getNestedValue(data, sourceField as string);
     }
-    
+
     return result;
   }
 
@@ -179,13 +179,13 @@ export class ToolNodeExecutor {
     if (!Array.isArray(data)) {
       return data;
     }
-    
+
     return data.filter(item => this.evaluateCondition(item, transformation.condition));
   }
 
   private applyFormatTransformation(data: any, transformation: any): any {
     const format = transformation.format;
-    
+
     switch (format) {
       case 'json':
         return JSON.stringify(data);
@@ -217,7 +217,7 @@ export class ToolNodeExecutor {
   private evaluateCondition(item: any, condition: any): boolean {
     if (condition.field && condition.operator && condition.value) {
       const fieldValue = this.getNestedValue(item, condition.field);
-      
+
       switch (condition.operator) {
         case 'equals':
           return fieldValue === condition.value;
@@ -235,13 +235,13 @@ export class ToolNodeExecutor {
           return true;
       }
     }
-    
+
     return true;
   }
 
   private validateParameters(parameters: any, schema: any): { valid: boolean; errors: string[] } {
     const errors: string[] = [];
-    
+
     // Check required parameters
     if (schema.required) {
       for (const requiredParam of schema.required) {
@@ -250,7 +250,7 @@ export class ToolNodeExecutor {
         }
       }
     }
-    
+
     // Check parameter types
     if (schema.properties) {
       for (const [paramName, paramSchema] of Object.entries(schema.properties)) {
@@ -260,14 +260,14 @@ export class ToolNodeExecutor {
             parameters[paramName],
             paramSchema as any
           );
-          
+
           if (typeError) {
             errors.push(typeError);
           }
         }
       }
     }
-    
+
     return {
       valid: errors.length === 0,
       errors
@@ -276,11 +276,11 @@ export class ToolNodeExecutor {
 
   private validateParameterType(paramName: string, value: any, schema: any): string | null {
     const { type, enum: enumValues } = schema;
-    
+
     if (enumValues && !enumValues.includes(value)) {
       return `Parameter '${paramName}' must be one of: ${enumValues.join(', ')}`;
     }
-    
+
     switch (type) {
       case 'string':
         if (typeof value !== 'string') {
@@ -308,7 +308,7 @@ export class ToolNodeExecutor {
         }
         break;
     }
-    
+
     return null;
   }
 
@@ -319,22 +319,22 @@ export class ToolNodeExecutor {
   private processResult(result: any, node: Node, context: ExecutionContext): any {
     const config = node.properties;
     let processedResult = result.data;
-    
+
     // Extract specific fields if configured
     if (config['outputFields']) {
       processedResult = this.extractFields(processedResult, config['outputFields'] as string[]);
     }
-    
+
     // Apply result transformations if configured
     if (config['outputTransformations']) {
       processedResult = this.applyResultTransformations(processedResult, config['outputTransformations'] as any[]);
     }
-    
+
     // Store raw result if configured
     if (config['storeRawResult']) {
       context.setVariable(`tool_raw_result_${node.nodeId.value}`, result.data);
     }
-    
+
     // Store execution metadata if configured
     if (config['storeExecutionMetadata']) {
       context.setVariable(`tool_metadata_${node.nodeId.value}`, {
@@ -344,25 +344,25 @@ export class ToolNodeExecutor {
         timestamp: new Date().toISOString()
       });
     }
-    
+
     return processedResult;
   }
 
   private extractFields(data: any, fields: string[]): any {
     const result: any = {};
-    
+
     for (const field of fields) {
       if (field in data) {
         result[field] = data[field];
       }
     }
-    
+
     return result;
   }
 
   private applyResultTransformations(data: any, transformations: any[]): any {
     let result = data;
-    
+
     for (const transformation of transformations) {
       switch (transformation.type) {
         case 'map':
@@ -379,7 +379,7 @@ export class ToolNodeExecutor {
           break;
       }
     }
-    
+
     return result;
   }
 
@@ -390,11 +390,11 @@ export class ToolNodeExecutor {
   async canExecute(node: Node, context: ExecutionContext): Promise<boolean> {
     // Check if node has required configuration
     const config = node.properties;
-    
+
     if (!config['toolId'] && !config['toolName']) {
       return false;
     }
-    
+
     // Check if tool exists
     if (config['toolId']) {
       const tool = this.toolRegistry.getTool({ value: config['toolId'] } as any);
@@ -402,26 +402,26 @@ export class ToolNodeExecutor {
         return false;
       }
     }
-    
+
     if (config['toolName']) {
       const tool = this.toolRegistry.getToolByName(String(config['toolName']));
       if (!tool) {
         return false;
       }
     }
-    
+
     return true;
   }
 
   async validate(node: Node): Promise<{ valid: boolean; errors: string[] }> {
     const errors: string[] = [];
     const config = node.properties;
-    
+
     // Check required fields
     if (!config['toolId'] && !config['toolName']) {
       errors.push('Tool node requires either toolId or toolName configuration');
     }
-    
+
     // Validate tool exists
     if (config['toolId']) {
       const tool = this.toolRegistry.getTool({ value: config['toolId'] } as any);
@@ -429,14 +429,14 @@ export class ToolNodeExecutor {
         errors.push(`Tool with ID '${config['toolId']}' not found`);
       }
     }
-    
+
     if (config['toolName']) {
       const tool = this.toolRegistry.getToolByName(String(config['toolName']));
       if (!tool) {
         errors.push(`Tool with name '${config['toolName']}' not found`);
       }
     }
-    
+
     // Validate parameter mappings
     if (config['parameterMappings']) {
       for (const [targetParam, sourcePath] of Object.entries(config['parameterMappings'])) {
@@ -445,7 +445,7 @@ export class ToolNodeExecutor {
         }
       }
     }
-    
+
     return {
       valid: errors.length === 0,
       errors

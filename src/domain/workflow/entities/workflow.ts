@@ -58,7 +58,7 @@ export class Workflow extends AggregateRoot {
    * @param description 工作流描述
    * @param type 工作流类型
    * @param config 工作流配置
-   * @param graphId 图ID
+   * @param workflowId 图ID
    * @param tags 标签
    * @param metadata 元数据
    * @param createdBy 创建者ID
@@ -480,7 +480,7 @@ export class Workflow extends AggregateRoot {
       throw new DomainError('无法向已删除的工作流添加节点');
     }
 
-    if (!node.graphId.equals(this.props.id)) {
+    if (!node.workflowId.equals(this.props.id)) {
       throw new DomainError('节点不属于当前工作流');
     }
 
@@ -549,7 +549,7 @@ export class Workflow extends AggregateRoot {
       throw new DomainError('无法向已删除的工作流添加边');
     }
 
-    if (!edge.graphId.equals(this.props.id)) {
+    if (!edge.workflowId.equals(this.props.id)) {
       throw new DomainError('边不属于当前工作流');
     }
 

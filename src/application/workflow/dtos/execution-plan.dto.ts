@@ -5,7 +5,7 @@ export interface ExecutionPlanDto {
   /** 执行计划ID */
   id: string;
   /** 图ID */
-  graphId: string;
+  workflowId: string;
   /** 执行模式 */
   executionMode: 'sequential' | 'parallel' | 'conditional';
   /** 执行步骤 */

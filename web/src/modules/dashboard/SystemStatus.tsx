@@ -1,5 +1,5 @@
 import React from 'react'
-import { Row, Col, Progress, Typography, Space, Button, Tag, Tooltip } from 'antd'
+import { Row, Col, Progress, Typoworkflowy, Space, Button, Tag, Tooltip } from 'antd'
 import {
   CheckCircleOutlined,
   ExclamationCircleOutlined,
@@ -11,7 +11,7 @@ import {
 import { useNavigate } from 'react-router-dom'
 import type { SystemStatus } from '@/types'
 
-const { Text, Title } = Typography
+const { Text, Title } = Typoworkflowy
 
 interface SystemStatusProps {
   status: SystemStatus | null | undefined

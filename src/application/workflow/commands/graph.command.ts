@@ -1,7 +1,7 @@
 /**
  * 创建图命令
  */
-export interface CreateGraphCommand {
+export interface CreateWorkflowCommand {
   /** 图名称 */
   name: string;
   /** 图描述 */
@@ -15,9 +15,9 @@ export interface CreateGraphCommand {
 /**
  * 更新图命令
  */
-export interface UpdateGraphCommand {
+export interface UpdateWorkflowCommand {
   /** 图ID */
-  graphId: string;
+  workflowId: string;
   /** 新名称 */
   name?: string;
   /** 新描述 */
@@ -31,9 +31,9 @@ export interface UpdateGraphCommand {
 /**
  * 删除图命令
  */
-export interface DeleteGraphCommand {
+export interface DeleteWorkflowCommand {
   /** 图ID */
-  graphId: string;
+  workflowId: string;
   /** 操作用户ID */
   userId?: string;
   /** 删除原因 */
@@ -45,7 +45,7 @@ export interface DeleteGraphCommand {
  */
 export interface AddNodeCommand {
   /** 图ID */
-  graphId: string;
+  workflowId: string;
   /** 节点类型 */
   nodeType: string;
   /** 节点名称 */
@@ -68,7 +68,7 @@ export interface AddNodeCommand {
  */
 export interface UpdateNodeCommand {
   /** 图ID */
-  graphId: string;
+  workflowId: string;
   /** 节点ID */
   nodeId: string;
   /** 新节点名称 */
@@ -91,7 +91,7 @@ export interface UpdateNodeCommand {
  */
 export interface RemoveNodeCommand {
   /** 图ID */
-  graphId: string;
+  workflowId: string;
   /** 节点ID */
   nodeId: string;
   /** 操作用户ID */
@@ -103,7 +103,7 @@ export interface RemoveNodeCommand {
  */
 export interface AddEdgeCommand {
   /** 图ID */
-  graphId: string;
+  workflowId: string;
   /** 边类型 */
   edgeType: string;
   /** 源节点ID */
@@ -125,7 +125,7 @@ export interface AddEdgeCommand {
  */
 export interface UpdateEdgeCommand {
   /** 图ID */
-  graphId: string;
+  workflowId: string;
   /** 边ID */
   edgeId: string;
   /** 新条件表达式 */
@@ -143,7 +143,7 @@ export interface UpdateEdgeCommand {
  */
 export interface RemoveEdgeCommand {
   /** 图ID */
-  graphId: string;
+  workflowId: string;
   /** 边ID */
   edgeId: string;
   /** 操作用户ID */
@@ -153,9 +153,9 @@ export interface RemoveEdgeCommand {
 /**
  * 执行图命令
  */
-export interface ExecuteGraphCommand {
+export interface ExecuteWorkflowCommand {
   /** 图ID */
-  graphId: string;
+  workflowId: string;
   /** 输入数据 */
   inputData: Record<string, unknown>;
   /** 执行参数 */
@@ -183,9 +183,9 @@ export interface ExecuteGraphCommand {
 /**
  * 验证图命令
  */
-export interface ValidateGraphCommand {
+export interface ValidateWorkflowCommand {
   /** 图ID */
-  graphId: string;
+  workflowId: string;
   /** 验证级别 */
   validationLevel?: 'basic' | 'standard' | 'strict';
   /** 验证类型 */
@@ -197,7 +197,7 @@ export interface ValidateGraphCommand {
  */
 export interface CreateExecutionPlanCommand {
   /** 图ID */
-  graphId: string;
+  workflowId: string;
   /** 执行模式 */
   executionMode?: 'sequential' | 'parallel' | 'conditional';
   /** 执行参数 */
@@ -218,7 +218,7 @@ export interface CreateExecutionPlanCommand {
  */
 export interface BatchOperationCommand {
   /** 图ID */
-  graphId: string;
+  workflowId: string;
   /** 操作类型 */
   operationType: 'add_nodes' | 'remove_nodes' | 'add_edges' | 'remove_edges';
   /** 操作数据 */
@@ -230,9 +230,9 @@ export interface BatchOperationCommand {
 /**
  * 导入图命令
  */
-export interface ImportGraphCommand {
+export interface ImportWorkflowCommand {
   /** 图数据 */
-  graphData: {
+  workflowData: {
     name: string;
     description?: string;
     nodes: any[];
@@ -255,9 +255,9 @@ export interface ImportGraphCommand {
 /**
  * 导出图命令
  */
-export interface ExportGraphCommand {
+export interface ExportWorkflowCommand {
   /** 图ID */
-  graphId: string;
+  workflowId: string;
   /** 导出格式 */
   format?: 'json' | 'yaml' | 'xml' | 'dot';
   /** 导出选项 */

@@ -18,7 +18,7 @@ export interface NodePosition {
  */
 export interface NodeProps {
   id: ID;
-  graphId: ID;
+  workflowId: ID;
   type: NodeType;
   name?: string | undefined;
   description?: string | undefined;
@@ -49,7 +49,7 @@ export class Node extends Entity {
 
   /**
    * 创建新节点
-   * @param graphId 图ID
+   * @param workflowId 图ID
    * @param type 节点类型
    * @param name 节点名称
    * @param description 节点描述
@@ -58,7 +58,7 @@ export class Node extends Entity {
    * @returns 新节点实例
    */
   public static create(
-    graphId: ID,
+    workflowId: ID,
     type: NodeType,
     name?: string,
     description?: string,
@@ -70,7 +70,7 @@ export class Node extends Entity {
 
     const props: NodeProps = {
       id: nodeId,
-      graphId,
+      workflowId,
       type,
       name: name || undefined,
       description: description || undefined,
@@ -106,8 +106,8 @@ export class Node extends Entity {
    * 获取图ID
    * @returns 图ID
    */
-  public get graphId(): ID {
-    return this.props.graphId;
+  public get workflowId(): ID {
+    return this.props.workflowId;
   }
 
   /**
@@ -338,7 +338,7 @@ export class Node extends Entity {
       throw new DomainError('节点ID不能为空');
     }
 
-    if (!this.props.graphId) {
+    if (!this.props.workflowId) {
       throw new DomainError('图ID不能为空');
     }
 

@@ -1,8 +1,8 @@
 import { injectable, inject } from 'inversify';
 import { Workflow } from '../../../domain/workflow/entities/workflow';
 import { WorkflowRepository } from '../../../domain/workflow/repositories/workflow-repository';
-import { WorkflowGraphRepository } from '../../../domain/workflow/repositories/workflow-graph-repository';
-import { WorkflowGraphDomainService } from '../../../domain/workflow/services/workflow-graph-domain-service';
+import { WorkflowWorkflowRepository } from '../../../domain/workflow/repositories/workflow-workflow-repository';
+import { WorkflowWorkflowDomainService } from '../../../domain/workflow/services/workflow-workflow-domain-service';
 import { ID } from '../../../domain/common/value-objects/id';
 import { DomainError } from '../../../domain/common/errors/domain-error';
 import { ILogger } from '@shared/types/logger';
@@ -46,8 +46,8 @@ export interface WorkflowValidationRequest {
 export class WorkflowValidator {
   constructor(
     @inject('WorkflowRepository') private readonly workflowRepository: WorkflowRepository,
-    @inject('WorkflowGraphRepository') private readonly workflowGraphRepository: WorkflowGraphRepository,
-    @inject('WorkflowGraphDomainService') private readonly workflowGraphDomainService: WorkflowGraphDomainService,
+    @inject('WorkflowWorkflowRepository') private readonly workflowWorkflowRepository: WorkflowWorkflowRepository,
+    @inject('WorkflowWorkflowDomainService') private readonly workflowWorkflowDomainService: WorkflowWorkflowDomainService,
     @inject('Logger') private readonly logger: ILogger
   ) { }
 
@@ -153,7 +153,7 @@ export class WorkflowValidator {
         result.errors.push(`工作流状态不是活跃状态: ${workflow.status.toString()}`);
       }
 
-      // Note: Workflow no longer has graphId property
+      // Note: Workflow no longer has workflowId property
       // 工作流现在直接包含节点和边，不关联外部图
       if (workflow.nodes.size === 0) {
         result.isValid = false;
@@ -162,7 +162,7 @@ export class WorkflowValidator {
       }
 
       // 验证工作流结构
-      const workflowValidationResult = await this.workflowGraphDomainService.validateWorkflowGraphStructure(workflow.workflowId);
+      const workflowValidationResult = await this.workflowWorkflowDomainService.validateWorkflowWorkflowStructure(workflow.workflowId);
       this.mergeValidationResults(result, {
         isValid: workflowValidationResult.isValid,
         errors: workflowValidationResult.errors,
@@ -289,7 +289,7 @@ export class WorkflowValidator {
    * 按类型验证
    * @param validationType 验证类型
    * @param workflow 工作流
-   * @param graph 图
+   * @param workflow 图
    * @param validationLevel 验证级别
    * @returns 验证结果
    */
@@ -320,7 +320,7 @@ export class WorkflowValidator {
   /**
    * 验证结构
    * @param workflow 工作流
-   * @param graph 图
+   * @param workflow 图
    * @param validationLevel 验证级别
    * @returns 验证结果
    */
@@ -379,7 +379,7 @@ export class WorkflowValidator {
   /**
    * 验证语义
    * @param workflow 工作流
-   * @param graph 图
+   * @param workflow 图
    * @param validationLevel 验证级别
    * @returns 验证结果
    */
@@ -439,7 +439,7 @@ export class WorkflowValidator {
   /**
    * 验证性能
    * @param workflow 工作流
-   * @param graph 图
+   * @param workflow 图
    * @param validationLevel 验证级别
    * @returns 验证结果
    */
@@ -491,7 +491,7 @@ export class WorkflowValidator {
   /**
    * 验证安全性
    * @param workflow 工作流
-   * @param graph 图
+   * @param workflow 图
    * @param validationLevel 验证级别
    * @returns 验证结果
    */
