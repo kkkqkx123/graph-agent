@@ -4,7 +4,6 @@
  * 负责各种类型检查点的创建功能
  */
 
-import { ID } from '../../../../domain/common/value-objects/id';
 import { ThreadCheckpoint } from '../../../../domain/threads/checkpoints/entities/thread-checkpoint';
 import { CheckpointType } from '../../../../domain/checkpoint/value-objects/checkpoint-type';
 import { ThreadCheckpointDomainService, ThreadCheckpointDomainServiceImpl } from '../../../../domain/threads/checkpoints/services/thread-checkpoint-domain-service';

@@ -4,5 +4,4 @@
 
 export { BaseService } from './base-service';
 export { BaseApplicationService } from './base-application-service';
-export { BaseDtoMapper } from './base-dto-mapper';
 export { BaseServiceFactory, BaseApplicationServiceFactory } from './base-service-factory';

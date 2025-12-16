@@ -4,7 +4,6 @@
  * 负责检查点的查询、历史记录和过期时间延长等管理功能
  */
 
-import { ID } from '../../../../domain/common/value-objects/id';
 import { ThreadCheckpoint } from '../../../../domain/threads/checkpoints/entities/thread-checkpoint';
 import { ThreadCheckpointDomainService, ThreadCheckpointDomainServiceImpl } from '../../../../domain/threads/checkpoints/services/thread-checkpoint-domain-service';
 import { ThreadCheckpointRepository } from '../../../../domain/threads/checkpoints/repositories/thread-checkpoint-repository';
@@ -88,14 +87,14 @@ export class CheckpointManagementService extends BaseApplicationService {
         return success;
       },
       { checkpointId, hours }
-      );
-      }
+    );
+  }
 
-      /**
-      * 将检查点领域对象映射为检查点信息DTO
-      */
-      private mapCheckpointToInfo(checkpoint: ThreadCheckpoint): CheckpointInfo {
-      return {
+  /**
+  * 将检查点领域对象映射为检查点信息DTO
+  */
+  private mapCheckpointToInfo(checkpoint: ThreadCheckpoint): CheckpointInfo {
+    return {
       checkpointId: checkpoint.checkpointId.toString(),
       threadId: checkpoint.threadId.toString(),
       type: checkpoint.type.getValue(),
@@ -110,6 +109,6 @@ export class CheckpointManagementService extends BaseApplicationService {
       sizeBytes: checkpoint.sizeBytes,
       restoreCount: checkpoint.restoreCount,
       lastRestoredAt: checkpoint.lastRestoredAt?.getDate().toISOString()
-      };
-      }
-      }
+    };
+  }
+}

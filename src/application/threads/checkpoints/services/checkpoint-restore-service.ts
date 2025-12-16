@@ -4,7 +4,6 @@
  * 负责检查点的恢复、备份和备份链管理功能
  */
 
-import { ID } from '../../../../domain/common/value-objects/id';
 import { ThreadCheckpoint } from '../../../../domain/threads/checkpoints/entities/thread-checkpoint';
 import { ThreadCheckpointDomainService, ThreadCheckpointDomainServiceImpl } from '../../../../domain/threads/checkpoints/services/thread-checkpoint-domain-service';
 import { ThreadCheckpointRepository } from '../../../../domain/threads/checkpoints/repositories/thread-checkpoint-repository';
@@ -135,4 +134,4 @@ export class CheckpointRestoreService extends BaseApplicationService {
       lastRestoredAt: checkpoint.lastRestoredAt?.getDate().toISOString()
     };
   }
-  }
+}

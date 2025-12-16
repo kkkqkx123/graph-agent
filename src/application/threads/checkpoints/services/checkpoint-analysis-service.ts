@@ -4,7 +4,6 @@
  * 负责检查点的统计、分析、清理和健康检查等功能
  */
 
-import { ID } from '../../../../domain/common/value-objects/id';
 import { CheckpointStatistics } from '../../../../domain/threads/checkpoints/value-objects/checkpoint-statistics';
 import { ThreadCheckpointDomainService, ThreadCheckpointDomainServiceImpl } from '../../../../domain/threads/checkpoints/services/thread-checkpoint-domain-service';
 import { ThreadCheckpointRepository } from '../../../../domain/threads/checkpoints/repositories/thread-checkpoint-repository';

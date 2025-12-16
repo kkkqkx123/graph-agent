@@ -1,7 +1,6 @@
 import { ID } from '../../../../domain/common/value-objects/id';
 import { ThreadCheckpoint } from '../../../../domain/threads/checkpoints/entities/thread-checkpoint';
 import { CheckpointType } from '../../../../domain/checkpoint/value-objects/checkpoint-type';
-import { CheckpointStatus } from '../../../../domain/threads/checkpoints/value-objects/checkpoint-status';
 import { CheckpointStatistics } from '../../../../domain/threads/checkpoints/value-objects/checkpoint-statistics';
 import { ThreadCheckpointDomainService, ThreadCheckpointDomainServiceImpl } from '../../../../domain/threads/checkpoints/services/thread-checkpoint-domain-service';
 import { ThreadCheckpointRepository } from '../../../../domain/threads/checkpoints/repositories/thread-checkpoint-repository';
