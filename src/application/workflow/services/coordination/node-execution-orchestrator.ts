@@ -2,11 +2,11 @@ import { injectable, inject } from 'inversify';
 import { Node } from '../../../../../domain/workflow/graph/entities/nodes';
 import { Edge } from '../../../../../domain/workflow/graph/entities/edges';
 import { Graph } from '../../../../../domain/workflow/graph/entities/graph';
-import { INodeExecutor } from '../../../../../domain/workflow/interfaces/node-executor.interface';
-import { IEdgeEvaluator } from '../../../../../domain/workflow/interfaces/edge-evaluator.interface';
-import { ID } from '../../../../../domain/common/value-objects/id';
-import { NodeExecutionResultValue } from '../../../../../domain/workflow/value-objects/node-execution-result';
-import { DomainError } from '../../../../../domain/common/errors/domain-error';
+import { INodeExecutor } from '../../../../domain/workflow/interfaces/node-executor.interface';
+import { IEdgeEvaluator } from '../../../../domain/workflow/interfaces/edge-evaluator.interface';
+import { ID } from '../../../../domain/common/value-objects/id';
+import { NodeExecutionResultValue } from '../../../../domain/workflow/value-objects/node-execution-result';
+import { DomainError } from '../../../../domain/common/errors/domain-error';
 import { ILogger } from '@shared/types/logger';
 
 // DTOs

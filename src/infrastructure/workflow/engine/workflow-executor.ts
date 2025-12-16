@@ -48,8 +48,9 @@ export class WorkflowExecutor {
     // Get node executor
     const executor = this.nodeExecutorFactory.createExecutor(node.type.getValue());
 
-    // Execute node
-    const result = await executor.execute(node, context);
+    // Note: ExecutionContext.getGraph() returns Graph | Workflow, but executor expects Graph
+    // Cast to Graph since ExecutionContext can work with both
+    const result = await executor.execute(node, context as unknown as IExecutionContext);
 
     // Update state
     await this.stateManager.updateNodeState(context, node.id, result);

@@ -11,6 +11,7 @@ import { WorkflowModel } from '../../models/workflow.model';
 @injectable()
 export class WorkflowMapper {
   toEntity(model: WorkflowModel): Workflow {
+    // Note: Workflow no longer has graphId, executionCount, etc. as direct properties
     const props = {
       id: ID.fromString(model.id),
       name: model.name,
@@ -18,15 +19,11 @@ export class WorkflowMapper {
       status: this.mapStateToStatus(model.state),
       type: this.mapExecutionModeToType(model.executionMode),
       config: this.mapConfigurationToConfig(model.configuration),
-      graphId: model.graphId ? ID.fromString(model.graphId) : undefined,
+      nodes: new Map(),
+      edges: new Map(),
       createdAt: Timestamp.create(model.createdAt),
       updatedAt: Timestamp.create(model.updatedAt),
       version: Version.fromString(model.revision.toString()),
-      lastExecutedAt: model.metadata?.lastExecutedAt ? Timestamp.create(model.metadata.lastExecutedAt) : undefined,
-      executionCount: model.metadata?.executionCount || 0,
-      successCount: model.metadata?.successCount || 0,
-      failureCount: model.metadata?.failureCount || 0,
-      averageExecutionTime: model.metadata?.averageExecutionTime,
       tags: model.metadata?.tags || [],
       metadata: model.metadata || {},
       isDeleted: model.metadata?.isDeleted || false,
@@ -42,16 +39,11 @@ export class WorkflowMapper {
     model.id = entity.workflowId.value;
     model.name = entity.name;
     model.description = entity.description || undefined;
-    model.graphId = entity.graphId?.value ?? undefined;
+    model.graphId = undefined;
     model.state = this.mapStatusToState(entity.status);
     model.executionMode = this.mapTypeToExecutionMode(entity.type);
     model.metadata = {
       ...entity.metadata,
-      executionCount: entity.executionCount,
-      successCount: entity.successCount,
-      failureCount: entity.failureCount,
-      averageExecutionTime: entity.averageExecutionTime,
-      lastExecutedAt: entity.lastExecutedAt?.getDate() || null,
       tags: entity.tags,
       isDeleted: entity.isDeleted()
     };

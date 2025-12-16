@@ -1,7 +1,7 @@
 import { injectable, inject } from 'inversify';
 import { Graph } from '../../../../../domain/workflow/graph/entities/graph';
-import { ID } from '../../../../../domain/common/value-objects/id';
-import { DomainError } from '../../../../../domain/common/errors/domain-error';
+import { ID } from '../../../../domain/common/value-objects/id';
+import { DomainError } from '../../../../domain/common/errors/domain-error';
 import { ILogger } from '@shared/types/logger';
 
 /**
@@ -11,7 +11,7 @@ import { ILogger } from '@shared/types/logger';
  */
 @injectable()
 export class TopologicalSorter {
-  constructor(@inject('Logger') private readonly logger: ILogger) {}
+  constructor(@inject('Logger') private readonly logger: ILogger) { }
 
   /**
    * 拓扑排序
@@ -28,30 +28,30 @@ export class TopologicalSorter {
     const inDegree = new Map<string, number>();
     const result: string[] = [];
     const queue: string[] = [];
-    
+
     // 计算每个节点的入度
     for (const node of graph.nodes.values()) {
       const nodeIdStr = node.nodeId.toString();
       inDegree.set(nodeIdStr, 0);
     }
-    
+
     for (const edge of graph.edges.values()) {
       const toNodeIdStr = edge.toNodeId.toString();
       inDegree.set(toNodeIdStr, (inDegree.get(toNodeIdStr) || 0) + 1);
     }
-    
+
     // 找到入度为0的节点
     for (const [nodeIdStr, degree] of inDegree.entries()) {
       if (degree === 0) {
         queue.push(nodeIdStr);
       }
     }
-    
+
     // 拓扑排序
     while (queue.length > 0) {
       const nodeIdStr = queue.shift()!;
       result.push(nodeIdStr);
-      
+
       const node = graph.getNode(ID.fromString(nodeIdStr));
       if (node) {
         const outgoingEdges = graph.getOutgoingEdges(node.nodeId);
@@ -59,14 +59,14 @@ export class TopologicalSorter {
           const toNodeIdStr = edge.toNodeId.toString();
           const newInDegree = (inDegree.get(toNodeIdStr) || 0) - 1;
           inDegree.set(toNodeIdStr, newInDegree);
-          
+
           if (newInDegree === 0) {
             queue.push(toNodeIdStr);
           }
         }
       }
     }
-    
+
     // 检查是否有环
     if (result.length !== graph.nodes.size) {
       throw new DomainError('图中存在循环，无法进行拓扑排序');
@@ -107,18 +107,18 @@ export class TopologicalSorter {
     const nodeLevels = new Map<string, number>();
     const inDegree = new Map<string, number>();
     const queue: Array<{ nodeId: string; level: number }> = [];
-    
+
     // 计算每个节点的入度
     for (const node of graph.nodes.values()) {
       const nodeIdStr = node.nodeId.toString();
       inDegree.set(nodeIdStr, 0);
     }
-    
+
     for (const edge of graph.edges.values()) {
       const toNodeIdStr = edge.toNodeId.toString();
       inDegree.set(toNodeIdStr, (inDegree.get(toNodeIdStr) || 0) + 1);
     }
-    
+
     // 找到入度为0的节点，作为第0层
     for (const [nodeIdStr, degree] of inDegree.entries()) {
       if (degree === 0) {
@@ -126,11 +126,11 @@ export class TopologicalSorter {
         nodeLevels.set(nodeIdStr, 0);
       }
     }
-    
+
     // 按层级处理节点
     while (queue.length > 0) {
       const { nodeId, level } = queue.shift()!;
-      
+
       const node = graph.getNode(ID.fromString(nodeId));
       if (node) {
         const outgoingEdges = graph.getOutgoingEdges(node.nodeId);
@@ -138,7 +138,7 @@ export class TopologicalSorter {
           const toNodeIdStr = edge.toNodeId.toString();
           const newInDegree = (inDegree.get(toNodeIdStr) || 0) - 1;
           inDegree.set(toNodeIdStr, newInDegree);
-          
+
           // 如果入度变为0，设置其层级
           if (newInDegree === 0) {
             const nextLevel = level + 1;
@@ -166,13 +166,13 @@ export class TopologicalSorter {
   getNodesAtLevel(graph: Graph, level: number): string[] {
     const nodeLevels = this.getNodeLevels(graph);
     const nodesAtLevel: string[] = [];
-    
+
     for (const [nodeIdStr, nodeLevel] of nodeLevels.entries()) {
       if (nodeLevel === level) {
         nodesAtLevel.push(nodeIdStr);
       }
     }
-    
+
     return nodesAtLevel;
   }
 
@@ -186,7 +186,7 @@ export class TopologicalSorter {
     if (nodeLevels.size === 0) {
       return 0;
     }
-    
+
     return Math.max(...Array.from(nodeLevels.values()));
   }
 
@@ -201,7 +201,7 @@ export class TopologicalSorter {
     const topologicalOrder = this.topologicalSort(graph);
     const fromIndex = topologicalOrder.indexOf(fromNodeId.toString());
     const toIndex = topologicalOrder.indexOf(toNodeId.toString());
-    
+
     return fromIndex !== -1 && toIndex !== -1 && fromIndex < toIndex;
   }
 
@@ -214,14 +214,14 @@ export class TopologicalSorter {
   getPredecessors(graph: Graph, nodeId: ID): string[] {
     const topologicalOrder = this.topologicalSort(graph);
     const nodeIndex = topologicalOrder.indexOf(nodeId.toString());
-    
+
     if (nodeIndex === -1) {
       return [];
     }
-    
+
     const predecessors: string[] = [];
     const visited = new Set<string>();
-    
+
     // 检查拓扑排序中在该节点之前的所有节点
     for (let i = 0; i < nodeIndex; i++) {
       const candidateNodeId = topologicalOrder[i];
@@ -229,7 +229,7 @@ export class TopologicalSorter {
         predecessors.push(candidateNodeId);
       }
     }
-    
+
     return predecessors;
   }
 
@@ -242,13 +242,13 @@ export class TopologicalSorter {
   getSuccessors(graph: Graph, nodeId: ID): string[] {
     const topologicalOrder = this.topologicalSort(graph);
     const nodeIndex = topologicalOrder.indexOf(nodeId.toString());
-    
+
     if (nodeIndex === -1) {
       return [];
     }
-    
+
     const successors: string[] = [];
-    
+
     // 检查拓扑排序中在该节点之后的所有节点
     for (let i = nodeIndex + 1; i < topologicalOrder.length; i++) {
       const candidateNodeId = topologicalOrder[i];
@@ -256,7 +256,7 @@ export class TopologicalSorter {
         successors.push(candidateNodeId);
       }
     }
-    
+
     return successors;
   }
 
@@ -270,21 +270,21 @@ export class TopologicalSorter {
   private hasPath(graph: Graph, fromNodeId: ID, toNodeId: ID): boolean {
     const visited = new Set<string>();
     const queue = [fromNodeId];
-    
+
     while (queue.length > 0) {
       const currentNodeId = queue.shift()!;
       const currentNodeIdStr = currentNodeId.toString();
-      
+
       if (currentNodeId.equals(toNodeId)) {
         return true;
       }
-      
+
       if (visited.has(currentNodeIdStr)) {
         continue;
       }
-      
+
       visited.add(currentNodeIdStr);
-      
+
       const outgoingEdges = graph.getOutgoingEdges(currentNodeId);
       for (const edge of outgoingEdges) {
         if (!visited.has(edge.toNodeId.toString())) {
@@ -292,7 +292,7 @@ export class TopologicalSorter {
         }
       }
     }
-    
+
     return false;
   }
 }

@@ -1,11 +1,10 @@
 import { injectable } from 'inversify';
 import { ExecutionContext } from '../engine/execution-context';
-import { GraphExecutor } from '../engine/graph-executor';
 import { ExecutionStrategy } from './execution-strategy';
 
 @injectable()
 export class SequentialStrategy extends ExecutionStrategy {
-  async execute(context: ExecutionContext, graphExecutor: GraphExecutor): Promise<any> {
+  async execute(context: ExecutionContext, graphExecutor: any): Promise<any> {
     const graph = context.getGraph();
     const executedNodes = new Set<string>();
     const nodeResults: Map<string, any> = new Map();
@@ -45,7 +44,7 @@ export class SequentialStrategy extends ExecutionStrategy {
   private async executeFromNode(
     nodeId: string,
     context: ExecutionContext,
-    graphExecutor: GraphExecutor,
+    graphExecutor: any,
     executedNodes: Set<string>,
     nodeResults: Map<string, any>
   ): Promise<any> {

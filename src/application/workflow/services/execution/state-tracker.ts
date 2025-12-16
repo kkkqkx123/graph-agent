@@ -2,9 +2,9 @@ import { injectable, inject } from 'inversify';
 import { Graph } from '../../../../../domain/workflow/graph/entities/graph';
 import { Node } from '../../../../../domain/workflow/graph/entities/nodes';
 import { Edge } from '../../../../../domain/workflow/graph/entities/edges';
-import { GraphRepository, NodeRepository, EdgeRepository } from '../../../../../domain/workflow/repositories/graph-repository';
-import { ID } from '../../../../../domain/common/value-objects/id';
-import { DomainError } from '../../../../../domain/common/errors/domain-error';
+import { GraphRepository, NodeRepository, EdgeRepository } from '../../../../domain/workflow/repositories/graph-repository';
+import { ID } from '../../../../domain/common/value-objects/id';
+import { DomainError } from '../../../../domain/common/errors/domain-error';
 import { ILogger } from '@shared/types/logger';
 
 // DTOs

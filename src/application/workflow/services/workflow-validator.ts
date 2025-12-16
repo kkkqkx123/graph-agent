@@ -84,19 +84,16 @@ export class WorkflowValidator {
           return result;
         }
 
-        if (workflow.graphId) {
-          graph = await this.graphRepository.findById(workflow.graphId);
         }
-      }
 
-      if (request.graphId) {
-        graph = await this.graphRepository.findById(ID.fromString(request.graphId));
-        if (!graph) {
-          result.isValid = false;
-          result.errors.push(`图不存在: ${request.graphId}`);
-          return result;
+        if (request.graphId) {
+          graph = await this.graphRepository.findById(ID.fromString(request.graphId));
+          if (!graph) {
+            result.isValid = false;
+            result.errors.push(`图不存在: ${request.graphId}`);
+            return result;
+          }
         }
-      }
 
       // 确定验证类型
       const validationTypes = request.validationTypes || ['structure', 'semantics'];
@@ -159,23 +156,16 @@ export class WorkflowValidator {
         result.errors.push(`工作流状态不是活跃状态: ${workflow.status.toString()}`);
       }
 
-      // 验证工作流是否有关联的图
-      if (!workflow.graphId) {
+      // Note: Workflow no longer has graphId property
+      // 工作流现在直接包含节点和边，不关联外部图
+      if (workflow.nodes.size === 0) {
         result.isValid = false;
-        result.errors.push('工作流没有关联的图');
+        result.errors.push('工作流没有节点');
         return result;
       }
 
-      // 获取并验证图
-      const graph = await this.graphRepository.findById(workflow.graphId);
-      if (!graph) {
-        result.isValid = false;
-        result.errors.push(`工作流关联的图不存在: ${workflow.graphId.toString()}`);
-        return result;
-      }
-
-      // 验证图结构
-      const graphValidationResult = await this.graphDomainService.validateGraphStructure(workflow.graphId);
+      // 验证工作流结构
+      const graphValidationResult = await this.graphDomainService.validateGraphStructure(workflow.workflowId);
       this.mergeValidationResults(result, {
         isValid: graphValidationResult.isValid,
         errors: graphValidationResult.errors,

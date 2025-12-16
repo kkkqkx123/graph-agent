@@ -272,14 +272,14 @@ export class GraphMetricsCalculator {
    * @returns 平均路径长度
    */
   calculateAveragePathLength(graph: Graph): number {
-    const nodeIds = Array.from(graph.nodes.keys());
+    const nodes = Array.from(graph.nodes.values());
     let totalPathLength = 0;
     let pathCount = 0;
     
-    for (let i = 0; i < nodeIds.length; i++) {
-      for (let j = i + 1; j < nodeIds.length; j++) {
-        const nodeId1 = nodeIds[i];
-        const nodeId2 = nodeIds[j];
+    for (let i = 0; i < nodes.length; i++) {
+      for (let j = i + 1; j < nodes.length; j++) {
+        const nodeId1 = nodes[i]?.nodeId;
+        const nodeId2 = nodes[j]?.nodeId;
         if (nodeId1 && nodeId2) {
           const pathLength = this.calculateShortestPathLength(graph, nodeId1, nodeId2);
           if (pathLength > 0) {
@@ -337,13 +337,13 @@ export class GraphMetricsCalculator {
    * @returns 图的直径
    */
   calculateDiameter(graph: Graph): number {
-    const nodeIds = Array.from(graph.nodes.keys());
+    const nodes = Array.from(graph.nodes.values());
     let maxPathLength = 0;
     
-    for (let i = 0; i < nodeIds.length; i++) {
-      for (let j = i + 1; j < nodeIds.length; j++) {
-        const nodeId1 = nodeIds[i];
-        const nodeId2 = nodeIds[j];
+    for (let i = 0; i < nodes.length; i++) {
+      for (let j = i + 1; j < nodes.length; j++) {
+        const nodeId1 = nodes[i]?.nodeId;
+        const nodeId2 = nodes[j]?.nodeId;
         if (nodeId1 && nodeId2) {
           const pathLength = this.calculateShortestPathLength(graph, nodeId1, nodeId2);
           if (pathLength > maxPathLength) {
