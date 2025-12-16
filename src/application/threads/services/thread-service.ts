@@ -53,7 +53,7 @@ export class ThreadService {
     private readonly sessionRepository: SessionRepository,
     private readonly threadDomainService: ThreadDomainService,
     private readonly logger: ILogger
-  ) {}
+  ) { }
 
   /**
    * 创建线程
@@ -62,9 +62,9 @@ export class ThreadService {
    */
   async createThread(request: CreateThreadRequest): Promise<string> {
     try {
-      this.logger.info('正在创建线程', { 
-        sessionId: request.sessionId, 
-        workflowId: request.workflowId 
+      this.logger.info('正在创建线程', {
+        sessionId: request.sessionId,
+        workflowId: request.workflowId
       });
 
       // 验证会话存在
@@ -76,7 +76,7 @@ export class ThreadService {
 
       // 转换请求参数
       const workflowId = request.workflowId ? ID.fromString(request.workflowId) : undefined;
-      const priority = request.priority ? ThreadPriority.fromNumericValue(request.priority) : undefined;
+      const priority = request.priority ? ThreadPriority.fromNumber(request.priority) : undefined;
 
       // 调用领域服务创建线程
       const thread = await this.threadDomainService.createThread(
@@ -354,9 +354,9 @@ export class ThreadService {
    * @returns 失败后的线程信息
    */
   async failThread(
-    threadId: string, 
-    errorMessage: string, 
-    userId?: string, 
+    threadId: string,
+    errorMessage: string,
+    userId?: string,
     reason?: string
   ): Promise<ThreadInfo> {
     try {
@@ -426,7 +426,7 @@ export class ThreadService {
   async updateThreadPriority(threadId: string, priority: number): Promise<ThreadInfo> {
     try {
       const id = ID.fromString(threadId);
-      const threadPriority = ThreadPriority.fromNumericValue(priority);
+      const threadPriority = ThreadPriority.fromNumber(priority);
 
       const thread = await this.threadDomainService.updateThreadPriority(id, threadPriority);
 

@@ -12,7 +12,8 @@ export class CreateSessionCommand {
   readonly title?: string;
   readonly config?: Record<string, unknown>;
 
-  constructor(dto: CreateSessionDto) {
+  constructor(data: any) {
+    const dto = new CreateSessionDto(data);
     this.userId = dto.userId;
     this.title = dto.title;
     this.config = dto.config?.value;

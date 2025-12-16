@@ -15,7 +15,8 @@ export class CreateThreadCommand {
   readonly description?: string;
   readonly metadata?: Record<string, unknown>;
 
-  constructor(dto: CreateThreadDto) {
+  constructor(data: any) {
+    const dto = new CreateThreadDto(data);
     this.sessionId = dto.sessionId;
     this.workflowId = dto.workflowId;
     this.priority = dto.priority;

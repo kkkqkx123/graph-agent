@@ -61,7 +61,7 @@ export class SessionService {
 
       // 转换请求参数
       const userId = request.userId ? ID.fromString(request.userId) : undefined;
-      const config = request.config ? SessionConfig.fromValue(request.config) : undefined;
+      const config = request.config ? SessionConfig.create(request.config) : undefined;
 
       // 调用领域服务创建会话
       const session = await this.sessionDomainService.createSession(
@@ -274,7 +274,7 @@ export class SessionService {
   async updateSessionConfig(sessionId: string, config: Record<string, unknown>): Promise<SessionInfo> {
     try {
       const id = ID.fromString(sessionId);
-      const sessionConfig = SessionConfig.fromValue(config);
+      const sessionConfig = SessionConfig.create(config);
 
       const session = await this.sessionDomainService.updateSessionConfig(id, sessionConfig);
 
@@ -352,19 +352,22 @@ export class SessionService {
   }
 
   /**
-   * 获取会话统计信息
-   * @param userId 用户ID
-   * @returns 会话统计信息
-   */
-  async getSessionStatistics(userId?: string): Promise<{
-    total: number;
-    active: number;
-    suspended: number;
-    terminated: number;
-  }> {
-    try {
-      const user = userId ? ID.fromString(userId) : undefined;
-      return await this.sessionDomainService.getSessionStatistics(user);
+    * 获取会话统计信息
+    * @param userId 用户ID
+    * @returns 会话统计信息
+    */
+   async getSessionStatistics(userId?: string): Promise<{
+     total: number;
+     active: number;
+     suspended: number;
+     terminated: number;
+   }> {
+     try {
+       const user = userId ? ID.fromString(userId) : undefined;
+       if (!user) {
+         throw new DomainError('获取会话统计信息需要提供用户ID');
+       }
+       return await this.sessionDomainService.getUserSessionStats(user);
     } catch (error) {
       this.logger.error('获取会话统计信息失败', error as Error);
       throw error;

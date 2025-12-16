@@ -2,33 +2,16 @@
  * 会话信息DTO
  */
 
-import { IsString, IsOptional, IsNumber } from 'class-validator';
-
 /**
  * 会话信息DTO
  */
 export class SessionInfoDto {
-  @IsString()
   readonly sessionId: string;
-
-  @IsOptional()
-  @IsString()
   readonly userId?: string;
-
-  @IsOptional()
-  @IsString()
   readonly title?: string;
-
-  @IsString()
   readonly status: string;
-
-  @IsNumber()
   readonly messageCount: number;
-
-  @IsString()
   readonly createdAt: string;
-
-  @IsString()
   readonly lastActivityAt: string;
 
   constructor(
@@ -40,6 +23,29 @@ export class SessionInfoDto {
     userId?: string,
     title?: string
   ) {
+    // 基本类型验证
+    if (typeof sessionId !== 'string') {
+      throw new Error('sessionId must be string');
+    }
+    if (typeof status !== 'string') {
+      throw new Error('status must be string');
+    }
+    if (typeof messageCount !== 'number') {
+      throw new Error('messageCount must be number');
+    }
+    if (typeof createdAt !== 'string') {
+      throw new Error('createdAt must be string');
+    }
+    if (typeof lastActivityAt !== 'string') {
+      throw new Error('lastActivityAt must be string');
+    }
+    if (userId && typeof userId !== 'string') {
+      throw new Error('userId must be string');
+    }
+    if (title && typeof title !== 'string') {
+      throw new Error('title must be string');
+    }
+    
     this.sessionId = sessionId;
     this.userId = userId;
     this.title = title;
@@ -54,18 +60,25 @@ export class SessionInfoDto {
  * 会话列表响应DTO
  */
 export class SessionListResponseDto {
-  @IsNumber()
   readonly total: number;
-
-  @IsNumber()
   readonly page: number;
-
-  @IsNumber()
   readonly pageSize: number;
-
   readonly items: SessionInfoDto[];
 
   constructor(total: number, page: number, pageSize: number, items: SessionInfoDto[]) {
+    if (typeof total !== 'number') {
+      throw new Error('total must be number');
+    }
+    if (typeof page !== 'number') {
+      throw new Error('page must be number');
+    }
+    if (typeof pageSize !== 'number') {
+      throw new Error('pageSize must be number');
+    }
+    if (!Array.isArray(items)) {
+      throw new Error('items must be array');
+    }
+    
     this.total = total;
     this.page = page;
     this.pageSize = pageSize;
@@ -77,19 +90,25 @@ export class SessionListResponseDto {
  * 会话统计信息DTO
  */
 export class SessionStatisticsDto {
-  @IsNumber()
   readonly total: number;
-
-  @IsNumber()
   readonly active: number;
-
-  @IsNumber()
   readonly suspended: number;
-
-  @IsNumber()
   readonly terminated: number;
 
   constructor(total: number, active: number, suspended: number, terminated: number) {
+    if (typeof total !== 'number') {
+      throw new Error('total must be number');
+    }
+    if (typeof active !== 'number') {
+      throw new Error('active must be number');
+    }
+    if (typeof suspended !== 'number') {
+      throw new Error('suspended must be number');
+    }
+    if (typeof terminated !== 'number') {
+      throw new Error('terminated must be number');
+    }
+    
     this.total = total;
     this.active = active;
     this.suspended = suspended;
