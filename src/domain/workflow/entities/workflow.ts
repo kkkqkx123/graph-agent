@@ -8,8 +8,8 @@ import { WorkflowType } from '../value-objects/workflow-type';
 import { WorkflowConfig } from '../value-objects/workflow-config';
 import { WorkflowCreatedEvent } from '../events/workflow-created-event';
 import { WorkflowStatusChangedEvent } from '../events/workflow-status-changed-event';
-import { Node } from '../entities/nodes/base/node';
-import { Edge } from '../entities/edges/base/edge';
+import { Node } from './nodes/base/node';
+import { Edge } from './edges/base/edge';
 
 /**
  * Workflow实体接口
@@ -126,7 +126,6 @@ export class Workflow extends AggregateRoot {
       workflowType.toString(),
       workflowStatus.toString(),
       workflowConfig.value,
-      undefined,
       createdBy
     ));
 

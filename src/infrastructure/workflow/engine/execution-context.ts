@@ -1,10 +1,9 @@
-import { Graph } from '@domain/workflow/entities/graph';
 import { Workflow } from '@domain/workflow/entities/workflow';
 import { NodeId } from '@/domain/workflow/value-objects/node-id';
 import { EdgeId } from '@/domain/workflow/value-objects/edge-id';
 
 export class ExecutionContext {
-  private readonly graph: Graph | Workflow;
+  private readonly workflow: Workflow;
   private readonly input: any;
   private readonly startTime: number;
   private readonly nodeId: string;
@@ -15,22 +14,20 @@ export class ExecutionContext {
   private variables: Map<string, any> = new Map();
   private metadata: Map<string, any> = new Map();
 
-  constructor(graph: Graph | Workflow, input: any, nodeId?: string) {
-    this.graph = graph;
+  constructor(workflow: Workflow, input: any, nodeId?: string) {
+    this.workflow = workflow;
     this.input = input;
     this.startTime = Date.now();
     this.nodeId = nodeId || this.generateExecutionId();
   }
 
-  getGraph(): Graph | Workflow {
-    return this.graph;
+  getWorkflow(): Workflow {
+    return this.workflow;
   }
 
-  getWorkflow(): Workflow {
-    if ('workflowId' in this.graph) {
-      return this.graph as Workflow;
-    }
-    throw new Error('ExecutionContext was not initialized with a Workflow');
+  // 为了向后兼容，保留 getGraph 方法
+  getGraph(): Workflow {
+    return this.workflow;
   }
 
   getInput(): any {
@@ -131,7 +128,7 @@ export class ExecutionContext {
 
   // Utility methods
   clone(): ExecutionContext {
-    const cloned = new ExecutionContext(this.graph, this.input, this.nodeId);
+    const cloned = new ExecutionContext(this.workflow, this.input, this.nodeId);
 
     // Copy executed nodes
     for (const nodeId of this.executedNodes) {
@@ -193,7 +190,7 @@ export class ExecutionContext {
       executionId: this.nodeId,
       startTime: this.startTime,
       elapsedTime: this.getElapsedTime(),
-      graphId: this.graph.graphId ? this.graph.graphId.value : this.graph.workflowId.value,
+      workflowId: this.workflow.workflowId.value,
       input: this.input,
       executedNodes: Array.from(this.executedNodes),
       nodeResults: Object.fromEntries(this.nodeResults),
@@ -203,8 +200,8 @@ export class ExecutionContext {
     };
   }
 
-  static fromJSON(data: any, graph: Graph | Workflow): ExecutionContext {
-    const context = new ExecutionContext(graph, data.input, data.executionId);
+  static fromJSON(data: any, workflow: Workflow): ExecutionContext {
+    const context = new ExecutionContext(workflow, data.input, data.executionId);
 
     // Restore executed nodes
     for (const nodeId of data.executedNodes || []) {
@@ -242,13 +239,13 @@ export class ExecutionContext {
   getExecutionSummary(): any {
     return {
       executionId: this.nodeId,
-      graphId: this.graph.graphId ? this.graph.graphId.value : this.graph.workflowId.value,
-      graphName: this.graph.name,
+      workflowId: this.workflow.workflowId.value,
+      workflowName: this.workflow.name,
       startTime: this.startTime,
       elapsedTime: this.getElapsedTime(),
-      totalNodes: this.graph.nodes.size,
+      totalNodes: this.workflow.nodes.size,
       executedNodes: this.executedNodes.size,
-      totalEdges: this.graph.edges.size,
+      totalEdges: this.workflow.edges.size,
       evaluatedEdges: this.edgeResults.size,
       variablesCount: this.variables.size,
       metadataCount: this.metadata.size
@@ -259,7 +256,7 @@ export class ExecutionContext {
     const summary: any[] = [];
 
     for (const [nodeId, result] of this.nodeResults.entries()) {
-      const node = this.graph.nodes.get(nodeId);
+      const node = this.workflow.nodes.get(nodeId);
       if (node) {
         summary.push({
           nodeId,
@@ -272,7 +269,7 @@ export class ExecutionContext {
     }
 
     // Add unexecuted nodes
-    for (const [nodeId, node] of this.graph.nodes.entries()) {
+    for (const [nodeId, node] of this.workflow.nodes.entries()) {
       if (!this.executedNodes.has(nodeId)) {
         summary.push({
           nodeId,
@@ -291,7 +288,7 @@ export class ExecutionContext {
     const summary: any[] = [];
 
     for (const [edgeId, result] of this.edgeResults.entries()) {
-      const edge = this.graph.edges.get(edgeId);
+      const edge = this.workflow.edges.get(edgeId);
       if (edge) {
         summary.push({
           edgeId,

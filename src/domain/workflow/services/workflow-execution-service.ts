@@ -6,19 +6,19 @@ import {
   ExecutionPriority,
   ExecutionConfig,
   IExecutionContextManager
-} from '../graph/execution';
+} from '../execution';
 import { IGraphCompiler, CompilationOptions, CompilationResult, CompilationTarget } from '../validation';
 import { ITriggerManager, TriggerContext } from '../extensions';
-import { IStateManager } from '../graph/state';
+import { IStateManager } from '../state';
 
 /**
- * 执行请求接口
+ * 工作流执行请求接口
  */
-export interface ExecutionRequest {
+export interface WorkflowExecutionRequest {
   /** 执行ID */
   readonly executionId: string;
-  /** 图ID */
-  readonly graphId: ID;
+  /** 工作流ID */
+  readonly workflowId: ID;
   /** 执行模式 */
   readonly mode: ExecutionMode;
   /** 执行优先级 */
@@ -34,13 +34,13 @@ export interface ExecutionRequest {
 }
 
 /**
- * 执行结果接口
+ * 工作流执行结果接口
  */
-export interface ExecutionResult {
+export interface WorkflowExecutionResult {
   /** 执行ID */
   readonly executionId: string;
-  /** 图ID */
-  readonly graphId: ID;
+  /** 工作流ID */
+  readonly workflowId: ID;
   /** 执行状态 */
   readonly status: ExecutionStatus;
   /** 执行开始时间 */
@@ -79,33 +79,33 @@ export interface ExecutionResult {
 }
 
 /**
- * 图执行服务接口
+ * 工作流执行服务接口
  */
-export interface IGraphExecutionService {
+export interface IWorkflowExecutionService {
   /**
-   * 执行图
+   * 执行工作流
    */
-  execute(request: ExecutionRequest): Promise<ExecutionResult>;
+  execute(request: WorkflowExecutionRequest): Promise<WorkflowExecutionResult>;
 
   /**
-   * 异步执行图
+   * 异步执行工作流
    */
-  executeAsync(request: ExecutionRequest): Promise<string>;
+  executeAsync(request: WorkflowExecutionRequest): Promise<string>;
 
   /**
-   * 流式执行图
+   * 流式执行工作流
    */
   executeStream(
-    request: ExecutionRequest,
-    onProgress?: (progress: ExecutionProgress) => void,
+    request: WorkflowExecutionRequest,
+    onProgress?: (progress: WorkflowExecutionProgress) => void,
     onNodeComplete?: (nodeId: ID, result: any) => void,
     onError?: (error: Error) => void
-  ): Promise<ExecutionResult>;
+  ): Promise<WorkflowExecutionResult>;
 
   /**
-   * 批量执行图
+   * 批量执行工作流
    */
-  executeBatch(requests: ExecutionRequest[]): Promise<ExecutionResult[]>;
+  executeBatch(requests: WorkflowExecutionRequest[]): Promise<WorkflowExecutionResult[]>;
 
   /**
    * 暂停执行
@@ -199,13 +199,13 @@ export interface IGraphExecutionService {
 }
 
 /**
- * 执行进度接口
+ * 工作流执行进度接口
  */
-export interface ExecutionProgress {
+export interface WorkflowExecutionProgress {
   /** 执行ID */
   readonly executionId: string;
-  /** 图ID */
-  readonly graphId: ID;
+  /** 工作流ID */
+  readonly workflowId: ID;
   /** 执行状态 */
   readonly status: ExecutionStatus;
   /** 进度百分比 */
@@ -229,9 +229,9 @@ export interface ExecutionProgress {
 }
 
 /**
- * 执行统计信息接口
+ * 工作流执行统计信息接口
  */
-export interface ExecutionStatistics {
+export interface WorkflowExecutionStatistics {
   /** 总执行数 */
   readonly totalExecutions: number;
   /** 成功执行数 */
@@ -250,8 +250,8 @@ export interface ExecutionStatistics {
   readonly executionsByMode: Record<ExecutionMode, number>;
   /** 按优先级分组的执行数 */
   readonly executionsByPriority: Record<ExecutionPriority, number>;
-  /** 按图分组的执行数 */
-  readonly executionsByGraph: Record<string, number>;
+  /** 按工作流分组的执行数 */
+  readonly executionsByWorkflow: Record<string, number>;
   /** 成功率 */
   readonly successRate: number;
   /** 失败率 */
@@ -259,15 +259,15 @@ export interface ExecutionStatistics {
 }
 
 /**
- * 执行事件接口
+ * 工作流执行事件接口
  */
-export interface ExecutionEvent {
+export interface WorkflowExecutionEvent {
   /** 事件类型 */
   readonly type: 'started' | 'paused' | 'resumed' | 'completed' | 'failed' | 'cancelled' | 'node_started' | 'node_completed' | 'edge_traversed';
   /** 执行ID */
   readonly executionId: string;
-  /** 图ID */
-  readonly graphId: ID;
+  /** 工作流ID */
+  readonly workflowId: ID;
   /** 事件时间 */
   readonly timestamp: Date;
   /** 相关节点ID */
@@ -281,14 +281,14 @@ export interface ExecutionEvent {
 }
 
 /**
- * 执行事件回调类型
+ * 工作流执行事件回调类型
  */
-export type ExecutionEventCallback = (event: ExecutionEvent) => void;
+export type WorkflowExecutionEventCallback = (event: WorkflowExecutionEvent) => void;
 
 /**
- * 默认图执行服务实现
+ * 默认工作流执行服务实现
  */
-export class DefaultGraphExecutionService implements IGraphExecutionService {
+export class DefaultWorkflowExecutionService implements IWorkflowExecutionService {
   constructor(
     private readonly contextManager: IExecutionContextManager,
     private readonly compiler: IGraphCompiler,
@@ -297,18 +297,18 @@ export class DefaultGraphExecutionService implements IGraphExecutionService {
   ) { }
 
   /**
-   * 执行图
+   * 执行工作流
    */
-  async execute(request: ExecutionRequest): Promise<ExecutionResult> {
+  async execute(request: WorkflowExecutionRequest): Promise<WorkflowExecutionResult> {
     // 创建执行上下文
     const context = await this.contextManager.createContext(
       request.executionId,
-      request.graphId,
+      request.workflowId,
       request.config
     );
 
     try {
-      // 编译图
+      // 编译工作流
       const compilationOptions: CompilationOptions = {
         target: CompilationTarget.MEMORY,
         optimize: true,
@@ -319,24 +319,24 @@ export class DefaultGraphExecutionService implements IGraphExecutionService {
         }
       };
 
-      // 这里需要获取图数据，简化处理
-      const graphData = {}; // 实际实现中应该从仓储获取
+      // 这里需要获取工作流数据，简化处理
+      const workflowData = {}; // 实际实现中应该从仓储获取
 
       const compilationResult = await this.compiler.compile(
-        request.graphId,
-        graphData,
+        request.workflowId,
+        workflowData,
         compilationOptions
       );
 
       if (!compilationResult.success) {
-        throw new Error(`图编译失败: ${compilationResult.validation.errors.map(e => e.message).join(', ')}`);
+        throw new Error(`工作流编译失败: ${compilationResult.validation.errors.map(e => e.message).join(', ')}`);
       }
 
       // 更新执行状态为运行中
       await this.contextManager.updateStatus(request.executionId, ExecutionStatus.RUNNING);
 
-      // 执行图逻辑
-      const result = await this.executeGraphLogic(request, context, compilationResult);
+      // 执行工作流逻辑
+      const result = await this.executeWorkflowLogic(request, context, compilationResult);
 
       // 更新执行状态为已完成
       await this.contextManager.updateStatus(request.executionId, ExecutionStatus.COMPLETED);
@@ -348,7 +348,7 @@ export class DefaultGraphExecutionService implements IGraphExecutionService {
 
       return {
         executionId: request.executionId,
-        graphId: request.graphId,
+        workflowId: request.workflowId,
         status: ExecutionStatus.FAILED,
         startTime: context.startTime,
         endTime: new Date(),
@@ -369,9 +369,9 @@ export class DefaultGraphExecutionService implements IGraphExecutionService {
   }
 
   /**
-   * 异步执行图
+   * 异步执行工作流
    */
-  async executeAsync(request: ExecutionRequest): Promise<string> {
+  async executeAsync(request: WorkflowExecutionRequest): Promise<string> {
     // 异步启动执行
     this.execute(request).catch(error => {
       console.error(`异步执行失败 [${request.executionId}]:`, error);
@@ -381,14 +381,14 @@ export class DefaultGraphExecutionService implements IGraphExecutionService {
   }
 
   /**
-   * 流式执行图
+   * 流式执行工作流
    */
   async executeStream(
-    request: ExecutionRequest,
-    onProgress?: (progress: ExecutionProgress) => void,
+    request: WorkflowExecutionRequest,
+    onProgress?: (progress: WorkflowExecutionProgress) => void,
     onNodeComplete?: (nodeId: ID, result: any) => void,
     onError?: (error: Error) => void
-  ): Promise<ExecutionResult> {
+  ): Promise<WorkflowExecutionResult> {
     // 简化实现，实际中应该支持真正的流式执行
     try {
       const result = await this.execute(request);
@@ -396,7 +396,7 @@ export class DefaultGraphExecutionService implements IGraphExecutionService {
       if (onProgress) {
         onProgress({
           executionId: request.executionId,
-          graphId: request.graphId,
+          workflowId: request.workflowId,
           status: result.status,
           progress: 100,
           executedNodes: result.statistics.executedNodes,
@@ -418,10 +418,10 @@ export class DefaultGraphExecutionService implements IGraphExecutionService {
   }
 
   /**
-   * 批量执行图
+   * 批量执行工作流
    */
-  async executeBatch(requests: ExecutionRequest[]): Promise<ExecutionResult[]> {
-    const results: ExecutionResult[] = [];
+  async executeBatch(requests: WorkflowExecutionRequest[]): Promise<WorkflowExecutionResult[]> {
+    const results: WorkflowExecutionResult[] = [];
 
     for (const request of requests) {
       try {
@@ -430,7 +430,7 @@ export class DefaultGraphExecutionService implements IGraphExecutionService {
       } catch (error) {
         results.push({
           executionId: request.executionId,
-          graphId: request.graphId,
+          workflowId: request.workflowId,
           status: ExecutionStatus.FAILED,
           startTime: new Date(),
           endTime: new Date(),
@@ -485,7 +485,7 @@ export class DefaultGraphExecutionService implements IGraphExecutionService {
   /**
    * 获取执行结果
    */
-  async getExecutionResult(executionId: string): Promise<ExecutionResult | undefined> {
+  async getExecutionResult(executionId: string): Promise<WorkflowExecutionResult | undefined> {
     const context = await this.contextManager.getContext(executionId);
     if (!context) {
       return undefined;
@@ -493,7 +493,7 @@ export class DefaultGraphExecutionService implements IGraphExecutionService {
 
     return {
       executionId: context.executionId,
-      graphId: context.graphId,
+      workflowId: context.graphId,
       status: context.status,
       startTime: context.startTime,
       endTime: context.endTime,
@@ -527,7 +527,7 @@ export class DefaultGraphExecutionService implements IGraphExecutionService {
   /**
    * 获取执行进度
    */
-  async getExecutionProgress(executionId: string): Promise<ExecutionProgress> {
+  async getExecutionProgress(executionId: string): Promise<WorkflowExecutionProgress> {
     const context = await this.contextManager.getContext(executionId);
     if (!context) {
       throw new Error(`执行上下文不存在: ${executionId}`);
@@ -537,7 +537,7 @@ export class DefaultGraphExecutionService implements IGraphExecutionService {
 
     return {
       executionId: context.executionId,
-      graphId: context.graphId,
+      workflowId: context.graphId,
       status: context.status,
       progress,
       currentNodeId: context.currentNodeId,
@@ -596,16 +596,16 @@ export class DefaultGraphExecutionService implements IGraphExecutionService {
   /**
    * 重试执行
    */
-  async retryExecution(executionId: string): Promise<ExecutionResult> {
+  async retryExecution(executionId: string): Promise<WorkflowExecutionResult> {
     const context = await this.contextManager.getContext(executionId);
     if (!context) {
       throw new Error(`执行上下文不存在: ${executionId}`);
     }
 
     // 创建新的执行请求
-    const retryRequest: ExecutionRequest = {
+    const retryRequest: WorkflowExecutionRequest = {
       executionId: `${executionId}_retry_${Date.now()}`,
-      graphId: context.graphId,
+      workflowId: context.graphId,
       mode: context.mode,
       priority: context.priority,
       config: context.config,
@@ -620,10 +620,10 @@ export class DefaultGraphExecutionService implements IGraphExecutionService {
    * 获取执行统计信息
    */
   async getExecutionStatistics(
-    graphId?: ID,
+    workflowId?: ID,
     startTime?: Date,
     endTime?: Date
-  ): Promise<ExecutionStatistics> {
+  ): Promise<WorkflowExecutionStatistics> {
     // 简化实现，实际中应该从数据库查询
     return {
       totalExecutions: 0,
@@ -641,7 +641,7 @@ export class DefaultGraphExecutionService implements IGraphExecutionService {
       executionsByPriority: Object.fromEntries(
         Object.values(ExecutionPriority).map(priority => [priority, 0])
       ) as Record<ExecutionPriority, number>,
-      executionsByGraph: {},
+      executionsByWorkflow: {},
       successRate: 0,
       failureRate: 0
     };
@@ -671,7 +671,7 @@ export class DefaultGraphExecutionService implements IGraphExecutionService {
   /**
    * 订阅执行事件
    */
-  async subscribeExecutionEvents(callback: ExecutionEventCallback): Promise<string> {
+  async subscribeExecutionEvents(callback: WorkflowExecutionEventCallback): Promise<string> {
     // 简化实现，实际中应该支持事件订阅
     return `subscription_${Date.now()}`;
   }
@@ -685,20 +685,20 @@ export class DefaultGraphExecutionService implements IGraphExecutionService {
   }
 
   /**
-   * 执行图逻辑
+   * 执行工作流逻辑
    */
-  private async executeGraphLogic(
-    request: ExecutionRequest,
+  private async executeWorkflowLogic(
+    request: WorkflowExecutionRequest,
     context: ExecutionContext,
     compilationResult: CompilationResult
-  ): Promise<ExecutionResult> {
-    // 简化实现，实际中应该执行真正的图逻辑
+  ): Promise<WorkflowExecutionResult> {
+    // 简化实现，实际中应该执行真正的工作流逻辑
     const endTime = new Date();
     const duration = endTime.getTime() - context.startTime.getTime();
 
     return {
       executionId: request.executionId,
-      graphId: request.graphId,
+      workflowId: request.workflowId,
       status: ExecutionStatus.COMPLETED,
       startTime: context.startTime,
       endTime,

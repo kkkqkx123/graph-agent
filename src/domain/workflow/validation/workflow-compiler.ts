@@ -135,10 +135,10 @@ export interface CompilationStatistics {
  * 编译上下文接口
  */
 export interface CompilationContext {
-  /** 图ID */
-  readonly graphId: ID;
-  /** 图数据 */
-  readonly graphData: any;
+  /** 工作流ID */
+  readonly workflowId: ID;
+  /** 工作流数据 */
+  readonly workflowData: any;
   /** 编译选项 */
   readonly options: CompilationOptions;
   /** 当前编译阶段 */
@@ -251,42 +251,42 @@ export interface CompilationPlugin {
 }
 
 /**
- * 图编译器接口
+ * 工作流编译器接口
  */
-export interface IGraphCompiler {
+export interface IWorkflowCompiler {
   /**
-   * 编译图
+   * 编译工作流
    */
   compile(
-    graphId: ID,
-    graphData: any,
+    workflowId: ID,
+    workflowData: any,
     options: CompilationOptions
   ): Promise<CompilationResult>;
 
   /**
-   * 验证图
+   * 验证工作流
    */
   validate(
-    graphId: ID,
-    graphData: any,
+    workflowId: ID,
+    workflowData: any,
     config?: ValidationConfig
   ): Promise<ValidationResult>;
 
   /**
-   * 解析图
+   * 解析工作流
    */
   parse(
-    graphId: ID,
+    workflowId: ID,
     source: string,
     format?: string
   ): Promise<any>;
 
   /**
-   * 优化图
+   * 优化工作流
    */
   optimize(
-    graphId: ID,
-    graphData: any,
+    workflowId: ID,
+    workflowData: any,
     options?: Record<string, any>
   ): Promise<any>;
 
@@ -294,8 +294,8 @@ export interface IGraphCompiler {
    * 生成代码
    */
   generateCode(
-    graphId: ID,
-    graphData: any,
+    workflowId: ID,
+    workflowData: any,
     target: CompilationTarget,
     options?: Record<string, any>
   ): Promise<string>;
@@ -304,8 +304,8 @@ export interface IGraphCompiler {
    * 批量编译
    */
   compileBatch(requests: Array<{
-    graphId: ID;
-    graphData: any;
+    workflowId: ID;
+    workflowData: any;
     options: CompilationOptions;
   }>): Promise<CompilationResult[]>;
 
@@ -357,7 +357,7 @@ export interface ICompilerFactory {
   /**
    * 创建编译器
    */
-  createCompiler(config?: Record<string, any>): IGraphCompiler;
+  createCompiler(config?: Record<string, any>): IWorkflowCompiler;
 
   /**
    * 获取支持的编译目标
@@ -369,7 +369,7 @@ export interface ICompilerFactory {
    */
   registerCompilerType(
     target: CompilationTarget,
-    compilerClass: new (config?: Record<string, any>) => IGraphCompiler
+    compilerClass: new (config?: Record<string, any>) => IWorkflowCompiler
   ): void;
 
   /**
@@ -378,7 +378,7 @@ export interface ICompilerFactory {
   createCompilerForTarget(
     target: CompilationTarget,
     config?: Record<string, any>
-  ): IGraphCompiler;
+  ): IWorkflowCompiler;
 }
 
 /**

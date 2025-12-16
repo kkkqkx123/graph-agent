@@ -1,5 +1,5 @@
 import { injectable, inject } from 'inversify';
-import { Graph } from '@domain/workflow/entities/graph';
+import { Workflow as Graph } from '@domain/workflow/entities/workflow';
 import { ID } from '@domain/common/value-objects/id';
 import { ILogger } from '@shared/types/logger';
 
@@ -278,8 +278,8 @@ export class GraphMetricsCalculator {
     
     for (let i = 0; i < nodes.length; i++) {
       for (let j = i + 1; j < nodes.length; j++) {
-        const nodeId1 = nodes[i]?.nodeId;
-        const nodeId2 = nodes[j]?.nodeId;
+        const nodeId1 = (nodes[i] as any)?.nodeId;
+        const nodeId2 = (nodes[j] as any)?.nodeId;
         if (nodeId1 && nodeId2) {
           const pathLength = this.calculateShortestPathLength(graph, nodeId1, nodeId2);
           if (pathLength > 0) {
@@ -342,8 +342,8 @@ export class GraphMetricsCalculator {
     
     for (let i = 0; i < nodes.length; i++) {
       for (let j = i + 1; j < nodes.length; j++) {
-        const nodeId1 = nodes[i]?.nodeId;
-        const nodeId2 = nodes[j]?.nodeId;
+        const nodeId1 = (nodes[i] as any)?.nodeId;
+        const nodeId2 = (nodes[j] as any)?.nodeId;
         if (nodeId1 && nodeId2) {
           const pathLength = this.calculateShortestPathLength(graph, nodeId1, nodeId2);
           if (pathLength > maxPathLength) {

@@ -1,7 +1,7 @@
 /**
- * 图值对象模块入口
+ * 工作流值对象模块入口
  *
- * 导出所有图相关的值对象
+ * 导出所有工作流相关的值对象
  */
 
 export * from './node-type';
@@ -16,14 +16,9 @@ export {
   HookPointValue,
   HookPointValueProps
 } from './hook-point';
-export {
-  NodeExecutionResultValue,
-  NodeExecutionResultProps
-} from './node-execution-result';
-export {
-  GraphExecutionContextValue,
-  GraphExecutionContextProps
-} from './graph-execution-context';
 
 export * from './node-id';
 export * from './edge-id';
+export * from './workflow-status';
+export * from './workflow-type';
+export * from './workflow-config';

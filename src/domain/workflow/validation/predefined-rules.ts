@@ -9,12 +9,12 @@ import {
 } from './validation-rules';
 
 /**
- * 图结构验证规则
+ * 工作流结构验证规则
  */
-export class GraphStructureRule implements ValidationRule {
-  readonly id = 'graph_structure';
-  readonly name = '图结构验证';
-  readonly description = '验证图的基本结构完整性';
+export class WorkflowStructureRule implements ValidationRule {
+  readonly id = 'workflow_structure';
+  readonly name = '工作流结构验证';
+  readonly description = '验证工作流的基本结构完整性';
   readonly type = ValidationErrorType.STRUCTURE;
   readonly defaultSeverity = ValidationSeverity.ERROR;
   readonly enabled = true;
@@ -22,13 +22,13 @@ export class GraphStructureRule implements ValidationRule {
 
   validate(context: ValidationContext): ValidationError[] {
     const errors: ValidationError[] = [];
-    const { graphData, nodes, edges } = context;
+    const { workflowData, nodes, edges } = context;
 
-    // 检查图数据是否存在
-    if (!graphData) {
+    // 检查工作流数据是否存在
+    if (!workflowData) {
       errors.push(
-        ValidationUtils.createStructureError('图数据不能为空')
-          .withGraphId(context.graphId)
+        ValidationUtils.createStructureError('工作流数据不能为空')
+          .withWorkflowId(context.workflowId)
           .build()
       );
       return errors;
@@ -38,7 +38,7 @@ export class GraphStructureRule implements ValidationRule {
     if (!nodes) {
       errors.push(
         ValidationUtils.createStructureError('节点集合不能为空')
-          .withGraphId(context.graphId)
+          .withWorkflowId(context.workflowId)
           .build()
       );
       return errors;
@@ -48,7 +48,7 @@ export class GraphStructureRule implements ValidationRule {
     if (!edges) {
       errors.push(
         ValidationUtils.createStructureError('边集合不能为空')
-          .withGraphId(context.graphId)
+          .withWorkflowId(context.workflowId)
           .build()
       );
       return errors;
@@ -57,8 +57,8 @@ export class GraphStructureRule implements ValidationRule {
     // 检查是否有节点
     if (nodes.size === 0) {
       errors.push(
-        ValidationUtils.createStructureError('图必须包含至少一个节点')
-          .withGraphId(context.graphId)
+        ValidationUtils.createStructureError('工作流必须包含至少一个节点')
+          .withWorkflowId(context.workflowId)
           .build()
       );
     }
@@ -91,7 +91,7 @@ export class NodeReferenceRule implements ValidationRule {
       if (!nodes.has(sourceId)) {
         errors.push(
           ValidationUtils.createReferenceError(`边 ${edgeId} 引用的源节点 ${sourceId} 不存在`)
-            .withGraphId(context.graphId)
+            .withWorkflowId(context.workflowId)
             .withEdgeId(edgeId)
             .withContext({ sourceId, targetId })
             .build()
@@ -102,7 +102,7 @@ export class NodeReferenceRule implements ValidationRule {
       if (!nodes.has(targetId)) {
         errors.push(
           ValidationUtils.createReferenceError(`边 ${edgeId} 引用的目标节点 ${targetId} 不存在`)
-            .withGraphId(context.graphId)
+            .withWorkflowId(context.workflowId)
             .withEdgeId(edgeId)
             .withContext({ sourceId, targetId })
             .build()
@@ -120,7 +120,7 @@ export class NodeReferenceRule implements ValidationRule {
 export class CycleDetectionRule implements ValidationRule {
   readonly id = 'cycle_detection';
   readonly name = '循环依赖检测';
-  readonly description = '检测图中是否存在循环依赖';
+  readonly description = '检测工作流中是否存在循环依赖';
   readonly type = ValidationErrorType.CYCLE;
   readonly defaultSeverity = ValidationSeverity.WARNING;
   readonly enabled = true;
@@ -177,9 +177,9 @@ export class CycleDetectionRule implements ValidationRule {
       const cycleStr = cycle.join(' -> ');
       errors.push(
         ValidationUtils.createCycleError(`检测到循环依赖: ${cycleStr}`)
-          .withGraphId(context.graphId)
+          .withWorkflowId(context.workflowId)
           .withContext({ cycle })
-          .withSuggestions(['考虑重构图结构以消除循环', '使用条件节点打破循环'])
+          .withSuggestions(['考虑重构工作流结构以消除循环', '使用条件节点打破循环'])
           .build()
       );
     }
@@ -257,7 +257,7 @@ export class NodeTypeRule implements ValidationRule {
       if (!nodeType) {
         errors.push(
           ValidationUtils.createTypeError(`节点 ${nodeId} 缺少类型定义`)
-            .withGraphId(context.graphId)
+            .withWorkflowId(context.workflowId)
             .withNodeId(nodeId)
             .build()
         );
@@ -267,7 +267,7 @@ export class NodeTypeRule implements ValidationRule {
       if (!allowedTypes.includes(nodeType)) {
         errors.push(
           ValidationUtils.createTypeError(`节点 ${nodeId} 的类型 ${nodeType} 无效`)
-            .withGraphId(context.graphId)
+            .withWorkflowId(context.workflowId)
             .withNodeId(nodeId)
             .withContext({ nodeType, allowedTypes })
             .withSuggestions([`使用允许的类型之一: ${allowedTypes.join(', ')}`])
@@ -310,7 +310,7 @@ export class EdgeTypeRule implements ValidationRule {
       if (!allowedTypes.includes(edgeType)) {
         errors.push(
           ValidationUtils.createTypeError(`边 ${edgeId} 的类型 ${edgeType} 无效`)
-            .withGraphId(context.graphId)
+            .withWorkflowId(context.workflowId)
             .withEdgeId(edgeId)
             .withContext({ edgeType, allowedTypes })
             .withSuggestions([`使用允许的类型之一: ${allowedTypes.join(', ')}`])
@@ -329,7 +329,7 @@ export class EdgeTypeRule implements ValidationRule {
 export class IsolatedNodeRule implements ValidationRule {
   readonly id = 'isolated_node';
   readonly name = '孤立节点检测';
-  readonly description = '检测图中是否存在孤立节点';
+  readonly description = '检测工作流中是否存在孤立节点';
   readonly type = ValidationErrorType.STRUCTURE;
   readonly defaultSeverity = ValidationSeverity.WARNING;
   readonly enabled = true;
@@ -375,7 +375,7 @@ export class IsolatedNodeRule implements ValidationRule {
 
         errors.push(
           ValidationUtils.createStructureError(`节点 ${nodeId} 是孤立节点，没有连接的边`)
-            .withGraphId(context.graphId)
+            .withWorkflowId(context.workflowId)
             .withNodeId(nodeId)
             .withContext({ inDegree: nodeInDegree, outDegree: nodeOutDegree })
             .withSuggestions(['添加连接到此节点的边', '如果不需要此节点，请删除它'])
@@ -450,7 +450,7 @@ export class DegreeValidationRule implements ValidationRule {
           ValidationUtils.createSemanticError(
             `节点 ${nodeId} 的入度 ${nodeInDegree} 超过了最大值 ${constraints.maxInDegree}`
           )
-            .withGraphId(context.graphId)
+            .withWorkflowId(context.workflowId)
             .withNodeId(nodeId)
             .withContext({ nodeType, inDegree: nodeInDegree, maxInDegree: constraints.maxInDegree })
             .build()
@@ -462,7 +462,7 @@ export class DegreeValidationRule implements ValidationRule {
           ValidationUtils.createSemanticError(
             `节点 ${nodeId} 的入度 ${nodeInDegree} 小于最小值 ${constraints.minInDegree}`
           )
-            .withGraphId(context.graphId)
+            .withWorkflowId(context.workflowId)
             .withNodeId(nodeId)
             .withContext({ nodeType, inDegree: nodeInDegree, minInDegree: constraints.minInDegree })
             .build()
@@ -475,7 +475,7 @@ export class DegreeValidationRule implements ValidationRule {
           ValidationUtils.createSemanticError(
             `节点 ${nodeId} 的出度 ${nodeOutDegree} 超过了最大值 ${constraints.maxOutDegree}`
           )
-            .withGraphId(context.graphId)
+            .withWorkflowId(context.workflowId)
             .withNodeId(nodeId)
             .withContext({ nodeType, outDegree: nodeOutDegree, maxOutDegree: constraints.maxOutDegree })
             .build()
@@ -487,7 +487,7 @@ export class DegreeValidationRule implements ValidationRule {
           ValidationUtils.createSemanticError(
             `节点 ${nodeId} 的出度 ${nodeOutDegree} 小于最小值 ${constraints.minOutDegree}`
           )
-            .withGraphId(context.graphId)
+            .withWorkflowId(context.workflowId)
             .withNodeId(nodeId)
             .withContext({ nodeType, outDegree: nodeOutDegree, minOutDegree: constraints.minOutDegree })
             .build()
@@ -542,7 +542,7 @@ export class ConfigurationCompletenessRule implements ValidationRule {
             ValidationUtils.createConfigurationError(
               `节点 ${nodeId} 缺少必需的配置字段: ${field}`
             )
-              .withGraphId(context.graphId)
+              .withWorkflowId(context.workflowId)
               .withNodeId(nodeId)
               .withContext({ nodeType, field })
               .build()
@@ -566,7 +566,7 @@ export class ConfigurationCompletenessRule implements ValidationRule {
             ValidationUtils.createConfigurationError(
               `边 ${edgeId} 缺少必需的配置字段: ${field}`
             )
-              .withGraphId(context.graphId)
+              .withWorkflowId(context.workflowId)
               .withEdgeId(edgeId)
               .withContext({ edgeType, field })
               .build()
@@ -585,7 +585,7 @@ export class ConfigurationCompletenessRule implements ValidationRule {
 export class PerformanceRule implements ValidationRule {
   readonly id = 'performance';
   readonly name = '性能验证';
-  readonly description = '验证图的性能特征';
+  readonly description = '验证工作流的性能特征';
   readonly type = ValidationErrorType.PERFORMANCE;
   readonly defaultSeverity = ValidationSeverity.WARNING;
   readonly enabled = true;
@@ -607,9 +607,9 @@ export class PerformanceRule implements ValidationRule {
         ValidationUtils.createPerformanceIssue(
           `节点数量 ${nodes.size} 超过了建议的最大值 ${maxNodes}`
         )
-          .withGraphId(context.graphId)
+          .withWorkflowId(context.workflowId)
           .withContext({ nodeCount: nodes.size, maxNodes })
-          .withSuggestions(['考虑拆分图为多个子图', '优化图结构减少节点数量'])
+          .withSuggestions(['考虑拆分工作流为多个子工作流', '优化工作流结构减少节点数量'])
           .build()
       );
     }
@@ -620,23 +620,23 @@ export class PerformanceRule implements ValidationRule {
         ValidationUtils.createPerformanceIssue(
           `边数量 ${edges.size} 超过了建议的最大值 ${maxEdges}`
         )
-          .withGraphId(context.graphId)
+          .withWorkflowId(context.workflowId)
           .withContext({ edgeCount: edges.size, maxEdges })
-          .withSuggestions(['考虑简化图结构', '移除不必要的边'])
+          .withSuggestions(['考虑简化工作流结构', '移除不必要的边'])
           .build()
       );
     }
 
-    // 检查图深度
-    const depth = this.calculateGraphDepth(nodes, edges);
+    // 检查工作流深度
+    const depth = this.calculateWorkflowDepth(nodes, edges);
     if (depth > maxDepth) {
       errors.push(
         ValidationUtils.createPerformanceIssue(
-          `图深度 ${depth} 超过了建议的最大值 ${maxDepth}`
+          `工作流深度 ${depth} 超过了建议的最大值 ${maxDepth}`
         )
-          .withGraphId(context.graphId)
+          .withWorkflowId(context.workflowId)
           .withContext({ depth, maxDepth })
-          .withSuggestions(['考虑重构图结构减少深度', '使用并行处理'])
+          .withSuggestions(['考虑重构工作流结构减少深度', '使用并行处理'])
           .build()
       );
     }
@@ -648,9 +648,9 @@ export class PerformanceRule implements ValidationRule {
         ValidationUtils.createPerformanceIssue(
           `最大分支因子 ${maxBranching} 超过了建议的最大值 ${maxBranchingFactor}`
         )
-          .withGraphId(context.graphId)
+          .withWorkflowId(context.workflowId)
           .withContext({ maxBranching, maxBranchingFactor })
-          .withSuggestions(['考虑使用条件节点减少分支', '优化图结构'])
+          .withSuggestions(['考虑使用条件节点减少分支', '优化工作流结构'])
           .build()
       );
     }
@@ -658,7 +658,7 @@ export class PerformanceRule implements ValidationRule {
     return errors;
   }
 
-  private calculateGraphDepth(
+  private calculateWorkflowDepth(
     nodes: Map<ID, any>,
     edges: Map<ID, any>
   ): number {
@@ -696,7 +696,7 @@ export class PerformanceRule implements ValidationRule {
       .map(([nodeId, _]) => nodeId);
 
     if (startNodes.length === 0) {
-      // 没有起始节点，可能是循环图，返回节点数量作为深度上限
+      // 没有起始节点，可能是循环工作流，返回节点数量作为深度上限
       return nodes.size;
     }
 
@@ -757,7 +757,7 @@ export class PerformanceRule implements ValidationRule {
  */
 export function getPredefinedValidationRules(): ValidationRule[] {
   return [
-    new GraphStructureRule(),
+    new WorkflowStructureRule(),
     new NodeReferenceRule(),
     new CycleDetectionRule(),
     new NodeTypeRule(),

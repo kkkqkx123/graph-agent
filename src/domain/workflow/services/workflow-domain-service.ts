@@ -5,8 +5,8 @@ import { WorkflowStatus } from '../value-objects/workflow-status';
 import { WorkflowType } from '../value-objects/workflow-type';
 import { WorkflowConfig } from '../value-objects/workflow-config';
 import { DomainError } from '../../common/errors/domain-error';
-import { Node } from '../graph/entities/nodes/base/node';
-import { Edge } from '../graph/entities/edges/base/edge';
+import { Node } from '../entities/nodes/base/node';
+import { Edge } from '../entities/edges/base/edge';
 import { NodeType } from '../value-objects/node-type';
 import { EdgeType } from '../value-objects/edge-type';
 

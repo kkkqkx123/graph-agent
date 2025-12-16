@@ -1,9 +1,8 @@
 import { injectable, inject } from 'inversify';
 import { Workflow } from '../../../domain/workflow/entities/workflow';
-import { Graph } from '../../../domain/workflow/graph/entities/graph';
 import { WorkflowRepository } from '../../../domain/workflow/repositories/workflow-repository';
-import { GraphRepository } from '../../../domain/workflow/repositories/graph-repository';
-import { IGraphExecutionService } from '../../../domain/workflow/services/graph-execution-service';
+import { WorkflowGraphRepository } from '../../../domain/workflow/repositories/workflow-graph-repository';
+import { IWorkflowExecutionService } from '../../../domain/workflow/services/workflow-execution-service';
 import { ID } from '../../../domain/common/value-objects/id';
 import { DomainError } from '../../../domain/common/errors/domain-error';
 import { ILogger } from '@shared/types/logger';
@@ -97,8 +96,8 @@ export interface WorkflowOrchestrationResult {
 export class WorkflowOrchestrator {
   constructor(
     @inject('WorkflowRepository') private readonly workflowRepository: WorkflowRepository,
-    @inject('GraphRepository') private readonly graphRepository: GraphRepository,
-    @inject('IGraphExecutionService') private readonly graphExecutionService: IGraphExecutionService,
+    @inject('WorkflowGraphRepository') private readonly workflowGraphRepository: WorkflowGraphRepository,
+    @inject('IWorkflowExecutionService') private readonly workflowExecutionService: IWorkflowExecutionService,
     @inject('Logger') private readonly logger: ILogger
   ) { }
 
@@ -124,17 +123,10 @@ export class WorkflowOrchestrator {
         throw new DomainError('只能执行活跃状态的工作流');
       }
 
-      // 获取图
-      if (!workflow.graphId) {
-        throw new DomainError('工作流没有关联的图');
-      }
-
-      const graph = await this.graphRepository.findByIdOrFail(workflow.graphId);
-
-      // 验证图结构
-      const validationResult = await this.validateGraph(graph);
+      // 验证工作流结构
+      const validationResult = await this.validateWorkflow(workflow);
       if (!validationResult.isValid) {
-        throw new DomainError(`图结构验证失败: ${validationResult.errors.join(', ')}`);
+        throw new DomainError(`工作流结构验证失败: ${validationResult.errors.join(', ')}`);
       }
 
       // 生成编排ID和执行ID
@@ -144,7 +136,7 @@ export class WorkflowOrchestrator {
       // 构建执行请求
       const executionRequest = {
         executionId,
-        graphId: workflow.graphId,
+        workflowId: workflow.workflowId,
         mode: this.mapExecutionMode(request.executionMode || 'sequential'),
         priority: this.mapExecutionPriority(request.priority || 'normal'),
         config: {
@@ -156,25 +148,25 @@ export class WorkflowOrchestrator {
         parameters: request.parameters || {}
       };
 
-      // 执行图
+      // 执行工作流
       let executionResult;
       if (request.async) {
         // 异步执行
-        await this.graphExecutionService.executeAsync(executionRequest);
+        await this.workflowExecutionService.executeAsync(executionRequest);
 
         // 返回异步执行结果
         executionResult = {
           executionId,
-          graphId: workflow.graphId,
+          workflowId: workflow.workflowId,
           status: 'running' as any,
           startTime: new Date(),
           output: {},
           logs: [],
           statistics: {
             executedNodes: 0,
-            totalNodes: graph.getNodeCount(),
+            totalNodes: workflow.nodes.size,
             executedEdges: 0,
-            totalEdges: graph.getEdgeCount(),
+            totalEdges: workflow.edges.size,
             executionPath: []
           },
           metadata: {
@@ -186,7 +178,7 @@ export class WorkflowOrchestrator {
         };
       } else {
         // 同步执行
-        executionResult = await this.graphExecutionService.execute(executionRequest);
+        executionResult = await this.workflowExecutionService.execute(executionRequest);
       }
 
       // 构建编排结果
@@ -251,7 +243,7 @@ export class WorkflowOrchestrator {
         throw new DomainError('无效的编排ID');
       }
 
-      const status = await this.graphExecutionService.getExecutionStatus(executionId);
+      const status = await this.workflowExecutionService.getExecutionStatus(executionId);
       return this.mapExecutionStatus(status);
     } catch (error) {
       this.logger.error('获取编排状态失败', error as Error);
@@ -272,7 +264,7 @@ export class WorkflowOrchestrator {
         throw new DomainError('无效的编排ID');
       }
 
-      const executionResult = await this.graphExecutionService.getExecutionResult(executionId);
+      const executionResult = await this.workflowExecutionService.getExecutionResult(executionId);
       if (!executionResult) {
         return null;
       }
@@ -288,7 +280,7 @@ export class WorkflowOrchestrator {
         duration: executionResult.duration,
         output: executionResult.output,
         error: executionResult.error?.message,
-        logs: executionResult.logs.map(log => ({
+        logs: executionResult.logs.map((log: { level: any; message: any; timestamp: any; nodeId: { toString: () => any; }; edgeId: { toString: () => any; }; }) => ({
           level: log.level,
           message: log.message,
           timestamp: log.timestamp,
@@ -300,7 +292,7 @@ export class WorkflowOrchestrator {
           totalNodes: executionResult.statistics.totalNodes,
           executedEdges: executionResult.statistics.executedEdges,
           totalEdges: executionResult.statistics.totalEdges,
-          executionPath: executionResult.statistics.executionPath.map(id => id.toString())
+          executionPath: executionResult.statistics.executionPath.map((id: { toString: () => any; }) => id.toString())
         },
         metadata: executionResult.metadata
       };
@@ -323,7 +315,7 @@ export class WorkflowOrchestrator {
         throw new DomainError('无效的编排ID');
       }
 
-      await this.graphExecutionService.pauseExecution(executionId);
+      await this.workflowExecutionService.pauseExecution(executionId);
       this.logger.info('编排已暂停', { orchestrationId });
     } catch (error) {
       this.logger.error('暂停编排失败', error as Error);
@@ -342,7 +334,7 @@ export class WorkflowOrchestrator {
         throw new DomainError('无效的编排ID');
       }
 
-      await this.graphExecutionService.resumeExecution(executionId);
+      await this.workflowExecutionService.resumeExecution(executionId);
       this.logger.info('编排已恢复', { orchestrationId });
     } catch (error) {
       this.logger.error('恢复编排失败', error as Error);
@@ -361,7 +353,7 @@ export class WorkflowOrchestrator {
         throw new DomainError('无效的编排ID');
       }
 
-      await this.graphExecutionService.cancelExecution(executionId);
+      await this.workflowExecutionService.cancelExecution(executionId);
       this.logger.info('编排已取消', { orchestrationId });
     } catch (error) {
       this.logger.error('取消编排失败', error as Error);
@@ -381,7 +373,7 @@ export class WorkflowOrchestrator {
         throw new DomainError('无效的编排ID');
       }
 
-      const executionResult = await this.graphExecutionService.retryExecution(executionId);
+      const executionResult = await this.workflowExecutionService.retryExecution(executionId);
 
       // 构建新的编排结果
       const result: WorkflowOrchestrationResult = {
@@ -394,7 +386,7 @@ export class WorkflowOrchestrator {
         duration: executionResult.duration,
         output: executionResult.output,
         error: executionResult.error?.message,
-        logs: executionResult.logs.map(log => ({
+        logs: executionResult.logs.map((log: { level: any; message: any; timestamp: any; nodeId: { toString: () => any; }; edgeId: { toString: () => any; }; }) => ({
           level: log.level,
           message: log.message,
           timestamp: log.timestamp,
@@ -406,7 +398,7 @@ export class WorkflowOrchestrator {
           totalNodes: executionResult.statistics.totalNodes,
           executedEdges: executionResult.statistics.executedEdges,
           totalEdges: executionResult.statistics.totalEdges,
-          executionPath: executionResult.statistics.executionPath.map(id => id.toString())
+          executionPath: executionResult.statistics.executionPath.map((id: { toString: () => any; }) => id.toString())
         },
         metadata: executionResult.metadata
       };
@@ -425,18 +417,24 @@ export class WorkflowOrchestrator {
   }
 
   /**
-   * 验证图结构
-   * @param graph 图实体
+   * 验证工作流结构
+   * @param workflow 工作流实体
    * @returns 验证结果
    */
-  private async validateGraph(graph: Graph): Promise<{
+  private async validateWorkflow(workflow: Workflow): Promise<{
     isValid: boolean;
     errors: string[];
     warnings: string[];
   }> {
     try {
       // 基本验证
-      graph.validate();
+      if (workflow.nodes.size === 0) {
+        return {
+          isValid: false,
+          errors: ['工作流必须包含至少一个节点'],
+          warnings: []
+        };
+      }
 
       // 这里可以添加更多的验证逻辑
       return {

@@ -1,5 +1,5 @@
 import { injectable } from 'inversify';
-import { Graph } from '@domain/workflow/entities/graph';
+import { Workflow } from '@domain/workflow/entities/workflow';
 import { Node } from '@domain/workflow/entities/nodes/base/node';
 import { Edge } from '@domain/workflow/entities/edges/base/edge';
 import { NodeId } from '@/domain/workflow/value-objects/node-id';
@@ -26,24 +26,24 @@ export interface ParallelGroup {
 
 @injectable()
 export class ExecutionPlanner {
-  createExecutionPlan(graph: Graph): ExecutionPlan {
-    // Validate graph
-    const validation = this.validateGraph(graph);
+  createExecutionPlan(workflow: Workflow): ExecutionPlan {
+    // Validate workflow
+    const validation = this.validateWorkflow(workflow);
     if (!validation.valid) {
-      throw new Error(`Invalid graph: ${validation.errors.join(', ')}`);
+      throw new Error(`Invalid workflow: ${validation.errors.join(', ')}`);
     }
 
     // Calculate node dependencies
-    const dependencies = this.calculateDependencies(graph);
+    const dependencies = this.calculateDependencies(workflow);
 
     // Identify parallel groups
-    const parallelGroups = this.identifyParallelGroups(graph, dependencies);
+    const parallelGroups = this.identifyParallelGroups(workflow, dependencies);
 
     // Create execution steps
-    const steps = this.createExecutionSteps(graph, dependencies, parallelGroups);
+    const steps = this.createExecutionSteps(workflow, dependencies, parallelGroups);
 
     // Calculate critical path
-    const criticalPath = this.calculateCriticalPath(graph, dependencies);
+    const criticalPath = this.calculateCriticalPath(workflow, dependencies);
 
     // Estimate total duration
     const estimatedDuration = this.estimateTotalDuration(steps);
@@ -56,28 +56,28 @@ export class ExecutionPlanner {
     };
   }
 
-  private validateGraph(graph: Graph): { valid: boolean; errors: string[] } {
+  private validateWorkflow(workflow: Workflow): { valid: boolean; errors: string[] } {
     const errors: string[] = [];
 
-    // Check if graph has nodes
-    if (graph.nodes.size === 0) {
-      errors.push('Graph must have at least one node');
+    // Check if workflow has nodes
+    if (workflow.nodes.size === 0) {
+      errors.push('Workflow must have at least one node');
     }
 
     // Check if all edges reference valid nodes
-    for (const edge of graph.edges.values()) {
-      if (!graph.nodes.has(edge.fromNodeId.value)) {
+    for (const edge of workflow.edges.values()) {
+      if (!workflow.nodes.has(edge.fromNodeId.value)) {
         errors.push(`Edge references non-existent source node: ${edge.fromNodeId.value}`);
       }
 
-      if (!graph.nodes.has(edge.toNodeId.value)) {
+      if (!workflow.nodes.has(edge.toNodeId.value)) {
         errors.push(`Edge references non-existent target node: ${edge.toNodeId.value}`);
       }
     }
 
     // Check for cycles
-    if (this.hasCycles(graph)) {
-      errors.push('Graph contains cycles');
+    if (this.hasCycles(workflow)) {
+      errors.push('Workflow contains cycles');
     }
 
     return {
@@ -86,16 +86,16 @@ export class ExecutionPlanner {
     };
   }
 
-  private calculateDependencies(graph: Graph): Map<string, string[]> {
+  private calculateDependencies(workflow: Workflow): Map<string, string[]> {
     const dependencies = new Map<string, string[]>();
 
     // Initialize dependencies for all nodes
-    for (const nodeId of graph.nodes.keys()) {
+    for (const nodeId of workflow.nodes.keys()) {
       dependencies.set(nodeId, []);
     }
 
     // Calculate dependencies based on edges
-    for (const edge of graph.edges.values()) {
+    for (const edge of workflow.edges.values()) {
       const targetDeps = dependencies.get(edge.toNodeId.value) || [];
       targetDeps.push(edge.fromNodeId.value);
       dependencies.set(edge.toNodeId.value, targetDeps);
@@ -105,7 +105,7 @@ export class ExecutionPlanner {
   }
 
   private identifyParallelGroups(
-    graph: Graph,
+    workflow: Workflow,
     dependencies: Map<string, string[]>
   ): ParallelGroup[] {
     const groups: ParallelGroup[] = [];
@@ -113,8 +113,8 @@ export class ExecutionPlanner {
     let groupId = 0;
 
     // Find nodes that can be executed in parallel
-    while (processedNodes.size < graph.nodes.size) {
-      const currentGroup = this.findParallelGroup(graph, dependencies, processedNodes);
+    while (processedNodes.size < workflow.nodes.size) {
+      const currentGroup = this.findParallelGroup(workflow, dependencies, processedNodes);
 
       if (currentGroup.length === 0) {
         break; // No more nodes can be processed
@@ -133,13 +133,13 @@ export class ExecutionPlanner {
   }
 
   private findParallelGroup(
-    graph: Graph,
+    workflow: Workflow,
     dependencies: Map<string, string[]>,
     processedNodes: Set<string>
   ): Node[] {
     const group: Node[] = [];
 
-    for (const node of graph.nodes.values()) {
+    for (const node of workflow.nodes.values()) {
       // Skip already processed nodes
       if (processedNodes.has(node.id.value)) {
         continue;
@@ -158,7 +158,7 @@ export class ExecutionPlanner {
   }
 
   private createExecutionSteps(
-    graph: Graph,
+    workflow: Workflow,
     dependencies: Map<string, string[]>,
     parallelGroups: ParallelGroup[]
   ): ExecutionStep[] {
@@ -173,7 +173,7 @@ export class ExecutionPlanner {
     }
 
     // Create steps for each node
-    for (const node of graph.nodes.values()) {
+    for (const node of workflow.nodes.values()) {
       const nodeDeps = dependencies.get(node.id.value) || [];
       const parallelGroup = nodeToGroup.get(node.id.value);
 
@@ -219,7 +219,7 @@ export class ExecutionPlanner {
   }
 
   private calculateCriticalPath(
-    graph: Graph,
+    workflow: Workflow,
     dependencies: Map<string, string[]>
   ): NodeId[] {
     const nodeDurations = new Map<string, number>();
@@ -227,13 +227,13 @@ export class ExecutionPlanner {
     const earliestFinish = new Map<string, number>();
 
     // Calculate node durations
-    for (const node of graph.nodes.values()) {
+    for (const node of workflow.nodes.values()) {
       nodeDurations.set(node.id.value, this.estimateNodeDuration(node));
     }
 
     // Find start nodes (nodes with no dependencies)
     const startNodes: string[] = [];
-    for (const nodeId of graph.nodes.keys()) {
+    for (const nodeId of workflow.nodes.keys()) {
       const deps = dependencies.get(nodeId) || [];
       if (deps.length === 0) {
         startNodes.push(nodeId);
@@ -339,12 +339,12 @@ export class ExecutionPlanner {
     return duration;
   }
 
-  private hasCycles(graph: Graph): boolean {
+  private hasCycles(workflow: Workflow): boolean {
     const visited = new Set<string>();
     const recursionStack = new Set<string>();
 
-    for (const node of graph.nodes.values()) {
-      if (this.hasCycleDFS(node, graph, visited, recursionStack)) {
+    for (const node of workflow.nodes.values()) {
+      if (this.hasCycleDFS(node, workflow, visited, recursionStack)) {
         return true;
       }
     }
@@ -354,7 +354,7 @@ export class ExecutionPlanner {
 
   private hasCycleDFS(
     node: Node,
-    graph: Graph,
+    workflow: Workflow,
     visited: Set<string>,
     recursionStack: Set<string>
   ): boolean {
@@ -362,13 +362,13 @@ export class ExecutionPlanner {
     recursionStack.add(node.id.value);
 
     // Find outgoing edges
-    for (const edge of graph.edges.values()) {
+    for (const edge of workflow.edges.values()) {
       if (edge.fromNodeId.value === node.id.value) {
-        const targetNode = graph.nodes.get(edge.toNodeId.value);
+        const targetNode = workflow.nodes.get(edge.toNodeId.value);
         if (!targetNode) continue;
 
         if (!visited.has(targetNode.id.value)) {
-          if (this.hasCycleDFS(targetNode, graph, visited, recursionStack)) {
+          if (this.hasCycleDFS(targetNode, workflow, visited, recursionStack)) {
             return true;
           }
         } else if (recursionStack.has(targetNode.id.value)) {

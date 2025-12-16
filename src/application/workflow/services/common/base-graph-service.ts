@@ -1,5 +1,5 @@
 import { injectable, inject } from 'inversify';
-import { Graph } from '@domain/workflow/entities/graph';
+import { Workflow as Graph } from '@domain/workflow/entities/workflow';
 import { Node } from '@domain/workflow/entities/nodes/base/node';
 import { Edge } from '@domain/workflow/entities/edges/base/edge';
 import { ID } from '@domain/common/value-objects/id';
@@ -108,8 +108,8 @@ export abstract class BaseGraphService {
       description: node.description,
       position: node.position,
       properties: node.properties,
-      createdAt: node.createdAt.toISOString(),
-      updatedAt: node.updatedAt.toISOString()
+      createdAt: (node as any).createdAt.toISOString(),
+      updatedAt: (node as any).updatedAt.toISOString()
     };
   }
 
@@ -126,8 +126,8 @@ export abstract class BaseGraphService {
       condition: edge.condition,
       weight: edge.weight,
       properties: edge.properties,
-      createdAt: edge.createdAt.toISOString(),
-      updatedAt: edge.updatedAt.toISOString()
+      createdAt: (edge as any).createdAt.toISOString(),
+      updatedAt: (edge as any).updatedAt.toISOString()
     };
   }
 

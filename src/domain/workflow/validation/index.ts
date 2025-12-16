@@ -14,8 +14,8 @@ export {
   ValidationUtils
 } from './validation-rules';
 
-// 图编译器
-export { 
+// 工作流编译器
+export {
   CompilationPhase,
   CompilationTarget,
   CompilationOptions,
@@ -27,15 +27,15 @@ export {
   CompilationError,
   CompilationWarning,
   CompilationPlugin,
-  IGraphCompiler,
+  IWorkflowCompiler,
   ICompilerFactory,
   CompilationOptionsBuilder,
   CompilationUtils
-} from './graph-compiler';
+} from './workflow-compiler';
 
 // 预定义验证规则
-export { 
-  GraphStructureRule,
+export {
+  WorkflowStructureRule,
   NodeReferenceRule,
   CycleDetectionRule,
   NodeTypeRule,

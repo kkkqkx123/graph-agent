@@ -1,9 +1,8 @@
 import { injectable, inject } from 'inversify';
 import { Workflow } from '../../../domain/workflow/entities/workflow';
-import { Graph } from '../../../domain/workflow/entities/graph';
 import { WorkflowRepository } from '../../../domain/workflow/repositories/workflow-repository';
-import { GraphRepository } from '../../../domain/workflow/repositories/graph-repository';
-import { GraphDomainService } from '../../../domain/workflow/services/graph-domain-service';
+import { WorkflowGraphRepository } from '../../../domain/workflow/repositories/workflow-graph-repository';
+import { WorkflowGraphDomainService } from '../../../domain/workflow/services/workflow-graph-domain-service';
 import { ID } from '../../../domain/common/value-objects/id';
 import { DomainError } from '../../../domain/common/errors/domain-error';
 import { ILogger } from '@shared/types/logger';
@@ -28,8 +27,8 @@ export interface ValidationResult {
 export interface WorkflowValidationRequest {
   /** 工作流ID */
   workflowId?: string;
-  /** 图ID */
-  graphId?: string;
+  /** 工作流ID */
+  workflowIdForValidation?: string;
   /** 工作流配置 */
   workflowConfig?: Record<string, unknown>;
   /** 验证级别 */
@@ -47,8 +46,8 @@ export interface WorkflowValidationRequest {
 export class WorkflowValidator {
   constructor(
     @inject('WorkflowRepository') private readonly workflowRepository: WorkflowRepository,
-    @inject('GraphRepository') private readonly graphRepository: GraphRepository,
-    @inject('GraphDomainService') private readonly graphDomainService: GraphDomainService,
+    @inject('WorkflowGraphRepository') private readonly workflowGraphRepository: WorkflowGraphRepository,
+    @inject('WorkflowGraphDomainService') private readonly workflowGraphDomainService: WorkflowGraphDomainService,
     @inject('Logger') private readonly logger: ILogger
   ) { }
 
@@ -61,7 +60,7 @@ export class WorkflowValidator {
     try {
       this.logger.info('开始验证工作流', {
         workflowId: request.workflowId,
-        graphId: request.graphId,
+        workflowIdForValidation: request.workflowIdForValidation,
         validationLevel: request.validationLevel
       });
 
@@ -72,9 +71,8 @@ export class WorkflowValidator {
         suggestions: []
       };
 
-      // 获取工作流和图
+      // 获取工作流
       let workflow: Workflow | null = null;
-      let graph: Graph | null = null;
 
       if (request.workflowId) {
         workflow = await this.workflowRepository.findById(ID.fromString(request.workflowId));
@@ -83,17 +81,16 @@ export class WorkflowValidator {
           result.errors.push(`工作流不存在: ${request.workflowId}`);
           return result;
         }
+      }
 
+      if (request.workflowIdForValidation) {
+        const workflowForValidation = await this.workflowRepository.findById(ID.fromString(request.workflowIdForValidation));
+        if (!workflowForValidation) {
+          result.isValid = false;
+          result.errors.push(`工作流不存在: ${request.workflowIdForValidation}`);
+          return result;
         }
-
-        if (request.graphId) {
-          graph = await this.graphRepository.findById(ID.fromString(request.graphId));
-          if (!graph) {
-            result.isValid = false;
-            result.errors.push(`图不存在: ${request.graphId}`);
-            return result;
-          }
-        }
+      }
 
       // 确定验证类型
       const validationTypes = request.validationTypes || ['structure', 'semantics'];
@@ -101,7 +98,7 @@ export class WorkflowValidator {
 
       // 执行验证
       for (const validationType of validationTypes) {
-        const typeResult = await this.validateByType(validationType, workflow, graph, validationLevel);
+        const typeResult = await this.validateByType(validationType, workflow, validationLevel);
         this.mergeValidationResults(result, typeResult);
       }
 
@@ -112,7 +109,7 @@ export class WorkflowValidator {
 
       this.logger.info('工作流验证完成', {
         workflowId: request.workflowId,
-        graphId: request.graphId,
+        workflowIdForValidation: request.workflowIdForValidation,
         isValid: result.isValid,
         errorCount: result.errors.length,
         warningCount: result.warnings.length,
@@ -165,11 +162,11 @@ export class WorkflowValidator {
       }
 
       // 验证工作流结构
-      const graphValidationResult = await this.graphDomainService.validateGraphStructure(workflow.workflowId);
+      const workflowValidationResult = await this.workflowGraphDomainService.validateWorkflowGraphStructure(workflow.workflowId);
       this.mergeValidationResults(result, {
-        isValid: graphValidationResult.isValid,
-        errors: graphValidationResult.errors,
-        warnings: graphValidationResult.warnings,
+        isValid: workflowValidationResult.isValid,
+        errors: workflowValidationResult.errors,
+        warnings: workflowValidationResult.warnings,
         suggestions: []
       });
 
@@ -299,18 +296,17 @@ export class WorkflowValidator {
   private async validateByType(
     validationType: 'structure' | 'semantics' | 'performance' | 'security',
     workflow: Workflow | null,
-    graph: Graph | null,
     validationLevel: 'basic' | 'standard' | 'strict'
   ): Promise<ValidationResult> {
     switch (validationType) {
       case 'structure':
-        return this.validateStructure(workflow, graph, validationLevel);
+        return this.validateStructure(workflow, validationLevel);
       case 'semantics':
-        return this.validateSemantics(workflow, graph, validationLevel);
+        return this.validateSemantics(workflow, validationLevel);
       case 'performance':
-        return this.validatePerformance(workflow, graph, validationLevel);
+        return this.validatePerformance(workflow, validationLevel);
       case 'security':
-        return this.validateSecurity(workflow, graph, validationLevel);
+        return this.validateSecurity(workflow, validationLevel);
       default:
         return {
           isValid: true,
@@ -330,7 +326,6 @@ export class WorkflowValidator {
    */
   private async validateStructure(
     workflow: Workflow | null,
-    graph: Graph | null,
     validationLevel: 'basic' | 'standard' | 'strict'
   ): Promise<ValidationResult> {
     const result: ValidationResult = {
@@ -352,44 +347,29 @@ export class WorkflowValidator {
         result.errors.push('工作流类型不能为空');
       }
 
-      if (!workflow.graphId) {
+      // 验证工作流节点和边
+      if (workflow.nodes.size === 0) {
         result.isValid = false;
-        result.errors.push('工作流必须关联一个图');
-      }
-    }
-
-    // 验证图结构
-    if (graph) {
-      try {
-        const graphValidationResult = await this.graphDomainService.validateGraphStructure(graph.graphId);
-        this.mergeValidationResults(result, {
-          isValid: graphValidationResult.isValid,
-          errors: graphValidationResult.errors,
-          warnings: graphValidationResult.warnings,
-          suggestions: []
-        });
-      } catch (error) {
-        result.isValid = false;
-        result.errors.push(`验证图结构时发生错误: ${error instanceof Error ? error.message : '未知错误'}`);
+        result.errors.push('工作流必须包含至少一个节点');
       }
     }
 
     // 严格模式下进行额外验证
-    if (validationLevel === 'strict' && graph) {
+    if (validationLevel === 'strict' && workflow) {
       // 验证节点数量
-      if (graph.getNodeCount() > 100) {
-        result.warnings.push('图节点数量超过100个，可能影响执行性能');
+      if (workflow.nodes.size > 100) {
+        result.warnings.push('工作流节点数量超过100个，可能影响执行性能');
       }
 
       // 验证边数量
-      if (graph.getEdgeCount() > 200) {
-        result.warnings.push('图边数量超过200个，可能影响执行性能');
+      if (workflow.edges.size > 200) {
+        result.warnings.push('工作流边数量超过200个，可能影响执行性能');
       }
 
-      // 验证图的复杂度
-      const complexity = this.calculateGraphComplexity(graph);
+      // 验证工作流的复杂度
+      const complexity = this.calculateWorkflowComplexity(workflow);
       if (complexity > 1000) {
-        result.warnings.push('图复杂度过高，建议简化工作流结构');
+        result.warnings.push('工作流复杂度过高，建议简化工作流结构');
       }
     }
 
@@ -405,7 +385,6 @@ export class WorkflowValidator {
    */
   private async validateSemantics(
     workflow: Workflow | null,
-    graph: Graph | null,
     validationLevel: 'basic' | 'standard' | 'strict'
   ): Promise<ValidationResult> {
     const result: ValidationResult = {
@@ -415,20 +394,20 @@ export class WorkflowValidator {
       suggestions: []
     };
 
-    if (!graph) {
+    if (!workflow) {
       return result;
     }
 
-    // 验证图的语义正确性
+    // 验证工作流的语义正确性
     try {
       // 检查是否有未连接的节点
-      const isolatedNodes = this.findIsolatedNodes(graph);
+      const isolatedNodes = this.findIsolatedNodes(workflow);
       if (isolatedNodes.length > 0) {
         result.warnings.push(`发现 ${isolatedNodes.length} 个未连接的节点`);
       }
 
       // 检查是否有死循环
-      const cycles = this.findCycles(graph);
+      const cycles = this.findCycles(workflow);
       if (cycles.length > 0) {
         if (validationLevel === 'strict') {
           result.isValid = false;
@@ -439,19 +418,19 @@ export class WorkflowValidator {
       }
 
       // 检查决策节点是否有默认路径
-      const decisionNodesWithoutDefault = this.findDecisionNodesWithoutDefault(graph);
+      const decisionNodesWithoutDefault = this.findDecisionNodesWithoutDefault(workflow);
       if (decisionNodesWithoutDefault.length > 0) {
         result.warnings.push(`发现 ${decisionNodesWithoutDefault.length} 个没有默认路径的决策节点`);
       }
 
       // 检查是否有不可达的结束节点
-      const unreachableEndNodes = this.findUnreachableEndNodes(graph);
+      const unreachableEndNodes = this.findUnreachableEndNodes(workflow);
       if (unreachableEndNodes.length > 0) {
         result.errors.push(`发现 ${unreachableEndNodes.length} 个不可达的结束节点`);
       }
     } catch (error) {
       result.isValid = false;
-      result.errors.push(`验证图语义时发生错误: ${error instanceof Error ? error.message : '未知错误'}`);
+      result.errors.push(`验证工作流语义时发生错误: ${error instanceof Error ? error.message : '未知错误'}`);
     }
 
     return result;
@@ -466,7 +445,6 @@ export class WorkflowValidator {
    */
   private async validatePerformance(
     workflow: Workflow | null,
-    graph: Graph | null,
     validationLevel: 'basic' | 'standard' | 'strict'
   ): Promise<ValidationResult> {
     const result: ValidationResult = {
@@ -476,14 +454,14 @@ export class WorkflowValidator {
       suggestions: []
     };
 
-    if (!graph) {
+    if (!workflow) {
       return result;
     }
 
-    // 计算图的性能指标
-    const nodeCount = graph.getNodeCount();
-    const edgeCount = graph.getEdgeCount();
-    const complexity = this.calculateGraphComplexity(graph);
+    // 计算工作流的性能指标
+    const nodeCount = workflow.nodes.size;
+    const edgeCount = workflow.edges.size;
+    const complexity = this.calculateWorkflowComplexity(workflow);
 
     // 性能警告
     if (nodeCount > 50) {
@@ -495,7 +473,7 @@ export class WorkflowValidator {
     }
 
     if (complexity > 500) {
-      result.warnings.push('图复杂度较高，建议优化工作流结构');
+      result.warnings.push('工作流复杂度较高，建议优化工作流结构');
     }
 
     // 性能建议
@@ -519,7 +497,6 @@ export class WorkflowValidator {
    */
   private async validateSecurity(
     workflow: Workflow | null,
-    graph: Graph | null,
     validationLevel: 'basic' | 'standard' | 'strict'
   ): Promise<ValidationResult> {
     const result: ValidationResult = {
@@ -570,13 +547,13 @@ export class WorkflowValidator {
   }
 
   /**
-   * 计算图复杂度
-   * @param graph 图
+   * 计算工作流复杂度
+   * @param workflow 工作流
    * @returns 复杂度值
    */
-  private calculateGraphComplexity(graph: Graph): number {
-    const nodeCount = graph.getNodeCount();
-    const edgeCount = graph.getEdgeCount();
+  private calculateWorkflowComplexity(workflow: Workflow): number {
+    const nodeCount = workflow.nodes.size;
+    const edgeCount = workflow.edges.size;
 
     // 简单的复杂度计算：节点数 + 边数 * 2
     return nodeCount + edgeCount * 2;
@@ -584,15 +561,15 @@ export class WorkflowValidator {
 
   /**
    * 查找孤立节点
-   * @param graph 图
+   * @param workflow 工作流
    * @returns 孤立节点列表
    */
-  private findIsolatedNodes(graph: Graph): any[] {
+  private findIsolatedNodes(workflow: Workflow): any[] {
     const isolatedNodes: any[] = [];
 
-    for (const node of graph.nodes.values()) {
-      const incomingEdges = graph.getIncomingEdges(node.nodeId);
-      const outgoingEdges = graph.getOutgoingEdges(node.nodeId);
+    for (const node of workflow.nodes.values()) {
+      const incomingEdges = workflow.getIncomingEdges(node.nodeId);
+      const outgoingEdges = workflow.getOutgoingEdges(node.nodeId);
 
       if (incomingEdges.length === 0 && outgoingEdges.length === 0) {
         isolatedNodes.push(node);
@@ -604,25 +581,25 @@ export class WorkflowValidator {
 
   /**
    * 查找循环
-   * @param graph 图
+   * @param workflow 工作流
    * @returns 循环列表
    */
-  private findCycles(graph: Graph): string[][] {
+  private findCycles(workflow: Workflow): string[][] {
     // 简化实现，实际应该使用深度优先搜索
     return [];
   }
 
   /**
    * 查找没有默认路径的决策节点
-   * @param graph 图
+   * @param workflow 工作流
    * @returns 决策节点列表
    */
-  private findDecisionNodesWithoutDefault(graph: Graph): any[] {
+  private findDecisionNodesWithoutDefault(workflow: Workflow): any[] {
     const decisionNodesWithoutDefault: any[] = [];
 
-    for (const node of graph.nodes.values()) {
+    for (const node of workflow.nodes.values()) {
       if (node.type.toString() === 'decision') {
-        const outgoingEdges = graph.getOutgoingEdges(node.nodeId);
+        const outgoingEdges = workflow.getOutgoingEdges(node.nodeId);
         const hasDefaultEdge = outgoingEdges.some(edge => edge.type.toString() === 'default');
 
         if (!hasDefaultEdge) {
@@ -636,10 +613,10 @@ export class WorkflowValidator {
 
   /**
    * 查找不可达的结束节点
-   * @param graph 图
+   * @param workflow 工作流
    * @returns 结束节点列表
    */
-  private findUnreachableEndNodes(graph: Graph): any[] {
+  private findUnreachableEndNodes(workflow: Workflow): any[] {
     // 简化实现，实际应该使用广度优先搜索
     return [];
   }

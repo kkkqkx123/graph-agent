@@ -1,17 +1,17 @@
-import { ID } from '@domain/common/value-objects/id';
-import { Graph } from '@domain/workflow/entities/graph';
-import { Node } from '@domain/workflow/entities/nodes/base/node';
-import { Edge } from '@domain/workflow/entities/edges/base/edge';
-import { GraphRepository, NodeRepository, EdgeRepository } from '@/domain/workflow/repositories/graph-repository';
-import { NodeType } from '@/domain/workflow/value-objects/node-type';
-import { EdgeType } from '@/domain/workflow/value-objects/edge-type';
-import { DomainError } from '@domain/common/errors/domain-error';
-import { ValidationResult, ValidationUtils } from '@/domain/workflow/validation';
+import { ID } from '../../common/value-objects/id';
+import { Workflow } from '../entities/workflow';
+import { Node } from '../entities/nodes/base/node';
+import { Edge } from '../entities/edges/base/edge';
+import { WorkflowRepository } from '../repositories/workflow-repository';
+import { NodeType } from '../value-objects/node-type';
+import { EdgeType } from '../value-objects/edge-type';
+import { DomainError } from '../../common/errors/domain-error';
+import { ValidationResult, ValidationUtils } from '../validation';
 
 /**
- * 图构建配置接口
+ * 工作流图构建配置接口
  */
-export interface GraphBuildConfig {
+export interface WorkflowGraphBuildConfig {
   /** 是否启用验证 */
   readonly enableValidation?: boolean;
   /** 是否自动保存 */
@@ -69,13 +69,13 @@ export interface EdgeBuildRequest {
 }
 
 /**
- * 图构建结果接口
+ * 工作流图构建结果接口
  */
-export interface GraphBuildResult {
+export interface WorkflowGraphBuildResult {
   /** 是否成功 */
   readonly success: boolean;
-  /** 图ID */
-  readonly graphId: ID;
+  /** 工作流ID */
+  readonly workflowId: ID;
   /** 构建的节点列表 */
   readonly builtNodes: ID[];
   /** 构建的边列表 */
@@ -91,42 +91,42 @@ export interface GraphBuildResult {
 }
 
 /**
- * 图构建服务接口
+ * 工作流图构建服务接口
  */
-export interface IGraphBuildService {
+export interface IWorkflowGraphBuildService {
   /**
-   * 创建新图
+   * 创建新工作流
    */
-  createGraph(
+  createWorkflow(
     name: string,
     description?: string,
-    config?: GraphBuildConfig,
+    config?: WorkflowGraphBuildConfig,
     metadata?: Record<string, any>,
     createdBy?: ID
-  ): Promise<Graph>;
+  ): Promise<Workflow>;
 
   /**
-   * 从模板创建图
+   * 从模板创建工作流
    */
-  createGraphFromTemplate(
+  createWorkflowFromTemplate(
     templateId: string,
     name: string,
     description?: string,
     parameters?: Record<string, any>,
-    config?: GraphBuildConfig,
+    config?: WorkflowGraphBuildConfig,
     createdBy?: ID
-  ): Promise<Graph>;
+  ): Promise<Workflow>;
 
   /**
-   * 克隆图
+   * 克隆工作流
    */
-  cloneGraph(
-    sourceGraphId: ID,
+  cloneWorkflow(
+    sourceWorkflowId: ID,
     newName: string,
     newDescription?: string,
-    config?: GraphBuildConfig,
+    config?: WorkflowGraphBuildConfig,
     createdBy?: ID
-  ): Promise<Graph>;
+  ): Promise<Workflow>;
 
   /**
    * 添加节点到图
@@ -244,24 +244,24 @@ export interface IGraphBuildService {
   ): Promise<void>;
 
   /**
-   * 验证图结构
+   * 验证工作流图结构
    */
-  validateGraph(graphId: ID): Promise<ValidationResult>;
+  validateWorkflowGraph(workflowId: ID): Promise<ValidationResult>;
 
   /**
-   * 自动布局图
+   * 自动布局工作流图
    */
-  autoLayout(
-    graphId: ID,
+  autoLayoutWorkflow(
+    workflowId: ID,
     layoutType?: 'hierarchical' | 'force' | 'circular' | 'grid',
     options?: Record<string, any>
   ): Promise<void>;
 
   /**
-   * 优化图结构
+   * 优化工作流图结构
    */
-  optimizeGraph(
-    graphId: ID,
+  optimizeWorkflowGraph(
+    workflowId: ID,
     options?: {
       removeUnusedNodes?: boolean;
       mergeSimilarNodes?: boolean;
@@ -270,30 +270,30 @@ export interface IGraphBuildService {
   ): Promise<void>;
 
   /**
-   * 导入图数据
+   * 导入工作流图数据
    */
-  importGraph(
+  importWorkflowGraph(
     data: string,
     format?: 'json' | 'yaml' | 'xml' | 'graphml',
     name?: string,
     description?: string,
-    config?: GraphBuildConfig,
+    config?: WorkflowGraphBuildConfig,
     createdBy?: ID
-  ): Promise<Graph>;
+  ): Promise<Workflow>;
 
   /**
-   * 导出图数据
+   * 导出工作流图数据
    */
-  exportGraph(
-    graphId: ID,
+  exportWorkflowGraph(
+    workflowId: ID,
     format?: 'json' | 'yaml' | 'xml' | 'graphml' | 'dot',
     options?: Record<string, any>
   ): Promise<string>;
 
   /**
-   * 获取图构建统计信息
+   * 获取工作流图构建统计信息
    */
-  getBuildStatistics(graphId: ID): Promise<{
+  getWorkflowBuildStatistics(workflowId: ID): Promise<{
     nodeCount: number;
     edgeCount: number;
     nodeTypeDistribution: Record<string, number>;
@@ -307,74 +307,72 @@ export interface IGraphBuildService {
 }
 
 /**
- * 默认图构建服务实现
+ * 默认工作流图构建服务实现
  */
-export class DefaultGraphBuildService implements IGraphBuildService {
+export class DefaultWorkflowGraphBuildService implements IWorkflowGraphBuildService {
   constructor(
-    private readonly graphRepository: GraphRepository,
-    private readonly nodeRepository: NodeRepository,
-    private readonly edgeRepository: EdgeRepository
+    private readonly workflowRepository: WorkflowRepository
   ) { }
 
   /**
-   * 创建新图
+   * 创建新工作流
    */
-  async createGraph(
+  async createWorkflow(
     name: string,
     description?: string,
-    config: GraphBuildConfig = {},
+    config: WorkflowGraphBuildConfig = {},
     metadata?: Record<string, any>,
     createdBy?: ID
-  ): Promise<Graph> {
-    // 验证图名称是否已存在
-    const exists = await this.graphRepository.existsByName(name);
+  ): Promise<Workflow> {
+    // 验证工作流名称是否已存在
+    const exists = await this.workflowRepository.existsByName(name);
     if (exists) {
-      throw new DomainError(`图名称 "${name}" 已存在`);
+      throw new DomainError(`工作流名称 "${name}" 已存在`);
     }
 
-    // 创建图
-    const graph = Graph.create(name, description, metadata, createdBy);
+    // 创建工作流
+    const workflow = Workflow.create(name, description, undefined, undefined, undefined, undefined, undefined, metadata, createdBy);
 
-    // 保存图
-    return await this.graphRepository.save(graph);
+    // 保存工作流
+    return await this.workflowRepository.save(workflow);
   }
 
   /**
-   * 从模板创建图
+   * 从模板创建工作流
    */
-  async createGraphFromTemplate(
+  async createWorkflowFromTemplate(
     templateId: string,
     name: string,
     description?: string,
     parameters: Record<string, any> = {},
-    config: GraphBuildConfig = {},
+    config: WorkflowGraphBuildConfig = {},
     createdBy?: ID
-  ): Promise<Graph> {
-    // 这里应该实现从模板创建图的逻辑
-    // 简化实现，直接创建空图
-    return await this.createGraph(name, description, config, { templateId, parameters }, createdBy);
+  ): Promise<Workflow> {
+    // 这里应该实现从模板创建工作流的逻辑
+    // 简化实现，直接创建空工作流
+    return await this.createWorkflow(name, description, config, { templateId, parameters }, createdBy);
   }
 
   /**
-   * 克隆图
+   * 克隆工作流
    */
-  async cloneGraph(
-    sourceGraphId: ID,
+  async cloneWorkflow(
+    sourceWorkflowId: ID,
     newName: string,
     newDescription?: string,
-    config: GraphBuildConfig = {},
+    config: WorkflowGraphBuildConfig = {},
     createdBy?: ID
-  ): Promise<Graph> {
-    const sourceGraph = await this.graphRepository.findByIdOrFail(sourceGraphId);
+  ): Promise<Workflow> {
+    const sourceWorkflow = await this.workflowRepository.findByIdOrFail(sourceWorkflowId);
 
-    // 创建新图
-    const newGraph = await this.createGraph(newName, newDescription, config, { clonedFrom: sourceGraphId }, createdBy);
+    // 创建新工作流
+    const newWorkflow = await this.createWorkflow(newName, newDescription, config, { clonedFrom: sourceWorkflowId }, createdBy);
 
     // 克隆节点
     const nodeIdMapping = new Map<string, ID>();
-    for (const [oldNodeId, node] of sourceGraph.nodes) {
+    for (const [oldNodeId, node] of sourceWorkflow.nodes) {
       const newNode = Node.create(
-        newGraph.graphId,
+        newWorkflow.workflowId,
         node.type,
         node.name,
         node.description,
@@ -382,18 +380,18 @@ export class DefaultGraphBuildService implements IGraphBuildService {
         { ...node.properties }
       );
 
-      await this.nodeRepository.save(newNode);
-      nodeIdMapping.set(oldNodeId, newNode.id);
+      newWorkflow.addNode(newNode, createdBy);
+      nodeIdMapping.set(oldNodeId, newNode.nodeId);
     }
 
     // 克隆边
-    for (const [oldEdgeId, edge] of sourceGraph.edges) {
-      const newFromNodeId = nodeIdMapping.get(edge.fromNodeId.value);
-      const newToNodeId = nodeIdMapping.get(edge.toNodeId.value);
+    for (const [oldEdgeId, edge] of sourceWorkflow.edges) {
+      const newFromNodeId = nodeIdMapping.get(edge.fromNodeId.toString());
+      const newToNodeId = nodeIdMapping.get(edge.toNodeId.toString());
 
       if (newFromNodeId && newToNodeId) {
         const newEdge = Edge.create(
-          newGraph.graphId,
+          newWorkflow.workflowId,
           edge.type,
           newFromNodeId,
           newToNodeId,
@@ -402,33 +400,32 @@ export class DefaultGraphBuildService implements IGraphBuildService {
           { ...edge.properties }
         );
 
-        await this.edgeRepository.save(newEdge);
+        newWorkflow.addEdge(newEdge, createdBy);
       }
     }
 
-    // 重新加载图以包含所有节点和边
-    return await this.graphRepository.findByIdOrFail(newGraph.graphId);
+    // 保存工作流
+    return await this.workflowRepository.save(newWorkflow);
   }
 
   /**
-   * 添加节点到图
+   * 添加节点到工作流
    */
   async addNode(
-    graphId: ID,
+    workflowId: ID,
     request: NodeBuildRequest,
     addedBy?: ID
   ): Promise<Node> {
-    const graph = await this.graphRepository.findByIdOrFail(graphId);
+    const workflow = await this.workflowRepository.findByIdOrFail(workflowId);
 
-    if (graph.isDeleted()) {
-      throw new DomainError('无法向已删除的图添加节点');
+    if (workflow.isDeleted()) {
+      throw new DomainError('无法向已删除的工作流添加节点');
     }
 
     // 创建节点
-    const nodeId = request.nodeId || ID.generate();
     const nodeType = NodeType.fromString(request.nodeType);
     const node = Node.create(
-      graphId,
+      workflowId,
       nodeType,
       request.nodeName,
       request.nodeDescription,
@@ -436,28 +433,27 @@ export class DefaultGraphBuildService implements IGraphBuildService {
       request.properties
     );
 
-    // 添加节点到图
-    graph.addNode(node, addedBy);
+    // 添加节点到工作流
+    workflow.addNode(node, addedBy);
 
-    // 保存图和节点
-    await this.graphRepository.save(graph);
-    await this.nodeRepository.save(node);
+    // 保存工作流
+    await this.workflowRepository.save(workflow);
 
     return node;
   }
 
   /**
-   * 批量添加节点到图
+   * 批量添加节点到工作流
    */
   async addNodes(
-    graphId: ID,
+    workflowId: ID,
     requests: NodeBuildRequest[],
     addedBy?: ID
   ): Promise<Node[]> {
     const nodes: Node[] = [];
 
     for (const request of requests) {
-      const node = await this.addNode(graphId, request, addedBy);
+      const node = await this.addNode(workflowId, request, addedBy);
       nodes.push(node);
     }
 
@@ -465,16 +461,16 @@ export class DefaultGraphBuildService implements IGraphBuildService {
   }
 
   /**
-   * 更新图中的节点
+   * 更新工作流中的节点
    */
   async updateNode(
-    graphId: ID,
+    workflowId: ID,
     nodeId: ID,
     updates: Partial<NodeBuildRequest>,
     updatedBy?: ID
   ): Promise<Node> {
-    const graph = await this.graphRepository.findByIdOrFail(graphId);
-    const node = graph.getNode(nodeId);
+    const workflow = await this.workflowRepository.findByIdOrFail(workflowId);
+    const node = workflow.getNode(nodeId);
 
     if (!node) {
       throw new DomainError(`节点不存在: ${nodeId}`);
@@ -502,61 +498,62 @@ export class DefaultGraphBuildService implements IGraphBuildService {
       node.updateProperties(updates.config || {});
     }
 
-    // 保存节点
-    return await this.nodeRepository.save(node);
+    // 保存工作流
+    await this.workflowRepository.save(workflow);
+    return node;
   }
 
   /**
-   * 从图移除节点
+   * 从工作流移除节点
    */
   async removeNode(
-    graphId: ID,
+    workflowId: ID,
     nodeId: ID,
     removedBy?: ID
   ): Promise<void> {
-    const graph = await this.graphRepository.findByIdOrFail(graphId);
+    const workflow = await this.workflowRepository.findByIdOrFail(workflowId);
 
-    if (graph.isDeleted()) {
-      throw new DomainError('无法从已删除的图移除节点');
+    if (workflow.isDeleted()) {
+      throw new DomainError('无法从已删除的工作流移除节点');
     }
 
     // 移除节点
-    graph.removeNode(nodeId, removedBy);
+    workflow.removeNode(nodeId, removedBy);
 
-    // 保存图
-    await this.graphRepository.save(graph);
+    // 保存工作流
+    await this.workflowRepository.save(workflow);
   }
 
   /**
-   * 批量从图移除节点
+   * 批量从工作流移除节点
    */
   async removeNodes(
-    graphId: ID,
+    workflowId: ID,
     nodeIds: ID[],
     removedBy?: ID
   ): Promise<void> {
     for (const nodeId of nodeIds) {
-      await this.removeNode(graphId, nodeId, removedBy);
+      await this.removeNode(workflowId, nodeId, removedBy);
     }
   }
 
   /**
-   * 添加边到图
+   * 添加边到工作流
    */
   async addEdge(
-    graphId: ID,
+    workflowId: ID,
     request: EdgeBuildRequest,
     addedBy?: ID
   ): Promise<Edge> {
-    const graph = await this.graphRepository.findByIdOrFail(graphId);
+    const workflow = await this.workflowRepository.findByIdOrFail(workflowId);
 
-    if (graph.isDeleted()) {
-      throw new DomainError('无法向已删除的图添加边');
+    if (workflow.isDeleted()) {
+      throw new DomainError('无法向已删除的工作流添加边');
     }
 
     // 验证节点存在
-    const fromNode = graph.getNode(request.fromNodeId);
-    const toNode = graph.getNode(request.toNodeId);
+    const fromNode = workflow.getNode(request.fromNodeId);
+    const toNode = workflow.getNode(request.toNodeId);
 
     if (!fromNode) {
       throw new DomainError(`源节点不存在: ${request.fromNodeId}`);
@@ -567,10 +564,9 @@ export class DefaultGraphBuildService implements IGraphBuildService {
     }
 
     // 创建边
-    const edgeId = request.edgeId || ID.generate();
     const edgeType = EdgeType.fromString(request.edgeType);
     const edge = Edge.create(
-      graphId,
+      workflowId,
       edgeType,
       request.fromNodeId,
       request.toNodeId,
@@ -579,28 +575,27 @@ export class DefaultGraphBuildService implements IGraphBuildService {
       request.properties
     );
 
-    // 添加边到图
-    graph.addEdge(edge, addedBy);
+    // 添加边到工作流
+    workflow.addEdge(edge, addedBy);
 
-    // 保存图和边
-    await this.graphRepository.save(graph);
-    await this.edgeRepository.save(edge);
+    // 保存工作流
+    await this.workflowRepository.save(workflow);
 
     return edge;
   }
 
   /**
-   * 批量添加边到图
+   * 批量添加边到工作流
    */
   async addEdges(
-    graphId: ID,
+    workflowId: ID,
     requests: EdgeBuildRequest[],
     addedBy?: ID
   ): Promise<Edge[]> {
     const edges: Edge[] = [];
 
     for (const request of requests) {
-      const edge = await this.addEdge(graphId, request, addedBy);
+      const edge = await this.addEdge(workflowId, request, addedBy);
       edges.push(edge);
     }
 
@@ -608,16 +603,16 @@ export class DefaultGraphBuildService implements IGraphBuildService {
   }
 
   /**
-   * 更新图中的边
+   * 更新工作流中的边
    */
   async updateEdge(
-    graphId: ID,
+    workflowId: ID,
     edgeId: ID,
     updates: Partial<EdgeBuildRequest>,
     updatedBy?: ID
   ): Promise<Edge> {
-    const graph = await this.graphRepository.findByIdOrFail(graphId);
-    const edge = graph.getEdge(edgeId);
+    const workflow = await this.workflowRepository.findByIdOrFail(workflowId);
+    const edge = workflow.getEdge(edgeId);
 
     if (!edge) {
       throw new DomainError(`边不存在: ${edgeId}`);
@@ -641,41 +636,42 @@ export class DefaultGraphBuildService implements IGraphBuildService {
       edge.updateProperties(updates.config || {});
     }
 
-    // 保存边
-    return await this.edgeRepository.save(edge);
+    // 保存工作流
+    await this.workflowRepository.save(workflow);
+    return edge;
   }
 
   /**
-   * 从图移除边
+   * 从工作流移除边
    */
   async removeEdge(
-    graphId: ID,
+    workflowId: ID,
     edgeId: ID,
     removedBy?: ID
   ): Promise<void> {
-    const graph = await this.graphRepository.findByIdOrFail(graphId);
+    const workflow = await this.workflowRepository.findByIdOrFail(workflowId);
 
-    if (graph.isDeleted()) {
-      throw new DomainError('无法从已删除的图移除边');
+    if (workflow.isDeleted()) {
+      throw new DomainError('无法从已删除的工作流移除边');
     }
 
     // 移除边
-    graph.removeEdge(edgeId, removedBy);
+    workflow.removeEdge(edgeId, removedBy);
 
-    // 保存图
-    await this.graphRepository.save(graph);
+    // 保存工作流
+    await this.workflowRepository.save(workflow);
   }
 
   /**
-   * 批量从图移除边
+   * 批量从工作流移除边
    */
   async removeEdges(
-    graphId: ID,
+    workflowId: ID,
     edgeIds: ID[],
     removedBy?: ID
   ): Promise<void> {
     for (const edgeId of edgeIds) {
-      await this.removeEdge(graphId, edgeId, removedBy);
+      await this.removeEdge(workflowId, edgeId, removedBy);
     }
   }
 
@@ -683,7 +679,7 @@ export class DefaultGraphBuildService implements IGraphBuildService {
    * 连接两个节点
    */
   async connectNodes(
-    graphId: ID,
+    workflowId: ID,
     fromNodeId: ID,
     toNodeId: ID,
     edgeType: string = 'default',
@@ -699,46 +695,46 @@ export class DefaultGraphBuildService implements IGraphBuildService {
       weight
     };
 
-    return await this.addEdge(graphId, request, addedBy);
+    return await this.addEdge(workflowId, request, addedBy);
   }
 
   /**
    * 断开两个节点
    */
   async disconnectNodes(
-    graphId: ID,
+    workflowId: ID,
     fromNodeId: ID,
     toNodeId: ID,
     removedBy?: ID
   ): Promise<void> {
-    const graph = await this.graphRepository.findByIdOrFail(graphId);
+    const workflow = await this.workflowRepository.findByIdOrFail(workflowId);
 
     // 查找连接两个节点的边
-    const edgesToRemove = Array.from(graph.edges.values()).filter(
+    const edgesToRemove = Array.from(workflow.edges.values()).filter(
       edge => edge.fromNodeId.equals(fromNodeId) && edge.toNodeId.equals(toNodeId)
     );
 
     // 移除所有连接边
     for (const edge of edgesToRemove) {
-      await this.removeEdge(graphId, edge.edgeId, removedBy);
+      await this.removeEdge(workflowId, edge.edgeId, removedBy);
     }
   }
 
   /**
-   * 验证图结构
+   * 验证工作流图结构
    */
-  async validateGraph(graphId: ID): Promise<ValidationResult> {
-    const graph = await this.graphRepository.findByIdOrFail(graphId);
+  async validateWorkflowGraph(workflowId: ID): Promise<ValidationResult> {
+    const workflow = await this.workflowRepository.findByIdOrFail(workflowId);
 
     // 简化实现，实际中应该使用完整的验证逻辑
     const errors: any[] = [];
     const warnings: any[] = [];
 
     // 基本验证
-    if (graph.getNodeCount() === 0) {
+    if (workflow.getNodeCount() === 0) {
       errors.push(
-        ValidationUtils.createStructureError('图必须包含至少一个节点')
-          .withGraphId(graphId)
+        ValidationUtils.createStructureError('工作流必须包含至少一个节点')
+          .withGraphId(workflowId)
           .build()
       );
     }
@@ -749,17 +745,17 @@ export class DefaultGraphBuildService implements IGraphBuildService {
   }
 
   /**
-   * 自动布局图
+   * 自动布局工作流图
    */
-  async autoLayout(
-    graphId: ID,
+  async autoLayoutWorkflow(
+    workflowId: ID,
     layoutType: 'hierarchical' | 'force' | 'circular' | 'grid' = 'hierarchical',
     options: Record<string, any> = {}
   ): Promise<void> {
-    const graph = await this.graphRepository.findByIdOrFail(graphId);
+    const workflow = await this.workflowRepository.findByIdOrFail(workflowId);
 
     // 简化实现，实际中应该实现真正的布局算法
-    const nodes = Array.from(graph.nodes.values());
+    const nodes = Array.from(workflow.nodes.values());
     const nodeCount = nodes.length;
 
     for (let i = 0; i < nodeCount; i++) {
@@ -790,65 +786,67 @@ export class DefaultGraphBuildService implements IGraphBuildService {
       // updatePosition 方法存在，但需要确保 node 不为 undefined
       if (node) {
         node.updatePosition({ x, y });
-        await this.nodeRepository.save(node);
       }
     }
+
+    // 保存工作流
+    await this.workflowRepository.save(workflow);
   }
 
   /**
-   * 优化图结构
+   * 优化工作流图结构
    */
-  async optimizeGraph(
-    graphId: ID,
+  async optimizeWorkflowGraph(
+    workflowId: ID,
     options: {
       removeUnusedNodes?: boolean;
       mergeSimilarNodes?: boolean;
       simplifyPaths?: boolean;
     } = {}
   ): Promise<void> {
-    const graph = await this.graphRepository.findByIdOrFail(graphId);
+    const workflow = await this.workflowRepository.findByIdOrFail(workflowId);
 
     // 简化实现，实际中应该实现真正的优化算法
     if (options.removeUnusedNodes) {
       // 移除未使用的节点
-      const unusedNodes = Array.from(graph.nodes.values()).filter(node => {
-        const incomingEdges = graph.getIncomingEdges(node.nodeId);
-        const outgoingEdges = graph.getOutgoingEdges(node.nodeId);
+      const unusedNodes = Array.from(workflow.nodes.values()).filter(node => {
+        const incomingEdges = workflow.getIncomingEdges(node.nodeId);
+        const outgoingEdges = workflow.getOutgoingEdges(node.nodeId);
         return incomingEdges.length === 0 && outgoingEdges.length === 0;
       });
 
       for (const node of unusedNodes) {
-        await this.removeNode(graphId, node.nodeId);
+        await this.removeNode(workflowId, node.nodeId);
       }
     }
   }
 
   /**
-   * 导入图数据
+   * 导入工作流图数据
    */
-  async importGraph(
+  async importWorkflowGraph(
     data: string,
     format: 'json' | 'yaml' | 'xml' | 'graphml' = 'json',
     name?: string,
     description?: string,
-    config: GraphBuildConfig = {},
+    config: WorkflowGraphBuildConfig = {},
     createdBy?: ID
-  ): Promise<Graph> {
+  ): Promise<Workflow> {
     // 简化实现，实际中应该支持多种格式
-    const graphData = JSON.parse(data);
+    const workflowData = JSON.parse(data);
 
-    const graph = await this.createGraph(
-      name || graphData.name || 'Imported Graph',
-      description || graphData.description,
+    const workflow = await this.createWorkflow(
+      name || workflowData.name || 'Imported Workflow',
+      description || workflowData.description,
       config,
       { imported: true, originalFormat: format },
       createdBy
     );
 
     // 导入节点
-    if (graphData.nodes) {
-      for (const nodeData of graphData.nodes) {
-        await this.addNode(graph.graphId, {
+    if (workflowData.nodes) {
+      for (const nodeData of workflowData.nodes) {
+        await this.addNode(workflow.workflowId, {
           nodeType: nodeData.type,
           nodeName: nodeData.name,
           nodeDescription: nodeData.description,
@@ -860,9 +858,9 @@ export class DefaultGraphBuildService implements IGraphBuildService {
     }
 
     // 导入边
-    if (graphData.edges) {
-      for (const edgeData of graphData.edges) {
-        await this.addEdge(graph.graphId, {
+    if (workflowData.edges) {
+      for (const edgeData of workflowData.edges) {
+        await this.addEdge(workflow.workflowId, {
           edgeType: edgeData.type,
           fromNodeId: ID.fromString(edgeData.fromNodeId),
           toNodeId: ID.fromString(edgeData.toNodeId),
@@ -874,26 +872,26 @@ export class DefaultGraphBuildService implements IGraphBuildService {
       }
     }
 
-    return graph;
+    return workflow;
   }
 
   /**
-   * 导出图数据
+   * 导出工作流图数据
    */
-  async exportGraph(
-    graphId: ID,
+  async exportWorkflowGraph(
+    workflowId: ID,
     format: 'json' | 'yaml' | 'xml' | 'graphml' | 'dot' = 'json',
     options: Record<string, any> = {}
   ): Promise<string> {
-    const graph = await this.graphRepository.findByIdOrFail(graphId);
+    const workflow = await this.workflowRepository.findByIdOrFail(workflowId);
 
     // 简化实现，只支持JSON格式
     const exportData = {
-      id: graph.graphId.toString(),
-      name: graph.name,
-      description: graph.description,
-      metadata: graph.metadata,
-      nodes: Array.from(graph.nodes.values()).map(node => ({
+      id: workflow.workflowId.toString(),
+      name: workflow.name,
+      description: workflow.description,
+      metadata: workflow.metadata,
+      nodes: Array.from(workflow.nodes.values()).map(node => ({
         id: node.nodeId.toString(),
         type: node.type.toString(),
         name: node.name,
@@ -902,7 +900,7 @@ export class DefaultGraphBuildService implements IGraphBuildService {
         properties: node.properties,
         config: node.properties
       })),
-      edges: Array.from(graph.edges.values()).map(edge => ({
+      edges: Array.from(workflow.edges.values()).map(edge => ({
         id: edge.edgeId.toString(),
         type: edge.type.toString(),
         fromNodeId: edge.fromNodeId.toString(),
@@ -918,9 +916,9 @@ export class DefaultGraphBuildService implements IGraphBuildService {
   }
 
   /**
-   * 获取图构建统计信息
+   * 获取工作流图构建统计信息
    */
-  async getBuildStatistics(graphId: ID): Promise<{
+  async getWorkflowBuildStatistics(workflowId: ID): Promise<{
     nodeCount: number;
     edgeCount: number;
     nodeTypeDistribution: Record<string, number>;
@@ -931,25 +929,25 @@ export class DefaultGraphBuildService implements IGraphBuildService {
       components: number;
     };
   }> {
-    const graph = await this.graphRepository.findByIdOrFail(graphId);
+    const workflow = await this.workflowRepository.findByIdOrFail(workflowId);
 
     // 统计节点类型分布
     const nodeTypeDistribution: Record<string, number> = {};
-    for (const node of graph.nodes.values()) {
+    for (const node of workflow.nodes.values()) {
       const type = node.type.toString();
       nodeTypeDistribution[type] = (nodeTypeDistribution[type] || 0) + 1;
     }
 
     // 统计边类型分布
     const edgeTypeDistribution: Record<string, number> = {};
-    for (const edge of graph.edges.values()) {
+    for (const edge of workflow.edges.values()) {
       const type = edge.type.toString();
       edgeTypeDistribution[type] = (edgeTypeDistribution[type] || 0) + 1;
     }
 
     // 计算连通性指标
-    const nodeCount = graph.getNodeCount();
-    const edgeCount = graph.getEdgeCount();
+    const nodeCount = workflow.getNodeCount();
+    const edgeCount = workflow.getEdgeCount();
     const averageDegree = nodeCount > 0 ? (2 * edgeCount) / nodeCount : 0;
     const maxPossibleEdges = nodeCount * (nodeCount - 1) / 2;
     const density = maxPossibleEdges > 0 ? edgeCount / maxPossibleEdges : 0;
