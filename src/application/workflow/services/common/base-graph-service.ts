@@ -23,7 +23,7 @@ import {
 export abstract class BaseGraphService {
   constructor(
     @inject('Logger') protected readonly logger: ILogger
-  ) {}
+  ) { }
 
   /**
    * 执行服务操作
@@ -37,11 +37,11 @@ export abstract class BaseGraphService {
   ): Promise<T> {
     try {
       this.logger.info(`正在${operationName}`, context || {});
-      
+
       const result = await operation();
-      
+
       this.logger.info(`${operationName}成功`, context || {});
-      
+
       return result;
     } catch (error) {
       this.logger.error(`${operationName}失败`, error as Error);
@@ -68,7 +68,7 @@ export abstract class BaseGraphService {
    */
   public toGraphDto(graph: Graph): GraphDto {
     return {
-      id: graph.graphId.toString(),
+      id: graph.workflowId.toString(),
       name: graph.name,
       description: graph.description,
       nodes: Array.from(graph.nodes.values()).map(node => this.toNodeDto(node)),
@@ -87,7 +87,7 @@ export abstract class BaseGraphService {
    */
   public toGraphSummaryDto(graph: Graph): GraphSummaryDto {
     return {
-      id: graph.graphId.toString(),
+      id: graph.workflowId.toString(),
       name: graph.name,
       nodeCount: graph.getNodeCount(),
       edgeCount: graph.getEdgeCount(),

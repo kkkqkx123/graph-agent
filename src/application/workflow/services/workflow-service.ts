@@ -1,7 +1,6 @@
 import { injectable, inject } from 'inversify';
 import { Workflow } from '../../../domain/workflow/entities/workflow';
 import { WorkflowRepository } from '../../../domain/workflow/repositories/workflow-repository';
-import { WorkflowGraphRepository } from '../../../domain/workflow/repositories/workflow-graph-repository';
 import { WorkflowDomainService } from '../../../domain/workflow/services/workflow-domain-service';
 import { ID } from '../../../domain/common/value-objects/id';
 import { WorkflowStatus } from '../../../domain/workflow/value-objects/workflow-status';
@@ -229,7 +228,6 @@ interface SearchWorkflowsQuery {
 export class WorkflowService {
   constructor(
     @inject('WorkflowRepository') private readonly workflowRepository: WorkflowRepository,
-    @inject('WorkflowGraphRepository') private readonly workflowGraphRepository: WorkflowGraphRepository,
     @inject('WorkflowDomainService') private readonly workflowDomainService: WorkflowDomainService,
     @inject('Logger') private readonly logger: ILogger
   ) { }
