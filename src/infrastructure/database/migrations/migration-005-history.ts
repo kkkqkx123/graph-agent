@@ -1,10 +1,10 @@
 import { QueryRunner, Table, TableIndex } from 'typeorm';
 import { Migration } from './migration-runner';
 
-export const migration006: Migration = {
+export const migration005: Migration = {
   id: '006-history',
   name: 'Create history and checkpoints tables',
-  
+
   async up(queryRunner: QueryRunner): Promise<void> {
     // 创建history表
     await queryRunner.createTable(
