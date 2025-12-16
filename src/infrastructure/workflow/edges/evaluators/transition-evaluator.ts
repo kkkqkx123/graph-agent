@@ -1,5 +1,5 @@
 import { injectable } from 'inversify';
-import { Edge } from '@domain/workflow/graph/entities/edges/base/edge';
+import { Edge } from '@domain/workflow/entities/edges/base/edge';
 import { ExecutionContext } from '../../engine/execution-context';
 
 @injectable()

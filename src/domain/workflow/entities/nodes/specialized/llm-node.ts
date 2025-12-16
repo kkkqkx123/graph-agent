@@ -1,7 +1,7 @@
-import { Node, NodeProps, NodePosition } from '@domain/workflow/graph/entities/nodes/base/node';
+import { Node, NodeProps, NodePosition } from '@domain/workflow/entities/nodes/base/node';
 import { ID } from '@domain/common/value-objects/id';
 import { NodeType } from '@/domain/workflow/value-objects/node-type';
-import { WorkflowState } from '@domain/workflow/graph/entities/workflow-state';
+import { WorkflowState } from '@domain/workflow/entities/workflow-state';
 import { Timestamp } from '@domain/common/value-objects/timestamp';
 import { Version } from '@domain/common/value-objects/version';
 import { DomainError } from '@domain/common/errors/domain-error';

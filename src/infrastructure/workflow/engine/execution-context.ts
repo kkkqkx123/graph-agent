@@ -1,9 +1,10 @@
-import { Graph } from '@domain/workflow/graph/entities/graph';
+import { Graph } from '@domain/workflow/entities/graph';
+import { Workflow } from '@domain/workflow/entities/workflow';
 import { NodeId } from '@/domain/workflow/value-objects/node-id';
 import { EdgeId } from '@/domain/workflow/value-objects/edge-id';
 
 export class ExecutionContext {
-  private readonly graph: Graph;
+  private readonly graph: Graph | Workflow;
   private readonly input: any;
   private readonly startTime: number;
   private readonly nodeId: string;
@@ -14,15 +15,22 @@ export class ExecutionContext {
   private variables: Map<string, any> = new Map();
   private metadata: Map<string, any> = new Map();
 
-  constructor(graph: Graph, input: any, nodeId?: string) {
+  constructor(graph: Graph | Workflow, input: any, nodeId?: string) {
     this.graph = graph;
     this.input = input;
     this.startTime = Date.now();
     this.nodeId = nodeId || this.generateExecutionId();
   }
 
-  getGraph(): Graph {
+  getGraph(): Graph | Workflow {
     return this.graph;
+  }
+
+  getWorkflow(): Workflow {
+    if ('workflowId' in this.graph) {
+      return this.graph as Workflow;
+    }
+    throw new Error('ExecutionContext was not initialized with a Workflow');
   }
 
   getInput(): any {
@@ -185,7 +193,7 @@ export class ExecutionContext {
       executionId: this.nodeId,
       startTime: this.startTime,
       elapsedTime: this.getElapsedTime(),
-      graphId: this.graph.id.value,
+      graphId: this.graph.graphId ? this.graph.graphId.value : this.graph.workflowId.value,
       input: this.input,
       executedNodes: Array.from(this.executedNodes),
       nodeResults: Object.fromEntries(this.nodeResults),
@@ -195,7 +203,7 @@ export class ExecutionContext {
     };
   }
 
-  static fromJSON(data: any, graph: Graph): ExecutionContext {
+  static fromJSON(data: any, graph: Graph | Workflow): ExecutionContext {
     const context = new ExecutionContext(graph, data.input, data.executionId);
 
     // Restore executed nodes
@@ -234,7 +242,7 @@ export class ExecutionContext {
   getExecutionSummary(): any {
     return {
       executionId: this.nodeId,
-      graphId: this.graph.id.value,
+      graphId: this.graph.graphId ? this.graph.graphId.value : this.graph.workflowId.value,
       graphName: this.graph.name,
       startTime: this.startTime,
       elapsedTime: this.getElapsedTime(),

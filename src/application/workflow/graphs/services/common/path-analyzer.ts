@@ -1,7 +1,7 @@
 import { injectable, inject } from 'inversify';
-import { Graph } from '../../../../../domain/workflow/graph/entities/graph';
-import { Edge } from '../../../../../domain/workflow/graph/entities/edges';
-import { ID } from '../../../../../domain/common/value-objects/id';
+import { Graph } from '@domain/workflow/entities/graph';
+import { Edge } from '@domain/workflow/entities/edges';
+import { ID } from '@domain/common/value-objects/id';
 import { ILogger } from '@shared/types/logger';
 
 /**
@@ -80,7 +80,7 @@ export class PathAnalyzer {
 
     const conditionalPaths: string[][] = [];
     const conditionalEdges = Array.from(graph.edges.values()).filter(
-      edge => edge.type.toString() === 'conditional'
+      (edge: any) => edge.type.toString() === 'conditional'
     );
     
     for (const edge of conditionalEdges) {

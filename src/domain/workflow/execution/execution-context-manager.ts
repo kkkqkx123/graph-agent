@@ -10,7 +10,7 @@ import {
   ExecutionLog,
   ExecutionError,
   ExecutionContextUtils
-} from '../graph/execution/execution-context';
+} from '../execution/execution-context';
 
 /**
  * 执行上下文管理器接口

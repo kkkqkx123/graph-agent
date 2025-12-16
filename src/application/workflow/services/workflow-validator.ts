@@ -1,6 +1,6 @@
 import { injectable, inject } from 'inversify';
 import { Workflow } from '../../../domain/workflow/entities/workflow';
-import { Graph } from '../../../domain/workflow/graph/entities/graph';
+import { Graph } from '../../../domain/workflow/entities/graph';
 import { WorkflowRepository } from '../../../domain/workflow/repositories/workflow-repository';
 import { GraphRepository } from '../../../domain/workflow/repositories/graph-repository';
 import { GraphDomainService } from '../../../domain/workflow/services/graph-domain-service';

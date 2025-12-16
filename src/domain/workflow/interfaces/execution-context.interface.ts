@@ -1,4 +1,4 @@
-import { Graph } from '@domain/workflow/graph/entities/graph';
+import { Graph } from '@domain/workflow/entities/graph';
 import { NodeId } from '@/domain/workflow/value-objects/node-id';
 import { EdgeId } from '@/domain/workflow/value-objects/edge-id';
 

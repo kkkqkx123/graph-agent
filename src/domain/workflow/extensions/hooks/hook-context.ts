@@ -1,4 +1,4 @@
-import { ID } from '../../../../common/value-objects/id';
+import { ID } from '../../../common/value-objects/id';
 import { HookPoint } from '../../value-objects/hook-point';
 import { WorkflowState } from '../../entities/workflow-state';
 

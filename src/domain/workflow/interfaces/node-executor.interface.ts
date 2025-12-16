@@ -1,4 +1,4 @@
-import { Node } from '@domain/workflow/graph/entities/nodes/base/node';
+import { Node } from '@domain/workflow/entities/nodes/base/node';
 import { IExecutionContext } from '@/domain/workflow/interfaces/execution-context.interface';
 
 /**

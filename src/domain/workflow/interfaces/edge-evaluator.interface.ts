@@ -1,4 +1,4 @@
-import { Edge } from '@domain/workflow/graph/entities/edges/base/edge';
+import { Edge } from '@domain/workflow/entities/edges/base/edge';
 import { IExecutionContext } from '@/domain/workflow/interfaces/execution-context.interface';
 
 /**

@@ -1,6 +1,6 @@
 import { injectable, inject } from 'inversify';
-import { Graph } from '../../../../../domain/workflow/graph/entities/graph';
-import { ID } from '../../../../../domain/common/value-objects/id';
+import { Graph } from '@domain/workflow/entities/graph';
+import { ID } from '@domain/common/value-objects/id';
 import { ILogger } from '@shared/types/logger';
 import { PathAnalyzer } from './path-analyzer';
 

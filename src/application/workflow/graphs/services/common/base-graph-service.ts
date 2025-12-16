@@ -1,7 +1,7 @@
 import { injectable, inject } from 'inversify';
-import { Graph } from '@domain/workflow/graph/entities/graph';
-import { Node } from '@domain/workflow/graph/entities/nodes/base/node';
-import { Edge } from '@domain/workflow/graph/entities/edges/base/edge';
+import { Graph } from '@domain/workflow/entities/graph';
+import { Node } from '@domain/workflow/entities/nodes/base/node';
+import { Edge } from '@domain/workflow/entities/edges/base/edge';
 import { ID } from '@domain/common/value-objects/id';
 import { DomainError } from '@domain/common/errors/domain-error';
 import { ILogger } from '@shared/types/logger';

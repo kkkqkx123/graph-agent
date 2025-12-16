@@ -1,7 +1,7 @@
 import { injectable } from 'inversify';
-import { Graph } from '@domain/workflow/graph/entities/graph';
-import { Node } from '@domain/workflow/graph/entities/nodes/base/node';
-import { Edge } from '@domain/workflow/graph/entities/edges/base/edge';
+import { Graph } from '@domain/workflow/entities/graph';
+import { Node } from '@domain/workflow/entities/nodes/base/node';
+import { Edge } from '@domain/workflow/entities/edges/base/edge';
 import { NodeId } from '@/domain/workflow/value-objects/node-id';
 
 export interface ExecutionPlan {

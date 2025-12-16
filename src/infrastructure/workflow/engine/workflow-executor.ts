@@ -1,7 +1,7 @@
 import { injectable, inject } from 'inversify';
 import { Workflow } from '@domain/workflow/entities/workflow';
-import { Node } from '@domain/workflow/graph/entities/nodes/base/node';
-import { Edge } from '@domain/workflow/graph/entities/edges/base/edge';
+import { Node } from '@domain/workflow/entities/nodes/base/node';
+import { Edge } from '@domain/workflow/entities/edges/base/edge';
 import { NodeId } from '@/domain/workflow/value-objects/node-id';
 import { ExecutionContext } from './execution-context';
 import { StateManager } from './state-manager';
@@ -100,7 +100,7 @@ export class WorkflowExecutor {
       }
 
       // Check if all incoming edges conditions are satisfied
-      const incomingEdges = this.getIncomingEdges(node, graph);
+      const incomingEdges = this.getIncomingEdges(node, workflow);
       let canExecute = true;
 
       for (const edge of incomingEdges) {

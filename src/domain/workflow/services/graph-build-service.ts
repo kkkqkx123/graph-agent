@@ -1,7 +1,7 @@
 import { ID } from '@domain/common/value-objects/id';
-import { Graph } from '@domain/workflow/graph/entities/graph';
-import { Node } from '@domain/workflow/graph/entities/nodes/base/node';
-import { Edge } from '@domain/workflow/graph/entities/edges/base/edge';
+import { Graph } from '@domain/workflow/entities/graph';
+import { Node } from '@domain/workflow/entities/nodes/base/node';
+import { Edge } from '@domain/workflow/entities/edges/base/edge';
 import { GraphRepository, NodeRepository, EdgeRepository } from '@/domain/workflow/repositories/graph-repository';
 import { NodeType } from '@/domain/workflow/value-objects/node-type';
 import { EdgeType } from '@/domain/workflow/value-objects/edge-type';

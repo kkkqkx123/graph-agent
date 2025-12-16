@@ -1,11 +1,11 @@
-import { Graph } from '@domain/workflow/graph/entities/graph';
+import { Graph } from '@domain/workflow/entities/graph';
 import { ID } from '@domain/common/value-objects/id';
 import { Timestamp } from '@domain/common/value-objects/timestamp';
 import { Version } from '@domain/common/value-objects/version';
 import { NodeType } from '@/domain/workflow/value-objects/node-type';
 import { EdgeType } from '@/domain/workflow/value-objects/edge-type';
-import { Node } from '@domain/workflow/graph/entities/nodes/base/node';
-import { Edge } from '@domain/workflow/graph/entities/edges/base/edge';
+import { Node } from '@domain/workflow/entities/nodes/base/node';
+import { Edge } from '@domain/workflow/entities/edges/base/edge';
 import { GraphModel } from '../../models/graph.model';
 import { NodeModel } from '../../models/node.model';
 import { EdgeModel } from '../../models/edge.model';
