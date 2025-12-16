@@ -6,9 +6,9 @@
 
 import { BaseApplicationServiceFactory } from '../../common/base-service-factory';
 import { SessionMaintenanceService } from '../services/session-maintenance-service';
-import { SessionRepository } from '../../../domain/session/repositories/session-repository';
-import { ThreadRepository } from '../../../domain/thread/repositories/thread-repository';
-import { SessionDomainService } from '../../../domain/session/services/session-domain-service';
+import { SessionRepository } from '../../../domain/sessions/repositories/session-repository';
+import { ThreadRepository } from '../../../domain/threads/repositories/thread-repository';
+import { SessionDomainService } from '../../../domain/sessions/services/session-domain-service';
 
 /**
  * 会话维护服务工厂

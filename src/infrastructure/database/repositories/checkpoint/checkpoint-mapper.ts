@@ -1,6 +1,6 @@
 import { Checkpoint } from '../../../../domain/checkpoint/entities/checkpoint';
 import { CheckpointId } from '../../../../domain/checkpoint/value-objects/checkpoint-id';
-import { ThreadId } from '../../../../domain/thread/value-objects/thread-id';
+import { ThreadId } from '../../../../domain/threads/value-objects/thread-id';
 import { CheckpointType } from '../../../../domain/checkpoint/value-objects/checkpoint-type';
 import { ID } from '../../../../domain/common/value-objects/id';
 import { Timestamp } from '../../../../domain/common/value-objects/timestamp';
@@ -35,7 +35,7 @@ export class CheckpointMapper {
     model.createdAt = entity.createdAt.getDate();
     model.updatedAt = entity.updatedAt.getDate();
     model.version = parseInt(entity.version.getValue());
-    
+
     return model;
   }
 }

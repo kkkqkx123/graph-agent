@@ -4,15 +4,15 @@
  * 负责会话相关的业务逻辑编排和协调
  */
 
-import { Session } from '../../../domain/session/entities/session';
-import { SessionRepository } from '../../../domain/session/repositories/session-repository';
-import { SessionDomainService } from '../../../domain/session/services/session-domain-service';
-import { ThreadRepository } from '../../../domain/thread/repositories/thread-repository';
-import { ThreadDomainService } from '../../../domain/thread/services/thread-domain-service';
+import { Session } from '../../../domain/sessions/entities/session';
+import { SessionRepository } from '../../../domain/sessions/repositories/session-repository';
+import { SessionDomainService } from '../../../domain/sessions/services/session-domain-service';
+import { ThreadRepository } from '../../../domain/threads/repositories/thread-repository';
+import { ThreadDomainService } from '../../../domain/threads/services/thread-domain-service';
 import { ID } from '../../../domain/common/value-objects/id';
 import { SessionId } from '../../../domain/common/value-objects/session-id';
-import { SessionStatus } from '../../../domain/session/value-objects/session-status';
-import { SessionConfig, SessionConfigProps } from '../../../domain/session/value-objects/session-config';
+import { SessionStatus } from '../../../domain/sessions/value-objects/session-status';
+import { SessionConfig, SessionConfigProps } from '../../../domain/sessions/value-objects/session-config';
 import { DomainError } from '../../../domain/common/errors/domain-error';
 import { ILogger } from '@shared/types/logger';
 import { CreateSessionRequest, SessionInfo } from '../dtos';
@@ -27,7 +27,7 @@ export class SessionService {
     private readonly sessionDomainService: SessionDomainService,
     private readonly threadDomainService: ThreadDomainService,
     private readonly logger: ILogger
-  ) {}
+  ) { }
 
   /**
    * 创建会话
@@ -335,18 +335,18 @@ export class SessionService {
     * @param userId 用户ID
     * @returns 会话统计信息
     */
-   async getSessionStatistics(userId?: string): Promise<{
-     total: number;
-     active: number;
-     suspended: number;
-     terminated: number;
-   }> {
-     try {
-       const user = userId ? ID.fromString(userId) : undefined;
-       if (!user) {
-         throw new DomainError('获取会话统计信息需要提供用户ID');
-       }
-       return await this.sessionDomainService.getUserSessionStats(user);
+  async getSessionStatistics(userId?: string): Promise<{
+    total: number;
+    active: number;
+    suspended: number;
+    terminated: number;
+  }> {
+    try {
+      const user = userId ? ID.fromString(userId) : undefined;
+      if (!user) {
+        throw new DomainError('获取会话统计信息需要提供用户ID');
+      }
+      return await this.sessionDomainService.getUserSessionStats(user);
     } catch (error) {
       this.logger.error('获取会话统计信息失败', error as Error);
       throw error;

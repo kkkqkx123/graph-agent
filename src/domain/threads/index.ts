@@ -24,4 +24,4 @@ export * from './repositories';
 export * from './events';
 
 // 导出checkpoint子模块
-export * from '../threads/checkpoints';
+export * from './checkpoints';

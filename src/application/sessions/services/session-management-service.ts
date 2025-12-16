@@ -4,10 +4,10 @@
  * 负责会话的查询、列表、存在性检查和配置更新等管理功能
  */
 
-import { Session } from '../../../domain/session/entities/session';
-import { SessionRepository } from '../../../domain/session/repositories/session-repository';
-import { SessionDomainService } from '../../../domain/session/services/session-domain-service';
-import { SessionConfig, SessionConfigProps } from '../../../domain/session/value-objects/session-config';
+import { Session } from '../../../domain/sessions/entities/session';
+import { SessionRepository } from '../../../domain/sessions/repositories/session-repository';
+import { SessionDomainService } from '../../../domain/sessions/services/session-domain-service';
+import { SessionConfig, SessionConfigProps } from '../../../domain/sessions/value-objects/session-config';
 import { BaseApplicationService } from '../../common/base-application-service';
 import { SessionInfo } from '../dtos';
 import { ILogger } from '@shared/types/logger';
@@ -42,11 +42,11 @@ export class SessionManagementService extends BaseApplicationService {
       async () => {
         const id = this.parseId(sessionId, '会话ID');
         const session = await this.sessionRepository.findById(id);
-        
+
         if (!session) {
           return null;
         }
-        
+
         return this.mapSessionToInfo(session);
       },
       { sessionId }

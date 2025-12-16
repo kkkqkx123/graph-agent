@@ -1,9 +1,9 @@
 import { injectable, inject } from 'inversify';
-import { ThreadRepository as IThreadRepository, ThreadQueryOptions } from '../../../../domain/thread/repositories/thread-repository';
-import { Thread } from '../../../../domain/thread/entities/thread';
+import { ThreadRepository as IThreadRepository, ThreadQueryOptions } from '../../../../domain/threads/repositories/thread-repository';
+import { Thread } from '../../../../domain/threads/entities/thread';
 import { ID } from '../../../../domain/common/value-objects/id';
-import { ThreadStatus } from '../../../../domain/thread/value-objects/thread-status';
-import { ThreadPriority } from '../../../../domain/thread/value-objects/thread-priority';
+import { ThreadStatus } from '../../../../domain/threads/value-objects/thread-status';
+import { ThreadPriority } from '../../../../domain/threads/value-objects/thread-priority';
 import { ConnectionManager } from '../../connections/connection-manager';
 import { ThreadMapper } from './thread-mapper';
 import { ThreadModel } from '../../models/thread.model';
@@ -16,22 +16,22 @@ export class ThreadRepository implements IThreadRepository {
   constructor(
     @inject('ConnectionManager') private connectionManager: ConnectionManager,
     @inject('ThreadMapper') private mapper: ThreadMapper
-  ) {}
+  ) { }
 
   async save(thread: Thread): Promise<Thread> {
     const connection = await this.connectionManager.getConnection();
     const repository = connection.getRepository(ThreadModel);
-    
+
     const model = this.mapper.toModel(thread);
     await repository.save(model);
-    
+
     return thread;
   }
 
   async findById(id: ID): Promise<Thread | null> {
     const connection = await this.connectionManager.getConnection();
     const repository = connection.getRepository(ThreadModel);
-    
+
     const model = await repository.findOne({ where: { id: id.value } });
     return model ? this.mapper.toEntity(model) : null;
   }
@@ -47,7 +47,7 @@ export class ThreadRepository implements IThreadRepository {
   async findAll(): Promise<Thread[]> {
     const connection = await this.connectionManager.getConnection();
     const repository = connection.getRepository(ThreadModel);
-    
+
     const models = await repository.find();
     return models.map(model => this.mapper.toEntity(model));
   }
@@ -55,9 +55,9 @@ export class ThreadRepository implements IThreadRepository {
   async find(options: QueryOptions): Promise<Thread[]> {
     const connection = await this.connectionManager.getConnection();
     const repository = connection.getRepository(ThreadModel);
-    
+
     const queryBuilder = repository.createQueryBuilder('thread');
-    
+
     if (options.filters) {
       Object.entries(options.filters).forEach(([key, value]) => {
         if (value !== undefined) {
@@ -65,20 +65,20 @@ export class ThreadRepository implements IThreadRepository {
         }
       });
     }
-    
+
     if (options.sortBy) {
       const order = options.sortOrder === 'desc' ? 'DESC' : 'ASC';
       queryBuilder.orderBy(`thread.${options.sortBy}`, order);
     }
-    
+
     if (options.offset) {
       queryBuilder.skip(options.offset);
     }
-    
+
     if (options.limit) {
       queryBuilder.take(options.limit);
     }
-    
+
     const models = await queryBuilder.getMany();
     return models.map(model => this.mapper.toEntity(model));
   }
@@ -99,13 +99,13 @@ export class ThreadRepository implements IThreadRepository {
   async findWithPaginationBase(options: QueryOptions): Promise<PaginatedResult<Thread>> {
     const connection = await this.connectionManager.getConnection();
     const repository = connection.getRepository(ThreadModel);
-    
+
     const page = options.offset ? Math.floor(options.offset / (options.limit || 10)) + 1 : 1;
     const pageSize = options.limit || 10;
     const skip = (page - 1) * pageSize;
-    
+
     const queryBuilder = repository.createQueryBuilder('thread');
-    
+
     if (options.filters) {
       Object.entries(options.filters).forEach(([key, value]) => {
         if (value !== undefined) {
@@ -113,15 +113,15 @@ export class ThreadRepository implements IThreadRepository {
         }
       });
     }
-    
+
     const [models, total] = await queryBuilder
       .skip(skip)
       .take(pageSize)
       .orderBy('thread.createdAt', 'DESC')
       .getManyAndCount();
-    
+
     const totalPages = Math.ceil(total / pageSize);
-    
+
     return {
       items: models.map(model => this.mapper.toEntity(model)),
       total,
@@ -134,31 +134,31 @@ export class ThreadRepository implements IThreadRepository {
   async saveBatch(threads: Thread[]): Promise<Thread[]> {
     const connection = await this.connectionManager.getConnection();
     const repository = connection.getRepository(ThreadModel);
-    
+
     const models = threads.map(thread => this.mapper.toModel(thread));
     const savedModels = await repository.save(models);
-    
+
     return savedModels.map(model => this.mapper.toEntity(model));
   }
 
   async delete(entity: Thread): Promise<void> {
     const connection = await this.connectionManager.getConnection();
     const repository = connection.getRepository(ThreadModel);
-    
+
     await repository.delete(entity.threadId.value);
   }
 
   async deleteById(id: ID): Promise<void> {
     const connection = await this.connectionManager.getConnection();
     const repository = connection.getRepository(ThreadModel);
-    
+
     await repository.delete({ id: id.value });
   }
 
   async deleteBatch(threads: Thread[]): Promise<void> {
     const connection = await this.connectionManager.getConnection();
     const repository = connection.getRepository(ThreadModel);
-    
+
     const ids = threads.map(thread => thread.threadId.value);
     await repository.delete({ id: In(ids) });
   }
@@ -166,9 +166,9 @@ export class ThreadRepository implements IThreadRepository {
   async deleteWhere(options: QueryOptions): Promise<number> {
     const connection = await this.connectionManager.getConnection();
     const repository = connection.getRepository(ThreadModel);
-    
+
     const queryBuilder = repository.createQueryBuilder('thread').delete();
-    
+
     if (options.filters) {
       Object.entries(options.filters).forEach(([key, value]) => {
         if (value !== undefined) {
@@ -176,7 +176,7 @@ export class ThreadRepository implements IThreadRepository {
         }
       });
     }
-    
+
     const result = await queryBuilder.execute();
     return result.affected || 0;
   }
@@ -184,7 +184,7 @@ export class ThreadRepository implements IThreadRepository {
   async exists(id: ID): Promise<boolean> {
     const connection = await this.connectionManager.getConnection();
     const repository = connection.getRepository(ThreadModel);
-    
+
     const count = await repository.count({ where: { id: id.value } });
     return count > 0;
   }
@@ -192,13 +192,13 @@ export class ThreadRepository implements IThreadRepository {
   async count(options?: QueryOptions): Promise<number> {
     const connection = await this.connectionManager.getConnection();
     const repository = connection.getRepository(ThreadModel);
-    
+
     if (!options || !options.filters) {
       return repository.count();
     }
-    
+
     const queryBuilder = repository.createQueryBuilder('thread');
-    
+
     if (options.filters) {
       Object.entries(options.filters).forEach(([key, value]) => {
         if (value !== undefined) {
@@ -206,14 +206,14 @@ export class ThreadRepository implements IThreadRepository {
         }
       });
     }
-    
+
     return queryBuilder.getCount();
   }
 
   async findBySessionId(sessionId: ID, options?: ThreadQueryOptions): Promise<Thread[]> {
     const connection = await this.connectionManager.getConnection();
     const repository = connection.getRepository(ThreadModel);
-    
+
     const queryBuilder = repository.createQueryBuilder('thread')
       .where('thread.sessionId = :sessionId', { sessionId: sessionId.value });
 
@@ -254,7 +254,7 @@ export class ThreadRepository implements IThreadRepository {
   async findByWorkflowId(workflowId: ID, options?: ThreadQueryOptions): Promise<Thread[]> {
     const connection = await this.connectionManager.getConnection();
     const repository = connection.getRepository(ThreadModel);
-    
+
     const queryBuilder = repository.createQueryBuilder('thread')
       .where('thread.workflowId = :workflowId', { workflowId: workflowId.value });
 
@@ -291,7 +291,7 @@ export class ThreadRepository implements IThreadRepository {
   async findByStatus(status: ThreadStatus, options?: ThreadQueryOptions): Promise<Thread[]> {
     const connection = await this.connectionManager.getConnection();
     const repository = connection.getRepository(ThreadModel);
-    
+
     const queryBuilder = repository.createQueryBuilder('thread')
       .where('thread.status = :status', { status: status.getValue() });
 
@@ -328,7 +328,7 @@ export class ThreadRepository implements IThreadRepository {
   async findByPriority(priority: ThreadPriority, options?: ThreadQueryOptions): Promise<Thread[]> {
     const connection = await this.connectionManager.getConnection();
     const repository = connection.getRepository(ThreadModel);
-    
+
     const queryBuilder = repository.createQueryBuilder('thread')
       .where('thread.priority = :priority', { priority: priority.getNumericValue() });
 
@@ -365,7 +365,7 @@ export class ThreadRepository implements IThreadRepository {
   async findBySessionIdAndStatus(sessionId: ID, status: ThreadStatus, options?: ThreadQueryOptions): Promise<Thread[]> {
     const connection = await this.connectionManager.getConnection();
     const repository = connection.getRepository(ThreadModel);
-    
+
     const queryBuilder = repository.createQueryBuilder('thread')
       .where('thread.sessionId = :sessionId', { sessionId: sessionId.value })
       .andWhere('thread.status = :status', { status: status.getValue() });
@@ -395,7 +395,7 @@ export class ThreadRepository implements IThreadRepository {
   async findActiveThreads(options?: ThreadQueryOptions): Promise<Thread[]> {
     const connection = await this.connectionManager.getConnection();
     const repository = connection.getRepository(ThreadModel);
-    
+
     const queryBuilder = repository.createQueryBuilder('thread')
       .where('thread.status IN (:...statuses)', { statuses: ['pending', 'running', 'paused'] });
 
@@ -444,7 +444,7 @@ export class ThreadRepository implements IThreadRepository {
   async findTerminalThreads(options?: ThreadQueryOptions): Promise<Thread[]> {
     const connection = await this.connectionManager.getConnection();
     const repository = connection.getRepository(ThreadModel);
-    
+
     const queryBuilder = repository.createQueryBuilder('thread')
       .where('thread.status IN (:...statuses)', { statuses: ['completed', 'failed', 'cancelled'] });
 
@@ -485,7 +485,7 @@ export class ThreadRepository implements IThreadRepository {
   async searchByTitle(title: string, options?: ThreadQueryOptions): Promise<Thread[]> {
     const connection = await this.connectionManager.getConnection();
     const repository = connection.getRepository(ThreadModel);
-    
+
     const queryBuilder = repository.createQueryBuilder('thread')
       .where('thread.title LIKE :title', { title: `%${title}%` });
 
@@ -522,7 +522,7 @@ export class ThreadRepository implements IThreadRepository {
   async findWithPagination(options: ThreadQueryOptions): Promise<PaginatedResult<Thread>> {
     const connection = await this.connectionManager.getConnection();
     const repository = connection.getRepository(ThreadModel);
-    
+
     const queryBuilder = repository.createQueryBuilder('thread');
 
     if (options?.includeDeleted === false) {
@@ -572,7 +572,7 @@ export class ThreadRepository implements IThreadRepository {
   async countBySessionId(sessionId: ID, options?: ThreadQueryOptions): Promise<number> {
     const connection = await this.connectionManager.getConnection();
     const repository = connection.getRepository(ThreadModel);
-    
+
     const queryBuilder = repository.createQueryBuilder('thread')
       .where('thread.sessionId = :sessionId', { sessionId: sessionId.value });
 
@@ -594,7 +594,7 @@ export class ThreadRepository implements IThreadRepository {
   async countByWorkflowId(workflowId: ID, options?: ThreadQueryOptions): Promise<number> {
     const connection = await this.connectionManager.getConnection();
     const repository = connection.getRepository(ThreadModel);
-    
+
     const queryBuilder = repository.createQueryBuilder('thread')
       .where('thread.workflowId = :workflowId', { workflowId: workflowId.value });
 
@@ -616,7 +616,7 @@ export class ThreadRepository implements IThreadRepository {
   async countByStatus(status: ThreadStatus, options?: ThreadQueryOptions): Promise<number> {
     const connection = await this.connectionManager.getConnection();
     const repository = connection.getRepository(ThreadModel);
-    
+
     const queryBuilder = repository.createQueryBuilder('thread')
       .where('thread.status = :status', { status: status.getValue() });
 
@@ -638,7 +638,7 @@ export class ThreadRepository implements IThreadRepository {
   async countByPriority(priority: ThreadPriority, options?: ThreadQueryOptions): Promise<number> {
     const connection = await this.connectionManager.getConnection();
     const repository = connection.getRepository(ThreadModel);
-    
+
     const queryBuilder = repository.createQueryBuilder('thread')
       .where('thread.priority = :priority', { priority: priority.getNumericValue() });
 
@@ -660,7 +660,7 @@ export class ThreadRepository implements IThreadRepository {
   async hasActiveThreads(sessionId: ID): Promise<boolean> {
     const connection = await this.connectionManager.getConnection();
     const repository = connection.getRepository(ThreadModel);
-    
+
     const count = await repository.createQueryBuilder('thread')
       .where('thread.sessionId = :sessionId', { sessionId: sessionId.value })
       .andWhere('thread.status IN (:...statuses)', { statuses: ['pending', 'running', 'paused'] })
@@ -673,7 +673,7 @@ export class ThreadRepository implements IThreadRepository {
   async getLastActiveThreadBySessionId(sessionId: ID): Promise<Thread | null> {
     const connection = await this.connectionManager.getConnection();
     const repository = connection.getRepository(ThreadModel);
-    
+
     const model = await repository.createQueryBuilder('thread')
       .where('thread.sessionId = :sessionId', { sessionId: sessionId.value })
       .andWhere('thread.status IN (:...statuses)', { statuses: ['pending', 'running', 'paused'] })
@@ -687,7 +687,7 @@ export class ThreadRepository implements IThreadRepository {
   async getHighestPriorityPendingThread(options?: ThreadQueryOptions): Promise<Thread | null> {
     const connection = await this.connectionManager.getConnection();
     const repository = connection.getRepository(ThreadModel);
-    
+
     const queryBuilder = repository.createQueryBuilder('thread')
       .where('thread.status = :status', { status: 'pending' })
       .andWhere('thread.isDeleted = false')
@@ -713,7 +713,7 @@ export class ThreadRepository implements IThreadRepository {
   async batchUpdateStatus(threadIds: ID[], status: ThreadStatus): Promise<number> {
     const connection = await this.connectionManager.getConnection();
     const repository = connection.getRepository(ThreadModel);
-    
+
     const result = await repository.createQueryBuilder()
       .update(ThreadModel)
       .set({
@@ -729,7 +729,7 @@ export class ThreadRepository implements IThreadRepository {
   async batchDelete(threadIds: ID[]): Promise<number> {
     const connection = await this.connectionManager.getConnection();
     const repository = connection.getRepository(ThreadModel);
-    
+
     const result = await repository.delete({ id: In(threadIds.map(id => id.value)) });
     return result.affected || 0;
   }
@@ -737,7 +737,7 @@ export class ThreadRepository implements IThreadRepository {
   async deleteAllBySessionId(sessionId: ID): Promise<number> {
     const connection = await this.connectionManager.getConnection();
     const repository = connection.getRepository(ThreadModel);
-    
+
     const result = await repository.delete({ sessionId: sessionId.value });
     return result.affected || 0;
   }
@@ -745,7 +745,7 @@ export class ThreadRepository implements IThreadRepository {
   async softDelete(threadId: ID): Promise<void> {
     const connection = await this.connectionManager.getConnection();
     const repository = connection.getRepository(ThreadModel);
-    
+
     await repository.update({ id: threadId.value }, {
       state: 'archived',
       updatedAt: new Date()
@@ -755,7 +755,7 @@ export class ThreadRepository implements IThreadRepository {
   async batchSoftDelete(threadIds: ID[]): Promise<number> {
     const connection = await this.connectionManager.getConnection();
     const repository = connection.getRepository(ThreadModel);
-    
+
     const result = await repository.createQueryBuilder()
       .update(ThreadModel)
       .set({
@@ -771,7 +771,7 @@ export class ThreadRepository implements IThreadRepository {
   async restoreSoftDeleted(threadId: ID): Promise<void> {
     const connection = await this.connectionManager.getConnection();
     const repository = connection.getRepository(ThreadModel);
-    
+
     await repository.update({ id: threadId.value }, {
       state: 'active',
       updatedAt: new Date()
@@ -781,7 +781,7 @@ export class ThreadRepository implements IThreadRepository {
   async findSoftDeleted(options?: ThreadQueryOptions): Promise<Thread[]> {
     const connection = await this.connectionManager.getConnection();
     const repository = connection.getRepository(ThreadModel);
-    
+
     const queryBuilder = repository.createQueryBuilder('thread')
       .where('thread.isDeleted = true');
 
@@ -834,7 +834,7 @@ export class ThreadRepository implements IThreadRepository {
   }> {
     const connection = await this.connectionManager.getConnection();
     const repository = connection.getRepository(ThreadModel);
-    
+
     const stats = await repository.createQueryBuilder('thread')
       .select('thread.status', 'status')
       .addSelect('COUNT(*)', 'count')
@@ -856,7 +856,7 @@ export class ThreadRepository implements IThreadRepository {
     stats.forEach(stat => {
       const count = parseInt(stat.count);
       result.total += count;
-      
+
       switch (stat.status) {
         case 'pending':
           result.pending = count;

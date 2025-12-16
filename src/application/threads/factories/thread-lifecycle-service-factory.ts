@@ -6,9 +6,9 @@
 
 import { BaseApplicationServiceFactory } from '../../common/base-service-factory';
 import { ThreadLifecycleService } from '../services/thread-lifecycle-service';
-import { ThreadRepository } from '../../../domain/thread/repositories/thread-repository';
-import { SessionRepository } from '../../../domain/session/repositories/session-repository';
-import { ThreadDomainService } from '../../../domain/thread/services/thread-domain-service';
+import { ThreadRepository } from '../../../domain/threads/repositories/thread-repository';
+import { SessionRepository } from '../../../domain/sessions/repositories/session-repository';
+import { ThreadDomainService } from '../../../domain/threads/services/thread-domain-service';
 
 /**
  * 线程生命周期服务工厂

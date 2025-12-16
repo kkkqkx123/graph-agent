@@ -10,10 +10,10 @@
 export * from './common';
 
 // 导出会话领域模块
-export * from './session';
+export * from './sessions';
 
 // 导出线程领域模块
-export * from './thread';
+export * from './threads';
 
 // 导出工作流领域模块
 export {

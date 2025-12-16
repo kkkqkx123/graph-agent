@@ -1,10 +1,10 @@
 import { injectable } from 'inversify';
-import { Session } from '../../../../domain/session/entities/session';
+import { Session } from '../../../../domain/sessions/entities/session';
 import { ID } from '../../../../domain/common/value-objects/id';
 import { Timestamp } from '../../../../domain/common/value-objects/timestamp';
 import { Version } from '../../../../domain/common/value-objects/version';
-import { SessionStatus } from '../../../../domain/session/value-objects/session-status';
-import { SessionConfig } from '../../../../domain/session/value-objects/session-config';
+import { SessionStatus } from '../../../../domain/sessions/value-objects/session-status';
+import { SessionConfig } from '../../../../domain/sessions/value-objects/session-config';
 import { SessionModel } from '../../models/session.model';
 
 @injectable()
@@ -23,7 +23,7 @@ export class SessionMapper {
       messageCount: model.metadata?.messageCount || 0,
       isDeleted: false
     };
-    
+
     return Session.fromProps(props);
   }
 

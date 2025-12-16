@@ -1,10 +1,10 @@
 import { injectable } from 'inversify';
-import { Thread } from '../../../../domain/thread/entities/thread';
+import { Thread } from '../../../../domain/threads/entities/thread';
 import { ID } from '../../../../domain/common/value-objects/id';
 import { Timestamp } from '../../../../domain/common/value-objects/timestamp';
 import { Version } from '../../../../domain/common/value-objects/version';
-import { ThreadStatus } from '../../../../domain/thread/value-objects/thread-status';
-import { ThreadPriority } from '../../../../domain/thread/value-objects/thread-priority';
+import { ThreadStatus } from '../../../../domain/threads/value-objects/thread-status';
+import { ThreadPriority } from '../../../../domain/threads/value-objects/thread-priority';
 import { ThreadModel } from '../../models/thread.model';
 
 @injectable()

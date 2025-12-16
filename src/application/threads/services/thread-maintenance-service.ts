@@ -4,9 +4,9 @@
  * 负责线程的删除、清理、重试和批量操作等维护功能
  */
 
-import { Thread } from '../../../domain/thread/entities/thread';
-import { ThreadRepository } from '../../../domain/thread/repositories/thread-repository';
-import { ThreadDomainService } from '../../../domain/thread/services/thread-domain-service';
+import { Thread } from '../../../domain/threads/entities/thread';
+import { ThreadRepository } from '../../../domain/threads/repositories/thread-repository';
+import { ThreadDomainService } from '../../../domain/threads/services/thread-domain-service';
 import { DomainError } from '../../../domain/common/errors/domain-error';
 import { BaseApplicationService } from '../../common/base-application-service';
 import { ThreadInfo, ThreadStatistics } from '../dtos';
@@ -153,4 +153,4 @@ export class ThreadMaintenanceService extends BaseApplicationService {
       errorMessage: thread.errorMessage
     };
   }
-  }
+}

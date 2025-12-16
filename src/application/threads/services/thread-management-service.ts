@@ -4,10 +4,10 @@
  * 负责线程的查询、列表、存在性检查、优先级更新和获取下一个待执行线程等管理功能
  */
 
-import { Thread } from '../../../domain/thread/entities/thread';
-import { ThreadRepository } from '../../../domain/thread/repositories/thread-repository';
-import { ThreadDomainService } from '../../../domain/thread/services/thread-domain-service';
-import { ThreadPriority } from '../../../domain/thread/value-objects/thread-priority';
+import { Thread } from '../../../domain/threads/entities/thread';
+import { ThreadRepository } from '../../../domain/threads/repositories/thread-repository';
+import { ThreadDomainService } from '../../../domain/threads/services/thread-domain-service';
+import { ThreadPriority } from '../../../domain/threads/value-objects/thread-priority';
 import { BaseApplicationService } from '../../common/base-application-service';
 import { ThreadInfo } from '../dtos';
 import { ILogger } from '@shared/types/logger';
@@ -44,39 +44,39 @@ export class ThreadManagementService extends BaseApplicationService {
         const thread = await this.threadRepository.findById(id);
 
         if (!thread) {
-           return null;
-         }
-
-         return this.mapThreadToInfo(thread);
-        },
-        { threadId }
-        );
+          return null;
         }
 
-        /**
-        * 列出所有线程
-        * @param filters 过滤条件
-        * @param limit 数量限制
-        * @returns 线程信息列表
-        */
-        async listThreads(filters?: Record<string, unknown>, limit?: number): Promise<ThreadInfo[]> {
-        return this.executeListOperation(
-        '线程',
-        async () => {
-         const options: any = {};
-         if (filters) {
-           options.filters = filters;
-         }
-         if (limit) {
-           options.limit = limit;
-         }
+        return this.mapThreadToInfo(thread);
+      },
+      { threadId }
+    );
+  }
 
-         const threads = await this.threadRepository.find(options);
-         return threads.map(thread => this.mapThreadToInfo(thread));
-        },
-        { filters, limit }
-        );
+  /**
+  * 列出所有线程
+  * @param filters 过滤条件
+  * @param limit 数量限制
+  * @returns 线程信息列表
+  */
+  async listThreads(filters?: Record<string, unknown>, limit?: number): Promise<ThreadInfo[]> {
+    return this.executeListOperation(
+      '线程',
+      async () => {
+        const options: any = {};
+        if (filters) {
+          options.filters = filters;
         }
+        if (limit) {
+          options.limit = limit;
+        }
+
+        const threads = await this.threadRepository.find(options);
+        return threads.map(thread => this.mapThreadToInfo(thread));
+      },
+      { filters, limit }
+    );
+  }
 
   /**
    * 检查线程是否存在
@@ -154,4 +154,4 @@ export class ThreadManagementService extends BaseApplicationService {
       errorMessage: thread.errorMessage
     };
   }
-  }
+}

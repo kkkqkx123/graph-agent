@@ -4,11 +4,11 @@
  * 负责线程的创建、启动、暂停、恢复、完成、失败和取消等生命周期管理
  */
 
-import { Thread } from '../../../domain/thread/entities/thread';
-import { ThreadRepository } from '../../../domain/thread/repositories/thread-repository';
-import { SessionRepository } from '../../../domain/session/repositories/session-repository';
-import { ThreadDomainService } from '../../../domain/thread/services/thread-domain-service';
-import { ThreadPriority } from '../../../domain/thread/value-objects/thread-priority';
+import { Thread } from '../../../domain/threads/entities/thread';
+import { ThreadRepository } from '../../../domain/threads/repositories/thread-repository';
+import { SessionRepository } from '../../../domain/sessions/repositories/session-repository';
+import { ThreadDomainService } from '../../../domain/threads/services/thread-domain-service';
+import { ThreadPriority } from '../../../domain/threads/value-objects/thread-priority';
 import { DomainError } from '../../../domain/common/errors/domain-error';
 import { BaseApplicationService } from '../../common/base-application-service';
 import { CreateThreadRequest, ThreadInfo } from '../dtos';

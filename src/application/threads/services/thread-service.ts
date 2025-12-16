@@ -4,14 +4,14 @@
  * 负责线程相关的业务逻辑编排和协调
  */
 
-import { Thread } from '../../../domain/thread/entities/thread';
-import { ThreadRepository } from '../../../domain/thread/repositories/thread-repository';
-import { ThreadDomainService } from '../../../domain/thread/services/thread-domain-service';
-import { SessionRepository } from '../../../domain/session/repositories/session-repository';
+import { Thread } from '../../../domain/threads/entities/thread';
+import { ThreadRepository } from '../../../domain/threads/repositories/thread-repository';
+import { ThreadDomainService } from '../../../domain/threads/services/thread-domain-service';
+import { SessionRepository } from '../../../domain/sessions/repositories/session-repository';
 import { ID } from '../../../domain/common/value-objects/id';
 import { ThreadId } from '../../../domain/common/value-objects/thread-id';
-import { ThreadStatus } from '../../../domain/thread/value-objects/thread-status';
-import { ThreadPriority } from '../../../domain/thread/value-objects/thread-priority';
+import { ThreadStatus } from '../../../domain/threads/value-objects/thread-status';
+import { ThreadPriority } from '../../../domain/threads/value-objects/thread-priority';
 import { DomainError } from '../../../domain/common/errors/domain-error';
 import { ILogger } from '@shared/types/logger';
 

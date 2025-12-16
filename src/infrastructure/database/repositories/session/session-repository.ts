@@ -1,8 +1,8 @@
 import { injectable, inject } from 'inversify';
-import { SessionRepository as ISessionRepository, SessionQueryOptions } from '../../../../domain/session/repositories/session-repository';
-import { Session } from '../../../../domain/session/entities/session';
+import { SessionRepository as ISessionRepository, SessionQueryOptions } from '../../../../domain/sessions/repositories/session-repository';
+import { Session } from '../../../../domain/sessions/entities/session';
 import { ID } from '../../../../domain/common/value-objects/id';
-import { SessionStatus } from '../../../../domain/session/value-objects/session-status';
+import { SessionStatus } from '../../../../domain/sessions/value-objects/session-status';
 import { ConnectionManager } from '../../connections/connection-manager';
 import { SessionMapper } from './session-mapper';
 import { SessionModel } from '../../models/session.model';
@@ -13,34 +13,34 @@ export class SessionRepository implements ISessionRepository {
   constructor(
     @inject('ConnectionManager') private connectionManager: ConnectionManager,
     @inject('SessionMapper') private mapper: SessionMapper
-  ) {}
+  ) { }
 
   async save(session: Session): Promise<Session> {
     const connection = await this.connectionManager.getConnection();
     const repository = connection.getRepository(SessionModel);
-    
+
     const model = this.mapper.toModel(session);
     await repository.save(model);
-    
+
     return session;
   }
 
   async findById(id: ID): Promise<Session | null> {
     const connection = await this.connectionManager.getConnection();
     const repository = connection.getRepository(SessionModel);
-    
+
     const model = await repository.findOne({ where: { id: id.value } });
     if (!model) {
       return null;
     }
-    
+
     return this.mapper.toEntity(model);
   }
 
   async findAll(): Promise<Session[]> {
     const connection = await this.connectionManager.getConnection();
     const repository = connection.getRepository(SessionModel);
-    
+
     const models = await repository.find();
     return models.map(model => this.mapper.toEntity(model));
   }
@@ -48,14 +48,14 @@ export class SessionRepository implements ISessionRepository {
   async delete(entity: Session): Promise<void> {
     const connection = await this.connectionManager.getConnection();
     const repository = connection.getRepository(SessionModel);
-    
+
     await repository.delete({ id: entity.sessionId.value });
   }
 
   async exists(id: ID): Promise<boolean> {
     const connection = await this.connectionManager.getConnection();
     const repository = connection.getRepository(SessionModel);
-    
+
     const count = await repository.count({ where: { id: id.value } });
     return count > 0;
   }
@@ -63,24 +63,24 @@ export class SessionRepository implements ISessionRepository {
   async findByUserId(userId: ID, options?: SessionQueryOptions): Promise<Session[]> {
     const connection = await this.connectionManager.getConnection();
     const repository = connection.getRepository(SessionModel);
-    
+
     const queryBuilder = repository.createQueryBuilder('session');
-    
+
     queryBuilder.where('session.userId = :userId', { userId: userId.value });
-    
+
     if (options?.sortBy) {
       const order = options.sortOrder === 'desc' ? 'DESC' : 'ASC';
       queryBuilder.orderBy(`session.${options.sortBy}`, order);
     }
-    
+
     if (options?.offset) {
       queryBuilder.skip(options.offset);
     }
-    
+
     if (options?.limit) {
       queryBuilder.take(options.limit);
     }
-    
+
     const models = await queryBuilder.getMany();
     return models.map(model => this.mapper.toEntity(model));
   }
@@ -88,7 +88,7 @@ export class SessionRepository implements ISessionRepository {
   async findByStatus(status: SessionStatus, options?: SessionQueryOptions): Promise<Session[]> {
     const connection = await this.connectionManager.getConnection();
     const repository = connection.getRepository(SessionModel);
-    
+
     const models = await repository.find({
       where: { state: status.getValue() },
       skip: options?.offset,
@@ -101,14 +101,14 @@ export class SessionRepository implements ISessionRepository {
   async countByUserId(userId: ID, options?: SessionQueryOptions): Promise<number> {
     const connection = await this.connectionManager.getConnection();
     const repository = connection.getRepository(SessionModel);
-    
+
     return await repository.count({ where: { userId: userId.value } });
   }
 
   async updateState(id: ID, state: SessionStatus): Promise<void> {
     const connection = await this.connectionManager.getConnection();
     const repository = connection.getRepository(SessionModel);
-    
+
     await repository.update({ id: id.value }, { state: state.getValue(), updatedAt: new Date() });
   }
 
@@ -116,25 +116,25 @@ export class SessionRepository implements ISessionRepository {
   async find(options: any): Promise<Session[]> {
     const connection = await this.connectionManager.getConnection();
     const repository = connection.getRepository(SessionModel);
-    
+
     const models = await repository.find({
       where: options.filters || {},
       skip: options.offset,
       take: options.limit,
       order: options.sortBy ? { [options.sortBy]: options.sortOrder || 'asc' } : undefined
     });
-    
+
     return models.map(model => this.mapper.toEntity(model));
   }
 
   async findOne(options: any): Promise<Session | null> {
     const connection = await this.connectionManager.getConnection();
     const repository = connection.getRepository(SessionModel);
-    
+
     const model = await repository.findOne({
       where: options.filters || {}
     });
-    
+
     return model ? this.mapper.toEntity(model) : null;
   }
 
@@ -166,7 +166,7 @@ export class SessionRepository implements ISessionRepository {
   async deleteById(id: ID): Promise<void> {
     const connection = await this.connectionManager.getConnection();
     const repository = connection.getRepository(SessionModel);
-    
+
     await repository.delete({ id: id.value });
   }
 
@@ -179,7 +179,7 @@ export class SessionRepository implements ISessionRepository {
   async deleteWhere(options: any): Promise<number> {
     const connection = await this.connectionManager.getConnection();
     const repository = connection.getRepository(SessionModel);
-    
+
     const result = await repository.delete(options.filters || {});
     return result.affected || 0;
   }
@@ -187,7 +187,7 @@ export class SessionRepository implements ISessionRepository {
   async count(options?: any): Promise<number> {
     const connection = await this.connectionManager.getConnection();
     const repository = connection.getRepository(SessionModel);
-    
+
     return repository.count({ where: options?.filters || {} });
   }
 
@@ -195,14 +195,14 @@ export class SessionRepository implements ISessionRepository {
   async findByUserIdAndStatus(userId: ID, status: SessionStatus, options?: SessionQueryOptions): Promise<Session[]> {
     const connection = await this.connectionManager.getConnection();
     const repository = connection.getRepository(SessionModel);
-    
+
     const models = await repository.find({
       where: { userId: userId.value, state: status.getValue() },
       skip: options?.offset,
       take: options?.limit,
       order: options?.sortBy ? { [options.sortBy]: options.sortOrder || 'asc' } : undefined
     });
-    
+
     return models.map(model => this.mapper.toEntity(model));
   }
 
@@ -225,36 +225,36 @@ export class SessionRepository implements ISessionRepository {
   async searchByTitle(title: string, options?: SessionQueryOptions): Promise<Session[]> {
     const connection = await this.connectionManager.getConnection();
     const repository = connection.getRepository(SessionModel);
-    
+
     const models = await repository.find({
       where: { metadata: { title: { $like: `%${title}%` } } },
       skip: options?.offset,
       take: options?.limit,
       order: options?.sortBy ? { [options.sortBy]: options.sortOrder || 'asc' } : undefined
     });
-    
+
     return models.map(model => this.mapper.toEntity(model));
   }
 
   async findWithPagination(options: SessionQueryOptions): Promise<{ items: Session[], total: number, page: number, pageSize: number, totalPages: number }> {
     const connection = await this.connectionManager.getConnection();
     const repository = connection.getRepository(SessionModel);
-    
+
     const offset = options.offset || 0;
     const limit = options.limit || 10;
     const sortBy = options.sortBy || 'createdAt';
     const sortOrder = options.sortOrder || 'desc';
-    
+
     const [models, total] = await repository.findAndCount({
       skip: offset,
       take: limit,
       order: { [sortBy]: sortOrder.toUpperCase() as 'ASC' | 'DESC' }
     });
-    
+
     const items = models.map(model => this.mapper.toEntity(model));
     const page = Math.floor(offset / limit) + 1;
     const totalPages = Math.ceil(total / limit);
-    
+
     return {
       items,
       total,
@@ -267,7 +267,7 @@ export class SessionRepository implements ISessionRepository {
   async countByStatus(status: SessionStatus, options?: SessionQueryOptions): Promise<number> {
     const connection = await this.connectionManager.getConnection();
     const repository = connection.getRepository(SessionModel);
-    
+
     return repository.count({
       where: { state: status.getValue() }
     });
@@ -290,19 +290,19 @@ export class SessionRepository implements ISessionRepository {
   async batchUpdateStatus(sessionIds: ID[], status: SessionStatus): Promise<number> {
     const connection = await this.connectionManager.getConnection();
     const repository = connection.getRepository(SessionModel);
-    
+
     const result = await repository.update(
       { id: In(sessionIds.map(id => id.value)) },
       { state: status.getValue(), updatedAt: new Date() }
     );
-    
+
     return result.affected || 0;
   }
 
   async batchDelete(sessionIds: ID[]): Promise<number> {
     const connection = await this.connectionManager.getConnection();
     const repository = connection.getRepository(SessionModel);
-    
+
     const result = await repository.delete({ id: In(sessionIds.map(id => id.value)) });
     return result.affected || 0;
   }
@@ -310,7 +310,7 @@ export class SessionRepository implements ISessionRepository {
   async deleteAllByUserId(userId: ID): Promise<number> {
     const connection = await this.connectionManager.getConnection();
     const repository = connection.getRepository(SessionModel);
-    
+
     const result = await repository.delete({ userId: userId.value });
     return result.affected || 0;
   }

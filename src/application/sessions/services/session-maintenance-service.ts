@@ -4,10 +4,10 @@
  * 负责会话的删除、消息添加、清理和统计等维护功能
  */
 
-import { Session } from '../../../domain/session/entities/session';
-import { SessionRepository } from '../../../domain/session/repositories/session-repository';
-import { ThreadRepository } from '../../../domain/thread/repositories/thread-repository';
-import { SessionDomainService } from '../../../domain/session/services/session-domain-service';
+import { Session } from '../../../domain/sessions/entities/session';
+import { SessionRepository } from '../../../domain/sessions/repositories/session-repository';
+import { ThreadRepository } from '../../../domain/threads/repositories/thread-repository';
+import { SessionDomainService } from '../../../domain/sessions/services/session-domain-service';
 import { DomainError } from '../../../domain/common/errors/domain-error';
 import { BaseApplicationService } from '../../common/base-application-service';
 import { SessionInfo, SessionStatistics } from '../dtos';

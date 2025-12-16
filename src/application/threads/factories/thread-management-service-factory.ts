@@ -6,8 +6,8 @@
 
 import { BaseApplicationServiceFactory } from '../../common/base-service-factory';
 import { ThreadManagementService } from '../services/thread-management-service';
-import { ThreadRepository } from '../../../domain/thread/repositories/thread-repository';
-import { ThreadDomainService } from '../../../domain/thread/services/thread-domain-service';
+import { ThreadRepository } from '../../../domain/threads/repositories/thread-repository';
+import { ThreadDomainService } from '../../../domain/threads/services/thread-domain-service';
 
 /**
  * 线程管理服务工厂

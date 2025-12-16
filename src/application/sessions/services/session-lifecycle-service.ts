@@ -4,10 +4,10 @@
  * 负责会话的创建、激活、暂停和终止等生命周期管理
  */
 
-import { Session } from '../../../domain/session/entities/session';
-import { SessionRepository } from '../../../domain/session/repositories/session-repository';
-import { SessionDomainService } from '../../../domain/session/services/session-domain-service';
-import { SessionConfig, SessionConfigProps } from '../../../domain/session/value-objects/session-config';
+import { Session } from '../../../domain/sessions/entities/session';
+import { SessionRepository } from '../../../domain/sessions/repositories/session-repository';
+import { SessionDomainService } from '../../../domain/sessions/services/session-domain-service';
+import { SessionConfig, SessionConfigProps } from '../../../domain/sessions/value-objects/session-config';
 import { BaseApplicationService } from '../../common/base-application-service';
 import { CreateSessionRequest, SessionInfo } from '../dtos';
 import { ILogger } from '@shared/types/logger';
@@ -42,13 +42,13 @@ export class SessionLifecycleService extends BaseApplicationService {
       async () => {
         const userId = this.parseOptionalId(request.userId, '用户ID');
         const config = request.config ? SessionConfig.create(request.config as Partial<SessionConfigProps>) : undefined;
-        
+
         const session = await this.sessionDomainService.createSession(
           userId,
           request.title,
           config
         );
-        
+
         return session.sessionId.toString();
       },
       { userId: request.userId, title: request.title }

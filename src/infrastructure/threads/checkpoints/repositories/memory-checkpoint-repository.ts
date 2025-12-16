@@ -385,7 +385,7 @@ export class MemoryThreadCheckpointRepository implements ThreadCheckpointReposit
   async update(checkpoint: ThreadCheckpoint): Promise<boolean> {
     try {
       const checkpointId = checkpoint.checkpointId.toString();
-      
+
       if (!this.checkpoints.has(checkpointId)) {
         this.logger.warn('更新检查点失败，检查点不存在', { checkpointId });
         return false;
@@ -846,7 +846,7 @@ export class MemoryThreadCheckpointRepository implements ThreadCheckpointReposit
       }
 
       const checkpoints = await this.findByThreadId(original.threadId);
-      return checkpoints.filter(cp => 
+      return checkpoints.filter(cp =>
         cp.metadata['backupOf'] === originalCheckpointId.toString()
       );
 

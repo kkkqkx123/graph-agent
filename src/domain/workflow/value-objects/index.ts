@@ -7,6 +7,7 @@
 export * from './workflow-status';
 export * from './workflow-type';
 export * from './workflow-config';
+export * from './workflow-structure';
 export * from './node-id';
 export * from './edge-id';
 export * from './node-type';

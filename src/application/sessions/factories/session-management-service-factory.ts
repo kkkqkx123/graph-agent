@@ -6,8 +6,8 @@
 
 import { BaseApplicationServiceFactory } from '../../common/base-service-factory';
 import { SessionManagementService } from '../services/session-management-service';
-import { SessionRepository } from '../../../domain/session/repositories/session-repository';
-import { SessionDomainService } from '../../../domain/session/services/session-domain-service';
+import { SessionRepository } from '../../../domain/sessions/repositories/session-repository';
+import { SessionDomainService } from '../../../domain/sessions/services/session-domain-service';
 
 /**
  * 会话管理服务工厂
