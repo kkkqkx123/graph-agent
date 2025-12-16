@@ -1,23 +1,27 @@
 import { injectable, inject } from 'inversify';
-import { Graph } from '../../../../domain/workflow/graph/entities/graph';
-import { Node } from '../../../../domain/workflow/graph/entities/nodes';
-import { Edge } from '../../../../domain/workflow/graph/entities/edges';
-import { GraphRepository } from '../../../../domain/workflow/graph/repositories/graph-repository';
-import { GraphDomainService } from '../../../../domain/workflow/graph/services/graph-domain-service';
-import { ID } from '../../../../domain/common/value-objects/id';
-import { NodeType } from '../../../../domain/workflow/graph/value-objects/node-type';
-import { EdgeType } from '../../../../domain/workflow/graph/value-objects/edge-type';
-import { ExecutionMode } from '../../../../domain/workflow/graph/value-objects/execution-mode';
-import { DomainError } from '../../../../domain/common/errors/domain-error';
+import { Graph } from '../../../../../domain/workflow/graph/entities/graph';
+import { Node } from '../../../../../domain/workflow/graph/entities/nodes';
+import { GraphRepository } from '../../../../../domain/workflow/graph/repositories/graph-repository';
+import { GraphDomainService } from '../../../../../domain/workflow/graph/services/graph-domain-service';
+import { ID } from '../../../../../domain/common/value-objects/id';
+import { DomainError } from '../../../../../domain/common/errors/domain-error';
 import { ILogger } from '@shared/types/logger';
+
+// Common services
+import {
+  PathAnalyzer,
+  CycleDetector,
+  TopologicalSorter,
+  ParallelAnalyzer,
+  GraphMetricsCalculator
+} from '../common';
 
 // DTOs
 import {
   ExecutionPlanDto,
   ExecutionStepDto,
-  ExecutionDependencyDto,
-  GraphDto
-} from '../dtos/graph.dto';
+  ExecutionDependencyDto
+} from '../../dtos/graph.dto';
 
 /**
  * 执行计划器
@@ -29,6 +33,11 @@ export class ExecutionPlanner {
   constructor(
     @inject('GraphRepository') private readonly graphRepository: GraphRepository,
     @inject('GraphDomainService') private readonly graphDomainService: GraphDomainService,
+    @inject('PathAnalyzer') private readonly pathAnalyzer: PathAnalyzer,
+    @inject('CycleDetector') private readonly cycleDetector: CycleDetector,
+    @inject('TopologicalSorter') private readonly topologicalSorter: TopologicalSorter,
+    @inject('ParallelAnalyzer') private readonly parallelAnalyzer: ParallelAnalyzer,
+    @inject('GraphMetricsCalculator') private readonly graphMetricsCalculator: GraphMetricsCalculator,
     @inject('Logger') private readonly logger: ILogger
   ) {}
 
@@ -77,7 +86,7 @@ export class ExecutionPlanner {
       }
 
       // 分析图结构
-      const graphAnalysis = this.analyzeGraphStructure(graph, startNodeId);
+      const graphAnalysis = await this.analyzeGraphStructure(graph, startNodeId);
       
       // 生成执行步骤
       const executionSteps = this.generateExecutionSteps(
@@ -139,309 +148,53 @@ export class ExecutionPlanner {
    * @param startNodeId 起始节点ID
    * @returns 图分析结果
    */
-  private analyzeGraphStructure(
+  private async analyzeGraphStructure(
     graph: Graph,
     startNodeId: ID
-  ): {
+  ): Promise<{
     nodeLevels: Map<string, number>;
     criticalPath: string[];
     parallelGroups: string[][];
     conditionalPaths: string[][];
     cycleCount: number;
-  } {
+    stronglyConnectedComponents: string[][];
+    topologicalOrder: string[];
+    graphMetrics: any;
+  }> {
     // 计算节点层级
-    const nodeLevels = this.calculateNodeLevels(graph, startNodeId);
+    const nodeLevels = this.topologicalSorter.getNodeLevels(graph);
     
     // 找到关键路径
-    const criticalPath = this.findCriticalPath(graph, startNodeId, nodeLevels);
+    const criticalPath = this.pathAnalyzer.findCriticalPath(graph, startNodeId, nodeLevels);
     
     // 识别可并行执行的节点组
-    const parallelGroups = this.identifyParallelGroups(graph, nodeLevels);
+    const parallelGroups = this.parallelAnalyzer.identifyParallelGroups(graph, nodeLevels);
     
     // 识别条件路径
-    const conditionalPaths = this.identifyConditionalPaths(graph);
+    const conditionalPaths = this.pathAnalyzer.identifyConditionalPaths(graph);
     
     // 检测循环
-    const cycleCount = this.detectCycles(graph);
+    const cycleCount = this.cycleDetector.detectCycles(graph);
+    
+    // 找到强连通分量
+    const stronglyConnectedComponents = this.cycleDetector.findStronglyConnectedComponents(graph);
+    
+    // 拓扑排序
+    const topologicalOrder = this.topologicalSorter.topologicalSort(graph);
+    
+    // 计算图指标
+    const graphMetrics = this.graphMetricsCalculator.calculateGraphMetrics(graph);
 
     return {
       nodeLevels,
       criticalPath,
       parallelGroups,
       conditionalPaths,
-      cycleCount
+      cycleCount,
+      stronglyConnectedComponents,
+      topologicalOrder,
+      graphMetrics
     };
-  }
-
-  /**
-   * 计算节点层级
-   * @param graph 图
-   * @param startNodeId 起始节点ID
-   * @returns 节点层级映射
-   */
-  private calculateNodeLevels(
-    graph: Graph,
-    startNodeId: ID
-  ): Map<string, number> {
-    const nodeLevels = new Map<string, number>();
-    const visited = new Set<string>();
-    const queue: Array<{ nodeId: ID; level: number }> = [
-      { nodeId: startNodeId, level: 0 }
-    ];
-
-    while (queue.length > 0) {
-      const { nodeId, level } = queue.shift()!;
-      const nodeIdStr = nodeId.toString();
-
-      if (visited.has(nodeIdStr)) {
-        continue;
-      }
-
-      visited.add(nodeIdStr);
-      nodeLevels.set(nodeIdStr, level);
-
-      // 获取后续节点
-      const outgoingEdges = graph.getOutgoingEdges(nodeId);
-      for (const edge of outgoingEdges) {
-        if (!visited.has(edge.toNodeId.toString())) {
-          queue.push({ nodeId: edge.toNodeId, level: level + 1 });
-        }
-      }
-    }
-
-    return nodeLevels;
-  }
-
-  /**
-   * 找到关键路径
-   * @param graph 图
-   * @param startNodeId 起始节点ID
-   * @param nodeLevels 节点层级
-   * @returns 关键路径
-   */
-  private findCriticalPath(
-    graph: Graph,
-    startNodeId: ID,
-    nodeLevels: Map<string, number>
-  ): string[] {
-    // 简化实现：找到最长路径
-    const longestPath: string[] = [];
-    const visited = new Set<string>();
-    
-    const dfs = (nodeId: ID, currentPath: string[]): string[] => {
-      const nodeIdStr = nodeId.toString();
-      
-      if (visited.has(nodeIdStr)) {
-        return currentPath;
-      }
-      
-      visited.add(nodeIdStr);
-      currentPath.push(nodeIdStr);
-      
-      let longestSubPath = currentPath;
-      const outgoingEdges = graph.getOutgoingEdges(nodeId);
-      
-      for (const edge of outgoingEdges) {
-        const subPath = dfs(edge.toNodeId, [...currentPath]);
-        if (subPath.length > longestSubPath.length) {
-          longestSubPath = subPath;
-        }
-      }
-      
-      return longestSubPath;
-    };
-    
-    return dfs(startNodeId, []);
-  }
-
-  /**
-   * 识别可并行执行的节点组
-   * @param graph 图
-   * @param nodeLevels 节点层级
-   * @returns 并行节点组
-   */
-  private identifyParallelGroups(
-    graph: Graph,
-    nodeLevels: Map<string, number>
-  ): string[][] {
-    const levelGroups = new Map<number, string[]>();
-    
-    // 按层级分组节点
-    for (const [nodeId, level] of nodeLevels.entries()) {
-      if (!levelGroups.has(level)) {
-        levelGroups.set(level, []);
-      }
-      levelGroups.get(level)!.push(nodeId);
-    }
-    
-    // 过滤出有多个节点的层级（可并行执行）
-    const parallelGroups: string[][] = [];
-    for (const [level, nodes] of levelGroups.entries()) {
-      if (nodes.length > 1 && this.canExecuteInParallel(graph, nodes)) {
-        parallelGroups.push(nodes);
-      }
-    }
-    
-    return parallelGroups;
-  }
-
-  /**
-   * 检查节点是否可以并行执行
-   * @param graph 图
-   * @param nodeIds 节点ID列表
-   * @returns 是否可以并行执行
-   */
-  private canExecuteInParallel(graph: Graph, nodeIds: string[]): boolean {
-    // 检查节点之间是否有依赖关系
-    for (let i = 0; i < nodeIds.length; i++) {
-      for (let j = i + 1; j < nodeIds.length; j++) {
-        const nodeId1 = ID.fromString(nodeIds[i]);
-        const nodeId2 = ID.fromString(nodeIds[j]);
-        
-        // 检查是否存在从一个节点到另一个节点的路径
-        if (this.hasPath(graph, nodeId1, nodeId2) || this.hasPath(graph, nodeId2, nodeId1)) {
-          return false;
-        }
-      }
-    }
-    
-    return true;
-  }
-
-  /**
-   * 检查是否存在从一个节点到另一个节点的路径
-   * @param graph 图
-   * @param fromNodeId 起始节点ID
-   * @param toNodeId 目标节点ID
-   * @returns 是否存在路径
-   */
-  private hasPath(graph: Graph, fromNodeId: ID, toNodeId: ID): boolean {
-    const visited = new Set<string>();
-    const queue = [fromNodeId];
-    
-    while (queue.length > 0) {
-      const currentNodeId = queue.shift()!;
-      const currentNodeIdStr = currentNodeId.toString();
-      
-      if (currentNodeId.equals(toNodeId)) {
-        return true;
-      }
-      
-      if (visited.has(currentNodeIdStr)) {
-        continue;
-      }
-      
-      visited.add(currentNodeIdStr);
-      
-      const outgoingEdges = graph.getOutgoingEdges(currentNodeId);
-      for (const edge of outgoingEdges) {
-        if (!visited.has(edge.toNodeId.toString())) {
-          queue.push(edge.toNodeId);
-        }
-      }
-    }
-    
-    return false;
-  }
-
-  /**
-   * 识别条件路径
-   * @param graph 图
-   * @returns 条件路径列表
-   */
-  private identifyConditionalPaths(graph: Graph): string[][] {
-    const conditionalPaths: string[][] = [];
-    const conditionalEdges = Array.from(graph.edges.values()).filter(
-      edge => edge.type.toString() === 'conditional'
-    );
-    
-    for (const edge of conditionalEdges) {
-      // 找到从条件边出发的所有路径
-      const path = this.findPathFromEdge(graph, edge);
-      if (path.length > 0) {
-        conditionalPaths.push(path);
-      }
-    }
-    
-    return conditionalPaths;
-  }
-
-  /**
-   * 从边出发找到路径
-   * @param graph 图
-   * @param startEdge 起始边
-   * @returns 路径
-   */
-  private findPathFromEdge(graph: Graph, startEdge: Edge): string[] {
-    const path: string[] = [];
-    const visited = new Set<string>();
-    const queue = [startEdge.toNodeId];
-    
-    while (queue.length > 0) {
-      const nodeId = queue.shift()!;
-      const nodeIdStr = nodeId.toString();
-      
-      if (visited.has(nodeIdStr)) {
-        continue;
-      }
-      
-      visited.add(nodeIdStr);
-      path.push(nodeIdStr);
-      
-      const outgoingEdges = graph.getOutgoingEdges(nodeId);
-      for (const edge of outgoingEdges) {
-        if (!visited.has(edge.toNodeId.toString())) {
-          queue.push(edge.toNodeId);
-        }
-      }
-    }
-    
-    return path;
-  }
-
-  /**
-   * 检测循环
-   * @param graph 图
-   * @returns 循环数量
-   */
-  private detectCycles(graph: Graph): number {
-    const visited = new Set<string>();
-    const recursionStack = new Set<string>();
-    let cycleCount = 0;
-    
-    const dfs = (nodeId: ID): boolean => {
-      const nodeIdStr = nodeId.toString();
-      
-      if (recursionStack.has(nodeIdStr)) {
-        cycleCount++;
-        return true;
-      }
-      
-      if (visited.has(nodeIdStr)) {
-        return false;
-      }
-      
-      visited.add(nodeIdStr);
-      recursionStack.add(nodeIdStr);
-      
-      const outgoingEdges = graph.getOutgoingEdges(nodeId);
-      for (const edge of outgoingEdges) {
-        if (dfs(edge.toNodeId)) {
-          return true;
-        }
-      }
-      
-      recursionStack.delete(nodeIdStr);
-      return false;
-    };
-    
-    for (const node of graph.nodes.values()) {
-      if (!visited.has(node.nodeId.toString())) {
-        dfs(node.nodeId);
-      }
-    }
-    
-    return cycleCount;
   }
 
   /**
@@ -478,21 +231,7 @@ export class ExecutionPlanner {
         const node = graph.getNode(nodeId);
         
         if (node) {
-          steps.push({
-            id: `step_${nodeIdStr}`,
-            nodeId: nodeIdStr,
-            name: node.name,
-            type: node.type.toString(),
-            order: stepOrder++,
-            prerequisites: this.getPrerequisites(graph, nodeId, visited),
-            inputMapping: {},
-            outputMapping: {},
-            estimatedDuration: this.estimateNodeDuration(node),
-            retryConfig: {
-              maxRetries: 3,
-              retryDelay: 1000
-            }
-          });
+          steps.push(this.createExecutionStep(node, stepOrder++, visited));
           
           // 添加后续节点
           const outgoingEdges = graph.getOutgoingEdges(nodeId);
@@ -511,50 +250,51 @@ export class ExecutionPlanner {
         for (const nodeId of nodeIds) {
           const node = graph.getNode(ID.fromString(nodeId));
           if (node) {
-            steps.push({
-              id: `step_${nodeId}`,
-              nodeId,
-              name: node.name,
-              type: node.type.toString(),
-              order: stepOrder++,
-              prerequisites: this.getPrerequisites(graph, ID.fromString(nodeId), visited),
-              inputMapping: {},
-              outputMapping: {},
-              estimatedDuration: this.estimateNodeDuration(node),
-              retryConfig: {
-                maxRetries: 3,
-                retryDelay: 1000
-              }
-            });
+            steps.push(this.createExecutionStep(node, stepOrder++, visited));
           }
         }
       }
     } else if (executionMode === 'conditional') {
       // 条件执行模式
-      // 简化实现，基于关键路径生成步骤
+      // 基于关键路径生成步骤
       for (const nodeId of graphAnalysis.criticalPath) {
         const node = graph.getNode(ID.fromString(nodeId));
         if (node) {
-          steps.push({
-            id: `step_${nodeId}`,
-            nodeId,
-            name: node.name,
-            type: node.type.toString(),
-            order: stepOrder++,
-            prerequisites: this.getPrerequisites(graph, ID.fromString(nodeId), visited),
-            inputMapping: {},
-            outputMapping: {},
-            estimatedDuration: this.estimateNodeDuration(node),
-            retryConfig: {
-              maxRetries: 3,
-              retryDelay: 1000
-            }
-          });
+          steps.push(this.createExecutionStep(node, stepOrder++, visited));
         }
       }
     }
     
     return steps;
+  }
+
+  /**
+   * 创建执行步骤
+   * @param node 节点
+   * @param order 步骤顺序
+   * @param visited 已访问节点集合
+   * @returns 执行步骤
+   */
+  private createExecutionStep(
+    node: Node,
+    order: number,
+    visited: Set<string>
+  ): ExecutionStepDto {
+    return {
+      id: `step_${node.nodeId.toString()}`,
+      nodeId: node.nodeId.toString(),
+      name: node.name,
+      type: node.type.toString(),
+      order,
+      prerequisites: Array.from(visited).map(nodeId => `step_${nodeId}`),
+      inputMapping: {},
+      outputMapping: {},
+      estimatedDuration: this.estimateNodeDuration(node),
+      retryConfig: {
+        maxRetries: 3,
+        retryDelay: 1000
+      }
+    };
   }
 
   /**
@@ -573,24 +313,6 @@ export class ExecutionPlanner {
     }
     
     return groups;
-  }
-
-  /**
-   * 获取节点的前置条件
-   * @param graph 图
-   * @param nodeId 节点ID
-   * @param visited 已访问节点集合
-   * @returns 前置条件列表
-   */
-  private getPrerequisites(
-    graph: Graph,
-    nodeId: ID,
-    visited: Set<string>
-  ): string[] {
-    const incomingEdges = graph.getIncomingEdges(nodeId);
-    return incomingEdges
-      .filter(edge => visited.has(edge.fromNodeId.toString()))
-      .map(edge => `step_${edge.fromNodeId.toString()}`);
   }
 
   /**
