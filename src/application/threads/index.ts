@@ -18,3 +18,6 @@ export * from './handlers/get-thread-handler';
 export * from './handlers/list-threads-handler';
 export * from './handlers/thread-created-handler';
 export * from './handlers/thread-deleted-handler';
+
+// 导出checkpoint子模块
+export * from './checkpoints';

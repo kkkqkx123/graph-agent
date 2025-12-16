@@ -138,6 +138,35 @@ export class Timestamp extends ValueObject<TimestampProps> {
   }
 
   /**
+   * 计算与另一个时间戳的差值（秒）
+   * @param other 另一个时间戳
+   * @returns 差值（秒）
+   */
+  public differenceInSeconds(other: Timestamp): number {
+    return Math.floor(this.diff(other) / 1000);
+  }
+
+  /**
+   * 添加小时数
+   * @param hours 小时数
+   * @returns 新的时间戳
+   */
+  public addHours(hours: number): Timestamp {
+    const newDate = new Date(this.props.value.getTime() + hours * 60 * 60 * 1000);
+    return Timestamp.create(newDate);
+  }
+
+  /**
+   * 添加天数
+   * @param days 天数
+   * @returns 新的时间戳
+   */
+  public addDays(days: number): Timestamp {
+    const newDate = new Date(this.props.value.getTime() + days * 24 * 60 * 60 * 1000);
+    return Timestamp.create(newDate);
+  }
+
+  /**
    * 验证时间戳的有效性
    */
   public validate(): void {

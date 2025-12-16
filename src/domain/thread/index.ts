@@ -22,3 +22,6 @@ export * from './repositories';
 
 // 导出事件
 export * from './events';
+
+// 导出checkpoint子模块
+export * from '../threads/checkpoints';
