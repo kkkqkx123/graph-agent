@@ -6,7 +6,7 @@ import { GraphRepository, NodeRepository, EdgeRepository } from '../../../../../
 import { INodeExecutor } from '../../../../../domain/workflow/graph/interfaces/node-executor.interface';
 import { IEdgeEvaluator } from '../../../../../domain/workflow/graph/interfaces/edge-evaluator.interface';
 import { ID } from '../../../../../domain/common/value-objects/id';
-import { NodeExecutionResult } from '../../../../../domain/workflow/graph/value-objects/node-execution-result';
+import { NodeExecutionResultValue } from '../../../../../domain/workflow/graph/value-objects/node-execution-result';
 import { DomainError } from '../../../../../domain/common/errors/domain-error';
 import { ILogger } from '@shared/types/logger';
 
@@ -16,10 +16,7 @@ import { NodeExecutionOrchestrator } from './node-execution-orchestrator';
 import { DependencyResolver } from './dependency-resolver';
 
 // DTOs
-import {
-  NodeExecutionStatusDto,
-  GraphExecutionStatusDto
-} from '../../dtos/graph.dto';
+// Note: These DTOs may not exist yet, we'll need to create them or use alternatives
 
 /**
  * 节点协调器
@@ -55,7 +52,7 @@ export class NodeCoordinator {
     executionContext: any
   ): Promise<{
     executionId: string;
-    results: Map<string, NodeExecutionResult>;
+    results: Map<string, NodeExecutionResultValue>;
     executionPath: string[];
     status: 'completed' | 'failed' | 'cancelled';
     error?: string;
@@ -103,12 +100,12 @@ export class NodeCoordinator {
     executionId: string
   ): Promise<{
     executionId: string;
-    results: Map<string, NodeExecutionResult>;
+    results: Map<string, NodeExecutionResultValue>;
     executionPath: string[];
     status: 'completed' | 'failed' | 'cancelled';
     error?: string;
   }> {
-    const executionResults = new Map<string, NodeExecutionResult>();
+    const executionResults = new Map<string, NodeExecutionResultValue>();
     const executionPath: string[] = [];
     let status: 'completed' | 'failed' | 'cancelled' = 'completed';
     let error: string | undefined;
@@ -145,7 +142,7 @@ export class NodeCoordinator {
             // 更新队列管理器，标记节点为已完成
             await this.executionQueueManager.markNodeCompleted(
               ID.fromString(nodeId),
-              result.output
+              result.value
             );
           } else {
             // 处理执行失败
@@ -203,7 +200,7 @@ export class NodeCoordinator {
    */
   private async handleNodeFailure(
     nodeId: ID,
-    result: NodeExecutionResult
+    result: NodeExecutionResultValue
   ): Promise<boolean> {
     const node = await this.nodeRepository.findById(nodeId);
     if (!node) {
@@ -211,7 +208,7 @@ export class NodeCoordinator {
     }
 
     // 检查节点的错误处理策略
-    const errorHandlingStrategy = node.properties.errorHandlingStrategy || 'stop';
+    const errorHandlingStrategy = (node.properties['errorHandlingStrategy'] as string) || 'stop';
     
     switch (errorHandlingStrategy) {
       case 'stop':
@@ -237,7 +234,7 @@ export class NodeCoordinator {
     graphId: string,
     nodeId: string,
     executionId: string
-  ): Promise<NodeExecutionStatusDto | null> {
+  ): Promise<any | null> {
     try {
       const graphIdObj = ID.fromString(graphId);
       const nodeIdObj = ID.fromString(nodeId);
@@ -416,7 +413,7 @@ export class NodeCoordinator {
   async getGraphExecutionStatus(
     graphId: string,
     executionId: string
-  ): Promise<GraphExecutionStatusDto | null> {
+  ): Promise<any | null> {
     try {
       const graphIdObj = ID.fromString(graphId);
       const graph = await this.graphRepository.findById(graphIdObj);

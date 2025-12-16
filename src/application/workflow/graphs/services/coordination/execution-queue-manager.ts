@@ -147,7 +147,7 @@ export class ExecutionQueueManager {
       status: 'pending',
       enqueuedAt: new Date(),
       retryCount: 0,
-      maxRetries: node.properties.maxRetries || 3
+      maxRetries: (node.properties['maxRetries'] as number) || 3
     };
 
     this.queue.set(node.nodeId.toString(), queueItem);
@@ -183,7 +183,7 @@ export class ExecutionQueueManager {
     };
     
     const basePriority = typePriorities[node.type.toString()] || 0;
-    const customPriority = node.properties.priority || 0;
+    const customPriority = (node.properties['priority'] as number) || 0;
     
     return basePriority + customPriority;
   }
@@ -314,9 +314,8 @@ export class ExecutionQueueManager {
       this.failedNodes.add(nodeIdStr);
       this.runningNodes.delete(nodeIdStr);
       
-      this.logger.error('节点执行失败', {
+      this.logger.error('节点执行失败', error, {
         nodeId: nodeIdStr,
-        error: error.message,
         retryCount: queueItem.retryCount
       });
     }

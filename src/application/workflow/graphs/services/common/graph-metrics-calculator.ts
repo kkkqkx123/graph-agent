@@ -190,7 +190,9 @@ export class GraphMetricsCalculator {
     let connectionCount = 0;
     for (let i = 0; i < neighborCount; i++) {
       for (let j = i + 1; j < neighborCount; j++) {
-        if (this.hasEdgeBetween(graph, neighbors[i], neighbors[j])) {
+        const neighbor1 = neighbors[i];
+        const neighbor2 = neighbors[j];
+        if (neighbor1 && neighbor2 && this.hasEdgeBetween(graph, neighbor1, neighbor2)) {
           connectionCount++;
         }
       }
@@ -276,10 +278,14 @@ export class GraphMetricsCalculator {
     
     for (let i = 0; i < nodeIds.length; i++) {
       for (let j = i + 1; j < nodeIds.length; j++) {
-        const pathLength = this.calculateShortestPathLength(graph, nodeIds[i], nodeIds[j]);
-        if (pathLength > 0) {
-          totalPathLength += pathLength;
-          pathCount++;
+        const nodeId1 = nodeIds[i];
+        const nodeId2 = nodeIds[j];
+        if (nodeId1 && nodeId2) {
+          const pathLength = this.calculateShortestPathLength(graph, ID.fromString(nodeId1), ID.fromString(nodeId2));
+          if (pathLength > 0) {
+            totalPathLength += pathLength;
+            pathCount++;
+          }
         }
       }
     }
@@ -336,9 +342,13 @@ export class GraphMetricsCalculator {
     
     for (let i = 0; i < nodeIds.length; i++) {
       for (let j = i + 1; j < nodeIds.length; j++) {
-        const pathLength = this.calculateShortestPathLength(graph, nodeIds[i], nodeIds[j]);
-        if (pathLength > maxPathLength) {
-          maxPathLength = pathLength;
+        const nodeId1 = nodeIds[i];
+        const nodeId2 = nodeIds[j];
+        if (nodeId1 && nodeId2) {
+          const pathLength = this.calculateShortestPathLength(graph, ID.fromString(nodeId1), ID.fromString(nodeId2));
+          if (pathLength > maxPathLength) {
+            maxPathLength = pathLength;
+          }
         }
       }
     }

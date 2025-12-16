@@ -66,11 +66,18 @@ export class ParallelAnalyzer {
     // 检查节点之间是否有依赖关系
     for (let i = 0; i < nodeIds.length; i++) {
       for (let j = i + 1; j < nodeIds.length; j++) {
-        const nodeId1 = ID.fromString(nodeIds[i]);
-        const nodeId2 = ID.fromString(nodeIds[j]);
+        const nodeIdStr1 = nodeIds[i];
+        const nodeIdStr2 = nodeIds[j];
+        
+        if (!nodeIdStr1 || !nodeIdStr2) {
+          continue;
+        }
+        
+        const nodeId1 = ID.fromString(nodeIdStr1);
+        const nodeId2 = ID.fromString(nodeIdStr2);
         
         // 检查是否存在从一个节点到另一个节点的路径
-        if (this.pathAnalyzer.hasPath(graph, nodeId1, nodeId2) || 
+        if (this.pathAnalyzer.hasPath(graph, nodeId1, nodeId2) ||
             this.pathAnalyzer.hasPath(graph, nodeId2, nodeId1)) {
           return false;
         }
@@ -155,7 +162,16 @@ export class ParallelAnalyzer {
     const parallelGroups = this.identifyParallelGroups(graph, nodeLevels);
     
     const opportunities = parallelGroups.map((nodes, index) => {
-      const level = this.getLevelForNodes(nodeLevels, nodes[0]);
+      if (nodes.length === 0) {
+        return null;
+      }
+      
+      const firstNodeId = nodes[0];
+      if (!firstNodeId) {
+        return null;
+      }
+      
+      const level = this.getLevelForNodes(nodeLevels, firstNodeId);
       const potentialSpeedup = this.calculatePotentialSpeedup(graph, nodes);
       const resourceRequirements = this.calculateResourceRequirements(graph, nodes);
       
@@ -165,7 +181,12 @@ export class ParallelAnalyzer {
         potentialSpeedup,
         resourceRequirements
       };
-    });
+    }).filter(opportunity => opportunity !== null) as Array<{
+      level: number;
+      nodes: string[];
+      potentialSpeedup: number;
+      resourceRequirements: Map<string, number>;
+    }>;
 
     this.logger.debug('并行执行机会识别完成', {
       graphId: graph.graphId.toString(),
@@ -295,7 +316,8 @@ export class ParallelAnalyzer {
     
     // 如果没有找到，返回第一个节点
     if (graph.nodes.size > 0) {
-      return graph.nodes.values().next().value.nodeId;
+      const firstNode = graph.nodes.values().next().value;
+      return firstNode ? firstNode.nodeId : null;
     }
     
     return null;

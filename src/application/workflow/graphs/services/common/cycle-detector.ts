@@ -199,7 +199,7 @@ export class CycleDetector {
     
     for (let i = order.length - 1; i >= 0; i--) {
       const nodeIdStr = order[i];
-      if (!visited.has(nodeIdStr)) {
+      if (nodeIdStr && !visited.has(nodeIdStr)) {
         const component: string[] = [];
         dfs2(ID.fromString(nodeIdStr), component);
         components.push(component);

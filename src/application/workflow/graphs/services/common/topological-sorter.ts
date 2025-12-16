@@ -225,7 +225,7 @@ export class TopologicalSorter {
     // 检查拓扑排序中在该节点之前的所有节点
     for (let i = 0; i < nodeIndex; i++) {
       const candidateNodeId = topologicalOrder[i];
-      if (this.hasPath(graph, ID.fromString(candidateNodeId), nodeId)) {
+      if (candidateNodeId && this.hasPath(graph, ID.fromString(candidateNodeId), nodeId)) {
         predecessors.push(candidateNodeId);
       }
     }
@@ -252,7 +252,7 @@ export class TopologicalSorter {
     // 检查拓扑排序中在该节点之后的所有节点
     for (let i = nodeIndex + 1; i < topologicalOrder.length; i++) {
       const candidateNodeId = topologicalOrder[i];
-      if (this.hasPath(graph, nodeId, ID.fromString(candidateNodeId))) {
+      if (candidateNodeId && this.hasPath(graph, nodeId, ID.fromString(candidateNodeId))) {
         successors.push(candidateNodeId);
       }
     }

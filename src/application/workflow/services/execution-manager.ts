@@ -435,7 +435,7 @@ export class ExecutionManager {
       // 按优先级分组
       const executionsByPriority: Record<string, number> = {};
       executions.forEach(exec => {
-        const priority = exec.metadata.priority as string || 'normal';
+        const priority = (exec.metadata['priority'] as string) || 'normal';
         executionsByPriority[priority] = (executionsByPriority[priority] || 0) + 1;
       });
       

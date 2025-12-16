@@ -16,12 +16,47 @@ import {
   GraphMetricsCalculator
 } from '../common';
 
-// DTOs
-import {
-  ExecutionPlanDto,
-  ExecutionStepDto,
-  ExecutionDependencyDto
-} from '../../dtos/graph.dto';
+// DTOs - Note: These DTOs may not exist yet, using any for now
+// import {
+//   ExecutionPlanDto,
+//   ExecutionStepDto,
+//   ExecutionDependencyDto
+// } from '../../dtos/graph.dto';
+
+// Temporary type definitions
+interface ExecutionPlanDto {
+  id: string;
+  graphId: string;
+  executionMode: 'sequential' | 'parallel' | 'conditional';
+  steps: ExecutionStepDto[];
+  dependencies: ExecutionDependencyDto[];
+  estimatedDuration: number;
+  createdAt: string;
+  metadata: any;
+}
+
+interface ExecutionStepDto {
+  id: string;
+  nodeId: string;
+  name: string;
+  type: string;
+  order: number;
+  prerequisites: string[];
+  inputMapping: Record<string, any>;
+  outputMapping: Record<string, any>;
+  estimatedDuration: number;
+  retryConfig: {
+    maxRetries: number;
+    retryDelay: number;
+  };
+}
+
+interface ExecutionDependencyDto {
+  fromStepId: string;
+  toStepId: string;
+  type: string;
+  condition: any;
+}
 
 /**
  * 执行计划器
@@ -283,7 +318,7 @@ export class ExecutionPlanner {
     return {
       id: `step_${node.nodeId.toString()}`,
       nodeId: node.nodeId.toString(),
-      name: node.name,
+      name: node.name || '',
       type: node.type.toString(),
       order,
       prerequisites: Array.from(visited).map(nodeId => `step_${nodeId}`),
@@ -334,7 +369,7 @@ export class ExecutionPlanner {
     const baseDuration = baseDurations[nodeType] || 1000;
     
     // 根据节点属性调整估算时间
-    const complexityFactor = node.properties.complexity || 1.0;
+    const complexityFactor = (node.properties['complexity'] as number) || 1.0;
     return Math.round(baseDuration * complexityFactor);
   }
 
@@ -496,7 +531,8 @@ export class ExecutionPlanner {
     
     // 如果没有找到，返回第一个节点
     if (graph.nodes.size > 0) {
-      return graph.nodes.values().next().value.nodeId;
+      const firstNode = graph.nodes.values().next().value;
+      return firstNode ? firstNode.nodeId : null;
     }
     
     return null;

@@ -1,6 +1,9 @@
 /**
  * 图DTO
  */
+import { NodeDto } from './node.dto';
+import { EdgeDto } from './edge.dto';
+
 export interface GraphDto {
   /** 图ID */
   id: string;
@@ -46,31 +49,3 @@ export interface GraphSummaryDto {
   updatedAt: string;
 }
 
-// 前向声明，实际定义在其他文件
-export interface NodeDto {
-  id: string;
-  graphId: string;
-  type: string;
-  name?: string;
-  description?: string;
-  position?: {
-    x: number;
-    y: number;
-  };
-  properties: Record<string, unknown>;
-  createdAt: string;
-  updatedAt: string;
-}
-
-export interface EdgeDto {
-  id: string;
-  graphId: string;
-  type: string;
-  fromNodeId: string;
-  toNodeId: string;
-  condition?: string;
-  weight?: number;
-  properties: Record<string, unknown>;
-  createdAt: string;
-  updatedAt: string;
-}

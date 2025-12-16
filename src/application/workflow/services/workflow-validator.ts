@@ -185,7 +185,7 @@ export class WorkflowValidator {
 
       // 验证工作流配置
       if (workflow.config) {
-        const configValidationResult = this.validateWorkflowConfig(workflow.config.value);
+        const configValidationResult = await this.validateWorkflowConfig(workflow.config.value);
         this.mergeValidationResults(result, configValidationResult);
       }
 
@@ -230,8 +230,8 @@ export class WorkflowValidator {
       }
 
       // 验证超时配置
-      if (config.timeout !== undefined) {
-        const timeout = Number(config.timeout);
+      if (config['timeout'] !== undefined) {
+        const timeout = Number(config['timeout']);
         if (isNaN(timeout) || timeout <= 0) {
           result.errors.push('超时配置必须是正数');
         } else if (timeout > 3600) {
@@ -240,10 +240,10 @@ export class WorkflowValidator {
       }
 
       // 验证重试配置
-      if (config.retryConfig) {
-        const retryConfig = config.retryConfig as Record<string, unknown>;
-        if (retryConfig.maxRetries !== undefined) {
-          const maxRetries = Number(retryConfig.maxRetries);
+      if (config['retryConfig']) {
+        const retryConfig = config['retryConfig'] as Record<string, unknown>;
+        if (retryConfig['maxRetries'] !== undefined) {
+          const maxRetries = Number(retryConfig['maxRetries']);
           if (isNaN(maxRetries) || maxRetries < 0) {
             result.errors.push('最大重试次数必须是非负数');
           } else if (maxRetries > 10) {
@@ -251,8 +251,8 @@ export class WorkflowValidator {
           }
         }
 
-        if (retryConfig.retryInterval !== undefined) {
-          const retryInterval = Number(retryConfig.retryInterval);
+        if (retryConfig['retryInterval'] !== undefined) {
+          const retryInterval = Number(retryConfig['retryInterval']);
           if (isNaN(retryInterval) || retryInterval <= 0) {
             result.errors.push('重试间隔必须是正数');
           } else if (retryInterval > 300) {
@@ -262,8 +262,8 @@ export class WorkflowValidator {
       }
 
       // 验证并发配置
-      if (config.maxConcurrentExecutions !== undefined) {
-        const maxConcurrent = Number(config.maxConcurrentExecutions);
+      if (config['maxConcurrentExecutions'] !== undefined) {
+        const maxConcurrent = Number(config['maxConcurrentExecutions']);
         if (isNaN(maxConcurrent) || maxConcurrent <= 0) {
           result.errors.push('最大并发执行数必须是正数');
         } else if (maxConcurrent > 100) {
@@ -272,9 +272,9 @@ export class WorkflowValidator {
       }
 
       // 验证通知配置
-      if (config.notificationConfig) {
-        const notificationConfig = config.notificationConfig as Record<string, unknown>;
-        if (notificationConfig.enabled && !notificationConfig.webhook) {
+      if (config['notificationConfig']) {
+        const notificationConfig = config['notificationConfig'] as Record<string, unknown>;
+        if (notificationConfig['enabled'] && !notificationConfig['webhook']) {
           result.warnings.push('通知已启用但未配置Webhook，通知可能无法发送');
         }
       }
@@ -553,8 +553,8 @@ export class WorkflowValidator {
       }
 
       // 检查权限配置
-      if (config.permissions && typeof config.permissions === 'object') {
-        const permissions = config.permissions as Record<string, unknown>;
+      if (config['permissions'] && typeof config['permissions'] === 'object') {
+        const permissions = config['permissions'] as Record<string, unknown>;
         if (Object.keys(permissions).length === 0) {
           result.suggestions.push('建议配置适当的权限以增强安全性');
         }

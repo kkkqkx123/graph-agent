@@ -362,14 +362,14 @@ export class DependencyResolver {
         type: dependency.edgeType,
         condition: dependency.condition,
         weight: dependency.weight
-      } as Edge;
+      } as unknown as Edge;
       
       return await edgeEvaluator.evaluate(edge, context);
     } catch (error) {
-      this.logger.error('评估边条件失败', {
+      const errorObj = error as Error;
+      this.logger.error('评估边条件失败', errorObj, {
         fromNodeId: fromNodeIdStr,
-        toNodeId: toNodeIdStr,
-        error: (error as Error).message
+        toNodeId: toNodeIdStr
       });
       
       return false;

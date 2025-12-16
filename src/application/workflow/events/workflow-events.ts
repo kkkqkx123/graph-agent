@@ -15,7 +15,7 @@ export interface WorkflowCreatedEvent {
   /** 工作流描述 */
   description?: string;
   /** 工作流类型 */
-  type: string;
+  workflowType: string;
   /** 工作流状态 */
   status: string;
   /** 工作流配置 */

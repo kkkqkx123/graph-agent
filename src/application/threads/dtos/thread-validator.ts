@@ -2,7 +2,8 @@
  * 线程数据验证器
  */
 
-import { CreateThreadRequest, ThreadInfo, ThreadStatistics } from './thread-info';
+import { ThreadInfo, ThreadStatistics } from './thread-info';
+import { CreateThreadRequest } from './create-thread';
 
 export class ThreadValidator {
   /**

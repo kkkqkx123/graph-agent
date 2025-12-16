@@ -8,11 +8,7 @@ import { DomainError } from '../../../../../domain/common/errors/domain-error';
 import { ILogger } from '@shared/types/logger';
 
 // DTOs
-import {
-  NodeExecutionStatusDto,
-  GraphExecutionStatusDto,
-  GraphStatisticsDto
-} from '../../dtos/graph.dto';
+// Note: These DTOs may not exist yet, we'll need to create them or use alternatives
 
 /**
  * 节点执行状态
@@ -182,7 +178,7 @@ export class StateTracker {
         logs: [],
         metadata: {},
         retryCount: 0,
-        maxRetries: node.properties.maxRetries || 3,
+        maxRetries: (node.properties['maxRetries'] as number) || 3,
         input
       };
 
@@ -341,7 +337,7 @@ export class StateTracker {
   async getNodeExecutionStatus(
     executionId: string,
     nodeId: string
-  ): Promise<NodeExecutionStatusDto | null> {
+  ): Promise<any | null> {
     const nodeKey = `${executionId}:${nodeId}`;
     const nodeState = this.nodeStates.get(nodeKey);
     
@@ -374,7 +370,7 @@ export class StateTracker {
    * @param executionId 执行ID
    * @returns 图执行状态DTO
    */
-  async getGraphExecutionStatus(executionId: string): Promise<GraphExecutionStatusDto | null> {
+  async getGraphExecutionStatus(executionId: string): Promise<any | null> {
     const graphState = this.graphStates.get(executionId);
     
     if (!graphState) {
@@ -418,7 +414,7 @@ export class StateTracker {
    * @param graphId 图ID
    * @returns 图统计信息DTO
    */
-  async getGraphStatistics(graphId: string): Promise<GraphStatisticsDto | null> {
+  async getGraphStatistics(graphId: string): Promise<any | null> {
     try {
       const graphIdObj = ID.fromString(graphId);
       const graph = await this.graphRepository.findByIdOrFail(graphIdObj);
@@ -511,8 +507,9 @@ export class StateTracker {
     const successCount = Object.values(graphState.nodeStatuses)
       .filter(state => state.status === 'completed').length;
     
-    graphState.statistics.successRate = graphState.nodeStatuses.length > 0 
-      ? successCount / graphState.nodeStatuses.length 
+    const nodeStatusesLength = Object.keys(graphState.nodeStatuses).length;
+    graphState.statistics.successRate = nodeStatusesLength > 0
+      ? successCount / nodeStatusesLength
       : 0;
   }
 
@@ -578,9 +575,9 @@ export class StateTracker {
     
     for (const edge of graph.edges.values()) {
       if (edge.condition) {
-        conditionStats['with_condition']++;
+        conditionStats['with_condition'] = (conditionStats['with_condition'] || 0) + 1;
       } else {
-        conditionStats['without_condition']++;
+        conditionStats['without_condition'] = (conditionStats['without_condition'] || 0) + 1;
       }
     }
     

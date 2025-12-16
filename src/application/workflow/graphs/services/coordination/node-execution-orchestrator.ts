@@ -5,15 +5,12 @@ import { Graph } from '../../../../../domain/workflow/graph/entities/graph';
 import { INodeExecutor } from '../../../../../domain/workflow/graph/interfaces/node-executor.interface';
 import { IEdgeEvaluator } from '../../../../../domain/workflow/graph/interfaces/edge-evaluator.interface';
 import { ID } from '../../../../../domain/common/value-objects/id';
-import { NodeExecutionResult } from '../../../../../domain/workflow/graph/value-objects/node-execution-result';
+import { NodeExecutionResultValue } from '../../../../../domain/workflow/graph/value-objects/node-execution-result';
 import { DomainError } from '../../../../../domain/common/errors/domain-error';
 import { ILogger } from '@shared/types/logger';
 
 // DTOs
-import {
-  NodeExecutionStatusDto,
-  GraphExecutionStatusDto
-} from '../../dtos/graph.dto';
+// Note: These DTOs may not exist yet, we'll need to create them or use alternatives
 
 /**
  * 节点执行状态
@@ -42,7 +39,7 @@ export class NodeExecutionOrchestrator {
   private executionId: string | null = null;
   private executionContext: any = null;
   private nodeStates: Map<string, NodeExecutionState> = new Map();
-  private runningExecutions: Map<string, Promise<NodeExecutionResult>> = new Map();
+  private runningExecutions: Map<string, Promise<NodeExecutionResultValue>> = new Map();
   private graph: Graph | null = null;
 
   constructor(
@@ -79,7 +76,7 @@ export class NodeExecutionOrchestrator {
   async executeBatch(
     nodes: Node[],
     nodeExecutorFactory: (nodeType: string) => INodeExecutor
-  ): Promise<Map<string, NodeExecutionResult>> {
+  ): Promise<Map<string, NodeExecutionResultValue>> {
     if (!this.executionId) {
       throw new DomainError('编排器未初始化');
     }
@@ -89,7 +86,7 @@ export class NodeExecutionOrchestrator {
       nodeCount: nodes.length
     });
 
-    const results = new Map<string, NodeExecutionResult>();
+    const results = new Map<string, NodeExecutionResultValue>();
     const executionPromises: Promise<void>[] = [];
 
     // 为每个节点创建执行任务
@@ -102,7 +99,7 @@ export class NodeExecutionOrchestrator {
         status: 'pending',
         logs: [],
         retryCount: 0,
-        maxRetries: node.properties.maxRetries || 3
+        maxRetries: (node.properties['maxRetries'] as number) || 3
       });
 
       // 创建执行Promise
@@ -111,14 +108,13 @@ export class NodeExecutionOrchestrator {
           results.set(nodeIdStr, result);
         })
         .catch(error => {
-          this.logger.error('节点执行失败', {
-            nodeId: nodeIdStr,
-            error: error.message
+          this.logger.error('节点执行失败', error as Error, {
+            nodeId: nodeIdStr
           });
           
-          const failureResult = NodeExecutionResult.failure(
+          const failureResult = NodeExecutionResultValue.failure(
             node.nodeId,
-            error,
+            error as Error,
             0,
             this.executionContext
           );
@@ -149,7 +145,7 @@ export class NodeExecutionOrchestrator {
   private async executeNode(
     node: Node,
     nodeExecutorFactory: (nodeType: string) => INodeExecutor
-  ): Promise<NodeExecutionResult> {
+  ): Promise<NodeExecutionResultValue> {
     const nodeIdStr = node.nodeId.toString();
     const nodeState = this.nodeStates.get(nodeIdStr)!;
     
@@ -180,7 +176,7 @@ export class NodeExecutionOrchestrator {
       const inputData = nodeState.input || {};
       
       // 执行节点
-      const output = await nodeExecutor.execute(node, inputData, nodeExecutionContext);
+      const output = await nodeExecutor.execute(node, inputData);
       
       // 计算执行时间
       const endTime = new Date();
@@ -197,7 +193,7 @@ export class NodeExecutionOrchestrator {
         duration
       });
 
-      return NodeExecutionResult.success(
+      return NodeExecutionResultValue.success(
         node.nodeId,
         output,
         duration,
@@ -214,13 +210,12 @@ export class NodeExecutionOrchestrator {
       nodeState.duration = duration;
       nodeState.error = error as Error;
       
-      this.logger.error('节点执行失败', {
+      this.logger.error('节点执行失败', error as Error, {
         nodeId: nodeIdStr,
-        error: (error as Error).message,
         duration
       });
 
-      return NodeExecutionResult.failure(
+      return NodeExecutionResultValue.failure(
         node.nodeId,
         error as Error,
         duration,
@@ -391,7 +386,7 @@ export class NodeExecutionOrchestrator {
   async getNodeExecutionStatus(
     nodeId: ID,
     executionId: string
-  ): Promise<NodeExecutionStatusDto | null> {
+  ): Promise<any | null> {
     if (this.executionId !== executionId) {
       return null;
     }
@@ -431,7 +426,7 @@ export class NodeExecutionOrchestrator {
   async getGraphExecutionStatus(
     graphId: ID,
     executionId: string
-  ): Promise<GraphExecutionStatusDto | null> {
+  ): Promise<any | null> {
     if (this.executionId !== executionId) {
       return null;
     }
