@@ -4,7 +4,7 @@ import { TriggerState, TriggerStateUtils } from './trigger-state';
 import { TriggerContext, TriggerContextUtils } from './trigger-context';
 import { TriggerExecutionResult, TriggerExecutionResultUtils } from './trigger-execution-result';
 import { DefaultTriggerFactory } from './trigger-manager';
-import { ID } from '../../../../common/value-objects/id';
+import { ID } from '@domain/common/value-objects/id';
 
 /**
  * 触发器工具类

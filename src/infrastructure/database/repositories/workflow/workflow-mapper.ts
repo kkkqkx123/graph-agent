@@ -39,7 +39,6 @@ export class WorkflowMapper {
     model.id = entity.workflowId.value;
     model.name = entity.name;
     model.description = entity.description || undefined;
-    model.workflowId = undefined;
     model.state = this.mapStatusToState(entity.status);
     model.executionMode = this.mapTypeToExecutionMode(entity.type);
     model.metadata = {

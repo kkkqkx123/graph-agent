@@ -1,5 +1,5 @@
 import { injectable } from 'inversify';
-import { ExecutionContext } from '../../engine/execution-context';
+import { ExecutionContext } from '@domain/workflow/execution/execution-context.interface';
 
 @injectable()
 export class ExpressionEvaluator {
@@ -79,18 +79,24 @@ export class ExpressionEvaluator {
     evalContext['isUndefined'] = (value: any) => value === undefined;
     
     // Add context variables
-    for (const [key, value] of context.getAllVariables()) {
-      evalContext[key] = value;
+    const variables = context.getAllVariables();
+    if (typeof variables === 'object' && !Array.isArray(variables)) {
+      for (const [key, value] of Object.entries(variables)) {
+        evalContext[key] = value;
+      }
     }
     
     // Add context metadata
-    for (const [key, value] of context.getAllMetadata()) {
-      evalContext[`meta_${key}`] = value;
+    const metadata = context.getAllMetadata();
+    if (typeof metadata === 'object' && !Array.isArray(metadata)) {
+      for (const [key, value] of Object.entries(metadata)) {
+        evalContext[`meta_${key}`] = value;
+      }
     }
     
     // Add special context values
     evalContext['input'] = context.getInput();
-    evalContext['executionId'] = context.getExecutionId();
+    evalContext['executionId'] = context.executionId;
     evalContext['elapsedTime'] = context.getElapsedTime();
     evalContext['executedNodes'] = Array.from(context.getExecutedNodes());
     

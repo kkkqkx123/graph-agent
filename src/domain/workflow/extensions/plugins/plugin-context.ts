@@ -1,4 +1,4 @@
-import { ID } from '../../../../common/value-objects/id';
+import { ID } from '@domain/common/value-objects/id';
 
 /**
  * 插件上下文接口

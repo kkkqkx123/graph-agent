@@ -1,4 +1,4 @@
-import { ID } from '../../../../common/value-objects/id';
+import { ID } from '@domain/common/value-objects/id';
 import { TriggerType } from './trigger-type';
 import { TriggerState } from './trigger-state';
 

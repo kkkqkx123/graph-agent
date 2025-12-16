@@ -1,4 +1,5 @@
-export * from './engine';
-export * from './nodes';
+// 工作流基础设施模块导出
 export * from './edges';
+export * from './functions';
+export * from './nodes';
 export * from './strategies';

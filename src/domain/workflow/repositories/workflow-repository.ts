@@ -68,6 +68,16 @@ export interface WorkflowQueryOptions extends QueryOptions {
    * 最大边数量
    */
   maxEdgeCount?: number;
+
+  /**
+   * 最小执行次数
+   */
+  minExecutionCount?: number;
+
+  /**
+   * 最大执行次数
+   */
+  maxExecutionCount?: number;
 }
 
 /**

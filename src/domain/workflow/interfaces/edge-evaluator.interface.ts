@@ -1,5 +1,5 @@
 import { Edge } from '@domain/workflow/entities/edges/base/edge';
-import { IExecutionContext } from '@/domain/workflow/interfaces/execution-context.interface';
+import { IExecutionContext } from '@domain/workflow/execution/execution-context.interface';
 
 /**
  * 边评估器接口

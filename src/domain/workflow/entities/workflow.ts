@@ -126,6 +126,10 @@ export class Workflow extends AggregateRoot {
       workflowType.toString(),
       workflowStatus.toString(),
       workflowConfig.value,
+      [], // nodes
+      [], // edges
+      undefined, // definition
+      undefined, // layout
       createdBy
     ));
 

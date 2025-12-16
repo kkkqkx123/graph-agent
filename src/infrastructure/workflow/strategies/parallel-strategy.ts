@@ -1,6 +1,6 @@
 import { injectable } from 'inversify';
-import { ExecutionContext } from '../engine/execution-context';
-import { WorkflowExecutor } from '../engine/workflow-executor';
+import { ExecutionContext } from '@domain/workflow/execution/execution-context.interface';
+import { WorkflowExecutor } from '@domain/workflow/execution/workflow-executor.interface';
 import { ExecutionStrategy } from './execution-strategy';
 
 @injectable()

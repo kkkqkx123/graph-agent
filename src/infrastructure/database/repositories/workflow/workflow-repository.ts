@@ -4,6 +4,8 @@ import { Workflow } from '../../../../domain/workflow/entities/workflow';
 import { ID } from '../../../../domain/common/value-objects/id';
 import { WorkflowStatus } from '../../../../domain/workflow/value-objects/workflow-status';
 import { WorkflowType } from '../../../../domain/workflow/value-objects/workflow-type';
+import { NodeType } from '../../../../domain/workflow/value-objects/node-type';
+import { EdgeType } from '../../../../domain/workflow/value-objects/edge-type';
 import { ConnectionManager } from '../../connections/connection-manager';
 import { WorkflowMapper } from './workflow-mapper';
 import { WorkflowModel } from '../../models/workflow.model';
@@ -673,6 +675,102 @@ export class WorkflowRepository implements IWorkflowRepository {
     const queryBuilder = repository.createQueryBuilder('workflow')
       .orderBy('workflow.metadata->>\'executionCount\'', 'DESC')
       .take(limit);
+
+    if (options?.includeDeleted === false) {
+      queryBuilder.andWhere('workflow.isDeleted = false');
+    }
+
+    if (options?.status) {
+      queryBuilder.andWhere('workflow.state = :status', { status: options.status });
+    }
+
+    const models = await queryBuilder.getMany();
+    return models.map(model => this.mapper.toEntity(model));
+  }
+
+  async getMostComplexWorkflows(limit: number, options?: WorkflowQueryOptions): Promise<Workflow[]> {
+    const connection = await this.connectionManager.getConnection();
+    const repository = connection.getRepository(WorkflowModel);
+
+    const queryBuilder = repository.createQueryBuilder('workflow')
+      .orderBy('(workflow.metadata->>\'nodeCount\' + workflow.metadata->>\'edgeCount\')', 'DESC')
+      .take(limit);
+
+    if (options?.includeDeleted === false) {
+      queryBuilder.andWhere('workflow.isDeleted = false');
+    }
+
+    if (options?.status) {
+      queryBuilder.andWhere('workflow.state = :status', { status: options.status });
+    }
+
+    const models = await queryBuilder.getMany();
+    return models.map(model => this.mapper.toEntity(model));
+  }
+
+  async findByNodeId(nodeId: ID, options?: WorkflowQueryOptions): Promise<Workflow[]> {
+    const connection = await this.connectionManager.getConnection();
+    const repository = connection.getRepository(WorkflowModel);
+
+    const queryBuilder = repository.createQueryBuilder('workflow')
+      .where('workflow.metadata->>\'nodeIds\' @> :nodeId', { nodeId: JSON.stringify([nodeId.value]) });
+
+    if (options?.includeDeleted === false) {
+      queryBuilder.andWhere('workflow.isDeleted = false');
+    }
+
+    if (options?.status) {
+      queryBuilder.andWhere('workflow.state = :status', { status: options.status });
+    }
+
+    const models = await queryBuilder.getMany();
+    return models.map(model => this.mapper.toEntity(model));
+  }
+
+  async findByEdgeId(edgeId: ID, options?: WorkflowQueryOptions): Promise<Workflow[]> {
+    const connection = await this.connectionManager.getConnection();
+    const repository = connection.getRepository(WorkflowModel);
+
+    const queryBuilder = repository.createQueryBuilder('workflow')
+      .where('workflow.metadata->>\'edgeIds\' @> :edgeId', { edgeId: JSON.stringify([edgeId.value]) });
+
+    if (options?.includeDeleted === false) {
+      queryBuilder.andWhere('workflow.isDeleted = false');
+    }
+
+    if (options?.status) {
+      queryBuilder.andWhere('workflow.state = :status', { status: options.status });
+    }
+
+    const models = await queryBuilder.getMany();
+    return models.map(model => this.mapper.toEntity(model));
+  }
+
+  async findByNodeType(nodeType: NodeType, options?: WorkflowQueryOptions): Promise<Workflow[]> {
+    const connection = await this.connectionManager.getConnection();
+    const repository = connection.getRepository(WorkflowModel);
+
+    const queryBuilder = repository.createQueryBuilder('workflow')
+      .where('workflow.metadata->>\'nodeTypes\' @> :nodeType', { nodeType: JSON.stringify([nodeType.value]) });
+
+    if (options?.includeDeleted === false) {
+      queryBuilder.andWhere('workflow.isDeleted = false');
+    }
+
+    if (options?.status) {
+      queryBuilder.andWhere('workflow.state = :status', { status: options.status });
+    }
+
+    const models = await queryBuilder.getMany();
+    return models.map(model => this.mapper.toEntity(model));
+  }
+
+  async findByEdgeType(edgeType: EdgeType, options?: WorkflowQueryOptions): Promise<Workflow[]> {
+    const connection = await this.connectionManager.getConnection();
+    const repository = connection.getRepository(WorkflowModel);
+
+    const queryBuilder = repository.createQueryBuilder('workflow')
+      .where('workflow.metadata->>\'edgeTypes\' @> :edgeType', { edgeType: JSON.stringify([edgeType.value]) });
 
     if (options?.includeDeleted === false) {
       queryBuilder.andWhere('workflow.isDeleted = false');

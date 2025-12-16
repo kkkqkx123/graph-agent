@@ -1,6 +1,6 @@
 import { injectable } from 'inversify';
 import { Edge } from '@domain/workflow/entities/edges/base/edge';
-import { ExecutionContext } from '../../engine/execution-context';
+import { ExecutionContext } from '@domain/workflow/execution/execution-context.interface';
 
 @injectable()
 export class EdgeEvaluator {
@@ -128,7 +128,7 @@ export class EdgeEvaluator {
 
   private evaluateTimeout(transition: any, context: ExecutionContext): boolean {
     const timeout = transition.timeout;
-    const startTime = transition.startTime || context.getStartTime();
+    const startTime = transition.startTime || context.startTime.getMilliseconds();
     const currentTime = Date.now();
     const elapsedTime = currentTime - startTime;
     

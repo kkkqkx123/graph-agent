@@ -1,6 +1,6 @@
 import { injectable } from 'inversify';
 import { Edge } from '@domain/workflow/entities/edges/base/edge';
-import { ExecutionContext } from '../../engine/execution-context';
+import { ExecutionContext } from '@domain/workflow/execution/execution-context.interface';
 
 @injectable()
 export class ConditionEvaluator {

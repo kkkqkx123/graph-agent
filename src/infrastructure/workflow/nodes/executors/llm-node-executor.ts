@@ -1,6 +1,6 @@
 import { injectable, inject } from 'inversify';
-import { Node } from '../../../../domain/workflow/workflow/entities/nodes/base/node';
-import { ExecutionContext } from '../../engine/execution-context';
+import { Node } from '@domain/workflow/entities/nodes/base/node';
+import { ExecutionContext } from '@domain/workflow/execution/execution-context.interface';
 
 @injectable()
 export class LLMNodeExecutor {
@@ -138,7 +138,8 @@ export class LLMNodeExecutor {
     const contextNodes = config['contextNodes'] || [];
 
     for (const nodeId of contextNodes as string[]) {
-      if (executedNodes.has(nodeId)) {
+      const executedNodesList = Array.isArray(executedNodes) ? executedNodes : Array.from(executedNodes);
+      if (executedNodesList.includes(nodeId) || (executedNodes instanceof Set && executedNodes.has(nodeId))) {
         const nodeResult = context.getNodeResult({ value: nodeId } as any);
         if (nodeResult) {
           messages.push({

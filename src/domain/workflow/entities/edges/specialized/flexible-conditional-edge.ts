@@ -1,7 +1,7 @@
 import { Edge, EdgeProps } from '@domain/workflow/entities/edges/base/edge';
 import { ID } from '@domain/common/value-objects/id';
 import { EdgeType } from '@/domain/workflow/value-objects/edge-type';
-import { WorkflowState } from '@domain/workflow/entities/workflow-state';
+import { WorkflowState } from '@domain/workflow/state/workflow-state';
 import { Timestamp } from '@domain/common/value-objects/timestamp';
 import { Version } from '@domain/common/value-objects/version';
 import { DomainError } from '@domain/common/errors/domain-error';

@@ -1,6 +1,6 @@
 import { ID } from '../../../common/value-objects/id';
 import { HookPoint } from '../../value-objects/hook-point';
-import { WorkflowState } from '../../entities/workflow-state';
+import { WorkflowState } from '../../state/workflow-state';
 
 /**
  * 钩子上下文接口
