@@ -8,6 +8,8 @@ import { WorkflowType } from '../value-objects/workflow-type';
 import { WorkflowConfig } from '../value-objects/workflow-config';
 import { WorkflowCreatedEvent } from '../events/workflow-created-event';
 import { WorkflowStatusChangedEvent } from '../events/workflow-status-changed-event';
+import { Node } from '../graph/entities/nodes/base/node';
+import { Edge } from '../graph/entities/edges/base/edge';
 
 /**
  * Workflow实体接口
@@ -19,15 +21,13 @@ export interface WorkflowProps {
   status: WorkflowStatus;
   type: WorkflowType;
   config: WorkflowConfig;
-  graphId?: ID;
+  nodes: Map<string, Node>;
+  edges: Map<string, Edge>;
+  definition?: Record<string, unknown>;
+  layout?: Record<string, unknown>;
   createdAt: Timestamp;
   updatedAt: Timestamp;
   version: Version;
-  lastExecutedAt?: Timestamp;
-  executionCount: number;
-  successCount: number;
-  failureCount: number;
-  averageExecutionTime?: number; // 平均执行时间（秒）
   tags: string[];
   metadata: Record<string, unknown>;
   isDeleted: boolean;
@@ -67,9 +67,10 @@ export class Workflow extends AggregateRoot {
   public static create(
     name: string,
     description?: string,
+    nodes?: Node[],
+    edges?: Edge[],
     type?: WorkflowType,
     config?: WorkflowConfig,
-    graphId?: ID,
     tags?: string[],
     metadata?: Record<string, unknown>,
     createdBy?: ID
@@ -80,6 +81,22 @@ export class Workflow extends AggregateRoot {
     const workflowStatus = WorkflowStatus.draft();
     const workflowConfig = config || WorkflowConfig.default();
 
+    // 创建节点和边的映射
+    const nodeMap = new Map<string, Node>();
+    const edgeMap = new Map<string, Edge>();
+    
+    if (nodes) {
+      for (const node of nodes) {
+        nodeMap.set(node.nodeId.toString(), node);
+      }
+    }
+    
+    if (edges) {
+      for (const edge of edges) {
+        edgeMap.set(edge.edgeId.toString(), edge);
+      }
+    }
+
     const props: WorkflowProps = {
       id: workflowId,
       name,
@@ -87,13 +104,11 @@ export class Workflow extends AggregateRoot {
       status: workflowStatus,
       type: workflowType,
       config: workflowConfig,
-      graphId,
+      nodes: nodeMap,
+      edges: edgeMap,
       createdAt: now,
       updatedAt: now,
       version: Version.initial(),
-      executionCount: 0,
-      successCount: 0,
-      failureCount: 0,
       tags: tags || [],
       metadata: metadata || {},
       isDeleted: false,
@@ -111,7 +126,7 @@ export class Workflow extends AggregateRoot {
       workflowType.toString(),
       workflowStatus.toString(),
       workflowConfig.value,
-      graphId,
+      undefined,
       createdBy
     ));
 
@@ -176,52 +191,53 @@ export class Workflow extends AggregateRoot {
   }
 
   /**
-   * 获取图ID
-   * @returns 图ID
+   * 获取所有节点
+   * @returns 节点映射
    */
-  public get graphId(): ID | undefined {
-    return this.props.graphId;
+  public get nodes(): Map<string, Node> {
+    return new Map(this.props.nodes);
   }
 
   /**
-   * 获取最后执行时间
-   * @returns 最后执行时间
+   * 获取所有边
+   * @returns 边映射
    */
-  public get lastExecutedAt(): Timestamp | undefined {
-    return this.props.lastExecutedAt;
+  public get edges(): Map<string, Edge> {
+    return new Map(this.props.edges);
   }
 
   /**
-   * 获取执行次数
-   * @returns 执行次数
+   * 获取节点数量
+   * @returns 节点数量
    */
-  public get executionCount(): number {
-    return this.props.executionCount;
+  public getNodeCount(): number {
+    return this.props.nodes.size;
   }
 
   /**
-   * 获取成功次数
-   * @returns 成功次数
+   * 获取边数量
+   * @returns 边数量
    */
-  public get successCount(): number {
-    return this.props.successCount;
+  public getEdgeCount(): number {
+    return this.props.edges.size;
   }
 
   /**
-   * 获取失败次数
-   * @returns 失败次数
+   * 获取图定义
+   * @returns 图定义
    */
-  public get failureCount(): number {
-    return this.props.failureCount;
+  public get definition(): Record<string, unknown> | undefined {
+    return this.props.definition;
   }
 
   /**
-   * 获取平均执行时间
-   * @returns 平均执行时间（秒）
+   * 获取布局信息
+   * @returns 布局信息
    */
-  public get averageExecutionTime(): number | undefined {
-    return this.props.averageExecutionTime;
+  public get layout(): Record<string, unknown> | undefined {
+    return this.props.layout;
   }
+
 
   /**
    * 获取标签
@@ -360,22 +376,285 @@ export class Workflow extends AggregateRoot {
   }
 
   /**
-   * 更新图ID
-   * @param graphId 新图ID
+   * 根据ID获取节点
+   * @param nodeId 节点ID
+   * @returns 节点或null
+   */
+  public getNode(nodeId: ID): Node | null {
+    return this.props.nodes.get(nodeId.toString()) || null;
+  }
+
+  /**
+   * 根据ID获取边
+   * @param edgeId 边ID
+   * @returns 边或null
+   */
+  public getEdge(edgeId: ID): Edge | null {
+    return this.props.edges.get(edgeId.toString()) || null;
+  }
+
+  /**
+   * 检查节点是否存在
+   * @param nodeId 节点ID
+   * @returns 是否存在
+   */
+  public hasNode(nodeId: ID): boolean {
+    return this.props.nodes.has(nodeId.toString());
+  }
+
+  /**
+   * 检查边是否存在
+   * @param edgeId 边ID
+   * @returns 是否存在
+   */
+  public hasEdge(edgeId: ID): boolean {
+    return this.props.edges.has(edgeId.toString());
+  }
+
+  /**
+   * 获取节点的入边
+   * @param nodeId 节点ID
+   * @returns 入边列表
+   */
+  public getIncomingEdges(nodeId: ID): Edge[] {
+    const incomingEdges: Edge[] = [];
+    for (const edge of this.props.edges.values()) {
+      if (edge.isTo(nodeId) && !edge.isDeleted()) {
+        incomingEdges.push(edge);
+      }
+    }
+    return incomingEdges;
+  }
+
+  /**
+   * 获取节点的出边
+   * @param nodeId 节点ID
+   * @returns 出边列表
+   */
+  public getOutgoingEdges(nodeId: ID): Edge[] {
+    const outgoingEdges: Edge[] = [];
+    for (const edge of this.props.edges.values()) {
+      if (edge.isFrom(nodeId) && !edge.isDeleted()) {
+        outgoingEdges.push(edge);
+      }
+    }
+    return outgoingEdges;
+  }
+
+  /**
+   * 获取节点的相邻节点
+   * @param nodeId 节点ID
+   * @returns 相邻节点列表
+   */
+  public getAdjacentNodes(nodeId: ID): Node[] {
+    const adjacentNodes: Node[] = [];
+    const visited = new Set<string>();
+
+    // 获取出边指向的节点
+    for (const edge of this.getOutgoingEdges(nodeId)) {
+      const targetNode = this.getNode(edge.toNodeId);
+      if (targetNode && !visited.has(targetNode.nodeId.toString())) {
+        adjacentNodes.push(targetNode);
+        visited.add(targetNode.nodeId.toString());
+      }
+    }
+
+    // 获取入边来源的节点
+    for (const edge of this.getIncomingEdges(nodeId)) {
+      const sourceNode = this.getNode(edge.fromNodeId);
+      if (sourceNode && !visited.has(sourceNode.nodeId.toString())) {
+        adjacentNodes.push(sourceNode);
+        visited.add(sourceNode.nodeId.toString());
+      }
+    }
+
+    return adjacentNodes;
+  }
+
+  /**
+   * 添加节点
+   * @param node 节点
+   * @param addedBy 添加者ID
+   */
+  public addNode(node: Node, addedBy?: ID): void {
+    if (this.props.isDeleted) {
+      throw new DomainError('无法向已删除的工作流添加节点');
+    }
+
+    if (!node.graphId.equals(this.props.id)) {
+      throw new DomainError('节点不属于当前工作流');
+    }
+
+    if (this.hasNode(node.nodeId)) {
+      throw new DomainError('节点已存在');
+    }
+
+    const newNodes = new Map(this.props.nodes);
+    newNodes.set(node.nodeId.toString(), node);
+
+    const newProps = {
+      ...this.props,
+      nodes: newNodes,
+      updatedAt: Timestamp.now(),
+      version: this.props.version.nextPatch(),
+      updatedBy: addedBy
+    };
+
+    (this as any).props = Object.freeze(newProps);
+    this.update();
+  }
+
+  /**
+   * 移除节点
+   * @param nodeId 节点ID
+   * @param removedBy 移除者ID
+   */
+  public removeNode(nodeId: ID, removedBy?: ID): void {
+    if (this.props.isDeleted) {
+      throw new DomainError('无法从已删除的工作流移除节点');
+    }
+
+    const node = this.getNode(nodeId);
+    if (!node) {
+      throw new DomainError('节点不存在');
+    }
+
+    // 检查是否有边连接到此节点
+    const connectedEdges = this.getIncomingEdges(nodeId).concat(this.getOutgoingEdges(nodeId));
+    if (connectedEdges.length > 0) {
+      throw new DomainError('无法移除有边连接的节点');
+    }
+
+    const newNodes = new Map(this.props.nodes);
+    newNodes.delete(nodeId.toString());
+
+    const newProps = {
+      ...this.props,
+      nodes: newNodes,
+      updatedAt: Timestamp.now(),
+      version: this.props.version.nextPatch(),
+      updatedBy: removedBy
+    };
+
+    (this as any).props = Object.freeze(newProps);
+    this.update();
+  }
+
+  /**
+   * 添加边
+   * @param edge 边
+   * @param addedBy 添加者ID
+   */
+  public addEdge(edge: Edge, addedBy?: ID): void {
+    if (this.props.isDeleted) {
+      throw new DomainError('无法向已删除的工作流添加边');
+    }
+
+    if (!edge.graphId.equals(this.props.id)) {
+      throw new DomainError('边不属于当前工作流');
+    }
+
+    if (this.hasEdge(edge.edgeId)) {
+      throw new DomainError('边已存在');
+    }
+
+    // 检查源节点和目标节点是否存在
+    if (!this.hasNode(edge.fromNodeId)) {
+      throw new DomainError('源节点不存在');
+    }
+
+    if (!this.hasNode(edge.toNodeId)) {
+      throw new DomainError('目标节点不存在');
+    }
+
+    const newEdges = new Map(this.props.edges);
+    newEdges.set(edge.edgeId.toString(), edge);
+
+    const newProps = {
+      ...this.props,
+      edges: newEdges,
+      updatedAt: Timestamp.now(),
+      version: this.props.version.nextPatch(),
+      updatedBy: addedBy
+    };
+
+    (this as any).props = Object.freeze(newProps);
+    this.update();
+  }
+
+  /**
+   * 移除边
+   * @param edgeId 边ID
+   * @param removedBy 移除者ID
+   */
+  public removeEdge(edgeId: ID, removedBy?: ID): void {
+    if (this.props.isDeleted) {
+      throw new DomainError('无法从已删除的工作流移除边');
+    }
+
+    const edge = this.getEdge(edgeId);
+    if (!edge) {
+      throw new DomainError('边不存在');
+    }
+
+    const newEdges = new Map(this.props.edges);
+    newEdges.delete(edgeId.toString());
+
+    const newProps = {
+      ...this.props,
+      edges: newEdges,
+      updatedAt: Timestamp.now(),
+      version: this.props.version.nextPatch(),
+      updatedBy: removedBy
+    };
+
+    (this as any).props = Object.freeze(newProps);
+    this.update();
+  }
+
+  /**
+   * 更新图定义
+   * @param definition 新定义
    * @param updatedBy 更新者ID
    */
-  public updateGraphId(graphId: ID, updatedBy?: ID): void {
+  public updateDefinition(definition: Record<string, unknown>, updatedBy?: ID): void {
     if (this.props.isDeleted) {
-      throw new DomainError('无法更新已删除工作流的图ID');
+      throw new DomainError('无法更新已删除工作流的图定义');
     }
 
     if (!this.props.status.canEdit()) {
-      throw new DomainError('只能编辑草稿状态工作流的图ID');
+      throw new DomainError('只能编辑草稿状态工作流的图定义');
     }
 
     const newProps = {
       ...this.props,
-      graphId,
+      definition,
+      updatedAt: Timestamp.now(),
+      version: this.props.version.nextPatch(),
+      updatedBy
+    };
+
+    (this as any).props = Object.freeze(newProps);
+    this.update();
+  }
+
+  /**
+   * 更新布局信息
+   * @param layout 新布局
+   * @param updatedBy 更新者ID
+   */
+  public updateLayout(layout: Record<string, unknown>, updatedBy?: ID): void {
+    if (this.props.isDeleted) {
+      throw new DomainError('无法更新已删除工作流的布局信息');
+    }
+
+    if (!this.props.status.canEdit()) {
+      throw new DomainError('只能编辑草稿状态工作流的布局信息');
+    }
+
+    const newProps = {
+      ...this.props,
+      layout,
       updatedAt: Timestamp.now(),
       version: this.props.version.nextPatch(),
       updatedBy
@@ -507,38 +786,6 @@ export class Workflow extends AggregateRoot {
     this.update();
   }
 
-  /**
-   * 记录执行结果
-   * @param success 是否成功
-   * @param executionTime 执行时间（秒）
-   */
-  public recordExecution(success: boolean, executionTime: number): void {
-    if (this.props.isDeleted) {
-      throw new DomainError('无法记录已删除工作流的执行结果');
-    }
-
-    const newExecutionCount = this.props.executionCount + 1;
-    const newSuccessCount = success ? this.props.successCount + 1 : this.props.successCount;
-    const newFailureCount = success ? this.props.failureCount : this.props.failureCount + 1;
-
-    // 计算新的平均执行时间
-    const currentTotalTime = (this.props.averageExecutionTime || 0) * this.props.executionCount;
-    const newAverageExecutionTime = (currentTotalTime + executionTime) / newExecutionCount;
-
-    const newProps = {
-      ...this.props,
-      executionCount: newExecutionCount,
-      successCount: newSuccessCount,
-      failureCount: newFailureCount,
-      averageExecutionTime: newAverageExecutionTime,
-      lastExecutedAt: Timestamp.now(),
-      updatedAt: Timestamp.now(),
-      version: this.props.version.nextPatch()
-    };
-
-    (this as any).props = Object.freeze(newProps);
-    this.update();
-  }
 
   /**
    * 标记工作流为已删除
@@ -567,27 +814,6 @@ export class Workflow extends AggregateRoot {
     return this.props.isDeleted;
   }
 
-  /**
-   * 获取成功率
-   * @returns 成功率（0-1）
-   */
-  public getSuccessRate(): number {
-    if (this.props.executionCount === 0) {
-      return 0;
-    }
-    return this.props.successCount / this.props.executionCount;
-  }
-
-  /**
-   * 获取失败率
-   * @returns 失败率（0-1）
-   */
-  public getFailureRate(): number {
-    if (this.props.executionCount === 0) {
-      return 0;
-    }
-    return this.props.failureCount / this.props.executionCount;
-  }
 
   /**
    * 获取业务标识
@@ -657,25 +883,33 @@ export class Workflow extends AggregateRoot {
       throw new DomainError('工作流配置不能为空');
     }
 
-    if (this.props.executionCount < 0) {
-      throw new DomainError('执行次数不能为负数');
+    // 验证图的基本结构
+    const startNodes = Array.from(this.props.nodes.values()).filter(node => node.type.isStart());
+    const endNodes = Array.from(this.props.nodes.values()).filter(node => node.type.isEnd());
+
+    if (startNodes.length === 0) {
+      throw new DomainError('工作流必须至少有一个开始节点');
     }
 
-    if (this.props.successCount < 0) {
-      throw new DomainError('成功次数不能为负数');
+    if (endNodes.length === 0) {
+      throw new DomainError('工作流必须至少有一个结束节点');
     }
 
-    if (this.props.failureCount < 0) {
-      throw new DomainError('失败次数不能为负数');
+    if (startNodes.length > 1) {
+      throw new DomainError('工作流只能有一个开始节点');
     }
 
-    if (this.props.successCount + this.props.failureCount > this.props.executionCount) {
-      throw new DomainError('成功和失败次数之和不能超过总执行次数');
+    // 验证所有边都连接到存在的节点
+    for (const edge of this.props.edges.values()) {
+      if (!this.hasNode(edge.fromNodeId)) {
+        throw new DomainError(`边 ${edge.edgeId} 的源节点不存在`);
+      }
+
+      if (!this.hasNode(edge.toNodeId)) {
+        throw new DomainError(`边 ${edge.edgeId} 的目标节点不存在`);
+      }
     }
 
-    if (this.props.averageExecutionTime !== undefined && this.props.averageExecutionTime < 0) {
-      throw new DomainError('平均执行时间不能为负数');
-    }
   }
 
   /**
@@ -686,5 +920,15 @@ export class Workflow extends AggregateRoot {
     this.props.status.validate();
     this.props.type.validate();
     this.props.config.validate();
+
+    // 验证所有节点
+    for (const node of this.props.nodes.values()) {
+      node.validate();
+    }
+
+    // 验证所有边
+    for (const edge of this.props.edges.values()) {
+      edge.validate();
+    }
   }
 }

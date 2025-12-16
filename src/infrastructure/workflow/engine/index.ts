@@ -1,4 +1,4 @@
-export { GraphExecutor } from './graph-executor';
+export { WorkflowExecutor } from './workflow-executor';
 export { ExecutionContext } from './execution-context';
 export { StateManager } from './state-manager';
 export { ExecutionPlanner } from './execution-planner';

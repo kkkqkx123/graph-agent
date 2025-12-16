@@ -11,7 +11,10 @@ export interface WorkflowCreatedEventData {
   type: string;
   status: string;
   config: Record<string, unknown>;
-  graphId?: string;
+  nodes: Record<string, unknown>[];
+  edges: Record<string, unknown>[];
+  definition?: Record<string, unknown>;
+  layout?: Record<string, unknown>;
   createdBy?: string;
   [key: string]: unknown;
 }
@@ -32,7 +35,10 @@ export class WorkflowCreatedEvent extends DomainEvent {
    * @param type 工作流类型
    * @param status 工作流状态
    * @param config 工作流配置
-   * @param graphId 图ID
+   * @param nodes 节点列表
+   * @param edges 边列表
+   * @param definition 工作流定义
+   * @param layout 布局信息
    * @param createdBy 创建者ID
    */
   constructor(
@@ -42,7 +48,10 @@ export class WorkflowCreatedEvent extends DomainEvent {
     type?: string,
     status?: string,
     config?: Record<string, unknown>,
-    graphId?: ID,
+    nodes?: Record<string, unknown>[],
+    edges?: Record<string, unknown>[],
+    definition?: Record<string, unknown>,
+    layout?: Record<string, unknown>,
     createdBy?: ID
   ) {
     super(workflowId);
@@ -53,7 +62,10 @@ export class WorkflowCreatedEvent extends DomainEvent {
       type: type || 'sequential',
       status: status || 'draft',
       config: config || {},
-      graphId: graphId?.toString(),
+      nodes: nodes || [],
+      edges: edges || [],
+      definition,
+      layout,
       createdBy: createdBy?.toString()
     };
   }
@@ -123,11 +135,35 @@ export class WorkflowCreatedEvent extends DomainEvent {
   }
 
   /**
-   * 获取图ID
-   * @returns 图ID
+   * 获取节点列表
+   * @returns 节点列表
    */
-  public getGraphId(): string | undefined {
-    return this.data.graphId;
+  public getNodes(): Record<string, unknown>[] {
+    return [...this.data.nodes];
+  }
+
+  /**
+   * 获取边列表
+   * @returns 边列表
+   */
+  public getEdges(): Record<string, unknown>[] {
+    return [...this.data.edges];
+  }
+
+  /**
+   * 获取工作流定义
+   * @returns 工作流定义
+   */
+  public getDefinition(): Record<string, unknown> | undefined {
+    return this.data.definition;
+  }
+
+  /**
+   * 获取布局信息
+   * @returns 布局信息
+   */
+  public getLayout(): Record<string, unknown> | undefined {
+    return this.data.layout;
   }
 
   /**

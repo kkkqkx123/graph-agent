@@ -5,6 +5,10 @@ import { WorkflowStatus } from '../value-objects/workflow-status';
 import { WorkflowType } from '../value-objects/workflow-type';
 import { WorkflowConfig } from '../value-objects/workflow-config';
 import { DomainError } from '../../common/errors/domain-error';
+import { Node } from '../graph/entities/nodes/base/node';
+import { Edge } from '../graph/entities/edges/base/edge';
+import { NodeType } from '../value-objects/node-type';
+import { EdgeType } from '../value-objects/edge-type';
 
 /**
  * 工作流领域服务
@@ -24,7 +28,8 @@ export class WorkflowDomainService {
    * @param description 工作流描述
    * @param type 工作流类型
    * @param config 工作流配置
-   * @param graphId 图ID
+   * @param nodes 节点列表
+   * @param edges 边列表
    * @param tags 标签
    * @param metadata 元数据
    * @param createdBy 创建者ID
@@ -35,7 +40,8 @@ export class WorkflowDomainService {
     description?: string,
     type?: WorkflowType,
     config?: WorkflowConfig,
-    graphId?: ID,
+    nodes?: Node[],
+    edges?: Edge[],
     tags?: string[],
     metadata?: Record<string, unknown>,
     createdBy?: ID
@@ -50,9 +56,10 @@ export class WorkflowDomainService {
     const workflow = Workflow.create(
       name,
       description,
+      nodes,
+      edges,
       type,
       config,
-      graphId,
       tags,
       metadata,
       createdBy
@@ -79,9 +86,9 @@ export class WorkflowDomainService {
       throw new DomainError('只能激活草稿或非活跃状态的工作流');
     }
 
-    // 验证工作流是否有关联的图
-    if (!workflow.graphId) {
-      throw new DomainError('工作流没有关联的图，无法激活');
+    // 验证工作流是否有关联的节点和边
+    if (workflow.nodes.size === 0) {
+      throw new DomainError('工作流没有节点，无法激活');
     }
 
     // 激活工作流
@@ -167,27 +174,138 @@ export class WorkflowDomainService {
   }
 
   /**
-   * 更新工作流图
+   * 添加节点到工作流
    * @param workflowId 工作流ID
-   * @param graphId 新图ID
+   * @param node 节点
    * @param userId 操作用户ID
    * @returns 更新后的工作流
    */
-  async updateWorkflowGraph(
+  async addNodeToWorkflow(
     workflowId: ID,
-    graphId: ID,
+    node: Node,
     userId?: ID
   ): Promise<Workflow> {
     const workflow = await this.workflowRepository.findByIdOrFail(workflowId);
 
     if (!workflow.status.canEdit()) {
-      throw new DomainError('只能编辑草稿状态工作流的图');
+      throw new DomainError('只能编辑草稿状态工作流的节点');
     }
 
-    // 更新图ID
-    workflow.updateGraphId(graphId, userId);
+    // 添加节点
+    workflow.addNode(node, userId);
 
     return await this.workflowRepository.save(workflow);
+  }
+
+  /**
+   * 从工作流中移除节点
+   * @param workflowId 工作流ID
+   * @param nodeId 节点ID
+   * @param userId 操作用户ID
+   * @returns 更新后的工作流
+   */
+  async removeNodeFromWorkflow(
+    workflowId: ID,
+    nodeId: ID,
+    userId?: ID
+  ): Promise<Workflow> {
+    const workflow = await this.workflowRepository.findByIdOrFail(workflowId);
+
+    if (!workflow.status.canEdit()) {
+      throw new DomainError('只能编辑草稿状态工作流的节点');
+    }
+
+    // 移除节点
+    workflow.removeNode(nodeId, userId);
+
+    return await this.workflowRepository.save(workflow);
+  }
+
+  /**
+   * 添加边到工作流
+   * @param workflowId 工作流ID
+   * @param edge 边
+   * @param userId 操作用户ID
+   * @returns 更新后的工作流
+   */
+  async addEdgeToWorkflow(
+    workflowId: ID,
+    edge: Edge,
+    userId?: ID
+  ): Promise<Workflow> {
+    const workflow = await this.workflowRepository.findByIdOrFail(workflowId);
+
+    if (!workflow.status.canEdit()) {
+      throw new DomainError('只能编辑草稿状态工作流的边');
+    }
+
+    // 添加边
+    workflow.addEdge(edge, userId);
+
+    return await this.workflowRepository.save(workflow);
+  }
+
+  /**
+   * 从工作流中移除边
+   * @param workflowId 工作流ID
+   * @param edgeId 边ID
+   * @param userId 操作用户ID
+   * @returns 更新后的工作流
+   */
+  async removeEdgeFromWorkflow(
+    workflowId: ID,
+    edgeId: ID,
+    userId?: ID
+  ): Promise<Workflow> {
+    const workflow = await this.workflowRepository.findByIdOrFail(workflowId);
+
+    if (!workflow.status.canEdit()) {
+      throw new DomainError('只能编辑草稿状态工作流的边');
+    }
+
+    // 移除边
+    workflow.removeEdge(edgeId, userId);
+
+    return await this.workflowRepository.save(workflow);
+  }
+
+  /**
+   * 根据节点类型查找工作流
+   * @param nodeType 节点类型
+   * @param options 查询选项
+   * @returns 工作流列表
+   */
+  async findWorkflowsByNodeType(
+    nodeType: NodeType,
+    options?: any
+  ): Promise<Workflow[]> {
+    return await this.workflowRepository.findByNodeType(nodeType, options);
+  }
+
+  /**
+   * 根据边类型查找工作流
+   * @param edgeType 边类型
+   * @param options 查询选项
+   * @returns 工作流列表
+   */
+  async findWorkflowsByEdgeType(
+    edgeType: EdgeType,
+    options?: any
+  ): Promise<Workflow[]> {
+    return await this.workflowRepository.findByEdgeType(edgeType, options);
+  }
+
+  /**
+   * 获取最复杂的工作流
+   * @param limit 限制数量
+   * @param options 查询选项
+   * @returns 最复杂的工作流列表
+   */
+  async getMostComplexWorkflows(
+    limit: number,
+    options?: any
+  ): Promise<Workflow[]> {
+    return await this.workflowRepository.getMostComplexWorkflows(limit, options);
   }
 
   /**
@@ -238,80 +356,6 @@ export class WorkflowDomainService {
     return await this.workflowRepository.save(workflow);
   }
 
-  /**
-   * 记录工作流执行结果
-   * @param workflowId 工作流ID
-   * @param success 是否成功
-   * @param executionTime 执行时间（秒）
-   * @returns 更新后的工作流
-   */
-  async recordWorkflowExecution(
-    workflowId: ID,
-    success: boolean,
-    executionTime: number
-  ): Promise<Workflow> {
-    const workflow = await this.workflowRepository.findByIdOrFail(workflowId);
-
-    if (workflow.isDeleted()) {
-      throw new DomainError('无法记录已删除工作流的执行结果');
-    }
-
-    // 记录执行结果
-    workflow.recordExecution(success, executionTime);
-
-    return await this.workflowRepository.save(workflow);
-  }
-
-  /**
-   * 获取工作流执行统计信息
-   * @param options 查询选项
-   * @returns 执行统计信息
-   */
-  async getWorkflowExecutionStats(options?: any): Promise<{
-    total: number;
-    draft: number;
-    active: number;
-    inactive: number;
-    archived: number;
-    totalExecutions: number;
-    totalSuccesses: number;
-    totalFailures: number;
-    averageSuccessRate: number;
-  }> {
-    return await this.workflowRepository.getWorkflowExecutionStats(options);
-  }
-
-  /**
-   * 获取最活跃的工作流
-   * @param limit 限制数量
-   * @param options 查询选项
-   * @returns 最活跃的工作流列表
-   */
-  async getMostActiveWorkflows(
-    limit: number,
-    options?: any
-  ): Promise<Workflow[]> {
-    return await this.workflowRepository.getMostActiveWorkflows(limit, options);
-  }
-
-  /**
-   * 获取成功率最高的工作流
-   * @param limit 限制数量
-   * @param minExecutionCount 最小执行次数
-   * @param options 查询选项
-   * @returns 成功率最高的工作流列表
-   */
-  async getMostSuccessfulWorkflows(
-    limit: number,
-    minExecutionCount: number,
-    options?: any
-  ): Promise<Workflow[]> {
-    return await this.workflowRepository.getMostSuccessfulWorkflows(
-      limit,
-      minExecutionCount,
-      options
-    );
-  }
 
   /**
    * 批量激活工作流
@@ -373,40 +417,6 @@ export class WorkflowDomainService {
     );
   }
 
-  /**
-   * 清理长时间未使用的工作流
-   * @param daysThreshold 天数阈值
-   * @param userId 操作用户ID
-   * @returns 归档的工作流数量
-   */
-  async cleanupUnusedWorkflows(
-    daysThreshold: number,
-    userId?: ID
-  ): Promise<number> {
-    const thresholdDate = new Date();
-    thresholdDate.setDate(thresholdDate.getDate() - daysThreshold);
-
-    const inactiveWorkflows = await this.workflowRepository.findInactiveWorkflows({
-      lastExecutedBefore: thresholdDate
-    });
-
-    let archivedCount = 0;
-    for (const workflow of inactiveWorkflows) {
-      try {
-        workflow.changeStatus(
-          WorkflowStatus.archived(),
-          userId,
-          `长时间未使用（超过${daysThreshold}天），自动归档`
-        );
-        await this.workflowRepository.save(workflow);
-        archivedCount++;
-      } catch (error) {
-        console.error(`归档工作流失败: ${workflow.workflowId}`, error);
-      }
-    }
-
-    return archivedCount;
-  }
 
   /**
    * 验证工作流是否可以执行

@@ -1,5 +1,5 @@
-import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, OneToOne, JoinColumn } from 'typeorm';
-import { GraphModel } from './graph.model';
+import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, OneToMany } from 'typeorm';
+import { ExecutionStatsModel } from './execution-stats.model';
 
 @Entity('workflows')
 export class WorkflowModel {
@@ -11,9 +11,6 @@ export class WorkflowModel {
 
   @Column({ nullable: true })
   description?: string;
-
-  @Column({ nullable: true })
-  graphId?: string;
 
   @Column({
     type: 'enum',
@@ -28,6 +25,18 @@ export class WorkflowModel {
     default: 'sequential'
   })
   executionMode!: string;
+
+  @Column('jsonb', { nullable: true })
+  nodes?: any;
+
+  @Column('jsonb', { nullable: true })
+  edges?: any;
+
+  @Column('jsonb', { nullable: true })
+  definition?: any;
+
+  @Column('jsonb', { nullable: true })
+  layout?: any;
 
   @Column('jsonb')
   metadata!: any;
@@ -53,7 +62,6 @@ export class WorkflowModel {
   @UpdateDateColumn()
   updatedAt!: Date;
 
-  @OneToOne(() => GraphModel, graph => graph.workflow)
-  @JoinColumn()
-  graph?: GraphModel;
+  @OneToMany(() => ExecutionStatsModel, stats => stats.workflow)
+  executionStats?: ExecutionStatsModel[];
 }

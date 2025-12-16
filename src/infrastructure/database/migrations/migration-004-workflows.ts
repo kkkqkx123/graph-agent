@@ -1,11 +1,12 @@
-import { QueryRunner, Table, TableIndex } from 'typeorm';
+import { QueryRunner, Table, TableIndex, TableForeignKey } from 'typeorm';
 import { Migration } from './migration-runner';
 
 export const migration004: Migration = {
   id: '004-workflows',
-  name: 'Create workflows table',
+  name: 'Create workflows and execution_stats tables',
   
   async up(queryRunner: QueryRunner): Promise<void> {
+    // 创建workflows表
     await queryRunner.createTable(
       new Table({
         name: 'workflows',
@@ -28,8 +29,24 @@ export const migration004: Migration = {
             isNullable: true,
           },
           {
-            name: 'graphId',
-            type: 'uuid',
+            name: 'nodes',
+            type: 'jsonb',
+            isNullable: true,
+          },
+          {
+            name: 'edges',
+            type: 'jsonb',
+            isNullable: true,
+          },
+          {
+            name: 'definition',
+            type: 'jsonb',
+            isNullable: true,
+          },
+          {
+            name: 'layout',
+            type: 'jsonb',
+            isNullable: true,
           },
           {
             name: 'state',
@@ -87,12 +104,65 @@ export const migration004: Migration = {
       })
     );
 
-    // 创建索引
-    await queryRunner.createIndex('workflows', new TableIndex({
-      name: 'IDX_workflows_graphId',
-      columnNames: ['graphId'],
-    }));
+    // 创建execution_stats表
+    await queryRunner.createTable(
+      new Table({
+        name: 'execution_stats',
+        columns: [
+          {
+            name: 'id',
+            type: 'uuid',
+            isPrimary: true,
+            generationStrategy: 'uuid',
+            default: 'uuid_generate_v4()'
+          },
+          {
+            name: 'workflowId',
+            type: 'uuid',
+            isUnique: true
+          },
+          {
+            name: 'executionCount',
+            type: 'integer',
+            default: 0
+          },
+          {
+            name: 'successCount',
+            type: 'integer',
+            default: 0
+          },
+          {
+            name: 'failureCount',
+            type: 'integer',
+            default: 0
+          },
+          {
+            name: 'averageExecutionTime',
+            type: 'decimal',
+            precision: 10,
+            scale: 2,
+            isNullable: true
+          },
+          {
+            name: 'lastExecutedAt',
+            type: 'timestamp',
+            isNullable: true
+          },
+          {
+            name: 'createdAt',
+            type: 'timestamp',
+            default: 'now()'
+          },
+          {
+            name: 'updatedAt',
+            type: 'timestamp',
+            default: 'now()'
+          }
+        ]
+      })
+    );
 
+    // 创建workflows表索引
     await queryRunner.createIndex('workflows', new TableIndex({
       name: 'IDX_workflows_state',
       columnNames: ['state'],
@@ -112,9 +182,31 @@ export const migration004: Migration = {
       name: 'IDX_workflows_createdAt',
       columnNames: ['createdAt'],
     }));
+
+    // 创建execution_stats表索引
+    await queryRunner.createIndex(
+      'execution_stats',
+      new TableIndex({
+        name: 'IDX_execution_stats_workflowId',
+        columnNames: ['workflowId'],
+        isUnique: true
+      })
+    );
+
+    // 创建外键约束
+    await queryRunner.createForeignKey(
+      'execution_stats',
+      new TableForeignKey({
+        columnNames: ['workflowId'],
+        referencedColumnNames: ['id'],
+        referencedTableName: 'workflows',
+        onDelete: 'CASCADE'
+      })
+    );
   },
 
   async down(queryRunner: QueryRunner): Promise<void> {
+    await queryRunner.dropTable('execution_stats');
     await queryRunner.dropTable('workflows');
   }
 };

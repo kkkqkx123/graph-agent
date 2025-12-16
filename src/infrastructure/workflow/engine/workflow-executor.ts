@@ -1,5 +1,5 @@
 import { injectable, inject } from 'inversify';
-import { Graph } from '@domain/workflow/graph/entities/graph';
+import { Workflow } from '@domain/workflow/entities/workflow';
 import { Node } from '@domain/workflow/graph/entities/nodes/base/node';
 import { Edge } from '@domain/workflow/graph/entities/edges/base/edge';
 import { NodeId } from '@domain/workflow/graph/value-objects/node-id';
@@ -12,25 +12,25 @@ import { ParallelStrategy } from '../strategies/parallel-strategy';
 import { SequentialStrategy } from '../strategies/sequential-strategy';
 
 @injectable()
-export class GraphExecutor {
+export class WorkflowExecutor {
   constructor(
     @inject('NodeExecutorFactory') private nodeExecutorFactory: NodeExecutorFactory,
     @inject('EdgeEvaluator') private edgeEvaluator: EdgeEvaluator,
     @inject('StateManager') private stateManager: StateManager
   ) {}
 
-  async execute(graph: Graph, input: any): Promise<any> {
+  async execute(workflow: Workflow, input: any): Promise<any> {
     // Create execution context
-    const context = new ExecutionContext(graph, input);
+    const context = new ExecutionContext(workflow, input);
     
     // Initialize state
     await this.stateManager.initialize(context);
     
     try {
       // Determine execution strategy
-      const strategy = this.determineExecutionStrategy(graph);
+      const strategy = this.determineExecutionStrategy(workflow);
       
-      // Execute graph
+      // Execute workflow
       const result = await strategy.execute(context, this);
       
       // Save final state
@@ -67,9 +67,9 @@ export class GraphExecutor {
     return result;
   }
 
-  private determineExecutionStrategy(graph: Graph): ExecutionStrategy {
-    // Check if graph has parallel execution nodes
-    const hasParallelNodes = this.hasParallelExecutionNodes(graph);
+  private determineExecutionStrategy(workflow: Workflow): ExecutionStrategy {
+    // Check if workflow has parallel execution nodes
+    const hasParallelNodes = this.hasParallelExecutionNodes(workflow);
     
     if (hasParallelNodes) {
       return new ParallelStrategy();
@@ -78,9 +78,9 @@ export class GraphExecutor {
     }
   }
 
-  private hasParallelExecutionNodes(graph: Graph): boolean {
+  private hasParallelExecutionNodes(workflow: Workflow): boolean {
     // Check if any node has parallel execution configuration
-    for (const node of graph.nodes.values()) {
+    for (const node of workflow.nodes.values()) {
       if (node.properties['parallel'] === true) {
         return true;
       }
@@ -89,11 +89,11 @@ export class GraphExecutor {
   }
 
   async getExecutableNodes(context: ExecutionContext): Promise<Node[]> {
-    const graph = context.getGraph();
+    const workflow = context.getWorkflow();
     const executedNodes = context.getExecutedNodes();
     const executableNodes: Node[] = [];
 
-    for (const node of graph.nodes.values()) {
+    for (const node of workflow.nodes.values()) {
       // Skip already executed nodes
       if (executedNodes.has(node.id.value)) {
         continue;
@@ -126,10 +126,10 @@ export class GraphExecutor {
     return executableNodes;
   }
 
-  private getIncomingEdges(node: Node, graph: Graph): Edge[] {
+  private getIncomingEdges(node: Node, workflow: Workflow): Edge[] {
     const incomingEdges: Edge[] = [];
     
-    for (const edge of graph.edges.values()) {
+    for (const edge of workflow.edges.values()) {
       if (edge.toNodeId.value === node.id.value) {
         incomingEdges.push(edge);
       }
@@ -138,10 +138,10 @@ export class GraphExecutor {
     return incomingEdges;
   }
 
-  private getOutgoingEdges(node: Node, graph: Graph): Edge[] {
+  private getOutgoingEdges(node: Node, workflow: Workflow): Edge[] {
     const outgoingEdges: Edge[] = [];
     
-    for (const edge of graph.edges.values()) {
+    for (const edge of workflow.edges.values()) {
       if (edge.fromNodeId.value === node.id.value) {
         outgoingEdges.push(edge);
       }
@@ -151,11 +151,11 @@ export class GraphExecutor {
   }
 
   async isExecutionComplete(context: ExecutionContext): Promise<boolean> {
-    const graph = context.getGraph();
+    const workflow = context.getWorkflow();
     const executedNodes = context.getExecutedNodes();
     
     // Check if all nodes have been executed
-    for (const node of graph.nodes.values()) {
+    for (const node of workflow.nodes.values()) {
       if (!executedNodes.has(node.id.value)) {
         // Check if node is still executable
         const executableNodes = await this.getExecutableNodes(context);
@@ -169,32 +169,32 @@ export class GraphExecutor {
   }
 
   async getExecutionPath(context: ExecutionContext): Promise<NodeId[]> {
-    const graph = context.getGraph();
+    const workflow = context.getWorkflow();
     const executedNodes = context.getExecutedNodes();
     const path: NodeId[] = [];
     
     // Find start nodes (nodes with no incoming edges)
-    const startNodes = this.findStartNodes(graph);
+    const startNodes = this.findStartNodes(workflow);
     
     // Build execution path
     for (const startNode of startNodes) {
-      await this.buildExecutionPath(startNode, graph, executedNodes, path, new Set());
+      await this.buildExecutionPath(startNode, workflow, executedNodes, path, new Set());
     }
     
     return path;
   }
 
-  private findStartNodes(graph: Graph): Node[] {
+  private findStartNodes(workflow: Workflow): Node[] {
     const startNodes: Node[] = [];
     const nodesWithIncomingEdges = new Set<string>();
     
     // Find all nodes that have incoming edges
-    for (const edge of graph.edges.values()) {
+    for (const edge of workflow.edges.values()) {
       nodesWithIncomingEdges.add(edge.toNodeId.value);
     }
     
     // Nodes without incoming edges are start nodes
-    for (const node of graph.nodes.values()) {
+    for (const node of workflow.nodes.values()) {
       if (!nodesWithIncomingEdges.has(node.id.value)) {
         startNodes.push(node);
       }
@@ -205,7 +205,7 @@ export class GraphExecutor {
 
   private async buildExecutionPath(
     node: Node,
-    graph: Graph,
+    workflow: Workflow,
     executedNodes: Set<string>,
     path: NodeId[],
     visited: Set<string>
@@ -223,44 +223,44 @@ export class GraphExecutor {
     }
     
     // Follow outgoing edges
-    const outgoingEdges = this.getOutgoingEdges(node, graph);
+    const outgoingEdges = this.getOutgoingEdges(node, workflow);
     for (const edge of outgoingEdges) {
-      const targetNode = graph.nodes.get(edge.toNodeId.value);
+      const targetNode = workflow.nodes.get(edge.toNodeId.value);
       if (targetNode) {
-        await this.buildExecutionPath(targetNode, graph, executedNodes, path, visited);
+        await this.buildExecutionPath(targetNode, workflow, executedNodes, path, visited);
       }
     }
   }
 
-  async validateGraph(graph: Graph): Promise<{ valid: boolean; errors: string[] }> {
+  async validateWorkflow(workflow: Workflow): Promise<{ valid: boolean; errors: string[] }> {
     const errors: string[] = [];
     
-    // Check if graph has nodes
-    if (graph.nodes.size === 0) {
-      errors.push('Graph must have at least one node');
+    // Check if workflow has nodes
+    if (workflow.nodes.size === 0) {
+      errors.push('Workflow must have at least one node');
     }
     
     // Check if all edges reference valid nodes
-    for (const edge of graph.edges.values()) {
-      if (!graph.nodes.has(edge.fromNodeId.value)) {
+    for (const edge of workflow.edges.values()) {
+      if (!workflow.nodes.has(edge.fromNodeId.value)) {
         errors.push(`Edge references non-existent source node: ${edge.fromNodeId.value}`);
       }
       
-      if (!graph.nodes.has(edge.toNodeId.value)) {
+      if (!workflow.nodes.has(edge.toNodeId.value)) {
         errors.push(`Edge references non-existent target node: ${edge.toNodeId.value}`);
       }
     }
     
     // Check for cycles
-    const hasCycles = await this.detectCycles(graph);
+    const hasCycles = await this.detectCycles(workflow);
     if (hasCycles) {
-      errors.push('Graph contains cycles, which are not supported in sequential execution');
+      errors.push('Workflow contains cycles, which are not supported in sequential execution');
     }
     
     // Check for disconnected nodes
-    const disconnectedNodes = this.findDisconnectedNodes(graph);
+    const disconnectedNodes = this.findDisconnectedNodes(workflow);
     if (disconnectedNodes.length > 0) {
-      errors.push(`Graph has disconnected nodes: ${disconnectedNodes.map(n => n.id.value).join(', ')}`);
+      errors.push(`Workflow has disconnected nodes: ${disconnectedNodes.map(n => n.id.value).join(', ')}`);
     }
     
     return {
@@ -269,12 +269,12 @@ export class GraphExecutor {
     };
   }
 
-  private async detectCycles(graph: Graph): Promise<boolean> {
+  private async detectCycles(workflow: Workflow): Promise<boolean> {
     const visited = new Set<string>();
     const recursionStack = new Set<string>();
     
-    for (const node of graph.nodes.values()) {
-      if (await this.hasCycleDFS(node, graph, visited, recursionStack)) {
+    for (const node of workflow.nodes.values()) {
+      if (await this.hasCycleDFS(node, workflow, visited, recursionStack)) {
         return true;
       }
     }
@@ -284,20 +284,20 @@ export class GraphExecutor {
 
   private async hasCycleDFS(
     node: Node,
-    graph: Graph,
+    workflow: Workflow,
     visited: Set<string>,
     recursionStack: Set<string>
   ): Promise<boolean> {
     visited.add(node.id.value);
     recursionStack.add(node.id.value);
     
-    const outgoingEdges = this.getOutgoingEdges(node, graph);
+    const outgoingEdges = this.getOutgoingEdges(node, workflow);
     for (const edge of outgoingEdges) {
-      const targetNode = graph.nodes.get(edge.toNodeId.value);
+      const targetNode = workflow.nodes.get(edge.toNodeId.value);
       if (!targetNode) continue;
       
       if (!visited.has(targetNode.id.value)) {
-        if (await this.hasCycleDFS(targetNode, graph, visited, recursionStack)) {
+        if (await this.hasCycleDFS(targetNode, workflow, visited, recursionStack)) {
           return true;
         }
       } else if (recursionStack.has(targetNode.id.value)) {
@@ -309,26 +309,26 @@ export class GraphExecutor {
     return false;
   }
 
-  private findDisconnectedNodes(graph: Graph): Node[] {
-    if (graph.nodes.size === 0) {
+  private findDisconnectedNodes(workflow: Workflow): Node[] {
+    if (workflow.nodes.size === 0) {
       return [];
     }
     
     const visited = new Set<string>();
-    const startNodes = this.findStartNodes(graph);
+    const startNodes = this.findStartNodes(workflow);
     
     // If no start nodes, pick any node as starting point
-    const startNodeArray = Array.from(graph.nodes.values());
+    const startNodeArray = Array.from(workflow.nodes.values());
     const startNode = startNodes.length > 0 ? startNodes[0] : startNodeArray[0];
     
     // DFS to find all reachable nodes
     if (startNode) {
-      this.dfsVisit(startNode, graph, visited);
+      this.dfsVisit(startNode, workflow, visited);
     }
     
     // Nodes not visited are disconnected
     const disconnectedNodes: Node[] = [];
-    for (const node of graph.nodes.values()) {
+    for (const node of workflow.nodes.values()) {
       if (!visited.has(node.id.value)) {
         disconnectedNodes.push(node);
       }
@@ -337,14 +337,14 @@ export class GraphExecutor {
     return disconnectedNodes;
   }
 
-  private dfsVisit(node: Node, graph: Graph, visited: Set<string>): void {
+  private dfsVisit(node: Node, workflow: Workflow, visited: Set<string>): void {
     visited.add(node.id.value);
     
-    const outgoingEdges = this.getOutgoingEdges(node, graph);
+    const outgoingEdges = this.getOutgoingEdges(node, workflow);
     for (const edge of outgoingEdges) {
-      const targetNode = graph.nodes.get(edge.toNodeId.value);
+      const targetNode = workflow.nodes.get(edge.toNodeId.value);
       if (targetNode && !visited.has(targetNode.id.value)) {
-        this.dfsVisit(targetNode, graph, visited);
+        this.dfsVisit(targetNode, workflow, visited);
       }
     }
   }

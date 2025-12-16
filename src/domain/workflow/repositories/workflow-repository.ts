@@ -4,6 +4,10 @@ import { ID } from '../../common/value-objects/id';
 import { WorkflowStatus } from '../value-objects/workflow-status';
 import { WorkflowType } from '../value-objects/workflow-type';
 import { QueryOptions, PaginatedResult } from '../../common/repositories/repository';
+import { Node } from '../entities/nodes/base/node';
+import { Edge } from '../entities/edges/base/edge';
+import { NodeType } from '../value-objects/node-type';
+import { EdgeType } from '../value-objects/edge-type';
 
 /**
  * 工作流查询选项接口
@@ -41,35 +45,29 @@ export interface WorkflowQueryOptions extends QueryOptions {
   createdBefore?: Date;
 
   /**
-   * 最后执行时间范围过滤
-   */
-  lastExecutedAfter?: Date;
-  lastExecutedBefore?: Date;
-
-  /**
    * 是否包含已删除的工作流
    */
   includeDeleted?: boolean;
 
   /**
-   * 最小执行次数
+   * 最小节点数量
    */
-  minExecutionCount?: number;
+  minNodeCount?: number;
 
   /**
-   * 最大执行次数
+   * 最大节点数量
    */
-  maxExecutionCount?: number;
+  maxNodeCount?: number;
 
   /**
-   * 最小成功率
+   * 最小边数量
    */
-  minSuccessRate?: number;
+  minEdgeCount?: number;
 
   /**
-   * 最大成功率
+   * 最大边数量
    */
-  maxSuccessRate?: number;
+  maxEdgeCount?: number;
 }
 
 /**
@@ -226,25 +224,12 @@ export interface WorkflowRepository extends Repository<Workflow, ID> {
   getRecentlyCreatedWorkflows(limit: number, options?: WorkflowQueryOptions): Promise<Workflow[]>;
 
   /**
-   * 获取最近执行的工作流
+   * 获取最复杂的工作流（按节点和边数量）
    * @param limit 限制数量
    * @param options 查询选项
-   * @returns 最近执行的工作流列表
+   * @returns 最复杂的工作流列表
    */
-  getRecentlyExecutedWorkflows(limit: number, options?: WorkflowQueryOptions): Promise<Workflow[]>;
-
-  /**
-   * 获取成功率最高的工作流
-   * @param limit 限制数量
-   * @param minExecutionCount 最小执行次数
-   * @param options 查询选项
-   * @returns 成功率最高的工作流列表
-   */
-  getMostSuccessfulWorkflows(
-    limit: number,
-    minExecutionCount: number,
-    options?: WorkflowQueryOptions
-  ): Promise<Workflow[]>;
+  getMostComplexWorkflows(limit: number, options?: WorkflowQueryOptions): Promise<Workflow[]>;
 
   /**
    * 批量更新工作流状态
@@ -295,21 +280,36 @@ export interface WorkflowRepository extends Repository<Workflow, ID> {
   findSoftDeleted(options?: WorkflowQueryOptions): Promise<Workflow[]>;
 
   /**
-   * 获取工作流执行统计信息
+   * 根据节点ID查找包含该节点的工作流
+   * @param nodeId 节点ID
    * @param options 查询选项
-   * @returns 执行统计信息
+   * @returns 工作流列表
    */
-  getWorkflowExecutionStats(options?: WorkflowQueryOptions): Promise<{
-    total: number;
-    draft: number;
-    active: number;
-    inactive: number;
-    archived: number;
-    totalExecutions: number;
-    totalSuccesses: number;
-    totalFailures: number;
-    averageSuccessRate: number;
-  }>;
+  findByNodeId(nodeId: ID, options?: WorkflowQueryOptions): Promise<Workflow[]>;
+
+  /**
+   * 根据边ID查找包含该边的工作流
+   * @param edgeId 边ID
+   * @param options 查询选项
+   * @returns 工作流列表
+   */
+  findByEdgeId(edgeId: ID, options?: WorkflowQueryOptions): Promise<Workflow[]>;
+
+  /**
+   * 根据节点类型查找工作流
+   * @param nodeType 节点类型
+   * @param options 查询选项
+   * @returns 工作流列表
+   */
+  findByNodeType(nodeType: NodeType, options?: WorkflowQueryOptions): Promise<Workflow[]>;
+
+  /**
+   * 根据边类型查找工作流
+   * @param edgeType 边类型
+   * @param options 查询选项
+   * @returns 工作流列表
+   */
+  findByEdgeType(edgeType: EdgeType, options?: WorkflowQueryOptions): Promise<Workflow[]>;
 
   /**
    * 获取工作流标签统计信息

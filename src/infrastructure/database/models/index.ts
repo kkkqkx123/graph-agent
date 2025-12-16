@@ -5,5 +5,6 @@ export { WorkflowModel } from './workflow.model';
 export { GraphModel } from './graph.model';
 export { NodeModel } from './node.model';
 export { EdgeModel } from './edge.model';
+export { ExecutionStatsModel } from './execution-stats.model';
 export { HistoryModel } from './history.model';
 export { CheckpointModel } from './checkpoint.model';
