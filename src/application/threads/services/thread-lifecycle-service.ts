@@ -11,8 +11,7 @@ import { ThreadDomainService } from '../../../domain/thread/services/thread-doma
 import { ThreadPriority } from '../../../domain/thread/value-objects/thread-priority';
 import { DomainError } from '../../../domain/common/errors/domain-error';
 import { BaseApplicationService } from '../../common/base-application-service';
-import { ThreadDtoMapper } from './mappers/thread-dto-mapper';
-import { CreateThreadRequest, ThreadInfo } from '../../common/dtos';
+import { CreateThreadRequest, ThreadInfo } from '../dtos';
 import { ILogger } from '@shared/types/logger';
 
 /**
@@ -23,7 +22,6 @@ export class ThreadLifecycleService extends BaseApplicationService {
     private readonly threadRepository: ThreadRepository,
     private readonly sessionRepository: SessionRepository,
     private readonly threadDomainService: ThreadDomainService,
-    private readonly dtoMapper: ThreadDtoMapper,
     logger: ILogger
   ) {
     super(logger);
@@ -86,7 +84,7 @@ export class ThreadLifecycleService extends BaseApplicationService {
         const user = this.parseOptionalId(userId, '用户ID');
 
         const thread = await this.threadDomainService.startThread(id, user);
-        return this.dtoMapper.mapToThreadInfo(thread);
+        return this.mapThreadToInfo(thread);
       },
       { threadId, userId }
     );
@@ -107,7 +105,7 @@ export class ThreadLifecycleService extends BaseApplicationService {
         const user = this.parseOptionalId(userId, '用户ID');
 
         const thread = await this.threadDomainService.pauseThread(id, user, reason);
-        return this.dtoMapper.mapToThreadInfo(thread);
+        return this.mapThreadToInfo(thread);
       },
       { threadId, userId, reason }
     );
@@ -128,7 +126,7 @@ export class ThreadLifecycleService extends BaseApplicationService {
         const user = this.parseOptionalId(userId, '用户ID');
 
         const thread = await this.threadDomainService.resumeThread(id, user, reason);
-        return this.dtoMapper.mapToThreadInfo(thread);
+        return this.mapThreadToInfo(thread);
       },
       { threadId, userId, reason }
     );
@@ -149,7 +147,7 @@ export class ThreadLifecycleService extends BaseApplicationService {
         const user = this.parseOptionalId(userId, '用户ID');
 
         const thread = await this.threadDomainService.completeThread(id, user, reason);
-        return this.dtoMapper.mapToThreadInfo(thread);
+        return this.mapThreadToInfo(thread);
       },
       { threadId, userId, reason }
     );
@@ -176,7 +174,7 @@ export class ThreadLifecycleService extends BaseApplicationService {
         const user = this.parseOptionalId(userId, '用户ID');
 
         const thread = await this.threadDomainService.failThread(id, errorMessage, user, reason);
-        return this.dtoMapper.mapToThreadInfo(thread);
+        return this.mapThreadToInfo(thread);
       },
       { threadId, errorMessage, userId, reason }
     );
@@ -197,9 +195,28 @@ export class ThreadLifecycleService extends BaseApplicationService {
         const user = this.parseOptionalId(userId, '用户ID');
 
         const thread = await this.threadDomainService.cancelThread(id, user, reason);
-        return this.dtoMapper.mapToThreadInfo(thread);
+        return this.mapThreadToInfo(thread);
       },
       { threadId, userId, reason }
     );
+  }
+
+  /**
+   * 将线程领域对象映射为线程信息DTO
+   */
+  private mapThreadToInfo(thread: Thread): ThreadInfo {
+    return {
+      threadId: thread.threadId.toString(),
+      sessionId: thread.sessionId.toString(),
+      workflowId: thread.workflowId?.toString(),
+      status: thread.status.getValue(),
+      priority: thread.priority.getNumericValue(),
+      title: thread.title,
+      description: thread.description,
+      createdAt: thread.createdAt.getDate().toISOString(),
+      startedAt: thread.startedAt?.getDate().toISOString(),
+      completedAt: thread.completedAt?.getDate().toISOString(),
+      errorMessage: thread.errorMessage
+    };
   }
 }

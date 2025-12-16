@@ -14,5 +14,3 @@ export * from './factories/checkpoint-restore-service-factory';
 export * from './factories/checkpoint-management-service-factory';
 export * from './factories/checkpoint-analysis-service-factory';
 
-// 导出DTO映射器
-export * from './services/mappers/checkpoint-dto-mapper';

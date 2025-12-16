@@ -10,7 +10,6 @@ import { ThreadRepository } from '../../../domain/thread/repositories/thread-rep
 import { SessionDomainService } from '../../../domain/session/services/session-domain-service';
 import { DomainError } from '../../../domain/common/errors/domain-error';
 import { BaseApplicationService } from '../../common/base-application-service';
-import { SessionDtoMapper } from './mappers/session-dto-mapper';
 import { SessionInfo, SessionStatistics } from '../dtos';
 import { ILogger } from '@shared/types/logger';
 
@@ -22,7 +21,6 @@ export class SessionMaintenanceService extends BaseApplicationService {
     private readonly sessionRepository: SessionRepository,
     private readonly threadRepository: ThreadRepository,
     private readonly sessionDomainService: SessionDomainService,
-    private readonly dtoMapper: SessionDtoMapper,
     logger: ILogger
   ) {
     super(logger);
@@ -81,7 +79,7 @@ export class SessionMaintenanceService extends BaseApplicationService {
         const user = this.parseOptionalId(userId, '用户ID');
 
         const session = await this.sessionDomainService.addMessageToSession(id, user);
-        return this.dtoMapper.mapToSessionInfo(session);
+        return this.mapSessionToInfo(session);
       },
       { sessionId, userId }
     );
@@ -136,5 +134,20 @@ export class SessionMaintenanceService extends BaseApplicationService {
       },
       { userId }
     );
+  }
+
+  /**
+   * 将会话领域对象映射为会话信息DTO
+   */
+  private mapSessionToInfo(session: Session): SessionInfo {
+    return {
+      sessionId: session.sessionId.toString(),
+      userId: session.userId?.toString(),
+      title: session.title,
+      status: session.status.getValue(),
+      messageCount: session.messageCount,
+      createdAt: session.createdAt.toISOString(),
+      lastActivityAt: session.lastActivityAt.toISOString()
+    };
   }
 }

@@ -15,7 +15,6 @@ export { SessionMaintenanceService } from './sessions/services/session-maintenan
 export * from './sessions/factories/session-service-factory';
 export * from './sessions/factories/session-management-service-factory';
 export * from './sessions/factories/session-maintenance-service-factory';
-export * from './sessions/services/mappers/session-dto-mapper';
 export * from './sessions/commands/create-session-command';
 export * from './sessions/commands/delete-session-command';
 export * from './sessions/queries/get-session-query';
@@ -36,7 +35,6 @@ export { ThreadMaintenanceService } from './threads/services/thread-maintenance-
 export * from './threads/factories/thread-lifecycle-service-factory';
 export * from './threads/factories/thread-management-service-factory';
 export * from './threads/factories/thread-maintenance-service-factory';
-export * from './threads/services/mappers/thread-dto-mapper';
 export * from './threads/commands/create-thread-command';
 export * from './threads/commands/delete-thread-command';
 export * from './threads/commands/update-thread-status-command';
@@ -61,7 +59,6 @@ export * from './threads/checkpoints/factories/checkpoint-creation-service-facto
 export * from './threads/checkpoints/factories/checkpoint-restore-service-factory';
 export * from './threads/checkpoints/factories/checkpoint-management-service-factory';
 export * from './threads/checkpoints/factories/checkpoint-analysis-service-factory';
-export * from './threads/checkpoints/services/mappers/checkpoint-dto-mapper';
 
 // 应用层类型定义
 export interface ApplicationService {

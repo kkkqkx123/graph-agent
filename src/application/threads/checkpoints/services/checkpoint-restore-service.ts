@@ -9,8 +9,7 @@ import { ThreadCheckpoint } from '../../../../domain/threads/checkpoints/entitie
 import { ThreadCheckpointDomainService, ThreadCheckpointDomainServiceImpl } from '../../../../domain/threads/checkpoints/services/thread-checkpoint-domain-service';
 import { ThreadCheckpointRepository } from '../../../../domain/threads/checkpoints/repositories/thread-checkpoint-repository';
 import { BaseApplicationService } from '../../../common/base-application-service';
-import { CheckpointDtoMapper } from './mappers/checkpoint-dto-mapper';
-import { CheckpointInfo } from '../../../common/dtos';
+import { CheckpointInfo } from '../../checkpoints/dtos';
 import { ILogger } from '@shared/types/logger';
 
 /**
@@ -21,7 +20,6 @@ export class CheckpointRestoreService extends BaseApplicationService {
 
   constructor(
     private readonly repository: ThreadCheckpointRepository,
-    private readonly dtoMapper: CheckpointDtoMapper,
     logger: ILogger
   ) {
     super(logger);
@@ -110,9 +108,31 @@ export class CheckpointRestoreService extends BaseApplicationService {
         const id = this.parseId(checkpointId, '检查点ID');
         const backupChain = await this.domainService.getBackupChain(id);
 
-        return backupChain.map(cp => this.dtoMapper.mapToCheckpointInfo(cp));
+        return backupChain.map(cp => this.mapCheckpointToInfo(cp));
       },
       { checkpointId }
     );
   }
-}
+
+  /**
+   * 将检查点领域对象映射为检查点信息DTO
+   */
+  private mapCheckpointToInfo(checkpoint: ThreadCheckpoint): CheckpointInfo {
+    return {
+      checkpointId: checkpoint.checkpointId.toString(),
+      threadId: checkpoint.threadId.toString(),
+      type: checkpoint.type.getValue(),
+      status: checkpoint.status.statusValue,
+      title: checkpoint.title,
+      description: checkpoint.description,
+      tags: [...checkpoint.tags],
+      metadata: { ...checkpoint.metadata },
+      createdAt: checkpoint.createdAt.getDate().toISOString(),
+      updatedAt: checkpoint.updatedAt.getDate().toISOString(),
+      expiresAt: checkpoint.expiresAt?.getDate().toISOString(),
+      sizeBytes: checkpoint.sizeBytes,
+      restoreCount: checkpoint.restoreCount,
+      lastRestoredAt: checkpoint.lastRestoredAt?.getDate().toISOString()
+    };
+  }
+  }

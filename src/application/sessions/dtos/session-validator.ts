@@ -2,8 +2,8 @@
  * 会话数据验证器
  */
 
-import { CreateSessionRequest, SessionInfo, SessionStatistics } from './session-info';
-import { SessionConfig } from './create-session';
+import { SessionInfo, SessionStatistics } from './session-info';
+import { CreateSessionRequest, SessionConfigDto } from './create-session';
 
 export class SessionValidator {
   /**

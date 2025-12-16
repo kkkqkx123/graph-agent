@@ -9,7 +9,6 @@ import { ThreadRepository } from '../../../domain/thread/repositories/thread-rep
 import { ThreadDomainService } from '../../../domain/thread/services/thread-domain-service';
 import { DomainError } from '../../../domain/common/errors/domain-error';
 import { BaseApplicationService } from '../../common/base-application-service';
-import { ThreadDtoMapper } from './mappers/thread-dto-mapper';
 import { ThreadInfo, ThreadStatistics } from '../dtos';
 import { ILogger } from '@shared/types/logger';
 
@@ -20,7 +19,6 @@ export class ThreadMaintenanceService extends BaseApplicationService {
   constructor(
     private readonly threadRepository: ThreadRepository,
     private readonly threadDomainService: ThreadDomainService,
-    private readonly dtoMapper: ThreadDtoMapper,
     logger: ILogger
   ) {
     super(logger);
@@ -95,7 +93,7 @@ export class ThreadMaintenanceService extends BaseApplicationService {
         const user = this.parseOptionalId(userId, '用户ID');
 
         const thread = await this.threadDomainService.retryFailedThread(id, user);
-        return this.dtoMapper.mapToThreadInfo(thread);
+        return this.mapThreadToInfo(thread);
       },
       { threadId, userId }
     );
@@ -136,4 +134,23 @@ export class ThreadMaintenanceService extends BaseApplicationService {
       { sessionId }
     );
   }
-}
+
+  /**
+   * 将线程领域对象映射为线程信息DTO
+   */
+  private mapThreadToInfo(thread: Thread): ThreadInfo {
+    return {
+      threadId: thread.threadId.toString(),
+      sessionId: thread.sessionId.toString(),
+      workflowId: thread.workflowId?.toString(),
+      status: thread.status.getValue(),
+      priority: thread.priority.getNumericValue(),
+      title: thread.title,
+      description: thread.description,
+      createdAt: thread.createdAt.getDate().toISOString(),
+      startedAt: thread.startedAt?.getDate().toISOString(),
+      completedAt: thread.completedAt?.getDate().toISOString(),
+      errorMessage: thread.errorMessage
+    };
+  }
+  }

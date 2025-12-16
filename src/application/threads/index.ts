@@ -12,9 +12,6 @@ export * from './factories/thread-lifecycle-service-factory';
 export * from './factories/thread-management-service-factory';
 export * from './factories/thread-maintenance-service-factory';
 
-// 导出DTO映射器
-export * from './services/mappers/thread-dto-mapper';
-
 // 导出命令
 export * from './commands/create-thread-command';
 export * from './commands/delete-thread-command';

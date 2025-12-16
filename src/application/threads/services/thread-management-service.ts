@@ -9,7 +9,6 @@ import { ThreadRepository } from '../../../domain/thread/repositories/thread-rep
 import { ThreadDomainService } from '../../../domain/thread/services/thread-domain-service';
 import { ThreadPriority } from '../../../domain/thread/value-objects/thread-priority';
 import { BaseApplicationService } from '../../common/base-application-service';
-import { ThreadDtoMapper } from './mappers/thread-dto-mapper';
 import { ThreadInfo } from '../dtos';
 import { ILogger } from '@shared/types/logger';
 
@@ -20,7 +19,6 @@ export class ThreadManagementService extends BaseApplicationService {
   constructor(
     private readonly threadRepository: ThreadRepository,
     private readonly threadDomainService: ThreadDomainService,
-    private readonly dtoMapper: ThreadDtoMapper,
     logger: ILogger
   ) {
     super(logger);
@@ -46,39 +44,39 @@ export class ThreadManagementService extends BaseApplicationService {
         const thread = await this.threadRepository.findById(id);
 
         if (!thread) {
-          return null;
+           return null;
+         }
+
+         return this.mapThreadToInfo(thread);
+        },
+        { threadId }
+        );
         }
 
-        return this.dtoMapper.mapToThreadInfo(thread);
-      },
-      { threadId }
-    );
-  }
+        /**
+        * 列出所有线程
+        * @param filters 过滤条件
+        * @param limit 数量限制
+        * @returns 线程信息列表
+        */
+        async listThreads(filters?: Record<string, unknown>, limit?: number): Promise<ThreadInfo[]> {
+        return this.executeListOperation(
+        '线程',
+        async () => {
+         const options: any = {};
+         if (filters) {
+           options.filters = filters;
+         }
+         if (limit) {
+           options.limit = limit;
+         }
 
-  /**
-   * 列出所有线程
-   * @param filters 过滤条件
-   * @param limit 数量限制
-   * @returns 线程信息列表
-   */
-  async listThreads(filters?: Record<string, unknown>, limit?: number): Promise<ThreadInfo[]> {
-    return this.executeListOperation(
-      '线程',
-      async () => {
-        const options: any = {};
-        if (filters) {
-          options.filters = filters;
+         const threads = await this.threadRepository.find(options);
+         return threads.map(thread => this.mapThreadToInfo(thread));
+        },
+        { filters, limit }
+        );
         }
-        if (limit) {
-          options.limit = limit;
-        }
-
-        const threads = await this.threadRepository.find(options);
-        return this.dtoMapper.mapToThreadInfoList(threads);
-      },
-      { filters, limit }
-    );
-  }
 
   /**
    * 检查线程是否存在
@@ -110,7 +108,7 @@ export class ThreadManagementService extends BaseApplicationService {
         const threadPriority = ThreadPriority.fromNumber(priority);
 
         const thread = await this.threadDomainService.updateThreadPriority(id, threadPriority);
-        return this.dtoMapper.mapToThreadInfo(thread);
+        return this.mapThreadToInfo(thread);
       },
       { threadId, priority }
     );
@@ -132,9 +130,28 @@ export class ThreadManagementService extends BaseApplicationService {
           return null;
         }
 
-        return this.dtoMapper.mapToThreadInfo(thread);
+        return this.mapThreadToInfo(thread);
       },
       { sessionId }
     );
   }
-}
+
+  /**
+   * 将线程领域对象映射为线程信息DTO
+   */
+  private mapThreadToInfo(thread: Thread): ThreadInfo {
+    return {
+      threadId: thread.threadId.toString(),
+      sessionId: thread.sessionId.toString(),
+      workflowId: thread.workflowId?.toString(),
+      status: thread.status.getValue(),
+      priority: thread.priority.getNumericValue(),
+      title: thread.title,
+      description: thread.description,
+      createdAt: thread.createdAt.getDate().toISOString(),
+      startedAt: thread.startedAt?.getDate().toISOString(),
+      completedAt: thread.completedAt?.getDate().toISOString(),
+      errorMessage: thread.errorMessage
+    };
+  }
+  }

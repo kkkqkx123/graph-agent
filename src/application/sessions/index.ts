@@ -12,9 +12,6 @@ export * from './factories/session-service-factory';
 export * from './factories/session-management-service-factory';
 export * from './factories/session-maintenance-service-factory';
 
-// 导出DTO映射器
-export * from './services/mappers/session-dto-mapper';
-
 // 导出命令
 export * from './commands/create-session-command';
 export * from './commands/delete-session-command';

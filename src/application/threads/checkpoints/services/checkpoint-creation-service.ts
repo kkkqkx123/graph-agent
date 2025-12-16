@@ -15,7 +15,7 @@ import {
   CreateManualCheckpointRequest,
   CreateErrorCheckpointRequest,
   CreateMilestoneCheckpointRequest
-} from '../../../common/dtos';
+} from '../../checkpoints/dtos';
 import { ILogger } from '@shared/types/logger';
 
 /**

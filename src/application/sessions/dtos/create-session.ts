@@ -8,7 +8,7 @@ export interface CreateSessionRequest {
   config?: Record<string, unknown>;
 }
 
-export interface SessionConfig {
+export interface SessionConfigDto {
   value?: Record<string, unknown>;
   timeoutMinutes?: string;
   maxDuration?: string;

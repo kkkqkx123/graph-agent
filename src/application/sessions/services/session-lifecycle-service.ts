@@ -7,9 +7,8 @@
 import { Session } from '../../../domain/session/entities/session';
 import { SessionRepository } from '../../../domain/session/repositories/session-repository';
 import { SessionDomainService } from '../../../domain/session/services/session-domain-service';
-import { SessionConfig } from '../../../domain/session/value-objects/session-config';
+import { SessionConfig, SessionConfigProps } from '../../../domain/session/value-objects/session-config';
 import { BaseApplicationService } from '../../common/base-application-service';
-import { SessionDtoMapper } from './mappers/session-dto-mapper';
 import { CreateSessionRequest, SessionInfo } from '../dtos';
 import { ILogger } from '@shared/types/logger';
 
@@ -20,7 +19,6 @@ export class SessionLifecycleService extends BaseApplicationService {
   constructor(
     private readonly sessionRepository: SessionRepository,
     private readonly sessionDomainService: SessionDomainService,
-    private readonly dtoMapper: SessionDtoMapper,
     logger: ILogger
   ) {
     super(logger);
@@ -43,7 +41,7 @@ export class SessionLifecycleService extends BaseApplicationService {
       '创建会话',
       async () => {
         const userId = this.parseOptionalId(request.userId, '用户ID');
-        const config = request.config ? SessionConfig.create(request.config) : undefined;
+        const config = request.config ? SessionConfig.create(request.config as Partial<SessionConfigProps>) : undefined;
         
         const session = await this.sessionDomainService.createSession(
           userId,
@@ -71,7 +69,7 @@ export class SessionLifecycleService extends BaseApplicationService {
         const user = this.parseOptionalId(userId, '用户ID');
 
         const session = await this.sessionDomainService.activateSession(id, user);
-        return this.dtoMapper.mapToSessionInfo(session);
+        return this.mapSessionToInfo(session);
       },
       { sessionId, userId }
     );
@@ -92,7 +90,7 @@ export class SessionLifecycleService extends BaseApplicationService {
         const user = this.parseOptionalId(userId, '用户ID');
 
         const session = await this.sessionDomainService.suspendSession(id, user, reason);
-        return this.dtoMapper.mapToSessionInfo(session);
+        return this.mapSessionToInfo(session);
       },
       { sessionId, userId, reason }
     );
@@ -113,9 +111,24 @@ export class SessionLifecycleService extends BaseApplicationService {
         const user = this.parseOptionalId(userId, '用户ID');
 
         const session = await this.sessionDomainService.terminateSession(id, user, reason);
-        return this.dtoMapper.mapToSessionInfo(session);
+        return this.mapSessionToInfo(session);
       },
       { sessionId, userId, reason }
     );
+  }
+
+  /**
+   * 将会话领域对象映射为会话信息DTO
+   */
+  private mapSessionToInfo(session: Session): SessionInfo {
+    return {
+      sessionId: session.sessionId.toString(),
+      userId: session.userId?.toString(),
+      title: session.title,
+      status: session.status.getValue(),
+      messageCount: session.messageCount,
+      createdAt: session.createdAt.toISOString(),
+      lastActivityAt: session.lastActivityAt.toISOString()
+    };
   }
 }

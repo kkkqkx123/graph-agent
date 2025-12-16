@@ -39,3 +39,42 @@ export interface CheckpointStatisticsInfo {
   healthScore: number;
   healthStatus: 'healthy' | 'warning' | 'critical';
 }
+
+export interface CreateCheckpointRequest {
+  threadId: string;
+  type: 'auto' | 'manual' | 'error' | 'milestone';
+  stateData: Record<string, unknown>;
+  title?: string;
+  description?: string;
+  tags?: string[];
+  metadata?: Record<string, unknown>;
+  expirationHours?: number;
+}
+
+export interface CreateManualCheckpointRequest {
+  threadId: string;
+  stateData: Record<string, unknown>;
+  title?: string;
+  description?: string;
+  tags?: string[];
+  metadata?: Record<string, unknown>;
+  expirationHours?: number;
+}
+
+export interface CreateErrorCheckpointRequest {
+  threadId: string;
+  stateData: Record<string, unknown>;
+  errorType: string;
+  errorMessage: string;
+  metadata?: Record<string, unknown>;
+  expirationHours?: number;
+}
+
+export interface CreateMilestoneCheckpointRequest {
+  threadId: string;
+  stateData: Record<string, unknown>;
+  milestoneName: string;
+  description?: string;
+  metadata?: Record<string, unknown>;
+  expirationHours?: number;
+}

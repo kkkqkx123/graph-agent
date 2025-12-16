@@ -12,7 +12,7 @@ import { ThreadDomainService } from '../../../domain/thread/services/thread-doma
 import { ID } from '../../../domain/common/value-objects/id';
 import { SessionId } from '../../../domain/common/value-objects/session-id';
 import { SessionStatus } from '../../../domain/session/value-objects/session-status';
-import { SessionConfig } from '../../../domain/session/value-objects/session-config';
+import { SessionConfig, SessionConfigProps } from '../../../domain/session/value-objects/session-config';
 import { DomainError } from '../../../domain/common/errors/domain-error';
 import { ILogger } from '@shared/types/logger';
 import { CreateSessionRequest, SessionInfo } from '../dtos';
@@ -40,7 +40,7 @@ export class SessionService {
 
       // 转换请求参数
       const userId = request.userId ? ID.fromString(request.userId) : undefined;
-      const config = request.config ? SessionConfig.create(request.config) : undefined;
+      const config = request.config ? SessionConfig.create(request.config as Partial<SessionConfigProps>) : undefined;
 
       // 调用领域服务创建会话
       const session = await this.sessionDomainService.createSession(
@@ -253,7 +253,7 @@ export class SessionService {
   async updateSessionConfig(sessionId: string, config: Record<string, unknown>): Promise<SessionInfo> {
     try {
       const id = ID.fromString(sessionId);
-      const sessionConfig = SessionConfig.create(config);
+      const sessionConfig = SessionConfig.create(config as Partial<SessionConfigProps>);
 
       const session = await this.sessionDomainService.updateSessionConfig(id, sessionConfig);
 

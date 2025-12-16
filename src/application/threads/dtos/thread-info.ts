@@ -25,3 +25,12 @@ export interface ThreadStatistics {
   failed: number;
   cancelled: number;
 }
+
+export interface CreateThreadRequest {
+  sessionId: string;
+  workflowId?: string;
+  priority?: number;
+  title?: string;
+  description?: string;
+  metadata?: Record<string, unknown>;
+}

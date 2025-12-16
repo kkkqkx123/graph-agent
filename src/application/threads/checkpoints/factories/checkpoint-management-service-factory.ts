@@ -7,15 +7,12 @@
 import { IContainer } from '../../../../infrastructure/container/container';
 import { BaseApplicationServiceFactory } from '../../../common/base-service-factory';
 import { CheckpointManagementService } from '../services/checkpoint-management-service';
-import { CheckpointDtoMapper } from '../services/mappers/checkpoint-dto-mapper';
 import { ThreadCheckpointRepository } from '../../../../domain/threads/checkpoints/repositories/thread-checkpoint-repository';
 
 /**
  * 检查点管理服务工厂
  */
 export class CheckpointManagementServiceFactory extends BaseApplicationServiceFactory<CheckpointManagementService> {
-  private dtoMapper?: CheckpointDtoMapper;
-
   /**
    * 创建检查点管理服务
    * @returns 检查点管理服务实例
@@ -24,11 +21,9 @@ export class CheckpointManagementServiceFactory extends BaseApplicationServiceFa
     try {
       this.logger.info('正在创建检查点管理服务...');
       const repository = this.getDependency<ThreadCheckpointRepository>('ThreadCheckpointRepository');
-      const dtoMapper = this.getDtoMapper();
 
       const service = new CheckpointManagementService(
         repository,
-        dtoMapper,
         this.logger
       );
       this.logger.info('检查点管理服务创建成功');
@@ -37,16 +32,5 @@ export class CheckpointManagementServiceFactory extends BaseApplicationServiceFa
       this.logger.error('创建检查点管理服务失败', error as Error);
       throw error;
     }
-  }
-
-  /**
-   * 获取DTO映射器（单例）
-   * @returns DTO映射器实例
-   */
-  private getDtoMapper(): CheckpointDtoMapper {
-    if (!this.dtoMapper) {
-      this.dtoMapper = new CheckpointDtoMapper();
-    }
-    return this.dtoMapper;
   }
 }

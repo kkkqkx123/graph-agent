@@ -7,9 +7,8 @@
 import { Session } from '../../../domain/session/entities/session';
 import { SessionRepository } from '../../../domain/session/repositories/session-repository';
 import { SessionDomainService } from '../../../domain/session/services/session-domain-service';
-import { SessionConfig } from '../../../domain/session/value-objects/session-config';
+import { SessionConfig, SessionConfigProps } from '../../../domain/session/value-objects/session-config';
 import { BaseApplicationService } from '../../common/base-application-service';
-import { SessionDtoMapper } from './mappers/session-dto-mapper';
 import { SessionInfo } from '../dtos';
 import { ILogger } from '@shared/types/logger';
 
@@ -20,7 +19,6 @@ export class SessionManagementService extends BaseApplicationService {
   constructor(
     private readonly sessionRepository: SessionRepository,
     private readonly sessionDomainService: SessionDomainService,
-    private readonly dtoMapper: SessionDtoMapper,
     logger: ILogger
   ) {
     super(logger);
@@ -49,7 +47,7 @@ export class SessionManagementService extends BaseApplicationService {
           return null;
         }
         
-        return this.dtoMapper.mapToSessionInfo(session);
+        return this.mapSessionToInfo(session);
       },
       { sessionId }
     );
@@ -64,7 +62,7 @@ export class SessionManagementService extends BaseApplicationService {
       '会话',
       async () => {
         const sessions = await this.sessionRepository.findAll();
-        return this.dtoMapper.mapToSessionInfoList(sessions);
+        return sessions.map(session => this.mapSessionToInfo(session));
       }
     );
   }
@@ -96,12 +94,27 @@ export class SessionManagementService extends BaseApplicationService {
       '会话配置',
       async () => {
         const id = this.parseId(sessionId, '会话ID');
-        const sessionConfig = SessionConfig.create(config);
+        const sessionConfig = SessionConfig.create(config as Partial<SessionConfigProps>);
 
         const session = await this.sessionDomainService.updateSessionConfig(id, sessionConfig);
-        return this.dtoMapper.mapToSessionInfo(session);
+        return this.mapSessionToInfo(session);
       },
       { sessionId, configKeys: Object.keys(config) }
     );
+  }
+
+  /**
+   * 将会话领域对象映射为会话信息DTO
+   */
+  private mapSessionToInfo(session: Session): SessionInfo {
+    return {
+      sessionId: session.sessionId.toString(),
+      userId: session.userId?.toString(),
+      title: session.title,
+      status: session.status.getValue(),
+      messageCount: session.messageCount,
+      createdAt: session.createdAt.toISOString(),
+      lastActivityAt: session.lastActivityAt.toISOString()
+    };
   }
 }

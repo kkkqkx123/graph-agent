@@ -137,7 +137,7 @@ describe('SessionService', () => {
       const mockSession = Session.create(
         ID.fromString('user-123'),
         '测试会话',
-        SessionConfig.fromValue({ timeoutMinutes: 30 })
+        SessionConfig.create({ timeoutMinutes: 30 })
       );
 
       mockSessionDomainService.createSession.mockResolvedValue(mockSession);

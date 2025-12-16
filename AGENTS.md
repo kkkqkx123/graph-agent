@@ -126,10 +126,9 @@ Infrastructure depends only on Domain. Application depends on Domain. Interface 
 - Use configuration files for customization with environment variable support
 
 ### 2. Testing Strategy
-- **Unit tests**: Domain layer and application layer core business logic coverage ≥ 90%
-- **Integration tests**: Module interaction and infrastructure component coverage ≥ 80%
-- **Infrastructure tests**: Infrastructure layer implementation coverage ≥ 85%
-- **End-to-end tests**: Complete workflow and user scenario coverage ≥ 70%
+- **Unit tests**: Create a folder named `__tests__` in the same folder as the code being tested. All unit test files should be placed in this folder.
+- **Integration tests**: Place all integration test files in global tests folder.
+- **End-to-end tests**: Place all integration test files in `e2e` folder of global tests folder.
 
 ### 3. Code Quality Standards
 - Follow dependency injection pattern for all service instantiation
