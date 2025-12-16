@@ -20,22 +20,17 @@ export {
   Workflow,
   WorkflowType,
   WorkflowConfig,
-  WorkflowStatus as WorkflowStatusEnum
-} from './workflow';
-
-// 导出图领域模块
-export {
-  Workflow,
+  WorkflowStatus as WorkflowStatusEnum,
   Node,
   Edge,
   WorkflowDomainService,
   NodeType,
   EdgeType,
   HookPoint
-} from './workflow/workflow';
+} from './workflow';
 
 // 重新导出有冲突的值对象，使用别名
 export {
   NodeId as WorkflowNodeId,
   EdgeId as WorkflowEdgeId
-} from './workflow/workflow';
+} from './workflow';

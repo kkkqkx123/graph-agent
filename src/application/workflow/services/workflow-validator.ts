@@ -1,8 +1,6 @@
 import { injectable, inject } from 'inversify';
 import { Workflow } from '../../../domain/workflow/entities/workflow';
 import { WorkflowRepository } from '../../../domain/workflow/repositories/workflow-repository';
-import { WorkflowWorkflowRepository } from '../../../domain/workflow/repositories/workflow-workflow-repository';
-import { WorkflowWorkflowDomainService } from '../../../domain/workflow/services/workflow-workflow-domain-service';
 import { ID } from '../../../domain/common/value-objects/id';
 import { DomainError } from '../../../domain/common/errors/domain-error';
 import { ILogger } from '@shared/types/logger';
@@ -46,8 +44,6 @@ export interface WorkflowValidationRequest {
 export class WorkflowValidator {
   constructor(
     @inject('WorkflowRepository') private readonly workflowRepository: WorkflowRepository,
-    @inject('WorkflowWorkflowRepository') private readonly workflowWorkflowRepository: WorkflowWorkflowRepository,
-    @inject('WorkflowWorkflowDomainService') private readonly workflowWorkflowDomainService: WorkflowWorkflowDomainService,
     @inject('Logger') private readonly logger: ILogger
   ) { }
 
@@ -162,13 +158,11 @@ export class WorkflowValidator {
       }
 
       // 验证工作流结构
-      const workflowValidationResult = await this.workflowWorkflowDomainService.validateWorkflowWorkflowStructure(workflow.workflowId);
-      this.mergeValidationResults(result, {
-        isValid: workflowValidationResult.isValid,
-        errors: workflowValidationResult.errors,
-        warnings: workflowValidationResult.warnings,
-        suggestions: []
-      });
+      // 简化验证逻辑，因为graph模块已删除
+      if (workflow.nodes.size === 0) {
+        result.isValid = false;
+        result.errors.push('工作流没有节点');
+      }
 
       // 验证工作流配置
       if (workflow.config) {

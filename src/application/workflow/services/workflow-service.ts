@@ -143,7 +143,6 @@ interface UpdateWorkflowCommand {
   name?: string;
   description?: string;
   config?: any;
-  workflowId?: string;
   metadata?: Record<string, unknown>;
 }
 

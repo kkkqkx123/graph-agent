@@ -40,9 +40,6 @@ export class HistoryModel {
   workflowId?: string;
 
   @Column({ nullable: true })
-  workflowId?: string;
-
-  @Column({ nullable: true })
   nodeId?: string;
 
   @Column({ nullable: true })

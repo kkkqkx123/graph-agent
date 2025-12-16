@@ -1,9 +1,9 @@
-import { Entity } from '../../common/base/entity';
-import { ID } from '../../common/value-objects/id';
-import { Timestamp } from '../../common/value-objects/timestamp';
-import { Version } from '../../common/value-objects/version';
-import { DomainError } from '../../common/errors/domain-error';
-import { EdgeType } from '../../value-objects/edge-type';
+import { Entity } from '../../../../common/base/entity';
+import { ID } from '../../../../common/value-objects/id';
+import { Timestamp } from '../../../../common/value-objects/timestamp';
+import { Version } from '../../../../common/value-objects/version';
+import { DomainError } from '../../../../common/errors/domain-error';
+import { EdgeType } from '../../../value-objects/edge-type';
 
 /**
  * Edge实体接口
