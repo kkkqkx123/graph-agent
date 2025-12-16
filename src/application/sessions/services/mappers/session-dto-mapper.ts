@@ -6,7 +6,7 @@
 
 import { Session } from '../../../../domain/session/entities/session';
 import { BaseDtoMapper } from '../../../common/base-dto-mapper';
-import { SessionInfo } from '../session-lifecycle-service';
+import { SessionInfo } from '../../../common/dtos';
 
 /**
  * 会话DTO映射器

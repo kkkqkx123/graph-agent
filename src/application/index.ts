@@ -5,8 +5,17 @@
  * 其他层（如接口层）应该通过此文件导入应用层组件
  */
 
+// 通用DTO类型导出
+export * from './common/dtos';
+
 // 会话模块导出
-export * from './sessions/services/session-service';
+export { SessionLifecycleService } from './sessions/services/session-lifecycle-service';
+export { SessionManagementService } from './sessions/services/session-management-service';
+export { SessionMaintenanceService } from './sessions/services/session-maintenance-service';
+export * from './sessions/factories/session-service-factory';
+export * from './sessions/factories/session-management-service-factory';
+export * from './sessions/factories/session-maintenance-service-factory';
+export * from './sessions/services/mappers/session-dto-mapper';
 export * from './sessions/dtos/create-session-dto';
 export * from './sessions/dtos/session-info-dto';
 export * from './sessions/commands/create-session-command';
@@ -23,7 +32,13 @@ export * from './sessions/handlers/session-created-handler';
 export * from './sessions/handlers/session-deleted-handler';
 
 // 线程模块导出
-export * from './threads/services/thread-service';
+export { ThreadLifecycleService } from './threads/services/thread-lifecycle-service';
+export { ThreadManagementService } from './threads/services/thread-management-service';
+export { ThreadMaintenanceService } from './threads/services/thread-maintenance-service';
+export * from './threads/factories/thread-lifecycle-service-factory';
+export * from './threads/factories/thread-management-service-factory';
+export * from './threads/factories/thread-maintenance-service-factory';
+export * from './threads/services/mappers/thread-dto-mapper';
 export * from './threads/dtos/create-thread-dto';
 export * from './threads/dtos/thread-info-dto';
 export * from './threads/commands/create-thread-command';
@@ -40,6 +55,17 @@ export * from './threads/handlers/get-thread-handler';
 export * from './threads/handlers/list-threads-handler';
 export * from './threads/handlers/thread-created-handler';
 export * from './threads/handlers/thread-deleted-handler';
+
+// 检查点模块导出
+export { CheckpointCreationService } from './threads/checkpoints/services/checkpoint-creation-service';
+export { CheckpointRestoreService } from './threads/checkpoints/services/checkpoint-restore-service';
+export { CheckpointManagementService } from './threads/checkpoints/services/checkpoint-management-service';
+export { CheckpointAnalysisService } from './threads/checkpoints/services/checkpoint-analysis-service';
+export * from './threads/checkpoints/factories/checkpoint-creation-service-factory';
+export * from './threads/checkpoints/factories/checkpoint-restore-service-factory';
+export * from './threads/checkpoints/factories/checkpoint-management-service-factory';
+export * from './threads/checkpoints/factories/checkpoint-analysis-service-factory';
+export * from './threads/checkpoints/services/mappers/checkpoint-dto-mapper';
 
 // 应用层类型定义
 export interface ApplicationService {
@@ -135,12 +161,14 @@ export interface SortParams {
  * 应用层服务工厂接口
  */
 export interface ApplicationServiceFactory {
-  createSessionService(): SessionService;
-  createThreadService(): ThreadService;
+  createSessionLifecycleService(): SessionLifecycleService;
+  createSessionManagementService(): SessionManagementService;
+  createSessionMaintenanceService(): SessionMaintenanceService;
+  createThreadLifecycleService(): ThreadLifecycleService;
+  createThreadManagementService(): ThreadManagementService;
+  createThreadMaintenanceService(): ThreadMaintenanceService;
+  createCheckpointCreationService(): CheckpointCreationService;
+  createCheckpointRestoreService(): CheckpointRestoreService;
+  createCheckpointManagementService(): CheckpointManagementService;
+  createCheckpointAnalysisService(): CheckpointAnalysisService;
 }
-
-// 重新导出会话和线程服务类型
-import { SessionService } from './sessions/services/session-service';
-import { ThreadService } from './threads/services/thread-service';
-
-export { SessionService, ThreadService };

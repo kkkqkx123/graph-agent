@@ -10,29 +10,8 @@ import { SessionDomainService } from '../../../domain/session/services/session-d
 import { SessionConfig } from '../../../domain/session/value-objects/session-config';
 import { BaseApplicationService } from '../../common/base-application-service';
 import { SessionDtoMapper } from './mappers/session-dto-mapper';
+import { CreateSessionRequest, SessionInfo } from '../../common/dtos';
 import { ILogger } from '@shared/types/logger';
-
-/**
- * 创建会话请求DTO
- */
-export interface CreateSessionRequest {
-  userId?: string;
-  title?: string;
-  config?: Record<string, unknown>;
-}
-
-/**
- * 会话信息DTO
- */
-export interface SessionInfo {
-  sessionId: string;
-  userId?: string;
-  title?: string;
-  status: string;
-  messageCount: number;
-  createdAt: string;
-  lastActivityAt: string;
-}
 
 /**
  * 会话生命周期服务
