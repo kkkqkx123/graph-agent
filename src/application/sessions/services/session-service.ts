@@ -15,28 +15,7 @@ import { SessionStatus } from '../../../domain/session/value-objects/session-sta
 import { SessionConfig } from '../../../domain/session/value-objects/session-config';
 import { DomainError } from '../../../domain/common/errors/domain-error';
 import { ILogger } from '@shared/types/logger';
-
-/**
- * 创建会话请求DTO
- */
-export interface CreateSessionRequest {
-  userId?: string;
-  title?: string;
-  config?: Record<string, unknown>;
-}
-
-/**
- * 会话信息DTO
- */
-export interface SessionInfo {
-  sessionId: string;
-  userId?: string;
-  title?: string;
-  status: string;
-  messageCount: number;
-  createdAt: string;
-  lastActivityAt: string;
-}
+import { CreateSessionRequest, SessionInfo } from '../dtos';
 
 /**
  * 会话应用服务

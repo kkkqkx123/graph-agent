@@ -58,25 +58,7 @@ export interface CreateMilestoneCheckpointRequest {
   expirationHours?: number;
 }
 
-/**
- * 检查点信息DTO
- */
-export interface CheckpointInfo {
-  checkpointId: string;
-  threadId: string;
-  type: string;
-  status: string;
-  title?: string;
-  description?: string;
-  tags: string[];
-  metadata: Record<string, unknown>;
-  createdAt: string;
-  updatedAt: string;
-  expiresAt?: string;
-  sizeBytes: number;
-  restoreCount: number;
-  lastRestoredAt?: string;
-}
+import { CheckpointInfo } from '../dtos/checkpoint-info';
 
 /**
  * 检查点统计信息DTO

@@ -27,22 +27,7 @@ export interface CreateThreadRequest {
   metadata?: Record<string, unknown>;
 }
 
-/**
- * 线程信息DTO
- */
-export interface ThreadInfo {
-  threadId: string;
-  sessionId: string;
-  workflowId?: string;
-  status: string;
-  priority: number;
-  title?: string;
-  description?: string;
-  createdAt: string;
-  startedAt?: string;
-  completedAt?: string;
-  errorMessage?: string;
-}
+import { ThreadInfo } from '../dtos';
 
 /**
  * 线程应用服务

@@ -2,7 +2,7 @@
  * 创建会话命令
  */
 
-import { CreateSessionDto } from '../dtos/create-session-dto';
+import { CreateSessionRequest, SessionValidator } from '../dtos';
 
 /**
  * 创建会话命令
@@ -13,10 +13,10 @@ export class CreateSessionCommand {
   readonly config?: Record<string, unknown>;
 
   constructor(data: any) {
-    const dto = new CreateSessionDto(data);
-    this.userId = dto.userId;
-    this.title = dto.title;
-    this.config = dto.config?.value;
+    const request = SessionValidator.validateCreateSessionRequest(data);
+    this.userId = request.userId;
+    this.title = request.title;
+    this.config = request.config;
   }
 }
 

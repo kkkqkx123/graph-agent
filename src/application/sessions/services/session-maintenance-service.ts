@@ -11,7 +11,7 @@ import { SessionDomainService } from '../../../domain/session/services/session-d
 import { DomainError } from '../../../domain/common/errors/domain-error';
 import { BaseApplicationService } from '../../common/base-application-service';
 import { SessionDtoMapper } from './mappers/session-dto-mapper';
-import { SessionInfo, SessionStatistics } from '../../common/dtos';
+import { SessionInfo, SessionStatistics } from '../dtos';
 import { ILogger } from '@shared/types/logger';
 
 /**

@@ -3,9 +3,9 @@
  */
 
 // 导出服务
-export * from './services/session-lifecycle-service';
-export * from './services/session-management-service';
-export * from './services/session-maintenance-service';
+export { SessionLifecycleService } from './services/session-lifecycle-service';
+export { SessionManagementService } from './services/session-management-service';
+export { SessionMaintenanceService } from './services/session-maintenance-service';
 
 // 导出服务工厂
 export * from './factories/session-service-factory';
@@ -28,8 +28,7 @@ export * from './events/session-created-event';
 export * from './events/session-deleted-event';
 
 // 导出DTO
-export * from './dtos/create-session-dto';
-export * from './dtos/session-info-dto';
+export * from './dtos';
 
 // 导出处理器
 export * from './handlers/create-session-handler';

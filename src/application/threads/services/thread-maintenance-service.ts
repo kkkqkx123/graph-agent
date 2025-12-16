@@ -10,7 +10,7 @@ import { ThreadDomainService } from '../../../domain/thread/services/thread-doma
 import { DomainError } from '../../../domain/common/errors/domain-error';
 import { BaseApplicationService } from '../../common/base-application-service';
 import { ThreadDtoMapper } from './mappers/thread-dto-mapper';
-import { ThreadInfo, ThreadStatistics } from '../../common/dtos';
+import { ThreadInfo, ThreadStatistics } from '../dtos';
 import { ILogger } from '@shared/types/logger';
 
 /**

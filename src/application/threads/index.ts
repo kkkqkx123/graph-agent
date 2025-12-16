@@ -29,8 +29,7 @@ export * from './events/thread-created-event';
 export * from './events/thread-deleted-event';
 
 // 导出DTO
-export * from './dtos/create-thread-dto';
-export * from './dtos/thread-info-dto';
+export * from './dtos';
 
 // 导出处理器
 export * from './handlers/create-thread-handler';

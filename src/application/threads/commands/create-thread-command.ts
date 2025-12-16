@@ -2,7 +2,7 @@
  * 创建线程命令
  */
 
-import { CreateThreadDto } from '../dtos/create-thread-dto';
+import { CreateThreadRequest, ThreadValidator } from '../dtos';
 
 /**
  * 创建线程命令
@@ -16,13 +16,13 @@ export class CreateThreadCommand {
   readonly metadata?: Record<string, unknown>;
 
   constructor(data: any) {
-    const dto = new CreateThreadDto(data);
-    this.sessionId = dto.sessionId;
-    this.workflowId = dto.workflowId;
-    this.priority = dto.priority;
-    this.title = dto.title;
-    this.description = dto.description;
-    this.metadata = dto.metadata;
+    const request = ThreadValidator.validateCreateThreadRequest(data);
+    this.sessionId = request.sessionId;
+    this.workflowId = request.workflowId;
+    this.priority = request.priority;
+    this.title = request.title;
+    this.description = request.description;
+    this.metadata = request.metadata;
   }
 }
 

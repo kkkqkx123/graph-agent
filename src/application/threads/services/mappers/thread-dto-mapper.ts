@@ -6,7 +6,7 @@
 
 import { Thread } from '../../../../domain/thread/entities/thread';
 import { BaseDtoMapper } from '../../../common/base-dto-mapper';
-import { ThreadInfo } from '../../../common/dtos';
+import { ThreadInfo } from '../../dtos';
 
 /**
  * 线程DTO映射器

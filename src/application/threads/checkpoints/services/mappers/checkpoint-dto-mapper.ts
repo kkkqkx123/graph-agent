@@ -7,7 +7,7 @@
 import { ThreadCheckpoint } from '../../../../../domain/threads/checkpoints/entities/thread-checkpoint';
 import { CheckpointStatistics } from '../../../../../domain/threads/checkpoints/value-objects/checkpoint-statistics';
 import { BaseDtoMapper } from '../../../../common/base-dto-mapper';
-import { CheckpointInfo, CheckpointStatisticsInfo } from '../../../../common/dtos';
+import { CheckpointInfo, CheckpointStatisticsInfo } from '../../dtos';
 
 /**
  * 检查点DTO映射器

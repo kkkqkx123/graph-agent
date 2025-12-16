@@ -10,7 +10,7 @@ import { SessionDomainService } from '../../../domain/session/services/session-d
 import { SessionConfig } from '../../../domain/session/value-objects/session-config';
 import { BaseApplicationService } from '../../common/base-application-service';
 import { SessionDtoMapper } from './mappers/session-dto-mapper';
-import { SessionInfo } from '../../common/dtos';
+import { SessionInfo } from '../dtos';
 import { ILogger } from '@shared/types/logger';
 
 /**

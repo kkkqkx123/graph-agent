@@ -5,8 +5,8 @@
  * 其他层（如接口层）应该通过此文件导入应用层组件
  */
 
-// 通用DTO类型导出
-export * from './common/dtos';
+// 通用工具导出
+export * from './common';
 
 // 会话模块导出
 export { SessionLifecycleService } from './sessions/services/session-lifecycle-service';
@@ -16,8 +16,6 @@ export * from './sessions/factories/session-service-factory';
 export * from './sessions/factories/session-management-service-factory';
 export * from './sessions/factories/session-maintenance-service-factory';
 export * from './sessions/services/mappers/session-dto-mapper';
-export * from './sessions/dtos/create-session-dto';
-export * from './sessions/dtos/session-info-dto';
 export * from './sessions/commands/create-session-command';
 export * from './sessions/commands/delete-session-command';
 export * from './sessions/queries/get-session-query';
@@ -39,8 +37,6 @@ export * from './threads/factories/thread-lifecycle-service-factory';
 export * from './threads/factories/thread-management-service-factory';
 export * from './threads/factories/thread-maintenance-service-factory';
 export * from './threads/services/mappers/thread-dto-mapper';
-export * from './threads/dtos/create-thread-dto';
-export * from './threads/dtos/thread-info-dto';
 export * from './threads/commands/create-thread-command';
 export * from './threads/commands/delete-thread-command';
 export * from './threads/commands/update-thread-status-command';
@@ -156,6 +152,18 @@ export interface SortParams {
   field: string;
   direction: 'asc' | 'desc';
 }
+
+// 导入服务类型用于接口定义
+import { SessionLifecycleService } from './sessions/services/session-lifecycle-service';
+import { SessionManagementService } from './sessions/services/session-management-service';
+import { SessionMaintenanceService } from './sessions/services/session-maintenance-service';
+import { ThreadLifecycleService } from './threads/services/thread-lifecycle-service';
+import { ThreadManagementService } from './threads/services/thread-management-service';
+import { ThreadMaintenanceService } from './threads/services/thread-maintenance-service';
+import { CheckpointCreationService } from './threads/checkpoints/services/checkpoint-creation-service';
+import { CheckpointRestoreService } from './threads/checkpoints/services/checkpoint-restore-service';
+import { CheckpointManagementService } from './threads/checkpoints/services/checkpoint-management-service';
+import { CheckpointAnalysisService } from './threads/checkpoints/services/checkpoint-analysis-service';
 
 /**
  * 应用层服务工厂接口
