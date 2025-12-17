@@ -16,10 +16,27 @@ import { GeminiClient } from './clients/gemini-client';
 import { GeminiOpenAIClient } from './clients/gemini-openai-client';
 import { MockClient } from './clients/mock-client';
 import { LLMClientFactory } from './clients/llm-client-factory';
+import { EnhancedLLMClientFactory } from './integration/enhanced-llm-client-factory';
 import { ConverterFactory } from './converters/converter-factory';
 import { EndpointStrategyFactory } from './endpoint-strategies/endpoint-strategy-factory';
 import { FeatureFactory } from './features/feature-factory';
 import { ParameterMapperFactory } from './parameter-mappers/parameter-mapper-factory';
+
+// 轮询池和任务组相关导入
+import { LLMPoolManager } from '../../../domain/llm/managers/pool-manager';
+import { LLMTaskGroupManager } from '../../../domain/llm/managers/task-group-manager';
+import { LLMWrapperManager } from '../../../domain/llm/managers/wrapper-manager';
+import { LLMWrapperFactory } from '../../../domain/llm/factories/wrapper-factory';
+import { PoolService } from '../../../application/llm/services/pool.service';
+import { TaskGroupService } from '../../../application/llm/services/task-group.service';
+import { ConfigManagementService } from '../../../application/llm/services/config-management.service';
+import { LLMOrchestrationService } from '../../../application/llm/services/llm-orchestration.service';
+import { RequestRouter } from './integration/request-router';
+import { PollingPoolAndTaskGroupConfigLoader } from './integration/config-loader';
+import { LLMClientAdapter } from './integration/llm-client-adapter';
+import { MetricsCollector } from '../../../domain/llm/services/metrics-collector';
+import { HealthChecker } from '../../../domain/llm/services/health-checker';
+import { AlertingService } from '../../../domain/llm/services/alerting-service';
 
 /**
  * 验证结果接口
@@ -56,6 +73,9 @@ export class LLMDIContainer {
 
     // 注册工厂类
     this.registerFactories();
+
+    // 注册轮询池和任务组服务
+    this.registerPollingAndTaskGroupServices();
   }
 
   /**
@@ -150,6 +170,11 @@ export class LLMDIContainer {
       .to(LLMClientFactory)
       .inSingletonScope();
 
+    // 增强的LLM客户端工厂
+    this.container.bind<EnhancedLLMClientFactory>(LLM_DI_IDENTIFIERS.EnhancedLLMClientFactory)
+      .to(EnhancedLLMClientFactory)
+      .inSingletonScope();
+
     // 转换器工厂
     this.container.bind<ConverterFactory>(LLM_DI_IDENTIFIERS.ConverterFactory)
       .toConstantValue(ConverterFactory.getInstance());
@@ -167,6 +192,71 @@ export class LLMDIContainer {
     // 参数映射器工厂
     this.container.bind<ParameterMapperFactory>(LLM_DI_IDENTIFIERS.ParameterMapperFactory)
       .to(ParameterMapperFactory)
+      .inSingletonScope();
+  }
+
+  /**
+   * 注册轮询池和任务组服务
+   */
+  private registerPollingAndTaskGroupServices(): void {
+    // 管理器
+    this.container.bind(LLM_DI_IDENTIFIERS.PoolManager)
+      .to(LLMPoolManager)
+      .inSingletonScope();
+      
+    this.container.bind(LLM_DI_IDENTIFIERS.TaskGroupManager)
+      .to(LLMTaskGroupManager)
+      .inSingletonScope();
+      
+    this.container.bind(LLM_DI_IDENTIFIERS.LLMWrapperManager)
+      .to(LLMWrapperManager)
+      .inSingletonScope();
+      
+    this.container.bind(LLM_DI_IDENTIFIERS.LLMWrapperFactory)
+      .to(LLMWrapperFactory)
+      .inSingletonScope();
+      
+    // 应用服务
+    this.container.bind(LLM_DI_IDENTIFIERS.PoolService)
+      .to(PoolService)
+      .inSingletonScope();
+      
+    this.container.bind(LLM_DI_IDENTIFIERS.TaskGroupService)
+      .to(TaskGroupService)
+      .inSingletonScope();
+      
+    this.container.bind(LLM_DI_IDENTIFIERS.ConfigManagementService)
+      .to(ConfigManagementService)
+      .inSingletonScope();
+      
+    this.container.bind(LLM_DI_IDENTIFIERS.LLMOrchestrationService)
+      .to(LLMOrchestrationService)
+      .inSingletonScope();
+      
+    // 集成组件
+    this.container.bind(LLM_DI_IDENTIFIERS.RequestRouter)
+      .to(RequestRouter)
+      .inSingletonScope();
+      
+    this.container.bind(LLM_DI_IDENTIFIERS.ConfigLoader)
+      .to(PollingPoolAndTaskGroupConfigLoader)
+      .inSingletonScope();
+      
+    this.container.bind(LLM_DI_IDENTIFIERS.LLMClientAdapter)
+      .to(LLMClientAdapter)
+      .inTransientScope();
+      
+    // 高级特性
+    this.container.bind(LLM_DI_IDENTIFIERS.MetricsCollector)
+      .to(MetricsCollector)
+      .inSingletonScope();
+      
+    this.container.bind(LLM_DI_IDENTIFIERS.HealthChecker)
+      .to(HealthChecker)
+      .inSingletonScope();
+      
+    this.container.bind(LLM_DI_IDENTIFIERS.AlertingService)
+      .to(AlertingService)
       .inSingletonScope();
   }
 
@@ -259,7 +349,14 @@ export class LLMDIContainer {
       LLM_DI_IDENTIFIERS.AnthropicClient,
       LLM_DI_IDENTIFIERS.GeminiClient,
       LLM_DI_IDENTIFIERS.MockClient,
-      LLM_DI_IDENTIFIERS.LLMClientFactory
+      LLM_DI_IDENTIFIERS.LLMClientFactory,
+      LLM_DI_IDENTIFIERS.EnhancedLLMClientFactory,
+      LLM_DI_IDENTIFIERS.PoolManager,
+      LLM_DI_IDENTIFIERS.TaskGroupManager,
+      LLM_DI_IDENTIFIERS.LLMWrapperManager,
+      LLM_DI_IDENTIFIERS.LLMWrapperFactory,
+      LLM_DI_IDENTIFIERS.RequestRouter,
+      LLM_DI_IDENTIFIERS.ConfigLoader
     ];
 
     return requiredServices.every(service => this.container.isBound(service));
