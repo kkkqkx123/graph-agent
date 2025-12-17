@@ -75,7 +75,7 @@ export class ToolCallNodeFunction extends BaseWorkflowFunction implements INodeF
     const toolCallId = context.getVariable('current_tool_call_id') || `tool_${Date.now()}`;
     
     // 记录工具调用开始
-    const toolCall = {
+    const toolCall: any = {
       id: toolCallId,
       name: toolName,
       parameters: toolParameters,
@@ -121,7 +121,8 @@ export class ToolCallNodeFunction extends BaseWorkflowFunction implements INodeF
     } catch (error) {
       // 更新工具调用状态为失败
       toolCall.status = 'failed';
-      toolCall.error = error.message;
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      toolCall.error = errorMessage;
 
       // 记录错误
       const errors = context.getVariable('errors') || [];
@@ -129,7 +130,7 @@ export class ToolCallNodeFunction extends BaseWorkflowFunction implements INodeF
         type: 'tool_execution_error',
         toolName: toolName,
         toolCallId: toolCallId,
-        message: error.message,
+        message: errorMessage,
         timestamp: new Date().toISOString()
       });
       context.setVariable('errors', errors);

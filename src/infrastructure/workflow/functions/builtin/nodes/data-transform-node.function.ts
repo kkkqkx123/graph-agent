@@ -142,16 +142,17 @@ export class DataTransformNodeFunction extends BaseWorkflowFunction implements I
     } catch (error) {
       // 记录错误
       const errors = context.getVariable('errors') || [];
+      const errorMessage = error instanceof Error ? error.message : String(error);
       errors.push({
         type: 'data_transform_error',
         transformType: transformType,
         sourceData: sourceData,
-        message: error.message,
+        message: errorMessage,
         timestamp: new Date().toISOString()
       });
       context.setVariable('errors', errors);
 
-      throw new Error(`数据转换失败: ${error.message}`);
+      throw new Error(`数据转换失败: ${errorMessage}`);
     }
   }
 
@@ -174,7 +175,8 @@ export class DataTransformNodeFunction extends BaseWorkflowFunction implements I
           const func = new Function('item', `return ${expression}`);
           return func(item);
         } catch (error) {
-          throw new Error(`表达式求值失败: ${error.message}`);
+          const errorMessage = error instanceof Error ? error.message : String(error);
+          throw new Error(`表达式求值失败: ${errorMessage}`);
         }
       }
       
@@ -192,7 +194,8 @@ export class DataTransformNodeFunction extends BaseWorkflowFunction implements I
           const func = new Function('item', `return ${expression}`);
           return func(item);
         } catch (error) {
-          throw new Error(`表达式求值失败: ${error.message}`);
+          const errorMessage = error instanceof Error ? error.message : String(error);
+          throw new Error(`表达式求值失败: ${errorMessage}`);
         }
       }
       

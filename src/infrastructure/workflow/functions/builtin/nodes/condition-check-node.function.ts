@@ -88,15 +88,16 @@ export class ConditionCheckNodeFunction extends BaseWorkflowFunction implements 
     } catch (error) {
       // 记录错误
       const errors = context.getVariable('errors') || [];
+      const errorMessage = error instanceof Error ? error.message : String(error);
       errors.push({
         type: 'condition_evaluation_error',
         condition: condition,
-        message: error.message,
+        message: errorMessage,
         timestamp: new Date().toISOString()
       });
       context.setVariable('errors', errors);
 
-      throw new Error(`条件检查失败: ${error.message}`);
+      throw new Error(`条件检查失败: ${errorMessage}`);
     }
   }
 
@@ -130,7 +131,8 @@ export class ConditionCheckNodeFunction extends BaseWorkflowFunction implements 
       const func = new Function('return ' + expression);
       return Boolean(func());
     } catch (error) {
-      throw new Error(`条件表达式解析失败: ${error.message}`);
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      throw new Error(`条件表达式解析失败: ${errorMessage}`);
     }
   }
 }

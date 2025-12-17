@@ -1,10 +1,10 @@
 import { injectable, inject } from 'inversify';
-import { 
+import {
     IWorkflowFunctionLoader,
     IWorkflowFunction,
-    WorkflowFunctionType,
-    ILogger 
+    WorkflowFunctionType
 } from '../../../../domain/workflow/interfaces/workflow-functions';
+import { ILogger } from '@shared/types/logger';
 import { FunctionRegistry } from '../registry/function-registry';
 import { BaseWorkflowFunction } from '../base/base-workflow-function';
 
@@ -67,17 +67,18 @@ export class WorkflowFunctionLoader implements IWorkflowFunctionLoader {
                 totalFunctions: this.registry.getAllFunctions().length
             });
         } catch (error) {
-            this.logger.error('工作流函数加载失败', { error: error.message });
+            const errorMessage = error instanceof Error ? error.message : String(error);
+            this.logger.error('工作流函数加载失败', new Error(errorMessage));
             throw error;
         }
     }
 
     private async loadBuiltinFunctions(): Promise<void> {
         // 动态导入并注册所有内置函数
-        const conditionFunctions = await import('../builtin/conditions');
-        const nodeFunctions = await import('../builtin/nodes');
-        const routingFunctions = await import('../builtin/routing');
-        const triggerFunctions = await import('../builtin/triggers');
+        const conditionFunctions = await import('../builtin/conditions/index');
+        const nodeFunctions = await import('../builtin/nodes/index');
+        const routingFunctions = await import('../builtin/routing/index');
+        const triggerFunctions = await import('../builtin/triggers/index');
 
         // 注册条件函数
         this.registerFunctionsFromModule(conditionFunctions, WorkflowFunctionType.CONDITION);
@@ -96,7 +97,13 @@ export class WorkflowFunctionLoader implements IWorkflowFunctionLoader {
         Object.values(module).forEach(funcClass => {
             if (this.isWorkflowFunctionClass(funcClass)) {
                 try {
-                    const instance = new funcClass();
+                    // 检查是否是抽象类
+                    if (funcClass === BaseWorkflowFunction) {
+                        return;
+                    }
+                    
+                    // 使用类型断言来避免抽象类实例化错误
+                    const instance = new (funcClass as any)();
                     
                     // 验证函数类型
                     if (instance.type !== expectedType) {
@@ -115,9 +122,9 @@ export class WorkflowFunctionLoader implements IWorkflowFunctionLoader {
                         type: instance.type
                     });
                 } catch (error) {
-                    this.logger.error(`注册函数失败`, {
-                        functionName: funcClass.name,
-                        error: error.message
+                    const errorMessage = error instanceof Error ? error.message : String(error);
+                    this.logger.error(`注册函数失败`, new Error(errorMessage), {
+                        functionName: funcClass.name
                     });
                 }
             }
@@ -130,7 +137,7 @@ export class WorkflowFunctionLoader implements IWorkflowFunctionLoader {
         // 例如从指定目录加载JavaScript/TypeScript文件
         
         // 示例：从环境变量或配置中获取自定义函数目录
-        const customFunctionsDir = process.env.CUSTOM_FUNCTIONS_DIR;
+        const customFunctionsDir = process.env['CUSTOM_FUNCTIONS_DIR'];
         
         if (customFunctionsDir) {
             this.logger.info(`尝试从目录加载自定义函数: ${customFunctionsDir}`);
@@ -139,9 +146,10 @@ export class WorkflowFunctionLoader implements IWorkflowFunctionLoader {
     }
 
     private isWorkflowFunctionClass(obj: any): obj is typeof BaseWorkflowFunction {
-        return obj && 
-               typeof obj === 'function' && 
-               obj.prototype instanceof BaseWorkflowFunction;
+        return obj &&
+               typeof obj === 'function' &&
+               obj.prototype instanceof BaseWorkflowFunction &&
+               obj !== BaseWorkflowFunction;
     }
 
     /**

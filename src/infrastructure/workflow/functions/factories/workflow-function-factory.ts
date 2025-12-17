@@ -1,14 +1,14 @@
 import { injectable, inject } from 'inversify';
-import { 
+import {
     IWorkflowFunctionFactory,
     IWorkflowFunction,
     IConditionFunction,
     INodeFunction,
     IRoutingFunction,
     ITriggerFunction,
-    WorkflowFunctionType,
-    ILogger
+    WorkflowFunctionType
 } from '../../../../domain/workflow/interfaces/workflow-functions';
+import { ILogger } from '@shared/types/logger';
 import { FunctionRegistry } from '../registry/function-registry';
 import { BaseWorkflowFunction } from '../base/base-workflow-function';
 
@@ -151,11 +151,11 @@ export class WorkflowFunctionFactory implements IWorkflowFunctionFactory {
         try {
             return new constructor();
         } catch (error) {
-            this.logger.error(`创建函数实例失败`, {
-                constructorName: constructor.name,
-                error: error.message
+            const errorMessage = error instanceof Error ? error.message : String(error);
+            this.logger.error(`创建函数实例失败`, new Error(errorMessage), {
+                constructorName: constructor.name
             });
-            throw new Error(`创建函数实例失败: ${error.message}`);
+            throw new Error(`创建函数实例失败: ${errorMessage}`);
         }
     }
 
