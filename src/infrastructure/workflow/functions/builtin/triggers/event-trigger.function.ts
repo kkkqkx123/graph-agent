@@ -1,0 +1,100 @@
+import { injectable } from 'inversify';
+import { ITriggerFunction, WorkflowFunctionType } from '../../../../../domain/workflow/interfaces/workflow-functions';
+import { BaseWorkflowFunction } from '../../base/base-workflow-function';
+
+/**
+ * 基于事件类型的触发器函数
+ */
+@injectable()
+export class EventTriggerFunction extends BaseWorkflowFunction implements ITriggerFunction {
+  constructor() {
+    super(
+      'trigger:event',
+      'event_trigger',
+      '基于工作流事件类型的触发器',
+      '1.0.0',
+      WorkflowFunctionType.TRIGGER,
+      false
+    );
+  }
+
+  override getParameters() {
+    return [
+      ...super.getParameters(),
+      {
+        name: 'eventType',
+        type: 'string',
+        required: true,
+        description: '要监听的事件类型'
+      },
+      {
+        name: 'eventSource',
+        type: 'string',
+        required: false,
+        description: '事件源，不指定则监听所有源',
+        defaultValue: null
+      },
+      {
+        name: 'eventDataFilter',
+        type: 'object',
+        required: false,
+        description: '事件数据过滤条件',
+        defaultValue: {}
+      }
+    ];
+  }
+
+  protected override validateCustomConfig(config: any): string[] {
+    const errors: string[] = [];
+
+    if (!config.eventType || typeof config.eventType !== 'string') {
+      errors.push('eventType是必需的字符串参数');
+    }
+
+    if (config.eventSource && typeof config.eventSource !== 'string') {
+      errors.push('eventSource必须是字符串类型');
+    }
+
+    if (config.eventDataFilter && typeof config.eventDataFilter !== 'object') {
+      errors.push('eventDataFilter必须是对象类型');
+    }
+
+    return errors;
+  }
+
+  async check(context: any, config: any): Promise<boolean> {
+    this.checkInitialized();
+
+    const eventType = config.eventType;
+    const eventSource = config.eventSource;
+    const eventDataFilter = config.eventDataFilter || {};
+
+    // 获取事件列表
+    const events = context.getVariable('events') || [];
+    
+    // 查找匹配的事件
+    const matchingEvents = events.filter((event: any) => {
+      // 检查事件类型
+      if (event.type !== eventType) {
+        return false;
+      }
+
+      // 检查事件源
+      if (eventSource && event.source !== eventSource) {
+        return false;
+      }
+
+      // 检查事件数据过滤条件
+      for (const [key, value] of Object.entries(eventDataFilter)) {
+        if (event.data && event.data[key] !== value) {
+          return false;
+        }
+      }
+
+      return true;
+    });
+
+    // 如果有匹配的事件，则触发
+    return matchingEvents.length > 0;
+  }
+}

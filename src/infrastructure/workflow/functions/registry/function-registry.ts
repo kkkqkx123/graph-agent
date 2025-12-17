@@ -92,4 +92,29 @@ export class FunctionRegistry {
     }
     return null;
   }
+
+  /**
+   * 清空注册表
+   */
+  clear(): void {
+    this.functions.clear();
+    this.functionsByName.clear();
+  }
+
+  /**
+   * 获取注册表统计信息
+   */
+  getStats(): { total: number; byType: Record<string, number> } {
+    const stats = {
+      total: this.functions.size,
+      byType: {} as Record<string, number>
+    };
+
+    for (const func of this.functions.values()) {
+      const type = func.type;
+      stats.byType[type] = (stats.byType[type] || 0) + 1;
+    }
+
+    return stats;
+  }
 }

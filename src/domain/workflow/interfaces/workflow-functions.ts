@@ -93,3 +93,34 @@ export interface IRoutingFunction extends IWorkflowFunction {
 export interface ITriggerFunction extends IWorkflowFunction {
   check(context: any, config: any): Promise<boolean>;
 }
+
+/**
+ * 函数工厂接口
+ */
+export interface IWorkflowFunctionFactory {
+  createFunction(functionId: string, config?: any): IWorkflowFunction;
+  createConditionFunction(name: string, config?: any): IConditionFunction;
+  createNodeFunction(name: string, config?: any): INodeFunction;
+  createRoutingFunction(name: string, config?: any): IRoutingFunction;
+  createTriggerFunction(name: string, config?: any): ITriggerFunction;
+}
+
+/**
+ * 函数加载器接口
+ */
+export interface IWorkflowFunctionLoader {
+  loadFunctions(type?: WorkflowFunctionType): Promise<IWorkflowFunction[]>;
+  loadFunctionById(functionId: string): Promise<IWorkflowFunction | null>;
+  loadFunctionByName(name: string): Promise<IWorkflowFunction | null>;
+}
+
+/**
+ * 函数集合接口
+ */
+export interface IWorkflowFunctionCollection {
+  getConditionFunctions(): IConditionFunction[];
+  getNodeFunctions(): INodeFunction[];
+  getRoutingFunctions(): IRoutingFunction[];
+  getTriggerFunctions(): ITriggerFunction[];
+  getFunctionByName(name: string): IWorkflowFunction | null;
+}
