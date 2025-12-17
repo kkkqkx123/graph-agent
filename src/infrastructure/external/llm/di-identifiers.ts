@@ -23,33 +23,10 @@ export const LLM_DI_IDENTIFIERS = {
   
   // 工厂类
   LLMClientFactory: Symbol.for('LLMClientFactory'),
-  EnhancedLLMClientFactory: Symbol.for('EnhancedLLMClientFactory'),
   ConverterFactory: Symbol.for('ConverterFactory'),
   EndpointStrategyFactory: Symbol.for('EndpointStrategyFactory'),
   FeatureFactory: Symbol.for('FeatureFactory'),
   ParameterMapperFactory: Symbol.for('ParameterMapperFactory'),
-  
-  // 轮询池和任务组管理器
-  PoolManager: Symbol.for('PoolManager'),
-  TaskGroupManager: Symbol.for('TaskGroupManager'),
-  LLMWrapperManager: Symbol.for('LLMWrapperManager'),
-  LLMWrapperFactory: Symbol.for('LLMWrapperFactory'),
-  
-  // 应用服务
-  PoolService: Symbol.for('PoolService'),
-  TaskGroupService: Symbol.for('TaskGroupService'),
-  ConfigManagementService: Symbol.for('ConfigManagementService'),
-  LLMOrchestrationService: Symbol.for('LLMOrchestrationService'),
-  
-  // 集成组件
-  RequestRouter: Symbol.for('RequestRouter'),
-  ConfigLoader: Symbol.for('ConfigLoader'),
-  LLMClientAdapter: Symbol.for('LLMClientAdapter'),
-  
-  // 高级特性
-  MetricsCollector: Symbol.for('MetricsCollector'),
-  HealthChecker: Symbol.for('HealthChecker'),
-  AlertingService: Symbol.for('AlertingService'),
   
   // 参数映射器
   OpenAIParameterMapper: Symbol.for('OpenAIParameterMapper'),
@@ -84,25 +61,10 @@ export interface ServiceTypes {
   GeminiOpenAIClient: any;
   MockClient: any;
   LLMClientFactory: any;
-  EnhancedLLMClientFactory: any;
   ConverterFactory: any;
   EndpointStrategyFactory: any;
   FeatureFactory: any;
   ParameterMapperFactory: any;
-  PoolManager: any;
-  TaskGroupManager: any;
-  LLMWrapperManager: any;
-  LLMWrapperFactory: any;
-  PoolService: any;
-  TaskGroupService: any;
-  ConfigManagementService: any;
-  LLMOrchestrationService: any;
-  RequestRouter: any;
-  ConfigLoader: any;
-  LLMClientAdapter: any;
-  MetricsCollector: any;
-  HealthChecker: any;
-  AlertingService: any;
   OpenAIParameterMapper: any;
   AnthropicParameterMapper: any;
   GeminiParameterMapper: any;
@@ -137,25 +99,10 @@ export const DEPENDENCY_GRAPH: Record<keyof LLMDIIdentifiers, (keyof LLMDIIdenti
   GeminiOpenAIClient: ['HttpClient', 'ConfigManager', 'TokenBucketLimiter', 'TokenCalculator'],
   MockClient: ['HttpClient', 'ConfigManager', 'TokenBucketLimiter', 'TokenCalculator'],
   LLMClientFactory: ['OpenAIChatClient', 'OpenAIResponseClient', 'AnthropicClient', 'GeminiClient', 'MockClient'],
-  EnhancedLLMClientFactory: ['OpenAIChatClient', 'OpenAIResponseClient', 'AnthropicClient', 'GeminiClient', 'MockClient', 'ConfigManager'],
   ConverterFactory: [],
   EndpointStrategyFactory: [],
   FeatureFactory: ['FeatureRegistry'],
   ParameterMapperFactory: [],
-  PoolManager: ['ConfigManager', 'LLMWrapperFactory', 'HealthChecker'],
-  TaskGroupManager: ['ConfigManager', 'LLMWrapperFactory', 'HealthChecker'],
-  LLMWrapperManager: ['LLMWrapperFactory', 'MetricsCollector', 'HealthChecker'],
-  LLMWrapperFactory: ['EnhancedLLMClientFactory', 'ConfigManager'],
-  PoolService: ['PoolManager', 'ConfigManagementService'],
-  TaskGroupService: ['TaskGroupManager', 'ConfigManagementService'],
-  ConfigManagementService: ['ConfigLoader', 'ConfigManager'],
-  LLMOrchestrationService: ['LLMWrapperManager', 'RequestRouter', 'MetricsCollector', 'HealthChecker', 'AlertingService'],
-  RequestRouter: ['LLMWrapperManager', 'EnhancedLLMClientFactory', 'ConfigManager'],
-  ConfigLoader: ['ConfigManager'],
-  LLMClientAdapter: [],
-  MetricsCollector: [],
-  HealthChecker: [],
-  AlertingService: ['MetricsCollector'],
   OpenAIParameterMapper: [],
   AnthropicParameterMapper: [],
   GeminiParameterMapper: [],
