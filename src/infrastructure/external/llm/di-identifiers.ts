@@ -20,6 +20,11 @@ export const LLM_DI_IDENTIFIERS = {
   GeminiClient: Symbol.for('GeminiClient'),
   GeminiOpenAIClient: Symbol.for('GeminiOpenAIClient'),
   MockClient: Symbol.for('MockClient'),
+  HumanRelayClient: Symbol.for('HumanRelayClient'),
+  
+  // HumanRelay相关
+  HumanRelayInteractionService: Symbol.for('HumanRelayInteractionService'),
+  HumanRelayConfigLoader: Symbol.for('HumanRelayConfigLoader'),
   
   // 工厂类
   LLMClientFactory: Symbol.for('LLMClientFactory'),
@@ -45,6 +50,11 @@ export const LLM_DI_IDENTIFIERS = {
   GeminiCachedContentFeature: Symbol.for('GeminiCachedContentFeature'),
   OpenAIResponseFormatFeature: Symbol.for('OpenAIResponseFormatFeature'),
   AnthropicSystemMessageFeature: Symbol.for('AnthropicSystemMessageFeature'),
+  
+  // HumanRelay前端服务
+  TUIInteractionService: Symbol.for('TUIInteractionService'),
+  WebInteractionService: Symbol.for('WebInteractionService'),
+  APIInteractionService: Symbol.for('APIInteractionService'),
 } as const;
 
 // 服务类型映射 - 使用any类型避免循环依赖，在运行时通过依赖注入保证类型安全
@@ -60,6 +70,9 @@ export interface ServiceTypes {
   GeminiClient: any;
   GeminiOpenAIClient: any;
   MockClient: any;
+  HumanRelayClient: any;
+  HumanRelayInteractionService: any;
+  HumanRelayConfigLoader: any;
   LLMClientFactory: any;
   ConverterFactory: any;
   EndpointStrategyFactory: any;
@@ -77,6 +90,9 @@ export interface ServiceTypes {
   GeminiCachedContentFeature: any;
   OpenAIResponseFormatFeature: any;
   AnthropicSystemMessageFeature: any;
+  TUIInteractionService: any;
+  WebInteractionService: any;
+  APIInteractionService: any;
 }
 
 // 类型安全的标识符类型
@@ -98,7 +114,10 @@ export const DEPENDENCY_GRAPH: Record<keyof LLMDIIdentifiers, (keyof LLMDIIdenti
   GeminiClient: ['HttpClient', 'ConfigManager', 'TokenBucketLimiter', 'TokenCalculator'],
   GeminiOpenAIClient: ['HttpClient', 'ConfigManager', 'TokenBucketLimiter', 'TokenCalculator'],
   MockClient: ['HttpClient', 'ConfigManager', 'TokenBucketLimiter', 'TokenCalculator'],
-  LLMClientFactory: ['OpenAIChatClient', 'OpenAIResponseClient', 'AnthropicClient', 'GeminiClient', 'MockClient'],
+  HumanRelayClient: ['HumanRelayInteractionService', 'ConfigManager'],
+  HumanRelayInteractionService: ['TUIInteractionService', 'WebInteractionService', 'APIInteractionService', 'ConfigManager'],
+  HumanRelayConfigLoader: ['ConfigManager'],
+  LLMClientFactory: ['OpenAIChatClient', 'OpenAIResponseClient', 'AnthropicClient', 'GeminiClient', 'MockClient', 'HumanRelayClient'],
   ConverterFactory: [],
   EndpointStrategyFactory: [],
   FeatureFactory: ['FeatureRegistry'],
@@ -115,4 +134,7 @@ export const DEPENDENCY_GRAPH: Record<keyof LLMDIIdentifiers, (keyof LLMDIIdenti
   GeminiCachedContentFeature: [],
   OpenAIResponseFormatFeature: [],
   AnthropicSystemMessageFeature: [],
+  TUIInteractionService: ['ConfigManager'],
+  WebInteractionService: ['ConfigManager'],
+  APIInteractionService: ['ConfigManager'],
 };

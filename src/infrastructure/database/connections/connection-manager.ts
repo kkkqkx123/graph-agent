@@ -3,7 +3,7 @@ import { DataSource, DataSourceOptions } from 'typeorm';
 import { ConfigManager } from '../../config/config-manager';
 
 interface DatabaseConfig {
-  type?: 'postgres' | 'mysql' | 'sqlite' | 'mariadb' | 'mssql';
+  type?: 'postgres' | 'sqlite';
   host?: string;
   port?: number;
   username?: string;

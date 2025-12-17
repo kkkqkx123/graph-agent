@@ -6,6 +6,8 @@ import { AnthropicClient } from './anthropic-client';
 import { GeminiClient } from './gemini-client';
 import { GeminiOpenAIClient } from './gemini-openai-client';
 import { MockClient } from './mock-client';
+import { HumanRelayClient } from './human-relay-client';
+import { HumanRelayMode } from '../../../../domain/llm/value-objects/human-relay-mode';
 import { LLM_DI_IDENTIFIERS } from '../di-identifiers';
 
 /**
@@ -23,6 +25,7 @@ export class LLMClientFactory {
     @inject(LLM_DI_IDENTIFIERS.GeminiClient) private geminiClient: GeminiClient,
     @inject(LLM_DI_IDENTIFIERS.GeminiOpenAIClient) private geminiOpenAIClient: GeminiOpenAIClient,
     @inject(LLM_DI_IDENTIFIERS.MockClient) private mockClient: MockClient,
+    @inject(LLM_DI_IDENTIFIERS.HumanRelayClient) private humanRelayClient: HumanRelayClient,
     @inject(LLM_DI_IDENTIFIERS.ConfigManager) private configManager: any
   ) { }
 
@@ -48,6 +51,11 @@ export class LLMClientFactory {
 
       case 'mock':
         return this.mockClient;
+
+      case 'human-relay':
+      case 'human-relay-s':
+      case 'human-relay-m':
+        return this.createHumanRelayClient(provider);
 
       default:
         throw new Error(`不支持的LLM提供商: ${provider}`);
@@ -105,7 +113,7 @@ export class LLMClientFactory {
    * @returns 提供商列表
    */
   getSupportedProviders(): string[] {
-    return ['openai', 'anthropic', 'gemini', 'mock'];
+    return ['openai', 'anthropic', 'gemini', 'mock', 'human-relay'];
   }
 
   /**
@@ -228,5 +236,58 @@ export class LLMClientFactory {
     }
 
     return results;
+  }
+
+  /**
+   * 创建HumanRelay客户端
+   * @param provider 提供商名称
+   * @returns HumanRelay客户端实例
+   */
+  private createHumanRelayClient(provider: string): ILLMClient {
+    // 根据提供商名称确定模式
+    let mode: HumanRelayMode;
+    switch (provider) {
+      case 'human-relay-s':
+        mode = HumanRelayMode.SINGLE;
+        break;
+      case 'human-relay-m':
+        mode = HumanRelayMode.MULTI;
+        break;
+      default:
+        mode = HumanRelayMode.SINGLE;
+    }
+
+    // 获取HumanRelay配置
+    const config = this.configManager.get(`llm.humanRelay`, {});
+    
+    // 创建客户端配置
+    const clientConfig = {
+      providerName: provider,
+      mode,
+      maxHistoryLength: config.maxHistoryLength || (mode === HumanRelayMode.MULTI ? 100 : 50),
+      defaultTimeout: config.defaultTimeout || (mode === HumanRelayMode.MULTI ? 600 : 300),
+      frontendConfig: config.frontendConfig || {}
+    };
+
+    // 由于HumanRelayClient已经通过依赖注入创建，这里直接返回
+    // 在实际使用中，可能需要创建多个实例或根据配置动态创建
+    return this.humanRelayClient;
+  }
+
+  /**
+   * 获取HumanRelay支持的模型
+   * @returns 模型列表
+   */
+  public getHumanRelayModels(): string[] {
+    return ['human-relay-s', 'human-relay-m'];
+  }
+
+  /**
+   * 检查是否为HumanRelay提供商
+   * @param provider 提供商名称
+   * @returns 是否为HumanRelay
+   */
+  public isHumanRelayProvider(provider: string): boolean {
+    return ['human-relay', 'human-relay-s', 'human-relay-m'].includes(provider.toLowerCase());
   }
 }

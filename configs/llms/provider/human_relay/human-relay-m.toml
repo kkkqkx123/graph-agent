@@ -1,0 +1,53 @@
+# 继承通用配置
+inherits_from = "../common.toml"
+model_name = "human-relay-m"
+
+# 多轮模式特定配置
+mode = "multi"
+max_history_length = 100           # 扩展历史长度
+default_timeout = 600              # 多轮对话可能需要更长时间
+
+# 前端配置优化
+[frontend.tui]
+show_history = true                # 显示历史记录
+history_format = "detailed"        # 详细历史格式
+auto_save = true                   # 自动保存会话
+
+[frontend.web]
+max_connections = 10               # 多轮模式可能需要更多连接
+session_timeout = 3600             # 会话超时时间（秒）
+
+# 模板优化
+[templates]
+multi = """
+🔄 **继续对话**
+
+请继续将以下内容输入到Web LLM：
+
+{incremental_prompt}
+
+📋 **对话历史：**
+{conversation_history}
+
+📝 **请将Web LLM的回复粘贴到下方：**
+"""
+
+# 会话管理
+[session_management]
+auto_save_interval = 60            # 自动保存间隔（秒）
+max_session_duration = 7200        # 最大会话持续时间（秒）
+session_cleanup_interval = 300     # 会话清理间隔（秒）
+
+[metadata]
+description = "HumanRelay多轮对话模式"
+capabilities = [
+    "human_interaction",
+    "web_llm_integration",
+    "conversation_history",
+]
+use_cases = [
+    "复杂分析",
+    "多轮讨论",
+    "迭代开发",
+    "教学场景",
+]

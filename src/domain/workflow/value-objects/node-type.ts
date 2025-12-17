@@ -17,7 +17,8 @@ export enum NodeTypeValue {
   CONDITION = 'condition',
   LLM = 'llm',
   TOOL = 'tool',
-  WAIT = 'wait'
+  WAIT = 'wait',
+  HUMAN_RELAY = 'human-relay'
 }
 
 /**
@@ -127,6 +128,14 @@ export class NodeType extends ValueObject<NodeTypeProps> {
    */
   public static wait(): NodeType {
     return new NodeType({ value: NodeTypeValue.WAIT });
+  }
+
+  /**
+   * 创建HumanRelay节点类型
+   * @returns HumanRelay节点类型实例
+   */
+  public static humanRelay(): NodeType {
+    return new NodeType({ value: NodeTypeValue.HUMAN_RELAY });
   }
 
   /**
@@ -262,6 +271,14 @@ export class NodeType extends ValueObject<NodeTypeProps> {
   }
 
   /**
+   * 检查是否为HumanRelay节点
+   * @returns 是否为HumanRelay节点
+   */
+  public isHumanRelay(): boolean {
+    return this.props.value === NodeTypeValue.HUMAN_RELAY;
+  }
+
+  /**
    * 检查是否为控制流节点
    * @returns 是否为控制流节点
    */
@@ -276,7 +293,7 @@ export class NodeType extends ValueObject<NodeTypeProps> {
    */
   public isExecutable(): boolean {
     return this.isTask() || this.isSubworkflow() || this.isCustom() ||
-      this.isCondition() || this.isLLM() || this.isTool() || this.isWait();
+      this.isCondition() || this.isLLM() || this.isTool() || this.isWait() || this.isHumanRelay();
   }
 
   /**
@@ -346,6 +363,7 @@ export class NodeType extends ValueObject<NodeTypeProps> {
       [NodeTypeValue.LLM]: 'LLM节点，调用大语言模型进行文本生成',
       [NodeTypeValue.TOOL]: '工具节点，执行工具调用并处理结果',
       [NodeTypeValue.WAIT]: '等待节点，处理等待和延迟逻辑',
+      [NodeTypeValue.HUMAN_RELAY]: 'HumanRelay节点，通过前端与用户交互进行人工中转',
       [NodeTypeValue.CUSTOM]: '自定义节点，根据特定逻辑执行'
     };
 
