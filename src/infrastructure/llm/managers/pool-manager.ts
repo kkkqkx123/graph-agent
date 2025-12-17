@@ -2,6 +2,7 @@ import { injectable, inject } from 'inversify';
 import { IPollingPoolManager, IPollingPool } from '../../../domain/llm/interfaces/pool-manager.interface';
 import { PollingPool } from '../../../domain/llm/entities/pool';
 import { ID } from '../../../domain/common/value-objects/id';
+import { LLMClientFactory } from '../../external/llm/clients/llm-client-factory';
 
 /**
  * 轮询池管理器
@@ -13,7 +14,8 @@ export class PollingPoolManager implements IPollingPoolManager {
   private pools: Map<string, IPollingPool> = new Map();
 
   constructor(
-    @inject('ITaskGroupManager') private taskGroupManager: any
+    @inject('ITaskGroupManager') private taskGroupManager: any,
+    @inject('ILLMClientFactory') private llmClientFactory: LLMClientFactory
   ) {}
 
   /**
@@ -35,7 +37,8 @@ export class PollingPoolManager implements IPollingPoolManager {
       ID.generate(),
       name,
       config,
-      this.taskGroupManager
+      this.taskGroupManager,
+      this.llmClientFactory
     );
 
     await pool.initialize();
