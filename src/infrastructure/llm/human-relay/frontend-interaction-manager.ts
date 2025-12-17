@@ -247,7 +247,7 @@ export class FrontendInteractionManager implements IHumanRelayInteractionService
         prompt.getId(),
         {
           frontendType: this.getFrontendType(),
-          promptId: prompt.getId().getValue(),
+          promptId: prompt.getId().toString(),
           timestamp: new Date()
         }
       );

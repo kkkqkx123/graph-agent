@@ -190,16 +190,17 @@ export class HumanRelayNodeExecutor implements INodeExecutor {
     // 创建请求
     const modelName = node.getMode() === HumanRelayMode.MULTI ? 'human-relay-m' : 'human-relay-s';
     return LLMRequest.create(
-      this.generateId(),
       modelName,
       messages,
       {
-        timeout: node.getTimeout(),
-        frontendType: node.getFrontendType(),
-        enableSessionPersistence: node.isSessionPersistenceEnabled(),
-        maxHistoryLength: node.getMaxHistoryLength(),
-        nodeId: node.nodeId.toString(),
-        workflowId: (context as any).workflowId?.toString()
+        metadata: {
+          timeout: node.getTimeout(),
+          frontendType: node.getFrontendType(),
+          enableSessionPersistence: node.isSessionPersistenceEnabled(),
+          maxHistoryLength: node.getMaxHistoryLength(),
+          nodeId: node.nodeId.toString(),
+          workflowId: (context as any).workflowId?.toString()
+        }
       }
     );
   }
