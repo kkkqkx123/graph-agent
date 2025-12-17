@@ -7,13 +7,15 @@
 export enum HumanRelayMode {
   /**
    * 单轮对话模式
-   * 每次交互都是独立的，不保留历史记录
+   * 每次交互都提供完整的上下文（包括历史对话）
+   * 适用于外部LLM无法保持会话状态的情况
    */
   SINGLE = 'single',
   
   /**
    * 多轮对话模式
-   * 保留对话历史，支持上下文相关的多轮交互
+   * 每次交互只提供增量内容（新消息）
+   * 适用于外部LLM可以保持会话状态的情况
    */
   MULTI = 'multi'
 }
@@ -42,19 +44,19 @@ export class HumanRelayModeUtils {
   public static getDescription(mode: HumanRelayMode): string {
     switch (mode) {
       case HumanRelayMode.SINGLE:
-        return '单轮对话模式 - 每次交互独立，不保留历史';
+        return '单轮对话模式 - 每次提供完整上下文，适用于无状态LLM';
       case HumanRelayMode.MULTI:
-        return '多轮对话模式 - 保留对话历史，支持上下文交互';
+        return '多轮对话模式 - 每次提供增量内容，适用于有状态LLM';
       default:
         return '未知模式';
     }
   }
 
   /**
-   * 检查模式是否支持历史记录
+   * 检查模式是否需要完整历史记录
    */
-  public static supportsHistory(mode: HumanRelayMode): boolean {
-    return mode === HumanRelayMode.MULTI;
+  public static requiresFullHistory(mode: HumanRelayMode): boolean {
+    return mode === HumanRelayMode.SINGLE;
   }
 
   /**

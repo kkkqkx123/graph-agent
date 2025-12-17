@@ -358,22 +358,28 @@ export class HumanRelayPrompt extends Entity {
     template: PromptTemplate,
     timeout: number = 300
   ): HumanRelayPrompt {
-    // 构建提示内容
-    const content = messages
-      .map(msg => `${msg.role}: ${msg.content}`)
-      .join('\n');
-
-    // 构建对话上下文（多轮模式）
-    let conversationContext: string | undefined;
-    if (mode === HumanRelayMode.MULTI && messages.length > 1) {
-      conversationContext = messages
+    if (mode === HumanRelayMode.SINGLE) {
+      // 单轮模式：合并所有消息作为完整上下文
+      const content = messages
         .map(msg => `${msg.role}: ${msg.content}`)
         .join('\n');
+      return this.createSingleTurn(content, template, timeout);
+    } else {
+      // 多轮模式：只使用最新消息作为增量内容
+      const latestMessage = messages[messages.length - 1];
+      if (!latestMessage) {
+        throw new Error('消息列表不能为空');
+      }
+      
+      // 历史消息作为上下文（除了最新消息）
+      const historyMessages = messages.slice(0, -1);
+      const conversationContext = historyMessages.length > 0
+        ? historyMessages.map(msg => `${msg.role}: ${msg.content}`).join('\n')
+        : undefined;
+      
+      const content = `${latestMessage.role}: ${latestMessage.content}`;
+      return this.createMultiTurn(content, conversationContext!, template, timeout);
     }
-
-    return mode === HumanRelayMode.MULTI
-      ? this.createMultiTurn(content, conversationContext!, template, timeout)
-      : this.createSingleTurn(content, template, timeout);
   }
 
   /**

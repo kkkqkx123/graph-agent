@@ -4,37 +4,14 @@ model_name = "human-relay-s"
 
 # 单轮模式特定配置
 mode = "single"
-max_history_length = 1             # 单轮模式不需要历史
-default_timeout = 300              # 单轮模式标准超时
-
-# 前端配置优化
-[frontend.tui]
-show_history = false               # 单轮模式不显示历史
-prompt_style = "minimal"           # 简化显示
-
-[frontend.web]
-max_connections = 5                # 单轮模式连接数较少
-
-# 模板优化
-[templates]
-single = """
-🎯 **单轮任务**
-
-请将以下内容输入到Web LLM：
-
-{prompt}
-
-📝 **请将回复粘贴到下方：**
-"""
+max_history_length = 100 # 单轮模式需要完整历史上下文
+default_timeout = 600    # 无状态外部llm需要更长超时时间
 
 [metadata]
-description = "HumanRelay单轮对话模式"
+description = "HumanRelay单轮模式 - 每次提供完整上下文"
 capabilities = [
     "human_interaction",
     "web_llm_integration",
+    "full_context_support",
 ]
-use_cases = [
-    "一次性分析",
-    "代码审查",
-    "简单问答",
-]
+use_cases = ["无状态LLM集成", "完整上下文分析", "需要历史记录的任务"]

@@ -352,8 +352,9 @@ export class HumanRelayDomainService {
     history?: ILLMMessage[]
   ): string {
     if (mode === HumanRelayMode.SINGLE) {
-      // 单轮模式：合并所有消息
-      return messages
+      // 单轮模式：合并所有消息和历史，提供完整上下文
+      const allMessages = history ? [...history, ...messages] : messages;
+      return allMessages
         .map(msg => `${msg.role}: ${msg.content}`)
         .join('\n');
     } else {
