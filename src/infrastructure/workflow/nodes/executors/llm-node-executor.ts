@@ -1,35 +1,59 @@
 import { injectable, inject } from 'inversify';
 import { Node } from '@domain/workflow/entities/nodes/base/node';
 import { ExecutionContext } from '@domain/workflow/execution/execution-context.interface';
+import { WrapperService } from '../../../../application/llm/services/wrapper-service';
 
 @injectable()
 export class LLMNodeExecutor {
   constructor(
-    @inject('LLMClientFactory') private llmClientFactory: any
+    @inject('WrapperService') private wrapperService: WrapperService,
+    @inject('LLMClientFactory') private llmClientFactory?: any
   ) { }
 
   async execute(node: Node, context: ExecutionContext): Promise<any> {
     try {
-      // Get LLM client
-      const client = await this.getLLMClient(node);
+      // 获取包装器名称
+      const wrapperName = this.getWrapperName(node);
 
-      // Prepare LLM request
+      // 准备LLM请求
       const request = this.prepareRequest(node, context);
 
-      // Execute LLM request
-      const response = await client.generateResponse(request);
+      // 通过包装器执行LLM请求
+      const response = await this.wrapperService.generateResponse(wrapperName, request);
 
-      // Process response
+      // 处理响应
       const result = this.processResponse(response, node, context);
 
-      // Store response in context
+      // 存储响应到上下文
       context.setVariable(`llm_response_${node.nodeId.value}`, result);
       context.setVariable(`llm_tokens_${node.nodeId.value}`, response.tokenUsage || {});
 
       return result;
     } catch (error) {
-      throw new Error(`LLM node execution failed: ${error instanceof Error ? error.message : String(error)}`);
+      throw new Error(`LLM节点执行失败: ${error instanceof Error ? error.message : String(error)}`);
     }
+  }
+
+  private getWrapperName(node: Node): string {
+    const config = node.properties;
+    
+    // 优先使用包装器配置
+    if (config['wrapper']) {
+      return config['wrapper'] as string;
+    }
+    
+    // 兼容旧配置：使用轮询池或任务组
+    if (config['pool']) {
+      return config['pool'] as string;
+    }
+    
+    if (config['taskGroup']) {
+      return config['taskGroup'] as string;
+    }
+    
+    // 默认使用直接LLM包装器
+    const provider = config['provider'] || 'openai';
+    return `${provider}_client`;
   }
 
   private async getLLMClient(node: Node): Promise<any> {

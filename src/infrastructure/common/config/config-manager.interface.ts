@@ -51,6 +51,8 @@ export interface LLMConfig {
     maxRequests: number;
     windowSizeMs: number;
   };
+  pools?: Record<string, any>; // 轮询池配置
+  taskGroups?: Record<string, any>; // 任务组配置
 }
 
 // 验证规则接口

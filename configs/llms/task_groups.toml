@@ -1,0 +1,74 @@
+# 任务组配置
+# 此文件包含所有任务组的配置
+
+# 快速任务组配置
+[task_groups.fast_group]
+name = "fast_group"
+
+[task_groups.fast_group.echelon1]
+models = ["openai:gpt-4o", "anthropic:claude-3-5-sonnet"]
+priority = 1
+
+[task_groups.fast_group.echelon2]
+models = ["openai:gpt-4o-mini", "anthropic:claude-3-haiku"]
+priority = 2
+
+[task_groups.fast_group.circuit_breaker]
+failure_threshold = 5
+reset_timeout = 60
+
+# 经济任务组配置
+[task_groups.economy_group]
+name = "economy_group"
+
+[task_groups.economy_group.echelon1]
+models = ["openai:gpt-5-mini", "gemini:gemini-2.5-flash"]
+priority = 1
+
+[task_groups.economy_group.echelon2]
+models = ["openai:gpt-5-nano", "gemini:gemini-2.5-flash-lite"]
+priority = 2
+
+[task_groups.economy_group.echelon3]
+models = ["openai:gpt-4o-mini"]
+priority = 3
+
+[task_groups.economy_group.circuit_breaker]
+failure_threshold = 10
+reset_timeout = 120
+
+# 高可用任务组配置
+[task_groups.high_availability_group]
+name = "high_availability_group"
+
+[task_groups.high_availability_group.echelon1]
+models = ["openai:gpt-4o", "anthropic:claude-3-5-sonnet", "gemini:gemini-2.5-pro"]
+priority = 1
+
+[task_groups.high_availability_group.echelon2]
+models = ["openai:gpt-4o-mini", "anthropic:claude-3-haiku", "gemini:gemini-2.5-flash"]
+priority = 2
+
+[task_groups.high_availability_group.echelon3]
+models = ["openai:gpt-5-mini", "gemini:gemini-2.5-flash-lite"]
+priority = 3
+
+[task_groups.high_availability_group.circuit_breaker]
+failure_threshold = 3
+reset_timeout = 30
+
+# 默认任务组配置
+[task_groups.default_group]
+name = "default_group"
+
+[task_groups.default_group.echelon1]
+models = ["openai:gpt-4o-mini", "gemini:gemini-2.5-flash"]
+priority = 1
+
+[task_groups.default_group.echelon2]
+models = ["openai:gpt-5-mini", "gemini:gemini-2.5-flash-lite"]
+priority = 2
+
+[task_groups.default_group.circuit_breaker]
+failure_threshold = 8
+reset_timeout = 90

@@ -1,0 +1,116 @@
+# 轮询池配置
+# 此文件包含所有轮询池的配置
+
+# 快速轮询池配置
+[pools.fast_pool]
+name = "fast_pool"
+task_groups = ["fast_group"]
+
+[pools.fast_pool.rotation]
+strategy = "round_robin"
+
+[pools.fast_pool.health_check]
+interval = 30
+failure_threshold = 3
+
+[[pools.fast_pool.instances]]
+name = "openai_gpt4o"
+provider = "openai"
+model = "gpt-4o"
+weight = 1
+
+[[pools.fast_pool.instances]]
+name = "openai_gpt4o_mini"
+provider = "openai"
+model = "gpt-4o-mini"
+weight = 2
+
+[[pools.fast_pool.instances]]
+name = "anthropic_claude35"
+provider = "anthropic"
+model = "claude-3-5-sonnet"
+weight = 1
+
+# 经济轮询池配置
+[pools.economy_pool]
+name = "economy_pool"
+task_groups = ["economy_group"]
+
+[pools.economy_pool.rotation]
+strategy = "weighted"
+
+[pools.economy_pool.health_check]
+interval = 60
+failure_threshold = 5
+
+[[pools.economy_pool.instances]]
+name = "openai_gpt5_mini"
+provider = "openai"
+model = "gpt-5-mini"
+weight = 3
+
+[[pools.economy_pool.instances]]
+name = "openai_gpt5_nano"
+provider = "openai"
+model = "gpt-5-nano"
+weight = 5
+
+[[pools.economy_pool.instances]]
+name = "gemini_25_flash"
+provider = "gemini"
+model = "gemini-2.5-flash"
+weight = 2
+
+# 高可用轮询池配置
+[pools.high_availability_pool]
+name = "high_availability_pool"
+task_groups = ["high_availability_group"]
+
+[pools.high_availability_pool.rotation]
+strategy = "least_recently_used"
+
+[pools.high_availability_pool.health_check]
+interval = 15
+failure_threshold = 2
+
+[[pools.high_availability_pool.instances]]
+name = "openai_gpt4o_ha"
+provider = "openai"
+model = "gpt-4o"
+weight = 1
+
+[[pools.high_availability_pool.instances]]
+name = "anthropic_claude35_ha"
+provider = "anthropic"
+model = "claude-3-5-sonnet"
+weight = 1
+
+[[pools.high_availability_pool.instances]]
+name = "gemini_25_pro_ha"
+provider = "gemini"
+model = "gemini-2.5-pro"
+weight = 1
+
+# 默认轮询池配置
+[pools.default_pool]
+name = "default_pool"
+task_groups = ["default_group"]
+
+[pools.default_pool.rotation]
+strategy = "round_robin"
+
+[pools.default_pool.health_check]
+interval = 45
+failure_threshold = 4
+
+[[pools.default_pool.instances]]
+name = "openai_default"
+provider = "openai"
+model = "gpt-4o-mini"
+weight = 1
+
+[[pools.default_pool.instances]]
+name = "gemini_default"
+provider = "gemini"
+model = "gemini-2.5-flash"
+weight = 2
