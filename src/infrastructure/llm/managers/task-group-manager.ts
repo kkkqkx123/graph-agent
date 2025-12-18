@@ -1,6 +1,7 @@
 import { injectable, inject } from 'inversify';
 import { ITaskGroupManager } from '../../../domain/llm/interfaces/task-group-manager.interface';
 import { ConfigManager } from '../../common/config/config-manager.interface';
+import { LLM_DI_IDENTIFIERS } from '../di-identifiers';
 
 /**
  * 任务组管理器
@@ -10,7 +11,7 @@ import { ConfigManager } from '../../common/config/config-manager.interface';
 @injectable()
 export class TaskGroupManager implements ITaskGroupManager {
   constructor(
-    @inject('ConfigManager') private configManager: ConfigManager
+    @inject(LLM_DI_IDENTIFIERS.ConfigManager) private configManager: ConfigManager
   ) {}
 
   /**

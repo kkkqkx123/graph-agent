@@ -4,7 +4,7 @@ import { Timestamp } from '../../common/value-objects/timestamp';
 import { Version } from '../../common/value-objects/version';
 import { InstanceStatus, RotationStrategy } from '../interfaces/pool-manager.interface';
 import { ILLMClient } from '../interfaces/llm-client.interface';
-import { LLMClientFactory } from '../../../infrastructure/external/llm/clients/llm-client-factory';
+import { LLMClientFactory } from '../../../infrastructure/llm/clients/llm-client-factory';
 import { LLMRequest } from './llm-request';
 
 /**

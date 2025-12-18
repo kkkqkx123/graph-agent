@@ -1,5 +1,6 @@
 import { injectable, inject } from 'inversify';
 import { ConfigManager } from '../../common/config/config-manager.interface';
+import { LLM_DI_IDENTIFIERS } from '../di-identifiers';
 
 /**
  * 任务组配置加载器
@@ -9,7 +10,7 @@ import { ConfigManager } from '../../common/config/config-manager.interface';
 @injectable()
 export class TaskGroupConfigLoader {
   constructor(
-    @inject('ConfigManager') private configManager: ConfigManager
+    @inject(LLM_DI_IDENTIFIERS.ConfigManager) private configManager: ConfigManager
   ) {}
 
   /**

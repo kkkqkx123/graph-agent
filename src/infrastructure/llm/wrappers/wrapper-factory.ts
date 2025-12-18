@@ -4,6 +4,7 @@ import { PollingPoolWrapper } from '../../../domain/llm/entities/wrapper';
 import { TaskGroupWrapper } from '../../../domain/llm/entities/wrapper';
 import { DirectLLMWrapper } from '../../../domain/llm/entities/wrapper';
 import { ID } from '../../../domain/common/value-objects/id';
+import { LLM_DI_IDENTIFIERS } from '../di-identifiers';
 
 /**
  * LLM包装器工厂
@@ -15,8 +16,8 @@ export class LLMWrapperFactory implements ILLMWrapperFactory {
   private wrappers: Map<string, ILLMWrapper> = new Map();
 
   constructor(
-    @inject('IPollingPoolManager') private poolManager: any,
-    @inject('ITaskGroupManager') private taskGroupManager: any
+    @inject(LLM_DI_IDENTIFIERS.PollingPoolManager) private poolManager: any,
+    @inject(LLM_DI_IDENTIFIERS.TaskGroupManager) private taskGroupManager: any
   ) {}
 
   /**

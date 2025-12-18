@@ -2,7 +2,8 @@ import { injectable, inject } from 'inversify';
 import { IPollingPoolManager, IPollingPool } from '../../../domain/llm/interfaces/pool-manager.interface';
 import { PollingPool } from '../../../domain/llm/entities/pool';
 import { ID } from '../../../domain/common/value-objects/id';
-import { LLMClientFactory } from '../../external/llm/clients/llm-client-factory';
+import { LLMClientFactory } from '../clients/llm-client-factory';
+import { LLM_DI_IDENTIFIERS } from '../di-identifiers';
 
 /**
  * 轮询池管理器
@@ -14,9 +15,9 @@ export class PollingPoolManager implements IPollingPoolManager {
   private pools: Map<string, IPollingPool> = new Map();
 
   constructor(
-    @inject('ITaskGroupManager') private taskGroupManager: any,
-    @inject('ILLMClientFactory') private llmClientFactory: LLMClientFactory
-  ) {}
+    @inject(LLM_DI_IDENTIFIERS.TaskGroupManager) private taskGroupManager: any,
+    @inject(LLM_DI_IDENTIFIERS.LLMClientFactory) private llmClientFactory: LLMClientFactory
+  ) { }
 
   /**
    * 获取轮询池
@@ -128,7 +129,7 @@ export class PollingPoolManager implements IPollingPoolManager {
       healthyInstances: status['healthyInstances'],
       degradedInstances: status['degradedInstances'],
       failedInstances: status['failedInstances'],
-      availabilityRate: status['totalInstances'] > 0 ? 
+      availabilityRate: status['totalInstances'] > 0 ?
         ((status['healthyInstances'] as number) + (status['degradedInstances'] as number)) / (status['totalInstances'] as number) : 0
     };
   }
@@ -147,7 +148,7 @@ export class PollingPoolManager implements IPollingPoolManager {
         healthyInstances: status['healthyInstances'],
         degradedInstances: status['degradedInstances'],
         failedInstances: status['failedInstances'],
-        availabilityRate: status['totalInstances'] > 0 ? 
+        availabilityRate: status['totalInstances'] > 0 ?
           ((status['healthyInstances'] as number) + (status['degradedInstances'] as number)) / (status['totalInstances'] as number) : 0
       };
     }
@@ -199,7 +200,7 @@ export class PollingPoolManager implements IPollingPoolManager {
       (sum, stats) => sum + stats.healthyInstances, 0
     );
 
-    const overallAvailability = totalInstances > 0 ? 
+    const overallAvailability = totalInstances > 0 ?
       healthyInstances / totalInstances : 0;
 
     return {
