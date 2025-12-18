@@ -6,8 +6,8 @@
 
 import * as fs from 'fs/promises';
 import * as path from 'path';
-import { BaseModuleLoader } from '../../config/loading/base-loader';
-import { ConfigFile, ModuleConfig, ModuleMetadata } from '../../config/loading/types';
+import { BaseModuleLoader } from '../base-loader';
+import { ConfigFile, ModuleConfig, ModuleMetadata } from '../types';
 import { ILogger } from '@shared/types/logger';
 import { PromptType, inferPromptTypeFromCategory } from '../../../domain/prompts/value-objects/prompt-type';
 
@@ -138,4 +138,4 @@ export class PromptLoader extends BaseModuleLoader {
     }
     return content.trim();
   }
-  }
+}

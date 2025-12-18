@@ -3,7 +3,7 @@
  */
 
 // 加载器
-export { PromptLoader } from './loaders/prompt-loader';
+export { PromptLoader } from '../config/loading/loaders/prompt-loader';
 
 // 仓库
 export { PromptRepository } from './repositories/prompt-repository';
