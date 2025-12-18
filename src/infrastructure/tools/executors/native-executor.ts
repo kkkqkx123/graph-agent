@@ -1,8 +1,8 @@
 import { injectable, inject } from 'inversify';
-import { IToolExecutor } from '../../../../domain/tools/interfaces/tool-executor.interface';
-import { Tool } from '../../../../domain/tools/entities/tool';
-import { ToolExecution } from '../../../../domain/tools/entities/tool-execution';
-import { ToolResult } from '../../../../domain/tools/entities/tool-result';
+import { IToolExecutor } from '../../../domain/tools/interfaces/tool-executor.interface';
+import { Tool } from '../../../domain/tools/entities/tool';
+import { ToolExecution } from '../../../domain/tools/entities/tool-execution';
+import { ToolResult } from '../../../domain/tools/entities/tool-result';
 import { spawn, ChildProcess } from 'child_process';
 import { promisify } from 'util';
 

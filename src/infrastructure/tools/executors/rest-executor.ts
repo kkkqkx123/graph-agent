@@ -1,11 +1,11 @@
 import { injectable, inject } from 'inversify';
-import { IToolExecutor } from '../../../../domain/tools/interfaces/tool-executor.interface';
-import { Tool } from '../../../../domain/tools/entities/tool';
-import { ToolExecution } from '../../../../domain/tools/entities/tool-execution';
-import { ToolResult } from '../../../../domain/tools/entities/tool-result';
-import { HttpClient } from '../../../common/http/http-client';
+import { IToolExecutor } from '../../../domain/tools/interfaces/tool-executor.interface';
+import { Tool } from '../../../domain/tools/entities/tool';
+import { ToolExecution } from '../../../domain/tools/entities/tool-execution';
+import { ToolResult } from '../../../domain/tools/entities/tool-result';
+import { HttpClient } from '../../common/http/http-client';
 import { ParameterAdapter } from '../adapters/parameter-adapter';
-import { ID } from '../../../../domain/common/value-objects/id';
+import { ID } from '../../../domain/common/value-objects/id';
 
 @injectable()
 export class RestExecutor implements IToolExecutor {

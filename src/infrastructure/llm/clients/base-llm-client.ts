@@ -9,7 +9,7 @@ import { TokenBucketLimiter } from '../rate-limiters/token-bucket-limiter';
 import { TokenCalculator } from '../token-calculators/token-calculator';
 import { ProviderConfig } from '../parameter-mappers/interfaces/provider-config.interface';
 import { FeatureRegistry } from '../features/feature-registry';
-import { LLM_DI_IDENTIFIERS } from '../../external/llm/di-identifiers';
+import { LLM_DI_IDENTIFIERS } from '../di-identifiers';
 import { ConfigManager } from '../../common/config/config-manager.interface';
 
 /**

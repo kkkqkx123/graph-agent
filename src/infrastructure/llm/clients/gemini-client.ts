@@ -9,7 +9,7 @@ import { GeminiNativeEndpointStrategy } from '../endpoint-strategies/providers/g
 import { BaseFeatureSupport } from '../parameter-mappers/interfaces/feature-support.interface';
 import { FeatureRegistry } from '../features/feature-registry';
 import { GeminiThinkingBudgetFeature } from '../features/providers/gemini-thinking-budget-feature';
-import { LLM_DI_IDENTIFIERS } from '../../external/llm/di-identifiers';
+import { LLM_DI_IDENTIFIERS } from '../di-identifiers';
 import { HttpClient } from '../../common/http/http-client';
 import { TokenBucketLimiter } from '../rate-limiters/token-bucket-limiter';
 import { TokenCalculator } from '../token-calculators/token-calculator';

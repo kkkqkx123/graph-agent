@@ -8,7 +8,7 @@ import { GeminiOpenAIClient } from './gemini-openai-client';
 import { MockClient } from './mock-client';
 import { HumanRelayClient } from './human-relay-client';
 import { HumanRelayMode } from '../../../domain/llm/value-objects/human-relay-mode';
-import { LLM_DI_IDENTIFIERS } from '../../external/llm/di-identifiers';
+import { LLM_DI_IDENTIFIERS } from '../di-identifiers';
 
 /**
  * LLM客户端工厂

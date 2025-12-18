@@ -9,7 +9,7 @@ import { ProviderConfig, ApiType, ProviderConfigBuilder } from '../parameter-map
 import { MockParameterMapper } from '../parameter-mappers/providers/mock-parameter-mapper';
 import { MockEndpointStrategy } from '../endpoint-strategies/providers/mock-endpoint-strategy';
 import { BaseFeatureSupport } from '../parameter-mappers/interfaces/feature-support.interface';
-import { LLM_DI_IDENTIFIERS } from '../../external/llm/di-identifiers';
+import { LLM_DI_IDENTIFIERS } from '../di-identifiers';
 import { HttpClient } from '../../common/http/http-client';
 import { TokenBucketLimiter } from '../rate-limiters/token-bucket-limiter';
 import { ConfigManager } from '../../common/config/config-manager.interface';

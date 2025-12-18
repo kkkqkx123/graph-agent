@@ -8,7 +8,7 @@ import { ProviderConfig, ApiType } from '../parameter-mappers/interfaces/provide
 import { AnthropicParameterMapper } from '../parameter-mappers/providers/anthropic-parameter-mapper';
 import { AnthropicEndpointStrategy } from '../endpoint-strategies/providers/anthropic-endpoint-strategy';
 import { BaseFeatureSupport } from '../parameter-mappers/interfaces/feature-support.interface';
-import { LLM_DI_IDENTIFIERS } from '../../external/llm/di-identifiers';
+import { LLM_DI_IDENTIFIERS } from '../di-identifiers';
 import { HttpClient } from '../../common/http/http-client';
 import { TokenBucketLimiter } from '../rate-limiters/token-bucket-limiter';
 import { TokenCalculator } from '../token-calculators/token-calculator';

@@ -13,7 +13,7 @@ import { ILLMWrapper } from '../../../../domain/llm/interfaces/llm-wrapper.inter
 import { LLMRequest } from '../../../../domain/llm/entities/llm-request';
 import { LLMMessageRole } from '../../../../shared/types/llm';
 import { HumanRelayMode } from '../../../../domain/llm/value-objects/human-relay-mode';
-import { LLM_DI_IDENTIFIERS } from '../../../external/llm/di-identifiers';
+import { LLM_DI_IDENTIFIERS } from '../../../llm/di-identifiers';
 
 /**
  * HumanRelay节点执行器

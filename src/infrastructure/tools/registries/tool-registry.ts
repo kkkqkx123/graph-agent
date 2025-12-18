@@ -1,7 +1,7 @@
 import { injectable, inject } from 'inversify';
-import { Tool } from '../../../../domain/tools/entities/tool';
-import { ToolType } from '../../../../domain/tools/value-objects/tool-type';
-import { ToolStatus } from '../../../../domain/tools/value-objects/tool-status';
+import { Tool } from '../../../domain/tools/entities/tool';
+import { ToolType } from '../../../domain/tools/value-objects/tool-type';
+import { ToolStatus } from '../../../domain/tools/value-objects/tool-status';
 import { ToolAdapter } from '../adapters/tool-adapter';
 
 @injectable()

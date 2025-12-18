@@ -1,8 +1,8 @@
 import { injectable, inject } from 'inversify';
-import { IToolExecutor } from '../../../../domain/tools/interfaces/tool-executor.interface';
-import { Tool } from '../../../../domain/tools/entities/tool';
-import { ToolExecution } from '../../../../domain/tools/entities/tool-execution';
-import { ToolResult } from '../../../../domain/tools/entities/tool-result';
+import { IToolExecutor } from '../../../domain/tools/interfaces/tool-executor.interface';
+import { Tool } from '../../../domain/tools/entities/tool';
+import { ToolExecution } from '../../../domain/tools/entities/tool-execution';
+import { ToolResult } from '../../../domain/tools/entities/tool-result';
 
 // 简化的 MCP 客户端类
 class McpClient {

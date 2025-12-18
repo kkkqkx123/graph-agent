@@ -6,7 +6,7 @@
 
 import { injectable, inject } from 'inversify';
 import { HumanRelayConfig } from '../../../../domain/llm/value-objects/human-relay-config';
-import { LLM_DI_IDENTIFIERS } from '../../../external/llm/di-identifiers';
+import { LLM_DI_IDENTIFIERS } from '../../di-identifiers';
 
 /**
  * HumanRelay配置加载器

@@ -21,7 +21,7 @@ import {
   IWebInteractionService,
   IAPIInteractionService
 } from './interfaces/frontend-services.interface';
-import { LLM_DI_IDENTIFIERS } from '../../external/llm/di-identifiers';
+import { LLM_DI_IDENTIFIERS } from '../di-identifiers';
 
 /**
  * 前端交互管理器
