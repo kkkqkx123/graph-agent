@@ -3,7 +3,7 @@ import { Repository as IRepository, IQueryOptions, PaginatedResult } from '../..
 import { ID } from '../../../domain/common/value-objects/id';
 import { ConnectionManager } from '../connections/connection-manager';
 import { RepositoryError } from '../../../domain/common/errors/repository-error';
-import { DataSource, Repository, FindOptionsWhere, FindManyOptions, ObjectLiteral, SelectQueryBuilder } from 'typeorm';
+import { DataSource, Repository, FindOptionsWhere, FindManyOptions, ObjectLiteral, SelectQueryBuilder, In } from 'typeorm';
 
 /**
  * 增强的查询选项接口
@@ -553,5 +553,15 @@ export abstract class BaseRepository<T, TModel extends ObjectLiteral, TId = ID> 
     } finally {
       await queryRunner.release();
     }
+  }
+
+  /**
+   * 提取ID值的辅助方法
+   */
+  private extractIdValue(id: TId): any {
+    if (id instanceof ID) {
+      return id.value;
+    }
+    return id;
   }
 }

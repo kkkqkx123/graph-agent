@@ -98,21 +98,15 @@ export class HistoryRepository extends BaseRepository<History, HistoryModel, ID>
   }
 
   async countBySessionId(sessionId: ID): Promise<number> {
-    return this.count({
-      filters: { sessionId: sessionId.value }
-    });
+    return this.count({ filters: { sessionId: sessionId.value } });
   }
 
   async countByThreadId(threadId: ID): Promise<number> {
-    return this.count({
-      filters: { threadId: threadId.value }
-    });
+    return this.count({ filters: { threadId: threadId.value } });
   }
 
   async countByWorkflowId(workflowId: ID): Promise<number> {
-    return this.count({
-      filters: { workflowId: workflowId.value }
-    });
+    return this.count({ filters: { workflowId: workflowId.value } });
   }
 
   async countByCriteria(options?: {
@@ -187,27 +181,19 @@ export class HistoryRepository extends BaseRepository<History, HistoryModel, ID>
   }
 
   async deleteBySessionId(sessionId: ID): Promise<number> {
-    return this.deleteWhere({
-      filters: { sessionId: sessionId.value }
-    });
+    return this.deleteWhere({ filters: { sessionId: sessionId.value } });
   }
 
   async deleteByThreadId(threadId: ID): Promise<number> {
-    return this.deleteWhere({
-      filters: { threadId: threadId.value }
-    });
+    return this.deleteWhere({ filters: { threadId: threadId.value } });
   }
 
   async deleteByEntityId(entityId: ID): Promise<number> {
-    return this.deleteWhere({
-      filters: { entityId: entityId.value }
-    });
+    return this.deleteWhere({ filters: { entityId: entityId.value } });
   }
 
   async deleteByType(type: HistoryType): Promise<number> {
-    return this.deleteWhere({
-      filters: { action: type.getValue() }
-    });
+    return this.deleteWhere({ filters: { action: type.getValue() } });
   }
 
   async deleteBeforeTime(beforeTime: Date): Promise<number> {

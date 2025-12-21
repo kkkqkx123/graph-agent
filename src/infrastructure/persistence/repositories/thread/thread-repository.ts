@@ -400,7 +400,7 @@ export class ThreadRepository extends BaseRepository<Thread, ThreadModel, ID> im
 
   async getHighestPriorityPendingThread(options?: ThreadQueryOptions): Promise<Thread | null> {
     const queryOptions: QueryOptions<ThreadModel> = {
-      customConditions: (qb: any) => {
+      customConditions: (qb) => {
         qb.andWhere('thread.status = :status', { status: 'pending' })
           .andWhere('thread.isDeleted = false')
           .orderBy('thread.priority', 'DESC')
@@ -490,7 +490,7 @@ export class ThreadRepository extends BaseRepository<Thread, ThreadModel, ID> im
 
   async findSoftDeleted(options?: ThreadQueryOptions): Promise<Thread[]> {
     const queryOptions: QueryOptions<ThreadModel> = {
-      customConditions: (qb: any) => {
+      customConditions: (qb) => {
         qb.andWhere('thread.isDeleted = true');
 
         if (options?.sessionId) {

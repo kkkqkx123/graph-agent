@@ -329,7 +329,7 @@ export class WorkflowRepository extends BaseRepository<Workflow, WorkflowModel, 
 
   async findSoftDeleted(options?: WorkflowQueryOptions): Promise<Workflow[]> {
     return this.find({
-      customConditions: (qb: any) => {
+      customConditions: (qb) => {
         qb.andWhere('workflow.isDeleted = true');
         this.applyCommonConditions(qb, options);
       },

@@ -50,9 +50,7 @@ export class SessionRepository extends BaseRepository<Session, SessionModel, ID>
   }
 
   async countByUserId(userId: ID, options?: SessionQueryOptions): Promise<number> {
-    return this.count({
-      filters: { userId: userId.value }
-    });
+    return this.count({ filters: { userId: userId.value } });
   }
 
   async updateState(id: ID, state: SessionStatus): Promise<void> {
@@ -115,9 +113,7 @@ export class SessionRepository extends BaseRepository<Session, SessionModel, ID>
   }
 
   async countByStatus(status: SessionStatus, options?: SessionQueryOptions): Promise<number> {
-    return this.count({
-      filters: { state: status.getValue() }
-    });
+    return this.count({ filters: { state: status.getValue() } });
   }
 
   async hasActiveSession(userId: ID): Promise<boolean> {
@@ -151,9 +147,7 @@ export class SessionRepository extends BaseRepository<Session, SessionModel, ID>
   }
 
   async deleteAllByUserId(userId: ID): Promise<number> {
-    return this.deleteWhere({
-      filters: { userId: userId.value }
-    });
+    return this.deleteWhere({ filters: { userId: userId.value } });
   }
 
   async softDelete(sessionId: ID): Promise<void> {
