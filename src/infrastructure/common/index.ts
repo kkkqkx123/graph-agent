@@ -49,18 +49,3 @@ export {
     SerializationConfig,
     SerializationResult
 } from './utils/serialization-utils';
-
-// 配置管理
-export {
-    ConfigManagerImpl
-} from './config/config-manager';
-
-export {
-    ConfigManager,
-    LLMConfig,
-    ModelConfig,
-    ProviderConfig,
-    ValidationResult as ConfigValidationResult,
-    ConfigSchema,
-    ValidationRule as ConfigValidationRule
-} from './config/config-manager.interface';

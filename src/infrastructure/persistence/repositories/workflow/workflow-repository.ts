@@ -9,416 +9,90 @@ import { EdgeType } from '../../../../domain/workflow/value-objects/edge-type';
 import { ConnectionManager } from '../../connections/connection-manager';
 import { WorkflowMapper } from './workflow-mapper';
 import { WorkflowModel } from '../../models/workflow.model';
-import { QueryOptions, PaginatedResult } from '../../../../domain/common/repositories/repository';
+import { IQueryOptions, PaginatedResult } from '../../../../domain/common/repositories/repository';
 import { RepositoryError } from '../../../../domain/common/errors/repository-error';
 import { In } from 'typeorm';
+import { BaseRepository, QueryOptions } from '../../base/base-repository';
 
 @injectable()
-export class WorkflowRepository implements IWorkflowRepository {
+export class WorkflowRepository extends BaseRepository<Workflow, WorkflowModel, ID> implements IWorkflowRepository {
   constructor(
-    @inject('ConnectionManager') private connectionManager: ConnectionManager,
-    @inject('WorkflowMapper') private mapper: WorkflowMapper
-  ) { }
-
-  async save(workflow: Workflow): Promise<Workflow> {
-    const connection = await this.connectionManager.getConnection();
-    const repository = connection.getRepository(WorkflowModel);
-
-    const model = this.mapper.toModel(workflow);
-    const savedModel = await repository.save(model);
-
-    return this.mapper.toEntity(savedModel);
+    @inject('ConnectionManager') connectionManager: ConnectionManager,
+    @inject('WorkflowMapper') mapper: WorkflowMapper
+  ) {
+    super(connectionManager);
+    this.mapper = mapper;
   }
 
-  async findById(id: ID): Promise<Workflow | null> {
-    const connection = await this.connectionManager.getConnection();
-    const repository = connection.getRepository(WorkflowModel);
-
-    const model = await repository.findOne({ where: { id: id.value } });
-    return model ? this.mapper.toEntity(model) : null;
+  protected override getModelClass(): new () => WorkflowModel {
+    return WorkflowModel;
   }
 
-  async findByIdOrFail(id: ID): Promise<Workflow> {
-    const workflow = await this.findById(id);
-    if (!workflow) {
-      throw new RepositoryError(`Workflow with ID ${id.value} not found`);
-    }
-    return workflow;
-  }
-
-  async findAll(): Promise<Workflow[]> {
-    const connection = await this.connectionManager.getConnection();
-    const repository = connection.getRepository(WorkflowModel);
-
-    const models = await repository.find();
-    return models.map(model => this.mapper.toEntity(model));
-  }
-
-  async find(options: QueryOptions): Promise<Workflow[]> {
-    const connection = await this.connectionManager.getConnection();
-    const repository = connection.getRepository(WorkflowModel);
-
-    const queryBuilder = repository.createQueryBuilder('workflow');
-
-    if (options.filters) {
-      Object.entries(options.filters).forEach(([key, value]) => {
-        if (value !== undefined) {
-          queryBuilder.andWhere(`workflow.${key} = :${key}`, { [key]: value });
-        }
-      });
-    }
-
-    if (options.sortBy) {
-      const order = options.sortOrder === 'desc' ? 'DESC' : 'ASC';
-      queryBuilder.orderBy(`workflow.${options.sortBy}`, order);
-    }
-
-    if (options.offset) {
-      queryBuilder.skip(options.offset);
-    }
-
-    if (options.limit) {
-      queryBuilder.take(options.limit);
-    }
-
-    const models = await queryBuilder.getMany();
-    return models.map(model => this.mapper.toEntity(model));
-  }
-
-  async findOne(options: QueryOptions): Promise<Workflow | null> {
-    const results = await this.find({ ...options, limit: 1 });
-    return results[0] ?? null;
-  }
-
-  async findOneOrFail(options: QueryOptions): Promise<Workflow> {
-    const workflow = await this.findOne(options);
-    if (!workflow) {
-      throw new RepositoryError('Workflow not found with given criteria');
-    }
-    return workflow;
-  }
-
-  async findWithPaginationBase(options: QueryOptions): Promise<PaginatedResult<Workflow>> {
-    const connection = await this.connectionManager.getConnection();
-    const repository = connection.getRepository(WorkflowModel);
-
-    const page = options.offset ? Math.floor(options.offset / (options.limit || 10)) + 1 : 1;
-    const pageSize = options.limit || 10;
-    const skip = (page - 1) * pageSize;
-
-    const queryBuilder = repository.createQueryBuilder('workflow');
-
-    if (options.filters) {
-      Object.entries(options.filters).forEach(([key, value]) => {
-        if (value !== undefined) {
-          queryBuilder.andWhere(`workflow.${key} = :${key}`, { [key]: value });
-        }
-      });
-    }
-
-    const [models, total] = await queryBuilder
-      .skip(skip)
-      .take(pageSize)
-      .orderBy('workflow.createdAt', 'DESC')
-      .getManyAndCount();
-
-    const totalPages = Math.ceil(total / pageSize);
-
-    return {
-      items: models.map(model => this.mapper.toEntity(model)),
-      total,
-      page,
-      pageSize,
-      totalPages
-    };
-  }
-
-  async saveBatch(workflows: Workflow[]): Promise<Workflow[]> {
-    const connection = await this.connectionManager.getConnection();
-    const repository = connection.getRepository(WorkflowModel);
-
-    const models = workflows.map(workflow => this.mapper.toModel(workflow));
-    const savedModels = await repository.save(models);
-
-    return savedModels.map(model => this.mapper.toEntity(model));
-  }
-
-  async delete(entity: Workflow): Promise<void> {
-    const connection = await this.connectionManager.getConnection();
-    const repository = connection.getRepository(WorkflowModel);
-
-    await repository.delete({ id: entity.workflowId.value });
-  }
-
-  async deleteById(id: ID): Promise<void> {
-    const connection = await this.connectionManager.getConnection();
-    const repository = connection.getRepository(WorkflowModel);
-
-    await repository.delete({ id: id.value });
-  }
-
-  async deleteBatch(entities: Workflow[]): Promise<void> {
-    const connection = await this.connectionManager.getConnection();
-    const repository = connection.getRepository(WorkflowModel);
-
-    const ids = entities.map(entity => entity.workflowId.value);
-    await repository.delete({ id: In(ids) });
-  }
-
-  async deleteWhere(options: QueryOptions): Promise<number> {
-    const connection = await this.connectionManager.getConnection();
-    const repository = connection.getRepository(WorkflowModel);
-
-    const queryBuilder = repository.createQueryBuilder('workflow').delete();
-
-    if (options.filters) {
-      Object.entries(options.filters).forEach(([key, value]) => {
-        if (value !== undefined) {
-          queryBuilder.andWhere(`workflow.${key} = :${key}`, { [key]: value });
-        }
-      });
-    }
-
-    const result = await queryBuilder.execute();
-    return result.affected || 0;
-  }
-
-  async exists(id: ID): Promise<boolean> {
-    const connection = await this.connectionManager.getConnection();
-    const repository = connection.getRepository(WorkflowModel);
-
-    const count = await repository.count({ where: { id: id.value } });
-    return count > 0;
-  }
-
-  async count(options?: QueryOptions): Promise<number> {
-    const connection = await this.connectionManager.getConnection();
-    const repository = connection.getRepository(WorkflowModel);
-
-    if (!options || !options.filters) {
-      return repository.count();
-    }
-
-    const queryBuilder = repository.createQueryBuilder('workflow');
-
-    if (options.filters) {
-      Object.entries(options.filters).forEach(([key, value]) => {
-        if (value !== undefined) {
-          queryBuilder.andWhere(`workflow.${key} = :${key}`, { [key]: value });
-        }
-      });
-    }
-
-    return queryBuilder.getCount();
-  }
+  // 基础 CRUD 方法现在由 BaseRepository 提供，无需重复实现
 
   async findByName(name: string, options?: WorkflowQueryOptions): Promise<Workflow[]> {
-    const connection = await this.connectionManager.getConnection();
-    const repository = connection.getRepository(WorkflowModel);
-
-    const queryBuilder = repository.createQueryBuilder('workflow')
-      .where('workflow.name = :name', { name });
-
-    if (options?.includeDeleted === false) {
-      queryBuilder.andWhere('workflow.isDeleted = false');
-    }
-
-    if (options?.status) {
-      queryBuilder.andWhere('workflow.state = :status', { status: options.status });
-    }
-
-    if (options?.type) {
-      queryBuilder.andWhere('workflow.executionMode = :type', { type: options.type });
-    }
-
-    if (options?.createdBy) {
-      queryBuilder.andWhere('workflow.createdBy = :createdBy', { createdBy: options.createdBy });
-    }
-
-    if (options?.limit) {
-      queryBuilder.take(options.limit);
-    }
-
-    if (options?.offset) {
-      queryBuilder.skip(options.offset);
-    }
-
-    if (options?.sortBy) {
-      queryBuilder.orderBy(`workflow.${options.sortBy}`, (options.sortOrder || 'ASC').toUpperCase() as 'ASC' | 'DESC');
-    } else {
-      queryBuilder.orderBy('workflow.createdAt', 'DESC');
-    }
-
-    const models = await queryBuilder.getMany();
-    return models.map(model => this.mapper.toEntity(model));
+    return this.find({
+      customConditions: (qb: any) => {
+        qb.andWhere('workflow.name = :name', { name });
+        this.applyCommonConditions(qb, options);
+      },
+      sortBy: options?.sortBy || 'createdAt',
+      sortOrder: options?.sortOrder || 'desc',
+      limit: options?.limit,
+      offset: options?.offset
+    });
   }
 
   async findByStatus(status: WorkflowStatus, options?: WorkflowQueryOptions): Promise<Workflow[]> {
-    const connection = await this.connectionManager.getConnection();
-    const repository = connection.getRepository(WorkflowModel);
-
-    const queryBuilder = repository.createQueryBuilder('workflow')
-      .where('workflow.state = :state', { state: this.mapStatusToState(status) });
-
-    if (options?.includeDeleted === false) {
-      queryBuilder.andWhere('workflow.isDeleted = false');
-    }
-
-    if (options?.name) {
-      queryBuilder.andWhere('workflow.name LIKE :name', { name: `%${options.name}%` });
-    }
-
-    if (options?.type) {
-      queryBuilder.andWhere('workflow.executionMode = :type', { type: options.type });
-    }
-
-    if (options?.createdBy) {
-      queryBuilder.andWhere('workflow.createdBy = :createdBy', { createdBy: options.createdBy });
-    }
-
-    if (options?.limit) {
-      queryBuilder.take(options.limit);
-    }
-
-    if (options?.offset) {
-      queryBuilder.skip(options.offset);
-    }
-
-    if (options?.sortBy) {
-      queryBuilder.orderBy(`workflow.${options.sortBy}`, (options.sortOrder || 'ASC').toUpperCase() as 'ASC' | 'DESC');
-    } else {
-      queryBuilder.orderBy('workflow.createdAt', 'DESC');
-    }
-
-    const models = await queryBuilder.getMany();
-    return models.map(model => this.mapper.toEntity(model));
+    return this.find({
+      customConditions: (qb: any) => {
+        qb.andWhere('workflow.state = :state', { state: this.mapStatusToState(status) });
+        this.applyCommonConditions(qb, options);
+      },
+      sortBy: options?.sortBy || 'createdAt',
+      sortOrder: options?.sortOrder || 'desc',
+      limit: options?.limit,
+      offset: options?.offset
+    });
   }
 
   async findByType(type: WorkflowType, options?: WorkflowQueryOptions): Promise<Workflow[]> {
-    const connection = await this.connectionManager.getConnection();
-    const repository = connection.getRepository(WorkflowModel);
-
-    const queryBuilder = repository.createQueryBuilder('workflow')
-      .where('workflow.executionMode = :type', { type: this.mapTypeToExecutionMode(type) });
-
-    if (options?.includeDeleted === false) {
-      queryBuilder.andWhere('workflow.isDeleted = false');
-    }
-
-    if (options?.name) {
-      queryBuilder.andWhere('workflow.name LIKE :name', { name: `%${options.name}%` });
-    }
-
-    if (options?.status) {
-      queryBuilder.andWhere('workflow.state = :status', { status: options.status });
-    }
-
-    if (options?.createdBy) {
-      queryBuilder.andWhere('workflow.createdBy = :createdBy', { createdBy: options.createdBy });
-    }
-
-    if (options?.limit) {
-      queryBuilder.take(options.limit);
-    }
-
-    if (options?.offset) {
-      queryBuilder.skip(options.offset);
-    }
-
-    if (options?.sortBy) {
-      queryBuilder.orderBy(`workflow.${options.sortBy}`, (options.sortOrder || 'ASC').toUpperCase() as 'ASC' | 'DESC');
-    } else {
-      queryBuilder.orderBy('workflow.createdAt', 'DESC');
-    }
-
-    const models = await queryBuilder.getMany();
-    return models.map(model => this.mapper.toEntity(model));
+    return this.find({
+      customConditions: (qb: any) => {
+        qb.andWhere('workflow.executionMode = :type', { type: this.mapTypeToExecutionMode(type) });
+        this.applyCommonConditions(qb, options);
+      },
+      sortBy: options?.sortBy || 'createdAt',
+      sortOrder: options?.sortOrder || 'desc',
+      limit: options?.limit,
+      offset: options?.offset
+    });
   }
 
   async findByTags(tags: string[], options?: WorkflowQueryOptions): Promise<Workflow[]> {
-    const connection = await this.connectionManager.getConnection();
-    const repository = connection.getRepository(WorkflowModel);
-
-    const queryBuilder = repository.createQueryBuilder('workflow')
-      .where('workflow.metadata->>\'tags\' @> :tags', { tags: JSON.stringify(tags) });
-
-    if (options?.includeDeleted === false) {
-      queryBuilder.andWhere('workflow.isDeleted = false');
-    }
-
-    if (options?.name) {
-      queryBuilder.andWhere('workflow.name LIKE :name', { name: `%${options.name}%` });
-    }
-
-    if (options?.status) {
-      queryBuilder.andWhere('workflow.state = :status', { status: options.status });
-    }
-
-    if (options?.type) {
-      queryBuilder.andWhere('workflow.executionMode = :type', { type: options.type });
-    }
-
-    if (options?.createdBy) {
-      queryBuilder.andWhere('workflow.createdBy = :createdBy', { createdBy: options.createdBy });
-    }
-
-    if (options?.limit) {
-      queryBuilder.take(options.limit);
-    }
-
-    if (options?.offset) {
-      queryBuilder.skip(options.offset);
-    }
-
-    if (options?.sortBy) {
-      queryBuilder.orderBy(`workflow.${options.sortBy}`, (options.sortOrder || 'ASC').toUpperCase() as 'ASC' | 'DESC');
-    } else {
-      queryBuilder.orderBy('workflow.createdAt', 'DESC');
-    }
-
-    const models = await queryBuilder.getMany();
-    return models.map(model => this.mapper.toEntity(model));
+    return this.find({
+      customConditions: (qb: any) => {
+        qb.andWhere('workflow.metadata->>\'tags\' @> :tags', { tags: JSON.stringify(tags) });
+        this.applyCommonConditions(qb, options);
+      },
+      sortBy: options?.sortBy || 'createdAt',
+      sortOrder: options?.sortOrder || 'desc',
+      limit: options?.limit,
+      offset: options?.offset
+    });
   }
 
   async findByCreatedBy(createdBy: ID, options?: WorkflowQueryOptions): Promise<Workflow[]> {
-    const connection = await this.connectionManager.getConnection();
-    const repository = connection.getRepository(WorkflowModel);
-
-    const queryBuilder = repository.createQueryBuilder('workflow')
-      .where('workflow.createdBy = :createdBy', { createdBy: createdBy.value });
-
-    if (options?.includeDeleted === false) {
-      queryBuilder.andWhere('workflow.isDeleted = false');
-    }
-
-    if (options?.name) {
-      queryBuilder.andWhere('workflow.name LIKE :name', { name: `%${options.name}%` });
-    }
-
-    if (options?.status) {
-      queryBuilder.andWhere('workflow.state = :status', { status: options.status });
-    }
-
-    if (options?.type) {
-      queryBuilder.andWhere('workflow.executionMode = :type', { type: options.type });
-    }
-
-    if (options?.limit) {
-      queryBuilder.take(options.limit);
-    }
-
-    if (options?.offset) {
-      queryBuilder.skip(options.offset);
-    }
-
-    if (options?.sortBy) {
-      queryBuilder.orderBy(`workflow.${options.sortBy}`, (options.sortOrder || 'ASC').toUpperCase() as 'ASC' | 'DESC');
-    } else {
-      queryBuilder.orderBy('workflow.createdAt', 'DESC');
-    }
-
-    const models = await queryBuilder.getMany();
-    return models.map(model => this.mapper.toEntity(model));
+    return this.find({
+      customConditions: (qb: any) => {
+        qb.andWhere('workflow.createdBy = :createdBy', { createdBy: createdBy.value });
+        this.applyCommonConditions(qb, options);
+      },
+      sortBy: options?.sortBy || 'createdAt',
+      sortOrder: options?.sortOrder || 'desc',
+      limit: options?.limit,
+      offset: options?.offset
+    });
   }
 
   async findDraftWorkflows(options?: WorkflowQueryOptions): Promise<Workflow[]> {
@@ -438,147 +112,55 @@ export class WorkflowRepository implements IWorkflowRepository {
   }
 
   async searchByName(name: string, options?: WorkflowQueryOptions): Promise<Workflow[]> {
-    const connection = await this.connectionManager.getConnection();
-    const repository = connection.getRepository(WorkflowModel);
-
-    const queryBuilder = repository.createQueryBuilder('workflow')
-      .where('workflow.name LIKE :name', { name: `%${name}%` });
-
-    if (options?.includeDeleted === false) {
-      queryBuilder.andWhere('workflow.isDeleted = false');
-    }
-
-    if (options?.status) {
-      queryBuilder.andWhere('workflow.state = :status', { status: options.status });
-    }
-
-    if (options?.type) {
-      queryBuilder.andWhere('workflow.executionMode = :type', { type: options.type });
-    }
-
-    if (options?.createdBy) {
-      queryBuilder.andWhere('workflow.createdBy = :createdBy', { createdBy: options.createdBy });
-    }
-
-    if (options?.limit) {
-      queryBuilder.take(options.limit);
-    }
-
-    if (options?.offset) {
-      queryBuilder.skip(options.offset);
-    }
-
-    if (options?.sortBy) {
-      queryBuilder.orderBy(`workflow.${options.sortBy}`, (options.sortOrder || 'ASC').toUpperCase() as 'ASC' | 'DESC');
-    } else {
-      queryBuilder.orderBy('workflow.createdAt', 'DESC');
-    }
-
-    const models = await queryBuilder.getMany();
-    return models.map(model => this.mapper.toEntity(model));
+    return this.find({
+      customConditions: (qb: any) => {
+        qb.andWhere('workflow.name LIKE :name', { name: `%${name}%` });
+        this.applyCommonConditions(qb, options);
+      },
+      sortBy: options?.sortBy || 'createdAt',
+      sortOrder: options?.sortOrder || 'desc',
+      limit: options?.limit,
+      offset: options?.offset
+    });
   }
 
   async searchByDescription(description: string, options?: WorkflowQueryOptions): Promise<Workflow[]> {
-    const connection = await this.connectionManager.getConnection();
-    const repository = connection.getRepository(WorkflowModel);
-
-    const queryBuilder = repository.createQueryBuilder('workflow')
-      .where('workflow.description LIKE :description', { description: `%${description}%` });
-
-    if (options?.includeDeleted === false) {
-      queryBuilder.andWhere('workflow.isDeleted = false');
-    }
-
-    if (options?.name) {
-      queryBuilder.andWhere('workflow.name LIKE :name', { name: `%${options.name}%` });
-    }
-
-    if (options?.status) {
-      queryBuilder.andWhere('workflow.state = :status', { status: options.status });
-    }
-
-    if (options?.type) {
-      queryBuilder.andWhere('workflow.executionMode = :type', { type: options.type });
-    }
-
-    if (options?.createdBy) {
-      queryBuilder.andWhere('workflow.createdBy = :createdBy', { createdBy: options.createdBy });
-    }
-
-    if (options?.limit) {
-      queryBuilder.take(options.limit);
-    }
-
-    if (options?.offset) {
-      queryBuilder.skip(options.offset);
-    }
-
-    if (options?.sortBy) {
-      queryBuilder.orderBy(`workflow.${options.sortBy}`, (options.sortOrder || 'ASC').toUpperCase() as 'ASC' | 'DESC');
-    } else {
-      queryBuilder.orderBy('workflow.createdAt', 'DESC');
-    }
-
-    const models = await queryBuilder.getMany();
-    return models.map(model => this.mapper.toEntity(model));
+    return this.find({
+      customConditions: (qb: any) => {
+        qb.andWhere('workflow.description LIKE :description', { description: `%${description}%` });
+        this.applyCommonConditions(qb, options);
+      },
+      sortBy: options?.sortBy || 'createdAt',
+      sortOrder: options?.sortOrder || 'desc',
+      limit: options?.limit,
+      offset: options?.offset
+    });
   }
 
-  async findWithPagination(options: WorkflowQueryOptions): Promise<PaginatedResult<Workflow>> {
-    const connection = await this.connectionManager.getConnection();
-    const repository = connection.getRepository(WorkflowModel);
+  override async findWithPagination(options: WorkflowQueryOptions): Promise<PaginatedResult<Workflow>> {
+    const queryOptions: QueryOptions<WorkflowModel> = {
+      customConditions: (qb: any) => {
+        this.applyCommonConditions(qb, options);
+        
+        if (options?.minExecutionCount) {
+          qb.andWhere('workflow.metadata->>\'executionCount\' >= :minExecutionCount', {
+            minExecutionCount: options.minExecutionCount
+          });
+        }
 
-    const queryBuilder = repository.createQueryBuilder('workflow');
-
-    if (options?.includeDeleted === false) {
-      queryBuilder.andWhere('workflow.isDeleted = false');
-    }
-
-    if (options?.name) {
-      queryBuilder.andWhere('workflow.name LIKE :name', { name: `%${options.name}%` });
-    }
-
-    if (options?.status) {
-      queryBuilder.andWhere('workflow.state = :status', { status: options.status });
-    }
-
-    if (options?.type) {
-      queryBuilder.andWhere('workflow.executionMode = :type', { type: options.type });
-    }
-
-    if (options?.createdBy) {
-      queryBuilder.andWhere('workflow.createdBy = :createdBy', { createdBy: options.createdBy });
-    }
-
-    if (options?.minExecutionCount) {
-      queryBuilder.andWhere('workflow.metadata->>\'executionCount\' >= :minExecutionCount', {
-        minExecutionCount: options.minExecutionCount
-      });
-    }
-
-    if (options?.maxExecutionCount) {
-      queryBuilder.andWhere('workflow.metadata->>\'executionCount\' <= :maxExecutionCount', {
-        maxExecutionCount: options.maxExecutionCount
-      });
-    }
-
-    if (options?.sortBy) {
-      queryBuilder.orderBy(`workflow.${options.sortBy}`, (options.sortOrder || 'ASC').toUpperCase() as 'ASC' | 'DESC');
-    } else {
-      queryBuilder.orderBy('workflow.createdAt', 'DESC');
-    }
-
-    const [models, total] = await queryBuilder
-      .skip(options.offset || 0)
-      .take(options.limit || 20)
-      .getManyAndCount();
-
-    return {
-      items: models.map(model => this.mapper.toEntity(model)),
-      total,
-      page: Math.floor((options.offset || 0) / (options.limit || 20)) + 1,
-      pageSize: options.limit || 20,
-      totalPages: Math.ceil(total / (options.limit || 20))
+        if (options?.maxExecutionCount) {
+          qb.andWhere('workflow.metadata->>\'executionCount\' <= :maxExecutionCount', {
+            maxExecutionCount: options.maxExecutionCount
+          });
+        }
+      },
+      sortBy: options?.sortBy || 'createdAt',
+      sortOrder: options?.sortOrder || 'desc',
+      limit: options?.limit || 20,
+      offset: options?.offset || 0
     };
+    
+    return super.findWithPagination(queryOptions);
   }
 
   async countByStatus(status: WorkflowStatus, options?: WorkflowQueryOptions): Promise<number> {
@@ -588,13 +170,7 @@ export class WorkflowRepository implements IWorkflowRepository {
     const queryBuilder = repository.createQueryBuilder('workflow')
       .where('workflow.state = :state', { state: this.mapStatusToState(status) });
 
-    if (options?.includeDeleted === false) {
-      queryBuilder.andWhere('workflow.isDeleted = false');
-    }
-
-    if (options?.createdBy) {
-      queryBuilder.andWhere('workflow.createdBy = :createdBy', { createdBy: options.createdBy });
-    }
+    this.applyCommonConditions(queryBuilder, options);
 
     return await queryBuilder.getCount();
   }
@@ -606,13 +182,7 @@ export class WorkflowRepository implements IWorkflowRepository {
     const queryBuilder = repository.createQueryBuilder('workflow')
       .where('workflow.executionMode = :type', { type: this.mapTypeToExecutionMode(type) });
 
-    if (options?.includeDeleted === false) {
-      queryBuilder.andWhere('workflow.isDeleted = false');
-    }
-
-    if (options?.createdBy) {
-      queryBuilder.andWhere('workflow.createdBy = :createdBy', { createdBy: options.createdBy });
-    }
+    this.applyCommonConditions(queryBuilder, options);
 
     return await queryBuilder.getCount();
   }
@@ -624,13 +194,7 @@ export class WorkflowRepository implements IWorkflowRepository {
     const queryBuilder = repository.createQueryBuilder('workflow')
       .where('workflow.createdBy = :createdBy', { createdBy: createdBy.value });
 
-    if (options?.includeDeleted === false) {
-      queryBuilder.andWhere('workflow.isDeleted = false');
-    }
-
-    if (options?.status) {
-      queryBuilder.andWhere('workflow.state = :status', { status: options.status });
-    }
+    this.applyCommonConditions(queryBuilder, options);
 
     return await queryBuilder.getCount();
   }
@@ -642,13 +206,7 @@ export class WorkflowRepository implements IWorkflowRepository {
     const queryBuilder = repository.createQueryBuilder('workflow')
       .where('workflow.metadata->>\'tags\' @> :tags', { tags: JSON.stringify(tags) });
 
-    if (options?.includeDeleted === false) {
-      queryBuilder.andWhere('workflow.isDeleted = false');
-    }
-
-    if (options?.createdBy) {
-      queryBuilder.andWhere('workflow.createdBy = :createdBy', { createdBy: options.createdBy });
-    }
+    this.applyCommonConditions(queryBuilder, options);
 
     return await queryBuilder.getCount();
   }
@@ -669,184 +227,33 @@ export class WorkflowRepository implements IWorkflowRepository {
   }
 
   async getMostActiveWorkflows(limit: number, options?: WorkflowQueryOptions): Promise<Workflow[]> {
-    const connection = await this.connectionManager.getConnection();
-    const repository = connection.getRepository(WorkflowModel);
-
-    const queryBuilder = repository.createQueryBuilder('workflow')
-      .orderBy('workflow.metadata->>\'executionCount\'', 'DESC')
-      .take(limit);
-
-    if (options?.includeDeleted === false) {
-      queryBuilder.andWhere('workflow.isDeleted = false');
-    }
-
-    if (options?.status) {
-      queryBuilder.andWhere('workflow.state = :status', { status: options.status });
-    }
-
-    const models = await queryBuilder.getMany();
-    return models.map(model => this.mapper.toEntity(model));
-  }
-
-  async getMostComplexWorkflows(limit: number, options?: WorkflowQueryOptions): Promise<Workflow[]> {
-    const connection = await this.connectionManager.getConnection();
-    const repository = connection.getRepository(WorkflowModel);
-
-    const queryBuilder = repository.createQueryBuilder('workflow')
-      .orderBy('(workflow.metadata->>\'nodeCount\' + workflow.metadata->>\'edgeCount\')', 'DESC')
-      .take(limit);
-
-    if (options?.includeDeleted === false) {
-      queryBuilder.andWhere('workflow.isDeleted = false');
-    }
-
-    if (options?.status) {
-      queryBuilder.andWhere('workflow.state = :status', { status: options.status });
-    }
-
-    const models = await queryBuilder.getMany();
-    return models.map(model => this.mapper.toEntity(model));
-  }
-
-  async findByNodeId(nodeId: ID, options?: WorkflowQueryOptions): Promise<Workflow[]> {
-    const connection = await this.connectionManager.getConnection();
-    const repository = connection.getRepository(WorkflowModel);
-
-    const queryBuilder = repository.createQueryBuilder('workflow')
-      .where('workflow.metadata->>\'nodeIds\' @> :nodeId', { nodeId: JSON.stringify([nodeId.value]) });
-
-    if (options?.includeDeleted === false) {
-      queryBuilder.andWhere('workflow.isDeleted = false');
-    }
-
-    if (options?.status) {
-      queryBuilder.andWhere('workflow.state = :status', { status: options.status });
-    }
-
-    const models = await queryBuilder.getMany();
-    return models.map(model => this.mapper.toEntity(model));
-  }
-
-  async findByEdgeId(edgeId: ID, options?: WorkflowQueryOptions): Promise<Workflow[]> {
-    const connection = await this.connectionManager.getConnection();
-    const repository = connection.getRepository(WorkflowModel);
-
-    const queryBuilder = repository.createQueryBuilder('workflow')
-      .where('workflow.metadata->>\'edgeIds\' @> :edgeId', { edgeId: JSON.stringify([edgeId.value]) });
-
-    if (options?.includeDeleted === false) {
-      queryBuilder.andWhere('workflow.isDeleted = false');
-    }
-
-    if (options?.status) {
-      queryBuilder.andWhere('workflow.state = :status', { status: options.status });
-    }
-
-    const models = await queryBuilder.getMany();
-    return models.map(model => this.mapper.toEntity(model));
-  }
-
-  async findByNodeType(nodeType: NodeType, options?: WorkflowQueryOptions): Promise<Workflow[]> {
-    const connection = await this.connectionManager.getConnection();
-    const repository = connection.getRepository(WorkflowModel);
-
-    const queryBuilder = repository.createQueryBuilder('workflow')
-      .where('workflow.metadata->>\'nodeTypes\' @> :nodeType', { nodeType: JSON.stringify([nodeType.value]) });
-
-    if (options?.includeDeleted === false) {
-      queryBuilder.andWhere('workflow.isDeleted = false');
-    }
-
-    if (options?.status) {
-      queryBuilder.andWhere('workflow.state = :status', { status: options.status });
-    }
-
-    const models = await queryBuilder.getMany();
-    return models.map(model => this.mapper.toEntity(model));
-  }
-
-  async findByEdgeType(edgeType: EdgeType, options?: WorkflowQueryOptions): Promise<Workflow[]> {
-    const connection = await this.connectionManager.getConnection();
-    const repository = connection.getRepository(WorkflowModel);
-
-    const queryBuilder = repository.createQueryBuilder('workflow')
-      .where('workflow.metadata->>\'edgeTypes\' @> :edgeType', { edgeType: JSON.stringify([edgeType.value]) });
-
-    if (options?.includeDeleted === false) {
-      queryBuilder.andWhere('workflow.isDeleted = false');
-    }
-
-    if (options?.status) {
-      queryBuilder.andWhere('workflow.state = :status', { status: options.status });
-    }
-
-    const models = await queryBuilder.getMany();
-    return models.map(model => this.mapper.toEntity(model));
+    return this.find({
+      customConditions: (qb: any) => {
+        qb.orderBy('workflow.metadata->>\'executionCount\'', 'DESC');
+        this.applyCommonConditions(qb, options);
+      },
+      limit
+    });
   }
 
   async getRecentlyCreatedWorkflows(limit: number, options?: WorkflowQueryOptions): Promise<Workflow[]> {
-    const connection = await this.connectionManager.getConnection();
-    const repository = connection.getRepository(WorkflowModel);
-
-    const queryBuilder = repository.createQueryBuilder('workflow')
-      .orderBy('workflow.createdAt', 'DESC')
-      .take(limit);
-
-    if (options?.includeDeleted === false) {
-      queryBuilder.andWhere('workflow.isDeleted = false');
-    }
-
-    if (options?.status) {
-      queryBuilder.andWhere('workflow.state = :status', { status: options.status });
-    }
-
-    const models = await queryBuilder.getMany();
-    return models.map(model => this.mapper.toEntity(model));
+    return this.find({
+      customConditions: (qb: any) => {
+        qb.orderBy('workflow.createdAt', 'DESC');
+        this.applyCommonConditions(qb, options);
+      },
+      limit
+    });
   }
 
-  async getRecentlyExecutedWorkflows(limit: number, options?: WorkflowQueryOptions): Promise<Workflow[]> {
-    const connection = await this.connectionManager.getConnection();
-    const repository = connection.getRepository(WorkflowModel);
-
-    const queryBuilder = repository.createQueryBuilder('workflow')
-      .orderBy('workflow.metadata->>\'lastExecutedAt\'', 'DESC')
-      .take(limit);
-
-    if (options?.includeDeleted === false) {
-      queryBuilder.andWhere('workflow.isDeleted = false');
-    }
-
-    if (options?.status) {
-      queryBuilder.andWhere('workflow.state = :status', { status: options.status });
-    }
-
-    const models = await queryBuilder.getMany();
-    return models.map(model => this.mapper.toEntity(model));
-  }
-
-  async getMostSuccessfulWorkflows(
-    limit: number,
-    minExecutionCount: number,
-    options?: WorkflowQueryOptions
-  ): Promise<Workflow[]> {
-    const connection = await this.connectionManager.getConnection();
-    const repository = connection.getRepository(WorkflowModel);
-
-    const queryBuilder = repository.createQueryBuilder('workflow')
-      .where('workflow.metadata->>\'executionCount\' >= :minExecutionCount', { minExecutionCount })
-      .orderBy('workflow.metadata->>\'successRate\'', 'DESC')
-      .take(limit);
-
-    if (options?.includeDeleted === false) {
-      queryBuilder.andWhere('workflow.isDeleted = false');
-    }
-
-    if (options?.status) {
-      queryBuilder.andWhere('workflow.state = :status', { status: options.status });
-    }
-
-    const models = await queryBuilder.getMany();
-    return models.map(model => this.mapper.toEntity(model));
+  async getMostComplexWorkflows(limit: number, options?: WorkflowQueryOptions): Promise<Workflow[]> {
+    return this.find({
+      customConditions: (qb: any) => {
+        qb.orderBy('(workflow.metadata->>\'nodeCount\' + workflow.metadata->>\'edgeCount\')', 'DESC');
+        this.applyCommonConditions(qb, options);
+      },
+      limit
+    });
   }
 
   async batchUpdateStatus(
@@ -921,120 +328,68 @@ export class WorkflowRepository implements IWorkflowRepository {
   }
 
   async findSoftDeleted(options?: WorkflowQueryOptions): Promise<Workflow[]> {
-    const connection = await this.connectionManager.getConnection();
-    const repository = connection.getRepository(WorkflowModel);
-
-    const queryBuilder = repository.createQueryBuilder('workflow')
-      .where('workflow.isDeleted = true');
-
-    if (options?.name) {
-      queryBuilder.andWhere('workflow.name LIKE :name', { name: `%${options.name}%` });
-    }
-
-    if (options?.status) {
-      queryBuilder.andWhere('workflow.state = :status', { status: options.status });
-    }
-
-    if (options?.type) {
-      queryBuilder.andWhere('workflow.executionMode = :type', { type: options.type });
-    }
-
-    if (options?.createdBy) {
-      queryBuilder.andWhere('workflow.createdBy = :createdBy', { createdBy: options.createdBy });
-    }
-
-    if (options?.limit) {
-      queryBuilder.take(options.limit);
-    }
-
-    if (options?.offset) {
-      queryBuilder.skip(options.offset);
-    }
-
-    if (options?.sortBy) {
-      queryBuilder.orderBy(`workflow.${options.sortBy}`, (options.sortOrder || 'ASC').toUpperCase() as 'ASC' | 'DESC');
-    } else {
-      queryBuilder.orderBy('workflow.updatedAt', 'DESC');
-    }
-
-    const models = await queryBuilder.getMany();
-    return models.map(model => this.mapper.toEntity(model));
+    return this.find({
+      customConditions: (qb: any) => {
+        qb.andWhere('workflow.isDeleted = true');
+        this.applyCommonConditions(qb, options);
+      },
+      sortBy: options?.sortBy || 'updatedAt',
+      sortOrder: options?.sortOrder || 'desc',
+      limit: options?.limit,
+      offset: options?.offset
+    });
   }
 
-  async getWorkflowExecutionStats(options?: WorkflowQueryOptions): Promise<{
-    total: number;
-    draft: number;
-    active: number;
-    inactive: number;
-    archived: number;
-    totalExecutions: number;
-    totalSuccesses: number;
-    totalFailures: number;
-    averageSuccessRate: number;
-  }> {
-    const connection = await this.connectionManager.getConnection();
-    const repository = connection.getRepository(WorkflowModel);
-
-    const queryBuilder = repository.createQueryBuilder('workflow');
-
-    if (options?.includeDeleted === false) {
-      queryBuilder.andWhere('workflow.isDeleted = false');
-    }
-
-    if (options?.createdBy) {
-      queryBuilder.andWhere('workflow.createdBy = :createdBy', { createdBy: options.createdBy });
-    }
-
-    const stats = await queryBuilder
-      .select('workflow.state', 'state')
-      .addSelect('COUNT(*)', 'count')
-      .addSelect('SUM(CAST(workflow.metadata->>\'executionCount\' AS INTEGER))', 'totalExecutions')
-      .addSelect('SUM(CAST(workflow.metadata->>\'successCount\' AS INTEGER))', 'totalSuccesses')
-      .addSelect('SUM(CAST(workflow.metadata->>\'failureCount\' AS INTEGER))', 'totalFailures')
-      .groupBy('workflow.state')
-      .getRawMany();
-
-    const result = {
-      total: 0,
-      draft: 0,
-      active: 0,
-      inactive: 0,
-      archived: 0,
-      totalExecutions: 0,
-      totalSuccesses: 0,
-      totalFailures: 0,
-      averageSuccessRate: 0
-    };
-
-    stats.forEach(stat => {
-      const count = parseInt(stat.count);
-      result.total += count;
-
-      switch (stat.state) {
-        case 'draft':
-          result.draft = count;
-          break;
-        case 'active':
-          result.active = count;
-          break;
-        case 'inactive':
-          result.inactive = count;
-          break;
-        case 'archived':
-          result.archived = count;
-          break;
-      }
-
-      result.totalExecutions += parseInt(stat.totalExecutions || 0);
-      result.totalSuccesses += parseInt(stat.totalSuccesses || 0);
-      result.totalFailures += parseInt(stat.totalFailures || 0);
+  async findByNodeId(nodeId: ID, options?: WorkflowQueryOptions): Promise<Workflow[]> {
+    return this.find({
+      customConditions: (qb: any) => {
+        qb.andWhere('workflow.metadata->>\'nodeIds\' @> :nodeId', { nodeId: JSON.stringify([nodeId.value]) });
+        this.applyCommonConditions(qb, options);
+      },
+      sortBy: options?.sortBy || 'createdAt',
+      sortOrder: options?.sortOrder || 'desc',
+      limit: options?.limit,
+      offset: options?.offset
     });
+  }
 
-    if (result.totalExecutions > 0) {
-      result.averageSuccessRate = result.totalSuccesses / result.totalExecutions;
-    }
+  async findByEdgeId(edgeId: ID, options?: WorkflowQueryOptions): Promise<Workflow[]> {
+    return this.find({
+      customConditions: (qb: any) => {
+        qb.andWhere('workflow.metadata->>\'edgeIds\' @> :edgeId', { edgeId: JSON.stringify([edgeId.value]) });
+        this.applyCommonConditions(qb, options);
+      },
+      sortBy: options?.sortBy || 'createdAt',
+      sortOrder: options?.sortOrder || 'desc',
+      limit: options?.limit,
+      offset: options?.offset
+    });
+  }
 
-    return result;
+  async findByNodeType(nodeType: NodeType, options?: WorkflowQueryOptions): Promise<Workflow[]> {
+    return this.find({
+      customConditions: (qb: any) => {
+        qb.andWhere('workflow.metadata->>\'nodeTypes\' @> :nodeType', { nodeType: JSON.stringify([nodeType.value]) });
+        this.applyCommonConditions(qb, options);
+      },
+      sortBy: options?.sortBy || 'createdAt',
+      sortOrder: options?.sortOrder || 'desc',
+      limit: options?.limit,
+      offset: options?.offset
+    });
+  }
+
+  async findByEdgeType(edgeType: EdgeType, options?: WorkflowQueryOptions): Promise<Workflow[]> {
+    return this.find({
+      customConditions: (qb: any) => {
+        qb.andWhere('workflow.metadata->>\'edgeTypes\' @> :edgeType', { edgeType: JSON.stringify([edgeType.value]) });
+        this.applyCommonConditions(qb, options);
+      },
+      sortBy: options?.sortBy || 'createdAt',
+      sortOrder: options?.sortOrder || 'desc',
+      limit: options?.limit,
+      offset: options?.offset
+    });
   }
 
   async getWorkflowTagStats(options?: WorkflowQueryOptions): Promise<Record<string, number>> {
@@ -1064,6 +419,31 @@ export class WorkflowRepository implements IWorkflowRepository {
     });
 
     return result;
+  }
+
+  /**
+   * 应用通用查询条件
+   */
+  private applyCommonConditions(qb: any, options?: WorkflowQueryOptions): void {
+    if (options?.includeDeleted === false) {
+      qb.andWhere('workflow.isDeleted = false');
+    }
+
+    if (options?.name) {
+      qb.andWhere('workflow.name LIKE :name', { name: `%${options.name}%` });
+    }
+
+    if (options?.status) {
+      qb.andWhere('workflow.state = :status', { status: options.status });
+    }
+
+    if (options?.type) {
+      qb.andWhere('workflow.executionMode = :type', { type: options.type });
+    }
+
+    if (options?.createdBy) {
+      qb.andWhere('workflow.createdBy = :createdBy', { createdBy: options.createdBy });
+    }
   }
 
   private mapStatusToState(status: WorkflowStatus): string {

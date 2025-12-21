@@ -7,359 +7,127 @@ import { ThreadPriority } from '../../../../domain/threads/value-objects/thread-
 import { ConnectionManager } from '../../connections/connection-manager';
 import { ThreadMapper } from './thread-mapper';
 import { ThreadModel } from '../../models/thread.model';
-import { QueryOptions, PaginatedResult } from '../../../../domain/common/repositories/repository';
+import { IQueryOptions, PaginatedResult } from '../../../../domain/common/repositories/repository';
 import { RepositoryError } from '../../../../domain/common/errors/repository-error';
 import { In } from 'typeorm';
+import { BaseRepository, QueryOptions } from '../../base/base-repository';
 
 @injectable()
-export class ThreadRepository implements IThreadRepository {
+export class ThreadRepository extends BaseRepository<Thread, ThreadModel, ID> implements IThreadRepository {
+  protected override mapper: ThreadMapper;
+
   constructor(
-    @inject('ConnectionManager') private connectionManager: ConnectionManager,
-    @inject('ThreadMapper') private mapper: ThreadMapper
-  ) { }
-
-  async save(thread: Thread): Promise<Thread> {
-    const connection = await this.connectionManager.getConnection();
-    const repository = connection.getRepository(ThreadModel);
-
-    const model = this.mapper.toModel(thread);
-    await repository.save(model);
-
-    return thread;
+    @inject('ConnectionManager') connectionManager: ConnectionManager,
+    @inject('ThreadMapper') mapper: ThreadMapper
+  ) {
+    super(connectionManager);
+    this.mapper = mapper;
   }
 
-  async findById(id: ID): Promise<Thread | null> {
-    const connection = await this.connectionManager.getConnection();
-    const repository = connection.getRepository(ThreadModel);
-
-    const model = await repository.findOne({ where: { id: id.value } });
-    return model ? this.mapper.toEntity(model) : null;
+  protected override getModelClass(): new () => ThreadModel {
+    return ThreadModel;
   }
 
-  async findByIdOrFail(id: ID): Promise<Thread> {
-    const thread = await this.findById(id);
-    if (!thread) {
-      throw new RepositoryError(`Thread with ID ${id.value} not found`);
-    }
-    return thread;
-  }
-
-  async findAll(): Promise<Thread[]> {
-    const connection = await this.connectionManager.getConnection();
-    const repository = connection.getRepository(ThreadModel);
-
-    const models = await repository.find();
-    return models.map(model => this.mapper.toEntity(model));
-  }
-
-  async find(options: QueryOptions): Promise<Thread[]> {
-    const connection = await this.connectionManager.getConnection();
-    const repository = connection.getRepository(ThreadModel);
-
-    const queryBuilder = repository.createQueryBuilder('thread');
-
-    if (options.filters) {
-      Object.entries(options.filters).forEach(([key, value]) => {
-        if (value !== undefined) {
-          queryBuilder.andWhere(`thread.${key} = :${key}`, { [key]: value });
-        }
-      });
-    }
-
-    if (options.sortBy) {
-      const order = options.sortOrder === 'desc' ? 'DESC' : 'ASC';
-      queryBuilder.orderBy(`thread.${options.sortBy}`, order);
-    }
-
-    if (options.offset) {
-      queryBuilder.skip(options.offset);
-    }
-
-    if (options.limit) {
-      queryBuilder.take(options.limit);
-    }
-
-    const models = await queryBuilder.getMany();
-    return models.map(model => this.mapper.toEntity(model));
-  }
-
-  async findOne(options: QueryOptions): Promise<Thread | null> {
-    const results = await this.find({ ...options, limit: 1 });
-    return results[0] ?? null;
-  }
-
-  async findOneOrFail(options: QueryOptions): Promise<Thread> {
-    const thread = await this.findOne(options);
-    if (!thread) {
-      throw new RepositoryError('Thread not found with given criteria');
-    }
-    return thread;
-  }
-
-  async findWithPaginationBase(options: QueryOptions): Promise<PaginatedResult<Thread>> {
-    const connection = await this.connectionManager.getConnection();
-    const repository = connection.getRepository(ThreadModel);
-
-    const page = options.offset ? Math.floor(options.offset / (options.limit || 10)) + 1 : 1;
-    const pageSize = options.limit || 10;
-    const skip = (page - 1) * pageSize;
-
-    const queryBuilder = repository.createQueryBuilder('thread');
-
-    if (options.filters) {
-      Object.entries(options.filters).forEach(([key, value]) => {
-        if (value !== undefined) {
-          queryBuilder.andWhere(`thread.${key} = :${key}`, { [key]: value });
-        }
-      });
-    }
-
-    const [models, total] = await queryBuilder
-      .skip(skip)
-      .take(pageSize)
-      .orderBy('thread.createdAt', 'DESC')
-      .getManyAndCount();
-
-    const totalPages = Math.ceil(total / pageSize);
-
-    return {
-      items: models.map(model => this.mapper.toEntity(model)),
-      total,
-      page,
-      pageSize,
-      totalPages
-    };
-  }
-
-  async saveBatch(threads: Thread[]): Promise<Thread[]> {
-    const connection = await this.connectionManager.getConnection();
-    const repository = connection.getRepository(ThreadModel);
-
-    const models = threads.map(thread => this.mapper.toModel(thread));
-    const savedModels = await repository.save(models);
-
-    return savedModels.map(model => this.mapper.toEntity(model));
-  }
-
-  async delete(entity: Thread): Promise<void> {
-    const connection = await this.connectionManager.getConnection();
-    const repository = connection.getRepository(ThreadModel);
-
-    await repository.delete(entity.threadId.value);
-  }
-
-  async deleteById(id: ID): Promise<void> {
-    const connection = await this.connectionManager.getConnection();
-    const repository = connection.getRepository(ThreadModel);
-
-    await repository.delete({ id: id.value });
-  }
-
-  async deleteBatch(threads: Thread[]): Promise<void> {
-    const connection = await this.connectionManager.getConnection();
-    const repository = connection.getRepository(ThreadModel);
-
-    const ids = threads.map(thread => thread.threadId.value);
-    await repository.delete({ id: In(ids) });
-  }
-
-  async deleteWhere(options: QueryOptions): Promise<number> {
-    const connection = await this.connectionManager.getConnection();
-    const repository = connection.getRepository(ThreadModel);
-
-    const queryBuilder = repository.createQueryBuilder('thread').delete();
-
-    if (options.filters) {
-      Object.entries(options.filters).forEach(([key, value]) => {
-        if (value !== undefined) {
-          queryBuilder.andWhere(`thread.${key} = :${key}`, { [key]: value });
-        }
-      });
-    }
-
-    const result = await queryBuilder.execute();
-    return result.affected || 0;
-  }
-
-  async exists(id: ID): Promise<boolean> {
-    const connection = await this.connectionManager.getConnection();
-    const repository = connection.getRepository(ThreadModel);
-
-    const count = await repository.count({ where: { id: id.value } });
-    return count > 0;
-  }
-
-  async count(options?: QueryOptions): Promise<number> {
-    const connection = await this.connectionManager.getConnection();
-    const repository = connection.getRepository(ThreadModel);
-
-    if (!options || !options.filters) {
-      return repository.count();
-    }
-
-    const queryBuilder = repository.createQueryBuilder('thread');
-
-    if (options.filters) {
-      Object.entries(options.filters).forEach(([key, value]) => {
-        if (value !== undefined) {
-          queryBuilder.andWhere(`thread.${key} = :${key}`, { [key]: value });
-        }
-      });
-    }
-
-    return queryBuilder.getCount();
-  }
+  // 基础 CRUD 方法现在由 BaseRepository 提供，无需重复实现
 
   async findBySessionId(sessionId: ID, options?: ThreadQueryOptions): Promise<Thread[]> {
-    const connection = await this.connectionManager.getConnection();
-    const repository = connection.getRepository(ThreadModel);
+    return this.find({
+      customConditions: (qb) => {
+        qb.andWhere('thread.sessionId = :sessionId', { sessionId: sessionId.value });
 
-    const queryBuilder = repository.createQueryBuilder('thread')
-      .where('thread.sessionId = :sessionId', { sessionId: sessionId.value });
+        if (options?.includeDeleted === false) {
+          qb.andWhere('thread.isDeleted = false');
+        }
 
-    if (options?.includeDeleted === false) {
-      queryBuilder.andWhere('thread.isDeleted = false');
-    }
+        if (options?.status) {
+          qb.andWhere('thread.status = :status', { status: options.status });
+        }
 
-    if (options?.status) {
-      queryBuilder.andWhere('thread.status = :status', { status: options.status });
-    }
+        if (options?.priority) {
+          qb.andWhere('thread.priority = :priority', { priority: options.priority });
+        }
 
-    if (options?.priority) {
-      queryBuilder.andWhere('thread.priority = :priority', { priority: options.priority });
-    }
-
-    if (options?.title) {
-      queryBuilder.andWhere('thread.title LIKE :title', { title: `%${options.title}%` });
-    }
-
-    if (options?.limit) {
-      queryBuilder.take(options.limit);
-    }
-
-    if (options?.offset) {
-      queryBuilder.skip(options.offset);
-    }
-
-    if (options?.sortBy) {
-      queryBuilder.orderBy(`thread.${options.sortBy}`, (options.sortOrder || 'ASC').toUpperCase() as 'ASC' | 'DESC');
-    } else {
-      queryBuilder.orderBy('thread.createdAt', 'DESC');
-    }
-
-    const models = await queryBuilder.getMany();
-    return models.map(model => this.mapper.toEntity(model));
+        if (options?.title) {
+          qb.andWhere('thread.title LIKE :title', { title: `%${options.title}%` });
+        }
+      },
+      sortBy: options?.sortBy || 'createdAt',
+      sortOrder: options?.sortOrder || 'desc',
+      limit: options?.limit,
+      offset: options?.offset
+    });
   }
 
   async findByWorkflowId(workflowId: ID, options?: ThreadQueryOptions): Promise<Thread[]> {
-    const connection = await this.connectionManager.getConnection();
-    const repository = connection.getRepository(ThreadModel);
+    return this.find({
+      customConditions: (qb) => {
+        qb.andWhere('thread.workflowId = :workflowId', { workflowId: workflowId.value });
 
-    const queryBuilder = repository.createQueryBuilder('thread')
-      .where('thread.workflowId = :workflowId', { workflowId: workflowId.value });
+        if (options?.includeDeleted === false) {
+          qb.andWhere('thread.isDeleted = false');
+        }
 
-    if (options?.includeDeleted === false) {
-      queryBuilder.andWhere('thread.isDeleted = false');
-    }
+        if (options?.status) {
+          qb.andWhere('thread.status = :status', { status: options.status });
+        }
 
-    if (options?.status) {
-      queryBuilder.andWhere('thread.status = :status', { status: options.status });
-    }
-
-    if (options?.priority) {
-      queryBuilder.andWhere('thread.priority = :priority', { priority: options.priority });
-    }
-
-    if (options?.limit) {
-      queryBuilder.take(options.limit);
-    }
-
-    if (options?.offset) {
-      queryBuilder.skip(options.offset);
-    }
-
-    if (options?.sortBy) {
-      queryBuilder.orderBy(`thread.${options.sortBy}`, (options.sortOrder || 'ASC').toUpperCase() as 'ASC' | 'DESC');
-    } else {
-      queryBuilder.orderBy('thread.createdAt', 'DESC');
-    }
-
-    const models = await queryBuilder.getMany();
-    return models.map(model => this.mapper.toEntity(model));
+        if (options?.priority) {
+          qb.andWhere('thread.priority = :priority', { priority: options.priority });
+        }
+      },
+      sortBy: options?.sortBy || 'createdAt',
+      sortOrder: options?.sortOrder || 'desc',
+      limit: options?.limit,
+      offset: options?.offset
+    });
   }
 
   async findByStatus(status: ThreadStatus, options?: ThreadQueryOptions): Promise<Thread[]> {
-    const connection = await this.connectionManager.getConnection();
-    const repository = connection.getRepository(ThreadModel);
+    return this.find({
+      customConditions: (qb) => {
+        qb.andWhere('thread.status = :status', { status: status.getValue() });
 
-    const queryBuilder = repository.createQueryBuilder('thread')
-      .where('thread.status = :status', { status: status.getValue() });
+        if (options?.includeDeleted === false) {
+          qb.andWhere('thread.isDeleted = false');
+        }
 
-    if (options?.includeDeleted === false) {
-      queryBuilder.andWhere('thread.isDeleted = false');
-    }
+        if (options?.sessionId) {
+          qb.andWhere('thread.sessionId = :sessionId', { sessionId: options.sessionId });
+        }
 
-    if (options?.sessionId) {
-      queryBuilder.andWhere('thread.sessionId = :sessionId', { sessionId: options.sessionId });
-    }
-
-    if (options?.workflowId) {
-      queryBuilder.andWhere('thread.workflowId = :workflowId', { workflowId: options.workflowId });
-    }
-
-    if (options?.limit) {
-      queryBuilder.take(options.limit);
-    }
-
-    if (options?.offset) {
-      queryBuilder.skip(options.offset);
-    }
-
-    if (options?.sortBy) {
-      queryBuilder.orderBy(`thread.${options.sortBy}`, (options.sortOrder || 'ASC').toUpperCase() as 'ASC' | 'DESC');
-    } else {
-      queryBuilder.orderBy('thread.createdAt', 'DESC');
-    }
-
-    const models = await queryBuilder.getMany();
-    return models.map(model => this.mapper.toEntity(model));
+        if (options?.workflowId) {
+          qb.andWhere('thread.workflowId = :workflowId', { workflowId: options.workflowId });
+        }
+      },
+      sortBy: options?.sortBy || 'createdAt',
+      sortOrder: options?.sortOrder || 'desc',
+      limit: options?.limit,
+      offset: options?.offset
+    });
   }
 
   async findByPriority(priority: ThreadPriority, options?: ThreadQueryOptions): Promise<Thread[]> {
-    const connection = await this.connectionManager.getConnection();
-    const repository = connection.getRepository(ThreadModel);
+    return this.find({
+      customConditions: (qb) => {
+        qb.andWhere('thread.priority = :priority', { priority: priority.getNumericValue() });
 
-    const queryBuilder = repository.createQueryBuilder('thread')
-      .where('thread.priority = :priority', { priority: priority.getNumericValue() });
+        if (options?.includeDeleted === false) {
+          qb.andWhere('thread.isDeleted = false');
+        }
 
-    if (options?.includeDeleted === false) {
-      queryBuilder.andWhere('thread.isDeleted = false');
-    }
+        if (options?.sessionId) {
+          qb.andWhere('thread.sessionId = :sessionId', { sessionId: options.sessionId });
+        }
 
-    if (options?.sessionId) {
-      queryBuilder.andWhere('thread.sessionId = :sessionId', { sessionId: options.sessionId });
-    }
-
-    if (options?.workflowId) {
-      queryBuilder.andWhere('thread.workflowId = :workflowId', { workflowId: options.workflowId });
-    }
-
-    if (options?.limit) {
-      queryBuilder.take(options.limit);
-    }
-
-    if (options?.offset) {
-      queryBuilder.skip(options.offset);
-    }
-
-    if (options?.sortBy) {
-      queryBuilder.orderBy(`thread.${options.sortBy}`, (options.sortOrder || 'ASC').toUpperCase() as 'ASC' | 'DESC');
-    } else {
-      queryBuilder.orderBy('thread.priority', 'DESC');
-    }
-
-    const models = await queryBuilder.getMany();
-    return models.map(model => this.mapper.toEntity(model));
+        if (options?.workflowId) {
+          qb.andWhere('thread.workflowId = :workflowId', { workflowId: options.workflowId });
+        }
+      },
+      sortBy: options?.sortBy || 'priority',
+      sortOrder: options?.sortOrder || 'desc',
+      limit: options?.limit,
+      offset: options?.offset
+    });
   }
 
   async findBySessionIdAndStatus(sessionId: ID, status: ThreadStatus, options?: ThreadQueryOptions): Promise<Thread[]> {
@@ -393,40 +161,27 @@ export class ThreadRepository implements IThreadRepository {
   }
 
   async findActiveThreads(options?: ThreadQueryOptions): Promise<Thread[]> {
-    const connection = await this.connectionManager.getConnection();
-    const repository = connection.getRepository(ThreadModel);
+    return this.find({
+      customConditions: (qb) => {
+        qb.andWhere('thread.status IN (:...statuses)', { statuses: ['pending', 'running', 'paused'] });
 
-    const queryBuilder = repository.createQueryBuilder('thread')
-      .where('thread.status IN (:...statuses)', { statuses: ['pending', 'running', 'paused'] });
+        if (options?.includeDeleted === false) {
+          qb.andWhere('thread.isDeleted = false');
+        }
 
-    if (options?.includeDeleted === false) {
-      queryBuilder.andWhere('thread.isDeleted = false');
-    }
+        if (options?.sessionId) {
+          qb.andWhere('thread.sessionId = :sessionId', { sessionId: options.sessionId });
+        }
 
-    if (options?.sessionId) {
-      queryBuilder.andWhere('thread.sessionId = :sessionId', { sessionId: options.sessionId });
-    }
-
-    if (options?.workflowId) {
-      queryBuilder.andWhere('thread.workflowId = :workflowId', { workflowId: options.workflowId });
-    }
-
-    if (options?.limit) {
-      queryBuilder.take(options.limit);
-    }
-
-    if (options?.offset) {
-      queryBuilder.skip(options.offset);
-    }
-
-    if (options?.sortBy) {
-      queryBuilder.orderBy(`thread.${options.sortBy}`, (options.sortOrder || 'ASC').toUpperCase() as 'ASC' | 'DESC');
-    } else {
-      queryBuilder.orderBy('thread.priority', 'DESC');
-    }
-
-    const models = await queryBuilder.getMany();
-    return models.map(model => this.mapper.toEntity(model));
+        if (options?.workflowId) {
+          qb.andWhere('thread.workflowId = :workflowId', { workflowId: options.workflowId });
+        }
+      },
+      sortBy: options?.sortBy || 'priority',
+      sortOrder: options?.sortOrder || 'desc',
+      limit: options?.limit,
+      offset: options?.offset
+    });
   }
 
   async findPendingThreads(options?: ThreadQueryOptions): Promise<Thread[]> {
@@ -442,40 +197,27 @@ export class ThreadRepository implements IThreadRepository {
   }
 
   async findTerminalThreads(options?: ThreadQueryOptions): Promise<Thread[]> {
-    const connection = await this.connectionManager.getConnection();
-    const repository = connection.getRepository(ThreadModel);
+    return this.find({
+      customConditions: (qb) => {
+        qb.andWhere('thread.status IN (:...statuses)', { statuses: ['completed', 'failed', 'cancelled'] });
 
-    const queryBuilder = repository.createQueryBuilder('thread')
-      .where('thread.status IN (:...statuses)', { statuses: ['completed', 'failed', 'cancelled'] });
+        if (options?.includeDeleted === false) {
+          qb.andWhere('thread.isDeleted = false');
+        }
 
-    if (options?.includeDeleted === false) {
-      queryBuilder.andWhere('thread.isDeleted = false');
-    }
+        if (options?.sessionId) {
+          qb.andWhere('thread.sessionId = :sessionId', { sessionId: options.sessionId });
+        }
 
-    if (options?.sessionId) {
-      queryBuilder.andWhere('thread.sessionId = :sessionId', { sessionId: options.sessionId });
-    }
-
-    if (options?.workflowId) {
-      queryBuilder.andWhere('thread.workflowId = :workflowId', { workflowId: options.workflowId });
-    }
-
-    if (options?.limit) {
-      queryBuilder.take(options.limit);
-    }
-
-    if (options?.offset) {
-      queryBuilder.skip(options.offset);
-    }
-
-    if (options?.sortBy) {
-      queryBuilder.orderBy(`thread.${options.sortBy}`, (options.sortOrder || 'ASC').toUpperCase() as 'ASC' | 'DESC');
-    } else {
-      queryBuilder.orderBy('thread.createdAt', 'DESC');
-    }
-
-    const models = await queryBuilder.getMany();
-    return models.map(model => this.mapper.toEntity(model));
+        if (options?.workflowId) {
+          qb.andWhere('thread.workflowId = :workflowId', { workflowId: options.workflowId });
+        }
+      },
+      sortBy: options?.sortBy || 'createdAt',
+      sortOrder: options?.sortOrder || 'desc',
+      limit: options?.limit,
+      offset: options?.offset
+    });
   }
 
   async findFailedThreads(options?: ThreadQueryOptions): Promise<Thread[]> {
@@ -483,231 +225,199 @@ export class ThreadRepository implements IThreadRepository {
   }
 
   async searchByTitle(title: string, options?: ThreadQueryOptions): Promise<Thread[]> {
-    const connection = await this.connectionManager.getConnection();
-    const repository = connection.getRepository(ThreadModel);
+    return this.find({
+      customConditions: (qb) => {
+        qb.andWhere('thread.title LIKE :title', { title: `%${title}%` });
 
-    const queryBuilder = repository.createQueryBuilder('thread')
-      .where('thread.title LIKE :title', { title: `%${title}%` });
+        if (options?.includeDeleted === false) {
+          qb.andWhere('thread.isDeleted = false');
+        }
 
-    if (options?.includeDeleted === false) {
-      queryBuilder.andWhere('thread.isDeleted = false');
-    }
+        if (options?.sessionId) {
+          qb.andWhere('thread.sessionId = :sessionId', { sessionId: options.sessionId });
+        }
 
-    if (options?.sessionId) {
-      queryBuilder.andWhere('thread.sessionId = :sessionId', { sessionId: options.sessionId });
-    }
-
-    if (options?.workflowId) {
-      queryBuilder.andWhere('thread.workflowId = :workflowId', { workflowId: options.workflowId });
-    }
-
-    if (options?.limit) {
-      queryBuilder.take(options.limit);
-    }
-
-    if (options?.offset) {
-      queryBuilder.skip(options.offset);
-    }
-
-    if (options?.sortBy) {
-      queryBuilder.orderBy(`thread.${options.sortBy}`, (options.sortOrder || 'ASC').toUpperCase() as 'ASC' | 'DESC');
-    } else {
-      queryBuilder.orderBy('thread.createdAt', 'DESC');
-    }
-
-    const models = await queryBuilder.getMany();
-    return models.map(model => this.mapper.toEntity(model));
+        if (options?.workflowId) {
+          qb.andWhere('thread.workflowId = :workflowId', { workflowId: options.workflowId });
+        }
+      },
+      sortBy: options?.sortBy || 'createdAt',
+      sortOrder: options?.sortOrder || 'desc',
+      limit: options?.limit,
+      offset: options?.offset
+    });
   }
 
-  async findWithPagination(options: ThreadQueryOptions): Promise<PaginatedResult<Thread>> {
-    const connection = await this.connectionManager.getConnection();
-    const repository = connection.getRepository(ThreadModel);
+  override async findWithPagination(options: ThreadQueryOptions): Promise<PaginatedResult<Thread>> {
+    const queryOptions: QueryOptions<ThreadModel> = {
+      customConditions: (qb: any) => {
+        if (options?.includeDeleted === false) {
+          qb.andWhere('thread.isDeleted = false');
+        }
 
-    const queryBuilder = repository.createQueryBuilder('thread');
+        if (options?.sessionId) {
+          qb.andWhere('thread.sessionId = :sessionId', { sessionId: options.sessionId });
+        }
 
-    if (options?.includeDeleted === false) {
-      queryBuilder.andWhere('thread.isDeleted = false');
-    }
+        if (options?.workflowId) {
+          qb.andWhere('thread.workflowId = :workflowId', { workflowId: options.workflowId });
+        }
 
-    if (options?.sessionId) {
-      queryBuilder.andWhere('thread.sessionId = :sessionId', { sessionId: options.sessionId });
-    }
+        if (options?.status) {
+          qb.andWhere('thread.status = :status', { status: options.status });
+        }
 
-    if (options?.workflowId) {
-      queryBuilder.andWhere('thread.workflowId = :workflowId', { workflowId: options.workflowId });
-    }
+        if (options?.priority) {
+          qb.andWhere('thread.priority = :priority', { priority: options.priority });
+        }
 
-    if (options?.status) {
-      queryBuilder.andWhere('thread.status = :status', { status: options.status });
-    }
-
-    if (options?.priority) {
-      queryBuilder.andWhere('thread.priority = :priority', { priority: options.priority });
-    }
-
-    if (options?.title) {
-      queryBuilder.andWhere('thread.title LIKE :title', { title: `%${options.title}%` });
-    }
-
-    if (options?.sortBy) {
-      queryBuilder.orderBy(`thread.${options.sortBy}`, (options.sortOrder || 'ASC').toUpperCase() as 'ASC' | 'DESC');
-    } else {
-      queryBuilder.orderBy('thread.createdAt', 'DESC');
-    }
-
-    const [models, total] = await queryBuilder
-      .skip(options.offset || 0)
-      .take(options.limit || 20)
-      .getManyAndCount();
-
-    return {
-      items: models.map(model => this.mapper.toEntity(model)),
-      total,
-      page: Math.floor((options.offset || 0) / (options.limit || 20)) + 1,
-      pageSize: options.limit || 20,
-      totalPages: Math.ceil(total / (options.limit || 20))
+        if (options?.title) {
+          qb.andWhere('thread.title LIKE :title', { title: `%${options.title}%` });
+        }
+      },
+      sortBy: options?.sortBy || 'createdAt',
+      sortOrder: options?.sortOrder || 'desc',
+      limit: options?.limit || 20,
+      offset: options?.offset || 0
     };
+
+    return super.findWithPagination(queryOptions);
   }
 
   async countBySessionId(sessionId: ID, options?: ThreadQueryOptions): Promise<number> {
-    const connection = await this.connectionManager.getConnection();
-    const repository = connection.getRepository(ThreadModel);
+    const queryOptions: QueryOptions<ThreadModel> = {
+      customConditions: (qb: any) => {
+        qb.andWhere('thread.sessionId = :sessionId', { sessionId: sessionId.value });
 
-    const queryBuilder = repository.createQueryBuilder('thread')
-      .where('thread.sessionId = :sessionId', { sessionId: sessionId.value });
+        if (options?.includeDeleted === false) {
+          qb.andWhere('thread.isDeleted = false');
+        }
 
-    if (options?.includeDeleted === false) {
-      queryBuilder.andWhere('thread.isDeleted = false');
-    }
+        if (options?.status) {
+          qb.andWhere('thread.status = :status', { status: options.status });
+        }
 
-    if (options?.status) {
-      queryBuilder.andWhere('thread.status = :status', { status: options.status });
-    }
+        if (options?.priority) {
+          qb.andWhere('thread.priority = :priority', { priority: options.priority });
+        }
+      }
+    };
 
-    if (options?.priority) {
-      queryBuilder.andWhere('thread.priority = :priority', { priority: options.priority });
-    }
-
-    return await queryBuilder.getCount();
+    return this.count(queryOptions);
   }
 
   async countByWorkflowId(workflowId: ID, options?: ThreadQueryOptions): Promise<number> {
-    const connection = await this.connectionManager.getConnection();
-    const repository = connection.getRepository(ThreadModel);
+    const queryOptions: QueryOptions<ThreadModel> = {
+      customConditions: (qb: any) => {
+        qb.andWhere('thread.workflowId = :workflowId', { workflowId: workflowId.value });
 
-    const queryBuilder = repository.createQueryBuilder('thread')
-      .where('thread.workflowId = :workflowId', { workflowId: workflowId.value });
+        if (options?.includeDeleted === false) {
+          qb.andWhere('thread.isDeleted = false');
+        }
 
-    if (options?.includeDeleted === false) {
-      queryBuilder.andWhere('thread.isDeleted = false');
-    }
+        if (options?.status) {
+          qb.andWhere('thread.status = :status', { status: options.status });
+        }
 
-    if (options?.status) {
-      queryBuilder.andWhere('thread.status = :status', { status: options.status });
-    }
+        if (options?.priority) {
+          qb.andWhere('thread.priority = :priority', { priority: options.priority });
+        }
+      }
+    };
 
-    if (options?.priority) {
-      queryBuilder.andWhere('thread.priority = :priority', { priority: options.priority });
-    }
-
-    return await queryBuilder.getCount();
+    return this.count(queryOptions);
   }
 
   async countByStatus(status: ThreadStatus, options?: ThreadQueryOptions): Promise<number> {
-    const connection = await this.connectionManager.getConnection();
-    const repository = connection.getRepository(ThreadModel);
+    const queryOptions: QueryOptions<ThreadModel> = {
+      customConditions: (qb: any) => {
+        qb.andWhere('thread.status = :status', { status: status.getValue() });
 
-    const queryBuilder = repository.createQueryBuilder('thread')
-      .where('thread.status = :status', { status: status.getValue() });
+        if (options?.includeDeleted === false) {
+          qb.andWhere('thread.isDeleted = false');
+        }
 
-    if (options?.includeDeleted === false) {
-      queryBuilder.andWhere('thread.isDeleted = false');
-    }
+        if (options?.sessionId) {
+          qb.andWhere('thread.sessionId = :sessionId', { sessionId: options.sessionId });
+        }
 
-    if (options?.sessionId) {
-      queryBuilder.andWhere('thread.sessionId = :sessionId', { sessionId: options.sessionId });
-    }
+        if (options?.workflowId) {
+          qb.andWhere('thread.workflowId = :workflowId', { workflowId: options.workflowId });
+        }
+      }
+    };
 
-    if (options?.workflowId) {
-      queryBuilder.andWhere('thread.workflowId = :workflowId', { workflowId: options.workflowId });
-    }
-
-    return await queryBuilder.getCount();
+    return this.count(queryOptions);
   }
 
   async countByPriority(priority: ThreadPriority, options?: ThreadQueryOptions): Promise<number> {
-    const connection = await this.connectionManager.getConnection();
-    const repository = connection.getRepository(ThreadModel);
+    const queryOptions: QueryOptions<ThreadModel> = {
+      customConditions: (qb: any) => {
+        qb.andWhere('thread.priority = :priority', { priority: priority.getNumericValue() });
 
-    const queryBuilder = repository.createQueryBuilder('thread')
-      .where('thread.priority = :priority', { priority: priority.getNumericValue() });
+        if (options?.includeDeleted === false) {
+          qb.andWhere('thread.isDeleted = false');
+        }
 
-    if (options?.includeDeleted === false) {
-      queryBuilder.andWhere('thread.isDeleted = false');
-    }
+        if (options?.sessionId) {
+          qb.andWhere('thread.sessionId = :sessionId', { sessionId: options.sessionId });
+        }
 
-    if (options?.sessionId) {
-      queryBuilder.andWhere('thread.sessionId = :sessionId', { sessionId: options.sessionId });
-    }
+        if (options?.workflowId) {
+          qb.andWhere('thread.workflowId = :workflowId', { workflowId: options.workflowId });
+        }
+      }
+    };
 
-    if (options?.workflowId) {
-      queryBuilder.andWhere('thread.workflowId = :workflowId', { workflowId: options.workflowId });
-    }
-
-    return await queryBuilder.getCount();
+    return this.count(queryOptions);
   }
 
   async hasActiveThreads(sessionId: ID): Promise<boolean> {
-    const connection = await this.connectionManager.getConnection();
-    const repository = connection.getRepository(ThreadModel);
+    const queryOptions: QueryOptions<ThreadModel> = {
+      customConditions: (qb: any) => {
+        qb.andWhere('thread.sessionId = :sessionId', { sessionId: sessionId.value })
+          .andWhere('thread.status IN (:...statuses)', { statuses: ['pending', 'running', 'paused'] })
+          .andWhere('thread.isDeleted = false');
+      }
+    };
 
-    const count = await repository.createQueryBuilder('thread')
-      .where('thread.sessionId = :sessionId', { sessionId: sessionId.value })
-      .andWhere('thread.status IN (:...statuses)', { statuses: ['pending', 'running', 'paused'] })
-      .andWhere('thread.isDeleted = false')
-      .getCount();
-
+    const count = await this.count(queryOptions);
     return count > 0;
   }
 
   async getLastActiveThreadBySessionId(sessionId: ID): Promise<Thread | null> {
-    const connection = await this.connectionManager.getConnection();
-    const repository = connection.getRepository(ThreadModel);
+    const queryOptions: QueryOptions<ThreadModel> = {
+      customConditions: (qb: any) => {
+        qb.andWhere('thread.sessionId = :sessionId', { sessionId: sessionId.value })
+          .andWhere('thread.status IN (:...statuses)', { statuses: ['pending', 'running', 'paused'] })
+          .andWhere('thread.isDeleted = false')
+          .orderBy('thread.updatedAt', 'DESC');
+      }
+    };
 
-    const model = await repository.createQueryBuilder('thread')
-      .where('thread.sessionId = :sessionId', { sessionId: sessionId.value })
-      .andWhere('thread.status IN (:...statuses)', { statuses: ['pending', 'running', 'paused'] })
-      .andWhere('thread.isDeleted = false')
-      .orderBy('thread.updatedAt', 'DESC')
-      .getOne();
-
-    return model ? this.mapper.toEntity(model) : null;
+    return this.findOne(queryOptions);
   }
 
   async getHighestPriorityPendingThread(options?: ThreadQueryOptions): Promise<Thread | null> {
-    const connection = await this.connectionManager.getConnection();
-    const repository = connection.getRepository(ThreadModel);
+    const queryOptions: QueryOptions<ThreadModel> = {
+      customConditions: (qb: any) => {
+        qb.andWhere('thread.status = :status', { status: 'pending' })
+          .andWhere('thread.isDeleted = false')
+          .orderBy('thread.priority', 'DESC')
+          .addOrderBy('thread.createdAt', 'ASC');
 
-    const queryBuilder = repository.createQueryBuilder('thread')
-      .where('thread.status = :status', { status: 'pending' })
-      .andWhere('thread.isDeleted = false')
-      .orderBy('thread.priority', 'DESC')
-      .addOrderBy('thread.createdAt', 'ASC');
+        if (options?.sessionId) {
+          qb.andWhere('thread.sessionId = :sessionId', { sessionId: options.sessionId });
+        }
 
-    if (options?.sessionId) {
-      queryBuilder.andWhere('thread.sessionId = :sessionId', { sessionId: options.sessionId });
-    }
+        if (options?.workflowId) {
+          qb.andWhere('thread.workflowId = :workflowId', { workflowId: options.workflowId });
+        }
+      },
+      limit: options?.limit || 1
+    };
 
-    if (options?.workflowId) {
-      queryBuilder.andWhere('thread.workflowId = :workflowId', { workflowId: options.workflowId });
-    }
-
-    if (options?.limit) {
-      queryBuilder.take(options.limit);
-    }
-
-    const model = await queryBuilder.getOne();
-    return model ? this.mapper.toEntity(model) : null;
+    return this.findOne(queryOptions);
   }
 
   async batchUpdateStatus(threadIds: ID[], status: ThreadStatus): Promise<number> {
@@ -779,48 +489,37 @@ export class ThreadRepository implements IThreadRepository {
   }
 
   async findSoftDeleted(options?: ThreadQueryOptions): Promise<Thread[]> {
-    const connection = await this.connectionManager.getConnection();
-    const repository = connection.getRepository(ThreadModel);
+    const queryOptions: QueryOptions<ThreadModel> = {
+      customConditions: (qb: any) => {
+        qb.andWhere('thread.isDeleted = true');
 
-    const queryBuilder = repository.createQueryBuilder('thread')
-      .where('thread.isDeleted = true');
+        if (options?.sessionId) {
+          qb.andWhere('thread.sessionId = :sessionId', { sessionId: options.sessionId });
+        }
 
-    if (options?.sessionId) {
-      queryBuilder.andWhere('thread.sessionId = :sessionId', { sessionId: options.sessionId });
-    }
+        if (options?.workflowId) {
+          qb.andWhere('thread.workflowId = :workflowId', { workflowId: options.workflowId });
+        }
 
-    if (options?.workflowId) {
-      queryBuilder.andWhere('thread.workflowId = :workflowId', { workflowId: options.workflowId });
-    }
+        if (options?.status) {
+          qb.andWhere('thread.status = :status', { status: options.status });
+        }
 
-    if (options?.status) {
-      queryBuilder.andWhere('thread.status = :status', { status: options.status });
-    }
+        if (options?.priority) {
+          qb.andWhere('thread.priority = :priority', { priority: options.priority });
+        }
 
-    if (options?.priority) {
-      queryBuilder.andWhere('thread.priority = :priority', { priority: options.priority });
-    }
+        if (options?.title) {
+          qb.andWhere('thread.title LIKE :title', { title: `%${options.title}%` });
+        }
+      },
+      sortBy: options?.sortBy || 'deletedAt',
+      sortOrder: options?.sortOrder || 'desc',
+      limit: options?.limit,
+      offset: options?.offset
+    };
 
-    if (options?.title) {
-      queryBuilder.andWhere('thread.title LIKE :title', { title: `%${options.title}%` });
-    }
-
-    if (options?.limit) {
-      queryBuilder.take(options.limit);
-    }
-
-    if (options?.offset) {
-      queryBuilder.skip(options.offset);
-    }
-
-    if (options?.sortBy) {
-      queryBuilder.orderBy(`thread.${options.sortBy}`, (options.sortOrder || 'ASC').toUpperCase() as 'ASC' | 'DESC');
-    } else {
-      queryBuilder.orderBy('thread.deletedAt', 'DESC');
-    }
-
-    const models = await queryBuilder.getMany();
-    return models.map(model => this.mapper.toEntity(model));
+    return this.find(queryOptions);
   }
 
   async getThreadExecutionStats(sessionId: ID): Promise<{

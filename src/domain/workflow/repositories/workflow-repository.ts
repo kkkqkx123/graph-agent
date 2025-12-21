@@ -3,7 +3,7 @@ import { Workflow } from '../entities/workflow';
 import { ID } from '../../common/value-objects/id';
 import { WorkflowStatus } from '../value-objects/workflow-status';
 import { WorkflowType } from '../value-objects/workflow-type';
-import { QueryOptions, PaginatedResult } from '../../common/repositories/repository';
+import { IQueryOptions, PaginatedResult } from '../../common/repositories/repository';
 import { Node } from '../entities/nodes/base/node';
 import { Edge } from '../entities/edges/base/edge';
 import { NodeType } from '../value-objects/node-type';
@@ -12,7 +12,7 @@ import { EdgeType } from '../value-objects/edge-type';
 /**
  * 工作流查询选项接口
  */
-export interface WorkflowQueryOptions extends QueryOptions {
+export interface WorkflowQueryOptions extends IQueryOptions {
   /**
    * 名称过滤
    */

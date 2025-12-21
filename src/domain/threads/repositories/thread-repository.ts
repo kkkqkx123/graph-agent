@@ -3,12 +3,12 @@ import { Thread } from '../entities/thread';
 import { ID } from '../../common/value-objects/id';
 import { ThreadStatus } from '../value-objects/thread-status';
 import { ThreadPriority } from '../value-objects/thread-priority';
-import { QueryOptions, PaginatedResult } from '../../common/repositories/repository';
+import { IQueryOptions, PaginatedResult } from '../../common/repositories/repository';
 
 /**
  * 线程查询选项接口
  */
-export interface ThreadQueryOptions extends QueryOptions {
+export interface ThreadQueryOptions extends IQueryOptions {
   /**
    * 会话ID过滤
    */

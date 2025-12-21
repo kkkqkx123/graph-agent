@@ -32,7 +32,7 @@ export type { EventHandlerRegistration } from './events/event-dispatcher';
 
 // 仓储接口
 export { Repository } from './repositories/repository';
-export type { QueryOptions } from './repositories/repository';
+export type { IQueryOptions as QueryOptions } from './repositories/repository';
 export type { PaginatedResult } from './repositories/repository';
 
 // 值对象属性接口

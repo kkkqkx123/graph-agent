@@ -3,7 +3,7 @@ import { ID } from '../value-objects/id';
 /**
  * 查询选项接口
  */
-export interface QueryOptions {
+export interface IQueryOptions {
   /**
    * 分页偏移量
    */
@@ -92,14 +92,14 @@ export interface Repository<T, TId = ID> {
    * @param options 查询选项
    * @returns 实体列表
    */
-  find(options: QueryOptions): Promise<T[]>;
+  find(options: IQueryOptions): Promise<T[]>;
 
   /**
    * 根据条件查找单个实体
    * @param options 查询选项
    * @returns 实体或null
    */
-  findOne(options: QueryOptions): Promise<T | null>;
+  findOne(options: IQueryOptions): Promise<T | null>;
 
   /**
    * 根据条件查找单个实体，如果不存在则抛出异常
@@ -107,14 +107,14 @@ export interface Repository<T, TId = ID> {
    * @returns 实体
    * @throws RepositoryError 当实体不存在时
    */
-  findOneOrFail(options: QueryOptions): Promise<T>;
+  findOneOrFail(options: IQueryOptions): Promise<T>;
 
   /**
    * 分页查询实体
    * @param options 查询选项
    * @returns 分页结果
    */
-  findWithPagination(options: QueryOptions): Promise<PaginatedResult<T>>;
+  findWithPagination(options: IQueryOptions): Promise<PaginatedResult<T>>;
 
   /**
    * 保存实体
@@ -153,7 +153,7 @@ export interface Repository<T, TId = ID> {
    * @param options 查询选项
    * @returns 删除的实体数量
    */
-  deleteWhere(options: QueryOptions): Promise<number>;
+  deleteWhere(options: IQueryOptions): Promise<number>;
 
   /**
    * 检查实体是否存在
@@ -167,5 +167,5 @@ export interface Repository<T, TId = ID> {
    * @param options 查询选项
    * @returns 实体数量
    */
-  count(options?: QueryOptions): Promise<number>;
+  count(options?: IQueryOptions): Promise<number>;
 }

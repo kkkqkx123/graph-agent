@@ -2,12 +2,12 @@ import { Repository } from '../../common/repositories/repository';
 import { Session } from '../entities/session';
 import { ID } from '../../common/value-objects/id';
 import { SessionStatus } from '../value-objects/session-status';
-import { QueryOptions, PaginatedResult } from '../../common/repositories/repository';
+import { IQueryOptions, PaginatedResult } from '../../common/repositories/repository';
 
 /**
  * 会话查询选项接口
  */
-export interface SessionQueryOptions extends QueryOptions {
+export interface SessionQueryOptions extends IQueryOptions {
   /**
    * 用户ID过滤
    */
