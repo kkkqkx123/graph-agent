@@ -108,14 +108,17 @@ export class BaseExecutionContext implements IExecutionContext {
     const clonedContext = new BaseExecutionContext(
       this.executionId,
       this.executionType,
-      { ...this.parameters },
-      { ...this.configuration },
+      JSON.parse(JSON.stringify(this.parameters)), // 深拷贝参数
+      JSON.parse(JSON.stringify(this.configuration)), // 深拷贝配置
       new Date(this.startedAt)
     );
 
-    // 复制变量
+    // 深拷贝变量
     this.variables.forEach((value, key) => {
-      clonedContext.setVariable(key, value);
+      const clonedValue = typeof value === 'object' && value !== null
+        ? JSON.parse(JSON.stringify(value))
+        : value;
+      clonedContext.setVariable(key, clonedValue);
     });
 
     return clonedContext;
@@ -141,15 +144,15 @@ export class BaseExecutionContext implements IExecutionContext {
    */
   static fromJSON(data: Record<string, unknown>): BaseExecutionContext {
     const context = new BaseExecutionContext(
-      data.executionId as string,
-      data.executionType as string,
-      data.parameters as Record<string, unknown>,
-      data.configuration as Record<string, unknown>,
-      new Date(data.startedAt as string)
+      data['executionId'] as string,
+      data['executionType'] as string,
+      data['parameters'] as Record<string, unknown>,
+      data['configuration'] as Record<string, unknown>,
+      new Date(data['startedAt'] as string)
     );
 
     // 设置变量
-    const variables = data.variables as Record<string, unknown>;
+    const variables = data['variables'] as Record<string, unknown>;
     if (variables) {
       Object.entries(variables).forEach(([key, value]) => {
         context.setVariable(key, value);

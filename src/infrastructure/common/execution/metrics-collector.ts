@@ -284,7 +284,7 @@ export class MetricsCollector {
    */
   private calculatePercentile(sortedValues: number[], percentile: number): number {
     const index = Math.floor(sortedValues.length * percentile);
-    return sortedValues[Math.min(index, sortedValues.length - 1)];
+    return sortedValues[Math.min(index, sortedValues.length - 1)] || 0;
   }
 
   /**

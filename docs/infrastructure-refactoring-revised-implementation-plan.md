@@ -18,16 +18,12 @@
 ```
 src/infrastructure/
 ├── common/                    # 共享基础设施
-│   ├── execution/
-│   │   ├── base-executor.ts
-│   │   ├── execution-context.ts
-│   │   ├── error-handler.ts
-│   │   └── metrics-collector.ts
-│   ├── persistence/
-│   │   ├── interfaces/
-│   │   ├── repositories/
-│   │   └── storage/
-│   └── configuration/         # 保持现状
+│   └── execution/
+│       ├── base-executor.ts
+│       ├── execution-context.ts
+│       ├── error-handler.ts
+│       └── metrics-collector.ts
+├── config/         # 保持现状
 ├── tools/
 │   └── execution/
 │       ├── executors/
@@ -49,42 +45,6 @@ src/infrastructure/
 ```
 
 ## 分阶段实施方案
-
-### 第一阶段：共享基础设施搭建（2-3周）
-
-#### 目标
-建立共享的基础设施组件，为各模块的独立执行引擎提供基础支持。
-
-#### 具体任务
-
-##### 1.1 创建通用执行基础设施
-- **base-executor.ts**: 定义所有执行器的通用基类
-- **execution-context.ts**: 标准化执行上下文接口
-- **error-handler.ts**: 统一错误处理机制
-- **metrics-collector.ts**: 通用指标收集组件
-
-##### 1.2 建立持久化抽象层
-- **repository.interface.ts**: 通用仓储接口
-- **storage.interface.ts**: 存储抽象接口
-- **memory-storage.ts**: 内存存储实现
-- **file-storage.ts**: 文件存储实现
-
-##### 1.3 创建通用工具集
-- **validation-utils.ts**: 通用验证工具
-- **serialization-utils.ts**: 序列化工具
-- **logging-utils.ts**: 日志工具
-- **cache-utils.ts**: 缓存工具
-
-#### 验收标准
-- [ ] 共享基础设施组件创建完成
-- [ ] 所有通用接口定义完成
-- [ ] 基础实现通过单元测试
-- [ ] 文档更新完成
-
-#### 风险控制
-- 新基础设施与现有代码并行存在
-- 通过适配器模式保持兼容性
-- 充分的单元测试确保基础功能正确
 
 ### 第二阶段：Tools 模块独立化（3-4周）
 
