@@ -1,7 +1,6 @@
 import { Container } from 'inversify';
 import { LLM_DI_IDENTIFIERS, ServiceType, DEPENDENCY_GRAPH } from './di-identifiers';
-import { ConfigManager } from '../common/config/config-manager.interface';
-import { ConfigManagerImpl } from '../common/config/config-manager';
+import { ConfigManager } from '../config/config-manager';
 import { HttpClient } from '../common/http/http-client';
 import { RetryHandler } from '../common/http/retry-handler';
 import { CircuitBreaker } from '../common/http/circuit-breaker';
@@ -94,7 +93,7 @@ export class LLMDIContainer {
   private registerInfrastructure(): void {
     // 配置管理器
     this.container.bind<ConfigManager>(LLM_DI_IDENTIFIERS.ConfigManager)
-      .to(ConfigManagerImpl)
+      .to(ConfigManager)
       .inSingletonScope();
 
     // HTTP相关依赖
@@ -112,7 +111,7 @@ export class LLMDIContainer {
     
     // 为HttpClient提供ConfigManager
     this.container.bind<ConfigManager>('ConfigManager')
-      .to(ConfigManagerImpl)
+      .to(ConfigManager)
       .inSingletonScope();
 
     // HTTP客户端

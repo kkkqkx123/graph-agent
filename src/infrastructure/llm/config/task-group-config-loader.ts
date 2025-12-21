@@ -1,5 +1,5 @@
 import { injectable, inject } from 'inversify';
-import { ConfigManager } from '../../common/config/config-manager.interface';
+import { ConfigManager } from '../../config/config-manager';
 import { LLM_DI_IDENTIFIERS } from '../di-identifiers';
 
 /**
@@ -17,7 +17,7 @@ export class TaskGroupConfigLoader {
    * 加载任务组配置
    */
   async loadTaskGroupConfig(groupName: string): Promise<Record<string, any>> {
-    const llmConfig = this.configManager.getConfigStructure();
+    const llmConfig = this.configManager.getAll();
     const taskGroups = llmConfig['taskGroups'] || {};
     
     const groupConfig = taskGroups[groupName];
@@ -36,7 +36,7 @@ export class TaskGroupConfigLoader {
    * 加载所有任务组配置
    */
   async loadAllTaskGroupConfigs(): Promise<Record<string, any>> {
-    const llmConfig = this.configManager.getConfigStructure();
+    const llmConfig = this.configManager.getAll();
     const taskGroups = llmConfig['taskGroups'] || {};
     
     const validatedConfigs: Record<string, any> = {};
@@ -180,7 +180,7 @@ export class TaskGroupConfigLoader {
    * 获取任务组配置状态
    */
   async getTaskGroupConfigStatus(): Promise<Record<string, any>> {
-    const llmConfig = this.configManager.getConfigStructure();
+    const llmConfig = this.configManager.getAll();
     const taskGroups = llmConfig['taskGroups'] || {};
     
     const status: Record<string, any> = {

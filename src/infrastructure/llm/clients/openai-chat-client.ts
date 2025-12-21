@@ -13,7 +13,7 @@ import { LLM_DI_IDENTIFIERS } from '../di-identifiers';
 import { HttpClient } from '../../common/http/http-client';
 import { TokenBucketLimiter } from '../rate-limiters/token-bucket-limiter';
 import { TokenCalculator } from '../token-calculators/token-calculator';
-import { ConfigManager } from '../../common/config/config-manager.interface';
+import { ConfigManager } from '../../config/config-manager';
 
 @injectable()
 export class OpenAIChatClient extends BaseLLMClient {

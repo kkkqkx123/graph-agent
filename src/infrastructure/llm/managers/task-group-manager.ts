@@ -1,6 +1,6 @@
 import { injectable, inject } from 'inversify';
 import { ITaskGroupManager } from '../../../domain/llm/interfaces/task-group-manager.interface';
-import { ConfigManager } from '../../common/config/config-manager.interface';
+import { ConfigManager } from '../../config/config-manager';
 import { LLM_DI_IDENTIFIERS } from '../di-identifiers';
 
 /**

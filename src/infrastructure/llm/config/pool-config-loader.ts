@@ -1,5 +1,5 @@
 import { injectable, inject } from 'inversify';
-import { ConfigManager } from '../../common/config/config-manager.interface';
+import { ConfigManager } from '../../config/config-manager';
 import { LLM_DI_IDENTIFIERS } from '../di-identifiers';
 
 /**
@@ -17,7 +17,7 @@ export class PoolConfigLoader {
    * 加载轮询池配置
    */
   async loadPoolConfig(poolName: string): Promise<Record<string, any>> {
-    const llmConfig = this.configManager.getConfigStructure();
+    const llmConfig = this.configManager.getAll();
     const pools = llmConfig['pools'] || {};
     
     const poolConfig = pools[poolName];
@@ -36,7 +36,7 @@ export class PoolConfigLoader {
    * 加载所有轮询池配置
    */
   async loadAllPoolConfigs(): Promise<Record<string, any>> {
-    const llmConfig = this.configManager.getConfigStructure();
+    const llmConfig = this.configManager.getAll();
     const pools = llmConfig['pools'] || {};
     
     const validatedConfigs: Record<string, any> = {};
@@ -150,7 +150,7 @@ export class PoolConfigLoader {
    * 获取轮询池配置状态
    */
   async getPoolConfigStatus(): Promise<Record<string, any>> {
-    const llmConfig = this.configManager.getConfigStructure();
+    const llmConfig = this.configManager.getAll();
     const pools = llmConfig['pools'] || {};
     
     const status: Record<string, any> = {

@@ -10,7 +10,7 @@ import { TokenCalculator } from '../token-calculators/token-calculator';
 import { ProviderConfig } from '../parameter-mappers/interfaces/provider-config.interface';
 import { FeatureRegistry } from '../features/feature-registry';
 import { LLM_DI_IDENTIFIERS } from '../di-identifiers';
-import { ConfigManager } from '../../common/config/config-manager.interface';
+import { ConfigManager } from '../../config/config-manager';
 
 /**
  * LLM客户端抽象基类

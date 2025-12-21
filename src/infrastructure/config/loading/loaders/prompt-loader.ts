@@ -9,7 +9,7 @@ import * as path from 'path';
 import { BaseModuleLoader } from '../base-loader';
 import { ConfigFile, ModuleConfig, ModuleMetadata } from '../types';
 import { ILogger } from '@shared/types/logger';
-import { PromptType, inferPromptTypeFromCategory } from '../../../domain/prompts/value-objects/prompt-type';
+import { PromptType, inferPromptTypeFromCategory } from '../../../../domain/prompts/value-objects/prompt-type';
 
 export class PromptLoader extends BaseModuleLoader {
   readonly moduleType = 'prompts';

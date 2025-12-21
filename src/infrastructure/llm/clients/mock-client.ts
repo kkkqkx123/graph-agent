@@ -12,7 +12,7 @@ import { BaseFeatureSupport } from '../parameter-mappers/interfaces/feature-supp
 import { LLM_DI_IDENTIFIERS } from '../di-identifiers';
 import { HttpClient } from '../../common/http/http-client';
 import { TokenBucketLimiter } from '../rate-limiters/token-bucket-limiter';
-import { ConfigManager } from '../../common/config/config-manager.interface';
+import { ConfigManager } from '../../config/config-manager';
 
 @injectable()
 export class MockClient extends BaseLLMClient {
