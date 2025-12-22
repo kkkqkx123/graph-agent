@@ -40,7 +40,7 @@
 
 ### 核心组件重新定义
 
-#### 1. UnifiedWorkflow（统一工作流）
+#### 1. Workflow（统一工作流）
 
 **职责**：
 - 工作流定义（结构+业务配置）
@@ -50,7 +50,7 @@
 
 **设计**：
 ```typescript
-export class UnifiedWorkflow extends AggregateRoot {
+export class Workflow extends AggregateRoot {
   // 结构定义
   private readonly nodes: Map<string, WorkflowNode>;
   private readonly edges: Map<string, WorkflowEdge>;
@@ -105,7 +105,7 @@ export class UnifiedWorkflow extends AggregateRoot {
 **设计**：
 ```typescript
 export class ThreadExecutor extends AggregateRoot {
-  private readonly workflow: UnifiedWorkflow;
+  private readonly workflow: Workflow;
   private readonly executionContext: ExecutionContext;
   private readonly executionState: ThreadExecutionState;
   
@@ -168,7 +168,7 @@ export class SessionManager extends AggregateRoot {
    * 协调并行执行
    */
   public async coordinateParallelExecution(
-    workflow: UnifiedWorkflow,
+    workflow: Workflow,
     executionPlan: ParallelExecutionPlan
   ): Promise<ExecutionResult> {
     // 1. 分配资源
@@ -215,7 +215,7 @@ export class SessionManager extends AggregateRoot {
 ```
 SessionManager (会话层)
 ├── ThreadExecutor (执行层)
-│   ├── UnifiedWorkflow (定义层)
+│   ├── Workflow (定义层)
 │   │   ├── ExecutionStrategy (策略层)
 │   │   ├── ParameterMapping (映射层)
 │   │   └── ErrorHandlingStrategy (错误处理层)
@@ -233,11 +233,11 @@ graph TD
     C -->|并行执行| E[创建多个ThreadExecutor]
     C -->|组合执行| F[创建组合执行计划]
     
-    D --> G[ThreadExecutor执行UnifiedWorkflow]
+    D --> G[ThreadExecutor执行Workflow]
     E --> H[SessionManager协调并行执行]
     F --> I[SessionManager协调组合执行]
     
-    G --> J[UnifiedWorkflow应用执行策略]
+    G --> J[Workflow应用执行策略]
     H --> J
     I --> J
     
@@ -255,7 +255,7 @@ graph TD
 
 ### 1. 合并Graph和Workflow
 
-**决策**：将Graph和Workflow合并为UnifiedWorkflow
+**决策**：将Graph和Workflow合并为Workflow
 
 **理由**：
 - 消除不必要的抽象层次
@@ -264,7 +264,7 @@ graph TD
 - 保证数据一致性
 
 **实施**：
-- 在UnifiedWorkflow中同时管理结构和业务配置
+- 在Workflow中同时管理结构和业务配置
 - 使用策略模式支持不同的执行模式
 - 保持模块化设计便于未来扩展
 
@@ -320,7 +320,7 @@ graph TD
 **目标**：建立新的架构基础
 
 **任务**：
-1. 创建UnifiedWorkflow实体
+1. 创建Workflow实体
 2. 实现ThreadExecutor基础功能
 3. 建立SessionManager框架
 4. 创建迁移工具和适配器
@@ -345,16 +345,6 @@ graph TD
 - 性能基准达标
 - 稳定性验证通过
 
-### 第三阶段：优化提升（1-2个月）
-
-**目标**：优化性能和用户体验
-
-**任务**：
-1. 性能优化和调优
-2. 监控和调试工具
-3. 文档和培训材料
-4. 生产环境部署
-
 **里程碑**：
 - 性能目标达成
 - 监控体系完善
@@ -374,42 +364,6 @@ graph TD
 - 旧代码完全移除
 - 系统稳定运行
 - 团队适应新架构
-
-## 风险评估与缓解
-
-### 主要风险
-
-1. **迁移风险**：
-   - 数据迁移可能失败
-   - 功能兼容性问题
-   - 性能回归风险
-
-2. **复杂度风险**：
-   - 新架构可能过于复杂
-   - 学习成本增加
-   - 开发效率短期下降
-
-3. **稳定性风险**：
-   - 新代码可能存在bug
-   - 边界情况处理不当
-   - 生产环境稳定性问题
-
-### 缓解措施
-
-1. **渐进式迁移**：
-   - 分阶段实施
-   - 保持向后兼容
-   - 建立回滚机制
-
-2. **充分测试**：
-   - 完整的测试覆盖
-   - 性能基准测试
-   - 压力测试验证
-
-3. **监控保障**：
-   - 实时监控指标
-   - 告警机制
-   - 快速响应流程
 
 ## 预期收益
 
@@ -436,18 +390,6 @@ graph TD
    - 组合工作流支持完善
    - 并行执行能力增强
    - 错误处理机制健全
-
-### 长期收益（6个月以上）
-
-1. **架构稳定**：
-   - 技术债务减少
-   - 维护成本降低
-   - 扩展能力增强
-
-2. **团队成长**：
-   - 技术能力提升
-   - 架构思维成熟
-   - 创新能力增强
 
 ## 结论
 
