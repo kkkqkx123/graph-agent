@@ -413,19 +413,5 @@ export class ContainerBootstrap {
       interface: interfaceContainer
     };
   }
-
-  /**
-   * 创建默认容器（向后兼容）
-   */
-  static createDefaultContainer(config: ContainerConfiguration = {}): IContainer {
-    const containers = this.createContainers(config);
-    return containers.interface;
-  }
 }
 
-// 向后兼容的Container类
-export class Container extends BaseContainer {
-  constructor() {
-    super();
-  }
-}

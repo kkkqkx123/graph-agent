@@ -3,7 +3,7 @@
  * 主入口文件
  */
 
-import { Container, ContainerBootstrap } from './infrastructure/container/container';
+import { ContainerBootstrap } from './infrastructure/container/container';
 import { Application } from './application/common/application';
 
 // 声明全局变量
