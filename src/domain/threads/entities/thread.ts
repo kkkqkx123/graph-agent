@@ -7,27 +7,12 @@ import { ThreadStatus } from '../value-objects/thread-status';
 import { ThreadPriority } from '../value-objects/thread-priority';
 import { ThreadCreatedEvent } from '../events/thread-created-event';
 import { ThreadStatusChangedEvent } from '../events/thread-status-changed-event';
+import { ThreadData } from '../interfaces/thread-data.interface';
 
 /**
  * Thread实体接口
  */
-export interface ThreadProps {
-  id: ID;
-  sessionId: ID;
-  workflowId?: ID;
-  status: ThreadStatus;
-  priority: ThreadPriority;
-  title?: string;
-  description?: string;
-  metadata: Record<string, unknown>;
-  createdAt: Timestamp;
-  updatedAt: Timestamp;
-  version: Version;
-  startedAt?: Timestamp;
-  completedAt?: Timestamp;
-  errorMessage?: string;
-  isDeleted: boolean;
-}
+export interface ThreadProps extends ThreadData {}
 
 /**
  * Thread实体

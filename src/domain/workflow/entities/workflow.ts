@@ -10,30 +10,12 @@ import { WorkflowCreatedEvent } from '../events/workflow-created-event';
 import { WorkflowStatusChangedEvent } from '../events/workflow-status-changed-event';
 import { Node } from './nodes/base/node';
 import { Edge } from './edges/base/edge';
+import { WorkflowData } from '../interfaces/workflow-data.interface';
 
 /**
  * Workflow实体接口
  */
-export interface WorkflowProps {
-  id: ID;
-  name: string;
-  description?: string;
-  status: WorkflowStatus;
-  type: WorkflowType;
-  config: WorkflowConfig;
-  nodes: Map<string, Node>;
-  edges: Map<string, Edge>;
-  definition?: Record<string, unknown>;
-  layout?: Record<string, unknown>;
-  createdAt: Timestamp;
-  updatedAt: Timestamp;
-  version: Version;
-  tags: string[];
-  metadata: Record<string, unknown>;
-  isDeleted: boolean;
-  createdBy?: ID;
-  updatedBy?: ID;
-}
+export interface WorkflowProps extends WorkflowData {}
 
 /**
  * Workflow实体

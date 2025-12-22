@@ -7,23 +7,12 @@ import { SessionStatus } from '../value-objects/session-status';
 import { SessionConfig } from '../value-objects/session-config';
 import { SessionCreatedEvent } from '../events/session-created-event';
 import { SessionStatusChangedEvent } from '../events/session-status-changed-event';
+import { SessionData } from '../interfaces/session-data.interface';
 
 /**
  * Session实体接口
  */
-export interface SessionProps {
-  id: ID;
-  userId?: ID;
-  title?: string;
-  status: SessionStatus;
-  config: SessionConfig;
-  createdAt: Timestamp;
-  updatedAt: Timestamp;
-  version: Version;
-  lastActivityAt: Timestamp;
-  messageCount: number;
-  isDeleted: boolean;
-}
+export interface SessionProps extends SessionData {}
 
 /**
  * Session实体
