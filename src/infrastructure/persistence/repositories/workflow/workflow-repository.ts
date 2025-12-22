@@ -3,7 +3,7 @@ import { WorkflowRepository as IWorkflowRepository, WorkflowQueryOptions } from 
 import { Workflow } from '../../../../domain/workflow/entities/workflow';
 import { WorkflowDefinition } from '../../../../domain/workflow/entities/workflow-definition';
 import { WorkflowGraph } from '../../../../domain/workflow/entities/workflow-graph';
-import { WorkflowExecutor } from '../../../../domain/workflow/services/workflow-executor';
+import { WorkflowExecutor } from '../../../../domain/workflow/services/executor';
 import { GraphValidationService } from '../../../../domain/workflow/interfaces/graph-validation-service.interface';
 import { ID } from '../../../../domain/common/value-objects/id';
 import { WorkflowStatus } from '../../../../domain/workflow/value-objects/workflow-status';
@@ -154,7 +154,7 @@ export class WorkflowRepository extends BaseRepository<Workflow, WorkflowModel, 
   protected override toModel(entity: Workflow): WorkflowModel {
     try {
       const model = new WorkflowModel();
-      
+
       // 使用类型转换器进行编译时类型安全的转换
       model.id = IdConverter.toStorage(entity.workflowId);
       model.name = entity.name;
@@ -175,7 +175,7 @@ export class WorkflowRepository extends BaseRepository<Workflow, WorkflowModel, 
       model.updatedBy = entity.updatedBy ? OptionalIdConverter.toStorage(entity.updatedBy) : undefined;
       model.createdAt = TimestampConverter.toStorage(entity.createdAt);
       model.updatedAt = TimestampConverter.toStorage(entity.updatedAt);
-      
+
       return model;
     } catch (error) {
       throw new RepositoryError(
@@ -299,7 +299,7 @@ export class WorkflowRepository extends BaseRepository<Workflow, WorkflowModel, 
     const queryOptions: QueryOptions<WorkflowModel> = {
       customConditions: (qb: any) => {
         this.applyCommonConditions(qb, options);
-        
+
         if (options?.minExecutionCount) {
           qb.andWhere('workflow.metadata->>\'executionCount\' >= :minExecutionCount', {
             minExecutionCount: options.minExecutionCount
@@ -317,7 +317,7 @@ export class WorkflowRepository extends BaseRepository<Workflow, WorkflowModel, 
       limit: options?.limit || 20,
       offset: options?.offset || 0
     };
-    
+
     return super.findWithPagination(queryOptions);
   }
 

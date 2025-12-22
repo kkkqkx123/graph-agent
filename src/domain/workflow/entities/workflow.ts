@@ -5,8 +5,7 @@ import { Version } from '../../common/value-objects/version';
 import { WorkflowDefinition } from './workflow-definition';
 import { WorkflowGraph } from './workflow-graph';
 import { Container } from 'inversify';
-import { container } from '../../../infrastructure/container';
-import { WorkflowExecutor } from '../services/workflow-executor';
+import { WorkflowExecutor } from '../services/executor';
 import { Node } from './nodes/base/node';
 import { Edge } from './edges/base/edge';
 import { GraphValidationService } from '../interfaces/graph-validation-service.interface';
@@ -72,81 +71,81 @@ export class Workflow extends AggregateRoot {
    * @param graphValidationService 图验证服务
    * @returns 新工作流实例
    */
- public static create(
-   name: string,
-   description?: string,
-   nodes?: Node[],
-   edges?: Edge[],
-   type?: any,
-   config?: any,
-   parameterMapping?: any,
-   errorHandlingStrategy?: any,
-   executionStrategy?: any,
-   tags?: string[],
-   metadata?: Record<string, unknown>,
-   createdBy?: ID,
-   graphValidationService?: GraphValidationService
- ): Workflow {
-   const now = Timestamp.now();
-   const workflowId = ID.generate();
+  public static create(
+    name: string,
+    description?: string,
+    nodes?: Node[],
+    edges?: Edge[],
+    type?: any,
+    config?: any,
+    parameterMapping?: any,
+    errorHandlingStrategy?: any,
+    executionStrategy?: any,
+    tags?: string[],
+    metadata?: Record<string, unknown>,
+    createdBy?: ID,
+    graphValidationService?: GraphValidationService
+  ): Workflow {
+    const now = Timestamp.now();
+    const workflowId = ID.generate();
 
-   // 创建工作流定义
-   const definition = WorkflowDefinition.create(
-     name,
-     description,
-     type,
-     config,
-     parameterMapping,
-     errorHandlingStrategy,
-     executionStrategy,
-     tags,
-     metadata,
-     createdBy
-   );
+    // 创建工作流定义
+    const definition = WorkflowDefinition.create(
+      name,
+      description,
+      type,
+      config,
+      parameterMapping,
+      errorHandlingStrategy,
+      executionStrategy,
+      tags,
+      metadata,
+      createdBy
+    );
 
-   // 创建工作流图
-   const graph = WorkflowGraph.create(workflowId, nodes, edges);
+    // 创建工作流图
+    const graph = WorkflowGraph.create(workflowId, nodes, edges);
 
-   // 创建工作流执行器
-   const executor = new WorkflowExecutor(definition, graph, graphValidationService || container.get<GraphValidationService>('GraphValidationService'));
+    // 创建工作流执行器
+    const executor = new WorkflowExecutor(definition, graph, graphValidationService!);
 
-   const props: WorkflowProps = {
-     id: workflowId,
-     definition,
-     graph,
-     executor,
-     createdAt: now,
-     updatedAt: now,
-     version: Version.initial(),
-     createdBy,
-     updatedBy: createdBy
-   };
+    const props: WorkflowProps = {
+      id: workflowId,
+      definition,
+      graph,
+      executor,
+      createdAt: now,
+      updatedAt: now,
+      version: Version.initial(),
+      createdBy,
+      updatedBy: createdBy
+    };
 
-   const workflow = new Workflow(props);
+    const workflow = new Workflow(props);
 
-   // 添加工作流创建事件
-   workflow.addDomainEvent(new WorkflowCreatedEvent(
-     workflowId,
-     name,
-     description,
-     definition.type.toString(),
-     definition.status.toString(),
-     definition.config.value,
-     nodes ? nodes.map(node => node.toJSON()) : [],
-     edges ? edges.map(edge => edge.toJSON()) : [],
-     undefined, // definition
-     undefined, // layout
-     createdBy
-   ));
+    // 添加工作流创建事件
+    workflow.addDomainEvent(new WorkflowCreatedEvent(
+      workflowId,
+      name,
+      description,
+      definition.type.toString(),
+      definition.status.toString(),
+      definition.config.value,
+      nodes ? nodes.map(node => node.toJSON()) : [],
+      edges ? edges.map(edge => edge.toJSON()) : [],
+      undefined, // definition
+      undefined, // layout
+      createdBy
+    ));
 
-   return workflow;
- }
+    return workflow;
+  }
 
- /**
-  * 从已有属性重建工作流
-   * @param props 工作流属性
-   * @returns 工作流实例
-   */
+  /**
+   * 从已有属性重建工作流
+    * @param props 工作流属性
+    * @returns 工作流实例
+    */
   public static fromProps(props: WorkflowProps): Workflow {
     return new Workflow(props);
   }

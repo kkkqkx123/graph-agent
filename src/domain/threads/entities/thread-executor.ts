@@ -9,7 +9,7 @@ import { ThreadCreatedEvent } from '../events/thread-created-event';
 import { ThreadStatusChangedEvent } from '../events/thread-status-changed-event';
 import { Workflow } from '../../workflow/entities/workflow';
 import { IExecutionContext, ExecutionResult, ExecutionStatus } from '../../workflow/execution';
-import { ExecutionStep } from '../../workflow/services/workflow-executor';
+import { ExecutionStep } from '../../workflow/services/executor';
 import { AbstractBaseExecutor } from '../../../infrastructure/common/execution/base-executor';
 
 /**
@@ -132,7 +132,7 @@ export class ThreadExecutor extends AggregateRoot {
     const threadId = ID.generate();
     const threadStatus = ThreadStatus.pending();
     const threadPriority = priority || ThreadPriority.normal();
-    
+
     // 创建执行上下文
     const executionContext: IExecutionContext = {
       executionId: ID.generate(),
@@ -153,22 +153,22 @@ export class ThreadExecutor extends AggregateRoot {
         return value;
       },
       setVariable: (path: string, value: any) => {
-         const keys = path.split('.');
-         let current: any = executionContext.data;
-         for (let i = 0; i < keys.length - 1; i++) {
-           const key = keys[i];
-           if (key && current[key] === undefined) {
-             current[key] = {};
-           }
-           if (key) {
-             current = current[key];
-           }
-         }
-         const lastKey = keys[keys.length - 1];
-         if (lastKey) {
-           current[lastKey] = value;
-         }
-       },
+        const keys = path.split('.');
+        let current: any = executionContext.data;
+        for (let i = 0; i < keys.length - 1; i++) {
+          const key = keys[i];
+          if (key && current[key] === undefined) {
+            current[key] = {};
+          }
+          if (key) {
+            current = current[key];
+          }
+        }
+        const lastKey = keys[keys.length - 1];
+        if (lastKey) {
+          current[lastKey] = value;
+        }
+      },
       getAllVariables: () => executionContext.data,
       getAllMetadata: () => executionContext.metadata,
       getInput: () => executionContext.data,
@@ -199,22 +199,22 @@ export class ThreadExecutor extends AggregateRoot {
     } as ThreadExecutorProps;
 
     const threadExecutor = new ThreadExecutor(props);
-    
+
     // 如果提供了工作流，设置关联
     if (workflow) {
       threadExecutor.workflow = workflow;
     }
 
     // 添加Thread创建事件
-     threadExecutor.addDomainEvent(new ThreadCreatedEvent(
-       threadId,
-       sessionId,
-       workflow?.workflowId,
-       threadPriority.getNumericValue(),
-       title,
-       description,
-       metadata
-     ));
+    threadExecutor.addDomainEvent(new ThreadCreatedEvent(
+      threadId,
+      sessionId,
+      workflow?.workflowId,
+      threadPriority.getNumericValue(),
+      title,
+      description,
+      metadata
+    ));
 
     return threadExecutor;
   }
@@ -419,7 +419,7 @@ export class ThreadExecutor extends AggregateRoot {
     }
 
     this.workflow = workflow;
-    
+
     // 更新工作流ID
     (this.props as any).workflowId = workflow.workflowId;
   }
@@ -650,7 +650,7 @@ export class ThreadExecutionState {
     const stepId = typeof step === 'string' ? step : (step as any).stepId;
     this.stepResults.set(stepId, result);
     this.currentStep = stepId;
-    
+
     // 更新进度（简化计算）
     this.progress = Math.min(100, this.progress + (100 / 10)); // 假设总共10个步骤
   }

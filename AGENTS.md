@@ -131,7 +131,6 @@ Infrastructure depends only on Domain. Application depends on Domain. Interface 
 ### 4. Configuration Changes
 - Use the configuration system API for configuration management
 - Update configuration in `package.json`, configs folder(for complex config) and .env(for simple config like api-key)
-- Ensure environment variable references use proper Rust types
 
 ## Core Components Usage
 
@@ -140,9 +139,6 @@ Infrastructure depends only on Domain. Application depends on Domain. Interface 
 - Manages service lifecycle through dependency injection
 - Use explicit dependencies in constructors
 - Resolve services via dependency injection
-## Coding Specifications
-
-Must follow Rust type specifications. Functions must be annotated with type hints.
 
 ### Domain Definition Location
 - **All domain definitions must be placed in the centralized domain layer** (`src/domain/`)

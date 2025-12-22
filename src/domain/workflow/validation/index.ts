@@ -48,3 +48,11 @@ export {
   getPredefinedValidationRulesByType,
   getPredefinedValidationRulesBySeverity
 } from './predefined-rules';
+
+// 函数验证规则
+export {
+  ValidationRuleType,
+  FunctionValidationRule,
+  FunctionValidationRules,
+  FunctionValidator
+} from './function-validation-rules';

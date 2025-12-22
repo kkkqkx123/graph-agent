@@ -3,7 +3,7 @@ import { WorkflowRepository as IWorkflowRepository, WorkflowQueryOptions } from 
 import { Workflow } from '../../../../domain/workflow/entities/workflow';
 import { WorkflowDefinition } from '../../../../domain/workflow/entities/workflow-definition';
 import { WorkflowGraph } from '../../../../domain/workflow/entities/workflow-graph';
-import { WorkflowExecutor } from '../../../../domain/workflow/services/workflow-executor';
+import { WorkflowExecutor } from '../../../../domain/workflow/services/executor';
 import { GraphValidationService } from '../../../../domain/workflow/interfaces/graph-validation-service.interface';
 import { ID } from '../../../../domain/common/value-objects/id';
 import { WorkflowStatus } from '../../../../domain/workflow/value-objects/workflow-status';
@@ -35,7 +35,7 @@ import { ExecutionStrategyFactory } from '../../../../domain/workflow/strategies
  */
 @injectable()
 export class WorkflowConverterRepository extends BaseRepository<Workflow, WorkflowModel, ID> implements IWorkflowRepository {
-  
+
   constructor(
     @inject('ConnectionManager') connectionManager: ConnectionManager,
     @inject('GraphValidationService') private readonly graphValidationService: GraphValidationService
@@ -117,7 +117,7 @@ export class WorkflowConverterRepository extends BaseRepository<Workflow, Workfl
   protected override toModel(entity: Workflow): WorkflowModel {
     try {
       const model = new WorkflowModel();
-      
+
       // 使用类型转换器进行编译时类型安全的转换
       model.id = IdConverter.toStorage(entity.workflowId);
       model.name = entity.name;
@@ -136,7 +136,7 @@ export class WorkflowConverterRepository extends BaseRepository<Workflow, Workfl
       model.updatedBy = entity.updatedBy ? OptionalIdConverter.toStorage(entity.updatedBy) : undefined;
       model.createdAt = TimestampConverter.toStorage(entity.createdAt);
       model.updatedAt = TimestampConverter.toStorage(entity.updatedAt);
-      
+
       return model;
     } catch (error) {
       throw new RepositoryError(
@@ -294,7 +294,7 @@ export class WorkflowConverterRepository extends BaseRepository<Workflow, Workfl
     const queryOptions: QueryOptions<WorkflowModel> = {
       customConditions: (qb: any) => {
         this.applyCommonConditions(qb, options);
-        
+
         if (options?.minExecutionCount) {
           qb.andWhere('workflow.metadata->>\'executionCount\' >= :minExecutionCount', {
             minExecutionCount: options.minExecutionCount
@@ -312,7 +312,7 @@ export class WorkflowConverterRepository extends BaseRepository<Workflow, Workfl
       limit: options?.limit || 20,
       offset: options?.offset || 0
     };
-    
+
     return super.findWithPagination(queryOptions);
   }
 

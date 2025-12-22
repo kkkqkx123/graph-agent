@@ -5,7 +5,7 @@
  */
 
 import { injectable, inject } from 'inversify';
-import { IWorkflowExecutionService } from '../../../domain/workflow/services/workflow-execution-service';
+import { IWorkflowExecutionService } from '../../../domain/workflow/services/execution-service';
 import { WorkflowRepository } from '../../../domain/workflow/repositories/workflow-repository';
 import { HumanRelayNode } from '../../../domain/workflow/entities/nodes/specialized/human-relay-node';
 import { ID } from '../../../domain/common/value-objects/id';

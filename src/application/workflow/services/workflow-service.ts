@@ -1,7 +1,7 @@
 import { injectable, inject } from 'inversify';
 import { Workflow } from '../../../domain/workflow/entities/workflow';
 import { WorkflowRepository } from '../../../domain/workflow/repositories/workflow-repository';
-import { WorkflowDomainService } from '../../../domain/workflow/services/workflow-domain-service';
+import { WorkflowDomainService } from '../../../domain/workflow/services/domain-service';
 import { ID } from '../../../domain/common/value-objects/id';
 import { WorkflowStatus } from '../../../domain/workflow/value-objects/workflow-status';
 import { WorkflowType } from '../../../domain/workflow/value-objects/workflow-type';
