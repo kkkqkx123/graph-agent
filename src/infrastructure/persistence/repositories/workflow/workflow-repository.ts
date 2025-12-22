@@ -6,26 +6,152 @@ import { WorkflowStatus } from '../../../../domain/workflow/value-objects/workfl
 import { WorkflowType } from '../../../../domain/workflow/value-objects/workflow-type';
 import { NodeType } from '../../../../domain/workflow/value-objects/node-type';
 import { EdgeType } from '../../../../domain/workflow/value-objects/edge-type';
-import { ConnectionManager } from '../../connections/connection-manager';
-import { WorkflowMapper } from './workflow-mapper';
 import { WorkflowModel } from '../../models/workflow.model';
 import { IQueryOptions, PaginatedResult } from '../../../../domain/common/repositories/repository';
 import { RepositoryError } from '../../../../domain/common/errors/repository-error';
 import { In } from 'typeorm';
 import { BaseRepository, QueryOptions } from '../../base/base-repository';
+import { ConnectionManager } from '../../connections/connection-manager';
+import {
+  IdConverter,
+  OptionalIdConverter,
+  TimestampConverter,
+  VersionConverter,
+  MetadataConverter
+} from '../../base/type-converter-base';
+
+/**
+ * 工作流状态类型转换器
+ * 将字符串状态转换为WorkflowStatus值对象
+ */
+interface WorkflowStatusConverter {
+  fromStorage: (value: string) => WorkflowStatus;
+  toStorage: (value: WorkflowStatus) => string;
+  validateStorage: (value: string) => boolean;
+  validateDomain: (value: WorkflowStatus) => boolean;
+}
+
+const WorkflowStatusConverter: WorkflowStatusConverter = {
+  fromStorage: (value: string) => {
+    return WorkflowStatus.fromString(value);
+  },
+  toStorage: (value: WorkflowStatus) => value.getValue(),
+  validateStorage: (value: string) => {
+    const validStates = ['draft', 'active', 'inactive', 'archived'];
+    return typeof value === 'string' && validStates.includes(value);
+  },
+  validateDomain: (value: WorkflowStatus) => {
+    return value instanceof WorkflowStatus;
+  }
+};
+
+/**
+ * 工作流类型类型转换器
+ * 将字符串类型转换为WorkflowType值对象
+ */
+interface WorkflowTypeConverter {
+  fromStorage: (value: string) => WorkflowType;
+  toStorage: (value: WorkflowType) => string;
+  validateStorage: (value: string) => boolean;
+  validateDomain: (value: WorkflowType) => boolean;
+}
+
+const WorkflowTypeConverter: WorkflowTypeConverter = {
+  fromStorage: (value: string) => {
+    return WorkflowType.fromString(value);
+  },
+  toStorage: (value: WorkflowType) => value.getValue(),
+  validateStorage: (value: string) => {
+    const validTypes = ['sequential', 'parallel', 'conditional', 'loop', 'custom'];
+    return typeof value === 'string' && validTypes.includes(value);
+  },
+  validateDomain: (value: WorkflowType) => {
+    return value instanceof WorkflowType;
+  }
+};
 
 @injectable()
 export class WorkflowRepository extends BaseRepository<Workflow, WorkflowModel, ID> implements IWorkflowRepository {
   constructor(
-    @inject('ConnectionManager') connectionManager: ConnectionManager,
-    @inject('WorkflowMapper') mapper: WorkflowMapper
+    @inject('ConnectionManager') connectionManager: ConnectionManager
   ) {
     super(connectionManager);
-    this.mapper = mapper;
   }
 
   protected override getModelClass(): new () => WorkflowModel {
     return WorkflowModel;
+  }
+
+  /**
+   * 重写toEntity方法，使用类型转换器
+   */
+  protected override toEntity(model: WorkflowModel): Workflow {
+    try {
+      // 使用类型转换器进行编译时类型安全的转换
+      const workflowData = {
+        id: IdConverter.fromStorage(model.id),
+        name: model.name,
+        description: model.description || undefined,
+        status: WorkflowStatusConverter.fromStorage(model.state),
+        type: WorkflowTypeConverter.fromStorage(model.executionMode),
+        config: model.configuration ? model.configuration : {}, // 简化处理，实际应转换为WorkflowConfig
+        nodes: new Map(),
+        edges: new Map(),
+        createdAt: TimestampConverter.fromStorage(model.createdAt),
+        updatedAt: TimestampConverter.fromStorage(model.updatedAt),
+        version: VersionConverter.fromStorage(model.revision),
+        tags: model.metadata?.tags || [],
+        metadata: MetadataConverter.fromStorage(model.metadata || {}),
+        isDeleted: model.metadata?.isDeleted || false,
+        createdBy: model.createdBy ? OptionalIdConverter.fromStorage(model.createdBy) : undefined,
+        updatedBy: model.updatedBy ? OptionalIdConverter.fromStorage(model.updatedBy) : undefined
+      };
+
+      // 创建Workflow实体
+      return Workflow.fromProps(workflowData);
+    } catch (error) {
+      throw new RepositoryError(
+        `Workflow模型转换失败: ${error instanceof Error ? error.message : String(error)}`,
+        'MAPPING_ERROR',
+        { modelId: model.id, operation: 'toEntity' }
+      );
+    }
+  }
+
+  /**
+   * 重写toModel方法，使用类型转换器
+   */
+  protected override toModel(entity: Workflow): WorkflowModel {
+    try {
+      const model = new WorkflowModel();
+      
+      // 使用类型转换器进行编译时类型安全的转换
+      model.id = IdConverter.toStorage(entity.workflowId);
+      model.name = entity.name;
+      model.description = entity.description || undefined;
+      model.state = WorkflowStatusConverter.toStorage(entity.status);
+      model.executionMode = WorkflowTypeConverter.toStorage(entity.type);
+      model.metadata = MetadataConverter.toStorage({
+        ...entity.metadata,
+        tags: entity.tags,
+        isDeleted: entity.isDeleted()
+      });
+      model.configuration = entity.config; // 简化处理，实际应转换为存储格式
+      model.version = entity.version.toString();
+      model.revision = VersionConverter.toStorage(entity.version);
+      model.createdBy = entity.createdBy ? OptionalIdConverter.toStorage(entity.createdBy) : undefined;
+      model.updatedBy = entity.updatedBy ? OptionalIdConverter.toStorage(entity.updatedBy) : undefined;
+      model.createdAt = TimestampConverter.toStorage(entity.createdAt);
+      model.updatedAt = TimestampConverter.toStorage(entity.updatedAt);
+      
+      return model;
+    } catch (error) {
+      throw new RepositoryError(
+        `Workflow实体转换失败: ${error instanceof Error ? error.message : String(error)}`,
+        'MAPPING_ERROR',
+        { entityId: entity.workflowId.value, operation: 'toModel' }
+      );
+    }
   }
 
   // 基础 CRUD 方法现在由 BaseRepository 提供，无需重复实现

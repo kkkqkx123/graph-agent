@@ -3,26 +3,166 @@ import { HistoryRepository as IHistoryRepository } from '../../../../domain/hist
 import { History } from '../../../../domain/history/entities/history';
 import { ID } from '../../../../domain/common/value-objects/id';
 import { HistoryType } from '../../../../domain/history/value-objects/history-type';
-import { ConnectionManager } from '../../connections/connection-manager';
-import { HistoryMapper } from './history-mapper';
 import { HistoryModel } from '../../models/history.model';
 import { Between, LessThan, In } from 'typeorm';
 import { IQueryOptions } from '../../../../domain/common/repositories/repository';
 import { RepositoryError } from '../../../../domain/common/errors/repository-error';
 import { BaseRepository, QueryOptions } from '../../base/base-repository';
+import { ConnectionManager } from '../../connections/connection-manager';
+import {
+  IdConverter,
+  OptionalIdConverter,
+  TimestampConverter,
+  VersionConverter,
+  OptionalStringConverter,
+  MetadataConverter
+} from '../../base/type-converter-base';
+
+/**
+ * 历史类型类型转换器
+ * 将字符串类型转换为HistoryType值对象
+ */
+interface HistoryTypeConverter {
+  fromStorage: (value: string) => HistoryType;
+  toStorage: (value: HistoryType) => string;
+  validateStorage: (value: string) => boolean;
+  validateDomain: (value: HistoryType) => boolean;
+}
+
+const HistoryTypeConverter: HistoryTypeConverter = {
+  fromStorage: (value: string) => {
+    return HistoryType.fromString(value);
+  },
+  toStorage: (value: HistoryType) => value.getValue(),
+  validateStorage: (value: string) => {
+    // 定义有效的历史类型值
+    const validTypes = [
+      'workflow_created',
+      'workflow_updated',
+      'workflow_deleted',
+      'workflow_executed',
+      'workflow_failed',
+      'workflow_completed',
+      'session_created',
+      'session_updated',
+      'session_deleted',
+      'session_closed',
+      'thread_created',
+      'thread_updated',
+      'thread_deleted',
+      'thread_started',
+      'thread_paused',
+      'thread_resumed',
+      'thread_completed',
+      'thread_failed',
+      'thread_cancelled',
+      'checkpoint_created',
+      'checkpoint_updated',
+      'checkpoint_deleted',
+      'checkpoint_restored',
+      'node_executed',
+      'node_failed',
+      'edge_traversed',
+      'tool_executed',
+      'tool_failed',
+      'llm_called',
+      'llm_failed',
+      'state_changed',
+      'error_occurred',
+      'warning_occurred',
+      'info_occurred'
+    ];
+    return typeof value === 'string' && validTypes.includes(value);
+  },
+  validateDomain: (value: HistoryType) => {
+    return value instanceof HistoryType;
+  }
+};
 
 @injectable()
 export class HistoryRepository extends BaseRepository<History, HistoryModel, ID> implements IHistoryRepository {
   constructor(
-    @inject('ConnectionManager') connectionManager: ConnectionManager,
-    @inject('HistoryMapper') mapper: HistoryMapper
+    @inject('ConnectionManager') connectionManager: ConnectionManager
   ) {
     super(connectionManager);
-    this.mapper = mapper;
   }
 
   protected override getModelClass(): new () => HistoryModel {
     return HistoryModel;
+  }
+
+  /**
+   * 重写toEntity方法，使用类型转换器
+   */
+  protected override toEntity(model: HistoryModel): History {
+    try {
+      // 使用类型转换器进行编译时类型安全的转换
+      const historyData = {
+        id: IdConverter.fromStorage(model.id),
+        sessionId: model.sessionId ? OptionalIdConverter.fromStorage(model.sessionId) : undefined,
+        threadId: model.threadId ? OptionalIdConverter.fromStorage(model.threadId) : undefined,
+        workflowId: model.workflowId ? OptionalIdConverter.fromStorage(model.workflowId) : undefined,
+        type: HistoryTypeConverter.fromStorage(model.action),
+        title: model.data?.title ? OptionalStringConverter.fromStorage(model.data.title) : undefined,
+        description: model.data?.description ? OptionalStringConverter.fromStorage(model.data.description) : undefined,
+        details: model.data || {},
+        metadata: MetadataConverter.fromStorage(model.metadata || {}),
+        createdAt: TimestampConverter.fromStorage(model.createdAt),
+        updatedAt: TimestampConverter.fromStorage(model.updatedAt),
+        version: VersionConverter.fromStorage(model.version),
+        isDeleted: false
+      };
+
+      // 创建History实体
+      return History.fromProps(historyData);
+    } catch (error) {
+      throw new RepositoryError(
+        `History模型转换失败: ${error instanceof Error ? error.message : String(error)}`,
+        'MAPPING_ERROR',
+        { modelId: model.id, operation: 'toEntity' }
+      );
+    }
+  }
+
+  /**
+   * 重写toModel方法，使用类型转换器
+   */
+  protected override toModel(entity: History): HistoryModel {
+    try {
+      const model = new HistoryModel();
+      
+      // 使用类型转换器进行编译时类型安全的转换
+      model.id = IdConverter.toStorage(entity.historyId);
+      model.entityType = 'history';
+      model.entityId = (entity.metadata as any)['entityId'] || entity.historyId.value;
+      model.action = HistoryTypeConverter.toStorage(entity.type);
+      model.data = {
+        title: entity.title,
+        description: entity.description,
+        ...entity.details
+      };
+      model.previousData = (entity.metadata as any)['previousData'];
+      model.metadata = MetadataConverter.toStorage(entity.metadata);
+      model.userId = (entity.metadata as any)['userId'];
+      model.sessionId = entity.sessionId?.value;
+      model.threadId = entity.threadId?.value;
+      model.workflowId = entity.workflowId?.value;
+      model.workflowId = (entity.metadata as any)['workflowId'];
+      model.nodeId = (entity.metadata as any)['nodeId'];
+      model.edgeId = (entity.metadata as any)['edgeId'];
+      model.timestamp = entity.createdAt.getMilliseconds();
+      model.createdAt = TimestampConverter.toStorage(entity.createdAt);
+      model.updatedAt = TimestampConverter.toStorage(entity.updatedAt);
+      model.version = VersionConverter.toStorage(entity.version);
+      
+      return model;
+    } catch (error) {
+      throw new RepositoryError(
+        `History实体转换失败: ${error instanceof Error ? error.message : String(error)}`,
+        'MAPPING_ERROR',
+        { entityId: entity.historyId.value, operation: 'toModel' }
+      );
+    }
   }
 
   // 基础 CRUD 方法现在由 BaseRepository 提供，无需重复实现

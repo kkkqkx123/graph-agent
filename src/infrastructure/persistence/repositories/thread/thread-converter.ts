@@ -11,13 +11,11 @@ import { In } from 'typeorm';
 import { BaseRepository, QueryOptions } from '../../base/base-repository';
 import { QueryOptionsBuilder } from '../../base/query-options-builder';
 import { ConnectionManager } from '../../connections/connection-manager';
-import { 
+import {
   IdConverter,
   OptionalIdConverter,
   TimestampConverter,
   VersionConverter,
-  ThreadStatusConverter,
-  ThreadPriorityConverter,
   OptionalStringConverter,
   NumberConverter,
   BooleanConverter
@@ -717,3 +715,53 @@ export class ThreadConverterRepository extends BaseRepository<Thread, ThreadMode
     return result;
   }
 }
+
+/**
+ * 线程状态类型转换器
+ * 将字符串状态转换为ThreadStatus值对象
+ */
+export interface ThreadStatusConverter {
+  fromStorage: (value: string) => ThreadStatus;
+  toStorage: (value: ThreadStatus) => string;
+  validateStorage: (value: string) => boolean;
+  validateDomain: (value: ThreadStatus) => boolean;
+}
+
+export const ThreadStatusConverter: ThreadStatusConverter = {
+  fromStorage: (value: string) => {
+    return ThreadStatus.fromString(value);
+  },
+  toStorage: (value: ThreadStatus) => value.getValue(),
+  validateStorage: (value: string) => {
+    const validStates = ['pending', 'running', 'paused', 'completed', 'failed', 'cancelled'];
+    return typeof value === 'string' && validStates.includes(value);
+  },
+  validateDomain: (value: ThreadStatus) => {
+    return value instanceof ThreadStatus;
+  }
+};
+
+/**
+ * 线程优先级类型转换器
+ * 将数字优先级转换为ThreadPriority值对象
+ */
+export interface ThreadPriorityConverter {
+  fromStorage: (value: number) => ThreadPriority;
+  toStorage: (value: ThreadPriority) => number;
+  validateStorage: (value: number) => boolean;
+  validateDomain: (value: ThreadPriority) => boolean;
+}
+
+export const ThreadPriorityConverter: ThreadPriorityConverter = {
+  fromStorage: (value: number) => {
+    return ThreadPriority.fromNumber(value);
+  },
+  toStorage: (value: ThreadPriority) => value.getNumericValue(),
+  validateStorage: (value: number) => {
+    const validPriorities = [1, 5, 10, 20]; // LOW, NORMAL, HIGH, URGENT
+    return typeof value === 'number' && validPriorities.includes(value);
+  },
+  validateDomain: (value: ThreadPriority) => {
+    return value instanceof ThreadPriority;
+  }
+};

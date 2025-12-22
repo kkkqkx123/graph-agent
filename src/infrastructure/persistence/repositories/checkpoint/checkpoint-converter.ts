@@ -15,7 +15,6 @@ import {
   VersionConverter,
   MetadataConverter
 } from '../../base/type-converter-base';
-import { CheckpointTypeConverter } from '../../base/checkpoint-type-converter';
 
 /**
  * 基于类型转换器的Checkpoint Repository
@@ -283,3 +282,28 @@ export class CheckpointConverterRepository extends BaseRepository<Checkpoint, Ch
     });
   }
 }
+
+/**
+ * 检查点类型类型转换器
+ * 将字符串类型转换为CheckpointType值对象
+ */
+export interface CheckpointTypeConverter {
+  fromStorage: (value: string) => CheckpointType;
+  toStorage: (value: CheckpointType) => string;
+  validateStorage: (value: string) => boolean;
+  validateDomain: (value: CheckpointType) => boolean;
+}
+
+export const CheckpointTypeConverter: CheckpointTypeConverter = {
+  fromStorage: (value: string) => {
+    return CheckpointType.fromString(value);
+  },
+  toStorage: (value: CheckpointType) => value.getValue(),
+  validateStorage: (value: string) => {
+    const validTypes = ['auto', 'manual', 'error', 'milestone'];
+    return typeof value === 'string' && validTypes.includes(value);
+  },
+  validateDomain: (value: CheckpointType) => {
+    return value instanceof CheckpointType;
+  }
+};

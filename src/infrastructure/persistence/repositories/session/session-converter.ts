@@ -12,13 +12,11 @@ import { In } from 'typeorm';
 import { BaseRepository, QueryOptions } from '../../base/base-repository';
 import { QueryOptionsBuilder } from '../../base/query-options-builder';
 import { ConnectionManager } from '../../connections/connection-manager';
-import { 
+import {
   IdConverter,
   OptionalIdConverter,
   TimestampConverter,
   VersionConverter,
-  SessionStatusConverter,
-  SessionConfigConverter,
   OptionalStringConverter,
   NumberConverter,
   BooleanConverter
@@ -585,3 +583,52 @@ export class SessionConverterRepository extends BaseRepository<Session, SessionM
     });
   }
 }
+
+/**
+ * 会话状态类型转换器
+ * 将字符串状态转换为SessionStatus值对象
+ */
+export interface SessionStatusConverter {
+  fromStorage: (value: string) => SessionStatus;
+  toStorage: (value: SessionStatus) => string;
+  validateStorage: (value: string) => boolean;
+  validateDomain: (value: SessionStatus) => boolean;
+}
+
+export const SessionStatusConverter: SessionStatusConverter = {
+  fromStorage: (value: string) => {
+    return SessionStatus.fromString(value);
+  },
+  toStorage: (value: SessionStatus) => value.getValue(),
+  validateStorage: (value: string) => {
+    const validStates = ['active', 'inactive', 'suspended', 'terminated'];
+    return typeof value === 'string' && validStates.includes(value);
+  },
+  validateDomain: (value: SessionStatus) => value instanceof SessionStatus
+};
+
+/**
+ * 会话配置类型转换器
+ * 将配置对象转换为SessionConfig值对象
+ */
+export interface SessionConfigConverter {
+  fromStorage: (value: Record<string, unknown>) => SessionConfig;
+  toStorage: (value: SessionConfig) => Record<string, unknown>;
+  validateStorage: (value: Record<string, unknown>) => boolean;
+  validateDomain: (value: SessionConfig) => boolean;
+}
+
+export const SessionConfigConverter: SessionConfigConverter = {
+  fromStorage: (value: Record<string, unknown>) => {
+    if (!value || Object.keys(value).length === 0) {
+      return SessionConfig.default();
+    }
+    return SessionConfig.create(value);
+  },
+  toStorage: (value: SessionConfig) => value.value,
+  validateStorage: (value: Record<string, unknown>) => {
+    if (!value || typeof value !== 'object') return false;
+    return true; // 让SessionConfig.create来处理详细验证
+  },
+  validateDomain: (value: SessionConfig) => value instanceof SessionConfig
+};

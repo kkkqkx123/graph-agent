@@ -1,2 +1,2 @@
 export { HistoryRepository } from './history-repository';
-export { HistoryConverterRepository } from './history-converter';
+export { HistoryConverterRepository, HistoryTypeConverter } from './history-converter';

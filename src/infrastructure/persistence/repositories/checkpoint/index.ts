@@ -1,2 +1,2 @@
 export { CheckpointRepository } from './checkpoint-repository';
-export { CheckpointConverterRepository } from './checkpoint-converter';
+export { CheckpointConverterRepository, CheckpointTypeConverter } from './checkpoint-converter';

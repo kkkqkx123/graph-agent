@@ -4,25 +4,79 @@ import { Thread } from '../../../../domain/threads/entities/thread';
 import { ID } from '../../../../domain/common/value-objects/id';
 import { ThreadStatus } from '../../../../domain/threads/value-objects/thread-status';
 import { ThreadPriority } from '../../../../domain/threads/value-objects/thread-priority';
-import { ConnectionManager } from '../../connections/connection-manager';
-import { ThreadMapper } from './thread-mapper';
 import { ThreadModel } from '../../models/thread.model';
 import { IQueryOptions, PaginatedResult } from '../../../../domain/common/repositories/repository';
 import { RepositoryError } from '../../../../domain/common/errors/repository-error';
 import { In } from 'typeorm';
 import { BaseRepository, QueryOptions } from '../../base/base-repository';
 import { QueryOptionsBuilder } from '../../base/query-options-builder';
+import { ConnectionManager } from '../../connections/connection-manager';
+import {
+  IdConverter,
+  OptionalIdConverter,
+  TimestampConverter,
+  VersionConverter,
+  OptionalStringConverter,
+  NumberConverter,
+  BooleanConverter
+} from '../../base/type-converter-base';
+
+/**
+ * 线程状态类型转换器
+ * 将字符串状态转换为ThreadStatus值对象
+ */
+interface ThreadStatusConverter {
+  fromStorage: (value: string) => ThreadStatus;
+  toStorage: (value: ThreadStatus) => string;
+  validateStorage: (value: string) => boolean;
+  validateDomain: (value: ThreadStatus) => boolean;
+}
+
+const ThreadStatusConverter: ThreadStatusConverter = {
+  fromStorage: (value: string) => {
+    return ThreadStatus.fromString(value);
+  },
+  toStorage: (value: ThreadStatus) => value.getValue(),
+  validateStorage: (value: string) => {
+    const validStates = ['pending', 'running', 'paused', 'completed', 'failed', 'cancelled'];
+    return typeof value === 'string' && validStates.includes(value);
+  },
+  validateDomain: (value: ThreadStatus) => {
+    return value instanceof ThreadStatus;
+  }
+};
+
+/**
+ * 线程优先级类型转换器
+ * 将数字优先级转换为ThreadPriority值对象
+ */
+interface ThreadPriorityConverter {
+  fromStorage: (value: number) => ThreadPriority;
+  toStorage: (value: ThreadPriority) => number;
+  validateStorage: (value: number) => boolean;
+  validateDomain: (value: ThreadPriority) => boolean;
+}
+
+const ThreadPriorityConverter: ThreadPriorityConverter = {
+  fromStorage: (value: number) => {
+    return ThreadPriority.fromNumber(value);
+  },
+  toStorage: (value: ThreadPriority) => value.getNumericValue(),
+  validateStorage: (value: number) => {
+    const validPriorities = [1, 5, 10, 20]; // LOW, NORMAL, HIGH, URGENT
+    return typeof value === 'number' && validPriorities.includes(value);
+  },
+  validateDomain: (value: ThreadPriority) => {
+    return value instanceof ThreadPriority;
+  }
+};
 
 @injectable()
 export class ThreadRepository extends BaseRepository<Thread, ThreadModel, ID> implements IThreadRepository {
-  protected override mapper: ThreadMapper;
-
   constructor(
-    @inject('ConnectionManager') connectionManager: ConnectionManager,
-    @inject('ThreadMapper') mapper: ThreadMapper
+    @inject('ConnectionManager') connectionManager: ConnectionManager
   ) {
     super(connectionManager);
-    this.mapper = mapper;
     
     // 配置ThreadRepository的软删除行为
     this.configureSoftDelete({
@@ -36,6 +90,74 @@ export class ThreadRepository extends BaseRepository<Thread, ThreadModel, ID> im
 
   protected override getModelClass(): new () => ThreadModel {
     return ThreadModel;
+  }
+
+  /**
+   * 重写toEntity方法，使用类型转换器
+   */
+  protected override toEntity(model: ThreadModel): Thread {
+    try {
+      // 使用类型转换器进行编译时类型安全的转换
+      const threadData = {
+        id: IdConverter.fromStorage(model.id),
+        sessionId: IdConverter.fromStorage(model.sessionId),
+        workflowId: model.workflowId ? OptionalIdConverter.fromStorage(model.workflowId) : undefined,
+        status: ThreadStatusConverter.fromStorage(model.state),
+        priority: ThreadPriorityConverter.fromStorage(parseInt(model.priority)),
+        title: model.name ? OptionalStringConverter.fromStorage(model.name) : undefined,
+        description: model.description ? OptionalStringConverter.fromStorage(model.description) : undefined,
+        metadata: model.context || {},
+        createdAt: TimestampConverter.fromStorage(model.createdAt),
+        updatedAt: TimestampConverter.fromStorage(model.updatedAt),
+        version: VersionConverter.fromStorage(model.version),
+        isDeleted: model.metadata?.isDeleted ? BooleanConverter.fromStorage(model.metadata.isDeleted as boolean) : false
+      };
+
+      // 创建Thread实体
+      return Thread.fromProps(threadData);
+    } catch (error) {
+      throw new RepositoryError(
+        `Thread模型转换失败: ${error instanceof Error ? error.message : String(error)}`,
+        'MAPPING_ERROR',
+        { modelId: model.id, operation: 'toEntity' }
+      );
+    }
+  }
+
+  /**
+   * 重写toModel方法，使用类型转换器
+   */
+  protected override toModel(entity: Thread): ThreadModel {
+    try {
+      const model = new ThreadModel();
+      
+      // 使用类型转换器进行编译时类型安全的转换
+      model.id = IdConverter.toStorage(entity.threadId);
+      model.sessionId = IdConverter.toStorage(entity.sessionId);
+      model.workflowId = entity.workflowId ? OptionalIdConverter.toStorage(entity.workflowId) : undefined;
+      model.name = entity.title ? OptionalStringConverter.toStorage(entity.title) || '' : '';
+      model.description = entity.description ? OptionalStringConverter.toStorage(entity.description) || '' : '';
+      model.state = ThreadStatusConverter.toStorage(entity.status);
+      model.priority = ThreadPriorityConverter.toStorage(entity.priority).toString();
+      model.context = entity.metadata;
+      model.version = VersionConverter.toStorage(entity.version);
+      model.createdAt = TimestampConverter.toStorage(entity.createdAt);
+      model.updatedAt = TimestampConverter.toStorage(entity.updatedAt);
+      
+      // 设置元数据
+      model.metadata = {
+        ...entity.metadata,
+        isDeleted: BooleanConverter.toStorage(entity.isDeleted())
+      };
+      
+      return model;
+    } catch (error) {
+      throw new RepositoryError(
+        `Thread实体转换失败: ${error instanceof Error ? error.message : String(error)}`,
+        'MAPPING_ERROR',
+        { entityId: entity.threadId.value, operation: 'toModel' }
+      );
+    }
   }
 
   // 基础 CRUD 方法现在由 BaseRepository 提供，无需重复实现
@@ -177,7 +299,7 @@ export class ThreadRepository extends BaseRepository<Thread, ThreadModel, ID> im
     }
 
     const models = await queryBuilder.getMany();
-    return models.map(model => this.mapper.toEntity(model));
+    return models.map(model => this.toEntity(model));
   }
 
   async findActiveThreads(options?: ThreadQueryOptions): Promise<Thread[]> {

@@ -19,8 +19,6 @@ import {
   VersionConverter,
   MetadataConverter
 } from '../../base/type-converter-base';
-import { WorkflowStatusConverter } from '../../base/workflow-status-converter';
-import { WorkflowTypeConverter } from '../../base/workflow-type-converter';
 
 /**
  * 基于类型转换器的Workflow Repository
@@ -637,3 +635,53 @@ export class WorkflowConverterRepository extends BaseRepository<Workflow, Workfl
     return 'sequential';
   }
 }
+
+/**
+ * 工作流状态类型转换器
+ * 将字符串状态转换为WorkflowStatus值对象
+ */
+export interface WorkflowStatusConverter {
+  fromStorage: (value: string) => WorkflowStatus;
+  toStorage: (value: WorkflowStatus) => string;
+  validateStorage: (value: string) => boolean;
+  validateDomain: (value: WorkflowStatus) => boolean;
+}
+
+export const WorkflowStatusConverter: WorkflowStatusConverter = {
+  fromStorage: (value: string) => {
+    return WorkflowStatus.fromString(value);
+  },
+  toStorage: (value: WorkflowStatus) => value.getValue(),
+  validateStorage: (value: string) => {
+    const validStates = ['draft', 'active', 'inactive', 'archived'];
+    return typeof value === 'string' && validStates.includes(value);
+  },
+  validateDomain: (value: WorkflowStatus) => {
+    return value instanceof WorkflowStatus;
+  }
+};
+
+/**
+ * 工作流类型类型转换器
+ * 将字符串类型转换为WorkflowType值对象
+ */
+export interface WorkflowTypeConverter {
+  fromStorage: (value: string) => WorkflowType;
+  toStorage: (value: WorkflowType) => string;
+  validateStorage: (value: string) => boolean;
+  validateDomain: (value: WorkflowType) => boolean;
+}
+
+export const WorkflowTypeConverter: WorkflowTypeConverter = {
+  fromStorage: (value: string) => {
+    return WorkflowType.fromString(value);
+  },
+  toStorage: (value: WorkflowType) => value.getValue(),
+  validateStorage: (value: string) => {
+    const validTypes = ['sequential', 'parallel', 'conditional', 'loop', 'custom'];
+    return typeof value === 'string' && validTypes.includes(value);
+  },
+  validateDomain: (value: WorkflowType) => {
+    return value instanceof WorkflowType;
+  }
+};

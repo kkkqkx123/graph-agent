@@ -3,10 +3,70 @@ import { SessionRepository as ISessionRepository, SessionQueryOptions } from '..
 import { Session } from '../../../../domain/sessions/entities/session';
 import { ID } from '../../../../domain/common/value-objects/id';
 import { SessionStatus } from '../../../../domain/sessions/value-objects/session-status';
-import { ConnectionManager } from '../../connections/connection-manager';
+import { SessionConfig } from '../../../../domain/sessions/value-objects/session-config';
 import { SessionModel } from '../../models/session.model';
 import { In } from 'typeorm';
+import { RepositoryError } from '../../../../domain/common/errors/repository-error';
 import { BaseRepository, QueryOptions } from '../../base/base-repository';
+import { ConnectionManager } from '../../connections/connection-manager';
+import {
+  IdConverter,
+  OptionalIdConverter,
+  TimestampConverter,
+  VersionConverter,
+  OptionalStringConverter,
+  NumberConverter,
+  BooleanConverter
+} from '../../base/type-converter-base';
+
+/**
+ * 会话状态类型转换器
+ * 将字符串状态转换为SessionStatus值对象
+ */
+interface SessionStatusConverter {
+  fromStorage: (value: string) => SessionStatus;
+  toStorage: (value: SessionStatus) => string;
+  validateStorage: (value: string) => boolean;
+  validateDomain: (value: SessionStatus) => boolean;
+}
+
+const SessionStatusConverter: SessionStatusConverter = {
+  fromStorage: (value: string) => {
+    return SessionStatus.fromString(value);
+  },
+  toStorage: (value: SessionStatus) => value.getValue(),
+  validateStorage: (value: string) => {
+    const validStates = ['active', 'inactive', 'suspended', 'terminated'];
+    return typeof value === 'string' && validStates.includes(value);
+  },
+  validateDomain: (value: SessionStatus) => value instanceof SessionStatus
+};
+
+/**
+ * 会话配置类型转换器
+ * 将配置对象转换为SessionConfig值对象
+ */
+interface SessionConfigConverter {
+  fromStorage: (value: Record<string, unknown>) => SessionConfig;
+  toStorage: (value: SessionConfig) => Record<string, unknown>;
+  validateStorage: (value: Record<string, unknown>) => boolean;
+  validateDomain: (value: SessionConfig) => boolean;
+}
+
+const SessionConfigConverter: SessionConfigConverter = {
+  fromStorage: (value: Record<string, unknown>) => {
+    if (!value || Object.keys(value).length === 0) {
+      return SessionConfig.default();
+    }
+    return SessionConfig.create(value);
+  },
+  toStorage: (value: SessionConfig) => value.value,
+  validateStorage: (value: Record<string, unknown>) => {
+    if (!value || typeof value !== 'object') return false;
+    return true; // 让SessionConfig.create来处理详细验证
+  },
+  validateDomain: (value: SessionConfig) => value instanceof SessionConfig
+};
 
 @injectable()
 export class SessionRepository extends BaseRepository<Session, SessionModel, ID> implements ISessionRepository {
@@ -14,10 +74,87 @@ export class SessionRepository extends BaseRepository<Session, SessionModel, ID>
     @inject('ConnectionManager') connectionManager: ConnectionManager,
   ) {
     super(connectionManager);
+    
+    // 配置软删除行为
+    this.configureSoftDelete({
+      fieldName: 'isDeleted',
+      deletedAtField: 'deletedAt',
+      stateField: 'state',
+      deletedValue: 'terminated',
+      activeValue: 'active'
+    });
   }
 
   protected override getModelClass(): new () => SessionModel {
     return SessionModel;
+  }
+
+  /**
+   * 重写toEntity方法，使用类型转换器
+   */
+  protected override toEntity(model: SessionModel): Session {
+    try {
+      // 使用类型转换器进行编译时类型安全的转换
+      const sessionData = {
+        id: IdConverter.fromStorage(model.id),
+        userId: model.userId ? OptionalIdConverter.fromStorage(model.userId) : undefined,
+        title: model.metadata?.title ? OptionalStringConverter.fromStorage(model.metadata.title as string) : undefined,
+        status: SessionStatusConverter.fromStorage(model.state),
+        config: SessionConfigConverter.fromStorage(model.context),
+        createdAt: TimestampConverter.fromStorage(model.createdAt),
+        updatedAt: TimestampConverter.fromStorage(model.updatedAt),
+        version: VersionConverter.fromStorage(model.version),
+        lastActivityAt: TimestampConverter.fromStorage(model.updatedAt), // 使用updatedAt作为最后活动时间
+        messageCount: model.metadata?.messageCount ? NumberConverter.fromStorage(model.metadata.messageCount as number) : 0,
+        isDeleted: model.metadata?.isDeleted ? BooleanConverter.fromStorage(model.metadata.isDeleted as boolean) : false
+      };
+
+      // 创建Session实体
+      return Session.fromProps(sessionData);
+    } catch (error) {
+      throw new RepositoryError(
+        `Session模型转换失败: ${error instanceof Error ? error.message : String(error)}`,
+        'MAPPING_ERROR',
+        { modelId: model.id, operation: 'toEntity' }
+      );
+    }
+  }
+
+  /**
+   * 重写toModel方法，使用类型转换器
+   */
+  protected override toModel(entity: Session): SessionModel {
+    try {
+      const model = new SessionModel();
+      
+      // 使用类型转换器进行编译时类型安全的转换
+      model.id = IdConverter.toStorage(entity.sessionId);
+      model.userId = entity.userId ? OptionalIdConverter.toStorage(entity.userId) : undefined;
+      model.state = SessionStatusConverter.toStorage(entity.status);
+      model.context = SessionConfigConverter.toStorage(entity.config);
+      model.version = VersionConverter.toStorage(entity.version);
+      model.createdAt = TimestampConverter.toStorage(entity.createdAt);
+      model.updatedAt = TimestampConverter.toStorage(entity.updatedAt);
+      
+      // 设置元数据
+      model.metadata = {
+        title: entity.title ? OptionalStringConverter.toStorage(entity.title) : undefined,
+        messageCount: NumberConverter.toStorage(entity.messageCount),
+        isDeleted: BooleanConverter.toStorage(entity.isDeleted()),
+        config: SessionConfigConverter.toStorage(entity.config)
+      };
+      
+      // 设置关联字段
+      model.threadIds = []; // 默认空数组
+      
+      return model;
+    } catch (error) {
+      throw new RepositoryError(
+        `Session实体转换失败: ${error instanceof Error ? error.message : String(error)}`,
+        'MAPPING_ERROR',
+        { entityId: entity.sessionId.value, operation: 'toModel' }
+      );
+    }
   }
 
   // 基础 CRUD 方法现在由 BaseRepository 提供，无需重复实现
@@ -148,24 +285,18 @@ export class SessionRepository extends BaseRepository<Session, SessionModel, ID>
   }
 
   override async softDelete(sessionId: ID): Promise<void> {
-    // This would require adding an isDeleted field to the SessionModel
-    // For now, we'll use regular delete
-    await this.deleteById(sessionId);
+    await super.softDelete(sessionId);
   }
 
   override async batchSoftDelete(sessionIds: ID[]): Promise<number> {
-    // This would require adding an isDeleted field to the SessionModel
-    // For now, we'll use regular delete
-    return this.batchDelete(sessionIds);
+    return super.batchSoftDelete(sessionIds);
   }
 
   override async restoreSoftDeleted(sessionId: ID): Promise<void> {
-    // This would require adding an isDeleted field to the SessionModel
-    throw new Error('Soft delete not implemented');
+    await super.restoreSoftDeleted(sessionId);
   }
 
   override async findSoftDeleted(options?: SessionQueryOptions): Promise<Session[]> {
-    // This would require adding an isDeleted field to the SessionModel
-    return [];
+    return super.findSoftDeleted(options);
   }
 }

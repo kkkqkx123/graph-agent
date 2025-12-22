@@ -2,27 +2,112 @@ import { injectable, inject } from 'inversify';
 import { CheckpointRepository as ICheckpointRepository } from '../../../../domain/checkpoint/repositories/checkpoint-repository';
 import { Checkpoint } from '../../../../domain/checkpoint/entities/checkpoint';
 import { ID } from '../../../../domain/common/value-objects/id';
-import { ConnectionManager } from '../../connections/connection-manager';
-import { CheckpointMapper } from './checkpoint-mapper';
+import { CheckpointType } from '../../../../domain/checkpoint/value-objects/checkpoint-type';
 import { CheckpointModel } from '../../models/checkpoint.model';
 import { Between, MoreThan, LessThan, In } from 'typeorm';
-import { CheckpointType } from '../../../../domain/checkpoint/value-objects/checkpoint-type';
 import { IQueryOptions } from '../../../../domain/common/repositories/repository';
 import { RepositoryError } from '../../../../domain/common/errors/repository-error';
 import { BaseRepository, QueryOptions } from '../../base/base-repository';
+import { ConnectionManager } from '../../connections/connection-manager';
+import {
+  IdConverter,
+  TimestampConverter,
+  VersionConverter,
+  MetadataConverter
+} from '../../base/type-converter-base';
+
+/**
+ * 检查点类型类型转换器
+ * 将字符串类型转换为CheckpointType值对象
+ */
+interface CheckpointTypeConverter {
+  fromStorage: (value: string) => CheckpointType;
+  toStorage: (value: CheckpointType) => string;
+  validateStorage: (value: string) => boolean;
+  validateDomain: (value: CheckpointType) => boolean;
+}
+
+const CheckpointTypeConverter: CheckpointTypeConverter = {
+  fromStorage: (value: string) => {
+    return CheckpointType.fromString(value);
+  },
+  toStorage: (value: CheckpointType) => value.getValue(),
+  validateStorage: (value: string) => {
+    const validTypes = ['auto', 'manual', 'error', 'milestone'];
+    return typeof value === 'string' && validTypes.includes(value);
+  },
+  validateDomain: (value: CheckpointType) => {
+    return value instanceof CheckpointType;
+  }
+};
 
 @injectable()
 export class CheckpointRepository extends BaseRepository<Checkpoint, CheckpointModel, ID> implements ICheckpointRepository {
   constructor(
-    @inject('ConnectionManager') connectionManager: ConnectionManager,
-    @inject('CheckpointMapper') mapper: CheckpointMapper
+    @inject('ConnectionManager') connectionManager: ConnectionManager
   ) {
     super(connectionManager);
-    this.mapper = mapper;
   }
 
   protected override getModelClass(): new () => CheckpointModel {
     return CheckpointModel;
+  }
+
+  /**
+   * 重写toEntity方法，使用类型转换器
+   */
+  protected override toEntity(model: CheckpointModel): Checkpoint {
+    try {
+      // 使用类型转换器进行编译时类型安全的转换
+      const checkpointData = {
+        id: IdConverter.fromStorage(model.id),
+        threadId: model.threadId ? IdConverter.fromStorage(model.threadId) : ID.generate(), // 临时解决方案，实际应该确保threadId不为空
+        type: CheckpointTypeConverter.fromStorage(model.checkpointType),
+        stateData: model.state || {},
+        tags: model.metadata?.tags || [],
+        metadata: MetadataConverter.fromStorage(model.metadata || {}),
+        createdAt: TimestampConverter.fromStorage(model.createdAt),
+        updatedAt: TimestampConverter.fromStorage(model.updatedAt),
+        version: VersionConverter.fromStorage(model.version),
+        isDeleted: false
+      };
+
+      // 创建Checkpoint实体
+      return Checkpoint.fromProps(checkpointData);
+    } catch (error) {
+      throw new RepositoryError(
+        `Checkpoint模型转换失败: ${error instanceof Error ? error.message : String(error)}`,
+        'MAPPING_ERROR',
+        { modelId: model.id, operation: 'toEntity' }
+      );
+    }
+  }
+
+  /**
+   * 重写toModel方法，使用类型转换器
+   */
+  protected override toModel(entity: Checkpoint): CheckpointModel {
+    try {
+      const model = new CheckpointModel();
+      
+      // 使用类型转换器进行编译时类型安全的转换
+      model.id = IdConverter.toStorage(entity.checkpointId);
+      model.threadId = entity.threadId ? IdConverter.toStorage(entity.threadId) : undefined;
+      model.checkpointType = CheckpointTypeConverter.toStorage(entity.type);
+      model.state = entity.stateData;
+      model.metadata = MetadataConverter.toStorage(entity.metadata);
+      model.createdAt = TimestampConverter.toStorage(entity.createdAt);
+      model.updatedAt = TimestampConverter.toStorage(entity.updatedAt);
+      model.version = VersionConverter.toStorage(entity.version);
+      
+      return model;
+    } catch (error) {
+      throw new RepositoryError(
+        `Checkpoint实体转换失败: ${error instanceof Error ? error.message : String(error)}`,
+        'MAPPING_ERROR',
+        { entityId: entity.checkpointId.value, operation: 'toModel' }
+      );
+    }
   }
 
   // 基础 CRUD 方法现在由 BaseRepository 提供，无需重复实现

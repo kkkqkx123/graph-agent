@@ -1,2 +1,2 @@
 export { ThreadRepository } from './thread-repository';
-export { ThreadConverterRepository } from './thread-converter';
+export { ThreadConverterRepository, ThreadStatusConverter, ThreadPriorityConverter } from './thread-converter';

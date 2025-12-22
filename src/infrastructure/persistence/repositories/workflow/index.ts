@@ -1,2 +1,2 @@
 export { WorkflowRepository } from './workflow-repository';
-export { WorkflowConverterRepository } from './workflow-converter';
+export { WorkflowConverterRepository, WorkflowStatusConverter, WorkflowTypeConverter } from './workflow-converter';
