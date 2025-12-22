@@ -1,11 +1,11 @@
-import { ConfigManagerImpl } from '../../common/config/config-manager';
+import { ConfigManager } from '../../config/config-manager';
 
 describe('配置模型加载测试', () => {
-  let configManager: ConfigManagerImpl;
+  let configManager: ConfigManager;
 
   beforeEach(() => {
     // 创建配置管理器实例
-    configManager = new ConfigManagerImpl('./configs');
+    configManager = new ConfigManager('./configs' as any, {} as any);
   });
 
   describe('配置管理器模型列表加载', () => {
@@ -58,7 +58,7 @@ describe('配置模型加载测试', () => {
 
   describe('配置结构验证', () => {
     test('应该正确设置默认配置', () => {
-      const config = configManager.getConfigStructure();
+      const config = configManager.getAll();
 
       // 验证 OpenAI 配置
       expect(config.openai).toBeDefined();

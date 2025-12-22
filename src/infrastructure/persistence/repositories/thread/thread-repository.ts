@@ -22,6 +22,15 @@ export class ThreadRepository extends BaseRepository<Thread, ThreadModel, ID> im
   ) {
     super(connectionManager);
     this.mapper = mapper;
+    
+    // 配置ThreadRepository的软删除行为
+    this.configureSoftDelete({
+      fieldName: 'isDeleted',
+      deletedAtField: 'deletedAt',
+      stateField: 'state',
+      deletedValue: 'archived',
+      activeValue: 'active'
+    });
   }
 
   protected override getModelClass(): new () => ThreadModel {
@@ -452,44 +461,11 @@ export class ThreadRepository extends BaseRepository<Thread, ThreadModel, ID> im
     return result.affected || 0;
   }
 
-  async softDelete(threadId: ID): Promise<void> {
-    const connection = await this.connectionManager.getConnection();
-    const repository = connection.getRepository(ThreadModel);
-
-    await repository.update({ id: threadId.value }, {
-      state: 'archived',
-      updatedAt: new Date()
-    });
-  }
-
-  async batchSoftDelete(threadIds: ID[]): Promise<number> {
-    const connection = await this.connectionManager.getConnection();
-    const repository = connection.getRepository(ThreadModel);
-
-    const result = await repository.createQueryBuilder()
-      .update(ThreadModel)
-      .set({
-        state: 'archived',
-        updatedAt: new Date()
-      })
-      .where('id IN (:...threadIds)', { threadIds: threadIds.map(id => id.value) })
-      .execute();
-
-    return result.affected || 0;
-  }
-
-  async restoreSoftDeleted(threadId: ID): Promise<void> {
-    const connection = await this.connectionManager.getConnection();
-    const repository = connection.getRepository(ThreadModel);
-
-    await repository.update({ id: threadId.value }, {
-      state: 'active',
-      updatedAt: new Date()
-    });
-  }
-
-  async findSoftDeleted(options?: ThreadQueryOptions): Promise<Thread[]> {
-    const queryOptions: QueryOptions<ThreadModel> = {
+  /**
+    * 重写软删除查找方法，添加Thread特有的查询条件
+    */
+  override async findSoftDeleted(options?: ThreadQueryOptions): Promise<Thread[]> {
+    return this.find({
       customConditions: (qb) => {
         qb.andWhere('thread.isDeleted = true');
 
@@ -517,9 +493,7 @@ export class ThreadRepository extends BaseRepository<Thread, ThreadModel, ID> im
       sortOrder: options?.sortOrder || 'desc',
       limit: options?.limit,
       offset: options?.offset
-    };
-
-    return this.find(queryOptions);
+    });
   }
 
   async getThreadExecutionStats(sessionId: ID): Promise<{

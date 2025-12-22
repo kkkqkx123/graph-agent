@@ -6,6 +6,42 @@ import { RepositoryError } from '../../../domain/common/errors/repository-error'
 import { DataSource, Repository, FindOptionsWhere, FindManyOptions, ObjectLiteral, SelectQueryBuilder, In } from 'typeorm';
 
 /**
+ * 错误类型枚举
+ */
+export enum ErrorType {
+  CONNECTION_ERROR = 'CONNECTION_ERROR',
+  QUERY_ERROR = 'QUERY_ERROR',
+  VALIDATION_ERROR = 'VALIDATION_ERROR',
+  TRANSACTION_ERROR = 'TRANSACTION_ERROR',
+  UNKNOWN_ERROR = 'UNKNOWN_ERROR'
+}
+
+/**
+ * 错误上下文信息
+ */
+export interface ErrorContext {
+  operation: string;
+  entityName?: string;
+  parameters?: Record<string, any>;
+  timestamp: Date;
+}
+
+/**
+ * 增强的Repository错误类
+ */
+export class EnhancedRepositoryError extends RepositoryError {
+  public readonly context: ErrorContext;
+  public readonly type: ErrorType;
+
+  constructor(message: string, context: ErrorContext, type: ErrorType) {
+    super(message);
+    this.context = context;
+    this.type = type;
+    this.name = 'EnhancedRepositoryError';
+  }
+}
+
+/**
  * 增强的查询选项接口
  */
 export interface QueryOptions<TModel extends ObjectLiteral> extends IQueryOptions {
@@ -86,9 +122,100 @@ export abstract class BaseRepository<T, TModel extends ObjectLiteral, TId = ID> 
   // 可选的映射器，子类可以注入并使用
   protected mapper?: IMapper<T, TModel>;
 
+  // 软删除配置
+  protected softDeleteConfig = {
+    enabled: true,
+    fieldName: 'isDeleted' as string,
+    deletedAtField: 'deletedAt' as string,
+    stateField: 'state' as string,
+    deletedValue: 'archived',
+    activeValue: 'active'
+  };
+
   constructor(
     @inject('ConnectionManager') protected connectionManager: ConnectionManager
   ) { }
+
+  /**
+   * 配置软删除行为 - 子类可以重写此方法来自定义软删除配置
+   */
+  protected configureSoftDelete(config: Partial<typeof this.softDeleteConfig>): void {
+    this.softDeleteConfig = { ...this.softDeleteConfig, ...config };
+  }
+
+  /**
+   * 检查是否支持软删除
+   */
+  protected supportsSoftDelete(): boolean {
+    return this.softDeleteConfig.enabled;
+  }
+
+  /**
+   * 获取实体名称
+   */
+  protected getEntityName(): string {
+    return this.getModelClass().name;
+  }
+
+  /**
+   * 处理错误的统一方法
+   */
+  protected handleError(error: unknown, operation: string, parameters?: Record<string, any>): never {
+    const context: ErrorContext = {
+      operation,
+      entityName: this.getEntityName(),
+      parameters,
+      timestamp: new Date()
+    };
+
+    let errorType = ErrorType.UNKNOWN_ERROR;
+    let message = `未知错误`;
+
+    if (error instanceof Error) {
+      message = error.message;
+      
+      // 根据错误消息判断错误类型
+      if (message.includes('connection') || message.includes('connect')) {
+        errorType = ErrorType.CONNECTION_ERROR;
+      } else if (message.includes('query') || message.includes('sql')) {
+        errorType = ErrorType.QUERY_ERROR;
+      } else if (message.includes('validation') || message.includes('constraint')) {
+        errorType = ErrorType.VALIDATION_ERROR;
+      } else if (message.includes('transaction')) {
+        errorType = ErrorType.TRANSACTION_ERROR;
+      }
+    }
+
+    // 构建详细的错误信息
+    const detailedMessage = `${operation}失败: ${message}`;
+    
+    // 在开发环境中打印详细错误信息
+    if (process.env['NODE_ENV'] === 'development') {
+      console.error('Repository Error Details:', {
+        message: detailedMessage,
+        type: errorType,
+        context,
+        originalError: error
+      });
+    }
+
+    throw new EnhancedRepositoryError(detailedMessage, context, errorType);
+  }
+
+  /**
+   * 安全执行操作，统一错误处理
+   */
+  protected async safeExecute<R>(
+    operation: () => Promise<R>,
+    operationName: string,
+    parameters?: Record<string, any>
+  ): Promise<R> {
+    try {
+      return await operation();
+    } catch (error) {
+      this.handleError(error, operationName, parameters);
+    }
+  }
 
   /**
    * 默认实体转换方法，子类可以重写
@@ -173,20 +300,22 @@ export abstract class BaseRepository<T, TModel extends ObjectLiteral, TId = ID> 
    * 根据ID查找实体
    */
   async findById(id: TId): Promise<T | null> {
-    try {
-      const repository = await this.getRepository();
-      const model = await repository.findOne({
-        where: this.buildIdWhere(id) as FindOptionsWhere<TModel>
-      });
+    return this.safeExecute(
+      async () => {
+        const repository = await this.getRepository();
+        const model = await repository.findOne({
+          where: this.buildIdWhere(id) as FindOptionsWhere<TModel>
+        });
 
-      if (!model) {
-        return null;
-      }
+        if (!model) {
+          return null;
+        }
 
-      return this.toEntity(model);
-    } catch (error) {
-      throw new RepositoryError(`查找实体失败: ${error instanceof Error ? error.message : String(error)}`);
-    }
+        return this.toEntity(model);
+      },
+      '根据ID查找实体',
+      { id: String(id) }
+    );
   }
 
   /**
@@ -195,7 +324,11 @@ export abstract class BaseRepository<T, TModel extends ObjectLiteral, TId = ID> 
   async findByIdOrFail(id: TId): Promise<T> {
     const entity = await this.findById(id);
     if (!entity) {
-      throw new RepositoryError(`实体不存在，ID: ${String(id)}`);
+      this.handleError(
+        new Error(`实体不存在`),
+        '根据ID查找实体',
+        { id: String(id) }
+      );
     }
     return entity;
   }
@@ -204,16 +337,17 @@ export abstract class BaseRepository<T, TModel extends ObjectLiteral, TId = ID> 
    * 查找所有实体
    */
   async findAll(): Promise<T[]> {
-    try {
-      const repository = await this.getRepository();
-      const models = await repository.find({
-        order: { createdAt: 'DESC' } as any
-      });
+    return this.safeExecute(
+      async () => {
+        const repository = await this.getRepository();
+        const models = await repository.find({
+          order: { createdAt: 'DESC' } as any
+        });
 
-      return models.map(model => this.toEntity(model));
-    } catch (error) {
-      throw new RepositoryError(`查找所有实体失败: ${error instanceof Error ? error.message : String(error)}`);
-    }
+        return models.map(model => this.toEntity(model));
+      },
+      '查找所有实体'
+    );
   }
 
   /**
@@ -300,6 +434,64 @@ export abstract class BaseRepository<T, TModel extends ObjectLiteral, TId = ID> 
           options.customConditions(qb);
         }
       }
+    });
+  }
+
+  /**
+   * 多字段组合查询模板方法
+   */
+  protected async findByMultipleFields(
+    fields: Record<string, any>,
+    options?: Partial<QueryOptions<TModel>>
+  ): Promise<T[]> {
+    return this.find({
+      ...options,
+      customConditions: (qb) => {
+        Object.entries(fields).forEach(([key, value]) => {
+          if (value !== undefined && value !== null) {
+            if (Array.isArray(value)) {
+              qb.andWhere(`${this.getAlias()}.${key} IN (:...${key})`, { [key]: value });
+            } else {
+              qb.andWhere(`${this.getAlias()}.${key} = :${key}`, { [key]: value });
+            }
+          }
+        });
+        if (options?.customConditions) {
+          options.customConditions(qb);
+        }
+      }
+    });
+  }
+
+  /**
+   * 关联查询支持模板方法
+   */
+  protected async findWithRelations(
+    relations: Array<{
+      alias: string;
+      property: string;
+      condition?: string;
+      type?: 'left' | 'inner';
+    }>,
+    options?: Partial<QueryOptions<TModel>>
+  ): Promise<T[]> {
+    return this.find({
+      ...options,
+      joins: relations,
+      customConditions: options?.customConditions
+    });
+  }
+
+  /**
+   * 自定义查询执行模板方法
+   */
+  protected async executeCustomQuery(
+    queryBuilder: (qb: SelectQueryBuilder<TModel>) => void,
+    options?: Partial<QueryOptions<TModel>>
+  ): Promise<T[]> {
+    return this.find({
+      ...options,
+      customConditions: queryBuilder
     });
   }
 
@@ -553,6 +745,205 @@ export abstract class BaseRepository<T, TModel extends ObjectLiteral, TId = ID> 
     } finally {
       await queryRunner.release();
     }
+  }
+
+  /**
+   * 软删除实体 - 可被子类重写以自定义行为
+   */
+  async softDelete(id: TId): Promise<void> {
+    if (!this.supportsSoftDelete()) {
+      // 如果不支持软删除，使用硬删除
+      return this.deleteById(id);
+    }
+
+    return this.safeExecute(
+      async () => {
+        const repository = await this.getRepository();
+        const updateData: any = {
+          updatedAt: new Date()
+        };
+
+        // 设置删除标记
+        if (this.softDeleteConfig.fieldName) {
+          updateData[this.softDeleteConfig.fieldName] = true;
+        }
+
+        // 设置删除时间
+        if (this.softDeleteConfig.deletedAtField) {
+          updateData[this.softDeleteConfig.deletedAtField] = new Date();
+        }
+
+        // 设置状态字段
+        if (this.softDeleteConfig.stateField && this.softDeleteConfig.deletedValue) {
+          updateData[this.softDeleteConfig.stateField] = this.softDeleteConfig.deletedValue;
+        }
+
+        await repository.update(this.buildIdWhere(id) as FindOptionsWhere<TModel>, updateData);
+      },
+      '软删除实体',
+      { id: String(id) }
+    );
+  }
+
+  /**
+   * 批量软删除实体 - 可被子类重写以自定义行为
+   */
+  async batchSoftDelete(ids: TId[]): Promise<number> {
+    if (!this.supportsSoftDelete()) {
+      // 如果不支持软删除，使用硬删除
+      return this.batchDeleteByIds(ids);
+    }
+
+    return this.safeExecute(
+      async () => {
+        const repository = await this.getRepository();
+        const idValues = ids.map(id => this.extractIdValue(id));
+        
+        const updateData: any = {
+          updatedAt: new Date()
+        };
+
+        // 设置删除标记
+        if (this.softDeleteConfig.fieldName) {
+          updateData[this.softDeleteConfig.fieldName] = true;
+        }
+
+        // 设置删除时间
+        if (this.softDeleteConfig.deletedAtField) {
+          updateData[this.softDeleteConfig.deletedAtField] = new Date();
+        }
+
+        // 设置状态字段
+        if (this.softDeleteConfig.stateField && this.softDeleteConfig.deletedValue) {
+          updateData[this.softDeleteConfig.stateField] = this.softDeleteConfig.deletedValue;
+        }
+
+        const result = await repository.createQueryBuilder()
+          .update()
+          .set(updateData)
+          .where(`id IN (:...ids)`, { ids: idValues })
+          .execute();
+        
+        return result.affected || 0;
+      },
+      '批量软删除实体',
+      { ids: ids.map(id => String(id)) }
+    );
+  }
+
+  /**
+   * 恢复软删除的实体 - 可被子类重写以自定义行为
+   */
+  async restoreSoftDeleted(id: TId): Promise<void> {
+    if (!this.supportsSoftDelete()) {
+      throw new Error('软删除功能未启用');
+    }
+
+    return this.safeExecute(
+      async () => {
+        const repository = await this.getRepository();
+        const updateData: any = {
+          updatedAt: new Date()
+        };
+
+        // 清除删除标记
+        if (this.softDeleteConfig.fieldName) {
+          updateData[this.softDeleteConfig.fieldName] = false;
+        }
+
+        // 清除删除时间
+        if (this.softDeleteConfig.deletedAtField) {
+          updateData[this.softDeleteConfig.deletedAtField] = null;
+        }
+
+        // 设置状态字段
+        if (this.softDeleteConfig.stateField && this.softDeleteConfig.activeValue) {
+          updateData[this.softDeleteConfig.stateField] = this.softDeleteConfig.activeValue;
+        }
+
+        await repository.update(this.buildIdWhere(id) as FindOptionsWhere<TModel>, updateData);
+      },
+      '恢复软删除实体',
+      { id: String(id) }
+    );
+  }
+
+  /**
+   * 查找软删除的实体 - 可被子类重写以自定义行为
+   */
+  async findSoftDeleted(options?: Partial<QueryOptions<TModel>>): Promise<T[]> {
+    if (!this.supportsSoftDelete()) {
+      return [];
+    }
+
+    return this.find({
+      ...options,
+      customConditions: (qb) => {
+        // 添加软删除条件
+        if (this.softDeleteConfig.fieldName) {
+          qb.andWhere(`${this.getAlias()}.${String(this.softDeleteConfig.fieldName)} = :isDeleted`, { isDeleted: true });
+        }
+        
+        if (options?.customConditions) {
+          options.customConditions(qb);
+        }
+      }
+    });
+  }
+
+  /**
+   * 批量更新实体字段
+   */
+  async batchUpdate(ids: TId[], updateData: Partial<TModel>): Promise<number> {
+    try {
+      const repository = await this.getRepository();
+      const idValues = ids.map(id => this.extractIdValue(id));
+      
+      const result = await repository.createQueryBuilder()
+        .update()
+        .set({
+          ...updateData,
+          updatedAt: new Date()
+        } as any)
+        .where(`id IN (:...ids)`, { ids: idValues })
+        .execute();
+      
+      return result.affected || 0;
+    } catch (error) {
+      throw new RepositoryError(`批量更新实体失败: ${error instanceof Error ? error.message : String(error)}`);
+    }
+  }
+
+  /**
+   * 批量删除实体（根据ID列表）
+   */
+  async batchDeleteByIds(ids: TId[]): Promise<number> {
+    try {
+      const repository = await this.getRepository();
+      const idValues = ids.map(id => this.extractIdValue(id));
+      
+      const result = await repository.createQueryBuilder()
+        .delete()
+        .where(`id IN (:...ids)`, { ids: idValues })
+        .execute();
+      
+      return result.affected || 0;
+    } catch (error) {
+      throw new RepositoryError(`批量删除实体失败: ${error instanceof Error ? error.message : String(error)}`);
+    }
+  }
+
+  /**
+   * 在事务中执行批量操作
+   */
+  async executeBatchInTransaction<R>(operations: Array<() => Promise<R>>): Promise<R[]> {
+    return this.executeInTransaction(async () => {
+      const results: R[] = [];
+      for (const operation of operations) {
+        results.push(await operation());
+      }
+      return results;
+    });
   }
 
   /**

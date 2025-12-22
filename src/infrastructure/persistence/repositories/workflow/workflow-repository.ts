@@ -291,7 +291,7 @@ export class WorkflowRepository extends BaseRepository<Workflow, WorkflowModel, 
     return result.affected || 0;
   }
 
-  async softDelete(workflowId: ID): Promise<void> {
+  override async softDelete(workflowId: ID): Promise<void> {
     const connection = await this.connectionManager.getConnection();
     const repository = connection.getRepository(WorkflowModel);
 
@@ -301,7 +301,7 @@ export class WorkflowRepository extends BaseRepository<Workflow, WorkflowModel, 
     });
   }
 
-  async batchSoftDelete(workflowIds: ID[]): Promise<number> {
+  override async batchSoftDelete(workflowIds: ID[]): Promise<number> {
     const connection = await this.connectionManager.getConnection();
     const repository = connection.getRepository(WorkflowModel);
 
@@ -317,7 +317,7 @@ export class WorkflowRepository extends BaseRepository<Workflow, WorkflowModel, 
     return result.affected || 0;
   }
 
-  async restoreSoftDeleted(workflowId: ID): Promise<void> {
+  override async restoreSoftDeleted(workflowId: ID): Promise<void> {
     const connection = await this.connectionManager.getConnection();
     const repository = connection.getRepository(WorkflowModel);
 
@@ -327,7 +327,7 @@ export class WorkflowRepository extends BaseRepository<Workflow, WorkflowModel, 
     });
   }
 
-  async findSoftDeleted(options?: WorkflowQueryOptions): Promise<Workflow[]> {
+  override async findSoftDeleted(options?: WorkflowQueryOptions): Promise<Workflow[]> {
     return this.find({
       customConditions: (qb) => {
         qb.andWhere('workflow.isDeleted = true');

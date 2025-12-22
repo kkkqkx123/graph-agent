@@ -150,24 +150,24 @@ export class SessionRepository extends BaseRepository<Session, SessionModel, ID>
     return this.deleteWhere({ filters: { userId: userId.value } });
   }
 
-  async softDelete(sessionId: ID): Promise<void> {
+  override async softDelete(sessionId: ID): Promise<void> {
     // This would require adding an isDeleted field to the SessionModel
     // For now, we'll use regular delete
     await this.deleteById(sessionId);
   }
 
-  async batchSoftDelete(sessionIds: ID[]): Promise<number> {
+  override async batchSoftDelete(sessionIds: ID[]): Promise<number> {
     // This would require adding an isDeleted field to the SessionModel
     // For now, we'll use regular delete
     return this.batchDelete(sessionIds);
   }
 
-  async restoreSoftDeleted(sessionId: ID): Promise<void> {
+  override async restoreSoftDeleted(sessionId: ID): Promise<void> {
     // This would require adding an isDeleted field to the SessionModel
     throw new Error('Soft delete not implemented');
   }
 
-  async findSoftDeleted(options?: SessionQueryOptions): Promise<Session[]> {
+  override async findSoftDeleted(options?: SessionQueryOptions): Promise<Session[]> {
     // This would require adding an isDeleted field to the SessionModel
     return [];
   }
