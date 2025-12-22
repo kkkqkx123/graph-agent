@@ -10,6 +10,7 @@ import {
   CacheServiceBindings,
   LLMServiceBindings
 } from './bindings/infrastructure-bindings';
+import { WorkflowInfrastructureBindings } from './bindings/workflow-bindings';
 
 import {
   WorkflowServiceBindings,
@@ -301,6 +302,9 @@ export class InfrastructureContainer extends BaseContainer {
 
     const llmBindings = new LLMServiceBindings();
     llmBindings.registerServices(this, this.config);
+
+    const workflowBindings = new WorkflowInfrastructureBindings();
+    workflowBindings.registerServices(this, this.config);
   }
 }
 

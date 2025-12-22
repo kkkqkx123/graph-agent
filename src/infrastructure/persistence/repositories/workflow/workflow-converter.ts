@@ -4,6 +4,7 @@ import { Workflow } from '../../../../domain/workflow/entities/workflow';
 import { WorkflowDefinition } from '../../../../domain/workflow/entities/workflow-definition';
 import { WorkflowGraph } from '../../../../domain/workflow/entities/workflow-graph';
 import { WorkflowExecutor } from '../../../../domain/workflow/services/workflow-executor';
+import { GraphValidationService } from '../../../../domain/workflow/interfaces/graph-validation-service.interface';
 import { ID } from '../../../../domain/common/value-objects/id';
 import { WorkflowStatus } from '../../../../domain/workflow/value-objects/workflow-status';
 import { WorkflowType } from '../../../../domain/workflow/value-objects/workflow-type';
@@ -36,7 +37,8 @@ import { ExecutionStrategyFactory } from '../../../../domain/workflow/strategies
 export class WorkflowConverterRepository extends BaseRepository<Workflow, WorkflowModel, ID> implements IWorkflowRepository {
   
   constructor(
-    @inject('ConnectionManager') connectionManager: ConnectionManager
+    @inject('ConnectionManager') connectionManager: ConnectionManager,
+    @inject('GraphValidationService') private readonly graphValidationService: GraphValidationService
   ) {
     super(connectionManager);
   }
@@ -59,6 +61,8 @@ export class WorkflowConverterRepository extends BaseRepository<Workflow, Workfl
         status: WorkflowStatusConverter.fromStorage(model.state),
         type: WorkflowTypeConverter.fromStorage(model.executionMode),
         config: model.configuration ? model.configuration : {}, // 简化处理，实际应转换为WorkflowConfig
+        nodes: new Map(),
+        edges: new Map(),
         parameterMapping: ParameterMappingFactory.default(),
         errorHandlingStrategy: ErrorHandlingStrategyFactory.default(),
         executionStrategy: ExecutionStrategyFactory.default(),
@@ -82,7 +86,7 @@ export class WorkflowConverterRepository extends BaseRepository<Workflow, Workfl
       });
 
       // 创建工作流执行器
-      const executor = new WorkflowExecutor(definition, graph);
+      const executor = new WorkflowExecutor(definition, graph, this.graphValidationService);
 
       const workflowProps = {
         id: IdConverter.fromStorage(model.id),

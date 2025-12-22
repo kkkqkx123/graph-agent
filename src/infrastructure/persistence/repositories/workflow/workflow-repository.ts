@@ -4,6 +4,7 @@ import { Workflow } from '../../../../domain/workflow/entities/workflow';
 import { WorkflowDefinition } from '../../../../domain/workflow/entities/workflow-definition';
 import { WorkflowGraph } from '../../../../domain/workflow/entities/workflow-graph';
 import { WorkflowExecutor } from '../../../../domain/workflow/services/workflow-executor';
+import { GraphValidationService } from '../../../../domain/workflow/interfaces/graph-validation-service.interface';
 import { ID } from '../../../../domain/common/value-objects/id';
 import { WorkflowStatus } from '../../../../domain/workflow/value-objects/workflow-status';
 import { WorkflowType } from '../../../../domain/workflow/value-objects/workflow-type';
@@ -76,7 +77,8 @@ const WorkflowTypeConverter: WorkflowTypeConverter = {
 @injectable()
 export class WorkflowRepository extends BaseRepository<Workflow, WorkflowModel, ID> implements IWorkflowRepository {
   constructor(
-    @inject('ConnectionManager') connectionManager: ConnectionManager
+    @inject('ConnectionManager') connectionManager: ConnectionManager,
+    @inject('GraphValidationService') private readonly graphValidationService: GraphValidationService
   ) {
     super(connectionManager);
   }
@@ -123,7 +125,7 @@ export class WorkflowRepository extends BaseRepository<Workflow, WorkflowModel, 
       );
 
       // 创建工作流执行器
-      const executor = new WorkflowExecutor(definition, graph);
+      const executor = new WorkflowExecutor(definition, graph, this.graphValidationService);
 
       // 创建Workflow实体
       return Workflow.fromProps({

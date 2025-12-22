@@ -17,10 +17,12 @@ export interface WorkflowGraphProps {
 /**
  * Workflow图实体
  * 
- * 专门负责图结构管理：
+ * 专门负责纯粹的图结构管理：
  * 1. 节点和边的增删改查
- * 2. 图算法（获取相邻节点、入边出边等）
- * 3. 图结构验证
+ * 2. 图结构查询（获取节点、边、入边、出边等）
+ * 3. 图结构验证（基本完整性检查）
+ * 
+ * 不包含图算法和复杂验证逻辑，这些功能已迁移到专门的GraphAlgorithmService和GraphValidationService。
  */
 export class WorkflowGraph {
   private readonly props: WorkflowGraphProps;
@@ -375,24 +377,10 @@ export class WorkflowGraph {
   }
 
   /**
-   * 验证图的基本结构
+   * 验证图的基本结构完整性
+   * 只检查最基本的完整性，复杂验证由GraphValidationService处理
    */
-  public validateGraphStructure(): void {
-    const startNodes = Array.from(this.props.nodes.values()).filter(node => node.type.isStart());
-    const endNodes = Array.from(this.props.nodes.values()).filter(node => node.type.isEnd());
-
-    if (startNodes.length === 0) {
-      throw new DomainError('工作流必须至少有一个开始节点');
-    }
-
-    if (endNodes.length === 0) {
-      throw new DomainError('工作流必须至少有一个结束节点');
-    }
-
-    if (startNodes.length > 1) {
-      throw new DomainError('工作流只能有一个开始节点');
-    }
-
+  public validateBasicIntegrity(): void {
     // 验证所有边都连接到存在的节点
     for (const edge of this.props.edges.values()) {
       if (!this.hasNode(edge.fromNodeId)) {
@@ -403,137 +391,49 @@ export class WorkflowGraph {
         throw new DomainError(`边 ${edge.edgeId} 的目标节点不存在`);
       }
     }
-  }
 
-  /**
-   * 验证图的有效性
-   */
-  public validate(): void {
-    this.validateGraphStructure();
-
-    // 验证所有节点
+    // 验证所有节点和边的基本有效性
     for (const node of this.props.nodes.values()) {
       node.validate();
     }
 
-    // 验证所有边
     for (const edge of this.props.edges.values()) {
       edge.validate();
     }
   }
 
   /**
-   * 获取图的拓扑排序
-   * @returns 拓扑排序的节点列表
+   * 获取图的序列化表示
+   * @returns 序列化图数据
    */
-  public getTopologicalOrder(): Node[] {
-    const visited = new Set<string>();
-    const result: Node[] = [];
-
-    const visit = (nodeId: ID) => {
-      const nodeIdStr = nodeId.toString();
-      if (visited.has(nodeIdStr)) return;
-      visited.add(nodeIdStr);
-
-      // 先访问所有依赖节点
-      const incomingEdges = this.getIncomingEdges(nodeId);
-      for (const edge of incomingEdges) {
-        visit(edge.fromNodeId);
-      }
-
-      // 然后访问当前节点
-      const node = this.getNode(nodeId);
-      if (node) {
-        result.push(node);
-      }
+  public toJSON(): Record<string, unknown> {
+    return {
+      workflowId: this.props.workflowId.toString(),
+      nodeCount: this.props.nodes.size,
+      edgeCount: this.props.edges.size,
+      definition: this.props.definition,
+      layout: this.props.layout
     };
-
-    // 从所有节点开始（简化实现）
-    for (const node of this.props.nodes.values()) {
-      visit(node.nodeId);
-    }
-
-    return result;
   }
 
   /**
-   * 检查图是否包含循环
-   * @returns 是否包含循环
+   * 比较两个图是否相等（基于ID）
+   * @param other 另一个图
+   * @returns 是否相等
    */
-  public hasCycle(): boolean {
-    const visited = new Set<string>();
-    const recursionStack = new Set<string>();
-
-    const hasCycleDFS = (nodeId: ID): boolean => {
-      const nodeIdStr = nodeId.toString();
-      
-      if (recursionStack.has(nodeIdStr)) {
-        return true; // 发现循环
-      }
-      
-      if (visited.has(nodeIdStr)) {
-        return false;
-      }
-      
-      visited.add(nodeIdStr);
-      recursionStack.add(nodeIdStr);
-      
-      const outgoingEdges = this.getOutgoingEdges(nodeId);
-      for (const edge of outgoingEdges) {
-        if (hasCycleDFS(edge.toNodeId)) {
-          return true;
-        }
-      }
-      
-      recursionStack.delete(nodeIdStr);
-      return false;
-    };
-
-    for (const node of this.props.nodes.values()) {
-      if (!visited.has(node.nodeId.toString())) {
-        if (hasCycleDFS(node.nodeId)) {
-          return true;
-        }
-      }
-    }
-
-    return false;
+  public equals(other: WorkflowGraph): boolean {
+    return this.props.workflowId.equals(other.workflowId);
   }
 
   /**
-   * 获取图的连通分量
-   * @returns 连通分量列表
+   * 克隆图
+   * @returns 克隆的图实例
    */
-  public getConnectedComponents(): Node[][] {
-    const visited = new Set<string>();
-    const components: Node[][] = [];
-
-    const dfs = (nodeId: ID, component: Node[]): void => {
-      const nodeIdStr = nodeId.toString();
-      if (visited.has(nodeIdStr)) return;
-      
-      visited.add(nodeIdStr);
-      const node = this.getNode(nodeId);
-      if (node) {
-        component.push(node);
-      }
-      
-      // 访问相邻节点
-      const adjacentNodes = this.getAdjacentNodes(nodeId);
-      for (const adjacentNode of adjacentNodes) {
-        dfs(adjacentNode.nodeId, component);
-      }
-    };
-
-    for (const node of this.props.nodes.values()) {
-      const nodeIdStr = node.nodeId.toString();
-      if (!visited.has(nodeIdStr)) {
-        const component: Node[] = [];
-        dfs(node.nodeId, component);
-        components.push(component);
-      }
-    }
-
-    return components;
+  public clone(): WorkflowGraph {
+    return new WorkflowGraph({
+      ...this.props,
+      nodes: new Map(this.props.nodes),
+      edges: new Map(this.props.edges)
+    });
   }
 }

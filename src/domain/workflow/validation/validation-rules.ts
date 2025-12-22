@@ -325,6 +325,11 @@ export class ValidationErrorBuilder {
     return this;
   }
 
+  withSeverity(severity: ValidationSeverity): ValidationErrorBuilder {
+    this.severity = severity;
+    return this;
+  }
+
   withMetadata(metadata: Record<string, any>): ValidationErrorBuilder {
     this.metadata = { ...this.metadata, ...metadata };
     return this;

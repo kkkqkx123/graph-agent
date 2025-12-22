@@ -3,6 +3,7 @@ import { DomainError } from '../../common/errors/domain-error';
 import { WorkflowDefinition, ExecutionDefinition } from '../entities/workflow-definition';
 import { WorkflowGraph } from '../entities/workflow-graph';
 import { IExecutionContext, ExecutionResult, ExecutionStatus } from '../execution';
+import { GraphValidationService } from '../interfaces/graph-validation-service.interface';
 
 /**
  * Workflow执行器配置
@@ -26,6 +27,7 @@ export class WorkflowExecutor {
   private readonly workflowDefinition: WorkflowDefinition;
   private readonly workflowGraph: WorkflowGraph;
   private readonly config: WorkflowExecutorConfig;
+  private readonly graphValidationService: GraphValidationService;
 
   /**
    * 构造函数
@@ -36,10 +38,12 @@ export class WorkflowExecutor {
   constructor(
     workflowDefinition: WorkflowDefinition,
     workflowGraph: WorkflowGraph,
+    graphValidationService: GraphValidationService,
     config: WorkflowExecutorConfig = {}
   ) {
     this.workflowDefinition = workflowDefinition;
     this.workflowGraph = workflowGraph;
+    this.graphValidationService = graphValidationService;
     this.config = config;
 
     // 验证工作流定义和图属于同一个工作流
@@ -160,7 +164,10 @@ export class WorkflowExecutor {
     }
 
     // 验证工作流结构
-    this.workflowGraph.validateGraphStructure();
+    const structureResult = this.graphValidationService.validateGraphStructure(this.workflowGraph);
+    if (!structureResult.valid) {
+      throw new DomainError(`图结构验证失败: ${structureResult.errors.join(', ')}`);
+    }
 
     // 验证执行上下文
     if (!context.executionId) {
@@ -211,7 +218,10 @@ export class WorkflowExecutor {
   private handleValidate(): void {
     // 执行额外的验证逻辑
     this.workflowDefinition.validate();
-    this.workflowGraph.validate();
+    const validationResult = this.graphValidationService.validateGraph(this.workflowGraph);
+    if (!validationResult.valid) {
+      throw new DomainError(`图验证失败: ${validationResult.errors.join(', ')}`);
+    }
   }
 
   /**
