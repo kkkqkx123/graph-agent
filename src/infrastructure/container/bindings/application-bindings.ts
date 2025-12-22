@@ -3,21 +3,24 @@
  */
 
 import { ServiceBindings, IContainer, ContainerConfiguration, ServiceLifetime } from '../container';
+import { WorkflowOrchestrationService } from '../../../application/workflow/services/workflow-orchestration-service';
 
 /**
  * 工作流服务绑定
  */
 export class WorkflowServiceBindings extends ServiceBindings {
   registerServices(container: IContainer, config: ContainerConfiguration): void {
-    // TODO: 注册工作流服务
-    // container.registerFactory<IWorkflowService>(
-    //   'IWorkflowService',
-    //   () => new WorkflowService(
-    //     container.get<ILogger>('ILogger'),
-    //     container.get<IConfigManager>('IConfigManager')
-    //   ),
-    //   { lifetime: ServiceLifetime.SINGLETON }
-    // );
+    // 注册工作流编排服务
+    container.registerFactory(
+      'WorkflowOrchestrationService',
+      () => new WorkflowOrchestrationService(
+        container.get('SessionOrchestrationService'),
+        container.get('ThreadCoordinatorService'),
+        container.get('GraphAlgorithmService'),
+        container.get('GraphValidationService')
+      ),
+      { lifetime: ServiceLifetime.SINGLETON }
+    );
   }
 }
 

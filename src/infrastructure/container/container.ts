@@ -11,6 +11,8 @@ import {
   LLMServiceBindings
 } from './bindings/infrastructure-bindings';
 import { WorkflowInfrastructureBindings } from './bindings/workflow-bindings';
+import { ThreadInfrastructureBindings } from './bindings/thread-bindings';
+import { SessionInfrastructureBindings } from './bindings/session-bindings';
 
 import {
   WorkflowServiceBindings,
@@ -305,6 +307,12 @@ export class InfrastructureContainer extends BaseContainer {
 
     const workflowBindings = new WorkflowInfrastructureBindings();
     workflowBindings.registerServices(this, this.config);
+
+    const threadBindings = new ThreadInfrastructureBindings();
+    threadBindings.registerServices(this, this.config);
+
+    const sessionBindings = new SessionInfrastructureBindings();
+    sessionBindings.registerServices(this, this.config);
   }
 }
 

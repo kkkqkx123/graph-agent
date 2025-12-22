@@ -5,6 +5,8 @@
 import { ServiceBindings, IContainer, ContainerConfiguration, ServiceLifetime } from '../container';
 import { ILogger } from '@shared/types/logger';
 import { LoggerFactory, LoggerConfigManager } from '../../logging';
+import { ThreadInfrastructureBindings } from './thread-bindings';
+import { SessionInfrastructureBindings } from './session-bindings';
 
 /**
  * 日志服务绑定
