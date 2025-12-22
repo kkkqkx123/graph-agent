@@ -431,4 +431,24 @@ export class Edge extends Entity {
     this.validateInvariants();
     this.props.type.validate();
   }
+
+  /**
+   * 转换为JSON对象
+   */
+  public toJSON(): Record<string, unknown> {
+    return {
+      id: this.props.id.toString(),
+      workflowId: this.props.workflowId.toString(),
+      type: this.props.type.toString(),
+      fromNodeId: this.props.fromNodeId.toString(),
+      toNodeId: this.props.toNodeId.toString(),
+      condition: this.props.condition,
+      weight: this.props.weight,
+      properties: this.props.properties,
+      createdAt: this.props.createdAt.toString(),
+      updatedAt: this.props.updatedAt.toString(),
+      version: this.props.version.toString(),
+      isDeleted: this.props.isDeleted
+    };
+  }
 }

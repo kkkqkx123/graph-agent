@@ -301,6 +301,14 @@ export class HumanRelayWorkflowService {
       `HumanRelay ${mode} 模式工作流`,
       [humanRelayNode], // nodes
       [], // edges
+      undefined, // type
+      undefined, // config
+      undefined, // parameterMapping
+      undefined, // errorHandlingStrategy
+      undefined, // executionStrategy
+      undefined, // tags
+      undefined, // metadata
+      undefined // createdBy
     );
 
     return workflow;

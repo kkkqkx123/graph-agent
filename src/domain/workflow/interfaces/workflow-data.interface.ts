@@ -6,6 +6,9 @@ import { WorkflowType } from '../value-objects/workflow-type';
 import { WorkflowConfig } from '../value-objects/workflow-config';
 import { Node } from '../entities/nodes/base/node';
 import { Edge } from '../entities/edges/base/edge';
+import { ParameterMapping } from '../mapping';
+import { ErrorHandlingStrategy } from '../strategies';
+import { ExecutionStrategy } from '../strategies';
 
 /**
  * Workflow数据接口
@@ -102,6 +105,21 @@ export interface WorkflowData {
    * 更新者ID（可选）
    */
   readonly updatedBy?: ID;
+
+  /**
+   * 参数映射策略
+   */
+  readonly parameterMapping: ParameterMapping;
+
+  /**
+   * 错误处理策略
+   */
+  readonly errorHandlingStrategy: ErrorHandlingStrategy;
+
+  /**
+   * 执行策略
+   */
+  readonly executionStrategy: ExecutionStrategy;
 }
 
 /**

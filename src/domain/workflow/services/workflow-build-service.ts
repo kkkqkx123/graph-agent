@@ -331,7 +331,20 @@ export class DefaultWorkflowWorkflowBuildService implements IWorkflowWorkflowBui
     }
 
     // 创建工作流
-    const workflow = Workflow.create(name, description, undefined, undefined, undefined, undefined, undefined, metadata, createdBy);
+    const workflow = Workflow.create(
+      name,
+      description,
+      undefined, // nodes
+      undefined, // edges
+      undefined, // type
+      undefined, // config
+      undefined, // parameterMapping
+      undefined, // errorHandlingStrategy
+      undefined, // executionStrategy
+      undefined, // tags
+      metadata,
+      createdBy
+    );
 
     // 保存工作流
     return await this.workflowRepository.save(workflow);

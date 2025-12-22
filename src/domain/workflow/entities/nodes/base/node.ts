@@ -371,4 +371,23 @@ export class Node extends Entity {
     this.validateInvariants();
     this.props.type.validate();
   }
+
+  /**
+   * 转换为JSON对象
+   */
+  public toJSON(): Record<string, unknown> {
+    return {
+      id: this.props.id.toString(),
+      workflowId: this.props.workflowId.toString(),
+      type: this.props.type.toString(),
+      name: this.props.name,
+      description: this.props.description,
+      position: this.props.position,
+      properties: this.props.properties,
+      createdAt: this.props.createdAt.toString(),
+      updatedAt: this.props.updatedAt.toString(),
+      version: this.props.version.toString(),
+      isDeleted: this.props.isDeleted
+    };
+  }
 }

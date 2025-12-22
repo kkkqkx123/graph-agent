@@ -325,7 +325,7 @@ export class HumanRelayNode extends Node {
   /**
    * 转换为JSON对象
    */
-  public toJSON(): Record<string, any> {
+  public override toJSON(): Record<string, any> {
     return {
       id: this.nodeId.toString(),
       workflowId: this.workflowId.toString(),

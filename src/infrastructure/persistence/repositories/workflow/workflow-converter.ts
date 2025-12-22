@@ -1,6 +1,9 @@
 import { injectable, inject } from 'inversify';
 import { WorkflowRepository as IWorkflowRepository, WorkflowQueryOptions } from '../../../../domain/workflow/repositories/workflow-repository';
 import { Workflow } from '../../../../domain/workflow/entities/workflow';
+import { WorkflowDefinition } from '../../../../domain/workflow/entities/workflow-definition';
+import { WorkflowGraph } from '../../../../domain/workflow/entities/workflow-graph';
+import { WorkflowExecutor } from '../../../../domain/workflow/services/workflow-executor';
 import { ID } from '../../../../domain/common/value-objects/id';
 import { WorkflowStatus } from '../../../../domain/workflow/value-objects/workflow-status';
 import { WorkflowType } from '../../../../domain/workflow/value-objects/workflow-type';
@@ -19,6 +22,9 @@ import {
   VersionConverter,
   MetadataConverter
 } from '../../base/type-converter-base';
+import { ParameterMappingFactory } from '../../../../domain/workflow/mapping/parameter-mapping';
+import { ErrorHandlingStrategyFactory } from '../../../../domain/workflow/strategies/error-handling-strategy';
+import { ExecutionStrategyFactory } from '../../../../domain/workflow/strategies/execution-strategy';
 
 /**
  * 基于类型转换器的Workflow Repository
@@ -45,27 +51,53 @@ export class WorkflowConverterRepository extends BaseRepository<Workflow, Workfl
   protected override toEntity(model: WorkflowModel): Workflow {
     try {
       // 使用类型转换器进行编译时类型安全的转换
-      const workflowData = {
+      // 创建工作流定义
+      const definition = WorkflowDefinition.fromProps({
         id: IdConverter.fromStorage(model.id),
         name: model.name,
         description: model.description || undefined,
         status: WorkflowStatusConverter.fromStorage(model.state),
         type: WorkflowTypeConverter.fromStorage(model.executionMode),
         config: model.configuration ? model.configuration : {}, // 简化处理，实际应转换为WorkflowConfig
-        nodes: new Map(),
-        edges: new Map(),
-        createdAt: TimestampConverter.fromStorage(model.createdAt),
-        updatedAt: TimestampConverter.fromStorage(model.updatedAt),
-        version: VersionConverter.fromStorage(model.revision),
+        parameterMapping: ParameterMappingFactory.default(),
+        errorHandlingStrategy: ErrorHandlingStrategyFactory.default(),
+        executionStrategy: ExecutionStrategyFactory.default(),
         tags: model.metadata?.tags || [],
         metadata: MetadataConverter.fromStorage(model.metadata || {}),
         isDeleted: model.metadata?.isDeleted || false,
+        createdAt: TimestampConverter.fromStorage(model.createdAt),
+        updatedAt: TimestampConverter.fromStorage(model.updatedAt),
+        version: VersionConverter.fromStorage(model.revision),
+        createdBy: model.createdBy ? OptionalIdConverter.fromStorage(model.createdBy) : undefined,
+        updatedBy: model.updatedBy ? OptionalIdConverter.fromStorage(model.updatedBy) : undefined
+      });
+
+      // 创建工作流图
+      const graph = WorkflowGraph.fromProps({
+        workflowId: IdConverter.fromStorage(model.id),
+        nodes: new Map(),
+        edges: new Map(),
+        definition: undefined,
+        layout: undefined
+      });
+
+      // 创建工作流执行器
+      const executor = new WorkflowExecutor(definition, graph);
+
+      const workflowProps = {
+        id: IdConverter.fromStorage(model.id),
+        definition,
+        graph,
+        executor,
+        createdAt: TimestampConverter.fromStorage(model.createdAt),
+        updatedAt: TimestampConverter.fromStorage(model.updatedAt),
+        version: VersionConverter.fromStorage(model.revision),
         createdBy: model.createdBy ? OptionalIdConverter.fromStorage(model.createdBy) : undefined,
         updatedBy: model.updatedBy ? OptionalIdConverter.fromStorage(model.updatedBy) : undefined
       };
 
       // 创建Workflow实体
-      return Workflow.fromProps(workflowData);
+      return Workflow.fromProps(workflowProps);
     } catch (error) {
       throw new RepositoryError(
         `Workflow模型转换失败: ${error instanceof Error ? error.message : String(error)}`,

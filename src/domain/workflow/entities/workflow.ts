@@ -2,25 +2,43 @@ import { AggregateRoot } from '../../common/base/aggregate-root';
 import { ID } from '../../common/value-objects/id';
 import { Timestamp } from '../../common/value-objects/timestamp';
 import { Version } from '../../common/value-objects/version';
-import { DomainError } from '../../common/errors/domain-error';
-import { WorkflowStatus } from '../value-objects/workflow-status';
-import { WorkflowType } from '../value-objects/workflow-type';
-import { WorkflowConfig } from '../value-objects/workflow-config';
-import { WorkflowCreatedEvent } from '../events/workflow-created-event';
-import { WorkflowStatusChangedEvent } from '../events/workflow-status-changed-event';
+import { WorkflowDefinition } from './workflow-definition';
+import { WorkflowGraph } from './workflow-graph';
+import { WorkflowExecutor } from '../services/workflow-executor';
 import { Node } from './nodes/base/node';
 import { Edge } from './edges/base/edge';
-import { WorkflowData } from '../interfaces/workflow-data.interface';
+import { WorkflowCreatedEvent } from '../events/workflow-created-event';
+import { WorkflowStatusChangedEvent } from '../events/workflow-status-changed-event';
+import { IExecutionContext, ExecutionResult, ExecutionStatus } from '../execution';
 
 /**
- * Workflow实体接口
+ * Workflow实体属性接口
  */
-export interface WorkflowProps extends WorkflowData {}
+export interface WorkflowProps {
+  readonly id: ID;
+  readonly definition: WorkflowDefinition;
+  readonly graph: WorkflowGraph;
+  readonly executor: WorkflowExecutor;
+  readonly createdAt: Timestamp;
+  readonly updatedAt: Timestamp;
+  readonly version: Version;
+  readonly createdBy?: ID;
+  readonly updatedBy?: ID;
+}
 
 /**
- * Workflow实体
- * 
- * 表示工作流的聚合根
+ * 简化的Workflow实体
+ *
+ * 根据最终架构设计，Workflow专注于：
+ * 1. 工作流定义（结构 + 业务配置）
+ * 2. 执行逻辑编排
+ * 3. 参数映射和转换
+ * 4. 错误处理策略
+ *
+ * 不再负责：
+ * - 执行状态管理
+ * - 生命周期协调
+ * - 执行统计跟踪
  */
 export class Workflow extends AggregateRoot {
   private readonly props: WorkflowProps;
@@ -38,9 +56,13 @@ export class Workflow extends AggregateRoot {
    * 创建新工作流
    * @param name 工作流名称
    * @param description 工作流描述
+   * @param nodes 节点列表
+   * @param edges 边列表
    * @param type 工作流类型
    * @param config 工作流配置
-   * @param workflowId 图ID
+   * @param parameterMapping 参数映射
+   * @param errorHandlingStrategy 错误处理策略
+   * @param executionStrategy 执行策略
    * @param tags 标签
    * @param metadata 元数据
    * @param createdBy 创建者ID
@@ -51,49 +73,46 @@ export class Workflow extends AggregateRoot {
     description?: string,
     nodes?: Node[],
     edges?: Edge[],
-    type?: WorkflowType,
-    config?: WorkflowConfig,
+    type?: any,
+    config?: any,
+    parameterMapping?: any,
+    errorHandlingStrategy?: any,
+    executionStrategy?: any,
     tags?: string[],
     metadata?: Record<string, unknown>,
     createdBy?: ID
   ): Workflow {
     const now = Timestamp.now();
     const workflowId = ID.generate();
-    const workflowType = type || WorkflowType.sequential();
-    const workflowStatus = WorkflowStatus.draft();
-    const workflowConfig = config || WorkflowConfig.default();
 
-    // 创建节点和边的映射
-    const nodeMap = new Map<string, Node>();
-    const edgeMap = new Map<string, Edge>();
+    // 创建工作流定义
+    const definition = WorkflowDefinition.create(
+      name,
+      description,
+      type,
+      config,
+      parameterMapping,
+      errorHandlingStrategy,
+      executionStrategy,
+      tags,
+      metadata,
+      createdBy
+    );
 
-    if (nodes) {
-      for (const node of nodes) {
-        nodeMap.set(node.nodeId.toString(), node);
-      }
-    }
+    // 创建工作流图
+    const graph = WorkflowGraph.create(workflowId, nodes, edges);
 
-    if (edges) {
-      for (const edge of edges) {
-        edgeMap.set(edge.edgeId.toString(), edge);
-      }
-    }
+    // 创建工作流执行器
+    const executor = new WorkflowExecutor(definition, graph);
 
     const props: WorkflowProps = {
       id: workflowId,
-      name,
-      description,
-      status: workflowStatus,
-      type: workflowType,
-      config: workflowConfig,
-      nodes: nodeMap,
-      edges: edgeMap,
+      definition,
+      graph,
+      executor,
       createdAt: now,
       updatedAt: now,
       version: Version.initial(),
-      tags: tags || [],
-      metadata: metadata || {},
-      isDeleted: false,
       createdBy,
       updatedBy: createdBy
     };
@@ -105,11 +124,11 @@ export class Workflow extends AggregateRoot {
       workflowId,
       name,
       description,
-      workflowType.toString(),
-      workflowStatus.toString(),
-      workflowConfig.value,
-      [], // nodes
-      [], // edges
+      definition.type.toString(),
+      definition.status.toString(),
+      definition.config.value,
+      nodes ? nodes.map(node => node.toJSON()) : [],
+      edges ? edges.map(edge => edge.toJSON()) : [],
       undefined, // definition
       undefined, // layout
       createdBy
@@ -140,7 +159,7 @@ export class Workflow extends AggregateRoot {
    * @returns 工作流名称
    */
   public get name(): string {
-    return this.props.name;
+    return this.props.definition.name;
   }
 
   /**
@@ -148,31 +167,31 @@ export class Workflow extends AggregateRoot {
    * @returns 工作流描述
    */
   public get description(): string | undefined {
-    return this.props.description;
+    return this.props.definition.description;
   }
 
   /**
    * 获取工作流状态
    * @returns 工作流状态
    */
-  public get status(): WorkflowStatus {
-    return this.props.status;
+  public get status(): any {
+    return this.props.definition.status;
   }
 
   /**
    * 获取工作流类型
    * @returns 工作流类型
    */
-  public get type(): WorkflowType {
-    return this.props.type;
+  public get type(): any {
+    return this.props.definition.type;
   }
 
   /**
    * 获取工作流配置
    * @returns 工作流配置
    */
-  public get config(): WorkflowConfig {
-    return this.props.config;
+  public get config(): any {
+    return this.props.definition.config;
   }
 
   /**
@@ -180,7 +199,7 @@ export class Workflow extends AggregateRoot {
    * @returns 节点映射
    */
   public get nodes(): Map<string, Node> {
-    return new Map(this.props.nodes);
+    return this.props.graph.nodes;
   }
 
   /**
@@ -188,7 +207,7 @@ export class Workflow extends AggregateRoot {
    * @returns 边映射
    */
   public get edges(): Map<string, Edge> {
-    return new Map(this.props.edges);
+    return this.props.graph.edges;
   }
 
   /**
@@ -196,7 +215,7 @@ export class Workflow extends AggregateRoot {
    * @returns 节点数量
    */
   public getNodeCount(): number {
-    return this.props.nodes.size;
+    return this.props.graph.getNodeCount();
   }
 
   /**
@@ -204,7 +223,7 @@ export class Workflow extends AggregateRoot {
    * @returns 边数量
    */
   public getEdgeCount(): number {
-    return this.props.edges.size;
+    return this.props.graph.getEdgeCount();
   }
 
   /**
@@ -212,7 +231,7 @@ export class Workflow extends AggregateRoot {
    * @returns 图定义
    */
   public get definition(): Record<string, unknown> | undefined {
-    return this.props.definition;
+    return this.props.graph.definition;
   }
 
   /**
@@ -220,16 +239,15 @@ export class Workflow extends AggregateRoot {
    * @returns 布局信息
    */
   public get layout(): Record<string, unknown> | undefined {
-    return this.props.layout;
+    return this.props.graph.layout;
   }
-
 
   /**
    * 获取标签
    * @returns 标签列表
    */
   public get tags(): string[] {
-    return [...this.props.tags];
+    return this.props.definition.tags;
   }
 
   /**
@@ -237,7 +255,7 @@ export class Workflow extends AggregateRoot {
    * @returns 元数据
    */
   public get metadata(): Record<string, unknown> {
-    return { ...this.props.metadata };
+    return this.props.definition.metadata;
   }
 
   /**
@@ -262,23 +280,7 @@ export class Workflow extends AggregateRoot {
    * @param updatedBy 更新者ID
    */
   public updateName(name: string, updatedBy?: ID): void {
-    if (this.props.isDeleted) {
-      throw new DomainError('无法更新已删除的工作流');
-    }
-
-    if (!this.props.status.canEdit()) {
-      throw new DomainError('只能编辑草稿状态的工作流');
-    }
-
-    const newProps = {
-      ...this.props,
-      name,
-      updatedAt: Timestamp.now(),
-      version: this.props.version.nextPatch(),
-      updatedBy
-    };
-
-    (this as any).props = Object.freeze(newProps);
+    this.props.definition.updateName(name, updatedBy);
     this.update();
   }
 
@@ -288,23 +290,7 @@ export class Workflow extends AggregateRoot {
    * @param updatedBy 更新者ID
    */
   public updateDescription(description: string, updatedBy?: ID): void {
-    if (this.props.isDeleted) {
-      throw new DomainError('无法更新已删除的工作流');
-    }
-
-    if (!this.props.status.canEdit()) {
-      throw new DomainError('只能编辑草稿状态的工作流');
-    }
-
-    const newProps = {
-      ...this.props,
-      description,
-      updatedAt: Timestamp.now(),
-      version: this.props.version.nextPatch(),
-      updatedBy
-    };
-
-    (this as any).props = Object.freeze(newProps);
+    this.props.definition.updateDescription(description, updatedBy);
     this.update();
   }
 
@@ -313,24 +299,8 @@ export class Workflow extends AggregateRoot {
    * @param type 新类型
    * @param updatedBy 更新者ID
    */
-  public updateType(type: WorkflowType, updatedBy?: ID): void {
-    if (this.props.isDeleted) {
-      throw new DomainError('无法更新已删除工作流的类型');
-    }
-
-    if (!this.props.status.canEdit()) {
-      throw new DomainError('只能编辑草稿状态工作流的类型');
-    }
-
-    const newProps = {
-      ...this.props,
-      type,
-      updatedAt: Timestamp.now(),
-      version: this.props.version.nextPatch(),
-      updatedBy
-    };
-
-    (this as any).props = Object.freeze(newProps);
+  public updateType(type: any, updatedBy?: ID): void {
+    this.props.definition.updateType(type, updatedBy);
     this.update();
   }
 
@@ -339,24 +309,8 @@ export class Workflow extends AggregateRoot {
    * @param config 新配置
    * @param updatedBy 更新者ID
    */
-  public updateConfig(config: WorkflowConfig, updatedBy?: ID): void {
-    if (this.props.isDeleted) {
-      throw new DomainError('无法更新已删除工作流的配置');
-    }
-
-    if (!this.props.status.canEdit()) {
-      throw new DomainError('只能编辑草稿状态工作流的配置');
-    }
-
-    const newProps = {
-      ...this.props,
-      config,
-      updatedAt: Timestamp.now(),
-      version: this.props.version.nextPatch(),
-      updatedBy
-    };
-
-    (this as any).props = Object.freeze(newProps);
+  public updateConfig(config: any, updatedBy?: ID): void {
+    this.props.definition.updateConfig(config, updatedBy);
     this.update();
   }
 
@@ -366,7 +320,7 @@ export class Workflow extends AggregateRoot {
    * @returns 节点或null
    */
   public getNode(nodeId: ID): Node | null {
-    return this.props.nodes.get(nodeId.toString()) || null;
+    return this.props.graph.getNode(nodeId);
   }
 
   /**
@@ -375,7 +329,7 @@ export class Workflow extends AggregateRoot {
    * @returns 边或null
    */
   public getEdge(edgeId: ID): Edge | null {
-    return this.props.edges.get(edgeId.toString()) || null;
+    return this.props.graph.getEdge(edgeId);
   }
 
   /**
@@ -384,7 +338,7 @@ export class Workflow extends AggregateRoot {
    * @returns 是否存在
    */
   public hasNode(nodeId: ID): boolean {
-    return this.props.nodes.has(nodeId.toString());
+    return this.props.graph.hasNode(nodeId);
   }
 
   /**
@@ -393,7 +347,7 @@ export class Workflow extends AggregateRoot {
    * @returns 是否存在
    */
   public hasEdge(edgeId: ID): boolean {
-    return this.props.edges.has(edgeId.toString());
+    return this.props.graph.hasEdge(edgeId);
   }
 
   /**
@@ -402,13 +356,7 @@ export class Workflow extends AggregateRoot {
    * @returns 入边列表
    */
   public getIncomingEdges(nodeId: ID): Edge[] {
-    const incomingEdges: Edge[] = [];
-    for (const edge of this.props.edges.values()) {
-      if (edge.isTo(nodeId) && !edge.isDeleted()) {
-        incomingEdges.push(edge);
-      }
-    }
-    return incomingEdges;
+    return this.props.graph.getIncomingEdges(nodeId);
   }
 
   /**
@@ -417,13 +365,7 @@ export class Workflow extends AggregateRoot {
    * @returns 出边列表
    */
   public getOutgoingEdges(nodeId: ID): Edge[] {
-    const outgoingEdges: Edge[] = [];
-    for (const edge of this.props.edges.values()) {
-      if (edge.isFrom(nodeId) && !edge.isDeleted()) {
-        outgoingEdges.push(edge);
-      }
-    }
-    return outgoingEdges;
+    return this.props.graph.getOutgoingEdges(nodeId);
   }
 
   /**
@@ -432,28 +374,7 @@ export class Workflow extends AggregateRoot {
    * @returns 相邻节点列表
    */
   public getAdjacentNodes(nodeId: ID): Node[] {
-    const adjacentNodes: Node[] = [];
-    const visited = new Set<string>();
-
-    // 获取出边指向的节点
-    for (const edge of this.getOutgoingEdges(nodeId)) {
-      const targetNode = this.getNode(edge.toNodeId);
-      if (targetNode && !visited.has(targetNode.nodeId.toString())) {
-        adjacentNodes.push(targetNode);
-        visited.add(targetNode.nodeId.toString());
-      }
-    }
-
-    // 获取入边来源的节点
-    for (const edge of this.getIncomingEdges(nodeId)) {
-      const sourceNode = this.getNode(edge.fromNodeId);
-      if (sourceNode && !visited.has(sourceNode.nodeId.toString())) {
-        adjacentNodes.push(sourceNode);
-        visited.add(sourceNode.nodeId.toString());
-      }
-    }
-
-    return adjacentNodes;
+    return this.props.graph.getAdjacentNodes(nodeId);
   }
 
   /**
@@ -462,30 +383,8 @@ export class Workflow extends AggregateRoot {
    * @param addedBy 添加者ID
    */
   public addNode(node: Node, addedBy?: ID): void {
-    if (this.props.isDeleted) {
-      throw new DomainError('无法向已删除的工作流添加节点');
-    }
-
-    if (!node.workflowId.equals(this.props.id)) {
-      throw new DomainError('节点不属于当前工作流');
-    }
-
-    if (this.hasNode(node.nodeId)) {
-      throw new DomainError('节点已存在');
-    }
-
-    const newNodes = new Map(this.props.nodes);
-    newNodes.set(node.nodeId.toString(), node);
-
-    const newProps = {
-      ...this.props,
-      nodes: newNodes,
-      updatedAt: Timestamp.now(),
-      version: this.props.version.nextPatch(),
-      updatedBy: addedBy
-    };
-
-    (this as any).props = Object.freeze(newProps);
+    const newGraph = this.props.graph.addNode(node);
+    (this.props as any).graph = newGraph;
     this.update();
   }
 
@@ -495,33 +394,8 @@ export class Workflow extends AggregateRoot {
    * @param removedBy 移除者ID
    */
   public removeNode(nodeId: ID, removedBy?: ID): void {
-    if (this.props.isDeleted) {
-      throw new DomainError('无法从已删除的工作流移除节点');
-    }
-
-    const node = this.getNode(nodeId);
-    if (!node) {
-      throw new DomainError('节点不存在');
-    }
-
-    // 检查是否有边连接到此节点
-    const connectedEdges = this.getIncomingEdges(nodeId).concat(this.getOutgoingEdges(nodeId));
-    if (connectedEdges.length > 0) {
-      throw new DomainError('无法移除有边连接的节点');
-    }
-
-    const newNodes = new Map(this.props.nodes);
-    newNodes.delete(nodeId.toString());
-
-    const newProps = {
-      ...this.props,
-      nodes: newNodes,
-      updatedAt: Timestamp.now(),
-      version: this.props.version.nextPatch(),
-      updatedBy: removedBy
-    };
-
-    (this as any).props = Object.freeze(newProps);
+    const newGraph = this.props.graph.removeNode(nodeId);
+    (this.props as any).graph = newGraph;
     this.update();
   }
 
@@ -531,39 +405,8 @@ export class Workflow extends AggregateRoot {
    * @param addedBy 添加者ID
    */
   public addEdge(edge: Edge, addedBy?: ID): void {
-    if (this.props.isDeleted) {
-      throw new DomainError('无法向已删除的工作流添加边');
-    }
-
-    if (!edge.workflowId.equals(this.props.id)) {
-      throw new DomainError('边不属于当前工作流');
-    }
-
-    if (this.hasEdge(edge.edgeId)) {
-      throw new DomainError('边已存在');
-    }
-
-    // 检查源节点和目标节点是否存在
-    if (!this.hasNode(edge.fromNodeId)) {
-      throw new DomainError('源节点不存在');
-    }
-
-    if (!this.hasNode(edge.toNodeId)) {
-      throw new DomainError('目标节点不存在');
-    }
-
-    const newEdges = new Map(this.props.edges);
-    newEdges.set(edge.edgeId.toString(), edge);
-
-    const newProps = {
-      ...this.props,
-      edges: newEdges,
-      updatedAt: Timestamp.now(),
-      version: this.props.version.nextPatch(),
-      updatedBy: addedBy
-    };
-
-    (this as any).props = Object.freeze(newProps);
+    const newGraph = this.props.graph.addEdge(edge);
+    (this.props as any).graph = newGraph;
     this.update();
   }
 
@@ -573,27 +416,8 @@ export class Workflow extends AggregateRoot {
    * @param removedBy 移除者ID
    */
   public removeEdge(edgeId: ID, removedBy?: ID): void {
-    if (this.props.isDeleted) {
-      throw new DomainError('无法从已删除的工作流移除边');
-    }
-
-    const edge = this.getEdge(edgeId);
-    if (!edge) {
-      throw new DomainError('边不存在');
-    }
-
-    const newEdges = new Map(this.props.edges);
-    newEdges.delete(edgeId.toString());
-
-    const newProps = {
-      ...this.props,
-      edges: newEdges,
-      updatedAt: Timestamp.now(),
-      version: this.props.version.nextPatch(),
-      updatedBy: removedBy
-    };
-
-    (this as any).props = Object.freeze(newProps);
+    const newGraph = this.props.graph.removeEdge(edgeId);
+    (this.props as any).graph = newGraph;
     this.update();
   }
 
@@ -603,23 +427,8 @@ export class Workflow extends AggregateRoot {
    * @param updatedBy 更新者ID
    */
   public updateDefinition(definition: Record<string, unknown>, updatedBy?: ID): void {
-    if (this.props.isDeleted) {
-      throw new DomainError('无法更新已删除工作流的图定义');
-    }
-
-    if (!this.props.status.canEdit()) {
-      throw new DomainError('只能编辑草稿状态工作流的图定义');
-    }
-
-    const newProps = {
-      ...this.props,
-      definition,
-      updatedAt: Timestamp.now(),
-      version: this.props.version.nextPatch(),
-      updatedBy
-    };
-
-    (this as any).props = Object.freeze(newProps);
+    const newGraph = this.props.graph.updateDefinition(definition);
+    (this.props as any).graph = newGraph;
     this.update();
   }
 
@@ -629,23 +438,8 @@ export class Workflow extends AggregateRoot {
    * @param updatedBy 更新者ID
    */
   public updateLayout(layout: Record<string, unknown>, updatedBy?: ID): void {
-    if (this.props.isDeleted) {
-      throw new DomainError('无法更新已删除工作流的布局信息');
-    }
-
-    if (!this.props.status.canEdit()) {
-      throw new DomainError('只能编辑草稿状态工作流的布局信息');
-    }
-
-    const newProps = {
-      ...this.props,
-      layout,
-      updatedAt: Timestamp.now(),
-      version: this.props.version.nextPatch(),
-      updatedBy
-    };
-
-    (this as any).props = Object.freeze(newProps);
+    const newGraph = this.props.graph.updateLayout(layout);
+    (this.props as any).graph = newGraph;
     this.update();
   }
 
@@ -656,37 +450,17 @@ export class Workflow extends AggregateRoot {
    * @param reason 变更原因
    */
   public changeStatus(
-    newStatus: WorkflowStatus,
+    newStatus: any,
     changedBy?: ID,
     reason?: string
   ): void {
-    if (this.props.isDeleted) {
-      throw new DomainError('无法更改已删除工作流的状态');
-    }
-
-    const oldStatus = this.props.status;
-    if (oldStatus.equals(newStatus)) {
-      return; // 状态未变更
-    }
-
-    // 验证状态转换的有效性
-    this.validateStatusTransition(oldStatus, newStatus);
-
-    const newProps = {
-      ...this.props,
-      status: newStatus,
-      updatedAt: Timestamp.now(),
-      version: this.props.version.nextPatch(),
-      updatedBy: changedBy
-    };
-
-    (this as any).props = Object.freeze(newProps);
+    this.props.definition.changeStatus(newStatus, changedBy, reason);
     this.update();
 
     // 添加状态变更事件
     this.addDomainEvent(new WorkflowStatusChangedEvent(
       this.props.id,
-      oldStatus,
+      this.props.definition.status,
       newStatus,
       changedBy,
       reason
@@ -699,23 +473,7 @@ export class Workflow extends AggregateRoot {
    * @param updatedBy 更新者ID
    */
   public addTag(tag: string, updatedBy?: ID): void {
-    if (this.props.isDeleted) {
-      throw new DomainError('无法为已删除的工作流添加标签');
-    }
-
-    if (this.props.tags.includes(tag)) {
-      return; // 标签已存在
-    }
-
-    const newProps = {
-      ...this.props,
-      tags: [...this.props.tags, tag],
-      updatedAt: Timestamp.now(),
-      version: this.props.version.nextPatch(),
-      updatedBy
-    };
-
-    (this as any).props = Object.freeze(newProps);
+    this.props.definition.addTag(tag, updatedBy);
     this.update();
   }
 
@@ -725,27 +483,7 @@ export class Workflow extends AggregateRoot {
    * @param updatedBy 更新者ID
    */
   public removeTag(tag: string, updatedBy?: ID): void {
-    if (this.props.isDeleted) {
-      throw new DomainError('无法为已删除的工作流移除标签');
-    }
-
-    const index = this.props.tags.indexOf(tag);
-    if (index === -1) {
-      return; // 标签不存在
-    }
-
-    const newTags = [...this.props.tags];
-    newTags.splice(index, 1);
-
-    const newProps = {
-      ...this.props,
-      tags: newTags,
-      updatedAt: Timestamp.now(),
-      version: this.props.version.nextPatch(),
-      updatedBy
-    };
-
-    (this as any).props = Object.freeze(newProps);
+    this.props.definition.removeTag(tag, updatedBy);
     this.update();
   }
 
@@ -755,39 +493,15 @@ export class Workflow extends AggregateRoot {
    * @param updatedBy 更新者ID
    */
   public updateMetadata(metadata: Record<string, unknown>, updatedBy?: ID): void {
-    if (this.props.isDeleted) {
-      throw new DomainError('无法更新已删除工作流的元数据');
-    }
-
-    const newProps = {
-      ...this.props,
-      metadata: { ...metadata },
-      updatedAt: Timestamp.now(),
-      version: this.props.version.nextPatch(),
-      updatedBy
-    };
-
-    (this as any).props = Object.freeze(newProps);
+    this.props.definition.updateMetadata(metadata, updatedBy);
     this.update();
   }
-
 
   /**
    * 标记工作流为已删除
    */
   public markAsDeleted(): void {
-    if (this.props.isDeleted) {
-      return;
-    }
-
-    const newProps = {
-      ...this.props,
-      isDeleted: true,
-      updatedAt: Timestamp.now(),
-      version: this.props.version.nextPatch()
-    };
-
-    (this as any).props = Object.freeze(newProps);
+    this.props.definition.markAsDeleted();
     this.update();
   }
 
@@ -796,124 +510,110 @@ export class Workflow extends AggregateRoot {
    * @returns 是否已删除
    */
   public isDeleted(): boolean {
-    return this.props.isDeleted;
+    return this.props.definition.isDeleted();
   }
-
 
   /**
    * 获取业务标识
    * @returns 业务标识
    */
   public getBusinessIdentifier(): string {
-    return `workflow:${this.props.id.toString()}`;
+    return this.props.definition.getBusinessIdentifier();
   }
 
   /**
-   * 验证状态转换的有效性
-   * @param oldStatus 旧状态
-   * @param newStatus 新状态
+   * 执行工作流（由ThreadExecutor调用）
+   *
+   * 这是Workflow的核心职责：专注于业务逻辑执行
+   * 不再管理执行状态和生命周期，这些由ThreadExecutor负责
    */
-  private validateStatusTransition(
-    oldStatus: WorkflowStatus,
-    newStatus: WorkflowStatus
-  ): void {
-    // 已归档的工作流不能变更到其他状态
-    if (oldStatus.isArchived() && !newStatus.isArchived()) {
-      throw new DomainError('已归档的工作流不能变更到其他状态');
-    }
+  public async execute(context: IExecutionContext): Promise<ExecutionResult> {
+    return await this.props.executor.execute(context);
+  }
 
-    // 草稿状态只能激活或归档
-    if (oldStatus.isDraft() &&
-      !newStatus.isActive() &&
-      !newStatus.isArchived()) {
-      throw new DomainError('草稿状态的工作流只能激活或归档');
-    }
+  /**
+   * 获取执行定义（供执行器使用）
+   *
+   * 提供工作流的完整定义信息，包括结构和业务配置
+   */
+  public getExecutionDefinition(): any {
+    return this.props.executor.getExecutionDefinition();
+  }
 
-    // 活跃状态只能变为非活跃或归档
-    if (oldStatus.isActive() &&
-      !newStatus.isInactive() &&
-      !newStatus.isArchived()) {
-      throw new DomainError('活跃状态的工作流只能变为非活跃或归档');
-    }
+  /**
+   * 处理执行动作（由ThreadExecutor调用）
+   *
+   * 响应执行器的生命周期管理指令
+   */
+  public handleExecutionAction(action: any): void {
+    this.props.executor.handleExecutionAction(action);
+  }
 
-    // 非活跃状态只能变为活跃或归档
-    if (oldStatus.isInactive() &&
-      !newStatus.isActive() &&
-      !newStatus.isArchived()) {
-      throw new DomainError('非活跃状态的工作流只能变为活跃或归档');
-    }
+  /**
+   * 获取执行步骤（供执行器使用）
+   */
+  public getExecutionSteps(): any[] {
+    return this.props.executor.getExecutionSteps();
+  }
+
+  /**
+   * 获取参数映射
+   */
+  public get parameterMapping(): any {
+    return this.props.definition.parameterMapping;
+  }
+
+  /**
+   * 获取错误处理策略
+   */
+  public get errorHandlingStrategy(): any {
+    return this.props.definition.errorHandlingStrategy;
+  }
+
+  /**
+   * 获取执行策略
+   */
+  public get executionStrategy(): any {
+    return this.props.definition.executionStrategy;
   }
 
   /**
    * 验证聚合的不变性
    */
   public validateInvariants(): void {
-    if (!this.props.id) {
-      throw new DomainError('工作流ID不能为空');
-    }
-
-    if (!this.props.name || this.props.name.trim().length === 0) {
-      throw new DomainError('工作流名称不能为空');
-    }
-
-    if (!this.props.status) {
-      throw new DomainError('工作流状态不能为空');
-    }
-
-    if (!this.props.type) {
-      throw new DomainError('工作流类型不能为空');
-    }
-
-    if (!this.props.config) {
-      throw new DomainError('工作流配置不能为空');
-    }
-
-    // 验证图的基本结构
-    const startNodes = Array.from(this.props.nodes.values()).filter(node => node.type.isStart());
-    const endNodes = Array.from(this.props.nodes.values()).filter(node => node.type.isEnd());
-
-    if (startNodes.length === 0) {
-      throw new DomainError('工作流必须至少有一个开始节点');
-    }
-
-    if (endNodes.length === 0) {
-      throw new DomainError('工作流必须至少有一个结束节点');
-    }
-
-    if (startNodes.length > 1) {
-      throw new DomainError('工作流只能有一个开始节点');
-    }
-
-    // 验证所有边都连接到存在的节点
-    for (const edge of this.props.edges.values()) {
-      if (!this.hasNode(edge.fromNodeId)) {
-        throw new DomainError(`边 ${edge.edgeId} 的源节点不存在`);
-      }
-
-      if (!this.hasNode(edge.toNodeId)) {
-        throw new DomainError(`边 ${edge.edgeId} 的目标节点不存在`);
-      }
-    }
-
+    this.props.definition.validateInvariants();
+    this.props.graph.validateGraphStructure();
   }
 
   /**
    * 验证实体的有效性
    */
   public override validate(): void {
-    this.validateInvariants();
-    this.props.status.validate();
-    this.props.type.validate();
-    this.props.config.validate();
+    this.props.definition.validate();
+    this.props.graph.validate();
+  }
 
-    // 验证所有节点
-    for (const node of this.props.nodes.values()) {
-      node.validate();
-    }
+  /**
+   * 获取工作流定义
+   * @returns 工作流定义
+   */
+  public getDefinition(): WorkflowDefinition {
+    return this.props.definition;
+  }
 
-    // 验证所有边
-    for (const edge of this.props.edges.values()) {
-      edge.validate();
-    }
+  /**
+   * 获取工作流图
+   * @returns 工作流图
+   */
+  public getGraph(): WorkflowGraph {
+    return this.props.graph;
+  }
+
+  /**
+   * 获取工作流执行器
+   * @returns 工作流执行器
+   */
+  public getExecutor(): WorkflowExecutor {
+    return this.props.executor;
   }
 }

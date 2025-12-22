@@ -1,6 +1,9 @@
 import { injectable, inject } from 'inversify';
 import { WorkflowRepository as IWorkflowRepository, WorkflowQueryOptions } from '../../../../domain/workflow/repositories/workflow-repository';
 import { Workflow } from '../../../../domain/workflow/entities/workflow';
+import { WorkflowDefinition } from '../../../../domain/workflow/entities/workflow-definition';
+import { WorkflowGraph } from '../../../../domain/workflow/entities/workflow-graph';
+import { WorkflowExecutor } from '../../../../domain/workflow/services/workflow-executor';
 import { ID } from '../../../../domain/common/value-objects/id';
 import { WorkflowStatus } from '../../../../domain/workflow/value-objects/workflow-status';
 import { WorkflowType } from '../../../../domain/workflow/value-objects/workflow-type';
@@ -87,8 +90,8 @@ export class WorkflowRepository extends BaseRepository<Workflow, WorkflowModel, 
    */
   protected override toEntity(model: WorkflowModel): Workflow {
     try {
-      // 使用类型转换器进行编译时类型安全的转换
-      const workflowData = {
+      // 创建工作流定义
+      const definition = WorkflowDefinition.fromProps({
         id: IdConverter.fromStorage(model.id),
         name: model.name,
         description: model.description || undefined,
@@ -97,6 +100,9 @@ export class WorkflowRepository extends BaseRepository<Workflow, WorkflowModel, 
         config: model.configuration ? model.configuration : {}, // 简化处理，实际应转换为WorkflowConfig
         nodes: new Map(),
         edges: new Map(),
+        parameterMapping: {} as any, // 临时处理
+        errorHandlingStrategy: {} as any, // 临时处理
+        executionStrategy: {} as any, // 临时处理
         createdAt: TimestampConverter.fromStorage(model.createdAt),
         updatedAt: TimestampConverter.fromStorage(model.updatedAt),
         version: VersionConverter.fromStorage(model.revision),
@@ -105,10 +111,32 @@ export class WorkflowRepository extends BaseRepository<Workflow, WorkflowModel, 
         isDeleted: model.metadata?.isDeleted || false,
         createdBy: model.createdBy ? OptionalIdConverter.fromStorage(model.createdBy) : undefined,
         updatedBy: model.updatedBy ? OptionalIdConverter.fromStorage(model.updatedBy) : undefined
-      };
+      });
+
+      // 创建工作流图
+      const graph = WorkflowGraph.create(
+        IdConverter.fromStorage(model.id),
+        [], // nodes
+        [], // edges
+        model.metadata?.definition,
+        model.metadata?.layout
+      );
+
+      // 创建工作流执行器
+      const executor = new WorkflowExecutor(definition, graph);
 
       // 创建Workflow实体
-      return Workflow.fromProps(workflowData);
+      return Workflow.fromProps({
+        id: IdConverter.fromStorage(model.id),
+        definition,
+        graph,
+        executor,
+        createdAt: TimestampConverter.fromStorage(model.createdAt),
+        updatedAt: TimestampConverter.fromStorage(model.updatedAt),
+        version: VersionConverter.fromStorage(model.revision),
+        createdBy: model.createdBy ? OptionalIdConverter.fromStorage(model.createdBy) : undefined,
+        updatedBy: model.updatedBy ? OptionalIdConverter.fromStorage(model.updatedBy) : undefined
+      });
     } catch (error) {
       throw new RepositoryError(
         `Workflow模型转换失败: ${error instanceof Error ? error.message : String(error)}`,
@@ -134,7 +162,9 @@ export class WorkflowRepository extends BaseRepository<Workflow, WorkflowModel, 
       model.metadata = MetadataConverter.toStorage({
         ...entity.metadata,
         tags: entity.tags,
-        isDeleted: entity.isDeleted()
+        isDeleted: entity.isDeleted(),
+        definition: entity.definition,
+        layout: entity.layout
       });
       model.configuration = entity.config; // 简化处理，实际应转换为存储格式
       model.version = entity.version.toString();

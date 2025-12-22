@@ -167,6 +167,14 @@ export class ThreadStatus extends ValueObject<ThreadStatusProps> {
   }
 
   /**
+   * 检查是否可以执行
+   * @returns 是否可以执行
+   */
+  public canExecute(): boolean {
+    return this.isPending() || this.isRunning();
+  }
+
+  /**
    * 比较两个线程状态是否相等
    * @param status 另一个线程状态
    * @returns 是否相等
