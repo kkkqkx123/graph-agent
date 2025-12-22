@@ -1,2 +1,2 @@
 export { SessionRepository } from './session-repository';
-export { SessionMapper } from './session-mapper';
+export { SessionConverterRepository } from './session-converter';

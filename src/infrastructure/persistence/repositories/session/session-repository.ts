@@ -4,7 +4,6 @@ import { Session } from '../../../../domain/sessions/entities/session';
 import { ID } from '../../../../domain/common/value-objects/id';
 import { SessionStatus } from '../../../../domain/sessions/value-objects/session-status';
 import { ConnectionManager } from '../../connections/connection-manager';
-import { SessionMapper } from './session-mapper';
 import { SessionModel } from '../../models/session.model';
 import { In } from 'typeorm';
 import { BaseRepository, QueryOptions } from '../../base/base-repository';
@@ -13,10 +12,8 @@ import { BaseRepository, QueryOptions } from '../../base/base-repository';
 export class SessionRepository extends BaseRepository<Session, SessionModel, ID> implements ISessionRepository {
   constructor(
     @inject('ConnectionManager') connectionManager: ConnectionManager,
-    @inject('SessionMapper') mapper: SessionMapper
   ) {
     super(connectionManager);
-    this.mapper = mapper;
   }
 
   protected override getModelClass(): new () => SessionModel {
@@ -35,7 +32,7 @@ export class SessionRepository extends BaseRepository<Session, SessionModel, ID>
       limit: options?.limit,
       offset: options?.offset
     };
-    
+
     return this.find(queryOptions);
   }
 
@@ -97,7 +94,7 @@ export class SessionRepository extends BaseRepository<Session, SessionModel, ID>
       limit: options?.limit,
       offset: options?.offset
     };
-    
+
     return this.find(queryOptions);
   }
 
@@ -108,7 +105,7 @@ export class SessionRepository extends BaseRepository<Session, SessionModel, ID>
       limit: options?.limit || 10,
       offset: options?.offset || 0
     };
-    
+
     return super.findWithPagination(queryOptions);
   }
 

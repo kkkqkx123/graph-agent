@@ -1,0 +1,631 @@
+import { injectable, inject } from 'inversify';
+import { HistoryRepository as IHistoryRepository } from '../../../../domain/history/repositories/history-repository';
+import { History } from '../../../../domain/history/entities/history';
+import { ID } from '../../../../domain/common/value-objects/id';
+import { HistoryType } from '../../../../domain/history/value-objects/history-type';
+import { HistoryModel } from '../../models/history.model';
+import { Between, LessThan, In } from 'typeorm';
+import { IQueryOptions } from '../../../../domain/common/repositories/repository';
+import { RepositoryError } from '../../../../domain/common/errors/repository-error';
+import { BaseRepository, QueryOptions } from '../../base/base-repository';
+import { ConnectionManager } from '../../connections/connection-manager';
+import {
+  IdConverter,
+  OptionalIdConverter,
+  TimestampConverter,
+  VersionConverter,
+  OptionalStringConverter,
+  MetadataConverter
+} from '../../base/type-converter-base';
+import { HistoryTypeConverter } from '../../base/history-type-converter';
+
+/**
+ * 基于类型转换器的History Repository
+ * 
+ * 直接使用类型转换器进行数据映射，消除传统的mapper层
+ * 提供编译时类型安全和运行时验证
+ */
+@injectable()
+export class HistoryConverterRepository extends BaseRepository<History, HistoryModel, ID> implements IHistoryRepository {
+  
+  constructor(
+    @inject('ConnectionManager') connectionManager: ConnectionManager
+  ) {
+    super(connectionManager);
+  }
+
+  protected override getModelClass(): new () => HistoryModel {
+    return HistoryModel;
+  }
+
+  /**
+   * 重写toEntity方法，使用类型转换器
+   */
+  protected override toEntity(model: HistoryModel): History {
+    try {
+      // 使用类型转换器进行编译时类型安全的转换
+      const historyData = {
+        id: IdConverter.fromStorage(model.id),
+        sessionId: model.sessionId ? OptionalIdConverter.fromStorage(model.sessionId) : undefined,
+        threadId: model.threadId ? OptionalIdConverter.fromStorage(model.threadId) : undefined,
+        workflowId: model.workflowId ? OptionalIdConverter.fromStorage(model.workflowId) : undefined,
+        type: HistoryTypeConverter.fromStorage(model.action),
+        title: model.data?.title ? OptionalStringConverter.fromStorage(model.data.title) : undefined,
+        description: model.data?.description ? OptionalStringConverter.fromStorage(model.data.description) : undefined,
+        details: model.data || {},
+        metadata: MetadataConverter.fromStorage(model.metadata || {}),
+        createdAt: TimestampConverter.fromStorage(model.createdAt),
+        updatedAt: TimestampConverter.fromStorage(model.updatedAt),
+        version: VersionConverter.fromStorage(model.version),
+        isDeleted: false
+      };
+
+      // 创建History实体
+      return History.fromProps(historyData);
+    } catch (error) {
+      throw new RepositoryError(
+        `History模型转换失败: ${error instanceof Error ? error.message : String(error)}`,
+        'MAPPING_ERROR',
+        { modelId: model.id, operation: 'toEntity' }
+      );
+    }
+  }
+
+  /**
+   * 重写toModel方法，使用类型转换器
+   */
+  protected override toModel(entity: History): HistoryModel {
+    try {
+      const model = new HistoryModel();
+      
+      // 使用类型转换器进行编译时类型安全的转换
+      model.id = IdConverter.toStorage(entity.historyId);
+      model.entityType = 'history';
+      model.entityId = (entity.metadata as any)['entityId'] || entity.historyId.value;
+      model.action = HistoryTypeConverter.toStorage(entity.type);
+      model.data = {
+        title: entity.title,
+        description: entity.description,
+        ...entity.details
+      };
+      model.previousData = (entity.metadata as any)['previousData'];
+      model.metadata = MetadataConverter.toStorage(entity.metadata);
+      model.userId = (entity.metadata as any)['userId'];
+      model.sessionId = entity.sessionId?.value;
+      model.threadId = entity.threadId?.value;
+      model.workflowId = entity.workflowId?.value;
+      model.workflowId = (entity.metadata as any)['workflowId'];
+      model.nodeId = (entity.metadata as any)['nodeId'];
+      model.edgeId = (entity.metadata as any)['edgeId'];
+      model.timestamp = entity.createdAt.getMilliseconds();
+      model.createdAt = TimestampConverter.toStorage(entity.createdAt);
+      model.updatedAt = TimestampConverter.toStorage(entity.updatedAt);
+      model.version = VersionConverter.toStorage(entity.version);
+      
+      return model;
+    } catch (error) {
+      throw new RepositoryError(
+        `History实体转换失败: ${error instanceof Error ? error.message : String(error)}`,
+        'MAPPING_ERROR',
+        { entityId: entity.historyId.value, operation: 'toModel' }
+      );
+    }
+  }
+
+  /**
+   * 根据会话ID查找历史记录
+   */
+  async findBySessionId(sessionId: ID): Promise<History[]> {
+    return this.findByField('sessionId', sessionId.value, {
+      sortBy: 'timestamp',
+      sortOrder: 'desc'
+    });
+  }
+
+  /**
+   * 根据线程ID查找历史记录
+   */
+  async findByThreadId(threadId: ID): Promise<History[]> {
+    return this.findByField('threadId', threadId.value, {
+      sortBy: 'timestamp',
+      sortOrder: 'desc'
+    });
+  }
+
+  /**
+   * 根据工作流ID查找历史记录
+   */
+  async findByWorkflowId(workflowId: ID): Promise<History[]> {
+    return this.findByField('workflowId', workflowId.value, {
+      sortBy: 'timestamp',
+      sortOrder: 'desc'
+    });
+  }
+
+  /**
+   * 根据类型查找历史记录
+   */
+  async findByType(type: HistoryType): Promise<History[]> {
+    return this.findByField('action', type.getValue(), {
+      sortBy: 'timestamp',
+      sortOrder: 'desc'
+    });
+  }
+
+  /**
+   * 根据多个类型查找历史记录
+   */
+  async findByTypes(types: HistoryType[]): Promise<History[]> {
+    const typeValues = types.map(type => type.getValue());
+    return this.find({
+      customConditions: (qb: any) => {
+        qb.andWhere('history.action IN (:...typeValues)', { typeValues });
+      },
+      sortBy: 'timestamp',
+      sortOrder: 'desc'
+    });
+  }
+
+  /**
+   * 根据时间范围查找历史记录
+   */
+  async findByTimeRange(startTime: Date, endTime: Date): Promise<History[]> {
+    return this.findByTimeRangeField('timestamp', startTime, endTime, {
+      sortBy: 'timestamp',
+      sortOrder: 'desc'
+    });
+  }
+
+  /**
+   * 查找最新的历史记录
+   */
+  async findLatest(limit?: number): Promise<History[]> {
+    return this.find({
+      sortBy: 'timestamp',
+      sortOrder: 'desc',
+      limit: limit || 10
+    });
+  }
+
+  /**
+   * 根据会话ID查找最新的历史记录
+   */
+  async findLatestBySessionId(sessionId: ID, limit: number = 10): Promise<History[]> {
+    return this.findByField('sessionId', sessionId.value, {
+      sortBy: 'timestamp',
+      sortOrder: 'desc',
+      limit
+    });
+  }
+
+  /**
+   * 根据线程ID查找最新的历史记录
+   */
+  async findLatestByThreadId(threadId: ID, limit: number = 10): Promise<History[]> {
+    return this.findByField('threadId', threadId.value, {
+      sortBy: 'timestamp',
+      sortOrder: 'desc',
+      limit
+    });
+  }
+
+  /**
+   * 统计会话中的历史记录数量
+   */
+  async countBySessionId(sessionId: ID): Promise<number> {
+    return this.count({ filters: { sessionId: sessionId.value } });
+  }
+
+  /**
+   * 统计线程中的历史记录数量
+   */
+  async countByThreadId(threadId: ID): Promise<number> {
+    return this.count({ filters: { threadId: threadId.value } });
+  }
+
+  /**
+   * 统计工作流中的历史记录数量
+   */
+  async countByWorkflowId(workflowId: ID): Promise<number> {
+    return this.count({ filters: { workflowId: workflowId.value } });
+  }
+
+  /**
+   * 根据条件统计历史记录数量
+   */
+  async countByCriteria(options?: {
+    sessionId?: ID;
+    threadId?: ID;
+    workflowId?: ID;
+    type?: HistoryType;
+    startTime?: Date;
+    endTime?: Date;
+  }): Promise<number> {
+    const queryOptions: QueryOptions<HistoryModel> = {
+      customConditions: (qb: any) => {
+        if (options?.sessionId) {
+          qb.andWhere('history.sessionId = :sessionId', { sessionId: options.sessionId.value });
+        }
+        if (options?.threadId) {
+          qb.andWhere('history.threadId = :threadId', { threadId: options.threadId.value });
+        }
+        if (options?.workflowId) {
+          qb.andWhere('history.workflowId = :workflowId', { workflowId: options.workflowId.value });
+        }
+        if (options?.type) {
+          qb.andWhere('history.action = :action', { action: options.type.getValue() });
+        }
+        if (options?.startTime && options?.endTime) {
+          qb.andWhere('history.timestamp BETWEEN :startTime AND :endTime', {
+            startTime: options.startTime.getTime(),
+            endTime: options.endTime.getTime()
+          });
+        }
+      }
+    };
+    
+    return this.count(queryOptions);
+  }
+
+  /**
+   * 根据类型统计历史记录数量
+   */
+  async countByType(options?: {
+    sessionId?: ID;
+    threadId?: ID;
+    workflowId?: ID;
+    startTime?: Date;
+    endTime?: Date;
+  }): Promise<Record<string, number>> {
+    const queryOptions: QueryOptions<HistoryModel> = {
+      customConditions: (qb: any) => {
+        if (options?.sessionId) {
+          qb.andWhere('history.sessionId = :sessionId', { sessionId: options.sessionId.value });
+        }
+        if (options?.threadId) {
+          qb.andWhere('history.threadId = :threadId', { threadId: options.threadId.value });
+        }
+        if (options?.workflowId) {
+          qb.andWhere('history.workflowId = :workflowId', { workflowId: options.workflowId.value });
+        }
+        if (options?.startTime && options?.endTime) {
+          qb.andWhere('history.timestamp BETWEEN :startTime AND :endTime', {
+            startTime: options.startTime.getTime(),
+            endTime: options.endTime.getTime()
+          });
+        }
+      }
+    };
+    
+    const histories = await this.find(queryOptions);
+    const byType: Record<string, number> = {};
+
+    histories.forEach(history => {
+      byType[history.type.getValue()] = (byType[history.type.getValue()] || 0) + 1;
+    });
+
+    return byType;
+  }
+
+  /**
+   * 删除会话中的历史记录
+   */
+  async deleteBySessionId(sessionId: ID): Promise<number> {
+    return this.deleteWhere({ filters: { sessionId: sessionId.value } });
+  }
+
+  /**
+   * 删除线程中的历史记录
+   */
+  async deleteByThreadId(threadId: ID): Promise<number> {
+    return this.deleteWhere({ filters: { threadId: threadId.value } });
+  }
+
+  /**
+   * 删除实体的历史记录
+   */
+  async deleteByEntityId(entityId: ID): Promise<number> {
+    return this.deleteWhere({ filters: { entityId: entityId.value } });
+  }
+
+  /**
+   * 删除指定类型的历史记录
+   */
+  async deleteByType(type: HistoryType): Promise<number> {
+    return this.deleteWhere({ filters: { action: type.getValue() } });
+  }
+
+  /**
+   * 删除指定时间之前的历史记录
+   */
+  async deleteBeforeTime(beforeTime: Date): Promise<number> {
+    const queryOptions: QueryOptions<HistoryModel> = {
+      customConditions: (qb: any) => {
+        qb.andWhere('history.timestamp < :beforeTime', { beforeTime: beforeTime.getTime() });
+      }
+    };
+    
+    return this.deleteWhere(queryOptions);
+  }
+
+  /**
+   * 根据实体ID和类型查找历史记录
+   */
+  async findByEntityIdAndType(entityId: ID, type: HistoryType): Promise<History[]> {
+    return this.find({
+      filters: {
+        entityId: entityId.value,
+        action: type.getValue()
+      },
+      sortBy: 'timestamp',
+      sortOrder: 'desc'
+    });
+  }
+
+  /**
+   * 根据实体ID和时间范围查找历史记录
+   */
+  async findByEntityIdAndTimeRange(entityId: ID, startTime: Date, endTime: Date): Promise<History[]> {
+    const queryOptions: QueryOptions<HistoryModel> = {
+      customConditions: (qb: any) => {
+        qb.andWhere('history.entityId = :entityId', { entityId: entityId.value })
+          .andWhere('history.timestamp BETWEEN :startTime AND :endTime', {
+            startTime: startTime.getTime(),
+            endTime: endTime.getTime()
+          });
+      },
+      sortBy: 'timestamp',
+      sortOrder: 'desc'
+    };
+    
+    return this.find(queryOptions);
+  }
+
+  /**
+   * 根据类型和时间范围查找历史记录
+   */
+  async findByTypeAndTimeRange(type: HistoryType, startTime: Date, endTime: Date): Promise<History[]> {
+    const queryOptions: QueryOptions<HistoryModel> = {
+      customConditions: (qb: any) => {
+        qb.andWhere('history.action = :action', { action: type.getValue() })
+          .andWhere('history.timestamp BETWEEN :startTime AND :endTime', {
+            startTime: startTime.getTime(),
+            endTime: endTime.getTime()
+          });
+      },
+      sortBy: 'timestamp',
+      sortOrder: 'desc'
+    };
+    
+    return this.find(queryOptions);
+  }
+
+  /**
+   * 根据实体ID查找最新的历史记录
+   */
+  async findLatestByEntityId(entityId: ID, limit?: number): Promise<History[]> {
+    return this.findByField('entityId', entityId.value, {
+      sortBy: 'timestamp',
+      sortOrder: 'desc',
+      limit: limit || 10
+    });
+  }
+
+  /**
+   * 根据类型查找最新的历史记录
+   */
+  async findLatestByType(type: HistoryType, limit?: number): Promise<History[]> {
+    return this.findByField('action', type.getValue(), {
+      sortBy: 'timestamp',
+      sortOrder: 'desc',
+      limit: limit || 10
+    });
+  }
+
+  /**
+   * 获取统计信息
+   */
+  async getStatistics(options?: {
+    sessionId?: ID;
+    threadId?: ID;
+    workflowId?: ID;
+    startTime?: Date;
+    endTime?: Date;
+  }): Promise<{
+    total: number;
+    byType: Record<string, number>;
+    byEntity: Record<string, number>;
+    errorCount: number;
+    warningCount: number;
+    infoCount: number;
+    latestAt?: Date;
+    oldestAt?: Date;
+  }> {
+    const connection = await this.connectionManager.getConnection();
+    const repository = connection.getRepository(HistoryModel);
+
+    const where: any = {};
+
+    if (options?.sessionId) {
+      where.sessionId = options.sessionId.value;
+    }
+    if (options?.threadId) {
+      where.threadId = options.threadId.value;
+    }
+    if (options?.workflowId) {
+      where.workflowId = options.workflowId.value;
+    }
+    if (options?.startTime && options?.endTime) {
+      where.timestamp = Between(options.startTime.getTime(), options.endTime.getTime());
+    }
+
+    const histories = await repository.find({ where });
+
+    const byType: Record<string, number> = {};
+    const byEntity: Record<string, number> = {};
+    let errorCount = 0;
+    let warningCount = 0;
+    let infoCount = 0;
+    let latestAt: Date | undefined;
+    let oldestAt: Date | undefined;
+
+    histories.forEach(history => {
+      // 按类型统计
+      byType[history.action] = (byType[history.action] || 0) + 1;
+
+      // 按实体统计
+      byEntity[history.entityId] = (byEntity[history.entityId] || 0) + 1;
+
+      // 按级别统计（需要根据类型判断级别）
+      if (history.action.includes('error')) {
+        errorCount++;
+      } else if (history.action.includes('warning')) {
+        warningCount++;
+      } else {
+        infoCount++;
+      }
+
+      // 时间统计
+      const historyDate = new Date(history.timestamp || 0);
+      if (!latestAt || historyDate > latestAt) {
+        latestAt = historyDate;
+      }
+      if (!oldestAt || historyDate < oldestAt) {
+        oldestAt = historyDate;
+      }
+    });
+
+    return {
+      total: histories.length,
+      byType,
+      byEntity,
+      errorCount,
+      warningCount,
+      infoCount,
+      latestAt,
+      oldestAt
+    };
+  }
+
+  /**
+   * 清理过期的历史记录
+   */
+  async cleanupExpired(retentionDays: number): Promise<number> {
+    const beforeTime = new Date(Date.now() - retentionDays * 24 * 60 * 60 * 1000);
+    return this.deleteBeforeTime(beforeTime);
+  }
+
+  /**
+   * 归档指定时间之前的历史记录
+   */
+  async archiveBeforeTime(beforeTime: Date): Promise<number> {
+    // 这里可以实现归档逻辑，暂时直接删除
+    return this.deleteBeforeTime(beforeTime);
+  }
+
+  /**
+   * 获取趋势数据
+   */
+  async getTrend(
+    startTime: Date,
+    endTime: Date,
+    interval: number
+  ): Promise<Array<{
+    timestamp: Date;
+    count: number;
+    byType: Record<string, number>;
+  }>> {
+    const connection = await this.connectionManager.getConnection();
+    const repository = connection.getRepository(HistoryModel);
+
+    const histories = await repository.find({
+      where: {
+        timestamp: Between(startTime.getTime(), endTime.getTime())
+      },
+      order: { timestamp: 'ASC' }
+    });
+
+    const trend: Array<{
+      timestamp: Date;
+      count: number;
+      byType: Record<string, number>;
+    }> = [];
+
+    const intervalMs = interval * 60 * 1000; // 转换为毫秒
+    let currentTime = new Date(startTime);
+
+    while (currentTime <= endTime) {
+      const nextTime = new Date(currentTime.getTime() + intervalMs);
+      const intervalHistories = histories.filter(h =>
+        (h.timestamp || 0) >= currentTime.getTime() && (h.timestamp || 0) < nextTime.getTime()
+      );
+
+      const byType: Record<string, number> = {};
+      intervalHistories.forEach(history => {
+        byType[history.action] = (byType[history.action] || 0) + 1;
+      });
+
+      trend.push({
+        timestamp: new Date(currentTime),
+        count: intervalHistories.length,
+        byType
+      });
+
+      currentTime = nextTime;
+    }
+
+    return trend;
+  }
+
+  /**
+   * 搜索历史记录
+   */
+  async search(
+    query: string,
+    options?: {
+      sessionId?: ID;
+      threadId?: ID;
+      workflowId?: ID;
+      type?: HistoryType;
+      startTime?: Date;
+      endTime?: Date;
+      limit?: number;
+      offset?: number;
+    }
+  ): Promise<History[]> {
+    const queryOptions: QueryOptions<HistoryModel> = {
+      customConditions: (qb: any) => {
+        // 搜索逻辑：在 description 和 details 字段中搜索
+        qb.where(
+          '(history.description ILIKE :query OR history.details::text ILIKE :query)',
+          { query: `%${query}%` }
+        );
+
+        if (options?.sessionId) {
+          qb.andWhere('history.sessionId = :sessionId', { sessionId: options.sessionId.value });
+        }
+        if (options?.threadId) {
+          qb.andWhere('history.threadId = :threadId', { threadId: options.threadId.value });
+        }
+        if (options?.workflowId) {
+          qb.andWhere('history.workflowId = :workflowId', { workflowId: options.workflowId.value });
+        }
+        if (options?.type) {
+          qb.andWhere('history.action = :action', { action: options.type.getValue() });
+        }
+        if (options?.startTime && options?.endTime) {
+          qb.andWhere('history.timestamp BETWEEN :startTime AND :endTime', {
+            startTime: options.startTime.getTime(),
+            endTime: options.endTime.getTime()
+          });
+        }
+      },
+      sortBy: 'timestamp',
+      sortOrder: 'desc',
+      limit: options?.limit,
+      offset: options?.offset
+    };
+    
+    return this.find(queryOptions);
+  }
+}

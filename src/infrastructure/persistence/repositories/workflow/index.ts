@@ -1,2 +1,2 @@
 export { WorkflowRepository } from './workflow-repository';
-export { WorkflowMapper } from './workflow-mapper';
+export { WorkflowConverterRepository } from './workflow-converter';
