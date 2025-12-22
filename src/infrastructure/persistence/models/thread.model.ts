@@ -10,6 +10,9 @@ export class ThreadModel {
   @Column()
   sessionId!: string;
 
+  @Column({ nullable: true })
+  workflowId?: string;
+
   @Column()
   name!: string;
 

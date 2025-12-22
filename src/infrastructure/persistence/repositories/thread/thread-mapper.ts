@@ -13,6 +13,7 @@ export class ThreadMapper {
     const props = {
       id: ID.fromString(model.id),
       sessionId: ID.fromString(model.sessionId),
+      workflowId: model.workflowId ? ID.fromString(model.workflowId) : undefined,
       status: ThreadStatus.fromString(model.state),
       priority: ThreadPriority.fromString(model.priority),
       title: model.name,
@@ -31,6 +32,7 @@ export class ThreadMapper {
     const model = new ThreadModel();
     model.id = entity.threadId.value;
     model.sessionId = entity.sessionId.value;
+    model.workflowId = entity.workflowId?.value;
     model.name = entity.title || '';
     model.description = entity.description || undefined;
     model.state = entity.status.getValue();

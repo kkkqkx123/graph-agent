@@ -4,6 +4,8 @@ import { ID } from '../../../domain/common/value-objects/id';
 import { ConnectionManager } from '../connections/connection-manager';
 import { RepositoryError } from '../../../domain/common/errors/repository-error';
 import { DataSource, Repository, FindOptionsWhere, FindManyOptions, ObjectLiteral, SelectQueryBuilder, In } from 'typeorm';
+import { QueryOptionsBuilder, QueryBuilderOptions } from './query-options-builder';
+import { QueryTemplateManager, QueryTemplateRegistrar } from './query-template-manager';
 
 /**
  * 错误类型枚举
@@ -132,15 +134,93 @@ export abstract class BaseRepository<T, TModel extends ObjectLiteral, TId = ID> 
     activeValue: 'active'
   };
 
+  // 查询模板管理器
+  protected queryTemplateManager: QueryTemplateManager<TModel>;
+
+  // 查询构建器选项
+  protected queryBuilderOptions: QueryBuilderOptions<TModel> = {
+    alias: 'entity',
+    enableSoftDelete: true,
+    defaultSortField: 'createdAt',
+    defaultSortOrder: 'desc'
+  };
+
   constructor(
     @inject('ConnectionManager') protected connectionManager: ConnectionManager
-  ) { }
+  ) {
+    // 初始化查询模板管理器
+    this.queryTemplateManager = new QueryTemplateManager<TModel>();
+    QueryTemplateRegistrar.registerCommonTemplates(this.queryTemplateManager);
+    
+    // 设置查询构建器别名
+    this.queryBuilderOptions.alias = this.getAlias();
+  }
 
   /**
    * 配置软删除行为 - 子类可以重写此方法来自定义软删除配置
    */
   protected configureSoftDelete(config: Partial<typeof this.softDeleteConfig>): void {
     this.softDeleteConfig = { ...this.softDeleteConfig, ...config };
+  }
+
+  /**
+   * 配置查询构建器选项
+   */
+  protected configureQueryBuilder(options: Partial<QueryBuilderOptions<TModel>>): void {
+    this.queryBuilderOptions = { ...this.queryBuilderOptions, ...options };
+  }
+
+  /**
+   * 创建查询选项构建器
+   */
+  protected createQueryOptionsBuilder(): QueryOptionsBuilder<TModel> {
+    return QueryOptionsBuilder.create<TModel>(this.queryBuilderOptions);
+  }
+
+  /**
+   * 使用查询构建器查找实体
+   */
+  protected async findWithBuilder(builder: QueryOptionsBuilder<TModel>): Promise<T[]> {
+    const options = builder.build();
+    return this.find(options);
+  }
+
+  /**
+   * 使用查询构建器查找单个实体
+   */
+  protected async findOneWithBuilder(builder: QueryOptionsBuilder<TModel>): Promise<T | null> {
+    const options = builder.build();
+    return this.findOne(options);
+  }
+
+  /**
+   * 使用查询构建器进行分页查询
+   */
+  protected async findWithPaginationBuilder(builder: QueryOptionsBuilder<TModel>): Promise<PaginatedResult<T>> {
+    const options = builder.build();
+    return this.findWithPagination(options);
+  }
+
+  /**
+   * 使用查询构建器统计数量
+   */
+  protected async countWithBuilder(builder: QueryOptionsBuilder<TModel>): Promise<number> {
+    const options = builder.build();
+    return this.count(options);
+  }
+
+  /**
+   * 使用模板构建查询
+   */
+  protected buildWithTemplate(templateName: string, params: any): QueryOptionsBuilder<TModel> {
+    return this.queryTemplateManager.buildWithTemplate(templateName, params, this.queryBuilderOptions);
+  }
+
+  /**
+   * 使用模板组合构建查询
+   */
+  protected buildWithComposition(compositionName: string): QueryOptionsBuilder<TModel> {
+    return this.queryTemplateManager.buildWithComposition(compositionName, this.queryBuilderOptions);
   }
 
   /**

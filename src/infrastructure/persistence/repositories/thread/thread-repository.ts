@@ -11,6 +11,7 @@ import { IQueryOptions, PaginatedResult } from '../../../../domain/common/reposi
 import { RepositoryError } from '../../../../domain/common/errors/repository-error';
 import { In } from 'typeorm';
 import { BaseRepository, QueryOptions } from '../../base/base-repository';
+import { QueryOptionsBuilder } from '../../base/query-options-builder';
 
 @injectable()
 export class ThreadRepository extends BaseRepository<Thread, ThreadModel, ID> implements IThreadRepository {
@@ -40,55 +41,65 @@ export class ThreadRepository extends BaseRepository<Thread, ThreadModel, ID> im
   // 基础 CRUD 方法现在由 BaseRepository 提供，无需重复实现
 
   async findBySessionId(sessionId: ID, options?: ThreadQueryOptions): Promise<Thread[]> {
-    return this.find({
-      customConditions: (qb) => {
-        qb.andWhere('thread.sessionId = :sessionId', { sessionId: sessionId.value });
+    const builder = this.createQueryOptionsBuilder()
+      .equals('sessionId', sessionId.value)
+      .sortBy(options?.sortBy || 'createdAt')
+      .sortOrder(options?.sortOrder || 'desc');
 
-        if (options?.includeDeleted === false) {
-          qb.andWhere('thread.isDeleted = false');
-        }
+    if (options?.includeDeleted === false) {
+      builder.excludeSoftDeleted();
+    }
 
-        if (options?.status) {
-          qb.andWhere('thread.status = :status', { status: options.status });
-        }
+    if (options?.status) {
+      builder.equals('state', options.status);
+    }
 
-        if (options?.priority) {
-          qb.andWhere('thread.priority = :priority', { priority: options.priority });
-        }
+    if (options?.priority) {
+      builder.equals('priority', options.priority.toString());
+    }
 
-        if (options?.title) {
-          qb.andWhere('thread.title LIKE :title', { title: `%${options.title}%` });
-        }
-      },
-      sortBy: options?.sortBy || 'createdAt',
-      sortOrder: options?.sortOrder || 'desc',
-      limit: options?.limit,
-      offset: options?.offset
-    });
+    if (options?.title) {
+      builder.like('name', `%${options.title}%`);
+    }
+
+    if (options?.limit) {
+      builder.limit(options.limit);
+    }
+
+    if (options?.offset) {
+      builder.offset(options.offset);
+    }
+
+    return this.findWithBuilder(builder);
   }
 
   async findByWorkflowId(workflowId: ID, options?: ThreadQueryOptions): Promise<Thread[]> {
-    return this.find({
-      customConditions: (qb) => {
-        qb.andWhere('thread.workflowId = :workflowId', { workflowId: workflowId.value });
+    const builder = this.createQueryOptionsBuilder()
+      .equals('workflowId', workflowId.value)
+      .sortBy(options?.sortBy || 'createdAt')
+      .sortOrder(options?.sortOrder || 'desc');
 
-        if (options?.includeDeleted === false) {
-          qb.andWhere('thread.isDeleted = false');
-        }
+    if (options?.includeDeleted === false) {
+      builder.excludeSoftDeleted();
+    }
 
-        if (options?.status) {
-          qb.andWhere('thread.status = :status', { status: options.status });
-        }
+    if (options?.status) {
+      builder.equals('state', options.status);
+    }
 
-        if (options?.priority) {
-          qb.andWhere('thread.priority = :priority', { priority: options.priority });
-        }
-      },
-      sortBy: options?.sortBy || 'createdAt',
-      sortOrder: options?.sortOrder || 'desc',
-      limit: options?.limit,
-      offset: options?.offset
-    });
+    if (options?.priority) {
+      builder.equals('priority', options.priority.toString());
+    }
+
+    if (options?.limit) {
+      builder.limit(options.limit);
+    }
+
+    if (options?.offset) {
+      builder.offset(options.offset);
+    }
+
+    return this.findWithBuilder(builder);
   }
 
   async findByStatus(status: ThreadStatus, options?: ThreadQueryOptions): Promise<Thread[]> {
