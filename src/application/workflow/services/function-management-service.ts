@@ -14,7 +14,6 @@ import {
   IWorkflowFunctionDomainService,
   IFunctionValidationDomainService
 } from '../../../domain/workflow/services/function-service';
-import { FunctionValidator } from '../../../domain/workflow/validation/function-validation-rules';
 import { ILogger } from '@shared/types/logger';
 
 /**

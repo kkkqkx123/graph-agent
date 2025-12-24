@@ -1,4 +1,4 @@
-import { AggregateRoot } from '../../common/base/aggregate-root';
+import { Entity } from '../../common/base/entity';
 import { ID } from '../../common/value-objects/id';
 import { Timestamp } from '../../common/value-objects/timestamp';
 import { Version } from '../../common/value-objects/version';
@@ -42,7 +42,7 @@ export interface WorkflowProps {
  * - 生命周期协调
  * - 执行统计跟踪
  */
-export class Workflow extends AggregateRoot {
+export class Workflow extends Entity {
   private readonly props: WorkflowProps;
 
   /**
@@ -572,23 +572,7 @@ export class Workflow extends AggregateRoot {
     return this.props.definition.executionStrategy;
   }
 
-  /**
-   * 验证聚合的不变性
-   */
-  public validateInvariants(): void {
-    this.props.definition.validateInvariants();
-    // 图结构验证现在由GraphValidationService处理
-    // this.props.graph.validateGraphStructure();
-  }
 
-  /**
-   * 验证实体的有效性
-   */
-  public override validate(): void {
-    this.props.definition.validate();
-    // 图验证现在由GraphValidationService处理
-    // this.props.graph.validate();
-  }
 
   /**
    * 获取工作流定义

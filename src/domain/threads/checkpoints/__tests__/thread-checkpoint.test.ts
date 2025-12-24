@@ -210,7 +210,7 @@ describe('ThreadCheckpoint', () => {
     it('应该延长过期时间', () => {
       checkpoint.setExpiration(24);
       const originalExpiresAt = checkpoint.expiresAt;
-      
+
       checkpoint.extendExpiration(12);
 
       expect(checkpoint.expiresAt!.getMilliseconds()).toBeGreaterThan(originalExpiresAt!.getMilliseconds());
@@ -286,28 +286,6 @@ describe('ThreadCheckpoint', () => {
     });
   });
 
-  describe('业务规则验证', () => {
-    it('应该验证不变性', () => {
-      const checkpoint = ThreadCheckpoint.create(
-        threadId,
-        CheckpointType.auto(),
-        stateData
-      );
-
-      expect(() => checkpoint.validate()).not.toThrow();
-    });
-
-    it('应该拒绝无效的线程ID', () => {
-      expect(() => {
-        ThreadCheckpoint.create(
-          ID.generate(), // 有效的ID，但会在验证时检查
-          CheckpointType.auto(),
-          stateData
-        );
-      }).not.toThrow(); // 创建时不会检查，验证时会检查
-    });
-  });
-
   describe('删除管理', () => {
     let checkpoint: ThreadCheckpoint;
 
@@ -321,19 +299,19 @@ describe('ThreadCheckpoint', () => {
 
     it('应该标记为已删除', () => {
       expect(checkpoint.isDeleted()).toBe(false);
-      
+
       checkpoint.markAsDeleted();
-      
+
       expect(checkpoint.isDeleted()).toBe(true);
     });
 
     it('应该允许重复标记为已删除', () => {
       checkpoint.markAsDeleted();
-      
+
       expect(() => {
         checkpoint.markAsDeleted();
       }).not.toThrow();
-      
+
       expect(checkpoint.isDeleted()).toBe(true);
     });
   });

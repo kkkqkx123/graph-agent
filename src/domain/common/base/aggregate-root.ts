@@ -69,17 +69,4 @@ export abstract class AggregateRoot extends Entity {
    */
   public abstract getBusinessIdentifier(): string;
 
-  /**
-   * 验证聚合的不变性
-   * 子类需要实现具体的业务规则验证
-   */
-  public abstract validateInvariants(): void;
-
-  /**
-   * 验证实体的有效性
-   * 聚合根需要额外验证不变性
-   */
-  public validate(): void {
-    this.validateInvariants();
-  }
 }

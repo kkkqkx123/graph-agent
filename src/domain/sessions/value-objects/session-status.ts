@@ -24,6 +24,17 @@ export interface SessionStatusProps {
  * 用于表示会话的当前状态
  */
 export class SessionStatus extends ValueObject<SessionStatusProps> {
+  private constructor(props: SessionStatusProps) {
+    super(props);
+    // 在构造时验证一次，确保值对象始终有效
+    if (!props.value) {
+      throw new DomainError('会话状态不能为空');
+    }
+    if (!Object.values(SessionStatusValue).includes(props.value)) {
+      throw new DomainError(`无效的会话状态: ${props.value}`);
+    }
+  }
+
   /**
    * 创建活跃状态
    * @returns 活跃状态实例
@@ -128,18 +139,6 @@ export class SessionStatus extends ValueObject<SessionStatusProps> {
     return this.props.value === status.getValue();
   }
 
-  /**
-   * 验证会话状态的有效性
-   */
-  public validate(): void {
-    if (!this.props.value) {
-      throw new DomainError('会话状态不能为空');
-    }
-
-    if (!Object.values(SessionStatusValue).includes(this.props.value)) {
-      throw new DomainError(`无效的会话状态: ${this.props.value}`);
-    }
-  }
 
   /**
    * 获取会话状态的字符串表示
@@ -147,5 +146,12 @@ export class SessionStatus extends ValueObject<SessionStatusProps> {
    */
   public override toString(): string {
     return this.props.value;
+  }
+
+  /**
+   * 验证实体的有效性（空实现，验证在构造时完成）
+   */
+  public validate(): void {
+    // 验证在构造时已完成，这里不需要额外验证
   }
 }

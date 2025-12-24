@@ -2,7 +2,77 @@ import { WorkflowGraph } from '../entities/workflow-graph';
 import { Node } from '../entities/nodes/base/node';
 import { Edge } from '../entities/edges/base/edge';
 import { ID } from '../../common/value-objects/id';
-import { ValidationResult, ValidationConfig } from '../validation/validation-rules';
+
+/**
+ * 验证错误类型
+ */
+export type ValidationSeverity = 'error' | 'warning' | 'info';
+
+/**
+ * 验证错误
+ */
+export interface ValidationError {
+  /** 错误ID */
+  id: string;
+  /** 错误消息 */
+  message: string;
+  /** 错误类型 */
+  severity: ValidationSeverity;
+  /** 错误位置 */
+  location?: string;
+  /** 修复建议 */
+  suggestions?: string[];
+}
+
+/**
+ * 验证结果
+ */
+export interface ValidationResult {
+  /** 是否有效 */
+  isValid: boolean;
+  /** 错误列表 */
+  errors: ValidationError[];
+  /** 警告列表 */
+  warnings: ValidationError[];
+  /** 信息列表 */
+  info: ValidationError[];
+}
+
+/**
+ * 业务规则
+ */
+export interface BusinessRule {
+  /** 规则ID */
+  id: string;
+  /** 规则名称 */
+  name: string;
+  /** 规则描述 */
+  description: string;
+  /** 验证条件 */
+  condition: (graph: WorkflowGraph) => boolean;
+  /** 错误消息 */
+  errorMessage: string;
+  /** 严重程度 */
+  severity: ValidationSeverity;
+  /** 修复建议 */
+  suggestions?: string[];
+}
+
+/**
+ * 验证规则
+ */
+export interface ValidationRule {
+  /** 规则ID */
+  id: string;
+  /** 规则名称 */
+  name: string;
+  /** 规则描述 */
+  description: string;
+  /** 验证函数 */
+  validate: (graph: WorkflowGraph) => boolean;
+  /** 是否启用 */
+  enabled: boolean;
+}
 
 /**
  * 图验证服务接口
@@ -13,7 +83,7 @@ import { ValidationResult, ValidationConfig } from '../validation/validation-rul
  * 3. 执行约束验证
  * 4. 图有效性验证
  * 
- * 此接口定义图验证的契约，具体实现在基础设施层提供。
+ * 简化接口，移除复杂的验证规则系统依赖。
  */
 export interface GraphValidationService {
   /**
@@ -21,62 +91,28 @@ export interface GraphValidationService {
    * @param graph 工作流图
    * @returns 验证结果
    */
-  validateGraphStructure(graph: WorkflowGraph): ValidationResult;
+  validateGraphStructure(graph: WorkflowGraph): boolean;
 
   /**
    * 验证图的完整性
    * @param graph 工作流图
    * @returns 验证结果
    */
-  validateGraphIntegrity(graph: WorkflowGraph): ValidationResult;
+  validateGraphIntegrity(graph: WorkflowGraph): boolean;
 
   /**
    * 验证节点连接
    * @param graph 工作流图
    * @returns 验证结果
    */
-  validateNodeConnections(graph: WorkflowGraph): ValidationResult;
-
-  /**
-   * 验证业务规则
-   * @param graph 工作流图
-   * @param rules 业务规则列表
-   * @returns 验证结果
-   */
-  validateBusinessRules(graph: WorkflowGraph, rules: BusinessRule[]): ValidationResult;
-
-  /**
-   * 验证执行约束
-   * @param graph 工作流图
-   * @returns 验证结果
-   */
-  validateExecutionConstraints(graph: WorkflowGraph): ValidationResult;
+  validateNodeConnections(graph: WorkflowGraph): boolean;
 
   /**
    * 验证图的有效性（综合验证）
    * @param graph 工作流图
-   * @param config 验证配置
    * @returns 验证结果
    */
-  validateGraph(graph: WorkflowGraph, config?: ValidationConfig): ValidationResult;
-
-  /**
-   * 验证节点
-   * @param graph 工作流图
-   * @param nodeId 节点ID
-   * @param config 验证配置
-   * @returns 验证结果
-   */
-  validateNode(graph: WorkflowGraph, nodeId: ID, config?: ValidationConfig): ValidationResult;
-
-  /**
-   * 验证边
-   * @param graph 工作流图
-   * @param edgeId 边ID
-   * @param config 验证配置
-   * @returns 验证结果
-   */
-  validateEdge(graph: WorkflowGraph, edgeId: ID, config?: ValidationConfig): ValidationResult;
+  validateGraph(graph: WorkflowGraph): boolean;
 
   /**
    * 检查图是否可执行
@@ -86,10 +122,28 @@ export interface GraphValidationService {
   isExecutable(graph: WorkflowGraph): boolean;
 
   /**
-   * 获取验证规则列表
+   * 获取验证规则
    * @returns 验证规则列表
    */
   getValidationRules(): ValidationRule[];
+
+  /**
+   * 获取业务规则
+   * @returns 业务规则列表
+   */
+  getBusinessRules(): BusinessRule[];
+
+  /**
+   * 启用验证规则
+   * @param ruleId 规则ID
+   */
+  enableValidationRule(ruleId: string): void;
+
+  /**
+   * 禁用验证规则
+   * @param ruleId 规则ID
+   */
+  disableValidationRule(ruleId: string): void;
 
   /**
    * 添加自定义验证规则
@@ -98,45 +152,8 @@ export interface GraphValidationService {
   addValidationRule(rule: ValidationRule): void;
 
   /**
-   * 移除验证规则
-   * @param ruleId 规则ID
-   * @returns 是否成功移除
+   * 添加自定义业务规则
+   * @param rule 业务规则
    */
-  removeValidationRule(ruleId: string): boolean;
-}
-
-/**
- * 业务规则接口
- */
-export interface BusinessRule {
-  /** 规则ID */
-  id: string;
-  /** 规则名称 */
-  name: string;
-  /** 规则描述 */
-  description?: string;
-  /** 规则条件 */
-  condition: (graph: WorkflowGraph) => boolean;
-  /** 错误消息 */
-  errorMessage: string;
-  /** 严重程度 */
-  severity: 'info' | 'warning' | 'error' | 'critical';
-  /** 修复建议 */
-  suggestions?: string[];
-}
-
-/**
- * 验证规则接口（简化版）
- */
-export interface ValidationRule {
-  /** 规则ID */
-  id: string;
-  /** 规则名称 */
-  name: string;
-  /** 规则描述 */
-  description?: string;
-  /** 验证函数 */
-  validate: (graph: WorkflowGraph) => ValidationResult;
-  /** 是否启用 */
-  enabled: boolean;
+  addBusinessRule(rule: BusinessRule): void;
 }

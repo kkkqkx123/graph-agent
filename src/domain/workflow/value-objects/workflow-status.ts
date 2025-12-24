@@ -24,6 +24,17 @@ export interface WorkflowStatusProps {
  * 用于表示工作流的当前状态
  */
 export class WorkflowStatus extends ValueObject<WorkflowStatusProps> {
+  private constructor(props: WorkflowStatusProps) {
+    super(props);
+    // 在构造时验证一次，确保值对象始终有效
+    if (!props.value) {
+      throw new DomainError('工作流状态不能为空');
+    }
+    if (!Object.values(WorkflowStatusValue).includes(props.value)) {
+      throw new DomainError(`无效的工作流状态: ${props.value}`);
+    }
+  }
+
   /**
    * 创建草稿状态
    * @returns 草稿状态实例
@@ -144,18 +155,6 @@ export class WorkflowStatus extends ValueObject<WorkflowStatusProps> {
     return this.props.value === status.getValue();
   }
 
-  /**
-   * 验证工作流状态的有效性
-   */
-  public validate(): void {
-    if (!this.props.value) {
-      throw new DomainError('工作流状态不能为空');
-    }
-
-    if (!Object.values(WorkflowStatusValue).includes(this.props.value)) {
-      throw new DomainError(`无效的工作流状态: ${this.props.value}`);
-    }
-  }
 
   /**
    * 获取工作流状态的字符串表示
@@ -163,5 +162,12 @@ export class WorkflowStatus extends ValueObject<WorkflowStatusProps> {
    */
   public override toString(): string {
     return this.props.value;
+  }
+
+  /**
+   * 验证实体的有效性（空实现，验证在构造时完成）
+   */
+  public validate(): void {
+    // 验证在构造时已完成，这里不需要额外验证
   }
 }

@@ -176,9 +176,9 @@ export class WorkflowExecutor {
     }
 
     // 验证工作流结构
-    const structureResult = this.graphValidationService.validateGraphStructure(this.workflowGraph);
-    if (!structureResult.valid) {
-      throw new DomainError(`图结构验证失败: ${structureResult.errors.join(', ')}`);
+    const isStructureValid = this.graphValidationService.validateGraphStructure(this.workflowGraph);
+    if (!isStructureValid) {
+      throw new DomainError('图结构验证失败: 工作流图结构无效');
     }
 
     // 验证执行上下文
@@ -220,10 +220,9 @@ export class WorkflowExecutor {
    */
   private handleValidate(): void {
     // 执行额外的验证逻辑
-    this.workflowDefinition.validate();
-    const validationResult = this.graphValidationService.validateGraph(this.workflowGraph);
-    if (!validationResult.valid) {
-      throw new DomainError(`图验证失败: ${validationResult.errors.join(', ')}`);
+    const isValid = this.graphValidationService.validateGraph(this.workflowGraph);
+    if (!isValid) {
+      throw new DomainError('图验证失败: 工作流图结构无效');
     }
   }
 

@@ -1,4 +1,4 @@
-import { AggregateRoot } from '../../common/base/aggregate-root';
+import { Entity } from '../../common/base/entity';
 import { ID } from '../../common/value-objects/id';
 import { Timestamp } from '../../common/value-objects/timestamp';
 import { Version } from '../../common/value-objects/version';
@@ -49,7 +49,7 @@ export interface SessionManagerProps {
  * - 单线程串行执行
  * - 具体的执行逻辑
  */
-export class SessionManager extends AggregateRoot {
+export class SessionManager extends Entity {
   private readonly props: SessionManagerProps;
   private deleted: boolean = false;
 
@@ -87,28 +87,6 @@ export class SessionManager extends AggregateRoot {
     return this.props.id.toString();
   }
 
-  /**
-   * 验证聚合的不变性
-   */
-  public validateInvariants(): void {
-    // 验证会话的基本不变性
-    if (!this.props.id) {
-      throw new Error('Session ID cannot be empty');
-    }
-
-    if (!this.props.status) {
-      throw new Error('Session status cannot be empty');
-    }
-
-    if (!this.props.config) {
-      throw new Error('Session config cannot be empty');
-    }
-
-    // 不能在已删除状态下执行操作
-    if (this.isDeleted()) {
-      throw new Error('Cannot perform operations on a deleted session');
-    }
-  }
 
   /**
    * 更新时间戳
@@ -342,50 +320,50 @@ export class SessionManager extends AggregateRoot {
 
     for (const plan of executionPlan.getThreadPlans()) {
       // 创建执行上下文
-       const context: IExecutionContext = {
-         executionId: ID.generate(),
-         workflowId: workflow.workflowId,
-         data: plan.getInputData() as Record<string, any>,
-         workflowState: {} as any, // TODO: 实现WorkflowState
-         executionHistory: [],
-         metadata: plan.getMetadata(),
-         startTime: Timestamp.now(),
-         status: 'pending',
-         getVariable: (path: string) => {
-           const keys = path.split('.');
-           let value: any = context.data;
-           for (const key of keys) {
-             if (key) {
-               value = value?.[key];
-             }
-           }
-           return value;
-         },
-         setVariable: (path: string, value: any) => {
-           const keys = path.split('.');
-           let current: any = context.data;
-           for (let i = 0; i < keys.length - 1; i++) {
-             const key = keys[i];
-             if (key && (current[key] === undefined)) {
-               current[key] = {};
-             }
-             if (key) {
-               current = current[key];
-             }
-           }
-           const lastKey = keys[keys.length - 1];
-           if (lastKey) {
-             current[lastKey] = value;
-           }
-         },
-         getAllVariables: () => context.data,
-         getAllMetadata: () => context.metadata,
-         getInput: () => context.data,
-         getExecutedNodes: () => [],
-         getNodeResult: (nodeId: string) => undefined,
-         getElapsedTime: () => 0,
-         getWorkflow: () => workflow
-       };
+      const context: IExecutionContext = {
+        executionId: ID.generate(),
+        workflowId: workflow.workflowId,
+        data: plan.getInputData() as Record<string, any>,
+        workflowState: {} as any, // TODO: 实现WorkflowState
+        executionHistory: [],
+        metadata: plan.getMetadata(),
+        startTime: Timestamp.now(),
+        status: 'pending',
+        getVariable: (path: string) => {
+          const keys = path.split('.');
+          let value: any = context.data;
+          for (const key of keys) {
+            if (key) {
+              value = value?.[key];
+            }
+          }
+          return value;
+        },
+        setVariable: (path: string, value: any) => {
+          const keys = path.split('.');
+          let current: any = context.data;
+          for (let i = 0; i < keys.length - 1; i++) {
+            const key = keys[i];
+            if (key && (current[key] === undefined)) {
+              current[key] = {};
+            }
+            if (key) {
+              current = current[key];
+            }
+          }
+          const lastKey = keys[keys.length - 1];
+          if (lastKey) {
+            current[lastKey] = value;
+          }
+        },
+        getAllVariables: () => context.data,
+        getAllMetadata: () => context.metadata,
+        getInput: () => context.data,
+        getExecutedNodes: () => [],
+        getNodeResult: (nodeId: string) => undefined,
+        getElapsedTime: () => 0,
+        getWorkflow: () => workflow
+      };
 
       // 创建Thread执行器
       const threadExecutor = await this.createThreadExecutor(workflow, context);
@@ -563,42 +541,6 @@ export class SessionManager extends AggregateRoot {
    */
   public get executionCoordinator(): IExecutionCoordinator {
     return this.props.executionCoordinator;
-  }
-
-  /**
-   * 验证实体的有效性
-   */
-  public override validate(): void {
-    if (!this.props.id) {
-      throw new DomainError('Session管理器ID不能为空');
-    }
-
-    if (!this.props.status) {
-      throw new DomainError('Session状态不能为空');
-    }
-
-    if (!this.props.config) {
-      throw new DomainError('Session配置不能为空');
-    }
-
-    if (!this.props.threadPool) {
-      throw new DomainError('线程池不能为空');
-    }
-
-    if (!this.props.resourceScheduler) {
-      throw new DomainError('资源调度器不能为空');
-    }
-
-    if (!this.props.executionCoordinator) {
-      throw new DomainError('执行协调器不能为空');
-    }
-
-    // 验证状态
-    this.props.status.validate();
-    this.props.config.validate();
-    this.props.threadPool.validate();
-    this.props.resourceScheduler.validate();
-    this.props.executionCoordinator.validate();
   }
 }
 

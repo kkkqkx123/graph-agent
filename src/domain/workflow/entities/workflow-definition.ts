@@ -1,4 +1,4 @@
-import { AggregateRoot } from '../../common/base/aggregate-root';
+import { Entity } from '../../common/base/entity';
 import { ID } from '../../common/value-objects/id';
 import { Timestamp } from '../../common/value-objects/timestamp';
 import { Version } from '../../common/value-objects/version';
@@ -28,7 +28,7 @@ export interface WorkflowDefinitionProps extends Omit<WorkflowData, 'parameterMa
  * 2. 状态管理和元数据管理
  * 3. 创建和重建方法
  */
-export class WorkflowDefinition extends AggregateRoot {
+export class WorkflowDefinition extends Entity {
   private readonly props: WorkflowDefinitionProps;
 
   /**
@@ -510,45 +510,6 @@ export class WorkflowDefinition extends AggregateRoot {
       !newStatus.isArchived()) {
       throw new DomainError('非活跃状态的工作流只能变为活跃或归档');
     }
-  }
-
-  /**
-   * 验证聚合的不变性
-   */
-  public validateInvariants(): void {
-    if (!this.props.id) {
-      throw new DomainError('工作流ID不能为空');
-    }
-
-    if (!this.props.name || this.props.name.trim().length === 0) {
-      throw new DomainError('工作流名称不能为空');
-    }
-
-    if (!this.props.status) {
-      throw new DomainError('工作流状态不能为空');
-    }
-
-    if (!this.props.type) {
-      throw new DomainError('工作流类型不能为空');
-    }
-
-    if (!this.props.config) {
-      throw new DomainError('工作流配置不能为空');
-    }
-
-    // 验证策略
-    this.props.errorHandlingStrategy.validate();
-    this.props.executionStrategy.validate();
-  }
-
-  /**
-   * 验证实体的有效性
-   */
-  public override validate(): void {
-    this.validateInvariants();
-    this.props.status.validate();
-    this.props.type.validate();
-    this.props.config.validate();
   }
 }
 

@@ -18,7 +18,6 @@ export { ValueObject } from './value-objects/value-object';
 
 // 基础类
 export { Entity } from './base/entity';
-export { AggregateRoot } from './base/aggregate-root';
 
 // 错误类
 export { DomainError } from './errors/domain-error';
@@ -51,14 +50,3 @@ export type { VersionProps } from './value-objects/version';
 
 // 事件属性接口
 export type { DomainEventProps } from './events/domain-event';
-
-// 验证器
-export {
-  DomainValidator,
-  ValidationResult,
-  ValidationResultBuilder,
-  CompositeValidator,
-  ConditionalValidator
-} from './validators/domain-validator';
-export { SessionValidator } from './validators/session-validator';
-export { WorkflowValidator } from './validators/workflow-validator';

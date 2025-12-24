@@ -1,4 +1,4 @@
-import { AggregateRoot } from '../../common/base/aggregate-root';
+import { Entity } from '../../common/base/entity';
 import { ID } from '../../common/value-objects/id';
 import { Timestamp } from '../../common/value-objects/timestamp';
 import { Version } from '../../common/value-objects/version';
@@ -12,14 +12,14 @@ import { SessionData } from '../interfaces/session-data.interface';
 /**
  * Session实体接口
  */
-export interface SessionProps extends SessionData {}
+export interface SessionProps extends SessionData { }
 
 /**
  * Session实体
- * 
- * 表示用户会话的聚合根
+ *
+ * 表示用户会话
  */
-export class Session extends AggregateRoot {
+export class Session extends Entity {
   private readonly props: SessionProps;
 
   /**
@@ -63,7 +63,7 @@ export class Session extends AggregateRoot {
     };
 
     const session = new Session(props);
-    
+
     // 添加会话创建事件
     session.addDomainEvent(new SessionCreatedEvent(
       sessionId,
@@ -348,44 +348,11 @@ export class Session extends AggregateRoot {
     }
 
     // 暂停的会话只能恢复到活跃状态或终止
-    if (oldStatus.isSuspended() && 
-        !newStatus.isActive() && 
-        !newStatus.isTerminated()) {
+    if (oldStatus.isSuspended() &&
+      !newStatus.isActive() &&
+      !newStatus.isTerminated()) {
       throw new DomainError('暂停的会话只能恢复到活跃状态或终止');
     }
   }
 
-  /**
-   * 验证聚合的不变性
-   */
-  public validateInvariants(): void {
-    if (!this.props.id) {
-      throw new DomainError('会话ID不能为空');
-    }
-
-    if (!this.props.status) {
-      throw new DomainError('会话状态不能为空');
-    }
-
-    if (!this.props.config) {
-      throw new DomainError('会话配置不能为空');
-    }
-
-    if (this.props.messageCount < 0) {
-      throw new DomainError('消息数量不能为负数');
-    }
-
-    if (this.props.messageCount > this.props.config.getMaxMessages()) {
-      throw new DomainError('消息数量超过配置限制');
-    }
-  }
-
-  /**
-   * 验证实体的有效性
-   */
-  public override validate(): void {
-    this.validateInvariants();
-    this.props.status.validate();
-    this.props.config.validate();
-  }
 }

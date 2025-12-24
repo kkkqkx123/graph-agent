@@ -27,7 +27,7 @@ tsc --noEmit //not recommended
 
 ### Testing
 ```bash
-# Run all tests
+# Run all tests (never use this unless I ask you to do so)
 npm test
 
 # Run specific test file

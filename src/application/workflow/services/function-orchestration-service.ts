@@ -307,7 +307,11 @@ export class FunctionOrchestrationService {
       };
     }
 
-    return strategy.validateExecutionPlan(plan);
+    const isValid = strategy.validateExecutionPlan(plan);
+    return {
+      valid: isValid,
+      errors: isValid ? [] : ['执行计划验证失败']
+    };
   }
 
   /**

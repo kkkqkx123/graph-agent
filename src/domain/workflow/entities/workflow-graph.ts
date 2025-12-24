@@ -391,15 +391,6 @@ export class WorkflowGraph {
         throw new DomainError(`边 ${edge.edgeId} 的目标节点不存在`);
       }
     }
-
-    // 验证所有节点和边的基本有效性
-    for (const node of this.props.nodes.values()) {
-      node.validate();
-    }
-
-    for (const edge of this.props.edges.values()) {
-      edge.validate();
-    }
   }
 
   /**

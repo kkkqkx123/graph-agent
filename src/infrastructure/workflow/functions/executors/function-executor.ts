@@ -87,9 +87,9 @@ export class FunctionExecutor {
       const executionPlan = strategy.createExecutionPlan(functions, configs);
 
       // 3. 验证执行计划
-      const validationResult = strategy.validateExecutionPlan(executionPlan);
-      if (!validationResult.valid) {
-        throw new Error(`执行计划验证失败: ${validationResult.errors.join(', ')}`);
+      const isValid = strategy.validateExecutionPlan(executionPlan);
+      if (!isValid) {
+        throw new Error('执行计划验证失败: 执行计划无效');
       }
 
       // 4. 执行函数

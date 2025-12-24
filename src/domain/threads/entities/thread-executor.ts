@@ -1,4 +1,4 @@
-import { AggregateRoot } from '../../common/base/aggregate-root';
+import { Entity } from '../../common/base/entity';
 import { ID } from '../../common/value-objects/id';
 import { Timestamp } from '../../common/value-objects/timestamp';
 import { Version } from '../../common/value-objects/version';
@@ -47,7 +47,7 @@ export interface ThreadExecutorProps {
  * - 多线程协调
  * - 资源分配和调度
  */
-export class ThreadExecutor extends AggregateRoot {
+export class ThreadExecutor extends Entity {
   private readonly props: ThreadExecutorProps;
   private workflow?: Workflow;
   private deleted: boolean = false;
@@ -85,28 +85,6 @@ export class ThreadExecutor extends AggregateRoot {
     return this.props.id.toString();
   }
 
-  /**
-   * 验证聚合的不变性
-   */
-  public validateInvariants(): void {
-    // 验证线程的基本不变性
-    if (!this.props.id) {
-      throw new Error('Thread ID cannot be empty');
-    }
-
-    if (!this.props.sessionId) {
-      throw new Error('Session ID cannot be empty');
-    }
-
-    if (!this.props.status) {
-      throw new Error('Thread status cannot be empty');
-    }
-
-    // 不能在已删除状态下执行操作
-    if (this.isDeleted()) {
-      throw new Error('Cannot perform operations on a deleted thread');
-    }
-  }
 
   /**
    * 创建Thread执行器
@@ -495,38 +473,8 @@ export class ThreadExecutor extends AggregateRoot {
   }
 
   /**
-   * 验证实体的有效性
+   * 验证实体的有效性（空实现，验证由值对象负责）
    */
-  public override validate(): void {
-    if (!this.props.id) {
-      throw new DomainError('Thread执行器ID不能为空');
-    }
-
-    if (!this.props.sessionId) {
-      throw new DomainError('会话ID不能为空');
-    }
-
-    if (!this.props.status) {
-      throw new DomainError('Thread执行器状态不能为空');
-    }
-
-    if (!this.props.priority) {
-      throw new DomainError('Thread执行器优先级不能为空');
-    }
-
-    if (!this.props.executionContext) {
-      throw new DomainError('执行上下文不能为空');
-    }
-
-    if (!this.props.executionState) {
-      throw new DomainError('执行状态不能为空');
-    }
-
-    // 验证状态
-    this.props.status.validate();
-    this.props.priority.validate();
-    this.props.executionState.validate();
-  }
 }
 
 /**

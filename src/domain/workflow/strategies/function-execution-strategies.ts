@@ -150,7 +150,7 @@ export interface IFunctionExecutionStrategy {
   /**
    * 验证执行计划
    */
-  validateExecutionPlan(plan: FunctionExecutionPlan): ValidationResult;
+  validateExecutionPlan(plan: FunctionExecutionPlan): boolean;
 
   /**
    * 执行函数
@@ -198,26 +198,21 @@ export class FunctionSequentialExecutionStrategy implements IFunctionExecutionSt
     };
   }
 
-  validateExecutionPlan(plan: FunctionExecutionPlan): ValidationResult {
-    const errors: string[] = [];
-
+  validateExecutionPlan(plan: FunctionExecutionPlan): boolean {
     // 检查是否有循环依赖
     if (this.hasCyclicDependencies(plan.dependencies)) {
-      errors.push('检测到循环依赖');
+      return false;
     }
 
     // 检查执行顺序
     for (let i = 0; i < plan.functions.length; i++) {
       const func = plan.functions[i];
       if (func && func.order !== i) {
-        errors.push(`函数 ${func.function.id} 的执行顺序不正确`);
+        return false;
       }
     }
 
-    return {
-      valid: errors.length === 0,
-      errors
-    };
+    return true;
   }
 
   async execute(plan: FunctionExecutionPlan, context: IExecutionContext): Promise<FunctionExecutionResult[]> {
@@ -372,20 +367,15 @@ export class FunctionParallelExecutionStrategy implements IFunctionExecutionStra
     };
   }
 
-  validateExecutionPlan(plan: FunctionExecutionPlan): ValidationResult {
-    const errors: string[] = [];
-
+  validateExecutionPlan(plan: FunctionExecutionPlan): boolean {
     // 检查是否有依赖关系（并行执行不应该有依赖）
     for (const func of plan.functions) {
       if (func.dependencies.length > 0) {
-        errors.push(`函数 ${func.function.id} 在并行执行策略中不应有依赖关系`);
+        return false;
       }
     }
 
-    return {
-      valid: errors.length === 0,
-      errors
-    };
+    return true;
   }
 
   async execute(plan: FunctionExecutionPlan, context: IExecutionContext): Promise<FunctionExecutionResult[]> {
@@ -508,19 +498,14 @@ export class FunctionConditionalExecutionStrategy implements IFunctionExecutionS
     };
   }
 
-  validateExecutionPlan(plan: FunctionExecutionPlan): ValidationResult {
-    const errors: string[] = [];
-
+  validateExecutionPlan(plan: FunctionExecutionPlan): boolean {
     // 检查是否有条件函数
     const hasCondition = plan.functions.some(f => f.function.type === WorkflowFunctionType.CONDITION);
     if (!hasCondition) {
-      errors.push('条件执行策略必须包含至少一个条件函数');
+      return false;
     }
 
-    return {
-      valid: errors.length === 0,
-      errors
-    };
+    return true;
   }
 
   async execute(plan: FunctionExecutionPlan, context: IExecutionContext): Promise<FunctionExecutionResult[]> {

@@ -1,4 +1,4 @@
-import { AggregateRoot } from '../../common/base/aggregate-root';
+import { Entity } from '../../common/base/entity';
 import { ID } from '../../common/value-objects/id';
 import { Timestamp } from '../../common/value-objects/timestamp';
 import { Version } from '../../common/value-objects/version';
@@ -12,14 +12,14 @@ import { ThreadData } from '../interfaces/thread-data.interface';
 /**
  * Thread实体接口
  */
-export interface ThreadProps extends ThreadData {}
+export interface ThreadProps extends ThreadData { }
 
 /**
  * Thread实体
  * 
  * 表示执行线程的聚合根
  */
-export class Thread extends AggregateRoot {
+export class Thread extends Entity {
   private readonly props: ThreadProps;
 
   /**
@@ -70,7 +70,7 @@ export class Thread extends AggregateRoot {
     };
 
     const thread = new Thread(props);
-    
+
     // 添加线程创建事件
     thread.addDomainEvent(new ThreadCreatedEvent(
       threadId,
@@ -535,51 +535,5 @@ export class Thread extends AggregateRoot {
    */
   public getBusinessIdentifier(): string {
     return `thread:${this.props.id.toString()}`;
-  }
-
-  /**
-   * 验证聚合的不变性
-   */
-  public validateInvariants(): void {
-    if (!this.props.id) {
-      throw new DomainError('线程ID不能为空');
-    }
-
-    if (!this.props.sessionId) {
-      throw new DomainError('会话ID不能为空');
-    }
-
-    if (!this.props.status) {
-      throw new DomainError('线程状态不能为空');
-    }
-
-    if (!this.props.priority) {
-      throw new DomainError('线程优先级不能为空');
-    }
-
-    // 验证时间逻辑
-    if (this.props.startedAt && this.props.completedAt) {
-      if (this.props.startedAt.isAfter(this.props.completedAt)) {
-        throw new DomainError('开始时间不能晚于完成时间');
-      }
-    }
-
-    // 验证状态与时间的一致性
-    if (this.props.status.isRunning() && !this.props.startedAt) {
-      throw new DomainError('运行中的线程必须有开始时间');
-    }
-
-    if (this.props.status.isTerminal() && !this.props.completedAt) {
-      throw new DomainError('已终止的线程必须有完成时间');
-    }
-  }
-
-  /**
-   * 验证实体的有效性
-   */
-  public override validate(): void {
-    this.validateInvariants();
-    this.props.status.validate();
-    this.props.priority.validate();
   }
 }

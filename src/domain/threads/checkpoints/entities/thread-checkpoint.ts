@@ -101,7 +101,7 @@ export class ThreadCheckpoint extends Entity {
     };
 
     const checkpoint = new ThreadCheckpoint(props);
-    checkpoint.validate();
+    // 验证由值对象在构造时完成，这里不需要额外验证
     return checkpoint;
   }
 

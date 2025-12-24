@@ -125,9 +125,4 @@ export abstract class Entity {
     return this._id.toString();
   }
 
-  /**
-   * 验证实体的有效性
-   * 子类需要实现具体的验证逻辑
-   */
-  public abstract validate(): void;
 }
