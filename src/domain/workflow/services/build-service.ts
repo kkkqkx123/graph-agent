@@ -338,7 +338,6 @@ export class DefaultWorkflowWorkflowBuildService implements IWorkflowWorkflowBui
       undefined, // edges
       undefined, // type
       undefined, // config
-      undefined, // parameterMapping
       undefined, // errorHandlingStrategy
       undefined, // executionStrategy
       undefined, // tags

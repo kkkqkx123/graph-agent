@@ -102,7 +102,6 @@ export class WorkflowRepository extends BaseRepository<Workflow, WorkflowModel, 
         config: model.configuration ? model.configuration : {}, // 简化处理，实际应转换为WorkflowConfig
         nodes: new Map(),
         edges: new Map(),
-        parameterMapping: {} as any, // 临时处理
         errorHandlingStrategy: {} as any, // 临时处理
         executionStrategy: {} as any, // 临时处理
         createdAt: TimestampConverter.fromStorage(model.createdAt),

@@ -62,7 +62,6 @@ export class Workflow extends AggregateRoot {
    * @param edges 边列表
    * @param type 工作流类型
    * @param config 工作流配置
-   * @param parameterMapping 参数映射
    * @param errorHandlingStrategy 错误处理策略
    * @param executionStrategy 执行策略
    * @param tags 标签
@@ -78,7 +77,6 @@ export class Workflow extends AggregateRoot {
     edges?: Edge[],
     type?: any,
     config?: any,
-    parameterMapping?: any,
     errorHandlingStrategy?: any,
     executionStrategy?: any,
     tags?: string[],
@@ -95,7 +93,6 @@ export class Workflow extends AggregateRoot {
       description,
       type,
       config,
-      parameterMapping,
       errorHandlingStrategy,
       executionStrategy,
       tags,
@@ -560,12 +557,6 @@ export class Workflow extends AggregateRoot {
     return this.props.executor.getExecutionSteps();
   }
 
-  /**
-   * 获取参数映射
-   */
-  public get parameterMapping(): any {
-    return this.props.definition.parameterMapping;
-  }
 
   /**
    * 获取错误处理策略

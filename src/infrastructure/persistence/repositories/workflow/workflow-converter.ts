@@ -23,7 +23,6 @@ import {
   VersionConverter,
   MetadataConverter
 } from '../../base/type-converter-base';
-import { ParameterMappingFactory } from '../../../../domain/workflow/mapping/parameter-mapping';
 import { ErrorHandlingStrategyFactory } from '../../../../domain/workflow/strategies/error-handling-strategy';
 import { ExecutionStrategyFactory } from '../../../../domain/workflow/strategies/execution-strategy';
 
@@ -63,7 +62,6 @@ export class WorkflowConverterRepository extends BaseRepository<Workflow, Workfl
         config: model.configuration ? model.configuration : {}, // 简化处理，实际应转换为WorkflowConfig
         nodes: new Map(),
         edges: new Map(),
-        parameterMapping: ParameterMappingFactory.default(),
         errorHandlingStrategy: ErrorHandlingStrategyFactory.default(),
         executionStrategy: ExecutionStrategyFactory.default(),
         tags: model.metadata?.tags || [],

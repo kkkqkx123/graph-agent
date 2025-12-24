@@ -45,7 +45,6 @@
 **职责**：
 - 工作流定义（结构+业务配置）
 - 执行逻辑编排
-- 参数映射和转换
 - 错误处理策略
 
 **设计**：
@@ -57,7 +56,6 @@ export class Workflow extends AggregateRoot {
   
   // 业务配置
   private readonly config: WorkflowConfig;
-  private readonly parameterMapping: ParameterMapping;
   private readonly errorHandlingStrategy: ErrorHandlingStrategy;
   
   // 执行编排
@@ -84,9 +82,8 @@ export class Workflow extends AggregateRoot {
   public getExecutionDefinition(): ExecutionDefinition {
     return {
       structure: { nodes: this.nodes, edges: this.edges },
-      business: { 
+      business: {
         config: this.config,
-        mapping: this.parameterMapping,
         errorHandling: this.errorHandlingStrategy
       }
     };
@@ -217,7 +214,6 @@ SessionManager (会话层)
 ├── ThreadExecutor (执行层)
 │   ├── Workflow (定义层)
 │   │   ├── ExecutionStrategy (策略层)
-│   │   ├── ParameterMapping (映射层)
 │   │   └── ErrorHandlingStrategy (错误处理层)
 │   └── ExecutionContext (上下文层)
 └── ResourceScheduler (资源层)

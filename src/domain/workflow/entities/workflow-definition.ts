@@ -9,15 +9,13 @@ import { WorkflowConfig } from '../value-objects/workflow-config';
 import { WorkflowCreatedEvent } from '../events/workflow-created-event';
 import { WorkflowStatusChangedEvent } from '../events/workflow-status-changed-event';
 import { WorkflowData } from '../interfaces/workflow-data.interface';
-import { ParameterMapping, ParameterMappingFactory } from '../mapping/parameter-mapping';
 import { ErrorHandlingStrategy, ErrorHandlingStrategyFactory } from '../strategies/error-handling-strategy';
 import { ExecutionStrategy, ExecutionStrategyFactory } from '../strategies/execution-strategy';
 
 /**
  * Workflow定义属性接口
  */
-export interface WorkflowDefinitionProps extends WorkflowData {
-  readonly parameterMapping: ParameterMapping;
+export interface WorkflowDefinitionProps extends Omit<WorkflowData, 'parameterMapping'> {
   readonly errorHandlingStrategy: ErrorHandlingStrategy;
   readonly executionStrategy: ExecutionStrategy;
 }
@@ -48,7 +46,6 @@ export class WorkflowDefinition extends AggregateRoot {
    * @param description 工作流描述
    * @param type 工作流类型
    * @param config 工作流配置
-   * @param parameterMapping 参数映射
    * @param errorHandlingStrategy 错误处理策略
    * @param executionStrategy 执行策略
    * @param tags 标签
@@ -61,7 +58,6 @@ export class WorkflowDefinition extends AggregateRoot {
     description?: string,
     type?: WorkflowType,
     config?: WorkflowConfig,
-    parameterMapping?: ParameterMapping,
     errorHandlingStrategy?: ErrorHandlingStrategy,
     executionStrategy?: ExecutionStrategy,
     tags?: string[],
@@ -83,7 +79,6 @@ export class WorkflowDefinition extends AggregateRoot {
       config: workflowConfig,
       nodes: new Map<string, any>(), // 空节点映射
       edges: new Map<string, any>(), // 空边映射
-      parameterMapping: parameterMapping || ParameterMappingFactory.default(),
       errorHandlingStrategy: errorHandlingStrategy || ErrorHandlingStrategyFactory.default(),
       executionStrategy: executionStrategy || ExecutionStrategyFactory.default(),
       createdAt: now,
@@ -205,12 +200,6 @@ export class WorkflowDefinition extends AggregateRoot {
     return this.props.updatedBy;
   }
 
-  /**
-   * 获取参数映射
-   */
-  public get parameterMapping(): ParameterMapping {
-    return this.props.parameterMapping;
-  }
 
   /**
    * 获取错误处理策略
@@ -548,7 +537,6 @@ export class WorkflowDefinition extends AggregateRoot {
     }
 
     // 验证策略
-    this.props.parameterMapping.validate();
     this.props.errorHandlingStrategy.validate();
     this.props.executionStrategy.validate();
   }
@@ -575,7 +563,6 @@ export interface ExecutionDefinition {
   };
   business: {
     config: any;
-    mapping: any;
     errorHandling: any;
     execution: any;
   };

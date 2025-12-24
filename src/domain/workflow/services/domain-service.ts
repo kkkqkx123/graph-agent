@@ -60,7 +60,6 @@ export class WorkflowDomainService {
       edges,
       type,
       config,
-      undefined, // parameterMapping
       undefined, // errorHandlingStrategy
       undefined, // executionStrategy
       tags,

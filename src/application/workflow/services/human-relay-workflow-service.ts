@@ -303,7 +303,6 @@ export class HumanRelayWorkflowService {
       [], // edges
       undefined, // type
       undefined, // config
-      undefined, // parameterMapping
       undefined, // errorHandlingStrategy
       undefined, // executionStrategy
       undefined, // tags

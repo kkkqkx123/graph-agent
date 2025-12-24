@@ -62,8 +62,8 @@ export class WorkflowExecutor {
       // 1. 验证执行条件
       this.validateExecutionConditions(context);
 
-      // 2. 应用参数映射
-      const mappedContext = await this.applyParameterMapping(context);
+      // 2. 直接使用原始上下文（不再需要参数映射）
+      const mappedContext = context;
 
       // 3. 执行编排策略
       const result = await this.workflowDefinition.executionStrategy.execute(
@@ -108,7 +108,6 @@ export class WorkflowExecutor {
       },
       business: {
         config: this.workflowDefinition.config,
-        mapping: this.workflowDefinition.parameterMapping,
         errorHandling: this.workflowDefinition.errorHandlingStrategy,
         execution: this.workflowDefinition.executionStrategy
       },
@@ -179,14 +178,6 @@ export class WorkflowExecutor {
     }
   }
 
-  /**
-   * 应用参数映射
-   * @param context 执行上下文
-   * @returns 映射后的执行上下文
-   */
-  private async applyParameterMapping(context: IExecutionContext): Promise<IExecutionContext> {
-    return await this.workflowDefinition.parameterMapping.apply(context);
-  }
 
   /**
    * 处理暂停动作

@@ -2,14 +2,14 @@
 
 ## 概述
 
-本文档总结了基于最终架构设计方案的Workflow重构工作。我们成功地将原有的复杂Workflow实体重构为专注于业务逻辑定义的简化版本，并创建了相应的执行策略、错误处理策略和参数映射组件。
+本文档总结了基于最终架构设计方案的Workflow重构工作。我们成功地将原有的复杂Workflow实体重构为专注于业务逻辑定义的简化版本，并创建了相应的执行策略和错误处理策略组件。
 
 ## 重构目标
 
 根据最终架构分析，我们的重构目标是：
 
 1. **简化Workflow职责**：移除执行状态管理，专注于工作流定义和业务逻辑
-2. **引入策略模式**：通过执行策略、错误处理策略和参数映射策略实现灵活的执行模式
+2. **引入策略模式**：通过执行策略和错误处理策略实现灵活的执行模式
 3. **明确职责分工**：Workflow专注定义，ThreadExecutor专注执行，SessionManager专注协调
 4. **提高扩展性**：支持不同的执行模式和错误处理策略
 
@@ -21,7 +21,7 @@
 
 **主要改进**：
 - 移除了执行状态管理职责
-- 添加了执行策略、错误处理策略和参数映射策略
+- 添加了执行策略和错误处理策略
 - 实现了`execute()`方法，专注于业务逻辑执行
 - 添加了`getExecutionDefinition()`方法，提供完整的执行定义
 - 实现了`handleExecutionAction()`方法，响应执行器的生命周期管理
@@ -67,24 +67,7 @@ public getExecutionSteps(): ExecutionStep[]
 - 支持可重试错误类型配置
 - 提供灵活的错误处理选项
 
-### 4. 参数映射系统
-
-**文件位置**：`src/domain/workflow/mapping/parameter-mapping.ts`
-
-**包含组件**：
-- `ParameterMapping`接口：定义参数映射的标准契约
-- `DirectParameterMapping`：直接参数映射
-- `TransformParameterMapping`：转换参数映射
-- `ConditionalParameterMapping`：条件参数映射
-- `ParameterMappingFactory`：参数映射工厂
-
-**特性**：
-- 支持路径映射和值转换
-- 提供条件映射功能
-- 支持参数验证
-- 包含默认值处理
-
-### 5. ThreadExecutor实体
+### 4. ThreadExecutor实体
 
 **文件位置**：`src/domain/threads/entities/thread-executor.ts`
 
@@ -131,14 +114,13 @@ public async manageThreadLifecycle(threadId: ID, action: ThreadAction): Promise<
 - **Workflow**：专注工作流定义和业务逻辑
 - **ThreadExecutor**：专注单线程串行执行
 - **SessionManager**：专注多线程协调和资源管理
-- **策略组件**：提供可插拔的执行、错误处理和参数映射功能
+- **策略组件**：提供可插拔的执行和错误处理功能
 
 ### 2. 扩展性提升
 
 **策略模式应用**：
 - 执行策略：支持串行、并行、条件等执行模式
 - 错误处理策略：支持快速失败、重试、继续执行等模式
-- 参数映射策略：支持直接、转换、条件等映射模式
 
 **工厂模式应用**：
 - 各策略组件都提供工厂方法，便于创建和配置
@@ -173,7 +155,6 @@ const workflow = Workflow.create(
   edges,
   WorkflowType.sequential(),
   WorkflowConfig.default(),
-  ParameterMappingFactory.default(),
   ErrorHandlingStrategyFactory.create(ErrorHandlingStrategyType.RETRY_ON_ERROR),
   ExecutionStrategyFactory.create(ExecutionStrategyType.SEQUENTIAL)
 );
