@@ -4,23 +4,22 @@
 
 import * as fs from 'fs';
 import * as path from 'path';
-import { LogEntry, FileLogOutputConfig, LogRotationStrategy } from '../interfaces';
+import { LogEntry, FileLogOutputConfig, LogRotationStrategy, LogFormatType } from '../interfaces';
 import { BaseTransport } from './base-transport';
-import { FormatterFactory } from '../formatters';
+import { JsonFormatter, JsonFormatterOptions } from '../formatters/json-formatter';
+import { TextFormatter, TextFormatterOptions } from '../formatters/text-formatter';
 
 /**
  * 文件传输器
  */
 export class FileTransport extends BaseTransport {
   readonly name = 'file';
-  private formatterFactory: FormatterFactory;
   private fileStream: fs.WriteStream | null = null;
   private currentFileName: string = '';
   private rotationTimer: NodeJS.Timeout | null = null;
 
   constructor(config: FileLogOutputConfig) {
     super(config);
-    this.formatterFactory = FormatterFactory.getInstance();
     this.initializeFileStream();
   }
 
@@ -72,8 +71,41 @@ export class FileTransport extends BaseTransport {
    * 格式化消息
    */
   private formatMessage(entry: LogEntry): string {
-    const formatter = this.formatterFactory.createFormatter(this.config.format);
+    const formatter = this.createFormatter(this.config.format);
     return formatter.format(entry);
+  }
+
+  /**
+   * 创建格式化器
+   */
+  private createFormatter(format: LogFormatType) {
+    switch (format) {
+      case LogFormatType.JSON:
+        const jsonOptions: JsonFormatterOptions = {
+          pretty: false,
+          includeTimestamp: true,
+          includeLevel: true,
+          includeContext: true,
+          includeStack: true,
+          sanitize: true
+        };
+        return new JsonFormatter(jsonOptions);
+      
+      case LogFormatType.TEXT:
+        const textOptions: TextFormatterOptions = {
+          colorize: false, // 文件输出不需要颜色
+          includeTimestamp: true,
+          timestampFormat: 'iso',
+          includeContext: true,
+          includeStack: true,
+          sanitize: true,
+          separator: ' | '
+        };
+        return new TextFormatter(textOptions);
+      
+      default:
+        throw new Error(`不支持的日志格式: ${format}`);
+    }
   }
 
   /**

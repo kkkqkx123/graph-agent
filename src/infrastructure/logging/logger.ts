@@ -3,8 +3,9 @@
  */
 
 import { ILogger, LogLevel, LogContext } from '@shared/types/logger';
-import { LoggerConfig, LogEntry } from './interfaces';
-import { TransportFactory } from './transports';
+import { LoggerConfig, LogEntry, LogOutputType } from './interfaces';
+import { ConsoleTransport } from './transports/console-transport';
+import { FileTransport } from './transports/file-transport';
 import { LogLevelUtils } from './utils';
 
 /**
@@ -14,12 +15,10 @@ export class Logger implements ILogger {
   private transports: any[] = [];
   private config: LoggerConfig;
   private context: LogContext;
-  private transportFactory: TransportFactory;
 
   constructor(config: LoggerConfig, context: LogContext = {}) {
     this.config = config;
     this.context = context;
-    this.transportFactory = TransportFactory.getInstance();
     this.initializeTransports();
   }
 
@@ -117,8 +116,22 @@ export class Logger implements ILogger {
    */
   private initializeTransports(): void {
     this.transports = this.config.outputs.map(outputConfig => {
-      return this.transportFactory.createTransport(outputConfig);
+      return this.createTransport(outputConfig);
     });
+  }
+
+  /**
+   * 创建传输器
+   */
+  private createTransport(config: any) {
+    switch (config.type) {
+      case LogOutputType.CONSOLE:
+        return new ConsoleTransport(config);
+      case LogOutputType.FILE:
+        return new FileTransport(config);
+      default:
+        throw new Error(`不支持的日志传输器类型: ${config.type}`);
+    }
   }
 
   /**

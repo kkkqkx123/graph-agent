@@ -2,20 +2,19 @@
  * 控制台日志传输器
  */
 
-import { LogEntry, ConsoleLogOutputConfig } from '../interfaces';
+import { LogEntry, ConsoleLogOutputConfig, LogFormatType } from '../interfaces';
 import { BaseTransport } from './base-transport';
-import { FormatterFactory } from '../formatters';
+import { JsonFormatter, JsonFormatterOptions } from '../formatters/json-formatter';
+import { TextFormatter, TextFormatterOptions } from '../formatters/text-formatter';
 
 /**
  * 控制台传输器
  */
 export class ConsoleTransport extends BaseTransport {
   readonly name = 'console';
-  private formatterFactory: FormatterFactory;
 
   constructor(config: ConsoleLogOutputConfig) {
     super(config);
-    this.formatterFactory = FormatterFactory.getInstance();
   }
 
   /**
@@ -34,8 +33,42 @@ export class ConsoleTransport extends BaseTransport {
    * 格式化消息
    */
   private formatMessage(entry: LogEntry): string {
-    const formatter = this.formatterFactory.createFormatter(this.config.format);
+    const formatter = this.createFormatter(this.config.format);
     return formatter.format(entry);
+  }
+
+  /**
+   * 创建格式化器
+   */
+  private createFormatter(format: LogFormatType) {
+    switch (format) {
+      case LogFormatType.JSON:
+        const jsonOptions: JsonFormatterOptions = {
+          pretty: false,
+          includeTimestamp: true,
+          includeLevel: true,
+          includeContext: true,
+          includeStack: true,
+          sanitize: true
+        };
+        return new JsonFormatter(jsonOptions);
+      
+      case LogFormatType.TEXT:
+        const consoleConfig = this.config as ConsoleLogOutputConfig;
+        const textOptions: TextFormatterOptions = {
+          colorize: consoleConfig.colorize !== false, // 默认启用颜色
+          includeTimestamp: true,
+          timestampFormat: 'iso',
+          includeContext: true,
+          includeStack: true,
+          sanitize: true,
+          separator: ' | '
+        };
+        return new TextFormatter(textOptions);
+      
+      default:
+        throw new Error(`不支持的日志格式: ${format}`);
+    }
   }
 
   /**

@@ -87,32 +87,3 @@ export interface ILoggerFilter {
   shouldLog(entry: LogEntry): boolean;
 }
 
-/**
- * 日志传输器工厂接口
- */
-export interface ILoggerTransportFactory {
-  /**
-   * 创建传输器
-   */
-  createTransport(config: LogOutputConfig): ILoggerTransport;
-
-  /**
-   * 检查是否支持指定配置
-   */
-  supports(config: LogOutputConfig): boolean;
-}
-
-/**
- * 日志格式化器工厂接口
- */
-export interface ILoggerFormatterFactory {
-  /**
-   * 创建格式化器
-   */
-  createFormatter(format: LogFormatType): ILoggerFormatter;
-
-  /**
-   * 检查是否支持指定格式
-   */
-  supports(format: LogFormatType): boolean;
-}
