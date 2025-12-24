@@ -34,12 +34,7 @@ import { TaskGroupManager } from '../../llm/managers/task-group-manager';
 import { PoolConfigLoader } from '../../config/loading/loaders/pool-config-loader';
 import { TaskGroupConfigLoader } from '../../config/loading/loaders/task-group-config-loader';
 
-// HumanRelay 相关
-import { FrontendInteractionManager } from '../../llm/human-relay/frontend-interaction-manager';
-import { HumanRelayConfigLoader } from '../../llm/human-relay/config/human-relay-config-loader';
-import { TUIInteractionService } from '../../llm/human-relay/services/tui-interaction-service';
-import { WebInteractionService } from '../../llm/human-relay/services/web-interaction-service';
-import { APIInteractionService } from '../../llm/human-relay/services/api-interaction-service';
+// HumanRelay 相关 - 已简化，不再需要前端交互服务
 
 /**
  * 基础设施层LLM服务绑定
@@ -63,8 +58,7 @@ export class InfrastructureLLMServiceBindings extends ServiceBindings {
     // 注册配置加载器
     this.registerConfigLoaders(container, config);
 
-    // 注册HumanRelay相关服务
-    this.registerHumanRelayServices(container, config);
+    // HumanRelay相关服务已简化，不再需要额外注册
   }
 
   /**
@@ -264,45 +258,9 @@ export class InfrastructureLLMServiceBindings extends ServiceBindings {
 
   /**
    * 注册HumanRelay相关服务
+   * 已简化，不再需要前端交互服务
    */
   private registerHumanRelayServices(container: IContainer, config: ContainerConfiguration): void {
-    const logger = container.get<ILogger>('ILogger');
-
-    // HumanRelay配置加载器
-    container.registerFactory(
-      'HumanRelayConfigLoader',
-      // TODO: 修复依赖注入问题
-      // () => new HumanRelayConfigLoader(),
-      () => null as any,
-      { lifetime: ServiceLifetime.SINGLETON }
-    );
-
-    // 前端交互服务
-    container.registerFactory(
-      'TUIInteractionService',
-      () => new TUIInteractionService(),
-      { lifetime: ServiceLifetime.SINGLETON }
-    );
-
-    container.registerFactory(
-      'WebInteractionService',
-      () => new WebInteractionService(),
-      { lifetime: ServiceLifetime.SINGLETON }
-    );
-
-    container.registerFactory(
-      'APIInteractionService',
-      () => new APIInteractionService(),
-      { lifetime: ServiceLifetime.SINGLETON }
-    );
-
-    // 前端交互管理器
-    container.registerFactory(
-      'FrontendInteractionManager',
-      // TODO: 修复依赖注入问题
-      // () => new FrontendInteractionManager(),
-      () => null as any,
-      { lifetime: ServiceLifetime.SINGLETON }
-    );
+    // HumanRelay客户端已简化，不再需要额外的服务
   }
 }

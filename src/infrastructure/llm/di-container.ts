@@ -34,13 +34,6 @@ import { TaskGroupManager } from './managers/task-group-manager';
 import { PoolConfigLoader } from '../config/loading/loaders/pool-config-loader';
 import { TaskGroupConfigLoader } from '../config/loading/loaders/task-group-config-loader';
 
-// HumanRelay 相关
-import { FrontendInteractionManager } from './human-relay/frontend-interaction-manager';
-import { HumanRelayConfigLoader } from './human-relay/config/human-relay-config-loader';
-import { TUIInteractionService } from './human-relay/services/tui-interaction-service';
-import { WebInteractionService } from './human-relay/services/web-interaction-service';
-import { APIInteractionService } from './human-relay/services/api-interaction-service';
-
 /**
  * 验证结果接口
  */
@@ -83,8 +76,7 @@ export class LLMDIContainer {
     // 注册配置加载器
     this.registerConfigLoaders();
 
-    // 注册HumanRelay相关服务
-    this.registerHumanRelayServices();
+    // HumanRelay相关服务已简化，不再需要额外注册
   }
 
   /**
@@ -100,15 +92,15 @@ export class LLMDIContainer {
     this.container.bind<RetryHandler>('RetryHandler')
       .to(RetryHandler)
       .inSingletonScope();
-    
+
     this.container.bind<CircuitBreaker>('CircuitBreaker')
       .to(CircuitBreaker)
       .inSingletonScope();
-    
+
     this.container.bind<RateLimiter>('RateLimiter')
       .to(RateLimiter)
       .inSingletonScope();
-    
+
     // 为HttpClient提供ConfigManager
     this.container.bind<ConfigManager>('ConfigManager')
       .to(ConfigManager)
@@ -241,30 +233,10 @@ export class LLMDIContainer {
 
   /**
    * 注册HumanRelay相关服务
+   * 已简化，不再需要前端交互服务
    */
   private registerHumanRelayServices(): void {
-    // HumanRelay配置加载器
-    this.container.bind<HumanRelayConfigLoader>(LLM_DI_IDENTIFIERS.HumanRelayConfigLoader)
-      .to(HumanRelayConfigLoader)
-      .inSingletonScope();
-
-    // 前端交互服务
-    this.container.bind<TUIInteractionService>(LLM_DI_IDENTIFIERS.TUIInteractionService)
-      .to(TUIInteractionService)
-      .inSingletonScope();
-
-    this.container.bind<WebInteractionService>(LLM_DI_IDENTIFIERS.WebInteractionService)
-      .to(WebInteractionService)
-      .inSingletonScope();
-
-    this.container.bind<APIInteractionService>(LLM_DI_IDENTIFIERS.APIInteractionService)
-      .to(APIInteractionService)
-      .inSingletonScope();
-
-    // 前端交互管理器
-    this.container.bind<FrontendInteractionManager>(LLM_DI_IDENTIFIERS.HumanRelayInteractionService)
-      .to(FrontendInteractionManager)
-      .inSingletonScope();
+    // HumanRelay客户端已简化，不再需要额外的服务
   }
 
   /**

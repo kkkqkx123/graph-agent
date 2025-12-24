@@ -80,7 +80,7 @@ export class ParallelStrategy extends ExecutionStrategy {
     workflowExecutor: WorkflowExecutor
   ): Promise<void> {
     // Find all nodes that can be executed
-    for (const [nodeId, node] of workflow.nodes.entries()) {
+    for (const [nodeId, node] of workflow.getGraph().nodes.entries()) {
       // Skip already executed nodes
       if (executedNodes.has(nodeId)) {
         continue;
@@ -105,12 +105,12 @@ export class ParallelStrategy extends ExecutionStrategy {
     const nodesWithOutgoingEdges = new Set<string>();
 
     // Find all nodes that have outgoing edges
-    for (const edge of workflow.edges.values()) {
+    for (const edge of workflow.getGraph().edges.values()) {
       nodesWithOutgoingEdges.add(edge.sourceNodeId.value);
     }
 
     // Nodes without outgoing edges are end nodes
-    for (const node of workflow.nodes.values()) {
+    for (const node of workflow.getGraph().nodes.values()) {
       if (!nodesWithOutgoingEdges.has(node.id.value)) {
         endNodes.push(node);
       }
@@ -152,12 +152,12 @@ export class ParallelStrategy extends ExecutionStrategy {
     const dependencyMap = new Map<string, string[]>();
 
     // Initialize dependency map for all nodes
-    for (const nodeId of workflow.nodes.keys()) {
+    for (const nodeId of workflow.getGraph().nodes.keys()) {
       dependencyMap.set(nodeId, []);
     }
 
     // Build dependencies based on edges
-    for (const edge of workflow.edges.values()) {
+    for (const edge of workflow.getGraph().edges.values()) {
       const targetDeps = dependencyMap.get(edge.targetNodeId.value) || [];
       targetDeps.push(edge.sourceNodeId.value);
       dependencyMap.set(edge.targetNodeId.value, targetDeps);

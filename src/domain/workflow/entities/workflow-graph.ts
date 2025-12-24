@@ -10,8 +10,6 @@ export interface WorkflowGraphProps {
   readonly workflowId: ID;
   readonly nodes: Map<string, Node>;
   readonly edges: Map<string, Edge>;
-  readonly definition?: Record<string, unknown>;
-  readonly layout?: Record<string, unknown>;
 }
 
 /**
@@ -47,9 +45,7 @@ export class WorkflowGraph {
   public static create(
     workflowId: ID,
     nodes?: Node[],
-    edges?: Edge[],
-    definition?: Record<string, unknown>,
-    layout?: Record<string, unknown>
+    edges?: Edge[]
   ): WorkflowGraph {
     // 创建节点和边的映射
     const nodeMap = new Map<string, Node>();
@@ -70,9 +66,7 @@ export class WorkflowGraph {
     const props: WorkflowGraphProps = {
       workflowId,
       nodes: nodeMap,
-      edges: edgeMap,
-      definition,
-      layout
+      edges: edgeMap
     };
 
     return new WorkflowGraph(props);
@@ -111,21 +105,6 @@ export class WorkflowGraph {
     return new Map(this.props.edges);
   }
 
-  /**
-   * 获取图定义
-   * @returns 图定义
-   */
-  public get definition(): Record<string, unknown> | undefined {
-    return this.props.definition;
-  }
-
-  /**
-   * 获取布局信息
-   * @returns 布局信息
-   */
-  public get layout(): Record<string, unknown> | undefined {
-    return this.props.layout;
-  }
 
   /**
    * 获取节点数量
@@ -348,33 +327,6 @@ export class WorkflowGraph {
     return new WorkflowGraph(newProps);
   }
 
-  /**
-   * 更新图定义
-   * @param definition 新定义
-   * @returns 新的工作流图实例
-   */
-  public updateDefinition(definition: Record<string, unknown>): WorkflowGraph {
-    const newProps = {
-      ...this.props,
-      definition
-    };
-
-    return new WorkflowGraph(newProps);
-  }
-
-  /**
-   * 更新布局信息
-   * @param layout 新布局
-   * @returns 新的工作流图实例
-   */
-  public updateLayout(layout: Record<string, unknown>): WorkflowGraph {
-    const newProps = {
-      ...this.props,
-      layout
-    };
-
-    return new WorkflowGraph(newProps);
-  }
 
   /**
    * 验证图的基本结构完整性
@@ -401,9 +353,7 @@ export class WorkflowGraph {
     return {
       workflowId: this.props.workflowId.toString(),
       nodeCount: this.props.nodes.size,
-      edgeCount: this.props.edges.size,
-      definition: this.props.definition,
-      layout: this.props.layout
+      edgeCount: this.props.edges.size
     };
   }
 

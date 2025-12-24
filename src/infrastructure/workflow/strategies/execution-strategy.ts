@@ -6,7 +6,7 @@ export abstract class ExecutionStrategy {
 
   protected async executeNode(nodeId: string, context: ExecutionContext, workflowExecutor: WorkflowExecutor): Promise<any> {
     const workflow = context.getWorkflow();
-    const node = workflow.nodes.get(nodeId);
+    const node = workflow.getGraph().nodes.get(nodeId);
 
     if (!node) {
       throw new Error(`Node not found: ${nodeId}`);
@@ -17,7 +17,7 @@ export abstract class ExecutionStrategy {
 
   protected async evaluateEdge(edgeId: string, context: ExecutionContext, workflowExecutor: WorkflowExecutor): Promise<boolean> {
     const workflow = context.getWorkflow();
-    const edge = workflow.edges.get(edgeId);
+    const edge = workflow.getGraph().edges.get(edgeId);
 
     if (!edge) {
       throw new Error(`Edge not found: ${edgeId}`);
@@ -30,7 +30,7 @@ export abstract class ExecutionStrategy {
     const workflow = context.getWorkflow();
     const outgoingEdges: string[] = [];
 
-    for (const [edgeId, edge] of workflow.edges.entries()) {
+    for (const [edgeId, edge] of workflow.getGraph().edges.entries()) {
       if (edge.fromNodeId.value === nodeId) {
         outgoingEdges.push(edgeId);
       }
@@ -43,7 +43,7 @@ export abstract class ExecutionStrategy {
     const workflow = context.getWorkflow();
     const incomingEdges: string[] = [];
 
-    for (const [edgeId, edge] of workflow.edges.entries()) {
+    for (const [edgeId, edge] of workflow.getGraph().edges.entries()) {
       if (edge.toNodeId.value === nodeId) {
         incomingEdges.push(edgeId);
       }

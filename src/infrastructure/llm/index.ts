@@ -10,7 +10,7 @@ export * from './token-calculators';
 export * from './utils';
 export * from './managers';
 export * from './wrappers';
-export * from './human-relay';
+// human-relay模块已简化，不再需要单独导出
 
 // 导出工厂类
 export { ConverterFactory } from './converters/converter-factory';

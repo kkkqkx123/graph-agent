@@ -4,6 +4,11 @@ import { Timestamp } from '../../common/value-objects/timestamp';
 import { Version } from '../../common/value-objects/version';
 import { WorkflowDefinition } from '../value-objects/workflow-definition';
 import { WorkflowGraph } from './workflow-graph';
+import { Node } from './nodes/base/node';
+import { Edge } from './edges/base/edge';
+import { WorkflowStatus } from '../value-objects/workflow-status';
+import { WorkflowType } from '../value-objects/workflow-type';
+import { WorkflowConfig } from '../value-objects/workflow-config';
 import { WorkflowCreatedEvent } from '../events/workflow-created-event';
 import { WorkflowStatusChangedEvent } from '../events/workflow-status-changed-event';
 
@@ -22,18 +27,19 @@ export interface WorkflowProps {
 }
 
 /**
- * 简化的Workflow实体
+ * Workflow聚合根实体
  *
- * 根据最终架构设计，Workflow专注于：
- * 1. 工作流定义（结构 + 业务配置）
- * 2. 执行逻辑编排
- * 3. 参数映射和转换
- * 4. 错误处理策略
+ * 根据DDD原则，Workflow专注于：
+ * 1. 工作流业务规则和不变性
+ * 2. 工作流定义管理
+ * 3. 业务状态变更
+ * 4. 领域事件发布
  *
- * 不再负责：
+ * 不负责：
+ * - 图结构的直接操作（委托给领域服务）
  * - 执行状态管理
- * - 生命周期协调
- * - 执行统计跟踪
+ * - UI相关的布局和可视化
+ * - 持久化细节
  */
 export class Workflow extends Entity {
   private readonly props: WorkflowProps;
@@ -105,8 +111,8 @@ export class Workflow extends Entity {
       workflowDefinition.config.value,
       [], // nodes
       [], // edges
-      undefined, // definition
-      undefined, // layout
+      undefined, // definition - 移除UI相关概念
+      undefined, // layout - 移除UI相关概念
       createdBy
     ));
 
@@ -150,7 +156,7 @@ export class Workflow extends Entity {
    * 获取工作流状态
    * @returns 工作流状态
    */
-  public get status(): any {
+  public get status(): WorkflowStatus {
     return this.props.definition.status;
   }
 
@@ -158,7 +164,7 @@ export class Workflow extends Entity {
    * 获取工作流类型
    * @returns 工作流类型
    */
-  public get type(): any {
+  public get type(): WorkflowType {
     return this.props.definition.type;
   }
 
@@ -166,24 +172,8 @@ export class Workflow extends Entity {
    * 获取工作流配置
    * @returns 工作流配置
    */
-  public get config(): any {
+  public get config(): WorkflowConfig {
     return this.props.definition.config;
-  }
-
-  /**
-   * 获取所有节点
-   * @returns 节点映射
-   */
-  public get nodes(): Map<string, any> {
-    return this.props.graph.nodes;
-  }
-
-  /**
-   * 获取所有边
-   * @returns 边映射
-   */
-  public get edges(): Map<string, any> {
-    return this.props.graph.edges;
   }
 
   /**
@@ -202,21 +192,6 @@ export class Workflow extends Entity {
     return this.props.graph.getEdgeCount();
   }
 
-  /**
-   * 获取图定义
-   * @returns 图定义
-   */
-  public get definition(): Record<string, unknown> | undefined {
-    return this.props.graph.definition;
-  }
-
-  /**
-   * 获取布局信息
-   * @returns 布局信息
-   */
-  public get layout(): Record<string, unknown> | undefined {
-    return this.props.graph.layout;
-  }
 
   /**
    * 获取标签
@@ -275,7 +250,7 @@ export class Workflow extends Entity {
    * @param type 新类型
    * @param updatedBy 更新者ID
    */
-  public updateType(type: any, updatedBy?: ID): void {
+  public updateType(type: WorkflowType, updatedBy?: ID): void {
     const newDefinition = this.props.definition.updateType(type, updatedBy);
     this.updateDefinition(newDefinition);
   }
@@ -285,7 +260,7 @@ export class Workflow extends Entity {
    * @param config 新配置
    * @param updatedBy 更新者ID
    */
-  public updateConfig(config: any, updatedBy?: ID): void {
+  public updateConfig(config: WorkflowConfig, updatedBy?: ID): void {
     const newDefinition = this.props.definition.updateConfig(config, updatedBy);
     this.updateDefinition(newDefinition);
   }
@@ -297,7 +272,7 @@ export class Workflow extends Entity {
    * @param reason 变更原因
    */
   public changeStatus(
-    newStatus: any,
+    newStatus: WorkflowStatus,
     changedBy?: ID,
     reason?: string
   ): void {
@@ -388,89 +363,45 @@ export class Workflow extends Entity {
   }
 
   /**
-   * 获取节点的入边
-   * @param nodeId 节点ID
-   * @returns 入边列表
+   * 检查工作流是否可以执行
+   * @returns 是否可以执行
    */
-  public getIncomingEdges(nodeId: any): any[] {
-    return this.props.graph.getIncomingEdges(nodeId);
+  public canExecute(): boolean {
+    return this.props.definition.status.isActive() &&
+           !this.props.definition.isDeleted() &&
+           this.getNodeCount() > 0;
   }
 
   /**
-   * 获取节点的出边
-   * @param nodeId 节点ID
-   * @returns 出边列表
+   * 检查工作流是否为空
+   * @returns 是否为空工作流
    */
-  public getOutgoingEdges(nodeId: any): any[] {
-    return this.props.graph.getOutgoingEdges(nodeId);
+  public isEmpty(): boolean {
+    return this.getNodeCount() === 0;
   }
 
   /**
-   * 获取执行步骤
-   * @returns 执行步骤列表
+   * 获取工作流的复杂度指标
+   * @returns 复杂度指标
    */
-  public getExecutionSteps(): any[] {
-    // 这个方法应该返回工作流的执行步骤
-    // 实际实现应该基于图的拓扑排序
-    return [];
-  }
-
-  /**
-   * 添加节点
-   * @param node 节点
-   * @param addedBy 添加者ID
-   */
-  public addNode(node: any, addedBy?: ID): void {
-    this.props.graph.addNode(node);
-    this.update();
-  }
-
-  /**
-   * 添加边
-   * @param edge 边
-   * @param addedBy 添加者ID
-   */
-  public addEdge(edge: any, addedBy?: ID): void {
-    this.props.graph.addEdge(edge);
-    this.update();
-  }
-
-  /**
-   * 获取节点
-   * @param nodeId 节点ID
-   * @returns 节点或undefined
-   */
-  public getNode(nodeId: any): any | undefined {
-    return this.props.graph.getNode(nodeId);
-  }
-
-  /**
-   * 移除节点
-   * @param nodeId 节点ID
-   * @param removedBy 移除者ID
-   */
-  public removeNode(nodeId: any, removedBy?: ID): void {
-    this.props.graph.removeNode(nodeId);
-    this.update();
-  }
-
-  /**
-   * 获取边
-   * @param edgeId 边ID
-   * @returns 边或undefined
-   */
-  public getEdge(edgeId: any): any | undefined {
-    return this.props.graph.getEdge(edgeId);
-  }
-
-  /**
-   * 移除边
-   * @param edgeId 边ID
-   * @param removedBy 移除者ID
-   */
-  public removeEdge(edgeId: any, removedBy?: ID): void {
-    this.props.graph.removeEdge(edgeId);
-    this.update();
+  public getComplexityMetrics(): {
+    nodeCount: number;
+    edgeCount: number;
+    complexity: 'simple' | 'moderate' | 'complex';
+  } {
+    const nodeCount = this.getNodeCount();
+    const edgeCount = this.getEdgeCount();
+    
+    let complexity: 'simple' | 'moderate' | 'complex';
+    if (nodeCount <= 5 && edgeCount <= 8) {
+      complexity = 'simple';
+    } else if (nodeCount <= 20 && edgeCount <= 30) {
+      complexity = 'moderate';
+    } else {
+      complexity = 'complex';
+    }
+    
+    return { nodeCount, edgeCount, complexity };
   }
 
   /**
@@ -479,6 +410,15 @@ export class Workflow extends Entity {
    */
   private updateDefinition(newDefinition: WorkflowDefinition): void {
     (this.props as any).definition = newDefinition;
+    this.update();
+  }
+
+  /**
+   * 更新图
+   * @param newGraph 新图
+   */
+  private updateGraph(newGraph: WorkflowGraph): void {
+    (this.props as any).graph = newGraph;
     this.update();
   }
 }

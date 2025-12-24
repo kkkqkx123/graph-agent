@@ -1,5 +1,5 @@
 /**
- * HumanRelay接口索引
+ * LLM接口索引
  */
 
-export * from './human-relay-interaction.interface';
+// human-relay-interaction.interface已删除，不再需要导出

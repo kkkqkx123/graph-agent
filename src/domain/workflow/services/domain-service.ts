@@ -85,7 +85,7 @@ export class WorkflowDomainService {
     }
 
     // 验证工作流是否有关联的节点和边
-    if (workflow.nodes.size === 0) {
+    if (workflow.getGraph().nodes.size === 0) {
       throw new DomainError('工作流没有节点，无法激活');
     }
 

@@ -116,9 +116,7 @@ export class WorkflowRepository extends BaseRepository<Workflow, WorkflowModel, 
       const graph = WorkflowGraph.create(
         IdConverter.fromStorage(model.id),
         [], // nodes
-        [], // edges
-        model.metadata?.definition,
-        model.metadata?.layout
+        [] // edges
       );
 
       // 创建Workflow实体
@@ -158,8 +156,7 @@ export class WorkflowRepository extends BaseRepository<Workflow, WorkflowModel, 
         ...entity.metadata,
         tags: entity.tags,
         isDeleted: entity.isDeleted(),
-        definition: entity.definition,
-        layout: entity.layout
+        definition: entity.getDefinition(),
       });
       model.configuration = entity.config; // 简化处理，实际应转换为存储格式
       model.version = entity.version.toString();

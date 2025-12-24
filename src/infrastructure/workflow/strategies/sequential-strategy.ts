@@ -73,7 +73,7 @@ export class SequentialStrategy extends ExecutionStrategy {
 
       if (canTraverse) {
         const workflow = context.getWorkflow();
-        const edge = workflow.edges.get(edgeId);
+        const edge = workflow.getGraph().edges.get(edgeId);
 
         if (edge) {
           const targetNodeId = edge.toNodeId.value;
@@ -96,12 +96,12 @@ export class SequentialStrategy extends ExecutionStrategy {
     const nodesWithIncomingEdges = new Set<string>();
 
     // Find all nodes that have incoming edges
-    for (const edge of workflow.edges.values()) {
+    for (const edge of workflow.getGraph().edges.values()) {
       nodesWithIncomingEdges.add(edge.toNodeId.value);
     }
 
     // Nodes without incoming edges are start nodes
-    for (const node of workflow.nodes.values()) {
+    for (const node of workflow.getGraph().nodes.values()) {
       if (!nodesWithIncomingEdges.has(node.id.value)) {
         startNodes.push(node);
       }

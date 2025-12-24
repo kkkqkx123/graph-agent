@@ -84,7 +84,7 @@ export class ConditionalStrategy extends ExecutionStrategy {
       if (edgeId === undefined) {
         return nodeResults.get(nodeId);
       }
-      const edge = workflow.edges.get(edgeId);
+      const edge = workflow.getGraph().edges.get(edgeId);
 
       if (edge) {
         return await this.executeConditionalPath(
@@ -180,7 +180,7 @@ export class ConditionalStrategy extends ExecutionStrategy {
     if (edgeId === undefined) {
       return null;
     }
-    const edge = workflow.edges.get(edgeId);
+    const edge = workflow.getGraph().edges.get(edgeId);
 
     if (edge) {
       return await this.executeConditionalPath(
@@ -206,7 +206,7 @@ export class ConditionalStrategy extends ExecutionStrategy {
 
     for (const edgeId of edgeIds) {
       const workflow = context.getWorkflow();
-      const edge = workflow.edges.get(edgeId);
+      const edge = workflow.getGraph().edges.get(edgeId);
 
       if (edge) {
         const result = await this.executeConditionalPath(
@@ -234,7 +234,7 @@ export class ConditionalStrategy extends ExecutionStrategy {
 
     // Create execution promises for all valid edges
     const edgePromises = edgeIds.map(async (edgeId) => {
-      const edge = workflow.edges.get(edgeId);
+      const edge = workflow.getGraph().edges.get(edgeId);
 
       if (edge) {
         return await this.executeConditionalPath(
@@ -278,7 +278,7 @@ export class ConditionalStrategy extends ExecutionStrategy {
 
     // Calculate weights for each edge
     for (const edgeId of edgeIds) {
-      const edge = workflow.edges.get(edgeId);
+      const edge = workflow.getGraph().edges.get(edgeId);
 
       if (edge && edge.weight) {
         weights.push(edge.weight);
@@ -293,7 +293,7 @@ export class ConditionalStrategy extends ExecutionStrategy {
     if (selectedEdgeId === undefined) {
       return null;
     }
-    const selectedEdge = workflow.edges.get(selectedEdgeId);
+    const selectedEdge = workflow.getGraph().edges.get(selectedEdgeId);
 
     if (selectedEdge) {
       return await this.executeConditionalPath(
@@ -331,12 +331,12 @@ export class ConditionalStrategy extends ExecutionStrategy {
     const nodesWithIncomingEdges = new Set<string>();
 
     // Find all nodes that have incoming edges
-    for (const edge of workflow.edges.values()) {
+    for (const edge of workflow.getGraph().edges.values()) {
       nodesWithIncomingEdges.add(edge.toNodeId.value);
     }
 
     // Nodes without incoming edges are start nodes
-    for (const node of workflow.nodes.values()) {
+    for (const node of workflow.getGraph().nodes.values()) {
       if (!nodesWithIncomingEdges.has(node.id.value)) {
         startNodes.push(node);
       }
@@ -413,7 +413,7 @@ export class ConditionalStrategy extends ExecutionStrategy {
       const canTraverse = await this.evaluateEdge(edgeId, context, workflowExecutor);
 
       if (canTraverse) {
-        validEdges.push(workflow.edges.get(edgeId));
+        validEdges.push(workflow.getGraph().edges.get(edgeId));
       }
     }
 
@@ -428,7 +428,7 @@ export class ConditionalStrategy extends ExecutionStrategy {
       if (edgeId === undefined) {
         return nodeResults.get(nodeId);
       }
-      const edge = workflow.edges.get(edgeId);
+      const edge = workflow.getGraph().edges.get(edgeId);
       if (edge) {
         return await this.executeConditionalPathWithCustomLogic(
           edge.toNodeId.value,
@@ -442,7 +442,7 @@ export class ConditionalStrategy extends ExecutionStrategy {
     } else {
       // Multiple edges selected, execute in parallel
       const edgePromises = selectedEdgeIds.map(async (edgeId) => {
-        const edge = workflow.edges.get(edgeId);
+        const edge = workflow.getGraph().edges.get(edgeId);
         if (edge) {
           return await this.executeConditionalPathWithCustomLogic(
             edge.toNodeId.value,

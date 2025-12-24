@@ -4,8 +4,8 @@ import { Timestamp } from '../../common/value-objects/timestamp';
 import { WorkflowStatus } from './workflow-status';
 import { WorkflowType } from './workflow-type';
 import { WorkflowConfig } from './workflow-config';
-import { ErrorHandlingStrategy } from '../strategies/error-handling-strategy';
-import { ExecutionStrategy } from '../strategies/execution-strategy';
+import { ErrorHandlingStrategy, ErrorHandlingStrategyFactory } from '../strategies/error-handling-strategy';
+import { ExecutionStrategy, ExecutionStrategyFactory } from '../strategies/execution-strategy';
 
 /**
  * WorkflowDefinition值对象属性接口
@@ -66,6 +66,13 @@ export class WorkflowDefinition extends ValueObject<WorkflowDefinitionProps> {
     const workflowStatus = WorkflowStatus.draft();
     const workflowConfig = config || WorkflowConfig.default();
 
+    // 使用工厂方法创建默认策略
+    const defaultErrorHandlingStrategy = errorHandlingStrategy ||
+      ErrorHandlingStrategyFactory.default();
+    
+    const defaultExecutionStrategy = executionStrategy ||
+      ExecutionStrategyFactory.default();
+
     return new WorkflowDefinition({
       id: workflowId,
       name,
@@ -73,8 +80,8 @@ export class WorkflowDefinition extends ValueObject<WorkflowDefinitionProps> {
       status: workflowStatus,
       type: workflowType,
       config: workflowConfig,
-      errorHandlingStrategy: errorHandlingStrategy || {} as any,
-      executionStrategy: executionStrategy || {} as any,
+      errorHandlingStrategy: defaultErrorHandlingStrategy,
+      executionStrategy: defaultExecutionStrategy,
       tags: tags || [],
       metadata: metadata || {},
       createdAt: now,

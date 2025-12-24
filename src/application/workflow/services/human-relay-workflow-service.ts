@@ -64,7 +64,7 @@ export class HumanRelayWorkflowService {
     }
 
     // 验证工作流包含HumanRelay节点
-    const humanRelayNodes = Array.from(workflow.nodes.values()).filter(
+    const humanRelayNodes = Array.from(workflow.getGraph().nodes.values()).filter(
       (node: any) => node instanceof HumanRelayNode
     ) as HumanRelayNode[];
 
@@ -143,7 +143,7 @@ export class HumanRelayWorkflowService {
     // 更新多轮模式的特定配置
     const workflow = await this.workflowRepository.findById(workflowId);
     if (workflow) {
-      const humanRelayNodes = Array.from(workflow.nodes.values()).filter(
+      const humanRelayNodes = Array.from(workflow.getGraph().nodes.values()).filter(
         (node: any) => node instanceof HumanRelayNode
       ) as HumanRelayNode[];
 
@@ -177,7 +177,7 @@ export class HumanRelayWorkflowService {
 
     return workflows
       .filter((workflow: Workflow) => {
-        const humanRelayNodes = Array.from(workflow.nodes.values()).filter(
+        const humanRelayNodes = Array.from(workflow.getGraph().nodes.values()).filter(
           (node: any) => node instanceof HumanRelayNode
         ) as HumanRelayNode[];
 
@@ -192,7 +192,7 @@ export class HumanRelayWorkflowService {
         return true;
       })
       .map((workflow: Workflow) => {
-        const humanRelayNode = Array.from(workflow.nodes.values()).find(
+        const humanRelayNode = Array.from(workflow.getGraph().nodes.values()).find(
           (node: any) => node instanceof HumanRelayNode
         ) as HumanRelayNode;
 
@@ -316,7 +316,7 @@ export class HumanRelayWorkflowService {
     const errors: string[] = [];
 
     // 检查是否包含HumanRelay节点
-    const humanRelayNodes = Array.from(workflow.nodes.values()).filter(
+    const humanRelayNodes = Array.from(workflow.getGraph().nodes.values()).filter(
       (node: any) => node instanceof HumanRelayNode
     ) as HumanRelayNode[];
 
@@ -344,11 +344,11 @@ export class HumanRelayWorkflowService {
   }> {
     const workflows = await this.workflowRepository.findAll();
     const humanRelayWorkflows = workflows.filter((workflow: Workflow) => {
-      return Array.from(workflow.nodes.values()).some((node: any) => node instanceof HumanRelayNode);
+      return Array.from(workflow.getGraph().nodes.values()).some((node: any) => node instanceof HumanRelayNode);
     });
 
     const singleModeCount = humanRelayWorkflows.filter((workflow: Workflow) => {
-      const humanRelayNode = Array.from(workflow.nodes.values()).find((node: any) => node instanceof HumanRelayNode) as HumanRelayNode;
+      const humanRelayNode = Array.from(workflow.getGraph().nodes.values()).find((node: any) => node instanceof HumanRelayNode) as HumanRelayNode;
       return humanRelayNode?.getMode() === HumanRelayMode.SINGLE;
     }).length;
 

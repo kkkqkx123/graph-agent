@@ -376,7 +376,7 @@ export class WorkflowBuildService implements IWorkflowBuildService {
 
     // 克隆节点
     const nodeIdMapping = new Map<string, ID>();
-    for (const [oldNodeId, node] of sourceWorkflow.nodes) {
+    for (const [oldNodeId, node] of sourceWorkflow.getGraph().nodes) {
       const newNode = Node.create(
         newWorkflow.workflowId,
         node.type,
@@ -386,12 +386,24 @@ export class WorkflowBuildService implements IWorkflowBuildService {
         { ...node.properties }
       );
 
-      newWorkflow.addNode(newNode, createdBy);
+      // 需要通过工作流图来添加节点
+      const newGraph = newWorkflow.getGraph().addNode(newNode);
+      // 创建新的工作流实例，因为Workflow是不可变的
+      const updatedWorkflow = Workflow.fromProps({
+        id: newWorkflow.workflowId,
+        definition: newWorkflow.getDefinition(),
+        graph: newGraph,
+        createdAt: newWorkflow.createdAt,
+        updatedAt: newWorkflow.updatedAt,
+        version: newWorkflow.version,
+        createdBy: newWorkflow.createdBy,
+        updatedBy: newWorkflow.updatedBy
+      });
       nodeIdMapping.set(oldNodeId, newNode.nodeId);
     }
 
     // 克隆边
-    for (const [oldEdgeId, edge] of sourceWorkflow.edges) {
+    for (const [oldEdgeId, edge] of sourceWorkflow.getGraph().edges) {
       const newFromNodeId = nodeIdMapping.get(edge.fromNodeId.toString());
       const newToNodeId = nodeIdMapping.get(edge.toNodeId.toString());
 
@@ -406,7 +418,19 @@ export class WorkflowBuildService implements IWorkflowBuildService {
           { ...edge.properties }
         );
 
-        newWorkflow.addEdge(newEdge, createdBy);
+        // 需要通过工作流图来添加边
+        const updatedGraph = newWorkflow.getGraph().addEdge(newEdge);
+        // 创建新的工作流实例，因为Workflow是不可变的
+        const updatedWorkflow = Workflow.fromProps({
+          id: newWorkflow.workflowId,
+          definition: newWorkflow.getDefinition(),
+          graph: updatedGraph,
+          createdAt: newWorkflow.createdAt,
+          updatedAt: newWorkflow.updatedAt,
+          version: newWorkflow.version,
+          createdBy: newWorkflow.createdBy,
+          updatedBy: newWorkflow.updatedBy
+        });
       }
     }
 
@@ -440,7 +464,19 @@ export class WorkflowBuildService implements IWorkflowBuildService {
     );
 
     // 添加节点到工作流
-    workflow.addNode(node, addedBy);
+    // 需要通过工作流图来添加节点
+    const newGraph = workflow.getGraph().addNode(node);
+    // 创建新的工作流实例，因为Workflow是不可变的
+    const updatedWorkflow = Workflow.fromProps({
+      id: workflow.workflowId,
+      definition: workflow.getDefinition(),
+      graph: newGraph,
+      createdAt: workflow.createdAt,
+      updatedAt: workflow.updatedAt,
+      version: workflow.version,
+      createdBy: workflow.createdBy,
+      updatedBy: workflow.updatedBy
+    });
 
     // 保存工作流
     await this.workflowRepository.save(workflow);
@@ -476,7 +512,7 @@ export class WorkflowBuildService implements IWorkflowBuildService {
     updatedBy?: ID
   ): Promise<Node> {
     const workflow = await this.workflowRepository.findByIdOrFail(workflowId);
-    const node = workflow.getNode(nodeId);
+    const node = workflow.getGraph().getNode(nodeId);
 
     if (!node) {
       throw new DomainError(`节点不存在: ${nodeId}`);
@@ -524,7 +560,19 @@ export class WorkflowBuildService implements IWorkflowBuildService {
     }
 
     // 移除节点
-    workflow.removeNode(nodeId, removedBy);
+    // 需要通过工作流图来移除节点
+    const newGraph = workflow.getGraph().removeNode(nodeId);
+    // 创建新的工作流实例，因为Workflow是不可变的
+    const updatedWorkflow = Workflow.fromProps({
+      id: workflow.workflowId,
+      definition: workflow.getDefinition(),
+      graph: newGraph,
+      createdAt: workflow.createdAt,
+      updatedAt: workflow.updatedAt,
+      version: workflow.version,
+      createdBy: workflow.createdBy,
+      updatedBy: workflow.updatedBy
+    });
 
     // 保存工作流
     await this.workflowRepository.save(workflow);
@@ -558,8 +606,8 @@ export class WorkflowBuildService implements IWorkflowBuildService {
     }
 
     // 验证节点存在
-    const fromNode = workflow.getNode(request.fromNodeId);
-    const toNode = workflow.getNode(request.toNodeId);
+    const fromNode = workflow.getGraph().getNode(request.fromNodeId);
+    const toNode = workflow.getGraph().getNode(request.toNodeId);
 
     if (!fromNode) {
       throw new DomainError(`源节点不存在: ${request.fromNodeId}`);
@@ -582,7 +630,19 @@ export class WorkflowBuildService implements IWorkflowBuildService {
     );
 
     // 添加边到工作流
-    workflow.addEdge(edge, addedBy);
+    // 需要通过工作流图来添加边
+    const newGraph = workflow.getGraph().addEdge(edge);
+    // 创建新的工作流实例，因为Workflow是不可变的
+    const updatedWorkflow = Workflow.fromProps({
+      id: workflow.workflowId,
+      definition: workflow.getDefinition(),
+      graph: newGraph,
+      createdAt: workflow.createdAt,
+      updatedAt: workflow.updatedAt,
+      version: workflow.version,
+      createdBy: workflow.createdBy,
+      updatedBy: workflow.updatedBy
+    });
 
     // 保存工作流
     await this.workflowRepository.save(workflow);
@@ -618,7 +678,7 @@ export class WorkflowBuildService implements IWorkflowBuildService {
     updatedBy?: ID
   ): Promise<Edge> {
     const workflow = await this.workflowRepository.findByIdOrFail(workflowId);
-    const edge = workflow.getEdge(edgeId);
+    const edge = workflow.getGraph().getEdge(edgeId);
 
     if (!edge) {
       throw new DomainError(`边不存在: ${edgeId}`);
@@ -662,7 +722,19 @@ export class WorkflowBuildService implements IWorkflowBuildService {
     }
 
     // 移除边
-    workflow.removeEdge(edgeId, removedBy);
+    // 需要通过工作流图来移除边
+    const newGraph = workflow.getGraph().removeEdge(edgeId);
+    // 创建新的工作流实例，因为Workflow是不可变的
+    const updatedWorkflow = Workflow.fromProps({
+      id: workflow.workflowId,
+      definition: workflow.getDefinition(),
+      graph: newGraph,
+      createdAt: workflow.createdAt,
+      updatedAt: workflow.updatedAt,
+      version: workflow.version,
+      createdBy: workflow.createdBy,
+      updatedBy: workflow.updatedBy
+    });
 
     // 保存工作流
     await this.workflowRepository.save(workflow);
@@ -716,7 +788,7 @@ export class WorkflowBuildService implements IWorkflowBuildService {
     const workflow = await this.workflowRepository.findByIdOrFail(workflowId);
 
     // 查找连接两个节点的边
-    const edgesToRemove = Array.from(workflow.edges.values()).filter(
+    const edgesToRemove = Array.from(workflow.getGraph().edges.values()).filter(
       edge => edge.fromNodeId.equals(fromNodeId) && edge.toNodeId.equals(toNodeId)
     );
 
@@ -761,7 +833,7 @@ export class WorkflowBuildService implements IWorkflowBuildService {
     const workflow = await this.workflowRepository.findByIdOrFail(workflowId);
 
     // 简化实现，实际中应该实现真正的布局算法
-    const nodes = Array.from(workflow.nodes.values());
+    const nodes = Array.from(workflow.getGraph().nodes.values());
     const nodeCount = nodes.length;
 
     for (let i = 0; i < nodeCount; i++) {
@@ -815,9 +887,9 @@ export class WorkflowBuildService implements IWorkflowBuildService {
     // 简化实现，实际中应该实现真正的优化算法
     if (options.removeUnusedNodes) {
       // 移除未使用的节点
-      const unusedNodes = Array.from(workflow.nodes.values()).filter(node => {
-        const incomingEdges = workflow.getIncomingEdges(node.nodeId);
-        const outgoingEdges = workflow.getOutgoingEdges(node.nodeId);
+      const unusedNodes = Array.from(workflow.getGraph().nodes.values()).filter(node => {
+        const incomingEdges = workflow.getGraph().getIncomingEdges(node.nodeId);
+        const outgoingEdges = workflow.getGraph().getOutgoingEdges(node.nodeId);
         return incomingEdges.length === 0 && outgoingEdges.length === 0;
       });
 
@@ -897,7 +969,7 @@ export class WorkflowBuildService implements IWorkflowBuildService {
       name: workflow.name,
       description: workflow.description,
       metadata: workflow.metadata,
-      nodes: Array.from(workflow.nodes.values()).map(node => ({
+      nodes: Array.from(workflow.getGraph().nodes.values()).map(node => ({
         id: node.nodeId.toString(),
         type: node.type.toString(),
         name: node.name,
@@ -906,7 +978,7 @@ export class WorkflowBuildService implements IWorkflowBuildService {
         properties: node.properties,
         config: node.properties
       })),
-      edges: Array.from(workflow.edges.values()).map(edge => ({
+      edges: Array.from(workflow.getGraph().edges.values()).map(edge => ({
         id: edge.edgeId.toString(),
         type: edge.type.toString(),
         fromNodeId: edge.fromNodeId.toString(),
@@ -939,14 +1011,14 @@ export class WorkflowBuildService implements IWorkflowBuildService {
 
     // 统计节点类型分布
     const nodeTypeDistribution: Record<string, number> = {};
-    for (const node of workflow.nodes.values()) {
+    for (const node of workflow.getGraph().nodes.values()) {
       const type = node.type.toString();
       nodeTypeDistribution[type] = (nodeTypeDistribution[type] || 0) + 1;
     }
 
     // 统计边类型分布
     const edgeTypeDistribution: Record<string, number> = {};
-    for (const edge of workflow.edges.values()) {
+    for (const edge of workflow.getGraph().edges.values()) {
       const type = edge.type.toString();
       edgeTypeDistribution[type] = (edgeTypeDistribution[type] || 0) + 1;
     }

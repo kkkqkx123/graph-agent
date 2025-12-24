@@ -151,7 +151,7 @@ export class WorkflowValidator {
 
       // Note: Workflow no longer has workflowId property
       // 工作流现在直接包含节点和边，不关联外部图
-      if (workflow.nodes.size === 0) {
+      if (workflow.getGraph().nodes.size === 0) {
         result.isValid = false;
         result.errors.push('工作流没有节点');
         return result;
@@ -159,7 +159,7 @@ export class WorkflowValidator {
 
       // 验证工作流结构
       // 简化验证逻辑，因为graph模块已删除
-      if (workflow.nodes.size === 0) {
+      if (workflow.getGraph().nodes.size === 0) {
         result.isValid = false;
         result.errors.push('工作流没有节点');
       }
@@ -342,7 +342,7 @@ export class WorkflowValidator {
       }
 
       // 验证工作流节点和边
-      if (workflow.nodes.size === 0) {
+      if (workflow.getGraph().nodes.size === 0) {
         result.isValid = false;
         result.errors.push('工作流必须包含至少一个节点');
       }
@@ -351,12 +351,12 @@ export class WorkflowValidator {
     // 严格模式下进行额外验证
     if (validationLevel === 'strict' && workflow) {
       // 验证节点数量
-      if (workflow.nodes.size > 100) {
+      if (workflow.getGraph().nodes.size > 100) {
         result.warnings.push('工作流节点数量超过100个，可能影响执行性能');
       }
 
       // 验证边数量
-      if (workflow.edges.size > 200) {
+      if (workflow.getGraph().edges.size > 200) {
         result.warnings.push('工作流边数量超过200个，可能影响执行性能');
       }
 
@@ -453,8 +453,8 @@ export class WorkflowValidator {
     }
 
     // 计算工作流的性能指标
-    const nodeCount = workflow.nodes.size;
-    const edgeCount = workflow.edges.size;
+    const nodeCount = workflow.getGraph().nodes.size;
+    const edgeCount = workflow.getGraph().edges.size;
     const complexity = this.calculateWorkflowComplexity(workflow);
 
     // 性能警告
@@ -546,8 +546,8 @@ export class WorkflowValidator {
    * @returns 复杂度值
    */
   private calculateWorkflowComplexity(workflow: Workflow): number {
-    const nodeCount = workflow.nodes.size;
-    const edgeCount = workflow.edges.size;
+    const nodeCount = workflow.getGraph().nodes.size;
+    const edgeCount = workflow.getGraph().edges.size;
 
     // 简单的复杂度计算：节点数 + 边数 * 2
     return nodeCount + edgeCount * 2;
@@ -561,9 +561,9 @@ export class WorkflowValidator {
   private findIsolatedNodes(workflow: Workflow): any[] {
     const isolatedNodes: any[] = [];
 
-    for (const node of workflow.nodes.values()) {
-      const incomingEdges = workflow.getIncomingEdges(node.nodeId);
-      const outgoingEdges = workflow.getOutgoingEdges(node.nodeId);
+    for (const node of workflow.getGraph().nodes.values()) {
+      const incomingEdges = workflow.getGraph().getIncomingEdges(node.nodeId);
+      const outgoingEdges = workflow.getGraph().getOutgoingEdges(node.nodeId);
 
       if (incomingEdges.length === 0 && outgoingEdges.length === 0) {
         isolatedNodes.push(node);
@@ -591,9 +591,9 @@ export class WorkflowValidator {
   private findDecisionNodesWithoutDefault(workflow: Workflow): any[] {
     const decisionNodesWithoutDefault: any[] = [];
 
-    for (const node of workflow.nodes.values()) {
+    for (const node of workflow.getGraph().nodes.values()) {
       if (node.type.toString() === 'decision') {
-        const outgoingEdges = workflow.getOutgoingEdges(node.nodeId);
+        const outgoingEdges = workflow.getGraph().getOutgoingEdges(node.nodeId);
         const hasDefaultEdge = outgoingEdges.some(edge => edge.type.toString() === 'default');
 
         if (!hasDefaultEdge) {

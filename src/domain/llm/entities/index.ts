@@ -1,7 +1,9 @@
 /**
- * HumanRelay实体索引
+ * LLM实体索引
  */
 
-export * from './human-relay-session';
-export * from './human-relay-prompt';
-export * from './human-relay-response';
+export * from './llm-request';
+export * from './llm-response';
+export * from './pool';
+export * from './task-group';
+export * from './wrapper';

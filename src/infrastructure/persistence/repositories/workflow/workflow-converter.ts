@@ -76,9 +76,7 @@ export class WorkflowConverterRepository extends BaseRepository<Workflow, Workfl
       const graph = WorkflowGraph.fromProps({
         workflowId: IdConverter.fromStorage(model.id),
         nodes: new Map(),
-        edges: new Map(),
-        definition: undefined,
-        layout: undefined
+        edges: new Map()
       });
 
       // 创建工作流执行器
