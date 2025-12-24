@@ -4,7 +4,7 @@
  */
 
 import { injectable } from 'inversify';
-import { SessionOrchestrationService, ThreadAction } from '../../../domain/sessions/interfaces/session-orchestration-service.interface';
+import { SessionOrchestrationService, ThreadAction } from '../../sessions/interfaces/session-orchestration-service.interface';
 import { ThreadCoordinatorService } from '../../../domain/threads/interfaces/thread-coordinator-service.interface';
 import { GraphAlgorithmService } from '../../../domain/workflow/interfaces/graph-algorithm-service.interface';
 import { GraphValidationService } from '../../../domain/workflow/interfaces/graph-validation-service.interface';
@@ -116,5 +116,4 @@ export class WorkflowOrchestrationService {
   async manageThreadLifecycle(sessionId: ID, threadId: ID, action: ThreadAction): Promise<void> {
     await this.sessionOrchestration.manageThreadLifecycle(sessionId, threadId, action);
   }
-
 }

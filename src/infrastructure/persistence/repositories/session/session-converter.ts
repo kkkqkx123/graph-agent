@@ -1,16 +1,15 @@
 import { injectable, inject } from 'inversify';
 import { SessionRepository as ISessionRepository } from '../../../../domain/sessions/repositories/session-repository';
 import { Session } from '../../../../domain/sessions/entities/session';
-import { SessionQueryOptions } from '../../../../domain/sessions/repositories/session-repository';
+import { SessionActivity } from '../../../../domain/sessions/value-objects/session-activity';
 import { ID } from '../../../../domain/common/value-objects/id';
+import { Timestamp } from '../../../../domain/common/value-objects/timestamp';
 import { SessionStatus } from '../../../../domain/sessions/value-objects/session-status';
 import { SessionConfig } from '../../../../domain/sessions/value-objects/session-config';
 import { SessionModel } from '../../models/session.model';
 import { IQueryOptions, PaginatedResult } from '../../../../domain/common/repositories/repository';
 import { RepositoryError } from '../../../../domain/common/errors/repository-error';
-import { In } from 'typeorm';
 import { BaseRepository, QueryOptions } from '../../base/base-repository';
-import { QueryOptionsBuilder } from '../../base/query-options-builder';
 import { ConnectionManager } from '../../connections/connection-manager';
 import {
   IdConverter,
@@ -30,12 +29,12 @@ import {
  */
 @injectable()
 export class SessionConverterRepository extends BaseRepository<Session, SessionModel, ID> implements ISessionRepository {
-  
+
   constructor(
     @inject('ConnectionManager') connectionManager: ConnectionManager
   ) {
     super(connectionManager);
-    
+
     // 配置软删除行为
     this.configureSoftDelete({
       fieldName: 'isDeleted',
@@ -56,17 +55,24 @@ export class SessionConverterRepository extends BaseRepository<Session, SessionM
   protected override toEntity(model: SessionModel): Session {
     try {
       // 使用类型转换器进行编译时类型安全的转换
+      const lastActivityAt = TimestampConverter.fromStorage(model.updatedAt); // 使用updatedAt作为最后活动时间
+      const messageCount = model.metadata?.messageCount ? NumberConverter.fromStorage(model.metadata.messageCount as number) : 0;
+      const threadCount = model.metadata?.threadCount ? NumberConverter.fromStorage(model.metadata.threadCount as number) : 0;
+
+      // 创建SessionActivity值对象
+      const activity = SessionActivity.create(lastActivityAt, messageCount, threadCount);
+
       const sessionData = {
         id: IdConverter.fromStorage(model.id),
         userId: model.userId ? OptionalIdConverter.fromStorage(model.userId) : undefined,
         title: model.metadata?.title ? OptionalStringConverter.fromStorage(model.metadata.title as string) : undefined,
         status: SessionStatusConverter.fromStorage(model.state),
         config: SessionConfigConverter.fromStorage(model.context),
+        activity: activity,
+        metadata: model.metadata || {},
         createdAt: TimestampConverter.fromStorage(model.createdAt),
         updatedAt: TimestampConverter.fromStorage(model.updatedAt),
         version: VersionConverter.fromStorage(model.version),
-        lastActivityAt: TimestampConverter.fromStorage(model.updatedAt), // 使用updatedAt作为最后活动时间
-        messageCount: model.metadata?.messageCount ? NumberConverter.fromStorage(model.metadata.messageCount as number) : 0,
         isDeleted: model.metadata?.isDeleted ? BooleanConverter.fromStorage(model.metadata.isDeleted as boolean) : false
       };
 
@@ -87,7 +93,7 @@ export class SessionConverterRepository extends BaseRepository<Session, SessionM
   protected override toModel(entity: Session): SessionModel {
     try {
       const model = new SessionModel();
-      
+
       // 使用类型转换器进行编译时类型安全的转换
       model.id = IdConverter.toStorage(entity.sessionId);
       model.userId = entity.userId ? OptionalIdConverter.toStorage(entity.userId) : undefined;
@@ -96,18 +102,20 @@ export class SessionConverterRepository extends BaseRepository<Session, SessionM
       model.version = VersionConverter.toStorage(entity.version);
       model.createdAt = TimestampConverter.toStorage(entity.createdAt);
       model.updatedAt = TimestampConverter.toStorage(entity.updatedAt);
-      
+
       // 设置元数据
       model.metadata = {
         title: entity.title ? OptionalStringConverter.toStorage(entity.title) : undefined,
         messageCount: NumberConverter.toStorage(entity.messageCount),
+        threadCount: NumberConverter.toStorage(entity.threadCount),
         isDeleted: BooleanConverter.toStorage(entity.isDeleted()),
-        config: SessionConfigConverter.toStorage(entity.config)
+        config: SessionConfigConverter.toStorage(entity.config),
+        ...entity.metadata // 保留其他元数据
       };
-      
+
       // 设置关联字段
       model.threadIds = []; // 默认空数组
-      
+
       return model;
     } catch (error) {
       throw new RepositoryError(
@@ -128,144 +136,192 @@ export class SessionConverterRepository extends BaseRepository<Session, SessionM
   }
 
   /**
-   * 根据用户ID查找会话
+   * 查找用户的活跃会话
    */
-  async findByUserId(userId: ID, options?: SessionQueryOptions): Promise<Session[]> {
+  async findActiveSessionsForUser(userId: ID): Promise<Session[]> {
     const builder = this.createQueryOptionsBuilder()
       .equals('userId', userId.value)
-      .sortBy(options?.sortBy || 'createdAt')
-      .sortOrder(options?.sortOrder || 'desc');
-
-    if (options?.includeDeleted === false) {
-      builder.excludeSoftDeleted();
-    }
-
-    if (options?.status) {
-      builder.equals('state', options.status);
-    }
-
-    if (options?.limit) {
-      builder.limit(options.limit);
-    }
-
-    if (options?.offset) {
-      builder.offset(options.offset);
-    }
+      .equals('state', 'active')
+      .sortBy('createdAt')
+      .sortOrder('desc')
+      .excludeSoftDeleted();
 
     return this.findWithBuilder(builder);
   }
 
   /**
-   * 根据用户ID查找会话（分页）
+   * 查找即将过期的会话
    */
-  async findByUserIdWithPagination(userId: ID, options?: SessionQueryOptions): Promise<PaginatedResult<Session>> {
+  async findSessionsExpiringBefore(beforeDate: Timestamp): Promise<Session[]> {
     const builder = this.createQueryOptionsBuilder()
-      .equals('userId', userId.value)
-      .sortBy(options?.sortBy || 'createdAt')
-      .sortOrder(options?.sortOrder || 'desc');
+      .sortBy('createdAt')
+      .sortOrder('asc')
+      .excludeSoftDeleted();
 
-    if (options?.includeDeleted === false) {
-      builder.excludeSoftDeleted();
-    }
-
-    if (options?.status) {
-      builder.equals('state', options.status);
-    }
-
-    return this.findWithPaginationBuilder(builder);
-  }
-
-  /**
-   * 根据状态查找会话
-   */
-  async findByStatus(status: SessionStatus, options?: SessionQueryOptions): Promise<Session[]> {
-    const builder = this.createQueryOptionsBuilder()
-      .equals('state', status.getValue())
-      .sortBy(options?.sortBy || 'createdAt')
-      .sortOrder(options?.sortOrder || 'desc');
-
-    if (options?.includeDeleted === false) {
-      builder.excludeSoftDeleted();
-    }
-
-    if (options?.userId) {
-      builder.equals('userId', options.userId);
-    }
-
-    if (options?.limit) {
-      builder.limit(options.limit);
-    }
-
-    if (options?.offset) {
-      builder.offset(options.offset);
-    }
+    builder.where((qb) => {
+      qb.andWhere('session.createdAt < :beforeDate', { beforeDate: beforeDate.getDate() });
+      qb.andWhere('session.state != :terminatedState', { terminatedState: 'terminated' });
+    });
 
     return this.findWithBuilder(builder);
   }
 
   /**
-   * 根据多个用户ID查找会话
+   * 查找需要清理的会话（超时或过期）
    */
-  async findByUserIds(userIds: ID[], options?: SessionQueryOptions): Promise<Session[]> {
-    const userIdValues = userIds.map(id => id.value);
+  async findSessionsNeedingCleanup(): Promise<Session[]> {
+    const timeoutThreshold = new Date(Date.now() - 30 * 60 * 1000); // 30分钟前
+    const expirationThreshold = new Date(Date.now() - 24 * 60 * 60 * 1000); // 24小时前
     
     const builder = this.createQueryOptionsBuilder()
-      .in('userId', userIdValues)
-      .sortBy(options?.sortBy || 'createdAt')
-      .sortOrder(options?.sortOrder || 'desc');
+      .sortBy('updatedAt')
+      .sortOrder('asc')
+      .excludeSoftDeleted();
 
-    if (options?.includeDeleted === false) {
-      builder.excludeSoftDeleted();
-    }
-
-    if (options?.status) {
-      builder.equals('state', options.status);
-    }
-
-    if (options?.limit) {
-      builder.limit(options.limit);
-    }
-
-    if (options?.offset) {
-      builder.offset(options.offset);
-    }
+    builder.where((qb) => {
+      qb.andWhere('(session.updatedAt < :timeoutThreshold OR session.createdAt < :expirationThreshold)', {
+        timeoutThreshold,
+        expirationThreshold
+      });
+      qb.andWhere('session.state IN (:...states)', {
+        states: ['active', 'suspended']
+      });
+    });
 
     return this.findWithBuilder(builder);
   }
 
   /**
-   * 查找过期的会话
+   * 查找高活动度的会话
    */
-  async findExpiredSessions(options?: SessionQueryOptions): Promise<Session[]> {
+  async findSessionsWithHighActivity(minMessageCount: number): Promise<Session[]> {
     const builder = this.createQueryOptionsBuilder()
-      .sortBy(options?.sortBy || 'lastActivityAt')
-      .sortOrder(options?.sortOrder || 'asc');
+      .sortBy('messageCount')
+      .sortOrder('desc')
+      .excludeSoftDeleted();
 
-    if (options?.includeDeleted === false) {
-      builder.excludeSoftDeleted();
-    }
-
-    if (options?.userId) {
-      builder.equals('userId', options.userId);
-    }
-
-    if (options?.status) {
-      builder.equals('state', options.status);
-    }
-
-    if (options?.limit) {
-      builder.limit(options.limit);
-    }
-
-    if (options?.offset) {
-      builder.offset(options.offset);
-    }
-
-    // 添加过期时间过滤条件
-    const expirationTime = options?.lastActivityBefore || new Date(Date.now() - 24 * 60 * 60 * 1000); // 默认24小时前
     builder.where((qb) => {
-      qb.andWhere('session.lastActivityAt < :expirationTime', { expirationTime });
-      qb.andWhere('session.state != :terminatedState', { terminatedState: 'terminated' });
+      qb.andWhere('CAST(session.metadata->>\'messageCount\' AS INTEGER) >= :minMessageCount', { minMessageCount });
+    });
+
+    return this.findWithBuilder(builder);
+  }
+
+  /**
+   * 查找用户的最近会话
+   */
+  async findRecentSessionsForUser(userId: ID, limit: number): Promise<Session[]> {
+    const builder = this.createQueryOptionsBuilder()
+      .equals('userId', userId.value)
+      .sortBy('updatedAt')
+      .sortOrder('desc')
+      .limit(limit)
+      .excludeSoftDeleted();
+
+    return this.findWithBuilder(builder);
+  }
+
+  /**
+   * 查找用户的会话
+   */
+  async findSessionsForUser(userId: ID): Promise<Session[]> {
+    const builder = this.createQueryOptionsBuilder()
+      .equals('userId', userId.value)
+      .sortBy('createdAt')
+      .sortOrder('desc')
+      .excludeSoftDeleted();
+
+    return this.findWithBuilder(builder);
+  }
+
+  /**
+   * 查找指定状态的会话
+   */
+  async findSessionsByStatus(status: SessionStatus): Promise<Session[]> {
+    const builder = this.createQueryOptionsBuilder()
+      .equals('state', status.getValue())
+      .sortBy('createdAt')
+      .sortOrder('desc')
+      .excludeSoftDeleted();
+
+    return this.findWithBuilder(builder);
+  }
+
+  /**
+   * 获取用户的最后活动会话
+   */
+  async getLastActiveSessionForUser(userId: ID): Promise<Session | null> {
+    const sessions = await this.findRecentSessionsForUser(userId, 1);
+    return sessions.length > 0 ? sessions[0]! : null;
+  }
+
+  /**
+   * 批量更新会话状态
+   */
+  async batchUpdateSessionStatus(sessionIds: ID[], status: SessionStatus): Promise<number> {
+    const sessionIdValues = sessionIds.map(id => id.value);
+    
+    return this.batchUpdate(
+      sessionIds,
+      {
+        state: status.getValue(),
+        updatedAt: new Date()
+      }
+    );
+  }
+
+  /**
+   * 批量删除会话
+   */
+  async batchDeleteSessions(sessionIds: ID[]): Promise<number> {
+    return this.batchDeleteByIds(sessionIds);
+  }
+
+  /**
+   * 删除用户的所有会话
+   */
+  async deleteAllSessionsForUser(userId: ID): Promise<number> {
+    const sessions = await this.findSessionsForUser(userId);
+    const sessionIds = sessions.map(session => session.sessionId);
+    
+    if (sessionIds.length === 0) {
+      return 0;
+    }
+    
+    return this.batchSoftDelete(sessionIds);
+  }
+
+  /**
+   * 软删除会话
+   */
+  async softDeleteSession(sessionId: ID): Promise<void> {
+    await super.softDelete(sessionId);
+  }
+
+  /**
+   * 批量软删除会话
+   */
+  async batchSoftDeleteSessions(sessionIds: ID[]): Promise<number> {
+    return this.batchSoftDelete(sessionIds);
+  }
+
+  /**
+   * 恢复软删除的会话
+   */
+  async restoreSoftDeletedSession(sessionId: ID): Promise<void> {
+    await super.restoreSoftDeleted(sessionId);
+  }
+
+  /**
+   * 查找软删除的会话
+   */
+  async findSoftDeletedSessions(): Promise<Session[]> {
+    const builder = this.createQueryOptionsBuilder()
+      .sortBy('deletedAt')
+      .sortOrder('desc');
+
+    builder.where((qb) => {
+      qb.andWhere('session.isDeleted = true');
     });
 
     return this.findWithBuilder(builder);
@@ -294,7 +350,7 @@ export class SessionConverterRepository extends BaseRepository<Session, SessionM
    */
   async batchUpdateStatus(sessionIds: ID[], newStatus: SessionStatus): Promise<number> {
     const sessionIdValues = sessionIds.map(id => id.value);
-    
+
     return this.batchUpdate(
       sessionIds,
       {
@@ -304,24 +360,18 @@ export class SessionConverterRepository extends BaseRepository<Session, SessionM
     );
   }
 
-  /**
-   * 批量删除会话（软删除）
-   */
-  async batchDeleteSessions(sessionIds: ID[]): Promise<number> {
-    return this.batchSoftDelete(sessionIds);
-  }
 
   /**
    * 查找需要清理的会话
    */
   async findSessionsForCleanup(maxAge: number): Promise<Session[]> {
     const cutoffDate = new Date(Date.now() - maxAge);
-    
+
     return this.find({
       customConditions: (qb) => {
         qb.andWhere('session.updatedAt < :cutoffDate', { cutoffDate });
-        qb.andWhere('session.state IN (:...states)', { 
-          states: ['inactive', 'suspended'] 
+        qb.andWhere('session.state IN (:...states)', {
+          states: ['inactive', 'suspended']
         });
       },
       sortBy: 'updatedAt',
@@ -332,156 +382,6 @@ export class SessionConverterRepository extends BaseRepository<Session, SessionM
   /**
    * 根据用户ID和状态查找会话
    */
-  async findByUserIdAndStatus(userId: ID, status: SessionStatus, options?: SessionQueryOptions): Promise<Session[]> {
-    const builder = this.createQueryOptionsBuilder()
-      .equals('userId', userId.value)
-      .equals('state', status.getValue())
-      .sortBy(options?.sortBy || 'createdAt')
-      .sortOrder(options?.sortOrder || 'desc');
-
-    if (options?.includeDeleted === false) {
-      builder.excludeSoftDeleted();
-    }
-
-    if (options?.limit) {
-      builder.limit(options.limit);
-    }
-
-    if (options?.offset) {
-      builder.offset(options.offset);
-    }
-
-    return this.findWithBuilder(builder);
-  }
-
-  /**
-   * 查找用户的活跃会话
-   */
-  async findActiveSessionsByUserId(userId: ID, options?: SessionQueryOptions): Promise<Session[]> {
-    return this.findByUserIdAndStatus(userId, SessionStatus.active(), options);
-  }
-
-  /**
-   * 查找超时的会话
-   */
-  async findTimeoutSessions(options?: SessionQueryOptions): Promise<Session[]> {
-    const timeoutThreshold = new Date(Date.now() - 30 * 60 * 1000); // 默认30分钟前
-    
-    const builder = this.createQueryOptionsBuilder()
-      .sortBy(options?.sortBy || 'lastActivityAt')
-      .sortOrder(options?.sortOrder || 'asc');
-
-    if (options?.includeDeleted === false) {
-      builder.excludeSoftDeleted();
-    }
-
-    if (options?.userId) {
-      builder.equals('userId', options.userId);
-    }
-
-    if (options?.status) {
-      builder.equals('state', options.status);
-    }
-
-    if (options?.limit) {
-      builder.limit(options.limit);
-    }
-
-    if (options?.offset) {
-      builder.offset(options.offset);
-    }
-
-    builder.where((qb) => {
-      qb.andWhere('session.lastActivityAt < :timeoutThreshold', { timeoutThreshold });
-      qb.andWhere('session.state = :activeState', { activeState: 'active' });
-    });
-
-    return this.findWithBuilder(builder);
-  }
-
-  /**
-   * 根据标题搜索会话
-   */
-  async searchByTitle(title: string, options?: SessionQueryOptions): Promise<Session[]> {
-    const builder = this.createQueryOptionsBuilder()
-      .sortBy(options?.sortBy || 'createdAt')
-      .sortOrder(options?.sortOrder || 'desc');
-
-    if (options?.includeDeleted === false) {
-      builder.excludeSoftDeleted();
-    }
-
-    if (options?.userId) {
-      builder.equals('userId', options.userId);
-    }
-
-    if (options?.status) {
-      builder.equals('state', options.status);
-    }
-
-    if (options?.limit) {
-      builder.limit(options.limit);
-    }
-
-    if (options?.offset) {
-      builder.offset(options.offset);
-    }
-
-    builder.where((qb) => {
-      qb.andWhere('session.metadata->>\'title\' ILIKE :title', { title: `%${title}%` });
-    });
-
-    return this.findWithBuilder(builder);
-  }
-
-  /**
-   * 分页查询会话
-   */
-  override async findWithPagination(options: SessionQueryOptions): Promise<PaginatedResult<Session>> {
-    const builder = this.createQueryOptionsBuilder()
-      .sortBy(options.sortBy || 'createdAt')
-      .sortOrder(options.sortOrder || 'desc');
-
-    if (options.includeDeleted === false) {
-      builder.excludeSoftDeleted();
-    }
-
-    if (options.userId) {
-      builder.equals('userId', options.userId);
-    }
-
-    if (options.status) {
-      builder.equals('state', options.status);
-    }
-
-    if (options.limit) {
-      builder.limit(options.limit);
-    }
-
-    if (options.offset) {
-      builder.offset(options.offset);
-    }
-
-    return this.findWithPaginationBuilder(builder);
-  }
-
-  /**
-   * 统计指定状态的会话数量
-   */
-  async countByStatus(status: SessionStatus, options?: SessionQueryOptions): Promise<number> {
-    const builder = this.createQueryOptionsBuilder()
-      .equals('state', status.getValue());
-
-    if (options?.includeDeleted === false) {
-      builder.excludeSoftDeleted();
-    }
-
-    if (options?.userId) {
-      builder.equals('userId', options.userId);
-    }
-
-    return this.countWithBuilder(builder);
-  }
 
   /**
    * 检查用户是否有活跃会话
@@ -495,12 +395,7 @@ export class SessionConverterRepository extends BaseRepository<Session, SessionM
    * 获取用户的最后活动会话
    */
   async getLastActiveSessionByUserId(userId: ID): Promise<Session | null> {
-    const sessions = await this.findByUserId(userId, {
-      sortBy: 'lastActivityAt',
-      sortOrder: 'desc',
-      limit: 1,
-      includeDeleted: false
-    });
+    const sessions = await this.findRecentSessionsForUser(userId, 1);
     
     return sessions.length > 0 ? sessions[0]! : null;
   }
@@ -509,13 +404,13 @@ export class SessionConverterRepository extends BaseRepository<Session, SessionM
    * 删除用户的所有会话
    */
   async deleteAllByUserId(userId: ID): Promise<number> {
-    const sessions = await this.findByUserId(userId);
+    const sessions = await this.findSessionsForUser(userId);
     const sessionIds = sessions.map(session => session.sessionId);
-    
+
     if (sessionIds.length === 0) {
       return 0;
     }
-    
+
     return this.batchSoftDelete(sessionIds);
   }
 
@@ -536,33 +431,6 @@ export class SessionConverterRepository extends BaseRepository<Session, SessionM
   /**
    * 查找软删除的会话
    */
-  override async findSoftDeleted(options?: SessionQueryOptions): Promise<Session[]> {
-    const builder = this.createQueryOptionsBuilder()
-      .sortBy(options?.sortBy || 'deletedAt')
-      .sortOrder(options?.sortOrder || 'desc');
-
-    if (options?.userId) {
-      builder.equals('userId', options.userId);
-    }
-
-    if (options?.status) {
-      builder.equals('state', options.status);
-    }
-
-    if (options?.limit) {
-      builder.limit(options.limit);
-    }
-
-    if (options?.offset) {
-      builder.offset(options.offset);
-    }
-
-    builder.where((qb) => {
-      qb.andWhere('session.isDeleted = true');
-    });
-
-    return this.findWithBuilder(builder);
-  }
 
   /**
    * 批量删除会话

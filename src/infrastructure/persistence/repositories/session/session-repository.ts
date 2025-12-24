@@ -1,9 +1,11 @@
 import { injectable, inject } from 'inversify';
-import { SessionRepository as ISessionRepository, SessionQueryOptions } from '../../../../domain/sessions/repositories/session-repository';
+import { SessionRepository as ISessionRepository } from '../../../../domain/sessions/repositories/session-repository';
 import { Session } from '../../../../domain/sessions/entities/session';
+import { SessionActivity } from '../../../../domain/sessions/value-objects/session-activity';
 import { ID } from '../../../../domain/common/value-objects/id';
 import { SessionStatus } from '../../../../domain/sessions/value-objects/session-status';
 import { SessionConfig } from '../../../../domain/sessions/value-objects/session-config';
+import { Timestamp } from '../../../../domain/common/value-objects/timestamp';
 import { SessionModel } from '../../models/session.model';
 import { In } from 'typeorm';
 import { RepositoryError } from '../../../../domain/common/errors/repository-error';
@@ -95,17 +97,24 @@ export class SessionRepository extends BaseRepository<Session, SessionModel, ID>
   protected override toEntity(model: SessionModel): Session {
     try {
       // 使用类型转换器进行编译时类型安全的转换
+      const lastActivityAt = TimestampConverter.fromStorage(model.updatedAt); // 使用updatedAt作为最后活动时间
+      const messageCount = model.metadata?.messageCount ? NumberConverter.fromStorage(model.metadata.messageCount as number) : 0;
+      const threadCount = model.metadata?.threadCount ? NumberConverter.fromStorage(model.metadata.threadCount as number) : 0;
+      
+      // 创建SessionActivity值对象
+      const activity = SessionActivity.create(lastActivityAt, messageCount, threadCount);
+      
       const sessionData = {
         id: IdConverter.fromStorage(model.id),
         userId: model.userId ? OptionalIdConverter.fromStorage(model.userId) : undefined,
         title: model.metadata?.title ? OptionalStringConverter.fromStorage(model.metadata.title as string) : undefined,
         status: SessionStatusConverter.fromStorage(model.state),
         config: SessionConfigConverter.fromStorage(model.context),
+        activity: activity,
+        metadata: model.metadata || {},
         createdAt: TimestampConverter.fromStorage(model.createdAt),
         updatedAt: TimestampConverter.fromStorage(model.updatedAt),
         version: VersionConverter.fromStorage(model.version),
-        lastActivityAt: TimestampConverter.fromStorage(model.updatedAt), // 使用updatedAt作为最后活动时间
-        messageCount: model.metadata?.messageCount ? NumberConverter.fromStorage(model.metadata.messageCount as number) : 0,
         isDeleted: model.metadata?.isDeleted ? BooleanConverter.fromStorage(model.metadata.isDeleted as boolean) : false
       };
 
@@ -140,8 +149,10 @@ export class SessionRepository extends BaseRepository<Session, SessionModel, ID>
       model.metadata = {
         title: entity.title ? OptionalStringConverter.toStorage(entity.title) : undefined,
         messageCount: NumberConverter.toStorage(entity.messageCount),
+        threadCount: NumberConverter.toStorage(entity.threadCount),
         isDeleted: BooleanConverter.toStorage(entity.isDeleted()),
-        config: SessionConfigConverter.toStorage(entity.config)
+        config: SessionConfigConverter.toStorage(entity.config),
+        ...entity.metadata // 保留其他元数据
       };
       
       // 设置关联字段
@@ -157,114 +168,120 @@ export class SessionRepository extends BaseRepository<Session, SessionModel, ID>
     }
   }
 
-  // 基础 CRUD 方法现在由 BaseRepository 提供，无需重复实现
-
-  async findByUserId(userId: ID, options?: SessionQueryOptions): Promise<Session[]> {
-    const queryOptions: QueryOptions<SessionModel> = {
-      customConditions: (qb: any) => {
-        qb.andWhere('session.userId = :userId', { userId: userId.value });
-      },
-      sortBy: options?.sortBy,
-      sortOrder: options?.sortOrder,
-      limit: options?.limit,
-      offset: options?.offset
-    };
-
-    return this.find(queryOptions);
-  }
-
-  async findByStatus(status: SessionStatus, options?: SessionQueryOptions): Promise<Session[]> {
+  /**
+   * 查找用户的活跃会话
+   */
+  async findActiveSessionsForUser(userId: ID): Promise<Session[]> {
     return this.find({
-      filters: { state: status.getValue() },
-      sortBy: options?.sortBy,
-      sortOrder: options?.sortOrder,
-      limit: options?.limit,
-      offset: options?.offset
+      filters: { userId: userId.value, state: 'active' },
+      sortBy: 'createdAt',
+      sortOrder: 'desc'
     });
   }
 
-  async countByUserId(userId: ID, options?: SessionQueryOptions): Promise<number> {
-    return this.count({ filters: { userId: userId.value } });
-  }
-
-  async updateState(id: ID, state: SessionStatus): Promise<void> {
-    const repository = await this.getRepository();
-    await repository.update({ id: id.value }, { state: state.getValue(), updatedAt: new Date() });
-  }
-
-  // 基础 CRUD 方法现在由 BaseRepository 提供，无需重复实现
-
-  // 实现 SessionRepository 特有的方法
-  async findByUserIdAndStatus(userId: ID, status: SessionStatus, options?: SessionQueryOptions): Promise<Session[]> {
+  /**
+   * 查找即将过期的会话
+   */
+  async findSessionsExpiringBefore(beforeDate: Timestamp): Promise<Session[]> {
     return this.find({
-      filters: { userId: userId.value, state: status.getValue() },
-      sortBy: options?.sortBy,
-      sortOrder: options?.sortOrder,
-      limit: options?.limit,
-      offset: options?.offset
+      customConditions: (qb: any) => {
+        qb.andWhere('session.createdAt < :beforeDate', { beforeDate: beforeDate.getDate() });
+        qb.andWhere('session.state != :terminatedState', { terminatedState: 'terminated' });
+      },
+      sortBy: 'createdAt',
+      sortOrder: 'asc'
     });
   }
 
-  async findActiveSessionsByUserId(userId: ID, options?: SessionQueryOptions): Promise<Session[]> {
-    return this.findByUserIdAndStatus(userId, SessionStatus.active(), options);
-  }
-
-  async findTimeoutSessions(options?: SessionQueryOptions): Promise<Session[]> {
-    // This would require more complex logic to check timeout
-    // For now, return empty array
-    return [];
-  }
-
-  async findExpiredSessions(options?: SessionQueryOptions): Promise<Session[]> {
-    // This would require more complex logic to check expiration
-    // For now, return empty array
-    return [];
-  }
-
-  async searchByTitle(title: string, options?: SessionQueryOptions): Promise<Session[]> {
-    const queryOptions: QueryOptions<SessionModel> = {
+  /**
+   * 查找需要清理的会话（超时或过期）
+   */
+  async findSessionsNeedingCleanup(): Promise<Session[]> {
+    const timeoutThreshold = new Date(Date.now() - 30 * 60 * 1000); // 30分钟前
+    const expirationThreshold = new Date(Date.now() - 24 * 60 * 60 * 1000); // 24小时前
+    
+    return this.find({
       customConditions: (qb: any) => {
-        qb.andWhere('session.metadata->>\'title\' ILIKE :title', { title: `%${title}%` });
+        qb.andWhere('(session.updatedAt < :timeoutThreshold OR session.createdAt < :expirationThreshold)', { 
+          timeoutThreshold, 
+          expirationThreshold 
+        });
+        qb.andWhere('session.state IN (:...states)', { 
+          states: ['active', 'suspended'] 
+        });
       },
-      sortBy: options?.sortBy,
-      sortOrder: options?.sortOrder,
-      limit: options?.limit,
-      offset: options?.offset
-    };
-
-    return this.find(queryOptions);
+      sortBy: 'updatedAt',
+      sortOrder: 'asc'
+    });
   }
 
-  override async findWithPagination(options: SessionQueryOptions): Promise<{ items: Session[], total: number, page: number, pageSize: number, totalPages: number }> {
-    const queryOptions: QueryOptions<SessionModel> = {
-      sortBy: options?.sortBy || 'createdAt',
-      sortOrder: options?.sortOrder || 'desc',
-      limit: options?.limit || 10,
-      offset: options?.offset || 0
-    };
-
-    return super.findWithPagination(queryOptions);
+  /**
+   * 查找高活动度的会话
+   */
+  async findSessionsWithHighActivity(minMessageCount: number): Promise<Session[]> {
+    return this.find({
+      customConditions: (qb: any) => {
+        qb.andWhere('CAST(session.metadata->>\'messageCount\' AS INTEGER) >= :minMessageCount', { minMessageCount });
+      },
+      sortBy: 'messageCount',
+      sortOrder: 'desc'
+    });
   }
 
-  async countByStatus(status: SessionStatus, options?: SessionQueryOptions): Promise<number> {
-    return this.count({ filters: { state: status.getValue() } });
+  /**
+   * 查找用户的最近会话
+   */
+  async findRecentSessionsForUser(userId: ID, limit: number): Promise<Session[]> {
+    return this.find({
+      filters: { userId: userId.value },
+      sortBy: 'updatedAt',
+      sortOrder: 'desc',
+      limit
+    });
   }
 
+  /**
+   * 查找用户的会话
+   */
+  async findSessionsForUser(userId: ID): Promise<Session[]> {
+    return this.find({
+      filters: { userId: userId.value },
+      sortBy: 'createdAt',
+      sortOrder: 'desc'
+    });
+  }
+
+  /**
+   * 检查用户是否有活跃会话
+   */
   async hasActiveSession(userId: ID): Promise<boolean> {
-    const sessions = await this.findActiveSessionsByUserId(userId, { limit: 1 });
+    const sessions = await this.findActiveSessionsForUser(userId);
     return sessions.length > 0;
   }
 
-  async getLastActiveSessionByUserId(userId: ID): Promise<Session | null> {
-    const sessions = await this.findByUserId(userId, {
-      sortBy: 'lastActivityAt',
-      sortOrder: 'desc',
-      limit: 1
+  /**
+   * 查找指定状态的会话
+   */
+  async findSessionsByStatus(status: SessionStatus): Promise<Session[]> {
+    return this.find({
+      filters: { state: status.getValue() },
+      sortBy: 'createdAt',
+      sortOrder: 'desc'
     });
-    return sessions[0] ?? null;
   }
 
-  async batchUpdateStatus(sessionIds: ID[], status: SessionStatus): Promise<number> {
+  /**
+   * 获取用户的最后活动会话
+   */
+  async getLastActiveSessionForUser(userId: ID): Promise<Session | null> {
+    const sessions = await this.findRecentSessionsForUser(userId, 1);
+    return sessions.length > 0 ? sessions[0]! : null;
+  }
+
+  /**
+   * 批量更新会话状态
+   */
+  async batchUpdateSessionStatus(sessionIds: ID[], status: SessionStatus): Promise<number> {
     const repository = await this.getRepository();
     const result = await repository.update(
       { id: In(sessionIds.map(id => id.value)) },
@@ -274,29 +291,47 @@ export class SessionRepository extends BaseRepository<Session, SessionModel, ID>
     return result.affected || 0;
   }
 
-  async batchDelete(sessionIds: ID[]): Promise<number> {
+  /**
+   * 批量删除会话
+   */
+  async batchDeleteSessions(sessionIds: ID[]): Promise<number> {
     const repository = await this.getRepository();
     const result = await repository.delete({ id: In(sessionIds.map(id => id.value)) });
     return result.affected || 0;
   }
 
-  async deleteAllByUserId(userId: ID): Promise<number> {
+  /**
+   * 删除用户的所有会话
+   */
+  async deleteAllSessionsForUser(userId: ID): Promise<number> {
     return this.deleteWhere({ filters: { userId: userId.value } });
   }
 
-  override async softDelete(sessionId: ID): Promise<void> {
+  /**
+   * 软删除会话
+   */
+  async softDeleteSession(sessionId: ID): Promise<void> {
     await super.softDelete(sessionId);
   }
 
-  override async batchSoftDelete(sessionIds: ID[]): Promise<number> {
+  /**
+   * 批量软删除会话
+   */
+  async batchSoftDeleteSessions(sessionIds: ID[]): Promise<number> {
     return super.batchSoftDelete(sessionIds);
   }
 
-  override async restoreSoftDeleted(sessionId: ID): Promise<void> {
+  /**
+   * 恢复软删除的会话
+   */
+  async restoreSoftDeletedSession(sessionId: ID): Promise<void> {
     await super.restoreSoftDeleted(sessionId);
   }
 
-  override async findSoftDeleted(options?: SessionQueryOptions): Promise<Session[]> {
-    return super.findSoftDeleted(options);
+  /**
+   * 查找软删除的会话
+   */
+  async findSoftDeletedSessions(): Promise<Session[]> {
+    return super.findSoftDeleted();
   }
 }

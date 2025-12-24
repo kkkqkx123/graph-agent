@@ -5,14 +5,13 @@
  */
 
 import { ServiceBindings, IContainer, ContainerConfiguration, ServiceLifetime } from '../container';
-import { SessionDefinitionRepository } from '../../../domain/sessions/interfaces/session-definition-repository.interface';
-import { SessionActivityRepository } from '../../../domain/sessions/interfaces/session-activity-repository.interface';
+import { SessionRepository } from '../../../domain/sessions/repositories/session-repository';
 import { ThreadDefinitionRepository } from '../../../domain/threads/interfaces/thread-definition-repository.interface';
 import { ThreadExecutionRepository } from '../../../domain/threads/interfaces/thread-execution-repository.interface';
-import { SessionDefinitionInfrastructureRepository } from '../../sessions/repositories/session-definition-infrastructure-repository';
-import { SessionActivityInfrastructureRepository } from '../../sessions/repositories/session-activity-infrastructure-repository';
+import { SessionRepository as SessionInfrastructureRepository } from '../../persistence/repositories/session/session-repository';
 import { ThreadDefinitionInfrastructureRepository } from '../../threads/repositories/thread-definition-infrastructure-repository';
 import { ThreadExecutionInfrastructureRepository } from '../../threads/repositories/thread-execution-infrastructure-repository';
+import { ConnectionManager } from '../../persistence/connections/connection-manager';
 
 /**
  * 基础设施层仓储绑定
@@ -20,15 +19,12 @@ import { ThreadExecutionInfrastructureRepository } from '../../threads/repositor
 export class InfrastructureRepositoryBindings extends ServiceBindings {
   registerServices(container: IContainer, config: ContainerConfiguration): void {
     // 注册Session仓储
-    container.registerFactory<SessionDefinitionRepository>(
-      'SessionDefinitionRepository',
-      () => new SessionDefinitionInfrastructureRepository(),
-      { lifetime: ServiceLifetime.SINGLETON }
-    );
-
-    container.registerFactory<SessionActivityRepository>(
-      'SessionActivityRepository',
-      () => new SessionActivityInfrastructureRepository(),
+    container.registerFactory<SessionRepository>(
+      'SessionRepository',
+      () => {
+        const connectionManager = container.get<ConnectionManager>('ConnectionManager');
+        return new SessionInfrastructureRepository(connectionManager);
+      },
       { lifetime: ServiceLifetime.SINGLETON }
     );
 

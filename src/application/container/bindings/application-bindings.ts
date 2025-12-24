@@ -3,7 +3,11 @@
  */
 
 import { ServiceBindings, IContainer, ContainerConfiguration, ServiceLifetime } from '../../../infrastructure/container/container';
-import { WorkflowOrchestrationService } from '../../../application/workflow/services/workflow-orchestration-service';
+import { WorkflowOrchestrationService } from '../../workflow/services/workflow-orchestration-service';
+import { SessionOrchestrationService } from '../../sessions/interfaces/session-orchestration-service.interface';
+import { SessionResourceService } from '../../sessions/interfaces/session-resource-service.interface';
+import { SessionOrchestrationServiceImpl } from '../../sessions/services/session-orchestration-service';
+import { SessionResourceServiceImpl } from '../../sessions/services/session-resource-service';
 import { ApplicationWorkflowBindings } from './application-workflow-bindings';
 
 /**
@@ -14,6 +18,27 @@ export class WorkflowServiceBindings extends ServiceBindings {
     // 注册应用层工作流服务
     const workflowBindings = new ApplicationWorkflowBindings();
     workflowBindings.registerServices(container, config);
+
+    // 注册会话编排服务
+    container.registerFactory<SessionOrchestrationService>(
+      'SessionOrchestrationService',
+      () => new SessionOrchestrationServiceImpl(
+        container.get('SessionRepository'),
+        container.get('ThreadRepository'),
+        container.get('SessionResourceService'),
+        container.get('ThreadCoordinatorService')
+      ),
+      { lifetime: ServiceLifetime.SINGLETON }
+    );
+
+    // 注册会话资源服务
+    container.registerFactory<SessionResourceService>(
+      'SessionResourceService',
+      () => new SessionResourceServiceImpl(
+        container.get('SessionRepository')
+      ),
+      { lifetime: ServiceLifetime.SINGLETON }
+    );
 
     // 注册工作流编排服务
     container.registerFactory(

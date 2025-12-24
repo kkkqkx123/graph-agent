@@ -9,14 +9,10 @@ import { GraphAlgorithmService } from '../../../domain/workflow/interfaces/graph
 import { GraphValidationService } from '../../../domain/workflow/interfaces/graph-validation-service.interface';
 import { ThreadLifecycleService } from '../../../domain/threads/interfaces/thread-lifecycle-service.interface';
 import { ThreadCoordinatorService } from '../../../domain/threads/interfaces/thread-coordinator-service.interface';
-import { SessionResourceService } from '../../../domain/sessions/interfaces/session-resource-service.interface';
-import { SessionOrchestrationService } from '../../../domain/sessions/interfaces/session-orchestration-service.interface';
 import { GraphAlgorithmServiceImpl } from '../../../infrastructure/workflow/services/graph-algorithm-service';
 import { GraphValidationServiceImpl } from '../../../infrastructure/workflow/services/graph-validation-service';
 import { ThreadLifecycleInfrastructureService } from '../../../infrastructure/threads/services/thread-lifecycle-service';
 import { ThreadCoordinatorInfrastructureService } from '../../../infrastructure/threads/services/thread-coordinator-service';
-import { SessionResourceInfrastructureService } from '../../../infrastructure/sessions/services/session-resource-infrastructure-service';
-import { SessionOrchestrationInfrastructureService } from '../../../infrastructure/sessions/services/session-orchestration-infrastructure-service';
 
 /**
  * 应用层工作流服务绑定
@@ -54,28 +50,6 @@ export class ApplicationWorkflowBindings extends ServiceBindings {
         container.get('ThreadDefinitionRepository'),
         container.get('ThreadExecutionRepository'),
         container.get('ThreadLifecycleService')
-      ),
-      { lifetime: ServiceLifetime.SINGLETON }
-    );
-
-    // 注册会话资源服务（应用层服务）
-    container.registerFactory<SessionResourceService>(
-      'SessionResourceService',
-      () => new SessionResourceInfrastructureService(
-        container.get('SessionDefinitionRepository'),
-        container.get('SessionActivityRepository')
-      ),
-      { lifetime: ServiceLifetime.SINGLETON }
-    );
-
-    // 注册会话编排服务（应用层服务）
-    container.registerFactory<SessionOrchestrationService>(
-      'SessionOrchestrationService',
-      () => new SessionOrchestrationInfrastructureService(
-        container.get('SessionDefinitionRepository'),
-        container.get('SessionActivityRepository'),
-        container.get('SessionResourceService'),
-        container.get('ThreadCoordinatorService')
       ),
       { lifetime: ServiceLifetime.SINGLETON }
     );
