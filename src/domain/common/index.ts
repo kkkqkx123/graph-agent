@@ -42,7 +42,12 @@ export type { EventHandlerRegistration } from './events/event-dispatcher';
 // 仓储接口
 export { Repository } from './repositories/repository';
 export type { IQueryOptions as QueryOptions } from './repositories/repository';
-export type { PaginatedResult } from './repositories/repository';
+
+// 类型定义
+export * from './types';
+
+// 工具类
+export * from './utils';
 
 // 值对象属性接口
 export type { TimestampProps } from './value-objects/timestamp';

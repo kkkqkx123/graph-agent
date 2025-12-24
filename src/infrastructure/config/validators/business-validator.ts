@@ -2,7 +2,7 @@
  * 业务验证器实现
  */
 
-import { IConfigValidator, BusinessValidatorOptions, ConfigValidationResult, ConfigValidationError } from '@shared/types/config';
+import { IConfigValidator, BusinessValidatorOptions, ConfigValidationResult, ConfigValidationError } from '../../domain/common/types';
 import { ILogger } from '@shared/types/logger';
 
 /**

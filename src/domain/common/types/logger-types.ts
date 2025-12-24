@@ -1,5 +1,6 @@
 /**
  * 日志系统类型定义
+ * 从shared/types/logger.ts迁移而来
  */
 
 /**

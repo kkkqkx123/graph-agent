@@ -2,7 +2,7 @@
  * 配置管理器实现
  */
 
-import { EventEmitter } from '@shared/utils/event-emitter';
+import { EventEmitter } from '../../domain/common/utils';
 import {
   IConfigManager,
   IConfigSource,
@@ -22,8 +22,8 @@ import {
   InheritanceProcessorOptions,
   SchemaValidatorOptions,
   BusinessValidatorOptions
-} from '@shared/types/config';
-import { ILogger } from '@shared/types/logger';
+} from '../../domain/common/types';
+import { ILogger } from '../../domain/common/types';
 
 // 导入配置源实现
 import { FileConfigSource } from './sources/file-source';

@@ -6,7 +6,7 @@ import * as fs from 'fs/promises';
 import * as path from 'path';
 import { parse as parseToml } from 'toml';
 import * as yaml from 'yaml';
-import { IConfigProcessor, InheritanceProcessorOptions } from '@shared/types/config';
+import { IConfigProcessor, InheritanceProcessorOptions } from '../../domain/common/types';
 import { ILogger } from '@shared/types/logger';
 
 /**

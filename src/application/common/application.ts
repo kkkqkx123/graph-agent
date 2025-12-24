@@ -3,9 +3,7 @@
  */
 
 import { IContainer } from '../../infrastructure/container/container';
-import { ILogger } from '@shared/types/logger';
-import { IConfigManager } from '@shared/types/config';
-import { IService } from '@shared/types/common';
+import { ILogger, IConfigManager, IService } from '../../domain/common/types';
 
 /**
  * 应用程序类

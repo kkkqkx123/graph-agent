@@ -1,5 +1,6 @@
 /**
  * 配置系统类型定义
+ * 从shared/types/config.ts迁移而来
  */
 
 /**
@@ -16,8 +17,6 @@ export enum ConfigSourceType {
  * 配置格式类型
  */
 export enum ConfigFormat {
-  //JSON = 'json',
-  //YAML = 'yaml',
   TOML = 'toml',
 }
 

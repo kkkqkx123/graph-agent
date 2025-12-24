@@ -1,5 +1,6 @@
 **/*.repomix-output.xml
 logs
+target
 
 # 依赖
 node_modules/
