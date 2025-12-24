@@ -3,7 +3,6 @@
  */
 
 import { injectable } from 'inversify';
-import { ThreadDefinitionRepository } from '../../../domain/threads/interfaces/thread-definition-repository.interface';
 import { ThreadDefinition } from '../../../domain/threads/value-objects/thread-definition';
 import { ID } from '../../../domain/common/value-objects/id';
 
@@ -11,11 +10,11 @@ import { ID } from '../../../domain/common/value-objects/id';
  * ThreadDefinition仓储基础设施实现
  */
 @injectable()
-export class ThreadDefinitionInfrastructureRepository implements ThreadDefinitionRepository {
+export class ThreadDefinitionInfrastructureRepository {
   private readonly threadDefinitions: Map<string, ThreadDefinition> = new Map();
 
   async save(threadDefinition: ThreadDefinition): Promise<void> {
-    this.threadDefinitions.set(threadDefinition.id.toString(), threadDefinition);
+    this.threadDefinitions.set(threadDefinition.threadId.toString(), threadDefinition);
   }
 
   async findById(id: ID): Promise<ThreadDefinition | null> {
@@ -47,10 +46,10 @@ export class ThreadDefinitionInfrastructureRepository implements ThreadDefinitio
   }
 
   async update(threadDefinition: ThreadDefinition): Promise<void> {
-    if (this.threadDefinitions.has(threadDefinition.id.toString())) {
-      this.threadDefinitions.set(threadDefinition.id.toString(), threadDefinition);
+    if (this.threadDefinitions.has(threadDefinition.threadId.toString())) {
+      this.threadDefinitions.set(threadDefinition.threadId.toString(), threadDefinition);
     } else {
-      throw new Error(`ThreadDefinition不存在: ${threadDefinition.id.toString()}`);
+      throw new Error(`ThreadDefinition不存在: ${threadDefinition.threadId.toString()}`);
     }
   }
 

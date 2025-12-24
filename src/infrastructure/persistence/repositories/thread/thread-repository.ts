@@ -809,18 +809,19 @@ export class ThreadRepository extends BaseRepository<Thread, ThreadModel, ID> im
 
 
   async hasRunningThreads(sessionId: ID): Promise<boolean> {
-    const count = await this.count({
+    const queryOptions: QueryOptions<ThreadModel> = {
       customConditions: (qb: any) => {
         qb.andWhere('thread.sessionId = :sessionId', { sessionId: sessionId.value })
           .andWhere('thread.status = :status', { status: 'running' })
           .andWhere('thread.isDeleted = false');
       }
-    });
+    };
+    const count = await this.count(queryOptions);
     return count > 0;
   }
 
   async getLastActiveThreadForSession(sessionId: ID): Promise<Thread | null> {
-    return this.findOne({
+    const queryOptions: QueryOptions<ThreadModel> = {
       customConditions: (qb: any) => {
         qb.andWhere('thread.sessionId = :sessionId', { sessionId: sessionId.value })
           .andWhere('thread.status IN (:...statuses)', { statuses: ['pending', 'running', 'paused'] })
@@ -828,7 +829,8 @@ export class ThreadRepository extends BaseRepository<Thread, ThreadModel, ID> im
       },
       sortBy: 'updatedAt',
       sortOrder: 'desc'
-    });
+    };
+    return this.findOne(queryOptions);
   }
 
   async batchUpdateThreadStatus(threadIds: ID[], status: ThreadStatus): Promise<number> {
@@ -953,13 +955,14 @@ export class ThreadRepository extends BaseRepository<Thread, ThreadModel, ID> im
   }
 
   async hasActiveThreads(sessionId: ID): Promise<boolean> {
-    const count = await this.count({
+    const queryOptions: QueryOptions<ThreadModel> = {
       customConditions: (qb: any) => {
         qb.andWhere('thread.sessionId = :sessionId', { sessionId: sessionId.value })
           .andWhere('thread.status IN (:...statuses)', { statuses: ['pending', 'running', 'paused'] })
           .andWhere('thread.isDeleted = false');
       }
-    });
+    };
+    const count = await this.count(queryOptions);
     return count > 0;
   }
 }

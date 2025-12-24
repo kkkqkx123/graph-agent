@@ -124,4 +124,11 @@ export interface ThreadRepository extends Repository<Thread, ID> {
    * @returns 可重试的失败线程列表
    */
   findRetryableFailedThreads(maxRetryCount: number): Promise<Thread[]>;
+
+  /**
+   * 获取线程执行统计
+   * @param threadId 线程ID
+   * @returns 执行统计信息
+   */
+  getThreadExecutionStats(threadId: ID): Promise<any>;
 }

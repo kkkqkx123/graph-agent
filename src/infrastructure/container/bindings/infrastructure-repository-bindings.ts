@@ -6,11 +6,9 @@
 
 import { ServiceBindings, IContainer, ContainerConfiguration, ServiceLifetime } from '../container';
 import { SessionRepository } from '../../../domain/sessions/repositories/session-repository';
-import { ThreadDefinitionRepository } from '../../../domain/threads/interfaces/thread-definition-repository.interface';
-import { ThreadExecutionRepository } from '../../../domain/threads/interfaces/thread-execution-repository.interface';
+import { ThreadRepository } from '../../../domain/threads/repositories/thread-repository';
 import { SessionRepository as SessionInfrastructureRepository } from '../../persistence/repositories/session/session-repository';
-import { ThreadDefinitionInfrastructureRepository } from '../../threads/repositories/thread-definition-infrastructure-repository';
-import { ThreadExecutionInfrastructureRepository } from '../../threads/repositories/thread-execution-infrastructure-repository';
+import { ThreadRepository as ThreadInfrastructureRepository } from '../../persistence/repositories/thread/thread-repository';
 import { ConnectionManager } from '../../persistence/connections/connection-manager';
 
 /**
@@ -29,15 +27,12 @@ export class InfrastructureRepositoryBindings extends ServiceBindings {
     );
 
     // 注册Thread仓储
-    container.registerFactory<ThreadDefinitionRepository>(
-      'ThreadDefinitionRepository',
-      () => new ThreadDefinitionInfrastructureRepository(),
-      { lifetime: ServiceLifetime.SINGLETON }
-    );
-
-    container.registerFactory<ThreadExecutionRepository>(
-      'ThreadExecutionRepository',
-      () => new ThreadExecutionInfrastructureRepository(),
+    container.registerFactory<ThreadRepository>(
+      'ThreadRepository',
+      () => {
+        const connectionManager = container.get<ConnectionManager>('ConnectionManager');
+        return new ThreadInfrastructureRepository(connectionManager);
+      },
       { lifetime: ServiceLifetime.SINGLETON }
     );
   }

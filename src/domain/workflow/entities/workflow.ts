@@ -388,6 +388,92 @@ export class Workflow extends Entity {
   }
 
   /**
+   * 获取节点的入边
+   * @param nodeId 节点ID
+   * @returns 入边列表
+   */
+  public getIncomingEdges(nodeId: any): any[] {
+    return this.props.graph.getIncomingEdges(nodeId);
+  }
+
+  /**
+   * 获取节点的出边
+   * @param nodeId 节点ID
+   * @returns 出边列表
+   */
+  public getOutgoingEdges(nodeId: any): any[] {
+    return this.props.graph.getOutgoingEdges(nodeId);
+  }
+
+  /**
+   * 获取执行步骤
+   * @returns 执行步骤列表
+   */
+  public getExecutionSteps(): any[] {
+    // 这个方法应该返回工作流的执行步骤
+    // 实际实现应该基于图的拓扑排序
+    return [];
+  }
+
+  /**
+   * 添加节点
+   * @param node 节点
+   * @param addedBy 添加者ID
+   */
+  public addNode(node: any, addedBy?: ID): void {
+    this.props.graph.addNode(node);
+    this.update();
+  }
+
+  /**
+   * 添加边
+   * @param edge 边
+   * @param addedBy 添加者ID
+   */
+  public addEdge(edge: any, addedBy?: ID): void {
+    this.props.graph.addEdge(edge);
+    this.update();
+  }
+
+  /**
+   * 获取节点
+   * @param nodeId 节点ID
+   * @returns 节点或undefined
+   */
+  public getNode(nodeId: any): any | undefined {
+    return this.props.graph.getNode(nodeId);
+  }
+
+  /**
+   * 移除节点
+   * @param nodeId 节点ID
+   * @param removedBy 移除者ID
+   */
+  public removeNode(nodeId: any, removedBy?: ID): void {
+    this.props.graph.removeNode(nodeId);
+    this.update();
+  }
+
+  /**
+   * 获取边
+   * @param edgeId 边ID
+   * @returns 边或undefined
+   */
+  public getEdge(edgeId: any): any | undefined {
+    return this.props.graph.getEdge(edgeId);
+  }
+
+  /**
+   * 移除边
+   * @param edgeId 边ID
+   * @param removedBy 移除者ID
+   */
+  public removeEdge(edgeId: any, removedBy?: ID): void {
+    this.props.graph.removeEdge(edgeId);
+    this.update();
+  }
+
+  /**
    * 更新定义
    * @param newDefinition 新定义
    */

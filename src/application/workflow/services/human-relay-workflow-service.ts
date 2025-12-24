@@ -300,16 +300,7 @@ export class HumanRelayWorkflowService {
     // 创建工作流
     const workflow = Workflow.create(
       name,
-      `HumanRelay ${mode} 模式工作流`,
-      [humanRelayNode], // nodes
-      [], // edges
-      undefined, // type
-      undefined, // config
-      undefined, // errorHandlingStrategy
-      undefined, // executionStrategy
-      undefined, // tags
-      undefined, // metadata
-      undefined // createdBy
+      `HumanRelay ${mode} 模式工作流`
     );
 
     return workflow;

@@ -2,6 +2,7 @@ import { Thread } from '../entities/thread';
 import { ThreadRepository } from '../repositories/thread-repository';
 import { WorkflowRepository } from '../../workflow/repositories/workflow-repository';
 import { ID } from '../../common/value-objects/id';
+import { Timestamp } from '../../common/value-objects/timestamp';
 import { DomainError } from '../../common/errors/domain-error';
 import { IExecutionContext } from '../../workflow/execution/execution-context.interface';
 import { ExecutionResult, ExecutionStatus } from '../../workflow/execution/types';
@@ -108,21 +109,51 @@ export class ThreadExecutionService {
    */
   private prepareExecutionEnvironment(thread: Thread, inputData: unknown): IExecutionContext {
     const now = Timestamp.now();
+    const executionHistory: any[] = [];
+    const data: any = { input: inputData };
+    const startTime = now;
     
     return {
       executionId: thread.threadId,
       workflowId: thread.workflowId,
-      data: {
-        input: inputData
+      data,
+      workflowState: {
+        workflowId: thread.workflowId,
+        data,
+        history: [],
+        metadata: thread.metadata,
+        createdAt: now,
+        updatedAt: now,
+        getData: (key?: string) => {
+          if (!key) return data;
+          const keys = key.split('.');
+          let value: any = data;
+          for (const k of keys) {
+            value = value?.[k];
+          }
+          return value;
+        },
+        setData: (key: string, value: any) => {
+          // 简化实现，返回新的状态对象
+          return {
+            workflowId: thread.workflowId,
+            data: { ...data, [key]: value },
+            history: [],
+            metadata: thread.metadata,
+            createdAt: now,
+            updatedAt: Timestamp.now(),
+            getData: () => data,
+            setData: () => ({} as any)
+          };
+        }
       },
-      workflowState: {},
-      executionHistory: [],
+      executionHistory,
       metadata: thread.metadata,
-      startTime: now,
+      startTime,
       status: 'running',
       getVariable: (path: string) => {
         const keys = path.split('.');
-        let value: any = this.data;
+        let value: any = data;
         for (const key of keys) {
           value = value?.[key];
         }
@@ -130,7 +161,7 @@ export class ThreadExecutionService {
       },
       setVariable: (path: string, value: any) => {
         const keys = path.split('.');
-        let current: any = this.data;
+        let current: any = data;
         for (let i = 0; i < keys.length - 1; i++) {
           const key = keys[i];
           if (key && current[key] === undefined) {
@@ -145,16 +176,16 @@ export class ThreadExecutionService {
           current[lastKey] = value;
         }
       },
-      getAllVariables: () => this.data,
-      getAllMetadata: () => this.metadata,
-      getInput: () => this.data,
-      getExecutedNodes: () => this.executionHistory.map(h => h.nodeId.toString()),
+      getAllVariables: () => data,
+      getAllMetadata: () => thread.metadata,
+      getInput: () => data,
+      getExecutedNodes: () => executionHistory.map((h: any) => h.nodeId.toString()),
       getNodeResult: (nodeId: string) => {
-        const history = this.executionHistory.find(h => h.nodeId.toString() === nodeId);
+        const history = executionHistory.find((h: any) => h.nodeId.toString() === nodeId);
         return history?.result;
       },
       getElapsedTime: () => {
-        return Timestamp.now().getDate().getTime() - this.startTime.getDate().getTime();
+        return Timestamp.now().getDate().getTime() - startTime.getDate().getTime();
       },
       getWorkflow: () => undefined
     };
@@ -196,7 +227,7 @@ export class ThreadExecutionService {
    */
   private completeExecution(thread: Thread, executionContext: IExecutionContext): ExecutionResult {
     return {
-      executionId: executionContext.executionId.toString(),
+      executionId: executionContext.executionId,
       status: ExecutionStatus.COMPLETED,
       data: executionContext.data,
       statistics: {
@@ -218,7 +249,7 @@ export class ThreadExecutionService {
    */
   private handleExecutionError(thread: Thread, error: Error): ExecutionResult {
     return {
-      executionId: thread.threadId.toString(),
+      executionId: thread.threadId,
       status: ExecutionStatus.FAILED,
       error,
       data: {},

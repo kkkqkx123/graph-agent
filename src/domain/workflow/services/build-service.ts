@@ -334,14 +334,8 @@ export class WorkflowBuildService implements IWorkflowBuildService {
     const workflow = Workflow.create(
       name,
       description,
-      undefined, // nodes
-      undefined, // edges
-      undefined, // type
-      undefined, // config
-      undefined, // errorHandlingStrategy
-      undefined, // executionStrategy
-      undefined, // tags
-      metadata,
+      undefined, // definition
+      undefined, // graph
       createdBy
     );
 

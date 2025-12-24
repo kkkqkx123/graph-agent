@@ -7,8 +7,6 @@
 import { ServiceBindings, IContainer, ContainerConfiguration, ServiceLifetime } from '../../../infrastructure/container/container';
 import { GraphAlgorithmService } from '../../../domain/workflow/interfaces/graph-algorithm-service.interface';
 import { GraphValidationService } from '../../../domain/workflow/interfaces/graph-validation-service.interface';
-import { ThreadLifecycleService } from '../../../domain/threads/interfaces/thread-lifecycle-service.interface';
-import { ThreadCoordinatorService } from '../../../domain/threads/interfaces/thread-coordinator-service.interface';
 import { GraphAlgorithmServiceImpl } from '../../../infrastructure/workflow/services/graph-algorithm-service';
 import { GraphValidationServiceImpl } from '../../../infrastructure/workflow/services/graph-validation-service';
 import { ThreadLifecycleInfrastructureService } from '../../../infrastructure/threads/services/thread-lifecycle-service';
@@ -34,7 +32,7 @@ export class ApplicationWorkflowBindings extends ServiceBindings {
     );
 
     // 注册线程生命周期服务（应用层服务）
-    container.registerFactory<ThreadLifecycleService>(
+    container.registerFactory<ThreadLifecycleInfrastructureService>(
       'ThreadLifecycleService',
       () => new ThreadLifecycleInfrastructureService(
         container.get('ThreadDefinitionRepository'),
@@ -44,12 +42,13 @@ export class ApplicationWorkflowBindings extends ServiceBindings {
     );
 
     // 注册线程协调服务（应用层服务）
-    container.registerFactory<ThreadCoordinatorService>(
+    container.registerFactory<ThreadCoordinatorInfrastructureService>(
       'ThreadCoordinatorService',
       () => new ThreadCoordinatorInfrastructureService(
+        container.get('ThreadRepository'),
+        container.get('ThreadLifecycleService'),
         container.get('ThreadDefinitionRepository'),
-        container.get('ThreadExecutionRepository'),
-        container.get('ThreadLifecycleService')
+        container.get('ThreadExecutionRepository')
       ),
       { lifetime: ServiceLifetime.SINGLETON }
     );

@@ -3,7 +3,7 @@ import { SessionOrchestrationService, ThreadAction, StateChange } from '../inter
 import { SessionRepository } from '../../../domain/sessions/repositories/session-repository';
 import { ThreadRepository } from '../../../domain/threads/repositories/thread-repository';
 import { SessionResourceService } from '../interfaces/session-resource-service.interface';
-import { ThreadCoordinatorService } from '../../../domain/threads/interfaces/thread-coordinator-service.interface';
+import { ThreadCoordinatorInfrastructureService } from '../../../infrastructure/threads/services/thread-coordinator-service';
 import { ExecutionContext, ExecutionResult, ExecutionStatus, ExecutionStatistics } from '../../../domain/workflow/execution';
 import { ID } from '../../../domain/common/value-objects/id';
 import { Timestamp } from '../../../domain/common/value-objects/timestamp';
@@ -17,7 +17,7 @@ export class SessionOrchestrationServiceImpl implements SessionOrchestrationServ
     private readonly sessionRepository: SessionRepository,
     private readonly threadRepository: ThreadRepository,
     private readonly sessionResourceService: SessionResourceService,
-    private readonly threadCoordinator: ThreadCoordinatorService
+    private readonly threadCoordinator: ThreadCoordinatorInfrastructureService
   ) {}
 
   /**

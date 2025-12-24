@@ -1,7 +1,7 @@
 import { injectable, inject } from 'inversify';
 import { WorkflowRepository as IWorkflowRepository, WorkflowQueryOptions } from '../../../../domain/workflow/repositories/workflow-repository';
 import { Workflow } from '../../../../domain/workflow/entities/workflow';
-import { WorkflowDefinition } from '../../../../domain/workflow/entities/workflow-definition';
+import { WorkflowDefinition } from '../../../../domain/workflow/value-objects/workflow-definition';
 import { WorkflowGraph } from '../../../../domain/workflow/entities/workflow-graph';
 import { WorkflowExecutor } from '../../../../domain/workflow/services/workflow-execution-service';
 import { GraphValidationService } from '../../../../domain/workflow/interfaces/graph-validation-service.interface';
@@ -60,8 +60,6 @@ export class WorkflowConverterRepository extends BaseRepository<Workflow, Workfl
         status: WorkflowStatusConverter.fromStorage(model.state),
         type: WorkflowTypeConverter.fromStorage(model.executionMode),
         config: model.configuration ? model.configuration : {}, // 简化处理，实际应转换为WorkflowConfig
-        nodes: new Map(),
-        edges: new Map(),
         errorHandlingStrategy: ErrorHandlingStrategyFactory.default(),
         executionStrategy: ExecutionStrategyFactory.default(),
         tags: model.metadata?.tags || [],

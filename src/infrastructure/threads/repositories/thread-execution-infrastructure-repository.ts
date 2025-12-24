@@ -3,7 +3,6 @@
  */
 
 import { injectable } from 'inversify';
-import { ThreadExecutionRepository } from '../../../domain/threads/interfaces/thread-execution-repository.interface';
 import { ThreadExecution } from '../../../domain/threads/value-objects/thread-execution';
 import { ID } from '../../../domain/common/value-objects/id';
 import { ThreadStatus } from '../../../domain/threads/value-objects/thread-status';
@@ -12,11 +11,11 @@ import { ThreadStatus } from '../../../domain/threads/value-objects/thread-statu
  * ThreadExecution仓储基础设施实现
  */
 @injectable()
-export class ThreadExecutionInfrastructureRepository implements ThreadExecutionRepository {
+export class ThreadExecutionInfrastructureRepository {
   private readonly threadExecutions: Map<string, ThreadExecution> = new Map();
 
   async save(threadExecution: ThreadExecution): Promise<void> {
-    this.threadExecutions.set(threadExecution.executionId.toString(), threadExecution);
+    this.threadExecutions.set(threadExecution.threadId.toString(), threadExecution);
   }
 
   async findById(id: ID): Promise<ThreadExecution | null> {
@@ -25,7 +24,7 @@ export class ThreadExecutionInfrastructureRepository implements ThreadExecutionR
 
   async findByThreadDefinitionId(threadDefinitionId: ID): Promise<ThreadExecution | null> {
     for (const threadExecution of this.threadExecutions.values()) {
-      if (threadExecution.threadDefinitionId.toString() === threadDefinitionId.toString()) {
+      if (threadExecution.threadId.toString() === threadDefinitionId.toString()) {
         return threadExecution;
       }
     }
@@ -58,10 +57,10 @@ export class ThreadExecutionInfrastructureRepository implements ThreadExecutionR
   }
 
   async update(threadExecution: ThreadExecution): Promise<void> {
-    if (this.threadExecutions.has(threadExecution.executionId.toString())) {
-      this.threadExecutions.set(threadExecution.executionId.toString(), threadExecution);
+    if (this.threadExecutions.has(threadExecution.threadId.toString())) {
+      this.threadExecutions.set(threadExecution.threadId.toString(), threadExecution);
     } else {
-      throw new Error(`ThreadExecution不存在: ${threadExecution.executionId.toString()}`);
+      throw new Error(`ThreadExecution不存在: ${threadExecution.threadId.toString()}`);
     }
   }
 

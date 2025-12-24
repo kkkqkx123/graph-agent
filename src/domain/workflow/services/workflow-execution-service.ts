@@ -1,7 +1,7 @@
 import { ID } from '../../common/value-objects/id';
 import { DomainError } from '../../common/errors/domain-error';
 import { IExecutionContext, ExecutionResult, ExecutionStatus } from '../execution';
-import { WorkflowDefinition, ExecutionDefinition } from '../entities/workflow-definition';
+import { WorkflowDefinition } from '../value-objects/workflow-definition';
 import { WorkflowGraph } from '../entities/workflow-graph';
 import { GraphValidationService } from '../interfaces/graph-validation-service.interface';
 
@@ -60,7 +60,7 @@ export class WorkflowExecutor {
     this.config = config;
 
     // 验证工作流定义和图属于同一个工作流
-    if (!workflowDefinition.workflowId.equals(workflowGraph.workflowId)) {
+    if (!workflowDefinition.id.equals(workflowGraph.workflowId)) {
       throw new DomainError('工作流定义和图不属于同一个工作流');
     }
   }
@@ -113,7 +113,7 @@ export class WorkflowExecutor {
    * 获取执行定义（供执行器使用）
    * @returns 执行定义
    */
-  public getExecutionDefinition(): ExecutionDefinition {
+  public getExecutionDefinition(): any {
     return {
       structure: {
         nodes: this.workflowGraph.nodes,
@@ -125,7 +125,7 @@ export class WorkflowExecutor {
         execution: this.workflowDefinition.executionStrategy
       },
       metadata: {
-        workflowId: this.workflowDefinition.workflowId,
+        workflowId: this.workflowDefinition.id,
         workflowType: this.workflowDefinition.type,
         workflowName: this.workflowDefinition.name,
         tags: this.workflowDefinition.tags
@@ -186,7 +186,7 @@ export class WorkflowExecutor {
       throw new DomainError('执行上下文缺少执行ID');
     }
 
-    if (!context.workflowId || !context.workflowId.equals(this.workflowDefinition.workflowId)) {
+    if (!context.workflowId || !context.workflowId.equals(this.workflowDefinition.id)) {
       throw new DomainError('执行上下文中的工作流ID不匹配');
     }
   }

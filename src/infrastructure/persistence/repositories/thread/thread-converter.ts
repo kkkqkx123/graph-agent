@@ -732,7 +732,7 @@ export class ThreadConverterRepository extends BaseRepository<Thread, ThreadMode
   /**
    * 获取线程执行统计信息
    */
-  async getThreadExecutionStats(sessionId: ID): Promise<{
+  async getThreadExecutionStatsBySession(sessionId: ID): Promise<{
     total: number;
     pending: number;
     running: number;
@@ -789,6 +789,198 @@ export class ThreadConverterRepository extends BaseRepository<Thread, ThreadMode
     });
 
     return result;
+  }
+
+  // 实现ThreadRepository接口中缺失的方法
+
+  /**
+   * 查找会话的活跃线程
+   */
+  async findActiveThreadsForSession(sessionId: ID): Promise<Thread[]> {
+    return this.findActiveThreads({ sessionId, includeDeleted: false });
+  }
+
+  /**
+   * 查找需要清理的线程
+   */
+  async findThreadsNeedingCleanup(maxRunningHours: number): Promise<Thread[]> {
+    const cutoffTime = new Date();
+    cutoffTime.setHours(cutoffTime.getHours() - maxRunningHours);
+
+    return this.find({
+      customConditions: (qb) => {
+        qb.andWhere('thread.createdAt < :cutoffTime', { cutoffTime })
+          .andWhere('thread.status IN (:...statuses)', { statuses: ['running', 'paused'] })
+          .andWhere('thread.isDeleted = false');
+      }
+    });
+  }
+
+  /**
+   * 查找高优先级的待执行线程
+   */
+  async findHighPriorityPendingThreads(minPriority: number): Promise<Thread[]> {
+    return this.find({
+      customConditions: (qb) => {
+        qb.andWhere('thread.status = :status', { status: 'pending' })
+          .andWhere('thread.priority >= :minPriority', { minPriority })
+          .andWhere('thread.isDeleted = false')
+          .orderBy('thread.priority', 'DESC')
+          .addOrderBy('thread.createdAt', 'ASC');
+      }
+    });
+  }
+
+  /**
+   * 查找会话的运行中线程
+   */
+  async findRunningThreadsForSession(sessionId: ID): Promise<Thread[]> {
+    return this.findRunningThreads({ sessionId, includeDeleted: false });
+  }
+
+  /**
+   * 获取下一个待执行的线程
+   */
+  async getNextPendingThread(sessionId?: ID): Promise<Thread | null> {
+    const queryOptions: QueryOptions<ThreadModel> = {
+      customConditions: (qb) => {
+        qb.andWhere('thread.status = :status', { status: 'pending' })
+          .andWhere('thread.isDeleted = false')
+          .orderBy('thread.priority', 'DESC')
+          .addOrderBy('thread.createdAt', 'ASC');
+
+        if (sessionId) {
+          qb.andWhere('thread.sessionId = :sessionId', { sessionId: sessionId.value });
+        }
+      },
+      limit: 1
+    };
+
+    return this.findOne(queryOptions);
+  }
+
+  /**
+   * 获取最高优先级的待执行线程
+   */
+
+  /**
+   * 检查会话是否有运行中线程
+   */
+  async hasRunningThreads(sessionId: ID): Promise<boolean> {
+    const queryOptions: QueryOptions<ThreadModel> = {
+      customConditions: (qb) => {
+        qb.andWhere('thread.sessionId = :sessionId', { sessionId: sessionId.value })
+          .andWhere('thread.status = :status', { status: 'running' })
+          .andWhere('thread.isDeleted = false');
+      }
+    };
+
+    const count = await this.count(queryOptions);
+    return count > 0;
+  }
+
+  /**
+   * 获取会话的最后活动线程
+   */
+  async getLastActiveThreadForSession(sessionId: ID): Promise<Thread | null> {
+    return this.getLastActiveThreadBySessionId(sessionId);
+  }
+
+  /**
+   * 批量更新线程状态
+   */
+  async batchUpdateThreadStatus(threadIds: ID[], status: ThreadStatus): Promise<number> {
+    return this.batchUpdateStatus(threadIds, status);
+  }
+
+  /**
+   * 批量取消会话的活跃线程
+   */
+  async batchCancelActiveThreadsForSession(sessionId: ID, reason?: string): Promise<number> {
+    const connection = await this.connectionManager.getConnection();
+    const repository = connection.getRepository(ThreadModel);
+
+    const result = await repository.createQueryBuilder()
+      .update(ThreadModel)
+      .set({
+        state: 'cancelled',
+        updatedAt: new Date(),
+        metadata: () => `JSON_SET(COALESCE(metadata, '{}'), '$.cancelReason', '${reason || 'Batch cancelled'}')`
+      })
+      .where('sessionId = :sessionId', { sessionId: sessionId.value })
+      .andWhere('status IN (:...statuses)', { statuses: ['pending', 'running', 'paused'] })
+      .andWhere('isDeleted = false')
+      .execute();
+
+    return result.affected || 0;
+  }
+
+  /**
+   * 删除会话的所有线程
+   */
+  async deleteAllThreadsForSession(sessionId: ID): Promise<number> {
+    return this.deleteAllBySessionId(sessionId);
+  }
+
+  /**
+   * 查找工作流的线程
+   */
+  async findThreadsForWorkflow(workflowId: ID): Promise<Thread[]> {
+    return this.findByWorkflowId(workflowId, { includeDeleted: false });
+  }
+
+  /**
+   * 查找超时的线程
+   */
+  async findTimedOutThreads(timeoutHours: number): Promise<Thread[]> {
+    const cutoffTime = new Date();
+    cutoffTime.setHours(cutoffTime.getHours() - timeoutHours);
+
+    return this.find({
+      customConditions: (qb) => {
+        qb.andWhere('thread.createdAt < :cutoffTime', { cutoffTime })
+          .andWhere('thread.status IN (:...statuses)', { statuses: ['pending', 'running', 'paused'] })
+          .andWhere('thread.isDeleted = false');
+      }
+    });
+  }
+
+  /**
+   * 查找可重试的失败线程
+   */
+  async findRetryableFailedThreads(maxRetryCount: number): Promise<Thread[]> {
+    return this.find({
+      customConditions: (qb) => {
+        qb.andWhere('thread.status = :status', { status: 'failed' })
+          .andWhere('(thread.metadata->>"$.retryCount" IS NULL OR JSON_EXTRACT(thread.metadata, "$.retryCount") < :maxRetryCount)', { maxRetryCount })
+          .andWhere('thread.isDeleted = false');
+      }
+    });
+  }
+
+  /**
+   * 获取线程执行统计
+   */
+  async getThreadExecutionStats(threadId: ID): Promise<any> {
+    const connection = await this.connectionManager.getConnection();
+    const repository = connection.getRepository(ThreadModel);
+
+    const thread = await repository.findOne({
+      where: { id: threadId.value }
+    });
+
+    if (!thread) {
+      throw new RepositoryError(`线程不存在: ${threadId.value}`, 'NOT_FOUND');
+    }
+
+    return {
+      threadId: thread.id,
+      status: thread.state,
+      createdAt: thread.createdAt,
+      updatedAt: thread.updatedAt,
+      executionTime: thread.updatedAt.getTime() - thread.createdAt.getTime(),
+      metadata: thread.metadata
+    };
   }
 }
 

@@ -5,24 +5,81 @@
 import { injectable } from 'inversify';
 import { ID } from '../../../domain/common/value-objects/id';
 import { ExecutionContext, ExecutionResult, ExecutionStatus } from '../../../domain/workflow/execution';
-import { ThreadCoordinatorService, ResourceRequirement, ThreadPoolStatus } from '../../../domain/threads/interfaces/thread-coordinator-service.interface';
-import { ThreadDefinitionRepository } from '../../../domain/threads/interfaces/thread-definition-repository.interface';
-import { ThreadExecutionRepository } from '../../../domain/threads/interfaces/thread-execution-repository.interface';
-import { ThreadLifecycleService } from '../../../domain/threads/interfaces/thread-lifecycle-service.interface';
+import { ThreadRepository } from '../../../domain/threads/repositories/thread-repository';
+import { ThreadLifecycleInfrastructureService } from './thread-lifecycle-service';
 import { ThreadStatus } from '../../../domain/threads/value-objects/thread-status';
 import { ThreadDefinition } from '../../../domain/threads/value-objects/thread-definition';
 import { ThreadExecution } from '../../../domain/threads/value-objects/thread-execution';
+import { ThreadPriority } from '../../../domain/threads/value-objects/thread-priority';
 
 /**
  * ThreadCoordinatorService基础设施实现
  */
 @injectable()
-export class ThreadCoordinatorInfrastructureService implements ThreadCoordinatorService {
+export class ThreadCoordinatorInfrastructureService {
   constructor(
-    private readonly threadDefinitionRepository: ThreadDefinitionRepository,
-    private readonly threadExecutionRepository: ThreadExecutionRepository,
-    private readonly threadLifecycleService: ThreadLifecycleService
+    private readonly threadRepository: ThreadRepository,
+    private readonly threadLifecycleService: ThreadLifecycleInfrastructureService,
+    private readonly threadDefinitionRepository: any,
+    private readonly threadExecutionRepository: any
   ) {}
+
+  /**
+   * 提交线程执行任务
+   * @param threadId 线程ID
+   * @param workflowId 工作流ID
+   * @param resourceRequirement 资源需求
+   * @param context 执行上下文
+   */
+  async submitThreadExecution(
+    threadId: ID,
+    workflowId: ID,
+    resourceRequirement: any,
+    context: any
+  ): Promise<void> {
+    // 实现线程执行提交逻辑
+    console.log(`提交线程执行: ${threadId}, 工作流: ${workflowId}`);
+  }
+
+  /**
+   * 获取线程池状态
+   * @returns 线程池状态
+   */
+  getThreadPoolStatus(): any {
+    // 实现线程池状态获取逻辑
+    return {
+      activeThreads: 0,
+      maxThreads: 10,
+      queuedTasks: 0
+    };
+  }
+
+  /**
+   * 取消线程执行
+   * @param threadId 线程ID
+   */
+  async cancelThreadExecution(threadId: ID): Promise<void> {
+    // 实现线程取消逻辑
+    console.log(`取消线程执行: ${threadId}`);
+  }
+
+  /**
+   * 暂停线程执行
+   * @param threadId 线程ID
+   */
+  async pauseThreadExecution(threadId: ID): Promise<void> {
+    // 实现线程暂停逻辑
+    console.log(`暂停线程执行: ${threadId}`);
+  }
+
+  /**
+   * 恢复线程执行
+   * @param threadId 线程ID
+   */
+  async resumeThreadExecution(threadId: ID): Promise<void> {
+    // 实现线程恢复逻辑
+    console.log(`恢复线程执行: ${threadId}`);
+  }
 
   /**
    * 协调执行
@@ -115,7 +172,7 @@ export class ThreadCoordinatorInfrastructureService implements ThreadCoordinator
    * @param threadId 线程ID
    * @param requirements 资源需求列表
    */
-  async allocateResources(threadId: ID, requirements: ResourceRequirement[]): Promise<void> {
+  async allocateResources(threadId: ID, requirements: any[]): Promise<void> {
     // TODO: 实现资源分配逻辑
     console.log(`为线程 ${threadId} 分配资源:`, requirements);
   }
@@ -134,7 +191,7 @@ export class ThreadCoordinatorInfrastructureService implements ThreadCoordinator
    * @param sessionId 会话ID
    * @returns 线程池状态
    */
-  async monitorThreadPool(sessionId: ID): Promise<ThreadPoolStatus> {
+  async monitorThreadPool(sessionId: ID): Promise<any> {
     // 获取会话的所有线程定义
     const threadDefinitions = await this.threadDefinitionRepository.findBySessionId(sessionId);
     
@@ -210,10 +267,10 @@ export class ThreadCoordinatorInfrastructureService implements ThreadCoordinator
       ID.fromString(sessionId || context.data?.['sessionId'] || 'default'),
       workflowId,
       undefined,
+      ThreadPriority.normal(),
       `工作流 ${workflowId.toString()} 执行线程`,
       undefined,
-      {},
-      ID.fromString('system')
+      {}
     );
 
     await this.threadDefinitionRepository.save(threadDefinition);
@@ -227,10 +284,7 @@ export class ThreadCoordinatorInfrastructureService implements ThreadCoordinator
     threadId: ID,
     context: ExecutionContext
   ): Promise<any> {
-    const threadExecution = ThreadExecution.create(
-      threadId,
-      context
-    );
+    const threadExecution = ThreadExecution.create(threadId);
 
     await this.threadExecutionRepository.save(threadExecution);
     return threadExecution;

@@ -5,7 +5,7 @@
 
 import { injectable } from 'inversify';
 import { SessionOrchestrationService, ThreadAction } from '../../sessions/interfaces/session-orchestration-service.interface';
-import { ThreadCoordinatorService } from '../../../domain/threads/interfaces/thread-coordinator-service.interface';
+import { ThreadCoordinatorInfrastructureService } from '../../../infrastructure/threads/services/thread-coordinator-service';
 import { GraphAlgorithmService } from '../../../domain/workflow/interfaces/graph-algorithm-service.interface';
 import { GraphValidationService } from '../../../domain/workflow/interfaces/graph-validation-service.interface';
 import { ExecutionContext, IExecutionContext } from '../../../domain/workflow/execution/execution-context.interface';
@@ -20,7 +20,7 @@ import { Timestamp } from '../../../domain/common/value-objects/timestamp';
 export class WorkflowOrchestrationService {
   constructor(
     private readonly sessionOrchestration: SessionOrchestrationService,
-    private readonly threadCoordinator: ThreadCoordinatorService,
+    private readonly threadCoordinator: ThreadCoordinatorInfrastructureService,
     private readonly graphAlgorithm: GraphAlgorithmService,
     private readonly graphValidation: GraphValidationService
   ) {}
