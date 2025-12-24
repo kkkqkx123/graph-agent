@@ -15,10 +15,16 @@ export class ListThreadsHandler {
     try {
       const threads = await this.threadService.listThreads(query.filters, query.limit);
       
+      // 确保所有线程都有workflowId，将undefined转换为空字符串
+      const threadsWithWorkflowId = threads.map(thread => ({
+        ...thread,
+        workflowId: thread.workflowId || ''
+      }));
+      
       // 应用过滤条件
-      let filteredThreads = threads;
+      let filteredThreads = threadsWithWorkflowId;
       if (query.filters) {
-        filteredThreads = this.applyFilters(threads, query.filters);
+        filteredThreads = this.applyFilters(threadsWithWorkflowId, query.filters);
       }
 
       // 应用分页
@@ -44,7 +50,7 @@ export class ListThreadsHandler {
     threads: Array<{
       threadId: string;
       sessionId: string;
-      workflowId?: string;
+      workflowId: string;
       status: string;
       priority: number;
       title?: string;

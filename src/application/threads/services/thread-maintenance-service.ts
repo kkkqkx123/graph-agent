@@ -1,16 +1,17 @@
 /**
  * 线程维护服务
  * 
- * 负责线程的删除、清理、重试和批量操作等维护功能
+ * 负责线程的删除、清理和批量操作等维护功能
  */
 
 import { Thread } from '../../../domain/threads/entities/thread';
 import { ThreadRepository } from '../../../domain/threads/repositories/thread-repository';
 import { ThreadDomainService } from '../../../domain/threads/services/thread-domain-service';
+import { ThreadStatus } from '../../../domain/threads/value-objects/thread-status';
 import { DomainError } from '../../../domain/common/errors/domain-error';
 import { BaseApplicationService } from '../../common/base-application-service';
-import { ThreadInfo, ThreadStatistics } from '../dtos';
-import { ILogger } from '../../../domain/common/types/logger-types';
+import { ThreadInfo } from '../dtos';
+import { ILogger } from '../../../domain/common/types';
 
 /**
  * 线程维护服务
@@ -73,10 +74,95 @@ export class ThreadMaintenanceService extends BaseApplicationService {
       '长时间运行线程',
       async () => {
         const user = this.parseOptionalId(userId, '用户ID');
-        return await this.threadDomainService.cleanupLongRunningThreads(maxRunningHours, user);
+        const threads = await this.threadRepository.findThreadsNeedingCleanup(maxRunningHours);
+        let cleanedCount = 0;
+
+        for (const thread of threads) {
+          try {
+            thread.cancel(user, `线程运行时间超过${maxRunningHours}小时，自动取消`);
+            await this.threadRepository.save(thread);
+            cleanedCount++;
+          } catch (error) {
+            this.logger.error(`清理长时间运行线程失败: ${thread.threadId}`, error as Error);
+          }
+        }
+
+        return cleanedCount;
       },
       { maxRunningHours, userId }
     );
+  }
+
+  /**
+   * 批量更新线程状态
+   * @param threadIds 线程ID列表
+   * @param status 新状态
+   * @returns 更新的线程数量
+   */
+  async batchUpdateThreadStatus(threadIds: string[], status: string): Promise<number> {
+    return this.executeBusinessOperation(
+      '批量更新线程状态',
+      async () => {
+        const ids = threadIds.map(id => this.parseId(id, '线程ID'));
+        const threadStatus = ThreadStatus.fromString(status);
+
+        // 验证批量状态更新
+        // TODO: 实现批量状态更新验证逻辑
+        // await this.threadDomainService.validateBatchStatusUpdate(ids, threadStatus);
+
+        return await this.threadRepository.batchUpdateThreadStatus(ids, threadStatus);
+      },
+      { threadIds, status }
+    );
+  }
+
+  /**
+   * 批量取消会话的活跃线程
+   * @param sessionId 会话ID
+   * @param reason 取消原因
+   * @param userId 用户ID
+   * @returns 取消的线程数量
+   */
+  async batchCancelActiveThreadsForSession(
+    sessionId: string,
+    reason?: string,
+    userId?: string
+  ): Promise<number> {
+    return this.executeBusinessOperation(
+      '批量取消会话活跃线程',
+      async () => {
+        const id = this.parseId(sessionId, '会话ID');
+        const user = this.parseOptionalId(userId, '用户ID');
+
+        return await this.threadRepository.batchCancelActiveThreadsForSession(id, reason);
+      },
+      { sessionId, reason, userId }
+    );
+  }
+
+  /**
+   * 删除会话的所有线程
+   * @param sessionId 会话ID
+   * @returns 删除的线程数量
+   */
+  async deleteAllThreadsForSession(sessionId: string): Promise<number> {
+    const deletedCount = await this.executeBusinessOperation(
+      '删除会话所有线程',
+      async () => {
+        const id = this.parseId(sessionId, '会话ID');
+
+        // 检查是否有运行中的线程
+        const hasRunningThreads = await this.threadRepository.hasRunningThreads(id);
+        if (hasRunningThreads) {
+          throw new DomainError('无法删除有运行中线程的会话');
+        }
+
+        return await this.threadRepository.deleteAllThreadsForSession(id);
+      },
+      { sessionId }
+    );
+    
+    return deletedCount;
   }
 
   /**
@@ -87,49 +173,130 @@ export class ThreadMaintenanceService extends BaseApplicationService {
    */
   async retryFailedThread(threadId: string, userId?: string): Promise<ThreadInfo> {
     return this.executeUpdateOperation(
-      '线程',
+      '失败线程重试',
       async () => {
         const id = this.parseId(threadId, '线程ID');
         const user = this.parseOptionalId(userId, '用户ID');
 
-        const thread = await this.threadDomainService.retryFailedThread(id, user);
-        return this.mapThreadToInfo(thread);
+        const thread = await this.threadRepository.findByIdOrFail(id);
+
+        if (!thread.status.isFailed()) {
+          throw new DomainError('只能重试失败状态的线程');
+        }
+
+        // 验证重试条件
+        // TODO: 实现线程重试验证逻辑
+        // await this.threadDomainService.validateThreadRetry(id);
+
+        // 重置线程状态为待执行
+        thread.start(user); // 先启动
+        thread.pause(user, '准备重试'); // 再暂停，表示准备重试
+
+        const savedThread = await this.threadRepository.save(thread);
+        return this.mapThreadToInfo(savedThread);
       },
       { threadId, userId }
     );
   }
 
   /**
-   * 批量取消会话的所有活跃线程
-   * @param sessionId 会话ID
+   * 批量重试失败的线程
+   * @param threadIds 线程ID列表
    * @param userId 用户ID
-   * @param reason 取消原因
-   * @returns 取消的线程数量
+   * @returns 重试成功的线程数量
    */
-  async cancelAllActiveThreads(sessionId: string, userId?: string, reason?: string): Promise<number> {
+  async batchRetryFailedThreads(threadIds: string[], userId?: string): Promise<number> {
     return this.executeBusinessOperation(
-      '批量取消活跃线程',
+      '批量重试失败线程',
       async () => {
-        const id = this.parseId(sessionId, '会话ID');
         const user = this.parseOptionalId(userId, '用户ID');
+        let retryCount = 0;
 
-        return await this.threadDomainService.cancelAllActiveThreads(id, user, reason);
+        for (const threadId of threadIds) {
+          try {
+            await this.retryFailedThread(threadId, user?.toString());
+            retryCount++;
+          } catch (error) {
+            this.logger.error(`重试失败线程出错: ${threadId}`, error as Error);
+          }
+        }
+
+        return retryCount;
       },
-      { sessionId, userId, reason }
+      { threadIds, userId }
     );
   }
 
   /**
-   * 获取会话的线程统计信息
-   * @param sessionId 会话ID
-   * @returns 线程统计信息
+   * 清理已删除的线程
+   * @param olderThanDays 清理多少天前的已删除线程
+   * @returns 清理的线程数量
    */
-  async getSessionThreadStats(sessionId: string): Promise<ThreadStatistics> {
-    return this.executeQueryOperation(
-      '会话线程统计信息',
+  async cleanupDeletedThreads(olderThanDays: number): Promise<number> {
+    return this.executeCleanupOperation(
+      '已删除线程',
       async () => {
-        const id = this.parseId(sessionId, '会话ID');
-        return await this.threadDomainService.getSessionThreadStats(id);
+        // 这里需要实现查找已删除线程的逻辑
+        // 当前ThreadRepository接口没有提供这个方法，需要扩展
+        // 暂时返回0，实际实现需要添加相应的方法
+        this.logger.warn('cleanupDeletedThreads方法需要ThreadRepository提供相应支持');
+        return 0;
+      },
+      { olderThanDays }
+    );
+  }
+
+  /**
+   * 获取线程维护统计信息
+   * @param sessionId 会话ID（可选）
+   * @returns 维护统计信息
+   */
+  async getThreadMaintenanceStats(sessionId?: string): Promise<{
+    total: number;
+    active: number;
+    running: number;
+    failed: number;
+    longRunning: number;
+    needsCleanup: number;
+  }> {
+    return this.executeQueryOperation(
+      '线程维护统计信息',
+      async () => {
+        const id = sessionId ? this.parseId(sessionId, '会话ID') : undefined;
+        
+        // 获取基础统计信息
+        const baseStats = id 
+          ? await this.threadRepository.getThreadExecutionStats(id)
+          : {
+              total: 0,
+              pending: 0,
+              running: 0,
+              paused: 0,
+              completed: 0,
+              failed: 0,
+              cancelled: 0
+            };
+
+        // 获取需要清理的线程数量
+        const needsCleanupThreads = await this.threadRepository.findThreadsNeedingCleanup(24); // 24小时
+        const needsCleanup = id 
+          ? needsCleanupThreads.filter(t => t.sessionId.equals(id)).length
+          : needsCleanupThreads.length;
+
+        // 获取长时间运行的线程数量
+        const longRunningThreads = await this.threadRepository.findThreadsNeedingCleanup(12); // 12小时
+        const longRunning = id 
+          ? longRunningThreads.filter(t => t.sessionId.equals(id)).length
+          : longRunningThreads.length;
+
+        return {
+          total: baseStats.total,
+          active: baseStats.pending + baseStats.running + baseStats.paused,
+          running: baseStats.running,
+          failed: baseStats.failed,
+          longRunning,
+          needsCleanup
+        };
       },
       { sessionId }
     );
@@ -142,15 +309,17 @@ export class ThreadMaintenanceService extends BaseApplicationService {
     return {
       threadId: thread.threadId.toString(),
       sessionId: thread.sessionId.toString(),
-      workflowId: thread.workflowId?.toString(),
+      workflowId: thread.workflowId.toString(),
       status: thread.status.getValue(),
       priority: thread.priority.getNumericValue(),
       title: thread.title,
       description: thread.description,
-      createdAt: thread.createdAt.getDate().toISOString(),
-      startedAt: thread.startedAt?.getDate().toISOString(),
-      completedAt: thread.completedAt?.getDate().toISOString(),
-      errorMessage: thread.errorMessage
+      createdAt: thread.createdAt.toISOString(),
+      startedAt: thread.startedAt?.toISOString(),
+      completedAt: thread.completedAt?.toISOString(),
+      errorMessage: thread.errorMessage,
+      progress: thread.execution.progress,
+      currentStep: thread.execution.currentStep
     };
   }
 }

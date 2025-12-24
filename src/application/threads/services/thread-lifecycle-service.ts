@@ -1,18 +1,19 @@
 /**
  * 线程生命周期服务
  * 
- * 负责线程的创建、启动、暂停、恢复、完成、失败和取消等生命周期管理
+ * 负责线程的创建、启动、暂停、恢复、完成、取消等生命周期管理
  */
 
 import { Thread } from '../../../domain/threads/entities/thread';
 import { ThreadRepository } from '../../../domain/threads/repositories/thread-repository';
-import { SessionRepository } from '../../../domain/sessions/repositories/session-repository';
 import { ThreadDomainService } from '../../../domain/threads/services/thread-domain-service';
+import { SessionRepository } from '../../../domain/sessions/repositories/session-repository';
+import { WorkflowRepository } from '../../../domain/workflow/repositories/workflow-repository';
+import { ThreadStatus } from '../../../domain/threads/value-objects/thread-status';
 import { ThreadPriority } from '../../../domain/threads/value-objects/thread-priority';
-import { DomainError } from '../../../domain/common/errors/domain-error';
 import { BaseApplicationService } from '../../common/base-application-service';
 import { CreateThreadRequest, ThreadInfo } from '../dtos';
-import { ILogger } from '../../../domain/common/types/logger-types';
+import { ILogger } from '../../../domain/common/types';
 
 /**
  * 线程生命周期服务
@@ -21,6 +22,7 @@ export class ThreadLifecycleService extends BaseApplicationService {
   constructor(
     private readonly threadRepository: ThreadRepository,
     private readonly sessionRepository: SessionRepository,
+    private readonly workflowRepository: WorkflowRepository,
     private readonly threadDomainService: ThreadDomainService,
     logger: ILogger
   ) {
@@ -47,15 +49,31 @@ export class ThreadLifecycleService extends BaseApplicationService {
         const sessionId = this.parseId(request.sessionId, '会话ID');
         const session = await this.sessionRepository.findById(sessionId);
         if (!session) {
-          throw new DomainError(`会话不存在: ${request.sessionId}`);
+          throw new Error(`会话不存在: ${request.sessionId}`);
+        }
+
+        // 验证工作流存在
+        if (!request.workflowId) {
+          throw new Error('工作流ID不能为空');
+        }
+        const workflowId = this.parseId(request.workflowId, '工作流ID');
+        const workflow = await this.workflowRepository.findById(workflowId);
+        if (!workflow) {
+          throw new Error(`工作流不存在: ${request.workflowId}`);
         }
 
         // 转换请求参数
-        const workflowId = this.parseOptionalId(request.workflowId, '工作流ID');
         const priority = request.priority ? ThreadPriority.fromNumber(request.priority) : undefined;
 
-        // 调用领域服务创建线程
-        const thread = await this.threadDomainService.createThread(
+        // 验证线程创建的业务规则
+        await this.threadDomainService.validateThreadCreation(
+          sessionId,
+          workflowId,
+          priority
+        );
+
+        // 创建线程
+        const thread = Thread.create(
           sessionId,
           workflowId,
           priority,
@@ -64,7 +82,13 @@ export class ThreadLifecycleService extends BaseApplicationService {
           request.metadata
         );
 
-        return thread.threadId;
+        // 设置工作流关联
+        thread.setWorkflow(workflow);
+
+        // 保存线程
+        const savedThread = await this.threadRepository.save(thread);
+
+        return savedThread.threadId;
       },
       { sessionId: request.sessionId, workflowId: request.workflowId }
     );
@@ -83,8 +107,14 @@ export class ThreadLifecycleService extends BaseApplicationService {
         const id = this.parseId(threadId, '线程ID');
         const user = this.parseOptionalId(userId, '用户ID');
 
-        const thread = await this.threadDomainService.startThread(id, user);
-        return this.mapThreadToInfo(thread);
+        // 验证线程启动的业务规则
+        await this.threadDomainService.validateThreadStart(id);
+
+        const thread = await this.threadRepository.findByIdOrFail(id);
+        thread.start(user);
+
+        const savedThread = await this.threadRepository.save(thread);
+        return this.mapThreadToInfo(savedThread);
       },
       { threadId, userId }
     );
@@ -104,8 +134,14 @@ export class ThreadLifecycleService extends BaseApplicationService {
         const id = this.parseId(threadId, '线程ID');
         const user = this.parseOptionalId(userId, '用户ID');
 
-        const thread = await this.threadDomainService.pauseThread(id, user, reason);
-        return this.mapThreadToInfo(thread);
+        // 验证线程暂停的业务规则
+        await this.threadDomainService.validateThreadPause(id);
+
+        const thread = await this.threadRepository.findByIdOrFail(id);
+        thread.pause(user, reason);
+
+        const savedThread = await this.threadRepository.save(thread);
+        return this.mapThreadToInfo(savedThread);
       },
       { threadId, userId, reason }
     );
@@ -125,8 +161,14 @@ export class ThreadLifecycleService extends BaseApplicationService {
         const id = this.parseId(threadId, '线程ID');
         const user = this.parseOptionalId(userId, '用户ID');
 
-        const thread = await this.threadDomainService.resumeThread(id, user, reason);
-        return this.mapThreadToInfo(thread);
+        // 验证线程恢复的业务规则
+        await this.threadDomainService.validateThreadResume(id);
+
+        const thread = await this.threadRepository.findByIdOrFail(id);
+        thread.resume(user, reason);
+
+        const savedThread = await this.threadRepository.save(thread);
+        return this.mapThreadToInfo(savedThread);
       },
       { threadId, userId, reason }
     );
@@ -146,8 +188,14 @@ export class ThreadLifecycleService extends BaseApplicationService {
         const id = this.parseId(threadId, '线程ID');
         const user = this.parseOptionalId(userId, '用户ID');
 
-        const thread = await this.threadDomainService.completeThread(id, user, reason);
-        return this.mapThreadToInfo(thread);
+        // 验证线程完成的业务规则
+        await this.threadDomainService.validateThreadCompletion(id);
+
+        const thread = await this.threadRepository.findByIdOrFail(id);
+        thread.complete(user, reason);
+
+        const savedThread = await this.threadRepository.save(thread);
+        return this.mapThreadToInfo(savedThread);
       },
       { threadId, userId, reason }
     );
@@ -173,8 +221,14 @@ export class ThreadLifecycleService extends BaseApplicationService {
         const id = this.parseId(threadId, '线程ID');
         const user = this.parseOptionalId(userId, '用户ID');
 
-        const thread = await this.threadDomainService.failThread(id, errorMessage, user, reason);
-        return this.mapThreadToInfo(thread);
+        // 验证线程失败的业务规则
+        await this.threadDomainService.validateThreadFailure(id);
+
+        const thread = await this.threadRepository.findByIdOrFail(id);
+        thread.fail(errorMessage, user, reason);
+
+        const savedThread = await this.threadRepository.save(thread);
+        return this.mapThreadToInfo(savedThread);
       },
       { threadId, errorMessage, userId, reason }
     );
@@ -194,10 +248,45 @@ export class ThreadLifecycleService extends BaseApplicationService {
         const id = this.parseId(threadId, '线程ID');
         const user = this.parseOptionalId(userId, '用户ID');
 
-        const thread = await this.threadDomainService.cancelThread(id, user, reason);
-        return this.mapThreadToInfo(thread);
+        // 验证线程取消的业务规则
+        await this.threadDomainService.validateThreadCancellation(id);
+
+        const thread = await this.threadRepository.findByIdOrFail(id);
+        thread.cancel(user, reason);
+
+        const savedThread = await this.threadRepository.save(thread);
+        return this.mapThreadToInfo(savedThread);
       },
       { threadId, userId, reason }
+    );
+  }
+
+  /**
+   * 执行线程（串行执行工作流）
+   * @param threadId 线程ID
+   * @param inputData 输入数据
+   * @returns 执行结果
+   */
+  async executeThread(threadId: string, inputData: unknown): Promise<any> {
+    return this.executeBusinessOperation(
+      '线程执行',
+      async () => {
+        const id = this.parseId(threadId, '线程ID');
+
+        const thread = await this.threadRepository.findByIdOrFail(id);
+        
+        // 验证线程启动的业务规则
+        await this.threadDomainService.validateThreadStart(id);
+
+        // 执行线程
+        const result = await thread.executeSequentially(inputData);
+
+        // 保存线程状态
+        await this.threadRepository.save(thread);
+
+        return result;
+      },
+      { threadId }
     );
   }
 
@@ -208,15 +297,17 @@ export class ThreadLifecycleService extends BaseApplicationService {
     return {
       threadId: thread.threadId.toString(),
       sessionId: thread.sessionId.toString(),
-      workflowId: thread.workflowId?.toString(),
+      workflowId: thread.workflowId.toString(),
       status: thread.status.getValue(),
       priority: thread.priority.getNumericValue(),
       title: thread.title,
       description: thread.description,
-      createdAt: thread.createdAt.getDate().toISOString(),
-      startedAt: thread.startedAt?.getDate().toISOString(),
-      completedAt: thread.completedAt?.getDate().toISOString(),
-      errorMessage: thread.errorMessage
+      createdAt: thread.createdAt.toISOString(),
+      startedAt: thread.startedAt?.toISOString(),
+      completedAt: thread.completedAt?.toISOString(),
+      errorMessage: thread.errorMessage,
+      progress: thread.execution.progress,
+      currentStep: thread.execution.currentStep
     };
   }
 }

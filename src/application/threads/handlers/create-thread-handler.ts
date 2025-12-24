@@ -15,7 +15,7 @@ export class CreateThreadHandler {
     try {
       const threadId = await this.threadService.createThread({
         sessionId: command.sessionId,
-        workflowId: command.workflowId,
+        workflowId: command.workflowId || '',
         priority: command.priority,
         title: command.title,
         description: command.description,

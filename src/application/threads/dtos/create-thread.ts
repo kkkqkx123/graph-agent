@@ -4,7 +4,7 @@
 
 export interface CreateThreadRequest {
   sessionId: string;
-  workflowId?: string;
+  workflowId: string;
   priority?: number;
   title?: string;
   description?: string;

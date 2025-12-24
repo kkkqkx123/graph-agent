@@ -3,10 +3,7 @@
  */
 
 // 导出服务
-export * from './services/thread-lifecycle-service';
-export * from './services/thread-management-service';
-export * from './services/thread-maintenance-service';
-
+export * from './services/thread-service';
 
 // 导出命令
 export * from './commands/create-thread-command';

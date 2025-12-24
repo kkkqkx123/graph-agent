@@ -1,5 +1,5 @@
 import { ID } from '../../common/value-objects/id';
-import { ThreadExecution } from '../entities/thread-execution';
+import { ThreadExecution } from '../value-objects/thread-execution';
 
 /**
  * ThreadExecution仓储接口

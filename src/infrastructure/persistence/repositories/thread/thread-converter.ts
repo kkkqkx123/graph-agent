@@ -1,9 +1,11 @@
 import { injectable, inject } from 'inversify';
-import { ThreadRepository as IThreadRepository, ThreadQueryOptions } from '../../../../domain/threads/repositories/thread-repository';
+import { ThreadRepository as IThreadRepository } from '../../../../domain/threads/repositories/thread-repository';
 import { Thread } from '../../../../domain/threads/entities/thread';
 import { ID } from '../../../../domain/common/value-objects/id';
 import { ThreadStatus } from '../../../../domain/threads/value-objects/thread-status';
 import { ThreadPriority } from '../../../../domain/threads/value-objects/thread-priority';
+import { ThreadDefinition } from '../../../../domain/threads/value-objects/thread-definition';
+import { ThreadExecution } from '../../../../domain/threads/value-objects/thread-execution';
 import { ThreadModel } from '../../models/thread.model';
 import { IQueryOptions, PaginatedResult } from '../../../../domain/common/repositories/repository';
 import { RepositoryError } from '../../../../domain/common/errors/repository-error';
@@ -11,6 +13,7 @@ import { In } from 'typeorm';
 import { BaseRepository, QueryOptions } from '../../base/base-repository';
 import { QueryOptionsBuilder } from '../../base/query-options-builder';
 import { ConnectionManager } from '../../connections/connection-manager';
+import { IExecutionContext } from '../../../../domain/workflow/execution/execution-context.interface';
 import {
   IdConverter,
   OptionalIdConverter,
@@ -55,19 +58,92 @@ export class ThreadConverterRepository extends BaseRepository<Thread, ThreadMode
   protected override toEntity(model: ThreadModel): Thread {
     try {
       // 使用类型转换器进行编译时类型安全的转换
+      const id = IdConverter.fromStorage(model.id);
+      const sessionId = IdConverter.fromStorage(model.sessionId);
+      const workflowId = model.workflowId ? OptionalIdConverter.fromStorage(model.workflowId) : undefined;
+      const status = ThreadStatusConverter.fromStorage(model.state);
+      const priority = ThreadPriorityConverter.fromStorage(parseInt(model.priority));
+      const title = model.name ? OptionalStringConverter.fromStorage(model.name) : undefined;
+      const description = model.description ? OptionalStringConverter.fromStorage(model.description) : undefined;
+      const metadata = model.context || {};
+      const createdAt = TimestampConverter.fromStorage(model.createdAt);
+      const updatedAt = TimestampConverter.fromStorage(model.updatedAt);
+      const version = VersionConverter.fromStorage(model.version);
+      const isDeleted = model.metadata?.isDeleted ? BooleanConverter.fromStorage(model.metadata.isDeleted as boolean) : false;
+
+      // 创建必需的值对象
+      const definition = ThreadDefinition.create(
+        id,
+        sessionId,
+        workflowId || ID.empty(),
+        priority,
+        title,
+        description,
+        metadata
+      );
+
+      const execution = ThreadExecution.create(id);
+
+      // 创建执行上下文
+      const executionContext: IExecutionContext = {
+        executionId: id,
+        workflowId: workflowId || ID.empty(),
+        data: {},
+        workflowState: {} as any,
+        executionHistory: [],
+        metadata: metadata || {},
+        startTime: createdAt,
+        status: 'pending',
+        getVariable: (path: string) => {
+          const keys = path.split('.');
+          let value: any = executionContext.data;
+          for (const key of keys) {
+            value = value?.[key];
+          }
+          return value;
+        },
+        setVariable: (path: string, value: any) => {
+          const keys = path.split('.');
+          let current: any = executionContext.data;
+          for (let i = 0; i < keys.length - 1; i++) {
+            const key = keys[i];
+            if (key && current[key] === undefined) {
+              current[key] = {};
+            }
+            if (key) {
+              current = current[key];
+            }
+          }
+          const lastKey = keys[keys.length - 1];
+          if (lastKey) {
+            current[lastKey] = value;
+          }
+        },
+        getAllVariables: () => executionContext.data,
+        getAllMetadata: () => executionContext.metadata,
+        getInput: () => executionContext.data,
+        getExecutedNodes: () => [],
+        getNodeResult: (nodeId: string) => undefined,
+        getElapsedTime: () => 0,
+        getWorkflow: () => undefined
+      };
+
       const threadData = {
-        id: IdConverter.fromStorage(model.id),
-        sessionId: IdConverter.fromStorage(model.sessionId),
-        workflowId: model.workflowId ? OptionalIdConverter.fromStorage(model.workflowId) : undefined,
-        status: ThreadStatusConverter.fromStorage(model.state),
-        priority: ThreadPriorityConverter.fromStorage(parseInt(model.priority)),
-        title: model.name ? OptionalStringConverter.fromStorage(model.name) : undefined,
-        description: model.description ? OptionalStringConverter.fromStorage(model.description) : undefined,
-        metadata: model.context || {},
-        createdAt: TimestampConverter.fromStorage(model.createdAt),
-        updatedAt: TimestampConverter.fromStorage(model.updatedAt),
-        version: VersionConverter.fromStorage(model.version),
-        isDeleted: model.metadata?.isDeleted ? BooleanConverter.fromStorage(model.metadata.isDeleted as boolean) : false
+        id,
+        sessionId,
+        workflowId: workflowId || ID.empty(),
+        status,
+        priority,
+        title,
+        description,
+        metadata,
+        definition,
+        execution,
+        executionContext,
+        createdAt,
+        updatedAt,
+        version,
+        isDeleted
       };
 
       // 创建Thread实体
@@ -120,7 +196,7 @@ export class ThreadConverterRepository extends BaseRepository<Thread, ThreadMode
   /**
    * 根据会话ID查找线程
    */
-  async findBySessionId(sessionId: ID, options?: ThreadQueryOptions): Promise<Thread[]> {
+  async findBySessionId(sessionId: ID, options?: any): Promise<Thread[]> {
     const builder = this.createQueryOptionsBuilder()
       .equals('sessionId', sessionId.value)
       .sortBy(options?.sortBy || 'createdAt')
@@ -156,7 +232,7 @@ export class ThreadConverterRepository extends BaseRepository<Thread, ThreadMode
   /**
    * 根据工作流ID查找线程
    */
-  async findByWorkflowId(workflowId: ID, options?: ThreadQueryOptions): Promise<Thread[]> {
+  async findByWorkflowId(workflowId: ID, options?: any): Promise<Thread[]> {
     const builder = this.createQueryOptionsBuilder()
       .equals('workflowId', workflowId.value)
       .sortBy(options?.sortBy || 'createdAt')
@@ -188,7 +264,7 @@ export class ThreadConverterRepository extends BaseRepository<Thread, ThreadMode
   /**
    * 根据状态查找线程
    */
-  async findByStatus(status: ThreadStatus, options?: ThreadQueryOptions): Promise<Thread[]> {
+  async findByStatus(status: ThreadStatus, options?: any): Promise<Thread[]> {
     return this.find({
       customConditions: (qb) => {
         qb.andWhere('thread.status = :status', { status: status.getValue() });
@@ -215,7 +291,7 @@ export class ThreadConverterRepository extends BaseRepository<Thread, ThreadMode
   /**
    * 根据优先级查找线程
    */
-  async findByPriority(priority: ThreadPriority, options?: ThreadQueryOptions): Promise<Thread[]> {
+  async findByPriority(priority: ThreadPriority, options?: any): Promise<Thread[]> {
     return this.find({
       customConditions: (qb) => {
         qb.andWhere('thread.priority = :priority', { priority: priority.getNumericValue() });
@@ -242,7 +318,7 @@ export class ThreadConverterRepository extends BaseRepository<Thread, ThreadMode
   /**
    * 根据会话ID和状态查找线程
    */
-  async findBySessionIdAndStatus(sessionId: ID, status: ThreadStatus, options?: ThreadQueryOptions): Promise<Thread[]> {
+  async findBySessionIdAndStatus(sessionId: ID, status: ThreadStatus, options?: any): Promise<Thread[]> {
     const connection = await this.connectionManager.getConnection();
     const repository = connection.getRepository(ThreadModel);
 
@@ -275,7 +351,7 @@ export class ThreadConverterRepository extends BaseRepository<Thread, ThreadMode
   /**
    * 查找活跃线程
    */
-  async findActiveThreads(options?: ThreadQueryOptions): Promise<Thread[]> {
+  async findActiveThreads(options?: any): Promise<Thread[]> {
     return this.find({
       customConditions: (qb) => {
         qb.andWhere('thread.status IN (:...statuses)', { statuses: ['pending', 'running', 'paused'] });
@@ -302,28 +378,28 @@ export class ThreadConverterRepository extends BaseRepository<Thread, ThreadMode
   /**
    * 查找待处理线程
    */
-  async findPendingThreads(options?: ThreadQueryOptions): Promise<Thread[]> {
+  async findPendingThreads(options?: any): Promise<Thread[]> {
     return this.findByStatus(ThreadStatus.pending(), options);
   }
 
   /**
    * 查找运行中的线程
    */
-  async findRunningThreads(options?: ThreadQueryOptions): Promise<Thread[]> {
+  async findRunningThreads(options?: any): Promise<Thread[]> {
     return this.findByStatus(ThreadStatus.running(), options);
   }
 
   /**
    * 查找暂停的线程
    */
-  async findPausedThreads(options?: ThreadQueryOptions): Promise<Thread[]> {
+  async findPausedThreads(options?: any): Promise<Thread[]> {
     return this.findByStatus(ThreadStatus.paused(), options);
   }
 
   /**
    * 查找终止状态的线程
    */
-  async findTerminalThreads(options?: ThreadQueryOptions): Promise<Thread[]> {
+  async findTerminalThreads(options?: any): Promise<Thread[]> {
     return this.find({
       customConditions: (qb) => {
         qb.andWhere('thread.status IN (:...statuses)', { statuses: ['completed', 'failed', 'cancelled'] });
@@ -350,14 +426,14 @@ export class ThreadConverterRepository extends BaseRepository<Thread, ThreadMode
   /**
    * 查找失败的线程
    */
-  async findFailedThreads(options?: ThreadQueryOptions): Promise<Thread[]> {
+  async findFailedThreads(options?: any): Promise<Thread[]> {
     return this.findByStatus(ThreadStatus.failed(), options);
   }
 
   /**
    * 根据标题搜索线程
    */
-  async searchByTitle(title: string, options?: ThreadQueryOptions): Promise<Thread[]> {
+  async searchByTitle(title: string, options?: any): Promise<Thread[]> {
     return this.find({
       customConditions: (qb) => {
         qb.andWhere('thread.title LIKE :title', { title: `%${title}%` });
@@ -384,7 +460,7 @@ export class ThreadConverterRepository extends BaseRepository<Thread, ThreadMode
   /**
    * 分页查询线程
    */
-  override async findWithPagination(options: ThreadQueryOptions): Promise<PaginatedResult<Thread>> {
+  override async findWithPagination(options: any): Promise<PaginatedResult<Thread>> {
     const queryOptions: QueryOptions<ThreadModel> = {
       customConditions: (qb: any) => {
         if (options?.includeDeleted === false) {
@@ -423,7 +499,7 @@ export class ThreadConverterRepository extends BaseRepository<Thread, ThreadMode
   /**
    * 统计会话中的线程数
    */
-  async countBySessionId(sessionId: ID, options?: ThreadQueryOptions): Promise<number> {
+  async countBySessionId(sessionId: ID, options?: any): Promise<number> {
     const queryOptions: QueryOptions<ThreadModel> = {
       customConditions: (qb: any) => {
         qb.andWhere('thread.sessionId = :sessionId', { sessionId: sessionId.value });
@@ -448,7 +524,7 @@ export class ThreadConverterRepository extends BaseRepository<Thread, ThreadMode
   /**
    * 统计工作流中的线程数
    */
-  async countByWorkflowId(workflowId: ID, options?: ThreadQueryOptions): Promise<number> {
+  async countByWorkflowId(workflowId: ID, options?: any): Promise<number> {
     const queryOptions: QueryOptions<ThreadModel> = {
       customConditions: (qb: any) => {
         qb.andWhere('thread.workflowId = :workflowId', { workflowId: workflowId.value });
@@ -473,7 +549,7 @@ export class ThreadConverterRepository extends BaseRepository<Thread, ThreadMode
   /**
    * 统计指定状态的线程数
    */
-  async countByStatus(status: ThreadStatus, options?: ThreadQueryOptions): Promise<number> {
+  async countByStatus(status: ThreadStatus, options?: any): Promise<number> {
     const queryOptions: QueryOptions<ThreadModel> = {
       customConditions: (qb: any) => {
         qb.andWhere('thread.status = :status', { status: status.getValue() });
@@ -498,7 +574,7 @@ export class ThreadConverterRepository extends BaseRepository<Thread, ThreadMode
   /**
    * 统计指定优先级的线程数
    */
-  async countByPriority(priority: ThreadPriority, options?: ThreadQueryOptions): Promise<number> {
+  async countByPriority(priority: ThreadPriority, options?: any): Promise<number> {
     const queryOptions: QueryOptions<ThreadModel> = {
       customConditions: (qb: any) => {
         qb.andWhere('thread.priority = :priority', { priority: priority.getNumericValue() });
@@ -555,7 +631,7 @@ export class ThreadConverterRepository extends BaseRepository<Thread, ThreadMode
   /**
    * 获取最高优先级的待处理线程
    */
-  async getHighestPriorityPendingThread(options?: ThreadQueryOptions): Promise<Thread | null> {
+  async getHighestPriorityPendingThread(options?: any): Promise<Thread | null> {
     const queryOptions: QueryOptions<ThreadModel> = {
       customConditions: (qb) => {
         qb.andWhere('thread.status = :status', { status: 'pending' })
@@ -621,7 +697,7 @@ export class ThreadConverterRepository extends BaseRepository<Thread, ThreadMode
   /**
    * 重写软删除查找方法，添加Thread特有的查询条件
    */
-  override async findSoftDeleted(options?: ThreadQueryOptions): Promise<Thread[]> {
+  override async findSoftDeleted(options?: any): Promise<Thread[]> {
     return this.find({
       customConditions: (qb) => {
         qb.andWhere('thread.isDeleted = true');

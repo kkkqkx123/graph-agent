@@ -1,5 +1,5 @@
 import { ID } from '../../common/value-objects/id';
-import { ThreadDefinition } from '../entities/thread-definition';
+import { ThreadDefinition } from '../value-objects/thread-definition';
 
 /**
  * ThreadDefinition仓储接口

@@ -10,8 +10,8 @@ import { ThreadDefinitionRepository } from '../../../domain/threads/interfaces/t
 import { ThreadExecutionRepository } from '../../../domain/threads/interfaces/thread-execution-repository.interface';
 import { ThreadLifecycleService } from '../../../domain/threads/interfaces/thread-lifecycle-service.interface';
 import { ThreadStatus } from '../../../domain/threads/value-objects/thread-status';
-import { ThreadDefinition } from '../../../domain/threads/entities/thread-definition';
-import { ThreadExecution } from '../../../domain/threads/entities/thread-execution';
+import { ThreadDefinition } from '../../../domain/threads/value-objects/thread-definition';
+import { ThreadExecution } from '../../../domain/threads/value-objects/thread-execution';
 
 /**
  * ThreadCoordinatorService基础设施实现

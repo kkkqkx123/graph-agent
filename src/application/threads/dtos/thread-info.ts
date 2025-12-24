@@ -5,7 +5,7 @@
 export interface ThreadInfo {
   threadId: string;
   sessionId: string;
-  workflowId?: string;
+  workflowId: string;
   status: string;
   priority: number;
   title?: string;
@@ -14,6 +14,8 @@ export interface ThreadInfo {
   startedAt?: string;
   completedAt?: string;
   errorMessage?: string;
+  progress?: number;
+  currentStep?: string;
 }
 
 export interface ThreadStatistics {

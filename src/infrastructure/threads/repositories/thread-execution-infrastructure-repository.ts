@@ -4,7 +4,7 @@
 
 import { injectable } from 'inversify';
 import { ThreadExecutionRepository } from '../../../domain/threads/interfaces/thread-execution-repository.interface';
-import { ThreadExecution } from '../../../domain/threads/entities/thread-execution';
+import { ThreadExecution } from '../../../domain/threads/value-objects/thread-execution';
 import { ID } from '../../../domain/common/value-objects/id';
 import { ThreadStatus } from '../../../domain/threads/value-objects/thread-status';
 

@@ -1,16 +1,21 @@
 import { Thread } from '../entities/thread';
 import { ThreadRepository } from '../repositories/thread-repository';
 import { ID } from '../../common/value-objects/id';
-import { Timestamp } from '../../common/value-objects/timestamp';
 import { ThreadStatus } from '../value-objects/thread-status';
 import { ThreadPriority } from '../value-objects/thread-priority';
 import { DomainError } from '../../common/errors/domain-error';
-import type { ThreadProps } from '../entities/thread';
+import { Workflow } from '../../workflow/entities/workflow';
 
 /**
  * 线程领域服务
  * 
- * 提供线程相关的业务逻辑和规则
+ * 提供线程相关的核心业务逻辑和规则
+ * 专注于跨聚合的业务逻辑，不包含应用服务逻辑
+ * 
+ * Thread作为串行执行协调者的业务规则：
+ * - 单线程内的状态管理
+ * - 执行步骤的顺序控制
+ * - 错误处理和恢复
  */
 export class ThreadDomainService {
   /**
@@ -20,390 +25,332 @@ export class ThreadDomainService {
   constructor(private readonly threadRepository: ThreadRepository) {}
 
   /**
-   * 创建新线程
+   * 验证线程创建的业务规则
    * @param sessionId 会话ID
    * @param workflowId 工作流ID
    * @param priority 线程优先级
-   * @param title 线程标题
-   * @param description 线程描述
-   * @param metadata 元数据
-   * @returns 新线程
    */
-  async createThread(
+  async validateThreadCreation(
     sessionId: ID,
-    workflowId?: ID,
-    priority?: ThreadPriority,
-    title?: string,
-    description?: string,
-    metadata?: Record<string, unknown>
-  ): Promise<Thread> {
-    // 验证会话是否存在活跃线程（根据业务规则）
+    workflowId: ID,
+    priority?: ThreadPriority
+  ): Promise<void> {
+    // 验证会话是否有活跃线程（Session负责多线程并行管理）
     const hasActiveThreads = await this.threadRepository.hasActiveThreads(sessionId);
     if (hasActiveThreads) {
       throw new DomainError('会话已有活跃线程，无法创建新线程');
     }
 
-    // 创建线程
-    const thread = Thread.create(
-      sessionId,
-      workflowId,
-      priority,
-      title,
-      description,
-      metadata
-    );
-
-    // 保存线程
-    return await this.threadRepository.save(thread);
+    // 验证优先级
+    if (priority) {
+      priority.validate();
+    }
   }
 
   /**
-   * 启动线程
+   * 验证线程启动的业务规则
    * @param threadId 线程ID
-   * @param userId 操作用户ID
-   * @returns 启动后的线程
    */
-  async startThread(threadId: ID, userId?: ID): Promise<Thread> {
+  async validateThreadStart(threadId: ID): Promise<void> {
     const thread = await this.threadRepository.findByIdOrFail(threadId);
-
-    if (thread.status.isRunning()) {
-      return thread; // 已经是运行中状态
-    }
 
     if (!thread.status.isPending()) {
       throw new DomainError('只能启动待执行状态的线程');
     }
 
-    // 检查会话是否有其他运行中的线程
-    const runningThreads = await this.threadRepository.findRunningThreads({
-      sessionId: thread.sessionId.toString()
-    });
-
-    if (runningThreads.length > 0) {
+    // 检查会话是否有其他运行中的线程（Session负责并行管理）
+    const hasRunningThreads = await this.threadRepository.hasRunningThreads(thread.sessionId);
+    if (hasRunningThreads) {
       throw new DomainError('会话已有运行中的线程，无法启动其他线程');
     }
 
-    // 启动线程
-    thread.start(userId);
-
-    return await this.threadRepository.save(thread);
+    // 验证工作流是否可以执行
+    if (!thread.workflowId) {
+      throw new DomainError('线程未关联工作流，无法启动');
+    }
   }
 
   /**
-   * 暂停线程
+   * 验证线程暂停的业务规则
    * @param threadId 线程ID
-   * @param userId 操作用户ID
-   * @param reason 暂停原因
-   * @returns 暂停后的线程
    */
-  async pauseThread(
-    threadId: ID,
-    userId?: ID,
-    reason?: string
-  ): Promise<Thread> {
+  async validateThreadPause(threadId: ID): Promise<void> {
     const thread = await this.threadRepository.findByIdOrFail(threadId);
-
-    if (thread.status.isPaused()) {
-      return thread; // 已经是暂停状态
-    }
 
     if (!thread.status.isRunning()) {
       throw new DomainError('只能暂停运行中的线程');
     }
-
-    // 暂停线程
-    thread.pause(userId, reason);
-
-    return await this.threadRepository.save(thread);
   }
 
   /**
-   * 恢复线程
+   * 验证线程恢复的业务规则
    * @param threadId 线程ID
-   * @param userId 操作用户ID
-   * @param reason 恢复原因
-   * @returns 恢复后的线程
    */
-  async resumeThread(
-    threadId: ID,
-    userId?: ID,
-    reason?: string
-  ): Promise<Thread> {
+  async validateThreadResume(threadId: ID): Promise<void> {
     const thread = await this.threadRepository.findByIdOrFail(threadId);
-
-    if (thread.status.isRunning()) {
-      return thread; // 已经是运行中状态
-    }
 
     if (!thread.status.isPaused()) {
       throw new DomainError('只能恢复暂停状态的线程');
     }
 
-    // 检查会话是否有其他运行中的线程
-    const runningThreads = await this.threadRepository.findRunningThreads({
-      sessionId: thread.sessionId.toString()
-    });
-
-    if (runningThreads.length > 0) {
+    // 检查会话是否有其他运行中的线程（Session负责并行管理）
+    const hasRunningThreads = await this.threadRepository.hasRunningThreads(thread.sessionId);
+    if (hasRunningThreads) {
       throw new DomainError('会话已有运行中的线程，无法恢复其他线程');
     }
-
-    // 恢复线程
-    thread.resume(userId, reason);
-
-    return await this.threadRepository.save(thread);
   }
 
   /**
-   * 完成线程
+   * 验证线程完成的业务规则
    * @param threadId 线程ID
-   * @param userId 操作用户ID
-   * @param reason 完成原因
-   * @returns 完成后的线程
    */
-  async completeThread(
-    threadId: ID,
-    userId?: ID,
-    reason?: string
-  ): Promise<Thread> {
+  async validateThreadCompletion(threadId: ID): Promise<void> {
     const thread = await this.threadRepository.findByIdOrFail(threadId);
-
-    if (thread.status.isCompleted()) {
-      return thread; // 已经是完成状态
-    }
 
     if (!thread.status.isActive()) {
       throw new DomainError('只能完成活跃状态的线程');
     }
-
-    // 完成线程
-    thread.complete(userId, reason);
-
-    return await this.threadRepository.save(thread);
   }
 
   /**
-   * 失败线程
+   * 验证线程失败的业务规则
    * @param threadId 线程ID
-   * @param errorMessage 错误信息
-   * @param userId 操作用户ID
-   * @param reason 失败原因
-   * @returns 失败后的线程
    */
-  async failThread(
-    threadId: ID,
-    errorMessage: string,
-    userId?: ID,
-    reason?: string
-  ): Promise<Thread> {
+  async validateThreadFailure(threadId: ID): Promise<void> {
     const thread = await this.threadRepository.findByIdOrFail(threadId);
-
-    if (thread.status.isFailed()) {
-      return thread; // 已经是失败状态
-    }
 
     if (!thread.status.isActive()) {
       throw new DomainError('只能设置活跃状态的线程为失败状态');
     }
-
-    // 失败线程
-    thread.fail(errorMessage, userId, reason);
-
-    return await this.threadRepository.save(thread);
   }
 
   /**
-   * 取消线程
+   * 验证线程取消的业务规则
    * @param threadId 线程ID
-   * @param userId 操作用户ID
-   * @param reason 取消原因
-   * @returns 取消后的线程
    */
-  async cancelThread(
-    threadId: ID,
-    userId?: ID,
-    reason?: string
-  ): Promise<Thread> {
+  async validateThreadCancellation(threadId: ID): Promise<void> {
     const thread = await this.threadRepository.findByIdOrFail(threadId);
-
-    if (thread.status.isCancelled()) {
-      return thread; // 已经是取消状态
-    }
 
     if (thread.status.isTerminal()) {
       throw new DomainError('无法取消已终止状态的线程');
     }
-
-    // 取消线程
-    thread.cancel(userId, reason);
-
-    return await this.threadRepository.save(thread);
   }
 
   /**
-   * 更新线程优先级
+   * 验证线程优先级更新的业务规则
    * @param threadId 线程ID
    * @param newPriority 新优先级
-   * @param userId 操作用户ID
-   * @returns 更新后的线程
    */
-  async updateThreadPriority(
-    threadId: ID,
-    newPriority: ThreadPriority,
-    userId?: ID
-  ): Promise<Thread> {
+  async validateThreadPriorityUpdate(threadId: ID, newPriority: ThreadPriority): Promise<void> {
     const thread = await this.threadRepository.findByIdOrFail(threadId);
 
     if (!thread.status.canOperate()) {
       throw new DomainError('无法更新非活跃状态线程的优先级');
     }
 
-    // 更新优先级
-    thread.updatePriority(newPriority);
-
-    return await this.threadRepository.save(thread);
+    newPriority.validate();
   }
 
   /**
-   * 获取下一个待执行的线程
-   * @param sessionId 会话ID
-   * @returns 下一个待执行的线程或null
-   */
-  async getNextPendingThread(sessionId?: ID): Promise<Thread | null> {
-    const options: any = {};
-    if (sessionId) {
-      options.sessionId = sessionId.toString();
-    }
-
-    return await this.threadRepository.getHighestPriorityPendingThread(options);
-  }
-
-  /**
-   * 获取会话的线程执行统计信息
-   * @param sessionId 会话ID
-   * @returns 线程执行统计信息
-   */
-  async getSessionThreadStats(sessionId: ID): Promise<{
-    total: number;
-    pending: number;
-    running: number;
-    paused: number;
-    completed: number;
-    failed: number;
-    cancelled: number;
-  }> {
-    return await this.threadRepository.getThreadExecutionStats(sessionId);
-  }
-
-  /**
-   * 清理长时间运行的线程
-   * @param maxRunningHours 最大运行时间（小时）
-   * @param userId 操作用户ID
-   * @returns 清理的线程数量
-   */
-  async cleanupLongRunningThreads(
-    maxRunningHours: number,
-    userId?: ID
-  ): Promise<number> {
-    const runningThreads = await this.threadRepository.findRunningThreads();
-    let cleanedCount = 0;
-
-    for (const thread of runningThreads) {
-      if (thread.startedAt) {
-        const now = new Date();
-        const runningHours = (now.getTime() - thread.startedAt.getMilliseconds()) / (1000 * 60 * 60);
-        
-        if (runningHours > maxRunningHours) {
-          try {
-            // 取消长时间运行的线程
-            thread.cancel(userId, `线程运行时间超过${maxRunningHours}小时，自动取消`);
-            await this.threadRepository.save(thread);
-            cleanedCount++;
-          } catch (error) {
-            console.error(`清理长时间运行线程失败: ${thread.threadId}`, error);
-          }
-        }
-      }
-    }
-
-    return cleanedCount;
-  }
-
-  /**
-   * 重试失败的线程
+   * 验证工作流关联的业务规则
    * @param threadId 线程ID
-   * @param userId 操作用户ID
-   * @returns 重试后的线程
+   * @param workflow 工作流
    */
-  async retryFailedThread(threadId: ID, userId?: ID): Promise<Thread> {
+  async validateWorkflowAssociation(threadId: ID, workflow: Workflow): Promise<void> {
     const thread = await this.threadRepository.findByIdOrFail(threadId);
 
-    if (!thread.status.isFailed()) {
-      throw new DomainError('只能重试失败状态的线程');
+    if (thread.status.isRunning()) {
+      throw new DomainError('线程正在运行时不能更改工作流');
     }
 
-    // 检查会话是否有其他运行中的线程
-    const runningThreads = await this.threadRepository.findRunningThreads({
-      sessionId: thread.sessionId.toString()
-    });
-
-    if (runningThreads.length > 0) {
-      throw new DomainError('会话已有运行中的线程，无法重试其他线程');
+    if (!workflow.status.canExecute()) {
+      throw new DomainError(`工作流当前状态不允许执行: ${workflow.status}`);
     }
-
-    // 重置线程状态为待执行
-    const newProps: ThreadProps = {
-      id: thread.threadId,
-      sessionId: thread.sessionId,
-      workflowId: thread.workflowId,
-      status: ThreadStatus.pending(),
-      priority: thread.priority,
-      title: thread.title,
-      description: thread.description,
-      metadata: { ...thread.metadata },
-      createdAt: thread.createdAt,
-      updatedAt: Timestamp.now(),
-      version: thread.version.nextPatch(),
-      startedAt: undefined,
-      completedAt: undefined,
-      errorMessage: undefined,
-      isDeleted: false
-    };
-
-    const retriedThread = Thread.fromProps(newProps);
-
-    return await this.threadRepository.save(retriedThread);
   }
 
   /**
-   * 批量取消会话的所有活跃线程
-   * @param sessionId 会话ID
-   * @param userId 操作用户ID
-   * @param reason 取消原因
-   * @returns 取消的线程数量
+   * 计算线程超时时间
+   * @param thread 线程
+   * @param timeoutHours 超时小时数
+   * @returns 超时时间
    */
-  async cancelAllActiveThreads(
-    sessionId: ID,
-    userId?: ID,
-    reason?: string
-  ): Promise<number> {
-    const activeThreads = await this.threadRepository.findActiveThreads({
-      sessionId: sessionId.toString()
-    });
-    let cancelledCount = 0;
-
-    for (const thread of activeThreads) {
-      try {
-        if (!thread.status.isTerminal()) {
-          thread.cancel(userId, reason || '批量取消所有活跃线程');
-          await this.threadRepository.save(thread);
-          cancelledCount++;
-        }
-      } catch (error) {
-        console.error(`取消线程失败: ${thread.threadId}`, error);
-      }
+  calculateThreadTimeout(thread: Thread, timeoutHours: number): Date {
+    if (!thread.startedAt) {
+      throw new DomainError('线程尚未启动，无法计算超时时间');
     }
 
-    return cancelledCount;
+    return thread.startedAt.getDate();
+  }
+
+  /**
+   * 检查线程是否超时
+   * @param thread 线程
+   * @param timeoutHours 超时小时数
+   * @returns 是否超时
+   */
+  isThreadTimedOut(thread: Thread, timeoutHours: number): boolean {
+    if (!thread.startedAt) {
+      return false;
+    }
+
+    const now = new Date();
+    const startTime = thread.startedAt.getDate();
+    const timeoutTime = new Date(startTime.getTime() + timeoutHours * 60 * 60 * 1000);
+
+    return now > timeoutTime;
+  }
+
+  /**
+   * 检查线程是否可以重试
+   * @param thread 线程
+   * @param maxRetryCount 最大重试次数
+   * @returns 是否可以重试
+   */
+  canRetryThread(thread: Thread, maxRetryCount: number): boolean {
+    if (!thread.status.isFailed()) {
+      return false;
+    }
+
+    return thread.execution.retryCount < maxRetryCount;
+  }
+
+  /**
+   * 获取线程的下一个状态
+   * @param currentStatus 当前状态
+   * @param action 操作类型
+   * @returns 下一个状态
+   */
+  getNextThreadStatus(currentStatus: ThreadStatus, action: 'start' | 'pause' | 'resume' | 'complete' | 'fail' | 'cancel'): ThreadStatus {
+    switch (action) {
+      case 'start':
+        if (!currentStatus.isPending()) {
+          throw new DomainError('只能启动待执行状态的线程');
+        }
+        return ThreadStatus.running();
+      
+      case 'pause':
+        if (!currentStatus.isRunning()) {
+          throw new DomainError('只能暂停运行中的线程');
+        }
+        return ThreadStatus.paused();
+      
+      case 'resume':
+        if (!currentStatus.isPaused()) {
+          throw new DomainError('只能恢复暂停状态的线程');
+        }
+        return ThreadStatus.running();
+      
+      case 'complete':
+        if (!currentStatus.isActive()) {
+          throw new DomainError('只能完成活跃状态的线程');
+        }
+        return ThreadStatus.completed();
+      
+      case 'fail':
+        if (!currentStatus.isActive()) {
+          throw new DomainError('只能设置活跃状态的线程为失败状态');
+        }
+        return ThreadStatus.failed();
+      
+      case 'cancel':
+        if (currentStatus.isTerminal()) {
+          throw new DomainError('无法取消已终止状态的线程');
+        }
+        return ThreadStatus.cancelled();
+      
+      default:
+        throw new DomainError(`未知的操作类型: ${action}`);
+    }
+  }
+
+  /**
+   * 比较线程优先级
+   * @param thread1 线程1
+   * @param thread2 线程2
+   * @returns 比较结果：-1表示thread1优先级更高，0表示相等，1表示thread2优先级更高
+   */
+  compareThreadPriority(thread1: Thread, thread2: Thread): number {
+    return thread2.priority.compareTo(thread1.priority);
+  }
+
+  /**
+   * 检查线程是否可以执行
+   * @param thread 线程
+   * @returns 是否可以执行
+   */
+  canExecuteThread(thread: Thread): boolean {
+    return thread.status.isPending() || thread.status.isRunning();
+  }
+
+  /**
+   * 检查线程是否处于活跃状态
+   * @param thread 线程
+   * @returns 是否处于活跃状态
+   */
+  isThreadActive(thread: Thread): boolean {
+    return thread.status.isActive();
+  }
+
+  /**
+   * 检查线程是否已终止
+   * @param thread 线程
+   * @returns 是否已终止
+   */
+  isThreadTerminal(thread: Thread): boolean {
+    return thread.status.isTerminal();
+  }
+
+  /**
+   * 验证线程执行条件
+   * @param thread 线程
+   * @param workflow 工作流
+   */
+  validateExecutionConditions(thread: Thread, workflow: Workflow): void {
+    if (!thread.status.canExecute()) {
+      throw new DomainError(`线程当前状态不允许执行: ${thread.status}`);
+    }
+
+    if (!workflow.status.canExecute()) {
+      throw new DomainError(`工作流当前状态不允许执行: ${workflow.status}`);
+    }
+
+    if (!thread.workflowId.equals(workflow.workflowId)) {
+      throw new DomainError('线程关联的工作流ID不匹配');
+    }
+  }
+
+  /**
+   * 计算线程执行进度
+   * @param thread 线程
+   * @param totalSteps 总步骤数
+   * @param completedSteps 已完成步骤数
+   * @returns 执行进度（0-100）
+   */
+  calculateExecutionProgress(thread: Thread, totalSteps: number, completedSteps: number): number {
+    if (totalSteps <= 0) {
+      return 0;
+    }
+
+    return Math.min(100, Math.round((completedSteps / totalSteps) * 100));
+  }
+
+  /**
+   * 检查线程是否需要暂停
+   * @param thread 线程
+   * @returns 是否需要暂停
+   */
+  shouldPauseThread(thread: Thread): boolean {
+    // 检查各种暂停条件
+    return thread.status.isPaused() || this.isThreadTimedOut(thread, 24); // 24小时超时
+  }
+
+  /**
+   * 检查线程是否需要终止
+   * @param thread 线程
+   * @returns 是否需要终止
+   */
+  shouldTerminateThread(thread: Thread): boolean {
+    // 检查各种终止条件
+    return thread.status.isCancelled() || this.isThreadTimedOut(thread, 48); // 48小时强制终止
   }
 }
