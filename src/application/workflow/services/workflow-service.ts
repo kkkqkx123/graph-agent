@@ -9,214 +9,39 @@ import { WorkflowConfig } from '../../../domain/workflow/value-objects/workflow-
 import { DomainError } from '../../../domain/common/errors/domain-error';
 import { ILogger } from '@shared/types/logger';
 
-// DTOs - Note: These DTOs may not exist yet, using any for now
-// import {
-//   WorkflowDto,
-//   WorkflowSummaryDto,
-//   WorkflowExecutionResultDto,
-//   WorkflowStatisticsDto
-// } from '../dtos/workflow.dto';
+// DTOs
+import {
+  WorkflowDto,
+  WorkflowSummaryDto
+} from '../dtos/workflow.dto';
+import { WorkflowExecutionResultDto } from '../dtos/workflow-execution.dto';
+import { WorkflowStatisticsDto } from '../dtos/workflow-statistics.dto';
 
-// Temporary type definitions
-interface WorkflowDto {
-  id: string;
-  name: string;
-  description: string;
-  status: string;
-  type: string;
-  config: any;
-  workflowId?: string;
-  version: string;
-  executionCount: number;
-  successCount: number;
-  failureCount: number;
-  averageExecutionTime: number;
-  lastExecutedAt?: string;
-  tags: string[];
-  metadata: Record<string, unknown>;
-  createdAt: string;
-  updatedAt: string;
-  createdBy?: string;
-  updatedBy?: string;
-}
+// Commands
+import {
+  CreateWorkflowCommand,
+  ActivateWorkflowCommand,
+  DeactivateWorkflowCommand,
+  ArchiveWorkflowCommand,
+  UpdateWorkflowCommand,
+  ExecuteWorkflowCommand,
+  AddWorkflowTagCommand,
+  RemoveWorkflowTagCommand,
+  BatchUpdateWorkflowStatusCommand,
+  DeleteWorkflowCommand
+} from '../commands/create-workflow.command';
 
-interface WorkflowSummaryDto {
-  id: string;
-  name: string;
-  status: string;
-  type: string;
-  executionCount: number;
-  successRate: number;
-  averageExecutionTime: number;
-  lastExecutedAt?: string;
-  tags: string[];
-  createdAt: string;
-}
-
-interface WorkflowExecutionResultDto {
-  executionId: string;
-  workflowId: string;
-  status: string;
-  startTime: string;
-  endTime: string;
-  duration: number;
-  output: Record<string, unknown>;
-  logs: Array<{
-    level: string;
-    message: string;
-    timestamp: string;
-    nodeId?: string;
-    edgeId?: string;
-  }>;
-  statistics: {
-    executedNodes: number;
-    totalNodes: number;
-    executedEdges: number;
-    totalEdges: number;
-    executionPath: string[];
-  };
-  metadata: Record<string, unknown>;
-}
-
-interface WorkflowStatisticsDto {
-  totalWorkflows: number;
-  draftWorkflows: number;
-  activeWorkflows: number;
-  inactiveWorkflows: number;
-  archivedWorkflows: number;
-  totalExecutions: number;
-  totalSuccesses: number;
-  totalFailures: number;
-  averageSuccessRate: number;
-  averageExecutionTime: number;
-  workflowsByStatus: Record<string, number>;
-  workflowsByType: Record<string, number>;
-  tagStatistics: Record<string, number>;
-}
-
-// Commands - Note: These commands may not exist yet, using any for now
-// import {
-//   CreateWorkflowCommand,
-//   ActivateWorkflowCommand,
-//   DeactivateWorkflowCommand,
-//   ArchiveWorkflowCommand,
-//   UpdateWorkflowCommand,
-//   ExecuteWorkflowCommand,
-//   AddWorkflowTagCommand,
-//   RemoveWorkflowTagCommand,
-//   BatchUpdateWorkflowStatusCommand,
-//   DeleteWorkflowCommand
-// } from '../commands/create-workflow.command';
-
-// Temporary type definitions
-interface CreateWorkflowCommand {
-  name: string;
-  description?: string;
-  type?: string;
-  workflowId?: string;
-  tags?: string[];
-  metadata?: Record<string, unknown>;
-  createdBy?: string;
-  config?: any;
-}
-
-interface ActivateWorkflowCommand {
-  workflowId: string;
-  userId?: string;
-}
-
-interface DeactivateWorkflowCommand {
-  workflowId: string;
-  userId?: string;
-  reason?: string;
-}
-
-interface ArchiveWorkflowCommand {
-  workflowId: string;
-  userId?: string;
-  reason?: string;
-}
-
-interface UpdateWorkflowCommand {
-  workflowId: string;
-  userId?: string;
-  name?: string;
-  description?: string;
-  config?: any;
-  metadata?: Record<string, unknown>;
-}
-
-interface ExecuteWorkflowCommand {
-  workflowId: string;
-  inputData: Record<string, unknown>;
-  executionMode?: string;
-  async?: boolean;
-}
-
-interface AddWorkflowTagCommand {
-  workflowId: string;
-  tag: string;
-  userId?: string;
-}
-
-interface RemoveWorkflowTagCommand {
-  workflowId: string;
-  tag: string;
-  userId?: string;
-}
-
-interface BatchUpdateWorkflowStatusCommand {
-  workflowIds: string[];
-  status: string;
-  userId?: string;
-  reason?: string;
-}
-
-interface DeleteWorkflowCommand {
-  workflowId: string;
-}
-
-// Queries - Note: These queries may not exist yet, using any for now
-// import {
-//   GetWorkflowQuery,
-//   ListWorkflowsQuery,
-//   GetWorkflowStatusQuery,
-//   GetWorkflowExecutionHistoryQuery,
-//   GetWorkflowStatisticsQuery,
-//   SearchWorkflowsQuery,
-//   GetWorkflowExecutionPathQuery,
-//   GetWorkflowTagStatsQuery
-// } from '../queries/workflow.query';
-
-// Temporary type definitions
-interface GetWorkflowQuery {
-  workflowId: string;
-}
-
-interface ListWorkflowsQuery {
-  filters?: Record<string, unknown>;
-  sortBy?: string;
-  sortOrder?: string;
-  pagination?: { page: number; size: number };
-  includeSummary?: boolean;
-}
-
-interface GetWorkflowStatusQuery {
-  workflowId: string;
-}
-
-interface GetWorkflowStatisticsQuery {
-  filters?: Record<string, unknown>;
-}
-
-interface SearchWorkflowsQuery {
-  keyword: string;
-  searchIn?: 'name' | 'description' | 'all';
-  filters?: Record<string, unknown>;
-  sortBy?: string;
-  sortOrder?: string;
-  pagination?: { page: number; size: number };
-}
+// Queries
+import {
+  GetWorkflowQuery,
+  ListWorkflowsQuery,
+  GetWorkflowStatusQuery,
+  SearchWorkflowsQuery
+} from '../queries';
+import { GetWorkflowExecutionHistoryQuery } from '../queries/workflow-execution-history-query';
+import { GetWorkflowExecutionPathQuery } from '../queries/workflow-execution-path-query';
+import { GetWorkflowStatisticsQuery } from '../queries/workflow-statistics-query';
+import { GetWorkflowTagStatsQuery } from '../queries/workflow-tag-stats-query';
 
 /**
  * 工作流应用服务
@@ -460,7 +285,7 @@ export class WorkflowService {
       const result: WorkflowExecutionResultDto = {
         executionId,
         workflowId: command.workflowId,
-        status: 'completed',
+        status: 'completed' as const,
         startTime: startTime.toISOString(),
         endTime: endTime.toISOString(),
         duration,
@@ -660,7 +485,7 @@ export class WorkflowService {
   }> {
     try {
       // 构建查询选项
-      const options: any = {
+      const options = {
         filters: query.filters || {},
         sortBy: query.sortBy || 'createdAt',
         sortOrder: query.sortOrder || 'desc'
@@ -765,7 +590,7 @@ export class WorkflowService {
         // Note: searchByName and searchByDescription may not exist in WorkflowRepository
         // Using findByName as a fallback
         const nameResults = await this.workflowRepository.findByName(query.keyword, {
-          filters: query.filters,
+          filters: query.filters || {},
           sortBy: query.sortBy || 'relevance',
           sortOrder: (query.sortOrder as 'asc' | 'desc' | undefined) || 'desc'
           // Note: pagination may not be supported in the repository
@@ -778,7 +603,7 @@ export class WorkflowService {
         // Note: searchByDescription may not exist in WorkflowRepository
         // Using findByName as a fallback
         const descResults = await this.workflowRepository.findByName(query.keyword, {
-          filters: query.filters,
+          filters: query.filters || {},
           sortBy: query.sortBy || 'relevance',
           sortOrder: (query.sortOrder as 'asc' | 'desc' | undefined) || 'desc'
           // Note: pagination may not be supported in the repository
@@ -813,7 +638,7 @@ export class WorkflowService {
     return {
       id: workflow.workflowId.toString(),
       name: workflow.name,
-      description: workflow.description || '',
+      description: workflow.description,
       status: workflow.status.toString(),
       type: workflow.type.toString(),
       config: workflow.config.value,
@@ -822,7 +647,7 @@ export class WorkflowService {
       executionCount: 0,
       successCount: 0,
       failureCount: 0,
-      averageExecutionTime: 0,
+      averageExecutionTime: undefined,
       lastExecutedAt: undefined,
       tags: workflow.tags,
       metadata: workflow.metadata,
@@ -846,7 +671,7 @@ export class WorkflowService {
       type: workflow.type.toString(),
       executionCount: 0,
       successRate: 0,
-      averageExecutionTime: 0,
+      averageExecutionTime: undefined,
       lastExecutedAt: undefined,
       tags: workflow.tags,
       createdAt: workflow.createdAt.toISOString()

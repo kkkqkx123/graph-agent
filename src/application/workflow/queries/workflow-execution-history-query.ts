@@ -27,13 +27,3 @@ export interface GetWorkflowExecutionHistoryQuery {
   /** 排序方向 */
   sortOrder?: 'asc' | 'desc';
 }
-
-/**
- * 获取工作流执行路径查询
- */
-export interface GetWorkflowExecutionPathQuery {
-  /** 工作流ID */
-  workflowId: string;
-  /** 执行ID */
-  executionId?: string;
-}

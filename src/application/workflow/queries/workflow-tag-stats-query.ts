@@ -1,7 +1,7 @@
 /**
- * 获取工作流统计信息查询
+ * 获取工作流标签统计查询
  */
-export interface GetWorkflowStatisticsQuery {
+export interface GetWorkflowTagStatsQuery {
   /** 过滤条件 */
   filters?: {
     /** 状态过滤 */
@@ -13,7 +13,9 @@ export interface GetWorkflowStatisticsQuery {
     /** 创建时间范围过滤 */
     createdAfter?: string;
     createdBefore?: string;
-    /** 标签过滤 */
-    tags?: string[];
   };
+  /** 是否包含使用次数 */
+  includeUsageCount?: boolean;
+  /** 是否按使用频率排序 */
+  sortByUsage?: boolean;
 }

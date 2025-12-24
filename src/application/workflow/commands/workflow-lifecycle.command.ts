@@ -8,6 +8,8 @@ export interface CreateWorkflowCommand {
   description?: string;
   /** 工作流类型 */
   type?: string;
+  /** 工作流ID */
+  workflowId?: string;
   /** 工作流配置 */
   config?: Record<string, unknown>;
   /** 标签 */
@@ -72,66 +74,6 @@ export interface UpdateWorkflowCommand {
   metadata?: Record<string, unknown>;
   /** 操作用户ID */
   userId?: string;
-}
-
-/**
- * 执行工作流命令
- */
-export interface ExecuteWorkflowCommand {
-  /** 工作流ID */
-  workflowId: string;
-  /** 输入数据 */
-  inputData: Record<string, unknown>;
-  /** 执行参数 */
-  parameters?: Record<string, unknown>;
-  /** 执行模式 */
-  executionMode?: 'sequential' | 'parallel' | 'conditional';
-  /** 执行优先级 */
-  priority?: 'low' | 'normal' | 'high' | 'urgent';
-  /** 超时时间（秒） */
-  timeout?: number;
-  /** 是否异步执行 */
-  async?: boolean;
-  /** 操作用户ID */
-  userId?: string;
-}
-
-/**
- * 添加工作流标签命令
- */
-export interface AddWorkflowTagCommand {
-  /** 工作流ID */
-  workflowId: string;
-  /** 标签 */
-  tag: string;
-  /** 操作用户ID */
-  userId?: string;
-}
-
-/**
- * 移除工作流标签命令
- */
-export interface RemoveWorkflowTagCommand {
-  /** 工作流ID */
-  workflowId: string;
-  /** 标签 */
-  tag: string;
-  /** 操作用户ID */
-  userId?: string;
-}
-
-/**
- * 批量操作工作流命令
- */
-export interface BatchUpdateWorkflowStatusCommand {
-  /** 工作流ID列表 */
-  workflowIds: string[];
-  /** 新状态 */
-  status: string;
-  /** 操作用户ID */
-  userId?: string;
-  /** 操作原因 */
-  reason?: string;
 }
 
 /**
