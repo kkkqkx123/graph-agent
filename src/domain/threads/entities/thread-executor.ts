@@ -9,7 +9,7 @@ import { ThreadCreatedEvent } from '../events/thread-created-event';
 import { ThreadStatusChangedEvent } from '../events/thread-status-changed-event';
 import { Workflow } from '../../workflow/entities/workflow';
 import { IExecutionContext, ExecutionResult, ExecutionStatus } from '../../workflow/execution';
-import { ExecutionStep } from '../../workflow/services/executor';
+import { ExecutionStep } from '../../workflow/services/workflow-execution-service';
 import { AbstractBaseExecutor } from '../../../infrastructure/common/execution/base-executor';
 
 /**

@@ -1,8 +1,8 @@
 import { ID } from '../../common/value-objects/id';
 import { DomainError } from '../../common/errors/domain-error';
+import { IExecutionContext, ExecutionResult, ExecutionStatus } from '../execution';
 import { WorkflowDefinition, ExecutionDefinition } from '../entities/workflow-definition';
 import { WorkflowGraph } from '../entities/workflow-graph';
-import { IExecutionContext, ExecutionResult, ExecutionStatus } from '../execution';
 import { GraphValidationService } from '../interfaces/graph-validation-service.interface';
 
 /**
@@ -16,12 +16,31 @@ export interface WorkflowExecutorConfig {
 }
 
 /**
+ * 执行动作类型
+ */
+export type ExecutionAction = 'start' | 'pause' | 'resume' | 'cancel' | 'validate';
+
+/**
+ * 执行步骤接口
+ */
+export interface ExecutionStep {
+  readonly stepId: string;
+  readonly nodeId: ID;
+  readonly node: any;
+  readonly dependencies?: ID[];
+  readonly priority?: number;
+  
+  execute(context: IExecutionContext): Promise<any>;
+  validate(): void;
+}
+
+/**
  * Workflow执行器
  * 
- * 负责执行逻辑：
- * 1. 执行工作流
- * 2. 管理执行策略、参数映射、错误处理
- * 3. 处理执行动作（暂停、恢复、取消等）
+ * 职责：专注于工作流的具体执行逻辑
+ * 1. 执行单个工作流实例
+ * 2. 管理执行状态和动作
+ * 3. 处理执行步骤和验证
  */
 export class WorkflowExecutor {
   private readonly workflowDefinition: WorkflowDefinition;
@@ -29,12 +48,6 @@ export class WorkflowExecutor {
   private readonly config: WorkflowExecutorConfig;
   private readonly graphValidationService: GraphValidationService;
 
-  /**
-   * 构造函数
-   * @param workflowDefinition 工作流定义
-   * @param workflowGraph 工作流图
-   * @param config 执行器配置
-   */
   constructor(
     workflowDefinition: WorkflowDefinition,
     workflowGraph: WorkflowGraph,
@@ -178,7 +191,6 @@ export class WorkflowExecutor {
     }
   }
 
-
   /**
    * 处理暂停动作
    */
@@ -238,23 +250,4 @@ export class WorkflowExecutor {
   public getConfig(): WorkflowExecutorConfig {
     return this.config;
   }
-}
-
-/**
- * 执行动作类型
- */
-export type ExecutionAction = 'start' | 'pause' | 'resume' | 'cancel' | 'validate';
-
-/**
- * 执行步骤接口
- */
-export interface ExecutionStep {
-  readonly stepId: string;
-  readonly nodeId: ID;
-  readonly node: any;
-  readonly dependencies?: ID[];
-  readonly priority?: number;
-  
-  execute(context: IExecutionContext): Promise<any>;
-  validate(): void;
 }

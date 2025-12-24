@@ -1,219 +1,203 @@
 import { ID } from '../../common/value-objects/id';
 import { History } from '../entities/history';
 import { HistoryType } from '../value-objects/history-type';
+import { IWorkflowHistoryService } from './workflow-history-service';
+import { ISessionHistoryService } from './session-history-service';
+import { IThreadHistoryService } from './thread-history-service';
+import { IExecutionHistoryService } from './execution-history-service';
+import { IGeneralHistoryService } from './general-history-service';
+import { IHistoryManagementService } from './history-management-service';
 
 /**
- * 历史领域服务接口
+ * 历史领域服务接口 V2
  * 
- * 定义历史记录相关的业务逻辑
+ * 这是重构后的历史领域服务接口，通过组合多个专门的服务接口
+ * 来遵循接口隔离原则，同时保持向后兼容性
  */
-export interface HistoryDomainService {
-  /**
-   * 记录工作流创建历史
-   * @param workflowId 工作流ID
-   * @param details 详细信息
-   * @param metadata 元数据
-   * @returns 历史记录
-   */
-  recordWorkflowCreated(
+export interface IHistoryDomainService extends
+  IWorkflowHistoryService,
+  ISessionHistoryService,
+  IThreadHistoryService,
+  IExecutionHistoryService,
+  IGeneralHistoryService,
+  IHistoryManagementService {
+  // 这个接口现在继承所有拆分后的接口，保持完整的API
+}
+
+/**
+ * 历史领域服务实现 V2
+ * 
+ * 组合多个专门的历史服务来实现完整的历史记录功能
+ */
+export class HistoryDomainService implements IHistoryDomainService {
+  constructor(
+    private readonly workflowHistoryService: IWorkflowHistoryService,
+    private readonly sessionHistoryService: ISessionHistoryService,
+    private readonly threadHistoryService: IThreadHistoryService,
+    private readonly executionHistoryService: IExecutionHistoryService,
+    private readonly generalHistoryService: IGeneralHistoryService,
+    private readonly historyManagementService: IHistoryManagementService
+  ) {}
+
+  // Workflow历史服务方法
+  async recordWorkflowCreated(
     workflowId: ID,
     details: Record<string, unknown>,
     metadata?: Record<string, unknown>
-  ): Promise<History>;
+  ): Promise<History> {
+    return this.workflowHistoryService.recordWorkflowCreated(workflowId, details, metadata);
+  }
 
-  /**
-   * 记录工作流更新历史
-   * @param workflowId 工作流ID
-   * @param details 详细信息
-   * @param metadata 元数据
-   * @returns 历史记录
-   */
-  recordWorkflowUpdated(
+  async recordWorkflowUpdated(
     workflowId: ID,
     details: Record<string, unknown>,
     metadata?: Record<string, unknown>
-  ): Promise<History>;
+  ): Promise<History> {
+    return this.workflowHistoryService.recordWorkflowUpdated(workflowId, details, metadata);
+  }
 
-  /**
-   * 记录工作流执行历史
-   * @param workflowId 工作流ID
-   * @param sessionId 会话ID
-   * @param threadId 线程ID
-   * @param details 详细信息
-   * @param metadata 元数据
-   * @returns 历史记录
-   */
-  recordWorkflowExecuted(
+  async recordWorkflowExecuted(
     workflowId: ID,
     sessionId?: ID,
     threadId?: ID,
     details?: Record<string, unknown>,
     metadata?: Record<string, unknown>
-  ): Promise<History>;
+  ): Promise<History> {
+    return this.workflowHistoryService.recordWorkflowExecuted(workflowId, sessionId, threadId, details, metadata);
+  }
 
-  /**
-   * 记录工作流失败历史
-   * @param workflowId 工作流ID
-   * @param sessionId 会话ID
-   * @param threadId 线程ID
-   * @param error 错误信息
-   * @param details 详细信息
-   * @param metadata 元数据
-   * @returns 历史记录
-   */
-  recordWorkflowFailed(
+  async recordWorkflowFailed(
     workflowId: ID,
     sessionId?: ID,
     threadId?: ID,
     error?: Error,
     details?: Record<string, unknown>,
     metadata?: Record<string, unknown>
-  ): Promise<History>;
+  ): Promise<History> {
+    return this.workflowHistoryService.recordWorkflowFailed(workflowId, sessionId, threadId, error, details, metadata);
+  }
 
-  /**
-   * 记录会话创建历史
-   * @param sessionId 会话ID
-   * @param details 详细信息
-   * @param metadata 元数据
-   * @returns 历史记录
-   */
-  recordSessionCreated(
+  async getWorkflowHistory(
+    workflowId: ID,
+    options?: {
+      types?: HistoryType[];
+      startTime?: Date;
+      endTime?: Date;
+      limit?: number;
+      offset?: number;
+    }
+  ): Promise<History[]> {
+    return this.workflowHistoryService.getWorkflowHistory(workflowId, options);
+  }
+
+  // Session历史服务方法
+  async recordSessionCreated(
     sessionId: ID,
     details: Record<string, unknown>,
     metadata?: Record<string, unknown>
-  ): Promise<History>;
+  ): Promise<History> {
+    return this.sessionHistoryService.recordSessionCreated(sessionId, details, metadata);
+  }
 
-  /**
-   * 记录会话关闭历史
-   * @param sessionId 会话ID
-   * @param details 详细信息
-   * @param metadata 元数据
-   * @returns 历史记录
-   */
-  recordSessionClosed(
+  async recordSessionClosed(
     sessionId: ID,
     details?: Record<string, unknown>,
     metadata?: Record<string, unknown>
-  ): Promise<History>;
+  ): Promise<History> {
+    return this.sessionHistoryService.recordSessionClosed(sessionId, details, metadata);
+  }
 
-  /**
-   * 记录线程创建历史
-   * @param threadId 线程ID
-   * @param sessionId 会话ID
-   * @param workflowId 工作流ID
-   * @param details 详细信息
-   * @param metadata 元数据
-   * @returns 历史记录
-   */
-  recordThreadCreated(
+  async getSessionHistory(
+    sessionId: ID,
+    options?: {
+      types?: HistoryType[];
+      startTime?: Date;
+      endTime?: Date;
+      limit?: number;
+      offset?: number;
+    }
+  ): Promise<History[]> {
+    return this.sessionHistoryService.getSessionHistory(sessionId, options);
+  }
+
+  // Thread历史服务方法
+  async recordThreadCreated(
     threadId: ID,
     sessionId?: ID,
     workflowId?: ID,
     details?: Record<string, unknown>,
     metadata?: Record<string, unknown>
-  ): Promise<History>;
+  ): Promise<History> {
+    return this.threadHistoryService.recordThreadCreated(threadId, sessionId, workflowId, details, metadata);
+  }
 
-  /**
-   * 记录线程状态变更历史
-   * @param threadId 线程ID
-   * @param sessionId 会话ID
-   * @param oldStatus 旧状态
-   * @param newStatus 新状态
-   * @param details 详细信息
-   * @param metadata 元数据
-   * @returns 历史记录
-   */
-  recordThreadStatusChanged(
+  async recordThreadStatusChanged(
     threadId: ID,
     sessionId?: ID,
     oldStatus?: string,
     newStatus?: string,
     details?: Record<string, unknown>,
     metadata?: Record<string, unknown>
-  ): Promise<History>;
+  ): Promise<History> {
+    return this.threadHistoryService.recordThreadStatusChanged(threadId, sessionId, oldStatus, newStatus, details, metadata);
+  }
 
-  /**
-   * 记录线程失败历史
-   * @param threadId 线程ID
-   * @param sessionId 会话ID
-   * @param error 错误信息
-   * @param details 详细信息
-   * @param metadata 元数据
-   * @returns 历史记录
-   */
-  recordThreadFailed(
+  async recordThreadFailed(
     threadId: ID,
     sessionId?: ID,
     error?: Error,
     details?: Record<string, unknown>,
     metadata?: Record<string, unknown>
-  ): Promise<History>;
+  ): Promise<History> {
+    return this.threadHistoryService.recordThreadFailed(threadId, sessionId, error, details, metadata);
+  }
 
-  /**
-   * 记录检查点创建历史
-   * @param checkpointId 检查点ID
-   * @param threadId 线程ID
-   * @param sessionId 会话ID
-   * @param details 详细信息
-   * @param metadata 元数据
-   * @returns 历史记录
-   */
-  recordCheckpointCreated(
+  async getThreadHistory(
+    threadId: ID,
+    options?: {
+      types?: HistoryType[];
+      startTime?: Date;
+      endTime?: Date;
+      limit?: number;
+      offset?: number;
+    }
+  ): Promise<History[]> {
+    return this.threadHistoryService.getThreadHistory(threadId, options);
+  }
+
+  // Execution历史服务方法
+  async recordCheckpointCreated(
     checkpointId: ID,
     threadId: ID,
     sessionId?: ID,
     details?: Record<string, unknown>,
     metadata?: Record<string, unknown>
-  ): Promise<History>;
+  ): Promise<History> {
+    return this.executionHistoryService.recordCheckpointCreated(checkpointId, threadId, sessionId, details, metadata);
+  }
 
-  /**
-   * 记录检查点恢复历史
-   * @param checkpointId 检查点ID
-   * @param threadId 线程ID
-   * @param sessionId 会话ID
-   * @param details 详细信息
-   * @param metadata 元数据
-   * @returns 历史记录
-   */
-  recordCheckpointRestored(
+  async recordCheckpointRestored(
     checkpointId: ID,
     threadId: ID,
     sessionId?: ID,
     details?: Record<string, unknown>,
     metadata?: Record<string, unknown>
-  ): Promise<History>;
+  ): Promise<History> {
+    return this.executionHistoryService.recordCheckpointRestored(checkpointId, threadId, sessionId, details, metadata);
+  }
 
-  /**
-   * 记录节点执行历史
-   * @param nodeId 节点ID
-   * @param threadId 线程ID
-   * @param sessionId 会话ID
-   * @param workflowId 工作流ID
-   * @param details 详细信息
-   * @param metadata 元数据
-   * @returns 历史记录
-   */
-  recordNodeExecuted(
+  async recordNodeExecuted(
     nodeId: ID,
     threadId?: ID,
     sessionId?: ID,
     workflowId?: ID,
     details?: Record<string, unknown>,
     metadata?: Record<string, unknown>
-  ): Promise<History>;
+  ): Promise<History> {
+    return this.executionHistoryService.recordNodeExecuted(nodeId, threadId, sessionId, workflowId, details, metadata);
+  }
 
-  /**
-   * 记录节点失败历史
-   * @param nodeId 节点ID
-   * @param threadId 线程ID
-   * @param sessionId 会话ID
-   * @param workflowId 工作流ID
-   * @param error 错误信息
-   * @param details 详细信息
-   * @param metadata 元数据
-   * @returns 历史记录
-   */
-  recordNodeFailed(
+  async recordNodeFailed(
     nodeId: ID,
     threadId?: ID,
     sessionId?: ID,
@@ -221,39 +205,22 @@ export interface HistoryDomainService {
     error?: Error,
     details?: Record<string, unknown>,
     metadata?: Record<string, unknown>
-  ): Promise<History>;
+  ): Promise<History> {
+    return this.executionHistoryService.recordNodeFailed(nodeId, threadId, sessionId, workflowId, error, details, metadata);
+  }
 
-  /**
-   * 记录工具执行历史
-   * @param toolId 工具ID
-   * @param threadId 线程ID
-   * @param sessionId 会话ID
-   * @param workflowId 工作流ID
-   * @param details 详细信息
-   * @param metadata 元数据
-   * @returns 历史记录
-   */
-  recordToolExecuted(
+  async recordToolExecuted(
     toolId: ID,
     threadId?: ID,
     sessionId?: ID,
     workflowId?: ID,
     details?: Record<string, unknown>,
     metadata?: Record<string, unknown>
-  ): Promise<History>;
+  ): Promise<History> {
+    return this.executionHistoryService.recordToolExecuted(toolId, threadId, sessionId, workflowId, details, metadata);
+  }
 
-  /**
-   * 记录工具失败历史
-   * @param toolId 工具ID
-   * @param threadId 线程ID
-   * @param sessionId 会话ID
-   * @param workflowId 工作流ID
-   * @param error 错误信息
-   * @param details 详细信息
-   * @param metadata 元数据
-   * @returns 历史记录
-   */
-  recordToolFailed(
+  async recordToolFailed(
     toolId: ID,
     threadId?: ID,
     sessionId?: ID,
@@ -261,39 +228,22 @@ export interface HistoryDomainService {
     error?: Error,
     details?: Record<string, unknown>,
     metadata?: Record<string, unknown>
-  ): Promise<History>;
+  ): Promise<History> {
+    return this.executionHistoryService.recordToolFailed(toolId, threadId, sessionId, workflowId, error, details, metadata);
+  }
 
-  /**
-   * 记录LLM调用历史
-   * @param llmRequestId LLM请求ID
-   * @param threadId 线程ID
-   * @param sessionId 会话ID
-   * @param workflowId 工作流ID
-   * @param details 详细信息
-   * @param metadata 元数据
-   * @returns 历史记录
-   */
-  recordLLMCalled(
+  async recordLLMCalled(
     llmRequestId: ID,
     threadId?: ID,
     sessionId?: ID,
     workflowId?: ID,
     details?: Record<string, unknown>,
     metadata?: Record<string, unknown>
-  ): Promise<History>;
+  ): Promise<History> {
+    return this.executionHistoryService.recordLLMCalled(llmRequestId, threadId, sessionId, workflowId, details, metadata);
+  }
 
-  /**
-   * 记录LLM失败历史
-   * @param llmRequestId LLM请求ID
-   * @param threadId 线程ID
-   * @param sessionId 会话ID
-   * @param workflowId 工作流ID
-   * @param error 错误信息
-   * @param details 详细信息
-   * @param metadata 元数据
-   * @returns 历史记录
-   */
-  recordLLMFailed(
+  async recordLLMFailed(
     llmRequestId: ID,
     threadId?: ID,
     sessionId?: ID,
@@ -301,22 +251,12 @@ export interface HistoryDomainService {
     error?: Error,
     details?: Record<string, unknown>,
     metadata?: Record<string, unknown>
-  ): Promise<History>;
+  ): Promise<History> {
+    return this.executionHistoryService.recordLLMFailed(llmRequestId, threadId, sessionId, workflowId, error, details, metadata);
+  }
 
-  /**
-   * 记录状态变更历史
-   * @param entityId 实体ID
-   * @param entityType 实体类型
-   * @param oldState 旧状态
-   * @param newState 新状态
-   * @param threadId 线程ID
-   * @param sessionId 会话ID
-   * @param workflowId 工作流ID
-   * @param details 详细信息
-   * @param metadata 元数据
-   * @returns 历史记录
-   */
-  recordStateChanged(
+  // General历史服务方法
+  async recordStateChanged(
     entityId: ID,
     entityType: string,
     oldState?: string,
@@ -326,21 +266,13 @@ export interface HistoryDomainService {
     workflowId?: ID,
     details?: Record<string, unknown>,
     metadata?: Record<string, unknown>
-  ): Promise<History>;
+  ): Promise<History> {
+    return this.generalHistoryService.recordStateChanged(
+      entityId, entityType, oldState, newState, threadId, sessionId, workflowId, details, metadata
+    );
+  }
 
-  /**
-   * 记录错误历史
-   * @param error 错误信息
-   * @param entityId 实体ID
-   * @param entityType 实体类型
-   * @param threadId 线程ID
-   * @param sessionId 会话ID
-   * @param workflowId 工作流ID
-   * @param details 详细信息
-   * @param metadata 元数据
-   * @returns 历史记录
-   */
-  recordErrorOccurred(
+  async recordErrorOccurred(
     error: Error,
     entityId?: ID,
     entityType?: string,
@@ -349,21 +281,13 @@ export interface HistoryDomainService {
     workflowId?: ID,
     details?: Record<string, unknown>,
     metadata?: Record<string, unknown>
-  ): Promise<History>;
+  ): Promise<History> {
+    return this.generalHistoryService.recordErrorOccurred(
+      error, entityId, entityType, threadId, sessionId, workflowId, details, metadata
+    );
+  }
 
-  /**
-   * 记录警告历史
-   * @param warning 警告信息
-   * @param entityId 实体ID
-   * @param entityType 实体类型
-   * @param threadId 线程ID
-   * @param sessionId 会话ID
-   * @param workflowId 工作流ID
-   * @param details 详细信息
-   * @param metadata 元数据
-   * @returns 历史记录
-   */
-  recordWarningOccurred(
+  async recordWarningOccurred(
     warning: string,
     entityId?: ID,
     entityType?: string,
@@ -372,21 +296,13 @@ export interface HistoryDomainService {
     workflowId?: ID,
     details?: Record<string, unknown>,
     metadata?: Record<string, unknown>
-  ): Promise<History>;
+  ): Promise<History> {
+    return this.generalHistoryService.recordWarningOccurred(
+      warning, entityId, entityType, threadId, sessionId, workflowId, details, metadata
+    );
+  }
 
-  /**
-   * 记录信息历史
-   * @param info 信息内容
-   * @param entityId 实体ID
-   * @param entityType 实体类型
-   * @param threadId 线程ID
-   * @param sessionId 会话ID
-   * @param workflowId 工作流ID
-   * @param details 详细信息
-   * @param metadata 元数据
-   * @returns 历史记录
-   */
-  recordInfoOccurred(
+  async recordInfoOccurred(
     info: string,
     entityId?: ID,
     entityType?: string,
@@ -395,14 +311,14 @@ export interface HistoryDomainService {
     workflowId?: ID,
     details?: Record<string, unknown>,
     metadata?: Record<string, unknown>
-  ): Promise<History>;
+  ): Promise<History> {
+    return this.generalHistoryService.recordInfoOccurred(
+      info, entityId, entityType, threadId, sessionId, workflowId, details, metadata
+    );
+  }
 
-  /**
-   * 批量记录历史
-   * @param histories 历史记录数据列表
-   * @returns 创建的历史记录列表
-   */
-  recordBatch(
+  // History管理服务方法
+  async recordBatch(
     histories: Array<{
       type: HistoryType;
       details: Record<string, unknown>;
@@ -413,65 +329,11 @@ export interface HistoryDomainService {
       description?: string;
       metadata?: Record<string, unknown>;
     }>
-  ): Promise<History[]>;
+  ): Promise<History[]> {
+    return this.historyManagementService.recordBatch(histories);
+  }
 
-  /**
-   * 获取会话的历史记录
-   * @param sessionId 会话ID
-   * @param options 查询选项
-   * @returns 历史记录列表
-   */
-  getSessionHistory(
-    sessionId: ID,
-    options?: {
-      types?: HistoryType[];
-      startTime?: Date;
-      endTime?: Date;
-      limit?: number;
-      offset?: number;
-    }
-  ): Promise<History[]>;
-
-  /**
-   * 获取线程的历史记录
-   * @param threadId 线程ID
-   * @param options 查询选项
-   * @returns 历史记录列表
-   */
-  getThreadHistory(
-    threadId: ID,
-    options?: {
-      types?: HistoryType[];
-      startTime?: Date;
-      endTime?: Date;
-      limit?: number;
-      offset?: number;
-    }
-  ): Promise<History[]>;
-
-  /**
-   * 获取工作流的历史记录
-   * @param workflowId 工作流ID
-   * @param options 查询选项
-   * @returns 历史记录列表
-   */
-  getWorkflowHistory(
-    workflowId: ID,
-    options?: {
-      types?: HistoryType[];
-      startTime?: Date;
-      endTime?: Date;
-      limit?: number;
-      offset?: number;
-    }
-  ): Promise<History[]>;
-
-  /**
-   * 获取历史记录统计信息
-   * @param options 查询选项
-   * @returns 统计信息
-   */
-  getStatistics(
+  async getStatistics(
     options?: {
       sessionId?: ID;
       threadId?: ID;
@@ -488,18 +350,15 @@ export interface HistoryDomainService {
     infoCount: number;
     latestAt?: Date;
     oldestAt?: Date;
-  }>;
+  }> {
+    return this.historyManagementService.getStatistics(options);
+  }
 
-  /**
-   * 获取历史记录趋势
-   * @param options 查询选项
-   * @returns 趋势数据
-   */
-  getTrend(
+  async getTrend(
     options: {
       startTime: Date;
       endTime: Date;
-      interval: number; // 分钟
+      interval: number;
       sessionId?: ID;
       threadId?: ID;
       workflowId?: ID;
@@ -508,28 +367,19 @@ export interface HistoryDomainService {
     timestamp: Date;
     count: number;
     byType: Record<string, number>;
-  }>>;
+  }>> {
+    return this.historyManagementService.getTrend(options);
+  }
 
-  /**
-   * 清理过期历史记录
-   * @param retentionDays 保留天数
-   * @returns 清理的历史记录数量
-   */
-  cleanupExpired(retentionDays: number): Promise<number>;
+  async cleanupExpired(retentionDays: number): Promise<number> {
+    return this.historyManagementService.cleanupExpired(retentionDays);
+  }
 
-  /**
-   * 归档历史记录
-   * @param beforeTime 归档时间点
-   * @returns 归档的历史记录数量
-   */
-  archiveBeforeTime(beforeTime: Date): Promise<number>;
+  async archiveBeforeTime(beforeTime: Date): Promise<number> {
+    return this.historyManagementService.archiveBeforeTime(beforeTime);
+  }
 
-  /**
-   * 导出历史记录
-   * @param options 导出选项
-   * @returns 导出数据
-   */
-  exportHistory(
+  async exportHistory(
     options: {
       format: 'json' | 'csv' | 'xml';
       sessionId?: ID;
@@ -539,15 +389,11 @@ export interface HistoryDomainService {
       endTime?: Date;
       types?: HistoryType[];
     }
-  ): Promise<string>;
+  ): Promise<string> {
+    return this.historyManagementService.exportHistory(options);
+  }
 
-  /**
-   * 搜索历史记录
-   * @param query 搜索查询
-   * @param options 搜索选项
-   * @returns 搜索结果
-   */
-  search(
+  async search(
     query: string,
     options?: {
       sessionId?: ID;
@@ -559,5 +405,7 @@ export interface HistoryDomainService {
       limit?: number;
       offset?: number;
     }
-  ): Promise<History[]>;
+  ): Promise<History[]> {
+    return this.historyManagementService.search(query, options);
+  }
 }

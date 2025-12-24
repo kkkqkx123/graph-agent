@@ -5,7 +5,7 @@ import { Version } from '../../common/value-objects/version';
 import { WorkflowDefinition } from './workflow-definition';
 import { WorkflowGraph } from './workflow-graph';
 import { Container } from 'inversify';
-import { WorkflowExecutor } from '../services/executor';
+import { WorkflowExecutor } from '../services/workflow-execution-service';
 import { Node } from './nodes/base/node';
 import { Edge } from './edges/base/edge';
 import { GraphValidationService } from '../interfaces/graph-validation-service.interface';

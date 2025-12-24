@@ -3,7 +3,7 @@ import { WorkflowRepository as IWorkflowRepository, WorkflowQueryOptions } from 
 import { Workflow } from '../../../../domain/workflow/entities/workflow';
 import { WorkflowDefinition } from '../../../../domain/workflow/entities/workflow-definition';
 import { WorkflowGraph } from '../../../../domain/workflow/entities/workflow-graph';
-import { WorkflowExecutor } from '../../../../domain/workflow/services/executor';
+import { WorkflowExecutor } from '../../../../domain/workflow/services/workflow-execution-service';
 import { GraphValidationService } from '../../../../domain/workflow/interfaces/graph-validation-service.interface';
 import { ID } from '../../../../domain/common/value-objects/id';
 import { WorkflowStatus } from '../../../../domain/workflow/value-objects/workflow-status';

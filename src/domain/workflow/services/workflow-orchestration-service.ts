@@ -1,20 +1,21 @@
 import { ID } from '../../common/value-objects/id';
-import { IExecutionContextManager, IExecutionContext } from '../execution';
+import { IExecutionContext, ExecutionResult, ExecutionStatus } from '../execution';
 import { ExecutionContext } from '../execution';
 import {
-  ExecutionResult,
   ExecutionProgress,
   ExecutionStatistics,
   ExecutionEventCallback,
-  ExecutionStatus,
   ExecutionMode,
   ExecutionPriority,
-  ExecutionConfig
+  ExecutionConfig,
+  IExecutionContextManager
 } from '../execution/types';
 import { IWorkflowCompiler, CompilationOptions, CompilationResult, CompilationTarget } from '../validation';
 import { ITriggerManager, TriggerContext } from '../extensions';
 import { IStateManager } from '../state';
 import { Timestamp } from '../../common/value-objects/timestamp';
+import { WorkflowExecutor } from './workflow-execution-service';
+import { DomainError } from '../../common/errors/domain-error';
 
 /**
  * 工作流执行请求接口
@@ -59,9 +60,44 @@ export interface WorkflowExecutionResult {
 }
 
 /**
- * 工作流执行服务接口
+ * 工作流执行进度接口
  */
-export interface IWorkflowExecutionService {
+export interface WorkflowExecutionProgress {
+  /** 执行ID */
+  readonly executionId: string;
+  /** 工作流ID */
+  readonly workflowId: ID;
+  /** 执行状态 */
+  readonly status: ExecutionStatus;
+  /** 进度百分比 */
+  readonly progress: number;
+  /** 当前节点ID */
+  readonly currentNodeId?: ID;
+  /** 已执行节点数 */
+  readonly executedNodes: number;
+  /** 总节点数 */
+  readonly totalNodes: number;
+  /** 已执行边数 */
+  readonly executedEdges: number;
+  /** 总边数 */
+  readonly totalEdges: number;
+  /** 预估剩余时间（毫秒） */
+  readonly estimatedTimeRemaining?: number;
+  /** 执行开始时间 */
+  readonly startTime: Date;
+  /** 当前时间 */
+  readonly currentTime: Date;
+}
+
+/**
+ * 工作流编排服务接口
+ * 
+ * 职责：负责工作流的高级编排和协调
+ * 1. 管理执行生命周期
+ * 2. 协调多个执行器
+ * 3. 处理执行策略和事件
+ */
+export interface IWorkflowOrchestrationService {
   /**
    * 执行工作流
    */
@@ -123,51 +159,6 @@ export interface IWorkflowExecutionService {
   getExecutionProgress(executionId: string): Promise<ExecutionProgress>;
 
   /**
-   * 获取执行日志
-   */
-  getExecutionLogs(
-    executionId: string,
-    level?: 'debug' | 'info' | 'warn' | 'error',
-    nodeId?: ID,
-    edgeId?: ID
-  ): Promise<Array<{
-    level: 'debug' | 'info' | 'warn' | 'error';
-    message: string;
-    timestamp: Date;
-    nodeId?: ID;
-    edgeId?: ID;
-  }>>;
-
-  /**
-   * 重试执行
-   */
-  retryExecution(executionId: string): Promise<ExecutionResult>;
-
-  /**
-   * 获取执行统计信息
-   */
-  getExecutionStatistics(
-    workflowId?: ID,
-    startTime?: Date,
-    endTime?: Date
-  ): Promise<ExecutionStatistics>;
-
-  /**
-   * 清理执行历史
-   */
-  cleanupExecutionHistory(maxAge: number): Promise<number>;
-
-  /**
-   * 导出执行结果
-   */
-  exportExecutionResult(executionId: string): Promise<string>;
-
-  /**
-   * 导入执行结果
-   */
-  importExecutionResult(data: string): Promise<string>;
-
-  /**
    * 订阅执行事件
    */
   subscribeExecutionEvents(callback: ExecutionEventCallback): Promise<string>;
@@ -179,102 +170,16 @@ export interface IWorkflowExecutionService {
 }
 
 /**
- * 工作流执行进度接口
+ * 默认工作流编排服务实现
  */
-export interface WorkflowExecutionProgress {
-  /** 执行ID */
-  readonly executionId: string;
-  /** 工作流ID */
-  readonly workflowId: ID;
-  /** 执行状态 */
-  readonly status: ExecutionStatus;
-  /** 进度百分比 */
-  readonly progress: number;
-  /** 当前节点ID */
-  readonly currentNodeId?: ID;
-  /** 已执行节点数 */
-  readonly executedNodes: number;
-  /** 总节点数 */
-  readonly totalNodes: number;
-  /** 已执行边数 */
-  readonly executedEdges: number;
-  /** 总边数 */
-  readonly totalEdges: number;
-  /** 预估剩余时间（毫秒） */
-  readonly estimatedTimeRemaining?: number;
-  /** 执行开始时间 */
-  readonly startTime: Date;
-  /** 当前时间 */
-  readonly currentTime: Date;
-}
-
-/**
- * 工作流执行统计信息接口
- */
-export interface WorkflowExecutionStatistics {
-  /** 总执行数 */
-  readonly totalExecutions: number;
-  /** 成功执行数 */
-  readonly successfulExecutions: number;
-  /** 失败执行数 */
-  readonly failedExecutions: number;
-  /** 平均执行时间（毫秒） */
-  readonly averageExecutionTime: number;
-  /** 最长执行时间（毫秒） */
-  readonly maxExecutionTime: number;
-  /** 最短执行时间（毫秒） */
-  readonly minExecutionTime: number;
-  /** 按状态分组的执行数 */
-  readonly executionsByStatus: Record<ExecutionStatus, number>;
-  /** 按模式分组的执行数 */
-  readonly executionsByMode: Record<ExecutionMode, number>;
-  /** 按优先级分组的执行数 */
-  readonly executionsByPriority: Record<ExecutionPriority, number>;
-  /** 按工作流分组的执行数 */
-  readonly executionsByWorkflow: Record<string, number>;
-  /** 成功率 */
-  readonly successRate: number;
-  /** 失败率 */
-  readonly failureRate: number;
-}
-
-/**
- * 工作流执行事件接口
- */
-export interface WorkflowExecutionEvent {
-  /** 事件类型 */
-  readonly type: 'started' | 'paused' | 'resumed' | 'completed' | 'failed' | 'cancelled' | 'node_started' | 'node_completed' | 'edge_traversed';
-  /** 执行ID */
-  readonly executionId: string;
-  /** 工作流ID */
-  readonly workflowId: ID;
-  /** 事件时间 */
-  readonly timestamp: Date;
-  /** 相关节点ID */
-  readonly nodeId?: ID;
-  /** 相关边ID */
-  readonly edgeId?: ID;
-  /** 事件数据 */
-  readonly data?: Record<string, any>;
-  /** 事件元数据 */
-  readonly metadata: Record<string, any>;
-}
-
-/**
- * 工作流执行事件回调类型
- */
-export type WorkflowExecutionEventCallback = (event: WorkflowExecutionEvent) => void;
-
-/**
- * 默认工作流执行服务实现
- */
-export class DefaultWorkflowExecutionService implements IWorkflowExecutionService {
+export class DefaultWorkflowOrchestrationService implements IWorkflowOrchestrationService {
   constructor(
     private readonly contextManager: IExecutionContextManager,
     private readonly compiler: IWorkflowCompiler,
     private readonly triggerManager: ITriggerManager,
-    private readonly stateManager: IStateManager
-  ) { }
+    private readonly stateManager: IStateManager,
+    private readonly workflowExecutorFactory: (workflowId: ID) => WorkflowExecutor
+  ) {}
 
   /**
    * 执行工作流
@@ -331,8 +236,9 @@ export class DefaultWorkflowExecutionService implements IWorkflowExecutionServic
       // 更新执行状态为运行中
       await this.contextManager.updateStatus(request.executionId, ExecutionStatus.RUNNING);
 
-      // 执行工作流逻辑
-      const result = await this.executeWorkflowLogic(request, context, compilationResult);
+      // 获取工作流执行器并执行
+      const executor = this.workflowExecutorFactory(request.workflowId);
+      const result = await executor.execute(context);
 
       // 更新执行状态为已完成
       await this.contextManager.updateStatus(request.executionId, ExecutionStatus.COMPLETED);
@@ -380,8 +286,7 @@ export class DefaultWorkflowExecutionService implements IWorkflowExecutionServic
     onProgress?: (progress: WorkflowExecutionProgress) => void,
     onNodeComplete?: (nodeId: ID, result: any) => void,
     onError?: (error: Error) => void
-  ): Promise<WorkflowExecutionResult> {
-    // 简化实现，实际中应该支持真正的流式执行
+  ): Promise<ExecutionResult> {
     try {
       const result = await this.execute(request);
 
@@ -402,15 +307,7 @@ export class DefaultWorkflowExecutionService implements IWorkflowExecutionServic
         onProgress(progressInfo);
       }
 
-      return {
-        executionId: result.executionId,
-        workflowId: request.workflowId,
-        status: result.status,
-        data: result.data,
-        error: result.error,
-        statistics: result.statistics,
-        completedAt: result.completedAt
-      };
+      return result;
     } catch (error) {
       if (onError) {
         onError(error as Error);
@@ -548,116 +445,6 @@ export class DefaultWorkflowExecutionService implements IWorkflowExecutionServic
   }
 
   /**
-   * 获取执行日志
-   */
-  async getExecutionLogs(
-    executionId: string,
-    level?: 'debug' | 'info' | 'warn' | 'error',
-    nodeId?: ID,
-    edgeId?: ID
-  ): Promise<Array<{
-    level: 'debug' | 'info' | 'warn' | 'error';
-    message: string;
-    timestamp: Date;
-    nodeId?: ID;
-    edgeId?: ID;
-  }>> {
-    const context = await this.contextManager.getContext(executionId);
-    if (!context) {
-      return [];
-    }
-
-    let logs = (context.logs || []).map(log => ({
-      level: log.level,
-      message: log.message,
-      timestamp: log.timestamp,
-      nodeId: log.nodeId,
-      edgeId: log.edgeId
-    }));
-
-    if (level) {
-      logs = logs.filter(log => log.level === level);
-    }
-
-    if (nodeId) {
-      logs = logs.filter(log => log.nodeId === nodeId);
-    }
-
-    if (edgeId) {
-      logs = logs.filter(log => log.edgeId === edgeId);
-    }
-
-    return logs;
-  }
-
-  /**
-   * 重试执行
-   */
-  async retryExecution(executionId: string): Promise<ExecutionResult> {
-    const context = await this.contextManager.getContext(executionId);
-    if (!context) {
-      throw new Error(`执行上下文不存在: ${executionId}`);
-    }
-
-    // 创建新的执行请求
-    const retryRequest: WorkflowExecutionRequest = {
-      executionId: `${executionId}_retry_${Date.now()}`,
-      workflowId: context.workflowId,
-      mode: context.mode || ExecutionMode.SYNC,
-      priority: context.priority || ExecutionPriority.NORMAL,
-      config: context.config || {},
-      inputData: {}, // 实际实现中应该从上下文获取
-      parameters: {}
-    };
-
-    return await this.execute(retryRequest);
-  }
-
-  /**
-   * 获取执行统计信息
-   */
-  async getExecutionStatistics(
-    workflowId?: ID,
-    startTime?: Date,
-    endTime?: Date
-  ): Promise<ExecutionStatistics> {
-    // 简化实现，实际中应该从数据库查询
-    return {
-      totalTime: 0,
-      nodeExecutionTime: 0,
-      successfulNodes: 0,
-      failedNodes: 0,
-      skippedNodes: 0,
-      retries: 0
-    };
-  }
-
-  /**
-   * 清理执行历史
-   */
-  async cleanupExecutionHistory(maxAge: number): Promise<number> {
-    await this.contextManager.cleanupExpiredContexts();
-    return 0; // 简化实现，实际中应该返回清理的数量
-  }
-
-  /**
-   * 导出执行结果
-   */
-  async exportExecutionResult(executionId: string): Promise<string> {
-    const context = await this.contextManager.exportContext(executionId);
-    return context ? JSON.stringify(context) : '';
-  }
-
-  /**
-   * 导入执行结果
-   */
-  async importExecutionResult(data: string): Promise<string> {
-    const context = JSON.parse(data) as IExecutionContext;
-    await this.contextManager.importContext(context);
-    return context.executionId.toString();
-  }
-
-  /**
    * 订阅执行事件
    */
   async subscribeExecutionEvents(callback: ExecutionEventCallback): Promise<string> {
@@ -671,33 +458,5 @@ export class DefaultWorkflowExecutionService implements IWorkflowExecutionServic
   async unsubscribeExecutionEvents(subscriptionId: string): Promise<boolean> {
     // 简化实现，实际中应该支持事件取消订阅
     return true;
-  }
-
-  /**
-   * 执行工作流逻辑
-   */
-  private async executeWorkflowLogic(
-    request: WorkflowExecutionRequest,
-    context: ExecutionContext,
-    compilationResult: CompilationResult
-  ): Promise<ExecutionResult> {
-    // 简化实现，实际中应该执行真正的工作流逻辑
-    const endTime = new Date();
-    const duration = endTime.getTime() - context.startTime.getMilliseconds();
-
-    return {
-      executionId: ID.fromString(request.executionId),
-      status: ExecutionStatus.COMPLETED,
-      data: request.inputData,
-      statistics: {
-        totalTime: duration,
-        nodeExecutionTime: 0,
-        successfulNodes: 0,
-        failedNodes: 0,
-        skippedNodes: 0,
-        retries: 0
-      },
-      completedAt: Timestamp.now()
-    };
   }
 }

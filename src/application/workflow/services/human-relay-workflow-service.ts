@@ -5,7 +5,7 @@
  */
 
 import { injectable, inject } from 'inversify';
-import { IWorkflowExecutionService } from '../../../domain/workflow/services/execution-service';
+import { IWorkflowOrchestrationService, WorkflowExecutionRequest } from '../../../domain/workflow/services/workflow-orchestration-service';
 import { WorkflowRepository } from '../../../domain/workflow/repositories/workflow-repository';
 import { HumanRelayNode } from '../../../domain/workflow/entities/nodes/specialized/human-relay-node';
 import { ID } from '../../../domain/common/value-objects/id';
@@ -18,8 +18,8 @@ import { Workflow } from '../../../domain/workflow/entities/workflow';
 @injectable()
 export class HumanRelayWorkflowService {
   constructor(
-    @inject('IWorkflowExecutionService')
-    private workflowExecutionService: IWorkflowExecutionService,
+    @inject('IWorkflowOrchestrationService')
+    private workflowOrchestrationService: IWorkflowOrchestrationService,
     @inject('WorkflowRepository')
     private workflowRepository: WorkflowRepository
   ) { }
@@ -73,7 +73,7 @@ export class HumanRelayWorkflowService {
     }
 
     // 执行工作流
-    const executionResult = await this.workflowExecutionService.execute({
+    const executionRequest: WorkflowExecutionRequest = {
       executionId: ID.generate().toString(),
       workflowId: workflowId,
       mode: 'sync' as any,
@@ -81,7 +81,9 @@ export class HumanRelayWorkflowService {
       config: {},
       inputData,
       parameters: {}
-    });
+    };
+    
+    const executionResult = await this.workflowOrchestrationService.execute(executionRequest);
 
     return executionResult;
   }
@@ -98,7 +100,7 @@ export class HumanRelayWorkflowService {
     nodeId: string
   ): Promise<any> {
     // 获取工作流执行状态
-    const executionStatus = await this.workflowExecutionService.getExecutionStatus(
+    const executionStatus = await this.workflowOrchestrationService.getExecutionStatus(
       nodeId
     );
 
@@ -257,7 +259,7 @@ export class HumanRelayWorkflowService {
     executionId: string
   ): Promise<boolean> {
     try {
-      await this.workflowExecutionService.cancelExecution(executionId);
+      await this.workflowOrchestrationService.cancelExecution(executionId);
       return true;
     } catch (error) {
       console.error('取消工作流执行失败:', error);

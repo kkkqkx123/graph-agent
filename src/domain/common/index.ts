@@ -23,6 +23,16 @@ export { AggregateRoot } from './base/aggregate-root';
 // 错误类
 export { DomainError } from './errors/domain-error';
 export { RepositoryError } from './errors/repository-error';
+export {
+  ErrorHandlingStrategy,
+  DomainErrorHandler,
+  WorkflowErrorHandler,
+  SessionErrorHandler,
+  ErrorHandlerFactory,
+  DefaultErrorHandler,
+  type ErrorContext,
+  type ErrorHandlingResult
+} from './errors/error-handler';
 
 // 事件类
 export { DomainEvent } from './events/domain-event';
@@ -41,3 +51,14 @@ export type { VersionProps } from './value-objects/version';
 
 // 事件属性接口
 export type { DomainEventProps } from './events/domain-event';
+
+// 验证器
+export {
+  DomainValidator,
+  ValidationResult,
+  ValidationResultBuilder,
+  CompositeValidator,
+  ConditionalValidator
+} from './validators/domain-validator';
+export { SessionValidator } from './validators/session-validator';
+export { WorkflowValidator } from './validators/workflow-validator';
