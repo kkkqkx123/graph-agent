@@ -82,21 +82,6 @@ export interface ThreadRepository extends Repository<Thread, ID> {
   getLastActiveThreadForSession(sessionId: ID): Promise<Thread | null>;
 
   /**
-   * 获取线程执行统计信息
-   * @param sessionId 会话ID
-   * @returns 执行统计信息
-   */
-  getThreadExecutionStats(sessionId: ID): Promise<{
-    total: number;
-    pending: number;
-    running: number;
-    paused: number;
-    completed: number;
-    failed: number;
-    cancelled: number;
-  }>;
-
-  /**
    * 批量更新线程状态
    * @param threadIds 线程ID列表
    * @param status 新状态

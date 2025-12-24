@@ -9,6 +9,8 @@ import { Node } from '../entities/nodes/base/node';
 import { Edge } from '../entities/edges/base/edge';
 import { NodeType } from '../value-objects/node-type';
 import { EdgeType } from '../value-objects/edge-type';
+import { Timestamp } from '../../common/value-objects/timestamp';
+import { Version } from '../../common/value-objects/version';
 
 /**
  * 工作流领域服务
@@ -56,14 +58,8 @@ export class WorkflowDomainService {
     const workflow = Workflow.create(
       name,
       description,
-      nodes,
-      edges,
-      type,
-      config,
-      undefined, // errorHandlingStrategy
-      undefined, // executionStrategy
-      tags,
-      metadata,
+      undefined, // definition - 将在内部创建
+      undefined, // graph - 将在内部创建
       createdBy
     );
 
@@ -193,10 +189,22 @@ export class WorkflowDomainService {
       throw new DomainError('只能编辑草稿状态工作流的节点');
     }
 
-    // 添加节点
-    workflow.addNode(node, userId);
+    // 添加节点到图
+    const newGraph = workflow.getGraph().addNode(node);
+    
+    // 创建新的工作流实例
+    const newWorkflow = Workflow.fromProps({
+      id: workflow.workflowId,
+      definition: workflow.getDefinition(),
+      graph: newGraph,
+      createdAt: workflow.createdAt,
+      updatedAt: Timestamp.now(),
+      version: workflow.version.nextPatch(),
+      createdBy: workflow.createdBy,
+      updatedBy: userId
+    });
 
-    return await this.workflowRepository.save(workflow);
+    return await this.workflowRepository.save(newWorkflow);
   }
 
   /**
@@ -217,10 +225,22 @@ export class WorkflowDomainService {
       throw new DomainError('只能编辑草稿状态工作流的节点');
     }
 
-    // 移除节点
-    workflow.removeNode(nodeId, userId);
+    // 从图中移除节点
+    const newGraph = workflow.getGraph().removeNode(nodeId);
+    
+    // 创建新的工作流实例
+    const newWorkflow = Workflow.fromProps({
+      id: workflow.workflowId,
+      definition: workflow.getDefinition(),
+      graph: newGraph,
+      createdAt: workflow.createdAt,
+      updatedAt: Timestamp.now(),
+      version: workflow.version.nextPatch(),
+      createdBy: workflow.createdBy,
+      updatedBy: userId
+    });
 
-    return await this.workflowRepository.save(workflow);
+    return await this.workflowRepository.save(newWorkflow);
   }
 
   /**
@@ -241,10 +261,22 @@ export class WorkflowDomainService {
       throw new DomainError('只能编辑草稿状态工作流的边');
     }
 
-    // 添加边
-    workflow.addEdge(edge, userId);
+    // 添加边到图
+    const newGraph = workflow.getGraph().addEdge(edge);
+    
+    // 创建新的工作流实例
+    const newWorkflow = Workflow.fromProps({
+      id: workflow.workflowId,
+      definition: workflow.getDefinition(),
+      graph: newGraph,
+      createdAt: workflow.createdAt,
+      updatedAt: Timestamp.now(),
+      version: workflow.version.nextPatch(),
+      createdBy: workflow.createdBy,
+      updatedBy: userId
+    });
 
-    return await this.workflowRepository.save(workflow);
+    return await this.workflowRepository.save(newWorkflow);
   }
 
   /**
@@ -265,49 +297,63 @@ export class WorkflowDomainService {
       throw new DomainError('只能编辑草稿状态工作流的边');
     }
 
-    // 移除边
-    workflow.removeEdge(edgeId, userId);
+    // 从图中移除边
+    const newGraph = workflow.getGraph().removeEdge(edgeId);
+    
+    // 创建新的工作流实例
+    const newWorkflow = Workflow.fromProps({
+      id: workflow.workflowId,
+      definition: workflow.getDefinition(),
+      graph: newGraph,
+      createdAt: workflow.createdAt,
+      updatedAt: Timestamp.now(),
+      version: workflow.version.nextPatch(),
+      createdBy: workflow.createdBy,
+      updatedBy: userId
+    });
 
-    return await this.workflowRepository.save(workflow);
+    return await this.workflowRepository.save(newWorkflow);
   }
 
   /**
    * 根据节点类型查找工作流
    * @param nodeType 节点类型
-   * @param options 查询选项
    * @returns 工作流列表
    */
   async findWorkflowsByNodeType(
-    nodeType: NodeType,
-    options?: any
+    nodeType: NodeType
   ): Promise<Workflow[]> {
-    return await this.workflowRepository.findByNodeType(nodeType, options);
+    // 这里需要实现基于节点类型的查询逻辑
+    // 由于仓储接口已经简化，我们需要在应用层实现这个逻辑
+    throw new Error('该方法需要在应用层实现，基于工作流图的节点类型进行过滤');
   }
 
   /**
    * 根据边类型查找工作流
    * @param edgeType 边类型
-   * @param options 查询选项
    * @returns 工作流列表
    */
   async findWorkflowsByEdgeType(
-    edgeType: EdgeType,
-    options?: any
+    edgeType: EdgeType
   ): Promise<Workflow[]> {
-    return await this.workflowRepository.findByEdgeType(edgeType, options);
+    // 这里需要实现基于边类型的查询逻辑
+    // 由于仓储接口已经简化，我们需要在应用层实现这个逻辑
+    throw new Error('该方法需要在应用层实现，基于工作流图的边类型进行过滤');
   }
 
   /**
    * 获取最复杂的工作流
    * @param limit 限制数量
-   * @param options 查询选项
    * @returns 最复杂的工作流列表
    */
   async getMostComplexWorkflows(
-    limit: number,
-    options?: any
+    limit: number
   ): Promise<Workflow[]> {
-    return await this.workflowRepository.getMostComplexWorkflows(limit, options);
+    // 获取所有工作流并按复杂度排序
+    const allWorkflows = await this.workflowRepository.findAll();
+    return allWorkflows
+      .sort((a, b) => (b.getNodeCount() + b.getEdgeCount()) - (a.getNodeCount() + a.getEdgeCount()))
+      .slice(0, limit);
   }
 
   /**
@@ -357,7 +403,6 @@ export class WorkflowDomainService {
 
     return await this.workflowRepository.save(workflow);
   }
-
 
   /**
    * 批量激活工作流
@@ -419,7 +464,6 @@ export class WorkflowDomainService {
     );
   }
 
-
   /**
    * 验证工作流是否可以执行
    * @param workflowId 工作流ID
@@ -441,10 +485,9 @@ export class WorkflowDomainService {
 
   /**
    * 获取工作流标签统计信息
-   * @param options 查询选项
    * @returns 标签统计信息
    */
-  async getWorkflowTagStats(options?: any): Promise<Record<string, number>> {
-    return await this.workflowRepository.getWorkflowTagStats(options);
+  async getWorkflowTagStats(): Promise<Record<string, number>> {
+    return await this.workflowRepository.getWorkflowTagStats();
   }
 }

@@ -71,21 +71,9 @@ export class WorkflowService {
         workflowId: command.workflowId
       });
 
-      // 验证工作流是否存在
-      if (command.workflowId) {
-        const workflowId = ID.fromString(command.workflowId);
-        const workflowExists = await this.workflowRepository.exists(workflowId);
-        if (!workflowExists) {
-          throw new DomainError(`工作流不存在: ${command.workflowId}`);
-        }
-      }
-
       // 转换命令参数
       const type = command.type ? WorkflowType.fromString(command.type) : undefined;
-      // Note: WorkflowConfig.fromObject may not exist, using constructor instead
-      // Note: WorkflowConfig constructor may be protected, using any for now
       const config = command.config ? command.config as any : undefined;
-      const workflowId = command.workflowId ? ID.fromString(command.workflowId) : undefined;
       const createdBy = command.createdBy ? ID.fromString(command.createdBy) : undefined;
 
       // 调用领域服务创建工作流
@@ -217,14 +205,9 @@ export class WorkflowService {
 
       // 更新配置
       if (command.config !== undefined) {
-        // Note: WorkflowConfig.fromObject may not exist, using constructor instead
-        // Note: WorkflowConfig constructor may be protected, using any for now
         const config = command.config as any;
         workflow.updateConfig(config, userId);
       }
-
-      // Note: workflowId is not a mutable property of Workflow
-      // 更新工作流ID需要在创建时指定，不支持后续更新
 
       // 更新元数据
       if (command.metadata !== undefined) {
@@ -257,7 +240,6 @@ export class WorkflowService {
       });
 
       const workflowId = ID.fromString(command.workflowId);
-      const workflow = await this.workflowRepository.findByIdOrFail(workflowId);
 
       // 验证工作流是否可以执行
       const canExecute = await this.workflowDomainService.canExecuteWorkflow(workflowId);
@@ -275,14 +257,6 @@ export class WorkflowService {
       // 简化实现，直接返回一个模拟的执行结果
       const endTime = new Date();
       const duration = endTime.getTime() - startTime.getTime();
-
-      // Note: recordWorkflowExecution may not exist on WorkflowDomainService
-      // TODO: 实现执行记录功能
-      // await this.workflowDomainService.recordWorkflowExecution(
-      //   workflowId,
-      //   true,
-      //   duration / 1000 // 转换为秒
-      // );
 
       const result: WorkflowExecutionResultDto = {
         executionId,
@@ -312,16 +286,6 @@ export class WorkflowService {
       return result;
     } catch (error) {
       this.logger.error('执行工作流失败', error as Error);
-
-      // 记录执行失败
-      // Note: recordWorkflowExecution may not exist on WorkflowDomainService
-      // try {
-      //   const workflowId = ID.fromString(command.workflowId);
-      //   await this.workflowDomainService.recordWorkflowExecution(workflowId, false, 0);
-      // } catch (recordError) {
-      //   this.logger.error('记录工作流执行失败', recordError as Error);
-      // }
-
       throw error;
     }
   }
@@ -486,20 +450,7 @@ export class WorkflowService {
     size: number;
   }> {
     try {
-      // 构建查询选项
-      const options = {
-        filters: query.filters || {},
-        sortBy: query.sortBy || 'createdAt',
-        sortOrder: query.sortOrder || 'desc'
-      };
-
-      // Note: pagination may not be supported in the repository
-      // if (query.pagination) {
-      //   options.pagination = query.pagination;
-      // }
-
-      // Note: findWithPagination may not exist in WorkflowRepository
-      // Using findAll as a fallback
+      // 获取所有工作流
       const allWorkflows = await this.workflowRepository.findAll();
       const result = {
         items: allWorkflows,
@@ -516,7 +467,7 @@ export class WorkflowService {
         workflows,
         total: result.total,
         page: result.page,
-        size: result.items.length // Using items.length instead of result.size
+        size: result.items.length
       };
     } catch (error) {
       this.logger.error('列出工作流失败', error as Error);
@@ -548,16 +499,14 @@ export class WorkflowService {
    */
   async getWorkflowStatistics(query: GetWorkflowStatisticsQuery): Promise<WorkflowStatisticsDto> {
     try {
-      // Note: getWorkflowTagStats may not exist in WorkflowDomainService
-      // Using empty stats as fallback
-      const stats = { tags: {}, total: 0, draft: 0, active: 0, inactive: 0, archived: 0 };
+      const stats = await this.workflowDomainService.getWorkflowTagStats();
 
       return {
-        totalWorkflows: stats.total || 0,
-        draftWorkflows: stats.draft || 0,
-        activeWorkflows: stats.active || 0,
-        inactiveWorkflows: stats.inactive || 0,
-        archivedWorkflows: stats.archived || 0,
+        totalWorkflows: 0,
+        draftWorkflows: 0,
+        activeWorkflows: 0,
+        inactiveWorkflows: 0,
+        archivedWorkflows: 0,
         totalExecutions: 0,
         totalSuccesses: 0,
         totalFailures: 0,
@@ -565,7 +514,7 @@ export class WorkflowService {
         averageExecutionTime: 0,
         workflowsByStatus: {},
         workflowsByType: {},
-        tagStatistics: stats.tags || {}
+        tagStatistics: stats
       };
     } catch (error) {
       this.logger.error('获取工作流统计信息失败', error as Error);
@@ -589,28 +538,12 @@ export class WorkflowService {
       let workflows: Workflow[] = [];
 
       if (query.searchIn === 'name' || query.searchIn === 'all') {
-        // Note: searchByName and searchByDescription may not exist in WorkflowRepository
-        // Using findByName as a fallback
-        const nameResults = await this.workflowRepository.findByName(query.keyword, {
-          filters: query.filters || {},
-          sortBy: query.sortBy || 'relevance',
-          sortOrder: (query.sortOrder as 'asc' | 'desc' | undefined) || 'desc'
-          // Note: pagination may not be supported in the repository
-          // pagination: query.pagination
-        });
+        const nameResults = await this.workflowRepository.searchByName(query.keyword);
         workflows = workflows.concat(nameResults);
       }
 
       if (query.searchIn === 'description' || query.searchIn === 'all') {
-        // Note: searchByDescription may not exist in WorkflowRepository
-        // Using findByName as a fallback
-        const descResults = await this.workflowRepository.findByName(query.keyword, {
-          filters: query.filters || {},
-          sortBy: query.sortBy || 'relevance',
-          sortOrder: (query.sortOrder as 'asc' | 'desc' | undefined) || 'desc'
-          // Note: pagination may not be supported in the repository
-          // pagination: query.pagination
-        });
+        const descResults = await this.workflowRepository.searchByDescription(query.keyword);
         workflows = workflows.concat(descResults);
       }
 

@@ -4,7 +4,6 @@ import { ID } from '../../common/value-objects/id';
 import { ThreadStatus } from '../value-objects/thread-status';
 import { ThreadPriority } from '../value-objects/thread-priority';
 import { DomainError } from '../../common/errors/domain-error';
-import { Workflow } from '../../workflow/entities/workflow';
 
 /**
  * 线程领域服务
@@ -62,11 +61,6 @@ export class ThreadDomainService {
     const hasRunningThreads = await this.threadRepository.hasRunningThreads(thread.sessionId);
     if (hasRunningThreads) {
       throw new DomainError('会话已有运行中的线程，无法启动其他线程');
-    }
-
-    // 验证工作流是否可以执行
-    if (!thread.workflowId) {
-      throw new DomainError('线程未关联工作流，无法启动');
     }
   }
 
@@ -149,23 +143,6 @@ export class ThreadDomainService {
     }
 
     newPriority.validate();
-  }
-
-  /**
-   * 验证工作流关联的业务规则
-   * @param threadId 线程ID
-   * @param workflow 工作流
-   */
-  async validateWorkflowAssociation(threadId: ID, workflow: Workflow): Promise<void> {
-    const thread = await this.threadRepository.findByIdOrFail(threadId);
-
-    if (thread.status.isRunning()) {
-      throw new DomainError('线程正在运行时不能更改工作流');
-    }
-
-    if (!workflow.status.canExecute()) {
-      throw new DomainError(`工作流当前状态不允许执行: ${workflow.status}`);
-    }
   }
 
   /**
@@ -298,59 +275,5 @@ export class ThreadDomainService {
    */
   isThreadTerminal(thread: Thread): boolean {
     return thread.status.isTerminal();
-  }
-
-  /**
-   * 验证线程执行条件
-   * @param thread 线程
-   * @param workflow 工作流
-   */
-  validateExecutionConditions(thread: Thread, workflow: Workflow): void {
-    if (!thread.status.canExecute()) {
-      throw new DomainError(`线程当前状态不允许执行: ${thread.status}`);
-    }
-
-    if (!workflow.status.canExecute()) {
-      throw new DomainError(`工作流当前状态不允许执行: ${workflow.status}`);
-    }
-
-    if (!thread.workflowId.equals(workflow.workflowId)) {
-      throw new DomainError('线程关联的工作流ID不匹配');
-    }
-  }
-
-  /**
-   * 计算线程执行进度
-   * @param thread 线程
-   * @param totalSteps 总步骤数
-   * @param completedSteps 已完成步骤数
-   * @returns 执行进度（0-100）
-   */
-  calculateExecutionProgress(thread: Thread, totalSteps: number, completedSteps: number): number {
-    if (totalSteps <= 0) {
-      return 0;
-    }
-
-    return Math.min(100, Math.round((completedSteps / totalSteps) * 100));
-  }
-
-  /**
-   * 检查线程是否需要暂停
-   * @param thread 线程
-   * @returns 是否需要暂停
-   */
-  shouldPauseThread(thread: Thread): boolean {
-    // 检查各种暂停条件
-    return thread.status.isPaused() || this.isThreadTimedOut(thread, 24); // 24小时超时
-  }
-
-  /**
-   * 检查线程是否需要终止
-   * @param thread 线程
-   * @returns 是否需要终止
-   */
-  shouldTerminateThread(thread: Thread): boolean {
-    // 检查各种终止条件
-    return thread.status.isCancelled() || this.isThreadTimedOut(thread, 48); // 48小时强制终止
   }
 }

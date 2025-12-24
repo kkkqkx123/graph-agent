@@ -8,6 +8,7 @@
 import { Thread } from '../../../domain/threads/entities/thread';
 import { ThreadRepository } from '../../../domain/threads/repositories/thread-repository';
 import { ThreadDomainService } from '../../../domain/threads/services/thread-domain-service';
+import { ThreadExecutionService } from '../../../domain/threads/services/thread-execution-service';
 import { SessionRepository } from '../../../domain/sessions/repositories/session-repository';
 import { WorkflowRepository } from '../../../domain/workflow/repositories/workflow-repository';
 import { ID } from '../../../domain/common/value-objects/id';
@@ -26,6 +27,7 @@ export class ThreadService {
     private readonly sessionRepository: SessionRepository,
     private readonly workflowRepository: WorkflowRepository,
     private readonly threadDomainService: ThreadDomainService,
+    private readonly threadExecutionService: ThreadExecutionService,
     private readonly logger: ILogger
   ) { }
 
@@ -74,9 +76,6 @@ export class ThreadService {
         request.description,
         request.metadata
       );
-
-      // 设置工作流关联
-      thread.setWorkflow(workflow);
 
       // 保存线程
       const savedThread = await this.threadRepository.save(thread);
@@ -286,11 +285,8 @@ export class ThreadService {
       // 验证线程启动的业务规则
       await this.threadDomainService.validateThreadStart(id);
 
-      // 执行线程
-      const result = await thread.executeSequentially(inputData);
-
-      // 保存线程状态
-      await this.threadRepository.save(thread);
+      // 使用执行服务执行线程
+      const result = await this.threadExecutionService.executeSequentially(thread, inputData);
 
       this.logger.info('线程执行完成', { threadId, status: thread.status.toString() });
 
@@ -317,10 +313,9 @@ export class ThreadService {
       await this.threadDomainService.validateThreadPause(id);
 
       const thread = await this.threadRepository.findByIdOrFail(id);
-      thread.pause(user, reason);
+      await this.threadExecutionService.pauseExecution(thread);
 
-      const savedThread = await this.threadRepository.save(thread);
-      return this.mapThreadToInfo(savedThread);
+      return this.mapThreadToInfo(thread);
     } catch (error) {
       this.logger.error('暂停线程失败', error as Error);
       throw error;
@@ -343,10 +338,9 @@ export class ThreadService {
       await this.threadDomainService.validateThreadResume(id);
 
       const thread = await this.threadRepository.findByIdOrFail(id);
-      thread.resume(user, reason);
+      await this.threadExecutionService.resumeExecution(thread);
 
-      const savedThread = await this.threadRepository.save(thread);
-      return this.mapThreadToInfo(savedThread);
+      return this.mapThreadToInfo(thread);
     } catch (error) {
       this.logger.error('恢复线程失败', error as Error);
       throw error;
@@ -427,10 +421,9 @@ export class ThreadService {
       await this.threadDomainService.validateThreadCancellation(id);
 
       const thread = await this.threadRepository.findByIdOrFail(id);
-      thread.cancel(user, reason);
+      await this.threadExecutionService.cancelExecution(thread, reason);
 
-      const savedThread = await this.threadRepository.save(thread);
-      return this.mapThreadToInfo(savedThread);
+      return this.mapThreadToInfo(thread);
     } catch (error) {
       this.logger.error('取消线程失败', error as Error);
       throw error;
@@ -499,7 +492,38 @@ export class ThreadService {
   }> {
     try {
       const id = ID.fromString(sessionId);
-      return await this.threadRepository.getThreadExecutionStats(id);
+      
+      // 获取会话的所有线程
+      const threads = await this.threadRepository.findActiveThreadsForSession(id);
+      
+      // 统计各种状态的线程数量
+      const stats = {
+        total: threads.length,
+        pending: 0,
+        running: 0,
+        paused: 0,
+        completed: 0,
+        failed: 0,
+        cancelled: 0
+      };
+
+      for (const thread of threads) {
+        if (thread.status.isPending()) {
+          stats.pending++;
+        } else if (thread.status.isRunning()) {
+          stats.running++;
+        } else if (thread.status.isPaused()) {
+          stats.paused++;
+        } else if (thread.status.isCompleted()) {
+          stats.completed++;
+        } else if (thread.status.isFailed()) {
+          stats.failed++;
+        } else if (thread.status.isCancelled()) {
+          stats.cancelled++;
+        }
+      }
+
+      return stats;
     } catch (error) {
       this.logger.error('获取会话线程统计信息失败', error as Error);
       throw error;
@@ -520,8 +544,7 @@ export class ThreadService {
 
       for (const thread of threads) {
         try {
-          thread.cancel(user, `线程运行时间超过${maxRunningHours}小时，自动取消`);
-          await this.threadRepository.save(thread);
+          await this.threadExecutionService.cancelExecution(thread, `线程运行时间超过${maxRunningHours}小时，自动取消`);
           cleanedCount++;
         } catch (error) {
           this.logger.error(`清理长时间运行线程失败: ${thread.threadId}`, error as Error);
