@@ -13,7 +13,28 @@ import { In } from 'typeorm';
 import { BaseRepository, QueryOptions } from '../../base/base-repository';
 import { QueryOptionsBuilder } from '../../base/query-options-builder';
 import { ConnectionManager } from '../../connections/connection-manager';
-import { IExecutionContext } from '../../../../domain/workflow/execution/execution-context.interface';
+/**
+ * 执行上下文接口
+ */
+export interface IExecutionContext {
+  executionId: string;
+  workflowId: string;
+  data: Record<string, any>;
+  workflowState?: any;
+  executionHistory?: any[];
+  metadata?: Record<string, any>;
+  startTime?: Date;
+  status?: string;
+  getVariable: (path: string) => any;
+  setVariable: (path: string, value: any) => void;
+  getAllVariables: () => Record<string, any>;
+  getAllMetadata: () => Record<string, any>;
+  getInput: () => Record<string, any>;
+  getExecutedNodes: () => string[];
+  getNodeResult: (nodeId: string) => any;
+  getElapsedTime: () => number;
+  getWorkflow: () => any;
+}
 import {
   IdConverter,
   OptionalIdConverter,
@@ -86,13 +107,13 @@ export class ThreadConverterRepository extends BaseRepository<Thread, ThreadMode
 
       // 创建执行上下文
       const executionContext: IExecutionContext = {
-        executionId: id,
-        workflowId: workflowId || ID.empty(),
+        executionId: id.value,
+        workflowId: (workflowId || ID.empty()).value,
         data: {},
         workflowState: {} as any,
         executionHistory: [],
         metadata: metadata || {},
-        startTime: createdAt,
+        startTime: createdAt.getDate(),
         status: 'pending',
         getVariable: (path: string) => {
           const keys = path.split('.');
@@ -120,7 +141,7 @@ export class ThreadConverterRepository extends BaseRepository<Thread, ThreadMode
           }
         },
         getAllVariables: () => executionContext.data,
-        getAllMetadata: () => executionContext.metadata,
+        getAllMetadata: () => executionContext.metadata || {},
         getInput: () => executionContext.data,
         getExecutedNodes: () => [],
         getNodeResult: (nodeId: string) => undefined,

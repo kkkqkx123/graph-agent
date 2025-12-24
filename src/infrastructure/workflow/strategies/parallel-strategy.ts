@@ -1,7 +1,5 @@
 import { injectable } from 'inversify';
-import { ExecutionContext } from '@domain/workflow/execution/execution-context.interface';
-import { WorkflowExecutor } from '@domain/workflow/execution/workflow-executor.interface';
-import { ExecutionStrategy } from './execution-strategy';
+import { ExecutionContext, WorkflowExecutor, ExecutionStrategy } from './execution-strategy';
 
 @injectable()
 export class ParallelStrategy extends ExecutionStrategy {
@@ -106,7 +104,7 @@ export class ParallelStrategy extends ExecutionStrategy {
 
     // Find all nodes that have outgoing edges
     for (const edge of workflow.getGraph().edges.values()) {
-      nodesWithOutgoingEdges.add(edge.sourceNodeId.value);
+      nodesWithOutgoingEdges.add(edge.fromNodeId);
     }
 
     // Nodes without outgoing edges are end nodes
@@ -158,9 +156,9 @@ export class ParallelStrategy extends ExecutionStrategy {
 
     // Build dependencies based on edges
     for (const edge of workflow.getGraph().edges.values()) {
-      const targetDeps = dependencyMap.get(edge.targetNodeId.value) || [];
-      targetDeps.push(edge.sourceNodeId.value);
-      dependencyMap.set(edge.targetNodeId.value, targetDeps);
+      const targetDeps = dependencyMap.get(edge.toNodeId) || [];
+      targetDeps.push(edge.fromNodeId);
+      dependencyMap.set(edge.toNodeId, targetDeps);
     }
 
     return dependencyMap;

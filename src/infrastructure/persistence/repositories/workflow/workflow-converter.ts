@@ -18,8 +18,7 @@ import {
   VersionConverter,
   MetadataConverter
 } from '../../base/type-converter-base';
-import { ErrorHandlingStrategyFactory } from '../../../../domain/workflow/strategies/error-handling-strategy';
-import { ExecutionStrategyFactory } from '../../../../domain/workflow/strategies/execution-strategy';
+import { ErrorHandlingStrategy, ExecutionStrategy } from '../../../../domain/workflow/strategies';
 
 /**
  * 基于类型转换器的Workflow Repository
@@ -55,8 +54,8 @@ export class WorkflowConverterRepository extends BaseRepository<Workflow, Workfl
         status: WorkflowStatusConverter.fromStorage(model.state),
         type: WorkflowTypeConverter.fromStorage(model.executionMode),
         config: model.configuration ? model.configuration : {}, // 简化处理，实际应转换为WorkflowConfig
-        errorHandlingStrategy: ErrorHandlingStrategyFactory.default(),
-        executionStrategy: ExecutionStrategyFactory.default(),
+        errorHandlingStrategy: ErrorHandlingStrategy.CONTINUE_ON_ERROR,
+        executionStrategy: ExecutionStrategy.SEQUENTIAL,
         tags: model.metadata?.tags || [],
         metadata: MetadataConverter.fromStorage(model.metadata || {}),
         isDeleted: model.metadata?.isDeleted || false,

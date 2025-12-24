@@ -1,11 +1,9 @@
 import { injectable } from 'inversify';
-import { ExecutionContext } from '@domain/workflow/execution/execution-context.interface';
-import { WorkflowExecutor } from '@domain/workflow/execution/workflow-executor.interface';
-import { ExecutionStrategy } from './execution-strategy';
+import { ExecutionContext, WorkflowExecutor, ExecutionStrategy } from './execution-strategy';
 
 @injectable()
 export class SequentialStrategy extends ExecutionStrategy {
-  async execute(context: ExecutionContext, workflowExecutor: any): Promise<any> {
+  async execute(context: ExecutionContext, workflowExecutor: WorkflowExecutor): Promise<any> {
     const workflow = context.getWorkflow();
     const executedNodes = new Set<string>();
     const nodeResults: Map<string, any> = new Map();
@@ -45,7 +43,7 @@ export class SequentialStrategy extends ExecutionStrategy {
   private async executeFromNode(
     nodeId: string,
     context: ExecutionContext,
-    workflowExecutor: any,
+    workflowExecutor: WorkflowExecutor,
     executedNodes: Set<string>,
     nodeResults: Map<string, any>
   ): Promise<any> {
@@ -76,7 +74,7 @@ export class SequentialStrategy extends ExecutionStrategy {
         const edge = workflow.getGraph().edges.get(edgeId);
 
         if (edge) {
-          const targetNodeId = edge.toNodeId.value;
+          const targetNodeId = edge.toNodeId;
           await this.executeFromNode(
             targetNodeId,
             context,

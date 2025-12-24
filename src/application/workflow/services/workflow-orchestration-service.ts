@@ -8,8 +8,7 @@ import { SessionOrchestrationService, ThreadAction } from '../../sessions/interf
 import { ThreadCoordinatorInfrastructureService } from '../../../infrastructure/threads/services/thread-coordinator-service';
 import { GraphAlgorithmService } from '../../../domain/workflow/interfaces/graph-algorithm-service.interface';
 import { GraphValidationService } from '../../../domain/workflow/interfaces/graph-validation-service.interface';
-import { ExecutionContext, IExecutionContext } from '../../../domain/workflow/execution/execution-context.interface';
-import { ExecutionResult } from '../../../domain/workflow/execution/types';
+import { WorkflowExecutionResultDto } from '../dtos';
 import { ID } from '../../../domain/common/value-objects/id';
 import { Timestamp } from '../../../domain/common/value-objects/timestamp';
 
@@ -28,7 +27,7 @@ export class WorkflowOrchestrationService {
   /**
    * 执行工作流
    */
-  async executeWorkflow(sessionId: ID, workflowId: ID, input: unknown): Promise<ExecutionResult> {
+  async executeWorkflow(sessionId: ID, workflowId: ID, input: unknown): Promise<WorkflowExecutionResultDto> {
     // TODO: 需要先获取工作流图对象，然后进行验证
     // 1. 验证工作流图结构
     // const validationResult = await this.graphValidation.validateGraphStructure(workflowGraph);
@@ -49,7 +48,7 @@ export class WorkflowOrchestrationService {
   /**
    * 并行执行多个工作流
    */
-  async executeWorkflowsParallel(sessionId: ID, workflowIds: ID[], input: unknown): Promise<ExecutionResult[]> {
+  async executeWorkflowsParallel(sessionId: ID, workflowIds: ID[], input: unknown): Promise<WorkflowExecutionResultDto[]> {
     const context = this.createExecutionContext(sessionId, ID.empty(), input);
     return await this.sessionOrchestration.orchestrateParallelExecution(sessionId, workflowIds, context);
   }
@@ -57,31 +56,12 @@ export class WorkflowOrchestrationService {
   /**
    * 创建执行上下文
    */
-  private createExecutionContext(sessionId: ID, workflowId: ID, input: unknown): IExecutionContext {
+  private createExecutionContext(sessionId: ID, workflowId: ID, input: unknown): Record<string, unknown> {
     return {
-      executionId: ID.generate(),
-      workflowId: workflowId,
+      executionId: ID.generate().toString(),
+      workflowId: workflowId.toString(),
       data: { input },
-      workflowState: {
-        getVariable: (path: string) => {
-          const parts = path.split('.');
-          let value: any = { input };
-          for (const part of parts) {
-            value = value?.[part];
-          }
-          return value;
-        },
-        setVariable: () => {},
-        getAllVariables: () => ({ input }),
-        getAllMetadata: () => ({}),
-        getInput: () => input,
-        getExecutedNodes: () => [],
-        getNodeResult: () => null,
-        getElapsedTime: () => 0,
-        getWorkflow: () => null
-      } as any,
-      executionHistory: [],
-      metadata: { sessionId: sessionId.toString() },
+      sessionId: sessionId.toString(),
       startTime: Timestamp.now(),
       status: 'pending',
       getVariable: function(path: string) {

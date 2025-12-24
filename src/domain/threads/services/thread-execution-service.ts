@@ -4,8 +4,6 @@ import { WorkflowRepository } from '../../workflow/repositories/workflow-reposit
 import { ID } from '../../common/value-objects/id';
 import { Timestamp } from '../../common/value-objects/timestamp';
 import { DomainError } from '../../common/errors/domain-error';
-import { IExecutionContext } from '../../workflow/execution/execution-context.interface';
-import { ExecutionResult, ExecutionStatus } from '../../workflow/execution/types';
 import { ExecutionStep } from '../../workflow/services/workflow-execution-service';
 
 /**
@@ -26,7 +24,7 @@ export class ThreadExecutionService {
    * @param inputData 输入数据
    * @returns 执行结果
    */
-  async executeSequentially(thread: Thread, inputData: unknown): Promise<ExecutionResult> {
+  async executeSequentially(thread: Thread, inputData: unknown): Promise<any> {
     try {
       // 1. 初始化执行状态
       thread.start();
@@ -42,18 +40,18 @@ export class ThreadExecutionService {
       // 获取执行步骤 - 从工作流图中获取节点并转换为执行步骤
       const graph = workflow.getGraph();
       const steps = Array.from(graph.nodes.values()).map(node => ({
-        stepId: node.nodeId.toString(),
-        nodeId: node.nodeId,
+        stepId: node.id.toString(),
+        nodeId: node.id,
         node: node,
         dependencies: [], // 简化实现，实际应该根据边计算依赖
         priority: 1,
-        execute: async (context: IExecutionContext) => {
+        execute: async (context: any) => {
           // 简化的执行逻辑，实际应该根据节点类型执行不同的操作
           return { success: true, data: {} };
         },
         validate: () => {
           // 简化的验证逻辑
-          if (!node || !node.nodeId) {
+          if (!node || !node.id) {
             throw new Error('节点验证失败');
           }
         }
@@ -101,7 +99,7 @@ export class ThreadExecutionService {
   private async executeStep(
     thread: Thread,
     step: ExecutionStep,
-    executionContext: IExecutionContext
+    executionContext: any
   ): Promise<void> {
     // 更新当前步骤
     const stepId = typeof step === 'string' ? step : (step as any).stepId;
@@ -125,7 +123,7 @@ export class ThreadExecutionService {
    * @param inputData 输入数据
    * @returns 执行上下文
    */
-  private prepareExecutionEnvironment(thread: Thread, inputData: unknown): IExecutionContext {
+  private prepareExecutionEnvironment(thread: Thread, inputData: unknown): any {
     const now = Timestamp.now();
     const executionHistory: any[] = [];
     const data: any = { input: inputData };
@@ -243,10 +241,10 @@ export class ThreadExecutionService {
    * @param executionContext 执行上下文
    * @returns 执行结果
    */
-  private completeExecution(thread: Thread, executionContext: IExecutionContext): ExecutionResult {
+  private completeExecution(thread: Thread, executionContext: any): any {
     return {
       executionId: executionContext.executionId,
-      status: ExecutionStatus.COMPLETED,
+      status: 'completed',
       data: executionContext.data,
       statistics: {
         totalTime: executionContext.getElapsedTime(),
@@ -265,10 +263,10 @@ export class ThreadExecutionService {
    * @param error 错误
    * @returns 执行结果
    */
-  private handleExecutionError(thread: Thread, error: Error): ExecutionResult {
+  private handleExecutionError(thread: Thread, error: Error): any {
     return {
       executionId: thread.threadId,
-      status: ExecutionStatus.FAILED,
+      status: 'failed',
       error,
       data: {},
       statistics: {

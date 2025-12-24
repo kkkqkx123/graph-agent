@@ -4,17 +4,26 @@
  */
 
 import { injectable, inject } from 'inversify';
-import {
-  IWorkflowFunction,
-  WorkflowFunctionType,
-  FunctionMetadata,
-  ValidationResult
-} from '../../../domain/workflow/interfaces/workflow-functions';
-import {
-  IWorkflowFunctionDomainService,
-  IFunctionValidationDomainService
-} from '../../../domain/workflow/services/function-service';
 import { ILogger } from '../../../domain/common/types/logger-types';
+
+/**
+ * 工作流函数类型枚举
+ */
+export enum WorkflowFunctionType {
+  NODE = 'node',
+  CONDITION = 'condition',
+  ROUTING = 'routing',
+  TRIGGER = 'trigger',
+  TRANSFORM = 'transform'
+}
+
+/**
+ * 验证结果接口
+ */
+export interface ValidationResult {
+  valid: boolean;
+  errors: string[];
+}
 
 /**
  * 函数定义
@@ -96,8 +105,6 @@ export class FunctionManagementService {
   private readonly deploymentRegistry = new Map<string, FunctionDeploymentStatus[]>();
 
   constructor(
-    @inject('IWorkflowFunctionDomainService') private readonly domainService: IWorkflowFunctionDomainService,
-    @inject('IFunctionValidationDomainService') private readonly validationService: IFunctionValidationDomainService,
     @inject('Logger') private readonly logger: ILogger
   ) { }
 
@@ -395,36 +402,13 @@ export class FunctionManagementService {
       errors.push('函数版本格式应为 x.y.z');
     }
 
-    // 使用领域服务进行验证
+    // 简化的验证逻辑，不依赖已删除的领域服务
     try {
-      // 创建一个临时的函数对象进行验证
-      const tempFunction = {
-        id: definition.id,
-        name: definition.name,
-        description: definition.description,
-        version: definition.version,
-        type: definition.type,
-        isAsync: true,
-        getParameters: () => [],
-        getReturnType: () => 'any',
-        validateConfig: (config: any) => ({ valid: true, errors: [] }),
-        getMetadata: () => ({
-          id: definition.id,
-          name: definition.name,
-          description: definition.description,
-          version: definition.version,
-          type: definition.type,
-          isAsync: true,
-          parameters: [],
-          returnType: 'any'
-        }),
-        initialize: () => true,
-        cleanup: () => true
-      } as IWorkflowFunction;
-
-      const validationResult = await this.validationService.validateFunctionConfiguration(tempFunction, definition.config || {});
-      if (!validationResult.valid) {
-        errors.push(...validationResult.errors);
+      // 基础配置验证
+      if (definition.config) {
+        if (typeof definition.config !== 'object') {
+          errors.push('函数配置必须是一个对象');
+        }
       }
     } catch (error) {
       errors.push(`函数验证过程中发生错误: ${error instanceof Error ? error.message : String(error)}`);

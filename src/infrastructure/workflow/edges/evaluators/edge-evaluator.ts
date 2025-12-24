@@ -1,10 +1,15 @@
 import { injectable } from 'inversify';
-import { Edge } from '@domain/workflow/entities/edges/base/edge';
-import { ExecutionContext } from '@domain/workflow/execution/execution-context.interface';
+import { EdgeId } from '@domain/workflow/value-objects/edge-id';
+import { Workflow } from '@domain/workflow/entities/workflow';
+import { ExecutionContext } from '../../execution/execution-context.interface';
 
 @injectable()
 export class EdgeEvaluator {
-  async evaluate(edge: Edge, context: ExecutionContext): Promise<boolean> {
+  async evaluate(edgeId: EdgeId, workflow: Workflow, context: ExecutionContext): Promise<boolean> {
+    const edge = workflow.getEdge(edgeId);
+    if (!edge) {
+      throw new Error(`Edge with ID ${edgeId.value} not found in workflow`);
+    }
     try {
       const condition = edge.condition;
       
@@ -563,7 +568,11 @@ export class EdgeEvaluator {
     return prepared;
   }
 
-  async validate(edge: Edge): Promise<{ valid: boolean; errors: string[] }> {
+  async validate(edgeId: EdgeId, workflow: Workflow): Promise<{ valid: boolean; errors: string[] }> {
+    const edge = workflow.getEdge(edgeId);
+    if (!edge) {
+      return { valid: false, errors: [`Edge with ID ${edgeId.value} not found in workflow`] };
+    }
     const errors: string[] = [];
     const condition = edge.condition;
     
@@ -716,7 +725,11 @@ export class EdgeEvaluator {
     };
   }
 
-  extractVariables(edge: Edge): string[] {
+  extractVariables(edgeId: EdgeId, workflow: Workflow): string[] {
+    const edge = workflow.getEdge(edgeId);
+    if (!edge) {
+      return [];
+    }
     const condition = edge.condition;
     if (!condition) {
       return [];

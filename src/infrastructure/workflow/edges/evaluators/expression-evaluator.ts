@@ -1,5 +1,5 @@
 import { injectable } from 'inversify';
-import { ExecutionContext } from '@domain/workflow/execution/execution-context.interface';
+import { ExecutionContext } from '../../execution/execution-context.interface';
 
 @injectable()
 export class ExpressionEvaluator {

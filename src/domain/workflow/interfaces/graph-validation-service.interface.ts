@@ -1,6 +1,4 @@
-import { WorkflowGraph } from '../entities/workflow-graph';
-import { Node } from '../entities/nodes/base/node';
-import { Edge } from '../entities/edges/base/edge';
+import { Workflow, NodeData, EdgeData } from '../entities/workflow';
 import { ID } from '../../common/value-objects/id';
 
 /**
@@ -49,7 +47,7 @@ export interface BusinessRule {
   /** 规则描述 */
   description: string;
   /** 验证条件 */
-  condition: (graph: WorkflowGraph) => boolean;
+  condition: (workflow: Workflow) => boolean;
   /** 错误消息 */
   errorMessage: string;
   /** 严重程度 */
@@ -69,7 +67,7 @@ export interface ValidationRule {
   /** 规则描述 */
   description: string;
   /** 验证函数 */
-  validate: (graph: WorkflowGraph) => boolean;
+  validate: (workflow: Workflow) => boolean;
   /** 是否启用 */
   enabled: boolean;
 }
@@ -91,35 +89,35 @@ export interface GraphValidationService {
    * @param graph 工作流图
    * @returns 验证结果
    */
-  validateGraphStructure(graph: WorkflowGraph): boolean;
+  validateGraphStructure(workflow: Workflow): boolean;
 
   /**
    * 验证图的完整性
    * @param graph 工作流图
    * @returns 验证结果
    */
-  validateGraphIntegrity(graph: WorkflowGraph): boolean;
+  validateGraphIntegrity(workflow: Workflow): boolean;
 
   /**
    * 验证节点连接
    * @param graph 工作流图
    * @returns 验证结果
    */
-  validateNodeConnections(graph: WorkflowGraph): boolean;
+  validateNodeConnections(workflow: Workflow): boolean;
 
   /**
    * 验证图的有效性（综合验证）
    * @param graph 工作流图
    * @returns 验证结果
    */
-  validateGraph(graph: WorkflowGraph): boolean;
+  validateGraph(workflow: Workflow): boolean;
 
   /**
    * 检查图是否可执行
    * @param graph 工作流图
    * @returns 是否可执行
    */
-  isExecutable(graph: WorkflowGraph): boolean;
+  isExecutable(workflow: Workflow): boolean;
 
   /**
    * 获取验证规则

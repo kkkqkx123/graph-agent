@@ -4,14 +4,33 @@
  */
 
 import { injectable, inject } from 'inversify';
-import {
-  IWorkflowFunction,
-  WorkflowFunctionType
-} from '../../../domain/workflow/interfaces/workflow-functions';
-import {
-  FunctionExecutionResult
-} from '../../../domain/workflow/strategies/function-execution-strategies';
 import { ILogger } from '../../../domain/common/types/logger-types';
+
+/**
+ * 工作流函数类型枚举
+ */
+export enum WorkflowFunctionType {
+  NODE = 'node',
+  CONDITION = 'condition',
+  ROUTING = 'routing',
+  TRIGGER = 'trigger',
+  TRANSFORM = 'transform'
+}
+
+/**
+ * 函数执行结果接口
+ */
+export interface FunctionExecutionResult {
+  functionId: string;
+  success: boolean;
+  executionTime: number;
+  resourceUsage: {
+    memory: number;
+    cpu: number;
+    network: number;
+    disk: number;
+  };
+}
 
 /**
  * 函数执行指标

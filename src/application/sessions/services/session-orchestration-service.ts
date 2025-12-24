@@ -4,7 +4,7 @@ import { SessionRepository } from '../../../domain/sessions/repositories/session
 import { ThreadRepository } from '../../../domain/threads/repositories/thread-repository';
 import { SessionResourceService } from '../interfaces/session-resource-service.interface';
 import { ThreadCoordinatorInfrastructureService } from '../../../infrastructure/threads/services/thread-coordinator-service';
-import { ExecutionContext, ExecutionResult, ExecutionStatus, ExecutionStatistics } from '../../../domain/workflow/execution';
+import { WorkflowExecutionResultDto } from '../../workflow/dtos';
 import { ID } from '../../../domain/common/value-objects/id';
 import { Timestamp } from '../../../domain/common/value-objects/timestamp';
 
@@ -26,8 +26,8 @@ export class SessionOrchestrationServiceImpl implements SessionOrchestrationServ
   async orchestrateWorkflowExecution(
     sessionId: ID,
     workflowId: ID,
-    context: ExecutionContext
-  ): Promise<ExecutionResult> {
+    context: Record<string, unknown>
+  ): Promise<WorkflowExecutionResultDto> {
     // 检查会话是否存在
     const session = await this.sessionRepository.findByIdOrFail(sessionId);
     
@@ -42,25 +42,29 @@ export class SessionOrchestrationServiceImpl implements SessionOrchestrationServ
 
     try {
       // 简化的执行逻辑
-      const result: ExecutionResult = {
-        executionId: ID.generate(),
-        status: ExecutionStatus.COMPLETED,
-        data: { message: '工作流执行成功' },
+      const result: WorkflowExecutionResultDto = {
+        executionId: ID.generate().toString(),
+        workflowId: workflowId.toString(),
+        status: 'completed',
+        startTime: new Date().toISOString(),
+        endTime: new Date().toISOString(),
+        duration: 1000,
+        output: { message: '工作流执行成功' },
+        logs: [],
         statistics: {
-          totalTime: 1000,
-          nodeExecutionTime: 800,
-          successfulNodes: 1,
-          failedNodes: 0,
-          skippedNodes: 0,
-          retries: 0
+          executedNodes: 1,
+          totalNodes: 1,
+          executedEdges: 0,
+          totalEdges: 0,
+          executionPath: []
         },
-        completedAt: Timestamp.now()
+        metadata: {}
       };
       
       // 更新资源使用情况
       await this.sessionResourceService.updateQuotaUsage(sessionId.toString(), {
         threadsUsed: 1,
-        executionTimeUsed: result.statistics.totalTime,
+        executionTimeUsed: result.duration || 0,
         memoryUsed: 0,
         storageUsed: 0
       });
@@ -82,8 +86,8 @@ export class SessionOrchestrationServiceImpl implements SessionOrchestrationServ
   async orchestrateParallelExecution(
     sessionId: ID,
     workflowIds: ID[],
-    context: ExecutionContext
-  ): Promise<ExecutionResult[]> {
+    context: Record<string, unknown>
+  ): Promise<WorkflowExecutionResultDto[]> {
     // 检查会话是否存在
     const session = await this.sessionRepository.findByIdOrFail(sessionId);
     
@@ -103,25 +107,29 @@ export class SessionOrchestrationServiceImpl implements SessionOrchestrationServ
 
     try {
       // 简化的并行执行逻辑
-      const results: ExecutionResult[] = workflowIds.map(() => ({
-        executionId: ID.generate(),
-        status: ExecutionStatus.COMPLETED,
-        data: { message: '工作流执行成功' },
+      const results: WorkflowExecutionResultDto[] = workflowIds.map((id, index) => ({
+        executionId: ID.generate().toString(),
+        workflowId: id.toString(),
+        status: 'completed',
+        startTime: new Date().toISOString(),
+        endTime: new Date().toISOString(),
+        duration: 1000,
+        output: { message: '工作流执行成功' },
+        logs: [],
         statistics: {
-          totalTime: 1000,
-          nodeExecutionTime: 800,
-          successfulNodes: 1,
-          failedNodes: 0,
-          skippedNodes: 0,
-          retries: 0
+          executedNodes: 1,
+          totalNodes: 1,
+          executedEdges: 0,
+          totalEdges: 0,
+          executionPath: []
         },
-        completedAt: Timestamp.now()
+        metadata: {}
       }));
 
       // 更新资源使用情况
       await this.sessionResourceService.updateQuotaUsage(sessionId.toString(), {
         threadsUsed: results.length,
-        executionTimeUsed: results.reduce((sum: number, r) => sum + r.statistics.totalTime, 0),
+        executionTimeUsed: results.reduce((sum: number, r) => sum + (r.duration || 0), 0),
         memoryUsed: 0,
         storageUsed: 0
       });

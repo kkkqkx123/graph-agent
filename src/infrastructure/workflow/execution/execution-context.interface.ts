@@ -1,8 +1,7 @@
 import { ID } from '@domain/common/value-objects/id';
 import { WorkflowState } from '@domain/workflow/state/workflow-state';
 import { Timestamp } from '@domain/common/value-objects/timestamp';
-import { Node } from '@domain/workflow/entities/nodes/base/node';
-import { Edge } from '@domain/workflow/entities/edges/base/edge';
+import { Workflow } from '@domain/workflow/entities/workflow';
 import { ExecutionMode, ExecutionPriority, ExecutionConfig } from './types';
 
 /**
@@ -26,11 +25,8 @@ export interface IExecutionContext {
   /** 工作流状态 */
   workflowState: WorkflowState;
 
-  /** 当前执行的节点 */
-  currentNode?: Node;
-
-  /** 当前处理的边 */
-  currentEdge?: Edge;
+  /** 当前处理的边ID */
+  currentEdgeId?: ID;
 
   /** 执行历史 */
   executionHistory: ExecutionHistoryItem[];
@@ -129,7 +125,7 @@ export interface IExecutionContext {
    * 获取工作流
    * @returns 工作流实例
    */
-  getWorkflow(): any;
+  getWorkflow(): Workflow;
 }
 
 /**

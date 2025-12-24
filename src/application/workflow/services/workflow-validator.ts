@@ -562,8 +562,8 @@ export class WorkflowValidator {
     const isolatedNodes: any[] = [];
 
     for (const node of workflow.getGraph().nodes.values()) {
-      const incomingEdges = workflow.getGraph().getIncomingEdges(node.nodeId);
-      const outgoingEdges = workflow.getGraph().getOutgoingEdges(node.nodeId);
+      const incomingEdges = workflow.getGraph().getIncomingEdges(node.id);
+      const outgoingEdges = workflow.getGraph().getOutgoingEdges(node.id);
 
       if (incomingEdges.length === 0 && outgoingEdges.length === 0) {
         isolatedNodes.push(node);
@@ -593,8 +593,8 @@ export class WorkflowValidator {
 
     for (const node of workflow.getGraph().nodes.values()) {
       if (node.type.toString() === 'decision') {
-        const outgoingEdges = workflow.getGraph().getOutgoingEdges(node.nodeId);
-        const hasDefaultEdge = outgoingEdges.some(edge => edge.type.toString() === 'default');
+        const outgoingEdges = workflow.getGraph().getOutgoingEdges(node.id);
+        const hasDefaultEdge = outgoingEdges.some((edge: any) => edge.type.toString() === 'default');
 
         if (!hasDefaultEdge) {
           decisionNodesWithoutDefault.push(node);

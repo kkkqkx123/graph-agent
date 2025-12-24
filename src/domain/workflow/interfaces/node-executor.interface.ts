@@ -1,5 +1,4 @@
-import { Node } from '@domain/workflow/entities/nodes/base/node';
-import { IExecutionContext } from '@domain/workflow/execution/execution-context.interface';
+import { NodeData } from '../entities/workflow';
 
 /**
  * 节点执行器接口
@@ -13,7 +12,7 @@ export interface INodeExecutor {
    * @param context 执行上下文
    * @returns 执行结果
    */
-  execute(node: Node, context: IExecutionContext): Promise<any>;
+  execute(node: NodeData, context: any): Promise<any>;
 
   /**
    * 验证节点是否可以执行
@@ -21,7 +20,7 @@ export interface INodeExecutor {
    * @param context 执行上下文
    * @returns 是否可以执行
    */
-  canExecute(node: Node, context: IExecutionContext): Promise<boolean>;
+  canExecute(node: NodeData, context: any): Promise<boolean>;
 
   /**
    * 获取执行器支持的节点类型

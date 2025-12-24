@@ -1,5 +1,5 @@
 import { ID } from '../../../domain/common/value-objects/id';
-import { ExecutionContext, ExecutionResult } from '../../../domain/workflow/execution';
+import { WorkflowExecutionResultDto } from '../../workflow/dtos';
 
 /**
  * 线程动作类型
@@ -30,7 +30,7 @@ export interface SessionOrchestrationService {
    * @param context 执行上下文
    * @returns 执行结果
    */
-  orchestrateWorkflowExecution(sessionId: ID, workflowId: ID, context: ExecutionContext): Promise<ExecutionResult>;
+  orchestrateWorkflowExecution(sessionId: ID, workflowId: ID, context: Record<string, unknown>): Promise<WorkflowExecutionResultDto>;
 
   /**
    * 编排并行执行
@@ -39,7 +39,7 @@ export interface SessionOrchestrationService {
    * @param context 执行上下文
    * @returns 执行结果列表
    */
-  orchestrateParallelExecution(sessionId: ID, workflowIds: ID[], context: ExecutionContext): Promise<ExecutionResult[]>;
+  orchestrateParallelExecution(sessionId: ID, workflowIds: ID[], context: Record<string, unknown>): Promise<WorkflowExecutionResultDto[]>;
 
   /**
    * 创建线程

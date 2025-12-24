@@ -1,6 +1,6 @@
 import { injectable } from 'inversify';
 import { Node } from '@domain/workflow/entities/nodes/base/node';
-import { ExecutionContext } from '@domain/workflow/execution/execution-context.interface';
+import { ExecutionContext } from '../../execution/execution-context.interface';
 
 @injectable()
 export class WaitNodeExecutor {

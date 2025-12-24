@@ -4,7 +4,28 @@
 
 import { injectable } from 'inversify';
 import { ID } from '../../../domain/common/value-objects/id';
-import { ExecutionContext } from '../../../domain/workflow/execution';
+/**
+ * 执行上下文接口
+ */
+export interface ExecutionContext {
+  executionId: string;
+  workflowId: string;
+  data: Record<string, any>;
+  workflowState?: any;
+  executionHistory?: any[];
+  metadata?: Record<string, any>;
+  startTime?: Date;
+  status?: string;
+  getVariable: (path: string) => any;
+  setVariable: (path: string, value: any) => void;
+  getAllVariables: () => Record<string, any>;
+  getAllMetadata: () => Record<string, any>;
+  getInput: () => Record<string, any>;
+  getExecutedNodes: () => string[];
+  getNodeResult: (nodeId: string) => any;
+  getElapsedTime: () => number;
+  getWorkflow: () => any;
+}
 import { ThreadStatus } from '../../../domain/threads/value-objects/thread-status';
 
 /**
@@ -149,8 +170,8 @@ export class ThreadLifecycleInfrastructureService {
 
     // 返回一个简单的执行上下文
     return {
-      executionId: ID.fromString(threadId),
-      workflowId: ID.empty(),
+      executionId: threadId,
+      workflowId: ID.empty().value,
       data: {},
       workflowState: {} as any,
       executionHistory: [],

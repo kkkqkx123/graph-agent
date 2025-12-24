@@ -4,7 +4,43 @@
 
 import { injectable } from 'inversify';
 import { ID } from '../../../domain/common/value-objects/id';
-import { ExecutionContext, ExecutionResult, ExecutionStatus } from '../../../domain/workflow/execution';
+/**
+ * 执行上下文接口
+ */
+export interface ExecutionContext {
+  executionId: string;
+  workflowId: string;
+  data: Record<string, any>;
+  metadata?: Record<string, any>;
+}
+
+/**
+ * 执行状态枚举
+ */
+export enum ExecutionStatus {
+  PENDING = 'pending',
+  RUNNING = 'running',
+  COMPLETED = 'completed',
+  FAILED = 'failed',
+  CANCELLED = 'cancelled'
+}
+
+/**
+ * 执行结果接口
+ */
+export interface ExecutionResult {
+  executionId: ID;
+  status: ExecutionStatus;
+  data: any;
+  statistics?: {
+    totalTime: number;
+    nodeExecutionTime: number;
+    successfulNodes: number;
+    failedNodes: number;
+    skippedNodes: number;
+    retries: number;
+  };
+}
 import { ThreadRepository } from '../../../domain/threads/repositories/thread-repository';
 import { ThreadLifecycleInfrastructureService } from './thread-lifecycle-service';
 import { ThreadStatus } from '../../../domain/threads/value-objects/thread-status';
@@ -125,7 +161,8 @@ export class ThreadCoordinatorInfrastructureService {
     
     // 创建子线程执行
     const childContext: ExecutionContext = {
-      ...parentContext,
+      executionId: ID.generate().value,
+      workflowId: parentDefinition.workflowId!.value,
       data: {
         ...parentContext.data,
         forkPoint,
@@ -153,14 +190,14 @@ export class ThreadCoordinatorInfrastructureService {
     const mergedResult: ExecutionResult = {
       executionId: threadIds[0] || ID.generate(),
       status: ExecutionStatus.COMPLETED,
-      data: results.map(result => result.data),
+      data: results.map((result: any) => result.data),
       statistics: {
-        totalTime: results.reduce((sum, result) => sum + (result.statistics?.totalTime || 0), 0),
-        nodeExecutionTime: results.reduce((sum, result) => sum + (result.statistics?.nodeExecutionTime || 0), 0),
-        successfulNodes: results.reduce((sum, result) => sum + (result.statistics?.successfulNodes || 0), 0),
-        failedNodes: results.reduce((sum, result) => sum + (result.statistics?.failedNodes || 0), 0),
-        skippedNodes: results.reduce((sum, result) => sum + (result.statistics?.skippedNodes || 0), 0),
-        retries: results.reduce((sum, result) => sum + (result.statistics?.retries || 0), 0)
+        totalTime: results.reduce((sum: number, result: any) => sum + (result.statistics?.totalTime || 0), 0),
+        nodeExecutionTime: results.reduce((sum: number, result: any) => sum + (result.statistics?.nodeExecutionTime || 0), 0),
+        successfulNodes: results.reduce((sum: number, result: any) => sum + (result.statistics?.successfulNodes || 0), 0),
+        failedNodes: results.reduce((sum: number, result: any) => sum + (result.statistics?.failedNodes || 0), 0),
+        skippedNodes: results.reduce((sum: number, result: any) => sum + (result.statistics?.skippedNodes || 0), 0),
+        retries: results.reduce((sum: number, result: any) => sum + (result.statistics?.retries || 0), 0)
       }
     };
 
@@ -268,7 +305,7 @@ export class ThreadCoordinatorInfrastructureService {
       workflowId,
       undefined,
       ThreadPriority.normal(),
-      `工作流 ${workflowId.toString()} 执行线程`,
+      `工作流 ${workflowId.value} 执行线程`,
       undefined,
       {}
     );

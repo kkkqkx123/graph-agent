@@ -1,6 +1,29 @@
 import { injectable } from 'inversify';
-import { Edge } from '@domain/workflow/entities/edges/base/edge';
-import { ExecutionContext } from '@domain/workflow/execution/execution-context.interface';
+import { EdgeId } from '../../../../domain/workflow/value-objects/edge-id';
+import { Workflow } from '../../../../domain/workflow/entities/workflow';
+
+/**
+ * 执行上下文接口
+ */
+export interface ExecutionContext {
+  executionId: string;
+  workflowId: string;
+  data: Record<string, any>;
+  metadata?: Record<string, any>;
+  startTime?: Date;
+  getVariable: (path: string) => any;
+  setVariable: (path: string, value: any) => void;
+}
+
+/**
+ * 边接口
+ */
+export interface Edge {
+  id: string;
+  fromNodeId: string;
+  toNodeId: string;
+  condition?: any;
+}
 
 @injectable()
 export class TransitionEvaluator {
@@ -78,7 +101,7 @@ export class TransitionEvaluator {
 
   private evaluateTimeout(transition: any, context: ExecutionContext): boolean {
     const timeout = transition.timeout;
-    const startTime = transition.startTime || context.startTime.getMilliseconds();
+    const startTime = transition.startTime || (context.startTime?.getTime() || 0);
     const currentTime = Date.now();
     const elapsedTime = currentTime - startTime;
     
@@ -359,8 +382,15 @@ export class TransitionEvaluator {
     return prepared;
   }
 
-  async validate(edge: Edge): Promise<{ valid: boolean; errors: string[] }> {
+  async validate(edgeId: EdgeId, workflow: Workflow): Promise<{ valid: boolean; errors: string[] }> {
     const errors: string[] = [];
+    const graph = workflow.getGraph();
+    const edge = graph.edges.get(edgeId.value);
+    if (!edge) {
+      errors.push(`Edge with ID ${edgeId.value} not found in workflow`);
+      return { valid: false, errors };
+    }
+    
     const transition = edge.condition;
     
     // If no transition, it's valid

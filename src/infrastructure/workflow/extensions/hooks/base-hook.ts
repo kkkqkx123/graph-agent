@@ -1,4 +1,4 @@
-import { HookPoint } from '../../value-objects/hook-point';
+import { HookPoint } from '@domain/workflow/value-objects/hook-point';
 import { HookContext } from './hook-context';
 import { HookExecutionResult, HookExecutionResultBuilder } from './hook-execution-result';
 

@@ -1,21 +1,8 @@
 import { ID } from '../../common/value-objects/id';
-import { IExecutionContext, ExecutionResult, ExecutionStatus } from '../execution';
-import { ExecutionContext } from '../execution';
-import {
-  ExecutionProgress,
-  ExecutionStatistics,
-  ExecutionEventCallback,
-  ExecutionMode,
-  ExecutionPriority,
-  ExecutionConfig,
-  IExecutionContextManager
-} from '../execution/types';
-import { IWorkflowCompiler, CompilationOptions, CompilationResult, CompilationTarget } from '../validation';
-import { ITriggerManager, TriggerContext } from '../extensions';
-import { IStateManager } from '../state';
 import { Timestamp } from '../../common/value-objects/timestamp';
 import { WorkflowExecutor } from './workflow-execution-service';
 import { DomainError } from '../../common/errors/domain-error';
+import { IExecutionContextManager } from '../interfaces/execution-context-manager.interface';
 
 /**
  * 工作流执行请求接口
@@ -26,11 +13,11 @@ export interface WorkflowExecutionRequest {
   /** 工作流ID */
   readonly workflowId: ID;
   /** 执行模式 */
-  readonly mode: ExecutionMode;
+  readonly mode: string;
   /** 执行优先级 */
-  readonly priority: ExecutionPriority;
+  readonly priority: string;
   /** 执行配置 */
-  readonly config: ExecutionConfig;
+  readonly config: Record<string, any>;
   /** 输入数据 */
   readonly inputData: Record<string, any>;
   /** 执行参数 */
@@ -48,13 +35,13 @@ export interface WorkflowExecutionResult {
   /** 工作流ID */
   readonly workflowId: ID;
   /** 执行状态 */
-  readonly status: ExecutionStatus;
+  readonly status: string;
   /** 执行结果数据 */
   readonly data?: any;
   /** 错误信息 */
   readonly error?: Error;
   /** 执行统计 */
-  readonly statistics: ExecutionStatistics;
+  readonly statistics: any;
   /** 执行完成时间 */
   readonly completedAt?: Timestamp;
 }
@@ -68,7 +55,7 @@ export interface WorkflowExecutionProgress {
   /** 工作流ID */
   readonly workflowId: ID;
   /** 执行状态 */
-  readonly status: ExecutionStatus;
+  readonly status: string;
   /** 进度百分比 */
   readonly progress: number;
   /** 当前节点ID */
@@ -101,7 +88,7 @@ export interface IWorkflowOrchestrationService {
   /**
    * 执行工作流
    */
-  execute(request: WorkflowExecutionRequest): Promise<ExecutionResult>;
+  execute(request: WorkflowExecutionRequest): Promise<any>;
 
   /**
    * 异步执行工作流
@@ -116,12 +103,12 @@ export interface IWorkflowOrchestrationService {
     onProgress?: (progress: WorkflowExecutionProgress) => void,
     onNodeComplete?: (nodeId: ID, result: any) => void,
     onError?: (error: Error) => void
-  ): Promise<ExecutionResult>;
+  ): Promise<any>;
 
   /**
    * 批量执行工作流
    */
-  executeBatch(requests: WorkflowExecutionRequest[]): Promise<ExecutionResult[]>;
+  executeBatch(requests: WorkflowExecutionRequest[]): Promise<any[]>;
 
   /**
    * 暂停执行
@@ -146,22 +133,22 @@ export interface IWorkflowOrchestrationService {
   /**
    * 获取执行结果
    */
-  getExecutionResult(executionId: string): Promise<ExecutionResult | undefined>;
+  getExecutionResult(executionId: string): Promise<any | undefined>;
 
   /**
    * 获取执行上下文
    */
-  getExecutionContext(executionId: string): Promise<ExecutionContext | undefined>;
+  getExecutionContext(executionId: string): Promise<any | undefined>;
 
   /**
    * 获取执行进度
    */
-  getExecutionProgress(executionId: string): Promise<ExecutionProgress>;
+  getExecutionProgress(executionId: string): Promise<any>;
 
   /**
    * 订阅执行事件
    */
-  subscribeExecutionEvents(callback: ExecutionEventCallback): Promise<string>;
+  subscribeExecutionEvents(callback: any): Promise<string>;
 
   /**
    * 取消订阅执行事件
@@ -175,18 +162,15 @@ export interface IWorkflowOrchestrationService {
 export class DefaultWorkflowOrchestrationService implements IWorkflowOrchestrationService {
   constructor(
     private readonly contextManager: IExecutionContextManager,
-    private readonly compiler: IWorkflowCompiler,
-    private readonly triggerManager: ITriggerManager,
-    private readonly stateManager: IStateManager,
     private readonly workflowExecutorFactory: (workflowId: ID) => WorkflowExecutor
   ) {}
 
   /**
    * 执行工作流
    */
-  async execute(request: WorkflowExecutionRequest): Promise<ExecutionResult> {
+  async execute(request: WorkflowExecutionRequest): Promise<any> {
     // 创建执行上下文
-    const context: IExecutionContext = {
+    const context: any = {
       executionId: ID.fromString(request.executionId),
       workflowId: request.workflowId,
       data: {},
@@ -230,27 +214,27 @@ export class DefaultWorkflowOrchestrationService implements IWorkflowOrchestrati
       );
 
       if (!compilationResult.success) {
-        throw new Error(`工作流编译失败: ${compilationResult.validation.errors.map(e => e.message).join(', ')}`);
+        throw new Error(`工作流编译失败: ${(compilationResult as any).validation?.errors?.map((e: any) => e.message).join(', ')}`);
       }
 
       // 更新执行状态为运行中
-      await this.contextManager.updateStatus(request.executionId, ExecutionStatus.RUNNING);
+      await this.contextManager.updateStatus(request.executionId, 'running');
 
       // 获取工作流执行器并执行
       const executor = this.workflowExecutorFactory(request.workflowId);
       const result = await executor.execute(context);
 
       // 更新执行状态为已完成
-      await this.contextManager.updateStatus(request.executionId, ExecutionStatus.COMPLETED);
+      await this.contextManager.updateStatus(request.executionId, 'completed');
 
       return result;
     } catch (error) {
       // 更新执行状态为失败
-      await this.contextManager.updateStatus(request.executionId, ExecutionStatus.FAILED);
+      await this.contextManager.updateStatus(request.executionId, 'failed');
 
       return {
         executionId: ID.fromString(request.executionId),
-        status: ExecutionStatus.FAILED,
+        status: 'failed',
         data: {},
         error: error as Error,
         statistics: {
@@ -286,7 +270,7 @@ export class DefaultWorkflowOrchestrationService implements IWorkflowOrchestrati
     onProgress?: (progress: WorkflowExecutionProgress) => void,
     onNodeComplete?: (nodeId: ID, result: any) => void,
     onError?: (error: Error) => void
-  ): Promise<ExecutionResult> {
+  ): Promise<any> {
     try {
       const result = await this.execute(request);
 
@@ -319,8 +303,8 @@ export class DefaultWorkflowOrchestrationService implements IWorkflowOrchestrati
   /**
    * 批量执行工作流
    */
-  async executeBatch(requests: WorkflowExecutionRequest[]): Promise<ExecutionResult[]> {
-    const results: ExecutionResult[] = [];
+  async executeBatch(requests: WorkflowExecutionRequest[]): Promise<any[]> {
+    const results: any[] = [];
 
     for (const request of requests) {
       try {
@@ -329,7 +313,7 @@ export class DefaultWorkflowOrchestrationService implements IWorkflowOrchestrati
       } catch (error) {
         results.push({
           executionId: ID.fromString(request.executionId),
-          status: ExecutionStatus.FAILED,
+          status: 'failed',
           data: {},
           error: error as Error,
           statistics: {
@@ -352,47 +336,40 @@ export class DefaultWorkflowOrchestrationService implements IWorkflowOrchestrati
    * 暂停执行
    */
   async pauseExecution(executionId: string): Promise<void> {
-    await this.contextManager.updateStatus(executionId, ExecutionStatus.PAUSED);
+    await this.contextManager.updateStatus(executionId, 'paused');
   }
 
   /**
    * 恢复执行
    */
   async resumeExecution(executionId: string): Promise<void> {
-    await this.contextManager.updateStatus(executionId, ExecutionStatus.RUNNING);
+    await this.contextManager.updateStatus(executionId, 'running');
   }
 
   /**
    * 取消执行
    */
   async cancelExecution(executionId: string): Promise<void> {
-    await this.contextManager.updateStatus(executionId, ExecutionStatus.CANCELLED);
+    await this.contextManager.updateStatus(executionId, 'cancelled');
   }
 
   /**
    * 获取执行状态
    */
-  async getExecutionStatus(executionId: string): Promise<ExecutionStatus> {
+  async getExecutionStatus(executionId: string): Promise<string> {
     const context = await this.contextManager.getContext(executionId);
     if (!context) {
       return ExecutionStatus.PENDING;
     }
     
-    // 将字符串状态转换为枚举
-    switch (context.status) {
-      case 'pending': return ExecutionStatus.PENDING;
-      case 'running': return ExecutionStatus.RUNNING;
-      case 'completed': return ExecutionStatus.COMPLETED;
-      case 'failed': return ExecutionStatus.FAILED;
-      case 'cancelled': return ExecutionStatus.CANCELLED;
-      default: return ExecutionStatus.PENDING;
-    }
+    // 返回状态字符串
+    return context.status || 'pending';
   }
 
   /**
    * 获取执行结果
    */
-  async getExecutionResult(executionId: string): Promise<ExecutionResult | undefined> {
+  async getExecutionResult(executionId: string): Promise<any | undefined> {
     const context = await this.contextManager.getContext(executionId);
     if (!context) {
       return undefined;
@@ -400,7 +377,7 @@ export class DefaultWorkflowOrchestrationService implements IWorkflowOrchestrati
 
     return {
       executionId: context.executionId,
-      status: ExecutionStatus.PENDING, // 需要将字符串状态转换为枚举
+      status: context.status || 'pending',
       data: {}, // 实际实现中应该从上下文获取
       statistics: {
         totalTime: context.duration || 0,
@@ -417,14 +394,14 @@ export class DefaultWorkflowOrchestrationService implements IWorkflowOrchestrati
   /**
    * 获取执行上下文
    */
-  async getExecutionContext(executionId: string): Promise<ExecutionContext | undefined> {
+  async getExecutionContext(executionId: string): Promise<any | undefined> {
     return await this.contextManager.getContext(executionId);
   }
 
   /**
    * 获取执行进度
    */
-  async getExecutionProgress(executionId: string): Promise<ExecutionProgress> {
+  async getExecutionProgress(executionId: string): Promise<any> {
     const context = await this.contextManager.getContext(executionId);
     if (!context) {
       throw new Error(`执行上下文不存在: ${executionId}`);
@@ -447,7 +424,7 @@ export class DefaultWorkflowOrchestrationService implements IWorkflowOrchestrati
   /**
    * 订阅执行事件
    */
-  async subscribeExecutionEvents(callback: ExecutionEventCallback): Promise<string> {
+  async subscribeExecutionEvents(callback: any): Promise<string> {
     // 简化实现，实际中应该支持事件订阅
     return `subscription_${Date.now()}`;
   }

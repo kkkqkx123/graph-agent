@@ -1,8 +1,83 @@
-import { HookPoint } from '../../value-objects/hook-point';
-import { BaseHook } from './base-hook';
-import { HookContext } from './hook-context';
-import { HookExecutionResult } from './hook-execution-result';
-import { HookChain, HookChainExecutionMode, HookChainErrorHandlingStrategy, HookChainUtils } from './hook-chain';
+import { HookPoint, HookContext } from './hook-context';
+
+/**
+ * 基础钩子接口
+ */
+export interface BaseHook {
+  getId(): string;
+  getHookPoint(): HookPoint;
+  execute(context: HookContext): Promise<HookExecutionResult>;
+  isEnabled(): boolean;
+  setEnabled(enabled: boolean): void;
+}
+
+/**
+ * 钩子执行结果接口
+ */
+export interface HookExecutionResult {
+  hookId: string;
+  success: boolean;
+  result?: any;
+  error?: Error;
+  executionTime: number;
+  shouldContinue: boolean;
+}
+
+/**
+ * 钩子链执行模式枚举
+ */
+export enum HookChainExecutionMode {
+  SEQUENTIAL = 'sequential',
+  PARALLEL = 'parallel',
+  PIPELINE = 'pipeline'
+}
+
+/**
+ * 钩子链错误处理策略枚举
+ */
+export enum HookChainErrorHandlingStrategy {
+  STOP_ON_ERROR = 'stop_on_error',
+  CONTINUE_ON_ERROR = 'continue_on_error',
+  RETRY = 'retry'
+}
+
+/**
+ * 钩子链接口
+ */
+export interface HookChain {
+  hookPoint: HookPoint;
+  hooks: BaseHook[];
+  enabled: boolean;
+  executionMode: HookChainExecutionMode;
+  errorHandlingStrategy: HookChainErrorHandlingStrategy;
+  maxRetries: number;
+}
+
+/**
+ * 钩子链工具类
+ */
+export class HookChainUtils {
+  static createExecutionResult(
+    hookPoint: HookPoint,
+    hookResults: HookExecutionResult[],
+    totalExecutionTime: number,
+    finalResult?: any,
+    error?: Error
+  ): HookChainExecutionResult {
+    return {
+      hookPoint,
+      success: !error,
+      hookResults,
+      totalExecutionTime,
+      executedHookCount: hookResults.length,
+      successfulHookCount: hookResults.filter(r => r.success).length,
+      failedHookCount: hookResults.filter(r => !r.success).length,
+      skippedHookCount: 0,
+      finalResult,
+      error
+    };
+  }
+}
 
 /**
  * 钩子执行管理器接口

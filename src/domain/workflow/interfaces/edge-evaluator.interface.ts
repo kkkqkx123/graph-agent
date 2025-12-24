@@ -1,5 +1,5 @@
-import { Edge } from '@domain/workflow/entities/edges/base/edge';
-import { IExecutionContext } from '@domain/workflow/execution/execution-context.interface';
+import { EdgeId } from '../value-objects/edge-id';
+import { Workflow, EdgeData } from '../entities/workflow';
 
 /**
  * 边评估器接口
@@ -13,21 +13,21 @@ export interface IEdgeEvaluator {
    * @param context 执行上下文
    * @returns 是否可以执行
    */
-  evaluate(edge: Edge, context: IExecutionContext): Promise<boolean>;
+  evaluate(edge: EdgeData, context: any): Promise<boolean>;
 
   /**
    * 验证边的条件或转换配置
    * @param edge 边实例
    * @returns 验证结果
    */
-  validate(edge: Edge): Promise<{ valid: boolean; errors: string[] }>;
+  validate(edge: EdgeData): Promise<{ valid: boolean; errors: string[] }>;
 
   /**
    * 提取边条件或转换中使用的变量
    * @param edge 边实例
    * @returns 变量名列表
    */
-  extractVariables(edge: Edge): string[];
+  extractVariables(edge: EdgeData): string[];
 
   /**
    * 获取评估器支持的边类型

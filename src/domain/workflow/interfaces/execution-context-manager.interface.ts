@@ -1,5 +1,3 @@
-import { IExecutionContext } from '../execution';
-
 /**
  * 执行上下文管理器接口
  */
@@ -7,12 +5,12 @@ export interface IExecutionContextManager {
   /**
    * 创建执行上下文
    */
-  createContext(context: IExecutionContext): Promise<void>;
+  createContext(context: any): Promise<void>;
 
   /**
    * 获取执行上下文
    */
-  getContext(executionId: string): Promise<IExecutionContext | undefined>;
+  getContext(executionId: string): Promise<any | undefined>;
 
   /**
    * 更新执行状态
@@ -27,10 +25,10 @@ export interface IExecutionContextManager {
   /**
    * 导出上下文
    */
-  exportContext(executionId: string): Promise<IExecutionContext | undefined>;
+  exportContext(executionId: string): Promise<any | undefined>;
 
   /**
    * 导入上下文
    */
-  importContext(context: IExecutionContext): Promise<void>;
+  importContext(context: any): Promise<void>;
 }

@@ -4,10 +4,8 @@ import { Version } from '../../common/value-objects/version';
 import { WorkflowStatus } from '../value-objects/workflow-status';
 import { WorkflowType } from '../value-objects/workflow-type';
 import { WorkflowConfig } from '../value-objects/workflow-config';
-import { Node } from '../entities/nodes/base/node';
-import { Edge } from '../entities/edges/base/edge';
-import { ErrorHandlingStrategy } from '../strategies';
-import { ExecutionStrategy } from '../strategies';
+import { NodeData, EdgeData } from '../entities/workflow';
+import { ErrorHandlingStrategy, ExecutionStrategy } from '../strategies';
 
 /**
  * Workflow数据接口
@@ -48,12 +46,12 @@ export interface WorkflowData {
   /**
    * 节点映射
    */
-  readonly nodes: Map<string, Node>;
+  readonly nodes: Map<string, NodeData>;
 
   /**
    * 边映射
    */
-  readonly edges: Map<string, Edge>;
+  readonly edges: Map<string, EdgeData>;
 
   /**
    * 图定义（可选）

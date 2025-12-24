@@ -1,14 +1,68 @@
-import {
-  IWorkflowFunction,
-  WorkflowFunctionType,
-  FunctionParameter,
-  ValidationResult,
-  FunctionMetadata
-} from '../../../../domain/workflow/interfaces/workflow-functions';
+/**
+ * 工作流函数类型枚举
+ */
+export enum WorkflowFunctionType {
+  NODE = 'node',
+  CONDITION = 'condition',
+  ROUTING = 'routing',
+  TRIGGER = 'trigger',
+  TRANSFORM = 'transform'
+}
+
+/**
+ * 函数参数接口
+ */
+export interface FunctionParameter {
+  name: string;
+  type: string;
+  required: boolean;
+  description: string;
+  defaultValue?: any;
+}
+
+/**
+ * 验证结果接口
+ */
+export interface ValidationResult {
+  valid: boolean;
+  errors: string[];
+}
+
+/**
+ * 函数元数据接口
+ */
+export interface FunctionMetadata {
+  id: string;
+  name: string;
+  description: string;
+  version: string;
+  type: WorkflowFunctionType;
+  isAsync: boolean;
+  category: string;
+  parameters: FunctionParameter[];
+  returnType: string;
+}
+
+/**
+ * 工作流函数接口
+ */
+export interface IWorkflowFunction {
+  id: string;
+  name: string;
+  type: WorkflowFunctionType;
+  description?: string;
+  version: string;
+  getParameters(): FunctionParameter[];
+  getReturnType(): string;
+  validateConfig(config: any): ValidationResult;
+  getMetadata(): FunctionMetadata;
+  initialize(config?: any): boolean;
+  cleanup(): boolean;
+}
 
 /**
  * 工作流函数基础抽象类
- * 
+ *
  * 提供通用实现，减少重复代码
  */
 export abstract class BaseWorkflowFunction implements IWorkflowFunction {

@@ -17,8 +17,7 @@ import { NodeAddedEvent } from '../events/node-added-event';
 import { NodeRemovedEvent } from '../events/node-removed-event';
 import { EdgeAddedEvent } from '../events/edge-added-event';
 import { EdgeRemovedEvent } from '../events/edge-removed-event';
-import { ErrorHandlingStrategyFactory } from '../strategies/error-handling-strategy';
-import { ExecutionStrategyFactory } from '../strategies/execution-strategy';
+import { ErrorHandlingStrategy, ExecutionStrategy } from '../strategies';
 
 /**
  * 节点数据接口
@@ -121,8 +120,8 @@ export class Workflow extends Entity {
       status: WorkflowStatus.draft(),
       type: type || WorkflowType.sequential(),
       config: config || WorkflowConfig.default(),
-      errorHandlingStrategy: ErrorHandlingStrategyFactory.default(),
-      executionStrategy: ExecutionStrategyFactory.default(),
+      errorHandlingStrategy: ErrorHandlingStrategy.STOP_ON_ERROR,
+      executionStrategy: ExecutionStrategy.SEQUENTIAL,
       tags: [],
       metadata: {},
       createdAt: now,
@@ -287,6 +286,22 @@ export class Workflow extends Entity {
    */
   public getEdges(): Map<string, EdgeData> {
     return new Map(this.props.graph.edges);
+  }
+
+  /**
+   * 获取工作流图
+   * @returns 工作流图数据
+   */
+  public getGraph(): WorkflowGraphData & {
+    getIncomingEdges(nodeId: NodeId): EdgeData[];
+    getOutgoingEdges(nodeId: NodeId): EdgeData[];
+  } {
+    return {
+      nodes: new Map(this.props.graph.nodes),
+      edges: new Map(this.props.graph.edges),
+      getIncomingEdges: (nodeId: NodeId) => this.getIncomingEdges(nodeId),
+      getOutgoingEdges: (nodeId: NodeId) => this.getOutgoingEdges(nodeId)
+    };
   }
 
   /**
@@ -579,6 +594,8 @@ export class Workflow extends Entity {
       nodeId,
       type,
       name,
+      position,
+      properties,
       updatedBy
     ));
   }
@@ -688,6 +705,9 @@ export class Workflow extends Entity {
       type,
       fromNodeId,
       toNodeId,
+      condition,
+      weight,
+      properties,
       updatedBy
     ));
   }

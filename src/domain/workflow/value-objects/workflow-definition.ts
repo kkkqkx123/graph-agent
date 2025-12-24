@@ -5,8 +5,7 @@ import { Version } from '../../common/value-objects/version';
 import { WorkflowStatus } from './workflow-status';
 import { WorkflowType } from './workflow-type';
 import { WorkflowConfig } from './workflow-config';
-import { ErrorHandlingStrategy } from '../strategies/error-handling-strategy';
-import { ExecutionStrategy } from '../strategies/execution-strategy';
+import { ErrorHandlingStrategy, ExecutionStrategy } from '../strategies';
 
 /**
  * WorkflowDefinition值对象属性接口
@@ -37,6 +36,42 @@ export interface WorkflowDefinitionProps {
  * 只包含数据访问方法，不包含业务逻辑
  */
 export class WorkflowDefinition extends ValueObject<WorkflowDefinitionProps> {
+  
+  /**
+   * 验证工作流定义
+   * @returns 验证结果
+   */
+  public validate(): { isValid: boolean; errors: string[] } {
+    const errors: string[] = [];
+    
+    if (!this.props.name || this.props.name.trim().length === 0) {
+      errors.push('工作流名称不能为空');
+    }
+    
+    if (this.props.name && this.props.name.length > 100) {
+      errors.push('工作流名称不能超过100个字符');
+    }
+    
+    if (this.props.description && this.props.description.length > 500) {
+      errors.push('工作流描述不能超过500个字符');
+    }
+    
+    if (this.props.tags.length > 20) {
+      errors.push('标签数量不能超过20个');
+    }
+    
+    for (const tag of this.props.tags) {
+      if (tag.length > 50) {
+        errors.push('标签长度不能超过50个字符');
+        break;
+      }
+    }
+    
+    return {
+      isValid: errors.length === 0,
+      errors
+    };
+  }
   /**
    * 创建工作流定义值对象
    * @param props 工作流定义属性
