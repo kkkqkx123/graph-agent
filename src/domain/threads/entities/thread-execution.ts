@@ -396,13 +396,6 @@ export class ThreadExecution extends Entity {
     }
   }
 
-  /**
-   * 验证实体的有效性
-   */
-  public override validate(): void {
-    this.validateInvariants();
-    this.props.status.validate();
-  }
 
   /**
    * 获取业务标识

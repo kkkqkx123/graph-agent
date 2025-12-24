@@ -372,12 +372,6 @@ export class SessionActivity extends Entity {
     }
   }
 
-  /**
-   * 验证实体的有效性
-   */
-  public override validate(): void {
-    this.validateInvariants();
-  }
 
   /**
    * 获取业务标识

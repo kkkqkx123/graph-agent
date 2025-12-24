@@ -164,6 +164,35 @@ export class GraphValidationServiceImpl implements GraphValidationService {
     return true;
   }
 
+  /**
+   * 验证图的完整性
+   * @param graph 工作流图
+   * @returns 验证结果
+   */
+  validateGraphIntegrity(graph: WorkflowGraph): boolean {
+    // 检查所有节点的ID是否有效
+    for (const node of graph.nodes.values()) {
+      if (!node.nodeId || node.nodeId.toString().trim() === '') {
+        return false;
+      }
+    }
+
+    // 检查所有边的ID是否有效
+    for (const edge of graph.edges.values()) {
+      if (!edge.edgeId || edge.edgeId.toString().trim() === '') {
+        return false;
+      }
+    }
+
+    // 检查边的连接是否有效
+    for (const edge of graph.edges.values()) {
+      if (!graph.hasNode(edge.fromNodeId) || !graph.hasNode(edge.toNodeId)) {
+        return false;
+      }
+    }
+
+    return true;
+  }
 
   /**
    * 验证节点连接
@@ -215,6 +244,37 @@ export class GraphValidationServiceImpl implements GraphValidationService {
       if (!rule.condition(graph)) {
         return false;
       }
+    }
+
+    return true;
+  }
+
+  /**
+   * 检查图是否可执行
+   * @param graph 工作流图
+   * @returns 是否可执行
+   */
+  isExecutable(graph: WorkflowGraph): boolean {
+    // 检查是否有开始节点
+    const startNodes = Array.from(graph.nodes.values()).filter(node => node.type.isStart());
+    if (startNodes.length === 0) {
+      return false;
+    }
+
+    // 检查是否有结束节点
+    const endNodes = Array.from(graph.nodes.values()).filter(node => node.type.isEnd());
+    if (endNodes.length === 0) {
+      return false;
+    }
+
+    // 检查图的基本结构
+    if (!this.validateGraphStructure(graph)) {
+      return false;
+    }
+
+    // 检查节点连接
+    if (!this.validateNodeConnections(graph)) {
+      return false;
     }
 
     return true;

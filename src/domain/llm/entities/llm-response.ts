@@ -606,10 +606,4 @@ export class LLMResponse extends Entity {
     }
   }
 
-  /**
-   * 验证实体的有效性
-   */
-  public override validate(): void {
-    this.validateInvariants();
-  }
 }

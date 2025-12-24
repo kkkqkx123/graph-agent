@@ -584,14 +584,6 @@ export class ThreadCheckpoint extends Entity {
     }
   }
 
-  /**
-   * 验证实体的有效性
-   */
-  public override validate(): void {
-    this.validateInvariants();
-    this.props.type.validate();
-    this.props.status.validate();
-  }
 
   /**
    * 转换为字典表示

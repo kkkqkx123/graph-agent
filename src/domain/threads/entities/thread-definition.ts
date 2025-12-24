@@ -245,13 +245,6 @@ export class ThreadDefinition extends Entity {
     }
   }
 
-  /**
-   * 验证实体的有效性
-   */
-  public override validate(): void {
-    this.validateInvariants();
-    this.props.priority.validate();
-  }
 
   /**
    * 获取业务标识
