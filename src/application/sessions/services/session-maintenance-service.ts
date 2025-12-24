@@ -78,7 +78,18 @@ export class SessionMaintenanceService extends BaseApplicationService {
         const id = this.parseId(sessionId, '会话ID');
         const user = this.parseOptionalId(userId, '用户ID');
 
-        const session = await this.sessionDomainService.addMessageToSession(id, user);
+        const session = await this.sessionRepository.findByIdOrFail(id);
+
+        // 验证操作权限
+        this.sessionDomainService.validateOperationPermission(session, user);
+
+        // 验证消息添加
+        this.sessionDomainService.validateMessageAddition(session);
+
+        // 增加消息数量
+        session.incrementMessageCount();
+
+        await this.sessionRepository.save(session);
         return this.mapSessionToInfo(session);
       },
       { sessionId, userId }
@@ -95,7 +106,23 @@ export class SessionMaintenanceService extends BaseApplicationService {
       '超时会话',
       async () => {
         const user = this.parseOptionalId(userId, '用户ID');
-        return await this.sessionDomainService.cleanupTimeoutSessions(user);
+        const timeoutSessions = await this.sessionRepository.findSessionsNeedingCleanup();
+        let cleanedCount = 0;
+
+        for (const session of timeoutSessions) {
+          try {
+            if (session.isTimeout()) {
+              const updatedSession = await this.sessionDomainService.handleSessionTimeout(session, user);
+              if (updatedSession.status.isSuspended()) {
+                cleanedCount++;
+              }
+            }
+          } catch (error) {
+            console.error(`清理超时会话失败: ${session.sessionId}`, error);
+          }
+        }
+
+        return cleanedCount;
       },
       { userId }
     );
@@ -111,7 +138,23 @@ export class SessionMaintenanceService extends BaseApplicationService {
       '过期会话',
       async () => {
         const user = this.parseOptionalId(userId, '用户ID');
-        return await this.sessionDomainService.cleanupExpiredSessions(user);
+        const expiredSessions = await this.sessionRepository.findSessionsNeedingCleanup();
+        let cleanedCount = 0;
+
+        for (const session of expiredSessions) {
+          try {
+            if (session.isExpired()) {
+              const updatedSession = await this.sessionDomainService.handleSessionExpiration(session, user);
+              if (updatedSession.status.isTerminated()) {
+                cleanedCount++;
+              }
+            }
+          } catch (error) {
+            console.error(`清理过期会话失败: ${session.sessionId}`, error);
+          }
+        }
+
+        return cleanedCount;
       },
       { userId }
     );
@@ -130,7 +173,22 @@ export class SessionMaintenanceService extends BaseApplicationService {
         if (!user) {
           throw new DomainError('获取会话统计信息需要提供用户ID');
         }
-        return await this.sessionDomainService.getUserSessionStats(user);
+
+        // 获取用户的所有会话
+        const sessions = await this.sessionRepository.findSessionsForUser(user);
+
+        // 计算统计信息
+        const total = sessions.length;
+        const active = sessions.filter(s => s.status.isActive()).length;
+        const suspended = sessions.filter(s => s.status.isSuspended()).length;
+        const terminated = sessions.filter(s => s.status.isTerminated()).length;
+
+        return {
+          total,
+          active,
+          suspended,
+          terminated
+        };
       },
       { userId }
     );

@@ -7,6 +7,7 @@
 import { Session } from '../../../domain/sessions/entities/session';
 import { SessionRepository } from '../../../domain/sessions/repositories/session-repository';
 import { SessionDomainService } from '../../../domain/sessions/services/session-domain-service';
+import { SessionStatus } from '../../../domain/sessions/value-objects/session-status';
 import { SessionConfig, SessionConfigProps } from '../../../domain/sessions/value-objects/session-config';
 import { BaseApplicationService } from '../../common/base-application-service';
 import { CreateSessionRequest, SessionInfo } from '../dtos';
@@ -43,11 +44,14 @@ export class SessionLifecycleService extends BaseApplicationService {
         const userId = this.parseOptionalId(request.userId, '用户ID');
         const config = request.config ? SessionConfig.create(request.config as Partial<SessionConfigProps>) : undefined;
 
-        const session = await this.sessionDomainService.createSession(
-          userId,
-          request.title,
-          config
-        );
+        // 验证会话创建的业务规则
+        await this.sessionDomainService.validateSessionCreation(userId, config);
+
+        // 创建会话
+        const session = Session.create(userId, request.title, config);
+
+        // 保存会话
+        await this.sessionRepository.save(session);
 
         return session.sessionId.toString();
       },
@@ -68,7 +72,24 @@ export class SessionLifecycleService extends BaseApplicationService {
         const id = this.parseId(sessionId, '会话ID');
         const user = this.parseOptionalId(userId, '用户ID');
 
-        const session = await this.sessionDomainService.activateSession(id, user);
+        const session = await this.sessionRepository.findByIdOrFail(id);
+
+        if (session.status.isActive()) {
+          return this.mapSessionToInfo(session); // 已经是活跃状态
+        }
+
+        if (session.status.isTerminated()) {
+          throw new Error('无法激活已终止的会话');
+        }
+
+        // 验证状态转换
+        await this.sessionDomainService.validateStatusTransition(session, SessionStatus.active(), user);
+
+        // 激活会话
+        session.changeStatus(SessionStatus.active(), user, '激活会话');
+        session.updateLastActivity();
+
+        await this.sessionRepository.save(session);
         return this.mapSessionToInfo(session);
       },
       { sessionId, userId }
@@ -89,7 +110,24 @@ export class SessionLifecycleService extends BaseApplicationService {
         const id = this.parseId(sessionId, '会话ID');
         const user = this.parseOptionalId(userId, '用户ID');
 
-        const session = await this.sessionDomainService.suspendSession(id, user, reason);
+        const session = await this.sessionRepository.findByIdOrFail(id);
+
+        if (session.status.isSuspended()) {
+          return this.mapSessionToInfo(session); // 已经是暂停状态
+        }
+
+        if (session.status.isTerminated()) {
+          throw new Error('无法暂停已终止的会话');
+        }
+
+        if (!session.status.isActive()) {
+          throw new Error('只能暂停活跃状态的会话');
+        }
+
+        // 暂停会话
+        session.changeStatus(SessionStatus.suspended(), user, reason);
+
+        await this.sessionRepository.save(session);
         return this.mapSessionToInfo(session);
       },
       { sessionId, userId, reason }
@@ -110,7 +148,16 @@ export class SessionLifecycleService extends BaseApplicationService {
         const id = this.parseId(sessionId, '会话ID');
         const user = this.parseOptionalId(userId, '用户ID');
 
-        const session = await this.sessionDomainService.terminateSession(id, user, reason);
+        const session = await this.sessionRepository.findByIdOrFail(id);
+
+        if (session.status.isTerminated()) {
+          return this.mapSessionToInfo(session); // 已经是终止状态
+        }
+
+        // 终止会话
+        session.changeStatus(SessionStatus.terminated(), user, reason);
+
+        await this.sessionRepository.save(session);
         return this.mapSessionToInfo(session);
       },
       { sessionId, userId, reason }

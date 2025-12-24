@@ -20,27 +20,27 @@ export enum PromptStatus {
    * 已创建
    */
   CREATED = 'created',
-  
+
   /**
    * 已发送给用户
    */
   DELIVERED = 'delivered',
-  
+
   /**
    * 用户已响应
    */
   RESPONDED = 'responded',
-  
+
   /**
    * 已超时
    */
   TIMEOUT = 'timeout',
-  
+
   /**
    * 已取消
    */
   CANCELLED = 'cancelled',
-  
+
   /**
    * 发生错误
    */
@@ -55,52 +55,52 @@ export interface HumanRelayPromptProps {
    * 提示ID
    */
   id: ID;
-  
+
   /**
    * 提示内容
    */
   content: string;
-  
+
   /**
    * 操作模式
    */
   mode: HumanRelayMode;
-  
+
   /**
    * 对话上下文（多轮模式）
    */
   conversationContext?: string;
-  
+
   /**
    * 提示模板
    */
   template: PromptTemplate;
-  
+
   /**
    * 创建时间
    */
   createdAt: Timestamp;
-  
+
   /**
    * 提示状态
    */
   status: PromptStatus;
-  
+
   /**
    * 发送时间
    */
   deliveredAt?: Timestamp;
-  
+
   /**
    * 响应时间
    */
   respondedAt?: Timestamp;
-  
+
   /**
    * 超时时间（秒）
    */
   timeout: number;
-  
+
   /**
    * 元数据
    */
@@ -173,7 +173,7 @@ export class HumanRelayPrompt extends Entity {
     if (this.props.status !== PromptStatus.CREATED) {
       throw new Error(`只能标记已创建的提示为已发送，当前状态: ${this.props.status}`);
     }
-    
+
     this.props.status = PromptStatus.DELIVERED;
     this.props.deliveredAt = Timestamp.now();
   }
@@ -185,7 +185,7 @@ export class HumanRelayPrompt extends Entity {
     if (this.props.status !== PromptStatus.DELIVERED) {
       throw new Error(`只能标记已发送的提示为已响应，当前状态: ${this.props.status}`);
     }
-    
+
     this.props.status = PromptStatus.RESPONDED;
     this.props.respondedAt = Timestamp.now();
   }
@@ -194,12 +194,12 @@ export class HumanRelayPrompt extends Entity {
    * 标记为超时
    */
   public markAsTimeout(): void {
-    if (this.props.status === PromptStatus.RESPONDED || 
-        this.props.status === PromptStatus.CANCELLED ||
-        this.props.status === PromptStatus.ERROR) {
+    if (this.props.status === PromptStatus.RESPONDED ||
+      this.props.status === PromptStatus.CANCELLED ||
+      this.props.status === PromptStatus.ERROR) {
       throw new Error(`无法标记已完成的提示为超时，当前状态: ${this.props.status}`);
     }
-    
+
     this.props.status = PromptStatus.TIMEOUT;
   }
 
@@ -207,11 +207,11 @@ export class HumanRelayPrompt extends Entity {
    * 标记为已取消
    */
   public markAsCancelled(): void {
-    if (this.props.status === PromptStatus.RESPONDED || 
-        this.props.status === PromptStatus.ERROR) {
+    if (this.props.status === PromptStatus.RESPONDED ||
+      this.props.status === PromptStatus.ERROR) {
       throw new Error(`无法标记已完成的提示为已取消，当前状态: ${this.props.status}`);
     }
-    
+
     this.props.status = PromptStatus.CANCELLED;
   }
 
@@ -222,7 +222,7 @@ export class HumanRelayPrompt extends Entity {
     if (this.props.status === PromptStatus.RESPONDED) {
       throw new Error(`无法标记已响应的提示为错误，当前状态: ${this.props.status}`);
     }
-    
+
     this.props.status = PromptStatus.ERROR;
   }
 
@@ -250,9 +250,9 @@ export class HumanRelayPrompt extends Entity {
    * 检查是否已超时
    */
   public isTimeout(): boolean {
-    if (this.props.status === PromptStatus.RESPONDED || 
-        this.props.status === PromptStatus.CANCELLED ||
-        this.props.status === PromptStatus.ERROR) {
+    if (this.props.status === PromptStatus.RESPONDED ||
+      this.props.status === PromptStatus.CANCELLED ||
+      this.props.status === PromptStatus.ERROR) {
       return false;
     }
 
@@ -267,9 +267,9 @@ export class HumanRelayPrompt extends Entity {
    * 获取剩余时间（秒）
    */
   public getRemainingTime(): number {
-    if (this.props.status === PromptStatus.RESPONDED || 
-        this.props.status === PromptStatus.CANCELLED ||
-        this.props.status === PromptStatus.ERROR) {
+    if (this.props.status === PromptStatus.RESPONDED ||
+      this.props.status === PromptStatus.CANCELLED ||
+      this.props.status === PromptStatus.ERROR) {
       return 0;
     }
 
@@ -285,9 +285,9 @@ export class HumanRelayPrompt extends Entity {
    * 检查是否可以取消
    */
   public canCancel(): boolean {
-    return this.props.status !== PromptStatus.RESPONDED && 
-           this.props.status !== PromptStatus.CANCELLED &&
-           this.props.status !== PromptStatus.ERROR;
+    return this.props.status !== PromptStatus.RESPONDED &&
+      this.props.status !== PromptStatus.CANCELLED &&
+      this.props.status !== PromptStatus.ERROR;
   }
 
   /**
@@ -302,9 +302,9 @@ export class HumanRelayPrompt extends Entity {
    */
   public isCompleted(): boolean {
     return this.props.status === PromptStatus.RESPONDED ||
-           this.props.status === PromptStatus.TIMEOUT ||
-           this.props.status === PromptStatus.CANCELLED ||
-           this.props.status === PromptStatus.ERROR;
+      this.props.status === PromptStatus.TIMEOUT ||
+      this.props.status === PromptStatus.CANCELLED ||
+      this.props.status === PromptStatus.ERROR;
   }
 
   // 静态工厂方法
@@ -370,13 +370,13 @@ export class HumanRelayPrompt extends Entity {
       if (!latestMessage) {
         throw new Error('消息列表不能为空');
       }
-      
+
       // 历史消息作为上下文（除了最新消息）
       const historyMessages = messages.slice(0, -1);
       const conversationContext = historyMessages.length > 0
         ? historyMessages.map(msg => `${msg.role}: ${msg.content}`).join('\n')
         : undefined;
-      
+
       const content = `${latestMessage.role}: ${latestMessage.content}`;
       return this.createMultiTurn(content, conversationContext!, template, timeout);
     }

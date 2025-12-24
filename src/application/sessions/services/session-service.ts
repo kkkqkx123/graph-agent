@@ -10,7 +10,6 @@ import { SessionDomainService } from '../../../domain/sessions/services/session-
 import { ThreadRepository } from '../../../domain/threads/repositories/thread-repository';
 import { ThreadDomainService } from '../../../domain/threads/services/thread-domain-service';
 import { ID } from '../../../domain/common/value-objects/id';
-import { SessionId } from '../../../domain/common/value-objects/session-id';
 import { SessionStatus } from '../../../domain/sessions/value-objects/session-status';
 import { SessionConfig, SessionConfigProps } from '../../../domain/sessions/value-objects/session-config';
 import { DomainError } from '../../../domain/common/errors/domain-error';
@@ -42,12 +41,14 @@ export class SessionService {
       const userId = request.userId ? ID.fromString(request.userId) : undefined;
       const config = request.config ? SessionConfig.create(request.config as Partial<SessionConfigProps>) : undefined;
 
-      // 调用领域服务创建会话
-      const session = await this.sessionDomainService.createSession(
-        userId,
-        request.title,
-        config
-      );
+      // 验证会话创建的业务规则
+      await this.sessionDomainService.validateSessionCreation(userId, config);
+
+      // 创建会话
+      const session = Session.create(userId, request.title, config);
+
+      // 保存会话
+      await this.sessionRepository.save(session);
 
       this.logger.info('会话创建成功', { sessionId: session.sessionId.toString() });
 
@@ -72,15 +73,7 @@ export class SessionService {
         return null;
       }
 
-      return {
-        sessionId: session.sessionId.toString(),
-        userId: session.userId?.toString(),
-        title: session.title,
-        status: session.status.toString(),
-        messageCount: session.messageCount,
-        createdAt: session.createdAt.toISOString(),
-        lastActivityAt: session.lastActivityAt.toISOString()
-      };
+      return this.mapSessionToInfo(session);
     } catch (error) {
       this.logger.error('获取会话信息失败', error as Error);
       throw error;
@@ -128,15 +121,7 @@ export class SessionService {
     try {
       const sessions = await this.sessionRepository.findAll();
 
-      return sessions.map(session => ({
-        sessionId: session.sessionId.toString(),
-        userId: session.userId?.toString(),
-        title: session.title,
-        status: session.status.toString(),
-        messageCount: session.messageCount,
-        createdAt: session.createdAt.toISOString(),
-        lastActivityAt: session.lastActivityAt.toISOString()
-      }));
+      return sessions.map(session => this.mapSessionToInfo(session));
     } catch (error) {
       this.logger.error('列出会话失败', error as Error);
       throw error;
@@ -169,17 +154,26 @@ export class SessionService {
       const id = ID.fromString(sessionId);
       const user = userId ? ID.fromString(userId) : undefined;
 
-      const session = await this.sessionDomainService.activateSession(id, user);
+      const session = await this.sessionRepository.findByIdOrFail(id);
 
-      return {
-        sessionId: session.sessionId.toString(),
-        userId: session.userId?.toString(),
-        title: session.title,
-        status: session.status.toString(),
-        messageCount: session.messageCount,
-        createdAt: session.createdAt.toISOString(),
-        lastActivityAt: session.lastActivityAt.toISOString()
-      };
+      if (session.status.isActive()) {
+        return this.mapSessionToInfo(session); // 已经是活跃状态
+      }
+
+      if (session.status.isTerminated()) {
+        throw new Error('无法激活已终止的会话');
+      }
+
+      // 验证状态转换
+      await this.sessionDomainService.validateStatusTransition(session, SessionStatus.active(), user);
+
+      // 激活会话
+      session.changeStatus(SessionStatus.active(), user, '激活会话');
+      session.updateLastActivity();
+
+      await this.sessionRepository.save(session);
+
+      return this.mapSessionToInfo(session);
     } catch (error) {
       this.logger.error('激活会话失败', error as Error);
       throw error;
@@ -198,17 +192,26 @@ export class SessionService {
       const id = ID.fromString(sessionId);
       const user = userId ? ID.fromString(userId) : undefined;
 
-      const session = await this.sessionDomainService.suspendSession(id, user, reason);
+      const session = await this.sessionRepository.findByIdOrFail(id);
 
-      return {
-        sessionId: session.sessionId.toString(),
-        userId: session.userId?.toString(),
-        title: session.title,
-        status: session.status.toString(),
-        messageCount: session.messageCount,
-        createdAt: session.createdAt.toISOString(),
-        lastActivityAt: session.lastActivityAt.toISOString()
-      };
+      if (session.status.isSuspended()) {
+        return this.mapSessionToInfo(session); // 已经是暂停状态
+      }
+
+      if (session.status.isTerminated()) {
+        throw new Error('无法暂停已终止的会话');
+      }
+
+      if (!session.status.isActive()) {
+        throw new Error('只能暂停活跃状态的会话');
+      }
+
+      // 暂停会话
+      session.changeStatus(SessionStatus.suspended(), user, reason);
+
+      await this.sessionRepository.save(session);
+
+      return this.mapSessionToInfo(session);
     } catch (error) {
       this.logger.error('暂停会话失败', error as Error);
       throw error;
@@ -227,17 +230,18 @@ export class SessionService {
       const id = ID.fromString(sessionId);
       const user = userId ? ID.fromString(userId) : undefined;
 
-      const session = await this.sessionDomainService.terminateSession(id, user, reason);
+      const session = await this.sessionRepository.findByIdOrFail(id);
 
-      return {
-        sessionId: session.sessionId.toString(),
-        userId: session.userId?.toString(),
-        title: session.title,
-        status: session.status.toString(),
-        messageCount: session.messageCount,
-        createdAt: session.createdAt.toISOString(),
-        lastActivityAt: session.lastActivityAt.toISOString()
-      };
+      if (session.status.isTerminated()) {
+        return this.mapSessionToInfo(session); // 已经是终止状态
+      }
+
+      // 终止会话
+      session.changeStatus(SessionStatus.terminated(), user, reason);
+
+      await this.sessionRepository.save(session);
+
+      return this.mapSessionToInfo(session);
     } catch (error) {
       this.logger.error('终止会话失败', error as Error);
       throw error;
@@ -255,17 +259,17 @@ export class SessionService {
       const id = ID.fromString(sessionId);
       const sessionConfig = SessionConfig.create(config as Partial<SessionConfigProps>);
 
-      const session = await this.sessionDomainService.updateSessionConfig(id, sessionConfig);
+      const session = await this.sessionRepository.findByIdOrFail(id);
 
-      return {
-        sessionId: session.sessionId.toString(),
-        userId: session.userId?.toString(),
-        title: session.title,
-        status: session.status.toString(),
-        messageCount: session.messageCount,
-        createdAt: session.createdAt.toISOString(),
-        lastActivityAt: session.lastActivityAt.toISOString()
-      };
+      // 验证配置更新
+      this.sessionDomainService.validateConfigUpdate(session, sessionConfig);
+
+      // 更新配置
+      session.updateConfig(sessionConfig);
+
+      await this.sessionRepository.save(session);
+
+      return this.mapSessionToInfo(session);
     } catch (error) {
       this.logger.error('更新会话配置失败', error as Error);
       throw error;
@@ -283,17 +287,20 @@ export class SessionService {
       const id = ID.fromString(sessionId);
       const user = userId ? ID.fromString(userId) : undefined;
 
-      const session = await this.sessionDomainService.addMessageToSession(id, user);
+      const session = await this.sessionRepository.findByIdOrFail(id);
 
-      return {
-        sessionId: session.sessionId.toString(),
-        userId: session.userId?.toString(),
-        title: session.title,
-        status: session.status.toString(),
-        messageCount: session.messageCount,
-        createdAt: session.createdAt.toISOString(),
-        lastActivityAt: session.lastActivityAt.toISOString()
-      };
+      // 验证操作权限
+      this.sessionDomainService.validateOperationPermission(session, user);
+
+      // 验证消息添加
+      this.sessionDomainService.validateMessageAddition(session);
+
+      // 增加消息数量
+      session.incrementMessageCount();
+
+      await this.sessionRepository.save(session);
+
+      return this.mapSessionToInfo(session);
     } catch (error) {
       this.logger.error('添加消息到会话失败', error as Error);
       throw error;
@@ -308,7 +315,23 @@ export class SessionService {
   async cleanupTimeoutSessions(userId?: string): Promise<number> {
     try {
       const user = userId ? ID.fromString(userId) : undefined;
-      return await this.sessionDomainService.cleanupTimeoutSessions(user);
+      const timeoutSessions = await this.sessionRepository.findSessionsNeedingCleanup();
+      let cleanedCount = 0;
+
+      for (const session of timeoutSessions) {
+        try {
+          if (session.isTimeout()) {
+            const updatedSession = await this.sessionDomainService.handleSessionTimeout(session, user);
+            if (updatedSession.status.isSuspended()) {
+              cleanedCount++;
+            }
+          }
+        } catch (error) {
+          console.error(`清理超时会话失败: ${session.sessionId}`, error);
+        }
+      }
+
+      return cleanedCount;
     } catch (error) {
       this.logger.error('清理超时会话失败', error as Error);
       throw error;
@@ -323,7 +346,23 @@ export class SessionService {
   async cleanupExpiredSessions(userId?: string): Promise<number> {
     try {
       const user = userId ? ID.fromString(userId) : undefined;
-      return await this.sessionDomainService.cleanupExpiredSessions(user);
+      const expiredSessions = await this.sessionRepository.findSessionsNeedingCleanup();
+      let cleanedCount = 0;
+
+      for (const session of expiredSessions) {
+        try {
+          if (session.isExpired()) {
+            const updatedSession = await this.sessionDomainService.handleSessionExpiration(session, user);
+            if (updatedSession.status.isTerminated()) {
+              cleanedCount++;
+            }
+          }
+        } catch (error) {
+          console.error(`清理过期会话失败: ${session.sessionId}`, error);
+        }
+      }
+
+      return cleanedCount;
     } catch (error) {
       this.logger.error('清理过期会话失败', error as Error);
       throw error;
@@ -346,10 +385,40 @@ export class SessionService {
       if (!user) {
         throw new DomainError('获取会话统计信息需要提供用户ID');
       }
-      return await this.sessionDomainService.getUserSessionStats(user);
+
+      // 获取用户的所有会话
+      const sessions = await this.sessionRepository.findSessionsForUser(user);
+
+      // 计算统计信息
+      const total = sessions.length;
+      const active = sessions.filter(s => s.status.isActive()).length;
+      const suspended = sessions.filter(s => s.status.isSuspended()).length;
+      const terminated = sessions.filter(s => s.status.isTerminated()).length;
+
+      return {
+        total,
+        active,
+        suspended,
+        terminated
+      };
     } catch (error) {
       this.logger.error('获取会话统计信息失败', error as Error);
       throw error;
     }
+  }
+
+  /**
+   * 将会话领域对象映射为会话信息DTO
+   */
+  private mapSessionToInfo(session: Session): SessionInfo {
+    return {
+      sessionId: session.sessionId.toString(),
+      userId: session.userId?.toString(),
+      title: session.title,
+      status: session.status.getValue(),
+      messageCount: session.messageCount,
+      createdAt: session.createdAt.toISOString(),
+      lastActivityAt: session.lastActivityAt.toISOString()
+    };
   }
 }

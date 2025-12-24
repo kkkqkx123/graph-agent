@@ -6,3 +6,4 @@
 
 export * from './session-status';
 export * from './session-config';
+export * from './session-activity';

@@ -5,19 +5,35 @@ import { Version } from '../../common/value-objects/version';
 import { DomainError } from '../../common/errors/domain-error';
 import { SessionStatus } from '../value-objects/session-status';
 import { SessionConfig } from '../value-objects/session-config';
+import { SessionActivity } from '../value-objects/session-activity';
 import { SessionCreatedEvent } from '../events/session-created-event';
 import { SessionStatusChangedEvent } from '../events/session-status-changed-event';
-import { SessionData } from '../interfaces/session-data.interface';
 
 /**
- * Session实体接口
+ * Session实体属性接口
  */
-export interface SessionProps extends SessionData { }
+export interface SessionProps {
+  readonly id: ID;
+  readonly userId?: ID;
+  readonly title?: string;
+  readonly status: SessionStatus;
+  readonly config: SessionConfig;
+  readonly activity: SessionActivity;
+  readonly metadata: Record<string, unknown>;
+  readonly createdAt: Timestamp;
+  readonly updatedAt: Timestamp;
+  readonly version: Version;
+  readonly isDeleted: boolean;
+}
 
 /**
  * Session实体
- *
- * 表示用户会话
+ * 
+ * 聚合根：表示用户会话
+ * 职责：
+ * - 会话生命周期管理
+ * - 状态转换验证
+ * - 业务不变性保证
  */
 export class Session extends Entity {
   private readonly props: SessionProps;
@@ -36,17 +52,20 @@ export class Session extends Entity {
    * @param userId 用户ID
    * @param title 会话标题
    * @param config 会话配置
+   * @param metadata 元数据
    * @returns 新会话实例
    */
   public static create(
     userId?: ID,
     title?: string,
-    config?: SessionConfig
+    config?: SessionConfig,
+    metadata?: Record<string, unknown>
   ): Session {
     const now = Timestamp.now();
     const sessionId = ID.generate();
     const sessionConfig = config || SessionConfig.default();
     const sessionStatus = SessionStatus.active();
+    const sessionActivity = SessionActivity.create(now);
 
     const props: SessionProps = {
       id: sessionId,
@@ -54,11 +73,11 @@ export class Session extends Entity {
       title,
       status: sessionStatus,
       config: sessionConfig,
+      activity: sessionActivity,
+      metadata: metadata || {},
       createdAt: now,
       updatedAt: now,
       version: Version.initial(),
-      lastActivityAt: now,
-      messageCount: 0,
       isDeleted: false
     };
 
@@ -125,11 +144,27 @@ export class Session extends Entity {
   }
 
   /**
+   * 获取会话活动
+   * @returns 会话活动
+   */
+  public get activity(): SessionActivity {
+    return this.props.activity;
+  }
+
+  /**
+   * 获取元数据
+   * @returns 元数据
+   */
+  public get metadata(): Record<string, unknown> {
+    return { ...this.props.metadata };
+  }
+
+  /**
    * 获取最后活动时间
    * @returns 最后活动时间
    */
   public get lastActivityAt(): Timestamp {
-    return this.props.lastActivityAt;
+    return this.props.activity.getLastActivityAt();
   }
 
   /**
@@ -137,7 +172,15 @@ export class Session extends Entity {
    * @returns 消息数量
    */
   public get messageCount(): number {
-    return this.props.messageCount;
+    return this.props.activity.getMessageCount();
+  }
+
+  /**
+   * 获取线程数量
+   * @returns 线程数量
+   */
+  public get threadCount(): number {
+    return this.props.activity.getThreadCount();
   }
 
   /**
@@ -219,14 +262,36 @@ export class Session extends Entity {
       throw new DomainError('无法在非活跃状态的会话中添加消息');
     }
 
-    if (this.props.messageCount >= this.props.config.getMaxMessages()) {
+    if (this.props.activity.getMessageCount() >= this.props.config.getMaxMessages()) {
       throw new DomainError('会话消息数量已达上限');
     }
 
     const newProps = {
       ...this.props,
-      messageCount: this.props.messageCount + 1,
-      lastActivityAt: Timestamp.now(),
+      activity: this.props.activity.incrementMessageCount(),
+      updatedAt: Timestamp.now(),
+      version: this.props.version.nextPatch()
+    };
+
+    (this as any).props = Object.freeze(newProps);
+    this.update();
+  }
+
+  /**
+   * 增加线程数量
+   */
+  public incrementThreadCount(): void {
+    if (this.props.isDeleted) {
+      throw new DomainError('无法在已删除的会话中添加线程');
+    }
+
+    if (!this.props.status.canOperate()) {
+      throw new DomainError('无法在非活跃状态的会话中添加线程');
+    }
+
+    const newProps = {
+      ...this.props,
+      activity: this.props.activity.incrementThreadCount(),
       updatedAt: Timestamp.now(),
       version: this.props.version.nextPatch()
     };
@@ -245,7 +310,7 @@ export class Session extends Entity {
 
     const newProps = {
       ...this.props,
-      lastActivityAt: Timestamp.now(),
+      activity: this.props.activity.updateLastActivity(),
       updatedAt: Timestamp.now(),
       version: this.props.version.nextPatch()
     };
@@ -267,9 +332,32 @@ export class Session extends Entity {
       throw new DomainError('无法更新非活跃状态会话的配置');
     }
 
+    // 验证配置的合理性
+    this.validateConfigUpdate(newConfig);
+
     const newProps = {
       ...this.props,
       config: newConfig,
+      updatedAt: Timestamp.now(),
+      version: this.props.version.nextPatch()
+    };
+
+    (this as any).props = Object.freeze(newProps);
+    this.update();
+  }
+
+  /**
+   * 更新元数据
+   * @param metadata 新元数据
+   */
+  public updateMetadata(metadata: Record<string, unknown>): void {
+    if (this.props.isDeleted) {
+      throw new DomainError('无法更新已删除会话的元数据');
+    }
+
+    const newProps = {
+      ...this.props,
+      metadata: { ...metadata },
       updatedAt: Timestamp.now(),
       version: this.props.version.nextPatch()
     };
@@ -284,7 +372,7 @@ export class Session extends Entity {
    */
   public isTimeout(): boolean {
     const now = Timestamp.now();
-    const diffMinutes = now.diff(this.props.lastActivityAt) / (1000 * 60);
+    const diffMinutes = now.diff(this.props.activity.getLastActivityAt()) / (1000 * 60);
     return diffMinutes > this.props.config.getTimeoutMinutes();
   }
 
@@ -355,4 +443,20 @@ export class Session extends Entity {
     }
   }
 
+  /**
+   * 验证配置更新的合理性
+   * @param newConfig 新配置
+   */
+  private validateConfigUpdate(newConfig: SessionConfig): void {
+    // 检查最大消息数量是否减少到当前消息数量以下
+    if (newConfig.getMaxMessages() < this.props.activity.getMessageCount()) {
+      throw new DomainError('新的最大消息数量不能小于当前消息数量');
+    }
+
+    // 检查其他业务规则
+    if (newConfig.getMaxDuration() < this.props.config.getMaxDuration()) {
+      // 可以添加警告日志，但不阻止更新
+      console.warn('最大持续时间被减少，可能会影响现有会话');
+    }
+  }
 }

@@ -96,7 +96,15 @@ export class SessionManagementService extends BaseApplicationService {
         const id = this.parseId(sessionId, '会话ID');
         const sessionConfig = SessionConfig.create(config as Partial<SessionConfigProps>);
 
-        const session = await this.sessionDomainService.updateSessionConfig(id, sessionConfig);
+        const session = await this.sessionRepository.findByIdOrFail(id);
+
+        // 验证配置更新
+        this.sessionDomainService.validateConfigUpdate(session, sessionConfig);
+
+        // 更新配置
+        session.updateConfig(sessionConfig);
+
+        await this.sessionRepository.save(session);
         return this.mapSessionToInfo(session);
       },
       { sessionId, configKeys: Object.keys(config) }
