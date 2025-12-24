@@ -4,7 +4,7 @@
 
 import { ILoggerTransport, LogEntry, LogOutputConfig } from '../interfaces';
 import { LogLevelUtils } from '../utils';
-import { LogLevel } from '@shared/types/logger';
+import { LogLevel } from '../../../domain/common/types/logger-types';
 
 /**
  * 基础日志传输器抽象类

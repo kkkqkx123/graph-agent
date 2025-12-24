@@ -12,7 +12,7 @@ import { HumanRelayMode } from '../value-objects/human-relay-mode';
 import { HumanRelaySessionStatus, HumanRelaySessionStatusUtils } from '../value-objects/human-relay-session-status';
 import { HumanRelayPrompt } from './human-relay-prompt';
 import { HumanRelayResponse } from './human-relay-response';
-import { ILLMMessage, LLMMessageRole } from '../../../shared/types/llm';
+import { ILLMMessage, LLMMessageRole } from '../types/llm-types';
 
 /**
  * HumanRelay会话属性接口

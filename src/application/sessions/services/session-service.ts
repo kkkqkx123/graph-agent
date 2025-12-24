@@ -14,7 +14,7 @@ import { SessionId } from '../../../domain/common/value-objects/session-id';
 import { SessionStatus } from '../../../domain/sessions/value-objects/session-status';
 import { SessionConfig, SessionConfigProps } from '../../../domain/sessions/value-objects/session-config';
 import { DomainError } from '../../../domain/common/errors/domain-error';
-import { ILogger } from '@shared/types/logger';
+import { ILogger } from '../../../domain/common/types';
 import { CreateSessionRequest, SessionInfo } from '../dtos';
 
 /**

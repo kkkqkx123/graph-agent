@@ -10,7 +10,7 @@ import { ThreadDomainService } from '../../../domain/threads/services/thread-dom
 import { ThreadPriority } from '../../../domain/threads/value-objects/thread-priority';
 import { BaseApplicationService } from '../../common/base-application-service';
 import { ThreadInfo } from '../dtos';
-import { ILogger } from '@shared/types/logger';
+import { ILogger } from '../../../domain/common/types/logger-types';
 
 /**
  * 线程管理服务

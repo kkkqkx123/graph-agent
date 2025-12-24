@@ -2,7 +2,7 @@
  * 日志配置接口定义
  */
 
-import { LogLevel } from '@shared/types/logger';
+import { LogLevel } from '../../../domain/common/types/logger-types';
 
 /**
  * 日志输出类型

@@ -7,7 +7,7 @@ import * as path from 'path';
 import { parse as parseToml } from 'toml';
 import * as yaml from 'yaml';
 import { IModuleLoader, ConfigFile, ModuleConfig, ModuleMetadata } from './types';
-import { ILogger } from '@shared/types/logger';
+import { ILogger } from '../../../domain/common/types';
 import { InheritanceProcessor } from '../processors/inheritance-processor';
 import { EnvironmentProcessor } from '../processors/environment-processor';
 

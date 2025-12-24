@@ -5,7 +5,7 @@
 import Ajv from 'ajv';
 import addFormats from 'ajv-formats';
 import { ITypeRegistry, ValidationResult } from './types';
-import { ILogger } from '@shared/types/logger';
+import { ILogger } from '../../../domain/common/types';
 
 // 使用 JSONSchemaType 作为 JSONSchema 的别名
 type JSONSchema = any;

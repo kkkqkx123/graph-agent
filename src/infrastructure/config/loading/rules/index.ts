@@ -6,7 +6,7 @@
  */
 
 import { IModuleRule } from '../types';
-import { ILogger } from '@shared/types/logger';
+import { ILogger } from '../../../../domain/common/types';
 import { createLLMModuleRule } from './llm-rule';
 import { createToolModuleRule } from './tool-rule';
 import { createPromptModuleRule } from './prompt-rule';

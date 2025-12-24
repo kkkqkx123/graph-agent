@@ -5,7 +5,7 @@
  */
 
 import { ID } from '../../domain/common/value-objects/id';
-import { ILogger } from '@shared/types/logger';
+import { ILogger } from '../../domain/common/types';
 import { BaseService } from './base-service';
 
 /**

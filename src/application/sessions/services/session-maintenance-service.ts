@@ -11,7 +11,7 @@ import { SessionDomainService } from '../../../domain/sessions/services/session-
 import { DomainError } from '../../../domain/common/errors/domain-error';
 import { BaseApplicationService } from '../../common/base-application-service';
 import { SessionInfo, SessionStatistics } from '../dtos';
-import { ILogger } from '@shared/types/logger';
+import { ILogger } from '../../../domain/common/types';
 
 /**
  * 会话维护服务

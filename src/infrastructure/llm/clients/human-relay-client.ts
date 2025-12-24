@@ -21,7 +21,7 @@ import {
   PromptTemplate,
   HumanRelayConfig
 } from '../../../domain/llm';
-import { LLMMessageRole } from '../../../shared/types/llm';
+import { LLMMessageRole } from '../../../domain/llm/types/llm-types';
 import { LLM_DI_IDENTIFIERS } from '../di-identifiers';
 import { ProviderConfig, ApiType } from '../parameter-mappers/interfaces/provider-config.interface';
 import { BaseFeatureSupport } from '../parameter-mappers/interfaces/feature-support.interface';

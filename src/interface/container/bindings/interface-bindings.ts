@@ -2,7 +2,7 @@
  * 接口层服务绑定
  */
 
-import { ServiceBindings, IContainer, ContainerConfiguration, ServiceLifetime } from '../container';
+import { ServiceBindings, IContainer, ContainerConfiguration, ServiceLifetime } from '../../../infrastructure/container/container';
 
 /**
  * HTTP服务绑定

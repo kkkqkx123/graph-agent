@@ -10,7 +10,7 @@ import { ThreadDomainService } from '../../../domain/threads/services/thread-dom
 import { DomainError } from '../../../domain/common/errors/domain-error';
 import { BaseApplicationService } from '../../common/base-application-service';
 import { ThreadInfo, ThreadStatistics } from '../dtos';
-import { ILogger } from '@shared/types/logger';
+import { ILogger } from '../../../domain/common/types/logger-types';
 
 /**
  * 线程维护服务

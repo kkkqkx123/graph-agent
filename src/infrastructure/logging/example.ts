@@ -2,7 +2,7 @@
  * 日志系统使用示例
  */
 
-import { LogLevel } from '@shared/types/logger';
+import { LogLevel } from '../../domain/common/types/logger-types';
 import {
   LoggerFactory,
   LoggerConfigBuilder,

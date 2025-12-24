@@ -6,7 +6,7 @@ import { injectable, inject } from 'inversify';
 import { WorkflowCommandHandler } from './workflow-command-handler';
 import { WorkflowService } from '../services/workflow-service';
 import { ExecuteWorkflowCommand } from '../commands/workflow-execution.command';
-import { ILogger } from '@shared/types/logger';
+import { ILogger } from '../../../domain/common/types/logger-types';
 
 /**
  * 执行工作流命令处理器

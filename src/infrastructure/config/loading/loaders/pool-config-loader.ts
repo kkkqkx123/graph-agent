@@ -6,7 +6,7 @@
 
 import { BaseModuleLoader } from '../base-loader';
 import { ConfigFile, ModuleConfig, ModuleMetadata } from '../types';
-import { ILogger } from '@shared/types/logger';
+import { ILogger } from '../../../../domain/common/types';
 
 /**
  * 轮询池配置加载器

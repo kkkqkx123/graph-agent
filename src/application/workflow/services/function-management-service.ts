@@ -14,7 +14,7 @@ import {
   IWorkflowFunctionDomainService,
   IFunctionValidationDomainService
 } from '../../../domain/workflow/services/function-service';
-import { ILogger } from '@shared/types/logger';
+import { ILogger } from '../../../domain/common/types/logger-types';
 
 /**
  * 函数定义

@@ -3,7 +3,7 @@
  */
 
 import { IDependencyResolver, ModuleConfig, LoadingOrder, DependencyError } from './types';
-import { ILogger } from '@shared/types/logger';
+import { ILogger } from '../../../domain/common/types';
 
 /**
  * 依赖解析器实现

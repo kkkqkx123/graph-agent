@@ -11,7 +11,7 @@ import {
 import {
   FunctionExecutionResult
 } from '../../../domain/workflow/strategies/function-execution-strategies';
-import { ILogger } from '@shared/types/logger';
+import { ILogger } from '../../../domain/common/types/logger-types';
 
 /**
  * 函数执行指标

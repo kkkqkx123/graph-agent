@@ -15,7 +15,7 @@ import { GetWorkflowExecutionHistoryQuery } from '../queries/workflow-execution-
 import { GetWorkflowExecutionPathQuery } from '../queries/workflow-execution-path-query';
 import { GetWorkflowStatisticsQuery } from '../queries/workflow-statistics-query';
 import { GetWorkflowTagStatsQuery } from '../queries/workflow-tag-stats-query';
-import { ILogger } from '@shared/types/logger';
+import { ILogger } from '../../../domain/common/types/logger-types';
 
 /**
  * 工作流查询处理器

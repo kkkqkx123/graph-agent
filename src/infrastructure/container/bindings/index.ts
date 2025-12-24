@@ -4,9 +4,10 @@
 
 export { ServiceBindings } from '../container';
 
-export { WorkflowInfrastructureBindings } from './workflow-bindings';
-export { ThreadInfrastructureBindings } from './thread-bindings';
-export { SessionInfrastructureBindings } from './session-bindings';
+// TODO: 实现缺失的绑定文件
+// export { WorkflowInfrastructureBindings } from './workflow-bindings';
+// export { ThreadInfrastructureBindings } from './thread-bindings';
+// export { SessionInfrastructureBindings } from './session-bindings';
 
 // TODO: 导入具体的服务绑定类
 // export { LoggerServiceBindings } from './logger-bindings';

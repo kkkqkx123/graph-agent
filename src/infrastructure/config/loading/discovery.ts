@@ -6,7 +6,7 @@ import * as fs from 'fs/promises';
 import * as path from 'path';
 import { minimatch } from 'minimatch';
 import { IConfigDiscovery, ConfigFile } from './types';
-import { ILogger } from '@shared/types/logger';
+import { ILogger } from '../../../domain/common/types';
 
 /**
  * 配置发现器选项

@@ -3,7 +3,7 @@
  */
 
 import { ILoadingCache } from './types';
-import { ILogger } from '@shared/types/logger';
+import { ILogger } from '../../../domain/common/types';
 
 /**
  * 缓存条目

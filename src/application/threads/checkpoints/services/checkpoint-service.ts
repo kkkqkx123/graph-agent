@@ -4,7 +4,7 @@ import { CheckpointType } from '../../../../domain/checkpoint/value-objects/chec
 import { CheckpointStatistics } from '../../../../domain/threads/checkpoints/value-objects/checkpoint-statistics';
 import { ThreadCheckpointDomainService, ThreadCheckpointDomainServiceImpl } from '../../../../domain/threads/checkpoints/services/thread-checkpoint-domain-service';
 import { ThreadCheckpointRepository } from '../../../../domain/threads/checkpoints/repositories/thread-checkpoint-repository';
-import { ILogger } from '@shared/types/logger';
+import { ILogger } from '../../../../domain/common/types/logger-types';
 
 /**
  * 创建检查点请求DTO

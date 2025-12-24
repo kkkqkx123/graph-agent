@@ -15,7 +15,7 @@ import {
   CreateErrorCheckpointRequest,
   CreateMilestoneCheckpointRequest
 } from '../../checkpoints/dtos';
-import { ILogger } from '@shared/types/logger';
+import { ILogger } from '../../../../domain/common/types/logger-types';
 
 /**
  * 检查点创建服务

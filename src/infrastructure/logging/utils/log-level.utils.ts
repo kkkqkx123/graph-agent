@@ -2,7 +2,7 @@
  * 日志级别工具类
  */
 
-import { LogLevel } from '@shared/types/logger';
+import { LogLevel } from '../../../domain/common/types/logger-types';
 
 /**
  * 日志级别权重映射

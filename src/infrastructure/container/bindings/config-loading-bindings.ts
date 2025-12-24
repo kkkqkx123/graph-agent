@@ -4,7 +4,7 @@
 
 import { ServiceBindings } from '../container';
 import { IContainer, ContainerConfiguration, ServiceLifetime } from '../container';
-import { ILogger } from '@shared/types/logger';
+import { ILogger } from '../../../domain/common/types';
 
 // 加载器导入
 import { LLMLoader } from '../../config/loading/loaders/llm-loader';

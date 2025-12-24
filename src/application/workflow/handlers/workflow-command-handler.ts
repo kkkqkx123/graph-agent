@@ -3,7 +3,7 @@
  */
 
 import { injectable, inject } from 'inversify';
-import { ILogger } from '@shared/types/logger';
+import { ILogger } from '../../../domain/common/types/logger-types';
 
 /**
  * 工作流命令处理器基类

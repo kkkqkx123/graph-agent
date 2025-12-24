@@ -3,7 +3,7 @@
  */
 
 import { ConfigLoadingModule } from '../../config/loading/config-loading-module';
-import { ILogger } from '@shared/types/logger';
+import { ILogger } from '../../../domain/common/types/logger-types';
 import { createPromptModuleRule } from '../module-rule';
 
 // 创建一个简单的日志记录器用于测试

@@ -6,7 +6,7 @@ import { promises as fs, watch as fsWatch } from 'fs';
 import * as path from 'path';
 import { parse as parseToml } from 'toml';
 import * as yaml from 'yaml';
-import { IConfigSource, ConfigSourceType, FileConfigSourceOptions } from '../../domain/common/types';
+import { IConfigSource, ConfigSourceType, FileConfigSourceOptions } from '../../../domain/common/types';
 import { ILogger } from '../../../domain/common/types';
 
 /**

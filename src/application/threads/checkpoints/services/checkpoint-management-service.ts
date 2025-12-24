@@ -9,7 +9,7 @@ import { ThreadCheckpointDomainService, ThreadCheckpointDomainServiceImpl } from
 import { ThreadCheckpointRepository } from '../../../../domain/threads/checkpoints/repositories/thread-checkpoint-repository';
 import { BaseApplicationService } from '../../../common/base-application-service';
 import { CheckpointInfo } from '../dtos';
-import { ILogger } from '@shared/types/logger';
+import { ILogger } from '../../../../domain/common/types/logger-types';
 
 /**
  * 检查点管理服务

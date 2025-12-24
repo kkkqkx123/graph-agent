@@ -7,7 +7,7 @@ import { WorkflowStatus } from '../../../domain/workflow/value-objects/workflow-
 import { WorkflowType } from '../../../domain/workflow/value-objects/workflow-type';
 import { WorkflowConfig } from '../../../domain/workflow/value-objects/workflow-config';
 import { DomainError } from '../../../domain/common/errors/domain-error';
-import { ILogger } from '@shared/types/logger';
+import { ILogger } from '../../../domain/common/types/logger-types';
 
 // DTOs
 import {

@@ -2,7 +2,7 @@
  * 日志传输器接口定义
  */
 
-import { LogLevel, LogContext } from '@shared/types/logger';
+import { LogLevel, LogContext } from '../../../domain/common/types/logger-types';
 import { LogOutputConfig, LogFormatType } from './logger-config.interface';
 
 /**

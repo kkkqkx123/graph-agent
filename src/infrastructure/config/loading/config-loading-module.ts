@@ -7,7 +7,7 @@ import { ConfigDiscovery } from './discovery';
 import { DependencyResolver } from './dependency-resolver';
 import { TypeRegistry } from './type-registry';
 import { LoadingCache } from './loading-cache';
-import { ILogger } from '@shared/types/logger';
+import { ILogger } from '../../../domain/common/types';
 
 /**
  * 配置加载模块选项

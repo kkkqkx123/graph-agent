@@ -11,7 +11,7 @@ import { HumanRelayNode } from '../../../../domain/workflow/entities/nodes/speci
 import { Node } from '../../../../domain/workflow/entities/nodes/base/node';
 import { ILLMWrapper } from '../../../../domain/llm/interfaces/llm-wrapper.interface';
 import { LLMRequest } from '../../../../domain/llm/entities/llm-request';
-import { LLMMessageRole } from '../../../../shared/types/llm';
+import { LLMMessageRole } from '../../../../domain/llm/types/llm-types';
 import { HumanRelayMode } from '../../../../domain/llm/value-objects/human-relay-mode';
 import { LLM_DI_IDENTIFIERS } from '../../../llm/di-identifiers';
 

@@ -4,7 +4,7 @@
 
 import { IModuleRule, MergeStrategy } from '../types';
 import { IModuleLoader } from '../types';
-import { ILogger } from '@shared/types/logger';
+import { ILogger } from '../../../../domain/common/types';
 
 /**
  * 提示模块Schema

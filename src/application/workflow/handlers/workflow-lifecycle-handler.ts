@@ -13,7 +13,7 @@ import {
   UpdateWorkflowCommand,
   DeleteWorkflowCommand
 } from '../commands/workflow-lifecycle.command';
-import { ILogger } from '@shared/types/logger';
+import { ILogger } from '../../../domain/common/types/logger-types';
 
 /**
  * 工作流生命周期命令处理器

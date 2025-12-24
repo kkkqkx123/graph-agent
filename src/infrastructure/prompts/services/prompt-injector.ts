@@ -2,7 +2,7 @@
  * 提示词注入器实现
  */
 
-import { ILogger } from '@shared/types/logger';
+import { ILogger } from '../../../domain/common/types/logger-types';
 import { IPromptInjector } from '../../../domain/prompts/interfaces/prompt-injector.interface';
 import { IPromptLoader } from '../../../domain/prompts/interfaces/prompt-loader.interface';
 import { PromptConfig } from '../../../domain/prompts/entities/prompt';

@@ -2,8 +2,7 @@
  * 提示词加载器实现
  */
 
-import { IConfigManager } from '@shared/types/config';
-import { ILogger } from '@shared/types/logger';
+import { IConfigManager, ILogger } from '../../../domain/common/types';
 import { IPromptLoader } from '../../../domain/prompts/interfaces/prompt-loader.interface';
 
 export class PromptLoaderImpl implements IPromptLoader {

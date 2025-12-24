@@ -4,8 +4,7 @@
  * 基于配置管理器存储提示词。
  */
 
-import { IConfigManager } from '@shared/types/config';
-import { ILogger } from '@shared/types/logger';
+import { IConfigManager, ILogger } from '../../../domain/common/types';
 import { IPromptRepository, PromptSearchCriteria } from '../../../domain/prompts/interfaces/prompt-repository.interface';
 import { Prompt } from '../../../domain/prompts/entities/prompt';
 import { PromptId } from '../../../domain/prompts/value-objects/prompt-id';

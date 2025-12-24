@@ -10,7 +10,7 @@ import { SessionDomainService } from '../../../domain/sessions/services/session-
 import { SessionConfig, SessionConfigProps } from '../../../domain/sessions/value-objects/session-config';
 import { BaseApplicationService } from '../../common/base-application-service';
 import { SessionInfo } from '../dtos';
-import { ILogger } from '@shared/types/logger';
+import { ILogger } from '../../../domain/common/types';
 
 /**
  * 会话管理服务

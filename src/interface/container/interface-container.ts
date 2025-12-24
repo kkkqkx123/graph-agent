@@ -3,10 +3,7 @@
  */
 
 import { BaseContainer, IContainer, ContainerConfiguration } from '../../infrastructure/container/container';
-import { HTTPServiceBindings } from './bindings/interface-bindings';
-import { CLIServiceBindings } from './bindings/interface-bindings';
-import { RequestContextBindings } from './bindings/interface-bindings';
-import { ApiControllerBindings } from './bindings/interface-bindings';
+import { HTTPServiceBindings, CLIServiceBindings, RequestContextBindings, ApiControllerBindings } from './bindings/interface-bindings';
 
 /**
  * 接口层容器

@@ -10,7 +10,7 @@ import { Timestamp } from '../../common/value-objects/timestamp';
 import { Version } from '../../common/value-objects/version';
 import { HumanRelayMode } from '../value-objects/human-relay-mode';
 import { PromptTemplate } from '../value-objects/prompt-template';
-import { ILLMMessage, LLMMessageRole } from '../../../shared/types/llm';
+import { ILLMMessage, LLMMessageRole } from '../types/llm-types';
 
 /**
  * 提示状态枚举

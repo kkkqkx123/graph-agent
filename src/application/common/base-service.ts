@@ -5,8 +5,7 @@
  */
 
 import { ID } from '../../domain/common/value-objects/id';
-import { ILogger } from '@shared/types/logger';
-import { IService } from '@shared/types/common';
+import { ILogger, IService } from '../../domain/common/types';
 
 /**
  * 应用服务基类

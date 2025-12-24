@@ -2,7 +2,7 @@
  * 日志配置实现
  */
 
-import { LogLevel } from '@shared/types/logger';
+import { LogLevel } from '../../domain/common/types/logger-types';
 import {
   LoggerConfig,
   LogOutputConfig,

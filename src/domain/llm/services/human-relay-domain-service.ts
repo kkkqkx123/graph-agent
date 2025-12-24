@@ -11,7 +11,7 @@ import { HumanRelayResponse } from '../entities/human-relay-response';
 import { HumanRelayMode } from '../value-objects/human-relay-mode';
 import { HumanRelaySessionStatus } from '../value-objects/human-relay-session-status';
 import { PromptTemplate } from '../value-objects/prompt-template';
-import { ILLMMessage, LLMMessageRole } from '../../../shared/types/llm';
+import { ILLMMessage, LLMMessageRole } from '../types/llm-types';
 
 /**
  * HumanRelay域服务

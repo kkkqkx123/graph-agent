@@ -2,8 +2,7 @@
  * 环境变量配置源实现
  */
 
-import { IConfigSource, ConfigSourceType, EnvironmentConfigSourceOptions } from '../../domain/common/types';
-import { ILogger } from '@shared/types/logger';
+import { IConfigSource, ConfigSourceType, EnvironmentConfigSourceOptions, ILogger } from '../../../domain/common/types';
 
 /**
  * 环境变量配置源

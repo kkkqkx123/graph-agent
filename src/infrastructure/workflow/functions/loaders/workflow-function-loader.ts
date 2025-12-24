@@ -4,7 +4,7 @@ import {
     IWorkflowFunction,
     WorkflowFunctionType
 } from '../../../../domain/workflow/interfaces/workflow-functions';
-import { ILogger } from '@shared/types/logger';
+import { ILogger } from '../../../../domain/common/types/logger-types';
 import { FunctionRegistry } from '../registry/function-registry';
 import { BaseWorkflowFunction } from '../base/base-workflow-function';
 

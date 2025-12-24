@@ -2,7 +2,7 @@
  * Winston日志记录器实现
  */
 
-import { ILogger, LogLevel, LogContext } from '@shared/types/logger';
+import { ILogger, LogLevel, LogContext } from '../../domain/common/types/logger-types';
 import { LoggerConfig, LogEntry, LogOutputType } from './interfaces';
 import { ConsoleTransport } from './transports/console-transport';
 import { FileTransport } from './transports/file-transport';

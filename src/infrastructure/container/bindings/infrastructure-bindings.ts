@@ -3,7 +3,7 @@
  */
 
 import { ServiceBindings, IContainer, ContainerConfiguration, ServiceLifetime } from '../container';
-import { ILogger } from '@shared/types/logger';
+import { ILogger } from '../../../domain/common/types';
 import { LoggerFactory, LoggerConfigManager } from '../../logging';
 import { InfrastructureRepositoryBindings } from './infrastructure-repository-bindings';
 import { ConfigLoadingBindings } from './config-loading-bindings';

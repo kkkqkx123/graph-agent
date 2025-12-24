@@ -13,7 +13,7 @@ import { ThreadId } from '../../../domain/common/value-objects/thread-id';
 import { ThreadStatus } from '../../../domain/threads/value-objects/thread-status';
 import { ThreadPriority } from '../../../domain/threads/value-objects/thread-priority';
 import { DomainError } from '../../../domain/common/errors/domain-error';
-import { ILogger } from '@shared/types/logger';
+import { ILogger } from '../../../domain/common/types/logger-types';
 
 /**
  * 创建线程请求DTO

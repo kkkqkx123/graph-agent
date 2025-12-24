@@ -2,8 +2,7 @@
  * 内存配置源实现
  */
 
-import { IConfigSource, ConfigSourceType } from '../../domain/common/types';
-import { ILogger } from '@shared/types/logger';
+import { IConfigSource, ConfigSourceType, ILogger } from '../../../domain/common/types';
 
 /**
  * 内存配置源选项

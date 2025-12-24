@@ -2,8 +2,7 @@
  * 环境变量处理器实现
  */
 
-import { IConfigProcessor, EnvironmentProcessorOptions } from '../../domain/common/types';
-import { ILogger } from '@shared/types/logger';
+import { IConfigProcessor, EnvironmentProcessorOptions, ILogger } from '../../../domain/common/types';
 
 /**
  * 环境变量处理器

@@ -2,7 +2,7 @@
  * 应用层服务绑定
  */
 
-import { ServiceBindings, IContainer, ContainerConfiguration, ServiceLifetime } from '../container';
+import { ServiceBindings, IContainer, ContainerConfiguration, ServiceLifetime } from '../../../infrastructure/container/container';
 import { WorkflowOrchestrationService } from '../../../application/workflow/services/workflow-orchestration-service';
 import { ApplicationWorkflowBindings } from './application-workflow-bindings';
 

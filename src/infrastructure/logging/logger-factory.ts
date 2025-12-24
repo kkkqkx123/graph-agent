@@ -2,7 +2,7 @@
  * 日志工厂类
  */
 
-import { ILogger, LogContext } from '@shared/types/logger';
+import { ILogger, LogContext } from '../../domain/common/types/logger-types';
 import { LoggerConfig, LoggerConfigBuilder, LogOutputType, LogFormatType } from './interfaces';
 import { Logger } from './logger';
 import { LoggerConfigManager } from './logger-config';

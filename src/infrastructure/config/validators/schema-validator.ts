@@ -4,8 +4,7 @@
 
 import Ajv from 'ajv';
 import addFormats from 'ajv-formats';
-import { IConfigValidator, SchemaValidatorOptions, ConfigValidationResult, ConfigValidationError } from '../../domain/common/types';
-import { ILogger } from '@shared/types/logger';
+import { IConfigValidator, SchemaValidatorOptions, ConfigValidationResult, ConfigValidationError, ILogger } from '../../../domain/common/types';
 
 /**
  * Schema验证器

@@ -4,7 +4,7 @@
 
 import { BaseModuleLoader } from '../base-loader';
 import { ConfigFile, ModuleMetadata } from '../types';
-import { ILogger } from '@shared/types/logger';
+import { ILogger } from '../../../../domain/common/types';
 
 /**
  * LLM模块加载器

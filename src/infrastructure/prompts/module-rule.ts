@@ -4,7 +4,7 @@
 
 import { IModuleRule, MergeStrategy } from '../config/loading/types';
 import { PromptLoader } from '../config/loading/loaders/prompt-loader';
-import { ILogger } from '@shared/types/logger';
+import { ILogger } from '../../domain/common/types/logger-types';
 
 /**
  * 创建提示词模块规则

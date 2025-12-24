@@ -31,7 +31,7 @@ import {
 } from '../../../domain/workflow/strategies/function-execution-strategies';
 import { IExecutionContext } from '../../../domain/workflow/execution/execution-context.interface';
 import { ValidationResult } from '../../../domain/workflow/interfaces/workflow-functions';
-import { ILogger } from '@shared/types/logger';
+import { ILogger } from '../../../domain/common/types/logger-types';
 
 /**
  * 函数编排配置
