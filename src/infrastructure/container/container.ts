@@ -7,28 +7,14 @@ import {
   LoggerServiceBindings,
   ConfigServiceBindings,
   DatabaseServiceBindings,
-  CacheServiceBindings,
-  LLMServiceBindings
+  CacheServiceBindings
 } from './bindings/infrastructure-bindings';
 import { WorkflowInfrastructureBindings } from './bindings/workflow-bindings';
 import { ThreadInfrastructureBindings } from './bindings/thread-bindings';
 import { SessionInfrastructureBindings } from './bindings/session-bindings';
 
-import {
-  WorkflowServiceBindings,
-  SessionServiceBindings,
-  ToolServiceBindings,
-  StateServiceBindings,
-  HistoryServiceBindings,
-  WorkflowExecutorBindings
-} from './bindings/application-bindings';
-
-import {
-  HTTPServiceBindings,
-  CLIServiceBindings,
-  RequestContextBindings,
-  ApiControllerBindings
-} from './bindings/interface-bindings';
+import { ApplicationContainer } from '../../application/container/application-container';
+import { InterfaceContainer } from '../../interface/container/interface-container';
 
 /**
  * 服务生命周期枚举
@@ -302,8 +288,7 @@ export class InfrastructureContainer extends BaseContainer {
     const cacheBindings = new CacheServiceBindings();
     cacheBindings.registerServices(this, this.config);
 
-    const llmBindings = new LLMServiceBindings();
-    llmBindings.registerServices(this, this.config);
+    // LLM绑定现在通过ConfigServiceBindings注册
 
     const workflowBindings = new WorkflowInfrastructureBindings();
     workflowBindings.registerServices(this, this.config);
@@ -316,69 +301,6 @@ export class InfrastructureContainer extends BaseContainer {
   }
 }
 
-/**
- * 应用层容器
- */
-export class ApplicationContainer extends BaseContainer {
-  constructor(
-    infrastructureContainer: InfrastructureContainer,
-    config: ContainerConfiguration = {}
-  ) {
-    super(infrastructureContainer);
-    this.configure(config);
-    this.registerApplicationServices();
-  }
-
-  private registerApplicationServices(): void {
-    // 注册应用层服务
-    const workflowBindings = new WorkflowServiceBindings();
-    workflowBindings.registerServices(this, this.config);
-
-    const sessionBindings = new SessionServiceBindings();
-    sessionBindings.registerServices(this, this.config);
-
-    const toolBindings = new ToolServiceBindings();
-    toolBindings.registerServices(this, this.config);
-
-    const stateBindings = new StateServiceBindings();
-    stateBindings.registerServices(this, this.config);
-
-    const historyBindings = new HistoryServiceBindings();
-    historyBindings.registerServices(this, this.config);
-
-    const executorBindings = new WorkflowExecutorBindings();
-    executorBindings.registerServices(this, this.config);
-  }
-}
-
-/**
- * 接口层容器
- */
-export class InterfaceContainer extends BaseContainer {
-  constructor(
-    applicationContainer: ApplicationContainer,
-    config: ContainerConfiguration = {}
-  ) {
-    super(applicationContainer);
-    this.configure(config);
-    this.registerInterfaceServices();
-  }
-
-  private registerInterfaceServices(): void {
-    // 注册接口层服务
-    const httpBindings = new HTTPServiceBindings();
-    httpBindings.registerServices(this, this.config);
-
-    const cliBindings = new CLIServiceBindings();
-    cliBindings.registerServices(this, this.config);
-
-    const requestContextBindings = new RequestContextBindings();
-    requestContextBindings.registerServices(this, this.config);
-
-    const apiControllerBindings = new ApiControllerBindings();
-    apiControllerBindings.registerServices(this, this.config);
-  }
-}
 
 /**
  * 容器引导器
@@ -413,5 +335,11 @@ export class ContainerBootstrap {
       interface: interfaceContainer
     };
   }
+  
+  // 重新导出分层容器
 }
+
+// 重新导出分层容器
+export { ApplicationContainer } from '../../application/container/application-container';
+export { InterfaceContainer } from '../../interface/container/interface-container';
 

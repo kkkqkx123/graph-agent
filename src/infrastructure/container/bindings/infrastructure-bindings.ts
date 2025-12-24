@@ -5,8 +5,8 @@
 import { ServiceBindings, IContainer, ContainerConfiguration, ServiceLifetime } from '../container';
 import { ILogger } from '@shared/types/logger';
 import { LoggerFactory, LoggerConfigManager } from '../../logging';
-import { ThreadInfrastructureBindings } from './thread-bindings';
-import { SessionInfrastructureBindings } from './session-bindings';
+import { InfrastructureRepositoryBindings } from './infrastructure-repository-bindings';
+import { ConfigLoadingBindings } from './config-loading-bindings';
 
 /**
  * 日志服务绑定
@@ -32,7 +32,7 @@ export class LoggerServiceBindings extends ServiceBindings {
       'ILogger',
       () => {
         const loggerFactory = LoggerFactory.getInstance();
-        
+
         // 根据环境创建不同的日志记录器
         const env = process.env['NODE_ENV'] || 'development';
         switch (env.toLowerCase()) {
@@ -54,12 +54,14 @@ export class LoggerServiceBindings extends ServiceBindings {
  */
 export class ConfigServiceBindings extends ServiceBindings {
   registerServices(container: IContainer, config: ContainerConfiguration): void {
-    // TODO: 注册配置管理器
-    // container.registerFactory<IConfigManager>(
-    //   'IConfigManager',
-    //   () => new ConfigManager(config.config),
-    //   { lifetime: ServiceLifetime.SINGLETON }
-    // );
+    // 注册配置加载绑定
+    const configLoadingBindings = new ConfigLoadingBindings();
+    configLoadingBindings.registerServices(container, config);
+
+    // 注册LLM服务绑定
+    const { InfrastructureLLMServiceBindings } = require('./infrastructure-llm-bindings');
+    const llmBindings = new InfrastructureLLMServiceBindings();
+    llmBindings.registerServices(container, config);
   }
 }
 
@@ -86,20 +88,6 @@ export class CacheServiceBindings extends ServiceBindings {
     // container.registerFactory<ICache>(
     //   'ICache',
     //   () => new Cache(config.cache),
-    //   { lifetime: ServiceLifetime.SINGLETON }
-    // );
-  }
-}
-
-/**
- * LLM服务绑定
- */
-export class LLMServiceBindings extends ServiceBindings {
-  registerServices(container: IContainer, config: ContainerConfiguration): void {
-    // TODO: 注册LLM服务
-    // container.registerFactory<ILLMService>(
-    //   'ILLMService',
-    //   () => new LLMService(config.llm),
     //   { lifetime: ServiceLifetime.SINGLETON }
     // );
   }

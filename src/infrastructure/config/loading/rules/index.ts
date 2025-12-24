@@ -1,118 +1,78 @@
 /**
- * 预定义模块规则
+ * 配置加载规则模块
+ * 
+ * 简化版本：每个模块一个规则文件，直接包含Schema和规则定义
+ * 通过依赖注入容器管理加载器和规则的关系
  */
 
-import { IModuleRule, MergeStrategy } from '../types';
-import { LLMLoader } from '../loaders/llm-loader';
-import { ToolLoader } from '../loaders/tool-loader';
+import { IModuleRule } from '../types';
 import { ILogger } from '@shared/types/logger';
+import { createLLMModuleRule } from './llm-rule';
+import { createToolModuleRule } from './tool-rule';
+import { createPromptModuleRule } from './prompt-rule';
 
-// LLM模块Schema（简化版）
-const LLMSchema = {
-  type: 'object',
-  properties: {
-    providers: {
-      type: 'object',
-      additionalProperties: {
-        type: 'object',
-        properties: {
-          provider: { type: 'string' },
-          base_url: { type: 'string' },
-          api_key: { type: 'string' },
-          models: { type: 'array', items: { type: 'string' } }
-        },
-        required: ['provider', 'base_url']
-      }
-    },
-    groups: {
-      type: 'object',
-      additionalProperties: {
-        type: 'object'
-      }
-    }
-  }
-};
+// 导出所有Schema
+export { LLMSchema } from './llm-rule';
+export { ToolSchema } from './tool-rule';
+export { PromptSchema } from './prompt-rule';
 
-// 工具模块Schema（简化版）
-const ToolSchema = {
-  type: 'object',
-  properties: {
-    tool_types: {
-      type: 'object',
-      additionalProperties: {
-        type: 'object',
-        properties: {
-          class_path: { type: 'string' },
-          description: { type: 'string' },
-          enabled: { type: 'boolean' }
-        },
-        required: ['class_path', 'description', 'enabled']
-      }
-    },
-    tool_sets: {
-      type: 'object',
-      additionalProperties: {
-        type: 'object',
-        properties: {
-          description: { type: 'string' },
-          enabled: { type: 'boolean' },
-          tools: { type: 'array', items: { type: 'string' } }
-        },
-        required: ['description', 'enabled', 'tools']
-      }
-    }
-  }
-};
+// 导出所有规则创建函数
+export { createLLMModuleRule } from './llm-rule';
+export { createToolModuleRule } from './tool-rule';
+export { createPromptModuleRule } from './prompt-rule';
 
 /**
- * 创建LLM模块规则
+ * 创建所有预定义模块规则
+ * 
+ * @param loaders 加载器映射表
+ * @param logger 日志记录器
+ * @returns 模块规则数组
  */
-export function createLLMModuleRule(logger: ILogger): IModuleRule {
-  return {
-    moduleType: 'llm',
-    patterns: [
-      'llms/_group.toml',
-      'llms/provider/**/common.toml',
-      'llms/provider/**/*.toml',
-      'llms/groups/*.toml',
-      'llms/polling_pools/*.toml',
-      'llms/*.toml'
-    ],
-    priority: 100,
-    loader: new LLMLoader(logger),
-    schema: LLMSchema as any,
-    dependencies: ['global'],
-    mergeStrategy: MergeStrategy.MERGE_DEEP
-  };
+export function createAllModuleRules(
+  loaders: Map<string, any>,
+  logger: ILogger
+): IModuleRule[] {
+  const rules: IModuleRule[] = [];
+
+  // 创建LLM规则
+  if (loaders.has('llm')) {
+    rules.push(createLLMModuleRule(loaders.get('llm'), logger));
+  }
+
+  // 创建工具规则
+  if (loaders.has('tools')) {
+    rules.push(createToolModuleRule(loaders.get('tools'), logger));
+  }
+
+  // 创建提示规则
+  if (loaders.has('prompts')) {
+    rules.push(createPromptModuleRule(loaders.get('prompts'), logger));
+  }
+
+  return rules;
 }
 
 /**
- * 创建工具模块规则
+ * 创建单个模块规则
+ * 
+ * @param moduleType 模块类型
+ * @param loader 加载器实例
+ * @param logger 日志记录器
+ * @returns 模块规则
  */
-export function createToolModuleRule(logger: ILogger): IModuleRule {
-  return {
-    moduleType: 'tools',
-    patterns: [
-      'tools/__registry__.toml',
-      'tools/builtin/*.toml',
-      'tools/native/*.toml',
-      'tools/rest/*.toml',
-      'tools/mcp/*.toml'
-    ],
-    priority: 90,
-    loader: new ToolLoader(logger),
-    schema: ToolSchema as any,
-    dependencies: ['global'],
-    mergeStrategy: MergeStrategy.MERGE_DEEP
-  };
-}
-
-/**
- * 获取所有预定义模块规则
- */
-export function getPredefinedModuleRules(logger: ILogger): IModuleRule[] {
-  return [
-    createLLMModuleRule(logger),
-    createToolModuleRule(logger)
-  ];
+export function createModuleRule(
+  moduleType: string,
+  loader: any,
+  logger: ILogger
+): IModuleRule {
+  switch (moduleType) {
+    case 'llm':
+      return createLLMModuleRule(loader, logger);
+    case 'tools':
+      return createToolModuleRule(loader, logger);
+    case 'prompts':
+      return createPromptModuleRule(loader, logger);
+    default:
+      throw new Error(`不支持的模块类型: ${moduleType}`);
+  }
 }

@@ -9,7 +9,6 @@ export * from './retry';
 export * from './token-calculators';
 export * from './utils';
 export * from './managers';
-export * from './config';
 export * from './wrappers';
 export * from './human-relay';
 
@@ -26,8 +25,8 @@ export { PollingPoolManager } from './managers/pool-manager';
 export { TaskGroupManager } from './managers/task-group-manager';
 
 // 导出配置加载器
-export { PoolConfigLoader } from './config/pool-config-loader';
-export { TaskGroupConfigLoader } from './config/task-group-config-loader';
+export { PoolConfigLoader } from '../config/loading/loaders/pool-config-loader';
+export { TaskGroupConfigLoader } from '../config/loading/loaders/task-group-config-loader';
 
 // 导出依赖注入标识符和容器
 export { LLM_DI_IDENTIFIERS } from './di-identifiers';

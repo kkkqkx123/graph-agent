@@ -31,8 +31,8 @@ import { PollingPoolManager } from './managers/pool-manager';
 import { TaskGroupManager } from './managers/task-group-manager';
 
 // 配置加载器
-import { PoolConfigLoader } from './config/pool-config-loader';
-import { TaskGroupConfigLoader } from './config/task-group-config-loader';
+import { PoolConfigLoader } from '../config/loading/loaders/pool-config-loader';
+import { TaskGroupConfigLoader } from '../config/loading/loaders/task-group-config-loader';
 
 // HumanRelay 相关
 import { FrontendInteractionManager } from './human-relay/frontend-interaction-manager';

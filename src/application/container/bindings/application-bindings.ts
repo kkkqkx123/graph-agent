@@ -4,12 +4,17 @@
 
 import { ServiceBindings, IContainer, ContainerConfiguration, ServiceLifetime } from '../container';
 import { WorkflowOrchestrationService } from '../../../application/workflow/services/workflow-orchestration-service';
+import { ApplicationWorkflowBindings } from './application-workflow-bindings';
 
 /**
  * 工作流服务绑定
  */
 export class WorkflowServiceBindings extends ServiceBindings {
   registerServices(container: IContainer, config: ContainerConfiguration): void {
+    // 注册应用层工作流服务
+    const workflowBindings = new ApplicationWorkflowBindings();
+    workflowBindings.registerServices(container, config);
+
     // 注册工作流编排服务
     container.registerFactory(
       'WorkflowOrchestrationService',
@@ -57,6 +62,9 @@ export class ToolServiceBindings extends ServiceBindings {
     // );
   }
 }
+
+// 导出工作流绑定
+export { ApplicationWorkflowBindings } from './application-workflow-bindings';
 
 /**
  * 状态管理服务绑定
