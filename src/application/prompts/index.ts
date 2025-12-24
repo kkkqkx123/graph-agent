@@ -5,5 +5,5 @@
 // 服务
 export { PromptService } from './services/prompt-service';
 
-// 工厂
-export { PromptSystemFactory } from './factories/prompt-system-factory';
+// DTO
+export * from './dtos';

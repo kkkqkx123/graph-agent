@@ -7,10 +7,6 @@ export * from './services/thread-lifecycle-service';
 export * from './services/thread-management-service';
 export * from './services/thread-maintenance-service';
 
-// 导出服务工厂
-export * from './factories/thread-lifecycle-service-factory';
-export * from './factories/thread-management-service-factory';
-export * from './factories/thread-maintenance-service-factory';
 
 // 导出命令
 export * from './commands/create-thread-command';

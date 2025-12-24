@@ -24,12 +24,14 @@ import {
   DeactivateWorkflowCommand,
   ArchiveWorkflowCommand,
   UpdateWorkflowCommand,
-  ExecuteWorkflowCommand,
-  AddWorkflowTagCommand,
-  RemoveWorkflowTagCommand,
-  BatchUpdateWorkflowStatusCommand,
   DeleteWorkflowCommand
-} from '../commands/create-workflow.command';
+} from '../commands/workflow-lifecycle.command';
+import { ExecuteWorkflowCommand } from '../commands/workflow-execution.command';
+import {
+  AddWorkflowTagCommand,
+  RemoveWorkflowTagCommand
+} from '../commands/workflow-tag.command';
+import { BatchUpdateWorkflowStatusCommand } from '../commands/workflow-batch.command';
 
 // Queries
 import {

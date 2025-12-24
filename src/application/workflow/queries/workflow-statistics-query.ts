@@ -2,6 +2,8 @@
  * 获取工作流统计信息查询
  */
 export interface GetWorkflowStatisticsQuery {
+  /** 工作流ID */
+  workflowId?: string;
   /** 过滤条件 */
   filters?: {
     /** 状态过滤 */

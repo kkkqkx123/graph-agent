@@ -7,10 +7,6 @@ export { SessionLifecycleService } from './services/session-lifecycle-service';
 export { SessionManagementService } from './services/session-management-service';
 export { SessionMaintenanceService } from './services/session-maintenance-service';
 
-// 导出服务工厂
-export * from './factories/session-service-factory';
-export * from './factories/session-management-service-factory';
-export * from './factories/session-maintenance-service-factory';
 
 // 导出命令
 export * from './commands/create-session-command';

@@ -12,9 +12,6 @@ export * from './common';
 export { SessionLifecycleService } from './sessions/services/session-lifecycle-service';
 export { SessionManagementService } from './sessions/services/session-management-service';
 export { SessionMaintenanceService } from './sessions/services/session-maintenance-service';
-export * from './sessions/factories/session-service-factory';
-export * from './sessions/factories/session-management-service-factory';
-export * from './sessions/factories/session-maintenance-service-factory';
 export * from './sessions/commands/create-session-command';
 export * from './sessions/commands/delete-session-command';
 export * from './sessions/queries/get-session-query';
@@ -32,9 +29,6 @@ export * from './sessions/handlers/session-deleted-handler';
 export { ThreadLifecycleService } from './threads/services/thread-lifecycle-service';
 export { ThreadManagementService } from './threads/services/thread-management-service';
 export { ThreadMaintenanceService } from './threads/services/thread-maintenance-service';
-export * from './threads/factories/thread-lifecycle-service-factory';
-export * from './threads/factories/thread-management-service-factory';
-export * from './threads/factories/thread-maintenance-service-factory';
 export * from './threads/commands/create-thread-command';
 export * from './threads/commands/delete-thread-command';
 export * from './threads/commands/update-thread-status-command';
@@ -55,10 +49,6 @@ export { CheckpointCreationService } from './threads/checkpoints/services/checkp
 export { CheckpointRestoreService } from './threads/checkpoints/services/checkpoint-restore-service';
 export { CheckpointManagementService } from './threads/checkpoints/services/checkpoint-management-service';
 export { CheckpointAnalysisService } from './threads/checkpoints/services/checkpoint-analysis-service';
-export * from './threads/checkpoints/factories/checkpoint-creation-service-factory';
-export * from './threads/checkpoints/factories/checkpoint-restore-service-factory';
-export * from './threads/checkpoints/factories/checkpoint-management-service-factory';
-export * from './threads/checkpoints/factories/checkpoint-analysis-service-factory';
 
 // 应用层类型定义
 export interface ApplicationService {

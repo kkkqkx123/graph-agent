@@ -4,4 +4,3 @@
 
 export { BaseService } from './base-service';
 export { BaseApplicationService } from './base-application-service';
-export { BaseServiceFactory, BaseApplicationServiceFactory } from './base-service-factory';
