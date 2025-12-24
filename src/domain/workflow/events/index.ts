@@ -7,4 +7,6 @@
 export * from './workflow-created-event';
 export * from './workflow-status-changed-event';
 export * from './node-added-event';
+export * from './node-removed-event';
 export * from './edge-added-event';
+export * from './edge-removed-event';

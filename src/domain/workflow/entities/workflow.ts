@@ -3,22 +3,63 @@ import { ID } from '../../common/value-objects/id';
 import { Timestamp } from '../../common/value-objects/timestamp';
 import { Version } from '../../common/value-objects/version';
 import { WorkflowDefinition } from '../value-objects/workflow-definition';
-import { WorkflowGraph } from './workflow-graph';
-import { Node } from './nodes/base/node';
-import { Edge } from './edges/base/edge';
 import { WorkflowStatus } from '../value-objects/workflow-status';
 import { WorkflowType } from '../value-objects/workflow-type';
 import { WorkflowConfig } from '../value-objects/workflow-config';
+import { NodeId } from '../value-objects/node-id';
+import { NodeType } from '../value-objects/node-type';
+import { EdgeId } from '../value-objects/edge-id';
+import { EdgeType } from '../value-objects/edge-type';
+import { DomainError } from '../../common/errors/domain-error';
 import { WorkflowCreatedEvent } from '../events/workflow-created-event';
 import { WorkflowStatusChangedEvent } from '../events/workflow-status-changed-event';
+import { NodeAddedEvent } from '../events/node-added-event';
+import { NodeRemovedEvent } from '../events/node-removed-event';
+import { EdgeAddedEvent } from '../events/edge-added-event';
+import { EdgeRemovedEvent } from '../events/edge-removed-event';
+import { ErrorHandlingStrategyFactory } from '../strategies/error-handling-strategy';
+import { ExecutionStrategyFactory } from '../strategies/execution-strategy';
 
 /**
- * Workflow实体属性接口
+ * 节点数据接口
+ */
+export interface NodeData {
+  readonly id: NodeId;
+  readonly type: NodeType;
+  readonly name?: string;
+  readonly description?: string;
+  readonly position?: { x: number; y: number };
+  readonly properties: Record<string, unknown>;
+}
+
+/**
+ * 边数据接口
+ */
+export interface EdgeData {
+  readonly id: EdgeId;
+  readonly type: EdgeType;
+  readonly fromNodeId: NodeId;
+  readonly toNodeId: NodeId;
+  readonly condition?: string;
+  readonly weight?: number;
+  readonly properties: Record<string, unknown>;
+}
+
+/**
+ * 工作流图数据接口
+ */
+export interface WorkflowGraphData {
+  readonly nodes: Map<string, NodeData>;
+  readonly edges: Map<string, EdgeData>;
+}
+
+/**
+ * Workflow聚合根属性接口
  */
 export interface WorkflowProps {
   readonly id: ID;
   readonly definition: WorkflowDefinition;
-  readonly graph: WorkflowGraph;
+  readonly graph: WorkflowGraphData;
   readonly createdAt: Timestamp;
   readonly updatedAt: Timestamp;
   readonly version: Version;
@@ -29,14 +70,14 @@ export interface WorkflowProps {
 /**
  * Workflow聚合根实体
  *
- * 根据DDD原则，Workflow专注于：
+ * 根据DDD原则，Workflow是唯一的聚合根，负责：
  * 1. 工作流业务规则和不变性
- * 2. 工作流定义管理
+ * 2. 节点和边的管理（通过聚合根访问）
  * 3. 业务状态变更
  * 4. 领域事件发布
  *
  * 不负责：
- * - 图结构的直接操作（委托给领域服务）
+ * - 图算法和复杂验证（委托给领域服务）
  * - 执行状态管理
  * - UI相关的布局和可视化
  * - 持久化细节
@@ -57,36 +98,46 @@ export class Workflow extends Entity {
    * 创建新工作流
    * @param name 工作流名称
    * @param description 工作流描述
-   * @param definition 工作流定义
-   * @param graph 工作流图
+   * @param type 工作流类型
+   * @param config 工作流配置
    * @param createdBy 创建者ID
    * @returns 新工作流实例
    */
   public static create(
     name: string,
     description?: string,
-    definition?: WorkflowDefinition,
-    graph?: WorkflowGraph,
+    type?: WorkflowType,
+    config?: WorkflowConfig,
     createdBy?: ID
   ): Workflow {
     const now = Timestamp.now();
     const workflowId = ID.generate();
 
     // 创建工作流定义
-    const workflowDefinition = definition || WorkflowDefinition.create(
+    const workflowDefinition = WorkflowDefinition.create({
+      id: workflowId,
       name,
       description,
-      undefined, // type
-      undefined, // config
-      undefined, // errorHandlingStrategy
-      undefined, // executionStrategy
-      undefined, // tags
-      undefined, // metadata
-      createdBy
-    );
+      status: WorkflowStatus.draft(),
+      type: type || WorkflowType.sequential(),
+      config: config || WorkflowConfig.default(),
+      errorHandlingStrategy: ErrorHandlingStrategyFactory.default(),
+      executionStrategy: ExecutionStrategyFactory.default(),
+      tags: [],
+      metadata: {},
+      createdAt: now,
+      updatedAt: now,
+      version: Version.initial(),
+      isDeleted: false,
+      createdBy,
+      updatedBy: createdBy
+    });
 
-    // 创建工作流图
-    const workflowGraph = graph || WorkflowGraph.create(workflowId);
+    // 创建空的工作流图
+    const workflowGraph: WorkflowGraphData = {
+      nodes: new Map(),
+      edges: new Map()
+    };
 
     const props: WorkflowProps = {
       id: workflowId,
@@ -111,9 +162,7 @@ export class Workflow extends Entity {
       workflowDefinition.config.value,
       [], // nodes
       [], // edges
-      undefined, // definition - 移除UI相关概念
-      undefined, // layout - 移除UI相关概念
-      createdBy
+      undefined
     ));
 
     return workflow;
@@ -181,7 +230,7 @@ export class Workflow extends Entity {
    * @returns 节点数量
    */
   public getNodeCount(): number {
-    return this.props.graph.getNodeCount();
+    return this.props.graph.nodes.size;
   }
 
   /**
@@ -189,9 +238,8 @@ export class Workflow extends Entity {
    * @returns 边数量
    */
   public getEdgeCount(): number {
-    return this.props.graph.getEdgeCount();
+    return this.props.graph.edges.size;
   }
-
 
   /**
    * 获取标签
@@ -223,6 +271,88 @@ export class Workflow extends Entity {
    */
   public get updatedBy(): ID | undefined {
     return this.props.updatedBy;
+  }
+
+  /**
+   * 获取所有节点
+   * @returns 节点映射
+   */
+  public getNodes(): Map<string, NodeData> {
+    return new Map(this.props.graph.nodes);
+  }
+
+  /**
+   * 获取所有边
+   * @returns 边映射
+   */
+  public getEdges(): Map<string, EdgeData> {
+    return new Map(this.props.graph.edges);
+  }
+
+  /**
+   * 根据ID获取节点
+   * @param nodeId 节点ID
+   * @returns 节点或null
+   */
+  public getNode(nodeId: NodeId): NodeData | null {
+    return this.props.graph.nodes.get(nodeId.toString()) || null;
+  }
+
+  /**
+   * 根据ID获取边
+   * @param edgeId 边ID
+   * @returns 边或null
+   */
+  public getEdge(edgeId: EdgeId): EdgeData | null {
+    return this.props.graph.edges.get(edgeId.toString()) || null;
+  }
+
+  /**
+   * 检查节点是否存在
+   * @param nodeId 节点ID
+   * @returns 是否存在
+   */
+  public hasNode(nodeId: NodeId): boolean {
+    return this.props.graph.nodes.has(nodeId.toString());
+  }
+
+  /**
+   * 检查边是否存在
+   * @param edgeId 边ID
+   * @returns 是否存在
+   */
+  public hasEdge(edgeId: EdgeId): boolean {
+    return this.props.graph.edges.has(edgeId.toString());
+  }
+
+  /**
+   * 获取节点的入边
+   * @param nodeId 节点ID
+   * @returns 入边列表
+   */
+  public getIncomingEdges(nodeId: NodeId): EdgeData[] {
+    const incomingEdges: EdgeData[] = [];
+    for (const edge of this.props.graph.edges.values()) {
+      if (edge.toNodeId.equals(nodeId)) {
+        incomingEdges.push(edge);
+      }
+    }
+    return incomingEdges;
+  }
+
+  /**
+   * 获取节点的出边
+   * @param nodeId 节点ID
+   * @returns 出边列表
+   */
+  public getOutgoingEdges(nodeId: NodeId): EdgeData[] {
+    const outgoingEdges: EdgeData[] = [];
+    for (const edge of this.props.graph.edges.values()) {
+      if (edge.fromNodeId.equals(nodeId)) {
+        outgoingEdges.push(edge);
+      }
+    }
+    return outgoingEdges;
   }
 
   /**
@@ -277,7 +407,7 @@ export class Workflow extends Entity {
     reason?: string
   ): void {
     const oldStatus = this.props.definition.status;
-    const newDefinition = this.props.definition.changeStatus(newStatus, changedBy, reason);
+    const newDefinition = this.props.definition.changeStatus(newStatus, changedBy);
     
     (this.props as any).definition = newDefinition;
     this.update();
@@ -355,14 +485,6 @@ export class Workflow extends Entity {
   }
 
   /**
-   * 获取工作流图
-   * @returns 工作流图
-   */
-  public getGraph(): WorkflowGraph {
-    return this.props.graph;
-  }
-
-  /**
    * 检查工作流是否可以执行
    * @returns 是否可以执行
    */
@@ -405,6 +527,205 @@ export class Workflow extends Entity {
   }
 
   /**
+   * 添加节点
+   * @param nodeId 节点ID
+   * @param type 节点类型
+   * @param name 节点名称
+   * @param description 节点描述
+   * @param position 节点位置
+   * @param properties 节点属性
+   * @param updatedBy 更新者ID
+   */
+  public addNode(
+    nodeId: NodeId,
+    type: NodeType,
+    name?: string,
+    description?: string,
+    position?: { x: number; y: number },
+    properties?: Record<string, unknown>,
+    updatedBy?: ID
+  ): void {
+    if (this.hasNode(nodeId)) {
+      throw new DomainError('节点已存在');
+    }
+
+    if (!this.status.canEdit()) {
+      throw new DomainError('只能编辑草稿状态工作流的节点');
+    }
+
+    const nodeData: NodeData = {
+      id: nodeId,
+      type,
+      name,
+      description,
+      position,
+      properties: properties || {}
+    };
+
+    const newNodes = new Map(this.props.graph.nodes);
+    newNodes.set(nodeId.toString(), nodeData);
+
+    const newGraph = {
+      ...this.props.graph,
+      nodes: newNodes
+    };
+
+    (this.props as any).graph = newGraph;
+    this.update(updatedBy);
+
+    // 添加节点添加事件
+    this.addDomainEvent(new NodeAddedEvent(
+      this.props.id,
+      nodeId,
+      type,
+      name,
+      updatedBy
+    ));
+  }
+
+  /**
+   * 移除节点
+   * @param nodeId 节点ID
+   * @param updatedBy 更新者ID
+   */
+  public removeNode(nodeId: NodeId, updatedBy?: ID): void {
+    if (!this.hasNode(nodeId)) {
+      throw new DomainError('节点不存在');
+    }
+
+    if (!this.status.canEdit()) {
+      throw new DomainError('只能编辑草稿状态工作流的节点');
+    }
+
+    // 检查是否有边连接到此节点
+    const connectedEdges = this.getIncomingEdges(nodeId).concat(this.getOutgoingEdges(nodeId));
+    if (connectedEdges.length > 0) {
+      throw new DomainError('无法移除有边连接的节点');
+    }
+
+    const newNodes = new Map(this.props.graph.nodes);
+    newNodes.delete(nodeId.toString());
+
+    const newGraph = {
+      ...this.props.graph,
+      nodes: newNodes
+    };
+
+    (this.props as any).graph = newGraph;
+    this.update(updatedBy);
+
+    // 添加节点移除事件
+    this.addDomainEvent(new NodeRemovedEvent(
+      this.props.id,
+      nodeId.toString(),
+      updatedBy
+    ));
+  }
+
+  /**
+   * 添加边
+   * @param edgeId 边ID
+   * @param type 边类型
+   * @param fromNodeId 源节点ID
+   * @param toNodeId 目标节点ID
+   * @param condition 条件表达式
+   * @param weight 权重
+   * @param properties 边属性
+   * @param updatedBy 更新者ID
+   */
+  public addEdge(
+    edgeId: EdgeId,
+    type: EdgeType,
+    fromNodeId: NodeId,
+    toNodeId: NodeId,
+    condition?: string,
+    weight?: number,
+    properties?: Record<string, unknown>,
+    updatedBy?: ID
+  ): void {
+    if (this.hasEdge(edgeId)) {
+      throw new DomainError('边已存在');
+    }
+
+    if (!this.status.canEdit()) {
+      throw new DomainError('只能编辑草稿状态工作流的边');
+    }
+
+    // 检查源节点和目标节点是否存在
+    if (!this.hasNode(fromNodeId)) {
+      throw new DomainError('源节点不存在');
+    }
+
+    if (!this.hasNode(toNodeId)) {
+      throw new DomainError('目标节点不存在');
+    }
+
+    const edgeData: EdgeData = {
+      id: edgeId,
+      type,
+      fromNodeId,
+      toNodeId,
+      condition,
+      weight,
+      properties: properties || {}
+    };
+
+    const newEdges = new Map(this.props.graph.edges);
+    newEdges.set(edgeId.toString(), edgeData);
+
+    const newGraph = {
+      ...this.props.graph,
+      edges: newEdges
+    };
+
+    (this.props as any).graph = newGraph;
+    this.update(updatedBy);
+
+    // 添加边添加事件
+    this.addDomainEvent(new EdgeAddedEvent(
+      this.props.id,
+      edgeId,
+      type,
+      fromNodeId,
+      toNodeId,
+      updatedBy
+    ));
+  }
+
+  /**
+   * 移除边
+   * @param edgeId 边ID
+   * @param updatedBy 更新者ID
+   */
+  public removeEdge(edgeId: EdgeId, updatedBy?: ID): void {
+    if (!this.hasEdge(edgeId)) {
+      throw new DomainError('边不存在');
+    }
+
+    if (!this.status.canEdit()) {
+      throw new DomainError('只能编辑草稿状态工作流的边');
+    }
+
+    const newEdges = new Map(this.props.graph.edges);
+    newEdges.delete(edgeId.toString());
+
+    const newGraph = {
+      ...this.props.graph,
+      edges: newEdges
+    };
+
+    (this.props as any).graph = newGraph;
+    this.update(updatedBy);
+
+    // 添加边移除事件
+    this.addDomainEvent(new EdgeRemovedEvent(
+      this.props.id,
+      edgeId.toString(),
+      updatedBy
+    ));
+  }
+
+  /**
    * 更新定义
    * @param newDefinition 新定义
    */
@@ -414,11 +735,15 @@ export class Workflow extends Entity {
   }
 
   /**
-   * 更新图
-   * @param newGraph 新图
+   * 更新实体
+   * @param updatedBy 更新者ID
    */
-  private updateGraph(newGraph: WorkflowGraph): void {
-    (this.props as any).graph = newGraph;
-    this.update();
+  protected override update(updatedBy?: ID): void {
+    (this.props as any).updatedAt = Timestamp.now();
+    (this.props as any).version = this.props.version.nextPatch();
+    if (updatedBy) {
+      (this.props as any).updatedBy = updatedBy;
+    }
+    super.update();
   }
 }

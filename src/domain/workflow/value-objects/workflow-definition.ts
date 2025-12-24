@@ -1,11 +1,12 @@
 import { ValueObject } from '../../common/value-objects/value-object';
 import { ID } from '../../common/value-objects/id';
 import { Timestamp } from '../../common/value-objects/timestamp';
+import { Version } from '../../common/value-objects/version';
 import { WorkflowStatus } from './workflow-status';
 import { WorkflowType } from './workflow-type';
 import { WorkflowConfig } from './workflow-config';
-import { ErrorHandlingStrategy, ErrorHandlingStrategyFactory } from '../strategies/error-handling-strategy';
-import { ExecutionStrategy, ExecutionStrategyFactory } from '../strategies/execution-strategy';
+import { ErrorHandlingStrategy } from '../strategies/error-handling-strategy';
+import { ExecutionStrategy } from '../strategies/execution-strategy';
 
 /**
  * WorkflowDefinition值对象属性接口
@@ -23,7 +24,7 @@ export interface WorkflowDefinitionProps {
   readonly metadata: Record<string, unknown>;
   readonly createdAt: Timestamp;
   readonly updatedAt: Timestamp;
-  readonly version: any;
+  readonly version: Version;
   readonly isDeleted: boolean;
   readonly createdBy?: ID;
   readonly updatedBy?: ID;
@@ -33,64 +34,16 @@ export interface WorkflowDefinitionProps {
  * WorkflowDefinition值对象
  * 
  * 表示工作流的定义信息，是不可变的
- * 包含工作流的基本属性和元数据
+ * 只包含数据访问方法，不包含业务逻辑
  */
 export class WorkflowDefinition extends ValueObject<WorkflowDefinitionProps> {
   /**
    * 创建工作流定义值对象
-   * @param name 工作流名称
-   * @param description 工作流描述
-   * @param type 工作流类型
-   * @param config 工作流配置
-   * @param errorHandlingStrategy 错误处理策略
-   * @param executionStrategy 执行策略
-   * @param tags 标签
-   * @param metadata 元数据
-   * @param createdBy 创建者ID
+   * @param props 工作流定义属性
    * @returns 工作流定义值对象
    */
-  public static create(
-    name: string,
-    description?: string,
-    type?: WorkflowType,
-    config?: WorkflowConfig,
-    errorHandlingStrategy?: ErrorHandlingStrategy,
-    executionStrategy?: ExecutionStrategy,
-    tags?: string[],
-    metadata?: Record<string, unknown>,
-    createdBy?: ID
-  ): WorkflowDefinition {
-    const now = Timestamp.now();
-    const workflowId = ID.generate();
-    const workflowType = type || WorkflowType.sequential();
-    const workflowStatus = WorkflowStatus.draft();
-    const workflowConfig = config || WorkflowConfig.default();
-
-    // 使用工厂方法创建默认策略
-    const defaultErrorHandlingStrategy = errorHandlingStrategy ||
-      ErrorHandlingStrategyFactory.default();
-    
-    const defaultExecutionStrategy = executionStrategy ||
-      ExecutionStrategyFactory.default();
-
-    return new WorkflowDefinition({
-      id: workflowId,
-      name,
-      description,
-      status: workflowStatus,
-      type: workflowType,
-      config: workflowConfig,
-      errorHandlingStrategy: defaultErrorHandlingStrategy,
-      executionStrategy: defaultExecutionStrategy,
-      tags: tags || [],
-      metadata: metadata || {},
-      createdAt: now,
-      updatedAt: now,
-      version: { nextPatch: () => ({ toString: () => '1.0.1' }) },
-      isDeleted: false,
-      createdBy,
-      updatedBy: createdBy
-    });
+  public static create(props: WorkflowDefinitionProps): WorkflowDefinition {
+    return new WorkflowDefinition(props);
   }
 
   /**
@@ -197,6 +150,46 @@ export class WorkflowDefinition extends ValueObject<WorkflowDefinitionProps> {
   }
 
   /**
+   * 获取创建时间
+   * @returns 创建时间
+   */
+  public get createdAt(): Timestamp {
+    return this.props.createdAt;
+  }
+
+  /**
+   * 获取更新时间
+   * @returns 更新时间
+   */
+  public get updatedAt(): Timestamp {
+    return this.props.updatedAt;
+  }
+
+  /**
+   * 获取版本
+   * @returns 版本
+   */
+  public get version(): Version {
+    return this.props.version;
+  }
+
+  /**
+   * 检查是否已删除
+   * @returns 是否已删除
+   */
+  public isDeleted(): boolean {
+    return this.props.isDeleted;
+  }
+
+  /**
+   * 获取业务标识
+   * @returns 业务标识
+   */
+  public getBusinessIdentifier(): string {
+    return `workflow:${this.props.id.toString()}`;
+  }
+
+  /**
    * 更新名称（创建新实例）
    * @param name 新名称
    * @param updatedBy 更新者ID
@@ -260,25 +253,12 @@ export class WorkflowDefinition extends ValueObject<WorkflowDefinitionProps> {
    * 更改状态（创建新实例）
    * @param newStatus 新状态
    * @param changedBy 变更者ID
-   * @param reason 变更原因
    * @returns 新的工作流定义值对象
    */
   public changeStatus(
     newStatus: WorkflowStatus,
-    changedBy?: ID,
-    reason?: string
+    changedBy?: ID
   ): WorkflowDefinition {
-    if (this.props.isDeleted) {
-      throw new Error('无法更改已删除工作流的状态');
-    }
-
-    if (this.props.status.equals(newStatus)) {
-      return this; // 状态未变更
-    }
-
-    // 验证状态转换的有效性
-    this.validateStatusTransition(this.props.status, newStatus);
-
     return new WorkflowDefinition({
       ...this.props,
       status: newStatus,
@@ -294,10 +274,6 @@ export class WorkflowDefinition extends ValueObject<WorkflowDefinitionProps> {
    * @returns 新的工作流定义值对象
    */
   public addTag(tag: string, updatedBy?: ID): WorkflowDefinition {
-    if (this.props.isDeleted) {
-      throw new Error('无法为已删除的工作流添加标签');
-    }
-
     if (this.props.tags.includes(tag)) {
       return this; // 标签已存在
     }
@@ -317,10 +293,6 @@ export class WorkflowDefinition extends ValueObject<WorkflowDefinitionProps> {
    * @returns 新的工作流定义值对象
    */
   public removeTag(tag: string, updatedBy?: ID): WorkflowDefinition {
-    if (this.props.isDeleted) {
-      throw new Error('无法为已删除的工作流移除标签');
-    }
-
     const index = this.props.tags.indexOf(tag);
     if (index === -1) {
       return this; // 标签不存在
@@ -344,10 +316,6 @@ export class WorkflowDefinition extends ValueObject<WorkflowDefinitionProps> {
    * @returns 新的工作流定义值对象
    */
   public updateMetadata(metadata: Record<string, unknown>, updatedBy?: ID): WorkflowDefinition {
-    if (this.props.isDeleted) {
-      throw new Error('无法更新已删除工作流的元数据');
-    }
-
     return new WorkflowDefinition({
       ...this.props,
       metadata: { ...metadata },
@@ -370,82 +338,5 @@ export class WorkflowDefinition extends ValueObject<WorkflowDefinitionProps> {
       isDeleted: true,
       updatedAt: Timestamp.now()
     });
-  }
-
-  /**
-   * 检查是否已删除
-   * @returns 是否已删除
-   */
-  public isDeleted(): boolean {
-    return this.props.isDeleted;
-  }
-
-  /**
-   * 获取业务标识
-   * @returns 业务标识
-   */
-  public getBusinessIdentifier(): string {
-    return `workflow:${this.props.id.toString()}`;
-  }
-
-  /**
-   * 验证状态转换的有效性
-   * @param oldStatus 旧状态
-   * @param newStatus 新状态
-   */
-  private validateStatusTransition(
-    oldStatus: WorkflowStatus,
-    newStatus: WorkflowStatus
-  ): void {
-    // 已归档的工作流不能变更到其他状态
-    if (oldStatus.isArchived() && !newStatus.isArchived()) {
-      throw new Error('已归档的工作流不能变更到其他状态');
-    }
-
-    // 草稿状态只能激活或归档
-    if (oldStatus.isDraft() &&
-      !newStatus.isActive() &&
-      !newStatus.isArchived()) {
-      throw new Error('草稿状态的工作流只能激活或归档');
-    }
-
-    // 活跃状态只能变为非活跃或归档
-    if (oldStatus.isActive() &&
-      !newStatus.isInactive() &&
-      !newStatus.isArchived()) {
-      throw new Error('活跃状态的工作流只能变为非活跃或归档');
-    }
-
-    // 非活跃状态只能变为活跃或归档
-    if (oldStatus.isInactive() &&
-      !newStatus.isActive() &&
-      !newStatus.isArchived()) {
-      throw new Error('非活跃状态的工作流只能变为活跃或归档');
-    }
-  }
-
-  /**
-   * 验证工作流定义的有效性
-   */
-  public validate(): void {
-    if (!this.props.name || this.props.name.trim().length === 0) {
-      throw new Error('工作流名称不能为空');
-    }
-
-    if (!this.props.status) {
-      throw new Error('工作流状态不能为空');
-    }
-
-    if (!this.props.type) {
-      throw new Error('工作流类型不能为空');
-    }
-
-    if (!this.props.config) {
-      throw new Error('工作流配置不能为空');
-    }
-
-    if (this.props.description && this.props.description.trim().length === 0) {
-      throw new Error('工作流描述不能为空字符串');
-    }
   }
 }

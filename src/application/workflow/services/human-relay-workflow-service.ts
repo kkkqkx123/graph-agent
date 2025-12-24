@@ -7,13 +7,19 @@
 import { injectable, inject } from 'inversify';
 import { IWorkflowOrchestrationService, WorkflowExecutionRequest } from '../../../domain/workflow/services/workflow-orchestration-service';
 import { WorkflowRepository } from '../../../domain/workflow/repositories/workflow-repository';
-import { HumanRelayNode } from '../../../domain/workflow/entities/nodes/specialized/human-relay-node';
+import { WorkflowDomainService } from '../../../domain/workflow/services/domain-service';
 import { ID } from '../../../domain/common/value-objects/id';
 import { HumanRelayMode } from '../../../domain/llm/value-objects/human-relay-mode';
 import { Workflow } from '../../../domain/workflow/entities/workflow';
+import { WorkflowType } from '../../../domain/workflow/value-objects/workflow-type';
+import { WorkflowConfig } from '../../../domain/workflow/value-objects/workflow-config';
+import { DomainError } from '../../../domain/common/errors/domain-error';
+import { ILogger } from '../../../domain/common/types/logger-types';
 
 /**
  * HumanRelay工作流服务
+ * 
+ * 负责HumanRelay工作流的业务流程编排和协调
  */
 @injectable()
 export class HumanRelayWorkflowService {
@@ -21,8 +27,12 @@ export class HumanRelayWorkflowService {
     @inject('IWorkflowOrchestrationService')
     private workflowOrchestrationService: IWorkflowOrchestrationService,
     @inject('WorkflowRepository')
-    private workflowRepository: WorkflowRepository
-  ) { }
+    private workflowRepository: WorkflowRepository,
+    @inject('WorkflowDomainService')
+    private workflowDomainService: WorkflowDomainService,
+    @inject('Logger')
+    private logger: ILogger
+  ) {}
 
   /**
    * 创建HumanRelay工作流
@@ -30,20 +40,65 @@ export class HumanRelayWorkflowService {
    * @param name 工作流名称
    * @param mode 操作模式
    * @param promptTemplate 提示词模板
+   * @param createdBy 创建者ID
    * @returns 工作流ID
    */
   public async createHumanRelayWorkflow(
     name: string,
     mode: HumanRelayMode,
-    promptTemplate?: string
+    promptTemplate?: string,
+    createdBy?: ID
   ): Promise<ID> {
-    // 创建工作流定义
-    const workflowDefinition = this.createWorkflowDefinition(name, mode, promptTemplate);
+    try {
+      this.logger.info('正在创建HumanRelay工作流', { name, mode });
 
-    // 保存工作流
-    const workflow = await this.workflowRepository.save(workflowDefinition);
+      // 验证创建条件
+      await this.workflowDomainService.validateWorkflowCreation(name, undefined, createdBy);
 
-    return workflow.workflowId;
+      // 创建工作流配置
+      const config = WorkflowConfig.create({
+        maxExecutionTime: mode === HumanRelayMode.MULTI ? 600 : 300,
+        retryCount: 3,
+        timeoutSeconds: mode === HumanRelayMode.MULTI ? 600 : 300,
+        enableLogging: true,
+        enableMetrics: true,
+        enableCheckpointing: false,
+        checkpointInterval: 300,
+        maxConcurrentThreads: 1,
+        metadata: {
+          type: 'human-relay',
+          mode: mode.toString(),
+          promptTemplate: promptTemplate || '',
+          maxHistoryLength: mode === HumanRelayMode.MULTI ? 100 : 1
+        }
+      });
+
+      // 创建工作流
+      const workflow = Workflow.create(
+        name,
+        `HumanRelay ${mode} 模式工作流`,
+        WorkflowType.fromString('human-relay'),
+        config,
+        createdBy
+      );
+
+      // 添加标签标识工作流类型
+      workflow.addTag('human-relay', createdBy);
+      workflow.addTag(mode.toString(), createdBy);
+
+      // 保存工作流
+      const savedWorkflow = await this.workflowRepository.save(workflow);
+
+      this.logger.info('HumanRelay工作流创建成功', { 
+        workflowId: savedWorkflow.workflowId.toString(),
+        mode 
+      });
+
+      return savedWorkflow.workflowId;
+    } catch (error) {
+      this.logger.error('创建HumanRelay工作流失败', error as Error);
+      throw error;
+    }
   }
 
   /**
@@ -57,35 +112,43 @@ export class HumanRelayWorkflowService {
     workflowId: ID,
     inputData: any
   ): Promise<any> {
-    // 获取工作流
-    const workflow = await this.workflowRepository.findById(workflowId);
-    if (!workflow) {
-      throw new Error(`工作流不存在: ${workflowId.toString()}`);
+    try {
+      this.logger.info('正在执行HumanRelay工作流', { workflowId: workflowId.toString() });
+
+      // 获取工作流
+      const workflow = await this.workflowRepository.findByIdOrFail(workflowId);
+
+      // 验证执行条件
+      this.workflowDomainService.validateExecutionEligibility(workflow);
+
+      // 验证工作流是否为HumanRelay类型
+      if (!this.isHumanRelayWorkflow(workflow)) {
+        throw new DomainError('工作流不是HumanRelay类型');
+      }
+
+      // 执行工作流
+      const executionRequest: WorkflowExecutionRequest = {
+        executionId: ID.generate().toString(),
+        workflowId: workflowId,
+        mode: 'sync' as any,
+        priority: 'normal' as any,
+        config: workflow.config.value as any,
+        inputData,
+        parameters: {}
+      };
+      
+      const executionResult = await this.workflowOrchestrationService.execute(executionRequest);
+
+      this.logger.info('HumanRelay工作流执行成功', { 
+        workflowId: workflowId.toString(),
+        executionId: executionRequest.executionId
+      });
+
+      return executionResult;
+    } catch (error) {
+      this.logger.error('执行HumanRelay工作流失败', error as Error);
+      throw error;
     }
-
-    // 验证工作流包含HumanRelay节点
-    const humanRelayNodes = Array.from(workflow.getGraph().nodes.values()).filter(
-      (node: any) => node instanceof HumanRelayNode
-    ) as HumanRelayNode[];
-
-    if (humanRelayNodes.length === 0) {
-      throw new Error('工作流中未找到HumanRelay节点');
-    }
-
-    // 执行工作流
-    const executionRequest: WorkflowExecutionRequest = {
-      executionId: ID.generate().toString(),
-      workflowId: workflowId,
-      mode: 'sync' as any,
-      priority: 'normal' as any,
-      config: {},
-      inputData,
-      parameters: {}
-    };
-    
-    const executionResult = await this.workflowOrchestrationService.execute(executionRequest);
-
-    return executionResult;
   }
 
   /**
@@ -99,12 +162,17 @@ export class HumanRelayWorkflowService {
     workflowId: ID,
     nodeId: string
   ): Promise<any> {
-    // 获取工作流执行状态
-    const executionStatus = await this.workflowOrchestrationService.getExecutionStatus(
-      nodeId
-    );
+    try {
+      // 获取工作流执行状态
+      const executionStatus = await this.workflowOrchestrationService.getExecutionStatus(
+        nodeId
+      );
 
-    return executionStatus || null;
+      return executionStatus || null;
+    } catch (error) {
+      this.logger.error('获取HumanRelay节点状态失败', error as Error);
+      throw error;
+    }
   }
 
   /**
@@ -113,14 +181,16 @@ export class HumanRelayWorkflowService {
    * @param name 工作流名称
    * @param timeout 超时时间
    * @param promptTemplate 提示词模板
+   * @param createdBy 创建者ID
    * @returns 工作流ID
    */
   public async createSingleTurnWorkflow(
     name: string,
     timeout: number = 300,
-    promptTemplate?: string
+    promptTemplate?: string,
+    createdBy?: ID
   ): Promise<ID> {
-    return this.createHumanRelayWorkflow(name, HumanRelayMode.SINGLE, promptTemplate);
+    return this.createHumanRelayWorkflow(name, HumanRelayMode.SINGLE, promptTemplate, createdBy);
   }
 
   /**
@@ -130,34 +200,63 @@ export class HumanRelayWorkflowService {
    * @param timeout 超时时间
    * @param maxHistoryLength 最大历史长度
    * @param promptTemplate 提示词模板
+   * @param createdBy 创建者ID
    * @returns 工作流ID
    */
   public async createMultiTurnWorkflow(
     name: string,
     timeout: number = 600,
     maxHistoryLength: number = 100,
-    promptTemplate?: string
+    promptTemplate?: string,
+    createdBy?: ID
   ): Promise<ID> {
-    const workflowId = await this.createHumanRelayWorkflow(name, HumanRelayMode.MULTI, promptTemplate);
+    try {
+      // 验证创建条件
+      await this.workflowDomainService.validateWorkflowCreation(name, undefined, createdBy);
 
-    // 更新多轮模式的特定配置
-    const workflow = await this.workflowRepository.findById(workflowId);
-    if (workflow) {
-      const humanRelayNodes = Array.from(workflow.getGraph().nodes.values()).filter(
-        (node: any) => node instanceof HumanRelayNode
-      ) as HumanRelayNode[];
+      // 创建工作流配置
+      const config = WorkflowConfig.create({
+        maxExecutionTime: timeout,
+        retryCount: 3,
+        timeoutSeconds: timeout,
+        enableLogging: true,
+        enableMetrics: true,
+        enableCheckpointing: false,
+        checkpointInterval: 300,
+        maxConcurrentThreads: 1,
+        metadata: {
+          type: 'human-relay',
+          mode: HumanRelayMode.MULTI.toString(),
+          promptTemplate: promptTemplate || '',
+          maxHistoryLength: maxHistoryLength
+        }
+      });
 
-      for (const node of humanRelayNodes) {
-        // 更新节点配置
-        const config = node.getConfig();
-        config.maxHistoryLength = maxHistoryLength;
-        config.timeout = timeout;
-      }
+      // 创建工作流
+      const workflow = Workflow.create(
+        name,
+        `HumanRelay 多轮模式工作流`,
+        WorkflowType.fromString('human-relay'),
+        config,
+        createdBy
+      );
 
-      await this.workflowRepository.save(workflow);
+      // 添加标签标识工作流类型
+      workflow.addTag('human-relay', createdBy);
+      workflow.addTag(HumanRelayMode.MULTI.toString(), createdBy);
+
+      // 保存工作流
+      const savedWorkflow = await this.workflowRepository.save(workflow);
+
+      this.logger.info('多轮模式HumanRelay工作流创建成功', { 
+        workflowId: savedWorkflow.workflowId.toString()
+      });
+
+      return savedWorkflow.workflowId;
+    } catch (error) {
+      this.logger.error('创建多轮模式工作流失败', error as Error);
+      throw error;
     }
-
-    return workflowId;
   }
 
   /**
@@ -173,37 +272,34 @@ export class HumanRelayWorkflowService {
     description: string;
     createdAt: Date;
   }>> {
-    const workflows = await this.workflowRepository.findAll();
+    try {
+      const workflows = await this.workflowRepository.findAll();
 
-    return workflows
-      .filter((workflow: Workflow) => {
-        const humanRelayNodes = Array.from(workflow.getGraph().nodes.values()).filter(
-          (node: any) => node instanceof HumanRelayNode
-        ) as HumanRelayNode[];
+      return workflows
+        .filter((workflow: Workflow) => {
+          return this.isHumanRelayWorkflow(workflow);
+        })
+        .filter((workflow: Workflow) => {
+          if (mode !== undefined) {
+            return workflow.tags.includes(mode.toString());
+          }
+          return true;
+        })
+        .map((workflow: Workflow) => {
+          const workflowMode = this.getWorkflowMode(workflow);
 
-        if (humanRelayNodes.length === 0) {
-          return false;
-        }
-
-        if (mode !== undefined) {
-          return humanRelayNodes.some(node => node.getMode() === mode);
-        }
-
-        return true;
-      })
-      .map((workflow: Workflow) => {
-        const humanRelayNode = Array.from(workflow.getGraph().nodes.values()).find(
-          (node: any) => node instanceof HumanRelayNode
-        ) as HumanRelayNode;
-
-        return {
-          id: workflow.workflowId.toString(),
-          name: workflow.name,
-          mode: humanRelayNode?.getMode() || 'unknown',
-          description: workflow.description || '',
-          createdAt: workflow.createdAt.getDate()
-        };
-      });
+          return {
+            id: workflow.workflowId.toString(),
+            name: workflow.name,
+            mode: workflowMode || 'unknown',
+            description: workflow.description || '',
+            createdAt: workflow.createdAt.getDate()
+          };
+        });
+    } catch (error) {
+      this.logger.error('获取工作流列表失败', error as Error);
+      throw error;
+    }
   }
 
   /**
@@ -214,11 +310,28 @@ export class HumanRelayWorkflowService {
    */
   public async deleteWorkflow(workflowId: ID): Promise<boolean> {
     try {
-      await this.workflowRepository.deleteById(workflowId);
+      this.logger.info('正在删除HumanRelay工作流', { workflowId: workflowId.toString() });
+
+      const workflow = await this.workflowRepository.findById(workflowId);
+      if (!workflow) {
+        return false;
+      }
+
+      // 检查工作流状态是否允许删除
+      if (workflow.status.isActive()) {
+        throw new DomainError('无法删除活跃状态的工作流');
+      }
+
+      // 标记工作流为已删除
+      workflow.markAsDeleted();
+      await this.workflowRepository.save(workflow);
+
+      this.logger.info('HumanRelay工作流删除成功', { workflowId: workflowId.toString() });
+
       return true;
     } catch (error) {
-      console.error('删除工作流失败:', error);
-      return false;
+      this.logger.error('删除HumanRelay工作流失败', error as Error);
+      throw error;
     }
   }
 
@@ -242,9 +355,14 @@ export class HumanRelayWorkflowService {
     output?: any;
     error?: string;
   }>> {
-    // 这里应该从实际的执行历史存储中获取数据
-    // 临时返回空数组
-    return [];
+    try {
+      // 这里应该从实际的执行历史存储中获取数据
+      // 临时返回空数组
+      return [];
+    } catch (error) {
+      this.logger.error('获取工作流执行历史失败', error as Error);
+      throw error;
+    }
   }
 
   /**
@@ -259,75 +377,23 @@ export class HumanRelayWorkflowService {
     executionId: string
   ): Promise<boolean> {
     try {
+      this.logger.info('正在取消工作流执行', { 
+        workflowId: workflowId.toString(),
+        executionId 
+      });
+
       await this.workflowOrchestrationService.cancelExecution(executionId);
+
+      this.logger.info('工作流执行取消成功', { 
+        workflowId: workflowId.toString(),
+        executionId 
+      });
+
       return true;
     } catch (error) {
-      console.error('取消工作流执行失败:', error);
-      return false;
+      this.logger.error('取消工作流执行失败', error as Error);
+      throw error;
     }
-  }
-
-  // 私有方法
-
-  /**
-   * 创建工作流定义
-   */
-  private createWorkflowDefinition(
-    name: string,
-    mode: HumanRelayMode,
-    promptTemplate?: string
-  ): Workflow {
-    // 创建工作流定义的具体实现
-    // 这里应该创建包含HumanRelay节点的完整工作流
-
-    const inputNodeId = ID.generate();
-    const humanRelayNodeId = ID.generate();
-    const outputNodeId = ID.generate();
-
-    // 创建HumanRelay节点
-    const humanRelayNode = HumanRelayNode.createSingleMode(
-      humanRelayNodeId,
-      'HumanRelay节点',
-      mode === HumanRelayMode.MULTI ? 600 : 300
-    );
-
-    // 如果有自定义模板，更新节点配置
-    if (promptTemplate) {
-      const config = humanRelayNode.getConfig();
-      config.promptTemplate = promptTemplate;
-    }
-
-    // 创建工作流
-    const workflow = Workflow.create(
-      name,
-      `HumanRelay ${mode} 模式工作流`
-    );
-
-    return workflow;
-  }
-
-  /**
-   * 验证工作流配置
-   */
-  private validateWorkflow(workflow: Workflow): {
-    isValid: boolean;
-    errors: string[];
-  } {
-    const errors: string[] = [];
-
-    // 检查是否包含HumanRelay节点
-    const humanRelayNodes = Array.from(workflow.getGraph().nodes.values()).filter(
-      (node: any) => node instanceof HumanRelayNode
-    ) as HumanRelayNode[];
-
-    if (humanRelayNodes.length === 0) {
-      errors.push('工作流必须包含至少一个HumanRelay节点');
-    }
-
-    return {
-      isValid: errors.length === 0,
-      errors
-    };
   }
 
   /**
@@ -342,28 +408,77 @@ export class HumanRelayWorkflowService {
     failedExecutions: number;
     averageExecutionTime: number;
   }> {
-    const workflows = await this.workflowRepository.findAll();
-    const humanRelayWorkflows = workflows.filter((workflow: Workflow) => {
-      return Array.from(workflow.getGraph().nodes.values()).some((node: any) => node instanceof HumanRelayNode);
-    });
+    try {
+      const workflows = await this.workflowRepository.findAll();
+      const humanRelayWorkflows = workflows.filter((workflow: Workflow) => {
+        return this.isHumanRelayWorkflow(workflow);
+      });
 
-    const singleModeCount = humanRelayWorkflows.filter((workflow: Workflow) => {
-      const humanRelayNode = Array.from(workflow.getGraph().nodes.values()).find((node: any) => node instanceof HumanRelayNode) as HumanRelayNode;
-      return humanRelayNode?.getMode() === HumanRelayMode.SINGLE;
-    }).length;
+      const singleModeCount = humanRelayWorkflows.filter((workflow: Workflow) => {
+        return workflow.tags.includes(HumanRelayMode.SINGLE.toString());
+      }).length;
 
-    const multiModeCount = humanRelayWorkflows.length - singleModeCount;
+      const multiModeCount = humanRelayWorkflows.filter((workflow: Workflow) => {
+        return workflow.tags.includes(HumanRelayMode.MULTI.toString());
+      }).length;
 
-    // 这里应该从实际的执行统计中获取数据
-    // 临时返回默认值
+      // 这里应该从实际的执行统计中获取数据
+      // 临时返回默认值
+      return {
+        totalWorkflows: humanRelayWorkflows.length,
+        singleModeWorkflows: singleModeCount,
+        multiModeWorkflows: multiModeCount,
+        totalExecutions: 0,
+        successfulExecutions: 0,
+        failedExecutions: 0,
+        averageExecutionTime: 0
+      };
+    } catch (error) {
+      this.logger.error('获取工作流统计信息失败', error as Error);
+      throw error;
+    }
+  }
+
+  // 私有方法
+
+  /**
+   * 检查工作流是否为HumanRelay类型
+   */
+  private isHumanRelayWorkflow(workflow: Workflow): boolean {
+    return workflow.tags.includes('human-relay') || 
+           workflow.type.toString() === 'human-relay';
+  }
+
+  /**
+   * 获取工作流模式
+   */
+  private getWorkflowMode(workflow: Workflow): string | null {
+    if (workflow.tags.includes(HumanRelayMode.SINGLE.toString())) {
+      return HumanRelayMode.SINGLE.toString();
+    }
+    if (workflow.tags.includes(HumanRelayMode.MULTI.toString())) {
+      return HumanRelayMode.MULTI.toString();
+    }
+    return null;
+  }
+
+  /**
+   * 验证工作流配置
+   */
+  private validateWorkflow(workflow: Workflow): {
+    isValid: boolean;
+    errors: string[];
+  } {
+    const errors: string[] = [];
+
+    // 检查是否为HumanRelay类型
+    if (!this.isHumanRelayWorkflow(workflow)) {
+      errors.push('工作流必须是HumanRelay类型');
+    }
+
     return {
-      totalWorkflows: humanRelayWorkflows.length,
-      singleModeWorkflows: singleModeCount,
-      multiModeWorkflows: multiModeCount,
-      totalExecutions: 0,
-      successfulExecutions: 0,
-      failedExecutions: 0,
-      averageExecutionTime: 0
+      isValid: errors.length === 0,
+      errors
     };
   }
 }

@@ -1,17 +1,12 @@
 import { injectable, inject } from 'inversify';
-import { WorkflowRepository as IWorkflowRepository, WorkflowQueryOptions } from '../../../../domain/workflow/repositories/workflow-repository';
+import { WorkflowRepository as IWorkflowRepository } from '../../../../domain/workflow/repositories/workflow-repository';
 import { Workflow } from '../../../../domain/workflow/entities/workflow';
 import { WorkflowDefinition } from '../../../../domain/workflow/value-objects/workflow-definition';
-import { WorkflowGraph } from '../../../../domain/workflow/entities/workflow-graph';
-import { WorkflowExecutor } from '../../../../domain/workflow/services/workflow-execution-service';
 import { GraphValidationService } from '../../../../domain/workflow/interfaces/graph-validation-service.interface';
 import { ID } from '../../../../domain/common/value-objects/id';
 import { WorkflowStatus } from '../../../../domain/workflow/value-objects/workflow-status';
 import { WorkflowType } from '../../../../domain/workflow/value-objects/workflow-type';
-import { NodeType } from '../../../../domain/workflow/value-objects/node-type';
-import { EdgeType } from '../../../../domain/workflow/value-objects/edge-type';
 import { WorkflowModel } from '../../models/workflow.model';
-import { IQueryOptions, PaginatedResult } from '../../../../domain/common/repositories/repository';
 import { RepositoryError } from '../../../../domain/common/errors/repository-error';
 import { In } from 'typeorm';
 import { BaseRepository, QueryOptions } from '../../base/base-repository';
@@ -72,21 +67,16 @@ export class WorkflowConverterRepository extends BaseRepository<Workflow, Workfl
         updatedBy: model.updatedBy ? OptionalIdConverter.fromStorage(model.updatedBy) : undefined
       });
 
-      // 创建工作流图
-      const graph = WorkflowGraph.fromProps({
-        workflowId: IdConverter.fromStorage(model.id),
+      // 创建工作流图数据
+      const graph = {
         nodes: new Map(),
         edges: new Map()
-      });
-
-      // 创建工作流执行器
-      const executor = new WorkflowExecutor(definition, graph, this.graphValidationService);
+      };
 
       const workflowProps = {
         id: IdConverter.fromStorage(model.id),
         definition,
         graph,
-        executor,
         createdAt: TimestampConverter.fromStorage(model.createdAt),
         updatedAt: TimestampConverter.fromStorage(model.updatedAt),
         version: VersionConverter.fromStorage(model.revision),
@@ -144,230 +134,106 @@ export class WorkflowConverterRepository extends BaseRepository<Workflow, Workfl
   /**
    * 根据名称查找工作流
    */
-  async findByName(name: string, options?: WorkflowQueryOptions): Promise<Workflow[]> {
+  async findByName(name: string): Promise<Workflow[]> {
     return this.find({
       customConditions: (qb: any) => {
         qb.andWhere('workflow.name = :name', { name });
-        this.applyCommonConditions(qb, options);
-      },
-      sortBy: options?.sortBy || 'createdAt',
-      sortOrder: options?.sortOrder || 'desc',
-      limit: options?.limit,
-      offset: options?.offset
+      }
     });
   }
 
   /**
    * 根据状态查找工作流
    */
-  async findByStatus(status: WorkflowStatus, options?: WorkflowQueryOptions): Promise<Workflow[]> {
+  async findByStatus(status: WorkflowStatus): Promise<Workflow[]> {
     return this.find({
       customConditions: (qb: any) => {
         qb.andWhere('workflow.state = :state', { state: this.mapStatusToState(status) });
-        this.applyCommonConditions(qb, options);
-      },
-      sortBy: options?.sortBy || 'createdAt',
-      sortOrder: options?.sortOrder || 'desc',
-      limit: options?.limit,
-      offset: options?.offset
+      }
     });
   }
 
   /**
    * 根据类型查找工作流
    */
-  async findByType(type: WorkflowType, options?: WorkflowQueryOptions): Promise<Workflow[]> {
+  async findByType(type: WorkflowType): Promise<Workflow[]> {
     return this.find({
       customConditions: (qb: any) => {
         qb.andWhere('workflow.executionMode = :type', { type: this.mapTypeToExecutionMode(type) });
-        this.applyCommonConditions(qb, options);
-      },
-      sortBy: options?.sortBy || 'createdAt',
-      sortOrder: options?.sortOrder || 'desc',
-      limit: options?.limit,
-      offset: options?.offset
+      }
     });
   }
 
   /**
    * 根据标签查找工作流
    */
-  async findByTags(tags: string[], options?: WorkflowQueryOptions): Promise<Workflow[]> {
+  async findByTags(tags: string[]): Promise<Workflow[]> {
     return this.find({
       customConditions: (qb: any) => {
         qb.andWhere('workflow.metadata->>\'tags\' @> :tags', { tags: JSON.stringify(tags) });
-        this.applyCommonConditions(qb, options);
-      },
-      sortBy: options?.sortBy || 'createdAt',
-      sortOrder: options?.sortOrder || 'desc',
-      limit: options?.limit,
-      offset: options?.offset
+      }
     });
   }
 
   /**
    * 根据创建者查找工作流
    */
-  async findByCreatedBy(createdBy: ID, options?: WorkflowQueryOptions): Promise<Workflow[]> {
+  async findByCreatedBy(createdBy: ID): Promise<Workflow[]> {
     return this.find({
       customConditions: (qb: any) => {
         qb.andWhere('workflow.createdBy = :createdBy', { createdBy: createdBy.value });
-        this.applyCommonConditions(qb, options);
-      },
-      sortBy: options?.sortBy || 'createdAt',
-      sortOrder: options?.sortOrder || 'desc',
-      limit: options?.limit,
-      offset: options?.offset
+      }
     });
   }
 
   /**
    * 查找草稿工作流
    */
-  async findDraftWorkflows(options?: WorkflowQueryOptions): Promise<Workflow[]> {
-    return this.findByStatus(WorkflowStatus.draft(), options);
+  async findDraftWorkflows(): Promise<Workflow[]> {
+    return this.findByStatus(WorkflowStatus.draft());
   }
 
   /**
    * 查找活跃工作流
    */
-  async findActiveWorkflows(options?: WorkflowQueryOptions): Promise<Workflow[]> {
-    return this.findByStatus(WorkflowStatus.active(), options);
+  async findActiveWorkflows(): Promise<Workflow[]> {
+    return this.findByStatus(WorkflowStatus.active());
   }
 
   /**
    * 查找非活跃工作流
    */
-  async findInactiveWorkflows(options?: WorkflowQueryOptions): Promise<Workflow[]> {
-    return this.findByStatus(WorkflowStatus.inactive(), options);
+  async findInactiveWorkflows(): Promise<Workflow[]> {
+    return this.findByStatus(WorkflowStatus.inactive());
   }
 
   /**
    * 查找已归档工作流
    */
-  async findArchivedWorkflows(options?: WorkflowQueryOptions): Promise<Workflow[]> {
-    return this.findByStatus(WorkflowStatus.archived(), options);
+  async findArchivedWorkflows(): Promise<Workflow[]> {
+    return this.findByStatus(WorkflowStatus.archived());
   }
 
   /**
    * 根据名称搜索工作流
    */
-  async searchByName(name: string, options?: WorkflowQueryOptions): Promise<Workflow[]> {
+  async searchByName(name: string): Promise<Workflow[]> {
     return this.find({
       customConditions: (qb: any) => {
         qb.andWhere('workflow.name LIKE :name', { name: `%${name}%` });
-        this.applyCommonConditions(qb, options);
-      },
-      sortBy: options?.sortBy || 'createdAt',
-      sortOrder: options?.sortOrder || 'desc',
-      limit: options?.limit,
-      offset: options?.offset
+      }
     });
   }
 
   /**
    * 根据描述搜索工作流
    */
-  async searchByDescription(description: string, options?: WorkflowQueryOptions): Promise<Workflow[]> {
+  async searchByDescription(description: string): Promise<Workflow[]> {
     return this.find({
       customConditions: (qb: any) => {
         qb.andWhere('workflow.description LIKE :description', { description: `%${description}%` });
-        this.applyCommonConditions(qb, options);
-      },
-      sortBy: options?.sortBy || 'createdAt',
-      sortOrder: options?.sortOrder || 'desc',
-      limit: options?.limit,
-      offset: options?.offset
+      }
     });
-  }
-
-  /**
-   * 分页查询工作流
-   */
-  override async findWithPagination(options: WorkflowQueryOptions): Promise<PaginatedResult<Workflow>> {
-    const queryOptions: QueryOptions<WorkflowModel> = {
-      customConditions: (qb: any) => {
-        this.applyCommonConditions(qb, options);
-
-        if (options?.minExecutionCount) {
-          qb.andWhere('workflow.metadata->>\'executionCount\' >= :minExecutionCount', {
-            minExecutionCount: options.minExecutionCount
-          });
-        }
-
-        if (options?.maxExecutionCount) {
-          qb.andWhere('workflow.metadata->>\'executionCount\' <= :maxExecutionCount', {
-            maxExecutionCount: options.maxExecutionCount
-          });
-        }
-      },
-      sortBy: options?.sortBy || 'createdAt',
-      sortOrder: options?.sortOrder || 'desc',
-      limit: options?.limit || 20,
-      offset: options?.offset || 0
-    };
-
-    return super.findWithPagination(queryOptions);
-  }
-
-  /**
-   * 统计指定状态的工作流数量
-   */
-  async countByStatus(status: WorkflowStatus, options?: WorkflowQueryOptions): Promise<number> {
-    const connection = await this.connectionManager.getConnection();
-    const repository = connection.getRepository(WorkflowModel);
-
-    const queryBuilder = repository.createQueryBuilder('workflow')
-      .where('workflow.state = :state', { state: this.mapStatusToState(status) });
-
-    this.applyCommonConditions(queryBuilder, options);
-
-    return await queryBuilder.getCount();
-  }
-
-  /**
-   * 统计指定类型的工作流数量
-   */
-  async countByType(type: WorkflowType, options?: WorkflowQueryOptions): Promise<number> {
-    const connection = await this.connectionManager.getConnection();
-    const repository = connection.getRepository(WorkflowModel);
-
-    const queryBuilder = repository.createQueryBuilder('workflow')
-      .where('workflow.executionMode = :type', { type: this.mapTypeToExecutionMode(type) });
-
-    this.applyCommonConditions(queryBuilder, options);
-
-    return await queryBuilder.getCount();
-  }
-
-  /**
-   * 统计指定创建者的工作流数量
-   */
-  async countByCreatedBy(createdBy: ID, options?: WorkflowQueryOptions): Promise<number> {
-    const connection = await this.connectionManager.getConnection();
-    const repository = connection.getRepository(WorkflowModel);
-
-    const queryBuilder = repository.createQueryBuilder('workflow')
-      .where('workflow.createdBy = :createdBy', { createdBy: createdBy.value });
-
-    this.applyCommonConditions(queryBuilder, options);
-
-    return await queryBuilder.getCount();
-  }
-
-  /**
-   * 统计包含指定标签的工作流数量
-   */
-  async countByTags(tags: string[], options?: WorkflowQueryOptions): Promise<number> {
-    const connection = await this.connectionManager.getConnection();
-    const repository = connection.getRepository(WorkflowModel);
-
-    const queryBuilder = repository.createQueryBuilder('workflow')
-      .where('workflow.metadata->>\'tags\' @> :tags', { tags: JSON.stringify(tags) });
-
-    this.applyCommonConditions(queryBuilder, options);
-
-    return await queryBuilder.getCount();
   }
 
   /**
@@ -391,11 +257,10 @@ export class WorkflowConverterRepository extends BaseRepository<Workflow, Workfl
   /**
    * 获取最活跃的工作流
    */
-  async getMostActiveWorkflows(limit: number, options?: WorkflowQueryOptions): Promise<Workflow[]> {
+  async getMostActiveWorkflows(limit: number): Promise<Workflow[]> {
     return this.find({
       customConditions: (qb: any) => {
         qb.orderBy('workflow.metadata->>\'executionCount\'', 'DESC');
-        this.applyCommonConditions(qb, options);
       },
       limit
     });
@@ -404,11 +269,10 @@ export class WorkflowConverterRepository extends BaseRepository<Workflow, Workfl
   /**
    * 获取最近创建的工作流
    */
-  async getRecentlyCreatedWorkflows(limit: number, options?: WorkflowQueryOptions): Promise<Workflow[]> {
+  async getRecentlyCreatedWorkflows(limit: number): Promise<Workflow[]> {
     return this.find({
       customConditions: (qb: any) => {
         qb.orderBy('workflow.createdAt', 'DESC');
-        this.applyCommonConditions(qb, options);
       },
       limit
     });
@@ -417,11 +281,10 @@ export class WorkflowConverterRepository extends BaseRepository<Workflow, Workfl
   /**
    * 获取最复杂的工作流
    */
-  async getMostComplexWorkflows(limit: number, options?: WorkflowQueryOptions): Promise<Workflow[]> {
+  async getMostComplexWorkflows(limit: number): Promise<Workflow[]> {
     return this.find({
       customConditions: (qb: any) => {
         qb.orderBy('(workflow.metadata->>\'nodeCount\' + workflow.metadata->>\'edgeCount\')', 'DESC');
-        this.applyCommonConditions(qb, options);
       },
       limit
     });
@@ -516,103 +379,46 @@ export class WorkflowConverterRepository extends BaseRepository<Workflow, Workfl
   /**
    * 查找软删除的工作流
    */
-  override async findSoftDeleted(options?: WorkflowQueryOptions): Promise<Workflow[]> {
+  override async findSoftDeleted(): Promise<Workflow[]> {
     return this.find({
       customConditions: (qb) => {
         qb.andWhere('workflow.isDeleted = true');
-        this.applyCommonConditions(qb, options);
-      },
-      sortBy: options?.sortBy || 'updatedAt',
-      sortOrder: options?.sortOrder || 'desc',
-      limit: options?.limit,
-      offset: options?.offset
+      }
     });
   }
 
   /**
    * 根据节点ID查找工作流
    */
-  async findByNodeId(nodeId: ID, options?: WorkflowQueryOptions): Promise<Workflow[]> {
+  async findByNodeId(nodeId: ID): Promise<Workflow[]> {
     return this.find({
       customConditions: (qb: any) => {
         qb.andWhere('workflow.metadata->>\'nodeIds\' @> :nodeId', { nodeId: JSON.stringify([nodeId.value]) });
-        this.applyCommonConditions(qb, options);
-      },
-      sortBy: options?.sortBy || 'createdAt',
-      sortOrder: options?.sortOrder || 'desc',
-      limit: options?.limit,
-      offset: options?.offset
+      }
     });
   }
 
   /**
    * 根据边ID查找工作流
    */
-  async findByEdgeId(edgeId: ID, options?: WorkflowQueryOptions): Promise<Workflow[]> {
+  async findByEdgeId(edgeId: ID): Promise<Workflow[]> {
     return this.find({
       customConditions: (qb: any) => {
         qb.andWhere('workflow.metadata->>\'edgeIds\' @> :edgeId', { edgeId: JSON.stringify([edgeId.value]) });
-        this.applyCommonConditions(qb, options);
-      },
-      sortBy: options?.sortBy || 'createdAt',
-      sortOrder: options?.sortOrder || 'desc',
-      limit: options?.limit,
-      offset: options?.offset
-    });
-  }
-
-  /**
-   * 根据节点类型查找工作流
-   */
-  async findByNodeType(nodeType: NodeType, options?: WorkflowQueryOptions): Promise<Workflow[]> {
-    return this.find({
-      customConditions: (qb: any) => {
-        qb.andWhere('workflow.metadata->>\'nodeTypes\' @> :nodeType', { nodeType: JSON.stringify([nodeType.value]) });
-        this.applyCommonConditions(qb, options);
-      },
-      sortBy: options?.sortBy || 'createdAt',
-      sortOrder: options?.sortOrder || 'desc',
-      limit: options?.limit,
-      offset: options?.offset
-    });
-  }
-
-  /**
-   * 根据边类型查找工作流
-   */
-  async findByEdgeType(edgeType: EdgeType, options?: WorkflowQueryOptions): Promise<Workflow[]> {
-    return this.find({
-      customConditions: (qb: any) => {
-        qb.andWhere('workflow.metadata->>\'edgeTypes\' @> :edgeType', { edgeType: JSON.stringify([edgeType.value]) });
-        this.applyCommonConditions(qb, options);
-      },
-      sortBy: options?.sortBy || 'createdAt',
-      sortOrder: options?.sortOrder || 'desc',
-      limit: options?.limit,
-      offset: options?.offset
+      }
     });
   }
 
   /**
    * 获取工作流标签统计信息
    */
-  async getWorkflowTagStats(options?: WorkflowQueryOptions): Promise<Record<string, number>> {
+  async getWorkflowTagStats(): Promise<Record<string, number>> {
     const connection = await this.connectionManager.getConnection();
     const repository = connection.getRepository(WorkflowModel);
 
-    const queryBuilder = repository.createQueryBuilder('workflow')
+    const stats = await repository.createQueryBuilder('workflow')
       .select("jsonb_array_elements_text(workflow.metadata->'tags')", 'tag')
-      .addSelect('COUNT(*)', 'count');
-
-    if (options?.includeDeleted === false) {
-      queryBuilder.andWhere('workflow.isDeleted = false');
-    }
-
-    if (options?.createdBy) {
-      queryBuilder.andWhere('workflow.createdBy = :createdBy', { createdBy: options.createdBy });
-    }
-
-    const stats = await queryBuilder
+      .addSelect('COUNT(*)', 'count')
       .groupBy('tag')
       .orderBy('count', 'DESC')
       .getRawMany();
@@ -623,31 +429,6 @@ export class WorkflowConverterRepository extends BaseRepository<Workflow, Workfl
     });
 
     return result;
-  }
-
-  /**
-   * 应用通用查询条件
-   */
-  private applyCommonConditions(qb: any, options?: WorkflowQueryOptions): void {
-    if (options?.includeDeleted === false) {
-      qb.andWhere('workflow.isDeleted = false');
-    }
-
-    if (options?.name) {
-      qb.andWhere('workflow.name LIKE :name', { name: `%${options.name}%` });
-    }
-
-    if (options?.status) {
-      qb.andWhere('workflow.state = :status', { status: options.status });
-    }
-
-    if (options?.type) {
-      qb.andWhere('workflow.executionMode = :type', { type: options.type });
-    }
-
-    if (options?.createdBy) {
-      qb.andWhere('workflow.createdBy = :createdBy', { createdBy: options.createdBy });
-    }
   }
 
   private mapStatusToState(status: WorkflowStatus): string {
