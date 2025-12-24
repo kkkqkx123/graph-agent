@@ -11,7 +11,20 @@ export interface ExecutionContext {
   executionId: string;
   workflowId: string;
   data: Record<string, any>;
+  workflowState?: any;
+  executionHistory?: any[];
   metadata?: Record<string, any>;
+  startTime?: Date;
+  status?: string;
+  getVariable: (path: string) => any;
+  setVariable: (path: string, value: any) => void;
+  getAllVariables: () => Record<string, any>;
+  getAllMetadata: () => Record<string, any>;
+  getInput: () => Record<string, any>;
+  getExecutedNodes: () => string[];
+  getNodeResult: (nodeId: string) => any;
+  getElapsedTime: () => number;
+  getWorkflow: () => any;
 }
 
 /**
@@ -167,7 +180,50 @@ export class ThreadCoordinatorInfrastructureService {
         ...parentContext.data,
         forkPoint,
         parentThreadId: parentThreadId.toString()
-      }
+      },
+      workflowState: parentContext.workflowState,
+      executionHistory: parentContext.executionHistory,
+      metadata: parentContext.metadata,
+      startTime: new Date(),
+      status: 'pending',
+      getVariable: (path: string) => {
+        const keys = path.split('.');
+        let value: any = parentContext.data || {};
+        for (const key of keys) {
+          value = value?.[key];
+        }
+        return value;
+      },
+      setVariable: (path: string, value: any) => {
+        const keys = path.split('.');
+        let current: any = parentContext.data || {};
+        for (let i = 0; i < keys.length - 1; i++) {
+          const key = keys[i];
+          if (key && current[key] === undefined) {
+            current[key] = {};
+          }
+          if (key) {
+            current = current[key];
+          }
+        }
+        const lastKey = keys[keys.length - 1];
+        if (lastKey) {
+          current[lastKey] = value;
+        }
+      },
+      getAllVariables: () => parentContext.data || {},
+      getAllMetadata: () => parentContext.metadata || {},
+      getInput: () => parentContext.data || {},
+      getExecutedNodes: () => parentContext.executionHistory?.map((h: any) => h.nodeId) || [],
+      getNodeResult: (nodeId: string) => {
+        const history = parentContext.executionHistory || [];
+        const nodeHistory = history.find((h: any) => h.nodeId === nodeId);
+        return nodeHistory?.result;
+      },
+      getElapsedTime: () => {
+        return Date.now() - (parentContext.startTime?.getTime() || Date.now());
+      },
+      getWorkflow: () => parentContext.getWorkflow()
     };
     
     await this.createThreadExecution(childDefinition.id, childContext);

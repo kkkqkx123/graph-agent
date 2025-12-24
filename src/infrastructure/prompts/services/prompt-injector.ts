@@ -1,16 +1,15 @@
 /**
- * 提示词注入器实现
+ * 提示词注入器
  */
 
 import { ILogger } from '../../../domain/common/types/logger-types';
-import { IPromptInjector } from '../../../domain/prompts/interfaces/prompt-injector.interface';
-import { IPromptLoader } from '../../../domain/prompts/interfaces/prompt-loader.interface';
 import { PromptConfig } from '../../../domain/prompts/entities/prompt';
 import { WorkflowState } from '../../../domain/workflow/state/workflow-state';
+import { PromptLoader } from './prompt-loader';
 
-export class PromptInjector implements IPromptInjector {
+export class PromptInjector {
   constructor(
-    private readonly promptLoader: IPromptLoader,
+    private readonly promptLoader: PromptLoader,
     private readonly logger: ILogger
   ) {}
 

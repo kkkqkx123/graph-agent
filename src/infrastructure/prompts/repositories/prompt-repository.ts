@@ -1,17 +1,36 @@
 /**
- * 提示词仓库实现
- * 
+ * 提示词仓库
+ *
  * 基于配置管理器存储提示词。
  */
 
 import { IConfigManager, ILogger } from '../../../domain/common/types';
-import { IPromptRepository, PromptSearchCriteria } from '../../../domain/prompts/interfaces/prompt-repository.interface';
 import { Prompt } from '../../../domain/prompts/entities/prompt';
 import { PromptId } from '../../../domain/prompts/value-objects/prompt-id';
 import { PromptType, inferPromptTypeFromCategory } from '../../../domain/prompts/value-objects/prompt-type';
 import { PromptStatus } from '../../../domain/prompts/value-objects/prompt-status';
 
-export class PromptRepository implements IPromptRepository {
+/**
+ * 提示词搜索条件
+ */
+export interface PromptSearchCriteria {
+  query?: string;
+  type?: string;
+  status?: string;
+  category?: string;
+  tags?: string[];
+  tagsMatchAll?: boolean;
+  createdAfter?: Date;
+  createdBefore?: Date;
+  updatedAfter?: Date;
+  updatedBefore?: Date;
+  offset?: number;
+  limit?: number;
+  sortBy?: string;
+  sortOrder?: 'asc' | 'desc';
+}
+
+export class PromptRepository {
   constructor(
     private readonly configManager: IConfigManager,
     private readonly logger: ILogger

@@ -1,17 +1,21 @@
-// 基础类
-export { BaseWorkflowFunction } from './base/base-workflow-function';
+/**
+ * 工作流函数模块导出
+ */
+
+// 执行器
+export { FunctionExecutor } from './executors/function-executor';
 
 // 注册表
 export { FunctionRegistry } from './registry/function-registry';
 
 // 内置函数
-export * from './builtin';
+export * from './builtin/index';
 
-// 加载器
-export { WorkflowFunctionLoader } from './loaders/workflow-function-loader';
-
-// 集合
-export { BuiltinFunctionCollection } from './collections/builtin-function-collection';
-
-// 工厂
-export { WorkflowFunctionFactory } from './factories/workflow-function-factory';
+// 公共接口
+export interface BaseWorkflowFunction {
+  readonly id: string;
+  readonly name: string;
+  readonly type: string;
+  readonly description?: string;
+  readonly metadata?: Record<string, any>;
+}

@@ -2,9 +2,9 @@
  * 提示词服务
  */
 
-import { IPromptRepository } from '../../../domain/prompts/interfaces/prompt-repository.interface';
-import { IPromptLoader } from '../../../domain/prompts/interfaces/prompt-loader.interface';
-import { IPromptInjector } from '../../../domain/prompts/interfaces/prompt-injector.interface';
+import { PromptRepository, PromptSearchCriteria } from '../../../infrastructure/prompts/repositories/prompt-repository';
+import { PromptLoader } from '../../../infrastructure/prompts/services/prompt-loader';
+import { PromptInjector } from '../../../infrastructure/prompts/services/prompt-injector';
 import { Prompt } from '../../../domain/prompts/entities/prompt';
 import { PromptId } from '../../../domain/prompts/value-objects/prompt-id';
 import { PromptConfig } from '../../../domain/prompts/entities/prompt';
@@ -12,9 +12,9 @@ import { WorkflowState } from '../../../domain/workflow/state/workflow-state';
 
 export class PromptService {
   constructor(
-    private readonly promptRepository: IPromptRepository,
-    private readonly promptLoader: IPromptLoader,
-    private readonly promptInjector: IPromptInjector
+    private readonly promptRepository: PromptRepository,
+    private readonly promptLoader: PromptLoader,
+    private readonly promptInjector: PromptInjector
   ) {}
 
   /**
@@ -48,7 +48,7 @@ export class PromptService {
   /**
    * 搜索提示词
    */
-  async searchPrompts(criteria: any): Promise<Prompt[]> {
+  async searchPrompts(criteria: PromptSearchCriteria): Promise<Prompt[]> {
     // 简化搜索，使用仓库的搜索方法
     return this.promptRepository.search(criteria);
   }

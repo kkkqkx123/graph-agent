@@ -3,5 +3,4 @@
  */
 
 export { ApplicationContainer } from './application-container';
-// TODO: 实现缺失的绑定文件
-// export * from './bindings';
+export * from './bindings/application-bindings';

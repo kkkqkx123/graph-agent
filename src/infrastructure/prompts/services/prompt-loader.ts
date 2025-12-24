@@ -1,11 +1,10 @@
 /**
- * 提示词加载器实现
+ * 提示词加载器
  */
 
 import { IConfigManager, ILogger } from '../../../domain/common/types';
-import { IPromptLoader } from '../../../domain/prompts/interfaces/prompt-loader.interface';
 
-export class PromptLoaderImpl implements IPromptLoader {
+export class PromptLoader {
   constructor(
     private readonly configManager: IConfigManager,
     private readonly logger: ILogger

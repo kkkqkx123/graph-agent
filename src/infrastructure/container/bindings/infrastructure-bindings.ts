@@ -7,6 +7,7 @@ import { ILogger } from '../../../domain/common/types';
 import { LoggerFactory, LoggerConfigManager } from '../../logging';
 import { InfrastructureRepositoryBindings } from './infrastructure-repository-bindings';
 import { ConfigLoadingBindings } from './config-loading-bindings';
+import { InfrastructurePromptsBindings } from './infrastructure-prompts-bindings';
 
 /**
  * 日志服务绑定
@@ -57,6 +58,10 @@ export class ConfigServiceBindings extends ServiceBindings {
     // 注册配置加载绑定
     const configLoadingBindings = new ConfigLoadingBindings();
     configLoadingBindings.registerServices(container, config);
+
+    // 注册提示词服务绑定
+    const promptsBindings = new InfrastructurePromptsBindings();
+    promptsBindings.registerServices(container, config);
 
     // 注册LLM服务绑定
     const { InfrastructureLLMServiceBindings } = require('./infrastructure-llm-bindings');

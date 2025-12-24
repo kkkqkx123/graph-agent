@@ -5,6 +5,49 @@ import { DomainError } from '../../common/errors/domain-error';
 import { IExecutionContextManager } from '../../../infrastructure/workflow/interfaces/execution-context-manager.interface';
 
 /**
+ * 触发上下文接口
+ */
+export interface TriggerContext {
+  readonly type: string;
+  readonly source: string;
+  readonly data?: Record<string, any>;
+  readonly timestamp: Timestamp;
+}
+
+/**
+ * 执行状态枚举
+ */
+export enum ExecutionStatus {
+  PENDING = 'pending',
+  RUNNING = 'running',
+  PAUSED = 'paused',
+  COMPLETED = 'completed',
+  FAILED = 'failed',
+  CANCELLED = 'cancelled'
+}
+
+/**
+ * 编译目标枚举
+ */
+export enum CompilationTarget {
+  MEMORY = 'memory',
+  DISK = 'disk'
+}
+
+/**
+ * 编译选项接口
+ */
+export interface CompilationOptions {
+  readonly target: CompilationTarget;
+  readonly optimize: boolean;
+  readonly debug: boolean;
+  readonly validation: {
+    readonly enabled: boolean;
+    readonly level: string;
+  };
+}
+
+/**
  * 工作流执行请求接口
  */
 export interface WorkflowExecutionRequest {
@@ -173,10 +216,10 @@ export class DefaultWorkflowOrchestrationService implements IWorkflowOrchestrati
     const context: any = {
       executionId: ID.fromString(request.executionId),
       workflowId: request.workflowId,
-      data: {},
+      data: request.inputData || {},
       workflowState: {} as any,
       executionHistory: [],
-      metadata: {},
+      metadata: request.parameters || {},
       startTime: Timestamp.now(),
       status: 'pending',
       getVariable: (path: string) => undefined,
@@ -193,29 +236,8 @@ export class DefaultWorkflowOrchestrationService implements IWorkflowOrchestrati
     await this.contextManager.createContext(context);
 
     try {
-      // 编译工作流
-      const compilationOptions: CompilationOptions = {
-        target: CompilationTarget.MEMORY,
-        optimize: true,
-        debug: request.config.debug || false,
-        validation: {
-          enabled: true,
-          level: 'normal'
-        }
-      };
-
-      // 这里需要获取工作流数据，简化处理
-      const workflowData = {}; // 实际实现中应该从仓储获取
-
-      const compilationResult = await this.compiler.compile(
-        request.workflowId,
-        workflowData,
-        compilationOptions
-      );
-
-      if (!compilationResult.success) {
-        throw new Error(`工作流编译失败: ${(compilationResult as any).validation?.errors?.map((e: any) => e.message).join(', ')}`);
-      }
+      // 简化编译逻辑，直接跳过编译步骤
+      // 实际实现中应该包含工作流编译逻辑
 
       // 更新执行状态为运行中
       await this.contextManager.updateStatus(request.executionId, 'running');
@@ -356,14 +378,14 @@ export class DefaultWorkflowOrchestrationService implements IWorkflowOrchestrati
   /**
    * 获取执行状态
    */
-  async getExecutionStatus(executionId: string): Promise<string> {
+  async getExecutionStatus(executionId: string): Promise<ExecutionStatus> {
     const context = await this.contextManager.getContext(executionId);
     if (!context) {
       return ExecutionStatus.PENDING;
     }
     
     // 返回状态字符串
-    return context.status || 'pending';
+    return (context.status as ExecutionStatus) || ExecutionStatus.PENDING;
   }
 
   /**

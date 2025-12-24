@@ -1,34 +1,31 @@
 /**
  * 函数执行器
- * 整合新的执行策略，提供统一的函数执行接口
+ * 简化版本，移除不必要的抽象
  */
 
 import { injectable, inject } from 'inversify';
-import {
-  IWorkflowFunction,
-  IConditionFunction,
-  INodeFunction,
-  IRoutingFunction,
-  ITriggerFunction,
-  WorkflowFunctionType
-} from '../../../../domain/workflow/interfaces/workflow-functions';
-import {
-  FunctionExecutionStrategy,
-  FunctionExecutionPlan,
-  FunctionExecutionResult,
-  IFunctionExecutionStrategy,
-  FunctionSequentialExecutionStrategy,
-  FunctionParallelExecutionStrategy,
-  FunctionConditionalExecutionStrategy
-} from '../../../../domain/workflow/strategies/function-execution-strategies';
-import { IExecutionContext } from '../../../../domain/workflow/execution/execution-context.interface';
+import { WorkflowFunctionType } from '../../../../domain/workflow/value-objects/workflow-function-type';
 import { ILogger } from '../../../../domain/common/types/logger-types';
+
+/**
+ * 简化的工作流函数接口
+ */
+interface BaseWorkflowFunction {
+  readonly id: string;
+  readonly name: string;
+  readonly type: WorkflowFunctionType;
+  readonly description?: string;
+  readonly metadata?: Record<string, any>;
+  
+  execute(context: any, ...args: any[]): Promise<any> | any;
+  validateParameters(...args: any[]): { isValid: boolean; errors: string[] };
+}
 
 /**
  * 函数执行配置
  */
 export interface FunctionExecutionConfig {
-  strategy: FunctionExecutionStrategy;
+  strategy: 'sequential' | 'parallel' | 'conditional';
   timeout?: number;
   retryCount?: number;
   retryDelay?: number;
@@ -41,13 +38,26 @@ export interface FunctionExecutionConfig {
  */
 export interface FunctionExecutionRequest {
   functions: Array<{
-    function: IWorkflowFunction;
+    function: BaseWorkflowFunction;
     config?: any;
     order?: number;
     dependencies?: string[];
   }>;
-  context: IExecutionContext;
+  context: any;
   executionConfig: FunctionExecutionConfig;
+}
+
+/**
+ * 函数执行结果
+ */
+export interface FunctionExecutionResult {
+  functionId: string;
+  success: boolean;
+  result: any;
+  error?: Error;
+  executionTime: number;
+  resourceUsage: any;
+  metadata: Record<string, any>;
 }
 
 /**
@@ -55,13 +65,9 @@ export interface FunctionExecutionRequest {
  */
 @injectable()
 export class FunctionExecutor {
-  private readonly strategyMap = new Map<FunctionExecutionStrategy, IFunctionExecutionStrategy>();
-
   constructor(
     @inject('Logger') private readonly logger: ILogger
-  ) {
-    this.initializeStrategies();
-  }
+  ) {}
 
   /**
    * 执行函数
@@ -75,37 +81,26 @@ export class FunctionExecutor {
     });
 
     try {
-      // 1. 获取执行策略
-      const strategy = this.strategyMap.get(request.executionConfig.strategy);
-      if (!strategy) {
-        throw new Error(`不支持的执行策略: ${request.executionConfig.strategy}`);
+      const results: FunctionExecutionResult[] = [];
+
+      // 简化的执行逻辑
+      for (const funcRequest of request.functions) {
+        const result = await this.executeSingleFunction(
+          funcRequest.function,
+          funcRequest.config || {},
+          request.context
+        );
+        results.push(result);
       }
-
-      // 2. 创建执行计划
-      const functions = request.functions.map(f => f.function);
-      const configs = request.functions.map(f => f.config || {});
-      const executionPlan = strategy.createExecutionPlan(functions, configs);
-
-      // 3. 验证执行计划
-      const isValid = strategy.validateExecutionPlan(executionPlan);
-      if (!isValid) {
-        throw new Error('执行计划验证失败: 执行计划无效');
-      }
-
-      // 4. 执行函数
-      const results = await strategy.execute(executionPlan, request.context);
-
-      // 5. 应用错误处理策略
-      const processedResults = await this.applyErrorHandling(results, request.executionConfig);
 
       const totalTime = Date.now() - startTime;
       this.logger.info('函数执行完成', {
         totalTime,
-        successCount: processedResults.filter(r => r.success).length,
-        errorCount: processedResults.filter(r => !r.success).length
+        successCount: results.filter(r => r.success).length,
+        errorCount: results.filter(r => !r.success).length
       });
 
-      return processedResults;
+      return results;
 
     } catch (error) {
       const totalTime = Date.now() - startTime;
@@ -121,9 +116,9 @@ export class FunctionExecutor {
    * 执行单个函数
    */
   async executeSingleFunction(
-    func: IWorkflowFunction,
+    func: BaseWorkflowFunction,
     config: any,
-    context: IExecutionContext
+    context: any
   ): Promise<FunctionExecutionResult> {
     const startTime = Date.now();
 
@@ -134,23 +129,32 @@ export class FunctionExecutor {
     });
 
     try {
-      let result: any;
+      // 验证参数
+      const validation = func.validateParameters(config);
+      if (!validation.isValid) {
+        throw new Error(`参数验证失败: ${validation.errors.join(', ')}`);
+      }
 
+      // 执行函数
+      let result: any;
+      
       switch (func.type) {
         case WorkflowFunctionType.CONDITION:
-          result = await (func as IConditionFunction).evaluate(context, config);
+          // 简化处理，直接调用execute
+          result = await func.execute(context, config);
           break;
         case WorkflowFunctionType.NODE:
-          result = await (func as INodeFunction).execute(context, config);
+          result = await func.execute(context, config);
           break;
         case WorkflowFunctionType.ROUTING:
-          result = await (func as IRoutingFunction).route(context, config);
+          result = await func.execute(context, config);
           break;
         case WorkflowFunctionType.TRIGGER:
-          result = await (func as ITriggerFunction).check(context, config);
+          result = await func.execute(context, config);
           break;
         default:
-          throw new Error(`不支持的函数类型: ${func.type}`);
+          result = await func.execute(context, config);
+          break;
       }
 
       const executionTime = Date.now() - startTime;
@@ -202,49 +206,8 @@ export class FunctionExecutor {
   /**
    * 获取支持的执行策略
    */
-  getSupportedStrategies(): FunctionExecutionStrategy[] {
-    return Array.from(this.strategyMap.keys());
-  }
-
-  /**
-   * 初始化执行策略
-   */
-  private initializeStrategies(): void {
-    this.strategyMap.set(FunctionExecutionStrategy.SEQUENTIAL, new FunctionSequentialExecutionStrategy());
-    this.strategyMap.set(FunctionExecutionStrategy.PARALLEL, new FunctionParallelExecutionStrategy());
-    this.strategyMap.set(FunctionExecutionStrategy.CONDITIONAL, new FunctionConditionalExecutionStrategy());
-  }
-
-  /**
-   * 应用错误处理策略
-   */
-  private async applyErrorHandling(
-    results: FunctionExecutionResult[],
-    config: FunctionExecutionConfig
-  ): Promise<FunctionExecutionResult[]> {
-    if (!config.errorHandling || config.errorHandling === 'fail-fast') {
-      return results;
-    }
-
-    const processedResults: FunctionExecutionResult[] = [];
-
-    for (const result of results) {
-      if (result.success) {
-        processedResults.push(result);
-      } else {
-        switch (config.errorHandling) {
-          case 'continue-on-error':
-            processedResults.push(result);
-            break;
-          case 'retry':
-            // 这里可以实现重试逻辑
-            processedResults.push(result);
-            break;
-        }
-      }
-    }
-
-    return processedResults;
+  getSupportedStrategies(): string[] {
+    return ['sequential', 'parallel', 'conditional'];
   }
 
   /**

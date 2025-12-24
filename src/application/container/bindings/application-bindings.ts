@@ -9,6 +9,7 @@ import { SessionResourceService } from '../../sessions/interfaces/session-resour
 import { SessionOrchestrationServiceImpl } from '../../sessions/services/session-orchestration-service';
 import { SessionResourceServiceImpl } from '../../sessions/services/session-resource-service';
 import { ApplicationWorkflowBindings } from './application-workflow-bindings';
+import { PromptService } from '../../prompts/services/prompt-service';
 
 /**
  * 工作流服务绑定
@@ -85,6 +86,24 @@ export class ToolServiceBindings extends ServiceBindings {
     //   ),
     //   { lifetime: ServiceLifetime.SINGLETON }
     // );
+  }
+}
+
+/**
+ * 提示词服务绑定
+ */
+export class PromptServiceBindings extends ServiceBindings {
+  registerServices(container: IContainer, config: ContainerConfiguration): void {
+    // 注册提示词服务
+    container.registerFactory<PromptService>(
+      'PromptService',
+      () => new PromptService(
+        container.get('PromptRepository'),
+        container.get('PromptLoader'),
+        container.get('PromptInjector')
+      ),
+      { lifetime: ServiceLifetime.SINGLETON }
+    );
   }
 }
 

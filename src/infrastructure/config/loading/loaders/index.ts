@@ -7,3 +7,4 @@ export { ToolLoader } from './tool-loader';
 export { PromptLoader } from './prompt-loader';
 export { PoolConfigLoader } from './pool-config-loader';
 export { TaskGroupConfigLoader } from './task-group-config-loader';
+export { WorkflowFunctionLoader } from './workflow-function-loader';
