@@ -2,17 +2,28 @@
  * 列出会话查询处理器
  */
 
+import { injectable, inject } from 'inversify';
+import { BaseQueryHandler } from '../../common/handlers/base-query-handler';
 import { ListSessionsQuery, ListSessionsQueryResult } from '../queries/list-sessions-query';
 import { SessionService } from '../services/session-service';
+import { ILogger } from '../../../domain/common/types/logger-types';
 
 /**
  * 列出会话查询处理器
  */
-export class ListSessionsHandler {
-  constructor(private readonly sessionService: SessionService) {}
+@injectable()
+export class ListSessionsHandler extends BaseQueryHandler {
+  constructor(
+    @inject('Logger') logger: ILogger,
+    @inject('SessionService') private readonly sessionService: SessionService
+  ) {
+    super(logger);
+  }
 
   async handle(query: ListSessionsQuery): Promise<ListSessionsQueryResult> {
     try {
+      this.logQueryStart('列出会话查询');
+
       const sessions = await this.sessionService.listSessions();
       
       // 应用过滤条件
@@ -28,6 +39,7 @@ export class ListSessionsHandler {
       const endIndex = query.limit ? startIndex + query.limit : filteredSessions.length;
       const paginatedSessions = filteredSessions.slice(startIndex, endIndex);
 
+      this.logQuerySuccess('列出会话查询', { total: filteredSessions.length, returned: paginatedSessions.length });
       return new ListSessionsQueryResult(
         filteredSessions.length,
         page,
@@ -35,7 +47,7 @@ export class ListSessionsHandler {
         paginatedSessions
       );
     } catch (error) {
-      console.error('列出会话查询处理失败:', error);
+      this.logQueryError('列出会话查询', error as Error);
       throw error;
     }
   }

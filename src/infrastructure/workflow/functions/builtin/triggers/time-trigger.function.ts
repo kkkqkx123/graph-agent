@@ -1,12 +1,12 @@
 import { injectable } from 'inversify';
-import { ITriggerFunction, WorkflowFunctionType } from '../../../../../domain/workflow/interfaces/workflow-functions';
+import { WorkflowFunctionType } from '../../../../../domain/workflow/value-objects/workflow-function-type';
 import { BaseWorkflowFunction } from '../../base/base-workflow-function';
 
 /**
  * 时间触发器函数
  */
 @injectable()
-export class TimeTriggerFunction extends BaseWorkflowFunction implements ITriggerFunction {
+export class TimeTriggerFunction extends BaseWorkflowFunction {
   constructor() {
     super(
       'trigger:time',

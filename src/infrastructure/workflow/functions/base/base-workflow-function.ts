@@ -1,13 +1,4 @@
-/**
- * 工作流函数类型枚举
- */
-export enum WorkflowFunctionType {
-  NODE = 'node',
-  CONDITION = 'condition',
-  ROUTING = 'routing',
-  TRIGGER = 'trigger',
-  TRANSFORM = 'transform'
-}
+import { WorkflowFunctionType } from '../../../../domain/workflow/value-objects/workflow-function-type';
 
 /**
  * 函数参数接口

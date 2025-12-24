@@ -1,4 +1,4 @@
-import { NodeData } from '../entities/workflow';
+import { NodeData } from '../../../domain/workflow/entities/workflow';
 
 /**
  * 节点执行器接口

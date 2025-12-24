@@ -1,5 +1,5 @@
-import { Workflow, NodeData, EdgeData } from '../entities/workflow';
-import { ID } from '../../common/value-objects/id';
+import { Workflow, NodeData, EdgeData } from '../../../domain/workflow/entities/workflow';
+import { ID } from '../../../domain/common/value-objects/id';
 
 /**
  * 图算法服务接口
@@ -49,62 +49,30 @@ export interface GraphAlgorithmService {
    * @param graph 工作流图
    * @param startNodeId 起始节点ID
    * @param endNodeId 结束节点ID
-   * @returns 所有路径的节点列表
+   * @returns 所有路径的列表
    */
   findAllPaths(workflow: Workflow, startNodeId: ID, endNodeId: ID): NodeData[][];
 
   /**
-   * 获取节点的相邻节点
+   * 计算图的复杂度
    * @param graph 工作流图
-   * @param nodeId 节点ID
-   * @returns 相邻节点列表
+   * @returns 图复杂度指标
    */
-  getAdjacentNodes(workflow: Workflow, nodeId: ID): NodeData[];
-
-  /**
-   * 分析图的复杂度
-   * @param graph 工作流图
-   * @returns 图复杂度分析结果
-   */
-  analyzeGraphComplexity(workflow: Workflow): GraphComplexity;
-
-  /**
-   * 获取图的入度统计
-   * @param graph 工作流图
-   * @returns 节点入度映射
-   */
-  getInDegreeStatistics(workflow: Workflow): Map<string, number>;
-
-  /**
-   * 获取图的出度统计
-   * @param graph 工作流图
-   * @returns 节点出度映射
-   */
-  getOutDegreeStatistics(workflow: Workflow): Map<string, number>;
+  calculateComplexity(workflow: Workflow): GraphComplexity;
 }
 
 /**
- * 图复杂度分析结果
+ * 图复杂度指标
  */
 export interface GraphComplexity {
   /** 节点数量 */
   nodeCount: number;
   /** 边数量 */
   edgeCount: number;
-  /** 平均度 */
-  averageDegree: number;
-  /** 最大入度 */
-  maxInDegree: number;
-  /** 最大出度 */
-  maxOutDegree: number;
+  /** 最大路径长度 */
+  maxPathLength: number;
+  /** 循环数量 */
+  cycleCount: number;
   /** 连通分量数量 */
-  connectedComponentCount: number;
-  /** 是否包含循环 */
-  hasCycle: boolean;
-  /** 图深度（最长路径长度） */
-  depth: number;
-  /** 图宽度（最大并行分支数） */
-  width: number;
-  /** 复杂度评分（0-100） */
-  complexityScore: number;
+  componentCount: number;
 }

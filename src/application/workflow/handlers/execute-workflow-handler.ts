@@ -3,7 +3,7 @@
  */
 
 import { injectable, inject } from 'inversify';
-import { WorkflowCommandHandler } from './workflow-command-handler';
+import { BaseCommandHandler } from '../../common/handlers/base-command-handler';
 import { WorkflowService } from '../services/workflow-service';
 import { ExecuteWorkflowCommand } from '../commands/workflow-execution.command';
 import { ILogger } from '../../../domain/common/types/logger-types';
@@ -12,7 +12,7 @@ import { ILogger } from '../../../domain/common/types/logger-types';
  * 执行工作流命令处理器
  */
 @injectable()
-export class ExecuteWorkflowHandler extends WorkflowCommandHandler {
+export class ExecuteWorkflowHandler extends BaseCommandHandler {
   constructor(
     @inject('Logger') logger: ILogger,
     @inject('WorkflowService') private readonly workflowService: WorkflowService

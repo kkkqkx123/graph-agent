@@ -1,12 +1,21 @@
 import { injectable } from 'inversify';
-import { IConditionFunction, WorkflowFunctionType } from '../../../../../domain/workflow/interfaces/workflow-functions';
 import { BaseWorkflowFunction } from '../../base/base-workflow-function';
+
+/**
+ * 工作流函数类型枚举
+ */
+enum WorkflowFunctionType {
+  CONDITION = 'condition',
+  TRIGGER = 'trigger',
+  ROUTING = 'routing',
+  NODE = 'node'
+}
 
 /**
  * 检查是否有工具调用的条件函数
  */
 @injectable()
-export class HasToolCallsConditionFunction extends BaseWorkflowFunction implements IConditionFunction {
+export class HasToolCallsConditionFunction extends BaseWorkflowFunction {
   constructor() {
     super(
       'condition:has_tool_calls',

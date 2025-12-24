@@ -1,5 +1,5 @@
-import { EdgeId } from '../value-objects/edge-id';
-import { Workflow, EdgeData } from '../entities/workflow';
+import { EdgeId } from '../../../domain/workflow/value-objects/edge-id';
+import { Workflow, EdgeData } from '../../../domain/workflow/entities/workflow';
 
 /**
  * 边评估器接口

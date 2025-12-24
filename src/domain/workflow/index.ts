@@ -25,6 +25,3 @@ export * from './events';
 
 // 导出策略
 export * from './strategies';
-
-// 导出接口
-export * from './interfaces';

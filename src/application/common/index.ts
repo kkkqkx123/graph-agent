@@ -4,3 +4,5 @@
 
 export { BaseService } from './base-service';
 export { BaseApplicationService } from './base-application-service';
+export { BaseCommandHandler, type ICommandHandler } from './handlers/base-command-handler';
+export { BaseQueryHandler, type IQueryHandler } from './handlers/base-query-handler';

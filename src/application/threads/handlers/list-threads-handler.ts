@@ -2,17 +2,28 @@
  * 列出线程查询处理器
  */
 
+import { injectable, inject } from 'inversify';
+import { BaseQueryHandler } from '../../common/handlers/base-query-handler';
 import { ListThreadsQuery, ListThreadsQueryResult } from '../queries/list-threads-query';
 import { ThreadService } from '../services/thread-service';
+import { ILogger } from '../../../domain/common/types/logger-types';
 
 /**
  * 列出线程查询处理器
  */
-export class ListThreadsHandler {
-  constructor(private readonly threadService: ThreadService) {}
+@injectable()
+export class ListThreadsHandler extends BaseQueryHandler {
+  constructor(
+    @inject('Logger') logger: ILogger,
+    @inject('ThreadService') private readonly threadService: ThreadService
+  ) {
+    super(logger);
+  }
 
   async handle(query: ListThreadsQuery): Promise<ListThreadsQueryResult> {
     try {
+      this.logQueryStart('列出线程查询');
+
       const threads = await this.threadService.listThreads(query.filters, query.limit);
       
       // 确保所有线程都有workflowId，将undefined转换为空字符串
@@ -34,6 +45,7 @@ export class ListThreadsHandler {
       const endIndex = query.limit ? startIndex + query.limit : filteredThreads.length;
       const paginatedThreads = filteredThreads.slice(startIndex, endIndex);
 
+      this.logQuerySuccess('列出线程查询', { total: filteredThreads.length, returned: paginatedThreads.length });
       return new ListThreadsQueryResult(
         filteredThreads.length,
         page,
@@ -41,7 +53,7 @@ export class ListThreadsHandler {
         paginatedThreads
       );
     } catch (error) {
-      console.error('列出线程查询处理失败:', error);
+      this.logQueryError('列出线程查询', error as Error);
       throw error;
     }
   }

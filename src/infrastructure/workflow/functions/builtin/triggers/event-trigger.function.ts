@@ -1,12 +1,12 @@
 import { injectable } from 'inversify';
-import { ITriggerFunction, WorkflowFunctionType } from '../../../../../domain/workflow/interfaces/workflow-functions';
+import { WorkflowFunctionType } from '../../../../../domain/workflow/value-objects/workflow-function-type';
 import { BaseWorkflowFunction } from '../../base/base-workflow-function';
 
 /**
  * 基于事件类型的触发器函数
  */
 @injectable()
-export class EventTriggerFunction extends BaseWorkflowFunction implements ITriggerFunction {
+export class EventTriggerFunction extends BaseWorkflowFunction {
   constructor() {
     super(
       'trigger:event',

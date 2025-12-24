@@ -3,7 +3,7 @@
  */
 
 import { injectable, inject } from 'inversify';
-import { WorkflowCommandHandler } from './workflow-command-handler';
+import { BaseCommandHandler } from '../../common/handlers/base-command-handler';
 import { WorkflowService } from '../services/workflow-service';
 import { 
   CreateWorkflowCommand,
@@ -19,7 +19,7 @@ import { ILogger } from '../../../domain/common/types/logger-types';
  * 工作流生命周期命令处理器
  */
 @injectable()
-export class WorkflowLifecycleHandler extends WorkflowCommandHandler {
+export class WorkflowLifecycleHandler extends BaseCommandHandler {
   constructor(
     @inject('Logger') logger: ILogger,
     @inject('WorkflowService') private readonly workflowService: WorkflowService
@@ -28,11 +28,28 @@ export class WorkflowLifecycleHandler extends WorkflowCommandHandler {
   }
 
   /**
-   * 实现抽象方法 handle
+   * 处理命令的主入口
+   * 根据命令的constructor.name进行派发
    */
   async handle(command: any): Promise<any> {
-    // 此方法由具体的处理方法委派
-    throw new Error('请使用具体的 handleXxx 方法处理命令');
+    const commandType = command.constructor.name;
+    
+    switch (commandType) {
+      case 'CreateWorkflowCommand':
+        return this.handleCreateWorkflow(command);
+      case 'ActivateWorkflowCommand':
+        return this.handleActivateWorkflow(command);
+      case 'DeactivateWorkflowCommand':
+        return this.handleDeactivateWorkflow(command);
+      case 'ArchiveWorkflowCommand':
+        return this.handleArchiveWorkflow(command);
+      case 'UpdateWorkflowCommand':
+        return this.handleUpdateWorkflow(command);
+      case 'DeleteWorkflowCommand':
+        return this.handleDeleteWorkflow(command);
+      default:
+        throw new Error(`未知的命令类型: ${commandType}`);
+    }
   }
 
   /**

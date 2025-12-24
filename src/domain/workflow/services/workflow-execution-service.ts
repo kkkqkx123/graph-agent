@@ -1,7 +1,7 @@
 import { ID } from '../../common/value-objects/id';
 import { DomainError } from '../../common/errors/domain-error';
 import { WorkflowDefinition } from '../value-objects/workflow-definition';
-import { GraphValidationService } from '../interfaces/graph-validation-service.interface';
+import { GraphValidationServiceImpl } from '../../../infrastructure/workflow/services/graph-validation-service';
 import { ExecutionStrategy, ErrorHandlingStrategy } from '../strategies';
 
 /**
@@ -44,11 +44,11 @@ export interface ExecutionStep {
 export class WorkflowExecutor {
   private readonly workflowDefinition: WorkflowDefinition;
   private readonly config: WorkflowExecutorConfig;
-  private readonly graphValidationService: GraphValidationService;
+  private readonly graphValidationService: GraphValidationServiceImpl;
 
   constructor(
     workflowDefinition: WorkflowDefinition,
-    graphValidationService: GraphValidationService,
+    graphValidationService: GraphValidationServiceImpl,
     config: WorkflowExecutorConfig = {}
   ) {
     this.workflowDefinition = workflowDefinition;

@@ -2,7 +2,7 @@ import { ID } from '../../common/value-objects/id';
 import { Timestamp } from '../../common/value-objects/timestamp';
 import { WorkflowExecutor } from './workflow-execution-service';
 import { DomainError } from '../../common/errors/domain-error';
-import { IExecutionContextManager } from '../interfaces/execution-context-manager.interface';
+import { IExecutionContextManager } from '../../../infrastructure/workflow/interfaces/execution-context-manager.interface';
 
 /**
  * 工作流执行请求接口

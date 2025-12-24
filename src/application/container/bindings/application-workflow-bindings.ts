@@ -5,10 +5,9 @@
  */
 
 import { ServiceBindings, IContainer, ContainerConfiguration, ServiceLifetime } from '../../../infrastructure/container/container';
-import { GraphAlgorithmService } from '../../../domain/workflow/interfaces/graph-algorithm-service.interface';
-import { GraphValidationService } from '../../../domain/workflow/interfaces/graph-validation-service.interface';
-import { GraphAlgorithmServiceImpl } from '../../../infrastructure/workflow/services/graph-algorithm-service';
+import { GraphAlgorithmService } from '../../../infrastructure/workflow/interfaces/graph-algorithm-service.interface';
 import { GraphValidationServiceImpl } from '../../../infrastructure/workflow/services/graph-validation-service';
+import { GraphAlgorithmServiceImpl } from '../../../infrastructure/workflow/services/graph-algorithm-service';
 import { ThreadLifecycleInfrastructureService } from '../../../infrastructure/threads/services/thread-lifecycle-service';
 import { ThreadCoordinatorInfrastructureService } from '../../../infrastructure/threads/services/thread-coordinator-service';
 
@@ -25,7 +24,7 @@ export class ApplicationWorkflowBindings extends ServiceBindings {
     );
 
     // 注册图验证服务（领域服务，但在应用层使用）
-    container.registerFactory<GraphValidationService>(
+    container.registerFactory<GraphValidationServiceImpl>(
       'GraphValidationService',
       () => new GraphValidationServiceImpl(),
       { lifetime: ServiceLifetime.SINGLETON }

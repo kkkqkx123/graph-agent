@@ -2,17 +2,28 @@
  * 更新线程状态命令处理器
  */
 
+import { injectable, inject } from 'inversify';
+import { BaseCommandHandler } from '../../common/handlers/base-command-handler';
 import { UpdateThreadStatusCommand, UpdateThreadStatusCommandResult } from '../commands/update-thread-status-command';
 import { ThreadService } from '../services/thread-service';
+import { ILogger } from '../../../domain/common/types/logger-types';
 
 /**
  * 更新线程状态命令处理器
  */
-export class UpdateThreadStatusHandler {
-  constructor(private readonly threadService: ThreadService) {}
+@injectable()
+export class UpdateThreadStatusHandler extends BaseCommandHandler {
+  constructor(
+    @inject('Logger') logger: ILogger,
+    @inject('ThreadService') private readonly threadService: ThreadService
+  ) {
+    super(logger);
+  }
 
   async handle(command: UpdateThreadStatusCommand): Promise<UpdateThreadStatusCommandResult> {
     try {
+      this.logCommandStart('更新线程状态命令', { threadId: command.threadId, status: command.status });
+
       let threadInfo;
 
       // 根据状态调用相应的方法
@@ -43,6 +54,7 @@ export class UpdateThreadStatusHandler {
         throw new Error('线程状态更新后无法获取线程信息');
       }
 
+      this.logCommandSuccess('更新线程状态命令', { threadId: command.threadId, newStatus: threadInfo.status });
       return new UpdateThreadStatusCommandResult(
         true,
         {
@@ -60,7 +72,7 @@ export class UpdateThreadStatusHandler {
         }
       );
     } catch (error) {
-      console.error('更新线程状态命令处理失败:', error);
+      this.logCommandError('更新线程状态命令', error as Error, { threadId: command.threadId, status: command.status });
       throw error;
     }
   }

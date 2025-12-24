@@ -1,12 +1,13 @@
 import { injectable } from 'inversify';
-import { IConditionFunction, WorkflowFunctionType } from '../../../../../domain/workflow/interfaces/workflow-functions';
 import { BaseWorkflowFunction } from '../../base/base-workflow-function';
+
+import { WorkflowFunctionType } from '../../../../../domain/workflow/value-objects/workflow-function-type';
 
 /**
  * 检查是否有错误的条件函数
  */
 @injectable()
-export class HasErrorsConditionFunction extends BaseWorkflowFunction implements IConditionFunction {
+export class HasErrorsConditionFunction extends BaseWorkflowFunction {
   constructor() {
     super(
       'condition:has_errors',

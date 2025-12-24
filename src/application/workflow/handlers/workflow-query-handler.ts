@@ -3,7 +3,7 @@
  */
 
 import { injectable, inject } from 'inversify';
-import { WorkflowCommandHandler } from './workflow-command-handler';
+import { BaseQueryHandler } from '../../common/handlers/base-query-handler';
 import { WorkflowService } from '../services/workflow-service';
 import { 
   GetWorkflowQuery,
@@ -21,7 +21,7 @@ import { ILogger } from '../../../domain/common/types/logger-types';
  * 工作流查询处理器
  */
 @injectable()
-export class WorkflowQueryHandler extends WorkflowCommandHandler {
+export class WorkflowQueryHandler extends BaseQueryHandler {
   constructor(
     @inject('Logger') logger: ILogger,
     @inject('WorkflowService') private readonly workflowService: WorkflowService
@@ -30,11 +30,32 @@ export class WorkflowQueryHandler extends WorkflowCommandHandler {
   }
 
   /**
-   * 实现抽象方法 handle
+   * 处理查询的主入口
+   * 根据查询的constructor.name进行派发
    */
-  async handle(command: any): Promise<any> {
-    // 此方法由具体的处理方法委派
-    throw new Error('请使用具体的 handleXxx 方法处理查询');
+  async handle(query: any): Promise<any> {
+    const queryType = query.constructor.name;
+    
+    switch (queryType) {
+      case 'GetWorkflowQuery':
+        return this.handleGetWorkflow(query);
+      case 'ListWorkflowsQuery':
+        return this.handleListWorkflows(query);
+      case 'GetWorkflowStatusQuery':
+        return this.handleGetWorkflowStatus(query);
+      case 'SearchWorkflowsQuery':
+        return this.handleSearchWorkflows(query);
+      case 'GetWorkflowExecutionHistoryQuery':
+        return this.handleGetWorkflowExecutionHistory(query);
+      case 'GetWorkflowExecutionPathQuery':
+        return this.handleGetWorkflowExecutionPath(query);
+      case 'GetWorkflowStatisticsQuery':
+        return this.handleGetWorkflowStatistics(query);
+      case 'GetWorkflowTagStatsQuery':
+        return this.handleGetWorkflowTagStats(query);
+      default:
+        throw new Error(`未知的查询类型: ${queryType}`);
+    }
   }
 
   /**

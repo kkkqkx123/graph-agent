@@ -1,10 +1,57 @@
 import { injectable } from 'inversify';
-import {
-  GraphValidationService,
-  BusinessRule,
-  ValidationRule as GraphValidationRule
-} from '../../../domain/workflow/interfaces/graph-validation-service.interface';
-import { WorkflowGraph } from '../../../domain/workflow/entities/workflow-graph';
+import { Workflow } from '../../../domain/workflow/entities/workflow';
+
+/**
+ * 验证规则接口
+ */
+export interface ValidationRule {
+  id: string;
+  name: string;
+  description: string;
+  validate: (workflow: Workflow) => ValidationResult;
+  enabled: boolean;
+}
+
+/**
+ * 业务规则接口
+ */
+export interface BusinessRule {
+  id: string;
+  name: string;
+  description: string;
+  validate: (workflow: Workflow) => ValidationResult;
+  enabled: boolean;
+}
+
+/**
+ * 验证结果接口
+ */
+export interface ValidationResult {
+  isValid: boolean;
+  errors: ValidationError[];
+  warnings: ValidationWarning[];
+}
+
+/**
+ * 验证错误接口
+ */
+export interface ValidationError {
+  code: string;
+  message: string;
+  nodeId?: string;
+  edgeId?: string;
+  severity: 'error' | 'warning';
+}
+
+/**
+ * 验证警告接口
+ */
+export interface ValidationWarning {
+  code: string;
+  message: string;
+  nodeId?: string;
+  edgeId?: string;
+}
 
 /**
  * 图验证服务实现
@@ -18,13 +65,24 @@ import { WorkflowGraph } from '../../../domain/workflow/entities/workflow-graph'
  * 简化实现，移除复杂的验证规则系统，专注于核心验证逻辑。
  */
 @injectable()
-export class GraphValidationServiceImpl implements GraphValidationService {
-  private validationRules: GraphValidationRule[] = [];
+export class GraphValidationServiceImpl {
+  private validationRules: ValidationRule[] = [];
   private businessRules: BusinessRule[] = [];
 
   constructor() {
     this.initializeValidationRules();
     this.initializeBusinessRules();
+  }
+
+  /**
+   * 将布尔值转换为验证结果
+   */
+  private booleanToValidationResult(isValid: boolean, errorCode?: string, errorMessage?: string): ValidationResult {
+    return {
+      isValid,
+      errors: isValid ? [] : [{ code: errorCode || 'VALIDATION_ERROR', message: errorMessage || '验证失败', severity: 'error' }],
+      warnings: []
+    };
   }
 
   /**
@@ -37,21 +95,21 @@ export class GraphValidationServiceImpl implements GraphValidationService {
         id: 'graph_structure',
         name: '图结构验证',
         description: '验证图的基本结构完整性',
-        validate: (graph: WorkflowGraph) => this.validateGraphStructure(graph),
+        validate: (workflow: Workflow) => this.booleanToValidationResult(this.validateGraphStructure(workflow), 'GRAPH_STRUCTURE_ERROR', '图结构验证失败'),
         enabled: true
       },
       {
         id: 'graph_integrity',
         name: '图完整性验证',
         description: '验证图元素的完整性',
-        validate: (graph: WorkflowGraph) => this.validateGraphIntegrity(graph),
+        validate: (workflow: Workflow) => this.booleanToValidationResult(this.validateGraphIntegrity(workflow), 'GRAPH_INTEGRITY_ERROR', '图完整性验证失败'),
         enabled: true
       },
       {
         id: 'node_connections',
         name: '节点连接验证',
         description: '验证节点连接的有效性',
-        validate: (graph: WorkflowGraph) => this.validateNodeConnections(graph),
+        validate: (workflow: Workflow) => this.booleanToValidationResult(this.validateNodeConnections(workflow), 'NODE_CONNECTIONS_ERROR', '节点连接验证失败'),
         enabled: true
       }
     ];
@@ -66,79 +124,73 @@ export class GraphValidationServiceImpl implements GraphValidationService {
         id: 'start_node_required',
         name: '开始节点要求',
         description: '工作流必须包含至少一个开始节点',
-        condition: (graph: WorkflowGraph) => {
-          const startNodes = Array.from(graph.nodes.values()).filter(node => node.type.isStart());
-          return startNodes.length > 0;
+        validate: (workflow: Workflow) => {
+          const startNodes = Array.from(workflow.getNodes().values()).filter(node => node.type.isStart());
+          const hasStartNode = startNodes.length > 0;
+          return this.booleanToValidationResult(hasStartNode, 'START_NODE_REQUIRED', '工作流必须至少有一个开始节点');
         },
-        errorMessage: '工作流必须至少有一个开始节点',
-        severity: 'error',
-        suggestions: ['添加一个开始节点到工作流']
+        enabled: true
       },
       {
         id: 'end_node_required',
         name: '结束节点要求',
         description: '工作流必须包含至少一个结束节点',
-        condition: (graph: WorkflowGraph) => {
-          const endNodes = Array.from(graph.nodes.values()).filter(node => node.type.isEnd());
-          return endNodes.length > 0;
+        validate: (workflow: Workflow) => {
+          const endNodes = Array.from(workflow.getNodes().values()).filter(node => node.type.isEnd());
+          const hasEndNode = endNodes.length > 0;
+          return this.booleanToValidationResult(hasEndNode, 'END_NODE_REQUIRED', '工作流必须至少有一个结束节点');
         },
-        errorMessage: '工作流必须至少有一个结束节点',
-        severity: 'error',
-        suggestions: ['添加一个结束节点到工作流']
+        enabled: true
       },
       {
         id: 'single_start_node',
         name: '单一开始节点',
         description: '工作流只能有一个开始节点',
-        condition: (graph: WorkflowGraph) => {
-          const startNodes = Array.from(graph.nodes.values()).filter(node => node.type.isStart());
-          return startNodes.length <= 1;
+        validate: (workflow: Workflow) => {
+          const startNodes = Array.from(workflow.getNodes().values()).filter(node => node.type.isStart());
+          const hasSingleStartNode = startNodes.length <= 1;
+          return this.booleanToValidationResult(hasSingleStartNode, 'SINGLE_START_NODE', '工作流只能有一个开始节点');
         },
-        errorMessage: '工作流只能有一个开始节点',
-        severity: 'error',
-        suggestions: ['确保只有一个开始节点', '合并多个开始节点']
+        enabled: true
       },
       {
         id: 'connected_graph',
         name: '连通图要求',
         description: '工作流应该是连通图（所有节点都可达）',
-        condition: (graph: WorkflowGraph) => {
+        validate: (workflow: Workflow) => {
           // 简化实现：检查是否有孤立节点（没有连接的节点）
           const nodesWithConnections = new Set<string>();
 
-          for (const edge of graph.edges.values()) {
+          for (const edge of workflow.getEdges().values()) {
             nodesWithConnections.add(edge.fromNodeId.toString());
             nodesWithConnections.add(edge.toNodeId.toString());
           }
 
-          for (const node of graph.nodes.values()) {
-            if (!nodesWithConnections.has(node.nodeId.toString())) {
+          for (const node of workflow.getNodes().values()) {
+            if (!nodesWithConnections.has(node.id.toString())) {
               // 允许开始和结束节点孤立
               if (node.type.isStart() || node.type.isEnd()) {
                 continue;
               }
-              return false;
+              return this.booleanToValidationResult(false, 'CONNECTED_GRAPH', '工作流应该是一个连通图');
             }
           }
 
-          return true;
+          return this.booleanToValidationResult(true);
         },
-        errorMessage: '工作流应该是一个连通图',
-        severity: 'warning',
-        suggestions: ['确保所有节点都通过边连接', '移除孤立节点']
+        enabled: true
       },
       {
         id: 'no_cycles',
         name: '无循环要求',
         description: '工作流不应该包含循环（除非明确设计）',
-        condition: (graph: WorkflowGraph) => {
+        validate: (workflow: Workflow) => {
           // 使用图算法服务检测循环
           // 这里简化实现，实际应该注入GraphAlgorithmService
-          return true; // 暂时返回true，实际实现需要检测循环
+          const hasNoCycles = true; // 暂时返回true，实际实现需要检测循环
+          return this.booleanToValidationResult(hasNoCycles, 'NO_CYCLES', '工作流包含循环');
         },
-        errorMessage: '工作流包含循环',
-        severity: 'warning',
-        suggestions: ['检查并移除循环', '使用条件节点控制循环']
+        enabled: true
       }
     ];
   }
@@ -148,15 +200,15 @@ export class GraphValidationServiceImpl implements GraphValidationService {
    * @param graph 工作流图
    * @returns 验证结果
    */
-  validateGraphStructure(graph: WorkflowGraph): boolean {
+  validateGraphStructure(workflow: Workflow): boolean {
     // 检查节点数量
-    if (graph.getNodeCount() === 0) {
+    if (workflow.getNodeCount() === 0) {
       return false;
     }
 
     // 检查边连接
-    for (const edge of graph.edges.values()) {
-      if (!graph.hasNode(edge.fromNodeId) || !graph.hasNode(edge.toNodeId)) {
+    for (const edge of workflow.getEdges().values()) {
+      if (!workflow.hasNode(edge.fromNodeId) || !workflow.hasNode(edge.toNodeId)) {
         return false;
       }
     }
@@ -169,24 +221,24 @@ export class GraphValidationServiceImpl implements GraphValidationService {
    * @param graph 工作流图
    * @returns 验证结果
    */
-  validateGraphIntegrity(graph: WorkflowGraph): boolean {
+  validateGraphIntegrity(workflow: Workflow): boolean {
     // 检查所有节点的ID是否有效
-    for (const node of graph.nodes.values()) {
-      if (!node.nodeId || node.nodeId.toString().trim() === '') {
+    for (const node of workflow.getNodes().values()) {
+      if (!node.id || node.id.toString().trim() === '') {
         return false;
       }
     }
 
     // 检查所有边的ID是否有效
-    for (const edge of graph.edges.values()) {
-      if (!edge.edgeId || edge.edgeId.toString().trim() === '') {
+    for (const edge of workflow.getEdges().values()) {
+      if (!edge.id || edge.id.toString().trim() === '') {
         return false;
       }
     }
 
     // 检查边的连接是否有效
-    for (const edge of graph.edges.values()) {
-      if (!graph.hasNode(edge.fromNodeId) || !graph.hasNode(edge.toNodeId)) {
+    for (const edge of workflow.getEdges().values()) {
+      if (!workflow.hasNode(edge.fromNodeId) || !workflow.hasNode(edge.toNodeId)) {
         return false;
       }
     }
@@ -199,11 +251,11 @@ export class GraphValidationServiceImpl implements GraphValidationService {
    * @param graph 工作流图
    * @returns 验证结果
    */
-  validateNodeConnections(graph: WorkflowGraph): boolean {
+  validateNodeConnections(workflow: Workflow): boolean {
     // 检查每个节点的连接是否符合其类型要求
-    for (const node of graph.nodes.values()) {
-      const incomingEdges = Array.from(graph.edges.values()).filter(edge => edge.toNodeId.equals(node.nodeId));
-      const outgoingEdges = Array.from(graph.edges.values()).filter(edge => edge.fromNodeId.equals(node.nodeId));
+    for (const node of workflow.getNodes().values()) {
+      const incomingEdges = Array.from(workflow.getEdges().values()).filter(edge => edge.toNodeId.equals(node.id));
+      const outgoingEdges = Array.from(workflow.getEdges().values()).filter(edge => edge.fromNodeId.equals(node.id));
 
       // 开始节点不应该有入边
       if (node.type.isStart() && incomingEdges.length > 0) {
@@ -231,18 +283,24 @@ export class GraphValidationServiceImpl implements GraphValidationService {
    * @param graph 工作流图
    * @returns 验证结果
    */
-  validateGraph(graph: WorkflowGraph): boolean {
+  validateGraph(workflow: Workflow): boolean {
     // 执行所有验证规则
     for (const rule of this.validationRules) {
-      if (rule.enabled && !rule.validate(graph)) {
-        return false;
+      if (rule.enabled) {
+        const result = rule.validate(workflow);
+        if (!result.isValid) {
+          return false;
+        }
       }
     }
 
     // 执行所有业务规则
     for (const rule of this.businessRules) {
-      if (!rule.condition(graph)) {
-        return false;
+      if (rule.enabled) {
+        const result = rule.validate(workflow);
+        if (!result.isValid) {
+          return false;
+        }
       }
     }
 
@@ -254,26 +312,26 @@ export class GraphValidationServiceImpl implements GraphValidationService {
    * @param graph 工作流图
    * @returns 是否可执行
    */
-  isExecutable(graph: WorkflowGraph): boolean {
+  isExecutable(workflow: Workflow): boolean {
     // 检查是否有开始节点
-    const startNodes = Array.from(graph.nodes.values()).filter(node => node.type.isStart());
+    const startNodes = Array.from(workflow.getNodes().values()).filter(node => node.type.isStart());
     if (startNodes.length === 0) {
       return false;
     }
 
     // 检查是否有结束节点
-    const endNodes = Array.from(graph.nodes.values()).filter(node => node.type.isEnd());
+    const endNodes = Array.from(workflow.getNodes().values()).filter(node => node.type.isEnd());
     if (endNodes.length === 0) {
       return false;
     }
 
     // 检查图的基本结构
-    if (!this.validateGraphStructure(graph)) {
+    if (!this.validateGraphStructure(workflow)) {
       return false;
     }
 
     // 检查节点连接
-    if (!this.validateNodeConnections(graph)) {
+    if (!this.validateNodeConnections(workflow)) {
       return false;
     }
 
@@ -284,7 +342,7 @@ export class GraphValidationServiceImpl implements GraphValidationService {
    * 获取验证规则
    * @returns 验证规则列表
    */
-  getValidationRules(): GraphValidationRule[] {
+  getValidationRules(): ValidationRule[] {
     return [...this.validationRules];
   }
 
@@ -322,7 +380,7 @@ export class GraphValidationServiceImpl implements GraphValidationService {
    * 添加自定义验证规则
    * @param rule 验证规则
    */
-  addValidationRule(rule: GraphValidationRule): void {
+  addValidationRule(rule: ValidationRule): void {
     this.validationRules.push(rule);
   }
 

@@ -1,19 +1,6 @@
 /**
- * 工作流命令处理器基类
+ * @deprecated 已弃用，请使用 BaseCommandHandler 替代
+ * 该文件保留用于过渡期，待所有引用更新后将被删除
  */
 
-import { injectable, inject } from 'inversify';
-import { ILogger } from '../../../domain/common/types/logger-types';
-
-/**
- * 工作流命令处理器基类
- */
-@injectable()
-export abstract class WorkflowCommandHandler {
-  constructor(@inject('Logger') protected readonly logger: ILogger) {}
-
-  /**
-   * 处理命令的抽象方法
-   */
-  abstract handle(command: any): Promise<any>;
-}
+export { BaseCommandHandler as WorkflowCommandHandler } from '../../common/handlers/base-command-handler';

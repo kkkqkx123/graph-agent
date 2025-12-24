@@ -5,7 +5,7 @@
  */
 
 import { injectable, inject } from 'inversify';
-import { INodeExecutor } from '../../../../domain/workflow/interfaces/node-executor.interface';
+import { INodeExecutor } from '../../interfaces/node-executor.interface';
 import { IExecutionContext } from '../../../../domain/workflow/execution/execution-context.interface';
 import { HumanRelayNode } from '../../../../domain/workflow/entities/nodes/specialized/human-relay-node';
 import { Node } from '../../../../domain/workflow/entities/nodes/base/node';

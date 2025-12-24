@@ -1,12 +1,12 @@
 import { injectable } from 'inversify';
-import { INodeFunction, WorkflowFunctionType } from '../../../../../domain/workflow/interfaces/workflow-functions';
+import { WorkflowFunctionType } from '../../../../../domain/workflow/value-objects/workflow-function-type';
 import { BaseWorkflowFunction } from '../../base/base-workflow-function';
 
 /**
  * 数据转换节点函数
  */
 @injectable()
-export class DataTransformNodeFunction extends BaseWorkflowFunction implements INodeFunction {
+export class DataTransformNodeFunction extends BaseWorkflowFunction {
   constructor() {
     super(
       'node:data_transform',

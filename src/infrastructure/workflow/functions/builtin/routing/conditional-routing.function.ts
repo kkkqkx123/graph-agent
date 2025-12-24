@@ -1,5 +1,5 @@
 import { injectable } from 'inversify';
-import { IRoutingFunction, WorkflowFunctionType } from '../../../../../domain/workflow/interfaces/workflow-functions';
+import { WorkflowFunctionType } from '../../../../../domain/workflow/value-objects/workflow-function-type';
 import { BaseWorkflowFunction } from '../../base/base-workflow-function';
 import { ExpressionEvaluator } from '../../common/expression-evaluator';
 
@@ -8,7 +8,7 @@ import { ExpressionEvaluator } from '../../common/expression-evaluator';
  * 基于配置的条件数组进行路由决策，支持复杂的条件组合和表达式评估
  */
 @injectable()
-export class ConditionalRoutingFunction extends BaseWorkflowFunction implements IRoutingFunction {
+export class ConditionalRoutingFunction extends BaseWorkflowFunction {
   constructor() {
     super(
       'route:conditional',
