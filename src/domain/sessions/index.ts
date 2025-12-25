@@ -19,6 +19,3 @@ export * from './services';
 
 // 导出仓储
 export * from './repositories';
-
-// 导出事件
-export * from './events';

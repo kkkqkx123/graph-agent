@@ -14,10 +14,6 @@ export * from './commands/update-thread-status-command';
 export * from './queries/get-thread-query';
 export * from './queries/list-threads-query';
 
-// 导出事件
-export * from './events/thread-created-event';
-export * from './events/thread-deleted-event';
-
 // 导出DTO
 export * from './dtos';
 
@@ -26,8 +22,6 @@ export * from './handlers/create-thread-handler';
 export * from './handlers/delete-thread-handler';
 export * from './handlers/get-thread-handler';
 export * from './handlers/list-threads-handler';
-export * from './handlers/thread-created-handler';
-export * from './handlers/thread-deleted-handler';
 
 // 导出checkpoint子模块
 export * from './checkpoints';

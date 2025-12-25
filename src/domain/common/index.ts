@@ -14,9 +14,6 @@ export { ValueObject } from './value-objects/value-object';
 // 基础类
 export { Entity } from './base/entity';
 
-// 事件类
-export { DomainEvent } from './events/domain-event';
-
 // 仓储接口
 export { Repository } from './repositories/repository';
 export type { IQueryOptions as QueryOptions } from './repositories/repository';
@@ -30,6 +27,3 @@ export * from './types';
 // 值对象属性接口
 export type { TimestampProps } from './value-objects/timestamp';
 export type { VersionProps } from './value-objects/version';
-
-// 事件属性接口
-export type { DomainEventProps } from './events/domain-event';

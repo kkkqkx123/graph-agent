@@ -6,9 +6,6 @@ import { ThreadStatus } from '../value-objects/thread-status';
 import { ThreadPriority } from '../value-objects/thread-priority';
 import { ThreadDefinition } from '../value-objects/thread-definition';
 import { ThreadExecution } from '../value-objects/thread-execution';
-import { ThreadCreatedEvent } from '../events/thread-created-event';
-import { ThreadStatusChangedEvent } from '../events/thread-status-changed-event';
-
 /**
  * Thread实体属性接口
  */
@@ -107,17 +104,6 @@ export class Thread extends Entity {
 
     const thread = new Thread(props);
 
-    // 添加线程创建事件
-    thread.addDomainEvent(new ThreadCreatedEvent(
-      threadId,
-      sessionId,
-      workflowId,
-      threadPriority.getNumericValue(),
-      title,
-      description,
-      metadata
-    ));
-
     return thread;
   }
 
@@ -159,15 +145,6 @@ export class Thread extends Entity {
 
     (this as any).props = Object.freeze(newProps);
     this.update();
-
-    // 添加状态变更事件
-    this.addDomainEvent(new ThreadStatusChangedEvent(
-      this.props.id,
-      oldStatus,
-      newStatus,
-      startedBy,
-      '线程启动'
-    ));
   }
 
   /**
@@ -198,15 +175,6 @@ export class Thread extends Entity {
 
     (this as any).props = Object.freeze(newProps);
     this.update();
-
-    // 添加状态变更事件
-    this.addDomainEvent(new ThreadStatusChangedEvent(
-      this.props.id,
-      oldStatus,
-      newStatus,
-      pausedBy,
-      reason
-    ));
   }
 
   /**
@@ -237,15 +205,6 @@ export class Thread extends Entity {
 
     (this as any).props = Object.freeze(newProps);
     this.update();
-
-    // 添加状态变更事件
-    this.addDomainEvent(new ThreadStatusChangedEvent(
-      this.props.id,
-      oldStatus,
-      newStatus,
-      resumedBy,
-      reason
-    ));
   }
 
   /**
@@ -276,15 +235,6 @@ export class Thread extends Entity {
 
     (this as any).props = Object.freeze(newProps);
     this.update();
-
-    // 添加状态变更事件
-    this.addDomainEvent(new ThreadStatusChangedEvent(
-      this.props.id,
-      oldStatus,
-      newStatus,
-      completedBy,
-      reason
-    ));
   }
 
   /**
@@ -316,16 +266,6 @@ export class Thread extends Entity {
 
     (this as any).props = Object.freeze(newProps);
     this.update();
-
-    // 添加状态变更事件
-    this.addDomainEvent(new ThreadStatusChangedEvent(
-      this.props.id,
-      oldStatus,
-      newStatus,
-      failedBy,
-      reason,
-      errorMessage
-    ));
   }
 
   /**
@@ -356,15 +296,6 @@ export class Thread extends Entity {
 
     (this as any).props = Object.freeze(newProps);
     this.update();
-
-    // 添加状态变更事件
-    this.addDomainEvent(new ThreadStatusChangedEvent(
-      this.props.id,
-      oldStatus,
-      newStatus,
-      cancelledBy,
-      reason
-    ));
   }
 
   /**

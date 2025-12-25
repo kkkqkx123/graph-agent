@@ -1,11 +1,10 @@
 import { ID } from '../value-objects/id';
 import { Timestamp } from '../value-objects/timestamp';
 import { Version } from '../value-objects/version';
-import { DomainEvent } from '../events/domain-event';
 
 /**
  * 实体基类
- * 
+ *
  * 实体是DDD中的核心概念，表示具有唯一标识的对象。
  * 实体具有以下特征：
  * - 具有唯一标识符
@@ -17,7 +16,6 @@ export abstract class Entity {
   protected _createdAt: Timestamp;
   protected _updatedAt: Timestamp;
   protected _version: Version;
-  private _domainEvents: DomainEvent<any>[] = [];
 
   /**
    * 构造函数
@@ -68,29 +66,6 @@ export abstract class Entity {
    */
   public get version(): Version {
     return this._version;
-  }
-
-  /**
-   * 获取领域事件
-   * @returns 领域事件列表
-   */
-  public get domainEvents(): DomainEvent<any>[] {
-    return [...this._domainEvents];
-  }
-
-  /**
-   * 添加领域事件
-   * @param event 领域事件
-   */
-  protected addDomainEvent<T = Record<string, unknown>>(event: DomainEvent<T>): void {
-    this._domainEvents.push(event);
-  }
-
-  /**
-   * 清除领域事件
-   */
-  public clearDomainEvents(): void {
-    this._domainEvents = [];
   }
 
   /**

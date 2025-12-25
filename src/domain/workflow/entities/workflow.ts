@@ -10,12 +10,6 @@ import { NodeId } from '../value-objects/node-id';
 import { NodeType } from '../value-objects/node-type';
 import { EdgeId } from '../value-objects/edge-id';
 import { EdgeType } from '../value-objects/edge-type';
-import { WorkflowCreatedEvent } from '../events/workflow-created-event';
-import { WorkflowStatusChangedEvent } from '../events/workflow-status-changed-event';
-import { NodeAddedEvent } from '../events/node-added-event';
-import { NodeRemovedEvent } from '../events/node-removed-event';
-import { EdgeAddedEvent } from '../events/edge-added-event';
-import { EdgeRemovedEvent } from '../events/edge-removed-event';
 import { ErrorHandlingStrategy } from '../value-objects/error-handling-strategy';
 import { ExecutionStrategy } from '../value-objects/execution-strategy';
 
@@ -73,7 +67,6 @@ export interface WorkflowProps {
  * 1. 工作流业务规则和不变性
  * 2. 节点和边的管理（通过聚合根访问）
  * 3. 业务状态变更
- * 4. 领域事件发布
  *
  * 不负责：
  * - 图算法和复杂验证（委托给领域服务）
@@ -150,19 +143,6 @@ export class Workflow extends Entity {
     };
 
     const workflow = new Workflow(props);
-
-    // 添加工作流创建事件
-    workflow.addDomainEvent(new WorkflowCreatedEvent(
-      workflowId,
-      name,
-      description,
-      workflowDefinition.type.toString(),
-      workflowDefinition.status.toString(),
-      workflowDefinition.config.value,
-      [], // nodes
-      [], // edges
-      undefined
-    ));
 
     return workflow;
   }
@@ -421,20 +401,10 @@ export class Workflow extends Entity {
     changedBy?: ID,
     reason?: string
   ): void {
-    const oldStatus = this.props.definition.status;
     const newDefinition = this.props.definition.changeStatus(newStatus, changedBy);
     
     (this.props as any).definition = newDefinition;
     this.update();
-
-    // 添加状态变更事件
-    this.addDomainEvent(new WorkflowStatusChangedEvent(
-      this.props.id,
-      oldStatus,
-      newStatus,
-      changedBy,
-      reason
-    ));
   }
 
   /**
@@ -587,17 +557,6 @@ export class Workflow extends Entity {
 
     (this.props as any).graph = newGraph;
     this.update(updatedBy);
-
-    // 添加节点添加事件
-    this.addDomainEvent(new NodeAddedEvent(
-      this.props.id,
-      nodeId,
-      type,
-      name,
-      position,
-      properties,
-      updatedBy
-    ));
   }
 
   /**
@@ -630,13 +589,6 @@ export class Workflow extends Entity {
 
     (this.props as any).graph = newGraph;
     this.update(updatedBy);
-
-    // 添加节点移除事件
-    this.addDomainEvent(new NodeRemovedEvent(
-      this.props.id,
-      nodeId.toString(),
-      updatedBy
-    ));
   }
 
   /**
@@ -697,19 +649,6 @@ export class Workflow extends Entity {
 
     (this.props as any).graph = newGraph;
     this.update(updatedBy);
-
-    // 添加边添加事件
-    this.addDomainEvent(new EdgeAddedEvent(
-      this.props.id,
-      edgeId,
-      type,
-      fromNodeId,
-      toNodeId,
-      condition,
-      weight,
-      properties,
-      updatedBy
-    ));
   }
 
   /**
@@ -736,13 +675,6 @@ export class Workflow extends Entity {
 
     (this.props as any).graph = newGraph;
     this.update(updatedBy);
-
-    // 添加边移除事件
-    this.addDomainEvent(new EdgeRemovedEvent(
-      this.props.id,
-      edgeId.toString(),
-      updatedBy
-    ));
   }
 
   /**

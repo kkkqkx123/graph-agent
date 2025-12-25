@@ -5,9 +5,6 @@ import { Version } from '../../common/value-objects/version';
 import { SessionStatus } from '../value-objects/session-status';
 import { SessionConfig } from '../value-objects/session-config';
 import { SessionActivity } from '../value-objects/session-activity';
-import { SessionCreatedEvent } from '../events/session-created-event';
-import { SessionStatusChangedEvent } from '../events/session-status-changed-event';
-
 /**
  * Session实体属性接口
  */
@@ -81,14 +78,6 @@ export class Session extends Entity {
     };
 
     const session = new Session(props);
-
-    // 添加会话创建事件
-    session.addDomainEvent(new SessionCreatedEvent(
-      sessionId,
-      userId,
-      title,
-      sessionConfig.value
-    ));
 
     return session;
   }
@@ -238,15 +227,6 @@ export class Session extends Entity {
 
     (this as any).props = Object.freeze(newProps);
     this.update();
-
-    // 添加状态变更事件
-    this.addDomainEvent(new SessionStatusChangedEvent(
-      this.props.id,
-      oldStatus,
-      newStatus,
-      changedBy,
-      reason
-    ));
   }
 
   /**
