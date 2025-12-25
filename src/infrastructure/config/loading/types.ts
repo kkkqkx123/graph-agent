@@ -104,12 +104,51 @@ export interface IDependencyResolver {
 }
 
 /**
- * 类型注册表接口
+ * Schema注册表接口
  */
-export interface ITypeRegistry {
-  registerModuleType(moduleType: string, schema: JSONSchema): void;
+export interface ISchemaRegistry {
+  registerSchema(moduleType: string, schema: JSONSchema, version?: string, description?: string): void;
   getSchema(moduleType: string): JSONSchema | undefined;
   validateConfig(moduleType: string, config: any): ValidationResult;
+  preValidate(config: any, moduleType: string): PreValidationResult;
+  validateSchemaCompatibility(newSchema: JSONSchema, oldSchema: JSONSchema): boolean;
+  getSchemaHistory(moduleType: string): SchemaVersion[];
+  hasModuleType(moduleType: string): boolean;
+  getRegisteredTypes(): string[];
+}
+
+/**
+ * 类型注册表接口（兼容性保持）
+ */
+export interface ITypeRegistry extends ISchemaRegistry {
+  registerModuleType(moduleType: string, schema: JSONSchema): void;
+}
+
+/**
+ * Schema版本信息
+ */
+export interface SchemaVersion {
+  version: string;
+  schema: JSONSchema;
+  description: string;
+  createdAt: Date;
+  compatibleWith?: string[];
+}
+
+/**
+ * 验证严重性枚举
+ */
+export type ValidationSeverity = 'error' | 'warning' | 'info' | 'success';
+
+/**
+ * 验证错误接口
+ */
+export interface ValidationError {
+  path: string;
+  message: string;
+  code: string;
+  severity: ValidationSeverity;
+  suggestions?: string[];
 }
 
 /**
@@ -117,7 +156,17 @@ export interface ITypeRegistry {
  */
 export interface ValidationResult {
   isValid: boolean;
+  errors: ValidationError[];
+  severity: ValidationSeverity;
+}
+
+/**
+ * 预验证结果接口
+ */
+export interface PreValidationResult {
+  isValid: boolean;
   errors: string[];
+  severity: ValidationSeverity;
 }
 
 /**

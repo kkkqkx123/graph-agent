@@ -14,7 +14,7 @@ import { PoolConfigLoader } from '../../config/loading/loaders/pool-config-loade
 import { TaskGroupConfigLoader } from '../../config/loading/loaders/task-group-config-loader';
 
 // 规则导入
-import { createAllModuleRules } from '../../config/loading/rules';
+import { RuleManager } from '../../config/loading/rules';
 
 // 类型导入
 import { IModuleLoader } from '../../config/loading/types';
@@ -94,9 +94,10 @@ export class ConfigLoadingBindings extends ServiceBindings {
     const loaders = container.get<Map<string, IModuleLoader>>('ModuleLoaders');
 
     // 注册所有模块规则
+    const ruleManager = new RuleManager(logger);
     container.registerFactory(
       'ModuleRules',
-      () => createAllModuleRules(loaders, logger),
+      () => ruleManager.createAllModuleRules(loaders),
       { lifetime: ServiceLifetime.SINGLETON }
     );
   }
