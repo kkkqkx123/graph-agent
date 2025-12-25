@@ -1,10 +1,10 @@
 /**
  * OpenAI Responses提供商实现
- * 
+ *
  * 提供OpenAI Responses API的格式转换功能
  */
 
-import { LLMMessage } from '../../../../domain/llm/entities/llm-request';
+import { LLMMessage, LLMMessageRole } from '../../../../domain/llm/value-objects/llm-message';
 import { BaseProvider, ConversionContext } from '../base';
 
 export class OpenAIResponsesProvider extends BaseProvider {
@@ -100,8 +100,8 @@ export class OpenAIResponsesProvider extends BaseProvider {
     message: LLMMessage,
     context: ConversionContext
   ): Record<string, any> | null {
-    const role = message.role;
-    const content = message.content;
+    const role = message.getRole();
+    const content = message.getContent();
 
     // OpenAI Responses API使用不同的消息格式
     if (role === 'system') {
@@ -128,7 +128,7 @@ export class OpenAIResponsesProvider extends BaseProvider {
     // OpenAI Responses API将系统消息作为特殊参数处理
     return {
       role: 'system',
-      content: this.processContent(message.content, context)
+      content: this.processContent(message.getContent(), context)
     };
   }
 
@@ -141,7 +141,7 @@ export class OpenAIResponsesProvider extends BaseProvider {
   ): Record<string, any> {
     return {
       role: 'user',
-      input: this.processContent(message.content, context)
+      input: this.processContent(message.getContent(), context)
     };
   }
 
@@ -154,12 +154,13 @@ export class OpenAIResponsesProvider extends BaseProvider {
   ): Record<string, any> {
     const providerMessage: Record<string, any> = {
       role: 'assistant',
-      output: this.processContent(message.content, context)
+      output: this.processContent(message.getContent(), context)
     };
 
     // 添加工具调用
-    if (message.tool_calls && message.tool_calls.length > 0) {
-      this.addToolCallsToMessage(providerMessage, message.tool_calls, context);
+    const toolCalls = message.getToolCalls();
+    if (toolCalls && toolCalls.length > 0) {
+      this.addToolCallsToMessage(providerMessage, toolCalls, context);
     }
 
     return providerMessage;
@@ -173,7 +174,7 @@ export class OpenAIResponsesProvider extends BaseProvider {
     context: ConversionContext
   ): Record<string, any> {
     // 确保工具结果是字符串格式
-    const content = this.processContent(message.content, context);
+    const content = this.processContent(message.getContent(), context);
 
     const providerMessage: Record<string, any> = {
       role: 'tool',
@@ -181,13 +182,15 @@ export class OpenAIResponsesProvider extends BaseProvider {
     };
 
     // 添加工具调用ID
-    if (message.tool_call_id) {
-      providerMessage['tool_call_id'] = message.tool_call_id;
+    const toolCallId = message.getToolCallId();
+    if (toolCallId) {
+      providerMessage['tool_call_id'] = toolCallId;
     }
 
     // 添加名称
-    if (message.name) {
-      providerMessage['name'] = message.name;
+    const name = message.getName();
+    if (name) {
+      providerMessage['name'] = name;
     }
 
     return providerMessage;
@@ -425,14 +428,11 @@ export class OpenAIResponsesProvider extends BaseProvider {
     }
 
     // 创建LLM消息
-    const llmMessage: LLMMessage = {
-      role: 'assistant',
-      content: output
-    };
-
-    if (toolCalls.length > 0) {
-      llmMessage.tool_calls = toolCalls;
-    }
+    const llmMessage = LLMMessage.fromInterface({
+      role: LLMMessageRole.ASSISTANT,
+      content: output,
+      toolCalls: toolCalls.length > 0 ? toolCalls : undefined
+    });
 
     return llmMessage;
   }

@@ -12,7 +12,7 @@ export class TokenCalculator {
 
     // 计算每个消息的token数量
     for (const message of request.messages) {
-      totalTokens += this.calculateTextTokens(message.content);
+      totalTokens += this.calculateTextTokens(message.getContent());
       // 添加角色和格式化的开销
       totalTokens += 4; // 大约每个消息的格式开销
     }
@@ -82,7 +82,7 @@ export class TokenCalculator {
   estimateResponseTokens(request: LLMRequest): number {
     // 基于请求长度估算响应长度
     const requestTokens = this.calculateTextTokens(
-      request.messages.map(m => m.content).join(' ')
+      request.messages.map(m => m.getContent()).join(' ')
     );
 
     // 通常响应长度是请求长度的一定比例
@@ -120,7 +120,7 @@ export class TokenCalculator {
    */
   isWithinTokenLimit(request: LLMRequest, maxTokens: number): boolean {
     const requestTokens = this.calculateTextTokens(
-      request.messages.map(m => m.content).join(' ')
+      request.messages.map(m => m.getContent()).join(' ')
     );
 
     // 考虑响应token和格式开销

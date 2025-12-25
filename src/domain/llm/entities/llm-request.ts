@@ -3,24 +3,8 @@ import { ID } from '../../common/value-objects/id';
 import { Timestamp } from '../../common/value-objects/timestamp';
 import { Version } from '../../common/value-objects/version';
 import { DomainError } from '../../common/errors/domain-error';
-
-/**
- * LLM消息接口
- */
-export interface LLMMessage {
-  role: 'system' | 'user' | 'assistant' | 'tool';
-  content: string;
-  name?: string;
-  tool_calls?: Array<{
-    id: string;
-    type: string;
-    function: {
-      name: string;
-      arguments: string;
-    };
-  }>;
-  tool_call_id?: string;
-}
+import { LLMMessage, LLMMessageRole } from '../value-objects/llm-message';
+import { LLMRequestOptions } from '../value-objects/llm-request-options';
 
 /**
  * LLM请求实体接口
@@ -516,7 +500,7 @@ export class LLMRequest extends Entity {
    * @returns 系统消息数量
    */
   public getSystemMessageCount(): number {
-    return this.props.messages.filter(msg => msg.role === 'system').length;
+    return this.props.messages.filter(msg => msg.isSystem()).length;
   }
 
   /**
@@ -524,7 +508,7 @@ export class LLMRequest extends Entity {
    * @returns 用户消息数量
    */
   public getUserMessageCount(): number {
-    return this.props.messages.filter(msg => msg.role === 'user').length;
+    return this.props.messages.filter(msg => msg.isUser()).length;
   }
 
   /**
@@ -532,7 +516,7 @@ export class LLMRequest extends Entity {
    * @returns 助手消息数量
    */
   public getAssistantMessageCount(): number {
-    return this.props.messages.filter(msg => msg.role === 'assistant').length;
+    return this.props.messages.filter(msg => msg.isAssistant()).length;
   }
 
   /**
@@ -540,7 +524,7 @@ export class LLMRequest extends Entity {
    * @returns 工具消息数量
    */
   public getToolMessageCount(): number {
-    return this.props.messages.filter(msg => msg.role === 'tool').length;
+    return this.props.messages.filter(msg => msg.isTool()).length;
   }
 
   /**
@@ -556,7 +540,7 @@ export class LLMRequest extends Entity {
    * @returns 系统消息列表
    */
   public getSystemMessages(): LLMMessage[] {
-    return this.props.messages.filter(msg => msg.role === 'system');
+    return this.props.messages.filter(msg => msg.isSystem());
   }
 
   /**
@@ -564,7 +548,7 @@ export class LLMRequest extends Entity {
    * @returns 用户消息列表
    */
   public getUserMessages(): LLMMessage[] {
-    return this.props.messages.filter(msg => msg.role === 'user');
+    return this.props.messages.filter(msg => msg.isUser());
   }
 
   /**
@@ -572,7 +556,7 @@ export class LLMRequest extends Entity {
    * @returns 助手消息列表
    */
   public getAssistantMessages(): LLMMessage[] {
-    return this.props.messages.filter(msg => msg.role === 'assistant');
+    return this.props.messages.filter(msg => msg.isAssistant());
   }
 
   /**
@@ -580,7 +564,7 @@ export class LLMRequest extends Entity {
    * @returns 工具消息列表
    */
   public getToolMessages(): LLMMessage[] {
-    return this.props.messages.filter(msg => msg.role === 'tool');
+    return this.props.messages.filter(msg => msg.isTool());
   }
 
   /**
@@ -588,7 +572,7 @@ export class LLMRequest extends Entity {
    * @returns 是否有工具调用
    */
   public hasToolCalls(): boolean {
-    return this.props.messages.some(msg => msg.tool_calls && msg.tool_calls.length > 0);
+    return this.props.messages.some(msg => msg.hasToolCalls());
   }
 
   /**
@@ -613,8 +597,8 @@ export class LLMRequest extends Entity {
     }> = [];
 
     for (const message of this.props.messages) {
-      if (message.tool_calls) {
-        toolCalls.push(...message.tool_calls);
+      if (message.hasToolCalls()) {
+        toolCalls.push(...message.getToolCalls() || []);
       }
     }
 
@@ -692,13 +676,12 @@ export class LLMRequest extends Entity {
 
     // 验证消息格式
     for (const message of this.props.messages) {
-      if (!message.role || !message.content) {
+      if (!message.getRole() || !message.getContent()) {
         throw new DomainError('消息必须包含role和content字段');
       }
 
-      const validRoles = ['system', 'user', 'assistant', 'tool'];
-      if (!validRoles.includes(message.role)) {
-        throw new DomainError(`无效的消息角色: ${message.role}`);
+      if (!message.getRole()) {
+        throw new DomainError('消息角色不能为空');
       }
     }
 

@@ -1,5 +1,6 @@
 import { LLMRequest } from '../../../../domain/llm/entities/llm-request';
 import { LLMResponse } from '../../../../domain/llm/entities/llm-response';
+import { LLMMessage } from '../../../../domain/llm/value-objects/llm-message';
 import { BaseParameterMapper } from '../base-parameter-mapper';
 import { ProviderConfig, ProviderRequest, ProviderResponse, ParameterDefinition } from '../interfaces/parameter-mapper.interface';
 import { ParameterDefinitionBuilder, CommonParameterDefinitions } from '../interfaces/parameter-definition.interface';
@@ -85,13 +86,13 @@ export class AnthropicParameterMapper extends BaseParameterMapper {
     }
 
     // 从消息中提取系统提示
-    const systemMessages = request.messages.filter(msg => msg.role === 'system');
+    const systemMessages = request.messages.filter(msg => msg.getRole() === 'system');
     if (systemMessages.length > 0) {
-      anthropicRequest['system'] = systemMessages.map(msg => msg.content).join('\n');
+      anthropicRequest['system'] = systemMessages.map(msg => msg.getContent()).join('\n');
     }
 
     // 过滤掉系统消息，因为 Anthropic 使用单独的 system 参数
-    const nonSystemMessages = request.messages.filter(msg => msg.role !== 'system');
+    const nonSystemMessages = request.messages.filter(msg => msg.getRole() !== 'system');
     anthropicRequest['messages'] = nonSystemMessages;
 
     // 元数据处理
@@ -137,10 +138,7 @@ export class AnthropicParameterMapper extends BaseParameterMapper {
       originalRequest.model,
       [{
         index: 0,
-        message: {
-          role: 'assistant',
-          content: content
-        },
+        message: LLMMessage.createAssistant(content),
         finish_reason: response['stop_reason'] || 'stop'
       }],
       {

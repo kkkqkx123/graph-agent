@@ -2,6 +2,7 @@ import { injectable, inject } from 'inversify';
 import { LLMRequest } from '../../../domain/llm/entities/llm-request';
 import { LLMResponse } from '../../../domain/llm/entities/llm-response';
 import { ModelConfig } from '../../../domain/llm/value-objects/model-config';
+import { LLMMessage } from '../../../domain/llm/value-objects/llm-message';
 import { ID } from '../../../domain/common/value-objects/id';
 import { BaseLLMClient } from './base-llm-client';
 import { OpenAIProvider } from '../converters/providers/openai-provider';
@@ -129,10 +130,7 @@ export class OpenAIResponseClient extends BaseLLMClient {
                   request.model,
                   [{
                     index: 0,
-                    message: {
-                      role: 'assistant',
-                      content: content
-                    },
+                    message: LLMMessage.createAssistant(content),
                     finish_reason: ''
                   }],
                   {
@@ -158,10 +156,7 @@ export class OpenAIResponseClient extends BaseLLMClient {
         request.model,
         [{
           index: 0,
-          message: {
-            role: 'assistant',
-            content: ''
-          },
+          message: LLMMessage.createAssistant(''),
           finish_reason: 'stop'
         }],
         { promptTokens: 0, completionTokens: 0, totalTokens: 0 },
@@ -198,8 +193,8 @@ export class OpenAIResponseClient extends BaseLLMClient {
 
     const contentParts = [];
     for (const message of messages) {
-      if (message.content) {
-        contentParts.push(String(message.content));
+      if (message.getContent()) {
+        contentParts.push(String(message.getContent()));
       }
     }
 
@@ -454,8 +449,8 @@ export class OpenAIResponseClient extends BaseLLMClient {
   public override async formatMessages(messages: any[]): Promise<any[]> {
     // Format messages for OpenAI API
     return messages.map(msg => ({
-      role: msg.role,
-      content: msg.content
+      role: msg.getRole(),
+      content: msg.getContent()
     }));
   }
 

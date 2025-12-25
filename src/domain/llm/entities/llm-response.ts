@@ -3,6 +3,7 @@ import { ID } from '../../common/value-objects/id';
 import { Timestamp } from '../../common/value-objects/timestamp';
 import { Version } from '../../common/value-objects/version';
 import { DomainError } from '../../common/errors/domain-error';
+import { LLMMessage } from '../value-objects/llm-message';
 
 /**
  * Token使用统计接口
@@ -34,12 +35,7 @@ export interface LLMToolCall {
  */
 export interface LLMChoice {
   index: number;
-  message: {
-    role: string;
-    content: string;
-    tool_calls?: LLMToolCall[];
-    thoughts?: any;
-  };
+  message: LLMMessage;
   finish_reason: string;
 }
 
@@ -246,7 +242,7 @@ export class LLMResponse extends Entity {
     if (this.props.choices.length === 0) {
       return '';
     }
-    return this.props.choices[0]?.message?.content || '';
+    return this.props.choices[0]?.message.getContent() || '';
   }
 
   /**
@@ -328,8 +324,8 @@ export class LLMResponse extends Entity {
   public getToolCalls(): LLMToolCall[] {
     const toolCalls: LLMToolCall[] = [];
     for (const choice of this.props.choices) {
-      if (choice.message.tool_calls) {
-        toolCalls.push(...choice.message.tool_calls);
+      if (choice.message.hasToolCalls()) {
+        toolCalls.push(...choice.message.getToolCalls() || []);
       }
     }
     return toolCalls;

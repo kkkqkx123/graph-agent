@@ -2,6 +2,7 @@ import { injectable, inject } from 'inversify';
 import { LLMRequest } from '../../../domain/llm/entities/llm-request';
 import { LLMResponse } from '../../../domain/llm/entities/llm-response';
 import { ModelConfig } from '../../../domain/llm/value-objects/model-config';
+import { LLMMessage } from '../../../domain/llm/value-objects/llm-message';
 import { ID } from '../../../domain/common/value-objects/id';
 import { BaseLLMClient } from './base-llm-client';
 import { OpenAIProvider, getMessageConverter } from '../converters';
@@ -133,10 +134,7 @@ export class OpenAIChatClient extends BaseLLMClient {
                   request.model,
                   [{
                     index: choice.index || 0,
-                    message: {
-                      role: 'assistant',
-                      content: choice.delta?.content || ''
-                    },
+                    message: LLMMessage.createAssistant(choice.delta?.content || ''),
                     finish_reason: choice.finish_reason || ''
                   }],
                   {
@@ -390,8 +388,8 @@ export class OpenAIChatClient extends BaseLLMClient {
   public override async formatMessages(messages: any[]): Promise<any[]> {
     // Format messages for OpenAI API
     return messages.map(msg => ({
-      role: msg.role,
-      content: msg.content
+      role: msg.getRole(),
+      content: msg.getContent()
     }));
   }
 

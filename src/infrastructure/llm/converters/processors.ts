@@ -1,10 +1,10 @@
 /**
  * 处理器接口定义
- * 
+ *
  * 提供工具和内容处理的标准化接口
  */
 
-import { LLMMessage } from '../../../domain/llm/entities/llm-request';
+import { LLMMessage } from '../../../domain/llm/value-objects/llm-message';
 import { ConversionContext } from './base';
 
 /**

@@ -1,10 +1,10 @@
 /**
  * 统一消息转换器
- * 
+ *
  * 提供所有消息格式转换的统一入口
  */
 
-import { LLMMessage } from '../../../domain/llm/entities/llm-request';
+import { LLMMessage, LLMMessageRole } from '../../../domain/llm/value-objects/llm-message';
 import { MessageRole } from './base';
 
 /**
@@ -163,27 +163,27 @@ export class MessageConverter {
   private isLLMMessage(message: any): message is LLMMessage {
     return message &&
       typeof message === 'object' &&
-      'role' in message &&
-      'content' in message;
+      typeof message.getRole === 'function' &&
+      typeof message.getContent === 'function';
   }
 
   /**
    * 将LLM消息转换为基础消息
    */
   private llmToBase(message: LLMMessage): BaseMessage {
-    const role = message.role;
-    const content = message.content;
-    const name = message.name;
-    const metadata = {}; // LLMMessage没有metadata字段，使用空对象
+    const role = message.getRole();
+    const content = message.getContent();
+    const name = message.getName();
+    const metadata = message.getMetadata() || {};
 
-    if (role === 'user') {
+    if (role === LLMMessageRole.USER) {
       return new HumanMessage(content, name, metadata);
-    } else if (role === 'assistant') {
-      return new AIMessage(content, name, message.tool_calls, metadata);
-    } else if (role === 'system') {
+    } else if (role === LLMMessageRole.ASSISTANT) {
+      return new AIMessage(content, name, message.getToolCalls(), metadata);
+    } else if (role === LLMMessageRole.SYSTEM) {
       return new SystemMessage(content, name, metadata);
-    } else if (role === 'tool') {
-      return new ToolMessage(content, message.tool_call_id || '', name, metadata);
+    } else if (role === LLMMessageRole.TOOL) {
+      return new ToolMessage(content, message.getToolCallId() || '', name, metadata);
     } else {
       // 默认为人类消息
       return new HumanMessage(content, name, metadata);
@@ -227,36 +227,17 @@ export class MessageConverter {
    * 将基础消息转换为LLM消息
    */
   private baseToLLM(message: BaseMessage): LLMMessage {
-    let role: 'system' | 'user' | 'assistant' | 'tool' = 'user';
-
     if (message instanceof HumanMessage) {
-      role = 'user';
+      return LLMMessage.createUser(message.content, message.additionalKwargs);
     } else if (message instanceof AIMessage) {
-      role = 'assistant';
+      return LLMMessage.createAssistant(message.content, message.additionalKwargs);
     } else if (message instanceof SystemMessage) {
-      role = 'system';
+      return LLMMessage.createSystem(message.content, message.additionalKwargs);
     } else if (message instanceof ToolMessage) {
-      role = 'tool';
+      return LLMMessage.createTool(message.content, message.additionalKwargs);
+    } else {
+      return LLMMessage.createUser(message.content, message.additionalKwargs);
     }
-
-    const llmMessage: LLMMessage = {
-      role,
-      content: message.content
-    };
-
-    if (message.name) {
-      llmMessage.name = message.name;
-    }
-
-    if (message instanceof AIMessage && message.toolCalls) {
-      llmMessage.tool_calls = message.toolCalls;
-    }
-
-    if (message instanceof ToolMessage) {
-      llmMessage.tool_call_id = message.toolCallId;
-    }
-
-    return llmMessage;
   }
 
   /**
@@ -357,49 +338,36 @@ export class MessageConverter {
    * 便捷方法：创建系统消息
    */
   createSystemMessage(content: string): LLMMessage {
-    return {
-      role: 'system',
-      content
-    };
+    return LLMMessage.createSystem(content);
   }
 
   /**
    * 便捷方法：创建用户消息
    */
   createUserMessage(content: string): LLMMessage {
-    return {
-      role: 'user',
-      content
-    };
+    return LLMMessage.createUser(content);
   }
 
   /**
    * 便捷方法：创建助手消息
    */
   createAssistantMessage(content: string): LLMMessage {
-    return {
-      role: 'assistant',
-      content
-    };
+    return LLMMessage.createAssistant(content);
   }
 
   /**
    * 便捷方法：创建工具消息
    */
   createToolMessage(content: string, toolCallId: string): LLMMessage {
-    return {
-      role: 'tool',
-      content,
-      tool_call_id: toolCallId
-    };
+    return LLMMessage.createTool(content);
   }
 
   /**
    * 检查是否包含工具调用
    */
   hasToolCalls(message: BaseMessage | LLMMessage): boolean {
-    if ('tool_calls' in message && message.tool_calls && message.tool_calls.length > 0) {
-      return true;
+    if (message instanceof LLMMessage) {
+      return message.hasToolCalls();
     }
 
     if (message instanceof AIMessage && message.toolCalls && message.toolCalls.length > 0) {
@@ -420,12 +388,12 @@ export class MessageConverter {
       arguments: string;
     };
   }> {
-    if (message instanceof AIMessage && message.toolCalls) {
-      return message.toolCalls;
+    if (message instanceof LLMMessage) {
+      return message.getToolCalls() || [];
     }
 
-    if ('tool_calls' in message && message.tool_calls) {
-      return message.tool_calls;
+    if (message instanceof AIMessage && message.toolCalls) {
+      return message.toolCalls;
     }
 
     return [];
@@ -459,9 +427,9 @@ export class MessageConverter {
       arguments: string;
     };
   }>): LLMMessage {
-    return {
-      ...message,
-      tool_calls: toolCalls
-    };
+    // 创建新的消息实例，添加工具调用
+    const messageData = message.toInterface();
+    messageData.toolCalls = toolCalls;
+    return LLMMessage.fromInterface(messageData);
   }
 }

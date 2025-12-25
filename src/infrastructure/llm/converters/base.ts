@@ -4,7 +4,7 @@
  * 提供转换器系统的核心抽象和基础实现
  */
 
-import { LLMMessage } from '../../../domain/llm/entities/llm-request';
+import { LLMMessage } from '../../../domain/llm/value-objects/llm-message';
 import { IToolProcessor, IContentProcessor } from './processors';
 
 /**

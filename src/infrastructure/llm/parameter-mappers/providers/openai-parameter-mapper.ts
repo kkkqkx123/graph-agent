@@ -1,5 +1,6 @@
 import { LLMRequest } from '../../../../domain/llm/entities/llm-request';
 import { LLMResponse } from '../../../../domain/llm/entities/llm-response';
+import { LLMMessage } from '../../../../domain/llm/value-objects/llm-message';
 import { BaseParameterMapper } from '../base-parameter-mapper';
 import { ProviderConfig, ProviderRequest, ProviderResponse, ParameterDefinition } from '../interfaces/parameter-mapper.interface';
 import { ParameterDefinitionBuilder, CommonParameterDefinitions } from '../interfaces/parameter-definition.interface';
@@ -236,11 +237,7 @@ export class OpenAIParameterMapper extends BaseParameterMapper {
       originalRequest.model,
       [{
         index: choice.index || 0,
-        message: {
-          role: choice.message.role || 'assistant',
-          content: choice.message.content || '',
-          tool_calls: choice.message.tool_calls
-        },
+        message: LLMMessage.createAssistant(choice.message.content || ''),
         finish_reason: choice.finish_reason || 'stop'
       }],
       {

@@ -12,7 +12,7 @@ import { ModelConfig } from '../../../domain/llm/value-objects/model-config';
 import { ID } from '../../../domain/common/value-objects/id';
 import { HumanRelayMode } from '../../../domain/llm/value-objects/human-relay-mode';
 import { PromptTemplate } from '../../../domain/llm/value-objects/prompt-template';
-import { LLMMessageRole } from '../../../domain/llm/types/llm-types';
+import { LLMMessage, LLMMessageRole } from '../../../domain/llm/value-objects/llm-message';
 import { LLM_DI_IDENTIFIERS } from '../di-identifiers';
 import { ProviderConfig, ApiType } from '../parameter-mappers/interfaces/provider-config.interface';
 import { BaseFeatureSupport } from '../parameter-mappers/interfaces/feature-support.interface';
@@ -242,7 +242,7 @@ export class HumanRelayClient extends BaseLLMClient {
    */
   public override async calculateTokens(request: LLMRequest): Promise<number> {
     // 简单的token估算
-    const text = request.messages.map(m => m.content).join(' ');
+    const text = request.messages.map(m => m.getContent()).join(' ');
     return Math.ceil(text.length / 4);
   }
 
@@ -290,8 +290,8 @@ export class HumanRelayClient extends BaseLLMClient {
 
     // 转换消息格式
     const iLLMMessages = request.messages.map(msg => ({
-      role: this.convertMessageRole(msg.role),
-      content: msg.content,
+      role: this.convertMessageRole(msg.getRole()),
+      content: msg.getContent(),
       metadata: {}
     }));
 
@@ -335,18 +335,18 @@ export class HumanRelayClient extends BaseLLMClient {
   /**
    * 转换消息角色
    */
-  private convertMessageRole(role: string): LLMMessageRole {
+  private convertMessageRole(role: LLMMessageRole): string {
     switch (role) {
-      case 'system':
-        return LLMMessageRole.SYSTEM;
-      case 'user':
-        return LLMMessageRole.USER;
-      case 'assistant':
-        return LLMMessageRole.ASSISTANT;
-      case 'tool':
-        return LLMMessageRole.TOOL;
+      case LLMMessageRole.SYSTEM:
+        return 'system';
+      case LLMMessageRole.USER:
+        return 'user';
+      case LLMMessageRole.ASSISTANT:
+        return 'assistant';
+      case LLMMessageRole.TOOL:
+        return 'tool';
       default:
-        return LLMMessageRole.USER;
+        return 'user';
     }
   }
 
@@ -492,12 +492,12 @@ export class HumanRelayClient extends BaseLLMClient {
       // 添加用户消息
       request.messages.forEach(msg => {
         const iLLMMsg = {
-          role: this.convertMessageRole(msg.role),
-          content: msg.content,
+          role: this.convertMessageRole(msg.getRole()),
+          content: msg.getContent(),
           metadata: {
-            name: msg.name,
-            tool_calls: msg.tool_calls,
-            tool_call_id: msg.tool_call_id
+            name: msg.getName(),
+            tool_calls: msg.getToolCalls(),
+            tool_call_id: msg.getToolCallId()
           }
         };
         this.conversationHistory.push(iLLMMsg);
@@ -539,10 +539,7 @@ export class HumanRelayClient extends BaseLLMClient {
       'human-relay',
       [{
         index: 0,
-        message: {
-          role: 'assistant',
-          content: humanRelayResponse.content
-        },
+        message: LLMMessage.createAssistant(humanRelayResponse.content),
         finish_reason: humanRelayResponse.type === ResponseType.NORMAL ? 'stop' : 'error'
       }],
       {
@@ -586,7 +583,7 @@ export class HumanRelayClient extends BaseLLMClient {
   private estimateTokensSync(request: LLMRequest | string): number {
     const text = typeof request === 'string'
       ? request
-      : request.messages.map(m => m.content).join(' ');
+      : request.messages.map(m => m.getContent()).join(' ');
     return Math.ceil(text.length / 4);
   }
 

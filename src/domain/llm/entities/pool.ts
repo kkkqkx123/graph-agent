@@ -4,6 +4,7 @@ import { Timestamp } from '../../common/value-objects/timestamp';
 import { Version } from '../../common/value-objects/version';
 import { InstanceStatus } from '../value-objects/pool-instance';
 import { RotationStrategy } from '../value-objects/rotation-strategy';
+import { LLMMessage } from '../value-objects/llm-message';
 import { BaseLLMClient } from '../../../infrastructure/llm/clients/base-llm-client';
 import { LLMClientFactory } from '../../../infrastructure/llm/clients/llm-client-factory';
 import { LLMRequest } from './llm-request';
@@ -385,10 +386,7 @@ export class PollingPool extends Entity {
     const request = LLMRequest.create(
       instance.modelName,
       [
-        {
-          role: 'user',
-          content: prompt
-        }
+        LLMMessage.createUser(prompt)
       ],
       {
         temperature: kwargs?.['temperature'] ?? 0.7,

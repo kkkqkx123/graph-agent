@@ -4,7 +4,7 @@
  * 提供Anthropic API的格式转换功能
  */
 
-import { LLMMessage } from '../../../../domain/llm/entities/llm-request';
+import { LLMMessage, LLMMessageRole } from '../../../../domain/llm/value-objects/llm-message';
 import { BaseProvider, ConversionContext } from '../base';
 import { AnthropicToolProcessor, AnthropicContentProcessor } from '../processors';
 
@@ -94,18 +94,18 @@ export class AnthropicProvider extends BaseProvider {
           continue;
         }
 
-        if (!message.role) {
+        if (!message.getRole()) {
           errors.push(`消息 ${i} 缺少role字段`);
         }
 
-        if (!message.content && message.content !== '') {
+        if (!message.getContent() && message.getContent() !== '') {
           errors.push(`消息 ${i} 缺少content字段`);
         }
 
         // 验证角色是否有效
         const validRoles = ['system', 'user', 'assistant', 'tool'];
-        if (message.role && !validRoles.includes(message.role)) {
-          errors.push(`消息 ${i} 的role字段无效: ${message.role}`);
+        if (message.getRole() && !validRoles.includes(message.getRole())) {
+          errors.push(`消息 ${i} 的role字段无效: ${message.getRole()}`);
         }
       }
     }
@@ -139,9 +139,9 @@ export class AnthropicProvider extends BaseProvider {
     message: LLMMessage,
     context: ConversionContext
   ): Record<string, any> | null {
-    const role = message.role;
-    const content = message.content;
-    const name = message.name;
+    const role = message.getRole();
+    const content = message.getContent();
+    const name = message.getName();
 
     // Anthropic将系统消息作为第一个用户消息处理
     if (role === 'system') {
@@ -172,19 +172,20 @@ export class AnthropicProvider extends BaseProvider {
     // Anthropic将系统消息作为第一个用户消息处理
     return {
       role: 'user',
-      content: this.processContent(message.content, context)
+      content: this.processContent(message.getContent(), context)
     };
   }
 
   /**
    * 获取角色映射
    */
-  private getRoleMapping(role: 'system' | 'user' | 'assistant' | 'tool'): string {
-    const roleMapping: Record<string, string> = {
-      'system': 'user', // Anthropic使用user角色发送系统消息
-      'user': 'user',
-      'assistant': 'assistant',
-      'tool': 'tool'
+  private getRoleMapping(role: LLMMessageRole): string {
+    const roleMapping: Record<LLMMessageRole, string> = {
+      [LLMMessageRole.SYSTEM]: 'user', // Anthropic使用user角色发送系统消息
+      [LLMMessageRole.USER]: 'user',
+      [LLMMessageRole.ASSISTANT]: 'assistant',
+      [LLMMessageRole.TOOL]: 'tool',
+      [LLMMessageRole.FUNCTION]: 'tool' // 将FUNCTION映射为tool
     };
 
     return roleMapping[role] || 'user';
@@ -424,16 +425,7 @@ export class AnthropicProvider extends BaseProvider {
     };
 
     // 创建LLM消息
-    const llmMessage: LLMMessage = {
-      role: 'assistant',
-      content: textContent
-    };
-
-    if (toolCalls.length > 0) {
-      llmMessage.tool_calls = toolCalls;
-    }
-
-    return llmMessage;
+    return LLMMessage.createAssistant(textContent);
   }
 
   /**

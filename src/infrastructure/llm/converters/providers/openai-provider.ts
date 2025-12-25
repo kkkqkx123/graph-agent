@@ -4,7 +4,7 @@
  * 提供OpenAI API的格式转换功能
  */
 
-import { LLMMessage } from '../../../../domain/llm/entities/llm-request';
+import { LLMMessage, LLMMessageRole } from '../../../../domain/llm/value-objects/llm-message';
 import { BaseProvider, ConversionContext } from '../base';
 import { OpenAIToolProcessor, OpenAIContentProcessor } from '../processors';
 
@@ -93,18 +93,18 @@ export class OpenAIProvider extends BaseProvider {
           continue;
         }
 
-        if (!message.role) {
+        if (!message.getRole()) {
           errors.push(`消息 ${i} 缺少role字段`);
         }
 
-        if (!message.content && message.content !== '') {
+        if (!message.getContent() && message.getContent() !== '') {
           errors.push(`消息 ${i} 缺少content字段`);
         }
 
         // 验证角色是否有效
         const validRoles = ['system', 'user', 'assistant', 'tool'];
-        if (message.role && !validRoles.includes(message.role)) {
-          errors.push(`消息 ${i} 的role字段无效: ${message.role}`);
+        if (message.getRole() && !validRoles.includes(message.getRole())) {
+          errors.push(`消息 ${i} 的role字段无效: ${message.getRole()}`);
         }
       }
     }
@@ -138,9 +138,9 @@ export class OpenAIProvider extends BaseProvider {
     message: LLMMessage,
     context: ConversionContext
   ): Record<string, any> | null {
-    const role = message.role;
-    const content = message.content;
-    const name = message.name;
+    const role = message.getRole();
+    const content = message.getContent();
+    const name = message.getName();
 
     // 构建基础消息
     const providerMessage: Record<string, any> = {
@@ -154,8 +154,9 @@ export class OpenAIProvider extends BaseProvider {
     }
 
     // 添加工具调用
-    if (message.tool_calls && message.tool_calls.length > 0) {
-      providerMessage['tool_calls'] = message.tool_calls;
+    const toolCalls = message.getToolCalls();
+    if (toolCalls && toolCalls.length > 0) {
+      providerMessage['tool_calls'] = toolCalls;
     }
 
     return providerMessage;
@@ -164,15 +165,36 @@ export class OpenAIProvider extends BaseProvider {
   /**
    * 获取角色映射
    */
-  private getRoleMapping(role: 'system' | 'user' | 'assistant' | 'tool'): string {
+  private getRoleMapping(role: string): string {
     const roleMapping: Record<string, string> = {
       'system': 'system',
       'user': 'user',
       'assistant': 'assistant',
-      'tool': 'tool'
+      'tool': 'tool',
+      'function': 'tool' // 处理FUNCTION角色
     };
 
     return roleMapping[role] || 'user';
+  }
+
+  /**
+   * 将字符串角色转换为LLMMessageRole枚举
+   */
+  private convertStringToRole(role: string): LLMMessageRole {
+    switch (role) {
+      case 'system':
+        return LLMMessageRole.SYSTEM;
+      case 'user':
+        return LLMMessageRole.USER;
+      case 'assistant':
+        return LLMMessageRole.ASSISTANT;
+      case 'tool':
+        return LLMMessageRole.TOOL;
+      case 'function':
+        return LLMMessageRole.FUNCTION;
+      default:
+        return LLMMessageRole.USER;
+    }
   }
 
   /**
@@ -300,14 +322,11 @@ export class OpenAIProvider extends BaseProvider {
     }
 
     // 创建LLM消息
-    const llmMessage: LLMMessage = {
-      role: role as 'system' | 'user' | 'assistant' | 'tool',
-      content: content
-    };
-
-    if (toolCalls.length > 0) {
-      llmMessage.tool_calls = toolCalls;
-    }
+    const llmMessage = LLMMessage.fromInterface({
+      role: this.convertStringToRole(role),
+      content: content,
+      toolCalls: toolCalls.length > 0 ? toolCalls : undefined
+    });
 
     return llmMessage;
   }
