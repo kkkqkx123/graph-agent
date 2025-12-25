@@ -15,7 +15,7 @@ import {
 // import { SessionInfrastructureBindings } from './bindings/session-bindings';
 
 import { ApplicationContainer } from '../../application/container/application-container';
-import { InterfaceContainer } from '../../interface/container/interface-container';
+import { InterfaceContainer } from '../../interfaces/container/interface-container';
 
 /**
  * 服务生命周期枚举
@@ -339,11 +339,11 @@ export class ContainerBootstrap {
       interface: interfaceContainer
     };
   }
-  
+
   // 重新导出分层容器
 }
 
 // 重新导出分层容器
 export { ApplicationContainer } from '../../application/container/application-container';
-export { InterfaceContainer } from '../../interface/container/interface-container';
+export { InterfaceContainer } from '../../interfaces/container/interface-container';
 
