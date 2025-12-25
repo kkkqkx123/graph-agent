@@ -1,15 +1,19 @@
-import { DomainError } from '../../common/errors/domain-error';
-
 /**
  * 轮询池异常基类
  */
-export abstract class PollingPoolError extends DomainError {
+export abstract class PollingPoolError extends Error {
+  public readonly code: string;
+  public readonly details?: Record<string, any>;
+
   constructor(
     message: string,
     code: string,
     details?: Record<string, any>
   ) {
-    super(message, code, details);
+    super(message);
+    this.name = 'PollingPoolError';
+    this.code = code;
+    this.details = details;
   }
 }
 

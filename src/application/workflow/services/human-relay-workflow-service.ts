@@ -13,7 +13,6 @@ import { HumanRelayMode } from '../../../domain/llm/value-objects/human-relay-mo
 import { Workflow } from '../../../domain/workflow/entities/workflow';
 import { WorkflowType } from '../../../domain/workflow/value-objects/workflow-type';
 import { WorkflowConfig } from '../../../domain/workflow/value-objects/workflow-config';
-import { DomainError } from '../../../domain/common/errors/domain-error';
 import { ILogger } from '../../../domain/common/types/logger-types';
 
 /**
@@ -123,7 +122,7 @@ export class HumanRelayWorkflowService {
 
       // 验证工作流是否为HumanRelay类型
       if (!this.isHumanRelayWorkflow(workflow)) {
-        throw new DomainError('工作流不是HumanRelay类型');
+        throw new Error('工作流不是HumanRelay类型');
       }
 
       // 执行工作流
@@ -319,7 +318,7 @@ export class HumanRelayWorkflowService {
 
       // 检查工作流状态是否允许删除
       if (workflow.status.isActive()) {
-        throw new DomainError('无法删除活跃状态的工作流');
+        throw new Error('无法删除活跃状态的工作流');
       }
 
       // 标记工作流为已删除

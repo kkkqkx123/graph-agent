@@ -1,6 +1,4 @@
 import { ValueObject } from '../../common/value-objects/value-object';
-import { DomainError } from '../../common/errors/domain-error';
-
 /**
  * 线程优先级枚举
  */
@@ -63,7 +61,7 @@ export class ThreadPriority extends ValueObject<ThreadPriorityProps> {
    */
   public static fromNumber(value: number): ThreadPriority {
     if (!Object.values(ThreadPriorityValue).includes(value as ThreadPriorityValue)) {
-      throw new DomainError(`无效的线程优先级: ${value}`);
+      throw new Error(`无效的线程优先级: ${value}`);
     }
     return new ThreadPriority({ value: value as ThreadPriorityValue });
   }
@@ -83,7 +81,7 @@ export class ThreadPriority extends ValueObject<ThreadPriorityProps> {
 
     const value = priorityMap[priority.toLowerCase()];
     if (value === undefined) {
-      throw new DomainError(`无效的线程优先级: ${priority}`);
+      throw new Error(`无效的线程优先级: ${priority}`);
     }
 
     return new ThreadPriority({ value });
@@ -195,11 +193,11 @@ export class ThreadPriority extends ValueObject<ThreadPriorityProps> {
    */
   public validate(): void {
     if (!this.props.value) {
-      throw new DomainError('线程优先级不能为空');
+      throw new Error('线程优先级不能为空');
     }
 
     if (!Object.values(ThreadPriorityValue).includes(this.props.value)) {
-      throw new DomainError(`无效的线程优先级: ${this.props.value}`);
+      throw new Error(`无效的线程优先级: ${this.props.value}`);
     }
   }
 

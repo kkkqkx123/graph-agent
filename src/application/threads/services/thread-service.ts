@@ -14,7 +14,6 @@ import { WorkflowRepository } from '../../../domain/workflow/repositories/workfl
 import { ID } from '../../../domain/common/value-objects/id';
 import { ThreadStatus } from '../../../domain/threads/value-objects/thread-status';
 import { ThreadPriority } from '../../../domain/threads/value-objects/thread-priority';
-import { DomainError } from '../../../domain/common/errors/domain-error';
 import { ILogger } from '../../../domain/common/types/logger-types';
 import { CreateThreadRequest, ThreadInfo } from '../dtos';
 
@@ -47,14 +46,14 @@ export class ThreadService {
       const sessionId = ID.fromString(request.sessionId);
       const session = await this.sessionRepository.findById(sessionId);
       if (!session) {
-        throw new DomainError(`会话不存在: ${request.sessionId}`);
+        throw new Error(`会话不存在: ${request.sessionId}`);
       }
 
       // 验证工作流存在
       const workflowId = ID.fromString(request.workflowId);
       const workflow = await this.workflowRepository.findById(workflowId);
       if (!workflow) {
-        throw new DomainError(`工作流不存在: ${request.workflowId}`);
+        throw new Error(`工作流不存在: ${request.workflowId}`);
       }
 
       // 转换请求参数
@@ -126,7 +125,7 @@ export class ThreadService {
 
       // 检查线程状态是否允许删除
       if (thread.status.isRunning()) {
-        throw new DomainError('无法删除运行中的线程');
+        throw new Error('无法删除运行中的线程');
       }
 
       // 标记线程为已删除

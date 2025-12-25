@@ -2,7 +2,6 @@ import { Entity } from '../../common/base/entity';
 import { ID } from '../../common/value-objects/id';
 import { Timestamp } from '../../common/value-objects/timestamp';
 import { Version } from '../../common/value-objects/version';
-import { DomainError } from '../../common/errors/domain-error';
 import { LLMMessage } from '../value-objects/llm-message';
 
 /**
@@ -385,7 +384,7 @@ export class LLMResponse extends Entity {
    */
   public updateChoices(choices: LLMChoice[]): void {
     if (this.props.isDeleted) {
-      throw new DomainError('无法更新已删除LLM响应的选择列表');
+      throw new Error('无法更新已删除LLM响应的选择列表');
     }
 
     const newProps = {
@@ -405,7 +404,7 @@ export class LLMResponse extends Entity {
    */
   public updateUsage(usage: TokenUsage): void {
     if (this.props.isDeleted) {
-      throw new DomainError('无法更新已删除LLM响应的Token使用统计');
+      throw new Error('无法更新已删除LLM响应的Token使用统计');
     }
 
     const newProps = {
@@ -425,7 +424,7 @@ export class LLMResponse extends Entity {
    */
   public updateMetadata(metadata: Record<string, unknown>): void {
     if (this.props.isDeleted) {
-      throw new DomainError('无法更新已删除LLM响应的元数据');
+      throw new Error('无法更新已删除LLM响应的元数据');
     }
 
     const newProps = {
@@ -446,7 +445,7 @@ export class LLMResponse extends Entity {
    */
   public setMetadata(key: string, value: unknown): void {
     if (this.props.isDeleted) {
-      throw new DomainError('无法设置已删除LLM响应的元数据');
+      throw new Error('无法设置已删除LLM响应的元数据');
     }
 
     const newMetadata = { ...this.props.metadata };
@@ -469,7 +468,7 @@ export class LLMResponse extends Entity {
    */
   public removeMetadata(key: string): void {
     if (this.props.isDeleted) {
-      throw new DomainError('无法移除已删除LLM响应的元数据');
+      throw new Error('无法移除已删除LLM响应的元数据');
     }
 
     const newMetadata = { ...this.props.metadata };
@@ -544,61 +543,61 @@ export class LLMResponse extends Entity {
    */
   public validateInvariants(): void {
     if (!this.props.id) {
-      throw new DomainError('LLM响应ID不能为空');
+      throw new Error('LLM响应ID不能为空');
     }
 
     if (!this.props.requestId) {
-      throw new DomainError('LLM请求ID不能为空');
+      throw new Error('LLM请求ID不能为空');
     }
 
     if (!this.props.model || this.props.model.trim().length === 0) {
-      throw new DomainError('模型名称不能为空');
+      throw new Error('模型名称不能为空');
     }
 
     if (!this.props.choices || this.props.choices.length === 0) {
-      throw new DomainError('选择列表不能为空');
+      throw new Error('选择列表不能为空');
     }
 
     if (!this.props.usage) {
-      throw new DomainError('Token使用统计不能为空');
+      throw new Error('Token使用统计不能为空');
     }
 
     if (!this.props.finishReason || this.props.finishReason.trim().length === 0) {
-      throw new DomainError('完成原因不能为空');
+      throw new Error('完成原因不能为空');
     }
 
     if (this.props.duration < 0) {
-      throw new DomainError('响应时间不能为负数');
+      throw new Error('响应时间不能为负数');
     }
 
     // 验证Token使用统计
     if (this.props.usage.promptTokens < 0) {
-      throw new DomainError('提示Token数不能为负数');
+      throw new Error('提示Token数不能为负数');
     }
 
     if (this.props.usage.completionTokens < 0) {
-      throw new DomainError('完成Token数不能为负数');
+      throw new Error('完成Token数不能为负数');
     }
 
     if (this.props.usage.totalTokens < 0) {
-      throw new DomainError('总Token数不能为负数');
+      throw new Error('总Token数不能为负数');
     }
 
     if (this.props.usage.totalTokens !== this.props.usage.promptTokens + this.props.usage.completionTokens) {
-      throw new DomainError('总Token数必须等于提示Token数加完成Token数');
+      throw new Error('总Token数必须等于提示Token数加完成Token数');
     }
 
     // 验证成本数据
     if (this.props.usage.promptTokensCost !== undefined && this.props.usage.promptTokensCost < 0) {
-      throw new DomainError('提示Token成本不能为负数');
+      throw new Error('提示Token成本不能为负数');
     }
 
     if (this.props.usage.completionTokensCost !== undefined && this.props.usage.completionTokensCost < 0) {
-      throw new DomainError('完成Token成本不能为负数');
+      throw new Error('完成Token成本不能为负数');
     }
 
     if (this.props.usage.totalCost !== undefined && this.props.usage.totalCost < 0) {
-      throw new DomainError('总成本不能为负数');
+      throw new Error('总成本不能为负数');
     }
   }
 

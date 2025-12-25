@@ -19,11 +19,8 @@ export { ValueObject } from './value-objects/value-object';
 // 基础类
 export { Entity } from './base/entity';
 
-// 错误类
-export { DomainError } from './errors/domain-error';
-export { RepositoryError } from './errors/repository-error';
-// 错误处理器已迁移到 infrastructure 层
-// 如需使用，请从 infrastructure/common/error-handlers 导入
+// 错误处理已简化，直接使用标准 Error 类
+// 如需专门的错误处理，请在各自的模块中定义
 
 // 事件类
 export { DomainEvent } from './events/domain-event';

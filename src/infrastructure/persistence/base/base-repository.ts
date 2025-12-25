@@ -2,7 +2,6 @@ import { injectable, inject } from 'inversify';
 import { Repository as IRepository, IQueryOptions, PaginatedResult } from '../../../domain/common/repositories/repository';
 import { ID } from '../../../domain/common/value-objects/id';
 import { ConnectionManager } from '../connections/connection-manager';
-import { RepositoryError } from '../../../domain/common/errors/repository-error';
 import { DataSource, Repository, FindOptionsWhere, FindManyOptions, ObjectLiteral, SelectQueryBuilder, In } from 'typeorm';
 import { QueryOptionsBuilder, QueryBuilderOptions } from './query-options-builder';
 import { QueryTemplateManager, QueryTemplateRegistrar } from './query-template-manager';
@@ -31,7 +30,7 @@ export interface ErrorContext {
 /**
  * 增强的Repository错误类
  */
-export class EnhancedRepositoryError extends RepositoryError {
+export class EnhancedRepositoryError extends Error {
   public readonly context: ErrorContext;
   public readonly type: ErrorType;
 
@@ -459,7 +458,7 @@ export abstract class BaseRepository<T, TModel extends ObjectLiteral, TId = ID> 
       const models = await qb.getMany();
       return models.map(model => this.toEntity(model));
     } catch (error) {
-      throw new RepositoryError(`条件查找实体失败: ${error instanceof Error ? error.message : String(error)}`);
+      throw new Error(`条件查找实体失败: ${error instanceof Error ? error.message : String(error)}`);
     }
   }
 
@@ -589,7 +588,7 @@ export abstract class BaseRepository<T, TModel extends ObjectLiteral, TId = ID> 
   async findOneOrFail(options: IQueryOptions): Promise<T> {
     const entity = await this.findOne(options);
     if (!entity) {
-      throw new RepositoryError('未找到符合条件的实体');
+      throw new Error('未找到符合条件的实体');
     }
     return entity;
   }
@@ -621,7 +620,7 @@ export abstract class BaseRepository<T, TModel extends ObjectLiteral, TId = ID> 
         totalPages
       };
     } catch (error) {
-      throw new RepositoryError(`分页查询实体失败: ${error instanceof Error ? error.message : String(error)}`);
+      throw new Error(`分页查询实体失败: ${error instanceof Error ? error.message : String(error)}`);
     }
   }
 
@@ -636,7 +635,7 @@ export abstract class BaseRepository<T, TModel extends ObjectLiteral, TId = ID> 
 
       return this.toEntity(savedModel);
     } catch (error) {
-      throw new RepositoryError(`保存实体失败: ${error instanceof Error ? error.message : String(error)}`);
+      throw new Error(`保存实体失败: ${error instanceof Error ? error.message : String(error)}`);
     }
   }
 
@@ -651,7 +650,7 @@ export abstract class BaseRepository<T, TModel extends ObjectLiteral, TId = ID> 
 
       return savedModels.map(model => this.toEntity(model));
     } catch (error) {
-      throw new RepositoryError(`批量保存实体失败: ${error instanceof Error ? error.message : String(error)}`);
+      throw new Error(`批量保存实体失败: ${error instanceof Error ? error.message : String(error)}`);
     }
   }
 
@@ -664,7 +663,7 @@ export abstract class BaseRepository<T, TModel extends ObjectLiteral, TId = ID> 
       const model = this.toModel(entity);
       await repository.remove(model);
     } catch (error) {
-      throw new RepositoryError(`删除实体失败: ${error instanceof Error ? error.message : String(error)}`);
+      throw new Error(`删除实体失败: ${error instanceof Error ? error.message : String(error)}`);
     }
   }
 
@@ -676,7 +675,7 @@ export abstract class BaseRepository<T, TModel extends ObjectLiteral, TId = ID> 
       const repository = await this.getRepository();
       await repository.delete(this.buildIdWhere(id) as FindOptionsWhere<TModel>);
     } catch (error) {
-      throw new RepositoryError(`根据ID删除实体失败: ${error instanceof Error ? error.message : String(error)}`);
+      throw new Error(`根据ID删除实体失败: ${error instanceof Error ? error.message : String(error)}`);
     }
   }
 
@@ -689,7 +688,7 @@ export abstract class BaseRepository<T, TModel extends ObjectLiteral, TId = ID> 
       const models = entities.map(entity => this.toModel(entity));
       await repository.remove(models);
     } catch (error) {
-      throw new RepositoryError(`批量删除实体失败: ${error instanceof Error ? error.message : String(error)}`);
+      throw new Error(`批量删除实体失败: ${error instanceof Error ? error.message : String(error)}`);
     }
   }
 
@@ -712,7 +711,7 @@ export abstract class BaseRepository<T, TModel extends ObjectLiteral, TId = ID> 
       const result = await queryBuilder.execute();
       return result.affected || 0;
     } catch (error) {
-      throw new RepositoryError(`条件删除实体失败: ${error instanceof Error ? error.message : String(error)}`);
+      throw new Error(`条件删除实体失败: ${error instanceof Error ? error.message : String(error)}`);
     }
   }
 
@@ -727,7 +726,7 @@ export abstract class BaseRepository<T, TModel extends ObjectLiteral, TId = ID> 
       });
       return count > 0;
     } catch (error) {
-      throw new RepositoryError(`检查实体存在性失败: ${error instanceof Error ? error.message : String(error)}`);
+      throw new Error(`检查实体存在性失败: ${error instanceof Error ? error.message : String(error)}`);
     }
   }
 
@@ -754,7 +753,7 @@ export abstract class BaseRepository<T, TModel extends ObjectLiteral, TId = ID> 
 
       return queryBuilder.getCount();
     } catch (error) {
-      throw new RepositoryError(`统计实体数量失败: ${error instanceof Error ? error.message : String(error)}`);
+      throw new Error(`统计实体数量失败: ${error instanceof Error ? error.message : String(error)}`);
     }
   }
 
@@ -990,7 +989,7 @@ export abstract class BaseRepository<T, TModel extends ObjectLiteral, TId = ID> 
       
       return result.affected || 0;
     } catch (error) {
-      throw new RepositoryError(`批量更新实体失败: ${error instanceof Error ? error.message : String(error)}`);
+      throw new Error(`批量更新实体失败: ${error instanceof Error ? error.message : String(error)}`);
     }
   }
 
@@ -1009,7 +1008,7 @@ export abstract class BaseRepository<T, TModel extends ObjectLiteral, TId = ID> 
       
       return result.affected || 0;
     } catch (error) {
-      throw new RepositoryError(`批量删除实体失败: ${error instanceof Error ? error.message : String(error)}`);
+      throw new Error(`批量删除实体失败: ${error instanceof Error ? error.message : String(error)}`);
     }
   }
 

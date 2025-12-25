@@ -4,7 +4,6 @@ import { ID } from '../../common/value-objects/id';
 import { WorkflowStatus } from '../value-objects/workflow-status';
 import { WorkflowType } from '../value-objects/workflow-type';
 import { WorkflowConfig } from '../value-objects/workflow-config';
-import { DomainError } from '../../common/errors/domain-error';
 import { NodeId } from '../value-objects/node-id';
 import { NodeType } from '../value-objects/node-type';
 import { EdgeId } from '../value-objects/edge-id';
@@ -33,7 +32,7 @@ export class WorkflowDomainService {
     // 验证工作流名称是否已存在
     const exists = await this.workflowRepository.existsByName(name);
     if (exists) {
-      throw new DomainError(`工作流名称 "${name}" 已存在`);
+      throw new Error(`工作流名称 "${name}" 已存在`);
     }
 
     // 验证配置
@@ -52,28 +51,28 @@ export class WorkflowDomainService {
 
     // 已归档的工作流不能变更到其他状态
     if (currentStatus.isArchived() && !newStatus.isArchived()) {
-      throw new DomainError('已归档的工作流不能变更到其他状态');
+      throw new Error('已归档的工作流不能变更到其他状态');
     }
 
     // 草稿状态只能激活或归档
     if (currentStatus.isDraft() &&
         !newStatus.isActive() &&
         !newStatus.isArchived()) {
-      throw new DomainError('草稿状态的工作流只能激活或归档');
+      throw new Error('草稿状态的工作流只能激活或归档');
     }
 
     // 活跃状态只能变为非活跃或归档
     if (currentStatus.isActive() &&
         !newStatus.isInactive() &&
         !newStatus.isArchived()) {
-      throw new DomainError('活跃状态的工作流只能变为非活跃或归档');
+      throw new Error('活跃状态的工作流只能变为非活跃或归档');
     }
 
     // 非活跃状态只能变为活跃或归档
     if (currentStatus.isInactive() &&
         !newStatus.isActive() &&
         !newStatus.isArchived()) {
-      throw new DomainError('非活跃状态的工作流只能变为活跃或归档');
+      throw new Error('非活跃状态的工作流只能变为活跃或归档');
     }
   }
 
@@ -83,15 +82,15 @@ export class WorkflowDomainService {
    */
   validateExecutionEligibility(workflow: Workflow): void {
     if (!workflow.status.isActive()) {
-      throw new DomainError('只有活跃状态的工作流才能执行');
+      throw new Error('只有活跃状态的工作流才能执行');
     }
 
     if (workflow.isDeleted()) {
-      throw new DomainError('已删除的工作流不能执行');
+      throw new Error('已删除的工作流不能执行');
     }
 
     if (workflow.isEmpty()) {
-      throw new DomainError('空工作流不能执行');
+      throw new Error('空工作流不能执行');
     }
   }
 
@@ -103,11 +102,11 @@ export class WorkflowDomainService {
    */
   validateNodeAddition(workflow: Workflow, nodeId: NodeId, nodeType: NodeType): void {
     if (!workflow.status.canEdit()) {
-      throw new DomainError('只能编辑草稿状态工作流的节点');
+      throw new Error('只能编辑草稿状态工作流的节点');
     }
 
     if (workflow.hasNode(nodeId)) {
-      throw new DomainError('节点已存在');
+      throw new Error('节点已存在');
     }
 
     // 验证节点类型的业务规则
@@ -121,17 +120,17 @@ export class WorkflowDomainService {
    */
   validateNodeRemoval(workflow: Workflow, nodeId: NodeId): void {
     if (!workflow.status.canEdit()) {
-      throw new DomainError('只能编辑草稿状态工作流的节点');
+      throw new Error('只能编辑草稿状态工作流的节点');
     }
 
     if (!workflow.hasNode(nodeId)) {
-      throw new DomainError('节点不存在');
+      throw new Error('节点不存在');
     }
 
     // 检查是否有边连接到此节点
     const connectedEdges = workflow.getIncomingEdges(nodeId).concat(workflow.getOutgoingEdges(nodeId));
     if (connectedEdges.length > 0) {
-      throw new DomainError('无法移除有边连接的节点');
+      throw new Error('无法移除有边连接的节点');
     }
   }
 
@@ -151,20 +150,20 @@ export class WorkflowDomainService {
     toNodeId: NodeId
   ): void {
     if (!workflow.status.canEdit()) {
-      throw new DomainError('只能编辑草稿状态工作流的边');
+      throw new Error('只能编辑草稿状态工作流的边');
     }
 
     if (workflow.hasEdge(edgeId)) {
-      throw new DomainError('边已存在');
+      throw new Error('边已存在');
     }
 
     // 检查源节点和目标节点是否存在
     if (!workflow.hasNode(fromNodeId)) {
-      throw new DomainError('源节点不存在');
+      throw new Error('源节点不存在');
     }
 
     if (!workflow.hasNode(toNodeId)) {
-      throw new DomainError('目标节点不存在');
+      throw new Error('目标节点不存在');
     }
 
     // 验证边类型的业务规则
@@ -178,11 +177,11 @@ export class WorkflowDomainService {
    */
   validateEdgeRemoval(workflow: Workflow, edgeId: EdgeId): void {
     if (!workflow.status.canEdit()) {
-      throw new DomainError('只能编辑草稿状态工作流的边');
+      throw new Error('只能编辑草稿状态工作流的边');
     }
 
     if (!workflow.hasEdge(edgeId)) {
-      throw new DomainError('边不存在');
+      throw new Error('边不存在');
     }
   }
 

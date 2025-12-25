@@ -1,6 +1,4 @@
 import { ValueObject } from '../../common/value-objects/value-object';
-import { DomainError } from '../../common/errors/domain-error';
-
 export enum ExecutionStrategyType {
   SEQUENTIAL = 'sequential',
   PARALLEL = 'parallel',
@@ -21,18 +19,18 @@ export class ExecutionStrategy extends ValueObject<ExecutionStrategyProps> {
 
   public validate(): void {
     if (!Object.values(ExecutionStrategyType).includes(this.props.type)) {
-      throw new DomainError(`无效的执行策略: ${this.props.type}`);
+      throw new Error(`无效的执行策略: ${this.props.type}`);
     }
     
     if (this.props.type === ExecutionStrategyType.PARALLEL) {
       if (this.props.maxConcurrency && this.props.maxConcurrency <= 0) {
-        throw new DomainError('并行策略的最大并发数必须大于0');
+        throw new Error('并行策略的最大并发数必须大于0');
       }
     }
     
     if (this.props.type === ExecutionStrategyType.CONDITIONAL) {
       if (!this.props.condition) {
-        throw new DomainError('条件策略必须指定条件表达式');
+        throw new Error('条件策略必须指定条件表达式');
       }
     }
   }

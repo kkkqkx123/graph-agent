@@ -1,15 +1,19 @@
-import { DomainError } from '../../common/errors/domain-error';
-
 /**
  * 任务组异常基类
  */
-export abstract class TaskGroupError extends DomainError {
+export abstract class TaskGroupError extends Error {
+  public readonly code: string;
+  public readonly details?: Record<string, any>;
+
   constructor(
     message: string,
     code: string,
     details?: Record<string, any>
   ) {
-    super(message, code, details);
+    super(message);
+    this.name = 'TaskGroupError';
+    this.code = code;
+    this.details = details;
   }
 }
 

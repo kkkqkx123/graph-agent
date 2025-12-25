@@ -1,5 +1,4 @@
 import { ValueObject } from '../../common/value-objects/value-object';
-import { DomainError } from '../../common/errors/domain-error';
 
 /**
  * 工作流类型枚举
@@ -72,7 +71,7 @@ export class WorkflowType extends ValueObject<WorkflowTypeProps> {
    */
   public static fromString(type: string): WorkflowType {
     if (!Object.values(WorkflowTypeValue).includes(type as WorkflowTypeValue)) {
-      throw new DomainError(`无效的工作流类型: ${type}`);
+      throw new Error(`无效的工作流类型: ${type}`);
     }
     return new WorkflowType({ value: type as WorkflowTypeValue });
   }
@@ -166,11 +165,11 @@ export class WorkflowType extends ValueObject<WorkflowTypeProps> {
    */
   public validate(): void {
     if (!this.props.value) {
-      throw new DomainError('工作流类型不能为空');
+      throw new Error('工作流类型不能为空');
     }
 
     if (!Object.values(WorkflowTypeValue).includes(this.props.value)) {
-      throw new DomainError(`无效的工作流类型: ${this.props.value}`);
+      throw new Error(`无效的工作流类型: ${this.props.value}`);
     }
   }
 

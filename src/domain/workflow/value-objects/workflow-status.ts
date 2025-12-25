@@ -1,5 +1,4 @@
 import { ValueObject } from '../../common/value-objects/value-object';
-import { DomainError } from '../../common/errors/domain-error';
 
 /**
  * 工作流状态枚举
@@ -28,10 +27,10 @@ export class WorkflowStatus extends ValueObject<WorkflowStatusProps> {
     super(props);
     // 在构造时验证一次，确保值对象始终有效
     if (!props.value) {
-      throw new DomainError('工作流状态不能为空');
+      throw new Error('工作流状态不能为空');
     }
     if (!Object.values(WorkflowStatusValue).includes(props.value)) {
-      throw new DomainError(`无效的工作流状态: ${props.value}`);
+      throw new Error(`无效的工作流状态: ${props.value}`);
     }
   }
 
@@ -74,7 +73,7 @@ export class WorkflowStatus extends ValueObject<WorkflowStatusProps> {
    */
   public static fromString(status: string): WorkflowStatus {
     if (!Object.values(WorkflowStatusValue).includes(status as WorkflowStatusValue)) {
-      throw new DomainError(`无效的工作流状态: ${status}`);
+      throw new Error(`无效的工作流状态: ${status}`);
     }
     return new WorkflowStatus({ value: status as WorkflowStatusValue });
   }

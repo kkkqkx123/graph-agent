@@ -1,6 +1,4 @@
 import { ValueObject } from '../../common/value-objects/value-object';
-import { DomainError } from '../../common/errors/domain-error';
-
 /**
  * 会话配置接口
  */
@@ -121,19 +119,19 @@ export class SessionConfig extends ValueObject<SessionConfigProps> {
    */
   public validate(): void {
     if (this.props.maxDuration <= 0) {
-      throw new DomainError('最大持续时间必须大于0');
+      throw new Error('最大持续时间必须大于0');
     }
 
     if (this.props.maxMessages <= 0) {
-      throw new DomainError('最大消息数量必须大于0');
+      throw new Error('最大消息数量必须大于0');
     }
 
     if (this.props.timeoutMinutes <= 0) {
-      throw new DomainError('超时时间必须大于0');
+      throw new Error('超时时间必须大于0');
     }
 
     if (this.props.timeoutMinutes > this.props.maxDuration) {
-      throw new DomainError('超时时间不能大于最大持续时间');
+      throw new Error('超时时间不能大于最大持续时间');
     }
   }
 

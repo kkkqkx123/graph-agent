@@ -91,7 +91,7 @@ describe('QueryOptionsBuilder 功能测试', () => {
       const mockQb = {
         andWhere: jest.fn()
       };
-      options.customConditions!(mockQb);
+      options.customConditions!(mockQb as any);
       expect(mockQb.andWhere).toHaveBeenCalledWith('entity.status = :status', { status: 'active' });
     });
 
@@ -105,7 +105,7 @@ describe('QueryOptionsBuilder 功能测试', () => {
       const mockQb = {
         andWhere: jest.fn()
       };
-      options.customConditions!(mockQb);
+      options.customConditions!(mockQb as any);
       expect(mockQb.andWhere).toHaveBeenCalledWith('entity.status IN (:...status)', { status: ['active', 'pending'] });
     });
 
@@ -119,14 +119,14 @@ describe('QueryOptionsBuilder 功能测试', () => {
       const mockQb = {
         andWhere: jest.fn()
       };
-      options.customConditions!(mockQb);
+      options.customConditions!(mockQb as any);
       expect(mockQb.andWhere).toHaveBeenCalledWith('entity.name LIKE :name', { name: '%test%' });
     });
 
     it('应该正确构建范围条件', () => {
       const startDate = new Date('2023-01-01');
       const endDate = new Date('2023-12-31');
-      
+
       const builder = QueryOptionsBuilder.create<TestModel>()
         .between('createdAt', startDate, endDate);
 
@@ -136,7 +136,7 @@ describe('QueryOptionsBuilder 功能测试', () => {
       const mockQb = {
         andWhere: jest.fn()
       };
-      options.customConditions!(mockQb);
+      options.customConditions!(mockQb as any);
       expect(mockQb.andWhere).toHaveBeenCalledWith('entity.createdAt BETWEEN :start AND :end', { start: startDate, end: endDate });
     });
 
@@ -151,7 +151,7 @@ describe('QueryOptionsBuilder 功能测试', () => {
       const mockQb = {
         andWhere: jest.fn()
       };
-      options.customConditions!(mockQb);
+      options.customConditions!(mockQb as any);
       expect(mockQb.andWhere).toHaveBeenCalledWith('entity.priority > :priority', { priority: 5 });
       expect(mockQb.andWhere).toHaveBeenCalledWith('entity.priority < :priority', { priority: 10 });
     });
@@ -168,7 +168,7 @@ describe('QueryOptionsBuilder 功能测试', () => {
       const mockQb = {
         andWhere: jest.fn()
       };
-      options.customConditions!(mockQb);
+      options.customConditions!(mockQb as any);
       expect(mockQb.andWhere).toHaveBeenCalledWith('entity.metadata::jsonb @> :value', { value: JSON.stringify({ type: 'user' }) });
     });
 
@@ -182,7 +182,7 @@ describe('QueryOptionsBuilder 功能测试', () => {
       const mockQb = {
         andWhere: jest.fn()
       };
-      options.customConditions!(mockQb);
+      options.customConditions!(mockQb as any);
       expect(mockQb.andWhere).toHaveBeenCalledWith('entity.metadata->>:path = :value', { path: 'settings.theme', value: 'dark' });
     });
   });
@@ -198,7 +198,7 @@ describe('QueryOptionsBuilder 功能测试', () => {
       const mockQb = {
         andWhere: jest.fn()
       };
-      options.customConditions!(mockQb);
+      options.customConditions!(mockQb as any);
       expect(mockQb.andWhere).toHaveBeenCalledWith('entity.isDeleted = false');
     });
 
@@ -212,7 +212,7 @@ describe('QueryOptionsBuilder 功能测试', () => {
       const mockQb = {
         andWhere: jest.fn()
       };
-      options.customConditions!(mockQb);
+      options.customConditions!(mockQb as any);
       expect(mockQb.andWhere).toHaveBeenCalledWith('entity.isDeleted = true');
     });
   });
@@ -246,7 +246,7 @@ describe('QueryOptionsBuilder 功能测试', () => {
     it('应该正确使用时间范围模板', () => {
       const startDate = new Date('2023-01-01');
       const endDate = new Date('2023-12-31');
-      
+
       const builder = templateManager.buildWithTemplate('timeRange', {
         field: 'createdAt',
         startTime: startDate,
@@ -258,11 +258,11 @@ describe('QueryOptionsBuilder 功能测试', () => {
       expect(options.customConditions).toBeDefined();
       expect(options.sortBy).toBe('createdAt');
       expect(options.sortOrder).toBe('asc');
-      
+
       const mockQb = {
         andWhere: jest.fn()
       };
-      options.customConditions!(mockQb);
+      options.customConditions!(mockQb as any);
       expect(mockQb.andWhere).toHaveBeenCalledWith('entity.createdAt BETWEEN :start AND :end', { start: startDate, end: endDate });
     });
 
@@ -277,11 +277,11 @@ describe('QueryOptionsBuilder 功能测试', () => {
       expect(options.customConditions).toBeDefined();
       expect(options.sortBy).toBe('createdAt');
       expect(options.sortOrder).toBe('desc');
-      
+
       const mockQb = {
         andWhere: jest.fn()
       };
-      options.customConditions!(mockQb);
+      options.customConditions!(mockQb as any);
       expect(mockQb.andWhere).toHaveBeenCalledWith('entity.status = :status', { status: 'active' });
     });
 
@@ -296,11 +296,11 @@ describe('QueryOptionsBuilder 功能测试', () => {
       expect(options.customConditions).toBeDefined();
       expect(options.sortBy).toBe('createdAt');
       expect(options.sortOrder).toBe('desc');
-      
+
       const mockQb = {
         andWhere: jest.fn()
       };
-      options.customConditions!(mockQb);
+      options.customConditions!(mockQb as any);
       expect(mockQb.andWhere).toHaveBeenCalledWith('entity.name ILIKE :name', { name: '%test%' });
     });
 
@@ -329,11 +329,11 @@ describe('QueryOptionsBuilder 功能测试', () => {
       expect(options.customConditions).toBeDefined();
       expect(options.sortBy).toBe('priority');
       expect(options.sortOrder).toBe('desc');
-      
+
       const mockQb = {
         andWhere: jest.fn()
       };
-      options.customConditions!(mockQb);
+      options.customConditions!(mockQb as any);
       expect(mockQb.andWhere).toHaveBeenCalledWith('entity.status IN (:...status)', { status: ['active', 'pending'] });
       expect(mockQb.andWhere).toHaveBeenCalledWith('entity.isDeleted = false');
     });

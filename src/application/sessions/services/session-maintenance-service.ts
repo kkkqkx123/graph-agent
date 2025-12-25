@@ -8,7 +8,6 @@ import { Session } from '../../../domain/sessions/entities/session';
 import { SessionRepository } from '../../../domain/sessions/repositories/session-repository';
 import { ThreadRepository } from '../../../domain/threads/repositories/thread-repository';
 import { SessionDomainService } from '../../../domain/sessions/services/session-domain-service';
-import { DomainError } from '../../../domain/common/errors/domain-error';
 import { BaseApplicationService } from '../../common/base-application-service';
 import { SessionInfo, SessionStatistics } from '../dtos';
 import { ILogger } from '../../../domain/common/types';
@@ -52,7 +51,7 @@ export class SessionMaintenanceService extends BaseApplicationService {
         // 检查会话是否有活跃线程
         const hasActiveThreads = await this.threadRepository.hasActiveThreads(id);
         if (hasActiveThreads) {
-          throw new DomainError('无法删除有活跃线程的会话');
+          throw new Error('无法删除有活跃线程的会话');
         }
 
         // 标记会话为已删除
@@ -171,7 +170,7 @@ export class SessionMaintenanceService extends BaseApplicationService {
       async () => {
         const user = this.parseOptionalId(userId, '用户ID');
         if (!user) {
-          throw new DomainError('获取会话统计信息需要提供用户ID');
+          throw new Error('获取会话统计信息需要提供用户ID');
         }
 
         // 获取用户的所有会话

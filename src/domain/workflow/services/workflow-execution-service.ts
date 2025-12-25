@@ -1,5 +1,4 @@
 import { ID } from '../../common/value-objects/id';
-import { DomainError } from '../../common/errors/domain-error';
 import { WorkflowDefinition } from '../value-objects/workflow-definition';
 
 /**
@@ -238,18 +237,18 @@ export class WorkflowExecutor {
   private validateExecutionConditions(context: any): void {
     // 验证工作流状态
     if (!this.workflowDefinition.status.canExecute()) {
-      throw new DomainError(`工作流当前状态不允许执行: ${this.workflowDefinition.status}`);
+      throw new Error(`工作流当前状态不允许执行: ${this.workflowDefinition.status}`);
     }
 
     // 简化验证逻辑
 
     // 验证执行上下文
     if (!context.executionId) {
-      throw new DomainError('执行上下文缺少执行ID');
+      throw new Error('执行上下文缺少执行ID');
     }
 
     if (!context.workflowId || context.workflowId !== this.workflowDefinition.id.toString()) {
-      throw new DomainError('执行上下文中的工作流ID不匹配');
+      throw new Error('执行上下文中的工作流ID不匹配');
     }
   }
 

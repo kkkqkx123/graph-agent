@@ -3,8 +3,6 @@ import { ThreadRepository } from '../repositories/thread-repository';
 import { ID } from '../../common/value-objects/id';
 import { ThreadStatus } from '../value-objects/thread-status';
 import { ThreadPriority } from '../value-objects/thread-priority';
-import { DomainError } from '../../common/errors/domain-error';
-
 /**
  * 线程领域服务
  * 
@@ -37,7 +35,7 @@ export class ThreadDomainService {
     // 验证会话是否有活跃线程（Session负责多线程并行管理）
     const hasActiveThreads = await this.threadRepository.hasActiveThreads(sessionId);
     if (hasActiveThreads) {
-      throw new DomainError('会话已有活跃线程，无法创建新线程');
+      throw new Error('会话已有活跃线程，无法创建新线程');
     }
 
     // 验证优先级
@@ -54,13 +52,13 @@ export class ThreadDomainService {
     const thread = await this.threadRepository.findByIdOrFail(threadId);
 
     if (!thread.status.isPending()) {
-      throw new DomainError('只能启动待执行状态的线程');
+      throw new Error('只能启动待执行状态的线程');
     }
 
     // 检查会话是否有其他运行中的线程（Session负责并行管理）
     const hasRunningThreads = await this.threadRepository.hasRunningThreads(thread.sessionId);
     if (hasRunningThreads) {
-      throw new DomainError('会话已有运行中的线程，无法启动其他线程');
+      throw new Error('会话已有运行中的线程，无法启动其他线程');
     }
   }
 
@@ -72,7 +70,7 @@ export class ThreadDomainService {
     const thread = await this.threadRepository.findByIdOrFail(threadId);
 
     if (!thread.status.isRunning()) {
-      throw new DomainError('只能暂停运行中的线程');
+      throw new Error('只能暂停运行中的线程');
     }
   }
 
@@ -84,13 +82,13 @@ export class ThreadDomainService {
     const thread = await this.threadRepository.findByIdOrFail(threadId);
 
     if (!thread.status.isPaused()) {
-      throw new DomainError('只能恢复暂停状态的线程');
+      throw new Error('只能恢复暂停状态的线程');
     }
 
     // 检查会话是否有其他运行中的线程（Session负责并行管理）
     const hasRunningThreads = await this.threadRepository.hasRunningThreads(thread.sessionId);
     if (hasRunningThreads) {
-      throw new DomainError('会话已有运行中的线程，无法恢复其他线程');
+      throw new Error('会话已有运行中的线程，无法恢复其他线程');
     }
   }
 
@@ -102,7 +100,7 @@ export class ThreadDomainService {
     const thread = await this.threadRepository.findByIdOrFail(threadId);
 
     if (!thread.status.isActive()) {
-      throw new DomainError('只能完成活跃状态的线程');
+      throw new Error('只能完成活跃状态的线程');
     }
   }
 
@@ -114,7 +112,7 @@ export class ThreadDomainService {
     const thread = await this.threadRepository.findByIdOrFail(threadId);
 
     if (!thread.status.isActive()) {
-      throw new DomainError('只能设置活跃状态的线程为失败状态');
+      throw new Error('只能设置活跃状态的线程为失败状态');
     }
   }
 
@@ -126,7 +124,7 @@ export class ThreadDomainService {
     const thread = await this.threadRepository.findByIdOrFail(threadId);
 
     if (thread.status.isTerminal()) {
-      throw new DomainError('无法取消已终止状态的线程');
+      throw new Error('无法取消已终止状态的线程');
     }
   }
 
@@ -139,7 +137,7 @@ export class ThreadDomainService {
     const thread = await this.threadRepository.findByIdOrFail(threadId);
 
     if (!thread.status.canOperate()) {
-      throw new DomainError('无法更新非活跃状态线程的优先级');
+      throw new Error('无法更新非活跃状态线程的优先级');
     }
 
     newPriority.validate();
@@ -153,7 +151,7 @@ export class ThreadDomainService {
    */
   calculateThreadTimeout(thread: Thread, timeoutHours: number): Date {
     if (!thread.startedAt) {
-      throw new DomainError('线程尚未启动，无法计算超时时间');
+      throw new Error('线程尚未启动，无法计算超时时间');
     }
 
     return thread.startedAt.getDate();
@@ -201,42 +199,42 @@ export class ThreadDomainService {
     switch (action) {
       case 'start':
         if (!currentStatus.isPending()) {
-          throw new DomainError('只能启动待执行状态的线程');
+          throw new Error('只能启动待执行状态的线程');
         }
         return ThreadStatus.running();
       
       case 'pause':
         if (!currentStatus.isRunning()) {
-          throw new DomainError('只能暂停运行中的线程');
+          throw new Error('只能暂停运行中的线程');
         }
         return ThreadStatus.paused();
       
       case 'resume':
         if (!currentStatus.isPaused()) {
-          throw new DomainError('只能恢复暂停状态的线程');
+          throw new Error('只能恢复暂停状态的线程');
         }
         return ThreadStatus.running();
       
       case 'complete':
         if (!currentStatus.isActive()) {
-          throw new DomainError('只能完成活跃状态的线程');
+          throw new Error('只能完成活跃状态的线程');
         }
         return ThreadStatus.completed();
       
       case 'fail':
         if (!currentStatus.isActive()) {
-          throw new DomainError('只能设置活跃状态的线程为失败状态');
+          throw new Error('只能设置活跃状态的线程为失败状态');
         }
         return ThreadStatus.failed();
       
       case 'cancel':
         if (currentStatus.isTerminal()) {
-          throw new DomainError('无法取消已终止状态的线程');
+          throw new Error('无法取消已终止状态的线程');
         }
         return ThreadStatus.cancelled();
       
       default:
-        throw new DomainError(`未知的操作类型: ${action}`);
+        throw new Error(`未知的操作类型: ${action}`);
     }
   }
 

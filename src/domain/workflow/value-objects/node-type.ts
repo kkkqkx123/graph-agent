@@ -1,6 +1,4 @@
 import { ValueObject } from '../../common/value-objects/value-object';
-import { DomainError } from '../../common/errors/domain-error';
-
 /**
  * 节点类型枚举
  */
@@ -153,7 +151,7 @@ export class NodeType extends ValueObject<NodeTypeProps> {
    */
   public static fromString(type: string): NodeType {
     if (!Object.values(NodeTypeValue).includes(type as NodeTypeValue)) {
-      throw new DomainError(`无效的节点类型: ${type}`);
+      throw new Error(`无效的节点类型: ${type}`);
     }
     return new NodeType({ value: type as NodeTypeValue });
   }
@@ -329,11 +327,11 @@ export class NodeType extends ValueObject<NodeTypeProps> {
    */
   public validate(): void {
     if (!this.props.value) {
-      throw new DomainError('节点类型不能为空');
+      throw new Error('节点类型不能为空');
     }
 
     if (!Object.values(NodeTypeValue).includes(this.props.value)) {
-      throw new DomainError(`无效的节点类型: ${this.props.value}`);
+      throw new Error(`无效的节点类型: ${this.props.value}`);
     }
   }
 

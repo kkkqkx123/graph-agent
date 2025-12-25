@@ -2,7 +2,6 @@ import { Entity } from '../../common/base/entity';
 import { ID } from '../../common/value-objects/id';
 import { Timestamp } from '../../common/value-objects/timestamp';
 import { Version } from '../../common/value-objects/version';
-import { DomainError } from '../../common/errors/domain-error';
 import { CheckpointType } from '../value-objects/checkpoint-type';
 
 /**
@@ -160,7 +159,7 @@ export class Checkpoint extends Entity {
    */
   public updateTitle(title: string): void {
     if (this.props.isDeleted) {
-      throw new DomainError('无法更新已删除的检查点');
+      throw new Error('无法更新已删除的检查点');
     }
 
     const newProps = {
@@ -180,7 +179,7 @@ export class Checkpoint extends Entity {
    */
   public updateDescription(description: string): void {
     if (this.props.isDeleted) {
-      throw new DomainError('无法更新已删除的检查点');
+      throw new Error('无法更新已删除的检查点');
     }
 
     const newProps = {
@@ -200,7 +199,7 @@ export class Checkpoint extends Entity {
    */
   public updateStateData(stateData: Record<string, unknown>): void {
     if (this.props.isDeleted) {
-      throw new DomainError('无法更新已删除检查点的状态数据');
+      throw new Error('无法更新已删除检查点的状态数据');
     }
 
     const newProps = {
@@ -220,7 +219,7 @@ export class Checkpoint extends Entity {
    */
   public addTag(tag: string): void {
     if (this.props.isDeleted) {
-      throw new DomainError('无法为已删除的检查点添加标签');
+      throw new Error('无法为已删除的检查点添加标签');
     }
 
     if (this.props.tags.includes(tag)) {
@@ -244,7 +243,7 @@ export class Checkpoint extends Entity {
    */
   public removeTag(tag: string): void {
     if (this.props.isDeleted) {
-      throw new DomainError('无法为已删除的检查点移除标签');
+      throw new Error('无法为已删除的检查点移除标签');
     }
 
     const index = this.props.tags.indexOf(tag);
@@ -272,7 +271,7 @@ export class Checkpoint extends Entity {
    */
   public updateMetadata(metadata: Record<string, unknown>): void {
     if (this.props.isDeleted) {
-      throw new DomainError('无法更新已删除检查点的元数据');
+      throw new Error('无法更新已删除检查点的元数据');
     }
 
     const newProps = {
@@ -293,7 +292,7 @@ export class Checkpoint extends Entity {
    */
   public setMetadata(key: string, value: unknown): void {
     if (this.props.isDeleted) {
-      throw new DomainError('无法设置已删除检查点的元数据');
+      throw new Error('无法设置已删除检查点的元数据');
     }
 
     const newMetadata = { ...this.props.metadata };
@@ -316,7 +315,7 @@ export class Checkpoint extends Entity {
    */
   public removeMetadata(key: string): void {
     if (this.props.isDeleted) {
-      throw new DomainError('无法移除已删除检查点的元数据');
+      throw new Error('无法移除已删除检查点的元数据');
     }
 
     const newMetadata = { ...this.props.metadata };
@@ -349,7 +348,7 @@ export class Checkpoint extends Entity {
    */
   public setStateDataValue(key: string, value: unknown): void {
     if (this.props.isDeleted) {
-      throw new DomainError('无法设置已删除检查点的状态数据');
+      throw new Error('无法设置已删除检查点的状态数据');
     }
 
     const newStateData = { ...this.props.stateData };
@@ -433,29 +432,29 @@ export class Checkpoint extends Entity {
    */
   public validateInvariants(): void {
     if (!this.props.id) {
-      throw new DomainError('检查点ID不能为空');
+      throw new Error('检查点ID不能为空');
     }
 
     if (!this.props.threadId) {
-      throw new DomainError('线程ID不能为空');
+      throw new Error('线程ID不能为空');
     }
 
     if (!this.props.type) {
-      throw new DomainError('检查点类型不能为空');
+      throw new Error('检查点类型不能为空');
     }
 
     if (!this.props.stateData) {
-      throw new DomainError('状态数据不能为空');
+      throw new Error('状态数据不能为空');
     }
 
     // 验证错误检查点的约束
     if (this.props.type.isError() && !this.props.description) {
-      throw new DomainError('错误检查点必须有描述');
+      throw new Error('错误检查点必须有描述');
     }
 
     // 验证里程碑检查点的约束
     if (this.props.type.isMilestone() && !this.props.title) {
-      throw new DomainError('里程碑检查点必须有标题');
+      throw new Error('里程碑检查点必须有标题');
     }
   }
 

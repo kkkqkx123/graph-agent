@@ -1,5 +1,4 @@
 import { ValueObject } from '../../common/value-objects/value-object';
-import { DomainError } from '../../common/errors/domain-error';
 
 /**
  * 工作流配置接口
@@ -209,31 +208,31 @@ export class WorkflowConfig extends ValueObject<WorkflowConfigProps> {
    */
   public validate(): void {
     if (this.props.maxExecutionTime <= 0) {
-      throw new DomainError('最大执行时间必须大于0');
+      throw new Error('最大执行时间必须大于0');
     }
 
     if (this.props.retryCount < 0) {
-      throw new DomainError('重试次数不能为负数');
+      throw new Error('重试次数不能为负数');
     }
 
     if (this.props.timeoutSeconds <= 0) {
-      throw new DomainError('超时时间必须大于0');
+      throw new Error('超时时间必须大于0');
     }
 
     if (this.props.timeoutSeconds > this.props.maxExecutionTime) {
-      throw new DomainError('超时时间不能大于最大执行时间');
+      throw new Error('超时时间不能大于最大执行时间');
     }
 
     if (this.props.checkpointInterval <= 0) {
-      throw new DomainError('检查点间隔必须大于0');
+      throw new Error('检查点间隔必须大于0');
     }
 
     if (this.props.maxConcurrentThreads <= 0) {
-      throw new DomainError('最大并发线程数必须大于0');
+      throw new Error('最大并发线程数必须大于0');
     }
 
     if (this.props.enableCheckpointing && this.props.checkpointInterval > this.props.timeoutSeconds) {
-      throw new DomainError('检查点间隔不能大于超时时间');
+      throw new Error('检查点间隔不能大于超时时间');
     }
   }
 

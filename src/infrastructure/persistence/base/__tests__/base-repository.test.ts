@@ -1,7 +1,6 @@
 import { BaseRepository, QueryOptions, QueryBuilderHelper } from '../base-repository';
 import { ConnectionManager } from '../../connections/connection-manager';
 import { Repository, DataSource, SelectQueryBuilder, FindOptionsWhere } from 'typeorm';
-import { RepositoryError } from '../../../../domain/common/errors/repository-error';
 import { ID } from '../../../../domain/common/value-objects/id';
 import { IMapper } from '../base-repository';
 
@@ -22,6 +21,7 @@ interface MockModel {
   updatedAt: Date;
   isDeleted?: boolean;
   deletedAt?: Date;
+  state?: string;
 }
 
 class MockMapper implements IMapper<MockEntity, MockModel> {
@@ -48,7 +48,7 @@ class MockMapper implements IMapper<MockEntity, MockModel> {
   }
 }
 
-class MockModel {}
+class MockModel { }
 
 class TestRepository extends BaseRepository<MockEntity, MockModel, string> {
   protected override mapper = new MockMapper();
@@ -224,6 +224,7 @@ describe('BaseRepository', () => {
         {
           isDeleted: true,
           deletedAt: expect.any(Date),
+          state: 'archived',
           updatedAt: expect.any(Date)
         }
       );
@@ -250,6 +251,7 @@ describe('BaseRepository', () => {
         {
           isDeleted: false,
           deletedAt: null,
+          state: 'active',
           updatedAt: expect.any(Date)
         }
       );
@@ -318,56 +320,56 @@ describe('BaseRepository', () => {
   describe('错误处理机制', () => {
     it('应该能够正确识别连接错误', () => {
       const connectionError = new Error('Connection failed');
-      
-      expect(() => repository.testHandleError(connectionError, '测试操作')).toThrow(RepositoryError);
+
+      expect(() => repository.testHandleError(connectionError, '测试操作')).toThrow(Error);
     });
 
     it('应该能够正确识别查询错误', () => {
       const queryError = new Error('SQL syntax error');
-      
-      expect(() => repository.testHandleError(queryError, '测试操作')).toThrow(RepositoryError);
+
+      expect(() => repository.testHandleError(queryError, '测试操作')).toThrow(Error);
     });
 
     it('应该能够正确识别验证错误', () => {
       const validationError = new Error('Validation constraint failed');
-      
-      expect(() => repository.testHandleError(validationError, '测试操作')).toThrow(RepositoryError);
+
+      expect(() => repository.testHandleError(validationError, '测试操作')).toThrow(Error);
     });
 
     it('应该能够正确识别事务错误', () => {
       const transactionError = new Error('Transaction rollback');
-      
-      expect(() => repository.testHandleError(transactionError, '测试操作')).toThrow(RepositoryError);
+
+      expect(() => repository.testHandleError(transactionError, '测试操作')).toThrow(Error);
     });
 
     it('应该能够安全执行操作', async () => {
       const successOperation = jest.fn().mockResolvedValue('success');
-      
+
       const result = await repository.testSafeExecute(successOperation, '成功操作');
-      
+
       expect(result).toBe('success');
       expect(successOperation).toHaveBeenCalled();
     });
 
     it('应该能够处理操作失败', async () => {
       const failOperation = jest.fn().mockRejectedValue(new Error('Operation failed'));
-      
-      await expect(repository.testSafeExecute(failOperation, '失败操作')).rejects.toThrow(RepositoryError);
+
+      await expect(repository.testSafeExecute(failOperation, '失败操作')).rejects.toThrow(Error);
     });
 
     it('应该在开发环境中打印详细错误信息', () => {
       const originalEnv = process.env['NODE_ENV'];
       process.env['NODE_ENV'] = 'development';
-      
+
       const consoleSpy = jest.spyOn(console, 'error').mockImplementation();
       const error = new Error('Test error');
-      
+
       try {
         repository.testHandleError(error, '测试操作');
       } catch (e) {
         // 忽略错误，只检查控制台输出
       }
-      
+
       expect(consoleSpy).toHaveBeenCalledWith(
         'Repository Error Details:',
         expect.objectContaining({
@@ -381,7 +383,7 @@ describe('BaseRepository', () => {
           originalError: error
         })
       );
-      
+
       consoleSpy.mockRestore();
       process.env['NODE_ENV'] = originalEnv;
     });
@@ -425,7 +427,7 @@ describe('BaseRepository', () => {
     it('应该能够构建时间范围查询', () => {
       const startTime = new Date('2023-01-01');
       const endTime = new Date('2023-12-31');
-      
+
       helper.whereTimeRange('createdAt', startTime, endTime);
       expect(mockQueryBuilder.andWhere).toHaveBeenCalledWith(
         'test.createdAt BETWEEN :startTime AND :endTime',

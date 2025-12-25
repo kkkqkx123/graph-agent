@@ -1,6 +1,4 @@
 import { ValueObject } from '../../common/value-objects/value-object';
-import { DomainError } from '../../common/errors/domain-error';
-
 /**
  * 检查点类型枚举
  */
@@ -63,7 +61,7 @@ export class CheckpointType extends ValueObject<CheckpointTypeProps> {
    */
   public static fromString(type: string): CheckpointType {
     if (!Object.values(CheckpointTypeValue).includes(type as CheckpointTypeValue)) {
-      throw new DomainError(`无效的检查点类型: ${type}`);
+      throw new Error(`无效的检查点类型: ${type}`);
     }
     return new CheckpointType({ value: type as CheckpointTypeValue });
   }
@@ -133,11 +131,11 @@ export class CheckpointType extends ValueObject<CheckpointTypeProps> {
    */
   public validate(): void {
     if (!this.props.value) {
-      throw new DomainError('检查点类型不能为空');
+      throw new Error('检查点类型不能为空');
     }
 
     if (!Object.values(CheckpointTypeValue).includes(this.props.value)) {
-      throw new DomainError(`无效的检查点类型: ${this.props.value}`);
+      throw new Error(`无效的检查点类型: ${this.props.value}`);
     }
   }
 

@@ -1,6 +1,4 @@
 import { ValueObject } from '../../../common/value-objects/value-object';
-import { DomainError } from '../../../common/errors/domain-error';
-
 /**
  * 检查点状态枚举值
  */
@@ -59,7 +57,7 @@ export class CheckpointStatus extends ValueObject<CheckpointStatusValue> {
       case 'archived':
         return new CheckpointStatus(value);
       default:
-        throw new DomainError(`无效的检查点状态: ${value}`);
+        throw new Error(`无效的检查点状态: ${value}`);
     }
   }
 
@@ -156,12 +154,12 @@ export class CheckpointStatus extends ValueObject<CheckpointStatusValue> {
    */
   public validate(): void {
     if (!this.props) {
-      throw new DomainError('检查点状态不能为空');
+      throw new Error('检查点状态不能为空');
     }
 
     const validValues: CheckpointStatusValue[] = ['active', 'expired', 'corrupted', 'archived'];
     if (!validValues.includes(this.props)) {
-      throw new DomainError(`无效的检查点状态: ${this.props}`);
+      throw new Error(`无效的检查点状态: ${this.props}`);
     }
   }
 

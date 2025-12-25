@@ -1,6 +1,4 @@
 import { ValueObject } from '../../common/value-objects/value-object';
-import { DomainError } from '../../common/errors/domain-error';
-
 /**
  * 模型配置接口
  */
@@ -407,47 +405,47 @@ export class ModelConfig extends ValueObject<ModelConfigProps> {
    */
   public validate(): void {
     if (!this.props.model || this.props.model.trim().length === 0) {
-      throw new DomainError('模型名称不能为空');
+      throw new Error('模型名称不能为空');
     }
 
     if (!this.props.provider || this.props.provider.trim().length === 0) {
-      throw new DomainError('提供商不能为空');
+      throw new Error('提供商不能为空');
     }
 
     if (this.props.maxTokens <= 0) {
-      throw new DomainError('最大Token数必须大于0');
+      throw new Error('最大Token数必须大于0');
     }
 
     if (this.props.contextWindow <= 0) {
-      throw new DomainError('上下文窗口大小必须大于0');
+      throw new Error('上下文窗口大小必须大于0');
     }
 
     if (this.props.maxTokens > this.props.contextWindow) {
-      throw new DomainError('最大Token数不能超过上下文窗口大小');
+      throw new Error('最大Token数不能超过上下文窗口大小');
     }
 
     if (this.props.temperature < 0 || this.props.temperature > 2) {
-      throw new DomainError('温度参数必须在0到2之间');
+      throw new Error('温度参数必须在0到2之间');
     }
 
     if (this.props.topP < 0 || this.props.topP > 1) {
-      throw new DomainError('top_p参数必须在0到1之间');
+      throw new Error('top_p参数必须在0到1之间');
     }
 
     if (this.props.frequencyPenalty < -2 || this.props.frequencyPenalty > 2) {
-      throw new DomainError('频率惩罚参数必须在-2到2之间');
+      throw new Error('频率惩罚参数必须在-2到2之间');
     }
 
     if (this.props.presencePenalty < -2 || this.props.presencePenalty > 2) {
-      throw new DomainError('存在惩罚参数必须在-2到2之间');
+      throw new Error('存在惩罚参数必须在-2到2之间');
     }
 
     if (this.props.costPer1KTokens.prompt < 0) {
-      throw new DomainError('提示Token成本不能为负数');
+      throw new Error('提示Token成本不能为负数');
     }
 
     if (this.props.costPer1KTokens.completion < 0) {
-      throw new DomainError('完成Token成本不能为负数');
+      throw new Error('完成Token成本不能为负数');
     }
   }
 

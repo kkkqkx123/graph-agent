@@ -8,7 +8,6 @@ import { Thread } from '../../../domain/threads/entities/thread';
 import { ThreadRepository } from '../../../domain/threads/repositories/thread-repository';
 import { ThreadDomainService } from '../../../domain/threads/services/thread-domain-service';
 import { ThreadStatus } from '../../../domain/threads/value-objects/thread-status';
-import { DomainError } from '../../../domain/common/errors/domain-error';
 import { BaseApplicationService } from '../../common/base-application-service';
 import { ThreadInfo } from '../dtos';
 import { ILogger } from '../../../domain/common/types';
@@ -50,7 +49,7 @@ export class ThreadMaintenanceService extends BaseApplicationService {
 
         // 检查线程状态是否允许删除
         if (thread.status.isRunning()) {
-          throw new DomainError('无法删除运行中的线程');
+          throw new Error('无法删除运行中的线程');
         }
 
         // 标记线程为已删除
@@ -154,7 +153,7 @@ export class ThreadMaintenanceService extends BaseApplicationService {
         // 检查是否有运行中的线程
         const hasRunningThreads = await this.threadRepository.hasRunningThreads(id);
         if (hasRunningThreads) {
-          throw new DomainError('无法删除有运行中线程的会话');
+          throw new Error('无法删除有运行中线程的会话');
         }
 
         return await this.threadRepository.deleteAllThreadsForSession(id);
@@ -181,7 +180,7 @@ export class ThreadMaintenanceService extends BaseApplicationService {
         const thread = await this.threadRepository.findByIdOrFail(id);
 
         if (!thread.status.isFailed()) {
-          throw new DomainError('只能重试失败状态的线程');
+          throw new Error('只能重试失败状态的线程');
         }
 
         // 验证重试条件

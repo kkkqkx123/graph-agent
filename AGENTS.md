@@ -27,12 +27,10 @@ tsc --noEmit //not recommended
 
 ### Testing
 ```bash
-# Run all tests (never use this unless I ask you to do so)
-npm test
-
 # Run specific test file
-npm test <test_name>
+npm test <test_file_path>
 ```
+**NEVER RUN FULL TEST SUITE**
 
 ## Codebase Architecture
 

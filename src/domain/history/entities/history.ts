@@ -2,7 +2,6 @@ import { Entity } from '../../common/base/entity';
 import { ID } from '../../common/value-objects/id';
 import { Timestamp } from '../../common/value-objects/timestamp';
 import { Version } from '../../common/value-objects/version';
-import { DomainError } from '../../common/errors/domain-error';
 import { HistoryType } from '../value-objects/history-type';
 
 /**
@@ -172,7 +171,7 @@ export class History extends Entity {
    */
   public updateTitle(title: string): void {
     if (this.props.isDeleted) {
-      throw new DomainError('无法更新已删除的历史记录');
+      throw new Error('无法更新已删除的历史记录');
     }
 
     const newProps = {
@@ -192,7 +191,7 @@ export class History extends Entity {
    */
   public updateDescription(description: string): void {
     if (this.props.isDeleted) {
-      throw new DomainError('无法更新已删除的历史记录');
+      throw new Error('无法更新已删除的历史记录');
     }
 
     const newProps = {
@@ -212,7 +211,7 @@ export class History extends Entity {
    */
   public updateDetails(details: Record<string, unknown>): void {
     if (this.props.isDeleted) {
-      throw new DomainError('无法更新已删除历史记录的详细信息');
+      throw new Error('无法更新已删除历史记录的详细信息');
     }
 
     const newProps = {
@@ -232,7 +231,7 @@ export class History extends Entity {
    */
   public updateMetadata(metadata: Record<string, unknown>): void {
     if (this.props.isDeleted) {
-      throw new DomainError('无法更新已删除历史记录的元数据');
+      throw new Error('无法更新已删除历史记录的元数据');
     }
 
     const newProps = {
@@ -253,7 +252,7 @@ export class History extends Entity {
    */
   public setMetadata(key: string, value: unknown): void {
     if (this.props.isDeleted) {
-      throw new DomainError('无法设置已删除历史记录的元数据');
+      throw new Error('无法设置已删除历史记录的元数据');
     }
 
     const newMetadata = { ...this.props.metadata };
@@ -276,7 +275,7 @@ export class History extends Entity {
    */
   public removeMetadata(key: string): void {
     if (this.props.isDeleted) {
-      throw new DomainError('无法移除已删除历史记录的元数据');
+      throw new Error('无法移除已删除历史记录的元数据');
     }
 
     const newMetadata = { ...this.props.metadata };
@@ -309,7 +308,7 @@ export class History extends Entity {
    */
   public setDetailValue(key: string, value: unknown): void {
     if (this.props.isDeleted) {
-      throw new DomainError('无法设置已删除历史记录的详细信息');
+      throw new Error('无法设置已删除历史记录的详细信息');
     }
 
     const newDetails = { ...this.props.details };
@@ -332,7 +331,7 @@ export class History extends Entity {
    */
   public removeDetail(key: string): void {
     if (this.props.isDeleted) {
-      throw new DomainError('无法移除已删除历史记录的详细信息');
+      throw new Error('无法移除已删除历史记录的详细信息');
     }
 
     const newDetails = { ...this.props.details };
@@ -407,26 +406,26 @@ export class History extends Entity {
    */
   public validateInvariants(): void {
     if (!this.props.id) {
-      throw new DomainError('历史记录ID不能为空');
+      throw new Error('历史记录ID不能为空');
     }
 
     if (!this.props.type) {
-      throw new DomainError('历史类型不能为空');
+      throw new Error('历史类型不能为空');
     }
 
     if (!this.props.details) {
-      throw new DomainError('详细信息不能为空');
+      throw new Error('详细信息不能为空');
     }
 
     // 验证错误历史记录的约束
     if (this.props.type.isErrorType() && !this.props.description) {
-      throw new DomainError('错误历史记录必须有描述');
+      throw new Error('错误历史记录必须有描述');
     }
 
     // 验证关联ID的约束
     const hasAnyId = this.props.sessionId || this.props.threadId || this.props.workflowId;
     if (!hasAnyId) {
-      throw new DomainError('历史记录必须关联至少一个实体ID');
+      throw new Error('历史记录必须关联至少一个实体ID');
     }
   }
 

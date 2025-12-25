@@ -2,7 +2,6 @@ import { Entity } from '../../common/base/entity';
 import { ID } from '../../common/value-objects/id';
 import { Timestamp } from '../../common/value-objects/timestamp';
 import { Version } from '../../common/value-objects/version';
-import { DomainError } from '../../common/errors/domain-error';
 import { ThreadStatus } from '../value-objects/thread-status';
 import { ThreadPriority } from '../value-objects/thread-priority';
 import { ThreadDefinition } from '../value-objects/thread-definition';
@@ -139,11 +138,11 @@ export class Thread extends Entity {
    */
   public start(startedBy?: ID): void {
     if (this.props.isDeleted) {
-      throw new DomainError('无法启动已删除的线程');
+      throw new Error('无法启动已删除的线程');
     }
 
     if (!this.props.status.isPending()) {
-      throw new DomainError('只能启动待执行状态的线程');
+      throw new Error('只能启动待执行状态的线程');
     }
 
     const oldStatus = this.props.status;
@@ -178,11 +177,11 @@ export class Thread extends Entity {
    */
   public pause(pausedBy?: ID, reason?: string): void {
     if (this.props.isDeleted) {
-      throw new DomainError('无法暂停已删除的线程');
+      throw new Error('无法暂停已删除的线程');
     }
 
     if (!this.props.status.isRunning()) {
-      throw new DomainError('只能暂停运行中的线程');
+      throw new Error('只能暂停运行中的线程');
     }
 
     const oldStatus = this.props.status;
@@ -217,11 +216,11 @@ export class Thread extends Entity {
    */
   public resume(resumedBy?: ID, reason?: string): void {
     if (this.props.isDeleted) {
-      throw new DomainError('无法恢复已删除的线程');
+      throw new Error('无法恢复已删除的线程');
     }
 
     if (!this.props.status.isPaused()) {
-      throw new DomainError('只能恢复暂停状态的线程');
+      throw new Error('只能恢复暂停状态的线程');
     }
 
     const oldStatus = this.props.status;
@@ -256,11 +255,11 @@ export class Thread extends Entity {
    */
   public complete(completedBy?: ID, reason?: string): void {
     if (this.props.isDeleted) {
-      throw new DomainError('无法完成已删除的线程');
+      throw new Error('无法完成已删除的线程');
     }
 
     if (!this.props.status.isActive()) {
-      throw new DomainError('只能完成活跃状态的线程');
+      throw new Error('只能完成活跃状态的线程');
     }
 
     const oldStatus = this.props.status;
@@ -296,11 +295,11 @@ export class Thread extends Entity {
    */
   public fail(errorMessage: string, failedBy?: ID, reason?: string): void {
     if (this.props.isDeleted) {
-      throw new DomainError('无法设置已删除线程为失败状态');
+      throw new Error('无法设置已删除线程为失败状态');
     }
 
     if (!this.props.status.isActive()) {
-      throw new DomainError('只能设置活跃状态的线程为失败状态');
+      throw new Error('只能设置活跃状态的线程为失败状态');
     }
 
     const oldStatus = this.props.status;
@@ -336,11 +335,11 @@ export class Thread extends Entity {
    */
   public cancel(cancelledBy?: ID, reason?: string): void {
     if (this.props.isDeleted) {
-      throw new DomainError('无法取消已删除的线程');
+      throw new Error('无法取消已删除的线程');
     }
 
     if (this.props.status.isTerminal()) {
-      throw new DomainError('无法取消已终止状态的线程');
+      throw new Error('无法取消已终止状态的线程');
     }
 
     const oldStatus = this.props.status;
@@ -374,11 +373,11 @@ export class Thread extends Entity {
    */
   public updateTitle(title: string): void {
     if (this.props.isDeleted) {
-      throw new DomainError('无法更新已删除的线程');
+      throw new Error('无法更新已删除的线程');
     }
 
     if (!this.props.status.canOperate()) {
-      throw new DomainError('无法更新非活跃状态的线程');
+      throw new Error('无法更新非活跃状态的线程');
     }
 
     const newDefinition = this.props.definition.updateTitle(title);
@@ -400,11 +399,11 @@ export class Thread extends Entity {
    */
   public updateDescription(description: string): void {
     if (this.props.isDeleted) {
-      throw new DomainError('无法更新已删除的线程');
+      throw new Error('无法更新已删除的线程');
     }
 
     if (!this.props.status.canOperate()) {
-      throw new DomainError('无法更新非活跃状态的线程');
+      throw new Error('无法更新非活跃状态的线程');
     }
 
     const newDefinition = this.props.definition.updateDescription(description);
@@ -426,11 +425,11 @@ export class Thread extends Entity {
    */
   public updatePriority(priority: ThreadPriority): void {
     if (this.props.isDeleted) {
-      throw new DomainError('无法更新已删除线程的优先级');
+      throw new Error('无法更新已删除线程的优先级');
     }
 
     if (!this.props.status.canOperate()) {
-      throw new DomainError('无法更新非活跃状态线程的优先级');
+      throw new Error('无法更新非活跃状态线程的优先级');
     }
 
     const newDefinition = this.props.definition.updatePriority(priority);
@@ -452,7 +451,7 @@ export class Thread extends Entity {
    */
   public updateMetadata(metadata: Record<string, unknown>): void {
     if (this.props.isDeleted) {
-      throw new DomainError('无法更新已删除线程的元数据');
+      throw new Error('无法更新已删除线程的元数据');
     }
 
     const newDefinition = this.props.definition.updateMetadata(metadata);
@@ -475,11 +474,11 @@ export class Thread extends Entity {
    */
   public updateProgress(progress: number, currentStep?: string): void {
     if (this.props.isDeleted) {
-      throw new DomainError('无法更新已删除线程的进度');
+      throw new Error('无法更新已删除线程的进度');
     }
 
     if (!this.props.status.isActive()) {
-      throw new DomainError('只能更新活跃状态的线程进度');
+      throw new Error('只能更新活跃状态的线程进度');
     }
 
     const newExecution = this.props.execution.updateProgress(progress, currentStep);

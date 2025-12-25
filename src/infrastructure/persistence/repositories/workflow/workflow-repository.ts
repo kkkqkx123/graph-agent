@@ -7,7 +7,6 @@ import { ID } from '../../../../domain/common/value-objects/id';
 import { WorkflowStatus } from '../../../../domain/workflow/value-objects/workflow-status';
 import { WorkflowType } from '../../../../domain/workflow/value-objects/workflow-type';
 import { WorkflowModel } from '../../models/workflow.model';
-import { RepositoryError } from '../../../../domain/common/errors/repository-error';
 import { In } from 'typeorm';
 import { BaseRepository, QueryOptions } from '../../base/base-repository';
 import { ConnectionManager } from '../../connections/connection-manager';
@@ -125,11 +124,11 @@ export class WorkflowRepository extends BaseRepository<Workflow, WorkflowModel, 
         updatedBy: model.updatedBy ? OptionalIdConverter.fromStorage(model.updatedBy) : undefined
       });
     } catch (error) {
-      throw new RepositoryError(
-        `Workflow模型转换失败: ${error instanceof Error ? error.message : String(error)}`,
-        'MAPPING_ERROR',
-        { modelId: model.id, operation: 'toEntity' }
-      );
+      const errorMessage = `Workflow模型转换失败: ${error instanceof Error ? error.message : String(error)}`;
+      const customError = new Error(errorMessage);
+      (customError as any).code = 'MAPPING_ERROR';
+      (customError as any).context = { modelId: model.id, operation: 'toEntity' };
+      throw customError;
     }
   }
 
@@ -162,11 +161,11 @@ export class WorkflowRepository extends BaseRepository<Workflow, WorkflowModel, 
 
       return model;
     } catch (error) {
-      throw new RepositoryError(
-        `Workflow实体转换失败: ${error instanceof Error ? error.message : String(error)}`,
-        'MAPPING_ERROR',
-        { entityId: entity.workflowId.value, operation: 'toModel' }
-      );
+      const errorMessage = `Workflow实体转换失败: ${error instanceof Error ? error.message : String(error)}`;
+      const customError = new Error(errorMessage);
+      (customError as any).code = 'MAPPING_ERROR';
+      (customError as any).context = { entityId: entity.workflowId.value, operation: 'toModel' };
+      throw customError;
     }
   }
 

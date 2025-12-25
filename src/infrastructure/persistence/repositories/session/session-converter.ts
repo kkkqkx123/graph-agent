@@ -8,7 +8,6 @@ import { SessionStatus } from '../../../../domain/sessions/value-objects/session
 import { SessionConfig } from '../../../../domain/sessions/value-objects/session-config';
 import { SessionModel } from '../../models/session.model';
 import { IQueryOptions, PaginatedResult } from '../../../../domain/common/repositories/repository';
-import { RepositoryError } from '../../../../domain/common/errors/repository-error';
 import { BaseRepository, QueryOptions } from '../../base/base-repository';
 import { ConnectionManager } from '../../connections/connection-manager';
 import {
@@ -79,11 +78,11 @@ export class SessionConverterRepository extends BaseRepository<Session, SessionM
       // 创建Session实体
       return Session.fromProps(sessionData);
     } catch (error) {
-      throw new RepositoryError(
-        `Session模型转换失败: ${error instanceof Error ? error.message : String(error)}`,
-        'MAPPING_ERROR',
-        { modelId: model.id, operation: 'toEntity' }
-      );
+      const errorMessage = `Session模型转换失败: ${error instanceof Error ? error.message : String(error)}`;
+      const customError = new Error(errorMessage);
+      (customError as any).code = 'MAPPING_ERROR';
+      (customError as any).context = { modelId: model.id, operation: 'toEntity' };
+      throw customError;
     }
   }
 
@@ -118,11 +117,11 @@ export class SessionConverterRepository extends BaseRepository<Session, SessionM
 
       return model;
     } catch (error) {
-      throw new RepositoryError(
-        `Session实体转换失败: ${error instanceof Error ? error.message : String(error)}`,
-        'MAPPING_ERROR',
-        { entityId: entity.sessionId.value, operation: 'toModel' }
-      );
+      const errorMessage = `Session实体转换失败: ${error instanceof Error ? error.message : String(error)}`;
+      const customError = new Error(errorMessage);
+      (customError as any).code = 'MAPPING_ERROR';
+      (customError as any).context = { entityId: entity.sessionId.value, operation: 'toModel' };
+      throw customError;
     }
   }
 

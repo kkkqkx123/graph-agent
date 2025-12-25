@@ -8,7 +8,6 @@ import { ThreadDefinition } from '../../../../domain/threads/value-objects/threa
 import { ThreadExecution } from '../../../../domain/threads/value-objects/thread-execution';
 import { ThreadModel } from '../../models/thread.model';
 import { IQueryOptions, PaginatedResult } from '../../../../domain/common/repositories/repository';
-import { RepositoryError } from '../../../../domain/common/errors/repository-error';
 import { In } from 'typeorm';
 import { BaseRepository, QueryOptions } from '../../base/base-repository';
 import { QueryOptionsBuilder } from '../../base/query-options-builder';
@@ -170,11 +169,11 @@ export class ThreadConverterRepository extends BaseRepository<Thread, ThreadMode
       // 创建Thread实体
       return Thread.fromProps(threadData);
     } catch (error) {
-      throw new RepositoryError(
-        `Thread模型转换失败: ${error instanceof Error ? error.message : String(error)}`,
-        'MAPPING_ERROR',
-        { modelId: model.id, operation: 'toEntity' }
-      );
+      const errorMessage = `Thread模型转换失败: ${error instanceof Error ? error.message : String(error)}`;
+      const customError = new Error(errorMessage);
+      (customError as any).code = 'MAPPING_ERROR';
+      (customError as any).context = { modelId: model.id, operation: 'toEntity' };
+      throw customError;
     }
   }
 
@@ -206,11 +205,11 @@ export class ThreadConverterRepository extends BaseRepository<Thread, ThreadMode
       
       return model;
     } catch (error) {
-      throw new RepositoryError(
-        `Thread实体转换失败: ${error instanceof Error ? error.message : String(error)}`,
-        'MAPPING_ERROR',
-        { entityId: entity.threadId.value, operation: 'toModel' }
-      );
+      const errorMessage = `Thread实体转换失败: ${error instanceof Error ? error.message : String(error)}`;
+      const customError = new Error(errorMessage);
+      (customError as any).code = 'MAPPING_ERROR';
+      (customError as any).context = { entityId: entity.threadId.value, operation: 'toModel' };
+      throw customError;
     }
   }
 
@@ -991,7 +990,10 @@ export class ThreadConverterRepository extends BaseRepository<Thread, ThreadMode
     });
 
     if (!thread) {
-      throw new RepositoryError(`线程不存在: ${threadId.value}`, 'NOT_FOUND');
+      const errorMessage = `线程不存在: ${threadId.value}`;
+      const customError = new Error(errorMessage);
+      (customError as any).code = 'NOT_FOUND';
+      throw customError;
     }
 
     return {

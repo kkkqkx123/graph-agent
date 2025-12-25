@@ -1,6 +1,4 @@
 import { ValueObject } from '../../common/value-objects/value-object';
-import { DomainError } from '../../common/errors/domain-error';
-
 /**
  * 历史类型枚举
  */
@@ -224,7 +222,7 @@ export class HistoryType extends ValueObject<HistoryTypeProps> {
    */
   public static fromString(type: string): HistoryType {
     if (!Object.values(HistoryTypeValue).includes(type as HistoryTypeValue)) {
-      throw new DomainError(`无效的历史类型: ${type}`);
+      throw new Error(`无效的历史类型: ${type}`);
     }
     return new HistoryType({ value: type as HistoryTypeValue });
   }
@@ -353,11 +351,11 @@ export class HistoryType extends ValueObject<HistoryTypeProps> {
    */
   public validate(): void {
     if (!this.props.value) {
-      throw new DomainError('历史类型不能为空');
+      throw new Error('历史类型不能为空');
     }
 
     if (!Object.values(HistoryTypeValue).includes(this.props.value)) {
-      throw new DomainError(`无效的历史类型: ${this.props.value}`);
+      throw new Error(`无效的历史类型: ${this.props.value}`);
     }
   }
 

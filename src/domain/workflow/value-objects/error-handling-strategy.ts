@@ -1,6 +1,4 @@
 import { ValueObject } from '../../common/value-objects/value-object';
-import { DomainError } from '../../common/errors/domain-error';
-
 export enum ErrorHandlingStrategyType {
   STOP_ON_ERROR = 'stop_on_error',
   CONTINUE_ON_ERROR = 'continue_on_error',
@@ -22,12 +20,12 @@ export class ErrorHandlingStrategy extends ValueObject<ErrorHandlingStrategyProp
 
   public validate(): void {
     if (!Object.values(ErrorHandlingStrategyType).includes(this.props.type)) {
-      throw new DomainError(`无效的错误处理策略: ${this.props.type}`);
+      throw new Error(`无效的错误处理策略: ${this.props.type}`);
     }
     
     if (this.props.type === ErrorHandlingStrategyType.RETRY) {
       if (!this.props.retryCount || this.props.retryCount <= 0) {
-        throw new DomainError('重试策略必须指定有效的重试次数');
+        throw new Error('重试策略必须指定有效的重试次数');
       }
     }
   }

@@ -5,7 +5,6 @@
  */
 
 import { ID } from '../../common/value-objects/id';
-import { DomainError } from '../../common/errors/domain-error';
 import { Tool } from '../entities/tool';
 import { ToolExecution } from '../entities/tool-execution';
 import { ToolResult } from '../entities/tool-result';
@@ -58,16 +57,16 @@ export class ToolDomainService {
   ): Promise<Tool> {
     // 验证必填字段
     if (!name || name.trim().length === 0) {
-      throw new DomainError('工具名称不能为空');
+      throw new Error('工具名称不能为空');
     }
 
     if (!description || description.trim().length === 0) {
-      throw new DomainError('工具描述不能为空');
+      throw new Error('工具描述不能为空');
     }
 
     // 验证参数定义
     if (!parameters || !parameters.properties || parameters.required.length === 0) {
-      throw new DomainError('工具参数定义不能为空');
+      throw new Error('工具参数定义不能为空');
     }
 
     // 验证配置
@@ -98,11 +97,11 @@ export class ToolDomainService {
   ): Promise<Tool> {
     // 验证工具状态
     if (tool.status === ToolStatus.DEPRECATED) {
-      throw new DomainError('不能更新已弃用的工具');
+      throw new Error('不能更新已弃用的工具');
     }
 
     if (tool.status === ToolStatus.ARCHIVED) {
-      throw new DomainError('不能更新已归档的工具');
+      throw new Error('不能更新已归档的工具');
     }
 
     // 验证配置
@@ -126,21 +125,21 @@ export class ToolDomainService {
    */
   async activateTool(tool: Tool): Promise<Tool> {
     if (tool.status === ToolStatus.ACTIVE) {
-      throw new DomainError('工具已经是激活状态');
+      throw new Error('工具已经是激活状态');
     }
 
     if (tool.status === ToolStatus.DEPRECATED) {
-      throw new DomainError('不能激活已弃用的工具');
+      throw new Error('不能激活已弃用的工具');
     }
 
     if (tool.status === ToolStatus.ARCHIVED) {
-      throw new DomainError('不能激活已归档的工具');
+      throw new Error('不能激活已归档的工具');
     }
 
     // 验证工具配置
     const validation = await this.validateTool(tool);
     if (!validation.isValid) {
-      throw new DomainError(`工具验证失败: ${validation.errors.join(', ')}`);
+      throw new Error(`工具验证失败: ${validation.errors.join(', ')}`);
     }
 
     return tool.changeStatus(ToolStatus.ACTIVE);
@@ -151,15 +150,15 @@ export class ToolDomainService {
    */
   async deactivateTool(tool: Tool): Promise<Tool> {
     if (tool.status === ToolStatus.INACTIVE) {
-      throw new DomainError('工具已经是停用状态');
+      throw new Error('工具已经是停用状态');
     }
 
     if (tool.status === ToolStatus.DEPRECATED) {
-      throw new DomainError('不能停用已弃用的工具');
+      throw new Error('不能停用已弃用的工具');
     }
 
     if (tool.status === ToolStatus.ARCHIVED) {
-      throw new DomainError('不能停用已归档的工具');
+      throw new Error('不能停用已归档的工具');
     }
 
     return tool.changeStatus(ToolStatus.INACTIVE);
@@ -170,7 +169,7 @@ export class ToolDomainService {
    */
   async deprecateTool(tool: Tool): Promise<Tool> {
     if (tool.status === ToolStatus.DEPRECATED) {
-      throw new DomainError('工具已经是弃用状态');
+      throw new Error('工具已经是弃用状态');
     }
 
     return tool.changeStatus(ToolStatus.DEPRECATED);
@@ -181,7 +180,7 @@ export class ToolDomainService {
    */
   async archiveTool(tool: Tool): Promise<Tool> {
     if (tool.status === ToolStatus.ARCHIVED) {
-      throw new DomainError('工具已经是归档状态');
+      throw new Error('工具已经是归档状态');
     }
 
     return tool.changeStatus(ToolStatus.ARCHIVED);
@@ -192,12 +191,12 @@ export class ToolDomainService {
    */
   async deleteTool(tool: Tool): Promise<boolean> {
     if (tool.isBuiltin) {
-      throw new DomainError('不能删除内置工具');
+      throw new Error('不能删除内置工具');
     }
 
     // 检查是否有依赖关系
     if (tool.dependencies.length > 0) {
-      throw new DomainError('不能删除有依赖关系的工具');
+      throw new Error('不能删除有依赖关系的工具');
     }
 
     // 工具删除由应用层处理（通过仓储）
@@ -209,7 +208,7 @@ export class ToolDomainService {
    */
   async duplicateTool(tool: Tool, newName: string, createdBy?: ID): Promise<Tool> {
     if (!newName || newName.trim().length === 0) {
-      throw new DomainError('新工具名称不能为空');
+      throw new Error('新工具名称不能为空');
     }
 
     return Tool.create(
@@ -339,13 +338,13 @@ export class ToolDomainService {
   ): Promise<ToolResult> {
     // 验证工具状态
     if (tool.status !== ToolStatus.ACTIVE) {
-      throw new DomainError(`工具 ${tool.name} 不是激活状态`);
+      throw new Error(`工具 ${tool.name} 不是激活状态`);
     }
 
     // 验证参数
     const paramValidation = await this.validateToolParameters(tool, parameters);
     if (!paramValidation.isValid) {
-      throw new DomainError(`参数验证失败: ${paramValidation.errors.join(', ')}`);
+      throw new Error(`参数验证失败: ${paramValidation.errors.join(', ')}`);
     }
 
     // 创建执行记录

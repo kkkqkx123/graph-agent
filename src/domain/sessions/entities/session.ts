@@ -2,7 +2,6 @@ import { Entity } from '../../common/base/entity';
 import { ID } from '../../common/value-objects/id';
 import { Timestamp } from '../../common/value-objects/timestamp';
 import { Version } from '../../common/value-objects/version';
-import { DomainError } from '../../common/errors/domain-error';
 import { SessionStatus } from '../value-objects/session-status';
 import { SessionConfig } from '../value-objects/session-config';
 import { SessionActivity } from '../value-objects/session-activity';
@@ -189,11 +188,11 @@ export class Session extends Entity {
    */
   public updateTitle(title: string): void {
     if (this.props.isDeleted) {
-      throw new DomainError('无法更新已删除的会话');
+      throw new Error('无法更新已删除的会话');
     }
 
     if (!this.props.status.canOperate()) {
-      throw new DomainError('无法更新非活跃状态的会话');
+      throw new Error('无法更新非活跃状态的会话');
     }
 
     const newProps = {
@@ -219,7 +218,7 @@ export class Session extends Entity {
     reason?: string
   ): void {
     if (this.props.isDeleted) {
-      throw new DomainError('无法更改已删除会话的状态');
+      throw new Error('无法更改已删除会话的状态');
     }
 
     const oldStatus = this.props.status;
@@ -255,15 +254,15 @@ export class Session extends Entity {
    */
   public incrementMessageCount(): void {
     if (this.props.isDeleted) {
-      throw new DomainError('无法在已删除的会话中添加消息');
+      throw new Error('无法在已删除的会话中添加消息');
     }
 
     if (!this.props.status.canOperate()) {
-      throw new DomainError('无法在非活跃状态的会话中添加消息');
+      throw new Error('无法在非活跃状态的会话中添加消息');
     }
 
     if (this.props.activity.getMessageCount() >= this.props.config.getMaxMessages()) {
-      throw new DomainError('会话消息数量已达上限');
+      throw new Error('会话消息数量已达上限');
     }
 
     const newProps = {
@@ -282,11 +281,11 @@ export class Session extends Entity {
    */
   public incrementThreadCount(): void {
     if (this.props.isDeleted) {
-      throw new DomainError('无法在已删除的会话中添加线程');
+      throw new Error('无法在已删除的会话中添加线程');
     }
 
     if (!this.props.status.canOperate()) {
-      throw new DomainError('无法在非活跃状态的会话中添加线程');
+      throw new Error('无法在非活跃状态的会话中添加线程');
     }
 
     const newProps = {
@@ -305,7 +304,7 @@ export class Session extends Entity {
    */
   public updateLastActivity(): void {
     if (this.props.isDeleted) {
-      throw new DomainError('无法更新已删除会话的活动时间');
+      throw new Error('无法更新已删除会话的活动时间');
     }
 
     const newProps = {
@@ -325,11 +324,11 @@ export class Session extends Entity {
    */
   public updateConfig(newConfig: SessionConfig): void {
     if (this.props.isDeleted) {
-      throw new DomainError('无法更新已删除会话的配置');
+      throw new Error('无法更新已删除会话的配置');
     }
 
     if (!this.props.status.canOperate()) {
-      throw new DomainError('无法更新非活跃状态会话的配置');
+      throw new Error('无法更新非活跃状态会话的配置');
     }
 
     // 验证配置的合理性
@@ -352,7 +351,7 @@ export class Session extends Entity {
    */
   public updateMetadata(metadata: Record<string, unknown>): void {
     if (this.props.isDeleted) {
-      throw new DomainError('无法更新已删除会话的元数据');
+      throw new Error('无法更新已删除会话的元数据');
     }
 
     const newProps = {
@@ -432,14 +431,14 @@ export class Session extends Entity {
   ): void {
     // 已终止的会话不能变更到其他状态
     if (oldStatus.isTerminated() && !newStatus.isTerminated()) {
-      throw new DomainError('已终止的会话不能变更到其他状态');
+      throw new Error('已终止的会话不能变更到其他状态');
     }
 
     // 暂停的会话只能恢复到活跃状态或终止
     if (oldStatus.isSuspended() &&
       !newStatus.isActive() &&
       !newStatus.isTerminated()) {
-      throw new DomainError('暂停的会话只能恢复到活跃状态或终止');
+      throw new Error('暂停的会话只能恢复到活跃状态或终止');
     }
   }
 
@@ -450,7 +449,7 @@ export class Session extends Entity {
   private validateConfigUpdate(newConfig: SessionConfig): void {
     // 检查最大消息数量是否减少到当前消息数量以下
     if (newConfig.getMaxMessages() < this.props.activity.getMessageCount()) {
-      throw new DomainError('新的最大消息数量不能小于当前消息数量');
+      throw new Error('新的最大消息数量不能小于当前消息数量');
     }
 
     // 检查其他业务规则

@@ -10,7 +10,6 @@ import { NodeId } from '../value-objects/node-id';
 import { NodeType } from '../value-objects/node-type';
 import { EdgeId } from '../value-objects/edge-id';
 import { EdgeType } from '../value-objects/edge-type';
-import { DomainError } from '../../common/errors/domain-error';
 import { WorkflowCreatedEvent } from '../events/workflow-created-event';
 import { WorkflowStatusChangedEvent } from '../events/workflow-status-changed-event';
 import { NodeAddedEvent } from '../events/node-added-event';
@@ -562,11 +561,11 @@ export class Workflow extends Entity {
     updatedBy?: ID
   ): void {
     if (this.hasNode(nodeId)) {
-      throw new DomainError('节点已存在');
+      throw new Error('节点已存在');
     }
 
     if (!this.status.canEdit()) {
-      throw new DomainError('只能编辑草稿状态工作流的节点');
+      throw new Error('只能编辑草稿状态工作流的节点');
     }
 
     const nodeData: NodeData = {
@@ -608,17 +607,17 @@ export class Workflow extends Entity {
    */
   public removeNode(nodeId: NodeId, updatedBy?: ID): void {
     if (!this.hasNode(nodeId)) {
-      throw new DomainError('节点不存在');
+      throw new Error('节点不存在');
     }
 
     if (!this.status.canEdit()) {
-      throw new DomainError('只能编辑草稿状态工作流的节点');
+      throw new Error('只能编辑草稿状态工作流的节点');
     }
 
     // 检查是否有边连接到此节点
     const connectedEdges = this.getIncomingEdges(nodeId).concat(this.getOutgoingEdges(nodeId));
     if (connectedEdges.length > 0) {
-      throw new DomainError('无法移除有边连接的节点');
+      throw new Error('无法移除有边连接的节点');
     }
 
     const newNodes = new Map(this.props.graph.nodes);
@@ -662,20 +661,20 @@ export class Workflow extends Entity {
     updatedBy?: ID
   ): void {
     if (this.hasEdge(edgeId)) {
-      throw new DomainError('边已存在');
+      throw new Error('边已存在');
     }
 
     if (!this.status.canEdit()) {
-      throw new DomainError('只能编辑草稿状态工作流的边');
+      throw new Error('只能编辑草稿状态工作流的边');
     }
 
     // 检查源节点和目标节点是否存在
     if (!this.hasNode(fromNodeId)) {
-      throw new DomainError('源节点不存在');
+      throw new Error('源节点不存在');
     }
 
     if (!this.hasNode(toNodeId)) {
-      throw new DomainError('目标节点不存在');
+      throw new Error('目标节点不存在');
     }
 
     const edgeData: EdgeData = {
@@ -720,11 +719,11 @@ export class Workflow extends Entity {
    */
   public removeEdge(edgeId: EdgeId, updatedBy?: ID): void {
     if (!this.hasEdge(edgeId)) {
-      throw new DomainError('边不存在');
+      throw new Error('边不存在');
     }
 
     if (!this.status.canEdit()) {
-      throw new DomainError('只能编辑草稿状态工作流的边');
+      throw new Error('只能编辑草稿状态工作流的边');
     }
 
     const newEdges = new Map(this.props.graph.edges);

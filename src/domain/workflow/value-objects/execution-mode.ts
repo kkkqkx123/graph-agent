@@ -1,6 +1,4 @@
 import { ValueObject } from '../../common/value-objects/value-object';
-import { DomainError } from '../../common/errors/domain-error';
-
 /**
  * 执行模式枚举
  */
@@ -33,7 +31,7 @@ export class ExecutionModeValue extends ValueObject<ExecutionModeValueProps> {
    */
   public validate(): void {
     if (!Object.values(ExecutionMode).includes(this.props.value)) {
-      throw new DomainError(`无效的执行模式: ${this.props.value}`);
+      throw new Error(`无效的执行模式: ${this.props.value}`);
     }
   }
 
@@ -92,7 +90,7 @@ export class ExecutionModeValue extends ValueObject<ExecutionModeValueProps> {
   public static fromString(value: string): ExecutionModeValue {
     const mode = Object.values(ExecutionMode).find(m => m === value.toLowerCase());
     if (!mode) {
-      throw new DomainError(`无法识别的执行模式字符串: ${value}`);
+      throw new Error(`无法识别的执行模式字符串: ${value}`);
     }
     return new ExecutionModeValue({ value: mode });
   }

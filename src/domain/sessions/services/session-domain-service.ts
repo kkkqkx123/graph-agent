@@ -4,8 +4,6 @@ import { ID } from '../../common/value-objects/id';
 import { SessionStatus } from '../value-objects/session-status';
 import { SessionConfig } from '../value-objects/session-config';
 import { Timestamp } from '../../common/value-objects/timestamp';
-import { DomainError } from '../../common/errors/domain-error';
-
 /**
  * 会话领域服务
  * 
@@ -29,7 +27,7 @@ export class SessionDomainService {
     if (userId) {
       const hasActiveSession = await this.sessionRepository.hasActiveSession(userId);
       if (hasActiveSession) {
-        throw new DomainError('用户已有活跃会话，无法创建新会话');
+        throw new Error('用户已有活跃会话，无法创建新会话');
       }
     }
 
@@ -114,7 +112,7 @@ export class SessionDomainService {
     if (newStatus.isActive() && userId && session.userId && !session.userId.equals(userId)) {
       const hasActiveSession = await this.sessionRepository.hasActiveSession(userId);
       if (hasActiveSession) {
-        throw new DomainError('用户已有活跃会话，无法激活其他会话');
+        throw new Error('用户已有活跃会话，无法激活其他会话');
       }
     }
 
@@ -128,16 +126,16 @@ export class SessionDomainService {
    */
   validateOperationPermission(session: Session, userId?: ID): void {
     if (session.isDeleted()) {
-      throw new DomainError('无法操作已删除的会话');
+      throw new Error('无法操作已删除的会话');
     }
 
     if (!session.status.canOperate()) {
-      throw new DomainError('无法在非活跃状态的会话中进行操作');
+      throw new Error('无法在非活跃状态的会话中进行操作');
     }
 
     // 检查用户权限（如果有用户ID）
     if (userId && session.userId && !session.userId.equals(userId)) {
-      throw new DomainError('用户无权操作此会话');
+      throw new Error('用户无权操作此会话');
     }
   }
 
@@ -147,15 +145,15 @@ export class SessionDomainService {
    */
   validateMessageAddition(session: Session): void {
     if (session.isTimeout()) {
-      throw new DomainError('会话已超时，无法添加消息');
+      throw new Error('会话已超时，无法添加消息');
     }
 
     if (session.isExpired()) {
-      throw new DomainError('会话已过期，无法添加消息');
+      throw new Error('会话已过期，无法添加消息');
     }
 
     if (session.messageCount >= session.config.getMaxMessages()) {
-      throw new DomainError('会话消息数量已达上限');
+      throw new Error('会话消息数量已达上限');
     }
   }
 
@@ -170,7 +168,7 @@ export class SessionDomainService {
 
     // 检查最大消息数量是否减少到当前消息数量以下
     if (newConfig.getMaxMessages() < session.messageCount) {
-      throw new DomainError('新的最大消息数量不能小于当前消息数量');
+      throw new Error('新的最大消息数量不能小于当前消息数量');
     }
   }
 

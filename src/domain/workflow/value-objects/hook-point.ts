@@ -1,6 +1,4 @@
 import { ValueObject } from '../../common/value-objects/value-object';
-import { DomainError } from '../../common/errors/domain-error';
-
 /**
  * 钩子点枚举
  */
@@ -43,7 +41,7 @@ export class HookPointValue extends ValueObject<HookPointValueProps> {
    */
   public validate(): void {
     if (!Object.values(HookPoint).includes(this.props.value)) {
-      throw new DomainError(`无效的钩子点: ${this.props.value}`);
+      throw new Error(`无效的钩子点: ${this.props.value}`);
     }
   }
 
@@ -211,7 +209,7 @@ export class HookPointValue extends ValueObject<HookPointValueProps> {
   public static fromString(value: string): HookPointValue {
     const hookPoint = Object.values(HookPoint).find(h => h === value);
     if (!hookPoint) {
-      throw new DomainError(`无法识别的钩子点字符串: ${value}`);
+      throw new Error(`无法识别的钩子点字符串: ${value}`);
     }
     return new HookPointValue({ value: hookPoint });
   }

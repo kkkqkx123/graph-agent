@@ -1,5 +1,4 @@
 import { ValueObject } from '../../../common/value-objects/value-object';
-import { DomainError } from '../../../common/errors/domain-error';
 import { CheckpointStatus } from './checkpoint-status';
 import { CheckpointType } from '../../../checkpoint/value-objects/checkpoint-type';
 
@@ -436,59 +435,59 @@ export class CheckpointStatistics extends ValueObject<CheckpointStatisticsProps>
    */
   public validate(): void {
     if (this.props.totalCheckpoints < 0) {
-      throw new DomainError('总检查点数不能为负数');
+      throw new Error('总检查点数不能为负数');
     }
 
     if (this.props.activeCheckpoints < 0) {
-      throw new DomainError('活跃检查点数不能为负数');
+      throw new Error('活跃检查点数不能为负数');
     }
 
     if (this.props.expiredCheckpoints < 0) {
-      throw new DomainError('过期检查点数不能为负数');
+      throw new Error('过期检查点数不能为负数');
     }
 
     if (this.props.corruptedCheckpoints < 0) {
-      throw new DomainError('损坏检查点数不能为负数');
+      throw new Error('损坏检查点数不能为负数');
     }
 
     if (this.props.archivedCheckpoints < 0) {
-      throw new DomainError('归档检查点数不能为负数');
+      throw new Error('归档检查点数不能为负数');
     }
 
     if (this.props.totalSizeBytes < 0) {
-      throw new DomainError('总大小不能为负数');
+      throw new Error('总大小不能为负数');
     }
 
     if (this.props.averageSizeBytes < 0) {
-      throw new DomainError('平均大小不能为负数');
+      throw new Error('平均大小不能为负数');
     }
 
     if (this.props.largestCheckpointBytes < 0) {
-      throw new DomainError('最大检查点大小不能为负数');
+      throw new Error('最大检查点大小不能为负数');
     }
 
     if (this.props.smallestCheckpointBytes < 0) {
-      throw new DomainError('最小检查点大小不能为负数');
+      throw new Error('最小检查点大小不能为负数');
     }
 
     if (this.props.totalRestores < 0) {
-      throw new DomainError('总恢复次数不能为负数');
+      throw new Error('总恢复次数不能为负数');
     }
 
     if (this.props.averageRestores < 0) {
-      throw new DomainError('平均恢复次数不能为负数');
+      throw new Error('平均恢复次数不能为负数');
     }
 
     if (this.props.oldestCheckpointAgeHours < 0) {
-      throw new DomainError('最旧检查点年龄不能为负数');
+      throw new Error('最旧检查点年龄不能为负数');
     }
 
     if (this.props.newestCheckpointAgeHours < 0) {
-      throw new DomainError('最新检查点年龄不能为负数');
+      throw new Error('最新检查点年龄不能为负数');
     }
 
     if (this.props.averageAgeHours < 0) {
-      throw new DomainError('平均年龄不能为负数');
+      throw new Error('平均年龄不能为负数');
     }
 
     // 验证数量一致性
@@ -498,17 +497,17 @@ export class CheckpointStatistics extends ValueObject<CheckpointStatisticsProps>
                      this.props.archivedCheckpoints;
 
     if (statusSum !== this.props.totalCheckpoints) {
-      throw new DomainError('状态检查点数量与总数不一致');
+      throw new Error('状态检查点数量与总数不一致');
     }
 
     // 验证大小逻辑
     if (this.props.largestCheckpointBytes < this.props.smallestCheckpointBytes) {
-      throw new DomainError('最大检查点大小不能小于最小检查点大小');
+      throw new Error('最大检查点大小不能小于最小检查点大小');
     }
 
     // 验证年龄逻辑
     if (this.props.oldestCheckpointAgeHours < this.props.newestCheckpointAgeHours) {
-      throw new DomainError('最旧检查点年龄不能小于最新检查点年龄');
+      throw new Error('最旧检查点年龄不能小于最新检查点年龄');
     }
   }
 

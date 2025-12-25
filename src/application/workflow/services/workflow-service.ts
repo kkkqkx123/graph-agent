@@ -6,7 +6,6 @@ import { ID } from '../../../domain/common/value-objects/id';
 import { WorkflowStatus } from '../../../domain/workflow/value-objects/workflow-status';
 import { WorkflowType } from '../../../domain/workflow/value-objects/workflow-type';
 import { WorkflowConfig } from '../../../domain/workflow/value-objects/workflow-config';
-import { DomainError } from '../../../domain/common/errors/domain-error';
 import { ILogger } from '../../../domain/common/types/logger-types';
 import { NodeId } from '../../../domain/workflow/value-objects/node-id';
 import { NodeType } from '../../../domain/workflow/value-objects/node-type';
@@ -212,7 +211,7 @@ export class WorkflowService {
       const workflow = await this.workflowRepository.findByIdOrFail(workflowId);
 
       if (!workflow.status.canEdit()) {
-        throw new DomainError('只能编辑草稿状态的工作流');
+        throw new Error('只能编辑草稿状态的工作流');
       }
 
       const userId = command.userId ? ID.fromString(command.userId) : undefined;
@@ -440,7 +439,7 @@ export class WorkflowService {
 
       // 检查工作流状态是否允许删除
       if (workflow.status.isActive()) {
-        throw new DomainError('无法删除活跃状态的工作流');
+        throw new Error('无法删除活跃状态的工作流');
       }
 
       // 标记工作流为已删除

@@ -12,7 +12,6 @@ import { ThreadDomainService } from '../../../domain/threads/services/thread-dom
 import { ID } from '../../../domain/common/value-objects/id';
 import { SessionStatus } from '../../../domain/sessions/value-objects/session-status';
 import { SessionConfig, SessionConfigProps } from '../../../domain/sessions/value-objects/session-config';
-import { DomainError } from '../../../domain/common/errors/domain-error';
 import { ILogger } from '../../../domain/common/types';
 import { CreateSessionRequest, SessionInfo } from '../dtos';
 
@@ -97,7 +96,7 @@ export class SessionService {
       // 检查会话是否有活跃线程
       const hasActiveThreads = await this.threadRepository.hasActiveThreads(id);
       if (hasActiveThreads) {
-        throw new DomainError('无法删除有活跃线程的会话');
+        throw new Error('无法删除有活跃线程的会话');
       }
 
       // 标记会话为已删除
@@ -383,7 +382,7 @@ export class SessionService {
     try {
       const user = userId ? ID.fromString(userId) : undefined;
       if (!user) {
-        throw new DomainError('获取会话统计信息需要提供用户ID');
+        throw new Error('获取会话统计信息需要提供用户ID');
       }
 
       // 获取用户的所有会话

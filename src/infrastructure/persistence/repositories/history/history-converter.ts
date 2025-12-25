@@ -6,7 +6,6 @@ import { HistoryType } from '../../../../domain/history/value-objects/history-ty
 import { HistoryModel } from '../../models/history.model';
 import { Between, LessThan, In } from 'typeorm';
 import { IQueryOptions } from '../../../../domain/common/repositories/repository';
-import { RepositoryError } from '../../../../domain/common/errors/repository-error';
 import { BaseRepository, QueryOptions } from '../../base/base-repository';
 import { ConnectionManager } from '../../connections/connection-manager';
 import {
@@ -62,11 +61,11 @@ export class HistoryConverterRepository extends BaseRepository<History, HistoryM
       // 创建History实体
       return History.fromProps(historyData);
     } catch (error) {
-      throw new RepositoryError(
-        `History模型转换失败: ${error instanceof Error ? error.message : String(error)}`,
-        'MAPPING_ERROR',
-        { modelId: model.id, operation: 'toEntity' }
-      );
+      const errorMessage = `History模型转换失败: ${error instanceof Error ? error.message : String(error)}`;
+      const customError = new Error(errorMessage);
+      (customError as any).code = 'MAPPING_ERROR';
+      (customError as any).context = { modelId: model.id, operation: 'toEntity' };
+      throw customError;
     }
   }
 
@@ -103,11 +102,11 @@ export class HistoryConverterRepository extends BaseRepository<History, HistoryM
       
       return model;
     } catch (error) {
-      throw new RepositoryError(
-        `History实体转换失败: ${error instanceof Error ? error.message : String(error)}`,
-        'MAPPING_ERROR',
-        { entityId: entity.historyId.value, operation: 'toModel' }
-      );
+      const errorMessage = `History实体转换失败: ${error instanceof Error ? error.message : String(error)}`;
+      const customError = new Error(errorMessage);
+      (customError as any).code = 'MAPPING_ERROR';
+      (customError as any).context = { entityId: entity.historyId.value, operation: 'toModel' };
+      throw customError;
     }
   }
 

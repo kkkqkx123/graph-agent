@@ -6,7 +6,6 @@ import { CheckpointType } from '../../../../domain/checkpoint/value-objects/chec
 import { CheckpointModel } from '../../models/checkpoint.model';
 import { Between, MoreThan, LessThan, In } from 'typeorm';
 import { IQueryOptions } from '../../../../domain/common/repositories/repository';
-import { RepositoryError } from '../../../../domain/common/errors/repository-error';
 import { BaseRepository, QueryOptions } from '../../base/base-repository';
 import { ConnectionManager } from '../../connections/connection-manager';
 import {
@@ -75,11 +74,11 @@ export class CheckpointRepository extends BaseRepository<Checkpoint, CheckpointM
       // 创建Checkpoint实体
       return Checkpoint.fromProps(checkpointData);
     } catch (error) {
-      throw new RepositoryError(
-        `Checkpoint模型转换失败: ${error instanceof Error ? error.message : String(error)}`,
-        'MAPPING_ERROR',
-        { modelId: model.id, operation: 'toEntity' }
-      );
+      const errorMessage = `Checkpoint模型转换失败: ${error instanceof Error ? error.message : String(error)}`;
+      const customError = new Error(errorMessage);
+      (customError as any).code = 'MAPPING_ERROR';
+      (customError as any).context = { modelId: model.id, operation: 'toEntity' };
+      throw customError;
     }
   }
 
@@ -102,11 +101,11 @@ export class CheckpointRepository extends BaseRepository<Checkpoint, CheckpointM
       
       return model;
     } catch (error) {
-      throw new RepositoryError(
-        `Checkpoint实体转换失败: ${error instanceof Error ? error.message : String(error)}`,
-        'MAPPING_ERROR',
-        { entityId: entity.checkpointId.value, operation: 'toModel' }
-      );
+      const errorMessage = `Checkpoint实体转换失败: ${error instanceof Error ? error.message : String(error)}`;
+      const customError = new Error(errorMessage);
+      (customError as any).code = 'MAPPING_ERROR';
+      (customError as any).context = { entityId: entity.checkpointId.value, operation: 'toModel' };
+      throw customError;
     }
   }
 
@@ -166,7 +165,7 @@ export class CheckpointRepository extends BaseRepository<Checkpoint, CheckpointM
       
       return result.affected || 0;
     } catch (error) {
-      throw new RepositoryError(`按时间删除检查点失败: ${error instanceof Error ? error.message : String(error)}`);
+      throw new Error(`按时间删除检查点失败: ${error instanceof Error ? error.message : String(error)}`);
     }
   }
 

@@ -1,5 +1,3 @@
-import { DomainError } from '../../../domain/common/errors/domain-error';
-
 /**
  * 错误处理策略枚举
  */
@@ -96,9 +94,9 @@ export abstract class DomainErrorHandler {
    * @param context 上下文
    * @returns 领域错误
    */
-  protected createDomainError(message: string, context: ErrorContext): DomainError {
+  protected createDomainError(message: string, context: ErrorContext): Error {
     const fullMessage = `${context.component}.${context.operation}: ${message}`;
-    const error = new DomainError(fullMessage);
+    const error = new Error(fullMessage);
     
     // 添加上下文信息到错误
     (error as any).context = context;
@@ -119,10 +117,10 @@ export abstract class DomainErrorHandler {
     }
 
     // 某些错误类型不应该重试
-    if (error instanceof DomainError) {
-      const domainError = error as DomainError;
-      if (domainError.code === 'VALIDATION_ERROR' || 
-          domainError.code === 'AUTHORIZATION_ERROR') {
+    if ((error as any).code) {
+      const errorCode = (error as any).code;
+      if (errorCode === 'VALIDATION_ERROR' ||
+          errorCode === 'AUTHORIZATION_ERROR') {
         return false;
       }
     }

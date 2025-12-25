@@ -2,7 +2,6 @@ import { Entity } from '../../common/base/entity';
 import { ID } from '../../common/value-objects/id';
 import { Timestamp } from '../../common/value-objects/timestamp';
 import { Version } from '../../common/value-objects/version';
-import { DomainError } from '../../common/errors/domain-error';
 import { LLMMessage, LLMMessageRole } from '../value-objects/llm-message';
 import { LLMRequestOptions } from '../value-objects/llm-request-options';
 
@@ -312,7 +311,7 @@ export class LLMRequest extends Entity {
    */
   public addMessage(message: LLMMessage): void {
     if (this.props.isDeleted) {
-      throw new DomainError('无法为已删除的LLM请求添加消息');
+      throw new Error('无法为已删除的LLM请求添加消息');
     }
 
     const newMessages = [...this.props.messages, message];
@@ -335,11 +334,11 @@ export class LLMRequest extends Entity {
    */
   public updateMessage(index: number, message: LLMMessage): void {
     if (this.props.isDeleted) {
-      throw new DomainError('无法更新已删除LLM请求的消息');
+      throw new Error('无法更新已删除LLM请求的消息');
     }
 
     if (index < 0 || index >= this.props.messages.length) {
-      throw new DomainError('消息索引超出范围');
+      throw new Error('消息索引超出范围');
     }
 
     const newMessages = [...this.props.messages];
@@ -362,11 +361,11 @@ export class LLMRequest extends Entity {
    */
   public removeMessage(index: number): void {
     if (this.props.isDeleted) {
-      throw new DomainError('无法移除已删除LLL请求的消息');
+      throw new Error('无法移除已删除LLL请求的消息');
     }
 
     if (index < 0 || index >= this.props.messages.length) {
-      throw new DomainError('消息索引超出范围');
+      throw new Error('消息索引超出范围');
     }
 
     const newMessages = [...this.props.messages];
@@ -406,7 +405,7 @@ export class LLMRequest extends Entity {
     stream?: boolean;
   }): void {
     if (this.props.isDeleted) {
-      throw new DomainError('无法更新已删除LLM请求的参数');
+      throw new Error('无法更新已删除LLM请求的参数');
     }
 
     const newProps = {
@@ -426,7 +425,7 @@ export class LLMRequest extends Entity {
    */
   public updateMetadata(metadata: Record<string, unknown>): void {
     if (this.props.isDeleted) {
-      throw new DomainError('无法更新已删除LLM请求的元数据');
+      throw new Error('无法更新已删除LLM请求的元数据');
     }
 
     const newProps = {
@@ -447,7 +446,7 @@ export class LLMRequest extends Entity {
    */
   public setMetadata(key: string, value: unknown): void {
     if (this.props.isDeleted) {
-      throw new DomainError('无法设置已删除LLM请求的元数据');
+      throw new Error('无法设置已删除LLM请求的元数据');
     }
 
     const newMetadata = { ...this.props.metadata };
@@ -470,7 +469,7 @@ export class LLMRequest extends Entity {
    */
   public removeMetadata(key: string): void {
     if (this.props.isDeleted) {
-      throw new DomainError('无法移除已删除LLM请求的元数据');
+      throw new Error('无法移除已删除LLM请求的元数据');
     }
 
     const newMetadata = { ...this.props.metadata };
@@ -663,60 +662,60 @@ export class LLMRequest extends Entity {
    */
   public validateInvariants(): void {
     if (!this.props.id) {
-      throw new DomainError('LLM请求ID不能为空');
+      throw new Error('LLM请求ID不能为空');
     }
 
     if (!this.props.model || this.props.model.trim().length === 0) {
-      throw new DomainError('模型名称不能为空');
+      throw new Error('模型名称不能为空');
     }
 
     if (!this.props.messages || this.props.messages.length === 0) {
-      throw new DomainError('消息列表不能为空');
+      throw new Error('消息列表不能为空');
     }
 
     // 验证消息格式
     for (const message of this.props.messages) {
       if (!message.getRole() || !message.getContent()) {
-        throw new DomainError('消息必须包含role和content字段');
+        throw new Error('消息必须包含role和content字段');
       }
 
       if (!message.getRole()) {
-        throw new DomainError('消息角色不能为空');
+        throw new Error('消息角色不能为空');
       }
     }
 
     // 验证温度参数范围
     if (this.props.temperature !== undefined) {
       if (this.props.temperature < 0 || this.props.temperature > 2) {
-        throw new DomainError('温度参数必须在0到2之间');
+        throw new Error('温度参数必须在0到2之间');
       }
     }
 
     // 验证top_p参数范围
     if (this.props.topP !== undefined) {
       if (this.props.topP < 0 || this.props.topP > 1) {
-        throw new DomainError('top_p参数必须在0到1之间');
+        throw new Error('top_p参数必须在0到1之间');
       }
     }
 
     // 验证频率惩罚参数范围
     if (this.props.frequencyPenalty !== undefined) {
       if (this.props.frequencyPenalty < -2 || this.props.frequencyPenalty > 2) {
-        throw new DomainError('频率惩罚参数必须在-2到2之间');
+        throw new Error('频率惩罚参数必须在-2到2之间');
       }
     }
 
     // 验证存在惩罚参数范围
     if (this.props.presencePenalty !== undefined) {
       if (this.props.presencePenalty < -2 || this.props.presencePenalty > 2) {
-        throw new DomainError('存在惩罚参数必须在-2到2之间');
+        throw new Error('存在惩罚参数必须在-2到2之间');
       }
     }
 
     // 验证最大token数
     if (this.props.maxTokens !== undefined) {
       if (this.props.maxTokens <= 0) {
-        throw new DomainError('最大token数必须大于0');
+        throw new Error('最大token数必须大于0');
       }
     }
   }

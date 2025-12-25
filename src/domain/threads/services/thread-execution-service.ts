@@ -3,7 +3,6 @@ import { ThreadRepository } from '../repositories/thread-repository';
 import { WorkflowRepository } from '../../workflow/repositories/workflow-repository';
 import { ID } from '../../common/value-objects/id';
 import { Timestamp } from '../../common/value-objects/timestamp';
-import { DomainError } from '../../common/errors/domain-error';
 import { ExecutionStep } from '../../workflow/services/workflow-execution-service';
 
 /**
@@ -213,7 +212,7 @@ export class ThreadExecutionService {
    */
   private validateExecutionConditions(thread: Thread): void {
     if (!thread.status.canExecute()) {
-      throw new DomainError(`线程当前状态不允许执行: ${thread.status}`);
+      throw new Error(`线程当前状态不允许执行: ${thread.status}`);
     }
   }
 
@@ -286,7 +285,7 @@ export class ThreadExecutionService {
    */
   async pauseExecution(thread: Thread): Promise<void> {
     if (!thread.status.isRunning()) {
-      throw new DomainError('只能暂停运行中的线程');
+      throw new Error('只能暂停运行中的线程');
     }
 
     thread.pause();
@@ -299,13 +298,13 @@ export class ThreadExecutionService {
    */
   async resumeExecution(thread: Thread): Promise<void> {
     if (!thread.status.isPaused()) {
-      throw new DomainError('只能恢复暂停状态的线程');
+      throw new Error('只能恢复暂停状态的线程');
     }
 
     // 检查会话是否有其他运行中的线程
     const hasRunningThreads = await this.threadRepository.hasRunningThreads(thread.sessionId);
     if (hasRunningThreads) {
-      throw new DomainError('会话已有运行中的线程，无法恢复其他线程');
+      throw new Error('会话已有运行中的线程，无法恢复其他线程');
     }
 
     thread.resume();
@@ -319,7 +318,7 @@ export class ThreadExecutionService {
    */
   async cancelExecution(thread: Thread, reason?: string): Promise<void> {
     if (thread.status.isTerminal()) {
-      throw new DomainError('无法取消已终止状态的线程');
+      throw new Error('无法取消已终止状态的线程');
     }
 
     thread.cancel(undefined, reason);

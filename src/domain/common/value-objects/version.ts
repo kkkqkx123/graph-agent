@@ -1,6 +1,4 @@
 import { ValueObject } from './value-object';
-import { DomainError } from '../errors/domain-error';
-
 /**
  * 版本值对象接口
  */
@@ -95,7 +93,7 @@ export class Version extends ValueObject<VersionProps> {
     const match = this.props.value.match(versionRegex);
     
     if (!match) {
-      throw new DomainError(`无效的版本格式: ${this.props.value}`);
+      throw new Error(`无效的版本格式: ${this.props.value}`);
     }
 
     return {
@@ -194,13 +192,13 @@ export class Version extends ValueObject<VersionProps> {
    */
   public validate(): void {
     if (!this.props.value || this.props.value.trim().length === 0) {
-      throw new DomainError('版本不能为空');
+      throw new Error('版本不能为空');
     }
 
     // 验证版本格式
     const versionRegex = /^\d+\.\d+\.\d+$/;
     if (!versionRegex.test(this.props.value)) {
-      throw new DomainError(`无效的版本格式: ${this.props.value}，应为 x.y.z 格式`);
+      throw new Error(`无效的版本格式: ${this.props.value}，应为 x.y.z 格式`);
     }
   }
 
