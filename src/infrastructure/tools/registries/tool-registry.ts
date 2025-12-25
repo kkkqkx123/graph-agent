@@ -1,97 +1,41 @@
-import { injectable, inject } from 'inversify';
+import { injectable } from 'inversify';
 import { Tool } from '../../../domain/tools/entities/tool';
-import { ToolType } from '../../../domain/tools/value-objects/tool-type';
-import { ToolStatus } from '../../../domain/tools/value-objects/tool-status';
-import { ToolAdapter } from '../adapters/tool-adapter';
-import { Timestamp } from '../../../domain/common/value-objects/timestamp';
 
+/**
+ * 工具注册表
+ * 
+ * 职责：工具的存储和检索
+ * 注意：不包含业务逻辑，业务逻辑应该在应用层处理
+ */
 @injectable()
 export class ToolRegistry {
   private tools: Map<string, Tool> = new Map();
-  private toolCategories: Map<string, string[]> = new Map();
 
-  constructor(
-    @inject('ToolAdapter') private toolAdapter: ToolAdapter
-  ) {}
-
-  registerTool(tool: Tool): void {
-    // Adapt tool configuration
-    const adaptedConfig = this.toolAdapter.adaptToolConfig(tool.config);
-    const adaptedTool = new Tool(
-      tool.id,
-      tool.name,
-      tool.description,
-      tool.type,
-      tool.status,
-      adaptedConfig,
-      tool.parameters,
-      tool.returns,
-      tool.metadata,
-      tool.createdAt,
-      tool.updatedAt,
-      tool.createdBy,
-      tool.version,
-      tool.tags,
-      tool.category,
-      tool.isBuiltin,
-      tool.isEnabled,
-      tool.timeout,
-      tool.maxRetries,
-      tool.permissions,
-      tool.dependencies
-    );
-
-    // Validate tool configuration
-    const validation = this.toolAdapter.validateToolConfiguration(adaptedConfig);
-    if (!validation.valid) {
-      throw new Error(`Invalid tool configuration: ${validation.errors.join(', ')}`);
-    }
-
-    // Register the tool
-    this.tools.set(tool.id.value, adaptedTool);
-
-    // Add to category if specified
-    const category = adaptedTool.metadata?.['category'] as string || 'default';
-    if (!this.toolCategories.has(category)) {
-      this.toolCategories.set(category, []);
-    }
-    
-    const categoryTools = this.toolCategories.get(category)!;
-    if (!categoryTools.includes(tool.id.value)) {
-      categoryTools.push(tool.id.value);
-    }
+  /**
+   * 注册工具
+   */
+  register(tool: Tool): void {
+    this.tools.set(tool.id.value, tool);
   }
 
-  unregisterTool(toolId: Tool): void {
-    const tool = this.tools.get(toolId.id.value);
-    if (!tool) {
-      return;
-    }
-
-    // Remove from tools map
-    this.tools.delete(toolId.id.value);
-
-    // Remove from category
-    const category = tool.metadata?.['category'] as string || 'default';
-    const categoryTools = this.toolCategories.get(category);
-    if (categoryTools) {
-      const index = categoryTools.indexOf(toolId.id.value);
-      if (index > -1) {
-        categoryTools.splice(index, 1);
-      }
-      
-      // Remove category if empty
-      if (categoryTools.length === 0) {
-        this.toolCategories.delete(category);
-      }
-    }
+  /**
+   * 注销工具
+   */
+  unregister(toolId: string): void {
+    this.tools.delete(toolId);
   }
 
-  getTool(toolId: Tool): Tool | null {
-    return this.tools.get(toolId.id.value) || null;
+  /**
+   * 获取工具
+   */
+  get(toolId: string): Tool | null {
+    return this.tools.get(toolId) || null;
   }
 
-  getToolByName(name: string): Tool | null {
+  /**
+   * 按名称获取工具
+   */
+  getByName(name: string): Tool | null {
     for (const tool of this.tools.values()) {
       if (tool.name === name) {
         return tool;
@@ -100,155 +44,120 @@ export class ToolRegistry {
     return null;
   }
 
-  getAllTools(): Tool[] {
+  /**
+   * 获取所有工具
+   */
+  getAll(): Tool[] {
     return Array.from(this.tools.values());
   }
 
-  getToolsByCategory(category: string): Tool[] {
-    const toolIds = this.toolCategories.get(category) || [];
-    return toolIds.map(id => this.tools.get(id)!).filter(Boolean);
+  /**
+   * 按类型获取工具
+   */
+  getByType(type: string): Tool[] {
+    return Array.from(this.tools.values()).filter(tool => tool.type.value === type);
   }
 
-  getCategories(): string[] {
-    return Array.from(this.toolCategories.keys());
+  /**
+   * 按分类获取工具
+   */
+  getByCategory(category: string): Tool[] {
+    return Array.from(this.tools.values()).filter(tool => tool.category === category);
   }
 
-  searchTools(query: string): Tool[] {
+  /**
+   * 搜索工具
+   */
+  search(query: string): Tool[] {
     const lowerQuery = query.toLowerCase();
-    const results: Tool[] = [];
-
-    for (const tool of this.tools.values()) {
-      if (
-        tool.name.toLowerCase().includes(lowerQuery) ||
-        tool.description.toLowerCase().includes(lowerQuery) ||
-        (tool.metadata?.['tags'] && Array.isArray(tool.metadata['tags']) && (tool.metadata['tags'] as string[]).some((tag: string) => 
-          tag.toLowerCase().includes(lowerQuery)
-        ))
-      ) {
-        results.push(tool);
-      }
-    }
-
-    return results;
-  }
-
-  getToolsByType(type: string): Tool[] {
-    return Array.from(this.tools.values()).filter(tool => tool.config['type'] === type);
-  }
-
-  validateTool(toolId: Tool): { valid: boolean; errors: string[] } {
-    const tool = this.tools.get(toolId.id.value);
-    if (!tool) {
-      return {
-        valid: false,
-        errors: [`Tool with ID '${toolId.id.value}' not found`]
-      };
-    }
-
-    return this.toolAdapter.validateToolConfiguration(tool.config);
-  }
-
-  updateTool(toolId: Tool, updates: Partial<Tool>): void {
-    const existingTool = this.tools.get(toolId.id.value);
-    if (!existingTool) {
-      throw new Error(`Tool with ID '${toolId.id.value}' not found`);
-    }
-
-    // Create updated tool
-    const updatedConfig = { ...existingTool.config, ...updates.config };
-    const updatedTool = new Tool(
-      existingTool.id,
-      updates.name || existingTool.name,
-      updates.description || existingTool.description,
-      updates.type || existingTool.type,
-      updates.status || existingTool.status,
-      updatedConfig,
-      updates.parameters || existingTool.parameters,
-      updates.returns || existingTool.returns,
-      { ...existingTool.metadata, ...updates.metadata },
-      existingTool.createdAt,
-      Timestamp.now(),
-      existingTool.createdBy,
-      updates.version || existingTool.version,
-      updates.tags || existingTool.tags,
-      updates.category || existingTool.category,
-      updates.isBuiltin !== undefined ? updates.isBuiltin : existingTool.isBuiltin,
-      updates.isEnabled !== undefined ? updates.isEnabled : existingTool.isEnabled,
-      updates.timeout !== undefined ? updates.timeout : existingTool.timeout,
-      updates.maxRetries !== undefined ? updates.maxRetries : existingTool.maxRetries,
-      updates.permissions || existingTool.permissions,
-      updates.dependencies || existingTool.dependencies
+    return Array.from(this.tools.values()).filter(tool =>
+      tool.name.toLowerCase().includes(lowerQuery) ||
+      tool.description.toLowerCase().includes(lowerQuery) ||
+      tool.tags.some(tag => tag.toLowerCase().includes(lowerQuery))
     );
-
-    // Validate updated configuration
-    const validation = this.toolAdapter.validateToolConfiguration(updatedConfig);
-    if (!validation.valid) {
-      throw new Error(`Invalid tool configuration: ${validation.errors.join(', ')}`);
-    }
-
-    // Update the tool
-    this.tools.set(toolId.id.value, updatedTool);
-
-    // Update category if changed
-    const oldCategory = existingTool.metadata?.['category'] as string || 'default';
-    const newCategory = updatedTool.metadata?.['category'] as string || 'default';
-
-    if (oldCategory !== newCategory) {
-      // Remove from old category
-      const oldCategoryTools = this.toolCategories.get(oldCategory);
-      if (oldCategoryTools) {
-        const index = oldCategoryTools.indexOf(toolId.id.value);
-        if (index > -1) {
-          oldCategoryTools.splice(index, 1);
-        }
-        
-        if (oldCategoryTools.length === 0) {
-          this.toolCategories.delete(oldCategory);
-        }
-      }
-
-      // Add to new category
-      if (!this.toolCategories.has(newCategory)) {
-        this.toolCategories.set(newCategory, []);
-      }
-      
-      const newCategoryTools = this.toolCategories.get(newCategory)!;
-      if (!newCategoryTools.includes(toolId.id.value)) {
-        newCategoryTools.push(toolId.id.value);
-      }
-    }
   }
 
+  /**
+   * 检查工具是否存在
+   */
+  has(toolId: string): boolean {
+    return this.tools.has(toolId);
+  }
+
+  /**
+   * 获取工具数量
+   */
+  count(): number {
+    return this.tools.size;
+  }
+
+  /**
+   * 获取所有分类
+   */
+  getCategories(): string[] {
+    const categories = new Set<string>();
+    for (const tool of this.tools.values()) {
+      categories.add(tool.category);
+    }
+    return Array.from(categories);
+  }
+
+  /**
+   * 获取所有类型
+   */
+  getTypes(): string[] {
+    const types = new Set<string>();
+    for (const tool of this.tools.values()) {
+      types.add(tool.type.value);
+    }
+    return Array.from(types);
+  }
+
+  /**
+   * 清空所有工具
+   */
   clear(): void {
     this.tools.clear();
-    this.toolCategories.clear();
   }
 
+  /**
+   * 获取统计信息
+   */
   getStats(): {
-    totalTools: number;
-    categoriesCount: number;
-    toolsByType: Record<string, number>;
-    toolsByCategory: Record<string, number>;
+    total: number;
+    byType: Record<string, number>;
+    byCategory: Record<string, number>;
+    enabled: number;
+    disabled: number;
   } {
-    const toolsByType: Record<string, number> = {};
-    const toolsByCategory: Record<string, number> = {};
+    const byType: Record<string, number> = {};
+    const byCategory: Record<string, number> = {};
+    let enabled = 0;
+    let disabled = 0;
 
-    // Count tools by type
     for (const tool of this.tools.values()) {
-      const type = tool.config['type'] as string;
-      toolsByType[type] = (toolsByType[type] || 0) + 1;
-    }
+      // 按类型统计
+      const type = tool.type.value;
+      byType[type] = (byType[type] || 0) + 1;
 
-    // Count tools by category
-    for (const [category, toolIds] of this.toolCategories.entries()) {
-      toolsByCategory[category] = toolIds.length;
+      // 按分类统计
+      const category = tool.category;
+      byCategory[category] = (byCategory[category] || 0) + 1;
+
+      // 按状态统计
+      if (tool.isEnabled) {
+        enabled++;
+      } else {
+        disabled++;
+      }
     }
 
     return {
-      totalTools: this.tools.size,
-      categoriesCount: this.toolCategories.size,
-      toolsByType,
-      toolsByCategory
+      total: this.tools.size,
+      byType,
+      byCategory,
+      enabled,
+      disabled
     };
   }
 }

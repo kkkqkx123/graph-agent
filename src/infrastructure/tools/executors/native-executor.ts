@@ -17,14 +17,12 @@ export class NativeExecutor extends ToolExecutorBase {
 
       const result = await this.executeCommand(command, args, options);
       
-      this.updateExecutionStats(true, Date.now() - execution.startedAt.getTime());
       return ToolResult.createSuccess(
         execution.id,
         result,
         Date.now() - execution.startedAt.getTime()
       );
     } catch (error) {
-      this.updateExecutionStats(false, Date.now() - execution.startedAt.getTime());
       return ToolResult.createFailure(
         execution.id,
         error instanceof Error ? error.message : String(error),
@@ -220,14 +218,6 @@ export class NativeExecutor extends ToolExecutorBase {
     };
   }
 
-  override async preprocessParameters(tool: Tool, parameters: Record<string, unknown>): Promise<Record<string, unknown>> {
-    return parameters;
-  }
-
-  override async postprocessResult(tool: Tool, result: unknown): Promise<unknown> {
-    return result;
-  }
-
   getType(): string {
     return 'native';
   }
@@ -249,10 +239,10 @@ export class NativeExecutor extends ToolExecutorBase {
   }
 
   override supportsTool(tool: Tool): boolean {
-    return tool.type.toString() === 'native';
+    return tool.type.value === 'native';
   }
 
-  override getConfigSchema(): ToolExecutorConfigSchema {
+  getConfigSchema(): ToolExecutorConfigSchema {
     return {
       type: 'object',
       properties: {
@@ -270,7 +260,6 @@ export class NativeExecutor extends ToolExecutorBase {
         },
         args: {
           type: 'array',
-          items: { type: 'string' },
           description: 'Command arguments'
         },
         options: {
@@ -282,20 +271,18 @@ export class NativeExecutor extends ToolExecutorBase {
     };
   }
 
-  override getCapabilities(): ToolExecutorCapabilities {
+  getCapabilities(): ToolExecutorCapabilities {
     return {
       streaming: false,
       async: true,
       batch: false,
       retry: false,
       timeout: true,
-      cancellation: false,
-      progress: false,
-      metrics: false
+      cancellation: false
     };
   }
 
-  override async healthCheck(): Promise<ToolExecutorHealthCheck> {
+  async healthCheck(): Promise<ToolExecutorHealthCheck> {
     return {
       status: 'healthy',
       message: 'Native executor is operational',

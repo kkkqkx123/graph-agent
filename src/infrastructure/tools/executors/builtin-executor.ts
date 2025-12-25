@@ -25,14 +25,12 @@ export class BuiltinExecutor extends ToolExecutorBase {
       // Execute the builtin function
       const result = await func(execution.parameters);
       
-      this.updateExecutionStats(true, Date.now() - execution.startedAt.getTime());
       return ToolResult.createSuccess(
         execution.id,
         result,
         Date.now() - execution.startedAt.getTime()
       );
     } catch (error) {
-      this.updateExecutionStats(false, Date.now() - execution.startedAt.getTime());
       return ToolResult.createFailure(
         execution.id,
         error instanceof Error ? error.message : String(error),
@@ -73,14 +71,6 @@ export class BuiltinExecutor extends ToolExecutorBase {
     };
   }
 
-  override async preprocessParameters(tool: Tool, parameters: Record<string, unknown>): Promise<Record<string, unknown>> {
-    return parameters;
-  }
-
-  override async postprocessResult(tool: Tool, result: unknown): Promise<unknown> {
-    return result;
-  }
-
   getType(): string {
     return 'builtin';
   }
@@ -102,10 +92,10 @@ export class BuiltinExecutor extends ToolExecutorBase {
   }
 
   override supportsTool(tool: Tool): boolean {
-    return tool.type.toString() === 'builtin';
+    return tool.type.value === 'builtin';
   }
 
-  override getConfigSchema(): ToolExecutorConfigSchema {
+  getConfigSchema(): ToolExecutorConfigSchema {
     return {
       type: 'object',
       properties: {
@@ -118,20 +108,18 @@ export class BuiltinExecutor extends ToolExecutorBase {
     };
   }
 
-  override getCapabilities(): ToolExecutorCapabilities {
+  getCapabilities(): ToolExecutorCapabilities {
     return {
       streaming: false,
       async: true,
       batch: false,
       retry: false,
       timeout: false,
-      cancellation: false,
-      progress: false,
-      metrics: false
+      cancellation: false
     };
   }
 
-  override async healthCheck(): Promise<ToolExecutorHealthCheck> {
+  async healthCheck(): Promise<ToolExecutorHealthCheck> {
     return {
       status: 'healthy',
       message: 'Builtin executor is operational',
