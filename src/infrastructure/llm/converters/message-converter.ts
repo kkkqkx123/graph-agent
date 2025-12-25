@@ -6,6 +6,7 @@
 
 import { LLMMessage, LLMMessageRole } from '../../../domain/llm/value-objects/llm-message';
 import { MessageRole } from './base';
+import { Timestamp } from '../../../domain/common/value-objects/timestamp';
 
 /**
  * 基础消息接口
@@ -233,7 +234,7 @@ export class MessageConverter {
         content: message.content,
         name: message.name,
         metadata: message.additionalKwargs,
-        timestamp: new Date()
+        timestamp: Timestamp.now()
       });
     } else if (message instanceof AIMessage) {
       return LLMMessage.fromInterface({
@@ -241,7 +242,7 @@ export class MessageConverter {
         content: message.content,
         toolCalls: message.toolCalls,
         metadata: message.additionalKwargs,
-        timestamp: new Date()
+        timestamp: Timestamp.now()
       });
     } else if (message instanceof SystemMessage) {
       return LLMMessage.createSystem(message.content, message.additionalKwargs);
@@ -251,7 +252,7 @@ export class MessageConverter {
         content: message.content,
         toolCallId: message.toolCallId,
         metadata: message.additionalKwargs,
-        timestamp: new Date()
+        timestamp: Timestamp.now()
       });
     } else {
       return LLMMessage.createUser(message.content, message.additionalKwargs);
@@ -381,7 +382,7 @@ export class MessageConverter {
       role: LLMMessageRole.TOOL,
       content,
       toolCallId,
-      timestamp: new Date()
+      timestamp: Timestamp.now()
     });
   }
 

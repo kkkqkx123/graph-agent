@@ -3,6 +3,7 @@ import { Tool } from '../../../domain/tools/entities/tool';
 import { ToolType } from '../../../domain/tools/value-objects/tool-type';
 import { ToolStatus } from '../../../domain/tools/value-objects/tool-status';
 import { ToolAdapter } from '../adapters/tool-adapter';
+import { Timestamp } from '../../../domain/common/value-objects/timestamp';
 
 @injectable()
 export class ToolRegistry {
@@ -166,7 +167,7 @@ export class ToolRegistry {
       updates.returns || existingTool.returns,
       { ...existingTool.metadata, ...updates.metadata },
       existingTool.createdAt,
-      new Date(),
+      Timestamp.now(),
       existingTool.createdBy,
       updates.version || existingTool.version,
       updates.tags || existingTool.tags,
