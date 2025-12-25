@@ -11,6 +11,7 @@ import { NodeId } from '../../../domain/workflow/value-objects/node-id';
 import { NodeType } from '../../../domain/workflow/value-objects/node-type';
 import { EdgeId } from '../../../domain/workflow/value-objects/edge-id';
 import { EdgeType } from '../../../domain/workflow/value-objects/edge-type';
+import { Timestamp } from '../../../domain/common/value-objects/timestamp';
 
 // DTOs
 import {
@@ -269,15 +270,15 @@ export class WorkflowService {
       this.workflowDomainService.validateExecutionEligibility(workflow);
 
       // 生成执行ID
-      const executionId = `exec_${workflowId.toString()}_${Date.now()}`;
+      const executionId = `exec_${workflowId.toString()}_${Timestamp.now().getMilliseconds()}`;
 
       // 记录执行开始
-      const startTime = new Date();
+      const startTime = Timestamp.now();
 
       // 这里应该调用工作流编排器来执行工作流
       // 简化实现，直接返回一个模拟的执行结果
-      const endTime = new Date();
-      const duration = endTime.getTime() - startTime.getTime();
+      const endTime = Timestamp.now();
+      const duration = endTime.getMilliseconds() - startTime.getMilliseconds();
 
       // 计算执行路径
       const executionPath = this.calculateExecutionPath(workflow);

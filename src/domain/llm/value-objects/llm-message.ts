@@ -3,6 +3,7 @@
  */
 
 import { ValueObject } from '../../common/value-objects/value-object';
+import { Timestamp } from '../../common/value-objects/timestamp';
 
 /**
  * LLM消息角色枚举
@@ -69,7 +70,7 @@ export interface LLMMessageProps {
   /**
    * 时间戳（可选）
    */
-  timestamp?: Date;
+  timestamp?: Timestamp;
   
   /**
    * 元数据（可选）
@@ -91,7 +92,7 @@ export class LLMMessage extends ValueObject<LLMMessageProps> {
     return new LLMMessage({
       role: LLMMessageRole.SYSTEM,
       content,
-      timestamp: new Date(),
+      timestamp: Timestamp.now(),
       metadata
     });
   }
@@ -106,7 +107,7 @@ export class LLMMessage extends ValueObject<LLMMessageProps> {
     return new LLMMessage({
       role: LLMMessageRole.USER,
       content,
-      timestamp: new Date(),
+      timestamp: Timestamp.now(),
       metadata
     });
   }
@@ -121,7 +122,7 @@ export class LLMMessage extends ValueObject<LLMMessageProps> {
     return new LLMMessage({
       role: LLMMessageRole.ASSISTANT,
       content,
-      timestamp: new Date(),
+      timestamp: Timestamp.now(),
       metadata
     });
   }
@@ -142,7 +143,7 @@ export class LLMMessage extends ValueObject<LLMMessageProps> {
         name,
         arguments: args
       },
-      timestamp: new Date(),
+      timestamp: Timestamp.now(),
       metadata
     });
   }
@@ -157,7 +158,7 @@ export class LLMMessage extends ValueObject<LLMMessageProps> {
     return new LLMMessage({
       role: LLMMessageRole.TOOL,
       content,
-      timestamp: new Date(),
+      timestamp: Timestamp.now(),
       metadata
     });
   }
@@ -174,7 +175,7 @@ export class LLMMessage extends ValueObject<LLMMessageProps> {
     functionCall?: LLMFunctionCall;
     toolCalls?: LLMToolCall[];
     toolCallId?: string;
-    timestamp?: Date;
+    timestamp?: Timestamp;
     metadata?: Record<string, any>;
   }): LLMMessage {
     return new LLMMessage({
@@ -184,7 +185,7 @@ export class LLMMessage extends ValueObject<LLMMessageProps> {
       functionCall: message.functionCall,
       toolCalls: message.toolCalls,
       toolCallId: message.toolCallId,
-      timestamp: message.timestamp || new Date(),
+      timestamp: message.timestamp || Timestamp.now(),
       metadata: message.metadata
     });
   }
@@ -241,7 +242,7 @@ export class LLMMessage extends ValueObject<LLMMessageProps> {
    * 获取时间戳
    * @returns 时间戳
    */
-  public getTimestamp(): Date | undefined {
+  public getTimestamp(): Timestamp | undefined {
     return this.props.timestamp;
   }
 
@@ -318,7 +319,7 @@ export class LLMMessage extends ValueObject<LLMMessageProps> {
     return new LLMMessage({
       ...this.props,
       content,
-      timestamp: new Date()
+      timestamp: Timestamp.now()
     });
   }
 

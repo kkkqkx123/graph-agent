@@ -92,7 +92,7 @@ export class SessionService {
    * @param sessionId 会话ID
    * @returns 会话信息
    */
-  async getSessionInfo(sessionId: string): Promise<SessionInfo | null> {
+  async getSessionInfo(sessionId: string): Promise<Session | null> {
     try {
       // 验证ID格式
       const id = ID.fromString(sessionId);
@@ -102,8 +102,8 @@ export class SessionService {
         return null;
       }
 
-      // 使用转换器自动映射 - 替代手动映射
-      return this.sessionConverter.toDto(session);
+      // 直接返回领域对象
+      return session;
     } catch (error) {
       this.logger.error('获取会话信息失败', error as Error);
       throw error;
@@ -147,12 +147,12 @@ export class SessionService {
    * 列出所有会话
    * @returns 会话信息列表
    */
-  async listSessions(): Promise<SessionInfo[]> {
+  async listSessions(): Promise<Session[]> {
     try {
       const sessions = await this.sessionRepository.findAll();
 
-      // 使用转换器批量转换 - 替代手动映射
-      return this.sessionConverter.toDtoList(sessions);
+      // 直接返回领域对象列表
+      return sessions;
     } catch (error) {
       this.logger.error('列出会话失败', error as Error);
       throw error;
@@ -180,7 +180,7 @@ export class SessionService {
    * @param userId 用户ID
    * @returns 激活后的会话信息
    */
-  async activateSession(sessionId: string, userId?: string): Promise<SessionInfo> {
+  async activateSession(sessionId: string, userId?: string): Promise<Session> {
     try {
       const id = ID.fromString(sessionId);
       const user = userId ? ID.fromString(userId) : undefined;
@@ -188,7 +188,7 @@ export class SessionService {
       const session = await this.sessionRepository.findByIdOrFail(id);
 
       if (session.status.isActive()) {
-        return this.sessionConverter.toDto(session); // 已经是活跃状态
+        return session; // 已经是活跃状态
       }
 
       if (session.status.isTerminated()) {
@@ -204,7 +204,7 @@ export class SessionService {
 
       await this.sessionRepository.save(session);
 
-      return this.sessionConverter.toDto(session);
+      return session;
     } catch (error) {
       this.logger.error('激活会话失败', error as Error);
       throw error;
@@ -218,7 +218,7 @@ export class SessionService {
    * @param reason 暂停原因
    * @returns 暂停后的会话信息
    */
-  async suspendSession(sessionId: string, userId?: string, reason?: string): Promise<SessionInfo> {
+  async suspendSession(sessionId: string, userId?: string, reason?: string): Promise<Session> {
     try {
       const id = ID.fromString(sessionId);
       const user = userId ? ID.fromString(userId) : undefined;
@@ -226,7 +226,7 @@ export class SessionService {
       const session = await this.sessionRepository.findByIdOrFail(id);
 
       if (session.status.isSuspended()) {
-        return this.sessionConverter.toDto(session); // 已经是暂停状态
+        return session; // 已经是暂停状态
       }
 
       if (session.status.isTerminated()) {
@@ -242,7 +242,7 @@ export class SessionService {
 
       await this.sessionRepository.save(session);
 
-      return this.sessionConverter.toDto(session);
+      return session;
     } catch (error) {
       this.logger.error('暂停会话失败', error as Error);
       throw error;
@@ -256,7 +256,7 @@ export class SessionService {
    * @param reason 终止原因
    * @returns 终止后的会话信息
    */
-  async terminateSession(sessionId: string, userId?: string, reason?: string): Promise<SessionInfo> {
+  async terminateSession(sessionId: string, userId?: string, reason?: string): Promise<Session> {
     try {
       const id = ID.fromString(sessionId);
       const user = userId ? ID.fromString(userId) : undefined;
@@ -264,7 +264,7 @@ export class SessionService {
       const session = await this.sessionRepository.findByIdOrFail(id);
 
       if (session.status.isTerminated()) {
-        return this.sessionConverter.toDto(session); // 已经是终止状态
+        return session; // 已经是终止状态
       }
 
       // 终止会话
@@ -272,7 +272,7 @@ export class SessionService {
 
       await this.sessionRepository.save(session);
 
-      return this.sessionConverter.toDto(session);
+      return session;
     } catch (error) {
       this.logger.error('终止会话失败', error as Error);
       throw error;
@@ -285,7 +285,7 @@ export class SessionService {
    * @param config 新配置
    * @returns 更新后的会话信息
    */
-  async updateSessionConfig(sessionId: string, config: Record<string, unknown>): Promise<SessionInfo> {
+  async updateSessionConfig(sessionId: string, config: Record<string, unknown>): Promise<Session> {
     try {
       const id = ID.fromString(sessionId);
 
@@ -306,7 +306,7 @@ export class SessionService {
 
       await this.sessionRepository.save(session);
 
-      return this.sessionConverter.toDto(session);
+      return session;
     } catch (error) {
       if (error instanceof DtoValidationError) {
         this.logger.warn('会话配置验证失败', {
@@ -325,7 +325,7 @@ export class SessionService {
    * @param userId 用户ID
    * @returns 更新后的会话信息
    */
-  async addMessageToSession(sessionId: string, userId?: string): Promise<SessionInfo> {
+  async addMessageToSession(sessionId: string, userId?: string): Promise<Session> {
     try {
       const id = ID.fromString(sessionId);
       const user = userId ? ID.fromString(userId) : undefined;
@@ -343,7 +343,7 @@ export class SessionService {
 
       await this.sessionRepository.save(session);
 
-      return this.sessionConverter.toDto(session);
+      return session;
     } catch (error) {
       this.logger.error('添加消息到会话失败', error as Error);
       throw error;

@@ -113,9 +113,9 @@ export interface WorkflowExecutionProgress {
   /** 预估剩余时间（毫秒） */
   readonly estimatedTimeRemaining?: number;
   /** 执行开始时间 */
-  readonly startTime: Date;
+  readonly startTime: Timestamp;
   /** 当前时间 */
-  readonly currentTime: Date;
+  readonly currentTime: Timestamp;
 }
 
 /**
@@ -259,7 +259,7 @@ export class DefaultWorkflowOrchestrationService implements IWorkflowOrchestrati
         data: {},
         error: error as Error,
         statistics: {
-          totalTime: new Date().getTime() - context.startTime.getMilliseconds(),
+          totalTime: Timestamp.now().getMilliseconds() - context.startTime.getMilliseconds(),
           nodeExecutionTime: 0,
           successfulNodes: 0,
           failedNodes: 0,
@@ -306,8 +306,8 @@ export class DefaultWorkflowOrchestrationService implements IWorkflowOrchestrati
           totalNodes: 0,
           executedEdges: 0,
           totalEdges: 0,
-          startTime: new Date(),
-          currentTime: new Date()
+          startTime: Timestamp.now(),
+          currentTime: Timestamp.now()
         };
         onProgress(progressInfo);
       }
@@ -447,7 +447,7 @@ export class DefaultWorkflowOrchestrationService implements IWorkflowOrchestrati
    */
   async subscribeExecutionEvents(callback: any): Promise<string> {
     // 简化实现，实际中应该支持事件订阅
-    return `subscription_${Date.now()}`;
+    return `subscription_${Timestamp.now().getMilliseconds()}`;
   }
 
   /**

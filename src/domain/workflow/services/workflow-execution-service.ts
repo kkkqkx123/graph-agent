@@ -1,5 +1,6 @@
 import { ID } from '../../common/value-objects/id';
 import { WorkflowDefinition } from '../value-objects/workflow-definition';
+import { Timestamp } from '../../common/value-objects/timestamp';
 
 /**
  * Workflow执行器配置
@@ -80,7 +81,7 @@ export class WorkflowExecutor {
         status: 'completed',
         data: { results },
         statistics: {
-          totalTime: Date.now() - (context.startTime?.getTime() || Date.now()),
+          totalTime: Timestamp.now().getMilliseconds() - (context.startTime?.getMilliseconds() || Timestamp.now().getMilliseconds()),
           nodeExecutionTime: 0,
           successfulNodes: results.length,
           failedNodes: 0,
@@ -152,7 +153,7 @@ export class WorkflowExecutor {
         return nodeHistory?.result;
       },
       getElapsedTime: () => {
-        return Date.now() - (context.startTime?.getTime() || Date.now());
+        return Timestamp.now().getMilliseconds() - (context.startTime?.getMilliseconds() || Timestamp.now().getMilliseconds());
       },
       getWorkflow: () => this.workflowDefinition
     };

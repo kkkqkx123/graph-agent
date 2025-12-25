@@ -1,6 +1,7 @@
 import { ID } from '../../common/value-objects/id';
 import { ToolType } from '../value-objects/tool-type';
 import { ToolStatus } from '../value-objects/tool-status';
+import { Timestamp } from '../../common/value-objects/timestamp';
 
 /**
  * 工具实体
@@ -72,12 +73,12 @@ export class Tool {
   /**
    * 创建时间
    */
-  readonly createdAt: Date;
+  readonly createdAt: Timestamp;
 
   /**
    * 更新时间
    */
-  readonly updatedAt: Date;
+  readonly updatedAt: Timestamp;
 
   /**
    * 创建者ID
@@ -180,8 +181,8 @@ export class Tool {
       items?: any;
     },
     metadata: Record<string, unknown> = {},
-    createdAt: Date = new Date(),
-    updatedAt: Date = new Date(),
+    createdAt: Timestamp = Timestamp.now(),
+    updatedAt: Timestamp = Timestamp.now(),
     createdBy?: ID,
     version: string = '1.0.0',
     tags: string[] = [],
@@ -254,8 +255,8 @@ export class Tool {
     createdBy?: ID
   ): Tool {
     const id = ID.generate();
-    const now = new Date();
-    
+    const now = Timestamp.now();
+
     return new Tool(
       id,
       name,
@@ -318,7 +319,7 @@ export class Tool {
       returns || this.returns,
       metadata || this.metadata,
       this.createdAt,
-      new Date(),
+      Timestamp.now(),
       this.createdBy,
       this.version,
       this.tags,
@@ -350,7 +351,7 @@ export class Tool {
       this.returns,
       this.metadata,
       this.createdAt,
-      new Date(),
+      Timestamp.now(),
       this.createdBy,
       this.version,
       this.tags,
@@ -381,7 +382,7 @@ export class Tool {
       this.returns,
       this.metadata,
       this.createdAt,
-      new Date(),
+      Timestamp.now(),
       this.createdBy,
       this.version,
       this.tags,
@@ -412,7 +413,7 @@ export class Tool {
       this.returns,
       this.metadata,
       this.createdAt,
-      new Date(),
+      Timestamp.now(),
       this.createdBy,
       this.version,
       this.tags,
@@ -448,7 +449,7 @@ export class Tool {
       this.returns,
       this.metadata,
       this.createdAt,
-      new Date(),
+      Timestamp.now(),
       this.createdBy,
       this.version,
       [...this.tags, tag],
@@ -484,7 +485,7 @@ export class Tool {
       this.returns,
       this.metadata,
       this.createdAt,
-      new Date(),
+      Timestamp.now(),
       this.createdBy,
       this.version,
       this.tags.filter(t => t !== tag),
@@ -516,7 +517,7 @@ export class Tool {
       this.returns,
       this.metadata,
       this.createdAt,
-      new Date(),
+      Timestamp.now(),
       this.createdBy,
       this.version,
       this.tags,
@@ -552,7 +553,7 @@ export class Tool {
       this.returns,
       this.metadata,
       this.createdAt,
-      new Date(),
+      Timestamp.now(),
       this.createdBy,
       this.version,
       this.tags,
@@ -590,7 +591,7 @@ export class Tool {
       this.returns,
       this.metadata,
       this.createdAt,
-      new Date(),
+      Timestamp.now(),
       this.createdBy,
       this.version,
       this.tags,
@@ -717,8 +718,8 @@ export class Tool {
         items?: any;
       },
       json['metadata'] as Record<string, unknown>,
-      new Date(json['createdAt'] as string),
-      new Date(json['updatedAt'] as string),
+      Timestamp.fromString(json['createdAt'] as string),
+      Timestamp.fromString(json['updatedAt'] as string),
       json['createdBy'] ? ID.fromString(json['createdBy'] as string) : undefined,
       json['version'] as string,
       json['tags'] as string[],
