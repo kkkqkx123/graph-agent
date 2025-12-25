@@ -7,11 +7,6 @@
 // 值对象
 export { ID } from './value-objects/id';
 export { UserId } from './value-objects/user-id';
-export { SessionId } from './value-objects/session-id';
-export { ThreadId } from './value-objects/thread-id';
-export { WorkflowId } from './value-objects/workflow-id';
-export { NodeId } from './value-objects/node-id';
-export { EdgeId } from './value-objects/edge-id';
 export { Timestamp } from './value-objects/timestamp';
 export { Version } from './value-objects/version';
 export { ValueObject } from './value-objects/value-object';
@@ -19,13 +14,8 @@ export { ValueObject } from './value-objects/value-object';
 // 基础类
 export { Entity } from './base/entity';
 
-// 错误处理已简化，直接使用标准 Error 类
-// 如需专门的错误处理，请在各自的模块中定义
-
 // 事件类
 export { DomainEvent } from './events/domain-event';
-// EventDispatcher 已迁移到 infrastructure 层
-// 如需使用，请从 infrastructure/common/event-dispatchers 导入
 
 // 仓储接口
 export { Repository } from './repositories/repository';
