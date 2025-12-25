@@ -1,5 +1,4 @@
 import { injectable, inject } from 'inversify';
-import { ILLMClient } from '../../../domain/llm/interfaces/llm-client.interface';
 import { LLMRequest } from '../../../domain/llm/entities/llm-request';
 import { LLMResponse } from '../../../domain/llm/entities/llm-response';
 import { ModelConfig } from '../../../domain/llm/value-objects/model-config';
@@ -14,11 +13,11 @@ import { ConfigManager } from '../../config/config-manager';
 
 /**
  * LLM客户端抽象基类
- * 
+ *
  * 提供通用功能实现，减少代码重复
  */
 @injectable()
-export abstract class BaseLLMClient implements ILLMClient {
+export abstract class BaseLLMClient {
   protected readonly providerName: string;
   protected readonly supportedModels: string[];
   protected readonly providerConfig: ProviderConfig;

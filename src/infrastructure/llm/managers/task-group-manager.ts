@@ -1,15 +1,14 @@
 import { injectable, inject } from 'inversify';
-import { ITaskGroupManager } from '../../../domain/llm/interfaces/task-group-manager.interface';
 import { ConfigManager } from '../../config/config-manager';
 import { LLM_DI_IDENTIFIERS } from '../di-identifiers';
 
 /**
  * 任务组管理器
- * 
+ *
  * 实现任务组管理的具体逻辑
  */
 @injectable()
-export class TaskGroupManager implements ITaskGroupManager {
+export class TaskGroupManager {
   constructor(
     @inject(LLM_DI_IDENTIFIERS.ConfigManager) private configManager: ConfigManager
   ) {}

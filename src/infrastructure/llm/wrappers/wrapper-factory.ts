@@ -1,19 +1,21 @@
 import { injectable, inject } from 'inversify';
-import { ILLMWrapperFactory, ILLMWrapper } from '../../../domain/llm/interfaces/llm-wrapper.interface';
 import { PollingPoolWrapper } from '../../../domain/llm/entities/wrapper';
 import { TaskGroupWrapper } from '../../../domain/llm/entities/wrapper';
 import { DirectLLMWrapper } from '../../../domain/llm/entities/wrapper';
 import { ID } from '../../../domain/common/value-objects/id';
 import { LLM_DI_IDENTIFIERS } from '../di-identifiers';
 
+// 定义基础包装器类型
+type BaseLLMWrapper = PollingPoolWrapper | TaskGroupWrapper | DirectLLMWrapper;
+
 /**
  * LLM包装器工厂
- * 
+ *
  * 实现包装器创建的具体逻辑
  */
 @injectable()
-export class LLMWrapperFactory implements ILLMWrapperFactory {
-  private wrappers: Map<string, ILLMWrapper> = new Map();
+export class LLMWrapperFactory {
+  private wrappers: Map<string, BaseLLMWrapper> = new Map();
 
   constructor(
     @inject(LLM_DI_IDENTIFIERS.PollingPoolManager) private poolManager: any,
@@ -23,7 +25,7 @@ export class LLMWrapperFactory implements ILLMWrapperFactory {
   /**
    * 创建轮询池包装器
    */
-  async createPollingPoolWrapper(poolName: string, config?: Record<string, any>): Promise<ILLMWrapper> {
+  async createPollingPoolWrapper(poolName: string, config?: Record<string, any>): Promise<BaseLLMWrapper> {
     const pool = await this.poolManager.getPool(poolName);
     if (!pool) {
       throw new Error(`轮询池不存在: ${poolName}`);
@@ -43,7 +45,7 @@ export class LLMWrapperFactory implements ILLMWrapperFactory {
   /**
    * 创建任务组包装器
    */
-  async createTaskGroupWrapper(groupName: string, config?: Record<string, any>): Promise<ILLMWrapper> {
+  async createTaskGroupWrapper(groupName: string, config?: Record<string, any>): Promise<BaseLLMWrapper> {
     const wrapper = new TaskGroupWrapper(
       ID.generate(),
       groupName,
@@ -58,7 +60,7 @@ export class LLMWrapperFactory implements ILLMWrapperFactory {
   /**
    * 创建直接LLM包装器
    */
-  async createDirectLLMWrapper(client: any, config?: Record<string, any>): Promise<ILLMWrapper> {
+  async createDirectLLMWrapper(client: any, config?: Record<string, any>): Promise<BaseLLMWrapper> {
     const wrapper = new DirectLLMWrapper(
       ID.generate(),
       client.getClientName(),
@@ -73,7 +75,7 @@ export class LLMWrapperFactory implements ILLMWrapperFactory {
   /**
    * 获取所有包装器
    */
-  async getAllWrappers(): Promise<ILLMWrapper[]> {
+  async getAllWrappers(): Promise<BaseLLMWrapper[]> {
     return Array.from(this.wrappers.values());
   }
 
@@ -90,7 +92,7 @@ export class LLMWrapperFactory implements ILLMWrapperFactory {
   /**
    * 获取包装器
    */
-  async getWrapper(name: string): Promise<ILLMWrapper | null> {
+  async getWrapper(name: string): Promise<BaseLLMWrapper | null> {
     return this.wrappers.get(name) || null;
   }
 
@@ -122,7 +124,7 @@ export class LLMWrapperFactory implements ILLMWrapperFactory {
   /**
    * 重新创建包装器
    */
-  async recreateWrapper(name: string, config?: Record<string, any>): Promise<ILLMWrapper> {
+  async recreateWrapper(name: string, config?: Record<string, any>): Promise<BaseLLMWrapper> {
     await this.removeWrapper(name);
 
     // 根据名称判断包装器类型
@@ -234,11 +236,11 @@ export class LLMWrapperFactory implements ILLMWrapperFactory {
     name: string;
     type: 'polling_pool' | 'task_group' | 'direct_llm';
     config?: Record<string, any>;
-  }>): Promise<ILLMWrapper[]> {
-    const wrappers: ILLMWrapper[] = [];
+  }>): Promise<BaseLLMWrapper[]> {
+    const wrappers: BaseLLMWrapper[] = [];
 
     for (const config of wrapperConfigs) {
-      let wrapper: ILLMWrapper;
+      let wrapper: BaseLLMWrapper;
 
       switch (config.type) {
         case 'polling_pool':

@@ -2,9 +2,9 @@ import { Entity } from '../../common/base/entity';
 import { ID } from '../../common/value-objects/id';
 import { Timestamp } from '../../common/value-objects/timestamp';
 import { Version } from '../../common/value-objects/version';
-import { ILLMClient } from '../interfaces/llm-client.interface';
-import { IPollingPool } from '../interfaces/pool-manager.interface';
-import { ITaskGroupManager } from '../interfaces/task-group-manager.interface';
+import { BaseLLMClient } from '../../../infrastructure/llm/clients/base-llm-client';
+import { PollingPool } from './pool';
+import { TaskGroupManager } from '../../../infrastructure/llm/managers/task-group-manager';
 
 /**
  * LLM包装器基类
@@ -91,7 +91,7 @@ export class PollingPoolWrapper extends LLMWrapper {
     id: ID,
     name: string,
     config: Record<string, any>,
-    public readonly pool: IPollingPool
+    public readonly pool: PollingPool
   ) {
     super(id, name, config);
   }
@@ -180,7 +180,7 @@ export class TaskGroupWrapper extends LLMWrapper {
      id: ID,
      name: string,
      config: Record<string, any>,
-     public readonly taskGroupManager: ITaskGroupManager
+     public readonly taskGroupManager: TaskGroupManager
    ) {
      super(id, name, config);
    }
@@ -315,7 +315,7 @@ export class DirectLLMWrapper extends LLMWrapper {
      id: ID,
      name: string,
      config: Record<string, any>,
-     public readonly client: ILLMClient
+     public readonly client: BaseLLMClient
    ) {
      super(id, name, config);
    }

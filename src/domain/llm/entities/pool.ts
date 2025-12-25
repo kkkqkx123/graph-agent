@@ -2,8 +2,9 @@ import { Entity } from '../../common/base/entity';
 import { ID } from '../../common/value-objects/id';
 import { Timestamp } from '../../common/value-objects/timestamp';
 import { Version } from '../../common/value-objects/version';
-import { InstanceStatus, RotationStrategy } from '../interfaces/pool-manager.interface';
-import { ILLMClient } from '../interfaces/llm-client.interface';
+import { InstanceStatus } from '../value-objects/pool-instance';
+import { RotationStrategy } from '../value-objects/rotation-strategy';
+import { BaseLLMClient } from '../../../infrastructure/llm/clients/base-llm-client';
 import { LLMClientFactory } from '../../../infrastructure/llm/clients/llm-client-factory';
 import { LLMRequest } from './llm-request';
 
@@ -17,7 +18,7 @@ export class LLMInstance extends Entity {
     public readonly modelName: string,
     public readonly groupName: string,
     public readonly echelon: string,
-    public readonly client: ILLMClient,
+    public readonly client: BaseLLMClient,
     public status: InstanceStatus = InstanceStatus.HEALTHY,
     public lastHealthCheck: Date = new Date(),
     public failureCount: number = 0,

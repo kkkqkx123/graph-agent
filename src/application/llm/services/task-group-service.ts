@@ -1,16 +1,16 @@
 import { injectable, inject } from 'inversify';
-import { ITaskGroupManager } from '../../../domain/llm/interfaces/task-group-manager.interface';
+import { TaskGroupManager } from '../../../infrastructure/llm/managers/task-group-manager';
 import { TaskGroupNotFoundError } from '../../../domain/llm/exceptions/task-group-exceptions';
 
 /**
  * 任务组服务
- * 
+ *
  * 提供任务组管理的应用层服务
  */
 @injectable()
 export class TaskGroupService {
   constructor(
-    @inject('ITaskGroupManager') private taskGroupManager: ITaskGroupManager
+    @inject('TaskGroupManager') private taskGroupManager: TaskGroupManager
   ) {}
 
   /**

@@ -1,8 +1,7 @@
 import { injectable, inject } from 'inversify';
-import { RateLimiter } from '../../../domain/llm/interfaces/rate-limiter.interface';
 
 @injectable()
-export class TokenBucketLimiter implements RateLimiter {
+export class TokenBucketLimiter {
   private tokens: number;
   private lastRefill: number;
   private readonly capacity: number;

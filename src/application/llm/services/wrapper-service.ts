@@ -1,23 +1,29 @@
 import { injectable, inject } from 'inversify';
-import { ILLMWrapper, ILLMWrapperFactory } from '../../../domain/llm/interfaces/llm-wrapper.interface';
+import { LLMWrapperFactory } from '../../../infrastructure/llm/wrappers/wrapper-factory';
+import { PollingPoolWrapper } from '../../../domain/llm/entities/wrapper';
+import { TaskGroupWrapper } from '../../../domain/llm/entities/wrapper';
+import { DirectLLMWrapper } from '../../../domain/llm/entities/wrapper';
+
+// 定义基础包装器类型
+type BaseLLMWrapper = PollingPoolWrapper | TaskGroupWrapper | DirectLLMWrapper;
 
 /**
  * 包装器服务
- * 
+ *
  * 提供统一的LLM调用接口
  */
 @injectable()
 export class WrapperService {
-  private wrappers: Map<string, ILLMWrapper> = new Map();
+  private wrappers: Map<string, BaseLLMWrapper> = new Map();
 
   constructor(
-    @inject('ILLMWrapperFactory') private wrapperFactory: ILLMWrapperFactory
+    @inject('LLMWrapperFactory') private wrapperFactory: LLMWrapperFactory
   ) {}
 
   /**
    * 获取包装器
    */
-  async getWrapper(wrapperName: string): Promise<ILLMWrapper> {
+  async getWrapper(wrapperName: string): Promise<BaseLLMWrapper> {
     if (!this.wrappers.has(wrapperName)) {
       throw new Error(`包装器未找到: ${wrapperName}`);
     }
@@ -28,7 +34,7 @@ export class WrapperService {
   /**
    * 创建轮询池包装器
    */
-  async createPollingPoolWrapper(poolName: string, config?: Record<string, any>): Promise<ILLMWrapper> {
+  async createPollingPoolWrapper(poolName: string, config?: Record<string, any>): Promise<BaseLLMWrapper> {
     const wrapper = await this.wrapperFactory.createPollingPoolWrapper(poolName, config);
     this.wrappers.set(poolName, wrapper);
     return wrapper;
@@ -37,7 +43,7 @@ export class WrapperService {
   /**
    * 创建任务组包装器
    */
-  async createTaskGroupWrapper(groupName: string, config?: Record<string, any>): Promise<ILLMWrapper> {
+  async createTaskGroupWrapper(groupName: string, config?: Record<string, any>): Promise<BaseLLMWrapper> {
     const wrapper = await this.wrapperFactory.createTaskGroupWrapper(groupName, config);
     this.wrappers.set(groupName, wrapper);
     return wrapper;
@@ -46,7 +52,7 @@ export class WrapperService {
   /**
    * 创建直接LLM包装器
    */
-  async createDirectLLMWrapper(clientName: string, config?: Record<string, any>): Promise<ILLMWrapper> {
+  async createDirectLLMWrapper(clientName: string, config?: Record<string, any>): Promise<BaseLLMWrapper> {
     // TODO: 需要获取实际的LLM客户端
     const wrapper = await this.wrapperFactory.createDirectLLMWrapper(null as any, config);
     this.wrappers.set(clientName, wrapper);

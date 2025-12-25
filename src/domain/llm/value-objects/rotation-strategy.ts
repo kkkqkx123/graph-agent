@@ -1,5 +1,11 @@
 import { ValueObject } from '../../common/value-objects/value-object';
-import { RotationStrategy } from '../interfaces/pool-manager.interface';
+
+// 轮询策略枚举
+export enum RotationStrategy {
+  ROUND_ROBIN = 'round_robin',
+  LEAST_RECENTLY_USED = 'least_recently_used',
+  WEIGHTED = 'weighted'
+}
 
 /**
  * 轮询策略值对象

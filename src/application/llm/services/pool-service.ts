@@ -1,16 +1,16 @@
 import { injectable, inject } from 'inversify';
-import { IPollingPoolManager } from '../../../domain/llm/interfaces/pool-manager.interface';
+import { PollingPoolManager } from '../../../infrastructure/llm/managers/pool-manager';
 import { PollingPoolNotFoundError } from '../../../domain/llm/exceptions/pool-exceptions';
 
 /**
  * 轮询池服务
- * 
+ *
  * 提供轮询池管理的应用层服务
  */
 @injectable()
 export class PoolService {
   constructor(
-    @inject('IPollingPoolManager') private poolManager: IPollingPoolManager
+    @inject('PollingPoolManager') private poolManager: PollingPoolManager
   ) {}
 
   /**

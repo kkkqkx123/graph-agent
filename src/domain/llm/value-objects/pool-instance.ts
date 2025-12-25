@@ -1,5 +1,13 @@
 import { ValueObject } from '../../common/value-objects/value-object';
-import { InstanceStatus } from '../interfaces/pool-manager.interface';
+
+// 实例状态枚举
+export enum InstanceStatus {
+  HEALTHY = 'healthy',
+  DEGRADED = 'degraded',
+  UNHEALTHY = 'unhealthy',
+  FAILED = 'failed',
+  RECOVERING = 'recovering'
+}
 
 /**
  * 池实例值对象

@@ -5,12 +5,11 @@
  */
 
 import { injectable, inject } from 'inversify';
-import { ILLMClient } from '../../../domain/llm/interfaces/llm-client.interface';
+import { BaseLLMClient } from './base-llm-client';
 import { LLMRequest } from '../../../domain/llm/entities/llm-request';
 import { LLMResponse } from '../../../domain/llm/entities/llm-response';
 import { ModelConfig } from '../../../domain/llm/value-objects/model-config';
 import { ID } from '../../../domain/common/value-objects/id';
-import { BaseLLMClient } from './base-llm-client';
 import { HumanRelayMode } from '../../../domain/llm/value-objects/human-relay-mode';
 import { PromptTemplate } from '../../../domain/llm/value-objects/prompt-template';
 import { LLMMessageRole } from '../../../domain/llm/types/llm-types';
@@ -83,7 +82,7 @@ interface HumanRelayClientConfig {
  * HumanRelay LLM客户端
  */
 @injectable()
-export class HumanRelayClient extends BaseLLMClient implements ILLMClient {
+export class HumanRelayClient extends BaseLLMClient {
   private readonly mode: HumanRelayMode;
   private readonly maxHistoryLength: number;
   private readonly defaultTimeout: number;

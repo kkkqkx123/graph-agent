@@ -1,5 +1,5 @@
 import { injectable, inject } from 'inversify';
-import { ILLMClient } from '../../../domain/llm/interfaces/llm-client.interface';
+import { BaseLLMClient } from './base-llm-client';
 import { OpenAIChatClient } from './openai-chat-client';
 import { OpenAIResponseClient } from './openai-response-client';
 import { AnthropicClient } from './anthropic-client';
@@ -35,7 +35,7 @@ export class LLMClientFactory {
    * @param model 模型名称（可选）
    * @returns LLM客户端实例
    */
-  createClient(provider: string, model?: string): ILLMClient {
+  createClient(provider: string, model?: string): BaseLLMClient {
     const normalizedProvider = provider.toLowerCase();
 
     switch (normalizedProvider) {
@@ -67,7 +67,7 @@ export class LLMClientFactory {
    * @param model 模型名称
    * @returns OpenAI客户端实例
    */
-  private selectOpenAIClient(model?: string): ILLMClient {
+  private selectOpenAIClient(model?: string): BaseLLMClient {
     if (model && this.isResponseModel(model)) {
       return this.openaiResponseClient;
     }
@@ -97,7 +97,7 @@ export class LLMClientFactory {
    * @param model 模型名称
    * @returns Gemini客户端实例
    */
-  private selectGeminiClient(model?: string): ILLMClient {
+  private selectGeminiClient(model?: string): BaseLLMClient {
     // 从配置中获取客户端类型
     const clientType = this.configManager.get('llm.gemini.clientType', 'native');
 
@@ -168,7 +168,7 @@ export class LLMClientFactory {
    * @param client 客户端实例
    * @returns 功能列表
    */
-  private getClientFeatures(client: ILLMClient): string[] {
+  private getClientFeatures(client: BaseLLMClient): string[] {
     const features: string[] = [];
 
     // 检查流式响应支持
@@ -201,8 +201,8 @@ export class LLMClientFactory {
    * @param providers 提供商列表
    * @returns 客户端映射
    */
-  createClients(providers: string[]): Record<string, ILLMClient> {
-    const clients: Record<string, ILLMClient> = {};
+  createClients(providers: string[]): Record<string, BaseLLMClient> {
+    const clients: Record<string, BaseLLMClient> = {};
 
     for (const provider of providers) {
       try {
@@ -243,7 +243,7 @@ export class LLMClientFactory {
    * @param provider 提供商名称
    * @returns HumanRelay客户端实例
    */
-  private createHumanRelayClient(provider: string): ILLMClient {
+  private createHumanRelayClient(provider: string): BaseLLMClient {
     // 根据提供商名称确定模式
     let mode: HumanRelayMode;
     switch (provider) {

@@ -1,5 +1,4 @@
 import { injectable, inject } from 'inversify';
-import { IPollingPoolManager, IPollingPool } from '../../../domain/llm/interfaces/pool-manager.interface';
 import { PollingPool } from '../../../domain/llm/entities/pool';
 import { ID } from '../../../domain/common/value-objects/id';
 import { LLMClientFactory } from '../clients/llm-client-factory';
@@ -7,12 +6,12 @@ import { LLM_DI_IDENTIFIERS } from '../di-identifiers';
 
 /**
  * 轮询池管理器
- * 
+ *
  * 实现轮询池管理的具体逻辑
  */
 @injectable()
-export class PollingPoolManager implements IPollingPoolManager {
-  private pools: Map<string, IPollingPool> = new Map();
+export class PollingPoolManager {
+  private pools: Map<string, PollingPool> = new Map();
 
   constructor(
     @inject(LLM_DI_IDENTIFIERS.TaskGroupManager) private taskGroupManager: any,
@@ -22,14 +21,14 @@ export class PollingPoolManager implements IPollingPoolManager {
   /**
    * 获取轮询池
    */
-  async getPool(name: string): Promise<IPollingPool | null> {
+  async getPool(name: string): Promise<PollingPool | null> {
     return this.pools.get(name) || null;
   }
 
   /**
    * 创建轮询池
    */
-  async createPool(name: string, config: Record<string, any>): Promise<IPollingPool> {
+  async createPool(name: string, config: Record<string, any>): Promise<PollingPool> {
     if (this.pools.has(name)) {
       throw new Error(`轮询池已存在: ${name}`);
     }

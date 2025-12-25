@@ -1,12 +1,11 @@
 import { injectable, inject } from 'inversify';
-import { RateLimiter } from '../../../domain/llm/interfaces/rate-limiter.interface';
 
 interface RequestRecord {
   timestamp: number;
 }
 
 @injectable()
-export class SlidingWindowLimiter implements RateLimiter {
+export class SlidingWindowLimiter {
   private requests: RequestRecord[] = [];
   private readonly maxRequests: number;
   private readonly windowSizeMs: number;
