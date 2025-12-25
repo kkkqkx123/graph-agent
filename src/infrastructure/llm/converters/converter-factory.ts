@@ -165,7 +165,7 @@ export class ConverterFactory {
   public reset(): void {
     this.providers.clear();
     this.messageConverter = null;
-    this.registerDefaultProviders();
+    // 不重新注册默认提供商，避免重复注册警告
   }
 }
 

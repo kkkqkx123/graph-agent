@@ -6,7 +6,7 @@
 
 import { ConverterFactory } from '../converter-factory';
 import { MessageConverter, HumanMessage } from '../message-converter';
-import { LLMMessage } from '../../../../../domain/llm/entities/llm-request';
+import { LLMMessage, LLMMessageRole } from '../../../../domain/llm/value-objects/llm-message';
 
 describe('转换器系统集成测试', () => {
   let converterFactory: ConverterFactory;
@@ -21,14 +21,8 @@ describe('转换器系统集成测试', () => {
     test('应该能够完成OpenAI提供商的完整转换流程', () => {
       // 创建测试消息
       const messages: LLMMessage[] = [
-        {
-          role: 'system',
-          content: '你是一个有用的助手'
-        },
-        {
-          role: 'user',
-          content: '你好，请介绍一下你自己'
-        }
+        LLMMessage.createSystem('你是一个有用的助手'),
+        LLMMessage.createUser('你好，请介绍一下你自己')
       ];
 
       const parameters = {
@@ -77,29 +71,26 @@ describe('转换器系统集成测试', () => {
       // 转换响应
       const response = provider!.convertResponse(mockResponse);
       expect(response).toBeDefined();
-      expect(response.role).toBe('assistant');
-      expect(response.content).toBe('你好！我是一个AI助手，很高兴为您服务。');
+      expect(response.getRole()).toBe('assistant');
+      expect(response.getContent()).toBe('你好！我是一个AI助手，很高兴为您服务。');
     });
 
     test('应该能够完成Anthropic提供商的完整转换流程', () => {
       // 创建多模态测试消息
       const messages: LLMMessage[] = [
-        {
-          role: 'user',
-          content: JSON.stringify([
-            {
-              type: 'text',
-              text: '描述这张图片'
-            },
-            {
-              type: 'image',
-              source: {
-                media_type: 'image/jpeg',
-                data: 'base64encodedimagedata'
-              }
+        LLMMessage.createUser(JSON.stringify([
+          {
+            type: 'text',
+            text: '描述这张图片'
+          },
+          {
+            type: 'image',
+            source: {
+              media_type: 'image/jpeg',
+              data: 'base64encodedimagedata'
             }
-          ])
-        }
+          }
+        ]))
       ];
 
       const parameters = {
@@ -150,17 +141,14 @@ describe('转换器系统集成测试', () => {
       // 转换响应
       const response = provider!.convertResponse(mockResponse);
       expect(response).toBeDefined();
-      expect(response.role).toBe('assistant');
-      expect(response.content).toBe('这是一张美丽的风景图片，显示了山脉和湖泊。');
+      expect(response.getRole()).toBe('assistant');
+      expect(response.getContent()).toBe('这是一张美丽的风景图片，显示了山脉和湖泊。');
     });
 
     test('应该能够完成Gemini提供商的完整转换流程', () => {
       // 创建工具调用测试消息
       const messages: LLMMessage[] = [
-        {
-          role: 'user',
-          content: '现在几点了？'
-        }
+        LLMMessage.createUser('现在几点了？')
       ];
 
       const parameters = {
@@ -232,23 +220,19 @@ describe('转换器系统集成测试', () => {
       // 转换响应
       const response = provider!.convertResponse(mockResponse);
       expect(response).toBeDefined();
-      expect(response.role).toBe('assistant');
-      expect(response.content).toBe('我需要调用工具来获取当前时间。');
-      expect(response.tool_calls).toBeDefined();
-      expect(Array.isArray(response.tool_calls)).toBe(true);
-      expect(response.tool_calls.length).toBe(1);
-      expect(response.tool_calls[0].function.name).toBe('get_current_time');
+      expect(response.getRole()).toBe('assistant');
+      expect(response.getContent()).toBe('我需要调用工具来获取当前时间。');
+      expect(response.getToolCalls()).toBeDefined();
+      expect(Array.isArray(response.getToolCalls())).toBe(true);
+      expect(response.getToolCalls()!.length).toBe(1);
+      expect(response.getToolCalls()![0].function.name).toBe('get_current_time');
     });
   });
 
   describe('消息转换器集成测试', () => {
     test('应该能够与消息转换器协同工作', () => {
       // 创建LLMMessage
-      const llmMessage: LLMMessage = {
-        role: 'user',
-        content: '测试消息',
-        name: 'test_user'
-      };
+      const llmMessage = LLMMessage.createUser('测试消息');
 
       // 转换为BaseMessage
       const baseMessage = messageConverter.toBaseMessage(llmMessage);
@@ -259,8 +243,8 @@ describe('转换器系统集成测试', () => {
       // 转换回LLMMessage
       const convertedLLMMessage = messageConverter.fromBaseMessage(baseMessage);
       expect(convertedLLMMessage).toBeDefined();
-      expect(convertedLLMMessage.role).toBe('user');
-      expect(convertedLLMMessage.content).toBe('测试消息');
+      expect(convertedLLMMessage.getRole()).toBe('user');
+      expect(convertedLLMMessage.getContent()).toBe('测试消息');
     });
   });
 
@@ -286,10 +270,11 @@ describe('转换器系统集成测试', () => {
       // 创建大量消息
       const messages: LLMMessage[] = [];
       for (let i = 0; i < 100; i++) {
-        messages.push({
-          role: i % 2 === 0 ? 'user' : 'assistant',
-          content: `消息 ${i}: 这是一条测试消息`
-        });
+        if (i % 2 === 0) {
+          messages.push(LLMMessage.createUser(`消息 ${i}: 这是一条测试消息`));
+        } else {
+          messages.push(LLMMessage.createAssistant(`消息 ${i}: 这是一条测试消息`));
+        }
       }
 
       const startTime = Date.now();

@@ -12,8 +12,13 @@ describe('ConverterFactory', () => {
   let factory: ConverterFactory;
 
   beforeEach(() => {
+    // 重置单例实例，确保每个测试都使用干净的工厂
+    (ConverterFactory as any).instance = undefined;
     factory = ConverterFactory.getInstance();
-    factory.reset(); // 重置工厂状态以避免测试间的状态污染
+    // 手动注册默认提供商用于测试
+    factory.registerProvider('openai', OpenAIProvider);
+    factory.registerProvider('anthropic', AnthropicProvider);
+    factory.registerProvider('gemini', GeminiProvider);
   });
 
   describe('单例模式', () => {

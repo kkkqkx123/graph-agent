@@ -58,8 +58,8 @@ describe('QueryOptionsBuilder 功能测试', () => {
       const options = builder.build();
 
       expect(options.filters).toBeDefined();
-      expect(options.filters!.status).toBe('active');
-      expect(options.filters!.priority).toBe(5);
+      expect(options.filters!['status']).toBe('active');
+      expect(options.filters!['priority']).toBe(5);
     });
 
     it('应该正确构建多个过滤条件', () => {
@@ -73,9 +73,9 @@ describe('QueryOptionsBuilder 功能测试', () => {
       const options = builder.build();
 
       expect(options.filters).toBeDefined();
-      expect(options.filters!.status).toBe('active');
-      expect(options.filters!.priority).toBe(5);
-      expect(options.filters!.name).toBe('test');
+      expect(options.filters!['status']).toBe('active');
+      expect(options.filters!['priority']).toBe(5);
+      expect(options.filters!['name']).toBe('test');
     });
   });
 

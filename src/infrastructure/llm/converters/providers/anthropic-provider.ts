@@ -425,7 +425,12 @@ export class AnthropicProvider extends BaseProvider {
     };
 
     // 创建LLM消息
-    return LLMMessage.createAssistant(textContent);
+    return LLMMessage.fromInterface({
+      role: LLMMessageRole.ASSISTANT,
+      content: textContent,
+      toolCalls: toolCalls.length > 0 ? toolCalls : undefined,
+      metadata: additionalKwargs
+    });
   }
 
   /**

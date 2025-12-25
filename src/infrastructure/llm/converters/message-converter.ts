@@ -228,13 +228,31 @@ export class MessageConverter {
    */
   private baseToLLM(message: BaseMessage): LLMMessage {
     if (message instanceof HumanMessage) {
-      return LLMMessage.createUser(message.content, message.additionalKwargs);
+      return LLMMessage.fromInterface({
+        role: LLMMessageRole.USER,
+        content: message.content,
+        name: message.name,
+        metadata: message.additionalKwargs,
+        timestamp: new Date()
+      });
     } else if (message instanceof AIMessage) {
-      return LLMMessage.createAssistant(message.content, message.additionalKwargs);
+      return LLMMessage.fromInterface({
+        role: LLMMessageRole.ASSISTANT,
+        content: message.content,
+        toolCalls: message.toolCalls,
+        metadata: message.additionalKwargs,
+        timestamp: new Date()
+      });
     } else if (message instanceof SystemMessage) {
       return LLMMessage.createSystem(message.content, message.additionalKwargs);
     } else if (message instanceof ToolMessage) {
-      return LLMMessage.createTool(message.content, message.additionalKwargs);
+      return LLMMessage.fromInterface({
+        role: LLMMessageRole.TOOL,
+        content: message.content,
+        toolCallId: message.toolCallId,
+        metadata: message.additionalKwargs,
+        timestamp: new Date()
+      });
     } else {
       return LLMMessage.createUser(message.content, message.additionalKwargs);
     }
@@ -359,7 +377,12 @@ export class MessageConverter {
    * 便捷方法：创建工具消息
    */
   createToolMessage(content: string, toolCallId: string): LLMMessage {
-    return LLMMessage.createTool(content);
+    return LLMMessage.fromInterface({
+      role: LLMMessageRole.TOOL,
+      content,
+      toolCallId,
+      timestamp: new Date()
+    });
   }
 
   /**

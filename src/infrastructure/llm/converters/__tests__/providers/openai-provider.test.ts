@@ -3,7 +3,7 @@
  */
 
 import { OpenAIProvider } from '../../providers/openai-provider';
-import { LLMMessage } from '../../../../../../domain/llm/entities/llm-request';
+import { LLMMessage, LLMMessageRole } from '../../../../../domain/llm/value-objects/llm-message';
 
 describe('OpenAIProvider', () => {
   let provider: OpenAIProvider;
@@ -32,14 +32,8 @@ describe('OpenAIProvider', () => {
   describe('请求转换', () => {
     it('应该正确转换基本消息', () => {
       const messages: LLMMessage[] = [
-        {
-          role: 'system',
-          content: '你是一个助手'
-        },
-        {
-          role: 'user',
-          content: '你好'
-        }
+        LLMMessage.createSystem('你是一个助手'),
+        LLMMessage.createUser('你好')
       ];
 
       const parameters = {
@@ -59,14 +53,11 @@ describe('OpenAIProvider', () => {
 
     it('应该处理工具调用消息', () => {
       const messages: LLMMessage[] = [
-        {
-          role: 'user',
-          content: '获取天气信息'
-        },
-        {
-          role: 'assistant',
+        LLMMessage.createUser('获取天气信息'),
+        LLMMessage.fromInterface({
+          role: LLMMessageRole.ASSISTANT,
           content: '',
-          tool_calls: [
+          toolCalls: [
             {
               id: 'call_123',
               type: 'function',
@@ -76,7 +67,7 @@ describe('OpenAIProvider', () => {
               }
             }
           ]
-        }
+        })
       ];
 
       const parameters = {
@@ -92,10 +83,7 @@ describe('OpenAIProvider', () => {
 
     it('应该处理可选参数', () => {
       const messages: LLMMessage[] = [
-        {
-          role: 'user',
-          content: '测试消息'
-        }
+        LLMMessage.createUser('测试消息')
       ];
 
       const parameters = {
@@ -114,10 +102,7 @@ describe('OpenAIProvider', () => {
 
     it('应该处理特殊参数', () => {
       const messages: LLMMessage[] = [
-        {
-          role: 'user',
-          content: '测试消息'
-        }
+        LLMMessage.createUser('测试消息')
       ];
 
       const parameters = {
@@ -134,10 +119,7 @@ describe('OpenAIProvider', () => {
 
     it('应该处理工具配置', () => {
       const messages: LLMMessage[] = [
-        {
-          role: 'user',
-          content: '使用工具'
-        }
+        LLMMessage.createUser('使用工具')
       ];
 
       const parameters = {
@@ -184,8 +166,8 @@ describe('OpenAIProvider', () => {
       const result = provider.convertResponse(response);
 
       expect(result).toBeDefined();
-      expect(result.role).toBe('assistant');
-      expect(result.content).toBe('你好，我是助手');
+      expect(result.getRole()).toBe('assistant');
+      expect(result.getContent()).toBe('你好，我是助手');
     });
 
     it('应该处理工具调用响应', () => {
@@ -212,9 +194,9 @@ describe('OpenAIProvider', () => {
 
       const result = provider.convertResponse(response);
 
-      expect(result.tool_calls).toBeDefined();
-      expect(result.tool_calls).toHaveLength(1);
-      expect(result.tool_calls[0].function.name).toBe('test_function');
+      expect(result.getToolCalls()).toBeDefined();
+      expect(result.getToolCalls()).toHaveLength(1);
+      expect(result.getToolCalls()[0].function.name).toBe('test_function');
     });
 
     it('应该处理流式响应', () => {
@@ -242,7 +224,7 @@ describe('OpenAIProvider', () => {
       const result = provider.convertStreamResponse(events);
 
       expect(result).toBeDefined();
-      expect(result.content).toBe('你好，世界');
+      expect(result.getContent()).toBe('你好，世界');
     });
 
     it('应该处理流式工具调用', () => {
@@ -269,8 +251,8 @@ describe('OpenAIProvider', () => {
 
       const result = provider.convertStreamResponse(events);
 
-      expect(result.tool_calls).toBeDefined();
-      expect(result.tool_calls).toHaveLength(1);
+      expect(result.getToolCalls()).toBeDefined();
+      expect(result.getToolCalls()).toHaveLength(1);
     });
   });
 

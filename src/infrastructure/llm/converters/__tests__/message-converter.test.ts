@@ -5,7 +5,7 @@
  */
 
 import { MessageConverter, HumanMessage, AIMessage, SystemMessage, ToolMessage } from '../message-converter';
-import { LLMMessage } from '../../../../../domain/llm/entities/llm-request';
+import { LLMMessage, LLMMessageRole } from '../../../../domain/llm/value-objects/llm-message';
 
 describe('MessageConverter', () => {
   let converter: MessageConverter;
@@ -16,10 +16,7 @@ describe('MessageConverter', () => {
 
   describe('toBaseMessage', () => {
     it('应该正确转换LLMMessage到HumanMessage', () => {
-      const llmMessage: LLMMessage = {
-        role: 'user',
-        content: '你好，世界'
-      };
+      const llmMessage = LLMMessage.createUser('你好，世界');
 
       const result = converter.toBaseMessage(llmMessage);
 
@@ -28,10 +25,10 @@ describe('MessageConverter', () => {
     });
 
     it('应该正确转换LLMMessage到AIMessage', () => {
-      const llmMessage: LLMMessage = {
-        role: 'assistant',
+      const llmMessage = LLMMessage.fromInterface({
+        role: LLMMessageRole.ASSISTANT,
         content: '我是助手',
-        tool_calls: [
+        toolCalls: [
           {
             id: 'call_123',
             type: 'function',
@@ -41,7 +38,7 @@ describe('MessageConverter', () => {
             }
           }
         ]
-      };
+      });
 
       const result = converter.toBaseMessage(llmMessage);
 
@@ -51,10 +48,7 @@ describe('MessageConverter', () => {
     });
 
     it('应该正确转换LLMMessage到SystemMessage', () => {
-      const llmMessage: LLMMessage = {
-        role: 'system',
-        content: '你是一个助手'
-      };
+      const llmMessage = LLMMessage.createSystem('你是一个助手');
 
       const result = converter.toBaseMessage(llmMessage);
 
@@ -63,11 +57,11 @@ describe('MessageConverter', () => {
     });
 
     it('应该正确转换LLMMessage到ToolMessage', () => {
-      const llmMessage: LLMMessage = {
-        role: 'tool',
+      const llmMessage = LLMMessage.fromInterface({
+        role: LLMMessageRole.TOOL,
         content: '工具执行结果',
-        tool_call_id: 'call_123'
-      };
+        toolCallId: 'call_123'
+      });
 
       const result = converter.toBaseMessage(llmMessage);
 
@@ -77,11 +71,11 @@ describe('MessageConverter', () => {
     });
 
     it('应该正确转换字典格式到BaseMessage', () => {
-      const messageDict = {
-        role: 'user',
+      const messageDict = LLMMessage.fromInterface({
+        role: LLMMessageRole.USER,
         content: '测试消息',
         name: 'test_user'
-      };
+      });
 
       const result = converter.toBaseMessage(messageDict);
 
@@ -107,9 +101,9 @@ describe('MessageConverter', () => {
       const result = converter.fromBaseMessage(baseMessage, 'llm');
 
       expect(result).toBeDefined();
-      expect(result.role).toBe('user');
-      expect(result.content).toBe('你好，世界');
-      expect(result.name).toBe('user');
+      expect(result.getRole()).toBe('user');
+      expect(result.getContent()).toBe('你好，世界');
+      expect(result.getName()).toBe('user');
     });
 
     it('应该正确转换AIMessage到LLMMessage', () => {
@@ -127,9 +121,9 @@ describe('MessageConverter', () => {
 
       const result = converter.fromBaseMessage(baseMessage, 'llm');
 
-      expect(result.role).toBe('assistant');
-      expect(result.content).toBe('助手回复');
-      expect(result.tool_calls).toHaveLength(1);
+      expect(result.getRole()).toBe('assistant');
+      expect(result.getContent()).toBe('助手回复');
+      expect(result.getToolCalls()).toHaveLength(1);
     });
 
     it('应该正确转换到字典格式', () => {
@@ -147,18 +141,9 @@ describe('MessageConverter', () => {
   describe('批量转换', () => {
     it('应该正确转换消息列表', () => {
       const messages: LLMMessage[] = [
-        {
-          role: 'system',
-          content: '你是一个助手'
-        },
-        {
-          role: 'user',
-          content: '你好'
-        },
-        {
-          role: 'assistant',
-          content: '我是助手'
-        }
+        LLMMessage.createSystem('你是一个助手'),
+        LLMMessage.createUser('你好'),
+        LLMMessage.createAssistant('我是助手')
       ];
 
       const baseMessages = converter.convertMessageList(messages);
@@ -179,9 +164,9 @@ describe('MessageConverter', () => {
       const llmMessages = converter.convertFromBaseList(baseMessages, 'llm');
 
       expect(llmMessages).toHaveLength(3);
-      expect(llmMessages[0].role).toBe('system');
-      expect(llmMessages[1].role).toBe('user');
-      expect(llmMessages[2].role).toBe('assistant');
+      expect(llmMessages[0].getRole()).toBe('system');
+      expect(llmMessages[1].getRole()).toBe('user');
+      expect(llmMessages[2].getRole()).toBe('assistant');
     });
   });
 
@@ -189,39 +174,39 @@ describe('MessageConverter', () => {
     it('应该创建系统消息', () => {
       const message = converter.createSystemMessage('系统指令');
 
-      expect(message.role).toBe('system');
-      expect(message.content).toBe('系统指令');
+      expect(message.getRole()).toBe(LLMMessageRole.SYSTEM);
+      expect(message.getContent()).toBe('系统指令');
     });
 
     it('应该创建用户消息', () => {
       const message = converter.createUserMessage('用户输入');
 
-      expect(message.role).toBe('user');
-      expect(message.content).toBe('用户输入');
+      expect(message.getRole()).toBe(LLMMessageRole.USER);
+      expect(message.getContent()).toBe('用户输入');
     });
 
     it('应该创建助手消息', () => {
       const message = converter.createAssistantMessage('助手回复');
 
-      expect(message.role).toBe('assistant');
-      expect(message.content).toBe('助手回复');
+      expect(message.getRole()).toBe(LLMMessageRole.ASSISTANT);
+      expect(message.getContent()).toBe('助手回复');
     });
 
     it('应该创建工具消息', () => {
       const message = converter.createToolMessage('工具结果', 'call_123');
 
-      expect(message.role).toBe('tool');
-      expect(message.content).toBe('工具结果');
-      expect(message.tool_call_id).toBe('call_123');
+      expect(message.getRole()).toBe(LLMMessageRole.TOOL);
+      expect(message.getContent()).toBe('工具结果');
+      expect(message.getToolCallId()).toBe('call_123');
     });
   });
 
   describe('工具调用检测', () => {
     it('应该检测LLMMessage中的工具调用', () => {
-      const message: LLMMessage = {
-        role: 'assistant',
+      const message = LLMMessage.fromInterface({
+        role: LLMMessageRole.ASSISTANT,
         content: '',
-        tool_calls: [
+        toolCalls: [
           {
             id: 'call_123',
             type: 'function',
@@ -231,7 +216,7 @@ describe('MessageConverter', () => {
             }
           }
         ]
-      };
+      });
 
       expect(converter.hasToolCalls(message)).toBe(true);
     });
@@ -252,10 +237,7 @@ describe('MessageConverter', () => {
     });
 
     it('应该正确处理没有工具调用的情况', () => {
-      const message: LLMMessage = {
-        role: 'user',
-        content: '普通消息'
-      };
+      const message = LLMMessage.createUser('普通消息');
 
       expect(converter.hasToolCalls(message)).toBe(false);
     });
