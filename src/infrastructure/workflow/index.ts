@@ -4,3 +4,5 @@ export * from './execution';
 export * from './extensions';
 export * from './functions';
 export * from './strategies';
+export * from './state';
+export * from './routing';

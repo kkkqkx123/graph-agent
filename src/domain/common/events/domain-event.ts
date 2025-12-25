@@ -21,7 +21,7 @@ export interface DomainEventProps {
  * - 包含相关的聚合ID
  * - 包含事件的版本信息
  */
-export abstract class DomainEvent<T = Record<string, unknown>> {
+export abstract class DomainEvent<T = unknown> {
   protected readonly props: DomainEventProps;
 
   /**

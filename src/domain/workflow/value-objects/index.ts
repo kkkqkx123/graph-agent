@@ -24,3 +24,8 @@ export * from './workflow-type';
 export * from './workflow-config';
 export * from './error-handling-strategy';
 export * from './execution-strategy';
+
+// 状态管理相关值对象
+export * from './execution-status';
+export * from './node-status';
+export * from './prompt-context';

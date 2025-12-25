@@ -296,4 +296,46 @@ export class ExpressionEvaluator {
     
     return count;
   }
+
+  /**
+   * 验证表达式语法
+   * @param expression 表达式字符串
+   * @returns 验证结果
+   */
+  static validate(expression: string): { valid: boolean; errors: string[] } {
+    const errors: string[] = [];
+    
+    if (!expression || typeof expression !== 'string') {
+      errors.push('表达式必须是非空字符串');
+      return { valid: false, errors };
+    }
+
+    // 基本语法检查
+    if (expression.includes('${') && !expression.includes('}')) {
+      errors.push('变量引用语法不完整：缺少闭合花括号');
+    }
+
+    if (expression.includes('}') && !expression.includes('${')) {
+      errors.push('变量引用语法不完整：缺少起始花括号');
+    }
+
+    // 检查括号平衡
+    const openBraces = (expression.match(/\{/g) || []).length;
+    const closeBraces = (expression.match(/\}/g) || []).length;
+    if (openBraces !== closeBraces) {
+      errors.push('花括号不平衡');
+    }
+
+    // 检查括号平衡
+    const openParens = (expression.match(/\(/g) || []).length;
+    const closeParens = (expression.match(/\)/g) || []).length;
+    if (openParens !== closeParens) {
+      errors.push('括号不平衡');
+    }
+
+    return {
+      valid: errors.length === 0,
+      errors
+    };
+  }
 }
