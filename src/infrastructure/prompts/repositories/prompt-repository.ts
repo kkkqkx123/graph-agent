@@ -5,10 +5,12 @@
  */
 
 import { IConfigManager, ILogger } from '../../../domain/common/types';
-import { Prompt } from '../../../domain/prompts/entities/prompt';
+import { Prompt, PromptProps } from '../../../domain/prompts/entities/prompt';
 import { PromptId } from '../../../domain/prompts/value-objects/prompt-id';
 import { PromptType, inferPromptTypeFromCategory } from '../../../domain/prompts/value-objects/prompt-type';
 import { PromptStatus } from '../../../domain/prompts/value-objects/prompt-status';
+import { Timestamp } from '../../../domain/common/value-objects/timestamp';
+import { Version } from '../../../domain/common/value-objects/version';
 
 /**
  * 提示词搜索条件
@@ -44,16 +46,22 @@ export class PromptRepository {
       return null;
     }
     
-    return {
+    const promptProps: PromptProps = {
       id,
       name,
       type: inferPromptTypeFromCategory(category),
       content,
       category,
       metadata: {},
-      version: '1.0.0',
-      status: PromptStatus.ACTIVE
+      version: Version.create('1.0.0'),
+      status: PromptStatus.ACTIVE,
+      createdAt: Timestamp.now(),
+      updatedAt: Timestamp.now(),
+      priority: 0,
+      dependencies: [],
+      variables: []
     };
+    return Prompt.reconstruct(promptProps);
   }
 
   async findByCategory(category: string): Promise<Prompt[]> {
@@ -65,29 +73,35 @@ export class PromptRepository {
     const prompts: Prompt[] = [];
     for (const [name, content] of Object.entries(promptsConfig)) {
       const id = PromptId.create(category, name);
-      prompts.push({
+      const promptProps: PromptProps = {
         id,
         name,
         type: inferPromptTypeFromCategory(category),
         content: content as string,
         category,
         metadata: {},
-        version: '1.0.0',
-        status: PromptStatus.ACTIVE
-      });
+        version: Version.create('1.0.0'),
+        status: PromptStatus.ACTIVE,
+        createdAt: Timestamp.now(),
+        updatedAt: Timestamp.now(),
+        priority: 0,
+        dependencies: [],
+        variables: []
+      };
+      prompts.push(Prompt.reconstruct(promptProps));
     }
     return prompts;
   }
 
   async save(prompt: Prompt): Promise<void> {
     // 提示词配置是只读的，不支持保存
-    this.logger.warn('提示词仓库不支持保存操作', { promptId: prompt.id.getValue() });
+    this.logger.warn('提示词仓库不支持保存操作', { promptId: prompt.id.toString() });
     throw new Error('提示词仓库不支持保存操作');
   }
 
   async delete(id: PromptId): Promise<void> {
     // 提示词配置是只读的，不支持删除
-    this.logger.warn('提示词仓库不支持删除操作', { promptId: id.getValue() });
+    this.logger.warn('提示词仓库不支持删除操作', { promptId: id.toString() });
     throw new Error('提示词仓库不支持删除操作');
   }
 
@@ -102,16 +116,22 @@ export class PromptRepository {
       if (typeof categoryPrompts !== 'object') continue;
       for (const [name, content] of Object.entries(categoryPrompts ?? {})) {
         const id = PromptId.create(category, name);
-        prompts.push({
+        const promptProps: PromptProps = {
           id,
           name,
           type: inferPromptTypeFromCategory(category),
           content: content as string,
           category,
           metadata: {},
-          version: '1.0.0',
-          status: PromptStatus.ACTIVE
-        });
+          version: Version.create('1.0.0'),
+          status: PromptStatus.ACTIVE,
+          createdAt: Timestamp.now(),
+          updatedAt: Timestamp.now(),
+          priority: 0,
+          dependencies: [],
+          variables: []
+        };
+        prompts.push(Prompt.reconstruct(promptProps));
       }
     }
     return prompts;

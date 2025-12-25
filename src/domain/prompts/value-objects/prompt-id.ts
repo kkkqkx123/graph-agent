@@ -2,8 +2,12 @@
  * 提示词ID值对象
  */
 
-export class PromptId {
-  constructor(private readonly value: string) { }
+import { ID } from '../../common/value-objects/id';
+
+export class PromptId extends ID {
+  constructor(value: string) {
+    super(value);
+  }
 
   /**
    * 从类别和名称创建提示词ID
@@ -35,14 +39,14 @@ export class PromptId {
   /**
    * 比较两个ID是否相等
    */
-  equals(other: PromptId): boolean {
+  override equals(other: PromptId): boolean {
     return this.value === other.value;
   }
 
   /**
    * 转换为字符串
    */
-  toString(): string {
+  override toString(): string {
     return this.value;
   }
 }
