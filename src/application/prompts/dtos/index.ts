@@ -2,8 +2,21 @@
  * 提示词DTO模块导出
  */
 
-// 提示词信息相关DTO
-export * from './prompt-info';
+// 导出新的基于Zod的DTO
+export * from './prompts.dto';
 
-// 提示词配置相关DTO
-export * from './prompt-config';
+// 为了向后兼容，保留旧的导出
+export type {
+  PromptInfo,
+  PromptSummary,
+  PromptSearchRequest,
+  PromptSearchResult,
+  PromptStatistics,
+  PromptConfigRequest,
+  PromptInjectionRequest,
+  PromptInjectionResult
+} from './prompts.dto';
+
+export type {
+  PromptConfigDto
+} from './prompts.dto';

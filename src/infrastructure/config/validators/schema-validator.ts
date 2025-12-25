@@ -2,17 +2,15 @@
  * Schema验证器实现
  */
 
-import Ajv from 'ajv';
-import addFormats from 'ajv-formats';
+import { z, ZodError, ZodSchema } from 'zod';
 import { IConfigValidator, SchemaValidatorOptions, ConfigValidationResult, ConfigValidationError, ILogger } from '../../../domain/common/types';
 
 /**
  * Schema验证器
- * 使用JSON Schema验证配置
+ * 使用Zod验证配置
  */
 export class SchemaValidator implements IConfigValidator {
-  private readonly ajv: Ajv;
-  private readonly schema: Record<string, any>;
+  private readonly schema: ZodSchema<any>;
   private readonly strict: boolean;
   private readonly logger: ILogger;
 
@@ -20,19 +18,9 @@ export class SchemaValidator implements IConfigValidator {
     options: SchemaValidatorOptions,
     logger: ILogger
   ) {
-    this.schema = options.schema;
+    this.schema = options.schema as ZodSchema<any>;
     this.strict = options.strict !== false;
     this.logger = logger.child({ module: 'SchemaValidator' });
-    
-    // 初始化AJV
-    this.ajv = new Ajv({
-      allErrors: true,
-      verbose: true,
-      strict: this.strict
-    });
-    
-    // 添加格式支持
-    addFormats(this.ajv);
   }
 
   /**
@@ -40,21 +28,20 @@ export class SchemaValidator implements IConfigValidator {
    */
   validate(config: Record<string, any>): ConfigValidationResult {
     this.logger.debug('开始Schema验证');
-    
+
     try {
-      const validate = this.ajv.compile(this.schema);
-      const isValid = validate(config);
-      
-      if (isValid) {
-        this.logger.debug('Schema验证通过');
-        return { isValid: true, errors: [] };
-      }
-      
-      const errors = this.formatErrors(validate.errors || []);
-      this.logger.warn('Schema验证失败', { errorCount: errors.length });
-      
-      return { isValid: false, errors };
+      this.schema.parse(config);
+
+      this.logger.debug('Schema验证通过');
+      return { isValid: true, errors: [] };
     } catch (error) {
+      if (error instanceof ZodError) {
+        const errors = this.formatZodErrors(error);
+        this.logger.warn('Schema验证失败', { errorCount: errors.length });
+
+        return { isValid: false, errors };
+      }
+
       this.logger.error('Schema验证器执行失败', error as Error);
       return {
         isValid: false,
@@ -67,94 +54,50 @@ export class SchemaValidator implements IConfigValidator {
     }
   }
 
+
   /**
-   * 格式化AJV错误
+   * 格式化Zod错误
    */
-  private formatErrors(ajvErrors: any[]): ConfigValidationError[] {
-    return ajvErrors.map(error => {
-      const path = this.getErrorPath(error);
-      const message = this.getErrorMessage(error);
-      const code = this.getErrorCode(error);
-      
+  private formatZodErrors(zodError: ZodError): ConfigValidationError[] {
+    return zodError.issues.map(error => {
+      const path = error.path.join('.') || 'root';
+      const message = error.message;
+      const code = this.getZodErrorCode(error);
+
       return {
         path,
         message,
         code,
-        value: error.data
+        value: (error as any).input
       };
     });
   }
 
   /**
-   * 获取错误路径
+   * 获取Zod错误代码
    */
-  private getErrorPath(error: any): string {
-    if (error.instancePath) {
-      return error.instancePath.substring(1) || 'root';
-    }
-    
-    if (error.dataPath) {
-      return error.dataPath.substring(1) || 'root';
-    }
-    
-    return 'unknown';
-  }
-
-  /**
-   * 获取错误消息
-   */
-  private getErrorMessage(error: any): string {
-    const params = error.params || {};
-    
-    switch (error.keyword) {
-      case 'required':
-        return `缺少必需字段: ${params.missingProperty}`;
-      case 'type':
-        return `类型错误，期望 ${params.type}，实际 ${typeof error.data}`;
-      case 'format':
-        return `格式错误，期望 ${params.format}`;
-      case 'minimum':
-        return `值太小，最小值为 ${params.limit}`;
-      case 'maximum':
-        return `值太大，最大值为 ${params.limit}`;
-      case 'minLength':
-        return `长度太短，最小长度为 ${params.limit}`;
-      case 'maxLength':
-        return `长度太长，最大长度为 ${params.limit}`;
-      case 'pattern':
-        return `格式不匹配，期望模式: ${params.pattern}`;
-      case 'enum':
-        return `值不在允许的枚举中: ${params.allowedValues?.join(', ')}`;
-      case 'additionalProperties':
-        return `不允许的额外属性: ${params.additionalProperty}`;
-      default:
-        return error.message || '验证失败';
-    }
-  }
-
-  /**
-   * 获取错误代码
-   */
-  private getErrorCode(error: any): string {
-    switch (error.keyword) {
-      case 'required':
-        return 'REQUIRED_FIELD';
-      case 'type':
+  private getZodErrorCode(error: any): string {
+    switch (error.code) {
+      case 'invalid_type':
         return 'TYPE_MISMATCH';
-      case 'format':
-        return 'FORMAT_ERROR';
-      case 'minimum':
-      case 'maximum':
-        return 'RANGE_ERROR';
-      case 'minLength':
-      case 'maxLength':
-        return 'LENGTH_ERROR';
-      case 'pattern':
-        return 'PATTERN_MISMATCH';
-      case 'enum':
+      case 'invalid_literal':
+        return 'LITERAL_ERROR';
+      case 'custom':
+        return 'CUSTOM_ERROR';
+      case 'invalid_union':
+        return 'UNION_ERROR';
+      case 'invalid_enum_value':
         return 'ENUM_ERROR';
-      case 'additionalProperties':
-        return 'ADDITIONAL_PROPERTY';
+      case 'too_small':
+        if (error.type === 'string') return 'LENGTH_ERROR';
+        if (error.type === 'number') return 'RANGE_ERROR';
+        if (error.type === 'array') return 'LENGTH_ERROR';
+        return 'VALIDATION_ERROR';
+      case 'too_big':
+        if (error.type === 'string') return 'LENGTH_ERROR';
+        if (error.type === 'number') return 'RANGE_ERROR';
+        if (error.type === 'array') return 'LENGTH_ERROR';
+        return 'VALIDATION_ERROR';
       default:
         return 'VALIDATION_ERROR';
     }

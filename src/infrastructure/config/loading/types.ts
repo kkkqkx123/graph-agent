@@ -2,10 +2,7 @@
  * 配置加载模块类型定义
  */
 
-import { JSONSchemaType } from 'ajv';
-
-// 使用 JSONSchemaType 作为 JSONSchema 的别名
-type JSONSchema = JSONSchemaType<any>;
+import { ZodSchema } from 'zod';
 
 /**
  * 配置文件信息
@@ -73,7 +70,7 @@ export interface IModuleRule {
   patterns: string[];
   priority: number;
   loader: IModuleLoader;
-  schema: JSONSchema;
+  schema: ZodSchema<any>;
   dependencies?: string[];
   mergeStrategy: MergeStrategy;
 }
@@ -107,11 +104,11 @@ export interface IDependencyResolver {
  * Schema注册表接口
  */
 export interface ISchemaRegistry {
-  registerSchema(moduleType: string, schema: JSONSchema, version?: string, description?: string): void;
-  getSchema(moduleType: string): JSONSchema | undefined;
+  registerSchema(moduleType: string, schema: ZodSchema<any>, version?: string, description?: string): void;
+  getSchema(moduleType: string): ZodSchema<any> | undefined;
   validateConfig(moduleType: string, config: any): ValidationResult;
   preValidate(config: any, moduleType: string): PreValidationResult;
-  validateSchemaCompatibility(newSchema: JSONSchema, oldSchema: JSONSchema): boolean;
+  validateSchemaCompatibility(newSchema: ZodSchema<any>, oldSchema: ZodSchema<any>): boolean;
   getSchemaHistory(moduleType: string): SchemaVersion[];
   hasModuleType(moduleType: string): boolean;
   getRegisteredTypes(): string[];
@@ -121,7 +118,7 @@ export interface ISchemaRegistry {
  * 类型注册表接口（兼容性保持）
  */
 export interface ITypeRegistry extends ISchemaRegistry {
-  registerModuleType(moduleType: string, schema: JSONSchema): void;
+  registerModuleType(moduleType: string, schema: ZodSchema<any>): void;
 }
 
 /**
@@ -129,7 +126,7 @@ export interface ITypeRegistry extends ISchemaRegistry {
  */
 export interface SchemaVersion {
   version: string;
-  schema: JSONSchema;
+  schema: ZodSchema<any>;
   description: string;
   createdAt: Date;
   compatibleWith?: string[];

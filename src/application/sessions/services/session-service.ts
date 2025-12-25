@@ -1,7 +1,8 @@
 /**
  * 会话应用服务
- * 
+ *
  * 负责会话相关的业务逻辑编排和协调
+ * 使用新的Zod-based DTO进行运行时验证
  */
 
 import { Session } from '../../../domain/sessions/entities/session';
@@ -11,48 +12,76 @@ import { ThreadRepository } from '../../../domain/threads/repositories/thread-re
 import { ThreadDomainService } from '../../../domain/threads/services/thread-domain-service';
 import { ID } from '../../../domain/common/value-objects/id';
 import { SessionStatus } from '../../../domain/sessions/value-objects/session-status';
-import { SessionConfig, SessionConfigProps } from '../../../domain/sessions/value-objects/session-config';
 import { ILogger } from '../../../domain/common/types';
-import { CreateSessionRequest, SessionInfo } from '../dtos';
+import {
+  CreateSessionRequest,
+  SessionInfo,
+  CreateSessionRequestDto,
+  SessionInfoDto,
+  SessionConverter
+} from '../dtos';
+import { DtoValidationError } from '../../common/dto';
 
 /**
  * 会话应用服务
  */
 export class SessionService {
+  private createSessionDto: CreateSessionRequestDto;
+  private sessionInfoDto: SessionInfoDto;
+  private sessionConverter: SessionConverter;
+
   constructor(
     private readonly sessionRepository: SessionRepository,
     private readonly threadRepository: ThreadRepository,
     private readonly sessionDomainService: SessionDomainService,
     private readonly threadDomainService: ThreadDomainService,
     private readonly logger: ILogger
-  ) { }
+  ) {
+    // 初始化DTO实例
+    this.createSessionDto = new CreateSessionRequestDto();
+    this.sessionInfoDto = new SessionInfoDto();
+    this.sessionConverter = new SessionConverter();
+  }
 
   /**
    * 创建会话
    * @param request 创建会话请求
    * @returns 创建的会话ID
    */
-  async createSession(request: CreateSessionRequest): Promise<string> {
+  async createSession(request: unknown): Promise<string> {
     try {
-      this.logger.info('正在创建会话', { userId: request.userId, title: request.title });
+      this.logger.info('正在创建会话', { request });
 
-      // 转换请求参数
-      const userId = request.userId ? ID.fromString(request.userId) : undefined;
-      const config = request.config ? SessionConfig.create(request.config as Partial<SessionConfigProps>) : undefined;
+      // 1. 运行时验证 - 使用新的DTO验证
+      const validatedRequest = this.createSessionDto.validate(request);
 
-      // 验证会话创建的业务规则
+      this.logger.info('会话请求验证通过', {
+        userId: validatedRequest.userId,
+        title: validatedRequest.title
+      });
+
+      // 2. 转换请求参数
+      const { userId, title, config } = SessionConverter.fromCreateRequest(validatedRequest);
+
+      // 3. 验证会话创建的业务规则
       await this.sessionDomainService.validateSessionCreation(userId, config);
 
-      // 创建会话
-      const session = Session.create(userId, request.title, config);
+      // 4. 创建会话
+      const session = Session.create(userId, title, config);
 
-      // 保存会话
+      // 5. 保存会话
       await this.sessionRepository.save(session);
 
       this.logger.info('会话创建成功', { sessionId: session.sessionId.toString() });
 
       return session.sessionId.toString();
     } catch (error) {
+      if (error instanceof DtoValidationError) {
+        this.logger.warn('创建会话请求验证失败', {
+          errors: error.getFormattedErrors()
+        });
+        throw new Error(`无效的请求参数: ${error.message}`);
+      }
       this.logger.error('创建会话失败', error as Error);
       throw error;
     }
@@ -65,6 +94,7 @@ export class SessionService {
    */
   async getSessionInfo(sessionId: string): Promise<SessionInfo | null> {
     try {
+      // 验证ID格式
       const id = ID.fromString(sessionId);
       const session = await this.sessionRepository.findById(id);
 
@@ -72,7 +102,8 @@ export class SessionService {
         return null;
       }
 
-      return this.mapSessionToInfo(session);
+      // 使用转换器自动映射 - 替代手动映射
+      return this.sessionConverter.toDto(session);
     } catch (error) {
       this.logger.error('获取会话信息失败', error as Error);
       throw error;
@@ -120,7 +151,8 @@ export class SessionService {
     try {
       const sessions = await this.sessionRepository.findAll();
 
-      return sessions.map(session => this.mapSessionToInfo(session));
+      // 使用转换器批量转换 - 替代手动映射
+      return this.sessionConverter.toDtoList(sessions);
     } catch (error) {
       this.logger.error('列出会话失败', error as Error);
       throw error;
@@ -156,7 +188,7 @@ export class SessionService {
       const session = await this.sessionRepository.findByIdOrFail(id);
 
       if (session.status.isActive()) {
-        return this.mapSessionToInfo(session); // 已经是活跃状态
+        return this.sessionConverter.toDto(session); // 已经是活跃状态
       }
 
       if (session.status.isTerminated()) {
@@ -172,7 +204,7 @@ export class SessionService {
 
       await this.sessionRepository.save(session);
 
-      return this.mapSessionToInfo(session);
+      return this.sessionConverter.toDto(session);
     } catch (error) {
       this.logger.error('激活会话失败', error as Error);
       throw error;
@@ -194,7 +226,7 @@ export class SessionService {
       const session = await this.sessionRepository.findByIdOrFail(id);
 
       if (session.status.isSuspended()) {
-        return this.mapSessionToInfo(session); // 已经是暂停状态
+        return this.sessionConverter.toDto(session); // 已经是暂停状态
       }
 
       if (session.status.isTerminated()) {
@@ -210,7 +242,7 @@ export class SessionService {
 
       await this.sessionRepository.save(session);
 
-      return this.mapSessionToInfo(session);
+      return this.sessionConverter.toDto(session);
     } catch (error) {
       this.logger.error('暂停会话失败', error as Error);
       throw error;
@@ -232,7 +264,7 @@ export class SessionService {
       const session = await this.sessionRepository.findByIdOrFail(id);
 
       if (session.status.isTerminated()) {
-        return this.mapSessionToInfo(session); // 已经是终止状态
+        return this.sessionConverter.toDto(session); // 已经是终止状态
       }
 
       // 终止会话
@@ -240,7 +272,7 @@ export class SessionService {
 
       await this.sessionRepository.save(session);
 
-      return this.mapSessionToInfo(session);
+      return this.sessionConverter.toDto(session);
     } catch (error) {
       this.logger.error('终止会话失败', error as Error);
       throw error;
@@ -256,8 +288,14 @@ export class SessionService {
   async updateSessionConfig(sessionId: string, config: Record<string, unknown>): Promise<SessionInfo> {
     try {
       const id = ID.fromString(sessionId);
-      const sessionConfig = SessionConfig.create(config as Partial<SessionConfigProps>);
 
+      // 验证配置格式
+      const validatedConfig = this.createSessionDto.validateConfig(config);
+      if (!validatedConfig) {
+        throw new Error('无效的配置格式');
+      }
+
+      const sessionConfig = SessionConverter.createSessionConfig(validatedConfig);
       const session = await this.sessionRepository.findByIdOrFail(id);
 
       // 验证配置更新
@@ -268,8 +306,14 @@ export class SessionService {
 
       await this.sessionRepository.save(session);
 
-      return this.mapSessionToInfo(session);
+      return this.sessionConverter.toDto(session);
     } catch (error) {
+      if (error instanceof DtoValidationError) {
+        this.logger.warn('会话配置验证失败', {
+          errors: error.getFormattedErrors()
+        });
+        throw new Error(`无效的配置参数: ${error.message}`);
+      }
       this.logger.error('更新会话配置失败', error as Error);
       throw error;
     }
@@ -299,7 +343,7 @@ export class SessionService {
 
       await this.sessionRepository.save(session);
 
-      return this.mapSessionToInfo(session);
+      return this.sessionConverter.toDto(session);
     } catch (error) {
       this.logger.error('添加消息到会话失败', error as Error);
       throw error;
@@ -407,17 +451,11 @@ export class SessionService {
   }
 
   /**
-   * 将会话领域对象映射为会话信息DTO
+   * 将会话领域对象映射为会话信息DTO（已废弃）
+   * @deprecated 请使用SessionConverter.toDto()
    */
   private mapSessionToInfo(session: Session): SessionInfo {
-    return {
-      sessionId: session.sessionId.toString(),
-      userId: session.userId?.toString(),
-      title: session.title,
-      status: session.status.getValue(),
-      messageCount: session.messageCount,
-      createdAt: session.createdAt.toISOString(),
-      lastActivityAt: session.lastActivityAt.toISOString()
-    };
+    // 使用转换器进行映射，保持向后兼容
+    return this.sessionConverter.toDto(session);
   }
 }

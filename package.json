@@ -30,8 +30,6 @@
   "license": "MIT",
   "dependencies": {
     "@types/pg": "^8.16.0",
-    "ajv": "^8.17.1",
-    "ajv-formats": "^3.0.1",
     "axios": "^1.13.2",
     "chokidar": "^5.0.0",
     "cron": "^4.4.0",
@@ -50,7 +48,8 @@
     "typeorm": "^0.3.28",
     "uuid": "^13.0.0",
     "winston": "^3.19.0",
-    "yaml": "^2.8.2"
+    "yaml": "^2.8.2",
+    "zod": "^4.2.1"
   },
   "devDependencies": {
     "@types/express": "^5.0.6",

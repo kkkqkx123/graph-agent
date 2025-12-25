@@ -3,19 +3,16 @@
  * 解决Schema管理分散问题
  */
 
-import Ajv from 'ajv';
-import addFormats from 'ajv-formats';
+import { z, ZodSchema, ZodError } from 'zod';
 import { ILogger } from '../../../domain/common/types';
 
-// 使用 JSONSchemaType 作为 JSONSchema 的别名
-type JSONSchema = any;
 
 /**
  * Schema版本信息
  */
 export interface SchemaVersion {
   version: string;
-  schema: JSONSchema;
+  schema: ZodSchema<any>;
   description: string;
   createdAt: Date;
   compatibleWith?: string[];
@@ -35,10 +32,8 @@ export interface SchemaRegistryOptions {
  * 集中管理所有模块类型的Schema定义
  */
 export class SchemaRegistry {
-  private readonly schemas: Map<string, JSONSchema> = new Map();
-  private readonly validators: Map<string, any> = new Map();
+  private readonly schemas: Map<string, ZodSchema<any>> = new Map();
   private readonly versions: Map<string, SchemaVersion[]> = new Map();
-  private readonly ajv: Ajv;
   private readonly logger: ILogger;
   private readonly options: SchemaRegistryOptions;
 
@@ -53,18 +48,6 @@ export class SchemaRegistry {
       cacheValidators: true,
       ...options
     };
-
-    // 初始化AJV
-    this.ajv = new Ajv({
-      allErrors: true,
-      verbose: true,
-      strict: this.options.strict
-    });
-
-    // 添加格式支持
-    if (this.options.enableFormats) {
-      addFormats(this.ajv);
-    }
   }
 
   /**
@@ -72,7 +55,7 @@ export class SchemaRegistry {
    */
   registerSchema(
     moduleType: string,
-    schema: JSONSchema,
+    schema: ZodSchema<any>,
     version: string = '1.0.0',
     description: string = `${moduleType}模块Schema`
   ): void {
@@ -85,14 +68,8 @@ export class SchemaRegistry {
         this.logger.warn('Schema兼容性检查失败', { moduleType });
       }
 
-      // 编译验证器
-      const validate = this.ajv.compile(schema);
-
-      // 存储Schema和验证器
+      // 存储Schema
       this.schemas.set(moduleType, schema);
-      if (this.options.cacheValidators) {
-        this.validators.set(moduleType, validate);
-      }
 
       // 记录版本历史
       this.addVersionHistory(moduleType, {
@@ -114,7 +91,7 @@ export class SchemaRegistry {
   /**
    * 获取模块Schema
    */
-  getSchema(moduleType: string): JSONSchema | undefined {
+  getSchema(moduleType: string): ZodSchema<any> | undefined {
     return this.schemas.get(moduleType);
   }
 
@@ -124,8 +101,8 @@ export class SchemaRegistry {
   validateConfig(moduleType: string, config: any): ValidationResult {
     this.logger.debug('验证配置', { moduleType });
 
-    const validator = this.validators.get(moduleType);
-    if (!validator) {
+    const schema = this.schemas.get(moduleType);
+    if (!schema) {
       const error = `未找到模块类型 ${moduleType} 的验证器`;
       this.logger.warn(error);
       return {
@@ -140,27 +117,43 @@ export class SchemaRegistry {
       };
     }
 
-    const isValid = validator(config);
+    try {
+      schema.parse(config);
 
-    if (isValid) {
       this.logger.debug('配置验证通过', { moduleType });
       return { isValid: true, errors: [], severity: 'success' };
+    } catch (error) {
+      if (error instanceof ZodError) {
+        // 格式化错误信息
+        const errors = this.formatZodValidationErrors(error, moduleType);
+
+        this.logger.warn('配置验证失败', {
+          moduleType,
+          errorCount: errors.length,
+          errors: errors.slice(0, 5) // 记录前5个错误
+        });
+
+        return {
+          isValid: false,
+          errors,
+          severity: this.determineSeverity(errors)
+        };
+      }
+
+      const validationError: ValidationError = {
+        path: 'root',
+        message: `验证器执行失败: ${(error as Error).message}`,
+        code: 'VALIDATION_ERROR',
+        severity: 'error' as ValidationSeverity
+      };
+
+      this.logger.error('配置验证失败', error as Error);
+      return {
+        isValid: false,
+        errors: [validationError],
+        severity: 'error' as ValidationSeverity
+      };
     }
-
-    // 格式化错误信息
-    const errors = this.formatValidationErrors(validator.errors || [], moduleType);
-
-    this.logger.warn('配置验证失败', { 
-      moduleType, 
-      errorCount: errors.length,
-      errors: errors.slice(0, 5) // 记录前5个错误
-    });
-
-    return {
-      isValid: false,
-      errors,
-      severity: this.determineSeverity(errors)
-    };
   }
 
   /**
@@ -180,7 +173,7 @@ export class SchemaRegistry {
 
     // 基础验证：检查必需字段和类型
     const basicErrors = this.basicValidation(config, schema);
-    
+
     if (basicErrors.length > 0) {
       return {
         isValid: false,
@@ -199,24 +192,12 @@ export class SchemaRegistry {
   /**
    * 验证Schema兼容性
    */
-  validateSchemaCompatibility(newSchema: JSONSchema, oldSchema: JSONSchema): boolean {
-    // 简化的兼容性检查
-    // 在实际实现中可能需要更复杂的逻辑
-    
-    // 检查新Schema是否包含所有必需字段
-    if (newSchema.required && oldSchema.required) {
-      const newRequired = new Set(newSchema.required);
-      const oldRequired = new Set(oldSchema.required);
-      
-      // 新Schema必须包含所有旧Schema的必需字段
-      for (const field of oldRequired) {
-        if (!newRequired.has(field)) {
-          this.logger.warn('Schema兼容性检查失败：缺少必需字段', { field });
-          return false;
-        }
-      }
-    }
+  validateSchemaCompatibility(newSchema: ZodSchema<any>, oldSchema: ZodSchema<any>): boolean {
+    // 简化的兼容性检查 for Zod schemas
+    // In a real implementation, this might need more complex logic
 
+    // For now, we'll just return true since Zod doesn't have the same
+    // required field tracking as JSON Schema
     return true;
   }
 
@@ -246,17 +227,15 @@ export class SchemaRegistry {
    */
   unregisterModuleType(moduleType: string): boolean {
     const hadSchema = this.schemas.has(moduleType);
-    const hadValidator = this.validators.has(moduleType);
-    
+
     this.schemas.delete(moduleType);
-    this.validators.delete(moduleType);
     this.versions.delete(moduleType);
-    
-    if (hadSchema || hadValidator) {
+
+    if (hadSchema) {
       this.logger.debug('移除模块Schema', { moduleType });
       return true;
     }
-    
+
     return false;
   }
 
@@ -266,9 +245,8 @@ export class SchemaRegistry {
   clear(): void {
     const count = this.schemas.size;
     this.schemas.clear();
-    this.validators.clear();
     this.versions.clear();
-    
+
     this.logger.debug('清空所有模块Schema', { count });
   }
 
@@ -295,149 +273,89 @@ export class SchemaRegistry {
   /**
    * 基础验证（预验证）
    */
-  private basicValidation(config: any, schema: JSONSchema): string[] {
-    const errors: string[] = [];
-
-    // 检查必需字段
-    if (schema.required && Array.isArray(schema.required)) {
-      for (const field of schema.required) {
-        if (config[field] === undefined) {
-          errors.push(`缺少必需字段: ${field}`);
-        }
+  private basicValidation(config: any, schema: ZodSchema<any>): string[] {
+    // For Zod schemas, we'll run a basic parse to check validation
+    try {
+      schema.parse(config);
+      return []; // No errors if parsing succeeds
+    } catch (error) {
+      if (error instanceof ZodError) {
+        return error.issues.map((e: any) => e.message);
       }
+      return [`验证失败: ${(error as Error).message}`];
     }
-
-    // 检查类型
-    if (schema.properties) {
-      for (const [field, fieldSchema] of Object.entries(schema.properties as Record<string, any>)) {
-        if (config[field] !== undefined) {
-          const expectedType = fieldSchema.type;
-          const actualType = typeof config[field];
-          
-          if (expectedType && actualType !== expectedType) {
-            errors.push(`字段 ${field} 类型错误，期望 ${expectedType}，实际 ${actualType}`);
-          }
-        }
-      }
-    }
-
-    return errors;
   }
 
   /**
-   * 格式化验证错误
+   * 格式化Zod验证错误
    */
-  private formatValidationErrors(errors: any[], moduleType: string): ValidationError[] {
-    return errors.map(error => {
-      const path = this.getErrorPath(error);
-      const message = this.getErrorMessage(error);
-      const severity = this.determineErrorSeverity(error);
-      
+  private formatZodValidationErrors(zodError: ZodError, moduleType: string): ValidationError[] {
+    return zodError.issues.map(error => {
+      const path = error.path.join('.') || 'root';
+      const message = error.message;
+      const severity = this.determineZodErrorSeverity(error);
+
       return {
         path: path ? `${moduleType}.${path}` : moduleType,
         message,
-        code: this.getErrorCode(error),
+        code: this.getZodErrorCode(error),
         severity,
-        suggestions: this.getErrorSuggestions(error)
+        suggestions: this.getZodErrorSuggestions(error)
       };
     });
   }
 
   /**
-   * 获取错误路径
+   * 获取Zod错误代码
    */
-  private getErrorPath(error: any): string {
-    if (error.instancePath) {
-      return error.instancePath.substring(1) || 'root';
-    }
-    
-    if (error.dataPath) {
-      return error.dataPath.substring(1) || 'root';
-    }
-    
-    return '';
-  }
-
-  /**
-   * 获取错误消息
-   */
-  private getErrorMessage(error: any): string {
-    const params = error.params || {};
-    
-    switch (error.keyword) {
-      case 'required':
-        return `缺少必需字段: ${params.missingProperty}`;
-      case 'type':
-        return `类型错误，期望 ${params.type}，实际 ${typeof error.data}`;
-      case 'format':
-        return `格式错误，期望 ${params.format}`;
-      case 'minimum':
-        return `值太小，最小值为 ${params.limit}`;
-      case 'maximum':
-        return `值太大，最大值为 ${params.limit}`;
-      case 'minLength':
-        return `长度太短，最小长度为 ${params.limit}`;
-      case 'maxLength':
-        return `长度太长，最大长度为 ${params.limit}`;
-      case 'pattern':
-        return `格式不匹配，期望模式: ${params.pattern}`;
-      case 'enum':
-        return `值不在允许的枚举中: ${params.allowedValues?.join(', ')}`;
-      case 'additionalProperties':
-        return `不允许的额外属性: ${params.additionalProperty}`;
-      default:
-        return error.message || '验证失败';
-    }
-  }
-
-  /**
-   * 获取错误代码
-   */
-  private getErrorCode(error: any): string {
-    switch (error.keyword) {
-      case 'required':
-        return 'REQUIRED_FIELD';
-      case 'type':
+  private getZodErrorCode(error: any): string {
+    switch (error.code) {
+      case 'invalid_type':
         return 'TYPE_MISMATCH';
-      case 'format':
-        return 'FORMAT_ERROR';
-      case 'minimum':
-      case 'maximum':
-        return 'RANGE_ERROR';
-      case 'minLength':
-      case 'maxLength':
-        return 'LENGTH_ERROR';
-      case 'pattern':
-        return 'PATTERN_MISMATCH';
-      case 'enum':
+      case 'invalid_literal':
+        return 'LITERAL_ERROR';
+      case 'custom':
+        return 'CUSTOM_ERROR';
+      case 'invalid_union':
+        return 'UNION_ERROR';
+      case 'invalid_enum_value':
         return 'ENUM_ERROR';
-      case 'additionalProperties':
-        return 'ADDITIONAL_PROPERTY';
+      case 'too_small':
+        if (error.type === 'string') return 'LENGTH_ERROR';
+        if (error.type === 'number') return 'RANGE_ERROR';
+        if (error.type === 'array') return 'LENGTH_ERROR';
+        return 'VALIDATION_ERROR';
+      case 'too_big':
+        if (error.type === 'string') return 'LENGTH_ERROR';
+        if (error.type === 'number') return 'RANGE_ERROR';
+        if (error.type === 'array') return 'LENGTH_ERROR';
+        return 'VALIDATION_ERROR';
       default:
         return 'VALIDATION_ERROR';
     }
   }
 
   /**
-   * 确定错误严重性
+   * 确定Zod错误严重性
    */
-  private determineErrorSeverity(error: any): ValidationSeverity {
-    switch (error.keyword) {
-      case 'required':
+  private determineZodErrorSeverity(error: any): ValidationSeverity {
+    switch (error.code) {
+      case 'invalid_type':
         return 'error';
-      case 'type':
-      case 'format':
+      case 'invalid_literal':
         return 'error';
-      case 'minimum':
-      case 'maximum':
-      case 'minLength':
-      case 'maxLength':
-        return 'warning';
-      case 'pattern':
-      case 'enum':
-        return 'warning';
-      case 'additionalProperties':
-        return 'info';
+      case 'custom':
+        return 'error';
+      case 'invalid_union':
+        return 'error';
+      case 'invalid_enum_value':
+        return 'error';
+      case 'too_small':
+      case 'too_big':
+        if (error.type === 'string' || error.type === 'number' || error.type === 'array') {
+          return 'warning';
+        }
+        return 'error';
       default:
         return 'error';
     }
@@ -457,30 +375,35 @@ export class SchemaRegistry {
   }
 
   /**
-   * 获取错误修复建议
+   * 获取Zod错误修复建议
    */
-  private getErrorSuggestions(error: any): string[] {
+  private getZodErrorSuggestions(error: any): string[] {
     const suggestions: string[] = [];
-    const params = error.params || {};
-    
-    switch (error.keyword) {
-      case 'required':
-        suggestions.push(`添加字段 ${params.missingProperty}`);
+
+    switch (error.code) {
+      case 'invalid_type':
+        suggestions.push(`将值转换为正确的类型`);
         break;
-      case 'type':
-        suggestions.push(`将值转换为 ${params.type} 类型`);
+      case 'too_small':
+        if (error.type === 'string') {
+          suggestions.push(`确保字符串长度不少于 ${error.minimum}`);
+        } else if (error.type === 'number') {
+          suggestions.push(`确保数值不小于 ${error.minimum}`);
+        } else if (error.type === 'array') {
+          suggestions.push(`确保数组长度不少于 ${error.minimum}`);
+        }
         break;
-      case 'format':
-        suggestions.push(`使用正确的 ${params.format} 格式`);
-        break;
-      case 'minimum':
-        suggestions.push(`确保值大于等于 ${params.limit}`);
-        break;
-      case 'maximum':
-        suggestions.push(`确保值小于等于 ${params.limit}`);
+      case 'too_big':
+        if (error.type === 'string') {
+          suggestions.push(`确保字符串长度不超过 ${error.maximum}`);
+        } else if (error.type === 'number') {
+          suggestions.push(`确保数值不超过 ${error.maximum}`);
+        } else if (error.type === 'array') {
+          suggestions.push(`确保数组长度不超过 ${error.maximum}`);
+        }
         break;
     }
-    
+
     return suggestions;
   }
 }

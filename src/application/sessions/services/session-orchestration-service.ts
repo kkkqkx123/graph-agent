@@ -18,7 +18,7 @@ export class SessionOrchestrationServiceImpl implements SessionOrchestrationServ
     private readonly threadRepository: ThreadRepository,
     private readonly sessionResourceService: SessionResourceService,
     private readonly threadCoordinator: ThreadCoordinatorInfrastructureService
-  ) {}
+  ) { }
 
   /**
    * 编排工作流执行
@@ -30,7 +30,7 @@ export class SessionOrchestrationServiceImpl implements SessionOrchestrationServ
   ): Promise<WorkflowExecutionResultDto> {
     // 检查会话是否存在
     const session = await this.sessionRepository.findByIdOrFail(sessionId);
-    
+
     // 检查资源限制
     const canExecute = await this.sessionResourceService.canSendMessage(sessionId.toString());
     if (!canExecute) {
@@ -60,7 +60,7 @@ export class SessionOrchestrationServiceImpl implements SessionOrchestrationServ
         },
         metadata: {}
       };
-      
+
       // 更新资源使用情况
       await this.sessionResourceService.updateQuotaUsage(sessionId.toString(), {
         threadsUsed: 1,
@@ -90,12 +90,12 @@ export class SessionOrchestrationServiceImpl implements SessionOrchestrationServ
   ): Promise<WorkflowExecutionResultDto[]> {
     // 检查会话是否存在
     const session = await this.sessionRepository.findByIdOrFail(sessionId);
-    
+
     // 检查是否可以创建多个线程
     const canCreateThreads = await Promise.all(
       workflowIds.map(() => this.sessionResourceService.canCreateThread(sessionId.toString()))
     );
-    
+
     if (canCreateThreads.some(can => !can)) {
       throw new Error('会话资源不足，无法并行执行多个工作流');
     }
@@ -151,10 +151,10 @@ export class SessionOrchestrationServiceImpl implements SessionOrchestrationServ
   async createThread(sessionId: ID, workflowId?: ID): Promise<ID> {
     // 检查会话是否存在
     await this.sessionRepository.findByIdOrFail(sessionId);
-    
+
     // 简化的线程创建逻辑
     const threadId = ID.generate();
-    
+
     // 广播状态变更
     const change: StateChange = {
       type: 'thread',
@@ -163,9 +163,9 @@ export class SessionOrchestrationServiceImpl implements SessionOrchestrationServ
       newState: 'created',
       timestamp: new Date()
     };
-    
+
     await this.broadcastStateChange(sessionId, change);
-    
+
     return threadId;
   }
 
@@ -175,10 +175,10 @@ export class SessionOrchestrationServiceImpl implements SessionOrchestrationServ
   async manageThreadLifecycle(sessionId: ID, threadId: ID, action: ThreadAction): Promise<void> {
     // 检查会话是否存在
     await this.sessionRepository.findByIdOrFail(sessionId);
-    
+
     // 简化的线程管理逻辑
     console.log(`管理线程 ${threadId.toString()} 动作: ${action}`);
-    
+
     // 广播状态变更
     const change: StateChange = {
       type: 'thread',
@@ -187,7 +187,7 @@ export class SessionOrchestrationServiceImpl implements SessionOrchestrationServ
       newState: action,
       timestamp: new Date()
     };
-    
+
     await this.broadcastStateChange(sessionId, change);
   }
 
@@ -196,7 +196,7 @@ export class SessionOrchestrationServiceImpl implements SessionOrchestrationServ
    */
   async syncSessionState(sessionId: ID): Promise<void> {
     const session = await this.sessionRepository.findById(sessionId);
-    
+
     if (session) {
       // 更新会话的最后活动时间
       session.updateLastActivity();
@@ -211,7 +211,7 @@ export class SessionOrchestrationServiceImpl implements SessionOrchestrationServ
     // 这里可以实现事件发布机制
     // 目前只是记录日志
     console.log(`Session ${sessionId.toString()} state change:`, change);
-    
+
     // 更新会话的最后活动时间
     const session = await this.sessionRepository.findById(sessionId);
     if (session) {

@@ -30,9 +30,9 @@ export class ConfigDiscovery implements IConfigDiscovery {
     options: ConfigDiscoveryOptions = {},
     logger: ILogger
   ) {
-    this.includePatterns = options.includePatterns || ['**/*.toml', '**/*.yaml', '**/*.yml', '**/*.json'];
+    this.includePatterns = options.includePatterns || ['**/*.toml', '**/*.md'];
     this.excludePatterns = options.excludePatterns = ['**/_*', '**/__*', '**/test_*', '**/*.test.*'];
-    this.fileExtensions = options.fileExtensions || ['.toml', '.yaml', '.yml', '.json'];
+    this.fileExtensions = options.fileExtensions || ['.toml', '.md'];
     this.logger = logger.child({ module: 'ConfigDiscovery' });
   }
 
@@ -193,39 +193,30 @@ export class ConfigDiscovery implements IConfigDiscovery {
    */
   private detectModuleType(relativePath: string): string {
     const parts = relativePath.split(path.sep);
-    
-    // 特殊文件检测
-    if (parts.includes('global') || parts.includes('environments')) {
-      return 'global';
-    }
-    
-    // 根据目录名检测模块类型
     const firstDir = parts[0];
-    switch (firstDir) {
-      case 'llms':
-        return 'llms';
-      case 'tools':
-        return 'tools';
-      case 'workflows':
-        return 'workflows';
-      case 'nodes':
-        return 'nodes';
-      case 'edges':
-        return 'edges';
-      case 'prompts':
-        return 'prompts';
-      case 'storage':
-        return 'storage';
-      case 'history':
-        return 'history';
-      case 'plugins':
-        return 'plugins';
-      case 'trigger_compositions':
-      case 'trigger_functions':
-        return 'triggers';
-      default:
-        return 'unknown';
+    
+    if (!firstDir) {
+      return 'unknown';
     }
+    
+    // 预定义的目录到模块类型映射
+    const MODULE_MAPPING: Record<string, string> = {
+      'global': 'global',
+      'environments': 'global',
+      'llms': 'llms',
+      'tools': 'tools',
+      'workflows': 'workflows',
+      'nodes': 'nodes',
+      'edges': 'edges',
+      'prompts': 'prompts',
+      'storage': 'storage',
+      'history': 'history',
+      'plugins': 'plugins',
+      'trigger_compositions': 'triggers',
+      'trigger_functions': 'triggers'
+    };
+    
+    return MODULE_MAPPING[firstDir] || 'unknown';
   }
 
   /**
