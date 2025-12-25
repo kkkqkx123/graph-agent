@@ -22,22 +22,13 @@ export { Entity } from './base/entity';
 // 错误类
 export { DomainError } from './errors/domain-error';
 export { RepositoryError } from './errors/repository-error';
-export {
-  ErrorHandlingStrategy,
-  DomainErrorHandler,
-  WorkflowErrorHandler,
-  SessionErrorHandler,
-  ErrorHandlerFactory,
-  DefaultErrorHandler,
-  type ErrorContext,
-  type ErrorHandlingResult
-} from './errors/error-handler';
+// 错误处理器已迁移到 infrastructure 层
+// 如需使用，请从 infrastructure/common/error-handlers 导入
 
 // 事件类
 export { DomainEvent } from './events/domain-event';
-export { EventDispatcher } from './events/event-dispatcher';
-export type { EventHandler } from './events/event-dispatcher';
-export type { EventHandlerRegistration } from './events/event-dispatcher';
+// EventDispatcher 已迁移到 infrastructure 层
+// 如需使用，请从 infrastructure/common/event-dispatchers 导入
 
 // 仓储接口
 export { Repository } from './repositories/repository';
@@ -46,8 +37,8 @@ export type { IQueryOptions as QueryOptions } from './repositories/repository';
 // 类型定义
 export * from './types';
 
-// 工具类
-export * from './utils';
+// 工具类（技术实现已迁移到 infrastructure 层）
+// 如需使用 EventEmitter，请从 infrastructure/common/utils 导入
 
 // 值对象属性接口
 export type { TimestampProps } from './value-objects/timestamp';

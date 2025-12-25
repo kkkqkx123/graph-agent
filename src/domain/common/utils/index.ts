@@ -1,5 +1,8 @@
 /**
  * 通用工具模块入口
+ *
+ * 注意：技术实现已迁移到 infrastructure 层
+ * 此处仅保留纯领域相关的工具
  */
 
-export { EventEmitter, IEventEmitter } from './event-emitter';
+// 暂无纯领域工具

@@ -1,6 +1,6 @@
 /**
  * 简单的事件发射器实现
- * 从shared/utils/event-emitter.ts迁移而来
+ * 技术基础设施组件，从domain层迁移而来
  */
 
 export interface IEventEmitter {

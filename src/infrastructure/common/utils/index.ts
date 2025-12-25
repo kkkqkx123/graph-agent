@@ -1,6 +1,7 @@
 /**
- * 通用工具集索引
+ * 通用工具模块入口
+ * 
+ * 技术基础设施组件
  */
 
-export * from './validation-utils';
-export * from './serialization-utils';
+export { EventEmitter, IEventEmitter } from './event-emitter';

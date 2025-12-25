@@ -1,7 +1,6 @@
 import { ID } from '../../common/value-objects/id';
 import { DomainError } from '../../common/errors/domain-error';
 import { WorkflowDefinition } from '../value-objects/workflow-definition';
-import { ExecutionStrategy, ErrorHandlingStrategy } from '../strategies';
 
 /**
  * Workflow执行器配置
@@ -27,7 +26,7 @@ export interface ExecutionStep {
   readonly node: any;
   readonly dependencies?: ID[];
   readonly priority?: number;
-  
+
   execute(context: any): Promise<any>;
   validate(): void;
 }
@@ -209,7 +208,7 @@ export class WorkflowExecutor {
     // 基于工作流定义生成执行步骤
     // 简化实现，实际应该从工作流图中获取节点
     const steps: ExecutionStep[] = [];
-    
+
     // 示例：创建一个简单的执行步骤
     const exampleStep: ExecutionStep = {
       stepId: 'step-1',
@@ -227,7 +226,7 @@ export class WorkflowExecutor {
         }
       }
     };
-    
+
     steps.push(exampleStep);
     return steps;
   }

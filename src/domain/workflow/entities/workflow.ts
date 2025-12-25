@@ -17,7 +17,8 @@ import { NodeAddedEvent } from '../events/node-added-event';
 import { NodeRemovedEvent } from '../events/node-removed-event';
 import { EdgeAddedEvent } from '../events/edge-added-event';
 import { EdgeRemovedEvent } from '../events/edge-removed-event';
-import { ErrorHandlingStrategy, ExecutionStrategy } from '../strategies';
+import { ErrorHandlingStrategy } from '../value-objects/error-handling-strategy';
+import { ExecutionStrategy } from '../value-objects/execution-strategy';
 
 /**
  * 节点数据接口
@@ -120,8 +121,8 @@ export class Workflow extends Entity {
       status: WorkflowStatus.draft(),
       type: type || WorkflowType.sequential(),
       config: config || WorkflowConfig.default(),
-      errorHandlingStrategy: ErrorHandlingStrategy.STOP_ON_ERROR,
-      executionStrategy: ExecutionStrategy.SEQUENTIAL,
+      errorHandlingStrategy: ErrorHandlingStrategy.stopOnError(),
+      executionStrategy: ExecutionStrategy.sequential(),
       tags: [],
       metadata: {},
       createdAt: now,

@@ -5,7 +5,8 @@ import { Version } from '../../common/value-objects/version';
 import { WorkflowStatus } from './workflow-status';
 import { WorkflowType } from './workflow-type';
 import { WorkflowConfig } from './workflow-config';
-import { ErrorHandlingStrategy, ExecutionStrategy } from '../strategies';
+import { ErrorHandlingStrategy } from './error-handling-strategy';
+import { ExecutionStrategy } from './execution-strategy';
 
 /**
  * WorkflowDefinition值对象属性接口

@@ -22,3 +22,5 @@ export * from './edge-id';
 export * from './workflow-status';
 export * from './workflow-type';
 export * from './workflow-config';
+export * from './error-handling-strategy';
+export * from './execution-strategy';

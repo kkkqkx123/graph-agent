@@ -5,5 +5,5 @@
  */
 
 export { DomainEvent } from './domain-event';
-export { EventDispatcher } from './event-dispatcher';
+// EventDispatcher 已迁移到 infrastructure 层
 export * from './events';

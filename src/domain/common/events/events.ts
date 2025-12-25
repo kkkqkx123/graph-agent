@@ -5,4 +5,4 @@
  */
 
 export * from './domain-event';
-export * from './event-dispatcher';
+// event-dispatcher 已迁移到 infrastructure 层

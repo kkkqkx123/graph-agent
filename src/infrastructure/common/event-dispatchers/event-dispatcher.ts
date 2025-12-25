@@ -1,4 +1,4 @@
-import { DomainEvent } from './domain-event';
+import { DomainEvent } from '../../../domain/common/events/domain-event';
 
 /**
  * 事件处理器接口
@@ -22,8 +22,9 @@ export interface EventHandlerRegistration {
 
 /**
  * 事件分发器
- * 
- * 负责管理领域事件的分发和处理
+ *
+ * 技术基础设施组件，负责管理领域事件的分发和处理
+ * 从domain层迁移而来
  */
 export class EventDispatcher {
   private handlers: Map<string, EventHandlerRegistration[]> = new Map();

@@ -2,7 +2,7 @@
  * 配置管理器实现
  */
 
-import { EventEmitter } from '../../domain/common/utils';
+import { EventEmitter } from '../common/utils';
 import {
   IConfigManager,
   IConfigSource,

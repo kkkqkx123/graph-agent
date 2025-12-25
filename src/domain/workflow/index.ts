@@ -23,5 +23,5 @@ export * from './repositories';
 // 导出事件
 export * from './events';
 
-// 导出策略
-export * from './strategies';
+// 导出状态管理
+export * from './state';

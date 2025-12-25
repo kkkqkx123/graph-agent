@@ -1,4 +1,4 @@
-import { DomainError } from './domain-error';
+import { DomainError } from '../../../domain/common/errors/domain-error';
 
 /**
  * 错误处理策略枚举
