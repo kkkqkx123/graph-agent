@@ -2,6 +2,8 @@
  * 列出会话查询
  */
 
+import { Session } from '../../../domain/sessions/entities/session';
+
 /**
  * 列出会话查询
  */
@@ -24,29 +26,13 @@ export class ListSessionsQueryResult {
   readonly total: number;
   readonly page: number;
   readonly pageSize: number;
-  readonly items: Array<{
-    sessionId: string;
-    userId?: string;
-    title?: string;
-    status: string;
-    messageCount: number;
-    createdAt: string;
-    lastActivityAt: string;
-  }>;
+  readonly items: Session[];
 
   constructor(
     total: number,
     page: number,
     pageSize: number,
-    items: Array<{
-      sessionId: string;
-      userId?: string;
-      title?: string;
-      status: string;
-      messageCount: number;
-      createdAt: string;
-      lastActivityAt: string;
-    }>
+    items: Session[]
   ) {
     this.total = total;
     this.page = page;

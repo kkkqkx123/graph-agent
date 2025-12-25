@@ -3,11 +3,11 @@
  * 提供领域对象和DTO之间的转换功能
  */
 
-import { DtoConverter, DtoConverterOptions, GenericDtoConverter } from '../../common/dto';
-import { Session } from '../../../domain/sessions/entities/session';
+import { DtoConverter, DtoConverterOptions, GenericDtoConverter } from '../../../../application/common/dto';
+import { Session } from '../../../../domain/sessions/entities/session';
 import { SessionInfo, CreateSessionRequest, SessionConfigDto } from './session.dto';
-import { ID } from '../../../domain/common/value-objects/id';
-import { SessionConfig, SessionConfigProps } from '../../../domain/sessions/value-objects/session-config';
+import { ID } from '../../../../domain/common/value-objects/id';
+import { SessionConfig, SessionConfigProps } from '../../../../domain/sessions/value-objects/session-config';
 
 /**
  * 会话转换器

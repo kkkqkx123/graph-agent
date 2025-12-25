@@ -9,7 +9,6 @@ import { SessionRepository } from '../../../domain/sessions/repositories/session
 import { SessionDomainService } from '../../../domain/sessions/services/session-domain-service';
 import { SessionConfig, SessionConfigProps } from '../../../domain/sessions/value-objects/session-config';
 import { BaseApplicationService } from '../../common/base-application-service';
-import { SessionInfo } from '../dtos';
 import { ILogger } from '../../../domain/common/types';
 
 /**
@@ -36,7 +35,7 @@ export class SessionManagementService extends BaseApplicationService {
    * @param sessionId 会话ID
    * @returns 会话信息
    */
-  async getSessionInfo(sessionId: string): Promise<SessionInfo | null> {
+  async getSessionInfo(sessionId: string): Promise<Session | null> {
     return this.executeGetOperation(
       '会话信息',
       async () => {
@@ -47,7 +46,7 @@ export class SessionManagementService extends BaseApplicationService {
           return null;
         }
 
-        return this.mapSessionToInfo(session);
+        return session;
       },
       { sessionId }
     );
@@ -57,12 +56,12 @@ export class SessionManagementService extends BaseApplicationService {
    * 列出所有会话
    * @returns 会话信息列表
    */
-  async listSessions(): Promise<SessionInfo[]> {
+  async listSessions(): Promise<Session[]> {
     return this.executeListOperation(
       '会话',
       async () => {
         const sessions = await this.sessionRepository.findAll();
-        return sessions.map(session => this.mapSessionToInfo(session));
+        return sessions;
       }
     );
   }
@@ -89,7 +88,7 @@ export class SessionManagementService extends BaseApplicationService {
    * @param config 新配置
    * @returns 更新后的会话信息
    */
-  async updateSessionConfig(sessionId: string, config: Record<string, unknown>): Promise<SessionInfo> {
+  async updateSessionConfig(sessionId: string, config: Record<string, unknown>): Promise<Session> {
     return this.executeUpdateOperation(
       '会话配置',
       async () => {
@@ -105,24 +104,10 @@ export class SessionManagementService extends BaseApplicationService {
         session.updateConfig(sessionConfig);
 
         await this.sessionRepository.save(session);
-        return this.mapSessionToInfo(session);
+        return session;
       },
       { sessionId, configKeys: Object.keys(config) }
     );
   }
 
-  /**
-   * 将会话领域对象映射为会话信息DTO
-   */
-  private mapSessionToInfo(session: Session): SessionInfo {
-    return {
-      sessionId: session.sessionId.toString(),
-      userId: session.userId?.toString(),
-      title: session.title,
-      status: session.status.getValue(),
-      messageCount: session.messageCount,
-      createdAt: session.createdAt.toISOString(),
-      lastActivityAt: session.lastActivityAt.toISOString()
-    };
-  }
 }

@@ -350,7 +350,7 @@ export class LLMMessage extends ValueObject<LLMMessageProps> {
     functionCall?: LLMFunctionCall;
     toolCalls?: LLMToolCall[];
     toolCallId?: string;
-    timestamp?: Date;
+    timestamp?: Timestamp;
     metadata?: Record<string, any>;
   } {
     return {

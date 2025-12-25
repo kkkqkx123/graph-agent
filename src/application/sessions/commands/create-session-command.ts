@@ -3,7 +3,7 @@
  * 使用新的Zod-based DTO验证
  */
 
-import { CreateSessionRequest, CreateSessionRequestDto } from '../dtos';
+import { CreateSessionRequest, CreateSessionRequestDto } from '../index';
 import { DtoValidationError } from '../../common/dto';
 
 /**

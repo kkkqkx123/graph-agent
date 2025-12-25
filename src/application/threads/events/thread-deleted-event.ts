@@ -2,6 +2,8 @@
  * 线程删除事件
  */
 
+import { Timestamp } from '../../../domain/common/value-objects/timestamp';
+
 /**
  * 线程删除事件
  */
@@ -9,13 +11,13 @@ export class ThreadDeletedEvent {
   readonly threadId: string;
   readonly sessionId: string;
   readonly userId?: string;
-  readonly timestamp: Date;
+  readonly timestamp: Timestamp;
 
   constructor(threadId: string, sessionId: string, userId?: string) {
     this.threadId = threadId;
     this.sessionId = sessionId;
     this.userId = userId;
-    this.timestamp = new Date();
+    this.timestamp = Timestamp.now();
   }
 }
 

@@ -10,7 +10,7 @@ import { SessionDomainService } from '../../../domain/sessions/services/session-
 import { SessionStatus } from '../../../domain/sessions/value-objects/session-status';
 import { SessionConfig, SessionConfigProps } from '../../../domain/sessions/value-objects/session-config';
 import { BaseApplicationService } from '../../common/base-application-service';
-import { CreateSessionRequest, SessionInfo } from '../dtos';
+import { CreateSessionRequest } from '../index';
 import { ILogger } from '../../../domain/common/types';
 
 /**
@@ -65,7 +65,7 @@ export class SessionLifecycleService extends BaseApplicationService {
    * @param userId 用户ID
    * @returns 激活后的会话信息
    */
-  async activateSession(sessionId: string, userId?: string): Promise<SessionInfo> {
+  async activateSession(sessionId: string, userId?: string): Promise<Session> {
     return this.executeUpdateOperation(
       '会话',
       async () => {
@@ -75,7 +75,7 @@ export class SessionLifecycleService extends BaseApplicationService {
         const session = await this.sessionRepository.findByIdOrFail(id);
 
         if (session.status.isActive()) {
-          return this.mapSessionToInfo(session); // 已经是活跃状态
+          return session; // 已经是活跃状态
         }
 
         if (session.status.isTerminated()) {
@@ -90,7 +90,7 @@ export class SessionLifecycleService extends BaseApplicationService {
         session.updateLastActivity();
 
         await this.sessionRepository.save(session);
-        return this.mapSessionToInfo(session);
+        return session;
       },
       { sessionId, userId }
     );
@@ -103,7 +103,7 @@ export class SessionLifecycleService extends BaseApplicationService {
    * @param reason 暂停原因
    * @returns 暂停后的会话信息
    */
-  async suspendSession(sessionId: string, userId?: string, reason?: string): Promise<SessionInfo> {
+  async suspendSession(sessionId: string, userId?: string, reason?: string): Promise<Session> {
     return this.executeUpdateOperation(
       '会话',
       async () => {
@@ -113,7 +113,7 @@ export class SessionLifecycleService extends BaseApplicationService {
         const session = await this.sessionRepository.findByIdOrFail(id);
 
         if (session.status.isSuspended()) {
-          return this.mapSessionToInfo(session); // 已经是暂停状态
+          return session; // 已经是暂停状态
         }
 
         if (session.status.isTerminated()) {
@@ -128,7 +128,7 @@ export class SessionLifecycleService extends BaseApplicationService {
         session.changeStatus(SessionStatus.suspended(), user, reason);
 
         await this.sessionRepository.save(session);
-        return this.mapSessionToInfo(session);
+        return session;
       },
       { sessionId, userId, reason }
     );
@@ -141,7 +141,7 @@ export class SessionLifecycleService extends BaseApplicationService {
    * @param reason 终止原因
    * @returns 终止后的会话信息
    */
-  async terminateSession(sessionId: string, userId?: string, reason?: string): Promise<SessionInfo> {
+  async terminateSession(sessionId: string, userId?: string, reason?: string): Promise<Session> {
     return this.executeUpdateOperation(
       '会话',
       async () => {
@@ -151,31 +151,17 @@ export class SessionLifecycleService extends BaseApplicationService {
         const session = await this.sessionRepository.findByIdOrFail(id);
 
         if (session.status.isTerminated()) {
-          return this.mapSessionToInfo(session); // 已经是终止状态
+          return session; // 已经是终止状态
         }
 
         // 终止会话
         session.changeStatus(SessionStatus.terminated(), user, reason);
 
         await this.sessionRepository.save(session);
-        return this.mapSessionToInfo(session);
+        return session;
       },
       { sessionId, userId, reason }
     );
   }
 
-  /**
-   * 将会话领域对象映射为会话信息DTO
-   */
-  private mapSessionToInfo(session: Session): SessionInfo {
-    return {
-      sessionId: session.sessionId.toString(),
-      userId: session.userId?.toString(),
-      title: session.title,
-      status: session.status.getValue(),
-      messageCount: session.messageCount,
-      createdAt: session.createdAt.toISOString(),
-      lastActivityAt: session.lastActivityAt.toISOString()
-    };
-  }
 }

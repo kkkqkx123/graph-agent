@@ -4,7 +4,7 @@
  */
 
 import { z } from 'zod';
-import { BaseDto, VersionedBaseDto } from '../../common/dto';
+import { BaseDto, VersionedBaseDto } from '../../../../application/common/dto';
 
 // 基础Schema定义
 

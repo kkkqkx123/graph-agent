@@ -5,6 +5,7 @@
 
 import { injectable } from 'inversify';
 import { NodeData } from '../../../../domain/workflow/entities/workflow';
+import { Timestamp } from '../../../../domain/common/value-objects/timestamp';
 
 /**
  * 等待节点执行器
@@ -18,25 +19,25 @@ export class WaitNodeExecutor {
     node: NodeData,
     context: any
   ): Promise<any> {
-    const startTime = Date.now();
-     
+    const startTime = Timestamp.now().getMilliseconds();
+
     try {
       // 简化的等待逻辑
       const waitTime = (node.properties?.['waitTime'] as number) || 1000;
       await new Promise(resolve => setTimeout(resolve, waitTime));
-      
+
       const result = {
         waitCompleted: true,
         waitTime,
-        timestamp: new Date(),
+        timestamp: Timestamp.now(),
         nodeId: node.id.toString()
       };
-      
+
       return {
         success: true,
         output: result,
         metadata: {
-          executionTime: Date.now() - startTime,
+          executionTime: Timestamp.now().getMilliseconds() - startTime,
           nodeId: node.id.toString(),
           nodeType: node.type.toString()
         }
@@ -46,7 +47,7 @@ export class WaitNodeExecutor {
         success: false,
         error: error instanceof Error ? error.message : String(error),
         metadata: {
-          executionTime: Date.now() - startTime,
+          executionTime: Timestamp.now().getMilliseconds() - startTime,
           nodeId: node.id.toString(),
           errorType: error instanceof Error ? error.constructor.name : 'Unknown'
         }

@@ -5,6 +5,7 @@
 
 import { injectable } from 'inversify';
 import { NodeData } from '../../../../domain/workflow/entities/workflow';
+import { Timestamp } from '../../../../domain/common/value-objects/timestamp';
 
 /**
  * LLM节点执行器
@@ -18,23 +19,23 @@ export class LLMNodeExecutor {
     node: NodeData,
     context: any
   ): Promise<any> {
-    const startTime = Date.now();
-     
+    const startTime = Timestamp.now().getMilliseconds();
+
     try {
       // 简化的LLM执行逻辑
       const result = {
         response: `LLM处理完成: ${JSON.stringify(node.properties)}`,
         model: 'default-model',
         tokens: 100,
-        timestamp: new Date(),
+        timestamp: Timestamp.now(),
         nodeId: node.id.toString()
       };
-      
+
       return {
         success: true,
         output: result,
         metadata: {
-          executionTime: Date.now() - startTime,
+          executionTime: Timestamp.now().getMilliseconds() - startTime,
           nodeId: node.id.toString(),
           nodeType: node.type.toString()
         }
@@ -44,7 +45,7 @@ export class LLMNodeExecutor {
         success: false,
         error: error instanceof Error ? error.message : String(error),
         metadata: {
-          executionTime: Date.now() - startTime,
+          executionTime: Timestamp.now().getMilliseconds() - startTime,
           nodeId: node.id.toString(),
           errorType: error instanceof Error ? error.constructor.name : 'Unknown'
         }

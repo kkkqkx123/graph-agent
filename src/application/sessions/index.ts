@@ -20,8 +20,8 @@ export * from './queries/list-sessions-query';
 export * from './events/session-created-event';
 export * from './events/session-deleted-event';
 
-// 导出DTO
-export * from './dtos';
+// 导出应用层需要的DTO（仅用于请求验证）
+export { CreateSessionRequestDto, CreateSessionRequest } from './dtos/request.dto';
 
 // 导出处理器
 export * from './handlers/create-session-handler';

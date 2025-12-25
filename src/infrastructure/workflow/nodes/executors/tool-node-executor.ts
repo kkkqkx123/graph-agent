@@ -5,6 +5,7 @@
 
 import { injectable } from 'inversify';
 import { NodeData } from '../../../../domain/workflow/entities/workflow';
+import { Timestamp } from '../../../../domain/common/value-objects/timestamp';
 
 /**
  * 工具节点执行器
@@ -18,22 +19,22 @@ export class ToolNodeExecutor {
     node: NodeData,
     context: any
   ): Promise<any> {
-    const startTime = Date.now();
-     
+    const startTime = Timestamp.now().getMilliseconds();
+
     try {
       // 简化的工具执行逻辑
       const result = {
         toolResult: `工具执行完成: ${JSON.stringify(node.properties)}`,
         toolName: node.name || 'unnamed-tool',
-        timestamp: new Date(),
+        timestamp: Timestamp.now(),
         nodeId: node.id.toString()
       };
-      
+
       return {
         success: true,
         output: result,
         metadata: {
-          executionTime: Date.now() - startTime,
+          executionTime: Timestamp.now().getMilliseconds() - startTime,
           nodeId: node.id.toString(),
           nodeType: node.type.toString()
         }
@@ -43,7 +44,7 @@ export class ToolNodeExecutor {
         success: false,
         error: error instanceof Error ? error.message : String(error),
         metadata: {
-          executionTime: Date.now() - startTime,
+          executionTime: Timestamp.now().getMilliseconds() - startTime,
           nodeId: node.id.toString(),
           errorType: error instanceof Error ? error.constructor.name : 'Unknown'
         }

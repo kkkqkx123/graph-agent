@@ -6,6 +6,7 @@ import { injectable, inject } from 'inversify';
 import { BaseQueryHandler } from '../../common/handlers/base-query-handler';
 import { ListSessionsQuery, ListSessionsQueryResult } from '../queries/list-sessions-query';
 import { SessionService } from '../services/session-service';
+import { Session } from '../../../domain/sessions/entities/session';
 import { ILogger } from '../../../domain/common/types/logger-types';
 
 /**
@@ -53,25 +54,17 @@ export class ListSessionsHandler extends BaseQueryHandler {
   }
 
   private applyFilters(
-    sessions: Array<{
-      sessionId: string;
-      userId?: string;
-      title?: string;
-      status: string;
-      messageCount: number;
-      createdAt: string;
-      lastActivityAt: string;
-    }>,
+    sessions: Session[],
     filters: Record<string, unknown>
   ) {
     return sessions.filter(session => {
       for (const [key, value] of Object.entries(filters)) {
         switch (key) {
           case 'userId':
-            if (session.userId !== value) return false;
+            if (session.userId?.toString() !== value) return false;
             break;
           case 'status':
-            if (session.status !== value) return false;
+            if (session.status.getValue() !== value) return false;
             break;
           case 'title':
             if (session.title !== value) return false;

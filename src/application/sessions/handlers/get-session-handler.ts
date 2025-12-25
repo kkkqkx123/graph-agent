@@ -24,10 +24,10 @@ export class GetSessionHandler extends BaseQueryHandler {
     try {
       this.logQueryStart('获取会话查询', { sessionId: query.sessionId });
 
-      const sessionInfo = await this.sessionService.getSessionInfo(query.sessionId);
+      const session = await this.sessionService.getSessionInfo(query.sessionId);
       
-      this.logQuerySuccess('获取会话查询', { sessionId: query.sessionId, found: sessionInfo !== null });
-      return new GetSessionQueryResult(sessionInfo);
+      this.logQuerySuccess('获取会话查询', { sessionId: query.sessionId, found: session !== null });
+      return new GetSessionQueryResult(session);
     } catch (error) {
       this.logQueryError('获取会话查询', error as Error, { sessionId: query.sessionId });
       throw error;

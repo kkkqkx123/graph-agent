@@ -41,7 +41,7 @@ export class CreateSessionHandler extends BaseCommandHandler {
       }
 
       this.logCommandSuccess('创建会话命令', { sessionId });
-      return new CreateSessionCommandResult(sessionId, sessionInfo.status);
+      return new CreateSessionCommandResult(sessionId, sessionInfo.status.getValue());
     } catch (error) {
       this.logCommandError('创建会话命令', error as Error);
       throw error;

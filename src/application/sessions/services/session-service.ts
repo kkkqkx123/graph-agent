@@ -15,11 +15,9 @@ import { SessionStatus } from '../../../domain/sessions/value-objects/session-st
 import { ILogger } from '../../../domain/common/types';
 import {
   CreateSessionRequest,
-  SessionInfo,
-  CreateSessionRequestDto,
-  SessionInfoDto,
-  SessionConverter
-} from '../dtos';
+  CreateSessionRequestDto
+} from '../index';
+import { SessionConverter } from '../../../interfaces/http/sessions/dtos';
 import { DtoValidationError } from '../../common/dto';
 
 /**
@@ -27,8 +25,6 @@ import { DtoValidationError } from '../../common/dto';
  */
 export class SessionService {
   private createSessionDto: CreateSessionRequestDto;
-  private sessionInfoDto: SessionInfoDto;
-  private sessionConverter: SessionConverter;
 
   constructor(
     private readonly sessionRepository: SessionRepository,
@@ -39,8 +35,6 @@ export class SessionService {
   ) {
     // 初始化DTO实例
     this.createSessionDto = new CreateSessionRequestDto();
-    this.sessionInfoDto = new SessionInfoDto();
-    this.sessionConverter = new SessionConverter();
   }
 
   /**
@@ -450,12 +444,4 @@ export class SessionService {
     }
   }
 
-  /**
-   * 将会话领域对象映射为会话信息DTO（已废弃）
-   * @deprecated 请使用SessionConverter.toDto()
-   */
-  private mapSessionToInfo(session: Session): SessionInfo {
-    // 使用转换器进行映射，保持向后兼容
-    return this.sessionConverter.toDto(session);
-  }
 }

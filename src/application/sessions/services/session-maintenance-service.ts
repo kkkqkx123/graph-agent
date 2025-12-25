@@ -9,7 +9,6 @@ import { SessionRepository } from '../../../domain/sessions/repositories/session
 import { ThreadRepository } from '../../../domain/threads/repositories/thread-repository';
 import { SessionDomainService } from '../../../domain/sessions/services/session-domain-service';
 import { BaseApplicationService } from '../../common/base-application-service';
-import { SessionInfo, SessionStatistics } from '../dtos';
 import { ILogger } from '../../../domain/common/types';
 
 /**
@@ -70,7 +69,7 @@ export class SessionMaintenanceService extends BaseApplicationService {
    * @param userId 用户ID
    * @returns 更新后的会话信息
    */
-  async addMessageToSession(sessionId: string, userId?: string): Promise<SessionInfo> {
+  async addMessageToSession(sessionId: string, userId?: string): Promise<Session> {
     return this.executeUpdateOperation(
       '会话消息',
       async () => {
@@ -89,7 +88,7 @@ export class SessionMaintenanceService extends BaseApplicationService {
         session.incrementMessageCount();
 
         await this.sessionRepository.save(session);
-        return this.mapSessionToInfo(session);
+        return session;
       },
       { sessionId, userId }
     );
@@ -164,7 +163,12 @@ export class SessionMaintenanceService extends BaseApplicationService {
    * @param userId 用户ID
    * @returns 会话统计信息
    */
-  async getSessionStatistics(userId?: string): Promise<SessionStatistics> {
+  async getSessionStatistics(userId?: string): Promise<{
+    total: number;
+    active: number;
+    suspended: number;
+    terminated: number;
+  }> {
     return this.executeQueryOperation(
       '会话统计信息',
       async () => {
@@ -193,18 +197,4 @@ export class SessionMaintenanceService extends BaseApplicationService {
     );
   }
 
-  /**
-   * 将会话领域对象映射为会话信息DTO
-   */
-  private mapSessionToInfo(session: Session): SessionInfo {
-    return {
-      sessionId: session.sessionId.toString(),
-      userId: session.userId?.toString(),
-      title: session.title,
-      status: session.status.getValue(),
-      messageCount: session.messageCount,
-      createdAt: session.createdAt.toISOString(),
-      lastActivityAt: session.lastActivityAt.toISOString()
-    };
-  }
 }

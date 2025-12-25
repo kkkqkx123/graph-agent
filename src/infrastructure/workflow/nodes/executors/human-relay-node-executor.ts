@@ -5,6 +5,7 @@
 
 import { injectable, inject } from 'inversify';
 import { ILogger } from '../../../../domain/common/types/logger-types';
+import { Timestamp } from '../../../../domain/common/value-objects/timestamp';
 
 /**
  * 简化的节点接口
@@ -48,8 +49,8 @@ export class HumanRelayNodeExecutor {
     node: BaseNode,
     context: ExecutionContext
   ): Promise<any> {
-    const startTime = Date.now();
-     
+    const startTime = Timestamp.now().getMilliseconds();
+
     try {
       // 1. 验证节点配置
       const validation = node.validateConfig();
@@ -58,7 +59,7 @@ export class HumanRelayNodeExecutor {
           success: false,
           error: `节点配置无效: ${validation.errors.join(', ')}`,
           metadata: {
-            executionTime: Date.now() - startTime,
+            executionTime: Timestamp.now().getMilliseconds() - startTime,
             nodeId: node.nodeId.toString(),
             validationErrors: validation.errors
           }
@@ -67,20 +68,20 @@ export class HumanRelayNodeExecutor {
 
       // 2. 获取输入数据
       const inputData = context.getInput();
-      
+
       // 3. 简化的执行逻辑
       const result = {
         text: inputData,
         analysis: `HumanRelay节点处理完成: ${node.name}`,
-        timestamp: new Date(),
+        timestamp: Timestamp.now(),
         nodeId: node.nodeId.toString()
       };
-      
+
       return {
         success: true,
         output: result,
         metadata: {
-          executionTime: Date.now() - startTime,
+          executionTime: Timestamp.now().getMilliseconds() - startTime,
           nodeId: node.nodeId.toString(),
           nodeType: node.type
         }
@@ -90,7 +91,7 @@ export class HumanRelayNodeExecutor {
         success: false,
         error: error instanceof Error ? error.message : String(error),
         metadata: {
-          executionTime: Date.now() - startTime,
+          executionTime: Timestamp.now().getMilliseconds() - startTime,
           nodeId: node.nodeId.toString(),
           errorType: error instanceof Error ? error.constructor.name : 'Unknown'
         }

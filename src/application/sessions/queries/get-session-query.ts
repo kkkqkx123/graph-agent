@@ -2,6 +2,8 @@
  * 获取会话查询
  */
 
+import { Session } from '../../../domain/sessions/entities/session';
+
 /**
  * 获取会话查询
  */
@@ -17,25 +19,9 @@ export class GetSessionQuery {
  * 获取会话查询结果
  */
 export class GetSessionQueryResult {
-  readonly sessionInfo: {
-    sessionId: string;
-    userId?: string;
-    title?: string;
-    status: string;
-    messageCount: number;
-    createdAt: string;
-    lastActivityAt: string;
-  } | null;
+  readonly session: Session | null;
 
-  constructor(sessionInfo: {
-    sessionId: string;
-    userId?: string;
-    title?: string;
-    status: string;
-    messageCount: number;
-    createdAt: string;
-    lastActivityAt: string;
-  } | null) {
-    this.sessionInfo = sessionInfo;
+  constructor(session: Session | null) {
+    this.session = session;
   }
 }
