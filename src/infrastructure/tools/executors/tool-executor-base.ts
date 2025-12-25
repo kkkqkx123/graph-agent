@@ -485,7 +485,7 @@ export abstract class ToolExecutorBase {
     async function* streamGenerator() {
       const result = await self.execute(tool, execution);
       yield {
-        type: 'complete',
+        type: 'complete' as const,
         data: result
       };
     }

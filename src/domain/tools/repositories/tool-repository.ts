@@ -1,3 +1,4 @@
+import { Repository } from '../../common/repositories/repository';
 import { ID } from '../../common/value-objects/id';
 import { Tool } from '../entities/tool';
 import { ToolType } from '../value-objects/tool-type';
@@ -8,23 +9,7 @@ import { ToolStatus } from '../value-objects/tool-status';
  * 
  * 定义工具持久化的契约
  */
-export interface IToolRepository {
-  /**
-   * 保存工具
-   * 
-   * @param tool 工具
-   * @returns Promise
-   */
-  save(tool: Tool): Promise<void>;
-
-  /**
-   * 根据ID查找工具
-   * 
-   * @param id 工具ID
-   * @returns 工具或null
-   */
-  findById(id: ID): Promise<Tool | null>;
-
+export interface ToolRepository extends Repository<Tool> {
   /**
    * 根据名称查找工具
    * 
@@ -32,13 +17,6 @@ export interface IToolRepository {
    * @returns 工具或null
    */
   findByName(name: string): Promise<Tool | null>;
-
-  /**
-   * 查找所有工具
-   * 
-   * @returns 工具列表
-   */
-  findAll(): Promise<Tool[]>;
 
   /**
    * 根据类型查找工具
@@ -140,14 +118,14 @@ export interface IToolRepository {
   }): Promise<Tool[]>;
 
   /**
-   * 分页查找工具
-   * 
+   * 分页查找工具（自定义方法）
+   *
    * @param page 页码
    * @param limit 每页数量
    * @param criteria 查询条件
    * @returns 工具列表和总数
    */
-  findWithPagination(
+  findToolsWithPagination(
     page: number,
     limit: number,
     criteria?: {
@@ -171,14 +149,6 @@ export interface IToolRepository {
   }>;
 
   /**
-   * 检查工具是否存在
-   * 
-   * @param id 工具ID
-   * @returns 是否存在
-   */
-  exists(id: ID): Promise<boolean>;
-
-  /**
    * 检查工具名称是否存在
    * 
    * @param name 工具名称
@@ -188,28 +158,12 @@ export interface IToolRepository {
   existsByName(name: string, excludeId?: ID): Promise<boolean>;
 
   /**
-   * 删除工具
-   * 
-   * @param id 工具ID
-   * @returns Promise
-   */
-  delete(id: ID): Promise<void>;
-
-  /**
-   * 批量删除工具
-   * 
-   * @param ids 工具ID列表
-   * @returns Promise
-   */
-  deleteMany(ids: ID[]): Promise<void>;
-
-  /**
-   * 统计工具数量
-   * 
+   * 统计工具数量（自定义方法）
+   *
    * @param criteria 查询条件
    * @returns 数量
    */
-  count(criteria?: {
+  countByCriteria(criteria?: {
     type?: ToolType;
     status?: ToolStatus;
     category?: string;
@@ -366,93 +320,4 @@ export interface IToolRepository {
     executionTime: number,
     success: boolean
   ): Promise<void>;
-
-  /**
-   * 清理过期数据
-   * 
-   * @param beforeDate 清理此日期之前的数据
-   * @returns 清理的记录数
-   */
-  cleanupExpiredData(beforeDate: Date): Promise<number>;
-
-  /**
-   * 备份工具数据
-   * 
-   * @param backupPath 备份路径
-   * @param criteria 查询条件
-   * @returns 备份文件路径
-   */
-  backup(backupPath: string, criteria?: {
-    type?: ToolType;
-    status?: ToolStatus;
-    category?: string;
-    tags?: string[];
-    createdBy?: ID;
-    isEnabled?: boolean;
-    isBuiltin?: boolean;
-  }): Promise<string>;
-
-  /**
-   * 恢复工具数据
-   * 
-   * @param backupPath 备份路径
-   * @param overwrite 是否覆盖现有数据
-   * @returns 恢复的工具数量
-   */
-  restore(backupPath: string, overwrite?: boolean): Promise<number>;
-
-  /**
-   * 导出工具数据
-   * 
-   * @param format 导出格式
-   * @param criteria 查询条件
-   * @returns 导出数据
-   */
-  export(
-    format: 'json' | 'csv' | 'xml',
-    criteria?: {
-      type?: ToolType;
-      status?: ToolStatus;
-      category?: string;
-      tags?: string[];
-      createdBy?: ID;
-      isEnabled?: boolean;
-      isBuiltin?: boolean;
-    }
-  ): Promise<string>;
-
-  /**
-   * 导入工具数据
-   * 
-   * @param data 导入数据
-   * @param format 数据格式
-   * @param overwrite 是否覆盖现有数据
-   * @returns 导入的工具数量
-   */
-  import(data: string, format: 'json' | 'csv' | 'xml', overwrite?: boolean): Promise<number>;
-
-  /**
-   * 验证工具数据完整性
-   * 
-   * @returns 验证结果
-   */
-  validateDataIntegrity(): Promise<{
-    isValid: boolean;
-    errors: string[];
-    warnings: string[];
-  }>;
-
-  /**
-   * 重建索引
-   * 
-   * @returns Promise
-   */
-  rebuildIndexes(): Promise<void>;
-
-  /**
-   * 优化数据库
-   * 
-   * @returns Promise
-   */
-  optimize(): Promise<void>;
 }

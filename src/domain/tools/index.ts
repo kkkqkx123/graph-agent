@@ -1,18 +1,19 @@
+/**
+ * 工具领域模块导出
+ */
+
 // 实体
-export { Tool } from './entities/tool';
-export { ToolExecution } from './entities/tool-execution';
-export { ToolResult } from './entities/tool-result';
+export * from './entities/tool';
+export * from './entities/tool-execution';
+export * from './entities/tool-result';
 
 // 值对象
-export { ToolType } from './value-objects/tool-type';
-export { ToolStatus } from './value-objects/tool-status';
-export { ToolExecutionStatus } from './value-objects/tool-execution-status';
+export * from './value-objects/tool-type';
+export * from './value-objects/tool-status';
+export * from './value-objects/tool-execution-status';
 
 // 仓储接口
-export { IToolRepository } from './repositories/tool-repository.interface';
-export { IToolExecutionRepository } from './repositories/tool-execution-repository.interface';
-export { IToolResultRepository } from './repositories/tool-result-repository.interface';
+export * from './repositories';
 
-// 服务接口
-export { IToolExecutor } from './interfaces/tool-executor.interface';
-export { IToolDomainService } from './interfaces/tool-domain-service.interface';
+// 服务
+export * from './services/tool-domain-service';

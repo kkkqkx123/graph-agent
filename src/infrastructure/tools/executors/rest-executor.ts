@@ -1,32 +1,22 @@
 import { injectable, inject } from 'inversify';
-import { IToolExecutor } from '../../../domain/tools/interfaces/tool-executor.interface';
 import { Tool } from '../../../domain/tools/entities/tool';
 import { ToolExecution } from '../../../domain/tools/entities/tool-execution';
 import { ToolResult } from '../../../domain/tools/entities/tool-result';
 import { HttpClient } from '../../common/http/http-client';
 import { ParameterAdapter } from '../adapters/parameter-adapter';
 import { ID } from '../../../domain/common/value-objects/id';
+import { ToolExecutorBase } from './tool-executor-base';
 
 @injectable()
-export class RestExecutor implements IToolExecutor {
-  private isInitialized = false;
-  private isRunningFlag = false;
-  private config: Record<string, unknown> = {};
-  private executionStats = {
-    totalExecutions: 0,
-    successfulExecutions: 0,
-    failedExecutions: 0,
-    cancelledExecutions: 0,
-    timeoutExecutions: 0,
-    totalExecutionTime: 0
-  };
-
+export class RestExecutor extends ToolExecutorBase {
   constructor(
     @inject('HttpClient') private httpClient: HttpClient,
     @inject('ParameterAdapter') private parameterAdapter: ParameterAdapter
-  ) {}
+  ) {
+    super();
+  }
 
-  async execute(tool: Tool, execution: ToolExecution): Promise<ToolResult> {
+  override async execute(tool: Tool, execution: ToolExecution): Promise<ToolResult> {
     try {
       this.executionStats.totalExecutions++;
       const startTime = Date.now();
@@ -45,6 +35,7 @@ export class RestExecutor implements IToolExecutor {
       this.executionStats.successfulExecutions++;
       this.executionStats.totalExecutionTime += Date.now() - startTime;
       
+      this.updateExecutionStats(true, Date.now() - execution.startedAt.getTime());
       return new ToolResult(
         ID.generate(),
         execution.id,
@@ -55,6 +46,7 @@ export class RestExecutor implements IToolExecutor {
       );
     } catch (error) {
       this.executionStats.failedExecutions++;
+      this.updateExecutionStats(false, Date.now() - execution.startedAt.getTime());
       return new ToolResult(
         ID.generate(),
         execution.id,
@@ -316,7 +308,7 @@ export class RestExecutor implements IToolExecutor {
   }
 
   // IToolExecutor 接口实现
-  async validateTool(tool: Tool): Promise<{
+  override async validateTool(tool: Tool): Promise<{
     isValid: boolean;
     errors: string[];
     warnings: string[];
@@ -339,7 +331,7 @@ export class RestExecutor implements IToolExecutor {
     };
   }
 
-  async validateParameters(tool: Tool, parameters: Record<string, unknown>): Promise<{
+  override async validateParameters(tool: Tool, parameters: Record<string, unknown>): Promise<{
     isValid: boolean;
     errors: string[];
     warnings: string[];
@@ -360,41 +352,41 @@ export class RestExecutor implements IToolExecutor {
     };
   }
 
-  async preprocessParameters(tool: Tool, parameters: Record<string, unknown>): Promise<Record<string, unknown>> {
+  override async preprocessParameters(tool: Tool, parameters: Record<string, unknown>): Promise<Record<string, unknown>> {
     // 基本参数预处理
     return { ...parameters };
   }
 
-  async postprocessResult(tool: Tool, result: unknown): Promise<unknown> {
+  override async postprocessResult(tool: Tool, result: unknown): Promise<unknown> {
     // 基本结果后处理
     return result;
   }
 
-  getType(): string {
+  override getType(): string {
     return 'rest';
   }
 
-  getName(): string {
+  override getName(): string {
     return 'REST Executor';
   }
 
-  getVersion(): string {
+  override getVersion(): string {
     return '1.0.0';
   }
 
-  getDescription(): string {
+  override getDescription(): string {
     return 'REST API工具执行器，支持HTTP请求执行';
   }
 
-  getSupportedToolTypes(): string[] {
+  override getSupportedToolTypes(): string[] {
     return ['rest', 'http', 'api'];
   }
 
-  supportsTool(tool: Tool): boolean {
+  override supportsTool(tool: Tool): boolean {
     return tool.type.toString() === 'rest' || tool.type.toString() === 'http' || tool.type.toString() === 'api';
   }
 
-  getConfigSchema(): {
+  override getConfigSchema(): {
     type: string;
     properties: Record<string, {
       type: string;
@@ -433,7 +425,7 @@ export class RestExecutor implements IToolExecutor {
     };
   }
 
-  getCapabilities(): {
+  override getCapabilities(): {
     streaming: boolean;
     async: boolean;
     batch: boolean;
@@ -455,21 +447,7 @@ export class RestExecutor implements IToolExecutor {
     };
   }
 
-  async getStatus(): Promise<{
-    status: 'healthy' | 'unhealthy' | 'degraded';
-    message?: string;
-    details?: Record<string, unknown>;
-    lastChecked: Date;
-  }> {
-    const healthCheck = await this.healthCheck();
-    return {
-      status: healthCheck.status,
-      message: healthCheck.message,
-      lastChecked: healthCheck.lastChecked
-    };
-  }
-
-  async healthCheck(): Promise<{
+  override async healthCheck(): Promise<{
     status: 'healthy' | 'unhealthy' | 'degraded';
     message?: string;
     latency?: number;
@@ -500,7 +478,7 @@ export class RestExecutor implements IToolExecutor {
     }
   }
 
-  async initialize(config: Record<string, unknown>): Promise<boolean> {
+  override async initialize(config: Record<string, unknown>): Promise<boolean> {
     try {
       this.config = config;
       this.isInitialized = true;
@@ -511,7 +489,7 @@ export class RestExecutor implements IToolExecutor {
     }
   }
 
-  async configure(config: Record<string, unknown>): Promise<boolean> {
+  override async configure(config: Record<string, unknown>): Promise<boolean> {
     try {
       this.config = { ...this.config, ...config };
       return true;
@@ -521,36 +499,36 @@ export class RestExecutor implements IToolExecutor {
     }
   }
 
-  async getConfiguration(): Promise<Record<string, unknown>> {
+  override async getConfiguration(): Promise<Record<string, unknown>> {
     return { ...this.config };
   }
 
-  async resetConfiguration(): Promise<boolean> {
+  override async resetConfiguration(): Promise<boolean> {
     this.config = {};
     return true;
   }
 
-  async start(): Promise<boolean> {
+  override async start(): Promise<boolean> {
     this.isRunningFlag = true;
     return true;
   }
 
-  async stop(): Promise<boolean> {
+  override async stop(): Promise<boolean> {
     this.isRunningFlag = false;
     return true;
   }
 
-  async restart(): Promise<boolean> {
+  override async restart(): Promise<boolean> {
     await this.stop();
     await this.start();
     return true;
   }
 
-  async isRunning(): Promise<boolean> {
+  override async isRunning(): Promise<boolean> {
     return this.isRunningFlag;
   }
 
-  async getExecutionStatistics(startTime?: Date, endTime?: Date): Promise<{
+  override async getExecutionStatistics(startTime?: Date, endTime?: Date): Promise<{
     totalExecutions: number;
     successfulExecutions: number;
     failedExecutions: number;
@@ -587,7 +565,7 @@ export class RestExecutor implements IToolExecutor {
     };
   }
 
-  async getPerformanceStatistics(startTime?: Date, endTime?: Date): Promise<{
+  override async getPerformanceStatistics(startTime?: Date, endTime?: Date): Promise<{
     averageLatency: number;
     medianLatency: number;
     p95Latency: number;
@@ -614,7 +592,7 @@ export class RestExecutor implements IToolExecutor {
     };
   }
 
-  async getErrorStatistics(startTime?: Date, endTime?: Date): Promise<{
+  override async getErrorStatistics(startTime?: Date, endTime?: Date): Promise<{
     totalErrors: number;
     byType: Record<string, number>;
     byTool: Record<string, number>;
@@ -636,7 +614,7 @@ export class RestExecutor implements IToolExecutor {
     };
   }
 
-  async getResourceUsage(): Promise<{
+  override async getResourceUsage(): Promise<{
     memoryUsage: number;
     cpuUsage: number;
     diskUsage: number;
@@ -654,7 +632,7 @@ export class RestExecutor implements IToolExecutor {
     };
   }
 
-  async getConcurrencyStatistics(): Promise<{
+  override async getConcurrencyStatistics(): Promise<{
     currentExecutions: number;
     maxConcurrentExecutions: number;
     averageConcurrentExecutions: number;
@@ -672,12 +650,12 @@ export class RestExecutor implements IToolExecutor {
     };
   }
 
-  async cancelExecution(executionId: ID, reason?: string): Promise<boolean> {
+  override async cancelExecution(executionId: ID, reason?: string): Promise<boolean> {
     // REST执行器不支持取消执行
     return false;
   }
 
-  async getExecutionStatus(executionId: ID): Promise<{
+  override async getExecutionStatus(executionId: ID): Promise<{
     status: 'pending' | 'running' | 'completed' | 'failed' | 'cancelled' | 'timeout';
     progress?: number;
     message?: string;
@@ -691,7 +669,7 @@ export class RestExecutor implements IToolExecutor {
     };
   }
 
-  async getExecutionLogs(
+  override async getExecutionLogs(
     executionId: ID,
     level?: 'debug' | 'info' | 'warn' | 'error',
     limit?: number
@@ -704,7 +682,7 @@ export class RestExecutor implements IToolExecutor {
     return [];
   }
 
-  async executeStream(tool: Tool, execution: ToolExecution): Promise<AsyncIterable<{
+  override async executeStream(tool: Tool, execution: ToolExecution): Promise<AsyncIterable<{
     type: 'data' | 'progress' | 'log' | 'error' | 'complete';
     data?: unknown;
     progress?: number;
@@ -719,7 +697,7 @@ export class RestExecutor implements IToolExecutor {
     throw new Error('REST执行器不支持流式执行');
   }
 
-  async executeBatch(tools: Tool[], executions: ToolExecution[]): Promise<ToolResult[]> {
+  override async executeBatch(tools: Tool[], executions: ToolExecution[]): Promise<ToolResult[]> {
     const results: ToolResult[] = [];
     for (let i = 0; i < tools.length; i++) {
       const tool = tools[i];
@@ -732,7 +710,7 @@ export class RestExecutor implements IToolExecutor {
     return results;
   }
 
-  async cleanup(): Promise<boolean> {
+  override async cleanup(): Promise<boolean> {
     this.executionStats = {
       totalExecutions: 0,
       successfulExecutions: 0,
@@ -744,12 +722,12 @@ export class RestExecutor implements IToolExecutor {
     return true;
   }
 
-  async reset(): Promise<boolean> {
+  override async reset(): Promise<boolean> {
     await this.cleanup();
     return true;
   }
 
-  async close(): Promise<boolean> {
+  override async close(): Promise<boolean> {
     await this.stop();
     await this.cleanup();
     return true;
