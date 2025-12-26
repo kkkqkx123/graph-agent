@@ -137,3 +137,49 @@ export const MetadataConverter: TypeConverter<Record<string, unknown>, Record<st
     return Object.keys(value).every(key => typeof key === 'string');
   }
 };
+
+/**
+ * 值对象类型转换器工厂
+ * 用于创建枚举类型的转换器，避免重复定义
+ */
+export class ValueObjectConverterFactory {
+  /**
+   * 创建枚举类型的转换器
+   * @param enumValues 枚举值数组
+   * @param fromString 从字符串创建值对象的函数
+   * @param toString 从值对象获取字符串的函数
+   * @returns 类型转换器
+   */
+  static createForEnum<T extends string, V extends { fromString: (value: string) => V; getValue: () => string }>(
+    enumValues: T[],
+    fromString: (value: string) => V,
+    toString: (value: V) => string
+  ): TypeConverter<string, V> {
+    return {
+      fromStorage: fromString,
+      toStorage: toString,
+      validateStorage: (value: string) => typeof value === 'string' && enumValues.includes(value as T),
+      validateDomain: (value: V) => value instanceof Object && typeof value.getValue === 'function'
+    };
+  }
+
+  /**
+   * 创建数字枚举类型的转换器
+   * @param enumValues 枚举值数组
+   * @param fromNumber 从数字创建值对象的函数
+   * @param toNumber 从值对象获取数字的函数
+   * @returns 类型转换器
+   */
+  static createForNumberEnum<T extends number, V extends { fromNumber: (value: number) => V; getNumericValue: () => number }>(
+    enumValues: T[],
+    fromNumber: (value: number) => V,
+    toNumber: (value: V) => number
+  ): TypeConverter<number, V> {
+    return {
+      fromStorage: fromNumber,
+      toStorage: toNumber,
+      validateStorage: (value: number) => typeof value === 'number' && enumValues.includes(value as T),
+      validateDomain: (value: V) => value instanceof Object && typeof value.getNumericValue === 'function'
+    };
+  }
+}
