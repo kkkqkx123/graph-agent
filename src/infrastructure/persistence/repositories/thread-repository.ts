@@ -28,7 +28,7 @@ export class ThreadRepository extends BaseRepository<Thread, ThreadModel, ID> im
   /**
    * 重写toDomain方法
    */
-  protected toDomain(model: ThreadModel): Thread {
+  protected override toDomain(model: ThreadModel): Thread {
     try {
       const id = new ID(model.id);
       const sessionId = new ID(model.sessionId);

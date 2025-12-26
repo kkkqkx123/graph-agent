@@ -29,7 +29,7 @@ export class WorkflowRepository extends BaseRepository<Workflow, WorkflowModel, 
   /**
    * 重写toDomain方法
    */
-  protected toDomain(model: WorkflowModel): Workflow {
+  protected override toDomain(model: WorkflowModel): Workflow {
     try {
       const definition = WorkflowDefinition.fromProps({
         id: new ID(model.id),
