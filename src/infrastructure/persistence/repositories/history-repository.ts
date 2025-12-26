@@ -1,13 +1,13 @@
 import { injectable, inject } from 'inversify';
-import { HistoryRepository as IHistoryRepository } from '../../../../domain/history/repositories/history-repository';
-import { History } from '../../../../domain/history/entities/history';
-import { ID } from '../../../../domain/common/value-objects/id';
-import { HistoryType } from '../../../../domain/history/value-objects/history-type';
-import { HistoryModel } from '../../models/history.model';
+import { HistoryRepository as IHistoryRepository } from '../../../domain/history/repositories/history-repository';
+import { History } from '../../../domain/history/entities/history';
+import { ID } from '../../../domain/common/value-objects/id';
+import { HistoryType } from '../../../domain/history/value-objects/history-type';
+import { HistoryModel } from '../models/history.model';
 import { Between, LessThan, In } from 'typeorm';
-import { IQueryOptions } from '../../../../domain/common/repositories/repository';
-import { BaseRepository, QueryOptions } from '../../base/base-repository';
-import { ConnectionManager } from '../../connections/connection-manager';
+import { IQueryOptions } from '../../../domain/common/repositories/repository';
+import { BaseRepository, QueryOptions } from '../base/base-repository';
+import { ConnectionManager } from '../connections/connection-manager';
 import {
   IdConverter,
   OptionalIdConverter,
@@ -15,17 +15,71 @@ import {
   VersionConverter,
   OptionalStringConverter,
   MetadataConverter
-} from '../../base/type-converter-base';
+} from '../base/type-converter-base';
 
 /**
- * 基于类型转换器的History Repository
- * 
- * 直接使用类型转换器进行数据映射，消除传统的mapper层
- * 提供编译时类型安全和运行时验证
+ * 历史类型类型转换器
+ * 将字符串类型转换为HistoryType值对象
  */
+interface HistoryTypeConverter {
+  fromStorage: (value: string) => HistoryType;
+  toStorage: (value: HistoryType) => string;
+  validateStorage: (value: string) => boolean;
+  validateDomain: (value: HistoryType) => boolean;
+}
+
+const HistoryTypeConverter: HistoryTypeConverter = {
+  fromStorage: (value: string) => {
+    return HistoryType.fromString(value);
+  },
+  toStorage: (value: HistoryType) => value.getValue(),
+  validateStorage: (value: string) => {
+    // 定义有效的历史类型值
+    const validTypes = [
+      'workflow_created',
+      'workflow_updated',
+      'workflow_deleted',
+      'workflow_executed',
+      'workflow_failed',
+      'workflow_completed',
+      'session_created',
+      'session_updated',
+      'session_deleted',
+      'session_closed',
+      'thread_created',
+      'thread_updated',
+      'thread_deleted',
+      'thread_started',
+      'thread_paused',
+      'thread_resumed',
+      'thread_completed',
+      'thread_failed',
+      'thread_cancelled',
+      'checkpoint_created',
+      'checkpoint_updated',
+      'checkpoint_deleted',
+      'checkpoint_restored',
+      'node_executed',
+      'node_failed',
+      'edge_traversed',
+      'tool_executed',
+      'tool_failed',
+      'llm_called',
+      'llm_failed',
+      'state_changed',
+      'error_occurred',
+      'warning_occurred',
+      'info_occurred'
+    ];
+    return typeof value === 'string' && validTypes.includes(value);
+  },
+  validateDomain: (value: HistoryType) => {
+    return value instanceof HistoryType;
+  }
+};
+
 @injectable()
-export class HistoryConverterRepository extends BaseRepository<History, HistoryModel, ID> implements IHistoryRepository {
-  
+export class HistoryRepository extends BaseRepository<History, HistoryModel, ID> implements IHistoryRepository {
   constructor(
     @inject('ConnectionManager') connectionManager: ConnectionManager
   ) {
@@ -75,7 +129,7 @@ export class HistoryConverterRepository extends BaseRepository<History, HistoryM
   protected override toModel(entity: History): HistoryModel {
     try {
       const model = new HistoryModel();
-      
+
       // 使用类型转换器进行编译时类型安全的转换
       model.id = IdConverter.toStorage(entity.historyId);
       model.entityType = 'history';
@@ -99,7 +153,7 @@ export class HistoryConverterRepository extends BaseRepository<History, HistoryM
       model.createdAt = TimestampConverter.toStorage(entity.createdAt);
       model.updatedAt = TimestampConverter.toStorage(entity.updatedAt);
       model.version = VersionConverter.toStorage(entity.version);
-      
+
       return model;
     } catch (error) {
       const errorMessage = `History实体转换失败: ${error instanceof Error ? error.message : String(error)}`;
@@ -110,9 +164,8 @@ export class HistoryConverterRepository extends BaseRepository<History, HistoryM
     }
   }
 
-  /**
-   * 根据会话ID查找历史记录
-   */
+  // 基础 CRUD 方法现在由 BaseRepository 提供，无需重复实现
+
   async findBySessionId(sessionId: ID): Promise<History[]> {
     return this.findByField('sessionId', sessionId.value, {
       sortBy: 'timestamp',
@@ -120,9 +173,6 @@ export class HistoryConverterRepository extends BaseRepository<History, HistoryM
     });
   }
 
-  /**
-   * 根据线程ID查找历史记录
-   */
   async findByThreadId(threadId: ID): Promise<History[]> {
     return this.findByField('threadId', threadId.value, {
       sortBy: 'timestamp',
@@ -130,9 +180,6 @@ export class HistoryConverterRepository extends BaseRepository<History, HistoryM
     });
   }
 
-  /**
-   * 根据工作流ID查找历史记录
-   */
   async findByWorkflowId(workflowId: ID): Promise<History[]> {
     return this.findByField('workflowId', workflowId.value, {
       sortBy: 'timestamp',
@@ -140,9 +187,6 @@ export class HistoryConverterRepository extends BaseRepository<History, HistoryM
     });
   }
 
-  /**
-   * 根据类型查找历史记录
-   */
   async findByType(type: HistoryType): Promise<History[]> {
     return this.findByField('action', type.getValue(), {
       sortBy: 'timestamp',
@@ -150,9 +194,6 @@ export class HistoryConverterRepository extends BaseRepository<History, HistoryM
     });
   }
 
-  /**
-   * 根据多个类型查找历史记录
-   */
   async findByTypes(types: HistoryType[]): Promise<History[]> {
     const typeValues = types.map(type => type.getValue());
     return this.find({
@@ -164,9 +205,6 @@ export class HistoryConverterRepository extends BaseRepository<History, HistoryM
     });
   }
 
-  /**
-   * 根据时间范围查找历史记录
-   */
   async findByTimeRange(startTime: Date, endTime: Date): Promise<History[]> {
     return this.findByTimeRangeField('timestamp', startTime, endTime, {
       sortBy: 'timestamp',
@@ -174,9 +212,6 @@ export class HistoryConverterRepository extends BaseRepository<History, HistoryM
     });
   }
 
-  /**
-   * 查找最新的历史记录
-   */
   async findLatest(limit?: number): Promise<History[]> {
     return this.find({
       sortBy: 'timestamp',
@@ -185,9 +220,6 @@ export class HistoryConverterRepository extends BaseRepository<History, HistoryM
     });
   }
 
-  /**
-   * 根据会话ID查找最新的历史记录
-   */
   async findLatestBySessionId(sessionId: ID, limit: number = 10): Promise<History[]> {
     return this.findByField('sessionId', sessionId.value, {
       sortBy: 'timestamp',
@@ -196,9 +228,6 @@ export class HistoryConverterRepository extends BaseRepository<History, HistoryM
     });
   }
 
-  /**
-   * 根据线程ID查找最新的历史记录
-   */
   async findLatestByThreadId(threadId: ID, limit: number = 10): Promise<History[]> {
     return this.findByField('threadId', threadId.value, {
       sortBy: 'timestamp',
@@ -207,30 +236,18 @@ export class HistoryConverterRepository extends BaseRepository<History, HistoryM
     });
   }
 
-  /**
-   * 统计会话中的历史记录数量
-   */
   async countBySessionId(sessionId: ID): Promise<number> {
     return this.count({ filters: { sessionId: sessionId.value } });
   }
 
-  /**
-   * 统计线程中的历史记录数量
-   */
   async countByThreadId(threadId: ID): Promise<number> {
     return this.count({ filters: { threadId: threadId.value } });
   }
 
-  /**
-   * 统计工作流中的历史记录数量
-   */
   async countByWorkflowId(workflowId: ID): Promise<number> {
     return this.count({ filters: { workflowId: workflowId.value } });
   }
 
-  /**
-   * 根据条件统计历史记录数量
-   */
   async countByCriteria(options?: {
     sessionId?: ID;
     threadId?: ID;
@@ -261,13 +278,10 @@ export class HistoryConverterRepository extends BaseRepository<History, HistoryM
         }
       }
     };
-    
+
     return this.count(queryOptions);
   }
 
-  /**
-   * 根据类型统计历史记录数量
-   */
   async countByType(options?: {
     sessionId?: ID;
     threadId?: ID;
@@ -294,7 +308,7 @@ export class HistoryConverterRepository extends BaseRepository<History, HistoryM
         }
       }
     };
-    
+
     const histories = await this.find(queryOptions);
     const byType: Record<string, number> = {};
 
@@ -305,50 +319,33 @@ export class HistoryConverterRepository extends BaseRepository<History, HistoryM
     return byType;
   }
 
-  /**
-   * 删除会话中的历史记录
-   */
   async deleteBySessionId(sessionId: ID): Promise<number> {
     return this.deleteWhere({ filters: { sessionId: sessionId.value } });
   }
 
-  /**
-   * 删除线程中的历史记录
-   */
   async deleteByThreadId(threadId: ID): Promise<number> {
     return this.deleteWhere({ filters: { threadId: threadId.value } });
   }
 
-  /**
-   * 删除实体的历史记录
-   */
   async deleteByEntityId(entityId: ID): Promise<number> {
     return this.deleteWhere({ filters: { entityId: entityId.value } });
   }
 
-  /**
-   * 删除指定类型的历史记录
-   */
   async deleteByType(type: HistoryType): Promise<number> {
     return this.deleteWhere({ filters: { action: type.getValue() } });
   }
 
-  /**
-   * 删除指定时间之前的历史记录
-   */
   async deleteBeforeTime(beforeTime: Date): Promise<number> {
     const queryOptions: QueryOptions<HistoryModel> = {
       customConditions: (qb: any) => {
         qb.andWhere('history.timestamp < :beforeTime', { beforeTime: beforeTime.getTime() });
       }
     };
-    
+
     return this.deleteWhere(queryOptions);
   }
 
-  /**
-   * 根据实体ID和类型查找历史记录
-   */
+  // 实现缺失的方法
   async findByEntityIdAndType(entityId: ID, type: HistoryType): Promise<History[]> {
     return this.find({
       filters: {
@@ -360,9 +357,6 @@ export class HistoryConverterRepository extends BaseRepository<History, HistoryM
     });
   }
 
-  /**
-   * 根据实体ID和时间范围查找历史记录
-   */
   async findByEntityIdAndTimeRange(entityId: ID, startTime: Date, endTime: Date): Promise<History[]> {
     const queryOptions: QueryOptions<HistoryModel> = {
       customConditions: (qb: any) => {
@@ -375,13 +369,10 @@ export class HistoryConverterRepository extends BaseRepository<History, HistoryM
       sortBy: 'timestamp',
       sortOrder: 'desc'
     };
-    
+
     return this.find(queryOptions);
   }
 
-  /**
-   * 根据类型和时间范围查找历史记录
-   */
   async findByTypeAndTimeRange(type: HistoryType, startTime: Date, endTime: Date): Promise<History[]> {
     const queryOptions: QueryOptions<HistoryModel> = {
       customConditions: (qb: any) => {
@@ -394,13 +385,10 @@ export class HistoryConverterRepository extends BaseRepository<History, HistoryM
       sortBy: 'timestamp',
       sortOrder: 'desc'
     };
-    
+
     return this.find(queryOptions);
   }
 
-  /**
-   * 根据实体ID查找最新的历史记录
-   */
   async findLatestByEntityId(entityId: ID, limit?: number): Promise<History[]> {
     return this.findByField('entityId', entityId.value, {
       sortBy: 'timestamp',
@@ -409,9 +397,6 @@ export class HistoryConverterRepository extends BaseRepository<History, HistoryM
     });
   }
 
-  /**
-   * 根据类型查找最新的历史记录
-   */
   async findLatestByType(type: HistoryType, limit?: number): Promise<History[]> {
     return this.findByField('action', type.getValue(), {
       sortBy: 'timestamp',
@@ -420,9 +405,6 @@ export class HistoryConverterRepository extends BaseRepository<History, HistoryM
     });
   }
 
-  /**
-   * 获取统计信息
-   */
   async getStatistics(options?: {
     sessionId?: ID;
     threadId?: ID;
@@ -505,25 +487,16 @@ export class HistoryConverterRepository extends BaseRepository<History, HistoryM
     };
   }
 
-  /**
-   * 清理过期的历史记录
-   */
   async cleanupExpired(retentionDays: number): Promise<number> {
     const beforeTime = new Date(Date.now() - retentionDays * 24 * 60 * 60 * 1000);
     return this.deleteBeforeTime(beforeTime);
   }
 
-  /**
-   * 归档指定时间之前的历史记录
-   */
   async archiveBeforeTime(beforeTime: Date): Promise<number> {
     // 这里可以实现归档逻辑，暂时直接删除
     return this.deleteBeforeTime(beforeTime);
   }
 
-  /**
-   * 获取趋势数据
-   */
   async getTrend(
     startTime: Date,
     endTime: Date,
@@ -575,9 +548,6 @@ export class HistoryConverterRepository extends BaseRepository<History, HistoryM
     return trend;
   }
 
-  /**
-   * 搜索历史记录
-   */
   async search(
     query: string,
     options?: {
@@ -623,68 +593,7 @@ export class HistoryConverterRepository extends BaseRepository<History, HistoryM
       limit: options?.limit,
       offset: options?.offset
     };
-    
+
     return this.find(queryOptions);
   }
 }
-
-/**
- * 历史类型类型转换器
- * 将字符串类型转换为HistoryType值对象
- */
-export interface HistoryTypeConverter {
-  fromStorage: (value: string) => HistoryType;
-  toStorage: (value: HistoryType) => string;
-  validateStorage: (value: string) => boolean;
-  validateDomain: (value: HistoryType) => boolean;
-}
-
-export const HistoryTypeConverter: HistoryTypeConverter = {
-  fromStorage: (value: string) => {
-    return HistoryType.fromString(value);
-  },
-  toStorage: (value: HistoryType) => value.getValue(),
-  validateStorage: (value: string) => {
-    // 定义有效的历史类型值
-    const validTypes = [
-      'workflow_created',
-      'workflow_updated',
-      'workflow_deleted',
-      'workflow_executed',
-      'workflow_failed',
-      'workflow_completed',
-      'session_created',
-      'session_updated',
-      'session_deleted',
-      'session_closed',
-      'thread_created',
-      'thread_updated',
-      'thread_deleted',
-      'thread_started',
-      'thread_paused',
-      'thread_resumed',
-      'thread_completed',
-      'thread_failed',
-      'thread_cancelled',
-      'checkpoint_created',
-      'checkpoint_updated',
-      'checkpoint_deleted',
-      'checkpoint_restored',
-      'node_executed',
-      'node_failed',
-      'edge_traversed',
-      'tool_executed',
-      'tool_failed',
-      'llm_called',
-      'llm_failed',
-      'state_changed',
-      'error_occurred',
-      'warning_occurred',
-      'info_occurred'
-    ];
-    return typeof value === 'string' && validTypes.includes(value);
-  },
-  validateDomain: (value: HistoryType) => {
-    return value instanceof HistoryType;
-  }
-};

@@ -3,7 +3,7 @@
  * 使用基于Zod的DTO实现
  */
 
-import { PromptRepository, PromptSearchCriteria } from '../../../infrastructure/prompts/repositories/prompt-repository';
+import { PromptRepository, PromptSearchCriteria } from '../../../infrastructure/persistence/repositories/prompt-repository';
 import { PromptLoader } from '../../../infrastructure/prompts/services/prompt-loader';
 import { PromptInjector } from '../../../infrastructure/prompts/services/prompt-injector';
 import { Prompt } from '../../../domain/prompts/entities/prompt';
@@ -151,7 +151,7 @@ export class PromptService {
     try {
       // 验证搜索请求
       const validatedRequest = this.promptSearchRequestDto.validate(request);
-      
+
       // 转换为搜索条件
       const criteria: PromptSearchCriteria = {
         query: validatedRequest.keyword,
@@ -165,10 +165,10 @@ export class PromptService {
 
       // 执行搜索
       const prompts = await this.searchPrompts(criteria);
-      
+
       // 获取总数（简化实现，实际应该从仓库获取）
       const total = prompts.length;
-      
+
       // 分页处理
       const page = validatedRequest.pagination?.page || 1;
       const size = validatedRequest.pagination?.size || 20;
@@ -177,7 +177,7 @@ export class PromptService {
       const paginatedPrompts = prompts.slice(startIndex, endIndex);
 
       // 转换为DTO
-      const promptDtos = validatedRequest.pagination 
+      const promptDtos = validatedRequest.pagination
         ? this.promptConverter.toSummaryList(paginatedPrompts)
         : this.promptConverter.toDtoList(paginatedPrompts);
 
@@ -200,17 +200,17 @@ export class PromptService {
    */
   async getPromptStatistics(): Promise<PromptStatistics> {
     const allPrompts = await this.listPrompts();
-    
+
     // 计算统计信息
     const totalPrompts = allPrompts.length;
     const promptsByCategory: Record<string, number> = {};
     const promptsByTag: Record<string, number> = {};
-    
+
     allPrompts.forEach(prompt => {
       // 按类别统计
       const category = prompt.category || '未分类';
       promptsByCategory[category] = (promptsByCategory[category] || 0) + 1;
-      
+
       // 按标签统计
       if (prompt.metadata.tags && Array.isArray(prompt.metadata.tags)) {
         prompt.metadata.tags.forEach((tag: string) => {
@@ -255,15 +255,15 @@ export class PromptService {
     try {
       // 验证注入请求
       const validatedRequest = this.promptInjectionRequestDto.validate(request);
-      
+
       // 获取工作流状态（简化实现）
       const workflowState = {} as WorkflowState; // 实际应该从仓库获取
-      
+
       // 创建提示词配置
       const promptConfig: PromptConfig = {
         rules: (validatedRequest.config.config as any)['rules'] || []
       };
-      
+
       // 执行注入
       const updatedWorkflowState = await this.injectPromptsIntoWorkflow(
         workflowState,
@@ -285,7 +285,7 @@ export class PromptService {
           errorMessage: `无效的注入请求: ${error.message}`
         };
       }
-      
+
       return {
         success: false,
         workflowState: {},
@@ -316,7 +316,7 @@ export class PromptService {
     try {
       // 验证配置请求
       const validatedRequest = this.promptConfigRequestDto.validate(request);
-      
+
       // 创建配置（简化实现）
       const config = {
         configId: crypto.randomUUID(),

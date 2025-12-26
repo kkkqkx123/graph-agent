@@ -1,22 +1,22 @@
 import { injectable, inject } from 'inversify';
-import { WorkflowRepository as IWorkflowRepository } from '../../../../domain/workflow/repositories/workflow-repository';
-import { Workflow } from '../../../../domain/workflow/entities/workflow';
-import { WorkflowDefinition } from '../../../../domain/workflow/value-objects/workflow-definition';
-import { GraphValidationServiceImpl } from '../../../../infrastructure/workflow/services/graph-validation-service';
-import { ID } from '../../../../domain/common/value-objects/id';
-import { WorkflowStatus } from '../../../../domain/workflow/value-objects/workflow-status';
-import { WorkflowType } from '../../../../domain/workflow/value-objects/workflow-type';
-import { WorkflowModel } from '../../models/workflow.model';
+import { WorkflowRepository as IWorkflowRepository } from '../../../domain/workflow/repositories/workflow-repository';
+import { Workflow } from '../../../domain/workflow/entities/workflow';
+import { WorkflowDefinition } from '../../../domain/workflow/value-objects/workflow-definition';
+import { GraphValidationServiceImpl } from '../../workflow/services/graph-validation-service';
+import { ID } from '../../../domain/common/value-objects/id';
+import { WorkflowStatus } from '../../../domain/workflow/value-objects/workflow-status';
+import { WorkflowType } from '../../../domain/workflow/value-objects/workflow-type';
+import { WorkflowModel } from '../models/workflow.model';
 import { In } from 'typeorm';
-import { BaseRepository, QueryOptions } from '../../base/base-repository';
-import { ConnectionManager } from '../../connections/connection-manager';
+import { BaseRepository, QueryOptions } from '../base/base-repository';
+import { ConnectionManager } from '../connections/connection-manager';
 import {
   IdConverter,
   OptionalIdConverter,
   TimestampConverter,
   VersionConverter,
   MetadataConverter
-} from '../../base/type-converter-base';
+} from '../base/type-converter-base';
 
 /**
  * 工作流状态类型转换器

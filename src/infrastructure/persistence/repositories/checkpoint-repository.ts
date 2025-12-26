@@ -1,29 +1,47 @@
 import { injectable, inject } from 'inversify';
-import { CheckpointRepository as ICheckpointRepository } from '../../../../domain/checkpoint/repositories/checkpoint-repository';
-import { Checkpoint } from '../../../../domain/checkpoint/entities/checkpoint';
-import { ID } from '../../../../domain/common/value-objects/id';
-import { CheckpointType } from '../../../../domain/checkpoint/value-objects/checkpoint-type';
-import { CheckpointModel } from '../../models/checkpoint.model';
+import { CheckpointRepository as ICheckpointRepository } from '../../../domain/checkpoint/repositories/checkpoint-repository';
+import { Checkpoint } from '../../../domain/checkpoint/entities/checkpoint';
+import { ID } from '../../../domain/common/value-objects/id';
+import { CheckpointType } from '../../../domain/checkpoint/value-objects/checkpoint-type';
+import { CheckpointModel } from '../models/checkpoint.model';
 import { Between, MoreThan, LessThan, In } from 'typeorm';
-import { IQueryOptions } from '../../../../domain/common/repositories/repository';
-import { BaseRepository, QueryOptions } from '../../base/base-repository';
-import { ConnectionManager } from '../../connections/connection-manager';
+import { IQueryOptions } from '../../../domain/common/repositories/repository';
+import { BaseRepository, QueryOptions } from '../base/base-repository';
+import { ConnectionManager } from '../connections/connection-manager';
 import {
   IdConverter,
   TimestampConverter,
   VersionConverter,
   MetadataConverter
-} from '../../base/type-converter-base';
+} from '../base/type-converter-base';
 
 /**
- * 基于类型转换器的Checkpoint Repository
- * 
- * 直接使用类型转换器进行数据映射，消除传统的mapper层
- * 提供编译时类型安全和运行时验证
+ * 检查点类型类型转换器
+ * 将字符串类型转换为CheckpointType值对象
  */
+interface CheckpointTypeConverter {
+  fromStorage: (value: string) => CheckpointType;
+  toStorage: (value: CheckpointType) => string;
+  validateStorage: (value: string) => boolean;
+  validateDomain: (value: CheckpointType) => boolean;
+}
+
+const CheckpointTypeConverter: CheckpointTypeConverter = {
+  fromStorage: (value: string) => {
+    return CheckpointType.fromString(value);
+  },
+  toStorage: (value: CheckpointType) => value.getValue(),
+  validateStorage: (value: string) => {
+    const validTypes = ['auto', 'manual', 'error', 'milestone'];
+    return typeof value === 'string' && validTypes.includes(value);
+  },
+  validateDomain: (value: CheckpointType) => {
+    return value instanceof CheckpointType;
+  }
+};
+
 @injectable()
-export class CheckpointConverterRepository extends BaseRepository<Checkpoint, CheckpointModel, ID> implements ICheckpointRepository {
-  
+export class CheckpointRepository extends BaseRepository<Checkpoint, CheckpointModel, ID> implements ICheckpointRepository {
   constructor(
     @inject('ConnectionManager') connectionManager: ConnectionManager
   ) {
@@ -70,7 +88,7 @@ export class CheckpointConverterRepository extends BaseRepository<Checkpoint, Ch
   protected override toModel(entity: Checkpoint): CheckpointModel {
     try {
       const model = new CheckpointModel();
-      
+
       // 使用类型转换器进行编译时类型安全的转换
       model.id = IdConverter.toStorage(entity.checkpointId);
       model.threadId = entity.threadId ? IdConverter.toStorage(entity.threadId) : undefined;
@@ -80,7 +98,7 @@ export class CheckpointConverterRepository extends BaseRepository<Checkpoint, Ch
       model.createdAt = TimestampConverter.toStorage(entity.createdAt);
       model.updatedAt = TimestampConverter.toStorage(entity.updatedAt);
       model.version = VersionConverter.toStorage(entity.version);
-      
+
       return model;
     } catch (error) {
       const errorMessage = `Checkpoint实体转换失败: ${error instanceof Error ? error.message : String(error)}`;
@@ -91,9 +109,8 @@ export class CheckpointConverterRepository extends BaseRepository<Checkpoint, Ch
     }
   }
 
-  /**
-   * 根据线程ID查找检查点
-   */
+  // 基础 CRUD 方法现在由 BaseRepository 提供，无需重复实现
+
   async findByThreadId(threadId: ID): Promise<Checkpoint[]> {
     return this.findByField('threadId', threadId.value, {
       sortBy: 'createdAt',
@@ -101,9 +118,6 @@ export class CheckpointConverterRepository extends BaseRepository<Checkpoint, Ch
     });
   }
 
-  /**
-   * 查找线程的最新检查点
-   */
   async findLatestByThreadId(threadId: ID): Promise<Checkpoint | null> {
     return this.findOneByField('threadId', threadId.value, {
       sortBy: 'createdAt',
@@ -111,9 +125,6 @@ export class CheckpointConverterRepository extends BaseRepository<Checkpoint, Ch
     });
   }
 
-  /**
-   * 根据时间范围查找检查点
-   */
   async findByTimeRange(threadId: ID, startTime: Date, endTime: Date): Promise<Checkpoint[]> {
     return this.find({
       customConditions: (qb) => {
@@ -125,16 +136,10 @@ export class CheckpointConverterRepository extends BaseRepository<Checkpoint, Ch
     });
   }
 
-  /**
-   * 统计线程中的检查点数量
-   */
   async countByThreadId(threadId: ID): Promise<number> {
     return this.count({ filters: { threadId: threadId.value } });
   }
 
-  /**
-   * 统计线程中指定类型的检查点数量
-   */
   async countByThreadIdAndType(threadId: ID, type: CheckpointType): Promise<number> {
     return this.count({
       filters: {
@@ -144,16 +149,10 @@ export class CheckpointConverterRepository extends BaseRepository<Checkpoint, Ch
     });
   }
 
-  /**
-   * 删除线程中的所有检查点
-   */
   async deleteByThreadId(threadId: ID): Promise<number> {
     return this.deleteWhere({ filters: { threadId: threadId.value } });
   }
 
-  /**
-   * 删除线程中指定时间之前的检查点
-   */
   async deleteByThreadIdBeforeTime(threadId: ID, beforeTime: Date): Promise<number> {
     try {
       const repository = await this.getRepository();
@@ -163,16 +162,13 @@ export class CheckpointConverterRepository extends BaseRepository<Checkpoint, Ch
         .where('checkpoint.threadId = :threadId', { threadId: threadId.value })
         .andWhere('checkpoint.createdAt < :beforeTime', { beforeTime })
         .execute();
-      
+
       return result.affected || 0;
     } catch (error) {
       throw new Error(`按时间删除检查点失败: ${error instanceof Error ? error.message : String(error)}`);
     }
   }
 
-  /**
-   * 删除线程中指定类型的检查点
-   */
   async deleteByThreadIdAndType(threadId: ID, type: CheckpointType): Promise<number> {
     return this.deleteWhere({
       filters: {
@@ -182,9 +178,6 @@ export class CheckpointConverterRepository extends BaseRepository<Checkpoint, Ch
     });
   }
 
-  /**
-   * 根据线程ID和类型查找检查点
-   */
   async findByThreadIdAndType(threadId: ID, type: CheckpointType): Promise<Checkpoint[]> {
     return this.find({
       filters: {
@@ -196,9 +189,6 @@ export class CheckpointConverterRepository extends BaseRepository<Checkpoint, Ch
     });
   }
 
-  /**
-   * 查找线程中指定类型的最新检查点
-   */
   async findLatestByThreadIdAndType(threadId: ID, type: CheckpointType): Promise<Checkpoint | null> {
     return this.findOne({
       filters: {
@@ -210,9 +200,6 @@ export class CheckpointConverterRepository extends BaseRepository<Checkpoint, Ch
     });
   }
 
-  /**
-   * 根据标签查找检查点
-   */
   async findByTag(tag: string): Promise<Checkpoint[]> {
     return this.find({
       customConditions: (qb) => {
@@ -223,9 +210,6 @@ export class CheckpointConverterRepository extends BaseRepository<Checkpoint, Ch
     });
   }
 
-  /**
-   * 根据多个标签查找检查点
-   */
   async findByTags(tags: string[]): Promise<Checkpoint[]> {
     return this.find({
       customConditions: (qb) => {
@@ -238,16 +222,10 @@ export class CheckpointConverterRepository extends BaseRepository<Checkpoint, Ch
     });
   }
 
-  /**
-   * 获取检查点历史记录
-   */
   async getCheckpointHistory(threadId: ID, limit?: number, offset?: number): Promise<Checkpoint[]> {
     return this.findByThreadId(threadId); // 使用现有的方法
   }
 
-  /**
-   * 获取检查点统计信息
-   */
   async getCheckpointStatistics(threadId: ID): Promise<{
     total: number;
     byType: Record<string, number>;
@@ -281,28 +259,3 @@ export class CheckpointConverterRepository extends BaseRepository<Checkpoint, Ch
     });
   }
 }
-
-/**
- * 检查点类型类型转换器
- * 将字符串类型转换为CheckpointType值对象
- */
-export interface CheckpointTypeConverter {
-  fromStorage: (value: string) => CheckpointType;
-  toStorage: (value: CheckpointType) => string;
-  validateStorage: (value: string) => boolean;
-  validateDomain: (value: CheckpointType) => boolean;
-}
-
-export const CheckpointTypeConverter: CheckpointTypeConverter = {
-  fromStorage: (value: string) => {
-    return CheckpointType.fromString(value);
-  },
-  toStorage: (value: CheckpointType) => value.getValue(),
-  validateStorage: (value: string) => {
-    const validTypes = ['auto', 'manual', 'error', 'milestone'];
-    return typeof value === 'string' && validTypes.includes(value);
-  },
-  validateDomain: (value: CheckpointType) => {
-    return value instanceof CheckpointType;
-  }
-};

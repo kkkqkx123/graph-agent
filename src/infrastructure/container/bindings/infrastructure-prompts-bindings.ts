@@ -5,7 +5,7 @@
 import { ServiceBindings, IContainer, ContainerConfiguration, ServiceLifetime } from '../container';
 import { ILogger } from '../../../domain/common/types';
 import { IConfigManager } from '../../../domain/common/types';
-import { PromptRepository } from '../../prompts/repositories/prompt-repository';
+import { PromptRepository } from '../../persistence/repositories/prompt-repository';
 import { PromptLoader } from '../../prompts/services/prompt-loader';
 import { PromptInjector } from '../../prompts/services/prompt-injector';
 

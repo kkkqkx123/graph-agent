@@ -36,16 +36,16 @@ export class PromptRepository {
   constructor(
     private readonly configManager: IConfigManager,
     private readonly logger: ILogger
-  ) {}
+  ) { }
 
   async findById(id: PromptId): Promise<Prompt | null> {
     const { category, name } = id.parse();
     const content = this.configManager.get(`prompts.${category}.${name}`);
-    
+
     if (!content) {
       return null;
     }
-    
+
     const promptProps: PromptProps = {
       id,
       name,
@@ -69,7 +69,7 @@ export class PromptRepository {
     if (!promptsConfig || typeof promptsConfig !== 'object') {
       return [];
     }
-    
+
     const prompts: Prompt[] = [];
     for (const [name, content] of Object.entries(promptsConfig)) {
       const id = PromptId.create(category, name);
@@ -110,7 +110,7 @@ export class PromptRepository {
     if (!promptsConfig || typeof promptsConfig !== 'object') {
       return [];
     }
-    
+
     const prompts: Prompt[] = [];
     for (const [category, categoryPrompts] of Object.entries(promptsConfig ?? {})) {
       if (typeof categoryPrompts !== 'object') continue;

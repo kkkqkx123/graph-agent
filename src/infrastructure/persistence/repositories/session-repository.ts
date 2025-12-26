@@ -1,15 +1,15 @@
 import { injectable, inject } from 'inversify';
-import { SessionRepository as ISessionRepository } from '../../../../domain/sessions/repositories/session-repository';
-import { Session } from '../../../../domain/sessions/entities/session';
-import { SessionActivity } from '../../../../domain/sessions/value-objects/session-activity';
-import { ID } from '../../../../domain/common/value-objects/id';
-import { SessionStatus } from '../../../../domain/sessions/value-objects/session-status';
-import { SessionConfig } from '../../../../domain/sessions/value-objects/session-config';
-import { Timestamp } from '../../../../domain/common/value-objects/timestamp';
-import { SessionModel } from '../../models/session.model';
+import { SessionRepository as ISessionRepository } from '../../../domain/sessions/repositories/session-repository';
+import { Session } from '../../../domain/sessions/entities/session';
+import { SessionActivity } from '../../../domain/sessions/value-objects/session-activity';
+import { ID } from '../../../domain/common/value-objects/id';
+import { SessionStatus } from '../../../domain/sessions/value-objects/session-status';
+import { SessionConfig } from '../../../domain/sessions/value-objects/session-config';
+import { Timestamp } from '../../../domain/common/value-objects/timestamp';
+import { SessionModel } from '../models/session.model';
 import { In } from 'typeorm';
-import { BaseRepository, QueryOptions } from '../../base/base-repository';
-import { ConnectionManager } from '../../connections/connection-manager';
+import { BaseRepository, QueryOptions } from '../base/base-repository';
+import { ConnectionManager } from '../connections/connection-manager';
 import {
   IdConverter,
   OptionalIdConverter,
@@ -18,7 +18,7 @@ import {
   OptionalStringConverter,
   NumberConverter,
   BooleanConverter
-} from '../../base/type-converter-base';
+} from '../base/type-converter-base';
 
 /**
  * 会话状态类型转换器
@@ -75,7 +75,7 @@ export class SessionRepository extends BaseRepository<Session, SessionModel, ID>
     @inject('ConnectionManager') connectionManager: ConnectionManager,
   ) {
     super(connectionManager);
-    
+
     // 配置软删除行为
     this.configureSoftDelete({
       fieldName: 'isDeleted',
@@ -99,10 +99,10 @@ export class SessionRepository extends BaseRepository<Session, SessionModel, ID>
       const lastActivityAt = TimestampConverter.fromStorage(model.updatedAt); // 使用updatedAt作为最后活动时间
       const messageCount = model.metadata?.messageCount ? NumberConverter.fromStorage(model.metadata.messageCount as number) : 0;
       const threadCount = model.metadata?.threadCount ? NumberConverter.fromStorage(model.metadata.threadCount as number) : 0;
-      
+
       // 创建SessionActivity值对象
       const activity = SessionActivity.create(lastActivityAt, messageCount, threadCount);
-      
+
       const sessionData = {
         id: IdConverter.fromStorage(model.id),
         userId: model.userId ? OptionalIdConverter.fromStorage(model.userId) : undefined,
@@ -134,7 +134,7 @@ export class SessionRepository extends BaseRepository<Session, SessionModel, ID>
   protected override toModel(entity: Session): SessionModel {
     try {
       const model = new SessionModel();
-      
+
       // 使用类型转换器进行编译时类型安全的转换
       model.id = IdConverter.toStorage(entity.sessionId);
       model.userId = entity.userId ? OptionalIdConverter.toStorage(entity.userId) : undefined;
@@ -143,7 +143,7 @@ export class SessionRepository extends BaseRepository<Session, SessionModel, ID>
       model.version = VersionConverter.toStorage(entity.version);
       model.createdAt = TimestampConverter.toStorage(entity.createdAt);
       model.updatedAt = TimestampConverter.toStorage(entity.updatedAt);
-      
+
       // 设置元数据
       model.metadata = {
         title: entity.title ? OptionalStringConverter.toStorage(entity.title) : undefined,
@@ -153,10 +153,10 @@ export class SessionRepository extends BaseRepository<Session, SessionModel, ID>
         config: SessionConfigConverter.toStorage(entity.config),
         ...entity.metadata // 保留其他元数据
       };
-      
+
       // 设置关联字段
       model.threadIds = []; // 默认空数组
-      
+
       return model;
     } catch (error) {
       const errorMessage = `Session实体转换失败: ${error instanceof Error ? error.message : String(error)}`;
@@ -198,15 +198,15 @@ export class SessionRepository extends BaseRepository<Session, SessionModel, ID>
   async findSessionsNeedingCleanup(): Promise<Session[]> {
     const timeoutThreshold = new Date(Date.now() - 30 * 60 * 1000); // 30分钟前
     const expirationThreshold = new Date(Date.now() - 24 * 60 * 60 * 1000); // 24小时前
-    
+
     return this.find({
       customConditions: (qb: any) => {
-        qb.andWhere('(session.updatedAt < :timeoutThreshold OR session.createdAt < :expirationThreshold)', { 
-          timeoutThreshold, 
-          expirationThreshold 
+        qb.andWhere('(session.updatedAt < :timeoutThreshold OR session.createdAt < :expirationThreshold)', {
+          timeoutThreshold,
+          expirationThreshold
         });
-        qb.andWhere('session.state IN (:...states)', { 
-          states: ['active', 'suspended'] 
+        qb.andWhere('session.state IN (:...states)', {
+          states: ['active', 'suspended']
         });
       },
       sortBy: 'updatedAt',

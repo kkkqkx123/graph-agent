@@ -7,8 +7,8 @@
 import { ServiceBindings, IContainer, ContainerConfiguration, ServiceLifetime } from '../container';
 import { SessionRepository } from '../../../domain/sessions/repositories/session-repository';
 import { ThreadRepository } from '../../../domain/threads/repositories/thread-repository';
-import { SessionRepository as SessionInfrastructureRepository } from '../../persistence/repositories/session/session-repository';
-import { ThreadRepository as ThreadInfrastructureRepository } from '../../persistence/repositories/thread/thread-repository';
+import { SessionRepository as SessionInfrastructureRepository } from '../../persistence/repositories/session-repository';
+import { ThreadRepository as ThreadInfrastructureRepository } from '../../persistence/repositories/thread-repository';
 import { ConnectionManager } from '../../persistence/connections/connection-manager';
 
 /**
