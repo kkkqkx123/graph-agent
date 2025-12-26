@@ -83,7 +83,7 @@ export class ConditionalRoutingFunction extends BaseWorkflowFunction {
     return validOperators.includes(operator);
   }
 
-  async route(context: any, config: any): Promise<string | string[]> {
+  async execute(context: any, config: any): Promise<string | string[]> {
     this.checkInitialized();
 
     const conditions = config.conditions || [];

@@ -49,6 +49,8 @@ export interface IWorkflowFunction {
   getMetadata(): FunctionMetadata;
   initialize(config?: any): boolean;
   cleanup(): boolean;
+  execute(context: any, config: any): Promise<any> | any;
+  validateParameters(...args: any[]): { isValid: boolean; errors: string[] };
 }
 
 /**
@@ -58,6 +60,7 @@ export interface IWorkflowFunction {
  */
 export abstract class BaseWorkflowFunction implements IWorkflowFunction {
   protected _initialized: boolean = false;
+  public readonly metadata?: Record<string, any>;
 
   constructor(
     public readonly id: string,
@@ -66,8 +69,11 @@ export abstract class BaseWorkflowFunction implements IWorkflowFunction {
     public readonly version: string,
     public readonly type: WorkflowFunctionType,
     public readonly isAsync: boolean,
-    public readonly category: string = 'builtin'
-  ) { }
+    public readonly category: string = 'builtin',
+    metadata?: Record<string, any>
+  ) {
+    this.metadata = metadata;
+  }
 
   getParameters(): FunctionParameter[] {
     return [
@@ -163,5 +169,17 @@ export abstract class BaseWorkflowFunction implements IWorkflowFunction {
     if (!this._initialized) {
       throw new Error(`函数 ${this.name} 尚未初始化`);
     }
+  }
+
+  /**
+   * 执行函数（抽象方法，子类必须实现）
+   */
+  abstract execute(context: any, config: any): Promise<any> | any;
+
+  /**
+   * 验证参数
+   */
+  validateParameters(...args: any[]): { isValid: boolean; errors: string[] } {
+    return { isValid: true, errors: [] };
   }
 }

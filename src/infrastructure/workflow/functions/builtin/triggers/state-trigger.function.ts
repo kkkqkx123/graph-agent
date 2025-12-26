@@ -58,7 +58,7 @@ export class StateTriggerFunction extends BaseWorkflowFunction {
     return errors;
   }
 
-  async check(context: any, config: any): Promise<boolean> {
+  async execute(context: any, config: any): Promise<boolean> {
     this.checkInitialized();
 
     const stateVariable = config.stateVariable;

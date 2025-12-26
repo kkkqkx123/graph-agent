@@ -27,7 +27,7 @@ export class HasToolResultsConditionFunction extends BaseWorkflowFunction {
     );
   }
 
-  async evaluate(context: any, config: any): Promise<boolean> {
+  async execute(context: any, config: any): Promise<boolean> {
     this.checkInitialized();
 
     const messages = context.getVariable('messages') || [];

@@ -3,13 +3,19 @@
  */
 
 // 执行器
-export { FunctionExecutor } from './executors/function-executor';
+export * from './executors';
 
 // 注册表
 export { FunctionRegistry } from './registry/function-registry';
 
 // 内置函数
 export * from './builtin/index';
+
+// 组合
+export * from './composition';
+
+// 基础类
+export * from './base/base-workflow-function';
 
 // 公共接口
 export interface BaseWorkflowFunction {

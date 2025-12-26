@@ -1,6 +1,11 @@
 import { injectable } from 'inversify';
 import { WorkflowFunctionType } from '../../../../domain/workflow/value-objects/workflow-function-type';
 import { BaseWorkflowFunction } from '../base/base-workflow-function';
+import { ValueObject } from '../../../../domain/common/value-objects/value-object';
+import { NodeValueObject } from '../../../../domain/workflow/value-objects/node-value-object';
+import { EdgeValueObject } from '../../../../domain/workflow/value-objects/edge-value-object';
+import { TriggerValueObject } from '../../../../domain/workflow/value-objects/trigger-value-object';
+import { HookValueObject } from '../../../../domain/workflow/value-objects/hook-value-object';
 
 /**
  * 函数注册表实现
@@ -12,6 +17,7 @@ import { BaseWorkflowFunction } from '../base/base-workflow-function';
 export class FunctionRegistry {
   private functions: Map<string, BaseWorkflowFunction> = new Map();
   private functionsByName: Map<string, BaseWorkflowFunction> = new Map();
+  private valueObjectTypeMapping: Map<string, string> = new Map();
 
   /**
    * 注册函数
@@ -199,5 +205,83 @@ export class FunctionRegistry {
     }
 
     return stats;
+  }
+
+  /**
+   * 注册值对象类型与函数的映射关系
+   * @param valueObjectType 值对象类型标识
+   * @param functionName 函数名称
+   */
+  registerValueObjectMapping(valueObjectType: string, functionName: string): void {
+    if (this.valueObjectTypeMapping.has(valueObjectType)) {
+      throw new Error(`值对象类型 ${valueObjectType} 的映射关系已存在`);
+    }
+    this.valueObjectTypeMapping.set(valueObjectType, functionName);
+  }
+
+  /**
+   * 根据值对象获取对应的函数
+   * @param valueObject 值对象
+   * @returns 工作流函数
+   */
+  getFunctionByValueObject(valueObject: ValueObject<any>): BaseWorkflowFunction | null {
+    const valueObjectType = this.getValueObjectType(valueObject);
+    const functionName = this.valueObjectTypeMapping.get(valueObjectType);
+
+    if (!functionName) {
+      return null;
+    }
+
+    return this.getFunctionByName(functionName);
+  }
+
+  /**
+   * 获取支持特定值对象类型的函数列表
+   * @param valueObjectType 值对象类型标识
+   * @returns 工作流函数列表
+   */
+  getFunctionsByValueObjectType(valueObjectType: string): BaseWorkflowFunction[] {
+    const functionName = this.valueObjectTypeMapping.get(valueObjectType);
+    if (!functionName) {
+      return [];
+    }
+
+    const func = this.getFunctionByName(functionName);
+    return func ? [func] : [];
+  }
+
+  /**
+   * 获取值对象类型映射关系
+   * @returns 值对象类型映射关系
+   */
+  getValueObjectTypeMapping(): Map<string, string> {
+    return new Map(this.valueObjectTypeMapping);
+  }
+
+  /**
+   * 注销值对象类型映射关系
+   * @param valueObjectType 值对象类型标识
+   * @returns 是否成功
+   */
+  unregisterValueObjectMapping(valueObjectType: string): boolean {
+    return this.valueObjectTypeMapping.delete(valueObjectType);
+  }
+
+  /**
+   * 获取值对象的类型标识
+   * @param valueObject 值对象
+   * @returns 类型标识字符串
+   */
+  private getValueObjectType(valueObject: ValueObject<any>): string {
+    if (valueObject instanceof NodeValueObject) {
+      return `node_${valueObject.type.toString()}`;
+    } else if (valueObject instanceof EdgeValueObject) {
+      return `edge_${valueObject.type.toString()}`;
+    } else if (valueObject instanceof TriggerValueObject) {
+      return `trigger_${valueObject.type.toString()}`;
+    } else if (valueObject instanceof HookValueObject) {
+      return `hook_${valueObject.hookPoint.toString()}`;
+    }
+    return 'unknown';
   }
 }

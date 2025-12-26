@@ -52,7 +52,7 @@ export class MaxIterationsReachedConditionFunction extends BaseWorkflowFunction 
     return errors;
   }
 
-  async evaluate(context: any, config: any): Promise<boolean> {
+  async execute(context: any, config: any): Promise<boolean> {
     this.checkInitialized();
 
     const maxIterations = config.maxIterations || 10;

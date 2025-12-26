@@ -19,7 +19,7 @@ export class HasErrorsConditionFunction extends BaseWorkflowFunction {
     );
   }
 
-  async evaluate(context: any, config: any): Promise<boolean> {
+  async execute(context: any, config: any): Promise<boolean> {
     this.checkInitialized();
 
     // 检查工具结果中的错误
