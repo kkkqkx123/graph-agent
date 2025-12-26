@@ -167,28 +167,32 @@ export class HistoryRepository extends BaseRepository<History, HistoryModel, ID>
   // 基础 CRUD 方法现在由 BaseRepository 提供，无需重复实现
 
   async findBySessionId(sessionId: ID): Promise<History[]> {
-    return this.findByField('sessionId', sessionId.value, {
+    return this.find({
+      filters: { sessionId: sessionId.value },
       sortBy: 'timestamp',
       sortOrder: 'desc'
     });
   }
 
   async findByThreadId(threadId: ID): Promise<History[]> {
-    return this.findByField('threadId', threadId.value, {
+    return this.find({
+      filters: { threadId: threadId.value },
       sortBy: 'timestamp',
       sortOrder: 'desc'
     });
   }
 
   async findByWorkflowId(workflowId: ID): Promise<History[]> {
-    return this.findByField('workflowId', workflowId.value, {
+    return this.find({
+      filters: { workflowId: workflowId.value },
       sortBy: 'timestamp',
       sortOrder: 'desc'
     });
   }
 
   async findByType(type: HistoryType): Promise<History[]> {
-    return this.findByField('action', type.getValue(), {
+    return this.find({
+      filters: { action: type.getValue() },
       sortBy: 'timestamp',
       sortOrder: 'desc'
     });
@@ -206,7 +210,13 @@ export class HistoryRepository extends BaseRepository<History, HistoryModel, ID>
   }
 
   async findByTimeRange(startTime: Date, endTime: Date): Promise<History[]> {
-    return this.findByTimeRangeField('timestamp', startTime, endTime, {
+    return this.find({
+      customConditions: (qb: any) => {
+        qb.andWhere('history.timestamp BETWEEN :startTime AND :endTime', {
+          startTime: startTime.getTime(),
+          endTime: endTime.getTime()
+        });
+      },
       sortBy: 'timestamp',
       sortOrder: 'desc'
     });
@@ -221,7 +231,8 @@ export class HistoryRepository extends BaseRepository<History, HistoryModel, ID>
   }
 
   async findLatestBySessionId(sessionId: ID, limit: number = 10): Promise<History[]> {
-    return this.findByField('sessionId', sessionId.value, {
+    return this.find({
+      filters: { sessionId: sessionId.value },
       sortBy: 'timestamp',
       sortOrder: 'desc',
       limit
@@ -229,7 +240,8 @@ export class HistoryRepository extends BaseRepository<History, HistoryModel, ID>
   }
 
   async findLatestByThreadId(threadId: ID, limit: number = 10): Promise<History[]> {
-    return this.findByField('threadId', threadId.value, {
+    return this.find({
+      filters: { threadId: threadId.value },
       sortBy: 'timestamp',
       sortOrder: 'desc',
       limit
@@ -390,7 +402,8 @@ export class HistoryRepository extends BaseRepository<History, HistoryModel, ID>
   }
 
   async findLatestByEntityId(entityId: ID, limit?: number): Promise<History[]> {
-    return this.findByField('entityId', entityId.value, {
+    return this.find({
+      filters: { entityId: entityId.value },
       sortBy: 'timestamp',
       sortOrder: 'desc',
       limit: limit || 10
@@ -398,7 +411,8 @@ export class HistoryRepository extends BaseRepository<History, HistoryModel, ID>
   }
 
   async findLatestByType(type: HistoryType, limit?: number): Promise<History[]> {
-    return this.findByField('action', type.getValue(), {
+    return this.find({
+      filters: { action: type.getValue() },
       sortBy: 'timestamp',
       sortOrder: 'desc',
       limit: limit || 10

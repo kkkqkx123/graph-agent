@@ -14,6 +14,42 @@ import { QueryConditionsApplier } from './query-conditions-applier';
 import { RepositoryConfig, DefaultRepositoryConfig } from './repository-config';
 
 /**
+ * 查询配置接口
+ * 定义查询构建器的配置选项
+ */
+export interface QueryConfig<TModel extends ObjectLiteral> {
+  /**
+   * 查询别名
+   */
+  alias: string;
+  
+  /**
+   * 是否启用软删除过滤
+   */
+  enableSoftDelete: boolean;
+  
+  /**
+   * 默认排序字段
+   */
+  defaultSortField: string;
+  
+  /**
+   * 默认排序方向
+   */
+  defaultSortOrder: 'asc' | 'desc';
+}
+
+/**
+ * 默认查询配置
+ */
+export const DefaultQueryConfig: QueryConfig<any> = {
+  alias: 'entity',
+  enableSoftDelete: true,
+  defaultSortField: 'createdAt',
+  defaultSortOrder: 'desc'
+};
+
+/**
  * 增强的查询选项接口
  */
 export interface QueryOptions<TModel extends ObjectLiteral> extends IQueryOptions {
@@ -50,7 +86,8 @@ export abstract class BaseRepository<T, TModel extends ObjectLiteral, TId = ID> 
   protected queryConditionsApplier: QueryConditionsApplier<TModel>;
 
   // 配置
-  protected config: RepositoryConfig<TModel>;
+  protected config: RepositoryConfig;
+  protected queryConfig: QueryConfig<TModel>;
 
   // 类型转换器（可选）
   protected converters?: Record<string, any>;
@@ -60,19 +97,41 @@ export abstract class BaseRepository<T, TModel extends ObjectLiteral, TId = ID> 
 
   constructor(
     @inject('ConnectionManager') protected connectionManager: ConnectionManager,
-    config?: Partial<RepositoryConfig<TModel>>
+    config?: Partial<RepositoryConfig>
   ) {
     // 初始化配置
-    this.config = new DefaultRepositoryConfig<TModel>(config);
+    this.config = new DefaultRepositoryConfig(config);
+    
+    // 初始化查询配置
+    this.queryConfig = {
+      alias: this.getAlias(),
+      enableSoftDelete: true,
+      defaultSortField: 'createdAt',
+      defaultSortOrder: 'desc'
+    };
 
     // 初始化模块
     this.errorHandler = new RepositoryErrorHandler();
-    this.softDeleteManager = new SoftDeleteManager<TModel>(this.config.softDeleteConfig);
-    this.queryConditionsApplier = new QueryConditionsApplier<TModel>(this.getAlias());
+    this.softDeleteManager = new SoftDeleteManager<TModel>({
+      enabled: this.config.softDeleteEnabled,
+      fieldName: this.config.softDeleteField,
+      deletedAtField: 'deletedAt',
+      stateField: 'state',
+      deletedValue: 'archived',
+      activeValue: 'active'
+    });
+    this.queryConditionsApplier = new QueryConditionsApplier<TModel>(this.queryConfig);
 
     // 初始化查询模板管理器
     this.queryTemplateManager = new QueryTemplateManager<TModel>();
     QueryTemplateRegistrar.registerCommonTemplates(this.queryTemplateManager);
+  }
+
+  /**
+   * 配置软删除行为 - 子类可以重写此方法来自定义软删除配置
+   */
+  protected configureSoftDelete(config: Partial<SoftDeleteConfig>): void {
+    this.softDeleteManager.configure(config);
   }
 
   /**
@@ -132,7 +191,7 @@ export abstract class BaseRepository<T, TModel extends ObjectLiteral, TId = ID> 
    * 创建查询选项构建器
    */
   protected createQueryOptionsBuilder(): QueryOptionsBuilder<TModel> {
-    return QueryOptionsBuilder.create<TModel>(this.config.queryBuilderOptions);
+    return QueryOptionsBuilder.create<TModel>(this.queryConfig);
   }
 
   /**
@@ -171,14 +230,14 @@ export abstract class BaseRepository<T, TModel extends ObjectLiteral, TId = ID> 
    * 使用模板构建查询
    */
   protected buildWithTemplate(templateName: string, params: any): QueryOptionsBuilder<TModel> {
-    return this.queryTemplateManager.buildWithTemplate(templateName, params, this.config.queryBuilderOptions);
+    return this.queryTemplateManager.buildWithTemplate(templateName, params, this.queryConfig);
   }
 
   /**
    * 使用模板组合构建查询
    */
   protected buildWithComposition(compositionName: string): QueryOptionsBuilder<TModel> {
-    return this.queryTemplateManager.buildWithComposition(compositionName, this.config.queryBuilderOptions);
+    return this.queryTemplateManager.buildWithComposition(compositionName, this.queryConfig);
   }
 
   /**
@@ -490,5 +549,128 @@ export abstract class BaseRepository<T, TModel extends ObjectLiteral, TId = ID> 
   async executeInTransaction<R>(operation: () => Promise<R>): Promise<R> {
     const transactionManager = await this.initTransactionManager();
     return transactionManager.executeInTransaction(operation);
+  }
+
+  // ========== 基础工具方法 ==========
+
+  /**
+   * 应用软删除过滤条件到查询构建器
+   * 子类可以在customConditions中调用此方法
+   */
+  protected applySoftDeleteFilter(qb: SelectQueryBuilder<TModel>): void {
+    this.softDeleteManager.applySoftDeleteFilter(qb, this.getAlias());
+  }
+
+  /**
+   * 应用字段过滤条件到查询构建器
+   * 子类可以在customConditions中调用此方法
+   */
+  protected applyFieldFilter(
+    qb: SelectQueryBuilder<TModel>,
+    field: string,
+    value: any,
+    operator: '=' | 'IN' | 'LIKE' | '>' | '<' | '>=' | '<=' = '='
+  ): void {
+    this.queryConditionsApplier.applyFieldFilter(qb, field, value, operator);
+  }
+
+  /**
+   * 应用时间范围过滤条件到查询构建器
+   * 子类可以在customConditions中调用此方法
+   */
+  protected applyTimeRangeFilter(
+    qb: SelectQueryBuilder<TModel>,
+    field: string,
+    startTime?: Date,
+    endTime?: Date
+  ): void {
+    this.queryConditionsApplier.applyTimeRangeFilter(qb, field, startTime, endTime);
+  }
+
+  /**
+   * 应用状态过滤条件到查询构建器
+   * 子类可以在customConditions中调用此方法
+   */
+  protected applyStatusFilter(
+    qb: SelectQueryBuilder<TModel>,
+    field: string,
+    statuses: string[]
+  ): void {
+    this.queryConditionsApplier.applyStatusFilter(qb, field, statuses);
+  }
+
+  /**
+   * 批量软删除实体
+   */
+  async batchSoftDelete(ids: TId[]): Promise<number> {
+    const repository = await this.getRepository();
+    return this.softDeleteManager.batchSoftDelete(repository, ids.map(id => this.buildIdWhere(id)));
+  }
+
+  /**
+   * 恢复软删除的实体
+   */
+  async restoreSoftDeleted(id: TId): Promise<void> {
+    const repository = await this.getRepository();
+    await this.softDeleteManager.restoreSoftDeleted(repository, this.buildIdWhere(id));
+  }
+
+  /**
+   * 查找软删除的实体
+   */
+  async findSoftDeleted(options?: Partial<QueryOptions<TModel>>): Promise<T[]> {
+    return this.find({
+      ...options,
+      customConditions: (qb) => {
+        this.softDeleteManager.applySoftDeleteFilter(qb, this.getAlias());
+        if (options?.customConditions) {
+          options.customConditions(qb);
+        }
+      }
+    });
+  }
+
+  /**
+   * 批量更新实体字段
+   */
+  async batchUpdate(ids: TId[], updateData: Partial<TModel>): Promise<number> {
+    const batchManager = await this.initBatchOperationManager();
+    const idValues = ids.map(id => this.extractIdValue(id));
+    return batchManager.batchUpdate(idValues, {
+      ...updateData,
+      updatedAt: new Date()
+    } as any);
+  }
+
+  /**
+   * 批量删除实体（根据ID列表）
+   */
+  async batchDeleteByIds(ids: TId[]): Promise<number> {
+    const batchManager = await this.initBatchOperationManager();
+    const idValues = ids.map(id => this.extractIdValue(id));
+    return batchManager.batchDeleteByIds(idValues);
+  }
+
+  /**
+   * 在事务中执行批量操作
+   */
+  async executeBatchInTransaction<R>(operations: Array<() => Promise<R>>): Promise<R[]> {
+    return this.executeInTransaction(async () => {
+      const results: R[] = [];
+      for (const operation of operations) {
+        results.push(await operation());
+      }
+      return results;
+    });
+  }
+
+  /**
+   * 提取ID值的辅助方法
+   */
+  private extractIdValue(id: TId): any {
+    if (id instanceof ID) {
+      return id.value;
+    }
+    return id;
   }
 }

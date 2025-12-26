@@ -112,14 +112,16 @@ export class CheckpointRepository extends BaseRepository<Checkpoint, CheckpointM
   // 基础 CRUD 方法现在由 BaseRepository 提供，无需重复实现
 
   async findByThreadId(threadId: ID): Promise<Checkpoint[]> {
-    return this.findByField('threadId', threadId.value, {
+    return this.find({
+      filters: { threadId: threadId.value },
       sortBy: 'createdAt',
       sortOrder: 'desc'
     });
   }
 
   async findLatestByThreadId(threadId: ID): Promise<Checkpoint | null> {
-    return this.findOneByField('threadId', threadId.value, {
+    return this.findOne({
+      filters: { threadId: threadId.value },
       sortBy: 'createdAt',
       sortOrder: 'desc'
     });

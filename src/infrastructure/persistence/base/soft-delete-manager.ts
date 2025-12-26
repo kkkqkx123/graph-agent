@@ -19,6 +19,13 @@ export class SoftDeleteManager<TModel extends ObjectLiteral> {
   constructor(private config: SoftDeleteConfig) { }
 
   /**
+   * 配置软删除设置
+   */
+  configure(config: Partial<SoftDeleteConfig>): void {
+    this.config = { ...this.config, ...config };
+  }
+
+  /**
    * 检查是否支持软删除
    */
   supportsSoftDelete(): boolean {

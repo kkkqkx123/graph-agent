@@ -2,10 +2,47 @@ import { SelectQueryBuilder, ObjectLiteral } from 'typeorm';
 import { IQueryOptions } from '../../../domain/common/repositories/repository';
 
 /**
+ * 查询配置接口
+ * 定义查询构建器的配置选项
+ */
+export interface QueryConfig<TModel extends ObjectLiteral> {
+  /**
+   * 查询别名
+   */
+  alias: string;
+  
+  /**
+   * 是否启用软删除过滤
+   */
+  enableSoftDelete: boolean;
+  
+  /**
+   * 默认排序字段
+   */
+  defaultSortField: string;
+  
+  /**
+   * 默认排序方向
+   */
+  defaultSortOrder: 'asc' | 'desc';
+}
+
+/**
+ * 默认查询配置
+ */
+export const DefaultQueryConfig: QueryConfig<any> = {
+  alias: 'entity',
+  enableSoftDelete: true,
+  defaultSortField: 'createdAt',
+  defaultSortOrder: 'desc'
+};
+
+/**
  * 查询条件应用器
+ * 负责应用查询条件和配置到查询构建器
  */
 export class QueryConditionsApplier<TModel extends ObjectLiteral> {
-  constructor(private alias: string) { }
+  constructor(private config: QueryConfig<TModel>) { }
 
   /**
    * 应用基础查询条件
@@ -14,16 +51,16 @@ export class QueryConditionsApplier<TModel extends ObjectLiteral> {
     if (options.filters) {
       Object.entries(options.filters).forEach(([key, value]) => {
         if (value !== undefined) {
-          qb.andWhere(`${this.alias}.${key} = :${key}`, { [key]: value });
+          qb.andWhere(`${this.config.alias}.${key} = :${key}`, { [key]: value });
         }
       });
     }
 
     if (options.sortBy) {
       const order = options.sortOrder === 'desc' ? 'DESC' : 'ASC';
-      qb.orderBy(`${this.alias}.${options.sortBy}`, order);
+      qb.orderBy(`${this.config.alias}.${options.sortBy}`, order);
     } else {
-      qb.orderBy(`${this.alias}.createdAt`, 'DESC');
+      qb.orderBy(`${this.config.alias}.${this.config.defaultSortField}`, this.config.defaultSortOrder.toUpperCase() as 'ASC' | 'DESC');
     }
 
     if (options.offset) {
@@ -99,7 +136,7 @@ export class QueryConditionsApplier<TModel extends ObjectLiteral> {
     if (joins) {
       joins.forEach(join => {
         const joinMethod = join.type === 'left' ? 'leftJoin' : 'innerJoin';
-        qb[joinMethod](`${this.alias}.${join.property}`, join.alias);
+        qb[joinMethod](`${this.config.alias}.${join.property}`, join.alias);
         if (join.condition) {
           qb.andWhere(join.condition);
         }
@@ -116,6 +153,58 @@ export class QueryConditionsApplier<TModel extends ObjectLiteral> {
   ): void {
     if (customConditions) {
       customConditions(qb);
+    }
+  }
+  /**
+   * 应用字段过滤条件到查询构建器
+   */
+  applyFieldFilter(
+    qb: SelectQueryBuilder<TModel>,
+    field: string,
+    value: any,
+    operator: '=' | 'IN' | 'LIKE' | '>' | '<' | '>=' | '<=' = '='
+  ): void {
+    const paramName = `${field}_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    
+    switch (operator) {
+      case 'IN':
+        qb.andWhere(`${this.config.alias}.${field} IN (:...${paramName})`, { [paramName]: value });
+        break;
+      case 'LIKE':
+        qb.andWhere(`${this.config.alias}.${field} LIKE :${paramName}`, { [paramName]: value });
+        break;
+      default:
+        qb.andWhere(`${this.config.alias}.${field} ${operator} :${paramName}`, { [paramName]: value });
+    }
+  }
+
+  /**
+   * 应用时间范围过滤条件到查询构建器
+   */
+  applyTimeRangeFilter(
+    qb: SelectQueryBuilder<TModel>,
+    field: string,
+    startTime?: Date,
+    endTime?: Date
+  ): void {
+    if (startTime) {
+      qb.andWhere(`${this.config.alias}.${field} >= :startTime`, { startTime });
+    }
+    if (endTime) {
+      qb.andWhere(`${this.config.alias}.${field} <= :endTime`, { endTime });
+    }
+  }
+
+  /**
+   * 应用状态过滤条件到查询构建器
+   */
+  applyStatusFilter(
+    qb: SelectQueryBuilder<TModel>,
+    field: string,
+    statuses: string[]
+  ): void {
+    if (statuses.length > 0) {
+      qb.andWhere(`${this.config.alias}.${field} IN (:...statuses)`, { statuses });
     }
   }
 }
