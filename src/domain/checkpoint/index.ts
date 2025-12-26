@@ -6,6 +6,3 @@ export { CheckpointType, CheckpointTypeValue } from './value-objects/checkpoint-
 
 // 仓储
 export { CheckpointRepository } from './repositories/checkpoint-repository';
-
-// 服务
-export { CheckpointDomainService } from './services/checkpoint-domain-service';

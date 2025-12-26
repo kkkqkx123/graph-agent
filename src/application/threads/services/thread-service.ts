@@ -7,7 +7,6 @@
 
 import { Thread } from '../../../domain/threads/entities/thread';
 import { ThreadRepository } from '../../../domain/threads/repositories/thread-repository';
-import { ThreadDomainService } from '../../../domain/threads/services/thread-domain-service';
 import { ThreadExecutionService } from '../../../domain/threads/services/thread-execution-service';
 import { SessionRepository } from '../../../domain/sessions/repositories/session-repository';
 import { WorkflowRepository } from '../../../domain/workflow/repositories/workflow-repository';
@@ -25,10 +24,120 @@ export class ThreadService {
     private readonly threadRepository: ThreadRepository,
     private readonly sessionRepository: SessionRepository,
     private readonly workflowRepository: WorkflowRepository,
-    private readonly threadDomainService: ThreadDomainService,
     private readonly threadExecutionService: ThreadExecutionService,
     private readonly logger: ILogger
   ) { }
+
+  /**
+   * 验证线程创建的业务规则
+   */
+  private async validateThreadCreation(
+    sessionId: ID,
+    workflowId: ID,
+    priority?: ThreadPriority
+  ): Promise<void> {
+    // 验证会话是否有活跃线程（Session负责多线程并行管理）
+    const hasActiveThreads = await this.threadRepository.hasActiveThreads(sessionId);
+    if (hasActiveThreads) {
+      throw new Error('会话已有活跃线程，无法创建新线程');
+    }
+
+    // 验证优先级
+    if (priority) {
+      priority.validate();
+    }
+  }
+
+  /**
+   * 验证线程启动的业务规则
+   */
+  private async validateThreadStart(threadId: ID): Promise<void> {
+    const thread = await this.threadRepository.findByIdOrFail(threadId);
+
+    if (!thread.status.isPending()) {
+      throw new Error('只能启动待执行状态的线程');
+    }
+
+    // 检查会话是否有其他运行中的线程（Session负责并行管理）
+    const hasRunningThreads = await this.threadRepository.hasRunningThreads(thread.sessionId);
+    if (hasRunningThreads) {
+      throw new Error('会话已有运行中的线程，无法启动其他线程');
+    }
+  }
+
+  /**
+   * 验证线程暂停的业务规则
+   */
+  private async validateThreadPause(threadId: ID): Promise<void> {
+    const thread = await this.threadRepository.findByIdOrFail(threadId);
+
+    if (!thread.status.isRunning()) {
+      throw new Error('只能暂停运行中的线程');
+    }
+  }
+
+  /**
+   * 验证线程恢复的业务规则
+   */
+  private async validateThreadResume(threadId: ID): Promise<void> {
+    const thread = await this.threadRepository.findByIdOrFail(threadId);
+
+    if (!thread.status.isPaused()) {
+      throw new Error('只能恢复暂停状态的线程');
+    }
+
+    // 检查会话是否有其他运行中的线程（Session负责并行管理）
+    const hasRunningThreads = await this.threadRepository.hasRunningThreads(thread.sessionId);
+    if (hasRunningThreads) {
+      throw new Error('会话已有运行中的线程，无法恢复其他线程');
+    }
+  }
+
+  /**
+   * 验证线程完成的业务规则
+   */
+  private async validateThreadCompletion(threadId: ID): Promise<void> {
+    const thread = await this.threadRepository.findByIdOrFail(threadId);
+
+    if (!thread.status.isActive()) {
+      throw new Error('只能完成活跃状态的线程');
+    }
+  }
+
+  /**
+   * 验证线程失败的业务规则
+   */
+  private async validateThreadFailure(threadId: ID): Promise<void> {
+    const thread = await this.threadRepository.findByIdOrFail(threadId);
+
+    if (!thread.status.isActive()) {
+      throw new Error('只能设置活跃状态的线程为失败状态');
+    }
+  }
+
+  /**
+   * 验证线程取消的业务规则
+   */
+  private async validateThreadCancellation(threadId: ID): Promise<void> {
+    const thread = await this.threadRepository.findByIdOrFail(threadId);
+
+    if (thread.status.isTerminal()) {
+      throw new Error('无法取消已终止状态的线程');
+    }
+  }
+
+  /**
+   * 验证线程优先级更新的业务规则
+   */
+  private async validateThreadPriorityUpdate(threadId: ID, newPriority: ThreadPriority): Promise<void> {
+    const thread = await this.threadRepository.findByIdOrFail(threadId);
+
+    if (!thread.status.canOperate()) {
+      throw new Error('无法更新非活跃状态线程的优先级');
+    }
+
+    newPriority.validate();
+  }
 
   /**
    * 创建线程
@@ -60,7 +169,7 @@ export class ThreadService {
       const priority = request.priority ? ThreadPriority.fromNumber(request.priority) : undefined;
 
       // 验证线程创建的业务规则
-      await this.threadDomainService.validateThreadCreation(
+      await this.validateThreadCreation(
         sessionId,
         workflowId,
         priority
@@ -256,7 +365,7 @@ export class ThreadService {
       const user = userId ? ID.fromString(userId) : undefined;
 
       // 验证线程启动的业务规则
-      await this.threadDomainService.validateThreadStart(id);
+      await this.validateThreadStart(id);
 
       const thread = await this.threadRepository.findByIdOrFail(id);
       thread.start(user);
@@ -282,7 +391,7 @@ export class ThreadService {
       const thread = await this.threadRepository.findByIdOrFail(id);
       
       // 验证线程启动的业务规则
-      await this.threadDomainService.validateThreadStart(id);
+      await this.validateThreadStart(id);
 
       // 使用执行服务执行线程
       const result = await this.threadExecutionService.executeSequentially(thread, inputData);
@@ -309,7 +418,7 @@ export class ThreadService {
       const user = userId ? ID.fromString(userId) : undefined;
 
       // 验证线程暂停的业务规则
-      await this.threadDomainService.validateThreadPause(id);
+      await this.validateThreadPause(id);
 
       const thread = await this.threadRepository.findByIdOrFail(id);
       await this.threadExecutionService.pauseExecution(thread);
@@ -334,7 +443,7 @@ export class ThreadService {
       const user = userId ? ID.fromString(userId) : undefined;
 
       // 验证线程恢复的业务规则
-      await this.threadDomainService.validateThreadResume(id);
+      await this.validateThreadResume(id);
 
       const thread = await this.threadRepository.findByIdOrFail(id);
       await this.threadExecutionService.resumeExecution(thread);
@@ -359,7 +468,7 @@ export class ThreadService {
       const user = userId ? ID.fromString(userId) : undefined;
 
       // 验证线程完成的业务规则
-      await this.threadDomainService.validateThreadCompletion(id);
+      await this.validateThreadCompletion(id);
 
       const thread = await this.threadRepository.findByIdOrFail(id);
       thread.complete(user, reason);
@@ -391,7 +500,7 @@ export class ThreadService {
       const user = userId ? ID.fromString(userId) : undefined;
 
       // 验证线程失败的业务规则
-      await this.threadDomainService.validateThreadFailure(id);
+      await this.validateThreadFailure(id);
 
       const thread = await this.threadRepository.findByIdOrFail(id);
       thread.fail(errorMessage, user, reason);
@@ -417,7 +526,7 @@ export class ThreadService {
       const user = userId ? ID.fromString(userId) : undefined;
 
       // 验证线程取消的业务规则
-      await this.threadDomainService.validateThreadCancellation(id);
+      await this.validateThreadCancellation(id);
 
       const thread = await this.threadRepository.findByIdOrFail(id);
       await this.threadExecutionService.cancelExecution(thread, reason);
@@ -441,7 +550,7 @@ export class ThreadService {
       const threadPriority = ThreadPriority.fromNumber(priority);
 
       // 验证线程优先级更新的业务规则
-      await this.threadDomainService.validateThreadPriorityUpdate(id, threadPriority);
+      await this.validateThreadPriorityUpdate(id, threadPriority);
 
       const thread = await this.threadRepository.findByIdOrFail(id);
       thread.updatePriority(threadPriority);

@@ -6,11 +6,11 @@
 
 import { Thread } from '../../../domain/threads/entities/thread';
 import { ThreadRepository } from '../../../domain/threads/repositories/thread-repository';
-import { ThreadDomainService } from '../../../domain/threads/services/thread-domain-service';
 import { ThreadPriority } from '../../../domain/threads/value-objects/thread-priority';
 import { BaseApplicationService } from '../../common/base-application-service';
 import { ThreadInfo } from '../dtos';
 import { ILogger } from '../../../domain/common/types';
+import { ID } from '../../../domain/common/value-objects/id';
 
 /**
  * 线程管理服务
@@ -18,7 +18,6 @@ import { ILogger } from '../../../domain/common/types';
 export class ThreadManagementService extends BaseApplicationService {
   constructor(
     private readonly threadRepository: ThreadRepository,
-    private readonly threadDomainService: ThreadDomainService,
     logger: ILogger
   ) {
     super(logger);
@@ -29,6 +28,19 @@ export class ThreadManagementService extends BaseApplicationService {
    */
   protected getServiceName(): string {
     return '线程管理';
+  }
+
+  /**
+   * 验证线程优先级更新的业务规则
+   */
+  private async validateThreadPriorityUpdate(threadId: ID, newPriority: ThreadPriority): Promise<void> {
+    const thread = await this.threadRepository.findByIdOrFail(threadId);
+
+    if (!thread.status.canOperate()) {
+      throw new Error('无法更新非活跃状态线程的优先级');
+    }
+
+    newPriority.validate();
   }
 
   /**
@@ -115,7 +127,7 @@ export class ThreadManagementService extends BaseApplicationService {
         const threadPriority = ThreadPriority.fromNumber(priority);
 
         // 验证线程优先级更新的业务规则
-        await this.threadDomainService.validateThreadPriorityUpdate(id, threadPriority);
+        await this.validateThreadPriorityUpdate(id, threadPriority);
 
         const thread = await this.threadRepository.findByIdOrFail(id);
         thread.updatePriority(threadPriority);

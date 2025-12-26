@@ -9,7 +9,6 @@ import { Session } from '../../../domain/sessions/entities/session';
 import { SessionRepository } from '../../../domain/sessions/repositories/session-repository';
 import { SessionDomainService } from '../../../domain/sessions/services/session-domain-service';
 import { ThreadRepository } from '../../../domain/threads/repositories/thread-repository';
-import { ThreadDomainService } from '../../../domain/threads/services/thread-domain-service';
 import { ID } from '../../../domain/common/value-objects/id';
 import { SessionStatus } from '../../../domain/sessions/value-objects/session-status';
 import { ILogger } from '../../../domain/common/types';
@@ -30,7 +29,6 @@ export class SessionService {
     private readonly sessionRepository: SessionRepository,
     private readonly threadRepository: ThreadRepository,
     private readonly sessionDomainService: SessionDomainService,
-    private readonly threadDomainService: ThreadDomainService,
     private readonly logger: ILogger
   ) {
     // 初始化DTO实例

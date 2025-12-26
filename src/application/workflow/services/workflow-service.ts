@@ -1,7 +1,6 @@
 import { injectable, inject } from 'inversify';
 import { Workflow } from '../../../domain/workflow/entities/workflow';
 import { WorkflowRepository } from '../../../domain/workflow/repositories/workflow-repository';
-import { WorkflowDomainService } from '../../../domain/workflow/services/domain-service';
 import { ID } from '../../../domain/common/value-objects/id';
 import { WorkflowStatus } from '../../../domain/workflow/value-objects/workflow-status';
 import { WorkflowType } from '../../../domain/workflow/value-objects/workflow-type';
@@ -57,7 +56,6 @@ import { GetWorkflowTagStatsQuery } from '../queries/workflow-tag-stats-query';
 export class WorkflowService {
   constructor(
     @inject('WorkflowRepository') private readonly workflowRepository: WorkflowRepository,
-    @inject('WorkflowDomainService') private readonly workflowDomainService: WorkflowDomainService,
     @inject('Logger') private readonly logger: ILogger
   ) {}
 
@@ -80,7 +78,7 @@ export class WorkflowService {
       const createdBy = command.createdBy ? ID.fromString(command.createdBy) : undefined;
 
       // 验证创建条件
-      await this.workflowDomainService.validateWorkflowCreation(command.name, config, createdBy);
+      await this.validateWorkflowCreation(command.name, config, createdBy);
 
       // 创建工作流
       const workflow = Workflow.create(
@@ -118,7 +116,7 @@ export class WorkflowService {
       const workflow = await this.workflowRepository.findByIdOrFail(workflowId);
 
       // 验证状态转换
-      this.workflowDomainService.validateStatusTransition(workflow, WorkflowStatus.active());
+      this.validateStatusTransition(workflow, WorkflowStatus.active());
 
       // 激活工作流
       workflow.changeStatus(WorkflowStatus.active(), userId, command.reason);
@@ -150,7 +148,7 @@ export class WorkflowService {
       const workflow = await this.workflowRepository.findByIdOrFail(workflowId);
 
       // 验证状态转换
-      this.workflowDomainService.validateStatusTransition(workflow, WorkflowStatus.inactive());
+      this.validateStatusTransition(workflow, WorkflowStatus.inactive());
 
       // 停用工作流
       workflow.changeStatus(WorkflowStatus.inactive(), userId, command.reason);
@@ -182,7 +180,7 @@ export class WorkflowService {
       const workflow = await this.workflowRepository.findByIdOrFail(workflowId);
 
       // 验证状态转换
-      this.workflowDomainService.validateStatusTransition(workflow, WorkflowStatus.archived());
+      this.validateStatusTransition(workflow, WorkflowStatus.archived());
 
       // 归档工作流
       workflow.changeStatus(WorkflowStatus.archived(), userId, command.reason);
@@ -267,7 +265,7 @@ export class WorkflowService {
       const workflow = await this.workflowRepository.findByIdOrFail(workflowId);
 
       // 验证执行条件
-      this.workflowDomainService.validateExecutionEligibility(workflow);
+      this.validateExecutionEligibility(workflow);
 
       // 生成执行ID
       const executionId = `exec_${workflowId.toString()}_${Timestamp.now().getMilliseconds()}`;
@@ -716,7 +714,7 @@ export class WorkflowService {
       executionPath.push(currentNodeId);
       
       // 获取下一个节点
-      currentNodeId = this.workflowDomainService.getNextExecutionNode(workflow, currentNodeId);
+      currentNodeId = this.getNextExecutionNode(workflow, currentNodeId);
       iterations++;
     }
     
@@ -770,5 +768,93 @@ export class WorkflowService {
       tags: workflow.tags,
       createdAt: workflow.createdAt.toISOString()
     };
+  }
+
+  /**
+   * 验证工作流创建的业务规则
+   */
+  private async validateWorkflowCreation(name: string, config?: WorkflowConfig, createdBy?: ID): Promise<void> {
+    // 验证工作流名称是否已存在
+    const exists = await this.workflowRepository.existsByName(name);
+    if (exists) {
+      throw new Error(`工作流名称 "${name}" 已存在`);
+    }
+
+    // 验证配置
+    if (config) {
+      config.validate();
+    }
+  }
+
+  /**
+   * 验证工作流状态转换的业务规则
+   */
+  private validateStatusTransition(workflow: Workflow, newStatus: WorkflowStatus): void {
+    const currentStatus = workflow.status;
+
+    // 已归档的工作流不能变更到其他状态
+    if (currentStatus.isArchived() && !newStatus.isArchived()) {
+      throw new Error('已归档的工作流不能变更到其他状态');
+    }
+
+    // 草稿状态只能激活或归档
+    if (currentStatus.isDraft() &&
+        !newStatus.isActive() &&
+        !newStatus.isArchived()) {
+      throw new Error('草稿状态的工作流只能激活或归档');
+    }
+
+    // 活跃状态只能变为非活跃或归档
+    if (currentStatus.isActive() &&
+        !newStatus.isInactive() &&
+        !newStatus.isArchived()) {
+      throw new Error('活跃状态的工作流只能变为非活跃或归档');
+    }
+
+    // 非活跃状态只能变为活跃或归档
+    if (currentStatus.isInactive() &&
+        !newStatus.isActive() &&
+        !newStatus.isArchived()) {
+      throw new Error('非活跃状态的工作流只能变为活跃或归档');
+    }
+  }
+
+  /**
+   * 验证工作流是否可以执行
+   */
+  private validateExecutionEligibility(workflow: Workflow): void {
+    if (!workflow.status.isActive()) {
+      throw new Error('只有活跃状态的工作流才能执行');
+    }
+
+    if (workflow.isDeleted()) {
+      throw new Error('已删除的工作流不能执行');
+    }
+
+    if (workflow.isEmpty()) {
+      throw new Error('空工作流不能执行');
+    }
+  }
+
+  /**
+   * 获取工作流的下一个执行节点
+   */
+  private getNextExecutionNode(workflow: Workflow, currentNodeId?: NodeId): NodeId | null {
+    if (!currentNodeId) {
+      // 返回第一个节点
+      const nodes = workflow.getNodes();
+      if (nodes.size === 0) return null;
+      const firstNode = Array.from(nodes.values())[0];
+      return firstNode ? firstNode.id : null;
+    }
+
+    // 获取当前节点的出边
+    const outgoingEdges = workflow.getOutgoingEdges(currentNodeId);
+    if (outgoingEdges.length === 0) return null;
+
+    // 简单实现：返回第一个出边的目标节点
+    if (outgoingEdges.length === 0) return null;
+    const firstEdge = outgoingEdges[0];
+    return firstEdge ? firstEdge.toNodeId : null;
   }
 }

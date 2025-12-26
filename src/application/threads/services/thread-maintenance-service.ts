@@ -6,7 +6,6 @@
 
 import { Thread } from '../../../domain/threads/entities/thread';
 import { ThreadRepository } from '../../../domain/threads/repositories/thread-repository';
-import { ThreadDomainService } from '../../../domain/threads/services/thread-domain-service';
 import { ThreadStatus } from '../../../domain/threads/value-objects/thread-status';
 import { BaseApplicationService } from '../../common/base-application-service';
 import { ThreadInfo } from '../dtos';
@@ -18,7 +17,6 @@ import { ILogger } from '../../../domain/common/types';
 export class ThreadMaintenanceService extends BaseApplicationService {
   constructor(
     private readonly threadRepository: ThreadRepository,
-    private readonly threadDomainService: ThreadDomainService,
     logger: ILogger
   ) {
     super(logger);

@@ -14,6 +14,3 @@ export * from './value-objects/tool-execution-status';
 
 // 仓储接口
 export * from './repositories';
-
-// 服务
-export * from './services/tool-domain-service';
