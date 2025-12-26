@@ -1,7 +1,7 @@
 import { injectable, inject } from 'inversify';
-import { EdgeValueObject } from '../../../../domain/workflow/value-objects/edge-value-object';
-import { ValueObjectExecutor, FunctionExecutionContext } from '../../functions/executors/value-object-executor';
-import { ILogger } from '../../../../domain/common/types/logger-types';
+import { EdgeValueObject } from '../../../domain/workflow/value-objects/edge-value-object';
+import { ValueObjectExecutor, FunctionExecutionContext } from '../functions/executors/value-object-executor';
+import { ILogger } from '../../../domain/common/types/logger-types';
 
 /**
  * 边执行器
@@ -12,7 +12,7 @@ export class EdgeExecutor {
   constructor(
     @inject('ValueObjectExecutor') private readonly valueObjectExecutor: ValueObjectExecutor,
     @inject('Logger') private readonly logger: ILogger
-  ) {}
+  ) { }
 
   /**
    * 执行边

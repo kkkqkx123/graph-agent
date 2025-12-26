@@ -222,11 +222,11 @@ export class EdgeEvaluator {
         ['edge', edge],
         ['nodeStates', executionState.nodeStates],
         ['variables', executionState.variables]
-      ]),
+      ] as [string, any][]),
       getVariable: (key: string) => executionState.variables.get(key),
       setVariable: (key: string, value: any) => executionState.variables.set(key, value),
       getNodeResult: (nodeId: string) => {
-        const state = executionState.getNodeState(nodeId);
+        const state = executionState.getNodeState({ toString: () => nodeId } as any);
         return state?.result;
       },
       setNodeResult: (nodeId: string, result: any) => {
@@ -280,7 +280,7 @@ export class EdgeEvaluator {
 
       // 节点状态
       nodeStates: nodeStates ? Object.fromEntries(
-        Array.from(nodeStates.entries()).map(([nodeId, state]: [any, any]) => [
+        (Array.from(nodeStates.entries()) as Array<[any, any]>).map(([nodeId, state]) => [
           nodeId,
           {
             status: state.status?.toString(),
@@ -289,7 +289,7 @@ export class EdgeEvaluator {
             retryCount: state.retryCount,
             duration: state.duration
           }
-        ]) as Array<[PropertyKey, any]>
+        ])
       ) : {}
     };
   }

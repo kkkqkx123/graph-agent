@@ -47,6 +47,13 @@ The framework uses a simplified 3-layer architecture that reduces complexity whi
 - Provides contracts for all major components: LLM, storage, workflow, sessions, etc.
 - Contains no technical implementation details, only business rules
 - Includes domain modules for workflow, state, LLM, and common components
+- **DOES NOT provide application services** - Services belong to Application layer only
+- **Contains only**:
+  - Entities: Workflow, Node, Edge, Tool, Session, Thread, etc.
+  - Value Objects: IDs, Status, Type, Config, Timestamp, etc.
+  - Repositories (contracts only): WorkflowRepository, ToolRepository, etc.
+  - Domain Events: Changes in entities that other layers need to know about
+  - No services, no application orchestration logic
 
 **Application Layer** (`src/application/`)
 - Provides application services and business process orchestration
