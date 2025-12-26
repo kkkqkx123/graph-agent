@@ -12,38 +12,15 @@ import { EdgeId } from '../value-objects/edge-id';
 import { EdgeType } from '../value-objects/edge-type';
 import { ErrorHandlingStrategy } from '../value-objects/error-handling-strategy';
 import { ExecutionStrategy } from '../value-objects/execution-strategy';
-
-/**
- * 节点数据接口
- */
-export interface NodeData {
-  readonly id: NodeId;
-  readonly type: NodeType;
-  readonly name?: string;
-  readonly description?: string;
-  readonly position?: { x: number; y: number };
-  readonly properties: Record<string, unknown>;
-}
-
-/**
- * 边数据接口
- */
-export interface EdgeData {
-  readonly id: EdgeId;
-  readonly type: EdgeType;
-  readonly fromNodeId: NodeId;
-  readonly toNodeId: NodeId;
-  readonly condition?: string;
-  readonly weight?: number;
-  readonly properties: Record<string, unknown>;
-}
+import { NodeValueObject } from '../value-objects/node-value-object';
+import { EdgeValueObject } from '../value-objects/edge-value-object';
 
 /**
  * 工作流图数据接口
  */
 export interface WorkflowGraphData {
-  readonly nodes: Map<string, NodeData>;
-  readonly edges: Map<string, EdgeData>;
+  readonly nodes: Map<string, NodeValueObject>;
+  readonly edges: Map<string, EdgeValueObject>;
 }
 
 /**
@@ -256,7 +233,7 @@ export class Workflow extends Entity {
    * 获取所有节点
    * @returns 节点映射
    */
-  public getNodes(): Map<string, NodeData> {
+  public getNodes(): Map<string, NodeValueObject> {
     return new Map(this.props.graph.nodes);
   }
 
@@ -264,7 +241,7 @@ export class Workflow extends Entity {
    * 获取所有边
    * @returns 边映射
    */
-  public getEdges(): Map<string, EdgeData> {
+  public getEdges(): Map<string, EdgeValueObject> {
     return new Map(this.props.graph.edges);
   }
 
@@ -273,8 +250,8 @@ export class Workflow extends Entity {
    * @returns 工作流图数据
    */
   public getGraph(): WorkflowGraphData & {
-    getIncomingEdges(nodeId: NodeId): EdgeData[];
-    getOutgoingEdges(nodeId: NodeId): EdgeData[];
+    getIncomingEdges(nodeId: NodeId): EdgeValueObject[];
+    getOutgoingEdges(nodeId: NodeId): EdgeValueObject[];
   } {
     return {
       nodes: new Map(this.props.graph.nodes),
@@ -289,7 +266,7 @@ export class Workflow extends Entity {
    * @param nodeId 节点ID
    * @returns 节点或null
    */
-  public getNode(nodeId: NodeId): NodeData | null {
+  public getNode(nodeId: NodeId): NodeValueObject | null {
     return this.props.graph.nodes.get(nodeId.toString()) || null;
   }
 
@@ -298,7 +275,7 @@ export class Workflow extends Entity {
    * @param edgeId 边ID
    * @returns 边或null
    */
-  public getEdge(edgeId: EdgeId): EdgeData | null {
+  public getEdge(edgeId: EdgeId): EdgeValueObject | null {
     return this.props.graph.edges.get(edgeId.toString()) || null;
   }
 
@@ -325,8 +302,8 @@ export class Workflow extends Entity {
    * @param nodeId 节点ID
    * @returns 入边列表
    */
-  public getIncomingEdges(nodeId: NodeId): EdgeData[] {
-    const incomingEdges: EdgeData[] = [];
+  public getIncomingEdges(nodeId: NodeId): EdgeValueObject[] {
+    const incomingEdges: EdgeValueObject[] = [];
     for (const edge of this.props.graph.edges.values()) {
       if (edge.toNodeId.equals(nodeId)) {
         incomingEdges.push(edge);
@@ -340,8 +317,8 @@ export class Workflow extends Entity {
    * @param nodeId 节点ID
    * @returns 出边列表
    */
-  public getOutgoingEdges(nodeId: NodeId): EdgeData[] {
-    const outgoingEdges: EdgeData[] = [];
+  public getOutgoingEdges(nodeId: NodeId): EdgeValueObject[] {
+    const outgoingEdges: EdgeValueObject[] = [];
     for (const edge of this.props.graph.edges.values()) {
       if (edge.fromNodeId.equals(nodeId)) {
         outgoingEdges.push(edge);
@@ -538,17 +515,18 @@ export class Workflow extends Entity {
       throw new Error('只能编辑草稿状态工作流的节点');
     }
 
-    const nodeData: NodeData = {
+    // 创建节点值对象
+    const node = NodeValueObject.create({
       id: nodeId,
       type,
       name,
       description,
       position,
       properties: properties || {}
-    };
+    });
 
     const newNodes = new Map(this.props.graph.nodes);
-    newNodes.set(nodeId.toString(), nodeData);
+    newNodes.set(nodeId.toString(), node);
 
     const newGraph = {
       ...this.props.graph,
@@ -629,7 +607,8 @@ export class Workflow extends Entity {
       throw new Error('目标节点不存在');
     }
 
-    const edgeData: EdgeData = {
+    // 创建边值对象
+    const edge = EdgeValueObject.create({
       id: edgeId,
       type,
       fromNodeId,
@@ -637,10 +616,10 @@ export class Workflow extends Entity {
       condition,
       weight,
       properties: properties || {}
-    };
+    });
 
     const newEdges = new Map(this.props.graph.edges);
-    newEdges.set(edgeId.toString(), edgeData);
+    newEdges.set(edgeId.toString(), edge);
 
     const newGraph = {
       ...this.props.graph,

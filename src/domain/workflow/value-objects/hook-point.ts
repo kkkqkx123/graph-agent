@@ -113,6 +113,69 @@ export class HookPointValue extends ValueObject<HookPointValueProps> {
   }
 
   /**
+   * 检查是否为节点执行前钩子
+   */
+  public isBeforeNodeExecute(): boolean {
+    return this.props.value === HookPoint.BEFORE_NODE_EXECUTE;
+  }
+
+  /**
+   * 检查是否为节点执行后钩子
+   */
+  public isAfterNodeExecute(): boolean {
+    return this.props.value === HookPoint.AFTER_NODE_EXECUTE;
+  }
+
+  /**
+   * 检查是否为工作流开始钩子 (映射到 BEFORE_EXECUTE)
+   */
+  public isWorkflowStart(): boolean {
+    return this.props.value === HookPoint.BEFORE_EXECUTE;
+  }
+
+  /**
+   * 检查是否为工作流结束钩子 (映射到 AFTER_EXECUTE)
+   */
+  public isWorkflowEnd(): boolean {
+    return this.props.value === HookPoint.AFTER_EXECUTE;
+  }
+
+  /**
+   * 检查是否为控制流钩子 (映射到边相关钩子)
+   */
+  public isControlFlow(): boolean {
+    return this.isEdgeRelated();
+  }
+
+  /**
+   * 检查是否为数据流钩子 (映射到状态相关钩子)
+   */
+  public isDataFlow(): boolean {
+    return this.isStateRelated();
+  }
+
+  /**
+   * 检查是否为状态钩子 (映射到状态相关钩子)
+   */
+  public isState(): boolean {
+    return this.isStateRelated();
+  }
+
+  /**
+   * 检查是否为生命周期钩子 (所有钩子都是生命周期钩子)
+   */
+  public isLifecycle(): boolean {
+    return true;
+  }
+
+  /**
+   * 检查是否为自定义钩子 (暂无专用自定义钩子)
+   */
+  public isCustom(): boolean {
+    return false;
+  }
+
+  /**
    * 创建执行前钩子点
    */
   public static beforeExecute(): HookPointValue {

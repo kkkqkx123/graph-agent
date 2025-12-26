@@ -1,5 +1,5 @@
 import { NodeId } from '../value-objects/node-id';
-import { EdgeData } from './workflow';
+import { EdgeValueObject } from '../value-objects/edge-value-object';
 
 /**
  * 路由决策接口
@@ -10,9 +10,9 @@ export interface RouteDecision {
   /** 下一个节点ID列表 */
   nextNodeIds: NodeId[];
   /** 满足条件的边 */
-  satisfiedEdges: EdgeData[];
+  satisfiedEdges: EdgeValueObject[];
   /** 未满足条件的边 */
-  unsatisfiedEdges: EdgeData[];
+  unsatisfiedEdges: EdgeValueObject[];
   /** 状态更新 */
   stateUpdates: Record<string, unknown>;
   /** 路由元数据 */
@@ -30,8 +30,8 @@ export interface RouteDecision {
  */
 export function createRouteDecision(
   nextNodeIds: NodeId[],
-  satisfiedEdges: EdgeData[],
-  unsatisfiedEdges: EdgeData[],
+  satisfiedEdges: EdgeValueObject[],
+  unsatisfiedEdges: EdgeValueObject[],
   stateUpdates: Record<string, unknown> = {},
   metadata?: Record<string, unknown>
 ): RouteDecision {
@@ -51,7 +51,7 @@ export function createRouteDecision(
  * @returns 路由决策
  */
 export function createEmptyRouteDecision(
-  unsatisfiedEdges: EdgeData[] = [],
+  unsatisfiedEdges: EdgeValueObject[] = [],
   metadata?: Record<string, unknown>
 ): RouteDecision {
   return {

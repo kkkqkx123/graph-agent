@@ -1,4 +1,4 @@
-import { NodeData } from '../../../domain/workflow/entities/workflow';
+import { NodeValueObject } from '../../../domain/workflow/value-objects/node-value-object';
 
 /**
  * 节点执行器接口
@@ -12,7 +12,7 @@ export interface INodeExecutor {
    * @param context 执行上下文
    * @returns 执行结果
    */
-  execute(node: NodeData, context: any): Promise<any>;
+  execute(node: NodeValueObject, context: any): Promise<any>;
 
   /**
    * 验证节点是否可以执行
@@ -20,7 +20,7 @@ export interface INodeExecutor {
    * @param context 执行上下文
    * @returns 是否可以执行
    */
-  canExecute(node: NodeData, context: any): Promise<boolean>;
+  canExecute(node: NodeValueObject, context: any): Promise<boolean>;
 
   /**
    * 获取执行器支持的节点类型

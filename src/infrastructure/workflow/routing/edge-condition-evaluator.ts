@@ -1,7 +1,7 @@
 import { ID } from '@domain/common/value-objects/id';
 import { EdgeId } from '@domain/workflow/value-objects/edge-id';
 import { NodeId } from '@domain/workflow/value-objects/node-id';
-import { EdgeData } from '@domain/workflow/entities/workflow';
+import { EdgeValueObject } from '@domain/workflow/value-objects/edge-value-object';
 import { ExecutionState } from '@domain/workflow/entities/execution-state';
 import { NodeExecutionState } from '@domain/workflow/entities/node-execution-state';
 import { ExpressionEvaluator } from '../functions/common/expression-evaluator';
@@ -43,7 +43,7 @@ export interface RoutingContext {
   /** 当前节点状态 */
   currentNodeState: NodeExecutionState;
   /** 边数据 */
-  edge: EdgeData;
+  edge: EdgeValueObject;
   /** 所有节点状态 */
   nodeStates: Map<string, NodeExecutionState>;
   /** 执行变量 */
@@ -194,7 +194,7 @@ export class EdgeConditionEvaluator {
    */
   public async evaluate(
     edgeId: EdgeId,
-    edge: EdgeData,
+    edge: EdgeValueObject,
     executionState: ExecutionState
   ): Promise<EdgeEvaluationResult> {
     try {
@@ -392,7 +392,7 @@ export class EdgeConditionEvaluator {
    * @returns 评估结果数组
    */
   public async evaluateBatch(
-    edges: EdgeData[],
+    edges: EdgeValueObject[],
     executionState: ExecutionState
   ): Promise<EdgeEvaluationResult[]> {
     const results: EdgeEvaluationResult[] = [];
@@ -412,9 +412,9 @@ export class EdgeConditionEvaluator {
    * @returns 满足条件的边数组
    */
   public async getSatisfiedEdges(
-    edges: EdgeData[],
+    edges: EdgeValueObject[],
     executionState: ExecutionState
-  ): Promise<EdgeData[]> {
+  ): Promise<EdgeValueObject[]> {
     const results = await this.evaluateBatch(edges, executionState);
     return edges.filter((edge, index) => results[index]?.satisfied ?? false);
   }
@@ -424,7 +424,7 @@ export class EdgeConditionEvaluator {
    * @param edge 边数据
    * @returns 验证结果
    */
-  public async validate(edge: EdgeData): Promise<{ valid: boolean; errors: string[] }> {
+  public async validate(edge: EdgeValueObject): Promise<{ valid: boolean; errors: string[] }> {
     const errors: string[] = [];
 
     // 如果没有条件，则有效

@@ -4,7 +4,7 @@
  */
 
 import { injectable } from 'inversify';
-import { NodeData } from '../../../../domain/workflow/entities/workflow';
+import { NodeValueObject } from '../../../../domain/workflow/value-objects/node-value-object';
 import { Timestamp } from '../../../../domain/common/value-objects/timestamp';
 
 /**
@@ -16,7 +16,7 @@ export class WaitNodeExecutor {
    * 执行等待节点
    */
   public async execute(
-    node: NodeData,
+    node: NodeValueObject,
     context: any
   ): Promise<any> {
     const startTime = Timestamp.now().getMilliseconds();
@@ -58,7 +58,7 @@ export class WaitNodeExecutor {
   /**
    * 验证节点是否可以执行
    */
-  public async canExecute(node: NodeData, context: any): Promise<boolean> {
+  public async canExecute(node: NodeValueObject, context: any): Promise<boolean> {
     return node.type.toString() === 'wait';
   }
 

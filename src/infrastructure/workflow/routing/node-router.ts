@@ -1,6 +1,6 @@
 import { ID } from '@domain/common/value-objects/id';
 import { NodeId } from '@domain/workflow/value-objects/node-id';
-import { EdgeData } from '@domain/workflow/entities/workflow';
+import { EdgeValueObject } from '@domain/workflow/value-objects/edge-value-object';
 import { ExecutionState } from '@domain/workflow/entities/execution-state';
 import { NodeExecutionResult } from '@domain/workflow/entities/node-execution-result';
 import { RouteDecision } from '@domain/workflow/entities/route-decision';
@@ -16,9 +16,9 @@ export interface NodeRoutingResult {
   /** 下一个节点ID列表 */
   nextNodeIds: NodeId[];
   /** 满足条件的边 */
-  satisfiedEdges: EdgeData[];
+  satisfiedEdges: EdgeValueObject[];
   /** 未满足条件的边 */
-  unsatisfiedEdges: EdgeData[];
+  unsatisfiedEdges: EdgeValueObject[];
   /** 路由元数据 */
   metadata?: Record<string, unknown>;
 }
@@ -107,8 +107,8 @@ export class NodeRouter {
     );
 
     // 分离满足和未满足条件的边
-    const satisfiedEdges: EdgeData[] = [];
-    const unsatisfiedEdges: EdgeData[] = [];
+    const satisfiedEdges: EdgeValueObject[] = [];
+    const unsatisfiedEdges: EdgeValueObject[] = [];
 
     for (let i = 0; i < outgoingEdges.length; i++) {
       const edge = outgoingEdges[i];
@@ -214,7 +214,7 @@ export class NodeRouter {
    */
   public async determineNextNodes(
     currentNodeId: NodeId,
-    outgoingEdges: EdgeData[],
+    outgoingEdges: EdgeValueObject[],
     executionState: ExecutionState
   ): Promise<NodeRoutingResult> {
     // 如果没有出边，返回空列表
@@ -235,8 +235,8 @@ export class NodeRouter {
     );
 
     // 分离满足和未满足条件的边
-    const satisfiedEdges: EdgeData[] = [];
-    const unsatisfiedEdges: EdgeData[] = [];
+    const satisfiedEdges: EdgeValueObject[] = [];
+    const unsatisfiedEdges: EdgeValueObject[] = [];
 
     for (let i = 0; i < outgoingEdges.length; i++) {
       const edge = outgoingEdges[i];
@@ -276,7 +276,7 @@ export class NodeRouter {
    * @param allEdges 所有边
    * @returns 出边列表
    */
-  public getOutgoingEdges(nodeId: NodeId, allEdges: EdgeData[]): EdgeData[] {
+  public getOutgoingEdges(nodeId: NodeId, allEdges: EdgeValueObject[]): EdgeValueObject[] {
     return allEdges.filter(edge => edge.fromNodeId.equals(nodeId));
   }
 
@@ -286,7 +286,7 @@ export class NodeRouter {
    * @param allEdges 所有边
    * @returns 入边列表
    */
-  public getIncomingEdges(nodeId: NodeId, allEdges: EdgeData[]): EdgeData[] {
+  public getIncomingEdges(nodeId: NodeId, allEdges: EdgeValueObject[]): EdgeValueObject[] {
     return allEdges.filter(edge => edge.toNodeId.equals(nodeId));
   }
 
@@ -296,7 +296,7 @@ export class NodeRouter {
    * @param allEdges 所有边
    * @returns 是否有出边
    */
-  public hasOutgoingEdges(nodeId: NodeId, allEdges: EdgeData[]): boolean {
+  public hasOutgoingEdges(nodeId: NodeId, allEdges: EdgeValueObject[]): boolean {
     return this.getOutgoingEdges(nodeId, allEdges).length > 0;
   }
 
@@ -306,7 +306,7 @@ export class NodeRouter {
    * @param allEdges 所有边
    * @returns 是否有入边
    */
-  public hasIncomingEdges(nodeId: NodeId, allEdges: EdgeData[]): boolean {
+  public hasIncomingEdges(nodeId: NodeId, allEdges: EdgeValueObject[]): boolean {
     return this.getIncomingEdges(nodeId, allEdges).length > 0;
   }
 
@@ -316,7 +316,7 @@ export class NodeRouter {
    * @param allNodeIds 所有节点ID
    * @returns 起始节点ID列表
    */
-  public getStartNodes(allEdges: EdgeData[], allNodeIds: NodeId[]): NodeId[] {
+  public getStartNodes(allEdges: EdgeValueObject[], allNodeIds: NodeId[]): NodeId[] {
     const nodeIdsWithIncomingEdges = new Set<string>();
 
     for (const edge of allEdges) {
@@ -332,7 +332,7 @@ export class NodeRouter {
    * @param allNodeIds 所有节点ID
    * @returns 结束节点ID列表
    */
-  public getEndNodes(allEdges: EdgeData[], allNodeIds: NodeId[]): NodeId[] {
+  public getEndNodes(allEdges: EdgeValueObject[], allNodeIds: NodeId[]): NodeId[] {
     const nodeIdsWithOutgoingEdges = new Set<string>();
 
     for (const edge of allEdges) {
@@ -348,7 +348,7 @@ export class NodeRouter {
    * @param allEdges 所有边
    * @returns 是否为结束节点
    */
-  public isEndNode(nodeId: NodeId, allEdges: EdgeData[]): boolean {
+  public isEndNode(nodeId: NodeId, allEdges: EdgeValueObject[]): boolean {
     return !this.hasOutgoingEdges(nodeId, allEdges);
   }
 
@@ -358,7 +358,7 @@ export class NodeRouter {
    * @param allEdges 所有边
    * @returns 是否为起始节点
    */
-  public isStartNode(nodeId: NodeId, allEdges: EdgeData[]): boolean {
+  public isStartNode(nodeId: NodeId, allEdges: EdgeValueObject[]): boolean {
     return !this.hasIncomingEdges(nodeId, allEdges);
   }
 

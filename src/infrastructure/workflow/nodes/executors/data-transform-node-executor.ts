@@ -5,7 +5,7 @@
  */
 
 import { injectable } from 'inversify';
-import { NodeData } from '../../../../domain/workflow/entities/workflow';
+import { NodeValueObject } from '../../../../domain/workflow/value-objects/node-value-object';
 import { Timestamp } from '../../../../domain/common/value-objects/timestamp';
 
 /**
@@ -49,7 +49,7 @@ export class DataTransformNodeExecutor {
    * 执行数据转换节点
    */
   public async execute(
-    node: NodeData,
+    node: NodeValueObject,
     context: ExecutionContext
   ): Promise<{ success: boolean; output?: unknown; error?: string; metadata?: Record<string, unknown> }> {
     const startTime = Timestamp.now().getMilliseconds();
@@ -111,7 +111,7 @@ export class DataTransformNodeExecutor {
   /**
    * 验证节点是否可以执行
    */
-  public async canExecute(node: NodeData, context: any): Promise<boolean> {
+  public async canExecute(node: NodeValueObject, context: any): Promise<boolean> {
     return node.type.toString() === 'data_transform';
   }
 
@@ -125,7 +125,7 @@ export class DataTransformNodeExecutor {
   /**
    * 解析节点配置
    */
-  private parseConfig(node: NodeData): DataTransformConfig {
+  private parseConfig(node: NodeValueObject): DataTransformConfig {
     const properties = node.properties || {};
     const config = (properties as any)['config'] || properties;
 

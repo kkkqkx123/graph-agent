@@ -1,16 +1,17 @@
-import { Workflow, NodeData, EdgeData } from '../../../domain/workflow/entities/workflow';
+import { Workflow } from '../../../domain/workflow/entities/workflow';
+import { NodeValueObject } from '../../../domain/workflow/value-objects/node-value-object';
 import { ID } from '../../../domain/common/value-objects/id';
 
 /**
  * 图算法服务接口
- * 
+ *
  * 提供各种图算法功能，专注于算法实现：
  * 1. 拓扑排序
  * 2. 循环检测
  * 3. 连通分量分析
  * 4. 路径查找
  * 5. 图复杂度分析
- * 
+ *
  * 此接口定义图算法的契约，具体实现在基础设施层提供。
  */
 export interface GraphAlgorithmService {
@@ -19,7 +20,7 @@ export interface GraphAlgorithmService {
    * @param graph 工作流图
    * @returns 拓扑排序的节点列表
    */
-  getTopologicalOrder(workflow: Workflow): NodeData[];
+  getTopologicalOrder(workflow: Workflow): NodeValueObject[];
 
   /**
    * 检查图是否包含循环
@@ -33,7 +34,7 @@ export interface GraphAlgorithmService {
    * @param graph 工作流图
    * @returns 连通分量列表
    */
-  getConnectedComponents(workflow: Workflow): NodeData[][];
+  getConnectedComponents(workflow: Workflow): NodeValueObject[][];
 
   /**
    * 查找两个节点之间的路径
@@ -42,7 +43,7 @@ export interface GraphAlgorithmService {
    * @param endNodeId 结束节点ID
    * @returns 路径节点列表，如果不存在路径则返回空数组
    */
-  findPath(workflow: Workflow, startNodeId: ID, endNodeId: ID): NodeData[];
+  findPath(workflow: Workflow, startNodeId: ID, endNodeId: ID): NodeValueObject[];
 
   /**
    * 查找两个节点之间的所有路径
@@ -51,7 +52,7 @@ export interface GraphAlgorithmService {
    * @param endNodeId 结束节点ID
    * @returns 所有路径的列表
    */
-  findAllPaths(workflow: Workflow, startNodeId: ID, endNodeId: ID): NodeData[][];
+  findAllPaths(workflow: Workflow, startNodeId: ID, endNodeId: ID): NodeValueObject[][];
 
   /**
    * 计算图的复杂度

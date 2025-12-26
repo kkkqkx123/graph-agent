@@ -1,7 +1,7 @@
 import { ID } from '@domain/common/value-objects/id';
 import { Timestamp } from '@domain/common/value-objects/timestamp';
 import { NodeId } from '@domain/workflow/value-objects/node-id';
-import { EdgeData } from '@domain/workflow/entities/workflow';
+import { EdgeValueObject } from '@domain/workflow/value-objects/edge-value-object';
 import { ExecutionState } from '@domain/workflow/entities/execution-state';
 import { NodeExecutionState } from '@domain/workflow/entities/node-execution-state';
 import { PromptContext } from '@domain/workflow/value-objects/prompt-context';

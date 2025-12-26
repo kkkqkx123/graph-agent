@@ -29,3 +29,11 @@ export * from './execution-strategy';
 export * from './execution-status';
 export * from './node-status';
 export * from './prompt-context';
+
+// 节点和边值对象
+export * from './node-value-object';
+export * from './edge-value-object';
+
+// 触发器和钩子值对象
+export * from './trigger-value-object';
+export * from './hook-value-object';

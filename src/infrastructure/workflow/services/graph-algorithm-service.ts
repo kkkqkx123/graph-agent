@@ -1,6 +1,8 @@
 import { injectable } from 'inversify';
 import { GraphAlgorithmService, GraphComplexity } from '../interfaces/graph-algorithm-service.interface';
-import { Workflow, NodeData, EdgeData } from '../../../domain/workflow/entities/workflow';
+import { Workflow } from '../../../domain/workflow/entities/workflow';
+import { NodeValueObject } from '../../../domain/workflow/value-objects/node-value-object';
+import { EdgeValueObject } from '../../../domain/workflow/value-objects/edge-value-object';
 import { ID } from '../../../domain/common/value-objects/id';
 import { NodeId } from '../../../domain/workflow/value-objects/node-id';
 
@@ -23,9 +25,9 @@ export class GraphAlgorithmServiceImpl implements GraphAlgorithmService {
    * @param workflow 工作流
    * @returns 拓扑排序的节点列表
    */
-  getTopologicalOrder(workflow: Workflow): NodeData[] {
+  getTopologicalOrder(workflow: Workflow): NodeValueObject[] {
     const visited = new Set<string>();
-    const result: NodeData[] = [];
+    const result: NodeValueObject[] = [];
     const graph = workflow.getGraph();
 
     const visit = (nodeId: ID) => {
@@ -106,12 +108,12 @@ export class GraphAlgorithmServiceImpl implements GraphAlgorithmService {
    * @param workflow 工作流
    * @returns 连通分量列表
    */
-  getConnectedComponents(workflow: Workflow): NodeData[][] {
+  getConnectedComponents(workflow: Workflow): NodeValueObject[][] {
     const visited = new Set<string>();
-    const components: NodeData[][] = [];
+    const components: NodeValueObject[][] = [];
     const graph = workflow.getGraph();
 
-    const dfs = (nodeId: ID, component: NodeData[]): void => {
+    const dfs = (nodeId: ID, component: NodeValueObject[]): void => {
       const nodeIdStr = nodeId.toString();
       if (visited.has(nodeIdStr)) return;
       
@@ -136,7 +138,7 @@ export class GraphAlgorithmServiceImpl implements GraphAlgorithmService {
     // 从所有未访问的节点开始DFS
     for (const node of graph.nodes.values()) {
       if (!visited.has(node.id.toString())) {
-        const component: NodeData[] = [];
+        const component: NodeValueObject[] = [];
         dfs(node.id, component);
         components.push(component);
       }
@@ -152,9 +154,9 @@ export class GraphAlgorithmServiceImpl implements GraphAlgorithmService {
    * @param endNodeId 结束节点ID
    * @returns 路径节点列表，如果不存在路径则返回空数组
    */
-  findPath(workflow: Workflow, startNodeId: ID, endNodeId: ID): NodeData[] {
+  findPath(workflow: Workflow, startNodeId: ID, endNodeId: ID): NodeValueObject[] {
     const visited = new Set<string>();
-    const path: NodeData[] = [];
+    const path: NodeValueObject[] = [];
     const graph = workflow.getGraph();
 
     const dfs = (nodeId: ID): boolean => {
@@ -198,9 +200,9 @@ export class GraphAlgorithmServiceImpl implements GraphAlgorithmService {
    * @param endNodeId 结束节点ID
    * @returns 所有路径的列表
    */
-  findAllPaths(workflow: Workflow, startNodeId: ID, endNodeId: ID): NodeData[][] {
-    const allPaths: NodeData[][] = [];
-    const currentPath: NodeData[] = [];
+  findAllPaths(workflow: Workflow, startNodeId: ID, endNodeId: ID): NodeValueObject[][] {
+    const allPaths: NodeValueObject[][] = [];
+    const currentPath: NodeValueObject[] = [];
     const visited = new Set<string>();
     const graph = workflow.getGraph();
 
