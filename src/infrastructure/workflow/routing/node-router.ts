@@ -5,7 +5,7 @@ import { ExecutionState } from '@domain/workflow/entities/execution-state';
 import { NodeExecutionResult } from '@domain/workflow/entities/node-execution-result';
 import { RouteDecision } from '@domain/workflow/entities/route-decision';
 import { Workflow } from '@domain/workflow/entities/workflow';
-import { EdgeConditionEvaluator, EdgeEvaluationResult } from './edge-condition-evaluator';
+import { EdgeEvaluator, EdgeEvaluationResult } from './edge-evaluator';
 
 /**
  * 节点路由结果接口（向后兼容）
@@ -30,14 +30,14 @@ export interface NodeRoutingResult {
  * 支持节点类型路由策略：常规节点、条件节点、子工作流节点
  */
 export class NodeRouter {
-  private edgeConditionEvaluator: EdgeConditionEvaluator;
+  private edgeEvaluator: EdgeEvaluator;
 
   /**
    * 构造函数
-   * @param edgeConditionEvaluator 边条件评估器
+   * @param edgeEvaluator 边评估器
    */
-  constructor(edgeConditionEvaluator?: EdgeConditionEvaluator) {
-    this.edgeConditionEvaluator = edgeConditionEvaluator || new EdgeConditionEvaluator();
+  constructor(edgeEvaluator: EdgeEvaluator) {
+    this.edgeEvaluator = edgeEvaluator;
   }
 
   /**
@@ -101,7 +101,7 @@ export class NodeRouter {
     }
 
     // 评估所有出边的条件
-    const evaluationResults = await this.edgeConditionEvaluator.evaluateBatch(
+    const evaluationResults = await this.edgeEvaluator.evaluateBatch(
       outgoingEdges,
       executionState
     );
@@ -229,7 +229,7 @@ export class NodeRouter {
     }
 
     // 评估所有出边的条件
-    const evaluationResults = await this.edgeConditionEvaluator.evaluateBatch(
+    const evaluationResults = await this.edgeEvaluator.evaluateBatch(
       outgoingEdges,
       executionState
     );
@@ -383,18 +383,18 @@ export class NodeRouter {
   }
 
   /**
-   * 获取边条件评估器
-   * @returns 边条件评估器
+   * 获取边评估器
+   * @returns 边评估器
    */
-  public getEdgeConditionEvaluator(): EdgeConditionEvaluator {
-    return this.edgeConditionEvaluator;
+  public getEdgeEvaluator(): EdgeEvaluator {
+    return this.edgeEvaluator;
   }
 
   /**
-   * 设置边条件评估器
-   * @param edgeConditionEvaluator 边条件评估器
+   * 设置边评估器
+   * @param edgeEvaluator 边评估器
    */
-  public setEdgeConditionEvaluator(edgeConditionEvaluator: EdgeConditionEvaluator): void {
-    this.edgeConditionEvaluator = edgeConditionEvaluator;
+  public setEdgeEvaluator(edgeEvaluator: EdgeEvaluator): void {
+    this.edgeEvaluator = edgeEvaluator;
   }
 }

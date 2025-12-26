@@ -1,1 +1,9 @@
 export { ConditionalRoutingFunction } from './conditional-routing.function';
+export { NodeSuccessRoutingFunction } from './node-success-routing.function';
+export { NodeFailedRoutingFunction } from './node-failed-routing.function';
+export { VariableExistsRoutingFunction } from './variable-exists-routing.function';
+export { VariableEqualsRoutingFunction } from './variable-equals-routing.function';
+export { RetryCountRoutingFunction } from './retry-count-routing.function';
+export { ExecutionTimeoutRoutingFunction } from './execution-timeout-routing.function';
+export { ProgressReachedRoutingFunction } from './progress-reached-routing.function';
+export { AllNodesCompletedRoutingFunction } from './all-nodes-completed-routing.function';
