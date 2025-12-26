@@ -23,9 +23,12 @@ import {
 import {
   createDirectEdge,
   createConditionalEdge,
-  EdgeType,
-  ConditionOperator
+  EdgeType
 } from '../entities/edge';
+
+import {
+  ConditionOperator
+} from '../types/workflow-types';
 
 import {
   createTimeoutTrigger,

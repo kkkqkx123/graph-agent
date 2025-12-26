@@ -254,6 +254,70 @@ export type NodeFunction = (
 ) => Promise<NodeOutput>;
 
 /**
+ * 边函数类型
+ */
+export type EdgeFunction = (
+  input: EdgeInput,
+  config: EdgeConfig,
+  context: ExecutionContext
+) => Promise<EdgeOutput>;
+
+/**
+ * 边输入接口
+ */
+export interface EdgeInput {
+  fromNodeId: string;
+  toNodeId: string;
+  [key: string]: any;
+}
+
+/**
+ * 边配置接口
+ */
+export interface EdgeConfig {
+  expression?: string;
+  operator?: string;
+  expectedValue?: any;
+  weight?: number;
+  [key: string]: any;
+}
+
+/**
+ * 边输出接口
+ */
+export interface EdgeOutput {
+  canTraverse: boolean;
+  reason: string;
+  metadata?: Record<string, any>;
+}
+
+/**
+ * 触发器函数类型
+ */
+export type TriggerFunction = (
+  input: TriggerInput,
+  config: TriggerConfig,
+  context: ExecutionContext
+) => Promise<TriggerOutput>;
+
+/**
+ * 触发器输入接口
+ */
+export interface TriggerInput {
+  triggerId: string;
+  [key: string]: any;
+}
+
+/**
+ * 触发器输出接口
+ */
+export interface TriggerOutput {
+  shouldTrigger: boolean;
+  reason: string;
+  metadata?: Record<string, any>;
+}
+
+/**
  * 条件评估函数类型
  */
 export type ConditionEvaluator = (

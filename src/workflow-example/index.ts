@@ -1,6 +1,6 @@
 /**
  * 图工作流示例 - 主入口文件
- * 
+ *
  * 本文件导出图工作流示例的所有公共API
  */
 
@@ -23,6 +23,8 @@ export * from './entities/trigger';
 // ============================================================================
 
 export * from './functions/nodes/node-functions';
+export * from './functions/edges/edge-functions';
+export * from './functions/triggers/trigger-functions';
 
 // ============================================================================
 // 引擎

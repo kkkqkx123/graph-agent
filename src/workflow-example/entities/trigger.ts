@@ -1,7 +1,7 @@
 /**
  * 触发器实体实现
  * 
- * 本文件实现了图工作流中的触发器实体
+ * 本文件实现了图工作流中的触发器实体，使用函数式编程风格
  */
 
 import {
@@ -10,13 +10,13 @@ import {
   TriggerAction,
   TriggerStatus,
   TriggerConfig,
-  TimeTriggerConfig,
-  EventTriggerConfig,
-  StateTriggerConfig,
   createTriggerId,
   ExecutionContext,
-  WorkflowEngine
+  WorkflowEngine,
+  TriggerFunction
 } from '../types/workflow-types';
+
+import { getTriggerFunction } from '../functions/triggers/trigger-functions';
 
 /**
  * 触发器实体类
@@ -121,7 +121,72 @@ export class TriggerImpl {
   }
 
   /**
+   * 获取输入Schema
+   * 根据触发器类型返回不同的输入Schema
+   */
+  getInputSchema(): Record<string, any> {
+    switch (this._type) {
+      case TriggerType.TIME:
+        return {
+          type: 'object',
+          properties: {
+            triggerId: { type: 'string', description: '触发器ID' },
+            delay: { type: 'number', description: '延迟毫秒数' },
+            interval: { type: 'number', description: '间隔毫秒数' },
+            cron: { type: 'string', description: 'Cron表达式' }
+          },
+          required: ['triggerId']
+        };
+
+      case TriggerType.EVENT:
+        return {
+          type: 'object',
+          properties: {
+            triggerId: { type: 'string', description: '触发器ID' },
+            eventType: { type: 'string', description: '事件类型' },
+            eventDataPattern: { type: 'object', description: '事件数据模式' }
+          },
+          required: ['triggerId', 'eventType']
+        };
+
+      case TriggerType.STATE:
+        return {
+          type: 'object',
+          properties: {
+            triggerId: { type: 'string', description: '触发器ID' },
+            statePath: { type: 'string', description: '状态路径' },
+            expectedValue: { type: 'any', description: '期望值' }
+          },
+          required: ['triggerId', 'statePath', 'expectedValue']
+        };
+
+      default:
+        return {
+          type: 'object',
+          properties: {},
+          required: []
+        };
+    }
+  }
+
+  /**
+   * 获取输出Schema
+   */
+  getOutputSchema(): Record<string, any> {
+    return {
+      type: 'object',
+      properties: {
+        shouldTrigger: { type: 'boolean', description: '是否应该触发' },
+        reason: { type: 'string', description: '原因说明' },
+        metadata: { type: 'object', description: '元数据' }
+      },
+      required: ['shouldTrigger', 'reason']
+    };
+  }
+
+  /**
    * 评估触发器是否应该触发
+   * 使用函数式编程风格，调用对应的触发器函数
    * 
    * @param context 执行上下文
    * @returns 是否应该触发
@@ -138,165 +203,28 @@ export class TriggerImpl {
     }
 
     try {
-      switch (this._type) {
-        case TriggerType.TIME:
-          return await this.evaluateTimeTrigger(context);
-        case TriggerType.EVENT:
-          return await this.evaluateEventTrigger(context);
-        case TriggerType.STATE:
-          return await this.evaluateStateTrigger(context);
-        default:
-          return false;
+      // 获取触发器函数
+      const triggerFunction: TriggerFunction | undefined = getTriggerFunction(this._type.toString());
+
+      if (!triggerFunction) {
+        console.warn(`未找到触发器类型 ${this._type} 的函数`);
+        return false;
       }
+
+      // 准备输入
+      const input = {
+        triggerId: this._id.toString(),
+        targetNodeId: this._targetNodeId
+      };
+
+      // 调用触发器函数
+      const output = await triggerFunction(input, this._config, context);
+
+      return output.shouldTrigger;
     } catch (error) {
       console.error(`评估触发器失败: ${this._id}`, error);
       return false;
     }
-  }
-
-  /**
-   * 评估时间触发器
-   * 
-   * @param context 执行上下文
-   * @returns 是否应该触发
-   */
-  private async evaluateTimeTrigger(context: ExecutionContext): Promise<boolean> {
-    const config = this._config as TimeTriggerConfig;
-
-    // 检查延迟触发
-    if (config.delay !== undefined) {
-      return this.checkDelayMet(config.delay, context);
-    }
-
-    // 检查间隔触发
-    if (config.interval !== undefined) {
-      return this.checkIntervalMet(config.interval, context);
-    }
-
-    // 检查cron触发（简化版本，仅支持基本检查）
-    if (config.cron !== undefined) {
-      return this.checkCronMatch(config.cron);
-    }
-
-    return false;
-  }
-
-  /**
-   * 检查延迟是否满足
-   * 
-   * @param delay 延迟毫秒数
-   * @param context 执行上下文
-   * @returns 是否满足
-   */
-  private checkDelayMet(delay: number, context: ExecutionContext): boolean {
-    const startTime = context.getVariable('workflow.startTime') as number;
-    if (!startTime) {
-      return false;
-    }
-    const currentTime = Date.now();
-    return (currentTime - startTime) >= delay;
-  }
-
-  /**
-   * 检查间隔是否满足
-   * 
-   * @param interval 间隔毫秒数
-   * @param context 执行上下文
-   * @returns 是否满足
-   */
-  private checkIntervalMet(interval: number, context: ExecutionContext): boolean {
-    const lastTriggerTime = context.getVariable(`trigger.${this._id}.lastTriggerTime`) as number;
-    if (!lastTriggerTime) {
-      return true;
-    }
-    const currentTime = Date.now();
-    return (currentTime - lastTriggerTime) >= interval;
-  }
-
-  /**
-   * 检查cron表达式是否匹配
-   * 
-   * @param cron cron表达式
-   * @returns 是否匹配
-   */
-  private checkCronMatch(cron: string): boolean {
-    // 简化版本，仅支持基本检查
-    // 实际实现应该使用cron解析库
-    const now = new Date();
-    const minute = now.getMinutes();
-    const hour = now.getHours();
-
-    // 简单的每分钟检查
-    if (cron === '* * * * *') {
-      return true;
-    }
-
-    // 简单的每小时检查
-    if (cron === '0 * * * *' && minute === 0) {
-      return true;
-    }
-
-    // 简单的每天检查
-    if (cron === '0 0 * * *' && minute === 0 && hour === 0) {
-      return true;
-    }
-
-    return false;
-  }
-
-  /**
-   * 评估事件触发器
-   * 
-   * @param context 执行上下文
-   * @returns 是否应该触发
-   */
-  private async evaluateEventTrigger(context: ExecutionContext): Promise<boolean> {
-    const config = this._config as EventTriggerConfig;
-
-    // 获取最近的事件
-    const recentEvent = context.getRecentEvent(config.eventType);
-    if (!recentEvent) {
-      return false;
-    }
-
-    // 如果有事件数据模式，检查是否匹配
-    if (config.eventDataPattern) {
-      return this.matchEventData(recentEvent.data, config.eventDataPattern);
-    }
-
-    return true;
-  }
-
-  /**
-   * 匹配事件数据
-   * 
-   * @param eventData 事件数据
-   * @param pattern 匹配模式
-   * @returns 是否匹配
-   */
-  private matchEventData(eventData: any, pattern: Record<string, any>): boolean {
-    for (const key in pattern) {
-      if (eventData[key] !== pattern[key]) {
-        return false;
-      }
-    }
-    return true;
-  }
-
-  /**
-   * 评估状态触发器
-   * 
-   * @param context 执行上下文
-   * @returns 是否应该触发
-   */
-  private async evaluateStateTrigger(context: ExecutionContext): Promise<boolean> {
-    const config = this._config as StateTriggerConfig;
-
-    // 从上下文获取状态值
-    const actualValue = context.getVariable(config.statePath);
-
-    // 比较状态值
-    return actualValue === config.expectedValue;
   }
 
   /**
@@ -374,7 +302,7 @@ export function createTrigger(
 export function createTimeTrigger(
   id: string,
   name: string,
-  config: TimeTriggerConfig,
+  config: TriggerConfig,
   action: TriggerAction,
   targetNodeId?: string
 ): TriggerImpl {
@@ -387,7 +315,7 @@ export function createTimeTrigger(
 export function createEventTrigger(
   id: string,
   name: string,
-  config: EventTriggerConfig,
+  config: TriggerConfig,
   action: TriggerAction,
   targetNodeId?: string
 ): TriggerImpl {
@@ -400,7 +328,7 @@ export function createEventTrigger(
 export function createStateTrigger(
   id: string,
   name: string,
-  config: StateTriggerConfig,
+  config: TriggerConfig,
   action: TriggerAction,
   targetNodeId?: string
 ): TriggerImpl {
