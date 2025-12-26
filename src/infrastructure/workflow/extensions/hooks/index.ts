@@ -24,10 +24,8 @@ export {
 } from './hook-chain';
 
 // 钩子执行管理器
-export { 
-  HookExecutionManager,
-  DefaultHookExecutionManager,
-  HookChainExecutionResult as HookManagerExecutionResult
+export {
+  HookExecutionManager
 } from './hook-execution-manager';
 
 // 预定义钩子类型

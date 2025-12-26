@@ -2,6 +2,7 @@ import { ValueObject } from '../../common/value-objects/value-object';
 import { ID } from '../../common/value-objects/id';
 import { Timestamp } from '../../common/value-objects/timestamp';
 import { ThreadStatus } from './thread-status';
+import { NodeStatus } from '../../workflow/value-objects/node-status';
 
 /**
  * ThreadExecution值对象属性接口

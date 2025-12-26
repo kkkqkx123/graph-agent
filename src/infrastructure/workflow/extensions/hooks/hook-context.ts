@@ -1,16 +1,7 @@
 import { ID } from '../../../../domain/common/value-objects/id';
+import { HookPoint } from '../../../../domain/workflow/value-objects/hook-point';
 
-/**
- * 钩子点枚举
- */
-export enum HookPoint {
-  BEFORE_EXECUTE = 'before_execute',
-  AFTER_EXECUTE = 'after_execute',
-  BEFORE_NODE_EXECUTE = 'before_node_execute',
-  AFTER_NODE_EXECUTE = 'after_node_execute',
-  ON_ERROR = 'on_error',
-  ON_COMPLETE = 'on_complete'
-}
+export { HookPoint };
 
 /**
  * 工作流状态接口

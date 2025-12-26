@@ -4,6 +4,7 @@ import { LLMNodeExecutor } from '../executors/llm-node-executor';
 import { ToolNodeExecutor } from '../executors/tool-node-executor';
 import { ConditionNodeExecutor } from '../executors/condition-node-executor';
 import { WaitNodeExecutor } from '../executors/wait-node-executor';
+import { DataTransformNodeExecutor } from '../executors/data-transform-node-executor';
 
 @injectable()
 export class NodeExecutorFactory {
@@ -13,7 +14,8 @@ export class NodeExecutorFactory {
     @inject('LLMNodeExecutor') private llmNodeExecutor: LLMNodeExecutor,
     @inject('ToolNodeExecutor') private toolNodeExecutor: ToolNodeExecutor,
     @inject('ConditionNodeExecutor') private conditionNodeExecutor: ConditionNodeExecutor,
-    @inject('WaitNodeExecutor') private waitNodeExecutor: WaitNodeExecutor
+    @inject('WaitNodeExecutor') private waitNodeExecutor: WaitNodeExecutor,
+    @inject('DataTransformNodeExecutor') private dataTransformNodeExecutor: DataTransformNodeExecutor
   ) {
     this.registerDefaultExecutors();
   }
@@ -49,5 +51,8 @@ export class NodeExecutorFactory {
     this.executors.set('tool', this.toolNodeExecutor);
     this.executors.set('condition', this.conditionNodeExecutor);
     this.executors.set('wait', this.waitNodeExecutor);
+    this.executors.set('data_transform', this.dataTransformNodeExecutor);
+    this.executors.set('transform', this.dataTransformNodeExecutor);
+    this.executors.set('data-mapping', this.dataTransformNodeExecutor);
   }
 }

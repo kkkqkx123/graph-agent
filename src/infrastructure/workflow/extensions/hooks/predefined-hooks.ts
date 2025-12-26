@@ -1,65 +1,33 @@
 import { HookPoint, HookContext } from './hook-context';
-import { BaseHook, HookExecutionResult } from './hook-execution-manager';
+import { BaseHook } from './base-hook';
+import { HookExecutionResult } from './hook-execution-result';
 
 /**
  * 日志钩子
  *
  * 记录图执行过程中的日志信息
  */
-export class LoggingHook implements BaseHook {
+export class LoggingHook extends BaseHook {
   private logger: (message: string, context?: any) => void;
-  private enabled = true;
 
   constructor(
-    private id: string,
-    private hookPoint: HookPoint,
+    id: string,
+    hookPoint: HookPoint,
     logger: (message: string, context?: any) => void = console.log
   ) {
+    super(id, hookPoint);
     this.logger = logger;
   }
 
-  getId(): string {
-    return this.id;
-  }
-
-  getHookPoint(): HookPoint {
-    return this.hookPoint;
-  }
-
-  async execute(context: HookContext): Promise<HookExecutionResult> {
-    const startTime = Date.now();
-    try {
-      const message = `钩子执行 [${this.getId()}] 在 ${this.getHookPoint()}`;
-      this.logger(message, {
-        workflowId: context.workflowId,
-        nodeId: context.nodeId,
-        edgeId: context.edgeId,
-        timestamp: context.timestamp
-      });
-      return {
-        hookId: this.id,
-        success: true,
-        result: { logged: true },
-        executionTime: Date.now() - startTime,
-        shouldContinue: true
-      };
-    } catch (error) {
-      return {
-        hookId: this.id,
-        success: false,
-        error: error as Error,
-        executionTime: Date.now() - startTime,
-        shouldContinue: true
-      };
-    }
-  }
-
-  isEnabled(): boolean {
-    return this.enabled;
-  }
-
-  setEnabled(enabled: boolean): void {
-    this.enabled = enabled;
+  protected async onExecute(context: HookContext): Promise<any> {
+    const message = `钩子执行 [${this.getId()}] 在 ${this.getHookPoint()}`;
+    this.logger(message, {
+      workflowId: context.workflowId,
+      nodeId: context.nodeId,
+      edgeId: context.edgeId,
+      timestamp: context.timestamp
+    });
+    return { logged: true };
   }
 }
 
@@ -68,60 +36,27 @@ export class LoggingHook implements BaseHook {
  *
  * 验证图执行过程中的数据
  */
-export class ValidationHook implements BaseHook {
+export class ValidationHook extends BaseHook {
   private validator: (context: HookContext) => boolean | Promise<boolean>;
   private errorMessage: string;
-  private enabled = true;
 
   constructor(
-    private id: string,
-    private hookPoint: HookPoint,
+    id: string,
+    hookPoint: HookPoint,
     validator: (context: HookContext) => boolean | Promise<boolean>,
     errorMessage: string = '验证失败'
   ) {
+    super(id, hookPoint);
     this.validator = validator;
     this.errorMessage = errorMessage;
   }
 
-  getId(): string {
-    return this.id;
-  }
-
-  getHookPoint(): HookPoint {
-    return this.hookPoint;
-  }
-
-  async execute(context: HookContext): Promise<HookExecutionResult> {
-    const startTime = Date.now();
-    try {
-      const isValid = await this.validator(context);
-      if (!isValid) {
-        throw new Error(this.errorMessage);
-      }
-      return {
-        hookId: this.id,
-        success: true,
-        result: { validated: true },
-        executionTime: Date.now() - startTime,
-        shouldContinue: true
-      };
-    } catch (error) {
-      return {
-        hookId: this.id,
-        success: false,
-        error: error as Error,
-        executionTime: Date.now() - startTime,
-        shouldContinue: false
-      };
+  protected async onExecute(context: HookContext): Promise<any> {
+    const isValid = await this.validator(context);
+    if (!isValid) {
+      throw new Error(this.errorMessage);
     }
-  }
-
-  isEnabled(): boolean {
-    return this.enabled;
-  }
-
-  setEnabled(enabled: boolean): void {
-    this.enabled = enabled;
+    return { validated: true };
   }
 }
 
@@ -130,71 +65,32 @@ export class ValidationHook implements BaseHook {
  *
  * 缓存图执行过程中的数据
  */
-export class CacheHook implements BaseHook {
+export class CacheHook extends BaseHook {
   private cache: Map<string, any> = new Map();
   private keyGenerator: (context: HookContext) => string;
   private ttl: number; // 生存时间（毫秒）
-  private enabled = true;
 
   constructor(
-    private id: string,
-    private hookPoint: HookPoint,
+    id: string,
+    hookPoint: HookPoint,
     keyGenerator: (context: HookContext) => string,
     ttl: number = 300000 // 默认5分钟
   ) {
+    super(id, hookPoint);
     this.keyGenerator = keyGenerator;
     this.ttl = ttl;
   }
 
-  getId(): string {
-    return this.id;
-  }
+  protected async onExecute(context: HookContext): Promise<any> {
+    const key = this.keyGenerator(context);
+    const cached = this.cache.get(key);
 
-  getHookPoint(): HookPoint {
-    return this.hookPoint;
-  }
-
-  async execute(context: HookContext): Promise<HookExecutionResult> {
-    const startTime = Date.now();
-    try {
-      const key = this.keyGenerator(context);
-      const cached = this.cache.get(key);
-
-      if (cached && Date.now() - cached.timestamp < this.ttl) {
-        return {
-          hookId: this.id,
-          success: true,
-          result: { cached: true, data: cached.data, fromCache: true },
-          executionTime: Date.now() - startTime,
-          shouldContinue: true
-        };
-      }
-
-      // 如果没有缓存或已过期，返回空结果，实际数据由其他钩子或业务逻辑设置
-      return {
-        hookId: this.id,
-        success: true,
-        result: { cached: false, fromCache: false },
-        executionTime: Date.now() - startTime,
-        shouldContinue: true
-      };
-    } catch (error) {
-      return {
-        hookId: this.id,
-        success: false,
-        error: error as Error,
-        executionTime: Date.now() - startTime,
-        shouldContinue: true
-      };
+    if (cached && Date.now() - cached.timestamp < this.ttl) {
+      return { cached: true, data: cached.data, fromCache: true };
     }
-  }
 
-  isEnabled(): boolean {
-    return this.enabled;
-  }
-
-  setEnabled(enabled: boolean): void {
-    this.enabled = enabled;
+    // 如果没有缓存或已过期，返回空结果，实际数据由其他钩子或业务逻辑设置
+    return { cached: false, fromCache: false };
   }
 
   public setCache(key: string, data: any): void {
@@ -222,83 +118,52 @@ export class CacheHook implements BaseHook {
  *
  * 监控执行性能
  */
-export class PerformanceHook implements BaseHook {
+export class PerformanceHook extends BaseHook {
   private performanceData: Map<string, any> = new Map();
-  private enabled = true;
 
   constructor(
-    private id: string,
-    private hookPoint: HookPoint
-  ) {}
-
-  getId(): string {
-    return this.id;
+    id: string,
+    hookPoint: HookPoint
+  ) {
+    super(id, hookPoint);
   }
 
-  getHookPoint(): HookPoint {
-    return this.hookPoint;
-  }
-
-  async execute(context: HookContext): Promise<HookExecutionResult> {
+  protected async onExecute(context: HookContext): Promise<any> {
     const startTime = Date.now();
-    try {
-      const startMemory = this.getMemoryUsage();
+    const startMemory = this.getMemoryUsage();
 
-      // 模拟执行，实际应该由其他钩子或业务逻辑执行
-      const result = {
-        performanceMonitored: true,
-        startTime,
-        startMemory
-      };
+    // 模拟执行，实际应该由其他钩子或业务逻辑执行
+    const result = {
+      performanceMonitored: true,
+      startTime,
+      startMemory
+    };
 
-      const endTime = Date.now();
-      const endMemory = this.getMemoryUsage();
-      const executionTime = endTime - startTime;
-      const memoryDelta = endMemory - startMemory;
+    const endTime = Date.now();
+    const endMemory = this.getMemoryUsage();
+    const executionTime = endTime - startTime;
+    const memoryDelta = endMemory - startMemory;
 
-      const performanceData = {
-        hookId: this.getId(),
-        hookPoint: this.getHookPoint(),
-        workflowId: context.workflowId,
-        nodeId: context.nodeId,
-        executionTime,
-        memoryDelta,
-        timestamp: new Date()
-      };
+    const performanceData = {
+      hookId: this.getId(),
+      hookPoint: this.getHookPoint(),
+      workflowId: context.workflowId,
+      nodeId: context.nodeId,
+      executionTime,
+      memoryDelta,
+      timestamp: new Date()
+    };
 
-      this.performanceData.set(`${this.getId()}_${Date.now()}`, performanceData);
+    this.performanceData.set(`${this.getId()}_${Date.now()}`, performanceData);
 
-      return {
-        hookId: this.id,
-        success: true,
-        result: {
-          ...result,
-          endTime,
-          endMemory,
-          executionTime,
-          memoryDelta,
-          performanceData
-        },
-        executionTime: Date.now() - startTime,
-        shouldContinue: true
-      };
-    } catch (error) {
-      return {
-        hookId: this.id,
-        success: false,
-        error: error as Error,
-        executionTime: Date.now() - startTime,
-        shouldContinue: true
-      };
-    }
-  }
-
-  isEnabled(): boolean {
-    return this.enabled;
-  }
-
-  setEnabled(enabled: boolean): void {
-    this.enabled = enabled;
+    return {
+      ...result,
+      endTime,
+      endMemory,
+      executionTime,
+      memoryDelta,
+      performanceData
+    };
   }
 
   private getMemoryUsage(): number {
@@ -322,58 +187,25 @@ export class PerformanceHook implements BaseHook {
  *
  * 转换上下文数据
  */
-export class TransformHook implements BaseHook {
+export class TransformHook extends BaseHook {
   private transformer: (context: HookContext) => Promise<HookContext> | HookContext;
-  private enabled = true;
 
   constructor(
-    private id: string,
-    private hookPoint: HookPoint,
+    id: string,
+    hookPoint: HookPoint,
     transformer: (context: HookContext) => Promise<HookContext> | HookContext
   ) {
+    super(id, hookPoint);
     this.transformer = transformer;
   }
 
-  getId(): string {
-    return this.id;
-  }
-
-  getHookPoint(): HookPoint {
-    return this.hookPoint;
-  }
-
-  async execute(context: HookContext): Promise<HookExecutionResult> {
-    const startTime = Date.now();
-    try {
-      const transformedContext = await this.transformer(context);
-      return {
-        hookId: this.id,
-        success: true,
-        result: {
-          transformed: true,
-          originalContext: context,
-          transformedContext
-        },
-        executionTime: Date.now() - startTime,
-        shouldContinue: true
-      };
-    } catch (error) {
-      return {
-        hookId: this.id,
-        success: false,
-        error: error as Error,
-        executionTime: Date.now() - startTime,
-        shouldContinue: true
-      };
-    }
-  }
-
-  isEnabled(): boolean {
-    return this.enabled;
-  }
-
-  setEnabled(enabled: boolean): void {
-    this.enabled = enabled;
+  protected async onExecute(context: HookContext): Promise<any> {
+    const transformedContext = await this.transformer(context);
+    return {
+      transformed: true,
+      originalContext: context,
+      transformedContext
+    };
   }
 }
 
@@ -382,56 +214,23 @@ export class TransformHook implements BaseHook {
  *
  * 根据条件过滤执行
  */
-export class FilterHook implements BaseHook {
+export class FilterHook extends BaseHook {
   private filter: (context: HookContext) => boolean | Promise<boolean>;
-  private enabled = true;
 
   constructor(
-    private id: string,
-    private hookPoint: HookPoint,
+    id: string,
+    hookPoint: HookPoint,
     filter: (context: HookContext) => boolean | Promise<boolean>
   ) {
+    super(id, hookPoint);
     this.filter = filter;
   }
 
-  getId(): string {
-    return this.id;
-  }
-
-  getHookPoint(): HookPoint {
-    return this.hookPoint;
-  }
-
-  async execute(context: HookContext): Promise<HookExecutionResult> {
-    const startTime = Date.now();
-    try {
-      const shouldExecute = await this.filter(context);
-      return {
-        hookId: this.id,
-        success: true,
-        result: {
-          filtered: true,
-          shouldExecute
-        },
-        executionTime: Date.now() - startTime,
-        shouldContinue: shouldExecute
-      };
-    } catch (error) {
-      return {
-        hookId: this.id,
-        success: false,
-        error: error as Error,
-        executionTime: Date.now() - startTime,
-        shouldContinue: false
-      };
-    }
-  }
-
-  isEnabled(): boolean {
-    return this.enabled;
-  }
-
-  setEnabled(enabled: boolean): void {
-    this.enabled = enabled;
+  protected async onExecute(context: HookContext): Promise<any> {
+    const shouldExecute = await this.filter(context);
+    return {
+      filtered: true,
+      shouldExecute
+    };
   }
 }

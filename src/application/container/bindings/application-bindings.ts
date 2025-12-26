@@ -48,7 +48,8 @@ export class WorkflowServiceBindings extends ServiceBindings {
         container.get('SessionOrchestrationService'),
         container.get('ThreadCoordinatorService'),
         container.get('GraphAlgorithmService'),
-        container.get('GraphValidationService')
+        container.get('GraphValidationService'),
+        container.get('WorkflowRepository')
       ),
       { lifetime: ServiceLifetime.SINGLETON }
     );

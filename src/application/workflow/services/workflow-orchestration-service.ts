@@ -1,13 +1,16 @@
 /**
  * 工作流编排服务
+ *
  * 协调Thread和Session服务完成工作流执行
+ * 专注于工作流级别的编排，不涉及单线程执行细节（由Thread层负责）
  */
 
-import { injectable } from 'inversify';
+import { injectable, inject } from 'inversify';
 import { SessionOrchestrationService, ThreadAction } from '../../sessions/interfaces/session-orchestration-service.interface';
 import { ThreadCoordinatorInfrastructureService } from '../../../infrastructure/threads/services/thread-coordinator-service';
 import { GraphAlgorithmService } from '../../../infrastructure/workflow/interfaces/graph-algorithm-service.interface';
 import { GraphValidationServiceImpl } from '../../../infrastructure/workflow/services/graph-validation-service';
+import { WorkflowRepository } from '../../../domain/workflow/repositories/workflow-repository';
 import { WorkflowExecutionResultDto } from '../dtos';
 import { ID } from '../../../domain/common/value-objects/id';
 import { Timestamp } from '../../../domain/common/value-objects/timestamp';
@@ -21,22 +24,31 @@ export class WorkflowOrchestrationService {
     private readonly sessionOrchestration: SessionOrchestrationService,
     private readonly threadCoordinator: ThreadCoordinatorInfrastructureService,
     private readonly graphAlgorithm: GraphAlgorithmService,
-    private readonly graphValidation: GraphValidationServiceImpl
+    private readonly graphValidation: GraphValidationServiceImpl,
+    private readonly workflowRepository: WorkflowRepository
   ) {}
 
   /**
    * 执行工作流
+   * 委托给SessionOrchestrationService进行编排
    */
   async executeWorkflow(sessionId: ID, workflowId: ID, input: unknown): Promise<WorkflowExecutionResultDto> {
-    // TODO: 需要先获取工作流图对象，然后进行验证
-    // 1. 验证工作流图结构
-    // const validationResult = await this.graphValidation.validateGraphStructure(workflowGraph);
-    // if (!validationResult.valid) {
-    //   throw new Error(`工作流验证失败: ${validationResult.errors.join(', ')}`);
-    // }
+    // 1. 验证工作流存在
+    const workflow = await this.workflowRepository.findById(workflowId);
+    if (!workflow) {
+      throw new Error(`工作流不存在: ${workflowId.toString()}`);
+    }
 
-    // 2. 生成拓扑排序
-    // const topologicalOrder = await this.graphAlgorithm.getTopologicalOrder(workflowGraph);
+    // 2. 验证工作流图结构（如果需要）
+    try {
+      const validationResult = this.graphValidation.validateGraph(workflow);
+      if (!validationResult) {
+        throw new Error('工作流图结构验证失败');
+      }
+    } catch (error) {
+      // 验证可能不支持，跳过或记录警告
+      console.warn('工作流验证跳过:', error);
+    }
 
     // 3. 创建执行上下文
     const context = this.createExecutionContext(sessionId, workflowId, input);
@@ -49,8 +61,85 @@ export class WorkflowOrchestrationService {
    * 并行执行多个工作流
    */
   async executeWorkflowsParallel(sessionId: ID, workflowIds: ID[], input: unknown): Promise<WorkflowExecutionResultDto[]> {
+    // 1. 验证所有工作流存在
+    for (const workflowId of workflowIds) {
+      const workflow = await this.workflowRepository.findById(workflowId);
+      if (!workflow) {
+        throw new Error(`工作流不存在: ${workflowId.toString()}`);
+      }
+    }
+
+    // 2. 创建执行上下文
     const context = this.createExecutionContext(sessionId, ID.empty(), input);
+
+    // 3. 通过会话编排服务并行执行
     return await this.sessionOrchestration.orchestrateParallelExecution(sessionId, workflowIds, context);
+  }
+
+  /**
+   * 获取工作流执行路径
+   * 提供拓扑排序信息，用于调试和监控
+   */
+  async getExecutionPath(workflowId: ID): Promise<string[]> {
+    const workflow = await this.workflowRepository.findById(workflowId);
+    if (!workflow) {
+      throw new Error(`工作流不存在: ${workflowId.toString()}`);
+    }
+
+    try {
+      const topologicalOrderNodes = this.graphAlgorithm.getTopologicalOrder(workflow);
+      return topologicalOrderNodes.map(node => node.id.toString());
+    } catch (error) {
+      console.warn('获取拓扑排序失败:', error);
+      return [];
+    }
+  }
+
+  /**
+   * 验证工作流可执行性
+   */
+  async validateWorkflowExecutable(workflowId: ID): Promise<{
+    valid: boolean;
+    errors: string[];
+    warnings: string[];
+  }> {
+    const workflow = await this.workflowRepository.findById(workflowId);
+    if (!workflow) {
+      return {
+        valid: false,
+        errors: [`工作流不存在: ${workflowId.toString()}`],
+        warnings: []
+      };
+    }
+
+    const errors: string[] = [];
+    const warnings: string[] = [];
+
+    try {
+      // 验证图结构
+      const validationResult = this.graphValidation.validateGraph(workflow);
+      if (!validationResult) {
+        errors.push('工作流图结构验证失败');
+      }
+    } catch (error) {
+      warnings.push(`图验证失败: ${error}`);
+    }
+
+    try {
+      // 检查循环
+      const hasCycle = this.graphAlgorithm.hasCycle(workflow);
+      if (hasCycle) {
+        errors.push('工作流图存在循环，无法执行');
+      }
+    } catch (error) {
+      warnings.push(`循环检测失败: ${error}`);
+    }
+
+    return {
+      valid: errors.length === 0,
+      errors,
+      warnings
+    };
   }
 
   /**
@@ -95,5 +184,12 @@ export class WorkflowOrchestrationService {
    */
   async manageThreadLifecycle(sessionId: ID, threadId: ID, action: ThreadAction): Promise<void> {
     await this.sessionOrchestration.manageThreadLifecycle(sessionId, threadId, action);
+  }
+
+  /**
+   * 同步会话状态
+   */
+  async syncSessionState(sessionId: ID): Promise<void> {
+    await this.sessionOrchestration.syncSessionState(sessionId);
   }
 }

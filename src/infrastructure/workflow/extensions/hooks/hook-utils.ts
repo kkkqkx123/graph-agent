@@ -1,283 +1,115 @@
 import { HookPoint, HookContext } from './hook-context';
-import { BaseHook, HookExecutionResult, HookChainExecutionMode, HookChainErrorHandlingStrategy } from './hook-execution-manager';
+import { BaseHook } from './base-hook';
+import { HookExecutionResult, HookExecutionResultBuilder } from './hook-execution-result';
+
+/**
+ * 钩子链执行模式
+ */
+export enum HookChainExecutionMode {
+  SEQUENTIAL = 'sequential',
+  PARALLEL = 'parallel'
+}
+
+/**
+ * 钩子链错误处理策略
+ */
+export enum HookChainErrorHandlingStrategy {
+  STOP_ON_ERROR = 'stop_on_error',
+  CONTINUE_ON_ERROR = 'continue_on_error',
+  SKIP_ON_ERROR = 'skip_on_error'
+}
 
 /**
  * 预定义钩子类
  */
-export class LoggingHook implements BaseHook {
+export class LoggingHook extends BaseHook {
   constructor(
-    private id: string,
-    private hookPoint: HookPoint,
+    id: string,
+    hookPoint: HookPoint,
     private logger?: (message: string, context?: any) => void
-  ) {}
-
-  getId(): string {
-    return this.id;
+  ) {
+    super(id, hookPoint);
   }
 
-  getHookPoint(): HookPoint {
-    return this.hookPoint;
+
+  protected async onExecute(context: HookContext): Promise<any> {
+    this.logger?.(`执行日志钩子: ${this.getId()}`, context);
+    return { logged: true };
   }
 
-  async execute(context: HookContext): Promise<HookExecutionResult> {
-    const startTime = Date.now();
-    try {
-      this.logger?.(`执行日志钩子: ${this.id}`, context);
-      return {
-        hookId: this.id,
-        success: true,
-        executionTime: Date.now() - startTime,
-        shouldContinue: true
-      };
-    } catch (error) {
-      return {
-        hookId: this.id,
-        success: false,
-        error: error as Error,
-        executionTime: Date.now() - startTime,
-        shouldContinue: true
-      };
-    }
-  }
-
-  isEnabled(): boolean {
-    return true;
-  }
-
-  setEnabled(enabled: boolean): void {
-    // 简化实现
-  }
 }
 
-export class ValidationHook implements BaseHook {
+export class ValidationHook extends BaseHook {
   constructor(
-    private id: string,
-    private hookPoint: HookPoint,
+    id: string,
+    hookPoint: HookPoint,
     private validator: (context: HookContext) => boolean | Promise<boolean>,
     private errorMessage?: string
-  ) {}
-
-  getId(): string {
-    return this.id;
+  ) {
+    super(id, hookPoint);
   }
 
-  getHookPoint(): HookPoint {
-    return this.hookPoint;
-  }
-
-  async execute(context: HookContext): Promise<HookExecutionResult> {
-    const startTime = Date.now();
-    try {
-      const isValid = await this.validator(context);
-      return {
-        hookId: this.id,
-        success: isValid,
-        result: { isValid },
-        executionTime: Date.now() - startTime,
-        shouldContinue: isValid
-      };
-    } catch (error) {
-      return {
-        hookId: this.id,
-        success: false,
-        error: error as Error,
-        executionTime: Date.now() - startTime,
-        shouldContinue: false
-      };
-    }
-  }
-
-  isEnabled(): boolean {
-    return true;
-  }
-
-  setEnabled(enabled: boolean): void {
-    // 简化实现
+  protected async onExecute(context: HookContext): Promise<any> {
+    const isValid = await this.validator(context);
+    return { isValid };
   }
 }
 
-export class CacheHook implements BaseHook {
+export class CacheHook extends BaseHook {
   constructor(
-    private id: string,
-    private hookPoint: HookPoint,
+    id: string,
+    hookPoint: HookPoint,
     private keyGenerator: (context: HookContext) => string,
     private ttl?: number
-  ) {}
-
-  getId(): string {
-    return this.id;
+  ) {
+    super(id, hookPoint);
   }
 
-  getHookPoint(): HookPoint {
-    return this.hookPoint;
-  }
-
-  async execute(context: HookContext): Promise<HookExecutionResult> {
-    const startTime = Date.now();
-    try {
-      const key = this.keyGenerator(context);
-      // 简化的缓存实现
-      return {
-        hookId: this.id,
-        success: true,
-        result: { cacheKey: key },
-        executionTime: Date.now() - startTime,
-        shouldContinue: true
-      };
-    } catch (error) {
-      return {
-        hookId: this.id,
-        success: false,
-        error: error as Error,
-        executionTime: Date.now() - startTime,
-        shouldContinue: true
-      };
-    }
-  }
-
-  isEnabled(): boolean {
-    return true;
-  }
-
-  setEnabled(enabled: boolean): void {
-    // 简化实现
+  protected async onExecute(context: HookContext): Promise<any> {
+    const key = this.keyGenerator(context);
+    // 简化的缓存实现
+    return { cacheKey: key };
   }
 }
 
-export class PerformanceHook implements BaseHook {
-  constructor(
-    private id: string,
-    private hookPoint: HookPoint
-  ) {}
-
-  getId(): string {
-    return this.id;
+export class PerformanceHook extends BaseHook {
+  constructor(id: string, hookPoint: HookPoint) {
+    super(id, hookPoint);
   }
 
-  getHookPoint(): HookPoint {
-    return this.hookPoint;
-  }
-
-  async execute(context: HookContext): Promise<HookExecutionResult> {
-    const startTime = Date.now();
-    try {
-      // 简化的性能监控实现
-      return {
-        hookId: this.id,
-        success: true,
-        result: { performanceMetrics: { timestamp: Date.now() } },
-        executionTime: Date.now() - startTime,
-        shouldContinue: true
-      };
-    } catch (error) {
-      return {
-        hookId: this.id,
-        success: false,
-        error: error as Error,
-        executionTime: Date.now() - startTime,
-        shouldContinue: true
-      };
-    }
-  }
-
-  isEnabled(): boolean {
-    return true;
-  }
-
-  setEnabled(enabled: boolean): void {
-    // 简化实现
+  protected async onExecute(context: HookContext): Promise<any> {
+    // 简化的性能监控实现
+    return { performanceMetrics: { timestamp: Date.now() } };
   }
 }
 
-export class TransformHook implements BaseHook {
+export class TransformHook extends BaseHook {
   constructor(
-    private id: string,
-    private hookPoint: HookPoint,
+    id: string,
+    hookPoint: HookPoint,
     private transformer: (context: HookContext) => Promise<HookContext> | HookContext
-  ) {}
-
-  getId(): string {
-    return this.id;
+  ) {
+    super(id, hookPoint);
   }
 
-  getHookPoint(): HookPoint {
-    return this.hookPoint;
-  }
-
-  async execute(context: HookContext): Promise<HookExecutionResult> {
-    const startTime = Date.now();
-    try {
-      const transformedContext = await this.transformer(context);
-      return {
-        hookId: this.id,
-        success: true,
-        result: { transformedContext },
-        executionTime: Date.now() - startTime,
-        shouldContinue: true
-      };
-    } catch (error) {
-      return {
-        hookId: this.id,
-        success: false,
-        error: error as Error,
-        executionTime: Date.now() - startTime,
-        shouldContinue: true
-      };
-    }
-  }
-
-  isEnabled(): boolean {
-    return true;
-  }
-
-  setEnabled(enabled: boolean): void {
-    // 简化实现
+  protected async onExecute(context: HookContext): Promise<any> {
+    const transformedContext = await this.transformer(context);
+    return { transformedContext };
   }
 }
 
-export class FilterHook implements BaseHook {
+export class FilterHook extends BaseHook {
   constructor(
-    private id: string,
-    private hookPoint: HookPoint,
+    id: string,
+    hookPoint: HookPoint,
     private filter: (context: HookContext) => boolean | Promise<boolean>
-  ) {}
-
-  getId(): string {
-    return this.id;
+  ) {
+    super(id, hookPoint);
   }
 
-  getHookPoint(): HookPoint {
-    return this.hookPoint;
-  }
-
-  async execute(context: HookContext): Promise<HookExecutionResult> {
-    const startTime = Date.now();
-    try {
-      const shouldPass = await this.filter(context);
-      return {
-        hookId: this.id,
-        success: true,
-        result: { shouldPass },
-        executionTime: Date.now() - startTime,
-        shouldContinue: shouldPass
-      };
-    } catch (error) {
-      return {
-        hookId: this.id,
-        success: false,
-        error: error as Error,
-        executionTime: Date.now() - startTime,
-        shouldContinue: false
-      };
-    }
-  }
-
-  isEnabled(): boolean {
-    return true;
-  }
-
-  setEnabled(enabled: boolean): void {
-    // 简化实现
+  protected async onExecute(context: HookContext): Promise<any> {
+    const shouldPass = await this.filter(context);
+    return { shouldPass };
   }
 }
 
@@ -371,59 +203,30 @@ export class HookUtils {
   ): BaseHook {
     const id = options.id || `custom_${hookPoint}_${Date.now()}`;
 
-    return new class implements BaseHook {
-      private enabled = options.enabled !== false;
+    return new class extends BaseHook {
+       constructor() {
+         super(id, hookPoint);
+         if (options.enabled === false) {
+           this.setEnabled(false);
+         }
+         if (options.priority !== undefined) {
+           this.setPriority(options.priority);
+         }
+         if (options.metadata) {
+           this.setMetadata(options.metadata);
+         }
+       }
 
-      getId(): string {
-        return id;
-      }
-
-      getHookPoint(): HookPoint {
-        return hookPoint;
-      }
-
-      async execute(context: HookContext): Promise<HookExecutionResult> {
-        const startTime = Date.now();
-        try {
-          if (options.condition) {
-            const shouldExecute = await options.condition(context);
-            if (!shouldExecute) {
-              return {
-                hookId: id,
-                success: true,
-                executionTime: Date.now() - startTime,
-                shouldContinue: true
-              };
-            }
-          }
-
-          const result = await executor(context);
-          return {
-            hookId: id,
-            success: true,
-            result,
-            executionTime: Date.now() - startTime,
-            shouldContinue: true
-          };
-        } catch (error) {
-          return {
-            hookId: id,
-            success: false,
-            error: error as Error,
-            executionTime: Date.now() - startTime,
-            shouldContinue: true
-          };
-        }
-      }
-
-      isEnabled(): boolean {
-        return this.enabled;
-      }
-
-      setEnabled(enabled: boolean): void {
-        this.enabled = enabled;
-      }
-    }();
+       protected async onExecute(context: HookContext): Promise<any> {
+         if (options.condition) {
+           const shouldExecute = await options.condition(context);
+           if (!shouldExecute) {
+             return { conditionNotMet: true };
+           }
+         }
+         return await executor(context);
+       }
+     }();
   }
 
   /**
@@ -436,70 +239,39 @@ export class HookUtils {
   ): BaseHook {
     const id = `composite_${hookPoint}_${Date.now()}`;
 
-    return new class implements BaseHook {
-      private enabled = true;
+    return new class extends BaseHook {
+       constructor() {
+         super(id, hookPoint);
+       }
 
-      getId(): string {
-        return id;
-      }
+       protected async onExecute(context: HookContext): Promise<any> {
+         const results: any[] = [];
 
-      getHookPoint(): HookPoint {
-        return hookPoint;
-      }
+         switch (executionMode) {
+           case HookChainExecutionMode.SEQUENTIAL:
+             for (const hook of hooks) {
+               if (hook.isEnabled()) {
+                 const result = await hook.execute(context);
+                 results.push(result);
+               }
+             }
+             break;
 
-      async execute(context: HookContext): Promise<HookExecutionResult> {
-        const startTime = Date.now();
-        try {
-          const results: any[] = [];
+           case HookChainExecutionMode.PARALLEL:
+             const promises = hooks
+               .filter(hook => hook.isEnabled())
+               .map(hook => hook.execute(context));
+             const parallelResults = await Promise.all(promises);
+             results.push(...parallelResults);
+             break;
 
-          switch (executionMode) {
-            case HookChainExecutionMode.SEQUENTIAL:
-              for (const hook of hooks) {
-                if (hook.isEnabled()) {
-                  const result = await hook.execute(context);
-                  results.push(result);
-                }
-              }
-              break;
+           default:
+             throw new Error(`不支持的执行模式: ${executionMode}`);
+         }
 
-            case HookChainExecutionMode.PARALLEL:
-              const promises = hooks
-                .filter(hook => hook.isEnabled())
-                .map(hook => hook.execute(context));
-              const parallelResults = await Promise.all(promises);
-              results.push(...parallelResults);
-              break;
-
-            default:
-              throw new Error(`不支持的执行模式: ${executionMode}`);
-          }
-
-          return {
-            hookId: id,
-            success: true,
-            result: { compositeResults: results },
-            executionTime: Date.now() - startTime,
-            shouldContinue: true
-          };
-        } catch (error) {
-          return {
-            hookId: id,
-            success: false,
-            error: error as Error,
-            executionTime: Date.now() - startTime,
-            shouldContinue: true
-          };
-        }
-      }
-
-      isEnabled(): boolean {
-        return this.enabled;
-      }
-
-      setEnabled(enabled: boolean): void {
-        this.enabled = enabled;
-      }
-    }();
+         return { compositeResults: results };
+       }
+     }();
   }
 
   /**
@@ -513,54 +285,23 @@ export class HookUtils {
   ): BaseHook {
     const id = `conditional_${hookPoint}_${Date.now()}`;
 
-    return new class implements BaseHook {
-      private enabled = true;
+    return new class extends BaseHook {
+       constructor() {
+         super(id, hookPoint);
+       }
 
-      getId(): string {
-        return id;
-      }
+       protected async onExecute(context: HookContext): Promise<any> {
+         const shouldExecuteTrue = await condition(context);
 
-      getHookPoint(): HookPoint {
-        return hookPoint;
-      }
+         if (shouldExecuteTrue) {
+           return await trueHook.execute(context);
+         } else if (falseHook) {
+           return await falseHook.execute(context);
+         }
 
-      async execute(context: HookContext): Promise<HookExecutionResult> {
-        const startTime = Date.now();
-        try {
-          const shouldExecuteTrue = await condition(context);
-
-          if (shouldExecuteTrue) {
-            return await trueHook.execute(context);
-          } else if (falseHook) {
-            return await falseHook.execute(context);
-          }
-
-          return {
-            hookId: id,
-            success: true,
-            result: { conditionMet: shouldExecuteTrue, executed: false },
-            executionTime: Date.now() - startTime,
-            shouldContinue: true
-          };
-        } catch (error) {
-          return {
-            hookId: id,
-            success: false,
-            error: error as Error,
-            executionTime: Date.now() - startTime,
-            shouldContinue: true
-          };
-        }
-      }
-
-      isEnabled(): boolean {
-        return this.enabled;
-      }
-
-      setEnabled(enabled: boolean): void {
-        this.enabled = enabled;
-      }
-    }();
+         return { conditionMet: shouldExecuteTrue, executed: false };
+       }
+     }();
   }
 
   /**

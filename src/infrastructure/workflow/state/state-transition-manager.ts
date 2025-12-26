@@ -6,7 +6,8 @@ import { ExecutionState } from '@domain/workflow/entities/execution-state';
 import { NodeExecutionState } from '@domain/workflow/entities/node-execution-state';
 import { PromptContext } from '@domain/workflow/value-objects/prompt-context';
 import { ExecutionStatus } from '@domain/workflow/value-objects/execution-status';
-import { NodeRouter, NodeRoutingResult } from '../routing/node-router';
+import { NodeRouter } from '../routing/node-router';
+import { RouteDecision, NodeExecutionResult } from '@domain/workflow/entities';
 
 /**
  * 状态转换配置接口
@@ -32,8 +33,8 @@ export interface StateTransitionResult {
   previousState: ExecutionState;
   /** 转换后的状态 */
   newState: ExecutionState;
-  /** 路由结果 */
-  routingResult: NodeRoutingResult;
+  /** 路由决策 */
+  routeDecision: RouteDecision;
   /** 错误信息 */
   error?: string;
   /** 转换元数据 */
@@ -61,7 +62,7 @@ export class StateTransitionManager {
    * @param nodeId 节点ID
    * @param result 节点执行结果
    * @param executionState 执行状态
-   * @param allEdges 所有边
+   * @param workflow 工作流
    * @param config 转换配置
    * @returns 转换结果
    */
@@ -69,7 +70,7 @@ export class StateTransitionManager {
     nodeId: NodeId,
     result: unknown,
     executionState: ExecutionState,
-    allEdges: EdgeData[],
+    workflow: any,
     config: StateTransitionConfig = {}
   ): Promise<StateTransitionResult> {
     const previousState = executionState;
@@ -78,35 +79,52 @@ export class StateTransitionManager {
       // 1. 更新节点状态
       await this.updateNodeState(nodeId, result, executionState);
 
-      // 2. 确定下一个节点
-      const outgoingEdges = this.nodeRouter.getOutgoingEdges(nodeId, allEdges);
-      const routingResult = await this.nodeRouter.determineNextNodes(
+      // 2. 创建节点执行结果
+      const nodeState = executionState.getNodeState(nodeId);
+      const nodeResult: NodeExecutionResult = {
+        status: nodeState?.status || (result instanceof Error ? { isFailed: () => true, isSuccess: () => false } as any : { isFailed: () => false, isSuccess: () => true } as any),
+        result: result instanceof Error ? undefined : result,
+        error: result instanceof Error ? result : undefined,
+        executionTime: nodeState?.duration || 0,
+        metadata: {}
+      };
+
+      // 3. 使用新的route接口进行路由决策
+      const routeDecision = await this.nodeRouter.route(
         nodeId,
-        outgoingEdges,
-        executionState
+        nodeResult,
+        executionState,
+        workflow
       );
 
-      // 3. 更新工作流状态
-      await this.updateWorkflowState(executionState, routingResult);
+      // 4. 更新工作流状态
+      await this.updateWorkflowState(executionState, routeDecision);
 
-      // 4. 更新上下文（如果配置）
+      // 5. 应用状态更新
+      if (routeDecision.stateUpdates) {
+        for (const [key, value] of Object.entries(routeDecision.stateUpdates)) {
+          executionState.setVariable(key, value);
+        }
+      }
+
+      // 6. 更新上下文（如果配置）
       if (config.updateContext !== false) {
         await this.updateContext(nodeId, result, executionState, config);
       }
 
-      // 5. 传播提示词（如果配置）
+      // 7. 传播提示词（如果配置）
       if (config.propagatePrompt !== false) {
         await this.propagatePrompt(nodeId, result, executionState);
       }
 
-      // 6. 合并节点结果（如果配置）
+      // 8. 合并节点结果（如果配置）
       if (config.mergeNodeResult !== false) {
         await this.mergeNodeResult(nodeId, result, executionState);
       }
 
-      // 7. 设置当前节点
-      if (routingResult.nextNodeIds.length > 0) {
-        const nextNodeId = routingResult.nextNodeIds[0];
+      // 9. 设置当前节点
+      if (routeDecision.nextNodeIds.length > 0) {
+        const nextNodeId = routeDecision.nextNodeIds[0];
         if (nextNodeId) {
           executionState.workflowState.setCurrentNode(nextNodeId);
         }
@@ -116,11 +134,11 @@ export class StateTransitionManager {
         success: true,
         previousState,
         newState: executionState,
-        routingResult,
+        routeDecision,
         metadata: {
           nodeId: nodeId.toString(),
-          nextNodeCount: routingResult.nextNodeIds.length,
-          satisfiedEdgesCount: routingResult.satisfiedEdges.length
+          nextNodeCount: routeDecision.nextNodeIds.length,
+          satisfiedEdgesCount: routeDecision.satisfiedEdges.length
         }
       };
     } catch (error) {
@@ -128,11 +146,12 @@ export class StateTransitionManager {
         success: false,
         previousState,
         newState: executionState,
-        routingResult: {
-          currentNodeId: nodeId,
+        routeDecision: {
           nextNodeIds: [],
           satisfiedEdges: [],
-          unsatisfiedEdges: []
+          unsatisfiedEdges: [],
+          stateUpdates: {},
+          metadata: { reason: 'transition_failed' }
         },
         error: error instanceof Error ? error.message : String(error)
       };
@@ -169,16 +188,16 @@ export class StateTransitionManager {
   /**
    * 更新工作流状态
    * @param executionState 执行状态
-   * @param routingResult 路由结果
+   * @param routeDecision 路由决策
    */
   private async updateWorkflowState(
     executionState: ExecutionState,
-    routingResult: NodeRoutingResult
+    routeDecision: RouteDecision
   ): Promise<void> {
     const workflowState = executionState.workflowState;
 
     // 如果没有下一个节点，标记工作流完成
-    if (routingResult.nextNodeIds.length === 0) {
+    if (routeDecision.nextNodeIds.length === 0) {
       workflowState.complete();
     }
   }
@@ -294,14 +313,14 @@ export class StateTransitionManager {
    * 批量状态转换
    * @param transitions 转换数组
    * @param executionState 执行状态
-   * @param allEdges 所有边
+   * @param workflow 工作流
    * @param config 转换配置
    * @returns 转换结果数组
    */
   public async transitionBatch(
     transitions: Array<{ nodeId: NodeId; result: unknown }>,
     executionState: ExecutionState,
-    allEdges: EdgeData[],
+    workflow: any,
     config: StateTransitionConfig = {}
   ): Promise<StateTransitionResult[]> {
     const results: StateTransitionResult[] = [];
@@ -311,7 +330,7 @@ export class StateTransitionManager {
         transition.nodeId,
         transition.result,
         executionState,
-        allEdges,
+        workflow,
         config
       );
       results.push(result);
