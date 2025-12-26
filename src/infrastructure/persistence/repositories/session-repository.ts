@@ -6,68 +6,11 @@ import { ID } from '../../../domain/common/value-objects/id';
 import { SessionStatus } from '../../../domain/sessions/value-objects/session-status';
 import { SessionConfig } from '../../../domain/sessions/value-objects/session-config';
 import { Timestamp } from '../../../domain/common/value-objects/timestamp';
+import { Version } from '../../../domain/common/value-objects/version';
 import { SessionModel } from '../models/session.model';
 import { In } from 'typeorm';
-import { BaseRepository, QueryOptions } from '../base/base-repository';
+import { BaseRepository } from './base-repository';
 import { ConnectionManager } from '../connections/connection-manager';
-import {
-  IdConverter,
-  OptionalIdConverter,
-  TimestampConverter,
-  VersionConverter,
-  OptionalStringConverter,
-  NumberConverter,
-  BooleanConverter
-} from '../base/type-converter-base';
-
-/**
- * 会话状态类型转换器
- * 将字符串状态转换为SessionStatus值对象
- */
-interface SessionStatusConverter {
-  fromStorage: (value: string) => SessionStatus;
-  toStorage: (value: SessionStatus) => string;
-  validateStorage: (value: string) => boolean;
-  validateDomain: (value: SessionStatus) => boolean;
-}
-
-const SessionStatusConverter: SessionStatusConverter = {
-  fromStorage: (value: string) => {
-    return SessionStatus.fromString(value);
-  },
-  toStorage: (value: SessionStatus) => value.getValue(),
-  validateStorage: (value: string) => {
-    const validStates = ['active', 'inactive', 'suspended', 'terminated'];
-    return typeof value === 'string' && validStates.includes(value);
-  },
-  validateDomain: (value: SessionStatus) => value instanceof SessionStatus
-};
-
-/**
- * 会话配置类型转换器
- * 将配置对象转换为SessionConfig值对象
- */
-interface SessionConfigConverter {
-  fromStorage: (value: Record<string, unknown>) => SessionConfig;
-  toStorage: (value: SessionConfig) => Record<string, unknown>;
-  validateStorage: (value: Record<string, unknown>) => boolean;
-  validateDomain: (value: SessionConfig) => boolean;
-}
-
-const SessionConfigConverter: SessionConfigConverter = {
-  fromStorage: (value: Record<string, unknown>) => {
-    if (!value || Object.keys(value).length === 0) {
-      return SessionConfig.default();
-    }
-    return SessionConfig.create(value);
-  },
-  toStorage: (value: SessionConfig) => value.value,
-  validateStorage: (value: Record<string, unknown>) => {
-    if (!value || typeof value !== 'object') return false;
-    return true; // 让SessionConfig.create来处理详细验证
-  },
-  validateDomain: (value: SessionConfig) => value instanceof SessionConfig
-};
 
 @injectable()
 export class SessionRepository extends BaseRepository<Session, SessionModel, ID> implements ISessionRepository {
@@ -75,87 +18,72 @@ export class SessionRepository extends BaseRepository<Session, SessionModel, ID>
     @inject('ConnectionManager') connectionManager: ConnectionManager,
   ) {
     super(connectionManager);
-
-    // 配置软删除行为
-    this.configureSoftDelete({
-      fieldName: 'isDeleted',
-      deletedAtField: 'deletedAt',
-      stateField: 'state',
-      deletedValue: 'terminated',
-      activeValue: 'active'
-    });
   }
 
-  protected override getModelClass(): new () => SessionModel {
+  protected getModelClass(): new () => SessionModel {
     return SessionModel;
   }
 
   /**
-   * 重写toEntity方法，使用类型转换器
+   * 重写toDomain方法
    */
-  protected override toEntity(model: SessionModel): Session {
+  protected override toDomain(model: SessionModel): Session {
     try {
-      // 使用类型转换器进行编译时类型安全的转换
-      const lastActivityAt = TimestampConverter.fromStorage(model.updatedAt); // 使用updatedAt作为最后活动时间
-      const messageCount = model.metadata?.messageCount ? NumberConverter.fromStorage(model.metadata.messageCount as number) : 0;
-      const threadCount = model.metadata?.threadCount ? NumberConverter.fromStorage(model.metadata.threadCount as number) : 0;
+      const lastActivityAt = Timestamp.create(model.updatedAt);
+      const messageCount = model.metadata?.messageCount as number || 0;
+      const threadCount = model.metadata?.threadCount as number || 0;
 
-      // 创建SessionActivity值对象
       const activity = SessionActivity.create(lastActivityAt, messageCount, threadCount);
 
       const sessionData = {
-        id: IdConverter.fromStorage(model.id),
-        userId: model.userId ? OptionalIdConverter.fromStorage(model.userId) : undefined,
-        title: model.metadata?.title ? OptionalStringConverter.fromStorage(model.metadata.title as string) : undefined,
-        status: SessionStatusConverter.fromStorage(model.state),
-        config: SessionConfigConverter.fromStorage(model.context),
+        id: new ID(model.id),
+        userId: model.userId ? new ID(model.userId) : undefined,
+        title: model.metadata?.title as string || undefined,
+        status: SessionStatus.fromString(model.state),
+        config: SessionConfig.create(model.context || {}),
         activity: activity,
         metadata: model.metadata || {},
-        createdAt: TimestampConverter.fromStorage(model.createdAt),
-        updatedAt: TimestampConverter.fromStorage(model.updatedAt),
-        version: VersionConverter.fromStorage(model.version),
-        isDeleted: model.metadata?.isDeleted ? BooleanConverter.fromStorage(model.metadata.isDeleted as boolean) : false
+        createdAt: Timestamp.create(model.createdAt),
+        updatedAt: Timestamp.create(model.updatedAt),
+        version: Version.fromString(model.version),
+        isDeleted: model.metadata?.isDeleted as boolean || false
       };
 
-      // 创建Session实体
       return Session.fromProps(sessionData);
     } catch (error) {
       const errorMessage = `Session模型转换失败: ${error instanceof Error ? error.message : String(error)}`;
       const customError = new Error(errorMessage);
       (customError as any).code = 'MAPPING_ERROR';
-      (customError as any).context = { modelId: model.id, operation: 'toEntity' };
+      (customError as any).context = { modelId: model.id, operation: 'toDomain' };
       throw customError;
     }
   }
 
   /**
-   * 重写toModel方法，使用类型转换器
+   * 重写toModel方法
    */
   protected override toModel(entity: Session): SessionModel {
     try {
       const model = new SessionModel();
 
-      // 使用类型转换器进行编译时类型安全的转换
-      model.id = IdConverter.toStorage(entity.sessionId);
-      model.userId = entity.userId ? OptionalIdConverter.toStorage(entity.userId) : undefined;
-      model.state = SessionStatusConverter.toStorage(entity.status);
-      model.context = SessionConfigConverter.toStorage(entity.config);
-      model.version = VersionConverter.toStorage(entity.version);
-      model.createdAt = TimestampConverter.toStorage(entity.createdAt);
-      model.updatedAt = TimestampConverter.toStorage(entity.updatedAt);
+      model.id = entity.sessionId.value;
+      model.userId = entity.userId ? entity.userId.value : undefined;
+      model.state = entity.status.getValue();
+      model.context = entity.config.value;
+      model.version = entity.version.getValue();
+      model.createdAt = entity.createdAt.getDate();
+      model.updatedAt = entity.updatedAt.getDate();
 
-      // 设置元数据
       model.metadata = {
-        title: entity.title ? OptionalStringConverter.toStorage(entity.title) : undefined,
-        messageCount: NumberConverter.toStorage(entity.messageCount),
-        threadCount: NumberConverter.toStorage(entity.threadCount),
-        isDeleted: BooleanConverter.toStorage(entity.isDeleted()),
-        config: SessionConfigConverter.toStorage(entity.config),
-        ...entity.metadata // 保留其他元数据
+        title: entity.title,
+        messageCount: entity.messageCount,
+        threadCount: entity.threadCount,
+        isDeleted: entity.isDeleted(),
+        config: entity.config.value,
+        ...entity.metadata
       };
 
-      // 设置关联字段
-      model.threadIds = []; // 默认空数组
+      model.threadIds = [];
 
       return model;
     } catch (error) {
@@ -182,49 +110,49 @@ export class SessionRepository extends BaseRepository<Session, SessionModel, ID>
    * 查找即将过期的会话
    */
   async findSessionsExpiringBefore(beforeDate: Timestamp): Promise<Session[]> {
-    return this.find({
-      customConditions: (qb: any) => {
-        qb.andWhere('session.createdAt < :beforeDate', { beforeDate: beforeDate.getDate() });
-        qb.andWhere('session.state != :terminatedState', { terminatedState: 'terminated' });
-      },
-      sortBy: 'createdAt',
-      sortOrder: 'asc'
-    });
+    const repository = await this.getRepository();
+    const models = await repository
+      .createQueryBuilder('session')
+      .where('session.createdAt < :beforeDate', { beforeDate: beforeDate.getDate() })
+      .andWhere('session.state != :terminatedState', { terminatedState: 'terminated' })
+      .orderBy('session.createdAt', 'ASC')
+      .getMany();
+    return models.map(model => this.toDomain(model));
   }
 
   /**
    * 查找需要清理的会话（超时或过期）
    */
   async findSessionsNeedingCleanup(): Promise<Session[]> {
-    const timeoutThreshold = new Date(Date.now() - 30 * 60 * 1000); // 30分钟前
-    const expirationThreshold = new Date(Date.now() - 24 * 60 * 60 * 1000); // 24小时前
+    const timeoutThreshold = new Date(Date.now() - 30 * 60 * 1000);
+    const expirationThreshold = new Date(Date.now() - 24 * 60 * 60 * 1000);
 
-    return this.find({
-      customConditions: (qb: any) => {
-        qb.andWhere('(session.updatedAt < :timeoutThreshold OR session.createdAt < :expirationThreshold)', {
-          timeoutThreshold,
-          expirationThreshold
-        });
-        qb.andWhere('session.state IN (:...states)', {
-          states: ['active', 'suspended']
-        });
-      },
-      sortBy: 'updatedAt',
-      sortOrder: 'asc'
-    });
+    const repository = await this.getRepository();
+    const models = await repository
+      .createQueryBuilder('session')
+      .where('(session.updatedAt < :timeoutThreshold OR session.createdAt < :expirationThreshold)', {
+        timeoutThreshold,
+        expirationThreshold
+      })
+      .andWhere('session.state IN (:...states)', {
+        states: ['active', 'suspended']
+      })
+      .orderBy('session.updatedAt', 'ASC')
+      .getMany();
+    return models.map(model => this.toDomain(model));
   }
 
   /**
    * 查找高活动度的会话
    */
   async findSessionsWithHighActivity(minMessageCount: number): Promise<Session[]> {
-    return this.find({
-      customConditions: (qb: any) => {
-        qb.andWhere('CAST(session.metadata->>\'messageCount\' AS INTEGER) >= :minMessageCount', { minMessageCount });
-      },
-      sortBy: 'messageCount',
-      sortOrder: 'desc'
-    });
+    const repository = await this.getRepository();
+    const models = await repository
+      .createQueryBuilder('session')
+      .where("CAST(session.metadata->>'messageCount' AS INTEGER) >= :minMessageCount", { minMessageCount })
+      .orderBy('session.metadata->>messageCount', 'DESC')
+      .getMany();
+    return models.map(model => this.toDomain(model));
   }
 
   /**
@@ -240,22 +168,19 @@ export class SessionRepository extends BaseRepository<Session, SessionModel, ID>
   }
 
   /**
-   * 查找用户的会话
-   */
-  async findSessionsForUser(userId: ID): Promise<Session[]> {
-    return this.find({
-      filters: { userId: userId.value },
-      sortBy: 'createdAt',
-      sortOrder: 'desc'
-    });
-  }
-
-  /**
    * 检查用户是否有活跃会话
    */
   async hasActiveSession(userId: ID): Promise<boolean> {
     const sessions = await this.findActiveSessionsForUser(userId);
     return sessions.length > 0;
+  }
+
+  /**
+   * 获取用户的最后活动会话
+   */
+  async getLastActiveSessionForUser(userId: ID): Promise<Session | null> {
+    const sessions = await this.findRecentSessionsForUser(userId, 1);
+    return sessions.length > 0 ? sessions[0]! : null;
   }
 
   /**
@@ -270,11 +195,14 @@ export class SessionRepository extends BaseRepository<Session, SessionModel, ID>
   }
 
   /**
-   * 获取用户的最后活动会话
+   * 查找用户的会话
    */
-  async getLastActiveSessionForUser(userId: ID): Promise<Session | null> {
-    const sessions = await this.findRecentSessionsForUser(userId, 1);
-    return sessions.length > 0 ? sessions[0]! : null;
+  async findSessionsForUser(userId: ID): Promise<Session[]> {
+    return this.find({
+      filters: { userId: userId.value },
+      sortBy: 'createdAt',
+      sortOrder: 'desc'
+    });
   }
 
   /**
@@ -310,27 +238,45 @@ export class SessionRepository extends BaseRepository<Session, SessionModel, ID>
    * 软删除会话
    */
   async softDeleteSession(sessionId: ID): Promise<void> {
-    await super.softDelete(sessionId);
+    const session = await this.findById(sessionId);
+    if (session) {
+      session.markAsDeleted();
+      await this.save(session);
+    }
   }
 
   /**
    * 批量软删除会话
    */
   async batchSoftDeleteSessions(sessionIds: ID[]): Promise<number> {
-    return super.batchSoftDelete(sessionIds);
+    let count = 0;
+    for (const sessionId of sessionIds) {
+      await this.softDeleteSession(sessionId);
+      count++;
+    }
+    return count;
   }
 
   /**
    * 恢复软删除的会话
    */
   async restoreSoftDeletedSession(sessionId: ID): Promise<void> {
-    await super.restoreSoftDeleted(sessionId);
+    const session = await this.findById(sessionId);
+    if (session && session.isDeleted()) {
+      // 需要实现恢复逻辑，这里暂时抛出异常
+      throw new Error('恢复软删除功能尚未实现');
+    }
   }
 
   /**
    * 查找软删除的会话
    */
   async findSoftDeletedSessions(): Promise<Session[]> {
-    return super.findSoftDeleted();
+    const repository = await this.getRepository();
+    const models = await repository
+      .createQueryBuilder('session')
+      .where("session.metadata->>'isDeleted' = :isDeleted", { isDeleted: true })
+      .getMany();
+    return models.map(model => this.toDomain(model));
   }
 }

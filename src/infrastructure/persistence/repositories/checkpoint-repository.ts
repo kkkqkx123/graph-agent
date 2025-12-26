@@ -3,42 +3,12 @@ import { CheckpointRepository as ICheckpointRepository } from '../../../domain/c
 import { Checkpoint } from '../../../domain/checkpoint/entities/checkpoint';
 import { ID } from '../../../domain/common/value-objects/id';
 import { CheckpointType } from '../../../domain/checkpoint/value-objects/checkpoint-type';
+import { Timestamp } from '../../../domain/common/value-objects/timestamp';
+import { Version } from '../../../domain/common/value-objects/version';
 import { CheckpointModel } from '../models/checkpoint.model';
-import { Between, MoreThan, LessThan, In } from 'typeorm';
-import { IQueryOptions } from '../../../domain/common/repositories/repository';
-import { BaseRepository, QueryOptions } from '../base/base-repository';
+import { In } from 'typeorm';
+import { BaseRepository } from './base-repository';
 import { ConnectionManager } from '../connections/connection-manager';
-import {
-  IdConverter,
-  TimestampConverter,
-  VersionConverter,
-  MetadataConverter
-} from '../base/type-converter-base';
-
-/**
- * 检查点类型类型转换器
- * 将字符串类型转换为CheckpointType值对象
- */
-interface CheckpointTypeConverter {
-  fromStorage: (value: string) => CheckpointType;
-  toStorage: (value: CheckpointType) => string;
-  validateStorage: (value: string) => boolean;
-  validateDomain: (value: CheckpointType) => boolean;
-}
-
-const CheckpointTypeConverter: CheckpointTypeConverter = {
-  fromStorage: (value: string) => {
-    return CheckpointType.fromString(value);
-  },
-  toStorage: (value: CheckpointType) => value.getValue(),
-  validateStorage: (value: string) => {
-    const validTypes = ['auto', 'manual', 'error', 'milestone'];
-    return typeof value === 'string' && validTypes.includes(value);
-  },
-  validateDomain: (value: CheckpointType) => {
-    return value instanceof CheckpointType;
-  }
-};
 
 @injectable()
 export class CheckpointRepository extends BaseRepository<Checkpoint, CheckpointModel, ID> implements ICheckpointRepository {
@@ -48,56 +18,53 @@ export class CheckpointRepository extends BaseRepository<Checkpoint, CheckpointM
     super(connectionManager);
   }
 
-  protected override getModelClass(): new () => CheckpointModel {
+  protected getModelClass(): new () => CheckpointModel {
     return CheckpointModel;
   }
 
   /**
-   * 重写toEntity方法，使用类型转换器
+   * 重写toDomain方法
    */
-  protected override toEntity(model: CheckpointModel): Checkpoint {
+  protected override toDomain(model: CheckpointModel): Checkpoint {
     try {
-      // 使用类型转换器进行编译时类型安全的转换
       const checkpointData = {
-        id: IdConverter.fromStorage(model.id),
-        threadId: model.threadId ? IdConverter.fromStorage(model.threadId) : ID.generate(), // 临时解决方案，实际应该确保threadId不为空
-        type: CheckpointTypeConverter.fromStorage(model.checkpointType),
+        id: new ID(model.id),
+        threadId: model.threadId ? new ID(model.threadId) : ID.generate(),
+        type: CheckpointType.fromString(model.checkpointType),
         stateData: model.state || {},
         tags: model.metadata?.tags || [],
-        metadata: MetadataConverter.fromStorage(model.metadata || {}),
-        createdAt: TimestampConverter.fromStorage(model.createdAt),
-        updatedAt: TimestampConverter.fromStorage(model.updatedAt),
-        version: VersionConverter.fromStorage(model.version),
+        metadata: model.metadata || {},
+        createdAt: Timestamp.create(model.createdAt),
+        updatedAt: Timestamp.create(model.updatedAt),
+        version: Version.fromString(model.version),
         isDeleted: false
       };
 
-      // 创建Checkpoint实体
       return Checkpoint.fromProps(checkpointData);
     } catch (error) {
       const errorMessage = `Checkpoint模型转换失败: ${error instanceof Error ? error.message : String(error)}`;
       const customError = new Error(errorMessage);
       (customError as any).code = 'MAPPING_ERROR';
-      (customError as any).context = { modelId: model.id, operation: 'toEntity' };
+      (customError as any).context = { modelId: model.id, operation: 'toDomain' };
       throw customError;
     }
   }
 
   /**
-   * 重写toModel方法，使用类型转换器
+   * 重写toModel方法
    */
   protected override toModel(entity: Checkpoint): CheckpointModel {
     try {
       const model = new CheckpointModel();
 
-      // 使用类型转换器进行编译时类型安全的转换
-      model.id = IdConverter.toStorage(entity.checkpointId);
-      model.threadId = entity.threadId ? IdConverter.toStorage(entity.threadId) : undefined;
-      model.checkpointType = CheckpointTypeConverter.toStorage(entity.type);
+      model.id = entity.checkpointId.value;
+      model.threadId = entity.threadId ? entity.threadId.value : undefined;
+      model.checkpointType = entity.type.getValue();
       model.state = entity.stateData;
-      model.metadata = MetadataConverter.toStorage(entity.metadata);
-      model.createdAt = TimestampConverter.toStorage(entity.createdAt);
-      model.updatedAt = TimestampConverter.toStorage(entity.updatedAt);
-      model.version = VersionConverter.toStorage(entity.version);
+      model.metadata = entity.metadata;
+      model.createdAt = entity.createdAt.getDate();
+      model.updatedAt = entity.updatedAt.getDate();
+      model.version = entity.version.getValue();
 
       return model;
     } catch (error) {
@@ -109,8 +76,9 @@ export class CheckpointRepository extends BaseRepository<Checkpoint, CheckpointM
     }
   }
 
-  // 基础 CRUD 方法现在由 BaseRepository 提供，无需重复实现
-
+  /**
+   * 查找线程的检查点
+   */
   async findByThreadId(threadId: ID): Promise<Checkpoint[]> {
     return this.find({
       filters: { threadId: threadId.value },
@@ -119,6 +87,9 @@ export class CheckpointRepository extends BaseRepository<Checkpoint, CheckpointM
     });
   }
 
+  /**
+   * 查找线程的最新检查点
+   */
   async findLatestByThreadId(threadId: ID): Promise<Checkpoint | null> {
     return this.findOne({
       filters: { threadId: threadId.value },
@@ -127,34 +98,49 @@ export class CheckpointRepository extends BaseRepository<Checkpoint, CheckpointM
     });
   }
 
+  /**
+   * 查找指定时间范围内的检查点
+   */
   async findByTimeRange(threadId: ID, startTime: Date, endTime: Date): Promise<Checkpoint[]> {
-    return this.find({
-      customConditions: (qb) => {
-        qb.andWhere('checkpoint.threadId = :threadId', { threadId: threadId.value })
-          .andWhere('checkpoint.createdAt BETWEEN :startTime AND :endTime', { startTime, endTime });
-      },
-      sortBy: 'createdAt',
-      sortOrder: 'desc'
-    });
+    const repository = await this.getRepository();
+    const models = await repository
+      .createQueryBuilder('checkpoint')
+      .where('checkpoint.threadId = :threadId', { threadId: threadId.value })
+      .andWhere('checkpoint.createdAt BETWEEN :startTime AND :endTime', { startTime, endTime })
+      .orderBy('checkpoint.createdAt', 'DESC')
+      .getMany();
+    return models.map(model => this.toDomain(model));
   }
 
+  /**
+   * 统计线程的检查点数量
+   */
   async countByThreadId(threadId: ID): Promise<number> {
     return this.count({ filters: { threadId: threadId.value } });
   }
 
+  /**
+   * 统计线程指定类型的检查点数量
+   */
   async countByThreadIdAndType(threadId: ID, type: CheckpointType): Promise<number> {
     return this.count({
       filters: {
         threadId: threadId.value,
-        checkpointType: type.toString()
+        checkpointType: type.getValue()
       }
     });
   }
 
+  /**
+   * 删除线程的所有检查点
+   */
   async deleteByThreadId(threadId: ID): Promise<number> {
     return this.deleteWhere({ filters: { threadId: threadId.value } });
   }
 
+  /**
+   * 删除线程在指定时间之前的检查点
+   */
   async deleteByThreadIdBeforeTime(threadId: ID, beforeTime: Date): Promise<number> {
     try {
       const repository = await this.getRepository();
@@ -171,93 +157,121 @@ export class CheckpointRepository extends BaseRepository<Checkpoint, CheckpointM
     }
   }
 
+  /**
+   * 删除线程指定类型的检查点
+   */
   async deleteByThreadIdAndType(threadId: ID, type: CheckpointType): Promise<number> {
     return this.deleteWhere({
       filters: {
         threadId: threadId.value,
-        checkpointType: type.toString()
+        checkpointType: type.getValue()
       }
     });
   }
 
+  /**
+   * 查找线程指定类型的检查点
+   */
   async findByThreadIdAndType(threadId: ID, type: CheckpointType): Promise<Checkpoint[]> {
     return this.find({
       filters: {
         threadId: threadId.value,
-        checkpointType: type.toString()
+        checkpointType: type.getValue()
       },
       sortBy: 'createdAt',
       sortOrder: 'desc'
     });
   }
 
+  /**
+   * 查找线程指定类型的最新检查点
+   */
   async findLatestByThreadIdAndType(threadId: ID, type: CheckpointType): Promise<Checkpoint | null> {
     return this.findOne({
       filters: {
         threadId: threadId.value,
-        checkpointType: type.toString()
+        checkpointType: type.getValue()
       },
       sortBy: 'createdAt',
       sortOrder: 'desc'
     });
   }
 
+  /**
+   * 按标签查找检查点
+   */
   async findByTag(tag: string): Promise<Checkpoint[]> {
-    return this.find({
-      customConditions: (qb) => {
-        qb.where("checkpoint.metadata::jsonb->'tags' @> :tag", { tag: JSON.stringify([tag]) });
-      },
-      sortBy: 'createdAt',
-      sortOrder: 'desc'
-    });
+    const repository = await this.getRepository();
+    const models = await repository
+      .createQueryBuilder('checkpoint')
+      .where("checkpoint.metadata::jsonb->'tags' @> :tag", { tag: JSON.stringify([tag]) })
+      .orderBy('checkpoint.createdAt', 'DESC')
+      .getMany();
+    return models.map(model => this.toDomain(model));
   }
 
+  /**
+   * 按多个标签查找检查点
+   */
   async findByTags(tags: string[]): Promise<Checkpoint[]> {
+    const repository = await this.getRepository();
+    const queryBuilder = repository
+      .createQueryBuilder('checkpoint')
+      .orderBy('checkpoint.createdAt', 'DESC');
+
+    tags.forEach((tag, index) => {
+      queryBuilder.andWhere(`checkpoint.metadata::jsonb->'tags' @> :tag${index}`, { [`tag${index}`]: JSON.stringify([tag]) });
+    });
+
+    const models = await queryBuilder.getMany();
+    return models.map(model => this.toDomain(model));
+  }
+
+  /**
+   * 获取检查点历史
+   */
+  async getCheckpointHistory(threadId: ID, limit?: number, offset?: number): Promise<Checkpoint[]> {
     return this.find({
-      customConditions: (qb) => {
-        tags.forEach((tag, index) => {
-          qb.andWhere(`checkpoint.metadata::jsonb->'tags' @> :tag${index}`, { [`tag${index}`]: JSON.stringify([tag]) });
-        });
-      },
+      filters: { threadId: threadId.value },
       sortBy: 'createdAt',
-      sortOrder: 'desc'
+      sortOrder: 'desc',
+      limit,
+      offset
     });
   }
 
-  async getCheckpointHistory(threadId: ID, limit?: number, offset?: number): Promise<Checkpoint[]> {
-    return this.findByThreadId(threadId); // 使用现有的方法
-  }
-
+  /**
+   * 获取检查点统计信息
+   */
   async getCheckpointStatistics(threadId: ID): Promise<{
     total: number;
     byType: Record<string, number>;
     latestAt?: Date;
     oldestAt?: Date;
   }> {
-    return this.findByThreadId(threadId).then(checkpoints => {
-      const byType: Record<string, number> = {};
-      let latestAt: Date | undefined;
-      let oldestAt: Date | undefined;
+    const checkpoints = await this.findByThreadId(threadId);
+    const byType: Record<string, number> = {};
+    let latestAt: Date | undefined;
+    let oldestAt: Date | undefined;
 
-      checkpoints.forEach(checkpoint => {
-        const type = checkpoint.type.getValue();
-        byType[type] = (byType[type] || 0) + 1;
+    checkpoints.forEach(checkpoint => {
+      const type = checkpoint.type.getValue();
+      byType[type] = (byType[type] || 0) + 1;
 
-        const createdAt = checkpoint.createdAt.getDate();
-        if (!latestAt || createdAt > latestAt) {
-          latestAt = createdAt;
-        }
-        if (!oldestAt || createdAt < oldestAt) {
-          oldestAt = createdAt;
-        }
-      });
-
-      return {
-        total: checkpoints.length,
-        byType,
-        latestAt,
-        oldestAt
-      };
+      const createdAt = checkpoint.createdAt.getDate();
+      if (!latestAt || createdAt > latestAt) {
+        latestAt = createdAt;
+      }
+      if (!oldestAt || createdAt < oldestAt) {
+        oldestAt = createdAt;
+      }
     });
+
+    return {
+      total: checkpoints.length,
+      byType,
+      latestAt,
+      oldestAt
+    };
   }
 }

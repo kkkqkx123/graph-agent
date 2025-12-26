@@ -6,67 +6,12 @@ import { GraphValidationServiceImpl } from '../../workflow/services/graph-valida
 import { ID } from '../../../domain/common/value-objects/id';
 import { WorkflowStatus } from '../../../domain/workflow/value-objects/workflow-status';
 import { WorkflowType } from '../../../domain/workflow/value-objects/workflow-type';
+import { Timestamp } from '../../../domain/common/value-objects/timestamp';
+import { Version } from '../../../domain/common/value-objects/version';
 import { WorkflowModel } from '../models/workflow.model';
 import { In } from 'typeorm';
-import { BaseRepository, QueryOptions } from '../base/base-repository';
+import { BaseRepository } from './base-repository';
 import { ConnectionManager } from '../connections/connection-manager';
-import {
-  IdConverter,
-  OptionalIdConverter,
-  TimestampConverter,
-  VersionConverter,
-  MetadataConverter
-} from '../base/type-converter-base';
-
-/**
- * 工作流状态类型转换器
- * 将字符串状态转换为WorkflowStatus值对象
- */
-interface WorkflowStatusConverter {
-  fromStorage: (value: string) => WorkflowStatus;
-  toStorage: (value: WorkflowStatus) => string;
-  validateStorage: (value: string) => boolean;
-  validateDomain: (value: WorkflowStatus) => boolean;
-}
-
-const WorkflowStatusConverter: WorkflowStatusConverter = {
-  fromStorage: (value: string) => {
-    return WorkflowStatus.fromString(value);
-  },
-  toStorage: (value: WorkflowStatus) => value.getValue(),
-  validateStorage: (value: string) => {
-    const validStates = ['draft', 'active', 'inactive', 'archived'];
-    return typeof value === 'string' && validStates.includes(value);
-  },
-  validateDomain: (value: WorkflowStatus) => {
-    return value instanceof WorkflowStatus;
-  }
-};
-
-/**
- * 工作流类型类型转换器
- * 将字符串类型转换为WorkflowType值对象
- */
-interface WorkflowTypeConverter {
-  fromStorage: (value: string) => WorkflowType;
-  toStorage: (value: WorkflowType) => string;
-  validateStorage: (value: string) => boolean;
-  validateDomain: (value: WorkflowType) => boolean;
-}
-
-const WorkflowTypeConverter: WorkflowTypeConverter = {
-  fromStorage: (value: string) => {
-    return WorkflowType.fromString(value);
-  },
-  toStorage: (value: WorkflowType) => value.getValue(),
-  validateStorage: (value: string) => {
-    const validTypes = ['sequential', 'parallel', 'conditional', 'loop', 'custom'];
-    return typeof value === 'string' && validTypes.includes(value);
-  },
-  validateDomain: (value: WorkflowType) => {
-    return value instanceof WorkflowType;
-  }
-};
 
 @injectable()
 export class WorkflowRepository extends BaseRepository<Workflow, WorkflowModel, ID> implements IWorkflowRepository {
@@ -77,87 +22,83 @@ export class WorkflowRepository extends BaseRepository<Workflow, WorkflowModel, 
     super(connectionManager);
   }
 
-  protected override getModelClass(): new () => WorkflowModel {
+  protected getModelClass(): new () => WorkflowModel {
     return WorkflowModel;
   }
 
   /**
-   * 重写toEntity方法，使用类型转换器
+   * 重写toDomain方法
    */
-  protected override toEntity(model: WorkflowModel): Workflow {
+  protected toDomain(model: WorkflowModel): Workflow {
     try {
-      // 创建工作流定义
       const definition = WorkflowDefinition.fromProps({
-        id: IdConverter.fromStorage(model.id),
+        id: new ID(model.id),
         name: model.name,
         description: model.description || undefined,
-        status: WorkflowStatusConverter.fromStorage(model.state),
-        type: WorkflowTypeConverter.fromStorage(model.executionMode),
-        config: model.configuration ? model.configuration : {}, // 简化处理，实际应转换为WorkflowConfig
-        errorHandlingStrategy: {} as any, // 临时处理
-        executionStrategy: {} as any, // 临时处理
-        createdAt: TimestampConverter.fromStorage(model.createdAt),
-        updatedAt: TimestampConverter.fromStorage(model.updatedAt),
-        version: VersionConverter.fromStorage(model.revision),
+        status: WorkflowStatus.fromString(model.state),
+        type: WorkflowType.fromString(model.executionMode),
+        config: model.configuration || {},
+        errorHandlingStrategy: {} as any,
+        executionStrategy: {} as any,
+        createdAt: Timestamp.create(model.createdAt),
+        updatedAt: Timestamp.create(model.updatedAt),
+        version: Version.fromString(model.version),
         tags: model.metadata?.tags || [],
-        metadata: MetadataConverter.fromStorage(model.metadata || {}),
+        metadata: model.metadata || {},
         isDeleted: model.metadata?.isDeleted || false,
-        createdBy: model.createdBy ? OptionalIdConverter.fromStorage(model.createdBy) : undefined,
-        updatedBy: model.updatedBy ? OptionalIdConverter.fromStorage(model.updatedBy) : undefined
+        createdBy: model.createdBy ? new ID(model.createdBy) : undefined,
+        updatedBy: model.updatedBy ? new ID(model.updatedBy) : undefined
       });
 
-      // 创建工作流图数据
       const graph = {
         nodes: new Map(),
         edges: new Map()
       };
 
-      // 创建Workflow实体
       return Workflow.fromProps({
-        id: IdConverter.fromStorage(model.id),
+        id: new ID(model.id),
         definition,
         graph,
-        createdAt: TimestampConverter.fromStorage(model.createdAt),
-        updatedAt: TimestampConverter.fromStorage(model.updatedAt),
-        version: VersionConverter.fromStorage(model.revision),
-        createdBy: model.createdBy ? OptionalIdConverter.fromStorage(model.createdBy) : undefined,
-        updatedBy: model.updatedBy ? OptionalIdConverter.fromStorage(model.updatedBy) : undefined
+        createdAt: Timestamp.create(model.createdAt),
+        updatedAt: Timestamp.create(model.updatedAt),
+        version: Version.fromString(model.version),
+        createdBy: model.createdBy ? new ID(model.createdBy) : undefined,
+        updatedBy: model.updatedBy ? new ID(model.updatedBy) : undefined
       });
     } catch (error) {
       const errorMessage = `Workflow模型转换失败: ${error instanceof Error ? error.message : String(error)}`;
       const customError = new Error(errorMessage);
       (customError as any).code = 'MAPPING_ERROR';
-      (customError as any).context = { modelId: model.id, operation: 'toEntity' };
+      (customError as any).context = { modelId: model.id, operation: 'toDomain' };
       throw customError;
     }
   }
 
   /**
-   * 重写toModel方法，使用类型转换器
+   * 重写toModel方法
    */
   protected override toModel(entity: Workflow): WorkflowModel {
     try {
       const model = new WorkflowModel();
 
-      // 使用类型转换器进行编译时类型安全的转换
-      model.id = IdConverter.toStorage(entity.workflowId);
+      model.id = entity.workflowId.value;
       model.name = entity.name;
       model.description = entity.description || undefined;
-      model.state = WorkflowStatusConverter.toStorage(entity.status);
-      model.executionMode = WorkflowTypeConverter.toStorage(entity.type);
-      model.metadata = MetadataConverter.toStorage({
+      model.state = entity.status.getValue();
+      model.executionMode = entity.type.getValue();
+      model.metadata = {
         ...entity.metadata,
         tags: entity.tags,
         isDeleted: entity.isDeleted(),
         definition: entity.getDefinition(),
-      });
-      model.configuration = entity.config; // 简化处理，实际应转换为存储格式
-      model.version = entity.version.toString();
-      model.revision = VersionConverter.toStorage(entity.version);
-      model.createdBy = entity.createdBy ? OptionalIdConverter.toStorage(entity.createdBy) : undefined;
-      model.updatedBy = entity.updatedBy ? OptionalIdConverter.toStorage(entity.updatedBy) : undefined;
-      model.createdAt = TimestampConverter.toStorage(entity.createdAt);
-      model.updatedAt = TimestampConverter.toStorage(entity.updatedAt);
+      };
+      model.configuration = entity.config;
+      model.version = entity.version.getValue();
+      model.revision = parseInt(entity.version.getValue().split('.')[2] || '0');
+      model.createdBy = entity.createdBy ? entity.createdBy.value : undefined;
+      model.updatedBy = entity.updatedBy ? entity.updatedBy.value : undefined;
+      model.createdAt = entity.createdAt.getDate();
+      model.updatedAt = entity.updatedAt.getDate();
 
       return model;
     } catch (error) {
@@ -169,85 +110,122 @@ export class WorkflowRepository extends BaseRepository<Workflow, WorkflowModel, 
     }
   }
 
-  // 基础 CRUD 方法现在由 BaseRepository 提供，无需重复实现
-
+  /**
+   * 按名称查找工作流
+   */
   async findByName(name: string): Promise<Workflow[]> {
-    return this.find({
-      customConditions: (qb: any) => {
-        qb.andWhere('workflow.name = :name', { name });
-      }
-    });
+    const repository = await this.getRepository();
+    const models = await repository
+      .createQueryBuilder('workflow')
+      .where('workflow.name = :name', { name })
+      .getMany();
+    return models.map(model => this.toDomain(model));
   }
 
+  /**
+   * 按状态查找工作流
+   */
   async findByStatus(status: WorkflowStatus): Promise<Workflow[]> {
     return this.find({
-      customConditions: (qb: any) => {
-        qb.andWhere('workflow.state = :state', { state: this.mapStatusToState(status) });
-      }
+      filters: { state: status.getValue() },
+      sortBy: 'createdAt',
+      sortOrder: 'desc'
     });
   }
 
+  /**
+   * 按类型查找工作流
+   */
   async findByType(type: WorkflowType): Promise<Workflow[]> {
     return this.find({
-      customConditions: (qb: any) => {
-        qb.andWhere('workflow.executionMode = :type', { type: this.mapTypeToExecutionMode(type) });
-      }
+      filters: { executionMode: type.getValue() },
+      sortBy: 'createdAt',
+      sortOrder: 'desc'
     });
   }
 
+  /**
+   * 按标签查找工作流
+   */
   async findByTags(tags: string[]): Promise<Workflow[]> {
-    return this.find({
-      customConditions: (qb: any) => {
-        qb.andWhere('workflow.metadata->>\'tags\' @> :tags', { tags: JSON.stringify(tags) });
-      }
-    });
+    const repository = await this.getRepository();
+    const models = await repository
+      .createQueryBuilder('workflow')
+      .where("workflow.metadata->>'tags' @> :tags", { tags: JSON.stringify(tags) })
+      .getMany();
+    return models.map(model => this.toDomain(model));
   }
 
+  /**
+   * 按创建者查找工作流
+   */
   async findByCreatedBy(createdBy: ID): Promise<Workflow[]> {
     return this.find({
-      customConditions: (qb: any) => {
-        qb.andWhere('workflow.createdBy = :createdBy', { createdBy: createdBy.value });
-      }
+      filters: { createdBy: createdBy.value },
+      sortBy: 'createdAt',
+      sortOrder: 'desc'
     });
   }
 
+  /**
+   * 查找草稿工作流
+   */
   async findDraftWorkflows(): Promise<Workflow[]> {
     return this.findByStatus(WorkflowStatus.draft());
   }
 
+  /**
+   * 查找活跃工作流
+   */
   async findActiveWorkflows(): Promise<Workflow[]> {
     return this.findByStatus(WorkflowStatus.active());
   }
 
+  /**
+   * 查找非活跃工作流
+   */
   async findInactiveWorkflows(): Promise<Workflow[]> {
     return this.findByStatus(WorkflowStatus.inactive());
   }
 
+  /**
+   * 查找已归档工作流
+   */
   async findArchivedWorkflows(): Promise<Workflow[]> {
     return this.findByStatus(WorkflowStatus.archived());
   }
 
+  /**
+   * 按名称搜索工作流
+   */
   async searchByName(name: string): Promise<Workflow[]> {
-    return this.find({
-      customConditions: (qb: any) => {
-        qb.andWhere('workflow.name LIKE :name', { name: `%${name}%` });
-      }
-    });
+    const repository = await this.getRepository();
+    const models = await repository
+      .createQueryBuilder('workflow')
+      .where('workflow.name LIKE :name', { name: `%${name}%` })
+      .getMany();
+    return models.map(model => this.toDomain(model));
   }
 
+  /**
+   * 按描述搜索工作流
+   */
   async searchByDescription(description: string): Promise<Workflow[]> {
-    return this.find({
-      customConditions: (qb: any) => {
-        qb.andWhere('workflow.description LIKE :description', { description: `%${description}%` });
-      }
-    });
+    const repository = await this.getRepository();
+    const models = await repository
+      .createQueryBuilder('workflow')
+      .where('workflow.description LIKE :description', { description: `%${description}%` })
+      .getMany();
+    return models.map(model => this.toDomain(model));
   }
 
+  /**
+   * 检查名称是否存在
+   */
   async existsByName(name: string, excludeId?: ID): Promise<boolean> {
-    const connection = await this.connectionManager.getConnection();
-    const repository = connection.getRepository(WorkflowModel);
-
-    const queryBuilder = repository.createQueryBuilder('workflow')
+    const repository = await this.getRepository();
+    const queryBuilder = repository
+      .createQueryBuilder('workflow')
       .where('workflow.name = :name', { name });
 
     if (excludeId) {
@@ -258,44 +236,55 @@ export class WorkflowRepository extends BaseRepository<Workflow, WorkflowModel, 
     return count > 0;
   }
 
+  /**
+   * 获取最活跃的工作流
+   */
   async getMostActiveWorkflows(limit: number): Promise<Workflow[]> {
-    return this.find({
-      customConditions: (qb: any) => {
-        qb.orderBy('workflow.metadata->>\'executionCount\'', 'DESC');
-      },
-      limit
-    });
+    const repository = await this.getRepository();
+    const models = await repository
+      .createQueryBuilder('workflow')
+      .orderBy("CAST(workflow.metadata->>'executionCount' AS INTEGER)", 'DESC')
+      .take(limit)
+      .getMany();
+    return models.map(model => this.toDomain(model));
   }
 
+  /**
+   * 获取最近创建的工作流
+   */
   async getRecentlyCreatedWorkflows(limit: number): Promise<Workflow[]> {
     return this.find({
-      customConditions: (qb: any) => {
-        qb.orderBy('workflow.createdAt', 'DESC');
-      },
+      sortBy: 'createdAt',
+      sortOrder: 'desc',
       limit
     });
   }
 
+  /**
+   * 获取最复杂的工作流
+   */
   async getMostComplexWorkflows(limit: number): Promise<Workflow[]> {
-    return this.find({
-      customConditions: (qb: any) => {
-        qb.orderBy('(workflow.metadata->>\'nodeCount\' + workflow.metadata->>\'edgeCount\')', 'DESC');
-      },
-      limit
-    });
+    const repository = await this.getRepository();
+    const models = await repository
+      .createQueryBuilder('workflow')
+      .orderBy('(CAST(workflow.metadata->>\'nodeCount\' AS INTEGER) + CAST(workflow.metadata->>\'edgeCount\' AS INTEGER))', 'DESC')
+      .take(limit)
+      .getMany();
+    return models.map(model => this.toDomain(model));
   }
 
+  /**
+   * 批量更新工作流状态
+   */
   async batchUpdateStatus(
     workflowIds: ID[],
     status: WorkflowStatus,
     changedBy?: ID,
     reason?: string
   ): Promise<number> {
-    const connection = await this.connectionManager.getConnection();
-    const repository = connection.getRepository(WorkflowModel);
-
+    const repository = await this.getRepository();
     const updateData: any = {
-      state: this.mapStatusToState(status),
+      state: status.getValue(),
       updatedAt: new Date()
     };
 
@@ -303,88 +292,102 @@ export class WorkflowRepository extends BaseRepository<Workflow, WorkflowModel, 
       updateData.updatedBy = changedBy.value;
     }
 
-    const result = await repository.createQueryBuilder()
-      .update(WorkflowModel)
-      .set(updateData)
-      .where('id IN (:...workflowIds)', { workflowIds: workflowIds.map(id => id.value) })
-      .execute();
+    const result = await repository.update(
+      { id: In(workflowIds.map(id => id.value)) },
+      updateData
+    );
 
     return result.affected || 0;
   }
 
+  /**
+   * 批量删除工作流
+   */
   async batchDelete(workflowIds: ID[]): Promise<number> {
-    const connection = await this.connectionManager.getConnection();
-    const repository = connection.getRepository(WorkflowModel);
-
+    const repository = await this.getRepository();
     const result = await repository.delete({ id: In(workflowIds.map(id => id.value)) });
     return result.affected || 0;
   }
 
-  override async softDelete(workflowId: ID): Promise<void> {
-    const connection = await this.connectionManager.getConnection();
-    const repository = connection.getRepository(WorkflowModel);
-
+  /**
+   * 软删除工作流
+   */
+  async softDelete(workflowId: ID): Promise<void> {
+    const repository = await this.getRepository();
     await repository.update({ id: workflowId.value }, {
       state: 'archived',
       updatedAt: new Date()
     });
   }
 
-  override async batchSoftDelete(workflowIds: ID[]): Promise<number> {
-    const connection = await this.connectionManager.getConnection();
-    const repository = connection.getRepository(WorkflowModel);
-
-    const result = await repository.createQueryBuilder()
-      .update(WorkflowModel)
-      .set({
+  /**
+   * 批量软删除工作流
+   */
+  async batchSoftDelete(workflowIds: ID[]): Promise<number> {
+    const repository = await this.getRepository();
+    const result = await repository.update(
+      { id: In(workflowIds.map(id => id.value)) },
+      {
         state: 'archived',
         updatedAt: new Date()
-      })
-      .where('id IN (:...workflowIds)', { workflowIds: workflowIds.map(id => id.value) })
-      .execute();
-
+      }
+    );
     return result.affected || 0;
   }
 
-  override async restoreSoftDeleted(workflowId: ID): Promise<void> {
-    const connection = await this.connectionManager.getConnection();
-    const repository = connection.getRepository(WorkflowModel);
-
+  /**
+   * 恢复软删除的工作流
+   */
+  async restoreSoftDeleted(workflowId: ID): Promise<void> {
+    const repository = await this.getRepository();
     await repository.update({ id: workflowId.value }, {
       state: 'draft',
       updatedAt: new Date()
     });
   }
 
-  override async findSoftDeleted(): Promise<Workflow[]> {
+  /**
+   * 查找软删除的工作流
+   */
+  async findSoftDeleted(): Promise<Workflow[]> {
     return this.find({
-      customConditions: (qb) => {
-        qb.andWhere('workflow.isDeleted = true');
-      }
+      filters: { state: 'archived' },
+      sortBy: 'updatedAt',
+      sortOrder: 'desc'
     });
   }
 
+  /**
+   * 按节点ID查找工作流
+   */
   async findByNodeId(nodeId: ID): Promise<Workflow[]> {
-    return this.find({
-      customConditions: (qb: any) => {
-        qb.andWhere('workflow.metadata->>\'nodeIds\' @> :nodeId', { nodeId: JSON.stringify([nodeId.value]) });
-      }
-    });
+    const repository = await this.getRepository();
+    const models = await repository
+      .createQueryBuilder('workflow')
+      .where("workflow.metadata->>'nodeIds' @> :nodeId", { nodeId: JSON.stringify([nodeId.value]) })
+      .getMany();
+    return models.map(model => this.toDomain(model));
   }
 
+  /**
+   * 按边ID查找工作流
+   */
   async findByEdgeId(edgeId: ID): Promise<Workflow[]> {
-    return this.find({
-      customConditions: (qb: any) => {
-        qb.andWhere('workflow.metadata->>\'edgeIds\' @> :edgeId', { edgeId: JSON.stringify([edgeId.value]) });
-      }
-    });
+    const repository = await this.getRepository();
+    const models = await repository
+      .createQueryBuilder('workflow')
+      .where("workflow.metadata->>'edgeIds' @> :edgeId", { edgeId: JSON.stringify([edgeId.value]) })
+      .getMany();
+    return models.map(model => this.toDomain(model));
   }
 
+  /**
+   * 获取工作流标签统计
+   */
   async getWorkflowTagStats(): Promise<Record<string, number>> {
-    const connection = await this.connectionManager.getConnection();
-    const repository = connection.getRepository(WorkflowModel);
-
-    const stats = await repository.createQueryBuilder('workflow')
+    const repository = await this.getRepository();
+    const stats = await repository
+      .createQueryBuilder('workflow')
       .select("jsonb_array_elements_text(workflow.metadata->'tags')", 'tag')
       .addSelect('COUNT(*)', 'count')
       .groupBy('tag')
@@ -397,20 +400,5 @@ export class WorkflowRepository extends BaseRepository<Workflow, WorkflowModel, 
     });
 
     return result;
-  }
-
-  private mapStatusToState(status: WorkflowStatus): string {
-    if (status.isDraft()) return 'draft';
-    if (status.isActive()) return 'active';
-    if (status.isInactive()) return 'inactive';
-    if (status.isArchived()) return 'archived';
-    return 'draft';
-  }
-
-  private mapTypeToExecutionMode(type: WorkflowType): string {
-    if (type.isSequential()) return 'sequential';
-    if (type.isParallel()) return 'parallel';
-    if (type.isConditional()) return 'conditional';
-    return 'sequential';
   }
 }

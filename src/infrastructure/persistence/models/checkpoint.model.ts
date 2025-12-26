@@ -51,8 +51,8 @@ export class CheckpointModel {
   @Column({ type: 'int', nullable: true })
   order?: number;
 
-  @Column({ default: 1 })
-  version!: number;
+  @Column({ default: '1.0.0' })
+  version!: string;
 
   @CreateDateColumn()
   createdAt!: Date;

@@ -11,12 +11,6 @@ interface DatabaseConfig {
   database?: string;
   synchronize?: boolean;
   logging?: boolean;
-  ssl?: boolean;
-  extra?: any;
-  connectionLimit?: number;
-  acquireTimeout?: number;
-  timeout?: number;
-  reconnect?: boolean;
 }
 
 @injectable()
@@ -46,42 +40,16 @@ export class ConnectionManager {
   private buildConnectionConfig(): DataSourceOptions {
     const dbConfig = this.configManager.get<DatabaseConfig>('database', {});
 
-    const config: any = {
+    return {
       type: dbConfig.type || 'postgres',
       host: dbConfig.host || 'localhost',
       port: dbConfig.port || 5432,
       username: dbConfig.username || 'postgres',
       password: dbConfig.password || 'password',
-      database: dbConfig.database || 'workflow_agent',
+      database: dbConfig.database || 'graph_agent',
       entities: [__dirname + '/../models/*.model.ts'],
       synchronize: dbConfig.synchronize || false,
-      logging: dbConfig.logging || false,
-      ssl: dbConfig.ssl || false,
-      extra: {
-        ...dbConfig.extra,
-        connectionLimit: dbConfig.connectionLimit || 10,
-        acquireTimeout: dbConfig.acquireTimeout || 60000,
-        timeout: dbConfig.timeout || 60000,
-        reconnect: dbConfig.reconnect !== false,
-      }
+      logging: dbConfig.logging || false
     };
-
-    return config as DataSourceOptions;
-  }
-
-  async createQueryRunner() {
-    const connection = await this.getConnection();
-    return connection.createQueryRunner();
-  }
-
-  async healthCheck(): Promise<boolean> {
-    try {
-      const connection = await this.getConnection();
-      await connection.query('SELECT 1');
-      return true;
-    } catch (error) {
-      console.error('Database health check failed:', error);
-      return false;
-    }
   }
 }

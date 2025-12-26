@@ -48,8 +48,8 @@ export class HistoryModel {
   @Column({ type: 'bigint', nullable: true })
   timestamp?: number;
 
-  @Column({ default: 1 })
-  version!: number;
+  @Column({ default: '1.0.0' })
+  version!: string;
 
   @CreateDateColumn()
   createdAt!: Date;

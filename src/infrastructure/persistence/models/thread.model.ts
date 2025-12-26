@@ -39,8 +39,8 @@ export class ThreadModel {
   @Column('jsonb', { nullable: true })
   metadata?: any;
 
-  @Column({ default: 1 })
-  version!: number;
+  @Column({ default: '1.0.0' })
+  version!: string;
 
   @CreateDateColumn()
   createdAt!: Date;
