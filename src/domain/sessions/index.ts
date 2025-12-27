@@ -17,5 +17,4 @@ export * from './value-objects';
 // 导出仓储
 export * from './repositories';
 
-// 导出操作子模块
-export * from './operations';
+// 操作相关值对象已移至 value-objects/operations

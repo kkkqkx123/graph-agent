@@ -11,3 +11,6 @@ export * from './llm-statistics';
 export * from './performance-statistics';
 export * from './resource-usage';
 export * from './operation-statistics';
+
+// 导出操作相关值对象
+export * from './operations';
