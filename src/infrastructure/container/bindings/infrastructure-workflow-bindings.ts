@@ -11,6 +11,10 @@ import { EdgeEvaluator } from '../../threads/execution/edge-evaluator';
 import { NodeRouter } from '../../threads/execution/node-router';
 import { FunctionRegistry } from '../../workflow/functions/registry/function-registry';
 import { FunctionExecutor } from '../../workflow/functions/executors/function-executor';
+import { GraphAlgorithmService } from '../../workflow/interfaces/graph-algorithm-service.interface';
+import { GraphAlgorithmServiceImpl } from '../../workflow/services/graph-algorithm-service';
+import { GraphValidationServiceImpl } from '../../workflow/services/graph-validation-service';
+import { ThreadCoordinatorInfrastructureService } from '../../threads/services/thread-coordinator-service';
 
 /**
  * 工作流执行器绑定
@@ -85,6 +89,38 @@ export class WorkflowExecutorBindings extends ServiceBindings {
     container.registerFactory<NodeRouter>(
       'NodeRouter',
       () => new NodeRouter(),
+      { lifetime: ServiceLifetime.SINGLETON }
+    );
+
+    // 注册图算法服务（基础设施层服务）
+    container.registerFactory<GraphAlgorithmService>(
+      'GraphAlgorithmService',
+      () => new GraphAlgorithmServiceImpl(),
+      { lifetime: ServiceLifetime.SINGLETON }
+    );
+
+    // 注册图验证服务（基础设施层服务）
+    container.registerFactory<GraphValidationServiceImpl>(
+      'GraphValidationService',
+      () => new GraphValidationServiceImpl(),
+      { lifetime: ServiceLifetime.SINGLETON }
+    );
+
+    // 注册线程协调服务（基础设施层服务）
+    container.registerFactory<ThreadCoordinatorInfrastructureService>(
+      'ThreadCoordinatorService',
+      () => new ThreadCoordinatorInfrastructureService(
+        container.get('ThreadRepository'),
+        container.get('ThreadLifecycleService'),
+        container.get('ThreadDefinitionRepository'),
+        container.get('ThreadExecutionRepository'),
+        container.get('NodeExecutor'),
+        container.get('EdgeExecutor'),
+        container.get('EdgeEvaluator'),
+        container.get('NodeRouter'),
+        container.get('HookExecutor'),
+        container.get('Logger')
+      ),
       { lifetime: ServiceLifetime.SINGLETON }
     );
   }

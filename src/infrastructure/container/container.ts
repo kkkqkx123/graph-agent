@@ -9,10 +9,10 @@ import {
   DatabaseServiceBindings,
   CacheServiceBindings
 } from './bindings/infrastructure-bindings';
-// TODO: 实现缺失的绑定文件
-// import { WorkflowInfrastructureBindings } from './bindings/workflow-bindings';
-// import { ThreadInfrastructureBindings } from './bindings/thread-bindings';
-// import { SessionInfrastructureBindings } from './bindings/session-bindings';
+import { InfrastructureLLMServiceBindings } from './bindings/infrastructure-llm-bindings';
+import { InfrastructurePromptsBindings } from './bindings/infrastructure-prompts-bindings';
+import { InfrastructureRepositoryBindings } from './bindings/infrastructure-repository-bindings';
+import { WorkflowExecutorBindings } from './bindings/infrastructure-workflow-bindings';
 
 import { ApplicationContainer } from '../../application/container/application-container';
 import { InterfaceContainer } from '../../interfaces/container/interface-container';
@@ -112,6 +112,27 @@ export abstract class BaseContainer implements IContainer {
       factory,
       options
     });
+  }
+
+  /**
+   * 验证依赖是否已注册
+   * @param dependencies 需要验证的依赖键列表
+   * @throws Error 如果有依赖未注册
+   */
+  protected validateDependencies(dependencies: string[]): void {
+    const missingDependencies: string[] = [];
+
+    for (const dep of dependencies) {
+      if (!this.has(dep)) {
+        missingDependencies.push(dep);
+      }
+    }
+
+    if (missingDependencies.length > 0) {
+      throw new Error(
+        `以下依赖未注册: ${missingDependencies.join(', ')}`
+      );
+    }
   }
 
   get<T>(key: string): T {
@@ -222,24 +243,55 @@ export abstract class BaseContainer implements IContainer {
     }
 
     if (registration.implementation) {
-      // TODO: 实现自动依赖解析
-      // const dependencies = this.resolveDependencies(registration.implementation);
-      // return new registration.implementation(...dependencies);
-      return new registration.implementation();
+      // 自动依赖解析
+      const dependencies = this.resolveDependencies(registration.implementation);
+      return new registration.implementation(...dependencies);
     }
 
     throw new Error(`无法创建实例: ${registration.key}`);
   }
 
-  // TODO: 实现自动依赖解析
-  // protected resolveDependencies(implementation: any): any[] {
-  //   // 通过反射获取构造函数参数类型
-  //   const paramTypes = Reflect.getMetadata('design:paramtypes', implementation) || [];
-  //   return paramTypes.map((paramType: any) => {
-  //     const serviceName = this.getServiceName(paramType);
-  //     return this.get(serviceName);
-  //   });
-  // }
+  /**
+   * 自动依赖解析
+   * 通过反射获取构造函数参数类型，并从容器中解析依赖
+   */
+  protected resolveDependencies(implementation: any): any[] {
+    // 通过反射获取构造函数参数类型
+    const paramTypes = Reflect.getMetadata('design:paramtypes', implementation) || [];
+    
+    return paramTypes.map((paramType: any, index: number) => {
+      try {
+        // 尝试根据类型名称获取服务
+        const serviceName = this.getServiceName(paramType);
+        return this.get(serviceName);
+      } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : String(error);
+        throw new Error(
+          `无法解析 ${implementation.name} 的第 ${index + 1} 个依赖: ${errorMessage}`
+        );
+      }
+    });
+  }
+
+  /**
+   * 根据类型获取服务名称
+   */
+  private getServiceName(paramType: any): string {
+    // 如果类型有name属性，直接使用
+    if (paramType.name) {
+      return paramType.name;
+    }
+    
+    // 否则使用toString()获取类型名称
+    const typeString = paramType.toString();
+    const match = typeString.match(/class\s+(\w+)/) || typeString.match(/function\s+(\w+)/);
+    
+    if (match && match[1]) {
+      return match[1];
+    }
+    
+    throw new Error(`无法确定服务名称: ${typeString}`);
+  }
 }
 
 /**
@@ -276,30 +328,37 @@ export class InfrastructureContainer extends BaseContainer {
   }
 
   private registerInfrastructureServices(): void {
-    // 注册基础设施层服务
+    // 按照依赖顺序注册基础设施层服务
+    
+    // 1. 基础服务（日志、配置）
     const loggerBindings = new LoggerServiceBindings();
     loggerBindings.registerServices(this, this.config);
 
     const configBindings = new ConfigServiceBindings();
     configBindings.registerServices(this, this.config);
 
+    // 2. 数据库和缓存服务
     const databaseBindings = new DatabaseServiceBindings();
     databaseBindings.registerServices(this, this.config);
 
     const cacheBindings = new CacheServiceBindings();
     cacheBindings.registerServices(this, this.config);
 
-    // LLM绑定现在通过ConfigServiceBindings注册
+    // 3. LLM服务
+    const llmBindings = new InfrastructureLLMServiceBindings();
+    llmBindings.registerServices(this, this.config);
 
-    // TODO: 实现缺失的绑定文件
-    // const workflowBindings = new WorkflowInfrastructureBindings();
-    // workflowBindings.registerServices(this, this.config);
+    // 4. 提示词服务
+    const promptsBindings = new InfrastructurePromptsBindings();
+    promptsBindings.registerServices(this, this.config);
 
-    // const threadBindings = new ThreadInfrastructureBindings();
-    // threadBindings.registerServices(this, this.config);
+    // 5. 仓储服务
+    const repositoryBindings = new InfrastructureRepositoryBindings();
+    repositoryBindings.registerServices(this, this.config);
 
-    // const sessionBindings = new SessionInfrastructureBindings();
-    // sessionBindings.registerServices(this, this.config);
+    // 6. 工作流执行器服务
+    const workflowBindings = new WorkflowExecutorBindings();
+    workflowBindings.registerServices(this, this.config);
   }
 }
 
@@ -326,12 +385,10 @@ export class ContainerBootstrap {
     );
 
     // 创建接口容器
-    // TODO: 修复ApplicationContainer实现IContainer接口
-    // const interfaceContainer = new InterfaceContainer(
-    //   applicationContainer,
-    //   config
-    // );
-    const interfaceContainer = null as any;
+    const interfaceContainer = new InterfaceContainer(
+      applicationContainer,
+      config
+    );
 
     return {
       infrastructure: infrastructureContainer,

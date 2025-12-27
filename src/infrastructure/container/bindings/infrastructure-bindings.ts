@@ -60,22 +60,6 @@ export class ConfigServiceBindings extends ServiceBindings {
     // 注册配置加载绑定
     const configLoadingBindings = new ConfigLoadingBindings();
     configLoadingBindings.registerServices(container, config);
-
-    // 注册提示词服务绑定
-    const promptsBindings = new InfrastructurePromptsBindings();
-    promptsBindings.registerServices(container, config);
-
-    // 注册LLM服务绑定
-    const llmBindings = new InfrastructureLLMServiceBindings();
-    llmBindings.registerServices(container, config);
-
-    // 注册工作流执行器绑定
-    const workflowBindings = new WorkflowExecutorBindings();
-    workflowBindings.registerServices(container, config);
-
-    // 注册仓储服务绑定
-    const repositoryBindings = new InfrastructureRepositoryBindings();
-    repositoryBindings.registerServices(container, config);
   }
 }
 

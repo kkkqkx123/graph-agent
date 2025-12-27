@@ -3,6 +3,7 @@
  */
 
 import { BaseContainer, IContainer, ContainerConfiguration } from '../../infrastructure/container/container';
+import { WorkflowServiceBindings, SessionServiceBindings, PromptServiceBindings } from './bindings/application-bindings';
 
 /**
  * 应用层容器
@@ -21,7 +22,16 @@ export class ApplicationContainer extends BaseContainer {
    * 注册应用层服务
    */
   private registerApplicationServices(): void {
-    // 注册应用层服务
-    // TODO: 实现具体的服务绑定
+    // 注册工作流服务
+    const workflowBindings = new WorkflowServiceBindings();
+    workflowBindings.registerServices(this, this.config);
+
+    // 注册会话服务
+    const sessionBindings = new SessionServiceBindings();
+    sessionBindings.registerServices(this, this.config);
+
+    // 注册提示词服务
+    const promptBindings = new PromptServiceBindings();
+    promptBindings.registerServices(this, this.config);
   }
 }
