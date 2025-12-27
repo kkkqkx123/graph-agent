@@ -2,7 +2,7 @@ import { ID } from '../../../common/value-objects/id';
 import { Timestamp } from '../../../common/value-objects/timestamp';
 import { NodeId } from '../../../workflow/value-objects/node-id';
 import { PromptContext } from '../../../workflow/value-objects/prompt-context';
-import { NodeExecutionSnapshot } from '../../value-objects/node-execution';
+import { NodeExecutionSnapshot } from '../../../threads/value-objects/node-execution';
 
 /**
  * Fork选项接口
@@ -23,12 +23,12 @@ export interface ForkContext {
   readonly parentThreadId: ID;
   readonly forkPoint: NodeId;
   readonly timestamp: Timestamp;
-  
+
   // 上下文快照
   readonly variableSnapshot: Map<string, unknown>;
   readonly nodeStateSnapshot: Map<string, NodeExecutionSnapshot>;
   readonly promptContextSnapshot: PromptContext;
-  
+
   // Fork配置
   readonly options: ForkOptions;
 }

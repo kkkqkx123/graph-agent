@@ -1,12 +1,12 @@
 import { ID } from '../../../common/value-objects/id';
 import { NodeId } from '../../../workflow/value-objects/node-id';
-import { Thread } from '../../entities/thread';
+import { Thread } from '../../../threads/entities/thread';
 import { ThreadOperation } from '../base/thread-operation';
 import { OperationResult } from '../base/operation-result';
 import { ForkContext, createForkContext, DEFAULT_FORK_OPTIONS, ForkOptions } from './fork-context';
 import { ForkStrategy } from './fork-strategy';
-import { ExecutionContext } from '../../value-objects/execution-context';
-import { NodeExecution, NodeExecutionSnapshot } from '../../value-objects/node-execution';
+import { ExecutionContext } from '../../../threads/value-objects/execution-context';
+import { NodeExecution, NodeExecutionSnapshot } from '../../../threads/value-objects/node-execution';
 import { PromptContext } from '../../../workflow/value-objects/prompt-context';
 
 /**

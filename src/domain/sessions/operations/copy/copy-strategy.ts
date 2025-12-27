@@ -1,7 +1,7 @@
 import { ValueObject } from '../../../common/value-objects/value-object';
 import { ID } from '../../../common/value-objects/id';
 import { NodeId } from '../../../workflow/value-objects/node-id';
-import { Thread } from '../../entities/thread';
+import { Thread } from '../../../threads/entities/thread';
 import { CopyScope, createCopyScope } from './copy-context';
 
 /**

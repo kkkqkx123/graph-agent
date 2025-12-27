@@ -1,7 +1,7 @@
 import { ID } from '../../../common/value-objects/id';
 import { Timestamp } from '../../../common/value-objects/timestamp';
 import { NodeId } from '../../../workflow/value-objects/node-id';
-import { NodeExecutionSnapshot } from '../../value-objects/node-execution';
+import { NodeExecutionSnapshot } from '../../../threads/value-objects/node-execution';
 
 /**
  * Copy选项接口
@@ -31,13 +31,13 @@ export interface CopyContext {
   readonly copyId: ID;
   readonly sourceThreadId: ID;
   readonly timestamp: Timestamp;
-  
+
   // Copy配置
   readonly options: CopyOptions;
-  
+
   // Copy范围
   readonly scope: CopyScope;
-  
+
   // 关系映射
   readonly relationshipMapping: Map<ID, ID>;
 }

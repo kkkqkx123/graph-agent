@@ -1,6 +1,6 @@
 import { ID } from '../../../common/value-objects/id';
 import { NodeId } from '../../../workflow/value-objects/node-id';
-import { Thread } from '../../entities/thread';
+import { Thread } from '../../../threads/entities/thread';
 import { ThreadOperation } from '../base/thread-operation';
 import { OperationResult } from '../base/operation-result';
 import { CopyContext, createCopyContext, DEFAULT_COPY_OPTIONS, CopyOptions } from './copy-context';
