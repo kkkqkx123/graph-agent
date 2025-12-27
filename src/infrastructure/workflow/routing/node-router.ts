@@ -5,7 +5,7 @@ import { ExecutionState } from '@domain/workflow/entities/execution-state';
 import { NodeExecutionResult } from '@domain/workflow/entities/node-execution-result';
 import { RouteDecision } from '@domain/workflow/entities/route-decision';
 import { Workflow } from '@domain/workflow/entities/workflow';
-import { EdgeEvaluator, EdgeEvaluationResult } from './edge-evaluator';
+import { EdgeEvaluator, EdgeEvaluationResult } from '../evaluation/edge-evaluator';
 
 /**
  * 节点路由结果接口（向后兼容）

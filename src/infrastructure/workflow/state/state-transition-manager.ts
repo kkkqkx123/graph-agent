@@ -7,7 +7,7 @@ import { NodeExecutionState } from '@domain/workflow/entities/node-execution-sta
 import { PromptContext } from '@domain/workflow/value-objects/prompt-context';
 import { ExecutionStatus } from '@domain/workflow/value-objects/execution-status';
 import { NodeRouter } from '../routing/node-router';
-import { EdgeEvaluator } from '../routing/edge-evaluator';
+import { EdgeEvaluator } from '../evaluation/edge-evaluator';
 import { RouteDecision, NodeExecutionResult } from '@domain/workflow/entities';
 
 /**
