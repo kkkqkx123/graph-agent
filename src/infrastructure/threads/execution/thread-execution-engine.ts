@@ -1,10 +1,20 @@
+import { injectable, inject } from 'inversify';
 import { Workflow } from '../../../domain/workflow/entities/workflow';
 import { Thread } from '../../../domain/threads/entities/thread';
 import { NodeId } from '../../../domain/workflow/value-objects/node-id';
+import { EdgeValueObject } from '../../../domain/workflow/value-objects/edge-value-object';
+import { NodeValueObject } from '../../../domain/workflow/value-objects/node-value-object';
 import { NodeExecution, NodeExecutionError } from '../../../domain/threads/value-objects/node-execution';
 import { NodeStatus } from '../../../domain/workflow/value-objects/node-status';
+import { ExecutionContext } from '../../../domain/threads/value-objects/execution-context';
 import { NodeRouter } from './node-router';
 import { EdgeEvaluator } from './edge-evaluator';
+import { NodeExecutor } from '../../workflow/nodes/node-executor';
+import { EdgeExecutor } from '../../workflow/edges/edge-executor';
+import { HookExecutor } from '../../workflow/hooks/hook-executor';
+import { HookContext } from '../../workflow/hooks/hook-context';
+import { HookValueObject } from '../../../domain/workflow/value-objects/hook-value-object';
+import { ILogger } from '../../../domain/common/types/logger-types';
 
 /**
  * 执行引擎配置接口
@@ -49,32 +59,64 @@ export interface RoutingDecision {
 }
 
 /**
+ * 钩子执行点枚举
+ */
+export enum ThreadHookPoint {
+  BEFORE_NODE_EXECUTION = 'before_node_execution',
+  AFTER_NODE_EXECUTION = 'after_node_execution',
+  BEFORE_EDGE_EVALUATION = 'before_edge_evaluation',
+  AFTER_EDGE_EVALUATION = 'after_edge_evaluation',
+  BEFORE_EDGE_EXECUTION = 'before_edge_execution',
+  AFTER_EDGE_EXECUTION = 'after_edge_execution',
+  ON_THREAD_START = 'on_thread_start',
+  ON_THREAD_COMPLETE = 'on_thread_complete',
+  ON_THREAD_ERROR = 'on_thread_error'
+}
+
+/**
  * Thread执行引擎
  *
  * 负责协调Thread的执行流程，包括：
- * - 节点执行协调
- * - 路由决策
- * - 边条件评估
+ * - 节点执行协调（通过NodeExecutor）
+ * - 路由决策（通过NodeRouter）
+ * - 边条件评估（通过EdgeEvaluator）
+ * - 边执行（通过EdgeExecutor）
+ * - 钩子执行（通过HookExecutor）
  * - 执行状态管理
  *
  * 属于基础设施层，提供技术性的执行协调支持
  */
+@injectable()
 export class ThreadExecutionEngine {
   private readonly workflow: Workflow;
   private readonly thread: Thread;
   private readonly nodeRouter: NodeRouter;
   private readonly edgeEvaluator: EdgeEvaluator;
+  private readonly nodeExecutor: NodeExecutor;
+  private readonly edgeExecutor: EdgeExecutor;
+  private readonly hookExecutor: HookExecutor;
   private readonly config: ExecutionEngineConfig;
+  private readonly logger: ILogger;
 
   constructor(
-    workflow: Workflow,
-    thread: Thread,
+    @inject('Workflow') workflow: Workflow,
+    @inject('Thread') thread: Thread,
+    @inject('NodeExecutor') nodeExecutor: NodeExecutor,
+    @inject('EdgeExecutor') edgeExecutor: EdgeExecutor,
+    @inject('EdgeEvaluator') edgeEvaluator: EdgeEvaluator,
+    @inject('NodeRouter') nodeRouter: NodeRouter,
+    @inject('HookExecutor') hookExecutor: HookExecutor,
+    @inject('Logger') logger: ILogger,
     config?: ExecutionEngineConfig
   ) {
     this.workflow = workflow;
     this.thread = thread;
-    this.nodeRouter = new NodeRouter();
-    this.edgeEvaluator = new EdgeEvaluator();
+    this.nodeExecutor = nodeExecutor;
+    this.edgeExecutor = edgeExecutor;
+    this.edgeEvaluator = edgeEvaluator;
+    this.nodeRouter = nodeRouter;
+    this.hookExecutor = hookExecutor;
+    this.logger = logger;
     this.config = config || {};
   }
 
@@ -229,32 +271,107 @@ export class ThreadExecutionEngine {
     const updatedThreadExecution = this.thread.execution.updateNodeExecution(runningNodeExecution);
     this.updateThreadExecution(updatedThreadExecution);
 
-    // 这里应该调用实际的节点执行逻辑
-    // 目前返回一个模拟结果
-    const result = await this.executeNodeLogic(node);
+    // 执行节点前钩子
+    await this.executeHooks(ThreadHookPoint.BEFORE_NODE_EXECUTION, nodeId);
+
+    // 调用实际的节点执行逻辑
+    const result = await this.nodeExecutor.execute(node, this.createFunctionExecutionContext(nodeId));
+
+    // 执行节点后钩子
+    await this.executeHooks(ThreadHookPoint.AFTER_NODE_EXECUTION, nodeId, result);
 
     return result;
   }
 
   /**
-   * 执行节点逻辑（模拟实现）
+   * 创建函数执行上下文
    *
-   * @param node 节点
-   * @returns 执行结果
+   * @param nodeId 节点ID
+   * @returns 函数执行上下文
    */
-  private async executeNodeLogic(node: any): Promise<unknown> {
-    // TODO: 实现实际的节点执行逻辑
-    // 这里应该根据节点类型调用相应的执行器
-
-    // 模拟执行延迟
-    await new Promise(resolve => setTimeout(resolve, 100));
-
-    // 返回模拟结果
+  private createFunctionExecutionContext(nodeId: NodeId): {
+    workflowId: string;
+    executionId: string;
+    variables: Map<string, unknown>;
+    getVariable: (key: string) => unknown;
+    setVariable: (key: string, value: unknown) => void;
+    getNodeResult: (key: string) => unknown;
+    setNodeResult: (key: string, value: unknown) => void;
+  } {
+    const context = this.thread.execution.context;
     return {
-      nodeId: node.id.toString(),
-      nodeType: node.type.toString(),
-      output: `Node ${node.id.toString()} executed successfully`
+      workflowId: this.workflow.id.toString(),
+      executionId: this.thread.execution.context.variables.get('executionId')?.toString() || '',
+      variables: context.variables,
+      getVariable: (key: string) => context.getVariable(key),
+      setVariable: (key: string, value: unknown) => {
+        // 注意：ExecutionContext.setVariable 返回新的上下文
+        // 这里我们不修改原上下文
+      },
+      getNodeResult: (key: string) => {
+        const nodeContext = context.getNodeContext({ toString: () => key } as NodeId);
+        return nodeContext?.variables.get('result');
+      },
+      setNodeResult: (key: string, value: unknown) => {
+        // 设置节点结果到上下文
+      }
     };
+  }
+
+  /**
+   * 执行钩子
+   *
+   * @param hookPoint 钩子执行点
+   * @param nodeId 节点ID
+   * @param nodeResult 节点执行结果（可选）
+   */
+  private async executeHooks(
+    hookPoint: ThreadHookPoint,
+    nodeId: NodeId,
+    nodeResult?: unknown
+  ): Promise<void> {
+    try {
+      // 获取工作流中该钩子点的所有钩子
+      const hooks = this.getHooksForPoint(hookPoint);
+      
+      if (hooks.length === 0) {
+        return;
+      }
+
+      // 创建钩子上下文（使用metadata传递节点信息）
+      const hookContext: HookContext = {
+        workflowId: this.workflow.id.toString(),
+        executionId: this.thread.execution.context.variables.get('executionId')?.toString(),
+        config: {
+          nodeId: nodeId.toString(),
+          nodeResult
+        },
+        metadata: {
+          nodeId: nodeId.toString(),
+          nodeResult,
+          threadId: this.thread.id.toString()
+        }
+      };
+
+      // 执行钩子
+      await this.hookExecutor.executeBatch(hooks, hookContext);
+    } catch (error) {
+      this.logger.warn(`执行钩子失败: ${hookPoint}`, { error });
+      // 钩子失败不应该中断执行流程
+    }
+  }
+
+  /**
+   * 获取指定钩子点的钩子
+   *
+   * @param hookPoint 钩子执行点
+   * @returns 钩子列表
+   */
+  private getHooksForPoint(hookPoint: ThreadHookPoint): HookValueObject[] {
+    // 从工作流中获取对应钩子点的钩子
+    // 这里需要根据实际的钩子存储方式实现
+    // 目前返回空数组
+    return [];
   }
 
   /**

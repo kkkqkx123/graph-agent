@@ -2,14 +2,20 @@
  * ThreadCoordinatorService基础设施实现
  */
 
-import { injectable } from 'inversify';
+import { injectable, inject, Container } from 'inversify';
 import { ID } from '../../../domain/common/value-objects/id';
 import { ThreadExecution } from '../../../domain/threads/value-objects/thread-execution';
 import { ExecutionContext as DomainExecutionContext } from '../../../domain/threads/value-objects/execution-context';
 import { PromptContext } from '../../../domain/workflow/value-objects/prompt-context';
 import { Workflow } from '../../../domain/workflow/entities/workflow';
 import { Thread } from '../../../domain/threads/entities/thread';
-import { ThreadExecutionEngine } from '../../workflow/execution/thread-execution-engine';
+import { ThreadExecutionEngine } from '../execution/thread-execution-engine';
+import { NodeExecutor } from '../../workflow/nodes/node-executor';
+import { EdgeExecutor } from '../../workflow/edges/edge-executor';
+import { EdgeEvaluator } from '../execution/edge-evaluator';
+import { NodeRouter } from '../execution/node-router';
+import { HookExecutor } from '../../workflow/hooks/hook-executor';
+import { ILogger } from '../../../domain/common/types/logger-types';
 
 /**
  * 执行上下文接口（基础设施层）
@@ -78,7 +84,13 @@ export class ThreadCoordinatorInfrastructureService {
     private readonly threadRepository: ThreadRepository,
     private readonly threadLifecycleService: ThreadLifecycleInfrastructureService,
     private readonly threadDefinitionRepository: any,
-    private readonly threadExecutionRepository: any
+    private readonly threadExecutionRepository: any,
+    @inject('NodeExecutor') private readonly nodeExecutor: NodeExecutor,
+    @inject('EdgeExecutor') private readonly edgeExecutor: EdgeExecutor,
+    @inject('EdgeEvaluator') private readonly edgeEvaluator: EdgeEvaluator,
+    @inject('NodeRouter') private readonly nodeRouter: NodeRouter,
+    @inject('HookExecutor') private readonly hookExecutor: HookExecutor,
+    @inject('Logger') private readonly logger: ILogger
   ) {}
 
   /**
@@ -363,8 +375,17 @@ export class ThreadCoordinatorInfrastructureService {
    * @returns 执行结果
    */
   async executeWithEngine(workflow: Workflow, thread: Thread): Promise<any> {
-    // 创建执行引擎
-    const engine = new ThreadExecutionEngine(workflow, thread);
+    // 创建执行引擎（使用依赖注入的组件）
+    const engine = new ThreadExecutionEngine(
+      workflow,
+      thread,
+      this.nodeExecutor,
+      this.edgeExecutor,
+      this.edgeEvaluator,
+      this.nodeRouter,
+      this.hookExecutor,
+      this.logger
+    );
     
     // 存储执行引擎
     this.executionEngines.set(thread.threadId.toString(), engine);

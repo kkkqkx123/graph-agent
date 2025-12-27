@@ -8,6 +8,8 @@ import { LoggerFactory, LoggerConfigManager } from '../../logging';
 import { InfrastructureRepositoryBindings } from './infrastructure-repository-bindings';
 import { ConfigLoadingBindings } from './config-loading-bindings';
 import { InfrastructurePromptsBindings } from './infrastructure-prompts-bindings';
+import { WorkflowExecutorBindings } from './infrastructure-workflow-bindings';
+import { InfrastructureLLMServiceBindings } from './infrastructure-llm-bindings';
 
 /**
  * 日志服务绑定
@@ -64,9 +66,16 @@ export class ConfigServiceBindings extends ServiceBindings {
     promptsBindings.registerServices(container, config);
 
     // 注册LLM服务绑定
-    const { InfrastructureLLMServiceBindings } = require('./infrastructure-llm-bindings');
     const llmBindings = new InfrastructureLLMServiceBindings();
     llmBindings.registerServices(container, config);
+
+    // 注册工作流执行器绑定
+    const workflowBindings = new WorkflowExecutorBindings();
+    workflowBindings.registerServices(container, config);
+
+    // 注册仓储服务绑定
+    const repositoryBindings = new InfrastructureRepositoryBindings();
+    repositoryBindings.registerServices(container, config);
   }
 }
 
