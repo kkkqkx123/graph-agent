@@ -1,5 +1,5 @@
-import { ID } from '../../../../domain/common/value-objects/id';
-import { HookPoint } from '../../../../domain/workflow/value-objects/hook-point';
+import { ID } from '../../../domain/common/value-objects/id';
+import { HookPoint } from '../../../domain/workflow/value-objects/hook-point';
 
 export { HookPoint };
 
