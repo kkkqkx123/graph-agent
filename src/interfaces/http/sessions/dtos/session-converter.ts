@@ -51,7 +51,7 @@ export class SessionConverter extends DtoConverter<Session, SessionInfo> {
   } {
     const userId = request.userId ? ID.fromString(request.userId) : undefined;
     const config = request.config ? SessionConverter.createSessionConfig(request.config) : undefined;
-    
+
     return {
       userId,
       title: request.title,
@@ -64,33 +64,33 @@ export class SessionConverter extends DtoConverter<Session, SessionInfo> {
    */
   static createSessionConfig(configDto: SessionConfigDto): SessionConfig {
     const configProps: Partial<SessionConfigProps> = {};
-    
+
     if (configDto) {
       // @ts-ignore - TypeScript requires index signature access for this property
       configProps.value = configDto.value;
     }
-    
+
     if (configDto) {
       // @ts-ignore - TypeScript requires index signature access for this property
       if (configDto.timeoutMinutes) {
         configProps.timeoutMinutes = parseInt(configDto.timeoutMinutes);
       }
     }
-    
+
     if (configDto) {
       // @ts-ignore - TypeScript requires index signature access for this property
       if (configDto.maxDuration) {
         configProps.maxDuration = parseInt(configDto.maxDuration as string);
       }
     }
-    
+
     if (configDto) {
       // @ts-ignore - TypeScript requires index signature access for this property
       if (configDto.maxMessages) {
         configProps.maxMessages = parseInt(configDto.maxMessages);
       }
     }
-    
+
     return SessionConfig.create(configProps);
   }
 
@@ -168,7 +168,7 @@ export class SessionStatisticsConverter extends DtoConverter<any, any> {
     options?: DtoConverterOptions
   ): any {
     const result = { ...statistics };
-    
+
     // 应用转换选项
     return this.applyOptions(result, options);
   }
@@ -178,7 +178,7 @@ export class SessionStatisticsConverter extends DtoConverter<any, any> {
    */
   toEntity(dto: any, options?: DtoConverterOptions): any {
     const result = { ...dto };
-    
+
     // 应用转换选项
     return this.applyOptions(result, options);
   }
@@ -220,7 +220,7 @@ export class SessionStatisticsConverter extends DtoConverter<any, any> {
 export class GenericSessionConverter extends GenericDtoConverter<Session, SessionInfo> {
   constructor() {
     super();
-    
+
     // 添加字段映射
     this.addFieldMappings({
       'sessionId': 'sessionId',
@@ -231,7 +231,7 @@ export class GenericSessionConverter extends GenericDtoConverter<Session, Sessio
       'createdAt': 'createdAt',
       'lastActivityAt': 'lastActivityAt'
     });
-    
+
     // 添加字段转换器
     this.addFieldTransformers({
       'sessionId': (value: ID) => value.toString(),
@@ -276,15 +276,15 @@ export class SessionConverterFactory {
     transformers?: Record<string, (value: any) => any>
   ): GenericDtoConverter<TSource, TTarget> {
     const converter = new GenericDtoConverter<TSource, TTarget>();
-    
+
     if (mappings) {
       converter.addFieldMappings(mappings);
     }
-    
+
     if (transformers) {
       converter.addFieldTransformers(transformers);
     }
-    
+
     return converter;
   }
 }

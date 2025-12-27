@@ -1,9 +1,9 @@
 import { ValueObject } from '../../common/value-objects/value-object';
 import { Timestamp } from '../../common/value-objects/timestamp';
-import { LLMStatistics } from './llm-statistics';
-import { PerformanceStatistics } from './performance-statistics';
-import { ResourceUsage } from './resource-usage';
-import { OperationStatistics } from './operation-statistics';
+import { LLMStatistics } from './statiscs/llm-statistics';
+import { PerformanceStatistics } from './statiscs/performance-statistics';
+import { ResourceUsage } from './statiscs/resource-usage';
+import { OperationStatistics } from './statiscs/operation-statistics';
 
 /**
  * 会话活动值对象属性接口

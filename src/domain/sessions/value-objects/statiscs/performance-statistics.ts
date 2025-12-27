@@ -1,4 +1,4 @@
-import { ValueObject } from '../../common/value-objects/value-object';
+import { ValueObject } from '../../../common/value-objects/value-object';
 
 /**
  * 性能统计信息属性接口
@@ -101,10 +101,10 @@ export class PerformanceStatistics extends ValueObject<PerformanceStatisticsProp
     const newExecutionCount = this.props.executionCount + 1;
     const newTotalExecutionTime = this.props.totalExecutionTime + executionTime;
     const newAverageExecutionTime = newTotalExecutionTime / newExecutionCount;
-    
+
     const newMaxExecutionTime = Math.max(this.props.maxExecutionTime, executionTime);
-    const newMinExecutionTime = this.props.minExecutionTime === 0 
-      ? executionTime 
+    const newMinExecutionTime = this.props.minExecutionTime === 0
+      ? executionTime
       : Math.min(this.props.minExecutionTime, executionTime);
 
     const successCount = success ? 1 : 0;

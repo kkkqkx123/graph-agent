@@ -1,4 +1,4 @@
-import { ValueObject } from '../../common/value-objects/value-object';
+import { ValueObject } from '../../../common/value-objects/value-object';
 
 /**
  * 模型统计信息接口
@@ -119,7 +119,7 @@ export class LLMStatistics extends ValueObject<LLMStatisticsProps> {
   public addLLMCall(modelName: string, tokens: number, cost: number): LLMStatistics {
     const newByModel = new Map(this.props.byModel);
     const existingModel = newByModel.get(modelName);
-    
+
     if (existingModel) {
       newByModel.set(modelName, {
         modelName,
