@@ -1,122 +1,123 @@
-import { TriggerState } from './trigger-state';
-
 /**
- * 触发器执行结果接口
- * 表示触发器执行后的结果
+ * 触发器执行结果
  */
 export interface TriggerExecutionResult {
-  /** 是否成功 */
-  readonly success: boolean;
-  
-  /** 触发器状态 */
-  readonly state: TriggerState;
-  
-  /** 执行消息 */
-  readonly message: string;
-  
-  /** 执行数据 */
-  readonly data: Record<string, any>;
-  
-  /** 错误信息 */
-  readonly error?: Error;
-  
-  /** 执行开始时间 */
-  readonly startTime: Date;
-  
-  /** 执行结束时间 */
-  readonly endTime: Date;
-  
-  /** 执行持续时间（毫秒） */
-  readonly duration: number;
-  
-  /** 执行元数据 */
-  readonly metadata: Record<string, any>;
+  /**
+   * 触发器ID
+   */
+  triggerId: string;
+
+  /**
+   * 是否应该触发
+   */
+  shouldTrigger: boolean;
+
+  /**
+   * 执行是否成功
+   */
+  success: boolean;
+
+  /**
+   * 执行错误
+   */
+  error?: Error;
+
+  /**
+   * 执行时间（毫秒）
+   */
+  executionTime: number;
+
+  /**
+   * 触发数据
+   */
+  data?: Record<string, any>;
+
+  /**
+   * 消息
+   */
+  message?: string;
 }
 
 /**
  * 触发器执行结果构建器
  */
 export class TriggerExecutionResultBuilder {
-  private success: boolean;
-  private state: TriggerState;
-  private message: string;
-  private data: Record<string, any>;
+  private triggerId: string = '';
+  private shouldTrigger: boolean = false;
+  private success: boolean = true;
   private error?: Error;
-  private startTime: Date;
-  private endTime: Date;
-  private duration: number;
-  private metadata: Record<string, any>;
+  private executionTime: number = 0;
+  private data: Record<string, any> = {};
+  private message: string = '';
 
-  constructor(success: boolean = true, state: TriggerState = TriggerState.ACTIVE) {
+  /**
+   * 设置触发器ID
+   */
+  setTriggerId(triggerId: string): TriggerExecutionResultBuilder {
+    this.triggerId = triggerId;
+    return this;
+  }
+
+  /**
+   * 设置是否应该触发
+   */
+  setShouldTrigger(shouldTrigger: boolean): TriggerExecutionResultBuilder {
+    this.shouldTrigger = shouldTrigger;
+    return this;
+  }
+
+  /**
+   * 设置执行成功状态
+   */
+  setSuccess(success: boolean): TriggerExecutionResultBuilder {
     this.success = success;
-    this.state = state;
-    this.message = '';
-    this.data = {};
-    this.startTime = new Date();
-    this.endTime = new Date();
-    this.duration = 0;
-    this.metadata = {};
-  }
-
-  withSuccess(success: boolean): TriggerExecutionResultBuilder {
-    this.success = success;
     return this;
   }
 
-  withState(state: TriggerState): TriggerExecutionResultBuilder {
-    this.state = state;
+  /**
+   * 设置执行错误
+   */
+  setError(error: Error): TriggerExecutionResultBuilder {
+    this.error = error;
     return this;
   }
 
-  withMessage(message: string): TriggerExecutionResultBuilder {
-    this.message = message;
+  /**
+   * 设置执行时间
+   */
+  setExecutionTime(executionTime: number): TriggerExecutionResultBuilder {
+    this.executionTime = executionTime;
     return this;
   }
 
-  withData(data: Record<string, any>): TriggerExecutionResultBuilder {
+  /**
+   * 设置触发数据
+   */
+  setData(data: Record<string, any>): TriggerExecutionResultBuilder {
     this.data = { ...this.data, ...data };
     return this;
   }
 
-  withError(error: Error): TriggerExecutionResultBuilder {
-    this.error = error;
-    this.success = false;
-    this.state = TriggerState.ERROR;
+  /**
+   * 设置消息
+   */
+  setMessage(message: string): TriggerExecutionResultBuilder {
+    this.message = message;
     return this;
   }
 
-  withStartTime(startTime: Date): TriggerExecutionResultBuilder {
-    this.startTime = startTime;
-    return this;
-  }
-
-  withEndTime(endTime: Date): TriggerExecutionResultBuilder {
-    this.endTime = endTime;
-    this.duration = endTime.getTime() - this.startTime.getTime();
-    return this;
-  }
-
-  withDuration(duration: number): TriggerExecutionResultBuilder {
-    this.duration = duration;
-    return this;
-  }
-
-  withMetadata(metadata: Record<string, any>): TriggerExecutionResultBuilder {
-    this.metadata = { ...this.metadata, ...metadata };
-    return this;
-  }
-
+  /**
+   * 构建触发器执行结果
+   */
   build(): TriggerExecutionResult {
     return {
+      triggerId: this.triggerId,
+      shouldTrigger: this.shouldTrigger,
       success: this.success,
-      state: this.state,
-      message: this.message,
-      data: this.data,
       error: this.error,
-      startTime: this.startTime,
-      endTime: this.endTime,
-      duration: this.duration,
-      metadata: this.metadata
+      executionTime: this.executionTime,
+      data: this.data,
+      message: this.message
     };
   }
 }
@@ -126,104 +127,28 @@ export class TriggerExecutionResultBuilder {
  */
 export class TriggerExecutionResultUtils {
   /**
-   * 创建成功结果
+   * 创建成功的触发结果
    */
-  static success(
-    message: string = '触发器执行成功',
-    data: Record<string, any> = {}
-  ): TriggerExecutionResultBuilder {
-    return new TriggerExecutionResultBuilder(true, TriggerState.ACTIVE)
-      .withMessage(message)
-      .withData(data);
+  static success(message: string = '触发器条件满足'): TriggerExecutionResultBuilder {
+    return new TriggerExecutionResultBuilder()
+      .setShouldTrigger(true)
+      .setSuccess(true)
+      .setMessage(message);
   }
 
   /**
-   * 创建失败结果
+   * 创建失败的触发结果
    */
-  static failure(
-    message: string = '触发器执行失败',
-    error?: Error
-  ): TriggerExecutionResultBuilder {
-    const builder = new TriggerExecutionResultBuilder(false, TriggerState.ERROR)
-      .withMessage(message);
-    
+  static failure(message: string = '触发器条件不满足', error?: Error): TriggerExecutionResultBuilder {
+    const builder = new TriggerExecutionResultBuilder()
+      .setShouldTrigger(false)
+      .setSuccess(error ? false : true)
+      .setMessage(message);
+
     if (error) {
-      builder.withError(error);
+      builder.setError(error);
     }
-    
+
     return builder;
-  }
-
-  /**
-   * 创建暂停结果
-   */
-  static paused(
-    message: string = '触发器已暂停',
-    data: Record<string, any> = {}
-  ): TriggerExecutionResultBuilder {
-    return new TriggerExecutionResultBuilder(true, TriggerState.PAUSED)
-      .withMessage(message)
-      .withData(data);
-  }
-
-  /**
-   * 创建禁用结果
-   */
-  static disabled(
-    message: string = '触发器已禁用',
-    data: Record<string, any> = {}
-  ): TriggerExecutionResultBuilder {
-    return new TriggerExecutionResultBuilder(true, TriggerState.DISABLED)
-      .withMessage(message)
-      .withData(data);
-  }
-
-  /**
-   * 计算执行持续时间
-   */
-  static calculateDuration(startTime: Date, endTime: Date): number {
-    return endTime.getTime() - startTime.getTime();
-  }
-
-  /**
-   * 检查结果是否成功
-   */
-  static isSuccess(result: TriggerExecutionResult): boolean {
-    return result.success;
-  }
-
-  /**
-   * 检查结果是否失败
-   */
-  static isFailure(result: TriggerExecutionResult): boolean {
-    return !result.success;
-  }
-
-  /**
-   * 检查结果是否有错误
-   */
-  static hasError(result: TriggerExecutionResult): boolean {
-    return !!result.error;
-  }
-
-  /**
-   * 获取结果摘要
-   */
-  static getSummary(result: TriggerExecutionResult): string {
-    const status = result.success ? '成功' : '失败';
-    return `触发器执行${status}: ${result.message} (耗时: ${result.duration}ms)`;
-  }
-
-  /**
-   * 格式化执行时间
-   */
-  static formatDuration(duration: number): string {
-    if (duration < 1000) {
-      return `${duration}ms`;
-    } else if (duration < 60000) {
-      return `${(duration / 1000).toFixed(2)}s`;
-    } else {
-      return `${(duration / 60000).toFixed(2)}m`;
-    }
   }
 }

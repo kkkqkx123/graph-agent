@@ -21,5 +21,11 @@ export { EventTriggerFunction } from './triggers/event-trigger.function';
 export { ToolErrorTriggerFunction } from './triggers/tool-error-trigger.function';
 export { IterationLimitTriggerFunction } from './triggers/iteration-limit-trigger.function';
 
+// 钩子函数
+export { BeforeExecuteHookFunction } from './hooks/before-execute-hook.function';
+export { AfterExecuteHookFunction } from './hooks/after-execute-hook.function';
+export { BeforeNodeExecuteHookFunction } from './hooks/before-node-execute-hook.function';
+export { AfterNodeExecuteHookFunction } from './hooks/after-node-execute-hook.function';
+
 // 通用组件
 export { ExpressionEvaluator } from '../common/expression-evaluator';
