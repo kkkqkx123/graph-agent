@@ -4,10 +4,17 @@
 
 import { injectable } from 'inversify';
 import { ID } from '../../../domain/common/value-objects/id';
+import { ThreadExecution } from '../../../domain/threads/value-objects/thread-execution';
+import { ExecutionContext as DomainExecutionContext } from '../../../domain/threads/value-objects/execution-context';
+import { PromptContext } from '../../../domain/workflow/value-objects/prompt-context';
+import { Workflow } from '../../../domain/workflow/entities/workflow';
+import { Thread } from '../../../domain/threads/entities/thread';
+import { ThreadExecutionEngine } from '../../workflow/execution/thread-execution-engine';
+
 /**
- * 执行上下文接口
+ * 执行上下文接口（基础设施层）
  */
-export interface ExecutionContext {
+export interface InfrastructureExecutionContext {
   executionId: string;
   workflowId: string;
   data: Record<string, any>;
@@ -58,7 +65,6 @@ import { ThreadRepository } from '../../../domain/threads/repositories/thread-re
 import { ThreadLifecycleInfrastructureService } from './thread-lifecycle-service';
 import { ThreadStatus } from '../../../domain/threads/value-objects/thread-status';
 import { ThreadDefinition } from '../../../domain/threads/value-objects/thread-definition';
-import { ThreadExecution } from '../../../domain/threads/value-objects/thread-execution';
 import { ThreadPriority } from '../../../domain/threads/value-objects/thread-priority';
 
 /**
@@ -66,6 +72,8 @@ import { ThreadPriority } from '../../../domain/threads/value-objects/thread-pri
  */
 @injectable()
 export class ThreadCoordinatorInfrastructureService {
+  private executionEngines: Map<string, ThreadExecutionEngine> = new Map();
+
   constructor(
     private readonly threadRepository: ThreadRepository,
     private readonly threadLifecycleService: ThreadLifecycleInfrastructureService,
@@ -136,7 +144,7 @@ export class ThreadCoordinatorInfrastructureService {
    * @param context 执行上下文
    * @returns 线程ID
    */
-  async coordinateExecution(workflowId: ID, context: ExecutionContext): Promise<ID> {
+  async coordinateExecution(workflowId: ID, context: InfrastructureExecutionContext): Promise<ID> {
     // 创建线程定义
     const threadDefinition = await this.createThreadDefinition(workflowId, context);
     
@@ -173,7 +181,7 @@ export class ThreadCoordinatorInfrastructureService {
     );
     
     // 创建子线程执行
-    const childContext: ExecutionContext = {
+    const childContext: InfrastructureExecutionContext = {
       executionId: ID.generate().value,
       workflowId: parentDefinition.workflowId!.value,
       data: {
@@ -349,11 +357,69 @@ export class ThreadCoordinatorInfrastructureService {
 
 
   /**
+   * 使用执行引擎执行线程
+   * @param workflow 工作流
+   * @param thread 线程
+   * @returns 执行结果
+   */
+  async executeWithEngine(workflow: Workflow, thread: Thread): Promise<any> {
+    // 创建执行引擎
+    const engine = new ThreadExecutionEngine(workflow, thread);
+    
+    // 存储执行引擎
+    this.executionEngines.set(thread.threadId.toString(), engine);
+    
+    // 初始化执行
+    const initialized = await engine.initializeExecution();
+    if (!initialized) {
+      throw new Error('执行引擎初始化失败');
+    }
+    
+    // 启动线程
+    thread.start();
+    
+    // 执行节点直到完成
+    while (engine.canContinue()) {
+      const result = await engine.executeNextNode();
+      
+      // 更新进度
+      const progress = engine.getExecutionProgress();
+      thread.updateProgress(progress, `执行节点: ${result.nodeId.toString()}`);
+      
+      // 如果执行失败，停止执行
+      if (!result.success) {
+        break;
+      }
+    }
+    
+    // 获取执行统计
+    const statistics = engine.getExecutionStatistics();
+    
+    // 清理执行引擎
+    this.executionEngines.delete(thread.threadId.toString());
+    
+    return {
+      success: thread.status.isCompleted(),
+      statistics,
+      threadId: thread.threadId
+    };
+  }
+
+  /**
+   * 获取线程的执行引擎
+   * @param threadId 线程ID
+   * @returns 执行引擎或null
+   */
+  getExecutionEngine(threadId: ID): ThreadExecutionEngine | null {
+    return this.executionEngines.get(threadId.toString()) || null;
+  }
+
+  /**
    * 创建线程定义
    */
   private async createThreadDefinition(
     workflowId: ID,
-    context: ExecutionContext,
+    context: InfrastructureExecutionContext,
     sessionId?: string
   ): Promise<any> {
     const threadDefinition = ThreadDefinition.create(
@@ -375,9 +441,11 @@ export class ThreadCoordinatorInfrastructureService {
    */
   private async createThreadExecution(
     threadId: ID,
-    context: ExecutionContext
+    context: InfrastructureExecutionContext
   ): Promise<any> {
-    const threadExecution = ThreadExecution.create(threadId);
+    const promptContext = PromptContext.create('');
+    const domainContext = DomainExecutionContext.create(promptContext);
+    const threadExecution = ThreadExecution.create(threadId, domainContext);
 
     await this.threadExecutionRepository.save(threadExecution);
     return threadExecution;

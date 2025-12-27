@@ -152,7 +152,7 @@ export class Session extends Entity {
    * @returns 最后活动时间
    */
   public get lastActivityAt(): Timestamp {
-    return this.props.activity.getLastActivityAt();
+    return this.props.activity.lastActivityAt;
   }
 
   /**
@@ -160,7 +160,7 @@ export class Session extends Entity {
    * @returns 消息数量
    */
   public get messageCount(): number {
-    return this.props.activity.getMessageCount();
+    return this.props.activity.messageCount;
   }
 
   /**
@@ -168,7 +168,7 @@ export class Session extends Entity {
    * @returns 线程数量
    */
   public get threadCount(): number {
-    return this.props.activity.getThreadCount();
+    return this.props.activity.threadCount;
   }
 
   /**
@@ -241,7 +241,7 @@ export class Session extends Entity {
       throw new Error('无法在非活跃状态的会话中添加消息');
     }
 
-    if (this.props.activity.getMessageCount() >= this.props.config.getMaxMessages()) {
+    if (this.props.activity.messageCount >= this.props.config.getMaxMessages()) {
       throw new Error('会话消息数量已达上限');
     }
 
@@ -351,7 +351,7 @@ export class Session extends Entity {
    */
   public isTimeout(): boolean {
     const now = Timestamp.now();
-    const diffMinutes = now.diff(this.props.activity.getLastActivityAt()) / (1000 * 60);
+    const diffMinutes = now.diff(this.props.activity.lastActivityAt) / (1000 * 60);
     return diffMinutes > this.props.config.getTimeoutMinutes();
   }
 
@@ -428,7 +428,7 @@ export class Session extends Entity {
    */
   private validateConfigUpdate(newConfig: SessionConfig): void {
     // 检查最大消息数量是否减少到当前消息数量以下
-    if (newConfig.getMaxMessages() < this.props.activity.getMessageCount()) {
+    if (newConfig.getMaxMessages() < this.props.activity.messageCount) {
       throw new Error('新的最大消息数量不能小于当前消息数量');
     }
 

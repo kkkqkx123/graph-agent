@@ -21,7 +21,6 @@ export {
   WorkflowType,
   WorkflowConfig,
   WorkflowStatus as WorkflowStatusEnum,
-  WorkflowDomainService,
   NodeType,
   EdgeType,
   HookPoint

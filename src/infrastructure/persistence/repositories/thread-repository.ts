@@ -6,6 +6,8 @@ import { ThreadStatus } from '../../../domain/threads/value-objects/thread-statu
 import { ThreadPriority } from '../../../domain/threads/value-objects/thread-priority';
 import { ThreadDefinition } from '../../../domain/threads/value-objects/thread-definition';
 import { ThreadExecution } from '../../../domain/threads/value-objects/thread-execution';
+import { ExecutionContext } from '../../../domain/threads/value-objects/execution-context';
+import { PromptContext } from '../../../domain/workflow/value-objects/prompt-context';
 import { Timestamp } from '../../../domain/common/value-objects/timestamp';
 import { Version } from '../../../domain/common/value-objects/version';
 import { ThreadModel } from '../models/thread.model';
@@ -53,7 +55,9 @@ export class ThreadRepository extends BaseRepository<Thread, ThreadModel, ID> im
         metadata
       );
 
-      const execution = ThreadExecution.create(id);
+      const promptContext = PromptContext.create('');
+      const context = ExecutionContext.create(promptContext);
+      const execution = ThreadExecution.create(id, context);
 
       const threadData = {
         id,

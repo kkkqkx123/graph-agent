@@ -214,7 +214,7 @@ export class ExecutionContext extends ValueObject<ExecutionContextProps> {
     variables: Map<string, unknown>
   ): ExecutionContext {
     const existingContext = this.props.nodeContexts.get(nodeId.toString());
-    
+
     if (!existingContext) {
       throw new Error(`节点上下文不存在: ${nodeId.toString()}`);
     }
@@ -373,5 +373,14 @@ export class ExecutionContext extends ValueObject<ExecutionContextProps> {
     }
 
     return 0;
+  }
+
+  /**
+   * 验证执行上下文的有效性
+   */
+  public validate(): void {
+    if (!this.props.promptContext) {
+      throw new Error('提示词上下文不能为空');
+    }
   }
 }
