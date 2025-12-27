@@ -20,31 +20,108 @@ import {
 import { WorkflowExecutionResultDto } from '../dtos/workflow-execution.dto';
 import { WorkflowStatisticsDto } from '../dtos/workflow-statistics.dto';
 
-// Commands
-import {
-  CreateWorkflowCommand,
-  ActivateWorkflowCommand,
-  DeactivateWorkflowCommand,
-  ArchiveWorkflowCommand,
-  UpdateWorkflowCommand,
-  DeleteWorkflowCommand
-} from '../commands/workflow-lifecycle.command';
-import { ExecuteWorkflowCommand } from '../commands/workflow-execution.command';
-import {
-  AddWorkflowTagCommand,
-  RemoveWorkflowTagCommand
-} from '../commands/workflow-tag.command';
-import { BatchUpdateWorkflowStatusCommand } from '../commands/workflow-batch.command';
+// 参数类型定义
+export interface CreateWorkflowParams {
+  name: string;
+  description?: string;
+  type?: string;
+  config?: any;
+  createdBy?: string;
+  workflowId?: string;
+}
 
-// Queries
-import {
-  GetWorkflowQuery,
-  ListWorkflowsQuery,
-  GetWorkflowStatusQuery,
-  SearchWorkflowsQuery
-} from '../queries';
-import { GetWorkflowStatisticsQuery } from '../queries/workflow-statistics-query';
-import { GetWorkflowTagStatsQuery } from '../queries/workflow-tag-stats-query';
+export interface ActivateWorkflowParams {
+  workflowId: string;
+  userId?: string;
+  reason?: string;
+}
+
+export interface DeactivateWorkflowParams {
+  workflowId: string;
+  userId?: string;
+  reason?: string;
+}
+
+export interface ArchiveWorkflowParams {
+  workflowId: string;
+  userId?: string;
+  reason?: string;
+}
+
+export interface UpdateWorkflowParams {
+  workflowId: string;
+  name?: string;
+  description?: string;
+  config?: any;
+  metadata?: Record<string, unknown>;
+  userId?: string;
+}
+
+export interface DeleteWorkflowParams {
+  workflowId: string;
+}
+
+export interface ExecuteWorkflowParams {
+  workflowId: string;
+  inputData?: unknown;
+  executionMode?: string;
+  async?: boolean;
+}
+
+export interface AddWorkflowTagParams {
+  workflowId: string;
+  tag: string;
+  userId?: string;
+}
+
+export interface RemoveWorkflowTagParams {
+  workflowId: string;
+  tag: string;
+  userId?: string;
+}
+
+export interface BatchUpdateWorkflowStatusParams {
+  workflowIds: string[];
+  status: string;
+  userId?: string;
+  reason?: string;
+}
+
+export interface GetWorkflowParams {
+  workflowId: string;
+}
+
+export interface ListWorkflowsParams {
+  filters?: {
+    status?: string;
+    type?: string;
+    createdBy?: string;
+    name?: string;
+    tags?: string[];
+  };
+  pagination?: {
+    page?: number;
+    size?: number;
+  };
+  includeSummary?: boolean;
+}
+
+export interface GetWorkflowStatusParams {
+  workflowId: string;
+}
+
+export interface GetWorkflowStatisticsParams {
+  // 可以添加过滤参数
+}
+
+export interface SearchWorkflowsParams {
+  keyword: string;
+  searchIn?: 'name' | 'description' | 'all';
+  pagination?: {
+    page?: number;
+    size?: number;
+  };
+}
 
 /**
  * 工作流应用服务
@@ -64,26 +141,26 @@ export class WorkflowService {
    * @param command 创建工作流命令
    * @returns 创建的工作流DTO
    */
-  async createWorkflow(command: CreateWorkflowCommand): Promise<WorkflowDto> {
+  async createWorkflow(params: CreateWorkflowParams): Promise<WorkflowDto> {
     try {
       this.logger.info('正在创建工作流', {
-        name: command.name,
-        type: command.type,
-        workflowId: command.workflowId
+        name: params.name,
+        type: params.type,
+        workflowId: params.workflowId
       });
 
       // 转换命令参数
-      const type = command.type ? WorkflowType.fromString(command.type) : undefined;
-      const config = command.config ? command.config as any : undefined;
-      const createdBy = command.createdBy ? ID.fromString(command.createdBy) : undefined;
+      const type = params.type ? WorkflowType.fromString(params.type) : undefined;
+      const config = params.config ? params.config as any : undefined;
+      const createdBy = params.createdBy ? ID.fromString(params.createdBy) : undefined;
 
       // 验证创建条件
-      await this.validateWorkflowCreation(command.name, config, createdBy);
+      await this.validateWorkflowCreation(params.name, config, createdBy);
 
       // 创建工作流
       const workflow = Workflow.create(
-        command.name,
-        command.description,
+        params.name,
+        params.description,
         type,
         config,
         createdBy
@@ -106,12 +183,12 @@ export class WorkflowService {
    * @param command 激活工作流命令
    * @returns 激活后的工作流DTO
    */
-  async activateWorkflow(command: ActivateWorkflowCommand): Promise<WorkflowDto> {
+  async activateWorkflow(params: ActivateWorkflowParams): Promise<WorkflowDto> {
     try {
-      this.logger.info('正在激活工作流', { workflowId: command.workflowId });
+      this.logger.info('正在激活工作流', { workflowId: params.workflowId });
 
-      const workflowId = ID.fromString(command.workflowId);
-      const userId = command.userId ? ID.fromString(command.userId) : undefined;
+      const workflowId = ID.fromString(params.workflowId);
+      const userId = params.userId ? ID.fromString(params.userId) : undefined;
 
       const workflow = await this.workflowRepository.findByIdOrFail(workflowId);
 
@@ -119,12 +196,12 @@ export class WorkflowService {
       this.validateStatusTransition(workflow, WorkflowStatus.active());
 
       // 激活工作流
-      workflow.changeStatus(WorkflowStatus.active(), userId, command.reason);
+      workflow.changeStatus(WorkflowStatus.active(), userId, params.reason);
 
       // 保存工作流
       const savedWorkflow = await this.workflowRepository.save(workflow);
 
-      this.logger.info('工作流激活成功', { workflowId: command.workflowId });
+      this.logger.info('工作流激活成功', { workflowId: params.workflowId });
 
       return this.toWorkflowDto(savedWorkflow);
     } catch (error) {
@@ -138,12 +215,12 @@ export class WorkflowService {
    * @param command 停用工作流命令
    * @returns 停用后的工作流DTO
    */
-  async deactivateWorkflow(command: DeactivateWorkflowCommand): Promise<WorkflowDto> {
+  async deactivateWorkflow(params: DeactivateWorkflowParams): Promise<WorkflowDto> {
     try {
-      this.logger.info('正在停用工作流', { workflowId: command.workflowId });
+      this.logger.info('正在停用工作流', { workflowId: params.workflowId });
 
-      const workflowId = ID.fromString(command.workflowId);
-      const userId = command.userId ? ID.fromString(command.userId) : undefined;
+      const workflowId = ID.fromString(params.workflowId);
+      const userId = params.userId ? ID.fromString(params.userId) : undefined;
 
       const workflow = await this.workflowRepository.findByIdOrFail(workflowId);
 
@@ -151,12 +228,12 @@ export class WorkflowService {
       this.validateStatusTransition(workflow, WorkflowStatus.inactive());
 
       // 停用工作流
-      workflow.changeStatus(WorkflowStatus.inactive(), userId, command.reason);
+      workflow.changeStatus(WorkflowStatus.inactive(), userId, params.reason);
 
       // 保存工作流
       const savedWorkflow = await this.workflowRepository.save(workflow);
 
-      this.logger.info('工作流停用成功', { workflowId: command.workflowId });
+      this.logger.info('工作流停用成功', { workflowId: params.workflowId });
 
       return this.toWorkflowDto(savedWorkflow);
     } catch (error) {
@@ -170,12 +247,12 @@ export class WorkflowService {
    * @param command 归档工作流命令
    * @returns 归档后的工作流DTO
    */
-  async archiveWorkflow(command: ArchiveWorkflowCommand): Promise<WorkflowDto> {
+  async archiveWorkflow(params: ArchiveWorkflowParams): Promise<WorkflowDto> {
     try {
-      this.logger.info('正在归档工作流', { workflowId: command.workflowId });
+      this.logger.info('正在归档工作流', { workflowId: params.workflowId });
 
-      const workflowId = ID.fromString(command.workflowId);
-      const userId = command.userId ? ID.fromString(command.userId) : undefined;
+      const workflowId = ID.fromString(params.workflowId);
+      const userId = params.userId ? ID.fromString(params.userId) : undefined;
 
       const workflow = await this.workflowRepository.findByIdOrFail(workflowId);
 
@@ -183,12 +260,12 @@ export class WorkflowService {
       this.validateStatusTransition(workflow, WorkflowStatus.archived());
 
       // 归档工作流
-      workflow.changeStatus(WorkflowStatus.archived(), userId, command.reason);
+      workflow.changeStatus(WorkflowStatus.archived(), userId, params.reason);
 
       // 保存工作流
       const savedWorkflow = await this.workflowRepository.save(workflow);
 
-      this.logger.info('工作流归档成功', { workflowId: command.workflowId });
+      this.logger.info('工作流归档成功', { workflowId: params.workflowId });
 
       return this.toWorkflowDto(savedWorkflow);
     } catch (error) {
@@ -202,44 +279,44 @@ export class WorkflowService {
    * @param command 更新工作流命令
    * @returns 更新后的工作流DTO
    */
-  async updateWorkflow(command: UpdateWorkflowCommand): Promise<WorkflowDto> {
+  async updateWorkflow(params: UpdateWorkflowParams): Promise<WorkflowDto> {
     try {
-      this.logger.info('正在更新工作流', { workflowId: command.workflowId });
+      this.logger.info('正在更新工作流', { workflowId: params.workflowId });
 
-      const workflowId = ID.fromString(command.workflowId);
+      const workflowId = ID.fromString(params.workflowId);
       const workflow = await this.workflowRepository.findByIdOrFail(workflowId);
 
       if (!workflow.status.canEdit()) {
         throw new Error('只能编辑草稿状态的工作流');
       }
 
-      const userId = command.userId ? ID.fromString(command.userId) : undefined;
+      const userId = params.userId ? ID.fromString(params.userId) : undefined;
 
       // 更新名称
-      if (command.name !== undefined) {
-        workflow.updateName(command.name, userId);
+      if (params.name !== undefined) {
+        workflow.updateName(params.name, userId);
       }
 
       // 更新描述
-      if (command.description !== undefined) {
-        workflow.updateDescription(command.description, userId);
+      if (params.description !== undefined) {
+        workflow.updateDescription(params.description, userId);
       }
 
       // 更新配置
-      if (command.config !== undefined) {
-        const config = command.config as any;
+      if (params.config !== undefined) {
+        const config = params.config as any;
         workflow.updateConfig(config, userId);
       }
 
       // 更新元数据
-      if (command.metadata !== undefined) {
-        workflow.updateMetadata(command.metadata, userId);
+      if (params.metadata !== undefined) {
+        workflow.updateMetadata(params.metadata, userId);
       }
 
       // 保存工作流
       const updatedWorkflow = await this.workflowRepository.save(workflow);
 
-      this.logger.info('工作流更新成功', { workflowId: command.workflowId });
+      this.logger.info('工作流更新成功', { workflowId: params.workflowId });
 
       return this.toWorkflowDto(updatedWorkflow);
     } catch (error) {
@@ -253,15 +330,15 @@ export class WorkflowService {
    * @param command 执行工作流命令
    * @returns 执行结果DTO
    */
-  async executeWorkflow(command: ExecuteWorkflowCommand): Promise<WorkflowExecutionResultDto> {
+  async executeWorkflow(params: ExecuteWorkflowParams): Promise<WorkflowExecutionResultDto> {
     try {
       this.logger.info('正在执行工作流', {
-        workflowId: command.workflowId,
-        executionMode: command.executionMode,
-        async: command.async
+        workflowId: params.workflowId,
+        executionMode: params.executionMode,
+        async: params.async
       });
 
-      const workflowId = ID.fromString(command.workflowId);
+      const workflowId = ID.fromString(params.workflowId);
       const workflow = await this.workflowRepository.findByIdOrFail(workflowId);
 
       // 验证执行条件
@@ -283,12 +360,12 @@ export class WorkflowService {
 
       const result: WorkflowExecutionResultDto = {
         executionId,
-        workflowId: command.workflowId,
+        workflowId: params.workflowId,
         status: 'completed' as const,
         startTime: startTime.toISOString(),
         endTime: endTime.toISOString(),
         duration,
-        output: command.inputData,
+        output: params.inputData as Record<string, unknown>,
         logs: [],
         statistics: {
           executedNodes: executionPath.length,
@@ -301,7 +378,7 @@ export class WorkflowService {
       };
 
       this.logger.info('工作流执行成功', {
-        workflowId: command.workflowId,
+        workflowId: params.workflowId,
         executionId,
         duration
       });
@@ -318,27 +395,27 @@ export class WorkflowService {
    * @param command 添加工作流标签命令
    * @returns 更新后的工作流DTO
    */
-  async addWorkflowTag(command: AddWorkflowTagCommand): Promise<WorkflowDto> {
+  async addWorkflowTag(params: AddWorkflowTagParams): Promise<WorkflowDto> {
     try {
       this.logger.info('正在添加工作流标签', {
-        workflowId: command.workflowId,
-        tag: command.tag
+        workflowId: params.workflowId,
+        tag: params.tag
       });
 
-      const workflowId = ID.fromString(command.workflowId);
-      const userId = command.userId ? ID.fromString(command.userId) : undefined;
+      const workflowId = ID.fromString(params.workflowId);
+      const userId = params.userId ? ID.fromString(params.userId) : undefined;
 
       const workflow = await this.workflowRepository.findByIdOrFail(workflowId);
 
       // 添加标签
-      workflow.addTag(command.tag, userId);
+      workflow.addTag(params.tag, userId);
 
       // 保存工作流
       const savedWorkflow = await this.workflowRepository.save(workflow);
 
       this.logger.info('工作流标签添加成功', {
-        workflowId: command.workflowId,
-        tag: command.tag
+        workflowId: params.workflowId,
+        tag: params.tag
       });
 
       return this.toWorkflowDto(savedWorkflow);
@@ -353,27 +430,27 @@ export class WorkflowService {
    * @param command 移除工作流标签命令
    * @returns 更新后的工作流DTO
    */
-  async removeWorkflowTag(command: RemoveWorkflowTagCommand): Promise<WorkflowDto> {
+  async removeWorkflowTag(params: RemoveWorkflowTagParams): Promise<WorkflowDto> {
     try {
       this.logger.info('正在移除工作流标签', {
-        workflowId: command.workflowId,
-        tag: command.tag
+        workflowId: params.workflowId,
+        tag: params.tag
       });
 
-      const workflowId = ID.fromString(command.workflowId);
-      const userId = command.userId ? ID.fromString(command.userId) : undefined;
+      const workflowId = ID.fromString(params.workflowId);
+      const userId = params.userId ? ID.fromString(params.userId) : undefined;
 
       const workflow = await this.workflowRepository.findByIdOrFail(workflowId);
 
       // 移除标签
-      workflow.removeTag(command.tag, userId);
+      workflow.removeTag(params.tag, userId);
 
       // 保存工作流
       const savedWorkflow = await this.workflowRepository.save(workflow);
 
       this.logger.info('工作流标签移除成功', {
-        workflowId: command.workflowId,
-        tag: command.tag
+        workflowId: params.workflowId,
+        tag: params.tag
       });
 
       return this.toWorkflowDto(savedWorkflow);
@@ -388,28 +465,28 @@ export class WorkflowService {
    * @param command 批量更新工作流状态命令
    * @returns 更新的工作流数量
    */
-  async batchUpdateWorkflowStatus(command: BatchUpdateWorkflowStatusCommand): Promise<number> {
+  async batchUpdateWorkflowStatus(params: BatchUpdateWorkflowStatusParams): Promise<number> {
     try {
       this.logger.info('正在批量更新工作流状态', {
-        workflowIds: command.workflowIds,
-        status: command.status
+        workflowIds: params.workflowIds,
+        status: params.status
       });
 
-      const workflowIds = command.workflowIds.map(id => ID.fromString(id));
-      const status = WorkflowStatus.fromString(command.status);
-      const userId = command.userId ? ID.fromString(command.userId) : undefined;
+      const workflowIds = params.workflowIds.map((id: string) => ID.fromString(id));
+      const status = WorkflowStatus.fromString(params.status);
+      const userId = params.userId ? ID.fromString(params.userId) : undefined;
 
       // 批量更新状态
       const updatedCount = await this.workflowRepository.batchUpdateStatus(
         workflowIds,
         status,
         userId,
-        command.reason
+        params.reason
       );
 
       this.logger.info('工作流状态批量更新成功', {
-        workflowIds: command.workflowIds,
-        status: command.status,
+        workflowIds: params.workflowIds,
+        status: params.status,
         updatedCount
       });
 
@@ -425,11 +502,11 @@ export class WorkflowService {
    * @param command 删除工作流命令
    * @returns 删除是否成功
    */
-  async deleteWorkflow(command: DeleteWorkflowCommand): Promise<boolean> {
+  async deleteWorkflow(params: DeleteWorkflowParams): Promise<boolean> {
     try {
-      this.logger.info('正在删除工作流', { workflowId: command.workflowId });
+      this.logger.info('正在删除工作流', { workflowId: params.workflowId });
 
-      const workflowId = ID.fromString(command.workflowId);
+      const workflowId = ID.fromString(params.workflowId);
       const workflow = await this.workflowRepository.findById(workflowId);
 
       if (!workflow) {
@@ -445,7 +522,7 @@ export class WorkflowService {
       workflow.markAsDeleted();
       await this.workflowRepository.save(workflow);
 
-      this.logger.info('工作流删除成功', { workflowId: command.workflowId });
+      this.logger.info('工作流删除成功', { workflowId: params.workflowId });
 
       return true;
     } catch (error) {
@@ -459,9 +536,9 @@ export class WorkflowService {
    * @param query 获取工作流查询
    * @returns 工作流DTO或null
    */
-  async getWorkflow(query: GetWorkflowQuery): Promise<WorkflowDto | null> {
+  async getWorkflow(params: GetWorkflowParams): Promise<WorkflowDto | null> {
     try {
-      const workflowId = ID.fromString(query.workflowId);
+      const workflowId = ID.fromString(params.workflowId);
       const workflow = await this.workflowRepository.findById(workflowId);
 
       if (!workflow) {
@@ -480,7 +557,7 @@ export class WorkflowService {
    * @param query 列出工作流查询
    * @returns 工作流DTO列表
    */
-  async listWorkflows(query: ListWorkflowsQuery): Promise<{
+  async listWorkflows(params: ListWorkflowsParams): Promise<{
     workflows: WorkflowDto[] | WorkflowSummaryDto[];
     total: number;
     page: number;
@@ -493,43 +570,43 @@ export class WorkflowService {
       // 应用过滤条件
       let filteredWorkflows = allWorkflows;
       
-      if (query.filters?.status) {
-        const status = WorkflowStatus.fromString(query.filters.status);
+      if (params.filters?.status) {
+        const status = WorkflowStatus.fromString(params.filters.status);
         filteredWorkflows = allWorkflows.filter(wf => wf.status.equals(status));
       }
       
-      if (query.filters?.type) {
-        const type = WorkflowType.fromString(query.filters.type);
+      if (params.filters?.type) {
+        const type = WorkflowType.fromString(params.filters.type);
         filteredWorkflows = filteredWorkflows.filter(wf => wf.type.equals(type));
       }
       
-      if (query.filters?.createdBy) {
-        const createdBy = ID.fromString(query.filters.createdBy);
+      if (params.filters?.createdBy) {
+        const createdBy = ID.fromString(params.filters.createdBy);
         filteredWorkflows = filteredWorkflows.filter(wf =>
           wf.createdBy?.equals(createdBy)
         );
       }
       
-      if (query.filters?.name) {
+      if (params.filters?.name) {
         filteredWorkflows = filteredWorkflows.filter(wf =>
-          wf.name.toLowerCase().includes(query.filters!.name!.toLowerCase())
+          wf.name.toLowerCase().includes(params.filters!.name!.toLowerCase())
         );
       }
       
-      if (query.filters?.tags && query.filters.tags.length > 0) {
+      if (params.filters?.tags && params.filters.tags.length > 0) {
         filteredWorkflows = filteredWorkflows.filter(wf =>
-          query.filters!.tags!.some(tag => wf.tags.includes(tag))
+          params.filters!.tags!.some((tag: string) => wf.tags.includes(tag))
         );
       }
 
       // 应用分页
-      const page = query.pagination?.page || 1;
-      const size = query.pagination?.size || 20;
+      const page = params.pagination?.page || 1;
+      const size = params.pagination?.size || 20;
       const startIndex = (page - 1) * size;
       const endIndex = startIndex + size;
       const paginatedWorkflows = filteredWorkflows.slice(startIndex, endIndex);
 
-      const workflows = query.includeSummary
+      const workflows = params.includeSummary
         ? paginatedWorkflows.map(wf => this.toWorkflowSummaryDto(wf))
         : paginatedWorkflows.map(wf => this.toWorkflowDto(wf));
 
@@ -550,9 +627,9 @@ export class WorkflowService {
    * @param query 获取工作流状态查询
    * @returns 工作流状态
    */
-  async getWorkflowStatus(query: GetWorkflowStatusQuery): Promise<string> {
+  async getWorkflowStatus(params: GetWorkflowStatusParams): Promise<string> {
     try {
-      const workflowId = ID.fromString(query.workflowId);
+      const workflowId = ID.fromString(params.workflowId);
       const workflow = await this.workflowRepository.findByIdOrFail(workflowId);
 
       return workflow.status.toString();
@@ -567,7 +644,7 @@ export class WorkflowService {
    * @param query 获取工作流统计信息查询
    * @returns 工作流统计信息DTO
    */
-  async getWorkflowStatistics(query: GetWorkflowStatisticsQuery): Promise<WorkflowStatisticsDto> {
+  async getWorkflowStatistics(params: GetWorkflowStatisticsParams): Promise<WorkflowStatisticsDto> {
     try {
       // 获取所有工作流
       const allWorkflows = await this.workflowRepository.findAll();
@@ -593,7 +670,7 @@ export class WorkflowService {
    * @param query 搜索工作流查询
    * @returns 搜索结果
    */
-  async searchWorkflows(query: SearchWorkflowsQuery): Promise<{
+  async searchWorkflows(params: SearchWorkflowsParams): Promise<{
     workflows: WorkflowDto[];
     total: number;
     page: number;
@@ -603,13 +680,13 @@ export class WorkflowService {
       // 根据搜索范围构建查询
       let workflows: Workflow[] = [];
 
-      if (query.searchIn === 'name' || query.searchIn === 'all') {
-        const nameResults = await this.workflowRepository.searchByName(query.keyword);
+      if (params.searchIn === 'name' || params.searchIn === 'all') {
+        const nameResults = await this.workflowRepository.searchByName(params.keyword);
         workflows = workflows.concat(nameResults);
       }
 
-      if (query.searchIn === 'description' || query.searchIn === 'all') {
-        const descResults = await this.workflowRepository.searchByDescription(query.keyword);
+      if (params.searchIn === 'description' || params.searchIn === 'all') {
+        const descResults = await this.workflowRepository.searchByDescription(params.keyword);
         workflows = workflows.concat(descResults);
       }
 
@@ -619,8 +696,8 @@ export class WorkflowService {
       );
 
       // 应用分页
-      const page = query.pagination?.page || 1;
-      const size = query.pagination?.size || 20;
+      const page = params.pagination?.page || 1;
+      const size = params.pagination?.size || 20;
       const startIndex = (page - 1) * size;
       const endIndex = startIndex + size;
       const paginatedWorkflows = uniqueWorkflows.slice(startIndex, endIndex);

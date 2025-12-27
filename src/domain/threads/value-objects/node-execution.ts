@@ -425,6 +425,7 @@ export class NodeExecution extends ValueObject<NodeExecutionProps> {
    * 验证值对象的有效性
    */
   public validate(): void {
+    // 基本数据验证
     if (!this.props.nodeId) {
       throw new Error('节点ID不能为空');
     }
@@ -449,21 +450,7 @@ export class NodeExecution extends ValueObject<NodeExecutionProps> {
       throw new Error('当前重试次数不能超过最大重试次数');
     }
 
-    // 验证时间逻辑
-    if (this.props.startTime && this.props.endTime) {
-      if (this.props.startTime.isAfter(this.props.endTime)) {
-        throw new Error('开始时间不能晚于结束时间');
-      }
-    }
-
-    // 验证状态与时间的一致性
-    if (this.props.status.isRunning() && !this.props.startTime) {
-      throw new Error('运行中的节点必须有开始时间');
-    }
-
-    if (this.props.status.isTerminal() && !this.props.endTime) {
-      throw new Error('已终止的节点必须有结束时间');
-    }
+    // 业务逻辑验证已移到应用层
   }
 }
 

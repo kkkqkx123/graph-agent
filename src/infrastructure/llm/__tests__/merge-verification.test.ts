@@ -46,7 +46,7 @@ describe('LLM目录合并验证', () => {
 
   describe('服务标识符', () => {
     it('应该包含所有客户端标识符', () => {
-      const clientIdentifiers = [
+      const clientIdentifiers: (keyof typeof LLM_DI_IDENTIFIERS)[] = [
         'OpenAIChatClient',
         'OpenAIResponseClient',
         'AnthropicClient',
@@ -62,7 +62,7 @@ describe('LLM目录合并验证', () => {
     });
 
     it('应该包含所有管理器标识符', () => {
-      const managerIdentifiers = [
+      const managerIdentifiers: (keyof typeof LLM_DI_IDENTIFIERS)[] = [
         'TaskGroupManager',
         'PollingPoolManager'
       ];
@@ -73,7 +73,7 @@ describe('LLM目录合并验证', () => {
     });
 
     it('应该包含所有工厂标识符', () => {
-      const factoryIdentifiers = [
+      const factoryIdentifiers: (keyof typeof LLM_DI_IDENTIFIERS)[] = [
         'LLMClientFactory',
         'LLMWrapperFactory',
         'ConverterFactory',

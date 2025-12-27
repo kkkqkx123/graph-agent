@@ -7,20 +7,5 @@ export { SessionLifecycleService } from './services/session-lifecycle-service';
 export { SessionManagementService } from './services/session-management-service';
 export { SessionMaintenanceService } from './services/session-maintenance-service';
 
-
-// 导出命令
-export * from './commands/create-session-command';
-export * from './commands/delete-session-command';
-
-// 导出查询
-export * from './queries/get-session-query';
-export * from './queries/list-sessions-query';
-
 // 导出应用层需要的DTO（仅用于请求验证）
 export { CreateSessionRequestDto, CreateSessionRequest } from './dtos/request.dto';
-
-// 导出处理器
-export * from './handlers/create-session-handler';
-export * from './handlers/delete-session-handler';
-export * from './handlers/get-session-handler';
-export * from './handlers/list-sessions-handler';

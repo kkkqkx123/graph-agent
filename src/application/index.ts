@@ -12,29 +12,11 @@ export * from './common';
 export { SessionLifecycleService } from './sessions/services/session-lifecycle-service';
 export { SessionManagementService } from './sessions/services/session-management-service';
 export { SessionMaintenanceService } from './sessions/services/session-maintenance-service';
-export * from './sessions/commands/create-session-command';
-export * from './sessions/commands/delete-session-command';
-export * from './sessions/queries/get-session-query';
-export * from './sessions/queries/list-sessions-query';
-export * from './sessions/handlers/create-session-handler';
-export * from './sessions/handlers/delete-session-handler';
-export * from './sessions/handlers/get-session-handler';
-export * from './sessions/handlers/list-sessions-handler';
 
 // 线程模块导出
 export { ThreadLifecycleService } from './threads/services/thread-lifecycle-service';
 export { ThreadManagementService } from './threads/services/thread-management-service';
 export { ThreadMaintenanceService } from './threads/services/thread-maintenance-service';
-export * from './threads/commands/create-thread-command';
-export * from './threads/commands/delete-thread-command';
-export * from './threads/commands/update-thread-status-command';
-export * from './threads/queries/get-thread-query';
-export * from './threads/queries/list-threads-query';
-export * from './threads/handlers/create-thread-handler';
-export * from './threads/handlers/delete-thread-handler';
-export * from './threads/handlers/update-thread-status-handler';
-export * from './threads/handlers/get-thread-handler';
-export * from './threads/handlers/list-threads-handler';
 
 // 检查点模块导出
 export { CheckpointCreationService } from './threads/checkpoints/services/checkpoint-creation-service';

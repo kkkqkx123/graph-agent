@@ -1,5 +1,5 @@
 import { LLMClientFactory } from '../clients/llm-client-factory';
-import { ConfigManagerImpl } from '../../common/config/config-manager';
+import { ConfigManager } from '../../config/config-manager';
 
 /**
  * 简化的 Gemini 客户端选择测试
@@ -7,11 +7,21 @@ import { ConfigManagerImpl } from '../../common/config/config-manager';
  */
 describe('Gemini Client Selection (Simple)', () => {
   let factory: LLMClientFactory;
-  let configManager: ConfigManagerImpl;
+  let configManager: ConfigManager;
 
   beforeEach(() => {
-    // 直接创建配置管理器实例
-    configManager = new ConfigManagerImpl();
+    // 创建模拟的配置管理器
+    configManager = {
+      get: jest.fn().mockReturnValue('native'),
+      set: jest.fn(),
+      has: jest.fn(),
+      delete: jest.fn(),
+      getAll: jest.fn(),
+      reload: jest.fn(),
+      watch: jest.fn(),
+      unwatch: jest.fn(),
+      initialize: jest.fn()
+    } as any;
 
     // 创建模拟的客户端
     const mockOpenAIChatClient = { getClientName: () => 'openai-chat' } as any;
@@ -20,6 +30,7 @@ describe('Gemini Client Selection (Simple)', () => {
     const mockGeminiClient = { getClientName: () => 'gemini' } as any;
     const mockGeminiOpenAIClient = { getClientName: () => 'gemini-openai' } as any;
     const mockMockClient = { getClientName: () => 'mock' } as any;
+    const mockHumanRelayClient = { getClientName: () => 'human-relay' } as any;
 
     // 直接创建工厂实例，传入所有必需的依赖
     factory = new LLMClientFactory(
@@ -29,6 +40,7 @@ describe('Gemini Client Selection (Simple)', () => {
       mockGeminiClient,
       mockGeminiOpenAIClient,
       mockMockClient,
+      mockHumanRelayClient,
       configManager
     );
   });

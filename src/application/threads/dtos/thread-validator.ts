@@ -4,6 +4,9 @@
 
 import { ThreadInfo, ThreadStatistics } from './thread-info';
 import { CreateThreadRequest } from './create-thread';
+import { NodeExecution } from '../../../domain/threads/value-objects/node-execution';
+import { NodeStatus } from '../../../domain/workflow/value-objects/node-status';
+import { NodeStatusValue } from '../../../domain/workflow/value-objects/node-status';
 
 export class ThreadValidator {
   /**
@@ -100,5 +103,51 @@ export class ThreadValidator {
     }
     
     return data as ThreadStatistics;
+  }
+
+  /**
+   * 验证节点执行的时间一致性
+   */
+  static validateNodeExecutionTimeConsistency(nodeExecution: NodeExecution): void {
+    if (nodeExecution.startTime && nodeExecution.endTime) {
+      if (nodeExecution.startTime.isAfter(nodeExecution.endTime)) {
+        throw new Error('开始时间不能晚于结束时间');
+      }
+    }
+  }
+
+  /**
+   * 验证节点执行状态与时间的匹配
+   */
+  static validateNodeExecutionStatusTimeMatch(nodeExecution: NodeExecution): void {
+    if (nodeExecution.status.isRunning() && !nodeExecution.startTime) {
+      throw new Error('运行中的节点必须有开始时间');
+    }
+    if (nodeExecution.status.isTerminal() && !nodeExecution.endTime) {
+      throw new Error('已终止的节点必须有结束时间');
+    }
+  }
+
+  /**
+   * 验证节点状态转换的合法性
+   */
+  static validateNodeStateTransition(
+    currentStatus: NodeStatus,
+    targetStatus: NodeStatus
+  ): void {
+    // 验证状态转换的合法性
+    const allowedTransitions: Partial<Record<NodeStatusValue, NodeStatusValue[]>> = {
+      [NodeStatusValue.PENDING]: [NodeStatusValue.RUNNING, NodeStatusValue.SKIPPED],
+      [NodeStatusValue.RUNNING]: [NodeStatusValue.COMPLETED, NodeStatusValue.FAILED, NodeStatusValue.CANCELLED],
+      [NodeStatusValue.FAILED]: [NodeStatusValue.PENDING] // 重试
+    };
+
+    const currentStatusValue = currentStatus.getValue();
+    const targetStatusValue = targetStatus.getValue();
+
+    const allowedTargets = allowedTransitions[currentStatusValue];
+    if (!allowedTargets?.includes(targetStatusValue)) {
+      throw new Error(`不允许的状态转换: ${currentStatus} -> ${targetStatus}`);
+    }
   }
 }
