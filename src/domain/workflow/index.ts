@@ -14,13 +14,6 @@ export * from './entities';
 // 导出值对象
 export * from './value-objects';
 
-// 导出服务 - 使用显式导出避免冲突
-export {
-  ExecutionStep as ServiceExecutionStep,
-  ExecutionStatus as ServiceExecutionStatus,
-  WorkflowDomainService
-} from './services';
-
 // 导出仓储
 export * from './repositories';
 

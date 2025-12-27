@@ -7,6 +7,7 @@ import { NodeExecutionState } from '@domain/workflow/entities/node-execution-sta
 import { PromptContext } from '@domain/workflow/value-objects/prompt-context';
 import { ExecutionStatus } from '@domain/workflow/value-objects/execution-status';
 import { NodeRouter } from '../routing/node-router';
+import { EdgeEvaluator } from '../routing/edge-evaluator';
 import { RouteDecision, NodeExecutionResult } from '@domain/workflow/entities';
 
 /**
@@ -51,10 +52,11 @@ export class StateTransitionManager {
 
   /**
    * 构造函数
-   * @param nodeRouter 节点路由器
+   * @param edgeEvaluator 边评估器
+   * @param nodeRouter 节点路由器（可选）
    */
-  constructor(nodeRouter?: NodeRouter) {
-    this.nodeRouter = nodeRouter || new NodeRouter();
+  constructor(edgeEvaluator: EdgeEvaluator, nodeRouter?: NodeRouter) {
+    this.nodeRouter = nodeRouter || new NodeRouter(edgeEvaluator);
   }
 
   /**

@@ -44,45 +44,36 @@
 - [x] 移除构造函数注入
 - [x] 注意：第110行和188行的调用已注释
 
-## 第三阶段：CheckpointService (5个文件)
+## 第四阶段：SessionService ✅ DONE (4个文件)
 
-### 分析 ThreadCheckpointDomainService 的方法：
-需要抽取：
-- createManualCheckpoint()
-- createErrorCheckpoint()
-- createMilestoneCheckpoint()
-- createAutoCheckpoint()
-- restoreFromCheckpoint()
-- getThreadCheckpointHistory()
-- getCheckpointStatistics()
-- createBackup()
-- restoreFromBackup()
-- getBackupChain()
-- extendCheckpointExpiration()
-- cleanupExpiredCheckpoints()
-- cleanupExcessCheckpoints()
-- archiveOldCheckpoints()
-- analyzeCheckpointFrequency()
-- analyzeCheckpointSizeDistribution()
-- analyzeCheckpointTypeDistribution()
+### SessionService ✅
+- [x] 移除 import SessionDomainService
+- [x] 移除构造函数注入
+- [x] 添加所有private验证方法
+- [x] 替换所有调用
 
-### 需要重构的文件：
-- [ ] checkpoint-service.ts
-- [ ] checkpoint-restore-service.ts
-- [ ] checkpoint-management-service.ts
-- [ ] checkpoint-creation-service.ts
-- [ ] checkpoint-analysis-service.ts
+### SessionLifecycleService ✅
+- [x] 移除 import SessionDomainService
+- [x] 移除构造函数注入
+- [x] 添加所有private验证方法
+- [x] 替换所有调用
 
-## 第四阶段：SessionService (4个文件)
+### SessionManagementService ✅
+- [x] 移除 import SessionDomainService
+- [x] 移除构造函数注入
+- [x] 添加 validateConfigUpdate() 方法
+- [x] 替换调用
 
-### 分析 SessionDomainService 的方法：
-需要抽取的验证方法和逻辑
+### SessionMaintenanceService ✅
+- [x] 移除 import SessionDomainService
+- [x] 移除构造函数注入
+- [x] 添加所有private验证方法
+- [x] 替换所有调用
 
-### 需要重构的文件：
-- [ ] session-service.ts (使用于第61、193、296、330、333、361行)
-- [ ] session-management-service.ts (使用于第101行)
-- [ ] session-maintenance-service.ts (使用于第82、85、113、145行)
-- [ ] session-lifecycle-service.ts (使用于第48、86行)
+## 第三阶段：CheckpointService (5个文件 - 暂时跳过)
+
+这些文件仍在使用 ThreadCheckpointDomainService。
+当所有Domain Services都被移除后再处理。
 
 ## 第五阶段：最终清理
 
@@ -127,9 +118,9 @@ src/application/
 
 - WorkflowService: 完成 ✅
 - ThreadService: 完成 ✅
-- CheckpointService: ~3小时
-- SessionService: ~2小时
+- SessionService: 完成 ✅
+- CheckpointService: ~3小时（跳过，稍后处理）
 - 清理和验证: ~1小时
-- **总计**: ~8小时（已花费 ~2小时）
+- **总计**: ~8小时（已花费 ~3小时）
 
-## 进度：25% (2/8)
+## 进度：37.5% (3/8)

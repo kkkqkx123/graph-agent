@@ -7,9 +7,10 @@
 import { Session } from '../../../domain/sessions/entities/session';
 import { SessionRepository } from '../../../domain/sessions/repositories/session-repository';
 import { ThreadRepository } from '../../../domain/threads/repositories/thread-repository';
-import { SessionDomainService } from '../../../domain/sessions/services/session-domain-service';
 import { BaseApplicationService } from '../../common/base-application-service';
 import { ILogger } from '../../../domain/common/types';
+import { ID } from '../../../domain/common/value-objects/id';
+import { SessionStatus } from '../../../domain/sessions/value-objects/session-status';
 
 /**
  * 会话维护服务
@@ -18,10 +19,47 @@ export class SessionMaintenanceService extends BaseApplicationService {
   constructor(
     private readonly sessionRepository: SessionRepository,
     private readonly threadRepository: ThreadRepository,
-    private readonly sessionDomainService: SessionDomainService,
     logger: ILogger
   ) {
     super(logger);
+  }
+
+  /**
+   * 验证操作权限的业务规则
+   */
+  private validateOperationPermission(session: Session, userId?: ID): void {
+    // 验证用户是否有权限操作此会话
+    if (userId && session.userId && !session.userId.equals(userId)) {
+      throw new Error('无权限操作此会话');
+    }
+  }
+
+  /**
+   * 验证消息添加的业务规则
+   */
+  private validateMessageAddition(session: Session): void {
+    // 验证是否可以添加消息
+    if (!session.status.isActive()) {
+      throw new Error('只能在活跃状态的会话中添加消息');
+    }
+  }
+
+  /**
+   * 处理会话超时的业务规则
+   */
+  private async handleSessionTimeout(session: Session, userId?: ID): Promise<Session> {
+    // 处理超时的会话
+    session.changeStatus(SessionStatus.suspended(), userId, '会话超时');
+    return session;
+  }
+
+  /**
+   * 处理会话过期的业务规则
+   */
+  private async handleSessionExpiration(session: Session, userId?: ID): Promise<Session> {
+    // 处理过期的会话
+    session.changeStatus(SessionStatus.terminated(), userId, '会话已过期');
+    return session;
   }
 
   /**
@@ -79,10 +117,10 @@ export class SessionMaintenanceService extends BaseApplicationService {
         const session = await this.sessionRepository.findByIdOrFail(id);
 
         // 验证操作权限
-        this.sessionDomainService.validateOperationPermission(session, user);
+        this.validateOperationPermission(session, user);
 
         // 验证消息添加
-        this.sessionDomainService.validateMessageAddition(session);
+        this.validateMessageAddition(session);
 
         // 增加消息数量
         session.incrementMessageCount();
@@ -110,7 +148,7 @@ export class SessionMaintenanceService extends BaseApplicationService {
         for (const session of timeoutSessions) {
           try {
             if (session.isTimeout()) {
-              const updatedSession = await this.sessionDomainService.handleSessionTimeout(session, user);
+              const updatedSession = await this.handleSessionTimeout(session, user);
               if (updatedSession.status.isSuspended()) {
                 cleanedCount++;
               }
@@ -142,7 +180,7 @@ export class SessionMaintenanceService extends BaseApplicationService {
         for (const session of expiredSessions) {
           try {
             if (session.isExpired()) {
-              const updatedSession = await this.sessionDomainService.handleSessionExpiration(session, user);
+              const updatedSession = await this.handleSessionExpiration(session, user);
               if (updatedSession.status.isTerminated()) {
                 cleanedCount++;
               }

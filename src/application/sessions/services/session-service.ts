@@ -7,10 +7,10 @@
 
 import { Session } from '../../../domain/sessions/entities/session';
 import { SessionRepository } from '../../../domain/sessions/repositories/session-repository';
-import { SessionDomainService } from '../../../domain/sessions/services/session-domain-service';
 import { ThreadRepository } from '../../../domain/threads/repositories/thread-repository';
 import { ID } from '../../../domain/common/value-objects/id';
 import { SessionStatus } from '../../../domain/sessions/value-objects/session-status';
+import { SessionConfig } from '../../../domain/sessions/value-objects/session-config';
 import { ILogger } from '../../../domain/common/types';
 import {
   CreateSessionRequest,
@@ -28,11 +28,79 @@ export class SessionService {
   constructor(
     private readonly sessionRepository: SessionRepository,
     private readonly threadRepository: ThreadRepository,
-    private readonly sessionDomainService: SessionDomainService,
     private readonly logger: ILogger
   ) {
     // 初始化DTO实例
     this.createSessionDto = new CreateSessionRequestDto();
+  }
+
+  /**
+   * 验证会话创建的业务规则
+   */
+  private async validateSessionCreation(userId?: ID, config?: SessionConfig): Promise<void> {
+    // 验证配置有效性
+    if (config) {
+      config.validate();
+    }
+  }
+
+  /**
+   * 验证状态转换的业务规则
+   */
+  private validateStatusTransition(session: Session, newStatus: SessionStatus, userId?: ID): void {
+    // 验证状态转换是否合法
+    if (session.status.isTerminated()) {
+      throw new Error('已终止的会话无法转换状态');
+    }
+  }
+
+  /**
+   * 验证配置更新的业务规则
+   */
+  private validateConfigUpdate(session: Session, newConfig: SessionConfig): void {
+    // 验证配置更新是否合法
+    if (session.status.isTerminated()) {
+      throw new Error('已终止的会话无法更新配置');
+    }
+    newConfig.validate();
+  }
+
+  /**
+   * 验证操作权限的业务规则
+   */
+  private validateOperationPermission(session: Session, userId?: ID): void {
+    // 验证用户是否有权限操作此会话
+    if (userId && session.userId && !session.userId.equals(userId)) {
+      throw new Error('无权限操作此会话');
+    }
+  }
+
+  /**
+   * 验证消息添加的业务规则
+   */
+  private validateMessageAddition(session: Session): void {
+    // 验证是否可以添加消息
+    if (!session.status.isActive()) {
+      throw new Error('只能在活跃状态的会话中添加消息');
+    }
+  }
+
+  /**
+   * 处理会话超时的业务规则
+   */
+  private async handleSessionTimeout(session: Session, userId?: ID): Promise<Session> {
+    // 处理超时的会话
+    session.changeStatus(SessionStatus.suspended(), userId, '会话超时');
+    return session;
+  }
+
+  /**
+   * 处理会话过期的业务规则
+   */
+  private async handleSessionExpiration(session: Session, userId?: ID): Promise<Session> {
+    // 处理过期的会话
+    session.changeStatus(SessionStatus.terminated(), userId, '会话已过期');
+    return session;
   }
 
   /**
@@ -56,7 +124,7 @@ export class SessionService {
       const { userId, title, config } = SessionConverter.fromCreateRequest(validatedRequest);
 
       // 3. 验证会话创建的业务规则
-      await this.sessionDomainService.validateSessionCreation(userId, config);
+      await this.validateSessionCreation(userId, config);
 
       // 4. 创建会话
       const session = Session.create(userId, title, config);
@@ -188,7 +256,7 @@ export class SessionService {
       }
 
       // 验证状态转换
-      await this.sessionDomainService.validateStatusTransition(session, SessionStatus.active(), user);
+      this.validateStatusTransition(session, SessionStatus.active(), user);
 
       // 激活会话
       session.changeStatus(SessionStatus.active(), user, '激活会话');
@@ -291,7 +359,7 @@ export class SessionService {
       const session = await this.sessionRepository.findByIdOrFail(id);
 
       // 验证配置更新
-      this.sessionDomainService.validateConfigUpdate(session, sessionConfig);
+      this.validateConfigUpdate(session, sessionConfig);
 
       // 更新配置
       session.updateConfig(sessionConfig);
@@ -325,10 +393,10 @@ export class SessionService {
       const session = await this.sessionRepository.findByIdOrFail(id);
 
       // 验证操作权限
-      this.sessionDomainService.validateOperationPermission(session, user);
+      this.validateOperationPermission(session, user);
 
       // 验证消息添加
-      this.sessionDomainService.validateMessageAddition(session);
+      this.validateMessageAddition(session);
 
       // 增加消息数量
       session.incrementMessageCount();
@@ -356,7 +424,7 @@ export class SessionService {
       for (const session of timeoutSessions) {
         try {
           if (session.isTimeout()) {
-            const updatedSession = await this.sessionDomainService.handleSessionTimeout(session, user);
+            const updatedSession = await this.handleSessionTimeout(session, user);
             if (updatedSession.status.isSuspended()) {
               cleanedCount++;
             }
@@ -387,7 +455,7 @@ export class SessionService {
       for (const session of expiredSessions) {
         try {
           if (session.isExpired()) {
-            const updatedSession = await this.sessionDomainService.handleSessionExpiration(session, user);
+            const updatedSession = await this.handleSessionExpiration(session, user);
             if (updatedSession.status.isTerminated()) {
               cleanedCount++;
             }

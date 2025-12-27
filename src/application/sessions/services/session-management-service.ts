@@ -6,7 +6,6 @@
 
 import { Session } from '../../../domain/sessions/entities/session';
 import { SessionRepository } from '../../../domain/sessions/repositories/session-repository';
-import { SessionDomainService } from '../../../domain/sessions/services/session-domain-service';
 import { SessionConfig, SessionConfigProps } from '../../../domain/sessions/value-objects/session-config';
 import { BaseApplicationService } from '../../common/base-application-service';
 import { ILogger } from '../../../domain/common/types';
@@ -17,10 +16,20 @@ import { ILogger } from '../../../domain/common/types';
 export class SessionManagementService extends BaseApplicationService {
   constructor(
     private readonly sessionRepository: SessionRepository,
-    private readonly sessionDomainService: SessionDomainService,
     logger: ILogger
   ) {
     super(logger);
+  }
+
+  /**
+   * 验证配置更新的业务规则
+   */
+  private validateConfigUpdate(session: Session, newConfig: SessionConfig): void {
+    // 验证配置更新是否合法
+    if (session.status.isTerminated()) {
+      throw new Error('已终止的会话无法更新配置');
+    }
+    newConfig.validate();
   }
 
   /**
@@ -98,7 +107,7 @@ export class SessionManagementService extends BaseApplicationService {
         const session = await this.sessionRepository.findByIdOrFail(id);
 
         // 验证配置更新
-        this.sessionDomainService.validateConfigUpdate(session, sessionConfig);
+        this.validateConfigUpdate(session, sessionConfig);
 
         // 更新配置
         session.updateConfig(sessionConfig);
