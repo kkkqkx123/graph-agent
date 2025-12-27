@@ -6,6 +6,8 @@ import { ThreadStatus } from '../value-objects/thread-status';
 import { ThreadPriority } from '../value-objects/thread-priority';
 import { ThreadDefinition } from '../value-objects/thread-definition';
 import { ThreadExecution } from '../value-objects/thread-execution';
+import { ExecutionContext } from '../value-objects/execution-context';
+import { PromptContext } from '../../workflow/value-objects/prompt-context';
 /**
  * Thread实体属性接口
  */
@@ -82,8 +84,12 @@ export class Thread extends Entity {
       metadata
     );
 
+    // 创建执行上下文
+    const promptContext = PromptContext.create('');
+    const context = ExecutionContext.create(promptContext);
+
     // 创建线程执行值对象
-    const execution = ThreadExecution.create(threadId);
+    const execution = ThreadExecution.create(threadId, context);
 
     const props: ThreadProps = {
       id: threadId,

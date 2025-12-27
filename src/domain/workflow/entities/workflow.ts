@@ -38,16 +38,25 @@ export interface WorkflowProps {
 }
 
 /**
+ * 验证结果接口
+ */
+export interface ValidationResult {
+  readonly valid: boolean;
+  readonly errors: string[];
+  readonly warnings: string[];
+}
+
+/**
  * Workflow聚合根实体
  *
  * 根据DDD原则，Workflow是唯一的聚合根，负责：
- * 1. 工作流业务规则和不变性
- * 2. 节点和边的管理（通过聚合根访问）
- * 3. 业务状态变更
+ * 1. 纯粹的图结构定义
+ * 2. 业务验证逻辑
+ * 3. 节点和边的管理
  *
  * 不负责：
- * - 图算法和复杂验证（委托给领域服务）
- * - 执行状态管理
+ * - 执行状态管理（由Thread负责）
+ * - 进度跟踪（由Thread负责）
  * - UI相关的布局和可视化
  * - 持久化细节
  */
@@ -328,6 +337,54 @@ export class Workflow extends Entity {
   }
 
   /**
+   * 验证工作流
+   * @returns 验证结果
+   */
+  public validate(): ValidationResult {
+    const errors: string[] = [];
+    const warnings: string[] = [];
+
+    // 验证节点
+    if (this.props.graph.nodes.size === 0) {
+      warnings.push('工作流没有节点');
+    }
+
+    // 验证边的引用
+    for (const edge of this.props.graph.edges.values()) {
+      if (!this.hasNode(edge.fromNodeId)) {
+        errors.push(`边 ${edge.id.toString()} 引用了不存在的源节点 ${edge.fromNodeId.toString()}`);
+      }
+      if (!this.hasNode(edge.toNodeId)) {
+        errors.push(`边 ${edge.id.toString()} 引用了不存在的目标节点 ${edge.toNodeId.toString()}`);
+      }
+    }
+
+    // 验证起始节点
+    const startNodes = this.getStartNodes();
+    if (startNodes.length === 0 && this.props.graph.nodes.size > 0) {
+      errors.push('工作流没有起始节点（没有入边的节点）');
+    }
+
+    // 验证结束节点
+    const endNodes = this.getEndNodes();
+    if (endNodes.length === 0 && this.props.graph.nodes.size > 0) {
+      errors.push('工作流没有结束节点（没有出边的节点）');
+    }
+
+    // 验证循环引用
+    const hasCycle = this.detectCycle();
+    if (hasCycle) {
+      errors.push('工作流存在循环引用');
+    }
+
+    return {
+      valid: errors.length === 0,
+      errors,
+      warnings
+    };
+  }
+
+  /**
    * 更新工作流名称
    * @param name 新名称
    * @param updatedBy 更新者ID
@@ -451,9 +508,11 @@ export class Workflow extends Entity {
    * @returns 是否可以执行
    */
   public canExecute(): boolean {
+    const validationResult = this.validate();
     return this.props.definition.status.isActive() &&
            !this.props.definition.isDeleted() &&
-           this.getNodeCount() > 0;
+           this.getNodeCount() > 0 &&
+           validationResult.valid;
   }
 
   /**
@@ -654,6 +713,106 @@ export class Workflow extends Entity {
 
     (this.props as any).graph = newGraph;
     this.update(updatedBy);
+  }
+
+  /**
+   * 获取起始节点
+   * @returns 起始节点列表
+   */
+  public getStartNodes(): NodeId[] {
+    const nodeIdsWithIncomingEdges = new Set<string>();
+
+    for (const edge of this.props.graph.edges.values()) {
+      nodeIdsWithIncomingEdges.add(edge.toNodeId.toString());
+    }
+
+    const startNodes: NodeId[] = [];
+    for (const node of this.props.graph.nodes.values()) {
+      if (!nodeIdsWithIncomingEdges.has(node.id.toString())) {
+        startNodes.push(node.id);
+      }
+    }
+
+    return startNodes;
+  }
+
+  /**
+   * 获取结束节点
+   * @returns 结束节点列表
+   */
+  public getEndNodes(): NodeId[] {
+    const nodeIdsWithOutgoingEdges = new Set<string>();
+
+    for (const edge of this.props.graph.edges.values()) {
+      nodeIdsWithOutgoingEdges.add(edge.fromNodeId.toString());
+    }
+
+    const endNodes: NodeId[] = [];
+    for (const node of this.props.graph.nodes.values()) {
+      if (!nodeIdsWithOutgoingEdges.has(node.id.toString())) {
+        endNodes.push(node.id);
+      }
+    }
+
+    return endNodes;
+  }
+
+  /**
+   * 检查是否为结束节点
+   * @param nodeId 节点ID
+   * @returns 是否为结束节点
+   */
+  public isEndNode(nodeId: NodeId): boolean {
+    return this.getOutgoingEdges(nodeId).length === 0;
+  }
+
+  /**
+   * 检查是否为起始节点
+   * @param nodeId 节点ID
+   * @returns 是否为起始节点
+   */
+  public isStartNode(nodeId: NodeId): boolean {
+    return this.getIncomingEdges(nodeId).length === 0;
+  }
+
+  /**
+   * 检测循环引用
+   * @returns 是否存在循环
+   */
+  private detectCycle(): boolean {
+    const visited = new Set<string>();
+    const recursionStack = new Set<string>();
+
+    const hasCycleDFS = (nodeId: string): boolean => {
+      visited.add(nodeId);
+      recursionStack.add(nodeId);
+
+      const outgoingEdges = this.getOutgoingEdges({ toString: () => nodeId } as NodeId);
+      for (const edge of outgoingEdges) {
+        const neighborId = edge.toNodeId.toString();
+        
+        if (!visited.has(neighborId)) {
+          if (hasCycleDFS(neighborId)) {
+            return true;
+          }
+        } else if (recursionStack.has(neighborId)) {
+          return true;
+        }
+      }
+
+      recursionStack.delete(nodeId);
+      return false;
+    };
+
+    for (const node of this.props.graph.nodes.values()) {
+      if (!visited.has(node.id.toString())) {
+        if (hasCycleDFS(node.id.toString())) {
+          return true;
+        }
+      }
+    }
+
+    return false;
   }
 
   /**

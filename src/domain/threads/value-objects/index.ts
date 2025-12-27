@@ -9,3 +9,5 @@ export * from './thread-status';
 export * from './thread-priority';
 export * from './thread-definition';
 export * from './thread-execution';
+export * from './node-execution';
+export * from './execution-context';

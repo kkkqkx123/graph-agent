@@ -2,7 +2,42 @@ import { ValueObject } from '../../common/value-objects/value-object';
 import { ID } from '../../common/value-objects/id';
 import { Timestamp } from '../../common/value-objects/timestamp';
 import { ThreadStatus } from './thread-status';
-import { NodeStatus } from '../../workflow/value-objects/node-status';
+import { NodeId } from '../../workflow/value-objects/node-id';
+import { NodeExecution } from './node-execution';
+import { ExecutionContext } from './execution-context';
+
+/**
+ * 操作记录接口
+ */
+export interface OperationRecord {
+  readonly operationId: ID;
+  readonly operationType: 'start' | 'pause' | 'resume' | 'complete' | 'fail' | 'cancel' | 'fork' | 'copy';
+  readonly timestamp: Timestamp;
+  readonly operatorId?: ID;
+  readonly reason?: string;
+  readonly metadata?: Record<string, unknown>;
+}
+
+/**
+ * Fork信息接口
+ */
+export interface ForkInfo {
+  readonly forkId: ID;
+  readonly parentThreadId: ID;
+  readonly forkPoint: NodeId;
+  readonly forkedAt: Timestamp;
+  readonly forkStrategy: string;
+}
+
+/**
+ * Copy信息接口
+ */
+export interface CopyInfo {
+  readonly copyId: ID;
+  readonly sourceThreadId: ID;
+  readonly copiedAt: Timestamp;
+  readonly copyScope: 'full' | 'partial';
+}
 
 /**
  * ThreadExecution值对象属性接口
@@ -17,21 +52,27 @@ export interface ThreadExecutionProps {
   readonly errorMessage?: string;
   readonly retryCount: number;
   readonly lastActivityAt: Timestamp;
+  readonly nodeExecutions: Map<string, NodeExecution>;
+  readonly context: ExecutionContext;
+  readonly operationHistory: OperationRecord[];
+  readonly forkInfo?: ForkInfo;
+  readonly copyInfo?: CopyInfo;
 }
 
 /**
  * ThreadExecution值对象
  * 
  * 表示线程的执行状态信息，是不可变的
- * 包含执行进度、状态变化和时间信息
+ * 包含执行进度、状态变化、节点级状态和操作历史
  */
 export class ThreadExecution extends ValueObject<ThreadExecutionProps> {
   /**
    * 创建线程执行值对象
    * @param threadId 线程ID
+   * @param context 执行上下文
    * @returns 线程执行值对象
    */
-  public static create(threadId: ID): ThreadExecution {
+  public static create(threadId: ID, context: ExecutionContext): ThreadExecution {
     const now = Timestamp.now();
     const threadStatus = ThreadStatus.pending();
 
@@ -40,7 +81,10 @@ export class ThreadExecution extends ValueObject<ThreadExecutionProps> {
       status: threadStatus,
       progress: 0,
       retryCount: 0,
-      lastActivityAt: now
+      lastActivityAt: now,
+      nodeExecutions: new Map(),
+      context,
+      operationHistory: []
     });
   }
 
@@ -126,6 +170,64 @@ export class ThreadExecution extends ValueObject<ThreadExecutionProps> {
   }
 
   /**
+   * 获取节点执行状态
+   * @returns 节点执行状态映射
+   */
+  public get nodeExecutions(): Map<string, NodeExecution> {
+    return new Map(this.props.nodeExecutions);
+  }
+
+  /**
+   * 获取执行上下文
+   * @returns 执行上下文
+   */
+  public get context(): ExecutionContext {
+    return this.props.context;
+  }
+
+  /**
+   * 获取操作历史
+   * @returns 操作历史数组
+   */
+  public get operationHistory(): OperationRecord[] {
+    return [...this.props.operationHistory];
+  }
+
+  /**
+   * 获取Fork信息
+   * @returns Fork信息
+   */
+  public get forkInfo(): ForkInfo | undefined {
+    return this.props.forkInfo;
+  }
+
+  /**
+   * 获取Copy信息
+   * @returns Copy信息
+   */
+  public get copyInfo(): CopyInfo | undefined {
+    return this.props.copyInfo;
+  }
+
+  /**
+   * 获取节点执行状态
+   * @param nodeId 节点ID
+   * @returns 节点执行状态
+   */
+  public getNodeExecution(nodeId: NodeId): NodeExecution | undefined {
+    return this.props.nodeExecutions.get(nodeId.toString());
+  }
+
+  /**
+   * 检查节点执行状态是否存在
+   * @param nodeId 节点ID
+   * @returns 是否存在
+   */
+  public hasNodeExecution(nodeId: NodeId): boolean {
+    return this.props.nodeExecutions.has(nodeId.toString());
+  }
+
+  /**
    * 启动执行（创建新实例）
    * @returns 新的线程执行值对象
    */
@@ -134,11 +236,18 @@ export class ThreadExecution extends ValueObject<ThreadExecutionProps> {
       throw new Error('只能启动待执行状态的线程');
     }
 
+    const operationRecord: OperationRecord = {
+      operationId: ID.generate(),
+      operationType: 'start',
+      timestamp: Timestamp.now()
+    };
+
     return new ThreadExecution({
       ...this.props,
       status: ThreadStatus.running(),
       startedAt: Timestamp.now(),
-      lastActivityAt: Timestamp.now()
+      lastActivityAt: Timestamp.now(),
+      operationHistory: [...this.props.operationHistory, operationRecord]
     });
   }
 
@@ -151,10 +260,17 @@ export class ThreadExecution extends ValueObject<ThreadExecutionProps> {
       throw new Error('只能暂停运行中的线程');
     }
 
+    const operationRecord: OperationRecord = {
+      operationId: ID.generate(),
+      operationType: 'pause',
+      timestamp: Timestamp.now()
+    };
+
     return new ThreadExecution({
       ...this.props,
       status: ThreadStatus.paused(),
-      lastActivityAt: Timestamp.now()
+      lastActivityAt: Timestamp.now(),
+      operationHistory: [...this.props.operationHistory, operationRecord]
     });
   }
 
@@ -167,10 +283,17 @@ export class ThreadExecution extends ValueObject<ThreadExecutionProps> {
       throw new Error('只能恢复暂停状态的线程');
     }
 
+    const operationRecord: OperationRecord = {
+      operationId: ID.generate(),
+      operationType: 'resume',
+      timestamp: Timestamp.now()
+    };
+
     return new ThreadExecution({
       ...this.props,
       status: ThreadStatus.running(),
-      lastActivityAt: Timestamp.now()
+      lastActivityAt: Timestamp.now(),
+      operationHistory: [...this.props.operationHistory, operationRecord]
     });
   }
 
@@ -183,12 +306,19 @@ export class ThreadExecution extends ValueObject<ThreadExecutionProps> {
       throw new Error('只能完成活跃状态的线程');
     }
 
+    const operationRecord: OperationRecord = {
+      operationId: ID.generate(),
+      operationType: 'complete',
+      timestamp: Timestamp.now()
+    };
+
     return new ThreadExecution({
       ...this.props,
       status: ThreadStatus.completed(),
       progress: 100,
       completedAt: Timestamp.now(),
-      lastActivityAt: Timestamp.now()
+      lastActivityAt: Timestamp.now(),
+      operationHistory: [...this.props.operationHistory, operationRecord]
     });
   }
 
@@ -202,12 +332,20 @@ export class ThreadExecution extends ValueObject<ThreadExecutionProps> {
       throw new Error('只能设置活跃状态的线程为失败状态');
     }
 
+    const operationRecord: OperationRecord = {
+      operationId: ID.generate(),
+      operationType: 'fail',
+      timestamp: Timestamp.now(),
+      reason: errorMessage
+    };
+
     return new ThreadExecution({
       ...this.props,
       status: ThreadStatus.failed(),
       errorMessage,
       completedAt: Timestamp.now(),
-      lastActivityAt: Timestamp.now()
+      lastActivityAt: Timestamp.now(),
+      operationHistory: [...this.props.operationHistory, operationRecord]
     });
   }
 
@@ -220,11 +358,18 @@ export class ThreadExecution extends ValueObject<ThreadExecutionProps> {
       throw new Error('无法取消已终止状态的线程');
     }
 
+    const operationRecord: OperationRecord = {
+      operationId: ID.generate(),
+      operationType: 'cancel',
+      timestamp: Timestamp.now()
+    };
+
     return new ThreadExecution({
       ...this.props,
       status: ThreadStatus.cancelled(),
       completedAt: Timestamp.now(),
-      lastActivityAt: Timestamp.now()
+      lastActivityAt: Timestamp.now(),
+      operationHistory: [...this.props.operationHistory, operationRecord]
     });
   }
 
@@ -270,6 +415,97 @@ export class ThreadExecution extends ValueObject<ThreadExecutionProps> {
   public updateLastActivity(): ThreadExecution {
     return new ThreadExecution({
       ...this.props,
+      lastActivityAt: Timestamp.now()
+    });
+  }
+
+  /**
+   * 添加节点执行状态
+   * @param nodeExecution 节点执行状态
+   * @returns 新的线程执行值对象
+   */
+  public addNodeExecution(nodeExecution: NodeExecution): ThreadExecution {
+    const newNodeExecutions = new Map(this.props.nodeExecutions);
+    newNodeExecutions.set(nodeExecution.nodeId.toString(), nodeExecution);
+
+    return new ThreadExecution({
+      ...this.props,
+      nodeExecutions: newNodeExecutions,
+      lastActivityAt: Timestamp.now()
+    });
+  }
+
+  /**
+   * 更新节点执行状态
+   * @param nodeExecution 节点执行状态
+   * @returns 新的线程执行值对象
+   */
+  public updateNodeExecution(nodeExecution: NodeExecution): ThreadExecution {
+    if (!this.props.nodeExecutions.has(nodeExecution.nodeId.toString())) {
+      throw new Error(`节点执行状态不存在: ${nodeExecution.nodeId.toString()}`);
+    }
+
+    const newNodeExecutions = new Map(this.props.nodeExecutions);
+    newNodeExecutions.set(nodeExecution.nodeId.toString(), nodeExecution);
+
+    return new ThreadExecution({
+      ...this.props,
+      nodeExecutions: newNodeExecutions,
+      lastActivityAt: Timestamp.now()
+    });
+  }
+
+  /**
+   * 更新执行上下文
+   * @param context 新的执行上下文
+   * @returns 新的线程执行值对象
+   */
+  public updateContext(context: ExecutionContext): ThreadExecution {
+    return new ThreadExecution({
+      ...this.props,
+      context,
+      lastActivityAt: Timestamp.now()
+    });
+  }
+
+  /**
+   * 添加Fork信息
+   * @param forkInfo Fork信息
+   * @returns 新的线程执行值对象
+   */
+  public addForkInfo(forkInfo: ForkInfo): ThreadExecution {
+    const operationRecord: OperationRecord = {
+      operationId: ID.generate(),
+      operationType: 'fork',
+      timestamp: Timestamp.now(),
+      metadata: { forkId: forkInfo.forkId.toString() }
+    };
+
+    return new ThreadExecution({
+      ...this.props,
+      forkInfo,
+      operationHistory: [...this.props.operationHistory, operationRecord],
+      lastActivityAt: Timestamp.now()
+    });
+  }
+
+  /**
+   * 添加Copy信息
+   * @param copyInfo Copy信息
+   * @returns 新的线程执行值对象
+   */
+  public addCopyInfo(copyInfo: CopyInfo): ThreadExecution {
+    const operationRecord: OperationRecord = {
+      operationId: ID.generate(),
+      operationType: 'copy',
+      timestamp: Timestamp.now(),
+      metadata: { copyId: copyInfo.copyId.toString() }
+    };
+
+    return new ThreadExecution({
+      ...this.props,
+      copyInfo,
+      operationHistory: [...this.props.operationHistory, operationRecord],
       lastActivityAt: Timestamp.now()
     });
   }
