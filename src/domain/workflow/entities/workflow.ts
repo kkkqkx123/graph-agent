@@ -45,10 +45,12 @@ export interface WorkflowValidationResult {
  * 2. 简单的存在性检查
  * 3. 自身状态管理（版本、时间戳）
  * 4. 属性访问
+ * 5. 简单的查询方法（如 getIncomingEdges, getOutgoingEdges）
  *
  * 不负责：
- * - 复杂的验证逻辑（由WorkflowValidationService负责）
- * - 图遍历和算法（由WorkflowGraphService负责）
+ * - 复杂的验证逻辑（由GraphValidationService负责）
+ * - 图遍历和算法（由GraphAlgorithmService负责）
+ * - 复杂度计算（由GraphAlgorithmService负责）
  * - 执行状态管理（由Thread负责）
  * - 进度跟踪（由Thread负责）
  * - UI相关的布局和可视化
@@ -464,30 +466,6 @@ export class Workflow extends Entity {
   }
 
   /**
-   * 获取工作流的复杂度指标
-   * @returns 复杂度指标
-   */
-  public getComplexityMetrics(): {
-    nodeCount: number;
-    edgeCount: number;
-    complexity: 'simple' | 'moderate' | 'complex';
-  } {
-    const nodeCount = this.getNodeCount();
-    const edgeCount = this.getEdgeCount();
-
-    let complexity: 'simple' | 'moderate' | 'complex';
-    if (nodeCount <= 5 && edgeCount <= 8) {
-      complexity = 'simple';
-    } else if (nodeCount <= 20 && edgeCount <= 30) {
-      complexity = 'moderate';
-    } else {
-      complexity = 'complex';
-    }
-
-    return { nodeCount, edgeCount, complexity };
-  }
-
-  /**
    * 添加节点
    * @param nodeId 节点ID
    * @param type 节点类型
@@ -657,67 +635,6 @@ export class Workflow extends Entity {
     (this.props as any).graph = newGraph;
     this.update(updatedBy);
   }
-
-  /**
-   * 获取起始节点
-   * @returns 起始节点列表
-   */
-  public getStartNodes(): NodeId[] {
-    const nodeIdsWithIncomingEdges = new Set<string>();
-
-    for (const edge of this.props.graph.edges.values()) {
-      nodeIdsWithIncomingEdges.add(edge.toNodeId.toString());
-    }
-
-    const startNodes: NodeId[] = [];
-    for (const node of this.props.graph.nodes.values()) {
-      if (!nodeIdsWithIncomingEdges.has(node.id.toString())) {
-        startNodes.push(node.id);
-      }
-    }
-
-    return startNodes;
-  }
-
-  /**
-   * 获取结束节点
-   * @returns 结束节点列表
-   */
-  public getEndNodes(): NodeId[] {
-    const nodeIdsWithOutgoingEdges = new Set<string>();
-
-    for (const edge of this.props.graph.edges.values()) {
-      nodeIdsWithOutgoingEdges.add(edge.fromNodeId.toString());
-    }
-
-    const endNodes: NodeId[] = [];
-    for (const node of this.props.graph.nodes.values()) {
-      if (!nodeIdsWithOutgoingEdges.has(node.id.toString())) {
-        endNodes.push(node.id);
-      }
-    }
-
-    return endNodes;
-  }
-
-  /**
-   * 检查是否为结束节点
-   * @param nodeId 节点ID
-   * @returns 是否为结束节点
-   */
-  public isEndNode(nodeId: NodeId): boolean {
-    return this.getOutgoingEdges(nodeId).length === 0;
-  }
-
-  /**
-   * 检查是否为起始节点
-   * @param nodeId 节点ID
-   * @returns 是否为起始节点
-   */
-  public isStartNode(nodeId: NodeId): boolean {
-    return this.getIncomingEdges(nodeId).length === 0;
-  }
-
 
   /**
    * 更新定义

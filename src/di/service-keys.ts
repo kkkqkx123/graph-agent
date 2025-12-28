@@ -15,6 +15,7 @@ import { CheckpointRepository } from '../domain/checkpoint/repositories/checkpoi
 import { HistoryRepository } from '../domain/history/repositories/history-repository';
 import { GraphAlgorithmService } from '../domain/workflow/services/graph-algorithm-service.interface';
 import { GraphValidationService } from '../domain/workflow/services/graph-validation-service.interface';
+import { ContextProcessorService } from '../domain/workflow/services/context-processor-service.interface';
 import { ThreadCoordinatorService } from '../domain/threads/services/thread-coordinator-service.interface';
 
 // Application层接口
@@ -32,6 +33,7 @@ import { CheckpointRepository as CheckpointInfrastructureRepository } from '../i
 import { HistoryRepository as HistoryInfrastructureRepository } from '../infrastructure/persistence/repositories/history-repository';
 import { GraphAlgorithmServiceImpl } from '../infrastructure/workflow/services/graph-algorithm-service';
 import { GraphValidationServiceImpl } from '../infrastructure/workflow/services/graph-validation-service';
+import { ContextProcessorServiceImpl } from '../infrastructure/workflow/services/context-processor-service';
 import { ThreadCoordinatorInfrastructureService } from '../infrastructure/threads/services/thread-coordinator-service';
 import { ConnectionManager } from '../infrastructure/persistence/connections/connection-manager';
 import { PromptLoader } from '../infrastructure/prompts/services/prompt-loader';
@@ -67,6 +69,7 @@ export interface ServiceTypes {
   // 业务服务接口
   GraphAlgorithmService: GraphAlgorithmService;
   GraphValidationService: GraphValidationService;
+  ContextProcessorService: ContextProcessorService;
   ThreadCoordinatorService: ThreadCoordinatorService;
   
   // ========== Application层接口 ==========
@@ -94,6 +97,7 @@ export interface ServiceTypes {
   // 业务服务实现
   GraphAlgorithmServiceImpl: GraphAlgorithmServiceImpl;
   GraphValidationServiceImpl: GraphValidationServiceImpl;
+  ContextProcessorServiceImpl: ContextProcessorServiceImpl;
   ThreadCoordinatorServiceImpl: ThreadCoordinatorInfrastructureService;
   
   // 基础设施服务
@@ -154,6 +158,7 @@ export const TYPES: {
   // 业务服务接口
   GraphAlgorithmService: Symbol.for('GraphAlgorithmService') as TypedServiceIdentifier<'GraphAlgorithmService'>,
   GraphValidationService: Symbol.for('GraphValidationService') as TypedServiceIdentifier<'GraphValidationService'>,
+  ContextProcessorService: Symbol.for('ContextProcessorService') as TypedServiceIdentifier<'ContextProcessorService'>,
   ThreadCoordinatorService: Symbol.for('ThreadCoordinatorService') as TypedServiceIdentifier<'ThreadCoordinatorService'>,
   
   // ========== Application层接口 ==========
@@ -181,6 +186,7 @@ export const TYPES: {
   // 业务服务实现
   GraphAlgorithmServiceImpl: Symbol.for('GraphAlgorithmServiceImpl') as TypedServiceIdentifier<'GraphAlgorithmServiceImpl'>,
   GraphValidationServiceImpl: Symbol.for('GraphValidationServiceImpl') as TypedServiceIdentifier<'GraphValidationServiceImpl'>,
+  ContextProcessorServiceImpl: Symbol.for('ContextProcessorServiceImpl') as TypedServiceIdentifier<'ContextProcessorServiceImpl'>,
   ThreadCoordinatorServiceImpl: Symbol.for('ThreadCoordinatorServiceImpl') as TypedServiceIdentifier<'ThreadCoordinatorServiceImpl'>,
   
   // 基础设施服务

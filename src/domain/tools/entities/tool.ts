@@ -1,47 +1,18 @@
-import { ID } from '../../common/value-objects/id';
+import { Entity } from '../../common/base/entity';
+import { ID, Timestamp, Version } from '../../common/value-objects';
 import { ToolType } from '../value-objects/tool-type';
 import { ToolStatus } from '../value-objects/tool-status';
-import { Timestamp } from '../../common/value-objects/timestamp';
 
 /**
- * 工具实体
- * 
- * 表示系统中的工具定义
+ * Tool实体属性接口
  */
-export class Tool {
-  /**
-   * 工具ID
-   */
+export interface ToolProps {
   readonly id: ID;
-
-  /**
-   * 工具名称
-   */
   readonly name: string;
-
-  /**
-   * 工具描述
-   */
   readonly description: string;
-
-  /**
-   * 工具类型
-   */
   readonly type: ToolType;
-
-  /**
-   * 工具状态
-   */
   readonly status: ToolStatus;
-
-  /**
-   * 工具配置
-   */
   readonly config: Record<string, unknown>;
-
-  /**
-   * 工具参数定义
-   */
   readonly parameters: {
     type: 'object';
     properties: Record<string, {
@@ -54,172 +25,56 @@ export class Tool {
     }>;
     required: string[];
   };
-
-  /**
-   * 工具返回值定义
-   */
   readonly returns?: {
     type: string;
     description?: string;
     properties?: Record<string, any>;
     items?: any;
   };
-
-  /**
-   * 工具元数据
-   */
   readonly metadata: Record<string, unknown>;
-
-  /**
-   * 创建时间
-   */
   readonly createdAt: Timestamp;
-
-  /**
-   * 更新时间
-   */
   readonly updatedAt: Timestamp;
-
-  /**
-   * 创建者ID
-   */
+  readonly version: Version;
   readonly createdBy?: ID;
-
-  /**
-   * 版本号
-   */
-  readonly version: string;
-
-  /**
-   * 标签
-   */
   readonly tags: string[];
-
-  /**
-   * 分类
-   */
   readonly category: string;
-
-  /**
-   * 是否为内置工具
-   */
   readonly isBuiltin: boolean;
-
-  /**
-   * 是否启用
-   */
   readonly isEnabled: boolean;
-
-  /**
-   * 执行超时时间（毫秒）
-   */
   readonly timeout: number;
-
-  /**
-   * 最大重试次数
-   */
   readonly maxRetries: number;
-
-  /**
-   * 权限要求
-   */
   readonly permissions: string[];
-
-  /**
-   * 依赖的其他工具
-   */
   readonly dependencies: ID[];
+  readonly isDeleted: boolean;
+}
+
+/**
+ * Tool实体
+ *
+ * 表示系统中的工具定义
+ * 职责：
+ * - 工具基本信息管理
+ * - 属性访问
+ * - 基本状态管理
+ *
+ * 不负责：
+ * - 业务逻辑判断（由ToolValidationService负责）
+ * - 序列化/反序列化（由Infrastructure层负责）
+ * - 执行逻辑（由ToolExecutor负责）
+ */
+export class Tool extends Entity {
+  private readonly props: ToolProps;
 
   /**
    * 构造函数
-   * 
-   * @param id 工具ID
-   * @param name 工具名称
-   * @param description 工具描述
-   * @param type 工具类型
-   * @param status 工具状态
-   * @param config 工具配置
-   * @param parameters 工具参数定义
-   * @param returns 工具返回值定义
-   * @param metadata 工具元数据
-   * @param createdAt 创建时间
-   * @param updatedAt 更新时间
-   * @param createdBy 创建者ID
-   * @param version 版本号
-   * @param tags 标签
-   * @param category 分类
-   * @param isBuiltin 是否为内置工具
-   * @param isEnabled 是否启用
-   * @param timeout 执行超时时间
-   * @param maxRetries 最大重试次数
-   * @param permissions 权限要求
-   * @param dependencies 依赖的其他工具
+   * @param props 工具属性
    */
-  constructor(
-    id: ID,
-    name: string,
-    description: string,
-    type: ToolType,
-    status: ToolStatus,
-    config: Record<string, unknown>,
-    parameters: {
-      type: 'object';
-      properties: Record<string, {
-        type: string;
-        description?: string;
-        enum?: string[];
-        items?: any;
-        properties?: Record<string, any>;
-        required?: string[];
-      }>;
-      required: string[];
-    },
-    returns?: {
-      type: string;
-      description?: string;
-      properties?: Record<string, any>;
-      items?: any;
-    },
-    metadata: Record<string, unknown> = {},
-    createdAt: Timestamp = Timestamp.now(),
-    updatedAt: Timestamp = Timestamp.now(),
-    createdBy?: ID,
-    version: string = '1.0.0',
-    tags: string[] = [],
-    category: string = 'general',
-    isBuiltin: boolean = false,
-    isEnabled: boolean = true,
-    timeout: number = 30000,
-    maxRetries: number = 3,
-    permissions: string[] = [],
-    dependencies: ID[] = []
-  ) {
-    this.id = id;
-    this.name = name;
-    this.description = description;
-    this.type = type;
-    this.status = status;
-    this.config = config;
-    this.parameters = parameters;
-    this.returns = returns;
-    this.metadata = metadata;
-    this.createdAt = createdAt;
-    this.updatedAt = updatedAt;
-    this.createdBy = createdBy;
-    this.version = version;
-    this.tags = tags;
-    this.category = category;
-    this.isBuiltin = isBuiltin;
-    this.isEnabled = isEnabled;
-    this.timeout = timeout;
-    this.maxRetries = maxRetries;
-    this.permissions = permissions;
-    this.dependencies = dependencies;
+  private constructor(props: ToolProps) {
+    super(props.id, props.createdAt, props.updatedAt, props.version);
+    this.props = Object.freeze(props);
   }
 
   /**
    * 创建新工具
-   * 
    * @param name 工具名称
    * @param description 工具描述
    * @param type 工具类型
@@ -229,7 +84,7 @@ export class Tool {
    * @param createdBy 创建者ID
    * @returns 新工具
    */
-  static create(
+  public static create(
     name: string,
     description: string,
     type: ToolType,
@@ -254,37 +109,244 @@ export class Tool {
     },
     createdBy?: ID
   ): Tool {
-    const id = ID.generate();
     const now = Timestamp.now();
+    const toolId = ID.generate();
 
-    return new Tool(
-      id,
+    const props: ToolProps = {
+      id: toolId,
       name,
       description,
       type,
-      ToolStatus.DRAFT,
+      status: ToolStatus.DRAFT,
       config,
       parameters,
       returns,
-      {},
-      now,
-      now,
-      createdBy
-    );
+      metadata: {},
+      createdAt: now,
+      updatedAt: now,
+      version: Version.initial(),
+      createdBy,
+      tags: [],
+      category: 'general',
+      isBuiltin: false,
+      isEnabled: true,
+      timeout: 30000,
+      maxRetries: 3,
+      permissions: [],
+      dependencies: [],
+      isDeleted: false
+    };
+
+    return new Tool(props);
   }
 
   /**
+   * 从已有属性重建工具
+   * @param props 工具属性
+   * @returns 工具实例
+   */
+  public static fromProps(props: ToolProps): Tool {
+    return new Tool(props);
+  }
+
+  // 属性访问器
+
+  /**
+   * 获取工具ID
+   * @returns 工具ID
+   */
+  public get toolId(): ID {
+    return this.props.id;
+  }
+
+  /**
+   * 获取工具名称
+   * @returns 工具名称
+   */
+  public get name(): string {
+    return this.props.name;
+  }
+
+  /**
+   * 获取工具描述
+   * @returns 工具描述
+   */
+  public get description(): string {
+    return this.props.description;
+  }
+
+  /**
+   * 获取工具类型
+   * @returns 工具类型
+   */
+  public get type(): ToolType {
+    return this.props.type;
+  }
+
+  /**
+   * 获取工具状态
+   * @returns 工具状态
+   */
+  public get status(): ToolStatus {
+    return this.props.status;
+  }
+
+  /**
+   * 获取工具配置
+   * @returns 工具配置
+   */
+  public get config(): Record<string, unknown> {
+    return { ...this.props.config };
+  }
+
+  /**
+   * 获取工具参数定义
+   * @returns 工具参数定义
+   */
+  public get parameters(): {
+    type: 'object';
+    properties: Record<string, {
+      type: string;
+      description?: string;
+      enum?: string[];
+      items?: any;
+      properties?: Record<string, any>;
+      required?: string[];
+    }>;
+    required: string[];
+  } {
+    return this.props.parameters;
+  }
+
+  /**
+   * 获取工具返回值定义
+   * @returns 工具返回值定义
+   */
+  public get returns(): {
+    type: string;
+    description?: string;
+    properties?: Record<string, any>;
+    items?: any;
+  } | undefined {
+    return this.props.returns;
+  }
+
+  /**
+   * 获取元数据
+   * @returns 元数据
+   */
+  public get metadata(): Record<string, unknown> {
+    return { ...this.props.metadata };
+  }
+
+  /**
+   * 获取创建时间
+   * @returns 创建时间
+   */
+  public override get createdAt(): Timestamp {
+    return this.props.createdAt;
+  }
+
+  /**
+   * 获取更新时间
+   * @returns 更新时间
+   */
+  public override get updatedAt(): Timestamp {
+    return this.props.updatedAt;
+  }
+
+  /**
+   * 获取创建者ID
+   * @returns 创建者ID
+   */
+  public get createdBy(): ID | undefined {
+    return this.props.createdBy;
+  }
+
+  /**
+   * 获取版本号
+   * @returns 版本号
+   */
+  public override get version(): Version {
+    return this.props.version;
+  }
+
+  /**
+   * 获取标签
+   * @returns 标签列表
+   */
+  public get tags(): string[] {
+    return [...this.props.tags];
+  }
+
+  /**
+   * 获取分类
+   * @returns 分类
+   */
+  public get category(): string {
+    return this.props.category;
+  }
+
+  /**
+   * 获取是否为内置工具
+   * @returns 是否为内置工具
+   */
+  public get isBuiltin(): boolean {
+    return this.props.isBuiltin;
+  }
+
+  /**
+   * 获取是否启用
+   * @returns 是否启用
+   */
+  public get isEnabled(): boolean {
+    return this.props.isEnabled;
+  }
+
+  /**
+   * 获取执行超时时间
+   * @returns 执行超时时间（毫秒）
+   */
+  public get timeout(): number {
+    return this.props.timeout;
+  }
+
+  /**
+   * 获取最大重试次数
+   * @returns 最大重试次数
+   */
+  public get maxRetries(): number {
+    return this.props.maxRetries;
+  }
+
+  /**
+   * 获取权限要求
+   * @returns 权限要求列表
+   */
+  public get permissions(): string[] {
+    return [...this.props.permissions];
+  }
+
+  /**
+   * 获取依赖的其他工具
+   * @returns 依赖的工具ID列表
+   */
+  public get dependencies(): ID[] {
+    return [...this.props.dependencies];
+  }
+
+  // 更新方法
+
+  /**
    * 更新工具信息
-   * 
    * @param name 工具名称
    * @param description 工具描述
    * @param config 工具配置
    * @param parameters 工具参数定义
    * @param returns 工具返回值定义
    * @param metadata 工具元数据
-   * @returns 更新后的工具
    */
-  update(
+  public updateTool(
     name?: string,
     description?: string,
     config?: Record<string, unknown>,
@@ -307,429 +369,266 @@ export class Tool {
       items?: any;
     },
     metadata?: Record<string, unknown>
-  ): Tool {
-    return new Tool(
-      this.id,
-      name || this.name,
-      description || this.description,
-      this.type,
-      this.status,
-      config || this.config,
-      parameters || this.parameters,
-      returns || this.returns,
-      metadata || this.metadata,
-      this.createdAt,
-      Timestamp.now(),
-      this.createdBy,
-      this.version,
-      this.tags,
-      this.category,
-      this.isBuiltin,
-      this.isEnabled,
-      this.timeout,
-      this.maxRetries,
-      this.permissions,
-      this.dependencies
-    );
+  ): void {
+    if (this.props.isDeleted) {
+      throw new Error('无法更新已删除的工具');
+    }
+
+    const newProps = {
+      ...this.props,
+      name: name || this.props.name,
+      description: description || this.props.description,
+      config: config || this.props.config,
+      parameters: parameters || this.props.parameters,
+      returns: returns !== undefined ? returns : this.props.returns,
+      metadata: metadata || this.props.metadata,
+      updatedAt: Timestamp.now(),
+      version: this.props.version.nextPatch()
+    };
+
+    (this as any).props = Object.freeze(newProps);
+    this.update();
   }
 
   /**
    * 更改工具状态
-   * 
    * @param status 新状态
-   * @returns 更新后的工具
    */
-  changeStatus(status: ToolStatus): Tool {
-    return new Tool(
-      this.id,
-      this.name,
-      this.description,
-      this.type,
+  public changeStatus(status: ToolStatus): void {
+    if (this.props.isDeleted) {
+      throw new Error('无法更改已删除工具的状态');
+    }
+
+    const newProps = {
+      ...this.props,
       status,
-      this.config,
-      this.parameters,
-      this.returns,
-      this.metadata,
-      this.createdAt,
-      Timestamp.now(),
-      this.createdBy,
-      this.version,
-      this.tags,
-      this.category,
-      this.isBuiltin,
-      this.isEnabled,
-      this.timeout,
-      this.maxRetries,
-      this.permissions,
-      this.dependencies
-    );
+      updatedAt: Timestamp.now(),
+      version: this.props.version.nextPatch()
+    };
+
+    (this as any).props = Object.freeze(newProps);
+    this.update();
   }
 
   /**
    * 启用工具
-   * 
-   * @returns 更新后的工具
    */
-  enable(): Tool {
-    return new Tool(
-      this.id,
-      this.name,
-      this.description,
-      this.type,
-      this.status,
-      this.config,
-      this.parameters,
-      this.returns,
-      this.metadata,
-      this.createdAt,
-      Timestamp.now(),
-      this.createdBy,
-      this.version,
-      this.tags,
-      this.category,
-      this.isBuiltin,
-      true,
-      this.timeout,
-      this.maxRetries,
-      this.permissions,
-      this.dependencies
-    );
+  public enable(): void {
+    if (this.props.isDeleted) {
+      throw new Error('无法启用已删除的工具');
+    }
+
+    const newProps = {
+      ...this.props,
+      isEnabled: true,
+      updatedAt: Timestamp.now(),
+      version: this.props.version.nextPatch()
+    };
+
+    (this as any).props = Object.freeze(newProps);
+    this.update();
   }
 
   /**
    * 禁用工具
-   * 
-   * @returns 更新后的工具
    */
-  disable(): Tool {
-    return new Tool(
-      this.id,
-      this.name,
-      this.description,
-      this.type,
-      this.status,
-      this.config,
-      this.parameters,
-      this.returns,
-      this.metadata,
-      this.createdAt,
-      Timestamp.now(),
-      this.createdBy,
-      this.version,
-      this.tags,
-      this.category,
-      this.isBuiltin,
-      false,
-      this.timeout,
-      this.maxRetries,
-      this.permissions,
-      this.dependencies
-    );
+  public disable(): void {
+    if (this.props.isDeleted) {
+      throw new Error('无法禁用已删除的工具');
+    }
+
+    const newProps = {
+      ...this.props,
+      isEnabled: false,
+      updatedAt: Timestamp.now(),
+      version: this.props.version.nextPatch()
+    };
+
+    (this as any).props = Object.freeze(newProps);
+    this.update();
   }
 
   /**
    * 添加标签
-   * 
    * @param tag 标签
-   * @returns 更新后的工具
    */
-  addTag(tag: string): Tool {
-    if (this.tags.includes(tag)) {
-      return this;
+  public addTag(tag: string): void {
+    if (this.props.isDeleted) {
+      throw new Error('无法为已删除的工具添加标签');
     }
 
-    return new Tool(
-      this.id,
-      this.name,
-      this.description,
-      this.type,
-      this.status,
-      this.config,
-      this.parameters,
-      this.returns,
-      this.metadata,
-      this.createdAt,
-      Timestamp.now(),
-      this.createdBy,
-      this.version,
-      [...this.tags, tag],
-      this.category,
-      this.isBuiltin,
-      this.isEnabled,
-      this.timeout,
-      this.maxRetries,
-      this.permissions,
-      this.dependencies
-    );
+    if (this.props.tags.includes(tag)) {
+      return;
+    }
+
+    const newProps = {
+      ...this.props,
+      tags: [...this.props.tags, tag],
+      updatedAt: Timestamp.now(),
+      version: this.props.version.nextPatch()
+    };
+
+    (this as any).props = Object.freeze(newProps);
+    this.update();
   }
 
   /**
    * 移除标签
-   * 
    * @param tag 标签
-   * @returns 更新后的工具
    */
-  removeTag(tag: string): Tool {
-    if (!this.tags.includes(tag)) {
-      return this;
+  public removeTag(tag: string): void {
+    if (this.props.isDeleted) {
+      throw new Error('无法为已删除的工具移除标签');
     }
 
-    return new Tool(
-      this.id,
-      this.name,
-      this.description,
-      this.type,
-      this.status,
-      this.config,
-      this.parameters,
-      this.returns,
-      this.metadata,
-      this.createdAt,
-      Timestamp.now(),
-      this.createdBy,
-      this.version,
-      this.tags.filter(t => t !== tag),
-      this.category,
-      this.isBuiltin,
-      this.isEnabled,
-      this.timeout,
-      this.maxRetries,
-      this.permissions,
-      this.dependencies
-    );
+    const newTags = this.props.tags.filter(t => t !== tag);
+    
+    if (newTags.length === this.props.tags.length) {
+      return;
+    }
+
+    const newProps = {
+      ...this.props,
+      tags: newTags,
+      updatedAt: Timestamp.now(),
+      version: this.props.version.nextPatch()
+    };
+
+    (this as any).props = Object.freeze(newProps);
+    this.update();
   }
 
   /**
    * 更改分类
-   * 
    * @param category 新分类
-   * @returns 更新后的工具
    */
-  changeCategory(category: string): Tool {
-    return new Tool(
-      this.id,
-      this.name,
-      this.description,
-      this.type,
-      this.status,
-      this.config,
-      this.parameters,
-      this.returns,
-      this.metadata,
-      this.createdAt,
-      Timestamp.now(),
-      this.createdBy,
-      this.version,
-      this.tags,
+  public changeCategory(category: string): void {
+    if (this.props.isDeleted) {
+      throw new Error('无法更改已删除工具的分类');
+    }
+
+    const newProps = {
+      ...this.props,
       category,
-      this.isBuiltin,
-      this.isEnabled,
-      this.timeout,
-      this.maxRetries,
-      this.permissions,
-      this.dependencies
-    );
+      updatedAt: Timestamp.now(),
+      version: this.props.version.nextPatch()
+    };
+
+    (this as any).props = Object.freeze(newProps);
+    this.update();
   }
 
   /**
    * 添加依赖
-   * 
    * @param dependency 依赖的工具ID
-   * @returns 更新后的工具
    */
-  addDependency(dependency: ID): Tool {
-    if (this.dependencies.some(d => d.equals(dependency))) {
-      return this;
+  public addDependency(dependency: ID): void {
+    if (this.props.isDeleted) {
+      throw new Error('无法为已删除的工具添加依赖');
     }
 
-    return new Tool(
-      this.id,
-      this.name,
-      this.description,
-      this.type,
-      this.status,
-      this.config,
-      this.parameters,
-      this.returns,
-      this.metadata,
-      this.createdAt,
-      Timestamp.now(),
-      this.createdBy,
-      this.version,
-      this.tags,
-      this.category,
-      this.isBuiltin,
-      this.isEnabled,
-      this.timeout,
-      this.maxRetries,
-      this.permissions,
-      [...this.dependencies, dependency]
-    );
+    if (this.props.dependencies.some(d => d.equals(dependency))) {
+      return;
+    }
+
+    const newProps = {
+      ...this.props,
+      dependencies: [...this.props.dependencies, dependency],
+      updatedAt: Timestamp.now(),
+      version: this.props.version.nextPatch()
+    };
+
+    (this as any).props = Object.freeze(newProps);
+    this.update();
   }
 
   /**
    * 移除依赖
-   * 
    * @param dependency 依赖的工具ID
-   * @returns 更新后的工具
    */
-  removeDependency(dependency: ID): Tool {
-    const newDependencies = this.dependencies.filter(d => !d.equals(dependency));
-    
-    if (newDependencies.length === this.dependencies.length) {
-      return this;
+  public removeDependency(dependency: ID): void {
+    if (this.props.isDeleted) {
+      throw new Error('无法为已删除的工具移除依赖');
     }
 
-    return new Tool(
-      this.id,
-      this.name,
-      this.description,
-      this.type,
-      this.status,
-      this.config,
-      this.parameters,
-      this.returns,
-      this.metadata,
-      this.createdAt,
-      Timestamp.now(),
-      this.createdBy,
-      this.version,
-      this.tags,
-      this.category,
-      this.isBuiltin,
-      this.isEnabled,
-      this.timeout,
-      this.maxRetries,
-      this.permissions,
-      newDependencies
-    );
-  }
+    const newDependencies = this.props.dependencies.filter(d => !d.equals(dependency));
+    
+    if (newDependencies.length === this.props.dependencies.length) {
+      return;
+    }
 
-  /**
-   * 检查是否可以执行
-   * 
-   * @returns 是否可以执行
-   */
-  canExecute(): boolean {
-    return this.isEnabled && this.status === ToolStatus.ACTIVE;
-  }
-
-  /**
-   * 检查是否有指定权限
-   * 
-   * @param permission 权限
-   * @returns 是否有权限
-   */
-  hasPermission(permission: string): boolean {
-    return this.permissions.includes(permission);
-  }
-
-  /**
-   * 检查是否有指定标签
-   * 
-   * @param tag 标签
-   * @returns 是否有标签
-   */
-  hasTag(tag: string): boolean {
-    return this.tags.includes(tag);
-  }
-
-  /**
-   * 检查是否属于指定分类
-   * 
-   * @param category 分类
-   * @returns 是否属于分类
-   */
-  isInCategory(category: string): boolean {
-    return this.category === category;
-  }
-
-  /**
-   * 检查是否依赖指定工具
-   * 
-   * @param toolId 工具ID
-   * @returns 是否依赖
-   */
-  dependsOn(toolId: ID): boolean {
-    return this.dependencies.some(d => d.equals(toolId));
-  }
-
-  /**
-   * 转换为JSON对象
-   * 
-   * @returns JSON对象
-   */
-  toJSON(): Record<string, unknown> {
-    return {
-      id: this.id.value,
-      name: this.name,
-      description: this.description,
-      type: this.type.value,
-      status: this.status.value,
-      config: this.config,
-      parameters: this.parameters,
-      returns: this.returns,
-      metadata: this.metadata,
-      createdAt: this.createdAt.toISOString(),
-      updatedAt: this.updatedAt.toISOString(),
-      createdBy: this.createdBy?.value,
-      version: this.version,
-      tags: this.tags,
-      category: this.category,
-      isBuiltin: this.isBuiltin,
-      isEnabled: this.isEnabled,
-      timeout: this.timeout,
-      maxRetries: this.maxRetries,
-      permissions: this.permissions,
-      dependencies: this.dependencies.map(d => d.value)
+    const newProps = {
+      ...this.props,
+      dependencies: newDependencies,
+      updatedAt: Timestamp.now(),
+      version: this.props.version.nextPatch()
     };
+
+    (this as any).props = Object.freeze(newProps);
+    this.update();
   }
 
   /**
-   * 从JSON对象创建工具
-   * 
-   * @param json JSON对象
-   * @returns 工具
+   * 更新元数据
+   * @param metadata 新元数据
    */
-  static fromJSON(json: Record<string, unknown>): Tool {
-    return new Tool(
-      ID.fromString(json['id'] as string),
-      json['name'] as string,
-      json['description'] as string,
-      ToolType.fromString(json['type'] as string),
-      ToolStatus.fromString(json['status'] as string),
-      json['config'] as Record<string, unknown>,
-      json['parameters'] as {
-        type: 'object';
-        properties: Record<string, {
-          type: string;
-          description?: string;
-          enum?: string[];
-          items?: any;
-          properties?: Record<string, any>;
-          required?: string[];
-        }>;
-        required: string[];
-      },
-      json['returns'] as {
-        type: string;
-        description?: string;
-        properties?: Record<string, any>;
-        items?: any;
-      },
-      json['metadata'] as Record<string, unknown>,
-      Timestamp.fromString(json['createdAt'] as string),
-      Timestamp.fromString(json['updatedAt'] as string),
-      json['createdBy'] ? ID.fromString(json['createdBy'] as string) : undefined,
-      json['version'] as string,
-      json['tags'] as string[],
-      json['category'] as string,
-      json['isBuiltin'] as boolean,
-      json['isEnabled'] as boolean,
-      json['timeout'] as number,
-      json['maxRetries'] as number,
-      json['permissions'] as string[],
-      (json['dependencies'] as string[]).map(d => ID.fromString(d))
-    );
+  public updateMetadata(metadata: Record<string, unknown>): void {
+    if (this.props.isDeleted) {
+      throw new Error('无法更新已删除工具的元数据');
+    }
+
+    const newProps = {
+      ...this.props,
+      metadata: { ...metadata },
+      updatedAt: Timestamp.now(),
+      version: this.props.version.nextPatch()
+    };
+
+    (this as any).props = Object.freeze(newProps);
+    this.update();
+  }
+
+  /**
+   * 标记工具为已删除
+   */
+  public markAsDeleted(): void {
+    if (this.props.isDeleted) {
+      return;
+    }
+
+    const newProps = {
+      ...this.props,
+      isDeleted: true,
+      updatedAt: Timestamp.now(),
+      version: this.props.version.nextPatch()
+    };
+
+    (this as any).props = Object.freeze(newProps);
+    this.update();
+  }
+
+  /**
+   * 检查工具是否已删除
+   * @returns 是否已删除
+   */
+  public isDeleted(): boolean {
+    return this.props.isDeleted;
+  }
+
+  /**
+   * 获取业务标识
+   * @returns 业务标识
+   */
+  public getBusinessIdentifier(): string {
+    return `tool:${this.props.id.toString()}`;
+  }
+
+  /**
+   * 更新实体
+   */
+  protected override update(): void {
+    (this.props as any).updatedAt = Timestamp.now();
+    (this.props as any).version = this.props.version.nextPatch();
+    super.update();
   }
 }

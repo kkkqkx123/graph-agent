@@ -18,6 +18,7 @@ import { HistoryRepository as HistoryInfrastructureRepository } from '../../infr
 // 业务服务实现
 import { GraphAlgorithmServiceImpl } from '../../infrastructure/workflow/services/graph-algorithm-service';
 import { GraphValidationServiceImpl } from '../../infrastructure/workflow/services/graph-validation-service';
+import { ContextProcessorServiceImpl } from '../../infrastructure/workflow/services/context-processor-service';
 import { ThreadCoordinatorInfrastructureService } from '../../infrastructure/threads/services/thread-coordinator-service';
 
 // 基础设施服务
@@ -48,6 +49,7 @@ export const infrastructureBindings = new ContainerModule((bind: any) => {
   
   bind(TYPES.GraphAlgorithmServiceImpl).to(GraphAlgorithmServiceImpl).inSingletonScope();
   bind(TYPES.GraphValidationServiceImpl).to(GraphValidationServiceImpl).inSingletonScope();
+  bind(TYPES.ContextProcessorServiceImpl).to(ContextProcessorServiceImpl).inSingletonScope();
   bind(TYPES.ThreadCoordinatorServiceImpl).to(ThreadCoordinatorInfrastructureService).inSingletonScope();
 
   // ========== 基础设施服务绑定 ==========

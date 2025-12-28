@@ -1,9 +1,10 @@
-import { NodeValueObject } from '../../../domain/workflow/value-objects';
+import { NodeValueObject } from '../value-objects';
 
 /**
  * 节点执行器接口
  *
  * 定义了节点执行的标准契约，包括执行、验证和类型支持
+ * 具体实现在基础设施层提供
  */
 export interface INodeExecutor {
   /**

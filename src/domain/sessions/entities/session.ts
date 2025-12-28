@@ -20,12 +20,17 @@ export interface SessionProps {
 
 /**
  * Session实体
- * 
+ *
  * 聚合根：表示用户会话
  * 职责：
  * - 会话生命周期管理
- * - 状态转换验证
- * - 业务不变性保证
+ * - 基本状态管理
+ * - 属性访问和更新
+ *
+ * 不负责：
+ * - 复杂的状态转换验证（由SessionValidationService负责）
+ * - 业务规则判断（由SessionValidationService负责）
+ * - 超时和过期检查（由SessionValidationService负责）
  */
 export class Session extends Entity {
   private readonly props: SessionProps;
@@ -211,8 +216,8 @@ export class Session extends Entity {
       return; // 状态未变更
     }
 
-    // 验证状态转换的有效性
-    this.validateStatusTransition(oldStatus, newStatus);
+    // 注意：完整的状态转换验证应该由 SessionValidationService 负责
+    // 这里只做基本的状态变更
 
     const newProps = {
       ...this.props,
@@ -307,8 +312,8 @@ export class Session extends Entity {
       throw new Error('无法更新非活跃状态会话的配置');
     }
 
-    // 验证配置的合理性
-    this.validateConfigUpdate(newConfig);
+    // 注意：完整的配置验证应该由 SessionValidationService 负责
+    // 这里只做基本的配置更新
 
     const newProps = {
       ...this.props,
@@ -394,44 +399,5 @@ export class Session extends Entity {
    */
   public getBusinessIdentifier(): string {
     return `session:${this.props.id.toString()}`;
-  }
-
-  /**
-   * 验证状态转换的有效性
-   * @param oldStatus 旧状态
-   * @param newStatus 新状态
-   */
-  private validateStatusTransition(
-    oldStatus: SessionStatus,
-    newStatus: SessionStatus
-  ): void {
-    // 已终止的会话不能变更到其他状态
-    if (oldStatus.isTerminated() && !newStatus.isTerminated()) {
-      throw new Error('已终止的会话不能变更到其他状态');
-    }
-
-    // 暂停的会话只能恢复到活跃状态或终止
-    if (oldStatus.isSuspended() &&
-      !newStatus.isActive() &&
-      !newStatus.isTerminated()) {
-      throw new Error('暂停的会话只能恢复到活跃状态或终止');
-    }
-  }
-
-  /**
-   * 验证配置更新的合理性
-   * @param newConfig 新配置
-   */
-  private validateConfigUpdate(newConfig: SessionConfig): void {
-    // 检查最大消息数量是否减少到当前消息数量以下
-    if (newConfig.getMaxMessages() < this.props.activity.messageCount) {
-      throw new Error('新的最大消息数量不能小于当前消息数量');
-    }
-
-    // 检查其他业务规则
-    if (newConfig.getMaxDuration() < this.props.config.getMaxDuration()) {
-      // 可以添加警告日志，但不阻止更新
-      console.warn('最大持续时间被减少，可能会影响现有会话');
-    }
   }
 }

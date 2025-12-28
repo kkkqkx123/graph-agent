@@ -24,8 +24,15 @@ export interface CheckpointProps {
 
 /**
  * 检查点实体
- * 
+ *
  * 表示线程执行过程中的检查点
+ * 职责：
+ * - 检查点基本信息管理
+ * - 状态数据管理
+ * - 属性访问
+ *
+ * 不负责：
+ * - 复杂的验证逻辑（由CheckpointValidationService负责）
  */
 export class Checkpoint extends Entity {
   private readonly props: CheckpointProps;
@@ -425,37 +432,6 @@ export class Checkpoint extends Entity {
    */
   public getBusinessIdentifier(): string {
     return `checkpoint:${this.props.id.toString()}`;
-  }
-
-  /**
-   * 验证检查点的不变性
-   */
-  public validateInvariants(): void {
-    if (!this.props.id) {
-      throw new Error('检查点ID不能为空');
-    }
-
-    if (!this.props.threadId) {
-      throw new Error('线程ID不能为空');
-    }
-
-    if (!this.props.type) {
-      throw new Error('检查点类型不能为空');
-    }
-
-    if (!this.props.stateData) {
-      throw new Error('状态数据不能为空');
-    }
-
-    // 验证错误检查点的约束
-    if (this.props.type.isError() && !this.props.description) {
-      throw new Error('错误检查点必须有描述');
-    }
-
-    // 验证里程碑检查点的约束
-    if (this.props.type.isMilestone() && !this.props.title) {
-      throw new Error('里程碑检查点必须有标题');
-    }
   }
 
 }

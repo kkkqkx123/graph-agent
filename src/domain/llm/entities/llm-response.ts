@@ -62,8 +62,17 @@ export interface LLMResponseProps {
 
 /**
  * LLM响应实体
- * 
+ *
  * 表示大语言模型的响应
+ * 职责：
+ * - 响应基本信息管理
+ * - 选择列表管理
+ * - Token使用统计管理
+ * - 属性访问
+ *
+ * 不负责：
+ * - 复杂的验证逻辑（由LLMResponseValidationService负责）
+ * - 业务逻辑判断（由LLMResponseService负责）
  */
 export class LLMResponse extends Entity {
   private readonly props: LLMResponseProps;
@@ -347,38 +356,6 @@ export class LLMResponse extends Entity {
   }
 
   /**
-   * 检查是否成功完成
-   * @returns 是否成功完成
-   */
-  public isSuccessful(): boolean {
-    return this.props.finishReason === 'stop';
-  }
-
-  /**
-   * 检查是否因长度限制完成
-   * @returns 是否因长度限制完成
-   */
-  public isLengthLimited(): boolean {
-    return this.props.finishReason === 'length';
-  }
-
-  /**
-   * 检查是否因内容过滤完成
-   * @returns 是否因内容过滤完成
-   */
-  public isContentFiltered(): boolean {
-    return this.props.finishReason === 'content_filter';
-  }
-
-  /**
-   * 检查是否因工具调用完成
-   * @returns 是否因工具调用完成
-   */
-  public isToolCall(): boolean {
-    return this.props.finishReason === 'tool_calls';
-  }
-
-  /**
    * 更新选择列表
    * @param choices 新选择列表
    */
@@ -536,69 +513,6 @@ export class LLMResponse extends Entity {
    */
   public getBusinessIdentifier(): string {
     return `llm-response:${this.props.id.toString()}`;
-  }
-
-  /**
-   * 验证LLM响应的不变性
-   */
-  public validateInvariants(): void {
-    if (!this.props.id) {
-      throw new Error('LLM响应ID不能为空');
-    }
-
-    if (!this.props.requestId) {
-      throw new Error('LLM请求ID不能为空');
-    }
-
-    if (!this.props.model || this.props.model.trim().length === 0) {
-      throw new Error('模型名称不能为空');
-    }
-
-    if (!this.props.choices || this.props.choices.length === 0) {
-      throw new Error('选择列表不能为空');
-    }
-
-    if (!this.props.usage) {
-      throw new Error('Token使用统计不能为空');
-    }
-
-    if (!this.props.finishReason || this.props.finishReason.trim().length === 0) {
-      throw new Error('完成原因不能为空');
-    }
-
-    if (this.props.duration < 0) {
-      throw new Error('响应时间不能为负数');
-    }
-
-    // 验证Token使用统计
-    if (this.props.usage.promptTokens < 0) {
-      throw new Error('提示Token数不能为负数');
-    }
-
-    if (this.props.usage.completionTokens < 0) {
-      throw new Error('完成Token数不能为负数');
-    }
-
-    if (this.props.usage.totalTokens < 0) {
-      throw new Error('总Token数不能为负数');
-    }
-
-    if (this.props.usage.totalTokens !== this.props.usage.promptTokens + this.props.usage.completionTokens) {
-      throw new Error('总Token数必须等于提示Token数加完成Token数');
-    }
-
-    // 验证成本数据
-    if (this.props.usage.promptTokensCost !== undefined && this.props.usage.promptTokensCost < 0) {
-      throw new Error('提示Token成本不能为负数');
-    }
-
-    if (this.props.usage.completionTokensCost !== undefined && this.props.usage.completionTokensCost < 0) {
-      throw new Error('完成Token成本不能为负数');
-    }
-
-    if (this.props.usage.totalCost !== undefined && this.props.usage.totalCost < 0) {
-      throw new Error('总成本不能为负数');
-    }
   }
 
 }

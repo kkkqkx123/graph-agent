@@ -44,8 +44,17 @@ export interface LLMRequestProps {
 
 /**
  * LLM请求实体
- * 
+ *
  * 表示对大语言模型的请求
+ * 职责：
+ * - 请求基本信息管理
+ * - 消息列表管理
+ * - 参数管理
+ * - 属性访问
+ *
+ * 不负责：
+ * - 复杂的验证逻辑（由LLMRequestValidationService负责）
+ * - 消息过滤逻辑（由LLMRequestService负责）
  */
 export class LLMRequest extends Entity {
   private readonly props: LLMRequestProps;
@@ -495,75 +504,11 @@ export class LLMRequest extends Entity {
   }
 
   /**
-   * 获取系统消息数量
-   * @returns 系统消息数量
-   */
-  public getSystemMessageCount(): number {
-    return this.props.messages.filter(msg => msg.isSystem()).length;
-  }
-
-  /**
-   * 获取用户消息数量
-   * @returns 用户消息数量
-   */
-  public getUserMessageCount(): number {
-    return this.props.messages.filter(msg => msg.isUser()).length;
-  }
-
-  /**
-   * 获取助手消息数量
-   * @returns 助手消息数量
-   */
-  public getAssistantMessageCount(): number {
-    return this.props.messages.filter(msg => msg.isAssistant()).length;
-  }
-
-  /**
-   * 获取工具消息数量
-   * @returns 工具消息数量
-   */
-  public getToolMessageCount(): number {
-    return this.props.messages.filter(msg => msg.isTool()).length;
-  }
-
-  /**
    * 获取最后一条消息
    * @returns 最后一条消息或undefined
    */
   public getLastMessage(): LLMMessage | undefined {
     return this.props.messages.length > 0 ? this.props.messages[this.props.messages.length - 1] : undefined;
-  }
-
-  /**
-   * 获取系统消息
-   * @returns 系统消息列表
-   */
-  public getSystemMessages(): LLMMessage[] {
-    return this.props.messages.filter(msg => msg.isSystem());
-  }
-
-  /**
-   * 获取用户消息
-   * @returns 用户消息列表
-   */
-  public getUserMessages(): LLMMessage[] {
-    return this.props.messages.filter(msg => msg.isUser());
-  }
-
-  /**
-   * 获取助手消息
-   * @returns 助手消息列表
-   */
-  public getAssistantMessages(): LLMMessage[] {
-    return this.props.messages.filter(msg => msg.isAssistant());
-  }
-
-  /**
-   * 获取工具消息
-   * @returns 工具消息列表
-   */
-  public getToolMessages(): LLMMessage[] {
-    return this.props.messages.filter(msg => msg.isTool());
   }
 
   /**
@@ -655,69 +600,6 @@ export class LLMRequest extends Entity {
    */
   public getBusinessIdentifier(): string {
     return `llm-request:${this.props.id.toString()}`;
-  }
-
-  /**
-   * 验证LLM请求的不变性
-   */
-  public validateInvariants(): void {
-    if (!this.props.id) {
-      throw new Error('LLM请求ID不能为空');
-    }
-
-    if (!this.props.model || this.props.model.trim().length === 0) {
-      throw new Error('模型名称不能为空');
-    }
-
-    if (!this.props.messages || this.props.messages.length === 0) {
-      throw new Error('消息列表不能为空');
-    }
-
-    // 验证消息格式
-    for (const message of this.props.messages) {
-      if (!message.getRole() || !message.getContent()) {
-        throw new Error('消息必须包含role和content字段');
-      }
-
-      if (!message.getRole()) {
-        throw new Error('消息角色不能为空');
-      }
-    }
-
-    // 验证温度参数范围
-    if (this.props.temperature !== undefined) {
-      if (this.props.temperature < 0 || this.props.temperature > 2) {
-        throw new Error('温度参数必须在0到2之间');
-      }
-    }
-
-    // 验证top_p参数范围
-    if (this.props.topP !== undefined) {
-      if (this.props.topP < 0 || this.props.topP > 1) {
-        throw new Error('top_p参数必须在0到1之间');
-      }
-    }
-
-    // 验证频率惩罚参数范围
-    if (this.props.frequencyPenalty !== undefined) {
-      if (this.props.frequencyPenalty < -2 || this.props.frequencyPenalty > 2) {
-        throw new Error('频率惩罚参数必须在-2到2之间');
-      }
-    }
-
-    // 验证存在惩罚参数范围
-    if (this.props.presencePenalty !== undefined) {
-      if (this.props.presencePenalty < -2 || this.props.presencePenalty > 2) {
-        throw new Error('存在惩罚参数必须在-2到2之间');
-      }
-    }
-
-    // 验证最大token数
-    if (this.props.maxTokens !== undefined) {
-      if (this.props.maxTokens <= 0) {
-        throw new Error('最大token数必须大于0');
-      }
-    }
   }
 
 }

@@ -25,8 +25,15 @@ export interface HistoryProps {
 
 /**
  * 历史实体
- * 
+ *
  * 表示系统中的历史记录
+ * 职责：
+ * - 历史记录基本信息管理
+ * - 详细信息管理
+ * - 属性访问
+ *
+ * 不负责：
+ * - 复杂的验证逻辑（由HistoryValidationService负责）
  */
 export class History extends Entity {
   private readonly props: HistoryProps;
@@ -399,34 +406,6 @@ export class History extends Entity {
    */
   public getBusinessIdentifier(): string {
     return `history:${this.props.id.toString()}`;
-  }
-
-  /**
-   * 验证历史记录的不变性
-   */
-  public validateInvariants(): void {
-    if (!this.props.id) {
-      throw new Error('历史记录ID不能为空');
-    }
-
-    if (!this.props.type) {
-      throw new Error('历史类型不能为空');
-    }
-
-    if (!this.props.details) {
-      throw new Error('详细信息不能为空');
-    }
-
-    // 验证错误历史记录的约束
-    if (this.props.type.isErrorType() && !this.props.description) {
-      throw new Error('错误历史记录必须有描述');
-    }
-
-    // 验证关联ID的约束
-    const hasAnyId = this.props.sessionId || this.props.threadId || this.props.workflowId;
-    if (!hasAnyId) {
-      throw new Error('历史记录必须关联至少一个实体ID');
-    }
   }
 
 }

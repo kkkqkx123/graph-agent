@@ -20,6 +20,7 @@ import { WorkflowRepository } from '../../domain/workflow/repositories/workflow-
 import { ThreadCoordinatorService } from '../../domain/threads/services/thread-coordinator-service.interface';
 import { GraphAlgorithmService } from '../../domain/workflow/services/graph-algorithm-service.interface';
 import { GraphValidationService } from '../../domain/workflow/services/graph-validation-service.interface';
+import { ContextProcessorService } from '../../domain/workflow/services/context-processor-service.interface';
 
 /**
  * Application层绑定模块
@@ -80,6 +81,12 @@ export const applicationBindings = new ContainerModule((bind: any) => {
   bind(TYPES.GraphValidationService)
     .toDynamicValue((context: any) => {
       return context.container.get(TYPES.GraphValidationServiceImpl);
+    })
+    .inSingletonScope();
+  
+  bind(TYPES.ContextProcessorService)
+    .toDynamicValue((context: any) => {
+      return context.container.get(TYPES.ContextProcessorServiceImpl);
     })
     .inSingletonScope();
 

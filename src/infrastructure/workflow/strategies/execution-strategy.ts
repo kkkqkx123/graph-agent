@@ -1,6 +1,8 @@
+import { inject } from 'inversify';
 import { PromptContext } from '../../../domain/workflow/value-objects/context/prompt-context';
-import { ContextProcessorRegistry } from '../../../domain/workflow/services/context-processor-registry';
+import { ContextProcessorService } from '../../../domain/workflow/services/context-processor-service.interface';
 import { NodeContextTypeValue } from '../../../domain/workflow/value-objects/node/node-type';
+import { TYPES } from '../../../di/service-keys';
 
 /**
  * 执行上下文接口
@@ -26,10 +28,10 @@ export interface WorkflowExecutor {
 }
 
 export abstract class ExecutionStrategy {
-  protected contextProcessorRegistry: ContextProcessorRegistry;
+  protected contextProcessorService: ContextProcessorService;
 
-  constructor() {
-    this.contextProcessorRegistry = ContextProcessorRegistry.getInstance();
+  constructor(@inject(TYPES.ContextProcessorService) contextProcessorService: ContextProcessorService) {
+    this.contextProcessorService = contextProcessorService;
   }
 
   abstract execute(context: ExecutionContext, workflowExecutor: WorkflowExecutor): Promise<any>;
@@ -135,8 +137,8 @@ export abstract class ExecutionStrategy {
   protected applyContextProcessor(context: PromptContext, contextType: NodeContextTypeValue): PromptContext {
     const processorName = this.getProcessorNameForContextType(contextType);
 
-    if (processorName && this.contextProcessorRegistry.has(processorName)) {
-      return this.contextProcessorRegistry.execute(processorName, context);
+    if (processorName && this.contextProcessorService.has(processorName)) {
+      return this.contextProcessorService.execute(processorName, context);
     }
 
     return context.clone();
