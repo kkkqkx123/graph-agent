@@ -1,4 +1,4 @@
-import { ValueObject } from '../../common/value-objects/value-object';
+import { ValueObject } from '../../../common/value-objects/value-object';
 
 /**
  * 提示词上下文值对象接口
@@ -244,7 +244,7 @@ export class PromptContext extends ValueObject<PromptContextProps> {
   public render(additionalVariables?: Map<string, unknown>): string {
     let rendered = this.props.template;
     const allVariables = new Map(this.props.variables);
-    
+
     if (additionalVariables) {
       for (const [key, value] of additionalVariables.entries()) {
         allVariables.set(key, value);
@@ -286,7 +286,7 @@ export class PromptContext extends ValueObject<PromptContextProps> {
     return (
       this.props.template === context.template &&
       JSON.stringify(Array.from(this.props.variables.entries())) ===
-        JSON.stringify(Array.from(context.variables.entries())) &&
+      JSON.stringify(Array.from(context.variables.entries())) &&
       JSON.stringify(this.props.history) === JSON.stringify(context.history)
     );
   }

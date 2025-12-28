@@ -1,4 +1,5 @@
 import { ValueObject } from '../../../common/value-objects/value-object';
+
 /**
  * 节点类型枚举
  */
@@ -20,10 +21,30 @@ export enum NodeTypeValue {
 }
 
 /**
+ * 节点上下文类型枚举
+ */
+export enum NodeContextTypeValue {
+  // 上下文处理类型
+  PASS_THROUGH = 'pass_through',
+  FILTER_IN = 'filter_in',
+  FILTER_OUT = 'filter_out',
+  TRANSFORM = 'transform',
+  ISOLATE = 'isolate',
+  MERGE = 'merge',
+  
+  // 特殊处理类型
+  LLM_CONTEXT = 'llm_context',
+  TOOL_CONTEXT = 'tool_context',
+  HUMAN_CONTEXT = 'human_context',
+  SYSTEM_CONTEXT = 'system_context'
+}
+
+/**
  * 节点类型值对象接口
  */
 export interface NodeTypeProps {
   value: NodeTypeValue;
+  contextType: NodeContextTypeValue;
 }
 
 /**
@@ -37,126 +58,141 @@ export class NodeType extends ValueObject<NodeTypeProps> {
   }
   /**
    * 创建开始节点类型
+   * @param contextType 上下文类型（可选，默认为PASS_THROUGH）
    * @returns 开始节点类型实例
    */
-  public static start(): NodeType {
-    return new NodeType({ value: NodeTypeValue.START });
+  public static start(contextType: NodeContextTypeValue = NodeContextTypeValue.PASS_THROUGH): NodeType {
+    return new NodeType({ value: NodeTypeValue.START, contextType });
   }
 
   /**
    * 创建结束节点类型
+   * @param contextType 上下文类型（可选，默认为PASS_THROUGH）
    * @returns 结束节点类型实例
    */
-  public static end(): NodeType {
-    return new NodeType({ value: NodeTypeValue.END });
+  public static end(contextType: NodeContextTypeValue = NodeContextTypeValue.PASS_THROUGH): NodeType {
+    return new NodeType({ value: NodeTypeValue.END, contextType });
   }
 
   /**
    * 创建任务节点类型
+   * @param contextType 上下文类型（可选，默认为PASS_THROUGH）
    * @returns 任务节点类型实例
    */
-  public static task(): NodeType {
-    return new NodeType({ value: NodeTypeValue.TASK });
+  public static task(contextType: NodeContextTypeValue = NodeContextTypeValue.PASS_THROUGH): NodeType {
+    return new NodeType({ value: NodeTypeValue.TASK, contextType });
   }
 
   /**
    * 创建决策节点类型
+   * @param contextType 上下文类型（可选，默认为PASS_THROUGH）
    * @returns 决策节点类型实例
    */
-  public static decision(): NodeType {
-    return new NodeType({ value: NodeTypeValue.DECISION });
+  public static decision(contextType: NodeContextTypeValue = NodeContextTypeValue.PASS_THROUGH): NodeType {
+    return new NodeType({ value: NodeTypeValue.DECISION, contextType });
   }
 
   /**
    * 创建合并节点类型
+   * @param contextType 上下文类型（可选，默认为MERGE）
    * @returns 合并节点类型实例
    */
-  public static merge(): NodeType {
-    return new NodeType({ value: NodeTypeValue.MERGE });
+  public static merge(contextType: NodeContextTypeValue = NodeContextTypeValue.MERGE): NodeType {
+    return new NodeType({ value: NodeTypeValue.MERGE, contextType });
   }
 
   /**
    * 创建分支节点类型
+   * @param contextType 上下文类型（可选，默认为PASS_THROUGH）
    * @returns 分支节点类型实例
    */
-  public static fork(): NodeType {
-    return new NodeType({ value: NodeTypeValue.FORK });
+  public static fork(contextType: NodeContextTypeValue = NodeContextTypeValue.PASS_THROUGH): NodeType {
+    return new NodeType({ value: NodeTypeValue.FORK, contextType });
   }
 
   /**
    * 创建连接节点类型
+   * @param contextType 上下文类型（可选，默认为MERGE）
    * @returns 连接节点类型实例
    */
-  public static join(): NodeType {
-    return new NodeType({ value: NodeTypeValue.JOIN });
+  public static join(contextType: NodeContextTypeValue = NodeContextTypeValue.MERGE): NodeType {
+    return new NodeType({ value: NodeTypeValue.JOIN, contextType });
   }
 
   /**
    * 创建子图节点类型
+   * @param contextType 上下文类型（可选，默认为ISOLATE）
    * @returns 子图节点类型实例
    */
-  public static subworkflow(): NodeType {
-    return new NodeType({ value: NodeTypeValue.SUBGRAPH });
+  public static subworkflow(contextType: NodeContextTypeValue = NodeContextTypeValue.ISOLATE): NodeType {
+    return new NodeType({ value: NodeTypeValue.SUBGRAPH, contextType });
   }
 
   /**
    * 创建条件节点类型
+   * @param contextType 上下文类型（可选，默认为PASS_THROUGH）
    * @returns 条件节点类型实例
    */
-  public static condition(): NodeType {
-    return new NodeType({ value: NodeTypeValue.CONDITION });
+  public static condition(contextType: NodeContextTypeValue = NodeContextTypeValue.PASS_THROUGH): NodeType {
+    return new NodeType({ value: NodeTypeValue.CONDITION, contextType });
   }
 
   /**
    * 创建LLM节点类型
+   * @param contextType 上下文类型（可选，默认为LLM_CONTEXT）
    * @returns LLM节点类型实例
    */
-  public static llm(): NodeType {
-    return new NodeType({ value: NodeTypeValue.LLM });
+  public static llm(contextType: NodeContextTypeValue = NodeContextTypeValue.LLM_CONTEXT): NodeType {
+    return new NodeType({ value: NodeTypeValue.LLM, contextType });
   }
 
   /**
    * 创建工具节点类型
+   * @param contextType 上下文类型（可选，默认为TOOL_CONTEXT）
    * @returns 工具节点类型实例
    */
-  public static tool(): NodeType {
-    return new NodeType({ value: NodeTypeValue.TOOL });
+  public static tool(contextType: NodeContextTypeValue = NodeContextTypeValue.TOOL_CONTEXT): NodeType {
+    return new NodeType({ value: NodeTypeValue.TOOL, contextType });
   }
 
   /**
    * 创建等待节点类型
+   * @param contextType 上下文类型（可选，默认为PASS_THROUGH）
    * @returns 等待节点类型实例
    */
-  public static wait(): NodeType {
-    return new NodeType({ value: NodeTypeValue.WAIT });
+  public static wait(contextType: NodeContextTypeValue = NodeContextTypeValue.PASS_THROUGH): NodeType {
+    return new NodeType({ value: NodeTypeValue.WAIT, contextType });
   }
 
   /**
    * 创建HumanRelay节点类型
+   * @param contextType 上下文类型（可选，默认为HUMAN_CONTEXT）
    * @returns HumanRelay节点类型实例
    */
-  public static humanRelay(): NodeType {
-    return new NodeType({ value: NodeTypeValue.HUMAN_RELAY });
+  public static humanRelay(contextType: NodeContextTypeValue = NodeContextTypeValue.HUMAN_CONTEXT): NodeType {
+    return new NodeType({ value: NodeTypeValue.HUMAN_RELAY, contextType });
   }
 
   /**
    * 创建自定义节点类型
+   * @param contextType 上下文类型（可选，默认为PASS_THROUGH）
    * @returns 自定义节点类型实例
    */
-  public static custom(): NodeType {
-    return new NodeType({ value: NodeTypeValue.CUSTOM });
+  public static custom(contextType: NodeContextTypeValue = NodeContextTypeValue.PASS_THROUGH): NodeType {
+    return new NodeType({ value: NodeTypeValue.CUSTOM, contextType });
   }
 
   /**
    * 从字符串创建节点类型
    * @param type 类型字符串
+   * @param contextType 上下文类型（可选，默认为PASS_THROUGH）
    * @returns 节点类型实例
    */
-  public static fromString(type: string): NodeType {
+  public static fromString(type: string, contextType: NodeContextTypeValue = NodeContextTypeValue.PASS_THROUGH): NodeType {
     if (!Object.values(NodeTypeValue).includes(type as NodeTypeValue)) {
       throw new Error(`无效的节点类型: ${type}`);
     }
-    return new NodeType({ value: type as NodeTypeValue });
+    return new NodeType({ value: type as NodeTypeValue, contextType });
   }
 
   /**
@@ -165,6 +201,23 @@ export class NodeType extends ValueObject<NodeTypeProps> {
    */
   public getValue(): NodeTypeValue {
     return this.props.value;
+  }
+
+  /**
+   * 获取上下文类型
+   * @returns 上下文类型
+   */
+  public getContextType(): NodeContextTypeValue {
+    return this.props.contextType;
+  }
+
+  /**
+   * 设置上下文类型（创建新实例）
+   * @param contextType 新的上下文类型
+   * @returns 新的节点类型实例
+   */
+  public setContextType(contextType: NodeContextTypeValue): NodeType {
+    return new NodeType({ value: this.props.value, contextType });
   }
 
   /**
@@ -335,6 +388,14 @@ export class NodeType extends ValueObject<NodeTypeProps> {
 
     if (!Object.values(NodeTypeValue).includes(this.props.value)) {
       throw new Error(`无效的节点类型: ${this.props.value}`);
+    }
+
+    if (!this.props.contextType) {
+      throw new Error('节点上下文类型不能为空');
+    }
+
+    if (!Object.values(NodeContextTypeValue).includes(this.props.contextType)) {
+      throw new Error(`无效的节点上下文类型: ${this.props.contextType}`);
     }
   }
 

@@ -7,7 +7,7 @@ import { ThreadPriority } from '../value-objects/thread-priority';
 import { ThreadDefinition } from '../value-objects/thread-definition';
 import { ThreadExecution } from '../value-objects/thread-execution';
 import { ExecutionContext } from '../value-objects/execution-context';
-import { PromptContext } from '../../workflow/value-objects/prompt-context';
+import { PromptContext } from '../../workflow/value-objects/context/prompt-context';
 /**
  * Thread实体属性接口
  */

@@ -7,11 +7,6 @@
 export * from './node';
 export * from './edge';
 export {
-  ExecutionMode as ValueObjectExecutionMode,
-  ExecutionModeValue,
-  ExecutionModeValueProps
-} from './execution/execution-mode';
-export {
   HookPoint,
   HookPointValue,
   HookPointValueProps
@@ -21,11 +16,8 @@ export * from './workflow-status';
 export * from './workflow-type';
 export * from './workflow-config';
 export * from './error-handling-strategy';
-export * from './execution/execution-strategy';
-
-// 状态管理相关值对象
-export * from './execution/execution-status';
-export * from './prompt-context';
+export * from './execution';
+export * from './context';
 
 // 触发器和钩子值对象
 export * from './trigger-value-object';

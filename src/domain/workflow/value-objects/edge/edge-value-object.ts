@@ -2,6 +2,9 @@ import { ValueObject } from '../../../common/value-objects/value-object';
 import { EdgeId } from './edge-id';
 import { EdgeType } from './edge-type';
 import { NodeId } from '../node/node-id';
+import { EdgeContextFilter } from '../context';
+import { PromptContext } from '../context/prompt-context';
+import { ValidationResult } from '../context';
 
 /**
  * 边值对象属性接口
@@ -14,6 +17,7 @@ export interface EdgeValueObjectProps {
   readonly condition?: string;
   readonly weight?: number;
   readonly properties: Record<string, unknown>;
+  readonly contextFilter: EdgeContextFilter;
 }
 
 /**
@@ -37,6 +41,9 @@ export class EdgeValueObject extends ValueObject<EdgeValueObjectProps> {
     }
     if (!props.toNodeId) {
       throw new Error('目标节点ID不能为空');
+    }
+    if (!props.contextFilter) {
+      throw new Error('边上下文过滤器不能为空');
     }
 
     return new EdgeValueObject(props);
@@ -92,10 +99,52 @@ export class EdgeValueObject extends ValueObject<EdgeValueObjectProps> {
   }
 
   /**
+   * 获取上下文过滤器
+   */
+  public get contextFilter(): EdgeContextFilter {
+    return this.props.contextFilter;
+  }
+
+  /**
    * 获取条件表达式
    */
   public getConditionExpression(): string | undefined {
     return this.props.condition;
+  }
+
+  /**
+   * 过滤上下文
+   * @param context 提示词上下文
+   * @returns 过滤后的提示词上下文
+   */
+  public filterContext(context: PromptContext): PromptContext {
+    return this.props.contextFilter.applyFilter(context);
+  }
+
+  /**
+   * 验证上下文传递
+   * @param context 提示词上下文
+   * @returns 验证结果
+   */
+  public validateContextPassing(context: PromptContext): ValidationResult {
+    // 检查过滤器是否支持当前上下文
+    const supports = this.props.contextFilter.supportsContextType('prompt');
+    if (!supports) {
+      return {
+        isValid: false,
+        message: '边过滤器不支持当前上下文类型'
+      };
+    }
+
+    // 验证过滤器配置
+    const filterValidation = this.props.contextFilter.validateFilter();
+    if (!filterValidation.isValid) {
+      return filterValidation;
+    }
+
+    return {
+      isValid: true
+    };
   }
 
   /**

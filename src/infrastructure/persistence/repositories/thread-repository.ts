@@ -7,7 +7,7 @@ import { ThreadPriority } from '../../../domain/threads/value-objects/thread-pri
 import { ThreadDefinition } from '../../../domain/threads/value-objects/thread-definition';
 import { ThreadExecution } from '../../../domain/threads/value-objects/thread-execution';
 import { ExecutionContext } from '../../../domain/threads/value-objects/execution-context';
-import { PromptContext } from '../../../domain/workflow/value-objects/prompt-context';
+import { PromptContext } from '../../../domain/workflow/value-objects/context/prompt-context';
 import { Timestamp } from '../../../domain/common/value-objects/timestamp';
 import { Version } from '../../../domain/common/value-objects/version';
 import { ThreadModel } from '../models/thread.model';

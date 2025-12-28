@@ -2,7 +2,7 @@ import { ValueObject } from '../../common/value-objects/value-object';
 import { ID } from '../../common/value-objects/id';
 import { Timestamp } from '../../common/value-objects/timestamp';
 import { NodeId } from '../../workflow/value-objects';
-import { PromptContext } from '../../workflow/value-objects/prompt-context';
+import { PromptContext } from '../../workflow/value-objects/context/prompt-context';
 
 /**
  * 节点上下文接口

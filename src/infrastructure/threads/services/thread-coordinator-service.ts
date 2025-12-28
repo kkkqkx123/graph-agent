@@ -6,7 +6,7 @@ import { injectable, inject } from 'inversify';
 import { ID } from '../../../domain/common/value-objects/id';
 import { ThreadExecution } from '../../../domain/threads/value-objects/thread-execution';
 import { ExecutionContext as DomainExecutionContext } from '../../../domain/threads/value-objects/execution-context';
-import { PromptContext } from '../../../domain/workflow/value-objects/prompt-context';
+import { PromptContext } from '../../../domain/workflow/value-objects/context/prompt-context';
 import { Workflow } from '../../../domain/workflow/entities/workflow';
 import { Thread } from '../../../domain/threads/entities/thread';
 import { ThreadExecutionEngine } from '../execution/thread-execution-engine';
@@ -48,7 +48,7 @@ export class ThreadCoordinatorInfrastructureService implements DomainThreadCoord
     @inject(TYPES.NodeRouter) private readonly nodeRouter: NodeRouter,
     @inject(TYPES.HookExecutor) private readonly hookExecutor: HookExecutor,
     @inject(TYPES.Logger) private readonly logger: ILogger
-  ) {}
+  ) { }
 
   /**
    * 提交线程执行任务
@@ -116,13 +116,13 @@ export class ThreadCoordinatorInfrastructureService implements DomainThreadCoord
   async coordinateExecution(workflowId: ID, context: ThreadExecutionContext): Promise<ID> {
     // 创建线程定义
     const threadDefinition = await this.createThreadDefinition(workflowId, context);
-    
+
     // 创建线程执行
     const threadExecution = await this.createThreadExecution(threadDefinition.id, context);
-    
+
     // 启动线程
     await this.threadLifecycleService.start(threadDefinition.id, context);
-    
+
     return threadDefinition.id;
   }
 
@@ -141,14 +141,14 @@ export class ThreadCoordinatorInfrastructureService implements DomainThreadCoord
 
     // 获取父线程执行上下文
     const parentContext = await this.threadLifecycleService.getExecutionContext(parentThreadId.toString());
-    
+
     // 创建子线程定义
     const childDefinition = await this.createThreadDefinition(
       parentDefinition.workflowId!,
       parentContext,
       parentDefinition.sessionId?.toString()
     );
-    
+
     // 创建子线程执行
     const childContext: ThreadExecutionContext = {
       executionId: ID.generate().value,
@@ -202,9 +202,9 @@ export class ThreadCoordinatorInfrastructureService implements DomainThreadCoord
       },
       getWorkflow: () => parentContext.getWorkflow()
     };
-    
+
     await this.createThreadExecution(childDefinition.id, childContext);
-    
+
     return childDefinition.id;
   }
 
@@ -264,7 +264,7 @@ export class ThreadCoordinatorInfrastructureService implements DomainThreadCoord
   async monitorThreadPool(sessionId: ID): Promise<any> {
     // 获取会话的所有线程定义
     const threadDefinitions = await this.threadDefinitionRepository.findBySessionId(sessionId);
-    
+
     let totalThreads = 0;
     let runningThreads = 0;
     let completedThreads = 0;
@@ -343,39 +343,39 @@ export class ThreadCoordinatorInfrastructureService implements DomainThreadCoord
       this.hookExecutor,
       this.logger
     );
-    
+
     // 存储执行引擎
     this.executionEngines.set(thread.threadId.toString(), engine);
-    
+
     // 初始化执行
     const initialized = await engine.initializeExecution();
     if (!initialized) {
       throw new Error('执行引擎初始化失败');
     }
-    
+
     // 启动线程
     thread.start();
-    
+
     // 执行节点直到完成
     while (engine.canContinue()) {
       const result = await engine.executeNextNode();
-      
+
       // 更新进度
       const progress = engine.getExecutionProgress();
       thread.updateProgress(progress, `执行节点: ${result.nodeId.toString()}`);
-      
+
       // 如果执行失败，停止执行
       if (!result.success) {
         break;
       }
     }
-    
+
     // 获取执行统计
     const statistics = engine.getExecutionStatistics();
-    
+
     // 清理执行引擎
     this.executionEngines.delete(thread.threadId.toString());
-    
+
     return {
       success: thread.status.isCompleted(),
       statistics,
