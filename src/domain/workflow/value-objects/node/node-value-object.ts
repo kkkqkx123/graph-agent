@@ -1,9 +1,8 @@
 import { ValueObject } from '../../../common/value-objects/value-object';
 import { NodeId } from './node-id';
 import { NodeType } from './node-type';
-import { ContextFilter } from '../context';
+import { ContextFilter } from '../context/context-filter';
 import { PromptContext } from '../context/prompt-context';
-import { ValidationResult } from '../context';
 
 /**
  * 节点值对象属性接口
@@ -115,65 +114,6 @@ export class NodeValueObject extends ValueObject<NodeValueObjectProps> {
     return context.clone();
   }
 
-  /**
-   * 验证上下文兼容性
-   * @param context 提示词上下文
-   * @returns 验证结果
-   */
-  public validateContextCompatibility(context: PromptContext): ValidationResult {
-    const contextType = this.props.type.getContextType();
-
-    // 根据上下文类型验证兼容性
-    switch (contextType) {
-      case 'llm_context':
-        // LLM上下文需要包含必要的变量
-        if (!context.hasVariable('llm.model') && !context.hasVariable('prompt')) {
-          return {
-            isValid: false,
-            message: 'LLM节点上下文缺少必要的变量（llm.model或prompt）'
-          };
-        }
-        break;
-
-      case 'tool_context':
-        // 工具上下文需要包含工具相关变量
-        const hasToolVariable = context.getVariableNames().some(name => name.startsWith('tool.'));
-        if (!hasToolVariable) {
-          return {
-            isValid: false,
-            message: '工具节点上下文缺少工具相关变量'
-          };
-        }
-        break;
-
-      case 'human_context':
-        // 人工上下文需要包含用户交互相关变量
-        if (!context.hasVariable('user.input') && !context.hasVariable('human.response')) {
-          return {
-            isValid: false,
-            message: '人工交互节点上下文缺少用户交互相关变量'
-          };
-        }
-        break;
-
-      case 'isolate':
-        // 隔离上下文不需要验证
-        break;
-
-      case 'pass_through':
-      case 'filter_in':
-      case 'filter_out':
-      case 'transform':
-      case 'merge':
-      case 'system_context':
-        // 其他类型不需要特殊验证
-        break;
-    }
-
-    return {
-      isValid: true
-    };
-  }
 
   /**
    * 获取输入Schema

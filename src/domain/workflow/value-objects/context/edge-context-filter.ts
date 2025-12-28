@@ -1,6 +1,6 @@
 import { ValueObject } from '../../../common/value-objects/value-object';
 import { PromptContext } from './prompt-context';
-import { ValidationResult } from './context-filter';
+import { ContextFilterValidationResult } from './context-filter';
 
 /**
  * 边上下文过滤器类型
@@ -422,7 +422,7 @@ export class EdgeContextFilter extends ValueObject<EdgeContextFilterProps> {
    * 验证过滤器配置
    * @returns 验证结果
    */
-  public validateFilter(): ValidationResult {
+  public validateFilter(): ContextFilterValidationResult {
     switch (this.props.type) {
       case EdgeContextFilterType.SELECTIVE:
         if (!this.props.includePatterns || this.props.includePatterns.length === 0) {

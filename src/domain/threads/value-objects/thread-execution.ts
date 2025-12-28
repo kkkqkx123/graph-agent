@@ -5,6 +5,7 @@ import { ThreadStatus } from './thread-status';
 import { NodeId } from '../../workflow/value-objects';
 import { NodeExecution } from './node-execution';
 import { ExecutionContext } from './execution-context';
+import { WorkflowState, ExecutionHistory } from '../../workflow/value-objects';
 
 /**
  * 操作记录接口
@@ -57,6 +58,7 @@ export interface ThreadExecutionProps {
   readonly operationHistory: OperationRecord[];
   readonly forkInfo?: ForkInfo;
   readonly copyInfo?: CopyInfo;
+  readonly workflowState?: WorkflowState;
 }
 
 /**
@@ -508,6 +510,89 @@ export class ThreadExecution extends ValueObject<ThreadExecutionProps> {
       operationHistory: [...this.props.operationHistory, operationRecord],
       lastActivityAt: Timestamp.now()
     });
+  }
+
+  /**
+   * 更新工作流状态
+   * @param workflowState 新的工作流状态
+   * @returns 新的线程执行实例
+   */
+  public updateWorkflowState(workflowState: WorkflowState): ThreadExecution {
+    return new ThreadExecution({
+      ...this.props,
+      workflowState,
+      lastActivityAt: Timestamp.now()
+    });
+  }
+
+  /**
+   * 设置工作流数据
+   * @param key 键名
+   * @param value 键值
+   * @returns 新的线程执行实例
+   */
+  public setWorkflowData(key: string, value: any): ThreadExecution {
+    const currentState = this.props.workflowState;
+    if (!currentState) {
+      throw new Error('工作流状态不存在');
+    }
+
+    const newData = { ...currentState.data, [key]: value };
+    const newState = WorkflowState.create({
+      ...currentState.toProps(),
+      data: newData,
+      updatedAt: Timestamp.now()
+    });
+
+    return this.updateWorkflowState(newState);
+  }
+
+  /**
+   * 更新当前节点
+   * @param nodeId 节点ID
+   * @returns 新的线程执行实例
+   */
+  public updateCurrentNode(nodeId: ID): ThreadExecution {
+    const currentState = this.props.workflowState;
+    if (!currentState) {
+      throw new Error('工作流状态不存在');
+    }
+
+    const newState = WorkflowState.create({
+      ...currentState.toProps(),
+      currentNodeId: nodeId,
+      updatedAt: Timestamp.now()
+    });
+
+    return this.updateWorkflowState(newState);
+  }
+
+  /**
+   * 添加执行历史记录
+   * @param history 执行历史
+   * @returns 新的线程执行实例
+   */
+  public addExecutionHistory(history: ExecutionHistory): ThreadExecution {
+    const currentState = this.props.workflowState;
+    if (!currentState) {
+      throw new Error('工作流状态不存在');
+    }
+
+    const newState = WorkflowState.create({
+      ...currentState.toProps(),
+      history: [...currentState.history, history],
+      updatedAt: Timestamp.now()
+    });
+
+    return this.updateWorkflowState(newState);
+  }
+
+  /**
+   * 获取工作流状态
+   * @returns 工作流状态
+   */
+  public getWorkflowState(): WorkflowState | undefined {
+    return this.props.workflowState;
   }
 
   /**

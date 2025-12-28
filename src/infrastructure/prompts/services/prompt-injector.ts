@@ -4,14 +4,14 @@
 
 import { ILogger } from '../../../domain/common/types/logger-types';
 import { PromptConfig } from '../../../domain/prompts/entities/prompt';
-import { WorkflowState } from '../../../domain/workflow/state/workflow-state';
+import { WorkflowState } from '../../../domain/workflow/value-objects/workflow-state';
 import { PromptLoader } from './prompt-loader';
 
 export class PromptInjector {
   constructor(
     private readonly promptLoader: PromptLoader,
     private readonly logger: ILogger
-  ) {}
+  ) { }
 
   async injectPrompts(state: WorkflowState, config: PromptConfig): Promise<WorkflowState> {
     // 由于WorkflowState是不可变的，我们需要一个构建器
@@ -19,22 +19,22 @@ export class PromptInjector {
     // 实际上，我们需要查看现有的WorkflowState构建器
     // 暂时返回原始状态，待实现
     this.logger.debug('注入提示词', { config });
-    
+
     // 注入系统提示词
     if (config.systemPrompt) {
       state = await this.injectSystemPrompt(state, config.systemPrompt);
     }
-    
+
     // 注入规则提示词
     if (config.rules && config.rules.length > 0) {
       state = await this.injectRulePrompts(state, config.rules);
     }
-    
+
     // 注入用户指令
     if (config.userCommand) {
       state = await this.injectUserCommand(state, config.userCommand);
     }
-    
+
     // 其他类型暂不实现
     return state;
   }
@@ -67,8 +67,17 @@ export class PromptInjector {
    * 辅助方法：向工作流状态添加消息
    */
   private addMessage(state: WorkflowState, message: { role: string; content: string }): WorkflowState {
-    // 这里需要根据实际的WorkflowState API实现
-    // 暂时返回原始状态
-    return state;
+    // WorkflowState是不可变的，创建新的状态实例
+    const currentData = state.getData();
+    const messages = currentData.messages || [];
+    const newData = {
+      ...currentData,
+      messages: [...messages, message]
+    };
+
+    return WorkflowState.create({
+      ...state.toProps(),
+      data: newData
+    });
   }
 }

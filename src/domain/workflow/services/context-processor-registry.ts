@@ -1,14 +1,46 @@
-import { PromptContext } from '../value-objects/context/prompt-context';
-import {
-  ContextProcessor,
-  ContextProcessorConfig,
-  ContextProcessorMetadata,
-  ContextProcessorRegistration
-} from '../types/context-processor';
+import { PromptContext } from '../value-objects/context';
+
+/**
+ * 上下文处理器函数类型
+ *
+ * @param context 提示词上下文
+ * @param config 处理器配置（可选）
+ * @returns 处理后的提示词上下文
+ */
+export type ContextProcessor = (
+  context: PromptContext,
+  config?: Record<string, unknown>
+) => PromptContext;
+
+/**
+ * 上下文处理器元数据
+ */
+interface ContextProcessorMetadata {
+  /** 处理器名称 */
+  readonly name: string;
+  /** 处理器描述 */
+  readonly description?: string;
+  /** 处理器版本 */
+  readonly version?: string;
+  /** 创建时间 */
+  readonly createdAt: Date;
+  /** 是否为内置处理器 */
+  readonly isBuiltin: boolean;
+}
+
+/**
+ * 上下文处理器注册项
+ */
+interface ContextProcessorRegistration {
+  /** 处理器函数 */
+  readonly processor: ContextProcessor;
+  /** 处理器元数据 */
+  readonly metadata: ContextProcessorMetadata;
+}
 
 /**
  * 上下文处理器注册表
- * 
+ *
  * 用于管理和注册自定义上下文处理器
  */
 export class ContextProcessorRegistry {
@@ -142,7 +174,7 @@ export class ContextProcessorRegistry {
   public execute(
     name: string,
     context: PromptContext,
-    config?: ContextProcessorConfig
+    config?: Record<string, unknown>
   ): PromptContext {
     const processor = this.get(name);
     if (!processor) {
@@ -240,7 +272,7 @@ export class ContextProcessorRegistry {
    */
   private llmContextProcessor: ContextProcessor = (
     context: PromptContext,
-    config?: ContextProcessorConfig
+    config?: Record<string, unknown>
   ): PromptContext => {
     // 过滤掉工具调用历史
     const filteredHistory = context.history.filter(entry =>
@@ -269,7 +301,7 @@ export class ContextProcessorRegistry {
    */
   private toolContextProcessor: ContextProcessor = (
     context: PromptContext,
-    config?: ContextProcessorConfig
+    config?: Record<string, unknown>
   ): PromptContext => {
     // 提取工具相关变量
     const toolVariables = new Map<string, unknown>();
@@ -293,7 +325,7 @@ export class ContextProcessorRegistry {
    */
   private humanContextProcessor: ContextProcessor = (
     context: PromptContext,
-    config?: ContextProcessorConfig
+    config?: Record<string, unknown>
   ): PromptContext => {
     // 保留用户交互相关变量
     const humanVariables = new Map<string, unknown>();
@@ -322,7 +354,7 @@ export class ContextProcessorRegistry {
    */
   private systemContextProcessor: ContextProcessor = (
     context: PromptContext,
-    config?: ContextProcessorConfig
+    config?: Record<string, unknown>
   ): PromptContext => {
     // 保留系统级变量
     const systemVariables = new Map<string, unknown>();
@@ -354,7 +386,7 @@ export class ContextProcessorRegistry {
    */
   private passThroughProcessor: ContextProcessor = (
     context: PromptContext,
-    config?: ContextProcessorConfig
+    config?: Record<string, unknown>
   ): PromptContext => {
     return context.clone();
   };
@@ -365,7 +397,7 @@ export class ContextProcessorRegistry {
    */
   private isolateProcessor: ContextProcessor = (
     context: PromptContext,
-    config?: ContextProcessorConfig
+    config?: Record<string, unknown>
   ): PromptContext => {
     return PromptContext.create(
       context.template,

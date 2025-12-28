@@ -40,7 +40,7 @@ export abstract class ExecutionStrategy {
   protected async executeNode(nodeId: string, context: ExecutionContext, workflowExecutor: WorkflowExecutor): Promise<any> {
     const workflow = context.getWorkflow();
     const node = workflow.getNode(nodeId);
-
+    
     if (!node) {
       throw new Error(`节点 ${nodeId} 不存在`);
     }
@@ -57,28 +57,22 @@ export abstract class ExecutionStrategy {
     const contextType = node.type.getContextType();
     filteredContext = this.applyContextProcessor(filteredContext, contextType);
 
-    // 步骤4：验证上下文兼容性
-    const validationResult = node.validateContextCompatibility(filteredContext);
-    if (!validationResult.isValid) {
-      throw new Error(`上下文不兼容: ${validationResult.message}`);
-    }
-
-    // 步骤5：更新执行上下文
+    // 步骤4：更新执行上下文
     const updatedExecutionContext = {
       ...context,
       promptContext: filteredContext
     };
 
-    // 步骤6：执行节点逻辑
+    // 步骤5：执行节点逻辑
     const result = await workflowExecutor.executeNode(nodeId, updatedExecutionContext);
 
-    // 步骤7：应用节点的出站上下文过滤
+    // 步骤6：应用节点的出站上下文过滤
     let outgoingContext = filteredContext;
     if (node.contextFilter) {
       outgoingContext = node.filterOutgoingContext(filteredContext);
     }
 
-    // 步骤8：更新上下文历史
+    // 步骤7：更新上下文历史
     const updatedContext = outgoingContext.addHistoryEntry({
       nodeId,
       prompt: result.prompt || '',
@@ -90,7 +84,7 @@ export abstract class ExecutionStrategy {
       }
     });
 
-    // 步骤9：更新执行上下文
+    // 步骤8：更新执行上下文
     return {
       result,
       context: updatedContext
@@ -103,19 +97,13 @@ export abstract class ExecutionStrategy {
   protected async evaluateEdge(edgeId: string, context: ExecutionContext, workflowExecutor: WorkflowExecutor): Promise<boolean> {
     const workflow = context.getWorkflow();
     const edge = workflow.getEdge(edgeId);
-
+    
     if (!edge) {
       throw new Error(`边 ${edgeId} 不存在`);
     }
 
     // 应用边的上下文过滤器
     const filteredContext = edge.filterContext(context.promptContext || PromptContext.create('', new Map()));
-
-    // 验证上下文传递
-    const validationResult = edge.validateContextPassing(filteredContext);
-    if (!validationResult.isValid) {
-      return false;
-    }
 
     // 更新执行上下文
     const updatedExecutionContext = {

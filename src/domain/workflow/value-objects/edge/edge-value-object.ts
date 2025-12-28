@@ -2,9 +2,8 @@ import { ValueObject } from '../../../common/value-objects/value-object';
 import { EdgeId } from './edge-id';
 import { EdgeType } from './edge-type';
 import { NodeId } from '../node/node-id';
-import { EdgeContextFilter } from '../context';
+import { EdgeContextFilter } from '../context/edge-context-filter';
 import { PromptContext } from '../context/prompt-context';
-import { ValidationResult } from '../context';
 
 /**
  * 边值对象属性接口
@@ -119,32 +118,6 @@ export class EdgeValueObject extends ValueObject<EdgeValueObjectProps> {
    */
   public filterContext(context: PromptContext): PromptContext {
     return this.props.contextFilter.applyFilter(context);
-  }
-
-  /**
-   * 验证上下文传递
-   * @param context 提示词上下文
-   * @returns 验证结果
-   */
-  public validateContextPassing(context: PromptContext): ValidationResult {
-    // 检查过滤器是否支持当前上下文
-    const supports = this.props.contextFilter.supportsContextType('prompt');
-    if (!supports) {
-      return {
-        isValid: false,
-        message: '边过滤器不支持当前上下文类型'
-      };
-    }
-
-    // 验证过滤器配置
-    const filterValidation = this.props.contextFilter.validateFilter();
-    if (!filterValidation.isValid) {
-      return filterValidation;
-    }
-
-    return {
-      isValid: true
-    };
   }
 
   /**

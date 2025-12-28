@@ -30,9 +30,9 @@ export interface ContextFilterProps {
 }
 
 /**
- * 验证结果
+ * 上下文过滤器验证结果
  */
-export interface ValidationResult {
+export interface ContextFilterValidationResult {
   /** 是否有效 */
   readonly isValid: boolean;
   /** 错误消息 */
@@ -323,7 +323,7 @@ export class ContextFilter extends ValueObject<ContextFilterProps> {
    * 验证过滤规则
    * @returns 验证结果
    */
-  public validateRules(): ValidationResult {
+  public validateRules(): ContextFilterValidationResult {
     for (const rule of this.props.filterRules) {
       if (!rule.pattern || rule.pattern.trim().length === 0) {
         return {

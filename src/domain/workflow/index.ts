@@ -17,8 +17,5 @@ export * from './value-objects';
 // 导出仓储
 export * from './repositories';
 
-// 导出状态管理
-export * from './state';
-
 // 导出服务接口
 export * from './services';

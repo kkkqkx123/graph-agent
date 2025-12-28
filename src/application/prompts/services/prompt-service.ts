@@ -7,7 +7,7 @@ import { PromptRepository, PromptSearchCriteria } from '../../../infrastructure/
 import { PromptLoader } from '../../../infrastructure/prompts/services/prompt-loader';
 import { PromptInjector } from '../../../infrastructure/prompts/services/prompt-injector';
 import { Prompt, PromptId, PromptConfig } from '../../../domain/prompts';
-import { WorkflowState } from '../../../domain/workflow';
+import { WorkflowState } from '../../../domain/workflow/value-objects/workflow-state';
 
 // 导入新的DTO
 import {
