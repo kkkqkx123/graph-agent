@@ -1,24 +1,21 @@
-import { BaseWorkflowFunction } from '../../base/base-workflow-function';
-import { WorkflowFunctionType } from '../../../../../domain/workflow/value-objects/workflow-function-type';
+import { BaseRoutingFunction, RoutingFunctionConfig, WorkflowExecutionContext } from '../../base/base-workflow-function';
 
 /**
  * 节点成功路由函数
  * 检查节点是否执行成功
  */
-export class NodeSuccessRoutingFunction extends BaseWorkflowFunction {
+export class NodeSuccessRoutingFunction extends BaseRoutingFunction<RoutingFunctionConfig> {
   constructor() {
     super(
       'node_success_routing',
       'nodeSuccess',
       '检查节点是否执行成功',
       '1.0.0',
-      WorkflowFunctionType.ROUTING,
-      true,
       'builtin'
     );
   }
 
-  async execute(context: any, config: any): Promise<boolean> {
+  override async execute(context: WorkflowExecutionContext, config: RoutingFunctionConfig): Promise<boolean> {
     const nodeId = config.edge?.fromNodeId?.toString();
     const nodeStates = config.nodeStates;
 
@@ -30,7 +27,7 @@ export class NodeSuccessRoutingFunction extends BaseWorkflowFunction {
     return nodeState?.status?.isSuccess?.() ?? false;
   }
 
-  protected override validateCustomConfig(config: any): string[] {
+  protected override validateCustomConfig(config: RoutingFunctionConfig): string[] {
     const errors: string[] = [];
 
     if (!config.edge?.fromNodeId) {

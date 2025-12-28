@@ -45,8 +45,6 @@ export class TriggerExecutor {
 
       // 构建函数执行上下文
       const functionContext: FunctionExecutionContext = {
-        workflowId: context.workflowId.toString(),
-        executionId: context.triggerId,
         variables: new Map(Object.entries(context.triggerData || {})),
         getVariable: (key: string) => context.triggerData?.[key],
         setVariable: (key: string, value: any) => {
@@ -59,7 +57,9 @@ export class TriggerExecutor {
           if (context.metadata) {
             context.metadata[nodeId] = result;
           }
-        }
+        },
+        getExecutionId: () => context.triggerId,
+        getWorkflowId: () => context.workflowId.toString()
       };
 
       // 使用 ValueObjectExecutor 执行触发器

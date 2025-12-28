@@ -2,11 +2,7 @@ import { injectable, inject } from 'inversify';
 import { Workflow } from '../../../domain/workflow/entities/workflow';
 import { Thread } from '../../../domain/threads/entities/thread';
 import { NodeId } from '../../../domain/workflow/value-objects';
-import { EdgeValueObject } from '../../../domain/workflow/value-objects';
-import { NodeValueObject } from '../../../domain/workflow/value-objects';
 import { NodeExecution, NodeExecutionError } from '../../../domain/threads/value-objects/node-execution';
-import { NodeStatus } from '../../../domain/workflow/value-objects';
-import { ExecutionContext } from '../../../domain/threads/value-objects/execution-context';
 import { NodeRouter } from './node-router';
 import { EdgeEvaluator } from './edge-evaluator';
 import { NodeExecutor } from '../../workflow/nodes/node-executor';
@@ -297,6 +293,8 @@ export class ThreadExecutionEngine {
     setVariable: (key: string, value: unknown) => void;
     getNodeResult: (key: string) => unknown;
     setNodeResult: (key: string, value: unknown) => void;
+    getExecutionId: () => string;
+    getWorkflowId: () => string;
   } {
     const context = this.thread.execution.context;
     return {
@@ -314,7 +312,9 @@ export class ThreadExecutionEngine {
       },
       setNodeResult: (key: string, value: unknown) => {
         // 设置节点结果到上下文
-      }
+      },
+      getExecutionId: () => this.thread.execution.context.variables.get('executionId')?.toString() || '',
+      getWorkflowId: () => this.workflow.id.toString()
     };
   }
 

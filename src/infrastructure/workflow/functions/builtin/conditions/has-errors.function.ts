@@ -1,25 +1,23 @@
 import { injectable } from 'inversify';
-import { BaseWorkflowFunction } from '../../base/base-workflow-function';
-
+import { BaseConditionFunction, ConditionFunctionConfig, WorkflowExecutionContext } from '../../base/base-workflow-function';
 import { WorkflowFunctionType } from '../../../../../domain/workflow/value-objects/workflow-function-type';
 
 /**
  * 检查是否有错误的条件函数
  */
 @injectable()
-export class HasErrorsConditionFunction extends BaseWorkflowFunction {
+export class HasErrorsConditionFunction extends BaseConditionFunction<ConditionFunctionConfig> {
   constructor() {
     super(
       'condition:has_errors',
       'has_errors',
       '检查工作流状态中是否有错误',
       '1.0.0',
-      WorkflowFunctionType.CONDITION,
-      false
+      'builtin'
     );
   }
 
-  async execute(context: any, config: any): Promise<boolean> {
+  override async execute(context: WorkflowExecutionContext, config: ConditionFunctionConfig): Promise<boolean> {
     this.checkInitialized();
 
     // 检查工具结果中的错误

@@ -1,20 +1,28 @@
 import { injectable } from 'inversify';
-import { WorkflowFunctionType } from '../../../../../domain/workflow/value-objects/workflow-function-type';
-import { BaseWorkflowFunction } from '../../base/base-workflow-function';
+import { BaseNodeFunction, NodeFunctionConfig, NodeFunctionResult, WorkflowExecutionContext } from '../../base/base-workflow-function';
+
+/**
+ * LLM节点函数配置接口
+ */
+export interface LLMNodeConfig extends NodeFunctionConfig {
+  prompt: string;
+  model?: string;
+  temperature?: number;
+  maxTokens?: number;
+}
 
 /**
  * LLM节点函数
  */
 @injectable()
-export class LLMNodeFunction extends BaseWorkflowFunction {
+export class LLMNodeFunction extends BaseNodeFunction<LLMNodeConfig> {
   constructor() {
     super(
       'node:llm',
       'llm_node',
       '执行LLM推理的节点函数',
       '1.0.0',
-      WorkflowFunctionType.NODE,
-      true
+      'builtin'
     );
   }
 
@@ -51,7 +59,7 @@ export class LLMNodeFunction extends BaseWorkflowFunction {
     ];
   }
 
-  protected override validateCustomConfig(config: any): string[] {
+  protected override validateCustomConfig(config: LLMNodeConfig): string[] {
     const errors: string[] = [];
 
     if (!config.prompt || typeof config.prompt !== 'string') {
@@ -74,19 +82,7 @@ export class LLMNodeFunction extends BaseWorkflowFunction {
     return errors;
   }
 
-  async canExecute(context: any, config: any): Promise<boolean> {
-    this.checkInitialized();
-
-    // 检查必需的配置
-    if (!config.prompt) {
-      return false;
-    }
-
-    // 可以添加其他执行条件检查
-    return true;
-  }
-
-  async execute(context: any, config: any): Promise<any> {
+  override async execute(context: WorkflowExecutionContext, config: LLMNodeConfig): Promise<NodeFunctionResult> {
     this.checkInitialized();
 
     const prompt = config.prompt;
@@ -94,31 +90,53 @@ export class LLMNodeFunction extends BaseWorkflowFunction {
     const temperature = config.temperature || 0.7;
     const maxTokens = config.maxTokens || 1000;
 
-    // 这里应该调用实际的LLM服务
-    // 为了演示，返回模拟结果
-    const result = {
-      content: `LLM响应：基于prompt '${prompt}' 使用模型 ${model}`,
-      model: model,
-      temperature: temperature,
-      maxTokens: maxTokens,
-      tokensUsed: Math.floor(Math.random() * 500) + 100,
-      executionTime: Math.random() * 2 + 0.5
-    };
+    try {
+      // 这里应该调用实际的LLM服务
+      // 为了演示，返回模拟结果
+      const llmResult = {
+        content: `LLM响应：基于prompt '${prompt}' 使用模型 ${model}`,
+        model: model,
+        temperature: temperature,
+        maxTokens: maxTokens,
+        tokensUsed: Math.floor(Math.random() * 500) + 100,
+        executionTime: Math.random() * 2 + 0.5
+      };
 
-    // 更新上下文
-    const messages = context.getVariable('messages') || [];
-    messages.push({
-      role: 'assistant',
-      content: result.content,
-      model: model,
-      tokensUsed: result.tokensUsed,
-      timestamp: new Date().toISOString()
-    });
-    context.setVariable('messages', messages);
+      // 更新上下文
+      const messages = context.getVariable('messages') || [];
+      messages.push({
+        role: 'assistant',
+        content: llmResult.content,
+        model: model,
+        tokensUsed: llmResult.tokensUsed,
+        timestamp: new Date().toISOString()
+      });
+      context.setVariable('messages', messages);
 
-    // 存储LLM响应
-    context.setVariable(`llm_response_${context.getExecutionId()}`, result);
+      // 存储LLM响应
+      context.setVariable(`llm_response_${context.getExecutionId()}`, llmResult);
 
-    return result;
+      return {
+        success: true,
+        output: llmResult,
+        metadata: {
+          model,
+          temperature,
+          maxTokens,
+          tokensUsed: llmResult.tokensUsed,
+          executionTime: llmResult.executionTime
+        }
+      };
+    } catch (error) {
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : String(error),
+        metadata: {
+          model,
+          temperature,
+          maxTokens
+        }
+      };
+    }
   }
 }

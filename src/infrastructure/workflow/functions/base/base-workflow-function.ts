@@ -35,6 +35,86 @@ export interface FunctionMetadata {
 }
 
 /**
+ * 工作流执行上下文接口
+ * 提供统一的上下文访问方式
+ */
+export interface WorkflowExecutionContext {
+  /**
+   * 获取变量
+   */
+  getVariable(key: string): any;
+
+  /**
+   * 设置变量
+   */
+  setVariable(key: string, value: any): void;
+
+  /**
+   * 获取执行ID
+   */
+  getExecutionId(): string;
+
+  /**
+   * 获取工作流ID
+   */
+  getWorkflowId(): string;
+
+  /**
+   * 获取节点结果
+   */
+  getNodeResult(nodeId: string): any;
+
+  /**
+   * 设置节点结果
+   */
+  setNodeResult(nodeId: string, result: any): void;
+}
+
+/**
+ * 节点函数配置接口
+ */
+export interface NodeFunctionConfig {
+  [key: string]: any;
+}
+
+/**
+ * 节点函数执行结果接口
+ */
+export interface NodeFunctionResult {
+  success: boolean;
+  output?: any;
+  error?: string;
+  metadata?: Record<string, any>;
+}
+
+/**
+ * 条件函数配置接口
+ */
+export interface ConditionFunctionConfig {
+  [key: string]: any;
+}
+
+/**
+ * 路由函数配置接口
+ */
+export interface RoutingFunctionConfig {
+  edge?: {
+    fromNodeId?: string;
+    toNodeId?: string;
+    properties?: Record<string, any>;
+  };
+  nodeStates?: Map<string, any>;
+  [key: string]: any;
+}
+
+/**
+ * 触发器函数配置接口
+ */
+export interface TriggerFunctionConfig {
+  [key: string]: any;
+}
+
+/**
  * 工作流函数接口
  */
 export interface IWorkflowFunction {
@@ -49,14 +129,13 @@ export interface IWorkflowFunction {
   getMetadata(): FunctionMetadata;
   initialize(config?: any): boolean;
   cleanup(): boolean;
-  execute(context: any, config: any): Promise<any> | any;
+  execute(context: WorkflowExecutionContext, config: any): Promise<any>;
   validateParameters(...args: any[]): { isValid: boolean; errors: string[] };
 }
 
 /**
  * 工作流函数基础抽象类
- *
- * 提供通用实现，减少重复代码
+ * 使用类型安全的execute方法
  */
 export abstract class BaseWorkflowFunction implements IWorkflowFunction {
   protected _initialized: boolean = false;
@@ -79,7 +158,7 @@ export abstract class BaseWorkflowFunction implements IWorkflowFunction {
     return [
       {
         name: 'context',
-        type: 'IExecutionContext',
+        type: 'WorkflowExecutionContext',
         required: true,
         description: '执行上下文'
       },
@@ -99,9 +178,9 @@ export abstract class BaseWorkflowFunction implements IWorkflowFunction {
       case WorkflowFunctionType.TRIGGER:
         return 'boolean';
       case WorkflowFunctionType.ROUTING:
-        return 'string | null';
+        return 'boolean';
       case WorkflowFunctionType.NODE:
-        return 'any';
+        return 'NodeFunctionResult';
       default:
         return 'any';
     }
@@ -173,8 +252,9 @@ export abstract class BaseWorkflowFunction implements IWorkflowFunction {
 
   /**
    * 执行函数（抽象方法，子类必须实现）
+   * 使用类型安全的参数
    */
-  abstract execute(context: any, config: any): Promise<any> | any;
+  abstract execute(context: WorkflowExecutionContext, config: any): Promise<any>;
 
   /**
    * 验证参数
@@ -182,4 +262,144 @@ export abstract class BaseWorkflowFunction implements IWorkflowFunction {
   validateParameters(...args: any[]): { isValid: boolean; errors: string[] } {
     return { isValid: true, errors: [] };
   }
+}
+
+/**
+ * 节点函数基类
+ * 专门用于节点类型的函数，返回NodeFunctionResult
+ */
+export abstract class BaseNodeFunction<TConfig extends NodeFunctionConfig = NodeFunctionConfig>
+  extends BaseWorkflowFunction {
+
+  constructor(
+    id: string,
+    name: string,
+    description: string,
+    version: string = '1.0.0',
+    category: string = 'builtin'
+  ) {
+    super(
+      id,
+      name,
+      description,
+      version,
+      WorkflowFunctionType.NODE,
+      true,
+      category
+    );
+  }
+
+  override getReturnType(): string {
+    return 'NodeFunctionResult';
+  }
+
+  /**
+   * 类型安全的执行方法
+   */
+  abstract override execute(context: WorkflowExecutionContext, config: TConfig): Promise<NodeFunctionResult>;
+}
+
+/**
+ * 条件函数基类
+ * 专门用于条件类型的函数，返回boolean
+ */
+export abstract class BaseConditionFunction<TConfig extends ConditionFunctionConfig = ConditionFunctionConfig>
+  extends BaseWorkflowFunction {
+
+  constructor(
+    id: string,
+    name: string,
+    description: string,
+    version: string = '1.0.0',
+    category: string = 'builtin'
+  ) {
+    super(
+      id,
+      name,
+      description,
+      version,
+      WorkflowFunctionType.CONDITION,
+      true,
+      category
+    );
+  }
+
+  override getReturnType(): string {
+    return 'boolean';
+  }
+
+  /**
+   * 类型安全的执行方法
+   */
+  abstract override execute(context: WorkflowExecutionContext, config: TConfig): Promise<boolean>;
+}
+
+/**
+ * 路由函数基类
+ * 专门用于路由类型的函数，返回boolean
+ */
+export abstract class BaseRoutingFunction<TConfig extends RoutingFunctionConfig = RoutingFunctionConfig>
+  extends BaseWorkflowFunction {
+
+  constructor(
+    id: string,
+    name: string,
+    description: string,
+    version: string = '1.0.0',
+    category: string = 'builtin'
+  ) {
+    super(
+      id,
+      name,
+      description,
+      version,
+      WorkflowFunctionType.ROUTING,
+      true,
+      category
+    );
+  }
+
+  override getReturnType(): string {
+    return 'boolean';
+  }
+
+  /**
+   * 类型安全的执行方法
+   */
+  abstract override execute(context: WorkflowExecutionContext, config: TConfig): Promise<boolean>;
+}
+
+/**
+ * 触发器函数基类
+ * 专门用于触发器类型的函数，返回boolean
+ */
+export abstract class BaseTriggerFunction<TConfig extends TriggerFunctionConfig = TriggerFunctionConfig>
+  extends BaseWorkflowFunction {
+
+  constructor(
+    id: string,
+    name: string,
+    description: string,
+    version: string = '1.0.0',
+    category: string = 'builtin'
+  ) {
+    super(
+      id,
+      name,
+      description,
+      version,
+      WorkflowFunctionType.TRIGGER,
+      true,
+      category
+    );
+  }
+
+  override getReturnType(): string {
+    return 'boolean';
+  }
+
+  /**
+   * 类型安全的执行方法
+   */
+  abstract override execute(context: WorkflowExecutionContext, config: TConfig): Promise<boolean>;
 }

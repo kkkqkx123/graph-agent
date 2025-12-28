@@ -52,8 +52,6 @@ export class HookExecutor {
 
       // 构建函数执行上下文
       const functionContext: FunctionExecutionContext = {
-        workflowId: context.workflowId?.toString() || '',
-        executionId: context.executionId || '',
         variables: new Map(Object.entries(context.config || {})),
         getVariable: (key: string) => context.config?.[key],
         setVariable: (key: string, value: any) => {
@@ -66,7 +64,9 @@ export class HookExecutor {
           if (context.metadata) {
             context.metadata[nodeId] = result;
           }
-        }
+        },
+        getExecutionId: () => context.executionId || '',
+        getWorkflowId: () => context.workflowId?.toString() || ''
       };
 
       // 使用 ValueObjectExecutor 执行钩子

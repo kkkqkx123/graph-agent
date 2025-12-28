@@ -11,9 +11,6 @@ export { FunctionRegistry } from './registry/function-registry';
 // 内置函数
 export * from './builtin/index';
 
-// 组合
-export * from './composition';
-
 // 基础类
 export * from './base/base-workflow-function';
 

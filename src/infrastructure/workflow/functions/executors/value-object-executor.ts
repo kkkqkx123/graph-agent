@@ -4,21 +4,15 @@ import { NodeValueObject, EdgeValueObject } from '../../../../domain/workflow/va
 import { TriggerValueObject } from '../../../../domain/workflow/value-objects/trigger-value-object';
 import { HookValueObject } from '../../../../domain/workflow/value-objects/hook-value-object';
 import { FunctionRegistry } from '../registry/function-registry';
-import { FunctionExecutor, FunctionExecutionConfig } from './function-executor';
 import { ILogger } from '../../../../domain/common/types/logger-types';
-import { ValidationResult } from '../base/base-workflow-function';
+import { ValidationResult, WorkflowExecutionContext } from '../base/base-workflow-function';
 
 /**
  * 函数执行上下文接口
+ * 扩展WorkflowExecutionContext以保持兼容性
  */
-export interface FunctionExecutionContext {
-  workflowId: string;
-  executionId: string;
+export interface FunctionExecutionContext extends WorkflowExecutionContext {
   variables: Map<string, any>;
-  getVariable(key: string): any;
-  setVariable(key: string, value: any): void;
-  getNodeResult(nodeId: string): any;
-  setNodeResult(nodeId: string, result: any): void;
 }
 
 /**
@@ -98,7 +92,6 @@ export class ValueObjectExecutor implements IValueObjectExecutor {
 
   constructor(
     @inject('FunctionRegistry') private readonly registry: FunctionRegistry,
-    @inject('FunctionExecutor') private readonly functionExecutor: FunctionExecutor,
     @inject('Logger') private readonly logger: ILogger
   ) { }
 
@@ -121,17 +114,8 @@ export class ValueObjectExecutor implements IValueObjectExecutor {
       // 3. 提取配置数据
       const config = this.extractConfigFromValueObject(valueObject);
 
-      // 4. 执行函数
-      const executionConfig: FunctionExecutionConfig = {
-        strategy: 'sequential',
-        errorHandling: 'fail-fast'
-      };
-
-      const results = await this.functionExecutor.execute({
-        functions: [{ function: func, config }],
-        context: context.variables,
-        executionConfig
-      });
+      // 4. 直接执行函数
+      const result = await func.execute(context, config);
 
       const executionTime = Date.now() - startTime;
 
@@ -145,7 +129,7 @@ export class ValueObjectExecutor implements IValueObjectExecutor {
         success: true
       });
 
-      return results[0]?.result;
+      return result;
 
     } catch (error) {
       const executionTime = Date.now() - startTime;
