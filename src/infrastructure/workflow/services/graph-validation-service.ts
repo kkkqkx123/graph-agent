@@ -426,7 +426,7 @@ export class GraphValidationServiceImpl implements DomainGraphValidationService 
     }
 
     return {
-      isValid: errors.length === 0,
+      valid: errors.length === 0,
       errors,
       warnings
     };
@@ -459,7 +459,7 @@ export class GraphValidationServiceImpl implements DomainGraphValidationService 
     }
 
     return {
-      isValid: errors.length === 0,
+      valid: errors.length === 0,
       errors,
       warnings
     };
@@ -496,7 +496,7 @@ export class GraphValidationServiceImpl implements DomainGraphValidationService 
     }
 
     return {
-      isValid: errors.length === 0,
+      valid: errors.length === 0,
       errors,
       warnings
     };
@@ -536,7 +536,7 @@ export class GraphValidationServiceImpl implements DomainGraphValidationService 
     }
 
     return {
-      isValid: errors.length === 0,
+      valid: errors.length === 0,
       errors,
       warnings
     };

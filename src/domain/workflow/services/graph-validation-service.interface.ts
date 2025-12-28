@@ -5,19 +5,10 @@
  * 具体实现在基础设施层提供
  */
 
-import { Workflow } from '../entities/workflow';
+import { Workflow, ValidationResult } from '../entities/workflow';
 
-/**
- * 验证结果接口
- */
-export interface ValidationResult {
-  /** 是否验证通过 */
-  isValid: boolean;
-  /** 错误信息列表 */
-  errors: string[];
-  /** 警告信息列表 */
-  warnings: string[];
-}
+// 重新导出 ValidationResult 以便外部使用
+export type { ValidationResult };
 
 /**
  * 图验证服务接口

@@ -3,7 +3,8 @@
  * 主入口文件
  */
 
-import { AppContainer } from './di/app-container';
+import 'reflect-metadata';
+import { AppContainer } from './di/container';
 import { Application } from './application/common/application';
 
 // 声明全局变量

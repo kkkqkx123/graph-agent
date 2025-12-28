@@ -5,7 +5,6 @@
  */
 
 import { ContainerModule } from 'inversify';
-import type { interfaces } from 'inversify';
 import { TYPES } from '../service-keys';
 
 // Application层服务实现
@@ -25,88 +24,88 @@ import { GraphValidationService } from '../../domain/workflow/services/graph-val
 /**
  * Application层绑定模块
  */
-export const applicationBindings = new ContainerModule((bind: interfaces.Bind) => {
+export const applicationBindings = new ContainerModule((bind: any) => {
   // ========== Application层服务绑定 ==========
   
-  bind<SessionOrchestrationServiceImpl>(TYPES.SessionOrchestrationServiceImpl)
+  bind(TYPES.SessionOrchestrationServiceImpl)
     .to(SessionOrchestrationServiceImpl)
     .inSingletonScope();
   
-  bind<SessionResourceServiceImpl>(TYPES.SessionResourceServiceImpl)
+  bind(TYPES.SessionResourceServiceImpl)
     .to(SessionResourceServiceImpl)
     .inSingletonScope();
   
-  bind<WorkflowOrchestrationService>(TYPES.WorkflowOrchestrationServiceImpl)
+  bind(TYPES.WorkflowOrchestrationServiceImpl)
     .to(WorkflowOrchestrationService)
     .inSingletonScope();
   
-  bind<PromptService>(TYPES.PromptServiceImpl)
+  bind(TYPES.PromptServiceImpl)
     .to(PromptService)
     .inSingletonScope();
 
   // ========== Domain层接口到Infrastructure实现的绑定 ==========
   
   // 仓储接口绑定
-  bind<SessionRepository>(TYPES.SessionRepository)
-    .toDynamicValue((context: inversifyInterfaces.Context) => {
-      return context.container.get<SessionRepository>(TYPES.SessionRepositoryImpl);
+  bind(TYPES.SessionRepository)
+    .toDynamicValue((context: any) => {
+      return context.container.get(TYPES.SessionRepositoryImpl);
     })
     .inSingletonScope();
   
-  bind<ThreadRepository>(TYPES.ThreadRepository)
-    .toDynamicValue((context: inversifyInterfaces.Context) => {
-      return context.container.get<ThreadRepository>(TYPES.ThreadRepositoryImpl);
+  bind(TYPES.ThreadRepository)
+    .toDynamicValue((context: any) => {
+      return context.container.get(TYPES.ThreadRepositoryImpl);
     })
     .inSingletonScope();
   
-  bind<WorkflowRepository>(TYPES.WorkflowRepository)
-    .toDynamicValue((context: inversifyInterfaces.Context) => {
-      return context.container.get<WorkflowRepository>(TYPES.WorkflowRepositoryImpl);
+  bind(TYPES.WorkflowRepository)
+    .toDynamicValue((context: any) => {
+      return context.container.get(TYPES.WorkflowRepositoryImpl);
     })
     .inSingletonScope();
 
   // 业务服务接口绑定
-  bind<ThreadCoordinatorService>(TYPES.ThreadCoordinatorService)
-    .toDynamicValue((context: inversifyInterfaces.Context) => {
-      return context.container.get<ThreadCoordinatorService>(TYPES.ThreadCoordinatorServiceImpl);
+  bind(TYPES.ThreadCoordinatorService)
+    .toDynamicValue((context: any) => {
+      return context.container.get(TYPES.ThreadCoordinatorServiceImpl);
     })
     .inSingletonScope();
   
-  bind<GraphAlgorithmService>(TYPES.GraphAlgorithmService)
-    .toDynamicValue((context: inversifyInterfaces.Context) => {
-      return context.container.get<GraphAlgorithmService>(TYPES.GraphAlgorithmServiceImpl);
+  bind(TYPES.GraphAlgorithmService)
+    .toDynamicValue((context: any) => {
+      return context.container.get(TYPES.GraphAlgorithmServiceImpl);
     })
     .inSingletonScope();
   
-  bind<GraphValidationService>(TYPES.GraphValidationService)
-    .toDynamicValue((context: inversifyInterfaces.Context) => {
-      return context.container.get<GraphValidationService>(TYPES.GraphValidationServiceImpl);
+  bind(TYPES.GraphValidationService)
+    .toDynamicValue((context: any) => {
+      return context.container.get(TYPES.GraphValidationServiceImpl);
     })
     .inSingletonScope();
 
   // ========== Application层接口到实现的绑定 ==========
   
-  bind<SessionOrchestrationServiceImpl>(TYPES.SessionOrchestrationService)
-    .toDynamicValue((context: inversifyInterfaces.Context) => {
-      return context.container.get<SessionOrchestrationServiceImpl>(TYPES.SessionOrchestrationServiceImpl);
+  bind(TYPES.SessionOrchestrationService)
+    .toDynamicValue((context: any) => {
+      return context.container.get(TYPES.SessionOrchestrationServiceImpl);
     })
     .inSingletonScope();
   
-  bind<SessionResourceServiceImpl>(TYPES.SessionResourceService)
-    .toDynamicValue((context: inversifyInterfaces.Context) => {
-      return context.container.get<SessionResourceServiceImpl>(TYPES.SessionResourceServiceImpl);
+  bind(TYPES.SessionResourceService)
+    .toDynamicValue((context: any) => {
+      return context.container.get(TYPES.SessionResourceServiceImpl);
     })
     .inSingletonScope();
   
-  bind<WorkflowOrchestrationService>(TYPES.WorkflowOrchestrationService)
-    .toDynamicValue((context: inversifyInterfaces.Context) => {
-      return context.container.get<WorkflowOrchestrationService>(TYPES.WorkflowOrchestrationServiceImpl);
+  bind(TYPES.WorkflowOrchestrationService)
+    .toDynamicValue((context: any) => {
+      return context.container.get(TYPES.WorkflowOrchestrationServiceImpl);
     })
     .inSingletonScope();
   
-  bind<PromptService>(TYPES.PromptService)
-    .toDynamicValue((context: inversifyInterfaces.Context) => {
-      return context.container.get<PromptService>(TYPES.PromptServiceImpl);
+  bind(TYPES.PromptService)
+    .toDynamicValue((context: any) => {
+      return context.container.get(TYPES.PromptServiceImpl);
     })
     .inSingletonScope();
 });

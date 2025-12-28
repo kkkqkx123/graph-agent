@@ -5,7 +5,6 @@
  */
 
 import { ContainerModule } from 'inversify';
-import type { interfaces } from 'inversify';
 import { TYPES } from '../service-keys';
 
 // 仓储实现
@@ -35,82 +34,31 @@ import { Logger } from '../../infrastructure/logging/logger';
 /**
  * Infrastructure层绑定模块
  */
-export const infrastructureBindings = new ContainerModule((bind: interfaces.Bind) => {
+export const infrastructureBindings = new ContainerModule((bind: any) => {
   // ========== 仓储绑定 ==========
   
-  bind<SessionInfrastructureRepository>(TYPES.SessionRepositoryImpl)
-    .to(SessionInfrastructureRepository)
-    .inSingletonScope();
-  
-  bind<ThreadInfrastructureRepository>(TYPES.ThreadRepositoryImpl)
-    .to(ThreadInfrastructureRepository)
-    .inSingletonScope();
-  
-  bind<WorkflowInfrastructureRepository>(TYPES.WorkflowRepositoryImpl)
-    .to(WorkflowInfrastructureRepository)
-    .inSingletonScope();
-  
-  bind<PromptInfrastructureRepository>(TYPES.PromptRepositoryImpl)
-    .to(PromptInfrastructureRepository)
-    .inSingletonScope();
-  
-  bind<CheckpointInfrastructureRepository>(TYPES.CheckpointRepositoryImpl)
-    .to(CheckpointInfrastructureRepository)
-    .inSingletonScope();
-  
-  bind<HistoryInfrastructureRepository>(TYPES.HistoryRepositoryImpl)
-    .to(HistoryInfrastructureRepository)
-    .inSingletonScope();
+  bind(TYPES.SessionRepositoryImpl).to(SessionInfrastructureRepository).inSingletonScope();
+  bind(TYPES.ThreadRepositoryImpl).to(ThreadInfrastructureRepository).inSingletonScope();
+  bind(TYPES.WorkflowRepositoryImpl).to(WorkflowInfrastructureRepository).inSingletonScope();
+  bind(TYPES.PromptRepositoryImpl).to(PromptInfrastructureRepository).inSingletonScope();
+  bind(TYPES.CheckpointRepositoryImpl).to(CheckpointInfrastructureRepository).inSingletonScope();
+  bind(TYPES.HistoryRepositoryImpl).to(HistoryInfrastructureRepository).inSingletonScope();
 
   // ========== 业务服务绑定 ==========
   
-  bind<GraphAlgorithmServiceImpl>(TYPES.GraphAlgorithmServiceImpl)
-    .to(GraphAlgorithmServiceImpl)
-    .inSingletonScope();
-  
-  bind<GraphValidationServiceImpl>(TYPES.GraphValidationServiceImpl)
-    .to(GraphValidationServiceImpl)
-    .inSingletonScope();
-  
-  bind<ThreadCoordinatorInfrastructureService>(TYPES.ThreadCoordinatorServiceImpl)
-    .to(ThreadCoordinatorInfrastructureService)
-    .inSingletonScope();
+  bind(TYPES.GraphAlgorithmServiceImpl).to(GraphAlgorithmServiceImpl).inSingletonScope();
+  bind(TYPES.GraphValidationServiceImpl).to(GraphValidationServiceImpl).inSingletonScope();
+  bind(TYPES.ThreadCoordinatorServiceImpl).to(ThreadCoordinatorInfrastructureService).inSingletonScope();
 
   // ========== 基础设施服务绑定 ==========
   
-  bind<ConnectionManager>(TYPES.ConnectionManager)
-    .to(ConnectionManager)
-    .inSingletonScope();
-  
-  bind<PromptLoader>(TYPES.PromptLoader)
-    .to(PromptLoader)
-    .inSingletonScope();
-  
-  bind<PromptInjector>(TYPES.PromptInjector)
-    .to(PromptInjector)
-    .inSingletonScope();
-  
-  bind<NodeExecutor>(TYPES.NodeExecutor)
-    .to(NodeExecutor)
-    .inSingletonScope();
-  
-  bind<EdgeExecutor>(TYPES.EdgeExecutor)
-    .to(EdgeExecutor)
-    .inSingletonScope();
-  
-  bind<EdgeEvaluator>(TYPES.EdgeEvaluator)
-    .to(EdgeEvaluator)
-    .inSingletonScope();
-  
-  bind<NodeRouter>(TYPES.NodeRouter)
-    .to(NodeRouter)
-    .inSingletonScope();
-  
-  bind<HookExecutor>(TYPES.HookExecutor)
-    .to(HookExecutor)
-    .inSingletonScope();
-  
-  bind<Logger>(TYPES.Logger)
-    .to(Logger)
-    .inSingletonScope();
+  bind(TYPES.ConnectionManager).to(ConnectionManager).inSingletonScope();
+  bind(TYPES.PromptLoader).to(PromptLoader).inSingletonScope();
+  bind(TYPES.PromptInjector).to(PromptInjector).inSingletonScope();
+  bind(TYPES.NodeExecutor).to(NodeExecutor).inSingletonScope();
+  bind(TYPES.EdgeExecutor).to(EdgeExecutor).inSingletonScope();
+  bind(TYPES.EdgeEvaluator).to(EdgeEvaluator).inSingletonScope();
+  bind(TYPES.NodeRouter).to(NodeRouter).inSingletonScope();
+  bind(TYPES.HookExecutor).to(HookExecutor).inSingletonScope();
+  bind(TYPES.Logger).to(Logger).inSingletonScope();
 });

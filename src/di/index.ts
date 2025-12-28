@@ -8,20 +8,13 @@
 export { TYPES } from './service-keys';
 
 // 导出容器
-export { diContainer, container, ContainerManager, ServiceLocator } from './container';
+export { diContainer, container, ContainerManager, AppContainer } from './container';
 
 // 导出绑定模块
 export { infrastructureBindings, applicationBindings } from './bindings';
 
-// 导出引导器
-export { 
-  ContainerBootstrap, 
-  initializeContainer, 
-  getService, 
-  tryGetService, 
-  isServiceBound 
-} from './bootstrap';
-
 // 导出类型
 export type { ContainerConfig } from './container';
-export type { BootstrapConfig } from './bootstrap';
+
+// 默认导出AppContainer
+export { default } from './container';

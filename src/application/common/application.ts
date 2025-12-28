@@ -2,7 +2,7 @@
  * 应用程序主类
  */
 
-import { AppContainer } from '../../di/app-container';
+import { AppContainer } from '../../di/container';
 import { TYPES } from '../../di/service-keys';
 import { ILogger, IConfigManager, IService } from '../../domain/common/types';
 
@@ -28,7 +28,7 @@ export class Application implements IService {
 
     try {
       // 获取核心服务
-      const logger = AppContainer.getService<ILogger>(TYPES.Logger);
+      const logger = AppContainer.getService(TYPES.Logger);
 
       logger.info('正在初始化应用程序...');
 
@@ -42,7 +42,7 @@ export class Application implements IService {
       this.isInitialized = true;
       logger.info('应用程序初始化完成');
     } catch (error) {
-      const logger = AppContainer.getService<ILogger>(TYPES.Logger);
+      const logger = AppContainer.getService(TYPES.Logger);
       logger.error('应用程序初始化失败', error as Error);
       throw error;
     }
@@ -61,7 +61,7 @@ export class Application implements IService {
     }
 
     try {
-      const logger = AppContainer.getService<ILogger>(TYPES.Logger);
+      const logger = AppContainer.getService(TYPES.Logger);
       logger.info('正在启动应用程序...');
 
       // 启动所有服务
@@ -72,7 +72,7 @@ export class Application implements IService {
       this.isStarted = true;
       logger.info('应用程序启动完成');
     } catch (error) {
-      const logger = AppContainer.getService<ILogger>(TYPES.Logger);
+      const logger = AppContainer.getService(TYPES.Logger);
       logger.error('应用程序启动失败', error as Error);
       throw error;
     }
@@ -87,7 +87,7 @@ export class Application implements IService {
     }
 
     try {
-      const logger = AppContainer.getService<ILogger>(TYPES.Logger);
+      const logger = AppContainer.getService(TYPES.Logger);
       logger.info('正在停止应用程序...');
 
       // 停止所有服务
@@ -98,7 +98,7 @@ export class Application implements IService {
       this.isStarted = false;
       logger.info('应用程序停止完成');
     } catch (error) {
-      const logger = AppContainer.getService<ILogger>(TYPES.Logger);
+      const logger = AppContainer.getService(TYPES.Logger);
       logger.error('应用程序停止失败', error as Error);
       throw error;
     }
@@ -111,7 +111,7 @@ export class Application implements IService {
     try {
       await this.stop();
 
-      const logger = AppContainer.getService<ILogger>(TYPES.Logger);
+      const logger = AppContainer.getService(TYPES.Logger);
       logger.info('正在释放应用程序资源...');
 
       // 释放所有服务
@@ -124,7 +124,7 @@ export class Application implements IService {
 
       logger.info('应用程序资源释放完成');
     } catch (error) {
-      const logger = AppContainer.getService<ILogger>(TYPES.Logger);
+      const logger = AppContainer.getService(TYPES.Logger);
       logger.error('应用程序资源释放失败', error as Error);
       throw error;
     }
