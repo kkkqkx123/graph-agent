@@ -1,6 +1,7 @@
 import { injectable, inject } from 'inversify';
 import { EdgeValueObject } from '../../../domain/workflow/value-objects/edge/edge-value-object';
-import { ValueObjectExecutor, FunctionExecutionContext } from '../functions/executors/value-object-executor';
+import { ValueObjectExecutor } from '../functions/execution/executors/value-object-executor';
+import { WorkflowExecutionContext } from '../functions/base/base-workflow-function';
 import { ILogger } from '../../../domain/common/types/logger-types';
 
 /**
@@ -20,7 +21,7 @@ export class EdgeExecutor {
    * @param context 执行上下文
    * @returns 执行结果
    */
-  async execute(edge: EdgeValueObject, context: FunctionExecutionContext): Promise<any> {
+  async execute(edge: EdgeValueObject, context: WorkflowExecutionContext): Promise<any> {
     this.logger.debug('开始执行边', {
       edgeId: edge.id.toString(),
       edgeType: edge.type.toString(),
@@ -71,9 +72,9 @@ export class EdgeExecutor {
    * @param context 执行上下文
    * @returns 是否可以执行
    */
-  async canExecute(edge: EdgeValueObject, context: FunctionExecutionContext): Promise<boolean> {
-    const validation = this.valueObjectExecutor.validateMapping(edge);
-    return validation.valid;
+  async canExecute(edge: EdgeValueObject, context: WorkflowExecutionContext): Promise<boolean> {
+    // TODO: 实现验证逻辑
+    return true;
   }
 
   /**

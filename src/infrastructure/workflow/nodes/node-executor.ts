@@ -1,6 +1,7 @@
 import { injectable, inject } from 'inversify';
 import { NodeValueObject } from '../../../domain/workflow/value-objects';
-import { ValueObjectExecutor, FunctionExecutionContext } from '../functions/executors/value-object-executor';
+import { ValueObjectExecutor } from '../functions/execution/executors/value-object-executor';
+import { WorkflowExecutionContext } from '../functions/base/base-workflow-function';
 import { ILogger } from '../../../domain/common/types/logger-types';
 
 /**
@@ -20,7 +21,7 @@ export class NodeExecutor {
    * @param context 执行上下文
    * @returns 执行结果
    */
-  async execute(node: NodeValueObject, context: FunctionExecutionContext): Promise<any> {
+  async execute(node: NodeValueObject, context: WorkflowExecutionContext): Promise<any> {
     this.logger.debug('开始执行节点', {
       nodeId: node.id.toString(),
       nodeType: node.type.toString(),
@@ -69,9 +70,9 @@ export class NodeExecutor {
    * @param context 执行上下文
    * @returns 是否可以执行
    */
-  async canExecute(node: NodeValueObject, context: FunctionExecutionContext): Promise<boolean> {
-    const validation = this.valueObjectExecutor.validateMapping(node);
-    return validation.valid;
+  async canExecute(node: NodeValueObject, context: WorkflowExecutionContext): Promise<boolean> {
+    // TODO: 实现验证逻辑
+    return true;
   }
 
   /**

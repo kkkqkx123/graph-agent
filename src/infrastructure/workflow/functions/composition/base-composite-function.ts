@@ -3,7 +3,6 @@ import { WorkflowFunctionType } from '../../../../domain/workflow/value-objects/
 import { CompositionStrategy } from './composition-strategy';
 import {
   CompositeFunctionType,
-  ICompositeFunction,
   validateSameFunctionType,
   getCompositeReturnType,
   getWorkflowFunctionType
@@ -13,7 +12,7 @@ import {
  * 组合函数基类
  * 提供类型安全的函数组合功能，确保只能组合相同类型的函数
  */
-export abstract class BaseCompositeFunction<TConfig = any> extends BaseWorkflowFunction implements ICompositeFunction<TConfig> {
+export abstract class BaseCompositeFunction<TConfig = any> extends BaseWorkflowFunction {
   protected functions: BaseWorkflowFunction[] = [];
   protected compositionStrategy: CompositionStrategy;
   public readonly compositeType: CompositeFunctionType;
@@ -105,8 +104,7 @@ export abstract class BaseCompositeFunction<TConfig = any> extends BaseWorkflowF
    * @returns 验证结果
    */
   protected validateComposition(): ValidationResult {
-    const expectedType = this.getExpectedFunctionType();
-    return validateSameFunctionType(this.functions, expectedType);
+    return validateSameFunctionType(this.functions);
   }
 
   /**

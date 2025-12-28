@@ -1,8 +1,8 @@
-import { BaseWorkflowFunction, WorkflowExecutionContext, ConditionFunctionConfig } from '../base/base-workflow-function';
-import { WorkflowFunctionType } from '../../../../domain/workflow/value-objects/workflow-function-type';
-import { CompositionStrategy } from './composition-strategy';
-import { BaseCompositeFunction } from './base-composite-function';
-import { CompositeFunctionType, ConditionCompositeConfig } from './composition-types';
+import { BaseWorkflowFunction, WorkflowExecutionContext, ConditionFunctionConfig } from '../../base/base-workflow-function';
+import { WorkflowFunctionType } from '../../../../../domain/workflow/value-objects/workflow-function-type';
+import { CompositionStrategy } from '../composition-strategy';
+import { BaseCompositeFunction } from '../base-composite-function';
+import { CompositeFunctionType, ConditionCompositeConfig } from '../composition-types';
 
 /**
  * 条件函数组合

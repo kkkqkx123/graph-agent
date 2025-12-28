@@ -1,8 +1,8 @@
-import { BaseWorkflowFunction, WorkflowExecutionContext, NodeFunctionResult } from '../base/base-workflow-function';
-import { WorkflowFunctionType } from '../../../../domain/workflow/value-objects/workflow-function-type';
-import { CompositionStrategy } from './composition-strategy';
-import { BaseCompositeFunction } from './base-composite-function';
-import { CompositeFunctionType, HookCompositeConfig } from './composition-types';
+import { BaseWorkflowFunction, WorkflowExecutionContext, NodeFunctionResult } from '../../base/base-workflow-function';
+import { WorkflowFunctionType } from '../../../../../domain/workflow/value-objects/workflow-function-type';
+import { CompositionStrategy } from '../composition-strategy';
+import { BaseCompositeFunction } from '../base-composite-function';
+import { CompositeFunctionType, HookCompositeConfig } from '../composition-types';
 
 /**
  * 钩子函数组合

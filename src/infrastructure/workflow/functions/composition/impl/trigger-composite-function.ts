@@ -1,8 +1,8 @@
-import { BaseWorkflowFunction, WorkflowExecutionContext, TriggerFunctionConfig } from '../base/base-workflow-function';
-import { WorkflowFunctionType } from '../../../../domain/workflow/value-objects/workflow-function-type';
-import { CompositionStrategy } from './composition-strategy';
-import { BaseCompositeFunction } from './base-composite-function';
-import { CompositeFunctionType, TriggerCompositeConfig } from './composition-types';
+import { BaseWorkflowFunction, WorkflowExecutionContext, TriggerFunctionConfig } from '../../base/base-workflow-function';
+import { WorkflowFunctionType } from '../../../../../domain/workflow/value-objects/workflow-function-type';
+import { CompositionStrategy } from '../composition-strategy';
+import { BaseCompositeFunction } from '../base-composite-function';
+import { CompositeFunctionType, TriggerCompositeConfig } from '../composition-types';
 
 /**
  * 触发器函数组合

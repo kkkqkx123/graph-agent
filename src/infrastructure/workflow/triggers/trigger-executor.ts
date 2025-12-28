@@ -1,6 +1,7 @@
 import { injectable, inject } from 'inversify';
 import { TriggerValueObject } from '../../../domain/workflow/value-objects/trigger-value-object';
-import { ValueObjectExecutor, FunctionExecutionContext } from '../functions/executors/value-object-executor';
+import { ValueObjectExecutor } from '../functions/execution/executors/value-object-executor';
+import { WorkflowExecutionContext } from '../functions/base/base-workflow-function';
 import { ILogger } from '../../../domain/common/types/logger-types';
 import { TriggerContext } from './trigger-context';
 import { TriggerExecutionResult, TriggerExecutionResultUtils } from './trigger-execution-result';
@@ -44,8 +45,7 @@ export class TriggerExecutor {
       }
 
       // 构建函数执行上下文
-      const functionContext: FunctionExecutionContext = {
-        variables: new Map(Object.entries(context.triggerData || {})),
+      const functionContext: WorkflowExecutionContext = {
         getVariable: (key: string) => context.triggerData?.[key],
         setVariable: (key: string, value: any) => {
           if (context.triggerData) {

@@ -1,6 +1,7 @@
 import { injectable, inject } from 'inversify';
 import { HookValueObject } from '../../../domain/workflow/value-objects/hook-value-object';
-import { ValueObjectExecutor, FunctionExecutionContext } from '../functions/executors/value-object-executor';
+import { ValueObjectExecutor } from '../functions/execution/executors/value-object-executor';
+import { WorkflowExecutionContext } from '../functions/base/base-workflow-function';
 import { ILogger } from '../../../domain/common/types/logger-types';
 import { HookContext } from './hook-context';
 import { HookExecutionResult, HookExecutionResultBuilder } from './hook-execution-result';
@@ -51,8 +52,7 @@ export class HookExecutor {
       }
 
       // 构建函数执行上下文
-      const functionContext: FunctionExecutionContext = {
-        variables: new Map(Object.entries(context.config || {})),
+      const functionContext: WorkflowExecutionContext = {
         getVariable: (key: string) => context.config?.[key],
         setVariable: (key: string, value: any) => {
           if (context.config) {

@@ -1,16 +1,16 @@
 import { injectable } from 'inversify';
-import { WorkflowFunctionType } from '../../../../domain/workflow/value-objects/workflow-function-type';
-import { BaseWorkflowFunction } from '../base/base-workflow-function';
-import { ValueObject } from '../../../../domain/common/value-objects/value-object';
-import { NodeValueObject } from '../../../../domain/workflow/value-objects';
-import { EdgeValueObject } from '../../../../domain/workflow/value-objects/edge/edge-value-object';
-import { TriggerValueObject } from '../../../../domain/workflow/value-objects/trigger-value-object';
-import { HookValueObject } from '../../../../domain/workflow/value-objects/hook-value-object';
+import { WorkflowFunctionType } from '../../../../../domain/workflow/value-objects/workflow-function-type';
+import { BaseWorkflowFunction } from '../../base/base-workflow-function';
+import { ValueObject } from '../../../../../domain/common/value-objects/value-object';
+import { NodeValueObject } from '../../../../../domain/workflow/value-objects';
+import { EdgeValueObject } from '../../../../../domain/workflow/value-objects/edge/edge-value-object';
+import { TriggerValueObject } from '../../../../../domain/workflow/value-objects/trigger-value-object';
+import { HookValueObject } from '../../../../../domain/workflow/value-objects/hook-value-object';
 
 /**
  * 函数注册表实现
  *
- * 支持分层函数类型：CONDITION、ROUTING、NODE、TRIGGER
+ * 支持分层函数类型：CONDITION、ROUTING、NODE、TRIGGER、HOOK
  * 基于现有的BaseWorkflowFunction基类实现
  */
 @injectable()
@@ -150,6 +150,19 @@ export class FunctionRegistry {
   }
 
   /**
+   * 获取钩子函数
+   * @param name 函数名称
+   * @returns 工作流函数
+   */
+  getHookFunction(name: string): BaseWorkflowFunction | null {
+    const func = this.getFunctionByName(name);
+    if (func && func.type === WorkflowFunctionType.HOOK) {
+      return func;
+    }
+    return null;
+  }
+
+  /**
    * 获取所有条件函数
    * @returns 条件函数列表
    */
@@ -179,6 +192,14 @@ export class FunctionRegistry {
    */
   getAllTriggerFunctions(): BaseWorkflowFunction[] {
     return this.getFunctionsByType(WorkflowFunctionType.TRIGGER);
+  }
+
+  /**
+   * 获取所有钩子函数
+   * @returns 钩子函数列表
+   */
+  getAllHookFunctions(): BaseWorkflowFunction[] {
+    return this.getFunctionsByType(WorkflowFunctionType.HOOK);
   }
 
   /**

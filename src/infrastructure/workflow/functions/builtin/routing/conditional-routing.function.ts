@@ -1,7 +1,6 @@
 import { injectable } from 'inversify';
 import { WorkflowFunctionType } from '../../../../../domain/workflow/value-objects/workflow-function-type';
 import { BaseWorkflowFunction } from '../../base/base-workflow-function';
-import { ExpressionEvaluator } from '../../common/expression-evaluator';
 
 /**
  * 条件路由函数
@@ -161,7 +160,7 @@ export class ConditionalRoutingFunction extends BaseWorkflowFunction {
     // 如果value是字符串表达式，先评估它
     let evaluatedValue = value;
     if (typeof value === 'string' && value.includes('${')) {
-      evaluatedValue = ExpressionEvaluator.evaluate(value, context);
+      evaluatedValue = this.evaluateExpression(value, context);
     }
 
     // 根据操作符进行评估
@@ -195,11 +194,138 @@ export class ConditionalRoutingFunction extends BaseWorkflowFunction {
    */
   private evaluateExpressionCondition(expression: string, context: any): boolean {
     try {
-      const result = ExpressionEvaluator.evaluate(expression, context);
+      const result = this.evaluateExpression(expression, context);
       return Boolean(result);
     } catch (error) {
       console.warn(`表达式评估失败: ${expression}`, error);
       return false;
+    }
+  }
+
+  /**
+   * 简单的表达式评估器
+   * @param expression 表达式字符串
+   * @param context 执行上下文
+   * @returns 评估结果
+   */
+  private evaluateExpression(expression: string, context: any): any {
+    // 处理变量引用: ${variable_name}
+    if (expression.startsWith('${') && expression.endsWith('}')) {
+      const variablePath = expression.slice(2, -1).trim();
+      return this.getVariableValue(variablePath, context);
+    }
+
+    // 处理布尔表达式: ${iteration >= 10}
+    if (expression.includes('${') && expression.includes('}')) {
+      return this.evaluateBooleanExpression(expression, context);
+    }
+
+    // 处理直接值
+    return this.evaluateDirectValue(expression);
+  }
+
+  /**
+   * 获取变量值
+   * @param path 变量路径
+   * @param context 执行上下文
+   * @returns 变量值
+   */
+  private getVariableValue(path: string, context: any): any {
+    const parts = path.split('.');
+    let value = context;
+
+    for (const part of parts) {
+      if (value === null || value === undefined) {
+        return undefined;
+      }
+      value = value[part];
+    }
+
+    return value;
+  }
+
+  /**
+   * 评估布尔表达式
+   * @param expression 布尔表达式
+   * @param context 执行上下文
+   * @returns 布尔值
+   */
+  private evaluateBooleanExpression(expression: string, context: any): boolean {
+    const variableMatch = expression.match(/\$\{([^}]+)\}/);
+    if (!variableMatch) {
+      return false;
+    }
+
+    const variableExpression = variableMatch[1];
+    if (!variableExpression) {
+      return false;
+    }
+
+    const operatorMatch = variableExpression.match(/(.+)\s*(>=|<=|==|!=|>|<)\s*(.+)/);
+    
+    if (operatorMatch) {
+      const [, leftOperand, operator, rightOperand] = operatorMatch;
+      if (leftOperand && operator && rightOperand) {
+        const leftValue = this.getVariableValue(leftOperand.trim(), context);
+        const rightValue = this.evaluateDirectValue(rightOperand.trim());
+        return this.compareValues(leftValue, operator, rightValue);
+      }
+    }
+
+    const value = this.getVariableValue(variableExpression, context);
+    return Boolean(value);
+  }
+
+  /**
+   * 评估直接值
+   * @param value 值字符串
+   * @returns 评估后的值
+   */
+  private evaluateDirectValue(value: string): any {
+    if (value.startsWith('"') && value.endsWith('"')) {
+      return value.slice(1, -1);
+    }
+
+    if (/^\d+$/.test(value)) {
+      return parseInt(value, 10);
+    }
+
+    if (/^\d+\.\d+$/.test(value)) {
+      return parseFloat(value);
+    }
+
+    if (value === 'true') return true;
+    if (value === 'false') return false;
+
+    if (value === 'null') return null;
+    if (value === 'undefined') return undefined;
+
+    return value;
+  }
+
+  /**
+   * 比较两个值
+   * @param leftValue 左值
+   * @param operator 操作符
+   * @param rightValue 右值
+   * @returns 比较结果
+   */
+  private compareValues(leftValue: any, operator: string, rightValue: any): boolean {
+    switch (operator) {
+      case '==':
+        return leftValue == rightValue;
+      case '!=':
+        return leftValue != rightValue;
+      case '>=':
+        return leftValue >= rightValue;
+      case '<=':
+        return leftValue <= rightValue;
+      case '>':
+        return leftValue > rightValue;
+      case '<':
+        return leftValue < rightValue;
+      default:
+        return false;
     }
   }
 }
