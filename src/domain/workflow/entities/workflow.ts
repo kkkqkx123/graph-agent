@@ -1,12 +1,6 @@
 import { Entity } from '../../common/base/entity';
-import { ID } from '../../common/value-objects/id';
-import { Timestamp } from '../../common/value-objects/timestamp';
-import { Version } from '../../common/value-objects/version';
-import { WorkflowDefinition } from '../value-objects/workflow-definition';
-import { WorkflowStatus } from '../value-objects/workflow-status';
-import { WorkflowType } from '../value-objects/workflow-type';
-import { WorkflowConfig } from '../value-objects/workflow-config';
-import { NodeId, NodeType, NodeValueObject } from '../value-objects';
+import { ID, Timestamp, Version } from '../../common/value-objects';
+import { WorkflowDefinition, WorkflowStatus, WorkflowType, WorkflowConfig, NodeId, NodeType, NodeValueObject } from '../value-objects';
 import { EdgeId, EdgeType, EdgeValueObject } from '../value-objects/edge';
 import { EdgeContextFilter } from '../value-objects/context';
 import { ErrorHandlingStrategy } from '../value-objects/error-handling-strategy';

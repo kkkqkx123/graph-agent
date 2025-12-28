@@ -1,5 +1,4 @@
-import { ValueObject } from '../../common/value-objects/value-object';
-import { ID } from '../../common/value-objects/id';
+import { ValueObject, ID } from '../../common/value-objects';
 
 /**
  * ThreadId值对象属性接口

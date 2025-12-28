@@ -1,5 +1,4 @@
-import { ValueObject } from '../../../../common/value-objects/value-object';
-import { ID } from '../../../../common/value-objects/id';
+import { ValueObject, ID } from '../../../../common/value-objects';
 import { NodeId } from '../../../../workflow/value-objects';
 import { Thread } from '../../../../threads/entities/thread';
 import { ExecutionContext } from '../../../../threads/value-objects/execution-context';

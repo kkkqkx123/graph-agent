@@ -15,11 +15,11 @@ export {
 export * from './workflow-status';
 export * from './workflow-type';
 export * from './workflow-config';
+export * from './workflow-definition';
+export * from './workflow-state';
 export * from './error-handling-strategy';
 export * from './execution';
 export * from './context';
-
-export * from './workflow-state';
 
 // 触发器和钩子值对象
 export * from './trigger-value-object';

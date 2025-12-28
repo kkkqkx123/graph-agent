@@ -1,4 +1,4 @@
-import { ID } from '../../common/value-objects/id';
+import { ID } from '../../common/value-objects';
 
 /**
  * 会话ID值对象

@@ -1,6 +1,4 @@
-import { ID } from '../../../common/value-objects/id';
-import { Timestamp } from '../../../common/value-objects/timestamp';
-import { ValueObject } from '../../../common/value-objects/value-object';
+import { ID, Timestamp, ValueObject } from '../../../common/value-objects';
 
 /**
  * 线程操作错误值对象

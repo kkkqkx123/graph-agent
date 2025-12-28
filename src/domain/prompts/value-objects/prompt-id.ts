@@ -2,7 +2,7 @@
  * 提示词ID值对象
  */
 
-import { ID } from '../../common/value-objects/id';
+import { ID } from '../../common/value-objects';
 
 export class PromptId extends ID {
   constructor(value: string) {

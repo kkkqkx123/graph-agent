@@ -1,4 +1,4 @@
-import { ValueObject } from '../../../common/value-objects/value-object';
+import { ValueObject } from '../../../common/value-objects';
 import { PromptContext } from './prompt-context';
 
 /**

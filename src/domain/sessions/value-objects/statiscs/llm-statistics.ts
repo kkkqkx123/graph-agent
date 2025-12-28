@@ -1,4 +1,4 @@
-import { ValueObject } from '../../../common/value-objects/value-object';
+import { ValueObject } from '../../../common/value-objects';
 
 /**
  * 模型统计信息接口

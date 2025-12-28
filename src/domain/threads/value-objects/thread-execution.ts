@@ -1,11 +1,8 @@
-import { ValueObject } from '../../common/value-objects/value-object';
-import { ID } from '../../common/value-objects/id';
-import { Timestamp } from '../../common/value-objects/timestamp';
+import { ValueObject, ID, Timestamp } from '../../common/value-objects';
 import { ThreadStatus } from './thread-status';
-import { NodeId } from '../../workflow/value-objects';
+import { NodeId, WorkflowState, ExecutionHistory } from '../../workflow/value-objects';
 import { NodeExecution } from './node-execution';
 import { ExecutionContext } from './execution-context';
-import { WorkflowState, ExecutionHistory } from '../../workflow/value-objects';
 
 /**
  * 操作记录接口

@@ -2,8 +2,7 @@
  * LLM消息值对象
  */
 
-import { ValueObject } from '../../common/value-objects/value-object';
-import { Timestamp } from '../../common/value-objects/timestamp';
+import { ValueObject, Timestamp } from '../../common/value-objects';
 
 /**
  * LLM消息角色枚举

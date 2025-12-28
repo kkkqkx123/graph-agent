@@ -1,10 +1,6 @@
 import { Entity } from '../../common/base/entity';
-import { ID } from '../../common/value-objects/id';
-import { Timestamp } from '../../common/value-objects/timestamp';
-import { Version } from '../../common/value-objects/version';
-import { SessionStatus } from '../value-objects/session-status';
-import { SessionConfig } from '../value-objects/session-config';
-import { SessionActivity } from '../value-objects/session-activity';
+import { ID, Timestamp, Version } from '../../common/value-objects';
+import { SessionStatus, SessionConfig, SessionActivity } from '../value-objects';
 /**
  * Session实体属性接口
  */

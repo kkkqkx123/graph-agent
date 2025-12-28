@@ -1,8 +1,6 @@
-import { ID } from '../../../../common/value-objects/id';
-import { Timestamp } from '../../../../common/value-objects/timestamp';
-import { ValueObject } from '../../../../common/value-objects/value-object';
+import { ID, Timestamp, ValueObject } from '../../../../common/value-objects';
 import { NodeId } from '../../../../workflow/value-objects';
-import { PromptContext } from '../../../../workflow/value-objects/context/prompt-context';
+import { PromptContext } from '../../../../workflow/value-objects/context';
 import { NodeExecutionSnapshot } from '../../../../threads/value-objects/node-execution';
 
 /**

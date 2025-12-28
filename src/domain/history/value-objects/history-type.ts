@@ -1,4 +1,4 @@
-import { ValueObject } from '../../common/value-objects/value-object';
+import { ValueObject } from '../../common/value-objects';
 /**
  * 历史类型枚举
  */

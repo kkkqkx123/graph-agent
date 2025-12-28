@@ -1,6 +1,4 @@
-import { ValueObject } from '../../common/value-objects/value-object';
-import { ID } from '../../common/value-objects/id';
-import { Timestamp } from '../../common/value-objects/timestamp';
+import { ValueObject, ID, Timestamp } from '../../common/value-objects';
 import { NodeId, NodeStatus } from '../../workflow/value-objects';
 
 /**

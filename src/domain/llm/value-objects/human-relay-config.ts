@@ -4,7 +4,7 @@
  * 封装HumanRelay的所有配置选项
  */
 
-import { ValueObject } from '../../common/value-objects/value-object';
+import { ValueObject } from '../../common/value-objects';
 import { HumanRelayMode } from './human-relay-mode';
 
 /**

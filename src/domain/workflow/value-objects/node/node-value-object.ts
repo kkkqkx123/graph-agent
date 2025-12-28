@@ -1,8 +1,7 @@
-import { ValueObject } from '../../../common/value-objects/value-object';
+import { ValueObject } from '../../../common/value-objects';
 import { NodeId } from './node-id';
 import { NodeType } from './node-type';
-import { ContextFilter } from '../context/context-filter';
-import { PromptContext } from '../context/prompt-context';
+import { ContextFilter, PromptContext } from '../context';
 
 /**
  * 节点值对象属性接口

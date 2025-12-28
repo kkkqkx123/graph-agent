@@ -2,7 +2,7 @@
  * LLM请求选项值对象
  */
 
-import { ValueObject } from '../../common/value-objects/value-object';
+import { ValueObject } from '../../common/value-objects';
 
 /**
  * LLM请求选项属性接口

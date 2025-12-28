@@ -1,7 +1,4 @@
-import { ValueObject } from '../../common/value-objects/value-object';
-import { ID } from '../../common/value-objects/id';
-import { Timestamp } from '../../common/value-objects/timestamp';
-import { Version } from '../../common/value-objects/version';
+import { ValueObject, ID, Timestamp, Version } from '../../common/value-objects';
 import { WorkflowStatus } from './workflow-status';
 import { WorkflowType } from './workflow-type';
 import { WorkflowConfig } from './workflow-config';

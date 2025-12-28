@@ -1,4 +1,4 @@
-import { ValueObject } from '../../../common/value-objects/value-object';
+import { ValueObject } from '../../../common/value-objects';
 import { EdgeId } from './edge-id';
 import { EdgeType } from './edge-type';
 import { NodeId } from '../node/node-id';

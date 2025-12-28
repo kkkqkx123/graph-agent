@@ -1,13 +1,7 @@
 import { Entity } from '../../common/base/entity';
-import { ID } from '../../common/value-objects/id';
-import { Timestamp } from '../../common/value-objects/timestamp';
-import { Version } from '../../common/value-objects/version';
-import { ThreadStatus } from '../value-objects/thread-status';
-import { ThreadPriority } from '../value-objects/thread-priority';
-import { ThreadDefinition } from '../value-objects/thread-definition';
-import { ThreadExecution } from '../value-objects/thread-execution';
-import { ExecutionContext } from '../value-objects/execution-context';
-import { PromptContext } from '../../workflow/value-objects/context/prompt-context';
+import { ID, Timestamp, Version } from '../../common/value-objects';
+import { ThreadStatus, ThreadPriority, ThreadDefinition, ThreadExecution, ExecutionContext } from '../value-objects';
+import { PromptContext } from '../../workflow/value-objects/context';
 /**
  * Thread实体属性接口
  */

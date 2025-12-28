@@ -1,5 +1,4 @@
-import { ValueObject } from '../../common/value-objects/value-object';
-import { Timestamp } from '../../common/value-objects/timestamp';
+import { ValueObject, Timestamp } from '../../common/value-objects';
 import { LLMStatistics } from './statiscs/llm-statistics';
 import { PerformanceStatistics } from './statiscs/performance-statistics';
 import { ResourceUsage } from './statiscs/resource-usage';

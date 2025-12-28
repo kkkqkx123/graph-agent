@@ -4,7 +4,7 @@
  * 支持变量替换的提示词模板
  */
 
-import { ValueObject } from '../../common/value-objects/value-object';
+import { ValueObject } from '../../common/value-objects';
 
 /**
  * 提示词模板属性接口

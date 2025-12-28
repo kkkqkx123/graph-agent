@@ -1,4 +1,4 @@
-import { ValueObject } from '../../common/value-objects/value-object';
+import { ValueObject } from '../../common/value-objects';
 /**
  * 线程优先级枚举
  */

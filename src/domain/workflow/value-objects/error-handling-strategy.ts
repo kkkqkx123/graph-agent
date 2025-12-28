@@ -1,4 +1,4 @@
-import { ValueObject } from '../../common/value-objects/value-object';
+import { ValueObject } from '../../common/value-objects';
 export enum ErrorHandlingStrategyType {
   STOP_ON_ERROR = 'stop_on_error',
   CONTINUE_ON_ERROR = 'continue_on_error',
