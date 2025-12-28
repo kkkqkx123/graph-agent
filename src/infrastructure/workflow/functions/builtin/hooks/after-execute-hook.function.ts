@@ -1,21 +1,18 @@
 import { injectable } from 'inversify';
 import { WorkflowFunctionType } from '../../../../../domain/workflow/value-objects/workflow-function-type';
-import { BaseWorkflowFunction } from '../../base/base-workflow-function';
+import { BaseHookFunction, WorkflowExecutionContext, NodeFunctionResult, NodeFunctionConfig } from '../../base/base-workflow-function';
 
 /**
  * 执行后钩子函数
  * 在工作流执行后调用，用于后处理、清理、日志记录等
  */
 @injectable()
-export class AfterExecuteHookFunction extends BaseWorkflowFunction {
+export class AfterExecuteHookFunction extends BaseHookFunction {
   constructor() {
     super(
       'hook:after_execute',
       'after_execute_hook',
-      '在工作流执行后调用的钩子，用于后处理、清理、日志记录等',
-      '1.0.0',
-      WorkflowFunctionType.NODE,
-      true
+      '在工作流执行后调用的钩子，用于后处理、清理、日志记录等'
     );
   }
 
@@ -61,43 +58,54 @@ export class AfterExecuteHookFunction extends BaseWorkflowFunction {
     return errors;
   }
 
-  async execute(context: any, config: any): Promise<any> {
+  override async execute(context: WorkflowExecutionContext, config: NodeFunctionConfig): Promise<NodeFunctionResult> {
     this.checkInitialized();
 
-    const result: {
-      success: boolean;
-      shouldContinue: boolean;
-      data: Record<string, any>;
-      metadata: Record<string, any>;
-    } = {
-      success: true,
-      shouldContinue: true,
-      data: {},
-      metadata: {
-        hookPoint: 'after_execute',
-        timestamp: Date.now()
+    try {
+      const result: {
+        success: boolean;
+        shouldContinue: boolean;
+        data: Record<string, any>;
+        metadata: Record<string, any>;
+      } = {
+        success: true,
+        shouldContinue: true,
+        data: {},
+        metadata: {
+          hookPoint: 'after_execute',
+          timestamp: Date.now()
+        }
+      };
+
+      // 执行后处理
+      if (config['postprocessing']) {
+        result.data['postprocessed'] = this.postprocessContext(context, config['postprocessing']);
       }
-    };
 
-    // 执行后处理
-    if (config.postprocessing) {
-      result.data['postprocessed'] = this.postprocessContext(context, config.postprocessing);
+      // 执行日志记录
+      if (config['logging']) {
+        result.data['logs'] = this.logExecution(context, config['logging']);
+      }
+
+      // 执行清理
+      if (config['cleanup']) {
+        result.data['cleaned'] = this.cleanupResources(context, config['cleanup']);
+      }
+
+      return {
+        success: true,
+        output: result,
+        metadata: result.metadata
+      };
+    } catch (error) {
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : String(error)
+      };
     }
-
-    // 执行日志记录
-    if (config.logging) {
-      result.data['logs'] = this.logExecution(context, config.logging);
-    }
-
-    // 执行清理
-    if (config.cleanup) {
-      result.data['cleaned'] = this.cleanupResources(context, config.cleanup);
-    }
-
-    return result;
   }
 
-  private postprocessContext(context: any, postprocessing: any): any {
+  private postprocessContext(context: WorkflowExecutionContext, postprocessing: any): any {
     // 简化的后处理逻辑
     const result = { ...context };
 
@@ -112,30 +120,33 @@ export class AfterExecuteHookFunction extends BaseWorkflowFunction {
     return result;
   }
 
-  private logExecution(context: any, logging: any): any {
+  private logExecution(context: WorkflowExecutionContext, logging: any): any {
     // 简化的日志记录逻辑
     const logs = [];
 
-    if (logging.logResults) {
+    if (logging['logResults']) {
       logs.push({
         type: 'result',
-        data: context.result,
+        data: context.getVariable('result'),
         timestamp: Date.now()
       });
     }
 
-    if (logging.logErrors && context.error) {
-      logs.push({
-        type: 'error',
-        data: context.error,
-        timestamp: Date.now()
-      });
+    if (logging['logErrors']) {
+      const error = context.getVariable('error');
+      if (error) {
+        logs.push({
+          type: 'error',
+          data: error,
+          timestamp: Date.now()
+        });
+      }
     }
 
     return logs;
   }
 
-  private cleanupResources(context: any, cleanup: any): any {
+  private cleanupResources(context: WorkflowExecutionContext, cleanup: any): any {
     // 简化的清理逻辑
     const cleaned: Record<string, any> = {};
 

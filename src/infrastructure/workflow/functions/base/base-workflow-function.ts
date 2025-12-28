@@ -403,3 +403,38 @@ export abstract class BaseTriggerFunction<TConfig extends TriggerFunctionConfig 
    */
   abstract override execute(context: WorkflowExecutionContext, config: TConfig): Promise<boolean>;
 }
+
+/**
+ * 钩子函数基类
+ * 专门用于钩子类型的函数，返回NodeFunctionResult
+ */
+export abstract class BaseHookFunction<TConfig extends NodeFunctionConfig = NodeFunctionConfig>
+  extends BaseWorkflowFunction {
+
+  constructor(
+    id: string,
+    name: string,
+    description: string,
+    version: string = '1.0.0',
+    category: string = 'builtin'
+  ) {
+    super(
+      id,
+      name,
+      description,
+      version,
+      WorkflowFunctionType.HOOK,
+      true,
+      category
+    );
+  }
+
+  override getReturnType(): string {
+    return 'NodeFunctionResult';
+  }
+
+  /**
+   * 类型安全的执行方法
+   */
+  abstract override execute(context: WorkflowExecutionContext, config: TConfig): Promise<NodeFunctionResult>;
+}

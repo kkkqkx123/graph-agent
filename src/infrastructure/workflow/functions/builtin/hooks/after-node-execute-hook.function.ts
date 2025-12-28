@@ -1,21 +1,18 @@
 import { injectable } from 'inversify';
 import { WorkflowFunctionType } from '../../../../../domain/workflow/value-objects/workflow-function-type';
-import { BaseWorkflowFunction } from '../../base/base-workflow-function';
+import { BaseHookFunction, WorkflowExecutionContext, NodeFunctionResult, NodeFunctionConfig } from '../../base/base-workflow-function';
 
 /**
  * 节点执行后钩子函数
  * 在节点执行后调用，用于节点级别的后处理
  */
 @injectable()
-export class AfterNodeExecuteHookFunction extends BaseWorkflowFunction {
+export class AfterNodeExecuteHookFunction extends BaseHookFunction {
   constructor() {
     super(
       'hook:after_node_execute',
       'after_node_execute_hook',
-      '在节点执行后调用的钩子，用于节点级别的后处理',
-      '1.0.0',
-      WorkflowFunctionType.NODE,
-      true
+      '在节点执行后调用的钩子，用于节点级别的后处理'
     );
   }
 
@@ -67,43 +64,54 @@ export class AfterNodeExecuteHookFunction extends BaseWorkflowFunction {
     return errors;
   }
 
-  async execute(context: any, config: any): Promise<any> {
+  override async execute(context: WorkflowExecutionContext, config: NodeFunctionConfig): Promise<NodeFunctionResult> {
     this.checkInitialized();
 
-    const result: {
-      success: boolean;
-      shouldContinue: boolean;
-      data: Record<string, any>;
-      metadata: Record<string, any>;
-    } = {
-      success: true,
-      shouldContinue: true,
-      data: {},
-      metadata: {
-        hookPoint: 'after_node_execute',
-        nodeId: config.nodeId,
-        nodeType: config.nodeType,
-        timestamp: Date.now()
+    try {
+      const result: {
+        success: boolean;
+        shouldContinue: boolean;
+        data: Record<string, any>;
+        metadata: Record<string, any>;
+      } = {
+        success: true,
+        shouldContinue: true,
+        data: {},
+        metadata: {
+          hookPoint: 'after_node_execute',
+          nodeId: config['nodeId'],
+          nodeType: config['nodeType'],
+          timestamp: Date.now()
+        }
+      };
+
+      // 执行输出转换
+      if (config['outputTransform'] && config['result']) {
+        result.data['transformedResult'] = this.transformOutput(config['result'], config['outputTransform']);
       }
-    };
 
-    // 执行输出转换
-    if (config.outputTransform && config.result) {
-      result.data['transformedResult'] = this.transformOutput(config.result, config.outputTransform);
+      // 记录节点执行完成
+      result.data['executionCompleted'] = true;
+
+      return {
+        success: true,
+        output: result,
+        metadata: result.metadata
+      };
+    } catch (error) {
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : String(error)
+      };
     }
-
-    // 记录节点执行完成
-    result.data['executionCompleted'] = true;
-
-    return result;
   }
 
   private transformOutput(output: any, transform: any): any {
     // 简化的输出转换逻辑
     const result = { ...output };
 
-    if (transform.rename) {
-      for (const [oldName, newName] of Object.entries(transform.rename)) {
+    if (transform['rename']) {
+      for (const [oldName, newName] of Object.entries(transform['rename'])) {
         if (oldName in result) {
           (result as Record<string, any>)[newName as string] = (result as Record<string, any>)[oldName as string];
           delete (result as Record<string, any>)[oldName as string];
@@ -111,8 +119,8 @@ export class AfterNodeExecuteHookFunction extends BaseWorkflowFunction {
       }
     }
 
-    if (transform.filter) {
-      for (const field of transform.filter) {
+    if (transform['filter']) {
+      for (const field of transform['filter']) {
         if (field in result) {
           delete (result as Record<string, any>)[field as string];
         }

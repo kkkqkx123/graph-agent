@@ -1,10 +1,18 @@
 import { BaseWorkflowFunction } from '../base/base-workflow-function';
-import { CompositeFunction } from './composite-function';
+import { WorkflowFunctionType } from '../../../../domain/workflow/value-objects/workflow-function-type';
+import {
+  NodeCompositeFunction,
+  ConditionCompositeFunction,
+  RoutingCompositeFunction,
+  TriggerCompositeFunction,
+  HookCompositeFunction
+} from './index';
 import { CompositionStrategy, SequentialCompositionStrategy } from './composition-strategy';
+import { CompositeFunctionType, validateSameFunctionType } from './composition-types';
 
 /**
  * 函数组合构建器
- * 提供流式API来构建复合函数
+ * 提供流式API来构建类型安全的复合函数
  */
 export class FunctionCompositionBuilder {
   private functions: BaseWorkflowFunction[] = [];
@@ -50,20 +58,130 @@ export class FunctionCompositionBuilder {
   }
 
   /**
-   * 构建组合函数
+   * 构建节点函数组合
    * @param id 函数ID
    * @param name 函数名称
    * @param description 函数描述
-   * @returns 复合函数
+   * @returns 节点复合函数
+   * @throws Error 如果函数类型不匹配
    */
-  build(id: string, name: string, description: string): CompositeFunction {
-    const compositeFunc = new CompositeFunction(id, name, description, this.strategy);
+  buildNodeComposite(
+    id: string,
+    name: string,
+    description: string
+  ): NodeCompositeFunction {
+    this.validateFunctionType(WorkflowFunctionType.NODE);
+    const compositeFunc = new NodeCompositeFunction(id, name, description, this.strategy);
 
     for (const func of this.functions) {
       compositeFunc.addFunction(func);
     }
 
     return compositeFunc;
+  }
+
+  /**
+   * 构建条件函数组合
+   * @param id 函数ID
+   * @param name 函数名称
+   * @param description 函数描述
+   * @returns 条件复合函数
+   * @throws Error 如果函数类型不匹配
+   */
+  buildConditionComposite(
+    id: string,
+    name: string,
+    description: string
+  ): ConditionCompositeFunction {
+    this.validateFunctionType(WorkflowFunctionType.CONDITION);
+    const compositeFunc = new ConditionCompositeFunction(id, name, description, this.strategy);
+
+    for (const func of this.functions) {
+      compositeFunc.addFunction(func);
+    }
+
+    return compositeFunc;
+  }
+
+  /**
+   * 构建路由函数组合
+   * @param id 函数ID
+   * @param name 函数名称
+   * @param description 函数描述
+   * @returns 路由复合函数
+   * @throws Error 如果函数类型不匹配
+   */
+  buildRoutingComposite(
+    id: string,
+    name: string,
+    description: string
+  ): RoutingCompositeFunction {
+    this.validateFunctionType(WorkflowFunctionType.ROUTING);
+    const compositeFunc = new RoutingCompositeFunction(id, name, description, this.strategy);
+
+    for (const func of this.functions) {
+      compositeFunc.addFunction(func);
+    }
+
+    return compositeFunc;
+  }
+
+  /**
+   * 构建触发器函数组合
+   * @param id 函数ID
+   * @param name 函数名称
+   * @param description 函数描述
+   * @returns 触发器复合函数
+   * @throws Error 如果函数类型不匹配
+   */
+  buildTriggerComposite(
+    id: string,
+    name: string,
+    description: string
+  ): TriggerCompositeFunction {
+    this.validateFunctionType(WorkflowFunctionType.TRIGGER);
+    const compositeFunc = new TriggerCompositeFunction(id, name, description, this.strategy);
+
+    for (const func of this.functions) {
+      compositeFunc.addFunction(func);
+    }
+
+    return compositeFunc;
+  }
+
+  /**
+   * 构建钩子函数组合
+   * @param id 函数ID
+   * @param name 函数名称
+   * @param description 函数描述
+   * @returns 钩子复合函数
+   * @throws Error 如果函数类型不匹配
+   */
+  buildHookComposite(
+    id: string,
+    name: string,
+    description: string
+  ): HookCompositeFunction {
+    this.validateFunctionType(WorkflowFunctionType.HOOK);
+    const compositeFunc = new HookCompositeFunction(id, name, description, this.strategy);
+
+    for (const func of this.functions) {
+      compositeFunc.addFunction(func);
+    }
+
+    return compositeFunc;
+  }
+
+  /**
+   * 验证函数类型
+   * @param expectedType 期望的函数类型
+   * @throws Error 如果函数类型不匹配
+   */
+  private validateFunctionType(expectedType: WorkflowFunctionType): void {
+    const validation = validateSameFunctionType(this.functions, expectedType);
+    if (!validation.valid) {
+      throw new Error(`函数类型验证失败: ${validation.errors.join(', ')}`);
+    }
   }
 
   /**
@@ -80,5 +198,25 @@ export class FunctionCompositionBuilder {
    */
   isEmpty(): boolean {
     return this.functions.length === 0;
+  }
+
+  /**
+   * 获取函数类型
+   * @returns 函数类型，如果为空或类型不一致则返回undefined
+   */
+  getFunctionType(): WorkflowFunctionType | undefined {
+    if (this.functions.length === 0) {
+      return undefined;
+    }
+
+    const firstFunc = this.functions[0];
+    if (!firstFunc) {
+      return undefined;
+    }
+
+    const firstType = firstFunc.type;
+    const allSameType = this.functions.every(func => func.type === firstType);
+
+    return allSameType ? firstType : undefined;
   }
 }
