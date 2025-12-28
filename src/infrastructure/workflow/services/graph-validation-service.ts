@@ -1,5 +1,6 @@
 import { injectable } from 'inversify';
 import { Workflow } from '../../../domain/workflow/entities/workflow';
+import { GraphValidationService as DomainGraphValidationService, ValidationResult as DomainValidationResult } from '../../../domain/workflow/services/graph-validation-service.interface';
 
 /**
  * 验证规则接口
@@ -24,7 +25,7 @@ export interface BusinessRule {
 }
 
 /**
- * 验证结果接口
+ * 验证结果接口（基础设施层内部使用）
  */
 export interface ValidationResult {
   isValid: boolean;
@@ -55,17 +56,17 @@ export interface ValidationWarning {
 
 /**
  * 图验证服务实现
- * 
+ *
  * 基础设施层实现，提供具体的图验证功能：
  * 1. 图结构验证（完整性、连接性）
  * 2. 业务规则验证（开始/结束节点规则）
  * 3. 执行约束验证
  * 4. 图有效性验证
- * 
+ *
  * 简化实现，移除复杂的验证规则系统，专注于核心验证逻辑。
  */
 @injectable()
-export class GraphValidationServiceImpl {
+export class GraphValidationServiceImpl implements DomainGraphValidationService {
   private validationRules: ValidationRule[] = [];
   private businessRules: BusinessRule[] = [];
 
@@ -390,5 +391,154 @@ export class GraphValidationServiceImpl {
    */
   addBusinessRule(rule: BusinessRule): void {
     this.businessRules.push(rule);
+  }
+
+  /**
+   * 验证图结构（详细）
+   * @param workflow 工作流
+   * @returns 详细验证结果
+   */
+  validateGraphDetailed(workflow: Workflow): DomainValidationResult {
+    const errors: string[] = [];
+    const warnings: string[] = [];
+
+    // 执行所有验证规则
+    for (const rule of this.validationRules) {
+      if (rule.enabled) {
+        const result = rule.validate(workflow);
+        if (!result.isValid) {
+          errors.push(...result.errors.map(e => `[${rule.id}] ${e.message}`));
+        }
+      }
+    }
+
+    // 执行所有业务规则
+    for (const rule of this.businessRules) {
+      if (rule.enabled) {
+        const result = rule.validate(workflow);
+        if (!result.isValid) {
+          errors.push(...result.errors.map(e => `[${rule.id}] ${e.message}`));
+        }
+        if (result.warnings.length > 0) {
+          warnings.push(...result.warnings.map(w => `[${rule.id}] ${w.message}`));
+        }
+      }
+    }
+
+    return {
+      isValid: errors.length === 0,
+      errors,
+      warnings
+    };
+  }
+
+  /**
+   * 验证节点配置
+   * @param workflow 工作流
+   * @returns 验证结果
+   */
+  validateNodes(workflow: Workflow): DomainValidationResult {
+    const errors: string[] = [];
+    const warnings: string[] = [];
+
+    for (const node of workflow.getNodes().values()) {
+      // 检查节点ID
+      if (!node.id || node.id.toString().trim() === '') {
+        errors.push(`节点ID无效`);
+      }
+
+      // 检查节点名称
+      if (!node.name || node.name.trim() === '') {
+        warnings.push(`节点 ${node.id.toString()} 没有名称`);
+      }
+
+      // 检查节点类型
+      if (!node.type) {
+        errors.push(`节点 ${node.id.toString()} 没有类型`);
+      }
+    }
+
+    return {
+      isValid: errors.length === 0,
+      errors,
+      warnings
+    };
+  }
+
+  /**
+   * 验证边配置
+   * @param workflow 工作流
+   * @returns 验证结果
+   */
+  validateEdges(workflow: Workflow): DomainValidationResult {
+    const errors: string[] = [];
+    const warnings: string[] = [];
+
+    for (const edge of workflow.getEdges().values()) {
+      // 检查边ID
+      if (!edge.id || edge.id.toString().trim() === '') {
+        errors.push(`边ID无效`);
+      }
+
+      // 检查边的连接
+      if (!workflow.hasNode(edge.fromNodeId)) {
+        errors.push(`边 ${edge.id.toString()} 的起始节点 ${edge.fromNodeId.toString()} 不存在`);
+      }
+
+      if (!workflow.hasNode(edge.toNodeId)) {
+        errors.push(`边 ${edge.id.toString()} 的目标节点 ${edge.toNodeId.toString()} 不存在`);
+      }
+
+      // 检查边的条件
+      if (edge.condition && edge.condition.trim() === '') {
+        warnings.push(`边 ${edge.id.toString()} 的条件为空`);
+      }
+    }
+
+    return {
+      isValid: errors.length === 0,
+      errors,
+      warnings
+    };
+  }
+
+  /**
+   * 验证工作流可执行性
+   * @param workflow 工作流
+   * @returns 验证结果
+   */
+  validateExecutable(workflow: Workflow): DomainValidationResult {
+    const errors: string[] = [];
+    const warnings: string[] = [];
+
+    // 检查是否有开始节点
+    const startNodes = Array.from(workflow.getNodes().values()).filter(node => node.type.isStart());
+    if (startNodes.length === 0) {
+      errors.push('工作流必须至少有一个开始节点');
+    } else if (startNodes.length > 1) {
+      warnings.push('工作流有多个开始节点，可能影响执行顺序');
+    }
+
+    // 检查是否有结束节点
+    const endNodes = Array.from(workflow.getNodes().values()).filter(node => node.type.isEnd());
+    if (endNodes.length === 0) {
+      errors.push('工作流必须至少有一个结束节点');
+    }
+
+    // 检查图的基本结构
+    if (!this.validateGraphStructure(workflow)) {
+      errors.push('工作流图结构无效');
+    }
+
+    // 检查节点连接
+    if (!this.validateNodeConnections(workflow)) {
+      errors.push('工作流节点连接无效');
+    }
+
+    return {
+      isValid: errors.length === 0,
+      errors,
+      warnings
+    };
   }
 }

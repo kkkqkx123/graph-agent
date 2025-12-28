@@ -1,12 +1,13 @@
-import { injectable } from 'inversify';
+import { injectable, inject } from 'inversify';
 import { SessionOrchestrationService, ThreadAction, StateChange } from '../interfaces/session-orchestration-service.interface';
 import { SessionRepository } from '../../../domain/sessions/repositories/session-repository';
 import { ThreadRepository } from '../../../domain/threads/repositories/thread-repository';
 import { SessionResourceService } from '../interfaces/session-resource-service.interface';
-import { ThreadCoordinatorInfrastructureService } from '../../../infrastructure/threads/services/thread-coordinator-service';
+import { ThreadCoordinatorService } from '../../../domain/threads/services/thread-coordinator-service.interface';
 import { WorkflowExecutionResultDto } from '../../workflow/dtos';
 import { ID } from '../../../domain/common/value-objects/id';
 import { Timestamp } from '../../../domain/common/value-objects/timestamp';
+import { TYPES } from '../../../di/service-keys';
 
 /**
  * 会话编排服务实现
@@ -14,10 +15,10 @@ import { Timestamp } from '../../../domain/common/value-objects/timestamp';
 @injectable()
 export class SessionOrchestrationServiceImpl implements SessionOrchestrationService {
   constructor(
-    private readonly sessionRepository: SessionRepository,
-    private readonly threadRepository: ThreadRepository,
-    private readonly sessionResourceService: SessionResourceService,
-    private readonly threadCoordinator: ThreadCoordinatorInfrastructureService
+    @inject(TYPES.SessionRepository) private readonly sessionRepository: SessionRepository,
+    @inject(TYPES.ThreadRepository) private readonly threadRepository: ThreadRepository,
+    @inject(TYPES.SessionResourceService) private readonly sessionResourceService: SessionResourceService,
+    @inject(TYPES.ThreadCoordinatorService) private readonly threadCoordinator: ThreadCoordinatorService
   ) { }
 
   /**

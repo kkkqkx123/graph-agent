@@ -2,20 +2,20 @@
  * 应用程序主类
  */
 
-import { IContainer } from '../../infrastructure/container/container';
+import { AppContainer } from '../../di/app-container';
+import { TYPES } from '../../di/service-keys';
 import { ILogger, IConfigManager, IService } from '../../domain/common/types';
 
 /**
  * 应用程序类
  */
 export class Application implements IService {
-  private readonly container: IContainer;
   private readonly services: IService[] = [];
   private isInitialized = false;
   private isStarted = false;
 
-  constructor(container: IContainer) {
-    this.container = container;
+  constructor() {
+    // 不再需要传入容器，直接使用AppContainer
   }
 
   /**
@@ -28,13 +28,13 @@ export class Application implements IService {
 
     try {
       // 获取核心服务
-      const logger = this.container.get<ILogger>('ILogger');
-      const configManager = this.container.get<IConfigManager>('IConfigManager');
+      const logger = AppContainer.getService<ILogger>(TYPES.Logger);
 
       logger.info('正在初始化应用程序...');
 
-      // 初始化配置管理器
-      await this.initializeConfig(configManager, logger);
+      // TODO: 初始化配置管理器（待实现）
+      // const configManager = AppContainer.getService<IConfigManager>(TYPES.ConfigManager);
+      // await this.initializeConfig(configManager, logger);
 
       // 注册和初始化服务
       await this.initializeServices(logger);
@@ -42,7 +42,7 @@ export class Application implements IService {
       this.isInitialized = true;
       logger.info('应用程序初始化完成');
     } catch (error) {
-      const logger = this.container.get<ILogger>('ILogger');
+      const logger = AppContainer.getService<ILogger>(TYPES.Logger);
       logger.error('应用程序初始化失败', error as Error);
       throw error;
     }
@@ -61,7 +61,7 @@ export class Application implements IService {
     }
 
     try {
-      const logger = this.container.get<ILogger>('ILogger');
+      const logger = AppContainer.getService<ILogger>(TYPES.Logger);
       logger.info('正在启动应用程序...');
 
       // 启动所有服务
@@ -72,7 +72,7 @@ export class Application implements IService {
       this.isStarted = true;
       logger.info('应用程序启动完成');
     } catch (error) {
-      const logger = this.container.get<ILogger>('ILogger');
+      const logger = AppContainer.getService<ILogger>(TYPES.Logger);
       logger.error('应用程序启动失败', error as Error);
       throw error;
     }
@@ -87,7 +87,7 @@ export class Application implements IService {
     }
 
     try {
-      const logger = this.container.get<ILogger>('ILogger');
+      const logger = AppContainer.getService<ILogger>(TYPES.Logger);
       logger.info('正在停止应用程序...');
 
       // 停止所有服务
@@ -98,7 +98,7 @@ export class Application implements IService {
       this.isStarted = false;
       logger.info('应用程序停止完成');
     } catch (error) {
-      const logger = this.container.get<ILogger>('ILogger');
+      const logger = AppContainer.getService<ILogger>(TYPES.Logger);
       logger.error('应用程序停止失败', error as Error);
       throw error;
     }
@@ -111,7 +111,7 @@ export class Application implements IService {
     try {
       await this.stop();
 
-      const logger = this.container.get<ILogger>('ILogger');
+      const logger = AppContainer.getService<ILogger>(TYPES.Logger);
       logger.info('正在释放应用程序资源...');
 
       // 释放所有服务
@@ -124,30 +124,23 @@ export class Application implements IService {
 
       logger.info('应用程序资源释放完成');
     } catch (error) {
-      const logger = this.container.get<ILogger>('ILogger');
+      const logger = AppContainer.getService<ILogger>(TYPES.Logger);
       logger.error('应用程序资源释放失败', error as Error);
       throw error;
     }
   }
 
   /**
-   * 获取依赖注入容器
-   */
-  getContainer(): IContainer {
-    return this.container;
-  }
-
-  /**
    * 初始化配置管理器
    */
   private async initializeConfig(
-    _configManager: IConfigManager,
     logger: ILogger
   ): Promise<void> {
     logger.info('正在初始化配置管理器...');
 
     // TODO: 实现配置管理器初始化逻辑
-    // await _configManager.initialize();
+    // const configManager = AppContainer.getService<IConfigManager>(TYPES.ConfigManager);
+    // await configManager.initialize();
 
     logger.info('配置管理器初始化完成');
   }

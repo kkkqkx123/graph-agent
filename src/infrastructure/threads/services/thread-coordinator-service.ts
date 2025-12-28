@@ -2,7 +2,7 @@
  * ThreadCoordinatorService基础设施实现
  */
 
-import { injectable, inject, Container } from 'inversify';
+import { injectable, inject } from 'inversify';
 import { ID } from '../../../domain/common/value-objects/id';
 import { ThreadExecution } from '../../../domain/threads/value-objects/thread-execution';
 import { ExecutionContext as DomainExecutionContext } from '../../../domain/threads/value-objects/execution-context';
@@ -16,81 +16,38 @@ import { EdgeEvaluator } from '../execution/edge-evaluator';
 import { NodeRouter } from '../execution/node-router';
 import { HookExecutor } from '../../workflow/hooks/hook-executor';
 import { ILogger } from '../../../domain/common/types/logger-types';
-
-/**
- * 执行上下文接口（基础设施层）
- */
-export interface InfrastructureExecutionContext {
-  executionId: string;
-  workflowId: string;
-  data: Record<string, any>;
-  workflowState?: any;
-  executionHistory?: any[];
-  metadata?: Record<string, any>;
-  startTime?: Date;
-  status?: string;
-  getVariable: (path: string) => any;
-  setVariable: (path: string, value: any) => void;
-  getAllVariables: () => Record<string, any>;
-  getAllMetadata: () => Record<string, any>;
-  getInput: () => Record<string, any>;
-  getExecutedNodes: () => string[];
-  getNodeResult: (nodeId: string) => any;
-  getElapsedTime: () => number;
-  getWorkflow: () => any;
-}
-
-/**
- * 执行状态枚举
- */
-export enum ExecutionStatus {
-  PENDING = 'pending',
-  RUNNING = 'running',
-  COMPLETED = 'completed',
-  FAILED = 'failed',
-  CANCELLED = 'cancelled'
-}
-
-/**
- * 执行结果接口
- */
-export interface ExecutionResult {
-  executionId: ID;
-  status: ExecutionStatus;
-  data: any;
-  statistics?: {
-    totalTime: number;
-    nodeExecutionTime: number;
-    successfulNodes: number;
-    failedNodes: number;
-    skippedNodes: number;
-    retries: number;
-  };
-}
 import { ThreadRepository } from '../../../domain/threads/repositories/thread-repository';
 import { ThreadLifecycleInfrastructureService } from './thread-lifecycle-service';
 import { ThreadStatus } from '../../../domain/threads/value-objects/thread-status';
 import { ThreadDefinition } from '../../../domain/threads/value-objects/thread-definition';
 import { ThreadPriority } from '../../../domain/threads/value-objects/thread-priority';
+import {
+  ThreadCoordinatorService as DomainThreadCoordinatorService,
+  ThreadExecutionContext,
+  ExecutionStatus,
+  ExecutionResult,
+  ThreadPoolStatus
+} from '../../../domain/threads/services/thread-coordinator-service.interface';
+import { TYPES } from '../../../di/service-keys';
 
 /**
  * ThreadCoordinatorService基础设施实现
  */
 @injectable()
-export class ThreadCoordinatorInfrastructureService {
+export class ThreadCoordinatorInfrastructureService implements DomainThreadCoordinatorService {
   private executionEngines: Map<string, ThreadExecutionEngine> = new Map();
 
   constructor(
-    private readonly threadRepository: ThreadRepository,
-    private readonly threadLifecycleService: ThreadLifecycleInfrastructureService,
-    private readonly threadDefinitionRepository: any,
-    private readonly threadExecutionRepository: any,
-    @inject('NodeExecutor') private readonly nodeExecutor: NodeExecutor,
-    @inject('EdgeExecutor') private readonly edgeExecutor: EdgeExecutor,
-    @inject('EdgeEvaluator') private readonly edgeEvaluator: EdgeEvaluator,
-    @inject('NodeRouter') private readonly nodeRouter: NodeRouter,
-    @inject('HookExecutor') private readonly hookExecutor: HookExecutor,
-    @inject('Logger') private readonly logger: ILogger
+    @inject(TYPES.ThreadRepository) private readonly threadRepository: ThreadRepository,
+    @inject(TYPES.ThreadLifecycleService) private readonly threadLifecycleService: ThreadLifecycleInfrastructureService,
+    @inject(TYPES.ThreadDefinitionRepository) private readonly threadDefinitionRepository: any,
+    @inject(TYPES.ThreadExecutionRepository) private readonly threadExecutionRepository: any,
+    @inject(TYPES.NodeExecutor) private readonly nodeExecutor: NodeExecutor,
+    @inject(TYPES.EdgeExecutor) private readonly edgeExecutor: EdgeExecutor,
+    @inject(TYPES.EdgeEvaluator) private readonly edgeEvaluator: EdgeEvaluator,
+    @inject(TYPES.NodeRouter) private readonly nodeRouter: NodeRouter,
+    @inject(TYPES.HookExecutor) private readonly hookExecutor: HookExecutor,
+    @inject(TYPES.Logger) private readonly logger: ILogger
   ) {}
 
   /**
@@ -156,7 +113,7 @@ export class ThreadCoordinatorInfrastructureService {
    * @param context 执行上下文
    * @returns 线程ID
    */
-  async coordinateExecution(workflowId: ID, context: InfrastructureExecutionContext): Promise<ID> {
+  async coordinateExecution(workflowId: ID, context: ThreadExecutionContext): Promise<ID> {
     // 创建线程定义
     const threadDefinition = await this.createThreadDefinition(workflowId, context);
     
@@ -193,7 +150,7 @@ export class ThreadCoordinatorInfrastructureService {
     );
     
     // 创建子线程执行
-    const childContext: InfrastructureExecutionContext = {
+    const childContext: ThreadExecutionContext = {
       executionId: ID.generate().value,
       workflowId: parentDefinition.workflowId!.value,
       data: {
@@ -440,7 +397,7 @@ export class ThreadCoordinatorInfrastructureService {
    */
   private async createThreadDefinition(
     workflowId: ID,
-    context: InfrastructureExecutionContext,
+    context: ThreadExecutionContext,
     sessionId?: string
   ): Promise<any> {
     const threadDefinition = ThreadDefinition.create(
@@ -462,7 +419,7 @@ export class ThreadCoordinatorInfrastructureService {
    */
   private async createThreadExecution(
     threadId: ID,
-    context: InfrastructureExecutionContext
+    context: ThreadExecutionContext
   ): Promise<any> {
     const promptContext = PromptContext.create('');
     const domainContext = DomainExecutionContext.create(promptContext);

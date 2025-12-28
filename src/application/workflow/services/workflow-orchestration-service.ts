@@ -7,13 +7,14 @@
 
 import { injectable, inject } from 'inversify';
 import { SessionOrchestrationService, ThreadAction } from '../../sessions/interfaces/session-orchestration-service.interface';
-import { ThreadCoordinatorInfrastructureService } from '../../../infrastructure/threads/services/thread-coordinator-service';
-import { GraphAlgorithmService } from '../../../infrastructure/workflow/interfaces/graph-algorithm-service.interface';
-import { GraphValidationServiceImpl } from '../../../infrastructure/workflow/services/graph-validation-service';
+import { ThreadCoordinatorService } from '../../../domain/threads/services/thread-coordinator-service.interface';
+import { GraphAlgorithmService } from '../../../domain/workflow/services/graph-algorithm-service.interface';
+import { GraphValidationService } from '../../../domain/workflow/services/graph-validation-service.interface';
 import { WorkflowRepository } from '../../../domain/workflow/repositories/workflow-repository';
 import { WorkflowExecutionResultDto } from '../dtos';
 import { ID } from '../../../domain/common/value-objects/id';
 import { Timestamp } from '../../../domain/common/value-objects/timestamp';
+import { TYPES } from '../../../di/service-keys';
 
 /**
  * 工作流编排服务
@@ -21,11 +22,11 @@ import { Timestamp } from '../../../domain/common/value-objects/timestamp';
 @injectable()
 export class WorkflowOrchestrationService {
   constructor(
-    private readonly sessionOrchestration: SessionOrchestrationService,
-    private readonly threadCoordinator: ThreadCoordinatorInfrastructureService,
-    private readonly graphAlgorithm: GraphAlgorithmService,
-    private readonly graphValidation: GraphValidationServiceImpl,
-    private readonly workflowRepository: WorkflowRepository
+    @inject(TYPES.SessionOrchestrationService) private readonly sessionOrchestration: SessionOrchestrationService,
+    @inject(TYPES.ThreadCoordinatorService) private readonly threadCoordinator: ThreadCoordinatorService,
+    @inject(TYPES.GraphAlgorithmService) private readonly graphAlgorithm: GraphAlgorithmService,
+    @inject(TYPES.GraphValidationService) private readonly graphValidation: GraphValidationService,
+    @inject(TYPES.WorkflowRepository) private readonly workflowRepository: WorkflowRepository
   ) {}
 
   /**

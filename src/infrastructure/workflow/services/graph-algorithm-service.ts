@@ -1,5 +1,5 @@
 import { injectable } from 'inversify';
-import { GraphAlgorithmService, GraphComplexity } from '../interfaces/graph-algorithm-service.interface';
+import { GraphAlgorithmService, GraphComplexity } from '../../../domain/workflow/services/graph-algorithm-service.interface';
 import { Workflow } from '../../../domain/workflow/entities/workflow';
 import { NodeValueObject } from '../../../domain/workflow/value-objects/node-value-object';
 import { EdgeValueObject } from '../../../domain/workflow/value-objects/edge-value-object';
@@ -8,14 +8,14 @@ import { NodeId } from '../../../domain/workflow/value-objects/node-id';
 
 /**
  * 图算法服务实现
- * 
+ *
  * 基础设施层实现，提供具体的图算法功能：
  * 1. 拓扑排序
  * 2. 循环检测
  * 3. 连通分量分析
  * 4. 路径查找
  * 5. 图复杂度分析
- * 
+ *
  * 此实现可以替换为其他算法实现（如性能优化版本、并行版本等）。
  */
 @injectable()

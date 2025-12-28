@@ -1,6 +1,6 @@
 /**
  * 线程领域模块入口
- * 
+ *
  * 包含线程相关的所有领域组件：
  * - Thread实体和值对象
  * - Checkpoint子模块
@@ -19,3 +19,6 @@ export * from './repositories';
 
 // 导出checkpoint子模块
 export * from './checkpoints';
+
+// 导出服务接口
+export * from './services';
