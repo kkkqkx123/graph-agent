@@ -4,14 +4,10 @@
  * 负责会话的创建、激活、暂停和终止等生命周期管理
  */
 
-import { Session } from '../../../domain/sessions/entities/session';
-import { SessionRepository } from '../../../domain/sessions/repositories/session-repository';
-import { SessionStatus } from '../../../domain/sessions/value-objects/session-status';
-import { SessionConfig, SessionConfigProps } from '../../../domain/sessions/value-objects/session-config';
+import { Session, SessionRepository, SessionStatus, SessionConfig, SessionConfigProps } from '../../../domain/sessions';
 import { BaseApplicationService } from '../../common/base-application-service';
 import { CreateSessionRequest } from '../index';
-import { ILogger } from '../../../domain/common/types';
-import { ID } from '../../../domain/common/value-objects/id';
+import { ILogger, ID } from '../../../domain/common';
 
 /**
  * 会话生命周期服务

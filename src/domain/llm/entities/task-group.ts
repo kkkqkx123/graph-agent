@@ -7,7 +7,7 @@ import { Version } from '../../common/value-objects/version';
  * 任务组实体
  */
 export class TaskGroup extends Entity {
-  private echelons: Map<string, Echelon> = new Map();
+  private echelons: Map<string, TaskGroupEchelon> = new Map();
   private fallbackConfig: Record<string, any> = {};
 
   constructor(
@@ -41,7 +41,7 @@ export class TaskGroup extends Entity {
     // 初始化层级
     const echelonsConfig = this.config['echelons'] || {};
     for (const [echelonName, echelonConfig] of Object.entries(echelonsConfig)) {
-      const echelon = new Echelon(
+      const echelon = new TaskGroupEchelon(
         ID.generate(),
         echelonName,
         echelonConfig as Record<string, any>
@@ -60,21 +60,21 @@ export class TaskGroup extends Entity {
   /**
    * 获取层级配置
    */
-  getEchelonConfig(echelonName: string): Echelon | null {
+  getEchelonConfig(echelonName: string): TaskGroupEchelon | null {
     return this.echelons.get(echelonName) || null;
   }
 
   /**
    * 获取所有层级
    */
-  getAllEchelons(): Echelon[] {
+  getAllEchelons(): TaskGroupEchelon[] {
     return Array.from(this.echelons.values());
   }
 
   /**
    * 按优先级获取层级
    */
-  getEchelonsByPriority(): Echelon[] {
+  getEchelonsByPriority(): TaskGroupEchelon[] {
     return Array.from(this.echelons.values())
       .sort((a, b) => a.priority - b.priority);
   }
@@ -140,7 +140,7 @@ export class TaskGroup extends Entity {
 /**
  * 层级实体
  */
-export class Echelon extends Entity {
+export class TaskGroupEchelon extends Entity {
   constructor(
     id: ID,
     public readonly name: string,

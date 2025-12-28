@@ -12,7 +12,7 @@
  */
 
 import { Workflow } from '../entities/workflow';
-import { NodeValueObject } from '../value-objects/node-value-object';
+import { NodeValueObject } from '../value-objects';
 import { ID } from '../../common/value-objects/id';
 
 /**

@@ -1,4 +1,4 @@
-import { ValueObject } from '../../common/value-objects/value-object';
+import { ValueObject } from '../../../common/value-objects/value-object';
 /**
  * 节点类型枚举
  */
@@ -32,6 +32,9 @@ export interface NodeTypeProps {
  * 用于表示节点的类型
  */
 export class NodeType extends ValueObject<NodeTypeProps> {
+  private constructor(props: NodeTypeProps) {
+    super(props);
+  }
   /**
    * 创建开始节点类型
    * @returns 开始节点类型实例

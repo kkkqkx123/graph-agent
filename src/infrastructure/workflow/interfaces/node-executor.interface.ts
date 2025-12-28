@@ -1,4 +1,4 @@
-import { NodeValueObject } from '../../../domain/workflow/value-objects/node-value-object';
+import { NodeValueObject } from '../../../domain/workflow/value-objects';
 
 /**
  * 节点执行器接口

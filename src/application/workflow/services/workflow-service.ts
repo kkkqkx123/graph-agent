@@ -1,16 +1,6 @@
 import { injectable, inject } from 'inversify';
-import { Workflow } from '../../../domain/workflow/entities/workflow';
-import { WorkflowRepository } from '../../../domain/workflow/repositories/workflow-repository';
-import { ID } from '../../../domain/common/value-objects/id';
-import { WorkflowStatus } from '../../../domain/workflow/value-objects/workflow-status';
-import { WorkflowType } from '../../../domain/workflow/value-objects/workflow-type';
-import { WorkflowConfig } from '../../../domain/workflow/value-objects/workflow-config';
-import { ILogger } from '../../../domain/common/types/logger-types';
-import { NodeId } from '../../../domain/workflow/value-objects/node-id';
-import { NodeType } from '../../../domain/workflow/value-objects/node-type';
-import { EdgeId } from '../../../domain/workflow/value-objects/edge-id';
-import { EdgeType } from '../../../domain/workflow/value-objects/edge-type';
-import { Timestamp } from '../../../domain/common/value-objects/timestamp';
+import { Workflow, WorkflowStatus, WorkflowType, WorkflowConfig, NodeId, NodeType, EdgeId, EdgeType, WorkflowRepository } from '../../../domain/workflow';
+import { ID, Timestamp, ILogger } from '../../../domain/common';
 
 // DTOs
 import {
@@ -134,7 +124,7 @@ export class WorkflowService {
   constructor(
     @inject('WorkflowRepository') private readonly workflowRepository: WorkflowRepository,
     @inject('Logger') private readonly logger: ILogger
-  ) {}
+  ) { }
 
   /**
    * 创建工作流
@@ -566,33 +556,33 @@ export class WorkflowService {
     try {
       // 获取所有工作流
       const allWorkflows = await this.workflowRepository.findAll();
-      
+
       // 应用过滤条件
       let filteredWorkflows = allWorkflows;
-      
+
       if (params.filters?.status) {
         const status = WorkflowStatus.fromString(params.filters.status);
         filteredWorkflows = allWorkflows.filter(wf => wf.status.equals(status));
       }
-      
+
       if (params.filters?.type) {
         const type = WorkflowType.fromString(params.filters.type);
         filteredWorkflows = filteredWorkflows.filter(wf => wf.type.equals(type));
       }
-      
+
       if (params.filters?.createdBy) {
         const createdBy = ID.fromString(params.filters.createdBy);
         filteredWorkflows = filteredWorkflows.filter(wf =>
           wf.createdBy?.equals(createdBy)
         );
       }
-      
+
       if (params.filters?.name) {
         filteredWorkflows = filteredWorkflows.filter(wf =>
           wf.name.toLowerCase().includes(params.filters!.name!.toLowerCase())
         );
       }
-      
+
       if (params.filters?.tags && params.filters.tags.length > 0) {
         filteredWorkflows = filteredWorkflows.filter(wf =>
           params.filters!.tags!.some((tag: string) => wf.tags.includes(tag))
@@ -648,10 +638,10 @@ export class WorkflowService {
     try {
       // 获取所有工作流
       const allWorkflows = await this.workflowRepository.findAll();
-      
+
       // 计算统计信息
       const stats = this.calculateWorkflowStatistics(allWorkflows);
-      
+
       // 获取标签统计
       const tagStats = await this.workflowRepository.getWorkflowTagStats();
 
@@ -758,43 +748,43 @@ export class WorkflowService {
   private calculateExecutionPath(workflow: Workflow): NodeId[] {
     const executionPath: NodeId[] = [];
     const visited = new Set<string>();
-    
+
     // 简化实现：从第一个节点开始，沿着出边遍历
     let currentNodeId: NodeId | null = null;
-    
+
     // 获取第一个节点
     const nodes = workflow.getNodes();
     if (nodes.size === 0) {
       return executionPath;
     }
-    
+
     const firstNode = Array.from(nodes.values())[0];
     if (!firstNode) {
       return executionPath;
     }
-    
+
     currentNodeId = firstNode.id;
-    
+
     // 遍历图直到没有出边或形成循环
     const maxIterations = workflow.getNodeCount();
     let iterations = 0;
-    
+
     while (currentNodeId && iterations < maxIterations) {
       const nodeIdStr = currentNodeId.toString();
-      
+
       if (visited.has(nodeIdStr)) {
         // 检测到循环，停止遍历
         break;
       }
-      
+
       visited.add(nodeIdStr);
       executionPath.push(currentNodeId);
-      
+
       // 获取下一个节点
       currentNodeId = this.getNextExecutionNode(workflow, currentNodeId);
       iterations++;
     }
-    
+
     return executionPath;
   }
 
@@ -876,22 +866,22 @@ export class WorkflowService {
 
     // 草稿状态只能激活或归档
     if (currentStatus.isDraft() &&
-        !newStatus.isActive() &&
-        !newStatus.isArchived()) {
+      !newStatus.isActive() &&
+      !newStatus.isArchived()) {
       throw new Error('草稿状态的工作流只能激活或归档');
     }
 
     // 活跃状态只能变为非活跃或归档
     if (currentStatus.isActive() &&
-        !newStatus.isInactive() &&
-        !newStatus.isArchived()) {
+      !newStatus.isInactive() &&
+      !newStatus.isArchived()) {
       throw new Error('活跃状态的工作流只能变为非活跃或归档');
     }
 
     // 非活跃状态只能变为活跃或归档
     if (currentStatus.isInactive() &&
-        !newStatus.isActive() &&
-        !newStatus.isArchived()) {
+      !newStatus.isActive() &&
+      !newStatus.isArchived()) {
       throw new Error('非活跃状态的工作流只能变为活跃或归档');
     }
   }

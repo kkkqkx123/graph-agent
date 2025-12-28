@@ -1,4 +1,4 @@
-import { ID } from '../../common/value-objects/id';
+import { ID } from '../../../common/value-objects/id';
 
 /**
  * 边ID值对象

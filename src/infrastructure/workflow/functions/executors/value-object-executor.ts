@@ -1,7 +1,6 @@
 import { injectable, inject } from 'inversify';
 import { ValueObject } from '../../../../domain/common/value-objects/value-object';
-import { NodeValueObject } from '../../../../domain/workflow/value-objects/node-value-object';
-import { EdgeValueObject } from '../../../../domain/workflow/value-objects/edge-value-object';
+import { NodeValueObject, EdgeValueObject } from '../../../../domain/workflow/value-objects';
 import { TriggerValueObject } from '../../../../domain/workflow/value-objects/trigger-value-object';
 import { HookValueObject } from '../../../../domain/workflow/value-objects/hook-value-object';
 import { FunctionRegistry } from '../registry/function-registry';
@@ -101,7 +100,7 @@ export class ValueObjectExecutor implements IValueObjectExecutor {
     @inject('FunctionRegistry') private readonly registry: FunctionRegistry,
     @inject('FunctionExecutor') private readonly functionExecutor: FunctionExecutor,
     @inject('Logger') private readonly logger: ILogger
-  ) {}
+  ) { }
 
   async executeValueObject(valueObject: ValueObject<any>, context: FunctionExecutionContext): Promise<any> {
     const startTime = Date.now();

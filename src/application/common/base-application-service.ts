@@ -4,8 +4,7 @@
  * 为应用层服务提供通用功能，包括DTO映射、业务操作封装等
  */
 
-import { ID } from '../../domain/common/value-objects/id';
-import { ILogger } from '../../domain/common/types';
+import { ID, ILogger } from '../../domain/common';
 import { BaseService } from './base-service';
 
 /**

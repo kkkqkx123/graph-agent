@@ -1,8 +1,6 @@
 import { injectable, inject } from 'inversify';
 import { LLMWrapperFactory } from '../../../infrastructure/llm/wrappers/wrapper-factory';
-import { PollingPoolWrapper } from '../../../domain/llm/entities/wrapper';
-import { TaskGroupWrapper } from '../../../domain/llm/entities/wrapper';
-import { DirectLLMWrapper } from '../../../domain/llm/entities/wrapper';
+import { PollingPoolWrapper, TaskGroupWrapper, DirectLLMWrapper } from '../../../domain/llm';
 
 // 定义基础包装器类型
 type BaseLLMWrapper = PollingPoolWrapper | TaskGroupWrapper | DirectLLMWrapper;

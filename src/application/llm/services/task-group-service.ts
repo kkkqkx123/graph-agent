@@ -1,6 +1,6 @@
 import { injectable, inject } from 'inversify';
 import { TaskGroupManager } from '../../../infrastructure/llm/managers/task-group-manager';
-import { TaskGroupNotFoundError } from '../../../domain/llm/exceptions/task-group-exceptions';
+import { TaskGroupNotFoundError } from '../../../domain/llm';
 
 // 导入新的DTO
 import {
@@ -64,11 +64,11 @@ export class TaskGroupService {
    */
   async getTaskGroup(groupName: string): Promise<Record<string, any>> {
     const config = await this.taskGroupManager.getEchelonConfig(groupName, 'echelon1');
-    
+
     if (!config) {
       throw new TaskGroupNotFoundError(groupName);
     }
-    
+
     return config;
   }
 
@@ -79,7 +79,7 @@ export class TaskGroupService {
     try {
       const config = await this.getTaskGroup(groupName);
       const status = await this.getTaskGroupStatus(groupName);
-      
+
       const taskGroup = {
         name: groupName,
         config: config,
@@ -100,7 +100,7 @@ export class TaskGroupService {
     try {
       // 验证创建请求
       const validatedRequest = this.taskGroupCreateDto.validate(request);
-      
+
       // 创建任务组（简化实现）
       const taskGroup = {
         name: validatedRequest.name,
@@ -155,13 +155,13 @@ export class TaskGroupService {
     try {
       // 验证更新请求
       const validatedRequest = this.taskGroupUpdateDto.validate(request);
-      
+
       // 获取现有任务组
       const existingTaskGroup = await this.getTaskGroupWithDto(groupName);
       if (!existingTaskGroup) {
         throw new TaskGroupNotFoundError(groupName);
       }
-      
+
       // 更新任务组（简化实现）
       const updatedTaskGroup = {
         ...existingTaskGroup,
@@ -183,7 +183,7 @@ export class TaskGroupService {
    */
   async parseGroupReference(reference: string): Promise<GroupReferenceParseDTO> {
     const [groupName, echelonOrTask] = this.taskGroupManager.parseGroupReference(reference);
-    
+
     const result = {
       groupName,
       echelonOrTask,
@@ -199,7 +199,7 @@ export class TaskGroupService {
    */
   async getModelsForGroup(groupReference: string): Promise<ModelListDTO> {
     const models = await this.taskGroupManager.getModelsForGroup(groupReference);
-    
+
     const modelList = {
       models,
       totalCount: models.length,
@@ -222,7 +222,7 @@ export class TaskGroupService {
    */
   async getGroupModelsByPriority(groupName: string): Promise<EchelonPriorityDto[]> {
     const modelsByPriority = await this.taskGroupManager.getGroupModelsByPriority(groupName);
-    
+
     return modelsByPriority.map(([echelonName, priority, models]) => {
       const echelonPriority = {
         echelonName,
@@ -238,7 +238,7 @@ export class TaskGroupService {
    */
   async getTaskGroupStatus(groupName: string): Promise<Record<string, any>> {
     const modelsByPriorityData = await this.taskGroupManager.getGroupModelsByPriority(groupName);
-    
+
     return {
       name: groupName,
       totalEchelons: modelsByPriorityData.length,
@@ -259,11 +259,11 @@ export class TaskGroupService {
   async getAllTaskGroupsStatus(): Promise<Record<string, any>> {
     const taskGroups = await this.taskGroupManager.listTaskGroups();
     const status: Record<string, any> = {};
-    
+
     for (const groupName of taskGroups) {
       status[groupName] = await this.getTaskGroupStatus(groupName);
     }
-    
+
     return status;
   }
 
@@ -284,7 +284,7 @@ export class TaskGroupService {
    */
   async getFallbackConfig(groupName: string): Promise<FallbackConfigDTO> {
     const config = await this.taskGroupManager.getFallbackConfig(groupName);
-    
+
     return {
       strategy: (config as any)['strategy'] || 'sequential',
       fallbackGroups: (config as any)['fallbackGroups'] || [],
@@ -320,7 +320,7 @@ export class TaskGroupService {
    */
   async getTaskGroupStatistics(groupName: string): Promise<Record<string, any>> {
     const status = await this.getTaskGroupStatus(groupName);
-    
+
     return {
       name: groupName,
       totalEchelons: status['totalEchelons'],
@@ -346,12 +346,12 @@ export class TaskGroupService {
     const totalModels = Object.values(allStatus).reduce(
       (sum, status) => sum + status['totalModels'], 0
     );
-    
+
     const groups: Record<string, any> = {};
     for (const [groupName, status] of Object.entries(allStatus)) {
       groups[groupName] = await this.getTaskGroupStatistics(groupName);
     }
-    
+
     const report = {
       totalGroups,
       totalModels,
@@ -367,11 +367,11 @@ export class TaskGroupService {
    */
   async getOptimalTaskGroup(requirements: Record<string, any>): Promise<OptimalTaskGroupSelectionDTO> {
     const taskGroups = await this.taskGroupManager.listTaskGroups();
-    
+
     // 简化实现：返回第一个可用的任务组
     let selectedGroup: string | null = null;
     const alternatives: string[] = [];
-    
+
     for (const groupName of taskGroups) {
       if (await this.isTaskGroupAvailable(groupName)) {
         if (!selectedGroup) {
@@ -381,7 +381,7 @@ export class TaskGroupService {
         }
       }
     }
-    
+
     const selection = {
       selectedGroup,
       alternatives,
@@ -398,7 +398,7 @@ export class TaskGroupService {
   async getTaskGroupHealthReport(groupName: string): Promise<TaskGroupHealthReportDTO> {
     const status = await this.getTaskGroupStatus(groupName);
     const statistics = await this.getTaskGroupStatistics(groupName);
-    
+
     const report = {
       groupName,
       status: 'healthy' as const, // 简化实现

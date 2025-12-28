@@ -1,5 +1,5 @@
 import { ID } from '@domain/common/value-objects/id';
-import { WorkflowState } from '../state/workflow-state';
+import { WorkflowState } from './workflow-state';
 
 /**
  * 状态管理器接口
@@ -20,3 +20,6 @@ export interface IStateManager {
   /** 检查状态是否存在 */
   hasState(workflowId: ID, executionId: string): Promise<boolean>;
 }
+
+// 导出WorkflowState
+export { WorkflowState };

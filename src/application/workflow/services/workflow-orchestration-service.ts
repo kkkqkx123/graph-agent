@@ -7,13 +7,10 @@
 
 import { injectable, inject } from 'inversify';
 import { SessionOrchestrationService, ThreadAction } from '../../sessions/interfaces/session-orchestration-service.interface';
-import { ThreadCoordinatorService } from '../../../domain/threads/services/thread-coordinator-service.interface';
-import { GraphAlgorithmService } from '../../../domain/workflow/services/graph-algorithm-service.interface';
-import { GraphValidationService } from '../../../domain/workflow/services/graph-validation-service.interface';
-import { WorkflowRepository } from '../../../domain/workflow/repositories/workflow-repository';
+import { ThreadCoordinatorService } from '../../../domain/threads';
+import { GraphAlgorithmService, GraphValidationService, WorkflowRepository } from '../../../domain/workflow';
 import { WorkflowExecutionResultDto } from '../dtos';
-import { ID } from '../../../domain/common/value-objects/id';
-import { Timestamp } from '../../../domain/common/value-objects/timestamp';
+import { ID, Timestamp } from '../../../domain/common';
 import { TYPES } from '../../../di/service-keys';
 
 /**

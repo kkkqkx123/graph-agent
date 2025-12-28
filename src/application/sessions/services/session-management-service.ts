@@ -4,11 +4,9 @@
  * 负责会话的查询、列表、存在性检查和配置更新等管理功能
  */
 
-import { Session } from '../../../domain/sessions/entities/session';
-import { SessionRepository } from '../../../domain/sessions/repositories/session-repository';
-import { SessionConfig, SessionConfigProps } from '../../../domain/sessions/value-objects/session-config';
+import { Session, SessionRepository, SessionConfig, SessionConfigProps } from '../../../domain/sessions';
 import { BaseApplicationService } from '../../common/base-application-service';
-import { ILogger } from '../../../domain/common/types';
+import { ILogger } from '../../../domain/common';
 
 /**
  * 会话管理服务

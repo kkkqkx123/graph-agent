@@ -1,8 +1,7 @@
 import { injectable } from 'inversify';
 import { SessionResourceService } from '../interfaces/session-resource-service.interface';
-import { SessionRepository } from '../../../domain/sessions/repositories/session-repository';
-import { ID } from '../../../domain/common/value-objects/id';
-import { ResourceAllocation, ResourceRequirement, ResourceLimits, SessionQuota, QuotaUsage } from '../../../domain/common/types/resource-types';
+import { SessionRepository } from '../../../domain/sessions';
+import { ID, ResourceAllocation, ResourceRequirement, ResourceLimits, SessionQuota, QuotaUsage } from '../../../domain/common';
 
 /**
  * 会话资源服务实现

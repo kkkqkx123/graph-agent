@@ -1,10 +1,10 @@
 import { injectable } from 'inversify';
 import { GraphAlgorithmService, GraphComplexity } from '../../../domain/workflow/services/graph-algorithm-service.interface';
 import { Workflow } from '../../../domain/workflow/entities/workflow';
-import { NodeValueObject } from '../../../domain/workflow/value-objects/node-value-object';
-import { EdgeValueObject } from '../../../domain/workflow/value-objects/edge-value-object';
+import { NodeValueObject } from '../../../domain/workflow/value-objects';
+import { EdgeValueObject } from '../../../domain/workflow/value-objects/edge';
 import { ID } from '../../../domain/common/value-objects/id';
-import { NodeId } from '../../../domain/workflow/value-objects/node-id';
+import { NodeId } from '../../../domain/workflow/value-objects';
 
 /**
  * 图算法服务实现
@@ -68,11 +68,11 @@ export class GraphAlgorithmServiceImpl implements GraphAlgorithmService {
 
     const visit = (nodeId: ID): boolean => {
       const nodeIdStr = nodeId.toString();
-      
+
       if (visiting.has(nodeIdStr)) {
         return true; // 发现循环
       }
-      
+
       if (visited.has(nodeIdStr)) {
         return false; // 已访问过，无循环
       }
@@ -89,7 +89,7 @@ export class GraphAlgorithmServiceImpl implements GraphAlgorithmService {
 
       visiting.delete(nodeIdStr);
       visited.add(nodeIdStr);
-      
+
       return false;
     };
 
@@ -116,7 +116,7 @@ export class GraphAlgorithmServiceImpl implements GraphAlgorithmService {
     const dfs = (nodeId: ID, component: NodeValueObject[]): void => {
       const nodeIdStr = nodeId.toString();
       if (visited.has(nodeIdStr)) return;
-      
+
       visited.add(nodeIdStr);
       const node = graph.nodes.get(nodeIdStr);
       if (node) {
@@ -161,7 +161,7 @@ export class GraphAlgorithmServiceImpl implements GraphAlgorithmService {
 
     const dfs = (nodeId: ID): boolean => {
       const nodeIdStr = nodeId.toString();
-      
+
       if (visited.has(nodeIdStr)) return false;
       visited.add(nodeIdStr);
 
@@ -208,7 +208,7 @@ export class GraphAlgorithmServiceImpl implements GraphAlgorithmService {
 
     const dfs = (nodeId: ID): void => {
       const nodeIdStr = nodeId.toString();
-      
+
       if (visited.has(nodeIdStr)) return;
       visited.add(nodeIdStr);
 
@@ -244,13 +244,13 @@ export class GraphAlgorithmServiceImpl implements GraphAlgorithmService {
     const graph = workflow.getGraph();
     const nodeCount = graph.nodes.size;
     const edgeCount = graph.edges.size;
-    
+
     // 检测循环
     const cycleCount = this.hasCycle(workflow) ? 1 : 0;
-    
+
     // 计算连通分量
     const componentCount = this.getConnectedComponents(workflow).length;
-    
+
     // 计算最大路径长度（简化版）
     let maxPathLength = 0;
     for (const startNode of graph.nodes.values()) {

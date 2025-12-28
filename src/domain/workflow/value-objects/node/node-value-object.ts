@@ -1,4 +1,4 @@
-import { ValueObject } from '../../common/value-objects/value-object';
+import { ValueObject } from '../../../common/value-objects/value-object';
 import { NodeId } from './node-id';
 import { NodeType } from './node-type';
 
@@ -19,6 +19,10 @@ export interface NodeValueObjectProps {
  * 封装节点数据，提供类型安全和验证
  */
 export class NodeValueObject extends ValueObject<NodeValueObjectProps> {
+  private constructor(props: NodeValueObjectProps) {
+    super(props);
+  }
+
   /**
    * 创建节点值对象
    */

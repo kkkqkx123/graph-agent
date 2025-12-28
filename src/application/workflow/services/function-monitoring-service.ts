@@ -4,8 +4,7 @@
  */
 
 import { injectable, inject } from 'inversify';
-import { ILogger } from '../../../domain/common/types/logger-types';
-import { Timestamp } from '../../../domain/common/value-objects/timestamp';
+import { ILogger, Timestamp } from '../../../domain/common';
 
 /**
  * 工作流函数类型枚举

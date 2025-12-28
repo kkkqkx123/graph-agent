@@ -6,14 +6,10 @@ import { WorkflowDefinition } from '../value-objects/workflow-definition';
 import { WorkflowStatus } from '../value-objects/workflow-status';
 import { WorkflowType } from '../value-objects/workflow-type';
 import { WorkflowConfig } from '../value-objects/workflow-config';
-import { NodeId } from '../value-objects/node-id';
-import { NodeType } from '../value-objects/node-type';
-import { EdgeId } from '../value-objects/edge-id';
-import { EdgeType } from '../value-objects/edge-type';
+import { NodeId, NodeType, NodeValueObject } from '../value-objects';
+import { EdgeId, EdgeType, EdgeValueObject } from '../value-objects/edge';
 import { ErrorHandlingStrategy } from '../value-objects/error-handling-strategy';
-import { ExecutionStrategy } from '../value-objects/execution-strategy';
-import { NodeValueObject } from '../value-objects/node-value-object';
-import { EdgeValueObject } from '../value-objects/edge-value-object';
+import { ExecutionStrategy } from '../value-objects/execution/execution-strategy';
 
 /**
  * 工作流图数据接口
@@ -38,9 +34,9 @@ export interface WorkflowProps {
 }
 
 /**
- * 验证结果接口
+ * 工作流验证结果接口
  */
-export interface ValidationResult {
+export interface WorkflowValidationResult {
   readonly valid: boolean;
   readonly errors: string[];
   readonly warnings: string[];
@@ -340,7 +336,7 @@ export class Workflow extends Entity {
    * 验证工作流
    * @returns 验证结果
    */
-  public validate(): ValidationResult {
+  public validate(): WorkflowValidationResult {
     const errors: string[] = [];
     const warnings: string[] = [];
 
@@ -381,7 +377,7 @@ export class Workflow extends Entity {
       valid: errors.length === 0,
       errors,
       warnings
-    };
+    } as WorkflowValidationResult;
   }
 
   /**
@@ -436,7 +432,7 @@ export class Workflow extends Entity {
     reason?: string
   ): void {
     const newDefinition = this.props.definition.changeStatus(newStatus, changedBy);
-    
+
     (this.props as any).definition = newDefinition;
     this.update();
   }
@@ -510,9 +506,9 @@ export class Workflow extends Entity {
   public canExecute(): boolean {
     const validationResult = this.validate();
     return this.props.definition.status.isActive() &&
-           !this.props.definition.isDeleted() &&
-           this.getNodeCount() > 0 &&
-           validationResult.valid;
+      !this.props.definition.isDeleted() &&
+      this.getNodeCount() > 0 &&
+      validationResult.valid;
   }
 
   /**
@@ -534,7 +530,7 @@ export class Workflow extends Entity {
   } {
     const nodeCount = this.getNodeCount();
     const edgeCount = this.getEdgeCount();
-    
+
     let complexity: 'simple' | 'moderate' | 'complex';
     if (nodeCount <= 5 && edgeCount <= 8) {
       complexity = 'simple';
@@ -543,7 +539,7 @@ export class Workflow extends Entity {
     } else {
       complexity = 'complex';
     }
-    
+
     return { nodeCount, edgeCount, complexity };
   }
 
@@ -790,7 +786,7 @@ export class Workflow extends Entity {
       const outgoingEdges = this.getOutgoingEdges({ toString: () => nodeId } as NodeId);
       for (const edge of outgoingEdges) {
         const neighborId = edge.toNodeId.toString();
-        
+
         if (!visited.has(neighborId)) {
           if (hasCycleDFS(neighborId)) {
             return true;

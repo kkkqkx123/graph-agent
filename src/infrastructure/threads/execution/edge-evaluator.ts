@@ -1,4 +1,4 @@
-import { EdgeValueObject } from '../../../domain/workflow/value-objects/edge-value-object';
+import { EdgeValueObject } from '../../../domain/workflow/value-objects/edge/edge-value-object';
 import { ExecutionContext } from '../../../domain/threads/value-objects/execution-context';
 
 /**

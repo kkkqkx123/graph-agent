@@ -4,13 +4,10 @@
  * 负责会话的删除、消息添加、清理和统计等维护功能
  */
 
-import { Session } from '../../../domain/sessions/entities/session';
-import { SessionRepository } from '../../../domain/sessions/repositories/session-repository';
-import { ThreadRepository } from '../../../domain/threads/repositories/thread-repository';
+import { Session, SessionRepository, SessionStatus } from '../../../domain/sessions';
+import { ThreadRepository } from '../../../domain/threads';
 import { BaseApplicationService } from '../../common/base-application-service';
-import { ILogger } from '../../../domain/common/types';
-import { ID } from '../../../domain/common/value-objects/id';
-import { SessionStatus } from '../../../domain/sessions/value-objects/session-status';
+import { ILogger, ID } from '../../../domain/common';
 
 /**
  * 会话维护服务

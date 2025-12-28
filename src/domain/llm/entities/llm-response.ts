@@ -18,9 +18,9 @@ export interface TokenUsage {
 }
 
 /**
- * LLM工具调用接口
+ * LLM响应工具调用接口
  */
-export interface LLMToolCall {
+export interface LLMResponseToolCall {
   id: string;
   type: string;
   function: {
@@ -320,8 +320,8 @@ export class LLMResponse extends Entity {
    * 获取工具调用
    * @returns 工具调用列表
    */
-  public getToolCalls(): LLMToolCall[] {
-    const toolCalls: LLMToolCall[] = [];
+  public getToolCalls(): LLMResponseToolCall[] {
+    const toolCalls: LLMResponseToolCall[] = [];
     for (const choice of this.props.choices) {
       if (choice.message.hasToolCalls()) {
         toolCalls.push(...choice.message.getToolCalls() || []);

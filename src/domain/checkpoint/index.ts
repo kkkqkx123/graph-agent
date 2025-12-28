@@ -1,8 +1,12 @@
+/**
+ * 检查点领域模块入口
+ */
+
 // 实体
-export { Checkpoint } from './entities/checkpoint';
+export * from './entities';
 
 // 值对象
-export { CheckpointType, CheckpointTypeValue } from './value-objects/checkpoint-type';
+export * from './value-objects';
 
 // 仓储
-export { CheckpointRepository } from './repositories/checkpoint-repository';
+export * from './repositories';

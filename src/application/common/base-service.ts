@@ -4,8 +4,7 @@
  * 提供通用服务功能，包括错误处理、日志记录、ID转换等
  */
 
-import { ID } from '../../domain/common/value-objects/id';
-import { ILogger, IService } from '../../domain/common/types';
+import { ID, ILogger, IService } from '../../domain/common';
 
 /**
  * 应用服务基类

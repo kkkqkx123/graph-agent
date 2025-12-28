@@ -5,10 +5,13 @@
  * 具体实现在基础设施层提供
  */
 
-import { Workflow, ValidationResult } from '../entities/workflow';
+import { Workflow, WorkflowValidationResult } from '../entities/workflow';
 
-// 重新导出 ValidationResult 以便外部使用
-export type { ValidationResult };
+// 重新导出 WorkflowValidationResult 以便外部使用
+export type { WorkflowValidationResult as ValidationResult };
+
+// 在当前文件中使用类型别名
+type ValidationResult = WorkflowValidationResult;
 
 /**
  * 图验证服务接口

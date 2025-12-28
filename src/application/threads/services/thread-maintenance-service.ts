@@ -4,12 +4,10 @@
  * 负责线程的删除、清理和批量操作等维护功能
  */
 
-import { Thread } from '../../../domain/threads/entities/thread';
-import { ThreadRepository } from '../../../domain/threads/repositories/thread-repository';
-import { ThreadStatus } from '../../../domain/threads/value-objects/thread-status';
+import { Thread, ThreadRepository, ThreadStatus } from '../../../domain/threads';
 import { BaseApplicationService } from '../../common/base-application-service';
 import { ThreadInfo } from '../dtos';
-import { ILogger } from '../../../domain/common/types';
+import { ILogger } from '../../../domain/common';
 
 /**
  * 线程维护服务

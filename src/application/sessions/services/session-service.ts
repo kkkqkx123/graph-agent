@@ -5,13 +5,9 @@
  * 使用新的Zod-based DTO进行运行时验证
  */
 
-import { Session } from '../../../domain/sessions/entities/session';
-import { SessionRepository } from '../../../domain/sessions/repositories/session-repository';
-import { ThreadRepository } from '../../../domain/threads/repositories/thread-repository';
-import { ID } from '../../../domain/common/value-objects/id';
-import { SessionStatus } from '../../../domain/sessions/value-objects/session-status';
-import { SessionConfig } from '../../../domain/sessions/value-objects/session-config';
-import { ILogger } from '../../../domain/common/types';
+import { Session, SessionRepository, SessionStatus, SessionConfig } from '../../../domain/sessions';
+import { ThreadRepository } from '../../../domain/threads';
+import { ID, ILogger } from '../../../domain/common';
 import {
   CreateSessionRequest,
   CreateSessionRequestDto

@@ -2,8 +2,8 @@ import { injectable } from 'inversify';
 import { WorkflowFunctionType } from '../../../../domain/workflow/value-objects/workflow-function-type';
 import { BaseWorkflowFunction } from '../base/base-workflow-function';
 import { ValueObject } from '../../../../domain/common/value-objects/value-object';
-import { NodeValueObject } from '../../../../domain/workflow/value-objects/node-value-object';
-import { EdgeValueObject } from '../../../../domain/workflow/value-objects/edge-value-object';
+import { NodeValueObject } from '../../../../domain/workflow/value-objects';
+import { EdgeValueObject } from '../../../../domain/workflow/value-objects/edge/edge-value-object';
 import { TriggerValueObject } from '../../../../domain/workflow/value-objects/trigger-value-object';
 import { HookValueObject } from '../../../../domain/workflow/value-objects/hook-value-object';
 

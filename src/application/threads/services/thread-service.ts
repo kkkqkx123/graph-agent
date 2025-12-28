@@ -5,14 +5,10 @@
  * 专注于应用层逻辑，不包含核心业务规则
  */
 
-import { Thread } from '../../../domain/threads/entities/thread';
-import { ThreadRepository } from '../../../domain/threads/repositories/thread-repository';
-import { SessionRepository } from '../../../domain/sessions/repositories/session-repository';
-import { WorkflowRepository } from '../../../domain/workflow/repositories/workflow-repository';
-import { ID } from '../../../domain/common/value-objects/id';
-import { ThreadStatus } from '../../../domain/threads/value-objects/thread-status';
-import { ThreadPriority } from '../../../domain/threads/value-objects/thread-priority';
-import { ILogger } from '../../../domain/common/types/logger-types';
+import { Thread, ThreadStatus, ThreadPriority, ThreadRepository } from '../../../domain/threads';
+import { SessionRepository } from '../../../domain/sessions';
+import { WorkflowRepository } from '../../../domain/workflow';
+import { ID, ILogger } from '../../../domain/common';
 import { CreateThreadRequest, ThreadInfo } from '../dtos';
 
 /**

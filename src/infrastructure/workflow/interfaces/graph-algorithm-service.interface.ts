@@ -1,5 +1,5 @@
 import { Workflow } from '../../../domain/workflow/entities/workflow';
-import { NodeValueObject } from '../../../domain/workflow/value-objects/node-value-object';
+import { NodeValueObject } from '../../../domain/workflow/value-objects';
 import { ID } from '../../../domain/common/value-objects/id';
 
 /**

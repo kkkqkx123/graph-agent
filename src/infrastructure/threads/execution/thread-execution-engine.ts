@@ -1,11 +1,11 @@
 import { injectable, inject } from 'inversify';
 import { Workflow } from '../../../domain/workflow/entities/workflow';
 import { Thread } from '../../../domain/threads/entities/thread';
-import { NodeId } from '../../../domain/workflow/value-objects/node-id';
-import { EdgeValueObject } from '../../../domain/workflow/value-objects/edge-value-object';
-import { NodeValueObject } from '../../../domain/workflow/value-objects/node-value-object';
+import { NodeId } from '../../../domain/workflow/value-objects';
+import { EdgeValueObject } from '../../../domain/workflow/value-objects';
+import { NodeValueObject } from '../../../domain/workflow/value-objects';
 import { NodeExecution, NodeExecutionError } from '../../../domain/threads/value-objects/node-execution';
-import { NodeStatus } from '../../../domain/workflow/value-objects/node-status';
+import { NodeStatus } from '../../../domain/workflow/value-objects';
 import { ExecutionContext } from '../../../domain/threads/value-objects/execution-context';
 import { NodeRouter } from './node-router';
 import { EdgeEvaluator } from './edge-evaluator';
@@ -333,7 +333,7 @@ export class ThreadExecutionEngine {
     try {
       // 获取工作流中该钩子点的所有钩子
       const hooks = this.getHooksForPoint(hookPoint);
-      
+
       if (hooks.length === 0) {
         return;
       }

@@ -2,7 +2,7 @@ import { ValueObject } from '../../common/value-objects/value-object';
 import { ID } from '../../common/value-objects/id';
 import { Timestamp } from '../../common/value-objects/timestamp';
 import { ThreadStatus } from './thread-status';
-import { NodeId } from '../../workflow/value-objects/node-id';
+import { NodeId } from '../../workflow/value-objects';
 import { NodeExecution } from './node-execution';
 import { ExecutionContext } from './execution-context';
 

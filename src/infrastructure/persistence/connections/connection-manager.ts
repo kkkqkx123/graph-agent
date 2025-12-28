@@ -31,7 +31,7 @@ export class ConnectionManager {
   }
 
   async closeConnection(): Promise<void> {
-    if (this.connection && this.connection.isConnected) {
+    if (this.connection && this.connection.isInitialized) {
       await this.connection.close();
       this.connection = null;
     }

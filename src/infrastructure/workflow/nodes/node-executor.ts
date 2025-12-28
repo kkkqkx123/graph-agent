@@ -1,5 +1,5 @@
 import { injectable, inject } from 'inversify';
-import { NodeValueObject } from '../../../domain/workflow/value-objects/node-value-object';
+import { NodeValueObject } from '../../../domain/workflow/value-objects';
 import { ValueObjectExecutor, FunctionExecutionContext } from '../functions/executors/value-object-executor';
 import { ILogger } from '../../../domain/common/types/logger-types';
 

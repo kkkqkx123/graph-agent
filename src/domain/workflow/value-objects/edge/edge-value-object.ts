@@ -1,6 +1,7 @@
-import { ValueObject } from '../../common/value-objects/value-object';
-import { EdgeId, EdgeType } from './edge';
-import { NodeId } from './node';
+import { ValueObject } from '../../../common/value-objects/value-object';
+import { EdgeId } from './edge-id';
+import { EdgeType } from './edge-type';
+import { NodeId } from '../node/node-id';
 
 /**
  * 边值对象属性接口

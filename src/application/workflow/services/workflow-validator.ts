@@ -1,8 +1,6 @@
 import { injectable, inject } from 'inversify';
-import { Workflow } from '../../../domain/workflow/entities/workflow';
-import { WorkflowRepository } from '../../../domain/workflow/repositories/workflow-repository';
-import { ID } from '../../../domain/common/value-objects/id';
-import { ILogger } from '../../../domain/common/types/logger-types';
+import { Workflow, WorkflowRepository } from '../../../domain/workflow';
+import { ID, ILogger } from '../../../domain/common';
 
 /**
  * 验证结果

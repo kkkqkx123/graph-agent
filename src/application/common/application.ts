@@ -4,7 +4,7 @@
 
 import { AppContainer } from '../../di/container';
 import { TYPES } from '../../di/service-keys';
-import { ILogger, IConfigManager, IService } from '../../domain/common/types';
+import { ILogger, IConfigManager, IService } from '../../domain/common';
 
 /**
  * 应用程序类

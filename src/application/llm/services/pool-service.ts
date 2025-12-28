@@ -1,6 +1,6 @@
 import { injectable, inject } from 'inversify';
 import { PollingPoolManager } from '../../../infrastructure/llm/managers/pool-manager';
-import { PollingPoolNotFoundError } from '../../../domain/llm/exceptions/pool-exceptions';
+import { PollingPoolNotFoundError } from '../../../domain/llm';
 
 // 导入新的DTO
 import {

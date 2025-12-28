@@ -5,8 +5,7 @@
 import { ThreadInfo, ThreadStatistics } from './thread-info';
 import { CreateThreadRequest } from './create-thread';
 import { NodeExecution } from '../../../domain/threads/value-objects/node-execution';
-import { NodeStatus } from '../../../domain/workflow/value-objects/node-status';
-import { NodeStatusValue } from '../../../domain/workflow/value-objects/node-status';
+import { NodeStatus, NodeStatusValue } from '../../../domain/workflow';
 
 export class ThreadValidator {
   /**
@@ -46,7 +45,7 @@ export class ThreadValidator {
     if (data.errorMessage && typeof data.errorMessage !== 'string') {
       throw new Error('errorMessage must be string');
     }
-    
+
     return data as ThreadInfo;
   }
 
@@ -72,7 +71,7 @@ export class ThreadValidator {
     if (data.metadata && typeof data.metadata !== 'object') {
       throw new Error('metadata must be object');
     }
-    
+
     return data as CreateThreadRequest;
   }
 
@@ -101,7 +100,7 @@ export class ThreadValidator {
     if (typeof data.cancelled !== 'number') {
       throw new Error('cancelled must be number');
     }
-    
+
     return data as ThreadStatistics;
   }
 

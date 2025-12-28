@@ -3,9 +3,7 @@
  */
 
 // 实体
-export * from './entities/prompt';
+export * from './entities';
 
 // 值对象
-export * from './value-objects/prompt-id';
-export * from './value-objects/prompt-type';
-export * from './value-objects/prompt-status';
+export * from './value-objects';

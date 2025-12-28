@@ -3,14 +3,13 @@
  */
 
 // 实体
-export * from './entities/tool';
-export * from './entities/tool-execution';
-export * from './entities/tool-result';
+export * from './entities';
 
 // 值对象
-export * from './value-objects/tool-type';
-export * from './value-objects/tool-status';
-export * from './value-objects/tool-execution-status';
+export * from './value-objects';
+
+// 接口
+export * from './interfaces';
 
 // 仓储接口
 export * from './repositories';

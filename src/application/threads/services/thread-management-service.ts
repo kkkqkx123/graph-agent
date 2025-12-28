@@ -4,13 +4,10 @@
  * 负责线程的查询、列表、存在性检查和优先级更新等管理功能
  */
 
-import { Thread } from '../../../domain/threads/entities/thread';
-import { ThreadRepository } from '../../../domain/threads/repositories/thread-repository';
-import { ThreadPriority } from '../../../domain/threads/value-objects/thread-priority';
+import { Thread, ThreadRepository, ThreadPriority } from '../../../domain/threads';
 import { BaseApplicationService } from '../../common/base-application-service';
 import { ThreadInfo } from '../dtos';
-import { ILogger } from '../../../domain/common/types';
-import { ID } from '../../../domain/common/value-objects/id';
+import { ILogger, ID } from '../../../domain/common';
 
 /**
  * 线程管理服务

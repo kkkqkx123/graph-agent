@@ -1,8 +1,6 @@
-import { ID } from '../../../../common/value-objects/id';
-import { Timestamp } from '../../../../common/value-objects/timestamp';
-import { ValueObject } from '../../../../common/value-objects/value-object';
-import { NodeId } from '../../../../workflow/value-objects/node-id';
-import { NodeExecutionSnapshot } from '../../../../threads/value-objects/node-execution';
+import { ID, Timestamp, ValueObject } from '../../../../common';
+import { NodeId } from '../../../../workflow';
+import { NodeExecutionSnapshot } from '../../../../threads';
 
 /**
  * Copy选项值对象

@@ -4,16 +4,12 @@
  * 负责线程的创建、启动、暂停、恢复、完成、取消等生命周期管理
  */
 
-import { Thread } from '../../../domain/threads/entities/thread';
-import { ThreadRepository } from '../../../domain/threads/repositories/thread-repository';
-import { SessionRepository } from '../../../domain/sessions/repositories/session-repository';
-import { WorkflowRepository } from '../../../domain/workflow/repositories/workflow-repository';
-import { ThreadStatus } from '../../../domain/threads/value-objects/thread-status';
-import { ThreadPriority } from '../../../domain/threads/value-objects/thread-priority';
+import { Thread, ThreadRepository, ThreadStatus, ThreadPriority } from '../../../domain/threads';
+import { SessionRepository } from '../../../domain/sessions';
+import { WorkflowRepository } from '../../../domain/workflow';
 import { BaseApplicationService } from '../../common/base-application-service';
 import { CreateThreadRequest, ThreadInfo } from '../dtos';
-import { ILogger } from '../../../domain/common/types';
-import { ID } from '../../../domain/common/value-objects/id';
+import { ILogger, ID } from '../../../domain/common';
 
 /**
  * 线程生命周期服务

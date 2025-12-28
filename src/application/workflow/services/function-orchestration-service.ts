@@ -4,7 +4,7 @@
  */
 
 import { injectable, inject } from 'inversify';
-import { ILogger } from '../../../domain/common/types/logger-types';
+import { ILogger } from '../../../domain/common';
 
 /**
  * 工作流函数类型枚举

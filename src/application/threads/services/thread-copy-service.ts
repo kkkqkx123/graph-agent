@@ -4,21 +4,10 @@
  * 负责处理线程Copy操作的业务逻辑编排
  */
 
-import { ID } from '../../../domain/common/value-objects/id';
-import { NodeId } from '../../../domain/workflow/value-objects/node-id';
-import { Thread } from '../../../domain/threads/entities/thread';
-import { ThreadRepository } from '../../../domain/threads/repositories/thread-repository';
-import { SessionRepository } from '../../../domain/sessions/repositories/session-repository';
-import { ILogger } from '../../../domain/common/types/logger-types';
-import {
-  CopyStrategy,
-  CopyOptions,
-  CopyScope,
-  CopyContext,
-  ThreadOperationResult,
-  ThreadOperationMetadata,
-  ThreadOperationError
-} from '../../../domain/sessions/value-objects';
+import { ID, ILogger } from '../../../domain/common';
+import { NodeId } from '../../../domain/workflow';
+import { Thread, ThreadRepository } from '../../../domain/threads';
+import { SessionRepository, CopyStrategy, CopyOptions, CopyScope, CopyContext, ThreadOperationResult, ThreadOperationMetadata, ThreadOperationError } from '../../../domain/sessions';
 
 /**
  * Copy操作输入
@@ -56,7 +45,7 @@ export class ThreadCopyService {
     private readonly threadRepository: ThreadRepository,
     private readonly sessionRepository: SessionRepository,
     private readonly logger: ILogger
-  ) {}
+  ) { }
 
   /**
    * 执行Copy操作
@@ -64,7 +53,7 @@ export class ThreadCopyService {
   async executeCopy(input: CopyInput, operatorId?: ID): Promise<ThreadOperationResult<CopyOutput>> {
     const startTime = Date.now();
     const operationType = 'copy';
-    
+
     try {
       this.logger.info('开始执行Copy操作', {
         sourceThreadId: input.sourceThread.threadId.toString()
@@ -79,7 +68,7 @@ export class ThreadCopyService {
           { input }
         );
         const metadata = ThreadOperationMetadata.create(operationType, operatorId, {
-          validationError: validation.error 
+          validationError: validation.error
         });
         return ThreadOperationResult.createFailure<CopyOutput>(error, metadata);
       }
@@ -93,7 +82,7 @@ export class ThreadCopyService {
           { validation: copyValidation }
         );
         const metadata = ThreadOperationMetadata.create(operationType, operatorId, {
-          validationErrors: copyValidation.errors 
+          validationErrors: copyValidation.errors
         });
         return ThreadOperationResult.createFailure<CopyOutput>(error, metadata);
       }
@@ -138,11 +127,11 @@ export class ThreadCopyService {
         { error }
       );
       const metadata = ThreadOperationMetadata.create(operationType, operatorId, {
-        executionError: true 
+        executionError: true
       });
-      
+
       this.logger.error('Copy操作执行失败', error as Error);
-      
+
       return ThreadOperationResult.createFailure<CopyOutput>(operationError, metadata);
     }
   }

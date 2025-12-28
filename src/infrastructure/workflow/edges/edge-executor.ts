@@ -1,5 +1,5 @@
 import { injectable, inject } from 'inversify';
-import { EdgeValueObject } from '../../../domain/workflow/value-objects/edge-value-object';
+import { EdgeValueObject } from '../../../domain/workflow/value-objects/edge/edge-value-object';
 import { ValueObjectExecutor, FunctionExecutionContext } from '../functions/executors/value-object-executor';
 import { ILogger } from '../../../domain/common/types/logger-types';
 

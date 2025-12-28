@@ -1,8 +1,7 @@
 import { ValueObject } from '../../common/value-objects/value-object';
 import { ID } from '../../common/value-objects/id';
 import { Timestamp } from '../../common/value-objects/timestamp';
-import { NodeId } from '../../workflow/value-objects/node-id';
-import { NodeStatus } from '../../workflow/value-objects/node-status';
+import { NodeId, NodeStatus } from '../../workflow/value-objects';
 
 /**
  * LLM调用记录接口

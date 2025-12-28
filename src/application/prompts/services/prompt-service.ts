@@ -6,10 +6,8 @@
 import { PromptRepository, PromptSearchCriteria } from '../../../infrastructure/persistence/repositories/prompt-repository';
 import { PromptLoader } from '../../../infrastructure/prompts/services/prompt-loader';
 import { PromptInjector } from '../../../infrastructure/prompts/services/prompt-injector';
-import { Prompt } from '../../../domain/prompts/entities/prompt';
-import { PromptId } from '../../../domain/prompts/value-objects/prompt-id';
-import { PromptConfig } from '../../../domain/prompts/entities/prompt';
-import { WorkflowState } from '../../../domain/workflow/state/workflow-state';
+import { Prompt, PromptId, PromptConfig } from '../../../domain/prompts';
+import { WorkflowState } from '../../../domain/workflow';
 
 // 导入新的DTO
 import {

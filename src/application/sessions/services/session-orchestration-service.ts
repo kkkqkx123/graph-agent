@@ -1,12 +1,10 @@
 import { injectable, inject } from 'inversify';
 import { SessionOrchestrationService, ThreadAction, StateChange } from '../interfaces/session-orchestration-service.interface';
-import { SessionRepository } from '../../../domain/sessions/repositories/session-repository';
-import { ThreadRepository } from '../../../domain/threads/repositories/thread-repository';
+import { SessionRepository } from '../../../domain/sessions';
+import { ThreadRepository, ThreadCoordinatorService } from '../../../domain/threads';
 import { SessionResourceService } from '../interfaces/session-resource-service.interface';
-import { ThreadCoordinatorService } from '../../../domain/threads/services/thread-coordinator-service.interface';
 import { WorkflowExecutionResultDto } from '../../workflow/dtos';
-import { ID } from '../../../domain/common/value-objects/id';
-import { Timestamp } from '../../../domain/common/value-objects/timestamp';
+import { ID, Timestamp } from '../../../domain/common';
 import { TYPES } from '../../../di/service-keys';
 
 /**
