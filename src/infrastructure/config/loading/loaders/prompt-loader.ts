@@ -18,7 +18,9 @@ export class PromptLoader extends BaseModuleLoader {
     // 根据文件路径调整优先级
     const processedFiles = files.map(file => {
       const filePath = file.path.toLowerCase();
-      if (filePath.includes('system/')) {
+      if (filePath.includes('templates/')) {
+        file.priority += 1500; // 模板定义文件优先级最高
+      } else if (filePath.includes('system/')) {
         file.priority += 1000;
       } else if (filePath.includes('rules/')) {
         file.priority += 800;
@@ -39,7 +41,7 @@ export class PromptLoader extends BaseModuleLoader {
     const result: Record<string, any> = {};
     
     // 按类别分组
-    const promptsByCategory: Record<string, Record<string, string>> = {};
+    const promptsByCategory: Record<string, Record<string, any>> = {};
     
     for (const config of configs) {
       const category = this.extractCategory(config['path']);
