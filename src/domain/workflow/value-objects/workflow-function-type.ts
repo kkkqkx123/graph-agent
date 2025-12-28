@@ -8,5 +8,6 @@ export enum WorkflowFunctionType {
   ROUTING = 'routing',     // 路由函数：决定执行路径
   TRIGGER = 'trigger',     // 触发器函数：触发特定事件
   HOOK = 'hook',           // 钩子函数：在特定时机执行的回调
+  CONTEXT_PROCESSOR = 'context_processor', // 上下文处理器函数：处理上下文变量
   TRANSFORM = 'transform'  // 转换函数：数据转换（预留）
 }

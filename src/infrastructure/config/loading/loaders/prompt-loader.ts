@@ -51,7 +51,15 @@ export class PromptLoader extends BaseModuleLoader {
         promptsByCategory[category] = {};
       }
       
-      promptsByCategory[category][name] = config['content'];
+      // 添加文件路径信息到配置中
+      const enhancedConfig = {
+        ...config['content'],
+        _filepath: config['path'],
+        _category: category,
+        _name: name
+      };
+      
+      promptsByCategory[category][name] = enhancedConfig;
     }
     
     result['prompts'] = promptsByCategory;

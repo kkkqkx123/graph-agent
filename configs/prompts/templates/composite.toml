@@ -1,0 +1,31 @@
+name = "composite_template"
+description = "复合提示词模板"
+category = "templates"
+
+[template]
+# 定义消息结构
+messages = [
+    { role = "system", content = "{{system_prompt}}" },
+    { role = "system", content = "{{rules}}" },
+    { role = "user", content = "{{user_command}}" },
+]
+
+[parts]
+# 定义需要的部分
+system_prompt = { type = "prompt", category = "system", required = true }
+rules = { type = "prompt", category = "rules", required = false }
+user_command = { type = "prompt", category = "user_commands", required = true }
+
+[variables]
+# 定义模板级变量
+arg1 = { type = "string", description = "参数1", required = true }
+
+[options]
+# 模板选项
+include_rules = { type = "boolean", default = true, description = "是否包含规则" }
+
+[metadata]
+role = "template"
+priority = 2
+created_at = "2024-01-01"
+updated_at = "2024-01-01"

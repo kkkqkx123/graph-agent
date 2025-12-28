@@ -1,0 +1,31 @@
+name = "code_review_template"
+description = "代码审查模板"
+category = "templates"
+
+[template]
+# 定义消息结构
+messages = [
+    { role = "system", content = "{{system_prompt}}" },
+    { role = "system", content = "{{rules}}" },
+    { role = "user", content = "{{user_command}}\n\n代码：\n{{code}}" },
+]
+
+[parts]
+# 定义需要的部分
+system_prompt = { type = "prompt", category = "system", required = true }
+rules = { type = "prompt", category = "rules", required = false }
+user_command = { type = "prompt", category = "user_commands", required = true }
+
+[variables]
+# 定义模板级变量
+code = { type = "string", description = "要审查的代码", required = true }
+
+[options]
+# 模板选项
+include_rules = { type = "boolean", default = true, description = "是否包含规则" }
+
+[metadata]
+role = "template"
+priority = 3
+created_at = "2024-01-01"
+updated_at = "2024-01-01"

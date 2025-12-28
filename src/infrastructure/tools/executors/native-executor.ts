@@ -1,9 +1,8 @@
-import { injectable, inject } from 'inversify';
+import { injectable } from 'inversify';
 import { Tool } from '../../../domain/tools/entities/tool';
 import { ToolExecution } from '../../../domain/tools/entities/tool-execution';
 import { ToolResult } from '../../../domain/tools/entities/tool-result';
 import { spawn, ChildProcess } from 'child_process';
-import { promisify } from 'util';
 import { ToolExecutorBase, ToolExecutorConfigSchema, ToolExecutorCapabilities, ToolExecutorHealthCheck } from './tool-executor-base';
 
 @injectable()
@@ -16,7 +15,7 @@ export class NativeExecutor extends ToolExecutorBase {
       const options = this.prepareOptions(config['options'] || {});
 
       const result = await this.executeCommand(command, args, options);
-      
+
       return ToolResult.createSuccess(
         execution.id,
         result,
@@ -109,7 +108,7 @@ export class NativeExecutor extends ToolExecutorBase {
 
   private parseOutput(output: string): any {
     const trimmed = output.trim();
-    
+
     // Try to parse as JSON
     try {
       return JSON.parse(trimmed);
@@ -130,7 +129,7 @@ export class NativeExecutor extends ToolExecutorBase {
       const fs = require('fs');
       const path = require('path');
       const os = require('os');
-      
+
       const tempDir = os.tmpdir();
       const scriptFileName = `script_${Date.now()}_${Math.random().toString(36).substring(7)}`;
       const scriptPath = path.join(tempDir, scriptFileName);
@@ -141,7 +140,7 @@ export class NativeExecutor extends ToolExecutorBase {
       try {
         // Execute the script
         const result = await this.executeCommand(interpreter, [scriptPath], options);
-        
+
         return ToolResult.createSuccess(
           execution.id,
           result,
@@ -172,7 +171,7 @@ export class NativeExecutor extends ToolExecutorBase {
       const options = this.prepareOptions({ ...baseOptions, shell: true });
 
       const result = await this.executeCommand(command, [], options);
-      
+
       return ToolResult.createSuccess(
         execution.id,
         result,

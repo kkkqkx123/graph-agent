@@ -1,6 +1,7 @@
 /**
  * 提示词服务
  * 使用基于Zod的DTO实现
+ * 该模块与基础设施层workflow的llm_node无关，用于在应用层提供针对提示词的操作的服务
  */
 
 import { PromptRepository, PromptSearchCriteria } from '../../../infrastructure/persistence/repositories/prompt-repository';
@@ -21,14 +22,11 @@ import {
   PromptInjectionResultDto,
   PromptConverter,
   PromptConfigConverter,
-  type PromptInfo,
-  type PromptSummary,
-  type PromptSearchRequest,
-  type PromptSearchResult,
-  type PromptStatistics,
-  type PromptConfigRequest,
-  type PromptInjectionRequest,
-  type PromptInjectionResult
+  PromptInfo,
+  PromptInjectionResult,
+  PromptSearchResult,
+  PromptStatistics,
+  PromptSummary
 } from '../dtos/prompts.dto';
 
 import { DtoValidationError } from '../../common/dto/base-dto';

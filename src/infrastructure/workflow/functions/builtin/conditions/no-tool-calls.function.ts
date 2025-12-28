@@ -1,15 +1,6 @@
 import { injectable } from 'inversify';
 import { BaseWorkflowFunction } from '../../base/base-workflow-function';
-
-/**
- * 工作流函数类型枚举
- */
-enum WorkflowFunctionType {
-  CONDITION = 'condition',
-  TRIGGER = 'trigger',
-  ROUTING = 'routing',
-  NODE = 'node'
-}
+import { WorkflowFunctionType } from '../../../../../domain/workflow/value-objects/workflow-function-type';
 
 /**
  * 检查是否没有工具调用的条件函数
