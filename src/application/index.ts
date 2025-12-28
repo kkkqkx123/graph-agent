@@ -1,12 +1,15 @@
 /**
  * 应用层模块导出
- * 
+ *
  * 此文件导出应用层的所有公共接口和类型定义
  * 其他层（如接口层）应该通过此文件导入应用层组件
  */
 
 // 通用工具导出
 export * from './common';
+
+// LLM模块导出
+export { WrapperService } from './llm/services/wrapper-service';
 
 // 会话模块导出
 export { SessionLifecycleService } from './sessions/services/session-lifecycle-service';
@@ -115,6 +118,7 @@ export interface SortParams {
 }
 
 // 导入服务类型用于接口定义
+import { WrapperService } from './llm/services/wrapper-service';
 import { SessionLifecycleService } from './sessions/services/session-lifecycle-service';
 import { SessionManagementService } from './sessions/services/session-management-service';
 import { SessionMaintenanceService } from './sessions/services/session-maintenance-service';
@@ -130,6 +134,7 @@ import { CheckpointAnalysisService } from './threads/checkpoints/services/checkp
  * 应用层服务工厂接口
  */
 export interface ApplicationServiceFactory {
+  createWrapperService(): WrapperService;
   createSessionLifecycleService(): SessionLifecycleService;
   createSessionManagementService(): SessionManagementService;
   createSessionMaintenanceService(): SessionMaintenanceService;

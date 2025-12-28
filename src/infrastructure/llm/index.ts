@@ -18,7 +18,7 @@ export { EndpointStrategyFactory } from './endpoint-strategies/endpoint-strategy
 export { FeatureFactory } from './features/feature-factory';
 export { ParameterMapperFactory } from './parameter-mappers/parameter-mapper-factory';
 export { LLMClientFactory } from './clients/llm-client-factory';
-export { LLMWrapperFactory } from './wrappers/wrapper-factory';
+export { LLMWrapperFactory, BaseLLMWrapper } from './wrappers/wrapper-factory';
 
 // 导出管理器
 export { PollingPoolManager } from './managers/pool-manager';

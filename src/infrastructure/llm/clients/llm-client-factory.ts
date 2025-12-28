@@ -32,30 +32,29 @@ export class LLMClientFactory {
   /**
    * 创建LLM客户端
    * @param provider 提供商名称
-   * @param model 模型名称（可选）
+   * @param model 模型名称（必需）
    * @returns LLM客户端实例
    */
-  createClient(provider: string, model?: string): BaseLLMClient {
+  createClient(provider: string, model: string): BaseLLMClient {
     const normalizedProvider = provider.toLowerCase();
+    const normalizedModel = model.toLowerCase();
 
     switch (normalizedProvider) {
       case 'openai':
-        return this.selectOpenAIClient(model);
+        return this.selectOpenAIClient(normalizedModel);
 
       case 'anthropic':
         return this.anthropicClient;
 
       case 'gemini':
       case 'google':
-        return this.selectGeminiClient(model);
+        return this.selectGeminiClient(normalizedModel);
 
       case 'mock':
         return this.mockClient;
 
       case 'human-relay':
-      case 'human-relay-s':
-      case 'human-relay-m':
-        return this.createHumanRelayClient(provider);
+        return this.createHumanRelayClient(normalizedModel);
 
       default:
         throw new Error(`不支持的LLM提供商: ${provider}`);
@@ -67,8 +66,8 @@ export class LLMClientFactory {
    * @param model 模型名称
    * @returns OpenAI客户端实例
    */
-  private selectOpenAIClient(model?: string): BaseLLMClient {
-    if (model && this.isResponseModel(model)) {
+  private selectOpenAIClient(model: string): BaseLLMClient {
+    if (this.isResponseModel(model)) {
       return this.openaiResponseClient;
     }
     return this.openaiChatClient;
@@ -97,7 +96,7 @@ export class LLMClientFactory {
    * @param model 模型名称
    * @returns Gemini客户端实例
    */
-  private selectGeminiClient(model?: string): BaseLLMClient {
+  private selectGeminiClient(model: string): BaseLLMClient {
     // 从配置中获取客户端类型
     const clientType = this.configManager.get('llm.gemini.clientType', 'native');
 
@@ -119,10 +118,12 @@ export class LLMClientFactory {
   /**
    * 获取提供商支持的模型
    * @param provider 提供商名称
+   * @param model 模型名称（必需）
    * @returns 模型列表
    */
-  async getSupportedModels(provider: string): Promise<string[]> {
-    const client = this.createClient(provider);
+  async getSupportedModels(provider: string, model: string): Promise<string[]> {
+    const normalizedProvider = provider.toLowerCase();
+    const client = this.createClient(normalizedProvider, model);
     return client.getSupportedModels();
   }
 
@@ -134,7 +135,7 @@ export class LLMClientFactory {
    */
   async isModelSupported(provider: string, model: string): Promise<boolean> {
     try {
-      const models = await this.getSupportedModels(provider);
+      const models = await this.getSupportedModels(provider, model);
       return models.includes(model);
     } catch {
       return false;
@@ -144,15 +145,17 @@ export class LLMClientFactory {
   /**
    * 获取客户端信息
    * @param provider 提供商名称
+   * @param model 模型名称（必需）
    * @returns 客户端信息
    */
-  async getClientInfo(provider: string): Promise<{
+  async getClientInfo(provider: string, model: string): Promise<{
     name: string;
     version: string;
     supportedModels: string[];
     features: string[];
   }> {
-    const client = this.createClient(provider);
+    const normalizedProvider = provider.toLowerCase();
+    const client = this.createClient(normalizedProvider, model);
 
     const supportedModels = await client.getSupportedModels();
     return {
@@ -198,17 +201,19 @@ export class LLMClientFactory {
 
   /**
    * 批量创建客户端
-   * @param providers 提供商列表
+   * @param clientConfigs 客户端配置列表，格式为 [{ provider, model }]
    * @returns 客户端映射
    */
-  createClients(providers: string[]): Record<string, BaseLLMClient> {
+  createClients(clientConfigs: Array<{ provider: string; model: string }>): Record<string, BaseLLMClient> {
     const clients: Record<string, BaseLLMClient> = {};
 
-    for (const provider of providers) {
+    for (const config of clientConfigs) {
       try {
-        clients[provider] = this.createClient(provider);
+        const normalizedProvider = config.provider.toLowerCase();
+        const key = `${normalizedProvider}:${config.model}`;
+        clients[key] = this.createClient(normalizedProvider, config.model);
       } catch (error) {
-        console.warn(`创建客户端失败: ${provider}`, error);
+        console.warn(`创建客户端失败: ${config.provider}:${config.model}`, error);
       }
     }
 
@@ -216,41 +221,20 @@ export class LLMClientFactory {
   }
 
   /**
-   * 健康检查所有客户端
-   * @returns 健康检查结果
-   */
-  async healthCheckAll(): Promise<Record<string, any>> {
-    const providers = this.getSupportedProviders();
-    const results: Record<string, any> = {};
-
-    for (const provider of providers) {
-      try {
-        const client = this.createClient(provider);
-        results[provider] = await client.healthCheck();
-      } catch (error) {
-        results[provider] = {
-          status: 'unhealthy',
-          error: error instanceof Error ? error.message : String(error)
-        };
-      }
-    }
-
-    return results;
-  }
-
-  /**
    * 创建HumanRelay客户端
-   * @param provider 提供商名称
+   * @param model 模型名称（single 或 multi）
    * @returns HumanRelay客户端实例
    */
-  private createHumanRelayClient(provider: string): BaseLLMClient {
-    // 根据提供商名称确定模式
+  private createHumanRelayClient(model: string): BaseLLMClient {
+    // 根据模型名称确定模式
     let mode: HumanRelayMode;
-    switch (provider) {
-      case 'human-relay-s':
+    switch (model) {
+      case 'single':
+      case 's':
         mode = HumanRelayMode.SINGLE;
         break;
-      case 'human-relay-m':
+      case 'multi':
+      case 'm':
         mode = HumanRelayMode.MULTI;
         break;
       default:
@@ -262,7 +246,7 @@ export class LLMClientFactory {
 
     // 创建客户端配置
     const clientConfig = {
-      providerName: provider,
+      providerName: 'human-relay',
       mode,
       maxHistoryLength: config.maxHistoryLength || (mode === HumanRelayMode.MULTI ? 100 : 50),
       defaultTimeout: config.defaultTimeout || (mode === HumanRelayMode.MULTI ? 600 : 300),
@@ -279,7 +263,7 @@ export class LLMClientFactory {
    * @returns 模型列表
    */
   public getHumanRelayModels(): string[] {
-    return ['human-relay-s', 'human-relay-m'];
+    return ['single', 'multi'];
   }
 
   /**
@@ -288,6 +272,6 @@ export class LLMClientFactory {
    * @returns 是否为HumanRelay
    */
   public isHumanRelayProvider(provider: string): boolean {
-    return ['human-relay', 'human-relay-s', 'human-relay-m'].includes(provider.toLowerCase());
+    return provider.toLowerCase() === 'human-relay';
   }
 }

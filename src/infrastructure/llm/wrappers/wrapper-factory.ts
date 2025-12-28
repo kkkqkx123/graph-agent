@@ -4,9 +4,10 @@ import { TaskGroupWrapper } from '../../../domain/llm/entities/wrapper';
 import { DirectLLMWrapper } from '../../../domain/llm/entities/wrapper';
 import { ID } from '../../../domain/common/value-objects/id';
 import { LLM_DI_IDENTIFIERS } from '../di-identifiers';
+import { LLMClientFactory } from '../clients/llm-client-factory';
 
 // 定义基础包装器类型
-type BaseLLMWrapper = PollingPoolWrapper | TaskGroupWrapper | DirectLLMWrapper;
+export type BaseLLMWrapper = PollingPoolWrapper | TaskGroupWrapper | DirectLLMWrapper;
 
 /**
  * LLM包装器工厂
@@ -19,8 +20,9 @@ export class LLMWrapperFactory {
 
   constructor(
     @inject(LLM_DI_IDENTIFIERS.PollingPoolManager) private poolManager: any,
-    @inject(LLM_DI_IDENTIFIERS.TaskGroupManager) private taskGroupManager: any
-  ) {}
+    @inject(LLM_DI_IDENTIFIERS.TaskGroupManager) private taskGroupManager: any,
+    @inject(LLM_DI_IDENTIFIERS.LLMClientFactory) private llmClientFactory: LLMClientFactory
+  ) { }
 
   /**
    * 创建轮询池包装器
@@ -60,15 +62,33 @@ export class LLMWrapperFactory {
   /**
    * 创建直接LLM包装器
    */
-  async createDirectLLMWrapper(client: any, config?: Record<string, any>): Promise<BaseLLMWrapper> {
+  async createDirectLLMWrapper(clientName: string, config?: Record<string, any>): Promise<BaseLLMWrapper> {
+    // 通过 LLMClientFactory 创建客户端
+    // clientName 格式: "provider:model"（必须包含模型）
+    const parts = clientName.split(':');
+    
+    if (parts.length === 0 || !parts[0]) {
+      throw new Error(`无效的客户端名称: ${clientName}`);
+    }
+    
+    const provider = parts[0];
+    
+    // 必须指定模型名称
+    if (parts.length < 2 || !parts[1]) {
+      throw new Error(`创建直接LLM包装器必须指定模型名称，格式应为 "provider:model"，当前: ${clientName}`);
+    }
+    
+    const model = parts[1];
+    const client = this.llmClientFactory.createClient(provider, model);
+
     const wrapper = new DirectLLMWrapper(
       ID.generate(),
-      client.getClientName(),
+      clientName,
       config || {},
       client
     );
 
-    this.wrappers.set(client.getClientName(), wrapper);
+    this.wrappers.set(clientName, wrapper);
     return wrapper;
   }
 
@@ -154,7 +174,7 @@ export class LLMWrapperFactory {
       successfulRequests: stats?.['successfulRequests'] || 0,
       failedRequests: stats?.['failedRequests'] || 0,
       avgResponseTime: stats?.['avgResponseTime'] || 0,
-      successRate: (stats?.['totalRequests'] as number) > 0 ? 
+      successRate: (stats?.['totalRequests'] as number) > 0 ?
         ((stats['successfulRequests'] as number) / (stats['totalRequests'] as number)) : 0,
       available: await wrapper.isAvailable()
     };
@@ -175,35 +195,6 @@ export class LLMWrapperFactory {
   }
 
   /**
-   * 健康检查所有包装器
-   */
-  async healthCheckAll(): Promise<Record<string, any>> {
-    const healthStatus: Record<string, any> = {};
-
-    for (const wrapper of this.wrappers.values()) {
-      try {
-        const available = await wrapper.isAvailable();
-        const status = await wrapper.getStatus();
-
-        healthStatus[wrapper.getName()] = {
-          status: available ? 'healthy' : 'unhealthy',
-          available,
-          stats: status['stats'],
-          lastChecked: new Date()
-        };
-      } catch (error) {
-        healthStatus[wrapper.getName()] = {
-          status: 'error',
-          error: error instanceof Error ? error.message : String(error),
-          lastChecked: new Date()
-        };
-      }
-    }
-
-    return healthStatus;
-  }
-
-  /**
    * 获取系统级报告
    */
   async getSystemReport(): Promise<Record<string, any>> {
@@ -216,7 +207,7 @@ export class LLMWrapperFactory {
       (sum, stats) => sum + stats.successfulRequests, 0
     );
 
-    const overallSuccessRate = totalRequests > 0 ? 
+    const overallSuccessRate = totalRequests > 0 ?
       successfulRequests / totalRequests : 0;
 
     return {

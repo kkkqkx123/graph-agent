@@ -24,7 +24,7 @@ export class ValueObjectExecutor {
   constructor(
     private registry: FunctionRegistry,
     private logger: ILogger
-  ) {}
+  ) { }
 
   /**
    * 执行值对象
