@@ -7,6 +7,32 @@ import { ID } from '../../../domain/common/value-objects/id';
 import { NodeId } from '../../../domain/workflow/value-objects';
 
 /**
+ * 辅助函数：获取节点的入边
+ */
+function getIncomingEdges(edges: Map<string, EdgeValueObject>, nodeId: NodeId): EdgeValueObject[] {
+  const incomingEdges: EdgeValueObject[] = [];
+  for (const edge of edges.values()) {
+    if (edge.toNodeId.equals(nodeId)) {
+      incomingEdges.push(edge);
+    }
+  }
+  return incomingEdges;
+}
+
+/**
+ * 辅助函数：获取节点的出边
+ */
+function getOutgoingEdges(edges: Map<string, EdgeValueObject>, nodeId: NodeId): EdgeValueObject[] {
+  const outgoingEdges: EdgeValueObject[] = [];
+  for (const edge of edges.values()) {
+    if (edge.fromNodeId.equals(nodeId)) {
+      outgoingEdges.push(edge);
+    }
+  }
+  return outgoingEdges;
+}
+
+/**
  * 图算法服务实现
  *
  * 基础设施层实现，提供具体的图算法功能：
@@ -36,7 +62,7 @@ export class GraphAlgorithmServiceImpl implements GraphAlgorithmService {
       visited.add(nodeIdStr);
 
       // 先访问所有依赖节点
-      const incomingEdges = graph.getIncomingEdges(NodeId.fromString(nodeId.value));
+      const incomingEdges = getIncomingEdges(graph.edges, NodeId.fromString(nodeId.value));
       for (const edge of incomingEdges) {
         visit(edge.fromNodeId);
       }
@@ -80,7 +106,7 @@ export class GraphAlgorithmServiceImpl implements GraphAlgorithmService {
       visiting.add(nodeIdStr);
 
       // 访问所有相邻节点
-      const outgoingEdges = graph.getOutgoingEdges(NodeId.fromString(nodeId.value));
+      const outgoingEdges = getOutgoingEdges(graph.edges, NodeId.fromString(nodeId.value));
       for (const edge of outgoingEdges) {
         if (visit(edge.toNodeId)) {
           return true;
@@ -124,12 +150,12 @@ export class GraphAlgorithmServiceImpl implements GraphAlgorithmService {
       }
 
       // 访问所有相邻节点
-      const outgoingEdges = graph.getOutgoingEdges(NodeId.fromString(nodeId.value));
+      const outgoingEdges = getOutgoingEdges(graph.edges, NodeId.fromString(nodeId.value));
       for (const edge of outgoingEdges) {
         dfs(edge.toNodeId, component);
       }
 
-      const incomingEdges = graph.getIncomingEdges(NodeId.fromString(nodeId.value));
+      const incomingEdges = getIncomingEdges(graph.edges, NodeId.fromString(nodeId.value));
       for (const edge of incomingEdges) {
         dfs(edge.fromNodeId, component);
       }
@@ -175,7 +201,7 @@ export class GraphAlgorithmServiceImpl implements GraphAlgorithmService {
       }
 
       // 访问所有相邻节点
-      const outgoingEdges = graph.getOutgoingEdges(NodeId.fromString(nodeId.value));
+      const outgoingEdges = getOutgoingEdges(graph.edges, NodeId.fromString(nodeId.value));
       for (const edge of outgoingEdges) {
         if (dfs(edge.toNodeId)) {
           return true;
@@ -221,7 +247,7 @@ export class GraphAlgorithmServiceImpl implements GraphAlgorithmService {
         allPaths.push([...currentPath]);
       } else {
         // 访问所有相邻节点
-        const outgoingEdges = graph.getOutgoingEdges(NodeId.fromString(nodeId.value));
+        const outgoingEdges = getOutgoingEdges(graph.edges, NodeId.fromString(nodeId.value));
         for (const edge of outgoingEdges) {
           dfs(edge.toNodeId);
         }

@@ -29,47 +29,49 @@ export interface WorkflowDefinitionProps {
 
 /**
  * WorkflowDefinition值对象
- * 
+ *
  * 表示工作流的定义信息，是不可变的
  * 只包含数据访问方法，不包含业务逻辑
  */
 export class WorkflowDefinition extends ValueObject<WorkflowDefinitionProps> {
 
   /**
-   * 验证工作流定义
-   * @returns 验证结果
+   * 构造函数
+   * @param props 工作流定义属性
    */
-  public validate(): { isValid: boolean; errors: string[] } {
-    const errors: string[] = [];
+  protected constructor(props: WorkflowDefinitionProps) {
+    super(props);
+    this.validate();
+  }
 
+  /**
+   * 验证工作流定义的有效性
+   * 在构造时调用，如果验证失败则抛出异常
+   */
+  public validate(): void {
     if (!this.props.name || this.props.name.trim().length === 0) {
-      errors.push('工作流名称不能为空');
+      throw new Error('工作流名称不能为空');
     }
 
-    if (this.props.name && this.props.name.length > 100) {
-      errors.push('工作流名称不能超过100个字符');
+    if (this.props.name.length > 100) {
+      throw new Error('工作流名称不能超过100个字符');
     }
 
     if (this.props.description && this.props.description.length > 500) {
-      errors.push('工作流描述不能超过500个字符');
+      throw new Error('工作流描述不能超过500个字符');
     }
 
     if (this.props.tags.length > 20) {
-      errors.push('标签数量不能超过20个');
+      throw new Error('标签数量不能超过20个');
     }
 
     for (const tag of this.props.tags) {
       if (tag.length > 50) {
-        errors.push('标签长度不能超过50个字符');
-        break;
+        throw new Error('标签长度不能超过50个字符');
       }
     }
-
-    return {
-      isValid: errors.length === 0,
-      errors
-    };
   }
+
   /**
    * 创建工作流定义值对象
    * @param props 工作流定义属性

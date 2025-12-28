@@ -41,11 +41,14 @@ export interface WorkflowValidationResult {
  * Workflow聚合根实体
  *
  * 根据DDD原则，Workflow是唯一的聚合根，负责：
- * 1. 纯粹的图结构定义
- * 2. 业务验证逻辑
- * 3. 节点和边的管理
+ * 1. 节点和边的基本管理（增删改）
+ * 2. 简单的存在性检查
+ * 3. 自身状态管理（版本、时间戳）
+ * 4. 属性访问
  *
  * 不负责：
+ * - 复杂的验证逻辑（由WorkflowValidationService负责）
+ * - 图遍历和算法（由WorkflowGraphService负责）
  * - 执行状态管理（由Thread负责）
  * - 进度跟踪（由Thread负责）
  * - UI相关的布局和可视化
@@ -249,15 +252,10 @@ export class Workflow extends Entity {
    * 获取工作流图
    * @returns 工作流图数据
    */
-  public getGraph(): WorkflowGraphData & {
-    getIncomingEdges(nodeId: NodeId): EdgeValueObject[];
-    getOutgoingEdges(nodeId: NodeId): EdgeValueObject[];
-  } {
+  public getGraph(): WorkflowGraphData {
     return {
       nodes: new Map(this.props.graph.nodes),
-      edges: new Map(this.props.graph.edges),
-      getIncomingEdges: (nodeId: NodeId) => this.getIncomingEdges(nodeId),
-      getOutgoingEdges: (nodeId: NodeId) => this.getOutgoingEdges(nodeId)
+      edges: new Map(this.props.graph.edges)
     };
   }
 
@@ -325,54 +323,6 @@ export class Workflow extends Entity {
       }
     }
     return outgoingEdges;
-  }
-
-  /**
-   * 验证工作流
-   * @returns 验证结果
-   */
-  public validate(): WorkflowValidationResult {
-    const errors: string[] = [];
-    const warnings: string[] = [];
-
-    // 验证节点
-    if (this.props.graph.nodes.size === 0) {
-      warnings.push('工作流没有节点');
-    }
-
-    // 验证边的引用
-    for (const edge of this.props.graph.edges.values()) {
-      if (!this.hasNode(edge.fromNodeId)) {
-        errors.push(`边 ${edge.id.toString()} 引用了不存在的源节点 ${edge.fromNodeId.toString()}`);
-      }
-      if (!this.hasNode(edge.toNodeId)) {
-        errors.push(`边 ${edge.id.toString()} 引用了不存在的目标节点 ${edge.toNodeId.toString()}`);
-      }
-    }
-
-    // 验证起始节点
-    const startNodes = this.getStartNodes();
-    if (startNodes.length === 0 && this.props.graph.nodes.size > 0) {
-      errors.push('工作流没有起始节点（没有入边的节点）');
-    }
-
-    // 验证结束节点
-    const endNodes = this.getEndNodes();
-    if (endNodes.length === 0 && this.props.graph.nodes.size > 0) {
-      errors.push('工作流没有结束节点（没有出边的节点）');
-    }
-
-    // 验证循环引用
-    const hasCycle = this.detectCycle();
-    if (hasCycle) {
-      errors.push('工作流存在循环引用');
-    }
-
-    return {
-      valid: errors.length === 0,
-      errors,
-      warnings
-    } as WorkflowValidationResult;
   }
 
   /**
@@ -495,15 +445,14 @@ export class Workflow extends Entity {
   }
 
   /**
-   * 检查工作流是否可以执行
+   * 检查工作流是否可以执行（基本检查）
+   * 注意：完整的验证逻辑应该使用 WorkflowValidationService
    * @returns 是否可以执行
    */
   public canExecute(): boolean {
-    const validationResult = this.validate();
     return this.props.definition.status.isActive() &&
       !this.props.definition.isDeleted() &&
-      this.getNodeCount() > 0 &&
-      validationResult.valid;
+      this.getNodeCount() > 0;
   }
 
   /**
@@ -769,45 +718,6 @@ export class Workflow extends Entity {
     return this.getIncomingEdges(nodeId).length === 0;
   }
 
-  /**
-   * 检测循环引用
-   * @returns 是否存在循环
-   */
-  private detectCycle(): boolean {
-    const visited = new Set<string>();
-    const recursionStack = new Set<string>();
-
-    const hasCycleDFS = (nodeId: string): boolean => {
-      visited.add(nodeId);
-      recursionStack.add(nodeId);
-
-      const outgoingEdges = this.getOutgoingEdges({ toString: () => nodeId } as NodeId);
-      for (const edge of outgoingEdges) {
-        const neighborId = edge.toNodeId.toString();
-
-        if (!visited.has(neighborId)) {
-          if (hasCycleDFS(neighborId)) {
-            return true;
-          }
-        } else if (recursionStack.has(neighborId)) {
-          return true;
-        }
-      }
-
-      recursionStack.delete(nodeId);
-      return false;
-    };
-
-    for (const node of this.props.graph.nodes.values()) {
-      if (!visited.has(node.id.toString())) {
-        if (hasCycleDFS(node.id.toString())) {
-          return true;
-        }
-      }
-    }
-
-    return false;
-  }
 
   /**
    * 更新定义

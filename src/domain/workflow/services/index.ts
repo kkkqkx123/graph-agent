@@ -4,3 +4,4 @@
 
 export * from './graph-algorithm-service.interface';
 export * from './graph-validation-service.interface';
+export * from './context-processor-registry';

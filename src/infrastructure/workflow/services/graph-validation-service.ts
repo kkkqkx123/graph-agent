@@ -1,6 +1,6 @@
 import { injectable } from 'inversify';
-import { Workflow } from '../../../domain/workflow/entities/workflow';
-import { GraphValidationService as DomainGraphValidationService, ValidationResult as DomainValidationResult } from '../../../domain/workflow/services/graph-validation-service.interface';
+import { Workflow, WorkflowValidationResult } from '../../../domain/workflow/entities/workflow';
+import { GraphValidationService as DomainGraphValidationService } from '../../../domain/workflow/services/graph-validation-service.interface';
 
 /**
  * 验证规则接口
@@ -398,7 +398,7 @@ export class GraphValidationServiceImpl implements DomainGraphValidationService 
    * @param workflow 工作流
    * @returns 详细验证结果
    */
-  validateGraphDetailed(workflow: Workflow): DomainValidationResult {
+  validateGraphDetailed(workflow: Workflow): WorkflowValidationResult {
     const errors: string[] = [];
     const warnings: string[] = [];
 
@@ -437,7 +437,7 @@ export class GraphValidationServiceImpl implements DomainGraphValidationService 
    * @param workflow 工作流
    * @returns 验证结果
    */
-  validateNodes(workflow: Workflow): DomainValidationResult {
+  validateNodes(workflow: Workflow): WorkflowValidationResult {
     const errors: string[] = [];
     const warnings: string[] = [];
 
@@ -470,7 +470,7 @@ export class GraphValidationServiceImpl implements DomainGraphValidationService 
    * @param workflow 工作流
    * @returns 验证结果
    */
-  validateEdges(workflow: Workflow): DomainValidationResult {
+  validateEdges(workflow: Workflow): WorkflowValidationResult {
     const errors: string[] = [];
     const warnings: string[] = [];
 
@@ -507,7 +507,7 @@ export class GraphValidationServiceImpl implements DomainGraphValidationService 
    * @param workflow 工作流
    * @returns 验证结果
    */
-  validateExecutable(workflow: Workflow): DomainValidationResult {
+  validateExecutable(workflow: Workflow): WorkflowValidationResult {
     const errors: string[] = [];
     const warnings: string[] = [];
 

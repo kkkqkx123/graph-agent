@@ -7,12 +7,6 @@
 
 import { Workflow, WorkflowValidationResult } from '../entities/workflow';
 
-// 重新导出 WorkflowValidationResult 以便外部使用
-export type { WorkflowValidationResult as ValidationResult };
-
-// 在当前文件中使用类型别名
-type ValidationResult = WorkflowValidationResult;
-
 /**
  * 图验证服务接口
  */
@@ -29,26 +23,26 @@ export interface GraphValidationService {
    * @param workflow 工作流
    * @returns 详细验证结果
    */
-  validateGraphDetailed(workflow: Workflow): ValidationResult;
+  validateGraphDetailed(workflow: Workflow): WorkflowValidationResult;
 
   /**
    * 验证节点配置
    * @param workflow 工作流
    * @returns 验证结果
    */
-  validateNodes(workflow: Workflow): ValidationResult;
+  validateNodes(workflow: Workflow): WorkflowValidationResult;
 
   /**
    * 验证边配置
    * @param workflow 工作流
    * @returns 验证结果
    */
-  validateEdges(workflow: Workflow): ValidationResult;
+  validateEdges(workflow: Workflow): WorkflowValidationResult;
 
   /**
    * 验证工作流可执行性
    * @param workflow 工作流
    * @returns 验证结果
    */
-  validateExecutable(workflow: Workflow): ValidationResult;
+  validateExecutable(workflow: Workflow): WorkflowValidationResult;
 }
