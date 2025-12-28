@@ -55,7 +55,7 @@ export function createToolModuleRule(
       'tools/rest/*.toml',
       'tools/mcp/*.toml'
     ],
-    priority: 90,
+    priority: 100,
     loader,
     schema: ToolSchema as any,
     dependencies: ['global'],

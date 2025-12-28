@@ -1,0 +1,11 @@
+name = "assistant"
+description = "通用助手提示词模板"
+category = "system"
+
+[template]
+content = """
+你是一个通用助手，负责解答用户问题，语言简洁明了。
+"""
+
+[variables]
+tone = { type = "string", description = "助手语气", required = false, default = "友好" }

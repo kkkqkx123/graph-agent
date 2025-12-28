@@ -2,10 +2,10 @@
  * 配置加载模块主类
  */
 
-import { IConfigDiscovery, IModuleLoader, IDependencyResolver, ITypeRegistry, ILoadingCache, IModuleRule, ConfigFile, ModuleConfig, ValidationResult, PreValidationResult, ValidationSeverity } from './types';
+import { IConfigDiscovery, IModuleLoader, IDependencyResolver, ISchemaRegistry, ILoadingCache, IModuleRule, ConfigFile, ModuleConfig, ValidationResult, PreValidationResult, ValidationSeverity } from './types';
 import { ConfigDiscovery } from './discovery';
 import { DependencyResolver } from './dependency-resolver';
-import { TypeRegistry } from './type-registry';
+import { SchemaRegistry } from './schema-registry';
 import { LoadingCache } from './loading-cache';
 import { RuleManager } from './rules/rule-manager';
 import { ILogger } from '../../../domain/common/types';
@@ -27,7 +27,7 @@ export interface ConfigLoadingModuleOptions {
 export class ConfigLoadingModule {
   private readonly discovery: IConfigDiscovery;
   private readonly resolver: IDependencyResolver;
-  private readonly registry: ITypeRegistry;
+  private readonly registry: ISchemaRegistry;
   private readonly cache: ILoadingCache;
   private readonly loaders: Map<string, IModuleLoader> = new Map();
   private readonly rules: Map<string, IModuleRule> = new Map();
@@ -51,7 +51,7 @@ export class ConfigLoadingModule {
     // 初始化组件
     this.discovery = new ConfigDiscovery({}, this.logger);
     this.resolver = new DependencyResolver(this.logger);
-    this.registry = new TypeRegistry(this.logger);
+    this.registry = new SchemaRegistry(this.logger);
     this.cache = new LoadingCache(this.options.cacheTTL, this.logger);
   }
 

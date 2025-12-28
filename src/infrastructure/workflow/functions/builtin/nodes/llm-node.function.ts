@@ -2,8 +2,10 @@ import { injectable, inject } from 'inversify';
 import { BaseNodeFunction, NodeFunctionConfig, NodeFunctionResult, WorkflowExecutionContext } from '../../base/base-workflow-function';
 import { WrapperService } from '../../../../../application/llm/services/wrapper-service';
 import { LLMRequest } from '../../../../../domain/llm/entities/llm-request';
-import { LLMMessage } from '../../../../../domain/llm/value-objects/llm-message';
 import { ID } from '../../../../../domain/common/value-objects/id';
+import { PromptBuilder, PromptSource } from '../../../helpers/prompt-builder';
+import { ContextProcessor } from '../../../../../domain/workflow/services/context-processor-service.interface';
+import { llmContextProcessor } from '../context-processors';
 
 /**
  * LLM节点函数配置接口
@@ -18,13 +20,21 @@ export interface LLMNodeConfig extends NodeFunctionConfig {
    */
   wrapperName: string;
   /**
-   * 提示词内容
+   * 提示词来源（必需）
+   * 支持两种类型：
+   * - 直接内容: { type: 'direct', content: '...' }
+   * - 模板引用: { type: 'template', category: '...', name: '...' }
    */
-  prompt: string;
+  prompt: PromptSource;
   /**
-   * 系统提示词（可选）
+   * 系统提示词来源（可选）
    */
-  systemPrompt?: string;
+  systemPrompt?: PromptSource;
+  /**
+   * 上下文处理器名称（可选）
+   * 默认使用 'llm' 处理器
+   */
+  contextProcessor?: string;
   /**
    * 温度参数（可选，默认由包装器配置决定）
    */
@@ -50,7 +60,8 @@ export interface LLMNodeConfig extends NodeFunctionConfig {
 @injectable()
 export class LLMNodeFunction extends BaseNodeFunction<LLMNodeConfig> {
   constructor(
-    @inject('WrapperService') private wrapperService: WrapperService
+    @inject('WrapperService') private wrapperService: WrapperService,
+    @inject('PromptBuilder') private promptBuilder: PromptBuilder
   ) {
     super(
       'node:llm',
@@ -72,15 +83,22 @@ export class LLMNodeFunction extends BaseNodeFunction<LLMNodeConfig> {
       },
       {
         name: 'prompt',
-        type: 'string',
+        type: 'object',
         required: true,
-        description: 'LLM提示词'
+        description: '提示词来源（{type: "direct", content: "..."} 或 {type: "template", category: "...", name: "..."}）'
       },
       {
         name: 'systemPrompt',
+        type: 'object',
+        required: false,
+        description: '系统提示词来源（可选）'
+      },
+      {
+        name: 'contextProcessor',
         type: 'string',
         required: false,
-        description: '系统提示词（可选）'
+        description: '上下文处理器名称（可选，默认使用llm处理器）',
+        defaultValue: 'llm'
       },
       {
         name: 'temperature',
@@ -111,12 +129,30 @@ export class LLMNodeFunction extends BaseNodeFunction<LLMNodeConfig> {
       errors.push('wrapperName是必需的字符串参数');
     }
 
-    if (!config['prompt'] || typeof config['prompt'] !== 'string') {
-      errors.push('prompt是必需的字符串参数');
+    // 验证 prompt
+    const prompt = config['prompt'] as PromptSource;
+    if (!prompt || typeof prompt !== 'object') {
+      errors.push('prompt是必需的对象参数');
+    } else if (!prompt.type || (prompt.type !== 'direct' && prompt.type !== 'template')) {
+      errors.push('prompt.type必须是"direct"或"template"');
+    } else if (prompt.type === 'direct' && !prompt.content) {
+      errors.push('prompt.content在direct类型下是必需的');
+    } else if (prompt.type === 'template' && (!prompt.category || !prompt.name)) {
+      errors.push('prompt.category和prompt.name在template类型下是必需的');
     }
 
-    if (config['systemPrompt'] !== undefined && typeof config['systemPrompt'] !== 'string') {
-      errors.push('systemPrompt必须是字符串类型');
+    // 验证 systemPrompt
+    const systemPrompt = config['systemPrompt'] as PromptSource | undefined;
+    if (systemPrompt) {
+      if (typeof systemPrompt !== 'object') {
+        errors.push('systemPrompt必须是对象类型');
+      } else if (!systemPrompt.type || (systemPrompt.type !== 'direct' && systemPrompt.type !== 'template')) {
+        errors.push('systemPrompt.type必须是"direct"或"template"');
+      } else if (systemPrompt.type === 'direct' && !systemPrompt.content) {
+        errors.push('systemPrompt.content在direct类型下是必需的');
+      } else if (systemPrompt.type === 'template' && (!systemPrompt.category || !systemPrompt.name)) {
+        errors.push('systemPrompt.category和systemPrompt.name在template类型下是必需的');
+      }
     }
 
     if (config['temperature'] !== undefined &&
@@ -143,8 +179,9 @@ export class LLMNodeFunction extends BaseNodeFunction<LLMNodeConfig> {
     this.checkInitialized();
 
     const wrapperName = config['wrapperName'] as string;
-    const prompt = config['prompt'] as string;
-    const systemPrompt = config['systemPrompt'] as string | undefined;
+    const prompt = config['prompt'] as PromptSource;
+    const systemPrompt = config['systemPrompt'] as PromptSource | undefined;
+    const contextProcessorName = config['contextProcessor'] as string || 'llm';
     const temperature = config['temperature'] as number | undefined;
     const maxTokens = config['maxTokens'] as number | undefined;
     const stream = config['stream'] as boolean | undefined;
@@ -152,16 +189,27 @@ export class LLMNodeFunction extends BaseNodeFunction<LLMNodeConfig> {
     const startTime = Date.now();
 
     try {
-      // 构建消息列表
-      const messages: LLMMessage[] = [];
-      
-      // 添加系统提示词（如果有）
-      if (systemPrompt) {
-        messages.push(LLMMessage.createSystem(systemPrompt));
-      }
-      
-      // 添加用户提示词
-      messages.push(LLMMessage.createUser(prompt));
+      // 准备上下文处理器
+      const contextProcessors = new Map<string, ContextProcessor>();
+      contextProcessors.set('llm', llmContextProcessor);
+      // 可以添加更多内置处理器
+
+      // 收集工作流上下文变量
+      const workflowContext: Record<string, unknown> = {};
+      // 从 context 中提取变量（这里简化处理，实际可能需要更复杂的逻辑）
+      workflowContext['executionId'] = context.getExecutionId();
+      workflowContext['workflowId'] = context.getWorkflowId();
+
+      // 使用 PromptBuilder 构建消息列表
+      const messages = await this.promptBuilder.buildMessages(
+        {
+          source: prompt,
+          systemPrompt,
+          contextProcessor: contextProcessorName
+        },
+        workflowContext,
+        contextProcessors
+      );
 
       // 获取工作流ID和节点ID（如果有）
       const workflowId = context.getWorkflowId() ? ID.fromString(context.getWorkflowId()) : undefined;

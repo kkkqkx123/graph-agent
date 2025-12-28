@@ -2,7 +2,7 @@
  * 配置加载模块类型定义
  */
 
-import { ZodSchema } from 'zod';
+import { z } from 'zod';
 
 /**
  * 配置文件信息
@@ -70,7 +70,7 @@ export interface IModuleRule {
   patterns: string[];
   priority: number;
   loader: IModuleLoader;
-  schema: ZodSchema<any>;
+  schema: z.ZodType<any>;
   dependencies?: string[];
   mergeStrategy: MergeStrategy;
 }
@@ -104,21 +104,14 @@ export interface IDependencyResolver {
  * Schema注册表接口
  */
 export interface ISchemaRegistry {
-  registerSchema(moduleType: string, schema: ZodSchema<any>, version?: string, description?: string): void;
-  getSchema(moduleType: string): ZodSchema<any> | undefined;
+  registerSchema(moduleType: string, schema: z.ZodType<any>, version?: string, description?: string): void;
+  getSchema(moduleType: string): z.ZodType<any> | undefined;
   validateConfig(moduleType: string, config: any): ValidationResult;
   preValidate(config: any, moduleType: string): PreValidationResult;
-  validateSchemaCompatibility(newSchema: ZodSchema<any>, oldSchema: ZodSchema<any>): boolean;
+  validateSchemaCompatibility(newSchema: z.ZodType<any>, oldSchema: z.ZodType<any>): boolean;
   getSchemaHistory(moduleType: string): SchemaVersion[];
   hasModuleType(moduleType: string): boolean;
   getRegisteredTypes(): string[];
-}
-
-/**
- * 类型注册表接口（兼容性保持）
- */
-export interface ITypeRegistry extends ISchemaRegistry {
-  registerModuleType(moduleType: string, schema: ZodSchema<any>): void;
 }
 
 /**
@@ -126,7 +119,7 @@ export interface ITypeRegistry extends ISchemaRegistry {
  */
 export interface SchemaVersion {
   version: string;
-  schema: ZodSchema<any>;
+  schema: z.ZodType<any>;
   description: string;
   createdAt: Date;
   compatibleWith?: string[];

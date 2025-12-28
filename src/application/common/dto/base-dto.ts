@@ -3,13 +3,13 @@
  * 提供通用的DTO验证和转换功能
  */
 
-import { z, ZodSchema, ZodError } from 'zod';
+import { z, ZodError } from 'zod';
 
 /**
  * DTO基类抽象类
  * 所有DTO都应该继承此类
  */
-export abstract class BaseDto<T extends ZodSchema> {
+export abstract class BaseDto<T extends z.ZodType> {
   protected schema: T;
   protected version: string;
 
@@ -180,7 +180,7 @@ export interface DtoValidationOptions {
 /**
  * 带选项的DTO基类
  */
-export abstract class BaseDtoWithOptions<T extends ZodSchema> extends BaseDto<T> {
+export abstract class BaseDtoWithOptions<T extends z.ZodType> extends BaseDto<T> {
   protected options: DtoValidationOptions;
 
   constructor(schema: T, options: DtoValidationOptions = {}, version: string = '1.0.0') {

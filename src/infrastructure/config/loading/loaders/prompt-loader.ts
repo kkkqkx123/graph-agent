@@ -94,7 +94,7 @@ export class PromptLoader extends BaseModuleLoader {
   }
 
   /**
-    * 加载配置文件内容（重写以支持markdown文件）
+    * 加载配置文件内容（支持markdown和toml文件）
     */
   protected override async loadConfigs(files: ConfigFile[]): Promise<Record<string, any>[]> {
     const configs: Record<string, any>[] = [];
@@ -104,9 +104,20 @@ export class PromptLoader extends BaseModuleLoader {
         this.logger.debug('加载提示词配置文件', { path: file.path });
         
         const content = await fs.readFile(file.path, 'utf8');
-        // 对于markdown文件，我们直接存储内容
-        // 也可以解析frontmatter，但这里简化处理
-        const processed = await this.processMarkdownContent(content, file.path);
+        const ext = path.extname(file.path).toLowerCase();
+        
+        let processed: any;
+        
+        if (ext === '.md') {
+          // 处理markdown文件
+          processed = await this.processMarkdownContent(content, file.path);
+        } else if (ext === '.toml') {
+          // 处理toml文件
+          processed = await this.processTomlContent(content, file.path);
+        } else {
+          this.logger.warn('不支持的文件格式', { path: file.path, ext });
+          continue;
+        }
         
         configs.push({
           path: file.path,
@@ -115,9 +126,9 @@ export class PromptLoader extends BaseModuleLoader {
           name: this.extractName(file.path)
         });
       } catch (error) {
-        this.logger.warn('提示词配置文件加载失败，跳过', { 
-          path: file.path, 
-          error: (error as Error).message 
+        this.logger.warn('提示词配置文件加载失败，跳过', {
+          path: file.path,
+          error: (error as Error).message
         });
       }
     }
@@ -137,5 +148,14 @@ export class PromptLoader extends BaseModuleLoader {
       }
     }
     return content.trim();
+  }
+
+  /**
+    * 处理toml内容，解析为对象
+    */
+  private async processTomlContent(content: string, filePath: string): Promise<any> {
+    // 动态导入toml解析器
+    const toml = await import('toml');
+    return toml.parse(content);
   }
 }

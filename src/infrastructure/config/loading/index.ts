@@ -6,7 +6,6 @@
 export { ConfigLoadingModule } from './config-loading-module';
 export { ConfigDiscovery } from './discovery';
 export { DependencyResolver } from './dependency-resolver';
-export { TypeRegistry } from './type-registry';
 export { LoadingCache } from './loading-cache';
 
 // 基础类

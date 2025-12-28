@@ -61,12 +61,10 @@ export function createPromptModuleRule(
   return {
     moduleType: 'prompts',
     patterns: [
-      'prompts/_templates.toml',
-      'prompts/categories/*.toml',
-      'prompts/templates/**/*.toml',
-      'prompts/*.toml'
+      'prompts/**/*.md',
+      'prompts/**/*.toml'
     ],
-    priority: 80,
+    priority: 100,
     loader,
     schema: PromptSchema as any,
     dependencies: ['global'],

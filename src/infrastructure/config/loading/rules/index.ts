@@ -8,6 +8,7 @@
 export { createLLMModuleRule } from './llm-rule';
 export { createToolModuleRule } from './tool-rule';
 export { createPromptModuleRule } from './prompt-rule';
+export { createPoolModuleRule } from './pool-rule';
 
 // 导出规则管理器
 export { RuleManager } from './rule-manager';
@@ -16,3 +17,7 @@ export { RuleManager } from './rule-manager';
 export { LLMSchema } from './llm-rule';
 export { ToolSchema } from './tool-rule';
 export { PromptSchema } from './prompt-rule';
+export { PoolSchema } from './pool-rule';
+
+// 导出验证函数
+export { validatePoolConfig } from './pool-rule';

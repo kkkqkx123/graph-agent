@@ -3,13 +3,13 @@
  * 提供DTO版本控制和演进支持
  */
 
-import { z, ZodSchema } from 'zod';
+import { z } from 'zod';
 import { BaseDto, DtoValidationError } from './base-dto';
 
 /**
  * 版本化DTO接口
  */
-export interface VersionedDto<T extends ZodSchema> {
+export interface VersionedDto<T extends z.ZodType> {
   /**
    * DTO版本
    */
@@ -65,11 +65,11 @@ export interface VersionMigration<TFrom, TTo> {
  * 版本化DTO基类
  * 支持多版本DTO管理和自动迁移
  */
-export abstract class VersionedBaseDto<T extends ZodSchema> extends BaseDto<T> {
+export abstract class VersionedBaseDto<T extends z.ZodType> extends BaseDto<T> {
   /**
    * 版本历史记录
    */
-  protected versionHistory: Map<string, ZodSchema> = new Map();
+  protected versionHistory: Map<string, z.ZodType> = new Map();
 
   /**
    * 版本迁移映射
@@ -93,7 +93,7 @@ export abstract class VersionedBaseDto<T extends ZodSchema> extends BaseDto<T> {
    * @param version 版本号
    * @param schema Zod Schema
    */
-  registerVersion(version: string, schema: ZodSchema): void {
+  registerVersion(version: string, schema: z.ZodType): void {
     this.versionHistory.set(version, schema);
     if (!this.supportedVersions.includes(version)) {
       this.supportedVersions.push(version);

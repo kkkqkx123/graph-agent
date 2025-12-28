@@ -3,8 +3,9 @@
  * 解决Schema管理分散问题
  */
 
-import { z, ZodSchema, ZodError } from 'zod';
+import { z, ZodError } from 'zod';
 import { ILogger } from '../../../domain/common/types';
+import { ValidationResult, PreValidationResult, ValidationError, ValidationSeverity } from './types';
 
 
 /**
@@ -12,7 +13,7 @@ import { ILogger } from '../../../domain/common/types';
  */
 export interface SchemaVersion {
   version: string;
-  schema: ZodSchema<any>;
+  schema: z.ZodType<any>;
   description: string;
   createdAt: Date;
   compatibleWith?: string[];
@@ -32,7 +33,7 @@ export interface SchemaRegistryOptions {
  * 集中管理所有模块类型的Schema定义
  */
 export class SchemaRegistry {
-  private readonly schemas: Map<string, ZodSchema<any>> = new Map();
+  private readonly schemas: Map<string, z.ZodType<any>> = new Map();
   private readonly versions: Map<string, SchemaVersion[]> = new Map();
   private readonly logger: ILogger;
   private readonly options: SchemaRegistryOptions;
@@ -55,7 +56,7 @@ export class SchemaRegistry {
    */
   registerSchema(
     moduleType: string,
-    schema: ZodSchema<any>,
+    schema: z.ZodType<any>,
     version: string = '1.0.0',
     description: string = `${moduleType}模块Schema`
   ): void {
@@ -91,7 +92,7 @@ export class SchemaRegistry {
   /**
    * 获取模块Schema
    */
-  getSchema(moduleType: string): ZodSchema<any> | undefined {
+  getSchema(moduleType: string): z.ZodType<any> | undefined {
     return this.schemas.get(moduleType);
   }
 
@@ -192,7 +193,7 @@ export class SchemaRegistry {
   /**
    * 验证Schema兼容性
    */
-  validateSchemaCompatibility(newSchema: ZodSchema<any>, oldSchema: ZodSchema<any>): boolean {
+  validateSchemaCompatibility(newSchema: z.ZodType<any>, oldSchema: z.ZodType<any>): boolean {
     // 简化的兼容性检查 for Zod schemas
     // In a real implementation, this might need more complex logic
 
@@ -273,7 +274,7 @@ export class SchemaRegistry {
   /**
    * 基础验证（预验证）
    */
-  private basicValidation(config: any, schema: ZodSchema<any>): string[] {
+  private basicValidation(config: any, schema: z.ZodType<any>): string[] {
     // For Zod schemas, we'll run a basic parse to check validation
     try {
       schema.parse(config);
@@ -407,37 +408,3 @@ export class SchemaRegistry {
     return suggestions;
   }
 }
-
-/**
- * 验证结果接口
- */
-export interface ValidationResult {
-  isValid: boolean;
-  errors: ValidationError[];
-  severity: ValidationSeverity;
-}
-
-/**
- * 预验证结果接口
- */
-export interface PreValidationResult {
-  isValid: boolean;
-  errors: string[];
-  severity: ValidationSeverity;
-}
-
-/**
- * 验证错误接口
- */
-export interface ValidationError {
-  path: string;
-  message: string;
-  code: string;
-  severity: ValidationSeverity;
-  suggestions?: string[];
-}
-
-/**
- * 验证严重性枚举
- */
-export type ValidationSeverity = 'error' | 'warning' | 'info' | 'success';

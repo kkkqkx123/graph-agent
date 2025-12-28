@@ -7,6 +7,7 @@
 import { BaseModuleLoader } from '../base-loader';
 import { ConfigFile, ModuleConfig, ModuleMetadata } from '../types';
 import { ILogger } from '../../../../domain/common/types';
+import { validatePoolConfig } from '../rules';
 
 /**
  * 轮询池配置加载器
@@ -23,7 +24,7 @@ export class PoolConfigLoader extends BaseModuleLoader {
    */
   protected override async preprocessFiles(files: ConfigFile[]): Promise<ConfigFile[]> {
     const processedFiles = [];
-    
+
     for (const file of files) {
       // 根据文件路径调整优先级
       if (file.path.includes('common.toml')) {
@@ -33,10 +34,10 @@ export class PoolConfigLoader extends BaseModuleLoader {
         // 默认配置次之
         file.priority += 500;
       }
-      
+
       processedFiles.push(file);
     }
-    
+
     return processedFiles;
   }
 
@@ -45,42 +46,42 @@ export class PoolConfigLoader extends BaseModuleLoader {
    */
   protected async mergeConfigs(configs: Record<string, any>[]): Promise<Record<string, any>> {
     let result: Record<string, any> = {};
-    
+
     // 1. 首先处理默认配置
     const defaultConfigs = configs.filter(c =>
       c['path']?.includes('default.toml') || c['path']?.includes('common.toml')
     );
-    
+
     for (const config of defaultConfigs) {
       result = this.deepMerge(result, config);
     }
-    
+
     // 2. 处理具体的轮询池配置
     const poolConfigs = configs.filter(c =>
       !c['path']?.includes('default.toml') &&
       !c['path']?.includes('common.toml')
     );
-    
+
     const pools: Record<string, any> = {};
-    
+
     for (const config of poolConfigs) {
       const poolName = config['pool_name'] || config['name'];
       if (poolName) {
         // 验证配置
-        this.validatePoolConfig(poolName, config);
-        
+        validatePoolConfig(poolName, config);
+
         // 合并默认配置
         pools[poolName] = this.mergeWithDefaultConfig(config);
       }
     }
-    
+
     if (Object.keys(pools).length > 0) {
       result['pools'] = pools;
-      this.logger.debug('应用轮询池配置', { 
-        pools: Object.keys(pools) 
+      this.logger.debug('应用轮询池配置', {
+        pools: Object.keys(pools)
       });
     }
-    
+
     return result;
   }
 
@@ -94,42 +95,6 @@ export class PoolConfigLoader extends BaseModuleLoader {
       description: '轮询池配置模块',
       registry: config['_registry']
     };
-  }
-
-  /**
-   * 验证轮询池配置
-   */
-  private validatePoolConfig(poolName: string, config: Record<string, any>): void {
-    const requiredFields = ['name', 'taskGroups'];
-    
-    for (const field of requiredFields) {
-      if (!config[field]) {
-        throw new Error(`轮询池配置缺少必需字段: ${field}`);
-      }
-    }
-
-    // 验证任务组
-    const taskGroups = config['taskGroups'] || [];
-    if (!Array.isArray(taskGroups) || taskGroups.length === 0) {
-      throw new Error(`轮询池 ${poolName} 必须配置至少一个任务组`);
-    }
-
-    // 验证轮询策略
-    const rotationConfig = config['rotation'] || {};
-    const validStrategies = ['round_robin', 'least_recently_used', 'weighted'];
-    if (rotationConfig.strategy && !validStrategies.includes(rotationConfig.strategy)) {
-      throw new Error(`不支持的轮询策略: ${rotationConfig.strategy}`);
-    }
-
-    // 验证健康检查配置
-    const healthCheckConfig = config['healthCheck'] || {};
-    if (healthCheckConfig.interval && typeof healthCheckConfig.interval !== 'number') {
-      throw new Error('健康检查间隔必须是数字');
-    }
-
-    if (healthCheckConfig.failureThreshold && typeof healthCheckConfig.failureThreshold !== 'number') {
-      throw new Error('健康检查失败阈值必须是数字');
-    }
   }
 
   /**

@@ -2,7 +2,7 @@
  * Schema验证器实现
  */
 
-import { z, ZodError, ZodSchema } from 'zod';
+import { z, ZodError } from 'zod';
 import { IConfigValidator, SchemaValidatorOptions, ConfigValidationResult, ConfigValidationError, ILogger } from '../../../domain/common/types';
 
 /**
@@ -10,7 +10,7 @@ import { IConfigValidator, SchemaValidatorOptions, ConfigValidationResult, Confi
  * 使用Zod验证配置
  */
 export class SchemaValidator implements IConfigValidator {
-  private readonly schema: ZodSchema<any>;
+  private readonly schema: z.ZodType<any>;
   private readonly strict: boolean;
   private readonly logger: ILogger;
 
@@ -18,7 +18,7 @@ export class SchemaValidator implements IConfigValidator {
     options: SchemaValidatorOptions,
     logger: ILogger
   ) {
-    this.schema = options.schema as ZodSchema<any>;
+    this.schema = options.schema as z.ZodType<any>;
     this.strict = options.strict !== false;
     this.logger = logger.child({ module: 'SchemaValidator' });
   }
