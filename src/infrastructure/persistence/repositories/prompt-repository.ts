@@ -1,10 +1,11 @@
 /**
  * 提示词仓库
  *
- * 基于配置管理器存储提示词。
+ * 基于配置加载模块存储提示词。
  */
 
-import { IConfigManager, ILogger } from '../../../domain/common/types';
+import { ConfigLoadingModule } from '../../config/loading/config-loading-module';
+import { ILogger } from '../../../domain/common/types';
 import { Prompt, PromptProps } from '../../../domain/prompts/entities/prompt';
 import { PromptId } from '../../../domain/prompts/value-objects/prompt-id';
 import { PromptType, inferPromptTypeFromCategory } from '../../../domain/prompts/value-objects/prompt-type';
@@ -34,13 +35,13 @@ export interface PromptSearchCriteria {
 
 export class PromptRepository {
   constructor(
-    private readonly configManager: IConfigManager,
+    private readonly configLoadingModule: ConfigLoadingModule,
     private readonly logger: ILogger
   ) { }
 
   async findById(id: PromptId): Promise<Prompt | null> {
     const { category, name } = id.parse();
-    const content = this.configManager.get(`prompts.${category}.${name}`);
+    const content = this.configLoadingModule.get(`prompts.${category}.${name}`);
 
     if (!content) {
       return null;
@@ -65,7 +66,7 @@ export class PromptRepository {
   }
 
   async findByCategory(category: string): Promise<Prompt[]> {
-    const promptsConfig = this.configManager.get(`prompts.${category}`);
+    const promptsConfig = this.configLoadingModule.get(`prompts.${category}`);
     if (!promptsConfig || typeof promptsConfig !== 'object') {
       return [];
     }
@@ -106,7 +107,7 @@ export class PromptRepository {
   }
 
   async listAll(): Promise<Prompt[]> {
-    const promptsConfig = this.configManager.get('prompts');
+    const promptsConfig = this.configLoadingModule.get('prompts');
     if (!promptsConfig || typeof promptsConfig !== 'object') {
       return [];
     }
@@ -164,7 +165,7 @@ export class PromptRepository {
 
   async exists(id: PromptId): Promise<boolean> {
     const { category, name } = id.parse();
-    const content = this.configManager.get(`prompts.${category}.${name}`);
+    const content = this.configLoadingModule.get(`prompts.${category}.${name}`);
     return content !== undefined;
   }
 }
