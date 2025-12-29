@@ -285,17 +285,7 @@ export class ThreadExecutionEngine {
    * @param nodeId 节点ID
    * @returns 函数执行上下文
    */
-  private createFunctionExecutionContext(nodeId: NodeId): {
-    workflowId: string;
-    executionId: string;
-    variables: Map<string, unknown>;
-    getVariable: (key: string) => unknown;
-    setVariable: (key: string, value: unknown) => void;
-    getNodeResult: (key: string) => unknown;
-    setNodeResult: (key: string, value: unknown) => void;
-    getExecutionId: () => string;
-    getWorkflowId: () => string;
-  } {
+  private createFunctionExecutionContext(nodeId: NodeId) {
     const context = this.thread.execution.context;
     return {
       workflowId: this.workflow.id.toString(),
@@ -314,7 +304,19 @@ export class ThreadExecutionEngine {
         // 设置节点结果到上下文
       },
       getExecutionId: () => this.thread.execution.context.variables.get('executionId')?.toString() || '',
-      getWorkflowId: () => this.workflow.id.toString()
+      getWorkflowId: () => this.workflow.id.toString(),
+      getAllVariables: () => {
+        const result: Record<string, any> = {};
+        for (const [key, value] of context.variables.entries()) {
+          result[key] = value;
+        }
+        return result;
+      },
+      getService: <T,>(serviceName: string): T => {
+        // 实现服务获取逻辑
+        // 暂时返回 undefined，实际实现需要根据业务需求添加
+        return undefined as unknown as T;
+      }
     };
   }
 

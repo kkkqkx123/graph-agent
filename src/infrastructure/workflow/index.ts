@@ -2,7 +2,6 @@
 export * from './edges';
 export * from './functions';
 export * from './hooks';
-export * from './nodes';
 export * from './plugins';
 export * from './strategies';
 export * from './triggers';
