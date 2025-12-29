@@ -1,76 +1,43 @@
-import { injectable } from 'inversify';
-import { WorkflowFunctionType } from '../../../../../domain/workflow/value-objects/workflow-function-type';
-import { BaseWorkflowFunction } from '../../base/base-workflow-function';
+import { NodeId } from '../../../domain/workflow/value-objects/node/node-id';
+import { NodeType, NodeTypeValue, NodeContextTypeValue } from '../../../domain/workflow/value-objects/node/node-type';
+import { Node, NodeExecutionResult, NodeMetadata, ValidationResult, WorkflowExecutionContext } from './node';
 
 /**
- * 条件检查节点函数
+ * 条件检查节点
+ * 根据条件表达式进行条件判断和路由决策
  */
-@injectable()
-export class ConditionCheckNodeFunction extends BaseWorkflowFunction {
-  constructor() {
+export class ConditionNode extends Node {
+  constructor(
+    id: NodeId,
+    public readonly condition: string,
+    public readonly variables: Record<string, unknown> = {},
+    name?: string,
+    description?: string,
+    position?: { x: number; y: number }
+  ) {
     super(
-      'node:condition_check',
-      'condition_check_node',
-      '执行条件检查的节点函数',
-      '1.0.0',
-      WorkflowFunctionType.NODE,
-      false
+      id,
+      NodeType.condition(NodeContextTypeValue.PASS_THROUGH),
+      name,
+      description,
+      position
     );
   }
 
-  override getParameters() {
-    return [
-      ...super.getParameters(),
-      {
-        name: 'condition',
-        type: 'string',
-        required: true,
-        description: '条件表达式'
-      },
-      {
-        name: 'variables',
-        type: 'object',
-        required: false,
-        description: '条件变量',
-        defaultValue: {}
-      }
-    ];
-  }
-
-  protected override validateCustomConfig(config: any): string[] {
-    const errors: string[] = [];
-
-    if (!config.condition || typeof config.condition !== 'string') {
-      errors.push('condition是必需的字符串参数');
-    }
-
-    if (config.variables && typeof config.variables !== 'object') {
-      errors.push('variables必须是对象类型');
-    }
-
-    return errors;
-  }
-
-  async execute(context: any, config: any): Promise<any> {
-    this.checkInitialized();
-
-    const condition = config.condition;
-    const variables = config.variables || {};
-
+  async execute(context: WorkflowExecutionContext): Promise<NodeExecutionResult> {
     // 获取上下文中的变量
     const contextVariables = context.getAllVariables();
-    
+
     // 合并变量
-    const allVariables = { ...contextVariables, ...variables };
+    const allVariables = { ...contextVariables, ...this.variables };
 
     try {
-      // 简单的条件表达式解析
-      // 在实际实现中，应该使用更安全的表达式解析器
-      const result = this.evaluateCondition(condition, allVariables);
+      // 评估条件表达式
+      const result = this.evaluateCondition(this.condition, allVariables);
 
       // 记录条件检查结果
       const conditionResult = {
-        condition: condition,
+        condition: this.condition,
         result: result,
         variables: allVariables,
         timestamp: new Date().toISOString()
@@ -84,21 +51,75 @@ export class ConditionCheckNodeFunction extends BaseWorkflowFunction {
       conditionResults.push(conditionResult);
       context.setVariable('condition_results', conditionResults);
 
-      return conditionResult;
+      return {
+        success: true,
+        output: conditionResult,
+        metadata: {
+          condition: this.condition,
+          result: result
+        }
+      };
     } catch (error) {
       // 记录错误
       const errors = context.getVariable('errors') || [];
       const errorMessage = error instanceof Error ? error.message : String(error);
       errors.push({
         type: 'condition_evaluation_error',
-        condition: condition,
+        condition: this.condition,
         message: errorMessage,
         timestamp: new Date().toISOString()
       });
       context.setVariable('errors', errors);
 
-      throw new Error(`条件检查失败: ${errorMessage}`);
+      return {
+        success: false,
+        error: errorMessage,
+        metadata: {
+          condition: this.condition
+        }
+      };
     }
+  }
+
+  validate(): ValidationResult {
+    const errors: string[] = [];
+
+    if (!this.condition || typeof this.condition !== 'string') {
+      errors.push('condition是必需的字符串参数');
+    }
+
+    if (this.variables && typeof this.variables !== 'object') {
+      errors.push('variables必须是对象类型');
+    }
+
+    return {
+      valid: errors.length === 0,
+      errors
+    };
+  }
+
+  getMetadata(): NodeMetadata {
+    return {
+      id: this.id.toString(),
+      type: this.type.toString(),
+      name: this.name,
+      description: this.description,
+      parameters: [
+        {
+          name: 'condition',
+          type: 'string',
+          required: true,
+          description: '条件表达式'
+        },
+        {
+          name: 'variables',
+          type: 'object',
+          required: false,
+          description: '条件变量',
+          defaultValue: {}
+        }
+      ]
+    };
   }
 
   /**
@@ -108,7 +129,7 @@ export class ConditionCheckNodeFunction extends BaseWorkflowFunction {
   private evaluateCondition(condition: string, variables: any): boolean {
     // 替换变量
     let expression = condition;
-    
+
     // 简单的变量替换，格式为 ${variableName}
     expression = expression.replace(/\$\{([^}]+)\}/g, (match, varName) => {
       const value = variables[varName];
@@ -121,7 +142,7 @@ export class ConditionCheckNodeFunction extends BaseWorkflowFunction {
     // 简单的安全检查，只允许基本的比较操作
     const allowedOperators = ['===', '!==', '==', '!=', '>', '<', '>=', '<=', '&&', '||', '!'];
     const hasUnsafeContent = /eval|function|new|delete|typeof|void|in|instanceof/.test(expression);
-    
+
     if (hasUnsafeContent) {
       throw new Error('条件表达式包含不安全的内容');
     }

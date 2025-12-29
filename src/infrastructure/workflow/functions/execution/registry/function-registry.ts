@@ -1,23 +1,16 @@
 import { injectable } from 'inversify';
 import { WorkflowFunctionType } from '../../../../../domain/workflow/value-objects/workflow-function-type';
 import { BaseWorkflowFunction } from '../../base/base-workflow-function';
-import { ValueObject } from '../../../../../domain/common/value-objects/value-object';
-import { NodeValueObject } from '../../../../../domain/workflow/value-objects';
-import { EdgeValueObject } from '../../../../../domain/workflow/value-objects/edge/edge-value-object';
-import { TriggerValueObject } from '../../../../../domain/workflow/value-objects/trigger-value-object';
-import { HookValueObject } from '../../../../../domain/workflow/value-objects/hook-value-object';
 
 /**
  * 函数注册表实现
- *
- * 支持分层函数类型：CONDITION、ROUTING、NODE、TRIGGER、HOOK
- * 基于现有的BaseWorkflowFunction基类实现
+ * 支持分层函数类型：CONDITION、ROUTING、TRIGGER、HOOK
+ * 注意：NODE类型已不再使用此注册表，改用直接类型实现
  */
 @injectable()
 export class FunctionRegistry {
   private functions: Map<string, BaseWorkflowFunction> = new Map();
   private functionsByName: Map<string, BaseWorkflowFunction> = new Map();
-  private valueObjectTypeMapping: Map<string, string> = new Map();
 
   /**
    * 注册函数
@@ -96,7 +89,7 @@ export class FunctionRegistry {
     return true;
   }
 
-  // 便捷方法（向后兼容）
+  // 便捷方法
   /**
    * 获取条件函数
    * @param name 函数名称
@@ -105,19 +98,6 @@ export class FunctionRegistry {
   getConditionFunction(name: string): BaseWorkflowFunction | null {
     const func = this.getFunctionByName(name);
     if (func && func.type === WorkflowFunctionType.CONDITION) {
-      return func;
-    }
-    return null;
-  }
-
-  /**
-   * 获取节点函数
-   * @param name 函数名称
-   * @returns 工作流函数
-   */
-  getNodeFunction(name: string): BaseWorkflowFunction | null {
-    const func = this.getFunctionByName(name);
-    if (func && func.type === WorkflowFunctionType.NODE) {
       return func;
     }
     return null;
@@ -160,149 +140,5 @@ export class FunctionRegistry {
       return func;
     }
     return null;
-  }
-
-  /**
-   * 获取所有条件函数
-   * @returns 条件函数列表
-   */
-  getAllConditionFunctions(): BaseWorkflowFunction[] {
-    return this.getFunctionsByType(WorkflowFunctionType.CONDITION);
-  }
-
-  /**
-   * 获取所有路由函数
-   * @returns 路由函数列表
-   */
-  getAllRoutingFunctions(): BaseWorkflowFunction[] {
-    return this.getFunctionsByType(WorkflowFunctionType.ROUTING);
-  }
-
-  /**
-   * 获取所有节点函数
-   * @returns 节点函数列表
-   */
-  getAllNodeFunctions(): BaseWorkflowFunction[] {
-    return this.getFunctionsByType(WorkflowFunctionType.NODE);
-  }
-
-  /**
-   * 获取所有触发器函数
-   * @returns 触发器函数列表
-   */
-  getAllTriggerFunctions(): BaseWorkflowFunction[] {
-    return this.getFunctionsByType(WorkflowFunctionType.TRIGGER);
-  }
-
-  /**
-   * 获取所有钩子函数
-   * @returns 钩子函数列表
-   */
-  getAllHookFunctions(): BaseWorkflowFunction[] {
-    return this.getFunctionsByType(WorkflowFunctionType.HOOK);
-  }
-
-  /**
-   * 清空注册表
-   */
-  clear(): void {
-    this.functions.clear();
-    this.functionsByName.clear();
-  }
-
-  /**
-   * 获取注册表统计信息
-   * @returns 统计信息
-   */
-  getStats(): { total: number; byType: Record<string, number> } {
-    const stats = {
-      total: this.functions.size,
-      byType: {} as Record<string, number>
-    };
-
-    for (const func of this.functions.values()) {
-      const type = func.type;
-      stats.byType[type] = (stats.byType[type] || 0) + 1;
-    }
-
-    return stats;
-  }
-
-  /**
-   * 注册值对象类型与函数的映射关系
-   * @param valueObjectType 值对象类型标识
-   * @param functionName 函数名称
-   */
-  registerValueObjectMapping(valueObjectType: string, functionName: string): void {
-    if (this.valueObjectTypeMapping.has(valueObjectType)) {
-      throw new Error(`值对象类型 ${valueObjectType} 的映射关系已存在`);
-    }
-    this.valueObjectTypeMapping.set(valueObjectType, functionName);
-  }
-
-  /**
-   * 根据值对象获取对应的函数
-   * @param valueObject 值对象
-   * @returns 工作流函数
-   */
-  getFunctionByValueObject(valueObject: ValueObject<any>): BaseWorkflowFunction | null {
-    const valueObjectType = this.getValueObjectType(valueObject);
-    const functionName = this.valueObjectTypeMapping.get(valueObjectType);
-
-    if (!functionName) {
-      return null;
-    }
-
-    return this.getFunctionByName(functionName);
-  }
-
-  /**
-   * 获取支持特定值对象类型的函数列表
-   * @param valueObjectType 值对象类型标识
-   * @returns 工作流函数列表
-   */
-  getFunctionsByValueObjectType(valueObjectType: string): BaseWorkflowFunction[] {
-    const functionName = this.valueObjectTypeMapping.get(valueObjectType);
-    if (!functionName) {
-      return [];
-    }
-
-    const func = this.getFunctionByName(functionName);
-    return func ? [func] : [];
-  }
-
-  /**
-   * 获取值对象类型映射关系
-   * @returns 值对象类型映射关系
-   */
-  getValueObjectTypeMapping(): Map<string, string> {
-    return new Map(this.valueObjectTypeMapping);
-  }
-
-  /**
-   * 注销值对象类型映射关系
-   * @param valueObjectType 值对象类型标识
-   * @returns 是否成功
-   */
-  unregisterValueObjectMapping(valueObjectType: string): boolean {
-    return this.valueObjectTypeMapping.delete(valueObjectType);
-  }
-
-  /**
-   * 获取值对象的类型标识
-   * @param valueObject 值对象
-   * @returns 类型标识字符串
-   */
-  private getValueObjectType(valueObject: ValueObject<any>): string {
-    if (valueObject instanceof NodeValueObject) {
-      return `node_${valueObject.type.toString()}`;
-    } else if (valueObject instanceof EdgeValueObject) {
-      return `edge_${valueObject.type.toString()}`;
-    } else if (valueObject instanceof TriggerValueObject) {
-      return `trigger_${valueObject.type.toString()}`;
-    } else if (valueObject instanceof HookValueObject) {
-      return `hook_${valueObject.hookPoint.toString()}`;
-    }
-    return 'unknown';
   }
 }

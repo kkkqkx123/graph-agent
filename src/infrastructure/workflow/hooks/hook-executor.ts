@@ -1,6 +1,6 @@
 import { injectable, inject } from 'inversify';
 import { HookValueObject } from '../../../domain/workflow/value-objects/hook-value-object';
-import { ValueObjectExecutor } from '../functions/execution/executors/value-object-executor';
+import { FunctionRegistry } from '../functions/execution/registry/function-registry';
 import { WorkflowExecutionContext } from '../functions/base/base-workflow-function';
 import { ILogger } from '../../../domain/common/types/logger-types';
 import { HookContext } from './hook-context';
@@ -11,7 +11,7 @@ import { HookExecutionResult, HookExecutionResultBuilder } from './hook-executio
  *
  * 职责：
  * - 负责在指定 hookPoint 执行钩子
- * - 使用 ValueObjectExecutor 调用 HookFunction
+ * - 直接调用 HookFunction
  * - 返回钩子执行结果
  *
  * 注意：Hook 是无状态的，每次执行时调用
@@ -19,7 +19,7 @@ import { HookExecutionResult, HookExecutionResultBuilder } from './hook-executio
 @injectable()
 export class HookExecutor {
   constructor(
-    @inject('ValueObjectExecutor') private readonly valueObjectExecutor: ValueObjectExecutor,
+    @inject('FunctionRegistry') private readonly functionRegistry: FunctionRegistry,
     @inject('Logger') private readonly logger: ILogger
   ) {}
 
@@ -69,8 +69,20 @@ export class HookExecutor {
         getWorkflowId: () => context.workflowId?.toString() || ''
       };
 
-      // 使用 ValueObjectExecutor 执行钩子
-      const result = await this.valueObjectExecutor.executeValueObject(hook, functionContext);
+      // 直接调用钩子函数
+      const hookFunction = this.functionRegistry.getHookFunction(hook.hookPoint.toString());
+      if (!hookFunction) {
+        throw new Error(`未找到钩子函数: ${hook.hookPoint.toString()}`);
+      }
+
+      // 构建配置
+      const config = {
+        hookId: hook.id.toString(),
+        hookPoint: hook.hookPoint.toString(),
+        ...hook.config
+      };
+
+      const result = await hookFunction.execute(functionContext, config);
 
       const executionTime = Date.now() - startTime;
 

@@ -1,17 +1,17 @@
 import { injectable, inject } from 'inversify';
 import { EdgeValueObject } from '../../../domain/workflow/value-objects/edge/edge-value-object';
-import { ValueObjectExecutor } from '../functions/execution/executors/value-object-executor';
+import { FunctionRegistry } from '../functions/execution/registry/function-registry';
 import { WorkflowExecutionContext } from '../functions/base/base-workflow-function';
 import { ILogger } from '../../../domain/common/types/logger-types';
 
 /**
  * 边执行器
- * 使用统一的 ValueObjectExecutor 执行边值对象
+ * 直接调用边函数执行边值对象
  */
 @injectable()
 export class EdgeExecutor {
   constructor(
-    @inject('ValueObjectExecutor') private readonly valueObjectExecutor: ValueObjectExecutor,
+    @inject('FunctionRegistry') private readonly functionRegistry: FunctionRegistry,
     @inject('Logger') private readonly logger: ILogger
   ) { }
 
@@ -30,7 +30,23 @@ export class EdgeExecutor {
     });
 
     try {
-      const result = await this.valueObjectExecutor.executeValueObject(edge, context);
+      // 直接调用边函数
+      const edgeFunction = this.functionRegistry.getRoutingFunction(edge.type.toString());
+      if (!edgeFunction) {
+        throw new Error(`未找到边函数: ${edge.type.toString()}`);
+      }
+
+      // 构建配置
+      const config = {
+        edgeId: edge.id.toString(),
+        fromNodeId: edge.fromNodeId.toString(),
+        toNodeId: edge.toNodeId.toString(),
+        condition: edge.condition,
+        weight: edge.weight,
+        ...edge.properties
+      };
+
+      const result = await edgeFunction.execute(context, config);
 
       this.logger.info('边执行完成', {
         edgeId: edge.id.toString(),

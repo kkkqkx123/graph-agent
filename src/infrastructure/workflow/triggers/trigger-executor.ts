@@ -1,6 +1,6 @@
 import { injectable, inject } from 'inversify';
 import { TriggerValueObject } from '../../../domain/workflow/value-objects/trigger-value-object';
-import { ValueObjectExecutor } from '../functions/execution/executors/value-object-executor';
+import { FunctionRegistry } from '../functions/execution/registry/function-registry';
 import { WorkflowExecutionContext } from '../functions/base/base-workflow-function';
 import { ILogger } from '../../../domain/common/types/logger-types';
 import { TriggerContext } from './trigger-context';
@@ -11,7 +11,7 @@ import { TriggerExecutionResult, TriggerExecutionResultUtils } from './trigger-e
  *
  * 职责：
  * - 负责执行触发逻辑判断
- * - 使用 ValueObjectExecutor 调用 TriggerFunction
+ * - 直接调用 TriggerFunction
  * - 返回触发结果
  *
  * 注意：状态管理由 TriggerManager 负责
@@ -19,7 +19,7 @@ import { TriggerExecutionResult, TriggerExecutionResultUtils } from './trigger-e
 @injectable()
 export class TriggerExecutor {
   constructor(
-    @inject('ValueObjectExecutor') private readonly valueObjectExecutor: ValueObjectExecutor,
+    @inject('FunctionRegistry') private readonly functionRegistry: FunctionRegistry,
     @inject('Logger') private readonly logger: ILogger
   ) {}
 
@@ -62,8 +62,22 @@ export class TriggerExecutor {
         getWorkflowId: () => context.workflowId.toString()
       };
 
-      // 使用 ValueObjectExecutor 执行触发器
-      const shouldTrigger = await this.valueObjectExecutor.executeValueObject(trigger, functionContext);
+      // 直接调用触发器函数
+      const triggerFunction = this.functionRegistry.getTriggerFunction(trigger.type.toString());
+      if (!triggerFunction) {
+        throw new Error(`未找到触发器函数: ${trigger.type.toString()}`);
+      }
+
+      // 构建配置
+      const config = {
+        triggerId: trigger.id.toString(),
+        triggerType: trigger.type.toString(),
+        action: trigger.action.toString(),
+        targetNodeId: trigger.targetNodeId?.toString(),
+        ...trigger.config
+      };
+
+      const shouldTrigger = await triggerFunction.execute(functionContext, config);
 
       const executionTime = Date.now() - startTime;
 
