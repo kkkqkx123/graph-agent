@@ -1,6 +1,6 @@
 import { injectable } from 'inversify';
-import { WorkflowFunctionType } from '../../../../../domain/workflow/value-objects/workflow-function-type';
-import { BaseWorkflowFunction } from '../../base/base-workflow-function';
+import { WorkflowFunctionType } from '../../../../domain/workflow/value-objects/workflow-function-type';
+import { BaseWorkflowFunction } from '../base/base-workflow-function';
 
 /**
  * 函数注册表实现

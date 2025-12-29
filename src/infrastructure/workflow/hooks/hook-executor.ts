@@ -1,6 +1,6 @@
 import { injectable, inject } from 'inversify';
 import { HookValueObject } from '../../../domain/workflow/value-objects/hook-value-object';
-import { FunctionRegistry } from '../functions/execution/registry/function-registry';
+import { FunctionRegistry } from '../functions/registry/function-registry';
 import { WorkflowExecutionContext } from '../functions/base/base-workflow-function';
 import { ILogger } from '../../../domain/common/types/logger-types';
 import { HookContext } from './hook-context';
@@ -21,7 +21,7 @@ export class HookExecutor {
   constructor(
     @inject('FunctionRegistry') private readonly functionRegistry: FunctionRegistry,
     @inject('Logger') private readonly logger: ILogger
-  ) {}
+  ) { }
 
   /**
    * 执行单个钩子
