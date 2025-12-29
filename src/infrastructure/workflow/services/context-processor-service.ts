@@ -12,7 +12,7 @@ import {
   systemContextProcessor,
   passThroughProcessor,
   isolateProcessor
-} from '../functions/builtin/context-processors';
+} from '../functions/context-processors';
 
 /**
  * 上下文处理器服务实现

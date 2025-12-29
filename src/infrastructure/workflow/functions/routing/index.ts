@@ -1,3 +1,7 @@
+// 路由函数基类导出
+export { BaseConditionRoutingFunction, BaseTargetRoutingFunction } from './base-routing-function';
+
+// 路由函数实现导出
 export { ConditionalRoutingFunction } from './conditional-routing.function';
 export { NodeSuccessRoutingFunction } from './node-success-routing.function';
 export { NodeFailedRoutingFunction } from './node-failed-routing.function';

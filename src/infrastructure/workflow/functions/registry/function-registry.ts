@@ -1,6 +1,5 @@
 import { injectable } from 'inversify';
-import { WorkflowFunctionType } from '../../../../domain/workflow/value-objects/workflow-function-type';
-import { BaseWorkflowFunction } from '../base/base-workflow-function';
+import { IWorkflowFunction } from '../types';
 
 /**
  * 函数注册表实现
@@ -9,14 +8,14 @@ import { BaseWorkflowFunction } from '../base/base-workflow-function';
  */
 @injectable()
 export class FunctionRegistry {
-  private functions: Map<string, BaseWorkflowFunction> = new Map();
-  private functionsByName: Map<string, BaseWorkflowFunction> = new Map();
+  private functions: Map<string, IWorkflowFunction> = new Map();
+  private functionsByName: Map<string, IWorkflowFunction> = new Map();
 
   /**
    * 注册函数
    * @param func 工作流函数
    */
-  registerFunction(func: BaseWorkflowFunction): void {
+  registerFunction(func: IWorkflowFunction): void {
     if (this.functions.has(func.id)) {
       throw new Error(`函数ID ${func.id} 已存在`);
     }
@@ -34,7 +33,7 @@ export class FunctionRegistry {
    * @param id 函数ID
    * @returns 工作流函数
    */
-  getFunction(id: string): BaseWorkflowFunction | null {
+  getFunction(id: string): IWorkflowFunction | null {
     return this.functions.get(id) || null;
   }
 
@@ -43,24 +42,15 @@ export class FunctionRegistry {
    * @param name 函数名称
    * @returns 工作流函数
    */
-  getFunctionByName(name: string): BaseWorkflowFunction | null {
+  getFunctionByName(name: string): IWorkflowFunction | null {
     return this.functionsByName.get(name) || null;
-  }
-
-  /**
-   * 根据类型获取函数列表
-   * @param type 函数类型
-   * @returns 工作流函数列表
-   */
-  getFunctionsByType(type: WorkflowFunctionType): BaseWorkflowFunction[] {
-    return Array.from(this.functions.values()).filter(func => func.type === type);
   }
 
   /**
    * 获取所有函数
    * @returns 工作流函数列表
    */
-  getAllFunctions(): BaseWorkflowFunction[] {
+  getAllFunctions(): IWorkflowFunction[] {
     return Array.from(this.functions.values());
   }
 
@@ -95,12 +85,8 @@ export class FunctionRegistry {
    * @param name 函数名称
    * @returns 工作流函数
    */
-  getConditionFunction(name: string): BaseWorkflowFunction | null {
-    const func = this.getFunctionByName(name);
-    if (func && func.type === WorkflowFunctionType.CONDITION) {
-      return func;
-    }
-    return null;
+  getConditionFunction(name: string): IWorkflowFunction | null {
+    return this.getFunctionByName(name);
   }
 
   /**
@@ -108,12 +94,8 @@ export class FunctionRegistry {
    * @param name 函数名称
    * @returns 工作流函数
    */
-  getRoutingFunction(name: string): BaseWorkflowFunction | null {
-    const func = this.getFunctionByName(name);
-    if (func && func.type === WorkflowFunctionType.ROUTING) {
-      return func;
-    }
-    return null;
+  getRoutingFunction(name: string): IWorkflowFunction | null {
+    return this.getFunctionByName(name);
   }
 
   /**
@@ -121,12 +103,8 @@ export class FunctionRegistry {
    * @param name 函数名称
    * @returns 工作流函数
    */
-  getTriggerFunction(name: string): BaseWorkflowFunction | null {
-    const func = this.getFunctionByName(name);
-    if (func && func.type === WorkflowFunctionType.TRIGGER) {
-      return func;
-    }
-    return null;
+  getTriggerFunction(name: string): IWorkflowFunction | null {
+    return this.getFunctionByName(name);
   }
 
   /**
@@ -134,11 +112,7 @@ export class FunctionRegistry {
    * @param name 函数名称
    * @returns 工作流函数
    */
-  getHookFunction(name: string): BaseWorkflowFunction | null {
-    const func = this.getFunctionByName(name);
-    if (func && func.type === WorkflowFunctionType.HOOK) {
-      return func;
-    }
-    return null;
+  getHookFunction(name: string): IWorkflowFunction | null {
+    return this.getFunctionByName(name);
   }
 }

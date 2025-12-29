@@ -1,13 +1,13 @@
 import { injectable } from 'inversify';
-import { WorkflowFunctionType } from '../../../../domain/workflow/value-objects/workflow-function-type';
-import { BaseHookFunction, WorkflowExecutionContext, NodeFunctionResult, NodeFunctionConfig } from '../base/base-workflow-function';
+import { BaseHookFunction } from './base-hook-function';
+import { WorkflowExecutionContext, NodeFunctionResult, NodeFunctionConfig } from '../types';
 
 /**
  * 节点执行后钩子函数
  * 在节点执行后调用，用于节点级别的后处理
  */
 @injectable()
-export class AfterNodeExecuteHookFunction extends BaseHookFunction {
+export class AfterNodeExecuteHookFunction extends BaseHookFunction<NodeFunctionConfig> {
   constructor() {
     super(
       'hook:after_node_execute',
@@ -49,15 +49,15 @@ export class AfterNodeExecuteHookFunction extends BaseHookFunction {
   protected override validateCustomConfig(config: any): string[] {
     const errors: string[] = [];
 
-    if (!config.nodeId) {
+    if (!config['nodeId']) {
       errors.push('nodeId 是必需的');
     }
 
-    if (!config.nodeType) {
+    if (!config['nodeType']) {
       errors.push('nodeType 是必需的');
     }
 
-    if (config.outputTransform && typeof config.outputTransform !== 'object') {
+    if (config['outputTransform'] && typeof config['outputTransform'] !== 'object') {
       errors.push('outputTransform 必须是对象类型');
     }
 

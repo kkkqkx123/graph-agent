@@ -1,7 +1,7 @@
 import { injectable, inject } from 'inversify';
 import { TriggerValueObject } from '../../../domain/workflow/value-objects/trigger-value-object';
 import { FunctionRegistry } from '../functions/registry/function-registry';
-import { WorkflowExecutionContext } from '../functions/base/base-workflow-function';
+import { WorkflowExecutionContext } from '../functions/types';
 import { ILogger } from '../../../domain/common/types/logger-types';
 import { TriggerContext } from './trigger-context';
 import { TriggerExecutionResult, TriggerExecutionResultUtils } from './trigger-execution-result';

@@ -1,20 +1,19 @@
 import { injectable } from 'inversify';
-import { WorkflowFunctionType } from '../../../../domain/workflow/value-objects/workflow-function-type';
-import { BaseWorkflowFunction } from '../base/base-workflow-function';
+import { BaseTriggerFunction } from './base-trigger-function';
+import { TriggerFunctionConfig, WorkflowExecutionContext } from '../types';
 
 /**
  * 基于工具错误数量的触发器函数
  */
 @injectable()
-export class ToolErrorTriggerFunction extends BaseWorkflowFunction {
+export class ToolErrorTriggerFunction extends BaseTriggerFunction<TriggerFunctionConfig> {
   constructor() {
     super(
       'trigger:tool_error',
       'tool_error_trigger',
       '基于工具执行错误数量的触发器',
       '1.0.0',
-      WorkflowFunctionType.TRIGGER,
-      false
+      'builtin'
     );
   }
 
@@ -48,29 +47,29 @@ export class ToolErrorTriggerFunction extends BaseWorkflowFunction {
   protected override validateCustomConfig(config: any): string[] {
     const errors: string[] = [];
 
-    if (config.maxErrorCount !== undefined) {
-      if (typeof config.maxErrorCount !== 'number' || config.maxErrorCount <= 0) {
+    if (config['maxErrorCount'] !== undefined) {
+      if (typeof config['maxErrorCount'] !== 'number' || config['maxErrorCount'] <= 0) {
         errors.push('maxErrorCount必须是正数');
       }
     }
 
-    if (config.toolName && typeof config.toolName !== 'string') {
+    if (config['toolName'] && typeof config['toolName'] !== 'string') {
       errors.push('toolName必须是字符串类型');
     }
 
-    if (config.errorType && typeof config.errorType !== 'string') {
+    if (config['errorType'] && typeof config['errorType'] !== 'string') {
       errors.push('errorType必须是字符串类型');
     }
 
     return errors;
   }
 
-  async execute(context: any, config: any): Promise<boolean> {
+  override async execute(context: WorkflowExecutionContext, config: TriggerFunctionConfig): Promise<boolean> {
     this.checkInitialized();
 
-    const maxErrorCount = config.maxErrorCount || 3;
-    const toolName = config.toolName;
-    const errorType = config.errorType;
+    const maxErrorCount = config['maxErrorCount'] || 3;
+    const toolName = config['toolName'];
+    const errorType = config['errorType'];
 
     // 获取错误列表
     const errors = context.getVariable('errors') || [];

@@ -1,26 +1,24 @@
-import { BaseWorkflowFunction } from '../base/base-workflow-function';
-import { WorkflowFunctionType } from '../../../../domain/workflow/value-objects/workflow-function-type';
+import { BaseConditionRoutingFunction } from './base-routing-function';
+import { RoutingFunctionConfig, WorkflowExecutionContext } from '../types';
 
 /**
  * 进度路由函数
  * 检查工作流进度是否达到指定值
  */
-export class ProgressReachedRoutingFunction extends BaseWorkflowFunction {
+export class ProgressReachedRoutingFunction extends BaseConditionRoutingFunction<RoutingFunctionConfig> {
   constructor() {
     super(
       'progress_reached_routing',
       'progressReached',
       '检查工作流进度是否达到指定值',
       '1.0.0',
-      WorkflowFunctionType.ROUTING,
-      true,
       'builtin'
     );
   }
 
-  async execute(context: any, config: any): Promise<boolean> {
-    const targetProgress = config.edge?.properties?.targetProgress ?? 100;
-    const executionState = config.executionState;
+  override async execute(context: WorkflowExecutionContext, config: RoutingFunctionConfig): Promise<boolean> {
+    const targetProgress = config['edge']?.['properties']?.['targetProgress'] ?? 100;
+    const executionState = config['executionState'];
 
     if (!executionState?.workflowState) {
       return false;
@@ -32,7 +30,7 @@ export class ProgressReachedRoutingFunction extends BaseWorkflowFunction {
   protected override validateCustomConfig(config: any): string[] {
     const errors: string[] = [];
 
-    if (!config.executionState?.workflowState) {
+    if (!config['executionState']?.['workflowState']) {
       errors.push('缺少 executionState.workflowState');
     }
 

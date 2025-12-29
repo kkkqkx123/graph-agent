@@ -1,24 +1,23 @@
 import { injectable } from 'inversify';
-import { BaseWorkflowFunction } from '../base/base-workflow-function';
-import { WorkflowFunctionType } from '../../../../domain/workflow/value-objects/workflow-function-type';
+import { BaseConditionFunction } from './base-condition-function';
+import { ConditionFunctionConfig, WorkflowExecutionContext } from '../types';
 
 /**
  * 检查是否有工具调用的条件函数
  */
 @injectable()
-export class HasToolCallsConditionFunction extends BaseWorkflowFunction {
+export class HasToolCallsConditionFunction extends BaseConditionFunction<ConditionFunctionConfig> {
   constructor() {
     super(
       'condition:has_tool_calls',
       'has_tool_calls',
       '检查工作流状态中是否有工具调用',
       '1.0.0',
-      WorkflowFunctionType.CONDITION,
-      false
+      'builtin'
     );
   }
 
-  async execute(context: any, config: any): Promise<boolean> {
+  override async execute(context: WorkflowExecutionContext, config: ConditionFunctionConfig): Promise<boolean> {
     this.checkInitialized();
 
     const messages = context.getVariable('messages') || [];

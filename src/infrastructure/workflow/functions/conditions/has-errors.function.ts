@@ -1,6 +1,6 @@
 import { injectable } from 'inversify';
-import { BaseConditionFunction, ConditionFunctionConfig, WorkflowExecutionContext } from '../base/base-workflow-function';
-import { WorkflowFunctionType } from '../../../../domain/workflow/value-objects/workflow-function-type';
+import { BaseConditionFunction } from './base-condition-function';
+import { ConditionFunctionConfig, WorkflowExecutionContext } from '../types';
 
 /**
  * 检查是否有错误的条件函数

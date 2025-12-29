@@ -1,20 +1,19 @@
 import { injectable } from 'inversify';
-import { WorkflowFunctionType } from '../../../../domain/workflow/value-objects/workflow-function-type';
-import { BaseWorkflowFunction } from '../base/base-workflow-function';
+import { BaseTriggerFunction } from './base-trigger-function';
+import { TriggerFunctionConfig, WorkflowExecutionContext } from '../types';
 
 /**
  * 时间触发器函数
  */
 @injectable()
-export class TimeTriggerFunction extends BaseWorkflowFunction {
+export class TimeTriggerFunction extends BaseTriggerFunction<TriggerFunctionConfig> {
   constructor() {
     super(
       'trigger:time',
       'time_trigger',
       '基于时间条件的触发器，支持间隔时间和特定时间点两种模式',
       '1.0.0',
-      WorkflowFunctionType.TRIGGER,
-      false
+      'builtin'
     );
   }
 
@@ -39,18 +38,18 @@ export class TimeTriggerFunction extends BaseWorkflowFunction {
   protected override validateCustomConfig(config: any): string[] {
     const errors: string[] = [];
 
-    if (!config.triggerTime) {
+    if (!config['triggerTime']) {
       errors.push('triggerTime是必需的');
     }
 
     return errors;
   }
 
-  async execute(context: any, config: any): Promise<boolean> {
+  override async execute(context: WorkflowExecutionContext, config: TriggerFunctionConfig): Promise<boolean> {
     this.checkInitialized();
 
-    const triggerTime = config.triggerTime;
-    const lastTriggered = config.lastTriggered;
+    const triggerTime = config['triggerTime'];
+    const lastTriggered = config['lastTriggered'];
 
     if (!triggerTime) {
       return false;

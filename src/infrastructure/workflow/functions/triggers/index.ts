@@ -1,4 +1,7 @@
-// 触发器函数导出
+// 触发器函数基类导出
+export { BaseTriggerFunction } from './base-trigger-function';
+
+// 触发器函数实现导出
 export { TimeTriggerFunction } from './time-trigger.function';
 export { StateTriggerFunction } from './state-trigger.function';
 export { EventTriggerFunction } from './event-trigger.function';

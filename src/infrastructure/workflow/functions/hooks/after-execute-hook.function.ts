@@ -1,13 +1,13 @@
 import { injectable } from 'inversify';
-import { WorkflowFunctionType } from '../../../../domain/workflow/value-objects/workflow-function-type';
-import { BaseHookFunction, WorkflowExecutionContext, NodeFunctionResult, NodeFunctionConfig } from '../base/base-workflow-function';
+import { BaseHookFunction } from './base-hook-function';
+import { WorkflowExecutionContext, NodeFunctionResult, NodeFunctionConfig } from '../types';
 
 /**
  * 执行后钩子函数
  * 在工作流执行后调用，用于后处理、清理、日志记录等
  */
 @injectable()
-export class AfterExecuteHookFunction extends BaseHookFunction {
+export class AfterExecuteHookFunction extends BaseHookFunction<NodeFunctionConfig> {
   constructor() {
     super(
       'hook:after_execute',
@@ -43,15 +43,15 @@ export class AfterExecuteHookFunction extends BaseHookFunction {
   protected override validateCustomConfig(config: any): string[] {
     const errors: string[] = [];
 
-    if (config.postprocessing && typeof config.postprocessing !== 'object') {
+    if (config['postprocessing'] && typeof config['postprocessing'] !== 'object') {
       errors.push('postprocessing 必须是对象类型');
     }
 
-    if (config.logging && typeof config.logging !== 'object') {
+    if (config['logging'] && typeof config['logging'] !== 'object') {
       errors.push('logging 必须是对象类型');
     }
 
-    if (config.cleanup && typeof config.cleanup !== 'object') {
+    if (config['cleanup'] && typeof config['cleanup'] !== 'object') {
       errors.push('cleanup 必须是对象类型');
     }
 

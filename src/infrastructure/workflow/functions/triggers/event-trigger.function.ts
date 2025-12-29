@@ -1,20 +1,19 @@
 import { injectable } from 'inversify';
-import { WorkflowFunctionType } from '../../../../domain/workflow/value-objects/workflow-function-type';
-import { BaseWorkflowFunction } from '../base/base-workflow-function';
+import { BaseTriggerFunction } from './base-trigger-function';
+import { TriggerFunctionConfig, WorkflowExecutionContext } from '../types';
 
 /**
  * 基于事件类型的触发器函数
  */
 @injectable()
-export class EventTriggerFunction extends BaseWorkflowFunction {
+export class EventTriggerFunction extends BaseTriggerFunction<TriggerFunctionConfig> {
   constructor() {
     super(
       'trigger:event',
       'event_trigger',
       '基于工作流事件类型的触发器',
       '1.0.0',
-      WorkflowFunctionType.TRIGGER,
-      false
+      'builtin'
     );
   }
 
@@ -47,27 +46,27 @@ export class EventTriggerFunction extends BaseWorkflowFunction {
   protected override validateCustomConfig(config: any): string[] {
     const errors: string[] = [];
 
-    if (!config.eventType || typeof config.eventType !== 'string') {
+    if (!config['eventType'] || typeof config['eventType'] !== 'string') {
       errors.push('eventType是必需的字符串参数');
     }
 
-    if (config.eventSource && typeof config.eventSource !== 'string') {
+    if (config['eventSource'] && typeof config['eventSource'] !== 'string') {
       errors.push('eventSource必须是字符串类型');
     }
 
-    if (config.eventDataFilter && typeof config.eventDataFilter !== 'object') {
+    if (config['eventDataFilter'] && typeof config['eventDataFilter'] !== 'object') {
       errors.push('eventDataFilter必须是对象类型');
     }
 
     return errors;
   }
 
-  async execute(context: any, config: any): Promise<boolean> {
+  override async execute(context: WorkflowExecutionContext, config: TriggerFunctionConfig): Promise<boolean> {
     this.checkInitialized();
 
-    const eventType = config.eventType;
-    const eventSource = config.eventSource;
-    const eventDataFilter = config.eventDataFilter || {};
+    const eventType = config['eventType'];
+    const eventSource = config['eventSource'];
+    const eventDataFilter = config['eventDataFilter'] || {};
 
     // 获取事件列表
     const events = context.getVariable('events') || [];

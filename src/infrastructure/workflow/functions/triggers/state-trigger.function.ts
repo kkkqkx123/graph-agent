@@ -1,20 +1,19 @@
 import { injectable } from 'inversify';
-import { WorkflowFunctionType } from '../../../../domain/workflow/value-objects/workflow-function-type';
-import { BaseWorkflowFunction } from '../base/base-workflow-function';
+import { BaseTriggerFunction } from './base-trigger-function';
+import { TriggerFunctionConfig, WorkflowExecutionContext } from '../types';
 
 /**
  * 基于状态条件的触发器函数
  */
 @injectable()
-export class StateTriggerFunction extends BaseWorkflowFunction {
+export class StateTriggerFunction extends BaseTriggerFunction<TriggerFunctionConfig> {
   constructor() {
     super(
       'trigger:state',
       'state_trigger',
       '基于工作流状态条件的触发器',
       '1.0.0',
-      WorkflowFunctionType.TRIGGER,
-      false
+      'builtin'
     );
   }
 
@@ -46,24 +45,24 @@ export class StateTriggerFunction extends BaseWorkflowFunction {
   protected override validateCustomConfig(config: any): string[] {
     const errors: string[] = [];
 
-    if (!config.stateVariable || typeof config.stateVariable !== 'string') {
+    if (!config['stateVariable'] || typeof config['stateVariable'] !== 'string') {
       errors.push('stateVariable是必需的字符串参数');
     }
 
     const validOperators = ['===', '!==', '>', '<', '>=', '<=', 'contains', 'exists', 'not_exists'];
-    if (config.operator && !validOperators.includes(config.operator)) {
+    if (config['operator'] && !validOperators.includes(config['operator'])) {
       errors.push(`operator必须是以下值之一: ${validOperators.join(', ')}`);
     }
 
     return errors;
   }
 
-  async execute(context: any, config: any): Promise<boolean> {
+  override async execute(context: WorkflowExecutionContext, config: TriggerFunctionConfig): Promise<boolean> {
     this.checkInitialized();
 
-    const stateVariable = config.stateVariable;
-    const expectedValue = config.expectedValue;
-    const operator = config.operator || '===';
+    const stateVariable = config['stateVariable'];
+    const expectedValue = config['expectedValue'];
+    const operator = config['operator'] || '===';
 
     // 获取当前状态值
     const currentValue = context.getVariable(stateVariable);

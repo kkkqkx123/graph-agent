@@ -1,27 +1,25 @@
-import { BaseWorkflowFunction } from '../base/base-workflow-function';
-import { WorkflowFunctionType } from '../../../../domain/workflow/value-objects/workflow-function-type';
+import { BaseConditionRoutingFunction } from './base-routing-function';
+import { RoutingFunctionConfig, WorkflowExecutionContext } from '../types';
 
 /**
  * 变量值路由函数
  * 检查变量值是否等于指定值
  */
-export class VariableEqualsRoutingFunction extends BaseWorkflowFunction {
+export class VariableEqualsRoutingFunction extends BaseConditionRoutingFunction<RoutingFunctionConfig> {
   constructor() {
     super(
       'variable_equals_routing',
       'variableEquals',
       '检查变量值是否等于指定值',
       '1.0.0',
-      WorkflowFunctionType.ROUTING,
-      true,
       'builtin'
     );
   }
 
-  async execute(context: any, config: any): Promise<boolean> {
-    const variableName = config.edge?.properties?.variableName;
-    const expectedValue = config.edge?.properties?.expectedValue;
-    const variables = config.variables;
+  override async execute(context: WorkflowExecutionContext, config: RoutingFunctionConfig): Promise<boolean> {
+    const variableName = config['edge']?.['properties']?.['variableName'];
+    const expectedValue = config['edge']?.['properties']?.['expectedValue'];
+    const variables = config['variables'];
 
     if (!variableName || !variables) {
       return false;
@@ -34,11 +32,11 @@ export class VariableEqualsRoutingFunction extends BaseWorkflowFunction {
   protected override validateCustomConfig(config: any): string[] {
     const errors: string[] = [];
 
-    if (!config.edge?.properties?.variableName) {
+    if (!config['edge']?.['properties']?.['variableName']) {
       errors.push('缺少 edge.properties.variableName');
     }
 
-    if (!config.variables) {
+    if (!config['variables']) {
       errors.push('缺少 variables');
     }
 

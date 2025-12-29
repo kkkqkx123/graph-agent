@@ -1,21 +1,20 @@
 import { injectable } from 'inversify';
-import { WorkflowFunctionType } from '../../../../domain/workflow/value-objects/workflow-function-type';
-import { BaseWorkflowFunction } from '../base/base-workflow-function';
+import { BaseTargetRoutingFunction } from './base-routing-function';
+import { RoutingFunctionConfig, WorkflowExecutionContext } from '../types';
 
 /**
  * 条件路由函数
  * 基于配置的条件数组进行路由决策，支持复杂的条件组合和表达式评估
  */
 @injectable()
-export class ConditionalRoutingFunction extends BaseWorkflowFunction {
+export class ConditionalRoutingFunction extends BaseTargetRoutingFunction<RoutingFunctionConfig> {
   constructor() {
     super(
       'route:conditional',
       'conditional_routing',
       '基于条件结果进行路由决策，支持复杂的条件组合和表达式评估',
       '1.0.0',
-      WorkflowFunctionType.ROUTING,
-      false
+      'builtin'
     );
   }
 
@@ -50,13 +49,13 @@ export class ConditionalRoutingFunction extends BaseWorkflowFunction {
     const errors: string[] = [];
 
     // 验证conditions数组
-    if (config.conditions && !Array.isArray(config.conditions)) {
+    if (config['conditions'] && !Array.isArray(config['conditions'])) {
       errors.push('conditions必须是数组类型');
     }
 
     // 验证每个条件的结构
-    if (Array.isArray(config.conditions)) {
-      config.conditions.forEach((condition: any, index: number) => {
+    if (Array.isArray(config['conditions'])) {
+      config['conditions'].forEach((condition: any, index: number) => {
         if (!condition.name) {
           errors.push(`条件[${index}]缺少name字段`);
         }
@@ -70,7 +69,7 @@ export class ConditionalRoutingFunction extends BaseWorkflowFunction {
     }
 
     // 验证matchMode
-    if (config.matchMode && !['first', 'all', 'any'].includes(config.matchMode)) {
+    if (config['matchMode'] && !['first', 'all', 'any'].includes(config['matchMode'])) {
       errors.push('matchMode必须是first、all或any之一');
     }
 
@@ -82,12 +81,12 @@ export class ConditionalRoutingFunction extends BaseWorkflowFunction {
     return validOperators.includes(operator);
   }
 
-  async execute(context: any, config: any): Promise<string | string[]> {
+  override async execute(context: WorkflowExecutionContext, config: RoutingFunctionConfig): Promise<string | string[]> {
     this.checkInitialized();
 
-    const conditions = config.conditions || [];
-    const defaultNodeId = config.defaultNodeId || 'default';
-    const matchMode = config.matchMode || 'first';
+    const conditions = config['conditions'] || [];
+    const defaultNodeId = config['defaultNodeId'] || 'default';
+    const matchMode = config['matchMode'] || 'first';
 
     if (conditions.length === 0) {
       return defaultNodeId;

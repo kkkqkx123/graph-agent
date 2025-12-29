@@ -1,13 +1,13 @@
 import { injectable } from 'inversify';
-import { WorkflowFunctionType } from '../../../../domain/workflow/value-objects/workflow-function-type';
-import { BaseHookFunction, WorkflowExecutionContext, NodeFunctionResult, NodeFunctionConfig } from '../base/base-workflow-function';
+import { BaseHookFunction } from './base-hook-function';
+import { WorkflowExecutionContext, NodeFunctionResult, NodeFunctionConfig } from '../types';
 
 /**
  * 执行前钩子函数
  * 在工作流执行前调用，用于预处理、验证等
  */
 @injectable()
-export class BeforeExecuteHookFunction extends BaseHookFunction {
+export class BeforeExecuteHookFunction extends BaseHookFunction<NodeFunctionConfig> {
   constructor() {
     super(
       'hook:before_execute',
