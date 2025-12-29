@@ -5,7 +5,7 @@
  */
 
 import { BaseModuleLoader } from '../base-loader';
-import { ConfigFile, ModuleConfig, ModuleMetadata } from '../types';
+import { ConfigFile, ModuleMetadata } from '../types';
 import { ILogger } from '../../../../domain/common/types';
 
 /**
@@ -23,7 +23,7 @@ export class TaskGroupConfigLoader extends BaseModuleLoader {
    */
   protected override async preprocessFiles(files: ConfigFile[]): Promise<ConfigFile[]> {
     const processedFiles = [];
-    
+
     for (const file of files) {
       // 根据文件路径调整优先级
       if (file.path.includes('common.toml')) {
@@ -33,10 +33,10 @@ export class TaskGroupConfigLoader extends BaseModuleLoader {
         // 默认配置次之
         file.priority += 500;
       }
-      
+
       processedFiles.push(file);
     }
-    
+
     return processedFiles;
   }
 
@@ -45,42 +45,42 @@ export class TaskGroupConfigLoader extends BaseModuleLoader {
    */
   protected async mergeConfigs(configs: Record<string, any>[]): Promise<Record<string, any>> {
     let result: Record<string, any> = {};
-    
+
     // 1. 首先处理默认配置
     const defaultConfigs = configs.filter(c =>
       c['path']?.includes('default.toml') || c['path']?.includes('common.toml')
     );
-    
+
     for (const config of defaultConfigs) {
       result = this.deepMerge(result, config);
     }
-    
+
     // 2. 处理具体的任务组配置
     const groupConfigs = configs.filter(c =>
       !c['path']?.includes('default.toml') &&
       !c['path']?.includes('common.toml')
     );
-    
+
     const taskGroups: Record<string, any> = {};
-    
+
     for (const config of groupConfigs) {
       const groupName = config['name'] || config['group_name'];
       if (groupName) {
         // 验证配置
         this.validateTaskGroupConfig(groupName, config);
-        
+
         // 合并默认配置
         taskGroups[groupName] = this.mergeWithDefaultConfig(config);
       }
     }
-    
+
     if (Object.keys(taskGroups).length > 0) {
       result['taskGroups'] = taskGroups;
-      this.logger.debug('应用任务组配置', { 
-        taskGroups: Object.keys(taskGroups) 
+      this.logger.debug('应用任务组配置', {
+        taskGroups: Object.keys(taskGroups)
       });
     }
-    
+
     return result;
   }
 
@@ -101,7 +101,7 @@ export class TaskGroupConfigLoader extends BaseModuleLoader {
    */
   private validateTaskGroupConfig(groupName: string, config: Record<string, any>): void {
     const requiredFields = ['name'];
-    
+
     for (const field of requiredFields) {
       if (!config[field]) {
         throw new Error(`任务组配置缺少必需字段: ${field}`);
@@ -134,13 +134,13 @@ export class TaskGroupConfigLoader extends BaseModuleLoader {
    */
   private extractEchelons(config: Record<string, any>): Record<string, any> {
     const echelons: Record<string, any> = {};
-    
+
     for (const [key, value] of Object.entries(config)) {
       if (key.startsWith('echelon') && typeof value === 'object' && value !== null) {
         echelons[key] = value;
       }
     }
-    
+
     return echelons;
   }
 
@@ -149,7 +149,7 @@ export class TaskGroupConfigLoader extends BaseModuleLoader {
    */
   private validateEchelonConfig(groupName: string, echelonName: string, config: Record<string, any>): void {
     const requiredFields = ['priority', 'models'];
-    
+
     for (const field of requiredFields) {
       if (!config[field]) {
         throw new Error(`层级配置 ${groupName}.${echelonName} 缺少必需字段: ${field}`);

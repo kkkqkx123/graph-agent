@@ -29,7 +29,7 @@
 
 **职责**:
 - 从 `configs/prompts` 目录加载提示词配置
-- 支持 `.md` 和 `.toml` 文件格式
+- 仅支持 `.toml` 文件格式
 - 根据文件路径调整优先级（模板 > 系统 > 规则 > 用户命令 > 上下文 > 示例）
 - 按类别分组配置
 
@@ -37,13 +37,15 @@
 - 文件优先级调整机制
 - 类别自动提取（从文件路径）
 - 支持复合提示词目录（index文件）
+- 单一配置格式，简化处理逻辑
 
 ### PromptRule (`src/infrastructure/config/loading/rules/prompt-rule.ts`)
 
 **职责**:
 - 定义提示词模块的配置规则
-- 指定文件匹配模式：`prompts/**/*.md`, `prompts/**/*.toml`
+- 指定文件匹配模式：`prompts/**/*.toml`
 - 提供Schema验证
+- 提供文件路径构建函数（单一处理逻辑）
 
 **Schema结构**:
 ```typescript

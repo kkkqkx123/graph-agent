@@ -9,6 +9,3 @@ text = """代码中必须包含适当的错误处理逻辑：
 
 [metadata]
 role = "system"
-priority = 3
-created_at = "2024-01-01"
-updated_at = "2024-01-01"

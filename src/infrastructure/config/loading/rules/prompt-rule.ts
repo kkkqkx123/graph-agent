@@ -49,6 +49,34 @@ export const PromptSchema = {
 };
 
 /**
+ * 构建文件路径（单一处理逻辑）
+ *
+ * 引用格式说明：
+ * - 简单引用：category.name（如 system.assistant）
+ *   - 查找：configs/prompts/{category}/{name}.toml
+ * - 复合引用：category.composite.part（如 system.coder.index 或 system.coder.01_code_style）
+ *   - 查找：configs/prompts/{category}/{composite}/{part}.toml
+ *
+ * 注意：采用单一处理逻辑，不尝试多种可能的路径，确保执行逻辑可预测
+ *
+ * @param category 类别
+ * @param name 名称（可能包含复合名称，如 "coder.index" 或 "coder.01_code_style"）
+ * @returns 文件路径
+ */
+export function buildFilePath(category: string, name: string): string {
+  // 处理复合引用（如 "coder.index" 或 "coder.01_code_style"）
+  if (name.includes('.')) {
+    const parts = name.split('.');
+    const dirPath = `configs/prompts/${category}/${parts.slice(0, -1).join('/')}`;
+    const fileName = parts[parts.length - 1];
+    return `${dirPath}/${fileName}.toml`;
+  }
+
+  // 简单引用：category.name（如 system.assistant）
+  return `configs/prompts/${category}/${name}.toml`;
+}
+
+/**
  * 创建提示模块规则
  */
 export function createPromptModuleRule(
@@ -57,10 +85,7 @@ export function createPromptModuleRule(
 ): IModuleRule {
   return {
     moduleType: 'prompts',
-    patterns: [
-      'prompts/**/*.md',
-      'prompts/**/*.toml'
-    ],
+    patterns: ['prompts/**/*.toml'],
     priority: 100,
     loader,
     schema: PromptSchema as any,

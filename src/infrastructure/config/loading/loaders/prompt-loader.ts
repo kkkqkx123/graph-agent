@@ -1,15 +1,24 @@
 /**
  * 提示词配置加载器
- * 
- * 负责从 configs/prompts 目录加载提示词配置。
+ *
+ * 职责：
+ * - 从 configs/prompts 目录加载提示词配置
+ * - 支持复合提示词目录结构的智能查找
+ * - 处理文件路径构建和文件系统查找
+ *
+ * 支持的文件格式：仅支持 TOML 格式
+ *
+ * 支持的文件结构：
+ * - 简单文件: configs/prompts/{category}/{name}.toml
+ * - 复合目录: configs/prompts/{category}/{composite}/index.toml
+ * - 部分文件: configs/prompts/{category}/{composite}/{序号}_{part}.toml
  */
 
 import * as fs from 'fs/promises';
 import * as path from 'path';
 import { BaseModuleLoader } from '../base-loader';
-import { ConfigFile, ModuleConfig, ModuleMetadata } from '../types';
-import { ILogger } from '../../../../domain/common/types';
-import { PromptType, inferPromptTypeFromCategory } from '../../../../domain/prompts/value-objects/prompt-type';
+import { ConfigFile, ModuleMetadata } from '../types';
+import { buildFilePath } from '../rules/prompt-rule';
 
 export class PromptLoader extends BaseModuleLoader {
   readonly moduleType = 'prompts';
@@ -39,18 +48,18 @@ export class PromptLoader extends BaseModuleLoader {
   protected override async mergeConfigs(configs: Record<string, any>[]): Promise<Record<string, any>> {
     // 合并prompt配置的逻辑
     const result: Record<string, any> = {};
-    
+
     // 按类别分组
     const promptsByCategory: Record<string, Record<string, any>> = {};
-    
+
     for (const config of configs) {
       const category = this.extractCategory(config['path']);
       const name = this.extractName(config['path']);
-      
+
       if (!promptsByCategory[category]) {
         promptsByCategory[category] = {};
       }
-      
+
       // 添加文件路径信息到配置中
       const enhancedConfig = {
         ...config['content'],
@@ -58,10 +67,10 @@ export class PromptLoader extends BaseModuleLoader {
         _category: category,
         _name: name
       };
-      
+
       promptsByCategory[category][name] = enhancedConfig;
     }
-    
+
     result['prompts'] = promptsByCategory;
     return result;
   }
@@ -83,7 +92,7 @@ export class PromptLoader extends BaseModuleLoader {
    * 从文件路径提取类别
    */
   private extractCategory(filePath: string): string {
-    // 文件路径格式: configs/prompts/{category}/{name}.md
+    // 文件路径格式: configs/prompts/{category}/{name}.toml
     const relativePath = path.relative('configs/prompts', filePath);
     const parts = relativePath.split(path.sep);
     return parts[0] || 'unknown';
@@ -95,40 +104,40 @@ export class PromptLoader extends BaseModuleLoader {
   private extractName(filePath: string): string {
     // 移除扩展名和目录
     const basename = path.basename(filePath, path.extname(filePath));
-    // 如果是复合提示词目录，使用目录名
+
+    // 如果是复合提示词目录的 index 文件，使用目录名
     if (basename === 'index') {
       const dirname = path.basename(path.dirname(filePath));
       return dirname;
     }
+
+    // 保留完整的文件名（包括序号前缀）
+    // 例如：01_code_style.toml → 01_code_style
     return basename;
   }
 
   /**
-    * 加载配置文件内容（支持markdown和toml文件）
-    */
+   * 加载配置文件内容（仅支持TOML格式）
+   */
   protected override async loadConfigs(files: ConfigFile[]): Promise<Record<string, any>[]> {
     const configs: Record<string, any>[] = [];
-    
+
     for (const file of files) {
       try {
         this.logger.debug('加载提示词配置文件', { path: file.path });
-        
+
         const content = await fs.readFile(file.path, 'utf8');
         const ext = path.extname(file.path).toLowerCase();
-        
-        let processed: any;
-        
-        if (ext === '.md') {
-          // 处理markdown文件
-          processed = await this.processMarkdownContent(content, file.path);
-        } else if (ext === '.toml') {
-          // 处理toml文件
-          processed = await this.processTomlContent(content, file.path);
-        } else {
-          this.logger.warn('不支持的文件格式', { path: file.path, ext });
+
+        if (ext !== '.toml') {
+          this.logger.warn('不支持的文件格式，仅支持TOML格式', { path: file.path, ext });
           continue;
         }
-        
+
+        // 处理toml文件
+        const toml = await import('toml');
+        const processed = toml.parse(content);
+
         configs.push({
           path: file.path,
           content: processed,
@@ -142,30 +151,40 @@ export class PromptLoader extends BaseModuleLoader {
         });
       }
     }
-    
+
     return configs;
   }
 
   /**
-    * 处理markdown内容，移除frontmatter
-    */
-  private async processMarkdownContent(content: string, filePath: string): Promise<string> {
-    // 移除YAML frontmatter（如果有）
-    if (content.startsWith('---')) {
-      const parts = content.split('---', 3);
-      if (parts.length >= 3) {
-        return parts[2]?.trim() ?? '';
-      }
-    }
-    return content.trim();
-  }
+   * 根据引用查找提示词内容
+   * @param category 类别
+   * @param name 名称（可能包含复合名称，如 "coder.index" 或 "coder.01_code_style"）
+   * @returns 提示词内容，如果未找到则返回 null
+   */
+  async findPromptByReference(category: string, name: string): Promise<Record<string, unknown> | null> {
+    this.logger.debug('根据引用查找提示词', { category, name });
 
-  /**
-    * 处理toml内容，解析为对象
-    */
-  private async processTomlContent(content: string, filePath: string): Promise<any> {
-    // 动态导入toml解析器
-    const toml = await import('toml');
-    return toml.parse(content);
+    // 使用 PromptRule 中的路径构建函数（单一处理逻辑）
+    const filePath = buildFilePath(category, name);
+
+    try {
+      const content = await fs.readFile(filePath, 'utf8');
+      const ext = path.extname(filePath).toLowerCase();
+
+      if (ext !== '.toml') {
+        this.logger.warn('不支持的文件格式，仅支持TOML格式', { path: filePath, ext });
+        return null;
+      }
+
+      // 处理toml文件
+      const toml = await import('toml');
+      const processed = toml.parse(content);
+
+      this.logger.debug('成功加载提示词', { category, name, filePath });
+      return processed;
+    } catch (error) {
+      this.logger.warn('未找到提示词', { category, name, filePath, error: (error as Error).message });
+      return null;
+    }
   }
 }

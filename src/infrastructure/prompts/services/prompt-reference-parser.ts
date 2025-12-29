@@ -1,10 +1,12 @@
 /**
  * 提示词引用解析器
  * 
- * 负责解析提示词引用格式，将引用字符串转换为具体的文件路径
- * 支持格式：
- * - {category}.{name} - 基本引用
- * - {category}.{composite_name}.{part_name} - 复合提示词引用
+ * 职责：只负责引用格式的解析和验证
+ * - 解析引用字符串（如 "system.coder" 或 "system.coder.code_style"）
+ * - 验证引用格式的有效性
+ * - 返回结构化的引用信息
+ * 
+ * 注意：不负责文件路径构建和文件系统查找，这些由 PromptLoader 处理
  */
 
 import { ILogger } from '../../../domain/common/types/logger-types';
@@ -15,10 +17,8 @@ import { ILogger } from '../../../domain/common/types/logger-types';
 export interface PromptReference {
   /** 类别 */
   category: string;
-  /** 名称（可能包含复合名称） */
+  /** 名称（可能包含复合名称，如 "coder.code_style"） */
   name: string;
-  /** 文件路径 */
-  filePath: string;
 }
 
 /**
@@ -62,31 +62,12 @@ export class PromptReferenceParser {
       }
     }
 
-    const filePath = this.buildFilePath(category, name);
-
-    this.logger.debug('提示词引用解析成功', { reference, category, name, filePath });
+    this.logger.debug('提示词引用解析成功', { reference, category, name });
 
     return {
       category,
-      name,
-      filePath
+      name
     };
-  }
-
-  /**
-   * 构建文件路径
-   * @param category 类别
-   * @param name 名称
-   * @returns 文件路径
-   */
-  private buildFilePath(category: string, name: string): string {
-    // 处理复合提示词
-    if (name.includes('.')) {
-      const [compositeName, partName] = name.split('.');
-      return `configs/prompts/${category}/${compositeName}/${partName}.toml`;
-    }
-
-    return `configs/prompts/${category}/${name}.toml`;
   }
 
   /**

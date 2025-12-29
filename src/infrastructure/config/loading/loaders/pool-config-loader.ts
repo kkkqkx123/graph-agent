@@ -5,7 +5,7 @@
  */
 
 import { BaseModuleLoader } from '../base-loader';
-import { ConfigFile, ModuleConfig, ModuleMetadata } from '../types';
+import { ConfigFile, ModuleMetadata } from '../types';
 import { ILogger } from '../../../../domain/common/types';
 import { validatePoolConfig } from '../rules';
 

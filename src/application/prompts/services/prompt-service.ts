@@ -6,6 +6,7 @@
  */
 
 import { PromptRepository, PromptSearchCriteria } from '../../../infrastructure/persistence/repositories/prompt-repository';
+import { PromptLoader } from '../../../infrastructure/config/loading/loaders/prompt-loader';
 import { Prompt, PromptId } from '../../../domain/prompts';
 
 // 导入新的DTO
@@ -33,7 +34,8 @@ export class PromptService {
   private promptConverter: PromptConverter;
 
   constructor(
-    private readonly promptRepository: PromptRepository
+    private readonly promptRepository: PromptRepository,
+    private readonly promptLoader: PromptLoader
   ) {
     // 初始化DTO实例
     this.promptInfoDto = new PromptInfoDto();
@@ -219,23 +221,47 @@ export class PromptService {
 
   /**
    * 加载提示词内容
+   * 支持从配置中加载提示词，返回完整的提示词对象（包含 content 字段）
+   * 使用 PromptLoader 的智能查找功能，支持复合提示词目录结构
    */
-  async loadPromptContent(category: string, name: string): Promise<string> {
+  async loadPromptContent(category: string, name: string): Promise<Record<string, unknown> | string> {
+    // 首先尝试从已加载的配置中查找
     const prompts = await this.getPromptsByCategory(category);
     const prompt = prompts.find(p => p.name === name);
     
-    if (!prompt) {
+    if (prompt) {
+      // 返回完整的提示词对象，包含 content 和其他元数据
+      return {
+        content: prompt.content,
+        name: prompt.name,
+        category: prompt.category,
+        metadata: prompt.metadata
+      };
+    }
+    
+    // 如果在已加载的配置中未找到，尝试使用 PromptLoader 直接查找文件
+    // 这支持复合提示词目录结构的动态查找
+    const content = await this.promptLoader.findPromptByReference(category, name);
+    
+    if (!content) {
       throw new Error(`提示词 ${category}.${name} 未找到`);
     }
     
-    return prompt.content;
+    return content;
   }
 
   /**
    * 检查提示词是否存在
    */
   async promptExists(category: string, name: string): Promise<boolean> {
+    // 首先检查已加载的配置
     const prompts = await this.getPromptsByCategory(category);
-    return prompts.some(p => p.name === name);
+    if (prompts.some(p => p.name === name)) {
+      return true;
+    }
+    
+    // 如果未找到，尝试使用 PromptLoader 查找文件
+    const content = await this.promptLoader.findPromptByReference(category, name);
+    return content !== null;
   }
 }
