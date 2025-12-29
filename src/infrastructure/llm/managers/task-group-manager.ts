@@ -1,5 +1,5 @@
 import { injectable, inject } from 'inversify';
-import { ConfigManager } from '../../config/config-manager';
+import { ConfigLoadingModule } from '../../config/loading/config-loading-module';
 import { LLM_DI_IDENTIFIERS } from '../di-identifiers';
 
 /**
@@ -10,7 +10,7 @@ import { LLM_DI_IDENTIFIERS } from '../di-identifiers';
 @injectable()
 export class TaskGroupManager {
   constructor(
-    @inject(LLM_DI_IDENTIFIERS.ConfigManager) private configManager: ConfigManager
+    @inject(LLM_DI_IDENTIFIERS.ConfigLoadingModule) private configManager: ConfigLoadingModule
   ) {}
 
   /**
@@ -306,7 +306,8 @@ export class TaskGroupManager {
    * 重新加载配置
    */
   async reloadConfig(): Promise<void> {
-    await this.configManager.reload();
+    // ConfigLoadingModule 不需要手动重载，配置会自动更新
+    // await this.configManager.reload();
   }
 
   /**

@@ -10,6 +10,7 @@ import { ProviderConfig, ApiType, ProviderConfigBuilder } from '../parameter-map
 import { OpenAIParameterMapper } from '../parameter-mappers/providers/openai-parameter-mapper';
 import { OpenAIResponsesEndpointStrategy } from '../endpoint-strategies/providers/openai-responses-endpoint-strategy';
 import { BaseFeatureSupport } from '../parameter-mappers/interfaces/feature-support.interface';
+import { ConfigLoadingModule } from '../../config/loading/config-loading-module';
 
 @injectable()
 export class OpenAIResponseClient extends BaseLLMClient {
@@ -17,7 +18,7 @@ export class OpenAIResponseClient extends BaseLLMClient {
     @inject('HttpClient') httpClient: any,
     @inject('TokenBucketLimiter') rateLimiter: any,
     @inject('TokenCalculator') tokenCalculator: any,
-    @inject('ConfigManager') configManager: any
+    @inject('ConfigLoadingModule') configManager: ConfigLoadingModule
   ) {
     // 创建功能支持配置
     const featureSupport = new BaseFeatureSupport();
@@ -73,7 +74,7 @@ export class OpenAIResponseClient extends BaseLLMClient {
 
   public getModelConfig(): ModelConfig {
     const model = 'gpt-5'; // 默认模型
-    const configs: Record<string, any> = this.configManager.get('llm.openai.models', {});
+    const configs: Record<string, any> = this.configLoadingModule.get('llm.openai.models', {});
     const config = configs[model];
 
     if (!config) {

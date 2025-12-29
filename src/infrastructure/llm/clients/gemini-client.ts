@@ -13,7 +13,7 @@ import { LLM_DI_IDENTIFIERS } from '../di-identifiers';
 import { HttpClient } from '../../common/http/http-client';
 import { TokenBucketLimiter } from '../rate-limiters/token-bucket-limiter';
 import { TokenCalculator } from '../token-calculators/token-calculator';
-import { ConfigManager } from '../../config/config-manager';
+import { ConfigLoadingModule } from '../../config/loading/config-loading-module';
 
 @injectable()
 export class GeminiClient extends BaseLLMClient {
@@ -21,7 +21,7 @@ export class GeminiClient extends BaseLLMClient {
     @inject(LLM_DI_IDENTIFIERS.HttpClient) httpClient: HttpClient,
     @inject(LLM_DI_IDENTIFIERS.TokenBucketLimiter) rateLimiter: TokenBucketLimiter,
     @inject(LLM_DI_IDENTIFIERS.TokenCalculator) tokenCalculator: TokenCalculator,
-    @inject(LLM_DI_IDENTIFIERS.ConfigManager) configManager: ConfigManager
+    @inject(LLM_DI_IDENTIFIERS.ConfigLoadingModule) configManager: ConfigLoadingModule
   ) {
     // 创建功能支持配置
     const featureSupport = new BaseFeatureSupport();
@@ -89,7 +89,7 @@ export class GeminiClient extends BaseLLMClient {
 
   getModelConfig(): ModelConfig {
     const model = 'gemini-2.5-pro'; // 默认模型
-    const configs = this.configManager.get<Record<string, any>>('llm.gemini.modelConfigs', {});
+    const configs = this.configLoadingModule.get<Record<string, any>>('llm.gemini.modelConfigs', {});
     const config = configs[model];
 
     if (!config) {

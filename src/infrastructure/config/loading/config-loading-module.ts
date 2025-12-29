@@ -1,23 +1,24 @@
 /**
- * 配置加载模块主类
+ * 简化的配置加载模块主类
+ * 移除对RuleManager和Loaders的依赖，直接实现配置加载逻辑
  */
 
-import { IConfigDiscovery, IModuleLoader, IDependencyResolver, ISchemaRegistry, ILoadingCache, IModuleRule, ConfigFile, ModuleConfig, ValidationResult, PreValidationResult, ValidationSeverity } from './types';
+import { IConfigDiscovery, ConfigFile, ValidationResult, ValidationSeverity } from './types';
 import { ConfigDiscovery } from './discovery';
-import { DependencyResolver } from './dependency-resolver';
 import { SchemaRegistry } from './schema-registry';
-import { LoadingCache } from './loading-cache';
-import { RuleManager } from './rules/rule-manager';
+import { InheritanceProcessor } from '../processors/inheritance-processor';
+import { EnvironmentProcessor } from '../processors/environment-processor';
 import { ILogger } from '../../../domain/common/types';
+import * as fs from 'fs/promises';
+import * as path from 'path';
+import { parse as parseToml } from 'toml';
+import * as yaml from 'yaml';
 
 /**
  * 配置加载模块选项
  */
 export interface ConfigLoadingModuleOptions {
-  cacheTTL?: number;
-  enableCache?: boolean;
   enableValidation?: boolean;
-  enablePreValidation?: boolean;
   validationSeverityThreshold?: 'error' | 'warning' | 'info';
 }
 
@@ -26,13 +27,13 @@ export interface ConfigLoadingModuleOptions {
  */
 export class ConfigLoadingModule {
   private readonly discovery: IConfigDiscovery;
-  private readonly resolver: IDependencyResolver;
-  private readonly registry: ISchemaRegistry;
-  private readonly cache: ILoadingCache;
-  private readonly loaders: Map<string, IModuleLoader> = new Map();
-  private readonly rules: Map<string, IModuleRule> = new Map();
+  private readonly registry: SchemaRegistry;
+  private readonly inheritanceProcessor: InheritanceProcessor;
+  private readonly environmentProcessor: EnvironmentProcessor;
   private readonly logger: ILogger;
   private readonly options: ConfigLoadingModuleOptions;
+  private configs: Record<string, any> = {};
+  private isInitialized = false;
 
   constructor(
     logger: ILogger,
@@ -40,59 +41,37 @@ export class ConfigLoadingModule {
   ) {
     this.logger = logger.child({ module: 'ConfigLoadingModule' });
     this.options = {
-      cacheTTL: 300000, // 5分钟
-      enableCache: true,
       enableValidation: true,
-      enablePreValidation: true,
       validationSeverityThreshold: 'error',
       ...options
     };
 
     // 初始化组件
     this.discovery = new ConfigDiscovery({}, this.logger);
-    this.resolver = new DependencyResolver(this.logger);
-    this.registry = new SchemaRegistry(this.logger);
-    this.cache = new LoadingCache(this.options.cacheTTL, this.logger);
+    this.registry = new SchemaRegistry(this.logger) as any;
+    this.inheritanceProcessor = new InheritanceProcessor({}, this.logger);
+    this.environmentProcessor = new EnvironmentProcessor({}, this.logger);
   }
 
   /**
-   * 注册模块规则
+   * 注册Schema
    */
-  registerModuleRule(rule: IModuleRule): void {
-    this.logger.debug('注册模块规则', { moduleType: rule.moduleType });
-
-    this.loaders.set(rule.moduleType, rule.loader);
-    this.rules.set(rule.moduleType, rule);
-
-    // 使用新的Schema注册方法
-    this.registry.registerSchema(rule.moduleType, rule.schema, '1.0.0', `${rule.moduleType}模块配置Schema`);
+  registerSchema(moduleType: string, schema: any): void {
+    this.logger.debug('注册模块Schema', { moduleType });
+    this.registry.registerSchema(moduleType, schema);
   }
 
   /**
-   * 批量注册模块规则
+   * 初始化并加载所有配置
    */
-  registerModuleRules(rules: IModuleRule[]): void {
-    for (const rule of rules) {
-      this.registerModuleRule(rule);
+  async initialize(basePath: string): Promise<void> {
+    if (this.isInitialized) {
+      return;
     }
-  }
 
-  /**
-   * 加载所有配置
-   */
-  async loadAllConfigs(basePath: string): Promise<Record<string, any>> {
-    this.logger.info('开始加载所有配置', { basePath });
+    this.logger.info('开始初始化配置加载模块', { basePath });
 
     try {
-      // 检查缓存
-      if (this.options.enableCache) {
-        const cached = this.cache.getAllConfigs();
-        if (cached) {
-          this.logger.info('从缓存加载配置');
-          return cached;
-        }
-      }
-
       // 1. 发现所有配置文件
       const allFiles = await this.discovery.discoverConfigs(basePath);
       this.logger.debug('发现配置文件', { count: allFiles.length });
@@ -103,63 +82,29 @@ export class ConfigLoadingModule {
         moduleTypes: Array.from(moduleFiles.keys())
       });
 
-      // 3. 预验证配置文件
-      const preValidationResults = await this.preValidateFiles(moduleFiles);
-
-      // 4. 根据预验证结果决定是否继续加载
-      const shouldContinue = this.shouldContinueAfterPreValidation(preValidationResults);
-      if (!shouldContinue) {
-        throw new Error('配置预验证失败，停止加载流程');
-      }
-
-      // 5. 加载各模块配置
-      const modules = new Map<string, ModuleConfig>();
-
+      // 3. 加载各模块配置
       for (const [moduleType, files] of moduleFiles) {
-        const loader = this.loaders.get(moduleType);
-        if (loader) {
-          try {
-            const moduleConfig = await loader.loadModule(files);
+        try {
+          const moduleConfig = await this.loadModuleConfig(moduleType, files);
+          this.configs[moduleType] = moduleConfig;
 
-            // 验证配置
-            if (this.options.enableValidation) {
-              const validation = this.registry.validateConfig(moduleType, moduleConfig.configs);
-              this.handleValidationResult(validation, moduleType);
-            }
-
-            modules.set(moduleType, moduleConfig);
-            this.logger.debug('模块配置加载成功', { moduleType });
-          } catch (error) {
-            this.logger.error('模块配置加载失败', error as Error);
-            // 继续处理其他模块
+          // 验证配置
+          if (this.options.enableValidation) {
+            const validation = this.registry.validateConfig(moduleType, moduleConfig);
+            this.handleValidationResult(validation, moduleType);
           }
-        } else {
-          this.logger.warn('未找到模块加载器', { moduleType });
+
+          this.logger.debug('模块配置加载成功', { moduleType });
+        } catch (error) {
+          this.logger.error('模块配置加载失败', error as Error, { moduleType });
+          // 继续处理其他模块
         }
       }
 
-      // 6. 解析依赖关系并生成加载顺序
-      const loadingOrder = await this.resolver.resolveDependencies(modules);
-      this.logger.debug('依赖关系解析完成', {
-        orderedModules: loadingOrder.orderedModules
-      });
-
-      // 7. 按顺序合并配置
-      const result = await this.mergeInOrder(modules, loadingOrder);
-
-      // 8. 缓存结果
-      if (this.options.enableCache) {
-        await this.cache.store(result);
-      }
-
-      this.logger.info('配置加载完成', {
-        moduleCount: modules.size,
-        modules: Array.from(modules.keys())
-      });
-
-      return result;
+      this.isInitialized = true;
+      this.logger.info('配置加载模块初始化完成');
     } catch (error) {
-      this.logger.error('配置加载失败', error as Error);
+      this.logger.error('配置加载模块初始化失败', error as Error);
       throw error;
     }
   }
@@ -167,90 +112,87 @@ export class ConfigLoadingModule {
   /**
    * 加载特定模块配置
    */
-  async loadModuleConfig(moduleType: string, basePath: string): Promise<Record<string, any>> {
-    this.logger.debug('加载模块配置', { moduleType, basePath });
+  async loadModuleConfig(moduleType: string, files: ConfigFile[]): Promise<Record<string, any>> {
+    this.logger.debug('加载模块配置', { moduleType, fileCount: files.length });
 
-    // 检查缓存
-    if (this.options.enableCache) {
-      const cached = this.cache.getModuleConfig(moduleType);
-      if (cached) {
-        this.logger.debug('从缓存加载模块配置', { moduleType });
-        return cached;
+    // 按优先级排序
+    const sortedFiles = files.sort((a, b) => b.priority - a.priority);
+
+    // 加载并合并配置
+    const configs: Record<string, any>[] = [];
+    for (const file of sortedFiles) {
+      try {
+        const content = await fs.readFile(file.path, 'utf8');
+        const parsed = this.parseContent(content, file.path);
+
+        // 应用继承处理
+        const withInheritance = await this.inheritanceProcessor.process(parsed);
+
+        // 应用环境变量处理
+        const withEnvironment = await this.environmentProcessor.process(withInheritance);
+
+        configs.push(withEnvironment);
+      } catch (error) {
+        this.logger.warn('配置文件加载失败，跳过', {
+          path: file.path,
+          error: (error as Error).message
+        });
       }
     }
 
-    const loader = this.loaders.get(moduleType);
-    if (!loader) {
-      throw new Error(`未找到模块类型 ${moduleType} 的加载器`);
+    // 合并配置
+    return this.mergeConfigs(configs);
+  }
+
+  /**
+   * 获取配置值
+   */
+  get<T = any>(key: string, defaultValue?: T): T {
+    if (!this.isInitialized) {
+      throw new Error('配置加载模块尚未初始化');
     }
 
-    try {
-      // 发现模块配置文件
-      const moduleFiles = await this.discovery.discoverModuleConfigs(
-        `${basePath}/${moduleType}`,
-        moduleType
-      );
+    const value = this.getNestedValue(this.configs, key);
+    return (value !== undefined ? value : defaultValue) as T;
+  }
 
-      // 加载模块配置
-      const moduleConfig = await loader.loadModule(moduleFiles);
-
-      // 验证配置
-      if (this.options.enableValidation) {
-        const validation = this.registry.validateConfig(moduleType, moduleConfig.configs);
-        if (!validation.isValid) {
-          this.logger.warn('模块配置验证失败', {
-            moduleType,
-            errors: validation.errors
-          });
-        }
-      }
-
-      // 缓存结果
-      if (this.options.enableCache) {
-        this.cache.setModuleConfig(moduleType, moduleConfig.configs);
-      }
-
-      this.logger.debug('模块配置加载完成', { moduleType });
-      return moduleConfig.configs;
-    } catch (error) {
-      this.logger.error('模块配置加载失败', error as Error);
-      throw error;
+  /**
+   * 获取所有配置
+   */
+  getAll(): Record<string, any> {
+    if (!this.isInitialized) {
+      throw new Error('配置加载模块尚未初始化');
     }
+
+    return { ...this.configs };
+  }
+
+  /**
+   * 检查配置键是否存在
+   */
+  has(key: string): boolean {
+    if (!this.isInitialized) {
+      return false;
+    }
+
+    return this.getNestedValue(this.configs, key) !== undefined;
   }
 
   /**
    * 重新加载配置
    */
-  async reloadConfigs(basePath: string): Promise<Record<string, any>> {
+  async reload(basePath: string): Promise<void> {
     this.logger.info('重新加载配置');
-
-    // 清空缓存
-    if (this.options.enableCache) {
-      this.cache.clear();
-    }
-
-    return this.loadAllConfigs(basePath);
+    this.configs = {};
+    this.isInitialized = false;
+    await this.initialize(basePath);
   }
 
   /**
    * 获取已注册的模块类型
    */
   getRegisteredModuleTypes(): string[] {
-    return Array.from(this.loaders.keys());
-  }
-
-  /**
-   * 获取缓存统计信息
-   */
-  getCacheStats(): any {
-    return this.cache.getStats();
-  }
-
-  /**
-   * 清理缓存
-   */
-  cleanupCache(): number {
-    return this.cache.cleanup();
+    return this.registry.getRegisteredTypes();
   }
 
   /**
@@ -270,83 +212,16 @@ export class ConfigLoadingModule {
   }
 
   /**
-   * 按顺序合并配置
+   * 合并配置
    */
-  private async mergeInOrder(
-    modules: Map<string, ModuleConfig>,
-    order: { orderedModules: string[] }
-  ): Promise<Record<string, any>> {
-    const result: Record<string, any> = {};
+  private mergeConfigs(configs: Record<string, any>[]): Record<string, any> {
+    let result: Record<string, any> = {};
 
-    for (const moduleName of order.orderedModules) {
-      const module = modules.get(moduleName);
-      if (module) {
-        result[moduleName] = module.configs;
-      }
+    for (const config of configs) {
+      result = this.deepMerge(result, config);
     }
 
     return result;
-  }
-
-  /**
-   * 预验证配置文件
-   */
-  private async preValidateFiles(moduleFiles: Map<string, ConfigFile[]>): Promise<Map<string, PreValidationResult>> {
-    const results = new Map<string, PreValidationResult>();
-
-    if (!this.options.enablePreValidation) {
-      return results;
-    }
-
-    for (const [moduleType, files] of moduleFiles) {
-      try {
-        // 对每个文件进行基础验证
-        const fileResults = await Promise.all(
-          files.map(async file => {
-            const content = await this.readFileContent(file.path);
-            const parsed = await this.parseContent(content, file.path);
-            return this.registry.preValidate(parsed, moduleType);
-          })
-        );
-
-        // 合并文件验证结果
-        const combinedResult = this.combinePreValidationResults(fileResults);
-        results.set(moduleType, combinedResult);
-
-        this.logger.debug('预验证完成', { moduleType, isValid: combinedResult.isValid });
-      } catch (error) {
-        this.logger.error('预验证失败', error as Error);
-        results.set(moduleType, {
-          isValid: false,
-          errors: [`预验证执行失败: ${(error as Error).message}`],
-          severity: 'error'
-        });
-      }
-    }
-
-    return results;
-  }
-
-  /**
-   * 根据预验证结果决定是否继续加载
-   */
-  private shouldContinueAfterPreValidation(results: Map<string, PreValidationResult>): boolean {
-    if (!this.options.enablePreValidation) {
-      return true;
-    }
-
-    for (const [moduleType, result] of results) {
-      if (!result.isValid && this.isSeverityAboveThreshold(result.severity)) {
-        this.logger.error('预验证失败，停止加载', undefined, {
-          moduleType: moduleType,
-          severity: result.severity,
-          errors: result.errors
-        });
-        return false;
-      }
-    }
-
-    return true;
   }
 
   /**
@@ -401,52 +276,17 @@ export class ConfigLoadingModule {
   }
 
   /**
-   * 合并预验证结果
-   */
-  private combinePreValidationResults(results: PreValidationResult[]): PreValidationResult {
-    const allErrors: string[] = [];
-    let maxSeverity: ValidationSeverity = 'success';
-
-    for (const result of results) {
-      allErrors.push(...result.errors);
-
-      // 更新最高严重性
-      const severityLevels = { error: 3, warning: 2, info: 1, success: 0 };
-      if (severityLevels[result.severity] > severityLevels[maxSeverity]) {
-        maxSeverity = result.severity;
-      }
-    }
-
-    return {
-      isValid: allErrors.length === 0,
-      errors: allErrors,
-      severity: maxSeverity
-    };
-  }
-
-  /**
-   * 读取文件内容
-   */
-  private async readFileContent(filePath: string): Promise<string> {
-    const fs = await import('fs/promises');
-    return fs.readFile(filePath, 'utf8');
-  }
-
-  /**
    * 解析文件内容
    */
-  private async parseContent(content: string, filePath: string): Promise<Record<string, any>> {
-    const path = await import('path');
+  private parseContent(content: string, filePath: string): Record<string, any> {
     const ext = path.extname(filePath).toLowerCase();
 
     try {
       switch (ext) {
         case '.toml':
-          const { parse: parseToml } = await import('toml');
           return parseToml(content);
         case '.yaml':
         case '.yml':
-          const yaml = await import('yaml');
           return yaml.parse(content);
         case '.json':
           return JSON.parse(content);
@@ -456,5 +296,47 @@ export class ConfigLoadingModule {
     } catch (error) {
       throw new Error(`解析配置文件失败 ${filePath}: ${(error as Error).message}`);
     }
+  }
+
+  /**
+   * 深度合并对象
+   */
+  private deepMerge(target: any, source: any): any {
+    if (source === null || source === undefined) {
+      return target;
+    }
+
+    if (typeof source !== 'object' || Array.isArray(source)) {
+      return source;
+    }
+
+    if (typeof target !== 'object' || Array.isArray(target)) {
+      target = {};
+    }
+
+    const result = { ...target };
+
+    for (const [key, value] of Object.entries(source)) {
+      if (value === null || value === undefined) {
+        continue;
+      }
+
+      if (typeof value === 'object' && !Array.isArray(value) && typeof result[key] === 'object' && !Array.isArray(result[key])) {
+        result[key] = this.deepMerge(result[key], value);
+      } else {
+        result[key] = value;
+      }
+    }
+
+    return result;
+  }
+
+  /**
+   * 获取嵌套值
+   */
+  private getNestedValue(obj: Record<string, any>, path: string): any {
+    return path.split('.').reduce((current, key) => {
+      return current && current[key] !== undefined ? current[key] : undefined;
+    }, obj);
   }
 }

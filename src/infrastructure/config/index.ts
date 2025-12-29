@@ -2,8 +2,6 @@
  * 配置系统模块导出
  */
 
-export { ConfigManager } from './config-manager';
-
 // 导出配置源
 export * from './sources';
 

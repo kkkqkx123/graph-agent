@@ -9,6 +9,7 @@ import { MockClient } from './mock-client';
 import { HumanRelayClient } from './human-relay-client';
 import { HumanRelayMode } from '../../../domain/llm/value-objects/human-relay-mode';
 import { LLM_DI_IDENTIFIERS } from '../di-identifiers';
+import { ConfigLoadingModule } from '../../config/loading/config-loading-module';
 
 /**
  * LLM客户端工厂
@@ -26,7 +27,7 @@ export class LLMClientFactory {
     @inject(LLM_DI_IDENTIFIERS.GeminiOpenAIClient) private geminiOpenAIClient: GeminiOpenAIClient,
     @inject(LLM_DI_IDENTIFIERS.MockClient) private mockClient: MockClient,
     @inject(LLM_DI_IDENTIFIERS.HumanRelayClient) private humanRelayClient: HumanRelayClient,
-    @inject(LLM_DI_IDENTIFIERS.ConfigManager) private configManager: any
+    @inject(LLM_DI_IDENTIFIERS.ConfigLoadingModule) private configManager: ConfigLoadingModule
   ) { }
 
   /**
@@ -98,7 +99,7 @@ export class LLMClientFactory {
    */
   private selectGeminiClient(model: string): BaseLLMClient {
     // 从配置中获取客户端类型
-    const clientType = this.configManager.get('llm.gemini.clientType', 'native');
+    const clientType = this.configManager.get<string>('llm.gemini.clientType', 'native');
 
     if (clientType === 'openai-compatible') {
       return this.geminiOpenAIClient;
@@ -242,15 +243,15 @@ export class LLMClientFactory {
     }
 
     // 获取HumanRelay配置
-    const config = this.configManager.get(`llm.humanRelay`, {});
+    const config = this.configManager.get<Record<string, any>>(`llm.humanRelay`, {});
 
     // 创建客户端配置
     const clientConfig = {
       providerName: 'human-relay',
       mode,
-      maxHistoryLength: config.maxHistoryLength || (mode === HumanRelayMode.MULTI ? 100 : 50),
-      defaultTimeout: config.defaultTimeout || (mode === HumanRelayMode.MULTI ? 600 : 300),
-      frontendConfig: config.frontendConfig || {}
+      maxHistoryLength: config['maxHistoryLength'] || (mode === HumanRelayMode.MULTI ? 100 : 50),
+      defaultTimeout: config['defaultTimeout'] || (mode === HumanRelayMode.MULTI ? 600 : 300),
+      frontendConfig: config['frontendConfig'] || {}
     };
 
     // 由于HumanRelayClient已经通过依赖注入创建，这里直接返回

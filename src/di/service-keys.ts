@@ -41,7 +41,6 @@ import { TemplateProcessor } from '../infrastructure/prompts/services/template-p
 import { PromptReferenceParser } from '../infrastructure/prompts/services/prompt-reference-parser';
 import { PromptReferenceValidator } from '../infrastructure/prompts/services/prompt-reference-validator';
 import { NodeExecutor } from '../infrastructure/workflow/nodes/node-executor';
-import { PromptLoader } from '../infrastructure/config/loading/loaders/prompt-loader';
 import { EdgeExecutor } from '../infrastructure/workflow/edges/edge-executor';
 import { EdgeEvaluator } from '../infrastructure/threads/execution/edge-evaluator';
 import { NodeRouter } from '../infrastructure/threads/execution/node-router';
@@ -109,7 +108,6 @@ export interface ServiceTypes {
   TemplateProcessor: TemplateProcessor;
   PromptReferenceParser: PromptReferenceParser;
   PromptReferenceValidator: PromptReferenceValidator;
-  PromptLoader: PromptLoader;
   NodeExecutor: NodeExecutor;
   EdgeExecutor: EdgeExecutor;
   EdgeEvaluator: EdgeEvaluator;
@@ -201,7 +199,6 @@ export const TYPES: {
   TemplateProcessor: Symbol.for('TemplateProcessor') as TypedServiceIdentifier<'TemplateProcessor'>,
   PromptReferenceParser: Symbol.for('PromptReferenceParser') as TypedServiceIdentifier<'PromptReferenceParser'>,
   PromptReferenceValidator: Symbol.for('PromptReferenceValidator') as TypedServiceIdentifier<'PromptReferenceValidator'>,
-  PromptLoader: Symbol.for('PromptLoader') as TypedServiceIdentifier<'PromptLoader'>,
   NodeExecutor: Symbol.for('NodeExecutor') as TypedServiceIdentifier<'NodeExecutor'>,
   EdgeExecutor: Symbol.for('EdgeExecutor') as TypedServiceIdentifier<'EdgeExecutor'>,
   EdgeEvaluator: Symbol.for('EdgeEvaluator') as TypedServiceIdentifier<'EdgeEvaluator'>,

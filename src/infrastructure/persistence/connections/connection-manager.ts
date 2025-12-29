@@ -1,6 +1,6 @@
 import { injectable, inject } from 'inversify';
 import { DataSource, DataSourceOptions } from 'typeorm';
-import { ConfigManager } from '../../config/config-manager';
+import { ConfigLoadingModule } from '../../config/loading/config-loading-module';
 
 interface DatabaseConfig {
   type?: 'postgres' | 'sqlite';
@@ -18,7 +18,7 @@ export class ConnectionManager {
   private connection: DataSource | null = null;
   private config: DataSourceOptions;
 
-  constructor(@inject('ConfigManager') private configManager: ConfigManager) {
+  constructor(@inject('ConfigLoadingModule') private configManager: ConfigLoadingModule) {
     this.config = this.buildConnectionConfig();
   }
 

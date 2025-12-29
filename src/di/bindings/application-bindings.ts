@@ -13,9 +13,6 @@ import { SessionResourceServiceImpl } from '../../application/sessions/services/
 import { WorkflowOrchestrationService } from '../../application/workflow/services/workflow-orchestration-service';
 import { PromptService } from '../../application/prompts/services/prompt-service';
 
-// Infrastructure层服务（Application层依赖）
-import { PromptLoader } from '../../infrastructure/config/loading/loaders/prompt-loader';
-
 // Domain层接口
 import { SessionRepository } from '../../domain/sessions/repositories/session-repository';
 import { ThreadRepository } from '../../domain/threads/repositories/thread-repository';
@@ -45,12 +42,6 @@ export const applicationBindings = new ContainerModule((bind: any) => {
   
   bind(TYPES.PromptServiceImpl)
     .to(PromptService)
-    .inSingletonScope();
-
-  // ========== Infrastructure层服务绑定（Application层依赖） ==========
-  
-  bind(TYPES.PromptLoader)
-    .to(PromptLoader)
     .inSingletonScope();
 
   // ========== Domain层接口到Infrastructure实现的绑定 ==========

@@ -1,7 +1,7 @@
 import { Container } from 'inversify';
 import { LLM_DI_IDENTIFIERS, ServiceType, DEPENDENCY_GRAPH } from './di-identifiers';
-import { ConfigManager } from '../config/config-manager';
 import { HttpClient } from '../common/http/http-client';
+import { ConfigLoadingModule } from '../config/loading/config-loading-module';
 import { RetryHandler } from '../common/http/retry-handler';
 import { CircuitBreaker } from '../common/http/circuit-breaker';
 import { RateLimiter } from '../common/http/rate-limiter';
@@ -29,10 +29,6 @@ import { LLMWrapperFactory } from './wrappers/wrapper-factory';
 // 管理器
 import { PollingPoolManager } from './managers/pool-manager';
 import { TaskGroupManager } from './managers/task-group-manager';
-
-// 配置加载器
-import { PoolConfigLoader } from '../config/loading/loaders/pool-config-loader';
-import { TaskGroupConfigLoader } from '../config/loading/loaders/task-group-config-loader';
 
 /**
  * 验证结果接口
@@ -73,9 +69,6 @@ export class LLMDIContainer {
     // 注册管理器
     this.registerManagers();
 
-    // 注册配置加载器
-    this.registerConfigLoaders();
-
     // HumanRelay相关服务已简化，不再需要额外注册
   }
 
@@ -83,9 +76,9 @@ export class LLMDIContainer {
    * 注册基础设施组件
    */
   private registerInfrastructure(): void {
-    // 配置管理器
-    this.container.bind<ConfigManager>(LLM_DI_IDENTIFIERS.ConfigManager)
-      .to(ConfigManager)
+    // 配置加载模块
+    this.container.bind<ConfigLoadingModule>(LLM_DI_IDENTIFIERS.ConfigLoadingModule)
+      .to(ConfigLoadingModule)
       .inSingletonScope();
 
     // HTTP相关依赖
@@ -99,11 +92,6 @@ export class LLMDIContainer {
 
     this.container.bind<RateLimiter>('RateLimiter')
       .to(RateLimiter)
-      .inSingletonScope();
-
-    // 为HttpClient提供ConfigManager
-    this.container.bind<ConfigManager>('ConfigManager')
-      .to(ConfigManager)
       .inSingletonScope();
 
     // HTTP客户端
@@ -217,21 +205,6 @@ export class LLMDIContainer {
   }
 
   /**
-   * 注册配置加载器
-   */
-  private registerConfigLoaders(): void {
-    // 轮询池配置加载器
-    this.container.bind<PoolConfigLoader>(LLM_DI_IDENTIFIERS.PoolConfigLoader)
-      .to(PoolConfigLoader)
-      .inSingletonScope();
-
-    // 任务组配置加载器
-    this.container.bind<TaskGroupConfigLoader>(LLM_DI_IDENTIFIERS.TaskGroupConfigLoader)
-      .to(TaskGroupConfigLoader)
-      .inSingletonScope();
-  }
-
-  /**
    * 注册HumanRelay相关服务
    * 已简化，不再需要前端交互服务
    */
@@ -320,7 +293,7 @@ export class LLMDIContainer {
    */
   isConfigurationComplete(): boolean {
     const requiredServices = [
-      LLM_DI_IDENTIFIERS.ConfigManager,
+      LLM_DI_IDENTIFIERS.ConfigLoadingModule,
       LLM_DI_IDENTIFIERS.HttpClient,
       LLM_DI_IDENTIFIERS.TokenBucketLimiter,
       LLM_DI_IDENTIFIERS.TokenCalculator,

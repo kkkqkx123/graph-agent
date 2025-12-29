@@ -24,10 +24,6 @@ export { LLMWrapperFactory, BaseLLMWrapper } from './wrappers/wrapper-factory';
 export { PollingPoolManager } from './managers/pool-manager';
 export { TaskGroupManager } from './managers/task-group-manager';
 
-// 导出配置加载器
-export { PoolConfigLoader } from '../config/loading/loaders/pool-config-loader';
-export { TaskGroupConfigLoader } from '../config/loading/loaders/task-group-config-loader';
-
 // 导出依赖注入标识符和容器
 export { LLM_DI_IDENTIFIERS } from './di-identifiers';
 export { LLMDIContainer } from './di-container';

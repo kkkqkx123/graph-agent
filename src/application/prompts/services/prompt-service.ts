@@ -6,7 +6,6 @@
  */
 
 import { PromptRepository, PromptSearchCriteria } from '../../../infrastructure/persistence/repositories/prompt-repository';
-import { PromptLoader } from '../../../infrastructure/config/loading/loaders/prompt-loader';
 import { Prompt, PromptId } from '../../../domain/prompts';
 
 // 导入新的DTO
@@ -34,8 +33,7 @@ export class PromptService {
   private promptConverter: PromptConverter;
 
   constructor(
-    private readonly promptRepository: PromptRepository,
-    private readonly promptLoader: PromptLoader
+    private readonly promptRepository: PromptRepository
   ) {
     // 初始化DTO实例
     this.promptInfoDto = new PromptInfoDto();
@@ -239,15 +237,8 @@ export class PromptService {
       };
     }
     
-    // 如果在已加载的配置中未找到，尝试使用 PromptLoader 直接查找文件
-    // 这支持复合提示词目录结构的动态查找
-    const content = await this.promptLoader.findPromptByReference(category, name);
-    
-    if (!content) {
-      throw new Error(`提示词 ${category}.${name} 未找到`);
-    }
-    
-    return content;
+    // 如果在已加载的配置中未找到，抛出错误
+    throw new Error(`提示词 ${category}.${name} 未找到`);
   }
 
   /**
@@ -260,8 +251,7 @@ export class PromptService {
       return true;
     }
     
-    // 如果未找到，尝试使用 PromptLoader 查找文件
-    const content = await this.promptLoader.findPromptByReference(category, name);
-    return content !== null;
+    // 如果未找到，返回false
+    return false;
   }
 }

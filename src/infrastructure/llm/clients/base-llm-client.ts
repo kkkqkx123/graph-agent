@@ -9,7 +9,7 @@ import { TokenCalculator } from '../token-calculators/token-calculator';
 import { ProviderConfig } from '../parameter-mappers/interfaces/provider-config.interface';
 import { FeatureRegistry } from '../features/feature-registry';
 import { LLM_DI_IDENTIFIERS } from '../di-identifiers';
-import { ConfigManager } from '../../config/config-manager';
+import { ConfigLoadingModule } from '../../config/loading/config-loading-module';
 
 /**
  * LLM客户端抽象基类
@@ -27,7 +27,7 @@ export abstract class BaseLLMClient {
     @inject(LLM_DI_IDENTIFIERS.HttpClient) protected httpClient: HttpClient,
     @inject(LLM_DI_IDENTIFIERS.TokenBucketLimiter) protected rateLimiter: TokenBucketLimiter,
     @inject(LLM_DI_IDENTIFIERS.TokenCalculator) protected tokenCalculator: TokenCalculator,
-    @inject(LLM_DI_IDENTIFIERS.ConfigManager) protected configManager: ConfigManager,
+    @inject(LLM_DI_IDENTIFIERS.ConfigLoadingModule) protected configLoadingModule: ConfigLoadingModule,
     providerConfig: ProviderConfig,
     featureRegistry?: FeatureRegistry
   ) {

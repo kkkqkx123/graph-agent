@@ -16,6 +16,7 @@ import { LLMMessage, LLMMessageRole } from '../../../domain/llm/value-objects/ll
 import { LLM_DI_IDENTIFIERS } from '../di-identifiers';
 import { ProviderConfig, ApiType } from '../parameter-mappers/interfaces/provider-config.interface';
 import { BaseFeatureSupport } from '../parameter-mappers/interfaces/feature-support.interface';
+import { ConfigLoadingModule } from '../../config/loading/config-loading-module';
 import * as readline from 'readline';
 
 /**
@@ -98,8 +99,8 @@ export class HumanRelayClient extends BaseLLMClient {
     protected override rateLimiter: any,
     @inject(LLM_DI_IDENTIFIERS.TokenCalculator)
     protected override tokenCalculator: any,
-    @inject(LLM_DI_IDENTIFIERS.ConfigManager)
-    protected override configManager: any,
+    @inject(LLM_DI_IDENTIFIERS.ConfigLoadingModule)
+    protected override configLoadingModule: ConfigLoadingModule,
     clientConfig: HumanRelayClientConfig
   ) {
     // 创建基础配置
@@ -117,7 +118,7 @@ export class HumanRelayClient extends BaseLLMClient {
       featureSupport: featureSupport
     };
 
-    super(httpClient, rateLimiter, tokenCalculator, configManager, baseConfig);
+    super(httpClient, rateLimiter, tokenCalculator, configLoadingModule, baseConfig);
 
     this.mode = clientConfig.mode;
     this.maxHistoryLength = clientConfig.maxHistoryLength;

@@ -1,54 +1,21 @@
 /**
- * Schema注册表 - 集中管理模块Schema
- * 解决Schema管理分散问题
+ * 简化的Schema注册表
+ * 专注于核心的Schema注册和验证功能
  */
 
 import { z, ZodError } from 'zod';
 import { ILogger } from '../../../domain/common/types';
-import { ValidationResult, PreValidationResult, ValidationError, ValidationSeverity } from './types';
-
-
-/**
- * Schema版本信息
- */
-export interface SchemaVersion {
-  version: string;
-  schema: z.ZodType<any>;
-  description: string;
-  createdAt: Date;
-  compatibleWith?: string[];
-}
+import { ValidationError, ValidationResult, ValidationSeverity } from './types';
 
 /**
- * Schema注册表选项
- */
-export interface SchemaRegistryOptions {
-  strict?: boolean;
-  enableFormats?: boolean;
-  cacheValidators?: boolean;
-}
-
-/**
- * Schema注册表
- * 集中管理所有模块类型的Schema定义
+ * 简化的Schema注册表
  */
 export class SchemaRegistry {
   private readonly schemas: Map<string, z.ZodType<any>> = new Map();
-  private readonly versions: Map<string, SchemaVersion[]> = new Map();
   private readonly logger: ILogger;
-  private readonly options: SchemaRegistryOptions;
 
-  constructor(
-    logger: ILogger,
-    options: SchemaRegistryOptions = {}
-  ) {
+  constructor(logger: ILogger) {
     this.logger = logger.child({ module: 'SchemaRegistry' });
-    this.options = {
-      strict: true,
-      enableFormats: true,
-      cacheValidators: true,
-      ...options
-    };
   }
 
   /**
@@ -56,31 +23,13 @@ export class SchemaRegistry {
    */
   registerSchema(
     moduleType: string,
-    schema: z.ZodType<any>,
-    version: string = '1.0.0',
-    description: string = `${moduleType}模块Schema`
+    schema: z.ZodType<any>
   ): void {
-    this.logger.debug('注册模块Schema', { moduleType, version });
+    this.logger.debug('注册模块Schema', { moduleType });
 
     try {
-      // 检查Schema兼容性
-      const existingSchema = this.schemas.get(moduleType);
-      if (existingSchema && !this.validateSchemaCompatibility(schema, existingSchema)) {
-        this.logger.warn('Schema兼容性检查失败', { moduleType });
-      }
-
-      // 存储Schema
       this.schemas.set(moduleType, schema);
-
-      // 记录版本历史
-      this.addVersionHistory(moduleType, {
-        version,
-        schema,
-        description,
-        createdAt: new Date()
-      });
-
-      this.logger.debug('模块Schema注册成功', { moduleType, version });
+      this.logger.debug('模块Schema注册成功', { moduleType });
     } catch (error) {
       this.logger.error('模块Schema注册失败', error as Error, {
         moduleType
@@ -107,15 +56,15 @@ export class SchemaRegistry {
       const error = `未找到模块类型 ${moduleType} 的验证器`;
       this.logger.warn(error);
       return {
-        isValid: false,
-        errors: [{
-          path: 'root',
-          message: error,
-          code: 'VALIDATION_ERROR',
-          severity: 'error'
-        }],
-        severity: 'error'
-      };
+         isValid: false,
+         errors: [{
+           path: 'root',
+           message: error,
+           code: 'VALIDATION_ERROR',
+           severity: 'error' as any
+         }],
+         severity: 'error'
+       };
     }
 
     try {
@@ -125,13 +74,12 @@ export class SchemaRegistry {
       return { isValid: true, errors: [], severity: 'success' };
     } catch (error) {
       if (error instanceof ZodError) {
-        // 格式化错误信息
         const errors = this.formatZodValidationErrors(error, moduleType);
 
         this.logger.warn('配置验证失败', {
           moduleType,
           errorCount: errors.length,
-          errors: errors.slice(0, 5) // 记录前5个错误
+          errors: errors.slice(0, 5)
         });
 
         return {
@@ -145,68 +93,16 @@ export class SchemaRegistry {
         path: 'root',
         message: `验证器执行失败: ${(error as Error).message}`,
         code: 'VALIDATION_ERROR',
-        severity: 'error' as ValidationSeverity
+        severity: 'error' as any
       };
 
       this.logger.error('配置验证失败', error as Error);
       return {
         isValid: false,
         errors: [validationError],
-        severity: 'error' as ValidationSeverity
-      };
-    }
-  }
-
-  /**
-   * 预验证配置（在加载前进行基础验证）
-   */
-  preValidate(config: any, moduleType: string): PreValidationResult {
-    this.logger.debug('预验证配置', { moduleType });
-
-    const schema = this.schemas.get(moduleType);
-    if (!schema) {
-      return {
-        isValid: false,
-        errors: [`未找到模块类型 ${moduleType} 的Schema`],
         severity: 'error'
       };
     }
-
-    // 基础验证：检查必需字段和类型
-    const basicErrors = this.basicValidation(config, schema);
-
-    if (basicErrors.length > 0) {
-      return {
-        isValid: false,
-        errors: basicErrors,
-        severity: 'error'
-      };
-    }
-
-    return {
-      isValid: true,
-      errors: [],
-      severity: 'success'
-    };
-  }
-
-  /**
-   * 验证Schema兼容性
-   */
-  validateSchemaCompatibility(newSchema: z.ZodType<any>, oldSchema: z.ZodType<any>): boolean {
-    // 简化的兼容性检查 for Zod schemas
-    // In a real implementation, this might need more complex logic
-
-    // For now, we'll just return true since Zod doesn't have the same
-    // required field tracking as JSON Schema
-    return true;
-  }
-
-  /**
-   * 获取Schema版本历史
-   */
-  getSchemaHistory(moduleType: string): SchemaVersion[] {
-    return this.versions.get(moduleType) || [];
   }
 
   /**
@@ -228,9 +124,7 @@ export class SchemaRegistry {
    */
   unregisterModuleType(moduleType: string): boolean {
     const hadSchema = this.schemas.has(moduleType);
-
     this.schemas.delete(moduleType);
-    this.versions.delete(moduleType);
 
     if (hadSchema) {
       this.logger.debug('移除模块Schema', { moduleType });
@@ -246,45 +140,8 @@ export class SchemaRegistry {
   clear(): void {
     const count = this.schemas.size;
     this.schemas.clear();
-    this.versions.clear();
 
     this.logger.debug('清空所有模块Schema', { count });
-  }
-
-  /**
-   * 添加版本历史记录
-   */
-  private addVersionHistory(moduleType: string, version: SchemaVersion): void {
-    if (!this.versions.has(moduleType)) {
-      this.versions.set(moduleType, []);
-    }
-    
-    const history = this.versions.get(moduleType)!;
-    history.push(version);
-    
-    // 保持历史记录有序（最新的在前）
-    history.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
-    
-    // 限制历史记录数量
-    if (history.length > 10) {
-      history.splice(10);
-    }
-  }
-
-  /**
-   * 基础验证（预验证）
-   */
-  private basicValidation(config: any, schema: z.ZodType<any>): string[] {
-    // For Zod schemas, we'll run a basic parse to check validation
-    try {
-      schema.parse(config);
-      return []; // No errors if parsing succeeds
-    } catch (error) {
-      if (error instanceof ZodError) {
-        return error.issues.map((e: any) => e.message);
-      }
-      return [`验证失败: ${(error as Error).message}`];
-    }
   }
 
   /**

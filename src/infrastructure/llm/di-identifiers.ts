@@ -8,7 +8,7 @@
 export const LLM_DI_IDENTIFIERS = {
   // 基础设施组件
   HttpClient: Symbol.for('HttpClient'),
-  ConfigManager: Symbol.for('ConfigManager'),
+  ConfigLoadingModule: Symbol.for('ConfigLoadingModule'),
   TokenBucketLimiter: Symbol.for('TokenBucketLimiter'),
   TokenCalculator: Symbol.for('TokenCalculator'),
   FeatureRegistry: Symbol.for('FeatureRegistry'),
@@ -69,7 +69,7 @@ export const LLM_DI_IDENTIFIERS = {
 // 服务类型映射 - 使用any类型避免循环依赖，在运行时通过依赖注入保证类型安全
 export interface ServiceTypes {
   HttpClient: any;
-  ConfigManager: any;
+  ConfigLoadingModule: any;
   TokenBucketLimiter: any;
   TokenCalculator: any;
   FeatureRegistry: any;
@@ -118,29 +118,29 @@ export type ServiceType<K extends keyof LLMDIIdentifiers> = ServiceTypes[K];
 // 依赖关系图
 export const DEPENDENCY_GRAPH: Record<keyof LLMDIIdentifiers, (keyof LLMDIIdentifiers)[]> = {
   HttpClient: [],
-  ConfigManager: [],
+  ConfigLoadingModule: [],
   TokenBucketLimiter: [],
   TokenCalculator: [],
   FeatureRegistry: [],
-  OpenAIChatClient: ['HttpClient', 'ConfigManager', 'TokenBucketLimiter', 'TokenCalculator'],
-  OpenAIResponseClient: ['HttpClient', 'ConfigManager', 'TokenBucketLimiter', 'TokenCalculator'],
-  AnthropicClient: ['HttpClient', 'ConfigManager', 'TokenBucketLimiter', 'TokenCalculator'],
-  GeminiClient: ['HttpClient', 'ConfigManager', 'TokenBucketLimiter', 'TokenCalculator'],
-  GeminiOpenAIClient: ['HttpClient', 'ConfigManager', 'TokenBucketLimiter', 'TokenCalculator'],
-  MockClient: ['HttpClient', 'ConfigManager', 'TokenBucketLimiter', 'TokenCalculator'],
-  HumanRelayClient: ['HumanRelayInteractionService', 'ConfigManager'],
-  HumanRelayInteractionService: ['TUIInteractionService', 'WebInteractionService', 'APIInteractionService', 'ConfigManager'],
-  HumanRelayConfigLoader: ['ConfigManager'],
-  LLMClientFactory: ['OpenAIChatClient', 'OpenAIResponseClient', 'AnthropicClient', 'GeminiClient', 'GeminiOpenAIClient', 'MockClient', 'HumanRelayClient', 'ConfigManager'],
+  OpenAIChatClient: ['HttpClient', 'ConfigLoadingModule', 'TokenBucketLimiter', 'TokenCalculator'],
+  OpenAIResponseClient: ['HttpClient', 'ConfigLoadingModule', 'TokenBucketLimiter', 'TokenCalculator'],
+  AnthropicClient: ['HttpClient', 'ConfigLoadingModule', 'TokenBucketLimiter', 'TokenCalculator'],
+  GeminiClient: ['HttpClient', 'ConfigLoadingModule', 'TokenBucketLimiter', 'TokenCalculator'],
+  GeminiOpenAIClient: ['HttpClient', 'ConfigLoadingModule', 'TokenBucketLimiter', 'TokenCalculator'],
+  MockClient: ['HttpClient', 'ConfigLoadingModule', 'TokenBucketLimiter', 'TokenCalculator'],
+  HumanRelayClient: ['HumanRelayInteractionService', 'ConfigLoadingModule'],
+  HumanRelayInteractionService: ['TUIInteractionService', 'WebInteractionService', 'APIInteractionService', 'ConfigLoadingModule'],
+  HumanRelayConfigLoader: ['ConfigLoadingModule'],
+  LLMClientFactory: ['OpenAIChatClient', 'OpenAIResponseClient', 'AnthropicClient', 'GeminiClient', 'GeminiOpenAIClient', 'MockClient', 'HumanRelayClient', 'ConfigLoadingModule'],
   ConverterFactory: [],
   EndpointStrategyFactory: [],
   FeatureFactory: ['FeatureRegistry'],
   ParameterMapperFactory: [],
   LLMWrapperFactory: ['PollingPoolManager', 'TaskGroupManager'],
   PollingPoolManager: ['TaskGroupManager', 'LLMClientFactory'],
-  TaskGroupManager: ['ConfigManager'],
-  PoolConfigLoader: ['ConfigManager'],
-  TaskGroupConfigLoader: ['ConfigManager'],
+  TaskGroupManager: ['ConfigLoadingModule'],
+  PoolConfigLoader: ['ConfigLoadingModule'],
+  TaskGroupConfigLoader: ['ConfigLoadingModule'],
   OpenAIParameterMapper: [],
   AnthropicParameterMapper: [],
   GeminiParameterMapper: [],
@@ -153,7 +153,7 @@ export const DEPENDENCY_GRAPH: Record<keyof LLMDIIdentifiers, (keyof LLMDIIdenti
   GeminiCachedContentFeature: [],
   OpenAIResponseFormatFeature: [],
   AnthropicSystemMessageFeature: [],
-  TUIInteractionService: ['ConfigManager'],
-  WebInteractionService: ['ConfigManager'],
-  APIInteractionService: ['ConfigManager'],
+  TUIInteractionService: ['ConfigLoadingModule'],
+  WebInteractionService: ['ConfigLoadingModule'],
+  APIInteractionService: ['ConfigLoadingModule'],
 };

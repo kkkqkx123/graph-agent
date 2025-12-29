@@ -10,6 +10,7 @@ import { BaseFeatureSupport } from '../parameter-mappers/interfaces/feature-supp
 import { FeatureRegistry } from '../features/feature-registry';
 import { GeminiThinkingBudgetFeature } from '../features/providers/gemini-thinking-budget-feature';
 import { GeminiCachedContentFeature } from '../features/providers/gemini-cached-content-feature';
+import { ConfigLoadingModule } from '../../config/loading/config-loading-module';
 
 @injectable()
 export class GeminiOpenAIClient extends BaseLLMClient {
@@ -17,7 +18,7 @@ export class GeminiOpenAIClient extends BaseLLMClient {
     @inject('HttpClient') httpClient: any,
     @inject('TokenBucketLimiter') rateLimiter: any,
     @inject('TokenCalculator') tokenCalculator: any,
-    @inject('ConfigManager') configManager: any
+    @inject('ConfigLoadingModule') configManager: ConfigLoadingModule
   ) {
     // 创建功能支持配置
     const featureSupport = new BaseFeatureSupport();
@@ -86,7 +87,7 @@ export class GeminiOpenAIClient extends BaseLLMClient {
 
   getModelConfig(): ModelConfig {
     const model = 'gemini-2.5-flash'; // 默认模型
-    const configs: Record<string, any> = this.configManager.get('llm.gemini-openai.models', {});
+    const configs: Record<string, any> = this.configLoadingModule.get('llm.gemini-openai.models', {});
     const config = configs[model];
 
     if (!config) {
