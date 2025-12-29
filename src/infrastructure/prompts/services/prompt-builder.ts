@@ -4,6 +4,8 @@
  * 负责在工作流执行过程中构建提示词消息
  * 专注于消息构建和上下文处理，模板处理委托给 TemplateProcessor
  * 这是提示词模块与工作流集成的唯一入口点
+ *
+ * 简化版：移除 options 参数，通过创建不同模板实现不同变体
  */
 
 import { injectable, inject } from 'inversify';
@@ -19,7 +21,7 @@ import { ILogger } from '../../../domain/common/types/logger-types';
  */
 export type PromptSource =
   | { type: 'direct'; content: string }
-  | { type: 'template'; category: string; name: string; options?: Record<string, any>; variables?: Record<string, any> };
+  | { type: 'template'; category: string; name: string; variables?: Record<string, any> };
 
 /**
  * 提示词构建配置
@@ -117,8 +119,7 @@ export class PromptBuilder {
       const result = await this.templateProcessor.processTemplate(
         source.category,
         source.name,
-        { ...context, ...source.variables },
-        source.options
+        { ...context, ...source.variables }
       );
       content = result.content;
     }

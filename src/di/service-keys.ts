@@ -38,6 +38,8 @@ import { ThreadCoordinatorInfrastructureService } from '../infrastructure/thread
 import { ConnectionManager } from '../infrastructure/persistence/connections/connection-manager';
 import { PromptBuilder } from '../infrastructure/prompts/services/prompt-builder';
 import { TemplateProcessor } from '../infrastructure/prompts/services/template-processor';
+import { PromptReferenceParser } from '../infrastructure/prompts/services/prompt-reference-parser';
+import { PromptReferenceValidator } from '../infrastructure/prompts/services/prompt-reference-validator';
 import { NodeExecutor } from '../infrastructure/workflow/nodes/node-executor';
 import { EdgeExecutor } from '../infrastructure/workflow/edges/edge-executor';
 import { EdgeEvaluator } from '../infrastructure/threads/execution/edge-evaluator';
@@ -104,6 +106,8 @@ export interface ServiceTypes {
   ConnectionManager: ConnectionManager;
   PromptBuilder: PromptBuilder;
   TemplateProcessor: TemplateProcessor;
+  PromptReferenceParser: PromptReferenceParser;
+  PromptReferenceValidator: PromptReferenceValidator;
   NodeExecutor: NodeExecutor;
   EdgeExecutor: EdgeExecutor;
   EdgeEvaluator: EdgeEvaluator;
@@ -193,6 +197,8 @@ export const TYPES: {
   ConnectionManager: Symbol.for('ConnectionManager') as TypedServiceIdentifier<'ConnectionManager'>,
   PromptBuilder: Symbol.for('PromptBuilder') as TypedServiceIdentifier<'PromptBuilder'>,
   TemplateProcessor: Symbol.for('TemplateProcessor') as TypedServiceIdentifier<'TemplateProcessor'>,
+  PromptReferenceParser: Symbol.for('PromptReferenceParser') as TypedServiceIdentifier<'PromptReferenceParser'>,
+  PromptReferenceValidator: Symbol.for('PromptReferenceValidator') as TypedServiceIdentifier<'PromptReferenceValidator'>,
   NodeExecutor: Symbol.for('NodeExecutor') as TypedServiceIdentifier<'NodeExecutor'>,
   EdgeExecutor: Symbol.for('EdgeExecutor') as TypedServiceIdentifier<'EdgeExecutor'>,
   EdgeEvaluator: Symbol.for('EdgeEvaluator') as TypedServiceIdentifier<'EdgeEvaluator'>,

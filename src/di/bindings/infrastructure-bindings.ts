@@ -25,6 +25,8 @@ import { ThreadCoordinatorInfrastructureService } from '../../infrastructure/thr
 import { ConnectionManager } from '../../infrastructure/persistence/connections/connection-manager';
 import { PromptBuilder } from '../../infrastructure/prompts/services/prompt-builder';
 import { TemplateProcessor } from '../../infrastructure/prompts/services/template-processor';
+import { PromptReferenceParser } from '../../infrastructure/prompts/services/prompt-reference-parser';
+import { PromptReferenceValidator } from '../../infrastructure/prompts/services/prompt-reference-validator';
 import { NodeExecutor } from '../../infrastructure/workflow/nodes/node-executor';
 import { EdgeExecutor } from '../../infrastructure/workflow/edges/edge-executor';
 import { EdgeEvaluator } from '../../infrastructure/threads/execution/edge-evaluator';
@@ -57,6 +59,8 @@ export const infrastructureBindings = new ContainerModule((bind: any) => {
   bind(TYPES.ConnectionManager).to(ConnectionManager).inSingletonScope();
   bind(TYPES.PromptBuilder).to(PromptBuilder).inSingletonScope();
   bind(TYPES.TemplateProcessor).to(TemplateProcessor).inSingletonScope();
+  bind(TYPES.PromptReferenceParser).to(PromptReferenceParser).inSingletonScope();
+  bind(TYPES.PromptReferenceValidator).to(PromptReferenceValidator).inSingletonScope();
   bind(TYPES.NodeExecutor).to(NodeExecutor).inSingletonScope();
   bind(TYPES.EdgeExecutor).to(EdgeExecutor).inSingletonScope();
   bind(TYPES.EdgeEvaluator).to(EdgeEvaluator).inSingletonScope();
