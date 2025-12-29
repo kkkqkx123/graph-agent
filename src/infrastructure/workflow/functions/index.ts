@@ -3,7 +3,11 @@
  */
 
 // 内置函数
-export * from './builtin';
+export * from './conditions';
+export * from './routing';
+export * from './triggers';
+export * from './hooks';
+export * from './context-processors';
 
 // 基础类
 export * from './base/base-workflow-function';

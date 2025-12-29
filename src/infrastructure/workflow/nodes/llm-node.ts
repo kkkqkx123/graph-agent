@@ -6,7 +6,7 @@ import { LLMRequest } from '../../../domain/llm/entities/llm-request';
 import { ID } from '../../../domain/common/value-objects/id';
 import { PromptBuilder, PromptSource } from '../helpers/prompt-builder';
 import { ContextProcessor } from '../../../domain/workflow/services/context-processor-service.interface';
-import { llmContextProcessor } from '../functions/builtin/context-processors';
+import { llmContextProcessor } from '../functions/context-processors';
 
 /**
  * LLM节点
