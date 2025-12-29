@@ -10,26 +10,23 @@ export { PoolSchema } from './pool-schema';
 export { TaskGroupSchema } from './task-group-schema';
 export { WorkflowFunctionSchema } from './workflow-function-schema';
 
-/**
- * 所有Schema的映射表
- */
-export const ALL_SCHEMAS = {
-  llm: () => import('./llm-schema').then(m => m.LLMSchema),
-  tools: () => import('./tool-schema').then(m => m.ToolSchema),
-  prompts: () => import('./prompt-schema').then(m => m.PromptSchema),
-  pool: () => import('./pool-schema').then(m => m.PoolSchema),
-  taskGroup: () => import('./task-group-schema').then(m => m.TaskGroupSchema),
-  workflow_functions: () => import('./workflow-function-schema').then(m => m.WorkflowFunctionSchema)
-};
+// 导入所有Schema用于注册
+import { LLMSchema } from './llm-schema';
+import { ToolSchema } from './tool-schema';
+import { PromptSchema } from './prompt-schema';
+import { PoolSchema } from './pool-schema';
+import { TaskGroupSchema } from './task-group-schema';
+import { WorkflowFunctionSchema } from './workflow-function-schema';
 
 /**
- * 同步获取Schema（用于初始化）
+ * 所有Schema的映射表
+ * 用于动态加载和注册
  */
 export const SCHEMA_MAP = {
-  llm: require('./llm-schema').LLMSchema,
-  tools: require('./tool-schema').ToolSchema,
-  prompts: require('./prompt-schema').PromptSchema,
-  pool: require('./pool-schema').PoolSchema,
-  taskGroup: require('./task-group-schema').TaskGroupSchema,
-  workflow_functions: require('./workflow-function-schema').WorkflowFunctionSchema
-};
+  llm: LLMSchema,
+  tools: ToolSchema,
+  prompts: PromptSchema,
+  pool: PoolSchema,
+  taskGroup: TaskGroupSchema,
+  workflow_functions: WorkflowFunctionSchema
+} as const;

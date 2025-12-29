@@ -1,8 +1,7 @@
 /**
  * 配置加载模块类型定义
+ * 简化后的核心类型定义
  */
-
-import { z } from 'zod';
 
 /**
  * 配置文件信息
@@ -16,40 +15,11 @@ export interface ConfigFile {
 }
 
 /**
- * 模块元数据
+ * 配置发现器接口
  */
-export interface ModuleMetadata {
-  name: string;
-  version: string;
-  description: string;
-  registry?: string;
-}
-
-/**
- * 模块配置
- */
-export interface ModuleConfig {
-  type: string;
-  configs: Record<string, any>;
-  metadata: ModuleMetadata;
-  dependencies: string[];
-}
-
-/**
- * 加载顺序
- */
-export interface LoadingOrder {
-  orderedModules: string[];
-  parallelGroups: string[][];
-}
-
-/**
- * 依赖错误
- */
-export interface DependencyError {
-  module: string;
-  dependency: string;
-  message: string;
+export interface IConfigDiscovery {
+  discoverConfigs(basePath: string): Promise<ConfigFile[]>;
+  discoverModuleConfigs(modulePath: string, moduleType: string): Promise<ConfigFile[]>;
 }
 
 /**
@@ -60,69 +30,6 @@ export enum MergeStrategy {
   MERGE_DEEP = 'merge_deep',
   MERGE_SHALLOW = 'merge_shallow',
   ARRAY_APPEND = 'array_append'
-}
-
-/**
- * 模块规则接口
- */
-export interface IModuleRule {
-  moduleType: string;
-  patterns: string[];
-  priority: number;
-  loader: IModuleLoader;
-  schema: z.ZodType<any>;
-  dependencies?: string[];
-  mergeStrategy: MergeStrategy;
-}
-
-/**
- * 配置发现器接口
- */
-export interface IConfigDiscovery {
-  discoverConfigs(basePath: string): Promise<ConfigFile[]>;
-  discoverModuleConfigs(modulePath: string, moduleType: string): Promise<ConfigFile[]>;
-}
-
-/**
- * 模块加载器接口
- */
-export interface IModuleLoader {
-  readonly moduleType: string;
-  loadModule(configFiles: ConfigFile[]): Promise<ModuleConfig>;
-  supports(moduleType: string): boolean;
-}
-
-/**
- * 依赖解析器接口
- */
-export interface IDependencyResolver {
-  resolveDependencies(modules: Map<string, ModuleConfig>): Promise<LoadingOrder>;
-  checkCircularDependency(modules: Map<string, ModuleConfig>): DependencyError[];
-}
-
-/**
- * Schema注册表接口
- */
-export interface ISchemaRegistry {
-  registerSchema(moduleType: string, schema: z.ZodType<any>, version?: string, description?: string): void;
-  getSchema(moduleType: string): z.ZodType<any> | undefined;
-  validateConfig(moduleType: string, config: any): ValidationResult;
-  preValidate(config: any, moduleType: string): PreValidationResult;
-  validateSchemaCompatibility(newSchema: z.ZodType<any>, oldSchema: z.ZodType<any>): boolean;
-  getSchemaHistory(moduleType: string): SchemaVersion[];
-  hasModuleType(moduleType: string): boolean;
-  getRegisteredTypes(): string[];
-}
-
-/**
- * Schema版本信息
- */
-export interface SchemaVersion {
-  version: string;
-  schema: z.ZodType<any>;
-  description: string;
-  createdAt: Date;
-  compatibleWith?: string[];
 }
 
 /**
@@ -148,31 +55,6 @@ export interface ValidationResult {
   isValid: boolean;
   errors: ValidationError[];
   severity: ValidationSeverity;
-}
-
-/**
- * 预验证结果接口
- */
-export interface PreValidationResult {
-  isValid: boolean;
-  errors: string[];
-  severity: ValidationSeverity;
-}
-
-/**
- * 加载缓存接口
- */
-export interface ILoadingCache {
-  get(key: string): any;
-  set(key: string, value: any): void;
-  has(key: string): boolean;
-  clear(): void;
-  store(configs: Record<string, any>): Promise<void>;
-  getAllConfigs(): Record<string, any> | undefined;
-  getModuleConfig(moduleType: string): any;
-  setModuleConfig(moduleType: string, config: any): void;
-  getStats(): { size: number; keys: string[]; memoryUsage: number };
-  cleanup(): number;
 }
 
 /**
