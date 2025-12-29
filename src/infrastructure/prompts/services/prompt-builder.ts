@@ -3,6 +3,7 @@
  *
  * 负责在工作流执行过程中构建提示词消息
  * 专注于消息构建和上下文处理，模板处理委托给 TemplateProcessor
+ * 这是提示词模块与工作流集成的唯一入口点
  */
 
 import { injectable, inject } from 'inversify';
@@ -11,6 +12,7 @@ import { TemplateProcessor, TemplateProcessResult } from './template-processor';
 import { PromptContext } from '../../../domain/workflow/value-objects/context/prompt-context';
 import { ContextProcessor } from '../../../domain/workflow/services/context-processor-service.interface';
 import { LLMMessage } from '../../../domain/llm/value-objects/llm-message';
+import { ILogger } from '../../../domain/common/types/logger-types';
 
 /**
  * 提示词来源类型
@@ -38,16 +40,19 @@ export interface PromptBuildConfig {
  */
 @injectable()
 export class PromptBuilder {
+  private contextProcessors: Map<string, ContextProcessor> = new Map();
+
   constructor(
     @inject('PromptService') private promptService: PromptService,
-    @inject('TemplateProcessor') private templateProcessor: TemplateProcessor
+    @inject('TemplateProcessor') private templateProcessor: TemplateProcessor,
+    @inject('ILogger') private readonly logger: ILogger
   ) {}
 
   /**
    * 构建提示词消息列表
    * @param config 构建配置
    * @param context 工作流执行上下文
-   * @param contextProcessors 上下文处理器映射
+   * @param contextProcessors 上下文处理器映射（可选，如果不提供则使用内部注册的处理器）
    * @returns LLM 消息列表
    */
   async buildMessages(
@@ -57,13 +62,16 @@ export class PromptBuilder {
   ): Promise<LLMMessage[]> {
     const messages: LLMMessage[] = [];
 
+    // 使用传入的处理器或内部注册的处理器
+    const processors = contextProcessors || this.contextProcessors;
+
     // 构建系统提示词
     if (config.systemPrompt) {
       const systemContent = await this.buildPromptContent(
         config.systemPrompt,
         context,
         config.contextProcessor,
-        contextProcessors
+        processors
       );
       if (systemContent) {
         messages.push(LLMMessage.createSystem(systemContent));
@@ -75,7 +83,7 @@ export class PromptBuilder {
       config.source,
       context,
       config.contextProcessor,
-      contextProcessors
+      processors
     );
     if (userContent) {
       messages.push(LLMMessage.createUser(userContent));
@@ -163,5 +171,33 @@ export class PromptBuilder {
    */
   async templateExists(category: string, name: string): Promise<boolean> {
     return this.promptService.promptExists(category, name);
+  }
+
+  /**
+   * 注册上下文处理器
+   * @param name 处理器名称
+   * @param processor 处理器函数
+   */
+  registerContextProcessor(name: string, processor: ContextProcessor): void {
+    this.contextProcessors.set(name, processor);
+    this.logger.debug('注册上下文处理器', { name });
+  }
+
+  /**
+   * 获取上下文处理器
+   * @param name 处理器名称
+   * @returns 处理器函数或undefined
+   */
+  getContextProcessor(name: string): ContextProcessor | undefined {
+    return this.contextProcessors.get(name);
+  }
+
+  /**
+   * 检查处理器是否存在
+   * @param name 处理器名称
+   * @returns 是否存在
+   */
+  hasContextProcessor(name: string): boolean {
+    return this.contextProcessors.has(name);
   }
 }

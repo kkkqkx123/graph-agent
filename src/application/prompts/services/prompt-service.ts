@@ -1,14 +1,12 @@
 /**
  * 提示词服务
- * 使用基于Zod的DTO实现
- * 该模块与基础设施层workflow的llm_node无关，用于在应用层提供针对提示词的操作的服务
+ *
+ * 提供基本的提示词管理、查询功能
+ * 用于用户接口层，方便用户管理提示词
  */
 
 import { PromptRepository, PromptSearchCriteria } from '../../../infrastructure/persistence/repositories/prompt-repository';
-import { PromptLoader } from '../../../infrastructure/prompts/services/prompt-loader';
-import { PromptInjector } from '../../../infrastructure/prompts/services/prompt-injector';
-import { Prompt, PromptId, PromptConfig } from '../../../domain/prompts';
-import { WorkflowState } from '../../../domain/workflow/value-objects/workflow-state';
+import { Prompt, PromptId } from '../../../domain/prompts';
 
 // 导入新的DTO
 import {
@@ -17,13 +15,8 @@ import {
   PromptSearchRequestDto,
   PromptSearchResultDto,
   PromptStatisticsDto,
-  PromptConfigRequestDto,
-  PromptInjectionRequestDto,
-  PromptInjectionResultDto,
   PromptConverter,
-  PromptConfigConverter,
   PromptInfo,
-  PromptInjectionResult,
   PromptSearchResult,
   PromptStatistics,
   PromptSummary
@@ -37,16 +30,10 @@ export class PromptService {
   private promptSearchRequestDto: PromptSearchRequestDto;
   private promptSearchResultDto: PromptSearchResultDto;
   private promptStatisticsDto: PromptStatisticsDto;
-  private promptConfigRequestDto: PromptConfigRequestDto;
-  private promptInjectionRequestDto: PromptInjectionRequestDto;
-  private promptInjectionResultDto: PromptInjectionResultDto;
   private promptConverter: PromptConverter;
-  private promptConfigConverter: PromptConfigConverter;
 
   constructor(
-    private readonly promptRepository: PromptRepository,
-    private readonly promptLoader: PromptLoader,
-    private readonly promptInjector: PromptInjector
+    private readonly promptRepository: PromptRepository
   ) {
     // 初始化DTO实例
     this.promptInfoDto = new PromptInfoDto();
@@ -54,11 +41,7 @@ export class PromptService {
     this.promptSearchRequestDto = new PromptSearchRequestDto();
     this.promptSearchResultDto = new PromptSearchResultDto();
     this.promptStatisticsDto = new PromptStatisticsDto();
-    this.promptConfigRequestDto = new PromptConfigRequestDto();
-    this.promptInjectionRequestDto = new PromptInjectionRequestDto();
-    this.promptInjectionResultDto = new PromptInjectionResultDto();
     this.promptConverter = new PromptConverter();
-    this.promptConfigConverter = new PromptConfigConverter();
   }
 
   /**
@@ -235,101 +218,24 @@ export class PromptService {
   }
 
   /**
-   * 将提示词注入工作流状态
-   */
-  async injectPromptsIntoWorkflow(
-    workflowState: WorkflowState,
-    config: PromptConfig
-  ): Promise<WorkflowState> {
-    return this.promptInjector.injectPrompts(workflowState, config);
-  }
-
-  /**
-   * 注入提示词到工作流（DTO）
-   */
-  async injectPromptsIntoWorkflowWithDto(request: unknown): Promise<PromptInjectionResult> {
-    try {
-      // 验证注入请求
-      const validatedRequest = this.promptInjectionRequestDto.validate(request);
-
-      // 获取工作流状态（简化实现）
-      const workflowState = {} as WorkflowState; // 实际应该从仓库获取
-
-      // 创建提示词配置
-      const promptConfig: PromptConfig = {
-        rules: (validatedRequest.config.config as any)['rules'] || []
-      };
-
-      // 执行注入
-      const updatedWorkflowState = await this.injectPromptsIntoWorkflow(
-        workflowState,
-        promptConfig
-      );
-
-      return {
-        success: true,
-        workflowState: updatedWorkflowState as any, // 简化实现
-        injectedPrompts: ['prompt1', 'prompt2'], // 简化实现
-        warnings: validatedRequest.force ? ['强制注入可能覆盖现有配置'] : undefined
-      };
-    } catch (error) {
-      if (error instanceof DtoValidationError) {
-        return {
-          success: false,
-          workflowState: {},
-          injectedPrompts: [],
-          errorMessage: `无效的注入请求: ${error.message}`
-        };
-      }
-
-      return {
-        success: false,
-        workflowState: {},
-        injectedPrompts: [],
-        errorMessage: `注入失败: ${error instanceof Error ? error.message : String(error)}`
-      };
-    }
-  }
-
-  /**
    * 加载提示词内容
    */
   async loadPromptContent(category: string, name: string): Promise<string> {
-    return this.promptLoader.loadPrompt(category, name);
+    const prompts = await this.getPromptsByCategory(category);
+    const prompt = prompts.find(p => p.name === name);
+    
+    if (!prompt) {
+      throw new Error(`提示词 ${category}.${name} 未找到`);
+    }
+    
+    return prompt.content;
   }
 
   /**
    * 检查提示词是否存在
    */
   async promptExists(category: string, name: string): Promise<boolean> {
-    return this.promptLoader.exists(category, name);
-  }
-
-  /**
-   * 创建提示词配置（DTO）
-   */
-  async createPromptConfig(request: unknown): Promise<any> {
-    try {
-      // 验证配置请求
-      const validatedRequest = this.promptConfigRequestDto.validate(request);
-
-      // 创建配置（简化实现）
-      const config = {
-        configId: crypto.randomUUID(),
-        name: `config_${Date.now()}`,
-        value: validatedRequest.config,
-        description: validatedRequest.description,
-        isDefault: false,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString()
-      };
-
-      return config;
-    } catch (error) {
-      if (error instanceof DtoValidationError) {
-        throw new Error(`无效的配置请求: ${error.message}`);
-      }
-      throw error;
-    }
+    const prompts = await this.getPromptsByCategory(category);
+    return prompts.some(p => p.name === name);
   }
 }

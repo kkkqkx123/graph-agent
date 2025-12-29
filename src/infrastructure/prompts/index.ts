@@ -3,5 +3,9 @@
  */
 
 // 服务
-export { PromptInjector } from './services/prompt-injector';
-export { PromptLoader } from './services/prompt-loader';
+export { PromptBuilder } from './services/prompt-builder';
+export { TemplateProcessor } from './services/template-processor';
+
+// 类型
+export type { PromptSource, PromptBuildConfig } from './services/prompt-builder';
+export type { TemplateProcessResult } from './services/template-processor';

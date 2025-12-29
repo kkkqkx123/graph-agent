@@ -23,8 +23,8 @@ import { ThreadCoordinatorInfrastructureService } from '../../infrastructure/thr
 
 // 基础设施服务
 import { ConnectionManager } from '../../infrastructure/persistence/connections/connection-manager';
-import { PromptLoader } from '../../infrastructure/prompts/services/prompt-loader';
-import { PromptInjector } from '../../infrastructure/prompts/services/prompt-injector';
+import { PromptBuilder } from '../../infrastructure/prompts/services/prompt-builder';
+import { TemplateProcessor } from '../../infrastructure/prompts/services/template-processor';
 import { NodeExecutor } from '../../infrastructure/workflow/nodes/node-executor';
 import { EdgeExecutor } from '../../infrastructure/workflow/edges/edge-executor';
 import { EdgeEvaluator } from '../../infrastructure/threads/execution/edge-evaluator';
@@ -55,8 +55,8 @@ export const infrastructureBindings = new ContainerModule((bind: any) => {
   // ========== 基础设施服务绑定 ==========
   
   bind(TYPES.ConnectionManager).to(ConnectionManager).inSingletonScope();
-  bind(TYPES.PromptLoader).to(PromptLoader).inSingletonScope();
-  bind(TYPES.PromptInjector).to(PromptInjector).inSingletonScope();
+  bind(TYPES.PromptBuilder).to(PromptBuilder).inSingletonScope();
+  bind(TYPES.TemplateProcessor).to(TemplateProcessor).inSingletonScope();
   bind(TYPES.NodeExecutor).to(NodeExecutor).inSingletonScope();
   bind(TYPES.EdgeExecutor).to(EdgeExecutor).inSingletonScope();
   bind(TYPES.EdgeEvaluator).to(EdgeEvaluator).inSingletonScope();

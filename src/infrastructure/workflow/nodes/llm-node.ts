@@ -4,8 +4,7 @@ import { Node, NodeExecutionResult, NodeMetadata, ValidationResult, WorkflowExec
 import { WrapperService } from '../../../application/llm/services/wrapper-service';
 import { LLMRequest } from '../../../domain/llm/entities/llm-request';
 import { ID } from '../../../domain/common/value-objects/id';
-import { PromptBuilder, PromptSource } from '../helpers/prompt-builder';
-import { ContextProcessor } from '../../../domain/workflow/services/context-processor-service.interface';
+import { PromptBuilder, PromptSource, PromptBuildConfig } from '../../prompts/services/prompt-builder';
 import { llmContextProcessor } from '../functions/context-processors';
 
 /**
@@ -46,25 +45,27 @@ export class LLMNode extends Node {
       const wrapperService = context.getService<WrapperService>('WrapperService');
       const promptBuilder = context.getService<PromptBuilder>('PromptBuilder');
 
-      // 准备上下文处理器
-      const contextProcessors = new Map<string, ContextProcessor>();
-      contextProcessors.set('llm', llmContextProcessor);
+      // 注册上下文处理器（如果尚未注册）
+      if (!promptBuilder.hasContextProcessor(this.contextProcessorName)) {
+        promptBuilder.registerContextProcessor(this.contextProcessorName, llmContextProcessor);
+      }
 
       // 收集工作流上下文变量
-      const workflowContext: Record<string, unknown> = {};
-      workflowContext['executionId'] = context.getExecutionId();
-      workflowContext['workflowId'] = context.getWorkflowId();
+      const variables: Record<string, unknown> = {
+        executionId: context.getExecutionId(),
+        workflowId: context.getWorkflowId()
+      };
+
+      // 构建 PromptBuildConfig
+      const buildConfig: PromptBuildConfig = {
+        source: this.prompt,
+        systemPrompt: this.systemPrompt,
+        contextProcessor: this.contextProcessorName,
+        variables
+      };
 
       // 使用 PromptBuilder 构建消息列表
-      const messages = await promptBuilder.buildMessages(
-        {
-          source: this.prompt,
-          systemPrompt: this.systemPrompt,
-          contextProcessor: this.contextProcessorName
-        },
-        workflowContext,
-        contextProcessors
-      );
+      const messages = await promptBuilder.buildMessages(buildConfig, variables);
 
       // 获取工作流ID和节点ID
       const workflowId = context.getWorkflowId() ? ID.fromString(context.getWorkflowId()) : undefined;
@@ -223,7 +224,7 @@ export class LLMNode extends Node {
           description: '系统提示词来源（可选）'
         },
         {
-          name: 'contextProcessor',
+          name: 'contextProcessorName',
           type: 'string',
           required: false,
           description: '上下文处理器名称（可选，默认使用llm处理器）',

@@ -36,8 +36,8 @@ import { GraphValidationServiceImpl } from '../infrastructure/workflow/services/
 import { ContextProcessorServiceImpl } from '../infrastructure/workflow/services/context-processor-service';
 import { ThreadCoordinatorInfrastructureService } from '../infrastructure/threads/services/thread-coordinator-service';
 import { ConnectionManager } from '../infrastructure/persistence/connections/connection-manager';
-import { PromptLoader } from '../infrastructure/prompts/services/prompt-loader';
-import { PromptInjector } from '../infrastructure/prompts/services/prompt-injector';
+import { PromptBuilder } from '../infrastructure/prompts/services/prompt-builder';
+import { TemplateProcessor } from '../infrastructure/prompts/services/template-processor';
 import { NodeExecutor } from '../infrastructure/workflow/nodes/node-executor';
 import { EdgeExecutor } from '../infrastructure/workflow/edges/edge-executor';
 import { EdgeEvaluator } from '../infrastructure/threads/execution/edge-evaluator';
@@ -102,8 +102,8 @@ export interface ServiceTypes {
   
   // 基础设施服务
   ConnectionManager: ConnectionManager;
-  PromptLoader: PromptLoader;
-  PromptInjector: PromptInjector;
+  PromptBuilder: PromptBuilder;
+  TemplateProcessor: TemplateProcessor;
   NodeExecutor: NodeExecutor;
   EdgeExecutor: EdgeExecutor;
   EdgeEvaluator: EdgeEvaluator;
@@ -191,8 +191,8 @@ export const TYPES: {
   
   // 基础设施服务
   ConnectionManager: Symbol.for('ConnectionManager') as TypedServiceIdentifier<'ConnectionManager'>,
-  PromptLoader: Symbol.for('PromptLoader') as TypedServiceIdentifier<'PromptLoader'>,
-  PromptInjector: Symbol.for('PromptInjector') as TypedServiceIdentifier<'PromptInjector'>,
+  PromptBuilder: Symbol.for('PromptBuilder') as TypedServiceIdentifier<'PromptBuilder'>,
+  TemplateProcessor: Symbol.for('TemplateProcessor') as TypedServiceIdentifier<'TemplateProcessor'>,
   NodeExecutor: Symbol.for('NodeExecutor') as TypedServiceIdentifier<'NodeExecutor'>,
   EdgeExecutor: Symbol.for('EdgeExecutor') as TypedServiceIdentifier<'EdgeExecutor'>,
   EdgeEvaluator: Symbol.for('EdgeEvaluator') as TypedServiceIdentifier<'EdgeEvaluator'>,

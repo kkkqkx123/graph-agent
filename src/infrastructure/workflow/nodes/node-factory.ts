@@ -5,7 +5,7 @@ import { LLMNode } from './llm-node';
 import { ToolCallNode } from './tool-call-node';
 import { ConditionNode } from './condition-node';
 import { DataTransformNode } from './data-transform-node';
-import { PromptSource } from '../helpers/prompt-builder';
+import { PromptSource } from '../../prompts/services/prompt-builder';
 
 /**
  * 节点配置接口
