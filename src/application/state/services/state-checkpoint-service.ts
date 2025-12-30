@@ -262,7 +262,8 @@ export class StateCheckpointService {
         }
       } else {
         // 清理所有过期Checkpoint
-        const expiredCheckpoints = await this.checkpointRepository.findExpired();
+        const allCheckpoints = await this.checkpointRepository.findAll();
+        const expiredCheckpoints = allCheckpoints.filter(cp => cp.isExpired());
 
         for (const checkpoint of expiredCheckpoints) {
           checkpoint.markExpired();

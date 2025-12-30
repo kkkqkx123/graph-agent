@@ -12,7 +12,7 @@ import { SessionRepository as SessionInfrastructureRepository } from '../../infr
 import { ThreadRepository as ThreadInfrastructureRepository } from '../../infrastructure/persistence/repositories/thread-repository';
 import { WorkflowRepository as WorkflowInfrastructureRepository } from '../../infrastructure/persistence/repositories/workflow-repository';
 import { PromptRepository as PromptInfrastructureRepository } from '../../infrastructure/persistence/repositories/prompt-repository';
-import { CheckpointRepository as CheckpointInfrastructureRepository } from '../../infrastructure/persistence/repositories/checkpoint-repository';
+import { ThreadCheckpointRepository as ThreadCheckpointInfrastructureRepository } from '../../infrastructure/persistence/repositories/thread-checkpoint-repository';
 import { HistoryRepository as HistoryInfrastructureRepository } from '../../infrastructure/persistence/repositories/history-repository';
 
 // 业务服务实现
@@ -31,6 +31,8 @@ import { NodeExecutor } from '../../infrastructure/workflow/nodes/node-executor'
 import { EdgeExecutor } from '../../infrastructure/workflow/edges/edge-executor';
 import { EdgeEvaluator } from '../../infrastructure/workflow/services/edge-evaluator';
 import { NodeRouter } from '../../infrastructure/workflow/services/node-router';
+import { WorkflowExecutionEngine } from '../../infrastructure/workflow/services/workflow-execution-engine';
+import { ThreadExecutionEngine } from '../../infrastructure/threads';
 import { HookExecutor } from '../../infrastructure/workflow/hooks/hook-executor';
 import { Logger } from '../../infrastructure/logging/logger';
 
@@ -44,7 +46,7 @@ export const infrastructureBindings = new ContainerModule((bind: any) => {
   bind(TYPES.ThreadRepositoryImpl).to(ThreadInfrastructureRepository).inSingletonScope();
   bind(TYPES.WorkflowRepositoryImpl).to(WorkflowInfrastructureRepository).inSingletonScope();
   bind(TYPES.PromptRepositoryImpl).to(PromptInfrastructureRepository).inSingletonScope();
-  bind(TYPES.CheckpointRepositoryImpl).to(CheckpointInfrastructureRepository).inSingletonScope();
+  bind(TYPES.ThreadCheckpointRepositoryImpl).to(ThreadCheckpointInfrastructureRepository).inSingletonScope();
   bind(TYPES.HistoryRepositoryImpl).to(HistoryInfrastructureRepository).inSingletonScope();
 
   // ========== 业务服务绑定 ==========
@@ -65,6 +67,8 @@ export const infrastructureBindings = new ContainerModule((bind: any) => {
   bind(TYPES.EdgeExecutor).to(EdgeExecutor).inSingletonScope();
   bind(TYPES.EdgeEvaluator).to(EdgeEvaluator).inSingletonScope();
   bind(TYPES.NodeRouter).to(NodeRouter).inSingletonScope();
+  bind(TYPES.WorkflowExecutionEngine).to(WorkflowExecutionEngine).inSingletonScope();
+  bind(TYPES.ThreadExecutionEngine).to(ThreadExecutionEngine).inSingletonScope();
   bind(TYPES.HookExecutor).to(HookExecutor).inSingletonScope();
   bind(TYPES.Logger).to(Logger).inSingletonScope();
 });

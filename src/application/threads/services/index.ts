@@ -9,6 +9,9 @@ export * from './thread-lifecycle-service';
 export * from './thread-maintenance-service';
 export * from './thread-management-service';
 
+// 执行服务
+export * from './thread-execution-service';
+
 // 操作服务
 export * from './thread-fork-service';
 export * from './thread-copy-service';

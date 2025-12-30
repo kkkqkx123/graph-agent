@@ -1,16 +1,24 @@
 /**
  * 工作流编排服务
  *
- * 协调Thread和Session服务完成工作流执行
- * 专注于工作流级别的编排，不涉及单线程执行细节（由Thread层负责）
+ * 负责工作流级别的编排和执行，包括：
+ * - 工作流图操作（验证、拓扑排序、路径查找）
+ * - 工作流执行编排
+ * - 执行结果收集
+ * - 业务规则验证
+ * - 并行执行支持
+ *
+ * 属于应用层，负责业务流程编排
  */
 
 import { injectable, inject } from 'inversify';
-import { SessionOrchestrationService } from '../../sessions/services/session-orchestration-service';
-import { ThreadCoordinatorService } from '../../../domain/threads';
 import { GraphAlgorithmService, GraphValidationService, WorkflowRepository } from '../../../domain/workflow';
-import { ID, Timestamp } from '../../../domain/common';
+import { ID, Timestamp, ILogger } from '../../../domain/common';
+import { ExecutionContext } from '../../../domain/threads/value-objects/execution-context';
+import { PromptContext } from '../../../domain/workflow/value-objects/context/prompt-context';
 import { TYPES } from '../../../di/service-keys';
+import { WorkflowExecutionEngine } from '../../../infrastructure/workflow/services/workflow-execution-engine';
+import { BaseApplicationService } from '../../common/base-application-service';
 
 /**
  * 线程动作类型
@@ -47,46 +55,102 @@ export interface WorkflowExecutionResult {
  * 工作流编排服务
  */
 @injectable()
-export class WorkflowOrchestrationService {
+export class WorkflowOrchestrationService extends BaseApplicationService {
   constructor(
-    @inject(TYPES.SessionOrchestrationServiceImpl) private readonly sessionOrchestration: SessionOrchestrationService,
-    @inject(TYPES.ThreadCoordinatorService) private readonly threadCoordinator: ThreadCoordinatorService,
     @inject(TYPES.GraphAlgorithmService) private readonly graphAlgorithm: GraphAlgorithmService,
     @inject(TYPES.GraphValidationService) private readonly graphValidation: GraphValidationService,
-    @inject(TYPES.WorkflowRepository) private readonly workflowRepository: WorkflowRepository
-  ) { }
+    @inject(TYPES.WorkflowRepository) private readonly workflowRepository: WorkflowRepository,
+    @inject(TYPES.WorkflowExecutionEngine) private readonly workflowExecutionEngine: WorkflowExecutionEngine,
+    @inject(TYPES.Logger) logger: ILogger
+  ) {
+    super(logger);
+  }
+
+  /**
+   * 获取服务名称
+   */
+  protected override getServiceName(): string {
+    return '工作流编排服务';
+  }
 
   /**
    * 执行工作流
-   * 委托给SessionOrchestrationService进行编排
+   * 使用 WorkflowExecutionEngine 执行工作流
    */
   async executeWorkflow(sessionId: ID, workflowId: ID, input: unknown): Promise<WorkflowExecutionResult> {
-    // 1. 验证工作流存在
-    const workflow = await this.workflowRepository.findById(workflowId);
-    if (!workflow) {
-      throw new Error(`工作流不存在: ${workflowId.toString()}`);
-    }
+    return this.executeBusinessOperation(
+      '工作流执行',
+      async () => {
+        // 1. 验证工作流存在
+        const workflow = await this.workflowRepository.findById(workflowId);
+        if (!workflow) {
+          throw new Error(`工作流不存在: ${workflowId.toString()}`);
+        }
 
-    // 2. 验证工作流图结构（如果需要）
-    try {
-      const validationResult = this.graphValidation.validateGraph(workflow);
-      if (!validationResult) {
-        throw new Error('工作流图结构验证失败');
-      }
-    } catch (error) {
-      // 验证可能不支持，跳过或记录警告
-      console.warn('工作流验证跳过:', error);
-    }
+        // 2. 验证工作流可执行性（业务规则）
+        this.validateWorkflowExecutionEligibility(workflow);
 
-    // 3. 创建执行上下文
-    const context = this.createExecutionContext(sessionId, workflowId, input);
+        // 3. 验证工作流图结构
+        const validationResult = this.graphValidation.validateGraphDetailed(workflow);
+        if (!validationResult.valid) {
+          throw new Error(`工作流图结构验证失败: ${validationResult.errors.join(', ')}`);
+        }
 
-    // 4. 通过会话编排服务执行工作流
-    return await this.sessionOrchestration.orchestrateWorkflowExecution(
-      sessionId.toString(),
-      workflowId.toString(),
-      context
+        // 4. 检查循环
+        if (this.graphAlgorithm.hasCycle(workflow)) {
+          throw new Error('工作流图存在循环，无法执行');
+        }
+
+        // 5. 创建执行上下文
+        const context = this.createExecutionContext(sessionId, workflowId, input);
+
+        // 6. 使用 WorkflowExecutionEngine 执行工作流
+        const startTime = Timestamp.now();
+        const result = await this.workflowExecutionEngine.execute(workflow, context);
+        const endTime = Timestamp.now();
+
+        // 7. 转换执行结果
+        return this.convertToWorkflowExecutionResult(
+          sessionId,
+          workflowId,
+          result,
+          startTime,
+          endTime
+        );
+      },
+      { sessionId: sessionId.toString(), workflowId: workflowId.toString() }
     );
+  }
+
+  /**
+   * 验证工作流执行资格（业务规则）
+   */
+  private validateWorkflowExecutionEligibility(workflow: any): void {
+    // 验证状态
+    if (!workflow.status.isActive()) {
+      throw new Error(`工作流不是活跃状态，当前状态: ${workflow.status.toString()}`);
+    }
+
+    // 验证是否已删除
+    if (workflow.isDeleted()) {
+      throw new Error('工作流已删除，无法执行');
+    }
+
+    // 验证是否为空
+    if (workflow.isEmpty()) {
+      throw new Error('工作流为空，无法执行');
+    }
+
+    // 验证是否有节点
+    if (workflow.getNodeCount() === 0) {
+      throw new Error('工作流没有节点，无法执行');
+    }
+
+    // 验证是否有起始节点
+    const topologicalOrder = this.graphAlgorithm.getTopologicalOrder(workflow);
+    if (topologicalOrder.length === 0) {
+      throw new Error('工作流没有起始节点，无法执行');
+    }
   }
 
   /**
@@ -94,22 +158,28 @@ export class WorkflowOrchestrationService {
    */
   async executeWorkflowsParallel(sessionId: ID, workflowIds: ID[], input: unknown): Promise<WorkflowExecutionResult[]> {
     // 1. 验证所有工作流存在
+    const workflows: Map<ID, any> = new Map();
     for (const workflowId of workflowIds) {
       const workflow = await this.workflowRepository.findById(workflowId);
       if (!workflow) {
         throw new Error(`工作流不存在: ${workflowId.toString()}`);
       }
+      workflows.set(workflowId, workflow);
     }
 
-    // 2. 创建执行上下文
-    const context = this.createExecutionContext(sessionId, ID.empty(), input);
-
-    // 3. 通过会话编排服务并行执行
-    return await this.sessionOrchestration.orchestrateParallelExecution(
-      sessionId.toString(),
-      workflowIds.map(id => id.toString()),
-      context
+    // 2. 并行执行所有工作流
+    const results = await Promise.all(
+      workflowIds.map(async (workflowId) => {
+        const workflow = workflows.get(workflowId);
+        const context = this.createExecutionContext(sessionId, workflowId, input);
+        const startTime = Timestamp.now();
+        const result = await this.workflowExecutionEngine.execute(workflow!, context);
+        const endTime = Timestamp.now();
+        return this.convertToWorkflowExecutionResult(sessionId, workflowId, result, startTime, endTime);
+      })
     );
+
+    return results;
   }
 
   /**
@@ -181,58 +251,41 @@ export class WorkflowOrchestrationService {
   /**
    * 创建执行上下文
    */
-  private createExecutionContext(sessionId: ID, workflowId: ID, input: unknown): Record<string, unknown> {
+  private createExecutionContext(sessionId: ID, workflowId: ID, input: unknown): ExecutionContext {
+    const promptContext = PromptContext.create('');
+    return ExecutionContext.create(promptContext) as ExecutionContext;
+  }
+
+  /**
+   * 转换执行结果
+   */
+  private convertToWorkflowExecutionResult(
+    sessionId: ID,
+    workflowId: ID,
+    result: any,
+    startTime: Timestamp,
+    endTime: Timestamp
+  ): WorkflowExecutionResult {
     return {
-      executionId: ID.generate().toString(),
+      executionId: result.executedNodes.length > 0 ? result.executedNodes[0].toString() : ID.generate().toString(),
       workflowId: workflowId.toString(),
-      data: { input },
-      sessionId: sessionId.toString(),
-      startTime: Timestamp.now(),
-      status: 'pending',
-      getVariable: function (path: string) {
-        const parts = path.split('.');
-        let value: any = { input };
-        for (const part of parts) {
-          value = value?.[part];
-        }
-        return value;
+      status: result.success ? 'completed' : 'failed',
+      startTime: startTime.toISOString(),
+      endTime: endTime.toISOString(),
+      duration: result.duration,
+      output: result.results ? Object.fromEntries(result.results) : {},
+      logs: [],
+      statistics: {
+        executedNodes: result.statistics.executedNodes,
+        totalNodes: result.statistics.totalNodes,
+        executedEdges: 0,
+        totalEdges: 0,
+        executionPath: result.executedNodes.map((node: any) => node.toString())
       },
-      setVariable: function () { },
-      getAllVariables: function () { return { input }; },
-      getAllMetadata: function () { return {}; },
-      getInput: function () { return input; },
-      getExecutedNodes: function () { return []; },
-      getNodeResult: function () { return null; },
-      getElapsedTime: function () { return 0; },
-      getWorkflow: function () { return null; }
+      metadata: {
+        sessionId: sessionId.toString(),
+        error: result.error
+      }
     };
-  }
-
-  /**
-   * 创建工作流线程
-   */
-  async createWorkflowThread(sessionId: ID, workflowId?: ID): Promise<ID> {
-    return await this.sessionOrchestration.createThread(sessionId, workflowId);
-  }
-
-  /**
-   * 管理线程生命周期
-   */
-  async manageThreadLifecycle(sessionId: ID, threadId: ID, action: ThreadAction): Promise<void> {
-    await this.sessionOrchestration.manageThreadLifecycle(
-      sessionId.toString(),
-      threadId.toString(),
-      action
-    );
-  }
-
-  /**
-   * 同步会话状态
-   */
-  async syncSessionState(sessionId: ID): Promise<void> {
-    // 注意：syncSessionState在SessionOrchestrationService中是private方法
-    // 这里暂时注释掉，如果需要公开访问，需要在SessionOrchestrationService中改为public
-    // await this.sessionOrchestration.syncSessionState(sessionId);
-    throw new Error('syncSessionState方法在SessionOrchestrationService中是private，无法访问');
   }
 }

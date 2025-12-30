@@ -462,11 +462,30 @@ export class ThreadCheckpointDomainServiceImpl implements ThreadCheckpointDomain
   }
 
   async getCheckpointStatistics(threadId?: ID): Promise<CheckpointStatistics> {
-    return await this.repository.getStatistics(threadId);
+    // 简化实现：使用基本方法构建统计信息
+    const checkpoints = threadId
+      ? await this.repository.findByThreadId(threadId)
+      : await this.repository.findAll();
+    
+    return CheckpointStatistics.fromCheckpoints(checkpoints);
   }
 
   async cleanupExpiredCheckpoints(threadId?: ID): Promise<number> {
-    return await this.repository.cleanupExpired(threadId);
+    // 简化实现：使用基本方法清理过期检查点
+    const checkpoints = threadId
+      ? await this.repository.findByThreadId(threadId)
+      : await this.repository.findAll();
+    
+    const expiredCheckpoints = checkpoints.filter(cp => cp.isExpired());
+    let cleanedCount = 0;
+    
+    for (const checkpoint of expiredCheckpoints) {
+      checkpoint.markExpired();
+      await this.repository.save(checkpoint);
+      cleanedCount++;
+    }
+    
+    return cleanedCount;
   }
 
   async cleanupExcessCheckpoints(threadId: ID, maxCount: number): Promise<number> {
@@ -489,7 +508,24 @@ export class ThreadCheckpointDomainServiceImpl implements ThreadCheckpointDomain
   }
 
   async archiveOldCheckpoints(threadId: ID, days: number): Promise<number> {
-    return await this.repository.archiveOld(threadId, days);
+    // 简化实现：使用基本方法归档旧检查点
+    const checkpoints = await this.repository.findByThreadId(threadId);
+    const cutoffTime = new Date();
+    cutoffTime.setDate(cutoffTime.getDate() - days);
+    
+    const oldCheckpoints = checkpoints.filter(cp =>
+      cp.createdAt.getDate() < cutoffTime
+    );
+    
+    let archivedCount = 0;
+    
+    for (const checkpoint of oldCheckpoints) {
+      checkpoint.markArchived();
+      await this.repository.save(checkpoint);
+      archivedCount++;
+    }
+    
+    return archivedCount;
   }
 
   async shouldCreateCheckpoint(
@@ -668,7 +704,20 @@ export class ThreadCheckpointDomainServiceImpl implements ThreadCheckpointDomain
   }
 
   async getBackupChain(checkpointId: ID): Promise<ThreadCheckpoint[]> {
-    return await this.repository.findBackupChain(checkpointId);
+    // 简化实现：使用基本方法查找备份链
+    const checkpoint = await this.repository.findById(checkpointId);
+    if (!checkpoint) {
+      return [];
+    }
+    
+    // 查找所有带有backup标签的检查点
+    const allCheckpoints = await this.repository.findByThreadId(checkpoint.threadId);
+    const backupCheckpoints = allCheckpoints.filter(cp =>
+      cp.tags.includes('backup') &&
+      cp.metadata?.['backupOf'] === checkpointId.toString()
+    );
+    
+    return backupCheckpoints;
   }
 
   async extendCheckpointExpiration(checkpointId: ID, hours: number): Promise<boolean> {

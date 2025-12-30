@@ -13,12 +13,14 @@ import { SessionResourceService } from '../../application/sessions/services/sess
 import { WorkflowOrchestrationService } from '../../application/workflow/services/workflow-orchestration-service';
 import { PromptService } from '../../application/prompts/services/prompt-service';
 import { HumanRelayService } from '../../application/llm/services/human-relay-service';
+import { ThreadLifecycleService } from '../../application/threads/services/thread-lifecycle-service';
+import { ThreadExecutionService } from '../../application/threads/services/thread-execution-service';
 
 // Domain层接口
 import { SessionRepository } from '../../domain/sessions/repositories/session-repository';
 import { ThreadRepository } from '../../domain/threads/repositories/thread-repository';
 import { WorkflowRepository } from '../../domain/workflow/repositories/workflow-repository';
-import { ThreadCoordinatorService } from '../../domain/threads/services/thread-coordinator-service.interface';
+import { ThreadCheckpointRepository } from '../../domain/threads/checkpoints/repositories/thread-checkpoint-repository';
 import { GraphAlgorithmService } from '../../domain/workflow/services/graph-algorithm-service.interface';
 import { GraphValidationService } from '../../domain/workflow/services/graph-validation-service.interface';
 import { ContextProcessorService } from '../../domain/workflow/services/context-processor-service.interface';
@@ -42,6 +44,15 @@ export const applicationBindings = new ContainerModule((bind: any) => {
   // 工作流服务
   bind(TYPES.WorkflowOrchestrationServiceImpl)
     .to(WorkflowOrchestrationService)
+    .inSingletonScope();
+
+  // 线程服务
+  bind(TYPES.ThreadLifecycleService)
+    .to(ThreadLifecycleService)
+    .inSingletonScope();
+
+  bind(TYPES.ThreadExecutionService)
+    .to(ThreadExecutionService)
     .inSingletonScope();
 
   // 提示词服务
@@ -75,10 +86,9 @@ export const applicationBindings = new ContainerModule((bind: any) => {
     })
     .inSingletonScope();
 
-  // 业务服务接口绑定
-  bind(TYPES.ThreadCoordinatorService)
+  bind(TYPES.ThreadCheckpointRepository)
     .toDynamicValue((context: any) => {
-      return context.container.get(TYPES.ThreadCoordinatorServiceImpl);
+      return context.container.get(TYPES.ThreadCheckpointRepositoryImpl);
     })
     .inSingletonScope();
 

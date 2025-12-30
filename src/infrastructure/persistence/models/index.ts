@@ -4,4 +4,4 @@ export { MessageModel } from './message.model';
 export { WorkflowModel } from './workflow.model';
 export { ExecutionStatsModel } from './execution-stats.model';
 export { HistoryModel } from './history.model';
-export { CheckpointModel } from './checkpoint.model';
+export { ThreadCheckpointModel } from './thread-checkpoint.model';

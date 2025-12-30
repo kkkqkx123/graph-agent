@@ -1,8 +1,8 @@
 import { injectable, inject } from 'inversify';
 import { ID } from '../../../domain/common/value-objects/id';
-import { Checkpoint } from '../../../domain/checkpoint/entities/checkpoint';
+import { ThreadCheckpoint } from '../../../domain/threads/checkpoints/entities/thread-checkpoint';
 import { Snapshot } from '../../../domain/snapshot/entities/snapshot';
-import { CheckpointRepository } from '../../../domain/checkpoint/repositories/checkpoint-repository';
+import { ThreadCheckpointRepository } from '../../../domain/threads/checkpoints/repositories/thread-checkpoint-repository';
 import { SnapshotRepository } from '../../../domain/snapshot/repositories/snapshot-repository';
 import { Thread } from '../../../domain/threads/entities/thread';
 import { History } from '../../../domain/history/entities/history';
@@ -19,7 +19,7 @@ import { HistoryTypeValue } from '../../../domain/history/value-objects/history-
 @injectable()
 export class StateRecoveryService {
   constructor(
-    @inject('CheckpointRepository') private readonly checkpointRepository: CheckpointRepository,
+    @inject('ThreadCheckpointRepository') private readonly checkpointRepository: ThreadCheckpointRepository,
     @inject('SnapshotRepository') private readonly snapshotRepository: SnapshotRepository,
     @inject('HistoryRepository') private readonly historyRepository: HistoryRepository
   ) { }
@@ -209,7 +209,7 @@ export class StateRecoveryService {
   ): Promise<{
     canRestore: boolean;
     reason?: string;
-    availableCheckpoints: Checkpoint[];
+    availableCheckpoints: ThreadCheckpoint[];
     availableSnapshots: Snapshot[];
   }> {
     const availableCheckpoints = await this.checkpointRepository.findByThreadId(threadId);
@@ -285,7 +285,7 @@ export class StateRecoveryService {
    * 获取Thread的恢复历史
    */
   public async getThreadRecoveryHistory(threadId: ID): Promise<{
-    checkpointRestores: Checkpoint[];
+    checkpointRestores: ThreadCheckpoint[];
     snapshotRestores: Snapshot[];
     historyRecords: History[];
   }> {
@@ -344,7 +344,7 @@ export class StateRecoveryService {
    */
   public async getBestRecoveryPoint(threadId: ID): Promise<{
     type: 'checkpoint' | 'snapshot';
-    point: Checkpoint | Snapshot;
+    point: ThreadCheckpoint | Snapshot;
     reason: string;
   } | null> {
     const checkpoints = await this.checkpointRepository.findByThreadId(threadId);

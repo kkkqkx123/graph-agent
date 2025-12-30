@@ -13,27 +13,27 @@
 import { SessionRepository } from '../domain/sessions/repositories/session-repository';
 import { ThreadRepository } from '../domain/threads/repositories/thread-repository';
 import { WorkflowRepository } from '../domain/workflow/repositories/workflow-repository';
-import { CheckpointRepository } from '../domain/checkpoint/repositories/checkpoint-repository';
+import { ThreadCheckpointRepository } from '../domain/threads/checkpoints/repositories/thread-checkpoint-repository';
 import { HistoryRepository } from '../domain/history/repositories/history-repository';
 import { GraphAlgorithmService } from '../domain/workflow/services/graph-algorithm-service.interface';
 import { GraphValidationService } from '../domain/workflow/services/graph-validation-service.interface';
 import { ContextProcessorService } from '../domain/workflow/services/context-processor-service.interface';
-import { ThreadCoordinatorService } from '../domain/threads/services/thread-coordinator-service.interface';
 import { WorkflowOrchestrationService } from '../application/workflow/services/workflow-orchestration-service';
 import { PromptService } from '../application/prompts/services/prompt-service';
 import { IHumanRelayService } from '../domain/llm/services/human-relay-service.interface';
+import { ThreadLifecycleService } from '../application/threads/services/thread-lifecycle-service';
+import { ThreadExecutionService } from '../application/threads/services/thread-execution-service';
 
 // Infrastructure层实现
 import { SessionRepository as SessionInfrastructureRepository } from '../infrastructure/persistence/repositories/session-repository';
 import { ThreadRepository as ThreadInfrastructureRepository } from '../infrastructure/persistence/repositories/thread-repository';
 import { WorkflowRepository as WorkflowInfrastructureRepository } from '../infrastructure/persistence/repositories/workflow-repository';
 import { PromptRepository as PromptInfrastructureRepository } from '../infrastructure/persistence/repositories/prompt-repository';
-import { CheckpointRepository as CheckpointInfrastructureRepository } from '../infrastructure/persistence/repositories/checkpoint-repository';
+import { ThreadCheckpointRepository as ThreadCheckpointInfrastructureRepository } from '../infrastructure/persistence/repositories/thread-checkpoint-repository';
 import { HistoryRepository as HistoryInfrastructureRepository } from '../infrastructure/persistence/repositories/history-repository';
 import { GraphAlgorithmServiceImpl } from '../infrastructure/workflow/services/graph-algorithm-service';
 import { GraphValidationServiceImpl } from '../infrastructure/workflow/services/graph-validation-service';
 import { ContextProcessorServiceImpl } from '../infrastructure/workflow/services/context-processor-service';
-import { ThreadCoordinatorInfrastructureService } from '../infrastructure/threads/services/thread-coordinator-service';
 import { ConnectionManager } from '../infrastructure/persistence/connections/connection-manager';
 import { PromptBuilder } from '../infrastructure/prompts/services/prompt-builder';
 import { TemplateProcessor } from '../infrastructure/prompts/services/template-processor';
@@ -43,6 +43,7 @@ import { NodeExecutor } from '../infrastructure/workflow/nodes/node-executor';
 import { EdgeExecutor } from '../infrastructure/workflow/edges/edge-executor';
 import { EdgeEvaluator } from '../infrastructure/workflow/services/edge-evaluator';
 import { NodeRouter } from '../infrastructure/workflow/services/node-router';
+import { WorkflowExecutionEngine } from '../infrastructure/workflow/services/workflow-execution-engine';
 import { HookExecutor } from '../infrastructure/workflow/hooks/hook-executor';
 import { Logger } from '../infrastructure/logging/logger';
 
@@ -68,14 +69,13 @@ export interface ServiceTypes {
   ThreadRepository: ThreadRepository;
   WorkflowRepository: WorkflowRepository;
   PromptRepository: PromptInfrastructureRepository;
-  CheckpointRepository: CheckpointRepository;
+  ThreadCheckpointRepository: ThreadCheckpointRepository;
   HistoryRepository: HistoryRepository;
 
   // 业务服务接口
   GraphAlgorithmService: GraphAlgorithmService;
   GraphValidationService: GraphValidationService;
   ContextProcessorService: ContextProcessorService;
-  ThreadCoordinatorService: ThreadCoordinatorService;
 
   // ========== Application层接口（仅用于类型定义） ==========
 
@@ -95,14 +95,13 @@ export interface ServiceTypes {
   ThreadRepositoryImpl: ThreadInfrastructureRepository;
   WorkflowRepositoryImpl: WorkflowInfrastructureRepository;
   PromptRepositoryImpl: PromptInfrastructureRepository;
-  CheckpointRepositoryImpl: CheckpointInfrastructureRepository;
+  ThreadCheckpointRepositoryImpl: ThreadCheckpointInfrastructureRepository;
   HistoryRepositoryImpl: HistoryInfrastructureRepository;
 
   // 业务服务实现
   GraphAlgorithmServiceImpl: GraphAlgorithmServiceImpl;
   GraphValidationServiceImpl: GraphValidationServiceImpl;
   ContextProcessorServiceImpl: ContextProcessorServiceImpl;
-  ThreadCoordinatorServiceImpl: ThreadCoordinatorInfrastructureService;
 
   // 基础设施服务
   ConnectionManager: ConnectionManager;
@@ -114,11 +113,14 @@ export interface ServiceTypes {
   EdgeExecutor: EdgeExecutor;
   EdgeEvaluator: EdgeEvaluator;
   NodeRouter: NodeRouter;
+  WorkflowExecutionEngine: WorkflowExecutionEngine;
+  ThreadExecutionEngine: any;
   HookExecutor: HookExecutor;
   Logger: Logger;
 
   // 线程相关服务
-  ThreadLifecycleService: any; // TODO: 添加具体类型
+  ThreadLifecycleService: ThreadLifecycleService;
+  ThreadExecutionService: ThreadExecutionService;
   ThreadDefinitionRepository: any; // TODO: 添加具体类型
   ThreadExecutionRepository: any; // TODO: 添加具体类型
 
@@ -164,14 +166,13 @@ export const TYPES: {
   ThreadRepository: Symbol.for('ThreadRepository') as TypedServiceIdentifier<'ThreadRepository'>,
   WorkflowRepository: Symbol.for('WorkflowRepository') as TypedServiceIdentifier<'WorkflowRepository'>,
   PromptRepository: Symbol.for('PromptRepository') as TypedServiceIdentifier<'PromptRepository'>,
-  CheckpointRepository: Symbol.for('CheckpointRepository') as TypedServiceIdentifier<'CheckpointRepository'>,
+  ThreadCheckpointRepository: Symbol.for('ThreadCheckpointRepository') as TypedServiceIdentifier<'ThreadCheckpointRepository'>,
   HistoryRepository: Symbol.for('HistoryRepository') as TypedServiceIdentifier<'HistoryRepository'>,
 
   // 业务服务接口
   GraphAlgorithmService: Symbol.for('GraphAlgorithmService') as TypedServiceIdentifier<'GraphAlgorithmService'>,
   GraphValidationService: Symbol.for('GraphValidationService') as TypedServiceIdentifier<'GraphValidationService'>,
   ContextProcessorService: Symbol.for('ContextProcessorService') as TypedServiceIdentifier<'ContextProcessorService'>,
-  ThreadCoordinatorService: Symbol.for('ThreadCoordinatorService') as TypedServiceIdentifier<'ThreadCoordinatorService'>,
 
   // ========== Application层接口（仅用于类型定义） ==========
 
@@ -191,14 +192,13 @@ export const TYPES: {
   ThreadRepositoryImpl: Symbol.for('ThreadRepositoryImpl') as TypedServiceIdentifier<'ThreadRepositoryImpl'>,
   WorkflowRepositoryImpl: Symbol.for('WorkflowRepositoryImpl') as TypedServiceIdentifier<'WorkflowRepositoryImpl'>,
   PromptRepositoryImpl: Symbol.for('PromptRepositoryImpl') as TypedServiceIdentifier<'PromptRepositoryImpl'>,
-  CheckpointRepositoryImpl: Symbol.for('CheckpointRepositoryImpl') as TypedServiceIdentifier<'CheckpointRepositoryImpl'>,
+  ThreadCheckpointRepositoryImpl: Symbol.for('ThreadCheckpointRepositoryImpl') as TypedServiceIdentifier<'ThreadCheckpointRepositoryImpl'>,
   HistoryRepositoryImpl: Symbol.for('HistoryRepositoryImpl') as TypedServiceIdentifier<'HistoryRepositoryImpl'>,
 
   // 业务服务实现
   GraphAlgorithmServiceImpl: Symbol.for('GraphAlgorithmServiceImpl') as TypedServiceIdentifier<'GraphAlgorithmServiceImpl'>,
   GraphValidationServiceImpl: Symbol.for('GraphValidationServiceImpl') as TypedServiceIdentifier<'GraphValidationServiceImpl'>,
   ContextProcessorServiceImpl: Symbol.for('ContextProcessorServiceImpl') as TypedServiceIdentifier<'ContextProcessorServiceImpl'>,
-  ThreadCoordinatorServiceImpl: Symbol.for('ThreadCoordinatorServiceImpl') as TypedServiceIdentifier<'ThreadCoordinatorServiceImpl'>,
 
   // 基础设施服务
   ConnectionManager: Symbol.for('ConnectionManager') as TypedServiceIdentifier<'ConnectionManager'>,
@@ -210,11 +210,14 @@ export const TYPES: {
   EdgeExecutor: Symbol.for('EdgeExecutor') as TypedServiceIdentifier<'EdgeExecutor'>,
   EdgeEvaluator: Symbol.for('EdgeEvaluator') as TypedServiceIdentifier<'EdgeEvaluator'>,
   NodeRouter: Symbol.for('NodeRouter') as TypedServiceIdentifier<'NodeRouter'>,
+  WorkflowExecutionEngine: Symbol.for('WorkflowExecutionEngine') as TypedServiceIdentifier<'WorkflowExecutionEngine'>,
+  ThreadExecutionEngine: Symbol.for('ThreadExecutionEngine') as TypedServiceIdentifier<'ThreadExecutionEngine'>,
   HookExecutor: Symbol.for('HookExecutor') as TypedServiceIdentifier<'HookExecutor'>,
   Logger: Symbol.for('Logger') as TypedServiceIdentifier<'Logger'>,
 
   // 线程相关服务
   ThreadLifecycleService: Symbol.for('ThreadLifecycleService') as TypedServiceIdentifier<'ThreadLifecycleService'>,
+  ThreadExecutionService: Symbol.for('ThreadExecutionService') as TypedServiceIdentifier<'ThreadExecutionService'>,
   ThreadDefinitionRepository: Symbol.for('ThreadDefinitionRepository') as TypedServiceIdentifier<'ThreadDefinitionRepository'>,
   ThreadExecutionRepository: Symbol.for('ThreadExecutionRepository') as TypedServiceIdentifier<'ThreadExecutionRepository'>,
 
