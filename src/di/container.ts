@@ -264,25 +264,12 @@ export class AppContainer {
   // ========== 便捷方法：常用服务访问 ==========
 
   /**
-   * 获取工作流编排服务
-   */
-  static getWorkflowOrchestrationService() {
-    return this.getService(TYPES.WorkflowOrchestrationService);
-  }
-
-  /**
    * 获取会话编排服务
    */
   static getSessionOrchestrationService() {
     return this.getService(TYPES.SessionOrchestrationServiceImpl);
   }
 
-  /**
-   * 获取线程协调服务
-   */
-  static getThreadCoordinatorService() {
-    return this.getService(TYPES.ThreadCoordinatorService);
-  }
 
   /**
    * 获取图算法服务

@@ -1,33 +1,39 @@
 /**
- * 函数监控应用服务
- * 负责监控函数执行状态、收集执行指标和处理执行异常
+ * 监控服务
+ *
+ * 负责监控数据收集、指标计算和告警判断，包括：
+ * - 执行指标收集
+ * - 资源使用监控
+ * - 性能指标计算
+ * - 健康状态检查
+ * - 告警管理
+ *
+ * 属于基础设施层，提供技术性的监控支持
  */
 
 import { injectable, inject } from 'inversify';
-import { ILogger, Timestamp } from '../../../domain/common';
-
-/**
- * 工作流函数类型枚举
- */
-export enum WorkflowFunctionType {
-  NODE = 'node',
-  CONDITION = 'condition',
-  ROUTING = 'routing',
-  TRIGGER = 'trigger',
-  TRANSFORM = 'transform'
-}
+import { Timestamp } from '../../../domain/common/value-objects/timestamp';
+import { ILogger } from '../../../domain/common/types/logger-types';
 
 /**
  * 函数执行结果接口
  */
 export interface FunctionExecutionResult {
+  /** 函数ID */
   functionId: string;
+  /** 是否成功 */
   success: boolean;
+  /** 执行耗时（毫秒） */
   executionTime: number;
+  /** 资源使用情况 */
   resourceUsage: {
+    /** 内存使用（MB） */
     memory: number;
+    /** CPU使用率（0-1） */
     cpu: number;
+    /** 网络使用（KB） */
     network: number;
+    /** 磁盘使用（KB） */
     disk: number;
   };
 }
@@ -36,20 +42,35 @@ export interface FunctionExecutionResult {
  * 函数执行指标
  */
 export interface FunctionExecutionMetrics {
+  /** 函数ID */
   functionId: string;
+  /** 函数名称 */
   functionName: string;
-  functionType: WorkflowFunctionType;
+  /** 函数类型 */
+  functionType: string;
+  /** 执行次数 */
   executionCount: number;
+  /** 成功次数 */
   successCount: number;
+  /** 失败次数 */
   errorCount: number;
+  /** 平均执行时间（毫秒） */
   averageExecutionTime: number;
+  /** 最小执行时间（毫秒） */
   minExecutionTime: number;
+  /** 最大执行时间（毫秒） */
   maxExecutionTime: number;
+  /** 总执行时间（毫秒） */
   totalExecutionTime: number;
+  /** 最后执行时间 */
   lastExecutionTime?: Timestamp;
+  /** 最后成功时间 */
   lastSuccessTime?: Timestamp;
+  /** 最后失败时间 */
   lastErrorTime?: Timestamp;
+  /** 错误率（0-1） */
   errorRate: number;
+  /** 成功率（0-1） */
   successRate: number;
 }
 
@@ -57,13 +78,21 @@ export interface FunctionExecutionMetrics {
  * 函数资源使用指标
  */
 export interface FunctionResourceMetrics {
+  /** 函数ID */
   functionId: string;
+  /** 时间戳 */
   timestamp: Timestamp;
+  /** 内存使用（MB） */
   memoryUsage: number;
+  /** CPU使用率（0-1） */
   cpuUsage: number;
+  /** 网络使用（KB） */
   networkUsage: number;
+  /** 磁盘使用（KB） */
   diskUsage: number;
+  /** 活跃连接数 */
   activeConnections: number;
+  /** 队列长度 */
   queueLength: number;
 }
 
@@ -71,16 +100,26 @@ export interface FunctionResourceMetrics {
  * 函数性能指标
  */
 export interface FunctionPerformanceMetrics {
+  /** 函数ID */
   functionId: string;
+  /** 时间戳 */
   timestamp: Timestamp;
-  throughput: number; // 每秒执行次数
+  /** 吞吐量（每秒执行次数） */
+  throughput: number;
+  /** 延迟分布 */
   latency: {
+    /** P50延迟（毫秒） */
     p50: number;
+    /** P90延迟（毫秒） */
     p90: number;
+    /** P95延迟（毫秒） */
     p95: number;
+    /** P99延迟（毫秒） */
     p99: number;
   };
+  /** 并发数 */
   concurrency: number;
+  /** 扩缩容事件数 */
   scalingEvents: number;
 }
 
@@ -88,12 +127,19 @@ export interface FunctionPerformanceMetrics {
  * 函数健康状态
  */
 export interface FunctionHealthStatus {
+  /** 函数ID */
   functionId: string;
+  /** 状态 */
   status: 'healthy' | 'warning' | 'critical' | 'unknown';
+  /** 最后检查时间 */
   lastCheck: Timestamp;
+  /** 运行时间（毫秒） */
   uptime: number;
+  /** 响应时间（毫秒） */
   responseTime: number;
+  /** 错误率（0-1） */
   errorRate: number;
+  /** 告警列表 */
   alerts: FunctionAlert[];
 }
 
@@ -101,13 +147,21 @@ export interface FunctionHealthStatus {
  * 函数告警
  */
 export interface FunctionAlert {
+  /** 告警ID */
   id: string;
+  /** 函数ID */
   functionId: string;
+  /** 告警类型 */
   type: 'error_rate' | 'latency' | 'resource' | 'availability';
+  /** 严重程度 */
   severity: 'low' | 'medium' | 'high' | 'critical';
+  /** 告警消息 */
   message: string;
+  /** 告警时间 */
   timestamp: Timestamp;
+  /** 是否已解决 */
   resolved: boolean;
+  /** 解决时间 */
   resolvedAt?: Timestamp;
 }
 
@@ -115,14 +169,22 @@ export interface FunctionAlert {
  * 监控配置
  */
 export interface MonitoringConfig {
+  /** 指标保留天数 */
   metricsRetentionDays: number;
+  /** 告警阈值 */
   alertThresholds: {
+    /** 错误率阈值 */
     errorRate: number;
+    /** 延迟阈值（毫秒） */
     latency: number;
+    /** 内存使用阈值（0-1） */
     memoryUsage: number;
+    /** CPU使用阈值（0-1） */
     cpuUsage: number;
   };
-  checkInterval: number; // 毫秒
+  /** 检查间隔（毫秒） */
+  checkInterval: number;
+  /** 是否启用自动扩缩容 */
   enableAutoScaling: boolean;
 }
 
@@ -130,28 +192,37 @@ export interface MonitoringConfig {
  * 监控查询参数
  */
 export interface MonitoringQuery {
+  /** 函数ID列表 */
   functionIds?: string[];
-  functionTypes?: WorkflowFunctionType[];
+  /** 函数类型列表 */
+  functionTypes?: string[];
+  /** 时间范围 */
   timeRange?: {
+    /** 开始时间 */
     start: Timestamp;
+    /** 结束时间 */
     end: Timestamp;
   };
+  /** 指标列表 */
   metrics?: string[];
+  /** 聚合方式 */
   aggregation?: 'avg' | 'sum' | 'min' | 'max' | 'count';
-  interval?: number; // 聚合间隔（分钟）
+  /** 聚合间隔（分钟） */
+  interval?: number;
 }
 
 /**
- * 函数监控服务
+ * 监控服务
  */
 @injectable()
-export class FunctionMonitoringService {
+export class MonitoringService {
   private readonly executionMetrics = new Map<string, FunctionExecutionMetrics>();
   private readonly resourceMetrics = new Map<string, FunctionResourceMetrics[]>();
   private readonly performanceMetrics = new Map<string, FunctionPerformanceMetrics[]>();
   private readonly healthStatus = new Map<string, FunctionHealthStatus>();
   private readonly alerts = new Map<string, FunctionAlert[]>();
   private readonly monitoringConfig: MonitoringConfig;
+  private healthCheckInterval?: NodeJS.Timeout;
 
   constructor(
     @inject('Logger') private readonly logger: ILogger
@@ -174,6 +245,8 @@ export class FunctionMonitoringService {
 
   /**
    * 记录函数执行结果
+   *
+   * @param result 执行结果
    */
   async recordFunctionExecution(result: FunctionExecutionResult): Promise<void> {
     const functionId = result.functionId;
@@ -201,6 +274,9 @@ export class FunctionMonitoringService {
 
   /**
    * 获取函数执行指标
+   *
+   * @param functionId 函数ID
+   * @returns 执行指标
    */
   async getExecutionMetrics(functionId: string): Promise<FunctionExecutionMetrics | null> {
     return this.executionMetrics.get(functionId) || null;
@@ -208,6 +284,10 @@ export class FunctionMonitoringService {
 
   /**
    * 获取函数资源使用指标
+   *
+   * @param functionId 函数ID
+   * @param timeRange 时间范围
+   * @returns 资源使用指标列表
    */
   async getResourceMetrics(
     functionId: string,
@@ -227,6 +307,10 @@ export class FunctionMonitoringService {
 
   /**
    * 获取函数性能指标
+   *
+   * @param functionId 函数ID
+   * @param timeRange 时间范围
+   * @returns 性能指标列表
    */
   async getPerformanceMetrics(
     functionId: string,
@@ -246,6 +330,9 @@ export class FunctionMonitoringService {
 
   /**
    * 获取函数健康状态
+   *
+   * @param functionId 函数ID
+   * @returns 健康状态
    */
   async getHealthStatus(functionId: string): Promise<FunctionHealthStatus | null> {
     return this.healthStatus.get(functionId) || null;
@@ -253,6 +340,8 @@ export class FunctionMonitoringService {
 
   /**
    * 获取所有函数的健康状态
+   *
+   * @returns 健康状态列表
    */
   async getAllHealthStatus(): Promise<FunctionHealthStatus[]> {
     return Array.from(this.healthStatus.values());
@@ -260,6 +349,10 @@ export class FunctionMonitoringService {
 
   /**
    * 获取函数告警
+   *
+   * @param functionId 函数ID
+   * @param resolved 是否已解决
+   * @returns 告警列表
    */
   async getAlerts(
     functionId?: string,
@@ -284,6 +377,12 @@ export class FunctionMonitoringService {
 
   /**
    * 创建告警
+   *
+   * @param functionId 函数ID
+   * @param type 告警类型
+   * @param severity 严重程度
+   * @param message 告警消息
+   * @returns 告警
    */
   async createAlert(
     functionId: string,
@@ -319,6 +418,10 @@ export class FunctionMonitoringService {
 
   /**
    * 解决告警
+   *
+   * @param alertId 告警ID
+   * @param functionId 函数ID
+   * @returns 是否成功
    */
   async resolveAlert(alertId: string, functionId: string): Promise<boolean> {
     const alerts = this.alerts.get(functionId);
@@ -344,6 +447,9 @@ export class FunctionMonitoringService {
 
   /**
    * 查询监控数据
+   *
+   * @param query 查询参数
+   * @returns 监控数据
    */
   async queryMonitoringData(query: MonitoringQuery): Promise<{
     executionMetrics: FunctionExecutionMetrics[];
@@ -396,6 +502,10 @@ export class FunctionMonitoringService {
 
   /**
    * 更新执行指标
+   *
+   * @param functionId 函数ID
+   * @param result 执行结果
+   * @param timestamp 时间戳
    */
   private async updateExecutionMetrics(
     functionId: string,
@@ -407,8 +517,8 @@ export class FunctionMonitoringService {
     if (!metrics) {
       metrics = {
         functionId,
-        functionName: result.functionId, // 应该从函数定义获取
-        functionType: WorkflowFunctionType.NODE, // 应该从函数定义获取
+        functionName: result.functionId,
+        functionType: 'unknown',
         executionCount: 0,
         successCount: 0,
         errorCount: 0,
@@ -444,6 +554,10 @@ export class FunctionMonitoringService {
 
   /**
    * 更新资源指标
+   *
+   * @param functionId 函数ID
+   * @param resourceUsage 资源使用情况
+   * @param timestamp 时间戳
    */
   private async updateResourceMetrics(
     functionId: string,
@@ -475,6 +589,9 @@ export class FunctionMonitoringService {
 
   /**
    * 检查告警条件
+   *
+   * @param functionId 函数ID
+   * @param result 执行结果
    */
   private async checkAlertConditions(functionId: string, result: FunctionExecutionResult): Promise<void> {
     const metrics = this.executionMetrics.get(functionId);
@@ -515,6 +632,8 @@ export class FunctionMonitoringService {
 
   /**
    * 更新健康状态
+   *
+   * @param functionId 函数ID
    */
   private async updateHealthStatus(functionId: string): Promise<void> {
     const metrics = this.executionMetrics.get(functionId);
@@ -525,7 +644,7 @@ export class FunctionMonitoringService {
     }
 
     let status: FunctionHealthStatus['status'] = 'healthy';
-    
+
     // 根据指标和告警确定健康状态
     if (metrics.errorRate > 0.1) {
       status = 'critical';
@@ -557,7 +676,7 @@ export class FunctionMonitoringService {
    * 启动健康检查
    */
   private startHealthCheck(): void {
-    setInterval(async () => {
+    this.healthCheckInterval = setInterval(async () => {
       try {
         for (const functionId of this.executionMetrics.keys()) {
           await this.updateHealthStatus(functionId);
@@ -566,6 +685,16 @@ export class FunctionMonitoringService {
         this.logger.error('健康检查失败', error instanceof Error ? error : new Error(String(error)));
       }
     }, this.monitoringConfig.checkInterval);
+  }
+
+  /**
+   * 停止健康检查
+   */
+  stopHealthCheck(): void {
+    if (this.healthCheckInterval) {
+      clearInterval(this.healthCheckInterval);
+      this.healthCheckInterval = undefined;
+    }
   }
 
   /**
@@ -599,6 +728,8 @@ export class FunctionMonitoringService {
 
   /**
    * 获取监控配置
+   *
+   * @returns 监控配置
    */
   getMonitoringConfig(): MonitoringConfig {
     return { ...this.monitoringConfig };
@@ -606,9 +737,17 @@ export class FunctionMonitoringService {
 
   /**
    * 更新监控配置
+   *
+   * @param config 配置更新
    */
   updateMonitoringConfig(config: Partial<MonitoringConfig>): void {
     Object.assign(this.monitoringConfig, config);
     this.logger.info('更新监控配置', config);
+
+    // 如果检查间隔改变，重启健康检查
+    if (config.checkInterval !== undefined) {
+      this.stopHealthCheck();
+      this.startHealthCheck();
+    }
   }
 }

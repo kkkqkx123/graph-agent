@@ -19,6 +19,3 @@ export * from './repositories';
 
 // 导出checkpoint子模块
 export * from './checkpoints';
-
-// 导出服务接口
-export * from './services';

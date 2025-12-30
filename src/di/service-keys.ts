@@ -18,11 +18,12 @@ import { HistoryRepository } from '../domain/history/repositories/history-reposi
 import { GraphAlgorithmService } from '../domain/workflow/services/graph-algorithm-service.interface';
 import { GraphValidationService } from '../domain/workflow/services/graph-validation-service.interface';
 import { ContextProcessorService } from '../domain/workflow/services/context-processor-service.interface';
-import { WorkflowOrchestrationService } from '../application/workflow/services/workflow-orchestration-service';
 import { PromptService } from '../application/prompts/services/prompt-service';
 import { IHumanRelayService } from '../domain/llm/services/human-relay-service.interface';
 import { ThreadLifecycleService } from '../application/threads/services/thread-lifecycle-service';
 import { ThreadExecutionService } from '../application/threads/services/thread-execution-service';
+import { ThreadMonitoringService } from '../application/threads/services/thread-monitoring-service';
+import { SessionMonitoringService } from '../application/sessions/services/session-monitoring-service';
 
 // Infrastructure层实现
 import { SessionRepository as SessionInfrastructureRepository } from '../infrastructure/persistence/repositories/session-repository';
@@ -34,6 +35,8 @@ import { HistoryRepository as HistoryInfrastructureRepository } from '../infrast
 import { GraphAlgorithmServiceImpl } from '../infrastructure/workflow/services/graph-algorithm-service';
 import { GraphValidationServiceImpl } from '../infrastructure/workflow/services/graph-validation-service';
 import { ContextProcessorServiceImpl } from '../infrastructure/workflow/services/context-processor-service';
+import { FunctionExecutionEngine } from '../infrastructure/workflow/services/function-execution-engine';
+import { MonitoringService } from '../infrastructure/workflow/services/monitoring-service';
 import { ConnectionManager } from '../infrastructure/persistence/connections/connection-manager';
 import { PromptBuilder } from '../infrastructure/prompts/services/prompt-builder';
 import { TemplateProcessor } from '../infrastructure/prompts/services/template-processor';
@@ -79,9 +82,6 @@ export interface ServiceTypes {
 
   // ========== Application层接口（仅用于类型定义） ==========
 
-  // 工作流服务
-  WorkflowOrchestrationService: WorkflowOrchestrationService;
-
   // 提示词服务
   PromptService: PromptService;
 
@@ -102,6 +102,8 @@ export interface ServiceTypes {
   GraphAlgorithmServiceImpl: GraphAlgorithmServiceImpl;
   GraphValidationServiceImpl: GraphValidationServiceImpl;
   ContextProcessorServiceImpl: ContextProcessorServiceImpl;
+  FunctionExecutionEngine: FunctionExecutionEngine;
+  MonitoringService: MonitoringService;
 
   // 基础设施服务
   ConnectionManager: ConnectionManager;
@@ -121,8 +123,12 @@ export interface ServiceTypes {
   // 线程相关服务
   ThreadLifecycleService: ThreadLifecycleService;
   ThreadExecutionService: ThreadExecutionService;
+  ThreadMonitoringService: ThreadMonitoringService;
   ThreadDefinitionRepository: any; // TODO: 添加具体类型
   ThreadExecutionRepository: any; // TODO: 添加具体类型
+
+  // 会话相关服务
+  SessionMonitoringService: SessionMonitoringService;
 
   // ========== Application层实现 ==========
 
@@ -131,7 +137,6 @@ export interface ServiceTypes {
   SessionLifecycleServiceImpl: SessionLifecycleService;
   SessionManagementServiceImpl: SessionManagementService;
   SessionMaintenanceServiceImpl: SessionMaintenanceService;
-  WorkflowOrchestrationServiceImpl: WorkflowOrchestrationService;
   PromptServiceImpl: PromptService;
 
   // LLM服务实现
@@ -176,9 +181,6 @@ export const TYPES: {
 
   // ========== Application层接口（仅用于类型定义） ==========
 
-  // 工作流服务
-  WorkflowOrchestrationService: Symbol.for('WorkflowOrchestrationService') as TypedServiceIdentifier<'WorkflowOrchestrationService'>,
-
   // 提示词服务
   PromptService: Symbol.for('PromptService') as TypedServiceIdentifier<'PromptService'>,
 
@@ -199,6 +201,8 @@ export const TYPES: {
   GraphAlgorithmServiceImpl: Symbol.for('GraphAlgorithmServiceImpl') as TypedServiceIdentifier<'GraphAlgorithmServiceImpl'>,
   GraphValidationServiceImpl: Symbol.for('GraphValidationServiceImpl') as TypedServiceIdentifier<'GraphValidationServiceImpl'>,
   ContextProcessorServiceImpl: Symbol.for('ContextProcessorServiceImpl') as TypedServiceIdentifier<'ContextProcessorServiceImpl'>,
+  FunctionExecutionEngine: Symbol.for('FunctionExecutionEngine') as TypedServiceIdentifier<'FunctionExecutionEngine'>,
+  MonitoringService: Symbol.for('MonitoringService') as TypedServiceIdentifier<'MonitoringService'>,
 
   // 基础设施服务
   ConnectionManager: Symbol.for('ConnectionManager') as TypedServiceIdentifier<'ConnectionManager'>,
@@ -218,8 +222,12 @@ export const TYPES: {
   // 线程相关服务
   ThreadLifecycleService: Symbol.for('ThreadLifecycleService') as TypedServiceIdentifier<'ThreadLifecycleService'>,
   ThreadExecutionService: Symbol.for('ThreadExecutionService') as TypedServiceIdentifier<'ThreadExecutionService'>,
+  ThreadMonitoringService: Symbol.for('ThreadMonitoringService') as TypedServiceIdentifier<'ThreadMonitoringService'>,
   ThreadDefinitionRepository: Symbol.for('ThreadDefinitionRepository') as TypedServiceIdentifier<'ThreadDefinitionRepository'>,
   ThreadExecutionRepository: Symbol.for('ThreadExecutionRepository') as TypedServiceIdentifier<'ThreadExecutionRepository'>,
+
+  // 会话相关服务
+  SessionMonitoringService: Symbol.for('SessionMonitoringService') as TypedServiceIdentifier<'SessionMonitoringService'>,
 
   // ========== Application层实现 ==========
 
@@ -228,7 +236,6 @@ export const TYPES: {
   SessionLifecycleServiceImpl: Symbol.for('SessionLifecycleServiceImpl') as TypedServiceIdentifier<'SessionLifecycleServiceImpl'>,
   SessionManagementServiceImpl: Symbol.for('SessionManagementServiceImpl') as TypedServiceIdentifier<'SessionManagementServiceImpl'>,
   SessionMaintenanceServiceImpl: Symbol.for('SessionMaintenanceServiceImpl') as TypedServiceIdentifier<'SessionMaintenanceServiceImpl'>,
-  WorkflowOrchestrationServiceImpl: Symbol.for('WorkflowOrchestrationServiceImpl') as TypedServiceIdentifier<'WorkflowOrchestrationServiceImpl'>,
   PromptServiceImpl: Symbol.for('PromptServiceImpl') as TypedServiceIdentifier<'PromptServiceImpl'>,
 
   // LLM服务实现

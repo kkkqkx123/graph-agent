@@ -16,3 +16,6 @@ export { SessionResourceService } from './session-resource-service';
 
 // 导出编排服务
 export { SessionOrchestrationService } from './session-orchestration-service';
+
+// 导出监控服务
+export { SessionMonitoringService } from './session-monitoring-service';

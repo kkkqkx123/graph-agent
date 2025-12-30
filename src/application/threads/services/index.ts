@@ -12,6 +12,9 @@ export * from './thread-management-service';
 // 执行服务
 export * from './thread-execution-service';
 
+// 监控服务
+export * from './thread-monitoring-service';
+
 // 操作服务
 export * from './thread-fork-service';
 export * from './thread-copy-service';

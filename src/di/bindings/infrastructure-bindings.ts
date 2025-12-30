@@ -19,7 +19,8 @@ import { HistoryRepository as HistoryInfrastructureRepository } from '../../infr
 import { GraphAlgorithmServiceImpl } from '../../infrastructure/workflow/services/graph-algorithm-service';
 import { GraphValidationServiceImpl } from '../../infrastructure/workflow/services/graph-validation-service';
 import { ContextProcessorServiceImpl } from '../../infrastructure/workflow/services/context-processor-service';
-import { ThreadCoordinatorInfrastructureService } from '../../infrastructure/threads/services/thread-coordinator-service';
+import { FunctionExecutionEngine } from '../../infrastructure/workflow/services/function-execution-engine';
+import { MonitoringService } from '../../infrastructure/workflow/services/monitoring-service';
 
 // 基础设施服务
 import { ConnectionManager } from '../../infrastructure/persistence/connections/connection-manager';
@@ -32,7 +33,6 @@ import { EdgeExecutor } from '../../infrastructure/workflow/edges/edge-executor'
 import { EdgeEvaluator } from '../../infrastructure/workflow/services/edge-evaluator';
 import { NodeRouter } from '../../infrastructure/workflow/services/node-router';
 import { WorkflowExecutionEngine } from '../../infrastructure/workflow/services/workflow-execution-engine';
-import { ThreadExecutionEngine } from '../../infrastructure/threads';
 import { HookExecutor } from '../../infrastructure/workflow/hooks/hook-executor';
 import { Logger } from '../../infrastructure/logging/logger';
 
@@ -54,7 +54,8 @@ export const infrastructureBindings = new ContainerModule((bind: any) => {
   bind(TYPES.GraphAlgorithmServiceImpl).to(GraphAlgorithmServiceImpl).inSingletonScope();
   bind(TYPES.GraphValidationServiceImpl).to(GraphValidationServiceImpl).inSingletonScope();
   bind(TYPES.ContextProcessorServiceImpl).to(ContextProcessorServiceImpl).inSingletonScope();
-  bind(TYPES.ThreadCoordinatorServiceImpl).to(ThreadCoordinatorInfrastructureService).inSingletonScope();
+  bind(TYPES.FunctionExecutionEngine).to(FunctionExecutionEngine).inSingletonScope();
+  bind(TYPES.MonitoringService).to(MonitoringService).inSingletonScope();
 
   // ========== 基础设施服务绑定 ==========
 
@@ -68,7 +69,6 @@ export const infrastructureBindings = new ContainerModule((bind: any) => {
   bind(TYPES.EdgeEvaluator).to(EdgeEvaluator).inSingletonScope();
   bind(TYPES.NodeRouter).to(NodeRouter).inSingletonScope();
   bind(TYPES.WorkflowExecutionEngine).to(WorkflowExecutionEngine).inSingletonScope();
-  bind(TYPES.ThreadExecutionEngine).to(ThreadExecutionEngine).inSingletonScope();
   bind(TYPES.HookExecutor).to(HookExecutor).inSingletonScope();
   bind(TYPES.Logger).to(Logger).inSingletonScope();
 });

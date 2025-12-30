@@ -10,11 +10,12 @@ import { TYPES } from '../service-keys';
 // Application层服务实现
 import { SessionOrchestrationService } from '../../application/sessions/services/session-orchestration-service';
 import { SessionResourceService } from '../../application/sessions/services/session-resource-service';
-import { WorkflowOrchestrationService } from '../../application/workflow/services/workflow-orchestration-service';
+import { SessionMonitoringService } from '../../application/sessions/services/session-monitoring-service';
 import { PromptService } from '../../application/prompts/services/prompt-service';
 import { HumanRelayService } from '../../application/llm/services/human-relay-service';
 import { ThreadLifecycleService } from '../../application/threads/services/thread-lifecycle-service';
 import { ThreadExecutionService } from '../../application/threads/services/thread-execution-service';
+import { ThreadMonitoringService } from '../../application/threads/services/thread-monitoring-service';
 
 // Domain层接口
 import { SessionRepository } from '../../domain/sessions/repositories/session-repository';
@@ -25,6 +26,9 @@ import { GraphAlgorithmService } from '../../domain/workflow/services/graph-algo
 import { GraphValidationService } from '../../domain/workflow/services/graph-validation-service.interface';
 import { ContextProcessorService } from '../../domain/workflow/services/context-processor-service.interface';
 import { IHumanRelayService } from '../../domain/llm/services/human-relay-service.interface';
+
+// Infrastructure层服务
+import { WorkflowExecutionEngine } from '../../infrastructure/workflow/services/workflow-execution-engine';
 
 /**
  * Application层绑定模块
@@ -41,9 +45,8 @@ export const applicationBindings = new ContainerModule((bind: any) => {
     .to(SessionResourceService)
     .inSingletonScope();
 
-  // 工作流服务
-  bind(TYPES.WorkflowOrchestrationServiceImpl)
-    .to(WorkflowOrchestrationService)
+  bind(TYPES.SessionMonitoringService)
+    .to(SessionMonitoringService)
     .inSingletonScope();
 
   // 线程服务
@@ -53,6 +56,10 @@ export const applicationBindings = new ContainerModule((bind: any) => {
 
   bind(TYPES.ThreadExecutionService)
     .to(ThreadExecutionService)
+    .inSingletonScope();
+
+  bind(TYPES.ThreadMonitoringService)
+    .to(ThreadMonitoringService)
     .inSingletonScope();
 
   // 提示词服务
@@ -66,6 +73,20 @@ export const applicationBindings = new ContainerModule((bind: any) => {
     .inSingletonScope();
 
   // ========== Domain层接口到Infrastructure实现的绑定 ==========
+
+  // 工作流执行引擎
+  bind(TYPES.WorkflowExecutionEngine)
+    .toDynamicValue((context: any) => {
+      return context.container.get(TYPES.WorkflowExecutionEngine);
+    })
+    .inSingletonScope();
+
+  // 监控服务
+  bind(TYPES.MonitoringService)
+    .toDynamicValue((context: any) => {
+      return context.container.get(TYPES.MonitoringService);
+    })
+    .inSingletonScope();
 
   // 仓储接口绑定
   bind(TYPES.SessionRepository)

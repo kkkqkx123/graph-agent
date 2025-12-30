@@ -8,13 +8,17 @@
  * - 执行结果处理
  *
  * 属于应用层，负责业务流程编排
+ * 直接调用基础设施层的WorkflowExecutionEngine执行工作流
  */
 
 import { injectable, inject } from 'inversify';
 import { Thread, ThreadRepository } from '../../../domain/threads';
-import { ID, ILogger } from '../../../domain/common';
+import { Workflow, WorkflowRepository } from '../../../domain/workflow';
+import { ID, ILogger, Timestamp } from '../../../domain/common';
 import { BaseApplicationService } from '../../common/base-application-service';
-import { WorkflowOrchestrationService } from '../../workflow/services/workflow-orchestration-service';
+import { WorkflowExecutionEngine } from '../../../infrastructure/workflow/services/workflow-execution-engine';
+import { ExecutionContext } from '../../../domain/threads/value-objects/execution-context';
+import { PromptContext } from '../../../domain/workflow/value-objects/context/prompt-context';
 import { TYPES } from '../../../di/service-keys';
 
 /**
@@ -42,7 +46,8 @@ export interface ThreadExecutionResult {
 export class ThreadExecutionService extends BaseApplicationService {
   constructor(
     @inject(TYPES.ThreadRepository) private readonly threadRepository: ThreadRepository,
-    @inject(TYPES.WorkflowOrchestrationService) private readonly workflowOrchestrationService: WorkflowOrchestrationService,
+    @inject(TYPES.WorkflowRepository) private readonly workflowRepository: WorkflowRepository,
+    @inject(TYPES.WorkflowExecutionEngine) private readonly workflowExecutionEngine: WorkflowExecutionEngine,
     @inject(TYPES.Logger) logger: ILogger
   ) {
     super(logger);
@@ -73,6 +78,17 @@ export class ThreadExecutionService extends BaseApplicationService {
           throw new Error(`只能执行待执行状态的线程，当前状态: ${thread.status.toString()}`);
         }
 
+        // 获取工作流
+        const workflow = await this.workflowRepository.findById(thread.workflowId);
+        if (!workflow) {
+          throw new Error(`工作流不存在: ${thread.workflowId.toString()}`);
+        }
+
+        // 验证工作流状态
+        if (!workflow.status.isActive()) {
+          throw new Error(`工作流不是活跃状态，当前状态: ${workflow.status.toString()}`);
+        }
+
         // 启动线程
         thread.start();
         await this.threadRepository.save(thread);
@@ -83,15 +99,15 @@ export class ThreadExecutionService extends BaseApplicationService {
         });
 
         try {
-          // 执行工作流
-          const workflowResult = await this.workflowOrchestrationService.executeWorkflow(
-            thread.sessionId,
-            thread.workflowId,
-            inputData
-          );
+          // 创建执行上下文
+          const promptContext = PromptContext.create('');
+          const context = ExecutionContext.create(promptContext) as ExecutionContext;
+
+          // 直接调用基础设施层的WorkflowExecutionEngine执行工作流
+          const workflowResult = await this.workflowExecutionEngine.execute(workflow, context);
 
           // 根据工作流执行结果更新线程状态
-          if (workflowResult.status === 'completed') {
+          if (workflowResult.success) {
             thread.complete();
             await this.threadRepository.save(thread);
 
@@ -103,15 +119,12 @@ export class ThreadExecutionService extends BaseApplicationService {
             return {
               success: true,
               threadId: thread.id.toString(),
-              result: workflowResult.output,
+              result: workflowResult.results ? Object.fromEntries(workflowResult.results) : {},
               duration: workflowResult.duration,
               status: 'completed'
             };
-          } else if (workflowResult.status === 'failed') {
-            const errorMessage = workflowResult.logs
-              .filter(log => log.level === 'error')
-              .map(log => log.message)
-              .join('; ') || '工作流执行失败';
+          } else {
+            const errorMessage = workflowResult.error || '工作流执行失败';
 
             thread.fail(errorMessage);
             await this.threadRepository.save(thread);
@@ -127,23 +140,6 @@ export class ThreadExecutionService extends BaseApplicationService {
               error: errorMessage,
               duration: workflowResult.duration,
               status: 'failed'
-            };
-          } else {
-            // 其他状态（cancelled等）
-            thread.cancel();
-            await this.threadRepository.save(thread);
-
-            this.logger.warn('线程执行被取消', {
-              threadId: thread.id.toString(),
-              status: workflowResult.status
-            });
-
-            return {
-              success: false,
-              threadId: thread.id.toString(),
-              error: `工作流执行状态: ${workflowResult.status}`,
-              duration: workflowResult.duration,
-              status: 'cancelled'
             };
           }
         } catch (error) {
@@ -213,7 +209,7 @@ export class ThreadExecutionService extends BaseApplicationService {
     completedAt?: string;
     errorMessage?: string;
     currentStep?: string;
-  }> {
+  } | null> {
     return this.executeGetOperation(
       '线程执行状态',
       async () => {
