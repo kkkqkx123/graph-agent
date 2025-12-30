@@ -4,6 +4,3 @@
 
 // 服务
 export { PromptService } from './services/prompt-service';
-
-// DTO
-export * from './dtos';

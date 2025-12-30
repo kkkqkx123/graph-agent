@@ -6,12 +6,42 @@
  */
 
 import { injectable, inject } from 'inversify';
-import { SessionOrchestrationService, ThreadAction } from '../../sessions/interfaces/session-orchestration-service.interface';
+import { SessionOrchestrationServiceImpl } from '../../sessions/services/session-orchestration-service';
 import { ThreadCoordinatorService } from '../../../domain/threads';
 import { GraphAlgorithmService, GraphValidationService, WorkflowRepository } from '../../../domain/workflow';
-import { WorkflowExecutionResultDto } from '../dtos';
 import { ID, Timestamp } from '../../../domain/common';
 import { TYPES } from '../../../di/service-keys';
+
+/**
+ * 线程动作类型
+ */
+export type ThreadAction = 'start' | 'pause' | 'resume' | 'complete' | 'fail' | 'cancel';
+
+/**
+ * 工作流执行结果
+ */
+export interface WorkflowExecutionResult {
+  executionId: string;
+  workflowId: string;
+  status: 'pending' | 'running' | 'completed' | 'failed' | 'cancelled';
+  startTime: string;
+  endTime: string;
+  duration: number;
+  output: Record<string, unknown>;
+  logs: Array<{
+    timestamp: string;
+    level: 'info' | 'warn' | 'error';
+    message: string;
+  }>;
+  statistics: {
+    executedNodes: number;
+    totalNodes: number;
+    executedEdges: number;
+    totalEdges: number;
+    executionPath: string[];
+  };
+  metadata: Record<string, unknown>;
+}
 
 /**
  * 工作流编排服务
@@ -19,7 +49,7 @@ import { TYPES } from '../../../di/service-keys';
 @injectable()
 export class WorkflowOrchestrationService {
   constructor(
-    @inject(TYPES.SessionOrchestrationService) private readonly sessionOrchestration: SessionOrchestrationService,
+    @inject(TYPES.SessionOrchestrationServiceImpl) private readonly sessionOrchestration: SessionOrchestrationServiceImpl,
     @inject(TYPES.ThreadCoordinatorService) private readonly threadCoordinator: ThreadCoordinatorService,
     @inject(TYPES.GraphAlgorithmService) private readonly graphAlgorithm: GraphAlgorithmService,
     @inject(TYPES.GraphValidationService) private readonly graphValidation: GraphValidationService,
@@ -30,7 +60,7 @@ export class WorkflowOrchestrationService {
    * 执行工作流
    * 委托给SessionOrchestrationService进行编排
    */
-  async executeWorkflow(sessionId: ID, workflowId: ID, input: unknown): Promise<WorkflowExecutionResultDto> {
+  async executeWorkflow(sessionId: ID, workflowId: ID, input: unknown): Promise<WorkflowExecutionResult> {
     // 1. 验证工作流存在
     const workflow = await this.workflowRepository.findById(workflowId);
     if (!workflow) {
@@ -58,7 +88,7 @@ export class WorkflowOrchestrationService {
   /**
    * 并行执行多个工作流
    */
-  async executeWorkflowsParallel(sessionId: ID, workflowIds: ID[], input: unknown): Promise<WorkflowExecutionResultDto[]> {
+  async executeWorkflowsParallel(sessionId: ID, workflowIds: ID[], input: unknown): Promise<WorkflowExecutionResult[]> {
     // 1. 验证所有工作流存在
     for (const workflowId of workflowIds) {
       const workflow = await this.workflowRepository.findById(workflowId);

@@ -30,6 +30,7 @@ import { IHumanRelayService } from '../../domain/llm/services/human-relay-servic
 export const applicationBindings = new ContainerModule((bind: any) => {
   // ========== Application层服务绑定 ==========
 
+  // 会话服务
   bind(TYPES.SessionOrchestrationServiceImpl)
     .to(SessionOrchestrationServiceImpl)
     .inSingletonScope();
@@ -38,15 +39,17 @@ export const applicationBindings = new ContainerModule((bind: any) => {
     .to(SessionResourceServiceImpl)
     .inSingletonScope();
 
+  // 工作流服务
   bind(TYPES.WorkflowOrchestrationServiceImpl)
     .to(WorkflowOrchestrationService)
     .inSingletonScope();
 
+  // 提示词服务
   bind(TYPES.PromptServiceImpl)
     .to(PromptService)
     .inSingletonScope();
 
-  // LLM服务绑定
+  // LLM服务
   bind(TYPES.HumanRelayServiceImpl)
     .to(HumanRelayService)
     .inSingletonScope();
@@ -98,35 +101,5 @@ export const applicationBindings = new ContainerModule((bind: any) => {
     .inSingletonScope();
 
   // ========== Application层接口到实现的绑定 ==========
-
-  bind(TYPES.SessionOrchestrationService)
-    .toDynamicValue((context: any) => {
-      return context.container.get(TYPES.SessionOrchestrationServiceImpl);
-    })
-    .inSingletonScope();
-
-  bind(TYPES.SessionResourceService)
-    .toDynamicValue((context: any) => {
-      return context.container.get(TYPES.SessionResourceServiceImpl);
-    })
-    .inSingletonScope();
-
-  bind(TYPES.WorkflowOrchestrationService)
-    .toDynamicValue((context: any) => {
-      return context.container.get(TYPES.WorkflowOrchestrationServiceImpl);
-    })
-    .inSingletonScope();
-
-  bind(TYPES.PromptService)
-    .toDynamicValue((context: any) => {
-      return context.container.get(TYPES.PromptServiceImpl);
-    })
-    .inSingletonScope();
-
-  // LLM服务接口绑定
-  bind(TYPES.HumanRelayService)
-    .toDynamicValue((context: any) => {
-      return context.container.get(TYPES.HumanRelayServiceImpl) as IHumanRelayService;
-    })
-    .inSingletonScope();
+  // 注意：Application层服务直接绑定实现类，不使用接口
 });

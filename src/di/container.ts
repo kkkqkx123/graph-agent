@@ -274,7 +274,7 @@ export class AppContainer {
    * 获取会话编排服务
    */
   static getSessionOrchestrationService() {
-    return this.getService(TYPES.SessionOrchestrationService);
+    return this.getService(TYPES.SessionOrchestrationServiceImpl);
   }
 
   /**

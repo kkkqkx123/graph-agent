@@ -4,7 +4,7 @@
  * 定义所有服务的唯一标识符，用于依赖注入
  * 提供完整的类型映射，确保编译时类型检查
  *
- * 注意：只注册实现类，不注册接口
+ * 注意：Application层服务直接绑定实现类，不使用接口
  */
 
 // ========== 导入服务类型 ==========
@@ -19,8 +19,6 @@ import { GraphAlgorithmService } from '../domain/workflow/services/graph-algorit
 import { GraphValidationService } from '../domain/workflow/services/graph-validation-service.interface';
 import { ContextProcessorService } from '../domain/workflow/services/context-processor-service.interface';
 import { ThreadCoordinatorService } from '../domain/threads/services/thread-coordinator-service.interface';
-import { SessionOrchestrationService } from '../application/sessions/interfaces/session-orchestration-service.interface';
-import { SessionResourceService } from '../application/sessions/interfaces/session-resource-service.interface';
 import { WorkflowOrchestrationService } from '../application/workflow/services/workflow-orchestration-service';
 import { PromptService } from '../application/prompts/services/prompt-service';
 import { IHumanRelayService } from '../domain/llm/services/human-relay-service.interface';
@@ -77,10 +75,6 @@ export interface ServiceTypes {
   ThreadCoordinatorService: ThreadCoordinatorService;
 
   // ========== Application层接口（仅用于类型定义） ==========
-
-  // 会话服务
-  SessionOrchestrationService: SessionOrchestrationService;
-  SessionResourceService: SessionResourceService;
 
   // 工作流服务
   WorkflowOrchestrationService: WorkflowOrchestrationService;
@@ -174,10 +168,6 @@ export const TYPES: {
   ThreadCoordinatorService: Symbol.for('ThreadCoordinatorService') as TypedServiceIdentifier<'ThreadCoordinatorService'>,
 
   // ========== Application层接口（仅用于类型定义） ==========
-
-  // 会话服务
-  SessionOrchestrationService: Symbol.for('SessionOrchestrationService') as TypedServiceIdentifier<'SessionOrchestrationService'>,
-  SessionResourceService: Symbol.for('SessionResourceService') as TypedServiceIdentifier<'SessionResourceService'>,
 
   // 工作流服务
   WorkflowOrchestrationService: Symbol.for('WorkflowOrchestrationService') as TypedServiceIdentifier<'WorkflowOrchestrationService'>,

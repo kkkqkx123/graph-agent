@@ -1,13 +1,12 @@
 import { injectable } from 'inversify';
-import { SessionResourceService } from '../interfaces/session-resource-service.interface';
 import { SessionRepository } from '../../../domain/sessions';
 import { ID, ResourceAllocation, ResourceRequirement, ResourceLimits, SessionQuota, QuotaUsage } from '../../../domain/common';
 
 /**
- * 会话资源服务实现
+ * 会话资源服务
  */
 @injectable()
-export class SessionResourceServiceImpl implements SessionResourceService {
+export class SessionResourceServiceImpl {
   constructor(
     private readonly sessionRepository: SessionRepository
   ) {}

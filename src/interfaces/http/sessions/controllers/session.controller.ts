@@ -1,21 +1,16 @@
 /**
  * 会话HTTP控制器
- * 负责处理HTTP请求和响应，使用DTO进行数据转换
+ * 负责处理HTTP请求和响应，直接返回领域对象
  */
 
 import { Request, Response } from 'express';
 import { SessionService } from '../../../../application/sessions/services/session-service';
-import { SessionConverter, SessionInfo } from '../dtos';
 
 /**
  * 会话控制器
  */
 export class SessionController {
-  private sessionConverter: SessionConverter;
-
-  constructor(private sessionService: SessionService) {
-    this.sessionConverter = new SessionConverter();
-  }
+  constructor(private sessionService: SessionService) {}
 
   /**
    * 获取会话信息
@@ -29,8 +24,7 @@ export class SessionController {
         return;
       }
       
-      const dto = this.sessionConverter.toDto(session);
-      res.json(dto);
+      res.json(session);
     } catch (error) {
       res.status(500).json({ error: 'Internal server error' });
     }
@@ -42,8 +36,7 @@ export class SessionController {
   async listSessions(req: Request, res: Response): Promise<void> {
     try {
       const sessions = await this.sessionService.listSessions();
-      const dtos = this.sessionConverter.toDtoList(sessions);
-      res.json(dtos);
+      res.json(sessions);
     } catch (error) {
       res.status(500).json({ error: 'Internal server error' });
     }
@@ -54,17 +47,13 @@ export class SessionController {
    */
   async createSession(req: Request, res: Response): Promise<void> {
     try {
-      const sessionId = await this.sessionService.createSession(req.body);
+      const session = await this.sessionService.createSession(
+        req.body.userId,
+        req.body.title,
+        req.body.config
+      );
       
-      // 获取完整的会话信息
-      const session = await this.sessionService.getSessionInfo(sessionId);
-      if (!session) {
-        res.status(500).json({ error: 'Failed to retrieve created session' });
-        return;
-      }
-      
-      const dto = this.sessionConverter.toDto(session);
-      res.status(201).json(dto);
+      res.status(201).json(session);
     } catch (error) {
       res.status(400).json({ error: (error as Error).message });
     }
@@ -80,8 +69,7 @@ export class SessionController {
         sessionId,
         req.body.userId
       );
-      const dto = this.sessionConverter.toDto(session);
-      res.json(dto);
+      res.json(session);
     } catch (error) {
       res.status(400).json({ error: (error as Error).message });
     }
@@ -98,8 +86,7 @@ export class SessionController {
         req.body.userId,
         req.body.reason
       );
-      const dto = this.sessionConverter.toDto(session);
-      res.json(dto);
+      res.json(session);
     } catch (error) {
       res.status(400).json({ error: (error as Error).message });
     }
@@ -116,8 +103,7 @@ export class SessionController {
         req.body.userId,
         req.body.reason
       );
-      const dto = this.sessionConverter.toDto(session);
-      res.json(dto);
+      res.json(session);
     } catch (error) {
       res.status(400).json({ error: (error as Error).message });
     }
@@ -133,8 +119,7 @@ export class SessionController {
         sessionId,
         req.body.config
       );
-      const dto = this.sessionConverter.toDto(session);
-      res.json(dto);
+      res.json(session);
     } catch (error) {
       res.status(400).json({ error: (error as Error).message });
     }
@@ -150,8 +135,7 @@ export class SessionController {
         sessionId,
         req.body.userId
       );
-      const dto = this.sessionConverter.toDto(session);
-      res.json(dto);
+      res.json(session);
     } catch (error) {
       res.status(400).json({ error: (error as Error).message });
     }

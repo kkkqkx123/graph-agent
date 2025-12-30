@@ -1,21 +1,36 @@
 import { injectable, inject } from 'inversify';
-import { SessionOrchestrationService, ThreadAction, StateChange } from '../interfaces/session-orchestration-service.interface';
 import { SessionRepository } from '../../../domain/sessions';
 import { ThreadRepository, ThreadCoordinatorService } from '../../../domain/threads';
-import { SessionResourceService } from '../interfaces/session-resource-service.interface';
-import { WorkflowExecutionResultDto } from '../../workflow/dtos';
-import { ID, Timestamp } from '../../../domain/common';
+import { SessionResourceServiceImpl } from './session-resource-service';
+import { WorkflowExecutionResult } from '../../workflow/services/workflow-orchestration-service';
+import { ID } from '../../../domain/common';
 import { TYPES } from '../../../di/service-keys';
 
 /**
- * 会话编排服务实现
+ * 线程动作类型
+ */
+export type ThreadAction = 'start' | 'pause' | 'resume' | 'complete' | 'fail' | 'cancel';
+
+/**
+ * 状态变更接口
+ */
+export interface StateChange {
+  readonly type: 'thread' | 'session' | 'resource';
+  readonly id: ID;
+  readonly oldState: string;
+  readonly newState: string;
+  readonly timestamp: Date;
+}
+
+/**
+ * 会话编排服务
  */
 @injectable()
-export class SessionOrchestrationServiceImpl implements SessionOrchestrationService {
+export class SessionOrchestrationServiceImpl {
   constructor(
     @inject(TYPES.SessionRepository) private readonly sessionRepository: SessionRepository,
     @inject(TYPES.ThreadRepository) private readonly threadRepository: ThreadRepository,
-    @inject(TYPES.SessionResourceService) private readonly sessionResourceService: SessionResourceService,
+    @inject(TYPES.SessionResourceServiceImpl) private readonly sessionResourceService: SessionResourceServiceImpl,
     @inject(TYPES.ThreadCoordinatorService) private readonly threadCoordinator: ThreadCoordinatorService
   ) { }
 
@@ -26,7 +41,7 @@ export class SessionOrchestrationServiceImpl implements SessionOrchestrationServ
     sessionId: ID,
     workflowId: ID,
     context: Record<string, unknown>
-  ): Promise<WorkflowExecutionResultDto> {
+  ): Promise<WorkflowExecutionResult> {
     // 检查会话是否存在
     const session = await this.sessionRepository.findByIdOrFail(sessionId);
 
@@ -41,7 +56,7 @@ export class SessionOrchestrationServiceImpl implements SessionOrchestrationServ
 
     try {
       // 简化的执行逻辑
-      const result: WorkflowExecutionResultDto = {
+      const result: WorkflowExecutionResult = {
         executionId: ID.generate().toString(),
         workflowId: workflowId.toString(),
         status: 'completed',
@@ -86,7 +101,7 @@ export class SessionOrchestrationServiceImpl implements SessionOrchestrationServ
     sessionId: ID,
     workflowIds: ID[],
     context: Record<string, unknown>
-  ): Promise<WorkflowExecutionResultDto[]> {
+  ): Promise<WorkflowExecutionResult[]> {
     // 检查会话是否存在
     const session = await this.sessionRepository.findByIdOrFail(sessionId);
 
@@ -106,7 +121,7 @@ export class SessionOrchestrationServiceImpl implements SessionOrchestrationServ
 
     try {
       // 简化的并行执行逻辑
-      const results: WorkflowExecutionResultDto[] = workflowIds.map((id, index) => ({
+      const results: WorkflowExecutionResult[] = workflowIds.map((id, index) => ({
         executionId: ID.generate().toString(),
         workflowId: id.toString(),
         status: 'completed',

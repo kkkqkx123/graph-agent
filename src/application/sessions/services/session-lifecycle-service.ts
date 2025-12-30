@@ -1,13 +1,21 @@
 /**
  * 会话生命周期服务
- * 
+ *
  * 负责会话的创建、激活、暂停和终止等生命周期管理
  */
 
 import { Session, SessionRepository, SessionStatus, SessionConfig, SessionConfigProps } from '../../../domain/sessions';
 import { BaseApplicationService } from '../../common/base-application-service';
-import { CreateSessionRequest } from '../index';
 import { ILogger, ID } from '../../../domain/common';
+
+/**
+ * 创建会话请求
+ */
+export interface CreateSessionRequest {
+  userId?: string;
+  title?: string;
+  config?: Record<string, unknown>;
+}
 
 /**
  * 会话生命周期服务
