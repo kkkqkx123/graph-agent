@@ -300,11 +300,7 @@ export class OpenAIResponseClient extends BaseLLMClient {
     return true;
   }
 
-  public override async waitForRateLimitReset(timeout?: number): Promise<boolean> {
-    return true;
-  }
-
-  public override async getCacheStatistics(): Promise<{
+  public async getCacheStatistics(): Promise<{
     hits: number;
     misses: number;
     hitRate: number;
@@ -322,11 +318,11 @@ export class OpenAIResponseClient extends BaseLLMClient {
     };
   }
 
-  public override async clearCache(): Promise<boolean> {
+  public async clearCache(): Promise<boolean> {
     return true;
   }
 
-  public override async getErrorStatistics(startTime?: Date, endTime?: Date): Promise<{
+  public async getErrorStatistics(startTime?: Date, endTime?: Date): Promise<{
     totalErrors: number;
     byType: Record<string, number>;
     byStatusCode: Record<string, number>;
@@ -342,7 +338,7 @@ export class OpenAIResponseClient extends BaseLLMClient {
     };
   }
 
-  public override async getPerformanceStatistics(startTime?: Date, endTime?: Date): Promise<{
+  public async getPerformanceStatistics(startTime?: Date, endTime?: Date): Promise<{
     averageLatency: number;
     medianLatency: number;
     p95Latency: number;
@@ -368,7 +364,7 @@ export class OpenAIResponseClient extends BaseLLMClient {
     };
   }
 
-  public override async getUsageStatistics(startTime?: Date, endTime?: Date): Promise<{
+  public async getUsageStatistics(startTime?: Date, endTime?: Date): Promise<{
     totalRequests: number;
     totalTokens: number;
     totalCost: number;
@@ -390,7 +386,7 @@ export class OpenAIResponseClient extends BaseLLMClient {
     };
   }
 
-  public override async exportStatistics(
+  public async exportStatistics(
     format: 'json' | 'csv' | 'xml',
     startTime?: Date,
     endTime?: Date
@@ -398,52 +394,26 @@ export class OpenAIResponseClient extends BaseLLMClient {
     return JSON.stringify({});
   }
 
-  public override async configure(config: Record<string, unknown>): Promise<boolean> {
+  public async configure(config: Record<string, unknown>): Promise<boolean> {
     return true;
   }
 
-  public override async getConfiguration(): Promise<Record<string, unknown>> {
+  public async getConfiguration(): Promise<Record<string, unknown>> {
     return {};
   }
 
-  public override async resetConfiguration(): Promise<boolean> {
+  public async resetConfiguration(): Promise<boolean> {
     return true;
-  }
-
-  public override async close(): Promise<boolean> {
-    // Clean up resources if needed
-    return true;
-  }
-
-  public override async getModelCapabilities(model: string): Promise<any> {
-    const config = this.getModelConfig();
-    return {
-      supportsStreaming: config.supportsStreaming(),
-      supportsTools: config.supportsTools(),
-      supportsImages: config.supportsImages(),
-      supportsAudio: config.supportsAudio(),
-      supportsVideo: config.supportsVideo(),
-      maxTokens: config.getMaxTokens(),
-      contextWindow: config.getContextWindow()
-    };
   }
 
   public override async estimateTokens(text: string): Promise<number> {
-    // 简单的token估算实现
-    return Math.ceil(text.length / 4);
+    // 使用统一的Token计算服务
+    return await this.tokenCalculator.calculateTextTokens(text);
   }
 
   public override async truncateText(text: string, maxTokens: number): Promise<string> {
-    // 使用tiktoken进行精确截断
-    // 简化实现：按字符截断
-    const estimatedTokens = await this.estimateTokens(text);
-    if (estimatedTokens <= maxTokens) {
-      return text;
-    }
-
-    // 粗略估算：每个token约4个字符
-    const maxChars = maxTokens * 4;
-    return text.substring(0, maxChars);
+    // 使用统一的Token计算服务进行精确截断
+    return await this.tokenCalculator.truncateText(text, maxTokens);
   }
 
   public override async formatMessages(messages: any[]): Promise<any[]> {

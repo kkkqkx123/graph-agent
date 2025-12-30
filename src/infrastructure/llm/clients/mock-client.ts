@@ -3,7 +3,6 @@ import { LLMRequest } from '../../../domain/llm/entities/llm-request';
 import { LLMResponse } from '../../../domain/llm/entities/llm-response';
 import { ModelConfig } from '../../../domain/llm/value-objects/model-config';
 import { LLMMessage, LLMMessageRole } from '../../../domain/llm/value-objects/llm-message';
-import { ID } from '../../../domain/common/value-objects/id';
 import { BaseLLMClient } from './base-llm-client';
 import { TokenCalculator } from '../token-calculators/token-calculator';
 import { ProviderConfig, ApiType, ProviderConfigBuilder } from '../parameter-mappers';
@@ -77,14 +76,14 @@ export class MockClient extends BaseLLMClient {
     await this.delay(100 + Math.random() * 200);
 
     try {
-      return this.generateMockResponse(request);
+      return await this.generateMockResponse(request);
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : String(error);
       throw new Error(`Mock client error: ${errorMessage}`);
     }
   }
 
-  private generateMockResponse(request: LLMRequest): LLMResponse {
+  private async generateMockResponse(request: LLMRequest): Promise<LLMResponse> {
     // Generate mock response based on the last user message
     const lastUserMessage = request.messages
       .filter(msg => msg.isUser())
@@ -107,9 +106,9 @@ export class MockClient extends BaseLLMClient {
       }
     }
 
-    // Calculate mock token usage
-    const promptTokens = Math.ceil(JSON.stringify(request.messages).length / 4);
-    const completionTokens = Math.floor(responseText.length / 4);
+    // Calculate mock token usage using unified token calculator
+    const promptTokens = await this.tokenCalculator.calculateTokens(request);
+    const completionTokens = await this.tokenCalculator.calculateTextTokens(responseText);
 
     return LLMResponse.create(
       request.requestId,
@@ -195,6 +194,11 @@ export class MockClient extends BaseLLMClient {
       const chunks = content.split(' ');
 
       for (const chunk of chunks) {
+        // Calculate token count for this chunk
+        // Note: Using simplified calculation for streaming performance
+        // In production, consider using tokenCalculator.calculateTextTokens(chunk)
+        const chunkTokens = Math.ceil(chunk.length / 4);
+
         yield LLMResponse.create(
           request.requestId,
           request.model,
@@ -205,8 +209,8 @@ export class MockClient extends BaseLLMClient {
           }],
           {
             promptTokens: response.usage?.promptTokens || 0,
-            completionTokens: chunk.length / 4,
-            totalTokens: (response.usage?.promptTokens || 0) + chunk.length / 4
+            completionTokens: chunkTokens,
+            totalTokens: (response.usage?.promptTokens || 0) + chunkTokens
           },
           '',
           0
@@ -296,11 +300,6 @@ export class MockClient extends BaseLLMClient {
 
   public async resetMetrics(): Promise<void> {
     // Mock implementation - no-op
-  }
-
-  public override async close(): Promise<boolean> {
-    // Mock implementation - no-op
-    return true;
   }
 
   public async testConnection(): Promise<boolean> {

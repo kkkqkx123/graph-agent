@@ -1,6 +1,5 @@
 // 导出所有子模块
 export * from './clients';
-export * from './converters';
 export * from './endpoint-strategies';
 export * from './parameter-mappers';
 export * from './rate-limiters';
@@ -24,8 +23,8 @@ export { LLM_DI_IDENTIFIERS } from './di-identifiers';
 export { LLMDIContainer } from './di-container';
 
 // 导出类型
-export type { 
-  ServiceType, 
+export type {
+  ServiceType,
   LLMDIIdentifiers,
-  ServiceTypes 
+  ServiceTypes
 } from './di-identifiers';

@@ -65,7 +65,9 @@ export abstract class BaseLLMClient {
 
   public async calculateCost(request: LLMRequest, response: LLMResponse): Promise<number> {
     const modelConfig = this.getModelConfig();
-    const promptTokens = await this.calculateTokens(request);
+    
+    // 优先使用API返回的token计数，如果没有则使用本地计算作为回退
+    const promptTokens = response.usage?.promptTokens || await this.calculateTokens(request);
     const completionTokens = response.usage?.completionTokens || 0;
 
     return (promptTokens * modelConfig.getPromptCostPer1KTokens() +
@@ -254,36 +256,12 @@ export abstract class BaseLLMClient {
     return true;
   }
 
-  public async waitForRateLimitReset(timeout?: number): Promise<boolean> {
-    return true;
-  }
-
-
-  public async getModelCapabilities(model: string): Promise<any> {
-    const config = this.getModelConfig();
-    return {
-      supportsStreaming: config.supportsStreaming(),
-      supportsTools: config.supportsTools(),
-      supportsImages: config.supportsImages(),
-      supportsAudio: config.supportsAudio(),
-      supportsVideo: config.supportsVideo(),
-      maxTokens: config.getMaxTokens(),
-      contextWindow: config.getContextWindow()
-    };
-  }
-
   public async estimateTokens(text: string): Promise<number> {
-    return Math.ceil(text.length / 4);
+    return await this.tokenCalculator.calculateTextTokens(text);
   }
 
   public async truncateText(text: string, maxTokens: number): Promise<string> {
-    const estimatedTokens = await this.estimateTokens(text);
-    if (estimatedTokens <= maxTokens) {
-      return text;
-    }
-
-    const ratio = maxTokens / estimatedTokens;
-    return text.substring(0, Math.floor(text.length * ratio));
+    return await this.tokenCalculator.truncateText(text, maxTokens);
   }
 
   public async formatMessages(messages: any[]): Promise<any[]> {
@@ -307,4 +285,5 @@ export abstract class BaseLLMClient {
       }
     );
   }
+
 }

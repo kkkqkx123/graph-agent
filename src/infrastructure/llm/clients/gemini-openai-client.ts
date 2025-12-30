@@ -1,6 +1,4 @@
 import { injectable, inject } from 'inversify';
-import { LLMRequest } from '../../../domain/llm/entities/llm-request';
-import { LLMResponse } from '../../../domain/llm/entities/llm-response';
 import { ModelConfig } from '../../../domain/llm/value-objects/model-config';
 import { BaseLLMClient } from './base-llm-client';
 import { ProviderConfig, ApiType, ProviderConfigBuilder } from '../parameter-mappers';

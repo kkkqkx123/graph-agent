@@ -3,7 +3,6 @@ import { LLMRequest } from '../../../domain/llm/entities/llm-request';
 import { LLMResponse } from '../../../domain/llm/entities/llm-response';
 import { ModelConfig } from '../../../domain/llm/value-objects/model-config';
 import { LLMMessage } from '../../../domain/llm/value-objects/llm-message';
-import { ID } from '../../../domain/common/value-objects/id';
 import { BaseLLMClient } from './base-llm-client';
 import { ProviderConfig, ApiType } from '../parameter-mappers/interfaces/provider-config.interface';
 import { OpenAIParameterMapper } from '../parameter-mappers/openai-parameter-mapper';

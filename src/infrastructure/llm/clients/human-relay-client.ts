@@ -1,7 +1,7 @@
 /**
  * HumanRelay LLM客户端
  *
- * 实现直接与用户交互的LLM客户端
+ * 实现直接与用户交互的LLM客户端，使用策略模式分离用户交互逻辑
  */
 
 import { injectable, inject } from 'inversify';
@@ -11,25 +11,13 @@ import { LLMResponse } from '../../../domain/llm/entities/llm-response';
 import { ModelConfig } from '../../../domain/llm/value-objects/model-config';
 import { ID } from '../../../domain/common/value-objects/id';
 import { HumanRelayMode } from '../../../domain/llm/value-objects/human-relay-mode';
-import { PromptTemplate } from '../../../domain/llm/value-objects/prompt-template';
 import { LLMMessage, LLMMessageRole } from '../../../domain/llm/value-objects/llm-message';
 import { LLM_DI_IDENTIFIERS } from '../di-identifiers';
 import { ProviderConfig, ApiType } from '../parameter-mappers/interfaces/provider-config.interface';
 import { BaseFeatureSupport } from '../parameter-mappers/interfaces/feature-support.interface';
 import { ConfigLoadingModule } from '../../config/loading/config-loading-module';
-import * as readline from 'readline';
-
-/**
- * 提示状态枚举
- */
-enum PromptStatus {
-  CREATED = 'created',
-  DELIVERED = 'delivered',
-  RESPONDED = 'responded',
-  TIMEOUT = 'timeout',
-  CANCELLED = 'cancelled',
-  ERROR = 'error'
-}
+import { UserInteractionStrategy, TerminalInteraction } from '../interactions/user-interaction-strategy';
+import { PromptRenderingService, Prompt } from '../interactions/prompt-rendering-service';
 
 /**
  * 响应类型枚举
@@ -39,20 +27,6 @@ enum ResponseType {
   TIMEOUT = 'timeout',
   ERROR = 'error',
   CANCELLED = 'cancelled'
-}
-
-/**
- * 简化的提示数据结构
- */
-interface SimplePrompt {
-  id: string;
-  content: string;
-  mode: HumanRelayMode;
-  conversationContext?: string;
-  template: PromptTemplate;
-  status: PromptStatus;
-  createdAt: Date;
-  timeout: number;
 }
 
 /**
@@ -72,11 +46,9 @@ interface SimpleResponse {
  * HumanRelay客户端配置接口
  */
 interface HumanRelayClientConfig {
-  providerName: string;
   mode: HumanRelayMode;
   maxHistoryLength: number;
   defaultTimeout: number;
-  frontendConfig?: any;
 }
 
 /**
@@ -88,9 +60,10 @@ export class HumanRelayClient extends BaseLLMClient {
   private readonly maxHistoryLength: number;
   private readonly defaultTimeout: number;
   private conversationHistory: any[] = [];
-  private promptHistory: SimplePrompt[] = [];
+  private promptHistory: Prompt[] = [];
   private responseHistory: SimpleResponse[] = [];
-  private rlInterface: readline.Interface | null = null;
+  private interactionStrategy: UserInteractionStrategy;
+  private promptRenderingService: PromptRenderingService;
 
   constructor(
     @inject(LLM_DI_IDENTIFIERS.HttpClient)
@@ -103,18 +76,18 @@ export class HumanRelayClient extends BaseLLMClient {
     protected override configLoadingModule: ConfigLoadingModule,
     clientConfig: HumanRelayClientConfig
   ) {
-    // 创建基础配置
+    // 创建最小化的基础配置（HumanRelay不需要HTTP、限流等功能）
     const featureSupport = new BaseFeatureSupport();
     featureSupport.supportsStreaming = false;
     featureSupport.supportsTools = false;
 
     const baseConfig: ProviderConfig = {
-      name: clientConfig.providerName,
+      name: 'human-relay',
       apiType: ApiType.NATIVE,
-      baseURL: 'http://localhost:8080',
-      apiKey: 'human-relay-key',
-      parameterMapper: null as any, // HumanRelay不需要参数映射
-      endpointStrategy: null as any, // HumanRelay不需要端点策略
+      baseURL: '',
+      apiKey: '',
+      parameterMapper: null as any,
+      endpointStrategy: null as any,
       featureSupport: featureSupport
     };
 
@@ -123,6 +96,17 @@ export class HumanRelayClient extends BaseLLMClient {
     this.mode = clientConfig.mode;
     this.maxHistoryLength = clientConfig.maxHistoryLength;
     this.defaultTimeout = clientConfig.defaultTimeout;
+
+    // 使用策略模式初始化交互策略
+    this.interactionStrategy = new TerminalInteraction();
+    this.promptRenderingService = new PromptRenderingService();
+  }
+
+  /**
+   * 获取支持的模型列表（硬编码）
+   */
+  protected override getSupportedModelsList(): string[] {
+    return ['single_turn', 'multi_turn'];
   }
 
   /**
@@ -138,10 +122,10 @@ export class HumanRelayClient extends BaseLLMClient {
       const userResponse = await this.sendPromptAndWaitForResponse(prompt, timeout);
 
       // 3. 更新历史记录
-      this.updateHistory(request, userResponse);
+      this.updateHistory(request, userResponse, prompt);
 
       // 4. 构建LLM响应
-      return this.createLLMResponse(userResponse, request);
+      return await this.createLLMResponse(userResponse, request);
 
     } catch (error) {
       this.handleError(error);
@@ -165,8 +149,8 @@ export class HumanRelayClient extends BaseLLMClient {
     return ModelConfig.create({
       model: 'human-relay',
       provider: 'human-relay',
-      maxTokens: 100000, // 人工输入没有严格的token限制
-      contextWindow: 100000,
+      maxTokens: 200000, // 人工输入没有严格的token限制
+      contextWindow: 200000,
       supportsStreaming: false,
       supportsTools: false,
       supportsImages: false,
@@ -175,22 +159,9 @@ export class HumanRelayClient extends BaseLLMClient {
     });
   }
 
-  /**
-   * 获取支持的模型列表
-   */
-  public getSupportedModelsList(): string[] {
-    return ['human-relay-s', 'human-relay-m'];
-  }
 
   /**
-   * 获取支持的模型列表（异步版本）
-   */
-  public override async getSupportedModels(): Promise<string[]> {
-    return this.getSupportedModelsList();
-  }
-
-  /**
-   * 健康检查
+   * 健康检查（硬编码）
    */
   public override async healthCheck(): Promise<{
     status: 'healthy' | 'unhealthy' | 'degraded';
@@ -198,30 +169,12 @@ export class HumanRelayClient extends BaseLLMClient {
     latency?: number;
     lastChecked: Date;
   }> {
-    try {
-      const startTime = Date.now();
-      // 简单检查：检查readline接口是否可用
-      if (!this.rlInterface) {
-        this.rlInterface = readline.createInterface({
-          input: process.stdin,
-          output: process.stdout
-        });
-      }
-      const latency = Date.now() - startTime;
-
-      return {
-        status: 'healthy',
-        message: 'HumanRelay客户端可用',
-        latency,
-        lastChecked: new Date()
-      };
-    } catch (error) {
-      return {
-        status: 'unhealthy',
-        message: error instanceof Error ? error.message : String(error),
-        lastChecked: new Date()
-      };
-    }
+    return {
+      status: 'healthy',
+      message: 'HumanRelay客户端可用',
+      latency: 0,
+      lastChecked: new Date()
+    };
   }
 
   /**
@@ -242,9 +195,8 @@ export class HumanRelayClient extends BaseLLMClient {
    * 计算Token数
    */
   public override async calculateTokens(request: LLMRequest): Promise<number> {
-    // 简单的token估算
-    const text = request.messages.map(m => m.getContent()).join(' ');
-    return Math.ceil(text.length / 4);
+    // 使用统一的Token计算服务
+    return await this.tokenCalculator.calculateTokens(request);
   }
 
   /**
@@ -255,40 +207,12 @@ export class HumanRelayClient extends BaseLLMClient {
     return 0;
   }
 
-  /**
-   * 关闭客户端
-   */
-  public async close(): Promise<boolean> {
-    try {
-      // 清理历史记录
-      this.conversationHistory = [];
-      this.promptHistory = [];
-      this.responseHistory = [];
-      
-      // 关闭readline接口
-      if (this.rlInterface) {
-        this.rlInterface.close();
-        this.rlInterface = null;
-      }
-      
-      return true;
-    } catch (error) {
-      console.error('关闭HumanRelay客户端时出错:', error);
-      return false;
-    }
-  }
-
   // 私有方法
 
   /**
    * 构建提示词
    */
-  private buildPrompt(request: LLMRequest): SimplePrompt {
-    // 获取模板
-    const template = this.mode === HumanRelayMode.MULTI
-      ? PromptTemplate.createMultiTurnDefault()
-      : PromptTemplate.createSingleTurnDefault();
-
+  private buildPrompt(request: LLMRequest): Prompt {
     // 转换消息格式
     const iLLMMessages = request.messages.map(msg => ({
       role: this.convertMessageRole(msg.getRole()),
@@ -321,16 +245,11 @@ export class HumanRelayClient extends BaseLLMClient {
       content = `${latestMessage.role}: ${latestMessage.content}`;
     }
 
-    return {
-      id: ID.generate().value,
+    return this.promptRenderingService.buildPrompt(
       content,
-      mode: this.mode,
-      conversationContext,
-      template,
-      status: PromptStatus.CREATED,
-      createdAt: new Date(),
-      timeout: this.defaultTimeout
-    };
+      this.mode,
+      conversationContext
+    );
   }
 
   /**
@@ -355,27 +274,17 @@ export class HumanRelayClient extends BaseLLMClient {
    * 发送提示并等待响应
    */
   private async sendPromptAndWaitForResponse(
-    prompt: SimplePrompt,
+    prompt: Prompt,
     timeout: number
   ): Promise<SimpleResponse> {
-    // 初始化readline接口
-    if (!this.rlInterface) {
-      this.rlInterface = readline.createInterface({
-        input: process.stdin,
-        output: process.stdout
-      });
-    }
-
-    // 标记为已发送
-    prompt.status = PromptStatus.DELIVERED;
     const startTime = Date.now();
 
     try {
       // 渲染提示内容
-      const renderedPrompt = this.renderPrompt(prompt);
-      
-      // 显示提示并等待用户输入
-      const userInput = await this.promptUser(renderedPrompt, timeout);
+      const renderedPrompt = this.promptRenderingService.renderPrompt(prompt);
+
+      // 使用策略模式显示提示并等待用户输入
+      const userInput = await this.interactionStrategy.promptUser(renderedPrompt, timeout);
       const responseTime = Date.now() - startTime;
 
       // 创建响应
@@ -388,101 +297,21 @@ export class HumanRelayClient extends BaseLLMClient {
         createdAt: new Date()
       };
 
-      // 更新提示状态
-      prompt.status = PromptStatus.RESPONDED;
-
       return response;
     } catch (error) {
-      prompt.status = PromptStatus.ERROR;
       throw error;
     }
   }
 
-  /**
-   * 提示用户输入
-   */
-  private async promptUser(question: string, timeout: number): Promise<string> {
-    return new Promise((resolve, reject) => {
-      if (!this.rlInterface) {
-        reject(new Error('Readline接口未初始化'));
-        return;
-      }
-
-      let timeoutId: NodeJS.Timeout | null = null;
-      let resolved = false;
-
-      const cleanup = () => {
-        if (timeoutId) {
-          clearTimeout(timeoutId);
-          timeoutId = null;
-        }
-        if (this.rlInterface) {
-          this.rlInterface.removeListener('line', onLine);
-          this.rlInterface.removeListener('close', onClose);
-        }
-      };
-
-      const onLine = (input: string) => {
-        if (resolved) return;
-        resolved = true;
-        cleanup();
-        resolve(input.trim());
-      };
-
-      const onClose = () => {
-        if (resolved) return;
-        resolved = true;
-        cleanup();
-        reject(new Error('用户输入被中断'));
-      };
-
-      // 设置超时
-      if (timeout > 0) {
-        timeoutId = setTimeout(() => {
-          if (resolved) return;
-          resolved = true;
-          cleanup();
-          reject(new Error(`用户输入超时 (${timeout}ms)`));
-        }, timeout);
-      }
-
-      // 监听事件
-      this.rlInterface.addListener('line', onLine);
-      this.rlInterface.addListener('close', onClose);
-
-      // 显示问题
-      this.rlInterface.question(question, () => {
-        // question回调会在用户输入后调用，但我们已经在line事件中处理
-      });
-    });
-  }
-
-  /**
-   * 渲染提示内容
-   */
-  private renderPrompt(prompt: SimplePrompt): string {
-    const variables: Record<string, string> = {
-      prompt: prompt.content
-    };
-
-    if (prompt.conversationContext) {
-      variables['conversation_history'] = prompt.conversationContext;
-    }
-
-    variables['timestamp'] = prompt.createdAt.toISOString();
-    variables['session_id'] = prompt.id;
-
-    return prompt.template.render(variables);
-  }
 
   /**
    * 更新历史记录
    */
-  private updateHistory(request: LLMRequest, response: SimpleResponse): void {
+  private updateHistory(request: LLMRequest, response: SimpleResponse, prompt: Prompt): void {
     // 添加提示到历史
     this.promptHistory.push({
-      ...this.promptHistory[this.promptHistory.length - 1]!,
-      status: PromptStatus.RESPONDED
+      ...prompt,
+      status: 'responded'
     });
 
     // 添加响应到历史
@@ -528,12 +357,12 @@ export class HumanRelayClient extends BaseLLMClient {
   /**
    * 创建LLM响应
    */
-  private createLLMResponse(
+  private async createLLMResponse(
     humanRelayResponse: SimpleResponse,
     request: LLMRequest
-  ): LLMResponse {
-    const promptTokens = this.estimateTokensSync(request);
-    const completionTokens = this.estimateTokensSync(humanRelayResponse.content);
+  ): Promise<LLMResponse> {
+    const promptTokens = await this.estimateTokensSync(request);
+    const completionTokens = await this.estimateTokensSync(humanRelayResponse.content);
 
     return LLMResponse.create(
       request.id,
@@ -575,17 +404,18 @@ export class HumanRelayClient extends BaseLLMClient {
    * 估算token数量
    */
   public override async estimateTokens(text: string): Promise<number> {
-    return Math.ceil(text.length / 4);
+    // 使用统一的Token计算服务
+    return await this.tokenCalculator.calculateTextTokens(text);
   }
 
   /**
    * 估算token数量（内部方法）
    */
-  private estimateTokensSync(request: LLMRequest | string): number {
+  private async estimateTokensSync(request: LLMRequest | string): Promise<number> {
     const text = typeof request === 'string'
       ? request
       : request.messages.map(m => m.getContent()).join(' ');
-    return Math.ceil(text.length / 4);
+    return await this.tokenCalculator.calculateTextTokens(text);
   }
 
   /**

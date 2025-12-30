@@ -61,11 +61,6 @@ export abstract class LLMWrapper extends Entity {
   }
 
   /**
-   * 关闭包装器
-   */
-  abstract close(): Promise<void>;
-
-  /**
    * 更新统计信息
    */
   protected updateStats(responseTime: number, success: boolean): void {
@@ -145,13 +140,6 @@ export class PollingPoolWrapper extends LLMWrapper {
   async isAvailable(): Promise<boolean> {
     const status = await this.pool.getStatus();
     return status['healthyInstances'] > 0;
-  }
-
-  /**
-   * 关闭包装器
-   */
-  async close(): Promise<void> {
-    await this.pool.shutdown();
   }
 
   /**
@@ -283,14 +271,6 @@ export class TaskGroupWrapper extends LLMWrapper {
   }
 
   /**
-   * 关闭包装器
-   */
-  async close(): Promise<void> {
-    // 任务组包装器不需要特殊的关闭逻辑
-    console.log(`任务组包装器 ${this.name} 已关闭`);
-  }
-
-  /**
    * 获取包装器状态
    */
   override async getStatus(): Promise<Record<string, any>> {
@@ -381,12 +361,6 @@ export class DirectLLMWrapper extends LLMWrapper {
     return this.client.isModelAvailable();
   }
 
-  /**
-   * 关闭包装器
-   */
-  async close(): Promise<void> {
-    await this.client.close();
-  }
 
   /**
    * 获取包装器状态

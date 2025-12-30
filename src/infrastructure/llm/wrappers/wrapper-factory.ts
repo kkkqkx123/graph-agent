@@ -103,9 +103,7 @@ export class LLMWrapperFactory {
    * 关闭所有包装器
    */
   async closeAll(): Promise<void> {
-    for (const wrapper of this.wrappers.values()) {
-      await wrapper.close();
-    }
+    // 包装器不再需要显式关闭
     this.wrappers.clear();
   }
 
@@ -122,7 +120,6 @@ export class LLMWrapperFactory {
   async removeWrapper(name: string): Promise<void> {
     const wrapper = this.wrappers.get(name);
     if (wrapper) {
-      await wrapper.close();
       this.wrappers.delete(name);
     }
   }

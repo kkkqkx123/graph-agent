@@ -173,46 +173,6 @@ export class PromptTemplate extends ValueObject<PromptTemplateProps> {
   }
 
   /**
-   * 创建高级单轮模板
-   */
-  public static createAdvancedSingleTurn(): PromptTemplate {
-    return this.create(
-      `╔═══════════════════════════════════════════
-║ 🎯 完整上下文任务
-╚═══════════════════════════════════════════
-
-请将以下完整对话（包含所有历史）输入到Web LLM：
-
-{prompt}
-
-╔═══════════════════════════════════════════
-║ 📝 请在此处粘贴Web LLM的回复：
-╚═══════════════════════════════════════════`,
-      '高级单轮对话模板 - 完整上下文'
-    );
-  }
-
-  /**
-   * 创建高级多轮模板
-   */
-  public static createAdvancedMultiTurn(): PromptTemplate {
-    return this.create(
-      `╔═══════════════════════════════════════════
-║ 🔄 增量对话
-╚═══════════════════════════════════════════
-
-请将以下新消息输入到Web LLM（LLM会保持会话状态）：
-
-{prompt}
-
-╔═══════════════════════════════════════════
-║ 📝 新的回复：
-╚═══════════════════════════════════════════`,
-      '高级多轮对话模板 - 增量内容'
-    );
-  }
-
-  /**
    * 验证提示词模板的有效性
    */
   public override validate(): void {
@@ -243,45 +203,11 @@ export class PromptTemplate extends ValueObject<PromptTemplateProps> {
 
   /**
    * 检查模板是否包含特定变量
-   * 
+   *
    * @param variable 变量名
    * @returns 是否包含
    */
   public hasVariable(variable: string): boolean {
     return this.props.variables.includes(variable);
-  }
-
-  /**
-   * 获取模板的预估长度（不含变量）
-   * 
-   * @returns 模板基础长度
-   */
-  public getBaseLength(): number {
-    return this.props.template.replace(/\{[^}]+\}/g, '').length;
-  }
-
-  /**
-   * 获取模板的复杂度评分
-   * 
-   * @returns 复杂度评分（1-10）
-   */
-  public getComplexityScore(): number {
-    let score = 1;
-    
-    // 基于变量数量
-    score += Math.min(this.props.variables.length * 0.5, 3);
-    
-    // 基于模板长度
-    score += Math.min(this.getBaseLength() / 100, 2);
-    
-    // 基于特殊字符
-    const specialChars = (this.props.template.match(/[╔═║╚╝]/g) || []).length;
-    score += Math.min(specialChars * 0.2, 2);
-    
-    // 基于条件结构（简单检测）
-    const conditionalStructures = (this.props.template.match(/\{if.*?\}|\{endif\}/g) || []).length;
-    score += Math.min(conditionalStructures * 0.5, 2);
-    
-    return Math.min(Math.round(score * 10) / 10, 10);
   }
 }
