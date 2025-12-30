@@ -3,7 +3,7 @@
  */
 
 // 导出服务
-export * from './services/thread-service';
+export * from './services';
 
 // 导出checkpoint子模块
 export * from './checkpoints';

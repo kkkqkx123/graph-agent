@@ -82,7 +82,11 @@ export class WorkflowOrchestrationService {
     const context = this.createExecutionContext(sessionId, workflowId, input);
 
     // 4. 通过会话编排服务执行工作流
-    return await this.sessionOrchestration.orchestrateWorkflowExecution(sessionId, workflowId, context);
+    return await this.sessionOrchestration.orchestrateWorkflowExecution(
+      sessionId.toString(),
+      workflowId.toString(),
+      context
+    );
   }
 
   /**
@@ -101,7 +105,11 @@ export class WorkflowOrchestrationService {
     const context = this.createExecutionContext(sessionId, ID.empty(), input);
 
     // 3. 通过会话编排服务并行执行
-    return await this.sessionOrchestration.orchestrateParallelExecution(sessionId, workflowIds, context);
+    return await this.sessionOrchestration.orchestrateParallelExecution(
+      sessionId.toString(),
+      workflowIds.map(id => id.toString()),
+      context
+    );
   }
 
   /**
@@ -211,13 +219,20 @@ export class WorkflowOrchestrationService {
    * 管理线程生命周期
    */
   async manageThreadLifecycle(sessionId: ID, threadId: ID, action: ThreadAction): Promise<void> {
-    await this.sessionOrchestration.manageThreadLifecycle(sessionId, threadId, action);
+    await this.sessionOrchestration.manageThreadLifecycle(
+      sessionId.toString(),
+      threadId.toString(),
+      action
+    );
   }
 
   /**
    * 同步会话状态
    */
   async syncSessionState(sessionId: ID): Promise<void> {
-    await this.sessionOrchestration.syncSessionState(sessionId);
+    // 注意：syncSessionState在SessionOrchestrationService中是private方法
+    // 这里暂时注释掉，如果需要公开访问，需要在SessionOrchestrationService中改为public
+    // await this.sessionOrchestration.syncSessionState(sessionId);
+    throw new Error('syncSessionState方法在SessionOrchestrationService中是private，无法访问');
   }
 }

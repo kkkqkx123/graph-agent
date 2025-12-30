@@ -5,7 +5,6 @@
  */
 
 // 基础服务
-export * from './thread-service';
 export * from './thread-lifecycle-service';
 export * from './thread-maintenance-service';
 export * from './thread-management-service';

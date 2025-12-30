@@ -29,8 +29,8 @@ import { PromptReferenceParser } from '../../infrastructure/prompts/services/pro
 import { PromptReferenceValidator } from '../../infrastructure/prompts/services/prompt-reference-validator';
 import { NodeExecutor } from '../../infrastructure/workflow/nodes/node-executor';
 import { EdgeExecutor } from '../../infrastructure/workflow/edges/edge-executor';
-import { EdgeEvaluator } from '../../infrastructure/threads/execution/edge-evaluator';
-import { NodeRouter } from '../../infrastructure/threads/execution/node-router';
+import { EdgeEvaluator } from '../../infrastructure/workflow/services/edge-evaluator';
+import { NodeRouter } from '../../infrastructure/workflow/services/node-router';
 import { HookExecutor } from '../../infrastructure/workflow/hooks/hook-executor';
 import { Logger } from '../../infrastructure/logging/logger';
 
@@ -39,7 +39,7 @@ import { Logger } from '../../infrastructure/logging/logger';
  */
 export const infrastructureBindings = new ContainerModule((bind: any) => {
   // ========== 仓储绑定 ==========
-  
+
   bind(TYPES.SessionRepositoryImpl).to(SessionInfrastructureRepository).inSingletonScope();
   bind(TYPES.ThreadRepositoryImpl).to(ThreadInfrastructureRepository).inSingletonScope();
   bind(TYPES.WorkflowRepositoryImpl).to(WorkflowInfrastructureRepository).inSingletonScope();
@@ -48,14 +48,14 @@ export const infrastructureBindings = new ContainerModule((bind: any) => {
   bind(TYPES.HistoryRepositoryImpl).to(HistoryInfrastructureRepository).inSingletonScope();
 
   // ========== 业务服务绑定 ==========
-  
+
   bind(TYPES.GraphAlgorithmServiceImpl).to(GraphAlgorithmServiceImpl).inSingletonScope();
   bind(TYPES.GraphValidationServiceImpl).to(GraphValidationServiceImpl).inSingletonScope();
   bind(TYPES.ContextProcessorServiceImpl).to(ContextProcessorServiceImpl).inSingletonScope();
   bind(TYPES.ThreadCoordinatorServiceImpl).to(ThreadCoordinatorInfrastructureService).inSingletonScope();
 
   // ========== 基础设施服务绑定 ==========
-  
+
   bind(TYPES.ConnectionManager).to(ConnectionManager).inSingletonScope();
   bind(TYPES.PromptBuilder).to(PromptBuilder).inSingletonScope();
   bind(TYPES.TemplateProcessor).to(TemplateProcessor).inSingletonScope();

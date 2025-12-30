@@ -41,8 +41,8 @@ import { PromptReferenceParser } from '../infrastructure/prompts/services/prompt
 import { PromptReferenceValidator } from '../infrastructure/prompts/services/prompt-reference-validator';
 import { NodeExecutor } from '../infrastructure/workflow/nodes/node-executor';
 import { EdgeExecutor } from '../infrastructure/workflow/edges/edge-executor';
-import { EdgeEvaluator } from '../infrastructure/threads/execution/edge-evaluator';
-import { NodeRouter } from '../infrastructure/threads/execution/node-router';
+import { EdgeEvaluator } from '../infrastructure/workflow/services/edge-evaluator';
+import { NodeRouter } from '../infrastructure/workflow/services/node-router';
 import { HookExecutor } from '../infrastructure/workflow/hooks/hook-executor';
 import { Logger } from '../infrastructure/logging/logger';
 
