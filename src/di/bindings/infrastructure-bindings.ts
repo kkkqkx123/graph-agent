@@ -34,6 +34,7 @@ import { EdgeEvaluator } from '../../infrastructure/workflow/services/edge-evalu
 import { NodeRouter } from '../../infrastructure/workflow/services/node-router';
 import { WorkflowExecutionEngine } from '../../infrastructure/workflow/services/workflow-execution-engine';
 import { HookExecutor } from '../../infrastructure/workflow/hooks/hook-executor';
+import { HookFactory } from '../../infrastructure/workflow/hooks/hook-factory';
 import { Logger } from '../../infrastructure/logging/logger';
 
 /**
@@ -70,5 +71,6 @@ export const infrastructureBindings = new ContainerModule((bind: any) => {
   bind(TYPES.NodeRouter).to(NodeRouter).inSingletonScope();
   bind(TYPES.WorkflowExecutionEngine).to(WorkflowExecutionEngine).inSingletonScope();
   bind(TYPES.HookExecutor).to(HookExecutor).inSingletonScope();
+  bind(TYPES.HookFactory).to(HookFactory).inSingletonScope();
   bind(TYPES.Logger).to(Logger).inSingletonScope();
 });

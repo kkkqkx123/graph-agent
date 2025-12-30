@@ -1,128 +1,101 @@
-import {
-  IWorkflowFunction,
-  FunctionParameter,
-  ValidationResult,
-  FunctionMetadata,
-  WorkflowExecutionContext,
-  NodeFunctionConfig,
-  NodeFunctionResult
-} from '../types';
-
 /**
- * 钩子函数基类
- * 专门用于钩子类型的函数，返回 NodeFunctionResult
+ * Hook函数基类
+ *
+ * 提供纯执行逻辑的函数基类，不定义具体的hook点。
+ * Hook点由Hook实体定义，此类仅提供可复用的执行逻辑。
+ *
+ * 设计原则：
+ * - 不关心在哪个hook点执行
+ * - 只关注执行逻辑本身
+ * - 可以被多个Hook实体复用
  */
-export abstract class BaseHookFunction<TConfig extends NodeFunctionConfig = NodeFunctionConfig>
-  implements IWorkflowFunction {
-  protected _initialized: boolean = false;
-  public readonly metadata?: Record<string, any>;
+export abstract class BaseHookFunction {
+  /**
+   * 函数的唯一标识符
+   */
+  abstract readonly id: string;
 
-  constructor(
-    public readonly id: string,
-    public readonly name: string,
-    public readonly description: string,
-    public readonly version: string = '1.0.0',
-    public readonly category: string = 'builtin',
-    metadata?: Record<string, any>
-  ) {
-    this.metadata = metadata;
-  }
+  /**
+   * 函数名称
+   */
+  abstract readonly name: string;
 
-  getParameters(): FunctionParameter[] {
-    return [
-      {
-        name: 'context',
-        type: 'WorkflowExecutionContext',
-        required: true,
-        description: '执行上下文'
-      },
-      {
-        name: 'config',
-        type: 'NodeFunctionConfig',
-        required: false,
-        description: '函数配置',
-        defaultValue: {}
-      }
-    ];
-  }
+  /**
+   * 函数描述
+   */
+  abstract readonly description: string;
 
-  getReturnType(): string {
-    return 'NodeFunctionResult';
-  }
+  /**
+   * 函数版本
+   */
+  readonly version: string = '1.0.0';
 
-  validateConfig(config: any): ValidationResult {
-    const errors: string[] = [];
+  /**
+   * 执行函数逻辑
+   *
+   * @param context - 执行上下文
+   * @param config - 函数配置参数
+   * @returns 执行结果
+   */
+  abstract execute(context: any, config?: Record<string, any>): Promise<any>;
 
-    // 基础验证
-    if (config && typeof config !== 'object') {
-      errors.push('配置必须是对象类型');
-    }
+  /**
+   * 验证配置参数
+   *
+   * @param config - 待验证的配置
+   * @returns 验证结果
+   */
+  validateConfig?(config: Record<string, any>): { valid: boolean; errors: string[] };
 
-    // 子类可以重写此方法进行特定验证
-    const customErrors = this.validateCustomConfig(config);
-    errors.push(...customErrors);
-
-    return {
-      valid: errors.length === 0,
-      errors
-    };
-  }
-
-  getMetadata(): FunctionMetadata {
+  /**
+   * 获取函数元数据
+   */
+  getMetadata(): HookFunctionMetadata {
     return {
       id: this.id,
       name: this.name,
       description: this.description,
       version: this.version,
-      isAsync: true,
-      category: this.category,
-      parameters: this.getParameters(),
-      returnType: this.getReturnType()
     };
   }
+}
 
-  /**
-   * 子类可以重写此方法进行自定义配置验证
-   */
-  protected validateCustomConfig(config: any): string[] {
-    return [];
-  }
+/**
+ * Hook函数元数据接口
+ */
+export interface HookFunctionMetadata {
+  id: string;
+  name: string;
+  description: string;
+  version: string;
+}
 
-  /**
-   * 初始化函数
-   */
-  initialize(config?: any): boolean {
-    this._initialized = true;
-    return true;
-  }
+/**
+ * Hook函数执行结果接口
+ */
+export interface HookFunctionResult {
+  success: boolean;
+  data?: any;
+  error?: Error | string;
+  executionTime?: number;
+  shouldContinue?: boolean;
+}
 
-  /**
-   * 清理函数资源
-   */
-  cleanup(): boolean {
-    this._initialized = false;
-    return true;
-  }
-
-  /**
-   * 检查函数是否已初始化
-   */
-  protected checkInitialized(): void {
-    if (!this._initialized) {
-      throw new Error(`函数 ${this.name} 尚未初始化`);
-    }
-  }
-
-  /**
-   * 执行函数（抽象方法，子类必须实现）
-   * 使用类型安全的参数
-   */
-  abstract execute(context: WorkflowExecutionContext, config: TConfig): Promise<NodeFunctionResult>;
-
-  /**
-   * 验证参数
-   */
-  validateParameters(...args: any[]): { isValid: boolean; errors: string[] } {
-    return { isValid: true, errors: [] };
-  }
+/**
+ * 创建Hook函数执行结果的辅助函数
+ */
+export function createHookFunctionResult(
+  success: boolean,
+  data?: any,
+  error?: Error | string,
+  executionTime?: number,
+  shouldContinue: boolean = true
+): HookFunctionResult {
+  return {
+    success,
+    data,
+    error,
+    executionTime,
+    shouldContinue,
+  };
 }

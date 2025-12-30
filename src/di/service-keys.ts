@@ -48,6 +48,7 @@ import { EdgeEvaluator } from '../infrastructure/workflow/services/edge-evaluato
 import { NodeRouter } from '../infrastructure/workflow/services/node-router';
 import { WorkflowExecutionEngine } from '../infrastructure/workflow/services/workflow-execution-engine';
 import { HookExecutor } from '../infrastructure/workflow/hooks/hook-executor';
+import { HookFactory } from '../infrastructure/workflow/hooks/hook-factory';
 import { Logger } from '../infrastructure/logging/logger';
 
 // Application层实现
@@ -115,6 +116,7 @@ export interface ServiceTypes {
   WorkflowExecutionEngine: WorkflowExecutionEngine;
   ThreadExecutionEngine: any;
   HookExecutor: HookExecutor;
+  HookFactory: HookFactory;
   Logger: Logger;
 
   // 线程相关服务
@@ -210,6 +212,7 @@ export const TYPES: {
   WorkflowExecutionEngine: Symbol.for('WorkflowExecutionEngine') as TypedServiceIdentifier<'WorkflowExecutionEngine'>,
   ThreadExecutionEngine: Symbol.for('ThreadExecutionEngine') as TypedServiceIdentifier<'ThreadExecutionEngine'>,
   HookExecutor: Symbol.for('HookExecutor') as TypedServiceIdentifier<'HookExecutor'>,
+  HookFactory: Symbol.for('HookFactory') as TypedServiceIdentifier<'HookFactory'>,
   Logger: Symbol.for('Logger') as TypedServiceIdentifier<'Logger'>,
 
   // 线程相关服务

@@ -1,8 +1,16 @@
-// 钩子函数基类导出
-export { BaseHookFunction } from './base-hook-function';
+/**
+ * Hook函数模块
+ *
+ * 提供纯执行逻辑的函数实现，不定义具体的hook点。
+ * 这些函数可以被Hook实体复用，实现可组合的执行逻辑。
+ *
+ * 注意：Hook函数通过统一的FunctionRegistry进行注册和管理
+ */
 
-// 钩子函数实现导出
-export { BeforeExecuteHookFunction } from './before-execute-hook.function';
-export { AfterExecuteHookFunction } from './after-execute-hook.function';
-export { BeforeNodeExecuteHookFunction } from './before-node-execute-hook.function';
-export { AfterNodeExecuteHookFunction } from './after-node-execute-hook.function';
+// 基类和接口导出
+export { BaseHookFunction, HookFunctionMetadata, HookFunctionResult, createHookFunctionResult } from './base-hook-function';
+
+// Hook函数实现导出
+export { LoggingHookFunction } from './logging-hook-function';
+export { ValidationHookFunction } from './validation-hook-function';
+export { TransformationHookFunction } from './transformation-hook-function';

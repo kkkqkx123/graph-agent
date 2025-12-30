@@ -6,3 +6,6 @@
 
 // 基础实体
 export * from './workflow';
+
+// Hook实体
+export * from './hook';

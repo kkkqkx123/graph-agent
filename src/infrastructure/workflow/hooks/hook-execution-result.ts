@@ -20,7 +20,7 @@ export interface HookExecutionResult {
   /**
    * 执行错误
    */
-  error?: Error;
+  error?: Error | string;
 
   /**
    * 执行时间（毫秒）
@@ -45,7 +45,7 @@ export class HookExecutionResultBuilder {
   private hookId: string = '';
   private success: boolean = true;
   private result?: any;
-  private error?: Error;
+  private error?: Error | string;
   private executionTime: number = 0;
   private shouldContinue: boolean = true;
   private metadata: Record<string, any> = {};
@@ -77,7 +77,7 @@ export class HookExecutionResultBuilder {
   /**
    * 设置执行错误
    */
-  setError(error: Error): HookExecutionResultBuilder {
+  setError(error: Error | string): HookExecutionResultBuilder {
     this.error = error;
     return this;
   }
