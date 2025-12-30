@@ -20,8 +20,6 @@ import { HumanRelayClient } from './clients/human-relay-client';
 
 // 工厂类
 import { LLMClientFactory } from './clients/llm-client-factory';
-import { ConverterFactory } from './converters/converter-factory';
-import { FeatureFactory } from './features/feature-factory';
 import { LLMWrapperFactory } from './wrappers/wrapper-factory';
 
 // 管理器
@@ -162,16 +160,7 @@ export class LLMDIContainer {
       .to(LLMClientFactory)
       .inSingletonScope();
 
-    // 转换器工厂
-    this.container.bind<ConverterFactory>(LLM_DI_IDENTIFIERS.ConverterFactory)
-      .toConstantValue(ConverterFactory.getInstance());
-
     // 端点策略工厂已移除，现在直接使用具体的端点策略类
-
-    // 功能工厂
-    this.container.bind<FeatureFactory>(LLM_DI_IDENTIFIERS.FeatureFactory)
-      .to(FeatureFactory)
-      .inSingletonScope();
 
     // 参数映射器工厂已移除，现在直接使用具体的参数映射器类
 

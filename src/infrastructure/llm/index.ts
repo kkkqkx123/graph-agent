@@ -13,8 +13,7 @@ export * from './wrappers';
 // human-relay模块已简化，不再需要单独导出
 
 // 导出工厂类
-export { ConverterFactory } from './converters/converter-factory';
-export { FeatureFactory } from './features/feature-factory';
+export { createFeatureRegistry } from './features';
 export { LLMClientFactory } from './clients/llm-client-factory';
 export { LLMWrapperFactory, BaseLLMWrapper } from './wrappers/wrapper-factory';
 

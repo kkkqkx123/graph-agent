@@ -5,7 +5,6 @@ import { ModelConfig } from '../../../domain/llm/value-objects/model-config';
 import { LLMMessage } from '../../../domain/llm/value-objects/llm-message';
 import { ID } from '../../../domain/common/value-objects/id';
 import { BaseLLMClient } from './base-llm-client';
-import { OpenAIProvider } from '../converters/providers/openai-provider';
 import { ProviderConfig, ApiType, ProviderConfigBuilder } from '../parameter-mappers';
 import { OpenAIParameterMapper } from '../parameter-mappers/openai-parameter-mapper';
 import { OpenAIResponsesEndpointStrategy } from '../endpoint-strategies/openai-responses-endpoint-strategy';

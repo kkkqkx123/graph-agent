@@ -7,7 +7,7 @@ import { HttpClient } from '../../common/http/http-client';
 import { TokenBucketLimiter } from '../rate-limiters/token-bucket-limiter';
 import { TokenCalculator } from '../token-calculators/token-calculator';
 import { ProviderConfig } from '../parameter-mappers/interfaces/provider-config.interface';
-import { FeatureRegistry } from '../features/feature-registry';
+import { FeatureRegistry, createFeatureRegistry } from '../features';
 import { LLM_DI_IDENTIFIERS } from '../di-identifiers';
 import { ConfigLoadingModule } from '../../config/loading/config-loading-module';
 
@@ -33,7 +33,7 @@ export abstract class BaseLLMClient {
   ) {
     this.providerName = providerConfig.name;
     this.providerConfig = providerConfig;
-    this.featureRegistry = featureRegistry || new FeatureRegistry();
+    this.featureRegistry = featureRegistry || createFeatureRegistry();
     this.supportedModels = this.getSupportedModelsList();
   }
 

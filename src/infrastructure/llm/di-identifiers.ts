@@ -28,8 +28,6 @@ export const LLM_DI_IDENTIFIERS = {
   
   // 工厂类
   LLMClientFactory: Symbol.for('LLMClientFactory'),
-  ConverterFactory: Symbol.for('ConverterFactory'),
-  FeatureFactory: Symbol.for('FeatureFactory'),
   LLMWrapperFactory: Symbol.for('LLMWrapperFactory'),
   
   // 管理器
@@ -81,8 +79,6 @@ export interface ServiceTypes {
   HumanRelayInteractionService: any;
   HumanRelayConfigLoader: any;
   LLMClientFactory: any;
-  ConverterFactory: any;
-  FeatureFactory: any;
   LLMWrapperFactory: any;
   PollingPoolManager: any;
   TaskGroupManager: any;
@@ -128,8 +124,6 @@ export const DEPENDENCY_GRAPH: Record<keyof LLMDIIdentifiers, (keyof LLMDIIdenti
   HumanRelayInteractionService: ['TUIInteractionService', 'WebInteractionService', 'APIInteractionService', 'ConfigLoadingModule'],
   HumanRelayConfigLoader: ['ConfigLoadingModule'],
   LLMClientFactory: ['OpenAIChatClient', 'OpenAIResponseClient', 'AnthropicClient', 'GeminiClient', 'GeminiOpenAIClient', 'MockClient', 'HumanRelayClient', 'ConfigLoadingModule'],
-  ConverterFactory: [],
-  FeatureFactory: ['FeatureRegistry'],
   LLMWrapperFactory: ['PollingPoolManager', 'TaskGroupManager'],
   PollingPoolManager: ['TaskGroupManager', 'LLMClientFactory'],
   TaskGroupManager: ['ConfigLoadingModule'],

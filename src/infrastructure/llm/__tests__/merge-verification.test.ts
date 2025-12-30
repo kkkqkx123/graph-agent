@@ -75,9 +75,7 @@ describe('LLM目录合并验证', () => {
     it('应该包含所有工厂标识符', () => {
       const factoryIdentifiers: (keyof typeof LLM_DI_IDENTIFIERS)[] = [
         'LLMClientFactory',
-        'LLMWrapperFactory',
-        'ConverterFactory',
-        'FeatureFactory'
+        'LLMWrapperFactory'
       ];
 
       factoryIdentifiers.forEach(identifier => {
