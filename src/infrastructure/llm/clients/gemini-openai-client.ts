@@ -7,9 +7,6 @@ import { ProviderConfig, ApiType, ProviderConfigBuilder } from '../parameter-map
 import { GeminiParameterMapper } from '../parameter-mappers/gemini-parameter-mapper';
 import { OpenAICompatibleEndpointStrategy } from '../endpoint-strategies/openai-compatible-endpoint-strategy';
 import { BaseFeatureSupport } from '../parameter-mappers/interfaces/feature-support.interface';
-import { FeatureRegistry } from '../features/feature-registry';
-import { GeminiThinkingBudgetFeature } from '../features/gemini-thinking-budget-feature';
-import { GeminiCachedContentFeature } from '../features/gemini-cached-content-feature';
 import { ConfigLoadingModule } from '../../config/loading/config-loading-module';
 
 @injectable()
@@ -36,11 +33,6 @@ export class GeminiOpenAIClient extends BaseLLMClient {
     featureSupport.setProviderSpecificFeature('thinking_budget', true);
     featureSupport.setProviderSpecificFeature('cached_content', true);
 
-    // 创建功能注册表并注册 Gemini 特有功能
-    const featureRegistry = new FeatureRegistry();
-    featureRegistry.registerFeature(new GeminiThinkingBudgetFeature());
-    featureRegistry.registerFeature(new GeminiCachedContentFeature());
-
     // 创建提供商配置
     const providerConfig = new ProviderConfigBuilder()
       .name('gemini-openai')
@@ -61,8 +53,7 @@ export class GeminiOpenAIClient extends BaseLLMClient {
       rateLimiter,
       tokenCalculator,
       configManager,
-      providerConfig,
-      featureRegistry
+      providerConfig
     );
   }
 

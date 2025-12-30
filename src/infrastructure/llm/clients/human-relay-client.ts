@@ -258,7 +258,7 @@ export class HumanRelayClient extends BaseLLMClient {
   /**
    * 关闭客户端
    */
-  public override async close(): Promise<boolean> {
+  public async close(): Promise<boolean> {
     try {
       // 清理历史记录
       this.conversationHistory = [];

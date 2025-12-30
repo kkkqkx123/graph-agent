@@ -11,7 +11,6 @@ export const LLM_DI_IDENTIFIERS = {
   ConfigLoadingModule: Symbol.for('ConfigLoadingModule'),
   TokenBucketLimiter: Symbol.for('TokenBucketLimiter'),
   TokenCalculator: Symbol.for('TokenCalculator'),
-  FeatureRegistry: Symbol.for('FeatureRegistry'),
   
   // 客户端实现
   OpenAIChatClient: Symbol.for('OpenAIChatClient'),
@@ -50,12 +49,6 @@ export const LLM_DI_IDENTIFIERS = {
   AnthropicEndpointStrategy: Symbol.for('AnthropicEndpointStrategy'),
   MockEndpointStrategy: Symbol.for('MockEndpointStrategy'),
   
-  // 功能
-  GeminiThinkingBudgetFeature: Symbol.for('GeminiThinkingBudgetFeature'),
-  GeminiCachedContentFeature: Symbol.for('GeminiCachedContentFeature'),
-  OpenAIResponseFormatFeature: Symbol.for('OpenAIResponseFormatFeature'),
-  AnthropicSystemMessageFeature: Symbol.for('AnthropicSystemMessageFeature'),
-  
   // HumanRelay前端服务
   TUIInteractionService: Symbol.for('TUIInteractionService'),
   WebInteractionService: Symbol.for('WebInteractionService'),
@@ -68,7 +61,6 @@ export interface ServiceTypes {
   ConfigLoadingModule: any;
   TokenBucketLimiter: any;
   TokenCalculator: any;
-  FeatureRegistry: any;
   OpenAIChatClient: any;
   OpenAIResponseClient: any;
   AnthropicClient: any;
@@ -92,10 +84,6 @@ export interface ServiceTypes {
   GeminiNativeEndpointStrategy: any;
   AnthropicEndpointStrategy: any;
   MockEndpointStrategy: any;
-  GeminiThinkingBudgetFeature: any;
-  GeminiCachedContentFeature: any;
-  OpenAIResponseFormatFeature: any;
-  AnthropicSystemMessageFeature: any;
   TUIInteractionService: any;
   WebInteractionService: any;
   APIInteractionService: any;
@@ -113,7 +101,6 @@ export const DEPENDENCY_GRAPH: Record<keyof LLMDIIdentifiers, (keyof LLMDIIdenti
   ConfigLoadingModule: [],
   TokenBucketLimiter: [],
   TokenCalculator: [],
-  FeatureRegistry: [],
   OpenAIChatClient: ['HttpClient', 'ConfigLoadingModule', 'TokenBucketLimiter', 'TokenCalculator'],
   OpenAIResponseClient: ['HttpClient', 'ConfigLoadingModule', 'TokenBucketLimiter', 'TokenCalculator'],
   AnthropicClient: ['HttpClient', 'ConfigLoadingModule', 'TokenBucketLimiter', 'TokenCalculator'],
@@ -137,10 +124,6 @@ export const DEPENDENCY_GRAPH: Record<keyof LLMDIIdentifiers, (keyof LLMDIIdenti
   GeminiNativeEndpointStrategy: [],
   AnthropicEndpointStrategy: [],
   MockEndpointStrategy: [],
-  GeminiThinkingBudgetFeature: [],
-  GeminiCachedContentFeature: [],
-  OpenAIResponseFormatFeature: [],
-  AnthropicSystemMessageFeature: [],
   TUIInteractionService: ['ConfigLoadingModule'],
   WebInteractionService: ['ConfigLoadingModule'],
   APIInteractionService: ['ConfigLoadingModule'],

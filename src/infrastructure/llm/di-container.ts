@@ -9,7 +9,6 @@ import { RateLimiter } from '../common/http/rate-limiter';
 // LLM 客户端
 import { TokenBucketLimiter } from './rate-limiters/token-bucket-limiter';
 import { TokenCalculator } from './token-calculators/token-calculator';
-import { FeatureRegistry } from './features/feature-registry';
 import { OpenAIChatClient } from './clients/openai-chat-client';
 import { OpenAIResponseClient } from './clients/openai-response-client';
 import { AnthropicClient } from './clients/anthropic-client';
@@ -103,11 +102,6 @@ export class LLMDIContainer {
     // Token计算器
     this.container.bind<TokenCalculator>(LLM_DI_IDENTIFIERS.TokenCalculator)
       .to(TokenCalculator)
-      .inSingletonScope();
-
-    // 功能注册表
-    this.container.bind<FeatureRegistry>(LLM_DI_IDENTIFIERS.FeatureRegistry)
-      .to(FeatureRegistry)
       .inSingletonScope();
   }
 

@@ -7,8 +7,6 @@ import { ProviderConfig, ApiType, ProviderConfigBuilder } from '../parameter-map
 import { GeminiParameterMapper } from '../parameter-mappers/gemini-parameter-mapper';
 import { GeminiNativeEndpointStrategy } from '../endpoint-strategies/gemini-native-endpoint-strategy';
 import { BaseFeatureSupport } from '../parameter-mappers/interfaces/feature-support.interface';
-import { FeatureRegistry } from '../features/feature-registry';
-import { GeminiThinkingBudgetFeature } from '../features/gemini-thinking-budget-feature';
 import { LLM_DI_IDENTIFIERS } from '../di-identifiers';
 import { HttpClient } from '../../common/http/http-client';
 import { TokenBucketLimiter } from '../rate-limiters/token-bucket-limiter';
@@ -38,10 +36,6 @@ export class GeminiClient extends BaseLLMClient {
     featureSupport.supportsMaxTokens = true;
     featureSupport.setProviderSpecificFeature('thinking_budget', true);
     featureSupport.setProviderSpecificFeature('cached_content', true);
-
-    // 创建功能注册表并注册 Gemini 特有功能
-    const featureRegistry = new FeatureRegistry();
-    featureRegistry.registerFeature(new GeminiThinkingBudgetFeature());
 
     // 从配置中读取支持的模型列表
     const supportedModels = configManager.get('llm.gemini.models', [
@@ -76,8 +70,7 @@ export class GeminiClient extends BaseLLMClient {
       rateLimiter,
       tokenCalculator,
       configManager,
-      providerConfig,
-      featureRegistry
+      providerConfig
     );
   }
 

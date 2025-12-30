@@ -2,7 +2,6 @@
 export * from './clients';
 export * from './converters';
 export * from './endpoint-strategies';
-export * from './features';
 export * from './parameter-mappers';
 export * from './rate-limiters';
 export * from './retry';
@@ -13,7 +12,6 @@ export * from './wrappers';
 // human-relay模块已简化，不再需要单独导出
 
 // 导出工厂类
-export { createFeatureRegistry } from './features';
 export { LLMClientFactory } from './clients/llm-client-factory';
 export { LLMWrapperFactory, BaseLLMWrapper } from './wrappers/wrapper-factory';
 
