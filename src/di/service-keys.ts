@@ -24,8 +24,6 @@ import { SessionResourceService } from '../application/sessions/interfaces/sessi
 import { WorkflowOrchestrationService } from '../application/workflow/services/workflow-orchestration-service';
 import { PromptService } from '../application/prompts/services/prompt-service';
 import { IHumanRelayService } from '../domain/llm/services/human-relay-service.interface';
-import { IInteractionStrategy } from '../application/llm/strategies/interaction-strategy.interface';
-import { IPromptRenderingService } from '../application/llm/services/prompt-rendering-service.interface';
 
 // Infrastructure层实现
 import { SessionRepository as SessionInfrastructureRepository } from '../infrastructure/persistence/repositories/session-repository';
@@ -54,9 +52,6 @@ import { Logger } from '../infrastructure/logging/logger';
 import { SessionOrchestrationServiceImpl } from '../application/sessions/services/session-orchestration-service';
 import { SessionResourceServiceImpl } from '../application/sessions/services/session-resource-service';
 import { HumanRelayService } from '../application/llm/services/human-relay-service';
-import { TerminalInteraction } from '../application/llm/strategies/terminal-interaction.strategy';
-import { MockInteraction } from '../application/llm/strategies/mock-interaction.strategy';
-import { PromptRenderingService } from '../application/llm/services/prompt-rendering-service';
 
 // ========== 服务类型映射接口 ==========
 
@@ -95,8 +90,6 @@ export interface ServiceTypes {
 
   // LLM服务
   HumanRelayService: IHumanRelayService;
-  InteractionStrategy: IInteractionStrategy;
-  PromptRenderingService: IPromptRenderingService;
 
   // ========== Infrastructure层实现 ==========
 
@@ -141,9 +134,6 @@ export interface ServiceTypes {
 
   // LLM服务实现
   HumanRelayServiceImpl: HumanRelayService;
-  TerminalInteraction: TerminalInteraction;
-  MockInteraction: MockInteraction;
-  PromptRenderingServiceImpl: PromptRenderingService;
 }
 
 /**
@@ -197,8 +187,6 @@ export const TYPES: {
 
   // LLM服务
   HumanRelayService: Symbol.for('HumanRelayService') as TypedServiceIdentifier<'HumanRelayService'>,
-  InteractionStrategy: Symbol.for('InteractionStrategy') as TypedServiceIdentifier<'InteractionStrategy'>,
-  PromptRenderingService: Symbol.for('PromptRenderingService') as TypedServiceIdentifier<'PromptRenderingService'>,
 
   // ========== Infrastructure层实现 ==========
 
@@ -243,9 +231,6 @@ export const TYPES: {
 
   // LLM服务实现
   HumanRelayServiceImpl: Symbol.for('HumanRelayServiceImpl') as TypedServiceIdentifier<'HumanRelayServiceImpl'>,
-  TerminalInteraction: Symbol.for('TerminalInteraction') as TypedServiceIdentifier<'TerminalInteraction'>,
-  MockInteraction: Symbol.for('MockInteraction') as TypedServiceIdentifier<'MockInteraction'>,
-  PromptRenderingServiceImpl: Symbol.for('PromptRenderingServiceImpl') as TypedServiceIdentifier<'PromptRenderingServiceImpl'>,
 };
 
 /**

@@ -34,15 +34,4 @@ export interface IHumanRelayService {
    */
   processRequest(request: LLMRequest, config: HumanRelayConfig): Promise<LLMResponse>;
 
-  /**
-   * 设置交互策略
-   * @param strategy 交互策略
-   */
-  setInteractionStrategy(strategy: any): void;
-
-  /**
-   * 获取当前交互策略
-   * @returns 当前交互策略
-   */
-  getInteractionStrategy(): any;
 }

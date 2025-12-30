@@ -13,9 +13,6 @@ import { SessionResourceServiceImpl } from '../../application/sessions/services/
 import { WorkflowOrchestrationService } from '../../application/workflow/services/workflow-orchestration-service';
 import { PromptService } from '../../application/prompts/services/prompt-service';
 import { HumanRelayService } from '../../application/llm/services/human-relay-service';
-import { TerminalInteraction } from '../../application/llm/strategies/terminal-interaction.strategy';
-import { MockInteraction } from '../../application/llm/strategies/mock-interaction.strategy';
-import { PromptRenderingService } from '../../application/llm/services/prompt-rendering-service';
 
 // Domain层接口
 import { SessionRepository } from '../../domain/sessions/repositories/session-repository';
@@ -52,18 +49,6 @@ export const applicationBindings = new ContainerModule((bind: any) => {
   // LLM服务绑定
   bind(TYPES.HumanRelayServiceImpl)
     .to(HumanRelayService)
-    .inSingletonScope();
-
-  bind(TYPES.TerminalInteraction)
-    .to(TerminalInteraction)
-    .inSingletonScope();
-
-  bind(TYPES.MockInteraction)
-    .to(MockInteraction)
-    .inSingletonScope();
-
-  bind(TYPES.PromptRenderingServiceImpl)
-    .to(PromptRenderingService)
     .inSingletonScope();
 
   // ========== Domain层接口到Infrastructure实现的绑定 ==========
@@ -142,18 +127,6 @@ export const applicationBindings = new ContainerModule((bind: any) => {
   bind(TYPES.HumanRelayService)
     .toDynamicValue((context: any) => {
       return context.container.get(TYPES.HumanRelayServiceImpl) as IHumanRelayService;
-    })
-    .inSingletonScope();
-
-  bind(TYPES.InteractionStrategy)
-    .toDynamicValue((context: any) => {
-      return context.container.get(TYPES.TerminalInteraction);
-    })
-    .inSingletonScope();
-
-  bind(TYPES.PromptRenderingService)
-    .toDynamicValue((context: any) => {
-      return context.container.get(TYPES.PromptRenderingServiceImpl);
     })
     .inSingletonScope();
 });

@@ -2,6 +2,7 @@
  * HumanRelay LLM客户端
  *
  * 实现BaseLLMClient接口，委托给应用层的HumanRelayService处理业务逻辑
+ * 简化版本：移除交互策略依赖
  */
 
 import { injectable, inject } from 'inversify';
