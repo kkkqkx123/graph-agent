@@ -6,7 +6,7 @@
  */
 
 import { injectable, inject } from 'inversify';
-import { SessionOrchestrationServiceImpl } from '../../sessions/services/session-orchestration-service';
+import { SessionOrchestrationService } from '../../sessions/services/session-orchestration-service';
 import { ThreadCoordinatorService } from '../../../domain/threads';
 import { GraphAlgorithmService, GraphValidationService, WorkflowRepository } from '../../../domain/workflow';
 import { ID, Timestamp } from '../../../domain/common';
@@ -49,12 +49,12 @@ export interface WorkflowExecutionResult {
 @injectable()
 export class WorkflowOrchestrationService {
   constructor(
-    @inject(TYPES.SessionOrchestrationServiceImpl) private readonly sessionOrchestration: SessionOrchestrationServiceImpl,
+    @inject(TYPES.SessionOrchestrationServiceImpl) private readonly sessionOrchestration: SessionOrchestrationService,
     @inject(TYPES.ThreadCoordinatorService) private readonly threadCoordinator: ThreadCoordinatorService,
     @inject(TYPES.GraphAlgorithmService) private readonly graphAlgorithm: GraphAlgorithmService,
     @inject(TYPES.GraphValidationService) private readonly graphValidation: GraphValidationService,
     @inject(TYPES.WorkflowRepository) private readonly workflowRepository: WorkflowRepository
-  ) {}
+  ) { }
 
   /**
    * 执行工作流
@@ -181,7 +181,7 @@ export class WorkflowOrchestrationService {
       sessionId: sessionId.toString(),
       startTime: Timestamp.now(),
       status: 'pending',
-      getVariable: function(path: string) {
+      getVariable: function (path: string) {
         const parts = path.split('.');
         let value: any = { input };
         for (const part of parts) {
@@ -189,14 +189,14 @@ export class WorkflowOrchestrationService {
         }
         return value;
       },
-      setVariable: function() {},
-      getAllVariables: function() { return { input }; },
-      getAllMetadata: function() { return {}; },
-      getInput: function() { return input; },
-      getExecutedNodes: function() { return []; },
-      getNodeResult: function() { return null; },
-      getElapsedTime: function() { return 0; },
-      getWorkflow: function() { return null; }
+      setVariable: function () { },
+      getAllVariables: function () { return { input }; },
+      getAllMetadata: function () { return {}; },
+      getInput: function () { return input; },
+      getExecutedNodes: function () { return []; },
+      getNodeResult: function () { return null; },
+      getElapsedTime: function () { return 0; },
+      getWorkflow: function () { return null; }
     };
   }
 

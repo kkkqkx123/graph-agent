@@ -8,8 +8,8 @@ import { ContainerModule } from 'inversify';
 import { TYPES } from '../service-keys';
 
 // Application层服务实现
-import { SessionOrchestrationServiceImpl } from '../../application/sessions/services/session-orchestration-service';
-import { SessionResourceServiceImpl } from '../../application/sessions/services/session-resource-service';
+import { SessionOrchestrationService } from '../../application/sessions/services/session-orchestration-service';
+import { SessionResourceService } from '../../application/sessions/services/session-resource-service';
 import { WorkflowOrchestrationService } from '../../application/workflow/services/workflow-orchestration-service';
 import { PromptService } from '../../application/prompts/services/prompt-service';
 import { HumanRelayService } from '../../application/llm/services/human-relay-service';
@@ -32,11 +32,11 @@ export const applicationBindings = new ContainerModule((bind: any) => {
 
   // 会话服务
   bind(TYPES.SessionOrchestrationServiceImpl)
-    .to(SessionOrchestrationServiceImpl)
+    .to(SessionOrchestrationService)
     .inSingletonScope();
 
   bind(TYPES.SessionResourceServiceImpl)
-    .to(SessionResourceServiceImpl)
+    .to(SessionResourceService)
     .inSingletonScope();
 
   // 工作流服务

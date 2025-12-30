@@ -47,8 +47,11 @@ import { HookExecutor } from '../infrastructure/workflow/hooks/hook-executor';
 import { Logger } from '../infrastructure/logging/logger';
 
 // Application层实现
-import { SessionOrchestrationServiceImpl } from '../application/sessions/services/session-orchestration-service';
-import { SessionResourceServiceImpl } from '../application/sessions/services/session-resource-service';
+import { SessionOrchestrationService } from '../application/sessions/services/session-orchestration-service';
+import { SessionResourceService } from '../application/sessions/services/session-resource-service';
+import { SessionLifecycleService } from '../application/sessions/services/session-lifecycle-service';
+import { SessionManagementService } from '../application/sessions/services/session-management-service';
+import { SessionMaintenanceService } from '../application/sessions/services/session-maintenance-service';
 import { HumanRelayService } from '../application/llm/services/human-relay-service';
 
 // ========== 服务类型映射接口 ==========
@@ -121,8 +124,11 @@ export interface ServiceTypes {
 
   // ========== Application层实现 ==========
 
-  SessionOrchestrationServiceImpl: SessionOrchestrationServiceImpl;
-  SessionResourceServiceImpl: SessionResourceServiceImpl;
+  SessionOrchestrationServiceImpl: SessionOrchestrationService;
+  SessionResourceServiceImpl: SessionResourceService;
+  SessionLifecycleServiceImpl: SessionLifecycleService;
+  SessionManagementServiceImpl: SessionManagementService;
+  SessionMaintenanceServiceImpl: SessionMaintenanceService;
   WorkflowOrchestrationServiceImpl: WorkflowOrchestrationService;
   PromptServiceImpl: PromptService;
 
@@ -216,6 +222,9 @@ export const TYPES: {
 
   SessionOrchestrationServiceImpl: Symbol.for('SessionOrchestrationServiceImpl') as TypedServiceIdentifier<'SessionOrchestrationServiceImpl'>,
   SessionResourceServiceImpl: Symbol.for('SessionResourceServiceImpl') as TypedServiceIdentifier<'SessionResourceServiceImpl'>,
+  SessionLifecycleServiceImpl: Symbol.for('SessionLifecycleServiceImpl') as TypedServiceIdentifier<'SessionLifecycleServiceImpl'>,
+  SessionManagementServiceImpl: Symbol.for('SessionManagementServiceImpl') as TypedServiceIdentifier<'SessionManagementServiceImpl'>,
+  SessionMaintenanceServiceImpl: Symbol.for('SessionMaintenanceServiceImpl') as TypedServiceIdentifier<'SessionMaintenanceServiceImpl'>,
   WorkflowOrchestrationServiceImpl: Symbol.for('WorkflowOrchestrationServiceImpl') as TypedServiceIdentifier<'WorkflowOrchestrationServiceImpl'>,
   PromptServiceImpl: Symbol.for('PromptServiceImpl') as TypedServiceIdentifier<'PromptServiceImpl'>,
 
