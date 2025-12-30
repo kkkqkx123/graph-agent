@@ -12,6 +12,10 @@ import { SessionOrchestrationServiceImpl } from '../../application/sessions/serv
 import { SessionResourceServiceImpl } from '../../application/sessions/services/session-resource-service';
 import { WorkflowOrchestrationService } from '../../application/workflow/services/workflow-orchestration-service';
 import { PromptService } from '../../application/prompts/services/prompt-service';
+import { HumanRelayService } from '../../application/llm/services/human-relay-service';
+import { TerminalInteraction } from '../../application/llm/strategies/terminal-interaction.strategy';
+import { MockInteraction } from '../../application/llm/strategies/mock-interaction.strategy';
+import { PromptRenderingService } from '../../application/llm/services/prompt-rendering-service';
 
 // Domain层接口
 import { SessionRepository } from '../../domain/sessions/repositories/session-repository';
@@ -21,44 +25,62 @@ import { ThreadCoordinatorService } from '../../domain/threads/services/thread-c
 import { GraphAlgorithmService } from '../../domain/workflow/services/graph-algorithm-service.interface';
 import { GraphValidationService } from '../../domain/workflow/services/graph-validation-service.interface';
 import { ContextProcessorService } from '../../domain/workflow/services/context-processor-service.interface';
+import { IHumanRelayService } from '../../domain/llm/services/human-relay-service.interface';
 
 /**
  * Application层绑定模块
  */
 export const applicationBindings = new ContainerModule((bind: any) => {
   // ========== Application层服务绑定 ==========
-  
+
   bind(TYPES.SessionOrchestrationServiceImpl)
     .to(SessionOrchestrationServiceImpl)
     .inSingletonScope();
-  
+
   bind(TYPES.SessionResourceServiceImpl)
     .to(SessionResourceServiceImpl)
     .inSingletonScope();
-  
+
   bind(TYPES.WorkflowOrchestrationServiceImpl)
     .to(WorkflowOrchestrationService)
     .inSingletonScope();
-  
+
   bind(TYPES.PromptServiceImpl)
     .to(PromptService)
     .inSingletonScope();
 
+  // LLM服务绑定
+  bind(TYPES.HumanRelayServiceImpl)
+    .to(HumanRelayService)
+    .inSingletonScope();
+
+  bind(TYPES.TerminalInteraction)
+    .to(TerminalInteraction)
+    .inSingletonScope();
+
+  bind(TYPES.MockInteraction)
+    .to(MockInteraction)
+    .inSingletonScope();
+
+  bind(TYPES.PromptRenderingServiceImpl)
+    .to(PromptRenderingService)
+    .inSingletonScope();
+
   // ========== Domain层接口到Infrastructure实现的绑定 ==========
-  
+
   // 仓储接口绑定
   bind(TYPES.SessionRepository)
     .toDynamicValue((context: any) => {
       return context.container.get(TYPES.SessionRepositoryImpl);
     })
     .inSingletonScope();
-  
+
   bind(TYPES.ThreadRepository)
     .toDynamicValue((context: any) => {
       return context.container.get(TYPES.ThreadRepositoryImpl);
     })
     .inSingletonScope();
-  
+
   bind(TYPES.WorkflowRepository)
     .toDynamicValue((context: any) => {
       return context.container.get(TYPES.WorkflowRepositoryImpl);
@@ -71,19 +93,19 @@ export const applicationBindings = new ContainerModule((bind: any) => {
       return context.container.get(TYPES.ThreadCoordinatorServiceImpl);
     })
     .inSingletonScope();
-  
+
   bind(TYPES.GraphAlgorithmService)
     .toDynamicValue((context: any) => {
       return context.container.get(TYPES.GraphAlgorithmServiceImpl);
     })
     .inSingletonScope();
-  
+
   bind(TYPES.GraphValidationService)
     .toDynamicValue((context: any) => {
       return context.container.get(TYPES.GraphValidationServiceImpl);
     })
     .inSingletonScope();
-  
+
   bind(TYPES.ContextProcessorService)
     .toDynamicValue((context: any) => {
       return context.container.get(TYPES.ContextProcessorServiceImpl);
@@ -91,28 +113,47 @@ export const applicationBindings = new ContainerModule((bind: any) => {
     .inSingletonScope();
 
   // ========== Application层接口到实现的绑定 ==========
-  
+
   bind(TYPES.SessionOrchestrationService)
     .toDynamicValue((context: any) => {
       return context.container.get(TYPES.SessionOrchestrationServiceImpl);
     })
     .inSingletonScope();
-  
+
   bind(TYPES.SessionResourceService)
     .toDynamicValue((context: any) => {
       return context.container.get(TYPES.SessionResourceServiceImpl);
     })
     .inSingletonScope();
-  
+
   bind(TYPES.WorkflowOrchestrationService)
     .toDynamicValue((context: any) => {
       return context.container.get(TYPES.WorkflowOrchestrationServiceImpl);
     })
     .inSingletonScope();
-  
+
   bind(TYPES.PromptService)
     .toDynamicValue((context: any) => {
       return context.container.get(TYPES.PromptServiceImpl);
+    })
+    .inSingletonScope();
+
+  // LLM服务接口绑定
+  bind(TYPES.HumanRelayService)
+    .toDynamicValue((context: any) => {
+      return context.container.get(TYPES.HumanRelayServiceImpl) as IHumanRelayService;
+    })
+    .inSingletonScope();
+
+  bind(TYPES.InteractionStrategy)
+    .toDynamicValue((context: any) => {
+      return context.container.get(TYPES.TerminalInteraction);
+    })
+    .inSingletonScope();
+
+  bind(TYPES.PromptRenderingService)
+    .toDynamicValue((context: any) => {
+      return context.container.get(TYPES.PromptRenderingServiceImpl);
     })
     .inSingletonScope();
 });

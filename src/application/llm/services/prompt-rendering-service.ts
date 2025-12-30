@@ -1,26 +1,16 @@
+/**
+ * 提示渲染服务实现
+ *
+ * 负责将提示数据渲染为用户友好的格式
+ */
+
+import { injectable } from 'inversify';
+import { IPromptRenderingService, Prompt } from './prompt-rendering-service.interface';
 import { PromptTemplate } from '../../../domain/llm/value-objects/prompt-template';
 import { HumanRelayMode } from '../../../domain/llm/value-objects/human-relay-mode';
 
-/**
- * 提示数据结构
- */
-export interface Prompt {
-  id: string;
-  content: string;
-  mode: HumanRelayMode;
-  conversationContext?: string;
-  template: PromptTemplate;
-  status: string;
-  createdAt: Date;
-  timeout: number;
-}
-
-/**
- * 提示渲染服务
- * 
- * 负责将提示数据渲染为用户友好的格式
- */
-export class PromptRenderingService {
+@injectable()
+export class PromptRenderingService implements IPromptRenderingService {
   /**
    * 渲染提示内容
    */

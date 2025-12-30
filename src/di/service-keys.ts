@@ -3,11 +3,13 @@
  *
  * 定义所有服务的唯一标识符，用于依赖注入
  * 提供完整的类型映射，确保编译时类型检查
+ *
+ * 注意：只注册实现类，不注册接口
  */
 
 // ========== 导入服务类型 ==========
 
-// Domain层接口
+// Domain层接口（用于类型定义，不注册到容器）
 import { SessionRepository } from '../domain/sessions/repositories/session-repository';
 import { ThreadRepository } from '../domain/threads/repositories/thread-repository';
 import { WorkflowRepository } from '../domain/workflow/repositories/workflow-repository';
@@ -17,12 +19,13 @@ import { GraphAlgorithmService } from '../domain/workflow/services/graph-algorit
 import { GraphValidationService } from '../domain/workflow/services/graph-validation-service.interface';
 import { ContextProcessorService } from '../domain/workflow/services/context-processor-service.interface';
 import { ThreadCoordinatorService } from '../domain/threads/services/thread-coordinator-service.interface';
-
-// Application层接口
 import { SessionOrchestrationService } from '../application/sessions/interfaces/session-orchestration-service.interface';
 import { SessionResourceService } from '../application/sessions/interfaces/session-resource-service.interface';
 import { WorkflowOrchestrationService } from '../application/workflow/services/workflow-orchestration-service';
 import { PromptService } from '../application/prompts/services/prompt-service';
+import { IHumanRelayService } from '../domain/llm/services/human-relay-service.interface';
+import { IInteractionStrategy } from '../application/llm/strategies/interaction-strategy.interface';
+import { IPromptRenderingService } from '../application/llm/services/prompt-rendering-service.interface';
 
 // Infrastructure层实现
 import { SessionRepository as SessionInfrastructureRepository } from '../infrastructure/persistence/repositories/session-repository';
@@ -50,6 +53,10 @@ import { Logger } from '../infrastructure/logging/logger';
 // Application层实现
 import { SessionOrchestrationServiceImpl } from '../application/sessions/services/session-orchestration-service';
 import { SessionResourceServiceImpl } from '../application/sessions/services/session-resource-service';
+import { HumanRelayService } from '../application/llm/services/human-relay-service';
+import { TerminalInteraction } from '../application/llm/strategies/terminal-interaction.strategy';
+import { MockInteraction } from '../application/llm/strategies/mock-interaction.strategy';
+import { PromptRenderingService } from '../application/llm/services/prompt-rendering-service';
 
 // ========== 服务类型映射接口 ==========
 
@@ -58,8 +65,8 @@ import { SessionResourceServiceImpl } from '../application/sessions/services/ses
  * 将服务标识符映射到对应的服务类型
  */
 export interface ServiceTypes {
-  // ========== Domain层接口 ==========
-  
+  // ========== Domain层接口（仅用于类型定义） ==========
+
   // 仓储接口
   SessionRepository: SessionRepository;
   ThreadRepository: ThreadRepository;
@@ -67,27 +74,32 @@ export interface ServiceTypes {
   PromptRepository: PromptInfrastructureRepository;
   CheckpointRepository: CheckpointRepository;
   HistoryRepository: HistoryRepository;
-  
+
   // 业务服务接口
   GraphAlgorithmService: GraphAlgorithmService;
   GraphValidationService: GraphValidationService;
   ContextProcessorService: ContextProcessorService;
   ThreadCoordinatorService: ThreadCoordinatorService;
-  
-  // ========== Application层接口 ==========
-  
+
+  // ========== Application层接口（仅用于类型定义） ==========
+
   // 会话服务
   SessionOrchestrationService: SessionOrchestrationService;
   SessionResourceService: SessionResourceService;
-  
+
   // 工作流服务
   WorkflowOrchestrationService: WorkflowOrchestrationService;
-  
+
   // 提示词服务
   PromptService: PromptService;
-  
+
+  // LLM服务
+  HumanRelayService: IHumanRelayService;
+  InteractionStrategy: IInteractionStrategy;
+  PromptRenderingService: IPromptRenderingService;
+
   // ========== Infrastructure层实现 ==========
-  
+
   // 仓储实现
   SessionRepositoryImpl: SessionInfrastructureRepository;
   ThreadRepositoryImpl: ThreadInfrastructureRepository;
@@ -95,13 +107,13 @@ export interface ServiceTypes {
   PromptRepositoryImpl: PromptInfrastructureRepository;
   CheckpointRepositoryImpl: CheckpointInfrastructureRepository;
   HistoryRepositoryImpl: HistoryInfrastructureRepository;
-  
+
   // 业务服务实现
   GraphAlgorithmServiceImpl: GraphAlgorithmServiceImpl;
   GraphValidationServiceImpl: GraphValidationServiceImpl;
   ContextProcessorServiceImpl: ContextProcessorServiceImpl;
   ThreadCoordinatorServiceImpl: ThreadCoordinatorInfrastructureService;
-  
+
   // 基础设施服务
   ConnectionManager: ConnectionManager;
   PromptBuilder: PromptBuilder;
@@ -114,18 +126,24 @@ export interface ServiceTypes {
   NodeRouter: NodeRouter;
   HookExecutor: HookExecutor;
   Logger: Logger;
-  
+
   // 线程相关服务
   ThreadLifecycleService: any; // TODO: 添加具体类型
   ThreadDefinitionRepository: any; // TODO: 添加具体类型
   ThreadExecutionRepository: any; // TODO: 添加具体类型
-  
+
   // ========== Application层实现 ==========
-  
+
   SessionOrchestrationServiceImpl: SessionOrchestrationServiceImpl;
   SessionResourceServiceImpl: SessionResourceServiceImpl;
   WorkflowOrchestrationServiceImpl: WorkflowOrchestrationService;
   PromptServiceImpl: PromptService;
+
+  // LLM服务实现
+  HumanRelayServiceImpl: HumanRelayService;
+  TerminalInteraction: TerminalInteraction;
+  MockInteraction: MockInteraction;
+  PromptRenderingServiceImpl: PromptRenderingService;
 }
 
 /**
@@ -149,8 +167,8 @@ export type TypedServiceIdentifier<K extends ServiceIdentifier> = symbol & {
 export const TYPES: {
   [K in ServiceIdentifier]: TypedServiceIdentifier<K>
 } = {
-  // ========== Domain层接口 ==========
-  
+  // ========== Domain层接口（仅用于类型定义） ==========
+
   // 仓储接口
   SessionRepository: Symbol.for('SessionRepository') as TypedServiceIdentifier<'SessionRepository'>,
   ThreadRepository: Symbol.for('ThreadRepository') as TypedServiceIdentifier<'ThreadRepository'>,
@@ -158,27 +176,32 @@ export const TYPES: {
   PromptRepository: Symbol.for('PromptRepository') as TypedServiceIdentifier<'PromptRepository'>,
   CheckpointRepository: Symbol.for('CheckpointRepository') as TypedServiceIdentifier<'CheckpointRepository'>,
   HistoryRepository: Symbol.for('HistoryRepository') as TypedServiceIdentifier<'HistoryRepository'>,
-  
+
   // 业务服务接口
   GraphAlgorithmService: Symbol.for('GraphAlgorithmService') as TypedServiceIdentifier<'GraphAlgorithmService'>,
   GraphValidationService: Symbol.for('GraphValidationService') as TypedServiceIdentifier<'GraphValidationService'>,
   ContextProcessorService: Symbol.for('ContextProcessorService') as TypedServiceIdentifier<'ContextProcessorService'>,
   ThreadCoordinatorService: Symbol.for('ThreadCoordinatorService') as TypedServiceIdentifier<'ThreadCoordinatorService'>,
-  
-  // ========== Application层接口 ==========
-  
+
+  // ========== Application层接口（仅用于类型定义） ==========
+
   // 会话服务
   SessionOrchestrationService: Symbol.for('SessionOrchestrationService') as TypedServiceIdentifier<'SessionOrchestrationService'>,
   SessionResourceService: Symbol.for('SessionResourceService') as TypedServiceIdentifier<'SessionResourceService'>,
-  
+
   // 工作流服务
   WorkflowOrchestrationService: Symbol.for('WorkflowOrchestrationService') as TypedServiceIdentifier<'WorkflowOrchestrationService'>,
-  
+
   // 提示词服务
   PromptService: Symbol.for('PromptService') as TypedServiceIdentifier<'PromptService'>,
-  
+
+  // LLM服务
+  HumanRelayService: Symbol.for('HumanRelayService') as TypedServiceIdentifier<'HumanRelayService'>,
+  InteractionStrategy: Symbol.for('InteractionStrategy') as TypedServiceIdentifier<'InteractionStrategy'>,
+  PromptRenderingService: Symbol.for('PromptRenderingService') as TypedServiceIdentifier<'PromptRenderingService'>,
+
   // ========== Infrastructure层实现 ==========
-  
+
   // 仓储实现
   SessionRepositoryImpl: Symbol.for('SessionRepositoryImpl') as TypedServiceIdentifier<'SessionRepositoryImpl'>,
   ThreadRepositoryImpl: Symbol.for('ThreadRepositoryImpl') as TypedServiceIdentifier<'ThreadRepositoryImpl'>,
@@ -186,13 +209,13 @@ export const TYPES: {
   PromptRepositoryImpl: Symbol.for('PromptRepositoryImpl') as TypedServiceIdentifier<'PromptRepositoryImpl'>,
   CheckpointRepositoryImpl: Symbol.for('CheckpointRepositoryImpl') as TypedServiceIdentifier<'CheckpointRepositoryImpl'>,
   HistoryRepositoryImpl: Symbol.for('HistoryRepositoryImpl') as TypedServiceIdentifier<'HistoryRepositoryImpl'>,
-  
+
   // 业务服务实现
   GraphAlgorithmServiceImpl: Symbol.for('GraphAlgorithmServiceImpl') as TypedServiceIdentifier<'GraphAlgorithmServiceImpl'>,
   GraphValidationServiceImpl: Symbol.for('GraphValidationServiceImpl') as TypedServiceIdentifier<'GraphValidationServiceImpl'>,
   ContextProcessorServiceImpl: Symbol.for('ContextProcessorServiceImpl') as TypedServiceIdentifier<'ContextProcessorServiceImpl'>,
   ThreadCoordinatorServiceImpl: Symbol.for('ThreadCoordinatorServiceImpl') as TypedServiceIdentifier<'ThreadCoordinatorServiceImpl'>,
-  
+
   // 基础设施服务
   ConnectionManager: Symbol.for('ConnectionManager') as TypedServiceIdentifier<'ConnectionManager'>,
   PromptBuilder: Symbol.for('PromptBuilder') as TypedServiceIdentifier<'PromptBuilder'>,
@@ -205,18 +228,24 @@ export const TYPES: {
   NodeRouter: Symbol.for('NodeRouter') as TypedServiceIdentifier<'NodeRouter'>,
   HookExecutor: Symbol.for('HookExecutor') as TypedServiceIdentifier<'HookExecutor'>,
   Logger: Symbol.for('Logger') as TypedServiceIdentifier<'Logger'>,
-  
+
   // 线程相关服务
   ThreadLifecycleService: Symbol.for('ThreadLifecycleService') as TypedServiceIdentifier<'ThreadLifecycleService'>,
   ThreadDefinitionRepository: Symbol.for('ThreadDefinitionRepository') as TypedServiceIdentifier<'ThreadDefinitionRepository'>,
   ThreadExecutionRepository: Symbol.for('ThreadExecutionRepository') as TypedServiceIdentifier<'ThreadExecutionRepository'>,
-  
+
   // ========== Application层实现 ==========
-  
+
   SessionOrchestrationServiceImpl: Symbol.for('SessionOrchestrationServiceImpl') as TypedServiceIdentifier<'SessionOrchestrationServiceImpl'>,
   SessionResourceServiceImpl: Symbol.for('SessionResourceServiceImpl') as TypedServiceIdentifier<'SessionResourceServiceImpl'>,
   WorkflowOrchestrationServiceImpl: Symbol.for('WorkflowOrchestrationServiceImpl') as TypedServiceIdentifier<'WorkflowOrchestrationServiceImpl'>,
   PromptServiceImpl: Symbol.for('PromptServiceImpl') as TypedServiceIdentifier<'PromptServiceImpl'>,
+
+  // LLM服务实现
+  HumanRelayServiceImpl: Symbol.for('HumanRelayServiceImpl') as TypedServiceIdentifier<'HumanRelayServiceImpl'>,
+  TerminalInteraction: Symbol.for('TerminalInteraction') as TypedServiceIdentifier<'TerminalInteraction'>,
+  MockInteraction: Symbol.for('MockInteraction') as TypedServiceIdentifier<'MockInteraction'>,
+  PromptRenderingServiceImpl: Symbol.for('PromptRenderingServiceImpl') as TypedServiceIdentifier<'PromptRenderingServiceImpl'>,
 };
 
 /**
