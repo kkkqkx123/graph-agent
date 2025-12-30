@@ -6,7 +6,6 @@
 
 import { Thread, ThreadRepository, ThreadPriority } from '../../../domain/threads';
 import { BaseApplicationService } from '../../common/base-application-service';
-import { ThreadInfo } from '../dtos';
 import { ILogger, ID } from '../../../domain/common';
 
 /**
@@ -41,22 +40,16 @@ export class ThreadManagementService extends BaseApplicationService {
   }
 
   /**
-   * 获取线程信息
+   * 获取线程
    * @param threadId 线程ID
-   * @returns 线程信息
+   * @returns 线程领域对象
    */
-  async getThreadInfo(threadId: string): Promise<ThreadInfo | null> {
+  async getThread(threadId: string): Promise<Thread | null> {
     return this.executeGetOperation(
       '线程信息',
       async () => {
         const id = this.parseId(threadId, '线程ID');
-        const thread = await this.threadRepository.findById(id);
-
-        if (!thread) {
-          return null;
-        }
-
-        return this.mapThreadToInfo(thread);
+        return await this.threadRepository.findById(id);
       },
       { threadId }
     );
@@ -65,16 +58,14 @@ export class ThreadManagementService extends BaseApplicationService {
   /**
    * 列出会话的线程
    * @param sessionId 会话ID
-   * @returns 线程信息列表
+   * @returns 线程领域对象列表
    */
-  async listThreadsForSession(sessionId: string): Promise<ThreadInfo[]> {
+  async listThreadsForSession(sessionId: string): Promise<Thread[]> {
     return this.executeListOperation(
       '会话线程',
       async () => {
         const id = this.parseId(sessionId, '会话ID');
-        const threads = await this.threadRepository.findActiveThreadsForSession(id);
-
-        return threads.map(thread => this.mapThreadToInfo(thread));
+        return await this.threadRepository.findActiveThreadsForSession(id);
       },
       { sessionId }
     );
@@ -82,14 +73,13 @@ export class ThreadManagementService extends BaseApplicationService {
 
   /**
    * 列出所有线程
-   * @returns 线程信息列表
+   * @returns 线程领域对象列表
    */
-  async listThreads(): Promise<ThreadInfo[]> {
+  async listThreads(): Promise<Thread[]> {
     return this.executeListOperation(
       '线程',
       async () => {
-        const threads = await this.threadRepository.findAll();
-        return threads.map(thread => this.mapThreadToInfo(thread));
+        return await this.threadRepository.findAll();
       }
     );
   }
@@ -114,9 +104,9 @@ export class ThreadManagementService extends BaseApplicationService {
    * 更新线程优先级
    * @param threadId 线程ID
    * @param priority 新优先级
-   * @returns 更新后的线程信息
+   * @returns 更新后的线程领域对象
    */
-  async updateThreadPriority(threadId: string, priority: number): Promise<ThreadInfo> {
+  async updateThreadPriority(threadId: string, priority: number): Promise<Thread> {
     return this.executeUpdateOperation(
       '线程优先级',
       async () => {
@@ -129,8 +119,7 @@ export class ThreadManagementService extends BaseApplicationService {
         const thread = await this.threadRepository.findByIdOrFail(id);
         thread.updatePriority(threadPriority);
 
-        const savedThread = await this.threadRepository.save(thread);
-        return this.mapThreadToInfo(savedThread);
+        return await this.threadRepository.save(thread);
       },
       { threadId, priority }
     );
@@ -139,20 +128,14 @@ export class ThreadManagementService extends BaseApplicationService {
   /**
    * 获取下一个待执行的线程
    * @param sessionId 会话ID（可选）
-   * @returns 下一个待执行的线程信息
+   * @returns 下一个待执行的线程领域对象
    */
-  async getNextPendingThread(sessionId?: string): Promise<ThreadInfo | null> {
+  async getNextPendingThread(sessionId?: string): Promise<Thread | null> {
     return this.executeGetOperation(
       '下一个待执行线程',
       async () => {
         const id = sessionId ? this.parseId(sessionId, '会话ID') : undefined;
-        const thread = await this.threadRepository.getNextPendingThread(id);
-
-        if (!thread) {
-          return null;
-        }
-
-        return this.mapThreadToInfo(thread);
+        return await this.threadRepository.getNextPendingThread(id);
       },
       { sessionId }
     );
@@ -161,20 +144,14 @@ export class ThreadManagementService extends BaseApplicationService {
   /**
    * 获取最高优先级的待执行线程
    * @param sessionId 会话ID（可选）
-   * @returns 最高优先级的待执行线程信息
+   * @returns 最高优先级的待执行线程领域对象
    */
-  async getHighestPriorityPendingThread(sessionId?: string): Promise<ThreadInfo | null> {
+  async getHighestPriorityPendingThread(sessionId?: string): Promise<Thread | null> {
     return this.executeGetOperation(
       '最高优先级待执行线程',
       async () => {
         const id = sessionId ? this.parseId(sessionId, '会话ID') : undefined;
-        const thread = await this.threadRepository.getHighestPriorityPendingThread(id);
-
-        if (!thread) {
-          return null;
-        }
-
-        return this.mapThreadToInfo(thread);
+        return await this.threadRepository.getHighestPriorityPendingThread(id);
       },
       { sessionId }
     );
@@ -183,20 +160,14 @@ export class ThreadManagementService extends BaseApplicationService {
   /**
    * 获取会话的最后活动线程
    * @param sessionId 会话ID
-   * @returns 最后活动线程信息
+   * @returns 最后活动线程领域对象
    */
-  async getLastActiveThreadForSession(sessionId: string): Promise<ThreadInfo | null> {
+  async getLastActiveThreadForSession(sessionId: string): Promise<Thread | null> {
     return this.executeGetOperation(
       '最后活动线程',
       async () => {
         const id = this.parseId(sessionId, '会话ID');
-        const thread = await this.threadRepository.getLastActiveThreadForSession(id);
-
-        if (!thread) {
-          return null;
-        }
-
-        return this.mapThreadToInfo(thread);
+        return await this.threadRepository.getLastActiveThreadForSession(id);
       },
       { sessionId }
     );
@@ -229,16 +200,14 @@ export class ThreadManagementService extends BaseApplicationService {
   /**
    * 查找工作流的线程
    * @param workflowId 工作流ID
-   * @returns 线程信息列表
+   * @returns 线程领域对象列表
    */
-  async findThreadsForWorkflow(workflowId: string): Promise<ThreadInfo[]> {
+  async findThreadsForWorkflow(workflowId: string): Promise<Thread[]> {
     return this.executeListOperation(
       '工作流线程',
       async () => {
         const id = this.parseId(workflowId, '工作流ID');
-        const threads = await this.threadRepository.findThreadsForWorkflow(id);
-
-        return threads.map(thread => this.mapThreadToInfo(thread));
+        return await this.threadRepository.findThreadsForWorkflow(id);
       },
       { workflowId }
     );
@@ -247,16 +216,14 @@ export class ThreadManagementService extends BaseApplicationService {
   /**
    * 查找失败的线程
    * @param sessionId 会话ID（可选）
-   * @returns 失败线程信息列表
+   * @returns 失败线程领域对象列表
    */
-  async findFailedThreads(sessionId?: string): Promise<ThreadInfo[]> {
+  async findFailedThreads(sessionId?: string): Promise<Thread[]> {
     return this.executeListOperation(
       '失败线程',
       async () => {
         const id = sessionId ? this.parseId(sessionId, '会话ID') : undefined;
-        const threads = await this.threadRepository.findFailedThreads(id);
-
-        return threads.map(thread => this.mapThreadToInfo(thread));
+        return await this.threadRepository.findFailedThreads(id);
       },
       { sessionId }
     );
@@ -265,15 +232,13 @@ export class ThreadManagementService extends BaseApplicationService {
   /**
    * 查找超时的线程
    * @param timeoutHours 超时小时数
-   * @returns 超时线程信息列表
+   * @returns 超时线程领域对象列表
    */
-  async findTimedOutThreads(timeoutHours: number): Promise<ThreadInfo[]> {
+  async findTimedOutThreads(timeoutHours: number): Promise<Thread[]> {
     return this.executeListOperation(
       '超时线程',
       async () => {
-        const threads = await this.threadRepository.findTimedOutThreads(timeoutHours);
-
-        return threads.map(thread => this.mapThreadToInfo(thread));
+        return await this.threadRepository.findTimedOutThreads(timeoutHours);
       },
       { timeoutHours }
     );
@@ -282,38 +247,15 @@ export class ThreadManagementService extends BaseApplicationService {
   /**
    * 查找可重试的失败线程
    * @param maxRetryCount 最大重试次数
-   * @returns 可重试的失败线程信息列表
+   * @returns 可重试的失败线程领域对象列表
    */
-  async findRetryableFailedThreads(maxRetryCount: number): Promise<ThreadInfo[]> {
+  async findRetryableFailedThreads(maxRetryCount: number): Promise<Thread[]> {
     return this.executeListOperation(
       '可重试失败线程',
       async () => {
-        const threads = await this.threadRepository.findRetryableFailedThreads(maxRetryCount);
-
-        return threads.map(thread => this.mapThreadToInfo(thread));
+        return await this.threadRepository.findRetryableFailedThreads(maxRetryCount);
       },
       { maxRetryCount }
     );
-  }
-
-  /**
-   * 将线程领域对象映射为线程信息DTO
-   */
-  private mapThreadToInfo(thread: Thread): ThreadInfo {
-    return {
-      threadId: thread.threadId.toString(),
-      sessionId: thread.sessionId.toString(),
-      workflowId: thread.workflowId.toString(),
-      status: thread.status.getValue(),
-      priority: thread.priority.getNumericValue(),
-      title: thread.title,
-      description: thread.description,
-      createdAt: thread.createdAt.toISOString(),
-      startedAt: thread.startedAt?.toISOString(),
-      completedAt: thread.completedAt?.toISOString(),
-      errorMessage: thread.errorMessage,
-      progress: thread.execution.progress,
-      currentStep: thread.execution.currentStep
-    };
   }
 }

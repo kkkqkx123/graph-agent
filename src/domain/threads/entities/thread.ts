@@ -565,4 +565,192 @@ export class Thread extends Entity {
   public getBusinessIdentifier(): string {
     return `thread:${this.props.id.toString()}`;
   }
+
+  // 状态管理方法
+
+  /**
+   * 从Checkpoint恢复Thread状态
+   * @param checkpointData Checkpoint数据
+   */
+  public restoreFromCheckpoint(checkpointData: Record<string, unknown>): void {
+    if (this.props.isDeleted) {
+      throw new Error('无法恢复已删除的线程');
+    }
+
+    // 验证Checkpoint数据
+    if (!checkpointData || Object.keys(checkpointData).length === 0) {
+      throw new Error('Checkpoint数据不能为空');
+    }
+
+    // 验证Checkpoint是否属于当前Thread
+    const checkpointThreadId = checkpointData['threadId'] as string;
+    if (checkpointThreadId !== this.props.id.value) {
+      throw new Error(`Checkpoint不属于当前线程: ${checkpointThreadId} !== ${this.props.id.value}`);
+    }
+
+    // 恢复ThreadExecution
+    const executionData = checkpointData['execution'] as Record<string, unknown>;
+    if (!executionData) {
+      throw new Error('Checkpoint数据中缺少execution信息');
+    }
+
+    const restoredExecution = this.restoreExecution(executionData);
+
+    // 恢复状态
+    const statusValue = checkpointData['status'] as string;
+    let restoredStatus: ThreadStatus;
+    
+    switch (statusValue) {
+      case 'pending':
+        restoredStatus = ThreadStatus.pending();
+        break;
+      case 'running':
+        restoredStatus = ThreadStatus.running();
+        break;
+      case 'paused':
+        restoredStatus = ThreadStatus.paused();
+        break;
+      case 'completed':
+        restoredStatus = ThreadStatus.completed();
+        break;
+      case 'failed':
+        restoredStatus = ThreadStatus.failed();
+        break;
+      case 'cancelled':
+        restoredStatus = ThreadStatus.cancelled();
+        break;
+      default:
+        throw new Error(`无效的线程状态: ${statusValue}`);
+    }
+
+    const newProps = {
+      ...this.props,
+      status: restoredStatus,
+      execution: restoredExecution,
+      updatedAt: Timestamp.now(),
+      version: this.props.version.nextPatch()
+    };
+
+    (this as any).props = Object.freeze(newProps);
+    this.update();
+  }
+
+  /**
+   * 获取Thread状态快照
+   * @returns 状态快照数据
+   */
+  public getStateSnapshot(): Record<string, unknown> {
+    return {
+      threadId: this.props.id.value,
+      sessionId: this.props.sessionId.value,
+      workflowId: this.props.workflowId.value,
+      status: this.props.status.value,
+      priority: this.props.priority.value,
+      title: this.props.title,
+      description: this.props.description,
+      metadata: this.props.metadata,
+      execution: this.getExecutionSnapshot(),
+      createdAt: this.props.createdAt.toISOString(),
+      updatedAt: this.props.updatedAt.toISOString()
+    };
+  }
+
+  /**
+   * 恢复ThreadExecution
+   * @param executionData 执行数据
+   * @returns 恢复后的ThreadExecution
+   */
+  private restoreExecution(executionData: Record<string, unknown>): ThreadExecution {
+    // 解析status
+    const statusValue = executionData['status'] as string;
+    let status: ThreadStatus;
+    
+    switch (statusValue) {
+      case 'pending':
+        status = ThreadStatus.pending();
+        break;
+      case 'running':
+        status = ThreadStatus.running();
+        break;
+      case 'paused':
+        status = ThreadStatus.paused();
+        break;
+      case 'completed':
+        status = ThreadStatus.completed();
+        break;
+      case 'failed':
+        status = ThreadStatus.failed();
+        break;
+      case 'cancelled':
+        status = ThreadStatus.cancelled();
+        break;
+      default:
+        throw new Error(`无效的执行状态: ${statusValue}`);
+    }
+
+    // 解析progress
+    const progress = executionData['progress'] as number || 0;
+
+    // 解析currentStep
+    const currentStep = executionData['currentStep'] as string | undefined;
+
+    // 解析startedAt
+    const startedAtValue = executionData['startedAt'] as string | undefined;
+    const startedAt = startedAtValue ? Timestamp.fromISOString(startedAtValue) : undefined;
+
+    // 解析completedAt
+    const completedAtValue = executionData['completedAt'] as string | undefined;
+    const completedAt = completedAtValue ? Timestamp.fromISOString(completedAtValue) : undefined;
+
+    // 解析errorMessage
+    const errorMessage = executionData['errorMessage'] as string | undefined;
+
+    // 解析retryCount
+    const retryCount = executionData['retryCount'] as number || 0;
+
+    // 解析lastActivityAt
+    const lastActivityAtValue = executionData['lastActivityAt'] as string;
+    const lastActivityAt = Timestamp.fromISOString(lastActivityAtValue);
+
+    // 解析context
+    const contextData = executionData['context'] as Record<string, unknown> || {};
+    const promptContext = PromptContext.create(contextData['prompt'] as string || '');
+    const context = ExecutionContext.create(promptContext);
+
+    // 创建新的ThreadExecution
+    return ThreadExecution.fromProps({
+      threadId: this.props.id,
+      status,
+      progress,
+      currentStep,
+      startedAt,
+      completedAt,
+      errorMessage,
+      retryCount,
+      lastActivityAt,
+      nodeExecutions: new Map(),
+      context,
+      operationHistory: []
+    });
+  }
+
+  /**
+   * 获取ThreadExecution快照
+   * @returns 执行快照数据
+   */
+  private getExecutionSnapshot(): Record<string, unknown> {
+    return {
+      status: this.props.execution.status.value,
+      progress: this.props.execution.progress,
+      currentStep: this.props.execution.currentStep,
+      startedAt: this.props.execution.startedAt?.toISOString(),
+      completedAt: this.props.execution.completedAt?.toISOString(),
+      errorMessage: this.props.execution.errorMessage,
+      retryCount: this.props.execution.retryCount,
+      lastActivityAt: this.props.execution.lastActivityAt.toISOString(),
+      context: {
+        prompt: this.props.execution.context.promptContext?.value || ''
+      }
+    };
+  }
 }

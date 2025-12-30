@@ -8,7 +8,6 @@ import { Thread, ThreadRepository, ThreadStatus, ThreadPriority } from '../../..
 import { SessionRepository } from '../../../domain/sessions';
 import { WorkflowRepository } from '../../../domain/workflow';
 import { BaseApplicationService } from '../../common/base-application-service';
-import { CreateThreadRequest, ThreadInfo } from '../dtos';
 import { ILogger, ID } from '../../../domain/common';
 
 /**
@@ -131,56 +130,63 @@ export class ThreadLifecycleService extends BaseApplicationService {
 
   /**
    * 创建线程
-   * @param request 创建线程请求
-   * @returns 创建的线程ID
+   * @param sessionId 会话ID
+   * @param workflowId 工作流ID
+   * @param priority 优先级
+   * @param title 标题
+   * @param description 描述
+   * @param metadata 元数据
+   * @returns 创建的线程领域对象
    */
-  async createThread(request: CreateThreadRequest): Promise<string> {
-    return this.executeCreateOperation(
+  async createThread(
+    sessionId: string,
+    workflowId: string,
+    priority?: number,
+    title?: string,
+    description?: string,
+    metadata?: Record<string, unknown>
+  ): Promise<Thread> {
+    return this.executeBusinessOperation(
       '线程',
       async () => {
         // 验证会话存在
-        const sessionId = this.parseId(request.sessionId, '会话ID');
-        const session = await this.sessionRepository.findById(sessionId);
+        const sessionObjId = this.parseId(sessionId, '会话ID');
+        const session = await this.sessionRepository.findById(sessionObjId);
         if (!session) {
-          throw new Error(`会话不存在: ${request.sessionId}`);
+          throw new Error(`会话不存在: ${sessionId}`);
         }
 
         // 验证工作流存在
-        if (!request.workflowId) {
-          throw new Error('工作流ID不能为空');
-        }
-        const workflowId = this.parseId(request.workflowId, '工作流ID');
-        const workflow = await this.workflowRepository.findById(workflowId);
+        const workflowObjId = this.parseId(workflowId, '工作流ID');
+        const workflow = await this.workflowRepository.findById(workflowObjId);
         if (!workflow) {
-          throw new Error(`工作流不存在: ${request.workflowId}`);
+          throw new Error(`工作流不存在: ${workflowId}`);
         }
 
         // 转换请求参数
-        const priority = request.priority ? ThreadPriority.fromNumber(request.priority) : undefined;
+        const threadPriority = priority ? ThreadPriority.fromNumber(priority) : undefined;
 
         // 验证线程创建的业务规则
         await this.validateThreadCreation(
-          sessionId,
-          workflowId,
-          priority
+          sessionObjId,
+          workflowObjId,
+          threadPriority
         );
 
         // 创建线程
         const thread = Thread.create(
-          sessionId,
-          workflowId,
-          priority,
-          request.title,
-          request.description,
-          request.metadata
+          sessionObjId,
+          workflowObjId,
+          threadPriority,
+          title,
+          description,
+          metadata
         );
 
         // 保存线程
-        const savedThread = await this.threadRepository.save(thread);
-
-        return savedThread.threadId;
+        return await this.threadRepository.save(thread);
       },
-      { sessionId: request.sessionId, workflowId: request.workflowId }
+      { sessionId, workflowId }
     );
   }
 
@@ -188,9 +194,9 @@ export class ThreadLifecycleService extends BaseApplicationService {
    * 启动线程
    * @param threadId 线程ID
    * @param userId 用户ID
-   * @returns 启动后的线程信息
+   * @returns 启动后的线程领域对象
    */
-  async startThread(threadId: string, userId?: string): Promise<ThreadInfo> {
+  async startThread(threadId: string, userId?: string): Promise<Thread> {
     return this.executeUpdateOperation(
       '线程',
       async () => {
@@ -203,8 +209,7 @@ export class ThreadLifecycleService extends BaseApplicationService {
         const thread = await this.threadRepository.findByIdOrFail(id);
         thread.start(user);
 
-        const savedThread = await this.threadRepository.save(thread);
-        return this.mapThreadToInfo(savedThread);
+        return await this.threadRepository.save(thread);
       },
       { threadId, userId }
     );
@@ -215,9 +220,9 @@ export class ThreadLifecycleService extends BaseApplicationService {
    * @param threadId 线程ID
    * @param userId 用户ID
    * @param reason 暂停原因
-   * @returns 暂停后的线程信息
+   * @returns 暂停后的线程领域对象
    */
-  async pauseThread(threadId: string, userId?: string, reason?: string): Promise<ThreadInfo> {
+  async pauseThread(threadId: string, userId?: string, reason?: string): Promise<Thread> {
     return this.executeUpdateOperation(
       '线程',
       async () => {
@@ -230,8 +235,7 @@ export class ThreadLifecycleService extends BaseApplicationService {
         const thread = await this.threadRepository.findByIdOrFail(id);
         thread.pause(user, reason);
 
-        const savedThread = await this.threadRepository.save(thread);
-        return this.mapThreadToInfo(savedThread);
+        return await this.threadRepository.save(thread);
       },
       { threadId, userId, reason }
     );
@@ -242,9 +246,9 @@ export class ThreadLifecycleService extends BaseApplicationService {
    * @param threadId 线程ID
    * @param userId 用户ID
    * @param reason 恢复原因
-   * @returns 恢复后的线程信息
+   * @returns 恢复后的线程领域对象
    */
-  async resumeThread(threadId: string, userId?: string, reason?: string): Promise<ThreadInfo> {
+  async resumeThread(threadId: string, userId?: string, reason?: string): Promise<Thread> {
     return this.executeUpdateOperation(
       '线程',
       async () => {
@@ -257,8 +261,7 @@ export class ThreadLifecycleService extends BaseApplicationService {
         const thread = await this.threadRepository.findByIdOrFail(id);
         thread.resume(user, reason);
 
-        const savedThread = await this.threadRepository.save(thread);
-        return this.mapThreadToInfo(savedThread);
+        return await this.threadRepository.save(thread);
       },
       { threadId, userId, reason }
     );
@@ -269,9 +272,9 @@ export class ThreadLifecycleService extends BaseApplicationService {
    * @param threadId 线程ID
    * @param userId 用户ID
    * @param reason 完成原因
-   * @returns 完成后的线程信息
+   * @returns 完成后的线程领域对象
    */
-  async completeThread(threadId: string, userId?: string, reason?: string): Promise<ThreadInfo> {
+  async completeThread(threadId: string, userId?: string, reason?: string): Promise<Thread> {
     return this.executeUpdateOperation(
       '线程',
       async () => {
@@ -284,8 +287,7 @@ export class ThreadLifecycleService extends BaseApplicationService {
         const thread = await this.threadRepository.findByIdOrFail(id);
         thread.complete(user, reason);
 
-        const savedThread = await this.threadRepository.save(thread);
-        return this.mapThreadToInfo(savedThread);
+        return await this.threadRepository.save(thread);
       },
       { threadId, userId, reason }
     );
@@ -297,14 +299,14 @@ export class ThreadLifecycleService extends BaseApplicationService {
    * @param errorMessage 错误信息
    * @param userId 用户ID
    * @param reason 失败原因
-   * @returns 失败后的线程信息
+   * @returns 失败后的线程领域对象
    */
   async failThread(
     threadId: string,
     errorMessage: string,
     userId?: string,
     reason?: string
-  ): Promise<ThreadInfo> {
+  ): Promise<Thread> {
     return this.executeUpdateOperation(
       '线程',
       async () => {
@@ -317,8 +319,7 @@ export class ThreadLifecycleService extends BaseApplicationService {
         const thread = await this.threadRepository.findByIdOrFail(id);
         thread.fail(errorMessage, user, reason);
 
-        const savedThread = await this.threadRepository.save(thread);
-        return this.mapThreadToInfo(savedThread);
+        return await this.threadRepository.save(thread);
       },
       { threadId, errorMessage, userId, reason }
     );
@@ -329,9 +330,9 @@ export class ThreadLifecycleService extends BaseApplicationService {
    * @param threadId 线程ID
    * @param userId 用户ID
    * @param reason 取消原因
-   * @returns 取消后的线程信息
+   * @returns 取消后的线程领域对象
    */
-  async cancelThread(threadId: string, userId?: string, reason?: string): Promise<ThreadInfo> {
+  async cancelThread(threadId: string, userId?: string, reason?: string): Promise<Thread> {
     return this.executeUpdateOperation(
       '线程',
       async () => {
@@ -344,8 +345,7 @@ export class ThreadLifecycleService extends BaseApplicationService {
         const thread = await this.threadRepository.findByIdOrFail(id);
         thread.cancel(user, reason);
 
-        const savedThread = await this.threadRepository.save(thread);
-        return this.mapThreadToInfo(savedThread);
+        return await this.threadRepository.save(thread);
       },
       { threadId, userId, reason }
     );
@@ -383,26 +383,5 @@ export class ThreadLifecycleService extends BaseApplicationService {
       },
       { threadId }
     );
-  }
-
-  /**
-   * 将线程领域对象映射为线程信息DTO
-   */
-  private mapThreadToInfo(thread: Thread): ThreadInfo {
-    return {
-      threadId: thread.threadId.toString(),
-      sessionId: thread.sessionId.toString(),
-      workflowId: thread.workflowId.toString(),
-      status: thread.status.getValue(),
-      priority: thread.priority.getNumericValue(),
-      title: thread.title,
-      description: thread.description,
-      createdAt: thread.createdAt.toISOString(),
-      startedAt: thread.startedAt?.toISOString(),
-      completedAt: thread.completedAt?.toISOString(),
-      errorMessage: thread.errorMessage,
-      progress: thread.execution.progress,
-      currentStep: thread.execution.currentStep
-    };
   }
 }

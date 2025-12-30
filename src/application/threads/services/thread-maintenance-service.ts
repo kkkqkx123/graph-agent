@@ -6,7 +6,6 @@
 
 import { Thread, ThreadRepository, ThreadStatus } from '../../../domain/threads';
 import { BaseApplicationService } from '../../common/base-application-service';
-import { ThreadInfo } from '../dtos';
 import { ILogger } from '../../../domain/common';
 
 /**
@@ -164,9 +163,9 @@ export class ThreadMaintenanceService extends BaseApplicationService {
    * 重试失败的线程
    * @param threadId 线程ID
    * @param userId 用户ID
-   * @returns 重试后的线程信息
+   * @returns 重试后的线程领域对象
    */
-  async retryFailedThread(threadId: string, userId?: string): Promise<ThreadInfo> {
+  async retryFailedThread(threadId: string, userId?: string): Promise<Thread> {
     return this.executeUpdateOperation(
       '失败线程重试',
       async () => {
@@ -187,8 +186,7 @@ export class ThreadMaintenanceService extends BaseApplicationService {
         thread.start(user); // 先启动
         thread.pause(user, '准备重试'); // 再暂停，表示准备重试
 
-        const savedThread = await this.threadRepository.save(thread);
-        return this.mapThreadToInfo(savedThread);
+        return await this.threadRepository.save(thread);
       },
       { threadId, userId }
     );
@@ -295,26 +293,5 @@ export class ThreadMaintenanceService extends BaseApplicationService {
       },
       { sessionId }
     );
-  }
-
-  /**
-   * 将线程领域对象映射为线程信息DTO
-   */
-  private mapThreadToInfo(thread: Thread): ThreadInfo {
-    return {
-      threadId: thread.threadId.toString(),
-      sessionId: thread.sessionId.toString(),
-      workflowId: thread.workflowId.toString(),
-      status: thread.status.getValue(),
-      priority: thread.priority.getNumericValue(),
-      title: thread.title,
-      description: thread.description,
-      createdAt: thread.createdAt.toISOString(),
-      startedAt: thread.startedAt?.toISOString(),
-      completedAt: thread.completedAt?.toISOString(),
-      errorMessage: thread.errorMessage,
-      progress: thread.execution.progress,
-      currentStep: thread.execution.currentStep
-    };
   }
 }

@@ -2,14 +2,6 @@ import { injectable, inject } from 'inversify';
 import { Workflow, WorkflowStatus, WorkflowType, WorkflowConfig, NodeId, NodeType, EdgeId, EdgeType, WorkflowRepository } from '../../../domain/workflow';
 import { ID, Timestamp, ILogger } from '../../../domain/common';
 
-// DTOs
-import {
-  WorkflowDto,
-  WorkflowSummaryDto
-} from '../dtos/workflow.dto';
-import { WorkflowExecutionResultDto } from '../dtos/workflow-execution.dto';
-import { WorkflowStatisticsDto } from '../dtos/workflow-statistics.dto';
-
 // 参数类型定义
 export interface CreateWorkflowParams {
   name: string;
@@ -129,9 +121,9 @@ export class WorkflowService {
   /**
    * 创建工作流
    * @param command 创建工作流命令
-   * @returns 创建的工作流DTO
+   * @returns 创建的工作流领域对象
    */
-  async createWorkflow(params: CreateWorkflowParams): Promise<WorkflowDto> {
+  async createWorkflow(params: CreateWorkflowParams): Promise<Workflow> {
     try {
       this.logger.info('正在创建工作流', {
         name: params.name,
@@ -161,7 +153,7 @@ export class WorkflowService {
 
       this.logger.info('工作流创建成功', { workflowId: savedWorkflow.workflowId.toString() });
 
-      return this.toWorkflowDto(savedWorkflow);
+      return savedWorkflow;
     } catch (error) {
       this.logger.error('创建工作流失败', error as Error);
       throw error;
@@ -171,9 +163,9 @@ export class WorkflowService {
   /**
    * 激活工作流
    * @param command 激活工作流命令
-   * @returns 激活后的工作流DTO
+   * @returns 激活后的工作流领域对象
    */
-  async activateWorkflow(params: ActivateWorkflowParams): Promise<WorkflowDto> {
+  async activateWorkflow(params: ActivateWorkflowParams): Promise<Workflow> {
     try {
       this.logger.info('正在激活工作流', { workflowId: params.workflowId });
 
@@ -193,7 +185,7 @@ export class WorkflowService {
 
       this.logger.info('工作流激活成功', { workflowId: params.workflowId });
 
-      return this.toWorkflowDto(savedWorkflow);
+      return savedWorkflow;
     } catch (error) {
       this.logger.error('激活工作流失败', error as Error);
       throw error;
@@ -203,9 +195,9 @@ export class WorkflowService {
   /**
    * 停用工作流
    * @param command 停用工作流命令
-   * @returns 停用后的工作流DTO
+   * @returns 停用后的工作流领域对象
    */
-  async deactivateWorkflow(params: DeactivateWorkflowParams): Promise<WorkflowDto> {
+  async deactivateWorkflow(params: DeactivateWorkflowParams): Promise<Workflow> {
     try {
       this.logger.info('正在停用工作流', { workflowId: params.workflowId });
 
@@ -225,7 +217,7 @@ export class WorkflowService {
 
       this.logger.info('工作流停用成功', { workflowId: params.workflowId });
 
-      return this.toWorkflowDto(savedWorkflow);
+      return savedWorkflow;
     } catch (error) {
       this.logger.error('停用工作流失败', error as Error);
       throw error;
@@ -235,9 +227,9 @@ export class WorkflowService {
   /**
    * 归档工作流
    * @param command 归档工作流命令
-   * @returns 归档后的工作流DTO
+   * @returns 归档后的工作流领域对象
    */
-  async archiveWorkflow(params: ArchiveWorkflowParams): Promise<WorkflowDto> {
+  async archiveWorkflow(params: ArchiveWorkflowParams): Promise<Workflow> {
     try {
       this.logger.info('正在归档工作流', { workflowId: params.workflowId });
 
@@ -257,7 +249,7 @@ export class WorkflowService {
 
       this.logger.info('工作流归档成功', { workflowId: params.workflowId });
 
-      return this.toWorkflowDto(savedWorkflow);
+      return savedWorkflow;
     } catch (error) {
       this.logger.error('归档工作流失败', error as Error);
       throw error;
@@ -267,9 +259,9 @@ export class WorkflowService {
   /**
    * 更新工作流
    * @param command 更新工作流命令
-   * @returns 更新后的工作流DTO
+   * @returns 更新后的工作流领域对象
    */
-  async updateWorkflow(params: UpdateWorkflowParams): Promise<WorkflowDto> {
+  async updateWorkflow(params: UpdateWorkflowParams): Promise<Workflow> {
     try {
       this.logger.info('正在更新工作流', { workflowId: params.workflowId });
 
@@ -308,7 +300,7 @@ export class WorkflowService {
 
       this.logger.info('工作流更新成功', { workflowId: params.workflowId });
 
-      return this.toWorkflowDto(updatedWorkflow);
+      return updatedWorkflow;
     } catch (error) {
       this.logger.error('更新工作流失败', error as Error);
       throw error;
@@ -318,9 +310,32 @@ export class WorkflowService {
   /**
    * 执行工作流
    * @param command 执行工作流命令
-   * @returns 执行结果DTO
+   * @returns 执行结果
    */
-  async executeWorkflow(params: ExecuteWorkflowParams): Promise<WorkflowExecutionResultDto> {
+  async executeWorkflow(params: ExecuteWorkflowParams): Promise<{
+    executionId: string;
+    workflowId: string;
+    status: 'pending' | 'running' | 'completed' | 'failed' | 'cancelled' | 'paused';
+    startTime: string;
+    endTime?: string;
+    duration?: number;
+    output: Record<string, unknown>;
+    logs: Array<{
+      level: 'debug' | 'info' | 'warn' | 'error';
+      message: string;
+      timestamp: string;
+      nodeId?: string;
+      edgeId?: string;
+    }>;
+    statistics: {
+      executedNodes: number;
+      totalNodes: number;
+      executedEdges: number;
+      totalEdges: number;
+      executionPath: string[];
+    };
+    metadata: Record<string, unknown>;
+  }> {
     try {
       this.logger.info('正在执行工作流', {
         workflowId: params.workflowId,
@@ -348,7 +363,7 @@ export class WorkflowService {
       // 计算执行路径
       const executionPath = this.calculateExecutionPath(workflow);
 
-      const result: WorkflowExecutionResultDto = {
+      const result = {
         executionId,
         workflowId: params.workflowId,
         status: 'completed' as const,
@@ -383,9 +398,9 @@ export class WorkflowService {
   /**
    * 添加工作流标签
    * @param command 添加工作流标签命令
-   * @returns 更新后的工作流DTO
+   * @returns 更新后的工作流领域对象
    */
-  async addWorkflowTag(params: AddWorkflowTagParams): Promise<WorkflowDto> {
+  async addWorkflowTag(params: AddWorkflowTagParams): Promise<Workflow> {
     try {
       this.logger.info('正在添加工作流标签', {
         workflowId: params.workflowId,
@@ -408,7 +423,7 @@ export class WorkflowService {
         tag: params.tag
       });
 
-      return this.toWorkflowDto(savedWorkflow);
+      return savedWorkflow;
     } catch (error) {
       this.logger.error('添加工作流标签失败', error as Error);
       throw error;
@@ -418,9 +433,9 @@ export class WorkflowService {
   /**
    * 移除工作流标签
    * @param command 移除工作流标签命令
-   * @returns 更新后的工作流DTO
+   * @returns 更新后的工作流领域对象
    */
-  async removeWorkflowTag(params: RemoveWorkflowTagParams): Promise<WorkflowDto> {
+  async removeWorkflowTag(params: RemoveWorkflowTagParams): Promise<Workflow> {
     try {
       this.logger.info('正在移除工作流标签', {
         workflowId: params.workflowId,
@@ -443,7 +458,7 @@ export class WorkflowService {
         tag: params.tag
       });
 
-      return this.toWorkflowDto(savedWorkflow);
+      return savedWorkflow;
     } catch (error) {
       this.logger.error('移除工作流标签失败', error as Error);
       throw error;
@@ -524,9 +539,9 @@ export class WorkflowService {
   /**
    * 获取工作流
    * @param query 获取工作流查询
-   * @returns 工作流DTO或null
+   * @returns 工作流领域对象或null
    */
-  async getWorkflow(params: GetWorkflowParams): Promise<WorkflowDto | null> {
+  async getWorkflow(params: GetWorkflowParams): Promise<Workflow | null> {
     try {
       const workflowId = ID.fromString(params.workflowId);
       const workflow = await this.workflowRepository.findById(workflowId);
@@ -535,7 +550,7 @@ export class WorkflowService {
         return null;
       }
 
-      return this.toWorkflowDto(workflow);
+      return workflow;
     } catch (error) {
       this.logger.error('获取工作流失败', error as Error);
       throw error;
@@ -545,10 +560,10 @@ export class WorkflowService {
   /**
    * 列出工作流
    * @param query 列出工作流查询
-   * @returns 工作流DTO列表
+   * @returns 工作流领域对象列表
    */
   async listWorkflows(params: ListWorkflowsParams): Promise<{
-    workflows: WorkflowDto[] | WorkflowSummaryDto[];
+    workflows: Workflow[];
     total: number;
     page: number;
     size: number;
@@ -596,12 +611,8 @@ export class WorkflowService {
       const endIndex = startIndex + size;
       const paginatedWorkflows = filteredWorkflows.slice(startIndex, endIndex);
 
-      const workflows = params.includeSummary
-        ? paginatedWorkflows.map(wf => this.toWorkflowSummaryDto(wf))
-        : paginatedWorkflows.map(wf => this.toWorkflowDto(wf));
-
       return {
-        workflows,
+        workflows: paginatedWorkflows,
         total: filteredWorkflows.length,
         page,
         size: paginatedWorkflows.length
@@ -632,9 +643,23 @@ export class WorkflowService {
   /**
    * 获取工作流统计信息
    * @param query 获取工作流统计信息查询
-   * @returns 工作流统计信息DTO
+   * @returns 工作流统计信息
    */
-  async getWorkflowStatistics(params: GetWorkflowStatisticsParams): Promise<WorkflowStatisticsDto> {
+  async getWorkflowStatistics(params: GetWorkflowStatisticsParams): Promise<{
+    totalWorkflows: number;
+    draftWorkflows: number;
+    activeWorkflows: number;
+    inactiveWorkflows: number;
+    archivedWorkflows: number;
+    totalExecutions: number;
+    totalSuccesses: number;
+    totalFailures: number;
+    averageSuccessRate: number;
+    averageExecutionTime: number;
+    workflowsByStatus: Record<string, number>;
+    workflowsByType: Record<string, number>;
+    tagStatistics: Record<string, number>;
+  }> {
     try {
       // 获取所有工作流
       const allWorkflows = await this.workflowRepository.findAll();
@@ -661,7 +686,7 @@ export class WorkflowService {
    * @returns 搜索结果
    */
   async searchWorkflows(params: SearchWorkflowsParams): Promise<{
-    workflows: WorkflowDto[];
+    workflows: Workflow[];
     total: number;
     page: number;
     size: number;
@@ -693,7 +718,7 @@ export class WorkflowService {
       const paginatedWorkflows = uniqueWorkflows.slice(startIndex, endIndex);
 
       return {
-        workflows: paginatedWorkflows.map(wf => this.toWorkflowDto(wf)),
+        workflows: paginatedWorkflows,
         total: uniqueWorkflows.length,
         page,
         size: paginatedWorkflows.length
@@ -709,7 +734,20 @@ export class WorkflowService {
    * @param workflows 工作流列表
    * @returns 统计信息
    */
-  private calculateWorkflowStatistics(workflows: Workflow[]): Omit<WorkflowStatisticsDto, 'tagStatistics'> {
+  private calculateWorkflowStatistics(workflows: Workflow[]): {
+    totalWorkflows: number;
+    draftWorkflows: number;
+    activeWorkflows: number;
+    inactiveWorkflows: number;
+    archivedWorkflows: number;
+    totalExecutions: number;
+    totalSuccesses: number;
+    totalFailures: number;
+    averageSuccessRate: number;
+    averageExecutionTime: number;
+    workflowsByStatus: Record<string, number>;
+    workflowsByType: Record<string, number>;
+  } {
     const stats = {
       totalWorkflows: workflows.length,
       draftWorkflows: workflows.filter(wf => wf.status.isDraft()).length,
@@ -786,55 +824,6 @@ export class WorkflowService {
     }
 
     return executionPath;
-  }
-
-  /**
-   * 转换为工作流DTO
-   * @param workflow 工作流实体
-   * @returns 工作流DTO
-   */
-  private toWorkflowDto(workflow: Workflow): WorkflowDto {
-    return {
-      id: workflow.workflowId.toString(),
-      name: workflow.name,
-      description: workflow.description,
-      status: workflow.status.toString(),
-      type: workflow.type.toString(),
-      config: workflow.config.value,
-      workflowId: undefined,
-      version: workflow.version.toString(),
-      executionCount: 0,
-      successCount: 0,
-      failureCount: 0,
-      averageExecutionTime: undefined,
-      lastExecutedAt: undefined,
-      tags: workflow.tags,
-      metadata: workflow.metadata,
-      createdAt: workflow.createdAt.toISOString(),
-      updatedAt: workflow.updatedAt.toISOString(),
-      createdBy: workflow.createdBy?.toString(),
-      updatedBy: workflow.updatedBy?.toString()
-    };
-  }
-
-  /**
-   * 转换为工作流摘要DTO
-   * @param workflow 工作流实体
-   * @returns 工作流摘要DTO
-   */
-  private toWorkflowSummaryDto(workflow: Workflow): WorkflowSummaryDto {
-    return {
-      id: workflow.workflowId.toString(),
-      name: workflow.name,
-      status: workflow.status.toString(),
-      type: workflow.type.toString(),
-      executionCount: 0,
-      successRate: 0,
-      averageExecutionTime: undefined,
-      lastExecutedAt: undefined,
-      tags: workflow.tags,
-      createdAt: workflow.createdAt.toISOString()
-    };
   }
 
   /**

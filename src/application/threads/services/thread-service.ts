@@ -9,7 +9,6 @@ import { Thread, ThreadStatus, ThreadPriority, ThreadRepository } from '../../..
 import { SessionRepository } from '../../../domain/sessions';
 import { WorkflowRepository } from '../../../domain/workflow';
 import { ID, ILogger } from '../../../domain/common';
-import { CreateThreadRequest, ThreadInfo } from '../dtos';
 
 /**
  * 线程应用服务
@@ -135,48 +134,60 @@ export class ThreadService {
 
   /**
    * 创建线程
-   * @param request 创建线程请求
-   * @returns 创建的线程ID
+   * @param sessionId 会话ID
+   * @param workflowId 工作流ID
+   * @param priority 优先级
+   * @param title 标题
+   * @param description 描述
+   * @param metadata 元数据
+   * @returns 创建的线程领域对象
    */
-  async createThread(request: CreateThreadRequest): Promise<string> {
+  async createThread(
+    sessionId: string,
+    workflowId: string,
+    priority?: number,
+    title?: string,
+    description?: string,
+    metadata?: Record<string, unknown>
+  ): Promise<Thread> {
     try {
       this.logger.info('正在创建线程', {
-        sessionId: request.sessionId,
-        workflowId: request.workflowId
+        sessionId,
+        workflowId
       });
 
       // 验证会话存在
-      const sessionId = ID.fromString(request.sessionId);
-      const session = await this.sessionRepository.findById(sessionId);
+      const sessionObjId = ID.fromString(sessionId);
+      const session = await this.sessionRepository.findById(sessionObjId);
       if (!session) {
-        throw new Error(`会话不存在: ${request.sessionId}`);
+        throw new Error(`会话不存在: ${sessionId}`);
       }
 
       // 验证工作流存在
-      const workflowId = ID.fromString(request.workflowId);
-      const workflow = await this.workflowRepository.findById(workflowId);
+      const workflowObjId = ID.fromString(workflowId);
+      const workflow = await this.workflowRepository.findById(workflowObjId);
       if (!workflow) {
-        throw new Error(`工作流不存在: ${request.workflowId}`);
+        throw new Error(`工作流不存在: ${workflowId}`);
       }
 
       // 转换请求参数
-      const priority = request.priority ? ThreadPriority.fromNumber(request.priority) : undefined;
+      const threadPriority = priority ? ThreadPriority.fromNumber(priority) : undefined;
 
       // 验证线程创建的业务规则
       await this.validateThreadCreation(
-        sessionId,
-        workflowId,
-        priority
+        sessionObjId,
+        workflowObjId,
+        threadPriority
       );
 
       // 创建线程
       const thread = Thread.create(
-        sessionId,
-        workflowId,
-        priority,
-        request.title,
-        request.description,
-        request.metadata
+        sessionObjId,
+        workflowObjId,
+        threadPriority,
+        title,
+        description,
+        metadata
       );
 
       // 保存线程
@@ -184,7 +195,7 @@ export class ThreadService {
 
       this.logger.info('线程创建成功', { threadId: savedThread.threadId.toString() });
 
-      return savedThread.threadId.toString();
+      return savedThread;
     } catch (error) {
       this.logger.error('创建线程失败', error as Error);
       throw error;
@@ -192,20 +203,14 @@ export class ThreadService {
   }
 
   /**
-   * 获取线程信息
+   * 获取线程
    * @param threadId 线程ID
-   * @returns 线程信息
+   * @returns 线程领域对象
    */
-  async getThreadInfo(threadId: string): Promise<ThreadInfo | null> {
+  async getThread(threadId: string): Promise<Thread | null> {
     try {
       const id = ID.fromString(threadId);
-      const thread = await this.threadRepository.findById(id);
-
-      if (!thread) {
-        return null;
-      }
-
-      return this.mapThreadToInfo(thread);
+      return await this.threadRepository.findById(id);
     } catch (error) {
       this.logger.error('获取线程信息失败', error as Error);
       throw error;
@@ -247,14 +252,12 @@ export class ThreadService {
   /**
    * 列出会话的线程
    * @param sessionId 会话ID
-   * @returns 线程信息列表
+   * @returns 线程领域对象列表
    */
-  async listThreadsForSession(sessionId: string): Promise<ThreadInfo[]> {
+  async listThreadsForSession(sessionId: string): Promise<Thread[]> {
     try {
       const id = ID.fromString(sessionId);
-      const threads = await this.threadRepository.findActiveThreadsForSession(id);
-
-      return threads.map(thread => this.mapThreadToInfo(thread));
+      return await this.threadRepository.findActiveThreadsForSession(id);
     } catch (error) {
       this.logger.error('列出会话线程失败', error as Error);
       throw error;
@@ -265,9 +268,9 @@ export class ThreadService {
    * 列出线程
    * @param filters 过滤条件
    * @param limit 限制数量
-   * @returns 线程信息列表
+   * @returns 线程领域对象列表
    */
-  async listThreads(filters?: Record<string, unknown>, limit?: number): Promise<ThreadInfo[]> {
+  async listThreads(filters?: Record<string, unknown>, limit?: number): Promise<Thread[]> {
     try {
       // 如果有会话ID过滤条件，使用专门的方法
       if (filters?.['sessionId']) {
@@ -276,7 +279,7 @@ export class ThreadService {
 
       // 否则获取所有线程
       const threads = await this.threadRepository.findAll();
-      let result = threads.map(thread => this.mapThreadToInfo(thread));
+      let result = threads;
 
       // 应用其他过滤条件
       if (filters) {
@@ -302,26 +305,26 @@ export class ThreadService {
    * @returns 过滤后的线程列表
    */
   private applyFilters(
-    threads: ThreadInfo[],
+    threads: Thread[],
     filters: Record<string, unknown>
-  ): ThreadInfo[] {
+  ): Thread[] {
     return threads.filter(thread => {
       for (const [key, value] of Object.entries(filters)) {
         switch (key) {
           case 'sessionId':
-            if (thread.sessionId !== value) return false;
+            if (!thread.sessionId.equals(ID.fromString(value as string))) return false;
             break;
           case 'status':
-            if (thread.status !== value) return false;
+            if (thread.status.getValue() !== value) return false;
             break;
           case 'workflowId':
-            if (thread.workflowId !== value) return false;
+            if (!thread.workflowId.equals(ID.fromString(value as string))) return false;
             break;
           case 'title':
             if (thread.title !== value) return false;
             break;
           case 'priority':
-            if (thread.priority !== value) return false;
+            if (thread.priority.getNumericValue() !== value) return false;
             break;
           default:
             // 忽略未知的过滤条件
@@ -351,9 +354,9 @@ export class ThreadService {
    * 启动线程
    * @param threadId 线程ID
    * @param userId 用户ID
-   * @returns 启动后的线程信息
+   * @returns 启动后的线程领域对象
    */
-  async startThread(threadId: string, userId?: string): Promise<ThreadInfo> {
+  async startThread(threadId: string, userId?: string): Promise<Thread> {
     try {
       const id = ID.fromString(threadId);
       const user = userId ? ID.fromString(userId) : undefined;
@@ -364,8 +367,7 @@ export class ThreadService {
       const thread = await this.threadRepository.findByIdOrFail(id);
       thread.start(user);
 
-      const savedThread = await this.threadRepository.save(thread);
-      return this.mapThreadToInfo(savedThread);
+      return await this.threadRepository.save(thread);
     } catch (error) {
       this.logger.error('启动线程失败', error as Error);
       throw error;
@@ -409,9 +411,9 @@ export class ThreadService {
    * @param threadId 线程ID
    * @param userId 用户ID
    * @param reason 暂停原因
-   * @returns 暂停后的线程信息
+   * @returns 暂停后的线程领域对象
    */
-  async pauseThread(threadId: string, userId?: string, reason?: string): Promise<ThreadInfo> {
+  async pauseThread(threadId: string, userId?: string, reason?: string): Promise<Thread> {
     try {
       const id = ID.fromString(threadId);
       const user = userId ? ID.fromString(userId) : undefined;
@@ -422,8 +424,7 @@ export class ThreadService {
        const thread = await this.threadRepository.findByIdOrFail(id);
        thread.pause(user, reason);
 
-       const savedThread = await this.threadRepository.save(thread);
-       return this.mapThreadToInfo(savedThread);
+       return await this.threadRepository.save(thread);
      } catch (error) {
        this.logger.error('暂停线程失败', error as Error);
        throw error;
@@ -435,9 +436,9 @@ export class ThreadService {
    * @param threadId 线程ID
    * @param userId 用户ID
    * @param reason 恢复原因
-   * @returns 恢复后的线程信息
+   * @returns 恢复后的线程领域对象
    */
-  async resumeThread(threadId: string, userId?: string, reason?: string): Promise<ThreadInfo> {
+  async resumeThread(threadId: string, userId?: string, reason?: string): Promise<Thread> {
     try {
       const id = ID.fromString(threadId);
       const user = userId ? ID.fromString(userId) : undefined;
@@ -448,8 +449,7 @@ export class ThreadService {
        const thread = await this.threadRepository.findByIdOrFail(id);
        thread.resume(user, reason);
 
-       const savedThread = await this.threadRepository.save(thread);
-       return this.mapThreadToInfo(savedThread);
+       return await this.threadRepository.save(thread);
      } catch (error) {
        this.logger.error('恢复线程失败', error as Error);
        throw error;
@@ -461,9 +461,9 @@ export class ThreadService {
    * @param threadId 线程ID
    * @param userId 用户ID
    * @param reason 完成原因
-   * @returns 完成后的线程信息
+   * @returns 完成后的线程领域对象
    */
-  async completeThread(threadId: string, userId?: string, reason?: string): Promise<ThreadInfo> {
+  async completeThread(threadId: string, userId?: string, reason?: string): Promise<Thread> {
     try {
       const id = ID.fromString(threadId);
       const user = userId ? ID.fromString(userId) : undefined;
@@ -474,8 +474,7 @@ export class ThreadService {
       const thread = await this.threadRepository.findByIdOrFail(id);
       thread.complete(user, reason);
 
-      const savedThread = await this.threadRepository.save(thread);
-      return this.mapThreadToInfo(savedThread);
+      return await this.threadRepository.save(thread);
     } catch (error) {
       this.logger.error('完成线程失败', error as Error);
       throw error;
@@ -488,14 +487,14 @@ export class ThreadService {
    * @param errorMessage 错误信息
    * @param userId 用户ID
    * @param reason 失败原因
-   * @returns 失败后的线程信息
+   * @returns 失败后的线程领域对象
    */
   async failThread(
     threadId: string,
     errorMessage: string,
     userId?: string,
     reason?: string
-  ): Promise<ThreadInfo> {
+  ): Promise<Thread> {
     try {
       const id = ID.fromString(threadId);
       const user = userId ? ID.fromString(userId) : undefined;
@@ -506,8 +505,7 @@ export class ThreadService {
       const thread = await this.threadRepository.findByIdOrFail(id);
       thread.fail(errorMessage, user, reason);
 
-      const savedThread = await this.threadRepository.save(thread);
-      return this.mapThreadToInfo(savedThread);
+      return await this.threadRepository.save(thread);
     } catch (error) {
       this.logger.error('设置线程失败状态失败', error as Error);
       throw error;
@@ -519,9 +517,9 @@ export class ThreadService {
    * @param threadId 线程ID
    * @param userId 用户ID
    * @param reason 取消原因
-   * @returns 取消后的线程信息
+   * @returns 取消后的线程领域对象
    */
-  async cancelThread(threadId: string, userId?: string, reason?: string): Promise<ThreadInfo> {
+  async cancelThread(threadId: string, userId?: string, reason?: string): Promise<Thread> {
     try {
       const id = ID.fromString(threadId);
       const user = userId ? ID.fromString(userId) : undefined;
@@ -532,8 +530,7 @@ export class ThreadService {
        const thread = await this.threadRepository.findByIdOrFail(id);
        thread.cancel(user, reason);
 
-       const savedThread = await this.threadRepository.save(thread);
-       return this.mapThreadToInfo(savedThread);
+       return await this.threadRepository.save(thread);
      } catch (error) {
        this.logger.error('取消线程失败', error as Error);
        throw error;
@@ -544,9 +541,9 @@ export class ThreadService {
    * 更新线程优先级
    * @param threadId 线程ID
    * @param priority 新优先级
-   * @returns 更新后的线程信息
+   * @returns 更新后的线程领域对象
    */
-  async updateThreadPriority(threadId: string, priority: number): Promise<ThreadInfo> {
+  async updateThreadPriority(threadId: string, priority: number): Promise<Thread> {
     try {
       const id = ID.fromString(threadId);
       const threadPriority = ThreadPriority.fromNumber(priority);
@@ -557,8 +554,7 @@ export class ThreadService {
       const thread = await this.threadRepository.findByIdOrFail(id);
       thread.updatePriority(threadPriority);
 
-      const savedThread = await this.threadRepository.save(thread);
-      return this.mapThreadToInfo(savedThread);
+      return await this.threadRepository.save(thread);
     } catch (error) {
       this.logger.error('更新线程优先级失败', error as Error);
       throw error;
@@ -568,18 +564,12 @@ export class ThreadService {
   /**
    * 获取下一个待执行的线程
    * @param sessionId 会话ID
-   * @returns 下一个待执行的线程信息
+   * @returns 下一个待执行的线程领域对象
    */
-  async getNextPendingThread(sessionId?: string): Promise<ThreadInfo | null> {
+  async getNextPendingThread(sessionId?: string): Promise<Thread | null> {
     try {
       const id = sessionId ? ID.fromString(sessionId) : undefined;
-      const thread = await this.threadRepository.getNextPendingThread(id);
-
-      if (!thread) {
-        return null;
-      }
-
-      return this.mapThreadToInfo(thread);
+      return await this.threadRepository.getNextPendingThread(id);
     } catch (error) {
       this.logger.error('获取下一个待执行线程失败', error as Error);
       throw error;
@@ -667,26 +657,5 @@ export class ThreadService {
       this.logger.error('清理长时间运行线程失败', error as Error);
       throw error;
     }
-  }
-
-  /**
-   * 将线程领域对象映射为线程信息DTO
-   */
-  private mapThreadToInfo(thread: Thread): ThreadInfo {
-    return {
-      threadId: thread.threadId.toString(),
-      sessionId: thread.sessionId.toString(),
-      workflowId: thread.workflowId.toString(),
-      status: thread.status.getValue(),
-      priority: thread.priority.getNumericValue(),
-      title: thread.title,
-      description: thread.description,
-      createdAt: thread.createdAt.toISOString(),
-      startedAt: thread.startedAt?.toISOString(),
-      completedAt: thread.completedAt?.toISOString(),
-      errorMessage: thread.errorMessage,
-      progress: thread.execution.progress,
-      currentStep: thread.execution.currentStep
-    };
   }
 }

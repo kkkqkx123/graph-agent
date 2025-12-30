@@ -2,33 +2,21 @@
  * 会话应用服务
  *
  * 负责会话相关的业务逻辑编排和协调
- * 使用新的Zod-based DTO进行运行时验证
  */
 
 import { Session, SessionRepository, SessionStatus, SessionConfig } from '../../../domain/sessions';
 import { ThreadRepository } from '../../../domain/threads';
 import { ID, ILogger } from '../../../domain/common';
-import {
-  CreateSessionRequest,
-  CreateSessionRequestDto
-} from '../index';
-import { SessionConverter } from '../../../interfaces/http/sessions/dtos';
-import { DtoValidationError } from '../../common/dto';
 
 /**
  * 会话应用服务
  */
 export class SessionService {
-  private createSessionDto: CreateSessionRequestDto;
-
   constructor(
     private readonly sessionRepository: SessionRepository,
     private readonly threadRepository: ThreadRepository,
     private readonly logger: ILogger
-  ) {
-    // 初始化DTO实例
-    this.createSessionDto = new CreateSessionRequestDto();
-  }
+  ) {}
 
   /**
    * 验证会话创建的业务规则
@@ -101,43 +89,36 @@ export class SessionService {
 
   /**
    * 创建会话
-   * @param request 创建会话请求
-   * @returns 创建的会话ID
+   * @param userId 用户ID
+   * @param title 标题
+   * @param config 配置
+   * @returns 创建的会话领域对象
    */
-  async createSession(request: unknown): Promise<string> {
+  async createSession(
+    userId?: string,
+    title?: string,
+    config?: Record<string, unknown>
+  ): Promise<Session> {
     try {
-      this.logger.info('正在创建会话', { request });
+      this.logger.info('正在创建会话', { userId, title });
 
-      // 1. 运行时验证 - 使用新的DTO验证
-      const validatedRequest = this.createSessionDto.validate(request);
+      // 转换请求参数
+      const userObjId = userId ? ID.fromString(userId) : undefined;
+      const sessionConfig = config ? SessionConfig.create(config) : undefined;
 
-      this.logger.info('会话请求验证通过', {
-        userId: validatedRequest.userId,
-        title: validatedRequest.title
-      });
+      // 验证会话创建的业务规则
+      await this.validateSessionCreation(userObjId, sessionConfig);
 
-      // 2. 转换请求参数
-      const { userId, title, config } = SessionConverter.fromCreateRequest(validatedRequest);
+      // 创建会话
+      const session = Session.create(userObjId, title, sessionConfig);
 
-      // 3. 验证会话创建的业务规则
-      await this.validateSessionCreation(userId, config);
-
-      // 4. 创建会话
-      const session = Session.create(userId, title, config);
-
-      // 5. 保存会话
+      // 保存会话
       await this.sessionRepository.save(session);
 
       this.logger.info('会话创建成功', { sessionId: session.sessionId.toString() });
 
-      return session.sessionId.toString();
+      return session;
     } catch (error) {
-      if (error instanceof DtoValidationError) {
-        this.logger.warn('创建会话请求验证失败', {
-          errors: error.getFormattedErrors()
-        });
-        throw new Error(`无效的请求参数: ${error.message}`);
-      }
       this.logger.error('创建会话失败', error as Error);
       throw error;
     }
@@ -339,19 +320,12 @@ export class SessionService {
    * 更新会话配置
    * @param sessionId 会话ID
    * @param config 新配置
-   * @returns 更新后的会话信息
+   * @returns 更新后的会话领域对象
    */
   async updateSessionConfig(sessionId: string, config: Record<string, unknown>): Promise<Session> {
     try {
       const id = ID.fromString(sessionId);
-
-      // 验证配置格式
-      const validatedConfig = this.createSessionDto.validateConfig(config);
-      if (!validatedConfig) {
-        throw new Error('无效的配置格式');
-      }
-
-      const sessionConfig = SessionConverter.createSessionConfig(validatedConfig);
+      const sessionConfig = SessionConfig.create(config);
       const session = await this.sessionRepository.findByIdOrFail(id);
 
       // 验证配置更新
@@ -364,12 +338,6 @@ export class SessionService {
 
       return session;
     } catch (error) {
-      if (error instanceof DtoValidationError) {
-        this.logger.warn('会话配置验证失败', {
-          errors: error.getFormattedErrors()
-        });
-        throw new Error(`无效的配置参数: ${error.message}`);
-      }
       this.logger.error('更新会话配置失败', error as Error);
       throw error;
     }
