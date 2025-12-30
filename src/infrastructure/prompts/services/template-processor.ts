@@ -1,10 +1,10 @@
 /**
  * 模板处理器（简化版）
- * 
+ *
  * 核心职责：
  * 1. 提示词组合 - 将预定义的提示词片段组合成完整提示词
  * 2. 变量替换 - 将运行时变量替换到模板中的占位符
- * 
+ *
  * 移除的功能：
  * - 复杂的选项系统
  * - 过度复杂的验证逻辑
@@ -12,7 +12,8 @@
  */
 
 import { injectable, inject } from 'inversify';
-import { PromptService } from '../../../application/prompts/services/prompt-service';
+import { PromptRepository } from '../../../domain/prompts/repositories/prompt-repository';
+import { PromptId } from '../../../domain/prompts/value-objects/prompt-id';
 import { PromptReferenceParser } from './prompt-reference-parser';
 import { PromptReferenceValidator } from './prompt-reference-validator';
 import { ILogger } from '../../../domain/common/types/logger-types';
@@ -33,7 +34,7 @@ export interface TemplateProcessResult {
 @injectable()
 export class TemplateProcessor {
   constructor(
-    @inject('PromptService') private promptService: PromptService,
+    @inject('PromptRepository') private promptRepository: PromptRepository,
     @inject('PromptReferenceParser') private referenceParser: PromptReferenceParser,
     @inject('PromptReferenceValidator') private referenceValidator: PromptReferenceValidator,
     @inject('ILogger') private readonly logger: ILogger
@@ -54,13 +55,20 @@ export class TemplateProcessor {
     this.logger.debug('开始处理模板', { category, name, variables });
 
     // 1. 加载模板定义
-    const templateData = await this.promptService.loadPromptContent(category, name);
+    const promptId = PromptId.create(category, name);
+    const prompt = await this.promptRepository.findById(promptId);
 
-    if (typeof templateData !== 'object' || templateData === null) {
-      throw new Error(`模板 ${category}.${name} 格式不正确`);
+    if (!prompt) {
+      throw new Error(`模板 ${category}.${name} 未找到`);
     }
 
-    const templateObj = templateData as Record<string, unknown>;
+    const templateObj = {
+      name: prompt.name,
+      content: prompt.content,
+      category: prompt.category,
+      metadata: prompt.metadata,
+      variables: prompt.variables
+    };
 
     // 2. 验证必需的变量
     this.validateRequiredVariables(templateObj, variables);
@@ -127,15 +135,15 @@ export class TemplateProcessor {
         const ref = this.referenceParser.parse(promptRef);
 
         // 加载提示词内容
-        const partContent = await this.promptService.loadPromptContent(ref.category, ref.name);
+        const partPromptId = PromptId.create(ref.category, ref.name);
+        const partPrompt = await this.promptRepository.findById(partPromptId);
+
+        if (!partPrompt) {
+          throw new Error(`提示词片段 ${ref.category}.${ref.name} 未找到`);
+        }
 
         // 提取内容
-        if (typeof partContent === 'object' && partContent !== null && 'content' in partContent) {
-          const contentObj = partContent as Record<string, unknown>;
-          parts[partName] = contentObj['content'] as string;
-        } else if (typeof partContent === 'string') {
-          parts[partName] = partContent;
-        }
+        parts[partName] = partPrompt.content;
 
         this.logger.debug('成功加载提示词片段', { partName, reference: promptRef });
       } catch (error) {
@@ -167,7 +175,8 @@ export class TemplateProcessor {
    * 检查模板是否存在
    */
   async templateExists(category: string, name: string): Promise<boolean> {
-    return this.promptService.promptExists(category, name);
+    const promptId = PromptId.create(category, name);
+    return this.promptRepository.exists(promptId);
   }
 
   /**

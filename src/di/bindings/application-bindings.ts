@@ -11,7 +11,6 @@ import { TYPES } from '../service-keys';
 import { SessionOrchestrationService } from '../../application/sessions/services/session-orchestration-service';
 import { SessionResourceService } from '../../application/sessions/services/session-resource-service';
 import { SessionMonitoringService } from '../../application/sessions/services/session-monitoring-service';
-import { PromptService } from '../../application/prompts/services/prompt-service';
 import { HumanRelayService } from '../../application/llm/services/human-relay-service';
 import { ThreadLifecycleService } from '../../application/threads/services/thread-lifecycle-service';
 import { ThreadExecutionService } from '../../application/threads/services/thread-execution-service';
@@ -21,6 +20,7 @@ import { ThreadMonitoringService } from '../../application/threads/services/thre
 import { SessionRepository } from '../../domain/sessions/repositories/session-repository';
 import { ThreadRepository } from '../../domain/threads/repositories/thread-repository';
 import { WorkflowRepository } from '../../domain/workflow/repositories/workflow-repository';
+import { PromptRepository } from '../../domain/prompts/repositories/prompt-repository';
 import { ThreadCheckpointRepository } from '../../domain/threads/checkpoints/repositories/thread-checkpoint-repository';
 import { GraphAlgorithmService } from '../../domain/workflow/services/graph-algorithm-service.interface';
 import { GraphValidationService } from '../../domain/workflow/services/graph-validation-service.interface';
@@ -62,11 +62,6 @@ export const applicationBindings = new ContainerModule((bind: any) => {
     .to(ThreadMonitoringService)
     .inSingletonScope();
 
-  // 提示词服务
-  bind(TYPES.PromptServiceImpl)
-    .to(PromptService)
-    .inSingletonScope();
-
   // LLM服务
   bind(TYPES.HumanRelayServiceImpl)
     .to(HumanRelayService)
@@ -104,6 +99,12 @@ export const applicationBindings = new ContainerModule((bind: any) => {
   bind(TYPES.WorkflowRepository)
     .toDynamicValue((context: any) => {
       return context.container.get(TYPES.WorkflowRepositoryImpl);
+    })
+    .inSingletonScope();
+
+  bind(TYPES.PromptRepository)
+    .toDynamicValue((context: any) => {
+      return context.container.get(TYPES.PromptRepositoryImpl);
     })
     .inSingletonScope();
 

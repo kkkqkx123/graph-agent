@@ -13,12 +13,12 @@
 import { SessionRepository } from '../domain/sessions/repositories/session-repository';
 import { ThreadRepository } from '../domain/threads/repositories/thread-repository';
 import { WorkflowRepository } from '../domain/workflow/repositories/workflow-repository';
+import { PromptRepository as PromptDomainRepository } from '../domain/prompts/repositories/prompt-repository';
 import { ThreadCheckpointRepository } from '../domain/threads/checkpoints/repositories/thread-checkpoint-repository';
 import { HistoryRepository } from '../domain/history/repositories/history-repository';
 import { GraphAlgorithmService } from '../domain/workflow/services/graph-algorithm-service.interface';
 import { GraphValidationService } from '../domain/workflow/services/graph-validation-service.interface';
 import { ContextProcessorService } from '../domain/workflow/services/context-processor-service.interface';
-import { PromptService } from '../application/prompts/services/prompt-service';
 import { IHumanRelayService } from '../domain/llm/services/human-relay-service.interface';
 import { ThreadLifecycleService } from '../application/threads/services/thread-lifecycle-service';
 import { ThreadExecutionService } from '../application/threads/services/thread-execution-service';
@@ -71,7 +71,7 @@ export interface ServiceTypes {
   SessionRepository: SessionRepository;
   ThreadRepository: ThreadRepository;
   WorkflowRepository: WorkflowRepository;
-  PromptRepository: PromptInfrastructureRepository;
+  PromptRepository: PromptDomainRepository;
   ThreadCheckpointRepository: ThreadCheckpointRepository;
   HistoryRepository: HistoryRepository;
 
@@ -81,9 +81,6 @@ export interface ServiceTypes {
   ContextProcessorService: ContextProcessorService;
 
   // ========== Application层接口（仅用于类型定义） ==========
-
-  // 提示词服务
-  PromptService: PromptService;
 
   // LLM服务
   HumanRelayService: IHumanRelayService;
@@ -137,7 +134,6 @@ export interface ServiceTypes {
   SessionLifecycleServiceImpl: SessionLifecycleService;
   SessionManagementServiceImpl: SessionManagementService;
   SessionMaintenanceServiceImpl: SessionMaintenanceService;
-  PromptServiceImpl: PromptService;
 
   // LLM服务实现
   HumanRelayServiceImpl: HumanRelayService;
@@ -180,9 +176,6 @@ export const TYPES: {
   ContextProcessorService: Symbol.for('ContextProcessorService') as TypedServiceIdentifier<'ContextProcessorService'>,
 
   // ========== Application层接口（仅用于类型定义） ==========
-
-  // 提示词服务
-  PromptService: Symbol.for('PromptService') as TypedServiceIdentifier<'PromptService'>,
 
   // LLM服务
   HumanRelayService: Symbol.for('HumanRelayService') as TypedServiceIdentifier<'HumanRelayService'>,
@@ -236,7 +229,6 @@ export const TYPES: {
   SessionLifecycleServiceImpl: Symbol.for('SessionLifecycleServiceImpl') as TypedServiceIdentifier<'SessionLifecycleServiceImpl'>,
   SessionManagementServiceImpl: Symbol.for('SessionManagementServiceImpl') as TypedServiceIdentifier<'SessionManagementServiceImpl'>,
   SessionMaintenanceServiceImpl: Symbol.for('SessionMaintenanceServiceImpl') as TypedServiceIdentifier<'SessionMaintenanceServiceImpl'>,
-  PromptServiceImpl: Symbol.for('PromptServiceImpl') as TypedServiceIdentifier<'PromptServiceImpl'>,
 
   // LLM服务实现
   HumanRelayServiceImpl: Symbol.for('HumanRelayServiceImpl') as TypedServiceIdentifier<'HumanRelayServiceImpl'>,

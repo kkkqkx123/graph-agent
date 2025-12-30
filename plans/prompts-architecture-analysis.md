@@ -14,6 +14,7 @@
 **问题**:
 - ❌ **缺少PromptRepository接口定义**
 - ❌ 与其他模块（如WorkflowRepository）的架构模式不一致
+- ❌ 缺少repositories目录
 
 ### 1.2 基础设施层 (src/infrastructure/persistence/repositories/)
 
@@ -27,7 +28,27 @@
 - ❌ 没有实现领域层接口（因为接口不存在）
 - ❌ 技术细节（ConfigLoadingModule）直接暴露
 
-### 1.3 应用层 (src/application/prompts/)
+### 1.3 基础设施层 (src/infrastructure/prompts/)
+
+**PromptBuilder**:
+- 负责在工作流执行过程中构建提示词消息
+- 专注于消息构建和上下文处理
+- 依赖应用层的PromptService（违反分层架构）
+- 使用方法：
+  - `templateExists(category, name)` - 检查模板是否存在
+
+**TemplateProcessor**:
+- 处理模板，组合提示词片段，变量替换
+- 依赖应用层的PromptService（违反分层架构）
+- 使用方法：
+  - `processTemplate(category, name, variables)` - 处理模板
+  - `templateExists(category, name)` - 检查模板是否存在
+
+**问题**:
+- ❌ 基础设施层依赖应用层（违反分层架构原则）
+- ❌ PromptBuilder和TemplateProcessor应该直接使用PromptRepository
+
+### 1.4 应用层 (src/application/prompts/)
 
 **PromptService**:
 - 提供基本的查询功能：
@@ -43,6 +64,7 @@
 - ❌ 违反依赖倒置原则：直接依赖基础设施层的具体类
 - ❌ 只是简单转发调用，没有提供额外的业务逻辑
 - ❌ 职责不清晰，与PromptRepository功能重复
+- ❌ 被基础设施层依赖（违反分层架构）
 
 ## 2. 架构问题总结
 
@@ -53,15 +75,16 @@
 | 缺少领域层接口 | PromptRepository没有在领域层定义接口 | 无法实现依赖倒置 |
 | 直接依赖具体类 | 应用层直接依赖基础设施层的PromptRepository | 违反依赖倒置原则 |
 | 职责重复 | PromptService和PromptRepository功能高度重复 | 代码冗余，维护困难 |
+| 基础设施层依赖应用层 | PromptBuilder和TemplateProcessor依赖PromptService | 严重违反分层架构原则 |
 
 ### 2.2 与其他模块不一致
 
 对比Workflow模块的架构：
 
-| 模块 | 领域层接口 | 基础设施层实现 | 应用层服务 |
-|------|-----------|---------------|-----------|
-| Workflow | ✅ WorkflowRepository接口 | ✅ 实现接口 | ✅ 业务编排 |
-| Prompts | ❌ 无接口 | ❌ 直接实现类 | ❌ 简单转发 |
+| 模块 | 领域层接口 | 基础设施层实现 | 应用层服务 | 基础设施层依赖 |
+|------|-----------|---------------|-----------|---------------|
+| Workflow | ✅ WorkflowRepository接口 | ✅ 实现接口 | ✅ 业务编排 | ❌ 不依赖应用层 |
+| Prompts | ❌ 无接口 | ❌ 直接实现类 | ❌ 简单转发 | ❌ 依赖应用层 |
 
 ### 2.3 职责不清
 
@@ -74,6 +97,25 @@
 - `promptExists` → 调用 `getPromptsByCategory` 后检查
 
 **结论**: PromptService几乎没有提供任何业务价值，只是简单的转发层。
+
+### 2.4 基础设施层依赖应用层
+
+**PromptBuilder和TemplateProcessor的问题**:
+- 两个服务都在基础设施层
+- 都依赖应用层的PromptService
+- 这违反了分层架构原则：基础设施层不应该依赖应用层
+
+**正确的依赖关系应该是**:
+```
+应用层 → 基础设施层
+```
+
+**当前的依赖关系是**:
+```
+基础设施层 → 应用层 → 基础设施层
+```
+
+这形成了循环依赖，违反了架构原则。
 
 ## 3. 重构方案
 
@@ -102,6 +144,8 @@
 2. **基础设施层**:
    - 修改 `PromptRepository` 实现类实现领域层接口
    - 保持基于ConfigLoadingModule的实现
+   - 修改 `TemplateProcessor` 直接使用 `PromptRepository`
+   - 修改 `PromptBuilder` 直接使用 `PromptRepository`
 
 3. **应用层**:
    - **删除** `PromptService`（职责不清，无业务价值）
@@ -113,6 +157,8 @@
 - ✅ 职责清晰
 - ✅ 与其他模块架构一致
 - ✅ 简化代码结构
+- ✅ 消除循环依赖
+- ✅ 基础设施层不再依赖应用层
 
 **缺点**:
 - 需要更新所有使用PromptService的地方
@@ -144,6 +190,8 @@
 2. **消除冗余**: PromptService只是简单转发，没有业务价值
 3. **架构一致**: 与Workflow等其他模块保持一致的架构模式
 4. **简化维护**: 减少一层抽象，代码更清晰
+5. **消除循环依赖**: 基础设施层不再依赖应用层
+6. **符合分层架构**: 依赖关系正确：应用层 → 基础设施层
 
 ### 4.2 重构步骤
 
@@ -162,14 +210,23 @@ export interface PromptRepository extends Repository<Prompt, PromptId> {
 - 实现领域层接口
 - 保持现有实现逻辑
 
-#### 步骤3: 删除应用层PromptService
+#### 步骤3: 修改TemplateProcessor
+- 将依赖从PromptService改为PromptRepository
+- 更新loadPromptContent调用
+
+#### 步骤4: 修改PromptBuilder
+- 将依赖从PromptService改为PromptRepository
+- 更新promptExists调用
+
+#### 步骤5: 删除应用层PromptService
 - 删除 `src/application/prompts/services/prompt-service.ts`
 - 更新 `src/application/prompts/index.ts`
 
-#### 步骤4: 更新依赖注入配置
+#### 步骤6: 更新依赖注入配置
 - 绑定PromptRepository接口到实现类
+- 移除PromptService的绑定
 
-#### 步骤5: 更新所有使用PromptService的地方
+#### 步骤7: 更新所有使用PromptService的地方
 - 直接使用PromptRepository
 
 ### 4.3 风险评估
@@ -179,6 +236,7 @@ export interface PromptRepository extends Repository<Prompt, PromptId> {
 | 破坏现有功能 | 高 | 全面测试，确保所有功能正常 |
 | 需要更新多处代码 | 中 | 逐步替换，确保每一步都通过测试 |
 | 缺少业务逻辑 | 低 | 如需业务逻辑，可在后续添加 |
+| TemplateProcessor和PromptBuilder需要修改 | 中 | 确保修改后功能正常 |
 
 ## 5. 架构对比
 
@@ -189,6 +247,12 @@ export interface PromptRepository extends Repository<Prompt, PromptId> {
   └── PromptService (简单转发)
        └── PromptRepository (基础设施层具体类)
             └── ConfigLoadingModule
+
+基础设施层
+  └── TemplateProcessor
+       └── PromptService (应用层) ❌ 违反分层架构
+  └── PromptBuilder
+       └── PromptService (应用层) ❌ 违反分层架构
 
 领域层
   └── Prompt实体
@@ -210,6 +274,10 @@ export interface PromptRepository extends Repository<Prompt, PromptId> {
 基础设施层
   └── PromptRepository实现
        └── ConfigLoadingModule
+  └── TemplateProcessor
+       └── PromptRepository ✅ 正确依赖
+  └── PromptBuilder
+       └── PromptRepository ✅ 正确依赖
 ```
 
 ## 6. 下一步行动
@@ -227,6 +295,8 @@ Prompts模块当前存在以下主要问题：
 1. 缺少领域层PromptRepository接口
 2. 应用层直接依赖基础设施层具体类
 3. PromptService职责不清，只是简单转发
+4. **基础设施层依赖应用层**（严重违反分层架构原则）
+5. 存在循环依赖
 
 推荐采用方案B进行彻底重构，消除冗余，使架构与其他模块保持一致。重构后将：
 - 符合依赖倒置原则
@@ -234,3 +304,6 @@ Prompts模块当前存在以下主要问题：
 - 职责清晰
 - 架构一致
 - 简化维护
+- 消除循环依赖
+- 基础设施层不再依赖应用层
+- 符合正确的分层架构原则

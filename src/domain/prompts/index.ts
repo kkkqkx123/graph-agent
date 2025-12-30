@@ -7,3 +7,6 @@ export * from './entities';
 
 // 值对象
 export * from './value-objects';
+
+// 仓储接口
+export * from './repositories';

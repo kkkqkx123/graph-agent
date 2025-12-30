@@ -9,7 +9,8 @@
  */
 
 import { injectable, inject } from 'inversify';
-import { PromptService } from '../../../application/prompts/services/prompt-service';
+import { PromptRepository } from '../../../domain/prompts/repositories/prompt-repository';
+import { PromptId } from '../../../domain/prompts/value-objects/prompt-id';
 import { TemplateProcessor, TemplateProcessResult } from './template-processor';
 import { PromptContext } from '../../../domain/workflow/value-objects/context/prompt-context';
 import { ContextProcessor } from '../../../domain/workflow/services/context-processor-service.interface';
@@ -45,7 +46,7 @@ export class PromptBuilder {
   private contextProcessors: Map<string, ContextProcessor> = new Map();
 
   constructor(
-    @inject('PromptService') private promptService: PromptService,
+    @inject('PromptRepository') private promptRepository: PromptRepository,
     @inject('TemplateProcessor') private templateProcessor: TemplateProcessor,
     @inject('ILogger') private readonly logger: ILogger
   ) {}
@@ -171,7 +172,8 @@ export class PromptBuilder {
    * @returns 是否存在
    */
   async templateExists(category: string, name: string): Promise<boolean> {
-    return this.promptService.promptExists(category, name);
+    const promptId = PromptId.create(category, name);
+    return this.promptRepository.exists(promptId);
   }
 
   /**
