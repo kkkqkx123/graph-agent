@@ -1,6 +1,6 @@
 import { NodeId } from '../../../domain/workflow/value-objects/node/node-id';
 import { NodeType, NodeTypeValue, NodeContextTypeValue } from '../../../domain/workflow/value-objects/node/node-type';
-import { Node, NodeExecutionResult, NodeMetadata, ValidationResult, WorkflowExecutionContext } from './node';
+import { Node, NodeExecutionResult, NodeMetadata, ValidationResult, WorkflowExecutionContext } from '../../../domain/workflow/entities/node';
 
 /**
  * 条件检查节点
@@ -54,6 +54,7 @@ export class ConditionNode extends Node {
       return {
         success: true,
         output: conditionResult,
+        executionTime: 0,
         metadata: {
           condition: this.condition,
           result: result
@@ -74,6 +75,7 @@ export class ConditionNode extends Node {
       return {
         success: false,
         error: errorMessage,
+        executionTime: 0,
         metadata: {
           condition: this.condition
         }
@@ -100,10 +102,11 @@ export class ConditionNode extends Node {
 
   getMetadata(): NodeMetadata {
     return {
-      id: this.id.toString(),
+      id: this.nodeId.toString(),
       type: this.type.toString(),
       name: this.name,
       description: this.description,
+      status: this.status.toString(),
       parameters: [
         {
           name: 'condition',
@@ -119,6 +122,27 @@ export class ConditionNode extends Node {
           defaultValue: {}
         }
       ]
+    };
+  }
+
+  getInputSchema(): Record<string, any> {
+    return {
+      type: 'object',
+      properties: {
+        condition: { type: 'string', description: '决策条件' },
+        context: { type: 'object', description: '上下文数据' }
+      },
+      required: ['condition']
+    };
+  }
+
+  getOutputSchema(): Record<string, any> {
+    return {
+      type: 'object',
+      properties: {
+        decision: { type: 'string', description: '决策结果' },
+        branch: { type: 'string', description: '选择的分支' }
+      }
     };
   }
 

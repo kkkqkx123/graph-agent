@@ -184,6 +184,14 @@ export class NodeStatus extends ValueObject<NodeStatusProps> {
   }
 
   /**
+   * 检查是否准备好执行
+   * @returns 是否准备好执行
+   */
+  public isReady(): boolean {
+    return this.props.value === NodeStatusValue.PENDING;
+  }
+
+  /**
    * 检查是否可以开始执行
    * @returns 是否可以开始执行
    */

@@ -1,6 +1,6 @@
 import { NodeId } from '../../../domain/workflow/value-objects/node/node-id';
 import { NodeType, NodeTypeValue, NodeContextTypeValue } from '../../../domain/workflow/value-objects/node/node-type';
-import { Node, NodeExecutionResult, NodeMetadata, ValidationResult, WorkflowExecutionContext } from './node';
+import { Node, NodeExecutionResult, NodeMetadata, ValidationResult, WorkflowExecutionContext } from '../../../domain/workflow/entities/node';
 import { WrapperService } from '../../../application/llm/services/wrapper-service';
 import { LLMRequest } from '../../../domain/llm/entities/llm-request';
 import { ID } from '../../../domain/common/value-objects/id';
@@ -122,6 +122,7 @@ export class LLMNode extends Node {
       return {
         success: true,
         output: result,
+        executionTime,
         metadata: {
           wrapperName: this.wrapperName,
           model: result.model,
@@ -130,7 +131,6 @@ export class LLMNode extends Node {
           tokensUsed: result.usage.totalTokens,
           promptTokens: result.usage.promptTokens,
           completionTokens: result.usage.completionTokens,
-          executionTime,
           finishReason: result.finishReason
         }
       };
@@ -141,9 +141,9 @@ export class LLMNode extends Node {
       return {
         success: false,
         error: errorMessage,
+        executionTime,
         metadata: {
           wrapperName: this.wrapperName,
-          executionTime,
           temperature: this.temperature || 'default',
           maxTokens: this.maxTokens || 'default'
         }
@@ -200,10 +200,11 @@ export class LLMNode extends Node {
 
   getMetadata(): NodeMetadata {
     return {
-      id: this.id.toString(),
+      id: this.nodeId.toString(),
       type: this.type.toString(),
       name: this.name,
       description: this.description,
+      status: this.status.toString(),
       parameters: [
         {
           name: 'wrapperName',
@@ -250,6 +251,27 @@ export class LLMNode extends Node {
           defaultValue: false
         }
       ]
+    };
+  }
+
+  getInputSchema(): Record<string, any> {
+    return {
+      type: 'object',
+      properties: {
+        text: { type: 'string', description: '输入文本' },
+        prompt: { type: 'string', description: '提示词模板' }
+      },
+      required: ['text']
+    };
+  }
+
+  getOutputSchema(): Record<string, any> {
+    return {
+      type: 'object',
+      properties: {
+        response: { type: 'string', description: 'LLM响应' },
+        model: { type: 'string', description: '使用的模型' }
+      }
     };
   }
 }

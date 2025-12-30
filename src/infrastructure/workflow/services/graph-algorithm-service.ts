@@ -1,7 +1,7 @@
 import { injectable } from 'inversify';
 import { GraphAlgorithmService, GraphComplexity } from '../../../domain/workflow/services/graph-algorithm-service.interface';
 import { Workflow } from '../../../domain/workflow/entities/workflow';
-import { NodeValueObject } from '../../../domain/workflow/value-objects';
+import { Node } from '../../../domain/workflow/entities/node';
 import { EdgeValueObject } from '../../../domain/workflow/value-objects/edge';
 import { ID } from '../../../domain/common/value-objects/id';
 import { NodeId } from '../../../domain/workflow/value-objects';
@@ -51,9 +51,9 @@ export class GraphAlgorithmServiceImpl implements GraphAlgorithmService {
    * @param workflow 工作流
    * @returns 拓扑排序的节点列表
    */
-  getTopologicalOrder(workflow: Workflow): NodeValueObject[] {
+  getTopologicalOrder(workflow: Workflow): Node[] {
     const visited = new Set<string>();
-    const result: NodeValueObject[] = [];
+    const result: Node[] = [];
     const graph = workflow.getGraph();
 
     const visit = (nodeId: ID) => {
@@ -76,7 +76,7 @@ export class GraphAlgorithmServiceImpl implements GraphAlgorithmService {
 
     // 从所有节点开始
     for (const node of graph.nodes.values()) {
-      visit(node.id);
+      visit(node.nodeId);
     }
 
     return result;
@@ -134,12 +134,12 @@ export class GraphAlgorithmServiceImpl implements GraphAlgorithmService {
    * @param workflow 工作流
    * @returns 连通分量列表
    */
-  getConnectedComponents(workflow: Workflow): NodeValueObject[][] {
+  getConnectedComponents(workflow: Workflow): Node[][] {
     const visited = new Set<string>();
-    const components: NodeValueObject[][] = [];
+    const components: Node[][] = [];
     const graph = workflow.getGraph();
 
-    const dfs = (nodeId: ID, component: NodeValueObject[]): void => {
+    const dfs = (nodeId: ID, component: Node[]): void => {
       const nodeIdStr = nodeId.toString();
       if (visited.has(nodeIdStr)) return;
 
@@ -163,9 +163,9 @@ export class GraphAlgorithmServiceImpl implements GraphAlgorithmService {
 
     // 从所有未访问的节点开始DFS
     for (const node of graph.nodes.values()) {
-      if (!visited.has(node.id.toString())) {
-        const component: NodeValueObject[] = [];
-        dfs(node.id, component);
+      if (!visited.has(node.nodeId.toString())) {
+        const component: Node[] = [];
+        dfs(node.nodeId, component);
         components.push(component);
       }
     }
@@ -180,9 +180,9 @@ export class GraphAlgorithmServiceImpl implements GraphAlgorithmService {
    * @param endNodeId 结束节点ID
    * @returns 路径节点列表，如果不存在路径则返回空数组
    */
-  findPath(workflow: Workflow, startNodeId: ID, endNodeId: ID): NodeValueObject[] {
+  findPath(workflow: Workflow, startNodeId: ID, endNodeId: ID): Node[] {
     const visited = new Set<string>();
-    const path: NodeValueObject[] = [];
+    const path: Node[] = [];
     const graph = workflow.getGraph();
 
     const dfs = (nodeId: ID): boolean => {
@@ -226,9 +226,9 @@ export class GraphAlgorithmServiceImpl implements GraphAlgorithmService {
    * @param endNodeId 结束节点ID
    * @returns 所有路径的列表
    */
-  findAllPaths(workflow: Workflow, startNodeId: ID, endNodeId: ID): NodeValueObject[][] {
-    const allPaths: NodeValueObject[][] = [];
-    const currentPath: NodeValueObject[] = [];
+  findAllPaths(workflow: Workflow, startNodeId: ID, endNodeId: ID): Node[][] {
+    const allPaths: Node[][] = [];
+    const currentPath: Node[] = [];
     const visited = new Set<string>();
     const graph = workflow.getGraph();
 
@@ -281,8 +281,8 @@ export class GraphAlgorithmServiceImpl implements GraphAlgorithmService {
     let maxPathLength = 0;
     for (const startNode of graph.nodes.values()) {
       for (const endNode of graph.nodes.values()) {
-        if (!startNode.id.equals(endNode.id)) {
-          const path = this.findPath(workflow, startNode.id, endNode.id);
+        if (!startNode.nodeId.equals(endNode.nodeId)) {
+          const path = this.findPath(workflow, startNode.nodeId, endNode.nodeId);
           maxPathLength = Math.max(maxPathLength, path.length);
         }
       }

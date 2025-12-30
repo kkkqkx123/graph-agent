@@ -30,8 +30,8 @@ export class NodeRouter {
     // 找出没有入边的节点
     const startNodes: NodeId[] = [];
     for (const node of workflow.getNodes().values()) {
-      if (!nodeIdsWithIncomingEdges.has(node.id.toString())) {
-        startNodes.push(node.id);
+      if (!nodeIdsWithIncomingEdges.has(node.nodeId.toString())) {
+        startNodes.push(node.nodeId);
       }
     }
 
@@ -56,8 +56,8 @@ export class NodeRouter {
     // 找出没有出边的节点
     const endNodes: NodeId[] = [];
     for (const node of workflow.getNodes().values()) {
-      if (!nodeIdsWithOutgoingEdges.has(node.id.toString())) {
-        endNodes.push(node.id);
+      if (!nodeIdsWithOutgoingEdges.has(node.nodeId.toString())) {
+        endNodes.push(node.nodeId);
       }
     }
 

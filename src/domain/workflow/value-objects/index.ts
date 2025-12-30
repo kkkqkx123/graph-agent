@@ -21,6 +21,12 @@ export * from './error-handling-strategy';
 export * from './execution';
 export * from './context';
 
-// 触发器和钩子值对象
-export * from './trigger-value-object';
-export * from './hook-value-object';
+// 触发器值对象（仅保留类型相关的值对象）
+export {
+  TriggerType,
+  TriggerTypeValue,
+  TriggerAction,
+  TriggerActionValue,
+  TriggerStatus,
+  TriggerStatusValue
+} from './trigger-value-object';

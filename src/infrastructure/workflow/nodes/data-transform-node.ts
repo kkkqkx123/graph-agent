@@ -1,6 +1,6 @@
 import { NodeId } from '../../../domain/workflow/value-objects/node/node-id';
 import { NodeType, NodeTypeValue, NodeContextTypeValue } from '../../../domain/workflow/value-objects/node/node-type';
-import { Node, NodeExecutionResult, NodeMetadata, ValidationResult, WorkflowExecutionContext } from './node';
+import { Node, NodeExecutionResult, NodeMetadata, ValidationResult, WorkflowExecutionContext } from '../../../domain/workflow/entities/node';
 
 /**
  * 数据转换节点
@@ -106,6 +106,7 @@ export class DataTransformNode extends Node {
       return {
         success: true,
         output: transformResult,
+        executionTime: 0,
         metadata: {
           transformType: this.transformType,
           sourceData: this.sourceData,
@@ -131,6 +132,7 @@ export class DataTransformNode extends Node {
       return {
         success: false,
         error: errorMessage,
+        executionTime: 0,
         metadata: {
           transformType: this.transformType,
           sourceData: this.sourceData
@@ -169,10 +171,11 @@ export class DataTransformNode extends Node {
 
   getMetadata(): NodeMetadata {
     return {
-      id: this.id.toString(),
+      id: this.nodeId.toString(),
       type: this.type.toString(),
       name: this.name,
       description: this.description,
+      status: this.status.toString(),
       parameters: [
         {
           name: 'transformType',
@@ -200,6 +203,25 @@ export class DataTransformNode extends Node {
           defaultValue: {}
         }
       ]
+    };
+  }
+
+  getInputSchema(): Record<string, any> {
+    return {
+      type: 'object',
+      properties: {
+        input: { type: 'any', description: '任务输入' }
+      },
+      required: ['input']
+    };
+  }
+
+  getOutputSchema(): Record<string, any> {
+    return {
+      type: 'object',
+      properties: {
+        output: { type: 'any', description: '任务输出' }
+      }
     };
   }
 

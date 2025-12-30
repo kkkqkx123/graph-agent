@@ -12,7 +12,7 @@
  */
 
 import { Workflow } from '../entities/workflow';
-import { NodeValueObject } from '../value-objects';
+import { Node } from '../entities/node';
 import { ID } from '../../common/value-objects/id';
 
 /**
@@ -40,7 +40,7 @@ export interface GraphAlgorithmService {
    * @param workflow 工作流图
    * @returns 拓扑排序的节点列表
    */
-  getTopologicalOrder(workflow: Workflow): NodeValueObject[];
+  getTopologicalOrder(workflow: Workflow): Node[];
 
   /**
    * 检查图是否包含循环
@@ -54,7 +54,7 @@ export interface GraphAlgorithmService {
    * @param workflow 工作流图
    * @returns 连通分量列表
    */
-  getConnectedComponents(workflow: Workflow): NodeValueObject[][];
+  getConnectedComponents(workflow: Workflow): Node[][];
 
   /**
    * 查找两个节点之间的路径
@@ -63,7 +63,7 @@ export interface GraphAlgorithmService {
    * @param endNodeId 结束节点ID
    * @returns 路径节点列表，如果不存在路径则返回空数组
    */
-  findPath(workflow: Workflow, startNodeId: ID, endNodeId: ID): NodeValueObject[];
+  findPath(workflow: Workflow, startNodeId: ID, endNodeId: ID): Node[];
 
   /**
    * 查找两个节点之间的所有路径
@@ -72,7 +72,7 @@ export interface GraphAlgorithmService {
    * @param endNodeId 结束节点ID
    * @returns 所有路径的列表
    */
-  findAllPaths(workflow: Workflow, startNodeId: ID, endNodeId: ID): NodeValueObject[][];
+  findAllPaths(workflow: Workflow, startNodeId: ID, endNodeId: ID): Node[][];
 
   /**
    * 计算图的复杂度

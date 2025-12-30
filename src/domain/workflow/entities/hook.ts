@@ -65,9 +65,9 @@ export interface HookContext {
 }
 
 /**
- * 验证结果接口
+ * Hook验证结果接口
  */
-export interface ValidationResult {
+export interface HookValidationResult {
   readonly valid: boolean;
   readonly errors: string[];
 }
@@ -200,7 +200,7 @@ export abstract class Hook extends Entity {
    * 验证Hook配置
    * @returns 验证结果
    */
-  public abstract validate(): ValidationResult;
+  public abstract validate(): HookValidationResult;
 
   /**
    * 获取Hook元数据

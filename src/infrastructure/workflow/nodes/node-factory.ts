@@ -1,6 +1,6 @@
 import { NodeId } from '../../../domain/workflow/value-objects/node/node-id';
 import { NodeTypeValue, NodeContextTypeValue } from '../../../domain/workflow/value-objects/node/node-type';
-import { Node } from './node';
+import { Node } from '../../../domain/workflow/entities/node';
 import { LLMNode } from './llm-node';
 import { ToolCallNode } from './tool-call-node';
 import { ConditionNode } from './condition-node';
@@ -167,23 +167,6 @@ export class NodeFactory {
       config.description,
       config.position
     );
-  }
-
-  /**
-   * 从NodeValueObject创建节点
-   * 用于兼容旧的值对象接口
-   */
-  static fromNodeValueObject(nodeValueObject: any): Node {
-    const type = nodeValueObject.type.getValue();
-    const config: NodeConfig = {
-      id: nodeValueObject.id.toString(),
-      name: nodeValueObject.name,
-      description: nodeValueObject.description,
-      position: nodeValueObject.position,
-      ...nodeValueObject.properties
-    };
-
-    return this.createNode(type, config);
   }
 
   /**

@@ -11,9 +11,9 @@
  */
 
 import { injectable, inject } from 'inversify';
-import { NodeValueObject } from '../../../domain/workflow/value-objects';
+import { Node } from '../../../domain/workflow/entities/node';
+import { WorkflowExecutionContext } from '../../../domain/workflow/entities/node';
 import { NodeExecutor } from '../nodes/node-executor';
-import { WorkflowExecutionContext } from '../nodes/node';
 import { ContextProcessorServiceImpl } from './context-processor-service';
 import { ILogger } from '../../../domain/common/types/logger-types';
 
@@ -51,7 +51,7 @@ export interface FunctionExecutionPlan {
   /** 计划ID */
   id: string;
   /** 函数列表 */
-  functions: NodeValueObject[];
+  functions: Node[];
   /** 配置 */
   config: {
     /** 执行策略 */
@@ -110,7 +110,7 @@ export class FunctionExecutionEngine {
    * @returns 执行结果列表
    */
   async execute(
-    functions: NodeValueObject[],
+    functions: Node[],
     context: WorkflowExecutionContext,
     config: FunctionExecutionConfig
   ): Promise<FunctionExecutionResult[]> {
@@ -140,7 +140,7 @@ export class FunctionExecutionEngine {
    * @returns 执行结果列表
    */
   private async executeSequential(
-    functions: NodeValueObject[],
+    functions: Node[],
     context: WorkflowExecutionContext,
     config: FunctionExecutionConfig
   ): Promise<FunctionExecutionResult[]> {
@@ -172,7 +172,7 @@ export class FunctionExecutionEngine {
    * @returns 执行结果列表
    */
   private async executeParallel(
-    functions: NodeValueObject[],
+    functions: Node[],
     context: WorkflowExecutionContext,
     config: FunctionExecutionConfig
   ): Promise<FunctionExecutionResult[]> {
@@ -200,7 +200,7 @@ export class FunctionExecutionEngine {
    * @returns 执行结果列表
    */
   private async executeConditional(
-    functions: NodeValueObject[],
+    functions: Node[],
     context: WorkflowExecutionContext,
     config: FunctionExecutionConfig
   ): Promise<FunctionExecutionResult[]> {
@@ -241,12 +241,12 @@ export class FunctionExecutionEngine {
    * @returns 执行结果
    */
   private async executeFunction(
-    func: NodeValueObject,
+    func: Node,
     context: WorkflowExecutionContext,
     config: FunctionExecutionConfig
   ): Promise<FunctionExecutionResult> {
     const startTime = Date.now();
-    const functionId = func.id.toString();
+    const functionId = func.nodeId.toString();
 
     this.logger.debug('开始执行函数', {
       functionId,
@@ -272,7 +272,7 @@ export class FunctionExecutionEngine {
       return {
         functionId,
         success: result.success,
-        result: result.result,
+        result: result.output,
         executionTime,
         metadata: {
           functionName: func.name,
@@ -311,7 +311,7 @@ export class FunctionExecutionEngine {
    * @returns 执行结果
    */
   private async executeWithRetry(
-    func: NodeValueObject,
+    func: Node,
     context: WorkflowExecutionContext,
     config: FunctionExecutionConfig
   ): Promise<any> {
@@ -334,7 +334,7 @@ export class FunctionExecutionEngine {
         if (attempt < retryCount) {
           lastError = new Error(result.error || '函数执行失败');
           this.logger.warn('函数执行失败，准备重试', {
-            functionId: func.id.toString(),
+            functionId: func.nodeId.toString(),
             attempt: attempt + 1,
             maxAttempts: retryCount + 1,
             error: result.error
@@ -351,7 +351,7 @@ export class FunctionExecutionEngine {
 
         if (attempt < retryCount) {
           this.logger.warn('函数执行异常，准备重试', {
-            functionId: func.id.toString(),
+            functionId: func.nodeId.toString(),
             attempt: attempt + 1,
             maxAttempts: retryCount + 1,
             error: lastError.message
@@ -378,7 +378,7 @@ export class FunctionExecutionEngine {
    * @returns 处理后的上下文
    */
   private applyContextProcessor(
-    func: NodeValueObject,
+    func: Node,
     context: WorkflowExecutionContext
   ): WorkflowExecutionContext {
     // 简化实现：暂时不应用上下文处理器
@@ -404,7 +404,7 @@ export class FunctionExecutionEngine {
    * @returns 执行计划
    */
   createExecutionPlan(
-    functions: NodeValueObject[],
+    functions: Node[],
     config: FunctionExecutionConfig
   ): FunctionExecutionPlan {
     return {

@@ -6,7 +6,7 @@ import {
   HookExecutionResult,
   HookMetadata,
   HookParameter,
-  ValidationResult,
+  HookValidationResult,
   HookProps
 } from '../../../../domain/workflow/entities/hook';
 
@@ -145,7 +145,7 @@ export class AfterExecuteHook extends Hook {
    * 验证Hook配置
    * @returns 验证结果
    */
-  public validate(): ValidationResult {
+  public validate(): HookValidationResult {
     const errors: string[] = [];
     const config = this.props.config as AfterExecuteHookConfig;
 

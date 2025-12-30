@@ -1,16 +1,17 @@
 import { Entity } from '../../common/base/entity';
 import { ID, Timestamp, Version } from '../../common/value-objects';
-import { WorkflowDefinition, WorkflowStatus, WorkflowType, WorkflowConfig, NodeId, NodeType, NodeValueObject } from '../value-objects';
+import { WorkflowDefinition, WorkflowStatus, WorkflowType, WorkflowConfig, NodeId, NodeType } from '../value-objects';
 import { EdgeId, EdgeType, EdgeValueObject } from '../value-objects/edge';
 import { EdgeContextFilter } from '../value-objects/context';
 import { ErrorHandlingStrategy } from '../value-objects/error-handling-strategy';
 import { ExecutionStrategy } from '../value-objects/execution/execution-strategy';
+import { Node } from './node';
 
 /**
  * 工作流图数据接口
  */
 export interface WorkflowGraphData {
-  readonly nodes: Map<string, NodeValueObject>;
+  readonly nodes: Map<string, Node>;
   readonly edges: Map<string, EdgeValueObject>;
 }
 
@@ -238,7 +239,7 @@ export class Workflow extends Entity {
    * 获取所有节点
    * @returns 节点映射
    */
-  public getNodes(): Map<string, NodeValueObject> {
+  public getNodes(): Map<string, Node> {
     return new Map(this.props.graph.nodes);
   }
 
@@ -266,7 +267,7 @@ export class Workflow extends Entity {
    * @param nodeId 节点ID
    * @returns 节点或null
    */
-  public getNode(nodeId: NodeId): NodeValueObject | null {
+  public getNode(nodeId: NodeId): Node | null {
     return this.props.graph.nodes.get(nodeId.toString()) || null;
   }
 
@@ -467,24 +468,11 @@ export class Workflow extends Entity {
 
   /**
    * 添加节点
-   * @param nodeId 节点ID
-   * @param type 节点类型
-   * @param name 节点名称
-   * @param description 节点描述
-   * @param position 节点位置
-   * @param properties 节点属性
+   * @param node 节点实例
    * @param updatedBy 更新者ID
    */
-  public addNode(
-    nodeId: NodeId,
-    type: NodeType,
-    name?: string,
-    description?: string,
-    position?: { x: number; y: number },
-    properties?: Record<string, unknown>,
-    updatedBy?: ID
-  ): void {
-    if (this.hasNode(nodeId)) {
+  public addNode(node: Node, updatedBy?: ID): void {
+    if (this.hasNode(node.nodeId)) {
       throw new Error('节点已存在');
     }
 
@@ -492,18 +480,8 @@ export class Workflow extends Entity {
       throw new Error('只能编辑草稿状态工作流的节点');
     }
 
-    // 创建节点值对象
-    const node = NodeValueObject.create({
-      id: nodeId,
-      type,
-      name,
-      description,
-      position,
-      properties: properties || {}
-    });
-
     const newNodes = new Map(this.props.graph.nodes);
-    newNodes.set(nodeId.toString(), node);
+    newNodes.set(node.nodeId.toString(), node);
 
     const newGraph = {
       ...this.props.graph,

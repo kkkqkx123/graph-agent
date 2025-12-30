@@ -1,6 +1,6 @@
 import { NodeId } from '../../../domain/workflow/value-objects/node/node-id';
 import { NodeType, NodeTypeValue, NodeContextTypeValue } from '../../../domain/workflow/value-objects/node/node-type';
-import { Node, NodeExecutionResult, NodeMetadata, ValidationResult, WorkflowExecutionContext } from './node';
+import { Node, NodeExecutionResult, NodeMetadata, ValidationResult, WorkflowExecutionContext } from '../../../domain/workflow/entities/node';
 
 /**
  * 工具调用节点
@@ -84,10 +84,10 @@ export class ToolCallNode extends Node {
       return {
         success: true,
         output: result.data || result.result,
+        executionTime,
         metadata: {
           toolName: this.toolName,
           toolCallId,
-          executionTime,
           timeout: this.timeout
         }
       };
@@ -114,10 +114,10 @@ export class ToolCallNode extends Node {
       return {
         success: false,
         error: errorMessage,
+        executionTime,
         metadata: {
           toolName: this.toolName,
           toolCallId,
-          executionTime,
           timeout: this.timeout
         }
       };
@@ -147,10 +147,11 @@ export class ToolCallNode extends Node {
 
   getMetadata(): NodeMetadata {
     return {
-      id: this.id.toString(),
+      id: this.nodeId.toString(),
       type: this.type.toString(),
       name: this.name,
       description: this.description,
+      status: this.status.toString(),
       parameters: [
         {
           name: 'toolName',
@@ -173,6 +174,27 @@ export class ToolCallNode extends Node {
           defaultValue: 30000
         }
       ]
+    };
+  }
+
+  getInputSchema(): Record<string, any> {
+    return {
+      type: 'object',
+      properties: {
+        toolName: { type: 'string', description: '工具名称' },
+        parameters: { type: 'object', description: '工具参数' }
+      },
+      required: ['toolName']
+    };
+  }
+
+  getOutputSchema(): Record<string, any> {
+    return {
+      type: 'object',
+      properties: {
+        result: { type: 'any', description: '工具执行结果' },
+        success: { type: 'boolean', description: '是否成功' }
+      }
     };
   }
 }

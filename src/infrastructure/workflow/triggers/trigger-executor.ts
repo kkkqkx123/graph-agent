@@ -1,5 +1,5 @@
 import { injectable, inject } from 'inversify';
-import { TriggerValueObject } from '../../../domain/workflow/value-objects/trigger-value-object';
+import { Trigger } from '../../../domain/workflow/entities/trigger';
 import { FunctionRegistry } from '../functions/registry/function-registry';
 import { WorkflowExecutionContext } from '../functions/types';
 import { ILogger } from '../../../domain/common/types/logger-types';
@@ -25,16 +25,16 @@ export class TriggerExecutor {
 
   /**
    * 执行触发器检查
-   * @param trigger 触发器值对象
+   * @param trigger 触发器实体
    * @param context 触发器上下文
    * @returns 触发执行结果
    */
-  async execute(trigger: TriggerValueObject, context: TriggerContext): Promise<TriggerExecutionResult> {
+  async execute(trigger: Trigger, context: TriggerContext): Promise<TriggerExecutionResult> {
     const startTime = Date.now();
 
     try {
       this.logger.info('开始执行触发器检查', {
-        triggerId: trigger.id.toString(),
+        triggerId: trigger.triggerId.toString(),
         triggerType: trigger.type.toString(),
         triggerName: trigger.name
       });
@@ -70,7 +70,7 @@ export class TriggerExecutor {
 
       // 构建配置
       const config = {
-        triggerId: trigger.id.toString(),
+        triggerId: trigger.triggerId.toString(),
         triggerType: trigger.type.toString(),
         action: trigger.action.toString(),
         targetNodeId: trigger.targetNodeId?.toString(),
@@ -83,14 +83,14 @@ export class TriggerExecutor {
 
       if (shouldTrigger) {
         this.logger.info('触发器条件满足', {
-          triggerId: trigger.id.toString(),
+          triggerId: trigger.triggerId.toString(),
           triggerName: trigger.name,
           executionTime
         });
 
         return TriggerExecutionResultUtils.success('触发器条件满足')
           .setData({
-            triggerId: trigger.id.toString(),
+            triggerId: trigger.triggerId.toString(),
             triggerType: trigger.type.toString(),
             action: trigger.action.toString(),
             targetNodeId: trigger.targetNodeId?.toString()
@@ -98,7 +98,7 @@ export class TriggerExecutor {
           .build();
       } else {
         this.logger.info('触发器条件不满足', {
-          triggerId: trigger.id.toString(),
+          triggerId: trigger.triggerId.toString(),
           triggerName: trigger.name,
           executionTime
         });
@@ -110,7 +110,7 @@ export class TriggerExecutor {
       const executionTime = Date.now() - startTime;
 
       this.logger.error('触发器执行失败', error instanceof Error ? error : new Error(String(error)), {
-        triggerId: trigger.id.toString(),
+        triggerId: trigger.triggerId.toString(),
         triggerName: trigger.name,
         executionTime
       });
@@ -121,11 +121,11 @@ export class TriggerExecutor {
 
   /**
    * 批量执行触发器检查
-   * @param triggers 触发器值对象列表
+   * @param triggers 触发器实体列表
    * @param context 触发器上下文
    * @returns 触发执行结果列表
    */
-  async executeBatch(triggers: TriggerValueObject[], context: TriggerContext): Promise<TriggerExecutionResult[]> {
+  async executeBatch(triggers: Trigger[], context: TriggerContext): Promise<TriggerExecutionResult[]> {
     const results: TriggerExecutionResult[] = [];
 
     for (const trigger of triggers) {
@@ -144,10 +144,10 @@ export class TriggerExecutor {
 
   /**
    * 验证触发器配置
-   * @param trigger 触发器值对象
+   * @param trigger 触发器实体
    * @returns 验证结果
    */
-  validateTrigger(trigger: TriggerValueObject): { valid: boolean; errors: string[] } {
+  validateTrigger(trigger: Trigger): { valid: boolean; errors: string[] } {
     const errors: string[] = [];
 
     try {
