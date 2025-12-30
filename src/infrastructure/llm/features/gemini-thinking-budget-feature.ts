@@ -1,4 +1,4 @@
-import { IFeature } from '../feature.interface';
+import { IFeature } from './feature.interface';
 
 /**
  * Gemini 思考预算功能

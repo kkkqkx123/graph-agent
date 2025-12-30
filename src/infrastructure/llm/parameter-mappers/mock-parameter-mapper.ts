@@ -1,7 +1,7 @@
-import { LLMRequest } from '../../../../domain/llm/entities/llm-request';
-import { LLMResponse } from '../../../../domain/llm/entities/llm-response';
-import { BaseParameterMapper } from '../base-parameter-mapper';
-import { ProviderConfig, ProviderRequest, ProviderResponse } from '../interfaces/parameter-mapper.interface';
+import { LLMRequest } from '../../../domain/llm/entities/llm-request';
+import { LLMResponse } from '../../../domain/llm/entities/llm-response';
+import { BaseParameterMapper, ProviderRequest, ProviderResponse } from './base-parameter-mapper';
+import { ProviderConfig } from './interfaces/provider-config.interface';
 
 /**
  * Mock 参数映射器

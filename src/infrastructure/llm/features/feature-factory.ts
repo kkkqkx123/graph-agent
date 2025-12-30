@@ -1,9 +1,9 @@
 import { IFeature } from './feature.interface';
 import { FeatureRegistry } from './feature-registry';
-import { GeminiThinkingBudgetFeature } from './providers/gemini-thinking-budget-feature';
-import { GeminiCachedContentFeature } from './providers/gemini-cached-content-feature';
-import { OpenAIResponseFormatFeature } from './providers/openai-response-format-feature';
-import { AnthropicSystemMessageFeature } from './providers/anthropic-system-message-feature';
+import { GeminiThinkingBudgetFeature } from './gemini-thinking-budget-feature';
+import { GeminiCachedContentFeature } from './gemini-cached-content-feature';
+import { OpenAIResponseFormatFeature } from './openai-response-format-feature';
+import { AnthropicSystemMessageFeature } from './anthropic-system-message-feature';
 
 /**
  * 功能工厂

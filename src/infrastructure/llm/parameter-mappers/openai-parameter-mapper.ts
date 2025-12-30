@@ -1,9 +1,9 @@
-import { LLMRequest } from '../../../../domain/llm/entities/llm-request';
-import { LLMResponse } from '../../../../domain/llm/entities/llm-response';
-import { LLMMessage } from '../../../../domain/llm/value-objects/llm-message';
-import { BaseParameterMapper } from '../base-parameter-mapper';
-import { ProviderConfig, ProviderRequest, ProviderResponse, ParameterDefinition } from '../interfaces/parameter-mapper.interface';
-import { ParameterDefinitionBuilder, CommonParameterDefinitions } from '../interfaces/parameter-definition.interface';
+import { LLMRequest } from '../../../domain/llm/entities/llm-request';
+import { LLMResponse } from '../../../domain/llm/entities/llm-response';
+import { LLMMessage } from '../../../domain/llm/value-objects/llm-message';
+import { BaseParameterMapper, ProviderRequest, ProviderResponse } from './base-parameter-mapper';
+import { ProviderConfig } from './interfaces/provider-config.interface';
+import { ParameterDefinition } from './interfaces/parameter-definition.interface';
 
 /**
  * OpenAI 参数映射器
@@ -22,102 +22,83 @@ export class OpenAIParameterMapper extends BaseParameterMapper {
     const baseParams = super.initializeSupportedParameters();
 
     // 添加 OpenAI 特有参数
-    const openaiSpecificParams = [
-      new ParameterDefinitionBuilder()
-        .name('reasoningEffort')
-        .type('string')
-        .required(false)
-        .options(['low', 'medium', 'high'])
-        .description('推理努力程度')
-        .group('provider-specific')
-        .isProviderSpecific(true)
-        .build(),
-
-      new ParameterDefinitionBuilder()
-        .name('responseFormat')
-        .type('object')
-        .required(false)
-        .description('响应格式')
-        .group('provider-specific')
-        .isProviderSpecific(true)
-        .build(),
-
-      new ParameterDefinitionBuilder()
-        .name('seed')
-        .type('number')
-        .required(false)
-        .description('确定性种子')
-        .group('provider-specific')
-        .isProviderSpecific(true)
-        .build(),
-
-      new ParameterDefinitionBuilder()
-        .name('serviceTier')
-        .type('string')
-        .required(false)
-        .description('服务层级')
-        .group('provider-specific')
-        .isProviderSpecific(true)
-        .build(),
-
-      new ParameterDefinitionBuilder()
-        .name('user')
-        .type('string')
-        .required(false)
-        .description('用户标识符')
-        .group('provider-specific')
-        .isProviderSpecific(true)
-        .build(),
-
-      new ParameterDefinitionBuilder()
-        .name('n')
-        .type('number')
-        .required(false)
-        .defaultValue(1)
-        .description('生成数量')
-        .min(1)
-        .max(10)
-        .group('provider-specific')
-        .isProviderSpecific(true)
-        .build(),
-
-      new ParameterDefinitionBuilder()
-        .name('logitBias')
-        .type('object')
-        .required(false)
-        .description('Logit bias')
-        .group('provider-specific')
-        .isProviderSpecific(true)
-        .build(),
-
-      new ParameterDefinitionBuilder()
-        .name('topLogprobs')
-        .type('number')
-        .required(false)
-        .description('Top logprobs')
-        .min(0)
-        .max(20)
-        .group('provider-specific')
-        .isProviderSpecific(true)
-        .build(),
-
-      new ParameterDefinitionBuilder()
-        .name('store')
-        .type('boolean')
-        .required(false)
-        .description('存储选项')
-        .group('provider-specific')
-        .isProviderSpecific(true)
-        .build(),
-
-      new ParameterDefinitionBuilder()
-        .name('streamOptions')
-        .type('object')
-        .required(false)
-        .description('流式选项')
-        .group('provider-specific')
-        .isProviderSpecific(true)
-        .build()
+    const openaiSpecificParams: ParameterDefinition[] = [
+      {
+        name: 'reasoningEffort',
+        type: 'string',
+        required: false,
+        options: ['low', 'medium', 'high'],
+        description: '推理努力程度',
+        isProviderSpecific: true
+      },
+      {
+        name: 'responseFormat',
+        type: 'object',
+        required: false,
+        description: '响应格式',
+        isProviderSpecific: true
+      },
+      {
+        name: 'seed',
+        type: 'number',
+        required: false,
+        description: '确定性种子',
+        isProviderSpecific: true
+      },
+      {
+        name: 'serviceTier',
+        type: 'string',
+        required: false,
+        description: '服务层级',
+        isProviderSpecific: true
+      },
+      {
+        name: 'user',
+        type: 'string',
+        required: false,
+        description: '用户标识符',
+        isProviderSpecific: true
+      },
+      {
+        name: 'n',
+        type: 'number',
+        required: false,
+        defaultValue: 1,
+        description: '生成数量',
+        min: 1,
+        max: 10,
+        isProviderSpecific: true
+      },
+      {
+        name: 'logitBias',
+        type: 'object',
+        required: false,
+        description: 'Logit bias',
+        isProviderSpecific: true
+      },
+      {
+        name: 'topLogprobs',
+        type: 'number',
+        required: false,
+        description: 'Top logprobs',
+        min: 0,
+        max: 20,
+        isProviderSpecific: true
+      },
+      {
+        name: 'store',
+        type: 'boolean',
+        required: false,
+        description: '存储选项',
+        isProviderSpecific: true
+      },
+      {
+        name: 'streamOptions',
+        type: 'object',
+        required: false,
+        description: '流式选项',
+        isProviderSpecific: true
+      }
     ];
 
     return [...baseParams, ...openaiSpecificParams];

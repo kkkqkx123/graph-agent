@@ -4,10 +4,7 @@
  * 提供统一的端点构建和认证处理策略
  */
 
-export { IEndpointStrategy } from './endpoint-strategy.interface';
 export { BaseEndpointStrategy } from './base-endpoint-strategy';
-export { OpenAICompatibleEndpointStrategy } from './providers/openai-compatible-endpoint-strategy';
-export { GeminiNativeEndpointStrategy } from './providers/gemini-native-endpoint-strategy';
-export { AnthropicEndpointStrategy } from './providers/anthropic-endpoint-strategy';
-
-export { EndpointStrategyFactory } from './endpoint-strategy-factory';
+export { OpenAICompatibleEndpointStrategy } from './openai-compatible-endpoint-strategy';
+export { GeminiNativeEndpointStrategy } from './gemini-native-endpoint-strategy';
+export { AnthropicEndpointStrategy } from './anthropic-endpoint-strategy';

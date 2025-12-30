@@ -1,4 +1,4 @@
-import { IFeature } from '../feature.interface';
+import { IFeature } from './feature.interface';
 
 /**
  * OpenAI 响应格式功能

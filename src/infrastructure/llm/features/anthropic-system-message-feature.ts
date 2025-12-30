@@ -1,4 +1,4 @@
-import { IFeature } from '../feature.interface';
+import { IFeature } from './feature.interface';
 
 /**
  * Anthropic 系统消息功能

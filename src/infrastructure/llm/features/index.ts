@@ -6,9 +6,9 @@
 
 export { IFeature } from './feature.interface';
 export { FeatureRegistry } from './feature-registry';
-export { GeminiThinkingBudgetFeature } from './providers/gemini-thinking-budget-feature';
-export { GeminiCachedContentFeature } from './providers/gemini-cached-content-feature';
-export { OpenAIResponseFormatFeature } from './providers/openai-response-format-feature';
-export { AnthropicSystemMessageFeature } from './providers/anthropic-system-message-feature';
+export { GeminiThinkingBudgetFeature } from './gemini-thinking-budget-feature';
+export { GeminiCachedContentFeature } from './gemini-cached-content-feature';
+export { OpenAIResponseFormatFeature } from './openai-response-format-feature';
+export { AnthropicSystemMessageFeature } from './anthropic-system-message-feature';
 
 export { FeatureFactory } from './feature-factory';

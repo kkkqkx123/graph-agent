@@ -7,8 +7,8 @@ import { ID } from '../../../domain/common/value-objects/id';
 import { BaseLLMClient } from './base-llm-client';
 import { OpenAIProvider } from '../converters/providers/openai-provider';
 import { ProviderConfig, ApiType, ProviderConfigBuilder } from '../parameter-mappers';
-import { OpenAIParameterMapper } from '../parameter-mappers/providers/openai-parameter-mapper';
-import { OpenAIResponsesEndpointStrategy } from '../endpoint-strategies/providers/openai-responses-endpoint-strategy';
+import { OpenAIParameterMapper } from '../parameter-mappers/openai-parameter-mapper';
+import { OpenAIResponsesEndpointStrategy } from '../endpoint-strategies/openai-responses-endpoint-strategy';
 import { BaseFeatureSupport } from '../parameter-mappers/interfaces/feature-support.interface';
 import { ConfigLoadingModule } from '../../config/loading/config-loading-module';
 

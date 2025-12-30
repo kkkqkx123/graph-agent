@@ -14,9 +14,7 @@ export * from './wrappers';
 
 // 导出工厂类
 export { ConverterFactory } from './converters/converter-factory';
-export { EndpointStrategyFactory } from './endpoint-strategies/endpoint-strategy-factory';
 export { FeatureFactory } from './features/feature-factory';
-export { ParameterMapperFactory } from './parameter-mappers/parameter-mapper-factory';
 export { LLMClientFactory } from './clients/llm-client-factory';
 export { LLMWrapperFactory, BaseLLMWrapper } from './wrappers/wrapper-factory';
 

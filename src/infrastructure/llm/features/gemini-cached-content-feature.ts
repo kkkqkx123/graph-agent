@@ -1,4 +1,4 @@
-import { IFeature } from '../feature.interface';
+import { IFeature } from './feature.interface';
 
 /**
  * Gemini 缓存内容功能

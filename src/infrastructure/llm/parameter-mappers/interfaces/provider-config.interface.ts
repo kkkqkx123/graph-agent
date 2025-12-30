@@ -1,5 +1,5 @@
-import { IEndpointStrategy } from '../../endpoint-strategies/endpoint-strategy.interface';
-import { IParameterMapper } from './parameter-mapper.interface';
+import { BaseEndpointStrategy } from '../../endpoint-strategies/base-endpoint-strategy';
+import { BaseParameterMapper } from '../base-parameter-mapper';
 import { FeatureSupport } from './feature-support.interface';
 
 /**
@@ -40,12 +40,12 @@ export interface ProviderConfig {
   /**
    * 端点策略
    */
-  endpointStrategy: IEndpointStrategy;
+  endpointStrategy: BaseEndpointStrategy;
 
   /**
    * 参数映射器
    */
-  parameterMapper: IParameterMapper;
+  parameterMapper: BaseParameterMapper;
 
   /**
    * 功能支持
@@ -124,7 +124,7 @@ export class ProviderConfigBuilder {
   /**
    * 设置端点策略
    */
-  endpointStrategy(endpointStrategy: IEndpointStrategy): ProviderConfigBuilder {
+  endpointStrategy(endpointStrategy: BaseEndpointStrategy): ProviderConfigBuilder {
     this.config.endpointStrategy = endpointStrategy;
     return this;
   }
@@ -132,7 +132,7 @@ export class ProviderConfigBuilder {
   /**
    * 设置参数映射器
    */
-  parameterMapper(parameterMapper: IParameterMapper): ProviderConfigBuilder {
+  parameterMapper(parameterMapper: BaseParameterMapper): ProviderConfigBuilder {
     this.config.parameterMapper = parameterMapper;
     return this;
   }

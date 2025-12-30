@@ -1,13 +1,12 @@
-import { IEndpointStrategy } from './endpoint-strategy.interface';
 import { ProviderConfig } from '../parameter-mappers/interfaces/provider-config.interface';
-import { ProviderRequest } from '../parameter-mappers/interfaces/parameter-mapper.interface';
+import { ProviderRequest } from '../parameter-mappers/base-parameter-mapper';
 
 /**
  * 基础端点策略
- * 
+ *
  * 提供通用的端点策略功能，子类可以扩展实现特定提供商的策略
  */
-export abstract class BaseEndpointStrategy implements IEndpointStrategy {
+export abstract class BaseEndpointStrategy {
   protected readonly name: string;
   protected readonly version: string;
 

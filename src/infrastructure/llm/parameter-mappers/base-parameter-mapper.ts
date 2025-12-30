@@ -1,15 +1,28 @@
 import { LLMRequest } from '../../../domain/llm/entities/llm-request';
 import { LLMResponse } from '../../../domain/llm/entities/llm-response';
-import { IParameterMapper, ParameterDefinition, ProviderRequest, ProviderResponse } from './interfaces/parameter-mapper.interface';
 import { ProviderConfig } from './interfaces/provider-config.interface';
-import { CommonParameterDefinitions } from './interfaces/parameter-definition.interface';
+import { ParameterDefinition } from './interfaces/parameter-definition.interface';
+
+/**
+ * 提供商请求接口
+ */
+export interface ProviderRequest {
+  [key: string]: any;
+}
+
+/**
+ * 提供商响应接口
+ */
+export interface ProviderResponse {
+  [key: string]: any;
+}
 
 /**
  * 基础参数映射器
- * 
+ *
  * 提供通用的参数映射功能，子类可以扩展实现特定提供商的映射逻辑
  */
-export abstract class BaseParameterMapper implements IParameterMapper {
+export abstract class BaseParameterMapper {
   protected readonly name: string;
   protected readonly version: string;
   protected readonly supportedParameters: ParameterDefinition[];
@@ -26,15 +39,75 @@ export abstract class BaseParameterMapper implements IParameterMapper {
    */
   protected initializeSupportedParameters(): ParameterDefinition[] {
     return [
-      CommonParameterDefinitions.model(),
-      CommonParameterDefinitions.messages(),
-      CommonParameterDefinitions.temperature(),
-      CommonParameterDefinitions.maxTokens(),
-      CommonParameterDefinitions.topP(),
-      CommonParameterDefinitions.frequencyPenalty(),
-      CommonParameterDefinitions.presencePenalty(),
-      CommonParameterDefinitions.stop(),
-      CommonParameterDefinitions.stream()
+      {
+        name: 'model',
+        type: 'string',
+        required: true,
+        description: '模型名称'
+      },
+      {
+        name: 'messages',
+        type: 'array',
+        required: true,
+        description: '消息列表'
+      },
+      {
+        name: 'temperature',
+        type: 'number',
+        required: false,
+        defaultValue: 0.7,
+        description: '控制输出的随机性，值越高越随机',
+        min: 0,
+        max: 2
+      },
+      {
+        name: 'maxTokens',
+        type: 'number',
+        required: false,
+        defaultValue: 1000,
+        description: '生成的最大 token 数',
+        min: 1
+      },
+      {
+        name: 'topP',
+        type: 'number',
+        required: false,
+        defaultValue: 1.0,
+        description: '核采样参数，控制考虑的 token 范围',
+        min: 0,
+        max: 1
+      },
+      {
+        name: 'frequencyPenalty',
+        type: 'number',
+        required: false,
+        defaultValue: 0.0,
+        description: '频率惩罚，降低重复内容的概率',
+        min: -2,
+        max: 2
+      },
+      {
+        name: 'presencePenalty',
+        type: 'number',
+        required: false,
+        defaultValue: 0.0,
+        description: '存在惩罚，鼓励谈论新话题',
+        min: -2,
+        max: 2
+      },
+      {
+        name: 'stop',
+        type: 'array',
+        required: false,
+        description: '停止序列，遇到这些内容时停止生成'
+      },
+      {
+        name: 'stream',
+        type: 'boolean',
+        required: false,
+        defaultValue: false,
+        description: '是否启用流式响应'
+      }
     ];
   }
 

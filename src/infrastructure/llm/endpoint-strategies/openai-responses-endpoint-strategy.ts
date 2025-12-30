@@ -1,6 +1,6 @@
-import { BaseEndpointStrategy } from '../base-endpoint-strategy';
-import { ProviderConfig } from '../../parameter-mappers/interfaces/provider-config.interface';
-import { ProviderRequest } from '../../parameter-mappers/interfaces/parameter-mapper.interface';
+import { BaseEndpointStrategy } from './base-endpoint-strategy';
+import { ProviderConfig } from '../parameter-mappers/interfaces/provider-config.interface';
+import { ProviderRequest } from '../parameter-mappers/base-parameter-mapper';
 
 /**
  * OpenAI Responses API 端点策略
@@ -29,7 +29,7 @@ export class OpenAIResponsesEndpointStrategy extends BaseEndpointStrategy {
     // 从配置中获取端点路径，如果未配置则使用默认路径
     // 注意：不包含 v1 前缀，因为 baseURL 通常已经包含
     const endpointPath = config.extraConfig?.['endpointPath'] || 'responses';
-    
+
     // 支持自定义端点路径
     if (endpointPath.startsWith('/')) {
       // 如果是绝对路径，直接与 baseURL 组合
@@ -51,7 +51,7 @@ export class OpenAIResponsesEndpointStrategy extends BaseEndpointStrategy {
 
     // 从配置中获取默认请求头
     const defaultHeaders = config.extraConfig?.['defaultHeaders'] || {};
-    
+
     // 合并默认请求头
     Object.assign(headers, defaultHeaders);
 
@@ -93,13 +93,13 @@ export class OpenAIResponsesEndpointStrategy extends BaseEndpointStrategy {
     // 如果配置中指定了自定义认证处理
     if (config.extraConfig?.['customAuth']) {
       const authConfig = config.extraConfig['customAuth'];
-      
+
       // 支持在请求体中添加认证信息
       if (authConfig.type === 'body' && authConfig.field) {
         request = { ...request };
         request[authConfig.field] = config.apiKey;
       }
-      
+
       // 支持查询参数认证
       if (authConfig.type === 'query' && authConfig.param) {
         // 注意：这里不直接修改 URL，而是标记需要在 HTTP 客户端层面处理
@@ -130,11 +130,11 @@ export class OpenAIResponsesEndpointStrategy extends BaseEndpointStrategy {
       if (!authConfig.type || !['header', 'body', 'query'].includes(authConfig.type)) {
         result.errors.push('Custom auth type must be one of: header, body, query');
       }
-      
+
       if (authConfig.type === 'body' && !authConfig.field) {
         result.errors.push('Body auth requires a field name');
       }
-      
+
       if (authConfig.type === 'query' && !authConfig.param) {
         result.errors.push('Query auth requires a parameter name');
       }

@@ -1,6 +1,6 @@
-import { BaseEndpointStrategy } from '../base-endpoint-strategy';
-import { ProviderConfig } from '../../parameter-mappers/interfaces/provider-config.interface';
-import { ProviderRequest } from '../../parameter-mappers/interfaces/parameter-mapper.interface';
+import { BaseEndpointStrategy } from './base-endpoint-strategy';
+import { ProviderConfig } from '../parameter-mappers/interfaces/provider-config.interface';
+import { ProviderRequest } from '../parameter-mappers/base-parameter-mapper';
 
 /**
  * Gemini 原生端点策略

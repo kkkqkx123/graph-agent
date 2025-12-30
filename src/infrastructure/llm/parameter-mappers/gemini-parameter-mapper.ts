@@ -1,9 +1,9 @@
-import { LLMRequest } from '../../../../domain/llm/entities/llm-request';
-import { LLMResponse } from '../../../../domain/llm/entities/llm-response';
-import { LLMMessage } from '../../../../domain/llm/value-objects/llm-message';
-import { BaseParameterMapper } from '../base-parameter-mapper';
-import { ProviderConfig, ProviderRequest, ProviderResponse, ParameterDefinition } from '../interfaces/parameter-mapper.interface';
-import { ParameterDefinitionBuilder, CommonParameterDefinitions } from '../interfaces/parameter-definition.interface';
+import { LLMRequest } from '../../../domain/llm/entities/llm-request';
+import { LLMResponse } from '../../../domain/llm/entities/llm-response';
+import { LLMMessage } from '../../../domain/llm/value-objects/llm-message';
+import { BaseParameterMapper, ProviderRequest, ProviderResponse } from './base-parameter-mapper';
+import { ProviderConfig } from './interfaces/provider-config.interface';
+import { ParameterDefinition } from './interfaces/parameter-definition.interface';
 
 /**
  * Gemini 参数映射器
@@ -22,57 +22,48 @@ export class GeminiParameterMapper extends BaseParameterMapper {
     const baseParams = super.initializeSupportedParameters();
 
     // 添加 Gemini 特有参数
-    const geminiSpecificParams = [
-      new ParameterDefinitionBuilder()
-        .name('reasoningEffort')
-        .type('string')
-        .required(false)
-        .options(['none', 'low', 'medium', 'high'])
-        .description('推理努力程度')
-        .group('provider-specific')
-        .isProviderSpecific(true)
-        .build(),
-
-      new ParameterDefinitionBuilder()
-        .name('thinkingBudget')
-        .type('string')
-        .required(false)
-        .options(['low', 'medium', 'high'])
-        .description('思考预算')
-        .group('provider-specific')
-        .isProviderSpecific(true)
-        .build(),
-
-      new ParameterDefinitionBuilder()
-        .name('includeThoughts')
-        .type('boolean')
-        .required(false)
-        .defaultValue(false)
-        .description('是否包含思考过程')
-        .group('provider-specific')
-        .isProviderSpecific(true)
-        .build(),
-
-      new ParameterDefinitionBuilder()
-        .name('cachedContent')
-        .type('string')
-        .required(false)
-        .description('缓存内容标识符')
-        .group('provider-specific')
-        .isProviderSpecific(true)
-        .build(),
-
-      new ParameterDefinitionBuilder()
-        .name('topK')
-        .type('number')
-        .required(false)
-        .defaultValue(40)
-        .description('Top K 采样参数')
-        .min(1)
-        .max(100)
-        .group('provider-specific')
-        .isProviderSpecific(true)
-        .build()
+    const geminiSpecificParams: ParameterDefinition[] = [
+      {
+        name: 'reasoningEffort',
+        type: 'string',
+        required: false,
+        options: ['none', 'low', 'medium', 'high'],
+        description: '推理努力程度',
+        isProviderSpecific: true
+      },
+      {
+        name: 'thinkingBudget',
+        type: 'string',
+        required: false,
+        options: ['low', 'medium', 'high'],
+        description: '思考预算',
+        isProviderSpecific: true
+      },
+      {
+        name: 'includeThoughts',
+        type: 'boolean',
+        required: false,
+        defaultValue: false,
+        description: '是否包含思考过程',
+        isProviderSpecific: true
+      },
+      {
+        name: 'cachedContent',
+        type: 'string',
+        required: false,
+        description: '缓存内容标识符',
+        isProviderSpecific: true
+      },
+      {
+        name: 'topK',
+        type: 'number',
+        required: false,
+        defaultValue: 40,
+        description: 'Top K 采样参数',
+        min: 1,
+        max: 100,
+        isProviderSpecific: true
+      }
     ];
 
     return [...baseParams, ...geminiSpecificParams];

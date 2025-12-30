@@ -4,12 +4,12 @@ import { LLMResponse } from '../../../domain/llm/entities/llm-response';
 import { ModelConfig } from '../../../domain/llm/value-objects/model-config';
 import { BaseLLMClient } from './base-llm-client';
 import { ProviderConfig, ApiType, ProviderConfigBuilder } from '../parameter-mappers';
-import { GeminiParameterMapper } from '../parameter-mappers/providers/gemini-parameter-mapper';
-import { OpenAICompatibleEndpointStrategy } from '../endpoint-strategies/providers/openai-compatible-endpoint-strategy';
+import { GeminiParameterMapper } from '../parameter-mappers/gemini-parameter-mapper';
+import { OpenAICompatibleEndpointStrategy } from '../endpoint-strategies/openai-compatible-endpoint-strategy';
 import { BaseFeatureSupport } from '../parameter-mappers/interfaces/feature-support.interface';
 import { FeatureRegistry } from '../features/feature-registry';
-import { GeminiThinkingBudgetFeature } from '../features/providers/gemini-thinking-budget-feature';
-import { GeminiCachedContentFeature } from '../features/providers/gemini-cached-content-feature';
+import { GeminiThinkingBudgetFeature } from '../features/gemini-thinking-budget-feature';
+import { GeminiCachedContentFeature } from '../features/gemini-cached-content-feature';
 import { ConfigLoadingModule } from '../../config/loading/config-loading-module';
 
 @injectable()

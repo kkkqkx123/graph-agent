@@ -1,9 +1,9 @@
-import { LLMRequest } from '../../../../domain/llm/entities/llm-request';
-import { LLMResponse } from '../../../../domain/llm/entities/llm-response';
-import { LLMMessage } from '../../../../domain/llm/value-objects/llm-message';
-import { BaseParameterMapper } from '../base-parameter-mapper';
-import { ProviderConfig, ProviderRequest, ProviderResponse, ParameterDefinition } from '../interfaces/parameter-mapper.interface';
-import { ParameterDefinitionBuilder, CommonParameterDefinitions } from '../interfaces/parameter-definition.interface';
+import { LLMRequest } from '../../../domain/llm/entities/llm-request';
+import { LLMResponse } from '../../../domain/llm/entities/llm-response';
+import { LLMMessage } from '../../../domain/llm/value-objects/llm-message';
+import { BaseParameterMapper, ProviderRequest, ProviderResponse } from './base-parameter-mapper';
+import { ProviderConfig } from './interfaces/provider-config.interface';
+import { ParameterDefinition } from './interfaces/parameter-definition.interface';
 
 /**
  * Anthropic 参数映射器
@@ -22,34 +22,29 @@ export class AnthropicParameterMapper extends BaseParameterMapper {
     const baseParams = super.initializeSupportedParameters();
 
     // 添加 Anthropic 特有参数
-    const anthropicSpecificParams = [
-      new ParameterDefinitionBuilder()
-        .name('topK')
-        .type('number')
-        .required(false)
-        .description('Top K 采样参数')
-        .min(0)
-        .group('provider-specific')
-        .isProviderSpecific(true)
-        .build(),
-
-      new ParameterDefinitionBuilder()
-        .name('system')
-        .type('string')
-        .required(false)
-        .description('系统提示')
-        .group('provider-specific')
-        .isProviderSpecific(true)
-        .build(),
-
-      new ParameterDefinitionBuilder()
-        .name('metadata')
-        .type('object')
-        .required(false)
-        .description('元数据')
-        .group('provider-specific')
-        .isProviderSpecific(true)
-        .build()
+    const anthropicSpecificParams: ParameterDefinition[] = [
+      {
+        name: 'topK',
+        type: 'number',
+        required: false,
+        description: 'Top K 采样参数',
+        min: 0,
+        isProviderSpecific: true
+      },
+      {
+        name: 'system',
+        type: 'string',
+        required: false,
+        description: '系统提示',
+        isProviderSpecific: true
+      },
+      {
+        name: 'metadata',
+        type: 'object',
+        required: false,
+        description: '元数据',
+        isProviderSpecific: true
+      }
     ];
 
     return [...baseParams, ...anthropicSpecificParams];

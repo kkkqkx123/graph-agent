@@ -77,9 +77,7 @@ describe('LLM目录合并验证', () => {
         'LLMClientFactory',
         'LLMWrapperFactory',
         'ConverterFactory',
-        'EndpointStrategyFactory',
-        'FeatureFactory',
-        'ParameterMapperFactory'
+        'FeatureFactory'
       ];
 
       factoryIdentifiers.forEach(identifier => {
