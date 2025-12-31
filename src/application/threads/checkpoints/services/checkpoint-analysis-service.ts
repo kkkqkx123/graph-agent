@@ -8,7 +8,6 @@ import { CheckpointStatistics } from '../../../../domain/threads/checkpoints/val
 import { ThreadCheckpointDomainService, ThreadCheckpointDomainServiceImpl } from '../../../../domain/threads/checkpoints/services/thread-checkpoint-domain-service';
 import { ThreadCheckpointRepository } from '../../../../domain/threads/checkpoints/repositories/thread-checkpoint-repository';
 import { BaseApplicationService } from '../../../common/base-application-service';
-import { CheckpointStatisticsInfo } from '../../checkpoints/dtos';
 import { ILogger } from '../../../../domain/common/types';
 
 /**
@@ -30,48 +29,6 @@ export class CheckpointAnalysisService extends BaseApplicationService {
    */
   protected getServiceName(): string {
     return '检查点分析';
-  }
-
-  /**
-   * 获取检查点统计信息
-   */
-  async getCheckpointStatistics(threadId?: string): Promise<CheckpointStatisticsInfo> {
-    return this.executeQueryOperation(
-      '检查点统计信息',
-      async () => {
-        const id = threadId ? this.parseId(threadId, '线程ID') : undefined;
-        const statistics = await this.domainService.getCheckpointStatistics(id);
-
-        return this.mapCheckpointStatisticsToInfo(statistics);
-      },
-      { threadId }
-    );
-  }
-
-  /**
-   * 将检查点统计信息领域对象映射为DTO
-   */
-  private mapCheckpointStatisticsToInfo(statistics: CheckpointStatistics): CheckpointStatisticsInfo {
-    return {
-      totalCheckpoints: statistics.totalCheckpoints,
-      activeCheckpoints: statistics.activeCheckpoints,
-      expiredCheckpoints: statistics.expiredCheckpoints,
-      corruptedCheckpoints: statistics.corruptedCheckpoints,
-      archivedCheckpoints: statistics.archivedCheckpoints,
-      totalSizeBytes: statistics.totalSizeBytes,
-      averageSizeBytes: statistics.averageSizeBytes,
-      largestCheckpointBytes: statistics.largestCheckpointBytes,
-      smallestCheckpointBytes: statistics.smallestCheckpointBytes,
-      totalRestores: statistics.totalRestores,
-      averageRestores: statistics.averageRestores,
-      oldestCheckpointAgeHours: statistics.oldestCheckpointAgeHours,
-      newestCheckpointAgeHours: statistics.newestCheckpointAgeHours,
-      averageAgeHours: statistics.averageAgeHours,
-      typeDistribution: { ...statistics.typeDistribution },
-      restoreFrequency: { ...statistics.restoreFrequency },
-      healthScore: statistics.getHealthScore(),
-      healthStatus: statistics.getHealthStatus()
-    };
   }
 
   /**

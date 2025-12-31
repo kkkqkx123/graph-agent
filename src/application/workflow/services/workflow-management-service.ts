@@ -8,7 +8,7 @@ import { injectable, inject } from 'inversify';
 import { Workflow, WorkflowRepository } from '../../../domain/workflow';
 import { ID, ILogger } from '../../../domain/common';
 import { BaseApplicationService } from '../../common/base-application-service';
-import { WorkflowDTO, WorkflowConverter, WorkflowListResultDTO } from '../dtos/workflow-dto';
+import { WorkflowDTO, mapWorkflowToDTO, mapWorkflowsToDTOs } from '../dtos/workflow-dto';
 
 /**
  * 更新工作流参数
@@ -95,6 +95,16 @@ export interface GetWorkflowStatusParams {
 }
 
 /**
+ * 工作流列表结果
+ */
+export interface WorkflowListResult {
+  workflows: WorkflowDTO[];
+  total: number;
+  page: number;
+  size: number;
+}
+
+/**
  * 工作流管理服务
  */
 @injectable()
@@ -155,7 +165,7 @@ export class WorkflowManagementService extends BaseApplicationService {
         // 保存工作流
         const updatedWorkflow = await this.workflowRepository.save(workflow);
 
-        return WorkflowConverter.toDto(updatedWorkflow);
+        return mapWorkflowToDTO(updatedWorkflow);
       },
       { workflowId: params.workflowId }
     );
@@ -181,7 +191,7 @@ export class WorkflowManagementService extends BaseApplicationService {
         // 保存工作流
         const savedWorkflow = await this.workflowRepository.save(workflow);
 
-        return WorkflowConverter.toDto(savedWorkflow);
+        return mapWorkflowToDTO(savedWorkflow);
       },
       { workflowId: params.workflowId, tag: params.tag }
     );
@@ -207,7 +217,7 @@ export class WorkflowManagementService extends BaseApplicationService {
         // 保存工作流
         const savedWorkflow = await this.workflowRepository.save(workflow);
 
-        return WorkflowConverter.toDto(savedWorkflow);
+        return mapWorkflowToDTO(savedWorkflow);
       },
       { workflowId: params.workflowId, tag: params.tag }
     );
@@ -256,7 +266,7 @@ export class WorkflowManagementService extends BaseApplicationService {
           return null;
         }
 
-        return WorkflowConverter.toDto(workflow);
+        return mapWorkflowToDTO(workflow);
       },
       { workflowId: params.workflowId }
     );
@@ -265,9 +275,9 @@ export class WorkflowManagementService extends BaseApplicationService {
   /**
    * 列出工作流
    * @param params 列出工作流参数
-   * @returns 工作流列表结果DTO
+   * @returns 工作流列表结果
    */
-  async listWorkflows(params: ListWorkflowsParams): Promise<WorkflowListResultDTO> {
+  async listWorkflows(params: ListWorkflowsParams): Promise<WorkflowListResult> {
     return this.executeQueryOperation(
       '工作流列表',
       async () => {
@@ -313,12 +323,14 @@ export class WorkflowManagementService extends BaseApplicationService {
         const endIndex = startIndex + size;
         const paginatedWorkflows = filteredWorkflows.slice(startIndex, endIndex);
 
-        return new WorkflowListResultDTO({
-          workflows: WorkflowConverter.toDtoArray(paginatedWorkflows),
+        const result: WorkflowListResult = {
+          workflows: mapWorkflowsToDTOs(paginatedWorkflows),
           total: filteredWorkflows.length,
           page,
           size: paginatedWorkflows.length
-        });
+        };
+
+        return result;
       },
       { filters: params.filters, pagination: params.pagination }
     );
@@ -345,9 +357,9 @@ export class WorkflowManagementService extends BaseApplicationService {
   /**
    * 搜索工作流
    * @param params 搜索工作流参数
-   * @returns 工作流列表结果DTO
+   * @returns 工作流列表结果
    */
-  async searchWorkflows(params: SearchWorkflowsParams): Promise<WorkflowListResultDTO> {
+  async searchWorkflows(params: SearchWorkflowsParams): Promise<WorkflowListResult> {
     return this.executeQueryOperation(
       '工作流搜索',
       async () => {
@@ -376,12 +388,14 @@ export class WorkflowManagementService extends BaseApplicationService {
         const endIndex = startIndex + size;
         const paginatedWorkflows = uniqueWorkflows.slice(startIndex, endIndex);
 
-        return new WorkflowListResultDTO({
-          workflows: WorkflowConverter.toDtoArray(paginatedWorkflows),
+        const result: WorkflowListResult = {
+          workflows: mapWorkflowsToDTOs(paginatedWorkflows),
           total: uniqueWorkflows.length,
           page,
           size: paginatedWorkflows.length
-        });
+        };
+
+        return result;
       },
       { keyword: params.keyword, searchIn: params.searchIn }
     );

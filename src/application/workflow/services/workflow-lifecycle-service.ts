@@ -8,7 +8,7 @@ import { injectable, inject } from 'inversify';
 import { Workflow, WorkflowStatus, WorkflowType, WorkflowConfig, WorkflowRepository } from '../../../domain/workflow';
 import { ID, ILogger } from '../../../domain/common';
 import { BaseApplicationService } from '../../common/base-application-service';
-import { WorkflowDTO, WorkflowConverter } from '../dtos/workflow-dto';
+import { WorkflowDTO, mapWorkflowToDTO } from '../dtos/workflow-dto';
 
 /**
  * 创建工作流参数
@@ -104,7 +104,7 @@ export class WorkflowLifecycleService extends BaseApplicationService {
         // 保存工作流
         const savedWorkflow = await this.workflowRepository.save(workflow);
 
-        return WorkflowConverter.toDto(savedWorkflow);
+        return mapWorkflowToDTO(savedWorkflow);
       },
       { name: params.name, type: params.type, workflowId: params.workflowId }
     );
@@ -133,7 +133,7 @@ export class WorkflowLifecycleService extends BaseApplicationService {
         // 保存工作流
         const savedWorkflow = await this.workflowRepository.save(workflow);
 
-        return WorkflowConverter.toDto(savedWorkflow);
+        return mapWorkflowToDTO(savedWorkflow);
       },
       { workflowId: params.workflowId }
     );
@@ -162,7 +162,7 @@ export class WorkflowLifecycleService extends BaseApplicationService {
         // 保存工作流
         const savedWorkflow = await this.workflowRepository.save(workflow);
 
-        return WorkflowConverter.toDto(savedWorkflow);
+        return mapWorkflowToDTO(savedWorkflow);
       },
       { workflowId: params.workflowId }
     );
@@ -191,7 +191,7 @@ export class WorkflowLifecycleService extends BaseApplicationService {
         // 保存工作流
         const savedWorkflow = await this.workflowRepository.save(workflow);
 
-        return WorkflowConverter.toDto(savedWorkflow);
+        return mapWorkflowToDTO(savedWorkflow);
       },
       { workflowId: params.workflowId }
     );

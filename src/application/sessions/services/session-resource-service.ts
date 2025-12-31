@@ -14,7 +14,7 @@ import {
   ResourceLimitsDTO,
   SessionQuotaDTO,
   QuotaUsageDTO,
-  ResourceAllocationConverter
+  mapResourceAllocationToDTO
 } from '../dtos';
 
 /**
@@ -22,8 +22,6 @@ import {
  */
 @injectable()
 export class SessionResourceService extends BaseApplicationService {
-  private readonly resourceAllocationConverter = new ResourceAllocationConverter();
-
   constructor(
     @inject(TYPES.SessionRepository) private readonly sessionRepository: SessionRepository,
     @inject(TYPES.Logger) logger: ILogger
@@ -86,7 +84,7 @@ export class SessionResourceService extends BaseApplicationService {
           expiresAt: new Date(Date.now() + 3600000) // 1小时后过期
         };
 
-        return this.resourceAllocationConverter.toDto(allocation);
+        return mapResourceAllocationToDTO(allocation);
       },
       { sessionId, requirementCount: requirements.length }
     );
