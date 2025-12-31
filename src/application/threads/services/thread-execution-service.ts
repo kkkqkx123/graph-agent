@@ -19,7 +19,8 @@ import { ID, ILogger, Timestamp } from '../../../domain/common';
 import { BaseApplicationService } from '../../common/base-application-service';
 import { WorkflowEngine } from '../../../domain/workflow/services/workflow-engine';
 import { StateManager } from '../../../domain/workflow/services/state-manager';
-import { CheckpointManager } from '../../../domain/workflow/services/checkpoint-manager';
+import { HistoryManager } from '../../../domain/workflow/services/history-manager';
+import { CheckpointManager } from '../../../domain/checkpoint/services/checkpoint-manager';
 import { ConditionalRouter } from '../../../domain/workflow/services/conditional-router';
 import { ExpressionEvaluator } from '../../../domain/workflow/services/expression-evaluator';
 import { INodeExecutor } from '../../../domain/workflow/services/node-executor.interface';
@@ -50,6 +51,7 @@ export interface ThreadExecutionResult {
 export class ThreadExecutionService extends BaseApplicationService {
   private readonly workflowEngine: WorkflowEngine;
   private readonly stateManager: StateManager;
+  private readonly historyManager: HistoryManager;
   private readonly checkpointManager: CheckpointManager;
   private readonly router: ConditionalRouter;
   private readonly evaluator: ExpressionEvaluator;
@@ -66,11 +68,13 @@ export class ThreadExecutionService extends BaseApplicationService {
     // 注意：这些配置值应该从配置文件中读取
     // 这里使用默认值，后续可以通过依赖注入配置对象来覆盖
     this.evaluator = new ExpressionEvaluator();
-    this.stateManager = new StateManager(1000); // maxCacheSize
+    this.stateManager = new StateManager();
+    this.historyManager = new HistoryManager();
     this.checkpointManager = new CheckpointManager(10, 1000); // maxCheckpointsPerThread, maxTotalCheckpoints
     this.router = new ConditionalRouter(this.evaluator);
     this.workflowEngine = new WorkflowEngine(
       this.stateManager,
+      this.historyManager,
       this.checkpointManager,
       this.router,
       this.nodeExecutor
@@ -336,11 +340,11 @@ export class ThreadExecutionService extends BaseApplicationService {
       '获取线程检查点',
       async () => {
         const checkpoints = this.checkpointManager.getThreadCheckpoints(threadId);
-        return checkpoints.map(cp => ({
-          id: cp.id,
-          workflowId: cp.workflowId.value,
-          currentNodeId: cp.currentNodeId.value,
-          timestamp: cp.timestamp,
+        return checkpoints.map((cp: any) => ({
+          id: cp.checkpointId.toString(),
+          workflowId: cp.threadId.toString(),
+          currentNodeId: cp.threadId.toString(),
+          timestamp: cp.createdAt.getDate().getTime(),
           metadata: cp.metadata
         }));
       },
@@ -369,10 +373,10 @@ export class ThreadExecutionService extends BaseApplicationService {
           return null;
         }
         return {
-          id: checkpoint.id,
-          workflowId: checkpoint.workflowId.value,
-          currentNodeId: checkpoint.currentNodeId.value,
-          timestamp: checkpoint.timestamp,
+          id: checkpoint.checkpointId.toString(),
+          workflowId: checkpoint.threadId.toString(),
+          currentNodeId: checkpoint.threadId.toString(),
+          timestamp: checkpoint.createdAt.getDate().getTime(),
           metadata: checkpoint.metadata
         };
       },

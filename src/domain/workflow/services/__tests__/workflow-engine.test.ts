@@ -1,6 +1,7 @@
 import { WorkflowEngine } from '../workflow-engine';
 import { StateManager } from '../state-manager';
-import { CheckpointManager } from '../checkpoint-manager';
+import { HistoryManager } from '../history-manager';
+import { CheckpointManager } from '../../../checkpoint/services/checkpoint-manager';
 import { ConditionalRouter } from '../conditional-router';
 import { ExpressionEvaluator } from '../expression-evaluator';
 import { Workflow } from '../../entities/workflow';
@@ -30,6 +31,7 @@ class MockNodeExecutor implements import('../node-executor.interface').INodeExec
 describe('WorkflowEngine', () => {
   let engine: WorkflowEngine;
   let stateManager: StateManager;
+  let historyManager: HistoryManager;
   let checkpointManager: CheckpointManager;
   let router: ConditionalRouter;
   let evaluator: ExpressionEvaluator;
@@ -40,11 +42,12 @@ describe('WorkflowEngine', () => {
 
   beforeEach(() => {
     evaluator = new ExpressionEvaluator();
-    stateManager = new StateManager(100);
+    stateManager = new StateManager();
+    historyManager = new HistoryManager();
     checkpointManager = new CheckpointManager(10, 100);
     router = new ConditionalRouter(evaluator);
     nodeExecutor = new MockNodeExecutor();
-    engine = new WorkflowEngine(stateManager, checkpointManager, router, nodeExecutor);
+    engine = new WorkflowEngine(stateManager, historyManager, checkpointManager, router, nodeExecutor);
 
     workflowId = ID.generate();
     threadId = 'thread-1';
@@ -55,6 +58,7 @@ describe('WorkflowEngine', () => {
 
   afterEach(() => {
     stateManager.clearAllStates();
+    historyManager.clearAllHistories();
     checkpointManager.clearAllCheckpoints();
     router.clearRoutingHistory();
   });

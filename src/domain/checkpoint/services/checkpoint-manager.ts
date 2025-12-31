@@ -1,43 +1,26 @@
 import { ID } from '../../common/value-objects';
-import { WorkflowState } from '../value-objects/workflow-state';
-
-/**
- * 检查点接口
- */
-export interface Checkpoint {
-  /** 检查点ID */
-  readonly id: string;
-  /** 线程ID */
-  readonly threadId: string;
-  /** 工作流ID */
-  readonly workflowId: ID;
-  /** 当前节点ID */
-  readonly currentNodeId: ID;
-  /** 状态快照 */
-  readonly stateSnapshot: string;
-  /** 创建时间 */
-  readonly timestamp: number;
-  /** 元数据 */
-  readonly metadata?: Record<string, any>;
-}
+import { ThreadCheckpoint } from '../../threads/checkpoints/entities/thread-checkpoint';
+import { CheckpointType } from '../../checkpoint/value-objects/checkpoint-type';
 
 /**
  * 检查点管理器
  *
  * 职责：
- * - 管理工作流执行的检查点
- * - 提供检查点的创建、恢复、删除操作
+ * - 管理检查点的创建、获取、恢复、删除
  * - 支持检查点列表查询
- * - 支持检查点元数据管理
+ * - 支持检查点过期管理
  *
  * 特性：
- * - 支持状态快照和恢复
- * - 支持检查点元数据
- * - 支持检查点列表管理
+ * - 使用 ThreadCheckpoint 实体
+ * - 支持线程级别的检查点管理
  * - 支持检查点过期清理
+ *
+ * 不负责：
+ * - 状态的日常更新（由 StateManager 负责）
+ * - 执行历史记录（由 HistoryManager 负责）
  */
 export class CheckpointManager {
-  private checkpoints: Map<string, Checkpoint>;
+  private checkpoints: Map<string, ThreadCheckpoint>;
   private threadCheckpoints: Map<string, string[]>; // threadId -> checkpointIds
   private maxCheckpointsPerThread: number;
   private maxTotalCheckpoints: number;
@@ -57,7 +40,7 @@ export class CheckpointManager {
    * @param threadId 线程ID
    * @param workflowId 工作流ID
    * @param currentNodeId 当前节点ID
-   * @param state 工作流状态
+   * @param stateData 状态数据
    * @param metadata 元数据
    * @returns 检查点ID
    */
@@ -65,21 +48,20 @@ export class CheckpointManager {
     threadId: string,
     workflowId: ID,
     currentNodeId: ID,
-    state: WorkflowState,
-    metadata?: Record<string, any>
+    stateData: Record<string, unknown>,
+    metadata?: Record<string, unknown>
   ): string {
-    const checkpointId = this.generateCheckpointId();
-    const timestamp = Date.now();
-
-    const checkpoint: Checkpoint = {
-      id: checkpointId,
-      threadId,
-      workflowId,
-      currentNodeId,
-      stateSnapshot: JSON.stringify(state.toProps()),
-      timestamp,
+    const checkpoint = ThreadCheckpoint.create(
+      ID.fromString(threadId),
+      CheckpointType.auto(),
+      stateData,
+      undefined,
+      undefined,
+      undefined,
       metadata
-    };
+    );
+
+    const checkpointId = checkpoint.checkpointId.toString();
 
     // 保存检查点
     this.checkpoints.set(checkpointId, checkpoint);
@@ -102,24 +84,26 @@ export class CheckpointManager {
    * @param checkpointId 检查点ID
    * @returns 检查点，如果不存在则返回 null
    */
-  get(checkpointId: string): Checkpoint | null {
+  get(checkpointId: string): ThreadCheckpoint | null {
     return this.checkpoints.get(checkpointId) || null;
   }
 
   /**
    * 恢复检查点
    * @param checkpointId 检查点ID
-   * @returns 工作流状态，如果检查点不存在则返回 null
+   * @returns 状态数据，如果检查点不存在则返回 null
    */
-  restore(checkpointId: string): WorkflowState | null {
+  restore(checkpointId: string): Record<string, unknown> | null {
     const checkpoint = this.checkpoints.get(checkpointId);
     
     if (!checkpoint) {
       return null;
     }
 
-    const stateProps = JSON.parse(checkpoint.stateSnapshot);
-    return WorkflowState.fromProps(stateProps);
+    // 标记检查点为已恢复
+    checkpoint.markRestored();
+
+    return checkpoint.stateData;
   }
 
   /**
@@ -138,7 +122,8 @@ export class CheckpointManager {
     this.checkpoints.delete(checkpointId);
 
     // 从线程的检查点列表中删除
-    const threadCheckpointIds = this.threadCheckpoints.get(checkpoint.threadId);
+    const threadId = checkpoint.threadId.toString();
+    const threadCheckpointIds = this.threadCheckpoints.get(threadId);
     if (threadCheckpointIds) {
       const index = threadCheckpointIds.indexOf(checkpointId);
       if (index !== -1) {
@@ -154,7 +139,7 @@ export class CheckpointManager {
    * @param threadId 线程ID
    * @returns 检查点数组（按时间倒序）
    */
-  getThreadCheckpoints(threadId: string): Checkpoint[] {
+  getThreadCheckpoints(threadId: string): ThreadCheckpoint[] {
     const checkpointIds = this.threadCheckpoints.get(threadId);
     
     if (!checkpointIds) {
@@ -163,8 +148,8 @@ export class CheckpointManager {
 
     const checkpoints = checkpointIds
       .map(id => this.checkpoints.get(id))
-      .filter((cp): cp is Checkpoint => cp !== undefined)
-      .sort((a, b) => b.timestamp - a.timestamp);
+      .filter((cp): cp is ThreadCheckpoint => cp !== undefined)
+      .sort((a, b) => b.createdAt.differenceInSeconds(a.createdAt));
 
     return checkpoints;
   }
@@ -174,7 +159,7 @@ export class CheckpointManager {
    * @param threadId 线程ID
    * @returns 最新检查点，如果不存在则返回 null
    */
-  getLatestCheckpoint(threadId: string): Checkpoint | null {
+  getLatestCheckpoint(threadId: string): ThreadCheckpoint | null {
     const checkpoints = this.getThreadCheckpoints(threadId);
     
     if (checkpoints.length === 0) {
@@ -270,23 +255,15 @@ export class CheckpointManager {
     if (this.checkpoints.size > this.maxTotalCheckpoints) {
       // 按时间排序，删除最旧的检查点
       const sortedCheckpoints = Array.from(this.checkpoints.values())
-        .sort((a, b) => a.timestamp - b.timestamp);
+        .sort((a, b) => a.createdAt.differenceInSeconds(b.createdAt));
       
       const toDeleteCount = this.checkpoints.size - this.maxTotalCheckpoints;
       for (let i = 0; i < toDeleteCount; i++) {
         const checkpoint = sortedCheckpoints[i];
         if (checkpoint) {
-          this.delete(checkpoint.id);
+          this.delete(checkpoint.checkpointId.toString());
         }
       }
     }
-  }
-
-  /**
-   * 生成检查点ID（私有方法）
-   * @returns 检查点ID
-   */
-  private generateCheckpointId(): string {
-    return `cp-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
   }
 }

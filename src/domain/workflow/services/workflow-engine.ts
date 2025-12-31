@@ -2,7 +2,8 @@ import { Workflow } from '../entities/workflow';
 import { NodeId, NodeType } from '../value-objects/node';
 import { WorkflowState } from '../value-objects/workflow-state';
 import { StateManager } from './state-manager';
-import { CheckpointManager } from './checkpoint-manager';
+import { HistoryManager } from './history-manager';
+import { CheckpointManager } from '../../checkpoint/services/checkpoint-manager';
 import { ConditionalRouter } from './conditional-router';
 import { INodeExecutor } from './node-executor.interface';
 
@@ -57,17 +58,20 @@ export interface WorkflowExecutionResult {
  */
 export class WorkflowEngine {
   private stateManager: StateManager;
+  private historyManager: HistoryManager;
   private checkpointManager: CheckpointManager;
   private router: ConditionalRouter;
   private nodeExecutor: INodeExecutor;
 
   constructor(
     stateManager: StateManager,
+    historyManager: HistoryManager,
     checkpointManager: CheckpointManager,
     router: ConditionalRouter,
     nodeExecutor: INodeExecutor
   ) {
     this.stateManager = stateManager;
+    this.historyManager = historyManager;
     this.checkpointManager = checkpointManager;
     this.router = router;
     this.nodeExecutor = nodeExecutor;
@@ -132,7 +136,7 @@ export class WorkflowEngine {
             threadId,
             workflow.workflowId,
             NodeId.fromString(currentNodeId),
-            currentState,
+            currentState.data,
             { step: executedNodes }
           );
           checkpointCount++;
@@ -140,7 +144,7 @@ export class WorkflowEngine {
         }
 
         // 执行节点
-        const nodeContext = this.buildNodeContext(currentState);
+        const nodeContext = this.buildNodeContext(currentState, threadId);
         const canExecute = await this.nodeExecutor.canExecute(node, nodeContext);
         
         if (!canExecute) {
@@ -152,14 +156,16 @@ export class WorkflowEngine {
         // 更新状态
         this.stateManager.updateState(
           threadId,
-          nodeResult.output || {},
-          {
-            addToHistory: true,
-            historyNodeId: NodeId.fromString(currentNodeId),
-            historyResult: nodeResult,
-            historyStatus: nodeResult.success ? 'success' : 'failure',
-            historyMetadata: nodeResult.metadata
-          }
+          nodeResult.output || {}
+        );
+
+        // 记录执行历史
+        this.historyManager.recordExecution(
+          threadId,
+          NodeId.fromString(currentNodeId),
+          nodeResult,
+          nodeResult.success ? 'success' : 'failure',
+          nodeResult.metadata
         );
 
         executedNodes++;
@@ -232,24 +238,18 @@ export class WorkflowEngine {
     checkpointId: string,
     options: WorkflowExecutionOptions = {}
   ): Promise<WorkflowExecutionResult> {
-    // 恢复状态
-    const restoredState = this.checkpointManager.restore(checkpointId);
-    if (!restoredState) {
+    // 恢复状态数据
+    const restoredStateData = this.checkpointManager.restore(checkpointId);
+    if (!restoredStateData) {
       throw new Error(`检查点 ${checkpointId} 不存在`);
     }
 
     // 更新状态管理器
     this.stateManager.clearState(threadId);
-    this.stateManager.initialize(threadId, workflow.workflowId, restoredState.data);
-
-    // 从当前节点继续执行
-    const currentNodeId = restoredState.currentNodeId?.value;
-    if (!currentNodeId) {
-      throw new Error('检查点中没有当前节点信息');
-    }
+    this.stateManager.initialize(threadId, workflow.workflowId, restoredStateData);
 
     // 继续执行
-    return this.execute(workflow, threadId, restoredState.data, options);
+    return this.execute(workflow, threadId, restoredStateData, options);
   }
 
   /**
@@ -281,19 +281,18 @@ export class WorkflowEngine {
    * @param state 工作流状态
    * @returns 节点执行上下文
    */
-  private buildNodeContext(state: WorkflowState): any {
+  private buildNodeContext(state: WorkflowState, threadId: string): any {
     return {
       variables: state.data,
       metadata: state.metadata,
-      history: state.history,
       getVariable: (key: string) => state.getData(key),
       setVariable: (key: string, value: any) => {
         // 注意：这里只是返回一个函数，实际的变量更新在状态管理器中完成
         return value;
       },
       getNodeResult: (nodeId: string) => {
-        const historyEntry = state.history.find(h => h.nodeId.value === nodeId);
-        return historyEntry?.result;
+        const history = this.historyManager.getNodeHistory(threadId, NodeId.fromString(nodeId));
+        return history.length > 0 ? history[history.length - 1]?.result : undefined;
       }
     };
   }

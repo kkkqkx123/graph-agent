@@ -5,7 +5,7 @@ import { Session } from '../../../domain/sessions/entities/session';
 import { SnapshotType } from '../../../domain/snapshot/value-objects/snapshot-type';
 import { CheckpointType } from '../../../domain/checkpoint/value-objects/checkpoint-type';
 import { StateHistoryService } from './state-history-service';
-import { StateCheckpointService } from './state-checkpoint-service';
+import { CheckpointService } from '../../threads/checkpoints/services/checkpoint-service';
 import { StateSnapshotService } from './state-snapshot-service';
 import { StateRecoveryService } from './state-recovery-service';
 
@@ -17,7 +17,7 @@ import { StateRecoveryService } from './state-recovery-service';
 export class StateManagementService {
   constructor(
     @inject('StateHistoryService') private readonly historyService: StateHistoryService,
-    @inject('StateCheckpointService') private readonly checkpointService: StateCheckpointService,
+    @inject('CheckpointService') private readonly checkpointService: CheckpointService,
     @inject('StateSnapshotService') private readonly snapshotService: StateSnapshotService,
     @inject('StateRecoveryService') private readonly recoveryService: StateRecoveryService
   ) {}
@@ -39,7 +39,16 @@ export class StateManagementService {
 
     // 2. 根据变更类型决定是否创建Checkpoint
     if (this.shouldCreateCheckpoint(changeType)) {
-      await this.checkpointService.createAutoCheckpoint(thread);
+      await this.checkpointService.createCheckpoint({
+        threadId: thread.threadId.toString(),
+        type: 'auto',
+        stateData: {
+          status: thread.status.value,
+          metadata: thread.metadata
+        },
+        title: `自动检查点: ${thread.status.value}`,
+        tags: ['automatic']
+      });
     }
 
     // 3. 根据变更类型决定是否创建Snapshot
@@ -83,7 +92,16 @@ export class StateManagementService {
     title?: string,
     description?: string
   ): Promise<void> {
-    await this.checkpointService.createManualCheckpoint(thread, title, description);
+    await this.checkpointService.createManualCheckpoint({
+      threadId: thread.threadId.toString(),
+      stateData: {
+        status: thread.status.value,
+        metadata: thread.metadata
+      },
+      title,
+      description,
+      tags: ['manual']
+    });
   }
 
   /**
@@ -110,11 +128,15 @@ export class StateManagementService {
     milestoneName: string,
     description?: string
   ): Promise<void> {
-    await this.checkpointService.createMilestoneCheckpoint(
-      thread,
+    await this.checkpointService.createMilestoneCheckpoint({
+      threadId: thread.threadId.toString(),
+      stateData: {
+        status: thread.status.value,
+        metadata: thread.metadata
+      },
       milestoneName,
       description
-    );
+    });
   }
 
   /**
@@ -129,7 +151,21 @@ export class StateManagementService {
     await this.historyService.createErrorHistory(thread, error);
 
     // 2. 创建错误Checkpoint
-    await this.checkpointService.createErrorCheckpoint(thread, error);
+    await this.checkpointService.createErrorCheckpoint({
+      threadId: thread.threadId.toString(),
+      stateData: {
+        status: thread.status.value,
+        metadata: thread.metadata,
+        errorMessage: error.message,
+        errorStack: error.stack
+      },
+      errorMessage: error.message,
+      errorType: error.name,
+      metadata: {
+        errorName: error.name,
+        errorMessage: error.message
+      }
+    });
 
     // 3. 创建错误Snapshot
     await this.snapshotService.createThreadSnapshot(
@@ -218,7 +254,7 @@ export class StateManagementService {
   }> {
     const [history, checkpoints, snapshots] = await Promise.all([
       this.historyService.getThreadHistory(threadId),
-      this.checkpointService.getThreadCheckpoints(threadId),
+      this.checkpointService.getThreadCheckpointHistory(threadId.toString()),
       this.snapshotService.getThreadSnapshots(threadId)
     ]);
 
@@ -280,7 +316,7 @@ export class StateManagementService {
     excessSnapshots: number;
   }> {
     const [excessCheckpoints, excessSnapshots] = await Promise.all([
-      this.checkpointService.cleanupExcessCheckpoints(threadId, maxCheckpoints),
+      this.checkpointService.cleanupExcessCheckpoints(threadId.toString(), maxCheckpoints),
       this.snapshotService.cleanupExcessSnapshots(threadId, maxSnapshots)
     ]);
 

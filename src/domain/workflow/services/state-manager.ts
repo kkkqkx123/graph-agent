@@ -1,21 +1,5 @@
 import { ID } from '../../common/value-objects';
-import { WorkflowState, ExecutionHistory } from '../value-objects/workflow-state';
-
-/**
- * 状态更新选项接口
- */
-export interface StateUpdateOptions {
-  /** 是否添加到执行历史 */
-  addToHistory?: boolean;
-  /** 历史记录的节点ID */
-  historyNodeId?: ID;
-  /** 历史记录的结果 */
-  historyResult?: any;
-  /** 历史记录的状态 */
-  historyStatus?: 'success' | 'failure' | 'pending' | 'running';
-  /** 历史记录的元数据 */
-  historyMetadata?: Record<string, any>;
-}
+import { WorkflowState } from '../value-objects/workflow-state';
 
 /**
  * 状态管理器
@@ -23,22 +7,21 @@ export interface StateUpdateOptions {
  * 职责：
  * - 管理工作流执行状态
  * - 提供状态的初始化、获取、更新、清除操作
- * - 支持状态快照和恢复
- * - 支持执行历史记录
  *
  * 特性：
- * - 线程安全的状态管理
  * - 不可变的状态更新
- * - 支持状态缓存
- * - 支持执行历史追踪
+ * - 线程级别的状态隔离
+ *
+ * 不负责：
+ * - 状态快照和恢复（由 CheckpointManager 负责）
+ * - 执行历史记录（由 HistoryManager 负责）
+ * - 状态缓存管理（由基础设施层负责）
  */
 export class StateManager {
   private states: Map<string, WorkflowState>;
-  private maxCacheSize: number;
 
-  constructor(maxCacheSize: number = 1000) {
+  constructor() {
     this.states = new Map();
-    this.maxCacheSize = maxCacheSize;
   }
 
   /**
@@ -73,13 +56,11 @@ export class StateManager {
    * 更新状态
    * @param threadId 线程ID
    * @param updates 状态更新数据
-   * @param options 更新选项
    * @returns 更新后的状态
    */
   updateState(
     threadId: string,
-    updates: Record<string, any>,
-    options: StateUpdateOptions = {}
+    updates: Record<string, any>
   ): WorkflowState {
     const currentState = this.states.get(threadId);
     
@@ -88,26 +69,7 @@ export class StateManager {
     }
 
     // 更新状态数据
-    let updatedState = this.updateStateData(currentState, updates);
-
-    // 添加到执行历史
-    if (options.addToHistory && options.historyNodeId) {
-      updatedState = this.addToExecutionHistory(
-        updatedState,
-        options.historyNodeId,
-        options.historyResult,
-        options.historyStatus || 'success',
-        options.historyMetadata
-      );
-    }
-
-    // 更新当前节点ID
-    if (options.historyNodeId) {
-      updatedState = this.updateCurrentNodeId(updatedState, options.historyNodeId);
-    }
-
-    // 检查缓存大小
-    this.checkCacheSize();
+    const updatedState = this.updateStateData(currentState, updates);
 
     // 保存更新后的状态
     this.states.set(threadId, updatedState);
@@ -151,21 +113,6 @@ export class StateManager {
   }
 
   /**
-   * 获取执行历史
-   * @param threadId 线程ID
-   * @returns 执行历史数组
-   */
-  getHistory(threadId: string): ExecutionHistory[] {
-    const state = this.states.get(threadId);
-    
-    if (!state) {
-      throw new Error(`线程 ${threadId} 的状态不存在`);
-    }
-
-    return state.history;
-  }
-
-  /**
    * 清除状态
    * @param threadId 线程ID
    */
@@ -178,33 +125,6 @@ export class StateManager {
    */
   clearAllStates(): void {
     this.states.clear();
-  }
-
-  /**
-   * 获取状态快照
-   * @param threadId 线程ID
-   * @returns 状态快照（JSON字符串）
-   */
-  getSnapshot(threadId: string): string {
-    const state = this.states.get(threadId);
-    
-    if (!state) {
-      throw new Error(`线程 ${threadId} 的状态不存在`);
-    }
-
-    return JSON.stringify(state.toProps());
-  }
-
-  /**
-   * 从快照恢复状态
-   * @param threadId 线程ID
-   * @param snapshot 状态快照（JSON字符串）
-   */
-  restoreFromSnapshot(threadId: string, snapshot: string): void {
-    const props = JSON.parse(snapshot);
-    const state = WorkflowState.fromProps(props);
-    
-    this.states.set(threadId, state);
   }
 
   /**
@@ -250,39 +170,6 @@ export class StateManager {
   }
 
   /**
-   * 添加到执行历史（私有方法）
-   * @param state 当前状态
-   * @param nodeId 节点ID
-   * @param result 执行结果
-   * @param status 执行状态
-   * @param metadata 元数据
-   * @returns 更新后的状态
-   */
-  private addToExecutionHistory(
-    state: WorkflowState,
-    nodeId: ID,
-    result?: any,
-    status: 'success' | 'failure' | 'pending' | 'running' = 'success',
-    metadata?: Record<string, any>
-  ): WorkflowState {
-    const historyEntry: ExecutionHistory = {
-      nodeId,
-      timestamp: require('../../common/value-objects/timestamp').Timestamp.now(),
-      result,
-      status,
-      metadata
-    };
-
-    const newHistory = [...state.history, historyEntry];
-
-    return WorkflowState.fromProps({
-      ...state.toProps(),
-      history: newHistory,
-      updatedAt: require('../../common/value-objects/timestamp').Timestamp.now()
-    });
-  }
-
-  /**
    * 更新当前节点ID（私有方法）
    * @param state 当前状态
    * @param nodeId 节点ID
@@ -294,18 +181,5 @@ export class StateManager {
       currentNodeId: nodeId,
       updatedAt: require('../../common/value-objects/timestamp').Timestamp.now()
     });
-  }
-
-  /**
-   * 检查缓存大小（私有方法）
-   */
-  private checkCacheSize(): void {
-    if (this.states.size > this.maxCacheSize) {
-      // 删除最旧的状态（FIFO）
-      const firstKey = this.states.keys().next().value;
-      if (firstKey) {
-        this.states.delete(firstKey);
-      }
-    }
   }
 }

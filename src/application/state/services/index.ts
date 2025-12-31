@@ -4,6 +4,5 @@
 
 export * from './state-management-service';
 export * from './state-history-service';
-export * from './state-checkpoint-service';
 export * from './state-snapshot-service';
 export * from './state-recovery-service';
