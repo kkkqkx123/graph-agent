@@ -14,7 +14,14 @@ import { HistoryTypeValue } from '../../../domain/history/value-objects/history-
 
 /**
  * 状态恢复服务
- * 负责从Checkpoint和Snapshot恢复Thread和Session状态
+ *
+ * 注意：Thread 的检查点恢复功能已迁移到 WorkflowEngine 和 CheckpointManager
+ * 此服务现在主要负责：
+ * 1. 验证恢复条件
+ * 2. 获取恢复历史
+ * 3. 推荐最佳恢复点
+ *
+ * 实际的恢复操作应该通过 WorkflowEngine.resumeFromCheckpoint() 方法执行
  */
 @injectable()
 export class StateRecoveryService {
@@ -26,6 +33,9 @@ export class StateRecoveryService {
 
   /**
    * 从Checkpoint恢复Thread
+   *
+   * @deprecated 请使用 WorkflowEngine.resumeFromCheckpoint() 方法
+   * 此方法保留用于向后兼容，但不再执行实际的恢复操作
    */
   public async restoreThreadFromCheckpoint(
     thread: Thread,
@@ -47,11 +57,7 @@ export class StateRecoveryService {
       throw new Error(`Checkpoint ${checkpointId.value} is deleted`);
     }
 
-    // 4. 使用Thread实体的restoreFromCheckpoint方法恢复状态
-    thread.restoreFromCheckpoint(checkpoint.stateData);
-    const restoredThread = thread;
-
-    // 5. 记录恢复History
+    // 4. 记录恢复History
     const history = History.create(
       HistoryType.checkpointCreated(),
       {
@@ -73,11 +79,16 @@ export class StateRecoveryService {
 
     await this.historyRepository.save(history);
 
-    return restoredThread;
+    // 注意：实际的恢复操作应该通过 WorkflowEngine.resumeFromCheckpoint() 执行
+    // 这里只返回原始的 thread 对象
+    return thread;
   }
 
   /**
    * 从Snapshot恢复Thread
+   *
+   * @deprecated 请使用 WorkflowEngine.resumeFromCheckpoint() 方法
+   * 此方法保留用于向后兼容，但不再执行实际的恢复操作
    */
   public async restoreThreadFromSnapshot(
     thread: Thread,
@@ -104,15 +115,11 @@ export class StateRecoveryService {
       throw new Error(`Snapshot ${snapshotId.value} cannot be restored`);
     }
 
-    // 5. 使用Thread实体的restoreFromCheckpoint方法恢复状态
-    thread.restoreFromCheckpoint(snapshot.stateData);
-    const restoredThread = thread;
-
-    // 6. 标记Snapshot已恢复
+    // 5. 标记Snapshot已恢复
     snapshot.markRestored();
     await this.snapshotRepository.save(snapshot);
 
-    // 7. 记录恢复History
+    // 6. 记录恢复History
     const history = History.create(
       HistoryType.checkpointCreated(),
       {
@@ -134,7 +141,9 @@ export class StateRecoveryService {
 
     await this.historyRepository.save(history);
 
-    return restoredThread;
+    // 注意：实际的恢复操作应该通过 WorkflowEngine.resumeFromCheckpoint() 执行
+    // 这里只返回原始的 thread 对象
+    return thread;
   }
 
   /**

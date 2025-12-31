@@ -6,9 +6,10 @@
  * - 工作流执行调用
  * - 线程状态管理
  * - 执行结果处理
+ * - 检查点恢复
  *
  * 属于应用层，负责业务流程编排
- * 直接调用基础设施层的WorkflowExecutionEngine执行工作流
+ * 使用领域层的 WorkflowEngine 执行工作流
  */
 
 import { injectable, inject } from 'inversify';
@@ -16,9 +17,12 @@ import { Thread, ThreadRepository } from '../../../domain/threads';
 import { Workflow, WorkflowRepository } from '../../../domain/workflow';
 import { ID, ILogger, Timestamp } from '../../../domain/common';
 import { BaseApplicationService } from '../../common/base-application-service';
-import { WorkflowExecutionEngine } from '../../../infrastructure/workflow/services/workflow-execution-engine';
-import { ExecutionContext } from '../../../domain/threads/value-objects/execution-context';
-import { PromptContext } from '../../../domain/workflow/value-objects/context/prompt-context';
+import { WorkflowEngine } from '../../../domain/workflow/services/workflow-engine';
+import { StateManager } from '../../../domain/workflow/services/state-manager';
+import { CheckpointManager } from '../../../domain/workflow/services/checkpoint-manager';
+import { ConditionalRouter } from '../../../domain/workflow/services/conditional-router';
+import { ExpressionEvaluator } from '../../../domain/workflow/services/expression-evaluator';
+import { INodeExecutor } from '../../../domain/workflow/services/node-executor.interface';
 import { TYPES } from '../../../di/service-keys';
 
 /**
@@ -44,13 +48,33 @@ export interface ThreadExecutionResult {
  */
 @injectable()
 export class ThreadExecutionService extends BaseApplicationService {
+  private readonly workflowEngine: WorkflowEngine;
+  private readonly stateManager: StateManager;
+  private readonly checkpointManager: CheckpointManager;
+  private readonly router: ConditionalRouter;
+  private readonly evaluator: ExpressionEvaluator;
+
   constructor(
     @inject(TYPES.ThreadRepository) private readonly threadRepository: ThreadRepository,
     @inject(TYPES.WorkflowRepository) private readonly workflowRepository: WorkflowRepository,
-    @inject(TYPES.WorkflowExecutionEngine) private readonly workflowExecutionEngine: WorkflowExecutionEngine,
+    @inject(TYPES.NodeExecutor) private readonly nodeExecutor: INodeExecutor,
     @inject(TYPES.Logger) logger: ILogger
   ) {
     super(logger);
+
+    // 初始化领域服务
+    // 注意：这些配置值应该从配置文件中读取
+    // 这里使用默认值，后续可以通过依赖注入配置对象来覆盖
+    this.evaluator = new ExpressionEvaluator();
+    this.stateManager = new StateManager(1000); // maxCacheSize
+    this.checkpointManager = new CheckpointManager(10, 1000); // maxCheckpointsPerThread, maxTotalCheckpoints
+    this.router = new ConditionalRouter(this.evaluator);
+    this.workflowEngine = new WorkflowEngine(
+      this.stateManager,
+      this.checkpointManager,
+      this.router,
+      this.nodeExecutor
+    );
   }
 
   /**
@@ -64,9 +88,19 @@ export class ThreadExecutionService extends BaseApplicationService {
    * 执行线程
    * @param threadId 线程ID
    * @param inputData 输入数据
+   * @param options 执行选项
    * @returns 执行结果
    */
-  async executeThread(threadId: string, inputData: unknown): Promise<ThreadExecutionResult> {
+  async executeThread(
+    threadId: string,
+    inputData: unknown,
+    options?: {
+      enableCheckpoints?: boolean;
+      checkpointInterval?: number;
+      timeout?: number;
+      maxSteps?: number;
+    }
+  ): Promise<ThreadExecutionResult> {
     return this.executeBusinessOperation(
       '线程执行',
       async () => {
@@ -99,12 +133,19 @@ export class ThreadExecutionService extends BaseApplicationService {
         });
 
         try {
-          // 创建执行上下文
-          const promptContext = PromptContext.create('');
-          const context = ExecutionContext.create(promptContext) as ExecutionContext;
-
-          // 直接调用基础设施层的WorkflowExecutionEngine执行工作流
-          const workflowResult = await this.workflowExecutionEngine.execute(workflow, context);
+          // 使用新的 WorkflowEngine 执行工作流
+          const workflowResult = await this.workflowEngine.execute(
+            workflow,
+            thread.id.value,
+            inputData as Record<string, any>,
+            {
+              enableCheckpoints: options?.enableCheckpoints ?? true,
+              checkpointInterval: options?.checkpointInterval ?? 5,
+              timeout: options?.timeout ?? 300000, // 5分钟
+              maxSteps: options?.maxSteps ?? 1000,
+              recordRoutingHistory: true
+            }
+          );
 
           // 根据工作流执行结果更新线程状态
           if (workflowResult.success) {
@@ -113,14 +154,16 @@ export class ThreadExecutionService extends BaseApplicationService {
 
             this.logger.info('线程执行完成', {
               threadId: thread.id.toString(),
-              duration: workflowResult.duration
+              duration: workflowResult.executionTime,
+              executedNodes: workflowResult.executedNodes,
+              checkpointCount: workflowResult.checkpointCount
             });
 
             return {
               success: true,
               threadId: thread.id.toString(),
-              result: workflowResult.results ? Object.fromEntries(workflowResult.results) : {},
-              duration: workflowResult.duration,
+              result: workflowResult.finalState.data,
+              duration: workflowResult.executionTime,
               status: 'completed'
             };
           } else {
@@ -131,14 +174,15 @@ export class ThreadExecutionService extends BaseApplicationService {
 
             this.logger.error('线程执行失败', new Error(errorMessage), {
               threadId: thread.id.toString(),
-              duration: workflowResult.duration
+              duration: workflowResult.executionTime,
+              executedNodes: workflowResult.executedNodes
             });
 
             return {
               success: false,
               threadId: thread.id.toString(),
               error: errorMessage,
-              duration: workflowResult.duration,
+              duration: workflowResult.executionTime,
               status: 'failed'
             };
           }
@@ -155,6 +199,182 @@ export class ThreadExecutionService extends BaseApplicationService {
 
           throw error;
         }
+      },
+      { threadId }
+    );
+  }
+
+  /**
+   * 从检查点恢复线程执行
+   * @param threadId 线程ID
+   * @param checkpointId 检查点ID
+   * @param options 执行选项
+   * @returns 执行结果
+   */
+  async resumeThreadFromCheckpoint(
+    threadId: string,
+    checkpointId: string,
+    options?: {
+      timeout?: number;
+      maxSteps?: number;
+    }
+  ): Promise<ThreadExecutionResult> {
+    return this.executeBusinessOperation(
+      '从检查点恢复线程执行',
+      async () => {
+        const id = this.parseId(threadId, '线程ID');
+        const thread = await this.threadRepository.findByIdOrFail(id);
+
+        // 验证线程状态
+        if (!thread.status.isPaused() && !thread.status.isFailed()) {
+          throw new Error(`只能恢复暂停或失败状态的线程，当前状态: ${thread.status.toString()}`);
+        }
+
+        // 获取工作流
+        const workflow = await this.workflowRepository.findById(thread.workflowId);
+        if (!workflow) {
+          throw new Error(`工作流不存在: ${thread.workflowId.toString()}`);
+        }
+
+        // 验证工作流状态
+        if (!workflow.status.isActive()) {
+          throw new Error(`工作流不是活跃状态，当前状态: ${workflow.status.toString()}`);
+        }
+
+        // 恢复线程
+        thread.resume();
+        await this.threadRepository.save(thread);
+
+        this.logger.info('线程从检查点恢复执行', {
+          threadId: thread.id.toString(),
+          workflowId: thread.workflowId.toString(),
+          checkpointId
+        });
+
+        try {
+          // 使用 WorkflowEngine 从检查点恢复执行
+          const workflowResult = await this.workflowEngine.resumeFromCheckpoint(
+            workflow,
+            thread.id.value,
+            checkpointId,
+            {
+              timeout: options?.timeout ?? 300000, // 5分钟
+              maxSteps: options?.maxSteps ?? 1000,
+              recordRoutingHistory: true
+            }
+          );
+
+          // 根据工作流执行结果更新线程状态
+          if (workflowResult.success) {
+            thread.complete();
+            await this.threadRepository.save(thread);
+
+            this.logger.info('线程恢复执行完成', {
+              threadId: thread.id.toString(),
+              duration: workflowResult.executionTime,
+              executedNodes: workflowResult.executedNodes
+            });
+
+            return {
+              success: true,
+              threadId: thread.id.toString(),
+              result: workflowResult.finalState.data,
+              duration: workflowResult.executionTime,
+              status: 'completed'
+            };
+          } else {
+            const errorMessage = workflowResult.error || '工作流执行失败';
+
+            thread.fail(errorMessage);
+            await this.threadRepository.save(thread);
+
+            this.logger.error('线程恢复执行失败', new Error(errorMessage), {
+              threadId: thread.id.toString(),
+              duration: workflowResult.executionTime
+            });
+
+            return {
+              success: false,
+              threadId: thread.id.toString(),
+              error: errorMessage,
+              duration: workflowResult.executionTime,
+              status: 'failed'
+            };
+          }
+        } catch (error) {
+          // 捕获执行过程中的异常
+          const errorMessage = error instanceof Error ? error.message : String(error);
+
+          thread.fail(errorMessage);
+          await this.threadRepository.save(thread);
+
+          this.logger.error('线程恢复执行异常', error as Error, {
+            threadId: thread.id.toString(),
+            checkpointId
+          });
+
+          throw error;
+        }
+      },
+      { threadId, checkpointId }
+    );
+  }
+
+  /**
+   * 获取线程的检查点列表
+   * @param threadId 线程ID
+   * @returns 检查点列表
+   */
+  async getThreadCheckpoints(threadId: string): Promise<Array<{
+    id: string;
+    workflowId: string;
+    currentNodeId: string;
+    timestamp: number;
+    metadata?: Record<string, any>;
+  }>> {
+    const result = await this.executeGetOperation(
+      '获取线程检查点',
+      async () => {
+        const checkpoints = this.checkpointManager.getThreadCheckpoints(threadId);
+        return checkpoints.map(cp => ({
+          id: cp.id,
+          workflowId: cp.workflowId.value,
+          currentNodeId: cp.currentNodeId.value,
+          timestamp: cp.timestamp,
+          metadata: cp.metadata
+        }));
+      },
+      { threadId }
+    );
+    return result ?? [];
+  }
+
+  /**
+   * 获取线程的最新检查点
+   * @param threadId 线程ID
+   * @returns 最新检查点，如果不存在则返回 null
+   */
+  async getLatestCheckpoint(threadId: string): Promise<{
+    id: string;
+    workflowId: string;
+    currentNodeId: string;
+    timestamp: number;
+    metadata?: Record<string, any>;
+  } | null> {
+    return this.executeGetOperation(
+      '获取最新检查点',
+      async () => {
+        const checkpoint = this.checkpointManager.getLatestCheckpoint(threadId);
+        if (!checkpoint) {
+          return null;
+        }
+        return {
+          id: checkpoint.id,
+          workflowId: checkpoint.workflowId.value,
+          currentNodeId: checkpoint.currentNodeId.value,
+          timestamp: checkpoint.timestamp,
+          metadata: checkpoint.metadata
+        };
       },
       { threadId }
     );

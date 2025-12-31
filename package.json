@@ -29,6 +29,7 @@
   "author": "Modular Agent Framework Team",
   "license": "MIT",
   "dependencies": {
+    "@pawel-up/jexl": "^4.4.2",
     "@types/pg": "^8.16.0",
     "axios": "^1.13.2",
     "chokidar": "^5.0.0",

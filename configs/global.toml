@@ -94,3 +94,48 @@ max_concurrent_requests = 10
 request_queue_size = 100
 connection_pool_size = 20
 connection_keep_alive = true
+
+# 工作流引擎配置
+[workflow]
+# 默认执行超时时间（毫秒）
+default_timeout = 300000
+# 默认最大执行步数
+default_max_steps = 1000
+# 默认检查点间隔（节点数）
+default_checkpoint_interval = 5
+# 默认是否启用检查点
+default_enable_checkpoints = true
+
+# 状态管理器配置
+[workflow.state_manager]
+# 最大缓存状态数量
+max_cache_size = 1000
+# 最大历史记录数量
+max_history_size = 100
+
+# 检查点管理器配置
+[workflow.checkpoint_manager]
+# 每个线程最大检查点数量
+max_checkpoints_per_thread = 10
+# 全局最大检查点数量
+max_total_checkpoints = 1000
+# 检查点过期时间（小时）
+checkpoint_expiration_hours = 24
+
+# 表达式评估器配置
+[workflow.expression_evaluator]
+# 是否启用表达式缓存
+enable_cache = true
+# 最大缓存表达式数量
+max_cache_size = 1000
+# 表达式评估超时时间（毫秒）
+evaluation_timeout = 5000
+
+# 路由器配置
+[workflow.router]
+# 是否记录路由历史
+record_routing_history = true
+# 最大路由历史记录数量
+max_routing_history = 100
+# 是否使用默认边
+use_default_edge = true
