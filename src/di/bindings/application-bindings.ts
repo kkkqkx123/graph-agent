@@ -25,7 +25,7 @@ import { ThreadCheckpointRepository } from '../../domain/threads/checkpoints/rep
 import { GraphAlgorithmService } from '../../infrastructure/workflow/services/graph-algorithm-service';
 import { GraphValidationService } from '../../infrastructure/workflow/services/graph-validation-service';
 import { ContextProcessorService } from '../../infrastructure/workflow/services/context-processor-service';
-import { IHumanRelayService } from '../../domain/llm/services/human-relay-service.interface';
+import { IHumanRelayService } from '../../application/llm/services/human-relay-service';
 
 // Infrastructure层服务
 import { WorkflowExecutionEngine } from '../../infrastructure/workflow/services/workflow-execution-engine';

@@ -6,12 +6,37 @@
  */
 
 import { injectable } from 'inversify';
-import { IHumanRelayService, HumanRelayConfig } from '../../../domain/llm/services/human-relay-service.interface';
 import { LLMRequest } from '../../../domain/llm/entities/llm-request';
 import { LLMResponse } from '../../../domain/llm/entities/llm-response';
 import { LLMMessage, LLMMessageRole } from '../../../domain/llm/value-objects/llm-message';
 import { HumanRelayMode } from '../../../domain/llm/value-objects/human-relay-mode';
 import { ID } from '../../../domain/common/value-objects/id';
+
+/**
+ * HumanRelay配置接口
+ */
+export interface HumanRelayConfig {
+  mode: HumanRelayMode;
+  maxHistoryLength: number;
+  defaultTimeout: number;
+  templates?: {
+    single?: string;
+    multi?: string;
+  };
+}
+
+/**
+ * HumanRelay服务接口
+ */
+export interface IHumanRelayService {
+  /**
+   * 处理HumanRelay请求
+   * @param request LLM请求
+   * @param config HumanRelay配置
+   * @returns LLM响应
+   */
+  processRequest(request: LLMRequest, config: HumanRelayConfig): Promise<LLMResponse>;
+}
 
 /**
  * 提示数据结构

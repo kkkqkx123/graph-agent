@@ -15,7 +15,7 @@ import { LLM_DI_IDENTIFIERS } from '../di-identifiers';
 import { ProviderConfig, ApiType } from '../parameter-mappers/interfaces/provider-config.interface';
 import { BaseFeatureSupport } from '../parameter-mappers/interfaces/feature-support.interface';
 import { ConfigLoadingModule } from '../../config/loading/config-loading-module';
-import { IHumanRelayService, HumanRelayConfig } from '../../../domain/llm/services/human-relay-service.interface';
+import { IHumanRelayService, HumanRelayConfig } from '../../../application/llm/services/human-relay-service';
 
 /**
  * HumanRelay客户端配置接口

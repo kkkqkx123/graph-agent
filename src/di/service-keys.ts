@@ -16,14 +16,14 @@ import { WorkflowRepository } from '../domain/workflow/repositories/workflow-rep
 import { PromptRepository as PromptDomainRepository } from '../domain/prompts/repositories/prompt-repository';
 import { ThreadCheckpointRepository } from '../domain/threads/checkpoints/repositories/thread-checkpoint-repository';
 import { HistoryRepository } from '../domain/history/repositories/history-repository';
-import { GraphAlgorithmService } from '../infrastructure/workflow/services/graph-algorithm-service';
-import { GraphValidationService } from '../infrastructure/workflow/services/graph-validation-service';
-import { ContextProcessorService } from '../infrastructure/workflow/services/context-processor-service';
-import { IHumanRelayService } from '../domain/llm/services/human-relay-service.interface';
+import { IHumanRelayService } from '../application/llm/services/human-relay-service';
 import { ThreadLifecycleService } from '../application/threads/services/thread-lifecycle-service';
 import { ThreadExecutionService } from '../application/threads/services/thread-execution-service';
 import { ThreadMonitoringService } from '../application/threads/services/thread-monitoring-service';
 import { SessionMonitoringService } from '../application/sessions/services/session-monitoring-service';
+import { GraphAlgorithmService } from '../infrastructure/workflow/services/graph-algorithm-service';
+import { GraphValidationService } from '../infrastructure/workflow/services/graph-validation-service';
+import { ContextProcessorService } from '../infrastructure/workflow/services/context-processor-service';
 
 // Infrastructure层实现
 import { SessionRepository as SessionInfrastructureRepository } from '../infrastructure/persistence/repositories/session-repository';
