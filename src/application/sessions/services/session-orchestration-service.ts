@@ -12,8 +12,8 @@
  */
 
 import { injectable, inject } from 'inversify';
-import { SessionRepository } from '../../../domain/sessions';
-import { ThreadRepository } from '../../../domain/threads';
+import { ISessionRepository } from '../../../domain/sessions';
+import { IThreadRepository } from '../../../domain/threads';
 import { SessionResourceService } from './session-resource-service';
 import { ThreadLifecycleService } from '../../threads/services/thread-lifecycle-service';
 import { ThreadExecutionService } from '../../threads/services/thread-execution-service';
@@ -43,8 +43,8 @@ export interface StateChange {
 @injectable()
 export class SessionOrchestrationService extends BaseApplicationService {
   constructor(
-    @inject(TYPES.SessionRepository) private readonly sessionRepository: SessionRepository,
-    @inject(TYPES.ThreadRepository) private readonly threadRepository: ThreadRepository,
+    @inject(TYPES.SessionRepository) private readonly sessionRepository: ISessionRepository,
+    @inject(TYPES.ThreadRepository) private readonly threadRepository: IThreadRepository,
     @inject(TYPES.SessionResourceServiceImpl) private readonly sessionResourceService: SessionResourceService,
     @inject(TYPES.ThreadLifecycleService) private readonly threadLifecycleService: ThreadLifecycleService,
     @inject(TYPES.Logger) logger: ILogger

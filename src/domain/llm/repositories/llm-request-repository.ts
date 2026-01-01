@@ -7,7 +7,7 @@ import { LLMRequest } from '../entities/llm-request';
  * 
  * 定义LLM请求持久化和检索的契约
  */
-export interface LLMRequestRepository extends Repository<LLMRequest> {
+export interface ILLMRequestRepository extends Repository<LLMRequest> {
   /**
    * 根据会话ID查找LLM请求
    * @param sessionId 会话ID

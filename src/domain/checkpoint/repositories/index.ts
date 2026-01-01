@@ -1,1 +1,1 @@
-export { CheckpointRepository } from './checkpoint-repository';
+export { ICheckpointRepository } from './checkpoint-repository';

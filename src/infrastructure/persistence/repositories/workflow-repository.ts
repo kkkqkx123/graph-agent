@@ -1,5 +1,5 @@
 import { injectable, inject } from 'inversify';
-import { WorkflowRepository as IWorkflowRepository } from '../../../domain/workflow/repositories/workflow-repository';
+import { IWorkflowRepository } from '../../../domain/workflow/repositories/workflow-repository';
 import { Workflow } from '../../../domain/workflow/entities/workflow';
 import { WorkflowDefinition } from '../../../domain/workflow/value-objects/workflow-definition';
 import { GraphValidationServiceImpl } from '../../workflow/services/graph-validation-service';

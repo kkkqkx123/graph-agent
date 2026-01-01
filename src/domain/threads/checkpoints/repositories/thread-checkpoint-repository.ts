@@ -10,7 +10,7 @@ import { CheckpointType } from '../../../checkpoint/value-objects/checkpoint-typ
  * 定义Thread检查点的数据访问契约
  * 只包含基本的CRUD操作和必要的查询方法
  */
-export interface ThreadCheckpointRepository extends Repository<ThreadCheckpoint> {
+export interface IThreadCheckpointRepository extends Repository<ThreadCheckpoint> {
   /**
    * 根据线程ID查找检查点
    * @param threadId 线程ID

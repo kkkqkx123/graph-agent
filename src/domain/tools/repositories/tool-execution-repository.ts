@@ -8,7 +8,7 @@ import { ToolExecutionStatus } from '../value-objects/tool-execution-status';
  * 
  * 定义工具执行持久化的契约
  */
-export interface ToolExecutionRepository extends Repository<ToolExecution> {
+export interface IToolExecutionRepository extends Repository<ToolExecution> {
   /**
    * 根据工具ID查找执行记录
    * 

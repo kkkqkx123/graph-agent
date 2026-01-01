@@ -1,5 +1,5 @@
 import { injectable, inject } from 'inversify';
-import { SessionRepository as ISessionRepository } from '../../../domain/sessions/repositories/session-repository';
+import { ISessionRepository } from '../../../domain/sessions/repositories/session-repository';
 import { Session } from '../../../domain/sessions/entities/session';
 import { SessionActivity } from '../../../domain/sessions/value-objects/session-activity';
 import { ID } from '../../../domain/common/value-objects/id';

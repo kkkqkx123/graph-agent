@@ -1,5 +1,5 @@
 import { injectable, inject } from 'inversify';
-import { Workflow, WorkflowRepository } from '../../../domain/workflow';
+import { Workflow, IWorkflowRepository } from '../../../domain/workflow';
 import { ID, ILogger } from '../../../domain/common';
 
 /**
@@ -40,7 +40,7 @@ export interface WorkflowValidationRequest {
 @injectable()
 export class WorkflowValidator {
   constructor(
-    @inject('WorkflowRepository') private readonly workflowRepository: WorkflowRepository,
+    @inject('WorkflowRepository') private readonly workflowRepository: IWorkflowRepository,
     @inject('Logger') private readonly logger: ILogger
   ) { }
 

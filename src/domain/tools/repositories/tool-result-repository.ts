@@ -7,7 +7,7 @@ import { ToolResult } from '../entities/tool-result';
  * 
  * 定义工具结果持久化的契约
  */
-export interface ToolResultRepository extends Repository<ToolResult> {
+export interface IToolResultRepository extends Repository<ToolResult> {
   /**
    * 根据执行ID查找结果
    * 

@@ -9,7 +9,7 @@ import { ToolStatus } from '../value-objects/tool-status';
  * 
  * 定义工具持久化的契约
  */
-export interface ToolRepository extends Repository<Tool> {
+export interface IToolRepository extends Repository<Tool> {
   /**
    * 根据名称查找工具
    * 

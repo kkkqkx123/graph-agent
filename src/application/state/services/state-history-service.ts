@@ -5,7 +5,7 @@ import { ThreadStatus } from '../../../domain/threads/value-objects/thread-statu
 import { ThreadCheckpoint } from '../../../domain/threads/checkpoints/entities/thread-checkpoint';
 import { History } from '../../../domain/history/entities/history';
 import { HistoryType } from '../../../domain/history/value-objects/history-type';
-import { HistoryRepository } from '../../../domain/history/repositories/history-repository';
+import { IHistoryRepository } from '../../../domain/history/repositories/history-repository';
 import { ILogger } from '../../../domain/common/types/logger-types';
 
 /**
@@ -19,7 +19,7 @@ import { ILogger } from '../../../domain/common/types/logger-types';
  */
 export class StateHistoryService {
   constructor(
-    private readonly historyRepository: HistoryRepository,
+    private readonly historyRepository: IHistoryRepository,
     private readonly logger: ILogger
   ) {}
 

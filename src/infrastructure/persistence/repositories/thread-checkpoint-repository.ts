@@ -1,5 +1,5 @@
 import { injectable, inject } from 'inversify';
-import { ThreadCheckpointRepository as IThreadCheckpointRepository } from '../../../domain/threads/checkpoints/repositories/thread-checkpoint-repository';
+import { IThreadCheckpointRepository } from '../../../domain/threads/checkpoints/repositories/thread-checkpoint-repository';
 import { ThreadCheckpoint } from '../../../domain/threads/checkpoints/entities/thread-checkpoint';
 import { ID } from '../../../domain/common/value-objects/id';
 import { CheckpointStatus } from '../../../domain/threads/checkpoints/value-objects/checkpoint-status';

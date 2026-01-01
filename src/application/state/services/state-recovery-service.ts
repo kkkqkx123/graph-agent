@@ -2,12 +2,12 @@ import { injectable, inject } from 'inversify';
 import { ID } from '../../../domain/common/value-objects/id';
 import { ThreadCheckpoint } from '../../../domain/threads/checkpoints/entities/thread-checkpoint';
 import { Snapshot } from '../../../domain/snapshot/entities/snapshot';
-import { ThreadCheckpointRepository } from '../../../domain/threads/checkpoints/repositories/thread-checkpoint-repository';
-import { SnapshotRepository } from '../../../domain/snapshot/repositories/snapshot-repository';
+import { IThreadCheckpointRepository } from '../../../domain/threads/checkpoints/repositories/thread-checkpoint-repository';
+import { ISnapshotRepository } from '../../../domain/snapshot/repositories/snapshot-repository';
 import { Thread } from '../../../domain/threads/entities/thread';
 import { History } from '../../../domain/history/entities/history';
 import { HistoryType } from '../../../domain/history/value-objects/history-type';
-import { HistoryRepository } from '../../../domain/history/repositories/history-repository';
+import { IHistoryRepository } from '../../../domain/history/repositories/history-repository';
 import { SnapshotScopeValue } from '../../../domain/snapshot/value-objects/snapshot-scope';
 import { CheckpointTypeValue } from '../../../domain/checkpoint/value-objects/checkpoint-type';
 import { HistoryTypeValue } from '../../../domain/history/value-objects/history-type';
@@ -26,9 +26,9 @@ import { HistoryTypeValue } from '../../../domain/history/value-objects/history-
 @injectable()
 export class StateRecoveryService {
   constructor(
-    @inject('ThreadCheckpointRepository') private readonly checkpointRepository: ThreadCheckpointRepository,
-    @inject('SnapshotRepository') private readonly snapshotRepository: SnapshotRepository,
-    @inject('HistoryRepository') private readonly historyRepository: HistoryRepository
+    @inject('ThreadCheckpointRepository') private readonly checkpointRepository: IThreadCheckpointRepository,
+    @inject('SnapshotRepository') private readonly snapshotRepository: ISnapshotRepository,
+    @inject('HistoryRepository') private readonly historyRepository: IHistoryRepository
   ) { }
 
   /**

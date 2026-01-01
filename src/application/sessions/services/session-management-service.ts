@@ -4,7 +4,7 @@
  * 负责会话的查询、列表、存在性检查和配置更新等管理功能
  */
 
-import { Session, SessionRepository, SessionConfig, SessionConfigProps } from '../../../domain/sessions';
+import { Session, ISessionRepository, SessionConfig, SessionConfigProps } from '../../../domain/sessions';
 import { BaseApplicationService } from '../../common/base-application-service';
 import { ILogger } from '../../../domain/common';
 
@@ -13,7 +13,7 @@ import { ILogger } from '../../../domain/common';
  */
 export class SessionManagementService extends BaseApplicationService {
   constructor(
-    private readonly sessionRepository: SessionRepository,
+    private readonly sessionRepository: ISessionRepository,
     logger: ILogger
   ) {
     super(logger);

@@ -8,7 +8,7 @@ import { HistoryType } from '../value-objects/history-type';
  * 
  * 定义历史记录持久化和检索的契约
  */
-export interface HistoryRepository extends Repository<History> {
+export interface IHistoryRepository extends Repository<History> {
   /**
    * 根据会话ID查找历史记录
    * @param sessionId 会话ID

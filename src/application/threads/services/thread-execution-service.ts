@@ -13,8 +13,8 @@
  */
 
 import { injectable, inject } from 'inversify';
-import { Thread, ThreadRepository } from '../../../domain/threads';
-import { Workflow, WorkflowRepository } from '../../../domain/workflow';
+import { Thread, IThreadRepository } from '../../../domain/threads';
+import { Workflow, IWorkflowRepository } from '../../../domain/workflow';
 import { ID, ILogger, Timestamp } from '../../../domain/common';
 import { BaseApplicationService } from '../../common/base-application-service';
 import { WorkflowEngine } from '../../workflow/services/workflow-engine';
@@ -57,8 +57,8 @@ export class ThreadExecutionService extends BaseApplicationService {
   private readonly evaluator: ExpressionEvaluator;
 
   constructor(
-    @inject(TYPES.ThreadRepository) private readonly threadRepository: ThreadRepository,
-    @inject(TYPES.WorkflowRepository) private readonly workflowRepository: WorkflowRepository,
+    @inject(TYPES.ThreadRepository) private readonly threadRepository: IThreadRepository,
+    @inject(TYPES.WorkflowRepository) private readonly workflowRepository: IWorkflowRepository,
     @inject(TYPES.NodeExecutor) private readonly nodeExecutor: INodeExecutor,
     @inject(TYPES.Logger) logger: ILogger
   ) {

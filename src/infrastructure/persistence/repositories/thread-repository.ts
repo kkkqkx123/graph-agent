@@ -1,5 +1,5 @@
 import { injectable, inject } from 'inversify';
-import { ThreadRepository as IThreadRepository } from '../../../domain/threads/repositories/thread-repository';
+import { IThreadRepository } from '../../../domain/threads/repositories/thread-repository';
 import { Thread } from '../../../domain/threads/entities/thread';
 import { ID } from '../../../domain/common/value-objects/id';
 import { ThreadStatus } from '../../../domain/threads/value-objects/thread-status';

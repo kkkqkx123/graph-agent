@@ -5,7 +5,7 @@
  */
 
 import { injectable, inject } from 'inversify';
-import { Workflow, WorkflowStatus, WorkflowType, WorkflowConfig, WorkflowRepository } from '../../../domain/workflow';
+import { Workflow, WorkflowStatus, WorkflowType, WorkflowConfig, IWorkflowRepository } from '../../../domain/workflow';
 import { ID, ILogger } from '../../../domain/common';
 import { BaseApplicationService } from '../../common/base-application-service';
 import { WorkflowDTO, mapWorkflowToDTO } from '../dtos/workflow-dto';
@@ -62,7 +62,7 @@ export interface DeleteWorkflowParams {
 @injectable()
 export class WorkflowLifecycleService extends BaseApplicationService {
   constructor(
-    @inject('WorkflowRepository') private readonly workflowRepository: WorkflowRepository,
+    @inject('WorkflowRepository') private readonly workflowRepository: IWorkflowRepository,
     @inject('Logger') logger: ILogger
   ) {
     super(logger);

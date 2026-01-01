@@ -8,7 +8,7 @@ import { CheckpointType } from '../value-objects/checkpoint-type';
  * 
  * 定义检查点持久化和检索的契约
  */
-export interface CheckpointRepository extends Repository<Checkpoint> {
+export interface ICheckpointRepository extends Repository<Checkpoint> {
   /**
    * 根据线程ID查找检查点
    * @param threadId 线程ID

@@ -7,7 +7,7 @@ import { LLMResponse } from '../entities/llm-response';
  * 
  * 定义LLM响应持久化和检索的契约
  */
-export interface LLMResponseRepository extends Repository<LLMResponse> {
+export interface ILLMResponseRepository extends Repository<LLMResponse> {
   /**
    * 根据请求ID查找LLM响应
    * @param requestId 请求ID

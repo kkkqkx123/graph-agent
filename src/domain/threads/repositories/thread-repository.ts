@@ -10,7 +10,7 @@ import { ThreadPriority } from '../value-objects/thread-priority';
  * 定义线程持久化和查询的契约
  * 使用业务导向的方法，避免技术细节泄露
  */
-export interface ThreadRepository extends Repository<Thread, ID> {
+export interface IThreadRepository extends Repository<Thread, ID> {
   /**
    * 查找会话的活跃线程
    * @param sessionId 会话ID

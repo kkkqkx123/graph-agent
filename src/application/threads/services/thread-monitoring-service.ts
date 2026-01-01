@@ -12,7 +12,7 @@
  */
 
 import { injectable, inject } from 'inversify';
-import { Thread, ThreadRepository } from '../../../domain/threads';
+import { Thread, IThreadRepository } from '../../../domain/threads';
 import { ID, ILogger, Timestamp } from '../../../domain/common';
 import { BaseApplicationService } from '../../common/base-application-service';
 import { MonitoringService } from '../../../infrastructure/workflow/services/monitoring-service';
@@ -89,7 +89,7 @@ export interface ThreadHealthStatus {
 @injectable()
 export class ThreadMonitoringService extends BaseApplicationService {
   constructor(
-    @inject(TYPES.ThreadRepository) private readonly threadRepository: ThreadRepository,
+    @inject(TYPES.ThreadRepository) private readonly threadRepository: IThreadRepository,
     @inject(TYPES.MonitoringService) private readonly monitoringService: MonitoringService,
     @inject(TYPES.Logger) logger: ILogger
   ) {

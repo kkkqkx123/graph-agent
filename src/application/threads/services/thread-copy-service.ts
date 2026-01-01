@@ -6,8 +6,8 @@
 
 import { ID, ILogger } from '../../../domain/common';
 import { NodeId } from '../../../domain/workflow';
-import { Thread, ThreadRepository } from '../../../domain/threads';
-import { SessionRepository, CopyStrategy, CopyOptions, CopyScope, CopyContext, ThreadOperationResult, ThreadOperationMetadata, ThreadOperationError } from '../../../domain/sessions';
+import { Thread, IThreadRepository } from '../../../domain/threads';
+import { ISessionRepository, CopyStrategy, CopyOptions, CopyScope, CopyContext, ThreadOperationResult, ThreadOperationMetadata, ThreadOperationError } from '../../../domain/sessions';
 
 /**
  * Copy操作输入
@@ -42,8 +42,8 @@ export interface CopyValidationResult {
  */
 export class ThreadCopyService {
   constructor(
-    private readonly threadRepository: ThreadRepository,
-    private readonly sessionRepository: SessionRepository,
+    private readonly threadRepository: IThreadRepository,
+    private readonly sessionRepository: ISessionRepository,
     private readonly logger: ILogger
   ) { }
 

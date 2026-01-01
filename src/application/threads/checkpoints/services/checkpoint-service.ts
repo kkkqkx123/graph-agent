@@ -3,7 +3,7 @@ import { ThreadCheckpoint } from '../../../../domain/threads/checkpoints/entitie
 import { CheckpointType } from '../../../../domain/checkpoint/value-objects/checkpoint-type';
 import { CheckpointStatistics } from '../../../../domain/threads/checkpoints/value-objects/checkpoint-statistics';
 import { ThreadCheckpointDomainService, ThreadCheckpointDomainServiceImpl } from '../../../../domain/threads/checkpoints/services/thread-checkpoint-domain-service';
-import { ThreadCheckpointRepository } from '../../../../domain/threads/checkpoints/repositories/thread-checkpoint-repository';
+import { IThreadCheckpointRepository } from '../../../../domain/threads/checkpoints/repositories/thread-checkpoint-repository';
 import { ILogger } from '../../../../domain/common/types/logger-types';
 
 /**
@@ -110,7 +110,7 @@ export class CheckpointService {
   private readonly domainService: ThreadCheckpointDomainService;
 
   constructor(
-    private readonly repository: ThreadCheckpointRepository,
+    private readonly repository: IThreadCheckpointRepository,
     private readonly logger: ILogger
   ) {
     this.domainService = new ThreadCheckpointDomainServiceImpl(repository);

@@ -32,7 +32,7 @@ export interface PromptSearchCriteria {
 /**
  * 提示词仓储接口
  */
-export interface PromptRepository extends Repository<Prompt, PromptId> {
+export interface IPromptRepository extends Repository<Prompt, PromptId> {
   /**
    * 根据类别查找提示词
    * @param category 类别名称

@@ -4,7 +4,7 @@
  * 负责会话的创建、激活、暂停和终止等生命周期管理
  */
 
-import { Session, SessionRepository, SessionStatus, SessionConfig, SessionConfigProps } from '../../../domain/sessions';
+import { Session, ISessionRepository, SessionStatus, SessionConfig, SessionConfigProps } from '../../../domain/sessions';
 import { BaseApplicationService } from '../../common/base-application-service';
 import { ILogger, ID } from '../../../domain/common';
 
@@ -22,7 +22,7 @@ export interface CreateSessionRequest {
  */
 export class SessionLifecycleService extends BaseApplicationService {
   constructor(
-    private readonly sessionRepository: SessionRepository,
+    private readonly sessionRepository: ISessionRepository,
     logger: ILogger
   ) {
     super(logger);

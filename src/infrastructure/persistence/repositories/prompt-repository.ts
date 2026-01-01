@@ -12,7 +12,7 @@ import { PromptType, inferPromptTypeFromCategory } from '../../../domain/prompts
 import { PromptStatus } from '../../../domain/prompts/value-objects/prompt-status';
 import { Timestamp } from '../../../domain/common/value-objects/timestamp';
 import { Version } from '../../../domain/common/value-objects/version';
-import { PromptRepository as IPromptRepository, PromptSearchCriteria } from '../../../domain/prompts/repositories/prompt-repository';
+import { IPromptRepository, PromptSearchCriteria } from '../../../domain/prompts/repositories/prompt-repository';
 
 /**
  * 提示词仓库实现

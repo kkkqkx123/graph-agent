@@ -4,7 +4,7 @@
  * 负责线程的删除、清理和批量操作等维护功能
  */
 
-import { Thread, ThreadRepository, ThreadStatus } from '../../../domain/threads';
+import { Thread, IThreadRepository, ThreadStatus } from '../../../domain/threads';
 import { BaseApplicationService } from '../../common/base-application-service';
 import { ILogger } from '../../../domain/common';
 
@@ -13,7 +13,7 @@ import { ILogger } from '../../../domain/common';
  */
 export class ThreadMaintenanceService extends BaseApplicationService {
   constructor(
-    private readonly threadRepository: ThreadRepository,
+    private readonly threadRepository: IThreadRepository,
     logger: ILogger
   ) {
     super(logger);

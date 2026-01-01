@@ -1,5 +1,5 @@
 import { injectable, inject } from 'inversify';
-import { HistoryRepository as IHistoryRepository } from '../../../domain/history/repositories/history-repository';
+import { IHistoryRepository } from '../../../domain/history/repositories/history-repository';
 import { History } from '../../../domain/history/entities/history';
 import { ID } from '../../../domain/common/value-objects/id';
 import { HistoryType } from '../../../domain/history/value-objects/history-type';

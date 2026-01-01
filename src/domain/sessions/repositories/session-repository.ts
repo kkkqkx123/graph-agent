@@ -10,7 +10,7 @@ import { Timestamp } from '../../common/value-objects/timestamp';
  * 定义会话持久化和查询的契约
  * 使用业务语言而不是技术术语
  */
-export interface SessionRepository extends Repository<Session, ID> {
+export interface ISessionRepository extends Repository<Session, ID> {
   /**
    * 查找用户的活跃会话
    * @param userId 用户ID

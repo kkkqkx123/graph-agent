@@ -4,7 +4,7 @@
  * 负责线程的查询、列表、存在性检查和优先级更新等管理功能
  */
 
-import { Thread, ThreadRepository, ThreadPriority } from '../../../domain/threads';
+import { Thread, IThreadRepository, ThreadPriority } from '../../../domain/threads';
 import { BaseApplicationService } from '../../common/base-application-service';
 import { ILogger, ID } from '../../../domain/common';
 
@@ -13,7 +13,7 @@ import { ILogger, ID } from '../../../domain/common';
  */
 export class ThreadManagementService extends BaseApplicationService {
   constructor(
-    private readonly threadRepository: ThreadRepository,
+    private readonly threadRepository: IThreadRepository,
     logger: ILogger
   ) {
     super(logger);

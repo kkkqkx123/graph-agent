@@ -10,7 +10,7 @@ import { WorkflowType } from '../value-objects/workflow-type';
  * 定义工作流持久化和查询的契约
  * 使用业务导向的方法，避免技术细节泄露
  */
-export interface WorkflowRepository extends Repository<Workflow, ID> {
+export interface IWorkflowRepository extends Repository<Workflow, ID> {
   /**
    * 根据名称查找工作流
    * @param name 工作流名称

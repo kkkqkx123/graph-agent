@@ -5,7 +5,7 @@
  */
 
 import { injectable, inject } from 'inversify';
-import { SessionRepository } from '../../../domain/sessions';
+import { ISessionRepository } from '../../../domain/sessions';
 import { ID, ResourceAllocation, ResourceRequirement, ResourceLimits, SessionQuota, QuotaUsage, ILogger } from '../../../domain/common';
 import { BaseApplicationService } from '../../common/base-application-service';
 import { TYPES } from '../../../di/service-keys';
@@ -23,7 +23,7 @@ import {
 @injectable()
 export class SessionResourceService extends BaseApplicationService {
   constructor(
-    @inject(TYPES.SessionRepository) private readonly sessionRepository: SessionRepository,
+    @inject(TYPES.SessionRepository) private readonly sessionRepository: ISessionRepository,
     @inject(TYPES.Logger) logger: ILogger
   ) {
     super(logger);

@@ -6,8 +6,8 @@
 
 import { ID, ILogger } from '../../../domain/common';
 import { NodeId, PromptContext } from '../../../domain/workflow';
-import { Thread, ThreadRepository, ExecutionContext, NodeExecutionSnapshot } from '../../../domain/threads';
-import { SessionRepository, ForkStrategy, ForkOptions, ForkContext, ThreadOperationResult, ThreadOperationMetadata, ThreadOperationError } from '../../../domain/sessions';
+import { Thread, IThreadRepository, ExecutionContext, NodeExecutionSnapshot } from '../../../domain/threads';
+import { ISessionRepository, ForkStrategy, ForkOptions, ForkContext, ThreadOperationResult, ThreadOperationMetadata, ThreadOperationError } from '../../../domain/sessions';
 
 /**
  * Fork操作输入
@@ -42,8 +42,8 @@ export interface ForkValidationResult {
  */
 export class ThreadForkService {
   constructor(
-    private readonly threadRepository: ThreadRepository,
-    private readonly sessionRepository: SessionRepository,
+    private readonly threadRepository: IThreadRepository,
+    private readonly sessionRepository: ISessionRepository,
     private readonly logger: ILogger
   ) { }
 

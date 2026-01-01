@@ -12,7 +12,7 @@
  */
 
 import { injectable, inject } from 'inversify';
-import { PromptRepository } from '../../../domain/prompts/repositories/prompt-repository';
+import { IPromptRepository } from '../../../domain/prompts/repositories/prompt-repository';
 import { PromptId } from '../../../domain/prompts/value-objects/prompt-id';
 import { PromptReferenceParser } from './prompt-reference-parser';
 import { PromptReferenceValidator } from './prompt-reference-validator';
@@ -34,7 +34,7 @@ export interface TemplateProcessResult {
 @injectable()
 export class TemplateProcessor {
   constructor(
-    @inject('PromptRepository') private promptRepository: PromptRepository,
+    @inject('PromptRepository') private promptRepository: IPromptRepository,
     @inject('PromptReferenceParser') private referenceParser: PromptReferenceParser,
     @inject('PromptReferenceValidator') private referenceValidator: PromptReferenceValidator,
     @inject('ILogger') private readonly logger: ILogger

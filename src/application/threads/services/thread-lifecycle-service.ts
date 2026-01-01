@@ -4,9 +4,9 @@
  * 负责线程的创建、启动、暂停、恢复、完成、取消等生命周期管理
  */
 
-import { Thread, ThreadRepository, ThreadStatus, ThreadPriority } from '../../../domain/threads';
-import { SessionRepository } from '../../../domain/sessions';
-import { WorkflowRepository } from '../../../domain/workflow';
+import { Thread, IThreadRepository, ThreadStatus, ThreadPriority } from '../../../domain/threads';
+import { ISessionRepository } from '../../../domain/sessions';
+import { IWorkflowRepository } from '../../../domain/workflow';
 import { BaseApplicationService } from '../../common/base-application-service';
 import { ILogger, ID } from '../../../domain/common';
 
@@ -15,9 +15,9 @@ import { ILogger, ID } from '../../../domain/common';
  */
 export class ThreadLifecycleService extends BaseApplicationService {
   constructor(
-    private readonly threadRepository: ThreadRepository,
-    private readonly sessionRepository: SessionRepository,
-    private readonly workflowRepository: WorkflowRepository,
+    private readonly threadRepository: IThreadRepository,
+    private readonly sessionRepository: ISessionRepository,
+    private readonly workflowRepository: IWorkflowRepository,
     logger: ILogger
   ) {
     super(logger);

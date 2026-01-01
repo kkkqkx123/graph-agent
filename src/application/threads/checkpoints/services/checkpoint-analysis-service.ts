@@ -6,7 +6,7 @@
 
 import { CheckpointStatistics } from '../../../../domain/threads/checkpoints/value-objects/checkpoint-statistics';
 import { ThreadCheckpointDomainService, ThreadCheckpointDomainServiceImpl } from '../../../../domain/threads/checkpoints/services/thread-checkpoint-domain-service';
-import { ThreadCheckpointRepository } from '../../../../domain/threads/checkpoints/repositories/thread-checkpoint-repository';
+import { IThreadCheckpointRepository } from '../../../../domain/threads/checkpoints/repositories/thread-checkpoint-repository';
 import { BaseApplicationService } from '../../../common/base-application-service';
 import { ILogger } from '../../../../domain/common/types';
 
@@ -17,7 +17,7 @@ export class CheckpointAnalysisService extends BaseApplicationService {
   private readonly domainService: ThreadCheckpointDomainService;
 
   constructor(
-    private readonly repository: ThreadCheckpointRepository,
+    private readonly repository: IThreadCheckpointRepository,
     logger: ILogger
   ) {
     super(logger);

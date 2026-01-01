@@ -3,7 +3,7 @@ import { ID } from '../../../domain/common/value-objects/id';
 import { Snapshot } from '../../../domain/snapshot/entities/snapshot';
 import { SnapshotType } from '../../../domain/snapshot/value-objects/snapshot-type';
 import { SnapshotScope } from '../../../domain/snapshot/value-objects/snapshot-scope';
-import { SnapshotRepository } from '../../../domain/snapshot/repositories/snapshot-repository';
+import { ISnapshotRepository } from '../../../domain/snapshot/repositories/snapshot-repository';
 import { Thread } from '../../../domain/threads/entities/thread';
 import { Session } from '../../../domain/sessions/entities/session';
 import { ThreadExecution } from '../../../domain/threads/value-objects/thread-execution';
@@ -15,7 +15,7 @@ import { ThreadExecution } from '../../../domain/threads/value-objects/thread-ex
 @injectable()
 export class StateSnapshotService {
   constructor(
-    @inject('SnapshotRepository') private readonly snapshotRepository: SnapshotRepository
+    @inject('SnapshotRepository') private readonly snapshotRepository: ISnapshotRepository
   ) {}
 
   /**

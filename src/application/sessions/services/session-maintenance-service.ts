@@ -4,8 +4,8 @@
  * 负责会话的删除、消息添加、清理和统计等维护功能
  */
 
-import { Session, SessionRepository, SessionStatus } from '../../../domain/sessions';
-import { ThreadRepository } from '../../../domain/threads';
+import { Session, ISessionRepository, SessionStatus } from '../../../domain/sessions';
+import { IThreadRepository } from '../../../domain/threads';
 import { BaseApplicationService } from '../../common/base-application-service';
 import { ILogger, ID } from '../../../domain/common';
 
@@ -14,8 +14,8 @@ import { ILogger, ID } from '../../../domain/common';
  */
 export class SessionMaintenanceService extends BaseApplicationService {
   constructor(
-    private readonly sessionRepository: SessionRepository,
-    private readonly threadRepository: ThreadRepository,
+    private readonly sessionRepository: ISessionRepository,
+    private readonly threadRepository: IThreadRepository,
     logger: ILogger
   ) {
     super(logger);

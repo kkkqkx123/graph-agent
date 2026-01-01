@@ -20,7 +20,7 @@ export interface SnapshotQuery {
  *
  * 定义快照持久化和检索的契约
  */
-export interface SnapshotRepository extends Repository<Snapshot> {
+export interface ISnapshotRepository extends Repository<Snapshot> {
   /**
    * 根据范围和目标ID查找快照
    * @param scope 快照范围

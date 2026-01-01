@@ -13,8 +13,8 @@
  */
 
 import { injectable, inject } from 'inversify';
-import { Session, SessionRepository } from '../../../domain/sessions';
-import { Thread, ThreadRepository } from '../../../domain/threads';
+import { Session, ISessionRepository } from '../../../domain/sessions';
+import { Thread, IThreadRepository } from '../../../domain/threads';
 import { ID, ILogger, Timestamp } from '../../../domain/common';
 import { BaseApplicationService } from '../../common/base-application-service';
 import { MonitoringService } from '../../../infrastructure/workflow/services/monitoring-service';
@@ -96,8 +96,8 @@ export interface SessionHealthStatus {
 @injectable()
 export class SessionMonitoringService extends BaseApplicationService {
   constructor(
-    @inject(TYPES.SessionRepository) private readonly sessionRepository: SessionRepository,
-    @inject(TYPES.ThreadRepository) private readonly threadRepository: ThreadRepository,
+    @inject(TYPES.SessionRepository) private readonly sessionRepository: ISessionRepository,
+    @inject(TYPES.ThreadRepository) private readonly threadRepository: IThreadRepository,
     @inject(TYPES.MonitoringService) private readonly monitoringService: MonitoringService,
     @inject(TYPES.Logger) logger: ILogger
   ) {

@@ -1,5 +1,5 @@
 import { injectable, inject } from 'inversify';
-import { SnapshotRepository as ISnapshotRepository, SnapshotQuery } from '../../../domain/snapshot/repositories/snapshot-repository';
+import { ISnapshotRepository, SnapshotQuery } from '../../../domain/snapshot/repositories/snapshot-repository';
 import { Snapshot } from '../../../domain/snapshot/entities/snapshot';
 import { ID } from '../../../domain/common/value-objects/id';
 import { SnapshotType } from '../../../domain/snapshot/value-objects/snapshot-type';

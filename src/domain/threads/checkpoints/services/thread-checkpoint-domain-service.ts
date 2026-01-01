@@ -3,7 +3,7 @@ import { ThreadCheckpoint } from '../entities/thread-checkpoint';
 import { CheckpointType } from '../../../checkpoint/value-objects/checkpoint-type';
 import { CheckpointStatus } from '../value-objects/checkpoint-status';
 import { CheckpointStatistics } from '../value-objects/checkpoint-statistics';
-import { ThreadCheckpointRepository } from '../repositories/thread-checkpoint-repository';
+import { IThreadCheckpointRepository } from '../repositories/thread-checkpoint-repository';
 
 /**
  * Thread检查点领域服务接口
@@ -335,7 +335,7 @@ export interface ThreadCheckpointDomainService {
  */
 export class ThreadCheckpointDomainServiceImpl implements ThreadCheckpointDomainService {
   constructor(
-    private readonly repository: ThreadCheckpointRepository
+    private readonly repository: IThreadCheckpointRepository
   ) {}
 
   async createAutoCheckpoint(

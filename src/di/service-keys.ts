@@ -10,12 +10,12 @@
 // ========== 导入服务类型 ==========
 
 // Domain层接口（用于类型定义，不注册到容器）
-import { SessionRepository } from '../domain/sessions/repositories/session-repository';
-import { ThreadRepository } from '../domain/threads/repositories/thread-repository';
-import { WorkflowRepository } from '../domain/workflow/repositories/workflow-repository';
-import { PromptRepository as PromptDomainRepository } from '../domain/prompts/repositories/prompt-repository';
-import { ThreadCheckpointRepository } from '../domain/threads/checkpoints/repositories/thread-checkpoint-repository';
-import { HistoryRepository } from '../domain/history/repositories/history-repository';
+import { ISessionRepository } from '../domain/sessions/repositories/session-repository';
+import { IThreadRepository } from '../domain/threads/repositories/thread-repository';
+import { IWorkflowRepository } from '../domain/workflow/repositories/workflow-repository';
+import { IPromptRepository as PromptDomainRepository } from '../domain/prompts/repositories/prompt-repository';
+import { IThreadCheckpointRepository } from '../domain/threads/checkpoints/repositories/thread-checkpoint-repository';
+import { IHistoryRepository } from '../domain/history/repositories/history-repository';
 import { IHumanRelayService } from '../application/llm/services/human-relay-service';
 import { ThreadLifecycleService } from '../application/threads/services/thread-lifecycle-service';
 import { ThreadExecutionService } from '../application/threads/services/thread-execution-service';
@@ -68,12 +68,12 @@ export interface ServiceTypes {
   // ========== Domain层接口（仅用于类型定义） ==========
 
   // 仓储接口
-  SessionRepository: SessionRepository;
-  ThreadRepository: ThreadRepository;
-  WorkflowRepository: WorkflowRepository;
+  SessionRepository: ISessionRepository;
+  ThreadRepository: IThreadRepository;
+  WorkflowRepository: IWorkflowRepository;
   PromptRepository: PromptDomainRepository;
-  ThreadCheckpointRepository: ThreadCheckpointRepository;
-  HistoryRepository: HistoryRepository;
+  ThreadCheckpointRepository: IThreadCheckpointRepository;
+  HistoryRepository: IHistoryRepository;
 
   // 业务服务接口
   GraphAlgorithmService: GraphAlgorithmService;

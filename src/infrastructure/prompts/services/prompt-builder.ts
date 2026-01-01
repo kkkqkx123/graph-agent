@@ -8,7 +8,7 @@
  */
 
 import { injectable, inject } from 'inversify';
-import { PromptRepository } from '../../../domain/prompts/repositories/prompt-repository';
+import { IPromptRepository } from '../../../domain/prompts/repositories/prompt-repository';
 import { PromptId } from '../../../domain/prompts/value-objects/prompt-id';
 import { TemplateProcessor, TemplateProcessResult } from './template-processor';
 import { PromptContext } from '../../../domain/workflow/value-objects/context/prompt-context';
@@ -45,7 +45,7 @@ export class PromptBuilder {
   private contextProcessors: Map<string, ContextProcessor> = new Map();
 
   constructor(
-    @inject('PromptRepository') private promptRepository: PromptRepository,
+    @inject('PromptRepository') private promptRepository: IPromptRepository,
     @inject('TemplateProcessor') private templateProcessor: TemplateProcessor,
     @inject('ILogger') private readonly logger: ILogger
   ) { }
