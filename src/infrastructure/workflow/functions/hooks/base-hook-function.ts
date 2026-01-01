@@ -1,3 +1,5 @@
+import { WorkflowFunctionType } from '../../../../domain/workflow/value-objects/function-type';
+
 /**
  * Hook函数基类
  *
@@ -29,6 +31,11 @@ export abstract class BaseHookFunction {
    * 函数版本
    */
   readonly version: string = '1.0.0';
+
+  /**
+   * 函数类型标识
+   */
+  readonly type: WorkflowFunctionType = WorkflowFunctionType.HOOK;
 
   /**
    * 执行函数逻辑

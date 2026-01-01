@@ -6,6 +6,7 @@ import {
   WorkflowExecutionContext,
   TriggerFunctionConfig
 } from '../types';
+import { WorkflowFunctionType } from '../../../../domain/workflow/value-objects/function-type';
 
 /**
  * 触发器函数基类
@@ -15,6 +16,8 @@ export abstract class BaseTriggerFunction<TConfig extends TriggerFunctionConfig 
   implements IWorkflowFunction {
   protected _initialized: boolean = false;
   public readonly metadata?: Record<string, any>;
+  /** 函数类型标识 */
+  public readonly type: WorkflowFunctionType = WorkflowFunctionType.TRIGGER;
 
   constructor(
     public readonly id: string,

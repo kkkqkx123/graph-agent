@@ -6,6 +6,7 @@ import {
   WorkflowExecutionContext,
   RoutingFunctionConfig
 } from '../types';
+import { WorkflowFunctionType } from '../../../../domain/workflow/value-objects/function-type';
 
 /**
  * 条件路由函数基类
@@ -15,6 +16,8 @@ export abstract class BaseConditionRoutingFunction<TConfig extends RoutingFuncti
   implements IWorkflowFunction {
   protected _initialized: boolean = false;
   public readonly metadata?: Record<string, any>;
+  /** 函数类型标识 */
+  public readonly type: WorkflowFunctionType = WorkflowFunctionType.ROUTING;
 
   constructor(
     public readonly id: string,
@@ -134,6 +137,8 @@ export abstract class BaseTargetRoutingFunction<TConfig extends RoutingFunctionC
   implements IWorkflowFunction {
   protected _initialized: boolean = false;
   public readonly metadata?: Record<string, any>;
+  /** 函数类型标识 */
+  public readonly type: WorkflowFunctionType = WorkflowFunctionType.ROUTING;
 
   constructor(
     public readonly id: string,
