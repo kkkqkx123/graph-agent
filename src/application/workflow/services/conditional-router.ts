@@ -1,7 +1,7 @@
-import { EdgeValueObject } from '../value-objects/edge/edge-value-object';
-import { NodeId } from '../value-objects/node/node-id';
-import { WorkflowState } from '../value-objects/workflow-state';
-import { ExpressionEvaluator } from './expression-evaluator';
+import { EdgeValueObject } from '../../../domain/workflow/value-objects/edge/edge-value-object';
+import { NodeId } from '../../../domain/workflow/value-objects/node/node-id';
+import { WorkflowState } from '../../../domain/workflow/value-objects/workflow-state';
+import { ExpressionEvaluator } from '../../../infrastructure/workflow/services/expression-evaluator';
 
 /**
  * 路由结果接口

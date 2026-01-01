@@ -17,13 +17,13 @@ import { Thread, ThreadRepository } from '../../../domain/threads';
 import { Workflow, WorkflowRepository } from '../../../domain/workflow';
 import { ID, ILogger, Timestamp } from '../../../domain/common';
 import { BaseApplicationService } from '../../common/base-application-service';
-import { WorkflowEngine } from '../../../domain/workflow/services/workflow-engine';
-import { StateManager } from '../../../domain/workflow/services/state-manager';
-import { HistoryManager } from '../../../domain/workflow/services/history-manager';
+import { WorkflowEngine } from '../../workflow/services/workflow-engine';
+import { StateManager } from '../../workflow/services/state-manager';
+import { HistoryManager } from '../../workflow/services/history-manager';
 import { CheckpointManager } from '../../../domain/checkpoint/services/checkpoint-manager';
-import { ConditionalRouter } from '../../../domain/workflow/services/conditional-router';
-import { ExpressionEvaluator } from '../../../domain/workflow/services/expression-evaluator';
-import { INodeExecutor } from '../../../domain/workflow/services/node-executor.interface';
+import { ConditionalRouter } from '../../workflow/services/conditional-router';
+import { ExpressionEvaluator } from '../../../infrastructure/workflow/services/expression-evaluator';
+import { INodeExecutor } from '../../../infrastructure/workflow/nodes/node-executor';
 import { TYPES } from '../../../di/service-keys';
 
 /**

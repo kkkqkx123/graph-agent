@@ -1,5 +1,5 @@
 import { PromptContext } from '../../../../domain/workflow/value-objects/context';
-import { ContextProcessor } from '../../../../domain/workflow/services/context-processor-service.interface';
+import { ContextProcessor } from '../../services/context-processor-service';
 
 /**
  * 直接传递处理器

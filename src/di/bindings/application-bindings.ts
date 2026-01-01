@@ -22,9 +22,9 @@ import { ThreadRepository } from '../../domain/threads/repositories/thread-repos
 import { WorkflowRepository } from '../../domain/workflow/repositories/workflow-repository';
 import { PromptRepository } from '../../domain/prompts/repositories/prompt-repository';
 import { ThreadCheckpointRepository } from '../../domain/threads/checkpoints/repositories/thread-checkpoint-repository';
-import { GraphAlgorithmService } from '../../domain/workflow/services/graph-algorithm-service.interface';
-import { GraphValidationService } from '../../domain/workflow/services/graph-validation-service.interface';
-import { ContextProcessorService } from '../../domain/workflow/services/context-processor-service.interface';
+import { GraphAlgorithmService } from '../../infrastructure/workflow/services/graph-algorithm-service';
+import { GraphValidationService } from '../../infrastructure/workflow/services/graph-validation-service';
+import { ContextProcessorService } from '../../infrastructure/workflow/services/context-processor-service';
 import { IHumanRelayService } from '../../domain/llm/services/human-relay-service.interface';
 
 // Infrastructure层服务

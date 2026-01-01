@@ -1,5 +1,5 @@
-import { ID, Timestamp } from '../../common/value-objects';
-import { WorkflowState } from '../value-objects/workflow-state';
+import { ID, Timestamp } from '../../../domain/common/value-objects';
+import { WorkflowState } from '../../../domain/workflow/value-objects/workflow-state';
 
 /**
  * 状态变更接口

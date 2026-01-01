@@ -12,7 +12,7 @@ import { PromptRepository } from '../../../domain/prompts/repositories/prompt-re
 import { PromptId } from '../../../domain/prompts/value-objects/prompt-id';
 import { TemplateProcessor, TemplateProcessResult } from './template-processor';
 import { PromptContext } from '../../../domain/workflow/value-objects/context/prompt-context';
-import { ContextProcessor } from '../../../domain/workflow/services/context-processor-service.interface';
+import { ContextProcessor } from '../../workflow/services/context-processor-service';
 import { LLMMessage } from '../../../domain/llm/value-objects/llm-message';
 import { ILogger } from '../../../domain/common/types/logger-types';
 

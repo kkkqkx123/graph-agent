@@ -1,11 +1,11 @@
-import { Workflow } from '../entities/workflow';
-import { NodeId, NodeType } from '../value-objects/node';
-import { WorkflowState } from '../value-objects/workflow-state';
+import { Workflow } from '../../../domain/workflow/entities/workflow';
+import { NodeId, NodeType } from '../../../domain/workflow/value-objects/node';
+import { WorkflowState } from '../../../domain/workflow/value-objects/workflow-state';
 import { StateManager } from './state-manager';
 import { HistoryManager } from './history-manager';
-import { CheckpointManager } from '../../checkpoint/services/checkpoint-manager';
+import { CheckpointManager } from '../../../domain/checkpoint/services/checkpoint-manager';
 import { ConditionalRouter } from './conditional-router';
-import { INodeExecutor } from './node-executor.interface';
+import { INodeExecutor } from '../../../infrastructure/workflow/nodes/node-executor';
 
 /**
  * 工作流执行选项接口

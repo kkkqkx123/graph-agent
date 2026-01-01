@@ -1,6 +1,6 @@
 import { inject } from 'inversify';
 import { PromptContext } from '../../../domain/workflow/value-objects/context/prompt-context';
-import { ContextProcessorService } from '../../../domain/workflow/services/context-processor-service.interface';
+import { ContextProcessorService } from '../services/context-processor-service';
 import { NodeContextTypeValue } from '../../../domain/workflow/value-objects/node/node-type';
 import { TYPES } from '../../../di/service-keys';
 

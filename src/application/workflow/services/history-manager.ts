@@ -1,5 +1,5 @@
-import { ID } from '../../common/value-objects';
-import { ExecutionHistory } from '../value-objects/workflow-state';
+import { ID } from '../../../domain/common/value-objects';
+import { ExecutionHistory } from '../../../domain/workflow/value-objects/workflow-state';
 
 /**
  * 执行历史记录接口

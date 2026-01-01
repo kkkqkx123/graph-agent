@@ -1,6 +1,47 @@
 import { injectable } from 'inversify';
 import { Workflow, WorkflowValidationResult } from '../../../domain/workflow/entities/workflow';
-import { GraphValidationService as DomainGraphValidationService } from '../../../domain/workflow/services/graph-validation-service.interface';
+
+/**
+ * 图验证服务接口
+ *
+ * 定义工作流图验证的业务契约
+ */
+export interface GraphValidationService {
+  /**
+   * 验证工作流图结构
+   * @param workflow 工作流
+   * @returns 验证结果
+   */
+  validateGraph(workflow: Workflow): boolean;
+
+  /**
+   * 验证工作流图结构（详细）
+   * @param workflow 工作流
+   * @returns 详细验证结果
+   */
+  validateGraphDetailed(workflow: Workflow): WorkflowValidationResult;
+
+  /**
+   * 验证节点配置
+   * @param workflow 工作流
+   * @returns 验证结果
+   */
+  validateNodes(workflow: Workflow): WorkflowValidationResult;
+
+  /**
+   * 验证边配置
+   * @param workflow 工作流
+   * @returns 验证结果
+   */
+  validateEdges(workflow: Workflow): WorkflowValidationResult;
+
+  /**
+   * 验证工作流可执行性
+   * @param workflow 工作流
+   * @returns 验证结果
+   */
+  validateExecutable(workflow: Workflow): WorkflowValidationResult;
+}
 
 /**
  * 验证规则接口
@@ -66,7 +107,7 @@ export interface ValidationWarning {
  * 简化实现，移除复杂的验证规则系统，专注于核心验证逻辑。
  */
 @injectable()
-export class GraphValidationServiceImpl implements DomainGraphValidationService {
+export class GraphValidationServiceImpl implements GraphValidationService {
   private validationRules: ValidationRule[] = [];
   private businessRules: BusinessRule[] = [];
 
