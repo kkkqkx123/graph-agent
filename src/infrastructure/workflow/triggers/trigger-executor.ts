@@ -1,6 +1,6 @@
 import { injectable, inject } from 'inversify';
 import { Trigger } from '../../../domain/workflow/entities/trigger';
-import { FunctionRegistry } from '../functions/registry/function-registry';
+import { FunctionRegistry } from '../functions/function-registry';
 import { WorkflowExecutionContext } from '../functions/types';
 import { ILogger } from '../../../domain/common/types/logger-types';
 import { TriggerContext } from './trigger-context';
