@@ -9,6 +9,23 @@
 
 // ========== 导入服务类型 ==========
 
+// LLM模块服务
+import { HttpClient } from '../infrastructure/common/http/http-client';
+import { ConfigLoadingModule } from '../infrastructure/config/loading/config-loading-module';
+import { TokenBucketLimiter } from '../infrastructure/llm/rate-limiters/token-bucket-limiter';
+import { TokenCalculator } from '../infrastructure/llm/token-calculators/token-calculator';
+import { OpenAIChatClient } from '../infrastructure/llm/clients/openai-chat-client';
+import { OpenAIResponseClient } from '../infrastructure/llm/clients/openai-response-client';
+import { AnthropicClient } from '../infrastructure/llm/clients/anthropic-client';
+import { GeminiClient } from '../infrastructure/llm/clients/gemini-client';
+import { GeminiOpenAIClient } from '../infrastructure/llm/clients/gemini-openai-client';
+import { MockClient } from '../infrastructure/llm/clients/mock-client';
+import { HumanRelayClient } from '../infrastructure/llm/clients/human-relay-client';
+import { LLMClientFactory } from '../infrastructure/llm/clients/llm-client-factory';
+import { LLMWrapperFactory } from '../infrastructure/llm/wrappers/wrapper-factory';
+import { PollingPoolManager } from '../infrastructure/llm/managers/pool-manager';
+import { TaskGroupManager } from '../infrastructure/llm/managers/task-group-manager';
+
 // Domain层接口（用于类型定义，不注册到容器）
 import { ISessionRepository } from '../domain/sessions/repositories/session-repository';
 import { IThreadRepository } from '../domain/threads/repositories/thread-repository';
@@ -65,6 +82,31 @@ import { HumanRelayService } from '../application/llm/services/human-relay-servi
  * 将服务标识符映射到对应的服务类型
  */
 export interface ServiceTypes {
+  // ========== LLM模块服务 ==========
+
+  // 基础设施组件
+  HttpClient: HttpClient;
+  ConfigLoadingModule: ConfigLoadingModule;
+  TokenBucketLimiter: TokenBucketLimiter;
+  TokenCalculator: TokenCalculator;
+
+  // 客户端实现
+  OpenAIChatClient: OpenAIChatClient;
+  OpenAIResponseClient: OpenAIResponseClient;
+  AnthropicClient: AnthropicClient;
+  GeminiClient: GeminiClient;
+  GeminiOpenAIClient: GeminiOpenAIClient;
+  MockClient: MockClient;
+  HumanRelayClient: HumanRelayClient;
+
+  // 工厂类
+  LLMClientFactory: LLMClientFactory;
+  LLMWrapperFactory: LLMWrapperFactory;
+
+  // 管理器
+  PollingPoolManager: PollingPoolManager;
+  TaskGroupManager: TaskGroupManager;
+
   // ========== Domain层接口（仅用于类型定义） ==========
 
   // 仓储接口
@@ -160,6 +202,31 @@ export type TypedServiceIdentifier<K extends ServiceIdentifier> = symbol & {
 export const TYPES: {
   [K in ServiceIdentifier]: TypedServiceIdentifier<K>
 } = {
+  // ========== LLM模块服务 ==========
+
+  // 基础设施组件
+  HttpClient: Symbol.for('HttpClient') as TypedServiceIdentifier<'HttpClient'>,
+  ConfigLoadingModule: Symbol.for('ConfigLoadingModule') as TypedServiceIdentifier<'ConfigLoadingModule'>,
+  TokenBucketLimiter: Symbol.for('TokenBucketLimiter') as TypedServiceIdentifier<'TokenBucketLimiter'>,
+  TokenCalculator: Symbol.for('TokenCalculator') as TypedServiceIdentifier<'TokenCalculator'>,
+
+  // 客户端实现
+  OpenAIChatClient: Symbol.for('OpenAIChatClient') as TypedServiceIdentifier<'OpenAIChatClient'>,
+  OpenAIResponseClient: Symbol.for('OpenAIResponseClient') as TypedServiceIdentifier<'OpenAIResponseClient'>,
+  AnthropicClient: Symbol.for('AnthropicClient') as TypedServiceIdentifier<'AnthropicClient'>,
+  GeminiClient: Symbol.for('GeminiClient') as TypedServiceIdentifier<'GeminiClient'>,
+  GeminiOpenAIClient: Symbol.for('GeminiOpenAIClient') as TypedServiceIdentifier<'GeminiOpenAIClient'>,
+  MockClient: Symbol.for('MockClient') as TypedServiceIdentifier<'MockClient'>,
+  HumanRelayClient: Symbol.for('HumanRelayClient') as TypedServiceIdentifier<'HumanRelayClient'>,
+
+  // 工厂类
+  LLMClientFactory: Symbol.for('LLMClientFactory') as TypedServiceIdentifier<'LLMClientFactory'>,
+  LLMWrapperFactory: Symbol.for('LLMWrapperFactory') as TypedServiceIdentifier<'LLMWrapperFactory'>,
+
+  // 管理器
+  PollingPoolManager: Symbol.for('PollingPoolManager') as TypedServiceIdentifier<'PollingPoolManager'>,
+  TaskGroupManager: Symbol.for('TaskGroupManager') as TypedServiceIdentifier<'TaskGroupManager'>,
+
   // ========== Domain层接口（仅用于类型定义） ==========
 
   // 仓储接口

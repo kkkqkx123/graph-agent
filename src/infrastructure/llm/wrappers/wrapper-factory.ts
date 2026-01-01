@@ -3,7 +3,7 @@ import { PollingPoolWrapper } from '../../../domain/llm/entities/wrapper';
 import { TaskGroupWrapper } from '../../../domain/llm/entities/wrapper';
 import { DirectLLMWrapper } from '../../../domain/llm/entities/wrapper';
 import { ID } from '../../../domain/common/value-objects/id';
-import { LLM_DI_IDENTIFIERS } from '../di-identifiers';
+import { TYPES } from '../../../di/service-keys';
 import { LLMClientFactory } from '../clients/llm-client-factory';
 
 // 定义基础包装器类型
@@ -19,9 +19,9 @@ export class LLMWrapperFactory {
   private wrappers: Map<string, BaseLLMWrapper> = new Map();
 
   constructor(
-    @inject(LLM_DI_IDENTIFIERS.PollingPoolManager) private poolManager: any,
-    @inject(LLM_DI_IDENTIFIERS.TaskGroupManager) private taskGroupManager: any,
-    @inject(LLM_DI_IDENTIFIERS.LLMClientFactory) private llmClientFactory: LLMClientFactory
+    @inject(TYPES.PollingPoolManager) private poolManager: any,
+    @inject(TYPES.TaskGroupManager) private taskGroupManager: any,
+    @inject(TYPES.LLMClientFactory) private llmClientFactory: LLMClientFactory
   ) { }
 
   /**

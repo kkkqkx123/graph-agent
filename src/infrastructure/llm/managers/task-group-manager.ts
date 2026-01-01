@@ -1,6 +1,6 @@
 import { injectable, inject } from 'inversify';
 import { ConfigLoadingModule } from '../../config/loading/config-loading-module';
-import { LLM_DI_IDENTIFIERS } from '../di-identifiers';
+import { TYPES } from '../../../di/service-keys';
 
 /**
  * 任务组管理器
@@ -10,7 +10,7 @@ import { LLM_DI_IDENTIFIERS } from '../di-identifiers';
 @injectable()
 export class TaskGroupManager {
   constructor(
-    @inject(LLM_DI_IDENTIFIERS.ConfigLoadingModule) private configManager: ConfigLoadingModule
+    @inject(TYPES.ConfigLoadingModule) private configManager: ConfigLoadingModule
   ) {}
 
   /**

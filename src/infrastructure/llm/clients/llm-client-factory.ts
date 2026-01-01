@@ -8,7 +8,7 @@ import { GeminiOpenAIClient } from './gemini-openai-client';
 import { MockClient } from './mock-client';
 import { HumanRelayClient } from './human-relay-client';
 import { HumanRelayMode } from '../../../domain/llm/value-objects/human-relay-mode';
-import { LLM_DI_IDENTIFIERS } from '../di-identifiers';
+import { TYPES } from '../../../di/service-keys';
 import { ConfigLoadingModule } from '../../config/loading/config-loading-module';
 
 /**
@@ -20,14 +20,14 @@ import { ConfigLoadingModule } from '../../config/loading/config-loading-module'
 @injectable()
 export class LLMClientFactory {
   constructor(
-    @inject(LLM_DI_IDENTIFIERS.OpenAIChatClient) private openaiChatClient: OpenAIChatClient,
-    @inject(LLM_DI_IDENTIFIERS.OpenAIResponseClient) private openaiResponseClient: OpenAIResponseClient,
-    @inject(LLM_DI_IDENTIFIERS.AnthropicClient) private anthropicClient: AnthropicClient,
-    @inject(LLM_DI_IDENTIFIERS.GeminiClient) private geminiClient: GeminiClient,
-    @inject(LLM_DI_IDENTIFIERS.GeminiOpenAIClient) private geminiOpenAIClient: GeminiOpenAIClient,
-    @inject(LLM_DI_IDENTIFIERS.MockClient) private mockClient: MockClient,
-    @inject(LLM_DI_IDENTIFIERS.HumanRelayClient) private humanRelayClient: HumanRelayClient,
-    @inject(LLM_DI_IDENTIFIERS.ConfigLoadingModule) private configManager: ConfigLoadingModule
+    @inject(TYPES.OpenAIChatClient) private openaiChatClient: OpenAIChatClient,
+    @inject(TYPES.OpenAIResponseClient) private openaiResponseClient: OpenAIResponseClient,
+    @inject(TYPES.AnthropicClient) private anthropicClient: AnthropicClient,
+    @inject(TYPES.GeminiClient) private geminiClient: GeminiClient,
+    @inject(TYPES.GeminiOpenAIClient) private geminiOpenAIClient: GeminiOpenAIClient,
+    @inject(TYPES.MockClient) private mockClient: MockClient,
+    @inject(TYPES.HumanRelayClient) private humanRelayClient: HumanRelayClient,
+    @inject(TYPES.ConfigLoadingModule) private configManager: ConfigLoadingModule
   ) { }
 
   /**

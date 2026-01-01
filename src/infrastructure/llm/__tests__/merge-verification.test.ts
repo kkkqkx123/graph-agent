@@ -1,52 +1,41 @@
-import { LLMDIContainer } from '../di-container';
-import { LLM_DI_IDENTIFIERS } from '../di-identifiers';
+import { AppContainer } from '../../../di/container';
+import { TYPES } from '../../../di/service-keys';
 
 /**
  * 合并验证测试
  * 
- * 验证两个目录合并后的功能完整性
+ * 验证LLM模块集成到全局DI系统后的功能完整性
  */
-describe('LLM目录合并验证', () => {
-  let container: LLMDIContainer;
-
-  beforeEach(() => {
-    container = new LLMDIContainer();
+describe('LLM模块DI集成验证', () => {
+  beforeAll(() => {
+    // 初始化全局容器
+    AppContainer.initialize();
   });
 
   describe('依赖注入容器', () => {
-    it('应该成功创建容器', () => {
-      expect(container).toBeDefined();
+    it('应该成功初始化容器', () => {
+      expect(AppContainer.isInitialized()).toBe(true);
     });
 
-    it('应该注册所有必要的服务', () => {
+    it('应该注册所有必要的LLM服务', () => {
       const requiredServices = [
-        LLM_DI_IDENTIFIERS.ConfigManager,
-        LLM_DI_IDENTIFIERS.HttpClient,
-        LLM_DI_IDENTIFIERS.LLMClientFactory,
-        LLM_DI_IDENTIFIERS.TaskGroupManager,
-        LLM_DI_IDENTIFIERS.PollingPoolManager,
-        LLM_DI_IDENTIFIERS.LLMWrapperFactory
+        TYPES.ConfigLoadingModule,
+        TYPES.HttpClient,
+        TYPES.LLMClientFactory,
+        TYPES.TaskGroupManager,
+        TYPES.PollingPoolManager,
+        TYPES.LLMWrapperFactory
       ];
 
       requiredServices.forEach(service => {
-        expect(container.has(service)).toBe(true);
+        expect(AppContainer.isBound(service)).toBe(true);
       });
-    });
-
-    it('应该验证依赖关系', () => {
-      const validation = container.validateDependencies();
-      expect(validation.isValid).toBe(true);
-      expect(validation.errors).toHaveLength(0);
-    });
-
-    it('应该配置完整', () => {
-      expect(container.isConfigurationComplete()).toBe(true);
     });
   });
 
   describe('服务标识符', () => {
     it('应该包含所有客户端标识符', () => {
-      const clientIdentifiers: (keyof typeof LLM_DI_IDENTIFIERS)[] = [
+      const clientIdentifiers = [
         'OpenAIChatClient',
         'OpenAIResponseClient',
         'AnthropicClient',
@@ -57,63 +46,109 @@ describe('LLM目录合并验证', () => {
       ];
 
       clientIdentifiers.forEach(identifier => {
-        expect(LLM_DI_IDENTIFIERS[identifier]).toBeDefined();
+        expect(TYPES[identifier as keyof typeof TYPES]).toBeDefined();
       });
     });
 
     it('应该包含所有管理器标识符', () => {
-      const managerIdentifiers: (keyof typeof LLM_DI_IDENTIFIERS)[] = [
+      const managerIdentifiers = [
         'TaskGroupManager',
         'PollingPoolManager'
       ];
 
       managerIdentifiers.forEach(identifier => {
-        expect(LLM_DI_IDENTIFIERS[identifier]).toBeDefined();
+        expect(TYPES[identifier as keyof typeof TYPES]).toBeDefined();
       });
     });
 
     it('应该包含所有工厂标识符', () => {
-      const factoryIdentifiers: (keyof typeof LLM_DI_IDENTIFIERS)[] = [
+      const factoryIdentifiers = [
         'LLMClientFactory',
         'LLMWrapperFactory'
       ];
 
       factoryIdentifiers.forEach(identifier => {
-        expect(LLM_DI_IDENTIFIERS[identifier]).toBeDefined();
+        expect(TYPES[identifier as keyof typeof TYPES]).toBeDefined();
       });
     });
   });
 
   describe('服务获取', () => {
     it('应该能够获取LLMClientFactory', () => {
-      const factory = container.get(LLM_DI_IDENTIFIERS.LLMClientFactory);
+      const factory = AppContainer.getService(TYPES.LLMClientFactory);
       expect(factory).toBeDefined();
     });
 
     it('应该能够获取TaskGroupManager', () => {
-      const manager = container.get(LLM_DI_IDENTIFIERS.TaskGroupManager);
+      const manager = AppContainer.getService(TYPES.TaskGroupManager);
       expect(manager).toBeDefined();
     });
 
     it('应该能够获取PollingPoolManager', () => {
-      const manager = container.get(LLM_DI_IDENTIFIERS.PollingPoolManager);
+      const manager = AppContainer.getService(TYPES.PollingPoolManager);
       expect(manager).toBeDefined();
     });
 
     it('应该能够获取LLMWrapperFactory', () => {
-      const factory = container.get(LLM_DI_IDENTIFIERS.LLMWrapperFactory);
+      const factory = AppContainer.getService(TYPES.LLMWrapperFactory);
       expect(factory).toBeDefined();
+    });
+
+    it('应该能够获取HttpClient', () => {
+      const httpClient = AppContainer.getService(TYPES.HttpClient);
+      expect(httpClient).toBeDefined();
+    });
+
+    it('应该能够获取ConfigLoadingModule', () => {
+      const configModule = AppContainer.getService(TYPES.ConfigLoadingModule);
+      expect(configModule).toBeDefined();
+    });
+
+    it('应该能够获取TokenBucketLimiter', () => {
+      const limiter = AppContainer.getService(TYPES.TokenBucketLimiter);
+      expect(limiter).toBeDefined();
+    });
+
+    it('应该能够获取TokenCalculator', () => {
+      const calculator = AppContainer.getService(TYPES.TokenCalculator);
+      expect(calculator).toBeDefined();
     });
   });
 
-  describe('配置报告', () => {
-    it('应该生成完整的配置报告', () => {
-      const report = container.getFullConfigurationReport();
-      
-      expect(report.totalServices).toBeGreaterThan(0);
-      expect(report.registeredServices).toBeGreaterThan(0);
-      expect(report.configurationComplete).toBe(true);
-      expect(report.dependencyValidation.isValid).toBe(true);
+  describe('客户端服务', () => {
+    it('应该能够获取OpenAIChatClient', () => {
+      const client = AppContainer.getService(TYPES.OpenAIChatClient);
+      expect(client).toBeDefined();
+    });
+
+    it('应该能够获取OpenAIResponseClient', () => {
+      const client = AppContainer.getService(TYPES.OpenAIResponseClient);
+      expect(client).toBeDefined();
+    });
+
+    it('应该能够获取AnthropicClient', () => {
+      const client = AppContainer.getService(TYPES.AnthropicClient);
+      expect(client).toBeDefined();
+    });
+
+    it('应该能够获取GeminiClient', () => {
+      const client = AppContainer.getService(TYPES.GeminiClient);
+      expect(client).toBeDefined();
+    });
+
+    it('应该能够获取GeminiOpenAIClient', () => {
+      const client = AppContainer.getService(TYPES.GeminiOpenAIClient);
+      expect(client).toBeDefined();
+    });
+
+    it('应该能够获取MockClient', () => {
+      const client = AppContainer.getService(TYPES.MockClient);
+      expect(client).toBeDefined();
+    });
+
+    it('应该能够获取HumanRelayClient', () => {
+      const client = AppContainer.getService(TYPES.HumanRelayClient);
+      expect(client).toBeDefined();
     });
   });
 });

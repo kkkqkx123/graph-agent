@@ -5,7 +5,7 @@ import { ProviderConfig, ApiType } from '../parameter-mappers/interfaces/provide
 import { AnthropicParameterMapper } from '../parameter-mappers/anthropic-parameter-mapper';
 import { AnthropicEndpointStrategy } from '../endpoint-strategies/anthropic-endpoint-strategy';
 import { BaseFeatureSupport } from '../parameter-mappers/interfaces/feature-support.interface';
-import { LLM_DI_IDENTIFIERS } from '../di-identifiers';
+import { TYPES } from '../../../di/service-keys';
 import { HttpClient } from '../../common/http/http-client';
 import { TokenBucketLimiter } from '../rate-limiters/token-bucket-limiter';
 import { TokenCalculator } from '../token-calculators/token-calculator';
@@ -14,10 +14,10 @@ import { ConfigLoadingModule } from '../../config/loading/config-loading-module'
 @injectable()
 export class AnthropicClient extends BaseLLMClient {
   constructor(
-    @inject(LLM_DI_IDENTIFIERS.HttpClient) httpClient: HttpClient,
-    @inject(LLM_DI_IDENTIFIERS.TokenBucketLimiter) rateLimiter: TokenBucketLimiter,
-    @inject(LLM_DI_IDENTIFIERS.TokenCalculator) tokenCalculator: TokenCalculator,
-    @inject(LLM_DI_IDENTIFIERS.ConfigLoadingModule) configManager: ConfigLoadingModule
+    @inject(TYPES.HttpClient) httpClient: HttpClient,
+    @inject(TYPES.TokenBucketLimiter) rateLimiter: TokenBucketLimiter,
+    @inject(TYPES.TokenCalculator) tokenCalculator: TokenCalculator,
+    @inject(TYPES.ConfigLoadingModule) configManager: ConfigLoadingModule
   ) {
     // 创建 Anthropic 功能支持
     const featureSupport = new BaseFeatureSupport();

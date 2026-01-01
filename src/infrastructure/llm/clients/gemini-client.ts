@@ -5,7 +5,7 @@ import { ProviderConfig, ApiType, ProviderConfigBuilder } from '../parameter-map
 import { GeminiParameterMapper } from '../parameter-mappers/gemini-parameter-mapper';
 import { GeminiNativeEndpointStrategy } from '../endpoint-strategies/gemini-native-endpoint-strategy';
 import { BaseFeatureSupport } from '../parameter-mappers/interfaces/feature-support.interface';
-import { LLM_DI_IDENTIFIERS } from '../di-identifiers';
+import { TYPES } from '../../../di/service-keys';
 import { HttpClient } from '../../common/http/http-client';
 import { TokenBucketLimiter } from '../rate-limiters/token-bucket-limiter';
 import { TokenCalculator } from '../token-calculators/token-calculator';
@@ -14,10 +14,10 @@ import { ConfigLoadingModule } from '../../config/loading/config-loading-module'
 @injectable()
 export class GeminiClient extends BaseLLMClient {
   constructor(
-    @inject(LLM_DI_IDENTIFIERS.HttpClient) httpClient: HttpClient,
-    @inject(LLM_DI_IDENTIFIERS.TokenBucketLimiter) rateLimiter: TokenBucketLimiter,
-    @inject(LLM_DI_IDENTIFIERS.TokenCalculator) tokenCalculator: TokenCalculator,
-    @inject(LLM_DI_IDENTIFIERS.ConfigLoadingModule) configManager: ConfigLoadingModule
+    @inject(TYPES.HttpClient) httpClient: HttpClient,
+    @inject(TYPES.TokenBucketLimiter) rateLimiter: TokenBucketLimiter,
+    @inject(TYPES.TokenCalculator) tokenCalculator: TokenCalculator,
+    @inject(TYPES.ConfigLoadingModule) configManager: ConfigLoadingModule
   ) {
     // 创建功能支持配置
     const featureSupport = new BaseFeatureSupport();

@@ -11,7 +11,7 @@ import { LLMRequest } from '../../../domain/llm/entities/llm-request';
 import { LLMResponse } from '../../../domain/llm/entities/llm-response';
 import { ModelConfig } from '../../../domain/llm/value-objects/model-config';
 import { HumanRelayMode } from '../../../domain/llm/value-objects/human-relay-mode';
-import { LLM_DI_IDENTIFIERS } from '../di-identifiers';
+import { TYPES } from '../../../di/service-keys';
 import { ProviderConfig, ApiType } from '../parameter-mappers/interfaces/provider-config.interface';
 import { BaseFeatureSupport } from '../parameter-mappers/interfaces/feature-support.interface';
 import { ConfigLoadingModule } from '../../config/loading/config-loading-module';
@@ -36,13 +36,13 @@ export class HumanRelayClient extends BaseLLMClient {
   private readonly defaultTimeout: number;
 
   constructor(
-    @inject(LLM_DI_IDENTIFIERS.HttpClient)
+    @inject(TYPES.HttpClient)
     protected override httpClient: any,
-    @inject(LLM_DI_IDENTIFIERS.TokenBucketLimiter)
+    @inject(TYPES.TokenBucketLimiter)
     protected override rateLimiter: any,
-    @inject(LLM_DI_IDENTIFIERS.TokenCalculator)
+    @inject(TYPES.TokenCalculator)
     protected override tokenCalculator: any,
-    @inject(LLM_DI_IDENTIFIERS.ConfigLoadingModule)
+    @inject(TYPES.ConfigLoadingModule)
     protected override configLoadingModule: ConfigLoadingModule,
     @inject('IHumanRelayService')
     private humanRelayService: IHumanRelayService,

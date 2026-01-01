@@ -9,7 +9,7 @@ import { ProviderConfig, ApiType, ProviderConfigBuilder } from '../parameter-map
 import { MockParameterMapper } from '../parameter-mappers/mock-parameter-mapper';
 import { MockEndpointStrategy } from '../endpoint-strategies/mock-endpoint-strategy';
 import { BaseFeatureSupport } from '../parameter-mappers/interfaces/feature-support.interface';
-import { LLM_DI_IDENTIFIERS } from '../di-identifiers';
+import { TYPES } from '../../../di/service-keys';
 import { HttpClient } from '../../common/http/http-client';
 import { TokenBucketLimiter } from '../rate-limiters/token-bucket-limiter';
 import { ConfigLoadingModule } from '../../config/loading/config-loading-module';
@@ -19,10 +19,10 @@ export class MockClient extends BaseLLMClient {
   private responses: Map<string, string> = new Map();
 
   constructor(
-    @inject(LLM_DI_IDENTIFIERS.HttpClient) httpClient: HttpClient,
-    @inject(LLM_DI_IDENTIFIERS.TokenBucketLimiter) rateLimiter: TokenBucketLimiter,
-    @inject(LLM_DI_IDENTIFIERS.TokenCalculator) tokenCalculator: TokenCalculator,
-    @inject(LLM_DI_IDENTIFIERS.ConfigLoadingModule) configManager: ConfigLoadingModule
+    @inject(TYPES.HttpClient) httpClient: HttpClient,
+    @inject(TYPES.TokenBucketLimiter) rateLimiter: TokenBucketLimiter,
+    @inject(TYPES.TokenCalculator) tokenCalculator: TokenCalculator,
+    @inject(TYPES.ConfigLoadingModule) configManager: ConfigLoadingModule
   ) {
     // 创建功能支持配置
     const featureSupport = new BaseFeatureSupport();

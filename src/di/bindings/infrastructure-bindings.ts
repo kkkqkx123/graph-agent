@@ -7,6 +7,23 @@
 import { ContainerModule } from 'inversify';
 import { TYPES } from '../service-keys';
 
+// LLM模块服务
+import { HttpClient } from '../../infrastructure/common/http/http-client';
+import { ConfigLoadingModule } from '../../infrastructure/config/loading/config-loading-module';
+import { TokenBucketLimiter } from '../../infrastructure/llm/rate-limiters/token-bucket-limiter';
+import { TokenCalculator } from '../../infrastructure/llm/token-calculators/token-calculator';
+import { OpenAIChatClient } from '../../infrastructure/llm/clients/openai-chat-client';
+import { OpenAIResponseClient } from '../../infrastructure/llm/clients/openai-response-client';
+import { AnthropicClient } from '../../infrastructure/llm/clients/anthropic-client';
+import { GeminiClient } from '../../infrastructure/llm/clients/gemini-client';
+import { GeminiOpenAIClient } from '../../infrastructure/llm/clients/gemini-openai-client';
+import { MockClient } from '../../infrastructure/llm/clients/mock-client';
+import { HumanRelayClient } from '../../infrastructure/llm/clients/human-relay-client';
+import { LLMClientFactory } from '../../infrastructure/llm/clients/llm-client-factory';
+import { LLMWrapperFactory } from '../../infrastructure/llm/wrappers/wrapper-factory';
+import { PollingPoolManager } from '../../infrastructure/llm/managers/pool-manager';
+import { TaskGroupManager } from '../../infrastructure/llm/managers/task-group-manager';
+
 // 仓储实现
 import { SessionRepository as SessionInfrastructureRepository } from '../../infrastructure/persistence/repositories/session-repository';
 import { ThreadRepository as ThreadInfrastructureRepository } from '../../infrastructure/persistence/repositories/thread-repository';
@@ -40,6 +57,31 @@ import { Logger } from '../../infrastructure/logging/logger';
  * Infrastructure层绑定模块
  */
 export const infrastructureBindings = new ContainerModule((bind: any) => {
+  // ========== LLM模块服务绑定 ==========
+
+  // 基础设施组件
+  bind(TYPES.ConfigLoadingModule).to(ConfigLoadingModule).inSingletonScope();
+  bind(TYPES.HttpClient).to(HttpClient).inSingletonScope();
+  bind(TYPES.TokenBucketLimiter).to(TokenBucketLimiter).inSingletonScope();
+  bind(TYPES.TokenCalculator).to(TokenCalculator).inSingletonScope();
+
+  // 客户端实现
+  bind(TYPES.OpenAIChatClient).to(OpenAIChatClient).inSingletonScope();
+  bind(TYPES.OpenAIResponseClient).to(OpenAIResponseClient).inSingletonScope();
+  bind(TYPES.AnthropicClient).to(AnthropicClient).inSingletonScope();
+  bind(TYPES.GeminiClient).to(GeminiClient).inSingletonScope();
+  bind(TYPES.GeminiOpenAIClient).to(GeminiOpenAIClient).inSingletonScope();
+  bind(TYPES.MockClient).to(MockClient).inSingletonScope();
+  bind(TYPES.HumanRelayClient).to(HumanRelayClient).inSingletonScope();
+
+  // 工厂类
+  bind(TYPES.LLMClientFactory).to(LLMClientFactory).inSingletonScope();
+  bind(TYPES.LLMWrapperFactory).to(LLMWrapperFactory).inSingletonScope();
+
+  // 管理器
+  bind(TYPES.TaskGroupManager).to(TaskGroupManager).inSingletonScope();
+  bind(TYPES.PollingPoolManager).to(PollingPoolManager).inSingletonScope();
+
   // ========== 仓储绑定 ==========
 
   bind(TYPES.SessionRepositoryImpl).to(SessionInfrastructureRepository).inSingletonScope();

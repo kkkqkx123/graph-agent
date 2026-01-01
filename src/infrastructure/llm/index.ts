@@ -17,14 +17,3 @@ export { LLMWrapperFactory, BaseLLMWrapper } from './wrappers/wrapper-factory';
 // 导出管理器
 export { PollingPoolManager } from './managers/pool-manager';
 export { TaskGroupManager } from './managers/task-group-manager';
-
-// 导出依赖注入标识符和容器
-export { LLM_DI_IDENTIFIERS } from './di-identifiers';
-export { LLMDIContainer } from './di-container';
-
-// 导出类型
-export type {
-  ServiceType,
-  LLMDIIdentifiers,
-  ServiceTypes
-} from './di-identifiers';
