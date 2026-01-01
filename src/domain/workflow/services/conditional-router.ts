@@ -18,6 +18,44 @@ export interface RoutingResult {
 }
 
 /**
+ * 边评估详情接口
+ */
+export interface EdgeEvaluationDetails {
+  /** 边ID */
+  readonly edgeId: string;
+  /** 边类型 */
+  readonly edgeType: string;
+  /** 条件表达式 */
+  readonly condition?: string;
+  /** 评估时间（毫秒） */
+  readonly evaluationTime: number;
+  /** 时间戳 */
+  readonly timestamp: string;
+  /** 错误信息（如果有） */
+  readonly error?: string;
+}
+
+/**
+ * 路由决策日志接口
+ */
+export interface RoutingDecisionLog {
+  /** 工作流ID */
+  readonly workflowId: string;
+  /** 当前节点ID */
+  readonly currentNodeId?: string;
+  /** 评估的边数量 */
+  readonly evaluatedEdgesCount: number;
+  /** 匹配的边数量 */
+  readonly matchedEdgesCount: number;
+  /** 评估详情 */
+  readonly evaluations: EdgeEvaluationDetails[];
+  /** 选中的路由结果 */
+  readonly selectedRoutes: RoutingResult[];
+  /** 时间戳 */
+  readonly timestamp: string;
+}
+
+/**
  * 路由选项接口
  */
 export interface RoutingOptions {
@@ -27,6 +65,8 @@ export interface RoutingOptions {
   recordHistory?: boolean;
   /** 自定义上下文 */
   customContext?: Record<string, any>;
+  /** 是否记录详细评估日志 */
+  verboseLogging?: boolean;
 }
 
 /**
@@ -47,14 +87,16 @@ export interface RoutingOptions {
 export class ConditionalRouter {
   private evaluator: ExpressionEvaluator;
   private routingHistory: Map<string, RoutingResult[]>;
+  private decisionLogs: Map<string, RoutingDecisionLog[]>;
 
   constructor(evaluator: ExpressionEvaluator) {
     this.evaluator = evaluator;
     this.routingHistory = new Map();
+    this.decisionLogs = new Map();
   }
 
   /**
-   * 路由到下一个节点
+   * 路由到下一个节点（单路路由）
    * @param edges 边列表
    * @param state 工作流状态
    * @param options 路由选项
@@ -65,28 +107,35 @@ export class ConditionalRouter {
     state: WorkflowState,
     options: RoutingOptions = {}
   ): Promise<RoutingResult | null> {
-    // 构建评估上下文
     const context = this.buildContext(state, options.customContext);
+    const evaluations: EdgeEvaluationDetails[] = [];
 
     // 评估每条边
     for (const edge of edges) {
-      const result = await this.evaluateEdge(edge, context);
+      const evaluation = await this.evaluateEdgeWithLogging(edge, context);
+      evaluations.push(evaluation.details);
       
-      if (result.matched) {
+      if (evaluation.matched) {
         const routingResult: RoutingResult = {
           targetNodeId: edge.toNodeId.value,
           edgeId: edge.id.value,
-          conditionResult: result.conditionResult,
+          conditionResult: evaluation.conditionResult,
           metadata: {
             edgeType: edge.type.value,
             edgeWeight: edge.weight,
-            evaluatedAt: Date.now()
+            evaluatedAt: Date.now(),
+            evaluationDetails: evaluation.details
           }
         };
 
         // 记录路由历史
         if (options.recordHistory) {
           this.recordRouting(state.workflowId.value, routingResult);
+        }
+
+        // 记录决策日志
+        if (options.verboseLogging) {
+          this.recordDecisionLog(state.workflowId.value, state.currentNodeId?.value, evaluations, [routingResult]);
         }
 
         return routingResult;
@@ -112,8 +161,17 @@ export class ConditionalRouter {
           this.recordRouting(state.workflowId.value, routingResult);
         }
 
+        if (options.verboseLogging) {
+          this.recordDecisionLog(state.workflowId.value, state.currentNodeId?.value, evaluations, [routingResult]);
+        }
+
         return routingResult;
       }
+    }
+
+    // 记录决策日志（即使没有匹配的边）
+    if (options.verboseLogging) {
+      this.recordDecisionLog(state.workflowId.value, state.currentNodeId?.value, evaluations, []);
     }
 
     return null;
@@ -133,19 +191,22 @@ export class ConditionalRouter {
   ): Promise<RoutingResult[]> {
     const context = this.buildContext(state, options.customContext);
     const results: RoutingResult[] = [];
+    const evaluations: EdgeEvaluationDetails[] = [];
 
     for (const edge of edges) {
-      const result = await this.evaluateEdge(edge, context);
+      const evaluation = await this.evaluateEdgeWithLogging(edge, context);
+      evaluations.push(evaluation.details);
       
-      if (result.matched) {
+      if (evaluation.matched) {
         const routingResult: RoutingResult = {
           targetNodeId: edge.toNodeId.value,
           edgeId: edge.id.value,
-          conditionResult: result.conditionResult,
+          conditionResult: evaluation.conditionResult,
           metadata: {
             edgeType: edge.type.value,
             edgeWeight: edge.weight,
-            evaluatedAt: Date.now()
+            evaluatedAt: Date.now(),
+            evaluationDetails: evaluation.details
           }
         };
 
@@ -158,6 +219,11 @@ export class ConditionalRouter {
       for (const result of results) {
         this.recordRouting(state.workflowId.value, result);
       }
+    }
+
+    // 记录决策日志
+    if (options.verboseLogging) {
+      this.recordDecisionLog(state.workflowId.value, state.currentNodeId?.value, evaluations, results);
     }
 
     return results;
@@ -256,6 +322,107 @@ export class ConditionalRouter {
     // 限制历史记录数量
     if (history.length > 100) {
       history.shift();
+    }
+  }
+
+  /**
+   * 带日志的边评估（私有方法）
+   * @param edge 边
+   * @param context 评估上下文
+   * @returns 评估结果和详情
+   */
+  private async evaluateEdgeWithLogging(
+    edge: EdgeValueObject,
+    context: Record<string, any>
+  ): Promise<{
+    matched: boolean;
+    conditionResult?: boolean;
+    details: EdgeEvaluationDetails;
+  }> {
+    const startTime = Date.now();
+    
+    try {
+      const result = await this.evaluateEdge(edge, context);
+      
+      return {
+        ...result,
+        details: {
+          edgeId: edge.id.value,
+          edgeType: edge.type.toString(),
+          condition: edge.condition,
+          evaluationTime: Date.now() - startTime,
+          timestamp: new Date().toISOString()
+        }
+      };
+    } catch (error) {
+      return {
+        matched: false,
+        details: {
+          edgeId: edge.id.value,
+          edgeType: edge.type.toString(),
+          condition: edge.condition,
+          evaluationTime: Date.now() - startTime,
+          timestamp: new Date().toISOString(),
+          error: error instanceof Error ? error.message : String(error)
+        }
+      };
+    }
+  }
+
+  /**
+   * 记录决策日志（私有方法）
+   * @param workflowId 工作流ID
+   * @param currentNodeId 当前节点ID
+   * @param evaluations 边评估详情
+   * @param selectedRoutes 选中的路由
+   */
+  private recordDecisionLog(
+    workflowId: string,
+    currentNodeId: string | undefined,
+    evaluations: EdgeEvaluationDetails[],
+    selectedRoutes: RoutingResult[]
+  ): void {
+    if (!this.decisionLogs.has(workflowId)) {
+      this.decisionLogs.set(workflowId, []);
+    }
+
+    const logs = this.decisionLogs.get(workflowId)!;
+    const log: RoutingDecisionLog = {
+      workflowId,
+      currentNodeId,
+      evaluatedEdgesCount: evaluations.length,
+      matchedEdgesCount: selectedRoutes.length,
+      evaluations,
+      selectedRoutes,
+      timestamp: new Date().toISOString()
+    };
+
+    logs.push(log);
+
+    // 限制日志数量
+    if (logs.length > 100) {
+      logs.shift();
+    }
+  }
+
+  /**
+   * 获取决策日志
+   * @param workflowId 工作流ID
+   * @returns 决策日志数组
+   */
+  getDecisionLogs(workflowId: string): RoutingDecisionLog[] {
+    return this.decisionLogs.get(workflowId) || [];
+  }
+
+  /**
+   * 清除决策日志
+   * @param workflowId 工作流ID（可选，如果不提供则清除所有日志）
+   */
+  clearDecisionLogs(workflowId?: string): void {
+    if (workflowId) {
+      this.decisionLogs.delete(workflowId);
+    } else {
+      this.decisionLogs.clear();
     }
   }
 }

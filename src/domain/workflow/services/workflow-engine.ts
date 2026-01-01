@@ -17,10 +17,20 @@ export interface WorkflowExecutionOptions {
   checkpointInterval?: number;
   /** 是否记录路由历史 */
   recordRoutingHistory?: boolean;
+  /** 是否启用详细路由日志 */
+  verboseRoutingLogging?: boolean;
   /** 最大执行步数 */
   maxSteps?: number;
   /** 执行超时时间（毫秒） */
   timeout?: number;
+  /** 节点执行超时时间（毫秒） */
+  nodeTimeout?: number;
+  /** 节点最大重试次数 */
+  maxNodeRetries?: number;
+  /** 节点重试延迟（毫秒） */
+  nodeRetryDelay?: number;
+  /** 是否启用错误恢复 */
+  enableErrorRecovery?: boolean;
 }
 
 /**
@@ -39,6 +49,79 @@ export interface WorkflowExecutionResult {
   readonly error?: string;
   /** 创建的检查点数量 */
   readonly checkpointCount: number;
+  /** 执行状态 */
+  readonly status: 'completed' | 'cancelled' | 'timeout' | 'error';
+  /** 错误详情 */
+  readonly errorDetails?: {
+    nodeId?: string;
+    errorType: string;
+    message: string;
+    timestamp: string;
+  };
+}
+
+/**
+ * 执行控制器接口
+ */
+export interface ExecutionController {
+  /** 是否暂停 */
+  isPaused: boolean;
+  /** 是否取消 */
+  isCancelled: boolean;
+  /** 是否完成 */
+  isCompleted: boolean;
+  /** 暂停执行 */
+  pause(): void;
+  /** 恢复执行 */
+  resume(): void;
+  /** 取消执行 */
+  cancel(): void;
+  /** 等待恢复 */
+  waitForResume(): Promise<void>;
+}
+
+/**
+ * 执行控制器实现
+ */
+class WorkflowExecutionController implements ExecutionController {
+  public isPaused = false;
+  public isCancelled = false;
+  public isCompleted = false;
+  private resumePromise?: Promise<void>;
+  private resumeResolve?: () => void;
+
+  constructor(public readonly threadId: string) {}
+
+  pause(): void {
+    this.isPaused = true;
+  }
+
+  resume(): void {
+    this.isPaused = false;
+    if (this.resumeResolve) {
+      this.resumeResolve();
+      this.resumeResolve = undefined;
+    }
+  }
+
+  cancel(): void {
+    this.isCancelled = true;
+    this.resume();
+  }
+
+  setCompleted(): void {
+    this.isCompleted = true;
+  }
+
+  async waitForResume(): Promise<void> {
+    if (!this.isPaused) return;
+
+    this.resumePromise = new Promise(resolve => {
+      this.resumeResolve = resolve;
+    });
+
+    await this.resumePromise;
+  }
 }
 
 /**
@@ -49,12 +132,15 @@ export interface WorkflowExecutionResult {
  * - 管理节点执行顺序
  * - 处理路由决策
  * - 管理状态和检查点
+ * - 提供执行控制（暂停/恢复/取消）
+ * - 处理错误和恢复
  *
  * 特性：
  * - 支持顺序执行和条件路由
  * - 支持检查点和恢复
  * - 支持执行超时和最大步数限制
  * - 支持错误处理和恢复
+ * - 支持执行控制（暂停/恢复/取消）
  */
 export class WorkflowEngine {
   private stateManager: StateManager;
@@ -62,6 +148,7 @@ export class WorkflowEngine {
   private checkpointManager: CheckpointManager;
   private router: ConditionalRouter;
   private nodeExecutor: INodeExecutor;
+  private activeExecutions: Map<string, WorkflowExecutionController>;
 
   constructor(
     stateManager: StateManager,
@@ -75,6 +162,7 @@ export class WorkflowEngine {
     this.checkpointManager = checkpointManager;
     this.router = router;
     this.nodeExecutor = nodeExecutor;
+    this.activeExecutions = new Map();
   }
 
   /**
@@ -96,23 +184,44 @@ export class WorkflowEngine {
     const checkpointInterval = options.checkpointInterval ?? 1;
     const maxSteps = options.maxSteps ?? 1000;
     const timeout = options.timeout ?? 300000; // 5分钟默认超时
+    const nodeTimeout = options.nodeTimeout ?? 30000; // 节点默认超时30秒
+    const maxNodeRetries = options.maxNodeRetries ?? 0;
+    const nodeRetryDelay = options.nodeRetryDelay ?? 1000;
+    const enableErrorRecovery = options.enableErrorRecovery ?? false;
 
-    // 初始化状态
-    this.stateManager.initialize(threadId, workflow.workflowId, initialState);
+    // 创建执行控制器
+    const controller = new WorkflowExecutionController(threadId);
+    this.activeExecutions.set(threadId, controller);
 
-    // 查找起始节点
-    let currentNodeId = this.findStartNode(workflow);
-    if (!currentNodeId) {
-      throw new Error('工作流没有起始节点');
-    }
-
+    // 初始化计数器（在 try 块外定义，以便在 catch 块中访问）
     let executedNodes = 0;
     let checkpointCount = 0;
-    let lastCheckpointStep = 0;
+    let currentNodeId: string | null = null;
 
     try {
+      // 初始化状态
+      this.stateManager.initialize(threadId, workflow.workflowId, initialState);
+
+      // 查找起始节点
+      currentNodeId = this.findStartNode(workflow);
+      if (!currentNodeId) {
+        throw new Error('工作流没有起始节点');
+      }
+
+      let lastCheckpointStep = 0;
+
       // 执行循环
-      while (currentNodeId && executedNodes < maxSteps) {
+      while (this.shouldContinueExecution(controller, currentNodeId, executedNodes, maxSteps)) {
+        // 检查是否暂停
+        if (controller.isPaused) {
+          await controller.waitForResume();
+        }
+
+        // 检查是否取消
+        if (controller.isCancelled) {
+          throw new Error('Execution cancelled');
+        }
+
         // 检查超时
         if (Date.now() - startTime > timeout) {
           throw new Error('工作流执行超时');
@@ -143,32 +252,54 @@ export class WorkflowEngine {
           lastCheckpointStep = executedNodes;
         }
 
-        // 执行节点
-        const nodeContext = this.buildNodeContext(currentState, threadId);
-        const canExecute = await this.nodeExecutor.canExecute(node, nodeContext);
-        
-        if (!canExecute) {
-          throw new Error(`节点 ${currentNodeId} 无法执行`);
+        // 执行节点（带错误处理）
+        try {
+          const nodeResult = await this.executeNodeWithRetry(
+            node,
+            currentState,
+            threadId,
+            {
+              timeout: nodeTimeout,
+              maxRetries: maxNodeRetries,
+              retryDelay: nodeRetryDelay
+            }
+          );
+
+          // 更新状态
+          this.stateManager.updateState(
+            threadId,
+            nodeResult.output || {}
+          );
+
+          // 记录执行历史
+          this.historyManager.recordExecution(
+            threadId,
+            NodeId.fromString(currentNodeId),
+            nodeResult,
+            nodeResult.success ? 'success' : 'failure',
+            nodeResult.metadata
+          );
+
+          executedNodes++;
+
+        } catch (error) {
+          // 节点执行错误处理
+          const handled = await this.handleNodeExecutionError(
+            error,
+            node,
+            threadId,
+            workflow,
+            enableErrorRecovery
+          );
+
+          if (!handled) {
+            // 无法处理，抛出异常
+            throw error;
+          }
+
+          // 错误已处理，继续执行
+          executedNodes++;
         }
-
-        const nodeResult = await this.nodeExecutor.execute(node, nodeContext);
-
-        // 更新状态
-        this.stateManager.updateState(
-          threadId,
-          nodeResult.output || {}
-        );
-
-        // 记录执行历史
-        this.historyManager.recordExecution(
-          threadId,
-          NodeId.fromString(currentNodeId),
-          nodeResult,
-          nodeResult.success ? 'success' : 'failure',
-          nodeResult.metadata
-        );
-
-        executedNodes++;
 
         // 获取出边
         const outgoingEdges = workflow.getOutgoingEdges(NodeId.fromString(currentNodeId));
@@ -184,6 +315,7 @@ export class WorkflowEngine {
           this.stateManager.getState(threadId)!,
           {
             recordHistory: options.recordRoutingHistory,
+            verboseLogging: options.verboseRoutingLogging,
             useDefaultEdge: true
           }
         );
@@ -198,13 +330,15 @@ export class WorkflowEngine {
 
       // 获取最终状态
       const finalState = this.stateManager.getState(threadId)!;
+      controller.setCompleted();
 
       return {
         success: true,
         finalState,
         executedNodes,
         executionTime: Date.now() - startTime,
-        checkpointCount
+        checkpointCount,
+        status: 'completed'
       };
 
     } catch (error) {
@@ -213,14 +347,32 @@ export class WorkflowEngine {
       // 获取当前状态
       const currentState = this.stateManager.getState(threadId);
       
+      // 确定执行状态
+      let status: 'completed' | 'cancelled' | 'timeout' | 'error' = 'error';
+      if (errorMessage === 'Execution cancelled') {
+        status = 'cancelled';
+      } else if (errorMessage.includes('超时')) {
+        status = 'timeout';
+      }
+
       return {
         success: false,
         finalState: currentState || WorkflowState.initial(workflow.workflowId),
         executedNodes,
         executionTime: Date.now() - startTime,
         error: errorMessage,
-        checkpointCount
+        checkpointCount,
+        status,
+        errorDetails: {
+          nodeId: currentNodeId || undefined,
+          errorType: error instanceof Error ? error.constructor.name : 'Unknown',
+          message: errorMessage,
+          timestamp: new Date().toISOString()
+        }
       };
+    } finally {
+      // 清理执行控制器
+      this.activeExecutions.delete(threadId);
     }
   }
 
@@ -250,6 +402,152 @@ export class WorkflowEngine {
 
     // 继续执行
     return this.execute(workflow, threadId, restoredStateData, options);
+  }
+
+  /**
+   * 暂停执行
+   * @param threadId 线程ID
+   */
+  pauseExecution(threadId: string): void {
+    const controller = this.activeExecutions.get(threadId);
+    if (controller) {
+      controller.pause();
+    }
+  }
+
+  /**
+   * 恢复执行
+   * @param threadId 线程ID
+   */
+  resumeExecution(threadId: string): void {
+    const controller = this.activeExecutions.get(threadId);
+    if (controller) {
+      controller.resume();
+    }
+  }
+
+  /**
+   * 取消执行
+   * @param threadId 线程ID
+   */
+  cancelExecution(threadId: string): void {
+    const controller = this.activeExecutions.get(threadId);
+    if (controller) {
+      controller.cancel();
+    }
+  }
+
+  /**
+   * 获取执行控制器
+   * @param threadId 线程ID
+   * @returns 执行控制器，如果不存在则返回 undefined
+   */
+  getExecutionController(threadId: string): ExecutionController | undefined {
+    return this.activeExecutions.get(threadId);
+  }
+
+  /**
+   * 判断是否应该继续执行（私有方法）
+   * @param controller 执行控制器
+   * @param currentNodeId 当前节点ID
+   * @param executedNodes 已执行节点数
+   * @param maxSteps 最大步数
+   * @returns 是否应该继续执行
+   */
+  private shouldContinueExecution(
+    controller: ExecutionController,
+    currentNodeId: string | null,
+    executedNodes: number,
+    maxSteps: number
+  ): boolean {
+    return (
+      !controller.isCancelled &&
+      !controller.isCompleted &&
+      currentNodeId !== null &&
+      executedNodes < maxSteps
+    );
+  }
+
+  /**
+   * 执行节点（带重试）（私有方法）
+   * @param node 节点
+   * @param state 工作流状态
+   * @param threadId 线程ID
+   * @param options 执行选项
+   * @returns 执行结果
+   */
+  private async executeNodeWithRetry(
+    node: any,
+    state: WorkflowState,
+    threadId: string,
+    options: { timeout: number; maxRetries: number; retryDelay: number }
+  ): Promise<any> {
+    const nodeContext = this.buildNodeContext(state, threadId);
+    const canExecute = await this.nodeExecutor.canExecute(node, nodeContext);
+    
+    if (!canExecute) {
+      throw new Error(`节点 ${node.nodeId.toString()} 无法执行`);
+    }
+
+    // 如果有重试配置，使用带重试的执行
+    if (options.maxRetries > 0) {
+      return await this.nodeExecutor.execute(
+        node,
+        nodeContext
+      );
+    }
+
+    // 否则直接执行
+    return await this.nodeExecutor.execute(
+      node,
+      nodeContext
+    );
+  }
+
+  /**
+   * 处理节点执行错误（私有方法）
+   * @param error 错误
+   * @param node 节点
+   * @param threadId 线程ID
+   * @param workflow 工作流
+   * @param enableErrorRecovery 是否启用错误恢复
+   * @returns 是否成功处理错误
+   */
+  private async handleNodeExecutionError(
+    error: any,
+    node: any,
+    threadId: string,
+    workflow: Workflow,
+    enableErrorRecovery: boolean
+  ): Promise<boolean> {
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    const nodeId = node.nodeId.toString();
+
+    // 记录错误到状态
+    const currentState = this.stateManager.getState(threadId);
+    if (currentState) {
+      const errors = currentState.getData('errors') || [];
+      errors.push({
+        nodeId,
+        errorType: error instanceof Error ? error.constructor.name : 'Unknown',
+        message: errorMessage,
+        timestamp: new Date().toISOString()
+      });
+      this.stateManager.updateState(threadId, { errors });
+    }
+
+    // 如果启用了错误恢复，尝试查找错误处理边
+    if (enableErrorRecovery) {
+      const errorEdges = workflow.getOutgoingEdges(node.nodeId).filter(edge => edge.isError());
+      
+      if (errorEdges.length > 0) {
+        // 找到错误处理边，返回 true 表示已处理
+        return true;
+      }
+    }
+
+    // 没有错误处理机制，返回 false
+    return false;
   }
 
   /**

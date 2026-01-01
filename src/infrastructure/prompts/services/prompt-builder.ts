@@ -5,7 +5,6 @@
  * 专注于消息构建和上下文处理，模板处理委托给 TemplateProcessor
  * 这是提示词模块与工作流集成的唯一入口点
  *
- * 简化版：移除 options 参数，通过创建不同模板实现不同变体
  */
 
 import { injectable, inject } from 'inversify';
@@ -49,7 +48,7 @@ export class PromptBuilder {
     @inject('PromptRepository') private promptRepository: PromptRepository,
     @inject('TemplateProcessor') private templateProcessor: TemplateProcessor,
     @inject('ILogger') private readonly logger: ILogger
-  ) {}
+  ) { }
 
   /**
    * 构建提示词消息列表
