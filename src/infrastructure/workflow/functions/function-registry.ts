@@ -1,5 +1,6 @@
 import { injectable } from 'inversify';
-import { IWorkflowFunction, WorkflowFunctionType } from './types';
+import { IWorkflowFunction } from './types';
+import { WorkflowFunctionType } from '../../../domain/workflow/value-objects/function-type';
 
 /**
  * 函数类型映射接口
@@ -15,7 +16,7 @@ export interface TypedFunctionRegistry {
 
 /**
  * 函数注册表实现
- * 支持分层函数类型：CONDITION、ROUTING、TRIGGER、HOOK
+ * 支持分层函数类型：CONDITION、ROUTING、TRIGGER、HOOK等。见doamin层的定义。
  * 提供类型安全的函数注册和获取方法
  */
 @injectable()

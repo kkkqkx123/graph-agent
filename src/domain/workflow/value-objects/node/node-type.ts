@@ -6,8 +6,7 @@ import { ValueObject } from '../../../common/value-objects';
 export enum NodeTypeValue {
   START = 'start',
   END = 'end',
-  TASK = 'task',
-  DECISION = 'decision',
+  DATA_TRANSFORM = 'data-transform',
   MERGE = 'merge',
   FORK = 'fork',
   JOIN = 'join',
@@ -75,21 +74,12 @@ export class NodeType extends ValueObject<NodeTypeProps> {
   }
 
   /**
-   * 创建任务节点类型
-   * @param contextType 上下文类型（可选，默认为PASS_THROUGH）
-   * @returns 任务节点类型实例
+   * 创建数据转换节点类型
+   * @param contextType 上下文类型（可选，默认为TRANSFORM）
+   * @returns 数据转换节点类型实例
    */
-  public static task(contextType: NodeContextTypeValue = NodeContextTypeValue.PASS_THROUGH): NodeType {
-    return new NodeType({ value: NodeTypeValue.TASK, contextType });
-  }
-
-  /**
-   * 创建决策节点类型
-   * @param contextType 上下文类型（可选，默认为PASS_THROUGH）
-   * @returns 决策节点类型实例
-   */
-  public static decision(contextType: NodeContextTypeValue = NodeContextTypeValue.PASS_THROUGH): NodeType {
-    return new NodeType({ value: NodeTypeValue.DECISION, contextType });
+  public static dataTransform(contextType: NodeContextTypeValue = NodeContextTypeValue.TRANSFORM): NodeType {
+    return new NodeType({ value: NodeTypeValue.DATA_TRANSFORM, contextType });
   }
 
   /**
@@ -237,19 +227,11 @@ export class NodeType extends ValueObject<NodeTypeProps> {
   }
 
   /**
-   * 检查是否为任务节点
-   * @returns 是否为任务节点
+   * 检查是否为数据转换节点
+   * @returns 是否为数据转换节点
    */
-  public isTask(): boolean {
-    return this.props.value === NodeTypeValue.TASK;
-  }
-
-  /**
-   * 检查是否为决策节点
-   * @returns 是否为决策节点
-   */
-  public isDecision(): boolean {
-    return this.props.value === NodeTypeValue.DECISION;
+  public isDataTransform(): boolean {
+    return this.props.value === NodeTypeValue.DATA_TRANSFORM;
   }
 
   /**
@@ -337,7 +319,7 @@ export class NodeType extends ValueObject<NodeTypeProps> {
    * @returns 是否为控制流节点
    */
   public isControlFlow(): boolean {
-    return this.isStart() || this.isEnd() || this.isDecision() ||
+    return this.isStart() || this.isEnd() || this.isCondition() ||
       this.isMerge() || this.isFork() || this.isJoin();
   }
 
@@ -346,7 +328,7 @@ export class NodeType extends ValueObject<NodeTypeProps> {
    * @returns 是否为执行节点
    */
   public isExecutable(): boolean {
-    return this.isTask() || this.isSubworkflow() || this.isCustom() ||
+    return this.isDataTransform() || this.isSubworkflow() || this.isCustom() ||
       this.isCondition() || this.isLLM() || this.isTool() || this.isWait() || this.isUserInteraction();
   }
 
@@ -363,7 +345,7 @@ export class NodeType extends ValueObject<NodeTypeProps> {
    * @returns 是否可以有多个输出边
    */
   public canHaveMultipleOutputs(): boolean {
-    return this.isDecision() || this.isFork() || this.isStart() || this.isCondition();
+    return this.isCondition() || this.isFork() || this.isStart();
   }
 
   /**
@@ -415,8 +397,7 @@ export class NodeType extends ValueObject<NodeTypeProps> {
     const descriptions: Record<NodeTypeValue, string> = {
       [NodeTypeValue.START]: '开始节点，表示图的入口点',
       [NodeTypeValue.END]: '结束节点，表示图的出口点',
-      [NodeTypeValue.TASK]: '任务节点，表示具体的执行任务',
-      [NodeTypeValue.DECISION]: '决策节点，根据条件选择执行路径',
+      [NodeTypeValue.DATA_TRANSFORM]: '数据转换节点，执行数据转换操作（map、filter、reduce、sort、group）',
       [NodeTypeValue.MERGE]: '合并节点，合并多个输入路径',
       [NodeTypeValue.FORK]: '分支节点，分支出多个执行路径',
       [NodeTypeValue.JOIN]: '连接节点，等待多个输入路径完成',

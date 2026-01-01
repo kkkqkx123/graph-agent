@@ -1,22 +1,8 @@
 /**
  * 工作流函数类型枚举
+ * 从领域层重新导出，保持单一数据源
  */
-export enum WorkflowFunctionType {
-  /** 节点函数：执行具体业务逻辑 */
-  NODE = 'node',
-  /** 条件函数：判断条件是否满足 */
-  CONDITION = 'condition',
-  /** 路由函数：决定执行路径 */
-  ROUTING = 'routing',
-  /** 触发器函数：触发特定事件 */
-  TRIGGER = 'trigger',
-  /** 钩子函数：在特定时机执行的回调 */
-  HOOK = 'hook',
-  /** 上下文处理器函数：处理上下文变量 */
-  CONTEXT_PROCESSOR = 'context_processor',
-  /** 转换函数：数据转换（预留） */
-  TRANSFORM = 'transform'
-}
+export { WorkflowFunctionType } from '../../../domain/workflow/value-objects/function-type';
 
 /**
  * 函数参数接口

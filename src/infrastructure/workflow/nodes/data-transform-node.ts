@@ -22,7 +22,7 @@ export class DataTransformNode extends Node {
   ) {
     super(
       id,
-      NodeType.task(NodeContextTypeValue.TRANSFORM),
+      NodeType.dataTransform(NodeContextTypeValue.TRANSFORM),
       name,
       description,
       position

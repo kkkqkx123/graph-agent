@@ -85,13 +85,8 @@ export class NodeFactory {
       case NodeTypeValue.CONDITION:
         return this.createConditionNode(nodeId, config);
 
-      case NodeTypeValue.TASK:
-        // 如果是TASK类型且有transformType，则创建数据转换节点
-        if (config.transformType) {
-          return this.createDataTransformNode(nodeId, config);
-        }
-        // 否则创建通用任务节点（暂未实现）
-        throw new Error(`通用任务节点暂未实现`);
+      case NodeTypeValue.DATA_TRANSFORM:
+        return this.createDataTransformNode(nodeId, config);
 
       default:
         throw new Error(`不支持的节点类型: ${type}`);
@@ -230,7 +225,7 @@ export class NodeFactory {
       NodeTypeValue.LLM,
       NodeTypeValue.TOOL,
       NodeTypeValue.CONDITION,
-      NodeTypeValue.TASK
+      NodeTypeValue.DATA_TRANSFORM
     ];
   }
 }

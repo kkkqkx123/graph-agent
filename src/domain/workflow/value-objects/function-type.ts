@@ -9,5 +9,5 @@ export enum WorkflowFunctionType {
   TRIGGER = 'trigger',     // 触发器函数：触发特定事件
   HOOK = 'hook',           // 钩子函数：在特定时机执行的回调
   CONTEXT_PROCESSOR = 'context_processor', // 上下文处理器函数：处理上下文变量
-  TRANSFORM = 'transform'  // 转换函数：数据转换（预留）
+  DATA_TRANSFORM = 'data-transform'  // 转换函数：数据转换（预留）
 }
