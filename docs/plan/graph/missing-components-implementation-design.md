@@ -78,22 +78,24 @@
 
 **实现位置**：`src/infrastructure/workflow/nodes/wait/`
 
-### 5. 人工中继节点（HUMAN_RELAY）
+### 5. 用户交互节点（USER_INTERACTION）
 
-**当前状态**：领域层定义了 `HUMAN_RELAY` 节点类型，但基础设施层缺少实现。
+**当前状态**：领域层定义了 `USER_INTERACTION` 节点类型（原HUMAN_RELAY），但基础设施层缺少实现。
 
 **设计思路**：
-- **HumanRelayNode**：
-  - 暂停工作流执行，等待人工输入
-  - 支持多种交互方式（表单、审批、通知）
+- **UserInteractionNode**：
+  - 暂停工作流执行，等待用户输入
+  - 支持多种交互方式（表单、审批、通知、对话）
   - 实现超时和重试机制
+  - 支持多轮对话和上下文保持
 
 **关键技术**：
-- 人工任务队列管理
+- 用户任务队列管理
 - 通知机制集成
 - 超时处理
+- 对话状态管理
 
-**实现位置**：`src/infrastructure/workflow/nodes/human-relay/`
+**实现位置**：`src/infrastructure/workflow/nodes/user-interaction/`
 
 ## 边执行器改进
 
@@ -154,7 +156,7 @@
 
 ### 低优先级（高级功能）
 1. **等待节点** - 支持异步操作
-2. **人工中继节点** - 支持人机协作
+2. **用户交互节点** - 支持人机协作
 
 ## 技术考虑
 

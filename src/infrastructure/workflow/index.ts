@@ -2,5 +2,4 @@
 export * from './edges';
 export * from './functions';
 export * from './hooks';
-export * from './plugins';
 export * from './triggers';

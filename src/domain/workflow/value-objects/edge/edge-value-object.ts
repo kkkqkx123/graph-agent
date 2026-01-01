@@ -4,6 +4,7 @@ import { EdgeType } from './edge-type';
 import { NodeId } from '../node/node-id';
 import { EdgeContextFilter } from '../context/edge-context-filter';
 import { PromptContext } from '../context/prompt-context';
+import { ExecutionContext } from '../../../threads/value-objects/execution-context';
 
 /**
  * 边值对象属性接口
@@ -181,6 +182,109 @@ export class EdgeValueObject extends ValueObject<EdgeValueObjectProps> {
    */
   public isTimeout(): boolean {
     return this.props.type.isTimeout();
+  }
+
+  /**
+   * 评估边的条件
+   *
+   * @param context 执行上下文
+   * @param expressionEvaluator 表达式评估器（可选，用于测试）
+   * @returns 评估结果
+   */
+  public async evaluateCondition(
+    context: ExecutionContext,
+    expressionEvaluator?: any
+  ): Promise<{ satisfied: boolean; error?: string }> {
+    // 如果不需要条件评估，默认满足
+    if (!this.requiresConditionEvaluation()) {
+      return { satisfied: true };
+    }
+
+    // 如果没有条件表达式，默认满足
+    const condition = this.getConditionExpression();
+    if (!condition) {
+      return { satisfied: true };
+    }
+
+    try {
+      // 使用提供的表达式评估器或默认的评估逻辑
+      if (expressionEvaluator) {
+        const result = await expressionEvaluator.evaluate(condition, Object.fromEntries(context.variables));
+        return {
+          satisfied: result.success && Boolean(result.value),
+          error: result.success ? undefined : result.error
+        };
+      } else {
+        // 简单的评估逻辑（可以后续替换为更复杂的实现）
+        const variables = Object.fromEntries(context.variables);
+        const result = this.evaluateSimpleCondition(condition, variables);
+        return { satisfied: result };
+      }
+    } catch (error) {
+      return {
+        satisfied: false,
+        error: error instanceof Error ? error.message : String(error)
+      };
+    }
+  }
+
+  /**
+   * 简单的条件评估（内部方法）
+   *
+   * @param condition 条件表达式
+   * @param variables 变量映射
+   * @returns 评估结果
+   */
+  private evaluateSimpleCondition(condition: string, variables: Record<string, any>): boolean {
+    try {
+      // 创建安全的评估函数
+      const func = new Function('context', `
+        'use strict';
+        with(context) {
+          try {
+            return (${condition});
+          } catch (error) {
+            return false;
+          }
+        }
+      `);
+      return func(variables);
+    } catch (error) {
+      return false;
+    }
+  }
+
+  /**
+   * 获取边的优先级
+   * 根据边的权重和类型计算优先级
+   *
+   * @returns 优先级（数值越大优先级越高）
+   */
+  public getPriority(): number {
+    let priority = 0;
+
+    // 权重影响优先级
+    if (this.props.weight !== undefined) {
+      priority += this.props.weight;
+    }
+
+    // 边类型影响优先级
+    const edgeType = this.props.type.toString();
+    switch (edgeType) {
+      case 'default':
+        priority += 10;
+        break;
+      case 'conditional':
+        priority += 20;
+        break;
+      case 'error':
+        priority += 30;
+        break;
+      default:
+        priority += 10;
+    }
+
+    return priority;
   }
 
   /**

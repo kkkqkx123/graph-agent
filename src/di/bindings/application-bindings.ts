@@ -16,20 +16,6 @@ import { ThreadLifecycleService } from '../../application/threads/services/threa
 import { ThreadExecutionService } from '../../application/threads/services/thread-execution-service';
 import { ThreadMonitoringService } from '../../application/threads/services/thread-monitoring-service';
 
-// Domain层接口
-import { SessionRepository } from '../../domain/sessions/repositories/session-repository';
-import { ThreadRepository } from '../../domain/threads/repositories/thread-repository';
-import { WorkflowRepository } from '../../domain/workflow/repositories/workflow-repository';
-import { PromptRepository } from '../../domain/prompts/repositories/prompt-repository';
-import { ThreadCheckpointRepository } from '../../domain/threads/checkpoints/repositories/thread-checkpoint-repository';
-import { GraphAlgorithmService } from '../../infrastructure/workflow/services/graph-algorithm-service';
-import { GraphValidationService } from '../../infrastructure/workflow/services/graph-validation-service';
-import { ContextProcessorService } from '../../infrastructure/workflow/services/context-processor-service';
-import { IHumanRelayService } from '../../application/llm/services/human-relay-service';
-
-// Infrastructure层服务
-import { WorkflowExecutionEngine } from '../../infrastructure/workflow/services/workflow-execution-engine';
-
 /**
  * Application层绑定模块
  */

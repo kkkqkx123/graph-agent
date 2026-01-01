@@ -30,7 +30,6 @@ import { PromptReferenceParser } from '../../infrastructure/prompts/services/pro
 import { PromptReferenceValidator } from '../../infrastructure/prompts/services/prompt-reference-validator';
 import { NodeExecutor } from '../../infrastructure/workflow/nodes/node-executor';
 import { EdgeExecutor } from '../../infrastructure/workflow/edges/edge-executor';
-import { EdgeEvaluator } from '../../infrastructure/workflow/services/edge-evaluator';
 import { NodeRouter } from '../../infrastructure/workflow/services/node-router';
 import { WorkflowExecutionEngine } from '../../infrastructure/workflow/services/workflow-execution-engine';
 import { HookExecutor } from '../../infrastructure/workflow/hooks/hook-executor';
@@ -67,7 +66,6 @@ export const infrastructureBindings = new ContainerModule((bind: any) => {
   bind(TYPES.PromptReferenceValidator).to(PromptReferenceValidator).inSingletonScope();
   bind(TYPES.NodeExecutor).to(NodeExecutor).inSingletonScope();
   bind(TYPES.EdgeExecutor).to(EdgeExecutor).inSingletonScope();
-  bind(TYPES.EdgeEvaluator).to(EdgeEvaluator).inSingletonScope();
   bind(TYPES.NodeRouter).to(NodeRouter).inSingletonScope();
   bind(TYPES.WorkflowExecutionEngine).to(WorkflowExecutionEngine).inSingletonScope();
   bind(TYPES.HookExecutor).to(HookExecutor).inSingletonScope();

@@ -15,7 +15,7 @@ import { injectable, inject } from 'inversify';
 import { Workflow } from '../../../domain/workflow/entities/workflow';
 import { NodeId } from '../../../domain/workflow/value-objects';
 import { ExecutionContext } from '../../../domain/threads/value-objects/execution-context';
-import { EdgeEvaluator } from './edge-evaluator';
+import { ExpressionEvaluator } from './expression-evaluator';
 import { NodeRouter } from './node-router';
 import { NodeExecutor } from '../nodes/node-executor';
 import { ILogger } from '../../../domain/common/types/logger-types';
@@ -61,18 +61,18 @@ export interface RoutingDecision {
  */
 @injectable()
 export class WorkflowExecutionEngine {
-  private readonly edgeEvaluator: EdgeEvaluator;
+  private readonly expressionEvaluator: ExpressionEvaluator;
   private readonly nodeRouter: NodeRouter;
   private readonly nodeExecutor: NodeExecutor;
   private readonly logger: ILogger;
 
   constructor(
-    @inject('EdgeEvaluator') edgeEvaluator: EdgeEvaluator,
+    @inject('ExpressionEvaluator') expressionEvaluator: ExpressionEvaluator,
     @inject('NodeRouter') nodeRouter: NodeRouter,
     @inject('NodeExecutor') nodeExecutor: NodeExecutor,
     @inject('Logger') logger: ILogger
   ) {
-    this.edgeEvaluator = edgeEvaluator;
+    this.expressionEvaluator = expressionEvaluator;
     this.nodeRouter = nodeRouter;
     this.nodeExecutor = nodeExecutor;
     this.logger = logger;
@@ -194,10 +194,13 @@ export class WorkflowExecutionEngine {
     }
 
     // 评估所有出边
-    const satisfiedEdges = await this.edgeEvaluator.getSatisfiedEdges(
-      outgoingEdges,
-      context
-    );
+    const satisfiedEdges: typeof outgoingEdges = [];
+    for (const edge of outgoingEdges) {
+      const result = await edge.evaluateCondition(context, this.expressionEvaluator);
+      if (result.satisfied) {
+        satisfiedEdges.push(edge);
+      }
+    }
 
     if (satisfiedEdges.length === 0) {
       return {
@@ -207,7 +210,9 @@ export class WorkflowExecutionEngine {
     }
 
     // 按优先级排序
-    const sortedEdges = this.edgeEvaluator.sortEdgesByPriority(satisfiedEdges);
+    const sortedEdges = [...satisfiedEdges].sort((a, b) => {
+      return b.getPriority() - a.getPriority(); // 降序排列
+    });
 
     // 返回第一个满足条件的边的目标节点
     const selectedEdge = sortedEdges[0];

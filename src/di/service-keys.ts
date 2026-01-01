@@ -44,7 +44,6 @@ import { PromptReferenceParser } from '../infrastructure/prompts/services/prompt
 import { PromptReferenceValidator } from '../infrastructure/prompts/services/prompt-reference-validator';
 import { NodeExecutor } from '../infrastructure/workflow/nodes/node-executor';
 import { EdgeExecutor } from '../infrastructure/workflow/edges/edge-executor';
-import { EdgeEvaluator } from '../infrastructure/workflow/services/edge-evaluator';
 import { NodeRouter } from '../infrastructure/workflow/services/node-router';
 import { WorkflowExecutionEngine } from '../infrastructure/workflow/services/workflow-execution-engine';
 import { HookExecutor } from '../infrastructure/workflow/hooks/hook-executor';
@@ -111,7 +110,6 @@ export interface ServiceTypes {
   PromptReferenceValidator: PromptReferenceValidator;
   NodeExecutor: NodeExecutor;
   EdgeExecutor: EdgeExecutor;
-  EdgeEvaluator: EdgeEvaluator;
   NodeRouter: NodeRouter;
   WorkflowExecutionEngine: WorkflowExecutionEngine;
   ThreadExecutionEngine: any;
@@ -207,7 +205,6 @@ export const TYPES: {
   PromptReferenceValidator: Symbol.for('PromptReferenceValidator') as TypedServiceIdentifier<'PromptReferenceValidator'>,
   NodeExecutor: Symbol.for('NodeExecutor') as TypedServiceIdentifier<'NodeExecutor'>,
   EdgeExecutor: Symbol.for('EdgeExecutor') as TypedServiceIdentifier<'EdgeExecutor'>,
-  EdgeEvaluator: Symbol.for('EdgeEvaluator') as TypedServiceIdentifier<'EdgeEvaluator'>,
   NodeRouter: Symbol.for('NodeRouter') as TypedServiceIdentifier<'NodeRouter'>,
   WorkflowExecutionEngine: Symbol.for('WorkflowExecutionEngine') as TypedServiceIdentifier<'WorkflowExecutionEngine'>,
   ThreadExecutionEngine: Symbol.for('ThreadExecutionEngine') as TypedServiceIdentifier<'ThreadExecutionEngine'>,
