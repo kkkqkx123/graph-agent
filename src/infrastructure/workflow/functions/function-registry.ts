@@ -4,7 +4,6 @@ import { IWorkflowFunction } from './types';
 /**
  * 函数注册表实现
  * 支持分层函数类型：CONDITION、ROUTING、TRIGGER、HOOK
- * 注意：NODE类型已不再使用此注册表，改用直接类型实现
  */
 @injectable()
 export class FunctionRegistry {

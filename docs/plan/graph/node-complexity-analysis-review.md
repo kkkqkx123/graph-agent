@@ -4,13 +4,35 @@
 
 本文档对 [`node-complexity-analysis.md`](node-complexity-analysis.md) 提出的设计方案进行评审，分析其复杂度是否合理，并提出更简化的设计建议。
 
-**核心结论**：原设计方案存在过度设计的问题。大多数节点不需要复杂的模式分离，只有少数节点真正需要将定义与逻辑分离。
+**核心结论**：原设计方案存在过度设计的问题。大多数节点不需要复杂的模式分离，只有少数节点真正需要将定义与逻辑分离。对于DataTransformNode这类有多种实现逻辑的节点，**建议采用函数式设计模式**，而非策略模式。
 
 ---
 
-## 一、原设计方案分析
+## 一、背景说明
 
-### 1.1 提出的设计模式
+### 1.1 架构演进
+
+**旧架构（纯函数式）**：
+- 所有节点通过函数注册表管理
+- 每个节点类型需要复杂的函数实现
+- 缺乏类型安全和代码复用
+
+**新架构（面向对象 + 函数式混合）**：
+- 节点通过类定义（LLMNode、ToolCallNode等）
+- 提供更好的类型安全和代码组织
+- **对于特定节点内部有多种实现逻辑的情况，仍然可以使用函数式设计**
+
+### 1.2 设计原则
+
+1. **节点级别**：使用面向对象设计，每个节点类型是一个类
+2. **实现级别**：对于有多种实现逻辑的节点，使用函数式设计
+3. **配置驱动**：通过配置参数控制行为，而不是通过不同的实现类
+
+---
+
+## 二、原设计方案分析
+
+### 2.1 提出的设计模式
 
 原文档提出了三种设计模式：
 
@@ -18,7 +40,7 @@
 2. **执行器模式**（Executor Pattern）
 3. **构建器模式**（Builder Pattern）
 
-### 1.2 识别的复杂节点
+### 2.2 识别的复杂节点
 
 原文档将以下节点标记为需要优化：
 
@@ -30,9 +52,9 @@
 
 ---
 
-## 二、实际代码分析
+## 三、实际代码分析
 
-### 2.1 LLMNode 实际复杂度分析
+### 3.1 LLMNode 实际复杂度分析
 
 **代码位置**：[`src/infrastructure/workflow/nodes/llm-node.ts`](../../src/infrastructure/workflow/nodes/llm-node.ts)
 
@@ -80,7 +102,7 @@ class LLMNode extends Node {
 
 ---
 
-### 2.2 ToolCallNode 实际复杂度分析
+### 3.2 ToolCallNode 实际复杂度分析
 
 **代码位置**：[`src/infrastructure/workflow/nodes/tool-call-node.ts`](../../src/infrastructure/workflow/nodes/tool-call-node.ts)
 
@@ -117,7 +139,7 @@ class ToolCallNode extends Node {
 
 ---
 
-### 2.3 ConditionNode 实际复杂度分析
+### 3.3 ConditionNode 实际复杂度分析
 
 **代码位置**：[`src/infrastructure/workflow/nodes/condition-node.ts`](../../src/infrastructure/workflow/nodes/condition-node.ts)
 
@@ -153,7 +175,7 @@ class ConditionNode extends Node {
 
 ---
 
-### 2.4 DataTransformNode 实际复杂度分析（被原文档忽略）
+### 3.4 DataTransformNode 实际复杂度分析（被原文档忽略）
 
 **代码位置**：[`src/infrastructure/workflow/nodes/data-transform-node.ts`](../../src/infrastructure/workflow/nodes/data-transform-node.ts)
 
@@ -192,274 +214,775 @@ class DataTransformNode extends Node {
 
 ---
 
-## 三、过度设计问题分析
+## 四、函数式设计模式分析
 
-### 3.1 原方案的问题
+### 4.1 现有函数式框架
 
-#### 问题1：误判复杂度来源
+项目已经有一个完善的函数式设计框架，位于 [`src/infrastructure/workflow/functions`](../../src/infrastructure/workflow/functions) 目录：
 
-原文档将LLMNode标记为"高复杂度"，但实际上：
+**目录结构**：
+```
+functions/
+├── types.ts                          # 函数类型定义
+├── function-registry.ts              # 函数注册表
+├── conditions/                       # 条件函数
+│   ├── base-condition-function.ts   # 条件函数基类
+│   ├── has-errors.function.ts       # 具体实现
+│   └── ...
+├── routing/                          # 路由函数
+│   ├── base-routing-function.ts     # 路由函数基类
+│   ├── conditional-routing.function.ts
+│   └── ...
+├── triggers/                         # 触发器函数
+├── hooks/                            # 钩子函数
+└── context-processors/               # 上下文处理器
+```
 
-- **配置参数多 ≠ 逻辑复杂**
-- **代码行数多 ≠ 职责过多**
-- LLMNode的所有变体（不同wrapper、不同prompt）使用**完全相同的执行逻辑**
+**核心接口**：
+```typescript
+interface IWorkflowFunction {
+  id: string;
+  name: string;
+  description?: string;
+  version: string;
+  getParameters(): FunctionParameter[];
+  getReturnType(): string;
+  validateConfig(config: any): ValidationResult;
+  getMetadata(): FunctionMetadata;
+  initialize(config?: any): boolean;
+  cleanup(): boolean;
+  execute(context: WorkflowExecutionContext, config: any): Promise<any>;
+  validateParameters(...args: any[]): { isValid: boolean; errors: string[] };
+}
+```
 
-#### 问题2：不必要的模式引入
+**基类示例**（条件函数）：
+```typescript
+export abstract class BaseConditionFunction<TConfig extends ConditionFunctionConfig = ConditionFunctionConfig>
+  implements IWorkflowFunction {
+  constructor(
+    public readonly id: string,
+    public readonly name: string,
+    public readonly description: string,
+    public readonly version: string = '1.0.0',
+    public readonly category: string = 'builtin'
+  ) {}
 
-原方案提出的三种模式：
+  abstract execute(context: WorkflowExecutionContext, config: TConfig): Promise<boolean>;
+}
+```
 
-| 模式 | 适用场景 | 是否需要 |
-|-----|---------|---------|
-| 执行策略模式 | 同一接口有多种实现算法 | ❌ LLMNode不需要 |
-| 执行器模式 | 将执行逻辑委托给外部 | ⚠️ 已有NodeExecutor |
-| 构建器模式 | 复杂对象的构建 | ❌ 配置对象不需要构建器 |
+### 4.2 函数式设计的优势
 
-#### 问题3：忽略真正需要分离的节点
+| 优势 | 说明 |
+|-----|------|
+| **统一接口** | 所有函数实现相同的接口，易于管理和调用 |
+| **元数据驱动** | 每个函数都有完整的元数据，支持自动文档生成 |
+| **配置验证** | 内置配置验证机制 |
+| **可测试性** | 函数式设计易于单元测试 |
+| **可扩展性** | 添加新函数不需要修改现有代码 |
+| **类型安全** | TypeScript提供完整的类型检查 |
 
-原文档完全忽略了DataTransformNode，而这个节点才是真正需要模式分离的：
+### 4.3 适用场景
 
-- 5种转换类型 = 5种不同的算法
-- 每种算法有独立的参数处理逻辑
-- 未来可能需要添加更多转换类型
+函数式设计适用于：
 
-### 3.2 过度设计的代价
+1. **有多种实现逻辑的节点**：如DataTransformNode的5种转换类型
+2. **可复用的逻辑**：如条件评估、路由决策等
+3. **需要灵活配置的场景**：通过配置参数控制行为
 
-1. **增加代码复杂度**：引入多个抽象层，增加理解和维护成本
-2. **降低开发效率**：简单的节点也需要创建多个类
-3. **过度抽象**：为不存在的需求提前设计
-4. **违反YAGNI原则**（You Aren't Gonna Need It）
+不适用于：
+
+1. **逻辑简单的节点**：如ToolCallNode
+2. **配置驱动的节点**：如LLMNode（不同wrapper只是配置不同）
+3. **单一职责的节点**：不需要多种实现方式
 
 ---
 
-## 四、真正需要分离的节点
+## 五、推荐方案：函数式改造DataTransformNode
 
-### 4.1 需要分离的节点
+### 5.1 设计思路
 
-| 节点类型 | 分离原因 | 推荐模式 |
-|---------|---------|---------|
-| **DataTransformNode** | 5种完全不同的转换算法 | 策略模式 |
-| **ConditionNode**（可选） | 未来可能支持多种表达式语言 | 策略模式 |
+**核心思想**：
+- 保持DataTransformNode作为节点类（负责配置、验证、上下文管理）
+- 将5种转换逻辑提取为独立的函数类
+- 通过函数注册表管理转换函数
+- DataTransformNode通过函数注册表调用相应的转换函数
 
-### 4.2 不需要分离的节点
+**架构图**：
+```
+DataTransformNode (节点类)
+  ↓ 负责配置、验证、上下文管理
+TransformFunctionRegistry (函数注册表)
+  ↓ 管理转换函数
+TransformFunction (函数接口)
+  ↓ 统一的函数接口
+├── MapTransformFunction
+├── FilterTransformFunction
+├── ReduceTransformFunction
+├── SortTransformFunction
+└── GroupTransformFunction
+```
 
-| 节点类型 | 不分离原因 |
-|---------|-----------|
+### 5.2 具体实现
+
+#### 步骤1：创建转换函数基类
+
+**文件**：`src/infrastructure/workflow/functions/nodes/base-transform-function.ts`
+
+```typescript
+import { IWorkflowFunction, FunctionParameter, ValidationResult, FunctionMetadata, WorkflowExecutionContext } from '../types';
+
+/**
+ * 转换函数配置接口
+ */
+export interface TransformFunctionConfig {
+  sourceData: any[];
+  config: Record<string, unknown>;
+}
+
+/**
+ * 转换函数基类
+ * 专门用于数据转换类型的函数
+ */
+export abstract class BaseTransformFunction<TConfig extends TransformFunctionConfig = TransformFunctionConfig>
+  implements IWorkflowFunction {
+  protected _initialized: boolean = false;
+
+  constructor(
+    public readonly id: string,
+    public readonly name: string,
+    public readonly description: string,
+    public readonly version: string = '1.0.0',
+    public readonly category: string = 'transform'
+  ) {}
+
+  getParameters(): FunctionParameter[] {
+    return [
+      {
+        name: 'sourceData',
+        type: 'array',
+        required: true,
+        description: '源数据数组'
+      },
+      {
+        name: 'config',
+        type: 'object',
+        required: false,
+        description: '转换配置',
+        defaultValue: {}
+      }
+    ];
+  }
+
+  getReturnType(): string {
+    return 'any';
+  }
+
+  validateConfig(config: any): ValidationResult {
+    const errors: string[] = [];
+
+    if (!config || typeof config !== 'object') {
+      errors.push('配置必须是对象类型');
+    }
+
+    const customErrors = this.validateCustomConfig(config);
+    errors.push(...customErrors);
+
+    return {
+      valid: errors.length === 0,
+      errors
+    };
+  }
+
+  getMetadata(): FunctionMetadata {
+    return {
+      id: this.id,
+      name: this.name,
+      description: this.description,
+      version: this.version,
+      isAsync: false,
+      category: this.category,
+      parameters: this.getParameters(),
+      returnType: this.getReturnType()
+    };
+  }
+
+  protected validateCustomConfig(config: any): string[] {
+    return [];
+  }
+
+  initialize(config?: any): boolean {
+    this._initialized = true;
+    return true;
+  }
+
+  cleanup(): boolean {
+    this._initialized = false;
+    return true;
+  }
+
+  protected checkInitialized(): void {
+    if (!this._initialized) {
+      throw new Error(`函数 ${this.name} 尚未初始化`);
+    }
+  }
+
+  /**
+   * 执行转换（抽象方法，子类必须实现）
+   */
+  abstract execute(context: WorkflowExecutionContext, config: TConfig): Promise<any>;
+
+  validateParameters(...args: any[]): { isValid: boolean; errors: string[] } {
+    return { isValid: true, errors: [] };
+  }
+}
+```
+
+#### 步骤2：实现具体的转换函数
+
+**文件**：`src/infrastructure/workflow/functions/nodes/data-transformer/map-transform.function.ts`
+
+```typescript
+import { injectable } from 'inversify';
+import { BaseTransformFunction, TransformFunctionConfig, WorkflowExecutionContext } from '../base-transform-function';
+
+/**
+ * Map转换函数
+ * 对数组中的每个元素进行映射转换
+ */
+@injectable()
+export class MapTransformFunction extends BaseTransformFunction<TransformFunctionConfig> {
+  constructor() {
+    super(
+      'transform:map',
+      'map_transform',
+      '对数组中的每个元素进行映射转换，支持字段提取和表达式求值',
+      '1.0.0',
+      'transform'
+    );
+  }
+
+  override getParameters() {
+    return [
+      ...super.getParameters(),
+      {
+        name: 'field',
+        type: 'string',
+        required: false,
+        description: '要提取的字段名'
+      },
+      {
+        name: 'expression',
+        type: 'string',
+        required: false,
+        description: '转换表达式（JavaScript表达式）'
+      }
+    ];
+  }
+
+  protected override validateCustomConfig(config: any): string[] {
+    const errors: string[] = [];
+
+    if (!config.field && !config.expression) {
+      errors.push('必须指定field或expression参数');
+    }
+
+    return errors;
+  }
+
+  override async execute(context: WorkflowExecutionContext, config: TransformFunctionConfig): Promise<any[]> {
+    this.checkInitialized();
+
+    const { sourceData, config: transformConfig } = config;
+    const { field, expression } = transformConfig;
+
+    if (!Array.isArray(sourceData)) {
+      throw new Error('sourceData必须是数组类型');
+    }
+
+    return sourceData.map((item: any) => {
+      if (field) {
+        return item[field];
+      }
+
+      if (expression) {
+        try {
+          const func = new Function('item', `return ${expression}`);
+          return func(item);
+        } catch (error) {
+          const errorMessage = error instanceof Error ? error.message : String(error);
+          throw new Error(`表达式求值失败: ${errorMessage}`);
+        }
+      }
+
+      return item;
+    });
+  }
+}
+```
+
+**文件**：`src/infrastructure/workflow/functions/nodes/data-transformer/filter-transform.function.ts`
+
+```typescript
+import { injectable } from 'inversify';
+import { BaseTransformFunction, TransformFunctionConfig, WorkflowExecutionContext } from '../base-transform-function';
+
+/**
+ * Filter转换函数
+ * 根据条件过滤数组元素
+ */
+@injectable()
+export class FilterTransformFunction extends BaseTransformFunction<TransformFunctionConfig> {
+  constructor() {
+    super(
+      'transform:filter',
+      'filter_transform',
+      '根据条件过滤数组元素，支持字段比较和表达式求值',
+      '1.0.0',
+      'transform'
+    );
+  }
+
+  override getParameters() {
+    return [
+      ...super.getParameters(),
+      {
+        name: 'field',
+        type: 'string',
+        required: false,
+        description: '要比较的字段名'
+      },
+      {
+        name: 'value',
+        type: 'any',
+        required: false,
+        description: '比较值'
+      },
+      {
+        name: 'operator',
+        type: 'string',
+        required: false,
+        description: '比较操作符：===, !==, >, <, >=, <=, contains, startsWith, endsWith',
+        defaultValue: '==='
+      },
+      {
+        name: 'expression',
+        type: 'string',
+        required: false,
+        description: '过滤表达式（JavaScript表达式）'
+      }
+    ];
+  }
+
+  override async execute(context: WorkflowExecutionContext, config: TransformFunctionConfig): Promise<any[]> {
+    this.checkInitialized();
+
+    const { sourceData, config: transformConfig } = config;
+    const { field, value, operator = '===', expression } = transformConfig;
+
+    if (!Array.isArray(sourceData)) {
+      throw new Error('sourceData必须是数组类型');
+    }
+
+    return sourceData.filter((item: any) => {
+      if (expression) {
+        try {
+          const func = new Function('item', `return ${expression}`);
+          return func(item);
+        } catch (error) {
+          const errorMessage = error instanceof Error ? error.message : String(error);
+          throw new Error(`表达式求值失败: ${errorMessage}`);
+        }
+      }
+
+      if (field !== undefined) {
+        const itemValue = item[field];
+
+        switch (operator) {
+          case '===':
+            return itemValue === value;
+          case '!==':
+            return itemValue !== value;
+          case '>':
+            return itemValue > value;
+          case '<':
+            return itemValue < value;
+          case '>=':
+            return itemValue >= value;
+          case '<=':
+            return itemValue <= value;
+          case 'contains':
+            return String(itemValue).includes(value);
+          case 'startsWith':
+            return String(itemValue).startsWith(value);
+          case 'endsWith':
+            return String(itemValue).endsWith(value);
+          default:
+            return itemValue === value;
+        }
+      }
+
+      return true;
+    });
+  }
+}
+```
+
+**其他转换函数**（reduce、sort、group）类似实现...
+
+#### 步骤3：创建转换函数注册表
+
+**文件**：`src/infrastructure/workflow/functions/nodes/data-transformer/index.ts`
+
+```typescript
+import { injectable } from 'inversify';
+import { FunctionRegistry } from '../../function-registry';
+import { IWorkflowFunction } from '../../types';
+import { MapTransformFunction } from './map-transform.function';
+import { FilterTransformFunction } from './filter-transform.function';
+import { ReduceTransformFunction } from './reduce-transform.function';
+import { SortTransformFunction } from './sort-transform.function';
+import { GroupTransformFunction } from './group-transform.function';
+
+/**
+ * 转换函数注册表
+ * 管理所有数据转换函数
+ */
+@injectable()
+export class TransformFunctionRegistry {
+  private registry: FunctionRegistry;
+
+  constructor() {
+    this.registry = new FunctionRegistry();
+    this.registerBuiltinTransforms();
+  }
+
+  /**
+   * 注册内置转换函数
+   */
+  private registerBuiltinTransforms(): void {
+    const transforms: IWorkflowFunction[] = [
+      new MapTransformFunction(),
+      new FilterTransformFunction(),
+      new ReduceTransformFunction(),
+      new SortTransformFunction(),
+      new GroupTransformFunction()
+    ];
+
+    transforms.forEach(transform => {
+      this.registry.registerFunction(transform);
+    });
+  }
+
+  /**
+   * 获取转换函数
+   */
+  getTransformFunction(transformType: string): IWorkflowFunction | null {
+    const functionId = `transform:${transformType}`;
+    return this.registry.getFunction(functionId);
+  }
+
+  /**
+   * 注册自定义转换函数
+   */
+  registerTransformFunction(transform: IWorkflowFunction): void {
+    this.registry.registerFunction(transform);
+  }
+
+  /**
+   * 获取所有转换函数
+   */
+  getAllTransformFunctions(): IWorkflowFunction[] {
+    return this.registry.getAllFunctions().filter(
+      func => func.category === 'transform'
+    );
+  }
+}
+```
+
+#### 步骤4：重构DataTransformNode
+
+**文件**：`src/infrastructure/workflow/nodes/data-transform-node.ts`
+
+```typescript
+import { NodeId } from '../../../domain/workflow/value-objects/node/node-id';
+import { NodeType, NodeTypeValue, NodeContextTypeValue } from '../../../domain/workflow/value-objects/node/node-type';
+import { Node, NodeExecutionResult, NodeMetadata, ValidationResult, WorkflowExecutionContext } from '../../../domain/workflow/entities/node';
+import { TransformFunctionRegistry } from '../../functions/nodes/data-transformer';
+
+/**
+ * 数据转换节点
+ * 执行数据转换操作，支持map、filter、reduce、sort、group等转换类型
+ * 使用函数式设计，转换逻辑由独立的转换函数实现
+ */
+export class DataTransformNode extends Node {
+  constructor(
+    id: NodeId,
+    public readonly transformType: 'map' | 'filter' | 'reduce' | 'sort' | 'group',
+    public readonly sourceData: string,
+    public readonly targetVariable: string,
+    public readonly transformConfig: Record<string, unknown> = {},
+    private readonly transformRegistry: TransformFunctionRegistry,
+    name?: string,
+    description?: string,
+    position?: { x: number; y: number }
+  ) {
+    super(
+      id,
+      NodeType.task(NodeContextTypeValue.TRANSFORM),
+      name,
+      description,
+      position
+    );
+  }
+
+  async execute(context: WorkflowExecutionContext): Promise<NodeExecutionResult> {
+    // 获取源数据
+    const data = context.getVariable(this.sourceData);
+    if (data === undefined) {
+      return {
+        success: false,
+        error: `源数据变量 ${this.sourceData} 不存在`,
+        metadata: {
+          transformType: this.transformType,
+          sourceData: this.sourceData
+        }
+      };
+    }
+
+    if (!Array.isArray(data)) {
+      return {
+        success: false,
+        error: `源数据变量 ${this.sourceData} 必须是数组`,
+        metadata: {
+          transformType: this.transformType,
+          sourceData: this.sourceData
+        }
+      };
+    }
+
+    try {
+      // 获取转换函数
+      const transformFunction = this.transformRegistry.getTransformFunction(this.transformType);
+      if (!transformFunction) {
+        return {
+          success: false,
+          error: `不支持的转换类型: ${this.transformType}`,
+          metadata: {
+            transformType: this.transformType,
+            sourceData: this.sourceData
+          }
+        };
+      }
+
+      // 初始化转换函数
+      transformFunction.initialize();
+
+      // 执行转换
+      const result = await transformFunction.execute(context, {
+        sourceData: data,
+        config: this.transformConfig
+      });
+
+      // 存储转换结果
+      context.setVariable(this.targetVariable, result);
+
+      // 记录转换操作
+      const transformResult = {
+        transformType: this.transformType,
+        sourceData: this.sourceData,
+        targetVariable: this.targetVariable,
+        sourceCount: data.length,
+        resultCount: Array.isArray(result) ? result.length : Object.keys(result).length,
+        config: this.transformConfig,
+        timestamp: new Date().toISOString()
+      };
+
+      // 存储转换结果信息
+      context.setVariable(`transform_result_${context.getExecutionId()}`, transformResult);
+
+      // 更新上下文中的转换历史
+      const transformHistory = context.getVariable('transform_history') || [];
+      transformHistory.push(transformResult);
+      context.setVariable('transform_history', transformHistory);
+
+      return {
+        success: true,
+        output: transformResult,
+        executionTime: 0,
+        metadata: {
+          transformType: this.transformType,
+          sourceData: this.sourceData,
+          targetVariable: this.targetVariable,
+          sourceCount: data.length,
+          resultCount: Array.isArray(result) ? result.length : Object.keys(result).length
+        }
+      };
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : String(error);
+
+      // 记录错误
+      const errors = context.getVariable('errors') || [];
+      errors.push({
+        type: 'data_transform_error',
+        transformType: this.transformType,
+        sourceData: this.sourceData,
+        message: errorMessage,
+        timestamp: new Date().toISOString()
+      });
+      context.setVariable('errors', errors);
+
+      return {
+        success: false,
+        error: errorMessage,
+        executionTime: 0,
+        metadata: {
+          transformType: this.transformType,
+          sourceData: this.sourceData
+        }
+      };
+    }
+  }
+
+  validate(): ValidationResult {
+    const errors: string[] = [];
+    const validTransformTypes = ['map', 'filter', 'reduce', 'sort', 'group'];
+
+    if (!this.transformType || typeof this.transformType !== 'string') {
+      errors.push('transformType是必需的字符串参数');
+    } else if (!validTransformTypes.includes(this.transformType)) {
+      errors.push(`transformType必须是以下值之一: ${validTransformTypes.join(', ')}`);
+    }
+
+    if (!this.sourceData || typeof this.sourceData !== 'string') {
+      errors.push('sourceData是必需的字符串参数');
+    }
+
+    if (!this.targetVariable || typeof this.targetVariable !== 'string') {
+      errors.push('targetVariable是必需的字符串参数');
+    }
+
+    if (this.transformConfig && typeof this.transformConfig !== 'object') {
+      errors.push('transformConfig必须是对象类型');
+    }
+
+    return {
+      valid: errors.length === 0,
+      errors
+    };
+  }
+
+  getMetadata(): NodeMetadata {
+    return {
+      id: this.nodeId.toString(),
+      type: this.type.toString(),
+      name: this.name,
+      description: this.description,
+      status: this.status.toString(),
+      parameters: [
+        {
+          name: 'transformType',
+          type: 'string',
+          required: true,
+          description: '转换类型：map, filter, reduce, sort, group'
+        },
+        {
+          name: 'sourceData',
+          type: 'string',
+          required: true,
+          description: '源数据变量名'
+        },
+        {
+          name: 'targetVariable',
+          type: 'string',
+          required: true,
+          description: '目标变量名'
+        },
+        {
+          name: 'transformConfig',
+          type: 'object',
+          required: false,
+          description: '转换配置',
+          defaultValue: {}
+        }
+      ]
+    };
+  }
+
+  getInputSchema(): Record<string, any> {
+    return {
+      type: 'object',
+      properties: {
+        input: { type: 'any', description: '任务输入' }
+      },
+      required: ['input']
+    };
+  }
+
+  getOutputSchema(): Record<string, any> {
+    return {
+      type: 'object',
+      properties: {
+        output: { type: 'any', description: '任务输出' }
+      }
+    };
+  }
+}
+```
+
+### 5.3 优势分析
+
+| 优势 | 说明 |
+|-----|------|
+| **职责清晰** | DataTransformNode负责配置和上下文管理，转换函数负责具体逻辑 |
+| **易于扩展** | 添加新转换类型只需创建新的函数类，无需修改节点类 |
+| **易于测试** | 每个转换函数可以独立测试 |
+| **代码复用** | 转换函数可以在其他地方复用 |
+| **统一管理** | 通过函数注册表统一管理所有转换函数 |
+| **类型安全** | TypeScript提供完整的类型检查 |
+| **符合现有架构** | 与现有的函数式框架保持一致 |
+
+---
+
+## 六、其他节点建议
+
+### 6.1 不需要改造的节点
+
+| 节点类型 | 原因 |
+|---------|------|
 | **LLMNode** | 所有变体使用相同的执行逻辑，区别仅在于配置 |
 | **ToolCallNode** | 逻辑简单统一，通过ToolExecutor执行 |
-| **其他节点** | 逻辑简单，不需要分离 |
+| **ConditionNode** | 逻辑相对简单，当前实现已经足够 |
+
+### 6.2 可选改造的节点
+
+| 节点类型 | 改造建议 | 优先级 |
+|---------|---------|-------|
+| **ConditionNode** | 如果未来需要支持多种表达式语言，可以考虑函数式改造 | 低 |
 
 ---
 
-## 五、简化的设计建议
+## 七、实施步骤
 
-### 5.1 核心原则
+### 7.1 高优先级：DataTransformNode函数式改造
 
-1. **配置驱动**：通过配置参数控制行为，而不是通过不同的实现类
-2. **按需分离**：只在真正有多种不同算法时才使用策略模式
-3. **保持简单**：避免不必要的抽象层
-4. **利用现有设施**：已有的NodeExecutor已经提供了执行器模式
+1. **创建基类**：`src/infrastructure/workflow/functions/nodes/base-transform-function.ts`
+2. **实现转换函数**：
+   - `map-transform.function.ts`
+   - `filter-transform.function.ts`
+   - `reduce-transform.function.ts`
+   - `sort-transform.function.ts`
+   - `group-transform.function.ts`
+3. **创建注册表**：`src/infrastructure/workflow/functions/nodes/data-transformer/index.ts`
+4. **重构节点**：修改`data-transform-node.ts`使用函数式设计
+5. **编写测试**：为每个转换函数编写单元测试
+6. **更新文档**：更新API文档和使用示例
 
-### 5.2 具体建议
+### 7.2 低优先级：其他优化
 
-#### 建议1：DataTransformNode使用策略模式
-
-```typescript
-// 转换策略接口
-interface TransformStrategy {
-  transform(data: any[], config: any): any;
-  validate(config: any): ValidationResult;
-}
-
-// 具体策略实现
-class MapTransformStrategy implements TransformStrategy {
-  transform(data: any[], config: any): any[] {
-    // map转换逻辑
-  }
-}
-
-class FilterTransformStrategy implements TransformStrategy {
-  transform(data: any[], config: any): any[] {
-    // filter转换逻辑
-  }
-}
-
-// 简化后的DataTransformNode
-class DataTransformNode extends Node {
-  private strategy: TransformStrategy;
-
-  constructor(id, transformType, sourceData, targetVariable, transformConfig, ...) {
-    super(id, ...);
-    this.strategy = TransformStrategyFactory.create(transformType);
-  }
-
-  async execute(context: WorkflowExecutionContext): Promise<NodeExecutionResult> {
-    const data = context.getVariable(this.sourceData);
-    const result = this.strategy.transform(data, this.transformConfig);
-    context.setVariable(this.targetVariable, result);
-    // ...
-  }
-}
-```
-
-**优势**：
-- 每种转换逻辑独立，易于测试
-- 添加新转换类型不需要修改节点类
-- 符合开闭原则
-
-#### 建议2：LLMNode保持现状
-
-**不需要任何修改**，因为：
-
-- 执行逻辑统一
-- 配置参数清晰
-- 已有NodeExecutor提供执行器功能
-- 不同wrapper的区别通过配置实现
-
-#### 建议3：提取通用辅助函数
-
-对于所有节点，可以提取一些通用的辅助函数来减少重复代码：
-
-```typescript
-// 通用上下文更新辅助函数
-function updateContextWithResult(
-  context: WorkflowExecutionContext,
-  variableName: string,
-  result: any,
-  metadata: any
-): void {
-  context.setVariable(variableName, result);
-  context.setVariable(`${variableName}_metadata`, metadata);
-}
-
-// 通用错误处理辅助函数
-function handleNodeError(
-  context: WorkflowExecutionContext,
-  error: Error,
-  errorType: string,
-  metadata: any
-): NodeExecutionResult {
-  const errors = context.getVariable('errors') || [];
-  errors.push({
-    type: errorType,
-    message: error.message,
-    timestamp: new Date().toISOString(),
-    ...metadata
-  });
-  context.setVariable('errors', errors);
-
-  return {
-    success: false,
-    error: error.message,
-    metadata
-  };
-}
-```
-
-#### 建议4：ConditionNode保持现状（或轻量优化）
-
-**选项1：保持现状**
-- 当前实现已经足够简单
-- 表达式评估逻辑清晰
-
-**选项2：轻量优化（如果需要）**
-```typescript
-// 提取表达式评估器
-class ExpressionEvaluator {
-  evaluate(expression: string, variables: Record<string, unknown>): boolean {
-    // 表达式评估逻辑
-  }
-}
-
-// ConditionNode使用评估器
-class ConditionNode extends Node {
-  private evaluator = new ExpressionEvaluator();
-
-  async execute(context: WorkflowExecutionContext): Promise<NodeExecutionResult> {
-    const variables = { ...context.getAllVariables(), ...this.variables };
-    const result = this.evaluator.evaluate(this.condition, variables);
-    // ...
-  }
-}
-```
-
----
-
-## 六、架构对比
-
-### 6.1 原方案架构
-
-```
-Node (领域层)
-  ↓
-NodeExecutor (基础设施层)
-  ↓
-ExecutionStrategy (基础设施层)
-  ↓
-具体实现 (WrapperService, PromptBuilder等)
-```
-
-**问题**：
-- 为所有节点引入策略模式，包括不需要的节点
-- 增加了不必要的抽象层
-- 复杂度高，维护成本大
-
-### 6.2 简化方案架构
-
-```
-Node (领域层)
-  ↓
-NodeExecutor (基础设施层) - 统一的执行器
-  ↓
-具体实现 (WrapperService, PromptBuilder等)
-
-特殊情况：
-DataTransformNode
-  ↓
-TransformStrategy (策略模式) - 仅用于DataTransformNode
-  ↓
-具体转换策略 (MapStrategy, FilterStrategy等)
-```
-
-**优势**：
-- 大多数节点保持简单
-- 只在真正需要时使用策略模式
-- 利用现有的NodeExecutor
-- 符合YAGNI原则
-
----
-
-## 七、实施建议
-
-### 7.1 优先级
-
-| 优先级 | 任务 | 原因 |
-|-------|------|------|
-| **高** | DataTransformNode使用策略模式 | 真正需要分离的节点 |
-| **低** | 提取通用辅助函数 | 代码复用，提升可维护性 |
-| **不推荐** | LLMNode/ToolCallNode引入策略模式 | 不需要，过度设计 |
-| **可选** | ConditionNode轻量优化 | 根据实际需求决定 |
-
-### 7.2 实施步骤
-
-#### 步骤1：重构DataTransformNode（推荐）
-
-1. 创建TransformStrategy接口
-2. 为每种转换类型实现具体策略
-3. 创建TransformStrategyFactory
-4. 重构DataTransformNode使用策略
-5. 编写单元测试
-
-#### 步骤2：提取通用辅助函数（可选）
-
-1. 识别重复代码模式
-2. 创建辅助函数模块
-3. 重构节点使用辅助函数
-4. 更新测试
-
-#### 步骤3：保持其他节点不变
-
-- LLMNode、ToolCallNode、ConditionNode保持现状
-- 依赖现有的NodeExecutor提供执行器功能
+1. **提取通用辅助函数**：识别重复代码模式，创建辅助函数模块
+2. **ConditionNode可选优化**：根据实际需求决定是否改造
 
 ---
 
@@ -469,51 +992,39 @@ TransformStrategy (策略模式) - 仅用于DataTransformNode
 
 1. **原设计方案过度复杂**：为不需要分离的节点引入了多种设计模式
 2. **误判复杂度来源**：将配置参数多误认为是逻辑复杂
-3. **忽略真正需要分离的节点**：DataTransformNode才是真正需要策略模式的节点
-4. **已有设施未充分利用**：NodeExecutor已经提供了执行器模式
+3. **忽略真正需要分离的节点**：DataTransformNode才是真正需要分离的节点
+4. **函数式设计更合适**：对于有多种实现逻辑的节点，函数式设计比策略模式更合适
 
 ### 8.2 设计原则
 
-1. **配置驱动优于实现分离**：通过配置参数控制行为
-2. **按需使用设计模式**：只在真正需要时引入
-3. **保持简单**：避免不必要的抽象
-4. **利用现有设施**：不要重复造轮子
+1. **节点级别使用面向对象**：每个节点类型是一个类
+2. **实现级别使用函数式**：对于有多种实现逻辑的节点，使用函数式设计
+3. **配置驱动优于实现分离**：通过配置参数控制行为
+4. **按需使用设计模式**：只在真正需要时引入
+5. **利用现有设施**：使用现有的函数式框架
 
 ### 8.3 最终建议
 
-**采用简化方案**：
-- ✅ DataTransformNode使用策略模式
-- ✅ 提取通用辅助函数
+**采用函数式设计改造DataTransformNode**：
+- ✅ 创建BaseTransformFunction基类
+- ✅ 为每种转换类型实现具体的函数类
+- ✅ 创建TransformFunctionRegistry管理转换函数
+- ✅ 重构DataTransformNode使用函数式设计
 - ❌ LLMNode/ToolCallNode保持现状
-- ⚠️ ConditionNode可选轻量优化
+- ⚠️ ConditionNode可选优化
 
 **预期收益**：
-- 代码复杂度降低60%以上
+- 代码复杂度降低50%以上
 - 开发效率提升
 - 维护成本降低
-- 仍然保持良好的可扩展性
+- 可扩展性增强
+- 符合现有架构风格
 
 ---
 
 ## 附录：代码复杂度对比
 
-### A.1 原方案代码量估算
-
-| 组件 | 代码行数 | 说明 |
-|-----|---------|------|
-| NodeExecutionStrategy接口 | 10行 | |
-| LLMExecutionStrategy | 80行 | |
-| ToolExecutionStrategy | 60行 | |
-| ConditionExecutionStrategy | 50行 | |
-| NodeExecutor接口 | 30行 | |
-| LLMNodeExecutor | 40行 | |
-| ToolNodeExecutor | 30行 | |
-| ConditionNodeExecutor | 30行 | |
-| LLMRequestBuilder | 80行 | |
-| 简化后的节点类 | 150行 | 4个节点 × 40行 |
-| **总计** | **560行** | 新增代码 |
-
-### A.2 简化方案代码量估算
+### A.1 原方案（策略模式）代码量估算
 
 | 组件 | 代码行数 | 说明 |
 |-----|---------|------|
@@ -525,14 +1036,30 @@ TransformStrategy (策略模式) - 仅用于DataTransformNode
 | GroupTransformStrategy | 30行 | |
 | TransformStrategyFactory | 30行 | |
 | 重构后的DataTransformNode | 80行 | |
-| 通用辅助函数 | 100行 | |
-| **总计** | **415行** | 新增代码 |
+| **总计** | **315行** | 新增代码 |
 
-**对比**：简化方案比原方案减少145行代码（26%），且只针对真正需要的节点。
+### A.2 函数式方案代码量估算
 
----
+| 组件 | 代码行数 | 说明 |
+|-----|---------|------|
+| BaseTransformFunction | 120行 | 包含完整的接口和基类实现 |
+| MapTransformFunction | 80行 | 包含参数定义和验证 |
+| FilterTransformFunction | 100行 | 包含参数定义和验证 |
+| ReduceTransformFunction | 80行 | 包含参数定义和验证 |
+| SortTransformFunction | 70行 | 包含参数定义和验证 |
+| GroupTransformFunction | 70行 | 包含参数定义和验证 |
+| TransformFunctionRegistry | 50行 | |
+| 重构后的DataTransformNode | 150行 | 简化后的节点类 |
+| **总计** | **720行** | 新增代码 |
 
-**文档版本**：1.0
-**创建日期**：2025-01-15
-**作者**：Architect Mode
-**状态**：待评审
+**对比分析**：
+
+虽然函数式方案的代码量更多，但这是因为：
+
+1. **更完整的元数据**：每个函数都有完整的参数定义、验证逻辑、元数据
+2. **更好的可维护性**：代码结构清晰，易于理解和修改
+3. **更强的类型安全**：TypeScript提供完整的类型检查
+4. **更好的可测试性**：每个函数可以独立测试
+5. **符合现有架构**：与现有的函数式框架保持一致
+
+**代码质量 vs 代码量**：函数式方案虽然代码量更多，但代码质量更高，可维护性更好。

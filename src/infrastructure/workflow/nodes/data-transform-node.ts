@@ -1,22 +1,21 @@
 import { NodeId } from '../../../domain/workflow/value-objects/node/node-id';
 import { NodeType, NodeTypeValue, NodeContextTypeValue } from '../../../domain/workflow/value-objects/node/node-type';
 import { Node, NodeExecutionResult, NodeMetadata, ValidationResult, WorkflowExecutionContext } from '../../../domain/workflow/entities/node';
-import { TransformStrategyFactory } from './strategies/data-transformer/transform-strategy-factory';
+import { TransformFunctionRegistry } from '../functions/nodes/data-transformer';
 
 /**
  * 数据转换节点
  * 执行数据转换操作，支持map、filter、reduce、sort、group等转换类型
- * 使用策略模式将不同的转换逻辑分离到独立的策略类中
+ * 使用函数式设计，转换逻辑由独立的转换函数实现
  */
 export class DataTransformNode extends Node {
-  private strategy: any;
-
   constructor(
     id: NodeId,
     public readonly transformType: 'map' | 'filter' | 'reduce' | 'sort' | 'group',
     public readonly sourceData: string,
     public readonly targetVariable: string,
     public readonly transformConfig: Record<string, unknown> = {},
+    private readonly transformRegistry: TransformFunctionRegistry,
     name?: string,
     description?: string,
     position?: { x: number; y: number }
@@ -28,9 +27,6 @@ export class DataTransformNode extends Node {
       description,
       position
     );
-
-    // 创建转换策略实例
-    this.strategy = TransformStrategyFactory.create(this.transformType);
   }
 
   async execute(context: WorkflowExecutionContext): Promise<NodeExecutionResult> {
@@ -59,8 +55,27 @@ export class DataTransformNode extends Node {
     }
 
     try {
-      // 使用策略执行转换
-      const result = this.strategy.transform(data, this.transformConfig);
+      // 获取转换函数
+      const transformFunction = this.transformRegistry.getTransformFunction(this.transformType);
+      if (!transformFunction) {
+        return {
+          success: false,
+          error: `不支持的转换类型: ${this.transformType}`,
+          metadata: {
+            transformType: this.transformType,
+            sourceData: this.sourceData
+          }
+        };
+      }
+
+      // 初始化转换函数
+      transformFunction.initialize();
+
+      // 执行转换
+      const result = await transformFunction.execute(context, {
+        sourceData: data,
+        config: this.transformConfig
+      });
 
       // 存储转换结果
       context.setVariable(this.targetVariable, result);
@@ -124,35 +139,24 @@ export class DataTransformNode extends Node {
 
   validate(): ValidationResult {
     const errors: string[] = [];
+    const validTransformTypes = ['map', 'filter', 'reduce', 'sort', 'group'];
 
-    // 验证transformType
     if (!this.transformType || typeof this.transformType !== 'string') {
       errors.push('transformType是必需的字符串参数');
-    } else if (!TransformStrategyFactory.isSupported(this.transformType)) {
-      errors.push(`transformType必须是以下值之一: ${TransformStrategyFactory.getSupportedTypes().join(', ')}`);
+    } else if (!validTransformTypes.includes(this.transformType)) {
+      errors.push(`transformType必须是以下值之一: ${validTransformTypes.join(', ')}`);
     }
 
-    // 验证sourceData
     if (!this.sourceData || typeof this.sourceData !== 'string') {
       errors.push('sourceData是必需的字符串参数');
     }
 
-    // 验证targetVariable
     if (!this.targetVariable || typeof this.targetVariable !== 'string') {
       errors.push('targetVariable是必需的字符串参数');
     }
 
-    // 验证transformConfig
     if (this.transformConfig && typeof this.transformConfig !== 'object') {
       errors.push('transformConfig必须是对象类型');
-    }
-
-    // 使用策略验证配置
-    if (errors.length === 0) {
-      const strategyValidation = this.strategy.validate(this.transformConfig);
-      if (!strategyValidation.valid) {
-        errors.push(...strategyValidation.errors);
-      }
     }
 
     return {
