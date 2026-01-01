@@ -152,36 +152,63 @@ export class GeminiParameterMapper extends BaseParameterMapper {
    * 将 Gemini 响应映射为标准 LLM 响应格式
    */
   mapFromResponse(response: ProviderResponse, originalRequest: LLMRequest): LLMResponse {
-    const choice = response['choices']?.[0];
-    const usage = response['usage'];
+    // Gemini 使用 candidates 而不是 choices
+    const candidate = response['candidates']?.[0];
+    const usageMetadata = response['usageMetadata'];
 
-    if (!choice) {
-      throw new Error('Invalid Gemini response: no choices found');
+    if (!candidate) {
+      throw new Error('Invalid Gemini response: no candidates found');
     }
 
-    // 提取思考过程（如果存在）
-    let thoughts = undefined;
-    if (choice.message?.thoughts) {
-      thoughts = choice.message.thoughts;
+    // 提取内容
+    const content = candidate['content'];
+    let textContent = '';
+    if (content && content['parts']) {
+      // 提取文本内容
+      const textParts = content['parts'].filter((part: any) => part['text']);
+      textContent = textParts.map((part: any) => part['text']).join('');
+      
+      // 提取思考过程（如果存在）
+      const thoughtParts = content['parts'].filter((part: any) => part['thought']);
+      if (thoughtParts.length > 0) {
+        // 思考过程可以存储在metadata中
+      }
     }
+
+    // 解析token使用信息
+    const promptTokens = usageMetadata?.['promptTokenCount'] || 0;
+    const completionTokens = usageMetadata?.['candidatesTokenCount'] || 0;
+    const totalTokens = usageMetadata?.['totalTokenCount'] || 0;
+
+    // 构建元数据，保留原始API响应的详细信息
+    const metadata: Record<string, unknown> = {
+      model: response['model'],
+      responseId: response['id'] || response['name'],
+      provider: 'gemini',
+      // 保留原始详细信息用于调试和审计
+      usageMetadata: usageMetadata,
+      finishReason: candidate['finishReason'],
+      safetyRatings: candidate['safetyRatings']
+    };
 
     // 构建标准响应
     return LLMResponse.create(
       originalRequest.requestId,
       originalRequest.model,
       [{
-        index: choice.index || 0,
-        message: LLMMessage.createAssistant(choice.message.content || ''),
-        finish_reason: choice.finish_reason || 'stop'
+        index: candidate['index'] || 0,
+        message: LLMMessage.createAssistant(textContent),
+        finish_reason: candidate['finishReason'] || 'stop'
       }],
       {
-        promptTokens: usage?.prompt_tokens || 0,
-        completionTokens: usage?.completion_tokens || 0,
-        totalTokens: usage?.total_tokens || 0,
-        reasoningTokens: usage?.reasoning_tokens || 0
+        promptTokens,
+        completionTokens,
+        totalTokens,
+        metadata
       },
-      choice.finish_reason || 'stop',
-      0 // duration - would need to be calculated
+      candidate['finishReason'] || 'stop',
+      0, // duration - would need to be calculated
+      { metadata }
     );
   }
 }

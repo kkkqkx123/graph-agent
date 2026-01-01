@@ -120,12 +120,37 @@ export class AnthropicParameterMapper extends BaseParameterMapper {
    * 将 Anthropic 响应映射为标准 LLM 响应格式
    */
   mapFromResponse(response: ProviderResponse, originalRequest: LLMRequest): LLMResponse {
-    const content = response['content']?.[0]?.['text'] || '';
+    const content = response['content'];
     const usage = response['usage'];
 
-    if (!content && !response['content']) {
+    if (!content || content.length === 0) {
       throw new Error('Invalid Anthropic response: no content found');
     }
+
+    // 提取文本内容
+    let textContent = '';
+    const textBlocks = content.filter((block: any) => block['type'] === 'text');
+    if (textBlocks.length > 0) {
+      textContent = textBlocks.map((block: any) => block['text']).join('');
+    }
+
+    // 解析token使用信息
+    const promptTokens = usage?.['input_tokens'] || 0;
+    const completionTokens = usage?.['output_tokens'] || 0;
+    const totalTokens = promptTokens + completionTokens;
+
+    // 构建元数据，保留原始API响应的详细信息
+    const metadata: Record<string, unknown> = {
+      model: response['model'],
+      responseId: response['id'],
+      provider: 'anthropic',
+      // 保留原始详细信息用于调试和审计
+      usage: usage,
+      stopReason: response['stop_reason'],
+      stopSequence: response['stop_sequence'],
+      type: response['type'],
+      role: response['role']
+    };
 
     // 构建标准响应
     return LLMResponse.create(
@@ -133,16 +158,18 @@ export class AnthropicParameterMapper extends BaseParameterMapper {
       originalRequest.model,
       [{
         index: 0,
-        message: LLMMessage.createAssistant(content),
+        message: LLMMessage.createAssistant(textContent),
         finish_reason: response['stop_reason'] || 'stop'
       }],
       {
-        promptTokens: usage?.input_tokens || 0,
-        completionTokens: usage?.output_tokens || 0,
-        totalTokens: (usage?.input_tokens || 0) + (usage?.output_tokens || 0)
+        promptTokens,
+        completionTokens,
+        totalTokens,
+        metadata
       },
       response['stop_reason'] || 'stop',
-      0 // duration - would need to be calculated
+      0, // duration - would need to be calculated
+      { metadata }
     );
   }
 }
