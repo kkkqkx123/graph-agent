@@ -1,5 +1,8 @@
 import { injectable, inject } from 'inversify';
 import { ModelConfig } from '../../../domain/llm/value-objects/model-config';
+import { LLMRequest } from '../../../domain/llm/entities/llm-request';
+import { LLMResponse } from '../../../domain/llm/entities/llm-response';
+import { LLMMessage } from '../../../domain/llm/value-objects/llm-message';
 import { BaseLLMClient } from './base-llm-client';
 import { ProviderConfig, ApiType, ProviderConfigBuilder } from '../parameter-mappers';
 import { GeminiParameterMapper } from '../parameter-mappers/gemini-parameter-mapper';
@@ -35,28 +38,32 @@ export class GeminiClient extends BaseLLMClient {
     featureSupport.setProviderSpecificFeature('thinking_budget', true);
     featureSupport.setProviderSpecificFeature('cached_content', true);
 
-    // 从配置中读取支持的模型列表
-    const supportedModels = configManager.get('llm.gemini.models', [
-      'gemini-2.5-pro',
-      'gemini-2.5-flash',
-      'gemini-2.5-flash-lite',
-      'gemini-2.0-flash-exp',
-      'gemini-2.0-flash-thinking-exp',
-      'gemini-1.5-pro',
-      'gemini-1.5-flash',
-      'gemini-1.5-flash-8b'
-    ]);
+    // 从配置中读取必需的配置项
+    const apiKey = configManager.get('llm.gemini.apiKey');
+    const defaultModel = configManager.get('llm.gemini.defaultModel');
+    const supportedModels = configManager.get('llm.gemini.supportedModels');
+
+    // 验证必需配置
+    if (!apiKey) {
+      throw new Error('Gemini API密钥未配置。请在配置文件中设置 llm.gemini.apiKey。');
+    }
+    if (!defaultModel) {
+      throw new Error('Gemini默认模型未配置。请在配置文件中设置 llm.gemini.defaultModel。');
+    }
+    if (!supportedModels || !Array.isArray(supportedModels) || supportedModels.length === 0) {
+      throw new Error('Gemini支持的模型列表未配置。请在配置文件中设置 llm.gemini.supportedModels。');
+    }
 
     // 创建提供商配置
     const providerConfig = new ProviderConfigBuilder()
       .name('gemini')
       .apiType(ApiType.NATIVE)
       .baseURL('https://generativelanguage.googleapis.com')
-      .apiKey(configManager.get('llm.gemini.apiKey'))
+      .apiKey(apiKey)
       .endpointStrategy(new GeminiNativeEndpointStrategy())
       .parameterMapper(new GeminiParameterMapper())
       .featureSupport(featureSupport)
-      .defaultModel('gemini-2.5-pro')
+      .defaultModel(defaultModel)
       .supportedModels(supportedModels)
       .timeout(30000)
       .retryCount(3)
@@ -74,58 +81,111 @@ export class GeminiClient extends BaseLLMClient {
 
 
   getSupportedModelsList(): string[] {
-    // 使用配置中的模型列表，如果没有配置则返回空数组
-    return this.providerConfig.supportedModels || [];
+    if (!this.providerConfig.supportedModels) {
+      throw new Error('Gemini支持的模型列表未配置。');
+    }
+    return this.providerConfig.supportedModels;
   }
 
   getModelConfig(): ModelConfig {
-    const model = 'gemini-2.5-pro'; // 默认模型
-    const configs = this.configLoadingModule.get<Record<string, any>>('llm.gemini.modelConfigs', {});
+    const model = this.providerConfig.defaultModel;
+    if (!model) {
+      throw new Error('Gemini默认模型未配置。');
+    }
+
+    const configs = this.configLoadingModule.get<Record<string, any>>('llm.gemini.models', {});
     const config = configs[model];
 
     if (!config) {
-      // 返回默认配置
-      return ModelConfig.create({
-        model,
-        provider: 'gemini',
-        maxTokens: 8192,
-        contextWindow: 125000,
-        temperature: 0.7,
-        topP: 1.0,
-        frequencyPenalty: 0.0,
-        presencePenalty: 0.0,
-        costPer1KTokens: {
-          prompt: 0.0005,
-          completion: 0.0015
-        },
-        supportsStreaming: true,
-        supportsTools: true,
-        supportsImages: true,
-        supportsAudio: false,
-        supportsVideo: false,
-        metadata: {}
-      });
+      throw new Error(`Gemini模型配置未找到: ${model}。请在配置文件中提供该模型的完整配置。`);
+    }
+
+    // 验证必需的配置字段
+    const requiredFields = ['maxTokens', 'contextWindow', 'temperature', 'topP', 'promptTokenPrice', 'completionTokenPrice'];
+    for (const field of requiredFields) {
+      if (config[field] === undefined || config[field] === null) {
+        throw new Error(`Gemini模型 ${model} 缺少必需配置字段: ${field}`);
+      }
     }
 
     return ModelConfig.create({
       model,
       provider: 'gemini',
-      maxTokens: config.maxTokens || 8192,
-      contextWindow: config.contextWindow || 125000,
-      temperature: config.temperature || 0.7,
-      topP: config.topP || 1.0,
-      frequencyPenalty: config.frequencyPenalty || 0.0,
-      presencePenalty: config.presencePenalty || 0.0,
+      maxTokens: config.maxTokens,
+      contextWindow: config.contextWindow,
+      temperature: config.temperature,
+      topP: config.topP,
+      frequencyPenalty: config.frequencyPenalty ?? 0.0,
+      presencePenalty: config.presencePenalty ?? 0.0,
       costPer1KTokens: {
-        prompt: config.promptTokenPrice || 0.0005,
-        completion: config.completionTokenPrice || 0.0015
+        prompt: config.promptTokenPrice,
+        completion: config.completionTokenPrice
       },
       supportsStreaming: config.supportsStreaming ?? true,
       supportsTools: config.supportsTools ?? true,
       supportsImages: config.supportsImages ?? true,
       supportsAudio: config.supportsAudio ?? false,
       supportsVideo: config.supportsVideo ?? false,
-      metadata: config.metadata || {}
+      metadata: config.metadata ?? {}
     });
+  }
+
+  protected override async parseStreamResponse(response: any, request: LLMRequest): Promise<AsyncIterable<LLMResponse>> {
+    const self = this;
+
+    async function* streamGenerator() {
+      // Gemini原生API流式响应格式
+      for await (const chunk of response.data) {
+        try {
+          const data = JSON.parse(chunk.toString());
+          
+          // Gemini原生格式: { candidates: [{ content: { parts: [{ text: "..." }] }] }]
+          if (data.candidates && data.candidates.length > 0) {
+            const candidate = data.candidates[0];
+            if (candidate.content && candidate.content.parts) {
+              for (const part of candidate.content.parts) {
+                if (part.text) {
+                  yield LLMResponse.create(
+                    request.requestId,
+                    request.model,
+                    [{
+                      index: 0,
+                      message: LLMMessage.createAssistant(part.text),
+                      finish_reason: candidate.finishReason || ''
+                    }],
+                    {
+                      promptTokens: data.usageMetadata?.promptTokenCount || 0,
+                      completionTokens: data.usageMetadata?.candidatesTokenCount || 0,
+                      totalTokens: data.usageMetadata?.totalTokenCount || 0
+                    },
+                    candidate.finishReason || '',
+                    0
+                  );
+                }
+              }
+            }
+          }
+        } catch (e) {
+          // 跳过无效JSON
+          continue;
+        }
+      }
+
+      // 发送最终块
+      yield LLMResponse.create(
+        request.requestId,
+        request.model,
+        [{
+          index: 0,
+          message: LLMMessage.createAssistant(''),
+          finish_reason: 'stop'
+        }],
+        { promptTokens: 0, completionTokens: 0, totalTokens: 0 },
+        'stop',
+        0
+      );
+    }
+
+    return streamGenerator();
   }
 }

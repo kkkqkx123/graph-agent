@@ -12,7 +12,7 @@ import { LLMResponse } from '../../../domain/llm/entities/llm-response';
 import { ModelConfig } from '../../../domain/llm/value-objects/model-config';
 import { HumanRelayMode } from '../../../domain/llm/value-objects/human-relay-mode';
 import { TYPES } from '../../../di/service-keys';
-import { ProviderConfig, ApiType } from '../parameter-mappers/interfaces/provider-config.interface';
+import { ProviderConfig, ApiType, ProviderConfigBuilder } from '../parameter-mappers';
 import { BaseFeatureSupport } from '../parameter-mappers/interfaces/feature-support.interface';
 import { ConfigLoadingModule } from '../../config/loading/config-loading-module';
 import { IHumanRelayService, HumanRelayConfig } from '../../../application/llm/services/human-relay-service';
@@ -53,15 +53,28 @@ export class HumanRelayClient extends BaseLLMClient {
     featureSupport.supportsStreaming = false;
     featureSupport.supportsTools = false;
 
-    const baseConfig: ProviderConfig = {
-      name: 'human-relay',
-      apiType: ApiType.NATIVE,
-      baseURL: '',
-      apiKey: '',
-      parameterMapper: null as any,
-      endpointStrategy: null as any,
-      featureSupport: featureSupport
-    };
+    // 从配置中读取支持的模型列表
+    const supportedModels = configLoadingModule.get('llm.human-relay.supportedModels', ['single_turn', 'multi_turn']);
+
+    // 验证配置
+    if (!supportedModels || !Array.isArray(supportedModels) || supportedModels.length === 0) {
+      throw new Error('HumanRelay支持的模型列表未配置。请在配置文件中设置 llm.human-relay.supportedModels。');
+    }
+
+    const baseConfig = new ProviderConfigBuilder()
+      .name('human-relay')
+      .apiType(ApiType.NATIVE)
+      .baseURL('')
+      .apiKey('')
+      .endpointStrategy(null as any)
+      .parameterMapper(null as any)
+      .featureSupport(featureSupport)
+      .defaultModel('single_turn')
+      .supportedModels(supportedModels)
+      .timeout(30000)
+      .retryCount(0)
+      .retryDelay(0)
+      .build();
 
     super(httpClient, rateLimiter, tokenCalculator, configLoadingModule, baseConfig);
 
@@ -71,10 +84,13 @@ export class HumanRelayClient extends BaseLLMClient {
   }
 
   /**
-   * 获取支持的模型列表（硬编码）
+   * 获取支持的模型列表
    */
   protected override getSupportedModelsList(): string[] {
-    return ['single_turn', 'multi_turn'];
+    if (!this.providerConfig.supportedModels) {
+      throw new Error('HumanRelay支持的模型列表未配置。');
+    }
+    return this.providerConfig.supportedModels;
   }
 
   /**
@@ -102,19 +118,39 @@ export class HumanRelayClient extends BaseLLMClient {
   }
 
   /**
+   * 解析流式响应 - HumanRelay不支持真正的流式
+   */
+  protected override async parseStreamResponse(response: any, request: LLMRequest): Promise<AsyncIterable<LLMResponse>> {
+    // HumanRelay 完全覆盖了 generateResponseStream，这个方法不会被调用
+    // 但为了满足抽象方法要求，提供一个实现
+    throw new Error('HumanRelayClient 不应该调用 parseStreamResponse，因为它完全覆盖了 generateResponseStream');
+  }
+
+  /**
    * 获取模型配置
    */
   public getModelConfig(): ModelConfig {
+    const model = this.providerConfig.defaultModel || 'single_turn';
+    
     return ModelConfig.create({
-      model: 'human-relay',
+      model,
       provider: 'human-relay',
       maxTokens: 200000, // 人工输入没有严格的token限制
       contextWindow: 200000,
+      temperature: 0.7,
+      topP: 1.0,
+      frequencyPenalty: 0.0,
+      presencePenalty: 0.0,
+      costPer1KTokens: {
+        prompt: 0.0,
+        completion: 0.0
+      },
       supportsStreaming: false,
       supportsTools: false,
       supportsImages: false,
       supportsAudio: false,
-      supportsVideo: false
+      supportsVideo: false,
+      metadata: {}
     });
   }
 

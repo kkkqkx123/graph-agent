@@ -36,6 +36,9 @@ export abstract class BaseLLMClient {
   // 抽象方法，由子类实现
   protected abstract getSupportedModelsList(): string[];
   public abstract getModelConfig(): ModelConfig;
+  
+  // 抽象方法：解析流式响应，子类必须实现
+  protected abstract parseStreamResponse(response: any, request: LLMRequest): Promise<AsyncIterable<LLMResponse>>;
 
   // 通用实现
   public async generateResponse(request: LLMRequest): Promise<LLMResponse> {
@@ -104,23 +107,11 @@ export abstract class BaseLLMClient {
         responseType: 'stream'
       });
 
-      // 5. 解析流式响应
+      // 5. 解析流式响应（子类必须实现）
       return this.parseStreamResponse(response, request);
     } catch (error) {
       this.handleError(error);
     }
-  }
-
-  // 解析流式响应，子类可以覆盖
-  protected async parseStreamResponse(response: any, request: LLMRequest): Promise<AsyncIterable<LLMResponse>> {
-    // 默认实现，子类应该覆盖
-    throw new Error(`Stream parsing not implemented for ${this.providerName} client`);
-  }
-
-  // 将流式块转换为响应，子类可以覆盖
-  protected convertStreamChunkToResponse(chunk: any, request: LLMRequest): LLMResponse | null {
-    // 默认实现，子类应该覆盖
-    return null;
   }
 
   public async isModelAvailable(): Promise<boolean> {

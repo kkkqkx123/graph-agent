@@ -9,15 +9,19 @@ import { ProviderConfig, ApiType, ProviderConfigBuilder } from '../parameter-map
 import { OpenAIParameterMapper } from '../parameter-mappers/openai-parameter-mapper';
 import { OpenAIResponsesEndpointStrategy } from '../endpoint-strategies/openai-responses-endpoint-strategy';
 import { BaseFeatureSupport } from '../parameter-mappers/interfaces/feature-support.interface';
+import { TYPES } from '../../../di/service-keys';
+import { HttpClient } from '../../common/http/http-client';
+import { TokenBucketLimiter } from '../rate-limiters/token-bucket-limiter';
+import { TokenCalculator } from '../token-calculators/token-calculator';
 import { ConfigLoadingModule } from '../../config/loading/config-loading-module';
 
 @injectable()
 export class OpenAIResponseClient extends BaseLLMClient {
   constructor(
-    @inject('HttpClient') httpClient: any,
-    @inject('TokenBucketLimiter') rateLimiter: any,
-    @inject('TokenCalculator') tokenCalculator: any,
-    @inject('ConfigLoadingModule') configManager: ConfigLoadingModule
+    @inject(TYPES.HttpClient) httpClient: HttpClient,
+    @inject(TYPES.TokenBucketLimiter) rateLimiter: TokenBucketLimiter,
+    @inject(TYPES.TokenCalculator) tokenCalculator: TokenCalculator,
+    @inject(TYPES.ConfigLoadingModule) configManager: ConfigLoadingModule
   ) {
     // 创建功能支持配置
     const featureSupport = new BaseFeatureSupport();
@@ -34,21 +38,38 @@ export class OpenAIResponseClient extends BaseLLMClient {
     featureSupport.setProviderSpecificFeature('previous_response_id', true);
     featureSupport.setProviderSpecificFeature('verbosity', true);
 
+    // 从配置中读取必需的配置项
+    const apiKey = configManager.get('llm.openai.apiKey');
+    const defaultModel = configManager.get('llm.openai-response.defaultModel');
+    const supportedModels = configManager.get('llm.openai-response.supportedModels');
+
+    // 验证必需配置
+    if (!apiKey) {
+      throw new Error('OpenAI Response API密钥未配置。请在配置文件中设置 llm.openai.apiKey。');
+    }
+    if (!defaultModel) {
+      throw new Error('OpenAI Response默认模型未配置。请在配置文件中设置 llm.openai-response.defaultModel。');
+    }
+    if (!supportedModels || !Array.isArray(supportedModels) || supportedModels.length === 0) {
+      throw new Error('OpenAI Response支持的模型列表未配置。请在配置文件中设置 llm.openai-response.supportedModels。');
+    }
+
     // 创建提供商配置
     const providerConfig = new ProviderConfigBuilder()
       .name('OpenAI Response')
       .apiType(ApiType.OPENAI_COMPATIBLE)
       .baseURL('https://api.openai.com/v1')
-      .apiKey(configManager.get('llm.openai.apiKey'))
+      .apiKey(apiKey)
       .endpointStrategy(new OpenAIResponsesEndpointStrategy())
       .parameterMapper(new OpenAIParameterMapper())
       .featureSupport(featureSupport)
-      .defaultModel('gpt-5')
+      .defaultModel(defaultModel)
+      .supportedModels(supportedModels)
       .timeout(30000)
       .retryCount(3)
       .retryDelay(1000)
       .extraConfig({
-        endpointPath: 'responses',  // 使用 Responses API 端点
+        endpointPath: 'responses',
         enableBeta: true,
         betaVersion: 'responses=v1'
       })
@@ -65,40 +86,52 @@ export class OpenAIResponseClient extends BaseLLMClient {
 
 
   getSupportedModelsList(): string[] {
-    return [
-      // GPT-5系列
-      "gpt-5", "gpt-5-codex", "gpt-5.1"
-    ];
+    if (!this.providerConfig.supportedModels) {
+      throw new Error('OpenAI Response支持的模型列表未配置。');
+    }
+    return this.providerConfig.supportedModels;
   }
 
   public getModelConfig(): ModelConfig {
-    const model = 'gpt-5'; // 默认模型
-    const configs: Record<string, any> = this.configLoadingModule.get('llm.openai.models', {});
+    const model = this.providerConfig.defaultModel;
+    if (!model) {
+      throw new Error('OpenAI Response默认模型未配置。');
+    }
+
+    const configs: Record<string, any> = this.configLoadingModule.get('llm.openai-response.models', {});
     const config = configs[model];
 
     if (!config) {
-      throw new Error(`Model configuration not found for ${model}`);
+      throw new Error(`OpenAI Response模型配置未找到: ${model}。请在配置文件中提供该模型的完整配置。`);
+    }
+
+    // 验证必需的配置字段
+    const requiredFields = ['maxTokens', 'contextWindow', 'temperature', 'topP', 'promptTokenPrice', 'completionTokenPrice'];
+    for (const field of requiredFields) {
+      if (config[field] === undefined || config[field] === null) {
+        throw new Error(`OpenAI Response模型 ${model} 缺少必需配置字段: ${field}`);
+      }
     }
 
     return ModelConfig.create({
       model,
       provider: 'openai',
-      maxTokens: config.maxTokens || 4096,
-      contextWindow: config.contextWindow || 16384,
-      temperature: config.temperature || 0.7,
-      topP: config.topP || 1.0,
-      frequencyPenalty: config.frequencyPenalty || 0.0,
-      presencePenalty: config.presencePenalty || 0.0,
+      maxTokens: config.maxTokens,
+      contextWindow: config.contextWindow,
+      temperature: config.temperature,
+      topP: config.topP,
+      frequencyPenalty: config.frequencyPenalty ?? 0.0,
+      presencePenalty: config.presencePenalty ?? 0.0,
       costPer1KTokens: {
-        prompt: config.promptTokenPrice || 0.001,
-        completion: config.completionTokenPrice || 0.002
+        prompt: config.promptTokenPrice,
+        completion: config.completionTokenPrice
       },
       supportsStreaming: config.supportsStreaming ?? true,
       supportsTools: config.supportsTools ?? true,
       supportsImages: config.supportsImages ?? false,
       supportsAudio: config.supportsAudio ?? false,
       supportsVideo: config.supportsVideo ?? false,
-      metadata: config.metadata || {}
+      metadata: config.metadata ?? {}
     });
   }
 

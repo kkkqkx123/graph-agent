@@ -36,23 +36,29 @@ export class MockClient extends BaseLLMClient {
     featureSupport.supportsTopP = true;
     featureSupport.supportsMaxTokens = true;
 
-    // 从配置中读取支持的模型列表
-    const supportedModels = configManager.get('llm.mock.models', [
-      'mock-model',
-      'mock-model-turbo',
-      'mock-model-pro'
-    ]);
+    // 从配置中读取必需的配置项
+    const apiKey = configManager.get('llm.mock.apiKey', 'mock-key');
+    const defaultModel = configManager.get('llm.mock.defaultModel');
+    const supportedModels = configManager.get('llm.mock.supportedModels');
+
+    // 验证必需配置
+    if (!defaultModel) {
+      throw new Error('Mock默认模型未配置。请在配置文件中设置 llm.mock.defaultModel。');
+    }
+    if (!supportedModels || !Array.isArray(supportedModels) || supportedModels.length === 0) {
+      throw new Error('Mock支持的模型列表未配置。请在配置文件中设置 llm.mock.supportedModels。');
+    }
 
     // 创建提供商配置
     const providerConfig = new ProviderConfigBuilder()
       .name('Mock')
       .apiType(ApiType.CUSTOM)
       .baseURL('https://mock.api.example.com')
-      .apiKey('mock-key')
+      .apiKey(apiKey)
       .endpointStrategy(new MockEndpointStrategy())
       .parameterMapper(new MockParameterMapper())
       .featureSupport(featureSupport)
-      .defaultModel('mock-model')
+      .defaultModel(defaultModel)
       .supportedModels(supportedModels)
       .timeout(30000)
       .retryCount(3)
@@ -129,58 +135,52 @@ export class MockClient extends BaseLLMClient {
   }
 
   getSupportedModelsList(): string[] {
-    // 使用配置中的模型列表，如果没有配置则返回空数组
-    return this.providerConfig.supportedModels || [];
+    if (!this.providerConfig.supportedModels) {
+      throw new Error('Mock支持的模型列表未配置。');
+    }
+    return this.providerConfig.supportedModels;
   }
 
   public getModelConfig(): ModelConfig {
-    const model = 'mock-model'; // 默认模型
-    const configs = this.configLoadingModule.get<Record<string, any>>('llm.mock.modelConfigs', {});
+    const model = this.providerConfig.defaultModel;
+    if (!model) {
+      throw new Error('Mock默认模型未配置。');
+    }
+
+    const configs = this.configLoadingModule.get<Record<string, any>>('llm.mock.models', {});
     const config = configs[model];
 
     if (!config) {
-      // Return default mock configuration
-      return ModelConfig.create({
-        model,
-        provider: 'mock',
-        maxTokens: 4096,
-        contextWindow: 8192,
-        temperature: 0.7,
-        topP: 1.0,
-        frequencyPenalty: 0.0,
-        presencePenalty: 0.0,
-        costPer1KTokens: {
-          prompt: 0.0001, // $0.0001 per 1K prompt tokens
-          completion: 0.0002 // $0.0002 per 1K completion tokens
-        },
-        supportsStreaming: true,
-        supportsTools: true,
-        supportsImages: false,
-        supportsAudio: false,
-        supportsVideo: false,
-        metadata: {}
-      });
+      throw new Error(`Mock模型配置未找到: ${model}。请在配置文件中提供该模型的完整配置。`);
+    }
+
+    // 验证必需的配置字段
+    const requiredFields = ['maxTokens', 'contextWindow', 'temperature', 'topP', 'promptTokenPrice', 'completionTokenPrice'];
+    for (const field of requiredFields) {
+      if (config[field] === undefined || config[field] === null) {
+        throw new Error(`Mock模型 ${model} 缺少必需配置字段: ${field}`);
+      }
     }
 
     return ModelConfig.create({
       model,
       provider: 'mock',
-      maxTokens: config.maxTokens || 4096,
-      contextWindow: 8192,
-      temperature: config.temperature || 0.7,
-      topP: config.topP || 1.0,
-      frequencyPenalty: config.frequencyPenalty || 0.0,
-      presencePenalty: config.presencePenalty || 0.0,
+      maxTokens: config.maxTokens,
+      contextWindow: config.contextWindow,
+      temperature: config.temperature,
+      topP: config.topP,
+      frequencyPenalty: config.frequencyPenalty ?? 0.0,
+      presencePenalty: config.presencePenalty ?? 0.0,
       costPer1KTokens: {
-        prompt: config.promptTokenPrice || 0.0001,
-        completion: config.completionTokenPrice || 0.0002
+        prompt: config.promptTokenPrice,
+        completion: config.completionTokenPrice
       },
       supportsStreaming: config.supportsStreaming ?? true,
       supportsTools: config.supportsTools ?? true,
       supportsImages: config.supportsImages ?? false,
       supportsAudio: config.supportsAudio ?? false,
       supportsVideo: config.supportsVideo ?? false,
-      metadata: config.metadata || {}
+      metadata: config.metadata ?? {}
     });
   }
 
@@ -236,6 +236,12 @@ export class MockClient extends BaseLLMClient {
     }
 
     return streamGenerator();
+  }
+
+  protected override async parseStreamResponse(response: any, request: LLMRequest): Promise<AsyncIterable<LLMResponse>> {
+    // MockClient 完全覆盖了 generateResponseStream，这个方法不会被调用
+    // 但为了满足抽象方法要求，提供一个实现
+    throw new Error('MockClient 不应该调用 parseStreamResponse，因为它完全覆盖了 generateResponseStream');
   }
 
   public override async isModelAvailable(model?: string): Promise<boolean> {

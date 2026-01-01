@@ -4,7 +4,7 @@ import { LLMResponse } from '../../../domain/llm/entities/llm-response';
 import { ModelConfig } from '../../../domain/llm/value-objects/model-config';
 import { LLMMessage } from '../../../domain/llm/value-objects/llm-message';
 import { BaseLLMClient } from './base-llm-client';
-import { ProviderConfig, ApiType } from '../parameter-mappers/interfaces/provider-config.interface';
+import { ProviderConfig, ApiType, ProviderConfigBuilder } from '../parameter-mappers';
 import { OpenAIParameterMapper } from '../parameter-mappers/openai-parameter-mapper';
 import { OpenAICompatibleEndpointStrategy } from '../endpoint-strategies/openai-compatible-endpoint-strategy';
 import { BaseFeatureSupport } from '../parameter-mappers/interfaces/feature-support.interface';
@@ -36,28 +36,37 @@ export class OpenAIChatClient extends BaseLLMClient {
     featureSupport.supportsFunctionCalling = true;
     featureSupport.supportsParallelToolCalling = true;
 
-    // 从配置中读取支持的模型列表
-    const supportedModels = configManager.get('llm.openai.models', [
-      'gpt-4',
-      'gpt-4-turbo',
-      'gpt-4o',
-      'gpt-4o-mini',
-      'gpt-3.5-turbo',
-      'gpt-5'
-    ]);
+    // 从配置中读取必需的配置项
+    const apiKey = configManager.get('llm.openai.apiKey');
+    const defaultModel = configManager.get('llm.openai.defaultModel');
+    const supportedModels = configManager.get('llm.openai.supportedModels');
+
+    // 验证必需配置
+    if (!apiKey) {
+      throw new Error('OpenAI API密钥未配置。请在配置文件中设置 llm.openai.apiKey。');
+    }
+    if (!defaultModel) {
+      throw new Error('OpenAI默认模型未配置。请在配置文件中设置 llm.openai.defaultModel。');
+    }
+    if (!supportedModels || !Array.isArray(supportedModels) || supportedModels.length === 0) {
+      throw new Error('OpenAI支持的模型列表未配置。请在配置文件中设置 llm.openai.supportedModels。');
+    }
 
     // 创建 OpenAI 供应商配置
-    const providerConfig: ProviderConfig = {
-      name: 'OpenAI',
-      apiType: ApiType.OPENAI_COMPATIBLE,
-      apiKey: configManager.get('llm.openai.apiKey', ''),
-      baseURL: 'https://api.openai.com/v1',
-      parameterMapper: new OpenAIParameterMapper(),
-      endpointStrategy: new OpenAICompatibleEndpointStrategy(),
-      featureSupport: featureSupport,
-      defaultModel: 'gpt-3.5-turbo',
-      supportedModels: supportedModels
-    };
+    const providerConfig = new ProviderConfigBuilder()
+      .name('OpenAI')
+      .apiType(ApiType.OPENAI_COMPATIBLE)
+      .baseURL('https://api.openai.com/v1')
+      .apiKey(apiKey)
+      .endpointStrategy(new OpenAICompatibleEndpointStrategy())
+      .parameterMapper(new OpenAIParameterMapper())
+      .featureSupport(featureSupport)
+      .defaultModel(defaultModel)
+      .supportedModels(supportedModels)
+      .timeout(30000)
+      .retryCount(3)
+      .retryDelay(1000)
+      .build();
 
     super(
       httpClient,
@@ -70,38 +79,52 @@ export class OpenAIChatClient extends BaseLLMClient {
 
 
   getSupportedModelsList(): string[] {
-    // 使用配置中的模型列表，如果没有配置则返回空数组
-    return this.providerConfig.supportedModels || [];
+    if (!this.providerConfig.supportedModels) {
+      throw new Error('OpenAI支持的模型列表未配置。');
+    }
+    return this.providerConfig.supportedModels;
   }
 
   public getModelConfig(): ModelConfig {
-    const model = 'gpt-3.5-turbo'; // 默认模型
+    const model = this.providerConfig.defaultModel;
+    if (!model) {
+      throw new Error('OpenAI默认模型未配置。');
+    }
+
     const configs = this.configLoadingModule.get<Record<string, any>>('llm.openai.models', {});
     const config = configs[model];
 
     if (!config) {
-      throw new Error(`Model configuration not found for ${model}`);
+      throw new Error(`OpenAI模型配置未找到: ${model}。请在配置文件中提供该模型的完整配置。`);
+    }
+
+    // 验证必需的配置字段
+    const requiredFields = ['maxTokens', 'contextWindow', 'temperature', 'topP', 'promptTokenPrice', 'completionTokenPrice'];
+    for (const field of requiredFields) {
+      if (config[field] === undefined || config[field] === null) {
+        throw new Error(`OpenAI模型 ${model} 缺少必需配置字段: ${field}`);
+      }
     }
 
     return ModelConfig.create({
       model,
       provider: 'openai',
-      maxTokens: config.maxTokens || 4096,
-      contextWindow: config.contextWindow || 16384,
-      temperature: config.temperature || 0.7,
-      topP: config.topP || 1.0,
-      frequencyPenalty: config.frequencyPenalty || 0.0,
-      presencePenalty: config.presencePenalty || 0.0,
+      maxTokens: config.maxTokens,
+      contextWindow: config.contextWindow,
+      temperature: config.temperature,
+      topP: config.topP,
+      frequencyPenalty: config.frequencyPenalty ?? 0.0,
+      presencePenalty: config.presencePenalty ?? 0.0,
       costPer1KTokens: {
-        prompt: config.promptTokenPrice || 0.001,
-        completion: config.completionTokenPrice || 0.002
+        prompt: config.promptTokenPrice,
+        completion: config.completionTokenPrice
       },
       supportsStreaming: config.supportsStreaming ?? true,
       supportsTools: config.supportsTools ?? true,
       supportsImages: config.supportsImages ?? false,
       supportsAudio: config.supportsAudio ?? false,
       supportsVideo: config.supportsVideo ?? false,
-      metadata: config.metadata || {}
+      metadata: config.metadata ?? {}
     });
   }
 
