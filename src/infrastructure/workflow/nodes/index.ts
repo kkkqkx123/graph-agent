@@ -17,3 +17,12 @@ export * from './node-factory';
 
 // 执行器
 export * from './node-executor';
+
+// 转换策略（用于DataTransformNode）
+export * from './strategies/data-transformer/transform-strategy';
+export * from './strategies/data-transformer/transform-strategy-factory';
+export * from './strategies/data-transformer/map-transform-strategy';
+export * from './strategies/data-transformer/filter-transform-strategy';
+export * from './strategies/data-transformer/reduce-transform-strategy';
+export * from './strategies/data-transformer/sort-transform-strategy';
+export * from './strategies/data-transformer/group-transform-strategy';

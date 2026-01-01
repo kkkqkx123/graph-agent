@@ -1,12 +1,16 @@
 import { NodeId } from '../../../domain/workflow/value-objects/node/node-id';
 import { NodeType, NodeTypeValue, NodeContextTypeValue } from '../../../domain/workflow/value-objects/node/node-type';
 import { Node, NodeExecutionResult, NodeMetadata, ValidationResult, WorkflowExecutionContext } from '../../../domain/workflow/entities/node';
+import { TransformStrategyFactory } from './strategies/data-transformer/transform-strategy-factory';
 
 /**
  * 数据转换节点
  * 执行数据转换操作，支持map、filter、reduce、sort、group等转换类型
+ * 使用策略模式将不同的转换逻辑分离到独立的策略类中
  */
 export class DataTransformNode extends Node {
+  private strategy: any;
+
   constructor(
     id: NodeId,
     public readonly transformType: 'map' | 'filter' | 'reduce' | 'sort' | 'group',
@@ -24,6 +28,9 @@ export class DataTransformNode extends Node {
       description,
       position
     );
+
+    // 创建转换策略实例
+    this.strategy = TransformStrategyFactory.create(this.transformType);
   }
 
   async execute(context: WorkflowExecutionContext): Promise<NodeExecutionResult> {
@@ -52,34 +59,8 @@ export class DataTransformNode extends Node {
     }
 
     try {
-      let result;
-
-      switch (this.transformType) {
-        case 'map':
-          result = this.mapTransform(data, this.transformConfig);
-          break;
-        case 'filter':
-          result = this.filterTransform(data, this.transformConfig);
-          break;
-        case 'reduce':
-          result = this.reduceTransform(data, this.transformConfig);
-          break;
-        case 'sort':
-          result = this.sortTransform(data, this.transformConfig);
-          break;
-        case 'group':
-          result = this.groupTransform(data, this.transformConfig);
-          break;
-        default:
-          return {
-            success: false,
-            error: `不支持的转换类型: ${this.transformType}`,
-            metadata: {
-              transformType: this.transformType,
-              sourceData: this.sourceData
-            }
-          };
-      }
+      // 使用策略执行转换
+      const result = this.strategy.transform(data, this.transformConfig);
 
       // 存储转换结果
       context.setVariable(this.targetVariable, result);
@@ -143,24 +124,35 @@ export class DataTransformNode extends Node {
 
   validate(): ValidationResult {
     const errors: string[] = [];
-    const validTransformTypes = ['map', 'filter', 'reduce', 'sort', 'group'];
 
+    // 验证transformType
     if (!this.transformType || typeof this.transformType !== 'string') {
       errors.push('transformType是必需的字符串参数');
-    } else if (!validTransformTypes.includes(this.transformType)) {
-      errors.push(`transformType必须是以下值之一: ${validTransformTypes.join(', ')}`);
+    } else if (!TransformStrategyFactory.isSupported(this.transformType)) {
+      errors.push(`transformType必须是以下值之一: ${TransformStrategyFactory.getSupportedTypes().join(', ')}`);
     }
 
+    // 验证sourceData
     if (!this.sourceData || typeof this.sourceData !== 'string') {
       errors.push('sourceData是必需的字符串参数');
     }
 
+    // 验证targetVariable
     if (!this.targetVariable || typeof this.targetVariable !== 'string') {
       errors.push('targetVariable是必需的字符串参数');
     }
 
+    // 验证transformConfig
     if (this.transformConfig && typeof this.transformConfig !== 'object') {
       errors.push('transformConfig必须是对象类型');
+    }
+
+    // 使用策略验证配置
+    if (errors.length === 0) {
+      const strategyValidation = this.strategy.validate(this.transformConfig);
+      if (!strategyValidation.valid) {
+        errors.push(...strategyValidation.errors);
+      }
     }
 
     return {
@@ -225,136 +217,4 @@ export class DataTransformNode extends Node {
     };
   }
 
-  private mapTransform(data: any[], config: any): any[] {
-    const { field, expression } = config;
-
-    if (!field && !expression) {
-      throw new Error('map转换需要指定field或expression参数');
-    }
-
-    return data.map(item => {
-      if (field) {
-        return item[field];
-      }
-
-      if (expression) {
-        try {
-          const func = new Function('item', `return ${expression}`);
-          return func(item);
-        } catch (error) {
-          const errorMessage = error instanceof Error ? error.message : String(error);
-          throw new Error(`表达式求值失败: ${errorMessage}`);
-        }
-      }
-
-      return item;
-    });
-  }
-
-  private filterTransform(data: any[], config: any): any[] {
-    const { field, value, operator = '===', expression } = config;
-
-    return data.filter(item => {
-      if (expression) {
-        try {
-          const func = new Function('item', `return ${expression}`);
-          return func(item);
-        } catch (error) {
-          const errorMessage = error instanceof Error ? error.message : String(error);
-          throw new Error(`表达式求值失败: ${errorMessage}`);
-        }
-      }
-
-      if (field !== undefined) {
-        const itemValue = item[field];
-
-        switch (operator) {
-          case '===':
-            return itemValue === value;
-          case '!==':
-            return itemValue !== value;
-          case '>':
-            return itemValue > value;
-          case '<':
-            return itemValue < value;
-          case '>=':
-            return itemValue >= value;
-          case '<=':
-            return itemValue <= value;
-          case 'contains':
-            return String(itemValue).includes(value);
-          case 'startsWith':
-            return String(itemValue).startsWith(value);
-          case 'endsWith':
-            return String(itemValue).endsWith(value);
-          default:
-            return itemValue === value;
-        }
-      }
-
-      return true;
-    });
-  }
-
-  private reduceTransform(data: any[], config: any): any {
-    const { field, initialValue = 0, operation = 'sum' } = config;
-
-    return data.reduce((acc, item) => {
-      const value = field ? item[field] : item;
-
-      switch (operation) {
-        case 'sum':
-          return acc + (Number(value) || 0);
-        case 'multiply':
-          return acc * (Number(value) || 1);
-        case 'max':
-          return Math.max(acc, Number(value) || acc);
-        case 'min':
-          return Math.min(acc, Number(value) || acc);
-        case 'concat':
-          return acc + String(value);
-        case 'merge':
-          return { ...acc, ...value };
-        default:
-          return acc + value;
-      }
-    }, initialValue);
-  }
-
-  private sortTransform(data: any[], config: any): any[] {
-    const { field, order = 'asc' } = config;
-
-    return [...data].sort((a, b) => {
-      const aValue = field ? a[field] : a;
-      const bValue = field ? b[field] : b;
-
-      if (typeof aValue === 'number' && typeof bValue === 'number') {
-        return order === 'asc' ? aValue - bValue : bValue - aValue;
-      }
-
-      const aStr = String(aValue);
-      const bStr = String(bValue);
-
-      return order === 'asc'
-        ? aStr.localeCompare(bStr)
-        : bStr.localeCompare(aStr);
-    });
-  }
-
-  private groupTransform(data: any[], config: any): any {
-    const { field } = config;
-
-    if (!field) {
-      throw new Error('group转换需要指定field参数');
-    }
-
-    return data.reduce((groups, item) => {
-      const key = item[field];
-      if (!groups[key]) {
-        groups[key] = [];
-      }
-      groups[key].push(item);
-      return groups;
-    }, {});
-  }
 }

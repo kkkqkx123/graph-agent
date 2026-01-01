@@ -1,5 +1,5 @@
 import { injectable } from 'inversify';
-import { IWorkflowFunction } from '../types';
+import { IWorkflowFunction } from './types';
 
 /**
  * 函数注册表实现

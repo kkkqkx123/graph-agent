@@ -17,7 +17,7 @@ export enum NodeTypeValue {
   LLM = 'llm',
   TOOL = 'tool',
   WAIT = 'wait',
-  HUMAN_RELAY = 'human-relay'
+  USER_INTERACTION = 'user-interaction'
 }
 
 /**
@@ -31,7 +31,7 @@ export enum NodeContextTypeValue {
   TRANSFORM = 'transform',
   ISOLATE = 'isolate',
   MERGE = 'merge',
-  
+
   // 特殊处理类型
   LLM_CONTEXT = 'llm_context',
   TOOL_CONTEXT = 'tool_context',
@@ -165,12 +165,12 @@ export class NodeType extends ValueObject<NodeTypeProps> {
   }
 
   /**
-   * 创建HumanRelay节点类型
+   * 创建用户交互节点类型
    * @param contextType 上下文类型（可选，默认为HUMAN_CONTEXT）
-   * @returns HumanRelay节点类型实例
+   * @returns 用户交互节点类型实例
    */
-  public static humanRelay(contextType: NodeContextTypeValue = NodeContextTypeValue.HUMAN_CONTEXT): NodeType {
-    return new NodeType({ value: NodeTypeValue.HUMAN_RELAY, contextType });
+  public static userInteraction(contextType: NodeContextTypeValue = NodeContextTypeValue.HUMAN_CONTEXT): NodeType {
+    return new NodeType({ value: NodeTypeValue.USER_INTERACTION, contextType });
   }
 
   /**
@@ -325,11 +325,11 @@ export class NodeType extends ValueObject<NodeTypeProps> {
   }
 
   /**
-   * 检查是否为HumanRelay节点
-   * @returns 是否为HumanRelay节点
+   * 检查是否为用户交互节点
+   * @returns 是否为用户交互节点
    */
-  public isHumanRelay(): boolean {
-    return this.props.value === NodeTypeValue.HUMAN_RELAY;
+  public isUserInteraction(): boolean {
+    return this.props.value === NodeTypeValue.USER_INTERACTION;
   }
 
   /**
@@ -347,7 +347,7 @@ export class NodeType extends ValueObject<NodeTypeProps> {
    */
   public isExecutable(): boolean {
     return this.isTask() || this.isSubworkflow() || this.isCustom() ||
-      this.isCondition() || this.isLLM() || this.isTool() || this.isWait() || this.isHumanRelay();
+      this.isCondition() || this.isLLM() || this.isTool() || this.isWait() || this.isUserInteraction();
   }
 
   /**
@@ -425,7 +425,7 @@ export class NodeType extends ValueObject<NodeTypeProps> {
       [NodeTypeValue.LLM]: 'LLM节点，调用大语言模型进行文本生成',
       [NodeTypeValue.TOOL]: '工具节点，执行工具调用并处理结果',
       [NodeTypeValue.WAIT]: '等待节点，处理等待和延迟逻辑',
-      [NodeTypeValue.HUMAN_RELAY]: 'HumanRelay节点，通过前端与用户交互进行人工中转',
+      [NodeTypeValue.USER_INTERACTION]: '用户交互节点，通过前端与用户交互进行人工中转',
       [NodeTypeValue.CUSTOM]: '自定义节点，根据特定逻辑执行'
     };
 

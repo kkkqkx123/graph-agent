@@ -13,4 +13,4 @@ export * from './hooks';
 export * from './context-processors';
 
 // 函数注册表
-export { FunctionRegistry } from './registry/function-registry';
+export { FunctionRegistry } from './function-registry';
