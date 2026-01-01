@@ -1,5 +1,6 @@
-import { injectable } from 'inversify';
+import { injectable, inject } from 'inversify';
 import { Workflow, WorkflowValidationResult } from '../../../domain/workflow/entities/workflow';
+import { GraphAlgorithmService } from './graph-algorithm-service';
 
 /**
  * 图验证服务接口
@@ -111,7 +112,9 @@ export class GraphValidationServiceImpl implements GraphValidationService {
   private validationRules: ValidationRule[] = [];
   private businessRules: BusinessRule[] = [];
 
-  constructor() {
+  constructor(
+    @inject('GraphAlgorithmService') private readonly graphAlgorithmService: GraphAlgorithmService
+  ) {
     this.initializeValidationRules();
     this.initializeBusinessRules();
   }
@@ -228,8 +231,8 @@ export class GraphValidationServiceImpl implements GraphValidationService {
         description: '工作流不应该包含循环（除非明确设计）',
         validate: (workflow: Workflow) => {
           // 使用图算法服务检测循环
-          // 这里简化实现，实际应该注入GraphAlgorithmService
-          const hasNoCycles = true; // 暂时返回true，实际实现需要检测循环
+          const hasCycle = this.graphAlgorithmService.hasCycle(workflow);
+          const hasNoCycles = !hasCycle;
           return this.booleanToValidationResult(hasNoCycles, 'NO_CYCLES', '工作流包含循环');
         },
         enabled: true

@@ -11,7 +11,7 @@ export enum NodeTypeValue {
   MERGE = 'merge',
   FORK = 'fork',
   JOIN = 'join',
-  SUBGRAPH = 'subworkflow',
+  SUBGRAPH = 'subgraph',
   CUSTOM = 'custom',
   CONDITION = 'condition',
   LLM = 'llm',

@@ -5,6 +5,8 @@ import { LLMNode } from './llm-node';
 import { ToolCallNode } from './tool-call-node';
 import { ConditionNode } from './condition-node';
 import { DataTransformNode } from './data-transform-node';
+import { StartNode } from './start-node';
+import { EndNode } from './end-node';
 import { PromptSource } from '../../prompts/services/prompt-builder';
 import { TransformFunctionRegistry } from '../functions/nodes/data-transformer';
 
@@ -18,6 +20,15 @@ export interface NodeConfig {
   name?: string;
   description?: string;
   position?: { x: number; y: number };
+
+  // 开始节点配置
+  initialVariables?: Record<string, unknown>;
+  initializeContext?: boolean;
+
+  // 结束节点配置
+  collectResults?: boolean;
+  cleanupResources?: boolean;
+  returnVariables?: string[];
 
   // LLM节点配置
   wrapperName?: string;
@@ -59,6 +70,12 @@ export class NodeFactory {
     const nodeId = config.id ? NodeId.fromString(config.id) : NodeId.generate();
 
     switch (type) {
+      case NodeTypeValue.START:
+        return this.createStartNode(nodeId, config);
+
+      case NodeTypeValue.END:
+        return this.createEndNode(nodeId, config);
+
       case NodeTypeValue.LLM:
         return this.createLLMNode(nodeId, config);
 
@@ -79,6 +96,35 @@ export class NodeFactory {
       default:
         throw new Error(`不支持的节点类型: ${type}`);
     }
+  }
+
+  /**
+   * 创建开始节点
+   */
+  private static createStartNode(id: NodeId, config: NodeConfig): StartNode {
+    return new StartNode(
+      id,
+      config.initialVariables,
+      config.initializeContext !== undefined ? config.initializeContext : true,
+      config.name,
+      config.description,
+      config.position
+    );
+  }
+
+  /**
+   * 创建结束节点
+   */
+  private static createEndNode(id: NodeId, config: NodeConfig): EndNode {
+    return new EndNode(
+      id,
+      config.collectResults !== undefined ? config.collectResults : true,
+      config.cleanupResources !== undefined ? config.cleanupResources : true,
+      config.returnVariables,
+      config.name,
+      config.description,
+      config.position
+    );
   }
 
   /**
@@ -179,6 +225,8 @@ export class NodeFactory {
    */
   static getSupportedNodeTypes(): NodeTypeValue[] {
     return [
+      NodeTypeValue.START,
+      NodeTypeValue.END,
       NodeTypeValue.LLM,
       NodeTypeValue.TOOL,
       NodeTypeValue.CONDITION,

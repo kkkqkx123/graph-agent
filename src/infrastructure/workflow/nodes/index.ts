@@ -7,10 +7,20 @@
 export * from './node';
 
 // 具体节点实现
+export * from './start-node';
+export * from './end-node';
 export * from './llm-node';
 export * from './tool-call-node';
 export * from './condition-node';
 export * from './data-transform-node';
+export * from './wait-node';
+export * from './user-interaction-node';
+
+// 并行处理节点
+export * from './parallel';
+
+// 子工作流节点
+export * from './subgraph';
 
 // 工厂类
 export * from './node-factory';
