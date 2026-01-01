@@ -1,44 +1,199 @@
-import { injectable } from 'inversify';
+import { injectable, inject } from 'inversify';
+import { BaseTokenCalculator, TokenUsage } from './base-token-calculator';
+import { LocalTokenCalculator } from './local-token-calculator';
+import { ApiResponseTokenCalculator } from './api-response-token-calculator';
 import { LLMRequest } from '../../../domain/llm/entities/llm-request';
 
 /**
- * Token计算器
- *
- * 使用tiktoken进行精确的token计算
- * 优先使用API返回的token计数，本地计算仅作为回退方案
+ * 统一的Token计算器
+ * 
+ * 聚合TiktokenTokenCalculator和ApiResponseTokenCalculator的功能：
+ * - 使用TiktokenTokenCalculator进行本地token计算（预计算、文本截断等）
+ * - 使用ApiResponseTokenCalculator解析API响应中的token使用信息
+ * 
+ * 使用场景：
+ * - 请求前：使用tiktoken进行token估算和文本截断
+ * - 请求后：解析API响应获取准确的token使用信息
  */
 @injectable()
-export class TokenCalculator {
-  private tiktokenEncoding: any = null;
-  private encodingName = 'cl100k_base'; // 默认使用OpenAI的cl100k_base编码
-  private isInitialized = false;
+export class TokenCalculator extends BaseTokenCalculator {
+  private tiktokenCalculator: LocalTokenCalculator;
+  private apiResponseCalculator: ApiResponseTokenCalculator;
+
+  constructor(
+    @inject('ConfigManager') configManager: any,
+    modelName: string = 'gpt-3.5-turbo',
+    enableCache: boolean = true
+  ) {
+    super('unified', modelName);
+
+    // 初始化两个计算器
+    this.tiktokenCalculator = new LocalTokenCalculator(modelName, enableCache);
+    this.apiResponseCalculator = new ApiResponseTokenCalculator(configManager, modelName);
+  }
 
   /**
-   * 初始化tiktoken编码器
+   * 计算文本的token数量
+   * 使用tiktoken进行本地计算
+   * @param text 输入文本
+   * @returns token数量，如果无法计算则返回null
    */
-  private async initialize(): Promise<void> {
-    if (this.isInitialized) {
-      return;
+  async countTokens(text: string): Promise<number | null> {
+    return this.tiktokenCalculator.countTokens(text);
+  }
+
+  /**
+   * 计算消息列表的token数量
+   * 使用tiktoken进行本地计算
+   * @param messages 消息列表
+   * @returns token数量，如果无法计算则返回null
+   */
+  async countMessagesTokens(messages: any[]): Promise<number | null> {
+    return this.tiktokenCalculator.countMessagesTokens(messages);
+  }
+
+  /**
+   * 解析API响应中的token使用信息
+   *
+   * 聚合逻辑：
+   * - 优先使用API响应中的token计数
+   * - 当API响应token计数为0时，视为API供应商响应有误，使用本地计算作为回退
+   *
+   * @param response API响应数据
+   * @param originalRequest 原始请求（可选，用于回退计算）
+   * @returns 解析出的token使用信息
+   */
+  async parseApiResponse(response: any, originalRequest?: LLMRequest): Promise<TokenUsage | null> {
+    const apiUsage = await this.apiResponseCalculator.parseApiResponse(response);
+    
+    if (!apiUsage) {
+      return null;
     }
 
-    try {
-      // 动态导入tiktoken
-      const tiktoken = await import('tiktoken');
-      this.tiktokenEncoding = tiktoken.get_encoding(this.encodingName as any);
-      this.isInitialized = true;
-      console.debug(`Token计算器使用编码器: ${this.tiktokenEncoding.name}`);
-    } catch (error) {
-      console.error('加载tiktoken编码器失败:', error);
-      throw new Error(
-        'tiktoken is required for token processing. ' +
-        'Please install it with: npm install tiktoken'
-      );
+    // 检查API响应的token计数是否有效
+    const isApiUsageValid = apiUsage.totalTokens > 0 ||
+                           apiUsage.promptTokens > 0 ||
+                           apiUsage.completionTokens > 0;
+
+    if (isApiUsageValid) {
+      // API响应有效，直接使用
+      this._lastUsage = apiUsage;
+      return apiUsage;
     }
+
+    // API响应token计数为0，视为API供应商响应有误
+    console.warn('API响应token计数为0，视为API供应商响应有误，使用本地计算作为回退');
+    
+    if (!originalRequest) {
+      console.warn('未提供原始请求，无法进行本地计算回退');
+      return apiUsage;
+    }
+
+    // 使用本地计算作为回退
+    return await this.calculateUsageFromLocal(originalRequest, response);
+  }
+
+  /**
+   * 使用本地计算生成TokenUsage
+   * @param request LLM请求
+   * @param response API响应（用于提取completion内容）
+   * @returns 本地计算的TokenUsage
+   */
+  private async calculateUsageFromLocal(request: LLMRequest, response: any): Promise<TokenUsage | null> {
+    try {
+      // 计算prompt tokens
+      const messages = request.messages.map(msg => ({
+        role: msg.getRole(),
+        content: msg.getContent(),
+        name: msg.getName()
+      }));
+      const promptTokens = await this.tiktokenCalculator.countMessagesTokens(messages) || 0;
+
+      // 计算completion tokens
+      let completionTokens = 0;
+      const choices = response['choices'];
+      if (choices && choices.length > 0) {
+        const choice = choices[0];
+        const content = choice.message?.content || '';
+        completionTokens = await this.tiktokenCalculator.countTokens(content) || 0;
+      }
+
+      const totalTokens = promptTokens + completionTokens;
+
+      // 构建TokenUsage
+      const tokenUsage: TokenUsage = {
+        promptTokens,
+        completionTokens,
+        totalTokens,
+        metadata: {
+          model: response['model'],
+          responseId: response['id'],
+          object: response['object'],
+          created: response['created'],
+          systemFingerprint: response['system_fingerprint'],
+          provider: 'local-fallback',
+          fallbackReason: 'api-response-tokens-zero',
+          originalApiUsage: response.usage
+        }
+      };
+
+      this._lastUsage = tokenUsage;
+      return tokenUsage;
+    } catch (error) {
+      console.error('本地计算回退失败:', error);
+      return null;
+    }
+  }
+
+  /**
+   * 截断文本到指定token数量
+   * 使用tiktoken进行本地计算
+   * @param text 输入文本
+   * @param maxTokens 最大token数量
+   * @returns 截断后的文本
+   */
+  async truncateText(text: string, maxTokens: number): Promise<string> {
+    return this.tiktokenCalculator.truncateText(text, maxTokens);
+  }
+
+  /**
+   * 清空缓存
+   */
+  clearCache(): void {
+    this.tiktokenCalculator.clearCache();
+  }
+
+  /**
+   * 获取支持的模型列表
+   * @returns 支持的模型列表
+   */
+  override getSupportedModels(): string[] {
+    return this.apiResponseCalculator.getSupportedModels();
+  }
+
+  /**
+   * 获取模型定价信息
+   * @param modelName 模型名称
+   * @returns 定价信息，格式为 {"prompt": 0.001, "completion": 0.002}
+   */
+  override getModelPricing(modelName: string): Record<string, number> | null {
+    return this.apiResponseCalculator.getModelPricing(modelName);
+  }
+
+  /**
+   * 检查是否支持解析该响应
+   * @param response API响应数据
+   * @returns 是否支持解析
+   */
+  isSupportedResponse(response: any): boolean {
+    return this.apiResponseCalculator.isSupportedResponse(response);
   }
 
   /**
    * 计算LLM请求的token数量
    * 使用tiktoken进行精确计算
+   * @param request LLM请求
+   * @returns token数量
    */
   async calculateTokens(request: LLMRequest): Promise<number> {
     try {
@@ -49,7 +204,7 @@ export class TokenCalculator {
         name: msg.getName()
       }));
 
-      return await this.countMessagesTokens(messages);
+      return await this.countMessagesTokens(messages) || 0;
     } catch (error) {
       console.error('计算请求token失败:', error);
       return 0;
@@ -59,29 +214,36 @@ export class TokenCalculator {
   /**
    * 计算文本的token数量
    * 使用tiktoken进行精确计算
+   * @param text 输入文本
+   * @returns token数量
    */
   async calculateTextTokens(text: string): Promise<number> {
-    return await this.countTokens(text);
+    return await this.countTokens(text) || 0;
   }
 
   /**
    * 计算特定模型的token数量
    * 使用tiktoken进行精确计算
+   * @param text 输入文本
+   * @param model 模型名称
+   * @returns token数量
    */
   async calculateTokensForModel(text: string, model: string): Promise<number> {
     // 统一使用tiktoken计算，不区分模型
-    return await this.countTokens(text);
+    return await this.countTokens(text) || 0;
   }
 
   /**
    * 估算响应的token数量
    * 基于请求的复杂度和历史响应模式
+   * @param request LLM请求
+   * @returns 估算的token数量
    */
   async estimateResponseTokens(request: LLMRequest): Promise<number> {
     try {
       // 基于请求长度估算响应长度
       const requestText = request.messages.map(m => m.getContent()).join(' ');
-      const requestTokens = await this.countTokens(requestText);
+      const requestTokens = await this.countTokens(requestText) || 0;
 
       // 通常响应长度是请求长度的一定比例
       const responseRatio = 0.5; // 响应通常是请求的50%长度
@@ -102,10 +264,12 @@ export class TokenCalculator {
 
   /**
    * 计算对话历史的token数量
+   * @param messages 消息列表
+   * @returns token数量
    */
   async calculateConversationTokens(messages: Array<{ role: string; content: string }>): Promise<number> {
     try {
-      return await this.countMessagesTokens(messages);
+      return await this.countMessagesTokens(messages) || 0;
     } catch (error) {
       console.error('计算对话历史token失败:', error);
       return 0;
@@ -114,6 +278,9 @@ export class TokenCalculator {
 
   /**
    * 检查是否超过token限制
+   * @param request LLM请求
+   * @param maxTokens 最大token数量
+   * @returns 是否在限制内
    */
   async isWithinTokenLimit(request: LLMRequest, maxTokens: number): Promise<boolean> {
     try {
@@ -131,6 +298,9 @@ export class TokenCalculator {
 
   /**
    * 截断消息以适应token限制
+   * @param messages 消息列表
+   * @param maxTokens 最大token数量
+   * @returns 截断后的消息列表
    */
   async truncateMessages(messages: Array<{ role: string; content: string }>, maxTokens: number): Promise<Array<{ role: string; content: string }>> {
     try {
@@ -143,14 +313,14 @@ export class TokenCalculator {
 
       // 计算系统消息的token
       for (const message of systemMessages) {
-        currentTokens += await this.countTokens(message.content) + 4;
+        currentTokens += (await this.countTokens(message.content) || 0) + 4;
       }
 
       // 从最新消息开始添加，直到达到限制
       for (let i = otherMessages.length - 1; i >= 0; i--) {
         const message = otherMessages[i];
         if (message && message.content) {
-          const messageTokens = await this.countTokens(message.content) + 4;
+          const messageTokens = (await this.countTokens(message.content) || 0) + 4;
 
           if (currentTokens + messageTokens <= maxTokens) {
             truncatedMessages.unshift(message);
@@ -169,124 +339,35 @@ export class TokenCalculator {
   }
 
   /**
-   * 截断文本到指定token数量
-   */
-  async truncateText(text: string, maxTokens: number): Promise<string> {
-    if (!text || maxTokens <= 0) {
-      return '';
-    }
-
-    try {
-      await this.initialize();
-
-      const tokens = this.tiktokenEncoding.encode(text);
-      if (tokens.length <= maxTokens) {
-        return text;
-      }
-
-      // 截断到指定token数量
-      const truncatedTokens = tokens.slice(0, maxTokens);
-      return this.tiktokenEncoding.decode(truncatedTokens);
-    } catch (error) {
-      console.error('截断文本失败:', error);
-      // 如果截断失败，返回空字符串
-      return '';
-    }
-  }
-
-  /**
-   * 计算文本的token数量
-   * 使用tiktoken进行精确计算
-   */
-  private async countTokens(text: string): Promise<number> {
-    if (!text) {
-      return 0;
-    }
-
-    try {
-      await this.initialize();
-      return this.tiktokenEncoding.encode(text).length;
-    } catch (error) {
-      console.error('计算token失败:', error);
-      // 如果tiktoken失败，返回0而不是使用字符数/4
-      return 0;
-    }
-  }
-
-  /**
-   * 计算消息列表的token数量
-   * 考虑消息格式的开销
-   */
-  private async countMessagesTokens(messages: any[]): Promise<number> {
-    if (!messages || messages.length === 0) {
-      return 0;
-    }
-
-    try {
-      await this.initialize();
-
-      let totalTokens = 0;
-
-      // 每条消息的开销
-      const tokensPerMessage = 3;
-      const tokensPerName = 1;
-
-      for (const message of messages) {
-        // 计算消息内容的token
-        totalTokens += tokensPerMessage;
-        const content = this.extractMessageContent(message);
-        totalTokens += this.tiktokenEncoding.encode(content).length;
-
-        // 如果有名称，添加名称的token
-        if (message.name) {
-          totalTokens += tokensPerName + this.tiktokenEncoding.encode(message.name).length;
-        }
-      }
-
-      // 添加回复的token
-      totalTokens += 3;
-
-      return totalTokens;
-    } catch (error) {
-      console.error('计算消息token失败:', error);
-      return 0;
-    }
-  }
-
-  /**
-   * 提取消息内容
-   */
-  private extractMessageContent(message: any): string {
-    const content = message.content;
-    if (typeof content === 'string') {
-      return content;
-    } else if (Array.isArray(content)) {
-      // 处理内容列表，提取文本部分
-      const textParts: string[] = [];
-      for (const item of content) {
-        if (typeof item === 'string') {
-          textParts.push(item);
-        } else if (typeof item === 'object' && item !== null && "text" in item) {
-          textParts.push(String(item.text));
-        }
-      }
-      return textParts.join(' ');
-    } else {
-      return String(content);
-    }
-  }
-
-  /**
    * 检查计算器是否已初始化
+   * @returns 是否已初始化
    */
   isReady(): boolean {
-    return this.isInitialized;
+    return this.tiktokenCalculator.isReady();
   }
 
   /**
    * 获取编码器名称
+   * @returns 编码器名称
    */
   getEncodingName(): string {
-    return this.encodingName;
+    return this.tiktokenCalculator.getEncodingName();
+  }
+
+  /**
+   * 获取缓存统计信息
+   * @returns 缓存统计信息
+   */
+  getCacheStats(): { size: number; maxSize: number } {
+    return this.tiktokenCalculator.getCacheStats();
+  }
+
+  /**
+   * 批量计算token数量
+   * @param texts 文本列表
+   * @returns token数量列表
+   */
+  async countTokensBatch(texts: string[]): Promise<(number | null)[]> {
+    return this.tiktokenCalculator.countTokensBatch(texts);
   }
 }

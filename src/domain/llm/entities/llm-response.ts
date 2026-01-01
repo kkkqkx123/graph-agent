@@ -6,6 +6,12 @@ import { LLMMessage } from '../value-objects/llm-message';
 
 /**
  * Token使用统计接口
+ *
+ * 说明：
+ * - promptTokens: 输入token总数（包含所有输入相关的token，如缓存token、音频token等）
+ * - completionTokens: 输出token总数（包含所有输出相关的token，包括reasoningTokens）
+ * - reasoningTokens: 推理token数（单独统计，已包含在completionTokens中）
+ * - metadata: 保留原始API响应的详细信息，用于调试和审计
  */
 export interface TokenUsage {
   promptTokens: number;
@@ -15,6 +21,7 @@ export interface TokenUsage {
   completionTokensCost?: number;
   totalCost?: number;
   reasoningTokens?: number;
+  metadata?: Record<string, unknown>;
 }
 
 /**

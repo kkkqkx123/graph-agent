@@ -212,6 +212,26 @@ export class OpenAIParameterMapper extends BaseParameterMapper {
       throw new Error('Invalid OpenAI response: no choices found');
     }
 
+    // 解析详细信息
+    const promptDetails = usage?.prompt_tokens_details || {};
+    const completionDetails = usage?.completion_tokens_details || {};
+
+    // 推理token（单独统计，但已包含在completion_tokens中）
+    const reasoningTokens = completionDetails['reasoning_tokens'] || 0;
+
+    // 构建元数据，保留原始API响应的详细信息
+    const metadata: Record<string, unknown> = {
+      model: response['model'],
+      responseId: response['id'],
+      object: response['object'],
+      created: response['created'],
+      systemFingerprint: response['system_fingerprint'],
+      provider: 'openai',
+      // 保留原始详细信息用于调试和审计
+      promptTokensDetails: promptDetails,
+      completionTokensDetails: completionDetails
+    };
+
     // 构建标准响应
     return LLMResponse.create(
       originalRequest.requestId,
@@ -224,10 +244,13 @@ export class OpenAIParameterMapper extends BaseParameterMapper {
       {
         promptTokens: usage?.prompt_tokens || 0,
         completionTokens: usage?.completion_tokens || 0,
-        totalTokens: usage?.total_tokens || 0
+        totalTokens: usage?.total_tokens || 0,
+        reasoningTokens,
+        metadata
       },
       choice.finish_reason || 'stop',
-      0 // duration - would need to be calculated
+      0, // duration - would need to be calculated
+      { metadata }
     );
   }
 }

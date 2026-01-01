@@ -16,6 +16,12 @@ export interface TokenCalculationStats {
 
 /**
  * Token使用情况
+ *
+ * 说明：
+ * - promptTokens: 输入token总数（包含所有输入相关的token，如缓存token、音频token等）
+ * - completionTokens: 输出token总数（包含所有输出相关的token，包括reasoningTokens）
+ * - reasoningTokens: 推理token数（单独统计，已包含在completionTokens中）
+ * - metadata: 保留原始API响应的详细信息，用于调试和审计
  */
 export interface TokenUsage {
   promptTokens: number;
@@ -24,16 +30,7 @@ export interface TokenUsage {
   promptTokensCost?: number;
   completionTokensCost?: number;
   totalCost?: number;
-  cachedTokens?: number;
-  cachedPromptTokens?: number;
-  cachedCompletionTokens?: number;
-  promptAudioTokens?: number;
-  completionAudioTokens?: number;
   reasoningTokens?: number;
-  acceptedPredictionTokens?: number;
-  rejectedPredictionTokens?: number;
-  thoughtsTokens?: number;
-  toolCallTokens?: number;
   metadata?: Record<string, unknown>;
 }
 
@@ -60,7 +57,7 @@ export interface ITokenCalculator {
    * @param response API响应数据
    * @returns 解析出的token使用信息
    */
-  parseApiResponse(response: any): TokenUsage | null;
+  parseApiResponse(response: any): Promise<TokenUsage | null>;
 
   /**
    * 获取提供商名称
@@ -247,7 +244,7 @@ export abstract class BaseTokenCalculator implements ITokenCalculator {
   // 抽象方法，子类必须实现
   abstract countTokens(text: string): Promise<number | null>;
   abstract countMessagesTokens(messages: any[]): Promise<number | null>;
-  abstract parseApiResponse(response: any): TokenUsage | null;
+  abstract parseApiResponse(response: any): Promise<TokenUsage | null>;
   abstract truncateText(text: string, maxTokens: number): Promise<string>;
   abstract clearCache(): void;
 }
