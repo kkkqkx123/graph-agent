@@ -1,15 +1,63 @@
-import { BaseEndpointStrategy } from './base-endpoint-strategy';
+import { z } from 'zod';
+import { BaseEndpointStrategy, BaseEndpointConfigSchema } from './base-endpoint-strategy';
 import { ProviderConfig } from '../parameter-mappers/interfaces/provider-config.interface';
 import { ProviderRequest } from '../parameter-mappers/base-parameter-mapper';
 
 /**
+ * Anthropic 端点配置 Schema
+ * 定义 Anthropic 特有的配置验证规则
+ */
+const AnthropicEndpointConfigSchema = BaseEndpointConfigSchema.extend({
+  /**
+   * 提供商名称
+   */
+  name: z.literal('anthropic'),
+
+  /**
+   * 基础 URL
+   */
+  baseURL: z.string().refine(
+    (url) => url.includes('api.anthropic.com'),
+    { message: 'Anthropic API should use api.anthropic.com' }
+  ),
+
+  /**
+   * API 密钥
+   */
+  apiKey: z.string().refine(
+    (key) => key.startsWith('sk-ant-'),
+    { message: 'Anthropic API key should start with "sk-ant-"' }
+  ),
+
+  /**
+   * 额外配置
+   */
+  extraConfig: z.object({
+    /**
+     * API 版本
+     */
+    apiVersion: z.string().default('2023-06-01'),
+
+    /**
+     * 客户端名称
+     */
+    clientName: z.string().optional()
+  }).optional()
+});
+
+/**
+ * Anthropic 配置类型
+ */
+export type AnthropicEndpointConfig = z.infer<typeof AnthropicEndpointConfigSchema>;
+
+/**
  * Anthropic 端点策略
- * 
+ *
  * 适用于 Anthropic Claude API
  */
 export class AnthropicEndpointStrategy extends BaseEndpointStrategy {
   constructor() {
-    super('AnthropicEndpointStrategy', '1.0.0');
+    super('AnthropicEndpointStrategy', '1.0.0', AnthropicEndpointConfigSchema);
   }
 
   /**
@@ -47,30 +95,5 @@ export class AnthropicEndpointStrategy extends BaseEndpointStrategy {
     // Anthropic 通过 x-api-key 头部进行认证
     // 这里不需要修改请求体
     return request;
-  }
-
-  /**
-   * 验证配置
-   */
-  override validateConfig(config: ProviderConfig): {
-    isValid: boolean;
-    errors: string[];
-  } {
-    const result = super.validateConfig(config);
-
-    // 验证基础 URL 格式
-    if (config.baseURL && !config.baseURL.includes('api.anthropic.com')) {
-      result.errors.push('Anthropic API should use api.anthropic.com');
-    }
-
-    // 验证 API 密钥格式（Anthropic 通常以 sk-ant- 开头）
-    if (config.apiKey && !config.apiKey.startsWith('sk-ant-')) {
-      result.errors.push('Anthropic API key should start with "sk-ant-"');
-    }
-
-    return {
-      isValid: result.errors.length === 0,
-      errors: result.errors
-    };
   }
 }

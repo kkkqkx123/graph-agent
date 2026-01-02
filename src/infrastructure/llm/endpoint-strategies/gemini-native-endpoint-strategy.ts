@@ -1,15 +1,50 @@
-import { BaseEndpointStrategy } from './base-endpoint-strategy';
+import { z } from 'zod';
+import { BaseEndpointStrategy, BaseEndpointConfigSchema } from './base-endpoint-strategy';
 import { ProviderConfig } from '../parameter-mappers/interfaces/provider-config.interface';
 import { ProviderRequest } from '../parameter-mappers/base-parameter-mapper';
 
 /**
+ * Gemini 原生端点配置 Schema
+ * 定义 Gemini 原生 API 特有的配置验证规则
+ */
+const GeminiNativeEndpointConfigSchema = BaseEndpointConfigSchema.extend({
+  /**
+   * 提供商名称
+   */
+  name: z.literal('gemini-native'),
+
+  /**
+   * 基础 URL
+   */
+  baseURL: z.string().refine(
+    (url) => url.includes('generativelanguage.googleapis.com'),
+    { message: 'Gemini native API should use generativelanguage.googleapis.com' }
+  ),
+
+  /**
+   * 额外配置
+   */
+  extraConfig: z.object({
+    /**
+     * API 版本
+     */
+    apiVersion: z.string().optional()
+  }).optional()
+});
+
+/**
+ * Gemini 原生配置类型
+ */
+export type GeminiNativeEndpointConfig = z.infer<typeof GeminiNativeEndpointConfigSchema>;
+
+/**
  * Gemini 原生端点策略
- * 
+ *
  * 适用于 Gemini 原生 API，API 密钥需要包含在 URL 中
  */
 export class GeminiNativeEndpointStrategy extends BaseEndpointStrategy {
   constructor() {
-    super('GeminiNativeEndpointStrategy', '1.0.0');
+    super('GeminiNativeEndpointStrategy', '1.0.0', GeminiNativeEndpointConfigSchema);
   }
 
   /**
@@ -45,25 +80,5 @@ export class GeminiNativeEndpointStrategy extends BaseEndpointStrategy {
     // Gemini 原生 API 通过 URL 参数进行认证
     // 这里不需要修改请求体
     return request;
-  }
-
-  /**
-   * 验证配置
-   */
-  override validateConfig(config: ProviderConfig): {
-    isValid: boolean;
-    errors: string[];
-  } {
-    const result = super.validateConfig(config);
-
-    // 验证基础 URL 格式
-    if (config.baseURL && !config.baseURL.includes('generativelanguage.googleapis.com')) {
-      result.errors.push('Gemini native API should use generativelanguage.googleapis.com');
-    }
-
-    return {
-      isValid: result.errors.length === 0,
-      errors: result.errors
-    };
   }
 }

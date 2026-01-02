@@ -1,15 +1,37 @@
-import { BaseEndpointStrategy } from './base-endpoint-strategy';
+import { z } from 'zod';
+import { BaseEndpointStrategy, BaseEndpointConfigSchema } from './base-endpoint-strategy';
 import { ProviderConfig } from '../parameter-mappers/interfaces/provider-config.interface';
 import { ProviderRequest } from '../parameter-mappers/base-parameter-mapper';
 
 /**
+ * Mock 端点配置 Schema
+ * 定义 Mock 端点特有的配置验证规则
+ */
+const MockEndpointConfigSchema = BaseEndpointConfigSchema.extend({
+  /**
+   * 提供商名称
+   */
+  name: z.literal('mock'),
+
+  /**
+   * API 密钥（可选，Mock 可以使用默认值）
+   */
+  apiKey: z.string().optional().default('mock-key')
+});
+
+/**
+ * Mock 配置类型
+ */
+export type MockEndpointConfig = z.infer<typeof MockEndpointConfigSchema>;
+
+/**
  * Mock 端点策略
- * 
+ *
  * 用于测试和模拟场景
  */
 export class MockEndpointStrategy extends BaseEndpointStrategy {
   constructor() {
-    super('MockEndpointStrategy', '1.0.0');
+    super('MockEndpointStrategy', '1.0.0', MockEndpointConfigSchema);
   }
 
   /**
@@ -33,28 +55,11 @@ export class MockEndpointStrategy extends BaseEndpointStrategy {
   }
 
   /**
-    * 处理认证
-    */
+   * 处理认证
+   */
   override handleAuthentication(request: any, config: ProviderConfig): any {
     // Mock API 通过自定义头部进行认证
     // 这里不需要修改请求体
     return request;
-  }
-
-  /**
-    * 验证配置
-    */
-  override validateConfig(config: ProviderConfig): {
-    isValid: boolean;
-    errors: string[];
-  } {
-    const result = super.validateConfig(config);
-
-    // Mock API 不需要特殊验证
-
-    return {
-      isValid: result.errors.length === 0,
-      errors: result.errors
-    };
   }
 }

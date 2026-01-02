@@ -1,7 +1,7 @@
+import { z } from 'zod';
 import { LLMRequest } from '../../../domain/llm/entities/llm-request';
 import { LLMResponse } from '../../../domain/llm/entities/llm-response';
 import { ProviderConfig } from './interfaces/provider-config.interface';
-import { ParameterDefinition } from './interfaces/parameter-definition.interface';
 
 /**
  * 提供商请求接口
@@ -18,97 +18,45 @@ export interface ProviderResponse {
 }
 
 /**
+ * 基础参数 Schema
+ * 定义所有 LLM 提供商通用的参数验证规则
+ */
+export const BaseParameterSchema = z.object({
+  model: z.string().min(1, 'Model name is required'),
+  messages: z.array(z.any()).min(1, 'Messages array must not be empty'),
+  temperature: z.number().min(0).max(2).optional(),
+  maxTokens: z.number().int().positive().optional(),
+  topP: z.number().min(0).max(1).optional(),
+  frequencyPenalty: z.number().min(-2).max(2).optional(),
+  presencePenalty: z.number().min(-2).max(2).optional(),
+  stop: z.array(z.string()).optional(),
+  stream: z.boolean().optional()
+});
+
+/**
+ * 参数验证结果
+ */
+export interface ValidationResult {
+  isValid: boolean;
+  errors: string[];
+  warnings: string[];
+}
+
+/**
  * 基础参数映射器
  *
  * 提供通用的参数映射功能，子类可以扩展实现特定提供商的映射逻辑
+ * 使用 zod 进行参数验证，移除硬编码的默认值
  */
 export abstract class BaseParameterMapper {
   protected readonly name: string;
   protected readonly version: string;
-  protected readonly supportedParameters: ParameterDefinition[];
+  protected readonly parameterSchema: z.ZodSchema;
 
-  constructor(name: string, version: string) {
+  constructor(name: string, version: string, parameterSchema?: z.ZodSchema) {
     this.name = name;
     this.version = version;
-    this.supportedParameters = this.initializeSupportedParameters();
-  }
-
-  /**
-   * 初始化支持的参数列表
-   * 子类可以重写此方法来添加特定参数
-   */
-  protected initializeSupportedParameters(): ParameterDefinition[] {
-    return [
-      {
-        name: 'model',
-        type: 'string',
-        required: true,
-        description: '模型名称'
-      },
-      {
-        name: 'messages',
-        type: 'array',
-        required: true,
-        description: '消息列表'
-      },
-      {
-        name: 'temperature',
-        type: 'number',
-        required: false,
-        defaultValue: 0.7,
-        description: '控制输出的随机性，值越高越随机',
-        min: 0,
-        max: 2
-      },
-      {
-        name: 'maxTokens',
-        type: 'number',
-        required: false,
-        defaultValue: 1000,
-        description: '生成的最大 token 数',
-        min: 1
-      },
-      {
-        name: 'topP',
-        type: 'number',
-        required: false,
-        defaultValue: 1.0,
-        description: '核采样参数，控制考虑的 token 范围',
-        min: 0,
-        max: 1
-      },
-      {
-        name: 'frequencyPenalty',
-        type: 'number',
-        required: false,
-        defaultValue: 0.0,
-        description: '频率惩罚，降低重复内容的概率',
-        min: -2,
-        max: 2
-      },
-      {
-        name: 'presencePenalty',
-        type: 'number',
-        required: false,
-        defaultValue: 0.0,
-        description: '存在惩罚，鼓励谈论新话题',
-        min: -2,
-        max: 2
-      },
-      {
-        name: 'stop',
-        type: 'array',
-        required: false,
-        description: '停止序列，遇到这些内容时停止生成'
-      },
-      {
-        name: 'stream',
-        type: 'boolean',
-        required: false,
-        defaultValue: false,
-        description: '是否启用流式响应'
-      }
-    ];
+    this.parameterSchema = parameterSchema || BaseParameterSchema;
   }
 
   /**
@@ -124,50 +72,49 @@ export abstract class BaseParameterMapper {
   abstract mapFromResponse(response: ProviderResponse, originalRequest: LLMRequest): LLMResponse;
 
   /**
-   * 获取支持的参数定义列表
-   */
-  getSupportedParameters(): ParameterDefinition[] {
-    return [...this.supportedParameters];
-  }
-
-  /**
    * 验证请求参数
+   * 使用 zod schema 进行验证
    */
-  validateRequest(request: LLMRequest): {
-    isValid: boolean;
-    errors: string[];
-    warnings: string[];
-  } {
+  validateRequest(request: LLMRequest): ValidationResult {
     const errors: string[] = [];
     const warnings: string[] = [];
 
-    // 验证必需参数
-    for (const param of this.supportedParameters) {
-      if (param.required) {
-        const value = this.getParamValue(request, param.name);
-        if (value === undefined || value === null || value === '') {
-          errors.push(`Required parameter '${param.name}' is missing`);
-        }
-      }
+    // 构建验证对象
+    const validationObject: Record<string, any> = {
+      model: request.model,
+      messages: request.messages
+    };
+
+    // 添加可选参数（如果存在）
+    if (request.temperature !== undefined) {
+      validationObject['temperature'] = request.temperature;
+    }
+    if (request.maxTokens !== undefined) {
+      validationObject['maxTokens'] = request.maxTokens;
+    }
+    if (request.topP !== undefined) {
+      validationObject['topP'] = request.topP;
+    }
+    if (request.frequencyPenalty !== undefined) {
+      validationObject['frequencyPenalty'] = request.frequencyPenalty;
+    }
+    if (request.presencePenalty !== undefined) {
+      validationObject['presencePenalty'] = request.presencePenalty;
+    }
+    if (request.stop !== undefined) {
+      validationObject['stop'] = request.stop;
+    }
+    if (request.stream !== undefined) {
+      validationObject['stream'] = request.stream;
     }
 
-    // 验证参数值
-    for (const param of this.supportedParameters) {
-      const value = this.getParamValue(request, param.name);
-      if (value !== undefined && value !== null) {
-        const validationError = this.validateParameterValue(value, param);
-        if (validationError) {
-          errors.push(validationError);
-        }
+    // 使用 zod 进行验证
+    const result = this.parameterSchema.safeParse(validationObject);
 
-        // 检查弃用参数
-        if (param.deprecated) {
-          warnings.push(
-            `Parameter '${param.name}' is deprecated${param.deprecationMessage ? `: ${param.deprecationMessage}` : ''
-            }`
-          );
-        }
-      }
+    if (!result.success) {
+      result.error.issues.forEach((issue: any) => {
+        errors.push(`${issue.path.join('.')}: ${issue.message}`);
+      });
     }
 
     return {
@@ -206,109 +153,17 @@ export abstract class BaseParameterMapper {
       return request.metadata[paramName];
     }
 
-    // 检查参数定义中的别名
-    const paramDef = this.supportedParameters.find(p => p.name === paramName);
-    if (paramDef && paramDef.aliases) {
-      for (const alias of paramDef.aliases) {
-        if (alias in request) {
-          return (request as any)[alias];
-        }
-        if (request.metadata && alias in request.metadata) {
-          return request.metadata[alias];
-        }
-      }
-    }
-
     return undefined;
-  }
-
-  /**
-   * 验证参数值
-   */
-  protected validateParameterValue(value: any, paramDef: ParameterDefinition): string | null {
-    // 类型验证
-    if (!this.validateType(value, paramDef.type)) {
-      return `Parameter '${paramDef.name}' must be of type ${paramDef.type}`;
-    }
-
-    // 范围验证
-    if (paramDef.type === 'number') {
-      if (paramDef.min !== undefined && value < paramDef.min) {
-        return `Parameter '${paramDef.name}' must be >= ${paramDef.min}`;
-      }
-      if (paramDef.max !== undefined && value > paramDef.max) {
-        return `Parameter '${paramDef.name}' must be <= ${paramDef.max}`;
-      }
-    }
-
-    // 选项验证
-    if (paramDef.options && !paramDef.options.includes(value)) {
-      return `Parameter '${paramDef.name}' must be one of: ${paramDef.options.join(', ')}`;
-    }
-
-    // 自定义验证
-    if (paramDef.validation && !paramDef.validation(value)) {
-      return `Parameter '${paramDef.name}' failed custom validation`;
-    }
-
-    return null;
-  }
-
-  /**
-   * 验证类型
-   */
-  protected validateType(value: any, type: string): boolean {
-    switch (type) {
-      case 'string':
-        return typeof value === 'string';
-      case 'number':
-        return typeof value === 'number' && !isNaN(value);
-      case 'boolean':
-        return typeof value === 'boolean';
-      case 'object':
-        return typeof value === 'object' && value !== null && !Array.isArray(value);
-      case 'array':
-        return Array.isArray(value);
-      default:
-        return false;
-    }
-  }
-
-  /**
-   * 获取参数的默认值
-   */
-  protected getParamDefaultValue(paramName: string): any {
-    const paramDef = this.supportedParameters.find(p => p.name === paramName);
-    return paramDef?.defaultValue;
-  }
-
-  /**
-   * 应用参数默认值
-   */
-  protected applyDefaultValues(request: LLMRequest): Record<string, any> {
-    const result: Record<string, any> = {};
-
-    for (const paramDef of this.supportedParameters) {
-      const value = this.getParamValue(request, paramDef.name);
-      if (value !== undefined) {
-        result[paramDef.name] = value;
-      } else if (paramDef.defaultValue !== undefined) {
-        result[paramDef.name] = paramDef.defaultValue;
-      }
-    }
-
-    return result;
   }
 
   /**
    * 过滤提供商特定参数
    */
-  protected filterProviderSpecificParams(params: Record<string, any>): Record<string, any> {
+  protected filterProviderSpecificParams(params: Record<string, any>, providerSpecificKeys: string[]): Record<string, any> {
     const result: Record<string, any> = {};
 
     for (const [key, value] of Object.entries(params)) {
-      const paramDef = this.supportedParameters.find(p => p.name === key);
-      if (paramDef && paramDef.isProviderSpecific) {
+      if (providerSpecificKeys.includes(key)) {
         result[key] = value;
       }
     }
@@ -319,16 +174,33 @@ export abstract class BaseParameterMapper {
   /**
    * 过滤通用参数
    */
-  protected filterCommonParams(params: Record<string, any>): Record<string, any> {
+  protected filterCommonParams(params: Record<string, any>, providerSpecificKeys: string[]): Record<string, any> {
     const result: Record<string, any> = {};
 
     for (const [key, value] of Object.entries(params)) {
-      const paramDef = this.supportedParameters.find(p => p.name === key);
-      if (!paramDef || !paramDef.isProviderSpecific) {
+      if (!providerSpecificKeys.includes(key)) {
         result[key] = value;
       }
     }
 
     return result;
+  }
+
+  /**
+   * 安全地添加可选参数到请求对象
+   */
+  protected addOptionalParam<T>(target: Record<string, any>, key: string, value: T | undefined, targetKey?: string): void {
+    if (value !== undefined) {
+      target[targetKey || key] = value;
+    }
+  }
+
+  /**
+   * 安全地添加元数据参数到请求对象
+   */
+  protected addMetadataParam<T>(target: Record<string, any>, metadata: Record<string, any> | undefined, key: string, targetKey?: string): void {
+    if (metadata && metadata[key] !== undefined) {
+      target[targetKey || key] = metadata[key];
+    }
   }
 }

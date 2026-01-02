@@ -1,84 +1,56 @@
+import { z } from 'zod';
 import { LLMRequest } from '../../../domain/llm/entities/llm-request';
 import { LLMResponse } from '../../../domain/llm/entities/llm-response';
 import { LLMMessage } from '../../../domain/llm/value-objects/llm-message';
-import { BaseParameterMapper, ProviderRequest, ProviderResponse } from './base-parameter-mapper';
+import { BaseParameterMapper, ProviderRequest, ProviderResponse, BaseParameterSchema } from './base-parameter-mapper';
 import { ProviderConfig } from './interfaces/provider-config.interface';
-import { ParameterDefinition } from './interfaces/parameter-definition.interface';
+
+/**
+ * Anthropic 参数 Schema
+ * 定义 Anthropic 特有的参数验证规则
+ */
+const AnthropicParameterSchema = BaseParameterSchema.extend({
+  topK: z.number().int().min(0).optional(),
+  system: z.string().optional(),
+  metadata: z.record(z.string(), z.any()).optional()
+});
+
+/**
+ * Anthropic 特有参数键名
+ */
+const ANTHROPIC_SPECIFIC_KEYS = ['topK', 'system', 'metadata'];
 
 /**
  * Anthropic 参数映射器
- * 
+ *
  * 将标准 LLM 请求转换为 Anthropic API 格式
+ * 使用 zod 进行参数验证，移除硬编码的默认值
  */
 export class AnthropicParameterMapper extends BaseParameterMapper {
   constructor() {
-    super('AnthropicParameterMapper', '1.0.0');
-  }
-
-  /**
-   * 初始化支持的参数列表
-   */
-  protected override initializeSupportedParameters(): ParameterDefinition[] {
-    const baseParams = super.initializeSupportedParameters();
-
-    // 添加 Anthropic 特有参数
-    const anthropicSpecificParams: ParameterDefinition[] = [
-      {
-        name: 'topK',
-        type: 'number',
-        required: false,
-        description: 'Top K 采样参数',
-        min: 0,
-        isProviderSpecific: true
-      },
-      {
-        name: 'system',
-        type: 'string',
-        required: false,
-        description: '系统提示',
-        isProviderSpecific: true
-      },
-      {
-        name: 'metadata',
-        type: 'object',
-        required: false,
-        description: '元数据',
-        isProviderSpecific: true
-      }
-    ];
-
-    return [...baseParams, ...anthropicSpecificParams];
+    super('AnthropicParameterMapper', '2.0.0', AnthropicParameterSchema);
   }
 
   /**
    * 将标准 LLM 请求映射为 Anthropic 请求格式
    */
   mapToProvider(request: LLMRequest, providerConfig: ProviderConfig): ProviderRequest {
-    const baseParams = this.applyDefaultValues(request);
-
-    // 构建 Anthropic 请求
     const anthropicRequest: ProviderRequest = {
       model: request.model,
-      max_tokens: baseParams['maxTokens'] || 1000
+      max_tokens: request.maxTokens
     };
 
-    // 基本参数映射
-    if (baseParams['temperature'] !== undefined) {
-      anthropicRequest['temperature'] = baseParams['temperature'];
-    }
+    // 基本参数映射（仅在值存在时添加）
+    this.addOptionalParam(anthropicRequest, 'temperature', request.temperature);
+    this.addOptionalParam(anthropicRequest, 'top_p', request.topP);
 
-    if (baseParams['topP'] !== undefined) {
-      anthropicRequest['top_p'] = baseParams['topP'];
-    }
-
-    if (baseParams['stop'] && baseParams['stop'].length > 0) {
-      anthropicRequest['stop_sequences'] = baseParams['stop'];
+    // 停止序列映射
+    if (request.stop && request.stop.length > 0) {
+      anthropicRequest['stop_sequences'] = request.stop;
     }
 
     // Anthropic 特有参数
-    if (request.metadata?.['topK'] !== undefined) {
-      anthropicRequest['top_k'] = request.metadata['topK'];
-    }
+    this.addMetadataParam(anthropicRequest, request.metadata, 'topK', 'top_k');
 
     // 从消息中提取系统提示
     const systemMessages = request.messages.filter(msg => msg.getRole() === 'system');
@@ -109,9 +81,7 @@ export class AnthropicParameterMapper extends BaseParameterMapper {
     }
 
     // 流式响应
-    if (request.stream) {
-      anthropicRequest['stream'] = request.stream;
-    }
+    this.addOptionalParam(anthropicRequest, 'stream', request.stream);
 
     return anthropicRequest;
   }
@@ -134,12 +104,12 @@ export class AnthropicParameterMapper extends BaseParameterMapper {
       textContent = textBlocks.map((block: any) => block['text']).join('');
     }
 
-    // 解析token使用信息
+    // 解析 token 使用信息
     const promptTokens = usage?.['input_tokens'] || 0;
     const completionTokens = usage?.['output_tokens'] || 0;
     const totalTokens = promptTokens + completionTokens;
 
-    // 构建元数据，保留原始API响应的详细信息
+    // 构建元数据，保留原始 API 响应的详细信息
     const metadata: Record<string, unknown> = {
       model: response['model'],
       responseId: response['id'],

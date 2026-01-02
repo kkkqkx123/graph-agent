@@ -1,6 +1,91 @@
-import { BaseEndpointStrategy } from './base-endpoint-strategy';
+import { z } from 'zod';
+import { BaseEndpointStrategy, BaseEndpointConfigSchema } from './base-endpoint-strategy';
 import { ProviderConfig } from '../parameter-mappers/interfaces/provider-config.interface';
 import { ProviderRequest } from '../parameter-mappers/base-parameter-mapper';
+
+/**
+ * 自定义认证配置 Schema
+ */
+const CustomAuthSchema = z.object({
+  type: z.enum(['header', 'body', 'query']),
+  header: z.string().optional(),
+  field: z.string().optional(),
+  param: z.string().optional()
+}).refine(
+  (auth) => {
+    if (auth.type === 'body') return !!auth.field;
+    if (auth.type === 'query') return !!auth.param;
+    if (auth.type === 'header') return !!auth.header;
+    return true;
+  },
+  { message: 'Auth configuration is incomplete' }
+);
+
+/**
+ * OpenAI Responses 端点配置 Schema
+ * 定义 OpenAI Responses API 特有的配置验证规则
+ */
+const OpenAIResponsesEndpointConfigSchema = BaseEndpointConfigSchema.extend({
+  /**
+   * 提供商名称
+   */
+  name: z.literal('openai-responses'),
+
+  /**
+   * 额外配置
+   */
+  extraConfig: z.object({
+    /**
+     * 端点路径
+     */
+    endpointPath: z.string().default('responses'),
+
+    /**
+     * 认证类型
+     */
+    authType: z.string().default('Bearer'),
+
+    /**
+     * 自定义认证配置
+     */
+    customAuth: CustomAuthSchema.optional(),
+
+    /**
+     * 是否启用 Beta 功能
+     */
+    enableBeta: z.boolean().default(true),
+
+    /**
+     * Beta 版本标识
+     */
+    betaVersion: z.string().default('responses=v1'),
+
+    /**
+     * OpenAI 组织 ID
+     */
+    organization: z.string().optional(),
+
+    /**
+     * OpenAI 项目 ID
+     */
+    project: z.string().optional(),
+
+    /**
+     * API 版本
+     */
+    apiVersion: z.string().optional(),
+
+    /**
+     * 默认请求头
+     */
+    defaultHeaders: z.record(z.string(), z.string()).optional()
+  }).optional()
+});
+
+/**
+ * OpenAI Responses 配置类型
+ */
+export type OpenAIResponsesEndpointConfig = z.infer<typeof OpenAIResponsesEndpointConfigSchema>;
 
 /**
  * OpenAI Responses API 端点策略
@@ -16,7 +101,7 @@ import { ProviderRequest } from '../parameter-mappers/base-parameter-mapper';
  */
 export class OpenAIResponsesEndpointStrategy extends BaseEndpointStrategy {
   constructor() {
-    super('OpenAIResponsesEndpointStrategy', '1.0.0');
+    super('OpenAIResponsesEndpointStrategy', '1.0.0', OpenAIResponsesEndpointConfigSchema);
   }
 
   /**
@@ -111,44 +196,6 @@ export class OpenAIResponsesEndpointStrategy extends BaseEndpointStrategy {
     }
 
     return request;
-  }
-
-  /**
-   * 验证配置
-   *
-   * 基本配置验证，不包含硬编码的模型或 URL 限制
-   */
-  override validateConfig(config: ProviderConfig): {
-    isValid: boolean;
-    errors: string[];
-  } {
-    const result = super.validateConfig(config);
-
-    // 验证自定义认证配置
-    if (config.extraConfig?.['customAuth']) {
-      const authConfig = config.extraConfig['customAuth'];
-      if (!authConfig.type || !['header', 'body', 'query'].includes(authConfig.type)) {
-        result.errors.push('Custom auth type must be one of: header, body, query');
-      }
-
-      if (authConfig.type === 'body' && !authConfig.field) {
-        result.errors.push('Body auth requires a field name');
-      }
-
-      if (authConfig.type === 'query' && !authConfig.param) {
-        result.errors.push('Query auth requires a parameter name');
-      }
-    }
-
-    // 验证端点路径配置
-    if (config.extraConfig?.['endpointPath'] && typeof config.extraConfig['endpointPath'] !== 'string') {
-      result.errors.push('Endpoint path must be a string');
-    }
-
-    return {
-      isValid: result.errors.length === 0,
-      errors: result.errors
-    };
   }
 
   /**

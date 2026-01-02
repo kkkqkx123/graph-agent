@@ -1,18 +1,58 @@
+import { z } from 'zod';
 import { ProviderConfig } from '../parameter-mappers/interfaces/provider-config.interface';
 import { ProviderRequest } from '../parameter-mappers/base-parameter-mapper';
+
+/**
+ * 基础端点配置 Schema
+ * 定义所有端点策略通用的配置验证规则
+ */
+export const BaseEndpointConfigSchema = z.object({
+  /**
+   * 提供商名称
+   */
+  name: z.string().min(1, 'Provider name is required'),
+
+  /**
+   * API 类型
+   */
+  apiType: z.enum(['openai-compatible', 'native', 'custom']),
+
+  /**
+   * 基础 URL
+   */
+  baseURL: z.string().url('Base URL must be a valid URL'),
+
+  /**
+   * API 密钥
+   */
+  apiKey: z.string().min(1, 'API key is required'),
+
+  /**
+   * 额外配置
+   */
+  extraConfig: z.record(z.string(), z.any()).optional()
+});
+
+/**
+ * 基础配置类型
+ */
+export type BaseEndpointConfig = z.infer<typeof BaseEndpointConfigSchema>;
 
 /**
  * 基础端点策略
  *
  * 提供通用的端点策略功能，子类可以扩展实现特定提供商的策略
+ * 使用 Zod 进行配置验证
  */
 export abstract class BaseEndpointStrategy {
   protected readonly name: string;
   protected readonly version: string;
+  protected readonly configSchema: z.ZodSchema;
 
-  constructor(name: string, version: string) {
+  constructor(name: string, version: string, configSchema?: z.ZodSchema) {
     this.name = name;
     this.version = version;
+    this.configSchema = configSchema || BaseEndpointConfigSchema;
   }
 
   /**
@@ -55,26 +95,37 @@ export abstract class BaseEndpointStrategy {
 
   /**
    * 验证配置
-   * 默认验证基本配置项
+   * 使用 Zod schema 进行验证
    */
   validateConfig(config: ProviderConfig): {
     isValid: boolean;
     errors: string[];
   } {
-    const errors: string[] = [];
+    const result = this.configSchema.safeParse(config);
 
-    if (!config.baseURL) {
-      errors.push('Base URL is required');
-    }
+    if (!result.success) {
+      const errors = result.error.issues.map((issue) => {
+        const path = issue.path.length > 0 ? issue.path.join('.') : 'config';
+        return `${path}: ${issue.message}`;
+      });
 
-    if (!config.apiKey) {
-      errors.push('API key is required');
+      return {
+        isValid: false,
+        errors
+      };
     }
 
     return {
-      isValid: errors.length === 0,
-      errors
+      isValid: true,
+      errors: []
     };
+  }
+
+  /**
+   * 获取配置类型（用于类型推断）
+   */
+  getConfigType(): z.ZodType {
+    return this.configSchema;
   }
 
   /**

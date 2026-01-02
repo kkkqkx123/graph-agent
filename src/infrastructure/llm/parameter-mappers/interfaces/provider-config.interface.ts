@@ -13,7 +13,7 @@ export enum ApiType {
 
 /**
  * 提供商配置接口
- * 
+ *
  * 包含提供商的所有配置信息，包括端点策略、参数映射器和功能支持
  */
 export interface ProviderConfig {

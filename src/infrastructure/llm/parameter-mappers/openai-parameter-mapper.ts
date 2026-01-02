@@ -1,192 +1,90 @@
+import { z } from 'zod';
 import { LLMRequest } from '../../../domain/llm/entities/llm-request';
 import { LLMResponse } from '../../../domain/llm/entities/llm-response';
 import { LLMMessage } from '../../../domain/llm/value-objects/llm-message';
-import { BaseParameterMapper, ProviderRequest, ProviderResponse } from './base-parameter-mapper';
+import { BaseParameterMapper, ProviderRequest, ProviderResponse, BaseParameterSchema } from './base-parameter-mapper';
 import { ProviderConfig } from './interfaces/provider-config.interface';
-import { ParameterDefinition } from './interfaces/parameter-definition.interface';
+
+/**
+ * OpenAI 参数 Schema
+ * 定义 OpenAI 特有的参数验证规则
+ */
+const OpenAIParameterSchema = BaseParameterSchema.extend({
+  reasoningEffort: z.enum(['low', 'medium', 'high']).optional(),
+  responseFormat: z.record(z.string(), z.any()).optional(),
+  seed: z.number().int().optional(),
+  serviceTier: z.string().optional(),
+  user: z.string().optional(),
+  n: z.number().int().min(1).max(10).optional(),
+  logitBias: z.record(z.number(), z.number()).optional(),
+  topLogprobs: z.number().int().min(0).max(20).optional(),
+  store: z.boolean().optional(),
+  streamOptions: z.record(z.string(), z.any()).optional()
+});
+
+/**
+ * OpenAI 特有参数键名
+ */
+const OPENAI_SPECIFIC_KEYS = [
+  'reasoningEffort',
+  'responseFormat',
+  'seed',
+  'serviceTier',
+  'user',
+  'n',
+  'logitBias',
+  'topLogprobs',
+  'store',
+  'streamOptions'
+];
 
 /**
  * OpenAI 参数映射器
- * 
+ *
  * 将标准 LLM 请求转换为 OpenAI API 格式
+ * 使用 zod 进行参数验证，移除硬编码的默认值
  */
 export class OpenAIParameterMapper extends BaseParameterMapper {
   constructor() {
-    super('OpenAIParameterMapper', '1.0.0');
-  }
-
-  /**
-   * 初始化支持的参数列表
-   */
-  protected override initializeSupportedParameters(): ParameterDefinition[] {
-    const baseParams = super.initializeSupportedParameters();
-
-    // 添加 OpenAI 特有参数
-    const openaiSpecificParams: ParameterDefinition[] = [
-      {
-        name: 'reasoningEffort',
-        type: 'string',
-        required: false,
-        options: ['low', 'medium', 'high'],
-        description: '推理努力程度',
-        isProviderSpecific: true
-      },
-      {
-        name: 'responseFormat',
-        type: 'object',
-        required: false,
-        description: '响应格式',
-        isProviderSpecific: true
-      },
-      {
-        name: 'seed',
-        type: 'number',
-        required: false,
-        description: '确定性种子',
-        isProviderSpecific: true
-      },
-      {
-        name: 'serviceTier',
-        type: 'string',
-        required: false,
-        description: '服务层级',
-        isProviderSpecific: true
-      },
-      {
-        name: 'user',
-        type: 'string',
-        required: false,
-        description: '用户标识符',
-        isProviderSpecific: true
-      },
-      {
-        name: 'n',
-        type: 'number',
-        required: false,
-        defaultValue: 1,
-        description: '生成数量',
-        min: 1,
-        max: 10,
-        isProviderSpecific: true
-      },
-      {
-        name: 'logitBias',
-        type: 'object',
-        required: false,
-        description: 'Logit bias',
-        isProviderSpecific: true
-      },
-      {
-        name: 'topLogprobs',
-        type: 'number',
-        required: false,
-        description: 'Top logprobs',
-        min: 0,
-        max: 20,
-        isProviderSpecific: true
-      },
-      {
-        name: 'store',
-        type: 'boolean',
-        required: false,
-        description: '存储选项',
-        isProviderSpecific: true
-      },
-      {
-        name: 'streamOptions',
-        type: 'object',
-        required: false,
-        description: '流式选项',
-        isProviderSpecific: true
-      }
-    ];
-
-    return [...baseParams, ...openaiSpecificParams];
+    super('OpenAIParameterMapper', '2.0.0', OpenAIParameterSchema);
   }
 
   /**
    * 将标准 LLM 请求映射为 OpenAI 请求格式
    */
   mapToProvider(request: LLMRequest, providerConfig: ProviderConfig): ProviderRequest {
-    const baseParams = this.applyDefaultValues(request);
-
-    // 构建 OpenAI 请求
     const openaiRequest: ProviderRequest = {
       model: request.model,
       messages: request.messages
     };
 
-    // 基本参数映射
-    if (baseParams['temperature'] !== undefined) {
-      openaiRequest['temperature'] = baseParams['temperature'];
-    }
+    // 基本参数映射（仅在值存在时添加）
+    this.addOptionalParam(openaiRequest, 'temperature', request.temperature);
+    this.addOptionalParam(openaiRequest, 'max_tokens', request.maxTokens);
+    this.addOptionalParam(openaiRequest, 'top_p', request.topP);
+    this.addOptionalParam(openaiRequest, 'frequency_penalty', request.frequencyPenalty);
+    this.addOptionalParam(openaiRequest, 'presence_penalty', request.presencePenalty);
+    this.addOptionalParam(openaiRequest, 'stream', request.stream);
 
-    if (baseParams['maxTokens'] !== undefined) {
-      openaiRequest['max_tokens'] = baseParams['maxTokens'];
-    }
-
-    if (baseParams['topP'] !== undefined) {
-      openaiRequest['top_p'] = baseParams['topP'];
-    }
-
-    if (baseParams['frequencyPenalty'] !== undefined) {
-      openaiRequest['frequency_penalty'] = baseParams['frequencyPenalty'];
-    }
-
-    if (baseParams['presencePenalty'] !== undefined) {
-      openaiRequest['presence_penalty'] = baseParams['presencePenalty'];
-    }
-
-    if (baseParams['stop'] && baseParams['stop'].length > 0) {
-      openaiRequest['stop'] = baseParams['stop'];
-    }
-
-    if (baseParams['stream'] !== undefined) {
-      openaiRequest['stream'] = baseParams['stream'];
+    // 停止序列映射
+    if (request.stop && request.stop.length > 0) {
+      openaiRequest['stop'] = request.stop;
     }
 
     // OpenAI 特有参数
-    if (request.reasoningEffort) {
-      openaiRequest['reasoning_effort'] = request.reasoningEffort;
-    }
+    this.addOptionalParam(openaiRequest, 'reasoning_effort', request.reasoningEffort);
 
     // 从元数据中获取 OpenAI 特有参数
     if (request.metadata) {
-      if (request.metadata?.['responseFormat']) {
-        openaiRequest['response_format'] = request.metadata['responseFormat'];
-      }
-
-      if (request.metadata?.['seed'] !== undefined) {
-        openaiRequest['seed'] = request.metadata['seed'];
-      }
-
-      if (request.metadata?.['serviceTier']) {
-        openaiRequest['service_tier'] = request.metadata['serviceTier'];
-      }
-
-      if (request.metadata?.['user']) {
-        openaiRequest['user'] = request.metadata['user'];
-      }
-
-      if (request.metadata?.['n'] !== undefined) {
-        openaiRequest['n'] = request.metadata['n'];
-      }
-
-      if (request.metadata?.['logitBias']) {
-        openaiRequest['logit_bias'] = request.metadata['logitBias'];
-      }
-
-      if (request.metadata?.['topLogprobs'] !== undefined) {
-        openaiRequest['top_logprobs'] = request.metadata['topLogprobs'];
-      }
-
-      if (request.metadata?.['store'] !== undefined) {
-        openaiRequest['store'] = request.metadata['store'];
-      }
-
-      if (request.metadata?.['streamOptions']) {
-        openaiRequest['stream_options'] = request.metadata['streamOptions'];
-      }
+      this.addMetadataParam(openaiRequest, request.metadata, 'responseFormat', 'response_format');
+      this.addMetadataParam(openaiRequest, request.metadata, 'seed');
+      this.addMetadataParam(openaiRequest, request.metadata, 'serviceTier', 'service_tier');
+      this.addMetadataParam(openaiRequest, request.metadata, 'user');
+      this.addMetadataParam(openaiRequest, request.metadata, 'n');
+      this.addMetadataParam(openaiRequest, request.metadata, 'logitBias', 'logit_bias');
+      this.addMetadataParam(openaiRequest, request.metadata, 'topLogprobs', 'top_logprobs');
+      this.addMetadataParam(openaiRequest, request.metadata, 'store');
+      this.addMetadataParam(openaiRequest, request.metadata, 'streamOptions', 'stream_options');
     }
 
     // 工具相关参数
@@ -216,10 +114,10 @@ export class OpenAIParameterMapper extends BaseParameterMapper {
     const promptDetails = usage?.prompt_tokens_details || {};
     const completionDetails = usage?.completion_tokens_details || {};
 
-    // 推理token（单独统计，但已包含在completion_tokens中）
+    // 推理 token（单独统计，但已包含在 completion_tokens 中）
     const reasoningTokens = completionDetails['reasoning_tokens'] || 0;
 
-    // 构建元数据，保留原始API响应的详细信息
+    // 构建元数据，保留原始 API 响应的详细信息
     const metadata: Record<string, unknown> = {
       model: response['model'],
       responseId: response['id'],

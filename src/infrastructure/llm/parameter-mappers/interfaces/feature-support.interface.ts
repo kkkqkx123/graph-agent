@@ -1,6 +1,6 @@
 /**
  * 功能支持接口
- * 
+ *
  * 定义提供商支持的功能特性
  */
 export interface FeatureSupport {

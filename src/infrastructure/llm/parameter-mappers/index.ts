@@ -2,10 +2,10 @@
  * 参数映射器模块
  *
  * 提供统一的参数映射接口和实现，用于将标准 LLM 请求转换为特定提供商的请求格式
+ * 使用 zod 进行参数验证，移除硬编码的默认值
  */
 
-export { BaseParameterMapper, ProviderRequest, ProviderResponse } from './base-parameter-mapper';
-export { ParameterDefinition, ParameterDefinitionBuilder, CommonParameterDefinitions } from './interfaces/parameter-definition.interface';
+export { BaseParameterMapper, ProviderRequest, ProviderResponse, BaseParameterSchema, ValidationResult } from './base-parameter-mapper';
 export { ProviderConfig, ApiType, ProviderConfigBuilder } from './interfaces/provider-config.interface';
 export { FeatureSupport, BaseFeatureSupport } from './interfaces/feature-support.interface';
 
