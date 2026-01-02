@@ -34,7 +34,6 @@ import { HistoryRepository as HistoryInfrastructureRepository } from '../../infr
 
 // 业务服务实现
 import { GraphAlgorithmServiceImpl } from '../../infrastructure/workflow/services/graph-algorithm-service';
-import { GraphValidationServiceImpl } from '../../infrastructure/workflow/services/graph-validation-service';
 import { ContextProcessorServiceImpl } from '../../infrastructure/workflow/services/context-processor-service';
 import { FunctionExecutionEngine } from '../../infrastructure/workflow/services/function-execution-engine';
 import { MonitoringService } from '../../infrastructure/workflow/services/monitoring-service';
@@ -94,7 +93,6 @@ export const infrastructureBindings = new ContainerModule((bind: any) => {
   // ========== 业务服务绑定 ==========
 
   bind(TYPES.GraphAlgorithmServiceImpl).to(GraphAlgorithmServiceImpl).inSingletonScope();
-  bind(TYPES.GraphValidationServiceImpl).to(GraphValidationServiceImpl).inSingletonScope();
   bind(TYPES.ContextProcessorServiceImpl).to(ContextProcessorServiceImpl).inSingletonScope();
   bind(TYPES.FunctionExecutionEngine).to(FunctionExecutionEngine).inSingletonScope();
   bind(TYPES.MonitoringService).to(MonitoringService).inSingletonScope();

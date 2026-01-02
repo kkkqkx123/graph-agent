@@ -106,12 +106,6 @@ export const applicationBindings = new ContainerModule((bind: any) => {
     })
     .inSingletonScope();
 
-  bind(TYPES.GraphValidationService)
-    .toDynamicValue((context: any) => {
-      return context.container.get(TYPES.GraphValidationServiceImpl);
-    })
-    .inSingletonScope();
-
   bind(TYPES.ContextProcessorService)
     .toDynamicValue((context: any) => {
       return context.container.get(TYPES.ContextProcessorServiceImpl);

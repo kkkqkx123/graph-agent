@@ -279,13 +279,6 @@ export class AppContainer {
   }
 
   /**
-   * 获取图验证服务
-   */
-  static getGraphValidationService() {
-    return this.getService(TYPES.GraphValidationService);
-  }
-
-  /**
    * 获取工作流仓储
    */
   static getWorkflowRepository() {

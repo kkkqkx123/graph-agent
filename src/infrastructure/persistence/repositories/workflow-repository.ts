@@ -2,7 +2,6 @@ import { injectable, inject } from 'inversify';
 import { IWorkflowRepository } from '../../../domain/workflow/repositories/workflow-repository';
 import { Workflow } from '../../../domain/workflow/entities/workflow';
 import { WorkflowDefinition } from '../../../domain/workflow/value-objects/workflow-definition';
-import { GraphValidationServiceImpl } from '../../workflow/services/graph-validation-service';
 import { ID } from '../../../domain/common/value-objects/id';
 import { WorkflowStatus } from '../../../domain/workflow/value-objects/workflow-status';
 import { WorkflowType } from '../../../domain/workflow/value-objects/workflow-type';
@@ -16,8 +15,7 @@ import { ConnectionManager } from '../connections/connection-manager';
 @injectable()
 export class WorkflowRepository extends BaseRepository<Workflow, WorkflowModel, ID> implements IWorkflowRepository {
   constructor(
-    @inject('ConnectionManager') connectionManager: ConnectionManager,
-    @inject('GraphValidationService') private readonly graphValidationService: GraphValidationServiceImpl
+    @inject('ConnectionManager') connectionManager: ConnectionManager
   ) {
     super(connectionManager);
   }
