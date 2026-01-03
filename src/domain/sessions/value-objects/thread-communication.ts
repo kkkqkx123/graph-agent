@@ -60,6 +60,14 @@ export class ThreadMessage extends ValueObject<ThreadMessageProps> {
   }
 
   /**
+   * 获取消息ID（别名，用于兼容性）
+   * @returns 消息ID
+   */
+  public get id(): ID {
+    return this.props.id;
+  }
+
+  /**
    * 获取发送线程ID
    * @returns 发送线程ID
    */

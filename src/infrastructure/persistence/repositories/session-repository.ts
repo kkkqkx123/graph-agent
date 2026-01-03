@@ -12,6 +12,9 @@ import { In } from 'typeorm';
 import { BaseRepository } from './base-repository';
 import { ConnectionManager } from '../connections/connection-manager';
 import { ThreadCommunicationChannel } from '../../../domain/sessions/value-objects/thread-communication';
+import { ThreadCollection } from '../../../domain/sessions/value-objects/thread-collection';
+import { SharedResources } from '../../../domain/sessions/value-objects/shared-resources';
+import { ParallelStrategy } from '../../../domain/sessions/value-objects/parallel-strategy';
 
 @injectable()
 export class SessionRepository extends BaseRepository<Session, SessionModel, ID> implements ISessionRepository {
@@ -37,6 +40,21 @@ export class SessionRepository extends BaseRepository<Session, SessionModel, ID>
       const activity = SessionActivity.create(lastActivityAt, messageCount, threadCount);
       const sessionId = new ID(model.id);
 
+      // 从元数据中获取并行策略类型
+      const parallelStrategyType = (model.metadata?.parallelStrategy as 'sequential' | 'parallel' | 'hybrid') || 'sequential';
+      let parallelStrategy: ParallelStrategy;
+      
+      switch (parallelStrategyType) {
+        case 'parallel':
+          parallelStrategy = ParallelStrategy.parallel();
+          break;
+        case 'hybrid':
+          parallelStrategy = ParallelStrategy.hybrid();
+          break;
+        default:
+          parallelStrategy = ParallelStrategy.sequential();
+      }
+
       const sessionData = {
         id: sessionId,
         userId: model.userId ? new ID(model.userId) : undefined,
@@ -45,10 +63,9 @@ export class SessionRepository extends BaseRepository<Session, SessionModel, ID>
         config: SessionConfig.create(model.context || {}),
         activity: activity,
         metadata: model.metadata || {},
-        threads: new Map(), // 从数据库恢复时，线程需要单独加载
-        sharedResources: new Map(), // 从数据库恢复时，共享资源需要单独加载
-        parallelStrategy: (model.metadata?.parallelStrategy as 'sequential' | 'parallel' | 'hybrid') || 'sequential',
-        communicationChannel: ThreadCommunicationChannel.create(sessionId), // 创建新的通信通道
+        threads: ThreadCollection.empty(), // 从数据库恢复时，线程需要单独加载
+        sharedResources: SharedResources.empty(), // 从数据库恢复时，共享资源需要单独加载
+        parallelStrategy: parallelStrategy,
         createdAt: Timestamp.create(model.createdAt),
         updatedAt: Timestamp.create(model.updatedAt),
         version: Version.fromString(model.version),

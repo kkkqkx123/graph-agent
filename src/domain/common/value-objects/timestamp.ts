@@ -136,6 +136,15 @@ export class Timestamp extends ValueObject<TimestampProps> {
   }
 
   /**
+   * 比较两个时间戳
+   * @param other 另一个时间戳
+   * @returns 负数表示当前时间戳更早，0表示相等，正数表示当前时间戳更晚
+   */
+  public compare(other: Timestamp): number {
+    return this.props.value.getTime() - other.getMilliseconds();
+  }
+
+  /**
    * 计算与另一个时间戳的差值（秒）
    * @param other 另一个时间戳
    * @returns 差值（秒）
