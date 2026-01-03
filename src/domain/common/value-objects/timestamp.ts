@@ -65,10 +65,27 @@ export class Timestamp extends ValueObject<TimestampProps> {
   }
 
   /**
+   * 从Date对象创建时间戳
+   * @param date Date对象
+   * @returns 时间戳实例
+   */
+  public static fromDate(date: Date): Timestamp {
+    return Timestamp.create(date);
+  }
+
+  /**
    * 获取时间戳的Date对象
    * @returns Date对象
    */
   public getDate(): Date {
+    return this.props.value;
+  }
+
+  /**
+   * 获取时间戳的Date对象（别名）
+   * @returns Date对象
+   */
+  public toDate(): Date {
     return this.props.value;
   }
 

@@ -357,4 +357,19 @@ export class WaitNode extends Node {
       }
     };
   }
+
+  protected createNodeFromProps(props: any): any {
+    return new WaitNode(
+      props.id,
+      props.waitType,
+      props.duration,
+      props.condition,
+      props.eventName,
+      props.pollInterval,
+      props.timeout,
+      props.name,
+      props.description,
+      props.position
+    );
+  }
 }

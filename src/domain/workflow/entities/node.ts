@@ -293,38 +293,70 @@ export abstract class Node extends Entity {
   /**
    * 更新Node属性
    * @param properties 新属性
+   * @returns 新Node实例
    */
-  public updateProperties(properties: Record<string, any>): void {
-    (this.props as any).properties = { ...this.props.properties, ...properties };
-    this.update();
+  public updateProperties(properties: Record<string, any>): Node {
+    const newProps: NodeProps = {
+      ...this.props,
+      properties: { ...this.props.properties, ...properties },
+      updatedAt: Timestamp.now(),
+      version: this.props.version.nextPatch()
+    };
+    return this.createNodeFromProps(newProps);
   }
 
   /**
    * 更新Node位置
    * @param position 新位置
+   * @returns 新Node实例
    */
-  public updatePosition(position: { x: number; y: number }): void {
-    (this.props as any).position = position;
-    this.update();
+  public updatePosition(position: { x: number; y: number }): Node {
+    const newProps: NodeProps = {
+      ...this.props,
+      position,
+      updatedAt: Timestamp.now(),
+      version: this.props.version.nextPatch()
+    };
+    return this.createNodeFromProps(newProps);
   }
 
   /**
    * 更新Node状态
    * @param status 新状态
+   * @returns 新Node实例
    */
-  public updateStatus(status: NodeStatus): void {
-    (this.props as any).status = status;
-    this.update();
+  public updateStatus(status: NodeStatus): Node {
+    const newProps: NodeProps = {
+      ...this.props,
+      status,
+      updatedAt: Timestamp.now(),
+      version: this.props.version.nextPatch()
+    };
+    return this.createNodeFromProps(newProps);
   }
 
   /**
-   * 更新实体
+   * 获取业务标识
+   * @returns 业务标识
    */
-  protected override update(): void {
-    (this.props as any).updatedAt = Timestamp.now();
-    (this.props as any).version = this.props.version.nextPatch();
-    super.update();
+  public getBusinessIdentifier(): string {
+    return `node:${this.props.id.toString()}`;
   }
+
+  /**
+   * 获取Node属性（用于持久化）
+   * @returns Node属性
+   */
+  public toProps(): NodeProps {
+    return this.props;
+  }
+
+  /**
+   * 从属性创建Node实例（由子类实现）
+   * @param props Node属性
+   * @returns Node实例
+   */
+  protected abstract createNodeFromProps(props: NodeProps): Node;
 
   /**
    * 转换为字符串

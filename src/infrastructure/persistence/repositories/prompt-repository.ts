@@ -11,6 +11,7 @@ import { PromptId } from '../../../domain/prompts/value-objects/prompt-id';
 import { PromptType, inferPromptTypeFromCategory } from '../../../domain/prompts/value-objects/prompt-type';
 import { PromptStatus } from '../../../domain/prompts/value-objects/prompt-status';
 import { Metadata } from '../../../domain/checkpoint/value-objects/metadata';
+import { DeletionStatus } from '../../../domain/checkpoint/value-objects/deletion-status';
 import { Timestamp } from '../../../domain/common/value-objects/timestamp';
 import { Version } from '../../../domain/common/value-objects/version';
 import { IPromptRepository, PromptSearchCriteria } from '../../../domain/prompts/repositories/prompt-repository';
@@ -41,13 +42,14 @@ export class PromptRepository implements IPromptRepository {
       metadata: Metadata.create({}),
       version: Version.create('1.0.0'),
       status: PromptStatus.ACTIVE,
+      deletionStatus: DeletionStatus.active(),
       createdAt: Timestamp.now(),
       updatedAt: Timestamp.now(),
       priority: 0,
       dependencies: [],
       variables: []
     };
-    return Prompt.reconstruct(promptProps);
+    return Prompt.fromProps(promptProps);
   }
 
   async findByCategory(category: string): Promise<Prompt[]> {
@@ -68,13 +70,14 @@ export class PromptRepository implements IPromptRepository {
         metadata: Metadata.create({}),
         version: Version.create('1.0.0'),
         status: PromptStatus.ACTIVE,
+        deletionStatus: DeletionStatus.active(),
         createdAt: Timestamp.now(),
         updatedAt: Timestamp.now(),
         priority: 0,
         dependencies: [],
         variables: []
       };
-      prompts.push(Prompt.reconstruct(promptProps));
+      prompts.push(Prompt.fromProps(promptProps));
     }
     return prompts;
   }
@@ -184,13 +187,14 @@ export class PromptRepository implements IPromptRepository {
           metadata: Metadata.create({}),
           version: Version.create('1.0.0'),
           status: PromptStatus.ACTIVE,
+          deletionStatus: DeletionStatus.active(),
           createdAt: Timestamp.now(),
           updatedAt: Timestamp.now(),
           priority: 0,
           dependencies: [],
           variables: []
         };
-        prompts.push(Prompt.reconstruct(promptProps));
+        prompts.push(Prompt.fromProps(promptProps));
       }
     }
     return prompts;

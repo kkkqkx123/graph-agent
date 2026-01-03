@@ -221,4 +221,17 @@ export class DataTransformNode extends Node {
     };
   }
 
+  protected createNodeFromProps(props: any): any {
+    return new DataTransformNode(
+      props.id,
+      props.transformType,
+      props.sourceData,
+      props.targetVariable,
+      props.transformConfig,
+      props.transformRegistry,
+      props.name,
+      props.description,
+      props.position
+    );
+  }
 }

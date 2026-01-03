@@ -306,4 +306,16 @@ export class ForkNode extends Node {
       }
     };
   }
+
+  protected createNodeFromProps(props: any): any {
+    return new ForkNode(
+      props.id,
+      props.branches,
+      props.branchStrategy,
+      props.maxConcurrency,
+      props.name,
+      props.description,
+      props.position
+    );
+  }
 }

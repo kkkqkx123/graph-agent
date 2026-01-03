@@ -10,6 +10,7 @@ import { PromptId } from '../value-objects/prompt-id';
 import { PromptType } from '../value-objects/prompt-type';
 import { PromptStatus } from '../value-objects/prompt-status';
 import { Metadata } from '../../checkpoint/value-objects/metadata';
+import { DeletionStatus } from '../../checkpoint/value-objects/deletion-status';
 
 /**
  * 提示词变量
@@ -52,22 +53,23 @@ export interface PromptConfig {
  * 提示词属性接口
  */
 export interface PromptProps {
-  id: PromptId;
-  name: string;
-  type: PromptType;
-  content: string;
-  category: string;
-  metadata: Metadata;
-  version: Version;
-  status: PromptStatus;
-  description?: string;
-  template?: string;
-  priority?: number;
-  createdAt: Timestamp;
-  updatedAt: Timestamp;
-  dependencies?: string[];
-  variables?: PromptVariable[];
-  validation?: PromptValidation;
+  readonly id: PromptId;
+  readonly name: string;
+  readonly type: PromptType;
+  readonly content: string;
+  readonly category: string;
+  readonly metadata: Metadata;
+  readonly version: Version;
+  readonly status: PromptStatus;
+  readonly deletionStatus: DeletionStatus;
+  readonly description?: string;
+  readonly template?: string;
+  readonly priority?: number;
+  readonly createdAt: Timestamp;
+  readonly updatedAt: Timestamp;
+  readonly dependencies?: string[];
+  readonly variables?: PromptVariable[];
+  readonly validation?: PromptValidation;
 }
 
 /**
@@ -157,6 +159,7 @@ export class Prompt extends Entity {
       metadata: Metadata.create(props.metadata || {}),
       version: version,
       status: props.status || PromptStatus.DRAFT,
+      deletionStatus: DeletionStatus.active(),
       description: props.description,
       template: props.template,
       priority: props.priority || 0,
@@ -171,9 +174,9 @@ export class Prompt extends Entity {
   }
 
   /**
-   * 从已有数据重建提示词
+   * 从已有属性重建提示词
    */
-  static reconstruct(props: PromptProps): Prompt {
+  public static fromProps(props: PromptProps): Prompt {
     return new Prompt(props);
   }
 
@@ -195,6 +198,7 @@ export class Prompt extends Entity {
       ...this.props,
       status: PromptStatus.ACTIVE,
       updatedAt: Timestamp.now(),
+      version: this.props.version.nextPatch(),
     };
 
     return new Prompt(newProps);
@@ -212,6 +216,7 @@ export class Prompt extends Entity {
       ...this.props,
       status: PromptStatus.INACTIVE,
       updatedAt: Timestamp.now(),
+      version: this.props.version.nextPatch(),
     };
 
     return new Prompt(newProps);
@@ -229,6 +234,7 @@ export class Prompt extends Entity {
       ...this.props,
       status: PromptStatus.DEPRECATED,
       updatedAt: Timestamp.now(),
+      version: this.props.version.nextPatch(),
     };
 
     return new Prompt(newProps);
@@ -279,6 +285,7 @@ export class Prompt extends Entity {
       ...this.props,
       content: newContent.trim(),
       updatedAt: Timestamp.now(),
+      version: this.props.version.nextPatch(),
     };
 
     return new Prompt(newProps);
@@ -295,9 +302,56 @@ export class Prompt extends Entity {
         ...metadata,
       }),
       updatedAt: Timestamp.now(),
+      version: this.props.version.nextPatch(),
     };
 
     return new Prompt(newProps);
+  }
+
+  /**
+   * 标记提示词为已删除
+   */
+  public markAsDeleted(): Prompt {
+    if (this.props.deletionStatus.isDeleted()) {
+      return this;
+    }
+
+    const newProps: PromptProps = {
+      ...this.props,
+      deletionStatus: this.props.deletionStatus.markAsDeleted(),
+      updatedAt: Timestamp.now(),
+      version: this.props.version.nextPatch(),
+    };
+
+    return new Prompt(newProps);
+  }
+
+  /**
+   * 检查提示词是否已删除
+   */
+  public isDeleted(): boolean {
+    return this.props.deletionStatus.isDeleted();
+  }
+
+  /**
+   * 检查提示词是否活跃
+   */
+  public isActive(): boolean {
+    return this.props.deletionStatus.isActive();
+  }
+
+  /**
+   * 获取业务标识
+   */
+  public getBusinessIdentifier(): string {
+    return `prompt:${this.props.id.toString()}`;
+  }
+
+  /**
+   * 获取提示词属性（用于持久化）
+   */
+  public toProps(): PromptProps {
+    return this.props;
   }
 
   // 属性访问器

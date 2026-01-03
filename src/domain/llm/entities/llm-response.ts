@@ -3,6 +3,7 @@ import { ID } from '../../common/value-objects/id';
 import { Timestamp } from '../../common/value-objects/timestamp';
 import { Version } from '../../common/value-objects/version';
 import { LLMMessage } from '../value-objects/llm-message';
+import { DeletionStatus } from '../../checkpoint/value-objects/deletion-status';
 
 /**
  * Token使用统计接口
@@ -49,22 +50,22 @@ export interface LLMChoice {
  * LLM响应实体接口
  */
 export interface LLMResponseProps {
-  id: ID;
-  requestId: ID;
-  sessionId?: ID;
-  threadId?: ID;
-  workflowId?: ID;
-  nodeId?: ID;
-  model: string;
-  choices: LLMChoice[];
-  usage: TokenUsage;
-  finishReason: string;
-  duration: number; // 毫秒
-  metadata: Record<string, unknown>;
-  createdAt: Timestamp;
-  updatedAt: Timestamp;
-  version: Version;
-  isDeleted: boolean;
+  readonly id: ID;
+  readonly requestId: ID;
+  readonly sessionId?: ID;
+  readonly threadId?: ID;
+  readonly workflowId?: ID;
+  readonly nodeId?: ID;
+  readonly model: string;
+  readonly choices: LLMChoice[];
+  readonly usage: TokenUsage;
+  readonly finishReason: string;
+  readonly duration: number; // 毫秒
+  readonly metadata: Record<string, unknown>;
+  readonly createdAt: Timestamp;
+  readonly updatedAt: Timestamp;
+  readonly version: Version;
+  readonly deletionStatus: DeletionStatus;
 }
 
 /**
@@ -138,7 +139,7 @@ export class LLMResponse extends Entity {
       createdAt: now,
       updatedAt: now,
       version: Version.initial(),
-      isDeleted: false
+      deletionStatus: DeletionStatus.active()
     };
 
     return new LLMResponse(props);
@@ -366,60 +367,51 @@ export class LLMResponse extends Entity {
    * 更新选择列表
    * @param choices 新选择列表
    */
-  public updateChoices(choices: LLMChoice[]): void {
-    if (this.props.isDeleted) {
-      throw new Error('无法更新已删除LLM响应的选择列表');
-    }
+  public updateChoices(choices: LLMChoice[]): LLMResponse {
+    this.props.deletionStatus.ensureActive();
 
-    const newProps = {
+    const newProps: LLMResponseProps = {
       ...this.props,
       choices: [...choices],
       updatedAt: Timestamp.now(),
       version: this.props.version.nextPatch()
     };
 
-    (this as any).props = Object.freeze(newProps);
-    this.update();
+    return new LLMResponse(newProps);
   }
 
   /**
    * 更新Token使用统计
    * @param usage 新Token使用统计
    */
-  public updateUsage(usage: TokenUsage): void {
-    if (this.props.isDeleted) {
-      throw new Error('无法更新已删除LLM响应的Token使用统计');
-    }
+  public updateUsage(usage: TokenUsage): LLMResponse {
+    this.props.deletionStatus.ensureActive();
 
-    const newProps = {
+    const newProps: LLMResponseProps = {
       ...this.props,
       usage: { ...usage },
       updatedAt: Timestamp.now(),
       version: this.props.version.nextPatch()
     };
 
-    (this as any).props = Object.freeze(newProps);
-    this.update();
+    return new LLMResponse(newProps);
   }
 
   /**
    * 更新元数据
    * @param metadata 新元数据
    */
-  public updateMetadata(metadata: Record<string, unknown>): void {
-    if (this.props.isDeleted) {
-      throw new Error('无法更新已删除LLM响应的元数据');
-    }
+  public updateMetadata(metadata: Record<string, unknown>): LLMResponse {
+    this.props.deletionStatus.ensureActive();
 
-    const newProps = {
+    const newProps: LLMResponseProps = {
       ...this.props,
       metadata: { ...metadata },
       updatedAt: Timestamp.now(),
       version: this.props.version.nextPatch()
     };
 
-    (this as any).props = Object.freeze(newProps);
-    this.update();
+    return new LLMResponse(newProps);
   }
 
   /**
@@ -427,46 +419,40 @@ export class LLMResponse extends Entity {
    * @param key 键
    * @param value 值
    */
-  public setMetadata(key: string, value: unknown): void {
-    if (this.props.isDeleted) {
-      throw new Error('无法设置已删除LLM响应的元数据');
-    }
+  public setMetadata(key: string, value: unknown): LLMResponse {
+    this.props.deletionStatus.ensureActive();
 
     const newMetadata = { ...this.props.metadata };
     newMetadata[key] = value;
 
-    const newProps = {
+    const newProps: LLMResponseProps = {
       ...this.props,
       metadata: newMetadata,
       updatedAt: Timestamp.now(),
       version: this.props.version.nextPatch()
     };
 
-    (this as any).props = Object.freeze(newProps);
-    this.update();
+    return new LLMResponse(newProps);
   }
 
   /**
    * 移除元数据项
    * @param key 键
    */
-  public removeMetadata(key: string): void {
-    if (this.props.isDeleted) {
-      throw new Error('无法移除已删除LLM响应的元数据');
-    }
+  public removeMetadata(key: string): LLMResponse {
+    this.props.deletionStatus.ensureActive();
 
     const newMetadata = { ...this.props.metadata };
     delete newMetadata[key];
 
-    const newProps = {
+    const newProps: LLMResponseProps = {
       ...this.props,
       metadata: newMetadata,
       updatedAt: Timestamp.now(),
       version: this.props.version.nextPatch()
     };
 
-    (this as any).props = Object.freeze(newProps);
-    this.update();
+    return new LLMResponse(newProps);
   }
 
   /**
@@ -490,20 +476,19 @@ export class LLMResponse extends Entity {
   /**
    * 标记LLM响应为已删除
    */
-  public markAsDeleted(): void {
-    if (this.props.isDeleted) {
-      return;
+  public markAsDeleted(): LLMResponse {
+    if (this.props.deletionStatus.isDeleted()) {
+      return this;
     }
 
-    const newProps = {
+    const newProps: LLMResponseProps = {
       ...this.props,
-      isDeleted: true,
+      deletionStatus: this.props.deletionStatus.markAsDeleted(),
       updatedAt: Timestamp.now(),
       version: this.props.version.nextPatch()
     };
 
-    (this as any).props = Object.freeze(newProps);
-    this.update();
+    return new LLMResponse(newProps);
   }
 
   /**
@@ -511,7 +496,15 @@ export class LLMResponse extends Entity {
    * @returns 是否已删除
    */
   public isDeleted(): boolean {
-    return this.props.isDeleted;
+    return this.props.deletionStatus.isDeleted();
+  }
+
+  /**
+   * 检查LLM响应是否活跃
+   * @returns 是否活跃
+   */
+  public isActive(): boolean {
+    return this.props.deletionStatus.isActive();
   }
 
   /**
@@ -520,6 +513,14 @@ export class LLMResponse extends Entity {
    */
   public getBusinessIdentifier(): string {
     return `llm-response:${this.props.id.toString()}`;
+  }
+
+  /**
+   * 获取LLM响应属性（用于持久化）
+   * @returns LLM响应属性
+   */
+  public toProps(): LLMResponseProps {
+    return this.props;
   }
 
 }

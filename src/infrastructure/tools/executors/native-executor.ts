@@ -19,13 +19,13 @@ export class NativeExecutor extends ToolExecutorBase {
       return ToolResult.createSuccess(
         execution.id,
         result,
-        Date.now() - execution.startedAt.getTime()
+        Date.now() - execution.startedAt.toDate().getTime()
       );
     } catch (error) {
       return ToolResult.createFailure(
         execution.id,
         error instanceof Error ? error.message : String(error),
-        Date.now() - execution.startedAt.getTime()
+        Date.now() - execution.startedAt.toDate().getTime()
       );
     }
   }
@@ -144,7 +144,7 @@ export class NativeExecutor extends ToolExecutorBase {
         return ToolResult.createSuccess(
           execution.id,
           result,
-          Date.now() - execution.startedAt.getTime()
+          Date.now() - execution.startedAt.toDate().getTime()
         );
       } finally {
         // Clean up temporary file
@@ -158,7 +158,7 @@ export class NativeExecutor extends ToolExecutorBase {
       return ToolResult.createFailure(
         execution.id,
         error instanceof Error ? error.message : String(error),
-        Date.now() - execution.startedAt.getTime()
+        Date.now() - execution.startedAt.toDate().getTime()
       );
     }
   }
@@ -175,13 +175,13 @@ export class NativeExecutor extends ToolExecutorBase {
       return ToolResult.createSuccess(
         execution.id,
         result,
-        Date.now() - execution.startedAt.getTime()
+        Date.now() - execution.startedAt.toDate().getTime()
       );
     } catch (error) {
       return ToolResult.createFailure(
         execution.id,
         error instanceof Error ? error.message : String(error),
-        Date.now() - execution.startedAt.getTime()
+        Date.now() - execution.startedAt.toDate().getTime()
       );
     }
   }

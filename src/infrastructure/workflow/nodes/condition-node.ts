@@ -180,4 +180,15 @@ export class ConditionNode extends Node {
       throw new Error(`条件表达式解析失败: ${errorMessage}`);
     }
   }
+
+  protected createNodeFromProps(props: any): any {
+    return new ConditionNode(
+      props.id,
+      props.condition,
+      props.variables,
+      props.name,
+      props.description,
+      props.position
+    );
+  }
 }

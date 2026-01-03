@@ -354,4 +354,17 @@ export class JoinNode extends Node {
       }
     };
   }
+
+  protected createNodeFromProps(props: any): any {
+    return new JoinNode(
+      props.id,
+      props.joinStrategy,
+      props.requiredCount,
+      props.timeout,
+      props.mergeResults,
+      props.name,
+      props.description,
+      props.position
+    );
+  }
 }

@@ -335,4 +335,18 @@ export class SubgraphNode extends Node {
       }
     };
   }
+
+  protected createNodeFromProps(props: any): any {
+    return new SubgraphNode(
+      props.id,
+      props.subworkflowId,
+      props.inputMappings,
+      props.outputMappings,
+      props.propagateErrors,
+      props.timeout,
+      props.name,
+      props.description,
+      props.position
+    );
+  }
 }

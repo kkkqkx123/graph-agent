@@ -4,25 +4,26 @@ import { Timestamp } from '../../common/value-objects/timestamp';
 import { Version } from '../../common/value-objects/version';
 import { LLMMessage, LLMMessageRole } from '../value-objects/llm-message';
 import { LLMRequestOptions } from '../value-objects/llm-request-options';
+import { DeletionStatus } from '../../checkpoint/value-objects/deletion-status';
 
 /**
  * LLM请求实体接口
  */
 export interface LLMRequestProps {
-  id: ID;
-  sessionId?: ID;
-  threadId?: ID;
-  workflowId?: ID;
-  nodeId?: ID;
-  model: string;
-  messages: LLMMessage[];
-  temperature?: number;
-  maxTokens?: number;
-  topP?: number;
-  frequencyPenalty?: number;
-  presencePenalty?: number;
-  stop?: string[];
-  tools?: Array<{
+  readonly id: ID;
+  readonly sessionId?: ID;
+  readonly threadId?: ID;
+  readonly workflowId?: ID;
+  readonly nodeId?: ID;
+  readonly model: string;
+  readonly messages: LLMMessage[];
+  readonly temperature?: number;
+  readonly maxTokens?: number;
+  readonly topP?: number;
+  readonly frequencyPenalty?: number;
+  readonly presencePenalty?: number;
+  readonly stop?: string[];
+  readonly tools?: Array<{
     type: string;
     function: {
       name: string;
@@ -30,16 +31,16 @@ export interface LLMRequestProps {
       parameters?: Record<string, unknown>;
     };
   }>;
-  toolChoice?: 'none' | 'auto' | 'required' | { type: string; function: { name: string } };
-  stream?: boolean;
-  reasoningEffort?: 'low' | 'medium' | 'high';
-  verbosity?: 'concise' | 'normal' | 'detailed';
-  previousResponseId?: string;
-  metadata: Record<string, unknown>;
-  createdAt: Timestamp;
-  updatedAt: Timestamp;
-  version: Version;
-  isDeleted: boolean;
+  readonly toolChoice?: 'none' | 'auto' | 'required' | { type: string; function: { name: string } };
+  readonly stream?: boolean;
+  readonly reasoningEffort?: 'low' | 'medium' | 'high';
+  readonly verbosity?: 'concise' | 'normal' | 'detailed';
+  readonly previousResponseId?: string;
+  readonly metadata: Record<string, unknown>;
+  readonly createdAt: Timestamp;
+  readonly updatedAt: Timestamp;
+  readonly version: Version;
+  readonly deletionStatus: DeletionStatus;
 }
 
 /**
@@ -132,7 +133,7 @@ export class LLMRequest extends Entity {
       createdAt: now,
       updatedAt: now,
       version: Version.initial(),
-      isDeleted: false
+      deletionStatus: DeletionStatus.active()
     };
 
     return new LLMRequest(props);
@@ -318,22 +319,19 @@ export class LLMRequest extends Entity {
    * 添加消息
    * @param message 消息
    */
-  public addMessage(message: LLMMessage): void {
-    if (this.props.isDeleted) {
-      throw new Error('无法为已删除的LLM请求添加消息');
-    }
+  public addMessage(message: LLMMessage): LLMRequest {
+    this.props.deletionStatus.ensureActive();
 
     const newMessages = [...this.props.messages, message];
 
-    const newProps = {
+    const newProps: LLMRequestProps = {
       ...this.props,
       messages: newMessages,
       updatedAt: Timestamp.now(),
       version: this.props.version.nextPatch()
     };
 
-    (this as any).props = Object.freeze(newProps);
-    this.update();
+    return new LLMRequest(newProps);
   }
 
   /**
@@ -341,10 +339,8 @@ export class LLMRequest extends Entity {
    * @param index 消息索引
    * @param message 新消息
    */
-  public updateMessage(index: number, message: LLMMessage): void {
-    if (this.props.isDeleted) {
-      throw new Error('无法更新已删除LLM请求的消息');
-    }
+  public updateMessage(index: number, message: LLMMessage): LLMRequest {
+    this.props.deletionStatus.ensureActive();
 
     if (index < 0 || index >= this.props.messages.length) {
       throw new Error('消息索引超出范围');
@@ -353,25 +349,22 @@ export class LLMRequest extends Entity {
     const newMessages = [...this.props.messages];
     newMessages[index] = message;
 
-    const newProps = {
+    const newProps: LLMRequestProps = {
       ...this.props,
       messages: newMessages,
       updatedAt: Timestamp.now(),
       version: this.props.version.nextPatch()
     };
 
-    (this as any).props = Object.freeze(newProps);
-    this.update();
+    return new LLMRequest(newProps);
   }
 
   /**
    * 移除消息
    * @param index 消息索引
    */
-  public removeMessage(index: number): void {
-    if (this.props.isDeleted) {
-      throw new Error('无法移除已删除LLL请求的消息');
-    }
+  public removeMessage(index: number): LLMRequest {
+    this.props.deletionStatus.ensureActive();
 
     if (index < 0 || index >= this.props.messages.length) {
       throw new Error('消息索引超出范围');
@@ -380,15 +373,14 @@ export class LLMRequest extends Entity {
     const newMessages = [...this.props.messages];
     newMessages.splice(index, 1);
 
-    const newProps = {
+    const newProps: LLMRequestProps = {
       ...this.props,
       messages: newMessages,
       updatedAt: Timestamp.now(),
       version: this.props.version.nextPatch()
     };
 
-    (this as any).props = Object.freeze(newProps);
-    this.update();
+    return new LLMRequest(newProps);
   }
 
   /**
@@ -412,40 +404,34 @@ export class LLMRequest extends Entity {
     }>;
     toolChoice?: 'none' | 'auto' | 'required' | { type: string; function: { name: string } };
     stream?: boolean;
-  }): void {
-    if (this.props.isDeleted) {
-      throw new Error('无法更新已删除LLM请求的参数');
-    }
+  }): LLMRequest {
+    this.props.deletionStatus.ensureActive();
 
-    const newProps = {
+    const newProps: LLMRequestProps = {
       ...this.props,
       ...updates,
       updatedAt: Timestamp.now(),
       version: this.props.version.nextPatch()
     };
 
-    (this as any).props = Object.freeze(newProps);
-    this.update();
+    return new LLMRequest(newProps);
   }
 
   /**
    * 更新元数据
    * @param metadata 新元数据
    */
-  public updateMetadata(metadata: Record<string, unknown>): void {
-    if (this.props.isDeleted) {
-      throw new Error('无法更新已删除LLM请求的元数据');
-    }
+  public updateMetadata(metadata: Record<string, unknown>): LLMRequest {
+    this.props.deletionStatus.ensureActive();
 
-    const newProps = {
+    const newProps: LLMRequestProps = {
       ...this.props,
       metadata: { ...metadata },
       updatedAt: Timestamp.now(),
       version: this.props.version.nextPatch()
     };
 
-    (this as any).props = Object.freeze(newProps);
-    this.update();
+    return new LLMRequest(newProps);
   }
 
   /**
@@ -453,46 +439,40 @@ export class LLMRequest extends Entity {
    * @param key 键
    * @param value 值
    */
-  public setMetadata(key: string, value: unknown): void {
-    if (this.props.isDeleted) {
-      throw new Error('无法设置已删除LLM请求的元数据');
-    }
+  public setMetadata(key: string, value: unknown): LLMRequest {
+    this.props.deletionStatus.ensureActive();
 
     const newMetadata = { ...this.props.metadata };
     newMetadata[key] = value;
 
-    const newProps = {
+    const newProps: LLMRequestProps = {
       ...this.props,
       metadata: newMetadata,
       updatedAt: Timestamp.now(),
       version: this.props.version.nextPatch()
     };
 
-    (this as any).props = Object.freeze(newProps);
-    this.update();
+    return new LLMRequest(newProps);
   }
 
   /**
    * 移除元数据项
    * @param key 键
    */
-  public removeMetadata(key: string): void {
-    if (this.props.isDeleted) {
-      throw new Error('无法移除已删除LLM请求的元数据');
-    }
+  public removeMetadata(key: string): LLMRequest {
+    this.props.deletionStatus.ensureActive();
 
     const newMetadata = { ...this.props.metadata };
     delete newMetadata[key];
 
-    const newProps = {
+    const newProps: LLMRequestProps = {
       ...this.props,
       metadata: newMetadata,
       updatedAt: Timestamp.now(),
       version: this.props.version.nextPatch()
     };
 
-    (this as any).props = Object.freeze(newProps);
-    this.update();
+    return new LLMRequest(newProps);
   }
 
   /**
@@ -570,20 +550,19 @@ export class LLMRequest extends Entity {
   /**
    * 标记LLM请求为已删除
    */
-  public markAsDeleted(): void {
-    if (this.props.isDeleted) {
-      return;
+  public markAsDeleted(): LLMRequest {
+    if (this.props.deletionStatus.isDeleted()) {
+      return this;
     }
 
-    const newProps = {
+    const newProps: LLMRequestProps = {
       ...this.props,
-      isDeleted: true,
+      deletionStatus: this.props.deletionStatus.markAsDeleted(),
       updatedAt: Timestamp.now(),
       version: this.props.version.nextPatch()
     };
 
-    (this as any).props = Object.freeze(newProps);
-    this.update();
+    return new LLMRequest(newProps);
   }
 
   /**
@@ -591,7 +570,15 @@ export class LLMRequest extends Entity {
    * @returns 是否已删除
    */
   public isDeleted(): boolean {
-    return this.props.isDeleted;
+    return this.props.deletionStatus.isDeleted();
+  }
+
+  /**
+   * 检查LLM请求是否活跃
+   * @returns 是否活跃
+   */
+  public isActive(): boolean {
+    return this.props.deletionStatus.isActive();
   }
 
   /**
@@ -600,6 +587,14 @@ export class LLMRequest extends Entity {
    */
   public getBusinessIdentifier(): string {
     return `llm-request:${this.props.id.toString()}`;
+  }
+
+  /**
+   * 获取LLM请求属性（用于持久化）
+   * @returns LLM请求属性
+   */
+  public toProps(): LLMRequestProps {
+    return this.props;
   }
 
 }

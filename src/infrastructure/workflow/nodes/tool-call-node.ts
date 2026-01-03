@@ -197,4 +197,16 @@ export class ToolCallNode extends Node {
       }
     };
   }
+
+  protected createNodeFromProps(props: any): any {
+    return new ToolCallNode(
+      props.id,
+      props.toolName,
+      props.toolParameters,
+      props.timeout,
+      props.name,
+      props.description,
+      props.position
+    );
+  }
 }

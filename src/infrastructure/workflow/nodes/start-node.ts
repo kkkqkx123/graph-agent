@@ -138,4 +138,15 @@ export class StartNode extends Node {
       }
     };
   }
+
+  protected createNodeFromProps(props: any): StartNode {
+    return new StartNode(
+      props.id,
+      props.initialVariables,
+      props.initializeContext,
+      props.name,
+      props.description,
+      props.position
+    );
+  }
 }

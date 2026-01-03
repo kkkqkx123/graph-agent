@@ -184,4 +184,16 @@ export class EndNode extends Node {
       }
     };
   }
+
+  protected createNodeFromProps(props: any): any {
+    return new EndNode(
+      props.id,
+      props.collectResults,
+      props.cleanupResources,
+      props.returnVariables,
+      props.name,
+      props.description,
+      props.position
+    );
+  }
 }

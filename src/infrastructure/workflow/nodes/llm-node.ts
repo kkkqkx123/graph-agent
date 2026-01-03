@@ -278,4 +278,20 @@ export class LLMNode extends Node {
       }
     };
   }
+
+  protected createNodeFromProps(props: any): any {
+    return new LLMNode(
+      props.id,
+      props.wrapperName,
+      props.prompt,
+      props.systemPrompt,
+      props.contextProcessorName,
+      props.temperature,
+      props.maxTokens,
+      props.stream,
+      props.name,
+      props.description,
+      props.position
+    );
+  }
 }

@@ -389,4 +389,21 @@ export class UserInteractionNode extends Node {
       }
     };
   }
+
+  protected createNodeFromProps(props: any): any {
+    return new UserInteractionNode(
+      props.id,
+      props.interactionType,
+      props.title,
+      props.message,
+      props.formFields,
+      props.approvalOptions,
+      props.notificationChannels,
+      props.timeout,
+      props.allowMultipleResponses,
+      props.name,
+      props.description,
+      props.position
+    );
+  }
 }
