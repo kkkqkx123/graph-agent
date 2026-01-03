@@ -11,6 +11,7 @@ import { SessionModel } from '../models/session.model';
 import { In } from 'typeorm';
 import { BaseRepository } from './base-repository';
 import { ConnectionManager } from '../connections/connection-manager';
+import { ThreadCommunicationChannel } from '../../../domain/sessions/value-objects/thread-communication';
 
 @injectable()
 export class SessionRepository extends BaseRepository<Session, SessionModel, ID> implements ISessionRepository {
@@ -34,15 +35,20 @@ export class SessionRepository extends BaseRepository<Session, SessionModel, ID>
       const threadCount = model.metadata?.threadCount as number || 0;
 
       const activity = SessionActivity.create(lastActivityAt, messageCount, threadCount);
+      const sessionId = new ID(model.id);
 
       const sessionData = {
-        id: new ID(model.id),
+        id: sessionId,
         userId: model.userId ? new ID(model.userId) : undefined,
         title: model.metadata?.title as string || undefined,
         status: SessionStatus.fromString(model.state),
         config: SessionConfig.create(model.context || {}),
         activity: activity,
         metadata: model.metadata || {},
+        threads: new Map(), // 从数据库恢复时，线程需要单独加载
+        sharedResources: new Map(), // 从数据库恢复时，共享资源需要单独加载
+        parallelStrategy: (model.metadata?.parallelStrategy as 'sequential' | 'parallel' | 'hybrid') || 'sequential',
+        communicationChannel: ThreadCommunicationChannel.create(sessionId), // 创建新的通信通道
         createdAt: Timestamp.create(model.createdAt),
         updatedAt: Timestamp.create(model.updatedAt),
         version: Version.fromString(model.version),
@@ -80,6 +86,7 @@ export class SessionRepository extends BaseRepository<Session, SessionModel, ID>
         threadCount: entity.threadCount,
         isDeleted: entity.isDeleted(),
         config: entity.config.value,
+        parallelStrategy: entity.parallelStrategy,
         ...entity.metadata
       };
 

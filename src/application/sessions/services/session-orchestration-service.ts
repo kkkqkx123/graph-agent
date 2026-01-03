@@ -4,7 +4,9 @@
  * 负责会话级别的编排和管理，包括：
  * - 会话生命周期管理
  * - 线程创建和管理
+ * - 线程 fork 操作
  * - 资源配额管理
+ * - 线程间通信
  * - 状态同步
  *
  * 不负责工作流执行逻辑，工作流执行由 WorkflowOrchestrationService 负责
@@ -20,6 +22,9 @@ import { ThreadExecutionService } from '../../threads/services/thread-execution-
 import { ID, ILogger } from '../../../domain/common';
 import { TYPES } from '../../../di/service-keys';
 import { BaseApplicationService } from '../../common/base-application-service';
+import { NodeId } from '../../../domain/workflow';
+import { ForkStrategy, ForkOptions } from '../../../domain/sessions';
+import { ThreadMessageType } from '../../../domain/sessions/value-objects/thread-communication';
 
 /**
  * 线程动作类型
@@ -183,17 +188,351 @@ export class SessionOrchestrationService extends BaseApplicationService {
   }
 
   /**
+   * Fork 线程
+   * @param sessionId 会话ID
+   * @param parentThreadId 父线程ID
+   * @param forkPoint Fork点节点ID
+   * @param forkStrategy Fork策略
+   * @param forkOptions Fork选项
+   * @returns Fork操作结果
+   */
+  async forkThread(
+    sessionId: string,
+    parentThreadId: string,
+    forkPoint: string,
+    forkStrategy?: ForkStrategy,
+    forkOptions?: ForkOptions
+  ): Promise<{
+    forkedThread: any;
+    forkContext: any;
+    forkStrategy: any;
+  }> {
+    return this.executeBusinessOperation(
+      'Fork线程',
+      async () => {
+        const sessionIdObj = this.parseId(sessionId, '会话ID');
+        const parentThreadIdObj = this.parseId(parentThreadId, '父线程ID');
+        const forkPointObj = NodeId.fromString(forkPoint);
+
+        // 检查会话是否存在
+        const session = await this.sessionRepository.findByIdOrFail(sessionIdObj);
+
+        // 检查是否可以创建线程
+        const canCreate = await this.sessionResourceService.canCreateThread(sessionId);
+        if (!canCreate) {
+          throw new Error('会话线程数量已达上限');
+        }
+
+        // 获取父线程
+        const parentThread = await this.threadRepository.findByIdOrFail(parentThreadIdObj);
+
+        // 创建新线程
+        const newThread = session.forkThread(
+          parentThreadId,
+          forkPointObj,
+          forkStrategy || ForkStrategy.createPartial(),
+          forkOptions || ForkOptions.createDefault()
+        );
+
+        // 保存新线程
+        await this.threadRepository.save(newThread);
+
+        // 更新会话
+        await this.sessionRepository.save(session);
+
+        // 广播状态变更
+        const change: StateChange = {
+          type: 'thread',
+          id: newThread.threadId,
+          oldState: 'none',
+          newState: 'forked',
+          timestamp: new Date()
+        };
+
+        await this.broadcastStateChange(sessionIdObj, change);
+
+        return {
+          forkedThread: newThread,
+          forkContext: null,
+          forkStrategy: forkStrategy || ForkStrategy.createPartial()
+        };
+      },
+      { sessionId, parentThreadId, forkPoint }
+    );
+  }
+
+  /**
+   * 发送线程间消息
+   * @param sessionId 会话ID
+   * @param fromThreadId 发送线程ID
+   * @param toThreadId 接收线程ID
+   * @param type 消息类型
+   * @param payload 消息负载
+   * @returns 消息ID
+   */
+  async sendMessage(
+    sessionId: string,
+    fromThreadId: string,
+    toThreadId: string,
+    type: ThreadMessageType,
+    payload: Record<string, unknown>
+  ): Promise<string> {
+    return this.executeBusinessOperation(
+      '发送线程间消息',
+      async () => {
+        const sessionIdObj = this.parseId(sessionId, '会话ID');
+        const fromThreadIdObj = this.parseId(fromThreadId, '发送线程ID');
+        const toThreadIdObj = this.parseId(toThreadId, '接收线程ID');
+
+        // 检查会话是否存在
+        const session = await this.sessionRepository.findByIdOrFail(sessionIdObj);
+
+        // 检查线程是否存在
+        if (!session.hasThread(fromThreadId)) {
+          throw new Error('发送线程不存在');
+        }
+
+        if (!session.hasThread(toThreadId)) {
+          throw new Error('接收线程不存在');
+        }
+
+        // 发送消息
+        const messageId = session.sendMessage(fromThreadIdObj, toThreadIdObj, type, payload);
+
+        // 更新会话
+        await this.sessionRepository.save(session);
+
+        // 更新会话的最后活动时间
+        session.updateLastActivity();
+        await this.sessionRepository.save(session);
+
+        return messageId;
+      },
+      { sessionId, fromThreadId, toThreadId, type }
+    );
+  }
+
+  /**
+   * 广播消息到所有线程
+   * @param sessionId 会话ID
+   * @param fromThreadId 发送线程ID
+   * @param type 消息类型
+   * @param payload 消息负载
+   * @returns 消息ID数组
+   */
+  async broadcastMessage(
+    sessionId: string,
+    fromThreadId: string,
+    type: ThreadMessageType,
+    payload: Record<string, unknown>
+  ): Promise<string[]> {
+    return this.executeBusinessOperation(
+      '广播消息',
+      async () => {
+        const sessionIdObj = this.parseId(sessionId, '会话ID');
+        const fromThreadIdObj = this.parseId(fromThreadId, '发送线程ID');
+
+        // 检查会话是否存在
+        const session = await this.sessionRepository.findByIdOrFail(sessionIdObj);
+
+        // 检查发送线程是否存在
+        if (!session.hasThread(fromThreadId)) {
+          throw new Error('发送线程不存在');
+        }
+
+        // 广播消息
+        const messageIds = session.broadcastMessage(fromThreadIdObj, type, payload);
+
+        // 更新会话
+        await this.sessionRepository.save(session);
+
+        // 更新会话的最后活动时间
+        session.updateLastActivity();
+        await this.sessionRepository.save(session);
+
+        return messageIds;
+      },
+      { sessionId, fromThreadId, type }
+    );
+  }
+
+  /**
+   * 获取线程的未读消息
+   * @param sessionId 会话ID
+   * @param threadId 线程ID
+   * @returns 未读消息数量
+   */
+  async getUnreadMessageCount(sessionId: string, threadId: string): Promise<number> {
+    return this.executeQueryOperation(
+      '获取未读消息数量',
+      async () => {
+        const sessionIdObj = this.parseId(sessionId, '会话ID');
+        const threadIdObj = this.parseId(threadId, '线程ID');
+
+        // 检查会话是否存在
+        const session = await this.sessionRepository.findByIdOrFail(sessionIdObj);
+
+        return session.getUnreadMessageCount(threadIdObj);
+      },
+      { sessionId, threadId }
+    );
+  }
+
+  /**
+   * 获取线程的消息
+   * @param sessionId 会话ID
+   * @param threadId 线程ID
+   * @param includeRead 是否包含已读消息
+   * @returns 消息数组
+   */
+  async getMessagesForThread(
+    sessionId: string,
+    threadId: string,
+    includeRead: boolean = false
+  ): Promise<any[]> {
+    return this.executeQueryOperation(
+      '获取线程消息',
+      async () => {
+        const sessionIdObj = this.parseId(sessionId, '会话ID');
+        const threadIdObj = this.parseId(threadId, '线程ID');
+
+        // 检查会话是否存在
+        const session = await this.sessionRepository.findByIdOrFail(sessionIdObj);
+
+        return session.getMessagesForThread(threadIdObj, includeRead);
+      },
+      { sessionId, threadId, includeRead }
+    );
+  }
+
+  /**
+   * 设置共享资源
+   * @param sessionId 会话ID
+   * @param key 资源键
+   * @param value 资源值
+   */
+  async setSharedResource(sessionId: string, key: string, value: unknown): Promise<void> {
+    return this.executeBusinessOperation(
+      '设置共享资源',
+      async () => {
+        const sessionIdObj = this.parseId(sessionId, '会话ID');
+
+        // 检查会话是否存在
+        const session = await this.sessionRepository.findByIdOrFail(sessionIdObj);
+
+        // 设置共享资源
+        session.setSharedResource(key, value);
+
+        // 更新会话
+        await this.sessionRepository.save(session);
+
+        // 更新会话的最后活动时间
+        session.updateLastActivity();
+        await this.sessionRepository.save(session);
+      },
+      { sessionId, key }
+    );
+  }
+
+  /**
+   * 获取共享资源
+   * @param sessionId 会话ID
+   * @param key 资源键
+   * @returns 资源值
+   */
+  async getSharedResource(sessionId: string, key: string): Promise<unknown> {
+    return this.executeQueryOperation(
+      '获取共享资源',
+      async () => {
+        const sessionIdObj = this.parseId(sessionId, '会话ID');
+
+        // 检查会话是否存在
+        const session = await this.sessionRepository.findByIdOrFail(sessionIdObj);
+
+        return session.getSharedResource(key);
+      },
+      { sessionId, key }
+    );
+  }
+
+  /**
+   * 更新并行策略
+   * @param sessionId 会话ID
+   * @param strategy 并行策略
+   */
+  async updateParallelStrategy(
+    sessionId: string,
+    strategy: 'sequential' | 'parallel' | 'hybrid'
+  ): Promise<void> {
+    return this.executeBusinessOperation(
+      '更新并行策略',
+      async () => {
+        const sessionIdObj = this.parseId(sessionId, '会话ID');
+
+        // 检查会话是否存在
+        const session = await this.sessionRepository.findByIdOrFail(sessionIdObj);
+
+        // 更新并行策略
+        session.updateParallelStrategy(strategy);
+
+        // 更新会话
+        await this.sessionRepository.save(session);
+
+        // 更新会话的最后活动时间
+        session.updateLastActivity();
+        await this.sessionRepository.save(session);
+      },
+      { sessionId, strategy }
+    );
+  }
+
+  /**
+   * 获取会话的线程统计信息
+   * @param sessionId 会话ID
+   * @returns 线程统计信息
+   */
+  async getSessionThreadStats(sessionId: string): Promise<{
+    total: number;
+    active: number;
+    completed: number;
+    failed: number;
+    allCompleted: boolean;
+    hasActive: boolean;
+  }> {
+    return this.executeQueryOperation(
+      '获取会话线程统计信息',
+      async () => {
+        const sessionIdObj = this.parseId(sessionId, '会话ID');
+
+        // 检查会话是否存在
+        const session = await this.sessionRepository.findByIdOrFail(sessionIdObj);
+
+        return {
+          total: session.threadCount,
+          active: session.getActiveThreadCount(),
+          completed: session.getCompletedThreadCount(),
+          failed: session.getFailedThreadCount(),
+          allCompleted: session.areAllThreadsCompleted(),
+          hasActive: session.hasActiveThreads()
+        };
+      },
+      { sessionId }
+    );
+  }
+
+  /**
    * 广播状态变更
    * @param sessionId 会话ID
    * @param change 状态变更
    */
-  private async broadcastStateChange(sessionId: ID, change: StateChange): Promise<void> {
+  private async broadcastStateChange(sessionId: ID | string, change: StateChange): Promise<void> {
     // 这里可以实现事件发布机制
     // 目前只是记录日志
     this.logger.info(`Session ${sessionId.toString()} state change:`, change);
 
     // 更新会话的最后活动时间
-    const session = await this.sessionRepository.findById(sessionId);
+    const sessionIdObj = typeof sessionId === 'string' ? this.parseId(sessionId, '会话ID') : sessionId;
+    const session = await this.sessionRepository.findById(sessionIdObj);
     if (session) {
       session.updateLastActivity();
       await this.sessionRepository.save(session);

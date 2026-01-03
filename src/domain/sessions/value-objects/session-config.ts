@@ -5,6 +5,7 @@ import { ValueObject } from '../../common/value-objects';
 export interface SessionConfigProps {
   maxDuration: number; // 最大持续时间（分钟）
   maxMessages: number; // 最大消息数量
+  maxThreads: number; // 最大线程数量
   autoSave: boolean; // 是否自动保存
   enableHistory: boolean; // 是否启用历史记录
   timeoutMinutes: number; // 超时时间（分钟）
@@ -25,6 +26,7 @@ export class SessionConfig extends ValueObject<SessionConfigProps> {
     return new SessionConfig({
       maxDuration: 60, // 60分钟
       maxMessages: 1000,
+      maxThreads: 10, // 默认最多10个线程
       autoSave: true,
       enableHistory: true,
       timeoutMinutes: 30
@@ -85,6 +87,14 @@ export class SessionConfig extends ValueObject<SessionConfigProps> {
   }
 
   /**
+   * 获取最大线程数量
+   * @returns 最大线程数量
+   */
+  public getMaxThreads(): number {
+    return this.props.maxThreads;
+  }
+
+  /**
    * 更新配置
    * @param updates 更新的配置
    * @returns 新的配置实例
@@ -108,6 +118,7 @@ export class SessionConfig extends ValueObject<SessionConfigProps> {
     return (
       this.props.maxDuration === config.getMaxDuration() &&
       this.props.maxMessages === config.getMaxMessages() &&
+      this.props.maxThreads === config.getMaxThreads() &&
       this.props.autoSave === config.isAutoSaveEnabled() &&
       this.props.enableHistory === config.isHistoryEnabled() &&
       this.props.timeoutMinutes === config.getTimeoutMinutes()
@@ -124,6 +135,10 @@ export class SessionConfig extends ValueObject<SessionConfigProps> {
 
     if (this.props.maxMessages <= 0) {
       throw new Error('最大消息数量必须大于0');
+    }
+
+    if (this.props.maxThreads <= 0) {
+      throw new Error('最大线程数量必须大于0');
     }
 
     if (this.props.timeoutMinutes <= 0) {
