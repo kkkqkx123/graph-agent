@@ -5,6 +5,8 @@ import { ForkOptions, ForkContext } from '../../domain/sessions/value-objects/op
 import { NodeId } from '../../domain/workflow/value-objects';
 import { ID, Timestamp, Version } from '../../domain/common/value-objects';
 import { ThreadStatus as ThreadStatusVO, ThreadExecution } from '../../domain/threads/value-objects';
+import { Metadata } from '../../domain/checkpoint/value-objects';
+import { DeletionStatus } from '../../domain/checkpoint/value-objects';
 
 /**
  * 线程Fork服务
@@ -89,17 +91,17 @@ export class ThreadForkService {
       priority: parentThread.priority,
       title: `${parentThread.title || 'Thread'} (Fork)`,
       description: `Forked from ${parentThreadId}`,
-      metadata: {
-        ...parentThread.metadata,
+      metadata: Metadata.create({
+        ...parentThread.metadata.toRecord(),
         forkContext: forkContext.forkId.toString(),
         parentThreadId: parentThreadId
-      },
+      }),
       definition: parentThread.definition,
       execution: newExecution,
+      deletionStatus: DeletionStatus.active(),
       createdAt: now,
       updatedAt: now,
-      version: Version.initial(),
-      isDeleted: false
+      version: Version.initial()
     };
     
     const newThread = Thread.fromProps(newThreadProps);
@@ -109,7 +111,7 @@ export class ThreadForkService {
     // 具体实现可能需要访问 Thread 的内部方法或通过应用层服务来完成
 
     // 添加新线程到会话
-    session.addThread(newThread);
+    const updatedSession = session.addThread(newThread);
 
     return newThread;
   }

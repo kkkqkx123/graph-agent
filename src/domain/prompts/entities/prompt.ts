@@ -9,20 +9,7 @@ import { Version } from '../../common/value-objects/version';
 import { PromptId } from '../value-objects/prompt-id';
 import { PromptType } from '../value-objects/prompt-type';
 import { PromptStatus } from '../value-objects/prompt-status';
-
-/**
- * 提示词元数据
- */
-export interface PromptMetadata {
-  filePath?: string;
-  relativePath?: string;
-  isComposite?: boolean;
-  subFiles?: string[];
-  tags?: string[];
-  createdBy?: string;
-  updatedBy?: string;
-  [key: string]: unknown;
-}
+import { Metadata } from '../../checkpoint/value-objects/metadata';
 
 /**
  * 提示词变量
@@ -70,7 +57,7 @@ export interface PromptProps {
   type: PromptType;
   content: string;
   category: string;
-  metadata: PromptMetadata;
+  metadata: Metadata;
   version: Version;
   status: PromptStatus;
   description?: string;
@@ -91,7 +78,7 @@ export interface CreatePromptProps {
   type: PromptType;
   content: string;
   category: string;
-  metadata?: PromptMetadata;
+  metadata?: Record<string, unknown>;
   version?: string;
   status?: PromptStatus;
   description?: string;
@@ -167,7 +154,7 @@ export class Prompt extends Entity {
       type: props.type,
       content: props.content.trim(),
       category: props.category.trim(),
-      metadata: props.metadata || {},
+      metadata: Metadata.create(props.metadata || {}),
       version: version,
       status: props.status || PromptStatus.DRAFT,
       description: props.description,
@@ -195,7 +182,7 @@ export class Prompt extends Entity {
   /**
    * 激活提示词
    */
-  activate(): void {
+  activate(): Prompt {
     if (this.props.status === PromptStatus.ACTIVE) {
       throw new Error('提示词已经是激活状态');
     }
@@ -204,66 +191,59 @@ export class Prompt extends Entity {
       throw new Error('已弃用的提示词不能激活');
     }
 
-    // 创建新的props并更新状态和时间戳
     const newProps: PromptProps = {
       ...this.props,
       status: PromptStatus.ACTIVE,
       updatedAt: Timestamp.now(),
     };
 
-    // 使用Object.assign更新冻结的props
-    (this as any).props = Object.freeze(newProps);
-    this.update();
+    return new Prompt(newProps);
   }
 
   /**
    * 禁用提示词
    */
-  deactivate(): void {
+  deactivate(): Prompt {
     if (this.props.status === PromptStatus.INACTIVE) {
       throw new Error('提示词已经是禁用状态');
     }
 
-    // 创建新的props并更新状态和时间戳
     const newProps: PromptProps = {
       ...this.props,
       status: PromptStatus.INACTIVE,
       updatedAt: Timestamp.now(),
     };
 
-    (this as any).props = Object.freeze(newProps);
-    this.update();
+    return new Prompt(newProps);
   }
 
   /**
    * 弃用提示词
    */
-  deprecate(): void {
+  deprecate(): Prompt {
     if (this.props.status === PromptStatus.DEPRECATED) {
       throw new Error('提示词已经是弃用状态');
     }
 
-    // 创建新的props并更新状态和时间戳
     const newProps: PromptProps = {
       ...this.props,
       status: PromptStatus.DEPRECATED,
       updatedAt: Timestamp.now(),
     };
 
-    (this as any).props = Object.freeze(newProps);
-    this.update();
+    return new Prompt(newProps);
   }
 
   /**
    * 更新提示词内容
    */
-  updateContent(newContent: string): void {
+  updateContent(newContent: string): Prompt {
     if (!newContent || newContent.trim().length === 0) {
       throw new Error('提示词内容不能为空');
     }
 
     if (newContent === this.props.content) {
-      return; // 内容没有变化，无需更新
+      return this; // 内容没有变化，无需更新
     }
 
     // 验证新内容
@@ -295,32 +275,29 @@ export class Prompt extends Entity {
       }
     }
 
-    // 创建新的props并更新内容和时间戳
     const newProps: PromptProps = {
       ...this.props,
       content: newContent.trim(),
       updatedAt: Timestamp.now(),
     };
 
-    (this as any).props = Object.freeze(newProps);
-    this.update();
+    return new Prompt(newProps);
   }
 
   /**
    * 更新提示词元数据
    */
-  updateMetadata(metadata: Partial<PromptMetadata>): void {
+  updateMetadata(metadata: Record<string, unknown>): Prompt {
     const newProps: PromptProps = {
       ...this.props,
-      metadata: {
-        ...this.props.metadata,
+      metadata: Metadata.create({
+        ...this.props.metadata.toRecord(),
         ...metadata,
-      },
+      }),
       updatedAt: Timestamp.now(),
     };
 
-    (this as any).props = Object.freeze(newProps);
-    this.update();
+    return new Prompt(newProps);
   }
 
   // 属性访问器
@@ -341,7 +318,7 @@ export class Prompt extends Entity {
     return this.props.category;
   }
 
-  get metadata(): PromptMetadata {
+  get metadata(): Metadata {
     return this.props.metadata;
   }
 

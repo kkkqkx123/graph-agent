@@ -168,7 +168,7 @@ export const mapSessionToDTO = (session: Session): SessionDTO => {
       lastActivityAt: session.lastActivityAt.toISOString(),
       createdAt: session.createdAt.toISOString()
     },
-    metadata: session.metadata,
+    metadata: session.metadata.toRecord(),
     createdAt: session.createdAt.toISOString(),
     updatedAt: session.updatedAt.toISOString(),
     version: session.version.toString(),

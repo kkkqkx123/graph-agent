@@ -3,6 +3,9 @@ import { IHistoryRepository } from '../../../domain/history/repositories/history
 import { History } from '../../../domain/history/entities/history';
 import { ID } from '../../../domain/common/value-objects/id';
 import { HistoryType } from '../../../domain/history/value-objects/history-type';
+import { HistoryDetails } from '../../../domain/history/value-objects/history-details';
+import { Metadata } from '../../../domain/checkpoint/value-objects/metadata';
+import { DeletionStatus } from '../../../domain/checkpoint/value-objects/deletion-status';
 import { Timestamp } from '../../../domain/common/value-objects/timestamp';
 import { Version } from '../../../domain/common/value-objects/version';
 import { HistoryModel } from '../models/history.model';
@@ -35,12 +38,12 @@ export class HistoryRepository extends BaseRepository<History, HistoryModel, ID>
         type: HistoryType.fromString(model.action),
         title: model.data?.title as string || undefined,
         description: model.data?.description as string || undefined,
-        details: model.data || {},
-        metadata: model.metadata || {},
+        details: HistoryDetails.create(model.data || {}),
+        metadata: Metadata.create(model.metadata || {}),
         createdAt: Timestamp.create(model.createdAt),
         updatedAt: Timestamp.create(model.updatedAt),
         version: Version.fromString(model.version),
-        isDeleted: false
+        deletionStatus: DeletionStatus.active()
       };
 
       return History.fromProps(historyData);
@@ -62,21 +65,21 @@ export class HistoryRepository extends BaseRepository<History, HistoryModel, ID>
 
       model.id = entity.historyId.value;
       model.entityType = 'history';
-      model.entityId = (entity.metadata as any)['entityId'] || entity.historyId.value;
+      model.entityId = entity.metadata.getValue('entityId') as string || entity.historyId.value;
       model.action = entity.type.getValue();
       model.data = {
         title: entity.title,
         description: entity.description,
-        ...entity.details
+        ...entity.details.toRecord()
       };
-      model.previousData = (entity.metadata as any)['previousData'];
-      model.metadata = entity.metadata;
-      model.userId = (entity.metadata as any)['userId'];
+      model.previousData = entity.metadata.getValue('previousData');
+      model.metadata = entity.metadata.toRecord();
+      model.userId = entity.metadata.getValue('userId') as string;
       model.sessionId = entity.sessionId?.value;
       model.threadId = entity.threadId?.value;
       model.workflowId = entity.workflowId?.value;
-      model.nodeId = (entity.metadata as any)['nodeId'];
-      model.edgeId = (entity.metadata as any)['edgeId'];
+      model.nodeId = entity.metadata.getValue('nodeId') as string;
+      model.edgeId = entity.metadata.getValue('edgeId') as string;
       model.timestamp = entity.createdAt.getMilliseconds();
       model.createdAt = entity.createdAt.getDate();
       model.updatedAt = entity.updatedAt.getDate();

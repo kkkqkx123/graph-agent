@@ -3,23 +3,28 @@ import { ID } from '../../common/value-objects/id';
 import { Timestamp } from '../../common/value-objects/timestamp';
 import { Version } from '../../common/value-objects/version';
 import { CheckpointType } from '../value-objects/checkpoint-type';
+import { CheckpointId } from '../value-objects/checkpoint-id';
+import { StateData } from '../value-objects/state-data';
+import { Metadata } from '../value-objects/metadata';
+import { Tags } from '../value-objects/tags';
+import { DeletionStatus } from '../value-objects/deletion-status';
 
 /**
  * 检查点实体接口
  */
 export interface CheckpointProps {
-  id: ID;
+  id: CheckpointId;
   threadId: ID;
   type: CheckpointType;
   title?: string;
   description?: string;
-  stateData: Record<string, unknown>;
-  tags: string[];
-  metadata: Record<string, unknown>;
+  stateData: StateData;
+  tags: Tags;
+  metadata: Metadata;
+  deletionStatus: DeletionStatus;
   createdAt: Timestamp;
   updatedAt: Timestamp;
   version: Version;
-  isDeleted: boolean;
 }
 
 /**
@@ -28,11 +33,12 @@ export interface CheckpointProps {
  * 表示线程执行过程中的检查点
  * 职责：
  * - 检查点基本信息管理
- * - 状态数据管理
+ * - 协调值对象进行状态管理
  * - 属性访问
  *
  * 不负责：
  * - 复杂的验证逻辑（由CheckpointValidationService负责）
+ * - 数据操作的细节（由值对象负责）
  */
 export class Checkpoint extends Entity {
   private readonly props: CheckpointProps;
@@ -42,7 +48,7 @@ export class Checkpoint extends Entity {
    * @param props 检查点属性
    */
   private constructor(props: CheckpointProps) {
-    super(props.id, props.createdAt, props.updatedAt, props.version);
+    super(props.id.value, props.createdAt, props.updatedAt, props.version);
     this.props = Object.freeze(props);
   }
 
@@ -67,7 +73,7 @@ export class Checkpoint extends Entity {
     metadata?: Record<string, unknown>
   ): Checkpoint {
     const now = Timestamp.now();
-    const checkpointId = ID.generate();
+    const checkpointId = CheckpointId.generate();
 
     const props: CheckpointProps = {
       id: checkpointId,
@@ -75,13 +81,13 @@ export class Checkpoint extends Entity {
       type,
       title,
       description,
-      stateData: { ...stateData },
-      tags: tags || [],
-      metadata: metadata || {},
+      stateData: StateData.create(stateData),
+      tags: Tags.create(tags || []),
+      metadata: Metadata.create(metadata || {}),
+      deletionStatus: DeletionStatus.active(),
       createdAt: now,
       updatedAt: now,
-      version: Version.initial(),
-      isDeleted: false
+      version: Version.initial()
     };
 
     return new Checkpoint(props);
@@ -100,7 +106,7 @@ export class Checkpoint extends Entity {
    * 获取检查点ID
    * @returns 检查点ID
    */
-  public get checkpointId(): ID {
+  public get checkpointId(): CheckpointId {
     return this.props.id;
   }
 
@@ -140,236 +146,178 @@ export class Checkpoint extends Entity {
    * 获取状态数据
    * @returns 状态数据
    */
-  public get stateData(): Record<string, unknown> {
-    return { ...this.props.stateData };
+  public get stateData(): StateData {
+    return this.props.stateData;
   }
 
   /**
    * 获取标签
-   * @returns 标签列表
+   * @returns 标签
    */
-  public get tags(): string[] {
-    return [...this.props.tags];
+  public get tags(): Tags {
+    return this.props.tags;
   }
 
   /**
    * 获取元数据
    * @returns 元数据
    */
-  public get metadata(): Record<string, unknown> {
-    return { ...this.props.metadata };
+  public get metadata(): Metadata {
+    return this.props.metadata;
+  }
+
+  /**
+   * 获取删除状态
+   * @returns 删除状态
+   */
+  public get deletionStatus(): DeletionStatus {
+    return this.props.deletionStatus;
   }
 
   /**
    * 更新标题
    * @param title 新标题
+   * @returns 新检查点实例
    */
-  public updateTitle(title: string): void {
-    if (this.props.isDeleted) {
-      throw new Error('无法更新已删除的检查点');
-    }
+  public updateTitle(title: string): Checkpoint {
+    this.props.deletionStatus.ensureActive();
 
-    const newProps = {
+    return new Checkpoint({
       ...this.props,
       title,
       updatedAt: Timestamp.now(),
       version: this.props.version.nextPatch()
-    };
-
-    (this as any).props = Object.freeze(newProps);
-    this.update();
+    });
   }
 
   /**
    * 更新描述
    * @param description 新描述
+   * @returns 新检查点实例
    */
-  public updateDescription(description: string): void {
-    if (this.props.isDeleted) {
-      throw new Error('无法更新已删除的检查点');
-    }
+  public updateDescription(description: string): Checkpoint {
+    this.props.deletionStatus.ensureActive();
 
-    const newProps = {
+    return new Checkpoint({
       ...this.props,
       description,
       updatedAt: Timestamp.now(),
       version: this.props.version.nextPatch()
-    };
-
-    (this as any).props = Object.freeze(newProps);
-    this.update();
+    });
   }
 
   /**
    * 更新状态数据
    * @param stateData 新状态数据
+   * @returns 新检查点实例
    */
-  public updateStateData(stateData: Record<string, unknown>): void {
-    if (this.props.isDeleted) {
-      throw new Error('无法更新已删除检查点的状态数据');
-    }
+  public updateStateData(stateData: Record<string, unknown>): Checkpoint {
+    this.props.deletionStatus.ensureActive();
 
-    const newProps = {
+    return new Checkpoint({
       ...this.props,
-      stateData: { ...stateData },
+      stateData: StateData.create(stateData),
       updatedAt: Timestamp.now(),
       version: this.props.version.nextPatch()
-    };
-
-    (this as any).props = Object.freeze(newProps);
-    this.update();
-  }
-
-  /**
-   * 添加标签
-   * @param tag 标签
-   */
-  public addTag(tag: string): void {
-    if (this.props.isDeleted) {
-      throw new Error('无法为已删除的检查点添加标签');
-    }
-
-    if (this.props.tags.includes(tag)) {
-      return; // 标签已存在
-    }
-
-    const newProps = {
-      ...this.props,
-      tags: [...this.props.tags, tag],
-      updatedAt: Timestamp.now(),
-      version: this.props.version.nextPatch()
-    };
-
-    (this as any).props = Object.freeze(newProps);
-    this.update();
-  }
-
-  /**
-   * 移除标签
-   * @param tag 标签
-   */
-  public removeTag(tag: string): void {
-    if (this.props.isDeleted) {
-      throw new Error('无法为已删除的检查点移除标签');
-    }
-
-    const index = this.props.tags.indexOf(tag);
-    if (index === -1) {
-      return; // 标签不存在
-    }
-
-    const newTags = [...this.props.tags];
-    newTags.splice(index, 1);
-
-    const newProps = {
-      ...this.props,
-      tags: newTags,
-      updatedAt: Timestamp.now(),
-      version: this.props.version.nextPatch()
-    };
-
-    (this as any).props = Object.freeze(newProps);
-    this.update();
-  }
-
-  /**
-   * 更新元数据
-   * @param metadata 新元数据
-   */
-  public updateMetadata(metadata: Record<string, unknown>): void {
-    if (this.props.isDeleted) {
-      throw new Error('无法更新已删除检查点的元数据');
-    }
-
-    const newProps = {
-      ...this.props,
-      metadata: { ...metadata },
-      updatedAt: Timestamp.now(),
-      version: this.props.version.nextPatch()
-    };
-
-    (this as any).props = Object.freeze(newProps);
-    this.update();
-  }
-
-  /**
-   * 设置元数据项
-   * @param key 键
-   * @param value 值
-   */
-  public setMetadata(key: string, value: unknown): void {
-    if (this.props.isDeleted) {
-      throw new Error('无法设置已删除检查点的元数据');
-    }
-
-    const newMetadata = { ...this.props.metadata };
-    newMetadata[key] = value;
-
-    const newProps = {
-      ...this.props,
-      metadata: newMetadata,
-      updatedAt: Timestamp.now(),
-      version: this.props.version.nextPatch()
-    };
-
-    (this as any).props = Object.freeze(newProps);
-    this.update();
-  }
-
-  /**
-   * 移除元数据项
-   * @param key 键
-   */
-  public removeMetadata(key: string): void {
-    if (this.props.isDeleted) {
-      throw new Error('无法移除已删除检查点的元数据');
-    }
-
-    const newMetadata = { ...this.props.metadata };
-    delete newMetadata[key];
-
-    const newProps = {
-      ...this.props,
-      metadata: newMetadata,
-      updatedAt: Timestamp.now(),
-      version: this.props.version.nextPatch()
-    };
-
-    (this as any).props = Object.freeze(newProps);
-    this.update();
-  }
-
-  /**
-   * 获取状态数据值
-   * @param key 键
-   * @returns 值
-   */
-  public getStateDataValue(key: string): unknown {
-    return this.props.stateData[key];
+    });
   }
 
   /**
    * 设置状态数据值
    * @param key 键
    * @param value 值
+   * @returns 新检查点实例
    */
-  public setStateDataValue(key: string, value: unknown): void {
-    if (this.props.isDeleted) {
-      throw new Error('无法设置已删除检查点的状态数据');
-    }
+  public setStateDataValue(key: string, value: unknown): Checkpoint {
+    this.props.deletionStatus.ensureActive();
 
-    const newStateData = { ...this.props.stateData };
-    newStateData[key] = value;
-
-    const newProps = {
+    return new Checkpoint({
       ...this.props,
-      stateData: newStateData,
+      stateData: this.props.stateData.setValue(key, value),
       updatedAt: Timestamp.now(),
       version: this.props.version.nextPatch()
-    };
+    });
+  }
 
-    (this as any).props = Object.freeze(newProps);
-    this.update();
+  /**
+   * 添加标签
+   * @param tag 标签
+   * @returns 新检查点实例
+   */
+  public addTag(tag: string): Checkpoint {
+    this.props.deletionStatus.ensureActive();
+
+    return new Checkpoint({
+      ...this.props,
+      tags: this.props.tags.add(tag),
+      updatedAt: Timestamp.now(),
+      version: this.props.version.nextPatch()
+    });
+  }
+
+  /**
+   * 移除标签
+   * @param tag 标签
+   * @returns 新检查点实例
+   */
+  public removeTag(tag: string): Checkpoint {
+    this.props.deletionStatus.ensureActive();
+
+    return new Checkpoint({
+      ...this.props,
+      tags: this.props.tags.remove(tag),
+      updatedAt: Timestamp.now(),
+      version: this.props.version.nextPatch()
+    });
+  }
+
+  /**
+   * 更新元数据
+   * @param metadata 新元数据
+   * @returns 新检查点实例
+   */
+  public updateMetadata(metadata: Record<string, unknown>): Checkpoint {
+    this.props.deletionStatus.ensureActive();
+
+    return new Checkpoint({
+      ...this.props,
+      metadata: Metadata.create(metadata),
+      updatedAt: Timestamp.now(),
+      version: this.props.version.nextPatch()
+    });
+  }
+
+  /**
+   * 设置元数据项
+   * @param key 键
+   * @param value 值
+   * @returns 新检查点实例
+   */
+  public setMetadata(key: string, value: unknown): Checkpoint {
+    this.props.deletionStatus.ensureActive();
+
+    return new Checkpoint({
+      ...this.props,
+      metadata: this.props.metadata.setValue(key, value),
+      updatedAt: Timestamp.now(),
+      version: this.props.version.nextPatch()
+    });
+  }
+
+  /**
+   * 移除元数据项
+   * @param key 键
+   * @returns 新检查点实例
+   */
+  public removeMetadata(key: string): Checkpoint {
+    this.props.deletionStatus.ensureActive();
+
+    return new Checkpoint({
+      ...this.props,
+      metadata: this.props.metadata.remove(key),
+      updatedAt: Timestamp.now(),
+      version: this.props.version.nextPatch()
+    });
   }
 
   /**
@@ -378,7 +326,7 @@ export class Checkpoint extends Entity {
    * @returns 是否有标签
    */
   public hasTag(tag: string): boolean {
-    return this.props.tags.includes(tag);
+    return this.props.tags.has(tag);
   }
 
   /**
@@ -387,7 +335,7 @@ export class Checkpoint extends Entity {
    * @returns 是否有状态数据
    */
   public hasStateData(key: string): boolean {
-    return key in this.props.stateData;
+    return this.props.stateData.has(key);
   }
 
   /**
@@ -396,26 +344,24 @@ export class Checkpoint extends Entity {
    * @returns 是否有元数据
    */
   public hasMetadata(key: string): boolean {
-    return key in this.props.metadata;
+    return this.props.metadata.has(key);
   }
 
   /**
    * 标记检查点为已删除
+   * @returns 新检查点实例
    */
-  public markAsDeleted(): void {
-    if (this.props.isDeleted) {
-      return;
+  public markAsDeleted(): Checkpoint {
+    if (this.props.deletionStatus.isDeleted()) {
+      return this;
     }
 
-    const newProps = {
+    return new Checkpoint({
       ...this.props,
-      isDeleted: true,
+      deletionStatus: this.props.deletionStatus.markAsDeleted(),
       updatedAt: Timestamp.now(),
       version: this.props.version.nextPatch()
-    };
-
-    (this as any).props = Object.freeze(newProps);
-    this.update();
+    });
   }
 
   /**
@@ -423,7 +369,15 @@ export class Checkpoint extends Entity {
    * @returns 是否已删除
    */
   public isDeleted(): boolean {
-    return this.props.isDeleted;
+    return this.props.deletionStatus.isDeleted();
+  }
+
+  /**
+   * 检查检查点是否活跃
+   * @returns 是否活跃
+   */
+  public isActive(): boolean {
+    return this.props.deletionStatus.isActive();
   }
 
   /**
@@ -434,4 +388,11 @@ export class Checkpoint extends Entity {
     return `checkpoint:${this.props.id.toString()}`;
   }
 
+  /**
+   * 获取检查点的完整属性（用于持久化）
+   * @returns 检查点属性
+   */
+  public toProps(): CheckpointProps {
+    return this.props;
+  }
 }

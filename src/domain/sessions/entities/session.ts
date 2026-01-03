@@ -5,6 +5,8 @@ import { Thread } from '../../threads/entities/thread';
 import { ParallelStrategy } from '../value-objects/parallel-strategy';
 import { SharedResources } from '../value-objects/shared-resources';
 import { ThreadCollection } from '../value-objects/thread-collection';
+import { Metadata } from '../../checkpoint/value-objects';
+import { DeletionStatus } from '../../checkpoint/value-objects';
 
 /**
  * Session实体属性接口
@@ -16,14 +18,14 @@ export interface SessionProps {
   readonly status: SessionStatus;
   readonly config: SessionConfig;
   readonly activity: SessionActivity;
-  readonly metadata: Record<string, unknown>;
+  readonly metadata: Metadata;
   readonly threads: ThreadCollection; // 线程集合
   readonly sharedResources: SharedResources; // 共享资源
   readonly parallelStrategy: ParallelStrategy; // 并行策略
+  readonly deletionStatus: DeletionStatus;
   readonly createdAt: Timestamp;
   readonly updatedAt: Timestamp;
   readonly version: Version;
-  readonly isDeleted: boolean;
 }
 
 /**
@@ -86,14 +88,14 @@ export class Session extends Entity {
       status: sessionStatus,
       config: sessionConfig,
       activity: sessionActivity,
-      metadata: metadata || {},
+      metadata: Metadata.create(metadata || {}),
       threads: ThreadCollection.empty(),
       sharedResources: SharedResources.empty(),
       parallelStrategy,
+      deletionStatus: DeletionStatus.active(),
       createdAt: now,
       updatedAt: now,
-      version: Version.initial(),
-      isDeleted: false
+      version: Version.initial()
     };
 
     const session = new Session(props);
@@ -162,8 +164,8 @@ export class Session extends Entity {
    * 获取元数据
    * @returns 元数据
    */
-  public get metadata(): Record<string, unknown> {
-    return { ...this.props.metadata };
+  public get metadata(): Metadata {
+    return this.props.metadata;
   }
 
   /**
@@ -253,25 +255,21 @@ export class Session extends Entity {
   /**
    * 更新会话标题
    * @param title 新标题
+   * @returns 新会话实例
    */
-  public updateTitle(title: string): void {
-    if (this.props.isDeleted) {
-      throw new Error('无法更新已删除的会话');
-    }
+  public updateTitle(title: string): Session {
+    this.props.deletionStatus.ensureActive();
 
     if (!this.props.status.canOperate()) {
       throw new Error('无法更新非活跃状态的会话');
     }
 
-    const newProps = {
+    return new Session({
       ...this.props,
       title,
       updatedAt: Timestamp.now(),
       version: this.props.version.nextPatch()
-    };
-
-    (this as any).props = Object.freeze(newProps);
-    this.update();
+    });
   }
 
   /**
@@ -279,42 +277,37 @@ export class Session extends Entity {
    * @param newStatus 新状态
    * @param changedBy 变更者
    * @param reason 变更原因
+   * @returns 新会话实例
    */
   public changeStatus(
     newStatus: SessionStatus,
     changedBy?: ID,
     reason?: string
-  ): void {
-    if (this.props.isDeleted) {
-      throw new Error('无法更改已删除会话的状态');
-    }
+  ): Session {
+    this.props.deletionStatus.ensureActive();
 
     const oldStatus = this.props.status;
     if (oldStatus.equals(newStatus)) {
-      return; // 状态未变更
+      return this; // 状态未变更
     }
 
     // 注意：完整的状态转换验证应该由 SessionValidationService 负责
     // 这里只做基本的状态变更
 
-    const newProps = {
+    return new Session({
       ...this.props,
       status: newStatus,
       updatedAt: Timestamp.now(),
       version: this.props.version.nextPatch()
-    };
-
-    (this as any).props = Object.freeze(newProps);
-    this.update();
+    });
   }
 
   /**
    * 增加消息数量
+   * @returns 新会话实例
    */
-  public incrementMessageCount(): void {
-    if (this.props.isDeleted) {
-      throw new Error('无法在已删除的会话中添加消息');
-    }
+  public incrementMessageCount(): Session {
+    this.props.deletionStatus.ensureActive();
 
     if (!this.props.status.canOperate()) {
       throw new Error('无法在非活跃状态的会话中添加消息');
@@ -324,25 +317,21 @@ export class Session extends Entity {
       throw new Error('会话消息数量已达上限');
     }
 
-    const newProps = {
+    return new Session({
       ...this.props,
       activity: this.props.activity.incrementMessageCount(),
       updatedAt: Timestamp.now(),
       version: this.props.version.nextPatch()
-    };
-
-    (this as any).props = Object.freeze(newProps);
-    this.update();
+    });
   }
 
   /**
    * 添加线程
    * @param thread 线程实例
+   * @returns 新会话实例
    */
-  public addThread(thread: Thread): void {
-    if (this.props.isDeleted) {
-      throw new Error('无法在已删除的会话中添加线程');
-    }
+  public addThread(thread: Thread): Session {
+    this.props.deletionStatus.ensureActive();
 
     if (!this.props.status.canOperate()) {
       throw new Error('无法在非活跃状态的会话中添加线程');
@@ -360,26 +349,22 @@ export class Session extends Entity {
 
     const newThreads = this.props.threads.add(thread);
 
-    const newProps = {
+    return new Session({
       ...this.props,
       threads: newThreads,
       activity: this.props.activity.incrementThreadCount(),
       updatedAt: Timestamp.now(),
       version: this.props.version.nextPatch()
-    };
-
-    (this as any).props = Object.freeze(newProps);
-    this.update();
+    });
   }
 
   /**
    * 移除线程
    * @param threadId 线程ID
+   * @returns 新会话实例
    */
-  public removeThread(threadId: string): void {
-    if (this.props.isDeleted) {
-      throw new Error('无法在已删除的会话中移除线程');
-    }
+  public removeThread(threadId: string): Session {
+    this.props.deletionStatus.ensureActive();
 
     if (!this.props.threads.has(threadId)) {
       throw new Error('线程不存在');
@@ -394,46 +379,38 @@ export class Session extends Entity {
 
     const newThreads = this.props.threads.remove(threadId);
 
-    const newProps = {
+    return new Session({
       ...this.props,
       threads: newThreads,
       updatedAt: Timestamp.now(),
       version: this.props.version.nextPatch()
-    };
-
-    (this as any).props = Object.freeze(newProps);
-    this.update();
+    });
   }
 
 
 
   /**
    * 更新最后活动时间
+   * @returns 新会话实例
    */
-  public updateLastActivity(): void {
-    if (this.props.isDeleted) {
-      throw new Error('无法更新已删除会话的活动时间');
-    }
+  public updateLastActivity(): Session {
+    this.props.deletionStatus.ensureActive();
 
-    const newProps = {
+    return new Session({
       ...this.props,
       activity: this.props.activity.updateLastActivity(),
       updatedAt: Timestamp.now(),
       version: this.props.version.nextPatch()
-    };
-
-    (this as any).props = Object.freeze(newProps);
-    this.update();
+    });
   }
 
   /**
    * 更新会话配置
    * @param newConfig 新配置
+   * @returns 新会话实例
    */
-  public updateConfig(newConfig: SessionConfig): void {
-    if (this.props.isDeleted) {
-      throw new Error('无法更新已删除会话的配置');
-    }
+  public updateConfig(newConfig: SessionConfig): Session {
+    this.props.deletionStatus.ensureActive();
 
     if (!this.props.status.canOperate()) {
       throw new Error('无法更新非活跃状态会话的配置');
@@ -442,35 +419,28 @@ export class Session extends Entity {
     // 注意：完整的配置验证应该由 SessionValidationService 负责
     // 这里只做基本的配置更新
 
-    const newProps = {
+    return new Session({
       ...this.props,
       config: newConfig,
       updatedAt: Timestamp.now(),
       version: this.props.version.nextPatch()
-    };
-
-    (this as any).props = Object.freeze(newProps);
-    this.update();
+    });
   }
 
   /**
    * 更新元数据
    * @param metadata 新元数据
+   * @returns 新会话实例
    */
-  public updateMetadata(metadata: Record<string, unknown>): void {
-    if (this.props.isDeleted) {
-      throw new Error('无法更新已删除会话的元数据');
-    }
+  public updateMetadata(metadata: Record<string, unknown>): Session {
+    this.props.deletionStatus.ensureActive();
 
-    const newProps = {
+    return new Session({
       ...this.props,
-      metadata: { ...metadata },
+      metadata: Metadata.create(metadata),
       updatedAt: Timestamp.now(),
       version: this.props.version.nextPatch()
-    };
-
-    (this as any).props = Object.freeze(newProps);
-    this.update();
+    });
   }
 
   /**
@@ -495,21 +465,19 @@ export class Session extends Entity {
 
   /**
    * 标记会话为已删除
+   * @returns 新会话实例
    */
-  public markAsDeleted(): void {
-    if (this.props.isDeleted) {
-      return;
+  public markAsDeleted(): Session {
+    if (this.props.deletionStatus.isDeleted()) {
+      return this;
     }
 
-    const newProps = {
+    return new Session({
       ...this.props,
-      isDeleted: true,
+      deletionStatus: this.props.deletionStatus.markAsDeleted(),
       updatedAt: Timestamp.now(),
       version: this.props.version.nextPatch()
-    };
-
-    (this as any).props = Object.freeze(newProps);
-    this.update();
+    });
   }
 
   /**
@@ -517,7 +485,15 @@ export class Session extends Entity {
    * @returns 是否已删除
    */
   public isDeleted(): boolean {
-    return this.props.isDeleted;
+    return this.props.deletionStatus.isDeleted();
+  }
+
+  /**
+   * 检查会话是否活跃
+   * @returns 是否活跃
+   */
+  public isActive(): boolean {
+    return this.props.deletionStatus.isActive();
   }
 
   /**
@@ -534,17 +510,15 @@ export class Session extends Entity {
    * @param workflowId 工作流ID
    * @param forkStrategy Fork策略
    * @param forkOptions Fork选项
-   * @returns 新线程
+   * @returns 新会话实例和新线程
    */
   public forkThread(
     sourceThreadId: string,
     workflowId: ID,
     forkStrategy?: unknown,
     forkOptions?: unknown
-  ): Thread {
-    if (this.props.isDeleted) {
-      throw new Error('无法在已删除的会话中分支线程');
-    }
+  ): { session: Session; thread: Thread } {
+    this.props.deletionStatus.ensureActive();
 
     if (!this.props.status.canOperate()) {
       throw new Error('无法在非活跃状态的会话中分支线程');
@@ -565,8 +539,8 @@ export class Session extends Entity {
       forkOptions as Record<string, unknown> | undefined
     );
 
-    this.addThread(newThread);
-    return newThread;
+    const newSession = this.addThread(newThread);
+    return { session: newSession, thread: newThread };
   }
 
   /**
@@ -575,17 +549,15 @@ export class Session extends Entity {
    * @param toThreadId 接收线程ID
    * @param type 消息类型
    * @param payload 消息负载
-   * @returns 消息ID
+   * @returns 新会话实例和消息ID
    */
   public sendMessage(
     fromThreadId: ID,
     toThreadId: ID,
     type: string,
     payload: Record<string, unknown>
-  ): string {
-    if (this.props.isDeleted) {
-      throw new Error('无法在已删除的会话中发送消息');
-    }
+  ): { session: Session; messageId: string } {
+    this.props.deletionStatus.ensureActive();
 
     if (!this.props.status.canOperate()) {
       throw new Error('无法在非活跃状态的会话中发送消息');
@@ -602,10 +574,10 @@ export class Session extends Entity {
     }
 
     // 更新消息计数
-    this.incrementMessageCount();
+    const newSession = this.incrementMessageCount();
 
     // 返回一个模拟的消息ID
-    return ID.generate().toString();
+    return { session: newSession, messageId: ID.generate().toString() };
   }
 
   /**
@@ -613,16 +585,14 @@ export class Session extends Entity {
    * @param fromThreadId 发送线程ID
    * @param type 消息类型
    * @param payload 消息负载
-   * @returns 消息ID数组
+   * @returns 新会话实例和消息ID数组
    */
   public broadcastMessage(
     fromThreadId: ID,
     type: string,
     payload: Record<string, unknown>
-  ): string[] {
-    if (this.props.isDeleted) {
-      throw new Error('无法在已删除的会话中广播消息');
-    }
+  ): { session: Session; messageIds: string[] } {
+    this.props.deletionStatus.ensureActive();
 
     if (!this.props.status.canOperate()) {
       throw new Error('无法在非活跃状态的会话中广播消息');
@@ -634,7 +604,7 @@ export class Session extends Entity {
     }
 
     // 更新消息计数
-    this.incrementMessageCount();
+    const newSession = this.incrementMessageCount();
 
     // 返回模拟的消息ID数组
     const messageIds: string[] = [];
@@ -643,7 +613,7 @@ export class Session extends Entity {
         messageIds.push(ID.generate().toString());
       }
     }
-    return messageIds;
+    return { session: newSession, messageIds };
   }
 
   /**
@@ -683,33 +653,28 @@ export class Session extends Entity {
    * 设置共享资源
    * @param key 资源键
    * @param value 资源值
+   * @returns 新会话实例
    */
-  public setSharedResource(key: string, value: unknown): void {
-    if (this.props.isDeleted) {
-      throw new Error('无法在已删除的会话中设置共享资源');
-    }
+  public setSharedResource(key: string, value: unknown): Session {
+    this.props.deletionStatus.ensureActive();
 
     const newResources = this.props.sharedResources.set(key, value);
 
-    const newProps = {
+    return new Session({
       ...this.props,
       sharedResources: newResources,
       updatedAt: Timestamp.now(),
       version: this.props.version.nextPatch()
-    };
-
-    (this as any).props = Object.freeze(newProps);
-    this.update();
+    });
   }
 
   /**
    * 更新并行策略
    * @param newStrategy 新的并行策略（可以是 ParallelStrategy 实例或字符串）
+   * @returns 新会话实例
    */
-  public updateParallelStrategy(newStrategy: ParallelStrategy | string): void {
-    if (this.props.isDeleted) {
-      throw new Error('无法在已删除的会话中更新并行策略');
-    }
+  public updateParallelStrategy(newStrategy: ParallelStrategy | string): Session {
+    this.props.deletionStatus.ensureActive();
 
     if (!this.props.status.canOperate()) {
       throw new Error('无法在非活跃状态的会话中更新并行策略');
@@ -732,15 +697,12 @@ export class Session extends Entity {
       strategy = newStrategy;
     }
 
-    const newProps = {
+    return new Session({
       ...this.props,
       parallelStrategy: strategy,
       updatedAt: Timestamp.now(),
       version: this.props.version.nextPatch()
-    };
-
-    (this as any).props = Object.freeze(newProps);
-    this.update();
+    });
   }
 
   /**

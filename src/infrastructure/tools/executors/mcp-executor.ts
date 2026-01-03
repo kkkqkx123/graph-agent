@@ -37,8 +37,8 @@ export class McpExecutor extends ToolExecutorBase {
   async execute(tool: Tool, execution: ToolExecution): Promise<ToolResult> {
     try {
       const config = tool.config;
-      const serverName = config['serverName'] as string;
-      const toolName = config['toolName'] as string;
+      const serverName = config.getValue('serverName') as string;
+      const toolName = config.getValue('toolName') as string;
       
       // Get or create MCP client for the server
       const client = await this.getMcpClient(serverName);
@@ -80,11 +80,11 @@ export class McpExecutor extends ToolExecutorBase {
     const errors: string[] = [];
     const warnings: string[] = [];
 
-    if (!tool.config['serverName']) {
+    if (!tool.config.getValue('serverName')) {
       errors.push('MCP tool requires serverName');
     }
 
-    if (!tool.config['toolName']) {
+    if (!tool.config.getValue('toolName')) {
       errors.push('MCP tool requires toolName');
     }
 

@@ -2,6 +2,10 @@ import { Entity } from '../../common/base/entity';
 import { ID, Timestamp, Version } from '../../common/value-objects';
 import { ToolType } from '../value-objects/tool-type';
 import { ToolStatus } from '../value-objects/tool-status';
+import { Metadata } from '../../checkpoint/value-objects/metadata';
+import { Tags } from '../../checkpoint/value-objects/tags';
+import { DeletionStatus } from '../../checkpoint/value-objects/deletion-status';
+import { StateData } from '../../checkpoint/value-objects/state-data';
 
 /**
  * Tool实体属性接口
@@ -12,7 +16,7 @@ export interface ToolProps {
   readonly description: string;
   readonly type: ToolType;
   readonly status: ToolStatus;
-  readonly config: Record<string, unknown>;
+  readonly config: StateData;
   readonly parameters: {
     type: 'object';
     properties: Record<string, {
@@ -31,12 +35,12 @@ export interface ToolProps {
     properties?: Record<string, any>;
     items?: any;
   };
-  readonly metadata: Record<string, unknown>;
+  readonly metadata: Metadata;
   readonly createdAt: Timestamp;
   readonly updatedAt: Timestamp;
   readonly version: Version;
   readonly createdBy?: ID;
-  readonly tags: string[];
+  readonly tags: Tags;
   readonly category: string;
   readonly isBuiltin: boolean;
   readonly isEnabled: boolean;
@@ -44,7 +48,7 @@ export interface ToolProps {
   readonly maxRetries: number;
   readonly permissions: string[];
   readonly dependencies: ID[];
-  readonly isDeleted: boolean;
+  readonly deletionStatus: DeletionStatus;
 }
 
 /**
@@ -118,15 +122,15 @@ export class Tool extends Entity {
       description,
       type,
       status: ToolStatus.DRAFT,
-      config,
+      config: StateData.create(config),
       parameters,
       returns,
-      metadata: {},
+      metadata: Metadata.create({}),
       createdAt: now,
       updatedAt: now,
       version: Version.initial(),
       createdBy,
-      tags: [],
+      tags: Tags.create([]),
       category: 'general',
       isBuiltin: false,
       isEnabled: true,
@@ -134,7 +138,7 @@ export class Tool extends Entity {
       maxRetries: 3,
       permissions: [],
       dependencies: [],
-      isDeleted: false
+      deletionStatus: DeletionStatus.active()
     };
 
     return new Tool(props);
@@ -195,8 +199,8 @@ export class Tool extends Entity {
    * 获取工具配置
    * @returns 工具配置
    */
-  public get config(): Record<string, unknown> {
-    return { ...this.props.config };
+  public get config(): StateData {
+    return this.props.config;
   }
 
   /**
@@ -235,8 +239,8 @@ export class Tool extends Entity {
    * 获取元数据
    * @returns 元数据
    */
-  public get metadata(): Record<string, unknown> {
-    return { ...this.props.metadata };
+  public get metadata(): Metadata {
+    return this.props.metadata;
   }
 
   /**
@@ -275,8 +279,8 @@ export class Tool extends Entity {
    * 获取标签
    * @returns 标签列表
    */
-  public get tags(): string[] {
-    return [...this.props.tags];
+  public get tags(): Tags {
+    return this.props.tags;
   }
 
   /**
@@ -369,242 +373,197 @@ export class Tool extends Entity {
       items?: any;
     },
     metadata?: Record<string, unknown>
-  ): void {
-    if (this.props.isDeleted) {
-      throw new Error('无法更新已删除的工具');
-    }
+  ): Tool {
+    this.props.deletionStatus.ensureActive();
 
-    const newProps = {
+    const newProps: ToolProps = {
       ...this.props,
       name: name || this.props.name,
       description: description || this.props.description,
-      config: config || this.props.config,
+      config: config ? StateData.create(config) : this.props.config,
       parameters: parameters || this.props.parameters,
       returns: returns !== undefined ? returns : this.props.returns,
-      metadata: metadata || this.props.metadata,
+      metadata: metadata ? Metadata.create(metadata) : this.props.metadata,
       updatedAt: Timestamp.now(),
       version: this.props.version.nextPatch()
     };
 
-    (this as any).props = Object.freeze(newProps);
-    this.update();
+    return new Tool(newProps);
   }
 
   /**
    * 更改工具状态
    * @param status 新状态
    */
-  public changeStatus(status: ToolStatus): void {
-    if (this.props.isDeleted) {
-      throw new Error('无法更改已删除工具的状态');
-    }
+  public changeStatus(status: ToolStatus): Tool {
+    this.props.deletionStatus.ensureActive();
 
-    const newProps = {
+    const newProps: ToolProps = {
       ...this.props,
       status,
       updatedAt: Timestamp.now(),
       version: this.props.version.nextPatch()
     };
 
-    (this as any).props = Object.freeze(newProps);
-    this.update();
+    return new Tool(newProps);
   }
 
   /**
    * 启用工具
    */
-  public enable(): void {
-    if (this.props.isDeleted) {
-      throw new Error('无法启用已删除的工具');
-    }
+  public enable(): Tool {
+    this.props.deletionStatus.ensureActive();
 
-    const newProps = {
+    const newProps: ToolProps = {
       ...this.props,
       isEnabled: true,
       updatedAt: Timestamp.now(),
       version: this.props.version.nextPatch()
     };
 
-    (this as any).props = Object.freeze(newProps);
-    this.update();
+    return new Tool(newProps);
   }
 
   /**
    * 禁用工具
    */
-  public disable(): void {
-    if (this.props.isDeleted) {
-      throw new Error('无法禁用已删除的工具');
-    }
+  public disable(): Tool {
+    this.props.deletionStatus.ensureActive();
 
-    const newProps = {
+    const newProps: ToolProps = {
       ...this.props,
       isEnabled: false,
       updatedAt: Timestamp.now(),
       version: this.props.version.nextPatch()
     };
 
-    (this as any).props = Object.freeze(newProps);
-    this.update();
+    return new Tool(newProps);
   }
 
   /**
    * 添加标签
    * @param tag 标签
    */
-  public addTag(tag: string): void {
-    if (this.props.isDeleted) {
-      throw new Error('无法为已删除的工具添加标签');
-    }
+  public addTag(tag: string): Tool {
+    this.props.deletionStatus.ensureActive();
 
-    if (this.props.tags.includes(tag)) {
-      return;
-    }
-
-    const newProps = {
+    const newProps: ToolProps = {
       ...this.props,
-      tags: [...this.props.tags, tag],
+      tags: this.props.tags.add(tag),
       updatedAt: Timestamp.now(),
       version: this.props.version.nextPatch()
     };
 
-    (this as any).props = Object.freeze(newProps);
-    this.update();
+    return new Tool(newProps);
   }
 
   /**
    * 移除标签
    * @param tag 标签
    */
-  public removeTag(tag: string): void {
-    if (this.props.isDeleted) {
-      throw new Error('无法为已删除的工具移除标签');
-    }
+  public removeTag(tag: string): Tool {
+    this.props.deletionStatus.ensureActive();
 
-    const newTags = this.props.tags.filter(t => t !== tag);
-    
-    if (newTags.length === this.props.tags.length) {
-      return;
-    }
-
-    const newProps = {
+    const newProps: ToolProps = {
       ...this.props,
-      tags: newTags,
+      tags: this.props.tags.remove(tag),
       updatedAt: Timestamp.now(),
       version: this.props.version.nextPatch()
     };
 
-    (this as any).props = Object.freeze(newProps);
-    this.update();
+    return new Tool(newProps);
   }
 
   /**
    * 更改分类
    * @param category 新分类
    */
-  public changeCategory(category: string): void {
-    if (this.props.isDeleted) {
-      throw new Error('无法更改已删除工具的分类');
-    }
+  public changeCategory(category: string): Tool {
+    this.props.deletionStatus.ensureActive();
 
-    const newProps = {
+    const newProps: ToolProps = {
       ...this.props,
       category,
       updatedAt: Timestamp.now(),
       version: this.props.version.nextPatch()
     };
 
-    (this as any).props = Object.freeze(newProps);
-    this.update();
+    return new Tool(newProps);
   }
 
   /**
    * 添加依赖
    * @param dependency 依赖的工具ID
    */
-  public addDependency(dependency: ID): void {
-    if (this.props.isDeleted) {
-      throw new Error('无法为已删除的工具添加依赖');
-    }
+  public addDependency(dependency: ID): Tool {
+    this.props.deletionStatus.ensureActive();
 
     if (this.props.dependencies.some(d => d.equals(dependency))) {
-      return;
+      return this;
     }
 
-    const newProps = {
+    const newProps: ToolProps = {
       ...this.props,
       dependencies: [...this.props.dependencies, dependency],
       updatedAt: Timestamp.now(),
       version: this.props.version.nextPatch()
     };
 
-    (this as any).props = Object.freeze(newProps);
-    this.update();
+    return new Tool(newProps);
   }
 
   /**
    * 移除依赖
    * @param dependency 依赖的工具ID
    */
-  public removeDependency(dependency: ID): void {
-    if (this.props.isDeleted) {
-      throw new Error('无法为已删除的工具移除依赖');
-    }
+  public removeDependency(dependency: ID): Tool {
+    this.props.deletionStatus.ensureActive();
 
     const newDependencies = this.props.dependencies.filter(d => !d.equals(dependency));
     
     if (newDependencies.length === this.props.dependencies.length) {
-      return;
+      return this;
     }
 
-    const newProps = {
+    const newProps: ToolProps = {
       ...this.props,
       dependencies: newDependencies,
       updatedAt: Timestamp.now(),
       version: this.props.version.nextPatch()
     };
 
-    (this as any).props = Object.freeze(newProps);
-    this.update();
+    return new Tool(newProps);
   }
 
   /**
    * 更新元数据
    * @param metadata 新元数据
    */
-  public updateMetadata(metadata: Record<string, unknown>): void {
-    if (this.props.isDeleted) {
-      throw new Error('无法更新已删除工具的元数据');
-    }
+  public updateMetadata(metadata: Record<string, unknown>): Tool {
+    this.props.deletionStatus.ensureActive();
 
-    const newProps = {
+    const newProps: ToolProps = {
       ...this.props,
-      metadata: { ...metadata },
+      metadata: Metadata.create(metadata),
       updatedAt: Timestamp.now(),
       version: this.props.version.nextPatch()
     };
 
-    (this as any).props = Object.freeze(newProps);
-    this.update();
+    return new Tool(newProps);
   }
 
   /**
    * 标记工具为已删除
    */
-  public markAsDeleted(): void {
-    if (this.props.isDeleted) {
-      return;
-    }
-
-    const newProps = {
+  public markAsDeleted(): Tool {
+    const newProps: ToolProps = {
       ...this.props,
-      isDeleted: true,
+      deletionStatus: this.props.deletionStatus.markAsDeleted(),
       updatedAt: Timestamp.now(),
       version: this.props.version.nextPatch()
     };
 
-    (this as any).props = Object.freeze(newProps);
-    this.update();
+    return new Tool(newProps);
   }
 
   /**
@@ -612,7 +571,15 @@ export class Tool extends Entity {
    * @returns 是否已删除
    */
   public isDeleted(): boolean {
-    return this.props.isDeleted;
+    return this.props.deletionStatus.isDeleted();
+  }
+
+  /**
+   * 检查工具是否活跃
+   * @returns 是否活跃
+   */
+  public isActive(): boolean {
+    return this.props.deletionStatus.isActive();
   }
 
   /**
@@ -627,8 +594,7 @@ export class Tool extends Entity {
    * 更新实体
    */
   protected override update(): void {
-    (this.props as any).updatedAt = Timestamp.now();
-    (this.props as any).version = this.props.version.nextPatch();
+    // 不再需要此方法，因为所有更新方法都返回新实例
     super.update();
   }
 }

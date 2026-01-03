@@ -182,8 +182,8 @@ export class SessionOrchestrationService extends BaseApplicationService {
 
     if (session) {
       // 更新会话的最后活动时间
-      session.updateLastActivity();
-      await this.sessionRepository.save(session);
+      const updatedSession = session.updateLastActivity();
+      await this.sessionRepository.save(updatedSession);
     }
   }
 
@@ -227,7 +227,7 @@ export class SessionOrchestrationService extends BaseApplicationService {
         const parentThread = await this.threadRepository.findByIdOrFail(parentThreadIdObj);
 
         // 创建新线程
-        const newThread = session.forkThread(
+        const { session: updatedSession, thread: newThread } = session.forkThread(
           parentThreadId,
           forkPointObj,
           forkStrategy || ForkStrategy.createPartial(),
@@ -238,7 +238,7 @@ export class SessionOrchestrationService extends BaseApplicationService {
         await this.threadRepository.save(newThread);
 
         // 更新会话
-        await this.sessionRepository.save(session);
+        await this.sessionRepository.save(updatedSession);
 
         // 广播状态变更
         const change: StateChange = {
@@ -297,14 +297,14 @@ export class SessionOrchestrationService extends BaseApplicationService {
         }
 
         // 发送消息
-        const messageId = session.sendMessage(fromThreadIdObj, toThreadIdObj, type, payload);
+        const { session: updatedSession, messageId } = session.sendMessage(fromThreadIdObj, toThreadIdObj, type, payload);
 
         // 更新会话
-        await this.sessionRepository.save(session);
+        await this.sessionRepository.save(updatedSession);
 
         // 更新会话的最后活动时间
-        session.updateLastActivity();
-        await this.sessionRepository.save(session);
+        const finalSession = updatedSession.updateLastActivity();
+        await this.sessionRepository.save(finalSession);
 
         return messageId;
       },
@@ -341,14 +341,14 @@ export class SessionOrchestrationService extends BaseApplicationService {
         }
 
         // 广播消息
-        const messageIds = session.broadcastMessage(fromThreadIdObj, type, payload);
+        const { session: updatedSession, messageIds } = session.broadcastMessage(fromThreadIdObj, type, payload);
 
         // 更新会话
-        await this.sessionRepository.save(session);
+        await this.sessionRepository.save(updatedSession);
 
         // 更新会话的最后活动时间
-        session.updateLastActivity();
-        await this.sessionRepository.save(session);
+        const finalSession = updatedSession.updateLastActivity();
+        await this.sessionRepository.save(finalSession);
 
         return messageIds;
       },
@@ -421,14 +421,14 @@ export class SessionOrchestrationService extends BaseApplicationService {
         const session = await this.sessionRepository.findByIdOrFail(sessionIdObj);
 
         // 设置共享资源
-        session.setSharedResource(key, value);
+        const updatedSession = session.setSharedResource(key, value);
 
         // 更新会话
-        await this.sessionRepository.save(session);
+        await this.sessionRepository.save(updatedSession);
 
         // 更新会话的最后活动时间
-        session.updateLastActivity();
-        await this.sessionRepository.save(session);
+        const finalSession = updatedSession.updateLastActivity();
+        await this.sessionRepository.save(finalSession);
       },
       { sessionId, key }
     );
@@ -473,14 +473,14 @@ export class SessionOrchestrationService extends BaseApplicationService {
         const session = await this.sessionRepository.findByIdOrFail(sessionIdObj);
 
         // 更新并行策略
-        session.updateParallelStrategy(strategy);
+        const updatedSession = session.updateParallelStrategy(strategy);
 
         // 更新会话
-        await this.sessionRepository.save(session);
+        await this.sessionRepository.save(updatedSession);
 
         // 更新会话的最后活动时间
-        session.updateLastActivity();
-        await this.sessionRepository.save(session);
+        const finalSession = updatedSession.updateLastActivity();
+        await this.sessionRepository.save(finalSession);
       },
       { sessionId, strategy }
     );
@@ -534,8 +534,8 @@ export class SessionOrchestrationService extends BaseApplicationService {
     const sessionIdObj = typeof sessionId === 'string' ? this.parseId(sessionId, '会话ID') : sessionId;
     const session = await this.sessionRepository.findById(sessionIdObj);
     if (session) {
-      session.updateLastActivity();
-      await this.sessionRepository.save(session);
+      const updatedSession = session.updateLastActivity();
+      await this.sessionRepository.save(updatedSession);
     }
   }
 }

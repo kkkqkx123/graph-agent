@@ -3,6 +3,9 @@ import { ID } from '../../common/value-objects/id';
 import { Timestamp } from '../../common/value-objects/timestamp';
 import { Version } from '../../common/value-objects/version';
 import { HistoryType } from '../value-objects/history-type';
+import { HistoryDetails } from '../value-objects/history-details';
+import { Metadata } from '../../checkpoint/value-objects/metadata';
+import { DeletionStatus } from '../../checkpoint/value-objects/deletion-status';
 
 /**
  * 历史实体接口
@@ -15,12 +18,12 @@ export interface HistoryProps {
   type: HistoryType;
   title?: string;
   description?: string;
-  details: Record<string, unknown>;
-  metadata: Record<string, unknown>;
+  details: HistoryDetails;
+  metadata: Metadata;
   createdAt: Timestamp;
   updatedAt: Timestamp;
   version: Version;
-  isDeleted: boolean;
+  deletionStatus: DeletionStatus;
 }
 
 /**
@@ -80,12 +83,12 @@ export class History extends Entity {
       type,
       title,
       description,
-      details: { ...details },
-      metadata: metadata || {},
+      details: HistoryDetails.create(details),
+      metadata: Metadata.create(metadata || {}),
       createdAt: now,
       updatedAt: now,
       version: Version.initial(),
-      isDeleted: false
+      deletionStatus: DeletionStatus.active()
     };
 
     return new History(props);
@@ -160,96 +163,84 @@ export class History extends Entity {
    * 获取详细信息
    * @returns 详细信息
    */
-  public get details(): Record<string, unknown> {
-    return { ...this.props.details };
+  public get details(): HistoryDetails {
+    return this.props.details;
   }
 
   /**
    * 获取元数据
    * @returns 元数据
    */
-  public get metadata(): Record<string, unknown> {
-    return { ...this.props.metadata };
+  public get metadata(): Metadata {
+    return this.props.metadata;
   }
 
   /**
    * 更新标题
    * @param title 新标题
    */
-  public updateTitle(title: string): void {
-    if (this.props.isDeleted) {
-      throw new Error('无法更新已删除的历史记录');
-    }
+  public updateTitle(title: string): History {
+    this.props.deletionStatus.ensureActive();
 
-    const newProps = {
+    const newProps: HistoryProps = {
       ...this.props,
       title,
       updatedAt: Timestamp.now(),
       version: this.props.version.nextPatch()
     };
 
-    (this as any).props = Object.freeze(newProps);
-    this.update();
+    return new History(newProps);
   }
 
   /**
    * 更新描述
    * @param description 新描述
    */
-  public updateDescription(description: string): void {
-    if (this.props.isDeleted) {
-      throw new Error('无法更新已删除的历史记录');
-    }
+  public updateDescription(description: string): History {
+    this.props.deletionStatus.ensureActive();
 
-    const newProps = {
+    const newProps: HistoryProps = {
       ...this.props,
       description,
       updatedAt: Timestamp.now(),
       version: this.props.version.nextPatch()
     };
 
-    (this as any).props = Object.freeze(newProps);
-    this.update();
+    return new History(newProps);
   }
 
   /**
    * 更新详细信息
    * @param details 新详细信息
    */
-  public updateDetails(details: Record<string, unknown>): void {
-    if (this.props.isDeleted) {
-      throw new Error('无法更新已删除历史记录的详细信息');
-    }
+  public updateDetails(details: Record<string, unknown>): History {
+    this.props.deletionStatus.ensureActive();
 
-    const newProps = {
+    const newProps: HistoryProps = {
       ...this.props,
-      details: { ...details },
+      details: HistoryDetails.create(details),
       updatedAt: Timestamp.now(),
       version: this.props.version.nextPatch()
     };
 
-    (this as any).props = Object.freeze(newProps);
-    this.update();
+    return new History(newProps);
   }
 
   /**
    * 更新元数据
    * @param metadata 新元数据
    */
-  public updateMetadata(metadata: Record<string, unknown>): void {
-    if (this.props.isDeleted) {
-      throw new Error('无法更新已删除历史记录的元数据');
-    }
+  public updateMetadata(metadata: Record<string, unknown>): History {
+    this.props.deletionStatus.ensureActive();
 
-    const newProps = {
+    const newProps: HistoryProps = {
       ...this.props,
-      metadata: { ...metadata },
+      metadata: Metadata.create(metadata),
       updatedAt: Timestamp.now(),
       version: this.props.version.nextPatch()
     };
 
-    (this as any).props = Object.freeze(newProps);
-    this.update();
+    return new History(newProps);
   }
 
   /**
@@ -257,46 +248,34 @@ export class History extends Entity {
    * @param key 键
    * @param value 值
    */
-  public setMetadata(key: string, value: unknown): void {
-    if (this.props.isDeleted) {
-      throw new Error('无法设置已删除历史记录的元数据');
-    }
+  public setMetadata(key: string, value: unknown): History {
+    this.props.deletionStatus.ensureActive();
 
-    const newMetadata = { ...this.props.metadata };
-    newMetadata[key] = value;
-
-    const newProps = {
+    const newProps: HistoryProps = {
       ...this.props,
-      metadata: newMetadata,
+      metadata: this.props.metadata.setValue(key, value),
       updatedAt: Timestamp.now(),
       version: this.props.version.nextPatch()
     };
 
-    (this as any).props = Object.freeze(newProps);
-    this.update();
+    return new History(newProps);
   }
 
   /**
    * 移除元数据项
    * @param key 键
    */
-  public removeMetadata(key: string): void {
-    if (this.props.isDeleted) {
-      throw new Error('无法移除已删除历史记录的元数据');
-    }
+  public removeMetadata(key: string): History {
+    this.props.deletionStatus.ensureActive();
 
-    const newMetadata = { ...this.props.metadata };
-    delete newMetadata[key];
-
-    const newProps = {
+    const newProps: HistoryProps = {
       ...this.props,
-      metadata: newMetadata,
+      metadata: this.props.metadata.remove(key),
       updatedAt: Timestamp.now(),
       version: this.props.version.nextPatch()
     };
 
-    (this as any).props = Object.freeze(newProps);
-    this.update();
+    return new History(newProps);
   }
 
   /**
@@ -305,7 +284,7 @@ export class History extends Entity {
    * @returns 值
    */
   public getDetailValue(key: string): unknown {
-    return this.props.details[key];
+    return this.props.details.getValue(key);
   }
 
   /**
@@ -313,46 +292,34 @@ export class History extends Entity {
    * @param key 键
    * @param value 值
    */
-  public setDetailValue(key: string, value: unknown): void {
-    if (this.props.isDeleted) {
-      throw new Error('无法设置已删除历史记录的详细信息');
-    }
+  public setDetailValue(key: string, value: unknown): History {
+    this.props.deletionStatus.ensureActive();
 
-    const newDetails = { ...this.props.details };
-    newDetails[key] = value;
-
-    const newProps = {
+    const newProps: HistoryProps = {
       ...this.props,
-      details: newDetails,
+      details: this.props.details.setValue(key, value),
       updatedAt: Timestamp.now(),
       version: this.props.version.nextPatch()
     };
 
-    (this as any).props = Object.freeze(newProps);
-    this.update();
+    return new History(newProps);
   }
 
   /**
    * 移除详细信息项
    * @param key 键
    */
-  public removeDetail(key: string): void {
-    if (this.props.isDeleted) {
-      throw new Error('无法移除已删除历史记录的详细信息');
-    }
+  public removeDetail(key: string): History {
+    this.props.deletionStatus.ensureActive();
 
-    const newDetails = { ...this.props.details };
-    delete newDetails[key];
-
-    const newProps = {
+    const newProps: HistoryProps = {
       ...this.props,
-      details: newDetails,
+      details: this.props.details.remove(key),
       updatedAt: Timestamp.now(),
       version: this.props.version.nextPatch()
     };
 
-    (this as any).props = Object.freeze(newProps);
-    this.update();
+    return new History(newProps);
   }
 
   /**
@@ -361,7 +328,7 @@ export class History extends Entity {
    * @returns 是否有详细信息
    */
   public hasDetail(key: string): boolean {
-    return key in this.props.details;
+    return this.props.details.has(key);
   }
 
   /**
@@ -370,26 +337,21 @@ export class History extends Entity {
    * @returns 是否有元数据
    */
   public hasMetadata(key: string): boolean {
-    return key in this.props.metadata;
+    return this.props.metadata.has(key);
   }
 
   /**
    * 标记历史记录为已删除
    */
-  public markAsDeleted(): void {
-    if (this.props.isDeleted) {
-      return;
-    }
-
-    const newProps = {
+  public markAsDeleted(): History {
+    const newProps: HistoryProps = {
       ...this.props,
-      isDeleted: true,
+      deletionStatus: this.props.deletionStatus.markAsDeleted(),
       updatedAt: Timestamp.now(),
       version: this.props.version.nextPatch()
     };
 
-    (this as any).props = Object.freeze(newProps);
-    this.update();
+    return new History(newProps);
   }
 
   /**
@@ -397,7 +359,15 @@ export class History extends Entity {
    * @returns 是否已删除
    */
   public isDeleted(): boolean {
-    return this.props.isDeleted;
+    return this.props.deletionStatus.isDeleted();
+  }
+
+  /**
+   * 检查历史记录是否活跃
+   * @returns 是否活跃
+   */
+  public isActive(): boolean {
+    return this.props.deletionStatus.isActive();
   }
 
   /**

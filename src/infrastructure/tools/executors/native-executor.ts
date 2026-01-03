@@ -10,9 +10,9 @@ export class NativeExecutor extends ToolExecutorBase {
   async execute(tool: Tool, execution: ToolExecution): Promise<ToolResult> {
     try {
       const config = tool.config;
-      const command = config['command'] as string;
-      const args = this.prepareArgs(config['args'] as string[] || [], execution.parameters);
-      const options = this.prepareOptions(config['options'] || {});
+      const command = config.getValue('command') as string;
+      const args = this.prepareArgs(config.getValue('args') as string[] || [], execution.parameters);
+      const options = this.prepareOptions(config.getValue('options') || {});
 
       const result = await this.executeCommand(command, args, options);
 
@@ -121,9 +121,9 @@ export class NativeExecutor extends ToolExecutorBase {
   async executeScript(tool: Tool, execution: ToolExecution): Promise<ToolResult> {
     try {
       const config = tool.config;
-      const script = config['script'] as string;
-      const interpreter = config['interpreter'] as string || 'node';
-      const options = this.prepareOptions(config['options'] || {});
+      const script = config.getValue('script') as string;
+      const interpreter = config.getValue('interpreter') as string || 'node';
+      const options = this.prepareOptions(config.getValue('options') || {});
 
       // Create temporary script file
       const fs = require('fs');
@@ -166,8 +166,8 @@ export class NativeExecutor extends ToolExecutorBase {
   async executeShellCommand(tool: Tool, execution: ToolExecution): Promise<ToolResult> {
     try {
       const config = tool.config;
-      const command = this.interpolateString(config['command'] as string, execution.parameters);
-      const baseOptions = config['options'] as Record<string, any> || {};
+      const command = this.interpolateString(config.getValue('command') as string, execution.parameters);
+      const baseOptions = config.getValue('options') as Record<string, any> || {};
       const options = this.prepareOptions({ ...baseOptions, shell: true });
 
       const result = await this.executeCommand(command, [], options);
@@ -194,7 +194,7 @@ export class NativeExecutor extends ToolExecutorBase {
     const errors: string[] = [];
     const warnings: string[] = [];
 
-    if (!tool.config['command'] && !tool.config['script']) {
+    if (!tool.config.getValue('command') && !tool.config.getValue('script')) {
       errors.push('Native tool requires either command or script');
     }
 

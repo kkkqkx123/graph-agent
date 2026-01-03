@@ -14,6 +14,8 @@ import { ThreadModel } from '../models/thread.model';
 import { In } from 'typeorm';
 import { BaseRepository } from './base-repository';
 import { ConnectionManager } from '../connections/connection-manager';
+import { Metadata } from '../../../domain/checkpoint/value-objects';
+import { DeletionStatus } from '../../../domain/checkpoint/value-objects';
 
 @injectable()
 export class ThreadRepository extends BaseRepository<Thread, ThreadModel, ID> implements IThreadRepository {
@@ -67,13 +69,13 @@ export class ThreadRepository extends BaseRepository<Thread, ThreadModel, ID> im
         priority,
         title,
         description,
-        metadata,
+        metadata: Metadata.create(metadata),
         definition,
         execution,
+        deletionStatus: DeletionStatus.fromBoolean(isDeleted),
         createdAt,
         updatedAt,
-        version,
-        isDeleted
+        version
       };
 
       return Thread.fromProps(threadData);
@@ -106,7 +108,7 @@ export class ThreadRepository extends BaseRepository<Thread, ThreadModel, ID> im
       model.updatedAt = entity.updatedAt.getDate();
 
       model.metadata = {
-        ...entity.metadata,
+        ...entity.metadata.toRecord(),
         isDeleted: entity.isDeleted()
       };
 

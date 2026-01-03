@@ -15,6 +15,8 @@ import { ThreadCommunicationChannel } from '../../../domain/sessions/value-objec
 import { ThreadCollection } from '../../../domain/sessions/value-objects/thread-collection';
 import { SharedResources } from '../../../domain/sessions/value-objects/shared-resources';
 import { ParallelStrategy } from '../../../domain/sessions/value-objects/parallel-strategy';
+import { Metadata } from '../../../domain/checkpoint/value-objects';
+import { DeletionStatus } from '../../../domain/checkpoint/value-objects';
 
 @injectable()
 export class SessionRepository extends BaseRepository<Session, SessionModel, ID> implements ISessionRepository {
@@ -62,14 +64,14 @@ export class SessionRepository extends BaseRepository<Session, SessionModel, ID>
         status: SessionStatus.fromString(model.state),
         config: SessionConfig.create(model.context || {}),
         activity: activity,
-        metadata: model.metadata || {},
+        metadata: Metadata.create(model.metadata || {}),
         threads: ThreadCollection.empty(), // 从数据库恢复时，线程需要单独加载
         sharedResources: SharedResources.empty(), // 从数据库恢复时，共享资源需要单独加载
         parallelStrategy: parallelStrategy,
+        deletionStatus: DeletionStatus.fromBoolean(model.metadata?.isDeleted as boolean || false),
         createdAt: Timestamp.create(model.createdAt),
         updatedAt: Timestamp.create(model.updatedAt),
-        version: Version.fromString(model.version),
-        isDeleted: model.metadata?.isDeleted as boolean || false
+        version: Version.fromString(model.version)
       };
 
       return Session.fromProps(sessionData);
@@ -104,7 +106,7 @@ export class SessionRepository extends BaseRepository<Session, SessionModel, ID>
         isDeleted: entity.isDeleted(),
         config: entity.config.value,
         parallelStrategy: entity.parallelStrategy,
-        ...entity.metadata
+        ...entity.metadata.toRecord()
       };
 
       model.threadIds = [];
@@ -264,8 +266,8 @@ export class SessionRepository extends BaseRepository<Session, SessionModel, ID>
   async softDeleteSession(sessionId: ID): Promise<void> {
     const session = await this.findById(sessionId);
     if (session) {
-      session.markAsDeleted();
-      await this.save(session);
+      const deletedSession = session.markAsDeleted();
+      await this.save(deletedSession);
     }
   }
 

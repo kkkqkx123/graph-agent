@@ -47,11 +47,11 @@ export class RestExecutor extends ToolExecutorBase {
   }
 
   private prepareRequest(config: any, execution: ToolExecution): any {
-    const url = this.interpolateUrl(config.url, execution.parameters);
-    const method = config.method || 'GET';
-    const headers = this.prepareHeaders(config.headers || {}, execution.parameters);
+    const url = this.interpolateUrl(config.getValue('url') as string, execution.parameters);
+    const method = config.getValue('method') as string || 'GET';
+    const headers = this.prepareHeaders(config.getValue('headers') || {}, execution.parameters);
     const body = this.prepareBody(config, execution.parameters);
-    const params = this.prepareParams(config.params || {}, execution.parameters);
+    const params = this.prepareParams(config.getValue('params') || {}, execution.parameters);
 
     const request: any = {
       url,
@@ -68,8 +68,8 @@ export class RestExecutor extends ToolExecutorBase {
     }
 
     // Add timeout if specified
-    if (config.timeout) {
-      request.timeout = config.timeout;
+    if (config.getValue('timeout')) {
+      request.timeout = config.getValue('timeout');
     }
 
     return request;
@@ -315,11 +315,11 @@ export class RestExecutor extends ToolExecutorBase {
     const errors: string[] = [];
     const warnings: string[] = [];
 
-    if (!tool.config['url']) {
+    if (!tool.config.getValue('url')) {
       errors.push('REST工具必须配置URL');
     }
 
-    if (!tool.config['method']) {
+    if (!tool.config.getValue('method')) {
       warnings.push('未指定HTTP方法，将使用默认GET');
     }
 

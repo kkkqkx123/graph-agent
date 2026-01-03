@@ -15,7 +15,7 @@ export class BuiltinExecutor extends ToolExecutorBase {
 
   async execute(tool: Tool, execution: ToolExecution): Promise<ToolResult> {
     try {
-      const functionName = tool.config['functionName'] as string;
+      const functionName = tool.config.getValue('functionName') as string;
       const func = this.builtinFunctions.get(functionName);
       
       if (!func) {
@@ -47,7 +47,7 @@ export class BuiltinExecutor extends ToolExecutorBase {
     const errors: string[] = [];
     const warnings: string[] = [];
 
-    if (!tool.config['functionName']) {
+    if (!tool.config.getValue('functionName')) {
       errors.push('Builtin tool requires functionName');
     }
 

@@ -332,40 +332,44 @@ export class Workflow extends Entity {
    * 更新工作流名称
    * @param name 新名称
    * @param updatedBy 更新者ID
+   * @returns 新工作流实例
    */
-  public updateName(name: string, updatedBy?: ID): void {
+  public updateName(name: string, updatedBy?: ID): Workflow {
     const newDefinition = this.props.definition.updateName(name, updatedBy);
-    this.updateDefinition(newDefinition);
+    return this.updateDefinition(newDefinition, updatedBy);
   }
 
   /**
    * 更新工作流描述
    * @param description 新描述
    * @param updatedBy 更新者ID
+   * @returns 新工作流实例
    */
-  public updateDescription(description: string, updatedBy?: ID): void {
+  public updateDescription(description: string, updatedBy?: ID): Workflow {
     const newDefinition = this.props.definition.updateDescription(description, updatedBy);
-    this.updateDefinition(newDefinition);
+    return this.updateDefinition(newDefinition, updatedBy);
   }
 
   /**
    * 更新工作流类型
    * @param type 新类型
    * @param updatedBy 更新者ID
+   * @returns 新工作流实例
    */
-  public updateType(type: WorkflowType, updatedBy?: ID): void {
+  public updateType(type: WorkflowType, updatedBy?: ID): Workflow {
     const newDefinition = this.props.definition.updateType(type, updatedBy);
-    this.updateDefinition(newDefinition);
+    return this.updateDefinition(newDefinition, updatedBy);
   }
 
   /**
    * 更新工作流配置
    * @param config 新配置
    * @param updatedBy 更新者ID
+   * @returns 新工作流实例
    */
-  public updateConfig(config: WorkflowConfig, updatedBy?: ID): void {
+  public updateConfig(config: WorkflowConfig, updatedBy?: ID): Workflow {
     const newDefinition = this.props.definition.updateConfig(config, updatedBy);
-    this.updateDefinition(newDefinition);
+    return this.updateDefinition(newDefinition, updatedBy);
   }
 
   /**
@@ -373,54 +377,64 @@ export class Workflow extends Entity {
    * @param newStatus 新状态
    * @param changedBy 变更者ID
    * @param reason 变更原因
+   * @returns 新工作流实例
    */
   public changeStatus(
     newStatus: WorkflowStatus,
     changedBy?: ID,
     reason?: string
-  ): void {
+  ): Workflow {
     const newDefinition = this.props.definition.changeStatus(newStatus, changedBy);
 
-    (this.props as any).definition = newDefinition;
-    this.update();
+    return new Workflow({
+      ...this.props,
+      definition: newDefinition,
+      updatedAt: Timestamp.now(),
+      version: this.props.version.nextPatch(),
+      updatedBy: changedBy
+    });
   }
 
   /**
    * 添加标签
    * @param tag 标签
    * @param updatedBy 更新者ID
+   * @returns 新工作流实例
    */
-  public addTag(tag: string, updatedBy?: ID): void {
+  public addTag(tag: string, updatedBy?: ID): Workflow {
     const newDefinition = this.props.definition.addTag(tag, updatedBy);
-    this.updateDefinition(newDefinition);
+    return this.updateDefinition(newDefinition, updatedBy);
   }
 
   /**
    * 移除标签
    * @param tag 标签
    * @param updatedBy 更新者ID
+   * @returns 新工作流实例
    */
-  public removeTag(tag: string, updatedBy?: ID): void {
+  public removeTag(tag: string, updatedBy?: ID): Workflow {
     const newDefinition = this.props.definition.removeTag(tag, updatedBy);
-    this.updateDefinition(newDefinition);
+    return this.updateDefinition(newDefinition, updatedBy);
   }
 
   /**
    * 更新元数据
    * @param metadata 新元数据
    * @param updatedBy 更新者ID
+   * @returns 新工作流实例
    */
-  public updateMetadata(metadata: Record<string, unknown>, updatedBy?: ID): void {
+  public updateMetadata(metadata: Record<string, unknown>, updatedBy?: ID): Workflow {
     const newDefinition = this.props.definition.updateMetadata(metadata, updatedBy);
-    this.updateDefinition(newDefinition);
+    return this.updateDefinition(newDefinition, updatedBy);
   }
 
   /**
    * 标记工作流为已删除
+   * @returns 新工作流实例
    */
-  public markAsDeleted(): void {
+  public markAsDeleted(): Workflow {
     const newDefinition = this.props.definition.markAsDeleted();
-    this.updateDefinition(newDefinition);
+    return this.updateDefinition(newDefinition);
   }
 
   /**
@@ -470,8 +484,9 @@ export class Workflow extends Entity {
    * 添加节点
    * @param node 节点实例
    * @param updatedBy 更新者ID
+   * @returns 新工作流实例
    */
-  public addNode(node: Node, updatedBy?: ID): void {
+  public addNode(node: Node, updatedBy?: ID): Workflow {
     if (this.hasNode(node.nodeId)) {
       throw new Error('节点已存在');
     }
@@ -488,16 +503,22 @@ export class Workflow extends Entity {
       nodes: newNodes
     };
 
-    (this.props as any).graph = newGraph;
-    this.update(updatedBy);
+    return new Workflow({
+      ...this.props,
+      graph: newGraph,
+      updatedAt: Timestamp.now(),
+      version: this.props.version.nextPatch(),
+      updatedBy
+    });
   }
 
   /**
    * 移除节点
    * @param nodeId 节点ID
    * @param updatedBy 更新者ID
+   * @returns 新工作流实例
    */
-  public removeNode(nodeId: NodeId, updatedBy?: ID): void {
+  public removeNode(nodeId: NodeId, updatedBy?: ID): Workflow {
     if (!this.hasNode(nodeId)) {
       throw new Error('节点不存在');
     }
@@ -520,8 +541,13 @@ export class Workflow extends Entity {
       nodes: newNodes
     };
 
-    (this.props as any).graph = newGraph;
-    this.update(updatedBy);
+    return new Workflow({
+      ...this.props,
+      graph: newGraph,
+      updatedAt: Timestamp.now(),
+      version: this.props.version.nextPatch(),
+      updatedBy
+    });
   }
 
   /**
@@ -535,6 +561,7 @@ export class Workflow extends Entity {
    * @param properties 边属性
    * @param contextFilter 上下文过滤器（可选，默认为传递所有）
    * @param updatedBy 更新者ID
+   * @returns 新工作流实例
    */
   public addEdge(
     edgeId: EdgeId,
@@ -546,7 +573,7 @@ export class Workflow extends Entity {
     properties?: Record<string, unknown>,
     contextFilter?: EdgeContextFilter,
     updatedBy?: ID
-  ): void {
+  ): Workflow {
     if (this.hasEdge(edgeId)) {
       throw new Error('边已存在');
     }
@@ -584,16 +611,22 @@ export class Workflow extends Entity {
       edges: newEdges
     };
 
-    (this.props as any).graph = newGraph;
-    this.update(updatedBy);
+    return new Workflow({
+      ...this.props,
+      graph: newGraph,
+      updatedAt: Timestamp.now(),
+      version: this.props.version.nextPatch(),
+      updatedBy
+    });
   }
 
   /**
    * 移除边
    * @param edgeId 边ID
    * @param updatedBy 更新者ID
+   * @returns 新工作流实例
    */
-  public removeEdge(edgeId: EdgeId, updatedBy?: ID): void {
+  public removeEdge(edgeId: EdgeId, updatedBy?: ID): Workflow {
     if (!this.hasEdge(edgeId)) {
       throw new Error('边不存在');
     }
@@ -610,29 +643,28 @@ export class Workflow extends Entity {
       edges: newEdges
     };
 
-    (this.props as any).graph = newGraph;
-    this.update(updatedBy);
+    return new Workflow({
+      ...this.props,
+      graph: newGraph,
+      updatedAt: Timestamp.now(),
+      version: this.props.version.nextPatch(),
+      updatedBy
+    });
   }
 
   /**
    * 更新定义
    * @param newDefinition 新定义
-   */
-  private updateDefinition(newDefinition: WorkflowDefinition): void {
-    (this.props as any).definition = newDefinition;
-    this.update();
-  }
-
-  /**
-   * 更新实体
    * @param updatedBy 更新者ID
+   * @returns 新工作流实例
    */
-  protected override update(updatedBy?: ID): void {
-    (this.props as any).updatedAt = Timestamp.now();
-    (this.props as any).version = this.props.version.nextPatch();
-    if (updatedBy) {
-      (this.props as any).updatedBy = updatedBy;
-    }
-    super.update();
+  private updateDefinition(newDefinition: WorkflowDefinition, updatedBy?: ID): Workflow {
+    return new Workflow({
+      ...this.props,
+      definition: newDefinition,
+      updatedAt: Timestamp.now(),
+      version: this.props.version.nextPatch(),
+      updatedBy
+    });
   }
 }
