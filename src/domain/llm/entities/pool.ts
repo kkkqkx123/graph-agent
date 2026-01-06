@@ -5,8 +5,10 @@ import { Version } from '../../common/value-objects/version';
 import { InstanceStatus } from '../value-objects/pool-instance';
 import { RotationStrategy } from '../value-objects/rotation-strategy';
 import { LLMMessage } from '../value-objects/llm-message';
-import { BaseLLMClient } from '../../../infrastructure/llm/clients/base-llm-client';
-import { LLMClientFactory } from '../../../infrastructure/llm/clients/llm-client-factory';
+import { InstanceConfig } from '../value-objects/instance-config';
+import { PoolConfig } from '../value-objects/pool-config';
+import { ILLMClient } from '../interfaces/llm-client.interface';
+import { ITaskGroupManager } from '../interfaces/task-group-manager.interface';
 import { LLMRequest } from './llm-request';
 
 /**
@@ -15,37 +17,66 @@ import { LLMRequest } from './llm-request';
 export class LLMInstance extends Entity {
   constructor(
     id: ID,
-    public readonly instanceId: string,
-    public readonly modelName: string,
-    public readonly groupName: string,
-    public readonly echelon: string,
-    public readonly client: BaseLLMClient,
+    private readonly config: InstanceConfig,
+    public readonly client: ILLMClient,
     public status: InstanceStatus = InstanceStatus.HEALTHY,
     public lastHealthCheck: Date = new Date(),
     public failureCount: number = 0,
     public successCount: number = 0,
     public avgResponseTime: number = 0.0,
     public currentLoad: number = 0,
-    public maxConcurrency: number = 10,
-    public weight: number = 1.0,
     public lastUsed: Date | null = null
   ) {
     super(id, Timestamp.now(), Timestamp.now(), Version.initial());
   }
 
   /**
+   * 获取实例ID
+   */
+  get instanceId(): string {
+    return this.config.instanceId;
+  }
+
+  /**
+   * 获取模型名称
+   */
+  get modelName(): string {
+    return this.config.modelName;
+  }
+
+  /**
+   * 获取组名称
+   */
+  get groupName(): string {
+    return this.config.groupName;
+  }
+
+  /**
+   * 获取层级
+   */
+  get echelon(): string {
+    return this.config.echelon;
+  }
+
+  /**
+   * 获取最大并发数
+   */
+  get maxConcurrency(): number {
+    return this.config.maxConcurrency;
+  }
+
+  /**
+   * 获取权重
+   */
+  get weight(): number {
+    return this.config.weight;
+  }
+
+  /**
    * 验证实例有效性
    */
   validate(): void {
-    if (!this.instanceId || this.instanceId.trim().length === 0) {
-      throw new Error('实例ID不能为空');
-    }
-    if (!this.modelName || this.modelName.trim().length === 0) {
-      throw new Error('模型名称不能为空');
-    }
-    if (!this.groupName || this.groupName.trim().length === 0) {
-      throw new Error('组名称不能为空');
-    }
+    this.config.validate();
   }
 
   /**
@@ -132,24 +163,32 @@ export class PollingPool extends Entity {
 
   constructor(
     id: ID,
-    public readonly name: string,
-    public readonly config: Record<string, any>,
-    public readonly taskGroupManager: any,
-    private readonly llmClientFactory: LLMClientFactory
+    private readonly poolConfig: PoolConfig,
+    private readonly taskGroupManager: ITaskGroupManager,
+    private readonly clientProvider: (modelName: string) => ILLMClient
   ) {
     super(id, Timestamp.now(), Timestamp.now(), Version.initial());
+  }
+
+  /**
+   * 获取轮询池名称
+   */
+  get name(): string {
+    return this.poolConfig.name;
+  }
+
+  /**
+   * 获取轮询池配置
+   */
+  get config(): PoolConfig {
+    return this.poolConfig;
   }
 
   /**
    * 验证轮询池有效性
    */
   validate(): void {
-    if (!this.name || this.name.trim().length === 0) {
-      throw new Error('轮询池名称不能为空');
-    }
-    if (!this.config || Object.keys(this.config).length === 0) {
-      throw new Error('轮询池配置不能为空');
-    }
+    this.poolConfig.validate();
   }
 
   /**
@@ -185,17 +224,24 @@ export class PollingPool extends Entity {
 
       for (const modelName of models) {
         // 根据模型名称创建实际的LLM客户端
-        const parts = taskGroupRef.split('.');
-        const provider = this.extractProviderFromModel(modelName);
+        const client = this.clientProvider(modelName);
 
-        const client = this.llmClientFactory.createClient(provider, modelName);
+        // 解析任务组引用
+        const parts = taskGroupRef.split('.');
+        const groupName = parts[0] ?? '';
+        const echelon = parts[1] ?? 'default';
+
+        // 创建实例配置
+        const instanceConfig = InstanceConfig.create({
+          instanceId: `${taskGroupRef}_${modelName}`,
+          modelName,
+          groupName,
+          echelon,
+        });
 
         const instance = new LLMInstance(
           ID.generate(),
-          `${taskGroupRef}_${modelName}`,
-          modelName,
-          parts[0] ?? '',
-          parts[1] ?? 'default',
+          instanceConfig,
           client
         );
         this.instances.push(instance);
@@ -209,7 +255,7 @@ export class PollingPool extends Entity {
    * 创建调度器
    */
   private createScheduler(): any {
-    const strategy = this.config['rotation']?.['strategy'] || RotationStrategy.ROUND_ROBIN;
+    const strategy = this.poolConfig.rotationStrategy;
     let currentIndex = 0;
 
     return {
@@ -256,7 +302,7 @@ export class PollingPool extends Entity {
    * 创建健康检查器
    */
   private createHealthChecker(): any {
-    const interval = this.config['healthCheck']?.['interval'] || 30;
+    const interval = this.poolConfig.healthCheck.interval;
     let healthCheckInterval: NodeJS.Timeout | null = null;
 
     return {
@@ -428,26 +474,6 @@ export class PollingPool extends Entity {
       failedInstances,
       concurrencyStatus: this.concurrencyManager.getStatus(),
     };
-  }
-
-  /**
-   * 从模型名称提取提供商
-   */
-  private extractProviderFromModel(modelName: string): string {
-    const model = modelName.toLowerCase();
-
-    if (model.includes('gpt')) {
-      return 'openai';
-    } else if (model.includes('claude')) {
-      return 'anthropic';
-    } else if (model.includes('gemini')) {
-      return 'gemini';
-    } else if (model.includes('llama') || model.includes('mistral')) {
-      return 'openai'; // 假设使用OpenAI兼容的API
-    }
-
-    // 默认使用OpenAI
-    return 'openai';
   }
 
   /**

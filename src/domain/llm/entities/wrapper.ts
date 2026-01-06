@@ -2,9 +2,13 @@ import { Entity } from '../../common/base/entity';
 import { ID } from '../../common/value-objects/id';
 import { Timestamp } from '../../common/value-objects/timestamp';
 import { Version } from '../../common/value-objects/version';
-import { BaseLLMClient } from '../../../infrastructure/llm/clients/base-llm-client';
+import { ILLMClient } from '../interfaces/llm-client.interface';
+import { ITaskGroupManager } from '../interfaces/task-group-manager.interface';
+import { LLMWrapperRequest } from '../interfaces/wrapper-request.interface';
+import { LLMRequest } from './llm-request';
+import { LLMResponse } from './llm-response';
+import { LLMMessage } from '../value-objects/llm-message';
 import { PollingPool } from './pool';
-import { TaskGroupManager } from '../../../infrastructure/llm/managers/task-group-manager';
 
 /**
  * LLM包装器基类
@@ -37,12 +41,12 @@ export abstract class LLMWrapper extends Entity {
   /**
    * 生成响应
    */
-  abstract generateResponse(request: any): Promise<any>;
+  abstract generateResponse(request: LLMWrapperRequest): Promise<LLMResponse>;
 
   /**
    * 流式生成响应
    */
-  abstract generateResponseStream(request: any): Promise<AsyncIterable<any>>;
+  abstract generateResponseStream(request: LLMWrapperRequest): Promise<AsyncIterable<LLMResponse>>;
 
   /**
    * 检查包装器是否可用
@@ -110,15 +114,29 @@ export class PollingPoolWrapper extends LLMWrapper {
   /**
    * 生成响应
    */
-  async generateResponse(request: any): Promise<any> {
+  async generateResponse(request: LLMWrapperRequest): Promise<LLMResponse> {
     const startTime = Date.now();
 
     try {
-      const response = await this.pool.callLLM(request.prompt || request.content, request);
+      const prompt = request.prompt || request.content || '';
+      const response = await this.pool.callLLM(prompt, request.options);
       const responseTime = Date.now() - startTime;
 
       this.updateStats(responseTime, true);
-      return response;
+      // 将响应转换为LLMResponse
+      return LLMResponse.create(
+        ID.generate(),
+        'unknown',
+        [{
+          index: 0,
+          message: LLMMessage.createAssistant(response),
+          finish_reason: 'stop'
+        }],
+        { promptTokens: 0, completionTokens: 0, totalTokens: 0 },
+        'stop',
+        responseTime,
+        { metadata: request.options?.metadata }
+      );
     } catch (error) {
       const responseTime = Date.now() - startTime;
       this.updateStats(responseTime, false);
@@ -129,7 +147,7 @@ export class PollingPoolWrapper extends LLMWrapper {
   /**
    * 流式生成响应
    */
-  async generateResponseStream(request: any): Promise<AsyncIterable<any>> {
+  async generateResponseStream(request: LLMWrapperRequest): Promise<AsyncIterable<LLMResponse>> {
     throw new Error('轮询池包装器暂不支持流式响应');
   }
 
@@ -167,7 +185,7 @@ export class TaskGroupWrapper extends LLMWrapper {
     id: ID,
     name: string,
     config: Record<string, any>,
-    public readonly taskGroupManager: TaskGroupManager
+    public readonly taskGroupManager: ITaskGroupManager
   ) {
     super(id, name, config);
   }
@@ -192,7 +210,7 @@ export class TaskGroupWrapper extends LLMWrapper {
   /**
    * 生成响应
    */
-  async generateResponse(request: any): Promise<any> {
+  async generateResponse(request: LLMWrapperRequest): Promise<LLMResponse> {
     const startTime = Date.now();
 
     try {
@@ -220,7 +238,7 @@ export class TaskGroupWrapper extends LLMWrapper {
 
           // 检查是否达到最大降级尝试次数
           const fallbackConfig = await this.taskGroupManager.getFallbackConfig(this.name);
-          if (this.fallbackAttempts >= (fallbackConfig['maxAttempts'] as number)) {
+          if (this.fallbackAttempts >= fallbackConfig.maxAttempts) {
             throw new Error(`任务组 ${this.name} 降级失败，已达到最大尝试次数`);
           }
         }
@@ -237,7 +255,7 @@ export class TaskGroupWrapper extends LLMWrapper {
   /**
    * 尝试特定层级的模型
    */
-  private async tryEchelon(echelonName: string, models: string[], request: any): Promise<any> {
+  private async tryEchelon(echelonName: string, models: string[], request: LLMWrapperRequest): Promise<LLMResponse> {
     // TODO: 实现具体的模型调用逻辑
     // 这里应该根据模型列表选择合适的模型进行调用
 
@@ -247,13 +265,26 @@ export class TaskGroupWrapper extends LLMWrapper {
 
     // 模拟调用第一个模型
     await new Promise(resolve => setTimeout(resolve, 100));
-    return `模拟响应: ${request.prompt?.substring(0, 50) || '无内容'}... (层级: ${echelonName})`;
+    const prompt = request.prompt || request.content || '';
+    return LLMResponse.create(
+      ID.generate(),
+      models[0] || 'unknown',
+      [{
+        index: 0,
+        message: LLMMessage.createAssistant(`模拟响应: ${prompt.substring(0, 50)}... (层级: ${echelonName})`),
+        finish_reason: 'stop'
+      }],
+      { promptTokens: 0, completionTokens: 0, totalTokens: 0 },
+      'stop',
+      100,
+      { metadata: request.options?.metadata }
+    );
   }
 
   /**
    * 流式生成响应
    */
-  async generateResponseStream(request: any): Promise<AsyncIterable<any>> {
+  async generateResponseStream(request: LLMWrapperRequest): Promise<AsyncIterable<LLMResponse>> {
     throw new Error('任务组包装器暂不支持流式响应');
   }
 
@@ -294,7 +325,7 @@ export class DirectLLMWrapper extends LLMWrapper {
     id: ID,
     name: string,
     config: Record<string, any>,
-    public readonly client: BaseLLMClient
+    public readonly client: ILLMClient
   ) {
     super(id, name, config);
   }
@@ -319,7 +350,7 @@ export class DirectLLMWrapper extends LLMWrapper {
   /**
    * 生成响应
    */
-  async generateResponse(request: any): Promise<any> {
+  async generateResponse(request: LLMWrapperRequest): Promise<LLMResponse> {
     const startTime = Date.now();
 
     try {
@@ -340,7 +371,7 @@ export class DirectLLMWrapper extends LLMWrapper {
   /**
    * 流式生成响应
    */
-  async generateResponseStream(request: any): Promise<AsyncIterable<any>> {
+  async generateResponseStream(request: LLMWrapperRequest): Promise<AsyncIterable<LLMResponse>> {
     const llmRequest = this.convertToLLMRequest(request);
     return this.client.generateResponseStream(llmRequest);
   }
@@ -348,9 +379,14 @@ export class DirectLLMWrapper extends LLMWrapper {
   /**
    * 转换请求格式
    */
-  private convertToLLMRequest(request: any): any {
+  private convertToLLMRequest(request: LLMWrapperRequest): any {
     // TODO: 实现请求格式转换
-    return request;
+    // 这里需要将LLMWrapperRequest转换为LLMRequest
+    // 暂时返回一个基本结构
+    return {
+      messages: request.messages,
+      options: request.options,
+    };
   }
 
   /**

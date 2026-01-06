@@ -47,6 +47,16 @@ const FallbackConfigSchema = z.object({
 });
 
 /**
+ * 实例配置Schema
+ */
+const InstanceSchema = z.object({
+  name: z.string(),
+  provider: z.string(),
+  model: z.string(),
+  weight: z.number().optional(),
+});
+
+/**
  * 轮询池配置Schema
  */
 const PoolConfigSchema = z.object({
@@ -57,12 +67,21 @@ const PoolConfigSchema = z.object({
   concurrencyControl: ConcurrencyControlSchema.optional(),
   rateLimiting: RateLimitingSchema.optional(),
   fallbackConfig: FallbackConfigSchema.optional(),
+  instances: z.array(InstanceSchema).optional(),
 });
 
 /**
  * 轮询池模块Schema
+ *
+ * 注意：配置文件拆分后，每个池配置文件直接使用PoolConfigSchema
+ * 配置加载模块会自动将多个池配置文件合并为pools对象
  */
 export const PoolSchema = z.object({
   pools: z.record(z.string(), PoolConfigSchema).optional(),
   _registry: z.string().optional(),
 });
+
+/**
+ * 单个池配置Schema（用于拆分后的配置文件）
+ */
+export const SinglePoolSchema = PoolConfigSchema;

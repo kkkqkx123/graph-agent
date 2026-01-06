@@ -2,13 +2,20 @@ import { Entity } from '../../common/base/entity';
 import { ID } from '../../common/value-objects/id';
 import { Timestamp } from '../../common/value-objects/timestamp';
 import { Version } from '../../common/value-objects/version';
+import { Echelon } from '../value-objects/echelon';
+import { FallbackConfig } from '../interfaces/task-group-manager.interface';
 
 /**
  * 任务组实体
  */
 export class TaskGroup extends Entity {
-  private echelons: Map<string, TaskGroupEchelon> = new Map();
-  private fallbackConfig: Record<string, any> = {};
+  private echelons: Map<string, Echelon> = new Map();
+  private fallbackConfig: FallbackConfig = {
+    strategy: 'echelon_down',
+    maxAttempts: 3,
+    retryDelay: 1.0,
+    fallbackGroups: [],
+  };
 
   constructor(
     id: ID,
@@ -41,47 +48,55 @@ export class TaskGroup extends Entity {
     // 初始化层级
     const echelonsConfig = this.config['echelons'] || {};
     for (const [echelonName, echelonConfig] of Object.entries(echelonsConfig)) {
-      const echelon = new TaskGroupEchelon(
-        ID.generate(),
+      const config = echelonConfig as Record<string, any>;
+      const echelon = new Echelon(
         echelonName,
-        echelonConfig as Record<string, any>
+        config['priority'] || 999,
+        config['models'] || [],
+        config
       );
       this.echelons.set(echelonName, echelon);
     }
 
     // 初始化降级配置
-    this.fallbackConfig = this.config['fallbackConfig'] || {
+    const fallbackConfigData = this.config['fallbackConfig'] || {
       strategy: 'echelon_down',
       maxAttempts: 3,
       retryDelay: 1.0,
+    };
+    this.fallbackConfig = {
+      strategy: fallbackConfigData['strategy'] || 'echelon_down',
+      maxAttempts: fallbackConfigData['maxAttempts'] || 3,
+      retryDelay: fallbackConfigData['retryDelay'] || 1.0,
+      fallbackGroups: fallbackConfigData['fallbackGroups'] || [],
     };
   }
 
   /**
    * 获取层级配置
    */
-  getEchelonConfig(echelonName: string): TaskGroupEchelon | null {
+  getEchelonConfig(echelonName: string): Echelon | null {
     return this.echelons.get(echelonName) || null;
   }
 
   /**
    * 获取所有层级
    */
-  getAllEchelons(): TaskGroupEchelon[] {
+  getAllEchelons(): Echelon[] {
     return Array.from(this.echelons.values());
   }
 
   /**
    * 按优先级获取层级
    */
-  getEchelonsByPriority(): TaskGroupEchelon[] {
-    return Array.from(this.echelons.values()).sort((a, b) => a.priority - b.priority);
+  getEchelonsByPriority(): Echelon[] {
+    return Array.from(this.echelons.values()).sort((a, b) => a.comparePriority(b));
   }
 
   /**
    * 获取降级配置
    */
-  getFallbackConfig(): Record<string, any> {
+  getFallbackConfig(): FallbackConfig {
     return this.fallbackConfig;
   }
 
@@ -90,7 +105,7 @@ export class TaskGroup extends Entity {
    */
   getFallbackGroups(currentEchelon?: string): string[] {
     const fallbackGroups: string[] = [];
-    const strategy = this.fallbackConfig['strategy'] || 'echelon_down';
+    const strategy = this.fallbackConfig.strategy;
 
     if (strategy === 'echelon_down' && currentEchelon) {
       // 获取下一层级
@@ -103,8 +118,9 @@ export class TaskGroup extends Entity {
     }
 
     // 添加配置中指定的降级组
-    const configuredGroups = this.fallbackConfig['fallbackGroups'] || [];
-    fallbackGroups.push(...configuredGroups);
+    if (this.fallbackConfig.fallbackGroups) {
+      fallbackGroups.push(...this.fallbackConfig.fallbackGroups);
+    }
 
     return fallbackGroups;
   }
@@ -121,7 +137,7 @@ export class TaskGroup extends Entity {
    */
   getStatus(): Record<string, any> {
     const totalModels = Array.from(this.echelons.values()).reduce(
-      (sum, echelon) => sum + echelon.models.length,
+      (sum, echelon) => sum + echelon.getModelCount(),
       0
     );
 
@@ -129,81 +145,12 @@ export class TaskGroup extends Entity {
       name: this.name,
       totalEchelons: this.echelons.size,
       totalModels,
-      echelons: Array.from(this.echelons.entries()).map(([name, echelon]) => ({
-        name,
+      echelons: Array.from(this.echelons.values()).map(echelon => ({
+        name: echelon.name,
         priority: echelon.priority,
-        modelCount: echelon.models.length,
+        modelCount: echelon.getModelCount(),
+        available: echelon.isAvailable(),
       })),
-    };
-  }
-}
-
-/**
- * 层级实体
- */
-export class TaskGroupEchelon extends Entity {
-  constructor(
-    id: ID,
-    public readonly name: string,
-    public readonly config: Record<string, any>
-  ) {
-    super(id, Timestamp.now(), Timestamp.now(), Version.initial());
-  }
-
-  /**
-   * 验证层级有效性
-   */
-  validate(): void {
-    if (!this.name || this.name.trim().length === 0) {
-      throw new Error('层级名称不能为空');
-    }
-    if (!this.config || Object.keys(this.config).length === 0) {
-      throw new Error('层级配置不能为空');
-    }
-  }
-
-  /**
-   * 获取优先级
-   */
-  get priority(): number {
-    return (this.config['priority'] as number) || 999;
-  }
-
-  /**
-   * 获取模型列表
-   */
-  get models(): string[] {
-    return (this.config['models'] as string[]) || [];
-  }
-
-  /**
-   * 获取层级配置
-   */
-  getConfig(): Record<string, any> {
-    return {
-      name: this.name,
-      priority: this.priority,
-      models: this.models,
-      ...this.config,
-    };
-  }
-
-  /**
-   * 检查层级是否可用
-   */
-  isAvailable(): boolean {
-    return this.models.length > 0;
-  }
-
-  /**
-   * 获取层级状态
-   */
-  getStatus(): Record<string, any> {
-    return {
-      name: this.name,
-      priority: this.priority,
-      modelCount: this.models.length,
-      available: this.isAvailable(),
     };
   }
 }

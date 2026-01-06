@@ -59,4 +59,4 @@ models = [
 # 限流配置
 [rate_limiting]
 requests_per_minute = 3500
-tokens_per_minute = 90000
+tokens_per_minute = 200000

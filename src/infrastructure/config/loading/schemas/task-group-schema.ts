@@ -7,10 +7,13 @@ import { z } from 'zod';
 
 /**
  * 层级配置Schema
+ *
+ * 注意：简化后，每个层级只配置一个模型，不再使用数组
  */
 const EchelonSchema = z.object({
   priority: z.number(),
-  models: z.array(z.string()),
+  model: z.string(),           // 单个模型名称
+  provider: z.string(),        // 模型提供商
 });
 
 /**
@@ -52,8 +55,16 @@ const TaskGroupConfigSchema = z
 
 /**
  * 任务组模块Schema
+ *
+ * 注意：配置文件拆分后，每个任务组配置文件直接使用TaskGroupConfigSchema
+ * 配置加载模块会自动将多个任务组配置文件合并为taskGroups对象
  */
 export const TaskGroupSchema = z.object({
   taskGroups: z.record(z.string(), TaskGroupConfigSchema).optional(),
   _registry: z.string().optional(),
 });
+
+/**
+ * 单个任务组配置Schema（用于拆分后的配置文件）
+ */
+export const SingleTaskGroupSchema = TaskGroupConfigSchema;
