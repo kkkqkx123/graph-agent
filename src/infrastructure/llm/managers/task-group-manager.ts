@@ -13,6 +13,8 @@ export class TaskGroupManager {
 
   /**
    * 获取组引用对应的模型列表
+   *
+   * 新配置格式：每个层级只有一个模型，返回模型名称数组
    */
   async getModelsForGroup(groupReference: string): Promise<string[]> {
     const [groupName, echelonOrTask] = this.parseGroupReference(groupReference);
@@ -29,15 +31,21 @@ export class TaskGroupManager {
     if (echelonOrTask) {
       const echelonConfig = await this.getEchelonConfig(groupName, echelonOrTask);
       if (echelonConfig) {
-        return (echelonConfig['models'] as string[]) || [];
+        // 新格式：每个层级只有一个model字段
+        const model = echelonConfig['model'];
+        return model ? [model] : [];
       }
     } else {
       // 如果没有指定层级，返回所有层级的模型
       const allModels: string[] = [];
-      const echelons = (taskGroup['echelons'] as Record<string, any>) || {};
-
-      for (const echelonConfig of Object.values(echelons)) {
-        allModels.push(...(((echelonConfig as any)['models'] as string[]) || []));
+      
+      // 新格式：echelon配置直接在taskGroup中，不在echelons对象中
+      for (let i = 1; i <= 3; i++) {
+        const echelonKey = `echelon${i}`;
+        const echelonConfig = taskGroup[echelonKey];
+        if (echelonConfig && echelonConfig['model']) {
+          allModels.push(echelonConfig['model']);
+        }
       }
 
       return allModels;
@@ -102,6 +110,8 @@ export class TaskGroupManager {
 
   /**
    * 获取层级配置
+   *
+   * 新配置格式：echelon配置直接在taskGroup中，不在echelons对象中
    */
   async getEchelonConfig(
     groupName: string,
@@ -112,12 +122,14 @@ export class TaskGroupManager {
       return null;
     }
 
-    const echelons = taskGroup['echelons'] || {};
-    return echelons[echelonName] || null;
+    // 新格式：echelon配置直接在taskGroup中
+    return taskGroup[echelonName] || null;
   }
 
   /**
    * 按优先级获取组的模型
+   *
+   * 新配置格式：每个层级只有一个模型，返回模型名称数组
    */
   async getGroupModelsByPriority(groupName: string): Promise<Array<[string, number, string[]]>> {
     const taskGroup = await this.getTaskGroup(groupName);
@@ -126,11 +138,18 @@ export class TaskGroupManager {
     }
 
     const echelonList: Array<[string, number, string[]]> = [];
-    const echelons = taskGroup['echelons'] || {};
-
-    for (const [echelonName, echelonConfig] of Object.entries(echelons)) {
-      const config = echelonConfig as Record<string, any>;
-      echelonList.push([echelonName, config['priority'] || 999, config['models'] || []]);
+    
+    // 新格式：echelon配置直接在taskGroup中
+    for (let i = 1; i <= 3; i++) {
+      const echelonKey = `echelon${i}`;
+      const echelonConfig = taskGroup[echelonKey];
+      if (echelonConfig) {
+        const config = echelonConfig as Record<string, any>;
+        const model = config['model'];
+        if (model) {
+          echelonList.push([echelonKey, config['priority'] || 999, [model]]);
+        }
+      }
     }
 
     // 按优先级排序（数字越小优先级越高）
@@ -273,6 +292,8 @@ export class TaskGroupManager {
 
   /**
    * 获取任务组状态
+   *
+   * 新配置格式：每个层级只有一个模型
    */
   async getTaskGroupStatus(groupName: string): Promise<Record<string, any>> {
     const modelsByPriority = await this.getGroupModelsByPriority(groupName);
@@ -280,11 +301,12 @@ export class TaskGroupManager {
     return {
       name: groupName,
       totalEchelons: modelsByPriority.length,
-      totalModels: modelsByPriority.reduce((sum, [, , models]) => sum + models.length, 0),
+      totalModels: modelsByPriority.length, // 每个层级只有一个模型
       echelons: modelsByPriority.map(([echelonName, priority, models]) => ({
         name: echelonName,
         priority,
-        modelCount: models.length,
+        model: models[0] || null, // 单个模型
+        provider: null, // 需要从配置中获取
         available: models.length > 0,
       })),
       available: modelsByPriority.length > 0,

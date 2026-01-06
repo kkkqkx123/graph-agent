@@ -42,11 +42,11 @@ export class PollingPoolManager {
       taskGroups: config['taskGroups'] || [],
     });
 
-    // 异步构建模型到提供商的映射
-    const modelProviderMap = await this.buildModelProviderMap(config);
+    // 构建模型到提供商的映射
+    const modelProviderMap = this.buildModelProviderMap(config);
 
     // 验证所有模型都有提供商配置
-    await this.validateModelProviderMapping(config, modelProviderMap);
+    this.validateModelProviderMapping(config, modelProviderMap);
 
     // 创建客户端提供器
     const clientProvider = (modelName: string) => {
@@ -72,11 +72,14 @@ export class PollingPoolManager {
 
   /**
    * 从配置构建模型到提供商的映射
+   *
+   * 新配置格式：只从instances配置中提取模型到提供商的映射
+   * 每个实例必须明确指定provider和model字段
    */
-  private async buildModelProviderMap(config: Record<string, any>): Promise<Map<string, string>> {
+  private buildModelProviderMap(config: Record<string, any>): Map<string, string> {
     const map = new Map<string, string>();
     
-    // 优先从instances配置中提取模型到提供商的映射
+    // 从instances配置中提取模型到提供商的映射
     const instances = config['instances'] || [];
     for (const instance of instances) {
       const model = instance['model'];
@@ -86,74 +89,36 @@ export class PollingPoolManager {
       }
     }
     
-    // 从任务组获取模型列表，支持provider:model格式
-    const taskGroups = config['taskGroups'] || [];
-    for (const taskGroupRef of taskGroups) {
-      try {
-        const models = await this.taskGroupManager.getModelsForGroup(taskGroupRef);
-        for (const modelRef of models) {
-          // 解析provider:model格式
-          const parsed = this.parseModelReference(modelRef);
-          if (parsed && !map.has(parsed.modelName)) {
-            map.set(parsed.modelName, parsed.provider);
-          }
-        }
-      } catch (error) {
-        console.error(`获取任务组 ${taskGroupRef} 的模型列表失败:`, error);
-      }
-    }
-    
     return map;
   }
 
   /**
-   * 解析模型引用
-   * 支持格式: "provider:model" 或 "model"
-   */
-  private parseModelReference(modelRef: string): { provider: string; modelName: string } | null {
-    const parts = modelRef.split(':');
-    if (parts.length === 2 && parts[0] && parts[1]) {
-      return {
-        provider: parts[0],
-        modelName: parts[1]
-      };
-    }
-    // 如果没有provider前缀，返回null，需要从其他地方获取provider信息
-    return null;
-  }
-
-  /**
    * 验证模型到提供商映射的完整性
+   *
+   * 新配置格式：验证所有instances中的模型都有provider配置
    */
-  private async validateModelProviderMapping(
+  private validateModelProviderMapping(
     config: Record<string, any>,
     modelProviderMap: Map<string, string>
-  ): Promise<void> {
-    const taskGroups = config['taskGroups'] || [];
+  ): void {
+    const instances = config['instances'] || [];
     const missingProviders: string[] = [];
     
-    for (const taskGroupRef of taskGroups) {
-      try {
-        const models = await this.taskGroupManager.getModelsForGroup(taskGroupRef);
-        for (const modelRef of models) {
-          // 解析模型引用
-          const parsed = this.parseModelReference(modelRef);
-          const modelName = parsed ? parsed.modelName : modelRef;
-          
-          if (!modelProviderMap.has(modelName)) {
-            missingProviders.push(modelName);
-          }
-        }
-      } catch (error) {
-        console.error(`获取任务组 ${taskGroupRef} 的模型列表失败:`, error);
+    for (const instance of instances) {
+      const model = instance['model'];
+      const provider = instance['provider'];
+      
+      if (!model) {
+        missingProviders.push(`实例 ${instance['name'] || 'unknown'} 缺少model字段`);
+      } else if (!provider) {
+        missingProviders.push(`模型 ${model} 缺少provider字段`);
       }
     }
     
     if (missingProviders.length > 0) {
       throw new Error(
-        `以下模型缺少提供商配置: ${missingProviders.join(', ')}\n` +
-        `请在pools配置的instances中添加对应的provider信息，` +
-        `或在task_groups中使用provider:model格式`
+        `配置验证失败:\n${missingProviders.map(msg => `  - ${msg}`).join('\n')}\n` +
+        `请在pools配置的instances中为每个实例明确指定provider和model字段`
       );
     }
   }

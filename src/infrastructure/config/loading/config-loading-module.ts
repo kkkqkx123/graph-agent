@@ -8,6 +8,7 @@ import { ConfigDiscovery } from './discovery';
 import { SchemaRegistry } from './schema-registry';
 import { InheritanceProcessor } from '../processors/inheritance-processor';
 import { EnvironmentProcessor } from '../processors/environment-processor';
+import { ConfigProcessor } from '../processors/config-processor';
 import { ILogger } from '../../../domain/common/types';
 import * as fs from 'fs/promises';
 import * as path from 'path';
@@ -30,6 +31,7 @@ export class ConfigLoadingModule {
   private readonly registry: SchemaRegistry;
   private readonly inheritanceProcessor: InheritanceProcessor;
   private readonly environmentProcessor: EnvironmentProcessor;
+  private readonly configProcessor: ConfigProcessor;
   private readonly logger: ILogger;
   private readonly options: ConfigLoadingModuleOptions;
   private configs: Record<string, any> = {};
@@ -48,6 +50,12 @@ export class ConfigLoadingModule {
     this.registry = new SchemaRegistry(this.logger) as any;
     this.inheritanceProcessor = new InheritanceProcessor({}, this.logger);
     this.environmentProcessor = new EnvironmentProcessor({}, this.logger);
+    this.configProcessor = new ConfigProcessor(this.logger, {
+      enableSplit: true,
+      splitDirectories: {
+        'llms': 'pools',
+      },
+    });
   }
 
   /**
@@ -108,6 +116,8 @@ export class ConfigLoadingModule {
 
   /**
    * 加载特定模块配置
+   *
+   * 使用ConfigProcessor处理配置文件的合并和拆分
    */
   async loadModuleConfig(moduleType: string, files: ConfigFile[]): Promise<Record<string, any>> {
     this.logger.debug('加载模块配置', { moduleType, fileCount: files.length });
@@ -115,30 +125,20 @@ export class ConfigLoadingModule {
     // 按优先级排序
     const sortedFiles = files.sort((a, b) => b.priority - a.priority);
 
-    // 加载并合并配置
-    const configs: Record<string, any>[] = [];
-    for (const file of sortedFiles) {
-      try {
-        const content = await fs.readFile(file.path, 'utf8');
-        const parsed = this.parseContent(content, file.path);
+    // 使用ConfigProcessor处理配置文件
+    return this.configProcessor.processConfigFiles(moduleType, sortedFiles, async (file) => {
+      // 加载文件内容
+      const content = await fs.readFile(file.path, 'utf8');
+      let parsed = this.parseContent(content, file.path);
 
-        // 应用继承处理
-        const withInheritance = await this.inheritanceProcessor.process(parsed);
+      // 应用继承处理
+      parsed = this.inheritanceProcessor.process(parsed);
 
-        // 应用环境变量处理
-        const withEnvironment = await this.environmentProcessor.process(withInheritance);
+      // 应用环境变量处理
+      parsed = this.environmentProcessor.process(parsed);
 
-        configs.push(withEnvironment);
-      } catch (error) {
-        this.logger.warn('配置文件加载失败，跳过', {
-          path: file.path,
-          error: (error as Error).message,
-        });
-      }
-    }
-
-    // 合并配置
-    return this.mergeConfigs(configs);
+      return parsed;
+    });
   }
 
   /**
@@ -206,19 +206,6 @@ export class ConfigLoadingModule {
     }
 
     return groups;
-  }
-
-  /**
-   * 合并配置
-   */
-  private mergeConfigs(configs: Record<string, any>[]): Record<string, any> {
-    let result: Record<string, any> = {};
-
-    for (const config of configs) {
-      result = this.deepMerge(result, config);
-    }
-
-    return result;
   }
 
   /**
@@ -295,44 +282,6 @@ export class ConfigLoadingModule {
     } catch (error) {
       throw new Error(`解析配置文件失败 ${filePath}: ${(error as Error).message}`);
     }
-  }
-
-  /**
-   * 深度合并对象
-   */
-  private deepMerge(target: any, source: any): any {
-    if (source === null || source === undefined) {
-      return target;
-    }
-
-    if (typeof source !== 'object' || Array.isArray(source)) {
-      return source;
-    }
-
-    if (typeof target !== 'object' || Array.isArray(target)) {
-      target = {};
-    }
-
-    const result = { ...target };
-
-    for (const [key, value] of Object.entries(source)) {
-      if (value === null || value === undefined) {
-        continue;
-      }
-
-      if (
-        typeof value === 'object' &&
-        !Array.isArray(value) &&
-        typeof result[key] === 'object' &&
-        !Array.isArray(result[key])
-      ) {
-        result[key] = this.deepMerge(result[key], value);
-      } else {
-        result[key] = value;
-      }
-    }
-
-    return result;
   }
 
   /**
