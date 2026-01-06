@@ -10,7 +10,7 @@ import { z } from 'zod';
  */
 const RotationSchema = z.object({
   strategy: z.enum(['round_robin', 'least_recently_used', 'weighted']),
-  currentIndex: z.number().optional()
+  currentIndex: z.number().optional(),
 });
 
 /**
@@ -19,7 +19,7 @@ const RotationSchema = z.object({
 const HealthCheckSchema = z.object({
   enabled: z.boolean().optional(),
   interval: z.number().optional(),
-  failureThreshold: z.number().optional()
+  failureThreshold: z.number().optional(),
 });
 
 /**
@@ -27,7 +27,7 @@ const HealthCheckSchema = z.object({
  */
 const ConcurrencyControlSchema = z.object({
   enabled: z.boolean().optional(),
-  maxConcurrency: z.number().optional()
+  maxConcurrency: z.number().optional(),
 });
 
 /**
@@ -35,7 +35,7 @@ const ConcurrencyControlSchema = z.object({
  */
 const RateLimitingSchema = z.object({
   enabled: z.boolean().optional(),
-  requestsPerMinute: z.number().optional()
+  requestsPerMinute: z.number().optional(),
 });
 
 /**
@@ -43,7 +43,7 @@ const RateLimitingSchema = z.object({
  */
 const FallbackConfigSchema = z.object({
   strategy: z.string().optional(),
-  maxInstanceAttempts: z.number().optional()
+  maxInstanceAttempts: z.number().optional(),
 });
 
 /**
@@ -56,7 +56,7 @@ const PoolConfigSchema = z.object({
   healthCheck: HealthCheckSchema.optional(),
   concurrencyControl: ConcurrencyControlSchema.optional(),
   rateLimiting: RateLimitingSchema.optional(),
-  fallbackConfig: FallbackConfigSchema.optional()
+  fallbackConfig: FallbackConfigSchema.optional(),
 });
 
 /**
@@ -64,5 +64,5 @@ const PoolConfigSchema = z.object({
  */
 export const PoolSchema = z.object({
   pools: z.record(z.string(), PoolConfigSchema).optional(),
-  _registry: z.string().optional()
+  _registry: z.string().optional(),
 });

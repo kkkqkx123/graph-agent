@@ -103,7 +103,7 @@ describe('ValidationUtils', () => {
         'test@example.com',
         'user.name@domain.co.uk',
         'user+tag@example.org',
-        'user123@test-domain.com'
+        'user123@test-domain.com',
       ];
 
       validEmails.forEach(email => {
@@ -118,7 +118,7 @@ describe('ValidationUtils', () => {
         '@example.com',
         'user@',
         'user..name@example.com',
-        'user@.com'
+        'user@.com',
       ];
 
       invalidEmails.forEach(email => {
@@ -141,7 +141,7 @@ describe('ValidationUtils', () => {
         'https://example.com',
         'http://localhost:3000',
         'https://subdomain.example.com/path',
-        'ftp://example.com/file.txt'
+        'ftp://example.com/file.txt',
       ];
 
       validUrls.forEach(url => {
@@ -151,12 +151,7 @@ describe('ValidationUtils', () => {
     });
 
     it('should fail for invalid URLs', () => {
-      const invalidUrls = [
-        'not-a-url',
-        'example.com',
-        'http://',
-        '://missing-protocol.com'
-      ];
+      const invalidUrls = ['not-a-url', 'example.com', 'http://', '://missing-protocol.com'];
 
       invalidUrls.forEach(url => {
         const result = ValidationUtils.url(url, 'fieldName');
@@ -269,13 +264,13 @@ describe('ValidationUtils', () => {
       const validation1: ValidationResult = {
         isValid: true,
         errors: [],
-        warnings: ['warning1']
+        warnings: ['warning1'],
       };
 
       const validation2: ValidationResult = {
         isValid: false,
         errors: ['error1', 'error2'],
-        warnings: ['warning2']
+        warnings: ['warning2'],
       };
 
       const result = ValidationUtils.validateAll([validation1, validation2]);
@@ -302,14 +297,14 @@ describe('ValidationUtils', () => {
       const rules: ValidationRule<string>[] = [
         {
           name: 'minLength',
-          validate: (value) => value.length >= 5,
-          message: '字符串长度至少为5'
+          validate: value => value.length >= 5,
+          message: '字符串长度至少为5',
         },
         {
           name: 'containsNumber',
-          validate: (value) => /\d/.test(value),
-          message: '必须包含数字'
-        }
+          validate: value => /\d/.test(value),
+          message: '必须包含数字',
+        },
       ];
 
       const result = ValidationUtils.validateWithRules('test123', rules);
@@ -321,9 +316,9 @@ describe('ValidationUtils', () => {
       const rules: ValidationRule<string>[] = [
         {
           name: 'minLength',
-          validate: (value) => value.length >= 5,
-          message: '字符串长度至少为5'
-        }
+          validate: value => value.length >= 5,
+          message: '字符串长度至少为5',
+        },
       ];
 
       const result = ValidationUtils.validateWithRules('test', rules);
@@ -335,9 +330,9 @@ describe('ValidationUtils', () => {
       const rules: ValidationRule<string>[] = [
         {
           name: 'customRule',
-          validate: (value) => value === 'expected',
-          message: '值必须是expected'
-        }
+          validate: value => value === 'expected',
+          message: '值必须是expected',
+        },
       ];
 
       const result = ValidationUtils.validateWithRules('wrong', rules);
@@ -349,8 +344,8 @@ describe('ValidationUtils', () => {
       const rules: ValidationRule<string>[] = [
         {
           name: 'customRule',
-          validate: (value) => value === 'expected'
-        }
+          validate: value => value === 'expected',
+        },
       ];
 
       const result = ValidationUtils.validateWithRules('wrong', rules);

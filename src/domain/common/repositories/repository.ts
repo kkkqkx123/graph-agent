@@ -62,7 +62,7 @@ export interface PaginatedResult<T> {
 
 /**
  * 仓储接口
- * 
+ *
  * 仓储是DDD中的核心概念，用于封装对象存储和检索逻辑
  */
 export interface Repository<T, TId = ID> {

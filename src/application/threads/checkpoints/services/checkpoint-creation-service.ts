@@ -1,19 +1,22 @@
 /**
  * 检查点创建服务
- * 
+ *
  * 负责各种类型检查点的创建功能
  */
 
 import { ThreadCheckpoint } from '../../../../domain/threads/checkpoints/entities/thread-checkpoint';
 import { CheckpointType } from '../../../../domain/checkpoint/value-objects/checkpoint-type';
-import { ThreadCheckpointDomainService, ThreadCheckpointDomainServiceImpl } from '../../../../domain/threads/checkpoints/services/thread-checkpoint-domain-service';
+import {
+  ThreadCheckpointDomainService,
+  ThreadCheckpointDomainServiceImpl,
+} from '../../../../domain/threads/checkpoints/services/thread-checkpoint-domain-service';
 import { IThreadCheckpointRepository } from '../../../../domain/threads/checkpoints/repositories/thread-checkpoint-repository';
 import { BaseApplicationService } from '../../../common/base-application-service';
 import {
   CreateCheckpointRequest,
   CreateManualCheckpointRequest,
   CreateErrorCheckpointRequest,
-  CreateMilestoneCheckpointRequest
+  CreateMilestoneCheckpointRequest,
 } from './checkpoint-service';
 import { ILogger } from '../../../../domain/common/types/logger-types';
 
@@ -108,7 +111,7 @@ export class CheckpointCreationService extends BaseApplicationService {
   async createManualCheckpoint(request: CreateManualCheckpointRequest): Promise<string> {
     return await this.createCheckpoint({
       ...request,
-      type: 'manual'
+      type: 'manual',
     });
   }
 
@@ -123,9 +126,9 @@ export class CheckpointCreationService extends BaseApplicationService {
       description: request.errorMessage,
       metadata: {
         ...request.metadata,
-        errorType: request.errorType
+        errorType: request.errorType,
       },
-      expirationHours: request.expirationHours
+      expirationHours: request.expirationHours,
     });
   }
 
@@ -140,7 +143,7 @@ export class CheckpointCreationService extends BaseApplicationService {
       title: request.milestoneName,
       description: request.description,
       metadata: request.metadata,
-      expirationHours: request.expirationHours
+      expirationHours: request.expirationHours,
     });
   }
 

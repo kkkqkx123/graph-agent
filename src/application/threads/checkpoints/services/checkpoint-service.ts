@@ -2,7 +2,10 @@ import { ID } from '../../../../domain/common/value-objects/id';
 import { ThreadCheckpoint } from '../../../../domain/threads/checkpoints/entities/thread-checkpoint';
 import { CheckpointType } from '../../../../domain/checkpoint/value-objects/checkpoint-type';
 import { CheckpointStatistics } from '../../../../domain/threads/checkpoints/value-objects/checkpoint-statistics';
-import { ThreadCheckpointDomainService, ThreadCheckpointDomainServiceImpl } from '../../../../domain/threads/checkpoints/services/thread-checkpoint-domain-service';
+import {
+  ThreadCheckpointDomainService,
+  ThreadCheckpointDomainServiceImpl,
+} from '../../../../domain/threads/checkpoints/services/thread-checkpoint-domain-service';
 import { IThreadCheckpointRepository } from '../../../../domain/threads/checkpoints/repositories/thread-checkpoint-repository';
 import { ILogger } from '../../../../domain/common/types/logger-types';
 
@@ -103,7 +106,7 @@ export interface CheckpointStatisticsInfo {
 
 /**
  * Thread检查点应用服务
- * 
+ *
  * 提供Thread检查点的应用层服务，整合所有checkpoint功能
  */
 export class CheckpointService {
@@ -123,7 +126,7 @@ export class CheckpointService {
     try {
       this.logger.info('正在创建检查点', {
         threadId: request.threadId,
-        type: request.type
+        type: request.type,
       });
 
       const threadId = ID.fromString(request.threadId);
@@ -179,7 +182,6 @@ export class CheckpointService {
 
       this.logger.info('检查点创建成功', { checkpointId: checkpoint.checkpointId.toString() });
       return checkpoint.checkpointId.toString();
-
     } catch (error) {
       this.logger.error('创建检查点失败', error as Error);
       throw error;
@@ -192,7 +194,7 @@ export class CheckpointService {
   async createManualCheckpoint(request: CreateManualCheckpointRequest): Promise<string> {
     return await this.createCheckpoint({
       ...request,
-      type: 'manual'
+      type: 'manual',
     });
   }
 
@@ -207,9 +209,9 @@ export class CheckpointService {
       description: request.errorMessage,
       metadata: {
         ...request.metadata,
-        errorType: request.errorType
+        errorType: request.errorType,
       },
-      expirationHours: request.expirationHours
+      expirationHours: request.expirationHours,
     });
   }
 
@@ -224,7 +226,7 @@ export class CheckpointService {
       title: request.milestoneName,
       description: request.description,
       metadata: request.metadata,
-      expirationHours: request.expirationHours
+      expirationHours: request.expirationHours,
     });
   }
 
@@ -245,7 +247,6 @@ export class CheckpointService {
       }
 
       return stateData;
-
     } catch (error) {
       this.logger.error('从检查点恢复失败', error as Error);
       throw error;
@@ -265,7 +266,6 @@ export class CheckpointService {
       }
 
       return this.mapToCheckpointInfo(checkpoint);
-
     } catch (error) {
       this.logger.error('获取检查点信息失败', error as Error);
       throw error;
@@ -281,7 +281,6 @@ export class CheckpointService {
       const checkpoints = await this.domainService.getThreadCheckpointHistory(id, limit);
 
       return checkpoints.map(cp => this.mapToCheckpointInfo(cp));
-
     } catch (error) {
       this.logger.error('获取线程检查点历史失败', error as Error);
       throw error;
@@ -297,7 +296,6 @@ export class CheckpointService {
       const statistics = await this.domainService.getCheckpointStatistics(id);
 
       return this.mapToCheckpointStatisticsInfo(statistics);
-
     } catch (error) {
       this.logger.error('获取检查点统计信息失败', error as Error);
       throw error;
@@ -314,11 +312,10 @@ export class CheckpointService {
 
       this.logger.info('过期检查点清理完成', {
         threadId,
-        cleanedCount
+        cleanedCount,
       });
 
       return cleanedCount;
-
     } catch (error) {
       this.logger.error('清理过期检查点失败', error as Error);
       throw error;
@@ -336,11 +333,10 @@ export class CheckpointService {
       this.logger.info('多余检查点清理完成', {
         threadId,
         maxCount,
-        cleanedCount
+        cleanedCount,
       });
 
       return cleanedCount;
-
     } catch (error) {
       this.logger.error('清理多余检查点失败', error as Error);
       throw error;
@@ -358,11 +354,10 @@ export class CheckpointService {
       this.logger.info('旧检查点归档完成', {
         threadId,
         days,
-        archivedCount
+        archivedCount,
       });
 
       return archivedCount;
-
     } catch (error) {
       this.logger.error('归档旧检查点失败', error as Error);
       throw error;
@@ -384,7 +379,6 @@ export class CheckpointService {
       }
 
       return success;
-
     } catch (error) {
       this.logger.error('延长检查点过期时间失败', error as Error);
       throw error;
@@ -403,11 +397,10 @@ export class CheckpointService {
 
       this.logger.info('检查点备份创建成功', {
         originalCheckpointId: checkpointId,
-        backupId: backup.checkpointId.toString()
+        backupId: backup.checkpointId.toString(),
       });
 
       return backup.checkpointId.toString();
-
     } catch (error) {
       this.logger.error('创建检查点备份失败', error as Error);
       throw error;
@@ -431,7 +424,6 @@ export class CheckpointService {
       }
 
       return stateData;
-
     } catch (error) {
       this.logger.error('从备份恢复失败', error as Error);
       throw error;
@@ -447,7 +439,6 @@ export class CheckpointService {
       const backupChain = await this.domainService.getBackupChain(id);
 
       return backupChain.map(cp => this.mapToCheckpointInfo(cp));
-
     } catch (error) {
       this.logger.error('获取备份链失败', error as Error);
       throw error;
@@ -461,7 +452,6 @@ export class CheckpointService {
     try {
       const id = ID.fromString(threadId);
       return await this.domainService.analyzeCheckpointFrequency(id);
-
     } catch (error) {
       this.logger.error('分析检查点创建频率失败', error as Error);
       throw error;
@@ -475,7 +465,6 @@ export class CheckpointService {
     try {
       const id = ID.fromString(threadId);
       return await this.domainService.analyzeCheckpointSizeDistribution(id);
-
     } catch (error) {
       this.logger.error('分析检查点大小分布失败', error as Error);
       throw error;
@@ -489,7 +478,6 @@ export class CheckpointService {
     try {
       const id = ID.fromString(threadId);
       return await this.domainService.analyzeCheckpointTypeDistribution(id);
-
     } catch (error) {
       this.logger.error('分析检查点类型分布失败', error as Error);
       throw error;
@@ -503,7 +491,6 @@ export class CheckpointService {
     try {
       const id = ID.fromString(threadId);
       return await this.domainService.suggestOptimizationStrategy(id);
-
     } catch (error) {
       this.logger.error('建议优化策略失败', error as Error);
       throw error;
@@ -517,7 +504,6 @@ export class CheckpointService {
     try {
       const id = threadId ? ID.fromString(threadId) : undefined;
       return await this.domainService.healthCheck(id);
-
     } catch (error) {
       this.logger.error('健康检查失败', error as Error);
       throw error;
@@ -559,14 +545,16 @@ export class CheckpointService {
       expiresAt: checkpoint.expiresAt?.toISOString(),
       sizeBytes: checkpoint.sizeBytes,
       restoreCount: checkpoint.restoreCount,
-      lastRestoredAt: checkpoint.lastRestoredAt?.toISOString()
+      lastRestoredAt: checkpoint.lastRestoredAt?.toISOString(),
     };
   }
 
   /**
    * 映射到检查点统计信息DTO
    */
-  private mapToCheckpointStatisticsInfo(statistics: CheckpointStatistics): CheckpointStatisticsInfo {
+  private mapToCheckpointStatisticsInfo(
+    statistics: CheckpointStatistics
+  ): CheckpointStatisticsInfo {
     return {
       totalCheckpoints: statistics.totalCheckpoints,
       activeCheckpoints: statistics.activeCheckpoints,
@@ -585,7 +573,7 @@ export class CheckpointService {
       typeDistribution: statistics.typeDistribution,
       restoreFrequency: statistics.restoreFrequency,
       healthScore: statistics.getHealthScore(),
-      healthStatus: statistics.getHealthStatus()
+      healthStatus: statistics.getHealthStatus(),
     };
   }
 }

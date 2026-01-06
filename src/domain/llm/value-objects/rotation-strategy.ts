@@ -4,7 +4,7 @@ import { ValueObject } from '../../common/value-objects';
 export enum RotationStrategy {
   ROUND_ROBIN = 'round_robin',
   LEAST_RECENTLY_USED = 'least_recently_used',
-  WEIGHTED = 'weighted'
+  WEIGHTED = 'weighted',
 }
 
 /**
@@ -58,11 +58,11 @@ export class RotationStrategyVO extends ValueObject<{
       case RotationStrategy.LEAST_RECENTLY_USED:
         return {};
       case RotationStrategy.WEIGHTED:
-        return { 
+        return {
           baseWeight: 1.0,
           performanceWeight: 1.0,
           reliabilityWeight: 1.0,
-          loadWeight: 1.0
+          loadWeight: 1.0,
         };
       default:
         return {};
@@ -93,7 +93,7 @@ export class RotationStrategyVO extends ValueObject<{
       description: this.getDescription(),
       valid: this.isValid(),
       config: this.config,
-      defaultConfig: this.getDefaultConfig()
+      defaultConfig: this.getDefaultConfig(),
     };
   }
 }
@@ -108,7 +108,7 @@ export class RotationStrategyFactory {
   static create(strategy: RotationStrategy, config?: Record<string, any>): RotationStrategyVO {
     const defaultConfig = this.getDefaultConfig(strategy);
     const mergedConfig = { ...defaultConfig, ...(config || {}) };
-    
+
     return new RotationStrategyVO(strategy, mergedConfig);
   }
 
@@ -119,11 +119,11 @@ export class RotationStrategyFactory {
     const strategy = Object.values(RotationStrategy).find(
       s => s === strategyString
     ) as RotationStrategy;
-    
+
     if (!strategy) {
       throw new Error(`不支持的轮询策略: ${strategyString}`);
     }
-    
+
     return this.create(strategy, config);
   }
 
@@ -137,11 +137,11 @@ export class RotationStrategyFactory {
       case RotationStrategy.LEAST_RECENTLY_USED:
         return {};
       case RotationStrategy.WEIGHTED:
-        return { 
+        return {
           baseWeight: 1.0,
           performanceWeight: 1.0,
           reliabilityWeight: 1.0,
-          loadWeight: 1.0
+          loadWeight: 1.0,
         };
       default:
         return {};

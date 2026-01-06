@@ -7,7 +7,7 @@ import {
   HookMetadata,
   HookParameter,
   HookValidationResult,
-  HookProps
+  HookProps,
 } from '../../../../domain/workflow/entities/hook';
 
 /**
@@ -63,7 +63,7 @@ export class BeforeExecuteHook extends Hook {
       failFast,
       createdAt: now,
       updatedAt: now,
-      version: Version.initial()
+      version: Version.initial(),
     };
 
     return new BeforeExecuteHook(props);
@@ -105,15 +105,15 @@ export class BeforeExecuteHook extends Hook {
           return {
             success: false,
             output: {
-              validationErrors: validationResult.errors
+              validationErrors: validationResult.errors,
             },
             error: '验证失败',
             shouldContinue: false,
             executionTime: Date.now() - startTime,
             metadata: {
               hookPoint: 'before_execute',
-              timestamp: Date.now()
-            }
+              timestamp: Date.now(),
+            },
           };
         }
       }
@@ -130,8 +130,8 @@ export class BeforeExecuteHook extends Hook {
         executionTime: Date.now() - startTime,
         metadata: {
           hookPoint: 'before_execute',
-          timestamp: Date.now()
-        }
+          timestamp: Date.now(),
+        },
       };
     } catch (error) {
       return {
@@ -141,8 +141,8 @@ export class BeforeExecuteHook extends Hook {
         executionTime: Date.now() - startTime,
         metadata: {
           hookPoint: 'before_execute',
-          timestamp: Date.now()
-        }
+          timestamp: Date.now(),
+        },
       };
     }
   }
@@ -165,7 +165,7 @@ export class BeforeExecuteHook extends Hook {
 
     return {
       valid: errors.length === 0,
-      errors
+      errors,
     };
   }
 
@@ -181,7 +181,7 @@ export class BeforeExecuteHook extends Hook {
       description: this.props.description,
       parameters: this.getParameters(),
       enabled: this.props.enabled,
-      priority: this.props.priority
+      priority: this.props.priority,
     };
   }
 
@@ -195,14 +195,14 @@ export class BeforeExecuteHook extends Hook {
         name: 'validationRules',
         type: 'object',
         required: false,
-        description: '验证规则配置'
+        description: '验证规则配置',
       },
       {
         name: 'preprocessing',
         type: 'object',
         required: false,
-        description: '预处理配置'
-      }
+        description: '预处理配置',
+      },
     ];
   }
 
@@ -212,7 +212,10 @@ export class BeforeExecuteHook extends Hook {
    * @param rules 验证规则
    * @returns 验证结果
    */
-  private validateContext(context: HookContext, rules: BeforeExecuteHookConfig['validationRules']): { valid: boolean; errors: string[] } {
+  private validateContext(
+    context: HookContext,
+    rules: BeforeExecuteHookConfig['validationRules']
+  ): { valid: boolean; errors: string[] } {
     const errors: string[] = [];
 
     if (!rules) {
@@ -240,7 +243,7 @@ export class BeforeExecuteHook extends Hook {
 
     return {
       valid: errors.length === 0,
-      errors
+      errors,
     };
   }
 
@@ -250,7 +253,10 @@ export class BeforeExecuteHook extends Hook {
    * @param preprocessing 预处理配置
    * @returns 预处理结果
    */
-  private preprocessContext(context: HookContext, preprocessing: BeforeExecuteHookConfig['preprocessing']): any {
+  private preprocessContext(
+    context: HookContext,
+    preprocessing: BeforeExecuteHookConfig['preprocessing']
+  ): any {
     const result: Record<string, any> = {};
 
     if (!preprocessing) {

@@ -1,7 +1,12 @@
 import { z } from 'zod';
 import { LLMRequest } from '../../../domain/llm/entities/llm-request';
 import { LLMResponse } from '../../../domain/llm/entities/llm-response';
-import { BaseParameterMapper, ProviderRequest, ProviderResponse, BaseParameterSchema } from './base-parameter-mapper';
+import {
+  BaseParameterMapper,
+  ProviderRequest,
+  ProviderResponse,
+  BaseParameterSchema,
+} from './base-parameter-mapper';
 import { ProviderConfig } from './interfaces/provider-config.interface';
 
 /**
@@ -28,7 +33,7 @@ export class MockParameterMapper extends BaseParameterMapper {
     // Mock 客户端直接返回请求，不需要转换
     const mockRequest: ProviderRequest = {
       model: request.model,
-      messages: request.messages
+      messages: request.messages,
     };
 
     // 仅在值存在时添加可选参数

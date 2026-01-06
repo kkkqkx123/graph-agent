@@ -2,7 +2,12 @@ import { z } from 'zod';
 import { LLMRequest } from '../../../domain/llm/entities/llm-request';
 import { LLMResponse } from '../../../domain/llm/entities/llm-response';
 import { LLMMessage } from '../../../domain/llm/value-objects/llm-message';
-import { BaseParameterMapper, ProviderRequest, ProviderResponse, BaseParameterSchema } from './base-parameter-mapper';
+import {
+  BaseParameterMapper,
+  ProviderRequest,
+  ProviderResponse,
+  BaseParameterSchema,
+} from './base-parameter-mapper';
 import { ProviderConfig } from './interfaces/provider-config.interface';
 
 /**
@@ -19,7 +24,7 @@ const OpenAIParameterSchema = BaseParameterSchema.extend({
   logitBias: z.record(z.number(), z.number()).optional(),
   topLogprobs: z.number().int().min(0).max(20).optional(),
   store: z.boolean().optional(),
-  streamOptions: z.record(z.string(), z.any()).optional()
+  streamOptions: z.record(z.string(), z.any()).optional(),
 });
 
 /**
@@ -35,7 +40,7 @@ const OPENAI_SPECIFIC_KEYS = [
   'logitBias',
   'topLogprobs',
   'store',
-  'streamOptions'
+  'streamOptions',
 ];
 
 /**
@@ -55,7 +60,7 @@ export class OpenAIParameterMapper extends BaseParameterMapper {
   mapToProvider(request: LLMRequest, providerConfig: ProviderConfig): ProviderRequest {
     const openaiRequest: ProviderRequest = {
       model: request.model,
-      messages: request.messages
+      messages: request.messages,
     };
 
     // 基本参数映射（仅在值存在时添加）
@@ -127,24 +132,26 @@ export class OpenAIParameterMapper extends BaseParameterMapper {
       provider: 'openai',
       // 保留原始详细信息用于调试和审计
       promptTokensDetails: promptDetails,
-      completionTokensDetails: completionDetails
+      completionTokensDetails: completionDetails,
     };
 
     // 构建标准响应
     return LLMResponse.create(
       originalRequest.requestId,
       originalRequest.model,
-      [{
-        index: choice.index || 0,
-        message: LLMMessage.createAssistant(choice.message.content || ''),
-        finish_reason: choice.finish_reason || 'stop'
-      }],
+      [
+        {
+          index: choice.index || 0,
+          message: LLMMessage.createAssistant(choice.message.content || ''),
+          finish_reason: choice.finish_reason || 'stop',
+        },
+      ],
       {
         promptTokens: usage?.prompt_tokens || 0,
         completionTokens: usage?.completion_tokens || 0,
         totalTokens: usage?.total_tokens || 0,
         reasoningTokens,
-        metadata
+        metadata,
       },
       choice.finish_reason || 'stop',
       0, // duration - would need to be calculated

@@ -13,7 +13,7 @@ const LOG_LEVEL_WEIGHTS: Record<LogLevel, number> = {
   [LogLevel.INFO]: 2,
   [LogLevel.WARN]: 3,
   [LogLevel.ERROR]: 4,
-  [LogLevel.FATAL]: 5
+  [LogLevel.FATAL]: 5,
 };
 
 /**
@@ -25,7 +25,7 @@ const LOG_LEVEL_COLORS: Record<LogLevel, string> = {
   [LogLevel.INFO]: 'green',
   [LogLevel.WARN]: 'yellow',
   [LogLevel.ERROR]: 'red',
-  [LogLevel.FATAL]: 'magenta'
+  [LogLevel.FATAL]: 'magenta',
 };
 
 /**
@@ -41,7 +41,7 @@ export class LogLevelUtils {
   static compare(level1: LogLevel, level2: LogLevel): number {
     const weight1 = LOG_LEVEL_WEIGHTS[level1];
     const weight2 = LOG_LEVEL_WEIGHTS[level2];
-    
+
     if (weight1 < weight2) return -1;
     if (weight1 > weight2) return 1;
     return 0;
@@ -82,11 +82,11 @@ export class LogLevelUtils {
    */
   static parse(levelStr: string): LogLevel {
     const upperLevel = levelStr.toUpperCase();
-    
+
     if (Object.values(LogLevel).includes(upperLevel as LogLevel)) {
       return upperLevel as LogLevel;
     }
-    
+
     throw new Error(`无效的日志级别: ${levelStr}`);
   }
 

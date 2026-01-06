@@ -11,7 +11,7 @@ import {
   mapInstancesToDTOs,
   PoolDTO,
   TaskGroupDTO,
-  InstanceDTO
+  InstanceDTO,
 } from '../llm.dto';
 
 describe('LLM DTOs', () => {
@@ -30,9 +30,9 @@ describe('LLM DTOs', () => {
             enabled: true,
             currentLoad: 5,
             maxLoad: 10,
-            loadPercentage: 50
+            loadPercentage: 50,
           },
-          lastChecked: new Date('2023-01-01T00:00:00Z')
+          lastChecked: new Date('2023-01-01T00:00:00Z'),
         },
         statistics: {
           totalRequests: 100,
@@ -41,8 +41,8 @@ describe('LLM DTOs', () => {
           avgResponseTime: 100,
           successRate: 0.9,
           currentLoad: 5,
-          maxConcurrency: 10
-        }
+          maxConcurrency: 10,
+        },
       };
 
       const result = mapPoolToDTO(domainPool);
@@ -79,9 +79,9 @@ describe('LLM DTOs', () => {
               enabled: true,
               currentLoad: 2,
               maxLoad: 5,
-              loadPercentage: 40
+              loadPercentage: 40,
             },
-            lastChecked: new Date('2023-01-01T00:00:00Z')
+            lastChecked: new Date('2023-01-01T00:00:00Z'),
           },
           statistics: {
             totalRequests: 50,
@@ -90,8 +90,8 @@ describe('LLM DTOs', () => {
             avgResponseTime: 80,
             successRate: 1.0,
             currentLoad: 2,
-            maxConcurrency: 5
-          }
+            maxConcurrency: 5,
+          },
         },
         {
           name: '轮询池2',
@@ -106,9 +106,9 @@ describe('LLM DTOs', () => {
               enabled: true,
               currentLoad: 1,
               maxLoad: 3,
-              loadPercentage: 33.33
+              loadPercentage: 33.33,
             },
-            lastChecked: new Date('2023-01-01T00:00:00Z')
+            lastChecked: new Date('2023-01-01T00:00:00Z'),
           },
           statistics: {
             totalRequests: 30,
@@ -117,9 +117,9 @@ describe('LLM DTOs', () => {
             avgResponseTime: 90,
             successRate: 0.93,
             currentLoad: 1,
-            maxConcurrency: 3
-          }
-        }
+            maxConcurrency: 3,
+          },
+        },
       ];
 
       const results = mapPoolsToDTOs(domainPools);
@@ -140,9 +140,15 @@ describe('LLM DTOs', () => {
           totalModels: 10,
           available: true,
           echelons: [
-            { name: '层级1', priority: 1, modelCount: 5, available: true, models: ['model1', 'model2'] }
+            {
+              name: '层级1',
+              priority: 1,
+              modelCount: 5,
+              available: true,
+              models: ['model1', 'model2'],
+            },
           ],
-          lastChecked: new Date('2023-01-01T00:00:00Z')
+          lastChecked: new Date('2023-01-01T00:00:00Z'),
         },
         statistics: {
           name: '测试任务组',
@@ -150,9 +156,9 @@ describe('LLM DTOs', () => {
           totalModels: 10,
           availabilityRate: 0.9,
           echelonDistribution: {
-            '层级1': { priority: 1, modelCount: 5, availability: true }
-          }
-        }
+            层级1: { priority: 1, modelCount: 5, availability: true },
+          },
+        },
       };
 
       const result = mapTaskGroupToDTO(domainTaskGroup);
@@ -183,16 +189,16 @@ describe('LLM DTOs', () => {
             totalModels: 5,
             available: true,
             echelons: [],
-            lastChecked: new Date('2023-01-01T00:00:00Z')
+            lastChecked: new Date('2023-01-01T00:00:00Z'),
           },
           statistics: {
             name: '任务组1',
             totalEchelons: 2,
             totalModels: 5,
             availabilityRate: 1.0,
-            echelonDistribution: {}
-          }
-        }
+            echelonDistribution: {},
+          },
+        },
       ];
 
       const results = mapTaskGroupsToDTOs(domainTaskGroups);
@@ -220,7 +226,7 @@ describe('LLM DTOs', () => {
         available: true,
         canAcceptRequest: true,
         lastUsed: new Date('2023-01-01T00:00:00Z'),
-        lastHealthCheck: new Date('2023-01-01T00:00:00Z')
+        lastHealthCheck: new Date('2023-01-01T00:00:00Z'),
       };
 
       const result = mapInstanceToDTO(domainInstance);
@@ -260,8 +266,8 @@ describe('LLM DTOs', () => {
           available: true,
           canAcceptRequest: true,
           lastUsed: new Date('2023-01-01T00:00:00Z'),
-          lastHealthCheck: new Date('2023-01-01T00:00:00Z')
-        }
+          lastHealthCheck: new Date('2023-01-01T00:00:00Z'),
+        },
       ];
 
       const results = mapInstancesToDTOs(domainInstances);

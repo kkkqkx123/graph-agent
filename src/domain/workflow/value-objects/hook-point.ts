@@ -15,7 +15,7 @@ export enum HookPoint {
   AFTER_EDGE_TRAVERSE = 'after_edge_traverse',
   ON_STATE_CHANGE = 'on_state_change',
   ON_CHECKPOINT = 'on_checkpoint',
-  ON_RESTORE = 'on_restore'
+  ON_RESTORE = 'on_restore',
 }
 
 /**
@@ -77,7 +77,9 @@ export class HookPointValue extends ValueObject<HookPointValueProps> {
    * 检查是否为编译相关钩子
    */
   public isCompilation(): boolean {
-    return this.props.value === HookPoint.BEFORE_COMPILE || this.props.value === HookPoint.AFTER_COMPILE;
+    return (
+      this.props.value === HookPoint.BEFORE_COMPILE || this.props.value === HookPoint.AFTER_COMPILE
+    );
   }
 
   /**
@@ -87,7 +89,7 @@ export class HookPointValue extends ValueObject<HookPointValueProps> {
     return [
       HookPoint.BEFORE_NODE_EXECUTE,
       HookPoint.AFTER_NODE_EXECUTE,
-      HookPoint.ON_NODE_ERROR
+      HookPoint.ON_NODE_ERROR,
     ].includes(this.props.value);
   }
 
@@ -95,21 +97,18 @@ export class HookPointValue extends ValueObject<HookPointValueProps> {
    * 检查是否为边相关钩子
    */
   public isEdgeRelated(): boolean {
-    return [
-      HookPoint.BEFORE_EDGE_TRAVERSE,
-      HookPoint.AFTER_EDGE_TRAVERSE
-    ].includes(this.props.value);
+    return [HookPoint.BEFORE_EDGE_TRAVERSE, HookPoint.AFTER_EDGE_TRAVERSE].includes(
+      this.props.value
+    );
   }
 
   /**
    * 检查是否为状态相关钩子
    */
   public isStateRelated(): boolean {
-    return [
-      HookPoint.ON_STATE_CHANGE,
-      HookPoint.ON_CHECKPOINT,
-      HookPoint.ON_RESTORE
-    ].includes(this.props.value);
+    return [HookPoint.ON_STATE_CHANGE, HookPoint.ON_CHECKPOINT, HookPoint.ON_RESTORE].includes(
+      this.props.value
+    );
   }
 
   /**
@@ -288,53 +287,35 @@ export class HookPointValue extends ValueObject<HookPointValueProps> {
    * 获取执行相关的钩子点
    */
   public static getExecutionHookPoints(): HookPoint[] {
-    return [
-      HookPoint.BEFORE_EXECUTE,
-      HookPoint.AFTER_EXECUTE,
-      HookPoint.ON_ERROR
-    ];
+    return [HookPoint.BEFORE_EXECUTE, HookPoint.AFTER_EXECUTE, HookPoint.ON_ERROR];
   }
 
   /**
    * 获取编译相关的钩子点
    */
   public static getCompilationHookPoints(): HookPoint[] {
-    return [
-      HookPoint.BEFORE_COMPILE,
-      HookPoint.AFTER_COMPILE
-    ];
+    return [HookPoint.BEFORE_COMPILE, HookPoint.AFTER_COMPILE];
   }
 
   /**
    * 获取节点相关的钩子点
    */
   public static getNodeHookPoints(): HookPoint[] {
-    return [
-      HookPoint.BEFORE_NODE_EXECUTE,
-      HookPoint.AFTER_NODE_EXECUTE,
-      HookPoint.ON_NODE_ERROR
-    ];
+    return [HookPoint.BEFORE_NODE_EXECUTE, HookPoint.AFTER_NODE_EXECUTE, HookPoint.ON_NODE_ERROR];
   }
 
   /**
    * 获取边相关的钩子点
    */
   public static getEdgeHookPoints(): HookPoint[] {
-    return [
-      HookPoint.BEFORE_EDGE_TRAVERSE,
-      HookPoint.AFTER_EDGE_TRAVERSE
-    ];
+    return [HookPoint.BEFORE_EDGE_TRAVERSE, HookPoint.AFTER_EDGE_TRAVERSE];
   }
 
   /**
    * 获取状态相关的钩子点
    */
   public static getStateHookPoints(): HookPoint[] {
-    return [
-      HookPoint.ON_STATE_CHANGE,
-      HookPoint.ON_CHECKPOINT,
-      HookPoint.ON_RESTORE
-    ];
+    return [HookPoint.ON_STATE_CHANGE, HookPoint.ON_CHECKPOINT, HookPoint.ON_RESTORE];
   }
 
   /**

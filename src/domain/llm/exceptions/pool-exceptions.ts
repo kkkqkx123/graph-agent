@@ -5,11 +5,7 @@ export abstract class PollingPoolError extends Error {
   public readonly code: string;
   public readonly details?: Record<string, any>;
 
-  constructor(
-    message: string,
-    code: string,
-    details?: Record<string, any>
-  ) {
+  constructor(message: string, code: string, details?: Record<string, any>) {
     super(message);
     this.name = 'PollingPoolError';
     this.code = code;
@@ -22,11 +18,7 @@ export abstract class PollingPoolError extends Error {
  */
 export class PollingPoolNotFoundError extends PollingPoolError {
   constructor(poolName: string) {
-    super(
-      `轮询池未找到: ${poolName}`,
-      'POLLING_POOL_NOT_FOUND',
-      { poolName }
-    );
+    super(`轮询池未找到: ${poolName}`, 'POLLING_POOL_NOT_FOUND', { poolName });
   }
 }
 
@@ -35,11 +27,10 @@ export class PollingPoolNotFoundError extends PollingPoolError {
  */
 export class PollingPoolInitializationError extends PollingPoolError {
   constructor(poolName: string, reason: string) {
-    super(
-      `轮询池初始化失败: ${poolName} - ${reason}`,
-      'POLLING_POOL_INITIALIZATION_FAILED',
-      { poolName, reason }
-    );
+    super(`轮询池初始化失败: ${poolName} - ${reason}`, 'POLLING_POOL_INITIALIZATION_FAILED', {
+      poolName,
+      reason,
+    });
   }
 }
 
@@ -48,11 +39,10 @@ export class PollingPoolInitializationError extends PollingPoolError {
  */
 export class PollingPoolInstanceUnavailableError extends PollingPoolError {
   constructor(poolName: string, instanceId?: string) {
-    super(
-      `轮询池实例不可用: ${poolName}`,
-      'POLLING_POOL_INSTANCE_UNAVAILABLE',
-      { poolName, instanceId }
-    );
+    super(`轮询池实例不可用: ${poolName}`, 'POLLING_POOL_INSTANCE_UNAVAILABLE', {
+      poolName,
+      instanceId,
+    });
   }
 }
 

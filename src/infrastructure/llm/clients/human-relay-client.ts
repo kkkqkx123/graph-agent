@@ -15,7 +15,10 @@ import { TYPES } from '../../../di/service-keys';
 import { ProviderConfig, ApiType, ProviderConfigBuilder } from '../parameter-mappers';
 import { BaseFeatureSupport } from '../parameter-mappers/interfaces/feature-support.interface';
 import { ConfigLoadingModule } from '../../config/loading/config-loading-module';
-import { IHumanRelayService, HumanRelayConfig } from '../../../application/llm/services/human-relay-service';
+import {
+  IHumanRelayService,
+  HumanRelayConfig,
+} from '../../../application/llm/services/human-relay-service';
 
 /**
  * HumanRelay客户端配置接口
@@ -54,11 +57,16 @@ export class HumanRelayClient extends BaseLLMClient {
     featureSupport.supportsTools = false;
 
     // 从配置中读取支持的模型列表
-    const supportedModels = configLoadingModule.get('llm.human-relay.supportedModels', ['single_turn', 'multi_turn']);
+    const supportedModels = configLoadingModule.get('llm.human-relay.supportedModels', [
+      'single_turn',
+      'multi_turn',
+    ]);
 
     // 验证配置
     if (!supportedModels || !Array.isArray(supportedModels) || supportedModels.length === 0) {
-      throw new Error('HumanRelay支持的模型列表未配置。请在配置文件中设置 llm.human-relay.supportedModels。');
+      throw new Error(
+        'HumanRelay支持的模型列表未配置。请在配置文件中设置 llm.human-relay.supportedModels。'
+      );
     }
 
     const baseConfig = new ProviderConfigBuilder()
@@ -101,7 +109,7 @@ export class HumanRelayClient extends BaseLLMClient {
     const config: HumanRelayConfig = {
       mode: this.mode,
       maxHistoryLength: this.maxHistoryLength,
-      defaultTimeout: this.defaultTimeout
+      defaultTimeout: this.defaultTimeout,
     };
 
     // 委托给应用层服务
@@ -111,7 +119,9 @@ export class HumanRelayClient extends BaseLLMClient {
   /**
    * 流式生成响应 - HumanRelay不支持真正的流式
    */
-  public override async generateResponseStream(request: LLMRequest): Promise<AsyncIterable<LLMResponse>> {
+  public override async generateResponseStream(
+    request: LLMRequest
+  ): Promise<AsyncIterable<LLMResponse>> {
     // HumanRelay不支持真正的流式，返回单次响应
     const response = await this.generateResponse(request);
     return this.createAsyncIterable(response);
@@ -120,10 +130,15 @@ export class HumanRelayClient extends BaseLLMClient {
   /**
    * 解析流式响应 - HumanRelay不支持真正的流式
    */
-  protected override async parseStreamResponse(response: any, request: LLMRequest): Promise<AsyncIterable<LLMResponse>> {
+  protected override async parseStreamResponse(
+    response: any,
+    request: LLMRequest
+  ): Promise<AsyncIterable<LLMResponse>> {
     // HumanRelay 完全覆盖了 generateResponseStream，这个方法不会被调用
     // 但为了满足抽象方法要求，提供一个实现
-    throw new Error('HumanRelayClient 不应该调用 parseStreamResponse，因为它完全覆盖了 generateResponseStream');
+    throw new Error(
+      'HumanRelayClient 不应该调用 parseStreamResponse，因为它完全覆盖了 generateResponseStream'
+    );
   }
 
   /**
@@ -131,7 +146,7 @@ export class HumanRelayClient extends BaseLLMClient {
    */
   public getModelConfig(): ModelConfig {
     const model = this.providerConfig.defaultModel || 'single_turn';
-    
+
     return ModelConfig.create({
       model,
       provider: 'human-relay',
@@ -143,14 +158,14 @@ export class HumanRelayClient extends BaseLLMClient {
       presencePenalty: 0.0,
       costPer1KTokens: {
         prompt: 0.0,
-        completion: 0.0
+        completion: 0.0,
       },
       supportsStreaming: false,
       supportsTools: false,
       supportsImages: false,
       supportsAudio: false,
       supportsVideo: false,
-      metadata: {}
+      metadata: {},
     });
   }
 
@@ -167,7 +182,7 @@ export class HumanRelayClient extends BaseLLMClient {
       status: 'healthy',
       message: 'HumanRelay客户端可用',
       latency: 0,
-      lastChecked: new Date()
+      lastChecked: new Date(),
     };
   }
 

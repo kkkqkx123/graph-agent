@@ -1,4 +1,11 @@
-import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, Index } from 'typeorm';
+import {
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  CreateDateColumn,
+  UpdateDateColumn,
+  Index,
+} from 'typeorm';
 
 /**
  * Snapshot数据模型
@@ -16,7 +23,7 @@ export class SnapshotModel {
   @Column({
     type: 'enum',
     enum: ['automatic', 'manual', 'scheduled', 'error'],
-    default: 'manual'
+    default: 'manual',
   })
   @Index()
   type!: string;
@@ -24,7 +31,7 @@ export class SnapshotModel {
   @Column({
     type: 'enum',
     enum: ['session', 'thread', 'global'],
-    default: 'thread'
+    default: 'thread',
   })
   @Index()
   scope!: string;

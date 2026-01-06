@@ -134,7 +134,7 @@ export class ToolExecution extends Entity {
       metrics: {},
       createdAt: now,
       updatedAt: now,
-      version: Version.initial()
+      version: Version.initial(),
     };
 
     return new ToolExecution(props);
@@ -163,7 +163,9 @@ export class ToolExecution extends Entity {
       result: json['result'],
       error: json['error'] as string,
       startedAt: Timestamp.fromDate(new Date(json['startedAt'] as string)),
-      endedAt: json['endedAt'] ? Timestamp.fromDate(new Date(json['endedAt'] as string)) : undefined,
+      endedAt: json['endedAt']
+        ? Timestamp.fromDate(new Date(json['endedAt'] as string))
+        : undefined,
       duration: json['duration'] as number,
       executorId: json['executorId'] ? ID.fromString(json['executorId'] as string) : undefined,
       sessionId: json['sessionId'] ? ID.fromString(json['sessionId'] as string) : undefined,
@@ -174,21 +176,23 @@ export class ToolExecution extends Entity {
       metadata: json['metadata'] as Record<string, unknown>,
       retryCount: json['retryCount'] as number,
       maxRetries: json['maxRetries'] as number,
-      logs: (json['logs'] as Array<{
-        timestamp: string;
-        level: 'debug' | 'info' | 'warn' | 'error';
-        message: string;
-        data?: unknown;
-      }>).map(log => ({
+      logs: (
+        json['logs'] as Array<{
+          timestamp: string;
+          level: 'debug' | 'info' | 'warn' | 'error';
+          message: string;
+          data?: unknown;
+        }>
+      ).map(log => ({
         timestamp: new Date(log.timestamp),
         level: log.level,
         message: log.message,
-        data: log.data
+        data: log.data,
       })),
       metrics: json['metrics'] as ToolExecutionMetrics,
       createdAt: Timestamp.fromDate(new Date(json['createdAt'] as string)),
       updatedAt: Timestamp.fromDate(new Date(json['updatedAt'] as string)),
-      version: Version.create(json['version'] as string)
+      version: Version.create(json['version'] as string),
     };
 
     return new ToolExecution(props);
@@ -347,7 +351,7 @@ export class ToolExecution extends Entity {
       ...this.props,
       status: ToolExecutionStatus.RUNNING,
       updatedAt: Timestamp.now(),
-      version: this.props.version.nextPatch()
+      version: this.props.version.nextPatch(),
     });
   }
 
@@ -357,10 +361,7 @@ export class ToolExecution extends Entity {
    * @param metrics 执行指标
    * @returns 更新后的工具执行
    */
-  public complete(
-    result: unknown,
-    metrics?: ToolExecutionMetrics
-  ): ToolExecution {
+  public complete(result: unknown, metrics?: ToolExecutionMetrics): ToolExecution {
     const now = Timestamp.now();
     const duration = now.diff(this.props.startedAt);
 
@@ -372,7 +373,7 @@ export class ToolExecution extends Entity {
       duration,
       metrics: metrics || this.props.metrics,
       updatedAt: now,
-      version: this.props.version.nextPatch()
+      version: this.props.version.nextPatch(),
     });
   }
 
@@ -382,10 +383,7 @@ export class ToolExecution extends Entity {
    * @param metrics 执行指标
    * @returns 更新后的工具执行
    */
-  public fail(
-    error: string,
-    metrics?: ToolExecutionMetrics
-  ): ToolExecution {
+  public fail(error: string, metrics?: ToolExecutionMetrics): ToolExecution {
     const now = Timestamp.now();
     const duration = now.diff(this.props.startedAt);
 
@@ -397,7 +395,7 @@ export class ToolExecution extends Entity {
       duration,
       metrics: metrics || this.props.metrics,
       updatedAt: now,
-      version: this.props.version.nextPatch()
+      version: this.props.version.nextPatch(),
     });
   }
 
@@ -417,7 +415,7 @@ export class ToolExecution extends Entity {
       endedAt: now,
       duration,
       updatedAt: now,
-      version: this.props.version.nextPatch()
+      version: this.props.version.nextPatch(),
     });
   }
 
@@ -442,7 +440,7 @@ export class ToolExecution extends Entity {
       duration: undefined,
       retryCount: this.props.retryCount + 1,
       updatedAt: now,
-      version: this.props.version.nextPatch()
+      version: this.props.version.nextPatch(),
     });
   }
 
@@ -462,14 +460,14 @@ export class ToolExecution extends Entity {
       timestamp: new Date(),
       level,
       message,
-      data
+      data,
     };
 
     return new ToolExecution({
       ...this.props,
       logs: [...this.props.logs, log],
       updatedAt: Timestamp.now(),
-      version: this.props.version.nextPatch()
+      version: this.props.version.nextPatch(),
     });
   }
 
@@ -483,7 +481,7 @@ export class ToolExecution extends Entity {
       ...this.props,
       metrics: { ...this.props.metrics, ...metrics },
       updatedAt: Timestamp.now(),
-      version: this.props.version.nextPatch()
+      version: this.props.version.nextPatch(),
     });
   }
 
@@ -497,7 +495,7 @@ export class ToolExecution extends Entity {
       ...this.props,
       metadata: { ...this.props.metadata, ...metadata },
       updatedAt: Timestamp.now(),
-      version: this.props.version.nextPatch()
+      version: this.props.version.nextPatch(),
     });
   }
 
@@ -551,7 +549,7 @@ export class ToolExecution extends Entity {
     return [
       ToolExecutionStatus.COMPLETED,
       ToolExecutionStatus.FAILED,
-      ToolExecutionStatus.CANCELLED
+      ToolExecutionStatus.CANCELLED,
     ].includes(this.status);
   }
 
@@ -599,12 +597,12 @@ export class ToolExecution extends Entity {
         timestamp: log.timestamp.toISOString(),
         level: log.level,
         message: log.message,
-        data: log.data
+        data: log.data,
       })),
       metrics: this.props.metrics,
       createdAt: this.props.createdAt.toDate().toISOString(),
       updatedAt: this.props.updatedAt.toDate().toISOString(),
-      version: this.props.version.toString()
+      version: this.props.version.toString(),
     };
   }
 }

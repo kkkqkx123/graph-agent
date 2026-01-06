@@ -155,7 +155,7 @@ export abstract class Node extends Entity {
         status: NodeStatus.pending(),
         createdAt: now,
         updatedAt: now,
-        version: Version.initial()
+        version: Version.initial(),
       };
       super(props.id, props.createdAt, props.updatedAt, props.version);
       this.props = Object.freeze(props);
@@ -300,7 +300,7 @@ export abstract class Node extends Entity {
       ...this.props,
       properties: { ...this.props.properties, ...properties },
       updatedAt: Timestamp.now(),
-      version: this.props.version.nextPatch()
+      version: this.props.version.nextPatch(),
     };
     return this.createNodeFromProps(newProps);
   }
@@ -315,7 +315,7 @@ export abstract class Node extends Entity {
       ...this.props,
       position,
       updatedAt: Timestamp.now(),
-      version: this.props.version.nextPatch()
+      version: this.props.version.nextPatch(),
     };
     return this.createNodeFromProps(newProps);
   }
@@ -330,7 +330,7 @@ export abstract class Node extends Entity {
       ...this.props,
       status,
       updatedAt: Timestamp.now(),
-      version: this.props.version.nextPatch()
+      version: this.props.version.nextPatch(),
     };
     return this.createNodeFromProps(newProps);
   }

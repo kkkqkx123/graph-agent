@@ -138,7 +138,7 @@ export abstract class BaseTokenCalculator implements ITokenCalculator {
       cacheHits: 0,
       cacheMisses: 0,
       totalTokensCalculated: 0,
-      totalCalculationTime: 0
+      totalCalculationTime: 0,
     };
   }
 
@@ -166,7 +166,7 @@ export abstract class BaseTokenCalculator implements ITokenCalculator {
       cacheHits: 0,
       cacheMisses: 0,
       totalTokensCalculated: 0,
-      totalCalculationTime: 0
+      totalCalculationTime: 0,
     };
     this._lastUsage = null;
   }
@@ -191,8 +191,8 @@ export abstract class BaseTokenCalculator implements ITokenCalculator {
     }
 
     try {
-      const promptCost = tokenUsage.promptTokens * (pricing["prompt"] || 0);
-      const completionCost = tokenUsage.completionTokens * (pricing["completion"] || 0);
+      const promptCost = tokenUsage.promptTokens * (pricing['prompt'] || 0);
+      const completionCost = tokenUsage.completionTokens * (pricing['completion'] || 0);
       return promptCost + completionCost;
     } catch (error) {
       console.error(`计算成本失败: ${error}`);
@@ -231,7 +231,7 @@ export abstract class BaseTokenCalculator implements ITokenCalculator {
       for (const item of content) {
         if (typeof item === 'string') {
           textParts.push(item);
-        } else if (typeof item === 'object' && item !== null && "text" in item) {
+        } else if (typeof item === 'object' && item !== null && 'text' in item) {
           textParts.push(String(item.text));
         }
       }

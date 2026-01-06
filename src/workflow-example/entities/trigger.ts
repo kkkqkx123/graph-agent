@@ -1,6 +1,6 @@
 /**
  * 触发器实体实现
- * 
+ *
  * 本文件实现了图工作流中的触发器实体，使用函数式编程风格
  */
 
@@ -13,7 +13,7 @@ import {
   createTriggerId,
   ExecutionContext,
   WorkflowEngine,
-  TriggerFunction
+  TriggerFunction,
 } from '../types/workflow-types';
 
 import { getTriggerFunction } from '../functions/triggers/trigger-functions';
@@ -133,9 +133,9 @@ export class TriggerImpl {
             triggerId: { type: 'string', description: '触发器ID' },
             delay: { type: 'number', description: '延迟毫秒数' },
             interval: { type: 'number', description: '间隔毫秒数' },
-            cron: { type: 'string', description: 'Cron表达式' }
+            cron: { type: 'string', description: 'Cron表达式' },
           },
-          required: ['triggerId']
+          required: ['triggerId'],
         };
 
       case TriggerType.EVENT:
@@ -144,9 +144,9 @@ export class TriggerImpl {
           properties: {
             triggerId: { type: 'string', description: '触发器ID' },
             eventType: { type: 'string', description: '事件类型' },
-            eventDataPattern: { type: 'object', description: '事件数据模式' }
+            eventDataPattern: { type: 'object', description: '事件数据模式' },
           },
-          required: ['triggerId', 'eventType']
+          required: ['triggerId', 'eventType'],
         };
 
       case TriggerType.STATE:
@@ -155,16 +155,16 @@ export class TriggerImpl {
           properties: {
             triggerId: { type: 'string', description: '触发器ID' },
             statePath: { type: 'string', description: '状态路径' },
-            expectedValue: { type: 'any', description: '期望值' }
+            expectedValue: { type: 'any', description: '期望值' },
           },
-          required: ['triggerId', 'statePath', 'expectedValue']
+          required: ['triggerId', 'statePath', 'expectedValue'],
         };
 
       default:
         return {
           type: 'object',
           properties: {},
-          required: []
+          required: [],
         };
     }
   }
@@ -178,16 +178,16 @@ export class TriggerImpl {
       properties: {
         shouldTrigger: { type: 'boolean', description: '是否应该触发' },
         reason: { type: 'string', description: '原因说明' },
-        metadata: { type: 'object', description: '元数据' }
+        metadata: { type: 'object', description: '元数据' },
       },
-      required: ['shouldTrigger', 'reason']
+      required: ['shouldTrigger', 'reason'],
     };
   }
 
   /**
    * 评估触发器是否应该触发
    * 使用函数式编程风格，调用对应的触发器函数
-   * 
+   *
    * @param context 执行上下文
    * @returns 是否应该触发
    */
@@ -204,7 +204,9 @@ export class TriggerImpl {
 
     try {
       // 获取触发器函数
-      const triggerFunction: TriggerFunction | undefined = getTriggerFunction(this._type.toString());
+      const triggerFunction: TriggerFunction | undefined = getTriggerFunction(
+        this._type.toString()
+      );
 
       if (!triggerFunction) {
         console.warn(`未找到触发器类型 ${this._type} 的函数`);
@@ -214,7 +216,7 @@ export class TriggerImpl {
       // 准备输入
       const input = {
         triggerId: this._id.toString(),
-        targetNodeId: this._targetNodeId
+        targetNodeId: this._targetNodeId,
       };
 
       // 调用触发器函数
@@ -229,7 +231,7 @@ export class TriggerImpl {
 
   /**
    * 执行触发器动作
-   * 
+   *
    * @param engine 工作流引擎
    */
   async executeAction(engine: WorkflowEngine): Promise<void> {
@@ -356,17 +358,14 @@ export function createTimeoutTrigger(
 /**
  * 创建错误触发器
  */
-export function createErrorTrigger(
-  id: string,
-  nodeId: string
-): TriggerImpl {
+export function createErrorTrigger(id: string, nodeId: string): TriggerImpl {
   return new TriggerImpl(
     id,
     TriggerType.STATE,
     `ErrorTrigger_${id}`,
     {
       statePath: `${nodeId}.status`,
-      expectedValue: 'failed'
+      expectedValue: 'failed',
     },
     TriggerAction.STOP
   );

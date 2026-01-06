@@ -1,5 +1,9 @@
 import { injectable } from 'inversify';
-import { BaseTransformFunction, TransformFunctionConfig, WorkflowExecutionContext } from './base-transform-function';
+import {
+  BaseTransformFunction,
+  TransformFunctionConfig,
+  WorkflowExecutionContext,
+} from './base-transform-function';
 
 /**
  * Filter转换函数
@@ -24,35 +28,43 @@ export class FilterTransformFunction extends BaseTransformFunction<TransformFunc
         name: 'field',
         type: 'string',
         required: false,
-        description: '要比较的字段名'
+        description: '要比较的字段名',
       },
       {
         name: 'value',
         type: 'any',
         required: false,
-        description: '比较值'
+        description: '比较值',
       },
       {
         name: 'operator',
         type: 'string',
         required: false,
         description: '比较操作符：===, !==, >, <, >=, <=, contains, startsWith, endsWith',
-        defaultValue: '==='
+        defaultValue: '===',
       },
       {
         name: 'expression',
         type: 'string',
         required: false,
-        description: '过滤表达式（JavaScript表达式）'
-      }
+        description: '过滤表达式（JavaScript表达式）',
+      },
     ];
   }
 
-  override async execute(context: WorkflowExecutionContext, config: TransformFunctionConfig): Promise<any[]> {
+  override async execute(
+    context: WorkflowExecutionContext,
+    config: TransformFunctionConfig
+  ): Promise<any[]> {
     this.checkInitialized();
 
     const { sourceData, config: transformConfig } = config;
-    const { field, value, operator = '===', expression } = transformConfig as Record<string, unknown>;
+    const {
+      field,
+      value,
+      operator = '===',
+      expression,
+    } = transformConfig as Record<string, unknown>;
 
     if (!Array.isArray(sourceData)) {
       throw new Error('sourceData必须是数组类型');

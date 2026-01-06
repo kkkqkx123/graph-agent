@@ -1,5 +1,9 @@
 import { injectable } from 'inversify';
-import { BaseTransformFunction, TransformFunctionConfig, WorkflowExecutionContext } from './base-transform-function';
+import {
+  BaseTransformFunction,
+  TransformFunctionConfig,
+  WorkflowExecutionContext,
+} from './base-transform-function';
 
 /**
  * Map转换函数
@@ -24,14 +28,14 @@ export class MapTransformFunction extends BaseTransformFunction<TransformFunctio
         name: 'field',
         type: 'string',
         required: false,
-        description: '要提取的字段名'
+        description: '要提取的字段名',
       },
       {
         name: 'expression',
         type: 'string',
         required: false,
-        description: '转换表达式（JavaScript表达式）'
-      }
+        description: '转换表达式（JavaScript表达式）',
+      },
     ];
   }
 
@@ -45,7 +49,10 @@ export class MapTransformFunction extends BaseTransformFunction<TransformFunctio
     return errors;
   }
 
-  override async execute(context: WorkflowExecutionContext, config: TransformFunctionConfig): Promise<any[]> {
+  override async execute(
+    context: WorkflowExecutionContext,
+    config: TransformFunctionConfig
+  ): Promise<any[]> {
     this.checkInitialized();
 
     const { sourceData, config: transformConfig } = config;

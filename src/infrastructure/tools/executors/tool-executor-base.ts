@@ -1,6 +1,6 @@
 /**
  * 工具执行器基类
- * 
+ *
  * 提供工具执行器的核心接口和基础功能
  */
 
@@ -14,12 +14,15 @@ import { ToolResult } from '../../../domain/tools/entities/tool-result';
  */
 export interface ToolExecutorConfigSchema {
   type: string;
-  properties: Record<string, {
-    type: string;
-    description?: string;
-    required?: string[];
-    default?: any;
-  }>;
+  properties: Record<
+    string,
+    {
+      type: string;
+      description?: string;
+      required?: string[];
+      default?: any;
+    }
+  >;
   required: string[];
 }
 
@@ -46,7 +49,7 @@ export interface ToolExecutorHealthCheck {
 
 /**
  * 工具执行器基类
- * 
+ *
  * 职责：定义工具执行器的核心接口
  * 注意：移除了过多的统计和监控功能，保持简洁
  */
@@ -73,7 +76,10 @@ export abstract class ToolExecutorBase {
   /**
    * 验证执行参数
    */
-  abstract validateParameters(tool: Tool, parameters: Record<string, unknown>): Promise<{
+  abstract validateParameters(
+    tool: Tool,
+    parameters: Record<string, unknown>
+  ): Promise<{
     isValid: boolean;
     errors: string[];
     warnings: string[];

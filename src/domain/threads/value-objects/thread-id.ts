@@ -9,7 +9,7 @@ export interface ThreadIdProps {
 
 /**
  * ThreadId值对象
- * 
+ *
  * 表示线程的唯一标识符，是不可变的
  * 简化实现，直接使用ID值对象
  */

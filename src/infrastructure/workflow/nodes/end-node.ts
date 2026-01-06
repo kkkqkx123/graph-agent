@@ -1,6 +1,16 @@
 import { NodeId } from '../../../domain/workflow/value-objects/node/node-id';
-import { NodeType, NodeTypeValue, NodeContextTypeValue } from '../../../domain/workflow/value-objects/node/node-type';
-import { Node, NodeExecutionResult, NodeMetadata, ValidationResult, WorkflowExecutionContext } from '../../../domain/workflow/entities/node';
+import {
+  NodeType,
+  NodeTypeValue,
+  NodeContextTypeValue,
+} from '../../../domain/workflow/value-objects/node/node-type';
+import {
+  Node,
+  NodeExecutionResult,
+  NodeMetadata,
+  ValidationResult,
+  WorkflowExecutionContext,
+} from '../../../domain/workflow/entities/node';
 
 /**
  * 结束节点
@@ -47,7 +57,11 @@ export class EndNode extends Node {
         const allVariables = context.getAllVariables();
         for (const [key, value] of Object.entries(allVariables)) {
           // 收集以特定前缀开头的变量（如 node_result_、llm_response_、tool_result_）
-          if (key.startsWith('node_result_') || key.startsWith('llm_response_') || key.startsWith('tool_result_')) {
+          if (
+            key.startsWith('node_result_') ||
+            key.startsWith('llm_response_') ||
+            key.startsWith('tool_result_')
+          ) {
             results[key] = value;
           }
         }
@@ -84,15 +98,15 @@ export class EndNode extends Node {
           endTime,
           duration: stats.duration || 0,
           results: this.collectResults ? results : undefined,
-          stats: stats
+          stats: stats,
         },
         executionTime,
         metadata: {
           nodeId: this.nodeId.toString(),
           nodeType: this.type.toString(),
           collectedResults: Object.keys(results),
-          duration: stats.duration || 0
-        }
+          duration: stats.duration || 0,
+        },
       };
     } catch (error) {
       const executionTime = Date.now() - startTime;
@@ -104,8 +118,8 @@ export class EndNode extends Node {
         executionTime,
         metadata: {
           nodeId: this.nodeId.toString(),
-          nodeType: this.type.toString()
-        }
+          nodeType: this.type.toString(),
+        },
       };
     }
   }
@@ -127,7 +141,7 @@ export class EndNode extends Node {
 
     return {
       valid: errors.length === 0,
-      errors
+      errors,
     };
   }
 
@@ -144,23 +158,23 @@ export class EndNode extends Node {
           type: 'boolean',
           required: false,
           description: '是否收集执行结果',
-          defaultValue: true
+          defaultValue: true,
         },
         {
           name: 'cleanupResources',
           type: 'boolean',
           required: false,
           description: '是否清理临时资源',
-          defaultValue: true
+          defaultValue: true,
         },
         {
           name: 'returnVariables',
           type: 'array',
           required: false,
           description: '要返回的变量名称列表',
-          defaultValue: []
-        }
-      ]
+          defaultValue: [],
+        },
+      ],
     };
   }
 
@@ -168,7 +182,7 @@ export class EndNode extends Node {
     return {
       type: 'object',
       properties: {},
-      required: []
+      required: [],
     };
   }
 
@@ -180,8 +194,8 @@ export class EndNode extends Node {
         endTime: { type: 'string', description: '结束时间' },
         duration: { type: 'number', description: '执行时长（毫秒）' },
         results: { type: 'object', description: '执行结果集合' },
-        stats: { type: 'object', description: '执行统计信息' }
-      }
+        stats: { type: 'object', description: '执行统计信息' },
+      },
     };
   }
 

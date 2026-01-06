@@ -16,7 +16,7 @@ export class PollingPoolManager {
   constructor(
     @inject(TYPES.TaskGroupManager) private taskGroupManager: any,
     @inject(TYPES.LLMClientFactory) private llmClientFactory: LLMClientFactory
-  ) { }
+  ) {}
 
   /**
    * 获取轮询池
@@ -128,8 +128,11 @@ export class PollingPoolManager {
       healthyInstances: status['healthyInstances'],
       degradedInstances: status['degradedInstances'],
       failedInstances: status['failedInstances'],
-      availabilityRate: status['totalInstances'] > 0 ?
-        ((status['healthyInstances'] as number) + (status['degradedInstances'] as number)) / (status['totalInstances'] as number) : 0
+      availabilityRate:
+        status['totalInstances'] > 0
+          ? ((status['healthyInstances'] as number) + (status['degradedInstances'] as number)) /
+            (status['totalInstances'] as number)
+          : 0,
     };
   }
 
@@ -147,8 +150,11 @@ export class PollingPoolManager {
         healthyInstances: status['healthyInstances'],
         degradedInstances: status['degradedInstances'],
         failedInstances: status['failedInstances'],
-        availabilityRate: status['totalInstances'] > 0 ?
-          ((status['healthyInstances'] as number) + (status['degradedInstances'] as number)) / (status['totalInstances'] as number) : 0
+        availabilityRate:
+          status['totalInstances'] > 0
+            ? ((status['healthyInstances'] as number) + (status['degradedInstances'] as number)) /
+              (status['totalInstances'] as number)
+            : 0,
       };
     }
 
@@ -172,13 +178,13 @@ export class PollingPoolManager {
           healthyInstances,
           totalInstances,
           availabilityRate: totalInstances > 0 ? healthyInstances / totalInstances : 0,
-          lastChecked: new Date()
+          lastChecked: new Date(),
         };
       } catch (error) {
         healthStatus[name] = {
           status: 'error',
           error: error instanceof Error ? error.message : String(error),
-          lastChecked: new Date()
+          lastChecked: new Date(),
         };
       }
     }
@@ -193,14 +199,15 @@ export class PollingPoolManager {
     const allStatistics = await this.getAllPoolsStatistics();
     const totalPools = Object.keys(allStatistics).length;
     const totalInstances = Object.values(allStatistics).reduce(
-      (sum, stats) => sum + stats.totalInstances, 0
+      (sum, stats) => sum + stats.totalInstances,
+      0
     );
     const healthyInstances = Object.values(allStatistics).reduce(
-      (sum, stats) => sum + stats.healthyInstances, 0
+      (sum, stats) => sum + stats.healthyInstances,
+      0
     );
 
-    const overallAvailability = totalInstances > 0 ?
-      healthyInstances / totalInstances : 0;
+    const overallAvailability = totalInstances > 0 ? healthyInstances / totalInstances : 0;
 
     return {
       totalPools,
@@ -208,7 +215,7 @@ export class PollingPoolManager {
       healthyInstances,
       overallAvailability,
       pools: allStatistics,
-      timestamp: new Date()
+      timestamp: new Date(),
     };
   }
 }

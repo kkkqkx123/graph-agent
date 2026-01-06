@@ -6,7 +6,7 @@ import { Timestamp } from '../../common/value-objects/timestamp';
 
 /**
  * 会话仓储接口
- * 
+ *
  * 定义会话持久化和查询的契约
  * 使用业务语言而不是技术术语
  */

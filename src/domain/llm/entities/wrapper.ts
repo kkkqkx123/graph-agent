@@ -14,7 +14,7 @@ export abstract class LLMWrapper extends Entity {
     totalRequests: 0,
     successfulRequests: 0,
     failedRequests: 0,
-    avgResponseTime: 0.0
+    avgResponseTime: 0.0,
   };
 
   constructor(
@@ -56,7 +56,7 @@ export abstract class LLMWrapper extends Entity {
     return {
       name: this.name,
       stats: this.stats,
-      available: await this.isAvailable()
+      available: await this.isAvailable(),
     };
   }
 
@@ -65,13 +65,12 @@ export abstract class LLMWrapper extends Entity {
    */
   protected updateStats(responseTime: number, success: boolean): void {
     this.stats.totalRequests += 1;
-    
+
     if (success) {
       this.stats.successfulRequests += 1;
-      this.stats.avgResponseTime = (
-        (this.stats.avgResponseTime * (this.stats.successfulRequests - 1) + responseTime) / 
-        this.stats.successfulRequests
-      );
+      this.stats.avgResponseTime =
+        (this.stats.avgResponseTime * (this.stats.successfulRequests - 1) + responseTime) /
+        this.stats.successfulRequests;
     } else {
       this.stats.failedRequests += 1;
     }
@@ -109,15 +108,15 @@ export class PollingPoolWrapper extends LLMWrapper {
   }
 
   /**
-    * 生成响应
-    */
-   async generateResponse(request: any): Promise<any> {
+   * 生成响应
+   */
+  async generateResponse(request: any): Promise<any> {
     const startTime = Date.now();
-    
+
     try {
       const response = await this.pool.callLLM(request.prompt || request.content, request);
       const responseTime = Date.now() - startTime;
-      
+
       this.updateStats(responseTime, true);
       return response;
     } catch (error) {
@@ -148,11 +147,11 @@ export class PollingPoolWrapper extends LLMWrapper {
   override async getStatus(): Promise<Record<string, any>> {
     const baseStatus = await super.getStatus();
     const poolStatus = await this.pool.getStatus();
-    
+
     return {
       ...baseStatus,
       poolStatus,
-      type: 'polling_pool'
+      type: 'polling_pool',
     };
   }
 }
@@ -161,64 +160,64 @@ export class PollingPoolWrapper extends LLMWrapper {
  * 任务组包装器
  */
 export class TaskGroupWrapper extends LLMWrapper {
-   private currentEchelonIndex = 0;
-   private fallbackAttempts = 0;
+  private currentEchelonIndex = 0;
+  private fallbackAttempts = 0;
 
-   constructor(
-     id: ID,
-     name: string,
-     config: Record<string, any>,
-     public readonly taskGroupManager: TaskGroupManager
-   ) {
-     super(id, name, config);
-   }
-
-   /**
-    * 验证包装器有效性
-    */
-   override validate(): void {
-     super.validate();
-     if (!this.taskGroupManager) {
-       throw new Error('任务组管理器不能为空');
-     }
-   }
-
-   /**
-    * 获取包装器名称
-    */
-   getName(): string {
-     return this.name;
-   }
+  constructor(
+    id: ID,
+    name: string,
+    config: Record<string, any>,
+    public readonly taskGroupManager: TaskGroupManager
+  ) {
+    super(id, name, config);
+  }
 
   /**
-    * 生成响应
-    */
-   async generateResponse(request: any): Promise<any> {
+   * 验证包装器有效性
+   */
+  override validate(): void {
+    super.validate();
+    if (!this.taskGroupManager) {
+      throw new Error('任务组管理器不能为空');
+    }
+  }
+
+  /**
+   * 获取包装器名称
+   */
+  getName(): string {
+    return this.name;
+  }
+
+  /**
+   * 生成响应
+   */
+  async generateResponse(request: any): Promise<any> {
     const startTime = Date.now();
-    
+
     try {
       // 获取按优先级排序的层级
       const echelons = await this.taskGroupManager.getGroupModelsByPriority(this.name);
-      
+
       for (let i = this.currentEchelonIndex; i < echelons.length; i++) {
         const echelon = echelons[i];
         if (!echelon) continue;
         const [echelonName, priority, models] = echelon;
-        
+
         try {
           // 尝试当前层级的模型
           const response = await this.tryEchelon(echelonName, models, request);
           const responseTime = Date.now() - startTime;
-          
+
           this.updateStats(responseTime, true);
           this.currentEchelonIndex = i; // 记住成功的层级
           this.fallbackAttempts = 0;
-          
+
           return response;
         } catch (error) {
           console.warn(`层级 ${echelonName} 调用失败:`, error);
           this.fallbackAttempts += 1;
-          
+
           // 检查是否达到最大降级尝试次数
           const fallbackConfig = await this.taskGroupManager.getFallbackConfig(this.name);
           if (this.fallbackAttempts >= (fallbackConfig['maxAttempts'] as number)) {
@@ -226,7 +225,7 @@ export class TaskGroupWrapper extends LLMWrapper {
           }
         }
       }
-      
+
       throw new Error(`任务组 ${this.name} 所有层级都调用失败`);
     } catch (error) {
       const responseTime = Date.now() - startTime;
@@ -241,11 +240,11 @@ export class TaskGroupWrapper extends LLMWrapper {
   private async tryEchelon(echelonName: string, models: string[], request: any): Promise<any> {
     // TODO: 实现具体的模型调用逻辑
     // 这里应该根据模型列表选择合适的模型进行调用
-    
+
     if (models.length === 0) {
       throw new Error(`层级 ${echelonName} 没有可用的模型`);
     }
-    
+
     // 模拟调用第一个模型
     await new Promise(resolve => setTimeout(resolve, 100));
     return `模拟响应: ${request.prompt?.substring(0, 50) || '无内容'}... (层级: ${echelonName})`;
@@ -276,13 +275,13 @@ export class TaskGroupWrapper extends LLMWrapper {
   override async getStatus(): Promise<Record<string, any>> {
     const baseStatus = await super.getStatus();
     const echelons = await this.taskGroupManager.getGroupModelsByPriority(this.name);
-    
+
     return {
       ...baseStatus,
       currentEchelonIndex: this.currentEchelonIndex,
       fallbackAttempts: this.fallbackAttempts,
       totalEchelons: echelons.length,
-      type: 'task_group'
+      type: 'task_group',
     };
   }
 }
@@ -291,44 +290,44 @@ export class TaskGroupWrapper extends LLMWrapper {
  * 直接LLM包装器
  */
 export class DirectLLMWrapper extends LLMWrapper {
-   constructor(
-     id: ID,
-     name: string,
-     config: Record<string, any>,
-     public readonly client: BaseLLMClient
-   ) {
-     super(id, name, config);
-   }
-
-   /**
-    * 验证包装器有效性
-    */
-   override validate(): void {
-     super.validate();
-     if (!this.client) {
-       throw new Error('LLM客户端不能为空');
-     }
-   }
-
-   /**
-    * 获取包装器名称
-    */
-   getName(): string {
-     return this.name;
-   }
+  constructor(
+    id: ID,
+    name: string,
+    config: Record<string, any>,
+    public readonly client: BaseLLMClient
+  ) {
+    super(id, name, config);
+  }
 
   /**
-    * 生成响应
-    */
-   async generateResponse(request: any): Promise<any> {
+   * 验证包装器有效性
+   */
+  override validate(): void {
+    super.validate();
+    if (!this.client) {
+      throw new Error('LLM客户端不能为空');
+    }
+  }
+
+  /**
+   * 获取包装器名称
+   */
+  getName(): string {
+    return this.name;
+  }
+
+  /**
+   * 生成响应
+   */
+  async generateResponse(request: any): Promise<any> {
     const startTime = Date.now();
-    
+
     try {
       // 将请求转换为LLM请求格式
       const llmRequest = this.convertToLLMRequest(request);
       const response = await this.client.generateResponse(llmRequest);
       const responseTime = Date.now() - startTime;
-      
+
       this.updateStats(responseTime, true);
       return response;
     } catch (error) {
@@ -361,18 +360,17 @@ export class DirectLLMWrapper extends LLMWrapper {
     return this.client.isModelAvailable();
   }
 
-
   /**
    * 获取包装器状态
    */
   override async getStatus(): Promise<Record<string, any>> {
     const baseStatus = await super.getStatus();
     const clientStatus = await this.client.getModelInfo();
-    
+
     return {
       ...baseStatus,
       clientStatus,
-      type: 'direct_llm'
+      type: 'direct_llm',
     };
   }
-  }
+}

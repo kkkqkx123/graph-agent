@@ -12,10 +12,11 @@ import { ConnectionManager } from '../connections/connection-manager';
 import { In } from 'typeorm';
 
 @injectable()
-export class ThreadCheckpointRepository extends BaseRepository<ThreadCheckpoint, ThreadCheckpointModel, ID> implements IThreadCheckpointRepository {
-  constructor(
-    @inject('ConnectionManager') connectionManager: ConnectionManager
-  ) {
+export class ThreadCheckpointRepository
+  extends BaseRepository<ThreadCheckpoint, ThreadCheckpointModel, ID>
+  implements IThreadCheckpointRepository
+{
+  constructor(@inject('ConnectionManager') connectionManager: ConnectionManager) {
     super(connectionManager);
   }
 
@@ -45,7 +46,7 @@ export class ThreadCheckpointRepository extends BaseRepository<ThreadCheckpoint,
         expiresAt: model.expiresAt ? Timestamp.create(model.expiresAt) : undefined,
         sizeBytes: model.sizeBytes,
         restoreCount: model.restoreCount,
-        lastRestoredAt: model.lastRestoredAt ? Timestamp.create(model.lastRestoredAt) : undefined
+        lastRestoredAt: model.lastRestoredAt ? Timestamp.create(model.lastRestoredAt) : undefined,
       };
 
       return ThreadCheckpoint.fromProps(props);
@@ -100,7 +101,7 @@ export class ThreadCheckpointRepository extends BaseRepository<ThreadCheckpoint,
     return this.find({
       filters: { threadId: threadId.value },
       sortBy: 'createdAt',
-      sortOrder: 'desc'
+      sortOrder: 'desc',
     });
   }
 
@@ -111,7 +112,7 @@ export class ThreadCheckpointRepository extends BaseRepository<ThreadCheckpoint,
     return this.find({
       filters: { status: status.value },
       sortBy: 'createdAt',
-      sortOrder: 'desc'
+      sortOrder: 'desc',
     });
   }
 
@@ -122,20 +123,24 @@ export class ThreadCheckpointRepository extends BaseRepository<ThreadCheckpoint,
     return this.find({
       filters: { type: type.value },
       sortBy: 'createdAt',
-      sortOrder: 'desc'
+      sortOrder: 'desc',
     });
   }
 
   /**
    * 获取线程的检查点历史
    */
-  async getThreadHistory(threadId: ID, limit?: number, offset?: number): Promise<ThreadCheckpoint[]> {
+  async getThreadHistory(
+    threadId: ID,
+    limit?: number,
+    offset?: number
+  ): Promise<ThreadCheckpoint[]> {
     return this.find({
       filters: { threadId: threadId.value },
       sortBy: 'createdAt',
       sortOrder: 'desc',
       limit,
-      offset
+      offset,
     });
   }
 
@@ -146,7 +151,7 @@ export class ThreadCheckpointRepository extends BaseRepository<ThreadCheckpoint,
     return this.findOne({
       filters: { threadId: threadId.value },
       sortBy: 'createdAt',
-      sortOrder: 'desc'
+      sortOrder: 'desc',
     });
   }
 
@@ -157,11 +162,13 @@ export class ThreadCheckpointRepository extends BaseRepository<ThreadCheckpoint,
     try {
       const repository = await this.getRepository();
       const result = await repository.delete({
-        id: In(checkpointIds.map(id => id.value))
+        id: In(checkpointIds.map(id => id.value)),
       });
       return result.affected || 0;
     } catch (error) {
-      throw new Error(`批量删除检查点失败: ${error instanceof Error ? error.message : String(error)}`);
+      throw new Error(
+        `批量删除检查点失败: ${error instanceof Error ? error.message : String(error)}`
+      );
     }
   }
 }

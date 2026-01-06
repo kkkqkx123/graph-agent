@@ -1,6 +1,16 @@
 import { NodeId } from '../../../domain/workflow/value-objects/node/node-id';
-import { NodeType, NodeTypeValue, NodeContextTypeValue } from '../../../domain/workflow/value-objects/node/node-type';
-import { Node, NodeExecutionResult, NodeMetadata, ValidationResult, WorkflowExecutionContext } from '../../../domain/workflow/entities/node';
+import {
+  NodeType,
+  NodeTypeValue,
+  NodeContextTypeValue,
+} from '../../../domain/workflow/value-objects/node/node-type';
+import {
+  Node,
+  NodeExecutionResult,
+  NodeMetadata,
+  ValidationResult,
+  WorkflowExecutionContext,
+} from '../../../domain/workflow/entities/node';
 
 /**
  * 等待类型枚举
@@ -15,7 +25,7 @@ export enum WaitType {
   /** 条件等待 */
   CONDITION = 'condition',
   /** 事件等待 */
-  EVENT = 'event'
+  EVENT = 'event',
 }
 
 /**
@@ -76,15 +86,15 @@ export class WaitNode extends Node {
         output: {
           message: '等待完成',
           waitType: this.waitType,
-          result
+          result,
         },
         executionTime,
         metadata: {
           nodeId: this.nodeId.toString(),
           nodeType: this.type.toString(),
           waitType: this.waitType,
-          duration: this.duration
-        }
+          duration: this.duration,
+        },
       };
     } catch (error) {
       const executionTime = Date.now() - startTime;
@@ -97,8 +107,8 @@ export class WaitNode extends Node {
         metadata: {
           nodeId: this.nodeId.toString(),
           nodeType: this.type.toString(),
-          waitType: this.waitType
-        }
+          waitType: this.waitType,
+        },
       };
     }
   }
@@ -131,7 +141,7 @@ export class WaitNode extends Node {
     await this.sleep(waitTimeMs);
 
     return {
-      waitedTime: waitTimeMs
+      waitedTime: waitTimeMs,
     };
   }
 
@@ -140,7 +150,9 @@ export class WaitNode extends Node {
    * @param context 执行上下文
    * @returns 等待结果
    */
-  private async waitForCondition(context: WorkflowExecutionContext): Promise<{ satisfied: boolean; attempts: number }> {
+  private async waitForCondition(
+    context: WorkflowExecutionContext
+  ): Promise<{ satisfied: boolean; attempts: number }> {
     if (!this.condition) {
       throw new Error('condition是必需的');
     }
@@ -157,7 +169,7 @@ export class WaitNode extends Node {
       if (satisfied) {
         return {
           satisfied: true,
-          attempts
+          attempts,
         };
       }
 
@@ -174,7 +186,9 @@ export class WaitNode extends Node {
    * @param context 执行上下文
    * @returns 等待结果
    */
-  private async waitForEvent(context: WorkflowExecutionContext): Promise<{ eventName: string; eventData?: any }> {
+  private async waitForEvent(
+    context: WorkflowExecutionContext
+  ): Promise<{ eventName: string; eventData?: any }> {
     if (!this.eventName) {
       throw new Error('eventName是必需的');
     }
@@ -194,7 +208,7 @@ export class WaitNode extends Node {
 
         return {
           eventName: this.eventName,
-          eventData: eventOccurred
+          eventData: eventOccurred,
         };
       }
 
@@ -217,7 +231,7 @@ export class WaitNode extends Node {
       // 简单的条件评估逻辑
       const variables: Record<string, unknown> = {
         executionId: context.getExecutionId(),
-        workflowId: context.getWorkflowId()
+        workflowId: context.getWorkflowId(),
       };
 
       // 替换变量引用
@@ -231,7 +245,9 @@ export class WaitNode extends Node {
       });
 
       // 安全检查
-      const hasUnsafeContent = /eval|function|new|delete|typeof|void|in|instanceof/.test(expression);
+      const hasUnsafeContent = /eval|function|new|delete|typeof|void|in|instanceof/.test(
+        expression
+      );
       if (hasUnsafeContent) {
         return false;
       }
@@ -259,9 +275,11 @@ export class WaitNode extends Node {
       errors.push('waitType必须是有效的WaitType值');
     }
 
-    if (this.waitType === WaitType.TIME_SECONDS ||
+    if (
+      this.waitType === WaitType.TIME_SECONDS ||
       this.waitType === WaitType.TIME_MINUTES ||
-      this.waitType === WaitType.TIME_HOURS) {
+      this.waitType === WaitType.TIME_HOURS
+    ) {
       if (this.duration === undefined || this.duration <= 0) {
         errors.push('时间等待需要指定有效的duration');
       }
@@ -285,7 +303,7 @@ export class WaitNode extends Node {
 
     return {
       valid: errors.length === 0,
-      errors
+      errors,
     };
   }
 
@@ -301,41 +319,41 @@ export class WaitNode extends Node {
           name: 'waitType',
           type: 'string',
           required: true,
-          description: '等待类型：time_seconds、time_minutes、time_hours、condition、event'
+          description: '等待类型：time_seconds、time_minutes、time_hours、condition、event',
         },
         {
           name: 'duration',
           type: 'number',
           required: false,
-          description: '等待时长（根据waitType确定单位）'
+          description: '等待时长（根据waitType确定单位）',
         },
         {
           name: 'condition',
           type: 'string',
           required: false,
-          description: '条件表达式（condition类型时必需）'
+          description: '条件表达式（condition类型时必需）',
         },
         {
           name: 'eventName',
           type: 'string',
           required: false,
-          description: '事件名称（event类型时必需）'
+          description: '事件名称（event类型时必需）',
         },
         {
           name: 'pollInterval',
           type: 'number',
           required: false,
           description: '轮询间隔（毫秒）',
-          defaultValue: 1000
+          defaultValue: 1000,
         },
         {
           name: 'timeout',
           type: 'number',
           required: false,
           description: '超时时间（毫秒）',
-          defaultValue: 300000
-        }
-      ]
+          defaultValue: 300000,
+        },
+      ],
     };
   }
 
@@ -343,7 +361,7 @@ export class WaitNode extends Node {
     return {
       type: 'object',
       properties: {},
-      required: []
+      required: [],
     };
   }
 
@@ -353,8 +371,8 @@ export class WaitNode extends Node {
       properties: {
         message: { type: 'string', description: '执行消息' },
         waitType: { type: 'string', description: '等待类型' },
-        result: { type: 'object', description: '等待结果' }
-      }
+        result: { type: 'object', description: '等待结果' },
+      },
     };
   }
 

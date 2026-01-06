@@ -4,7 +4,7 @@ import { LLMResponse } from '../entities/llm-response';
 
 /**
  * LLM响应仓储接口
- * 
+ *
  * 定义LLM响应持久化和检索的契约
  */
 export interface ILLMResponseRepository extends Repository<LLMResponse> {
@@ -75,10 +75,7 @@ export interface ILLMResponseRepository extends Repository<LLMResponse> {
    * @param endTime 结束时间
    * @returns LLM响应列表
    */
-  findByTimeRange(
-    startTime: Date,
-    endTime: Date
-  ): Promise<LLMResponse[]>;
+  findByTimeRange(startTime: Date, endTime: Date): Promise<LLMResponse[]>;
 
   /**
    * 根据会话ID和时间范围查找LLM响应
@@ -100,11 +97,7 @@ export interface ILLMResponseRepository extends Repository<LLMResponse> {
    * @param endTime 结束时间
    * @returns LLM响应列表
    */
-  findByThreadIdAndTimeRange(
-    threadId: ID,
-    startTime: Date,
-    endTime: Date
-  ): Promise<LLMResponse[]>;
+  findByThreadIdAndTimeRange(threadId: ID, startTime: Date, endTime: Date): Promise<LLMResponse[]>;
 
   /**
    * 查找最新的LLM响应
@@ -337,12 +330,15 @@ export interface ILLMResponseRepository extends Repository<LLMResponse> {
     minDuration: number;
     p95Duration: number;
     p99Duration: number;
-    byModel: Record<string, {
-      average: number;
-      median: number;
-      max: number;
-      min: number;
-    }>;
+    byModel: Record<
+      string,
+      {
+        average: number;
+        median: number;
+        max: number;
+        min: number;
+      }
+    >;
   }>;
 
   /**
@@ -398,15 +394,17 @@ export interface ILLMResponseRepository extends Repository<LLMResponse> {
     startTime: Date,
     endTime: Date,
     interval: number
-  ): Promise<Array<{
-    timestamp: Date;
-    count: number;
-    byModel: Record<string, number>;
-    byFinishReason: Record<string, number>;
-    totalTokens: number;
-    totalCost: number;
-    averageDuration: number;
-  }>>;
+  ): Promise<
+    Array<{
+      timestamp: Date;
+      count: number;
+      byModel: Record<string, number>;
+      byFinishReason: Record<string, number>;
+      totalTokens: number;
+      totalCost: number;
+      averageDuration: number;
+    }>
+  >;
 
   /**
    * 搜索LLM响应

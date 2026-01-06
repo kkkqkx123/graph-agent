@@ -72,9 +72,8 @@ export class LLMInstance extends Entity {
       if (totalRequests === 1) {
         this.avgResponseTime = responseTime;
       } else {
-        this.avgResponseTime = (
-          (this.avgResponseTime * (totalRequests - 1) + responseTime) / totalRequests
-        );
+        this.avgResponseTime =
+          (this.avgResponseTime * (totalRequests - 1) + responseTime) / totalRequests;
       }
     } else {
       this.failureCount += 1;
@@ -249,7 +248,7 @@ export class PollingPool extends Entity {
           default:
             return availableInstances[0];
         }
-      }
+      },
     };
   }
 
@@ -278,7 +277,7 @@ export class PollingPool extends Entity {
           healthCheckInterval = null;
         }
         console.log('停止健康检查');
-      }
+      },
     };
   }
 
@@ -290,8 +289,8 @@ export class PollingPool extends Entity {
       getStatus: () => ({
         enabled: false,
         currentLoad: this.instances.reduce((sum, inst) => sum + inst.currentLoad, 0),
-        maxLoad: this.instances.reduce((sum, inst) => sum + inst.maxConcurrency, 0)
-      })
+        maxLoad: this.instances.reduce((sum, inst) => sum + inst.maxConcurrency, 0),
+      }),
     };
   }
 
@@ -381,26 +380,24 @@ export class PollingPool extends Entity {
   /**
    * 调用具体实例
    */
-  private async callInstance(instance: LLMInstance, prompt: string, kwargs?: Record<string, any>): Promise<any> {
+  private async callInstance(
+    instance: LLMInstance,
+    prompt: string,
+    kwargs?: Record<string, any>
+  ): Promise<any> {
     // 创建LLM请求
-    const request = LLMRequest.create(
-      instance.modelName,
-      [
-        LLMMessage.createUser(prompt)
-      ],
-      {
-        temperature: kwargs?.['temperature'] ?? 0.7,
-        maxTokens: kwargs?.['maxTokens'] ?? 1000,
-        topP: kwargs?.['topP'] ?? 1.0,
-        frequencyPenalty: kwargs?.['frequencyPenalty'] ?? 0.0,
-        presencePenalty: kwargs?.['presencePenalty'] ?? 0.0,
-        stop: kwargs?.['stop'],
-        tools: kwargs?.['tools'],
-        toolChoice: kwargs?.['toolChoice'],
-        stream: kwargs?.['stream'] ?? false,
-        metadata: kwargs?.['metadata'] || {}
-      }
-    );
+    const request = LLMRequest.create(instance.modelName, [LLMMessage.createUser(prompt)], {
+      temperature: kwargs?.['temperature'] ?? 0.7,
+      maxTokens: kwargs?.['maxTokens'] ?? 1000,
+      topP: kwargs?.['topP'] ?? 1.0,
+      frequencyPenalty: kwargs?.['frequencyPenalty'] ?? 0.0,
+      presencePenalty: kwargs?.['presencePenalty'] ?? 0.0,
+      stop: kwargs?.['stop'],
+      tools: kwargs?.['tools'],
+      toolChoice: kwargs?.['toolChoice'],
+      stream: kwargs?.['stream'] ?? false,
+      metadata: kwargs?.['metadata'] || {},
+    });
 
     // 调用LLM客户端
     const response = await instance.client.generateResponse(request);
@@ -413,9 +410,15 @@ export class PollingPool extends Entity {
    * 获取轮询池状态
    */
   async getStatus(): Promise<Record<string, any>> {
-    const healthyInstances = this.instances.filter(inst => inst.status === InstanceStatus.HEALTHY).length;
-    const degradedInstances = this.instances.filter(inst => inst.status === InstanceStatus.DEGRADED).length;
-    const failedInstances = this.instances.filter(inst => inst.status === InstanceStatus.FAILED).length;
+    const healthyInstances = this.instances.filter(
+      inst => inst.status === InstanceStatus.HEALTHY
+    ).length;
+    const degradedInstances = this.instances.filter(
+      inst => inst.status === InstanceStatus.DEGRADED
+    ).length;
+    const failedInstances = this.instances.filter(
+      inst => inst.status === InstanceStatus.FAILED
+    ).length;
 
     return {
       name: this.name,
@@ -423,7 +426,7 @@ export class PollingPool extends Entity {
       healthyInstances,
       degradedInstances,
       failedInstances,
-      concurrencyStatus: this.concurrencyManager.getStatus()
+      concurrencyStatus: this.concurrencyManager.getStatus(),
     };
   }
 

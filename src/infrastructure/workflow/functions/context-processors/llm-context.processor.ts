@@ -11,18 +11,12 @@ export const llmContextProcessor: ContextProcessor = (
   config?: Record<string, unknown>
 ): PromptContext => {
   // 过滤掉工具调用历史
-  const filteredHistory = context.history.filter(
-    entry => !entry.metadata?.['toolCall']
-  );
+  const filteredHistory = context.history.filter(entry => !entry.metadata?.['toolCall']);
 
   // 只保留LLM相关变量
   const filteredVariables = new Map<string, unknown>();
   for (const [key, value] of context.variables.entries()) {
-    if (
-      key.startsWith('llm.') ||
-      key.startsWith('prompt.') ||
-      key.startsWith('model.')
-    ) {
+    if (key.startsWith('llm.') || key.startsWith('prompt.') || key.startsWith('model.')) {
       filteredVariables.set(key, value);
     }
   }

@@ -9,7 +9,7 @@ export enum NodeStatusValue {
   COMPLETED = 'completed',
   FAILED = 'failed',
   SKIPPED = 'skipped',
-  CANCELLED = 'cancelled'
+  CANCELLED = 'cancelled',
 }
 
 /**
@@ -170,8 +170,7 @@ export class NodeStatus extends ValueObject<NodeStatusProps> {
    */
   public isSuccess(): boolean {
     return (
-      this.props.value === NodeStatusValue.COMPLETED ||
-      this.props.value === NodeStatusValue.SKIPPED
+      this.props.value === NodeStatusValue.COMPLETED || this.props.value === NodeStatusValue.SKIPPED
     );
   }
 
@@ -205,8 +204,7 @@ export class NodeStatus extends ValueObject<NodeStatusProps> {
    */
   public canCancel(): boolean {
     return (
-      this.props.value === NodeStatusValue.PENDING ||
-      this.props.value === NodeStatusValue.RUNNING
+      this.props.value === NodeStatusValue.PENDING || this.props.value === NodeStatusValue.RUNNING
     );
   }
 

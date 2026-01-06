@@ -7,7 +7,7 @@ export enum WorkflowStatusValue {
   DRAFT = 'draft',
   ACTIVE = 'active',
   INACTIVE = 'inactive',
-  ARCHIVED = 'archived'
+  ARCHIVED = 'archived',
 }
 
 /**
@@ -19,7 +19,7 @@ export interface WorkflowStatusProps {
 
 /**
  * 工作流状态值对象
- * 
+ *
  * 用于表示工作流的当前状态
  */
 export class WorkflowStatus extends ValueObject<WorkflowStatusProps> {
@@ -153,7 +153,6 @@ export class WorkflowStatus extends ValueObject<WorkflowStatusProps> {
     }
     return this.props.value === status.getValue();
   }
-
 
   /**
    * 获取工作流状态的字符串表示

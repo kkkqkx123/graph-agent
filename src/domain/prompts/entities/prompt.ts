@@ -130,7 +130,7 @@ export class Prompt extends Entity {
 
     // 验证禁止词汇
     if (props.validation?.forbiddenWords) {
-      const forbiddenWords = props.validation.forbiddenWords.filter(word => 
+      const forbiddenWords = props.validation.forbiddenWords.filter(word =>
         props.content.toLowerCase().includes(word.toLowerCase())
       );
       if (forbiddenWords.length > 0) {
@@ -140,8 +140,8 @@ export class Prompt extends Entity {
 
     // 验证必需关键词
     if (props.validation?.requiredKeywords) {
-      const missingKeywords = props.validation.requiredKeywords.filter(keyword => 
-        !props.content.toLowerCase().includes(keyword.toLowerCase())
+      const missingKeywords = props.validation.requiredKeywords.filter(
+        keyword => !props.content.toLowerCase().includes(keyword.toLowerCase())
       );
       if (missingKeywords.length > 0) {
         throw new Error(`提示词内容缺少必需关键词: ${missingKeywords.join(', ')}`);
@@ -273,8 +273,8 @@ export class Prompt extends Entity {
 
     // 验证必需关键词
     if (this.props.validation?.requiredKeywords) {
-      const missingKeywords = this.props.validation.requiredKeywords.filter(keyword =>
-        !newContent.toLowerCase().includes(keyword.toLowerCase())
+      const missingKeywords = this.props.validation.requiredKeywords.filter(
+        keyword => !newContent.toLowerCase().includes(keyword.toLowerCase())
       );
       if (missingKeywords.length > 0) {
         throw new Error(`提示词内容缺少必需关键词: ${missingKeywords.join(', ')}`);

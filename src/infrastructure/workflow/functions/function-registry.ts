@@ -28,7 +28,7 @@ export class FunctionRegistry {
     routing: new Map(),
     trigger: new Map(),
     hook: new Map(),
-    contextProcessor: new Map()
+    contextProcessor: new Map(),
   };
 
   /**

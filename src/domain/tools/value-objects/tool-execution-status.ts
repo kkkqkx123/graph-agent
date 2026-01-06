@@ -1,6 +1,6 @@
 /**
  * 工具执行状态值对象
- * 
+ *
  * 表示工具执行的状态
  */
 export class ToolExecutionStatus {
@@ -28,25 +28,25 @@ export class ToolExecutionStatus {
     'completed',
     'failed',
     'cancelled',
-    'timeout'
+    'timeout',
   ];
 
   /**
    * 构造函数
-   * 
+   *
    * @param value 状态值
    */
   constructor(value: string) {
     if (!ToolExecutionStatus.isValid(value)) {
       throw new Error(`Invalid tool execution status: ${value}`);
     }
-    
+
     this.value = value;
   }
 
   /**
    * 检查状态值是否有效
-   * 
+   *
    * @param value 状态值
    * @returns 是否有效
    */
@@ -56,7 +56,7 @@ export class ToolExecutionStatus {
 
   /**
    * 从字符串创建工具执行状态
-   * 
+   *
    * @param value 字符串值
    * @returns 工具执行状态
    */
@@ -66,7 +66,7 @@ export class ToolExecutionStatus {
 
   /**
    * 检查是否为待执行状态
-   * 
+   *
    * @returns 是否为待执行状态
    */
   isPending(): boolean {
@@ -75,7 +75,7 @@ export class ToolExecutionStatus {
 
   /**
    * 检查是否为运行中状态
-   * 
+   *
    * @returns 是否为运行中状态
    */
   isRunning(): boolean {
@@ -84,7 +84,7 @@ export class ToolExecutionStatus {
 
   /**
    * 检查是否为已完成状态
-   * 
+   *
    * @returns 是否为已完成状态
    */
   isCompleted(): boolean {
@@ -93,7 +93,7 @@ export class ToolExecutionStatus {
 
   /**
    * 检查是否为失败状态
-   * 
+   *
    * @returns 是否为失败状态
    */
   isFailed(): boolean {
@@ -102,7 +102,7 @@ export class ToolExecutionStatus {
 
   /**
    * 检查是否为已取消状态
-   * 
+   *
    * @returns 是否为已取消状态
    */
   isCancelled(): boolean {
@@ -111,7 +111,7 @@ export class ToolExecutionStatus {
 
   /**
    * 检查是否为超时状态
-   * 
+   *
    * @returns 是否为超时状态
    */
   isTimeout(): boolean {
@@ -120,7 +120,7 @@ export class ToolExecutionStatus {
 
   /**
    * 检查是否为进行中状态（待执行或运行中）
-   * 
+   *
    * @returns 是否为进行中状态
    */
   isInProgress(): boolean {
@@ -129,7 +129,7 @@ export class ToolExecutionStatus {
 
   /**
    * 检查是否为终止状态（已完成、失败、已取消或超时）
-   * 
+   *
    * @returns 是否为终止状态
    */
   isTerminated(): boolean {
@@ -138,7 +138,7 @@ export class ToolExecutionStatus {
 
   /**
    * 检查是否为成功状态（已完成）
-   * 
+   *
    * @returns 是否为成功状态
    */
   isSuccessful(): boolean {
@@ -147,7 +147,7 @@ export class ToolExecutionStatus {
 
   /**
    * 检查是否为错误状态（失败、已取消或超时）
-   * 
+   *
    * @returns 是否为错误状态
    */
   isError(): boolean {
@@ -156,7 +156,7 @@ export class ToolExecutionStatus {
 
   /**
    * 检查是否可以重试
-   * 
+   *
    * @returns 是否可以重试
    */
   canRetry(): boolean {
@@ -165,7 +165,7 @@ export class ToolExecutionStatus {
 
   /**
    * 检查是否可以取消
-   * 
+   *
    * @returns 是否可以取消
    */
   canCancel(): boolean {
@@ -174,7 +174,7 @@ export class ToolExecutionStatus {
 
   /**
    * 获取状态的显示名称
-   * 
+   *
    * @returns 显示名称
    */
   getDisplayName(): string {
@@ -198,7 +198,7 @@ export class ToolExecutionStatus {
 
   /**
    * 获取状态的描述
-   * 
+   *
    * @returns 描述
    */
   getDescription(): string {
@@ -222,7 +222,7 @@ export class ToolExecutionStatus {
 
   /**
    * 获取状态的颜色代码
-   * 
+   *
    * @returns 颜色代码
    */
   getColorCode(): string {
@@ -246,7 +246,7 @@ export class ToolExecutionStatus {
 
   /**
    * 获取状态图标
-   * 
+   *
    * @returns 图标名称
    */
   getIcon(): string {
@@ -270,7 +270,7 @@ export class ToolExecutionStatus {
 
   /**
    * 获取所有有效的工具执行状态
-   * 
+   *
    * @returns 所有有效的工具执行状态
    */
   static getAllStatuses(): ToolExecutionStatus[] {
@@ -279,7 +279,7 @@ export class ToolExecutionStatus {
 
   /**
    * 获取进行中的状态（待执行和运行中）
-   * 
+   *
    * @returns 进行中的状态
    */
   static getInProgressStatuses(): ToolExecutionStatus[] {
@@ -288,7 +288,7 @@ export class ToolExecutionStatus {
 
   /**
    * 获取终止状态（已完成、失败、已取消和超时）
-   * 
+   *
    * @returns 终止状态
    */
   static getTerminatedStatuses(): ToolExecutionStatus[] {
@@ -296,13 +296,13 @@ export class ToolExecutionStatus {
       ToolExecutionStatus.COMPLETED,
       ToolExecutionStatus.FAILED,
       ToolExecutionStatus.CANCELLED,
-      ToolExecutionStatus.TIMEOUT
+      ToolExecutionStatus.TIMEOUT,
     ];
   }
 
   /**
    * 获取成功状态（已完成）
-   * 
+   *
    * @returns 成功状态
    */
   static getSuccessStatuses(): ToolExecutionStatus[] {
@@ -311,20 +311,16 @@ export class ToolExecutionStatus {
 
   /**
    * 获取错误状态（失败、已取消和超时）
-   * 
+   *
    * @returns 错误状态
    */
   static getErrorStatuses(): ToolExecutionStatus[] {
-    return [
-      ToolExecutionStatus.FAILED,
-      ToolExecutionStatus.CANCELLED,
-      ToolExecutionStatus.TIMEOUT
-    ];
+    return [ToolExecutionStatus.FAILED, ToolExecutionStatus.CANCELLED, ToolExecutionStatus.TIMEOUT];
   }
 
   /**
    * 获取可重试状态（失败和超时）
-   * 
+   *
    * @returns 可重试状态
    */
   static getRetryableStatuses(): ToolExecutionStatus[] {
@@ -333,7 +329,7 @@ export class ToolExecutionStatus {
 
   /**
    * 获取可取消状态（待执行和运行中）
-   * 
+   *
    * @returns 可取消状态
    */
   static getCancellableStatuses(): ToolExecutionStatus[] {
@@ -342,7 +338,7 @@ export class ToolExecutionStatus {
 
   /**
    * 转换为字符串
-   * 
+   *
    * @returns 字符串表示
    */
   toString(): string {
@@ -351,7 +347,7 @@ export class ToolExecutionStatus {
 
   /**
    * 转换为JSON
-   * 
+   *
    * @returns JSON表示
    */
   toJSON(): string {
@@ -360,7 +356,7 @@ export class ToolExecutionStatus {
 
   /**
    * 检查是否相等
-   * 
+   *
    * @param other 另一个工具执行状态
    * @returns 是否相等
    */
@@ -370,7 +366,7 @@ export class ToolExecutionStatus {
 
   /**
    * 哈希值
-   * 
+   *
    * @returns 哈希值
    */
   hashCode(): number {

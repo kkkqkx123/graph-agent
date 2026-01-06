@@ -296,9 +296,9 @@ export const mapPoolToDTO = (pool: any): PoolDTO => {
         enabled: pool.status?.concurrencyStatus?.enabled || false,
         currentLoad: pool.status?.concurrencyStatus?.currentLoad || 0,
         maxLoad: pool.status?.concurrencyStatus?.maxLoad || 0,
-        loadPercentage: pool.status?.concurrencyStatus?.loadPercentage || 0
+        loadPercentage: pool.status?.concurrencyStatus?.loadPercentage || 0,
       },
-      lastChecked: pool.status?.lastChecked?.toISOString() || new Date().toISOString()
+      lastChecked: pool.status?.lastChecked?.toISOString() || new Date().toISOString(),
     },
     statistics: {
       totalRequests: pool.statistics?.totalRequests || 0,
@@ -307,8 +307,8 @@ export const mapPoolToDTO = (pool: any): PoolDTO => {
       avgResponseTime: pool.statistics?.avgResponseTime || 0,
       successRate: pool.statistics?.successRate || 0,
       currentLoad: pool.statistics?.currentLoad || 0,
-      maxConcurrency: pool.statistics?.maxConcurrency || 0
-    }
+      maxConcurrency: pool.statistics?.maxConcurrency || 0,
+    },
   };
 };
 
@@ -331,15 +331,15 @@ export const mapTaskGroupToDTO = (taskGroup: any): TaskGroupDTO => {
       totalModels: taskGroup.status?.totalModels || 0,
       available: taskGroup.status?.available || false,
       echelons: taskGroup.status?.echelons || [],
-      lastChecked: taskGroup.status?.lastChecked?.toISOString() || new Date().toISOString()
+      lastChecked: taskGroup.status?.lastChecked?.toISOString() || new Date().toISOString(),
     },
     statistics: {
       name: taskGroup.statistics?.name || taskGroup.name || '',
       totalEchelons: taskGroup.statistics?.totalEchelons || 0,
       totalModels: taskGroup.statistics?.totalModels || 0,
       availabilityRate: taskGroup.statistics?.availabilityRate || 0,
-      echelonDistribution: taskGroup.statistics?.echelonDistribution || {}
-    }
+      echelonDistribution: taskGroup.statistics?.echelonDistribution || {},
+    },
   };
 };
 
@@ -370,7 +370,7 @@ export const mapInstanceToDTO = (instance: any): InstanceDTO => {
     available: Boolean(instance.available),
     canAcceptRequest: Boolean(instance.canAcceptRequest),
     lastUsed: instance.lastUsed?.toISOString() || null,
-    lastHealthCheck: instance.lastHealthCheck?.toISOString() || new Date().toISOString()
+    lastHealthCheck: instance.lastHealthCheck?.toISOString() || new Date().toISOString(),
   };
 };
 

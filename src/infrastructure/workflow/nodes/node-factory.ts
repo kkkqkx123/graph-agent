@@ -1,5 +1,8 @@
 import { NodeId } from '../../../domain/workflow/value-objects/node/node-id';
-import { NodeTypeValue, NodeContextTypeValue } from '../../../domain/workflow/value-objects/node/node-type';
+import {
+  NodeTypeValue,
+  NodeContextTypeValue,
+} from '../../../domain/workflow/value-objects/node/node-type';
 import { Node } from '../../../domain/workflow/entities/node';
 import { LLMNode } from './llm-node';
 import { ToolCallNode } from './tool-call-node';
@@ -225,7 +228,7 @@ export class NodeFactory {
       NodeTypeValue.LLM,
       NodeTypeValue.TOOL,
       NodeTypeValue.CONDITION,
-      NodeTypeValue.DATA_TRANSFORM
+      NodeTypeValue.DATA_TRANSFORM,
     ];
   }
 }

@@ -1,6 +1,6 @@
 /**
  * 提示词模板值对象
- * 
+ *
  * 支持变量替换的提示词模板
  */
 
@@ -14,12 +14,12 @@ export interface PromptTemplateProps {
    * 模板内容
    */
   template: string;
-  
+
   /**
    * 模板变量列表
    */
   variables: string[];
-  
+
   /**
    * 模板描述
    */
@@ -57,7 +57,7 @@ export class PromptTemplate extends ValueObject<PromptTemplateProps> {
 
   /**
    * 渲染模板
-   * 
+   *
    * @param variables 变量值映射
    * @returns 渲染后的字符串
    */
@@ -81,7 +81,7 @@ export class PromptTemplate extends ValueObject<PromptTemplateProps> {
 
   /**
    * 验证变量是否完整
-   * 
+   *
    * @param variables 变量值映射
    * @returns 验证结果
    */
@@ -99,13 +99,13 @@ export class PromptTemplate extends ValueObject<PromptTemplateProps> {
 
     return {
       isValid: missingVariables.length === 0,
-      missingVariables
+      missingVariables,
     };
   }
 
   /**
    * 从模板字符串中提取变量
-   * 
+   *
    * @param template 模板字符串
    * @returns 变量列表
    */
@@ -126,21 +126,18 @@ export class PromptTemplate extends ValueObject<PromptTemplateProps> {
 
   /**
    * 创建提示词模板
-   * 
+   *
    * @param template 模板内容
    * @param description 模板描述
    * @returns 提示词模板实例
    */
-  public static create(
-    template: string,
-    description?: string
-  ): PromptTemplate {
+  public static create(template: string, description?: string): PromptTemplate {
     const variables = this.extractVariables(template);
 
     return new PromptTemplate({
       template,
       variables,
-      description
+      description,
     });
   }
 
@@ -186,15 +183,12 @@ export class PromptTemplate extends ValueObject<PromptTemplateProps> {
 
   /**
    * 克隆模板并修改内容
-   * 
+   *
    * @param newTemplate 新的模板内容
    * @param newDescription 新的模板描述
    * @returns 新的模板实例
    */
-  public clone(
-    newTemplate?: string,
-    newDescription?: string
-  ): PromptTemplate {
+  public clone(newTemplate?: string, newDescription?: string): PromptTemplate {
     return PromptTemplate.create(
       newTemplate || this.props.template,
       newDescription || this.props.description

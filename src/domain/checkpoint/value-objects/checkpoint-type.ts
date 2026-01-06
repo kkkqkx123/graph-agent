@@ -6,7 +6,7 @@ export enum CheckpointTypeValue {
   AUTO = 'auto',
   MANUAL = 'manual',
   ERROR = 'error',
-  MILESTONE = 'milestone'
+  MILESTONE = 'milestone',
 }
 
 /**
@@ -18,7 +18,7 @@ export interface CheckpointTypeProps {
 
 /**
  * 检查点类型值对象
- * 
+ *
  * 用于表示检查点的类型
  */
 export class CheckpointType extends ValueObject<CheckpointTypeProps> {
@@ -156,7 +156,7 @@ export class CheckpointType extends ValueObject<CheckpointTypeProps> {
       [CheckpointTypeValue.AUTO]: '自动检查点，由系统自动创建',
       [CheckpointTypeValue.MANUAL]: '手动检查点，由用户手动创建',
       [CheckpointTypeValue.ERROR]: '错误检查点，在发生错误时自动创建',
-      [CheckpointTypeValue.MILESTONE]: '里程碑检查点，标记重要的执行节点'
+      [CheckpointTypeValue.MILESTONE]: '里程碑检查点，标记重要的执行节点',
     };
 
     return descriptions[this.props.value];

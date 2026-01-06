@@ -1,16 +1,22 @@
 import { Session } from '../../domain/sessions/entities/session';
 import { Thread } from '../../domain/threads/entities/thread';
 import { ForkStrategy } from '../../domain/sessions/value-objects/operations/fork/fork-strategy';
-import { ForkOptions, ForkContext } from '../../domain/sessions/value-objects/operations/fork/fork-context';
+import {
+  ForkOptions,
+  ForkContext,
+} from '../../domain/sessions/value-objects/operations/fork/fork-context';
 import { NodeId } from '../../domain/workflow/value-objects';
 import { ID, Timestamp, Version } from '../../domain/common/value-objects';
-import { ThreadStatus as ThreadStatusVO, ThreadExecution } from '../../domain/threads/value-objects';
+import {
+  ThreadStatus as ThreadStatusVO,
+  ThreadExecution,
+} from '../../domain/threads/value-objects';
 import { Metadata } from '../../domain/checkpoint/value-objects';
 import { DeletionStatus } from '../../domain/checkpoint/value-objects';
 
 /**
  * 线程Fork服务
- * 
+ *
  * 职责：处理线程fork的复杂业务逻辑
  */
 export class ThreadForkService {
@@ -53,7 +59,7 @@ export class ThreadForkService {
     const execution = parentThread.execution;
     const variableSnapshot = new Map(execution.context.variables);
     const nodeStateSnapshot = new Map();
-    
+
     for (const [nodeId, nodeExecution] of execution.nodeExecutions.entries()) {
       nodeStateSnapshot.set(nodeId, nodeExecution.createSnapshot());
     }
@@ -69,20 +75,18 @@ export class ThreadForkService {
 
     // 计算上下文保留计划
     const retentionPlan = forkStrategy.calculateContextRetention(parentThread, forkPoint);
-    
+
     // 应用节点状态处理策略
-    const processedNodeStates = forkStrategy.applyNodeStateHandling(
-      forkContext.nodeStateSnapshot
-    );
+    const processedNodeStates = forkStrategy.applyNodeStateHandling(forkContext.nodeStateSnapshot);
 
     // 使用 fromProps 创建新线程，避免 PromptContext 问题
     const now = Timestamp.now();
     const newThreadId = ID.generate();
     const newThreadStatus = ThreadStatusVO.pending();
-    
+
     // 创建线程执行值对象（使用父线程的执行上下文）
     const newExecution = ThreadExecution.create(newThreadId, execution.context);
-    
+
     const newThreadProps = {
       id: newThreadId,
       sessionId: session.sessionId,
@@ -94,16 +98,16 @@ export class ThreadForkService {
       metadata: Metadata.create({
         ...parentThread.metadata.toRecord(),
         forkContext: forkContext.forkId.toString(),
-        parentThreadId: parentThreadId
+        parentThreadId: parentThreadId,
       }),
       definition: parentThread.definition,
       execution: newExecution,
       deletionStatus: DeletionStatus.active(),
       createdAt: now,
       updatedAt: now,
-      version: Version.initial()
+      version: Version.initial(),
     };
-    
+
     const newThread = Thread.fromProps(newThreadProps);
 
     // 根据 Fork 策略设置新线程的执行上下文
@@ -159,10 +163,10 @@ export class ThreadForkService {
 
     // 根据父线程的状态和配置返回可用的fork策略
     const strategies: ForkStrategy[] = [];
-    
+
     // 这里可以根据业务规则添加不同的fork策略
     // 例如：完整复制、部分复制、仅变量复制等
-    
+
     return strategies;
   }
 }

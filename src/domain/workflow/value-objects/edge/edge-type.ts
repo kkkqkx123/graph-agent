@@ -12,7 +12,7 @@ export enum EdgeTypeValue {
   FLEXIBLE_CONDITIONAL = 'flexible_conditional',
   ASYNC = 'async',
   SYNC = 'sync',
-  EVENT_DRIVEN = 'event_driven'
+  EVENT_DRIVEN = 'event_driven',
 }
 
 /**
@@ -24,7 +24,7 @@ export interface EdgeTypeProps {
 
 /**
  * 边类型值对象
- * 
+ *
  * 用于表示边的类型
  */
 export class EdgeType extends ValueObject<EdgeTypeProps> {
@@ -288,7 +288,7 @@ export class EdgeType extends ValueObject<EdgeTypeProps> {
       [EdgeTypeValue.ASYNC]: '异步边，支持异步执行',
       [EdgeTypeValue.SYNC]: '同步边，同步执行流程',
       [EdgeTypeValue.EVENT_DRIVEN]: '事件驱动边，由事件触发执行',
-      [EdgeTypeValue.CUSTOM]: '自定义边，根据特定逻辑执行'
+      [EdgeTypeValue.CUSTOM]: '自定义边，根据特定逻辑执行',
     };
 
     return descriptions[this.props.value];

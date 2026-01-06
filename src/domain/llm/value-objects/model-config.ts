@@ -25,7 +25,7 @@ export interface ModelConfigProps {
 
 /**
  * 模型配置值对象
- * 
+ *
  * 用于表示LLM模型的配置信息
  */
 export class ModelConfig extends ValueObject<ModelConfigProps> {
@@ -45,14 +45,14 @@ export class ModelConfig extends ValueObject<ModelConfigProps> {
       presencePenalty: 0.0,
       costPer1KTokens: {
         prompt: 0.03,
-        completion: 0.06
+        completion: 0.06,
       },
       supportsStreaming: true,
       supportsTools: true,
       supportsImages: true,
       supportsAudio: false,
       supportsVideo: false,
-      metadata: {}
+      metadata: {},
     });
   }
 
@@ -72,14 +72,14 @@ export class ModelConfig extends ValueObject<ModelConfigProps> {
       presencePenalty: 0.0,
       costPer1KTokens: {
         prompt: 0.001,
-        completion: 0.002
+        completion: 0.002,
       },
       supportsStreaming: true,
       supportsTools: true,
       supportsImages: false,
       supportsAudio: false,
       supportsVideo: false,
-      metadata: {}
+      metadata: {},
     });
   }
 
@@ -99,14 +99,14 @@ export class ModelConfig extends ValueObject<ModelConfigProps> {
       presencePenalty: 0.0,
       costPer1KTokens: {
         prompt: 0.003,
-        completion: 0.015
+        completion: 0.015,
       },
       supportsStreaming: true,
       supportsTools: true,
       supportsImages: true,
       supportsAudio: false,
       supportsVideo: false,
-      metadata: {}
+      metadata: {},
     });
   }
 
@@ -126,14 +126,14 @@ export class ModelConfig extends ValueObject<ModelConfigProps> {
       presencePenalty: 0.0,
       costPer1KTokens: {
         prompt: 0.0005,
-        completion: 0.0015
+        completion: 0.0015,
       },
       supportsStreaming: true,
       supportsTools: true,
       supportsImages: true,
       supportsAudio: false,
       supportsVideo: false,
-      metadata: {}
+      metadata: {},
     });
   }
 
@@ -146,7 +146,7 @@ export class ModelConfig extends ValueObject<ModelConfigProps> {
     const defaultConfig = this.openaiGPT35();
     return new ModelConfig({
       ...defaultConfig.value,
-      ...config
+      ...config,
     });
   }
 
@@ -324,7 +324,7 @@ export class ModelConfig extends ValueObject<ModelConfigProps> {
   public update(updates: Partial<ModelConfigProps>): ModelConfig {
     return new ModelConfig({
       ...this.props,
-      ...updates
+      ...updates,
     });
   }
 
@@ -336,7 +336,7 @@ export class ModelConfig extends ValueObject<ModelConfigProps> {
   public updateMetadata(metadata: Record<string, unknown>): ModelConfig {
     return new ModelConfig({
       ...this.props,
-      metadata: { ...metadata }
+      metadata: { ...metadata },
     });
   }
 
@@ -351,8 +351,8 @@ export class ModelConfig extends ValueObject<ModelConfigProps> {
       ...this.props,
       metadata: {
         ...this.props.metadata,
-        [key]: value
-      }
+        [key]: value,
+      },
     });
   }
 
@@ -364,10 +364,10 @@ export class ModelConfig extends ValueObject<ModelConfigProps> {
   public removeMetadata(key: string): ModelConfig {
     const newMetadata = { ...this.props.metadata };
     delete newMetadata[key];
-    
+
     return new ModelConfig({
       ...this.props,
-      metadata: newMetadata
+      metadata: newMetadata,
     });
   }
 
@@ -380,7 +380,7 @@ export class ModelConfig extends ValueObject<ModelConfigProps> {
     if (config === null || config === undefined) {
       return false;
     }
-    
+
     return (
       this.props.model === config.getModel() &&
       this.props.provider === config.getProvider() &&
@@ -474,7 +474,7 @@ export class ModelConfig extends ValueObject<ModelConfigProps> {
       supportsImages: this.props.supportsImages,
       supportsAudio: this.props.supportsAudio,
       supportsVideo: this.props.supportsVideo,
-      metadataKeys: Object.keys(this.props.metadata)
+      metadataKeys: Object.keys(this.props.metadata),
     };
   }
 }

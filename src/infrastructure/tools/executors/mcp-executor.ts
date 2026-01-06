@@ -2,7 +2,12 @@ import { injectable, inject } from 'inversify';
 import { Tool } from '../../../domain/tools/entities/tool';
 import { ToolExecution } from '../../../domain/tools/entities/tool-execution';
 import { ToolResult } from '../../../domain/tools/entities/tool-result';
-import { ToolExecutorBase, ToolExecutorConfigSchema, ToolExecutorCapabilities, ToolExecutorHealthCheck } from './tool-executor-base';
+import {
+  ToolExecutorBase,
+  ToolExecutorConfigSchema,
+  ToolExecutorCapabilities,
+  ToolExecutorHealthCheck,
+} from './tool-executor-base';
 
 // 简化的 MCP 客户端类
 class McpClient {
@@ -28,9 +33,7 @@ class McpClient {
 export class McpExecutor extends ToolExecutorBase {
   private mcpClients: Map<string, McpClient> = new Map();
 
-  constructor(
-    @inject('McpClientFactory') private mcpClientFactory: any
-  ) {
+  constructor(@inject('McpClientFactory') private mcpClientFactory: any) {
     super();
   }
 
@@ -39,13 +42,13 @@ export class McpExecutor extends ToolExecutorBase {
       const config = tool.config;
       const serverName = config.getValue('serverName') as string;
       const toolName = config.getValue('toolName') as string;
-      
+
       // Get or create MCP client for the server
       const client = await this.getMcpClient(serverName);
-      
+
       // Execute the tool through MCP
       const result = await client.callTool(toolName, execution.parameters);
-      
+
       return ToolResult.createSuccess(
         execution.id,
         result,
@@ -68,7 +71,7 @@ export class McpExecutor extends ToolExecutorBase {
     // Create new MCP client
     const client = new McpClient();
     this.mcpClients.set(serverName, client);
-    
+
     return client;
   }
 
@@ -91,11 +94,14 @@ export class McpExecutor extends ToolExecutorBase {
     return {
       isValid: errors.length === 0,
       errors,
-      warnings
+      warnings,
     };
   }
 
-  async validateParameters(tool: Tool, parameters: Record<string, unknown>): Promise<{
+  async validateParameters(
+    tool: Tool,
+    parameters: Record<string, unknown>
+  ): Promise<{
     isValid: boolean;
     errors: string[];
     warnings: string[];
@@ -103,7 +109,7 @@ export class McpExecutor extends ToolExecutorBase {
     return {
       isValid: true,
       errors: [],
-      warnings: []
+      warnings: [],
     };
   }
 
@@ -137,14 +143,14 @@ export class McpExecutor extends ToolExecutorBase {
       properties: {
         serverName: {
           type: 'string',
-          description: 'Name of the MCP server'
+          description: 'Name of the MCP server',
         },
         toolName: {
           type: 'string',
-          description: 'Name of the tool on the MCP server'
-        }
+          description: 'Name of the tool on the MCP server',
+        },
       },
-      required: ['serverName', 'toolName']
+      required: ['serverName', 'toolName'],
     };
   }
 
@@ -155,7 +161,7 @@ export class McpExecutor extends ToolExecutorBase {
       batch: false,
       retry: false,
       timeout: false,
-      cancellation: false
+      cancellation: false,
     };
   }
 
@@ -163,7 +169,7 @@ export class McpExecutor extends ToolExecutorBase {
     return {
       status: 'healthy',
       message: 'MCP executor is operational',
-      lastChecked: new Date()
+      lastChecked: new Date(),
     };
   }
 
@@ -172,7 +178,9 @@ export class McpExecutor extends ToolExecutorBase {
       const client = await this.getMcpClient(serverName);
       return await client.listTools();
     } catch (error) {
-      throw new Error(`Failed to list tools for MCP server '${serverName}': ${error instanceof Error ? error.message : String(error)}`);
+      throw new Error(
+        `Failed to list tools for MCP server '${serverName}': ${error instanceof Error ? error.message : String(error)}`
+      );
     }
   }
 
@@ -181,7 +189,9 @@ export class McpExecutor extends ToolExecutorBase {
       const client = await this.getMcpClient(serverName);
       return await client.getToolSchema(toolName);
     } catch (error) {
-      throw new Error(`Failed to get schema for tool '${toolName}' on MCP server '${serverName}': ${error instanceof Error ? error.message : String(error)}`);
+      throw new Error(
+        `Failed to get schema for tool '${toolName}' on MCP server '${serverName}': ${error instanceof Error ? error.message : String(error)}`
+      );
     }
   }
 
@@ -197,7 +207,7 @@ export class McpExecutor extends ToolExecutorBase {
     const disconnectPromises = Array.from(this.mcpClients.keys()).map(serverName =>
       this.disconnect(serverName)
     );
-    
+
     await Promise.all(disconnectPromises);
   }
 }

@@ -1,5 +1,9 @@
 import { injectable } from 'inversify';
-import { BaseTransformFunction, TransformFunctionConfig, WorkflowExecutionContext } from './base-transform-function';
+import {
+  BaseTransformFunction,
+  TransformFunctionConfig,
+  WorkflowExecutionContext,
+} from './base-transform-function';
 
 /**
  * Group转换函数
@@ -24,8 +28,8 @@ export class GroupTransformFunction extends BaseTransformFunction<TransformFunct
         name: 'field',
         type: 'string',
         required: true,
-        description: '要分组的字段名'
-      }
+        description: '要分组的字段名',
+      },
     ];
   }
 
@@ -39,7 +43,10 @@ export class GroupTransformFunction extends BaseTransformFunction<TransformFunct
     return errors;
   }
 
-  override async execute(context: WorkflowExecutionContext, config: TransformFunctionConfig): Promise<Record<string, any[]>> {
+  override async execute(
+    context: WorkflowExecutionContext,
+    config: TransformFunctionConfig
+  ): Promise<Record<string, any[]>> {
     this.checkInitialized();
 
     const { sourceData, config: transformConfig } = config;

@@ -366,7 +366,7 @@ export class GraphAlgorithmServiceImpl implements GraphAlgorithmService {
       edgeCount,
       maxPathLength,
       cycleCount,
-      componentCount
+      componentCount,
     };
   }
 }

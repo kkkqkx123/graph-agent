@@ -1,6 +1,6 @@
 /**
  * 工作流执行引擎实现
- * 
+ *
  * 本文件实现了图工作流的执行引擎
  */
 
@@ -16,10 +16,14 @@ import {
   ExecutionContext,
   NodeOutput,
   NodeStatus,
-  ExecutionStrategy
+  ExecutionStrategy,
 } from '../types/workflow-types';
 
-import { createExecutionContext, generateExecutionId, ExecutionContextImpl } from './execution-context';
+import {
+  createExecutionContext,
+  generateExecutionId,
+  ExecutionContextImpl,
+} from './execution-context';
 import { getNodeFunction } from '../functions/nodes/node-functions';
 
 // ============================================================================
@@ -365,8 +369,8 @@ export class WorkflowEngineImpl implements WorkflowEngineInterface {
           executionTime,
           executedNodes,
           skippedNodes,
-          failedNodes
-        }
+          failedNodes,
+        },
       };
     } catch (error) {
       this._status = WorkflowStatus.FAILED;
@@ -377,8 +381,8 @@ export class WorkflowEngineImpl implements WorkflowEngineInterface {
           executionTime: Date.now() - startTime,
           executedNodes: [],
           skippedNodes: [],
-          failedNodes: []
-        }
+          failedNodes: [],
+        },
       };
     }
   }
@@ -469,7 +473,7 @@ export class WorkflowEngineImpl implements WorkflowEngineInterface {
     return {
       success: this._status === WorkflowStatus.COMPLETED,
       data: finalResult,
-      error: finalError
+      error: finalError,
     };
   }
 
@@ -496,12 +500,12 @@ export class WorkflowEngineImpl implements WorkflowEngineInterface {
           nodeId: node.id.toString(),
           status: NodeStatus.SKIPPED,
           startTime,
-          endTime: Date.now()
+          endTime: Date.now(),
         });
         return {
           success: true,
           data: { skipped: true },
-          metadata: { skipped: true }
+          metadata: { skipped: true },
         };
       }
 
@@ -534,7 +538,7 @@ export class WorkflowEngineImpl implements WorkflowEngineInterface {
         startTime,
         endTime: Date.now(),
         output,
-        error: output.error
+        error: output.error,
       });
 
       console.log(`节点 ${node.id.toString()} 执行完成: ${output.success ? '成功' : '失败'}`);
@@ -549,14 +553,14 @@ export class WorkflowEngineImpl implements WorkflowEngineInterface {
         status: NodeStatus.FAILED,
         startTime,
         endTime: Date.now(),
-        error: errorMessage
+        error: errorMessage,
       });
 
       console.error(`节点 ${node.id.toString()} 执行失败:`, errorMessage);
 
       return {
         success: false,
-        error: errorMessage
+        error: errorMessage,
       };
     }
   }
@@ -608,18 +612,18 @@ export class WorkflowEngineImpl implements WorkflowEngineInterface {
         return this._context.getAllData();
 
       case 'end': {
-         // 获取前一个节点的结果
-         if (this._workflow && this._context) {
-           const incomingEdges = this._workflow.getEdgesTo(node.id.toString());
-           const edges = incomingEdges || [];
-           if (edges.length > 0 && edges[0]) {
-             const fromNodeId = edges[0].fromNodeId;
-             const prevResult = this._context.getNodeResult(fromNodeId);
-             return prevResult?.data;
-           }
-         }
-         return {};
-       }
+        // 获取前一个节点的结果
+        if (this._workflow && this._context) {
+          const incomingEdges = this._workflow.getEdgesTo(node.id.toString());
+          const edges = incomingEdges || [];
+          if (edges.length > 0 && edges[0]) {
+            const fromNodeId = edges[0].fromNodeId;
+            const prevResult = this._context.getNodeResult(fromNodeId);
+            return prevResult?.data;
+          }
+        }
+        return {};
+      }
 
       default:
         return this._context.getAllData();

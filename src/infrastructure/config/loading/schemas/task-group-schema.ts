@@ -10,7 +10,7 @@ import { z } from 'zod';
  */
 const EchelonSchema = z.object({
   priority: z.number(),
-  models: z.array(z.string())
+  models: z.array(z.string()),
 });
 
 /**
@@ -19,7 +19,7 @@ const EchelonSchema = z.object({
 const FallbackConfigSchema = z.object({
   strategy: z.enum(['echelon_down', 'pool_fallback', 'global_fallback']).optional(),
   maxAttempts: z.number().optional(),
-  retryDelay: z.number().optional()
+  retryDelay: z.number().optional(),
 });
 
 /**
@@ -28,30 +28,32 @@ const FallbackConfigSchema = z.object({
 const CircuitBreakerSchema = z.object({
   failureThreshold: z.number().optional(),
   recoveryTime: z.number().optional(),
-  halfOpenRequests: z.number().optional()
+  halfOpenRequests: z.number().optional(),
 });
 
 /**
  * 任务组配置Schema
  */
-const TaskGroupConfigSchema = z.object({
-  name: z.string(),
-  fallbackStrategy: z.string().optional(),
-  maxAttempts: z.number().optional(),
-  retryDelay: z.number().optional(),
-  circuitBreaker: CircuitBreakerSchema.optional()
-}).and(
-  z.object({
-    echelon1: EchelonSchema.optional(),
-    echelon2: EchelonSchema.optional(),
-    echelon3: EchelonSchema.optional()
+const TaskGroupConfigSchema = z
+  .object({
+    name: z.string(),
+    fallbackStrategy: z.string().optional(),
+    maxAttempts: z.number().optional(),
+    retryDelay: z.number().optional(),
+    circuitBreaker: CircuitBreakerSchema.optional(),
   })
-);
+  .and(
+    z.object({
+      echelon1: EchelonSchema.optional(),
+      echelon2: EchelonSchema.optional(),
+      echelon3: EchelonSchema.optional(),
+    })
+  );
 
 /**
  * 任务组模块Schema
  */
 export const TaskGroupSchema = z.object({
   taskGroups: z.record(z.string(), TaskGroupConfigSchema).optional(),
-  _registry: z.string().optional()
+  _registry: z.string().optional(),
 });

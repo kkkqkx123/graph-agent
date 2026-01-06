@@ -142,7 +142,9 @@ export class SessionMonitoringService extends BaseApplicationService {
         let completedCount = 0;
         for (const thread of threads) {
           if (thread.execution.startedAt && thread.execution.completedAt) {
-            const duration = thread.execution.completedAt.getMilliseconds() - thread.execution.startedAt.getMilliseconds();
+            const duration =
+              thread.execution.completedAt.getMilliseconds() -
+              thread.execution.startedAt.getMilliseconds();
             totalDuration += duration;
             completedCount++;
           }
@@ -156,7 +158,9 @@ export class SessionMonitoringService extends BaseApplicationService {
 
         for (const thread of threads) {
           try {
-            const resourceMetrics = await this.monitoringService.getResourceMetrics(thread.id.toString());
+            const resourceMetrics = await this.monitoringService.getResourceMetrics(
+              thread.id.toString()
+            );
             if (resourceMetrics.length > 0) {
               const latestMetrics = resourceMetrics[resourceMetrics.length - 1];
               if (latestMetrics) {
@@ -166,7 +170,10 @@ export class SessionMonitoringService extends BaseApplicationService {
               }
             }
           } catch (error) {
-            this.logger.warn('获取线程资源指标失败', error instanceof Error ? error : new Error(String(error)));
+            this.logger.warn(
+              '获取线程资源指标失败',
+              error instanceof Error ? error : new Error(String(error))
+            );
           }
         }
 
@@ -187,7 +194,10 @@ export class SessionMonitoringService extends BaseApplicationService {
             criticalAlerts += alerts.filter(a => !a.resolved && a.severity === 'critical').length;
             highAlerts += alerts.filter(a => !a.resolved && a.severity === 'high').length;
           } catch (error) {
-            this.logger.warn('获取线程告警失败', error instanceof Error ? error : new Error(String(error)));
+            this.logger.warn(
+              '获取线程告警失败',
+              error instanceof Error ? error : new Error(String(error))
+            );
           }
         }
 
@@ -206,14 +216,14 @@ export class SessionMonitoringService extends BaseApplicationService {
             totalMemory,
             averageMemory,
             totalCpu,
-            averageCpu
+            averageCpu,
           },
           alertStats: {
             total: totalAlerts,
             active: activeAlerts,
             critical: criticalAlerts,
-            high: highAlerts
-          }
+            high: highAlerts,
+          },
         };
       },
       { sessionId }
@@ -254,7 +264,10 @@ export class SessionMonitoringService extends BaseApplicationService {
             const alerts = await this.monitoringService.getAlerts(thread.id.toString(), false);
             activeAlerts += alerts.length;
           } catch (error) {
-            this.logger.warn('获取线程告警失败', error instanceof Error ? error : new Error(String(error)));
+            this.logger.warn(
+              '获取线程告警失败',
+              error instanceof Error ? error : new Error(String(error))
+            );
           }
         }
 
@@ -283,7 +296,7 @@ export class SessionMonitoringService extends BaseApplicationService {
           activeThreads,
           failureRate,
           activeAlerts,
-          healthScore
+          healthScore,
         };
       },
       { sessionId }
@@ -297,16 +310,21 @@ export class SessionMonitoringService extends BaseApplicationService {
    * @param resolved 是否已解决
    * @returns 告警列表
    */
-  async getSessionAlerts(sessionId: string, resolved?: boolean): Promise<Array<{
-    id: string;
-    threadId: string;
-    type: string;
-    severity: string;
-    message: string;
-    timestamp: string;
-    resolved: boolean;
-    resolvedAt?: string;
-  }>> {
+  async getSessionAlerts(
+    sessionId: string,
+    resolved?: boolean
+  ): Promise<
+    Array<{
+      id: string;
+      threadId: string;
+      type: string;
+      severity: string;
+      message: string;
+      timestamp: string;
+      resolved: boolean;
+      resolvedAt?: string;
+    }>
+  > {
     const result = await this.executeGetOperation(
       '会话告警',
       async () => {
@@ -334,23 +352,30 @@ export class SessionMonitoringService extends BaseApplicationService {
         for (const thread of threads) {
           try {
             const alerts = await this.monitoringService.getAlerts(thread.id.toString(), resolved);
-            allAlerts.push(...alerts.map(alert => ({
-              id: alert.id,
-              threadId: thread.id.toString(),
-              type: alert.type,
-              severity: alert.severity,
-              message: alert.message,
-              timestamp: alert.timestamp.toISOString(),
-              resolved: alert.resolved,
-              resolvedAt: alert.resolvedAt?.toISOString()
-            })));
+            allAlerts.push(
+              ...alerts.map(alert => ({
+                id: alert.id,
+                threadId: thread.id.toString(),
+                type: alert.type,
+                severity: alert.severity,
+                message: alert.message,
+                timestamp: alert.timestamp.toISOString(),
+                resolved: alert.resolved,
+                resolvedAt: alert.resolvedAt?.toISOString(),
+              }))
+            );
           } catch (error) {
-            this.logger.warn('获取线程告警失败', error instanceof Error ? error : new Error(String(error)));
+            this.logger.warn(
+              '获取线程告警失败',
+              error instanceof Error ? error : new Error(String(error))
+            );
           }
         }
 
         // 按时间排序
-        return allAlerts.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
+        return allAlerts.sort(
+          (a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
+        );
       },
       { sessionId, resolved }
     );
@@ -363,15 +388,17 @@ export class SessionMonitoringService extends BaseApplicationService {
    * @param sessionId 会话ID
    * @returns 线程列表
    */
-  async getSessionThreads(sessionId: string): Promise<Array<{
-    threadId: string;
-    workflowId: string;
-    status: string;
-    progress: number;
-    startedAt?: string;
-    completedAt?: string;
-    errorMessage?: string;
-  }>> {
+  async getSessionThreads(sessionId: string): Promise<
+    Array<{
+      threadId: string;
+      workflowId: string;
+      status: string;
+      progress: number;
+      startedAt?: string;
+      completedAt?: string;
+      errorMessage?: string;
+    }>
+  > {
     const result = await this.executeGetOperation(
       '会话线程列表',
       async () => {
@@ -392,7 +419,7 @@ export class SessionMonitoringService extends BaseApplicationService {
           progress: thread.execution.progress,
           startedAt: thread.execution.startedAt?.toISOString(),
           completedAt: thread.execution.completedAt?.toISOString(),
-          errorMessage: thread.execution.errorMessage
+          errorMessage: thread.execution.errorMessage,
         }));
       },
       { sessionId }
@@ -410,12 +437,14 @@ export class SessionMonitoringService extends BaseApplicationService {
   async getSessionResourceTrend(
     sessionId: string,
     timeRange?: { start: Timestamp; end: Timestamp }
-  ): Promise<Array<{
-    timestamp: string;
-    memoryUsage: number;
-    cpuUsage: number;
-    activeThreads: number;
-  }>> {
+  ): Promise<
+    Array<{
+      timestamp: string;
+      memoryUsage: number;
+      cpuUsage: number;
+      activeThreads: number;
+    }>
+  > {
     const result = await this.executeGetOperation(
       '会话资源使用趋势',
       async () => {
@@ -430,11 +459,17 @@ export class SessionMonitoringService extends BaseApplicationService {
         const threads = await this.threadRepository.findActiveThreadsForSession(id);
 
         // 收集所有线程的资源指标
-        const allResourceMetrics: Map<string, { timestamp: string; memoryUsage: number; cpuUsage: number }> = new Map();
+        const allResourceMetrics: Map<
+          string,
+          { timestamp: string; memoryUsage: number; cpuUsage: number }
+        > = new Map();
 
         for (const thread of threads) {
           try {
-            const resourceMetrics = await this.monitoringService.getResourceMetrics(thread.id.toString(), timeRange);
+            const resourceMetrics = await this.monitoringService.getResourceMetrics(
+              thread.id.toString(),
+              timeRange
+            );
             for (const metric of resourceMetrics) {
               const timestamp = metric.timestamp.toISOString();
               const existing = allResourceMetrics.get(timestamp);
@@ -445,23 +480,27 @@ export class SessionMonitoringService extends BaseApplicationService {
                 allResourceMetrics.set(timestamp, {
                   timestamp,
                   memoryUsage: metric.memoryUsage,
-                  cpuUsage: metric.cpuUsage
+                  cpuUsage: metric.cpuUsage,
                 });
               }
             }
           } catch (error) {
-            this.logger.warn('获取线程资源指标失败', error instanceof Error ? error : new Error(String(error)));
+            this.logger.warn(
+              '获取线程资源指标失败',
+              error instanceof Error ? error : new Error(String(error))
+            );
           }
         }
 
         // 转换为数组并按时间排序
-        const trend = Array.from(allResourceMetrics.values())
-          .sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
+        const trend = Array.from(allResourceMetrics.values()).sort(
+          (a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
+        );
 
         // 添加活跃线程数
         const result = trend.map(point => ({
           ...point,
-          activeThreads: threads.filter((t: Thread) => t.status.isActive()).length
+          activeThreads: threads.filter((t: Thread) => t.status.isActive()).length,
         }));
         return result;
       },

@@ -26,6 +26,6 @@ export const databaseConfigSchema = {
     password: { type: 'string' },
     database: { type: 'string' },
     synchronize: { type: 'boolean' },
-    logging: { type: 'boolean' }
-  }
+    logging: { type: 'boolean' },
+  },
 };

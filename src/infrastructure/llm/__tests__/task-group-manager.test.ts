@@ -23,7 +23,7 @@ describe('任务组管理器测试', () => {
       processors: [],
       validators: [],
       config: {},
-      eventEmitter: undefined as any
+      eventEmitter: undefined as any,
     } as any;
 
     taskGroupManager = new TaskGroupManager(mockConfigManager);
@@ -33,12 +33,12 @@ describe('任务组管理器测试', () => {
     test('应该获取任务组的所有模型', async () => {
       const mockConfig = {
         taskGroups: {
-          'fast_group': {
+          fast_group: {
             echelons: {
-              'echelon1': { priority: 1, models: ['openai:gpt-4o'] }
-            }
-          }
-        }
+              echelon1: { priority: 1, models: ['openai:gpt-4o'] },
+            },
+          },
+        },
       };
 
       mockConfigManager.get.mockReturnValue(mockConfig);
@@ -52,13 +52,13 @@ describe('任务组管理器测试', () => {
     test('应该获取特定层级的模型', async () => {
       const mockConfig = {
         taskGroups: {
-          'fast_group': {
+          fast_group: {
             echelons: {
-              'echelon1': { priority: 1, models: ['openai:gpt-4o'] },
-              'echelon2': { priority: 2, models: ['openai:gpt-4o-mini'] }
-            }
-          }
-        }
+              echelon1: { priority: 1, models: ['openai:gpt-4o'] },
+              echelon2: { priority: 2, models: ['openai:gpt-4o-mini'] },
+            },
+          },
+        },
       };
 
       mockConfigManager.get.mockReturnValue(mockConfig);
@@ -97,14 +97,14 @@ describe('任务组管理器测试', () => {
     test('应该返回降级组', async () => {
       const mockConfig = {
         taskGroups: {
-          'fast_group': {
+          fast_group: {
             fallbackStrategy: 'echelon_down',
             echelons: {
-              'echelon1': { priority: 1, models: ['openai:gpt-4o'] },
-              'echelon2': { priority: 2, models: ['openai:gpt-4o-mini'] }
-            }
-          }
-        }
+              echelon1: { priority: 1, models: ['openai:gpt-4o'] },
+              echelon2: { priority: 2, models: ['openai:gpt-4o-mini'] },
+            },
+          },
+        },
       };
 
       mockConfigManager.get.mockReturnValue(mockConfig);
@@ -127,12 +127,12 @@ describe('任务组管理器测试', () => {
     test('应该获取层级配置', async () => {
       const mockConfig = {
         taskGroups: {
-          'test_group': {
+          test_group: {
             echelons: {
-              'echelon1': { priority: 1, models: ['openai:gpt-4o'] }
-            }
-          }
-        }
+              echelon1: { priority: 1, models: ['openai:gpt-4o'] },
+            },
+          },
+        },
       };
 
       mockConfigManager.get.mockReturnValue(mockConfig);
@@ -145,10 +145,10 @@ describe('任务组管理器测试', () => {
     test('应该返回null当层级不存在', async () => {
       const mockConfig = {
         taskGroups: {
-          'test_group': {
-            echelons: {}
-          }
-        }
+          test_group: {
+            echelons: {},
+          },
+        },
       };
 
       mockConfigManager.get.mockReturnValue(mockConfig);
@@ -163,13 +163,13 @@ describe('任务组管理器测试', () => {
     test('应该按优先级返回模型列表', async () => {
       const mockConfig = {
         taskGroups: {
-          'test_group': {
+          test_group: {
             echelons: {
-              'echelon2': { priority: 2, models: ['openai:gpt-4o-mini'] },
-              'echelon1': { priority: 1, models: ['openai:gpt-4o'] }
-            }
-          }
-        }
+              echelon2: { priority: 2, models: ['openai:gpt-4o-mini'] },
+              echelon1: { priority: 1, models: ['openai:gpt-4o'] },
+            },
+          },
+        },
       };
 
       mockConfigManager.get.mockReturnValue(mockConfig);
@@ -194,10 +194,10 @@ describe('任务组管理器测试', () => {
     test('应该列出所有任务组名称', async () => {
       const mockConfig = {
         taskGroups: {
-          'group1': {},
-          'group2': {},
-          'group3': {}
-        }
+          group1: {},
+          group2: {},
+          group3: {},
+        },
       };
 
       mockConfigManager.get.mockReturnValue(mockConfig);
@@ -223,12 +223,12 @@ describe('任务组管理器测试', () => {
     test('应该验证有效的组引用', async () => {
       const mockConfig = {
         taskGroups: {
-          'test_group': {
+          test_group: {
             echelons: {
-              'echelon1': { priority: 1, models: ['openai:gpt-4o'] }
-            }
-          }
-        }
+              echelon1: { priority: 1, models: ['openai:gpt-4o'] },
+            },
+          },
+        },
       };
 
       mockConfigManager.get.mockReturnValue(mockConfig);
@@ -249,10 +249,10 @@ describe('任务组管理器测试', () => {
     test('应该验证只有组名的引用', async () => {
       const mockConfig = {
         taskGroups: {
-          'test_group': {
-            echelons: {}
-          }
-        }
+          test_group: {
+            echelons: {},
+          },
+        },
       };
 
       mockConfigManager.get.mockReturnValue(mockConfig);
@@ -267,18 +267,18 @@ describe('任务组管理器测试', () => {
     test('应该获取任务组的降级配置', async () => {
       const mockConfig = {
         taskGroups: {
-          'test_group': {
+          test_group: {
             fallbackConfig: {
               strategy: 'echelon_down',
               maxAttempts: 3,
-              retryDelay: 1.0
+              retryDelay: 1.0,
             },
             echelons: {
-              'echelon1': { priority: 1, models: ['openai:gpt-4o'] },
-              'echelon2': { priority: 2, models: ['openai:gpt-4o-mini'] }
-            }
-          }
-        }
+              echelon1: { priority: 1, models: ['openai:gpt-4o'] },
+              echelon2: { priority: 2, models: ['openai:gpt-4o-mini'] },
+            },
+          },
+        },
       };
 
       mockConfigManager.get.mockReturnValue(mockConfig);
@@ -293,13 +293,13 @@ describe('任务组管理器测试', () => {
     test('应该返回默认降级配置', async () => {
       const mockConfig = {
         taskGroups: {
-          'test_group': {
+          test_group: {
             fallbackStrategy: 'echelon_down',
             echelons: {
-              'echelon1': { priority: 1, models: ['openai:gpt-4o'] }
-            }
-          }
-        }
+              echelon1: { priority: 1, models: ['openai:gpt-4o'] },
+            },
+          },
+        },
       };
 
       mockConfigManager.get.mockReturnValue(mockConfig);
@@ -316,13 +316,13 @@ describe('任务组管理器测试', () => {
     test('应该获取任务组状态', async () => {
       const mockConfig = {
         taskGroups: {
-          'test_group': {
+          test_group: {
             echelons: {
-              'echelon1': { priority: 1, models: ['openai:gpt-4o'] },
-              'echelon2': { priority: 2, models: ['openai:gpt-4o-mini'] }
-            }
-          }
-        }
+              echelon1: { priority: 1, models: ['openai:gpt-4o'] },
+              echelon2: { priority: 2, models: ['openai:gpt-4o-mini'] },
+            },
+          },
+        },
       };
 
       mockConfigManager.get.mockReturnValue(mockConfig);
@@ -338,10 +338,10 @@ describe('任务组管理器测试', () => {
     test('应该返回未激活的状态当没有层级', async () => {
       const mockConfig = {
         taskGroups: {
-          'test_group': {
-            echelons: {}
-          }
-        }
+          test_group: {
+            echelons: {},
+          },
+        },
       };
 
       mockConfigManager.get.mockReturnValue(mockConfig);
@@ -357,17 +357,17 @@ describe('任务组管理器测试', () => {
     test('应该获取所有任务组的状态', async () => {
       const mockConfig = {
         taskGroups: {
-          'group1': {
+          group1: {
             echelons: {
-              'echelon1': { priority: 1, models: ['openai:gpt-4o'] }
-            }
+              echelon1: { priority: 1, models: ['openai:gpt-4o'] },
+            },
           },
-          'group2': {
+          group2: {
             echelons: {
-              'echelon1': { priority: 1, models: ['openai:gpt-4o-mini'] }
-            }
-          }
-        }
+              echelon1: { priority: 1, models: ['openai:gpt-4o-mini'] },
+            },
+          },
+        },
       };
 
       mockConfigManager.get.mockReturnValue(mockConfig);
@@ -393,15 +393,15 @@ describe('任务组管理器测试', () => {
     test('应该获取配置状态', async () => {
       const mockConfig = {
         taskGroups: {
-          'group1': {},
-          'group2': {}
+          group1: {},
+          group2: {},
         },
         pollingPools: {
-          'pool1': {}
+          pool1: {},
         },
         globalFallback: {
-          strategy: 'default'
-        }
+          strategy: 'default',
+        },
       };
 
       mockConfigManager.get.mockReturnValue(mockConfig);

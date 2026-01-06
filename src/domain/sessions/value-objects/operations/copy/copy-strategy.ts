@@ -19,7 +19,7 @@ export interface CopyStrategyValidationResult {
 
 /**
  * Copy策略值对象
- * 
+ *
  * 定义Copy操作的策略，包括复制范围和状态处理
  */
 export class CopyStrategy extends ValueObject<{
@@ -55,7 +55,7 @@ export class CopyStrategy extends ValueObject<{
       type,
       includeExecutionHistory,
       includeMetadata,
-      resetState
+      resetState,
     });
   }
 
@@ -68,7 +68,7 @@ export class CopyStrategy extends ValueObject<{
       type: 'full',
       includeExecutionHistory: true,
       includeMetadata: true,
-      resetState: false
+      resetState: false,
     });
   }
 
@@ -81,7 +81,7 @@ export class CopyStrategy extends ValueObject<{
       type: 'partial',
       includeExecutionHistory: false,
       includeMetadata: false,
-      resetState: true
+      resetState: true,
     });
   }
 
@@ -94,7 +94,7 @@ export class CopyStrategy extends ValueObject<{
       type: 'selective',
       includeExecutionHistory: true,
       includeMetadata: true,
-      resetState: false
+      resetState: false,
     });
   }
 
@@ -154,7 +154,7 @@ export class CopyStrategy extends ValueObject<{
     return {
       valid: errors.length === 0,
       errors,
-      warnings
+      warnings,
     };
   }
 
@@ -164,10 +164,7 @@ export class CopyStrategy extends ValueObject<{
    * @param selectedNodeIds 选中的节点ID列表（可选）
    * @returns Copy范围
    */
-  public calculateCopyScope(
-    thread: Thread,
-    selectedNodeIds?: NodeId[]
-  ): CopyScope {
+  public calculateCopyScope(thread: Thread, selectedNodeIds?: NodeId[]): CopyScope {
     let nodeIds: NodeId[];
     let includeVariables: boolean;
     let includeNodeStates: boolean;
@@ -177,7 +174,7 @@ export class CopyStrategy extends ValueObject<{
       case 'full':
         // 复制所有节点
         nodeIds = Array.from(thread.execution.nodeExecutions.keys()).map(
-          id => ({ toString: () => id } as NodeId)
+          id => ({ toString: () => id }) as NodeId
         );
         includeVariables = true;
         includeNodeStates = !this.props.resetState;
@@ -212,12 +209,7 @@ export class CopyStrategy extends ValueObject<{
         includeContext = false;
     }
 
-    return CopyScope.create(
-      nodeIds,
-      includeVariables,
-      includeNodeStates,
-      includeContext
-    );
+    return CopyScope.create(nodeIds, includeVariables, includeNodeStates, includeContext);
   }
 
   /**

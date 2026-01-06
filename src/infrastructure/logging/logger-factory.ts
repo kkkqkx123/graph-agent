@@ -90,7 +90,7 @@ export class LoggerFactory {
         level: 'DEBUG' as any,
         format: 'TEXT' as any,
         colorize: true,
-        timestamp: true
+        timestamp: true,
       })
       .addFileOutput({
         level: 'DEBUG' as any,
@@ -98,7 +98,7 @@ export class LoggerFactory {
         path: 'logs/dev.log',
         rotation: 'daily' as any,
         max_size: '50MB',
-        max_files: 3
+        max_files: 3,
       })
       .build();
 
@@ -115,7 +115,7 @@ export class LoggerFactory {
         level: 'WARN' as any,
         format: 'JSON' as any,
         colorize: false,
-        timestamp: true
+        timestamp: true,
       })
       .addFileOutput({
         level: 'INFO' as any,
@@ -124,7 +124,7 @@ export class LoggerFactory {
         rotation: 'daily' as any,
         max_size: '100MB',
         max_files: 30,
-        compress: true
+        compress: true,
       })
       .build();
 
@@ -141,7 +141,7 @@ export class LoggerFactory {
         level: 'ERROR' as any,
         format: 'TEXT' as any,
         colorize: false,
-        timestamp: false
+        timestamp: false,
       })
       .build();
 
@@ -168,14 +168,14 @@ export class LoggerFactory {
           builder.addConsoleOutput({
             level: level as any,
             format: output.format,
-            ...output.config
+            ...output.config,
           });
           break;
         case LogOutputType.FILE:
           builder.addFileOutput({
             level: level as any,
             format: output.format,
-            ...output.config
+            ...output.config,
           });
           break;
         default:

@@ -114,7 +114,7 @@ export class ConditionalRouter {
     for (const edge of edges) {
       const evaluation = await this.evaluateEdgeWithLogging(edge, context);
       evaluations.push(evaluation.details);
-      
+
       if (evaluation.matched) {
         const routingResult: RoutingResult = {
           targetNodeId: edge.toNodeId.value,
@@ -124,8 +124,8 @@ export class ConditionalRouter {
             edgeType: edge.type.value,
             edgeWeight: edge.weight,
             evaluatedAt: Date.now(),
-            evaluationDetails: evaluation.details
-          }
+            evaluationDetails: evaluation.details,
+          },
         };
 
         // 记录路由历史
@@ -135,7 +135,9 @@ export class ConditionalRouter {
 
         // 记录决策日志
         if (options.verboseLogging) {
-          this.recordDecisionLog(state.workflowId.value, state.currentNodeId?.value, evaluations, [routingResult]);
+          this.recordDecisionLog(state.workflowId.value, state.currentNodeId?.value, evaluations, [
+            routingResult,
+          ]);
         }
 
         return routingResult;
@@ -153,8 +155,8 @@ export class ConditionalRouter {
           metadata: {
             edgeType: defaultEdge.type.value,
             isDefault: true,
-            evaluatedAt: Date.now()
-          }
+            evaluatedAt: Date.now(),
+          },
         };
 
         if (options.recordHistory) {
@@ -162,7 +164,9 @@ export class ConditionalRouter {
         }
 
         if (options.verboseLogging) {
-          this.recordDecisionLog(state.workflowId.value, state.currentNodeId?.value, evaluations, [routingResult]);
+          this.recordDecisionLog(state.workflowId.value, state.currentNodeId?.value, evaluations, [
+            routingResult,
+          ]);
         }
 
         return routingResult;
@@ -196,7 +200,7 @@ export class ConditionalRouter {
     for (const edge of edges) {
       const evaluation = await this.evaluateEdgeWithLogging(edge, context);
       evaluations.push(evaluation.details);
-      
+
       if (evaluation.matched) {
         const routingResult: RoutingResult = {
           targetNodeId: edge.toNodeId.value,
@@ -206,8 +210,8 @@ export class ConditionalRouter {
             edgeType: edge.type.value,
             edgeWeight: edge.weight,
             evaluatedAt: Date.now(),
-            evaluationDetails: evaluation.details
-          }
+            evaluationDetails: evaluation.details,
+          },
         };
 
         results.push(routingResult);
@@ -223,7 +227,12 @@ export class ConditionalRouter {
 
     // 记录决策日志
     if (options.verboseLogging) {
-      this.recordDecisionLog(state.workflowId.value, state.currentNodeId?.value, evaluations, results);
+      this.recordDecisionLog(
+        state.workflowId.value,
+        state.currentNodeId?.value,
+        evaluations,
+        results
+      );
     }
 
     return results;
@@ -277,7 +286,7 @@ export class ConditionalRouter {
     if (evaluationResult.success) {
       return {
         matched: Boolean(evaluationResult.value),
-        conditionResult: Boolean(evaluationResult.value)
+        conditionResult: Boolean(evaluationResult.value),
       };
     }
 
@@ -300,9 +309,9 @@ export class ConditionalRouter {
       state: {
         ...state.data,
         currentNodeId: state.currentNodeId?.value,
-        workflowId: state.workflowId.value
+        workflowId: state.workflowId.value,
       },
-      ...customContext
+      ...customContext,
     };
   }
 
@@ -340,10 +349,10 @@ export class ConditionalRouter {
     details: EdgeEvaluationDetails;
   }> {
     const startTime = Date.now();
-    
+
     try {
       const result = await this.evaluateEdge(edge, context);
-      
+
       return {
         ...result,
         details: {
@@ -351,8 +360,8 @@ export class ConditionalRouter {
           edgeType: edge.type.toString(),
           condition: edge.condition,
           evaluationTime: Date.now() - startTime,
-          timestamp: new Date().toISOString()
-        }
+          timestamp: new Date().toISOString(),
+        },
       };
     } catch (error) {
       return {
@@ -363,8 +372,8 @@ export class ConditionalRouter {
           condition: edge.condition,
           evaluationTime: Date.now() - startTime,
           timestamp: new Date().toISOString(),
-          error: error instanceof Error ? error.message : String(error)
-        }
+          error: error instanceof Error ? error.message : String(error),
+        },
       };
     }
   }
@@ -394,7 +403,7 @@ export class ConditionalRouter {
       matchedEdgesCount: selectedRoutes.length,
       evaluations,
       selectedRoutes,
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
     };
 
     logs.push(log);

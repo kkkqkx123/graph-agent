@@ -15,7 +15,7 @@ export enum EdgeContextFilterType {
   /** 条件传递 */
   CONDITIONAL = 'conditional',
   /** 转换传递 */
-  TRANSFORM = 'transform'
+  TRANSFORM = 'transform',
 }
 
 /**
@@ -73,7 +73,7 @@ export class EdgeContextFilter extends ValueObject<EdgeContextFilterProps> {
    */
   public static passAll(): EdgeContextFilter {
     return new EdgeContextFilter({
-      type: EdgeContextFilterType.PASS_ALL
+      type: EdgeContextFilterType.PASS_ALL,
     });
   }
 
@@ -83,7 +83,7 @@ export class EdgeContextFilter extends ValueObject<EdgeContextFilterProps> {
    */
   public static passNone(): EdgeContextFilter {
     return new EdgeContextFilter({
-      type: EdgeContextFilterType.PASS_NONE
+      type: EdgeContextFilterType.PASS_NONE,
     });
   }
 
@@ -100,7 +100,7 @@ export class EdgeContextFilter extends ValueObject<EdgeContextFilterProps> {
     return new EdgeContextFilter({
       type: EdgeContextFilterType.SELECTIVE,
       includePatterns,
-      excludePatterns
+      excludePatterns,
     });
   }
 
@@ -120,7 +120,7 @@ export class EdgeContextFilter extends ValueObject<EdgeContextFilterProps> {
       type: EdgeContextFilterType.CONDITIONAL,
       condition,
       includePatterns,
-      excludePatterns
+      excludePatterns,
     });
   }
 
@@ -132,7 +132,7 @@ export class EdgeContextFilter extends ValueObject<EdgeContextFilterProps> {
   public static transform(transformRules: TransformRule[]): EdgeContextFilter {
     return new EdgeContextFilter({
       type: EdgeContextFilterType.TRANSFORM,
-      transformRules
+      transformRules,
     });
   }
 
@@ -147,12 +147,7 @@ export class EdgeContextFilter extends ValueObject<EdgeContextFilterProps> {
         return context.clone();
 
       case EdgeContextFilterType.PASS_NONE:
-        return PromptContext.create(
-          context.template,
-          new Map(),
-          [],
-          {}
-        );
+        return PromptContext.create(context.template, new Map(), [], {});
 
       case EdgeContextFilterType.SELECTIVE:
         return this.applySelectiveFilter(context);
@@ -185,7 +180,11 @@ export class EdgeContextFilter extends ValueObject<EdgeContextFilterProps> {
 
     // 应用排除模式
     if (this.props.excludePatterns && this.props.excludePatterns.length > 0) {
-      filteredVariables = this.filterVariables(filteredVariables, this.props.excludePatterns, false);
+      filteredVariables = this.filterVariables(
+        filteredVariables,
+        this.props.excludePatterns,
+        false
+      );
       filteredHistory = this.filterHistory(filteredHistory, this.props.excludePatterns, false);
       filteredMetadata = this.filterMetadata(filteredMetadata, this.props.excludePatterns, false);
     }
@@ -205,12 +204,7 @@ export class EdgeContextFilter extends ValueObject<EdgeContextFilterProps> {
     // 评估条件表达式
     if (this.props.condition && !this.evaluateCondition(this.props.condition, context)) {
       // 条件不满足，返回空上下文
-      return PromptContext.create(
-        context.template,
-        new Map(),
-        [],
-        {}
-      );
+      return PromptContext.create(context.template, new Map(), [], {});
     }
 
     // 条件满足，应用选择性过滤
@@ -291,7 +285,11 @@ export class EdgeContextFilter extends ValueObject<EdgeContextFilterProps> {
   /**
    * 过滤元数据
    */
-  private filterMetadata(metadata: Record<string, unknown>, patterns: string[], include: boolean): Record<string, unknown> {
+  private filterMetadata(
+    metadata: Record<string, unknown>,
+    patterns: string[],
+    include: boolean
+  ): Record<string, unknown> {
     const result: Record<string, unknown> = {};
     const regexes = patterns.map(p => this.patternToRegex(p));
 
@@ -348,8 +346,8 @@ export class EdgeContextFilter extends ValueObject<EdgeContextFilterProps> {
           nodeId: entry.nodeId.replace(sourceRegex, targetPattern),
           metadata: {
             ...entry.metadata,
-            transformed: transform
-          }
+            transformed: transform,
+          },
         };
       }
       return entry;
@@ -428,7 +426,7 @@ export class EdgeContextFilter extends ValueObject<EdgeContextFilterProps> {
         if (!this.props.includePatterns || this.props.includePatterns.length === 0) {
           return {
             isValid: false,
-            message: 'SELECTIVE类型过滤器必须指定包含模式'
+            message: 'SELECTIVE类型过滤器必须指定包含模式',
           };
         }
         break;
@@ -437,7 +435,7 @@ export class EdgeContextFilter extends ValueObject<EdgeContextFilterProps> {
         if (!this.props.condition) {
           return {
             isValid: false,
-            message: 'CONDITIONAL类型过滤器必须指定条件表达式'
+            message: 'CONDITIONAL类型过滤器必须指定条件表达式',
           };
         }
         break;
@@ -446,14 +444,14 @@ export class EdgeContextFilter extends ValueObject<EdgeContextFilterProps> {
         if (!this.props.transformRules || this.props.transformRules.length === 0) {
           return {
             isValid: false,
-            message: 'TRANSFORM类型过滤器必须指定转换规则'
+            message: 'TRANSFORM类型过滤器必须指定转换规则',
           };
         }
         break;
     }
 
     return {
-      isValid: true
+      isValid: true,
     };
   }
 

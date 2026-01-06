@@ -16,20 +16,23 @@ const GeminiNativeEndpointConfigSchema = BaseEndpointConfigSchema.extend({
   /**
    * 基础 URL
    */
-  baseURL: z.string().refine(
-    (url) => url.includes('generativelanguage.googleapis.com'),
-    { message: 'Gemini native API should use generativelanguage.googleapis.com' }
-  ),
+  baseURL: z
+    .string()
+    .refine(url => url.includes('generativelanguage.googleapis.com'), {
+      message: 'Gemini native API should use generativelanguage.googleapis.com',
+    }),
 
   /**
    * 额外配置
    */
-  extraConfig: z.object({
-    /**
-     * API 版本
-     */
-    apiVersion: z.string().optional()
-  }).optional()
+  extraConfig: z
+    .object({
+      /**
+       * API 版本
+       */
+      apiVersion: z.string().optional(),
+    })
+    .optional(),
 });
 
 /**
@@ -52,7 +55,12 @@ export class GeminiNativeEndpointStrategy extends BaseEndpointStrategy {
    */
   buildEndpoint(config: ProviderConfig, request: ProviderRequest): string {
     // Gemini 原生 API 需要在 URL 中包含 API 密钥和模型名称
-    const endpoint = this.buildPath(config.baseURL, 'v1beta', 'models', `${request['model']}:generateContent`);
+    const endpoint = this.buildPath(
+      config.baseURL,
+      'v1beta',
+      'models',
+      `${request['model']}:generateContent`
+    );
     return this.addQueryParams(endpoint, { key: config.apiKey });
   }
 

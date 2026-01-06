@@ -80,7 +80,7 @@ export abstract class BaseFormatter implements ILoggerFormatter {
       [LogLevelUtils.getAllLevels()[2] as string]: '\x1b[92m', // 绿色
       [LogLevelUtils.getAllLevels()[3] as string]: '\x1b[93m', // 黄色
       [LogLevelUtils.getAllLevels()[4] as string]: '\x1b[91m', // 红色
-      [LogLevelUtils.getHighestLevel() as string]: '\x1b[95m'  // 紫色
+      [LogLevelUtils.getHighestLevel() as string]: '\x1b[95m', // 紫色
     };
 
     return colors[level] || '\x1b[0m';

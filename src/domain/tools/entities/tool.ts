@@ -19,14 +19,17 @@ export interface ToolProps {
   readonly config: StateData;
   readonly parameters: {
     type: 'object';
-    properties: Record<string, {
-      type: string;
-      description?: string;
-      enum?: string[];
-      items?: any;
-      properties?: Record<string, any>;
-      required?: string[];
-    }>;
+    properties: Record<
+      string,
+      {
+        type: string;
+        description?: string;
+        enum?: string[];
+        items?: any;
+        properties?: Record<string, any>;
+        required?: string[];
+      }
+    >;
     required: string[];
   };
   readonly returns?: {
@@ -95,14 +98,17 @@ export class Tool extends Entity {
     config: Record<string, unknown>,
     parameters: {
       type: 'object';
-      properties: Record<string, {
-        type: string;
-        description?: string;
-        enum?: string[];
-        items?: any;
-        properties?: Record<string, any>;
-        required?: string[];
-      }>;
+      properties: Record<
+        string,
+        {
+          type: string;
+          description?: string;
+          enum?: string[];
+          items?: any;
+          properties?: Record<string, any>;
+          required?: string[];
+        }
+      >;
       required: string[];
     },
     returns?: {
@@ -138,7 +144,7 @@ export class Tool extends Entity {
       maxRetries: 3,
       permissions: [],
       dependencies: [],
-      deletionStatus: DeletionStatus.active()
+      deletionStatus: DeletionStatus.active(),
     };
 
     return new Tool(props);
@@ -209,14 +215,17 @@ export class Tool extends Entity {
    */
   public get parameters(): {
     type: 'object';
-    properties: Record<string, {
-      type: string;
-      description?: string;
-      enum?: string[];
-      items?: any;
-      properties?: Record<string, any>;
-      required?: string[];
-    }>;
+    properties: Record<
+      string,
+      {
+        type: string;
+        description?: string;
+        enum?: string[];
+        items?: any;
+        properties?: Record<string, any>;
+        required?: string[];
+      }
+    >;
     required: string[];
   } {
     return this.props.parameters;
@@ -226,12 +235,14 @@ export class Tool extends Entity {
    * 获取工具返回值定义
    * @returns 工具返回值定义
    */
-  public get returns(): {
-    type: string;
-    description?: string;
-    properties?: Record<string, any>;
-    items?: any;
-  } | undefined {
+  public get returns():
+    | {
+        type: string;
+        description?: string;
+        properties?: Record<string, any>;
+        items?: any;
+      }
+    | undefined {
     return this.props.returns;
   }
 
@@ -356,14 +367,17 @@ export class Tool extends Entity {
     config?: Record<string, unknown>,
     parameters?: {
       type: 'object';
-      properties: Record<string, {
-        type: string;
-        description?: string;
-        enum?: string[];
-        items?: any;
-        properties?: Record<string, any>;
-        required?: string[];
-      }>;
+      properties: Record<
+        string,
+        {
+          type: string;
+          description?: string;
+          enum?: string[];
+          items?: any;
+          properties?: Record<string, any>;
+          required?: string[];
+        }
+      >;
       required: string[];
     },
     returns?: {
@@ -385,7 +399,7 @@ export class Tool extends Entity {
       returns: returns !== undefined ? returns : this.props.returns,
       metadata: metadata ? Metadata.create(metadata) : this.props.metadata,
       updatedAt: Timestamp.now(),
-      version: this.props.version.nextPatch()
+      version: this.props.version.nextPatch(),
     };
 
     return new Tool(newProps);
@@ -402,7 +416,7 @@ export class Tool extends Entity {
       ...this.props,
       status,
       updatedAt: Timestamp.now(),
-      version: this.props.version.nextPatch()
+      version: this.props.version.nextPatch(),
     };
 
     return new Tool(newProps);
@@ -418,7 +432,7 @@ export class Tool extends Entity {
       ...this.props,
       isEnabled: true,
       updatedAt: Timestamp.now(),
-      version: this.props.version.nextPatch()
+      version: this.props.version.nextPatch(),
     };
 
     return new Tool(newProps);
@@ -434,7 +448,7 @@ export class Tool extends Entity {
       ...this.props,
       isEnabled: false,
       updatedAt: Timestamp.now(),
-      version: this.props.version.nextPatch()
+      version: this.props.version.nextPatch(),
     };
 
     return new Tool(newProps);
@@ -451,7 +465,7 @@ export class Tool extends Entity {
       ...this.props,
       tags: this.props.tags.add(tag),
       updatedAt: Timestamp.now(),
-      version: this.props.version.nextPatch()
+      version: this.props.version.nextPatch(),
     };
 
     return new Tool(newProps);
@@ -468,7 +482,7 @@ export class Tool extends Entity {
       ...this.props,
       tags: this.props.tags.remove(tag),
       updatedAt: Timestamp.now(),
-      version: this.props.version.nextPatch()
+      version: this.props.version.nextPatch(),
     };
 
     return new Tool(newProps);
@@ -485,7 +499,7 @@ export class Tool extends Entity {
       ...this.props,
       category,
       updatedAt: Timestamp.now(),
-      version: this.props.version.nextPatch()
+      version: this.props.version.nextPatch(),
     };
 
     return new Tool(newProps);
@@ -506,7 +520,7 @@ export class Tool extends Entity {
       ...this.props,
       dependencies: [...this.props.dependencies, dependency],
       updatedAt: Timestamp.now(),
-      version: this.props.version.nextPatch()
+      version: this.props.version.nextPatch(),
     };
 
     return new Tool(newProps);
@@ -520,7 +534,7 @@ export class Tool extends Entity {
     this.props.deletionStatus.ensureActive();
 
     const newDependencies = this.props.dependencies.filter(d => !d.equals(dependency));
-    
+
     if (newDependencies.length === this.props.dependencies.length) {
       return this;
     }
@@ -529,7 +543,7 @@ export class Tool extends Entity {
       ...this.props,
       dependencies: newDependencies,
       updatedAt: Timestamp.now(),
-      version: this.props.version.nextPatch()
+      version: this.props.version.nextPatch(),
     };
 
     return new Tool(newProps);
@@ -546,7 +560,7 @@ export class Tool extends Entity {
       ...this.props,
       metadata: Metadata.create(metadata),
       updatedAt: Timestamp.now(),
-      version: this.props.version.nextPatch()
+      version: this.props.version.nextPatch(),
     };
 
     return new Tool(newProps);
@@ -560,7 +574,7 @@ export class Tool extends Entity {
       ...this.props,
       deletionStatus: this.props.deletionStatus.markAsDeleted(),
       updatedAt: Timestamp.now(),
-      version: this.props.version.nextPatch()
+      version: this.props.version.nextPatch(),
     };
 
     return new Tool(newProps);

@@ -1,6 +1,16 @@
 import { NodeId } from '../../../domain/workflow/value-objects/node/node-id';
-import { NodeType, NodeTypeValue, NodeContextTypeValue } from '../../../domain/workflow/value-objects/node/node-type';
-import { Node, NodeExecutionResult, NodeMetadata, ValidationResult, WorkflowExecutionContext } from '../../../domain/workflow/entities/node';
+import {
+  NodeType,
+  NodeTypeValue,
+  NodeContextTypeValue,
+} from '../../../domain/workflow/value-objects/node/node-type';
+import {
+  Node,
+  NodeExecutionResult,
+  NodeMetadata,
+  ValidationResult,
+  WorkflowExecutionContext,
+} from '../../../domain/workflow/entities/node';
 import { TransformFunctionRegistry } from '../functions/nodes/data-transformer';
 
 /**
@@ -20,13 +30,7 @@ export class DataTransformNode extends Node {
     description?: string,
     position?: { x: number; y: number }
   ) {
-    super(
-      id,
-      NodeType.dataTransform(NodeContextTypeValue.TRANSFORM),
-      name,
-      description,
-      position
-    );
+    super(id, NodeType.dataTransform(NodeContextTypeValue.TRANSFORM), name, description, position);
   }
 
   async execute(context: WorkflowExecutionContext): Promise<NodeExecutionResult> {
@@ -38,8 +42,8 @@ export class DataTransformNode extends Node {
         error: `源数据变量 ${this.sourceData} 不存在`,
         metadata: {
           transformType: this.transformType,
-          sourceData: this.sourceData
-        }
+          sourceData: this.sourceData,
+        },
       };
     }
 
@@ -49,8 +53,8 @@ export class DataTransformNode extends Node {
         error: `源数据变量 ${this.sourceData} 必须是数组`,
         metadata: {
           transformType: this.transformType,
-          sourceData: this.sourceData
-        }
+          sourceData: this.sourceData,
+        },
       };
     }
 
@@ -63,8 +67,8 @@ export class DataTransformNode extends Node {
           error: `不支持的转换类型: ${this.transformType}`,
           metadata: {
             transformType: this.transformType,
-            sourceData: this.sourceData
-          }
+            sourceData: this.sourceData,
+          },
         };
       }
 
@@ -74,7 +78,7 @@ export class DataTransformNode extends Node {
       // 执行转换
       const result = await transformFunction.execute(context, {
         sourceData: data,
-        config: this.transformConfig
+        config: this.transformConfig,
       });
 
       // 存储转换结果
@@ -88,7 +92,7 @@ export class DataTransformNode extends Node {
         sourceCount: data.length,
         resultCount: Array.isArray(result) ? result.length : Object.keys(result).length,
         config: this.transformConfig,
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
       };
 
       // 存储转换结果信息
@@ -108,8 +112,8 @@ export class DataTransformNode extends Node {
           sourceData: this.sourceData,
           targetVariable: this.targetVariable,
           sourceCount: data.length,
-          resultCount: Array.isArray(result) ? result.length : Object.keys(result).length
-        }
+          resultCount: Array.isArray(result) ? result.length : Object.keys(result).length,
+        },
       };
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : String(error);
@@ -121,7 +125,7 @@ export class DataTransformNode extends Node {
         transformType: this.transformType,
         sourceData: this.sourceData,
         message: errorMessage,
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
       });
       context.setVariable('errors', errors);
 
@@ -131,8 +135,8 @@ export class DataTransformNode extends Node {
         executionTime: 0,
         metadata: {
           transformType: this.transformType,
-          sourceData: this.sourceData
-        }
+          sourceData: this.sourceData,
+        },
       };
     }
   }
@@ -161,7 +165,7 @@ export class DataTransformNode extends Node {
 
     return {
       valid: errors.length === 0,
-      errors
+      errors,
     };
   }
 
@@ -177,28 +181,28 @@ export class DataTransformNode extends Node {
           name: 'transformType',
           type: 'string',
           required: true,
-          description: '转换类型：map, filter, reduce, sort, group'
+          description: '转换类型：map, filter, reduce, sort, group',
         },
         {
           name: 'sourceData',
           type: 'string',
           required: true,
-          description: '源数据变量名'
+          description: '源数据变量名',
         },
         {
           name: 'targetVariable',
           type: 'string',
           required: true,
-          description: '目标变量名'
+          description: '目标变量名',
         },
         {
           name: 'transformConfig',
           type: 'object',
           required: false,
           description: '转换配置',
-          defaultValue: {}
-        }
-      ]
+          defaultValue: {},
+        },
+      ],
     };
   }
 
@@ -206,9 +210,9 @@ export class DataTransformNode extends Node {
     return {
       type: 'object',
       properties: {
-        input: { type: 'any', description: '任务输入' }
+        input: { type: 'any', description: '任务输入' },
       },
-      required: ['input']
+      required: ['input'],
     };
   }
 
@@ -216,8 +220,8 @@ export class DataTransformNode extends Node {
     return {
       type: 'object',
       properties: {
-        output: { type: 'any', description: '任务输出' }
-      }
+        output: { type: 'any', description: '任务输出' },
+      },
     };
   }
 

@@ -4,7 +4,7 @@ import {
   ValidationResult,
   FunctionMetadata,
   WorkflowExecutionContext,
-  ConditionFunctionConfig
+  ConditionFunctionConfig,
 } from '../types';
 import { WorkflowFunctionType } from '../../../../domain/workflow/value-objects/function-type';
 
@@ -12,8 +12,9 @@ import { WorkflowFunctionType } from '../../../../domain/workflow/value-objects/
  * 条件函数基类
  * 专门用于条件类型的函数，返回 boolean
  */
-export abstract class BaseConditionFunction<TConfig extends ConditionFunctionConfig = ConditionFunctionConfig>
-  implements IWorkflowFunction {
+export abstract class BaseConditionFunction<
+  TConfig extends ConditionFunctionConfig = ConditionFunctionConfig,
+> implements IWorkflowFunction {
   protected _initialized: boolean = false;
   public readonly metadata?: Record<string, any>;
   /** 函数类型标识 */
@@ -36,15 +37,15 @@ export abstract class BaseConditionFunction<TConfig extends ConditionFunctionCon
         name: 'context',
         type: 'WorkflowExecutionContext',
         required: true,
-        description: '执行上下文'
+        description: '执行上下文',
       },
       {
         name: 'config',
         type: 'ConditionFunctionConfig',
         required: false,
         description: '函数配置',
-        defaultValue: {}
-      }
+        defaultValue: {},
+      },
     ];
   }
 
@@ -66,7 +67,7 @@ export abstract class BaseConditionFunction<TConfig extends ConditionFunctionCon
 
     return {
       valid: errors.length === 0,
-      errors
+      errors,
     };
   }
 
@@ -79,7 +80,7 @@ export abstract class BaseConditionFunction<TConfig extends ConditionFunctionCon
       isAsync: true,
       category: this.category,
       parameters: this.getParameters(),
-      returnType: this.getReturnType()
+      returnType: this.getReturnType(),
     };
   }
 

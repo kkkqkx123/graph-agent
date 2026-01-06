@@ -3,7 +3,7 @@ import { HookExecutionResult } from './hook-execution-result';
 
 /**
  * Hook插件接口
- * 
+ *
  * 插件用于定义可复用的函数式执行逻辑，可以被Hook类使用
  * 插件不定义hook点，只提供执行逻辑的实现
  */
@@ -66,7 +66,7 @@ export interface HookPluginConfig {
 
 /**
  * Hook插件注册表
- * 
+ *
  * 管理所有可用的Hook插件
  */
 export class HookPluginRegistry {
@@ -141,7 +141,7 @@ export class HookPluginRegistry {
 
 /**
  * Hook插件执行器
- * 
+ *
  * 负责执行插件逻辑
  */
 export class HookPluginExecutor {
@@ -157,9 +157,12 @@ export class HookPluginExecutor {
    * @param context Hook上下文
    * @returns 执行结果
    */
-  async execute(pluginConfig: HookPluginConfig, context: HookContext): Promise<HookExecutionResult> {
+  async execute(
+    pluginConfig: HookPluginConfig,
+    context: HookContext
+  ): Promise<HookExecutionResult> {
     const plugin = this.registry.get(pluginConfig.pluginId);
-    
+
     if (!plugin) {
       throw new Error(`插件 ${pluginConfig.pluginId} 不存在`);
     }
@@ -170,7 +173,7 @@ export class HookPluginExecutor {
         success: true,
         executionTime: 0,
         shouldContinue: true,
-        metadata: { skipped: true, reason: 'plugin is disabled' }
+        metadata: { skipped: true, reason: 'plugin is disabled' },
       };
     }
 
@@ -183,7 +186,7 @@ export class HookPluginExecutor {
           success: false,
           error: `插件配置验证失败: ${validation.errors.join(', ')}`,
           executionTime: 0,
-          shouldContinue: true
+          shouldContinue: true,
         };
       }
     }
@@ -198,7 +201,10 @@ export class HookPluginExecutor {
    * @param context Hook上下文
    * @returns 执行结果列表
    */
-  async executeBatch(pluginConfigs: HookPluginConfig[], context: HookContext): Promise<HookExecutionResult[]> {
+  async executeBatch(
+    pluginConfigs: HookPluginConfig[],
+    context: HookContext
+  ): Promise<HookExecutionResult[]> {
     const results: HookExecutionResult[] = [];
 
     for (const pluginConfig of pluginConfigs) {
@@ -216,7 +222,7 @@ export class HookPluginExecutor {
           success: false,
           error: error instanceof Error ? error.message : String(error),
           executionTime: 0,
-          shouldContinue: true
+          shouldContinue: true,
         });
       }
     }

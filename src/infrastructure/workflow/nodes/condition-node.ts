@@ -1,6 +1,16 @@
 import { NodeId } from '../../../domain/workflow/value-objects/node/node-id';
-import { NodeType, NodeTypeValue, NodeContextTypeValue } from '../../../domain/workflow/value-objects/node/node-type';
-import { Node, NodeExecutionResult, NodeMetadata, ValidationResult, WorkflowExecutionContext } from '../../../domain/workflow/entities/node';
+import {
+  NodeType,
+  NodeTypeValue,
+  NodeContextTypeValue,
+} from '../../../domain/workflow/value-objects/node/node-type';
+import {
+  Node,
+  NodeExecutionResult,
+  NodeMetadata,
+  ValidationResult,
+  WorkflowExecutionContext,
+} from '../../../domain/workflow/entities/node';
 
 /**
  * 条件检查节点
@@ -15,13 +25,7 @@ export class ConditionNode extends Node {
     description?: string,
     position?: { x: number; y: number }
   ) {
-    super(
-      id,
-      NodeType.condition(NodeContextTypeValue.PASS_THROUGH),
-      name,
-      description,
-      position
-    );
+    super(id, NodeType.condition(NodeContextTypeValue.PASS_THROUGH), name, description, position);
   }
 
   async execute(context: WorkflowExecutionContext): Promise<NodeExecutionResult> {
@@ -40,7 +44,7 @@ export class ConditionNode extends Node {
         condition: this.condition,
         result: result,
         variables: allVariables,
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
       };
 
       // 存储条件检查结果
@@ -57,8 +61,8 @@ export class ConditionNode extends Node {
         executionTime: 0,
         metadata: {
           condition: this.condition,
-          result: result
-        }
+          result: result,
+        },
       };
     } catch (error) {
       // 记录错误
@@ -68,7 +72,7 @@ export class ConditionNode extends Node {
         type: 'condition_evaluation_error',
         condition: this.condition,
         message: errorMessage,
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
       });
       context.setVariable('errors', errors);
 
@@ -77,8 +81,8 @@ export class ConditionNode extends Node {
         error: errorMessage,
         executionTime: 0,
         metadata: {
-          condition: this.condition
-        }
+          condition: this.condition,
+        },
       };
     }
   }
@@ -96,7 +100,7 @@ export class ConditionNode extends Node {
 
     return {
       valid: errors.length === 0,
-      errors
+      errors,
     };
   }
 
@@ -112,16 +116,16 @@ export class ConditionNode extends Node {
           name: 'condition',
           type: 'string',
           required: true,
-          description: '条件表达式'
+          description: '条件表达式',
         },
         {
           name: 'variables',
           type: 'object',
           required: false,
           description: '条件变量',
-          defaultValue: {}
-        }
-      ]
+          defaultValue: {},
+        },
+      ],
     };
   }
 
@@ -130,9 +134,9 @@ export class ConditionNode extends Node {
       type: 'object',
       properties: {
         condition: { type: 'string', description: '决策条件' },
-        context: { type: 'object', description: '上下文数据' }
+        context: { type: 'object', description: '上下文数据' },
       },
-      required: ['condition']
+      required: ['condition'],
     };
   }
 
@@ -141,8 +145,8 @@ export class ConditionNode extends Node {
       type: 'object',
       properties: {
         decision: { type: 'string', description: '决策结果' },
-        branch: { type: 'string', description: '选择的分支' }
-      }
+        branch: { type: 'string', description: '选择的分支' },
+      },
     };
   }
 

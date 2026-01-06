@@ -7,16 +7,13 @@ import { RoutingFunctionConfig, WorkflowExecutionContext } from '../types';
  */
 export class RetryCountRoutingFunction extends BaseConditionRoutingFunction<RoutingFunctionConfig> {
   constructor() {
-    super(
-      'retry_count_routing',
-      'retryCount',
-      '检查重试次数是否达到指定值',
-      '1.0.0',
-      'builtin'
-    );
+    super('retry_count_routing', 'retryCount', '检查重试次数是否达到指定值', '1.0.0', 'builtin');
   }
 
-  override async execute(context: WorkflowExecutionContext, config: RoutingFunctionConfig): Promise<boolean> {
+  override async execute(
+    context: WorkflowExecutionContext,
+    config: RoutingFunctionConfig
+  ): Promise<boolean> {
     const maxRetries = config['edge']?.['properties']?.['maxRetries'] ?? 3;
     const currentNodeState = config['currentNodeState'];
 

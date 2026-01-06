@@ -73,7 +73,7 @@ export class TextFormatter extends BaseFormatter {
       includeStack: true,
       sanitize: true,
       separator: ' | ',
-      ...options
+      ...options,
     };
   }
 

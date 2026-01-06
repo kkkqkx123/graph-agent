@@ -14,7 +14,7 @@ export interface SessionConfigProps {
 
 /**
  * 会话配置值对象
- * 
+ *
  * 用于表示会话的配置信息
  */
 export class SessionConfig extends ValueObject<SessionConfigProps> {
@@ -29,7 +29,7 @@ export class SessionConfig extends ValueObject<SessionConfigProps> {
       maxThreads: 10, // 默认最多10个线程
       autoSave: true,
       enableHistory: true,
-      timeoutMinutes: 30
+      timeoutMinutes: 30,
     });
   }
 
@@ -42,7 +42,7 @@ export class SessionConfig extends ValueObject<SessionConfigProps> {
     const defaultConfig = this.default();
     return new SessionConfig({
       ...defaultConfig.value,
-      ...config
+      ...config,
     });
   }
 
@@ -102,7 +102,7 @@ export class SessionConfig extends ValueObject<SessionConfigProps> {
   public update(updates: Partial<SessionConfigProps>): SessionConfig {
     return new SessionConfig({
       ...this.props,
-      ...updates
+      ...updates,
     });
   }
 

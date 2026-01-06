@@ -8,13 +8,7 @@ import { TriggerFunctionConfig, WorkflowExecutionContext } from '../types';
 @injectable()
 export class EventTriggerFunction extends BaseTriggerFunction<TriggerFunctionConfig> {
   constructor() {
-    super(
-      'trigger:event',
-      'event_trigger',
-      '基于工作流事件类型的触发器',
-      '1.0.0',
-      'builtin'
-    );
+    super('trigger:event', 'event_trigger', '基于工作流事件类型的触发器', '1.0.0', 'builtin');
   }
 
   override getParameters() {
@@ -24,22 +18,22 @@ export class EventTriggerFunction extends BaseTriggerFunction<TriggerFunctionCon
         name: 'eventType',
         type: 'string',
         required: true,
-        description: '要监听的事件类型'
+        description: '要监听的事件类型',
       },
       {
         name: 'eventSource',
         type: 'string',
         required: false,
         description: '事件源，不指定则监听所有源',
-        defaultValue: null
+        defaultValue: null,
       },
       {
         name: 'eventDataFilter',
         type: 'object',
         required: false,
         description: '事件数据过滤条件',
-        defaultValue: {}
-      }
+        defaultValue: {},
+      },
     ];
   }
 
@@ -61,7 +55,10 @@ export class EventTriggerFunction extends BaseTriggerFunction<TriggerFunctionCon
     return errors;
   }
 
-  override async execute(context: WorkflowExecutionContext, config: TriggerFunctionConfig): Promise<boolean> {
+  override async execute(
+    context: WorkflowExecutionContext,
+    config: TriggerFunctionConfig
+  ): Promise<boolean> {
     this.checkInitialized();
 
     const eventType = config['eventType'];

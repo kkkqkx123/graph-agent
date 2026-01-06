@@ -80,7 +80,7 @@ export class Session extends Entity {
     const sessionConfig = config || SessionConfig.default();
     const sessionStatus = SessionStatus.active();
     const sessionActivity = SessionActivity.create(now);
-    
+
     const props: SessionProps = {
       id: sessionId,
       userId,
@@ -95,7 +95,7 @@ export class Session extends Entity {
       deletionStatus: DeletionStatus.active(),
       createdAt: now,
       updatedAt: now,
-      version: Version.initial()
+      version: Version.initial(),
     };
 
     const session = new Session(props);
@@ -268,7 +268,7 @@ export class Session extends Entity {
       ...this.props,
       title,
       updatedAt: Timestamp.now(),
-      version: this.props.version.nextPatch()
+      version: this.props.version.nextPatch(),
     });
   }
 
@@ -279,11 +279,7 @@ export class Session extends Entity {
    * @param reason 变更原因
    * @returns 新会话实例
    */
-  public changeStatus(
-    newStatus: SessionStatus,
-    changedBy?: ID,
-    reason?: string
-  ): Session {
+  public changeStatus(newStatus: SessionStatus, changedBy?: ID, reason?: string): Session {
     this.props.deletionStatus.ensureActive();
 
     const oldStatus = this.props.status;
@@ -298,7 +294,7 @@ export class Session extends Entity {
       ...this.props,
       status: newStatus,
       updatedAt: Timestamp.now(),
-      version: this.props.version.nextPatch()
+      version: this.props.version.nextPatch(),
     });
   }
 
@@ -321,7 +317,7 @@ export class Session extends Entity {
       ...this.props,
       activity: this.props.activity.incrementMessageCount(),
       updatedAt: Timestamp.now(),
-      version: this.props.version.nextPatch()
+      version: this.props.version.nextPatch(),
     });
   }
 
@@ -354,7 +350,7 @@ export class Session extends Entity {
       threads: newThreads,
       activity: this.props.activity.incrementThreadCount(),
       updatedAt: Timestamp.now(),
-      version: this.props.version.nextPatch()
+      version: this.props.version.nextPatch(),
     });
   }
 
@@ -383,11 +379,9 @@ export class Session extends Entity {
       ...this.props,
       threads: newThreads,
       updatedAt: Timestamp.now(),
-      version: this.props.version.nextPatch()
+      version: this.props.version.nextPatch(),
     });
   }
-
-
 
   /**
    * 更新最后活动时间
@@ -400,7 +394,7 @@ export class Session extends Entity {
       ...this.props,
       activity: this.props.activity.updateLastActivity(),
       updatedAt: Timestamp.now(),
-      version: this.props.version.nextPatch()
+      version: this.props.version.nextPatch(),
     });
   }
 
@@ -423,7 +417,7 @@ export class Session extends Entity {
       ...this.props,
       config: newConfig,
       updatedAt: Timestamp.now(),
-      version: this.props.version.nextPatch()
+      version: this.props.version.nextPatch(),
     });
   }
 
@@ -439,7 +433,7 @@ export class Session extends Entity {
       ...this.props,
       metadata: Metadata.create(metadata),
       updatedAt: Timestamp.now(),
-      version: this.props.version.nextPatch()
+      version: this.props.version.nextPatch(),
     });
   }
 
@@ -476,7 +470,7 @@ export class Session extends Entity {
       ...this.props,
       deletionStatus: this.props.deletionStatus.markAsDeleted(),
       updatedAt: Timestamp.now(),
-      version: this.props.version.nextPatch()
+      version: this.props.version.nextPatch(),
     });
   }
 
@@ -664,7 +658,7 @@ export class Session extends Entity {
       ...this.props,
       sharedResources: newResources,
       updatedAt: Timestamp.now(),
-      version: this.props.version.nextPatch()
+      version: this.props.version.nextPatch(),
     });
   }
 
@@ -701,7 +695,7 @@ export class Session extends Entity {
       ...this.props,
       parallelStrategy: strategy,
       updatedAt: Timestamp.now(),
-      version: this.props.version.nextPatch()
+      version: this.props.version.nextPatch(),
     });
   }
 

@@ -7,7 +7,7 @@ import { IThreadCheckpointRepository } from '../repositories/thread-checkpoint-r
 
 /**
  * Thread检查点领域服务接口
- * 
+ *
  * 定义Thread检查点相关的业务逻辑
  */
 export interface ThreadCheckpointDomainService {
@@ -98,10 +98,7 @@ export interface ThreadCheckpointDomainService {
    * @param limit 数量限制
    * @returns 检查点列表
    */
-  getThreadCheckpointHistory(
-    threadId: ID,
-    limit?: number
-  ): Promise<ThreadCheckpoint[]>;
+  getThreadCheckpointHistory(threadId: ID, limit?: number): Promise<ThreadCheckpoint[]>;
 
   /**
    * 获取检查点统计信息
@@ -334,9 +331,7 @@ export interface ThreadCheckpointDomainService {
  * Thread检查点领域服务实现
  */
 export class ThreadCheckpointDomainServiceImpl implements ThreadCheckpointDomainService {
-  constructor(
-    private readonly repository: IThreadCheckpointRepository
-  ) {}
+  constructor(private readonly repository: IThreadCheckpointRepository) {}
 
   async createAutoCheckpoint(
     threadId: ID,
@@ -395,7 +390,7 @@ export class ThreadCheckpointDomainServiceImpl implements ThreadCheckpointDomain
       ...metadata,
       errorMessage,
       errorType,
-      createdAt: new Date().toISOString()
+      createdAt: new Date().toISOString(),
     };
 
     const checkpoint = ThreadCheckpoint.create(
@@ -424,7 +419,7 @@ export class ThreadCheckpointDomainServiceImpl implements ThreadCheckpointDomain
     const milestoneMetadata = {
       ...metadata,
       milestoneName,
-      createdAt: new Date().toISOString()
+      createdAt: new Date().toISOString(),
     };
 
     const checkpoint = ThreadCheckpoint.create(
@@ -454,10 +449,7 @@ export class ThreadCheckpointDomainServiceImpl implements ThreadCheckpointDomain
     return checkpoint.stateData;
   }
 
-  async getThreadCheckpointHistory(
-    threadId: ID,
-    limit?: number
-  ): Promise<ThreadCheckpoint[]> {
+  async getThreadCheckpointHistory(threadId: ID, limit?: number): Promise<ThreadCheckpoint[]> {
     return await this.repository.getThreadHistory(threadId, limit);
   }
 
@@ -466,7 +458,7 @@ export class ThreadCheckpointDomainServiceImpl implements ThreadCheckpointDomain
     const checkpoints = threadId
       ? await this.repository.findByThreadId(threadId)
       : await this.repository.findAll();
-    
+
     return CheckpointStatistics.fromCheckpoints(checkpoints);
   }
 
@@ -475,16 +467,16 @@ export class ThreadCheckpointDomainServiceImpl implements ThreadCheckpointDomain
     const checkpoints = threadId
       ? await this.repository.findByThreadId(threadId)
       : await this.repository.findAll();
-    
+
     const expiredCheckpoints = checkpoints.filter(cp => cp.isExpired());
     let cleanedCount = 0;
-    
+
     for (const checkpoint of expiredCheckpoints) {
       checkpoint.markExpired();
       await this.repository.save(checkpoint);
       cleanedCount++;
     }
-    
+
     return cleanedCount;
   }
 
@@ -512,19 +504,17 @@ export class ThreadCheckpointDomainServiceImpl implements ThreadCheckpointDomain
     const checkpoints = await this.repository.findByThreadId(threadId);
     const cutoffTime = new Date();
     cutoffTime.setDate(cutoffTime.getDate() - days);
-    
-    const oldCheckpoints = checkpoints.filter(cp =>
-      cp.createdAt.getDate() < cutoffTime
-    );
-    
+
+    const oldCheckpoints = checkpoints.filter(cp => cp.createdAt.getDate() < cutoffTime);
+
     let archivedCount = 0;
-    
+
     for (const checkpoint of oldCheckpoints) {
       checkpoint.markArchived();
       await this.repository.save(checkpoint);
       archivedCount++;
     }
-    
+
     return archivedCount;
   }
 
@@ -544,7 +534,8 @@ export class ThreadCheckpointDomainServiceImpl implements ThreadCheckpointDomain
 
     // 如果距离上次检查点创建时间太短，不创建新的
     const latest = await this.repository.getLatest(threadId);
-    if (latest && latest.getAgeInSeconds() < 300) { // 5分钟
+    if (latest && latest.getAgeInSeconds() < 300) {
+      // 5分钟
       return false;
     }
 
@@ -569,7 +560,7 @@ export class ThreadCheckpointDomainServiceImpl implements ThreadCheckpointDomain
       return {
         shouldCreate: false,
         recommendedType: CheckpointType.auto(),
-        reason: '检查点创建条件不满足'
+        reason: '检查点创建条件不满足',
       };
     }
 
@@ -578,7 +569,7 @@ export class ThreadCheckpointDomainServiceImpl implements ThreadCheckpointDomain
       shouldCreate: true,
       recommendedType: CheckpointType.auto(),
       reason: '满足自动检查点创建条件',
-      suggestedTags: ['auto']
+      suggestedTags: ['auto'],
     };
   }
 
@@ -587,9 +578,7 @@ export class ThreadCheckpointDomainServiceImpl implements ThreadCheckpointDomain
     title?: string,
     description?: string
   ): Promise<ThreadCheckpoint> {
-    const checkpoints = await Promise.all(
-      checkpointIds.map(id => this.repository.findById(id))
-    );
+    const checkpoints = await Promise.all(checkpointIds.map(id => this.repository.findById(id)));
 
     const validCheckpoints = checkpoints.filter(cp => cp !== null) as ThreadCheckpoint[];
     if (validCheckpoints.length === 0) {
@@ -597,7 +586,7 @@ export class ThreadCheckpointDomainServiceImpl implements ThreadCheckpointDomain
     }
 
     // 使用最新的检查点作为基础
-    const latest = validCheckpoints.reduce((prev, current) => 
+    const latest = validCheckpoints.reduce((prev, current) =>
       prev.createdAt.toISOString() > current.createdAt.toISOString() ? prev : current
     );
 
@@ -605,7 +594,7 @@ export class ThreadCheckpointDomainServiceImpl implements ThreadCheckpointDomain
     const mergedMetadata = {
       ...latest.metadata,
       mergedFrom: checkpointIds.map(id => id.toString()),
-      mergedAt: new Date().toISOString()
+      mergedAt: new Date().toISOString(),
     };
 
     const merged = ThreadCheckpoint.create(
@@ -682,7 +671,7 @@ export class ThreadCheckpointDomainServiceImpl implements ThreadCheckpointDomain
     const backupMetadata = {
       ...original.metadata,
       backupOf: checkpointId.toString(),
-      backupTimestamp: new Date().toISOString()
+      backupTimestamp: new Date().toISOString(),
     };
 
     const backup = ThreadCheckpoint.create(
@@ -709,14 +698,13 @@ export class ThreadCheckpointDomainServiceImpl implements ThreadCheckpointDomain
     if (!checkpoint) {
       return [];
     }
-    
+
     // 查找所有带有backup标签的检查点
     const allCheckpoints = await this.repository.findByThreadId(checkpoint.threadId);
-    const backupCheckpoints = allCheckpoints.filter(cp =>
-      cp.tags.includes('backup') &&
-      cp.metadata?.['backupOf'] === checkpointId.toString()
+    const backupCheckpoints = allCheckpoints.filter(
+      cp => cp.tags.includes('backup') && cp.metadata?.['backupOf'] === checkpointId.toString()
     );
-    
+
     return backupCheckpoints;
   }
 
@@ -740,7 +728,7 @@ export class ThreadCheckpointDomainServiceImpl implements ThreadCheckpointDomain
     trends: 'increasing' | 'decreasing' | 'stable';
   }> {
     const checkpoints = await this.repository.findByThreadId(threadId);
-    
+
     // 简化实现
     return {
       totalCheckpoints: checkpoints.length,
@@ -748,7 +736,7 @@ export class ThreadCheckpointDomainServiceImpl implements ThreadCheckpointDomain
       frequencyByHour: {},
       frequencyByDay: {},
       peakHours: [],
-      trends: 'stable'
+      trends: 'stable',
     };
   }
 
@@ -769,15 +757,18 @@ export class ThreadCheckpointDomainServiceImpl implements ThreadCheckpointDomain
     growthTrend: 'increasing' | 'decreasing' | 'stable';
   }> {
     const checkpoints = await this.repository.findByThreadId(threadId);
-    
+
     // 简化实现
     return {
       totalSize: checkpoints.reduce((sum, cp) => sum + cp.sizeBytes, 0),
-      averageSize: checkpoints.length > 0 ? checkpoints.reduce((sum, cp) => sum + cp.sizeBytes, 0) / checkpoints.length : 0,
+      averageSize:
+        checkpoints.length > 0
+          ? checkpoints.reduce((sum, cp) => sum + cp.sizeBytes, 0) / checkpoints.length
+          : 0,
       medianSize: 0,
       sizeRanges: [],
       largestCheckpoints: [],
-      growthTrend: 'stable'
+      growthTrend: 'stable',
     };
   }
 
@@ -789,14 +780,14 @@ export class ThreadCheckpointDomainServiceImpl implements ThreadCheckpointDomain
     recommendations: string[];
   }> {
     const checkpoints = await this.repository.findByThreadId(threadId);
-    
+
     // 简化实现
     return {
       distribution: {},
       percentages: {},
       mostCommonType: '',
       typeTrends: {},
-      recommendations: []
+      recommendations: [],
     };
   }
 
@@ -827,7 +818,7 @@ export class ThreadCheckpointDomainServiceImpl implements ThreadCheckpointDomain
       backupRecommendations: [],
       configurationSuggestions: [],
       overallHealthScore: 100,
-      estimatedSpaceSavings: 0
+      estimatedSpaceSavings: 0,
     };
   }
 
@@ -850,7 +841,7 @@ export class ThreadCheckpointDomainServiceImpl implements ThreadCheckpointDomain
     timestamp: string;
   }> {
     const stats = await this.getCheckpointStatistics(threadId);
-    
+
     return {
       status: 'healthy',
       score: stats.getHealthScore(),
@@ -860,9 +851,9 @@ export class ThreadCheckpointDomainServiceImpl implements ThreadCheckpointDomain
         expiredCheckpoints: stats.expiredCheckpoints,
         corruptedCheckpoints: stats.corruptedCheckpoints,
         totalSizeMB: stats.totalSizeMB,
-        averageRestoreCount: stats.averageRestores
+        averageRestoreCount: stats.averageRestores,
       },
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
     };
   }
 }

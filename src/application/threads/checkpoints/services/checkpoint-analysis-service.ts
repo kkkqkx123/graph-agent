@@ -1,11 +1,14 @@
 /**
  * 检查点分析服务
- * 
+ *
  * 负责检查点的统计、分析、清理和健康检查等功能
  */
 
 import { CheckpointStatistics } from '../../../../domain/threads/checkpoints/value-objects/checkpoint-statistics';
-import { ThreadCheckpointDomainService, ThreadCheckpointDomainServiceImpl } from '../../../../domain/threads/checkpoints/services/thread-checkpoint-domain-service';
+import {
+  ThreadCheckpointDomainService,
+  ThreadCheckpointDomainServiceImpl,
+} from '../../../../domain/threads/checkpoints/services/thread-checkpoint-domain-service';
 import { IThreadCheckpointRepository } from '../../../../domain/threads/checkpoints/repositories/thread-checkpoint-repository';
 import { BaseApplicationService } from '../../../common/base-application-service';
 import { ILogger } from '../../../../domain/common/types';
@@ -43,7 +46,7 @@ export class CheckpointAnalysisService extends BaseApplicationService {
 
         this.logOperationSuccess('过期检查点清理完成', {
           threadId,
-          cleanedCount
+          cleanedCount,
         });
 
         return cleanedCount;
@@ -65,7 +68,7 @@ export class CheckpointAnalysisService extends BaseApplicationService {
         this.logOperationSuccess('多余检查点清理完成', {
           threadId,
           maxCount,
-          cleanedCount
+          cleanedCount,
         });
 
         return cleanedCount;
@@ -87,7 +90,7 @@ export class CheckpointAnalysisService extends BaseApplicationService {
         this.logOperationSuccess('旧检查点归档完成', {
           threadId,
           days,
-          archivedCount
+          archivedCount,
         });
 
         return archivedCount;

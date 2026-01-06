@@ -6,7 +6,7 @@ import { ValueObject } from '../../common/value-objects';
 export enum SnapshotScopeValue {
   SESSION = 'session',
   THREAD = 'thread',
-  GLOBAL = 'global'
+  GLOBAL = 'global',
 }
 
 /**
@@ -139,7 +139,7 @@ export class SnapshotScope extends ValueObject<SnapshotScopeProps> {
     const descriptions: Record<SnapshotScopeValue, string> = {
       [SnapshotScopeValue.SESSION]: '会话范围，包含会话内所有线程的状态',
       [SnapshotScopeValue.THREAD]: '线程范围，包含单个线程的状态',
-      [SnapshotScopeValue.GLOBAL]: '全局范围，包含整个系统的状态'
+      [SnapshotScopeValue.GLOBAL]: '全局范围，包含整个系统的状态',
     };
 
     return descriptions[this.props.value];

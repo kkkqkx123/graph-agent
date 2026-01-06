@@ -62,7 +62,7 @@ export class ExpressionEvaluator {
         return {
           success: false,
           value: null,
-          error: validation.errors.join(', ')
+          error: validation.errors.join(', '),
         };
       }
 
@@ -74,7 +74,7 @@ export class ExpressionEvaluator {
       if (this.expressionCache.has(cacheKey)) {
         return {
           success: true,
-          value: this.expressionCache.get(cacheKey)
+          value: this.expressionCache.get(cacheKey),
         };
       }
 
@@ -86,13 +86,13 @@ export class ExpressionEvaluator {
 
       return {
         success: true,
-        value
+        value,
       };
     } catch (error) {
       return {
         success: false,
         value: null,
-        error: error instanceof Error ? error.message : String(error)
+        error: error instanceof Error ? error.message : String(error),
       };
     }
   }
@@ -106,21 +106,21 @@ export class ExpressionEvaluator {
   validate(expression: string, context?: Record<string, any>): ExpressionValidationResult {
     try {
       const result = this.validator.validate(expression, context, {
-        allowUndefinedContext: !context
+        allowUndefinedContext: !context,
       });
 
       return {
         valid: result.valid,
         errors: result.errors.map(e => e.message),
         warnings: result.warnings.map(w => w.message),
-        trimmedExpression: expression.trim()
+        trimmedExpression: expression.trim(),
       };
     } catch (error) {
       return {
         valid: false,
         errors: [error instanceof Error ? error.message : String(error)],
         warnings: [],
-        trimmedExpression: expression.trim()
+        trimmedExpression: expression.trim(),
       };
     }
   }
@@ -177,9 +177,13 @@ export class ExpressionEvaluator {
     });
 
     // 数组转换器
-    this.jexl.addTransform('first', (val: any[]) => Array.isArray(val) ? val[0] : val);
-    this.jexl.addTransform('last', (val: any[]) => Array.isArray(val) ? val[val.length - 1] : val);
-    this.jexl.addTransform('reverse', (val: any[]) => Array.isArray(val) ? [...val].reverse() : val);
+    this.jexl.addTransform('first', (val: any[]) => (Array.isArray(val) ? val[0] : val));
+    this.jexl.addTransform('last', (val: any[]) =>
+      Array.isArray(val) ? val[val.length - 1] : val
+    );
+    this.jexl.addTransform('reverse', (val: any[]) =>
+      Array.isArray(val) ? [...val].reverse() : val
+    );
 
     // 类型转换器
     this.jexl.addTransform('string', (val: any) => String(val));
@@ -200,13 +204,24 @@ export class ExpressionEvaluator {
     this.jexl.addFunction('Math.ceil', (val: number) => Math.ceil(val));
 
     // 字符串函数
-    this.jexl.addFunction('String.includes', (str: string, substr: string) => String(str).includes(substr));
-    this.jexl.addFunction('String.startsWith', (str: string, prefix: string) => String(str).startsWith(prefix));
-    this.jexl.addFunction('String.endsWith', (str: string, suffix: string) => String(str).endsWith(suffix));
+    this.jexl.addFunction('String.includes', (str: string, substr: string) =>
+      String(str).includes(substr)
+    );
+    this.jexl.addFunction('String.startsWith', (str: string, prefix: string) =>
+      String(str).startsWith(prefix)
+    );
+    this.jexl.addFunction('String.endsWith', (str: string, suffix: string) =>
+      String(str).endsWith(suffix)
+    );
 
     // 数组函数
-    this.jexl.addFunction('Array.includes', (arr: any[], item: any) => Array.isArray(arr) && arr.includes(item));
-    this.jexl.addFunction('Array.indexOf', (arr: any[], item: any) => Array.isArray(arr) ? arr.indexOf(item) : -1);
+    this.jexl.addFunction(
+      'Array.includes',
+      (arr: any[], item: any) => Array.isArray(arr) && arr.includes(item)
+    );
+    this.jexl.addFunction('Array.indexOf', (arr: any[], item: any) =>
+      Array.isArray(arr) ? arr.indexOf(item) : -1
+    );
 
     // 工具函数
     this.jexl.addFunction('type', (val: any) => typeof val);

@@ -1,4 +1,11 @@
-import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, ManyToOne } from 'typeorm';
+import {
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  CreateDateColumn,
+  UpdateDateColumn,
+  ManyToOne,
+} from 'typeorm';
 import { ThreadModel } from './thread.model';
 
 @Entity('messages')
@@ -11,7 +18,7 @@ export class MessageModel {
 
   @Column({
     type: 'enum',
-    enum: ['user', 'assistant', 'system', 'tool']
+    enum: ['user', 'assistant', 'system', 'tool'],
   })
   role!: string;
 

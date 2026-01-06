@@ -68,7 +68,7 @@ export class ContextFilter extends ValueObject<ContextFilterProps> {
     return new ContextFilter({
       filterRules: [],
       defaultBehavior: 'pass',
-      priority: 0
+      priority: 0,
     });
   }
 
@@ -80,7 +80,7 @@ export class ContextFilter extends ValueObject<ContextFilterProps> {
     return new ContextFilter({
       filterRules: [],
       defaultBehavior: 'block',
-      priority: 0
+      priority: 0,
     });
   }
 
@@ -133,11 +133,23 @@ export class ContextFilter extends ValueObject<ContextFilterProps> {
 
         case 'transform':
           if (target === 'variables') {
-            filteredVariables = this.applyTransformRule(filteredVariables, rule.pattern, rule.transform);
+            filteredVariables = this.applyTransformRule(
+              filteredVariables,
+              rule.pattern,
+              rule.transform
+            );
           } else if (target === 'history') {
-            filteredHistory = this.applyTransformRuleToHistory(filteredHistory, rule.pattern, rule.transform);
+            filteredHistory = this.applyTransformRuleToHistory(
+              filteredHistory,
+              rule.pattern,
+              rule.transform
+            );
           } else if (target === 'metadata') {
-            filteredMetadata = this.applyTransformRuleToMetadata(filteredMetadata, rule.pattern, rule.transform);
+            filteredMetadata = this.applyTransformRuleToMetadata(
+              filteredMetadata,
+              rule.pattern,
+              rule.transform
+            );
           }
           break;
       }
@@ -185,7 +197,10 @@ export class ContextFilter extends ValueObject<ContextFilterProps> {
   /**
    * 应用包含规则到元数据
    */
-  private applyIncludeRuleToMetadata(metadata: Record<string, unknown>, pattern: string): Record<string, unknown> {
+  private applyIncludeRuleToMetadata(
+    metadata: Record<string, unknown>,
+    pattern: string
+  ): Record<string, unknown> {
     const result: Record<string, unknown> = {};
     const regex = this.patternToRegex(pattern);
 
@@ -225,7 +240,10 @@ export class ContextFilter extends ValueObject<ContextFilterProps> {
   /**
    * 应用排除规则到元数据
    */
-  private applyExcludeRuleToMetadata(metadata: Record<string, unknown>, pattern: string): Record<string, unknown> {
+  private applyExcludeRuleToMetadata(
+    metadata: Record<string, unknown>,
+    pattern: string
+  ): Record<string, unknown> {
     const result: Record<string, unknown> = {};
     const regex = this.patternToRegex(pattern);
 
@@ -241,7 +259,11 @@ export class ContextFilter extends ValueObject<ContextFilterProps> {
   /**
    * 应用转换规则到变量
    */
-  private applyTransformRule(variables: Map<string, unknown>, pattern: string, transform?: string): Map<string, unknown> {
+  private applyTransformRule(
+    variables: Map<string, unknown>,
+    pattern: string,
+    transform?: string
+  ): Map<string, unknown> {
     const result = new Map<string, unknown>();
     const regex = this.patternToRegex(pattern);
 
@@ -268,8 +290,8 @@ export class ContextFilter extends ValueObject<ContextFilterProps> {
           ...entry,
           metadata: {
             ...entry.metadata,
-            transformed: transform
-          }
+            transformed: transform,
+          },
         };
       }
       return entry;
@@ -279,7 +301,11 @@ export class ContextFilter extends ValueObject<ContextFilterProps> {
   /**
    * 应用转换规则到元数据
    */
-  private applyTransformRuleToMetadata(metadata: Record<string, unknown>, pattern: string, transform?: string): Record<string, unknown> {
+  private applyTransformRuleToMetadata(
+    metadata: Record<string, unknown>,
+    pattern: string,
+    transform?: string
+  ): Record<string, unknown> {
     const result: Record<string, unknown> = {};
     const regex = this.patternToRegex(pattern);
 
@@ -328,20 +354,20 @@ export class ContextFilter extends ValueObject<ContextFilterProps> {
       if (!rule.pattern || rule.pattern.trim().length === 0) {
         return {
           isValid: false,
-          message: '过滤规则的模式不能为空'
+          message: '过滤规则的模式不能为空',
         };
       }
 
       if (rule.type === 'transform' && !rule.transform) {
         return {
           isValid: false,
-          message: '转换规则必须指定转换函数'
+          message: '转换规则必须指定转换函数',
         };
       }
     }
 
     return {
-      isValid: true
+      isValid: true,
     };
   }
 
@@ -357,7 +383,7 @@ export class ContextFilter extends ValueObject<ContextFilterProps> {
     return ContextFilter.create({
       filterRules: mergedRules,
       defaultBehavior: this.props.defaultBehavior,
-      priority: mergedPriority
+      priority: mergedPriority,
     });
   }
 

@@ -50,8 +50,10 @@ export class SessionOrchestrationService extends BaseApplicationService {
   constructor(
     @inject(TYPES.SessionRepository) private readonly sessionRepository: ISessionRepository,
     @inject(TYPES.ThreadRepository) private readonly threadRepository: IThreadRepository,
-    @inject(TYPES.SessionResourceServiceImpl) private readonly sessionResourceService: SessionResourceService,
-    @inject(TYPES.ThreadLifecycleService) private readonly threadLifecycleService: ThreadLifecycleService,
+    @inject(TYPES.SessionResourceServiceImpl)
+    private readonly sessionResourceService: SessionResourceService,
+    @inject(TYPES.ThreadLifecycleService)
+    private readonly threadLifecycleService: ThreadLifecycleService,
     @inject(TYPES.Logger) logger: ILogger
   ) {
     super(logger);
@@ -63,7 +65,6 @@ export class SessionOrchestrationService extends BaseApplicationService {
   protected override getServiceName(): string {
     return '会话编排服务';
   }
-
 
   /**
    * 创建线程
@@ -102,7 +103,7 @@ export class SessionOrchestrationService extends BaseApplicationService {
           id: thread.id,
           oldState: 'none',
           newState: 'created',
-          timestamp: new Date()
+          timestamp: new Date(),
         };
 
         await this.broadcastStateChange(thread.id, change);
@@ -151,7 +152,12 @@ export class SessionOrchestrationService extends BaseApplicationService {
             await this.threadLifecycleService.completeThread(threadId, userId, reason);
             break;
           case 'fail':
-            await this.threadLifecycleService.failThread(threadId, reason || '线程失败', userId, reason);
+            await this.threadLifecycleService.failThread(
+              threadId,
+              reason || '线程失败',
+              userId,
+              reason
+            );
             break;
           case 'cancel':
             await this.threadLifecycleService.cancelThread(threadId, userId, reason);
@@ -164,7 +170,7 @@ export class SessionOrchestrationService extends BaseApplicationService {
           id: this.parseId(threadId, '线程ID'),
           oldState: 'unknown',
           newState: action,
-          timestamp: new Date()
+          timestamp: new Date(),
         };
 
         await this.broadcastStateChange(sessionIdObj, change);
@@ -246,7 +252,7 @@ export class SessionOrchestrationService extends BaseApplicationService {
           id: newThread.threadId,
           oldState: 'none',
           newState: 'forked',
-          timestamp: new Date()
+          timestamp: new Date(),
         };
 
         await this.broadcastStateChange(sessionIdObj, change);
@@ -254,7 +260,7 @@ export class SessionOrchestrationService extends BaseApplicationService {
         return {
           forkedThread: newThread,
           forkContext: null,
-          forkStrategy: forkStrategy || ForkStrategy.createPartial()
+          forkStrategy: forkStrategy || ForkStrategy.createPartial(),
         };
       },
       { sessionId, parentThreadId, forkPoint }
@@ -297,7 +303,12 @@ export class SessionOrchestrationService extends BaseApplicationService {
         }
 
         // 发送消息
-        const { session: updatedSession, messageId } = session.sendMessage(fromThreadIdObj, toThreadIdObj, type, payload);
+        const { session: updatedSession, messageId } = session.sendMessage(
+          fromThreadIdObj,
+          toThreadIdObj,
+          type,
+          payload
+        );
 
         // 更新会话
         await this.sessionRepository.save(updatedSession);
@@ -341,7 +352,11 @@ export class SessionOrchestrationService extends BaseApplicationService {
         }
 
         // 广播消息
-        const { session: updatedSession, messageIds } = session.broadcastMessage(fromThreadIdObj, type, payload);
+        const { session: updatedSession, messageIds } = session.broadcastMessage(
+          fromThreadIdObj,
+          type,
+          payload
+        );
 
         // 更新会话
         await this.sessionRepository.save(updatedSession);
@@ -513,7 +528,7 @@ export class SessionOrchestrationService extends BaseApplicationService {
           completed: session.getCompletedThreadCount(),
           failed: session.getFailedThreadCount(),
           allCompleted: session.areAllThreadsCompleted(),
-          hasActive: session.hasActiveThreads()
+          hasActive: session.hasActiveThreads(),
         };
       },
       { sessionId }
@@ -531,7 +546,8 @@ export class SessionOrchestrationService extends BaseApplicationService {
     this.logger.info(`Session ${sessionId.toString()} state change:`, change);
 
     // 更新会话的最后活动时间
-    const sessionIdObj = typeof sessionId === 'string' ? this.parseId(sessionId, '会话ID') : sessionId;
+    const sessionIdObj =
+      typeof sessionId === 'string' ? this.parseId(sessionId, '会话ID') : sessionId;
     const session = await this.sessionRepository.findById(sessionIdObj);
     if (session) {
       const updatedSession = session.updateLastActivity();

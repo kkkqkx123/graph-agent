@@ -22,12 +22,14 @@ const OpenAICompatibleEndpointConfigSchema = BaseEndpointConfigSchema.extend({
   /**
    * 额外配置
    */
-  extraConfig: z.object({
-    /**
-     * API 版本
-     */
-    apiVersion: z.string().optional()
-  }).optional()
+  extraConfig: z
+    .object({
+      /**
+       * API 版本
+       */
+      apiVersion: z.string().optional(),
+    })
+    .optional(),
 });
 
 /**

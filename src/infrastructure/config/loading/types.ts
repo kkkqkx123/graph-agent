@@ -29,7 +29,7 @@ export enum MergeStrategy {
   OVERRIDE = 'override',
   MERGE_DEEP = 'merge_deep',
   MERGE_SHALLOW = 'merge_shallow',
-  ARRAY_APPEND = 'array_append'
+  ARRAY_APPEND = 'array_append',
 }
 
 /**

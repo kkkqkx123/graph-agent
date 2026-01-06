@@ -87,7 +87,7 @@ export class Checkpoint extends Entity {
       deletionStatus: DeletionStatus.active(),
       createdAt: now,
       updatedAt: now,
-      version: Version.initial()
+      version: Version.initial(),
     };
 
     return new Checkpoint(props);
@@ -186,7 +186,7 @@ export class Checkpoint extends Entity {
       ...this.props,
       title,
       updatedAt: Timestamp.now(),
-      version: this.props.version.nextPatch()
+      version: this.props.version.nextPatch(),
     });
   }
 
@@ -202,7 +202,7 @@ export class Checkpoint extends Entity {
       ...this.props,
       description,
       updatedAt: Timestamp.now(),
-      version: this.props.version.nextPatch()
+      version: this.props.version.nextPatch(),
     });
   }
 
@@ -218,7 +218,7 @@ export class Checkpoint extends Entity {
       ...this.props,
       stateData: StateData.create(stateData),
       updatedAt: Timestamp.now(),
-      version: this.props.version.nextPatch()
+      version: this.props.version.nextPatch(),
     });
   }
 
@@ -235,7 +235,7 @@ export class Checkpoint extends Entity {
       ...this.props,
       stateData: this.props.stateData.setValue(key, value),
       updatedAt: Timestamp.now(),
-      version: this.props.version.nextPatch()
+      version: this.props.version.nextPatch(),
     });
   }
 
@@ -251,7 +251,7 @@ export class Checkpoint extends Entity {
       ...this.props,
       tags: this.props.tags.add(tag),
       updatedAt: Timestamp.now(),
-      version: this.props.version.nextPatch()
+      version: this.props.version.nextPatch(),
     });
   }
 
@@ -267,7 +267,7 @@ export class Checkpoint extends Entity {
       ...this.props,
       tags: this.props.tags.remove(tag),
       updatedAt: Timestamp.now(),
-      version: this.props.version.nextPatch()
+      version: this.props.version.nextPatch(),
     });
   }
 
@@ -283,7 +283,7 @@ export class Checkpoint extends Entity {
       ...this.props,
       metadata: Metadata.create(metadata),
       updatedAt: Timestamp.now(),
-      version: this.props.version.nextPatch()
+      version: this.props.version.nextPatch(),
     });
   }
 
@@ -300,7 +300,7 @@ export class Checkpoint extends Entity {
       ...this.props,
       metadata: this.props.metadata.setValue(key, value),
       updatedAt: Timestamp.now(),
-      version: this.props.version.nextPatch()
+      version: this.props.version.nextPatch(),
     });
   }
 
@@ -316,7 +316,7 @@ export class Checkpoint extends Entity {
       ...this.props,
       metadata: this.props.metadata.remove(key),
       updatedAt: Timestamp.now(),
-      version: this.props.version.nextPatch()
+      version: this.props.version.nextPatch(),
     });
   }
 
@@ -360,7 +360,7 @@ export class Checkpoint extends Entity {
       ...this.props,
       deletionStatus: this.props.deletionStatus.markAsDeleted(),
       updatedAt: Timestamp.now(),
-      version: this.props.version.nextPatch()
+      version: this.props.version.nextPatch(),
     });
   }
 

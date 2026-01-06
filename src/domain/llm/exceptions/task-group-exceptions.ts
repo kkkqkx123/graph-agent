@@ -5,11 +5,7 @@ export abstract class TaskGroupError extends Error {
   public readonly code: string;
   public readonly details?: Record<string, any>;
 
-  constructor(
-    message: string,
-    code: string,
-    details?: Record<string, any>
-  ) {
+  constructor(message: string, code: string, details?: Record<string, any>) {
     super(message);
     this.name = 'TaskGroupError';
     this.code = code;
@@ -22,11 +18,7 @@ export abstract class TaskGroupError extends Error {
  */
 export class TaskGroupNotFoundError extends TaskGroupError {
   constructor(groupName: string) {
-    super(
-      `任务组未找到: ${groupName}`,
-      'TASK_GROUP_NOT_FOUND',
-      { groupName }
-    );
+    super(`任务组未找到: ${groupName}`, 'TASK_GROUP_NOT_FOUND', { groupName });
   }
 }
 
@@ -48,11 +40,10 @@ export class TaskGroupConfigurationError extends TaskGroupError {
  */
 export class TaskGroupEchelonNotFoundError extends TaskGroupError {
   constructor(groupName: string, echelonName: string) {
-    super(
-      `任务组层级未找到: ${groupName} - ${echelonName}`,
-      'TASK_GROUP_ECHELON_NOT_FOUND',
-      { groupName, echelonName }
-    );
+    super(`任务组层级未找到: ${groupName} - ${echelonName}`, 'TASK_GROUP_ECHELON_NOT_FOUND', {
+      groupName,
+      echelonName,
+    });
   }
 }
 
@@ -61,11 +52,10 @@ export class TaskGroupEchelonNotFoundError extends TaskGroupError {
  */
 export class TaskGroupReferenceParseError extends TaskGroupError {
   constructor(reference: string, reason: string) {
-    super(
-      `任务组引用解析错误: ${reference} - ${reason}`,
-      'TASK_GROUP_REFERENCE_PARSE_ERROR',
-      { reference, reason }
-    );
+    super(`任务组引用解析错误: ${reference} - ${reason}`, 'TASK_GROUP_REFERENCE_PARSE_ERROR', {
+      reference,
+      reason,
+    });
   }
 }
 

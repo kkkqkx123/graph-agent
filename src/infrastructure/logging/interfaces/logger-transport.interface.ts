@@ -86,4 +86,3 @@ export interface ILoggerFilter {
    */
   shouldLog(entry: LogEntry): boolean;
 }
-

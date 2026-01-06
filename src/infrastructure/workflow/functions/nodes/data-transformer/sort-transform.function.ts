@@ -1,5 +1,9 @@
 import { injectable } from 'inversify';
-import { BaseTransformFunction, TransformFunctionConfig, WorkflowExecutionContext } from './base-transform-function';
+import {
+  BaseTransformFunction,
+  TransformFunctionConfig,
+  WorkflowExecutionContext,
+} from './base-transform-function';
 
 /**
  * Sort转换函数
@@ -24,15 +28,15 @@ export class SortTransformFunction extends BaseTransformFunction<TransformFuncti
         name: 'field',
         type: 'string',
         required: false,
-        description: '要排序的字段名'
+        description: '要排序的字段名',
       },
       {
         name: 'order',
         type: 'string',
         required: false,
         description: '排序顺序：asc（升序）或desc（降序）',
-        defaultValue: 'asc'
-      }
+        defaultValue: 'asc',
+      },
     ];
   }
 
@@ -46,7 +50,10 @@ export class SortTransformFunction extends BaseTransformFunction<TransformFuncti
     return errors;
   }
 
-  override async execute(context: WorkflowExecutionContext, config: TransformFunctionConfig): Promise<any[]> {
+  override async execute(
+    context: WorkflowExecutionContext,
+    config: TransformFunctionConfig
+  ): Promise<any[]> {
     this.checkInitialized();
 
     const { sourceData, config: transformConfig } = config;
@@ -67,9 +74,7 @@ export class SortTransformFunction extends BaseTransformFunction<TransformFuncti
       const aStr = String(aValue);
       const bStr = String(bValue);
 
-      return order === 'asc'
-        ? aStr.localeCompare(bStr)
-        : bStr.localeCompare(aStr);
+      return order === 'asc' ? aStr.localeCompare(bStr) : bStr.localeCompare(aStr);
     });
   }
 }

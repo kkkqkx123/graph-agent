@@ -67,7 +67,7 @@ export class TemplateProcessor {
       content: prompt.content,
       category: prompt.category,
       metadata: prompt.metadata,
-      variables: prompt.variables
+      variables: prompt.variables,
     };
 
     // 2. 验证必需的变量
@@ -79,7 +79,7 @@ export class TemplateProcessor {
     // 4. 变量替换
     const content = this.renderTemplate(templateObj['content'] as string, {
       ...combinedParts,
-      ...variables
+      ...variables,
     });
 
     this.logger.debug('模板处理完成', { category, name });

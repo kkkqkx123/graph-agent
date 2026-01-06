@@ -1,6 +1,16 @@
 import { NodeId } from '../../../../domain/workflow/value-objects/node/node-id';
-import { NodeType, NodeTypeValue, NodeContextTypeValue } from '../../../../domain/workflow/value-objects/node/node-type';
-import { Node, NodeExecutionResult, NodeMetadata, ValidationResult, WorkflowExecutionContext } from '../../../../domain/workflow/entities/node';
+import {
+  NodeType,
+  NodeTypeValue,
+  NodeContextTypeValue,
+} from '../../../../domain/workflow/value-objects/node/node-type';
+import {
+  Node,
+  NodeExecutionResult,
+  NodeMetadata,
+  ValidationResult,
+  WorkflowExecutionContext,
+} from '../../../../domain/workflow/entities/node';
 import { ID } from '../../../../domain/common/value-objects/id';
 
 /**
@@ -64,7 +74,7 @@ export class SubgraphNode extends Node {
         subworkflowContext,
         {
           timeout: this.timeout,
-          propagateErrors: this.propagateErrors
+          propagateErrors: this.propagateErrors,
         }
       );
 
@@ -79,7 +89,7 @@ export class SubgraphNode extends Node {
           message: '子工作流执行完成',
           subworkflowId: this.subworkflowId.toString(),
           outputs,
-          subworkflowResult: subworkflowResult
+          subworkflowResult: subworkflowResult,
         },
         executionTime,
         metadata: {
@@ -88,8 +98,8 @@ export class SubgraphNode extends Node {
           subworkflowId: this.subworkflowId.toString(),
           inputCount: Object.keys(subworkflowInputs).length,
           outputCount: Object.keys(outputs).length,
-          propagateErrors: this.propagateErrors
-        }
+          propagateErrors: this.propagateErrors,
+        },
       };
     } catch (error) {
       const executionTime = Date.now() - startTime;
@@ -101,7 +111,7 @@ export class SubgraphNode extends Node {
         type: 'subworkflow_execution_error',
         subworkflowId: this.subworkflowId.toString(),
         message: errorMessage,
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
       });
       context.setVariable('errors', errors);
 
@@ -113,8 +123,8 @@ export class SubgraphNode extends Node {
           nodeId: this.nodeId.toString(),
           nodeType: this.type.toString(),
           subworkflowId: this.subworkflowId.toString(),
-          propagateErrors: this.propagateErrors
-        }
+          propagateErrors: this.propagateErrors,
+        },
       };
     }
   }
@@ -144,7 +154,9 @@ export class SubgraphNode extends Node {
         inputs[mapping.target] = value;
       } catch (error) {
         if (mapping.required) {
-          throw new Error(`无法获取参数 ${mapping.source}: ${error instanceof Error ? error.message : String(error)}`);
+          throw new Error(
+            `无法获取参数 ${mapping.source}: ${error instanceof Error ? error.message : String(error)}`
+          );
         }
         // 非必需参数，跳过
       }
@@ -170,8 +182,8 @@ export class SubgraphNode extends Node {
       variables: { ...inputs },
       metadata: {
         isSubworkflow: true,
-        parentNodeId: this.nodeId.toString()
-      }
+        parentNodeId: this.nodeId.toString(),
+      },
     };
   }
 
@@ -266,7 +278,7 @@ export class SubgraphNode extends Node {
 
     return {
       valid: errors.length === 0,
-      errors
+      errors,
     };
   }
 
@@ -282,37 +294,37 @@ export class SubgraphNode extends Node {
           name: 'subworkflowId',
           type: 'string',
           required: true,
-          description: '子工作流ID'
+          description: '子工作流ID',
         },
         {
           name: 'inputMappings',
           type: 'array',
           required: false,
           description: '输入参数映射',
-          defaultValue: []
+          defaultValue: [],
         },
         {
           name: 'outputMappings',
           type: 'array',
           required: false,
           description: '输出参数映射',
-          defaultValue: []
+          defaultValue: [],
         },
         {
           name: 'propagateErrors',
           type: 'boolean',
           required: false,
           description: '是否传播错误',
-          defaultValue: true
+          defaultValue: true,
         },
         {
           name: 'timeout',
           type: 'number',
           required: false,
           description: '超时时间（毫秒）',
-          defaultValue: 300000
-        }
-      ]
+          defaultValue: 300000,
+        },
+      ],
     };
   }
 
@@ -320,7 +332,7 @@ export class SubgraphNode extends Node {
     return {
       type: 'object',
       properties: {},
-      required: []
+      required: [],
     };
   }
 
@@ -331,8 +343,8 @@ export class SubgraphNode extends Node {
         message: { type: 'string', description: '执行消息' },
         subworkflowId: { type: 'string', description: '子工作流ID' },
         outputs: { type: 'object', description: '输出参数' },
-        subworkflowResult: { type: 'object', description: '子工作流执行结果' }
-      }
+        subworkflowResult: { type: 'object', description: '子工作流执行结果' },
+      },
     };
   }
 

@@ -6,8 +6,21 @@
 
 import { ID, ILogger } from '../../../domain/common';
 import { NodeId, PromptContext } from '../../../domain/workflow';
-import { Thread, IThreadRepository, ExecutionContext, NodeExecutionSnapshot } from '../../../domain/threads';
-import { ISessionRepository, ForkStrategy, ForkOptions, ForkContext, ThreadOperationResult, ThreadOperationMetadata, ThreadOperationError } from '../../../domain/sessions';
+import {
+  Thread,
+  IThreadRepository,
+  ExecutionContext,
+  NodeExecutionSnapshot,
+} from '../../../domain/threads';
+import {
+  ISessionRepository,
+  ForkStrategy,
+  ForkOptions,
+  ForkContext,
+  ThreadOperationResult,
+  ThreadOperationMetadata,
+  ThreadOperationError,
+} from '../../../domain/sessions';
 
 /**
  * Fork操作输入
@@ -45,7 +58,7 @@ export class ThreadForkService {
     private readonly threadRepository: IThreadRepository,
     private readonly sessionRepository: ISessionRepository,
     private readonly logger: ILogger
-  ) { }
+  ) {}
 
   /**
    * 执行Fork操作
@@ -57,7 +70,7 @@ export class ThreadForkService {
     try {
       this.logger.info('开始执行Fork操作', {
         parentThreadId: input.parentThread.threadId.toString(),
-        forkPoint: input.forkPoint.toString()
+        forkPoint: input.forkPoint.toString(),
       });
 
       // 验证输入
@@ -69,7 +82,7 @@ export class ThreadForkService {
           { input }
         );
         const metadata = ThreadOperationMetadata.create(operationType, operatorId, {
-          validationError: validation.error
+          validationError: validation.error,
         });
         return ThreadOperationResult.createFailure<ForkOutput>(error, metadata);
       }
@@ -83,7 +96,7 @@ export class ThreadForkService {
           { validation: forkValidation }
         );
         const metadata = ThreadOperationMetadata.create(operationType, operatorId, {
-          validationErrors: forkValidation.errors
+          validationErrors: forkValidation.errors,
         });
         return ThreadOperationResult.createFailure<ForkOutput>(error, metadata);
       }
@@ -101,26 +114,30 @@ export class ThreadForkService {
       const output: ForkOutput = {
         forkContext,
         forkedThreadId,
-        forkStrategy
+        forkStrategy,
       };
 
       // 创建操作元数据
       const duration = Date.now() - startTime;
-      const metadata = ThreadOperationMetadata.createWithDuration(operationType, duration, operatorId, {
-        parentThreadId: input.parentThread.threadId.toString(),
-        forkPoint: input.forkPoint.toString(),
-        forkedThreadId: forkedThreadId.toString(),
-        forkStrategy: forkStrategy.type,
-        warnings: forkValidation.warnings
-      });
+      const metadata = ThreadOperationMetadata.createWithDuration(
+        operationType,
+        duration,
+        operatorId,
+        {
+          parentThreadId: input.parentThread.threadId.toString(),
+          forkPoint: input.forkPoint.toString(),
+          forkedThreadId: forkedThreadId.toString(),
+          forkStrategy: forkStrategy.type,
+          warnings: forkValidation.warnings,
+        }
+      );
 
       this.logger.info('Fork操作执行成功', {
         forkedThreadId: forkedThreadId.toString(),
-        duration
+        duration,
       });
 
       return ThreadOperationResult.createSuccess(output, metadata);
-
     } catch (error) {
       const operationError = ThreadOperationError.create(
         'EXECUTION_ERROR',
@@ -128,7 +145,7 @@ export class ThreadForkService {
         { error }
       );
       const metadata = ThreadOperationMetadata.create(operationType, operatorId, {
-        executionError: true
+        executionError: true,
       });
 
       this.logger.error('Fork操作执行失败', error as Error);
@@ -192,7 +209,7 @@ export class ThreadForkService {
     return {
       valid: errors.length === 0,
       errors,
-      warnings
+      warnings,
     };
   }
 

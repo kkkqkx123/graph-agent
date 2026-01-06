@@ -1,6 +1,16 @@
 import { NodeId } from '../../../domain/workflow/value-objects/node/node-id';
-import { NodeType, NodeTypeValue, NodeContextTypeValue } from '../../../domain/workflow/value-objects/node/node-type';
-import { Node, NodeExecutionResult, NodeMetadata, ValidationResult, WorkflowExecutionContext } from '../../../domain/workflow/entities/node';
+import {
+  NodeType,
+  NodeTypeValue,
+  NodeContextTypeValue,
+} from '../../../domain/workflow/value-objects/node/node-type';
+import {
+  Node,
+  NodeExecutionResult,
+  NodeMetadata,
+  ValidationResult,
+  WorkflowExecutionContext,
+} from '../../../domain/workflow/entities/node';
 
 /**
  * 交互类型枚举
@@ -13,7 +23,7 @@ export enum InteractionType {
   /** 通知 */
   NOTIFICATION = 'notification',
   /** 对话 */
-  CONVERSATION = 'conversation'
+  CONVERSATION = 'conversation',
 }
 
 /**
@@ -92,7 +102,7 @@ export class UserInteractionNode extends Node {
       // 等待用户响应
       const response = await interactionService.waitForResponse(taskId, {
         timeout: this.timeout,
-        allowMultipleResponses: this.allowMultipleResponses
+        allowMultipleResponses: this.allowMultipleResponses,
       });
 
       // 处理用户响应
@@ -106,7 +116,7 @@ export class UserInteractionNode extends Node {
           message: '用户交互完成',
           taskId,
           response: processedResponse,
-          interactionType: this.interactionType
+          interactionType: this.interactionType,
         },
         executionTime,
         metadata: {
@@ -114,8 +124,8 @@ export class UserInteractionNode extends Node {
           nodeType: this.type.toString(),
           interactionType: this.interactionType,
           taskId,
-          responseCount: Array.isArray(response) ? response.length : 1
-        }
+          responseCount: Array.isArray(response) ? response.length : 1,
+        },
       };
     } catch (error) {
       const executionTime = Date.now() - startTime;
@@ -127,7 +137,7 @@ export class UserInteractionNode extends Node {
         type: 'user_interaction_error',
         interactionType: this.interactionType,
         message: errorMessage,
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
       });
       context.setVariable('errors', errors);
 
@@ -138,8 +148,8 @@ export class UserInteractionNode extends Node {
         metadata: {
           nodeId: this.nodeId.toString(),
           nodeType: this.type.toString(),
-          interactionType: this.interactionType
-        }
+          interactionType: this.interactionType,
+        },
       };
     }
   }
@@ -159,7 +169,7 @@ export class UserInteractionNode extends Node {
       nodeId: this.nodeId.toString(),
       createdAt: new Date().toISOString(),
       timeout: this.timeout,
-      allowMultipleResponses: this.allowMultipleResponses
+      allowMultipleResponses: this.allowMultipleResponses,
     };
 
     // 根据交互类型添加特定配置
@@ -190,10 +200,13 @@ export class UserInteractionNode extends Node {
    * @param context 执行上下文
    * @returns 处理后的响应
    */
-  private processResponse(response: any, context: WorkflowExecutionContext): Record<string, unknown> {
+  private processResponse(
+    response: any,
+    context: WorkflowExecutionContext
+  ): Record<string, unknown> {
     const processed: Record<string, unknown> = {
       timestamp: new Date().toISOString(),
-      type: this.interactionType
+      type: this.interactionType,
     };
 
     if (Array.isArray(response)) {
@@ -239,7 +252,7 @@ export class UserInteractionNode extends Node {
           messages.push({
             role: 'user',
             content: response.userMessage,
-            timestamp: new Date().toISOString()
+            timestamp: new Date().toISOString(),
           });
           context.setVariable('messages', messages);
           break;
@@ -304,7 +317,7 @@ export class UserInteractionNode extends Node {
 
     return {
       valid: errors.length === 0,
-      errors
+      errors,
     };
   }
 
@@ -320,53 +333,53 @@ export class UserInteractionNode extends Node {
           name: 'interactionType',
           type: 'string',
           required: true,
-          description: '交互类型：form、approval、notification、conversation'
+          description: '交互类型：form、approval、notification、conversation',
         },
         {
           name: 'title',
           type: 'string',
           required: true,
-          description: '交互标题'
+          description: '交互标题',
         },
         {
           name: 'message',
           type: 'string',
           required: true,
-          description: '交互消息'
+          description: '交互消息',
         },
         {
           name: 'formFields',
           type: 'array',
           required: false,
-          description: '表单字段（form类型时必需）'
+          description: '表单字段（form类型时必需）',
         },
         {
           name: 'approvalOptions',
           type: 'array',
           required: false,
-          description: '审批选项（approval类型时必需）'
+          description: '审批选项（approval类型时必需）',
         },
         {
           name: 'notificationChannels',
           type: 'array',
           required: false,
-          description: '通知渠道（notification类型时必需）'
+          description: '通知渠道（notification类型时必需）',
         },
         {
           name: 'timeout',
           type: 'number',
           required: false,
           description: '超时时间（毫秒）',
-          defaultValue: 86400000
+          defaultValue: 86400000,
         },
         {
           name: 'allowMultipleResponses',
           type: 'boolean',
           required: false,
           description: '是否允许多个响应',
-          defaultValue: false
-        }
-      ]
+          defaultValue: false,
+        },
+      ],
     };
   }
 
@@ -374,7 +387,7 @@ export class UserInteractionNode extends Node {
     return {
       type: 'object',
       properties: {},
-      required: []
+      required: [],
     };
   }
 
@@ -385,8 +398,8 @@ export class UserInteractionNode extends Node {
         message: { type: 'string', description: '执行消息' },
         taskId: { type: 'string', description: '任务ID' },
         response: { type: 'object', description: '用户响应' },
-        interactionType: { type: 'string', description: '交互类型' }
-      }
+        interactionType: { type: 'string', description: '交互类型' },
+      },
     };
   }
 

@@ -1,6 +1,6 @@
 /**
  * 应用服务基类
- * 
+ *
  * 为应用层服务提供通用功能，包括DTO映射、业务操作封装等
  */
 
@@ -62,11 +62,7 @@ export abstract class BaseApplicationService extends BaseService {
     operation: () => Promise<ID>,
     context?: Record<string, unknown>
   ): Promise<string> {
-    const result = await this.executeBusinessOperation(
-      `创建${entityName}`,
-      operation,
-      context
-    );
+    const result = await this.executeBusinessOperation(`创建${entityName}`, operation, context);
     return result.toString();
   }
 
@@ -82,11 +78,7 @@ export abstract class BaseApplicationService extends BaseService {
     operation: () => Promise<T>,
     context?: Record<string, unknown>
   ): Promise<T> {
-    return this.executeBusinessOperation(
-      `更新${entityName}`,
-      operation,
-      context
-    );
+    return this.executeBusinessOperation(`更新${entityName}`, operation, context);
   }
 
   /**
@@ -101,11 +93,7 @@ export abstract class BaseApplicationService extends BaseService {
     operation: () => Promise<boolean>,
     context?: Record<string, unknown>
   ): Promise<boolean> {
-    return this.executeBusinessOperation(
-      `删除${entityName}`,
-      operation,
-      context
-    );
+    return this.executeBusinessOperation(`删除${entityName}`, operation, context);
   }
 
   /**
@@ -120,11 +108,7 @@ export abstract class BaseApplicationService extends BaseService {
     operation: () => Promise<T | null>,
     context?: Record<string, unknown>
   ): Promise<T | null> {
-    return this.executeQueryOperation(
-      `获取${entityName}`,
-      operation,
-      context
-    );
+    return this.executeQueryOperation(`获取${entityName}`, operation, context);
   }
 
   /**
@@ -139,11 +123,7 @@ export abstract class BaseApplicationService extends BaseService {
     operation: () => Promise<T[]>,
     context?: Record<string, unknown>
   ): Promise<T[]> {
-    return this.executeQueryOperation(
-      `列出${entityName}`,
-      operation,
-      context
-    );
+    return this.executeQueryOperation(`列出${entityName}`, operation, context);
   }
 
   /**
@@ -158,11 +138,7 @@ export abstract class BaseApplicationService extends BaseService {
     operation: () => Promise<boolean>,
     context?: Record<string, unknown>
   ): Promise<boolean> {
-    return this.executeQueryOperation(
-      `检查${entityName}`,
-      operation,
-      context
-    );
+    return this.executeQueryOperation(`检查${entityName}`, operation, context);
   }
 
   /**
@@ -177,11 +153,7 @@ export abstract class BaseApplicationService extends BaseService {
     operation: () => Promise<number>,
     context?: Record<string, unknown>
   ): Promise<number> {
-    return this.executeBusinessOperation(
-      `清理${targetName}`,
-      operation,
-      context
-    );
+    return this.executeBusinessOperation(`清理${targetName}`, operation, context);
   }
 
   /**
@@ -225,7 +197,10 @@ export abstract class BaseApplicationService extends BaseService {
     operationName: string,
     page: number,
     pageSize: number,
-    pageOperation: (page: number, pageSize: number) => Promise<{
+    pageOperation: (
+      page: number,
+      pageSize: number
+    ) => Promise<{
       items: T[];
       total: number;
       page: number;
@@ -234,10 +209,10 @@ export abstract class BaseApplicationService extends BaseService {
     }>,
     context?: Record<string, unknown>
   ) {
-    return this.executeOperation(
-      operationName,
-      () => pageOperation(page, pageSize),
-      { ...context, page, pageSize }
-    );
+    return this.executeOperation(operationName, () => pageOperation(page, pageSize), {
+      ...context,
+      page,
+      pageSize,
+    });
   }
 }

@@ -1,16 +1,10 @@
 /**
  * 节点实体实现
- * 
+ *
  * 本文件实现了图工作流中的节点实体
  */
 
-import {
-  NodeId,
-  NodeType,
-  NodeStatus,
-  NodeConfig,
-  createNodeId
-} from '../types/workflow-types';
+import { NodeId, NodeType, NodeStatus, NodeConfig, createNodeId } from '../types/workflow-types';
 
 /**
  * 节点实体类
@@ -98,9 +92,9 @@ export class NodeImpl {
           type: 'object',
           properties: {
             text: { type: 'string', description: '输入文本' },
-            prompt: { type: 'string', description: '提示词模板' }
+            prompt: { type: 'string', description: '提示词模板' },
           },
-          required: ['text']
+          required: ['text'],
         };
 
       case NodeType.TOOL:
@@ -108,9 +102,9 @@ export class NodeImpl {
           type: 'object',
           properties: {
             toolName: { type: 'string', description: '工具名称' },
-            parameters: { type: 'object', description: '工具参数' }
+            parameters: { type: 'object', description: '工具参数' },
           },
-          required: ['toolName']
+          required: ['toolName'],
         };
 
       case NodeType.CONDITION:
@@ -118,9 +112,9 @@ export class NodeImpl {
           type: 'object',
           properties: {
             condition: { type: 'string', description: '条件表达式' },
-            data: { type: 'object', description: '评估数据' }
+            data: { type: 'object', description: '评估数据' },
           },
-          required: ['condition', 'data']
+          required: ['condition', 'data'],
         };
 
       case NodeType.TRANSFORM:
@@ -128,34 +122,34 @@ export class NodeImpl {
           type: 'object',
           properties: {
             input: { type: 'any', description: '输入数据' },
-            transformRules: { type: 'object', description: '转换规则' }
+            transformRules: { type: 'object', description: '转换规则' },
           },
-          required: ['input', 'transformRules']
+          required: ['input', 'transformRules'],
         };
 
       case NodeType.START:
         return {
           type: 'object',
           properties: {
-            input: { type: 'any', description: '工作流输入' }
+            input: { type: 'any', description: '工作流输入' },
           },
-          required: ['input']
+          required: ['input'],
         };
 
       case NodeType.END:
         return {
           type: 'object',
           properties: {
-            result: { type: 'any', description: '工作流结果' }
+            result: { type: 'any', description: '工作流结果' },
           },
-          required: ['result']
+          required: ['result'],
         };
 
       default:
         return {
           type: 'object',
           properties: {},
-          required: []
+          required: [],
         };
     }
   }
@@ -172,8 +166,8 @@ export class NodeImpl {
           properties: {
             response: { type: 'string', description: 'LLM响应' },
             model: { type: 'string', description: '使用的模型' },
-            tokens: { type: 'number', description: '使用的token数' }
-          }
+            tokens: { type: 'number', description: '使用的token数' },
+          },
         };
 
       case NodeType.TOOL:
@@ -181,8 +175,8 @@ export class NodeImpl {
           type: 'object',
           properties: {
             result: { type: 'any', description: '工具执行结果' },
-            executionTime: { type: 'number', description: '执行时间(ms)' }
-          }
+            executionTime: { type: 'number', description: '执行时间(ms)' },
+          },
         };
 
       case NodeType.CONDITION:
@@ -190,24 +184,24 @@ export class NodeImpl {
           type: 'object',
           properties: {
             result: { type: 'boolean', description: '条件评估结果' },
-            evaluatedExpression: { type: 'string', description: '评估的表达式' }
-          }
+            evaluatedExpression: { type: 'string', description: '评估的表达式' },
+          },
         };
 
       case NodeType.TRANSFORM:
         return {
           type: 'object',
           properties: {
-            output: { type: 'any', description: '转换后的数据' }
-          }
+            output: { type: 'any', description: '转换后的数据' },
+          },
         };
 
       case NodeType.START:
         return {
           type: 'object',
           properties: {
-            text: { type: 'string', description: '输入文本' }
-          }
+            text: { type: 'string', description: '输入文本' },
+          },
         };
 
       case NodeType.END:
@@ -215,15 +209,15 @@ export class NodeImpl {
           type: 'object',
           properties: {
             success: { type: 'boolean', description: '执行是否成功' },
-            data: { type: 'any', description: '最终数据' }
-          }
+            data: { type: 'any', description: '最终数据' },
+          },
         };
 
       default:
         return {
           type: 'object',
           properties: {},
-          required: []
+          required: [],
         };
     }
   }

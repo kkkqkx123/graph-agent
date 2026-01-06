@@ -1,6 +1,6 @@
 /**
  * 线程生命周期服务
- * 
+ *
  * 负责线程的创建、启动、暂停、恢复、完成、取消等生命周期管理
  */
 
@@ -167,11 +167,7 @@ export class ThreadLifecycleService extends BaseApplicationService {
         const threadPriority = priority ? ThreadPriority.fromNumber(priority) : undefined;
 
         // 验证线程创建的业务规则
-        await this.validateThreadCreation(
-          sessionObjId,
-          workflowObjId,
-          threadPriority
-        );
+        await this.validateThreadCreation(sessionObjId, workflowObjId, threadPriority);
 
         // 创建线程
         const thread = Thread.create(
@@ -364,7 +360,7 @@ export class ThreadLifecycleService extends BaseApplicationService {
         const id = this.parseId(threadId, '线程ID');
 
         const thread = await this.threadRepository.findByIdOrFail(id);
-        
+
         // 验证线程启动的业务规则
         await this.validateThreadStart(id);
 
@@ -373,7 +369,7 @@ export class ThreadLifecycleService extends BaseApplicationService {
         const result = {
           success: true,
           data: inputData,
-          message: '线程执行完成'
+          message: '线程执行完成',
         };
 
         // 保存线程状态

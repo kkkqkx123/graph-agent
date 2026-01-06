@@ -10,7 +10,7 @@ export enum PromptType {
   EXAMPLES = 'examples',
   CONSTRAINTS = 'constraints',
   FORMAT = 'format',
-  CUSTOM = 'custom'
+  CUSTOM = 'custom',
 }
 
 /**
@@ -25,7 +25,7 @@ export function getPromptTypeDisplayName(type: PromptType): string {
     [PromptType.EXAMPLES]: '示例',
     [PromptType.CONSTRAINTS]: '约束',
     [PromptType.FORMAT]: '格式',
-    [PromptType.CUSTOM]: '自定义'
+    [PromptType.CUSTOM]: '自定义',
   };
   return displayNames[type] || type;
 }
@@ -35,13 +35,13 @@ export function getPromptTypeDisplayName(type: PromptType): string {
  */
 export function inferPromptTypeFromCategory(category: string): PromptType {
   const mapping: Record<string, PromptType> = {
-    'system': PromptType.SYSTEM,
-    'rules': PromptType.RULES,
-    'user_commands': PromptType.USER_COMMAND,
-    'context': PromptType.CONTEXT,
-    'examples': PromptType.EXAMPLES,
-    'constraints': PromptType.CONSTRAINTS,
-    'format': PromptType.FORMAT
+    system: PromptType.SYSTEM,
+    rules: PromptType.RULES,
+    user_commands: PromptType.USER_COMMAND,
+    context: PromptType.CONTEXT,
+    examples: PromptType.EXAMPLES,
+    constraints: PromptType.CONSTRAINTS,
+    format: PromptType.FORMAT,
   };
   return mapping[category] || PromptType.CUSTOM;
 }

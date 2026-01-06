@@ -21,10 +21,7 @@ export class SchemaRegistry {
   /**
    * 注册模块Schema
    */
-  registerSchema(
-    moduleType: string,
-    schema: z.ZodType<any>
-  ): void {
+  registerSchema(moduleType: string, schema: z.ZodType<any>): void {
     this.logger.debug('注册模块Schema', { moduleType });
 
     try {
@@ -32,7 +29,7 @@ export class SchemaRegistry {
       this.logger.debug('模块Schema注册成功', { moduleType });
     } catch (error) {
       this.logger.error('模块Schema注册失败', error as Error, {
-        moduleType
+        moduleType,
       });
       throw new Error(`注册模块Schema ${moduleType} 失败: ${(error as Error).message}`);
     }
@@ -56,15 +53,17 @@ export class SchemaRegistry {
       const error = `未找到模块类型 ${moduleType} 的验证器`;
       this.logger.warn(error);
       return {
-         isValid: false,
-         errors: [{
-           path: 'root',
-           message: error,
-           code: 'VALIDATION_ERROR',
-           severity: 'error' as any
-         }],
-         severity: 'error'
-       };
+        isValid: false,
+        errors: [
+          {
+            path: 'root',
+            message: error,
+            code: 'VALIDATION_ERROR',
+            severity: 'error' as any,
+          },
+        ],
+        severity: 'error',
+      };
     }
 
     try {
@@ -79,13 +78,13 @@ export class SchemaRegistry {
         this.logger.warn('配置验证失败', {
           moduleType,
           errorCount: errors.length,
-          errors: errors.slice(0, 5)
+          errors: errors.slice(0, 5),
         });
 
         return {
           isValid: false,
           errors,
-          severity: this.determineSeverity(errors)
+          severity: this.determineSeverity(errors),
         };
       }
 
@@ -93,14 +92,14 @@ export class SchemaRegistry {
         path: 'root',
         message: `验证器执行失败: ${(error as Error).message}`,
         code: 'VALIDATION_ERROR',
-        severity: 'error' as any
+        severity: 'error' as any,
       };
 
       this.logger.error('配置验证失败', error as Error);
       return {
         isValid: false,
         errors: [validationError],
-        severity: 'error'
+        severity: 'error',
       };
     }
   }
@@ -158,7 +157,7 @@ export class SchemaRegistry {
         message,
         code: this.getZodErrorCode(error),
         severity,
-        suggestions: this.getZodErrorSuggestions(error)
+        suggestions: this.getZodErrorSuggestions(error),
       };
     });
   }

@@ -64,12 +64,10 @@ export class HumanRelayService implements IHumanRelayService {
 
       // 3. 构建LLM响应
       return this.createLLMResponse(userResponse, request);
-
     } catch (error) {
       throw error;
     }
   }
-
 
   /**
    * 构建提示
@@ -79,7 +77,7 @@ export class HumanRelayService implements IHumanRelayService {
     const iLLMMessages = request.messages.map(msg => ({
       role: this.convertMessageRole(msg.getRole()),
       content: msg.getContent(),
-      metadata: {}
+      metadata: {},
     }));
 
     // 构建内容和上下文
@@ -88,9 +86,7 @@ export class HumanRelayService implements IHumanRelayService {
 
     if (config.mode === HumanRelayMode.SINGLE) {
       // 单轮模式：合并所有消息作为完整上下文
-      content = iLLMMessages
-        .map(msg => `${msg.role}: ${msg.content}`)
-        .join('\n');
+      content = iLLMMessages.map(msg => `${msg.role}: ${msg.content}`).join('\n');
     } else {
       // 多轮模式：只使用最新消息作为增量内容
       const latestMessage = iLLMMessages[iLLMMessages.length - 1];
@@ -100,9 +96,10 @@ export class HumanRelayService implements IHumanRelayService {
 
       // 历史消息作为上下文（除了最新消息）
       const historyMessages = iLLMMessages.slice(0, -1);
-      conversationContext = historyMessages.length > 0
-        ? historyMessages.map(msg => `${msg.role}: ${msg.content}`).join('\n')
-        : undefined;
+      conversationContext =
+        historyMessages.length > 0
+          ? historyMessages.map(msg => `${msg.role}: ${msg.content}`).join('\n')
+          : undefined;
 
       content = `${latestMessage.role}: ${latestMessage.content}`;
     }
@@ -114,7 +111,7 @@ export class HumanRelayService implements IHumanRelayService {
       conversationContext,
       status: 'created',
       createdAt: new Date(),
-      timeout: config.defaultTimeout
+      timeout: config.defaultTimeout,
     };
   }
 
@@ -139,10 +136,7 @@ export class HumanRelayService implements IHumanRelayService {
   /**
    * 发送提示并等待响应（简化实现）
    */
-  private async sendPromptAndWaitForResponse(
-    prompt: Prompt,
-    timeout: number
-  ): Promise<string> {
+  private async sendPromptAndWaitForResponse(prompt: Prompt, timeout: number): Promise<string> {
     // 简化实现：直接返回模拟响应
     console.log('HumanRelay提示:', prompt.content);
     console.log('等待用户输入...');
@@ -156,32 +150,31 @@ export class HumanRelayService implements IHumanRelayService {
   /**
    * 创建LLM响应
    */
-  private createLLMResponse(
-    userResponse: string,
-    request: LLMRequest
-  ): LLMResponse {
+  private createLLMResponse(userResponse: string, request: LLMRequest): LLMResponse {
     const promptTokens = this.estimateTokensSync(request);
     const completionTokens = this.estimateTokensSync(userResponse);
 
     return LLMResponse.create(
       request.id,
       'human-relay',
-      [{
-        index: 0,
-        message: LLMMessage.createAssistant(userResponse),
-        finish_reason: 'stop'
-      }],
+      [
+        {
+          index: 0,
+          message: LLMMessage.createAssistant(userResponse),
+          finish_reason: 'stop',
+        },
+      ],
       {
         promptTokens,
         completionTokens,
-        totalTokens: promptTokens + completionTokens
+        totalTokens: promptTokens + completionTokens,
       },
       'stop',
       0,
       {
         metadata: {
-          responseType: 'simulated'
-        }
+          responseType: 'simulated',
+        },
       }
     );
   }
@@ -190,9 +183,8 @@ export class HumanRelayService implements IHumanRelayService {
    * 估算token数量（内部方法）
    */
   private estimateTokensSync(request: LLMRequest | string): number {
-    const text = typeof request === 'string'
-      ? request
-      : request.messages.map(m => m.getContent()).join(' ');
+    const text =
+      typeof request === 'string' ? request : request.messages.map(m => m.getContent()).join(' ');
     // 简单估算：1个字符约等于0.25个token
     return Math.ceil(text.length * 0.25);
   }

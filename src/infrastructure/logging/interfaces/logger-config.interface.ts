@@ -10,7 +10,7 @@ import { LogLevel } from '../../../domain/common/types/logger-types';
 export enum LogOutputType {
   CONSOLE = 'console',
   FILE = 'file',
-  REMOTE = 'remote'
+  REMOTE = 'remote',
 }
 
 /**
@@ -19,7 +19,7 @@ export enum LogOutputType {
 export enum LogFormatType {
   JSON = 'json',
   TEXT = 'text',
-  CUSTOM = 'custom'
+  CUSTOM = 'custom',
 }
 
 /**
@@ -29,7 +29,7 @@ export enum LogRotationStrategy {
   DAILY = 'daily',
   WEEKLY = 'weekly',
   MONTHLY = 'monthly',
-  SIZE = 'size'
+  SIZE = 'size',
 }
 
 /**
@@ -77,10 +77,7 @@ export interface RemoteLogOutputConfig extends BaseLogOutputConfig {
 /**
  * 日志输出配置联合类型
  */
-export type LogOutputConfig =
-  | ConsoleLogOutputConfig
-  | FileLogOutputConfig
-  | RemoteLogOutputConfig;
+export type LogOutputConfig = ConsoleLogOutputConfig | FileLogOutputConfig | RemoteLogOutputConfig;
 
 /**
  * 敏感信息脱敏配置
@@ -111,8 +108,8 @@ export class LoggerConfigBuilder {
     sensitive_data: {
       patterns: [],
       replacement: '***',
-      enabled: true
-    }
+      enabled: true,
+    },
   };
 
   /**
@@ -135,7 +132,7 @@ export class LoggerConfigBuilder {
       enabled: true,
       colorize: true,
       timestamp: true,
-      ...config
+      ...config,
     });
     return this;
   }
@@ -154,7 +151,7 @@ export class LoggerConfigBuilder {
       max_size: '10MB',
       max_files: 7,
       compress: true,
-      ...config
+      ...config,
     });
     return this;
   }
@@ -171,7 +168,7 @@ export class LoggerConfigBuilder {
       endpoint: '',
       batch_size: 100,
       flush_interval: 5000,
-      ...config
+      ...config,
     });
     return this;
   }
@@ -184,7 +181,7 @@ export class LoggerConfigBuilder {
       patterns: [],
       replacement: '***',
       enabled: true,
-      ...config
+      ...config,
     };
     return this;
   }

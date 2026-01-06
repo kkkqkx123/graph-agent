@@ -5,7 +5,7 @@ import { ValueObject } from '../../../common/value-objects';
 export enum ExecutionMode {
   SYNC = 'sync',
   ASYNC = 'async',
-  STREAM = 'stream'
+  STREAM = 'stream',
 }
 
 /**

@@ -6,16 +6,16 @@ import { ValueObject, ID, Timestamp } from '../../common/value-objects';
 export interface ExecutionHistory {
   /** 节点ID */
   nodeId: ID;
-  
+
   /** 执行时间 */
   timestamp: Timestamp;
-  
+
   /** 执行结果 */
   result?: any;
-  
+
   /** 执行状态 */
   status: 'success' | 'failure' | 'pending' | 'running';
-  
+
   /** 执行元数据 */
   metadata?: Record<string, any>;
 }
@@ -35,7 +35,7 @@ export interface WorkflowStateProps {
 
 /**
  * WorkflowState值对象
- * 
+ *
  * 表示工作流执行过程中的状态信息，是不可变的
  * 包含当前节点、执行上下文数据、执行历史和元数据
  */
@@ -75,7 +75,7 @@ export class WorkflowState extends ValueObject<WorkflowStateProps> {
       history: [],
       metadata: {},
       createdAt: now,
-      updatedAt: now
+      updatedAt: now,
     });
   }
 
@@ -159,7 +159,7 @@ export class WorkflowState extends ValueObject<WorkflowStateProps> {
       history: [...this.props.history],
       metadata: { ...this.props.metadata },
       createdAt: this.props.createdAt,
-      updatedAt: this.props.updatedAt
+      updatedAt: this.props.updatedAt,
     };
   }
 

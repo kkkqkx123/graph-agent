@@ -37,7 +37,7 @@ export class CopyOptions extends ValueObject<{
       includeExecutionHistory,
       includeMetadata,
       resetState,
-      customSettings
+      customSettings,
     });
   }
 
@@ -49,7 +49,7 @@ export class CopyOptions extends ValueObject<{
       copyScope: 'full',
       includeExecutionHistory: true,
       includeMetadata: true,
-      resetState: false
+      resetState: false,
     });
   }
 
@@ -61,7 +61,7 @@ export class CopyOptions extends ValueObject<{
       copyScope: 'full',
       includeExecutionHistory: true,
       includeMetadata: true,
-      resetState: false
+      resetState: false,
     });
   }
 
@@ -73,7 +73,7 @@ export class CopyOptions extends ValueObject<{
       copyScope: 'partial',
       includeExecutionHistory: false,
       includeMetadata: false,
-      resetState: true
+      resetState: true,
     });
   }
 
@@ -136,7 +136,7 @@ export class CopyScope extends ValueObject<{
       nodeIds: [...nodeIds],
       includeVariables,
       includeNodeStates,
-      includeContext
+      includeContext,
     });
   }
 
@@ -148,7 +148,7 @@ export class CopyScope extends ValueObject<{
       nodeIds: [],
       includeVariables: false,
       includeNodeStates: false,
-      includeContext: false
+      includeContext: false,
     });
   }
 
@@ -239,7 +239,7 @@ export class CopyContext extends ValueObject<{
       timestamp: Timestamp.now(),
       options,
       scope,
-      relationshipMapping: new Map(relationshipMapping)
+      relationshipMapping: new Map(relationshipMapping),
     });
   }
 
@@ -301,7 +301,7 @@ export class CopyContext extends ValueObject<{
     if (!this.props.relationshipMapping) {
       throw new Error('关系映射不能为空');
     }
-    
+
     // 验证各个组件
     this.props.options.validate();
     this.props.scope.validate();

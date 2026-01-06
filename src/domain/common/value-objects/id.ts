@@ -2,7 +2,7 @@ import { v4 as uuidv4 } from 'uuid';
 
 /**
  * ID值对象
- * 
+ *
  * 表示实体的唯一标识符
  */
 export class ID {
@@ -13,20 +13,20 @@ export class ID {
 
   /**
    * 构造函数
-   * 
+   *
    * @param value ID值
    */
   constructor(value: string) {
     if (!ID.isValid(value)) {
       throw new Error(`Invalid ID: ${value}`);
     }
-    
+
     this.value = value;
   }
 
   /**
    * 检查ID值是否有效
-   * 
+   *
    * @param value ID值
    * @returns 是否有效
    */
@@ -38,7 +38,7 @@ export class ID {
 
   /**
    * 生成新的ID
-   * 
+   *
    * @returns 新ID
    */
   static generate(): ID {
@@ -47,7 +47,7 @@ export class ID {
 
   /**
    * 从字符串创建ID
-   * 
+   *
    * @param value 字符串值
    * @returns ID
    */
@@ -57,7 +57,7 @@ export class ID {
 
   /**
    * 检查是否为空ID
-   * 
+   *
    * @returns 是否为空
    */
   isEmpty(): boolean {
@@ -66,7 +66,7 @@ export class ID {
 
   /**
    * 获取ID的短表示（前8位）
-   * 
+   *
    * @returns 短表示
    */
   toShort(): string {
@@ -75,7 +75,7 @@ export class ID {
 
   /**
    * 转换为字符串
-   * 
+   *
    * @returns 字符串表示
    */
   toString(): string {
@@ -84,7 +84,7 @@ export class ID {
 
   /**
    * 转换为JSON
-   * 
+   *
    * @returns JSON表示
    */
   toJSON(): string {
@@ -93,7 +93,7 @@ export class ID {
 
   /**
    * 检查是否相等
-   * 
+   *
    * @param other 另一个ID
    * @returns 是否相等
    */
@@ -103,7 +103,7 @@ export class ID {
 
   /**
    * 哈希值
-   * 
+   *
    * @returns 哈希值
    */
   hashCode(): number {
@@ -112,7 +112,7 @@ export class ID {
 
   /**
    * 比较两个ID
-   * 
+   *
    * @param other 另一个ID
    * @returns 比较结果
    */
@@ -128,7 +128,7 @@ export class ID {
 
   /**
    * 获取ID的版本
-   * 
+   *
    * @returns 版本号
    */
   getVersion(): number {
@@ -137,7 +137,7 @@ export class ID {
 
   /**
    * 获取ID的变体
-   * 
+   *
    * @returns 变体号
    */
   getVariant(): number {
@@ -146,7 +146,7 @@ export class ID {
 
   /**
    * 获取ID的时间戳（仅适用于v1 UUID）
-   * 
+   *
    * @returns 时间戳
    */
   getTimestamp(): number | null {
@@ -157,16 +157,16 @@ export class ID {
     const timeLow = parseInt(this.value.substring(0, 8), 16);
     const timeMid = parseInt(this.value.substring(9, 13), 16);
     const timeHi = parseInt(this.value.substring(15, 19), 16);
-    
+
     const time = ((timeHi & 0x0fff) << 48) + (timeMid << 32) + timeLow;
-    
+
     // UUID时间戳从1582-10-15开始
     return time - 122192928000000000;
   }
 
   /**
    * 获取ID的节点ID（仅适用于v1 UUID）
-   * 
+   *
    * @returns 节点ID
    */
   getNodeId(): string | null {
@@ -179,7 +179,7 @@ export class ID {
 
   /**
    * 获取ID的时钟序列（仅适用于v1 UUID）
-   * 
+   *
    * @returns 时钟序列
    */
   getClockSequence(): number | null {
@@ -189,13 +189,13 @@ export class ID {
 
     const clockSeqHi = parseInt(this.value.substring(19, 21), 16);
     const clockSeqLow = parseInt(this.value.substring(21, 23), 16);
-    
+
     return ((clockSeqHi & 0x3f) << 8) | clockSeqLow;
   }
 
   /**
    * 创建空ID
-   * 
+   *
    * @returns 空ID
    */
   static empty(): ID {
@@ -204,7 +204,7 @@ export class ID {
 
   /**
    * 检查是否为空ID
-   * 
+   *
    * @param id ID
    * @returns 是否为空
    */
@@ -214,7 +214,7 @@ export class ID {
 
   /**
    * 从字节数组创建ID
-   * 
+   *
    * @param bytes 字节数组
    * @returns ID
    */
@@ -232,7 +232,7 @@ export class ID {
       hex.substring(8, 12),
       hex.substring(12, 16),
       hex.substring(16, 20),
-      hex.substring(20, 32)
+      hex.substring(20, 32),
     ].join('-');
 
     return new ID(uuid);
@@ -240,7 +240,7 @@ export class ID {
 
   /**
    * 转换为字节数组
-   * 
+   *
    * @returns 字节数组
    */
   toBytes(): Uint8Array {
@@ -256,7 +256,7 @@ export class ID {
 
   /**
    * 从Base64字符串创建ID
-   * 
+   *
    * @param base64 Base64字符串
    * @returns ID
    */
@@ -267,7 +267,7 @@ export class ID {
 
   /**
    * 转换为Base64字符串
-   * 
+   *
    * @returns Base64字符串
    */
   toBase64(): string {
@@ -277,7 +277,7 @@ export class ID {
 
   /**
    * 克隆ID
-   * 
+   *
    * @returns 新ID
    */
   clone(): ID {
@@ -286,7 +286,7 @@ export class ID {
 
   /**
    * 获取ID的字符串表示（用于调试）
-   * 
+   *
    * @returns 调试字符串
    */
   toDebugString(): string {

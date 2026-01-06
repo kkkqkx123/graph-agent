@@ -9,16 +9,14 @@ import { TYPES } from '../../../di/service-keys';
  */
 @injectable()
 export class TaskGroupManager {
-  constructor(
-    @inject(TYPES.ConfigLoadingModule) private configManager: ConfigLoadingModule
-  ) {}
+  constructor(@inject(TYPES.ConfigLoadingModule) private configManager: ConfigLoadingModule) {}
 
   /**
    * 获取组引用对应的模型列表
    */
   async getModelsForGroup(groupReference: string): Promise<string[]> {
     const [groupName, echelonOrTask] = this.parseGroupReference(groupReference);
-    
+
     if (!groupName) {
       return [];
     }
@@ -37,14 +35,14 @@ export class TaskGroupManager {
       // 如果没有指定层级，返回所有层级的模型
       const allModels: string[] = [];
       const echelons = (taskGroup['echelons'] as Record<string, any>) || {};
-      
+
       for (const echelonConfig of Object.values(echelons)) {
-        allModels.push(...((echelonConfig as any)['models'] as string[] || []));
+        allModels.push(...(((echelonConfig as any)['models'] as string[]) || []));
       }
-      
+
       return allModels;
     }
-    
+
     return [];
   }
 
@@ -54,8 +52,8 @@ export class TaskGroupManager {
   parseGroupReference(reference: string): [string, string | null] {
     const parts = reference.split('.');
     const groupName = parts[0] ?? '';
-    const echelonOrTask = parts.length > 1 ? parts[1] ?? null : null;
-    
+    const echelonOrTask = parts.length > 1 ? (parts[1] ?? null) : null;
+
     return [groupName, echelonOrTask];
   }
 
@@ -64,7 +62,7 @@ export class TaskGroupManager {
    */
   async getFallbackGroups(groupReference: string): Promise<string[]> {
     const [groupName, echelonOrTask] = this.parseGroupReference(groupReference);
-    
+
     if (!groupName) {
       return [];
     }
@@ -84,12 +82,16 @@ export class TaskGroupManager {
 
     // 根据降级策略生成降级组
     const fallbackStrategy = taskGroup['fallbackStrategy'] || 'echelon_down';
-    if (fallbackStrategy === 'echelon_down' && echelonOrTask && echelonOrTask.startsWith('echelon')) {
+    if (
+      fallbackStrategy === 'echelon_down' &&
+      echelonOrTask &&
+      echelonOrTask.startsWith('echelon')
+    ) {
       // 获取下一层级
       const echelonNum = parseInt(echelonOrTask.replace('echelon', ''));
       const nextEchelon = `echelon${echelonNum + 1}`;
       const nextEchelonConfig = await this.getEchelonConfig(groupName, nextEchelon);
-      
+
       if (nextEchelonConfig) {
         fallbackGroups.push(`${groupName}.${nextEchelon}`);
       }
@@ -101,7 +103,10 @@ export class TaskGroupManager {
   /**
    * 获取层级配置
    */
-  async getEchelonConfig(groupName: string, echelonName: string): Promise<Record<string, any> | null> {
+  async getEchelonConfig(
+    groupName: string,
+    echelonName: string
+  ): Promise<Record<string, any> | null> {
     const taskGroup = await this.getTaskGroup(groupName);
     if (!taskGroup) {
       return null;
@@ -122,19 +127,15 @@ export class TaskGroupManager {
 
     const echelonList: Array<[string, number, string[]]> = [];
     const echelons = taskGroup['echelons'] || {};
-    
+
     for (const [echelonName, echelonConfig] of Object.entries(echelons)) {
       const config = echelonConfig as Record<string, any>;
-      echelonList.push([
-        echelonName,
-        config['priority'] || 999,
-        config['models'] || []
-      ]);
+      echelonList.push([echelonName, config['priority'] || 999, config['models'] || []]);
     }
 
     // 按优先级排序（数字越小优先级越高）
     echelonList.sort((a, b) => a[1] - b[1]);
-    
+
     return echelonList;
   }
 
@@ -144,7 +145,7 @@ export class TaskGroupManager {
   async listTaskGroups(): Promise<string[]> {
     const llmConfig = await this.getLLMConfig();
     const taskGroups = llmConfig['taskGroups'] || {};
-    
+
     return Object.keys(taskGroups);
   }
 
@@ -153,7 +154,7 @@ export class TaskGroupManager {
    */
   async validateGroupReference(reference: string): Promise<boolean> {
     const [groupName, echelonOrTask] = this.parseGroupReference(reference);
-    
+
     if (!groupName) {
       return false;
     }
@@ -187,11 +188,13 @@ export class TaskGroupManager {
         fallbackGroups: fallbackConfig['fallbackGroups'] || [],
         maxAttempts: fallbackConfig['maxAttempts'] || 3,
         retryDelay: fallbackConfig['retryDelay'] || 1.0,
-        circuitBreaker: fallbackConfig['circuitBreaker'] ? {
-          failureThreshold: fallbackConfig['circuitBreaker']['failureThreshold'] || 5,
-          recoveryTime: fallbackConfig['circuitBreaker']['recoveryTime'] || 60,
-          halfOpenRequests: fallbackConfig['circuitBreaker']['halfOpenRequests'] || 1
-        } : null
+        circuitBreaker: fallbackConfig['circuitBreaker']
+          ? {
+              failureThreshold: fallbackConfig['circuitBreaker']['failureThreshold'] || 5,
+              recoveryTime: fallbackConfig['circuitBreaker']['recoveryTime'] || 60,
+              halfOpenRequests: fallbackConfig['circuitBreaker']['halfOpenRequests'] || 1,
+            }
+          : null,
       };
     }
 
@@ -204,8 +207,8 @@ export class TaskGroupManager {
       circuitBreaker: {
         failureThreshold: 5,
         recoveryTime: 60,
-        halfOpenRequests: 1
-      }
+        halfOpenRequests: 1,
+      },
     };
   }
 
@@ -222,14 +225,14 @@ export class TaskGroupManager {
     if (fallbackConfig) {
       return {
         strategy: fallbackConfig['strategy'] || 'instance_rotation',
-        maxInstanceAttempts: fallbackConfig['maxInstanceAttempts'] || 2
+        maxInstanceAttempts: fallbackConfig['maxInstanceAttempts'] || 2,
       };
     }
 
     // 返回默认配置
     return {
       strategy: 'instance_rotation',
-      maxInstanceAttempts: 2
+      maxInstanceAttempts: 2,
     };
   }
 
@@ -247,7 +250,7 @@ export class TaskGroupManager {
   private async getTaskGroup(groupName: string): Promise<Record<string, any> | null> {
     const llmConfig = await this.getLLMConfig();
     const taskGroups = llmConfig['taskGroups'] || {};
-    
+
     return taskGroups[groupName] || null;
   }
 
@@ -257,7 +260,7 @@ export class TaskGroupManager {
   private async getPollingPool(poolName: string): Promise<Record<string, any> | null> {
     const llmConfig = await this.getLLMConfig();
     const pollingPools = llmConfig['pollingPools'] || {};
-    
+
     return pollingPools[poolName] || null;
   }
 
@@ -273,7 +276,7 @@ export class TaskGroupManager {
    */
   async getTaskGroupStatus(groupName: string): Promise<Record<string, any>> {
     const modelsByPriority = await this.getGroupModelsByPriority(groupName);
-    
+
     return {
       name: groupName,
       totalEchelons: modelsByPriority.length,
@@ -282,9 +285,9 @@ export class TaskGroupManager {
         name: echelonName,
         priority,
         modelCount: models.length,
-        available: models.length > 0
+        available: models.length > 0,
       })),
-      available: modelsByPriority.length > 0
+      available: modelsByPriority.length > 0,
     };
   }
 
@@ -294,11 +297,11 @@ export class TaskGroupManager {
   async getAllTaskGroupsStatus(): Promise<Record<string, any>> {
     const taskGroups = await this.listTaskGroups();
     const status: Record<string, any> = {};
-    
+
     for (const groupName of taskGroups) {
       status[groupName] = await this.getTaskGroupStatus(groupName);
     }
-    
+
     return status;
   }
 
@@ -315,14 +318,14 @@ export class TaskGroupManager {
    */
   async getConfigStatus(): Promise<Record<string, any>> {
     const llmConfig = await this.getLLMConfig();
-    
+
     return {
       loaded: true,
       taskGroupsCount: Object.keys(llmConfig['taskGroups'] || {}).length,
       pollingPoolsCount: Object.keys(llmConfig['pollingPools'] || {}).length,
       hasGlobalFallback: Object.keys(llmConfig['globalFallback'] || {}).length > 0,
       hasConcurrencyControl: Object.keys(llmConfig['concurrencyControl'] || {}).length > 0,
-      hasRateLimiting: Object.keys(llmConfig['rateLimiting'] || {}).length > 0
+      hasRateLimiting: Object.keys(llmConfig['rateLimiting'] || {}).length > 0,
     };
   }
 }

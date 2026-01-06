@@ -6,7 +6,7 @@ export enum InstanceStatus {
   DEGRADED = 'degraded',
   UNHEALTHY = 'unhealthy',
   FAILED = 'failed',
-  RECOVERING = 'recovering'
+  RECOVERING = 'recovering',
 }
 
 /**
@@ -36,7 +36,18 @@ export class PoolInstance extends ValueObject<{
     public readonly successCount: number,
     public readonly failureCount: number
   ) {
-    super({ instanceId, modelName, groupName, echelon, status, currentLoad, maxConcurrency, avgResponseTime, successCount, failureCount });
+    super({
+      instanceId,
+      modelName,
+      groupName,
+      echelon,
+      status,
+      currentLoad,
+      maxConcurrency,
+      avgResponseTime,
+      successCount,
+      failureCount,
+    });
   }
 
   validate(): void {
@@ -70,7 +81,7 @@ export class PoolInstance extends ValueObject<{
    */
   getHealthScore(): number {
     let score = 0;
-    
+
     // 状态权重
     switch (this.status) {
       case InstanceStatus.HEALTHY:
@@ -89,20 +100,20 @@ export class PoolInstance extends ValueObject<{
         score += 0;
         break;
     }
-    
+
     // 成功率权重
     score += this.getSuccessRate() * 30;
-    
+
     // 负载权重
     const loadRatio = this.currentLoad / this.maxConcurrency;
     score += (1 - loadRatio) * 20;
-    
+
     // 响应时间权重（响应时间越短越好）
     if (this.avgResponseTime > 0) {
       const responseTimeScore = Math.max(0, 50 - this.avgResponseTime / 100);
       score += responseTimeScore;
     }
-    
+
     return Math.min(100, Math.max(0, score));
   }
 
@@ -131,7 +142,7 @@ export class PoolInstance extends ValueObject<{
       successRate: this.getSuccessRate(),
       healthScore: this.getHealthScore(),
       available: this.isAvailable(),
-      canAcceptRequest: this.canAcceptRequest()
+      canAcceptRequest: this.canAcceptRequest(),
     };
   }
 }

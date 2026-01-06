@@ -7,9 +7,7 @@ export class TokenBucketLimiter {
   private readonly capacity: number;
   private readonly refillRate: number;
 
-  constructor(
-    @inject('ConfigManager') private configManager: any
-  ) {
+  constructor(@inject('ConfigManager') private configManager: any) {
     this.capacity = this.configManager.get('llm.rateLimit.capacity', 100);
     this.refillRate = this.configManager.get('llm.rateLimit.refillRate', 10); // tokens per second
     this.tokens = this.capacity;
@@ -21,7 +19,9 @@ export class TokenBucketLimiter {
 
     if (this.tokens < 1) {
       const waitTime = this.calculateWaitTime();
-      throw new Error(`Rate limit exceeded. Please wait ${waitTime}ms before making another request.`);
+      throw new Error(
+        `Rate limit exceeded. Please wait ${waitTime}ms before making another request.`
+      );
     }
 
     this.tokens -= 1;

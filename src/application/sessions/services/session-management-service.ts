@@ -1,10 +1,15 @@
 /**
  * 会话管理服务
- * 
+ *
  * 负责会话的查询、列表、存在性检查和配置更新等管理功能
  */
 
-import { Session, ISessionRepository, SessionConfig, SessionConfigProps } from '../../../domain/sessions';
+import {
+  Session,
+  ISessionRepository,
+  SessionConfig,
+  SessionConfigProps,
+} from '../../../domain/sessions';
 import { BaseApplicationService } from '../../common/base-application-service';
 import { ILogger } from '../../../domain/common';
 
@@ -64,13 +69,10 @@ export class SessionManagementService extends BaseApplicationService {
    * @returns 会话信息列表
    */
   async listSessions(): Promise<Session[]> {
-    return this.executeListOperation(
-      '会话',
-      async () => {
-        const sessions = await this.sessionRepository.findAll();
-        return sessions;
-      }
-    );
+    return this.executeListOperation('会话', async () => {
+      const sessions = await this.sessionRepository.findAll();
+      return sessions;
+    });
   }
 
   /**
@@ -116,5 +118,4 @@ export class SessionManagementService extends BaseApplicationService {
       { sessionId, configKeys: Object.keys(config) }
     );
   }
-
 }

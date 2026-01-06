@@ -11,7 +11,7 @@ export enum ErrorHandlingStrategy {
   /** 重试 */
   RETRY = 'retry',
   /** 使用默认值 */
-  USE_DEFAULT = 'use_default'
+  USE_DEFAULT = 'use_default',
 }
 
 /**
@@ -48,7 +48,7 @@ export interface ErrorHandlingResult {
 
 /**
  * 领域错误处理器抽象基类
- * 
+ *
  * 提供统一的错误处理框架
  */
 export abstract class DomainErrorHandler {
@@ -72,7 +72,7 @@ export abstract class DomainErrorHandler {
   protected logError(error: Error, context: ErrorContext): void {
     const timestamp = new Date().toISOString();
     const logMessage = `[${timestamp}] ${context.component}.${context.operation}: ${error.message}`;
-    
+
     if (context.entityId) {
       console.error(`${logMessage} (Entity: ${context.entityId})`);
     } else {
@@ -97,10 +97,10 @@ export abstract class DomainErrorHandler {
   protected createDomainError(message: string, context: ErrorContext): Error {
     const fullMessage = `${context.component}.${context.operation}: ${message}`;
     const error = new Error(fullMessage);
-    
+
     // 添加上下文信息到错误
     (error as any).context = context;
-    
+
     return error;
   }
 
@@ -119,16 +119,17 @@ export abstract class DomainErrorHandler {
     // 某些错误类型不应该重试
     if ((error as any).code) {
       const errorCode = (error as any).code;
-      if (errorCode === 'VALIDATION_ERROR' ||
-          errorCode === 'AUTHORIZATION_ERROR') {
+      if (errorCode === 'VALIDATION_ERROR' || errorCode === 'AUTHORIZATION_ERROR') {
         return false;
       }
     }
 
     // 网络错误或临时性错误可以重试
-    if (error.message.includes('timeout') || 
-        error.message.includes('connection') ||
-        error.message.includes('temporary')) {
+    if (
+      error.message.includes('timeout') ||
+      error.message.includes('connection') ||
+      error.message.includes('temporary')
+    ) {
       return true;
     }
 
@@ -159,20 +160,20 @@ export class WorkflowErrorHandler extends DomainErrorHandler {
         return {
           handled: false,
           strategy: this.strategy,
-          error: this.createDomainError(error.message, context)
+          error: this.createDomainError(error.message, context),
         };
 
       case ErrorHandlingStrategy.LOG_AND_CONTINUE:
         return {
           handled: true,
-          strategy: this.strategy
+          strategy: this.strategy,
         };
 
       case ErrorHandlingStrategy.LOG_AND_THROW:
         return {
           handled: false,
           strategy: this.strategy,
-          error: this.createDomainError(error.message, context)
+          error: this.createDomainError(error.message, context),
         };
 
       case ErrorHandlingStrategy.RETRY:
@@ -181,21 +182,21 @@ export class WorkflowErrorHandler extends DomainErrorHandler {
           handled: true,
           strategy: this.strategy,
           shouldRetry,
-          retryDelay: shouldRetry ? this.calculateRetryDelay(1) : undefined
+          retryDelay: shouldRetry ? this.calculateRetryDelay(1) : undefined,
         };
 
       case ErrorHandlingStrategy.USE_DEFAULT:
         return {
           handled: true,
           strategy: this.strategy,
-          defaultValue: this.getDefaultValue(context)
+          defaultValue: this.getDefaultValue(context),
         };
 
       default:
         return {
           handled: false,
           strategy: this.strategy,
-          error: this.createDomainError(`未知的错误处理策略: ${this.strategy}`, context)
+          error: this.createDomainError(`未知的错误处理策略: ${this.strategy}`, context),
         };
     }
   }
@@ -228,8 +229,8 @@ export class SessionErrorHandler extends DomainErrorHandler {
         strategy: ErrorHandlingStrategy.USE_DEFAULT,
         defaultValue: {
           status: 'timeout',
-          message: '会话超时'
-        }
+          message: '会话超时',
+        },
       };
     }
 
@@ -239,8 +240,8 @@ export class SessionErrorHandler extends DomainErrorHandler {
         strategy: ErrorHandlingStrategy.USE_DEFAULT,
         defaultValue: {
           status: 'expired',
-          message: '会话过期'
-        }
+          message: '会话过期',
+        },
       };
     }
 
@@ -249,13 +250,13 @@ export class SessionErrorHandler extends DomainErrorHandler {
         return {
           handled: false,
           strategy: this.strategy,
-          error: this.createDomainError(error.message, context)
+          error: this.createDomainError(error.message, context),
         };
 
       default:
         return {
           handled: true,
-          strategy: this.strategy
+          strategy: this.strategy,
         };
     }
   }
@@ -296,11 +297,11 @@ export class ErrorHandlerFactory {
 export class DefaultErrorHandler extends DomainErrorHandler {
   handle(error: Error, context: ErrorContext): ErrorHandlingResult {
     this.logError(error, context);
-    
+
     return {
       handled: false,
       strategy: ErrorHandlingStrategy.LOG_AND_THROW,
-      error: this.createDomainError(error.message, context)
+      error: this.createDomainError(error.message, context),
     };
   }
 }

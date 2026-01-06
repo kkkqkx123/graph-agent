@@ -4,7 +4,13 @@
  * 负责会话的创建、激活、暂停和终止等生命周期管理
  */
 
-import { Session, ISessionRepository, SessionStatus, SessionConfig, SessionConfigProps } from '../../../domain/sessions';
+import {
+  Session,
+  ISessionRepository,
+  SessionStatus,
+  SessionConfig,
+  SessionConfigProps,
+} from '../../../domain/sessions';
 import { BaseApplicationService } from '../../common/base-application-service';
 import { ILogger, ID } from '../../../domain/common';
 
@@ -114,7 +120,9 @@ export class SessionLifecycleService extends BaseApplicationService {
       '创建会话',
       async () => {
         const userId = this.parseOptionalId(request.userId, '用户ID');
-        const config = request.config ? SessionConfig.create(request.config as Partial<SessionConfigProps>) : undefined;
+        const config = request.config
+          ? SessionConfig.create(request.config as Partial<SessionConfigProps>)
+          : undefined;
 
         // 验证会话创建的业务规则
         await this.validateSessionCreation(userId, config);
@@ -235,5 +243,4 @@ export class SessionLifecycleService extends BaseApplicationService {
       { sessionId, userId, reason }
     );
   }
-
 }

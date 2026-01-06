@@ -13,7 +13,7 @@ export interface CheckpointTupleProps {
 
 /**
  * 检查点元组值对象
- * 
+ *
  * 用于LangWorkflow集成的检查点元组结构
  */
 export class CheckpointTuple extends ValueObject<CheckpointTupleProps> {
@@ -49,7 +49,7 @@ export class CheckpointTuple extends ValueObject<CheckpointTupleProps> {
       config: { ...config },
       checkpoint,
       parentConfig: parentConfig ? { ...parentConfig } : undefined,
-      pendingWrites: pendingWrites ? [...pendingWrites] : undefined
+      pendingWrites: pendingWrites ? [...pendingWrites] : undefined,
     });
   }
 
@@ -100,7 +100,7 @@ export class CheckpointTuple extends ValueObject<CheckpointTupleProps> {
    * 获取检查点命名空间
    */
   public getCheckpointNamespace(): string {
-    const configurable = this.props.config['configurable'] as Record<string, unknown> || {};
+    const configurable = (this.props.config['configurable'] as Record<string, unknown>) || {};
     return (configurable['checkpoint_ns'] as string) || '';
   }
 
@@ -108,7 +108,7 @@ export class CheckpointTuple extends ValueObject<CheckpointTupleProps> {
    * 获取检查点ID
    */
   public getCheckpointId(): string {
-    const configurable = this.props.config['configurable'] as Record<string, unknown> || {};
+    const configurable = (this.props.config['configurable'] as Record<string, unknown>) || {};
     const configId = configurable['checkpoint_id'] as string;
     return configId || this.props.checkpoint.checkpointId.toString();
   }
@@ -117,7 +117,7 @@ export class CheckpointTuple extends ValueObject<CheckpointTupleProps> {
    * 获取配置中的线程ID
    */
   private getThreadIdFromConfig(): string {
-    const configurable = this.props.config['configurable'] as Record<string, unknown> || {};
+    const configurable = (this.props.config['configurable'] as Record<string, unknown>) || {};
     return (configurable['thread_id'] as string) || '';
   }
 
@@ -146,11 +146,13 @@ export class CheckpointTuple extends ValueObject<CheckpointTupleProps> {
    * 添加待写入数据
    */
   public addPendingWrite(data: unknown): CheckpointTuple {
-    const newPendingWrites = this.props.pendingWrites ? [...this.props.pendingWrites, data] : [data];
+    const newPendingWrites = this.props.pendingWrites
+      ? [...this.props.pendingWrites, data]
+      : [data];
 
     return new CheckpointTuple({
       ...this.props,
-      pendingWrites: newPendingWrites
+      pendingWrites: newPendingWrites,
     });
   }
 
@@ -160,7 +162,7 @@ export class CheckpointTuple extends ValueObject<CheckpointTupleProps> {
   public clearPendingWrites(): CheckpointTuple {
     return new CheckpointTuple({
       ...this.props,
-      pendingWrites: undefined
+      pendingWrites: undefined,
     });
   }
 
@@ -170,7 +172,7 @@ export class CheckpointTuple extends ValueObject<CheckpointTupleProps> {
   public updateConfig(newConfig: Record<string, unknown>): CheckpointTuple {
     return new CheckpointTuple({
       ...this.props,
-      config: { ...newConfig }
+      config: { ...newConfig },
     });
   }
 
@@ -180,7 +182,7 @@ export class CheckpointTuple extends ValueObject<CheckpointTupleProps> {
   public updateParentConfig(newParentConfig: Record<string, unknown>): CheckpointTuple {
     return new CheckpointTuple({
       ...this.props,
-      parentConfig: { ...newParentConfig }
+      parentConfig: { ...newParentConfig },
     });
   }
 
@@ -195,7 +197,7 @@ export class CheckpointTuple extends ValueObject<CheckpointTupleProps> {
    * 获取可配置值
    */
   public getConfigurableValue(key: string): unknown {
-    const configurable = this.props.config['configurable'] as Record<string, unknown> || {};
+    const configurable = (this.props.config['configurable'] as Record<string, unknown>) || {};
     return configurable[key];
   }
 
@@ -208,7 +210,7 @@ export class CheckpointTuple extends ValueObject<CheckpointTupleProps> {
 
     return new CheckpointTuple({
       ...this.props,
-      config: newConfig
+      config: newConfig,
     });
   }
 
@@ -216,7 +218,7 @@ export class CheckpointTuple extends ValueObject<CheckpointTupleProps> {
    * 设置可配置值
    */
   public setConfigurableValue(key: string, value: unknown): CheckpointTuple {
-    const configurable = this.props.config['configurable'] as Record<string, unknown> || {};
+    const configurable = (this.props.config['configurable'] as Record<string, unknown>) || {};
     const newConfigurable = { ...configurable };
     newConfigurable[key] = value;
 
@@ -225,7 +227,7 @@ export class CheckpointTuple extends ValueObject<CheckpointTupleProps> {
 
     return new CheckpointTuple({
       ...this.props,
-      config: newConfig
+      config: newConfig,
     });
   }
 
@@ -256,7 +258,7 @@ export class CheckpointTuple extends ValueObject<CheckpointTupleProps> {
       config: this.props.config,
       checkpoint: this.props.checkpoint.toDict(),
       parentConfig: this.props.parentConfig,
-      pendingWrites: this.props.pendingWrites
+      pendingWrites: this.props.pendingWrites,
     };
   }
 
@@ -278,23 +280,23 @@ export class CheckpointTuple extends ValueObject<CheckpointTupleProps> {
             source: 'workflow-agent',
             step: 0,
             writes: this.props.pendingWrites || [],
-            parents: this.props.parentConfig ? [this.props.parentConfig] : undefined
-          }
+            parents: this.props.parentConfig ? [this.props.parentConfig] : undefined,
+          },
         },
         metadata: {
           source: 'workflow-agent',
           step: 0,
           writes: this.props.pendingWrites || [],
           parents: this.props.parentConfig ? [this.props.parentConfig] : undefined,
-          config: this.props.config
-        }
+          config: this.props.config,
+        },
       },
       metadata: {
         source: 'workflow-agent',
         step: 0,
         writes: this.props.pendingWrites || [],
-        parents: this.props.parentConfig ? [this.props.parentConfig] : undefined
-      }
+        parents: this.props.parentConfig ? [this.props.parentConfig] : undefined,
+      },
     };
   }
 
@@ -329,9 +331,12 @@ export class CheckpointTuple extends ValueObject<CheckpointTupleProps> {
     }
 
     // 验证检查点ID的一致性
-    const configurable = this.props.config['configurable'] as Record<string, unknown> || {};
+    const configurable = (this.props.config['configurable'] as Record<string, unknown>) || {};
     const configCheckpointId = configurable['checkpoint_id'] as string;
-    if (configCheckpointId && configCheckpointId !== this.props.checkpoint.checkpointId.toString()) {
+    if (
+      configCheckpointId &&
+      configCheckpointId !== this.props.checkpoint.checkpointId.toString()
+    ) {
       throw new Error('配置中的检查点ID与检查点ID不一致');
     }
   }

@@ -6,7 +6,7 @@ import {
   humanContextProcessor,
   systemContextProcessor,
   passThroughProcessor,
-  isolateProcessor
+  isolateProcessor,
 } from '../functions/context-processors';
 
 /**
@@ -105,11 +105,7 @@ export interface ContextProcessorService {
    * @param config 处理器配置
    * @returns 处理后的提示词上下文
    */
-  execute(
-    name: string,
-    context: PromptContext,
-    config?: Record<string, unknown>
-  ): PromptContext;
+  execute(name: string, context: PromptContext, config?: Record<string, unknown>): PromptContext;
 }
 
 /**
@@ -152,8 +148,8 @@ export class ContextProcessorServiceImpl implements ContextProcessorService {
         description: metadata?.description,
         version: metadata?.version || '1.0.0',
         createdAt: metadata?.createdAt || new Date(),
-        isBuiltin: metadata?.isBuiltin || false
-      }
+        isBuiltin: metadata?.isBuiltin || false,
+      },
     };
 
     this.processors.set(name, registration);
@@ -239,11 +235,7 @@ export class ContextProcessorServiceImpl implements ContextProcessorService {
    * @param config 处理器配置
    * @returns 处理后的提示词上下文
    */
-  public execute(
-    name: string,
-    context: any,
-    config?: Record<string, unknown>
-  ): any {
+  public execute(name: string, context: any, config?: Record<string, unknown>): any {
     const processor = this.get(name);
     if (!processor) {
       throw new Error(`上下文处理器 "${name}" 不存在`);
@@ -256,81 +248,57 @@ export class ContextProcessorServiceImpl implements ContextProcessorService {
    */
   private registerBuiltinProcessors(): void {
     // LLM上下文处理器
-    this.register(
-      'llm_context',
-      llmContextProcessor,
-      {
-        name: 'llm_context',
-        description: 'LLM专用上下文处理器，过滤工具调用历史',
-        version: '1.0.0',
-        createdAt: new Date(),
-        isBuiltin: true
-      }
-    );
+    this.register('llm_context', llmContextProcessor, {
+      name: 'llm_context',
+      description: 'LLM专用上下文处理器，过滤工具调用历史',
+      version: '1.0.0',
+      createdAt: new Date(),
+      isBuiltin: true,
+    });
 
     // 工具上下文处理器
-    this.register(
-      'tool_context',
-      toolContextProcessor,
-      {
-        name: 'tool_context',
-        description: '工具调用上下文处理器，提取工具相关变量',
-        version: '1.0.0',
-        createdAt: new Date(),
-        isBuiltin: true
-      }
-    );
+    this.register('tool_context', toolContextProcessor, {
+      name: 'tool_context',
+      description: '工具调用上下文处理器，提取工具相关变量',
+      version: '1.0.0',
+      createdAt: new Date(),
+      isBuiltin: true,
+    });
 
     // 人工交互上下文处理器
-    this.register(
-      'human_context',
-      humanContextProcessor,
-      {
-        name: 'human_context',
-        description: '人工交互上下文处理器，保留用户交互相关数据',
-        version: '1.0.0',
-        createdAt: new Date(),
-        isBuiltin: true
-      }
-    );
+    this.register('human_context', humanContextProcessor, {
+      name: 'human_context',
+      description: '人工交互上下文处理器，保留用户交互相关数据',
+      version: '1.0.0',
+      createdAt: new Date(),
+      isBuiltin: true,
+    });
 
     // 系统上下文处理器
-    this.register(
-      'system_context',
-      systemContextProcessor,
-      {
-        name: 'system_context',
-        description: '系统上下文处理器，保留系统级变量和元数据',
-        version: '1.0.0',
-        createdAt: new Date(),
-        isBuiltin: true
-      }
-    );
+    this.register('system_context', systemContextProcessor, {
+      name: 'system_context',
+      description: '系统上下文处理器，保留系统级变量和元数据',
+      version: '1.0.0',
+      createdAt: new Date(),
+      isBuiltin: true,
+    });
 
     // 直接传递处理器
-    this.register(
-      'pass_through',
-      passThroughProcessor,
-      {
-        name: 'pass_through',
-        description: '直接传递上下文，不做任何过滤',
-        version: '1.0.0',
-        createdAt: new Date(),
-        isBuiltin: true
-      }
-    );
+    this.register('pass_through', passThroughProcessor, {
+      name: 'pass_through',
+      description: '直接传递上下文，不做任何过滤',
+      version: '1.0.0',
+      createdAt: new Date(),
+      isBuiltin: true,
+    });
 
     // 隔离上下文处理器
-    this.register(
-      'isolate',
-      isolateProcessor,
-      {
-        name: 'isolate',
-        description: '隔离上下文，只保留模板',
-        version: '1.0.0',
-        createdAt: new Date(),
-        isBuiltin: true
-      }
-    );
+    this.register('isolate', isolateProcessor, {
+      name: 'isolate',
+      description: '隔离上下文，只保留模板',
+      version: '1.0.0',
+      createdAt: new Date(),
+      isBuiltin: true,
+    });
   }
 }

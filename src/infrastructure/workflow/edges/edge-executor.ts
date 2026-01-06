@@ -13,7 +13,7 @@ export class EdgeExecutor {
   constructor(
     @inject('FunctionRegistry') private readonly functionRegistry: FunctionRegistry,
     @inject('Logger') private readonly logger: ILogger
-  ) { }
+  ) {}
 
   /**
    * 执行边
@@ -26,7 +26,7 @@ export class EdgeExecutor {
       edgeId: edge.id.toString(),
       edgeType: edge.type.toString(),
       fromNodeId: edge.fromNodeId.toString(),
-      toNodeId: edge.toNodeId.toString()
+      toNodeId: edge.toNodeId.toString(),
     });
 
     try {
@@ -43,7 +43,7 @@ export class EdgeExecutor {
         toNodeId: edge.toNodeId.toString(),
         condition: edge.condition,
         weight: edge.weight,
-        ...edge.properties
+        ...edge.properties,
       };
 
       const result = await edgeFunction.execute(context, config);
@@ -51,7 +51,7 @@ export class EdgeExecutor {
       this.logger.info('边执行完成', {
         edgeId: edge.id.toString(),
         edgeType: edge.type.toString(),
-        success: true
+        success: true,
       });
 
       return {
@@ -61,13 +61,13 @@ export class EdgeExecutor {
           edgeId: edge.id.toString(),
           edgeType: edge.type.toString(),
           fromNodeId: edge.fromNodeId.toString(),
-          toNodeId: edge.toNodeId.toString()
-        }
+          toNodeId: edge.toNodeId.toString(),
+        },
       };
     } catch (error) {
       this.logger.error('边执行失败', error instanceof Error ? error : new Error(String(error)), {
         edgeId: edge.id.toString(),
-        edgeType: edge.type.toString()
+        edgeType: edge.type.toString(),
       });
 
       return {
@@ -76,8 +76,8 @@ export class EdgeExecutor {
         metadata: {
           edgeId: edge.id.toString(),
           edgeType: edge.type.toString(),
-          errorType: error instanceof Error ? error.constructor.name : 'Unknown'
-        }
+          errorType: error instanceof Error ? error.constructor.name : 'Unknown',
+        },
       };
     }
   }
@@ -95,7 +95,7 @@ export class EdgeExecutor {
       if (!edgeFunction) {
         this.logger.warn('边函数不存在', {
           edgeId: edge.id.toString(),
-          edgeType: edge.type.toString()
+          edgeType: edge.type.toString(),
         });
         return false;
       }
@@ -107,11 +107,11 @@ export class EdgeExecutor {
           // 简单的条件评估逻辑
           const variables = this.extractVariables(context);
           const satisfied = this.evaluateCondition(condition, variables);
-          
+
           if (!satisfied) {
             this.logger.debug('边条件不满足', {
               edgeId: edge.id.toString(),
-              condition
+              condition,
             });
             return false;
           }
@@ -125,7 +125,7 @@ export class EdgeExecutor {
         toNodeId: edge.toNodeId.toString(),
         condition: edge.condition,
         weight: edge.weight,
-        ...edge.properties
+        ...edge.properties,
       };
 
       // 验证配置（使用IWorkflowFunction的validateConfig方法）
@@ -133,7 +133,7 @@ export class EdgeExecutor {
       if (!validationResult.valid) {
         this.logger.warn('边配置验证失败', {
           edgeId: edge.id.toString(),
-          errors: validationResult.errors
+          errors: validationResult.errors,
         });
         return false;
       }
@@ -142,7 +142,7 @@ export class EdgeExecutor {
     } catch (error) {
       this.logger.error('边验证失败', error instanceof Error ? error : new Error(String(error)), {
         edgeId: edge.id.toString(),
-        edgeType: edge.type.toString()
+        edgeType: edge.type.toString(),
       });
       return false;
     }
@@ -155,12 +155,12 @@ export class EdgeExecutor {
    */
   private extractVariables(context: WorkflowExecutionContext): Record<string, unknown> {
     const variables: Record<string, unknown> = {};
-    
+
     // 尝试获取常见的变量
     try {
       variables['executionId'] = context.getExecutionId();
       variables['workflowId'] = context.getWorkflowId();
-      
+
       // 尝试获取一些常见的上下文变量
       const commonKeys = ['messages', 'errors', 'tool_calls', 'condition_results'];
       for (const key of commonKeys) {
@@ -176,7 +176,7 @@ export class EdgeExecutor {
     } catch {
       // 忽略提取变量时的错误
     }
-    
+
     return variables;
   }
 
@@ -190,7 +190,7 @@ export class EdgeExecutor {
     try {
       // 替换变量引用
       let expression = condition;
-      
+
       // 简单的变量替换，格式为 ${variableName}
       expression = expression.replace(/\$\{([^}]+)\}/g, (match, varName) => {
         const value = variables[varName];
@@ -202,7 +202,9 @@ export class EdgeExecutor {
 
       // 安全检查，只允许基本的比较操作
       const allowedOperators = ['===', '!==', '==', '!=', '>', '<', '>=', '<=', '&&', '||', '!'];
-      const hasUnsafeContent = /eval|function|new|delete|typeof|void|in|instanceof/.test(expression);
+      const hasUnsafeContent = /eval|function|new|delete|typeof|void|in|instanceof/.test(
+        expression
+      );
 
       if (hasUnsafeContent) {
         this.logger.warn('条件表达式包含不安全的内容', { condition });
@@ -225,10 +227,10 @@ export class EdgeExecutor {
   getSupportedEdgeTypes(): string[] {
     // 从函数注册表获取所有已注册的路由函数类型
     const allFunctions = this.functionRegistry.getAllFunctions();
-    const routingFunctions = allFunctions.filter(func =>
-      func.id.startsWith('route:') || func.name.includes('routing')
+    const routingFunctions = allFunctions.filter(
+      func => func.id.startsWith('route:') || func.name.includes('routing')
     );
-    
+
     return routingFunctions.map(func => func.id);
   }
 }

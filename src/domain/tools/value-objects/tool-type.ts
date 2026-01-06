@@ -1,6 +1,6 @@
 /**
  * 工具类型值对象
- * 
+ *
  * 表示工具的类型
  */
 export class ToolType {
@@ -21,30 +21,24 @@ export class ToolType {
   /**
    * 所有有效类型
    */
-  private static readonly VALID_TYPES = [
-    'builtin',
-    'native',
-    'rest',
-    'mcp',
-    'custom'
-  ];
+  private static readonly VALID_TYPES = ['builtin', 'native', 'rest', 'mcp', 'custom'];
 
   /**
    * 构造函数
-   * 
+   *
    * @param value 工具类型值
    */
   constructor(value: string) {
     if (!ToolType.isValid(value)) {
       throw new Error(`Invalid tool type: ${value}`);
     }
-    
+
     this.value = value;
   }
 
   /**
    * 检查类型值是否有效
-   * 
+   *
    * @param value 类型值
    * @returns 是否有效
    */
@@ -54,7 +48,7 @@ export class ToolType {
 
   /**
    * 从字符串创建工具类型
-   * 
+   *
    * @param value 字符串值
    * @returns 工具类型
    */
@@ -64,7 +58,7 @@ export class ToolType {
 
   /**
    * 检查是否为内置类型
-   * 
+   *
    * @returns 是否为内置类型
    */
   isBuiltin(): boolean {
@@ -73,7 +67,7 @@ export class ToolType {
 
   /**
    * 检查是否为原生类型
-   * 
+   *
    * @returns 是否为原生类型
    */
   isNative(): boolean {
@@ -82,7 +76,7 @@ export class ToolType {
 
   /**
    * 检查是否为REST类型
-   * 
+   *
    * @returns 是否为REST类型
    */
   isRest(): boolean {
@@ -91,7 +85,7 @@ export class ToolType {
 
   /**
    * 检查是否为MCP类型
-   * 
+   *
    * @returns 是否为MCP类型
    */
   isMcp(): boolean {
@@ -100,7 +94,7 @@ export class ToolType {
 
   /**
    * 检查是否为自定义类型
-   * 
+   *
    * @returns 是否为自定义类型
    */
   isCustom(): boolean {
@@ -109,7 +103,7 @@ export class ToolType {
 
   /**
    * 检查是否为远程类型（REST或MCP）
-   * 
+   *
    * @returns 是否为远程类型
    */
   isRemote(): boolean {
@@ -118,7 +112,7 @@ export class ToolType {
 
   /**
    * 检查是否为本地类型（内置或原生）
-   * 
+   *
    * @returns 是否为本地类型
    */
   isLocal(): boolean {
@@ -127,7 +121,7 @@ export class ToolType {
 
   /**
    * 获取类型的显示名称
-   * 
+   *
    * @returns 显示名称
    */
   getDisplayName(): string {
@@ -149,7 +143,7 @@ export class ToolType {
 
   /**
    * 获取类型的描述
-   * 
+   *
    * @returns 描述
    */
   getDescription(): string {
@@ -171,7 +165,7 @@ export class ToolType {
 
   /**
    * 获取所有有效的工具类型
-   * 
+   *
    * @returns 所有有效的工具类型
    */
   static getAllTypes(): ToolType[] {
@@ -180,7 +174,7 @@ export class ToolType {
 
   /**
    * 转换为字符串
-   * 
+   *
    * @returns 字符串表示
    */
   toString(): string {
@@ -189,7 +183,7 @@ export class ToolType {
 
   /**
    * 转换为JSON
-   * 
+   *
    * @returns JSON表示
    */
   toJSON(): string {
@@ -198,7 +192,7 @@ export class ToolType {
 
   /**
    * 检查是否相等
-   * 
+   *
    * @param other 另一个工具类型
    * @returns 是否相等
    */
@@ -208,7 +202,7 @@ export class ToolType {
 
   /**
    * 哈希值
-   * 
+   *
    * @returns 哈希值
    */
   hashCode(): number {

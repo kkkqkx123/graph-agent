@@ -23,7 +23,7 @@ import { ILogger } from '../../../domain/common/types/logger-types';
 export enum FunctionExecutionStrategy {
   SEQUENTIAL = 'sequential',
   PARALLEL = 'parallel',
-  CONDITIONAL = 'conditional'
+  CONDITIONAL = 'conditional',
 }
 
 /**
@@ -97,7 +97,8 @@ export interface FunctionExecutionConfig {
 export class FunctionExecutionEngine {
   constructor(
     @inject('NodeExecutor') private readonly nodeExecutor: NodeExecutor,
-    @inject('ContextProcessorServiceImpl') private readonly contextProcessor: ContextProcessorServiceImpl,
+    @inject('ContextProcessorServiceImpl')
+    private readonly contextProcessor: ContextProcessorServiceImpl,
     @inject('Logger') private readonly logger: ILogger
   ) {}
 
@@ -116,7 +117,7 @@ export class FunctionExecutionEngine {
   ): Promise<FunctionExecutionResult[]> {
     this.logger.info('开始执行函数', {
       functionCount: functions.length,
-      strategy: config.strategy
+      strategy: config.strategy,
     });
 
     switch (config.strategy) {
@@ -154,7 +155,7 @@ export class FunctionExecutionEngine {
       if (config.errorHandling === 'fail-fast' && !result.success) {
         this.logger.warn('快速失败策略，停止执行', {
           functionId: func.id.toString(),
-          error: result.error
+          error: result.error,
         });
         break;
       }
@@ -211,7 +212,7 @@ export class FunctionExecutionEngine {
       const canExecute = await this.nodeExecutor.canExecute(func, context);
       if (!canExecute) {
         this.logger.debug('函数不满足执行条件，跳过', {
-          functionId: func.id.toString()
+          functionId: func.id.toString(),
         });
         continue;
       }
@@ -223,7 +224,7 @@ export class FunctionExecutionEngine {
       if (config.errorHandling === 'fail-fast' && !result.success) {
         this.logger.warn('快速失败策略，停止执行', {
           functionId: func.id.toString(),
-          error: result.error
+          error: result.error,
         });
         break;
       }
@@ -251,7 +252,7 @@ export class FunctionExecutionEngine {
     this.logger.debug('开始执行函数', {
       functionId,
       functionName: func.name,
-      functionType: func.type.toString()
+      functionType: func.type.toString(),
     });
 
     try {
@@ -266,7 +267,7 @@ export class FunctionExecutionEngine {
       this.logger.info('函数执行完成', {
         functionId,
         success: result.success,
-        executionTime
+        executionTime,
       });
 
       return {
@@ -276,8 +277,8 @@ export class FunctionExecutionEngine {
         executionTime,
         metadata: {
           functionName: func.name,
-          functionType: func.type.toString()
-        }
+          functionType: func.type.toString(),
+        },
       };
     } catch (error) {
       const executionTime = Date.now() - startTime;
@@ -285,7 +286,7 @@ export class FunctionExecutionEngine {
 
       this.logger.error('函数执行失败', error instanceof Error ? error : new Error(String(error)), {
         functionId,
-        executionTime
+        executionTime,
       });
 
       return {
@@ -296,8 +297,8 @@ export class FunctionExecutionEngine {
         metadata: {
           functionName: func.name,
           functionType: func.type.toString(),
-          errorType: error instanceof Error ? error.constructor.name : 'Unknown'
-        }
+          errorType: error instanceof Error ? error.constructor.name : 'Unknown',
+        },
       };
     }
   }
@@ -337,7 +338,7 @@ export class FunctionExecutionEngine {
             functionId: func.nodeId.toString(),
             attempt: attempt + 1,
             maxAttempts: retryCount + 1,
-            error: result.error
+            error: result.error,
           });
 
           // 等待重试延迟
@@ -354,7 +355,7 @@ export class FunctionExecutionEngine {
             functionId: func.nodeId.toString(),
             attempt: attempt + 1,
             maxAttempts: retryCount + 1,
-            error: lastError.message
+            error: lastError.message,
           });
 
           // 等待重试延迟
@@ -403,10 +404,7 @@ export class FunctionExecutionEngine {
    * @param config 执行配置
    * @returns 执行计划
    */
-  createExecutionPlan(
-    functions: Node[],
-    config: FunctionExecutionConfig
-  ): FunctionExecutionPlan {
+  createExecutionPlan(functions: Node[], config: FunctionExecutionConfig): FunctionExecutionPlan {
     return {
       id: `plan_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
       functions,
@@ -414,9 +412,9 @@ export class FunctionExecutionEngine {
         strategy: config.strategy,
         timeout: config.timeout,
         retryCount: config.retryCount,
-        retryDelay: config.retryDelay
+        retryDelay: config.retryDelay,
       },
-      dependencies: []
+      dependencies: [],
     };
   }
 

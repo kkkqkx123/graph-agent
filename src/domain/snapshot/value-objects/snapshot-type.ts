@@ -7,7 +7,7 @@ export enum SnapshotTypeValue {
   AUTOMATIC = 'automatic',
   MANUAL = 'manual',
   SCHEDULED = 'scheduled',
-  ERROR = 'error'
+  ERROR = 'error',
 }
 
 /**
@@ -165,7 +165,7 @@ export class SnapshotType extends ValueObject<SnapshotTypeProps> {
       [SnapshotTypeValue.AUTOMATIC]: '自动快照，由系统自动创建',
       [SnapshotTypeValue.MANUAL]: '手动快照，由用户手动创建',
       [SnapshotTypeValue.SCHEDULED]: '定时快照，按计划定时创建',
-      [SnapshotTypeValue.ERROR]: '错误快照，在发生错误时自动创建'
+      [SnapshotTypeValue.ERROR]: '错误快照，在发生错误时自动创建',
     };
 
     return descriptions[this.props.value];

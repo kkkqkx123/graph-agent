@@ -24,22 +24,26 @@ export class IterationLimitTriggerFunction extends BaseTriggerFunction<TriggerFu
         name: 'maxIterations',
         type: 'number',
         required: true,
-        description: '最大迭代次数'
+        description: '最大迭代次数',
       },
       {
         name: 'iterationVariable',
         type: 'string',
         required: false,
         description: '迭代计数器变量名',
-        defaultValue: 'iteration'
-      }
+        defaultValue: 'iteration',
+      },
     ];
   }
 
   protected override validateCustomConfig(config: any): string[] {
     const errors: string[] = [];
 
-    if (!config['maxIterations'] || typeof config['maxIterations'] !== 'number' || config['maxIterations'] <= 0) {
+    if (
+      !config['maxIterations'] ||
+      typeof config['maxIterations'] !== 'number' ||
+      config['maxIterations'] <= 0
+    ) {
       errors.push('maxIterations必须是正数');
     }
 
@@ -50,7 +54,10 @@ export class IterationLimitTriggerFunction extends BaseTriggerFunction<TriggerFu
     return errors;
   }
 
-  override async execute(context: WorkflowExecutionContext, config: TriggerFunctionConfig): Promise<boolean> {
+  override async execute(
+    context: WorkflowExecutionContext,
+    config: TriggerFunctionConfig
+  ): Promise<boolean> {
     this.checkInitialized();
 
     const maxIterations = config['maxIterations'];

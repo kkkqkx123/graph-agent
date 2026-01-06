@@ -26,7 +26,7 @@ async function bootstrap(): Promise<void> {
   try {
     // 初始化应用容器
     AppContainer.initialize({
-      enableLogging: process.env['NODE_ENV'] === 'development'
+      enableLogging: process.env['NODE_ENV'] === 'development',
     });
 
     // 创建并启动应用
@@ -68,7 +68,7 @@ if (process && process.on) {
 }
 
 // 启动应用程序
-bootstrap().catch((error) => {
+bootstrap().catch(error => {
   if (console && console.error) {
     console.error('启动过程中发生未处理的错误:', error);
   }

@@ -84,10 +84,10 @@ export class StateManager {
     options: StateUpdateOptions = {}
   ): void {
     const state = WorkflowState.initial(workflowId);
-    
+
     // 合并初始数据
     const updatedState = this.updateStateData(state, initialState);
-    
+
     this.states.set(threadId, updatedState);
 
     // 记录初始化历史
@@ -118,7 +118,7 @@ export class StateManager {
     options: StateUpdateOptions = {}
   ): WorkflowState {
     const currentState = this.states.get(threadId);
-    
+
     if (!currentState) {
       throw new Error(`线程 ${threadId} 的状态不存在`);
     }
@@ -149,7 +149,7 @@ export class StateManager {
    */
   setCurrentNodeId(threadId: string, nodeId: ID, options: StateUpdateOptions = {}): WorkflowState {
     const currentState = this.states.get(threadId);
-    
+
     if (!currentState) {
       throw new Error(`线程 ${threadId} 的状态不存在`);
     }
@@ -174,7 +174,7 @@ export class StateManager {
    */
   getData(threadId: string, key?: string): any {
     const state = this.states.get(threadId);
-    
+
     if (!state) {
       throw new Error(`线程 ${threadId} 的状态不存在`);
     }
@@ -252,12 +252,12 @@ export class StateManager {
    */
   validateState(threadId: string): StateValidationResult {
     const state = this.states.get(threadId);
-    
+
     if (!state) {
       return {
         valid: false,
         errors: [`线程 ${threadId} 的状态不存在`],
-        warnings: []
+        warnings: [],
       };
     }
 
@@ -285,7 +285,7 @@ export class StateManager {
     return {
       valid: errors.length === 0,
       errors,
-      warnings
+      warnings,
     };
   }
 
@@ -315,7 +315,7 @@ export class StateManager {
       before,
       after,
       updates,
-      diff: this.calculateDiff(before, after)
+      diff: this.calculateDiff(before, after),
     };
 
     history.push(change);
@@ -337,19 +337,19 @@ export class StateManager {
     after: Record<string, any>
   ): Record<string, { before: any; after: any }> {
     const diff: Record<string, { before: any; after: any }> = {};
-    
+
     // 检查所有键
     const allKeys = new Set([...Object.keys(before), ...Object.keys(after)]);
-    
+
     for (const key of allKeys) {
       const beforeValue = before[key];
       const afterValue = after[key];
-      
+
       if (JSON.stringify(beforeValue) !== JSON.stringify(afterValue)) {
         diff[key] = { before: beforeValue, after: afterValue };
       }
     }
-    
+
     return diff;
   }
 
@@ -366,7 +366,7 @@ export class StateManager {
     return WorkflowState.fromProps({
       ...state.toProps(),
       data: newData,
-      updatedAt: Timestamp.now()
+      updatedAt: Timestamp.now(),
     });
   }
 
@@ -380,7 +380,7 @@ export class StateManager {
     return WorkflowState.fromProps({
       ...state.toProps(),
       currentNodeId: nodeId,
-      updatedAt: Timestamp.now()
+      updatedAt: Timestamp.now(),
     });
   }
 }

@@ -17,7 +17,7 @@ export interface ThreadDefinitionProps {
 
 /**
  * ThreadDefinition值对象
- * 
+ *
  * 表示线程的定义信息，是不可变的
  * 包含线程的基本属性和元数据
  */
@@ -53,7 +53,7 @@ export class ThreadDefinition extends ValueObject<ThreadDefinitionProps> {
       title,
       description,
       metadata: metadata || {},
-      createdAt: now
+      createdAt: now,
     });
   }
 
@@ -138,7 +138,7 @@ export class ThreadDefinition extends ValueObject<ThreadDefinitionProps> {
   public updateTitle(title: string): ThreadDefinition {
     return new ThreadDefinition({
       ...this.props,
-      title
+      title,
     });
   }
 
@@ -150,7 +150,7 @@ export class ThreadDefinition extends ValueObject<ThreadDefinitionProps> {
   public updateDescription(description: string): ThreadDefinition {
     return new ThreadDefinition({
       ...this.props,
-      description
+      description,
     });
   }
 
@@ -162,7 +162,7 @@ export class ThreadDefinition extends ValueObject<ThreadDefinitionProps> {
   public updatePriority(priority: ThreadPriority): ThreadDefinition {
     return new ThreadDefinition({
       ...this.props,
-      priority
+      priority,
     });
   }
 
@@ -174,7 +174,7 @@ export class ThreadDefinition extends ValueObject<ThreadDefinitionProps> {
   public updateMetadata(metadata: Record<string, unknown>): ThreadDefinition {
     return new ThreadDefinition({
       ...this.props,
-      metadata: { ...metadata }
+      metadata: { ...metadata },
     });
   }
 

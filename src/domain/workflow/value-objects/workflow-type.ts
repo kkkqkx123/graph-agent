@@ -8,7 +8,7 @@ export enum WorkflowTypeValue {
   PARALLEL = 'parallel',
   CONDITIONAL = 'conditional',
   LOOP = 'loop',
-  CUSTOM = 'custom'
+  CUSTOM = 'custom',
 }
 
 /**
@@ -20,7 +20,7 @@ export interface WorkflowTypeProps {
 
 /**
  * 工作流类型值对象
- * 
+ *
  * 用于表示工作流的执行类型
  */
 export class WorkflowType extends ValueObject<WorkflowTypeProps> {
@@ -191,7 +191,7 @@ export class WorkflowType extends ValueObject<WorkflowTypeProps> {
       [WorkflowTypeValue.PARALLEL]: '并行执行，多个节点可以同时执行',
       [WorkflowTypeValue.CONDITIONAL]: '条件执行，根据条件选择执行路径',
       [WorkflowTypeValue.LOOP]: '循环执行，重复执行特定节点或子图',
-      [WorkflowTypeValue.CUSTOM]: '自定义执行，根据特定逻辑执行'
+      [WorkflowTypeValue.CUSTOM]: '自定义执行，根据特定逻辑执行',
     };
 
     return descriptions[this.props.value];

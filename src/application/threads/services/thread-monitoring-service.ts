@@ -130,32 +130,42 @@ export class ThreadMonitoringService extends BaseApplicationService {
           startedAt: thread.execution.startedAt?.toISOString(),
           completedAt: thread.execution.completedAt?.toISOString(),
           errorMessage: thread.execution.errorMessage,
-          currentStep: thread.execution.currentStep
+          currentStep: thread.execution.currentStep,
         };
 
         // 计算执行耗时
         if (thread.execution.startedAt && thread.execution.completedAt) {
-          metrics.duration = thread.execution.completedAt.getMilliseconds() - thread.execution.startedAt.getMilliseconds();
+          metrics.duration =
+            thread.execution.completedAt.getMilliseconds() -
+            thread.execution.startedAt.getMilliseconds();
         } else if (thread.execution.startedAt) {
-          metrics.duration = Timestamp.now().getMilliseconds() - thread.execution.startedAt.getMilliseconds();
+          metrics.duration =
+            Timestamp.now().getMilliseconds() - thread.execution.startedAt.getMilliseconds();
         }
 
         // 获取函数执行指标（从监控服务）
         try {
-          const executionMetrics = await this.monitoringService.getExecutionMetrics(thread.id.toString());
+          const executionMetrics = await this.monitoringService.getExecutionMetrics(
+            thread.id.toString()
+          );
           if (executionMetrics) {
-            metrics.functionMetrics = [{
-              functionId: executionMetrics.functionId,
-              functionName: executionMetrics.functionName,
-              executionCount: executionMetrics.executionCount,
-              successCount: executionMetrics.successCount,
-              errorCount: executionMetrics.errorCount,
-              averageExecutionTime: executionMetrics.averageExecutionTime,
-              errorRate: executionMetrics.errorRate
-            }];
+            metrics.functionMetrics = [
+              {
+                functionId: executionMetrics.functionId,
+                functionName: executionMetrics.functionName,
+                executionCount: executionMetrics.executionCount,
+                successCount: executionMetrics.successCount,
+                errorCount: executionMetrics.errorCount,
+                averageExecutionTime: executionMetrics.averageExecutionTime,
+                errorRate: executionMetrics.errorRate,
+              },
+            ];
           }
         } catch (error) {
-          this.logger.warn('获取函数执行指标失败', error instanceof Error ? error : new Error(String(error)));
+          this.logger.warn(
+            '获取函数执行指标失败',
+            error instanceof Error ? error : new Error(String(error))
+          );
         }
 
         // 获取告警（从监控服务）
@@ -167,10 +177,13 @@ export class ThreadMonitoringService extends BaseApplicationService {
             severity: alert.severity,
             message: alert.message,
             timestamp: alert.timestamp.toISOString(),
-            resolved: alert.resolved
+            resolved: alert.resolved,
           }));
         } catch (error) {
-          this.logger.warn('获取告警失败', error instanceof Error ? error : new Error(String(error)));
+          this.logger.warn(
+            '获取告警失败',
+            error instanceof Error ? error : new Error(String(error))
+          );
         }
 
         return metrics;
@@ -207,11 +220,14 @@ export class ThreadMonitoringService extends BaseApplicationService {
               uptime: healthStatus.uptime,
               responseTime: healthStatus.responseTime,
               errorRate: healthStatus.errorRate,
-              activeAlerts: healthStatus.alerts.filter(a => !a.resolved).length
+              activeAlerts: healthStatus.alerts.filter(a => !a.resolved).length,
             };
           }
         } catch (error) {
-          this.logger.warn('获取健康状态失败', error instanceof Error ? error : new Error(String(error)));
+          this.logger.warn(
+            '获取健康状态失败',
+            error instanceof Error ? error : new Error(String(error))
+          );
         }
 
         // 如果无法从监控服务获取，返回基于线程状态的健康状态
@@ -231,7 +247,7 @@ export class ThreadMonitoringService extends BaseApplicationService {
             : 0,
           responseTime: 0,
           errorRate: thread.status.isFailed() ? 1 : 0,
-          activeAlerts: 0
+          activeAlerts: 0,
         };
       },
       { threadId }
@@ -245,15 +261,20 @@ export class ThreadMonitoringService extends BaseApplicationService {
    * @param resolved 是否已解决
    * @returns 告警列表
    */
-  async getThreadAlerts(threadId: string, resolved?: boolean): Promise<Array<{
-    id: string;
-    type: string;
-    severity: string;
-    message: string;
-    timestamp: string;
-    resolved: boolean;
-    resolvedAt?: string;
-  }>> {
+  async getThreadAlerts(
+    threadId: string,
+    resolved?: boolean
+  ): Promise<
+    Array<{
+      id: string;
+      type: string;
+      severity: string;
+      message: string;
+      timestamp: string;
+      resolved: boolean;
+      resolvedAt?: string;
+    }>
+  > {
     const result = await this.executeGetOperation(
       '线程告警',
       async () => {
@@ -273,11 +294,14 @@ export class ThreadMonitoringService extends BaseApplicationService {
             message: alert.message,
             timestamp: alert.timestamp.toISOString(),
             resolved: alert.resolved,
-            resolvedAt: alert.resolvedAt?.toISOString()
+            resolvedAt: alert.resolvedAt?.toISOString(),
           }));
           return mappedAlerts;
         } catch (error) {
-          this.logger.warn('获取告警失败', error instanceof Error ? error : new Error(String(error)));
+          this.logger.warn(
+            '获取告警失败',
+            error instanceof Error ? error : new Error(String(error))
+          );
           return [];
         }
       },
@@ -307,7 +331,10 @@ export class ThreadMonitoringService extends BaseApplicationService {
         try {
           return await this.monitoringService.resolveAlert(alertId, thread.id.toString());
         } catch (error) {
-          this.logger.error('解决告警失败', error instanceof Error ? error : new Error(String(error)));
+          this.logger.error(
+            '解决告警失败',
+            error instanceof Error ? error : new Error(String(error))
+          );
           return false;
         }
       },
@@ -354,13 +381,19 @@ export class ThreadMonitoringService extends BaseApplicationService {
         if (!thread) {
           return {
             resourceMetrics: [],
-            performanceMetrics: []
+            performanceMetrics: [],
           };
         }
 
         try {
-          const resourceMetrics = await this.monitoringService.getResourceMetrics(thread.id.toString(), timeRange);
-          const performanceMetrics = await this.monitoringService.getPerformanceMetrics(thread.id.toString(), timeRange);
+          const resourceMetrics = await this.monitoringService.getResourceMetrics(
+            thread.id.toString(),
+            timeRange
+          );
+          const performanceMetrics = await this.monitoringService.getPerformanceMetrics(
+            thread.id.toString(),
+            timeRange
+          );
 
           const result = {
             resourceMetrics: resourceMetrics.map(m => ({
@@ -368,29 +401,34 @@ export class ThreadMonitoringService extends BaseApplicationService {
               memoryUsage: m.memoryUsage,
               cpuUsage: m.cpuUsage,
               networkUsage: m.networkUsage,
-              diskUsage: m.diskUsage
+              diskUsage: m.diskUsage,
             })),
             performanceMetrics: performanceMetrics.map(m => ({
               timestamp: m.timestamp.toISOString(),
               throughput: m.throughput,
               latency: m.latency,
-              concurrency: m.concurrency
-            }))
+              concurrency: m.concurrency,
+            })),
           };
           return result;
         } catch (error) {
-          this.logger.warn('获取执行历史失败', error instanceof Error ? error : new Error(String(error)));
+          this.logger.warn(
+            '获取执行历史失败',
+            error instanceof Error ? error : new Error(String(error))
+          );
           return {
             resourceMetrics: [],
-            performanceMetrics: []
+            performanceMetrics: [],
           };
         }
       },
       { threadId }
     );
-    return result || {
-      resourceMetrics: [],
-      performanceMetrics: []
-    };
+    return (
+      result || {
+        resourceMetrics: [],
+        performanceMetrics: [],
+      }
+    );
   }
 }

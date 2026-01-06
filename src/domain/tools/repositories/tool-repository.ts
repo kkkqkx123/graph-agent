@@ -6,13 +6,13 @@ import { ToolStatus } from '../value-objects/tool-status';
 
 /**
  * 工具仓储接口
- * 
+ *
  * 定义工具持久化的契约
  */
 export interface IToolRepository extends Repository<Tool> {
   /**
    * 根据名称查找工具
-   * 
+   *
    * @param name 工具名称
    * @returns 工具或null
    */
@@ -20,7 +20,7 @@ export interface IToolRepository extends Repository<Tool> {
 
   /**
    * 根据类型查找工具
-   * 
+   *
    * @param type 工具类型
    * @returns 工具列表
    */
@@ -28,7 +28,7 @@ export interface IToolRepository extends Repository<Tool> {
 
   /**
    * 根据状态查找工具
-   * 
+   *
    * @param status 工具状态
    * @returns 工具列表
    */
@@ -36,7 +36,7 @@ export interface IToolRepository extends Repository<Tool> {
 
   /**
    * 根据分类查找工具
-   * 
+   *
    * @param category 分类
    * @returns 工具列表
    */
@@ -44,7 +44,7 @@ export interface IToolRepository extends Repository<Tool> {
 
   /**
    * 根据标签查找工具
-   * 
+   *
    * @param tags 标签列表
    * @returns 工具列表
    */
@@ -52,7 +52,7 @@ export interface IToolRepository extends Repository<Tool> {
 
   /**
    * 根据创建者查找工具
-   * 
+   *
    * @param createdBy 创建者ID
    * @returns 工具列表
    */
@@ -60,49 +60,49 @@ export interface IToolRepository extends Repository<Tool> {
 
   /**
    * 查找启用的工具
-   * 
+   *
    * @returns 工具列表
    */
   findEnabled(): Promise<Tool[]>;
 
   /**
    * 查找内置工具
-   * 
+   *
    * @returns 工具列表
    */
   findBuiltin(): Promise<Tool[]>;
 
   /**
    * 查找自定义工具
-   * 
+   *
    * @returns 工具列表
    */
   findCustom(): Promise<Tool[]>;
 
   /**
    * 查找活跃工具
-   * 
+   *
    * @returns 工具列表
    */
   findActive(): Promise<Tool[]>;
 
   /**
    * 查找可用的工具（活跃或非活跃）
-   * 
+   *
    * @returns 工具列表
    */
   findAvailable(): Promise<Tool[]>;
 
   /**
    * 查找不可用的工具（已弃用或已归档）
-   * 
+   *
    * @returns 工具列表
    */
   findUnavailable(): Promise<Tool[]>;
 
   /**
    * 根据条件查找工具
-   * 
+   *
    * @param criteria 查询条件
    * @returns 工具列表
    */
@@ -150,7 +150,7 @@ export interface IToolRepository extends Repository<Tool> {
 
   /**
    * 检查工具名称是否存在
-   * 
+   *
    * @param name 工具名称
    * @param excludeId 排除的工具ID
    * @returns 是否存在
@@ -175,49 +175,49 @@ export interface IToolRepository extends Repository<Tool> {
 
   /**
    * 按类型统计工具数量
-   * 
+   *
    * @returns 类型统计
    */
   countByType(): Promise<Record<string, number>>;
 
   /**
    * 按状态统计工具数量
-   * 
+   *
    * @returns 状态统计
    */
   countByStatus(): Promise<Record<string, number>>;
 
   /**
    * 按分类统计工具数量
-   * 
+   *
    * @returns 分类统计
    */
   countByCategory(): Promise<Record<string, number>>;
 
   /**
    * 按创建者统计工具数量
-   * 
+   *
    * @returns 创建者统计
    */
   countByCreatedBy(): Promise<Record<string, number>>;
 
   /**
    * 获取所有分类
-   * 
+   *
    * @returns 分类列表
    */
   getAllCategories(): Promise<string[]>;
 
   /**
    * 获取所有标签
-   * 
+   *
    * @returns 标签列表
    */
   getAllTags(): Promise<string[]>;
 
   /**
    * 查找最近创建的工具
-   * 
+   *
    * @param limit 数量限制
    * @returns 工具列表
    */
@@ -225,7 +225,7 @@ export interface IToolRepository extends Repository<Tool> {
 
   /**
    * 查找最近更新的工具
-   * 
+   *
    * @param limit 数量限制
    * @returns 工具列表
    */
@@ -233,7 +233,7 @@ export interface IToolRepository extends Repository<Tool> {
 
   /**
    * 查找最常用的工具
-   * 
+   *
    * @param limit 数量限制
    * @returns 工具列表
    */
@@ -241,7 +241,7 @@ export interface IToolRepository extends Repository<Tool> {
 
   /**
    * 查找依赖指定工具的工具
-   * 
+   *
    * @param toolId 工具ID
    * @returns 工具列表
    */
@@ -249,7 +249,7 @@ export interface IToolRepository extends Repository<Tool> {
 
   /**
    * 查找指定工具依赖的工具
-   * 
+   *
    * @param toolId 工具ID
    * @returns 工具列表
    */
@@ -257,7 +257,7 @@ export interface IToolRepository extends Repository<Tool> {
 
   /**
    * 搜索工具
-   * 
+   *
    * @param query 搜索查询
    * @param limit 数量限制
    * @returns 工具列表
@@ -266,7 +266,7 @@ export interface IToolRepository extends Repository<Tool> {
 
   /**
    * 获取工具使用统计
-   * 
+   *
    * @param toolId 工具ID
    * @param startTime 开始时间
    * @param endTime 结束时间
@@ -286,7 +286,7 @@ export interface IToolRepository extends Repository<Tool> {
 
   /**
    * 获取工具性能统计
-   * 
+   *
    * @param toolId 工具ID
    * @param startTime 开始时间
    * @param endTime 结束时间
@@ -309,15 +309,11 @@ export interface IToolRepository extends Repository<Tool> {
 
   /**
    * 更新工具使用统计
-   * 
+   *
    * @param toolId 工具ID
    * @param executionTime 执行时间
    * @param success 是否成功
    * @returns Promise
    */
-  updateUsageStatistics(
-    toolId: ID,
-    executionTime: number,
-    success: boolean
-  ): Promise<void>;
+  updateUsageStatistics(toolId: ID, executionTime: number, success: boolean): Promise<void>;
 }

@@ -13,11 +13,7 @@ export const systemContextProcessor: ContextProcessor = (
   // 保留系统级变量
   const systemVariables = new Map<string, unknown>();
   for (const [key, value] of context.variables.entries()) {
-    if (
-      key.startsWith('system.') ||
-      key.startsWith('config.') ||
-      key.startsWith('env.')
-    ) {
+    if (key.startsWith('system.') || key.startsWith('config.') || key.startsWith('env.')) {
       systemVariables.set(key, value);
     }
   }
@@ -30,10 +26,5 @@ export const systemContextProcessor: ContextProcessor = (
     }
   }
 
-  return PromptContext.create(
-    context.template,
-    systemVariables,
-    [],
-    systemMetadata
-  );
+  return PromptContext.create(context.template, systemVariables, [], systemMetadata);
 };

@@ -141,7 +141,7 @@ export class Metadata extends ValueObject<MetadataProps> {
    */
   public merge(other: Metadata): Metadata {
     return new Metadata({
-      data: { ...this.props.data, ...other.toRecord() }
+      data: { ...this.props.data, ...other.toRecord() },
     });
   }
 

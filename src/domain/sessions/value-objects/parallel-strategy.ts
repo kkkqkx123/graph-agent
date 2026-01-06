@@ -15,7 +15,7 @@ export interface ParallelStrategyProps {
 
 /**
  * 并行策略值对象
- * 
+ *
  * 职责：表示会话的并行执行策略
  */
 export class ParallelStrategy extends ValueObject<ParallelStrategyProps> {
@@ -23,11 +23,11 @@ export class ParallelStrategy extends ValueObject<ParallelStrategyProps> {
     if (!this.props.value) {
       throw new Error('并行策略类型不能为空');
     }
-    
+
     if (!['sequential', 'parallel', 'hybrid'].includes(this.props.value)) {
       throw new Error(`无效的并行策略类型: ${this.props.value}`);
     }
-    
+
     if (this.props.maxConcurrentThreads !== undefined && this.props.maxConcurrentThreads <= 0) {
       throw new Error('最大并发线程数必须大于0');
     }
@@ -39,7 +39,7 @@ export class ParallelStrategy extends ValueObject<ParallelStrategyProps> {
   public static sequential(): ParallelStrategy {
     return new ParallelStrategy({
       value: 'sequential',
-      maxConcurrentThreads: 1
+      maxConcurrentThreads: 1,
     });
   }
 
@@ -52,10 +52,10 @@ export class ParallelStrategy extends ValueObject<ParallelStrategyProps> {
     if (maxConcurrentThreads <= 0) {
       throw new Error('最大并发线程数必须大于0');
     }
-    
+
     return new ParallelStrategy({
       value: 'parallel',
-      maxConcurrentThreads
+      maxConcurrentThreads,
     });
   }
 
@@ -68,10 +68,10 @@ export class ParallelStrategy extends ValueObject<ParallelStrategyProps> {
     if (maxConcurrentThreads <= 0) {
       throw new Error('最大并发线程数必须大于0');
     }
-    
+
     return new ParallelStrategy({
       value: 'hybrid',
-      maxConcurrentThreads
+      maxConcurrentThreads,
     });
   }
 

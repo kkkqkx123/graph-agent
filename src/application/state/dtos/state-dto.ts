@@ -129,7 +129,7 @@ export const mapWorkflowStateToDTO = (state: any): WorkflowStateDTO => {
     data: state.data || {},
     metadata: state.metadata || {},
     version: state.version?.toString() || '1.0.0',
-    timestamp: state.timestamp?.toISOString() || new Date().toISOString()
+    timestamp: state.timestamp?.toISOString() || new Date().toISOString(),
   };
 };
 
@@ -151,7 +151,7 @@ export const mapCheckpointToDTO = (checkpoint: any): CheckpointDTO => {
     stateData: checkpoint.stateData || {},
     metadata: checkpoint.metadata || {},
     createdAt: checkpoint.createdAt?.toISOString() || new Date().toISOString(),
-    isRestorable: checkpoint.canRestore?.() || checkpoint.canRestore || false
+    isRestorable: checkpoint.canRestore?.() || checkpoint.canRestore || false,
   };
 };
 
@@ -174,7 +174,7 @@ export const mapSnapshotToDTO = (snapshot: any): SnapshotDTO => {
     stateData: snapshot.stateData || {},
     createdAt: snapshot.createdAt?.toISOString() || new Date().toISOString(),
     restoreCount: snapshot.restoreCount || 0,
-    canRestore: snapshot.canRestore?.() || snapshot.canRestore || false
+    canRestore: snapshot.canRestore?.() || snapshot.canRestore || false,
   };
 };
 
@@ -195,7 +195,7 @@ export const mapStateHistoryEntryToDTO = (entry: any): StateHistoryEntryDTO => {
     threadId: entry.threadId || '',
     stateData: entry.stateData || {},
     timestamp: entry.timestamp?.toISOString() || new Date().toISOString(),
-    changeType: entry.changeType || 'update'
+    changeType: entry.changeType || 'update',
   };
 };
 

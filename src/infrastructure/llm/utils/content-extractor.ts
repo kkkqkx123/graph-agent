@@ -1,6 +1,6 @@
 /**
  * 内容提取器
- * 
+ *
  * 用于从响应中提取和处理内容
  */
 
@@ -10,7 +10,7 @@
 export class ContentExtractor {
   /**
    * 提取文本内容
-   * 
+   *
    * @param content 内容对象
    * @returns 文本内容或null
    */
@@ -25,7 +25,7 @@ export class ContentExtractor {
 
   /**
    * 从响应中提取内容
-   * 
+   *
    * @param response 响应对象
    * @returns 提取的内容字典
    */
@@ -33,7 +33,7 @@ export class ContentExtractor {
     const extracted = {
       text: null as string | null,
       content: null as any,
-      raw: response
+      raw: response,
     };
 
     // 尝试从常见字段提取内容
@@ -57,7 +57,7 @@ export class ContentExtractor {
 
   /**
    * 提取消息列表
-   * 
+   *
    * @param response 响应对象
    * @returns 消息列表
    */

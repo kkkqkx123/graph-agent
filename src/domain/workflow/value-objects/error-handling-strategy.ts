@@ -3,7 +3,7 @@ export enum ErrorHandlingStrategyType {
   STOP_ON_ERROR = 'stop_on_error',
   CONTINUE_ON_ERROR = 'continue_on_error',
   RETRY = 'retry',
-  SKIP = 'skip'
+  SKIP = 'skip',
 }
 
 export interface ErrorHandlingStrategyProps {
@@ -22,7 +22,7 @@ export class ErrorHandlingStrategy extends ValueObject<ErrorHandlingStrategyProp
     if (!Object.values(ErrorHandlingStrategyType).includes(this.props.type)) {
       throw new Error(`无效的错误处理策略: ${this.props.type}`);
     }
-    
+
     if (this.props.type === ErrorHandlingStrategyType.RETRY) {
       if (!this.props.retryCount || this.props.retryCount <= 0) {
         throw new Error('重试策略必须指定有效的重试次数');
@@ -65,10 +65,10 @@ export class ErrorHandlingStrategy extends ValueObject<ErrorHandlingStrategyProp
   }
 
   public static retry(count: number, delay: number = 1000): ErrorHandlingStrategy {
-    return new ErrorHandlingStrategy({ 
+    return new ErrorHandlingStrategy({
       type: ErrorHandlingStrategyType.RETRY,
       retryCount: count,
-      retryDelay: delay
+      retryDelay: delay,
     });
   }
 
@@ -78,9 +78,11 @@ export class ErrorHandlingStrategy extends ValueObject<ErrorHandlingStrategyProp
 
   public override equals(vo?: ValueObject<ErrorHandlingStrategyProps>): boolean {
     if (!vo) return false;
-    return this.props.type === (vo as ErrorHandlingStrategy).props.type &&
-           this.props.retryCount === (vo as ErrorHandlingStrategy).props.retryCount &&
-           this.props.retryDelay === (vo as ErrorHandlingStrategy).props.retryDelay;
+    return (
+      this.props.type === (vo as ErrorHandlingStrategy).props.type &&
+      this.props.retryCount === (vo as ErrorHandlingStrategy).props.retryCount &&
+      this.props.retryDelay === (vo as ErrorHandlingStrategy).props.retryDelay
+    );
   }
 
   public override toString(): string {

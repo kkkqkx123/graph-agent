@@ -5,7 +5,7 @@ import { CheckpointType } from '../value-objects/checkpoint-type';
 
 /**
  * 检查点仓储接口
- * 
+ *
  * 定义检查点持久化和检索的契约
  */
 export interface ICheckpointRepository extends Repository<Checkpoint> {
@@ -60,11 +60,7 @@ export interface ICheckpointRepository extends Repository<Checkpoint> {
    * @param endTime 结束时间
    * @returns 检查点列表
    */
-  findByTimeRange(
-    threadId: ID,
-    startTime: Date,
-    endTime: Date
-  ): Promise<Checkpoint[]>;
+  findByTimeRange(threadId: ID, startTime: Date, endTime: Date): Promise<Checkpoint[]>;
 
   /**
    * 统计线程的检查点数量
@@ -111,11 +107,7 @@ export interface ICheckpointRepository extends Repository<Checkpoint> {
    * @param offset 偏移量
    * @returns 检查点列表
    */
-  getCheckpointHistory(
-    threadId: ID,
-    limit?: number,
-    offset?: number
-  ): Promise<Checkpoint[]>;
+  getCheckpointHistory(threadId: ID, limit?: number, offset?: number): Promise<Checkpoint[]>;
 
   /**
    * 获取线程的检查点统计信息

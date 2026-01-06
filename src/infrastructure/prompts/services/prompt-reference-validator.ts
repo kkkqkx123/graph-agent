@@ -1,6 +1,6 @@
 /**
  * 提示词引用验证器
- * 
+ *
  * 负责验证提示词引用格式的有效性，并提供详细的验证结果和错误信息
  */
 
@@ -25,14 +25,21 @@ export enum ReferenceErrorCode {
   INVALID_FORMAT = 'INVALID_FORMAT',
   INVALID_CATEGORY = 'INVALID_CATEGORY',
   INVALID_NAME = 'INVALID_NAME',
-  EMPTY_REFERENCE = 'EMPTY_REFERENCE'
+  EMPTY_REFERENCE = 'EMPTY_REFERENCE',
 }
 
 /**
  * 提示词引用验证器
  */
 export class PromptReferenceValidator {
-  private readonly validCategories = ['system', 'rules', 'user_commands', 'templates', 'context', 'examples'];
+  private readonly validCategories = [
+    'system',
+    'rules',
+    'user_commands',
+    'templates',
+    'context',
+    'examples',
+  ];
 
   constructor(private readonly logger: ILogger) {}
 
@@ -49,7 +56,7 @@ export class PromptReferenceValidator {
       return {
         valid: false,
         error: '引用不能为空',
-        errorCode: ReferenceErrorCode.EMPTY_REFERENCE
+        errorCode: ReferenceErrorCode.EMPTY_REFERENCE,
       };
     }
 
@@ -61,7 +68,7 @@ export class PromptReferenceValidator {
       return {
         valid: false,
         error: `引用格式必须包含类别和名称，格式应为 "category.name" 或 "category.composite.part"`,
-        errorCode: ReferenceErrorCode.INVALID_FORMAT
+        errorCode: ReferenceErrorCode.INVALID_FORMAT,
       };
     }
 
@@ -72,7 +79,7 @@ export class PromptReferenceValidator {
       return {
         valid: false,
         error: `无效的类别: ${category}，有效类别: ${this.validCategories.join(', ')}`,
-        errorCode: ReferenceErrorCode.INVALID_CATEGORY
+        errorCode: ReferenceErrorCode.INVALID_CATEGORY,
       };
     }
 
@@ -83,7 +90,7 @@ export class PromptReferenceValidator {
         return {
           valid: false,
           error: '名称部分不能为空',
-          errorCode: ReferenceErrorCode.INVALID_NAME
+          errorCode: ReferenceErrorCode.INVALID_NAME,
         };
       }
 
@@ -91,7 +98,7 @@ export class PromptReferenceValidator {
         return {
           valid: false,
           error: `名称包含无效字符: ${part}，只允许字母、数字、下划线和连字符`,
-          errorCode: ReferenceErrorCode.INVALID_NAME
+          errorCode: ReferenceErrorCode.INVALID_NAME,
         };
       }
     }

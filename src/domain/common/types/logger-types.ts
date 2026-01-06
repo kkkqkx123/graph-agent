@@ -12,7 +12,7 @@ export enum LogLevel {
   INFO = 'info',
   WARN = 'warn',
   ERROR = 'error',
-  FATAL = 'fatal'
+  FATAL = 'fatal',
 }
 
 /**
@@ -32,7 +32,7 @@ export interface ILogger {
   warn(message: string, context?: LogContext): void;
   error(message: string, error?: Error, context?: LogContext): void;
   fatal(message: string, error?: Error, context?: LogContext): void;
-  
+
   // 创建子日志记录器
   child(context: LogContext): ILogger;
 

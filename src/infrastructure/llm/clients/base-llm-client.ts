@@ -36,9 +36,12 @@ export abstract class BaseLLMClient {
   // 抽象方法，由子类实现
   protected abstract getSupportedModelsList(): string[];
   public abstract getModelConfig(): ModelConfig;
-  
+
   // 抽象方法：解析流式响应，子类必须实现
-  protected abstract parseStreamResponse(response: any, request: LLMRequest): Promise<AsyncIterable<LLMResponse>>;
+  protected abstract parseStreamResponse(
+    response: any,
+    request: LLMRequest
+  ): Promise<AsyncIterable<LLMResponse>>;
 
   // 通用实现
   public async generateResponse(request: LLMRequest): Promise<LLMResponse> {
@@ -46,10 +49,16 @@ export abstract class BaseLLMClient {
 
     try {
       // 1. 参数映射
-      const providerRequest = this.providerConfig.parameterMapper.mapToProvider(request, this.providerConfig);
+      const providerRequest = this.providerConfig.parameterMapper.mapToProvider(
+        request,
+        this.providerConfig
+      );
 
       // 2. 构建端点和头部
-      const endpoint = this.providerConfig.endpointStrategy.buildEndpoint(this.providerConfig, providerRequest);
+      const endpoint = this.providerConfig.endpointStrategy.buildEndpoint(
+        this.providerConfig,
+        providerRequest
+      );
       const headers = this.providerConfig.endpointStrategy.buildHeaders(this.providerConfig);
 
       // 3. 发送请求
@@ -68,15 +77,17 @@ export abstract class BaseLLMClient {
 
   public async calculateCost(request: LLMRequest, response: LLMResponse): Promise<number> {
     const modelConfig = this.getModelConfig();
-    
+
     // 优先使用API返回的token计数，如果没有则使用本地计算作为回退
-    const promptTokens = response.usage?.promptTokens || await this.calculateTokens(request);
+    const promptTokens = response.usage?.promptTokens || (await this.calculateTokens(request));
     const completionTokens = response.usage?.completionTokens || 0;
 
-    return (promptTokens * modelConfig.getPromptCostPer1KTokens() +
-      completionTokens * modelConfig.getCompletionCostPer1KTokens()) / 1000;
+    return (
+      (promptTokens * modelConfig.getPromptCostPer1KTokens() +
+        completionTokens * modelConfig.getCompletionCostPer1KTokens()) /
+      1000
+    );
   }
-
 
   // 通用错误处理
   protected handleError(error: any): never {
@@ -90,7 +101,10 @@ export abstract class BaseLLMClient {
 
     try {
       // 1. 参数映射
-      const providerRequest = this.providerConfig.parameterMapper.mapToProvider(request, this.providerConfig);
+      const providerRequest = this.providerConfig.parameterMapper.mapToProvider(
+        request,
+        this.providerConfig
+      );
 
       // 2. 启用流式模式
       if (typeof providerRequest === 'object' && providerRequest !== null) {
@@ -98,13 +112,16 @@ export abstract class BaseLLMClient {
       }
 
       // 3. 构建端点和头部
-      const endpoint = this.providerConfig.endpointStrategy.buildEndpoint(this.providerConfig, providerRequest);
+      const endpoint = this.providerConfig.endpointStrategy.buildEndpoint(
+        this.providerConfig,
+        providerRequest
+      );
       const headers = this.providerConfig.endpointStrategy.buildHeaders(this.providerConfig);
 
       // 4. 发送流式请求
       const response = await this.httpClient.post(endpoint, providerRequest, {
         headers,
-        responseType: 'stream'
+        responseType: 'stream',
       });
 
       // 5. 解析流式响应（子类必须实现）
@@ -146,7 +163,7 @@ export abstract class BaseLLMClient {
       supportsTools: config.supportsTools(),
       supportsImages: config.supportsImages(),
       supportsAudio: config.supportsAudio(),
-      supportsVideo: config.supportsVideo()
+      supportsVideo: config.supportsVideo(),
     };
   }
 
@@ -165,7 +182,7 @@ export abstract class BaseLLMClient {
     return {
       isValid: errors.length === 0,
       errors,
-      warnings
+      warnings,
     };
   }
 
@@ -196,13 +213,13 @@ export abstract class BaseLLMClient {
         status: 'healthy',
         message: 'Service is operational',
         latency,
-        lastChecked: new Date()
+        lastChecked: new Date(),
       };
     } catch (error) {
       return {
         status: 'unhealthy',
         message: 'Service is unavailable',
-        lastChecked: new Date()
+        lastChecked: new Date(),
       };
     }
   }
@@ -239,7 +256,7 @@ export abstract class BaseLLMClient {
       tokensPerDay: 129600000,
       currentRequests: 0,
       currentTokens: 0,
-      resetTime: new Date(Date.now() + 60000)
+      resetTime: new Date(Date.now() + 60000),
     };
   }
 
@@ -272,9 +289,8 @@ export abstract class BaseLLMClient {
       'error',
       0,
       {
-        metadata: { error: error instanceof Error ? error.message : String(error) }
+        metadata: { error: error instanceof Error ? error.message : String(error) },
       }
     );
   }
-
 }

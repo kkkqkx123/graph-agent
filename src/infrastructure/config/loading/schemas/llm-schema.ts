@@ -12,7 +12,7 @@ const ProviderConfigSchema = z.object({
   provider: z.string(),
   base_url: z.string(),
   api_key: z.string().optional(),
-  models: z.array(z.string()).optional()
+  models: z.array(z.string()).optional(),
 });
 
 /**
@@ -22,5 +22,5 @@ export const LLMSchema = z.object({
   providers: z.record(z.string(), ProviderConfigSchema).optional(),
   groups: z.record(z.string(), z.object({})).optional(),
   _group: z.object({}).optional(),
-  _registry: z.string().optional()
+  _registry: z.string().optional(),
 });

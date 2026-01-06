@@ -13,10 +13,11 @@ import { BaseRepository } from './base-repository';
 import { ConnectionManager } from '../connections/connection-manager';
 
 @injectable()
-export class WorkflowRepository extends BaseRepository<Workflow, WorkflowModel, ID> implements IWorkflowRepository {
-  constructor(
-    @inject('ConnectionManager') connectionManager: ConnectionManager
-  ) {
+export class WorkflowRepository
+  extends BaseRepository<Workflow, WorkflowModel, ID>
+  implements IWorkflowRepository
+{
+  constructor(@inject('ConnectionManager') connectionManager: ConnectionManager) {
     super(connectionManager);
   }
 
@@ -45,12 +46,12 @@ export class WorkflowRepository extends BaseRepository<Workflow, WorkflowModel, 
         metadata: model.metadata || {},
         isDeleted: model.metadata?.isDeleted || false,
         createdBy: model.createdBy ? new ID(model.createdBy) : undefined,
-        updatedBy: model.updatedBy ? new ID(model.updatedBy) : undefined
+        updatedBy: model.updatedBy ? new ID(model.updatedBy) : undefined,
       });
 
       const graph = {
         nodes: new Map(),
-        edges: new Map()
+        edges: new Map(),
       };
 
       return Workflow.fromProps({
@@ -61,7 +62,7 @@ export class WorkflowRepository extends BaseRepository<Workflow, WorkflowModel, 
         updatedAt: Timestamp.create(model.updatedAt),
         version: Version.fromString(model.version),
         createdBy: model.createdBy ? new ID(model.createdBy) : undefined,
-        updatedBy: model.updatedBy ? new ID(model.updatedBy) : undefined
+        updatedBy: model.updatedBy ? new ID(model.updatedBy) : undefined,
       });
     } catch (error) {
       const errorMessage = `Workflow模型转换失败: ${error instanceof Error ? error.message : String(error)}`;
@@ -127,7 +128,7 @@ export class WorkflowRepository extends BaseRepository<Workflow, WorkflowModel, 
     return this.find({
       filters: { state: status.getValue() },
       sortBy: 'createdAt',
-      sortOrder: 'desc'
+      sortOrder: 'desc',
     });
   }
 
@@ -138,7 +139,7 @@ export class WorkflowRepository extends BaseRepository<Workflow, WorkflowModel, 
     return this.find({
       filters: { executionMode: type.getValue() },
       sortBy: 'createdAt',
-      sortOrder: 'desc'
+      sortOrder: 'desc',
     });
   }
 
@@ -161,7 +162,7 @@ export class WorkflowRepository extends BaseRepository<Workflow, WorkflowModel, 
     return this.find({
       filters: { createdBy: createdBy.value },
       sortBy: 'createdAt',
-      sortOrder: 'desc'
+      sortOrder: 'desc',
     });
   }
 
@@ -254,7 +255,7 @@ export class WorkflowRepository extends BaseRepository<Workflow, WorkflowModel, 
     return this.find({
       sortBy: 'createdAt',
       sortOrder: 'desc',
-      limit
+      limit,
     });
   }
 
@@ -265,7 +266,10 @@ export class WorkflowRepository extends BaseRepository<Workflow, WorkflowModel, 
     const repository = await this.getRepository();
     const models = await repository
       .createQueryBuilder('workflow')
-      .orderBy('(CAST(workflow.metadata->>\'nodeCount\' AS INTEGER) + CAST(workflow.metadata->>\'edgeCount\' AS INTEGER))', 'DESC')
+      .orderBy(
+        "(CAST(workflow.metadata->>'nodeCount' AS INTEGER) + CAST(workflow.metadata->>'edgeCount' AS INTEGER))",
+        'DESC'
+      )
       .take(limit)
       .getMany();
     return models.map(model => this.toDomain(model));
@@ -283,17 +287,14 @@ export class WorkflowRepository extends BaseRepository<Workflow, WorkflowModel, 
     const repository = await this.getRepository();
     const updateData: any = {
       state: status.getValue(),
-      updatedAt: new Date()
+      updatedAt: new Date(),
     };
 
     if (changedBy) {
       updateData.updatedBy = changedBy.value;
     }
 
-    const result = await repository.update(
-      { id: In(workflowIds.map(id => id.value)) },
-      updateData
-    );
+    const result = await repository.update({ id: In(workflowIds.map(id => id.value)) }, updateData);
 
     return result.affected || 0;
   }
@@ -312,10 +313,13 @@ export class WorkflowRepository extends BaseRepository<Workflow, WorkflowModel, 
    */
   async softDelete(workflowId: ID): Promise<void> {
     const repository = await this.getRepository();
-    await repository.update({ id: workflowId.value }, {
-      state: 'archived',
-      updatedAt: new Date()
-    });
+    await repository.update(
+      { id: workflowId.value },
+      {
+        state: 'archived',
+        updatedAt: new Date(),
+      }
+    );
   }
 
   /**
@@ -327,7 +331,7 @@ export class WorkflowRepository extends BaseRepository<Workflow, WorkflowModel, 
       { id: In(workflowIds.map(id => id.value)) },
       {
         state: 'archived',
-        updatedAt: new Date()
+        updatedAt: new Date(),
       }
     );
     return result.affected || 0;
@@ -338,10 +342,13 @@ export class WorkflowRepository extends BaseRepository<Workflow, WorkflowModel, 
    */
   async restoreSoftDeleted(workflowId: ID): Promise<void> {
     const repository = await this.getRepository();
-    await repository.update({ id: workflowId.value }, {
-      state: 'draft',
-      updatedAt: new Date()
-    });
+    await repository.update(
+      { id: workflowId.value },
+      {
+        state: 'draft',
+        updatedAt: new Date(),
+      }
+    );
   }
 
   /**
@@ -351,7 +358,7 @@ export class WorkflowRepository extends BaseRepository<Workflow, WorkflowModel, 
     return this.find({
       filters: { state: 'archived' },
       sortBy: 'updatedAt',
-      sortOrder: 'desc'
+      sortOrder: 'desc',
     });
   }
 

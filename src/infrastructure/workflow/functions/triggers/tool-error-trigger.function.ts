@@ -25,22 +25,22 @@ export class ToolErrorTriggerFunction extends BaseTriggerFunction<TriggerFunctio
         type: 'number',
         required: false,
         description: '最大错误数量阈值',
-        defaultValue: 3
+        defaultValue: 3,
       },
       {
         name: 'toolName',
         type: 'string',
         required: false,
         description: '特定工具名称，不指定则监控所有工具',
-        defaultValue: null
+        defaultValue: null,
       },
       {
         name: 'errorType',
         type: 'string',
         required: false,
         description: '特定错误类型，不指定则监控所有错误类型',
-        defaultValue: null
-      }
+        defaultValue: null,
+      },
     ];
   }
 
@@ -64,7 +64,10 @@ export class ToolErrorTriggerFunction extends BaseTriggerFunction<TriggerFunctio
     return errors;
   }
 
-  override async execute(context: WorkflowExecutionContext, config: TriggerFunctionConfig): Promise<boolean> {
+  override async execute(
+    context: WorkflowExecutionContext,
+    config: TriggerFunctionConfig
+  ): Promise<boolean> {
     this.checkInitialized();
 
     const maxErrorCount = config['maxErrorCount'] || 3;

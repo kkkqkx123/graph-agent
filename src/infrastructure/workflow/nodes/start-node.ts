@@ -1,6 +1,16 @@
 import { NodeId } from '../../../domain/workflow/value-objects/node/node-id';
-import { NodeType, NodeTypeValue, NodeContextTypeValue } from '../../../domain/workflow/value-objects/node/node-type';
-import { Node, NodeExecutionResult, NodeMetadata, ValidationResult, WorkflowExecutionContext } from '../../../domain/workflow/entities/node';
+import {
+  NodeType,
+  NodeTypeValue,
+  NodeContextTypeValue,
+} from '../../../domain/workflow/value-objects/node/node-type';
+import {
+  Node,
+  NodeExecutionResult,
+  NodeMetadata,
+  ValidationResult,
+  WorkflowExecutionContext,
+} from '../../../domain/workflow/entities/node';
 
 /**
  * 开始节点
@@ -44,7 +54,7 @@ export class StartNode extends Node {
         totalNodes: 0,
         executedNodes: 0,
         failedNodes: 0,
-        startTime: Date.now()
+        startTime: Date.now(),
       });
 
       const executionTime = Date.now() - startTime;
@@ -53,14 +63,14 @@ export class StartNode extends Node {
         success: true,
         output: {
           message: '工作流已启动',
-          initializedVariables: this.initialVariables ? Object.keys(this.initialVariables) : []
+          initializedVariables: this.initialVariables ? Object.keys(this.initialVariables) : [],
         },
         executionTime,
         metadata: {
           nodeId: this.nodeId.toString(),
           nodeType: this.type.toString(),
-          initializedVariables: this.initialVariables ? Object.keys(this.initialVariables) : []
-        }
+          initializedVariables: this.initialVariables ? Object.keys(this.initialVariables) : [],
+        },
       };
     } catch (error) {
       const executionTime = Date.now() - startTime;
@@ -72,8 +82,8 @@ export class StartNode extends Node {
         executionTime,
         metadata: {
           nodeId: this.nodeId.toString(),
-          nodeType: this.type.toString()
-        }
+          nodeType: this.type.toString(),
+        },
       };
     }
   }
@@ -91,7 +101,7 @@ export class StartNode extends Node {
 
     return {
       valid: errors.length === 0,
-      errors
+      errors,
     };
   }
 
@@ -108,16 +118,16 @@ export class StartNode extends Node {
           type: 'object',
           required: false,
           description: '初始变量集合',
-          defaultValue: {}
+          defaultValue: {},
         },
         {
           name: 'initializeContext',
           type: 'boolean',
           required: false,
           description: '是否初始化上下文',
-          defaultValue: true
-        }
-      ]
+          defaultValue: true,
+        },
+      ],
     };
   }
 
@@ -125,7 +135,7 @@ export class StartNode extends Node {
     return {
       type: 'object',
       properties: {},
-      required: []
+      required: [],
     };
   }
 
@@ -134,8 +144,12 @@ export class StartNode extends Node {
       type: 'object',
       properties: {
         message: { type: 'string', description: '启动消息' },
-        initializedVariables: { type: 'array', items: { type: 'string' }, description: '已初始化的变量列表' }
-      }
+        initializedVariables: {
+          type: 'array',
+          items: { type: 'string' },
+          description: '已初始化的变量列表',
+        },
+      },
     };
   }
 

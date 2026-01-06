@@ -43,7 +43,7 @@ export class StateSnapshotService {
         sessionId: thread.sessionId.value,
         workflowId: thread.workflowId.value,
         status: thread.status.value,
-        createdAt: new Date().toISOString()
+        createdAt: new Date().toISOString(),
       }
     );
 
@@ -77,7 +77,7 @@ export class StateSnapshotService {
         sessionId: session.id.value,
         threadCount: session.threadCount,
         status: session.status.value,
-        createdAt: new Date().toISOString()
+        createdAt: new Date().toISOString(),
       }
     );
 
@@ -104,10 +104,10 @@ export class StateSnapshotService {
       description || 'Global system snapshot',
       {
         timestamp: new Date().toISOString(),
-        snapshotType: type.value
+        snapshotType: type.value,
       },
       {
-        createdAt: new Date().toISOString()
+        createdAt: new Date().toISOString(),
       }
     );
 
@@ -121,20 +121,14 @@ export class StateSnapshotService {
    * 查询Thread的所有快照
    */
   public async getThreadSnapshots(threadId: ID): Promise<Snapshot[]> {
-    return await this.snapshotRepository.findByScopeAndTarget(
-      SnapshotScope.thread(),
-      threadId
-    );
+    return await this.snapshotRepository.findByScopeAndTarget(SnapshotScope.thread(), threadId);
   }
 
   /**
    * 查询Session的所有快照
    */
   public async getSessionSnapshots(sessionId: ID): Promise<Snapshot[]> {
-    return await this.snapshotRepository.findByScopeAndTarget(
-      SnapshotScope.session(),
-      sessionId
-    );
+    return await this.snapshotRepository.findByScopeAndTarget(SnapshotScope.session(), sessionId);
   }
 
   /**
@@ -153,9 +147,7 @@ export class StateSnapshotService {
       return null;
     }
     // 按创建时间降序排序，返回最新的
-    const sortedSnapshots = snapshots.sort((a, b) =>
-      b.createdAt.differenceInSeconds(a.createdAt)
-    );
+    const sortedSnapshots = snapshots.sort((a, b) => b.createdAt.differenceInSeconds(a.createdAt));
     return sortedSnapshots[0] || null;
   }
 
@@ -168,9 +160,7 @@ export class StateSnapshotService {
       return null;
     }
     // 按创建时间降序排序，返回最新的
-    const sortedSnapshots = snapshots.sort((a, b) =>
-      b.createdAt.differenceInSeconds(a.createdAt)
-    );
+    const sortedSnapshots = snapshots.sort((a, b) => b.createdAt.differenceInSeconds(a.createdAt));
     return sortedSnapshots[0] || null;
   }
 
@@ -208,7 +198,7 @@ export class StateSnapshotService {
   public async cleanupExpiredSnapshots(): Promise<number> {
     const expiredSnapshots = await this.snapshotRepository.query({
       scope: SnapshotScope.global(),
-      limit: 100
+      limit: 100,
     });
     let deletedCount = 0;
 
@@ -223,20 +213,15 @@ export class StateSnapshotService {
   /**
    * 清理多余快照（保留最新的N个）
    */
-  public async cleanupExcessSnapshots(
-    threadId: ID,
-    maxCount: number
-  ): Promise<number> {
+  public async cleanupExcessSnapshots(threadId: ID, maxCount: number): Promise<number> {
     const snapshots = await this.getThreadSnapshots(threadId);
-    
+
     if (snapshots.length <= maxCount) {
       return 0;
     }
 
     // 按创建时间降序排序，删除多余的旧快照
-    const sortedSnapshots = snapshots.sort((a, b) =>
-      b.createdAt.differenceInSeconds(a.createdAt)
-    );
+    const sortedSnapshots = snapshots.sort((a, b) => b.createdAt.differenceInSeconds(a.createdAt));
 
     const snapshotsToDelete = sortedSnapshots.slice(maxCount);
     let deletedCount = 0;
@@ -265,7 +250,7 @@ export class StateSnapshotService {
       byType: stats.byType,
       byScope: {},
       totalSizeBytes: stats.totalSizeBytes,
-      averageSizeBytes: stats.totalSizeBytes / Math.max(stats.total, 1)
+      averageSizeBytes: stats.totalSizeBytes / Math.max(stats.total, 1),
     };
   }
 
@@ -283,7 +268,7 @@ export class StateSnapshotService {
       totalRestores: stats.totalRestores,
       byType: {},
       byScope: {},
-      mostRestoredSnapshotId: stats.mostRestoredSnapshot?.id.value || null
+      mostRestoredSnapshotId: stats.mostRestoredSnapshot?.id.value || null,
     };
   }
 
@@ -298,7 +283,7 @@ export class StateSnapshotService {
       status: thread.status.value,
       execution: this.serializeThreadExecution(thread.execution),
       createdAt: thread.createdAt.toISOString(),
-      updatedAt: thread.updatedAt.toISOString()
+      updatedAt: thread.updatedAt.toISOString(),
     };
   }
 
@@ -323,8 +308,8 @@ export class StateSnapshotService {
         timestamp: op.timestamp.toISOString(),
         operatorId: op.operatorId?.value,
         reason: op.reason,
-        metadata: op.metadata
-      }))
+        metadata: op.metadata,
+      })),
     };
   }
 
@@ -337,7 +322,7 @@ export class StateSnapshotService {
       threadCount: session.threadCount,
       status: session.status.value,
       createdAt: session.createdAt.toISOString(),
-      updatedAt: session.updatedAt.toISOString()
+      updatedAt: session.updatedAt.toISOString(),
     };
   }
 }

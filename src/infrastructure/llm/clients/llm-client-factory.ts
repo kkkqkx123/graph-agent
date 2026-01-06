@@ -13,7 +13,7 @@ import { ConfigLoadingModule } from '../../config/loading/config-loading-module'
 
 /**
  * LLM客户端工厂
- * 
+ *
  * 提供智能客户端选择机制，根据提供商和模型自动选择合适的客户端
  */
 
@@ -28,7 +28,7 @@ export class LLMClientFactory {
     @inject(TYPES.MockClient) private mockClient: MockClient,
     @inject(TYPES.HumanRelayClient) private humanRelayClient: HumanRelayClient,
     @inject(TYPES.ConfigLoadingModule) private configManager: ConfigLoadingModule
-  ) { }
+  ) {}
 
   /**
    * 创建LLM客户端
@@ -81,9 +81,13 @@ export class LLMClientFactory {
    */
   private isResponseModel(model: string): boolean {
     const responseModels = [
-      'gpt-5', 'gpt-5-codex', 'gpt-5.1',
-      'gpt-4.5', 'gpt-4.5-turbo',
-      'gpt-4-response', 'gpt-4.5-response'
+      'gpt-5',
+      'gpt-5-codex',
+      'gpt-5.1',
+      'gpt-4.5',
+      'gpt-4.5-turbo',
+      'gpt-4-response',
+      'gpt-4.5-response',
     ];
 
     const normalizedModel = model.toLowerCase();
@@ -149,7 +153,10 @@ export class LLMClientFactory {
    * @param model 模型名称（必需）
    * @returns 客户端信息
    */
-  async getClientInfo(provider: string, model: string): Promise<{
+  async getClientInfo(
+    provider: string,
+    model: string
+  ): Promise<{
     name: string;
     version: string;
     supportedModels: string[];
@@ -163,7 +170,7 @@ export class LLMClientFactory {
       name: client.getClientName(),
       version: client.getClientVersion(),
       supportedModels,
-      features: this.getClientFeatures(client)
+      features: this.getClientFeatures(client),
     };
   }
 
@@ -205,7 +212,9 @@ export class LLMClientFactory {
    * @param clientConfigs 客户端配置列表，格式为 [{ provider, model }]
    * @returns 客户端映射
    */
-  createClients(clientConfigs: Array<{ provider: string; model: string }>): Record<string, BaseLLMClient> {
+  createClients(
+    clientConfigs: Array<{ provider: string; model: string }>
+  ): Record<string, BaseLLMClient> {
     const clients: Record<string, BaseLLMClient> = {};
 
     for (const config of clientConfigs) {
@@ -251,7 +260,7 @@ export class LLMClientFactory {
       mode,
       maxHistoryLength: config['maxHistoryLength'] || (mode === HumanRelayMode.MULTI ? 100 : 50),
       defaultTimeout: config['defaultTimeout'] || (mode === HumanRelayMode.MULTI ? 600 : 300),
-      frontendConfig: config['frontendConfig'] || {}
+      frontendConfig: config['frontendConfig'] || {},
     };
 
     // 由于HumanRelayClient已经通过依赖注入创建，这里直接返回

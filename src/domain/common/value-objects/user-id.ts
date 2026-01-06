@@ -2,7 +2,7 @@ import { ID } from './id';
 
 /**
  * 用户ID值对象
- * 
+ *
  * 表示用户的唯一标识符
  */
 export class UserId {
@@ -13,7 +13,7 @@ export class UserId {
 
   /**
    * 构造函数
-   * 
+   *
    * @param value 用户ID值
    */
   constructor(value: ID) {
@@ -22,7 +22,7 @@ export class UserId {
 
   /**
    * 从ID创建用户ID
-   * 
+   *
    * @param id ID
    * @returns 用户ID
    */
@@ -32,7 +32,7 @@ export class UserId {
 
   /**
    * 从字符串创建用户ID
-   * 
+   *
    * @param value 字符串值
    * @returns 用户ID
    */
@@ -42,7 +42,7 @@ export class UserId {
 
   /**
    * 生成新的用户ID
-   * 
+   *
    * @returns 新用户ID
    */
   static generate(): UserId {
@@ -51,7 +51,7 @@ export class UserId {
 
   /**
    * 获取显示名称
-   * 
+   *
    * @returns 显示名称
    */
   getDisplayName(): string {
@@ -60,7 +60,7 @@ export class UserId {
 
   /**
    * 转换为字符串
-   * 
+   *
    * @returns 字符串表示
    */
   toString(): string {
@@ -69,7 +69,7 @@ export class UserId {
 
   /**
    * 转换为JSON
-   * 
+   *
    * @returns JSON表示
    */
   toJSON(): string {
@@ -78,7 +78,7 @@ export class UserId {
 
   /**
    * 检查是否相等
-   * 
+   *
    * @param other 另一个用户ID
    * @returns 是否相等
    */
@@ -88,7 +88,7 @@ export class UserId {
 
   /**
    * 哈希值
-   * 
+   *
    * @returns 哈希值
    */
   hashCode(): number {
@@ -97,7 +97,7 @@ export class UserId {
 
   /**
    * 比较两个用户ID
-   * 
+   *
    * @param other 另一个用户ID
    * @returns 比较结果
    */
@@ -107,7 +107,7 @@ export class UserId {
 
   /**
    * 检查是否为空用户ID
-   * 
+   *
    * @returns 是否为空
    */
   isEmpty(): boolean {
@@ -116,7 +116,7 @@ export class UserId {
 
   /**
    * 创建空用户ID
-   * 
+   *
    * @returns 空用户ID
    */
   static empty(): UserId {
@@ -125,7 +125,7 @@ export class UserId {
 
   /**
    * 检查是否为空用户ID
-   * 
+   *
    * @param userId 用户ID
    * @returns 是否为空
    */
@@ -135,7 +135,7 @@ export class UserId {
 
   /**
    * 获取ID的短表示
-   * 
+   *
    * @returns 短表示
    */
   toShort(): string {
@@ -144,7 +144,7 @@ export class UserId {
 
   /**
    * 克隆用户ID
-   * 
+   *
    * @returns 新用户ID
    */
   clone(): UserId {
@@ -153,7 +153,7 @@ export class UserId {
 
   /**
    * 获取用户ID的字符串表示（用于调试）
-   * 
+   *
    * @returns 调试字符串
    */
   toDebugString(): string {

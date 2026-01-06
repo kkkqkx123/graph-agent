@@ -6,7 +6,7 @@ export enum ThreadPriorityValue {
   LOW = 1,
   NORMAL = 5,
   HIGH = 10,
-  URGENT = 20
+  URGENT = 20,
 }
 
 /**
@@ -18,7 +18,7 @@ export interface ThreadPriorityProps {
 
 /**
  * 线程优先级值对象
- * 
+ *
  * 用于表示线程的执行优先级
  */
 export class ThreadPriority extends ValueObject<ThreadPriorityProps> {
@@ -73,10 +73,10 @@ export class ThreadPriority extends ValueObject<ThreadPriorityProps> {
    */
   public static fromString(priority: string): ThreadPriority {
     const priorityMap: Record<string, ThreadPriorityValue> = {
-      'low': ThreadPriorityValue.LOW,
-      'normal': ThreadPriorityValue.NORMAL,
-      'high': ThreadPriorityValue.HIGH,
-      'urgent': ThreadPriorityValue.URGENT
+      low: ThreadPriorityValue.LOW,
+      normal: ThreadPriorityValue.NORMAL,
+      high: ThreadPriorityValue.HIGH,
+      urgent: ThreadPriorityValue.URGENT,
     };
 
     const value = priorityMap[priority.toLowerCase()];
@@ -210,7 +210,7 @@ export class ThreadPriority extends ValueObject<ThreadPriorityProps> {
       [ThreadPriorityValue.LOW]: 'low',
       [ThreadPriorityValue.NORMAL]: 'normal',
       [ThreadPriorityValue.HIGH]: 'high',
-      [ThreadPriorityValue.URGENT]: 'urgent'
+      [ThreadPriorityValue.URGENT]: 'urgent',
     };
 
     return priorityMap[this.props.value];

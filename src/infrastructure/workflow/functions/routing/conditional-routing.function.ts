@@ -26,22 +26,22 @@ export class ConditionalRoutingFunction extends BaseTargetRoutingFunction<Routin
         type: 'array',
         required: true,
         description: '条件数组，每个条件包含name、value、operator、targetNodeId',
-        defaultValue: []
+        defaultValue: [],
       },
       {
         name: 'defaultNodeId',
         type: 'string',
         required: false,
         description: '默认节点ID，当所有条件都不匹配时使用',
-        defaultValue: 'default'
+        defaultValue: 'default',
       },
       {
         name: 'matchMode',
         type: 'string',
         required: false,
         description: '匹配模式：first（第一个匹配）、all（所有匹配）、any（任意匹配）',
-        defaultValue: 'first'
-      }
+        defaultValue: 'first',
+      },
     ];
   }
 
@@ -77,11 +77,23 @@ export class ConditionalRoutingFunction extends BaseTargetRoutingFunction<Routin
   }
 
   private isValidOperator(operator: string): boolean {
-    const validOperators = ['equals', 'not_equals', 'greater_than', 'less_than', 'greater_equal', 'less_equal', 'contains', 'not_contains'];
+    const validOperators = [
+      'equals',
+      'not_equals',
+      'greater_than',
+      'less_than',
+      'greater_equal',
+      'less_equal',
+      'contains',
+      'not_contains',
+    ];
     return validOperators.includes(operator);
   }
 
-  override async execute(context: WorkflowExecutionContext, config: RoutingFunctionConfig): Promise<string | string[]> {
+  override async execute(
+    context: WorkflowExecutionContext,
+    config: RoutingFunctionConfig
+  ): Promise<string | string[]> {
     this.checkInitialized();
 
     const conditions = config['conditions'] || [];

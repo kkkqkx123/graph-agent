@@ -1,6 +1,6 @@
 /**
  * 重试配置基础设施模块
- * 
+ *
  * 提供统一的重试配置管理功能，支持多种重试策略和条件判断
  */
 
@@ -11,12 +11,12 @@ export enum RetryStrategy {
   EXPONENTIAL_BACKOFF = 'exponential_backoff',
   LINEAR_BACKOFF = 'linear_backoff',
   FIXED_DELAY = 'fixed_delay',
-  ADAPTIVE = 'adaptive'
+  ADAPTIVE = 'adaptive',
 }
 
 /**
  * 重试配置
- * 
+ *
  * 提供完整的重试配置管理，包括策略、延迟、条件等
  */
 export class RetryConfig {
@@ -33,8 +33,13 @@ export class RetryConfig {
   // 重试条件
   retryOnStatusCodes: Set<number> = new Set([429, 500, 502, 503, 504]);
   retryOnErrors: string[] = [
-    'timeout', 'rate_limit', 'service_unavailable', 'overloaded_error',
-    'connection_error', 'read_timeout', 'write_timeout'
+    'timeout',
+    'rate_limit',
+    'service_unavailable',
+    'overloaded_error',
+    'connection_error',
+    'read_timeout',
+    'write_timeout',
   ];
   retryableExceptions: any[] = [];
 
@@ -120,7 +125,7 @@ export class RetryConfig {
 
     // 添加抖动
     if (this.jitter) {
-      delay *= (0.5 + Math.random() * 0.5);
+      delay *= 0.5 + Math.random() * 0.5;
     }
 
     return delay;
@@ -146,7 +151,7 @@ export class RetryConfig {
   static fromDict(configDict: Record<string, any>): RetryConfig {
     const strategyStr = configDict['strategy'] || 'exponential_backoff';
     let strategy: RetryStrategy;
-    
+
     try {
       strategy = strategyStr as RetryStrategy;
     } catch (error) {
@@ -162,14 +167,19 @@ export class RetryConfig {
       jitter: configDict['jitter'] ?? true,
       retryOnStatusCodes: new Set(configDict['retry_on_status_codes'] || [429, 500, 502, 503, 504]),
       retryOnErrors: configDict['retry_on_errors'] || [
-        'timeout', 'rate_limit', 'service_unavailable', 'overloaded_error',
-        'connection_error', 'read_timeout', 'write_timeout'
+        'timeout',
+        'rate_limit',
+        'service_unavailable',
+        'overloaded_error',
+        'connection_error',
+        'read_timeout',
+        'write_timeout',
       ],
       retryableExceptions: configDict['retryable_exceptions'] || [],
       strategy,
       totalTimeout: configDict['total_timeout'],
       perAttemptTimeout: configDict['per_attempt_timeout'],
-      providerConfig: configDict['provider_config'] || {}
+      providerConfig: configDict['provider_config'] || {},
     });
   }
 
@@ -187,7 +197,7 @@ export class RetryConfig {
       strategy: this.strategy,
       total_timeout: this.totalTimeout,
       per_attempt_timeout: this.perAttemptTimeout,
-      provider_config: this.providerConfig
+      provider_config: this.providerConfig,
     };
   }
 }
@@ -214,7 +224,7 @@ export class RetryAttempt {
       timestamp: this.timestamp,
       delay: this.delay,
       success: this.success,
-      duration: this.duration
+      duration: this.duration,
     };
   }
 }
@@ -279,7 +289,7 @@ export class RetrySession {
       total_delay: this.getTotalDelay(),
       success: this.success,
       final_error: this.finalError ? this.finalError.message : null,
-      attempts: this.attempts.map(attempt => attempt.toDict())
+      attempts: this.attempts.map(attempt => attempt.toDict()),
     };
   }
 }
@@ -320,7 +330,7 @@ export class RetryStats {
       total_attempts: this.totalAttempts,
       total_delay: this.totalDelay,
       average_attempts: this.averageAttempts,
-      success_rate: this.successRate
+      success_rate: this.successRate,
     };
   }
 }

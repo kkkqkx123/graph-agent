@@ -16,7 +16,10 @@ export class AllNodesCompletedRoutingFunction extends BaseConditionRoutingFuncti
     );
   }
 
-  override async execute(context: WorkflowExecutionContext, config: RoutingFunctionConfig): Promise<boolean> {
+  override async execute(
+    context: WorkflowExecutionContext,
+    config: RoutingFunctionConfig
+  ): Promise<boolean> {
     const executionState = config['executionState'];
 
     if (!executionState?.workflowState) {

@@ -1,6 +1,6 @@
 /**
  * REST 工具执行器
- * 
+ *
  * 执行 REST API 工具
  */
 
@@ -9,29 +9,32 @@ import { Tool } from '../../../domain/tools/entities/tool';
 import { ToolExecution } from '../../../domain/tools/entities/tool-execution';
 import { ToolResult } from '../../../domain/tools/entities/tool-result';
 import { HttpClient } from '../../common/http/http-client';
-import { ToolExecutorBase, ToolExecutorConfigSchema, ToolExecutorCapabilities, ToolExecutorHealthCheck } from './tool-executor-base';
+import {
+  ToolExecutorBase,
+  ToolExecutorConfigSchema,
+  ToolExecutorCapabilities,
+  ToolExecutorHealthCheck,
+} from './tool-executor-base';
 
 @injectable()
 export class RestExecutor extends ToolExecutorBase {
-  constructor(
-    @inject('HttpClient') private httpClient: HttpClient
-  ) {
+  constructor(@inject('HttpClient') private httpClient: HttpClient) {
     super();
   }
 
   async execute(tool: Tool, execution: ToolExecution): Promise<ToolResult> {
     try {
       const config = tool.config;
-      
+
       // Prepare request
       const request = this.prepareRequest(config, execution);
-      
+
       // Make HTTP call
       const response = await this.httpClient.request(request);
-      
+
       // Process response
       const result = this.processResponse(response, config);
-      
+
       return ToolResult.createSuccess(
         execution.id,
         result,
@@ -48,7 +51,7 @@ export class RestExecutor extends ToolExecutorBase {
 
   private prepareRequest(config: any, execution: ToolExecution): any {
     const url = this.interpolateUrl(config.getValue('url') as string, execution.parameters);
-    const method = config.getValue('method') as string || 'GET';
+    const method = (config.getValue('method') as string) || 'GET';
     const headers = this.prepareHeaders(config.getValue('headers') || {}, execution.parameters);
     const body = this.prepareBody(config, execution.parameters);
     const params = this.prepareParams(config.getValue('params') || {}, execution.parameters);
@@ -56,7 +59,7 @@ export class RestExecutor extends ToolExecutorBase {
     const request: any = {
       url,
       method,
-      headers
+      headers,
     };
 
     if (method !== 'GET' && body !== undefined) {
@@ -162,14 +165,14 @@ export class RestExecutor extends ToolExecutorBase {
   private getParameterValue(path: string, parameters: any): string {
     const keys = path.split('.');
     let current = parameters;
-    
+
     for (const key of keys) {
       if (current === null || current === undefined || current[key] === undefined) {
         return path; // Return original placeholder if not found
       }
       current = current[key];
     }
-    
+
     return String(current);
   }
 
@@ -195,13 +198,13 @@ export class RestExecutor extends ToolExecutorBase {
     const result: any = {
       status: response.status,
       statusText: response.statusText,
-      headers: response.headers
+      headers: response.headers,
     };
 
     // Process response body based on configuration
     if (config.responseProcessing) {
       const processing = config.responseProcessing;
-      
+
       if (processing.extract) {
         // Extract specific data from response
         result.data = this.extractData(response.data, processing.extract);
@@ -223,7 +226,7 @@ export class RestExecutor extends ToolExecutorBase {
         url: response.config?.url,
         method: response.config?.method,
         duration: response.duration,
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
       };
     }
 
@@ -235,22 +238,22 @@ export class RestExecutor extends ToolExecutorBase {
       // Extract data using JSON path
       const keys = extractConfig.path.split('.');
       let current = data;
-      
+
       for (const key of keys) {
         if (current === null || current === undefined || current[key] === undefined) {
           return undefined;
         }
         current = current[key];
       }
-      
+
       return current;
     }
-    
+
     if (extractConfig.field) {
       // Extract specific field
       return data[extractConfig.field];
     }
-    
+
     if (extractConfig.index !== undefined) {
       // Extract array element by index
       if (Array.isArray(data) && data[extractConfig.index] !== undefined) {
@@ -258,7 +261,7 @@ export class RestExecutor extends ToolExecutorBase {
       }
       return undefined;
     }
-    
+
     return data;
   }
 
@@ -271,7 +274,7 @@ export class RestExecutor extends ToolExecutorBase {
       }
       return result;
     }
-    
+
     if (transformConfig.type === 'filter') {
       // Filter array data
       if (Array.isArray(data)) {
@@ -279,7 +282,7 @@ export class RestExecutor extends ToolExecutorBase {
       }
       return data;
     }
-    
+
     return data;
   }
 
@@ -287,7 +290,7 @@ export class RestExecutor extends ToolExecutorBase {
     // Simple condition evaluation
     if (condition.field && condition.operator && condition.value) {
       const fieldValue = item[condition.field];
-      
+
       switch (condition.operator) {
         case 'equals':
           return fieldValue === condition.value;
@@ -303,7 +306,7 @@ export class RestExecutor extends ToolExecutorBase {
           return true;
       }
     }
-    
+
     return true;
   }
 
@@ -326,11 +329,14 @@ export class RestExecutor extends ToolExecutorBase {
     return {
       isValid: errors.length === 0,
       errors,
-      warnings
+      warnings,
     };
   }
 
-  async validateParameters(tool: Tool, parameters: Record<string, unknown>): Promise<{
+  async validateParameters(
+    tool: Tool,
+    parameters: Record<string, unknown>
+  ): Promise<{
     isValid: boolean;
     errors: string[];
     warnings: string[];
@@ -347,7 +353,7 @@ export class RestExecutor extends ToolExecutorBase {
     return {
       isValid: errors.length === 0,
       errors,
-      warnings
+      warnings,
     };
   }
 
@@ -381,22 +387,22 @@ export class RestExecutor extends ToolExecutorBase {
       properties: {
         url: {
           type: 'string',
-          description: 'REST API的URL'
+          description: 'REST API的URL',
         },
         method: {
           type: 'string',
-          description: 'HTTP方法'
+          description: 'HTTP方法',
         },
         headers: {
           type: 'object',
-          description: 'HTTP请求头'
+          description: 'HTTP请求头',
         },
         timeout: {
           type: 'number',
-          description: '请求超时时间（毫秒）'
-        }
+          description: '请求超时时间（毫秒）',
+        },
       },
-      required: ['url']
+      required: ['url'],
     };
   }
 
@@ -407,7 +413,7 @@ export class RestExecutor extends ToolExecutorBase {
       batch: true,
       retry: false,
       timeout: true,
-      cancellation: false
+      cancellation: false,
     };
   }
 
@@ -417,19 +423,19 @@ export class RestExecutor extends ToolExecutorBase {
       await this.httpClient.request({
         url: 'https://httpbin.org/status/200',
         method: 'GET',
-        timeout: 5000
+        timeout: 5000,
       });
-      
+
       return {
         status: 'healthy',
         message: 'REST执行器运行正常',
-        lastChecked: new Date()
+        lastChecked: new Date(),
       };
     } catch (error) {
       return {
         status: 'unhealthy',
         message: `健康检查失败: ${error}`,
-        lastChecked: new Date()
+        lastChecked: new Date(),
       };
     }
   }

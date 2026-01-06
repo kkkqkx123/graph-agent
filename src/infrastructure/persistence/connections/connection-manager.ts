@@ -49,7 +49,7 @@ export class ConnectionManager {
       database: dbConfig.database || 'graph_agent',
       entities: [__dirname + '/../models/*.model.ts'],
       synchronize: dbConfig.synchronize || false,
-      logging: dbConfig.logging || false
+      logging: dbConfig.logging || false,
     };
   }
 }

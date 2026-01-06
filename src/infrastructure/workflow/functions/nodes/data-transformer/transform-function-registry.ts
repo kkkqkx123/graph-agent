@@ -28,7 +28,7 @@ export class TransformFunctionRegistry {
       new FilterTransformFunction(),
       new ReduceTransformFunction(),
       new SortTransformFunction(),
-      new GroupTransformFunction()
+      new GroupTransformFunction(),
     ];
 
     transforms.forEach(transform => {

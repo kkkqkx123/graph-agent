@@ -1,6 +1,12 @@
 import { Entity } from '../../common/base/entity';
 import { ID, Timestamp, Version } from '../../common/value-objects';
-import { ThreadStatus, ThreadPriority, ThreadDefinition, ThreadExecution, ExecutionContext } from '../value-objects';
+import {
+  ThreadStatus,
+  ThreadPriority,
+  ThreadDefinition,
+  ThreadExecution,
+  ExecutionContext,
+} from '../value-objects';
 import { PromptContext } from '../../workflow/value-objects/context';
 import { Metadata } from '../../checkpoint/value-objects';
 import { DeletionStatus } from '../../checkpoint/value-objects';
@@ -26,7 +32,7 @@ export interface ThreadProps {
 
 /**
  * Thread聚合根
- * 
+ *
  * 线程聚合根，专注于串行执行流程协调
  * 职责：
  * - 串行执行流程协调
@@ -101,7 +107,7 @@ export class Thread extends Entity {
       deletionStatus: DeletionStatus.active(),
       createdAt: now,
       updatedAt: now,
-      version: Version.initial()
+      version: Version.initial(),
     };
 
     const thread = new Thread(props);
@@ -141,7 +147,7 @@ export class Thread extends Entity {
       status: newStatus,
       execution: newExecution,
       updatedAt: Timestamp.now(),
-      version: this.props.version.nextPatch()
+      version: this.props.version.nextPatch(),
     });
   }
 
@@ -167,7 +173,7 @@ export class Thread extends Entity {
       status: newStatus,
       execution: newExecution,
       updatedAt: Timestamp.now(),
-      version: this.props.version.nextPatch()
+      version: this.props.version.nextPatch(),
     });
   }
 
@@ -193,7 +199,7 @@ export class Thread extends Entity {
       status: newStatus,
       execution: newExecution,
       updatedAt: Timestamp.now(),
-      version: this.props.version.nextPatch()
+      version: this.props.version.nextPatch(),
     });
   }
 
@@ -219,7 +225,7 @@ export class Thread extends Entity {
       status: newStatus,
       execution: newExecution,
       updatedAt: Timestamp.now(),
-      version: this.props.version.nextPatch()
+      version: this.props.version.nextPatch(),
     });
   }
 
@@ -246,7 +252,7 @@ export class Thread extends Entity {
       status: newStatus,
       execution: newExecution,
       updatedAt: Timestamp.now(),
-      version: this.props.version.nextPatch()
+      version: this.props.version.nextPatch(),
     });
   }
 
@@ -272,7 +278,7 @@ export class Thread extends Entity {
       status: newStatus,
       execution: newExecution,
       updatedAt: Timestamp.now(),
-      version: this.props.version.nextPatch()
+      version: this.props.version.nextPatch(),
     });
   }
 
@@ -295,7 +301,7 @@ export class Thread extends Entity {
       title,
       definition: newDefinition,
       updatedAt: Timestamp.now(),
-      version: this.props.version.nextPatch()
+      version: this.props.version.nextPatch(),
     });
   }
 
@@ -318,7 +324,7 @@ export class Thread extends Entity {
       description,
       definition: newDefinition,
       updatedAt: Timestamp.now(),
-      version: this.props.version.nextPatch()
+      version: this.props.version.nextPatch(),
     });
   }
 
@@ -341,7 +347,7 @@ export class Thread extends Entity {
       priority,
       definition: newDefinition,
       updatedAt: Timestamp.now(),
-      version: this.props.version.nextPatch()
+      version: this.props.version.nextPatch(),
     });
   }
 
@@ -360,7 +366,7 @@ export class Thread extends Entity {
       metadata: Metadata.create(metadata),
       definition: newDefinition,
       updatedAt: Timestamp.now(),
-      version: this.props.version.nextPatch()
+      version: this.props.version.nextPatch(),
     });
   }
 
@@ -383,7 +389,7 @@ export class Thread extends Entity {
       ...this.props,
       execution: newExecution,
       updatedAt: Timestamp.now(),
-      version: this.props.version.nextPatch()
+      version: this.props.version.nextPatch(),
     });
   }
 
@@ -400,7 +406,7 @@ export class Thread extends Entity {
       ...this.props,
       deletionStatus: this.props.deletionStatus.markAsDeleted(),
       updatedAt: Timestamp.now(),
-      version: this.props.version.nextPatch()
+      version: this.props.version.nextPatch(),
     });
   }
 
@@ -533,5 +539,4 @@ export class Thread extends Entity {
   public getBusinessIdentifier(): string {
     return `thread:${this.props.id.toString()}`;
   }
-
 }

@@ -35,15 +35,12 @@ export class ConfigLoadingModule {
   private configs: Record<string, any> = {};
   private isInitialized = false;
 
-  constructor(
-    logger: ILogger,
-    options: ConfigLoadingModuleOptions = {}
-  ) {
+  constructor(logger: ILogger, options: ConfigLoadingModuleOptions = {}) {
     this.logger = logger.child({ module: 'ConfigLoadingModule' });
     this.options = {
       enableValidation: true,
       validationSeverityThreshold: 'error',
-      ...options
+      ...options,
     };
 
     // 初始化组件
@@ -79,7 +76,7 @@ export class ConfigLoadingModule {
       // 2. 按模块类型分组
       const moduleFiles = this.groupByModuleType(allFiles);
       this.logger.debug('配置文件分组完成', {
-        moduleTypes: Array.from(moduleFiles.keys())
+        moduleTypes: Array.from(moduleFiles.keys()),
       });
 
       // 3. 加载各模块配置
@@ -135,7 +132,7 @@ export class ConfigLoadingModule {
       } catch (error) {
         this.logger.warn('配置文件加载失败，跳过', {
           path: file.path,
-          error: (error as Error).message
+          error: (error as Error).message,
         });
       }
     }
@@ -235,7 +232,7 @@ export class ConfigLoadingModule {
         moduleType: moduleType,
         severity: validation.severity,
         errorCount: validation.errors.length,
-        errors: validation.errors.slice(0, 5)
+        errors: validation.errors.slice(0, 5),
       });
 
       // 如果严重性超过阈值，抛出错误
@@ -262,7 +259,9 @@ export class ConfigLoadingModule {
   /**
    * 根据严重性获取日志级别
    */
-  private getLogLevelForSeverity(severity: ValidationSeverity): 'error' | 'warn' | 'info' | 'debug' {
+  private getLogLevelForSeverity(
+    severity: ValidationSeverity
+  ): 'error' | 'warn' | 'info' | 'debug' {
     switch (severity) {
       case 'error':
         return 'error';
@@ -321,7 +320,12 @@ export class ConfigLoadingModule {
         continue;
       }
 
-      if (typeof value === 'object' && !Array.isArray(value) && typeof result[key] === 'object' && !Array.isArray(result[key])) {
+      if (
+        typeof value === 'object' &&
+        !Array.isArray(value) &&
+        typeof result[key] === 'object' &&
+        !Array.isArray(result[key])
+      ) {
         result[key] = this.deepMerge(result[key], value);
       } else {
         result[key] = value;

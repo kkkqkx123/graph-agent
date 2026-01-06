@@ -6,7 +6,7 @@ export enum SessionStatusValue {
   ACTIVE = 'active',
   INACTIVE = 'inactive',
   SUSPENDED = 'suspended',
-  TERMINATED = 'terminated'
+  TERMINATED = 'terminated',
 }
 
 /**
@@ -18,7 +18,7 @@ export interface SessionStatusProps {
 
 /**
  * 会话状态值对象
- * 
+ *
  * 用于表示会话的当前状态
  */
 export class SessionStatus extends ValueObject<SessionStatusProps> {
@@ -136,7 +136,6 @@ export class SessionStatus extends ValueObject<SessionStatusProps> {
     }
     return this.props.value === status.getValue();
   }
-
 
   /**
    * 获取会话状态的字符串表示

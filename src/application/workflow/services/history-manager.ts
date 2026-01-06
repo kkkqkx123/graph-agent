@@ -85,7 +85,7 @@ export class HistoryManager {
       timestamp,
       result,
       status,
-      metadata
+      metadata,
     };
 
     // 获取或创建线程的历史记录
@@ -155,7 +155,7 @@ export class HistoryManager {
         successCount: 0,
         failureCount: 0,
         pendingCount: 0,
-        runningCount: 0
+        runningCount: 0,
       };
     }
 
@@ -164,7 +164,7 @@ export class HistoryManager {
       successCount: 0,
       failureCount: 0,
       pendingCount: 0,
-      runningCount: 0
+      runningCount: 0,
     };
 
     for (const record of history) {

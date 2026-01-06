@@ -28,5 +28,5 @@ export const SCHEMA_MAP = {
   prompts: PromptSchema,
   pool: PoolSchema,
   taskGroup: TaskGroupSchema,
-  workflow_functions: WorkflowFunctionSchema
+  workflow_functions: WorkflowFunctionSchema,
 } as const;

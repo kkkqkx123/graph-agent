@@ -92,7 +92,7 @@ export interface NodeExecutionProps {
 
 /**
  * NodeExecution值对象
- * 
+ *
  * 表示单个节点的执行状态，包含详细的执行信息
  */
 export class NodeExecution extends ValueObject<NodeExecutionProps> {
@@ -108,12 +108,12 @@ export class NodeExecution extends ValueObject<NodeExecutionProps> {
       retryInfo: {
         maxRetries: 3,
         currentRetry: 0,
-        retryDelay: 1000
+        retryDelay: 1000,
       },
       llmCalls: [],
       toolCalls: [],
       executionSteps: [],
-      metadata: {}
+      metadata: {},
     });
   }
 
@@ -234,7 +234,7 @@ export class NodeExecution extends ValueObject<NodeExecutionProps> {
     return new NodeExecution({
       ...this.props,
       status: NodeStatus.running(),
-      startTime: Timestamp.now()
+      startTime: Timestamp.now(),
     });
   }
 
@@ -256,7 +256,7 @@ export class NodeExecution extends ValueObject<NodeExecutionProps> {
       status: NodeStatus.completed(),
       result,
       endTime: now,
-      duration
+      duration,
     });
   }
 
@@ -278,7 +278,7 @@ export class NodeExecution extends ValueObject<NodeExecutionProps> {
       status: NodeStatus.failed(),
       error,
       endTime: now,
-      duration
+      duration,
     });
   }
 
@@ -296,7 +296,7 @@ export class NodeExecution extends ValueObject<NodeExecutionProps> {
       ...this.props,
       status: NodeStatus.skipped(),
       result: { skipped: true, reason },
-      endTime: Timestamp.now()
+      endTime: Timestamp.now(),
     });
   }
 
@@ -316,7 +316,7 @@ export class NodeExecution extends ValueObject<NodeExecutionProps> {
       ...this.props,
       status: NodeStatus.cancelled(),
       endTime: now,
-      duration
+      duration,
     });
   }
 
@@ -339,12 +339,12 @@ export class NodeExecution extends ValueObject<NodeExecutionProps> {
       retryInfo: {
         ...this.props.retryInfo,
         currentRetry: this.props.retryInfo.currentRetry + 1,
-        lastRetryAt: Timestamp.now()
+        lastRetryAt: Timestamp.now(),
       },
       startTime: undefined,
       endTime: undefined,
       duration: undefined,
-      error: undefined
+      error: undefined,
     });
   }
 
@@ -356,7 +356,7 @@ export class NodeExecution extends ValueObject<NodeExecutionProps> {
   public addLLMCall(llmCall: LLMCallRecord): NodeExecution {
     return new NodeExecution({
       ...this.props,
-      llmCalls: [...this.props.llmCalls, llmCall]
+      llmCalls: [...this.props.llmCalls, llmCall],
     });
   }
 
@@ -368,7 +368,7 @@ export class NodeExecution extends ValueObject<NodeExecutionProps> {
   public addToolCall(toolCall: ToolCallRecord): NodeExecution {
     return new NodeExecution({
       ...this.props,
-      toolCalls: [...this.props.toolCalls, toolCall]
+      toolCalls: [...this.props.toolCalls, toolCall],
     });
   }
 
@@ -380,7 +380,7 @@ export class NodeExecution extends ValueObject<NodeExecutionProps> {
   public addExecutionStep(step: ExecutionStep): NodeExecution {
     return new NodeExecution({
       ...this.props,
-      executionSteps: [...this.props.executionSteps, step]
+      executionSteps: [...this.props.executionSteps, step],
     });
   }
 
@@ -392,7 +392,7 @@ export class NodeExecution extends ValueObject<NodeExecutionProps> {
   public updateMetadata(metadata: Record<string, unknown>): NodeExecution {
     return new NodeExecution({
       ...this.props,
-      metadata: { ...this.props.metadata, ...metadata }
+      metadata: { ...this.props.metadata, ...metadata },
     });
   }
 
@@ -414,7 +414,7 @@ export class NodeExecution extends ValueObject<NodeExecutionProps> {
       executionSteps: [...this.props.executionSteps],
       retryInfo: { ...this.props.retryInfo },
       metadata: { ...this.props.metadata },
-      snapshotAt: Timestamp.now()
+      snapshotAt: Timestamp.now(),
     };
   }
 

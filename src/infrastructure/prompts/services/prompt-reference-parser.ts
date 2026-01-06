@@ -1,11 +1,11 @@
 /**
  * 提示词引用解析器
- * 
+ *
  * 职责：只负责引用格式的解析和验证
  * - 解析引用字符串（如 "system.coder" 或 "system.coder.code_style"）
  * - 验证引用格式的有效性
  * - 返回结构化的引用信息
- * 
+ *
  * 注意：不负责文件路径构建和文件系统查找，这些由 PromptLoader 处理
  */
 
@@ -25,7 +25,14 @@ export interface PromptReference {
  * 提示词引用解析器
  */
 export class PromptReferenceParser {
-  private readonly validCategories = ['system', 'rules', 'user_commands', 'templates', 'context', 'examples'];
+  private readonly validCategories = [
+    'system',
+    'rules',
+    'user_commands',
+    'templates',
+    'context',
+    'examples',
+  ];
 
   constructor(private readonly logger: ILogger) {}
 
@@ -41,7 +48,9 @@ export class PromptReferenceParser {
     const parts = reference.split('.');
 
     if (parts.length < 2) {
-      throw new Error(`无效的提示词引用格式: ${reference}，格式应为 "category.name" 或 "category.composite.part"`);
+      throw new Error(
+        `无效的提示词引用格式: ${reference}，格式应为 "category.name" 或 "category.composite.part"`
+      );
     }
 
     const category = parts[0]!;
@@ -49,9 +58,7 @@ export class PromptReferenceParser {
 
     // 验证类别
     if (!this.validCategories.includes(category)) {
-      throw new Error(
-        `无效的类别: ${category}，有效类别: ${this.validCategories.join(', ')}`
-      );
+      throw new Error(`无效的类别: ${category}，有效类别: ${this.validCategories.join(', ')}`);
     }
 
     // 验证名称格式
@@ -66,7 +73,7 @@ export class PromptReferenceParser {
 
     return {
       category,
-      name
+      name,
     };
   }
 

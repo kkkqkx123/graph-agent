@@ -41,7 +41,7 @@ export interface ContextRetentionPlan {
 
 /**
  * Fork策略值对象
- * 
+ *
  * 定义Fork操作的策略，包括上下文保留和节点状态处理
  */
 export class ForkStrategy extends ValueObject<{
@@ -80,7 +80,7 @@ export class ForkStrategy extends ValueObject<{
     return new ForkStrategy({
       type: 'full',
       contextRetention: 'full',
-      nodeStateHandling: 'copy'
+      nodeStateHandling: 'copy',
     });
   }
 
@@ -92,7 +92,7 @@ export class ForkStrategy extends ValueObject<{
     return new ForkStrategy({
       type: 'partial',
       contextRetention: 'partial',
-      nodeStateHandling: 'inherit'
+      nodeStateHandling: 'inherit',
     });
   }
 
@@ -104,7 +104,7 @@ export class ForkStrategy extends ValueObject<{
     return new ForkStrategy({
       type: 'minimal',
       contextRetention: 'minimal',
-      nodeStateHandling: 'reset'
+      nodeStateHandling: 'reset',
     });
   }
 
@@ -156,7 +156,7 @@ export class ForkStrategy extends ValueObject<{
     return {
       valid: errors.length === 0,
       errors,
-      warnings
+      warnings,
     };
   }
 
@@ -166,10 +166,7 @@ export class ForkStrategy extends ValueObject<{
    * @param forkPoint Fork点
    * @returns 上下文保留计划
    */
-  public calculateContextRetention(
-    thread: Thread,
-    forkPoint: NodeId
-  ): ContextRetentionPlan {
+  public calculateContextRetention(thread: Thread, forkPoint: NodeId): ContextRetentionPlan {
     const execution = thread.execution;
     const context = execution.context;
 
@@ -228,7 +225,7 @@ export class ForkStrategy extends ValueObject<{
       nodeStatesToRetain,
       includePromptContext,
       includeHistory,
-      includeMetadata
+      includeMetadata,
     };
   }
 

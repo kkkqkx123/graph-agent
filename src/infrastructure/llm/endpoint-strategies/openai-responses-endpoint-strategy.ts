@@ -6,20 +6,22 @@ import { ProviderRequest } from '../parameter-mappers/base-parameter-mapper';
 /**
  * 自定义认证配置 Schema
  */
-const CustomAuthSchema = z.object({
-  type: z.enum(['header', 'body', 'query']),
-  header: z.string().optional(),
-  field: z.string().optional(),
-  param: z.string().optional()
-}).refine(
-  (auth) => {
-    if (auth.type === 'body') return !!auth.field;
-    if (auth.type === 'query') return !!auth.param;
-    if (auth.type === 'header') return !!auth.header;
-    return true;
-  },
-  { message: 'Auth configuration is incomplete' }
-);
+const CustomAuthSchema = z
+  .object({
+    type: z.enum(['header', 'body', 'query']),
+    header: z.string().optional(),
+    field: z.string().optional(),
+    param: z.string().optional(),
+  })
+  .refine(
+    auth => {
+      if (auth.type === 'body') return !!auth.field;
+      if (auth.type === 'query') return !!auth.param;
+      if (auth.type === 'header') return !!auth.header;
+      return true;
+    },
+    { message: 'Auth configuration is incomplete' }
+  );
 
 /**
  * OpenAI Responses 端点配置 Schema
@@ -34,52 +36,54 @@ const OpenAIResponsesEndpointConfigSchema = BaseEndpointConfigSchema.extend({
   /**
    * 额外配置
    */
-  extraConfig: z.object({
-    /**
-     * 端点路径
-     */
-    endpointPath: z.string().default('responses'),
+  extraConfig: z
+    .object({
+      /**
+       * 端点路径
+       */
+      endpointPath: z.string().default('responses'),
 
-    /**
-     * 认证类型
-     */
-    authType: z.string().default('Bearer'),
+      /**
+       * 认证类型
+       */
+      authType: z.string().default('Bearer'),
 
-    /**
-     * 自定义认证配置
-     */
-    customAuth: CustomAuthSchema.optional(),
+      /**
+       * 自定义认证配置
+       */
+      customAuth: CustomAuthSchema.optional(),
 
-    /**
-     * 是否启用 Beta 功能
-     */
-    enableBeta: z.boolean().default(true),
+      /**
+       * 是否启用 Beta 功能
+       */
+      enableBeta: z.boolean().default(true),
 
-    /**
-     * Beta 版本标识
-     */
-    betaVersion: z.string().default('responses=v1'),
+      /**
+       * Beta 版本标识
+       */
+      betaVersion: z.string().default('responses=v1'),
 
-    /**
-     * OpenAI 组织 ID
-     */
-    organization: z.string().optional(),
+      /**
+       * OpenAI 组织 ID
+       */
+      organization: z.string().optional(),
 
-    /**
-     * OpenAI 项目 ID
-     */
-    project: z.string().optional(),
+      /**
+       * OpenAI 项目 ID
+       */
+      project: z.string().optional(),
 
-    /**
-     * API 版本
-     */
-    apiVersion: z.string().optional(),
+      /**
+       * API 版本
+       */
+      apiVersion: z.string().optional(),
 
-    /**
-     * 默认请求头
-     */
-    defaultHeaders: z.record(z.string(), z.string()).optional()
-  }).optional()
+      /**
+       * 默认请求头
+       */
+      defaultHeaders: z.record(z.string(), z.string()).optional(),
+    })
+    .optional(),
 });
 
 /**
@@ -152,12 +156,7 @@ export class OpenAIResponsesEndpointStrategy extends BaseEndpointStrategy {
     }
 
     // 处理其他可选的 OpenAI 特定头部
-    const optionalHeaders = [
-      'api-version',
-      'OpenAI-Organization',
-      'OpenAI-Project',
-      'OpenAI-User'
-    ];
+    const optionalHeaders = ['api-version', 'OpenAI-Organization', 'OpenAI-Project', 'OpenAI-User'];
 
     optionalHeaders.forEach(headerName => {
       const configKey = headerName.replace('OpenAI-', '').toLowerCase();
@@ -190,7 +189,7 @@ export class OpenAIResponsesEndpointStrategy extends BaseEndpointStrategy {
         // 注意：这里不直接修改 URL，而是标记需要在 HTTP 客户端层面处理
         request._authQuery = {
           param: authConfig.param,
-          value: config.apiKey
+          value: config.apiKey,
         };
       }
     }
@@ -205,13 +204,13 @@ export class OpenAIResponsesEndpointStrategy extends BaseEndpointStrategy {
    */
   getDefaultConfig(): Record<string, any> {
     return {
-      endpointPath: 'responses',  // 不包含 v1，因为 baseURL 通常已经包含
+      endpointPath: 'responses', // 不包含 v1，因为 baseURL 通常已经包含
       authType: 'Bearer',
       enableBeta: true,
       betaVersion: 'responses=v1',
       defaultHeaders: {
-        'Content-Type': 'application/json'
-      }
+        'Content-Type': 'application/json',
+      },
     };
   }
 

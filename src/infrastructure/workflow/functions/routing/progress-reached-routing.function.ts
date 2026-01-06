@@ -16,7 +16,10 @@ export class ProgressReachedRoutingFunction extends BaseConditionRoutingFunction
     );
   }
 
-  override async execute(context: WorkflowExecutionContext, config: RoutingFunctionConfig): Promise<boolean> {
+  override async execute(
+    context: WorkflowExecutionContext,
+    config: RoutingFunctionConfig
+  ): Promise<boolean> {
     const targetProgress = config['edge']?.['properties']?.['targetProgress'] ?? 100;
     const executionState = config['executionState'];
 

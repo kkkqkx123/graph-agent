@@ -1,6 +1,6 @@
 /**
  * HumanRelay会话状态值对象
- * 
+ *
  * 定义HumanRelay会话的各种状态
  */
 
@@ -10,42 +10,42 @@ export enum HumanRelaySessionStatus {
    * 会话正在运行，可以接收新的交互
    */
   ACTIVE = 'active',
-  
+
   /**
    * 等待用户输入
    * 已发送提示给用户，等待用户响应
    */
   WAITING_FOR_USER = 'waiting_for_user',
-  
+
   /**
    * 处理中
    * 正在处理用户输入或系统响应
    */
   PROCESSING = 'processing',
-  
+
   /**
    * 已完成
    * 会话正常结束
    */
   COMPLETED = 'completed',
-  
+
   /**
    * 超时
    * 用户响应超时
    */
   TIMEOUT = 'timeout',
-  
+
   /**
    * 已取消
    * 会话被用户或系统取消
    */
   CANCELLED = 'cancelled',
-  
+
   /**
    * 错误
    * 会话过程中发生错误
    */
-  ERROR = 'error'
+  ERROR = 'error',
 }
 
 /**
@@ -98,7 +98,7 @@ export class HumanRelaySessionStatusUtils {
       HumanRelaySessionStatus.COMPLETED,
       HumanRelaySessionStatus.TIMEOUT,
       HumanRelaySessionStatus.CANCELLED,
-      HumanRelaySessionStatus.ERROR
+      HumanRelaySessionStatus.ERROR,
     ].includes(status);
   }
 
@@ -109,7 +109,7 @@ export class HumanRelaySessionStatusUtils {
     return [
       HumanRelaySessionStatus.ACTIVE,
       HumanRelaySessionStatus.WAITING_FOR_USER,
-      HumanRelaySessionStatus.PROCESSING
+      HumanRelaySessionStatus.PROCESSING,
     ].includes(status);
   }
 
@@ -137,30 +137,30 @@ export class HumanRelaySessionStatusUtils {
           HumanRelaySessionStatus.WAITING_FOR_USER,
           HumanRelaySessionStatus.COMPLETED,
           HumanRelaySessionStatus.CANCELLED,
-          HumanRelaySessionStatus.ERROR
+          HumanRelaySessionStatus.ERROR,
         ];
-      
+
       case HumanRelaySessionStatus.WAITING_FOR_USER:
         return [
           HumanRelaySessionStatus.PROCESSING,
           HumanRelaySessionStatus.TIMEOUT,
           HumanRelaySessionStatus.CANCELLED,
-          HumanRelaySessionStatus.ERROR
+          HumanRelaySessionStatus.ERROR,
         ];
-      
+
       case HumanRelaySessionStatus.PROCESSING:
         return [
           HumanRelaySessionStatus.ACTIVE,
           HumanRelaySessionStatus.COMPLETED,
-          HumanRelaySessionStatus.ERROR
+          HumanRelaySessionStatus.ERROR,
         ];
-      
+
       case HumanRelaySessionStatus.COMPLETED:
       case HumanRelaySessionStatus.TIMEOUT:
       case HumanRelaySessionStatus.CANCELLED:
       case HumanRelaySessionStatus.ERROR:
         return []; // 终态，无法转换
-      
+
       default:
         return [];
     }

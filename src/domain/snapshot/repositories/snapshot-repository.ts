@@ -72,11 +72,7 @@ export interface ISnapshotRepository extends Repository<Snapshot> {
    * @param endTime 结束时间
    * @returns 快照列表
    */
-  findByTimeRange(
-    scope: SnapshotScope,
-    startTime: Date,
-    endTime: Date
-  ): Promise<Snapshot[]>;
+  findByTimeRange(scope: SnapshotScope, startTime: Date, endTime: Date): Promise<Snapshot[]>;
 
   /**
    * 统计快照数量

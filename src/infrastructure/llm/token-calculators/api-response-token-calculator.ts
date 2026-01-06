@@ -3,7 +3,7 @@ import { BaseTokenCalculator, TokenUsage } from './base-token-calculator';
 
 /**
  * API响应Token计算器
- * 
+ *
  * 专注于解析API响应中的token使用信息，不进行本地计算。
  * 用于API调用后的token统计和成本计算。
  */
@@ -70,7 +70,7 @@ export class ApiResponseTokenCalculator extends BaseTokenCalculator {
         provider: this.providerName,
         // 保留原始详细信息用于调试和审计
         promptTokensDetails: promptDetails,
-        completionTokensDetails: completionDetails
+        completionTokensDetails: completionDetails,
       };
 
       const tokenUsage: TokenUsage = {
@@ -78,7 +78,7 @@ export class ApiResponseTokenCalculator extends BaseTokenCalculator {
         completionTokens: usage.completion_tokens || 0,
         totalTokens: usage.total_tokens || 0,
         reasoningTokens,
-        metadata
+        metadata,
       };
 
       // 保存最后一次的使用情况
@@ -125,13 +125,26 @@ export class ApiResponseTokenCalculator extends BaseTokenCalculator {
 
     // 默认支持的模型
     return [
-      'gpt-4', 'gpt-4-32k', 'gpt-4-0613', 'gpt-4-32k-0613',
-      'gpt-4-turbo', 'gpt-4-turbo-2024-04-09', 'gpt-4-turbo-preview',
-      'gpt-4o', 'gpt-4o-2024-05-13', 'gpt-4o-2024-08-06',
-      'gpt-4o-mini', 'gpt-4o-mini-2024-07-18',
-      'gpt-3.5-turbo', 'gpt-3.5-turbo-16k', 'gpt-3.5-turbo-0613',
-      'gpt-3.5-turbo-16k-0613', 'gpt-3.5-turbo-0301',
-      'gpt-5', 'gpt-5-codex', 'gpt-5.1'
+      'gpt-4',
+      'gpt-4-32k',
+      'gpt-4-0613',
+      'gpt-4-32k-0613',
+      'gpt-4-turbo',
+      'gpt-4-turbo-2024-04-09',
+      'gpt-4-turbo-preview',
+      'gpt-4o',
+      'gpt-4o-2024-05-13',
+      'gpt-4o-2024-08-06',
+      'gpt-4o-mini',
+      'gpt-4o-mini-2024-07-18',
+      'gpt-3.5-turbo',
+      'gpt-3.5-turbo-16k',
+      'gpt-3.5-turbo-0613',
+      'gpt-3.5-turbo-16k-0613',
+      'gpt-3.5-turbo-0301',
+      'gpt-5',
+      'gpt-5-codex',
+      'gpt-5.1',
     ];
   }
 
@@ -154,7 +167,7 @@ export class ApiResponseTokenCalculator extends BaseTokenCalculator {
       'gpt-4-turbo': { prompt: 0.01, completion: 0.03 },
       'gpt-4': { prompt: 0.03, completion: 0.06 },
       'gpt-3.5-turbo': { prompt: 0.001, completion: 0.002 },
-      'gpt-5': { prompt: 0.01, completion: 0.03 }
+      'gpt-5': { prompt: 0.01, completion: 0.03 },
     };
 
     return defaultPricing[modelName] || null;

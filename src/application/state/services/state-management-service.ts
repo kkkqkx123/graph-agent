@@ -31,11 +31,7 @@ export class StateManagementService {
     details?: Record<string, unknown>
   ): Promise<void> {
     // 1. 记录状态变更History（使用操作History）
-    await this.historyService.createOperationHistory(
-      thread,
-      changeType,
-      details || {}
-    );
+    await this.historyService.createOperationHistory(thread, changeType, details || {});
 
     // 2. 根据变更类型决定是否创建Checkpoint
     if (this.shouldCreateCheckpoint(changeType)) {
@@ -44,10 +40,10 @@ export class StateManagementService {
         type: 'auto',
         stateData: {
           status: thread.status.value,
-          metadata: thread.metadata
+          metadata: thread.metadata,
         },
         title: `自动检查点: ${thread.status.value}`,
-        tags: ['automatic']
+        tags: ['automatic'],
       });
     }
 
@@ -96,11 +92,11 @@ export class StateManagementService {
       threadId: thread.threadId.toString(),
       stateData: {
         status: thread.status.value,
-        metadata: thread.metadata
+        metadata: thread.metadata,
       },
       title,
       description,
-      tags: ['manual']
+      tags: ['manual'],
     });
   }
 
@@ -132,10 +128,10 @@ export class StateManagementService {
       threadId: thread.threadId.toString(),
       stateData: {
         status: thread.status.value,
-        metadata: thread.metadata
+        metadata: thread.metadata,
       },
       milestoneName,
-      description
+      description,
     });
   }
 
@@ -157,14 +153,14 @@ export class StateManagementService {
         status: thread.status.value,
         metadata: thread.metadata,
         errorMessage: error.message,
-        errorStack: error.stack
+        errorStack: error.stack,
       },
       errorMessage: error.message,
       errorType: error.name,
       metadata: {
         errorName: error.name,
-        errorMessage: error.message
-      }
+        errorMessage: error.message,
+      },
     });
 
     // 3. 创建错误Snapshot
@@ -222,24 +218,17 @@ export class StateManagementService {
         restorePointId
       );
     } else if (restoreType === 'snapshot' && restorePointId) {
-      restoredThread = await this.recoveryService.restoreThreadFromSnapshot(
-        thread,
-        restorePointId
-      );
+      restoredThread = await this.recoveryService.restoreThreadFromSnapshot(thread, restorePointId);
     } else {
       throw new Error('Invalid restore parameters');
     }
 
     // 3. 记录恢复后的状态变更
-    await this.historyService.createOperationHistory(
-      restoredThread,
-      'state_restored',
-      {
-        restoreType,
-        restorePointId: restorePointId?.value,
-        restoredAt: new Date().toISOString()
-      }
-    );
+    await this.historyService.createOperationHistory(restoredThread, 'state_restored', {
+      restoreType,
+      restorePointId: restorePointId?.value,
+      restoredAt: new Date().toISOString(),
+    });
 
     return restoredThread;
   }
@@ -255,13 +244,13 @@ export class StateManagementService {
     const [history, checkpoints, snapshots] = await Promise.all([
       this.historyService.getThreadHistory(threadId),
       this.checkpointService.getThreadCheckpointHistory(threadId.toString()),
-      this.snapshotService.getThreadSnapshots(threadId)
+      this.snapshotService.getThreadSnapshots(threadId),
     ]);
 
     return {
       history,
       checkpoints,
-      snapshots
+      snapshots,
     };
   }
 
@@ -274,12 +263,12 @@ export class StateManagementService {
   }> {
     const [history, snapshots] = await Promise.all([
       this.historyService.getSessionHistory(sessionId),
-      this.snapshotService.getSessionSnapshots(sessionId)
+      this.snapshotService.getSessionSnapshots(sessionId),
     ]);
 
     return {
       history,
-      snapshots
+      snapshots,
     };
   }
 
@@ -294,13 +283,13 @@ export class StateManagementService {
     const [expiredHistory, expiredCheckpoints, expiredSnapshots] = await Promise.all([
       this.historyService.cleanupExpiredHistory(retentionDays),
       this.checkpointService.cleanupExpiredCheckpoints(),
-      this.snapshotService.cleanupExpiredSnapshots()
+      this.snapshotService.cleanupExpiredSnapshots(),
     ]);
 
     return {
       expiredHistory,
       expiredCheckpoints,
-      expiredSnapshots
+      expiredSnapshots,
     };
   }
 
@@ -317,12 +306,12 @@ export class StateManagementService {
   }> {
     const [excessCheckpoints, excessSnapshots] = await Promise.all([
       this.checkpointService.cleanupExcessCheckpoints(threadId.toString(), maxCheckpoints),
-      this.snapshotService.cleanupExcessSnapshots(threadId, maxSnapshots)
+      this.snapshotService.cleanupExcessSnapshots(threadId, maxSnapshots),
     ]);
 
     return {
       excessCheckpoints,
-      excessSnapshots
+      excessSnapshots,
     };
   }
 
@@ -346,7 +335,7 @@ export class StateManagementService {
   }> {
     const [snapshotStats, restoreStats] = await Promise.all([
       this.snapshotService.getSnapshotStatistics(),
-      this.snapshotService.getRestoreStatistics()
+      this.snapshotService.getRestoreStatistics(),
     ]);
 
     return {
@@ -355,14 +344,14 @@ export class StateManagementService {
         byType: snapshotStats.byType,
         byScope: snapshotStats.byScope,
         totalSizeBytes: snapshotStats.totalSizeBytes,
-        averageSizeBytes: snapshotStats.averageSizeBytes
+        averageSizeBytes: snapshotStats.averageSizeBytes,
       },
       recovery: {
         totalRestores: restoreStats.totalRestores,
         byType: restoreStats.byType,
         byScope: restoreStats.byScope,
-        mostRestoredSnapshotId: restoreStats.mostRestoredSnapshotId
-      }
+        mostRestoredSnapshotId: restoreStats.mostRestoredSnapshotId,
+      },
     };
   }
 
@@ -375,7 +364,7 @@ export class StateManagementService {
       'node_completed',
       'node_failed',
       'workflow_paused',
-      'workflow_resumed'
+      'workflow_resumed',
     ];
 
     return checkpointTriggers.includes(changeType);
@@ -392,7 +381,7 @@ export class StateManagementService {
       'thread_created',
       'thread_destroyed',
       'session_created',
-      'session_destroyed'
+      'session_destroyed',
     ];
 
     return snapshotTriggers.includes(changeType);

@@ -116,7 +116,6 @@ export abstract class Hook extends Entity {
     this.props = Object.freeze(props);
   }
 
-
   /**
    * 获取Hook ID
    * @returns Hook ID

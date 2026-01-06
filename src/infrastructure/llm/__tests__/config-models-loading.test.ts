@@ -8,8 +8,12 @@ describe('配置模型加载测试', () => {
     const configStore: Record<string, any> = {
       'llm.openai.models': ['gpt-4', 'gpt-4o', 'gpt-3.5-turbo'],
       'llm.gemini.models': ['gemini-2.5-pro', 'gemini-2.5-flash'],
-      'llm.anthropic.models': ['claude-3-opus-20240229', 'claude-3-sonnet-20240229', 'claude-3-haiku-20240307'],
-      'llm.mock.models': ['mock-model', 'mock-model-turbo', 'mock-model-pro']
+      'llm.anthropic.models': [
+        'claude-3-opus-20240229',
+        'claude-3-sonnet-20240229',
+        'claude-3-haiku-20240307',
+      ],
+      'llm.mock.models': ['mock-model', 'mock-model-turbo', 'mock-model-pro'],
     };
 
     // 创建模拟的配置管理器
@@ -30,12 +34,12 @@ describe('配置模型加载测试', () => {
         openai: { models: configStore['llm.openai.models'] },
         gemini: { models: configStore['llm.gemini.models'] },
         anthropic: { models: configStore['llm.anthropic.models'] },
-        mock: { models: configStore['llm.mock.models'] }
+        mock: { models: configStore['llm.mock.models'] },
       })),
       reload: jest.fn(),
       watch: jest.fn(),
       unwatch: jest.fn(),
-      initialize: jest.fn()
+      initialize: jest.fn(),
     } as any;
   });
 

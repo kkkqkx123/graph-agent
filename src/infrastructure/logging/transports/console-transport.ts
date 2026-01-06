@@ -49,10 +49,10 @@ export class ConsoleTransport extends BaseTransport {
           includeLevel: true,
           includeContext: true,
           includeStack: true,
-          sanitize: true
+          sanitize: true,
         };
         return new JsonFormatter(jsonOptions);
-      
+
       case LogFormatType.TEXT:
         const consoleConfig = this.config as ConsoleLogOutputConfig;
         const textOptions: TextFormatterOptions = {
@@ -62,10 +62,10 @@ export class ConsoleTransport extends BaseTransport {
           includeContext: true,
           includeStack: true,
           sanitize: true,
-          separator: ' | '
+          separator: ' | ',
         };
         return new TextFormatter(textOptions);
-      
+
       default:
         throw new Error(`不支持的日志格式: ${format}`);
     }

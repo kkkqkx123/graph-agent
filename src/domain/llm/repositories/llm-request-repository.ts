@@ -4,7 +4,7 @@ import { LLMRequest } from '../entities/llm-request';
 
 /**
  * LLM请求仓储接口
- * 
+ *
  * 定义LLM请求持久化和检索的契约
  */
 export interface ILLMRequestRepository extends Repository<LLMRequest> {
@@ -61,10 +61,7 @@ export interface ILLMRequestRepository extends Repository<LLMRequest> {
    * @param endTime 结束时间
    * @returns LLM请求列表
    */
-  findByTimeRange(
-    startTime: Date,
-    endTime: Date
-  ): Promise<LLMRequest[]>;
+  findByTimeRange(startTime: Date, endTime: Date): Promise<LLMRequest[]>;
 
   /**
    * 根据会话ID和时间范围查找LLM请求
@@ -73,11 +70,7 @@ export interface ILLMRequestRepository extends Repository<LLMRequest> {
    * @param endTime 结束时间
    * @returns LLM请求列表
    */
-  findBySessionIdAndTimeRange(
-    sessionId: ID,
-    startTime: Date,
-    endTime: Date
-  ): Promise<LLMRequest[]>;
+  findBySessionIdAndTimeRange(sessionId: ID, startTime: Date, endTime: Date): Promise<LLMRequest[]>;
 
   /**
    * 根据线程ID和时间范围查找LLM请求
@@ -86,11 +79,7 @@ export interface ILLMRequestRepository extends Repository<LLMRequest> {
    * @param endTime 结束时间
    * @returns LLM请求列表
    */
-  findByThreadIdAndTimeRange(
-    threadId: ID,
-    startTime: Date,
-    endTime: Date
-  ): Promise<LLMRequest[]>;
+  findByThreadIdAndTimeRange(threadId: ID, startTime: Date, endTime: Date): Promise<LLMRequest[]>;
 
   /**
    * 查找最新的LLM请求
@@ -243,11 +232,13 @@ export interface ILLMRequestRepository extends Repository<LLMRequest> {
     startTime: Date,
     endTime: Date,
     interval: number
-  ): Promise<Array<{
-    timestamp: Date;
-    count: number;
-    byModel: Record<string, number>;
-  }>>;
+  ): Promise<
+    Array<{
+      timestamp: Date;
+      count: number;
+      byModel: Record<string, number>;
+    }>
+  >;
 
   /**
    * 搜索LLM请求

@@ -53,7 +53,7 @@ export class TaskGroup extends Entity {
     this.fallbackConfig = this.config['fallbackConfig'] || {
       strategy: 'echelon_down',
       maxAttempts: 3,
-      retryDelay: 1.0
+      retryDelay: 1.0,
     };
   }
 
@@ -75,8 +75,7 @@ export class TaskGroup extends Entity {
    * 按优先级获取层级
    */
   getEchelonsByPriority(): TaskGroupEchelon[] {
-    return Array.from(this.echelons.values())
-      .sort((a, b) => a.priority - b.priority);
+    return Array.from(this.echelons.values()).sort((a, b) => a.priority - b.priority);
   }
 
   /**
@@ -97,7 +96,7 @@ export class TaskGroup extends Entity {
       // 获取下一层级
       const echelonNum = parseInt(currentEchelon.replace('echelon', ''));
       const nextEchelon = `echelon${echelonNum + 1}`;
-      
+
       if (this.echelons.has(nextEchelon)) {
         fallbackGroups.push(`${this.name}.${nextEchelon}`);
       }
@@ -121,8 +120,10 @@ export class TaskGroup extends Entity {
    * 获取任务组状态
    */
   getStatus(): Record<string, any> {
-    const totalModels = Array.from(this.echelons.values())
-      .reduce((sum, echelon) => sum + echelon.models.length, 0);
+    const totalModels = Array.from(this.echelons.values()).reduce(
+      (sum, echelon) => sum + echelon.models.length,
+      0
+    );
 
     return {
       name: this.name,
@@ -131,8 +132,8 @@ export class TaskGroup extends Entity {
       echelons: Array.from(this.echelons.entries()).map(([name, echelon]) => ({
         name,
         priority: echelon.priority,
-        modelCount: echelon.models.length
-      }))
+        modelCount: echelon.models.length,
+      })),
     };
   }
 }
@@ -183,7 +184,7 @@ export class TaskGroupEchelon extends Entity {
       name: this.name,
       priority: this.priority,
       models: this.models,
-      ...this.config
+      ...this.config,
     };
   }
 
@@ -202,7 +203,7 @@ export class TaskGroupEchelon extends Entity {
       name: this.name,
       priority: this.priority,
       modelCount: this.models.length,
-      available: this.isAvailable()
+      available: this.isAvailable(),
     };
   }
 }

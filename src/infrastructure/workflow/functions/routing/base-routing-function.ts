@@ -4,7 +4,7 @@ import {
   ValidationResult,
   FunctionMetadata,
   WorkflowExecutionContext,
-  RoutingFunctionConfig
+  RoutingFunctionConfig,
 } from '../types';
 import { WorkflowFunctionType } from '../../../../domain/workflow/value-objects/function-type';
 
@@ -12,8 +12,9 @@ import { WorkflowFunctionType } from '../../../../domain/workflow/value-objects/
  * 条件路由函数基类
  * 用于条件判断型路由函数，返回 boolean
  */
-export abstract class BaseConditionRoutingFunction<TConfig extends RoutingFunctionConfig = RoutingFunctionConfig>
-  implements IWorkflowFunction {
+export abstract class BaseConditionRoutingFunction<
+  TConfig extends RoutingFunctionConfig = RoutingFunctionConfig,
+> implements IWorkflowFunction {
   protected _initialized: boolean = false;
   public readonly metadata?: Record<string, any>;
   /** 函数类型标识 */
@@ -36,15 +37,15 @@ export abstract class BaseConditionRoutingFunction<TConfig extends RoutingFuncti
         name: 'context',
         type: 'WorkflowExecutionContext',
         required: true,
-        description: '执行上下文'
+        description: '执行上下文',
       },
       {
         name: 'config',
         type: 'RoutingFunctionConfig',
         required: false,
         description: '函数配置',
-        defaultValue: {}
-      }
+        defaultValue: {},
+      },
     ];
   }
 
@@ -66,7 +67,7 @@ export abstract class BaseConditionRoutingFunction<TConfig extends RoutingFuncti
 
     return {
       valid: errors.length === 0,
-      errors
+      errors,
     };
   }
 
@@ -79,7 +80,7 @@ export abstract class BaseConditionRoutingFunction<TConfig extends RoutingFuncti
       isAsync: true,
       category: this.category,
       parameters: this.getParameters(),
-      returnType: this.getReturnType()
+      returnType: this.getReturnType(),
     };
   }
 
@@ -133,8 +134,9 @@ export abstract class BaseConditionRoutingFunction<TConfig extends RoutingFuncti
  * 目标路由函数基类
  * 用于目标选择型路由函数，返回目标节点 ID
  */
-export abstract class BaseTargetRoutingFunction<TConfig extends RoutingFunctionConfig = RoutingFunctionConfig>
-  implements IWorkflowFunction {
+export abstract class BaseTargetRoutingFunction<
+  TConfig extends RoutingFunctionConfig = RoutingFunctionConfig,
+> implements IWorkflowFunction {
   protected _initialized: boolean = false;
   public readonly metadata?: Record<string, any>;
   /** 函数类型标识 */
@@ -157,15 +159,15 @@ export abstract class BaseTargetRoutingFunction<TConfig extends RoutingFunctionC
         name: 'context',
         type: 'WorkflowExecutionContext',
         required: true,
-        description: '执行上下文'
+        description: '执行上下文',
       },
       {
         name: 'config',
         type: 'RoutingFunctionConfig',
         required: false,
         description: '函数配置',
-        defaultValue: {}
-      }
+        defaultValue: {},
+      },
     ];
   }
 
@@ -187,7 +189,7 @@ export abstract class BaseTargetRoutingFunction<TConfig extends RoutingFunctionC
 
     return {
       valid: errors.length === 0,
-      errors
+      errors,
     };
   }
 
@@ -200,7 +202,7 @@ export abstract class BaseTargetRoutingFunction<TConfig extends RoutingFunctionC
       isAsync: true,
       category: this.category,
       parameters: this.getParameters(),
-      returnType: this.getReturnType()
+      returnType: this.getReturnType(),
     };
   }
 

@@ -8,7 +8,12 @@
  */
 
 // 基类和接口导出
-export { BaseHookFunction, HookFunctionMetadata, HookFunctionResult, createHookFunctionResult } from './base-hook-function';
+export {
+  BaseHookFunction,
+  HookFunctionMetadata,
+  HookFunctionResult,
+  createHookFunctionResult,
+} from './base-hook-function';
 
 // Hook函数实现导出
 export { LoggingHookFunction } from './logging-hook-function';

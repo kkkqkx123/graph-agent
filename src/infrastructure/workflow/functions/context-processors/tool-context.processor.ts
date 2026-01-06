@@ -18,10 +18,5 @@ export const toolContextProcessor: ContextProcessor = (
     }
   }
 
-  return PromptContext.create(
-    context.template,
-    toolVariables,
-    context.history,
-    context.metadata
-  );
+  return PromptContext.create(context.template, toolVariables, context.history, context.metadata);
 };

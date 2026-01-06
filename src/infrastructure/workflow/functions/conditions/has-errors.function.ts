@@ -8,16 +8,13 @@ import { ConditionFunctionConfig, WorkflowExecutionContext } from '../types';
 @injectable()
 export class HasErrorsConditionFunction extends BaseConditionFunction<ConditionFunctionConfig> {
   constructor() {
-    super(
-      'condition:has_errors',
-      'has_errors',
-      '检查工作流状态中是否有错误',
-      '1.0.0',
-      'builtin'
-    );
+    super('condition:has_errors', 'has_errors', '检查工作流状态中是否有错误', '1.0.0', 'builtin');
   }
 
-  override async execute(context: WorkflowExecutionContext, config: ConditionFunctionConfig): Promise<boolean> {
+  override async execute(
+    context: WorkflowExecutionContext,
+    config: ConditionFunctionConfig
+  ): Promise<boolean> {
     this.checkInitialized();
 
     // 检查工具结果中的错误

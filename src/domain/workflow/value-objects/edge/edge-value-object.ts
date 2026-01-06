@@ -209,10 +209,13 @@ export class EdgeValueObject extends ValueObject<EdgeValueObjectProps> {
     try {
       // 使用提供的表达式评估器或默认的评估逻辑
       if (expressionEvaluator) {
-        const result = await expressionEvaluator.evaluate(condition, Object.fromEntries(context.variables));
+        const result = await expressionEvaluator.evaluate(
+          condition,
+          Object.fromEntries(context.variables)
+        );
         return {
           satisfied: result.success && Boolean(result.value),
-          error: result.success ? undefined : result.error
+          error: result.success ? undefined : result.error,
         };
       } else {
         // 简单的评估逻辑（可以后续替换为更复杂的实现）
@@ -223,7 +226,7 @@ export class EdgeValueObject extends ValueObject<EdgeValueObjectProps> {
     } catch (error) {
       return {
         satisfied: false,
-        error: error instanceof Error ? error.message : String(error)
+        error: error instanceof Error ? error.message : String(error),
       };
     }
   }
@@ -238,7 +241,9 @@ export class EdgeValueObject extends ValueObject<EdgeValueObjectProps> {
   private evaluateSimpleCondition(condition: string, variables: Record<string, any>): boolean {
     try {
       // 创建安全的评估函数
-      const func = new Function('context', `
+      const func = new Function(
+        'context',
+        `
         'use strict';
         with(context) {
           try {
@@ -247,7 +252,8 @@ export class EdgeValueObject extends ValueObject<EdgeValueObjectProps> {
             return false;
           }
         }
-      `);
+      `
+      );
       return func(variables);
     } catch (error) {
       return false;

@@ -14,7 +14,7 @@ describe('轮询池管理器测试', () => {
       getPoolConfigStatus: jest.fn(),
       validateConfigSyntax: jest.fn(),
       reloadConfig: jest.fn(),
-      getConfigChangeHistory: jest.fn()
+      getConfigChangeHistory: jest.fn(),
     } as any;
 
     poolManager = new PollingPoolManager(mockConfigLoader);
@@ -43,9 +43,7 @@ describe('轮询池管理器测试', () => {
         name: 'test_pool',
         taskGroups: ['fast_group'],
         rotation: { strategy: 'round_robin' },
-        instances: [
-          { name: 'instance1', provider: 'openai', model: 'gpt-4o', weight: 1 }
-        ]
+        instances: [{ name: 'instance1', provider: 'openai', model: 'gpt-4o', weight: 1 }],
       };
 
       mockConfigLoader.loadPoolConfig.mockResolvedValue(config);
@@ -59,15 +57,14 @@ describe('轮询池管理器测试', () => {
     test('应该处理配置加载失败', async () => {
       mockConfigLoader.loadPoolConfig.mockRejectedValue(new Error('配置不存在'));
 
-      await expect(poolManager.createPool('nonexistent_pool'))
-        .rejects.toThrow('配置不存在');
+      await expect(poolManager.createPool('nonexistent_pool')).rejects.toThrow('配置不存在');
     });
 
     test('应该处理重复创建', async () => {
       const config = {
         name: 'test_pool',
         taskGroups: ['fast_group'],
-        instances: []
+        instances: [],
       };
 
       mockConfigLoader.loadPoolConfig.mockResolvedValue(config);
@@ -76,8 +73,7 @@ describe('轮询池管理器测试', () => {
       await poolManager.createPool('test_pool');
 
       // 第二次创建应该抛出错误
-      await expect(poolManager.createPool('test_pool'))
-        .rejects.toThrow('轮询池已存在: test_pool');
+      await expect(poolManager.createPool('test_pool')).rejects.toThrow('轮询池已存在: test_pool');
     });
   });
 
@@ -92,8 +88,9 @@ describe('轮询池管理器测试', () => {
     });
 
     test('应该处理移除不存在的轮询池', () => {
-      expect(() => poolManager.removePool('nonexistent_pool'))
-        .toThrow('轮询池不存在: nonexistent_pool');
+      expect(() => poolManager.removePool('nonexistent_pool')).toThrow(
+        '轮询池不存在: nonexistent_pool'
+      );
     });
   });
 
@@ -114,8 +111,9 @@ describe('轮询池管理器测试', () => {
     });
 
     test('应该处理轮询池不存在的情况', () => {
-      expect(() => poolManager.selectInstance('nonexistent_pool'))
-        .toThrow('轮询池不存在: nonexistent_pool');
+      expect(() => poolManager.selectInstance('nonexistent_pool')).toThrow(
+        '轮询池不存在: nonexistent_pool'
+      );
     });
 
     test('应该处理没有健康实例的情况', () => {
@@ -143,8 +141,9 @@ describe('轮询池管理器测试', () => {
     });
 
     test('应该处理轮询池不存在的情况', () => {
-      expect(() => poolManager.markInstanceHealthy('nonexistent_pool', 'instance1'))
-        .toThrow('轮询池不存在: nonexistent_pool');
+      expect(() => poolManager.markInstanceHealthy('nonexistent_pool', 'instance1')).toThrow(
+        '轮询池不存在: nonexistent_pool'
+      );
     });
   });
 
@@ -161,8 +160,9 @@ describe('轮询池管理器测试', () => {
     });
 
     test('应该处理轮询池不存在的情况', () => {
-      expect(() => poolManager.markInstanceUnhealthy('nonexistent_pool', 'instance1', '错误'))
-        .toThrow('轮询池不存在: nonexistent_pool');
+      expect(() =>
+        poolManager.markInstanceUnhealthy('nonexistent_pool', 'instance1', '错误')
+      ).toThrow('轮询池不存在: nonexistent_pool');
     });
   });
 
@@ -171,7 +171,7 @@ describe('轮询池管理器测试', () => {
       const mockPool = new PollingPool('test_pool', '测试轮询池');
       const mockInstance1 = new PoolInstance('instance1', 'openai', 'gpt-4o', 1);
       const mockInstance2 = new PoolInstance('instance2', 'openai', 'gpt-4o-mini', 2);
-      
+
       mockPool.addInstance(mockInstance1);
       mockPool.addInstance(mockInstance2);
       mockPool.markInstanceHealthy('instance1');
@@ -224,13 +224,13 @@ describe('轮询池管理器测试', () => {
         fast_pool: {
           name: 'fast_pool',
           taskGroups: ['fast_group'],
-          instances: []
+          instances: [],
         },
         economy_pool: {
           name: 'economy_pool',
           taskGroups: ['economy_group'],
-          instances: []
-        }
+          instances: [],
+        },
       };
 
       mockConfigLoader.loadAllPoolConfigs.mockResolvedValue(configs);
@@ -244,8 +244,7 @@ describe('轮询池管理器测试', () => {
     test('应该处理配置加载失败', async () => {
       mockConfigLoader.loadAllPoolConfigs.mockRejectedValue(new Error('配置加载失败'));
 
-      await expect(poolManager.initializeFromConfig())
-        .rejects.toThrow('配置加载失败');
+      await expect(poolManager.initializeFromConfig()).rejects.toThrow('配置加载失败');
     });
   });
 });

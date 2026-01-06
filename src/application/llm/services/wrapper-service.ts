@@ -17,9 +17,7 @@ import { LLMResponse } from '../../../domain/llm/entities/llm-response';
  */
 @injectable()
 export class WrapperService {
-  constructor(
-    @inject('LLMWrapperFactory') private wrapperFactory: LLMWrapperFactory
-  ) {}
+  constructor(@inject('LLMWrapperFactory') private wrapperFactory: LLMWrapperFactory) {}
 
   /**
    * 获取包装器
@@ -63,7 +61,10 @@ export class WrapperService {
   /**
    * 流式生成响应
    */
-  async generateResponseStream(wrapperName: string, request: LLMRequest): Promise<AsyncIterable<LLMResponse>> {
+  async generateResponseStream(
+    wrapperName: string,
+    request: LLMRequest
+  ): Promise<AsyncIterable<LLMResponse>> {
     const wrapper = await this.wrapperFactory.getWrapper(wrapperName);
     if (!wrapper) {
       throw new Error(`包装器未找到: ${wrapperName}`);
@@ -155,14 +156,15 @@ export class WrapperService {
     const allStatistics = await this.wrapperFactory.getAllWrappersStatistics();
     const totalWrappers = Object.keys(allStatistics).length;
     const totalRequests = Object.values(allStatistics).reduce(
-      (sum, stats) => sum + (stats['totalRequests'] as number || 0), 0
+      (sum, stats) => sum + ((stats['totalRequests'] as number) || 0),
+      0
     );
     const successfulRequests = Object.values(allStatistics).reduce(
-      (sum, stats) => sum + (stats['successfulRequests'] as number || 0), 0
+      (sum, stats) => sum + ((stats['successfulRequests'] as number) || 0),
+      0
     );
 
-    const overallSuccessRate = totalRequests > 0 ?
-      successfulRequests / totalRequests : 0;
+    const overallSuccessRate = totalRequests > 0 ? successfulRequests / totalRequests : 0;
 
     return {
       totalWrappers,
@@ -170,7 +172,7 @@ export class WrapperService {
       successfulRequests,
       overallSuccessRate,
       wrappers: allStatistics,
-      timestamp: new Date()
+      timestamp: new Date(),
     };
   }
 

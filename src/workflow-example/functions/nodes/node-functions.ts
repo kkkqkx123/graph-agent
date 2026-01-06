@@ -1,6 +1,6 @@
 /**
  * 节点函数实现
- * 
+ *
  * 本文件实现了图工作流中的各种节点函数
  */
 
@@ -9,7 +9,7 @@ import {
   NodeInput,
   NodeConfig,
   NodeOutput,
-  ExecutionContext
+  ExecutionContext,
 } from '../../types/workflow-types';
 
 // ============================================================================
@@ -19,7 +19,7 @@ import {
 /**
  * LLM节点函数
  * 模拟LLM调用，实际应用中应该调用真实的LLM服务
- * 
+ *
  * @param input 节点输入
  * @param config 节点配置
  * @param context 执行上下文
@@ -33,11 +33,11 @@ export const llmNodeFunction: NodeFunction = async (
   const startTime = Date.now();
 
   try {
-     // 提取配置参数
-     const prompt = config['prompt'] || '';
-     const model = config['model'] || 'gpt-3.5-turbo';
-     const temperature = config['temperature'] ?? 0.7;
-     const maxTokens = config['maxTokens'] ?? 1000;
+    // 提取配置参数
+    const prompt = config['prompt'] || '';
+    const model = config['model'] || 'gpt-3.5-turbo';
+    const temperature = config['temperature'] ?? 0.7;
+    const maxTokens = config['maxTokens'] ?? 1000;
 
     // 替换提示词中的变量占位符
     const processedPrompt = replacePlaceholders(prompt, context.getAllData());
@@ -54,27 +54,27 @@ export const llmNodeFunction: NodeFunction = async (
         response,
         model,
         tokens,
-        temperature
+        temperature,
       },
       metadata: {
         executionTime: Date.now() - startTime,
-        prompt: processedPrompt
-      }
+        prompt: processedPrompt,
+      },
     };
   } catch (error) {
     return {
       success: false,
       error: error instanceof Error ? error.message : String(error),
       metadata: {
-        executionTime: Date.now() - startTime
-      }
+        executionTime: Date.now() - startTime,
+      },
     };
   }
 };
 
 /**
  * 模拟LLM调用
- * 
+ *
  * @param prompt 提示词
  * @param model 模型名称
  * @param temperature 温度参数
@@ -99,7 +99,7 @@ async function simulateLLMCall(
     return JSON.stringify({
       title: '示例新闻标题',
       time: '2024-01-01',
-      location: '北京'
+      location: '北京',
     });
   }
 
@@ -111,7 +111,7 @@ async function simulateLLMCall(
   if (prompt.includes('问答')) {
     return JSON.stringify({
       question: '示例问题',
-      answer: '示例答案'
+      answer: '示例答案',
     });
   }
 
@@ -121,7 +121,7 @@ async function simulateLLMCall(
 
 /**
  * 估算token数
- * 
+ *
  * @param text 文本
  * @returns 估算的token数
  */
@@ -137,7 +137,7 @@ function estimateTokens(text: string): number {
 /**
  * 工具调用节点函数
  * 模拟工具调用，实际应用中应该调用真实的工具
- * 
+ *
  * @param input 节点输入
  * @param config 节点配置
  * @param context 执行上下文
@@ -151,9 +151,9 @@ export const toolNodeFunction: NodeFunction = async (
   const startTime = Date.now();
 
   try {
-     // 提取配置参数
-     const toolName = config['toolName'] || '';
-     const parameters = config['parameters'] || {};
+    // 提取配置参数
+    const toolName = config['toolName'] || '';
+    const parameters = config['parameters'] || {};
 
     // 模拟工具调用
     const result = await simulateToolCall(toolName, parameters);
@@ -162,34 +162,31 @@ export const toolNodeFunction: NodeFunction = async (
       success: true,
       data: {
         result,
-        toolName
+        toolName,
       },
       metadata: {
-        executionTime: Date.now() - startTime
-      }
+        executionTime: Date.now() - startTime,
+      },
     };
   } catch (error) {
     return {
       success: false,
       error: error instanceof Error ? error.message : String(error),
       metadata: {
-        executionTime: Date.now() - startTime
-      }
+        executionTime: Date.now() - startTime,
+      },
     };
   }
 };
 
 /**
  * 模拟工具调用
- * 
+ *
  * @param toolName 工具名称
  * @param parameters 工具参数
  * @returns 工具执行结果
  */
-async function simulateToolCall(
-  toolName: string,
-  parameters: Record<string, any>
-): Promise<any> {
+async function simulateToolCall(toolName: string, parameters: Record<string, any>): Promise<any> {
   // 模拟网络延迟
   await new Promise(resolve => setTimeout(resolve, 50 + Math.random() * 100));
 
@@ -230,8 +227,8 @@ function search(params: Record<string, any>): any {
     query,
     results: [
       { title: `搜索结果1: ${query}`, url: 'https://example.com/1' },
-      { title: `搜索结果2: ${query}`, url: 'https://example.com/2' }
-    ]
+      { title: `搜索结果2: ${query}`, url: 'https://example.com/2' },
+    ],
   };
 }
 
@@ -243,7 +240,7 @@ function getWeather(params: Record<string, any>): any {
   return {
     city,
     temperature: 20 + Math.floor(Math.random() * 15),
-    condition: ['晴', '多云', '阴', '雨'][Math.floor(Math.random() * 4)]
+    condition: ['晴', '多云', '阴', '雨'][Math.floor(Math.random() * 4)],
   };
 }
 
@@ -254,7 +251,7 @@ function getWeather(params: Record<string, any>): any {
 /**
  * 条件检查节点函数
  * 评估条件表达式并返回布尔结果
- * 
+ *
  * @param input 节点输入
  * @param config 节点配置
  * @param context 执行上下文
@@ -280,26 +277,26 @@ export const conditionNodeFunction: NodeFunction = async (
       data: {
         result,
         condition,
-        evaluatedData: data
+        evaluatedData: data,
       },
       metadata: {
-        executionTime: Date.now() - startTime
-      }
+        executionTime: Date.now() - startTime,
+      },
     };
   } catch (error) {
     return {
       success: false,
       error: error instanceof Error ? error.message : String(error),
       metadata: {
-        executionTime: Date.now() - startTime
-      }
+        executionTime: Date.now() - startTime,
+      },
     };
   }
 };
 
 /**
  * 评估条件
- * 
+ *
  * @param condition 条件表达式
  * @param data 数据
  * @param context 执行上下文
@@ -321,15 +318,15 @@ function evaluateCondition(
   if (trimmed === 'false') return false;
 
   // 比较表达式
-   const comparisonRegex = /^(.+?)\s*(==|!=|>=|<=|>|<)\s*(.+)$/;
-   const match = trimmed.match(comparisonRegex);
+  const comparisonRegex = /^(.+?)\s*(==|!=|>=|<=|>|<)\s*(.+)$/;
+  const match = trimmed.match(comparisonRegex);
 
-   if (match && match.length >= 4 && match[1] && match[2] && match[3]) {
-     const left = match[1];
-     const operator = match[2];
-     const right = match[3];
-     const leftValue = parseValue(left);
-     const rightValue = parseValue(right);
+  if (match && match.length >= 4 && match[1] && match[2] && match[3]) {
+    const left = match[1];
+    const operator = match[2];
+    const right = match[3];
+    const leftValue = parseValue(left);
+    const rightValue = parseValue(right);
 
     switch (operator) {
       case '==':
@@ -367,8 +364,10 @@ function parseValue(str: string): any {
     return Number(trimmed);
   }
 
-  if ((trimmed.startsWith("'") && trimmed.endsWith("'")) ||
-      (trimmed.startsWith('"') && trimmed.endsWith('"'))) {
+  if (
+    (trimmed.startsWith("'") && trimmed.endsWith("'")) ||
+    (trimmed.startsWith('"') && trimmed.endsWith('"'))
+  ) {
     return trimmed.slice(1, -1);
   }
 
@@ -382,7 +381,7 @@ function parseValue(str: string): any {
 /**
  * 数据转换节点函数
  * 根据转换规则转换输入数据
- * 
+ *
  * @param input 节点输入
  * @param config 节点配置
  * @param context 执行上下文
@@ -406,27 +405,27 @@ export const transformNodeFunction: NodeFunction = async (
     return {
       success: true,
       data: {
-        output
+        output,
       },
       metadata: {
         executionTime: Date.now() - startTime,
-        transformRules
-      }
+        transformRules,
+      },
     };
   } catch (error) {
     return {
       success: false,
       error: error instanceof Error ? error.message : String(error),
       metadata: {
-        executionTime: Date.now() - startTime
-      }
+        executionTime: Date.now() - startTime,
+      },
     };
   }
 };
 
 /**
  * 应用转换规则
- * 
+ *
  * @param input 输入数据
  * @param rules 转换规则
  * @param context 执行上下文
@@ -485,7 +484,7 @@ function getValueByPath(data: Record<string, any>, path: string): any {
 /**
  * 开始节点函数
  * 接收工作流输入并传递给后续节点
- * 
+ *
  * @param input 节点输入
  * @param config 节点配置
  * @param context 执行上下文
@@ -506,16 +505,16 @@ export const startNodeFunction: NodeFunction = async (
       success: true,
       data: input,
       metadata: {
-        executionTime: Date.now() - startTime
-      }
+        executionTime: Date.now() - startTime,
+      },
     };
   } catch (error) {
     return {
       success: false,
       error: error instanceof Error ? error.message : String(error),
       metadata: {
-        executionTime: Date.now() - startTime
-      }
+        executionTime: Date.now() - startTime,
+      },
     };
   }
 };
@@ -527,7 +526,7 @@ export const startNodeFunction: NodeFunction = async (
 /**
  * 结束节点函数
  * 返回工作流最终结果
- * 
+ *
  * @param input 节点输入
  * @param config 节点配置
  * @param context 执行上下文
@@ -541,22 +540,22 @@ export const endNodeFunction: NodeFunction = async (
   const startTime = Date.now();
 
   try {
-     const result = config['result'] || input;
+    const result = config['result'] || input;
 
     return {
       success: true,
       data: result,
       metadata: {
-        executionTime: Date.now() - startTime
-      }
+        executionTime: Date.now() - startTime,
+      },
     };
   } catch (error) {
     return {
       success: false,
       error: error instanceof Error ? error.message : String(error),
       metadata: {
-        executionTime: Date.now() - startTime
-      }
+        executionTime: Date.now() - startTime,
+      },
     };
   }
 };
@@ -567,7 +566,7 @@ export const endNodeFunction: NodeFunction = async (
 
 /**
  * 替换变量占位符
- * 
+ *
  * @param text 文本
  * @param data 数据
  * @returns 替换后的文本
@@ -616,12 +615,12 @@ export const nodeFunctionRegistry: Record<string, NodeFunction> = {
   condition: conditionNodeFunction,
   transform: transformNodeFunction,
   start: startNodeFunction,
-  end: endNodeFunction
+  end: endNodeFunction,
 };
 
 /**
  * 获取节点函数
- * 
+ *
  * @param nodeType 节点类型
  * @returns 节点函数
  */
@@ -631,7 +630,7 @@ export function getNodeFunction(nodeType: string): NodeFunction | undefined {
 
 /**
  * 注册节点函数
- * 
+ *
  * @param nodeType 节点类型
  * @param func 节点函数
  */

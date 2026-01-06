@@ -1,6 +1,6 @@
 /**
  * HumanRelay模式值对象
- * 
+ *
  * 定义HumanRelay支持的操作模式
  */
 
@@ -11,13 +11,13 @@ export enum HumanRelayMode {
    * 适用于外部LLM无法保持会话状态的情况
    */
   SINGLE = 'single',
-  
+
   /**
    * 多轮对话模式
    * 每次交互只提供增量内容（新消息）
    * 适用于外部LLM可以保持会话状态的情况
    */
-  MULTI = 'multi'
+  MULTI = 'multi',
 }
 
 /**

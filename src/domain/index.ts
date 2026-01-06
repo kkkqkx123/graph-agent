@@ -32,7 +32,7 @@ export {
   ThreadDefinition,
   ThreadExecution,
   ExecutionContext,
-  NodeExecution
+  NodeExecution,
 } from './threads';
 
 // 导出工具领域模块
@@ -49,5 +49,5 @@ export {
   EdgeId,
   EdgeType,
   HookPoint,
-  WorkflowValidationResult as ValidationResult
+  WorkflowValidationResult as ValidationResult,
 } from './workflow';

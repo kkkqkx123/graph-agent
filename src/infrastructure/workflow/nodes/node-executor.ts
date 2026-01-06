@@ -53,9 +53,7 @@ export interface NodeExecutionOptions {
  */
 @injectable()
 export class NodeExecutor {
-  constructor(
-    @inject('Logger') private readonly logger: ILogger
-  ) { }
+  constructor(@inject('Logger') private readonly logger: ILogger) {}
 
   /**
    * 执行节点
@@ -69,19 +67,14 @@ export class NodeExecutor {
     context: WorkflowExecutionContext,
     options: NodeExecutionOptions = {}
   ): Promise<NodeExecutionResult> {
-    const {
-      timeout = 30000,
-      maxRetries = 0,
-      retryDelay = 1000,
-      verboseLogging = false
-    } = options;
+    const { timeout = 30000, maxRetries = 0, retryDelay = 1000, verboseLogging = false } = options;
 
     this.logger.debug('开始执行节点', {
       nodeId: node.nodeId.toString(),
       nodeType: node.type.toString(),
       nodeName: node.name,
       timeout,
-      maxRetries
+      maxRetries,
     });
 
     try {
@@ -91,7 +84,7 @@ export class NodeExecutor {
         this.logger.warn('节点配置验证失败', {
           nodeId: node.nodeId.toString(),
           nodeType: node.type.toString(),
-          errors: validation.errors
+          errors: validation.errors,
         });
 
         return {
@@ -100,8 +93,8 @@ export class NodeExecutor {
           metadata: {
             nodeId: node.nodeId.toString(),
             nodeType: node.type.toString(),
-            validationErrors: validation.errors
-          }
+            validationErrors: validation.errors,
+          },
         };
       }
 
@@ -120,18 +113,18 @@ export class NodeExecutor {
           nodeId: node.nodeId.toString(),
           nodeType: node.type.toString(),
           success: result.success,
-          executionTime: result.executionTime
+          executionTime: result.executionTime,
         });
       }
 
       return result;
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : String(error);
-      
+
       this.logger.error('节点执行失败', error instanceof Error ? error : new Error(String(error)), {
         nodeId: node.nodeId.toString(),
         nodeType: node.type.toString(),
-        errorMessage
+        errorMessage,
       });
 
       return {
@@ -140,8 +133,8 @@ export class NodeExecutor {
         metadata: {
           nodeId: node.nodeId.toString(),
           nodeType: node.type.toString(),
-          errorType: error instanceof Error ? error.constructor.name : 'Unknown'
-        }
+          errorType: error instanceof Error ? error.constructor.name : 'Unknown',
+        },
       };
     }
   }
@@ -225,7 +218,7 @@ export class NodeExecutor {
           this.logger.warn(`节点执行失败，准备重试 (${attempt + 1}/${maxRetries})`, {
             nodeId,
             nodeType,
-            error: result.error
+            error: result.error,
           });
           await this.sleep(retryDelayMs * (attempt + 1)); // 指数退避
         } else {
@@ -239,7 +232,7 @@ export class NodeExecutor {
           this.logger.warn(`节点执行异常，准备重试 (${attempt + 1}/${maxRetries})`, {
             nodeId,
             nodeType,
-            error: lastError.message
+            error: lastError.message,
           });
           await this.sleep(retryDelayMs * (attempt + 1)); // 指数退避
         } else {

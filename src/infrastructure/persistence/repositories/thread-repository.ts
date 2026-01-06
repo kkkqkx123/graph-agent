@@ -18,10 +18,11 @@ import { Metadata } from '../../../domain/checkpoint/value-objects';
 import { DeletionStatus } from '../../../domain/checkpoint/value-objects';
 
 @injectable()
-export class ThreadRepository extends BaseRepository<Thread, ThreadModel, ID> implements IThreadRepository {
-  constructor(
-    @inject('ConnectionManager') connectionManager: ConnectionManager
-  ) {
+export class ThreadRepository
+  extends BaseRepository<Thread, ThreadModel, ID>
+  implements IThreadRepository
+{
+  constructor(@inject('ConnectionManager') connectionManager: ConnectionManager) {
     super(connectionManager);
   }
 
@@ -45,7 +46,7 @@ export class ThreadRepository extends BaseRepository<Thread, ThreadModel, ID> im
       const createdAt = Timestamp.create(model.createdAt);
       const updatedAt = Timestamp.create(model.updatedAt);
       const version = Version.fromString(model.version);
-      const isDeleted = model.metadata?.isDeleted as boolean || false;
+      const isDeleted = (model.metadata?.isDeleted as boolean) || false;
 
       const definition = ThreadDefinition.create(
         id,
@@ -75,7 +76,7 @@ export class ThreadRepository extends BaseRepository<Thread, ThreadModel, ID> im
         deletionStatus: DeletionStatus.fromBoolean(isDeleted),
         createdAt,
         updatedAt,
-        version
+        version,
       };
 
       return Thread.fromProps(threadData);
@@ -109,7 +110,7 @@ export class ThreadRepository extends BaseRepository<Thread, ThreadModel, ID> im
 
       model.metadata = {
         ...entity.metadata.toRecord(),
-        isDeleted: entity.isDeleted()
+        isDeleted: entity.isDeleted(),
       };
 
       return model;
@@ -144,7 +145,7 @@ export class ThreadRepository extends BaseRepository<Thread, ThreadModel, ID> im
     return this.find({
       filters: { sessionId: sessionId.value },
       sortBy: 'createdAt',
-      sortOrder: 'desc'
+      sortOrder: 'desc',
     });
   }
 
@@ -169,7 +170,7 @@ export class ThreadRepository extends BaseRepository<Thread, ThreadModel, ID> im
     return this.find({
       filters: { state: status.getValue() },
       sortBy: 'createdAt',
-      sortOrder: 'desc'
+      sortOrder: 'desc',
     });
   }
 
@@ -184,7 +185,9 @@ export class ThreadRepository extends BaseRepository<Thread, ThreadModel, ID> im
       .andWhere("thread.metadata->>'isDeleted' = :isDeleted", { isDeleted: false });
 
     if (sessionId) {
-      queryBuilder = queryBuilder.andWhere('thread.sessionId = :sessionId', { sessionId: sessionId.value });
+      queryBuilder = queryBuilder.andWhere('thread.sessionId = :sessionId', {
+        sessionId: sessionId.value,
+      });
     }
 
     const models = await queryBuilder.orderBy('thread.updatedAt', 'DESC').getMany();
@@ -198,7 +201,7 @@ export class ThreadRepository extends BaseRepository<Thread, ThreadModel, ID> im
     return this.find({
       filters: { state: 'running' },
       sortBy: 'updatedAt',
-      sortOrder: 'desc'
+      sortOrder: 'desc',
     });
   }
 
@@ -209,7 +212,7 @@ export class ThreadRepository extends BaseRepository<Thread, ThreadModel, ID> im
     return this.find({
       filters: { state: 'pending' },
       sortBy: 'priority',
-      sortOrder: 'desc'
+      sortOrder: 'desc',
     });
   }
 
@@ -227,7 +230,9 @@ export class ThreadRepository extends BaseRepository<Thread, ThreadModel, ID> im
       .take(1);
 
     if (sessionId) {
-      queryBuilder = queryBuilder.andWhere('thread.sessionId = :sessionId', { sessionId: sessionId.value });
+      queryBuilder = queryBuilder.andWhere('thread.sessionId = :sessionId', {
+        sessionId: sessionId.value,
+      });
     }
 
     const model = await queryBuilder.getOne();
@@ -387,7 +392,9 @@ export class ThreadRepository extends BaseRepository<Thread, ThreadModel, ID> im
     const models = await repository
       .createQueryBuilder('thread')
       .where('thread.status = :status', { status: 'failed' })
-      .andWhere('CAST(thread.metadata->>\'retryCount\' AS INTEGER) < :maxRetryCount', { maxRetryCount })
+      .andWhere("CAST(thread.metadata->>'retryCount' AS INTEGER) < :maxRetryCount", {
+        maxRetryCount,
+      })
       .andWhere("thread.metadata->>'isDeleted' = :isDeleted", { isDeleted: false })
       .orderBy('thread.updatedAt', 'DESC')
       .getMany();
@@ -407,7 +414,7 @@ export class ThreadRepository extends BaseRepository<Thread, ThreadModel, ID> im
       status: thread.status.getValue(),
       priority: thread.priority.getNumericValue(),
       createdAt: thread.createdAt.getDate(),
-      updatedAt: thread.updatedAt.getDate()
+      updatedAt: thread.updatedAt.getDate(),
     };
   }
 }

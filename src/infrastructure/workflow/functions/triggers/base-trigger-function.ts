@@ -4,7 +4,7 @@ import {
   ValidationResult,
   FunctionMetadata,
   WorkflowExecutionContext,
-  TriggerFunctionConfig
+  TriggerFunctionConfig,
 } from '../types';
 import { WorkflowFunctionType } from '../../../../domain/workflow/value-objects/function-type';
 
@@ -12,8 +12,9 @@ import { WorkflowFunctionType } from '../../../../domain/workflow/value-objects/
  * 触发器函数基类
  * 专门用于触发器类型的函数，返回 boolean
  */
-export abstract class BaseTriggerFunction<TConfig extends TriggerFunctionConfig = TriggerFunctionConfig>
-  implements IWorkflowFunction {
+export abstract class BaseTriggerFunction<
+  TConfig extends TriggerFunctionConfig = TriggerFunctionConfig,
+> implements IWorkflowFunction {
   protected _initialized: boolean = false;
   public readonly metadata?: Record<string, any>;
   /** 函数类型标识 */
@@ -36,15 +37,15 @@ export abstract class BaseTriggerFunction<TConfig extends TriggerFunctionConfig 
         name: 'context',
         type: 'WorkflowExecutionContext',
         required: true,
-        description: '执行上下文'
+        description: '执行上下文',
       },
       {
         name: 'config',
         type: 'TriggerFunctionConfig',
         required: false,
         description: '函数配置',
-        defaultValue: {}
-      }
+        defaultValue: {},
+      },
     ];
   }
 
@@ -66,7 +67,7 @@ export abstract class BaseTriggerFunction<TConfig extends TriggerFunctionConfig 
 
     return {
       valid: errors.length === 0,
-      errors
+      errors,
     };
   }
 
@@ -79,7 +80,7 @@ export abstract class BaseTriggerFunction<TConfig extends TriggerFunctionConfig 
       isAsync: true,
       category: this.category,
       parameters: this.getParameters(),
-      returnType: this.getReturnType()
+      returnType: this.getReturnType(),
     };
   }
 

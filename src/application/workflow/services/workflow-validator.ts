@@ -34,7 +34,7 @@ export interface WorkflowValidationRequest {
 
 /**
  * 工作流验证服务
- * 
+ *
  * 负责工作流的验证逻辑
  */
 @injectable()
@@ -42,7 +42,7 @@ export class WorkflowValidator {
   constructor(
     @inject('WorkflowRepository') private readonly workflowRepository: IWorkflowRepository,
     @inject('Logger') private readonly logger: ILogger
-  ) { }
+  ) {}
 
   /**
    * 验证工作流
@@ -54,14 +54,14 @@ export class WorkflowValidator {
       this.logger.info('开始验证工作流', {
         workflowId: request.workflowId,
         workflowIdForValidation: request.workflowIdForValidation,
-        validationLevel: request.validationLevel
+        validationLevel: request.validationLevel,
       });
 
       const result: ValidationResult = {
         isValid: true,
         errors: [],
         warnings: [],
-        suggestions: []
+        suggestions: [],
       };
 
       // 获取工作流
@@ -77,7 +77,9 @@ export class WorkflowValidator {
       }
 
       if (request.workflowIdForValidation) {
-        const workflowForValidation = await this.workflowRepository.findById(ID.fromString(request.workflowIdForValidation));
+        const workflowForValidation = await this.workflowRepository.findById(
+          ID.fromString(request.workflowIdForValidation)
+        );
         if (!workflowForValidation) {
           result.isValid = false;
           result.errors.push(`工作流不存在: ${request.workflowIdForValidation}`);
@@ -106,7 +108,7 @@ export class WorkflowValidator {
         isValid: result.isValid,
         errorCount: result.errors.length,
         warningCount: result.warnings.length,
-        suggestionCount: result.suggestions.length
+        suggestionCount: result.suggestions.length,
       });
 
       return result;
@@ -129,7 +131,7 @@ export class WorkflowValidator {
         isValid: true,
         errors: [],
         warnings: [],
-        suggestions: []
+        suggestions: [],
       };
 
       // 获取工作流
@@ -176,7 +178,7 @@ export class WorkflowValidator {
         workflowId,
         isValid: result.isValid,
         errorCount: result.errors.length,
-        warningCount: result.warnings.length
+        warningCount: result.warnings.length,
       });
 
       return result;
@@ -196,7 +198,7 @@ export class WorkflowValidator {
       isValid: true,
       errors: [],
       warnings: [],
-      suggestions: []
+      suggestions: [],
     };
 
     try {
@@ -271,7 +273,9 @@ export class WorkflowValidator {
       return result;
     } catch (error) {
       result.isValid = false;
-      result.errors.push(`验证工作流配置时发生错误: ${error instanceof Error ? error.message : '未知错误'}`);
+      result.errors.push(
+        `验证工作流配置时发生错误: ${error instanceof Error ? error.message : '未知错误'}`
+      );
       return result;
     }
   }
@@ -303,7 +307,7 @@ export class WorkflowValidator {
           isValid: true,
           errors: [],
           warnings: [],
-          suggestions: []
+          suggestions: [],
         };
     }
   }
@@ -323,7 +327,7 @@ export class WorkflowValidator {
       isValid: true,
       errors: [],
       warnings: [],
-      suggestions: []
+      suggestions: [],
     };
 
     // 验证工作流基本结构
@@ -382,7 +386,7 @@ export class WorkflowValidator {
       isValid: true,
       errors: [],
       warnings: [],
-      suggestions: []
+      suggestions: [],
     };
 
     if (!workflow) {
@@ -421,7 +425,9 @@ export class WorkflowValidator {
       }
     } catch (error) {
       result.isValid = false;
-      result.errors.push(`验证工作流语义时发生错误: ${error instanceof Error ? error.message : '未知错误'}`);
+      result.errors.push(
+        `验证工作流语义时发生错误: ${error instanceof Error ? error.message : '未知错误'}`
+      );
     }
 
     return result;
@@ -442,7 +448,7 @@ export class WorkflowValidator {
       isValid: true,
       errors: [],
       warnings: [],
-      suggestions: []
+      suggestions: [],
     };
 
     if (!workflow) {
@@ -494,7 +500,7 @@ export class WorkflowValidator {
       isValid: true,
       errors: [],
       warnings: [],
-      suggestions: []
+      suggestions: [],
     };
 
     if (!workflow) {
@@ -591,7 +597,9 @@ export class WorkflowValidator {
     for (const node of workflow.getGraph().nodes.values()) {
       if (node.type.toString() === 'decision') {
         const outgoingEdges = workflow.getOutgoingEdges(node.nodeId);
-        const hasDefaultEdge = outgoingEdges.some((edge: any) => edge.type.toString() === 'default');
+        const hasDefaultEdge = outgoingEdges.some(
+          (edge: any) => edge.type.toString() === 'default'
+        );
 
         if (!hasDefaultEdge) {
           decisionNodesWithoutDefault.push(node);

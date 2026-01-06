@@ -25,8 +25,8 @@ export class MaxIterationsReachedConditionFunction extends BaseConditionFunction
         type: 'number',
         required: false,
         description: '最大迭代次数',
-        defaultValue: 10
-      }
+        defaultValue: 10,
+      },
     ];
   }
 
@@ -42,7 +42,10 @@ export class MaxIterationsReachedConditionFunction extends BaseConditionFunction
     return errors;
   }
 
-  override async execute(context: WorkflowExecutionContext, config: ConditionFunctionConfig): Promise<boolean> {
+  override async execute(
+    context: WorkflowExecutionContext,
+    config: ConditionFunctionConfig
+  ): Promise<boolean> {
     this.checkInitialized();
 
     const maxIterations = config['maxIterations'] || 10;

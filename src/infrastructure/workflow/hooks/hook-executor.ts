@@ -15,9 +15,7 @@ import { HookExecutionResult, HookExecutionResultBuilder } from './hook-executio
  */
 @injectable()
 export class HookExecutor {
-  constructor(
-    @inject('Logger') private readonly logger: ILogger
-  ) { }
+  constructor(@inject('Logger') private readonly logger: ILogger) {}
 
   /**
    * 执行单个钩子
@@ -34,7 +32,7 @@ export class HookExecutor {
         hookPoint: hook.hookPoint.toString(),
         hookName: hook.name,
         enabled: hook.enabled,
-        priority: hook.priority
+        priority: hook.priority,
       });
 
       // 检查钩子是否应该执行
@@ -55,7 +53,7 @@ export class HookExecutor {
         hookId: hook.hookId.toString(),
         hookName: hook.name,
         executionTime,
-        success: result.success
+        success: result.success,
       });
 
       const builder = new HookExecutionResultBuilder()
@@ -70,14 +68,13 @@ export class HookExecutor {
       }
 
       return builder.build();
-
     } catch (error) {
       const executionTime = Date.now() - startTime;
 
       this.logger.error('钩子执行失败', error instanceof Error ? error : new Error(String(error)), {
         hookId: hook.hookId.toString(),
         hookName: hook.name,
-        executionTime
+        executionTime,
       });
 
       return new HookExecutionResultBuilder()
@@ -111,7 +108,7 @@ export class HookExecutor {
         if (!result.shouldContinue) {
           this.logger.info('钩子要求停止执行后续钩子', {
             hookId: hook.hookId.toString(),
-            hookName: hook.name
+            hookName: hook.name,
           });
           break;
         }
@@ -130,7 +127,7 @@ export class HookExecutor {
         if (hook.failFast) {
           this.logger.info('钩子执行失败，停止执行后续钩子（fail-fast）', {
             hookId: hook.hookId.toString(),
-            hookName: hook.name
+            hookName: hook.name,
           });
           break;
         }
@@ -157,7 +154,7 @@ export class HookExecutor {
 
     return {
       valid: errors.length === 0,
-      errors
+      errors,
     };
   }
 

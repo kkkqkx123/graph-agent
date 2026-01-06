@@ -10,9 +10,7 @@ export class SlidingWindowLimiter {
   private readonly maxRequests: number;
   private readonly windowSizeMs: number;
 
-  constructor(
-    @inject('ConfigManager') private configManager: any
-  ) {
+  constructor(@inject('ConfigManager') private configManager: any) {
     this.maxRequests = this.configManager.get('llm.rateLimit.maxRequests', 60);
     this.windowSizeMs = this.configManager.get('llm.rateLimit.windowSizeMs', 60000); // 1 minute
   }
@@ -24,7 +22,9 @@ export class SlidingWindowLimiter {
       const oldestRequest = this.requests[0];
       if (oldestRequest) {
         const waitTime = this.windowSizeMs - (Date.now() - oldestRequest.timestamp);
-        throw new Error(`Rate limit exceeded. Please wait ${Math.ceil(waitTime)}ms before making another request.`);
+        throw new Error(
+          `Rate limit exceeded. Please wait ${Math.ceil(waitTime)}ms before making another request.`
+        );
       }
     }
 

@@ -19,7 +19,7 @@ export interface SessionActivityProps {
 
 /**
  * 会话活动值对象
- * 
+ *
  * 职责：表示会话的活动状态和统计数据
  * 包含基础统计、LLM使用统计、性能统计、资源监控和操作统计
  */
@@ -43,7 +43,7 @@ export class SessionActivity extends ValueObject<SessionActivityProps> {
       llmStatistics: LLMStatistics.create(),
       performance: PerformanceStatistics.create(),
       resourceUsage: ResourceUsage.create(),
-      operationStatistics: OperationStatistics.create()
+      operationStatistics: OperationStatistics.create(),
     });
   }
 
@@ -110,7 +110,7 @@ export class SessionActivity extends ValueObject<SessionActivityProps> {
   public updateLastActivity(): SessionActivity {
     return new SessionActivity({
       ...this.props,
-      lastActivityAt: Timestamp.now()
+      lastActivityAt: Timestamp.now(),
     });
   }
 
@@ -122,7 +122,7 @@ export class SessionActivity extends ValueObject<SessionActivityProps> {
     return new SessionActivity({
       ...this.props,
       messageCount: this.props.messageCount + 1,
-      lastActivityAt: Timestamp.now()
+      lastActivityAt: Timestamp.now(),
     });
   }
 
@@ -134,7 +134,7 @@ export class SessionActivity extends ValueObject<SessionActivityProps> {
     return new SessionActivity({
       ...this.props,
       threadCount: this.props.threadCount + 1,
-      lastActivityAt: Timestamp.now()
+      lastActivityAt: Timestamp.now(),
     });
   }
 
@@ -147,7 +147,7 @@ export class SessionActivity extends ValueObject<SessionActivityProps> {
     return new SessionActivity({
       ...this.props,
       llmStatistics,
-      lastActivityAt: Timestamp.now()
+      lastActivityAt: Timestamp.now(),
     });
   }
 
@@ -160,7 +160,7 @@ export class SessionActivity extends ValueObject<SessionActivityProps> {
     return new SessionActivity({
       ...this.props,
       performance,
-      lastActivityAt: Timestamp.now()
+      lastActivityAt: Timestamp.now(),
     });
   }
 
@@ -173,7 +173,7 @@ export class SessionActivity extends ValueObject<SessionActivityProps> {
     return new SessionActivity({
       ...this.props,
       resourceUsage,
-      lastActivityAt: Timestamp.now()
+      lastActivityAt: Timestamp.now(),
     });
   }
 
@@ -186,7 +186,7 @@ export class SessionActivity extends ValueObject<SessionActivityProps> {
     return new SessionActivity({
       ...this.props,
       operationStatistics,
-      lastActivityAt: Timestamp.now()
+      lastActivityAt: Timestamp.now(),
     });
   }
 
@@ -217,7 +217,7 @@ export class SessionActivity extends ValueObject<SessionActivityProps> {
       threadCount: this.props.threadCount,
       totalTokens: this.props.llmStatistics.totalTokens,
       totalCost: this.props.llmStatistics.totalCost,
-      averageExecutionTime: this.props.performance.averageExecutionTime
+      averageExecutionTime: this.props.performance.averageExecutionTime,
     });
   }
 

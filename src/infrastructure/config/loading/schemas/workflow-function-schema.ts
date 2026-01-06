@@ -11,7 +11,7 @@ import { z } from 'zod';
 const FunctionTypeConfigSchema = z.object({
   class_path: z.string(),
   description: z.string(),
-  enabled: z.boolean()
+  enabled: z.boolean(),
 });
 
 /**
@@ -20,7 +20,7 @@ const FunctionTypeConfigSchema = z.object({
 const FunctionSetConfigSchema = z.object({
   description: z.string(),
   enabled: z.boolean(),
-  functions: z.array(z.string())
+  functions: z.array(z.string()),
 });
 
 /**
@@ -30,5 +30,5 @@ export const WorkflowFunctionSchema = z.object({
   function_types: z.record(z.string(), FunctionTypeConfigSchema).optional(),
   function_sets: z.record(z.string(), FunctionSetConfigSchema).optional(),
   auto_discovery: z.object({}).optional(),
-  _registry: z.string().optional()
+  _registry: z.string().optional(),
 });

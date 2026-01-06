@@ -133,9 +133,7 @@ export class Application implements IService {
   /**
    * 初始化配置管理器
    */
-  private async initializeConfig(
-    logger: ILogger
-  ): Promise<void> {
+  private async initializeConfig(logger: ILogger): Promise<void> {
     logger.info('正在初始化配置管理器...');
 
     // TODO: 实现配置管理器初始化逻辑

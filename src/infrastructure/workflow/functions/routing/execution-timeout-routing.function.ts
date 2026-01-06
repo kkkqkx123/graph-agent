@@ -16,7 +16,10 @@ export class ExecutionTimeoutRoutingFunction extends BaseConditionRoutingFunctio
     );
   }
 
-  override async execute(context: WorkflowExecutionContext, config: RoutingFunctionConfig): Promise<boolean> {
+  override async execute(
+    context: WorkflowExecutionContext,
+    config: RoutingFunctionConfig
+  ): Promise<boolean> {
     const timeoutMs = config['edge']?.['properties']?.['timeoutMs'] ?? 30000;
     const currentNodeState = config['currentNodeState'];
 

@@ -48,7 +48,7 @@ export class PromptBuilder {
     @inject('PromptRepository') private promptRepository: IPromptRepository,
     @inject('TemplateProcessor') private templateProcessor: TemplateProcessor,
     @inject('ILogger') private readonly logger: ILogger
-  ) { }
+  ) {}
 
   /**
    * 构建提示词消息列表
@@ -116,11 +116,10 @@ export class PromptBuilder {
       content = source.content;
     } else {
       // 模板：使用 TemplateProcessor 处理
-      const result = await this.templateProcessor.processTemplate(
-        source.category,
-        source.name,
-        { ...context, ...source.variables }
-      );
+      const result = await this.templateProcessor.processTemplate(source.category, source.name, {
+        ...context,
+        ...source.variables,
+      });
       content = result.content;
     }
 
@@ -128,10 +127,7 @@ export class PromptBuilder {
     let processedContext = context;
     if (source.type === 'template' && contextProcessorName && contextProcessors) {
       // 创建 PromptContext
-      const promptContext = PromptContext.create(
-        content,
-        new Map(Object.entries(context))
-      );
+      const promptContext = PromptContext.create(content, new Map(Object.entries(context)));
 
       // 应用处理器
       const processor = contextProcessors.get(contextProcessorName);

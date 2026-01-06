@@ -3,7 +3,7 @@ import { injectable, inject } from 'inversify';
 enum CircuitState {
   CLOSED = 'CLOSED',
   OPEN = 'OPEN',
-  HALF_OPEN = 'HALF_OPEN'
+  HALF_OPEN = 'HALF_OPEN',
 }
 
 @injectable()
@@ -120,7 +120,7 @@ export class CircuitBreaker {
       console.log(`Circuit breaker state changed: ${oldState} -> ${newState}`, {
         failureCount: this.failureCount,
         successCount: this.successCount,
-        lastFailureTime: this.lastFailureTime
+        lastFailureTime: this.lastFailureTime,
       });
     }
   }
@@ -160,7 +160,7 @@ export class CircuitBreaker {
       successCount: this.successCount,
       lastFailureTime: this.lastFailureTime,
       nextAttempt: this.nextAttempt,
-      timeUntilNextAttempt: Math.max(0, this.nextAttempt - Date.now())
+      timeUntilNextAttempt: Math.max(0, this.nextAttempt - Date.now()),
     };
   }
 

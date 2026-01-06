@@ -276,9 +276,9 @@ export abstract class Trigger extends Entity {
             triggerId: { type: 'string', description: '触发器ID' },
             delay: { type: 'number', description: '延迟毫秒数' },
             interval: { type: 'number', description: '间隔毫秒数' },
-            cron: { type: 'string', description: 'Cron表达式' }
+            cron: { type: 'string', description: 'Cron表达式' },
           },
-          required: ['triggerId']
+          required: ['triggerId'],
         };
 
       case 'event':
@@ -287,9 +287,9 @@ export abstract class Trigger extends Entity {
           properties: {
             triggerId: { type: 'string', description: '触发器ID' },
             eventType: { type: 'string', description: '事件类型' },
-            eventDataPattern: { type: 'object', description: '事件数据模式' }
+            eventDataPattern: { type: 'object', description: '事件数据模式' },
           },
-          required: ['triggerId', 'eventType']
+          required: ['triggerId', 'eventType'],
         };
 
       case 'state':
@@ -298,16 +298,16 @@ export abstract class Trigger extends Entity {
           properties: {
             triggerId: { type: 'string', description: '触发器ID' },
             statePath: { type: 'string', description: '状态路径' },
-            expectedValue: { type: 'any', description: '期望值' }
+            expectedValue: { type: 'any', description: '期望值' },
           },
-          required: ['triggerId', 'statePath', 'expectedValue']
+          required: ['triggerId', 'statePath', 'expectedValue'],
         };
 
       default:
         return {
           type: 'object',
           properties: {},
-          required: []
+          required: [],
         };
     }
   }
@@ -321,9 +321,9 @@ export abstract class Trigger extends Entity {
       properties: {
         shouldTrigger: { type: 'boolean', description: '是否应该触发' },
         reason: { type: 'string', description: '原因说明' },
-        metadata: { type: 'object', description: '元数据' }
+        metadata: { type: 'object', description: '元数据' },
       },
-      required: ['shouldTrigger', 'reason']
+      required: ['shouldTrigger', 'reason'],
     };
   }
 
@@ -341,7 +341,7 @@ export abstract class Trigger extends Entity {
       targetNodeId: this.props.targetNodeId?.toString(),
       createdAt: this.props.createdAt.toISOString(),
       updatedAt: this.props.updatedAt.toISOString(),
-      version: this.props.version.toString()
+      version: this.props.version.toString(),
     };
   }
 
@@ -360,9 +360,10 @@ export abstract class Trigger extends Entity {
 
     // 验证配置
     if (this.props.type.isTime()) {
-      const hasTimeConfig = this.props.config.delay !== undefined ||
-                           this.props.config.interval !== undefined ||
-                           this.props.config.cron !== undefined;
+      const hasTimeConfig =
+        this.props.config.delay !== undefined ||
+        this.props.config.interval !== undefined ||
+        this.props.config.cron !== undefined;
       if (!hasTimeConfig) {
         errors.push('时间触发器必须配置 delay、interval 或 cron');
       }
@@ -391,7 +392,7 @@ export abstract class Trigger extends Entity {
     return {
       valid: errors.length === 0,
       errors,
-      warnings
+      warnings,
     };
   }
 

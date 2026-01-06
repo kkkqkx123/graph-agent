@@ -6,7 +6,7 @@ import { ValueObject } from '../../common/value-objects';
 export enum TriggerTypeValue {
   TIME = 'time',
   EVENT = 'event',
-  STATE = 'state'
+  STATE = 'state',
 }
 
 /**
@@ -17,7 +17,7 @@ export enum TriggerActionValue {
   STOP = 'stop',
   PAUSE = 'pause',
   RESUME = 'resume',
-  SKIP_NODE = 'skip_node'
+  SKIP_NODE = 'skip_node',
 }
 
 /**
@@ -26,7 +26,7 @@ export enum TriggerActionValue {
 export enum TriggerStatusValue {
   ENABLED = 'enabled',
   DISABLED = 'disabled',
-  TRIGGERED = 'triggered'
+  TRIGGERED = 'triggered',
 }
 
 /**

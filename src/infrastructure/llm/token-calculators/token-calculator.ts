@@ -6,11 +6,11 @@ import { LLMRequest } from '../../../domain/llm/entities/llm-request';
 
 /**
  * 统一的Token计算器
- * 
+ *
  * 聚合TiktokenTokenCalculator和ApiResponseTokenCalculator的功能：
  * - 使用TiktokenTokenCalculator进行本地token计算（预计算、文本截断等）
  * - 使用ApiResponseTokenCalculator解析API响应中的token使用信息
- * 
+ *
  * 使用场景：
  * - 请求前：使用tiktoken进行token估算和文本截断
  * - 请求后：解析API响应获取准确的token使用信息
@@ -65,15 +65,14 @@ export class TokenCalculator extends BaseTokenCalculator {
    */
   async parseApiResponse(response: any, originalRequest?: LLMRequest): Promise<TokenUsage | null> {
     const apiUsage = await this.apiResponseCalculator.parseApiResponse(response);
-    
+
     if (!apiUsage) {
       return null;
     }
 
     // 检查API响应的token计数是否有效
-    const isApiUsageValid = apiUsage.totalTokens > 0 ||
-                           apiUsage.promptTokens > 0 ||
-                           apiUsage.completionTokens > 0;
+    const isApiUsageValid =
+      apiUsage.totalTokens > 0 || apiUsage.promptTokens > 0 || apiUsage.completionTokens > 0;
 
     if (isApiUsageValid) {
       // API响应有效，直接使用
@@ -83,7 +82,7 @@ export class TokenCalculator extends BaseTokenCalculator {
 
     // API响应token计数为0，视为API供应商响应有误
     console.warn('API响应token计数为0，视为API供应商响应有误，使用本地计算作为回退');
-    
+
     if (!originalRequest) {
       console.warn('未提供原始请求，无法进行本地计算回退');
       return apiUsage;
@@ -99,15 +98,18 @@ export class TokenCalculator extends BaseTokenCalculator {
    * @param response API响应（用于提取completion内容）
    * @returns 本地计算的TokenUsage
    */
-  private async calculateUsageFromLocal(request: LLMRequest, response: any): Promise<TokenUsage | null> {
+  private async calculateUsageFromLocal(
+    request: LLMRequest,
+    response: any
+  ): Promise<TokenUsage | null> {
     try {
       // 计算prompt tokens
       const messages = request.messages.map(msg => ({
         role: msg.getRole(),
         content: msg.getContent(),
-        name: msg.getName()
+        name: msg.getName(),
       }));
-      const promptTokens = await this.tiktokenCalculator.countMessagesTokens(messages) || 0;
+      const promptTokens = (await this.tiktokenCalculator.countMessagesTokens(messages)) || 0;
 
       // 计算completion tokens
       let completionTokens = 0;
@@ -115,7 +117,7 @@ export class TokenCalculator extends BaseTokenCalculator {
       if (choices && choices.length > 0) {
         const choice = choices[0];
         const content = choice.message?.content || '';
-        completionTokens = await this.tiktokenCalculator.countTokens(content) || 0;
+        completionTokens = (await this.tiktokenCalculator.countTokens(content)) || 0;
       }
 
       const totalTokens = promptTokens + completionTokens;
@@ -133,8 +135,8 @@ export class TokenCalculator extends BaseTokenCalculator {
           systemFingerprint: response['system_fingerprint'],
           provider: 'local-fallback',
           fallbackReason: 'api-response-tokens-zero',
-          originalApiUsage: response.usage
-        }
+          originalApiUsage: response.usage,
+        },
       };
 
       this._lastUsage = tokenUsage;
@@ -201,10 +203,10 @@ export class TokenCalculator extends BaseTokenCalculator {
       const messages = request.messages.map(msg => ({
         role: msg.getRole(),
         content: msg.getContent(),
-        name: msg.getName()
+        name: msg.getName(),
       }));
 
-      return await this.countMessagesTokens(messages) || 0;
+      return (await this.countMessagesTokens(messages)) || 0;
     } catch (error) {
       console.error('计算请求token失败:', error);
       return 0;
@@ -218,7 +220,7 @@ export class TokenCalculator extends BaseTokenCalculator {
    * @returns token数量
    */
   async calculateTextTokens(text: string): Promise<number> {
-    return await this.countTokens(text) || 0;
+    return (await this.countTokens(text)) || 0;
   }
 
   /**
@@ -230,7 +232,7 @@ export class TokenCalculator extends BaseTokenCalculator {
    */
   async calculateTokensForModel(text: string, model: string): Promise<number> {
     // 统一使用tiktoken计算，不区分模型
-    return await this.countTokens(text) || 0;
+    return (await this.countTokens(text)) || 0;
   }
 
   /**
@@ -243,7 +245,7 @@ export class TokenCalculator extends BaseTokenCalculator {
     try {
       // 基于请求长度估算响应长度
       const requestText = request.messages.map(m => m.getContent()).join(' ');
-      const requestTokens = await this.countTokens(requestText) || 0;
+      const requestTokens = (await this.countTokens(requestText)) || 0;
 
       // 通常响应长度是请求长度的一定比例
       const responseRatio = 0.5; // 响应通常是请求的50%长度
@@ -267,9 +269,11 @@ export class TokenCalculator extends BaseTokenCalculator {
    * @param messages 消息列表
    * @returns token数量
    */
-  async calculateConversationTokens(messages: Array<{ role: string; content: string }>): Promise<number> {
+  async calculateConversationTokens(
+    messages: Array<{ role: string; content: string }>
+  ): Promise<number> {
     try {
-      return await this.countMessagesTokens(messages) || 0;
+      return (await this.countMessagesTokens(messages)) || 0;
     } catch (error) {
       console.error('计算对话历史token失败:', error);
       return 0;
@@ -302,7 +306,10 @@ export class TokenCalculator extends BaseTokenCalculator {
    * @param maxTokens 最大token数量
    * @returns 截断后的消息列表
    */
-  async truncateMessages(messages: Array<{ role: string; content: string }>, maxTokens: number): Promise<Array<{ role: string; content: string }>> {
+  async truncateMessages(
+    messages: Array<{ role: string; content: string }>,
+    maxTokens: number
+  ): Promise<Array<{ role: string; content: string }>> {
     try {
       // 保留系统消息
       const systemMessages = messages.filter(m => m.role === 'system');
@@ -313,14 +320,14 @@ export class TokenCalculator extends BaseTokenCalculator {
 
       // 计算系统消息的token
       for (const message of systemMessages) {
-        currentTokens += (await this.countTokens(message.content) || 0) + 4;
+        currentTokens += ((await this.countTokens(message.content)) || 0) + 4;
       }
 
       // 从最新消息开始添加，直到达到限制
       for (let i = otherMessages.length - 1; i >= 0; i--) {
         const message = otherMessages[i];
         if (message && message.content) {
-          const messageTokens = (await this.countTokens(message.content) || 0) + 4;
+          const messageTokens = ((await this.countTokens(message.content)) || 0) + 4;
 
           if (currentTokens + messageTokens <= maxTokens) {
             truncatedMessages.unshift(message);

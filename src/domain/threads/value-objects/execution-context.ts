@@ -47,7 +47,7 @@ export interface ExecutionContextProps {
 
 /**
  * ExecutionContext值对象
- * 
+ *
  * 表示线程执行的上下文，包含变量、节点上下文和配置信息
  */
 export class ExecutionContext extends ValueObject<ExecutionContextProps> {
@@ -57,15 +57,12 @@ export class ExecutionContext extends ValueObject<ExecutionContextProps> {
    * @param config 执行配置
    * @returns 执行上下文实例
    */
-  public static create(
-    promptContext: PromptContext,
-    config?: ExecutionConfig
-  ): ExecutionContext {
+  public static create(promptContext: PromptContext, config?: ExecutionConfig): ExecutionContext {
     return new ExecutionContext({
       variables: new Map(),
       promptContext,
       nodeContexts: new Map(),
-      config: config || {}
+      config: config || {},
     });
   }
 
@@ -140,7 +137,7 @@ export class ExecutionContext extends ValueObject<ExecutionContextProps> {
 
     return new ExecutionContext({
       ...this.props,
-      variables: newVariables
+      variables: newVariables,
     });
   }
 
@@ -157,7 +154,7 @@ export class ExecutionContext extends ValueObject<ExecutionContextProps> {
 
     return new ExecutionContext({
       ...this.props,
-      variables: newVariables
+      variables: newVariables,
     });
   }
 
@@ -172,7 +169,7 @@ export class ExecutionContext extends ValueObject<ExecutionContextProps> {
 
     return new ExecutionContext({
       ...this.props,
-      variables: newVariables
+      variables: newVariables,
     });
   }
 
@@ -197,7 +194,7 @@ export class ExecutionContext extends ValueObject<ExecutionContextProps> {
 
     return new ExecutionContext({
       ...this.props,
-      nodeContexts: newNodeContexts
+      nodeContexts: newNodeContexts,
     });
   }
 
@@ -225,7 +222,7 @@ export class ExecutionContext extends ValueObject<ExecutionContextProps> {
     const newContext: NodeContext = {
       ...existingContext,
       variables: newVariables,
-      lastAccessedAt: Timestamp.now()
+      lastAccessedAt: Timestamp.now(),
     };
 
     const newNodeContexts = new Map(this.props.nodeContexts);
@@ -233,7 +230,7 @@ export class ExecutionContext extends ValueObject<ExecutionContextProps> {
 
     return new ExecutionContext({
       ...this.props,
-      nodeContexts: newNodeContexts
+      nodeContexts: newNodeContexts,
     });
   }
 
@@ -245,7 +242,7 @@ export class ExecutionContext extends ValueObject<ExecutionContextProps> {
   public updatePromptContext(promptContext: PromptContext): ExecutionContext {
     return new ExecutionContext({
       ...this.props,
-      promptContext
+      promptContext,
     });
   }
 
@@ -257,7 +254,7 @@ export class ExecutionContext extends ValueObject<ExecutionContextProps> {
   public updateConfig(config: ExecutionConfig): ExecutionContext {
     return new ExecutionContext({
       ...this.props,
-      config: { ...this.props.config, ...config }
+      config: { ...this.props.config, ...config },
     });
   }
 
@@ -313,7 +310,7 @@ export class ExecutionContext extends ValueObject<ExecutionContextProps> {
       nodeContexts: new Map(this.props.nodeContexts),
       promptContext: this.props.promptContext,
       config: { ...this.props.config },
-      snapshotAt: Timestamp.now()
+      snapshotAt: Timestamp.now(),
     };
   }
 
@@ -327,7 +324,7 @@ export class ExecutionContext extends ValueObject<ExecutionContextProps> {
       variables: new Map(snapshot.variables),
       nodeContexts: new Map(snapshot.nodeContexts),
       promptContext: snapshot.promptContext,
-      config: { ...snapshot.config }
+      config: { ...snapshot.config },
     });
   }
 

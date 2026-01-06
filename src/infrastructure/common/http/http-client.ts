@@ -1,5 +1,10 @@
 import { injectable, inject } from 'inversify';
-import axios, { AxiosInstance, AxiosRequestConfig, AxiosResponse, InternalAxiosRequestConfig } from 'axios';
+import axios, {
+  AxiosInstance,
+  AxiosRequestConfig,
+  AxiosResponse,
+  InternalAxiosRequestConfig,
+} from 'axios';
 import { RetryHandler } from './retry-handler';
 import { CircuitBreaker } from './circuit-breaker';
 import { RateLimiter } from './rate-limiter';
@@ -35,15 +40,27 @@ export class HttpClient {
     return this.request({ ...config, method: 'GET', url });
   }
 
-  async post<T = any>(url: string, data?: any, config?: AxiosRequestConfig): Promise<AxiosResponse<T>> {
+  async post<T = any>(
+    url: string,
+    data?: any,
+    config?: AxiosRequestConfig
+  ): Promise<AxiosResponse<T>> {
     return this.request({ ...config, method: 'POST', url, data });
   }
 
-  async put<T = any>(url: string, data?: any, config?: AxiosRequestConfig): Promise<AxiosResponse<T>> {
+  async put<T = any>(
+    url: string,
+    data?: any,
+    config?: AxiosRequestConfig
+  ): Promise<AxiosResponse<T>> {
     return this.request({ ...config, method: 'PUT', url, data });
   }
 
-  async patch<T = any>(url: string, data?: any, config?: AxiosRequestConfig): Promise<AxiosResponse<T>> {
+  async patch<T = any>(
+    url: string,
+    data?: any,
+    config?: AxiosRequestConfig
+  ): Promise<AxiosResponse<T>> {
     return this.request({ ...config, method: 'PATCH', url, data });
   }
 
@@ -89,9 +106,9 @@ export class HttpClient {
       timeout: this.configManager.get('http.timeout', 30000),
       headers: {
         'Content-Type': 'application/json',
-        'User-Agent': this.configManager.get('http.userAgent', 'WorkflowAgent/1.0.0')
+        'User-Agent': this.configManager.get('http.userAgent', 'WorkflowAgent/1.0.0'),
       },
-      validateStatus: (status) => status < 500 // Don't reject on 4xx errors
+      validateStatus: status => status < 500, // Don't reject on 4xx errors
     };
   }
 
@@ -106,13 +123,13 @@ export class HttpClient {
         if (this.configManager.get('http.logging.enabled', false)) {
           console.log(`HTTP Request: ${config.method?.toUpperCase()} ${config.url}`, {
             headers: config.headers,
-            data: config.data
+            data: config.data,
           });
         }
 
         return config;
       },
-      (error) => {
+      error => {
         console.error('HTTP Request Error:', error);
         return Promise.reject(error);
       }
@@ -120,9 +137,10 @@ export class HttpClient {
 
     // Response interceptor
     this.axiosInstance.interceptors.response.use(
-      (response) => {
+      response => {
         // Calculate request duration
-        const duration = Date.now() - ((response.config as ExtendedAxiosRequestConfig).metadata?.startTime || 0);
+        const duration =
+          Date.now() - ((response.config as ExtendedAxiosRequestConfig).metadata?.startTime || 0);
         (response as any).duration = duration;
 
         // Log response if enabled
@@ -130,23 +148,27 @@ export class HttpClient {
           console.log(`HTTP Response: ${response.status} ${response.config.url}`, {
             duration: `${duration}ms`,
             headers: response.headers,
-            data: response.data
+            data: response.data,
           });
         }
 
         return response;
       },
-      (error) => {
+      error => {
         // Calculate request duration for failed requests
-        const duration = Date.now() - ((error.config as ExtendedAxiosRequestConfig)?.metadata?.startTime || 0);
+        const duration =
+          Date.now() - ((error.config as ExtendedAxiosRequestConfig)?.metadata?.startTime || 0);
 
         // Log error if enabled
         if (this.configManager.get('http.logging.enabled', false)) {
-          console.error(`HTTP Error: ${error.response?.status || 'Network Error'} ${error.config?.url}`, {
-            duration: `${duration}ms`,
-            message: error.message,
-            response: error.response?.data
-          });
+          console.error(
+            `HTTP Error: ${error.response?.status || 'Network Error'} ${error.config?.url}`,
+            {
+              duration: `${duration}ms`,
+              message: error.message,
+              response: error.response?.data,
+            }
+          );
         }
 
         return Promise.reject(error);
@@ -173,7 +195,7 @@ export class HttpClient {
   createInstance(config?: AxiosRequestConfig): AxiosInstance {
     return axios.create({
       ...this.getDefaultConfig(),
-      ...config
+      ...config,
     });
   }
 
@@ -189,7 +211,7 @@ export class HttpClient {
       successfulRequests: this.retryHandler.getStats().successfulAttempts,
       failedRequests: this.retryHandler.getStats().failedAttempts,
       averageResponseTime: this.retryHandler.getStats().averageResponseTime,
-      circuitBreakerState: this.circuitBreaker.getState()
+      circuitBreakerState: this.circuitBreaker.getState(),
     };
   }
 

@@ -42,10 +42,10 @@ export class Echelon extends ValueObject<{
   getWeight(): number {
     // 优先级越高（数字越小），权重越大
     const priorityWeight = Math.max(0, 100 - this.priority * 10);
-    
+
     // 模型数量权重
     const modelWeight = Math.min(50, this.models.length * 5);
-    
+
     return priorityWeight + modelWeight;
   }
 
@@ -74,7 +74,7 @@ export class Echelon extends ValueObject<{
       modelCount: this.getModelCount(),
       available: this.isAvailable(),
       weight: this.getWeight(),
-      config: this.config
+      config: this.config,
     };
   }
 }
@@ -132,10 +132,7 @@ export class EchelonConfig extends ValueObject<{
    * 比较两个配置
    */
   override equals(other: EchelonConfig): boolean {
-    return (
-      this.groupName === other.groupName &&
-      this.echelonName === other.echelonName
-    );
+    return this.groupName === other.groupName && this.echelonName === other.echelonName;
   }
 
   /**
@@ -151,7 +148,7 @@ export class EchelonConfig extends ValueObject<{
       fallbackStrategy: this.fallbackStrategy,
       maxAttempts: this.maxAttempts,
       retryDelay: this.retryDelay,
-      valid: this.isValid()
+      valid: this.isValid(),
     };
   }
 }

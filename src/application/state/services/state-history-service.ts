@@ -42,7 +42,7 @@ export class StateHistoryService {
           entityId: thread.threadId.value,
           oldStatus: oldStatus.value,
           newStatus: newStatus.value,
-          executionState: this.serializeThreadExecution(thread.execution)
+          executionState: this.serializeThreadExecution(thread.execution),
         },
         thread.sessionId,
         thread.threadId,
@@ -50,7 +50,7 @@ export class StateHistoryService {
         `Thread状态变更: ${oldStatus.value} -> ${newStatus.value}`,
         undefined,
         {
-          timestamp: Timestamp.now().toISOString()
+          timestamp: Timestamp.now().toISOString(),
         }
       );
 
@@ -60,9 +60,8 @@ export class StateHistoryService {
         historyId: history.historyId.toString(),
         threadId: thread.threadId.toString(),
         oldStatus: oldStatus.value,
-        newStatus: newStatus.value
+        newStatus: newStatus.value,
       });
-
     } catch (error) {
       this.logger.error('创建状态变更History失败', error as Error);
       throw error;
@@ -74,10 +73,7 @@ export class StateHistoryService {
    * @param thread Thread实体
    * @param checkpoint Checkpoint实体
    */
-  async createRestoreHistory(
-    thread: Thread,
-    checkpoint: ThreadCheckpoint
-  ): Promise<void> {
+  async createRestoreHistory(thread: Thread, checkpoint: ThreadCheckpoint): Promise<void> {
     try {
       const history = History.create(
         HistoryType.checkpointRestored(),
@@ -86,7 +82,7 @@ export class StateHistoryService {
           entityId: thread.threadId.value,
           checkpointId: checkpoint.checkpointId.value,
           checkpointType: checkpoint.type.getValue(),
-          checkpointCreatedAt: checkpoint.createdAt.toISOString()
+          checkpointCreatedAt: checkpoint.createdAt.toISOString(),
         },
         thread.sessionId,
         thread.threadId,
@@ -94,7 +90,7 @@ export class StateHistoryService {
         `Thread从Checkpoint恢复`,
         `从检查点 ${checkpoint.checkpointId.toString()} 恢复`,
         {
-          timestamp: Timestamp.now().toISOString()
+          timestamp: Timestamp.now().toISOString(),
         }
       );
 
@@ -103,9 +99,8 @@ export class StateHistoryService {
       this.logger.info('恢复History创建成功', {
         historyId: history.historyId.toString(),
         threadId: thread.threadId.toString(),
-        checkpointId: checkpoint.checkpointId.toString()
+        checkpointId: checkpoint.checkpointId.toString(),
       });
-
     } catch (error) {
       this.logger.error('创建恢复History失败', error as Error);
       throw error;
@@ -126,7 +121,7 @@ export class StateHistoryService {
           entityId: thread.threadId.value,
           errorMessage: error.message,
           errorStack: error.stack,
-          executionState: this.serializeThreadExecution(thread.execution)
+          executionState: this.serializeThreadExecution(thread.execution),
         },
         thread.sessionId,
         thread.threadId,
@@ -135,7 +130,7 @@ export class StateHistoryService {
         error.message,
         {
           timestamp: Timestamp.now().toISOString(),
-          errorName: error.name
+          errorName: error.name,
         }
       );
 
@@ -144,9 +139,8 @@ export class StateHistoryService {
       this.logger.info('错误History创建成功', {
         historyId: history.historyId.toString(),
         threadId: thread.threadId.toString(),
-        errorMessage: error.message
+        errorMessage: error.message,
       });
-
     } catch (err) {
       this.logger.error('创建错误History失败', err as Error);
       throw err;
@@ -172,7 +166,7 @@ export class StateHistoryService {
           entityId: thread.threadId.value,
           operation,
           ...details,
-          executionState: this.serializeThreadExecution(thread.execution)
+          executionState: this.serializeThreadExecution(thread.execution),
         },
         thread.sessionId,
         thread.threadId,
@@ -180,7 +174,7 @@ export class StateHistoryService {
         `Thread操作: ${operation}`,
         undefined,
         {
-          timestamp: Timestamp.now().toISOString()
+          timestamp: Timestamp.now().toISOString(),
         }
       );
 
@@ -189,9 +183,8 @@ export class StateHistoryService {
       this.logger.info('操作History创建成功', {
         historyId: history.historyId.toString(),
         threadId: thread.threadId.toString(),
-        operation
+        operation,
       });
-
     } catch (error) {
       this.logger.error('创建操作History失败', error as Error);
       throw error;
@@ -213,7 +206,6 @@ export class StateHistoryService {
       }
 
       return histories;
-
     } catch (error) {
       this.logger.error('查询Thread的History失败', error as Error);
       throw error;
@@ -235,7 +227,6 @@ export class StateHistoryService {
       }
 
       return histories;
-
     } catch (error) {
       this.logger.error('查询Session的History失败', error as Error);
       throw error;
@@ -257,7 +248,6 @@ export class StateHistoryService {
       }
 
       return histories;
-
     } catch (error) {
       this.logger.error('查询指定类型的History失败', error as Error);
       throw error;
@@ -284,7 +274,7 @@ export class StateHistoryService {
       completedAt: execution.completedAt?.toISOString(),
       errorMessage: execution.errorMessage,
       retryCount: execution.retryCount,
-      lastActivityAt: execution.lastActivityAt.toISOString()
+      lastActivityAt: execution.lastActivityAt.toISOString(),
     };
   }
 
@@ -294,11 +284,10 @@ export class StateHistoryService {
 
       this.logger.info('过期History清理完成', {
         retentionDays,
-        cleanedCount
+        cleanedCount,
       });
 
       return cleanedCount;
-
     } catch (error) {
       this.logger.error('清理过期History失败', error as Error);
       throw error;

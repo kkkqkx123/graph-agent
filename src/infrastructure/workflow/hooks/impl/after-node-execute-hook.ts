@@ -7,7 +7,7 @@ import {
   HookMetadata,
   HookParameter,
   HookValidationResult,
-  HookProps
+  HookProps,
 } from '../../../../domain/workflow/entities/hook';
 
 /**
@@ -58,7 +58,7 @@ export class AfterNodeExecuteHook extends Hook {
     const fullConfig: AfterNodeExecuteHookConfig = {
       nodeId,
       nodeType,
-      ...config
+      ...config,
     };
 
     const props: HookProps = {
@@ -73,7 +73,7 @@ export class AfterNodeExecuteHook extends Hook {
       failFast,
       createdAt: now,
       updatedAt: now,
-      version: Version.initial()
+      version: Version.initial(),
     };
 
     return new AfterNodeExecuteHook(props);
@@ -125,8 +125,8 @@ export class AfterNodeExecuteHook extends Hook {
           hookPoint: 'after_node_execute',
           nodeId: config.nodeId,
           nodeType: config.nodeType,
-          timestamp: Date.now()
-        }
+          timestamp: Date.now(),
+        },
       };
     } catch (error) {
       return {
@@ -138,8 +138,8 @@ export class AfterNodeExecuteHook extends Hook {
           hookPoint: 'after_node_execute',
           nodeId: config.nodeId,
           nodeType: config.nodeType,
-          timestamp: Date.now()
-        }
+          timestamp: Date.now(),
+        },
       };
     }
   }
@@ -166,7 +166,7 @@ export class AfterNodeExecuteHook extends Hook {
 
     return {
       valid: errors.length === 0,
-      errors
+      errors,
     };
   }
 
@@ -182,7 +182,7 @@ export class AfterNodeExecuteHook extends Hook {
       description: this.props.description,
       parameters: this.getParameters(),
       enabled: this.props.enabled,
-      priority: this.props.priority
+      priority: this.props.priority,
     };
   }
 
@@ -196,26 +196,26 @@ export class AfterNodeExecuteHook extends Hook {
         name: 'nodeId',
         type: 'string',
         required: true,
-        description: '节点ID'
+        description: '节点ID',
       },
       {
         name: 'nodeType',
         type: 'string',
         required: true,
-        description: '节点类型'
+        description: '节点类型',
       },
       {
         name: 'result',
         type: 'any',
         required: false,
-        description: '节点执行结果'
+        description: '节点执行结果',
       },
       {
         name: 'outputTransform',
         type: 'object',
         required: false,
-        description: '输出转换配置'
-      }
+        description: '输出转换配置',
+      },
     ];
   }
 
@@ -225,7 +225,10 @@ export class AfterNodeExecuteHook extends Hook {
    * @param transform 转换配置
    * @returns 转换后的输出
    */
-  private transformOutput(output: any, transform: AfterNodeExecuteHookConfig['outputTransform']): any {
+  private transformOutput(
+    output: any,
+    transform: AfterNodeExecuteHookConfig['outputTransform']
+  ): any {
     if (!output || !transform) {
       return output;
     }

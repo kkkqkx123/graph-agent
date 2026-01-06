@@ -33,7 +33,7 @@ export class SerializationUtils {
     timeZone: 'UTC',
     prettyPrint: false,
     ignoreUndefined: true,
-    customSerializers: {}
+    customSerializers: {},
   };
 
   /**
@@ -43,7 +43,7 @@ export class SerializationUtils {
     try {
       const finalConfig = { ...this.defaultConfig, ...config };
       const serializedObj = this.prepareForSerialization(obj, finalConfig);
-      
+
       const jsonString = JSON.stringify(
         serializedObj,
         this.createReplacer(finalConfig),
@@ -52,12 +52,12 @@ export class SerializationUtils {
 
       return {
         success: true,
-        data: jsonString
+        data: jsonString,
       };
     } catch (error) {
       return {
         success: false,
-        error: error instanceof Error ? error.message : String(error)
+        error: error instanceof Error ? error.message : String(error),
       };
     }
   }
@@ -65,21 +65,24 @@ export class SerializationUtils {
   /**
    * 从JSON字符串反序列化
    */
-  static fromJSON(jsonString: string, config: Partial<SerializationConfig> = {}): SerializationResult {
+  static fromJSON(
+    jsonString: string,
+    config: Partial<SerializationConfig> = {}
+  ): SerializationResult {
     try {
       const finalConfig = { ...this.defaultConfig, ...config };
-      
+
       const parsed = JSON.parse(jsonString, this.createReviver(finalConfig));
       const restoredObj = this.restoreFromSerialization(parsed, finalConfig);
 
       return {
         success: true,
-        data: restoredObj
+        data: restoredObj,
       };
     } catch (error) {
       return {
         success: false,
-        error: error instanceof Error ? error.message : String(error)
+        error: error instanceof Error ? error.message : String(error),
       };
     }
   }
@@ -90,9 +93,9 @@ export class SerializationUtils {
   static toQueryString(obj: any, config: Partial<SerializationConfig> = {}): string {
     const finalConfig = { ...this.defaultConfig, ...config };
     const serializedObj = this.prepareForSerialization(obj, finalConfig);
-    
+
     const params = new URLSearchParams();
-    
+
     this.flattenObject(serializedObj).forEach((value, key) => {
       if (value !== null && value !== undefined) {
         params.append(key, String(value));
@@ -161,7 +164,7 @@ export class SerializationUtils {
     if (obj instanceof Date) {
       return {
         __type: 'Date',
-        __value: obj.toISOString()
+        __value: obj.toISOString(),
       };
     }
 
@@ -170,32 +173,32 @@ export class SerializationUtils {
         __type: 'RegExp',
         __value: {
           source: obj.source,
-          flags: obj.flags
-        }
+          flags: obj.flags,
+        },
       };
     }
 
     if (obj instanceof Map) {
       return {
         __type: 'Map',
-        __value: Array.from(obj.entries())
+        __value: Array.from(obj.entries()),
       };
     }
 
     if (obj instanceof Set) {
       return {
         __type: 'Set',
-        __value: Array.from(obj.values())
+        __value: Array.from(obj.values()),
       };
     }
 
     if (typeof obj === 'object') {
       const result: any = {};
-      
+
       for (const key in obj) {
         if (obj.hasOwnProperty(key)) {
           const value = obj[key];
-          
+
           if (value === undefined && config.ignoreUndefined) {
             continue;
           }
@@ -208,7 +211,7 @@ export class SerializationUtils {
           }
         }
       }
-      
+
       return result;
     }
 
@@ -227,16 +230,16 @@ export class SerializationUtils {
       switch (obj.__type) {
         case 'Date':
           return new Date(obj.__value);
-        
+
         case 'RegExp':
           return new RegExp(obj.__value.source, obj.__value.flags);
-        
+
         case 'Map':
           return new Map(obj.__value);
-        
+
         case 'Set':
           return new Set(obj.__value);
-        
+
         default:
           return obj;
       }
@@ -248,13 +251,13 @@ export class SerializationUtils {
 
     if (typeof obj === 'object') {
       const result: any = {};
-      
+
       for (const key in obj) {
         if (obj.hasOwnProperty(key)) {
           result[key] = this.restoreFromSerialization(obj[key], config);
         }
       }
-      
+
       return result;
     }
 
@@ -306,32 +309,32 @@ export class SerializationUtils {
   }
 
   /**
-    * 反扁平化对象
-    */
-   private static unflattenObject(flatObj: Record<string, any>): any {
-     const result: any = {};
+   * 反扁平化对象
+   */
+  private static unflattenObject(flatObj: Record<string, any>): any {
+    const result: any = {};
 
-     for (const key in flatObj) {
-       if (flatObj.hasOwnProperty(key)) {
-         const value = flatObj[key];
-         const keys = key.split('.');
-         
-         let current = result;
-         for (let i = 0; i < keys.length - 1; i++) {
-           const k = keys[i] as string;
-           if (!(k in current) || typeof current[k] !== 'object') {
-             current[k] = {};
-           }
-           current = current[k];
-         }
-         
-         const lastKey = keys[keys.length - 1] as string;
-         current[lastKey] = value;
-       }
-     }
+    for (const key in flatObj) {
+      if (flatObj.hasOwnProperty(key)) {
+        const value = flatObj[key];
+        const keys = key.split('.');
 
-     return result;
-   }
+        let current = result;
+        for (let i = 0; i < keys.length - 1; i++) {
+          const k = keys[i] as string;
+          if (!(k in current) || typeof current[k] !== 'object') {
+            current[k] = {};
+          }
+          current = current[k];
+        }
+
+        const lastKey = keys[keys.length - 1] as string;
+        current[lastKey] = value;
+      }
+    }
+
+    return result;
+  }
 
   /**
    * 安全的JSON解析

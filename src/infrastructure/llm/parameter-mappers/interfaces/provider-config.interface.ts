@@ -8,7 +8,7 @@ import { FeatureSupport } from './feature-support.interface';
 export enum ApiType {
   OPENAI_COMPATIBLE = 'openai-compatible',
   NATIVE = 'native',
-  CUSTOM = 'custom'
+  CUSTOM = 'custom',
 }
 
 /**

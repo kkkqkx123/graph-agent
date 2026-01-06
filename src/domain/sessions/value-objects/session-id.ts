@@ -2,7 +2,7 @@ import { ID } from '../../common/value-objects';
 
 /**
  * 会话ID值对象
- * 
+ *
  * 表示会话的唯一标识符
  */
 export class SessionId {
@@ -13,7 +13,7 @@ export class SessionId {
 
   /**
    * 构造函数
-   * 
+   *
    * @param value 会话ID值
    */
   constructor(value: ID) {
@@ -22,7 +22,7 @@ export class SessionId {
 
   /**
    * 从ID创建会话ID
-   * 
+   *
    * @param id ID
    * @returns 会话ID
    */
@@ -32,7 +32,7 @@ export class SessionId {
 
   /**
    * 从字符串创建会话ID
-   * 
+   *
    * @param value 字符串值
    * @returns 会话ID
    */
@@ -42,7 +42,7 @@ export class SessionId {
 
   /**
    * 生成新的会话ID
-   * 
+   *
    * @returns 新会话ID
    */
   static generate(): SessionId {
@@ -51,7 +51,7 @@ export class SessionId {
 
   /**
    * 获取显示名称
-   * 
+   *
    * @returns 显示名称
    */
   getDisplayName(): string {
@@ -60,7 +60,7 @@ export class SessionId {
 
   /**
    * 转换为字符串
-   * 
+   *
    * @returns 字符串表示
    */
   toString(): string {
@@ -69,7 +69,7 @@ export class SessionId {
 
   /**
    * 转换为JSON
-   * 
+   *
    * @returns JSON表示
    */
   toJSON(): string {
@@ -78,7 +78,7 @@ export class SessionId {
 
   /**
    * 检查是否相等
-   * 
+   *
    * @param other 另一个会话ID
    * @returns 是否相等
    */
@@ -88,7 +88,7 @@ export class SessionId {
 
   /**
    * 哈希值
-   * 
+   *
    * @returns 哈希值
    */
   hashCode(): number {
@@ -97,7 +97,7 @@ export class SessionId {
 
   /**
    * 比较两个会话ID
-   * 
+   *
    * @param other 另一个会话ID
    * @returns 比较结果
    */
@@ -107,7 +107,7 @@ export class SessionId {
 
   /**
    * 检查是否为空会话ID
-   * 
+   *
    * @returns 是否为空
    */
   isEmpty(): boolean {
@@ -116,7 +116,7 @@ export class SessionId {
 
   /**
    * 创建空会话ID
-   * 
+   *
    * @returns 空会话ID
    */
   static empty(): SessionId {
@@ -125,7 +125,7 @@ export class SessionId {
 
   /**
    * 检查是否为空会话ID
-   * 
+   *
    * @param sessionId 会话ID
    * @returns 是否为空
    */
@@ -135,7 +135,7 @@ export class SessionId {
 
   /**
    * 获取ID的短表示
-   * 
+   *
    * @returns 短表示
    */
   toShort(): string {
@@ -144,7 +144,7 @@ export class SessionId {
 
   /**
    * 克隆会话ID
-   * 
+   *
    * @returns 新会话ID
    */
   clone(): SessionId {
@@ -153,7 +153,7 @@ export class SessionId {
 
   /**
    * 获取会话ID的字符串表示（用于调试）
-   * 
+   *
    * @returns 调试字符串
    */
   toDebugString(): string {

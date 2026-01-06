@@ -6,7 +6,7 @@ export type CheckpointStatusValue = 'active' | 'expired' | 'corrupted' | 'archiv
 
 /**
  * 检查点状态值对象
- * 
+ *
  * 表示检查点的当前状态
  */
 export class CheckpointStatus extends ValueObject<CheckpointStatusValue> {

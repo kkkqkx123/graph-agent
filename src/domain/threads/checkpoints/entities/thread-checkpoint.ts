@@ -30,7 +30,7 @@ export interface ThreadCheckpointProps {
 
 /**
  * Thread检查点实体
- * 
+ *
  * 表示线程执行过程中的检查点，包含Python实现的所有功能
  */
 export class ThreadCheckpoint extends Entity {
@@ -96,7 +96,7 @@ export class ThreadCheckpoint extends Entity {
       isDeleted: false,
       expiresAt,
       sizeBytes,
-      restoreCount: 0
+      restoreCount: 0,
     };
 
     const checkpoint = new ThreadCheckpoint(props);
@@ -208,11 +208,7 @@ export class ThreadCheckpoint extends Entity {
    * 检查检查点是否有效
    */
   public isValid(): boolean {
-    return (
-      !this.props.isDeleted &&
-      this.props.status.isActive() &&
-      !this.isExpired()
-    );
+    return !this.props.isDeleted && this.props.status.isActive() && !this.isExpired();
   }
 
   /**
@@ -259,7 +255,7 @@ export class ThreadCheckpoint extends Entity {
       restoreCount: this.props.restoreCount + 1,
       lastRestoredAt: Timestamp.now(),
       updatedAt: Timestamp.now(),
-      version: this.props.version.nextPatch()
+      version: this.props.version.nextPatch(),
     };
 
     (this as any).props = Object.freeze(newProps);
@@ -278,7 +274,7 @@ export class ThreadCheckpoint extends Entity {
       ...this.props,
       status: CheckpointStatus.expired(),
       updatedAt: Timestamp.now(),
-      version: this.props.version.nextPatch()
+      version: this.props.version.nextPatch(),
     };
 
     (this as any).props = Object.freeze(newProps);
@@ -297,7 +293,7 @@ export class ThreadCheckpoint extends Entity {
       ...this.props,
       status: CheckpointStatus.corrupted(),
       updatedAt: Timestamp.now(),
-      version: this.props.version.nextPatch()
+      version: this.props.version.nextPatch(),
     };
 
     (this as any).props = Object.freeze(newProps);
@@ -316,7 +312,7 @@ export class ThreadCheckpoint extends Entity {
       ...this.props,
       status: CheckpointStatus.archived(),
       updatedAt: Timestamp.now(),
-      version: this.props.version.nextPatch()
+      version: this.props.version.nextPatch(),
     };
 
     (this as any).props = Object.freeze(newProps);
@@ -342,7 +338,7 @@ export class ThreadCheckpoint extends Entity {
       stateData: { ...stateData },
       sizeBytes,
       updatedAt: Timestamp.now(),
-      version: this.props.version.nextPatch()
+      version: this.props.version.nextPatch(),
     };
 
     (this as any).props = Object.freeze(newProps);
@@ -365,7 +361,7 @@ export class ThreadCheckpoint extends Entity {
       ...this.props,
       expiresAt: Timestamp.now().addHours(hours),
       updatedAt: Timestamp.now(),
-      version: this.props.version.nextPatch()
+      version: this.props.version.nextPatch(),
     };
 
     (this as any).props = Object.freeze(newProps);
@@ -391,7 +387,7 @@ export class ThreadCheckpoint extends Entity {
       ...this.props,
       expiresAt: newExpiresAt,
       updatedAt: Timestamp.now(),
-      version: this.props.version.nextPatch()
+      version: this.props.version.nextPatch(),
     };
 
     (this as any).props = Object.freeze(newProps);
@@ -410,7 +406,7 @@ export class ThreadCheckpoint extends Entity {
       ...this.props,
       title,
       updatedAt: Timestamp.now(),
-      version: this.props.version.nextPatch()
+      version: this.props.version.nextPatch(),
     };
 
     (this as any).props = Object.freeze(newProps);
@@ -429,7 +425,7 @@ export class ThreadCheckpoint extends Entity {
       ...this.props,
       description,
       updatedAt: Timestamp.now(),
-      version: this.props.version.nextPatch()
+      version: this.props.version.nextPatch(),
     };
 
     (this as any).props = Object.freeze(newProps);
@@ -452,7 +448,7 @@ export class ThreadCheckpoint extends Entity {
       ...this.props,
       tags: [...this.props.tags, tag],
       updatedAt: Timestamp.now(),
-      version: this.props.version.nextPatch()
+      version: this.props.version.nextPatch(),
     };
 
     (this as any).props = Object.freeze(newProps);
@@ -479,7 +475,7 @@ export class ThreadCheckpoint extends Entity {
       ...this.props,
       tags: newTags,
       updatedAt: Timestamp.now(),
-      version: this.props.version.nextPatch()
+      version: this.props.version.nextPatch(),
     };
 
     (this as any).props = Object.freeze(newProps);
@@ -498,7 +494,7 @@ export class ThreadCheckpoint extends Entity {
       ...this.props,
       metadata: { ...metadata },
       updatedAt: Timestamp.now(),
-      version: this.props.version.nextPatch()
+      version: this.props.version.nextPatch(),
     };
 
     (this as any).props = Object.freeze(newProps);
@@ -517,7 +513,7 @@ export class ThreadCheckpoint extends Entity {
       ...this.props,
       isDeleted: true,
       updatedAt: Timestamp.now(),
-      version: this.props.version.nextPatch()
+      version: this.props.version.nextPatch(),
     };
 
     (this as any).props = Object.freeze(newProps);
@@ -583,7 +579,6 @@ export class ThreadCheckpoint extends Entity {
     }
   }
 
-
   /**
    * 转换为字典表示
    */
@@ -605,7 +600,7 @@ export class ThreadCheckpoint extends Entity {
       expiresAt: this.props.expiresAt?.toISOString(),
       sizeBytes: this.props.sizeBytes,
       restoreCount: this.props.restoreCount,
-      lastRestoredAt: this.props.lastRestoredAt?.toISOString()
+      lastRestoredAt: this.props.lastRestoredAt?.toISOString(),
     };
   }
 
@@ -627,10 +622,14 @@ export class ThreadCheckpoint extends Entity {
       updatedAt: Timestamp.fromISOString(data['updatedAt'] as string),
       version: Version.fromString(data['version'] as string),
       isDeleted: data['isDeleted'] as boolean,
-      expiresAt: data['expiresAt'] ? Timestamp.fromISOString(data['expiresAt'] as string) : undefined,
+      expiresAt: data['expiresAt']
+        ? Timestamp.fromISOString(data['expiresAt'] as string)
+        : undefined,
       sizeBytes: data['sizeBytes'] as number,
       restoreCount: data['restoreCount'] as number,
-      lastRestoredAt: data['lastRestoredAt'] ? Timestamp.fromISOString(data['lastRestoredAt'] as string) : undefined
+      lastRestoredAt: data['lastRestoredAt']
+        ? Timestamp.fromISOString(data['lastRestoredAt'] as string)
+        : undefined,
     };
 
     return ThreadCheckpoint.fromProps(props);

@@ -1,4 +1,11 @@
-import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, OneToMany } from 'typeorm';
+import {
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  CreateDateColumn,
+  UpdateDateColumn,
+  OneToMany,
+} from 'typeorm';
 import { ThreadModel } from './thread.model';
 
 @Entity('sessions')
@@ -15,7 +22,7 @@ export class SessionModel {
   @Column({
     type: 'enum',
     enum: ['active', 'paused', 'closed'],
-    default: 'active'
+    default: 'active',
   })
   state!: string;
 

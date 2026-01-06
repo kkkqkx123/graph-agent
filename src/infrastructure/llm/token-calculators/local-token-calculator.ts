@@ -3,7 +3,7 @@ import { BaseTokenCalculator, TokenUsage, TokenCalculationStats } from './base-t
 
 /**
  * Tiktoken Token本地计算器
- * 
+ *
  * 基于tiktoken库进行本地token计算，不依赖API响应。
  * 用于预计算场景，如请求前的token估算、文本截断等。
  */
@@ -15,10 +15,7 @@ export class LocalTokenCalculator extends BaseTokenCalculator {
   private enableCache: boolean = true;
   private isInitialized = false;
 
-  constructor(
-    modelName: string = 'gpt-3.5-turbo',
-    enableCache: boolean = true
-  ) {
+  constructor(modelName: string = 'gpt-3.5-turbo', enableCache: boolean = true) {
     super('tiktoken', modelName);
     this.enableCache = enableCache;
   }
@@ -41,7 +38,7 @@ export class LocalTokenCalculator extends BaseTokenCalculator {
       console.error('加载tiktoken编码器失败:', error);
       throw new Error(
         'tiktoken is required for token processing. ' +
-        'Please install it with: npm install tiktoken'
+          'Please install it with: npm install tiktoken'
       );
     }
   }
@@ -211,7 +208,7 @@ export class LocalTokenCalculator extends BaseTokenCalculator {
   getCacheStats(): { size: number; maxSize: number } {
     return {
       size: this.cache.size,
-      maxSize: 1000 // 默认最大缓存大小
+      maxSize: 1000, // 默认最大缓存大小
     };
   }
 
@@ -247,9 +244,7 @@ export class LocalTokenCalculator extends BaseTokenCalculator {
     if (uncachedTexts.length > 0 && this.encoding) {
       try {
         // 使用tiktoken的批量编码
-        const uncachedTokens = uncachedTexts.map(text =>
-          this.encoding.encode(text).length
-        );
+        const uncachedTokens = uncachedTexts.map(text => this.encoding.encode(text).length);
 
         // 更新结果和缓存
         for (let i = 0; i < uncachedTexts.length; i++) {

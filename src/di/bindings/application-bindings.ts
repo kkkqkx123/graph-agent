@@ -23,35 +23,21 @@ export const applicationBindings = new ContainerModule((bind: any) => {
   // ========== Application层服务绑定 ==========
 
   // 会话服务
-  bind(TYPES.SessionOrchestrationServiceImpl)
-    .to(SessionOrchestrationService)
-    .inSingletonScope();
+  bind(TYPES.SessionOrchestrationServiceImpl).to(SessionOrchestrationService).inSingletonScope();
 
-  bind(TYPES.SessionResourceServiceImpl)
-    .to(SessionResourceService)
-    .inSingletonScope();
+  bind(TYPES.SessionResourceServiceImpl).to(SessionResourceService).inSingletonScope();
 
-  bind(TYPES.SessionMonitoringService)
-    .to(SessionMonitoringService)
-    .inSingletonScope();
+  bind(TYPES.SessionMonitoringService).to(SessionMonitoringService).inSingletonScope();
 
   // 线程服务
-  bind(TYPES.ThreadLifecycleService)
-    .to(ThreadLifecycleService)
-    .inSingletonScope();
+  bind(TYPES.ThreadLifecycleService).to(ThreadLifecycleService).inSingletonScope();
 
-  bind(TYPES.ThreadExecutionService)
-    .to(ThreadExecutionService)
-    .inSingletonScope();
+  bind(TYPES.ThreadExecutionService).to(ThreadExecutionService).inSingletonScope();
 
-  bind(TYPES.ThreadMonitoringService)
-    .to(ThreadMonitoringService)
-    .inSingletonScope();
+  bind(TYPES.ThreadMonitoringService).to(ThreadMonitoringService).inSingletonScope();
 
   // LLM服务
-  bind(TYPES.HumanRelayServiceImpl)
-    .to(HumanRelayService)
-    .inSingletonScope();
+  bind(TYPES.HumanRelayServiceImpl).to(HumanRelayService).inSingletonScope();
 
   // ========== Domain层接口到Infrastructure实现的绑定 ==========
 

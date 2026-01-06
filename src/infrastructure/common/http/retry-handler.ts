@@ -8,7 +8,7 @@ export class RetryHandler {
   private backoffMultiplier: number;
   private retryableStatusCodes: Set<number>;
   private retryableErrors: Set<string>;
-  
+
   // Stats
   private totalAttempts: number = 0;
   private successfulAttempts: number = 0;
@@ -20,7 +20,7 @@ export class RetryHandler {
     this.baseDelay = this.configManager.get('http.retry.baseDelay', 1000);
     this.maxDelay = this.configManager.get('http.retry.maxDelay', 30000);
     this.backoffMultiplier = this.configManager.get('http.retry.backoffMultiplier', 2);
-    
+
     this.retryableStatusCodes = new Set([
       408, // Request Timeout
       429, // Too Many Requests
@@ -34,9 +34,9 @@ export class RetryHandler {
       521, // Web Server Is Down
       522, // Connection Timed Out
       523, // Origin Is Unreachable
-      524  // A Timeout Occurred
+      524, // A Timeout Occurred
     ]);
-    
+
     this.retryableErrors = new Set([
       'ECONNRESET',
       'ECONNREFUSED',
@@ -44,7 +44,7 @@ export class RetryHandler {
       'ENOTFOUND',
       'EAI_AGAIN',
       'NETWORK_ERROR',
-      'TIMEOUT'
+      'TIMEOUT',
     ]);
   }
 
@@ -57,14 +57,14 @@ export class RetryHandler {
         this.totalAttempts++;
         const result = await fn();
         this.successfulAttempts++;
-        
+
         const responseTime = Date.now() - startTime;
         this.totalResponseTime += responseTime;
-        
+
         return result;
       } catch (error) {
         lastError = error instanceof Error ? error : new Error(String(error));
-        
+
         // Check if error is retryable
         if (!this.isRetryableError(error) || attempt === this.maxRetries) {
           this.failedAttempts++;
@@ -75,13 +75,16 @@ export class RetryHandler {
 
         // Calculate delay for next retry
         const delay = this.calculateDelay(attempt);
-        
+
         // Log retry attempt if enabled
         if (this.configManager.get('http.logging.enabled', false)) {
-          console.warn(`HTTP retry attempt ${attempt + 1}/${this.maxRetries + 1} after ${delay}ms`, {
-            error: lastError.message,
-            status: (error as any).response?.status
-          });
+          console.warn(
+            `HTTP retry attempt ${attempt + 1}/${this.maxRetries + 1} after ${delay}ms`,
+            {
+              error: lastError.message,
+              status: (error as any).response?.status,
+            }
+          );
         }
 
         // Wait before retry
@@ -92,7 +95,7 @@ export class RetryHandler {
     this.failedAttempts++;
     const responseTime = Date.now() - startTime;
     this.totalResponseTime += responseTime;
-    
+
     throw lastError || new Error('Unknown error occurred during retry');
   }
 
@@ -113,11 +116,12 @@ export class RetryHandler {
     }
 
     // Check for specific error patterns
-    if (error.message && (
-      error.message.includes('timeout') ||
-      error.message.includes('network') ||
-      error.message.includes('connection')
-    )) {
+    if (
+      error.message &&
+      (error.message.includes('timeout') ||
+        error.message.includes('network') ||
+        error.message.includes('connection'))
+    ) {
       return true;
     }
 
@@ -129,7 +133,7 @@ export class RetryHandler {
     const exponentialDelay = this.baseDelay * Math.pow(this.backoffMultiplier, attempt);
     const jitter = Math.random() * 0.1 * exponentialDelay; // 10% jitter
     const delay = exponentialDelay + jitter;
-    
+
     return Math.min(delay, this.maxDelay);
   }
 
@@ -144,20 +148,18 @@ export class RetryHandler {
     successRate: number;
     averageResponseTime: number;
   } {
-    const successRate = this.totalAttempts > 0 
-      ? (this.successfulAttempts / this.totalAttempts) * 100 
-      : 0;
-    
-    const averageResponseTime = this.totalAttempts > 0 
-      ? this.totalResponseTime / this.totalAttempts 
-      : 0;
+    const successRate =
+      this.totalAttempts > 0 ? (this.successfulAttempts / this.totalAttempts) * 100 : 0;
+
+    const averageResponseTime =
+      this.totalAttempts > 0 ? this.totalResponseTime / this.totalAttempts : 0;
 
     return {
       totalAttempts: this.totalAttempts,
       successfulAttempts: this.successfulAttempts,
       failedAttempts: this.failedAttempts,
       successRate,
-      averageResponseTime
+      averageResponseTime,
     };
   }
 

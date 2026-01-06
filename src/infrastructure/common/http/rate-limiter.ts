@@ -16,12 +16,14 @@ export class RateLimiter {
 
   async checkLimit(): Promise<void> {
     this.refill();
-    
+
     if (this.tokens < 1) {
       const waitTime = this.calculateWaitTime();
-      throw new Error(`Rate limit exceeded. Please wait ${waitTime}ms before making another request.`);
+      throw new Error(
+        `Rate limit exceeded. Please wait ${waitTime}ms before making another request.`
+      );
     }
-    
+
     this.tokens -= 1;
   }
 
@@ -56,7 +58,7 @@ export class RateLimiter {
     const now = Date.now();
     const timePassed = (now - this.lastRefill) / 1000; // Convert to seconds
     const tokensToAdd = timePassed * this.refillRate;
-    
+
     this.tokens = Math.min(this.capacity, this.tokens + tokensToAdd);
     this.lastRefill = now;
   }
@@ -65,7 +67,7 @@ export class RateLimiter {
     const tokensNeeded = 1;
     const tokensDeficit = tokensNeeded - this.tokens;
     const waitTime = (tokensDeficit / this.refillRate) * 1000; // Convert to milliseconds
-    
+
     return Math.ceil(waitTime);
   }
 
@@ -95,12 +97,12 @@ export class RateLimiter {
   } {
     this.refill();
     const utilization = ((this.capacity - this.tokens) / this.capacity) * 100;
-    
+
     return {
       availableTokens: this.tokens,
       capacity: this.capacity,
       refillRate: this.refillRate,
-      utilization
+      utilization,
     };
   }
 }

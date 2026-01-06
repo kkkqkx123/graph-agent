@@ -151,10 +151,10 @@ export class RedactorUtils {
         'secret["\']?\\s*[:=]\\s*["\']?[^"\'\\s]+',
         'authorization["\']?\\s*[:=]\\s*["\']?[^"\'\\s]+',
         'bearer\\s+[a-zA-Z0-9\\-._~+/]+=*',
-        'api[_-]?key["\']?\\s*[:=]\\s*["\']?[^"\'\\s]+'
+        'api[_-]?key["\']?\\s*[:=]\\s*["\']?[^"\'\\s]+',
       ],
       replacement: '***',
-      enabled: true
+      enabled: true,
     };
   }
 

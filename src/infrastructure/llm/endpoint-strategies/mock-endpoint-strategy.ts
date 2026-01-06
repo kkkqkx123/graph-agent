@@ -16,7 +16,7 @@ const MockEndpointConfigSchema = BaseEndpointConfigSchema.extend({
   /**
    * API 密钥（可选，Mock 可以使用默认值）
    */
-  apiKey: z.string().optional().default('mock-key')
+  apiKey: z.string().optional().default('mock-key'),
 });
 
 /**
@@ -35,16 +35,16 @@ export class MockEndpointStrategy extends BaseEndpointStrategy {
   }
 
   /**
-    * 构建端点 URL
-    */
+   * 构建端点 URL
+   */
   buildEndpoint(config: ProviderConfig, request: ProviderRequest): string {
     // Mock API 使用固定的路径
     return this.buildPath(config.baseURL, 'mock', 'generate');
   }
 
   /**
-    * 构建请求头
-    */
+   * 构建请求头
+   */
   override buildHeaders(config: ProviderConfig): Record<string, string> {
     const headers = super.buildHeaders(config);
 

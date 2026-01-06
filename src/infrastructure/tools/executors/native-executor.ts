@@ -3,7 +3,12 @@ import { Tool } from '../../../domain/tools/entities/tool';
 import { ToolExecution } from '../../../domain/tools/entities/tool-execution';
 import { ToolResult } from '../../../domain/tools/entities/tool-result';
 import { spawn, ChildProcess } from 'child_process';
-import { ToolExecutorBase, ToolExecutorConfigSchema, ToolExecutorCapabilities, ToolExecutorHealthCheck } from './tool-executor-base';
+import {
+  ToolExecutorBase,
+  ToolExecutorConfigSchema,
+  ToolExecutorCapabilities,
+  ToolExecutorHealthCheck,
+} from './tool-executor-base';
 
 @injectable()
 export class NativeExecutor extends ToolExecutorBase {
@@ -11,7 +16,10 @@ export class NativeExecutor extends ToolExecutorBase {
     try {
       const config = tool.config;
       const command = config.getValue('command') as string;
-      const args = this.prepareArgs(config.getValue('args') as string[] || [], execution.parameters);
+      const args = this.prepareArgs(
+        (config.getValue('args') as string[]) || [],
+        execution.parameters
+      );
       const options = this.prepareOptions(config.getValue('options') || {});
 
       const result = await this.executeCommand(command, args, options);
@@ -39,7 +47,7 @@ export class NativeExecutor extends ToolExecutorBase {
       cwd: templateOptions.cwd || process.cwd(),
       env: { ...process.env, ...templateOptions.env },
       timeout: templateOptions.timeout || 30000, // 30 seconds default
-      shell: templateOptions.shell || false
+      shell: templateOptions.shell || false,
     };
 
     return options;
@@ -62,18 +70,18 @@ export class NativeExecutor extends ToolExecutorBase {
       const childProcess: ChildProcess = spawn(command, args, options);
 
       if (childProcess.stdout) {
-        childProcess.stdout.on('data', (data) => {
+        childProcess.stdout.on('data', data => {
           stdout += data.toString();
         });
       }
 
       if (childProcess.stderr) {
-        childProcess.stderr.on('data', (data) => {
+        childProcess.stderr.on('data', data => {
           stderr += data.toString();
         });
       }
 
-      childProcess.on('close', (code) => {
+      childProcess.on('close', code => {
         if (code === 0) {
           try {
             // Try to parse JSON output
@@ -84,7 +92,7 @@ export class NativeExecutor extends ToolExecutorBase {
             resolve({
               stdout: stdout.trim(),
               stderr: stderr.trim(),
-              exitCode: code
+              exitCode: code,
             });
           }
         } else {
@@ -92,7 +100,7 @@ export class NativeExecutor extends ToolExecutorBase {
         }
       });
 
-      childProcess.on('error', (error) => {
+      childProcess.on('error', error => {
         reject(new Error(`Failed to execute command: ${error.message}`));
       });
 
@@ -122,7 +130,7 @@ export class NativeExecutor extends ToolExecutorBase {
     try {
       const config = tool.config;
       const script = config.getValue('script') as string;
-      const interpreter = config.getValue('interpreter') as string || 'node';
+      const interpreter = (config.getValue('interpreter') as string) || 'node';
       const options = this.prepareOptions(config.getValue('options') || {});
 
       // Create temporary script file
@@ -166,8 +174,11 @@ export class NativeExecutor extends ToolExecutorBase {
   async executeShellCommand(tool: Tool, execution: ToolExecution): Promise<ToolResult> {
     try {
       const config = tool.config;
-      const command = this.interpolateString(config.getValue('command') as string, execution.parameters);
-      const baseOptions = config.getValue('options') as Record<string, any> || {};
+      const command = this.interpolateString(
+        config.getValue('command') as string,
+        execution.parameters
+      );
+      const baseOptions = (config.getValue('options') as Record<string, any>) || {};
       const options = this.prepareOptions({ ...baseOptions, shell: true });
 
       const result = await this.executeCommand(command, [], options);
@@ -201,11 +212,14 @@ export class NativeExecutor extends ToolExecutorBase {
     return {
       isValid: errors.length === 0,
       errors,
-      warnings
+      warnings,
     };
   }
 
-  async validateParameters(tool: Tool, parameters: Record<string, unknown>): Promise<{
+  async validateParameters(
+    tool: Tool,
+    parameters: Record<string, unknown>
+  ): Promise<{
     isValid: boolean;
     errors: string[];
     warnings: string[];
@@ -213,7 +227,7 @@ export class NativeExecutor extends ToolExecutorBase {
     return {
       isValid: true,
       errors: [],
-      warnings: []
+      warnings: [],
     };
   }
 
@@ -247,26 +261,26 @@ export class NativeExecutor extends ToolExecutorBase {
       properties: {
         command: {
           type: 'string',
-          description: 'Command to execute'
+          description: 'Command to execute',
         },
         script: {
           type: 'string',
-          description: 'Script content to execute'
+          description: 'Script content to execute',
         },
         interpreter: {
           type: 'string',
-          description: 'Script interpreter (e.g., node, python)'
+          description: 'Script interpreter (e.g., node, python)',
         },
         args: {
           type: 'array',
-          description: 'Command arguments'
+          description: 'Command arguments',
         },
         options: {
           type: 'object',
-          description: 'Execution options'
-        }
+          description: 'Execution options',
+        },
       },
-      required: []
+      required: [],
     };
   }
 
@@ -277,7 +291,7 @@ export class NativeExecutor extends ToolExecutorBase {
       batch: false,
       retry: false,
       timeout: true,
-      cancellation: false
+      cancellation: false,
     };
   }
 
@@ -285,7 +299,7 @@ export class NativeExecutor extends ToolExecutorBase {
     return {
       status: 'healthy',
       message: 'Native executor is operational',
-      lastChecked: new Date()
+      lastChecked: new Date(),
     };
   }
 }

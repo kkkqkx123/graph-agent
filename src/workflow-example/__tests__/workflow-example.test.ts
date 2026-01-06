@@ -1,13 +1,13 @@
 /**
  * 图工作流示例测试
- * 
+ *
  * 本文件包含图工作流示例的单元测试和集成测试
  */
 
 import {
   createWorkflowGraph,
   createWorkflowEngine,
-  ExecutionStrategy
+  ExecutionStrategy,
 } from '../engine/workflow-engine';
 
 import {
@@ -17,33 +17,20 @@ import {
   createTransformNode,
   createEndNode,
   NodeType,
-  NodeStatus
+  NodeStatus,
 } from '../entities/node';
 
-import {
-  createDirectEdge,
-  createConditionalEdge,
-  EdgeType
-} from '../entities/edge';
+import { createDirectEdge, createConditionalEdge, EdgeType } from '../entities/edge';
 
-import {
-  ConditionOperator
-} from '../types/workflow-types';
+import { ConditionOperator } from '../types/workflow-types';
 
-import {
-  createTimeoutTrigger,
-  TriggerType,
-  TriggerAction
-} from '../entities/trigger';
+import { createTimeoutTrigger, TriggerType, TriggerAction } from '../entities/trigger';
 
-import {
-  createExecutionContext,
-  generateExecutionId
-} from '../engine/execution-context';
+import { createExecutionContext, generateExecutionId } from '../engine/execution-context';
 
 import {
   createTextAnalysisWorkflow,
-  runTextAnalysisWorkflow
+  runTextAnalysisWorkflow,
 } from '../examples/text-analysis-workflow';
 
 // ============================================================================
@@ -63,10 +50,10 @@ describe('Node实体', () => {
   test('应该更新节点状态', () => {
     const node = createLLMNode('test-node', 'LLM节点', { model: 'gpt-3.5' });
     expect(node.status).toBe(NodeStatus.PENDING);
-    
+
     node.updateStatus(NodeStatus.RUNNING);
     expect(node.status).toBe(NodeStatus.RUNNING);
-    
+
     node.updateStatus(NodeStatus.COMPLETED);
     expect(node.status).toBe(NodeStatus.COMPLETED);
   });
@@ -106,7 +93,7 @@ describe('Edge实体', () => {
       {
         expression: '{{value}} == true',
         operator: ConditionOperator.EQUALS,
-        expectedValue: true
+        expectedValue: true,
       },
       1
     );
@@ -123,16 +110,11 @@ describe('Edge实体', () => {
   });
 
   test('应该评估条件边条件', async () => {
-    const edge = createConditionalEdge(
-      'test-edge',
-      'node1',
-      'node2',
-      {
-        expression: '{{value}} == true',
-        operator: ConditionOperator.EQUALS,
-        expectedValue: true
-      }
-    );
+    const edge = createConditionalEdge('test-edge', 'node1', 'node2', {
+      expression: '{{value}} == true',
+      operator: ConditionOperator.EQUALS,
+      expectedValue: true,
+    });
     const context = createExecutionContext('test-workflow', 'test-exec');
     context.setVariable('value', true);
     const result = await edge.evaluateCondition(context);
@@ -151,10 +133,10 @@ describe('Trigger实体', () => {
   test('应该启用和禁用触发器', () => {
     const trigger = createTimeoutTrigger('test-trigger', 30000);
     expect(trigger.status).toBe('enabled');
-    
+
     trigger.disable();
     expect(trigger.status).toBe('disabled');
-    
+
     trigger.enable();
     expect(trigger.status).toBe('enabled');
   });
@@ -195,7 +177,7 @@ describe('ExecutionContext', () => {
     const context = createExecutionContext('test-workflow', 'test-exec');
     const result = {
       success: true,
-      data: { output: 'test' }
+      data: { output: 'test' },
     };
     context.setNodeResult('test-node', result);
     const retrieved = context.getNodeResult('test-node');
@@ -266,7 +248,7 @@ describe('WorkflowGraph', () => {
     workflow.addNode(createStartNode('node1', '节点1'));
     workflow.addNode(createLLMNode('node2', '节点2', {}));
     workflow.addEdge(createDirectEdge('edge1', 'node1', 'node2'));
-    
+
     const readyNodes = workflow.getReadyNodes(new Set());
     expect(readyNodes.length).toBe(1);
     expect(readyNodes[0].id.toString()).toBe('node1');
@@ -278,7 +260,7 @@ describe('WorkflowGraph', () => {
     workflow.addNode(createLLMNode('node2', '节点2', {}));
     workflow.addEdge(createDirectEdge('edge1', 'node1', 'node2'));
     workflow.addEdge(createDirectEdge('edge2', 'node2', 'node1'));
-    
+
     expect(workflow.hasCycle()).toBe(true);
   });
 
@@ -289,7 +271,7 @@ describe('WorkflowGraph', () => {
     workflow.addNode(createEndNode('node3', '节点3'));
     workflow.addEdge(createDirectEdge('edge1', 'node1', 'node2'));
     workflow.addEdge(createDirectEdge('edge2', 'node2', 'node3'));
-    
+
     const order = workflow.getTopologicalOrder();
     expect(order).toEqual(['node1', 'node2', 'node3']);
   });
@@ -307,18 +289,18 @@ describe('WorkflowEngine', () => {
 
   test('应该执行简单工作流', async () => {
     const workflow = createWorkflowGraph('test-workflow');
-    
+
     // 创建简单的工作流：开始 -> 结束
     const startNode = createStartNode('start', '开始');
     const endNode = createEndNode('end', '结束');
-    
+
     workflow.addNode(startNode);
     workflow.addNode(endNode);
     workflow.addEdge(createDirectEdge('edge1', 'start', 'end'));
-    
+
     const engine = createWorkflowEngine();
     const result = await engine.execute(workflow, { text: 'test' });
-    
+
     expect(result.success).toBe(true);
     expect(result.metadata?.executedNodes).toContain('start');
     expect(result.metadata?.executedNodes).toContain('end');
@@ -326,108 +308,105 @@ describe('WorkflowEngine', () => {
 
   test('应该执行带LLM节点的工作流', async () => {
     const workflow = createWorkflowGraph('test-workflow');
-    
+
     const startNode = createStartNode('start', '开始');
     const llmNode = createLLMNode('llm', 'LLM节点', {
       prompt: '处理文本: {{input.text}}',
-      model: 'gpt-3.5-turbo'
+      model: 'gpt-3.5-turbo',
     });
     const endNode = createEndNode('end', '结束');
-    
+
     workflow.addNode(startNode);
     workflow.addNode(llmNode);
     workflow.addNode(endNode);
     workflow.addEdge(createDirectEdge('edge1', 'start', 'llm'));
     workflow.addEdge(createDirectEdge('edge2', 'llm', 'end'));
-    
+
     const engine = createWorkflowEngine();
     const result = await engine.execute(workflow, { text: '测试文本' });
-    
+
     expect(result.success).toBe(true);
     expect(result.metadata?.executedNodes).toContain('llm');
   });
 
   test('应该执行带条件分支的工作流', async () => {
     const workflow = createWorkflowGraph('test-workflow');
-    
+
     const startNode = createStartNode('start', '开始');
     const conditionNode = createConditionNode('condition', '条件判断', {
       condition: '{{input.value}} == true',
-      data: { value: true }
+      data: { value: true },
     });
     const endNode = createEndNode('end', '结束');
-    
+
     workflow.addNode(startNode);
     workflow.addNode(conditionNode);
     workflow.addNode(endNode);
     workflow.addEdge(createDirectEdge('edge1', 'start', 'condition'));
-    workflow.addEdge(createConditionalEdge(
-      'edge2',
-      'condition',
-      'end',
-      {
+    workflow.addEdge(
+      createConditionalEdge('edge2', 'condition', 'end', {
         expression: '{{condition.data.result}} == true',
         operator: ConditionOperator.EQUALS,
-        expectedValue: true
-      }
-    ));
-    
+        expectedValue: true,
+      })
+    );
+
     const engine = createWorkflowEngine();
     const result = await engine.execute(workflow, { value: true });
-    
+
     expect(result.success).toBe(true);
   });
 
   test('应该暂停和恢复执行', async () => {
     const workflow = createWorkflowGraph('test-workflow');
-    
+
     const startNode = createStartNode('start', '开始');
     const llmNode = createLLMNode('llm', 'LLM节点', {
       prompt: '处理文本',
-      model: 'gpt-3.5-turbo'
+      model: 'gpt-3.5-turbo',
     });
     const endNode = createEndNode('end', '结束');
-    
+
     workflow.addNode(startNode);
     workflow.addNode(llmNode);
     workflow.addNode(endNode);
     workflow.addEdge(createDirectEdge('edge1', 'start', 'llm'));
     workflow.addEdge(createDirectEdge('edge2', 'llm', 'end'));
-    
+
     const engine = createWorkflowEngine();
-    
+
     // 在另一个线程中暂停
     setTimeout(() => engine.pause(), 50);
     setTimeout(() => engine.resume(), 150);
-    
+
     const result = await engine.execute(workflow, { text: 'test' });
-    
+
     expect(result.success).toBe(true);
   });
 
   test('应该停止执行', async () => {
     const workflow = createWorkflowGraph('test-workflow');
-    
+
     const startNode = createStartNode('start', '开始');
     const llmNode = createLLMNode('llm', 'LLM节点', {
       prompt: '处理文本',
-      model: 'gpt-3.5-turbo'
+      model: 'gpt-3.5-turbo',
     });
     const endNode = createEndNode('end', '结束');
-    
+
     workflow.addNode(startNode);
     workflow.addNode(llmNode);
     workflow.addNode(endNode);
     workflow.addEdge(createDirectEdge('edge1', 'start', 'llm'));
     workflow.addEdge(createDirectEdge('edge2', 'llm', 'end'));
-    
+
     const engine = createWorkflowEngine();
-    
+
     // 在另一个线程中停止
     setTimeout(() => engine.stop(), 50);
-    
+
     const result = await engine.execute(workflow, { text: 'test' });
-    
+
     expect(result.success).toBe(false);
     expect(engine.getStatus()).toBe('cancelled');
   });
@@ -451,7 +430,7 @@ describe('文本分析工作流', () => {
       '这是一条测试新闻文本。',
       ExecutionStrategy.SEQUENTIAL
     );
-    
+
     expect(result).toBeDefined();
     expect(result.success).toBeDefined();
     expect(result.metadata).toBeDefined();
@@ -462,7 +441,7 @@ describe('文本分析工作流', () => {
       '北京时间2024年1月1日，新年庆祝活动在北京举行。',
       ExecutionStrategy.SEQUENTIAL
     );
-    
+
     expect(result.success).toBe(true);
   }, 10000);
 
@@ -471,7 +450,7 @@ describe('文本分析工作流', () => {
       '这个产品真的太棒了！非常满意！',
       ExecutionStrategy.SEQUENTIAL
     );
-    
+
     expect(result.success).toBe(true);
   }, 10000);
 
@@ -480,7 +459,7 @@ describe('文本分析工作流', () => {
       '问：什么是人工智能？答：人工智能是计算机科学的一个分支。',
       ExecutionStrategy.SEQUENTIAL
     );
-    
+
     expect(result.success).toBe(true);
   }, 10000);
 });

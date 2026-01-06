@@ -7,5 +7,3 @@ export * from './services/checkpoint-creation-service';
 export * from './services/checkpoint-restore-service';
 export * from './services/checkpoint-management-service';
 export * from './services/checkpoint-analysis-service';
-
-

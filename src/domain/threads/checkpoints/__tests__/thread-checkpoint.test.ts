@@ -14,11 +14,7 @@ describe('ThreadCheckpoint', () => {
 
   describe('create', () => {
     it('应该创建有效的自动检查点', () => {
-      const checkpoint = ThreadCheckpoint.create(
-        threadId,
-        CheckpointType.auto(),
-        stateData
-      );
+      const checkpoint = ThreadCheckpoint.create(threadId, CheckpointType.auto(), stateData);
 
       expect(checkpoint).toBeDefined();
       expect(checkpoint.threadId.equals(threadId)).toBe(true);
@@ -51,31 +47,19 @@ describe('ThreadCheckpoint', () => {
 
     it('应该为错误检查点强制要求描述', () => {
       expect(() => {
-        ThreadCheckpoint.create(
-          threadId,
-          CheckpointType.error(),
-          stateData
-        );
+        ThreadCheckpoint.create(threadId, CheckpointType.error(), stateData);
       }).toThrow('错误检查点必须有描述');
     });
 
     it('应该为里程碑检查点强制要求标题', () => {
       expect(() => {
-        ThreadCheckpoint.create(
-          threadId,
-          CheckpointType.milestone(),
-          stateData
-        );
+        ThreadCheckpoint.create(threadId, CheckpointType.milestone(), stateData);
       }).toThrow('里程碑检查点必须有标题');
     });
 
     it('应该拒绝空的状态数据', () => {
       expect(() => {
-        ThreadCheckpoint.create(
-          threadId,
-          CheckpointType.auto(),
-          {}
-        );
+        ThreadCheckpoint.create(threadId, CheckpointType.auto(), {});
       }).toThrow('状态数据不能为空');
     });
   });
@@ -84,11 +68,7 @@ describe('ThreadCheckpoint', () => {
     let checkpoint: ThreadCheckpoint;
 
     beforeEach(() => {
-      checkpoint = ThreadCheckpoint.create(
-        threadId,
-        CheckpointType.auto(),
-        stateData
-      );
+      checkpoint = ThreadCheckpoint.create(threadId, CheckpointType.auto(), stateData);
     });
 
     it('应该正确检查有效性', () => {
@@ -193,11 +173,7 @@ describe('ThreadCheckpoint', () => {
     let checkpoint: ThreadCheckpoint;
 
     beforeEach(() => {
-      checkpoint = ThreadCheckpoint.create(
-        threadId,
-        CheckpointType.auto(),
-        stateData
-      );
+      checkpoint = ThreadCheckpoint.create(threadId, CheckpointType.auto(), stateData);
     });
 
     it('应该设置过期时间', () => {
@@ -213,7 +189,9 @@ describe('ThreadCheckpoint', () => {
 
       checkpoint.extendExpiration(12);
 
-      expect(checkpoint.expiresAt!.getMilliseconds()).toBeGreaterThan(originalExpiresAt!.getMilliseconds());
+      expect(checkpoint.expiresAt!.getMilliseconds()).toBeGreaterThan(
+        originalExpiresAt!.getMilliseconds()
+      );
     });
 
     it('应该拒绝无效的过期时间', () => {
@@ -227,11 +205,7 @@ describe('ThreadCheckpoint', () => {
     let checkpoint: ThreadCheckpoint;
 
     beforeEach(() => {
-      checkpoint = ThreadCheckpoint.create(
-        threadId,
-        CheckpointType.auto(),
-        stateData
-      );
+      checkpoint = ThreadCheckpoint.create(threadId, CheckpointType.auto(), stateData);
     });
 
     it('应该计算年龄（秒）', () => {
@@ -290,11 +264,7 @@ describe('ThreadCheckpoint', () => {
     let checkpoint: ThreadCheckpoint;
 
     beforeEach(() => {
-      checkpoint = ThreadCheckpoint.create(
-        threadId,
-        CheckpointType.auto(),
-        stateData
-      );
+      checkpoint = ThreadCheckpoint.create(threadId, CheckpointType.auto(), stateData);
     });
 
     it('应该标记为已删除', () => {
@@ -318,11 +288,7 @@ describe('ThreadCheckpoint', () => {
 
   describe('业务标识', () => {
     it('应该生成正确的业务标识', () => {
-      const checkpoint = ThreadCheckpoint.create(
-        threadId,
-        CheckpointType.auto(),
-        stateData
-      );
+      const checkpoint = ThreadCheckpoint.create(threadId, CheckpointType.auto(), stateData);
 
       const identifier = checkpoint.getBusinessIdentifier();
       expect(identifier).toBe(`thread-checkpoint:${checkpoint.checkpointId.toString()}`);

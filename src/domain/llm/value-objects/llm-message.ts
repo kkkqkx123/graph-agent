@@ -12,7 +12,7 @@ export enum LLMMessageRole {
   USER = 'user',
   ASSISTANT = 'assistant',
   FUNCTION = 'function',
-  TOOL = 'tool'
+  TOOL = 'tool',
 }
 
 /**
@@ -40,37 +40,37 @@ export interface LLMMessageProps {
    * 消息角色
    */
   role: LLMMessageRole;
-  
+
   /**
    * 消息内容
    */
   content: string;
-  
+
   /**
    * 消息名称（可选，用于function调用）
    */
   name?: string;
-  
+
   /**
    * 函数调用（可选）
    */
   functionCall?: LLMFunctionCall;
-  
+
   /**
    * 工具调用（可选）
    */
   toolCalls?: LLMToolCall[];
-  
+
   /**
    * 工具调用ID（可选）
    */
   toolCallId?: string;
-  
+
   /**
    * 时间戳（可选）
    */
   timestamp?: Timestamp;
-  
+
   /**
    * 元数据（可选）
    */
@@ -92,7 +92,7 @@ export class LLMMessage extends ValueObject<LLMMessageProps> {
       role: LLMMessageRole.SYSTEM,
       content,
       timestamp: Timestamp.now(),
-      metadata
+      metadata,
     });
   }
 
@@ -107,7 +107,7 @@ export class LLMMessage extends ValueObject<LLMMessageProps> {
       role: LLMMessageRole.USER,
       content,
       timestamp: Timestamp.now(),
-      metadata
+      metadata,
     });
   }
 
@@ -122,7 +122,7 @@ export class LLMMessage extends ValueObject<LLMMessageProps> {
       role: LLMMessageRole.ASSISTANT,
       content,
       timestamp: Timestamp.now(),
-      metadata
+      metadata,
     });
   }
 
@@ -133,17 +133,21 @@ export class LLMMessage extends ValueObject<LLMMessageProps> {
    * @param metadata 元数据
    * @returns 函数调用消息实例
    */
-  public static createFunction(name: string, args: string, metadata?: Record<string, any>): LLMMessage {
+  public static createFunction(
+    name: string,
+    args: string,
+    metadata?: Record<string, any>
+  ): LLMMessage {
     return new LLMMessage({
       role: LLMMessageRole.FUNCTION,
       content: '',
       name,
       functionCall: {
         name,
-        arguments: args
+        arguments: args,
       },
       timestamp: Timestamp.now(),
-      metadata
+      metadata,
     });
   }
 
@@ -158,7 +162,7 @@ export class LLMMessage extends ValueObject<LLMMessageProps> {
       role: LLMMessageRole.TOOL,
       content,
       timestamp: Timestamp.now(),
-      metadata
+      metadata,
     });
   }
 
@@ -185,7 +189,7 @@ export class LLMMessage extends ValueObject<LLMMessageProps> {
       toolCalls: message.toolCalls,
       toolCallId: message.toolCallId,
       timestamp: message.timestamp || Timestamp.now(),
-      metadata: message.metadata
+      metadata: message.metadata,
     });
   }
 
@@ -318,7 +322,7 @@ export class LLMMessage extends ValueObject<LLMMessageProps> {
     return new LLMMessage({
       ...this.props,
       content,
-      timestamp: Timestamp.now()
+      timestamp: Timestamp.now(),
     });
   }
 
@@ -331,10 +335,10 @@ export class LLMMessage extends ValueObject<LLMMessageProps> {
   public addMetadata(key: string, value: any): LLMMessage {
     const metadata = { ...this.props.metadata };
     metadata[key] = value;
-    
+
     return new LLMMessage({
       ...this.props,
-      metadata
+      metadata,
     });
   }
 
@@ -360,7 +364,7 @@ export class LLMMessage extends ValueObject<LLMMessageProps> {
       toolCalls: this.props.toolCalls,
       toolCallId: this.props.toolCallId,
       timestamp: this.props.timestamp,
-      metadata: this.props.metadata
+      metadata: this.props.metadata,
     };
   }
 
@@ -368,7 +372,11 @@ export class LLMMessage extends ValueObject<LLMMessageProps> {
    * 验证消息的有效性
    */
   public override validate(): void {
-    if (!this.props.content && this.props.role !== LLMMessageRole.FUNCTION && this.props.role !== LLMMessageRole.TOOL) {
+    if (
+      !this.props.content &&
+      this.props.role !== LLMMessageRole.FUNCTION &&
+      this.props.role !== LLMMessageRole.TOOL
+    ) {
       throw new Error('消息内容不能为空');
     }
 
@@ -376,7 +384,10 @@ export class LLMMessage extends ValueObject<LLMMessageProps> {
       throw new Error('函数调用消息必须包含名称');
     }
 
-    if (this.props.functionCall && (!this.props.functionCall.name || !this.props.functionCall.arguments)) {
+    if (
+      this.props.functionCall &&
+      (!this.props.functionCall.name || !this.props.functionCall.arguments)
+    ) {
       throw new Error('函数调用必须包含名称和参数');
     }
 
@@ -405,7 +416,7 @@ export class LLMMessage extends ValueObject<LLMMessageProps> {
       hasToolCalls: this.hasToolCalls(),
       toolCallCount: this.props.toolCalls ? this.props.toolCalls.length : 0,
       timestamp: this.props.timestamp,
-      metadataKeys: this.props.metadata ? Object.keys(this.props.metadata) : []
+      metadataKeys: this.props.metadata ? Object.keys(this.props.metadata) : [],
     };
   }
 }

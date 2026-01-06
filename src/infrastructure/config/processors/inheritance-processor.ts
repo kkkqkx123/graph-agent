@@ -6,7 +6,11 @@ import * as fs from 'fs/promises';
 import * as path from 'path';
 import { parse as parseToml } from 'toml';
 import * as yaml from 'yaml';
-import { IConfigProcessor, InheritanceProcessorOptions, ILogger } from '../../../domain/common/types';
+import {
+  IConfigProcessor,
+  InheritanceProcessorOptions,
+  ILogger,
+} from '../../../domain/common/types';
 
 /**
  * 配置继承接口
@@ -26,10 +30,7 @@ export class InheritanceProcessor implements IConfigProcessor {
   private readonly logger: ILogger;
   private readonly loadingCache: Map<string, Record<string, any>> = new Map();
 
-  constructor(
-    options: InheritanceProcessorOptions = {},
-    logger: ILogger
-  ) {
+  constructor(options: InheritanceProcessorOptions = {}, logger: ILogger) {
     this.separator = options.separator || '.';
     this.maxDepth = options.maxDepth || 10;
     this.logger = logger.child({ module: 'InheritanceProcessor' });
@@ -40,12 +41,12 @@ export class InheritanceProcessor implements IConfigProcessor {
    */
   process(config: Record<string, any>): Record<string, any> {
     this.logger.debug('开始处理配置继承');
-    
+
     // 清空缓存
     this.loadingCache.clear();
-    
+
     const processed = this.processInheritance(config, new Set<string>());
-    
+
     this.logger.debug('配置继承处理完成');
     return processed;
   }
@@ -54,7 +55,7 @@ export class InheritanceProcessor implements IConfigProcessor {
    * 递归处理继承关系
    */
   private processInheritance(
-    config: Record<string, any>, 
+    config: Record<string, any>,
     visited: Set<string>
   ): Record<string, any> {
     // 检查是否包含继承信息
@@ -69,7 +70,7 @@ export class InheritanceProcessor implements IConfigProcessor {
     }
 
     let result: Record<string, any> = {};
-    
+
     // 按顺序加载父配置
     for (const parentPath of config['inherits_from']) {
       // 检查循环继承
@@ -80,12 +81,12 @@ export class InheritanceProcessor implements IConfigProcessor {
 
       try {
         this.logger.debug('加载父配置', { path: parentPath });
-        
+
         const parentConfig = this.loadParentConfig(parentPath, visited);
         result = this.mergeConfigs(result, parentConfig);
       } catch (error) {
         this.logger.error('加载父配置失败', error as Error, {
-          path: parentPath
+          path: parentPath,
         });
         // 继续处理其他父配置
       }
@@ -101,10 +102,7 @@ export class InheritanceProcessor implements IConfigProcessor {
   /**
    * 加载父配置文件
    */
-  private loadParentConfig(
-    parentPath: string, 
-    visited: Set<string>
-  ): Record<string, any> {
+  private loadParentConfig(parentPath: string, visited: Set<string>): Record<string, any> {
     // 检查缓存
     if (this.loadingCache.has(parentPath)) {
       return this.loadingCache.get(parentPath)!;
@@ -112,20 +110,20 @@ export class InheritanceProcessor implements IConfigProcessor {
 
     // 解析路径
     const resolvedPath = this.resolvePath(parentPath);
-    
+
     // 读取文件
     const content = require('fs').readFileSync(resolvedPath, 'utf8');
     const config = this.parseContent(content, resolvedPath);
-    
+
     // 递归处理继承
     const newVisited = new Set(visited);
     newVisited.add(parentPath);
-    
+
     const processedConfig = this.processInheritance(config, newVisited);
-    
+
     // 缓存结果
     this.loadingCache.set(parentPath, processedConfig);
-    
+
     return processedConfig;
   }
 
@@ -137,7 +135,7 @@ export class InheritanceProcessor implements IConfigProcessor {
     if (path.isAbsolute(parentPath)) {
       return parentPath;
     }
-    
+
     return path.resolve(process.cwd(), parentPath);
   }
 
@@ -146,7 +144,7 @@ export class InheritanceProcessor implements IConfigProcessor {
    */
   private parseContent(content: string, filePath: string): Record<string, any> {
     const ext = path.extname(filePath).toLowerCase();
-    
+
     try {
       switch (ext) {
         case '.toml':
@@ -168,7 +166,7 @@ export class InheritanceProcessor implements IConfigProcessor {
    * 深度合并配置对象
    */
   private mergeConfigs(
-    target: Record<string, any>, 
+    target: Record<string, any>,
     source: Record<string, any>
   ): Record<string, any> {
     const result = { ...target };

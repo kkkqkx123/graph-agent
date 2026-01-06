@@ -14,7 +14,7 @@ export interface ResourceUsageProps {
 
 /**
  * 资源使用统计值对象
- * 
+ *
  * 职责：表示资源使用统计信息
  */
 export class ResourceUsage extends ValueObject<ResourceUsageProps> {
@@ -29,7 +29,7 @@ export class ResourceUsage extends ValueObject<ResourceUsageProps> {
       diskUsage: 0,
       networkUsage: 0,
       peakMemoryUsage: 0,
-      peakCpuUsage: 0
+      peakCpuUsage: 0,
     });
   }
 
@@ -104,7 +104,7 @@ export class ResourceUsage extends ValueObject<ResourceUsageProps> {
       diskUsage,
       networkUsage,
       peakMemoryUsage: newPeakMemoryUsage,
-      peakCpuUsage: newPeakCpuUsage
+      peakCpuUsage: newPeakCpuUsage,
     });
   }
 

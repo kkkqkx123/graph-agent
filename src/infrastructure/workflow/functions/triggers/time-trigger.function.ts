@@ -24,14 +24,14 @@ export class TimeTriggerFunction extends BaseTriggerFunction<TriggerFunctionConf
         name: 'triggerTime',
         type: 'string | number',
         required: true,
-        description: '触发时间，可以是秒数（间隔）或HH:MM格式（特定时间）'
+        description: '触发时间，可以是秒数（间隔）或HH:MM格式（特定时间）',
       },
       {
         name: 'lastTriggered',
         type: 'string',
         required: false,
-        description: '上次触发时间（ISO字符串）'
-      }
+        description: '上次触发时间（ISO字符串）',
+      },
     ];
   }
 
@@ -45,7 +45,10 @@ export class TimeTriggerFunction extends BaseTriggerFunction<TriggerFunctionConf
     return errors;
   }
 
-  override async execute(context: WorkflowExecutionContext, config: TriggerFunctionConfig): Promise<boolean> {
+  override async execute(
+    context: WorkflowExecutionContext,
+    config: TriggerFunctionConfig
+  ): Promise<boolean> {
     this.checkInitialized();
 
     const triggerTime = config['triggerTime'];
@@ -66,7 +69,7 @@ export class TimeTriggerFunction extends BaseTriggerFunction<TriggerFunctionConf
       }
 
       const lastTime = new Date(lastTriggered);
-      return (now.getTime() - lastTime.getTime()) >= intervalSeconds * 1000;
+      return now.getTime() - lastTime.getTime() >= intervalSeconds * 1000;
     } else {
       // 解析时间格式 "HH:MM"
       try {

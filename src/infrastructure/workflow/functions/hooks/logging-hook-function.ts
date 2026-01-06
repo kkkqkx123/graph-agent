@@ -1,8 +1,12 @@
-import { BaseHookFunction, HookFunctionResult, createHookFunctionResult } from './base-hook-function';
+import {
+  BaseHookFunction,
+  HookFunctionResult,
+  createHookFunctionResult,
+} from './base-hook-function';
 
 /**
  * 日志记录Hook函数
- * 
+ *
  * 提供日志记录功能，可以在任何Hook点使用
  */
 export class LoggingHookFunction extends BaseHookFunction {

@@ -34,7 +34,6 @@ export interface WorkflowDefinitionProps {
  * 只包含数据访问方法，不包含业务逻辑
  */
 export class WorkflowDefinition extends ValueObject<WorkflowDefinitionProps> {
-
   /**
    * 构造函数
    * @param props 工作流定义属性
@@ -235,7 +234,7 @@ export class WorkflowDefinition extends ValueObject<WorkflowDefinitionProps> {
       ...this.props,
       name,
       updatedAt: Timestamp.now(),
-      updatedBy
+      updatedBy,
     });
   }
 
@@ -250,7 +249,7 @@ export class WorkflowDefinition extends ValueObject<WorkflowDefinitionProps> {
       ...this.props,
       description,
       updatedAt: Timestamp.now(),
-      updatedBy
+      updatedBy,
     });
   }
 
@@ -265,7 +264,7 @@ export class WorkflowDefinition extends ValueObject<WorkflowDefinitionProps> {
       ...this.props,
       type,
       updatedAt: Timestamp.now(),
-      updatedBy
+      updatedBy,
     });
   }
 
@@ -280,7 +279,7 @@ export class WorkflowDefinition extends ValueObject<WorkflowDefinitionProps> {
       ...this.props,
       config,
       updatedAt: Timestamp.now(),
-      updatedBy
+      updatedBy,
     });
   }
 
@@ -290,15 +289,12 @@ export class WorkflowDefinition extends ValueObject<WorkflowDefinitionProps> {
    * @param changedBy 变更者ID
    * @returns 新的工作流定义值对象
    */
-  public changeStatus(
-    newStatus: WorkflowStatus,
-    changedBy?: ID
-  ): WorkflowDefinition {
+  public changeStatus(newStatus: WorkflowStatus, changedBy?: ID): WorkflowDefinition {
     return new WorkflowDefinition({
       ...this.props,
       status: newStatus,
       updatedAt: Timestamp.now(),
-      updatedBy: changedBy
+      updatedBy: changedBy,
     });
   }
 
@@ -317,7 +313,7 @@ export class WorkflowDefinition extends ValueObject<WorkflowDefinitionProps> {
       ...this.props,
       tags: [...this.props.tags, tag],
       updatedAt: Timestamp.now(),
-      updatedBy
+      updatedBy,
     });
   }
 
@@ -340,7 +336,7 @@ export class WorkflowDefinition extends ValueObject<WorkflowDefinitionProps> {
       ...this.props,
       tags: newTags,
       updatedAt: Timestamp.now(),
-      updatedBy
+      updatedBy,
     });
   }
 
@@ -355,7 +351,7 @@ export class WorkflowDefinition extends ValueObject<WorkflowDefinitionProps> {
       ...this.props,
       metadata: { ...metadata },
       updatedAt: Timestamp.now(),
-      updatedBy
+      updatedBy,
     });
   }
 
@@ -371,7 +367,7 @@ export class WorkflowDefinition extends ValueObject<WorkflowDefinitionProps> {
     return new WorkflowDefinition({
       ...this.props,
       isDeleted: true,
-      updatedAt: Timestamp.now()
+      updatedAt: Timestamp.now(),
     });
   }
 }

@@ -2,7 +2,7 @@ import { ValueObject } from '../../../common/value-objects';
 export enum ExecutionStrategyType {
   SEQUENTIAL = 'sequential',
   PARALLEL = 'parallel',
-  CONDITIONAL = 'conditional'
+  CONDITIONAL = 'conditional',
 }
 
 export interface ExecutionStrategyProps {
@@ -64,22 +64,24 @@ export class ExecutionStrategy extends ValueObject<ExecutionStrategyProps> {
   public static parallel(maxConcurrency: number = 4): ExecutionStrategy {
     return new ExecutionStrategy({
       type: ExecutionStrategyType.PARALLEL,
-      maxConcurrency
+      maxConcurrency,
     });
   }
 
   public static conditional(condition: string): ExecutionStrategy {
     return new ExecutionStrategy({
       type: ExecutionStrategyType.CONDITIONAL,
-      condition
+      condition,
     });
   }
 
   public override equals(vo?: ValueObject<ExecutionStrategyProps>): boolean {
     if (!vo) return false;
-    return this.props.type === (vo as ExecutionStrategy).props.type &&
+    return (
+      this.props.type === (vo as ExecutionStrategy).props.type &&
       this.props.maxConcurrency === (vo as ExecutionStrategy).props.maxConcurrency &&
-      this.props.condition === (vo as ExecutionStrategy).props.condition;
+      this.props.condition === (vo as ExecutionStrategy).props.condition
+    );
   }
 
   public override toString(): string {

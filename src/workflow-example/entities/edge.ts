@@ -1,6 +1,6 @@
 /**
  * 边实体实现
- * 
+ *
  * 本文件实现了图工作流中的边实体，使用函数式编程风格
  */
 
@@ -12,7 +12,7 @@ import {
   createEdgeId,
   ExecutionContext,
   EdgeFunction,
-  ConditionOperator
+  ConditionOperator,
 } from '../types/workflow-types';
 
 import { getEdgeFunction } from '../functions/edges/edge-functions';
@@ -43,13 +43,13 @@ export class EdgeImpl {
     this._toNodeId = toNodeId;
     this._config = { ...config };
     this._weight = weight;
-    
+
     // 如果是条件边且配置中有表达式，创建条件对象
     if (type === EdgeType.CONDITIONAL && config.expression) {
       this._condition = {
         expression: config.expression,
         operator: (config.operator as ConditionOperator) || ConditionOperator.EQUALS,
-        expectedValue: config.expectedValue
+        expectedValue: config.expectedValue,
       };
     }
   }
@@ -121,9 +121,9 @@ export class EdgeImpl {
           type: 'object',
           properties: {
             fromNodeId: { type: 'string', description: '源节点ID' },
-            toNodeId: { type: 'string', description: '目标节点ID' }
+            toNodeId: { type: 'string', description: '目标节点ID' },
           },
-          required: ['fromNodeId', 'toNodeId']
+          required: ['fromNodeId', 'toNodeId'],
         };
 
       case EdgeType.CONDITIONAL:
@@ -134,16 +134,16 @@ export class EdgeImpl {
             toNodeId: { type: 'string', description: '目标节点ID' },
             expression: { type: 'string', description: '条件表达式' },
             operator: { type: 'string', description: '运算符' },
-            expectedValue: { type: 'any', description: '期望值' }
+            expectedValue: { type: 'any', description: '期望值' },
           },
-          required: ['fromNodeId', 'toNodeId', 'expression', 'operator']
+          required: ['fromNodeId', 'toNodeId', 'expression', 'operator'],
         };
 
       default:
         return {
           type: 'object',
           properties: {},
-          required: []
+          required: [],
         };
     }
   }
@@ -158,16 +158,16 @@ export class EdgeImpl {
       properties: {
         canTraverse: { type: 'boolean', description: '是否可以遍历' },
         reason: { type: 'string', description: '原因说明' },
-        metadata: { type: 'object', description: '元数据' }
+        metadata: { type: 'object', description: '元数据' },
       },
-      required: ['canTraverse', 'reason']
+      required: ['canTraverse', 'reason'],
     };
   }
 
   /**
    * 评估边条件
    * 使用函数式编程风格，调用对应的边函数
-   * 
+   *
    * @param context 执行上下文
    * @returns 条件是否满足
    */
@@ -185,7 +185,7 @@ export class EdgeImpl {
       // 准备输入
       const input = {
         fromNodeId: this._fromNodeId,
-        toNodeId: this._toNodeId
+        toNodeId: this._toNodeId,
       };
 
       // 调用边函数
@@ -202,9 +202,8 @@ export class EdgeImpl {
    * 转换为字符串表示
    */
   toString(): string {
-    const configStr = Object.keys(this._config).length > 0
-      ? `, config=${JSON.stringify(this._config)}`
-      : '';
+    const configStr =
+      Object.keys(this._config).length > 0 ? `, config=${JSON.stringify(this._config)}` : '';
     return `Edge(id=${this._id}, type=${this._type}, from=${this._fromNodeId}, to=${this._toNodeId}, weight=${this._weight}${configStr})`;
   }
 }

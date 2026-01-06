@@ -47,7 +47,9 @@ export class AnthropicClient extends BaseLLMClient {
       throw new Error('Anthropic默认模型未配置。请在配置文件中设置 llm.anthropic.defaultModel。');
     }
     if (!supportedModels || !Array.isArray(supportedModels) || supportedModels.length === 0) {
-      throw new Error('Anthropic支持的模型列表未配置。请在配置文件中设置 llm.anthropic.supportedModels。');
+      throw new Error(
+        'Anthropic支持的模型列表未配置。请在配置文件中设置 llm.anthropic.supportedModels。'
+      );
     }
 
     // 创建 Anthropic 供应商配置
@@ -65,19 +67,12 @@ export class AnthropicClient extends BaseLLMClient {
       .retryCount(3)
       .retryDelay(1000)
       .extraConfig({
-        apiVersion: '2023-06-01'
+        apiVersion: '2023-06-01',
       })
       .build();
 
-    super(
-      httpClient,
-      rateLimiter,
-      tokenCalculator,
-      configManager,
-      providerConfig
-    );
+    super(httpClient, rateLimiter, tokenCalculator, configManager, providerConfig);
   }
-
 
   getSupportedModelsList(): string[] {
     if (!this.providerConfig.supportedModels) {
@@ -100,7 +95,14 @@ export class AnthropicClient extends BaseLLMClient {
     }
 
     // 验证必需的配置字段
-    const requiredFields = ['maxTokens', 'contextWindow', 'temperature', 'topP', 'promptTokenPrice', 'completionTokenPrice'];
+    const requiredFields = [
+      'maxTokens',
+      'contextWindow',
+      'temperature',
+      'topP',
+      'promptTokenPrice',
+      'completionTokenPrice',
+    ];
     for (const field of requiredFields) {
       if (config[field] === undefined || config[field] === null) {
         throw new Error(`Anthropic模型 ${model} 缺少必需配置字段: ${field}`);
@@ -118,18 +120,21 @@ export class AnthropicClient extends BaseLLMClient {
       presencePenalty: config.presencePenalty ?? 0.0,
       costPer1KTokens: {
         prompt: config.promptTokenPrice,
-        completion: config.completionTokenPrice
+        completion: config.completionTokenPrice,
       },
       supportsStreaming: config.supportsStreaming ?? true,
       supportsTools: config.supportsTools ?? true,
       supportsImages: config.supportsImages ?? true,
       supportsAudio: config.supportsAudio ?? false,
       supportsVideo: config.supportsVideo ?? false,
-      metadata: config.metadata ?? {}
+      metadata: config.metadata ?? {},
     });
   }
 
-  protected override async parseStreamResponse(response: any, request: LLMRequest): Promise<AsyncIterable<LLMResponse>> {
+  protected override async parseStreamResponse(
+    response: any,
+    request: LLMRequest
+  ): Promise<AsyncIterable<LLMResponse>> {
     const self = this;
 
     async function* streamGenerator() {
@@ -137,7 +142,7 @@ export class AnthropicClient extends BaseLLMClient {
       for await (const chunk of response.data) {
         try {
           const data = JSON.parse(chunk.toString());
-          
+
           // 处理不同的事件类型
           switch (data.type) {
             case 'content_block_delta':
@@ -146,46 +151,50 @@ export class AnthropicClient extends BaseLLMClient {
                 yield LLMResponse.create(
                   request.requestId,
                   request.model,
-                  [{
-                    index: data.index || 0,
-                    message: LLMMessage.createAssistant(data.delta.text),
-                    finish_reason: ''
-                  }],
+                  [
+                    {
+                      index: data.index || 0,
+                      message: LLMMessage.createAssistant(data.delta.text),
+                      finish_reason: '',
+                    },
+                  ],
                   {
                     promptTokens: 0,
                     completionTokens: 0,
-                    totalTokens: 0
+                    totalTokens: 0,
                   },
                   '',
                   0
                 );
               }
               break;
-              
+
             case 'message_stop':
               // 消息结束事件
               yield LLMResponse.create(
                 request.requestId,
                 request.model,
-                [{
-                  index: 0,
-                  message: LLMMessage.createAssistant(''),
-                  finish_reason: data.stop_reason || 'stop'
-                }],
+                [
+                  {
+                    index: 0,
+                    message: LLMMessage.createAssistant(''),
+                    finish_reason: data.stop_reason || 'stop',
+                  },
+                ],
                 {
                   promptTokens: data.usage?.input_tokens || 0,
                   completionTokens: data.usage?.output_tokens || 0,
-                  totalTokens: (data.usage?.input_tokens || 0) + (data.usage?.output_tokens || 0)
+                  totalTokens: (data.usage?.input_tokens || 0) + (data.usage?.output_tokens || 0),
                 },
                 data.stop_reason || 'stop',
                 0
               );
               return;
-              
+
             case 'error':
               // 错误事件
               throw new Error(`Anthropic流式响应错误: ${data.error?.message || 'Unknown error'}`);
-              
+
             default:
               // 其他事件类型忽略
               break;
@@ -200,11 +209,13 @@ export class AnthropicClient extends BaseLLMClient {
       yield LLMResponse.create(
         request.requestId,
         request.model,
-        [{
-          index: 0,
-          message: LLMMessage.createAssistant(''),
-          finish_reason: 'stop'
-        }],
+        [
+          {
+            index: 0,
+            message: LLMMessage.createAssistant(''),
+            finish_reason: 'stop',
+          },
+        ],
         { promptTokens: 0, completionTokens: 0, totalTokens: 0 },
         'stop',
         0

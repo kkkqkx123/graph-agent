@@ -7,7 +7,16 @@
 import { ID, ILogger } from '../../../domain/common';
 import { NodeId } from '../../../domain/workflow';
 import { Thread, IThreadRepository } from '../../../domain/threads';
-import { ISessionRepository, CopyStrategy, CopyOptions, CopyScope, CopyContext, ThreadOperationResult, ThreadOperationMetadata, ThreadOperationError } from '../../../domain/sessions';
+import {
+  ISessionRepository,
+  CopyStrategy,
+  CopyOptions,
+  CopyScope,
+  CopyContext,
+  ThreadOperationResult,
+  ThreadOperationMetadata,
+  ThreadOperationError,
+} from '../../../domain/sessions';
 
 /**
  * Copy操作输入
@@ -45,7 +54,7 @@ export class ThreadCopyService {
     private readonly threadRepository: IThreadRepository,
     private readonly sessionRepository: ISessionRepository,
     private readonly logger: ILogger
-  ) { }
+  ) {}
 
   /**
    * 执行Copy操作
@@ -56,7 +65,7 @@ export class ThreadCopyService {
 
     try {
       this.logger.info('开始执行Copy操作', {
-        sourceThreadId: input.sourceThread.threadId.toString()
+        sourceThreadId: input.sourceThread.threadId.toString(),
       });
 
       // 验证输入
@@ -68,7 +77,7 @@ export class ThreadCopyService {
           { input }
         );
         const metadata = ThreadOperationMetadata.create(operationType, operatorId, {
-          validationError: validation.error
+          validationError: validation.error,
         });
         return ThreadOperationResult.createFailure<CopyOutput>(error, metadata);
       }
@@ -82,7 +91,7 @@ export class ThreadCopyService {
           { validation: copyValidation }
         );
         const metadata = ThreadOperationMetadata.create(operationType, operatorId, {
-          validationErrors: copyValidation.errors
+          validationErrors: copyValidation.errors,
         });
         return ThreadOperationResult.createFailure<CopyOutput>(error, metadata);
       }
@@ -100,26 +109,30 @@ export class ThreadCopyService {
       const output: CopyOutput = {
         copyContext,
         copiedThreadId,
-        copyStrategy
+        copyStrategy,
       };
 
       // 创建操作元数据
       const duration = Date.now() - startTime;
-      const metadata = ThreadOperationMetadata.createWithDuration(operationType, duration, operatorId, {
-        sourceThreadId: input.sourceThread.threadId.toString(),
-        copiedThreadId: copiedThreadId.toString(),
-        copyStrategy: copyStrategy.type,
-        copyScope: copyContext.scope.nodeCount,
-        warnings: copyValidation.warnings
-      });
+      const metadata = ThreadOperationMetadata.createWithDuration(
+        operationType,
+        duration,
+        operatorId,
+        {
+          sourceThreadId: input.sourceThread.threadId.toString(),
+          copiedThreadId: copiedThreadId.toString(),
+          copyStrategy: copyStrategy.type,
+          copyScope: copyContext.scope.nodeCount,
+          warnings: copyValidation.warnings,
+        }
+      );
 
       this.logger.info('Copy操作执行成功', {
         copiedThreadId: copiedThreadId.toString(),
-        duration
+        duration,
       });
 
       return ThreadOperationResult.createSuccess(output, metadata);
-
     } catch (error) {
       const operationError = ThreadOperationError.create(
         'EXECUTION_ERROR',
@@ -127,7 +140,7 @@ export class ThreadCopyService {
         { error }
       );
       const metadata = ThreadOperationMetadata.create(operationType, operatorId, {
-        executionError: true
+        executionError: true,
       });
 
       this.logger.error('Copy操作执行失败', error as Error);
@@ -150,7 +163,10 @@ export class ThreadCopyService {
     }
 
     // 验证选择性Copy的节点ID
-    if (input.copyStrategy?.type === 'selective' && (!input.selectedNodeIds || input.selectedNodeIds.length === 0)) {
+    if (
+      input.copyStrategy?.type === 'selective' &&
+      (!input.selectedNodeIds || input.selectedNodeIds.length === 0)
+    ) {
       return { valid: false, error: '选择性Copy需要指定要复制的节点' };
     }
 
@@ -199,7 +215,7 @@ export class ThreadCopyService {
     return {
       valid: errors.length === 0,
       errors,
-      warnings
+      warnings,
     };
   }
 
@@ -220,18 +236,10 @@ export class ThreadCopyService {
 
     // 为每个节点创建映射
     for (const nodeId of scope.nodeIds) {
-      relationshipMapping.set(
-        { toString: () => nodeId.toString() } as ID,
-        ID.generate()
-      );
+      relationshipMapping.set({ toString: () => nodeId.toString() } as ID, ID.generate());
     }
 
-    return CopyContext.create(
-      sourceThread.threadId,
-      copyOptions,
-      scope,
-      relationshipMapping
-    );
+    return CopyContext.create(sourceThread.threadId, copyOptions, scope, relationshipMapping);
   }
 
   /**

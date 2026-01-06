@@ -16,7 +16,7 @@ export enum NodeTypeValue {
   LLM = 'llm',
   TOOL = 'tool',
   WAIT = 'wait',
-  USER_INTERACTION = 'user-interaction'
+  USER_INTERACTION = 'user-interaction',
 }
 
 /**
@@ -35,7 +35,7 @@ export enum NodeContextTypeValue {
   LLM_CONTEXT = 'llm_context',
   TOOL_CONTEXT = 'tool_context',
   HUMAN_CONTEXT = 'human_context',
-  SYSTEM_CONTEXT = 'system_context'
+  SYSTEM_CONTEXT = 'system_context',
 }
 
 /**
@@ -48,7 +48,7 @@ export interface NodeTypeProps {
 
 /**
  * 节点类型值对象
- * 
+ *
  * 用于表示节点的类型
  */
 export class NodeType extends ValueObject<NodeTypeProps> {
@@ -60,7 +60,9 @@ export class NodeType extends ValueObject<NodeTypeProps> {
    * @param contextType 上下文类型（可选，默认为PASS_THROUGH）
    * @returns 开始节点类型实例
    */
-  public static start(contextType: NodeContextTypeValue = NodeContextTypeValue.PASS_THROUGH): NodeType {
+  public static start(
+    contextType: NodeContextTypeValue = NodeContextTypeValue.PASS_THROUGH
+  ): NodeType {
     return new NodeType({ value: NodeTypeValue.START, contextType });
   }
 
@@ -69,7 +71,9 @@ export class NodeType extends ValueObject<NodeTypeProps> {
    * @param contextType 上下文类型（可选，默认为PASS_THROUGH）
    * @returns 结束节点类型实例
    */
-  public static end(contextType: NodeContextTypeValue = NodeContextTypeValue.PASS_THROUGH): NodeType {
+  public static end(
+    contextType: NodeContextTypeValue = NodeContextTypeValue.PASS_THROUGH
+  ): NodeType {
     return new NodeType({ value: NodeTypeValue.END, contextType });
   }
 
@@ -78,7 +82,9 @@ export class NodeType extends ValueObject<NodeTypeProps> {
    * @param contextType 上下文类型（可选，默认为TRANSFORM）
    * @returns 数据转换节点类型实例
    */
-  public static dataTransform(contextType: NodeContextTypeValue = NodeContextTypeValue.TRANSFORM): NodeType {
+  public static dataTransform(
+    contextType: NodeContextTypeValue = NodeContextTypeValue.TRANSFORM
+  ): NodeType {
     return new NodeType({ value: NodeTypeValue.DATA_TRANSFORM, contextType });
   }
 
@@ -96,7 +102,9 @@ export class NodeType extends ValueObject<NodeTypeProps> {
    * @param contextType 上下文类型（可选，默认为PASS_THROUGH）
    * @returns 分支节点类型实例
    */
-  public static fork(contextType: NodeContextTypeValue = NodeContextTypeValue.PASS_THROUGH): NodeType {
+  public static fork(
+    contextType: NodeContextTypeValue = NodeContextTypeValue.PASS_THROUGH
+  ): NodeType {
     return new NodeType({ value: NodeTypeValue.FORK, contextType });
   }
 
@@ -114,7 +122,9 @@ export class NodeType extends ValueObject<NodeTypeProps> {
    * @param contextType 上下文类型（可选，默认为ISOLATE）
    * @returns 子图节点类型实例
    */
-  public static subworkflow(contextType: NodeContextTypeValue = NodeContextTypeValue.ISOLATE): NodeType {
+  public static subworkflow(
+    contextType: NodeContextTypeValue = NodeContextTypeValue.ISOLATE
+  ): NodeType {
     return new NodeType({ value: NodeTypeValue.SUBGRAPH, contextType });
   }
 
@@ -123,7 +133,9 @@ export class NodeType extends ValueObject<NodeTypeProps> {
    * @param contextType 上下文类型（可选，默认为PASS_THROUGH）
    * @returns 条件节点类型实例
    */
-  public static condition(contextType: NodeContextTypeValue = NodeContextTypeValue.PASS_THROUGH): NodeType {
+  public static condition(
+    contextType: NodeContextTypeValue = NodeContextTypeValue.PASS_THROUGH
+  ): NodeType {
     return new NodeType({ value: NodeTypeValue.CONDITION, contextType });
   }
 
@@ -132,7 +144,9 @@ export class NodeType extends ValueObject<NodeTypeProps> {
    * @param contextType 上下文类型（可选，默认为LLM_CONTEXT）
    * @returns LLM节点类型实例
    */
-  public static llm(contextType: NodeContextTypeValue = NodeContextTypeValue.LLM_CONTEXT): NodeType {
+  public static llm(
+    contextType: NodeContextTypeValue = NodeContextTypeValue.LLM_CONTEXT
+  ): NodeType {
     return new NodeType({ value: NodeTypeValue.LLM, contextType });
   }
 
@@ -141,7 +155,9 @@ export class NodeType extends ValueObject<NodeTypeProps> {
    * @param contextType 上下文类型（可选，默认为TOOL_CONTEXT）
    * @returns 工具节点类型实例
    */
-  public static tool(contextType: NodeContextTypeValue = NodeContextTypeValue.TOOL_CONTEXT): NodeType {
+  public static tool(
+    contextType: NodeContextTypeValue = NodeContextTypeValue.TOOL_CONTEXT
+  ): NodeType {
     return new NodeType({ value: NodeTypeValue.TOOL, contextType });
   }
 
@@ -150,7 +166,9 @@ export class NodeType extends ValueObject<NodeTypeProps> {
    * @param contextType 上下文类型（可选，默认为PASS_THROUGH）
    * @returns 等待节点类型实例
    */
-  public static wait(contextType: NodeContextTypeValue = NodeContextTypeValue.PASS_THROUGH): NodeType {
+  public static wait(
+    contextType: NodeContextTypeValue = NodeContextTypeValue.PASS_THROUGH
+  ): NodeType {
     return new NodeType({ value: NodeTypeValue.WAIT, contextType });
   }
 
@@ -159,7 +177,9 @@ export class NodeType extends ValueObject<NodeTypeProps> {
    * @param contextType 上下文类型（可选，默认为HUMAN_CONTEXT）
    * @returns 用户交互节点类型实例
    */
-  public static userInteraction(contextType: NodeContextTypeValue = NodeContextTypeValue.HUMAN_CONTEXT): NodeType {
+  public static userInteraction(
+    contextType: NodeContextTypeValue = NodeContextTypeValue.HUMAN_CONTEXT
+  ): NodeType {
     return new NodeType({ value: NodeTypeValue.USER_INTERACTION, contextType });
   }
 
@@ -168,7 +188,9 @@ export class NodeType extends ValueObject<NodeTypeProps> {
    * @param contextType 上下文类型（可选，默认为PASS_THROUGH）
    * @returns 自定义节点类型实例
    */
-  public static custom(contextType: NodeContextTypeValue = NodeContextTypeValue.PASS_THROUGH): NodeType {
+  public static custom(
+    contextType: NodeContextTypeValue = NodeContextTypeValue.PASS_THROUGH
+  ): NodeType {
     return new NodeType({ value: NodeTypeValue.CUSTOM, contextType });
   }
 
@@ -178,7 +200,10 @@ export class NodeType extends ValueObject<NodeTypeProps> {
    * @param contextType 上下文类型（可选，默认为PASS_THROUGH）
    * @returns 节点类型实例
    */
-  public static fromString(type: string, contextType: NodeContextTypeValue = NodeContextTypeValue.PASS_THROUGH): NodeType {
+  public static fromString(
+    type: string,
+    contextType: NodeContextTypeValue = NodeContextTypeValue.PASS_THROUGH
+  ): NodeType {
     if (!Object.values(NodeTypeValue).includes(type as NodeTypeValue)) {
       throw new Error(`无效的节点类型: ${type}`);
     }
@@ -319,8 +344,14 @@ export class NodeType extends ValueObject<NodeTypeProps> {
    * @returns 是否为控制流节点
    */
   public isControlFlow(): boolean {
-    return this.isStart() || this.isEnd() || this.isCondition() ||
-      this.isMerge() || this.isFork() || this.isJoin();
+    return (
+      this.isStart() ||
+      this.isEnd() ||
+      this.isCondition() ||
+      this.isMerge() ||
+      this.isFork() ||
+      this.isJoin()
+    );
   }
 
   /**
@@ -328,8 +359,16 @@ export class NodeType extends ValueObject<NodeTypeProps> {
    * @returns 是否为执行节点
    */
   public isExecutable(): boolean {
-    return this.isDataTransform() || this.isSubworkflow() || this.isCustom() ||
-      this.isCondition() || this.isLLM() || this.isTool() || this.isWait() || this.isUserInteraction();
+    return (
+      this.isDataTransform() ||
+      this.isSubworkflow() ||
+      this.isCustom() ||
+      this.isCondition() ||
+      this.isLLM() ||
+      this.isTool() ||
+      this.isWait() ||
+      this.isUserInteraction()
+    );
   }
 
   /**
@@ -397,7 +436,8 @@ export class NodeType extends ValueObject<NodeTypeProps> {
     const descriptions: Record<NodeTypeValue, string> = {
       [NodeTypeValue.START]: '开始节点，表示图的入口点',
       [NodeTypeValue.END]: '结束节点，表示图的出口点',
-      [NodeTypeValue.DATA_TRANSFORM]: '数据转换节点，执行数据转换操作（map、filter、reduce、sort、group）',
+      [NodeTypeValue.DATA_TRANSFORM]:
+        '数据转换节点，执行数据转换操作（map、filter、reduce、sort、group）',
       [NodeTypeValue.MERGE]: '合并节点，合并多个输入路径',
       [NodeTypeValue.FORK]: '分支节点，分支出多个执行路径',
       [NodeTypeValue.JOIN]: '连接节点，等待多个输入路径完成',
@@ -407,7 +447,7 @@ export class NodeType extends ValueObject<NodeTypeProps> {
       [NodeTypeValue.TOOL]: '工具节点，执行工具调用并处理结果',
       [NodeTypeValue.WAIT]: '等待节点，处理等待和延迟逻辑',
       [NodeTypeValue.USER_INTERACTION]: '用户交互节点，通过前端与用户交互进行人工中转',
-      [NodeTypeValue.CUSTOM]: '自定义节点，根据特定逻辑执行'
+      [NodeTypeValue.CUSTOM]: '自定义节点，根据特定逻辑执行',
     };
 
     return descriptions[this.props.value];

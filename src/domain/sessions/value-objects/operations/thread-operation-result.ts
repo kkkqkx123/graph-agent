@@ -26,7 +26,7 @@ export class ThreadOperationError extends ValueObject<{
       code,
       message,
       details,
-      timestamp: Timestamp.now()
+      timestamp: Timestamp.now(),
     });
   }
 
@@ -91,7 +91,7 @@ export class ThreadOperationMetadata extends ValueObject<{
       operationType,
       timestamp: Timestamp.now(),
       operatorId,
-      additionalInfo
+      additionalInfo,
     });
   }
 
@@ -110,7 +110,7 @@ export class ThreadOperationMetadata extends ValueObject<{
       timestamp: Timestamp.now(),
       duration,
       operatorId,
-      additionalInfo
+      additionalInfo,
     });
   }
 
@@ -173,7 +173,7 @@ export class ThreadOperationResult<T> extends ValueObject<{
     return new ThreadOperationResult<T>({
       success: true,
       result,
-      metadata
+      metadata,
     });
   }
 
@@ -187,7 +187,7 @@ export class ThreadOperationResult<T> extends ValueObject<{
     return new ThreadOperationResult<T>({
       success: false,
       error,
-      metadata
+      metadata,
     });
   }
 

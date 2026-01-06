@@ -48,10 +48,14 @@ export class OpenAIResponseClient extends BaseLLMClient {
       throw new Error('OpenAI Response API密钥未配置。请在配置文件中设置 llm.openai.apiKey。');
     }
     if (!defaultModel) {
-      throw new Error('OpenAI Response默认模型未配置。请在配置文件中设置 llm.openai-response.defaultModel。');
+      throw new Error(
+        'OpenAI Response默认模型未配置。请在配置文件中设置 llm.openai-response.defaultModel。'
+      );
     }
     if (!supportedModels || !Array.isArray(supportedModels) || supportedModels.length === 0) {
-      throw new Error('OpenAI Response支持的模型列表未配置。请在配置文件中设置 llm.openai-response.supportedModels。');
+      throw new Error(
+        'OpenAI Response支持的模型列表未配置。请在配置文件中设置 llm.openai-response.supportedModels。'
+      );
     }
 
     // 创建提供商配置
@@ -71,19 +75,12 @@ export class OpenAIResponseClient extends BaseLLMClient {
       .extraConfig({
         endpointPath: 'responses',
         enableBeta: true,
-        betaVersion: 'responses=v1'
+        betaVersion: 'responses=v1',
       })
       .build();
 
-    super(
-      httpClient,
-      rateLimiter,
-      tokenCalculator,
-      configManager,
-      providerConfig
-    );
+    super(httpClient, rateLimiter, tokenCalculator, configManager, providerConfig);
   }
-
 
   getSupportedModelsList(): string[] {
     if (!this.providerConfig.supportedModels) {
@@ -98,15 +95,27 @@ export class OpenAIResponseClient extends BaseLLMClient {
       throw new Error('OpenAI Response默认模型未配置。');
     }
 
-    const configs: Record<string, any> = this.configLoadingModule.get('llm.openai-response.models', {});
+    const configs: Record<string, any> = this.configLoadingModule.get(
+      'llm.openai-response.models',
+      {}
+    );
     const config = configs[model];
 
     if (!config) {
-      throw new Error(`OpenAI Response模型配置未找到: ${model}。请在配置文件中提供该模型的完整配置。`);
+      throw new Error(
+        `OpenAI Response模型配置未找到: ${model}。请在配置文件中提供该模型的完整配置。`
+      );
     }
 
     // 验证必需的配置字段
-    const requiredFields = ['maxTokens', 'contextWindow', 'temperature', 'topP', 'promptTokenPrice', 'completionTokenPrice'];
+    const requiredFields = [
+      'maxTokens',
+      'contextWindow',
+      'temperature',
+      'topP',
+      'promptTokenPrice',
+      'completionTokenPrice',
+    ];
     for (const field of requiredFields) {
       if (config[field] === undefined || config[field] === null) {
         throw new Error(`OpenAI Response模型 ${model} 缺少必需配置字段: ${field}`);
@@ -124,24 +133,30 @@ export class OpenAIResponseClient extends BaseLLMClient {
       presencePenalty: config.presencePenalty ?? 0.0,
       costPer1KTokens: {
         prompt: config.promptTokenPrice,
-        completion: config.completionTokenPrice
+        completion: config.completionTokenPrice,
       },
       supportsStreaming: config.supportsStreaming ?? true,
       supportsTools: config.supportsTools ?? true,
       supportsImages: config.supportsImages ?? false,
       supportsAudio: config.supportsAudio ?? false,
       supportsVideo: config.supportsVideo ?? false,
-      metadata: config.metadata ?? {}
+      metadata: config.metadata ?? {},
     });
   }
 
-  protected override async parseStreamResponse(response: any, request: LLMRequest): Promise<AsyncIterable<LLMResponse>> {
+  protected override async parseStreamResponse(
+    response: any,
+    request: LLMRequest
+  ): Promise<AsyncIterable<LLMResponse>> {
     const self = this;
 
     async function* streamGenerator() {
       // 处理流式响应数据
       for await (const chunk of response.data) {
-        const lines = chunk.toString().split('\n').filter((line: string) => line.trim() !== '');
+        const lines = chunk
+          .toString()
+          .split('\n')
+          .filter((line: string) => line.trim() !== '');
 
         for (const line of lines) {
           if (line.startsWith('data: ')) {
@@ -161,15 +176,17 @@ export class OpenAIResponseClient extends BaseLLMClient {
                 yield LLMResponse.create(
                   request.requestId,
                   request.model,
-                  [{
-                    index: 0,
-                    message: LLMMessage.createAssistant(content),
-                    finish_reason: ''
-                  }],
+                  [
+                    {
+                      index: 0,
+                      message: LLMMessage.createAssistant(content),
+                      finish_reason: '',
+                    },
+                  ],
                   {
                     promptTokens: data.usage?.prompt_tokens || 0,
                     completionTokens: data.usage?.completion_tokens || 0,
-                    totalTokens: data.usage?.total_tokens || 0
+                    totalTokens: data.usage?.total_tokens || 0,
                   },
                   '',
                   0
@@ -187,11 +204,13 @@ export class OpenAIResponseClient extends BaseLLMClient {
       yield LLMResponse.create(
         request.requestId,
         request.model,
-        [{
-          index: 0,
-          message: LLMMessage.createAssistant(''),
-          finish_reason: 'stop'
-        }],
+        [
+          {
+            index: 0,
+            message: LLMMessage.createAssistant(''),
+            finish_reason: 'stop',
+          },
+        ],
         { promptTokens: 0, completionTokens: 0, totalTokens: 0 },
         'stop',
         0
@@ -203,7 +222,7 @@ export class OpenAIResponseClient extends BaseLLMClient {
 
   private extractContentFromResponsesChunk(data: any): string | null {
     // Responses API的流式格式可能不同
-    if ("content" in data) {
+    if ('content' in data) {
       return data.content || null;
     }
 
@@ -213,7 +232,7 @@ export class OpenAIResponseClient extends BaseLLMClient {
     }
 
     const choice = choices[0];
-    if ("content" in choice) {
+    if ('content' in choice) {
       return choice.content || null;
     }
 
@@ -222,7 +241,7 @@ export class OpenAIResponseClient extends BaseLLMClient {
   }
 
   private messagesToInput(messages: any[]): string {
-    if (!messages) return "";
+    if (!messages) return '';
 
     const contentParts = [];
     for (const message of messages) {
@@ -231,7 +250,7 @@ export class OpenAIResponseClient extends BaseLLMClient {
       }
     }
 
-    return contentParts.join("\n");
+    return contentParts.join('\n');
   }
 
   private convertResponsesTools(tools: any[]): any[] {
@@ -239,9 +258,9 @@ export class OpenAIResponseClient extends BaseLLMClient {
 
     for (const tool of tools) {
       const responsesTool = {
-        type: "custom",
+        type: 'custom',
         name: tool.name,
-        description: tool.get("description", "")
+        description: tool.get('description', ''),
       };
 
       responsesTools.push(responsesTool);
@@ -276,7 +295,7 @@ export class OpenAIResponseClient extends BaseLLMClient {
     return {
       isValid: errors.length === 0,
       errors,
-      warnings
+      warnings,
     };
   }
 
@@ -295,7 +314,6 @@ export class OpenAIResponseClient extends BaseLLMClient {
     return response;
   }
 
-
   public override getClientName(): string {
     return 'OpenAI Response';
   }
@@ -303,7 +321,6 @@ export class OpenAIResponseClient extends BaseLLMClient {
   public override getClientVersion(): string {
     return '1.0.0';
   }
-
 
   public override async getRateLimitInfo(): Promise<{
     requestsPerMinute: number;
@@ -325,7 +342,7 @@ export class OpenAIResponseClient extends BaseLLMClient {
       tokensPerDay: 129600000,
       currentRequests: 0,
       currentTokens: 0,
-      resetTime: new Date(Date.now() + 60000)
+      resetTime: new Date(Date.now() + 60000),
     };
   }
 
@@ -347,7 +364,7 @@ export class OpenAIResponseClient extends BaseLLMClient {
       hitRate: 0,
       totalRequests: 0,
       cacheSize: 0,
-      maxCacheSize: 1000
+      maxCacheSize: 1000,
     };
   }
 
@@ -355,7 +372,10 @@ export class OpenAIResponseClient extends BaseLLMClient {
     return true;
   }
 
-  public async getErrorStatistics(startTime?: Date, endTime?: Date): Promise<{
+  public async getErrorStatistics(
+    startTime?: Date,
+    endTime?: Date
+  ): Promise<{
     totalErrors: number;
     byType: Record<string, number>;
     byStatusCode: Record<string, number>;
@@ -367,11 +387,14 @@ export class OpenAIResponseClient extends BaseLLMClient {
       byType: {},
       byStatusCode: {},
       averageRetryCount: 0,
-      maxRetryCount: 0
+      maxRetryCount: 0,
     };
   }
 
-  public async getPerformanceStatistics(startTime?: Date, endTime?: Date): Promise<{
+  public async getPerformanceStatistics(
+    startTime?: Date,
+    endTime?: Date
+  ): Promise<{
     averageLatency: number;
     medianLatency: number;
     p95Latency: number;
@@ -393,19 +416,25 @@ export class OpenAIResponseClient extends BaseLLMClient {
       totalRequests: 0,
       successfulRequests: 0,
       failedRequests: 0,
-      successRate: 0
+      successRate: 0,
     };
   }
 
-  public async getUsageStatistics(startTime?: Date, endTime?: Date): Promise<{
+  public async getUsageStatistics(
+    startTime?: Date,
+    endTime?: Date
+  ): Promise<{
     totalRequests: number;
     totalTokens: number;
     totalCost: number;
-    byModel: Record<string, {
-      requests: number;
-      tokens: number;
-      cost: number;
-    }>;
+    byModel: Record<
+      string,
+      {
+        requests: number;
+        tokens: number;
+        cost: number;
+      }
+    >;
     averageTokensPerRequest: number;
     averageCostPerRequest: number;
   }> {
@@ -415,7 +444,7 @@ export class OpenAIResponseClient extends BaseLLMClient {
       totalCost: 0,
       byModel: {},
       averageTokensPerRequest: 0,
-      averageCostPerRequest: 0
+      averageCostPerRequest: 0,
     };
   }
 
@@ -453,7 +482,7 @@ export class OpenAIResponseClient extends BaseLLMClient {
     // Format messages for OpenAI API
     return messages.map(msg => ({
       role: msg.getRole(),
-      content: msg.getContent()
+      content: msg.getContent(),
     }));
   }
 
@@ -480,7 +509,7 @@ export class OpenAIResponseClient extends BaseLLMClient {
       'error',
       0,
       {
-        metadata: { error: error instanceof Error ? error.message : String(error) }
+        metadata: { error: error instanceof Error ? error.message : String(error) },
       }
     );
   }

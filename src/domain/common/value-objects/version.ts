@@ -8,7 +8,7 @@ export interface VersionProps {
 
 /**
  * 版本值对象
- * 
+ *
  * 用于表示实体的版本信息，支持语义化版本控制
  */
 export class Version extends ValueObject<VersionProps> {
@@ -91,7 +91,7 @@ export class Version extends ValueObject<VersionProps> {
   private parseVersion(): { major: number; minor: number; patch: number } {
     const versionRegex = /^(\d+)\.(\d+)\.(\d+)$/;
     const match = this.props.value.match(versionRegex);
-    
+
     if (!match) {
       throw new Error(`无效的版本格式: ${this.props.value}`);
     }
@@ -99,7 +99,7 @@ export class Version extends ValueObject<VersionProps> {
     return {
       major: parseInt(match[1]!, 10),
       minor: parseInt(match[2]!, 10),
-      patch: parseInt(match[3]!, 10)
+      patch: parseInt(match[3]!, 10),
     };
   }
 

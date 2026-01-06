@@ -17,7 +17,10 @@ export class NoToolCallsConditionFunction extends BaseConditionFunction<Conditio
     );
   }
 
-  override async execute(context: WorkflowExecutionContext, config: ConditionFunctionConfig): Promise<boolean> {
+  override async execute(
+    context: WorkflowExecutionContext,
+    config: ConditionFunctionConfig
+  ): Promise<boolean> {
     this.checkInitialized();
 
     const messages = context.getVariable('messages') || [];

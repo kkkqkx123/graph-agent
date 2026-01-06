@@ -6,7 +6,15 @@
 
 import { injectable, inject } from 'inversify';
 import { ISessionRepository } from '../../../domain/sessions';
-import { ID, ResourceAllocation, ResourceRequirement, ResourceLimits, SessionQuota, QuotaUsage, ILogger } from '../../../domain/common';
+import {
+  ID,
+  ResourceAllocation,
+  ResourceRequirement,
+  ResourceLimits,
+  SessionQuota,
+  QuotaUsage,
+  ILogger,
+} from '../../../domain/common';
 import { BaseApplicationService } from '../../common/base-application-service';
 import { TYPES } from '../../../di/service-keys';
 import {
@@ -14,7 +22,7 @@ import {
   ResourceLimitsDTO,
   SessionQuotaDTO,
   QuotaUsageDTO,
-  mapResourceAllocationToDTO
+  mapResourceAllocationToDTO,
 } from '../dtos';
 
 /**
@@ -56,7 +64,10 @@ export class SessionResourceService extends BaseApplicationService {
    * @param requirements 资源需求列表
    * @returns 资源分配DTO
    */
-  async allocateResources(sessionId: string, requirements: ResourceRequirement[]): Promise<ResourceAllocationDTO> {
+  async allocateResources(
+    sessionId: string,
+    requirements: ResourceRequirement[]
+  ): Promise<ResourceAllocationDTO> {
     return this.executeBusinessOperation(
       '分配资源',
       async () => {
@@ -81,7 +92,7 @@ export class SessionResourceService extends BaseApplicationService {
           sessionId: sessionId,
           resources: requirements,
           allocatedAt: new Date(),
-          expiresAt: new Date(Date.now() + 3600000) // 1小时后过期
+          expiresAt: new Date(Date.now() + 3600000), // 1小时后过期
         };
 
         return mapResourceAllocationToDTO(allocation);
@@ -129,7 +140,7 @@ export class SessionResourceService extends BaseApplicationService {
           maxMemory: (config.value as any)['maxMemory'] || 512, // 默认512MB
           maxThreads: (config.value as any)['maxThreads'] || 5, // 默认5个线程
           maxExecutionTime: (config.value as any)['maxExecutionTime'] || 300000, // 默认5分钟
-          maxStorage: (config.value as any)['maxStorage'] || 1024 // 默认1GB
+          maxStorage: (config.value as any)['maxStorage'] || 1024, // 默认1GB
         };
       },
       { sessionId }
@@ -202,7 +213,7 @@ export class SessionResourceService extends BaseApplicationService {
           remainingThreads: Math.max(0, limits.maxThreads - session.threadCount),
           remainingExecutionTime: limits.maxExecutionTime,
           remainingMemory: limits.maxMemory,
-          remainingStorage: limits.maxStorage
+          remainingStorage: limits.maxStorage,
         };
       },
       { sessionId }

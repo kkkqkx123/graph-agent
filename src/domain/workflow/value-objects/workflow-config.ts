@@ -18,7 +18,7 @@ export interface WorkflowConfigProps {
 
 /**
  * 工作流配置值对象
- * 
+ *
  * 用于表示工作流的配置信息
  */
 export class WorkflowConfig extends ValueObject<WorkflowConfigProps> {
@@ -36,7 +36,7 @@ export class WorkflowConfig extends ValueObject<WorkflowConfigProps> {
       enableCheckpointing: true,
       checkpointInterval: 300, // 5分钟
       maxConcurrentThreads: 10,
-      metadata: {}
+      metadata: {},
     });
   }
 
@@ -49,7 +49,7 @@ export class WorkflowConfig extends ValueObject<WorkflowConfigProps> {
     const defaultConfig = this.default();
     return new WorkflowConfig({
       ...defaultConfig.value,
-      ...config
+      ...config,
     });
   }
 
@@ -133,7 +133,7 @@ export class WorkflowConfig extends ValueObject<WorkflowConfigProps> {
   public update(updates: Partial<WorkflowConfigProps>): WorkflowConfig {
     return new WorkflowConfig({
       ...this.props,
-      ...updates
+      ...updates,
     });
   }
 
@@ -145,7 +145,7 @@ export class WorkflowConfig extends ValueObject<WorkflowConfigProps> {
   public updateMetadata(metadata: Record<string, unknown>): WorkflowConfig {
     return new WorkflowConfig({
       ...this.props,
-      metadata: { ...metadata }
+      metadata: { ...metadata },
     });
   }
 
@@ -160,8 +160,8 @@ export class WorkflowConfig extends ValueObject<WorkflowConfigProps> {
       ...this.props,
       metadata: {
         ...this.props.metadata,
-        [key]: value
-      }
+        [key]: value,
+      },
     });
   }
 
@@ -176,7 +176,7 @@ export class WorkflowConfig extends ValueObject<WorkflowConfigProps> {
 
     return new WorkflowConfig({
       ...this.props,
-      metadata: newMetadata
+      metadata: newMetadata,
     });
   }
 
@@ -231,7 +231,10 @@ export class WorkflowConfig extends ValueObject<WorkflowConfigProps> {
       throw new Error('最大并发线程数必须大于0');
     }
 
-    if (this.props.enableCheckpointing && this.props.checkpointInterval > this.props.timeoutSeconds) {
+    if (
+      this.props.enableCheckpointing &&
+      this.props.checkpointInterval > this.props.timeoutSeconds
+    ) {
       throw new Error('检查点间隔不能大于超时时间');
     }
   }
@@ -258,7 +261,7 @@ export class WorkflowConfig extends ValueObject<WorkflowConfigProps> {
       enableCheckpointing: this.props.enableCheckpointing,
       checkpointInterval: this.props.checkpointInterval,
       maxConcurrentThreads: this.props.maxConcurrentThreads,
-      metadataKeys: Object.keys(this.props.metadata)
+      metadataKeys: Object.keys(this.props.metadata),
     };
   }
 }

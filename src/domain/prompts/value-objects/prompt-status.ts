@@ -7,7 +7,7 @@ export enum PromptStatus {
   INACTIVE = 'inactive',
   DRAFT = 'draft',
   ARCHIVED = 'archived',
-  DEPRECATED = 'deprecated'
+  DEPRECATED = 'deprecated',
 }
 
 /**
@@ -19,7 +19,7 @@ export function getPromptStatusDisplayName(status: PromptStatus): string {
     [PromptStatus.INACTIVE]: '未激活',
     [PromptStatus.DRAFT]: '草稿',
     [PromptStatus.ARCHIVED]: '已归档',
-    [PromptStatus.DEPRECATED]: '已弃用'
+    [PromptStatus.DEPRECATED]: '已弃用',
   };
   return displayNames[status] || status;
 }

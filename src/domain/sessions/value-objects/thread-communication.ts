@@ -47,7 +47,7 @@ export class ThreadMessage extends ValueObject<ThreadMessageProps> {
       type,
       payload,
       timestamp: Timestamp.now(),
-      isRead: false
+      isRead: false,
     });
   }
 
@@ -122,7 +122,7 @@ export class ThreadMessage extends ValueObject<ThreadMessageProps> {
   public markAsRead(): ThreadMessage {
     return new ThreadMessage({
       ...this.props,
-      isRead: true
+      isRead: true,
     });
   }
 
@@ -190,14 +190,11 @@ export class ThreadCommunicationChannel extends ValueObject<ThreadCommunicationC
    * @param maxMessages 最大消息数量
    * @returns 通信通道实例
    */
-  public static create(
-    sessionId: ID,
-    maxMessages: number = 1000
-  ): ThreadCommunicationChannel {
+  public static create(sessionId: ID, maxMessages: number = 1000): ThreadCommunicationChannel {
     return new ThreadCommunicationChannel({
       sessionId,
       messages: new Map(),
-      maxMessages
+      maxMessages,
     });
   }
 
@@ -247,9 +244,10 @@ export class ThreadCommunicationChannel extends ValueObject<ThreadCommunicationC
 
     // 清理过期消息
     if (newMessages.size > this.props.maxMessages) {
-      const sortedMessages = Array.from(newMessages.entries())
-        .sort(([, a], [, b]) => a.timestamp.differenceInSeconds(b.timestamp));
-      
+      const sortedMessages = Array.from(newMessages.entries()).sort(([, a], [, b]) =>
+        a.timestamp.differenceInSeconds(b.timestamp)
+      );
+
       const toDelete = sortedMessages.slice(0, newMessages.size - this.props.maxMessages);
       for (const [messageId] of toDelete) {
         newMessages.delete(messageId);
@@ -259,7 +257,7 @@ export class ThreadCommunicationChannel extends ValueObject<ThreadCommunicationC
     // 更新内部状态
     (this as any).props = Object.freeze({
       ...this.props,
-      messages: newMessages
+      messages: newMessages,
     });
 
     return message.messageId.toString();
@@ -271,12 +269,10 @@ export class ThreadCommunicationChannel extends ValueObject<ThreadCommunicationC
    * @param includeRead 是否包含已读消息
    * @returns 消息数组
    */
-  public getMessagesForThread(
-    threadId: ID,
-    includeRead: boolean = false
-  ): ThreadMessage[] {
-    const messages = Array.from(this.props.messages.values())
-      .filter(message => message.toThreadId.equals(threadId));
+  public getMessagesForThread(threadId: ID, includeRead: boolean = false): ThreadMessage[] {
+    const messages = Array.from(this.props.messages.values()).filter(message =>
+      message.toThreadId.equals(threadId)
+    );
 
     if (!includeRead) {
       return messages.filter(message => !message.isRead);
@@ -291,9 +287,9 @@ export class ThreadCommunicationChannel extends ValueObject<ThreadCommunicationC
    * @returns 未读消息数量
    */
   public getUnreadMessageCount(threadId: ID): number {
-    return Array.from(this.props.messages.values())
-      .filter(message => message.toThreadId.equals(threadId) && !message.isRead)
-      .length;
+    return Array.from(this.props.messages.values()).filter(
+      message => message.toThreadId.equals(threadId) && !message.isRead
+    ).length;
   }
 
   /**
@@ -312,7 +308,7 @@ export class ThreadCommunicationChannel extends ValueObject<ThreadCommunicationC
 
     return new ThreadCommunicationChannel({
       ...this.props,
-      messages: newMessages
+      messages: newMessages,
     });
   }
 
@@ -332,7 +328,7 @@ export class ThreadCommunicationChannel extends ValueObject<ThreadCommunicationC
 
     return new ThreadCommunicationChannel({
       ...this.props,
-      messages: newMessages
+      messages: newMessages,
     });
   }
 
@@ -352,7 +348,7 @@ export class ThreadCommunicationChannel extends ValueObject<ThreadCommunicationC
 
     return new ThreadCommunicationChannel({
       ...this.props,
-      messages: newMessages
+      messages: newMessages,
     });
   }
 

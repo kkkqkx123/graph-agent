@@ -3,7 +3,7 @@ import {
   FunctionParameter,
   ValidationResult,
   FunctionMetadata,
-  WorkflowExecutionContext
+  WorkflowExecutionContext,
 } from '../../types';
 import { WorkflowFunctionType } from '../../../../../domain/workflow/value-objects/function-type';
 
@@ -22,8 +22,9 @@ export interface TransformFunctionConfig {
  * 转换函数基类
  * 专门用于数据转换类型的函数
  */
-export abstract class BaseTransformFunction<TConfig extends TransformFunctionConfig = TransformFunctionConfig>
-  implements IWorkflowFunction {
+export abstract class BaseTransformFunction<
+  TConfig extends TransformFunctionConfig = TransformFunctionConfig,
+> implements IWorkflowFunction {
   protected _initialized: boolean = false;
   /** 函数类型标识 */
   public readonly type: WorkflowFunctionType = WorkflowFunctionType.DATA_TRANSFORM;
@@ -34,7 +35,7 @@ export abstract class BaseTransformFunction<TConfig extends TransformFunctionCon
     public readonly description: string,
     public readonly version: string = '1.0.0',
     public readonly category: string = 'transform'
-  ) { }
+  ) {}
 
   getParameters(): FunctionParameter[] {
     return [
@@ -42,15 +43,15 @@ export abstract class BaseTransformFunction<TConfig extends TransformFunctionCon
         name: 'sourceData',
         type: 'array',
         required: true,
-        description: '源数据数组'
+        description: '源数据数组',
       },
       {
         name: 'config',
         type: 'object',
         required: false,
         description: '转换配置',
-        defaultValue: {}
-      }
+        defaultValue: {},
+      },
     ];
   }
 
@@ -70,7 +71,7 @@ export abstract class BaseTransformFunction<TConfig extends TransformFunctionCon
 
     return {
       valid: errors.length === 0,
-      errors
+      errors,
     };
   }
 
@@ -83,7 +84,7 @@ export abstract class BaseTransformFunction<TConfig extends TransformFunctionCon
       isAsync: false,
       category: this.category,
       parameters: this.getParameters(),
-      returnType: this.getReturnType()
+      returnType: this.getReturnType(),
     };
   }
 

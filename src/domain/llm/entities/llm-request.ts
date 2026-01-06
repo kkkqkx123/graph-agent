@@ -133,7 +133,7 @@ export class LLMRequest extends Entity {
       createdAt: now,
       updatedAt: now,
       version: Version.initial(),
-      deletionStatus: DeletionStatus.active()
+      deletionStatus: DeletionStatus.active(),
     };
 
     return new LLMRequest(props);
@@ -256,14 +256,16 @@ export class LLMRequest extends Entity {
    * 获取工具列表
    * @returns 工具列表
    */
-  public get tools(): Array<{
-    type: string;
-    function: {
-      name: string;
-      description?: string;
-      parameters?: Record<string, unknown>;
-    };
-  }> | undefined {
+  public get tools():
+    | Array<{
+        type: string;
+        function: {
+          name: string;
+          description?: string;
+          parameters?: Record<string, unknown>;
+        };
+      }>
+    | undefined {
     return this.props.tools;
   }
 
@@ -271,7 +273,12 @@ export class LLMRequest extends Entity {
    * 获取工具选择参数
    * @returns 工具选择参数
    */
-  public get toolChoice(): 'none' | 'auto' | 'required' | { type: string; function: { name: string } } | undefined {
+  public get toolChoice():
+    | 'none'
+    | 'auto'
+    | 'required'
+    | { type: string; function: { name: string } }
+    | undefined {
     return this.props.toolChoice;
   }
 
@@ -328,7 +335,7 @@ export class LLMRequest extends Entity {
       ...this.props,
       messages: newMessages,
       updatedAt: Timestamp.now(),
-      version: this.props.version.nextPatch()
+      version: this.props.version.nextPatch(),
     };
 
     return new LLMRequest(newProps);
@@ -353,7 +360,7 @@ export class LLMRequest extends Entity {
       ...this.props,
       messages: newMessages,
       updatedAt: Timestamp.now(),
-      version: this.props.version.nextPatch()
+      version: this.props.version.nextPatch(),
     };
 
     return new LLMRequest(newProps);
@@ -377,7 +384,7 @@ export class LLMRequest extends Entity {
       ...this.props,
       messages: newMessages,
       updatedAt: Timestamp.now(),
-      version: this.props.version.nextPatch()
+      version: this.props.version.nextPatch(),
     };
 
     return new LLMRequest(newProps);
@@ -411,7 +418,7 @@ export class LLMRequest extends Entity {
       ...this.props,
       ...updates,
       updatedAt: Timestamp.now(),
-      version: this.props.version.nextPatch()
+      version: this.props.version.nextPatch(),
     };
 
     return new LLMRequest(newProps);
@@ -428,7 +435,7 @@ export class LLMRequest extends Entity {
       ...this.props,
       metadata: { ...metadata },
       updatedAt: Timestamp.now(),
-      version: this.props.version.nextPatch()
+      version: this.props.version.nextPatch(),
     };
 
     return new LLMRequest(newProps);
@@ -449,7 +456,7 @@ export class LLMRequest extends Entity {
       ...this.props,
       metadata: newMetadata,
       updatedAt: Timestamp.now(),
-      version: this.props.version.nextPatch()
+      version: this.props.version.nextPatch(),
     };
 
     return new LLMRequest(newProps);
@@ -469,7 +476,7 @@ export class LLMRequest extends Entity {
       ...this.props,
       metadata: newMetadata,
       updatedAt: Timestamp.now(),
-      version: this.props.version.nextPatch()
+      version: this.props.version.nextPatch(),
     };
 
     return new LLMRequest(newProps);
@@ -488,7 +495,9 @@ export class LLMRequest extends Entity {
    * @returns 最后一条消息或undefined
    */
   public getLastMessage(): LLMMessage | undefined {
-    return this.props.messages.length > 0 ? this.props.messages[this.props.messages.length - 1] : undefined;
+    return this.props.messages.length > 0
+      ? this.props.messages[this.props.messages.length - 1]
+      : undefined;
   }
 
   /**
@@ -522,7 +531,7 @@ export class LLMRequest extends Entity {
 
     for (const message of this.props.messages) {
       if (message.hasToolCalls()) {
-        toolCalls.push(...message.getToolCalls() || []);
+        toolCalls.push(...(message.getToolCalls() || []));
       }
     }
 
@@ -559,7 +568,7 @@ export class LLMRequest extends Entity {
       ...this.props,
       deletionStatus: this.props.deletionStatus.markAsDeleted(),
       updatedAt: Timestamp.now(),
-      version: this.props.version.nextPatch()
+      version: this.props.version.nextPatch(),
     };
 
     return new LLMRequest(newProps);
@@ -596,5 +605,4 @@ export class LLMRequest extends Entity {
   public toProps(): LLMRequestProps {
     return this.props;
   }
-
 }

@@ -153,26 +153,26 @@ export const mapSessionToDTO = (session: Session): SessionDTO => {
       isActive: session.status.isActive(),
       isSuspended: session.status.isSuspended(),
       isTerminated: session.status.isTerminated(),
-      canOperate: session.status.canOperate()
+      canOperate: session.status.canOperate(),
     },
     config: {
       maxMessages: session.config.getMaxMessages(),
       maxThreads: 0, // SessionConfig没有maxThreads属性，使用默认值
       timeoutMinutes: session.config.getTimeoutMinutes(),
       maxDuration: session.config.getMaxDuration(),
-      value: session.config.value
+      value: session.config.value,
     },
     activity: {
       messageCount: session.messageCount,
       threadCount: session.threadCount,
       lastActivityAt: session.lastActivityAt.toISOString(),
-      createdAt: session.createdAt.toISOString()
+      createdAt: session.createdAt.toISOString(),
     },
     metadata: session.metadata.toRecord(),
     createdAt: session.createdAt.toISOString(),
     updatedAt: session.updatedAt.toISOString(),
     version: session.version.toString(),
-    isDeleted: session.isDeleted()
+    isDeleted: session.isDeleted(),
   };
 };
 
@@ -192,6 +192,6 @@ export const mapResourceAllocationToDTO = (allocation: any): ResourceAllocationD
     sessionId: allocation.sessionId?.toString() || '',
     resources: allocation.resources || [],
     allocatedAt: allocation.allocatedAt?.toISOString() || new Date().toISOString(),
-    expiresAt: allocation.expiresAt?.toISOString() || new Date().toISOString()
+    expiresAt: allocation.expiresAt?.toISOString() || new Date().toISOString(),
   };
 };

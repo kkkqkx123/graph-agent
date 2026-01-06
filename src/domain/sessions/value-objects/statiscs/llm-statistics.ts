@@ -45,7 +45,7 @@ export interface LLMStatisticsProps {
 
 /**
  * LLM统计信息值对象
- * 
+ *
  * 职责：表示LLM使用统计信息
  */
 export class LLMStatistics extends ValueObject<LLMStatisticsProps> {
@@ -64,8 +64,8 @@ export class LLMStatistics extends ValueObject<LLMStatisticsProps> {
         currency: 'USD',
         costByModel: new Map(),
         costTrend: [],
-        averageCostPerCall: 0
-      }
+        averageCostPerCall: 0,
+      },
     });
   }
 
@@ -126,7 +126,7 @@ export class LLMStatistics extends ValueObject<LLMStatisticsProps> {
         totalTokens: existingModel.totalTokens + tokens,
         totalCost: existingModel.totalCost + cost,
         callCount: existingModel.callCount + 1,
-        averageTokensPerCall: (existingModel.totalTokens + tokens) / (existingModel.callCount + 1)
+        averageTokensPerCall: (existingModel.totalTokens + tokens) / (existingModel.callCount + 1),
       });
     } else {
       newByModel.set(modelName, {
@@ -134,28 +134,34 @@ export class LLMStatistics extends ValueObject<LLMStatisticsProps> {
         totalTokens: tokens,
         totalCost: cost,
         callCount: 1,
-        averageTokensPerCall: tokens
+        averageTokensPerCall: tokens,
       });
     }
 
-    const newByTime = [...this.props.byTime, {
-      timestamp: new Date(),
-      tokens,
-      cost,
-      callCount: 1
-    }];
+    const newByTime = [
+      ...this.props.byTime,
+      {
+        timestamp: new Date(),
+        tokens,
+        cost,
+        callCount: 1,
+      },
+    ];
 
     const newCostByModel = new Map(this.props.costAnalysis.costByModel);
     const existingCost = newCostByModel.get(modelName) || 0;
     newCostByModel.set(modelName, existingCost + cost);
 
-    const totalCalls = Array.from(newByModel.values()).reduce((sum, model) => sum + model.callCount, 0);
+    const totalCalls = Array.from(newByModel.values()).reduce(
+      (sum, model) => sum + model.callCount,
+      0
+    );
     const newCostAnalysis: CostAnalysis = {
       totalCost: this.props.totalCost + cost,
       currency: 'USD',
       costByModel: newCostByModel,
       costTrend: newByTime,
-      averageCostPerCall: (this.props.totalCost + cost) / totalCalls
+      averageCostPerCall: (this.props.totalCost + cost) / totalCalls,
     };
 
     return new LLMStatistics({
@@ -163,7 +169,7 @@ export class LLMStatistics extends ValueObject<LLMStatisticsProps> {
       totalCost: this.props.totalCost + cost,
       byModel: newByModel,
       byTime: newByTime,
-      costAnalysis: newCostAnalysis
+      costAnalysis: newCostAnalysis,
     });
   }
 

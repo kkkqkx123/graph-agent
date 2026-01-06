@@ -5,13 +5,13 @@ import { ToolExecutionStatus } from '../value-objects/tool-execution-status';
 
 /**
  * 工具执行仓储接口
- * 
+ *
  * 定义工具执行持久化的契约
  */
 export interface IToolExecutionRepository extends Repository<ToolExecution> {
   /**
    * 根据工具ID查找执行记录
-   * 
+   *
    * @param toolId 工具ID
    * @returns 执行记录列表
    */
@@ -19,7 +19,7 @@ export interface IToolExecutionRepository extends Repository<ToolExecution> {
 
   /**
    * 根据状态查找执行记录
-   * 
+   *
    * @param status 执行状态
    * @returns 执行记录列表
    */
@@ -27,7 +27,7 @@ export interface IToolExecutionRepository extends Repository<ToolExecution> {
 
   /**
    * 根据会话ID查找执行记录
-   * 
+   *
    * @param sessionId 会话ID
    * @returns 执行记录列表
    */
@@ -35,7 +35,7 @@ export interface IToolExecutionRepository extends Repository<ToolExecution> {
 
   /**
    * 根据时间范围查找执行记录
-   * 
+   *
    * @param startTime 开始时间
    * @param endTime 结束时间
    * @returns 执行记录列表
@@ -44,14 +44,14 @@ export interface IToolExecutionRepository extends Repository<ToolExecution> {
 
   /**
    * 查找正在执行的记录
-   * 
+   *
    * @returns 执行记录列表
    */
   findRunning(): Promise<ToolExecution[]>;
 
   /**
    * 查找已完成的执行记录
-   * 
+   *
    * @param limit 数量限制
    * @returns 执行记录列表
    */
@@ -59,7 +59,7 @@ export interface IToolExecutionRepository extends Repository<ToolExecution> {
 
   /**
    * 查找失败的执行记录
-   * 
+   *
    * @param limit 数量限制
    * @returns 执行记录列表
    */
@@ -67,7 +67,7 @@ export interface IToolExecutionRepository extends Repository<ToolExecution> {
 
   /**
    * 根据条件查找执行记录
-   * 
+   *
    * @param criteria 查询条件
    * @returns 执行记录列表
    */
@@ -130,7 +130,7 @@ export interface IToolExecutionRepository extends Repository<ToolExecution> {
 
   /**
    * 按状态统计执行记录数量
-   * 
+   *
    * @param toolId 工具ID（可选）
    * @returns 状态统计
    */
@@ -138,14 +138,14 @@ export interface IToolExecutionRepository extends Repository<ToolExecution> {
 
   /**
    * 按工具统计执行记录数量
-   * 
+   *
    * @returns 工具统计
    */
   countByTool(): Promise<Record<string, number>>;
 
   /**
    * 获取平均执行时间
-   * 
+   *
    * @param toolId 工具ID（可选）
    * @param timeRange 时间范围（可选）
    * @returns 平均执行时间
@@ -157,19 +157,16 @@ export interface IToolExecutionRepository extends Repository<ToolExecution> {
 
   /**
    * 获取成功率
-   * 
+   *
    * @param toolId 工具ID（可选）
    * @param timeRange 时间范围（可选）
    * @returns 成功率
    */
-  getSuccessRate(
-    toolId?: ID,
-    timeRange?: { startTime: Date; endTime: Date }
-  ): Promise<number>;
+  getSuccessRate(toolId?: ID, timeRange?: { startTime: Date; endTime: Date }): Promise<number>;
 
   /**
    * 查找最近的执行记录
-   * 
+   *
    * @param limit 数量限制
    * @param toolId 工具ID（可选）
    * @returns 执行记录列表
@@ -178,7 +175,7 @@ export interface IToolExecutionRepository extends Repository<ToolExecution> {
 
   /**
    * 查找执行时间最长的记录
-   * 
+   *
    * @param limit 数量限制
    * @param toolId 工具ID（可选）
    * @returns 执行记录列表
@@ -187,7 +184,7 @@ export interface IToolExecutionRepository extends Repository<ToolExecution> {
 
   /**
    * 查找执行时间最短的记录
-   * 
+   *
    * @param limit 数量限制
    * @param toolId 工具ID（可选）
    * @returns 执行记录列表
@@ -196,7 +193,7 @@ export interface IToolExecutionRepository extends Repository<ToolExecution> {
 
   /**
    * 清理过期的执行记录
-   * 
+   *
    * @param beforeDate 清理此日期之前的记录
    * @returns 清理的记录数
    */
@@ -204,7 +201,7 @@ export interface IToolExecutionRepository extends Repository<ToolExecution> {
 
   /**
    * 获取执行统计信息
-   * 
+   *
    * @param toolId 工具ID（可选）
    * @param timeRange 时间范围（可选）
    * @returns 统计信息

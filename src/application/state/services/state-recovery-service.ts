@@ -26,10 +26,11 @@ import { HistoryTypeValue } from '../../../domain/history/value-objects/history-
 @injectable()
 export class StateRecoveryService {
   constructor(
-    @inject('ThreadCheckpointRepository') private readonly checkpointRepository: IThreadCheckpointRepository,
+    @inject('ThreadCheckpointRepository')
+    private readonly checkpointRepository: IThreadCheckpointRepository,
     @inject('SnapshotRepository') private readonly snapshotRepository: ISnapshotRepository,
     @inject('HistoryRepository') private readonly historyRepository: IHistoryRepository
-  ) { }
+  ) {}
 
   /**
    * 从Checkpoint恢复Thread
@@ -37,10 +38,7 @@ export class StateRecoveryService {
    * @deprecated 请使用 WorkflowEngine.resumeFromCheckpoint() 方法
    * 此方法保留用于向后兼容，但不再执行实际的恢复操作
    */
-  public async restoreThreadFromCheckpoint(
-    thread: Thread,
-    checkpointId: ID
-  ): Promise<Thread> {
+  public async restoreThreadFromCheckpoint(thread: Thread, checkpointId: ID): Promise<Thread> {
     // 1. 获取Checkpoint
     const checkpoint = await this.checkpointRepository.findById(checkpointId);
     if (!checkpoint) {
@@ -49,7 +47,9 @@ export class StateRecoveryService {
 
     // 2. 验证Checkpoint是否属于该Thread
     if (!checkpoint.threadId.equals(thread.id)) {
-      throw new Error(`Checkpoint ${checkpointId.value} does not belong to thread ${thread.id.value}`);
+      throw new Error(
+        `Checkpoint ${checkpointId.value} does not belong to thread ${thread.id.value}`
+      );
     }
 
     // 3. 验证Checkpoint是否已删除
@@ -65,7 +65,7 @@ export class StateRecoveryService {
         entityId: thread.threadId.value,
         checkpointId: checkpointId.value,
         checkpointType: checkpoint.type.getValue(),
-        restoredAt: new Date().toISOString()
+        restoredAt: new Date().toISOString(),
       },
       thread.sessionId,
       thread.threadId,
@@ -73,7 +73,7 @@ export class StateRecoveryService {
       `Thread从Checkpoint恢复`,
       `从检查点 ${checkpointId.toString()} 恢复`,
       {
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
       }
     );
 
@@ -90,10 +90,7 @@ export class StateRecoveryService {
    * @deprecated 请使用 WorkflowEngine.resumeFromCheckpoint() 方法
    * 此方法保留用于向后兼容，但不再执行实际的恢复操作
    */
-  public async restoreThreadFromSnapshot(
-    thread: Thread,
-    snapshotId: ID
-  ): Promise<Thread> {
+  public async restoreThreadFromSnapshot(thread: Thread, snapshotId: ID): Promise<Thread> {
     // 1. 获取Snapshot
     const snapshot = await this.snapshotRepository.findById(snapshotId);
     if (!snapshot) {
@@ -127,7 +124,7 @@ export class StateRecoveryService {
         entityId: thread.threadId.value,
         snapshotId: snapshotId.value,
         snapshotType: snapshot.type.value,
-        restoredAt: new Date().toISOString()
+        restoredAt: new Date().toISOString(),
       },
       thread.sessionId,
       thread.threadId,
@@ -135,7 +132,7 @@ export class StateRecoveryService {
       `Thread从Snapshot恢复`,
       `从快照 ${snapshotId.toString()} 恢复`,
       {
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
       }
     );
 
@@ -149,10 +146,7 @@ export class StateRecoveryService {
   /**
    * 从Snapshot恢复Session
    */
-  public async restoreSessionFromSnapshot(
-    sessionId: ID,
-    snapshotId: ID
-  ): Promise<void> {
+  public async restoreSessionFromSnapshot(sessionId: ID, snapshotId: ID): Promise<void> {
     // 1. 获取Snapshot
     const snapshot = await this.snapshotRepository.findById(snapshotId);
     if (!snapshot) {
@@ -190,7 +184,7 @@ export class StateRecoveryService {
         snapshotId: snapshotId.value,
         snapshotType: snapshot.type.value,
         restoredAt: new Date().toISOString(),
-        threadCount: sessionState['threadCount'] as number
+        threadCount: sessionState['threadCount'] as number,
       },
       sessionId,
       undefined,
@@ -198,7 +192,7 @@ export class StateRecoveryService {
       `Session从Snapshot恢复`,
       `从快照 ${snapshotId.toString()} 恢复`,
       {
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
       }
     );
 
@@ -235,7 +229,7 @@ export class StateRecoveryService {
           canRestore: false,
           reason: `Checkpoint ${checkpointId.value} not found`,
           availableCheckpoints,
-          availableSnapshots
+          availableSnapshots,
         };
       }
 
@@ -244,7 +238,7 @@ export class StateRecoveryService {
           canRestore: false,
           reason: `Checkpoint ${checkpointId.value} is deleted`,
           availableCheckpoints,
-          availableSnapshots
+          availableSnapshots,
         };
       }
     }
@@ -257,7 +251,7 @@ export class StateRecoveryService {
           canRestore: false,
           reason: `Snapshot ${snapshotId.value} not found`,
           availableCheckpoints,
-          availableSnapshots
+          availableSnapshots,
         };
       }
 
@@ -266,7 +260,7 @@ export class StateRecoveryService {
           canRestore: false,
           reason: `Snapshot ${snapshotId.value} cannot be restored`,
           availableCheckpoints,
-          availableSnapshots
+          availableSnapshots,
         };
       }
     }
@@ -278,7 +272,7 @@ export class StateRecoveryService {
           canRestore: false,
           reason: 'No checkpoints or snapshots available for restoration',
           availableCheckpoints,
-          availableSnapshots
+          availableSnapshots,
         };
       }
     }
@@ -286,7 +280,7 @@ export class StateRecoveryService {
     return {
       canRestore: true,
       availableCheckpoints,
-      availableSnapshots
+      availableSnapshots,
     };
   }
 
@@ -311,14 +305,14 @@ export class StateRecoveryService {
 
     // 获取History记录
     const allHistory = await this.historyRepository.findByThreadId(threadId);
-    const historyRecords = allHistory.filter(h =>
-      h.type.getValue() === HistoryTypeValue.CHECKPOINT_CREATED
+    const historyRecords = allHistory.filter(
+      h => h.type.getValue() === HistoryTypeValue.CHECKPOINT_CREATED
     );
 
     return {
       checkpointRestores,
       snapshotRestores,
-      historyRecords
+      historyRecords,
     };
   }
 
@@ -338,13 +332,13 @@ export class StateRecoveryService {
 
     // 获取History记录
     const allHistory = await this.historyRepository.findBySessionId(sessionId);
-    const historyRecords = allHistory.filter(h =>
-      h.type.getValue() === HistoryTypeValue.CHECKPOINT_CREATED
+    const historyRecords = allHistory.filter(
+      h => h.type.getValue() === HistoryTypeValue.CHECKPOINT_CREATED
     );
 
     return {
       snapshotRestores,
-      historyRecords
+      historyRecords,
     };
   }
 
@@ -372,7 +366,7 @@ export class StateRecoveryService {
         return {
           type: 'checkpoint',
           point: latest,
-          reason: 'Latest milestone checkpoint'
+          reason: 'Latest milestone checkpoint',
         };
       }
     }
@@ -387,7 +381,7 @@ export class StateRecoveryService {
         return {
           type: 'checkpoint',
           point: latest,
-          reason: 'Latest manual checkpoint'
+          reason: 'Latest manual checkpoint',
         };
       }
     }
@@ -402,21 +396,19 @@ export class StateRecoveryService {
         return {
           type: 'checkpoint',
           point: latest,
-          reason: 'Latest automatic checkpoint'
+          reason: 'Latest automatic checkpoint',
         };
       }
     }
 
     // 最后选择最新的Snapshot
     if (snapshots.length > 0) {
-      const latest = snapshots.sort((a, b) =>
-        b.createdAt.differenceInSeconds(a.createdAt)
-      )[0];
+      const latest = snapshots.sort((a, b) => b.createdAt.differenceInSeconds(a.createdAt))[0];
       if (latest) {
         return {
           type: 'snapshot',
           point: latest,
-          reason: 'Latest snapshot'
+          reason: 'Latest snapshot',
         };
       }
     }

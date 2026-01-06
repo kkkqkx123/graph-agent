@@ -1,6 +1,13 @@
 import { Entity } from '../../common/base/entity';
 import { ID, Timestamp, Version } from '../../common/value-objects';
-import { WorkflowDefinition, WorkflowStatus, WorkflowType, WorkflowConfig, NodeId, NodeType } from '../value-objects';
+import {
+  WorkflowDefinition,
+  WorkflowStatus,
+  WorkflowType,
+  WorkflowConfig,
+  NodeId,
+  NodeType,
+} from '../value-objects';
 import { EdgeId, EdgeType, EdgeValueObject } from '../value-objects/edge';
 import { EdgeContextFilter } from '../value-objects/context';
 import { ErrorHandlingStrategy } from '../value-objects/error-handling-strategy';
@@ -105,13 +112,13 @@ export class Workflow extends Entity {
       version: Version.initial(),
       isDeleted: false,
       createdBy,
-      updatedBy: createdBy
+      updatedBy: createdBy,
     });
 
     // 创建空的工作流图
     const workflowGraph: WorkflowGraphData = {
       nodes: new Map(),
-      edges: new Map()
+      edges: new Map(),
     };
 
     const props: WorkflowProps = {
@@ -122,7 +129,7 @@ export class Workflow extends Entity {
       updatedAt: now,
       version: Version.initial(),
       createdBy,
-      updatedBy: createdBy
+      updatedBy: createdBy,
     };
 
     const workflow = new Workflow(props);
@@ -258,7 +265,7 @@ export class Workflow extends Entity {
   public getGraph(): WorkflowGraphData {
     return {
       nodes: new Map(this.props.graph.nodes),
-      edges: new Map(this.props.graph.edges)
+      edges: new Map(this.props.graph.edges),
     };
   }
 
@@ -379,11 +386,7 @@ export class Workflow extends Entity {
    * @param reason 变更原因
    * @returns 新工作流实例
    */
-  public changeStatus(
-    newStatus: WorkflowStatus,
-    changedBy?: ID,
-    reason?: string
-  ): Workflow {
+  public changeStatus(newStatus: WorkflowStatus, changedBy?: ID, reason?: string): Workflow {
     const newDefinition = this.props.definition.changeStatus(newStatus, changedBy);
 
     return new Workflow({
@@ -391,7 +394,7 @@ export class Workflow extends Entity {
       definition: newDefinition,
       updatedAt: Timestamp.now(),
       version: this.props.version.nextPatch(),
-      updatedBy: changedBy
+      updatedBy: changedBy,
     });
   }
 
@@ -467,9 +470,11 @@ export class Workflow extends Entity {
    * @returns 是否可以执行
    */
   public canExecute(): boolean {
-    return this.props.definition.status.isActive() &&
+    return (
+      this.props.definition.status.isActive() &&
       !this.props.definition.isDeleted() &&
-      this.getNodeCount() > 0;
+      this.getNodeCount() > 0
+    );
   }
 
   /**
@@ -500,7 +505,7 @@ export class Workflow extends Entity {
 
     const newGraph = {
       ...this.props.graph,
-      nodes: newNodes
+      nodes: newNodes,
     };
 
     return new Workflow({
@@ -508,7 +513,7 @@ export class Workflow extends Entity {
       graph: newGraph,
       updatedAt: Timestamp.now(),
       version: this.props.version.nextPatch(),
-      updatedBy
+      updatedBy,
     });
   }
 
@@ -538,7 +543,7 @@ export class Workflow extends Entity {
 
     const newGraph = {
       ...this.props.graph,
-      nodes: newNodes
+      nodes: newNodes,
     };
 
     return new Workflow({
@@ -546,7 +551,7 @@ export class Workflow extends Entity {
       graph: newGraph,
       updatedAt: Timestamp.now(),
       version: this.props.version.nextPatch(),
-      updatedBy
+      updatedBy,
     });
   }
 
@@ -600,7 +605,7 @@ export class Workflow extends Entity {
       condition,
       weight,
       properties: properties || {},
-      contextFilter: contextFilter || EdgeContextFilter.passAll()
+      contextFilter: contextFilter || EdgeContextFilter.passAll(),
     });
 
     const newEdges = new Map(this.props.graph.edges);
@@ -608,7 +613,7 @@ export class Workflow extends Entity {
 
     const newGraph = {
       ...this.props.graph,
-      edges: newEdges
+      edges: newEdges,
     };
 
     return new Workflow({
@@ -616,7 +621,7 @@ export class Workflow extends Entity {
       graph: newGraph,
       updatedAt: Timestamp.now(),
       version: this.props.version.nextPatch(),
-      updatedBy
+      updatedBy,
     });
   }
 
@@ -640,7 +645,7 @@ export class Workflow extends Entity {
 
     const newGraph = {
       ...this.props.graph,
-      edges: newEdges
+      edges: newEdges,
     };
 
     return new Workflow({
@@ -648,7 +653,7 @@ export class Workflow extends Entity {
       graph: newGraph,
       updatedAt: Timestamp.now(),
       version: this.props.version.nextPatch(),
-      updatedBy
+      updatedBy,
     });
   }
 
@@ -664,7 +669,7 @@ export class Workflow extends Entity {
       definition: newDefinition,
       updatedAt: Timestamp.now(),
       version: this.props.version.nextPatch(),
-      updatedBy
+      updatedBy,
     });
   }
 }

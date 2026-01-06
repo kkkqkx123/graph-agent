@@ -30,7 +30,7 @@ export interface OperationStatisticsProps {
 
 /**
  * 操作统计信息值对象
- * 
+ *
  * 职责：表示操作统计信息
  */
 export class OperationStatistics extends ValueObject<OperationStatisticsProps> {
@@ -44,14 +44,14 @@ export class OperationStatistics extends ValueObject<OperationStatisticsProps> {
         total: 0,
         successful: 0,
         failed: 0,
-        byStrategy: new Map()
+        byStrategy: new Map(),
       },
       copyOperations: {
         total: 0,
         successful: 0,
-        failed: 0
+        failed: 0,
       },
-      otherOperations: new Map()
+      otherOperations: new Map(),
     });
   }
 
@@ -92,14 +92,16 @@ export class OperationStatistics extends ValueObject<OperationStatisticsProps> {
 
     const newForkOperations: ForkOperationStatistics = {
       total: this.props.forkOperations.total + 1,
-      successful: success ? this.props.forkOperations.successful + 1 : this.props.forkOperations.successful,
+      successful: success
+        ? this.props.forkOperations.successful + 1
+        : this.props.forkOperations.successful,
       failed: success ? this.props.forkOperations.failed : this.props.forkOperations.failed + 1,
-      byStrategy: newByStrategy
+      byStrategy: newByStrategy,
     };
 
     return new OperationStatistics({
       ...this.props,
-      forkOperations: newForkOperations
+      forkOperations: newForkOperations,
     });
   }
 
@@ -111,13 +113,15 @@ export class OperationStatistics extends ValueObject<OperationStatisticsProps> {
   public recordCopyOperation(success: boolean): OperationStatistics {
     const newCopyOperations: CopyOperationStatistics = {
       total: this.props.copyOperations.total + 1,
-      successful: success ? this.props.copyOperations.successful + 1 : this.props.copyOperations.successful,
-      failed: success ? this.props.copyOperations.failed : this.props.copyOperations.failed + 1
+      successful: success
+        ? this.props.copyOperations.successful + 1
+        : this.props.copyOperations.successful,
+      failed: success ? this.props.copyOperations.failed : this.props.copyOperations.failed + 1,
     };
 
     return new OperationStatistics({
       ...this.props,
-      copyOperations: newCopyOperations
+      copyOperations: newCopyOperations,
     });
   }
 
@@ -133,7 +137,7 @@ export class OperationStatistics extends ValueObject<OperationStatisticsProps> {
 
     return new OperationStatistics({
       ...this.props,
-      otherOperations: newOtherOperations
+      otherOperations: newOtherOperations,
     });
   }
 
@@ -151,7 +155,10 @@ export class OperationStatistics extends ValueObject<OperationStatisticsProps> {
     if (this.props.forkOperations.failed < 0) {
       throw new Error('Fork操作失败数不能为负数');
     }
-    if (this.props.forkOperations.successful + this.props.forkOperations.failed > this.props.forkOperations.total) {
+    if (
+      this.props.forkOperations.successful + this.props.forkOperations.failed >
+      this.props.forkOperations.total
+    ) {
       throw new Error('Fork操作成功数和失败数之和不能大于总数');
     }
 
@@ -165,7 +172,10 @@ export class OperationStatistics extends ValueObject<OperationStatisticsProps> {
     if (this.props.copyOperations.failed < 0) {
       throw new Error('Copy操作失败数不能为负数');
     }
-    if (this.props.copyOperations.successful + this.props.copyOperations.failed > this.props.copyOperations.total) {
+    if (
+      this.props.copyOperations.successful + this.props.copyOperations.failed >
+      this.props.copyOperations.total
+    ) {
       throw new Error('Copy操作成功数和失败数之和不能大于总数');
     }
 

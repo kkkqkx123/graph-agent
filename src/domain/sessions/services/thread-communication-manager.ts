@@ -3,7 +3,7 @@ import { ThreadMessage, ThreadMessageType } from '../value-objects/thread-commun
 
 /**
  * 线程通信管理器
- * 
+ *
  * 职责：管理会话中线程间的通信
  */
 export class ThreadCommunicationManager {
@@ -33,16 +33,16 @@ export class ThreadCommunicationManager {
     payload: Record<string, unknown>
   ): string {
     const message = ThreadMessage.create(fromThreadId, toThreadId, type, payload);
-    
+
     this.messages.set(message.id.toString(), message);
-    
+
     // 添加到接收线程的消息集合
     const toThreadIdStr = toThreadId.toString();
     if (!this.threadMessages.has(toThreadIdStr)) {
       this.threadMessages.set(toThreadIdStr, new Set());
     }
     this.threadMessages.get(toThreadIdStr)!.add(message.id.toString());
-    
+
     return message.id.toString();
   }
 
@@ -52,13 +52,10 @@ export class ThreadCommunicationManager {
    * @param includeRead 是否包含已读消息
    * @returns 消息数组
    */
-  public getMessagesForThread(
-    threadId: ID,
-    includeRead: boolean = false
-  ): ThreadMessage[] {
+  public getMessagesForThread(threadId: ID, includeRead: boolean = false): ThreadMessage[] {
     const threadIdStr = threadId.toString();
     const messageIds = this.threadMessages.get(threadIdStr) || new Set();
-    
+
     const messages: ThreadMessage[] = [];
     for (const messageId of messageIds) {
       const message = this.messages.get(messageId);
@@ -66,7 +63,7 @@ export class ThreadCommunicationManager {
         messages.push(message);
       }
     }
-    
+
     return messages.sort((a, b) => a.timestamp.compare(b.timestamp));
   }
 
@@ -119,12 +116,12 @@ export class ThreadCommunicationManager {
   public clearMessagesForThread(threadId: ID): void {
     const threadIdStr = threadId.toString();
     const messageIds = this.threadMessages.get(threadIdStr) || new Set();
-    
+
     // 从主消息映射中移除
     for (const messageId of messageIds) {
       this.messages.delete(messageId);
     }
-    
+
     // 清空线程的消息集合
     this.threadMessages.delete(threadIdStr);
   }
@@ -159,21 +156,21 @@ export class ThreadCommunicationManager {
    */
   public getThreadMessageStats(): Map<string, { total: number; unread: number }> {
     const stats = new Map<string, { total: number; unread: number }>();
-    
+
     for (const [threadIdStr, messageIds] of this.threadMessages.entries()) {
       const total = messageIds.size;
       let unread = 0;
-      
+
       for (const messageId of messageIds) {
         const message = this.messages.get(messageId);
         if (message && !message.isRead) {
           unread++;
         }
       }
-      
+
       stats.set(threadIdStr, { total, unread });
     }
-    
+
     return stats;
   }
 }

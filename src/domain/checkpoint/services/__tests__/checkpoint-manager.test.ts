@@ -18,24 +18,14 @@ describe('CheckpointManager', () => {
 
   describe('create', () => {
     it('应该成功创建检查点', () => {
-      const checkpointId = checkpointManager.create(
-        threadId,
-        workflowId,
-        nodeId,
-        stateData
-      );
+      const checkpointId = checkpointManager.create(threadId, workflowId, nodeId, stateData);
 
       expect(checkpointId).toBeDefined();
       expect(checkpointManager.hasCheckpoint(checkpointId)).toBe(true);
     });
 
     it('应该保存检查点数据', () => {
-      const checkpointId = checkpointManager.create(
-        threadId,
-        workflowId,
-        nodeId,
-        stateData
-      );
+      const checkpointId = checkpointManager.create(threadId, workflowId, nodeId, stateData);
 
       const checkpoint = checkpointManager.get(checkpointId);
       expect(checkpoint).not.toBeNull();
@@ -66,12 +56,7 @@ describe('CheckpointManager', () => {
 
   describe('get', () => {
     it('应该返回已创建的检查点', () => {
-      const checkpointId = checkpointManager.create(
-        threadId,
-        workflowId,
-        nodeId,
-        stateData
-      );
+      const checkpointId = checkpointManager.create(threadId, workflowId, nodeId, stateData);
 
       const checkpoint = checkpointManager.get(checkpointId);
       expect(checkpoint).not.toBeNull();
@@ -86,24 +71,14 @@ describe('CheckpointManager', () => {
 
   describe('restore', () => {
     it('应该成功恢复检查点', () => {
-      const checkpointId = checkpointManager.create(
-        threadId,
-        workflowId,
-        nodeId,
-        stateData
-      );
+      const checkpointId = checkpointManager.create(threadId, workflowId, nodeId, stateData);
 
       const restoredData = checkpointManager.restore(checkpointId);
       expect(restoredData).toEqual(stateData);
     });
 
     it('应该标记检查点为已恢复', () => {
-      const checkpointId = checkpointManager.create(
-        threadId,
-        workflowId,
-        nodeId,
-        stateData
-      );
+      const checkpointId = checkpointManager.create(threadId, workflowId, nodeId, stateData);
 
       const checkpoint = checkpointManager.get(checkpointId);
       expect(checkpoint?.restoreCount).toBe(0);
@@ -122,12 +97,7 @@ describe('CheckpointManager', () => {
 
   describe('delete', () => {
     it('应该成功删除检查点', () => {
-      const checkpointId = checkpointManager.create(
-        threadId,
-        workflowId,
-        nodeId,
-        stateData
-      );
+      const checkpointId = checkpointManager.create(threadId, workflowId, nodeId, stateData);
 
       const deleted = checkpointManager.delete(checkpointId);
       expect(deleted).toBe(true);
@@ -135,12 +105,7 @@ describe('CheckpointManager', () => {
     });
 
     it('应该从线程的检查点列表中删除', () => {
-      const checkpointId = checkpointManager.create(
-        threadId,
-        workflowId,
-        nodeId,
-        stateData
-      );
+      const checkpointId = checkpointManager.create(threadId, workflowId, nodeId, stateData);
 
       checkpointManager.delete(checkpointId);
 
@@ -229,12 +194,7 @@ describe('CheckpointManager', () => {
 
   describe('hasCheckpoint', () => {
     it('应该返回 true 如果检查点存在', () => {
-      const checkpointId = checkpointManager.create(
-        threadId,
-        workflowId,
-        nodeId,
-        stateData
-      );
+      const checkpointId = checkpointManager.create(threadId, workflowId, nodeId, stateData);
 
       expect(checkpointManager.hasCheckpoint(checkpointId)).toBe(true);
     });

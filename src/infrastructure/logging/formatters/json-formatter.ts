@@ -62,7 +62,7 @@ export class JsonFormatter extends BaseFormatter {
       includeContext: true,
       includeStack: true,
       sanitize: true,
-      ...options
+      ...options,
     };
   }
 
@@ -94,7 +94,7 @@ export class JsonFormatter extends BaseFormatter {
     if (entry.error) {
       logObject['error'] = {
         name: entry.error.name,
-        message: entry.error.message
+        message: entry.error.message,
       };
 
       if (this.options.includeStack && entry.error.stack) {
@@ -115,7 +115,11 @@ export class JsonFormatter extends BaseFormatter {
     // 脱敏敏感数据
     if (this.options.sanitize) {
       const sensitiveConfig = RedactorUtils.createDefaultConfig();
-      return JSON.stringify(RedactorUtils.sanitizeObject(logObject, sensitiveConfig), null, this.options.pretty ? 2 : 0);
+      return JSON.stringify(
+        RedactorUtils.sanitizeObject(logObject, sensitiveConfig),
+        null,
+        this.options.pretty ? 2 : 0
+      );
     }
 
     return JSON.stringify(logObject, null, this.options.pretty ? 2 : 0);
@@ -127,7 +131,7 @@ export class JsonFormatter extends BaseFormatter {
   override formatError(error: Error): string {
     const errorObject: Record<string, any> = {
       name: error.name,
-      message: error.message
+      message: error.message,
     };
 
     if (error.stack) {

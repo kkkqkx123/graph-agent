@@ -16,33 +16,37 @@ const AnthropicEndpointConfigSchema = BaseEndpointConfigSchema.extend({
   /**
    * 基础 URL
    */
-  baseURL: z.string().refine(
-    (url) => url.includes('api.anthropic.com'),
-    { message: 'Anthropic API should use api.anthropic.com' }
-  ),
+  baseURL: z
+    .string()
+    .refine(url => url.includes('api.anthropic.com'), {
+      message: 'Anthropic API should use api.anthropic.com',
+    }),
 
   /**
    * API 密钥
    */
-  apiKey: z.string().refine(
-    (key) => key.startsWith('sk-ant-'),
-    { message: 'Anthropic API key should start with "sk-ant-"' }
-  ),
+  apiKey: z
+    .string()
+    .refine(key => key.startsWith('sk-ant-'), {
+      message: 'Anthropic API key should start with "sk-ant-"',
+    }),
 
   /**
    * 额外配置
    */
-  extraConfig: z.object({
-    /**
-     * API 版本
-     */
-    apiVersion: z.string().default('2023-06-01'),
+  extraConfig: z
+    .object({
+      /**
+       * API 版本
+       */
+      apiVersion: z.string().default('2023-06-01'),
 
-    /**
-     * 客户端名称
-     */
-    clientName: z.string().optional()
-  }).optional()
+      /**
+       * 客户端名称
+       */
+      clientName: z.string().optional(),
+    })
+    .optional(),
 });
 
 /**

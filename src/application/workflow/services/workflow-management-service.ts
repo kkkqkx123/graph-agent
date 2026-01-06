@@ -1,6 +1,6 @@
 /**
  * 工作流管理服务
- * 
+ *
  * 负责工作流的查询、列表、搜索、更新和标签管理等管理功能
  */
 
@@ -299,9 +299,7 @@ export class WorkflowManagementService extends BaseApplicationService {
 
         if (params.filters?.createdBy) {
           const createdBy = this.parseId(params.filters.createdBy, '创建者ID');
-          filteredWorkflows = filteredWorkflows.filter(wf =>
-            wf.createdBy?.equals(createdBy)
-          );
+          filteredWorkflows = filteredWorkflows.filter(wf => wf.createdBy?.equals(createdBy));
         }
 
         if (params.filters?.name) {
@@ -327,7 +325,7 @@ export class WorkflowManagementService extends BaseApplicationService {
           workflows: mapWorkflowsToDTOs(paginatedWorkflows),
           total: filteredWorkflows.length,
           page,
-          size: paginatedWorkflows.length
+          size: paginatedWorkflows.length,
         };
 
         return result;
@@ -377,8 +375,9 @@ export class WorkflowManagementService extends BaseApplicationService {
         }
 
         // 去重
-        const uniqueWorkflows = workflows.filter((workflow, index, self) =>
-          index === self.findIndex(w => w.workflowId.equals(workflow.workflowId))
+        const uniqueWorkflows = workflows.filter(
+          (workflow, index, self) =>
+            index === self.findIndex(w => w.workflowId.equals(workflow.workflowId))
         );
 
         // 应用分页
@@ -392,7 +391,7 @@ export class WorkflowManagementService extends BaseApplicationService {
           workflows: mapWorkflowsToDTOs(paginatedWorkflows),
           total: uniqueWorkflows.length,
           page,
-          size: paginatedWorkflows.length
+          size: paginatedWorkflows.length,
         };
 
         return result;

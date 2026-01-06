@@ -141,7 +141,7 @@ export class StateData extends ValueObject<StateDataProps> {
    */
   public merge(other: StateData): StateData {
     return new StateData({
-      data: { ...this.props.data, ...other.toRecord() }
+      data: { ...this.props.data, ...other.toRecord() },
     });
   }
 

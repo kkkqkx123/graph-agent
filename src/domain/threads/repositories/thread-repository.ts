@@ -6,7 +6,7 @@ import { ThreadPriority } from '../value-objects/thread-priority';
 
 /**
  * 线程仓储接口
- * 
+ *
  * 定义线程持久化和查询的契约
  * 使用业务导向的方法，避免技术细节泄露
  */

@@ -38,7 +38,7 @@ export class ValidationUtils {
     return {
       isValid: errors.length === 0,
       errors,
-      warnings
+      warnings,
     };
   }
 
@@ -65,7 +65,7 @@ export class ValidationUtils {
     return {
       isValid: errors.length === 0,
       errors,
-      warnings
+      warnings,
     };
   }
 
@@ -92,7 +92,7 @@ export class ValidationUtils {
     return {
       isValid: errors.length === 0,
       errors,
-      warnings
+      warnings,
     };
   }
 
@@ -116,7 +116,7 @@ export class ValidationUtils {
     return {
       isValid: errors.length === 0,
       errors,
-      warnings
+      warnings,
     };
   }
 
@@ -141,7 +141,7 @@ export class ValidationUtils {
     return {
       isValid: errors.length === 0,
       errors,
-      warnings
+      warnings,
     };
   }
 
@@ -164,7 +164,7 @@ export class ValidationUtils {
     return {
       isValid: errors.length === 0,
       errors,
-      warnings
+      warnings,
     };
   }
 
@@ -182,14 +182,19 @@ export class ValidationUtils {
     return {
       isValid: errors.length === 0,
       errors,
-      warnings
+      warnings,
     };
   }
 
   /**
    * 验证数组
    */
-  static array(value: unknown, minItems?: number, maxItems?: number, fieldName?: string): ValidationResult {
+  static array(
+    value: unknown,
+    minItems?: number,
+    maxItems?: number,
+    fieldName?: string
+  ): ValidationResult {
     const errors: string[] = [];
     const warnings: string[] = [];
 
@@ -199,17 +204,21 @@ export class ValidationUtils {
     }
 
     if (minItems !== undefined && value.length < minItems) {
-      errors.push(fieldName ? `${fieldName}至少需要${minItems}个元素` : `数组至少需要${minItems}个元素`);
+      errors.push(
+        fieldName ? `${fieldName}至少需要${minItems}个元素` : `数组至少需要${minItems}个元素`
+      );
     }
 
     if (maxItems !== undefined && value.length > maxItems) {
-      errors.push(fieldName ? `${fieldName}最多只能有${maxItems}个元素` : `数组最多只能有${maxItems}个元素`);
+      errors.push(
+        fieldName ? `${fieldName}最多只能有${maxItems}个元素` : `数组最多只能有${maxItems}个元素`
+      );
     }
 
     return {
       isValid: errors.length === 0,
       errors,
-      warnings
+      warnings,
     };
   }
 
@@ -236,7 +245,7 @@ export class ValidationUtils {
     return {
       isValid: errors.length === 0,
       errors,
-      warnings
+      warnings,
     };
   }
 
@@ -255,7 +264,7 @@ export class ValidationUtils {
     return {
       isValid: allErrors.length === 0,
       errors: allErrors,
-      warnings: allWarnings
+      warnings: allWarnings,
     };
   }
 
@@ -278,7 +287,7 @@ export class ValidationUtils {
     return {
       isValid: errors.length === 0,
       errors,
-      warnings
+      warnings,
     };
   }
 
@@ -293,7 +302,7 @@ export class ValidationUtils {
     return {
       name,
       validate: validator,
-      message
+      message,
     };
   }
 }

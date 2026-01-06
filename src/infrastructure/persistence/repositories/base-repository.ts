@@ -1,5 +1,9 @@
 import { injectable, inject } from 'inversify';
-import { Repository as IRepository, IQueryOptions, PaginatedResult } from '../../../domain/common/repositories/repository';
+import {
+  Repository as IRepository,
+  IQueryOptions,
+  PaginatedResult,
+} from '../../../domain/common/repositories/repository';
 import { ID } from '../../../domain/common/value-objects/id';
 import { ConnectionManager } from '../connections/connection-manager';
 import { DataSource, Repository, FindOptionsWhere, FindManyOptions, ObjectLiteral } from 'typeorm';
@@ -10,12 +14,14 @@ import { DataSource, Repository, FindOptionsWhere, FindManyOptions, ObjectLitera
  * 提供基础的CRUD操作
  */
 @injectable()
-export abstract class BaseRepository<T, TModel extends ObjectLiteral, TId = ID> implements IRepository<T, TId> {
+export abstract class BaseRepository<
+  T,
+  TModel extends ObjectLiteral,
+  TId = ID,
+> implements IRepository<T, TId> {
   protected abstract getModelClass(): new () => TModel;
 
-  constructor(
-    @inject('ConnectionManager') protected connectionManager: ConnectionManager
-  ) {}
+  constructor(@inject('ConnectionManager') protected connectionManager: ConnectionManager) {}
 
   /**
    * 获取TypeORM仓储实例
@@ -88,7 +94,7 @@ export abstract class BaseRepository<T, TModel extends ObjectLiteral, TId = ID> 
     try {
       const repository = await this.getRepository();
       const model = await repository.findOne({
-        where: this.buildIdWhere(id) as FindOptionsWhere<TModel>
+        where: this.buildIdWhere(id) as FindOptionsWhere<TModel>,
       });
 
       if (!model) {
@@ -173,7 +179,7 @@ export abstract class BaseRepository<T, TModel extends ObjectLiteral, TId = ID> 
       const findOptions = this.buildFindOptions({
         ...options,
         offset: skip,
-        limit: pageSize
+        limit: pageSize,
       });
 
       const [models, total] = await repository.findAndCount(findOptions);
@@ -184,7 +190,7 @@ export abstract class BaseRepository<T, TModel extends ObjectLiteral, TId = ID> 
         total,
         page,
         pageSize: pageSize,
-        totalPages
+        totalPages,
       };
     } catch (error) {
       console.error('分页查询实体失败:', error);
@@ -285,7 +291,7 @@ export abstract class BaseRepository<T, TModel extends ObjectLiteral, TId = ID> 
     try {
       const repository = await this.getRepository();
       const count = await repository.count({
-        where: this.buildIdWhere(id) as FindOptionsWhere<TModel>
+        where: this.buildIdWhere(id) as FindOptionsWhere<TModel>,
       });
       return count > 0;
     } catch (error) {

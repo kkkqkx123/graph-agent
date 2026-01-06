@@ -14,7 +14,7 @@ export enum WorkflowFunctionType {
   CONDITION = 'condition',
   ROUTING = 'routing',
   TRIGGER = 'trigger',
-  TRANSFORM = 'transform'
+  TRANSFORM = 'transform',
 }
 
 /**
@@ -104,9 +104,7 @@ export class FunctionManagementService {
   private readonly versionRegistry = new Map<string, FunctionVersionInfo[]>();
   private readonly deploymentRegistry = new Map<string, FunctionDeploymentStatus[]>();
 
-  constructor(
-    @inject('Logger') private readonly logger: ILogger
-  ) { }
+  constructor(@inject('Logger') private readonly logger: ILogger) {}
 
   /**
    * 部署函数
@@ -118,7 +116,7 @@ export class FunctionManagementService {
     this.logger.info('开始部署函数', {
       functionId: functionDefinition.id,
       version: functionDefinition.version,
-      environment: deploymentConfig.environment
+      environment: deploymentConfig.environment,
     });
 
     try {
@@ -138,7 +136,7 @@ export class FunctionManagementService {
           code: functionDefinition.code,
           dependencies: functionDefinition.dependencies,
           config: functionDefinition.config,
-          metadata: functionDefinition.metadata
+          metadata: functionDefinition.metadata,
         });
       } else {
         // 注册新函数
@@ -152,7 +150,7 @@ export class FunctionManagementService {
         isActive: true,
         createdAt: new Date(),
         createdBy: 'system', // 应该从上下文获取
-        changelog: `部署版本 ${functionDefinition.version}`
+        changelog: `部署版本 ${functionDefinition.version}`,
       };
 
       // 4. 更新版本注册表
@@ -168,7 +166,7 @@ export class FunctionManagementService {
         environment: deploymentConfig.environment,
         status: 'deployed',
         deployedAt: new Date(),
-        endpoints: [`/api/functions/${functionDefinition.id}/${functionDefinition.version}`]
+        endpoints: [`/api/functions/${functionDefinition.id}/${functionDefinition.version}`],
       };
 
       // 6. 更新部署注册表
@@ -180,11 +178,10 @@ export class FunctionManagementService {
       this.logger.info('函数部署成功', {
         functionId: functionDefinition.id,
         version: functionDefinition.version,
-        environment: deploymentConfig.environment
+        environment: deploymentConfig.environment,
       });
 
       return deploymentStatus;
-
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : String(error);
 
@@ -193,13 +190,13 @@ export class FunctionManagementService {
         version: functionDefinition.version,
         environment: deploymentConfig.environment,
         status: 'failed',
-        errorMessage
+        errorMessage,
       };
 
       this.logger.error('函数部署失败', error instanceof Error ? error : new Error(errorMessage), {
         functionId: functionDefinition.id,
         version: functionDefinition.version,
-        environment: deploymentConfig.environment
+        environment: deploymentConfig.environment,
       });
 
       return failedStatus;
@@ -222,7 +219,7 @@ export class FunctionManagementService {
       const updatedFunction: FunctionDefinition = {
         ...existingFunction,
         ...updates,
-        id: functionId // 确保ID不被更改
+        id: functionId, // 确保ID不被更改
       };
 
       // 验证更新后的函数
@@ -236,10 +233,9 @@ export class FunctionManagementService {
 
       this.logger.info('函数更新成功', { functionId });
       return true;
-
     } catch (error) {
       this.logger.error('函数更新失败', error instanceof Error ? error : new Error(String(error)), {
-        functionId
+        functionId,
       });
       return false;
     }
@@ -279,11 +275,10 @@ export class FunctionManagementService {
 
       this.logger.info('函数退役成功', { functionId, version });
       return true;
-
     } catch (error) {
       this.logger.error('函数退役失败', error instanceof Error ? error : new Error(String(error)), {
         functionId,
-        version
+        version,
       });
       return false;
     }
@@ -292,7 +287,10 @@ export class FunctionManagementService {
   /**
    * 获取函数定义
    */
-  async getFunctionDefinition(functionId: string, version?: string): Promise<FunctionDefinition | null> {
+  async getFunctionDefinition(
+    functionId: string,
+    version?: string
+  ): Promise<FunctionDefinition | null> {
     const functionDef = this.functionRegistry.get(functionId);
     if (!functionDef) {
       return null;
@@ -373,7 +371,9 @@ export class FunctionManagementService {
   /**
    * 验证函数定义
    */
-  private async validateFunctionDefinition(definition: FunctionDefinition): Promise<ValidationResult> {
+  private async validateFunctionDefinition(
+    definition: FunctionDefinition
+  ): Promise<ValidationResult> {
     const errors: string[] = [];
 
     // 基础验证
@@ -411,12 +411,14 @@ export class FunctionManagementService {
         }
       }
     } catch (error) {
-      errors.push(`函数验证过程中发生错误: ${error instanceof Error ? error.message : String(error)}`);
+      errors.push(
+        `函数验证过程中发生错误: ${error instanceof Error ? error.message : String(error)}`
+      );
     }
 
     return {
       valid: errors.length === 0,
-      errors
+      errors,
     };
   }
 

@@ -1,4 +1,11 @@
-import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, OneToMany } from 'typeorm';
+import {
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  CreateDateColumn,
+  UpdateDateColumn,
+  OneToMany,
+} from 'typeorm';
 import { ExecutionStatsModel } from './execution-stats.model';
 
 @Entity('workflows')
@@ -15,14 +22,14 @@ export class WorkflowModel {
   @Column({
     type: 'enum',
     enum: ['draft', 'active', 'inactive', 'archived'],
-    default: 'draft'
+    default: 'draft',
   })
   state!: string;
 
   @Column({
     type: 'enum',
     enum: ['sequential', 'parallel', 'conditional'],
-    default: 'sequential'
+    default: 'sequential',
   })
   executionMode!: string;
 

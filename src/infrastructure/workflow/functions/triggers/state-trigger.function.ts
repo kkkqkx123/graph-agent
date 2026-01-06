@@ -8,13 +8,7 @@ import { TriggerFunctionConfig, WorkflowExecutionContext } from '../types';
 @injectable()
 export class StateTriggerFunction extends BaseTriggerFunction<TriggerFunctionConfig> {
   constructor() {
-    super(
-      'trigger:state',
-      'state_trigger',
-      '基于工作流状态条件的触发器',
-      '1.0.0',
-      'builtin'
-    );
+    super('trigger:state', 'state_trigger', '基于工作流状态条件的触发器', '1.0.0', 'builtin');
   }
 
   override getParameters() {
@@ -24,21 +18,21 @@ export class StateTriggerFunction extends BaseTriggerFunction<TriggerFunctionCon
         name: 'stateVariable',
         type: 'string',
         required: true,
-        description: '要监控的状态变量名'
+        description: '要监控的状态变量名',
       },
       {
         name: 'expectedValue',
         type: 'any',
         required: true,
-        description: '期望的状态值'
+        description: '期望的状态值',
       },
       {
         name: 'operator',
         type: 'string',
         required: false,
         description: '比较操作符：===, !==, >, <, >=, <=, contains, exists, not_exists',
-        defaultValue: '==='
-      }
+        defaultValue: '===',
+      },
     ];
   }
 
@@ -57,7 +51,10 @@ export class StateTriggerFunction extends BaseTriggerFunction<TriggerFunctionCon
     return errors;
   }
 
-  override async execute(context: WorkflowExecutionContext, config: TriggerFunctionConfig): Promise<boolean> {
+  override async execute(
+    context: WorkflowExecutionContext,
+    config: TriggerFunctionConfig
+  ): Promise<boolean> {
     this.checkInitialized();
 
     const stateVariable = config['stateVariable'];

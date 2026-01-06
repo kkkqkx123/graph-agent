@@ -15,7 +15,7 @@ export interface PerformanceStatisticsProps {
 
 /**
  * 性能统计信息值对象
- * 
+ *
  * 职责：表示性能统计信息
  */
 export class PerformanceStatistics extends ValueObject<PerformanceStatisticsProps> {
@@ -31,7 +31,7 @@ export class PerformanceStatistics extends ValueObject<PerformanceStatisticsProp
       totalExecutionTime: 0,
       executionCount: 0,
       successRate: 0,
-      failureRate: 0
+      failureRate: 0,
     });
   }
 
@@ -103,9 +103,10 @@ export class PerformanceStatistics extends ValueObject<PerformanceStatisticsProp
     const newAverageExecutionTime = newTotalExecutionTime / newExecutionCount;
 
     const newMaxExecutionTime = Math.max(this.props.maxExecutionTime, executionTime);
-    const newMinExecutionTime = this.props.minExecutionTime === 0
-      ? executionTime
-      : Math.min(this.props.minExecutionTime, executionTime);
+    const newMinExecutionTime =
+      this.props.minExecutionTime === 0
+        ? executionTime
+        : Math.min(this.props.minExecutionTime, executionTime);
 
     const successCount = success ? 1 : 0;
     const totalSuccessCount = this.props.successRate * this.props.executionCount + successCount;
@@ -119,7 +120,7 @@ export class PerformanceStatistics extends ValueObject<PerformanceStatisticsProp
       totalExecutionTime: newTotalExecutionTime,
       executionCount: newExecutionCount,
       successRate: newSuccessRate,
-      failureRate: newFailureRate
+      failureRate: newFailureRate,
     });
   }
 

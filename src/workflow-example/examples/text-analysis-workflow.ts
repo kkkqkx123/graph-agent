@@ -1,6 +1,6 @@
 /**
  * 智能文本分析工作流示例
- * 
+ *
  * 本文件演示如何使用图工作流框架构建一个完整的文本分析工作流
  * 工作流流程：
  * 1. 输入文本
@@ -14,7 +14,7 @@
 import {
   createWorkflowGraph,
   createWorkflowEngine,
-  ExecutionStrategy
+  ExecutionStrategy,
 } from '../engine/workflow-engine';
 
 import {
@@ -22,26 +22,18 @@ import {
   createLLMNode,
   createConditionNode,
   createTransformNode,
-  createEndNode
+  createEndNode,
 } from '../entities/node';
 
-import {
-  createDirectEdge,
-  createConditionalEdge
-} from '../entities/edge';
+import { createDirectEdge, createConditionalEdge } from '../entities/edge';
 
-import {
-  createTimeoutTrigger,
-  createErrorTrigger
-} from '../entities/trigger';
+import { createTimeoutTrigger, createErrorTrigger } from '../entities/trigger';
 
-import {
-  ConditionOperator
-} from '../types/workflow-types';
+import { ConditionOperator } from '../types/workflow-types';
 
 /**
  * 创建智能文本分析工作流
- * 
+ *
  * @returns 工作流图实例
  */
 export function createTextAnalysisWorkflow() {
@@ -53,22 +45,18 @@ export function createTextAnalysisWorkflow() {
   // ============================================================================
 
   // 1. 开始节点 - 接收输入文本
-  const inputNode = createStartNode(
-    'InputNode',
-    '输入节点',
-    {},
-    '接收用户输入的文本'
-  );
+  const inputNode = createStartNode('InputNode', '输入节点', {}, '接收用户输入的文本');
 
   // 2. LLM分类节点 - 使用LLM对文本进行分类
   const classifyNode = createLLMNode(
     'ClassifyNode',
     'LLM分类节点',
     {
-      prompt: '请判断以下文本的类型：新闻、评论、问答。只返回类型名称（news/review/qa）。文本：{{input.text}}',
+      prompt:
+        '请判断以下文本的类型：新闻、评论、问答。只返回类型名称（news/review/qa）。文本：{{input.text}}',
       model: 'gpt-3.5-turbo',
       temperature: 0.3,
-      maxTokens: 50
+      maxTokens: 50,
     },
     '使用LLM对输入文本进行分类'
   );
@@ -80,8 +68,8 @@ export function createTextAnalysisWorkflow() {
     {
       condition: '{{ClassifyNode.data.response}} == "news"',
       data: {
-        classification: '{{ClassifyNode.data.response}}'
-      }
+        classification: '{{ClassifyNode.data.response}}',
+      },
     },
     '判断分类结果是否为新闻'
   );
@@ -93,8 +81,8 @@ export function createTextAnalysisWorkflow() {
     {
       condition: '{{ClassifyNode.data.response}} == "review"',
       data: {
-        classification: '{{ClassifyNode.data.response}}'
-      }
+        classification: '{{ClassifyNode.data.response}}',
+      },
     },
     '判断分类结果是否为评论'
   );
@@ -106,8 +94,8 @@ export function createTextAnalysisWorkflow() {
     {
       condition: '{{ClassifyNode.data.response}} == "qa"',
       data: {
-        classification: '{{ClassifyNode.data.response}}'
-      }
+        classification: '{{ClassifyNode.data.response}}',
+      },
     },
     '判断分类结果是否为问答'
   );
@@ -117,10 +105,11 @@ export function createTextAnalysisWorkflow() {
     'ExtractNewsNode',
     '新闻信息提取',
     {
-      prompt: '从以下新闻文本中提取标题、时间、地点，以JSON格式返回：{"title": "...", "time": "...", "location": "..."}。文本：{{input.text}}',
+      prompt:
+        '从以下新闻文本中提取标题、时间、地点，以JSON格式返回：{"title": "...", "time": "...", "location": "..."}。文本：{{input.text}}',
       model: 'gpt-3.5-turbo',
       temperature: 0.5,
-      maxTokens: 200
+      maxTokens: 200,
     },
     '提取新闻的关键信息'
   );
@@ -130,10 +119,11 @@ export function createTextAnalysisWorkflow() {
     'SentimentNode',
     '情感分析',
     {
-      prompt: '分析以下评论的情感（positive/negative/neutral），只返回情感类型。文本：{{input.text}}',
+      prompt:
+        '分析以下评论的情感（positive/negative/neutral），只返回情感类型。文本：{{input.text}}',
       model: 'gpt-3.5-turbo',
       temperature: 0.3,
-      maxTokens: 50
+      maxTokens: 50,
     },
     '分析评论的情感倾向'
   );
@@ -143,10 +133,11 @@ export function createTextAnalysisWorkflow() {
     'ExtractQANode',
     '问答提取',
     {
-      prompt: '从以下文本中提取问题和答案，以JSON格式返回：{"question": "...", "answer": "..."}。文本：{{input.text}}',
+      prompt:
+        '从以下文本中提取问题和答案，以JSON格式返回：{"question": "...", "answer": "..."}。文本：{{input.text}}',
       model: 'gpt-3.5-turbo',
       temperature: 0.5,
-      maxTokens: 200
+      maxTokens: 200,
     },
     '提取问答内容'
   );
@@ -160,19 +151,14 @@ export function createTextAnalysisWorkflow() {
         type: '{{ClassifyNode.data.response}}',
         result: '{{node.result}}',
         timestamp: '{{workflow.startTime}}',
-        originalText: '{{input.text}}'
-      }
+        originalText: '{{input.text}}',
+      },
     },
     '将不同分支的结果转换为统一格式'
   );
 
   // 10. 结束节点 - 返回最终结果
-  const outputNode = createEndNode(
-    'OutputNode',
-    '输出节点',
-    {},
-    '返回工作流执行结果'
-  );
+  const outputNode = createEndNode('OutputNode', '输出节点', {}, '返回工作流执行结果');
 
   // 添加所有节点到工作流
   workflow.addNode(inputNode);
@@ -199,46 +185,58 @@ export function createTextAnalysisWorkflow() {
   workflow.addEdge(createDirectEdge('edge_classify_isqa', 'ClassifyNode', 'IsQANode', 1));
 
   // 条件判断节点 -> 提取节点（条件边）
-  workflow.addEdge(createConditionalEdge(
-    'edge_isnews_extract',
-    'IsNewsNode',
-    'ExtractNewsNode',
-    {
-      expression: '{{IsNewsNode.data.result}} == true',
-      operator: ConditionOperator.EQUALS,
-      expectedValue: true
-    },
-    1
-  ));
+  workflow.addEdge(
+    createConditionalEdge(
+      'edge_isnews_extract',
+      'IsNewsNode',
+      'ExtractNewsNode',
+      {
+        expression: '{{IsNewsNode.data.result}} == true',
+        operator: ConditionOperator.EQUALS,
+        expectedValue: true,
+      },
+      1
+    )
+  );
 
-  workflow.addEdge(createConditionalEdge(
-    'edge_isreview_sentiment',
-    'IsReviewNode',
-    'SentimentNode',
-    {
-      expression: '{{IsReviewNode.data.result}} == true',
-      operator: ConditionOperator.EQUALS,
-      expectedValue: true
-    },
-    1
-  ));
+  workflow.addEdge(
+    createConditionalEdge(
+      'edge_isreview_sentiment',
+      'IsReviewNode',
+      'SentimentNode',
+      {
+        expression: '{{IsReviewNode.data.result}} == true',
+        operator: ConditionOperator.EQUALS,
+        expectedValue: true,
+      },
+      1
+    )
+  );
 
-  workflow.addEdge(createConditionalEdge(
-    'edge_isqa_extractqa',
-    'IsQANode',
-    'ExtractQANode',
-    {
-      expression: '{{IsQANode.data.result}} == true',
-      operator: ConditionOperator.EQUALS,
-      expectedValue: true
-    },
-    1
-  ));
+  workflow.addEdge(
+    createConditionalEdge(
+      'edge_isqa_extractqa',
+      'IsQANode',
+      'ExtractQANode',
+      {
+        expression: '{{IsQANode.data.result}} == true',
+        operator: ConditionOperator.EQUALS,
+        expectedValue: true,
+      },
+      1
+    )
+  );
 
   // 提取节点 -> 转换节点
-  workflow.addEdge(createDirectEdge('edge_extractnews_transform', 'ExtractNewsNode', 'TransformNode', 1));
-  workflow.addEdge(createDirectEdge('edge_sentiment_transform', 'SentimentNode', 'TransformNode', 1));
-  workflow.addEdge(createDirectEdge('edge_extractqa_transform', 'ExtractQANode', 'TransformNode', 1));
+  workflow.addEdge(
+    createDirectEdge('edge_extractnews_transform', 'ExtractNewsNode', 'TransformNode', 1)
+  );
+  workflow.addEdge(
+    createDirectEdge('edge_sentiment_transform', 'SentimentNode', 'TransformNode', 1)
+  );
+  workflow.addEdge(
+    createDirectEdge('edge_extractqa_transform', 'ExtractQANode', 'TransformNode', 1)
+  );
 
   // 转换节点 -> 输出节点
   workflow.addEdge(createDirectEdge('edge_transform_output', 'TransformNode', 'OutputNode', 1));
@@ -256,10 +254,7 @@ export function createTextAnalysisWorkflow() {
   workflow.addTrigger(timeoutTrigger);
 
   // 错误触发器 - 捕获分类节点错误
-  const errorTrigger = createErrorTrigger(
-    'error_trigger',
-    'ClassifyNode'
-  );
+  const errorTrigger = createErrorTrigger('error_trigger', 'ClassifyNode');
   workflow.addTrigger(errorTrigger);
 
   return workflow;
@@ -267,7 +262,7 @@ export function createTextAnalysisWorkflow() {
 
 /**
  * 运行文本分析工作流示例
- * 
+ *
  * @param inputText 输入文本
  * @param strategy 执行策略
  */
@@ -325,7 +320,8 @@ export async function runTextAnalysisWorkflow(
  * 示例1：新闻文本分析
  */
 export async function example1_NewsAnalysis() {
-  const newsText = '北京时间2024年1月1日，新年庆祝活动在北京天安门广场举行。数万名市民聚集在一起，共同迎接新年的到来。';
+  const newsText =
+    '北京时间2024年1月1日，新年庆祝活动在北京天安门广场举行。数万名市民聚集在一起，共同迎接新年的到来。';
   return runTextAnalysisWorkflow(newsText, ExecutionStrategy.SEQUENTIAL);
 }
 
@@ -341,7 +337,8 @@ export async function example2_ReviewAnalysis() {
  * 示例3：问答提取
  */
 export async function example3_QAExtraction() {
-  const qaText = '问：什么是人工智能？答：人工智能是计算机科学的一个分支，致力于创建能够执行通常需要人类智能的任务的系统。';
+  const qaText =
+    '问：什么是人工智能？答：人工智能是计算机科学的一个分支，致力于创建能够执行通常需要人类智能的任务的系统。';
   return runTextAnalysisWorkflow(qaText, ExecutionStrategy.SEQUENTIAL);
 }
 

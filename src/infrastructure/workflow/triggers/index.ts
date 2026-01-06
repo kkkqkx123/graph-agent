@@ -9,4 +9,8 @@ export { TriggerExecutor } from './trigger-executor';
 
 // 触发器上下文和执行结果
 export type { TriggerContext } from './trigger-context';
-export { TriggerExecutionResult, TriggerExecutionResultBuilder, TriggerExecutionResultUtils } from './trigger-execution-result';
+export {
+  TriggerExecutionResult,
+  TriggerExecutionResultBuilder,
+  TriggerExecutionResultUtils,
+} from './trigger-execution-result';

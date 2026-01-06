@@ -1,8 +1,12 @@
-import { BaseHookFunction, HookFunctionResult, createHookFunctionResult } from './base-hook-function';
+import {
+  BaseHookFunction,
+  HookFunctionResult,
+  createHookFunctionResult,
+} from './base-hook-function';
 
 /**
  * 数据验证Hook函数
- * 
+ *
  * 提供数据验证功能，可以在任何Hook点使用
  */
 export class ValidationHookFunction extends BaseHookFunction {
@@ -153,12 +157,12 @@ export class ValidationHookFunction extends BaseHookFunction {
   }
 
   override validateConfig(config: Record<string, any>): { valid: boolean; errors: string[] } {
-     const errors: string[] = [];
+    const errors: string[] = [];
 
-     if (!config?.['rules'] || !Array.isArray(config['rules'])) {
-       errors.push('rules 必须是一个数组');
-     } else {
-       config['rules'].forEach((rule: any, index: number) => {
+    if (!config?.['rules'] || !Array.isArray(config['rules'])) {
+      errors.push('rules 必须是一个数组');
+    } else {
+      config['rules'].forEach((rule: any, index: number) => {
         if (!rule.field) {
           errors.push(`规则 ${index} 缺少 field 属性`);
         }

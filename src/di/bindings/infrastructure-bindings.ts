@@ -87,7 +87,9 @@ export const infrastructureBindings = new ContainerModule((bind: any) => {
   bind(TYPES.ThreadRepositoryImpl).to(ThreadInfrastructureRepository).inSingletonScope();
   bind(TYPES.WorkflowRepositoryImpl).to(WorkflowInfrastructureRepository).inSingletonScope();
   bind(TYPES.PromptRepositoryImpl).to(PromptInfrastructureRepository).inSingletonScope();
-  bind(TYPES.ThreadCheckpointRepositoryImpl).to(ThreadCheckpointInfrastructureRepository).inSingletonScope();
+  bind(TYPES.ThreadCheckpointRepositoryImpl)
+    .to(ThreadCheckpointInfrastructureRepository)
+    .inSingletonScope();
   bind(TYPES.HistoryRepositoryImpl).to(HistoryInfrastructureRepository).inSingletonScope();
 
   // ========== 业务服务绑定 ==========

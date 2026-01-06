@@ -1,6 +1,16 @@
 import { NodeId } from '../../../../domain/workflow/value-objects/node/node-id';
-import { NodeType, NodeTypeValue, NodeContextTypeValue } from '../../../../domain/workflow/value-objects/node/node-type';
-import { Node, NodeExecutionResult, NodeMetadata, ValidationResult, WorkflowExecutionContext } from '../../../../domain/workflow/entities/node';
+import {
+  NodeType,
+  NodeTypeValue,
+  NodeContextTypeValue,
+} from '../../../../domain/workflow/value-objects/node/node-type';
+import {
+  Node,
+  NodeExecutionResult,
+  NodeMetadata,
+  ValidationResult,
+  WorkflowExecutionContext,
+} from '../../../../domain/workflow/entities/node';
 
 /**
  * 合并策略枚举
@@ -13,7 +23,7 @@ export enum JoinStrategy {
   /** 多数分支完成 */
   MAJORITY = 'majority',
   /** 指定数量的分支完成 */
-  COUNT = 'count'
+  COUNT = 'count',
 }
 
 /**
@@ -72,14 +82,14 @@ export class JoinNode extends Node {
           success: true,
           output: {
             message: '没有需要等待的分支',
-            branchResults: []
+            branchResults: [],
           },
           executionTime: Date.now() - startTime,
           metadata: {
             nodeId: this.nodeId.toString(),
             nodeType: this.type.toString(),
-            branchCount: 0
-          }
+            branchCount: 0,
+          },
         };
       }
 
@@ -100,7 +110,7 @@ export class JoinNode extends Node {
             success: branchResult?.success || false,
             result: branchResult?.output,
             error: branchResult?.error,
-            executionTime: branchResult?.executionTime
+            executionTime: branchResult?.executionTime,
           });
         } else {
           // 分支未完成
@@ -108,7 +118,7 @@ export class JoinNode extends Node {
             branchId,
             targetNodeId: branch.targetNodeId,
             success: false,
-            error: 'Branch not completed'
+            error: 'Branch not completed',
           });
         }
       }
@@ -123,7 +133,7 @@ export class JoinNode extends Node {
             message: '等待更多分支完成',
             branchResults,
             completedCount: canJoin.completedCount,
-            requiredCount: canJoin.requiredCount
+            requiredCount: canJoin.requiredCount,
           },
           executionTime: Date.now() - startTime,
           metadata: {
@@ -132,8 +142,8 @@ export class JoinNode extends Node {
             branchCount: branchResults.length,
             completedCount: canJoin.completedCount,
             requiredCount: canJoin.requiredCount,
-            waiting: true
-          }
+            waiting: true,
+          },
         };
       }
 
@@ -164,7 +174,7 @@ export class JoinNode extends Node {
           branchResults,
           mergedResults: this.mergeResults ? mergedResults : undefined,
           completedCount: canJoin.completedCount,
-          totalBranches: forkBranchCount
+          totalBranches: forkBranchCount,
         },
         executionTime,
         metadata: {
@@ -173,8 +183,8 @@ export class JoinNode extends Node {
           branchCount: branchResults.length,
           completedCount: canJoin.completedCount,
           totalBranches: forkBranchCount,
-          joinStrategy: this.joinStrategy
-        }
+          joinStrategy: this.joinStrategy,
+        },
       };
     } catch (error) {
       const executionTime = Date.now() - startTime;
@@ -186,8 +196,8 @@ export class JoinNode extends Node {
         executionTime,
         metadata: {
           nodeId: this.nodeId.toString(),
-          nodeType: this.type.toString()
-        }
+          nodeType: this.type.toString(),
+        },
       };
     }
   }
@@ -228,7 +238,7 @@ export class JoinNode extends Node {
     return {
       canJoin: completedCount >= requiredCount,
       completedCount,
-      requiredCount
+      requiredCount,
     };
   }
 
@@ -242,7 +252,7 @@ export class JoinNode extends Node {
       success: true,
       branchCount: branchResults.length,
       successCount: branchResults.filter(br => br.success).length,
-      failureCount: branchResults.filter(br => !br.success).length
+      failureCount: branchResults.filter(br => !br.success).length,
     };
 
     // 合并所有分支的结果
@@ -291,7 +301,7 @@ export class JoinNode extends Node {
 
     return {
       valid: errors.length === 0,
-      errors
+      errors,
     };
   }
 
@@ -308,29 +318,29 @@ export class JoinNode extends Node {
           type: 'string',
           required: false,
           description: '合并策略：all（全部）、any（任意）、majority（多数）、count（指定数量）',
-          defaultValue: 'all'
+          defaultValue: 'all',
         },
         {
           name: 'requiredCount',
           type: 'number',
           required: false,
-          description: 'COUNT策略下需要的完成分支数'
+          description: 'COUNT策略下需要的完成分支数',
         },
         {
           name: 'timeout',
           type: 'number',
           required: false,
           description: '超时时间（毫秒）',
-          defaultValue: 300000
+          defaultValue: 300000,
         },
         {
           name: 'mergeResults',
           type: 'boolean',
           required: false,
           description: '是否合并分支结果',
-          defaultValue: true
-        }
-      ]
+          defaultValue: true,
+        },
+      ],
     };
   }
 
@@ -338,7 +348,7 @@ export class JoinNode extends Node {
     return {
       type: 'object',
       properties: {},
-      required: []
+      required: [],
     };
   }
 
@@ -350,8 +360,8 @@ export class JoinNode extends Node {
         branchResults: { type: 'array', description: '分支结果列表' },
         mergedResults: { type: 'object', description: '合并后的结果' },
         completedCount: { type: 'number', description: '已完成分支数' },
-        totalBranches: { type: 'number', description: '总分支数' }
-      }
+        totalBranches: { type: 'number', description: '总分支数' },
+      },
     };
   }
 

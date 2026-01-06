@@ -14,5 +14,5 @@ export {
   NodeExecutionResult,
   NodeMetadata,
   NodeParameter,
-  ValidationResult
+  ValidationResult,
 } from '../../../domain/workflow/entities/node';

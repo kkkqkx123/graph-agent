@@ -1,6 +1,6 @@
 /**
  * 触发器执行上下文
- * 
+ *
  * 提供触发器执行时所需的上下文信息
  */
 export interface TriggerContext {

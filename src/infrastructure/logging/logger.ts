@@ -75,7 +75,12 @@ export class Logger implements ILogger {
   /**
    * 记录日志的核心方法
    */
-  private async log(level: LogLevel, message: string, error?: Error, context?: LogContext): Promise<void> {
+  private async log(
+    level: LogLevel,
+    message: string,
+    error?: Error,
+    context?: LogContext
+  ): Promise<void> {
     // 检查是否应该记录此级别的日志
     if (!this.shouldLog(level)) {
       return;
@@ -88,7 +93,7 @@ export class Logger implements ILogger {
       timestamp: new Date(),
       context: { ...this.context, ...context },
       error,
-      meta: this.config.meta
+      meta: this.config.meta,
     };
 
     // 异步写入所有传输器
@@ -162,14 +167,14 @@ export class Logger implements ILogger {
    */
   updateConfig(config: Partial<LoggerConfig>): void {
     this.config = { ...this.config, ...config };
-    
+
     // 重新初始化传输器
     this.transports.forEach(transport => {
       if (transport.close) {
         transport.close();
       }
     });
-    
+
     this.initializeTransports();
   }
 

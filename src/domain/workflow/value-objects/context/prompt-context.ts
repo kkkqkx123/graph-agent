@@ -61,7 +61,7 @@ export class PromptContext extends ValueObject<PromptContextProps> {
       template,
       variables: new Map(variables),
       history: [...history],
-      metadata: { ...metadata }
+      metadata: { ...metadata },
     });
   }
 
@@ -75,7 +75,7 @@ export class PromptContext extends ValueObject<PromptContextProps> {
       template: props.template,
       variables: new Map(props.variables),
       history: [...props.history],
-      metadata: { ...props.metadata }
+      metadata: { ...props.metadata },
     });
   }
 
@@ -148,7 +148,7 @@ export class PromptContext extends ValueObject<PromptContextProps> {
     newVariables.set(key, value);
     return new PromptContext({
       ...this.props,
-      variables: newVariables
+      variables: newVariables,
     });
   }
 
@@ -164,7 +164,7 @@ export class PromptContext extends ValueObject<PromptContextProps> {
     }
     return new PromptContext({
       ...this.props,
-      variables: newVariables
+      variables: newVariables,
     });
   }
 
@@ -178,7 +178,7 @@ export class PromptContext extends ValueObject<PromptContextProps> {
     newVariables.delete(key);
     return new PromptContext({
       ...this.props,
-      variables: newVariables
+      variables: newVariables,
     });
   }
 
@@ -190,7 +190,7 @@ export class PromptContext extends ValueObject<PromptContextProps> {
   public addHistoryEntry(entry: PromptHistoryEntry): PromptContext {
     return new PromptContext({
       ...this.props,
-      history: [...this.props.history, entry]
+      history: [...this.props.history, entry],
     });
   }
 
@@ -220,7 +220,7 @@ export class PromptContext extends ValueObject<PromptContextProps> {
   public updateTemplate(template: string): PromptContext {
     return new PromptContext({
       ...this.props,
-      template
+      template,
     });
   }
 
@@ -232,7 +232,7 @@ export class PromptContext extends ValueObject<PromptContextProps> {
   public updateMetadata(metadata: Record<string, unknown>): PromptContext {
     return new PromptContext({
       ...this.props,
-      metadata: { ...this.props.metadata, ...metadata }
+      metadata: { ...this.props.metadata, ...metadata },
     });
   }
 
@@ -270,7 +270,7 @@ export class PromptContext extends ValueObject<PromptContextProps> {
       template: this.props.template,
       variables: new Map(this.props.variables),
       history: [...this.props.history],
-      metadata: { ...this.props.metadata }
+      metadata: { ...this.props.metadata },
     });
   }
 
@@ -286,7 +286,7 @@ export class PromptContext extends ValueObject<PromptContextProps> {
     return (
       this.props.template === context.template &&
       JSON.stringify(Array.from(this.props.variables.entries())) ===
-      JSON.stringify(Array.from(context.variables.entries())) &&
+        JSON.stringify(Array.from(context.variables.entries())) &&
       JSON.stringify(this.props.history) === JSON.stringify(context.history)
     );
   }

@@ -26,7 +26,7 @@ export interface CheckpointStatisticsProps {
 
 /**
  * 检查点统计信息值对象
- * 
+ *
  * 表示线程检查点的统计信息
  */
 export class CheckpointStatistics extends ValueObject<CheckpointStatisticsProps> {
@@ -61,7 +61,7 @@ export class CheckpointStatistics extends ValueObject<CheckpointStatisticsProps>
       newestCheckpointAgeHours: 0,
       averageAgeHours: 0,
       typeDistribution: {},
-      restoreFrequency: {}
+      restoreFrequency: {},
     });
   }
 
@@ -142,7 +142,7 @@ export class CheckpointStatistics extends ValueObject<CheckpointStatisticsProps>
       newestCheckpointAgeHours,
       averageAgeHours,
       typeDistribution,
-      restoreFrequency
+      restoreFrequency,
     });
   }
 
@@ -262,28 +262,36 @@ export class CheckpointStatistics extends ValueObject<CheckpointStatisticsProps>
    * 获取活跃检查点比例
    */
   public get activeRatio(): number {
-    return this.props.totalCheckpoints > 0 ? this.props.activeCheckpoints / this.props.totalCheckpoints : 0;
+    return this.props.totalCheckpoints > 0
+      ? this.props.activeCheckpoints / this.props.totalCheckpoints
+      : 0;
   }
 
   /**
    * 获取过期检查点比例
    */
   public get expiredRatio(): number {
-    return this.props.totalCheckpoints > 0 ? this.props.expiredCheckpoints / this.props.totalCheckpoints : 0;
+    return this.props.totalCheckpoints > 0
+      ? this.props.expiredCheckpoints / this.props.totalCheckpoints
+      : 0;
   }
 
   /**
    * 获取损坏检查点比例
    */
   public get corruptedRatio(): number {
-    return this.props.totalCheckpoints > 0 ? this.props.corruptedCheckpoints / this.props.totalCheckpoints : 0;
+    return this.props.totalCheckpoints > 0
+      ? this.props.corruptedCheckpoints / this.props.totalCheckpoints
+      : 0;
   }
 
   /**
    * 获取归档检查点比例
    */
   public get archivedRatio(): number {
-    return this.props.totalCheckpoints > 0 ? this.props.archivedCheckpoints / this.props.totalCheckpoints : 0;
+    return this.props.totalCheckpoints > 0
+      ? this.props.archivedCheckpoints / this.props.totalCheckpoints
+      : 0;
   }
 
   /**
@@ -320,8 +328,8 @@ export class CheckpointStatistics extends ValueObject<CheckpointStatisticsProps>
   public get mostCommonType(): string | null {
     const entries = Object.entries(this.props.typeDistribution);
     if (entries.length === 0) return null;
-    
-    return entries.reduce((a, b) => a[1] > b[1] ? a : b)[0];
+
+    return entries.reduce((a, b) => (a[1] > b[1] ? a : b))[0];
   }
 
   /**
@@ -330,8 +338,8 @@ export class CheckpointStatistics extends ValueObject<CheckpointStatisticsProps>
   public get mostCommonRestoreCount(): number | null {
     const entries = Object.entries(this.props.restoreFrequency);
     if (entries.length === 0) return null;
-    
-    return parseInt(entries.reduce((a, b) => a[1] > b[1] ? a : b)[0]);
+
+    return parseInt(entries.reduce((a, b) => (a[1] > b[1] ? a : b))[0]);
   }
 
   /**
@@ -347,7 +355,7 @@ export class CheckpointStatistics extends ValueObject<CheckpointStatisticsProps>
       expiredRatio = 0.3,
       corruptedRatio = 0.1,
       maxSizeMB = 100,
-      maxCount = 100
+      maxCount = 100,
     } = thresholds;
 
     return (
@@ -388,7 +396,7 @@ export class CheckpointStatistics extends ValueObject<CheckpointStatisticsProps>
    */
   public getHealthStatus(): 'healthy' | 'warning' | 'critical' {
     const score = this.getHealthScore();
-    
+
     if (score >= 80) return 'healthy';
     if (score >= 60) return 'warning';
     return 'critical';
@@ -426,7 +434,7 @@ export class CheckpointStatistics extends ValueObject<CheckpointStatisticsProps>
       mostCommonType: this.mostCommonType,
       mostCommonRestoreCount: this.mostCommonRestoreCount,
       healthScore: this.getHealthScore(),
-      healthStatus: this.getHealthStatus()
+      healthStatus: this.getHealthStatus(),
     };
   }
 
@@ -491,10 +499,11 @@ export class CheckpointStatistics extends ValueObject<CheckpointStatisticsProps>
     }
 
     // 验证数量一致性
-    const statusSum = this.props.activeCheckpoints + 
-                     this.props.expiredCheckpoints + 
-                     this.props.corruptedCheckpoints + 
-                     this.props.archivedCheckpoints;
+    const statusSum =
+      this.props.activeCheckpoints +
+      this.props.expiredCheckpoints +
+      this.props.corruptedCheckpoints +
+      this.props.archivedCheckpoints;
 
     if (statusSum !== this.props.totalCheckpoints) {
       throw new Error('状态检查点数量与总数不一致');

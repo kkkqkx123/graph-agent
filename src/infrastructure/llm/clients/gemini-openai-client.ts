@@ -45,13 +45,19 @@ export class GeminiOpenAIClient extends BaseLLMClient {
 
     // 验证必需配置
     if (!apiKey) {
-      throw new Error('Gemini OpenAI兼容API密钥未配置。请在配置文件中设置 llm.gemini-openai.apiKey。');
+      throw new Error(
+        'Gemini OpenAI兼容API密钥未配置。请在配置文件中设置 llm.gemini-openai.apiKey。'
+      );
     }
     if (!defaultModel) {
-      throw new Error('Gemini OpenAI兼容默认模型未配置。请在配置文件中设置 llm.gemini-openai.defaultModel。');
+      throw new Error(
+        'Gemini OpenAI兼容默认模型未配置。请在配置文件中设置 llm.gemini-openai.defaultModel。'
+      );
     }
     if (!supportedModels || !Array.isArray(supportedModels) || supportedModels.length === 0) {
-      throw new Error('Gemini OpenAI兼容支持的模型列表未配置。请在配置文件中设置 llm.gemini-openai.supportedModels。');
+      throw new Error(
+        'Gemini OpenAI兼容支持的模型列表未配置。请在配置文件中设置 llm.gemini-openai.supportedModels。'
+      );
     }
 
     // 创建提供商配置
@@ -70,15 +76,8 @@ export class GeminiOpenAIClient extends BaseLLMClient {
       .retryDelay(1000)
       .build();
 
-    super(
-      httpClient,
-      rateLimiter,
-      tokenCalculator,
-      configManager,
-      providerConfig
-    );
+    super(httpClient, rateLimiter, tokenCalculator, configManager, providerConfig);
   }
-
 
   getSupportedModelsList(): string[] {
     if (!this.providerConfig.supportedModels) {
@@ -93,15 +92,27 @@ export class GeminiOpenAIClient extends BaseLLMClient {
       throw new Error('Gemini OpenAI兼容默认模型未配置。');
     }
 
-    const configs: Record<string, any> = this.configLoadingModule.get('llm.gemini-openai.models', {});
+    const configs: Record<string, any> = this.configLoadingModule.get(
+      'llm.gemini-openai.models',
+      {}
+    );
     const config = configs[model];
 
     if (!config) {
-      throw new Error(`Gemini OpenAI兼容模型配置未找到: ${model}。请在配置文件中提供该模型的完整配置。`);
+      throw new Error(
+        `Gemini OpenAI兼容模型配置未找到: ${model}。请在配置文件中提供该模型的完整配置。`
+      );
     }
 
     // 验证必需的配置字段
-    const requiredFields = ['maxTokens', 'contextWindow', 'temperature', 'topP', 'promptTokenPrice', 'completionTokenPrice'];
+    const requiredFields = [
+      'maxTokens',
+      'contextWindow',
+      'temperature',
+      'topP',
+      'promptTokenPrice',
+      'completionTokenPrice',
+    ];
     for (const field of requiredFields) {
       if (config[field] === undefined || config[field] === null) {
         throw new Error(`Gemini OpenAI兼容模型 ${model} 缺少必需配置字段: ${field}`);
@@ -119,7 +130,7 @@ export class GeminiOpenAIClient extends BaseLLMClient {
       presencePenalty: config.presencePenalty ?? 0.0,
       costPer1KTokens: {
         prompt: config.promptTokenPrice,
-        completion: config.completionTokenPrice
+        completion: config.completionTokenPrice,
       },
       supportsStreaming: config.supportsStreaming ?? true,
       supportsTools: config.supportsTools ?? true,
@@ -129,18 +140,24 @@ export class GeminiOpenAIClient extends BaseLLMClient {
       metadata: {
         ...config.metadata,
         topK: config.topK ?? 40,
-        supportsThinking: config.supportsThinking ?? true
-      }
+        supportsThinking: config.supportsThinking ?? true,
+      },
     });
   }
 
-  protected override async parseStreamResponse(response: any, request: LLMRequest): Promise<AsyncIterable<LLMResponse>> {
+  protected override async parseStreamResponse(
+    response: any,
+    request: LLMRequest
+  ): Promise<AsyncIterable<LLMResponse>> {
     const self = this;
 
     async function* streamGenerator() {
       // Gemini OpenAI兼容端点使用与OpenAI相同的SSE格式
       for await (const chunk of response.data) {
-        const lines = chunk.toString().split('\n').filter((line: string) => line.trim() !== '');
+        const lines = chunk
+          .toString()
+          .split('\n')
+          .filter((line: string) => line.trim() !== '');
 
         for (const line of lines) {
           if (line.startsWith('data: ')) {
@@ -159,15 +176,17 @@ export class GeminiOpenAIClient extends BaseLLMClient {
                 yield LLMResponse.create(
                   request.requestId,
                   request.model,
-                  [{
-                    index: choice.index || 0,
-                    message: LLMMessage.createAssistant(choice.delta?.content || ''),
-                    finish_reason: choice.finish_reason || ''
-                  }],
+                  [
+                    {
+                      index: choice.index || 0,
+                      message: LLMMessage.createAssistant(choice.delta?.content || ''),
+                      finish_reason: choice.finish_reason || '',
+                    },
+                  ],
                   {
                     promptTokens: data.usage?.prompt_tokens || 0,
                     completionTokens: data.usage?.completion_tokens || 0,
-                    totalTokens: data.usage?.total_tokens || 0
+                    totalTokens: data.usage?.total_tokens || 0,
                   },
                   choice.finish_reason || '',
                   0
@@ -185,11 +204,13 @@ export class GeminiOpenAIClient extends BaseLLMClient {
       yield LLMResponse.create(
         request.requestId,
         request.model,
-        [{
-          index: 0,
-          message: LLMMessage.createAssistant(''),
-          finish_reason: 'stop'
-        }],
+        [
+          {
+            index: 0,
+            message: LLMMessage.createAssistant(''),
+            finish_reason: 'stop',
+          },
+        ],
         { promptTokens: 0, completionTokens: 0, totalTokens: 0 },
         'stop',
         0

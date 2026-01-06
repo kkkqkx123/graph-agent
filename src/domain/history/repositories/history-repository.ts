@@ -5,7 +5,7 @@ import { HistoryType } from '../value-objects/history-type';
 
 /**
  * 历史仓储接口
- * 
+ *
  * 定义历史记录持久化和检索的契约
  */
 export interface IHistoryRepository extends Repository<History> {
@@ -58,10 +58,7 @@ export interface IHistoryRepository extends Repository<History> {
    * @param endTime 结束时间
    * @returns 历史记录列表
    */
-  findByTimeRange(
-    startTime: Date,
-    endTime: Date
-  ): Promise<History[]>;
+  findByTimeRange(startTime: Date, endTime: Date): Promise<History[]>;
 
   /**
    * 根据实体ID和时间范围查找历史记录
@@ -70,11 +67,7 @@ export interface IHistoryRepository extends Repository<History> {
    * @param endTime 结束时间
    * @returns 历史记录列表
    */
-  findByEntityIdAndTimeRange(
-    entityId: ID,
-    startTime: Date,
-    endTime: Date
-  ): Promise<History[]>;
+  findByEntityIdAndTimeRange(entityId: ID, startTime: Date, endTime: Date): Promise<History[]>;
 
   /**
    * 根据类型和时间范围查找历史记录
@@ -83,11 +76,7 @@ export interface IHistoryRepository extends Repository<History> {
    * @param endTime 结束时间
    * @returns 历史记录列表
    */
-  findByTypeAndTimeRange(
-    type: HistoryType,
-    startTime: Date,
-    endTime: Date
-  ): Promise<History[]>;
+  findByTypeAndTimeRange(type: HistoryType, startTime: Date, endTime: Date): Promise<History[]>;
 
   /**
    * 查找最新的历史记录
@@ -207,11 +196,13 @@ export interface IHistoryRepository extends Repository<History> {
     startTime: Date,
     endTime: Date,
     interval: number
-  ): Promise<Array<{
-    timestamp: Date;
-    count: number;
-    byType: Record<string, number>;
-  }>>;
+  ): Promise<
+    Array<{
+      timestamp: Date;
+      count: number;
+      byType: Record<string, number>;
+    }>
+  >;
 
   /**
    * 搜索历史记录

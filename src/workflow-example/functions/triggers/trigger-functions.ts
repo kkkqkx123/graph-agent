@@ -1,6 +1,6 @@
 /**
  * 触发器函数实现
- * 
+ *
  * 本文件实现了图工作流中的各种触发器函数
  */
 
@@ -13,7 +13,7 @@ import {
   WorkflowEngine,
   TimeTriggerConfig,
   EventTriggerConfig,
-  StateTriggerConfig
+  StateTriggerConfig,
 } from '../../types/workflow-types';
 
 // ============================================================================
@@ -48,7 +48,7 @@ function isStateTriggerConfig(config: TriggerConfig): config is StateTriggerConf
 /**
  * 时间触发器函数
  * 基于时间条件触发
- * 
+ *
  * @param input 触发器输入
  * @param config 触发器配置
  * @param context 执行上下文
@@ -64,7 +64,7 @@ export const timeTriggerFunction: TriggerFunction = async (
     if (!isTimeTriggerConfig(config)) {
       return {
         shouldTrigger: false,
-        reason: '配置类型错误，期望为TimeTriggerConfig'
+        reason: '配置类型错误，期望为TimeTriggerConfig',
       };
     }
 
@@ -77,9 +77,7 @@ export const timeTriggerFunction: TriggerFunction = async (
       const shouldTrigger = checkDelayMet(delay, context);
       return {
         shouldTrigger,
-        reason: shouldTrigger
-          ? `延迟时间已达到: ${delay}ms`
-          : `延迟时间未达到: ${delay}ms`
+        reason: shouldTrigger ? `延迟时间已达到: ${delay}ms` : `延迟时间未达到: ${delay}ms`,
       };
     }
 
@@ -88,9 +86,7 @@ export const timeTriggerFunction: TriggerFunction = async (
       const shouldTrigger = checkIntervalMet(interval, context, input.triggerId);
       return {
         shouldTrigger,
-        reason: shouldTrigger
-          ? `间隔时间已达到: ${interval}ms`
-          : `间隔时间未达到: ${interval}ms`
+        reason: shouldTrigger ? `间隔时间已达到: ${interval}ms` : `间隔时间未达到: ${interval}ms`,
       };
     }
 
@@ -99,27 +95,25 @@ export const timeTriggerFunction: TriggerFunction = async (
       const shouldTrigger = checkCronMatch(cron);
       return {
         shouldTrigger,
-        reason: shouldTrigger
-          ? `Cron表达式匹配: ${cron}`
-          : `Cron表达式不匹配: ${cron}`
+        reason: shouldTrigger ? `Cron表达式匹配: ${cron}` : `Cron表达式不匹配: ${cron}`,
       };
     }
 
     return {
       shouldTrigger: false,
-      reason: '未配置时间触发条件'
+      reason: '未配置时间触发条件',
     };
   } catch (error) {
     return {
       shouldTrigger: false,
-      reason: `时间触发器评估失败: ${error instanceof Error ? error.message : String(error)}`
+      reason: `时间触发器评估失败: ${error instanceof Error ? error.message : String(error)}`,
     };
   }
 };
 
 /**
  * 检查延迟是否满足
- * 
+ *
  * @param delay 延迟毫秒数
  * @param context 执行上下文
  * @returns 是否满足
@@ -130,12 +124,12 @@ function checkDelayMet(delay: number, context: ExecutionContext): boolean {
     return false;
   }
   const currentTime = Date.now();
-  return (currentTime - startTime) >= delay;
+  return currentTime - startTime >= delay;
 }
 
 /**
  * 检查间隔是否满足
- * 
+ *
  * @param interval 间隔毫秒数
  * @param context 执行上下文
  * @param triggerId 触发器ID
@@ -147,12 +141,12 @@ function checkIntervalMet(interval: number, context: ExecutionContext, triggerId
     return true;
   }
   const currentTime = Date.now();
-  return (currentTime - lastTriggerTime) >= interval;
+  return currentTime - lastTriggerTime >= interval;
 }
 
 /**
  * 检查cron表达式是否匹配
- * 
+ *
  * @param cron cron表达式
  * @returns 是否匹配
  */
@@ -187,7 +181,7 @@ function checkCronMatch(cron: string): boolean {
 /**
  * 事件触发器函数
  * 基于事件触发
- * 
+ *
  * @param input 触发器输入
  * @param config 触发器配置
  * @param context 执行上下文
@@ -203,7 +197,7 @@ export const eventTriggerFunction: TriggerFunction = async (
     if (!isEventTriggerConfig(config)) {
       return {
         shouldTrigger: false,
-        reason: '配置类型错误，期望为EventTriggerConfig'
+        reason: '配置类型错误，期望为EventTriggerConfig',
       };
     }
 
@@ -215,7 +209,7 @@ export const eventTriggerFunction: TriggerFunction = async (
     if (!recentEvent) {
       return {
         shouldTrigger: false,
-        reason: `未找到事件: ${eventType}`
+        reason: `未找到事件: ${eventType}`,
       };
     }
 
@@ -224,27 +218,25 @@ export const eventTriggerFunction: TriggerFunction = async (
       const matches = matchEventData(recentEvent.data, eventDataPattern);
       return {
         shouldTrigger: matches,
-        reason: matches
-          ? `事件数据匹配: ${eventType}`
-          : `事件数据不匹配: ${eventType}`
+        reason: matches ? `事件数据匹配: ${eventType}` : `事件数据不匹配: ${eventType}`,
       };
     }
 
     return {
       shouldTrigger: true,
-      reason: `事件已触发: ${eventType}`
+      reason: `事件已触发: ${eventType}`,
     };
   } catch (error) {
     return {
       shouldTrigger: false,
-      reason: `事件触发器评估失败: ${error instanceof Error ? error.message : String(error)}`
+      reason: `事件触发器评估失败: ${error instanceof Error ? error.message : String(error)}`,
     };
   }
 };
 
 /**
  * 匹配事件数据
- * 
+ *
  * @param eventData 事件数据
  * @param pattern 匹配模式
  * @returns 是否匹配
@@ -265,7 +257,7 @@ function matchEventData(eventData: any, pattern: Record<string, any>): boolean {
 /**
  * 状态触发器函数
  * 基于状态变化触发
- * 
+ *
  * @param input 触发器输入
  * @param config 触发器配置
  * @param context 执行上下文
@@ -281,7 +273,7 @@ export const stateTriggerFunction: TriggerFunction = async (
     if (!isStateTriggerConfig(config)) {
       return {
         shouldTrigger: false,
-        reason: '配置类型错误，期望为StateTriggerConfig'
+        reason: '配置类型错误，期望为StateTriggerConfig',
       };
     }
 
@@ -298,12 +290,12 @@ export const stateTriggerFunction: TriggerFunction = async (
       shouldTrigger,
       reason: shouldTrigger
         ? `状态匹配: ${statePath} = ${actualValue}`
-        : `状态不匹配: ${statePath} = ${actualValue}, 期望: ${expectedValue}`
+        : `状态不匹配: ${statePath} = ${actualValue}, 期望: ${expectedValue}`,
     };
   } catch (error) {
     return {
       shouldTrigger: false,
-      reason: `状态触发器评估失败: ${error instanceof Error ? error.message : String(error)}`
+      reason: `状态触发器评估失败: ${error instanceof Error ? error.message : String(error)}`,
     };
   }
 };
@@ -315,7 +307,7 @@ export const stateTriggerFunction: TriggerFunction = async (
 /**
  * 错误触发器函数
  * 基于错误状态触发
- * 
+ *
  * @param input 触发器输入
  * @param config 触发器配置
  * @param context 执行上下文
@@ -332,7 +324,7 @@ export const errorTriggerFunction: TriggerFunction = async (
     if (!nodeId) {
       return {
         shouldTrigger: false,
-        reason: '未配置节点ID'
+        reason: '未配置节点ID',
       };
     }
 
@@ -344,14 +336,12 @@ export const errorTriggerFunction: TriggerFunction = async (
 
     return {
       shouldTrigger,
-      reason: shouldTrigger
-        ? `节点失败: ${nodeId}`
-        : `节点未失败: ${nodeId}, 状态: ${nodeStatus}`
+      reason: shouldTrigger ? `节点失败: ${nodeId}` : `节点未失败: ${nodeId}, 状态: ${nodeStatus}`,
     };
   } catch (error) {
     return {
       shouldTrigger: false,
-      reason: `错误触发器评估失败: ${error instanceof Error ? error.message : String(error)}`
+      reason: `错误触发器评估失败: ${error instanceof Error ? error.message : String(error)}`,
     };
   }
 };
@@ -363,7 +353,7 @@ export const errorTriggerFunction: TriggerFunction = async (
 /**
  * 超时触发器函数
  * 基于超时条件触发
- * 
+ *
  * @param input 触发器输入
  * @param config 触发器配置
  * @param context 执行上下文
@@ -379,7 +369,7 @@ export const timeoutTriggerFunction: TriggerFunction = async (
     if (!isTimeTriggerConfig(config)) {
       return {
         shouldTrigger: false,
-        reason: '配置类型错误，期望为TimeTriggerConfig'
+        reason: '配置类型错误，期望为TimeTriggerConfig',
       };
     }
 
@@ -390,7 +380,7 @@ export const timeoutTriggerFunction: TriggerFunction = async (
     if (delay === undefined) {
       return {
         shouldTrigger: false,
-        reason: '未配置延迟时间'
+        reason: '未配置延迟时间',
       };
     }
 
@@ -406,12 +396,12 @@ export const timeoutTriggerFunction: TriggerFunction = async (
       shouldTrigger,
       reason: shouldTrigger
         ? `节点超时: ${nodeId}, 延迟: ${delay}ms`
-        : `节点未超时: ${nodeId}, 延迟: ${delay}ms, 状态: ${nodeStatus}`
+        : `节点未超时: ${nodeId}, 延迟: ${delay}ms, 状态: ${nodeStatus}`,
     };
   } catch (error) {
     return {
       shouldTrigger: false,
-      reason: `超时触发器评估失败: ${error instanceof Error ? error.message : String(error)}`
+      reason: `超时触发器评估失败: ${error instanceof Error ? error.message : String(error)}`,
     };
   }
 };
@@ -428,12 +418,12 @@ export const triggerFunctionRegistry: Record<string, TriggerFunction> = {
   event: eventTriggerFunction,
   state: stateTriggerFunction,
   error: errorTriggerFunction,
-  timeout: timeoutTriggerFunction
+  timeout: timeoutTriggerFunction,
 };
 
 /**
  * 获取触发器函数
- * 
+ *
  * @param triggerType 触发器类型
  * @returns 触发器函数
  */
@@ -443,7 +433,7 @@ export function getTriggerFunction(triggerType: string): TriggerFunction | undef
 
 /**
  * 注册触发器函数
- * 
+ *
  * @param triggerType 触发器类型
  * @param func 触发器函数
  */

@@ -8,7 +8,7 @@ export interface TimestampProps {
 
 /**
  * 时间戳值对象
- * 
+ *
  * 用于表示系统中的时间信息
  */
 export class Timestamp extends ValueObject<TimestampProps> {

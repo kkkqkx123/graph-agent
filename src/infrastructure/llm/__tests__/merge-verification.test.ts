@@ -3,7 +3,7 @@ import { TYPES } from '../../../di/service-keys';
 
 /**
  * 合并验证测试
- * 
+ *
  * 验证LLM模块集成到全局DI系统后的功能完整性
  */
 describe('LLM模块DI集成验证', () => {
@@ -24,7 +24,7 @@ describe('LLM模块DI集成验证', () => {
         TYPES.LLMClientFactory,
         TYPES.TaskGroupManager,
         TYPES.PollingPoolManager,
-        TYPES.LLMWrapperFactory
+        TYPES.LLMWrapperFactory,
       ];
 
       requiredServices.forEach(service => {
@@ -42,7 +42,7 @@ describe('LLM模块DI集成验证', () => {
         'GeminiClient',
         'GeminiOpenAIClient',
         'MockClient',
-        'HumanRelayClient'
+        'HumanRelayClient',
       ];
 
       clientIdentifiers.forEach(identifier => {
@@ -51,10 +51,7 @@ describe('LLM模块DI集成验证', () => {
     });
 
     it('应该包含所有管理器标识符', () => {
-      const managerIdentifiers = [
-        'TaskGroupManager',
-        'PollingPoolManager'
-      ];
+      const managerIdentifiers = ['TaskGroupManager', 'PollingPoolManager'];
 
       managerIdentifiers.forEach(identifier => {
         expect(TYPES[identifier as keyof typeof TYPES]).toBeDefined();
@@ -62,10 +59,7 @@ describe('LLM模块DI集成验证', () => {
     });
 
     it('应该包含所有工厂标识符', () => {
-      const factoryIdentifiers = [
-        'LLMClientFactory',
-        'LLMWrapperFactory'
-      ];
+      const factoryIdentifiers = ['LLMClientFactory', 'LLMWrapperFactory'];
 
       factoryIdentifiers.forEach(identifier => {
         expect(TYPES[identifier as keyof typeof TYPES]).toBeDefined();

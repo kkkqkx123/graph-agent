@@ -2,7 +2,7 @@ import { HookPointValue } from '../../../domain/workflow/value-objects/hook-poin
 
 /**
  * 钩子执行上下文
- * 
+ *
  * 提供钩子执行时所需的上下文信息
  */
 export interface HookContext {

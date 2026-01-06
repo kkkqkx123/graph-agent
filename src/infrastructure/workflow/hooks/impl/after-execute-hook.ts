@@ -7,7 +7,7 @@ import {
   HookMetadata,
   HookParameter,
   HookValidationResult,
-  HookProps
+  HookProps,
 } from '../../../../domain/workflow/entities/hook';
 
 /**
@@ -67,7 +67,7 @@ export class AfterExecuteHook extends Hook {
       failFast,
       createdAt: now,
       updatedAt: now,
-      version: Version.initial()
+      version: Version.initial(),
     };
 
     return new AfterExecuteHook(props);
@@ -124,8 +124,8 @@ export class AfterExecuteHook extends Hook {
         executionTime: Date.now() - startTime,
         metadata: {
           hookPoint: 'after_execute',
-          timestamp: Date.now()
-        }
+          timestamp: Date.now(),
+        },
       };
     } catch (error) {
       return {
@@ -135,8 +135,8 @@ export class AfterExecuteHook extends Hook {
         executionTime: Date.now() - startTime,
         metadata: {
           hookPoint: 'after_execute',
-          timestamp: Date.now()
-        }
+          timestamp: Date.now(),
+        },
       };
     }
   }
@@ -163,7 +163,7 @@ export class AfterExecuteHook extends Hook {
 
     return {
       valid: errors.length === 0,
-      errors
+      errors,
     };
   }
 
@@ -179,7 +179,7 @@ export class AfterExecuteHook extends Hook {
       description: this.props.description,
       parameters: this.getParameters(),
       enabled: this.props.enabled,
-      priority: this.props.priority
+      priority: this.props.priority,
     };
   }
 
@@ -193,20 +193,20 @@ export class AfterExecuteHook extends Hook {
         name: 'postprocessing',
         type: 'object',
         required: false,
-        description: '后处理配置'
+        description: '后处理配置',
       },
       {
         name: 'logging',
         type: 'object',
         required: false,
-        description: '日志记录配置'
+        description: '日志记录配置',
       },
       {
         name: 'cleanup',
         type: 'object',
         required: false,
-        description: '清理配置'
-      }
+        description: '清理配置',
+      },
     ];
   }
 
@@ -216,7 +216,10 @@ export class AfterExecuteHook extends Hook {
    * @param postprocessing 后处理配置
    * @returns 后处理结果
    */
-  private postprocessContext(context: HookContext, postprocessing: AfterExecuteHookConfig['postprocessing']): any {
+  private postprocessContext(
+    context: HookContext,
+    postprocessing: AfterExecuteHookConfig['postprocessing']
+  ): any {
     const result: Record<string, any> = {};
 
     if (!postprocessing) {
@@ -252,7 +255,7 @@ export class AfterExecuteHook extends Hook {
       logs.push({
         type: 'result',
         data: context.getVariable('result'),
-        timestamp: Date.now()
+        timestamp: Date.now(),
       });
     }
 
@@ -262,7 +265,7 @@ export class AfterExecuteHook extends Hook {
         logs.push({
           type: 'error',
           data: error,
-          timestamp: Date.now()
+          timestamp: Date.now(),
         });
       }
     }
@@ -271,7 +274,7 @@ export class AfterExecuteHook extends Hook {
       logs.push({
         type: 'metadata',
         data: context.metadata,
-        timestamp: Date.now()
+        timestamp: Date.now(),
       });
     }
 

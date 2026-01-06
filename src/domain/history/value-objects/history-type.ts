@@ -36,7 +36,7 @@ export enum HistoryTypeValue {
   STATE_CHANGED = 'state_changed',
   ERROR_OCCURRED = 'error_occurred',
   WARNING_OCCURRED = 'warning_occurred',
-  INFO_OCCURRED = 'info_occurred'
+  INFO_OCCURRED = 'info_occurred',
 }
 
 /**
@@ -48,7 +48,7 @@ export interface HistoryTypeProps {
 
 /**
  * 历史类型值对象
- * 
+ *
  * 用于表示历史记录的类型
  */
 export class HistoryType extends ValueObject<HistoryTypeProps> {
@@ -272,9 +272,11 @@ export class HistoryType extends ValueObject<HistoryTypeProps> {
    * @returns 是否为图执行相关类型
    */
   public isWorkflowExecutionRelated(): boolean {
-    return this.props.value === HistoryTypeValue.NODE_EXECUTED ||
+    return (
+      this.props.value === HistoryTypeValue.NODE_EXECUTED ||
       this.props.value === HistoryTypeValue.NODE_FAILED ||
-      this.props.value === HistoryTypeValue.EDGE_TRAVERSED;
+      this.props.value === HistoryTypeValue.EDGE_TRAVERSED
+    );
   }
 
   /**
@@ -314,8 +316,9 @@ export class HistoryType extends ValueObject<HistoryTypeProps> {
    * @returns 是否为错误类型
    */
   public isErrorType(): boolean {
-    return this.props.value.endsWith('_failed') ||
-      this.props.value === HistoryTypeValue.ERROR_OCCURRED;
+    return (
+      this.props.value.endsWith('_failed') || this.props.value === HistoryTypeValue.ERROR_OCCURRED
+    );
   }
 
   /**
@@ -406,7 +409,7 @@ export class HistoryType extends ValueObject<HistoryTypeProps> {
       [HistoryTypeValue.STATE_CHANGED]: '状态变更',
       [HistoryTypeValue.ERROR_OCCURRED]: '错误发生',
       [HistoryTypeValue.WARNING_OCCURRED]: '警告发生',
-      [HistoryTypeValue.INFO_OCCURRED]: '信息发生'
+      [HistoryTypeValue.INFO_OCCURRED]: '信息发生',
     };
 
     return descriptions[this.props.value];

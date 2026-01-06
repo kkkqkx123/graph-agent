@@ -11,7 +11,7 @@ import { z } from 'zod';
 const ToolTypeConfigSchema = z.object({
   class_path: z.string(),
   description: z.string(),
-  enabled: z.boolean()
+  enabled: z.boolean(),
 });
 
 /**
@@ -20,7 +20,7 @@ const ToolTypeConfigSchema = z.object({
 const ToolSetConfigSchema = z.object({
   description: z.string(),
   enabled: z.boolean(),
-  tools: z.array(z.string())
+  tools: z.array(z.string()),
 });
 
 /**
@@ -30,5 +30,5 @@ export const ToolSchema = z.object({
   tool_types: z.record(z.string(), ToolTypeConfigSchema).optional(),
   tool_sets: z.record(z.string(), ToolSetConfigSchema).optional(),
   auto_discovery: z.object({}).optional(),
-  _registry: z.string().optional()
+  _registry: z.string().optional(),
 });

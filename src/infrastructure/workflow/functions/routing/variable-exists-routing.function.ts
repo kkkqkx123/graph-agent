@@ -7,16 +7,13 @@ import { RoutingFunctionConfig, WorkflowExecutionContext } from '../types';
  */
 export class VariableExistsRoutingFunction extends BaseConditionRoutingFunction<RoutingFunctionConfig> {
   constructor() {
-    super(
-      'variable_exists_routing',
-      'variableExists',
-      '检查变量是否存在',
-      '1.0.0',
-      'builtin'
-    );
+    super('variable_exists_routing', 'variableExists', '检查变量是否存在', '1.0.0', 'builtin');
   }
 
-  override async execute(context: WorkflowExecutionContext, config: RoutingFunctionConfig): Promise<boolean> {
+  override async execute(
+    context: WorkflowExecutionContext,
+    config: RoutingFunctionConfig
+  ): Promise<boolean> {
     const variableName = config['edge']?.['properties']?.['variableName'];
     const variables = config['variables'];
 

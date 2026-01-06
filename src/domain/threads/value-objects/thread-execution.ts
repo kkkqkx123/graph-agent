@@ -9,7 +9,15 @@ import { ExecutionContext } from './execution-context';
  */
 export interface OperationRecord {
   readonly operationId: ID;
-  readonly operationType: 'start' | 'pause' | 'resume' | 'complete' | 'fail' | 'cancel' | 'fork' | 'copy';
+  readonly operationType:
+    | 'start'
+    | 'pause'
+    | 'resume'
+    | 'complete'
+    | 'fail'
+    | 'cancel'
+    | 'fork'
+    | 'copy';
   readonly timestamp: Timestamp;
   readonly operatorId?: ID;
   readonly reason?: string;
@@ -60,7 +68,7 @@ export interface ThreadExecutionProps {
 
 /**
  * ThreadExecution值对象
- * 
+ *
  * 表示线程的执行状态信息，是不可变的
  * 包含执行进度、状态变化、节点级状态和操作历史
  */
@@ -83,7 +91,7 @@ export class ThreadExecution extends ValueObject<ThreadExecutionProps> {
       lastActivityAt: now,
       nodeExecutions: new Map(),
       context,
-      operationHistory: []
+      operationHistory: [],
     });
   }
 
@@ -238,7 +246,7 @@ export class ThreadExecution extends ValueObject<ThreadExecutionProps> {
     const operationRecord: OperationRecord = {
       operationId: ID.generate(),
       operationType: 'start',
-      timestamp: Timestamp.now()
+      timestamp: Timestamp.now(),
     };
 
     return new ThreadExecution({
@@ -246,7 +254,7 @@ export class ThreadExecution extends ValueObject<ThreadExecutionProps> {
       status: ThreadStatus.running(),
       startedAt: Timestamp.now(),
       lastActivityAt: Timestamp.now(),
-      operationHistory: [...this.props.operationHistory, operationRecord]
+      operationHistory: [...this.props.operationHistory, operationRecord],
     });
   }
 
@@ -262,14 +270,14 @@ export class ThreadExecution extends ValueObject<ThreadExecutionProps> {
     const operationRecord: OperationRecord = {
       operationId: ID.generate(),
       operationType: 'pause',
-      timestamp: Timestamp.now()
+      timestamp: Timestamp.now(),
     };
 
     return new ThreadExecution({
       ...this.props,
       status: ThreadStatus.paused(),
       lastActivityAt: Timestamp.now(),
-      operationHistory: [...this.props.operationHistory, operationRecord]
+      operationHistory: [...this.props.operationHistory, operationRecord],
     });
   }
 
@@ -285,14 +293,14 @@ export class ThreadExecution extends ValueObject<ThreadExecutionProps> {
     const operationRecord: OperationRecord = {
       operationId: ID.generate(),
       operationType: 'resume',
-      timestamp: Timestamp.now()
+      timestamp: Timestamp.now(),
     };
 
     return new ThreadExecution({
       ...this.props,
       status: ThreadStatus.running(),
       lastActivityAt: Timestamp.now(),
-      operationHistory: [...this.props.operationHistory, operationRecord]
+      operationHistory: [...this.props.operationHistory, operationRecord],
     });
   }
 
@@ -308,7 +316,7 @@ export class ThreadExecution extends ValueObject<ThreadExecutionProps> {
     const operationRecord: OperationRecord = {
       operationId: ID.generate(),
       operationType: 'complete',
-      timestamp: Timestamp.now()
+      timestamp: Timestamp.now(),
     };
 
     return new ThreadExecution({
@@ -317,7 +325,7 @@ export class ThreadExecution extends ValueObject<ThreadExecutionProps> {
       progress: 100,
       completedAt: Timestamp.now(),
       lastActivityAt: Timestamp.now(),
-      operationHistory: [...this.props.operationHistory, operationRecord]
+      operationHistory: [...this.props.operationHistory, operationRecord],
     });
   }
 
@@ -335,7 +343,7 @@ export class ThreadExecution extends ValueObject<ThreadExecutionProps> {
       operationId: ID.generate(),
       operationType: 'fail',
       timestamp: Timestamp.now(),
-      reason: errorMessage
+      reason: errorMessage,
     };
 
     return new ThreadExecution({
@@ -344,7 +352,7 @@ export class ThreadExecution extends ValueObject<ThreadExecutionProps> {
       errorMessage,
       completedAt: Timestamp.now(),
       lastActivityAt: Timestamp.now(),
-      operationHistory: [...this.props.operationHistory, operationRecord]
+      operationHistory: [...this.props.operationHistory, operationRecord],
     });
   }
 
@@ -360,7 +368,7 @@ export class ThreadExecution extends ValueObject<ThreadExecutionProps> {
     const operationRecord: OperationRecord = {
       operationId: ID.generate(),
       operationType: 'cancel',
-      timestamp: Timestamp.now()
+      timestamp: Timestamp.now(),
     };
 
     return new ThreadExecution({
@@ -368,7 +376,7 @@ export class ThreadExecution extends ValueObject<ThreadExecutionProps> {
       status: ThreadStatus.cancelled(),
       completedAt: Timestamp.now(),
       lastActivityAt: Timestamp.now(),
-      operationHistory: [...this.props.operationHistory, operationRecord]
+      operationHistory: [...this.props.operationHistory, operationRecord],
     });
   }
 
@@ -391,7 +399,7 @@ export class ThreadExecution extends ValueObject<ThreadExecutionProps> {
       ...this.props,
       progress,
       currentStep,
-      lastActivityAt: Timestamp.now()
+      lastActivityAt: Timestamp.now(),
     });
   }
 
@@ -403,7 +411,7 @@ export class ThreadExecution extends ValueObject<ThreadExecutionProps> {
     return new ThreadExecution({
       ...this.props,
       retryCount: this.props.retryCount + 1,
-      lastActivityAt: Timestamp.now()
+      lastActivityAt: Timestamp.now(),
     });
   }
 
@@ -414,7 +422,7 @@ export class ThreadExecution extends ValueObject<ThreadExecutionProps> {
   public updateLastActivity(): ThreadExecution {
     return new ThreadExecution({
       ...this.props,
-      lastActivityAt: Timestamp.now()
+      lastActivityAt: Timestamp.now(),
     });
   }
 
@@ -430,7 +438,7 @@ export class ThreadExecution extends ValueObject<ThreadExecutionProps> {
     return new ThreadExecution({
       ...this.props,
       nodeExecutions: newNodeExecutions,
-      lastActivityAt: Timestamp.now()
+      lastActivityAt: Timestamp.now(),
     });
   }
 
@@ -450,7 +458,7 @@ export class ThreadExecution extends ValueObject<ThreadExecutionProps> {
     return new ThreadExecution({
       ...this.props,
       nodeExecutions: newNodeExecutions,
-      lastActivityAt: Timestamp.now()
+      lastActivityAt: Timestamp.now(),
     });
   }
 
@@ -463,7 +471,7 @@ export class ThreadExecution extends ValueObject<ThreadExecutionProps> {
     return new ThreadExecution({
       ...this.props,
       context,
-      lastActivityAt: Timestamp.now()
+      lastActivityAt: Timestamp.now(),
     });
   }
 
@@ -477,14 +485,14 @@ export class ThreadExecution extends ValueObject<ThreadExecutionProps> {
       operationId: ID.generate(),
       operationType: 'fork',
       timestamp: Timestamp.now(),
-      metadata: { forkId: forkInfo.forkId.toString() }
+      metadata: { forkId: forkInfo.forkId.toString() },
     };
 
     return new ThreadExecution({
       ...this.props,
       forkInfo,
       operationHistory: [...this.props.operationHistory, operationRecord],
-      lastActivityAt: Timestamp.now()
+      lastActivityAt: Timestamp.now(),
     });
   }
 
@@ -498,14 +506,14 @@ export class ThreadExecution extends ValueObject<ThreadExecutionProps> {
       operationId: ID.generate(),
       operationType: 'copy',
       timestamp: Timestamp.now(),
-      metadata: { copyId: copyInfo.copyId.toString() }
+      metadata: { copyId: copyInfo.copyId.toString() },
     };
 
     return new ThreadExecution({
       ...this.props,
       copyInfo,
       operationHistory: [...this.props.operationHistory, operationRecord],
-      lastActivityAt: Timestamp.now()
+      lastActivityAt: Timestamp.now(),
     });
   }
 
@@ -518,7 +526,7 @@ export class ThreadExecution extends ValueObject<ThreadExecutionProps> {
     return new ThreadExecution({
       ...this.props,
       workflowState,
-      lastActivityAt: Timestamp.now()
+      lastActivityAt: Timestamp.now(),
     });
   }
 
@@ -538,7 +546,7 @@ export class ThreadExecution extends ValueObject<ThreadExecutionProps> {
     const newState = WorkflowState.create({
       ...currentState.toProps(),
       data: newData,
-      updatedAt: Timestamp.now()
+      updatedAt: Timestamp.now(),
     });
 
     return this.updateWorkflowState(newState);
@@ -558,7 +566,7 @@ export class ThreadExecution extends ValueObject<ThreadExecutionProps> {
     const newState = WorkflowState.create({
       ...currentState.toProps(),
       currentNodeId: nodeId,
-      updatedAt: Timestamp.now()
+      updatedAt: Timestamp.now(),
     });
 
     return this.updateWorkflowState(newState);
@@ -578,7 +586,7 @@ export class ThreadExecution extends ValueObject<ThreadExecutionProps> {
     const newState = WorkflowState.create({
       ...currentState.toProps(),
       history: [...currentState.history, history],
-      updatedAt: Timestamp.now()
+      updatedAt: Timestamp.now(),
     });
 
     return this.updateWorkflowState(newState);

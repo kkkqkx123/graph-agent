@@ -2,7 +2,11 @@
  * 环境变量处理器实现
  */
 
-import { IConfigProcessor, EnvironmentProcessorOptions, ILogger } from '../../../domain/common/types';
+import {
+  IConfigProcessor,
+  EnvironmentProcessorOptions,
+  ILogger,
+} from '../../../domain/common/types';
 
 /**
  * 环境变量处理器
@@ -13,10 +17,7 @@ export class EnvironmentProcessor implements IConfigProcessor {
   private readonly transform: (value: string) => any;
   private readonly logger: ILogger;
 
-  constructor(
-    options: EnvironmentProcessorOptions = {},
-    logger: ILogger
-  ) {
+  constructor(options: EnvironmentProcessorOptions = {}, logger: ILogger) {
     this.pattern = options.pattern || /\$\{([^:}]+)(?::([^}]*))?\}/g;
     this.transform = options.transform || ((value: string) => value);
     this.logger = logger.child({ module: 'EnvironmentProcessor' });
@@ -27,9 +28,9 @@ export class EnvironmentProcessor implements IConfigProcessor {
    */
   process(config: Record<string, any>): Record<string, any> {
     this.logger.debug('开始处理环境变量注入');
-    
+
     const processed = this.processObject(config);
-    
+
     this.logger.debug('环境变量注入处理完成');
     return processed;
   }
@@ -68,7 +69,7 @@ export class EnvironmentProcessor implements IConfigProcessor {
     return str.replace(this.pattern, (match, varName, defaultValue) => {
       try {
         const envValue = process.env[varName];
-        
+
         if (envValue === undefined) {
           if (defaultValue === undefined) {
             throw new Error(`环境变量 ${varName} 未设置且没有默认值`);
@@ -77,12 +78,15 @@ export class EnvironmentProcessor implements IConfigProcessor {
           return defaultValue;
         }
 
-        this.logger.debug('替换环境变量', { varName, value: this.maskSensitiveValue(varName, envValue) });
-        
+        this.logger.debug('替换环境变量', {
+          varName,
+          value: this.maskSensitiveValue(varName, envValue),
+        });
+
         return this.transform ? this.transform(envValue) : envValue;
       } catch (error) {
         this.logger.error('环境变量处理失败', error as Error, {
-          varName
+          varName,
         });
         throw error;
       }
@@ -93,16 +97,14 @@ export class EnvironmentProcessor implements IConfigProcessor {
    * 掩码敏感值
    */
   private maskSensitiveValue(varName: string, value: string): string {
-    const sensitivePatterns = [
-      /key/i, /secret/i, /password/i, /token/i, /api/i
-    ];
-    
+    const sensitivePatterns = [/key/i, /secret/i, /password/i, /token/i, /api/i];
+
     const isSensitive = sensitivePatterns.some(pattern => pattern.test(varName));
-    
+
     if (isSensitive && value.length > 4) {
       return value.substring(0, 4) + '***';
     }
-    
+
     return value;
   }
 }

@@ -2,7 +2,12 @@ import { z } from 'zod';
 import { LLMRequest } from '../../../domain/llm/entities/llm-request';
 import { LLMResponse } from '../../../domain/llm/entities/llm-response';
 import { LLMMessage } from '../../../domain/llm/value-objects/llm-message';
-import { BaseParameterMapper, ProviderRequest, ProviderResponse, BaseParameterSchema } from './base-parameter-mapper';
+import {
+  BaseParameterMapper,
+  ProviderRequest,
+  ProviderResponse,
+  BaseParameterSchema,
+} from './base-parameter-mapper';
 import { ProviderConfig } from './interfaces/provider-config.interface';
 
 /**
@@ -12,7 +17,7 @@ import { ProviderConfig } from './interfaces/provider-config.interface';
 const AnthropicParameterSchema = BaseParameterSchema.extend({
   topK: z.number().int().min(0).optional(),
   system: z.string().optional(),
-  metadata: z.record(z.string(), z.any()).optional()
+  metadata: z.record(z.string(), z.any()).optional(),
 });
 
 /**
@@ -37,7 +42,7 @@ export class AnthropicParameterMapper extends BaseParameterMapper {
   mapToProvider(request: LLMRequest, providerConfig: ProviderConfig): ProviderRequest {
     const anthropicRequest: ProviderRequest = {
       model: request.model,
-      max_tokens: request.maxTokens
+      max_tokens: request.maxTokens,
     };
 
     // 基本参数映射（仅在值存在时添加）
@@ -119,23 +124,25 @@ export class AnthropicParameterMapper extends BaseParameterMapper {
       stopReason: response['stop_reason'],
       stopSequence: response['stop_sequence'],
       type: response['type'],
-      role: response['role']
+      role: response['role'],
     };
 
     // 构建标准响应
     return LLMResponse.create(
       originalRequest.requestId,
       originalRequest.model,
-      [{
-        index: 0,
-        message: LLMMessage.createAssistant(textContent),
-        finish_reason: response['stop_reason'] || 'stop'
-      }],
+      [
+        {
+          index: 0,
+          message: LLMMessage.createAssistant(textContent),
+          finish_reason: response['stop_reason'] || 'stop',
+        },
+      ],
       {
         promptTokens,
         completionTokens,
         totalTokens,
-        metadata
+        metadata,
       },
       response['stop_reason'] || 'stop',
       0, // duration - would need to be calculated

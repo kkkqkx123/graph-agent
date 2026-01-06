@@ -6,11 +6,7 @@
 
 export * from './node';
 export * from './edge';
-export {
-  HookPoint,
-  HookPointValue,
-  HookPointValueProps
-} from './hook-point';
+export { HookPoint, HookPointValue, HookPointValueProps } from './hook-point';
 
 export * from './workflow-status';
 export * from './workflow-type';
@@ -28,5 +24,5 @@ export {
   TriggerAction,
   TriggerActionValue,
   TriggerStatus,
-  TriggerStatusValue
+  TriggerStatusValue,
 } from './trigger-value-object';

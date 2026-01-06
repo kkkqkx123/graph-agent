@@ -224,19 +224,17 @@ export class MonitoringService {
   private readonly monitoringConfig: MonitoringConfig;
   private healthCheckInterval?: NodeJS.Timeout;
 
-  constructor(
-    @inject('Logger') private readonly logger: ILogger
-  ) {
+  constructor(@inject('Logger') private readonly logger: ILogger) {
     this.monitoringConfig = {
       metricsRetentionDays: 30,
       alertThresholds: {
         errorRate: 0.05, // 5%
         latency: 5000, // 5秒
         memoryUsage: 0.8, // 80%
-        cpuUsage: 0.8 // 80%
+        cpuUsage: 0.8, // 80%
       },
       checkInterval: 60000, // 1分钟
-      enableAutoScaling: true
+      enableAutoScaling: true,
     };
 
     // 启动定期健康检查
@@ -256,7 +254,7 @@ export class MonitoringService {
     this.logger.debug('记录函数执行结果', {
       functionId,
       success: result.success,
-      executionTime
+      executionTime,
     });
 
     // 更新执行指标
@@ -299,9 +297,10 @@ export class MonitoringService {
       return metrics;
     }
 
-    return metrics.filter(metric =>
-      (metric.timestamp.isAfter(timeRange.start) || metric.timestamp.equals(timeRange.start)) &&
-      (metric.timestamp.isBefore(timeRange.end) || metric.timestamp.equals(timeRange.end))
+    return metrics.filter(
+      metric =>
+        (metric.timestamp.isAfter(timeRange.start) || metric.timestamp.equals(timeRange.start)) &&
+        (metric.timestamp.isBefore(timeRange.end) || metric.timestamp.equals(timeRange.end))
     );
   }
 
@@ -322,9 +321,10 @@ export class MonitoringService {
       return metrics;
     }
 
-    return metrics.filter(metric =>
-      (metric.timestamp.isAfter(timeRange.start) || metric.timestamp.equals(timeRange.start)) &&
-      (metric.timestamp.isBefore(timeRange.end) || metric.timestamp.equals(timeRange.end))
+    return metrics.filter(
+      metric =>
+        (metric.timestamp.isAfter(timeRange.start) || metric.timestamp.equals(timeRange.start)) &&
+        (metric.timestamp.isBefore(timeRange.end) || metric.timestamp.equals(timeRange.end))
     );
   }
 
@@ -354,10 +354,7 @@ export class MonitoringService {
    * @param resolved 是否已解决
    * @returns 告警列表
    */
-  async getAlerts(
-    functionId?: string,
-    resolved?: boolean
-  ): Promise<FunctionAlert[]> {
+  async getAlerts(functionId?: string, resolved?: boolean): Promise<FunctionAlert[]> {
     let alerts: FunctionAlert[] = [];
 
     if (functionId) {
@@ -397,7 +394,7 @@ export class MonitoringService {
       severity,
       message,
       timestamp: Timestamp.now(),
-      resolved: false
+      resolved: false,
     };
 
     if (!this.alerts.has(functionId)) {
@@ -410,7 +407,7 @@ export class MonitoringService {
       functionId,
       type,
       severity,
-      message
+      message,
     });
 
     return alert;
@@ -439,7 +436,7 @@ export class MonitoringService {
 
     this.logger.info('解决函数告警', {
       alertId,
-      functionId
+      functionId,
     });
 
     return true;
@@ -466,17 +463,25 @@ export class MonitoringService {
     for (const functionId of functionIds) {
       // 执行指标
       const execMetric = this.executionMetrics.get(functionId);
-      if (execMetric && (!query.functionTypes || query.functionTypes.includes(execMetric.functionType))) {
+      if (
+        execMetric &&
+        (!query.functionTypes || query.functionTypes.includes(execMetric.functionType))
+      ) {
         executionMetrics.push(execMetric);
       }
 
       // 资源指标
       const resMetrics = this.resourceMetrics.get(functionId) || [];
       if (query.timeRange) {
-        resourceMetrics.push(...resMetrics.filter(m =>
-          (m.timestamp.isAfter(query.timeRange!.start) || m.timestamp.equals(query.timeRange!.start)) &&
-          (m.timestamp.isBefore(query.timeRange!.end) || m.timestamp.equals(query.timeRange!.end))
-        ));
+        resourceMetrics.push(
+          ...resMetrics.filter(
+            m =>
+              (m.timestamp.isAfter(query.timeRange!.start) ||
+                m.timestamp.equals(query.timeRange!.start)) &&
+              (m.timestamp.isBefore(query.timeRange!.end) ||
+                m.timestamp.equals(query.timeRange!.end))
+          )
+        );
       } else {
         resourceMetrics.push(...resMetrics);
       }
@@ -484,10 +489,15 @@ export class MonitoringService {
       // 性能指标
       const perfMetrics = this.performanceMetrics.get(functionId) || [];
       if (query.timeRange) {
-        performanceMetrics.push(...perfMetrics.filter(m =>
-          (m.timestamp.isAfter(query.timeRange!.start) || m.timestamp.equals(query.timeRange!.start)) &&
-          (m.timestamp.isBefore(query.timeRange!.end) || m.timestamp.equals(query.timeRange!.end))
-        ));
+        performanceMetrics.push(
+          ...perfMetrics.filter(
+            m =>
+              (m.timestamp.isAfter(query.timeRange!.start) ||
+                m.timestamp.equals(query.timeRange!.start)) &&
+              (m.timestamp.isBefore(query.timeRange!.end) ||
+                m.timestamp.equals(query.timeRange!.end))
+          )
+        );
       } else {
         performanceMetrics.push(...perfMetrics);
       }
@@ -496,7 +506,7 @@ export class MonitoringService {
     return {
       executionMetrics,
       resourceMetrics,
-      performanceMetrics
+      performanceMetrics,
     };
   }
 
@@ -527,7 +537,7 @@ export class MonitoringService {
         maxExecutionTime: 0,
         totalExecutionTime: 0,
         errorRate: 0,
-        successRate: 0
+        successRate: 0,
       };
       this.executionMetrics.set(functionId, metrics);
     }
@@ -577,7 +587,7 @@ export class MonitoringService {
       networkUsage: resourceUsage.network || 0,
       diskUsage: resourceUsage.disk || 0,
       activeConnections: 0,
-      queueLength: 0
+      queueLength: 0,
     });
 
     // 保留最近的数据点
@@ -593,7 +603,10 @@ export class MonitoringService {
    * @param functionId 函数ID
    * @param result 执行结果
    */
-  private async checkAlertConditions(functionId: string, result: FunctionExecutionResult): Promise<void> {
+  private async checkAlertConditions(
+    functionId: string,
+    result: FunctionExecutionResult
+  ): Promise<void> {
     const metrics = this.executionMetrics.get(functionId);
     if (!metrics) {
       return;
@@ -663,10 +676,12 @@ export class MonitoringService {
       functionId,
       status,
       lastCheck: Timestamp.now(),
-      uptime: Timestamp.now().getMilliseconds() - (metrics.lastExecutionTime?.getMilliseconds() || Timestamp.now().getMilliseconds()),
+      uptime:
+        Timestamp.now().getMilliseconds() -
+        (metrics.lastExecutionTime?.getMilliseconds() || Timestamp.now().getMilliseconds()),
       responseTime: metrics.averageExecutionTime,
       errorRate: metrics.errorRate,
-      alerts: unresolvedAlerts
+      alerts: unresolvedAlerts,
     };
 
     this.healthStatus.set(functionId, healthStatus);
@@ -682,7 +697,10 @@ export class MonitoringService {
           await this.updateHealthStatus(functionId);
         }
       } catch (error) {
-        this.logger.error('健康检查失败', error instanceof Error ? error : new Error(String(error)));
+        this.logger.error(
+          '健康检查失败',
+          error instanceof Error ? error : new Error(String(error))
+        );
       }
     }, this.monitoringConfig.checkInterval);
   }
@@ -705,20 +723,26 @@ export class MonitoringService {
 
     // 清理资源指标
     for (const [functionId, metrics] of this.resourceMetrics.entries()) {
-      const filteredMetrics = metrics.filter(m => m.timestamp.isAfter(cutoffDate) || m.timestamp.equals(cutoffDate));
+      const filteredMetrics = metrics.filter(
+        m => m.timestamp.isAfter(cutoffDate) || m.timestamp.equals(cutoffDate)
+      );
       this.resourceMetrics.set(functionId, filteredMetrics);
     }
 
     // 清理性能指标
     for (const [functionId, metrics] of this.performanceMetrics.entries()) {
-      const filteredMetrics = metrics.filter(m => m.timestamp.isAfter(cutoffDate) || m.timestamp.equals(cutoffDate));
+      const filteredMetrics = metrics.filter(
+        m => m.timestamp.isAfter(cutoffDate) || m.timestamp.equals(cutoffDate)
+      );
       this.performanceMetrics.set(functionId, filteredMetrics);
     }
 
     // 清理已解决的告警
     for (const [functionId, alerts] of this.alerts.entries()) {
-      const filteredAlerts = alerts.filter(a =>
-        !a.resolved || (a.resolvedAt && (a.resolvedAt.isAfter(cutoffDate) || a.resolvedAt.equals(cutoffDate)))
+      const filteredAlerts = alerts.filter(
+        a =>
+          !a.resolved ||
+          (a.resolvedAt && (a.resolvedAt.isAfter(cutoffDate) || a.resolvedAt.equals(cutoffDate)))
       );
       this.alerts.set(functionId, filteredAlerts);
     }

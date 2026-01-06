@@ -1,4 +1,12 @@
-import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, ManyToOne, OneToMany } from 'typeorm';
+import {
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  CreateDateColumn,
+  UpdateDateColumn,
+  ManyToOne,
+  OneToMany,
+} from 'typeorm';
 import { SessionModel } from './session.model';
 import { MessageModel } from './message.model';
 
@@ -22,14 +30,14 @@ export class ThreadModel {
   @Column({
     type: 'enum',
     enum: ['active', 'paused', 'completed', 'archived'],
-    default: 'active'
+    default: 'active',
   })
   state!: string;
 
   @Column({
     type: 'enum',
     enum: ['low', 'medium', 'high', 'urgent'],
-    default: 'medium'
+    default: 'medium',
   })
   priority!: string;
 

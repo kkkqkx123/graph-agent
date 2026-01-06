@@ -1,6 +1,16 @@
 import { NodeId } from '../../../domain/workflow/value-objects/node/node-id';
-import { NodeType, NodeTypeValue, NodeContextTypeValue } from '../../../domain/workflow/value-objects/node/node-type';
-import { Node, NodeExecutionResult, NodeMetadata, ValidationResult, WorkflowExecutionContext } from '../../../domain/workflow/entities/node';
+import {
+  NodeType,
+  NodeTypeValue,
+  NodeContextTypeValue,
+} from '../../../domain/workflow/value-objects/node/node-type';
+import {
+  Node,
+  NodeExecutionResult,
+  NodeMetadata,
+  ValidationResult,
+  WorkflowExecutionContext,
+} from '../../../domain/workflow/entities/node';
 
 /**
  * 工具调用节点
@@ -16,13 +26,7 @@ export class ToolCallNode extends Node {
     description?: string,
     position?: { x: number; y: number }
   ) {
-    super(
-      id,
-      NodeType.tool(NodeContextTypeValue.TOOL_CONTEXT),
-      name,
-      description,
-      position
-    );
+    super(id, NodeType.tool(NodeContextTypeValue.TOOL_CONTEXT), name, description, position);
   }
 
   async execute(context: WorkflowExecutionContext): Promise<NodeExecutionResult> {
@@ -37,7 +41,7 @@ export class ToolCallNode extends Node {
       name: this.toolName,
       parameters: this.toolParameters,
       timestamp: new Date().toISOString(),
-      status: 'executing'
+      status: 'executing',
     };
 
     // 更新上下文中的工具调用信息
@@ -51,7 +55,7 @@ export class ToolCallNode extends Node {
 
       // 执行工具调用
       const result = await toolExecutor.execute(this.toolName, this.toolParameters, {
-        timeout: this.timeout
+        timeout: this.timeout,
       });
 
       const executionTime = Date.now() - startTime;
@@ -67,7 +71,7 @@ export class ToolCallNode extends Node {
         role: 'tool',
         tool_call_id: toolCallId,
         content: result.data || result.result,
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
       });
       context.setVariable('messages', messages);
 
@@ -78,7 +82,7 @@ export class ToolCallNode extends Node {
         result: result.data || result.result,
         success: result.success,
         executionTime,
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
       });
 
       return {
@@ -88,8 +92,8 @@ export class ToolCallNode extends Node {
         metadata: {
           toolName: this.toolName,
           toolCallId,
-          timeout: this.timeout
-        }
+          timeout: this.timeout,
+        },
       };
     } catch (error) {
       const executionTime = Date.now() - startTime;
@@ -107,7 +111,7 @@ export class ToolCallNode extends Node {
         toolName: this.toolName,
         toolCallId,
         message: errorMessage,
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
       });
       context.setVariable('errors', errors);
 
@@ -118,8 +122,8 @@ export class ToolCallNode extends Node {
         metadata: {
           toolName: this.toolName,
           toolCallId,
-          timeout: this.timeout
-        }
+          timeout: this.timeout,
+        },
       };
     }
   }
@@ -141,7 +145,7 @@ export class ToolCallNode extends Node {
 
     return {
       valid: errors.length === 0,
-      errors
+      errors,
     };
   }
 
@@ -157,23 +161,23 @@ export class ToolCallNode extends Node {
           name: 'toolName',
           type: 'string',
           required: true,
-          description: '工具名称'
+          description: '工具名称',
         },
         {
           name: 'toolParameters',
           type: 'object',
           required: false,
           description: '工具参数',
-          defaultValue: {}
+          defaultValue: {},
         },
         {
           name: 'timeout',
           type: 'number',
           required: false,
           description: '超时时间（毫秒）',
-          defaultValue: 30000
-        }
-      ]
+          defaultValue: 30000,
+        },
+      ],
     };
   }
 
@@ -182,9 +186,9 @@ export class ToolCallNode extends Node {
       type: 'object',
       properties: {
         toolName: { type: 'string', description: '工具名称' },
-        parameters: { type: 'object', description: '工具参数' }
+        parameters: { type: 'object', description: '工具参数' },
       },
-      required: ['toolName']
+      required: ['toolName'],
     };
   }
 
@@ -193,8 +197,8 @@ export class ToolCallNode extends Node {
       type: 'object',
       properties: {
         result: { type: 'any', description: '工具执行结果' },
-        success: { type: 'boolean', description: '是否成功' }
-      }
+        success: { type: 'boolean', description: '是否成功' },
+      },
     };
   }
 

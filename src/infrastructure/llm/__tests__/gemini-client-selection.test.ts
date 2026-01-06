@@ -20,7 +20,7 @@ describe('Gemini Client Selection (Simple)', () => {
       reload: jest.fn(),
       watch: jest.fn(),
       unwatch: jest.fn(),
-      initialize: jest.fn()
+      initialize: jest.fn(),
     } as any;
 
     // 创建模拟的客户端

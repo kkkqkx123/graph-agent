@@ -10,7 +10,7 @@ export enum ConfigSourceType {
   FILE = 'file',
   ENVIRONMENT = 'environment',
   REMOTE = 'remote',
-  MEMORY = 'memory'
+  MEMORY = 'memory',
 }
 
 /**

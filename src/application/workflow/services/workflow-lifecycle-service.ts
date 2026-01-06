@@ -1,11 +1,17 @@
 /**
  * 工作流生命周期服务
- * 
+ *
  * 负责工作流的创建、激活、停用、归档和删除等生命周期管理
  */
 
 import { injectable, inject } from 'inversify';
-import { Workflow, WorkflowStatus, WorkflowType, WorkflowConfig, IWorkflowRepository } from '../../../domain/workflow';
+import {
+  Workflow,
+  WorkflowStatus,
+  WorkflowType,
+  WorkflowConfig,
+  IWorkflowRepository,
+} from '../../../domain/workflow';
 import { ID, ILogger } from '../../../domain/common';
 import { BaseApplicationService } from '../../common/base-application-service';
 import { WorkflowDTO, mapWorkflowToDTO } from '../dtos/workflow-dto';
@@ -86,20 +92,14 @@ export class WorkflowLifecycleService extends BaseApplicationService {
       async () => {
         // 转换命令参数
         const type = params.type ? WorkflowType.fromString(params.type) : undefined;
-        const config = params.config ? params.config as any : undefined;
+        const config = params.config ? (params.config as any) : undefined;
         const createdBy = params.createdBy ? ID.fromString(params.createdBy) : undefined;
 
         // 验证创建条件
         await this.validateWorkflowCreation(params.name, config, createdBy);
 
         // 创建工作流
-        const workflow = Workflow.create(
-          params.name,
-          params.description,
-          type,
-          config,
-          createdBy
-        );
+        const workflow = Workflow.create(params.name, params.description, type, config, createdBy);
 
         // 保存工作流
         const savedWorkflow = await this.workflowRepository.save(workflow);
@@ -231,7 +231,11 @@ export class WorkflowLifecycleService extends BaseApplicationService {
   /**
    * 验证工作流创建的业务规则
    */
-  private async validateWorkflowCreation(name: string, config?: WorkflowConfig, createdBy?: ID): Promise<void> {
+  private async validateWorkflowCreation(
+    name: string,
+    config?: WorkflowConfig,
+    createdBy?: ID
+  ): Promise<void> {
     // 验证工作流名称是否已存在
     const exists = await this.workflowRepository.existsByName(name);
     if (exists) {
@@ -256,23 +260,17 @@ export class WorkflowLifecycleService extends BaseApplicationService {
     }
 
     // 草稿状态只能激活或归档
-    if (currentStatus.isDraft() &&
-      !newStatus.isActive() &&
-      !newStatus.isArchived()) {
+    if (currentStatus.isDraft() && !newStatus.isActive() && !newStatus.isArchived()) {
       throw new Error('草稿状态的工作流只能激活或归档');
     }
 
     // 活跃状态只能变为非活跃或归档
-    if (currentStatus.isActive() &&
-      !newStatus.isInactive() &&
-      !newStatus.isArchived()) {
+    if (currentStatus.isActive() && !newStatus.isInactive() && !newStatus.isArchived()) {
       throw new Error('活跃状态的工作流只能变为非活跃或归档');
     }
 
     // 非活跃状态只能变为活跃或归档
-    if (currentStatus.isInactive() &&
-      !newStatus.isActive() &&
-      !newStatus.isArchived()) {
+    if (currentStatus.isInactive() && !newStatus.isActive() && !newStatus.isArchived()) {
       throw new Error('非活跃状态的工作流只能变为活跃或归档');
     }
   }

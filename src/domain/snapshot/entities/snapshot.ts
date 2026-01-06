@@ -101,7 +101,7 @@ export class Snapshot extends Entity {
       version: Version.initial(),
       isDeleted: false,
       sizeBytes,
-      restoreCount: 0
+      restoreCount: 0,
     };
 
     const snapshot = new Snapshot(props);
@@ -249,7 +249,7 @@ export class Snapshot extends Entity {
       restoreCount: this.props.restoreCount + 1,
       lastRestoredAt: Timestamp.now(),
       updatedAt: Timestamp.now(),
-      version: this.props.version.nextPatch()
+      version: this.props.version.nextPatch(),
     };
 
     (this as any).props = Object.freeze(newProps);
@@ -275,7 +275,7 @@ export class Snapshot extends Entity {
       stateData: { ...stateData },
       sizeBytes,
       updatedAt: Timestamp.now(),
-      version: this.props.version.nextPatch()
+      version: this.props.version.nextPatch(),
     };
 
     (this as any).props = Object.freeze(newProps);
@@ -294,7 +294,7 @@ export class Snapshot extends Entity {
       ...this.props,
       title,
       updatedAt: Timestamp.now(),
-      version: this.props.version.nextPatch()
+      version: this.props.version.nextPatch(),
     };
 
     (this as any).props = Object.freeze(newProps);
@@ -313,7 +313,7 @@ export class Snapshot extends Entity {
       ...this.props,
       description,
       updatedAt: Timestamp.now(),
-      version: this.props.version.nextPatch()
+      version: this.props.version.nextPatch(),
     };
 
     (this as any).props = Object.freeze(newProps);
@@ -332,7 +332,7 @@ export class Snapshot extends Entity {
       ...this.props,
       metadata: { ...metadata },
       updatedAt: Timestamp.now(),
-      version: this.props.version.nextPatch()
+      version: this.props.version.nextPatch(),
     };
 
     (this as any).props = Object.freeze(newProps);
@@ -354,7 +354,7 @@ export class Snapshot extends Entity {
       ...this.props,
       metadata: newMetadata,
       updatedAt: Timestamp.now(),
-      version: this.props.version.nextPatch()
+      version: this.props.version.nextPatch(),
     };
 
     (this as any).props = Object.freeze(newProps);
@@ -376,7 +376,7 @@ export class Snapshot extends Entity {
       ...this.props,
       metadata: newMetadata,
       updatedAt: Timestamp.now(),
-      version: this.props.version.nextPatch()
+      version: this.props.version.nextPatch(),
     };
 
     (this as any).props = Object.freeze(newProps);
@@ -408,7 +408,7 @@ export class Snapshot extends Entity {
       stateData: newStateData,
       sizeBytes,
       updatedAt: Timestamp.now(),
-      version: this.props.version.nextPatch()
+      version: this.props.version.nextPatch(),
     };
 
     (this as any).props = Object.freeze(newProps);
@@ -441,7 +441,7 @@ export class Snapshot extends Entity {
       ...this.props,
       isDeleted: true,
       updatedAt: Timestamp.now(),
-      version: this.props.version.nextPatch()
+      version: this.props.version.nextPatch(),
     };
 
     (this as any).props = Object.freeze(newProps);
@@ -520,7 +520,7 @@ export class Snapshot extends Entity {
       isDeleted: this.props.isDeleted,
       sizeBytes: this.props.sizeBytes,
       restoreCount: this.props.restoreCount,
-      lastRestoredAt: this.props.lastRestoredAt?.toISOString()
+      lastRestoredAt: this.props.lastRestoredAt?.toISOString(),
     };
   }
 
@@ -543,7 +543,9 @@ export class Snapshot extends Entity {
       isDeleted: data['isDeleted'] as boolean,
       sizeBytes: data['sizeBytes'] as number,
       restoreCount: data['restoreCount'] as number,
-      lastRestoredAt: data['lastRestoredAt'] ? Timestamp.fromISOString(data['lastRestoredAt'] as string) : undefined
+      lastRestoredAt: data['lastRestoredAt']
+        ? Timestamp.fromISOString(data['lastRestoredAt'] as string)
+        : undefined,
     };
 
     return Snapshot.fromProps(props);

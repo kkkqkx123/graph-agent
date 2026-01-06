@@ -49,7 +49,9 @@ export class OpenAIChatClient extends BaseLLMClient {
       throw new Error('OpenAI默认模型未配置。请在配置文件中设置 llm.openai.defaultModel。');
     }
     if (!supportedModels || !Array.isArray(supportedModels) || supportedModels.length === 0) {
-      throw new Error('OpenAI支持的模型列表未配置。请在配置文件中设置 llm.openai.supportedModels。');
+      throw new Error(
+        'OpenAI支持的模型列表未配置。请在配置文件中设置 llm.openai.supportedModels。'
+      );
     }
 
     // 创建 OpenAI 供应商配置
@@ -68,15 +70,8 @@ export class OpenAIChatClient extends BaseLLMClient {
       .retryDelay(1000)
       .build();
 
-    super(
-      httpClient,
-      rateLimiter,
-      tokenCalculator,
-      configManager,
-      providerConfig
-    );
+    super(httpClient, rateLimiter, tokenCalculator, configManager, providerConfig);
   }
-
 
   getSupportedModelsList(): string[] {
     if (!this.providerConfig.supportedModels) {
@@ -99,7 +94,14 @@ export class OpenAIChatClient extends BaseLLMClient {
     }
 
     // 验证必需的配置字段
-    const requiredFields = ['maxTokens', 'contextWindow', 'temperature', 'topP', 'promptTokenPrice', 'completionTokenPrice'];
+    const requiredFields = [
+      'maxTokens',
+      'contextWindow',
+      'temperature',
+      'topP',
+      'promptTokenPrice',
+      'completionTokenPrice',
+    ];
     for (const field of requiredFields) {
       if (config[field] === undefined || config[field] === null) {
         throw new Error(`OpenAI模型 ${model} 缺少必需配置字段: ${field}`);
@@ -117,24 +119,30 @@ export class OpenAIChatClient extends BaseLLMClient {
       presencePenalty: config.presencePenalty ?? 0.0,
       costPer1KTokens: {
         prompt: config.promptTokenPrice,
-        completion: config.completionTokenPrice
+        completion: config.completionTokenPrice,
       },
       supportsStreaming: config.supportsStreaming ?? true,
       supportsTools: config.supportsTools ?? true,
       supportsImages: config.supportsImages ?? false,
       supportsAudio: config.supportsAudio ?? false,
       supportsVideo: config.supportsVideo ?? false,
-      metadata: config.metadata ?? {}
+      metadata: config.metadata ?? {},
     });
   }
 
-  protected override async parseStreamResponse(response: any, request: LLMRequest): Promise<AsyncIterable<LLMResponse>> {
+  protected override async parseStreamResponse(
+    response: any,
+    request: LLMRequest
+  ): Promise<AsyncIterable<LLMResponse>> {
     const self = this;
 
     async function* streamGenerator() {
       // 处理流式响应数据
       for await (const chunk of response.data) {
-        const lines = chunk.toString().split('\n').filter((line: string) => line.trim() !== '');
+        const lines = chunk
+          .toString()
+          .split('\n')
+          .filter((line: string) => line.trim() !== '');
 
         for (const line of lines) {
           if (line.startsWith('data: ')) {
@@ -153,15 +161,17 @@ export class OpenAIChatClient extends BaseLLMClient {
                 yield LLMResponse.create(
                   request.requestId,
                   request.model,
-                  [{
-                    index: choice.index || 0,
-                    message: LLMMessage.createAssistant(choice.delta?.content || ''),
-                    finish_reason: choice.finish_reason || ''
-                  }],
+                  [
+                    {
+                      index: choice.index || 0,
+                      message: LLMMessage.createAssistant(choice.delta?.content || ''),
+                      finish_reason: choice.finish_reason || '',
+                    },
+                  ],
                   {
                     promptTokens: data.usage?.prompt_tokens || 0,
                     completionTokens: data.usage?.completion_tokens || 0,
-                    totalTokens: data.usage?.total_tokens || 0
+                    totalTokens: data.usage?.total_tokens || 0,
                   },
                   choice.finish_reason || '',
                   0
@@ -205,7 +215,7 @@ export class OpenAIChatClient extends BaseLLMClient {
     return {
       isValid: errors.length === 0,
       errors,
-      warnings
+      warnings,
     };
   }
 
@@ -223,7 +233,6 @@ export class OpenAIChatClient extends BaseLLMClient {
     // Apply any postprocessing logic here
     return response;
   }
-
 
   public override getClientName(): string {
     return 'OpenAI Chat';

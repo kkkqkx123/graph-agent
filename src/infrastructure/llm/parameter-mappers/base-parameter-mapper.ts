@@ -30,7 +30,7 @@ export const BaseParameterSchema = z.object({
   frequencyPenalty: z.number().min(-2).max(2).optional(),
   presencePenalty: z.number().min(-2).max(2).optional(),
   stop: z.array(z.string()).optional(),
-  stream: z.boolean().optional()
+  stream: z.boolean().optional(),
 });
 
 /**
@@ -82,7 +82,7 @@ export abstract class BaseParameterMapper {
     // 构建验证对象
     const validationObject: Record<string, any> = {
       model: request.model,
-      messages: request.messages
+      messages: request.messages,
     };
 
     // 添加可选参数（如果存在）
@@ -120,7 +120,7 @@ export abstract class BaseParameterMapper {
     return {
       isValid: errors.length === 0,
       errors,
-      warnings
+      warnings,
     };
   }
 
@@ -159,7 +159,10 @@ export abstract class BaseParameterMapper {
   /**
    * 过滤提供商特定参数
    */
-  protected filterProviderSpecificParams(params: Record<string, any>, providerSpecificKeys: string[]): Record<string, any> {
+  protected filterProviderSpecificParams(
+    params: Record<string, any>,
+    providerSpecificKeys: string[]
+  ): Record<string, any> {
     const result: Record<string, any> = {};
 
     for (const [key, value] of Object.entries(params)) {
@@ -174,7 +177,10 @@ export abstract class BaseParameterMapper {
   /**
    * 过滤通用参数
    */
-  protected filterCommonParams(params: Record<string, any>, providerSpecificKeys: string[]): Record<string, any> {
+  protected filterCommonParams(
+    params: Record<string, any>,
+    providerSpecificKeys: string[]
+  ): Record<string, any> {
     const result: Record<string, any> = {};
 
     for (const [key, value] of Object.entries(params)) {
@@ -189,7 +195,12 @@ export abstract class BaseParameterMapper {
   /**
    * 安全地添加可选参数到请求对象
    */
-  protected addOptionalParam<T>(target: Record<string, any>, key: string, value: T | undefined, targetKey?: string): void {
+  protected addOptionalParam<T>(
+    target: Record<string, any>,
+    key: string,
+    value: T | undefined,
+    targetKey?: string
+  ): void {
     if (value !== undefined) {
       target[targetKey || key] = value;
     }
@@ -198,7 +209,12 @@ export abstract class BaseParameterMapper {
   /**
    * 安全地添加元数据参数到请求对象
    */
-  protected addMetadataParam<T>(target: Record<string, any>, metadata: Record<string, any> | undefined, key: string, targetKey?: string): void {
+  protected addMetadataParam<T>(
+    target: Record<string, any>,
+    metadata: Record<string, any> | undefined,
+    key: string,
+    targetKey?: string
+  ): void {
     if (metadata && metadata[key] !== undefined) {
       target[targetKey || key] = metadata[key];
     }

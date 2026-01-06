@@ -117,7 +117,7 @@ export class TriggerExecutionResultBuilder {
       error: this.error,
       executionTime: this.executionTime,
       data: this.data,
-      message: this.message
+      message: this.message,
     };
   }
 }
@@ -139,7 +139,10 @@ export class TriggerExecutionResultUtils {
   /**
    * 创建失败的触发结果
    */
-  static failure(message: string = '触发器条件不满足', error?: Error): TriggerExecutionResultBuilder {
+  static failure(
+    message: string = '触发器条件不满足',
+    error?: Error
+  ): TriggerExecutionResultBuilder {
     const builder = new TriggerExecutionResultBuilder()
       .setShouldTrigger(false)
       .setSuccess(error ? false : true)

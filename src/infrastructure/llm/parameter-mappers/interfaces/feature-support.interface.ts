@@ -161,7 +161,7 @@ export class BaseFeatureSupport implements FeatureSupport {
       supportsMaxTokens: this.supportsMaxTokens,
       supportsLogProbs: this.supportsLogProbs,
       supportsLogitBias: this.supportsLogitBias,
-      ...this.providerSpecificFeatures
+      ...this.providerSpecificFeatures,
     };
   }
 

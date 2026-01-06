@@ -38,7 +38,7 @@ export class ContainerManager {
     this.config = {
       enableLogging: false,
       enableCache: true,
-      ...config
+      ...config,
     };
   }
 
@@ -122,7 +122,9 @@ export class ContainerManager {
    * @param serviceIdentifier 服务标识符
    * @returns 服务实例
    */
-  getService<K extends ServiceIdentifier>(serviceIdentifier: TypedServiceIdentifier<K>): GetServiceType<K> {
+  getService<K extends ServiceIdentifier>(
+    serviceIdentifier: TypedServiceIdentifier<K>
+  ): GetServiceType<K> {
     if (!this.initialized) {
       throw new Error('[DI] 容器未初始化，请先调用initialize()方法');
     }
@@ -134,7 +136,9 @@ export class ContainerManager {
    * @param serviceIdentifier 服务标识符
    * @returns 服务实例或null
    */
-  tryGetService<K extends ServiceIdentifier>(serviceIdentifier: TypedServiceIdentifier<K>): GetServiceType<K> | null {
+  tryGetService<K extends ServiceIdentifier>(
+    serviceIdentifier: TypedServiceIdentifier<K>
+  ): GetServiceType<K> | null {
     if (!this.initialized) {
       return null;
     }
@@ -224,7 +228,9 @@ export class AppContainer {
    * @param serviceIdentifier 服务标识符
    * @returns 服务实例
    */
-  static getService<K extends ServiceIdentifier>(serviceIdentifier: TypedServiceIdentifier<K>): GetServiceType<K> {
+  static getService<K extends ServiceIdentifier>(
+    serviceIdentifier: TypedServiceIdentifier<K>
+  ): GetServiceType<K> {
     return this.getContainerManager().getService<K>(serviceIdentifier);
   }
 
@@ -233,7 +239,9 @@ export class AppContainer {
    * @param serviceIdentifier 服务标识符
    * @returns 服务实例或null
    */
-  static tryGetService<K extends ServiceIdentifier>(serviceIdentifier: TypedServiceIdentifier<K>): GetServiceType<K> | null {
+  static tryGetService<K extends ServiceIdentifier>(
+    serviceIdentifier: TypedServiceIdentifier<K>
+  ): GetServiceType<K> | null {
     return this.getContainerManager().tryGetService<K>(serviceIdentifier);
   }
 
@@ -269,7 +277,6 @@ export class AppContainer {
   static getSessionOrchestrationService() {
     return this.getService(TYPES.SessionOrchestrationServiceImpl);
   }
-
 
   /**
    * 获取图算法服务

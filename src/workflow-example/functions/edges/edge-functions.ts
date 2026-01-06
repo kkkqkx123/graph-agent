@@ -1,6 +1,6 @@
 /**
  * 边函数实现
- * 
+ *
  * 本文件实现了图工作流中的各种边函数
  */
 
@@ -9,7 +9,7 @@ import {
   EdgeInput,
   EdgeConfig,
   EdgeOutput,
-  ExecutionContext
+  ExecutionContext,
 } from '../../types/workflow-types';
 
 // ============================================================================
@@ -19,7 +19,7 @@ import {
 /**
  * 直接边函数
  * 直接边总是允许执行，无条件限制
- * 
+ *
  * @param input 边输入
  * @param config 边配置
  * @param context 执行上下文
@@ -32,7 +32,7 @@ export const directEdgeFunction: EdgeFunction = async (
 ): Promise<EdgeOutput> => {
   return {
     canTraverse: true,
-    reason: '直接边，无条件限制'
+    reason: '直接边，无条件限制',
   };
 };
 
@@ -43,7 +43,7 @@ export const directEdgeFunction: EdgeFunction = async (
 /**
  * 条件边函数
  * 根据条件表达式评估结果决定是否可以遍历
- * 
+ *
  * @param input 边输入
  * @param config 边配置
  * @param context 执行上下文
@@ -70,19 +70,19 @@ export const conditionalEdgeFunction: EdgeFunction = async (
       canTraverse,
       reason: canTraverse
         ? `条件满足: ${expression} = ${result}`
-        : `条件不满足: ${expression} = ${result}, 期望: ${expectedValue}`
+        : `条件不满足: ${expression} = ${result}, 期望: ${expectedValue}`,
     };
   } catch (error) {
     return {
       canTraverse: false,
-      reason: `条件评估失败: ${error instanceof Error ? error.message : String(error)}`
+      reason: `条件评估失败: ${error instanceof Error ? error.message : String(error)}`,
     };
   }
 };
 
 /**
  * 评估表达式
- * 
+ *
  * @param expression 表达式字符串
  * @param data 上下文数据
  * @returns 评估结果
@@ -97,7 +97,7 @@ function evaluateExpression(expression: string, data: Record<string, any>): any 
 
 /**
  * 替换变量占位符
- * 
+ *
  * @param expression 表达式
  * @param data 数据
  * @returns 替换后的表达式
@@ -114,7 +114,7 @@ function replacePlaceholders(expression: string, data: Record<string, any>): str
 
 /**
  * 根据路径获取值
- * 
+ *
  * @param data 数据对象
  * @param path 路径，如 "node.result.success"
  * @returns 路径对应的值
@@ -135,7 +135,7 @@ function getValueByPath(data: Record<string, any>, path: string): any {
 
 /**
  * 将值转换为字符串
- * 
+ *
  * @param value 值
  * @returns 字符串表示
  */
@@ -161,7 +161,7 @@ function valueToString(value: any): string {
 /**
  * 安全求值
  * 只支持简单的比较表达式，不支持任意代码执行
- * 
+ *
  * @param expression 表达式
  * @returns 求值结果
  */
@@ -180,8 +180,10 @@ function safeEvaluate(expression: string): any {
   }
 
   // 如果是字符串（带引号）
-  if ((trimmed.startsWith("'") && trimmed.endsWith("'")) ||
-      (trimmed.startsWith('"') && trimmed.endsWith('"'))) {
+  if (
+    (trimmed.startsWith("'") && trimmed.endsWith("'")) ||
+    (trimmed.startsWith('"') && trimmed.endsWith('"'))
+  ) {
     return trimmed.slice(1, -1);
   }
 
@@ -218,13 +220,13 @@ function safeEvaluate(expression: string): any {
 
 /**
  * 解析值
- * 
+ *
  * @param str 字符串
  * @returns 解析后的值
  */
 function parseValue(str?: string): any {
   if (!str) return undefined;
-  
+
   const trimmed = str.trim();
 
   if (trimmed === 'true') return true;
@@ -235,8 +237,10 @@ function parseValue(str?: string): any {
     return Number(trimmed);
   }
 
-  if ((trimmed.startsWith("'") && trimmed.endsWith("'")) ||
-      (trimmed.startsWith('"') && trimmed.endsWith('"'))) {
+  if (
+    (trimmed.startsWith("'") && trimmed.endsWith("'")) ||
+    (trimmed.startsWith('"') && trimmed.endsWith('"'))
+  ) {
     return trimmed.slice(1, -1);
   }
 
@@ -245,17 +249,13 @@ function parseValue(str?: string): any {
 
 /**
  * 使用运算符比较值
- * 
+ *
  * @param actual 实际值
  * @param operator 运算符
  * @param expected 期望值
  * @returns 比较结果
  */
-function compareWithOperator(
-  actual: any,
-  operator: string,
-  expected?: any
-): boolean {
+function compareWithOperator(actual: any, operator: string, expected?: any): boolean {
   switch (operator) {
     case 'equals':
       return actual == expected;
@@ -293,7 +293,7 @@ function compareWithOperator(
 /**
  * 权重边函数
  * 基于权重决定执行优先级，权重高的边优先执行
- * 
+ *
  * @param input 边输入
  * @param config 边配置
  * @param context 执行上下文
@@ -305,11 +305,11 @@ export const weightedEdgeFunction: EdgeFunction = async (
   context: ExecutionContext
 ): Promise<EdgeOutput> => {
   const weight = config.weight || 1;
-  
+
   return {
     canTraverse: true,
     reason: `权重边，权重值: ${weight}`,
-    metadata: { weight }
+    metadata: { weight },
   };
 };
 
@@ -323,12 +323,12 @@ export const weightedEdgeFunction: EdgeFunction = async (
 export const edgeFunctionRegistry: Record<string, EdgeFunction> = {
   direct: directEdgeFunction,
   conditional: conditionalEdgeFunction,
-  weighted: weightedEdgeFunction
+  weighted: weightedEdgeFunction,
 };
 
 /**
  * 获取边函数
- * 
+ *
  * @param edgeType 边类型
  * @returns 边函数
  */
@@ -338,7 +338,7 @@ export function getEdgeFunction(edgeType: string): EdgeFunction | undefined {
 
 /**
  * 注册边函数
- * 
+ *
  * @param edgeType 边类型
  * @param func 边函数
  */

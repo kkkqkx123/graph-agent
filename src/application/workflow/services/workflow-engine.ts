@@ -254,22 +254,14 @@ export class WorkflowEngine {
 
         // 执行节点（带错误处理）
         try {
-          const nodeResult = await this.executeNodeWithRetry(
-            node,
-            currentState,
-            threadId,
-            {
-              timeout: nodeTimeout,
-              maxRetries: maxNodeRetries,
-              retryDelay: nodeRetryDelay
-            }
-          );
+          const nodeResult = await this.executeNodeWithRetry(node, currentState, threadId, {
+            timeout: nodeTimeout,
+            maxRetries: maxNodeRetries,
+            retryDelay: nodeRetryDelay,
+          });
 
           // 更新状态
-          this.stateManager.updateState(
-            threadId,
-            nodeResult.output || {}
-          );
+          this.stateManager.updateState(threadId, nodeResult.output || {});
 
           // 记录执行历史
           this.historyManager.recordExecution(
@@ -281,7 +273,6 @@ export class WorkflowEngine {
           );
 
           executedNodes++;
-
         } catch (error) {
           // 节点执行错误处理
           const handled = await this.handleNodeExecutionError(
@@ -303,7 +294,7 @@ export class WorkflowEngine {
 
         // 获取出边
         const outgoingEdges = workflow.getOutgoingEdges(NodeId.fromString(currentNodeId));
-        
+
         if (outgoingEdges.length === 0) {
           // 没有出边，执行结束
           break;
@@ -316,7 +307,7 @@ export class WorkflowEngine {
           {
             recordHistory: options.recordRoutingHistory,
             verboseLogging: options.verboseRoutingLogging,
-            useDefaultEdge: true
+            useDefaultEdge: true,
           }
         );
 
@@ -338,15 +329,14 @@ export class WorkflowEngine {
         executedNodes,
         executionTime: Date.now() - startTime,
         checkpointCount,
-        status: 'completed'
+        status: 'completed',
       };
-
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : String(error);
-      
+
       // 获取当前状态
       const currentState = this.stateManager.getState(threadId);
-      
+
       // 确定执行状态
       let status: 'completed' | 'cancelled' | 'timeout' | 'error' = 'error';
       if (errorMessage === 'Execution cancelled') {
@@ -367,8 +357,8 @@ export class WorkflowEngine {
           nodeId: currentNodeId || undefined,
           errorType: error instanceof Error ? error.constructor.name : 'Unknown',
           message: errorMessage,
-          timestamp: new Date().toISOString()
-        }
+          timestamp: new Date().toISOString(),
+        },
       };
     } finally {
       // 清理执行控制器
@@ -484,24 +474,18 @@ export class WorkflowEngine {
   ): Promise<any> {
     const nodeContext = this.buildNodeContext(state, threadId);
     const canExecute = await this.nodeExecutor.canExecute(node, nodeContext);
-    
+
     if (!canExecute) {
       throw new Error(`节点 ${node.nodeId.toString()} 无法执行`);
     }
 
     // 如果有重试配置，使用带重试的执行
     if (options.maxRetries > 0) {
-      return await this.nodeExecutor.execute(
-        node,
-        nodeContext
-      );
+      return await this.nodeExecutor.execute(node, nodeContext);
     }
 
     // 否则直接执行
-    return await this.nodeExecutor.execute(
-      node,
-      nodeContext
-    );
+    return await this.nodeExecutor.execute(node, nodeContext);
   }
 
   /**
@@ -531,7 +515,7 @@ export class WorkflowEngine {
         nodeId,
         errorType: error instanceof Error ? error.constructor.name : 'Unknown',
         message: errorMessage,
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
       });
       this.stateManager.updateState(threadId, { errors });
     }
@@ -539,7 +523,7 @@ export class WorkflowEngine {
     // 如果启用了错误恢复，尝试查找错误处理边
     if (enableErrorRecovery) {
       const errorEdges = workflow.getOutgoingEdges(node.nodeId).filter(edge => edge.isError());
-      
+
       if (errorEdges.length > 0) {
         // 找到错误处理边，返回 true 表示已处理
         return true;
@@ -557,7 +541,7 @@ export class WorkflowEngine {
    */
   private findStartNode(workflow: Workflow): string | null {
     const nodes = workflow.getNodes();
-    
+
     // 查找类型为 START 的节点
     for (const [nodeId, node] of nodes.entries()) {
       if (node.type.equals(NodeType.start())) {
@@ -591,7 +575,7 @@ export class WorkflowEngine {
       getNodeResult: (nodeId: string) => {
         const history = this.historyManager.getNodeHistory(threadId, NodeId.fromString(nodeId));
         return history.length > 0 ? history[history.length - 1]?.result : undefined;
-      }
+      },
     };
   }
 }

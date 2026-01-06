@@ -139,7 +139,7 @@ export class LLMResponse extends Entity {
       createdAt: now,
       updatedAt: now,
       version: Version.initial(),
-      deletionStatus: DeletionStatus.active()
+      deletionStatus: DeletionStatus.active(),
     };
 
     return new LLMResponse(props);
@@ -274,7 +274,9 @@ export class LLMResponse extends Entity {
    * @returns 最后一个选择或undefined
    */
   public getLastChoice(): LLMChoice | undefined {
-    return this.props.choices.length > 0 ? this.props.choices[this.props.choices.length - 1] : undefined;
+    return this.props.choices.length > 0
+      ? this.props.choices[this.props.choices.length - 1]
+      : undefined;
   }
 
   /**
@@ -341,7 +343,7 @@ export class LLMResponse extends Entity {
     const toolCalls: LLMResponseToolCall[] = [];
     for (const choice of this.props.choices) {
       if (choice.message.hasToolCalls()) {
-        toolCalls.push(...choice.message.getToolCalls() || []);
+        toolCalls.push(...(choice.message.getToolCalls() || []));
       }
     }
     return toolCalls;
@@ -374,7 +376,7 @@ export class LLMResponse extends Entity {
       ...this.props,
       choices: [...choices],
       updatedAt: Timestamp.now(),
-      version: this.props.version.nextPatch()
+      version: this.props.version.nextPatch(),
     };
 
     return new LLMResponse(newProps);
@@ -391,7 +393,7 @@ export class LLMResponse extends Entity {
       ...this.props,
       usage: { ...usage },
       updatedAt: Timestamp.now(),
-      version: this.props.version.nextPatch()
+      version: this.props.version.nextPatch(),
     };
 
     return new LLMResponse(newProps);
@@ -408,7 +410,7 @@ export class LLMResponse extends Entity {
       ...this.props,
       metadata: { ...metadata },
       updatedAt: Timestamp.now(),
-      version: this.props.version.nextPatch()
+      version: this.props.version.nextPatch(),
     };
 
     return new LLMResponse(newProps);
@@ -429,7 +431,7 @@ export class LLMResponse extends Entity {
       ...this.props,
       metadata: newMetadata,
       updatedAt: Timestamp.now(),
-      version: this.props.version.nextPatch()
+      version: this.props.version.nextPatch(),
     };
 
     return new LLMResponse(newProps);
@@ -449,7 +451,7 @@ export class LLMResponse extends Entity {
       ...this.props,
       metadata: newMetadata,
       updatedAt: Timestamp.now(),
-      version: this.props.version.nextPatch()
+      version: this.props.version.nextPatch(),
     };
 
     return new LLMResponse(newProps);
@@ -485,7 +487,7 @@ export class LLMResponse extends Entity {
       ...this.props,
       deletionStatus: this.props.deletionStatus.markAsDeleted(),
       updatedAt: Timestamp.now(),
-      version: this.props.version.nextPatch()
+      version: this.props.version.nextPatch(),
     };
 
     return new LLMResponse(newProps);
@@ -522,5 +524,4 @@ export class LLMResponse extends Entity {
   public toProps(): LLMResponseProps {
     return this.props;
   }
-
 }

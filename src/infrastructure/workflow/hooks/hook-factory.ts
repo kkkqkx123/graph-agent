@@ -2,7 +2,10 @@ import { HookPointValue } from '../../../domain/workflow/value-objects/hook-poin
 import { Hook, HookProps } from '../../../domain/workflow/entities/hook';
 import { BeforeExecuteHook, BeforeExecuteHookConfig } from './impl/before-execute-hook';
 import { AfterExecuteHook, AfterExecuteHookConfig } from './impl/after-execute-hook';
-import { BeforeNodeExecuteHook, BeforeNodeExecuteHookConfig } from './impl/before-node-execute-hook';
+import {
+  BeforeNodeExecuteHook,
+  BeforeNodeExecuteHookConfig,
+} from './impl/before-node-execute-hook';
 import { AfterNodeExecuteHook, AfterNodeExecuteHookConfig } from './impl/after-node-execute-hook';
 
 /**
@@ -164,12 +167,7 @@ export class HookFactory {
    * @returns 钩子点列表
    */
   public static getSupportedHookPoints(): string[] {
-    return [
-      'before_execute',
-      'after_execute',
-      'before_node_execute',
-      'after_node_execute'
-    ];
+    return ['before_execute', 'after_execute', 'before_node_execute', 'after_node_execute'];
   }
 
   /**

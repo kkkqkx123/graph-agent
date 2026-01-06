@@ -9,7 +9,7 @@ import {
   LogOutputType,
   LogFormatType,
   RedactorConfig,
-  LoggerConfigBuilder
+  LoggerConfigBuilder,
 } from './interfaces';
 
 /**
@@ -23,7 +23,7 @@ const DEFAULT_SENSITIVE_PATTERNS = [
   'password["\']?\\s*[:=]\\s*["\']?[^"\'\\s]+',
   'token["\']?\\s*[:=]\\s*["\']?[^"\'\\s]+',
   'key["\']?\\s*[:=]\\s*["\']?[^"\'\\s]+',
-  'secret["\']?\\s*[:=]\\s*["\']?[^"\'\\s]+'
+  'secret["\']?\\s*[:=]\\s*["\']?[^"\'\\s]+',
 ];
 
 /**
@@ -87,7 +87,7 @@ export class LoggerConfigManager {
         level: LogLevel.DEBUG,
         format: LogFormatType.TEXT,
         colorize: true,
-        timestamp: true
+        timestamp: true,
       })
       .addFileOutput({
         level: LogLevel.INFO,
@@ -95,16 +95,16 @@ export class LoggerConfigManager {
         path: 'logs/agent.log',
         rotation: 'daily' as any,
         max_size: '10MB',
-        max_files: 7
+        max_files: 7,
       })
       .setSensitiveData({
         patterns: DEFAULT_SENSITIVE_PATTERNS,
         replacement: '***',
-        enabled: true
+        enabled: true,
       })
       .setMeta({
         service: 'agent-framework',
-        version: '1.0.0'
+        version: '1.0.0',
       })
       .build();
   }
@@ -122,9 +122,7 @@ export class LoggerConfigManager {
 
     // 解析日志输出
     if (tomlConfig.log_outputs && Array.isArray(tomlConfig.log_outputs)) {
-      result.outputs = tomlConfig.log_outputs.map((output: any) =>
-        this.parseLogOutput(output)
-      );
+      result.outputs = tomlConfig.log_outputs.map((output: any) => this.parseLogOutput(output));
     }
 
     // 解析敏感信息配置
@@ -132,7 +130,7 @@ export class LoggerConfigManager {
       result.sensitive_data = {
         patterns: tomlConfig.secret_patterns,
         replacement: '***',
-        enabled: true
+        enabled: true,
       };
     }
 
@@ -146,7 +144,7 @@ export class LoggerConfigManager {
     const baseConfig = {
       level: output.level?.toUpperCase() || LogLevel.INFO,
       format: output.format?.toUpperCase() || LogFormatType.JSON,
-      enabled: output.enabled !== false
+      enabled: output.enabled !== false,
     };
 
     switch (output.type?.toLowerCase()) {
@@ -155,7 +153,7 @@ export class LoggerConfigManager {
           ...baseConfig,
           type: LogOutputType.CONSOLE,
           colorize: output.colorize !== false,
-          timestamp: output.timestamp !== false
+          timestamp: output.timestamp !== false,
         } as LogOutputConfig;
 
       case LogOutputType.FILE:
@@ -166,7 +164,7 @@ export class LoggerConfigManager {
           rotation: output.rotation || 'daily',
           max_size: output.max_size || '10MB',
           max_files: output.max_files || 7,
-          compress: output.compress !== false
+          compress: output.compress !== false,
         } as LogOutputConfig;
 
       default:

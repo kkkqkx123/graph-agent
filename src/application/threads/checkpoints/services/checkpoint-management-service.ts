@@ -1,11 +1,14 @@
 /**
  * 检查点管理服务
- * 
+ *
  * 负责检查点的查询、历史记录和过期时间延长等管理功能
  */
 
 import { ThreadCheckpoint } from '../../../../domain/threads/checkpoints/entities/thread-checkpoint';
-import { ThreadCheckpointDomainService, ThreadCheckpointDomainServiceImpl } from '../../../../domain/threads/checkpoints/services/thread-checkpoint-domain-service';
+import {
+  ThreadCheckpointDomainService,
+  ThreadCheckpointDomainServiceImpl,
+} from '../../../../domain/threads/checkpoints/services/thread-checkpoint-domain-service';
 import { IThreadCheckpointRepository } from '../../../../domain/threads/checkpoints/repositories/thread-checkpoint-repository';
 import { BaseApplicationService } from '../../../common/base-application-service';
 import { ILogger } from '../../../../domain/common/types/logger-types';

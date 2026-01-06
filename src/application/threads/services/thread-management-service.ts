@@ -1,6 +1,6 @@
 /**
  * 线程管理服务
- * 
+ *
  * 负责线程的查询、列表、存在性检查和优先级更新等管理功能
  */
 
@@ -29,7 +29,10 @@ export class ThreadManagementService extends BaseApplicationService {
   /**
    * 验证线程优先级更新的业务规则
    */
-  private async validateThreadPriorityUpdate(threadId: ID, newPriority: ThreadPriority): Promise<void> {
+  private async validateThreadPriorityUpdate(
+    threadId: ID,
+    newPriority: ThreadPriority
+  ): Promise<void> {
     const thread = await this.threadRepository.findByIdOrFail(threadId);
 
     if (!thread.status.canOperate()) {
@@ -76,12 +79,9 @@ export class ThreadManagementService extends BaseApplicationService {
    * @returns 线程领域对象列表
    */
   async listThreads(): Promise<Thread[]> {
-    return this.executeListOperation(
-      '线程',
-      async () => {
-        return await this.threadRepository.findAll();
-      }
-    );
+    return this.executeListOperation('线程', async () => {
+      return await this.threadRepository.findAll();
+    });
   }
 
   /**

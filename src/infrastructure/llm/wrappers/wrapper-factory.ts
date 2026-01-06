@@ -22,23 +22,21 @@ export class LLMWrapperFactory {
     @inject(TYPES.PollingPoolManager) private poolManager: any,
     @inject(TYPES.TaskGroupManager) private taskGroupManager: any,
     @inject(TYPES.LLMClientFactory) private llmClientFactory: LLMClientFactory
-  ) { }
+  ) {}
 
   /**
    * 创建轮询池包装器
    */
-  async createPollingPoolWrapper(poolName: string, config?: Record<string, any>): Promise<BaseLLMWrapper> {
+  async createPollingPoolWrapper(
+    poolName: string,
+    config?: Record<string, any>
+  ): Promise<BaseLLMWrapper> {
     const pool = await this.poolManager.getPool(poolName);
     if (!pool) {
       throw new Error(`轮询池不存在: ${poolName}`);
     }
 
-    const wrapper = new PollingPoolWrapper(
-      ID.generate(),
-      poolName,
-      config || {},
-      pool
-    );
+    const wrapper = new PollingPoolWrapper(ID.generate(), poolName, config || {}, pool);
 
     this.wrappers.set(poolName, wrapper);
     return wrapper;
@@ -47,7 +45,10 @@ export class LLMWrapperFactory {
   /**
    * 创建任务组包装器
    */
-  async createTaskGroupWrapper(groupName: string, config?: Record<string, any>): Promise<BaseLLMWrapper> {
+  async createTaskGroupWrapper(
+    groupName: string,
+    config?: Record<string, any>
+  ): Promise<BaseLLMWrapper> {
     const wrapper = new TaskGroupWrapper(
       ID.generate(),
       groupName,
@@ -62,31 +63,31 @@ export class LLMWrapperFactory {
   /**
    * 创建直接LLM包装器
    */
-  async createDirectLLMWrapper(clientName: string, config?: Record<string, any>): Promise<BaseLLMWrapper> {
+  async createDirectLLMWrapper(
+    clientName: string,
+    config?: Record<string, any>
+  ): Promise<BaseLLMWrapper> {
     // 通过 LLMClientFactory 创建客户端
     // clientName 格式: "provider:model"（必须包含模型）
     const parts = clientName.split(':');
-    
+
     if (parts.length === 0 || !parts[0]) {
       throw new Error(`无效的客户端名称: ${clientName}`);
     }
-    
+
     const provider = parts[0];
-    
+
     // 必须指定模型名称
     if (parts.length < 2 || !parts[1]) {
-      throw new Error(`创建直接LLM包装器必须指定模型名称，格式应为 "provider:model"，当前: ${clientName}`);
+      throw new Error(
+        `创建直接LLM包装器必须指定模型名称，格式应为 "provider:model"，当前: ${clientName}`
+      );
     }
-    
+
     const model = parts[1];
     const client = this.llmClientFactory.createClient(provider, model);
 
-    const wrapper = new DirectLLMWrapper(
-      ID.generate(),
-      clientName,
-      config || {},
-      client
-    );
+    const wrapper = new DirectLLMWrapper(ID.generate(), clientName, config || {}, client);
 
     this.wrappers.set(clientName, wrapper);
     return wrapper;
@@ -171,9 +172,11 @@ export class LLMWrapperFactory {
       successfulRequests: stats?.['successfulRequests'] || 0,
       failedRequests: stats?.['failedRequests'] || 0,
       avgResponseTime: stats?.['avgResponseTime'] || 0,
-      successRate: (stats?.['totalRequests'] as number) > 0 ?
-        ((stats['successfulRequests'] as number) / (stats['totalRequests'] as number)) : 0,
-      available: await wrapper.isAvailable()
+      successRate:
+        (stats?.['totalRequests'] as number) > 0
+          ? (stats['successfulRequests'] as number) / (stats['totalRequests'] as number)
+          : 0,
+      available: await wrapper.isAvailable(),
     };
   }
 
@@ -198,14 +201,15 @@ export class LLMWrapperFactory {
     const allStatistics = await this.getAllWrappersStatistics();
     const totalWrappers = Object.keys(allStatistics).length;
     const totalRequests = Object.values(allStatistics).reduce(
-      (sum, stats) => sum + stats.totalRequests, 0
+      (sum, stats) => sum + stats.totalRequests,
+      0
     );
     const successfulRequests = Object.values(allStatistics).reduce(
-      (sum, stats) => sum + stats.successfulRequests, 0
+      (sum, stats) => sum + stats.successfulRequests,
+      0
     );
 
-    const overallSuccessRate = totalRequests > 0 ?
-      successfulRequests / totalRequests : 0;
+    const overallSuccessRate = totalRequests > 0 ? successfulRequests / totalRequests : 0;
 
     return {
       totalWrappers,
@@ -213,18 +217,20 @@ export class LLMWrapperFactory {
       successfulRequests,
       overallSuccessRate,
       wrappers: allStatistics,
-      timestamp: new Date()
+      timestamp: new Date(),
     };
   }
 
   /**
    * 批量创建包装器
    */
-  async batchCreateWrappers(wrapperConfigs: Array<{
-    name: string;
-    type: 'polling_pool' | 'task_group' | 'direct_llm';
-    config?: Record<string, any>;
-  }>): Promise<BaseLLMWrapper[]> {
+  async batchCreateWrappers(
+    wrapperConfigs: Array<{
+      name: string;
+      type: 'polling_pool' | 'task_group' | 'direct_llm';
+      config?: Record<string, any>;
+    }>
+  ): Promise<BaseLLMWrapper[]> {
     const wrappers: BaseLLMWrapper[] = [];
 
     for (const config of wrapperConfigs) {

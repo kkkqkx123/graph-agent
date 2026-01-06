@@ -2,7 +2,12 @@ import { z } from 'zod';
 import { LLMRequest } from '../../../domain/llm/entities/llm-request';
 import { LLMResponse } from '../../../domain/llm/entities/llm-response';
 import { LLMMessage } from '../../../domain/llm/value-objects/llm-message';
-import { BaseParameterMapper, ProviderRequest, ProviderResponse, BaseParameterSchema } from './base-parameter-mapper';
+import {
+  BaseParameterMapper,
+  ProviderRequest,
+  ProviderResponse,
+  BaseParameterSchema,
+} from './base-parameter-mapper';
 import { ProviderConfig } from './interfaces/provider-config.interface';
 
 /**
@@ -15,13 +20,20 @@ const GeminiParameterSchema = BaseParameterSchema.extend({
   includeThoughts: z.boolean().optional(),
   cachedContent: z.string().optional(),
   topK: z.number().int().min(1).max(100).optional(),
-  streamOptions: z.record(z.string(), z.any()).optional()
+  streamOptions: z.record(z.string(), z.any()).optional(),
 });
 
 /**
  * Gemini 特有参数键名
  */
-const GEMINI_SPECIFIC_KEYS = ['reasoningEffort', 'thinkingBudget', 'includeThoughts', 'cachedContent', 'topK', 'streamOptions'];
+const GEMINI_SPECIFIC_KEYS = [
+  'reasoningEffort',
+  'thinkingBudget',
+  'includeThoughts',
+  'cachedContent',
+  'topK',
+  'streamOptions',
+];
 
 /**
  * Gemini 参数映射器
@@ -40,7 +52,7 @@ export class GeminiParameterMapper extends BaseParameterMapper {
   mapToProvider(request: LLMRequest, providerConfig: ProviderConfig): ProviderRequest {
     const geminiRequest: ProviderRequest = {
       model: request.model,
-      messages: request.messages
+      messages: request.messages,
     };
 
     // 基本参数映射（仅在值存在时添加）
@@ -63,9 +75,9 @@ export class GeminiParameterMapper extends BaseParameterMapper {
         google: {
           thinking_config: {
             thinking_budget: request.metadata?.['thinkingBudget'] || 'medium',
-            include_thoughts: request.metadata?.['includeThoughts'] || false
-          }
-        }
+            include_thoughts: request.metadata?.['includeThoughts'] || false,
+          },
+        },
       };
     }
 
@@ -133,23 +145,25 @@ export class GeminiParameterMapper extends BaseParameterMapper {
       // 保留原始详细信息用于调试和审计
       usageMetadata: usageMetadata,
       finishReason: candidate['finishReason'],
-      safetyRatings: candidate['safetyRatings']
+      safetyRatings: candidate['safetyRatings'],
     };
 
     // 构建标准响应
     return LLMResponse.create(
       originalRequest.requestId,
       originalRequest.model,
-      [{
-        index: candidate['index'] || 0,
-        message: LLMMessage.createAssistant(textContent),
-        finish_reason: candidate['finishReason'] || 'stop'
-      }],
+      [
+        {
+          index: candidate['index'] || 0,
+          message: LLMMessage.createAssistant(textContent),
+          finish_reason: candidate['finishReason'] || 'stop',
+        },
+      ],
       {
         promptTokens,
         completionTokens,
         totalTokens,
-        metadata
+        metadata,
       },
       candidate['finishReason'] || 'stop',
       0, // duration - would need to be calculated

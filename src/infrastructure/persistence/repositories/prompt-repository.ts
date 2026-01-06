@@ -8,13 +8,19 @@ import { ConfigLoadingModule } from '../../config/loading/config-loading-module'
 import { ILogger } from '../../../domain/common/types';
 import { Prompt, PromptProps } from '../../../domain/prompts/entities/prompt';
 import { PromptId } from '../../../domain/prompts/value-objects/prompt-id';
-import { PromptType, inferPromptTypeFromCategory } from '../../../domain/prompts/value-objects/prompt-type';
+import {
+  PromptType,
+  inferPromptTypeFromCategory,
+} from '../../../domain/prompts/value-objects/prompt-type';
 import { PromptStatus } from '../../../domain/prompts/value-objects/prompt-status';
 import { Metadata } from '../../../domain/checkpoint/value-objects/metadata';
 import { DeletionStatus } from '../../../domain/checkpoint/value-objects/deletion-status';
 import { Timestamp } from '../../../domain/common/value-objects/timestamp';
 import { Version } from '../../../domain/common/value-objects/version';
-import { IPromptRepository, PromptSearchCriteria } from '../../../domain/prompts/repositories/prompt-repository';
+import {
+  IPromptRepository,
+  PromptSearchCriteria,
+} from '../../../domain/prompts/repositories/prompt-repository';
 
 /**
  * 提示词仓库实现
@@ -23,7 +29,7 @@ export class PromptRepository implements IPromptRepository {
   constructor(
     private readonly configLoadingModule: ConfigLoadingModule,
     private readonly logger: ILogger
-  ) { }
+  ) {}
 
   async findById(id: PromptId): Promise<Prompt | null> {
     const { category, name } = id.parse();
@@ -47,7 +53,7 @@ export class PromptRepository implements IPromptRepository {
       updatedAt: Timestamp.now(),
       priority: 0,
       dependencies: [],
-      variables: []
+      variables: [],
     };
     return Prompt.fromProps(promptProps);
   }
@@ -75,7 +81,7 @@ export class PromptRepository implements IPromptRepository {
         updatedAt: Timestamp.now(),
         priority: 0,
         dependencies: [],
-        variables: []
+        variables: [],
       };
       prompts.push(Prompt.fromProps(promptProps));
     }
@@ -158,7 +164,7 @@ export class PromptRepository implements IPromptRepository {
       total: allPrompts.length,
       page: Math.floor(offset / limit) + 1,
       pageSize: limit,
-      totalPages: Math.ceil(allPrompts.length / limit)
+      totalPages: Math.ceil(allPrompts.length / limit),
     };
   }
 
@@ -192,7 +198,7 @@ export class PromptRepository implements IPromptRepository {
           updatedAt: Timestamp.now(),
           priority: 0,
           dependencies: [],
-          variables: []
+          variables: [],
         };
         prompts.push(Prompt.fromProps(promptProps));
       }
@@ -215,7 +221,8 @@ export class PromptRepository implements IPromptRepository {
       }
       if (criteria.query) {
         const query = criteria.query.toLowerCase();
-        const matches = prompt.name.toLowerCase().includes(query) ||
+        const matches =
+          prompt.name.toLowerCase().includes(query) ||
           prompt.content.toLowerCase().includes(query) ||
           (prompt.description && prompt.description.toLowerCase().includes(query));
         if (!matches) return false;

@@ -7,7 +7,7 @@ import {
   HookMetadata,
   HookParameter,
   HookValidationResult,
-  HookProps
+  HookProps,
 } from '../../../../domain/workflow/entities/hook';
 
 /**
@@ -57,7 +57,7 @@ export class BeforeNodeExecuteHook extends Hook {
     const fullConfig: BeforeNodeExecuteHookConfig = {
       nodeId,
       nodeType,
-      ...config
+      ...config,
     };
 
     const props: HookProps = {
@@ -72,7 +72,7 @@ export class BeforeNodeExecuteHook extends Hook {
       failFast,
       createdAt: now,
       updatedAt: now,
-      version: Version.initial()
+      version: Version.initial(),
     };
 
     return new BeforeNodeExecuteHook(props);
@@ -114,7 +114,7 @@ export class BeforeNodeExecuteHook extends Hook {
           return {
             success: false,
             output: {
-              validationErrors: validationResult.errors
+              validationErrors: validationResult.errors,
             },
             error: '输入验证失败',
             shouldContinue: false,
@@ -123,8 +123,8 @@ export class BeforeNodeExecuteHook extends Hook {
               hookPoint: 'before_node_execute',
               nodeId: config.nodeId,
               nodeType: config.nodeType,
-              timestamp: Date.now()
-            }
+              timestamp: Date.now(),
+            },
           };
         }
       }
@@ -141,8 +141,8 @@ export class BeforeNodeExecuteHook extends Hook {
           hookPoint: 'before_node_execute',
           nodeId: config.nodeId,
           nodeType: config.nodeType,
-          timestamp: Date.now()
-        }
+          timestamp: Date.now(),
+        },
       };
     } catch (error) {
       return {
@@ -154,8 +154,8 @@ export class BeforeNodeExecuteHook extends Hook {
           hookPoint: 'before_node_execute',
           nodeId: config.nodeId,
           nodeType: config.nodeType,
-          timestamp: Date.now()
-        }
+          timestamp: Date.now(),
+        },
       };
     }
   }
@@ -182,7 +182,7 @@ export class BeforeNodeExecuteHook extends Hook {
 
     return {
       valid: errors.length === 0,
-      errors
+      errors,
     };
   }
 
@@ -198,7 +198,7 @@ export class BeforeNodeExecuteHook extends Hook {
       description: this.props.description,
       parameters: this.getParameters(),
       enabled: this.props.enabled,
-      priority: this.props.priority
+      priority: this.props.priority,
     };
   }
 
@@ -212,20 +212,20 @@ export class BeforeNodeExecuteHook extends Hook {
         name: 'nodeId',
         type: 'string',
         required: true,
-        description: '节点ID'
+        description: '节点ID',
       },
       {
         name: 'nodeType',
         type: 'string',
         required: true,
-        description: '节点类型'
+        description: '节点类型',
       },
       {
         name: 'inputValidation',
         type: 'object',
         required: false,
-        description: '输入验证规则'
-      }
+        description: '输入验证规则',
+      },
     ];
   }
 
@@ -235,7 +235,10 @@ export class BeforeNodeExecuteHook extends Hook {
    * @param rules 验证规则
    * @returns 验证结果
    */
-  private validateNodeInput(context: HookContext, rules: BeforeNodeExecuteHookConfig['inputValidation']): { valid: boolean; errors: string[] } {
+  private validateNodeInput(
+    context: HookContext,
+    rules: BeforeNodeExecuteHookConfig['inputValidation']
+  ): { valid: boolean; errors: string[] } {
     const errors: string[] = [];
 
     if (!rules) {
@@ -263,7 +266,7 @@ export class BeforeNodeExecuteHook extends Hook {
 
     return {
       valid: errors.length === 0,
-      errors
+      errors,
     };
   }
 }

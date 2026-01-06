@@ -142,7 +142,8 @@ export class ThreadCollection extends ValueObject<Map<string, Thread>> {
     }
 
     return this.getAll().every(
-      thread => thread.status.isCompleted() || thread.status.isFailed() || thread.status.isCancelled()
+      thread =>
+        thread.status.isCompleted() || thread.status.isFailed() || thread.status.isCancelled()
     );
   }
 

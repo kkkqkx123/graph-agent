@@ -38,7 +38,7 @@ export class ForkOptions extends ValueObject<{
       nodeStateHandling,
       includeHistory,
       includeMetadata,
-      customSettings
+      customSettings,
     });
   }
 
@@ -50,7 +50,7 @@ export class ForkOptions extends ValueObject<{
       contextRetention: 'partial',
       nodeStateHandling: 'inherit',
       includeHistory: true,
-      includeMetadata: true
+      includeMetadata: true,
     });
   }
 
@@ -62,7 +62,7 @@ export class ForkOptions extends ValueObject<{
       contextRetention: 'full',
       nodeStateHandling: 'copy',
       includeHistory: true,
-      includeMetadata: true
+      includeMetadata: true,
     });
   }
 
@@ -74,7 +74,7 @@ export class ForkOptions extends ValueObject<{
       contextRetention: 'minimal',
       nodeStateHandling: 'reset',
       includeHistory: false,
-      includeMetadata: false
+      includeMetadata: false,
     });
   }
 
@@ -157,7 +157,7 @@ export class ForkContext extends ValueObject<{
       variableSnapshot: new Map(variableSnapshot),
       nodeStateSnapshot: new Map(nodeStateSnapshot),
       promptContextSnapshot,
-      options
+      options,
     });
   }
 

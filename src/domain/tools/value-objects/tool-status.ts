@@ -1,6 +1,6 @@
 /**
  * 工具状态值对象
- * 
+ *
  * 表示工具的状态
  */
 export class ToolStatus {
@@ -26,25 +26,25 @@ export class ToolStatus {
     'active',
     'inactive',
     'deprecated',
-    'archived'
+    'archived',
   ];
 
   /**
    * 构造函数
-   * 
+   *
    * @param value 状态值
    */
   constructor(value: string) {
     if (!ToolStatus.isValid(value)) {
       throw new Error(`Invalid tool status: ${value}`);
     }
-    
+
     this.value = value;
   }
 
   /**
    * 检查状态值是否有效
-   * 
+   *
    * @param value 状态值
    * @returns 是否有效
    */
@@ -54,7 +54,7 @@ export class ToolStatus {
 
   /**
    * 从字符串创建工具状态
-   * 
+   *
    * @param value 字符串值
    * @returns 工具状态
    */
@@ -64,7 +64,7 @@ export class ToolStatus {
 
   /**
    * 检查是否为草稿状态
-   * 
+   *
    * @returns 是否为草稿状态
    */
   isDraft(): boolean {
@@ -73,7 +73,7 @@ export class ToolStatus {
 
   /**
    * 检查是否为活跃状态
-   * 
+   *
    * @returns 是否为活跃状态
    */
   isActive(): boolean {
@@ -82,7 +82,7 @@ export class ToolStatus {
 
   /**
    * 检查是否为非活跃状态
-   * 
+   *
    * @returns 是否为非活跃状态
    */
   isInactive(): boolean {
@@ -91,7 +91,7 @@ export class ToolStatus {
 
   /**
    * 检查是否为已弃用状态
-   * 
+   *
    * @returns 是否为已弃用状态
    */
   isDeprecated(): boolean {
@@ -100,7 +100,7 @@ export class ToolStatus {
 
   /**
    * 检查是否为已归档状态
-   * 
+   *
    * @returns 是否为已归档状态
    */
   isArchived(): boolean {
@@ -109,7 +109,7 @@ export class ToolStatus {
 
   /**
    * 检查是否可用（活跃或非活跃）
-   * 
+   *
    * @returns 是否可用
    */
   isAvailable(): boolean {
@@ -118,7 +118,7 @@ export class ToolStatus {
 
   /**
    * 检查是否不可用（已弃用或已归档）
-   * 
+   *
    * @returns 是否不可用
    */
   isUnavailable(): boolean {
@@ -127,7 +127,7 @@ export class ToolStatus {
 
   /**
    * 检查是否可以激活
-   * 
+   *
    * @returns 是否可以激活
    */
   canActivate(): boolean {
@@ -136,7 +136,7 @@ export class ToolStatus {
 
   /**
    * 检查是否可以停用
-   * 
+   *
    * @returns 是否可以停用
    */
   canDeactivate(): boolean {
@@ -145,7 +145,7 @@ export class ToolStatus {
 
   /**
    * 检查是否可以弃用
-   * 
+   *
    * @returns 是否可以弃用
    */
   canDeprecate(): boolean {
@@ -154,7 +154,7 @@ export class ToolStatus {
 
   /**
    * 检查是否可以归档
-   * 
+   *
    * @returns 是否可以归档
    */
   canArchive(): boolean {
@@ -163,7 +163,7 @@ export class ToolStatus {
 
   /**
    * 获取状态的显示名称
-   * 
+   *
    * @returns 显示名称
    */
   getDisplayName(): string {
@@ -185,7 +185,7 @@ export class ToolStatus {
 
   /**
    * 获取状态的描述
-   * 
+   *
    * @returns 描述
    */
   getDescription(): string {
@@ -207,7 +207,7 @@ export class ToolStatus {
 
   /**
    * 获取状态的颜色代码
-   * 
+   *
    * @returns 颜色代码
    */
   getColorCode(): string {
@@ -229,7 +229,7 @@ export class ToolStatus {
 
   /**
    * 获取状态图标
-   * 
+   *
    * @returns 图标名称
    */
   getIcon(): string {
@@ -251,7 +251,7 @@ export class ToolStatus {
 
   /**
    * 获取所有有效的工具状态
-   * 
+   *
    * @returns 所有有效的工具状态
    */
   static getAllStatuses(): ToolStatus[] {
@@ -260,7 +260,7 @@ export class ToolStatus {
 
   /**
    * 获取可用的状态（活跃和非活跃）
-   * 
+   *
    * @returns 可用的状态
    */
   static getAvailableStatuses(): ToolStatus[] {
@@ -269,7 +269,7 @@ export class ToolStatus {
 
   /**
    * 获取不可用的状态（已弃用和已归档）
-   * 
+   *
    * @returns 不可用的状态
    */
   static getUnavailableStatuses(): ToolStatus[] {
@@ -278,7 +278,7 @@ export class ToolStatus {
 
   /**
    * 获取开发中的状态（草稿）
-   * 
+   *
    * @returns 开发中的状态
    */
   static getDevelopmentStatuses(): ToolStatus[] {
@@ -287,7 +287,7 @@ export class ToolStatus {
 
   /**
    * 获取已发布的状态（活跃、非活跃、已弃用）
-   * 
+   *
    * @returns 已发布的状态
    */
   static getPublishedStatuses(): ToolStatus[] {
@@ -296,7 +296,7 @@ export class ToolStatus {
 
   /**
    * 获取已结束的状态（已弃用、已归档）
-   * 
+   *
    * @returns 已结束的状态
    */
   static getEndedStatuses(): ToolStatus[] {
@@ -305,7 +305,7 @@ export class ToolStatus {
 
   /**
    * 转换为字符串
-   * 
+   *
    * @returns 字符串表示
    */
   toString(): string {
@@ -314,7 +314,7 @@ export class ToolStatus {
 
   /**
    * 转换为JSON
-   * 
+   *
    * @returns JSON表示
    */
   toJSON(): string {
@@ -323,7 +323,7 @@ export class ToolStatus {
 
   /**
    * 检查是否相等
-   * 
+   *
    * @param other 另一个工具状态
    * @returns 是否相等
    */
@@ -333,7 +333,7 @@ export class ToolStatus {
 
   /**
    * 哈希值
-   * 
+   *
    * @returns 哈希值
    */
   hashCode(): number {

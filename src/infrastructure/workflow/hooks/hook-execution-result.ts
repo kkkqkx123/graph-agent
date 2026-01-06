@@ -117,7 +117,7 @@ export class HookExecutionResultBuilder {
       error: this.error,
       executionTime: this.executionTime,
       shouldContinue: this.shouldContinue,
-      metadata: this.metadata
+      metadata: this.metadata,
     };
   }
 }

@@ -185,7 +185,7 @@ export class ToolResult extends Entity {
       processingHistory: [],
       dependencies: [],
       consumers: [],
-      usage: { accessCount: 0, downloadCount: 0 }
+      usage: { accessCount: 0, downloadCount: 0 },
     };
 
     return new ToolResult(props);
@@ -242,7 +242,7 @@ export class ToolResult extends Entity {
       processingHistory: [],
       dependencies: [],
       consumers: [],
-      usage: { accessCount: 0, downloadCount: 0 }
+      usage: { accessCount: 0, downloadCount: 0 },
     };
 
     return new ToolResult(props);
@@ -286,35 +286,43 @@ export class ToolResult extends Entity {
       encryption: json['encryption'] as ToolResultEncryption,
       signature: json['signature'] as ToolResultSignature,
       checksum: json['checksum'] as ToolResultChecksum,
-      expiresAt: json['expiresAt'] ? Timestamp.fromDate(new Date(json['expiresAt'] as string)) : undefined,
+      expiresAt: json['expiresAt']
+        ? Timestamp.fromDate(new Date(json['expiresAt'] as string))
+        : undefined,
       permissions: json['permissions'] as ToolResultPermissions,
       tags: json['tags'] as string[],
       category: json['category'] as string,
       priority: json['priority'] as 'low' | 'medium' | 'high' | 'critical',
       status: json['status'] as 'draft' | 'processed' | 'validated' | 'archived' | 'deleted',
-      processingHistory: (json['processingHistory'] as Array<{
-        step: string;
-        timestamp: string;
-        status: 'pending' | 'running' | 'completed' | 'failed';
-        duration?: number;
-        error?: string;
-        metadata?: Record<string, unknown>;
-      }>).map(step => ({
+      processingHistory: (
+        json['processingHistory'] as Array<{
+          step: string;
+          timestamp: string;
+          status: 'pending' | 'running' | 'completed' | 'failed';
+          duration?: number;
+          error?: string;
+          metadata?: Record<string, unknown>;
+        }>
+      ).map(step => ({
         step: step.step,
         timestamp: new Date(step.timestamp),
         status: step.status,
         duration: step.duration,
         error: step.error,
-        metadata: step.metadata
+        metadata: step.metadata,
       })),
       dependencies: (json['dependencies'] as string[]).map(d => ID.fromString(d)),
       consumers: (json['consumers'] as string[]).map(c => ID.fromString(c)),
       usage: {
         accessCount: (json['usage'] as any).accessCount,
         downloadCount: (json['usage'] as any).downloadCount,
-        lastAccessedAt: (json['usage'] as any).lastAccessedAt ? new Date((json['usage'] as any).lastAccessedAt) : undefined,
-        lastDownloadedAt: (json['usage'] as any).lastDownloadedAt ? new Date((json['usage'] as any).lastDownloadedAt) : undefined
-      }
+        lastAccessedAt: (json['usage'] as any).lastAccessedAt
+          ? new Date((json['usage'] as any).lastAccessedAt)
+          : undefined,
+        lastDownloadedAt: (json['usage'] as any).lastDownloadedAt
+          ? new Date((json['usage'] as any).lastDownloadedAt)
+          : undefined,
+      },
     };
 
     return new ToolResult(props);
@@ -535,12 +543,7 @@ export class ToolResult extends Entity {
    * @param mimeType 结果MIME类型
    * @returns 更新后的结果
    */
-  public updateData(
-    data: unknown,
-    size?: number,
-    hash?: string,
-    mimeType?: string
-  ): ToolResult {
+  public updateData(data: unknown, size?: number, hash?: string, mimeType?: string): ToolResult {
     return new ToolResult({
       ...this.props,
       data,
@@ -548,7 +551,7 @@ export class ToolResult extends Entity {
       hash,
       mimeType,
       updatedAt: Timestamp.now(),
-      version: this.props.version.nextPatch()
+      version: this.props.version.nextPatch(),
     });
   }
 
@@ -577,7 +580,7 @@ export class ToolResult extends Entity {
         status: status === 'deleted' ? 'failed' : 'completed',
         duration,
         error,
-        metadata: stepMetadata
+        metadata: stepMetadata,
       });
     }
 
@@ -586,7 +589,7 @@ export class ToolResult extends Entity {
       status,
       processingHistory: newHistory,
       updatedAt: Timestamp.now(),
-      version: this.props.version.nextPatch()
+      version: this.props.version.nextPatch(),
     });
   }
 
@@ -604,7 +607,7 @@ export class ToolResult extends Entity {
       ...this.props,
       tags: [...this.props.tags, tag],
       updatedAt: Timestamp.now(),
-      version: this.props.version.nextPatch()
+      version: this.props.version.nextPatch(),
     });
   }
 
@@ -622,7 +625,7 @@ export class ToolResult extends Entity {
       ...this.props,
       tags: this.props.tags.filter(t => t !== tag),
       updatedAt: Timestamp.now(),
-      version: this.props.version.nextPatch()
+      version: this.props.version.nextPatch(),
     });
   }
 
@@ -636,10 +639,10 @@ export class ToolResult extends Entity {
       usage: {
         ...this.props.usage,
         accessCount: this.props.usage.accessCount + 1,
-        lastAccessedAt: new Date()
+        lastAccessedAt: new Date(),
       },
       updatedAt: Timestamp.now(),
-      version: this.props.version.nextPatch()
+      version: this.props.version.nextPatch(),
     });
   }
 
@@ -653,10 +656,10 @@ export class ToolResult extends Entity {
       usage: {
         ...this.props.usage,
         downloadCount: this.props.usage.downloadCount + 1,
-        lastDownloadedAt: new Date()
+        lastDownloadedAt: new Date(),
       },
       updatedAt: Timestamp.now(),
-      version: this.props.version.nextPatch()
+      version: this.props.version.nextPatch(),
     });
   }
 
@@ -670,7 +673,7 @@ export class ToolResult extends Entity {
       ...this.props,
       metadata: { ...this.props.metadata, ...metadata },
       updatedAt: Timestamp.now(),
-      version: this.props.version.nextPatch()
+      version: this.props.version.nextPatch(),
     });
   }
 
@@ -694,7 +697,9 @@ export class ToolResult extends Entity {
    * @returns 是否有权限
    */
   public hasReadPermission(userId: string): boolean {
-    return this.props.permissions.read.includes(userId) || this.props.permissions.read.includes('*');
+    return (
+      this.props.permissions.read.includes(userId) || this.props.permissions.read.includes('*')
+    );
   }
 
   /**
@@ -703,7 +708,9 @@ export class ToolResult extends Entity {
    * @returns 是否有权限
    */
   public hasWritePermission(userId: string): boolean {
-    return this.props.permissions.write.includes(userId) || this.props.permissions.write.includes('*');
+    return (
+      this.props.permissions.write.includes(userId) || this.props.permissions.write.includes('*')
+    );
   }
 
   /**
@@ -712,7 +719,9 @@ export class ToolResult extends Entity {
    * @returns 是否有权限
    */
   public hasDeletePermission(userId: string): boolean {
-    return this.props.permissions.delete.includes(userId) || this.props.permissions.delete.includes('*');
+    return (
+      this.props.permissions.delete.includes(userId) || this.props.permissions.delete.includes('*')
+    );
   }
 
   /**
@@ -789,15 +798,15 @@ export class ToolResult extends Entity {
         status: step.status,
         duration: step.duration,
         error: step.error,
-        metadata: step.metadata
+        metadata: step.metadata,
       })),
       dependencies: this.props.dependencies.map(d => d.value),
       consumers: this.props.consumers.map(c => c.value),
       usage: {
         ...this.props.usage,
         lastAccessedAt: this.props.usage.lastAccessedAt?.toISOString(),
-        lastDownloadedAt: this.props.usage.lastDownloadedAt?.toISOString()
-      }
+        lastDownloadedAt: this.props.usage.lastDownloadedAt?.toISOString(),
+      },
     };
   }
 }

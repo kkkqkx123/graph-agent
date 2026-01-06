@@ -14,10 +14,11 @@ import { BaseRepository } from './base-repository';
 import { ConnectionManager } from '../connections/connection-manager';
 
 @injectable()
-export class HistoryRepository extends BaseRepository<History, HistoryModel, ID> implements IHistoryRepository {
-  constructor(
-    @inject('ConnectionManager') connectionManager: ConnectionManager
-  ) {
+export class HistoryRepository
+  extends BaseRepository<History, HistoryModel, ID>
+  implements IHistoryRepository
+{
+  constructor(@inject('ConnectionManager') connectionManager: ConnectionManager) {
     super(connectionManager);
   }
 
@@ -36,14 +37,14 @@ export class HistoryRepository extends BaseRepository<History, HistoryModel, ID>
         threadId: model.threadId ? new ID(model.threadId) : undefined,
         workflowId: model.workflowId ? new ID(model.workflowId) : undefined,
         type: HistoryType.fromString(model.action),
-        title: model.data?.title as string || undefined,
-        description: model.data?.description as string || undefined,
+        title: (model.data?.title as string) || undefined,
+        description: (model.data?.description as string) || undefined,
         details: HistoryDetails.create(model.data || {}),
         metadata: Metadata.create(model.metadata || {}),
         createdAt: Timestamp.create(model.createdAt),
         updatedAt: Timestamp.create(model.updatedAt),
         version: Version.fromString(model.version),
-        deletionStatus: DeletionStatus.active()
+        deletionStatus: DeletionStatus.active(),
       };
 
       return History.fromProps(historyData);
@@ -65,12 +66,12 @@ export class HistoryRepository extends BaseRepository<History, HistoryModel, ID>
 
       model.id = entity.historyId.value;
       model.entityType = 'history';
-      model.entityId = entity.metadata.getValue('entityId') as string || entity.historyId.value;
+      model.entityId = (entity.metadata.getValue('entityId') as string) || entity.historyId.value;
       model.action = entity.type.getValue();
       model.data = {
         title: entity.title,
         description: entity.description,
-        ...entity.details.toRecord()
+        ...entity.details.toRecord(),
       };
       model.previousData = entity.metadata.getValue('previousData');
       model.metadata = entity.metadata.toRecord();
@@ -102,7 +103,7 @@ export class HistoryRepository extends BaseRepository<History, HistoryModel, ID>
     return this.find({
       filters: { sessionId: sessionId.value },
       sortBy: 'timestamp',
-      sortOrder: 'desc'
+      sortOrder: 'desc',
     });
   }
 
@@ -113,7 +114,7 @@ export class HistoryRepository extends BaseRepository<History, HistoryModel, ID>
     return this.find({
       filters: { threadId: threadId.value },
       sortBy: 'timestamp',
-      sortOrder: 'desc'
+      sortOrder: 'desc',
     });
   }
 
@@ -124,7 +125,7 @@ export class HistoryRepository extends BaseRepository<History, HistoryModel, ID>
     return this.find({
       filters: { workflowId: workflowId.value },
       sortBy: 'timestamp',
-      sortOrder: 'desc'
+      sortOrder: 'desc',
     });
   }
 
@@ -135,7 +136,7 @@ export class HistoryRepository extends BaseRepository<History, HistoryModel, ID>
     return this.find({
       filters: { action: type.getValue() },
       sortBy: 'timestamp',
-      sortOrder: 'desc'
+      sortOrder: 'desc',
     });
   }
 
@@ -162,7 +163,7 @@ export class HistoryRepository extends BaseRepository<History, HistoryModel, ID>
       .createQueryBuilder('history')
       .where('history.timestamp BETWEEN :startTime AND :endTime', {
         startTime: startTime.getTime(),
-        endTime: endTime.getTime()
+        endTime: endTime.getTime(),
       })
       .orderBy('history.timestamp', 'DESC')
       .getMany();
@@ -176,7 +177,7 @@ export class HistoryRepository extends BaseRepository<History, HistoryModel, ID>
     return this.find({
       sortBy: 'timestamp',
       sortOrder: 'desc',
-      limit: limit || 10
+      limit: limit || 10,
     });
   }
 
@@ -188,7 +189,7 @@ export class HistoryRepository extends BaseRepository<History, HistoryModel, ID>
       filters: { sessionId: sessionId.value },
       sortBy: 'timestamp',
       sortOrder: 'desc',
-      limit
+      limit,
     });
   }
 
@@ -200,7 +201,7 @@ export class HistoryRepository extends BaseRepository<History, HistoryModel, ID>
       filters: { threadId: threadId.value },
       sortBy: 'timestamp',
       sortOrder: 'desc',
-      limit
+      limit,
     });
   }
 
@@ -273,24 +274,28 @@ export class HistoryRepository extends BaseRepository<History, HistoryModel, ID>
     return this.find({
       filters: {
         entityId: entityId.value,
-        action: type.getValue()
+        action: type.getValue(),
       },
       sortBy: 'timestamp',
-      sortOrder: 'desc'
+      sortOrder: 'desc',
     });
   }
 
   /**
    * 查找实体指定时间范围内的历史记录
    */
-  async findByEntityIdAndTimeRange(entityId: ID, startTime: Date, endTime: Date): Promise<History[]> {
+  async findByEntityIdAndTimeRange(
+    entityId: ID,
+    startTime: Date,
+    endTime: Date
+  ): Promise<History[]> {
     const repository = await this.getRepository();
     const models = await repository
       .createQueryBuilder('history')
       .where('history.entityId = :entityId', { entityId: entityId.value })
       .andWhere('history.timestamp BETWEEN :startTime AND :endTime', {
         startTime: startTime.getTime(),
-        endTime: endTime.getTime()
+        endTime: endTime.getTime(),
       })
       .orderBy('history.timestamp', 'DESC')
       .getMany();
@@ -300,14 +305,18 @@ export class HistoryRepository extends BaseRepository<History, HistoryModel, ID>
   /**
    * 查找指定类型指定时间范围内的历史记录
    */
-  async findByTypeAndTimeRange(type: HistoryType, startTime: Date, endTime: Date): Promise<History[]> {
+  async findByTypeAndTimeRange(
+    type: HistoryType,
+    startTime: Date,
+    endTime: Date
+  ): Promise<History[]> {
     const repository = await this.getRepository();
     const models = await repository
       .createQueryBuilder('history')
       .where('history.action = :action', { action: type.getValue() })
       .andWhere('history.timestamp BETWEEN :startTime AND :endTime', {
         startTime: startTime.getTime(),
-        endTime: endTime.getTime()
+        endTime: endTime.getTime(),
       })
       .orderBy('history.timestamp', 'DESC')
       .getMany();
@@ -322,7 +331,7 @@ export class HistoryRepository extends BaseRepository<History, HistoryModel, ID>
       filters: { entityId: entityId.value },
       sortBy: 'timestamp',
       sortOrder: 'desc',
-      limit: limit || 10
+      limit: limit || 10,
     });
   }
 
@@ -334,7 +343,7 @@ export class HistoryRepository extends BaseRepository<History, HistoryModel, ID>
       filters: { action: type.getValue() },
       sortBy: 'timestamp',
       sortOrder: 'desc',
-      limit: limit || 10
+      limit: limit || 10,
     });
   }
 
@@ -368,13 +377,17 @@ export class HistoryRepository extends BaseRepository<History, HistoryModel, ID>
     const queryBuilder = repository.createQueryBuilder('history');
 
     if (options?.sessionId) {
-      queryBuilder.andWhere('history.sessionId = :sessionId', { sessionId: options.sessionId.value });
+      queryBuilder.andWhere('history.sessionId = :sessionId', {
+        sessionId: options.sessionId.value,
+      });
     }
     if (options?.threadId) {
       queryBuilder.andWhere('history.threadId = :threadId', { threadId: options.threadId.value });
     }
     if (options?.workflowId) {
-      queryBuilder.andWhere('history.workflowId = :workflowId', { workflowId: options.workflowId.value });
+      queryBuilder.andWhere('history.workflowId = :workflowId', {
+        workflowId: options.workflowId.value,
+      });
     }
     if (options?.type) {
       queryBuilder.andWhere('history.action = :action', { action: options.type.getValue() });
@@ -382,7 +395,7 @@ export class HistoryRepository extends BaseRepository<History, HistoryModel, ID>
     if (options?.startTime && options?.endTime) {
       queryBuilder.andWhere('history.timestamp BETWEEN :startTime AND :endTime', {
         startTime: options.startTime.getTime(),
-        endTime: options.endTime.getTime()
+        endTime: options.endTime.getTime(),
       });
     }
 
@@ -403,18 +416,22 @@ export class HistoryRepository extends BaseRepository<History, HistoryModel, ID>
     const queryBuilder = repository.createQueryBuilder('history');
 
     if (options?.sessionId) {
-      queryBuilder.andWhere('history.sessionId = :sessionId', { sessionId: options.sessionId.value });
+      queryBuilder.andWhere('history.sessionId = :sessionId', {
+        sessionId: options.sessionId.value,
+      });
     }
     if (options?.threadId) {
       queryBuilder.andWhere('history.threadId = :threadId', { threadId: options.threadId.value });
     }
     if (options?.workflowId) {
-      queryBuilder.andWhere('history.workflowId = :workflowId', { workflowId: options.workflowId.value });
+      queryBuilder.andWhere('history.workflowId = :workflowId', {
+        workflowId: options.workflowId.value,
+      });
     }
     if (options?.startTime && options?.endTime) {
       queryBuilder.andWhere('history.timestamp BETWEEN :startTime AND :endTime', {
         startTime: options.startTime.getTime(),
-        endTime: options.endTime.getTime()
+        endTime: options.endTime.getTime(),
       });
     }
 
@@ -451,18 +468,22 @@ export class HistoryRepository extends BaseRepository<History, HistoryModel, ID>
     const queryBuilder = repository.createQueryBuilder('history');
 
     if (options?.sessionId) {
-      queryBuilder.andWhere('history.sessionId = :sessionId', { sessionId: options.sessionId.value });
+      queryBuilder.andWhere('history.sessionId = :sessionId', {
+        sessionId: options.sessionId.value,
+      });
     }
     if (options?.threadId) {
       queryBuilder.andWhere('history.threadId = :threadId', { threadId: options.threadId.value });
     }
     if (options?.workflowId) {
-      queryBuilder.andWhere('history.workflowId = :workflowId', { workflowId: options.workflowId.value });
+      queryBuilder.andWhere('history.workflowId = :workflowId', {
+        workflowId: options.workflowId.value,
+      });
     }
     if (options?.startTime && options?.endTime) {
       queryBuilder.andWhere('history.timestamp BETWEEN :startTime AND :endTime', {
         startTime: options.startTime.getTime(),
-        endTime: options.endTime.getTime()
+        endTime: options.endTime.getTime(),
       });
     }
 
@@ -505,7 +526,7 @@ export class HistoryRepository extends BaseRepository<History, HistoryModel, ID>
       warningCount,
       infoCount,
       latestAt,
-      oldestAt
+      oldestAt,
     };
   }
 
@@ -516,17 +537,19 @@ export class HistoryRepository extends BaseRepository<History, HistoryModel, ID>
     startTime: Date,
     endTime: Date,
     interval: number
-  ): Promise<Array<{
-    timestamp: Date;
-    count: number;
-    byType: Record<string, number>;
-  }>> {
+  ): Promise<
+    Array<{
+      timestamp: Date;
+      count: number;
+      byType: Record<string, number>;
+    }>
+  > {
     const repository = await this.getRepository();
     const models = await repository.find({
       where: {
-        timestamp: Between(startTime.getTime(), endTime.getTime())
+        timestamp: Between(startTime.getTime(), endTime.getTime()),
       },
-      order: { timestamp: 'ASC' }
+      order: { timestamp: 'ASC' },
     });
 
     const trend: Array<{
@@ -540,8 +563,8 @@ export class HistoryRepository extends BaseRepository<History, HistoryModel, ID>
 
     while (currentTime <= endTime) {
       const nextTime = new Date(currentTime.getTime() + intervalMs);
-      const intervalModels = models.filter(m =>
-        (m.timestamp || 0) >= currentTime.getTime() && (m.timestamp || 0) < nextTime.getTime()
+      const intervalModels = models.filter(
+        m => (m.timestamp || 0) >= currentTime.getTime() && (m.timestamp || 0) < nextTime.getTime()
       );
 
       const byType: Record<string, number> = {};
@@ -552,7 +575,7 @@ export class HistoryRepository extends BaseRepository<History, HistoryModel, ID>
       trend.push({
         timestamp: new Date(currentTime),
         count: intervalModels.length,
-        byType
+        byType,
       });
 
       currentTime = nextTime;
@@ -580,19 +603,22 @@ export class HistoryRepository extends BaseRepository<History, HistoryModel, ID>
     const repository = await this.getRepository();
     const queryBuilder = repository
       .createQueryBuilder('history')
-      .where(
-        '(history.data::text ILIKE :query OR history.metadata::text ILIKE :query)',
-        { query: `%${query}%` }
-      );
+      .where('(history.data::text ILIKE :query OR history.metadata::text ILIKE :query)', {
+        query: `%${query}%`,
+      });
 
     if (options?.sessionId) {
-      queryBuilder.andWhere('history.sessionId = :sessionId', { sessionId: options.sessionId.value });
+      queryBuilder.andWhere('history.sessionId = :sessionId', {
+        sessionId: options.sessionId.value,
+      });
     }
     if (options?.threadId) {
       queryBuilder.andWhere('history.threadId = :threadId', { threadId: options.threadId.value });
     }
     if (options?.workflowId) {
-      queryBuilder.andWhere('history.workflowId = :workflowId', { workflowId: options.workflowId.value });
+      queryBuilder.andWhere('history.workflowId = :workflowId', {
+        workflowId: options.workflowId.value,
+      });
     }
     if (options?.type) {
       queryBuilder.andWhere('history.action = :action', { action: options.type.getValue() });
@@ -600,7 +626,7 @@ export class HistoryRepository extends BaseRepository<History, HistoryModel, ID>
     if (options?.startTime && options?.endTime) {
       queryBuilder.andWhere('history.timestamp BETWEEN :startTime AND :endTime', {
         startTime: options.startTime.getTime(),
-        endTime: options.endTime.getTime()
+        endTime: options.endTime.getTime(),
       });
     }
 

@@ -7,16 +7,13 @@ import { RoutingFunctionConfig, WorkflowExecutionContext } from '../types';
  */
 export class NodeSuccessRoutingFunction extends BaseConditionRoutingFunction<RoutingFunctionConfig> {
   constructor() {
-    super(
-      'node_success_routing',
-      'nodeSuccess',
-      '检查节点是否执行成功',
-      '1.0.0',
-      'builtin'
-    );
+    super('node_success_routing', 'nodeSuccess', '检查节点是否执行成功', '1.0.0', 'builtin');
   }
 
-  override async execute(context: WorkflowExecutionContext, config: RoutingFunctionConfig): Promise<boolean> {
+  override async execute(
+    context: WorkflowExecutionContext,
+    config: RoutingFunctionConfig
+  ): Promise<boolean> {
     const nodeId = config['edge']?.['fromNodeId']?.toString();
     const nodeStates = config['nodeStates'];
 

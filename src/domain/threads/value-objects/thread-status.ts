@@ -8,7 +8,7 @@ export enum ThreadStatusValue {
   PAUSED = 'paused',
   COMPLETED = 'completed',
   FAILED = 'failed',
-  CANCELLED = 'cancelled'
+  CANCELLED = 'cancelled',
 }
 
 /**
@@ -20,7 +20,7 @@ export interface ThreadStatusProps {
 
 /**
  * 线程状态值对象
- * 
+ *
  * 用于表示线程的当前状态
  */
 export class ThreadStatus extends ValueObject<ThreadStatusProps> {

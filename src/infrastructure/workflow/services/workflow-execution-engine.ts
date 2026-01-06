@@ -128,7 +128,7 @@ export class WorkflowExecutionEngine {
         executedNodes,
         results,
         duration: Date.now() - startTime,
-        statistics: this.calculateStatistics(workflow, executedNodes)
+        statistics: this.calculateStatistics(workflow, executedNodes),
       };
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : String(error);
@@ -140,7 +140,7 @@ export class WorkflowExecutionEngine {
         results,
         error: errorMessage,
         duration: Date.now() - startTime,
-        statistics: this.calculateStatistics(workflow, executedNodes)
+        statistics: this.calculateStatistics(workflow, executedNodes),
       };
     }
   }
@@ -189,7 +189,7 @@ export class WorkflowExecutionEngine {
     if (outgoingEdges.length === 0) {
       return {
         nextNodeId: null,
-        reason: '当前节点没有出边，执行结束'
+        reason: '当前节点没有出边，执行结束',
       };
     }
 
@@ -205,7 +205,7 @@ export class WorkflowExecutionEngine {
     if (satisfiedEdges.length === 0) {
       return {
         nextNodeId: null,
-        reason: '没有满足条件的边，执行结束'
+        reason: '没有满足条件的边，执行结束',
       };
     }
 
@@ -219,14 +219,14 @@ export class WorkflowExecutionEngine {
     if (!selectedEdge) {
       return {
         nextNodeId: null,
-        reason: '没有找到满足条件的边'
+        reason: '没有找到满足条件的边',
       };
     }
 
     return {
       nextNodeId: selectedEdge.toNodeId,
       usedEdge: selectedEdge.id.toString(),
-      reason: `选择满足条件的边: ${selectedEdge.id.toString()}`
+      reason: `选择满足条件的边: ${selectedEdge.id.toString()}`,
     };
   }
 
@@ -255,7 +255,7 @@ export class WorkflowExecutionEngine {
       executedNodes: executedCount,
       completedNodes: executedCount,
       failedNodes: 0,
-      skippedNodes: totalNodes - executedCount
+      skippedNodes: totalNodes - executedCount,
     };
   }
 

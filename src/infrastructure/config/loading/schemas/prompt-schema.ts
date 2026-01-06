@@ -10,7 +10,7 @@ import { z } from 'zod';
  */
 const VariableSchema = z.object({
   required: z.boolean(),
-  description: z.string().optional()
+  description: z.string().optional(),
 });
 
 /**
@@ -18,7 +18,7 @@ const VariableSchema = z.object({
  */
 const MetadataSchema = z.object({
   role: z.string().optional(),
-  priority: z.number().optional()
+  priority: z.number().optional(),
 });
 
 /**
@@ -31,5 +31,5 @@ export const PromptSchema = z.object({
   template: z.record(z.string(), z.string()).optional(),
   variables: z.record(z.string(), VariableSchema).optional(),
   metadata: MetadataSchema.optional(),
-  _registry: z.string().optional()
+  _registry: z.string().optional(),
 });

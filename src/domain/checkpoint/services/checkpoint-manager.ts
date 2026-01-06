@@ -25,10 +25,7 @@ export class CheckpointManager {
   private maxCheckpointsPerThread: number;
   private maxTotalCheckpoints: number;
 
-  constructor(
-    maxCheckpointsPerThread: number = 10,
-    maxTotalCheckpoints: number = 1000
-  ) {
+  constructor(maxCheckpointsPerThread: number = 10, maxTotalCheckpoints: number = 1000) {
     this.checkpoints = new Map();
     this.threadCheckpoints = new Map();
     this.maxCheckpointsPerThread = maxCheckpointsPerThread;
@@ -95,7 +92,7 @@ export class CheckpointManager {
    */
   restore(checkpointId: string): Record<string, unknown> | null {
     const checkpoint = this.checkpoints.get(checkpointId);
-    
+
     if (!checkpoint) {
       return null;
     }
@@ -113,7 +110,7 @@ export class CheckpointManager {
    */
   delete(checkpointId: string): boolean {
     const checkpoint = this.checkpoints.get(checkpointId);
-    
+
     if (!checkpoint) {
       return false;
     }
@@ -141,7 +138,7 @@ export class CheckpointManager {
    */
   getThreadCheckpoints(threadId: string): ThreadCheckpoint[] {
     const checkpointIds = this.threadCheckpoints.get(threadId);
-    
+
     if (!checkpointIds) {
       return [];
     }
@@ -161,7 +158,7 @@ export class CheckpointManager {
    */
   getLatestCheckpoint(threadId: string): ThreadCheckpoint | null {
     const checkpoints = this.getThreadCheckpoints(threadId);
-    
+
     if (checkpoints.length === 0) {
       return null;
     }
@@ -176,7 +173,7 @@ export class CheckpointManager {
    */
   clearThreadCheckpoints(threadId: string): number {
     const checkpointIds = this.threadCheckpoints.get(threadId);
-    
+
     if (!checkpointIds) {
       return 0;
     }
@@ -245,7 +242,10 @@ export class CheckpointManager {
     const threadCheckpointIds = this.threadCheckpoints.get(threadId);
     if (threadCheckpointIds && threadCheckpointIds.length > this.maxCheckpointsPerThread) {
       // 删除最旧的检查点
-      const toDelete = threadCheckpointIds.splice(0, threadCheckpointIds.length - this.maxCheckpointsPerThread);
+      const toDelete = threadCheckpointIds.splice(
+        0,
+        threadCheckpointIds.length - this.maxCheckpointsPerThread
+      );
       for (const checkpointId of toDelete) {
         this.checkpoints.delete(checkpointId);
       }
@@ -254,9 +254,10 @@ export class CheckpointManager {
     // 清理全局级别的过期检查点
     if (this.checkpoints.size > this.maxTotalCheckpoints) {
       // 按时间排序，删除最旧的检查点
-      const sortedCheckpoints = Array.from(this.checkpoints.values())
-        .sort((a, b) => a.createdAt.differenceInSeconds(b.createdAt));
-      
+      const sortedCheckpoints = Array.from(this.checkpoints.values()).sort((a, b) =>
+        a.createdAt.differenceInSeconds(b.createdAt)
+      );
+
       const toDeleteCount = this.checkpoints.size - this.maxTotalCheckpoints;
       for (let i = 0; i < toDeleteCount; i++) {
         const checkpoint = sortedCheckpoints[i];

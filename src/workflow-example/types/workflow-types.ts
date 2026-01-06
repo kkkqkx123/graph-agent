@@ -1,6 +1,6 @@
 /**
  * 图工作流示例 - 类型定义
- * 
+ *
  * 本文件定义了图工作流示例中使用的所有核心类型
  */
 
@@ -30,7 +30,7 @@ export enum NodeType {
   CONDITION = 'condition',
   TRANSFORM = 'transform',
   START = 'start',
-  END = 'end'
+  END = 'end',
 }
 
 /**
@@ -41,7 +41,7 @@ export enum NodeStatus {
   RUNNING = 'running',
   COMPLETED = 'completed',
   FAILED = 'failed',
-  SKIPPED = 'skipped'
+  SKIPPED = 'skipped',
 }
 
 /**
@@ -89,7 +89,7 @@ export function createEdgeId(value: string): EdgeId {
  */
 export enum EdgeType {
   DIRECT = 'direct',
-  CONDITIONAL = 'conditional'
+  CONDITIONAL = 'conditional',
 }
 
 /**
@@ -103,7 +103,7 @@ export enum ConditionOperator {
   GREATER_EQUALS = 'greater_equals',
   LESS_EQUALS = 'less_equals',
   EXISTS = 'exists',
-  NOT_EXISTS = 'not_exists'
+  NOT_EXISTS = 'not_exists',
 }
 
 /**
@@ -137,7 +137,7 @@ export function createTriggerId(value: string): TriggerId {
 export enum TriggerType {
   TIME = 'time',
   EVENT = 'event',
-  STATE = 'state'
+  STATE = 'state',
 }
 
 /**
@@ -148,7 +148,7 @@ export enum TriggerAction {
   STOP = 'stop',
   PAUSE = 'pause',
   RESUME = 'resume',
-  SKIP_NODE = 'skip_node'
+  SKIP_NODE = 'skip_node',
 }
 
 /**
@@ -157,7 +157,7 @@ export enum TriggerAction {
 export enum TriggerStatus {
   ENABLED = 'enabled',
   DISABLED = 'disabled',
-  TRIGGERED = 'triggered'
+  TRIGGERED = 'triggered',
 }
 
 /**
@@ -202,7 +202,7 @@ export enum WorkflowStatus {
   RUNNING = 'running',
   COMPLETED = 'completed',
   FAILED = 'failed',
-  CANCELLED = 'cancelled'
+  CANCELLED = 'cancelled',
 }
 
 /**
@@ -210,7 +210,7 @@ export enum WorkflowStatus {
  */
 export enum ExecutionStrategy {
   SEQUENTIAL = 'sequential',
-  PARALLEL = 'parallel'
+  PARALLEL = 'parallel',
 }
 
 /**
@@ -328,10 +328,7 @@ export type ConditionEvaluator = (
 /**
  * 表达式求值函数类型
  */
-export type ExpressionEvaluator = (
-  expression: string,
-  data: Record<string, any>
-) => any;
+export type ExpressionEvaluator = (expression: string, data: Record<string, any>) => any;
 
 /**
  * 触发器评估函数类型

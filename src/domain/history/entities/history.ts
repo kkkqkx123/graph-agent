@@ -88,7 +88,7 @@ export class History extends Entity {
       createdAt: now,
       updatedAt: now,
       version: Version.initial(),
-      deletionStatus: DeletionStatus.active()
+      deletionStatus: DeletionStatus.active(),
     };
 
     return new History(props);
@@ -186,7 +186,7 @@ export class History extends Entity {
       ...this.props,
       title,
       updatedAt: Timestamp.now(),
-      version: this.props.version.nextPatch()
+      version: this.props.version.nextPatch(),
     };
 
     return new History(newProps);
@@ -203,7 +203,7 @@ export class History extends Entity {
       ...this.props,
       description,
       updatedAt: Timestamp.now(),
-      version: this.props.version.nextPatch()
+      version: this.props.version.nextPatch(),
     };
 
     return new History(newProps);
@@ -220,7 +220,7 @@ export class History extends Entity {
       ...this.props,
       details: HistoryDetails.create(details),
       updatedAt: Timestamp.now(),
-      version: this.props.version.nextPatch()
+      version: this.props.version.nextPatch(),
     };
 
     return new History(newProps);
@@ -237,7 +237,7 @@ export class History extends Entity {
       ...this.props,
       metadata: Metadata.create(metadata),
       updatedAt: Timestamp.now(),
-      version: this.props.version.nextPatch()
+      version: this.props.version.nextPatch(),
     };
 
     return new History(newProps);
@@ -255,7 +255,7 @@ export class History extends Entity {
       ...this.props,
       metadata: this.props.metadata.setValue(key, value),
       updatedAt: Timestamp.now(),
-      version: this.props.version.nextPatch()
+      version: this.props.version.nextPatch(),
     };
 
     return new History(newProps);
@@ -272,7 +272,7 @@ export class History extends Entity {
       ...this.props,
       metadata: this.props.metadata.remove(key),
       updatedAt: Timestamp.now(),
-      version: this.props.version.nextPatch()
+      version: this.props.version.nextPatch(),
     };
 
     return new History(newProps);
@@ -299,7 +299,7 @@ export class History extends Entity {
       ...this.props,
       details: this.props.details.setValue(key, value),
       updatedAt: Timestamp.now(),
-      version: this.props.version.nextPatch()
+      version: this.props.version.nextPatch(),
     };
 
     return new History(newProps);
@@ -316,7 +316,7 @@ export class History extends Entity {
       ...this.props,
       details: this.props.details.remove(key),
       updatedAt: Timestamp.now(),
-      version: this.props.version.nextPatch()
+      version: this.props.version.nextPatch(),
     };
 
     return new History(newProps);
@@ -348,7 +348,7 @@ export class History extends Entity {
       ...this.props,
       deletionStatus: this.props.deletionStatus.markAsDeleted(),
       updatedAt: Timestamp.now(),
-      version: this.props.version.nextPatch()
+      version: this.props.version.nextPatch(),
     };
 
     return new History(newProps);
@@ -377,5 +377,4 @@ export class History extends Entity {
   public getBusinessIdentifier(): string {
     return `history:${this.props.id.toString()}`;
   }
-
 }

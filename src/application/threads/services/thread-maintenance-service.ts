@@ -1,6 +1,6 @@
 /**
  * 线程维护服务
- * 
+ *
  * 负责线程的删除、清理和批量操作等维护功能
  */
 
@@ -155,7 +155,7 @@ export class ThreadMaintenanceService extends BaseApplicationService {
       },
       { sessionId }
     );
-    
+
     return deletedCount;
   }
 
@@ -256,9 +256,9 @@ export class ThreadMaintenanceService extends BaseApplicationService {
       '线程维护统计信息',
       async () => {
         const id = sessionId ? this.parseId(sessionId, '会话ID') : undefined;
-        
+
         // 获取基础统计信息
-        const baseStats = id 
+        const baseStats = id
           ? await this.threadRepository.getThreadExecutionStats(id)
           : {
               total: 0,
@@ -267,18 +267,18 @@ export class ThreadMaintenanceService extends BaseApplicationService {
               paused: 0,
               completed: 0,
               failed: 0,
-              cancelled: 0
+              cancelled: 0,
             };
 
         // 获取需要清理的线程数量
         const needsCleanupThreads = await this.threadRepository.findThreadsNeedingCleanup(24); // 24小时
-        const needsCleanup = id 
+        const needsCleanup = id
           ? needsCleanupThreads.filter(t => t.sessionId.equals(id)).length
           : needsCleanupThreads.length;
 
         // 获取长时间运行的线程数量
         const longRunningThreads = await this.threadRepository.findThreadsNeedingCleanup(12); // 12小时
-        const longRunning = id 
+        const longRunning = id
           ? longRunningThreads.filter(t => t.sessionId.equals(id)).length
           : longRunningThreads.length;
 
@@ -288,7 +288,7 @@ export class ThreadMaintenanceService extends BaseApplicationService {
           running: baseStats.running,
           failed: baseStats.failed,
           longRunning,
-          needsCleanup
+          needsCleanup,
         };
       },
       { sessionId }

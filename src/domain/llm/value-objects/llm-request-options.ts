@@ -12,47 +12,47 @@ export interface LLMRequestOptionsProps {
    * 模型名称
    */
   model?: string;
-  
+
   /**
    * 温度参数（0-2）
    */
   temperature?: number;
-  
+
   /**
    * 最大令牌数
    */
   maxTokens?: number;
-  
+
   /**
    * 顶部概率采样
    */
   topP?: number;
-  
+
   /**
    * 频率惩罚
    */
   frequencyPenalty?: number;
-  
+
   /**
    * 存在惩罚
    */
   presencePenalty?: number;
-  
+
   /**
    * 停止词
    */
   stop?: string[];
-  
+
   /**
    * 流式响应
    */
   stream?: boolean;
-  
+
   /**
    * 超时时间（毫秒）
    */
   timeout?: number;
-  
+
   /**
    * 元数据
    */
@@ -78,7 +78,7 @@ export class LLMRequestOptions extends ValueObject<LLMRequestOptionsProps> {
       presencePenalty: 0.0,
       stream: false,
       timeout: 30000,
-      metadata: {}
+      metadata: {},
     });
   }
 
@@ -97,7 +97,7 @@ export class LLMRequestOptions extends ValueObject<LLMRequestOptionsProps> {
       presencePenalty: 0.0,
       stream: false,
       timeout: 15000,
-      metadata: { mode: 'fast' }
+      metadata: { mode: 'fast' },
     });
   }
 
@@ -116,7 +116,7 @@ export class LLMRequestOptions extends ValueObject<LLMRequestOptionsProps> {
       presencePenalty: 0.5,
       stream: false,
       timeout: 60000,
-      metadata: { mode: 'creative' }
+      metadata: { mode: 'creative' },
     });
   }
 
@@ -135,7 +135,7 @@ export class LLMRequestOptions extends ValueObject<LLMRequestOptionsProps> {
       presencePenalty: 0.0,
       stream: false,
       timeout: 45000,
-      metadata: { mode: 'precise' }
+      metadata: { mode: 'precise' },
     });
   }
 
@@ -155,7 +155,7 @@ export class LLMRequestOptions extends ValueObject<LLMRequestOptionsProps> {
       stop: options.stop,
       stream: options.stream,
       timeout: options.timeout,
-      metadata: options.metadata
+      metadata: options.metadata,
     });
   }
 
@@ -247,7 +247,7 @@ export class LLMRequestOptions extends ValueObject<LLMRequestOptionsProps> {
   public setModel(model: string): LLMRequestOptions {
     return new LLMRequestOptions({
       ...this.props,
-      model
+      model,
     });
   }
 
@@ -259,7 +259,7 @@ export class LLMRequestOptions extends ValueObject<LLMRequestOptionsProps> {
   public setTemperature(temperature: number): LLMRequestOptions {
     return new LLMRequestOptions({
       ...this.props,
-      temperature
+      temperature,
     });
   }
 
@@ -271,7 +271,7 @@ export class LLMRequestOptions extends ValueObject<LLMRequestOptionsProps> {
   public setMaxTokens(maxTokens: number): LLMRequestOptions {
     return new LLMRequestOptions({
       ...this.props,
-      maxTokens
+      maxTokens,
     });
   }
 
@@ -283,7 +283,7 @@ export class LLMRequestOptions extends ValueObject<LLMRequestOptionsProps> {
   public setTopP(topP: number): LLMRequestOptions {
     return new LLMRequestOptions({
       ...this.props,
-      topP
+      topP,
     });
   }
 
@@ -295,7 +295,7 @@ export class LLMRequestOptions extends ValueObject<LLMRequestOptionsProps> {
   public setFrequencyPenalty(frequencyPenalty: number): LLMRequestOptions {
     return new LLMRequestOptions({
       ...this.props,
-      frequencyPenalty
+      frequencyPenalty,
     });
   }
 
@@ -307,7 +307,7 @@ export class LLMRequestOptions extends ValueObject<LLMRequestOptionsProps> {
   public setPresencePenalty(presencePenalty: number): LLMRequestOptions {
     return new LLMRequestOptions({
       ...this.props,
-      presencePenalty
+      presencePenalty,
     });
   }
 
@@ -319,7 +319,7 @@ export class LLMRequestOptions extends ValueObject<LLMRequestOptionsProps> {
   public setStop(stop: string[]): LLMRequestOptions {
     return new LLMRequestOptions({
       ...this.props,
-      stop
+      stop,
     });
   }
 
@@ -331,7 +331,7 @@ export class LLMRequestOptions extends ValueObject<LLMRequestOptionsProps> {
   public setStream(stream: boolean): LLMRequestOptions {
     return new LLMRequestOptions({
       ...this.props,
-      stream
+      stream,
     });
   }
 
@@ -343,7 +343,7 @@ export class LLMRequestOptions extends ValueObject<LLMRequestOptionsProps> {
   public setTimeout(timeout: number): LLMRequestOptions {
     return new LLMRequestOptions({
       ...this.props,
-      timeout
+      timeout,
     });
   }
 
@@ -355,7 +355,7 @@ export class LLMRequestOptions extends ValueObject<LLMRequestOptionsProps> {
   public setMetadata(metadata: Record<string, any>): LLMRequestOptions {
     return new LLMRequestOptions({
       ...this.props,
-      metadata
+      metadata,
     });
   }
 
@@ -368,10 +368,10 @@ export class LLMRequestOptions extends ValueObject<LLMRequestOptionsProps> {
   public addMetadata(key: string, value: any): LLMRequestOptions {
     const metadata = { ...this.props.metadata };
     metadata[key] = value;
-    
+
     return new LLMRequestOptions({
       ...this.props,
-      metadata
+      metadata,
     });
   }
 
@@ -383,10 +383,10 @@ export class LLMRequestOptions extends ValueObject<LLMRequestOptionsProps> {
   public removeMetadata(key: string): LLMRequestOptions {
     const metadata = { ...this.props.metadata };
     delete metadata[key];
-    
+
     return new LLMRequestOptions({
       ...this.props,
-      metadata
+      metadata,
     });
   }
 
@@ -405,7 +405,7 @@ export class LLMRequestOptions extends ValueObject<LLMRequestOptionsProps> {
       stop: this.props.stop,
       stream: this.props.stream,
       timeout: this.props.timeout,
-      metadata: this.props.metadata
+      metadata: this.props.metadata,
     };
   }
 
@@ -413,7 +413,10 @@ export class LLMRequestOptions extends ValueObject<LLMRequestOptionsProps> {
    * 验证请求选项的有效性
    */
   public override validate(): void {
-    if (this.props.temperature !== undefined && (this.props.temperature < 0 || this.props.temperature > 2)) {
+    if (
+      this.props.temperature !== undefined &&
+      (this.props.temperature < 0 || this.props.temperature > 2)
+    ) {
       throw new Error('温度参数必须在0到2之间');
     }
 
@@ -425,11 +428,17 @@ export class LLMRequestOptions extends ValueObject<LLMRequestOptionsProps> {
       throw new Error('顶部概率采样必须在0到1之间');
     }
 
-    if (this.props.frequencyPenalty !== undefined && (this.props.frequencyPenalty < -2 || this.props.frequencyPenalty > 2)) {
+    if (
+      this.props.frequencyPenalty !== undefined &&
+      (this.props.frequencyPenalty < -2 || this.props.frequencyPenalty > 2)
+    ) {
       throw new Error('频率惩罚必须在-2到2之间');
     }
 
-    if (this.props.presencePenalty !== undefined && (this.props.presencePenalty < -2 || this.props.presencePenalty > 2)) {
+    if (
+      this.props.presencePenalty !== undefined &&
+      (this.props.presencePenalty < -2 || this.props.presencePenalty > 2)
+    ) {
       throw new Error('存在惩罚必须在-2到2之间');
     }
 
@@ -453,7 +462,7 @@ export class LLMRequestOptions extends ValueObject<LLMRequestOptionsProps> {
       stopCount: this.props.stop ? this.props.stop.length : 0,
       stream: this.props.stream,
       timeout: this.props.timeout,
-      metadataKeys: this.props.metadata ? Object.keys(this.props.metadata) : []
+      metadataKeys: this.props.metadata ? Object.keys(this.props.metadata) : [],
     };
   }
 }

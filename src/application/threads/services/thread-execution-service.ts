@@ -133,7 +133,7 @@ export class ThreadExecutionService extends BaseApplicationService {
 
         this.logger.info('线程开始执行', {
           threadId: thread.id.toString(),
-          workflowId: thread.workflowId.toString()
+          workflowId: thread.workflowId.toString(),
         });
 
         try {
@@ -147,7 +147,7 @@ export class ThreadExecutionService extends BaseApplicationService {
               checkpointInterval: options?.checkpointInterval ?? 5,
               timeout: options?.timeout ?? 300000, // 5分钟
               maxSteps: options?.maxSteps ?? 1000,
-              recordRoutingHistory: true
+              recordRoutingHistory: true,
             }
           );
 
@@ -160,7 +160,7 @@ export class ThreadExecutionService extends BaseApplicationService {
               threadId: thread.id.toString(),
               duration: workflowResult.executionTime,
               executedNodes: workflowResult.executedNodes,
-              checkpointCount: workflowResult.checkpointCount
+              checkpointCount: workflowResult.checkpointCount,
             });
 
             return {
@@ -168,7 +168,7 @@ export class ThreadExecutionService extends BaseApplicationService {
               threadId: thread.id.toString(),
               result: workflowResult.finalState.data,
               duration: workflowResult.executionTime,
-              status: 'completed'
+              status: 'completed',
             };
           } else {
             const errorMessage = workflowResult.error || '工作流执行失败';
@@ -179,7 +179,7 @@ export class ThreadExecutionService extends BaseApplicationService {
             this.logger.error('线程执行失败', new Error(errorMessage), {
               threadId: thread.id.toString(),
               duration: workflowResult.executionTime,
-              executedNodes: workflowResult.executedNodes
+              executedNodes: workflowResult.executedNodes,
             });
 
             return {
@@ -187,7 +187,7 @@ export class ThreadExecutionService extends BaseApplicationService {
               threadId: thread.id.toString(),
               error: errorMessage,
               duration: workflowResult.executionTime,
-              status: 'failed'
+              status: 'failed',
             };
           }
         } catch (error) {
@@ -198,7 +198,7 @@ export class ThreadExecutionService extends BaseApplicationService {
           await this.threadRepository.save(thread);
 
           this.logger.error('线程执行异常', error as Error, {
-            threadId: thread.id.toString()
+            threadId: thread.id.toString(),
           });
 
           throw error;
@@ -252,7 +252,7 @@ export class ThreadExecutionService extends BaseApplicationService {
         this.logger.info('线程从检查点恢复执行', {
           threadId: thread.id.toString(),
           workflowId: thread.workflowId.toString(),
-          checkpointId
+          checkpointId,
         });
 
         try {
@@ -264,7 +264,7 @@ export class ThreadExecutionService extends BaseApplicationService {
             {
               timeout: options?.timeout ?? 300000, // 5分钟
               maxSteps: options?.maxSteps ?? 1000,
-              recordRoutingHistory: true
+              recordRoutingHistory: true,
             }
           );
 
@@ -276,7 +276,7 @@ export class ThreadExecutionService extends BaseApplicationService {
             this.logger.info('线程恢复执行完成', {
               threadId: thread.id.toString(),
               duration: workflowResult.executionTime,
-              executedNodes: workflowResult.executedNodes
+              executedNodes: workflowResult.executedNodes,
             });
 
             return {
@@ -284,7 +284,7 @@ export class ThreadExecutionService extends BaseApplicationService {
               threadId: thread.id.toString(),
               result: workflowResult.finalState.data,
               duration: workflowResult.executionTime,
-              status: 'completed'
+              status: 'completed',
             };
           } else {
             const errorMessage = workflowResult.error || '工作流执行失败';
@@ -294,7 +294,7 @@ export class ThreadExecutionService extends BaseApplicationService {
 
             this.logger.error('线程恢复执行失败', new Error(errorMessage), {
               threadId: thread.id.toString(),
-              duration: workflowResult.executionTime
+              duration: workflowResult.executionTime,
             });
 
             return {
@@ -302,7 +302,7 @@ export class ThreadExecutionService extends BaseApplicationService {
               threadId: thread.id.toString(),
               error: errorMessage,
               duration: workflowResult.executionTime,
-              status: 'failed'
+              status: 'failed',
             };
           }
         } catch (error) {
@@ -314,7 +314,7 @@ export class ThreadExecutionService extends BaseApplicationService {
 
           this.logger.error('线程恢复执行异常', error as Error, {
             threadId: thread.id.toString(),
-            checkpointId
+            checkpointId,
           });
 
           throw error;
@@ -329,13 +329,15 @@ export class ThreadExecutionService extends BaseApplicationService {
    * @param threadId 线程ID
    * @returns 检查点列表
    */
-  async getThreadCheckpoints(threadId: string): Promise<Array<{
-    id: string;
-    workflowId: string;
-    currentNodeId: string;
-    timestamp: number;
-    metadata?: Record<string, any>;
-  }>> {
+  async getThreadCheckpoints(threadId: string): Promise<
+    Array<{
+      id: string;
+      workflowId: string;
+      currentNodeId: string;
+      timestamp: number;
+      metadata?: Record<string, any>;
+    }>
+  > {
     const result = await this.executeGetOperation(
       '获取线程检查点',
       async () => {
@@ -345,7 +347,7 @@ export class ThreadExecutionService extends BaseApplicationService {
           workflowId: cp.threadId.toString(),
           currentNodeId: cp.threadId.toString(),
           timestamp: cp.createdAt.getDate().getTime(),
-          metadata: cp.metadata
+          metadata: cp.metadata,
         }));
       },
       { threadId }
@@ -377,7 +379,7 @@ export class ThreadExecutionService extends BaseApplicationService {
           workflowId: checkpoint.threadId.toString(),
           currentNodeId: checkpoint.threadId.toString(),
           timestamp: checkpoint.createdAt.getDate().getTime(),
-          metadata: checkpoint.metadata
+          metadata: checkpoint.metadata,
         };
       },
       { threadId }
@@ -411,7 +413,7 @@ export class ThreadExecutionService extends BaseApplicationService {
 
         this.logger.info('线程执行已取消', {
           threadId: thread.id.toString(),
-          reason
+          reason,
         });
 
         return thread;
@@ -447,7 +449,7 @@ export class ThreadExecutionService extends BaseApplicationService {
           startedAt: thread.execution.startedAt?.toISOString(),
           completedAt: thread.execution.completedAt?.toISOString(),
           errorMessage: thread.execution.errorMessage,
-          currentStep: thread.execution.currentStep
+          currentStep: thread.execution.currentStep,
         };
       },
       { threadId }

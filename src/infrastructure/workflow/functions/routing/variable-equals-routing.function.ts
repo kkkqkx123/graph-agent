@@ -16,7 +16,10 @@ export class VariableEqualsRoutingFunction extends BaseConditionRoutingFunction<
     );
   }
 
-  override async execute(context: WorkflowExecutionContext, config: RoutingFunctionConfig): Promise<boolean> {
+  override async execute(
+    context: WorkflowExecutionContext,
+    config: RoutingFunctionConfig
+  ): Promise<boolean> {
     const variableName = config['edge']?.['properties']?.['variableName'];
     const expectedValue = config['edge']?.['properties']?.['expectedValue'];
     const variables = config['variables'];

@@ -1,8 +1,12 @@
-import { BaseHookFunction, HookFunctionResult, createHookFunctionResult } from './base-hook-function';
+import {
+  BaseHookFunction,
+  HookFunctionResult,
+  createHookFunctionResult,
+} from './base-hook-function';
 
 /**
  * 数据转换Hook函数
- * 
+ *
  * 提供数据转换功能，可以在任何Hook点使用
  */
 export class TransformationHookFunction extends BaseHookFunction {
@@ -89,13 +93,13 @@ export class TransformationHookFunction extends BaseHookFunction {
       case 'map':
         // 字段映射
         if (mapping && typeof mapping === 'object') {
-           for (const [oldKey, newKey] of Object.entries(mapping)) {
-             if (data[oldKey as string] !== undefined) {
-               data[newKey as string] = data[oldKey as string];
-               delete data[oldKey as string];
-             }
-           }
-         }
+          for (const [oldKey, newKey] of Object.entries(mapping)) {
+            if (data[oldKey as string] !== undefined) {
+              data[newKey as string] = data[oldKey as string];
+              delete data[oldKey as string];
+            }
+          }
+        }
         break;
 
       case 'transform':
@@ -152,14 +156,26 @@ export class TransformationHookFunction extends BaseHookFunction {
   }
 
   override validateConfig(config: Record<string, any>): { valid: boolean; errors: string[] } {
-     const errors: string[] = [];
+    const errors: string[] = [];
 
-     if (!config?.['transformations'] || !Array.isArray(config['transformations'])) {
-       errors.push('transformations 必须是一个数组');
-     } else {
-       const validTypes = ['set', 'copy', 'rename', 'delete', 'map', 'transform', 'uppercase', 'lowercase', 'trim', 'parse', 'stringify'];
+    if (!config?.['transformations'] || !Array.isArray(config['transformations'])) {
+      errors.push('transformations 必须是一个数组');
+    } else {
+      const validTypes = [
+        'set',
+        'copy',
+        'rename',
+        'delete',
+        'map',
+        'transform',
+        'uppercase',
+        'lowercase',
+        'trim',
+        'parse',
+        'stringify',
+      ];
 
-       config['transformations'].forEach((transformation: any, index: number) => {
+      config['transformations'].forEach((transformation: any, index: number) => {
         if (!transformation.type) {
           errors.push(`转换 ${index} 缺少 type 属性`);
         } else if (!validTypes.includes(transformation.type)) {

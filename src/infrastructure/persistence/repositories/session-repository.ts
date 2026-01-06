@@ -19,10 +19,11 @@ import { Metadata } from '../../../domain/checkpoint/value-objects';
 import { DeletionStatus } from '../../../domain/checkpoint/value-objects';
 
 @injectable()
-export class SessionRepository extends BaseRepository<Session, SessionModel, ID> implements ISessionRepository {
-  constructor(
-    @inject('ConnectionManager') connectionManager: ConnectionManager,
-  ) {
+export class SessionRepository
+  extends BaseRepository<Session, SessionModel, ID>
+  implements ISessionRepository
+{
+  constructor(@inject('ConnectionManager') connectionManager: ConnectionManager) {
     super(connectionManager);
   }
 
@@ -36,16 +37,17 @@ export class SessionRepository extends BaseRepository<Session, SessionModel, ID>
   protected override toDomain(model: SessionModel): Session {
     try {
       const lastActivityAt = Timestamp.create(model.updatedAt);
-      const messageCount = model.metadata?.messageCount as number || 0;
-      const threadCount = model.metadata?.threadCount as number || 0;
+      const messageCount = (model.metadata?.messageCount as number) || 0;
+      const threadCount = (model.metadata?.threadCount as number) || 0;
 
       const activity = SessionActivity.create(lastActivityAt, messageCount, threadCount);
       const sessionId = new ID(model.id);
 
       // 从元数据中获取并行策略类型
-      const parallelStrategyType = (model.metadata?.parallelStrategy as 'sequential' | 'parallel' | 'hybrid') || 'sequential';
+      const parallelStrategyType =
+        (model.metadata?.parallelStrategy as 'sequential' | 'parallel' | 'hybrid') || 'sequential';
       let parallelStrategy: ParallelStrategy;
-      
+
       switch (parallelStrategyType) {
         case 'parallel':
           parallelStrategy = ParallelStrategy.parallel();
@@ -60,7 +62,7 @@ export class SessionRepository extends BaseRepository<Session, SessionModel, ID>
       const sessionData = {
         id: sessionId,
         userId: model.userId ? new ID(model.userId) : undefined,
-        title: model.metadata?.title as string || undefined,
+        title: (model.metadata?.title as string) || undefined,
         status: SessionStatus.fromString(model.state),
         config: SessionConfig.create(model.context || {}),
         activity: activity,
@@ -68,10 +70,10 @@ export class SessionRepository extends BaseRepository<Session, SessionModel, ID>
         threads: ThreadCollection.empty(), // 从数据库恢复时，线程需要单独加载
         sharedResources: SharedResources.empty(), // 从数据库恢复时，共享资源需要单独加载
         parallelStrategy: parallelStrategy,
-        deletionStatus: DeletionStatus.fromBoolean(model.metadata?.isDeleted as boolean || false),
+        deletionStatus: DeletionStatus.fromBoolean((model.metadata?.isDeleted as boolean) || false),
         createdAt: Timestamp.create(model.createdAt),
         updatedAt: Timestamp.create(model.updatedAt),
-        version: Version.fromString(model.version)
+        version: Version.fromString(model.version),
       };
 
       return Session.fromProps(sessionData);
@@ -106,7 +108,7 @@ export class SessionRepository extends BaseRepository<Session, SessionModel, ID>
         isDeleted: entity.isDeleted(),
         config: entity.config.value,
         parallelStrategy: entity.parallelStrategy,
-        ...entity.metadata.toRecord()
+        ...entity.metadata.toRecord(),
       };
 
       model.threadIds = [];
@@ -128,7 +130,7 @@ export class SessionRepository extends BaseRepository<Session, SessionModel, ID>
     return this.find({
       filters: { userId: userId.value, state: 'active' },
       sortBy: 'createdAt',
-      sortOrder: 'desc'
+      sortOrder: 'desc',
     });
   }
 
@@ -156,12 +158,15 @@ export class SessionRepository extends BaseRepository<Session, SessionModel, ID>
     const repository = await this.getRepository();
     const models = await repository
       .createQueryBuilder('session')
-      .where('(session.updatedAt < :timeoutThreshold OR session.createdAt < :expirationThreshold)', {
-        timeoutThreshold,
-        expirationThreshold
-      })
+      .where(
+        '(session.updatedAt < :timeoutThreshold OR session.createdAt < :expirationThreshold)',
+        {
+          timeoutThreshold,
+          expirationThreshold,
+        }
+      )
       .andWhere('session.state IN (:...states)', {
-        states: ['active', 'suspended']
+        states: ['active', 'suspended'],
       })
       .orderBy('session.updatedAt', 'ASC')
       .getMany();
@@ -175,7 +180,9 @@ export class SessionRepository extends BaseRepository<Session, SessionModel, ID>
     const repository = await this.getRepository();
     const models = await repository
       .createQueryBuilder('session')
-      .where("CAST(session.metadata->>'messageCount' AS INTEGER) >= :minMessageCount", { minMessageCount })
+      .where("CAST(session.metadata->>'messageCount' AS INTEGER) >= :minMessageCount", {
+        minMessageCount,
+      })
       .orderBy('session.metadata->>messageCount', 'DESC')
       .getMany();
     return models.map(model => this.toDomain(model));
@@ -189,7 +196,7 @@ export class SessionRepository extends BaseRepository<Session, SessionModel, ID>
       filters: { userId: userId.value },
       sortBy: 'updatedAt',
       sortOrder: 'desc',
-      limit
+      limit,
     });
   }
 
@@ -216,7 +223,7 @@ export class SessionRepository extends BaseRepository<Session, SessionModel, ID>
     return this.find({
       filters: { state: status.getValue() },
       sortBy: 'createdAt',
-      sortOrder: 'desc'
+      sortOrder: 'desc',
     });
   }
 
@@ -227,7 +234,7 @@ export class SessionRepository extends BaseRepository<Session, SessionModel, ID>
     return this.find({
       filters: { userId: userId.value },
       sortBy: 'createdAt',
-      sortOrder: 'desc'
+      sortOrder: 'desc',
     });
   }
 

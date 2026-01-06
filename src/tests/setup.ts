@@ -13,7 +13,7 @@ export const testUtils = {
    * 创建模拟的实体ID
    */
   createEntityId: (value: string = 'test-id') => ({
-    value
+    value,
   }),
 
   /**
@@ -21,7 +21,7 @@ export const testUtils = {
    */
   createTimestamp: (createdAt: Date = new Date(), updatedAt: Date = new Date()) => ({
     createdAt,
-    updatedAt
+    updatedAt,
   }),
 
   /**
@@ -52,19 +52,19 @@ export const testUtils = {
     app: {
       name: 'test-app',
       version: '1.0.0',
-      environment: 'test'
+      environment: 'test',
     },
     server: {
       port: 3000,
-      host: 'localhost'
+      host: 'localhost',
     },
     database: {
       host: 'localhost',
       port: 5432,
       database: 'test_db',
       username: 'test_user',
-      password: 'test_password'
+      password: 'test_password',
     },
-    ...overrides
-  })
+    ...overrides,
+  }),
 };

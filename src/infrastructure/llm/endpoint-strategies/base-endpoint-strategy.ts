@@ -30,7 +30,7 @@ export const BaseEndpointConfigSchema = z.object({
   /**
    * 额外配置
    */
-  extraConfig: z.record(z.string(), z.any()).optional()
+  extraConfig: z.record(z.string(), z.any()).optional(),
 });
 
 /**
@@ -67,7 +67,7 @@ export abstract class BaseEndpointStrategy {
    */
   buildHeaders(config: ProviderConfig): Record<string, string> {
     return {
-      'Content-Type': 'application/json'
+      'Content-Type': 'application/json',
     };
   }
 
@@ -104,20 +104,20 @@ export abstract class BaseEndpointStrategy {
     const result = this.configSchema.safeParse(config);
 
     if (!result.success) {
-      const errors = result.error.issues.map((issue) => {
+      const errors = result.error.issues.map(issue => {
         const path = issue.path.length > 0 ? issue.path.join('.') : 'config';
         return `${path}: ${issue.message}`;
       });
 
       return {
         isValid: false,
-        errors
+        errors,
       };
     }
 
     return {
       isValid: true,
-      errors: []
+      errors: [],
     };
   }
 
@@ -135,13 +135,12 @@ export abstract class BaseEndpointStrategy {
   protected buildPath(baseURL: string, ...pathSegments: string[]): string {
     const url = new URL(baseURL);
     const currentPath = url.pathname.endsWith('/') ? url.pathname.slice(0, -1) : url.pathname;
-    const cleanSegments = pathSegments.map(segment =>
-      segment.startsWith('/') ? segment.slice(1) : segment
-    ).filter(segment => segment.length > 0);
+    const cleanSegments = pathSegments
+      .map(segment => (segment.startsWith('/') ? segment.slice(1) : segment))
+      .filter(segment => segment.length > 0);
 
-    const newPath = cleanSegments.length > 0
-      ? `${currentPath}/${cleanSegments.join('/')}`
-      : currentPath;
+    const newPath =
+      cleanSegments.length > 0 ? `${currentPath}/${cleanSegments.join('/')}` : currentPath;
 
     url.pathname = newPath;
     return url.toString();

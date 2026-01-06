@@ -1,6 +1,16 @@
 import { NodeId } from '../../../../domain/workflow/value-objects/node/node-id';
-import { NodeType, NodeTypeValue, NodeContextTypeValue } from '../../../../domain/workflow/value-objects/node/node-type';
-import { Node, NodeExecutionResult, NodeMetadata, ValidationResult, WorkflowExecutionContext } from '../../../../domain/workflow/entities/node';
+import {
+  NodeType,
+  NodeTypeValue,
+  NodeContextTypeValue,
+} from '../../../../domain/workflow/value-objects/node/node-type';
+import {
+  Node,
+  NodeExecutionResult,
+  NodeMetadata,
+  ValidationResult,
+  WorkflowExecutionContext,
+} from '../../../../domain/workflow/entities/node';
 
 /**
  * 分支配置接口
@@ -73,14 +83,14 @@ export class ForkNode extends Node {
           success: true,
           output: {
             message: '没有可执行的分支',
-            branches: []
+            branches: [],
           },
           executionTime: Date.now() - startTime,
           metadata: {
             nodeId: this.nodeId.toString(),
             nodeType: this.type.toString(),
-            branchCount: 0
-          }
+            branchCount: 0,
+          },
         };
       }
 
@@ -93,7 +103,7 @@ export class ForkNode extends Node {
         return {
           branchId: branch.branchId,
           targetNodeId: branch.targetNodeId,
-          context: branchContext
+          context: branchContext,
         };
       });
 
@@ -110,9 +120,9 @@ export class ForkNode extends Node {
           message: `已创建 ${branchContexts.length} 个并行分支`,
           branches: branchContexts.map(bc => ({
             branchId: bc.branchId,
-            targetNodeId: bc.targetNodeId
+            targetNodeId: bc.targetNodeId,
           })),
-          branchCount: branchContexts.length
+          branchCount: branchContexts.length,
         },
         executionTime,
         metadata: {
@@ -120,8 +130,8 @@ export class ForkNode extends Node {
           nodeType: this.type.toString(),
           branchCount: branchContexts.length,
           maxConcurrency: this.maxConcurrency,
-          branchStrategy: this.branchStrategy
-        }
+          branchStrategy: this.branchStrategy,
+        },
       };
     } catch (error) {
       const executionTime = Date.now() - startTime;
@@ -133,8 +143,8 @@ export class ForkNode extends Node {
         executionTime,
         metadata: {
           nodeId: this.nodeId.toString(),
-          nodeType: this.type.toString()
-        }
+          nodeType: this.type.toString(),
+        },
       };
     }
   }
@@ -145,12 +155,15 @@ export class ForkNode extends Node {
    * @param branch 分支配置
    * @returns 分支上下文
    */
-  private createBranchContext(context: WorkflowExecutionContext, branch: BranchConfig): Record<string, unknown> {
+  private createBranchContext(
+    context: WorkflowExecutionContext,
+    branch: BranchConfig
+  ): Record<string, unknown> {
     const branchContext: Record<string, unknown> = {
       branchId: branch.branchId,
       branchName: branch.name || branch.branchId,
       parentExecutionId: context.getExecutionId(),
-      parentWorkflowId: context.getWorkflowId()
+      parentWorkflowId: context.getWorkflowId(),
     };
 
     // 复制父上下文的变量
@@ -184,7 +197,7 @@ export class ForkNode extends Node {
       // 简单的条件评估逻辑
       const variables: Record<string, unknown> = {
         executionId: context.getExecutionId(),
-        workflowId: context.getWorkflowId()
+        workflowId: context.getWorkflowId(),
       };
 
       // 替换变量引用
@@ -198,7 +211,9 @@ export class ForkNode extends Node {
       });
 
       // 安全检查
-      const hasUnsafeContent = /eval|function|new|delete|typeof|void|in|instanceof/.test(expression);
+      const hasUnsafeContent = /eval|function|new|delete|typeof|void|in|instanceof/.test(
+        expression
+      );
       if (hasUnsafeContent) {
         return false;
       }
@@ -252,7 +267,7 @@ export class ForkNode extends Node {
 
     return {
       valid: errors.length === 0,
-      errors
+      errors,
     };
   }
 
@@ -268,23 +283,23 @@ export class ForkNode extends Node {
           name: 'branches',
           type: 'array',
           required: true,
-          description: '分支配置列表'
+          description: '分支配置列表',
         },
         {
           name: 'branchStrategy',
           type: 'string',
           required: false,
           description: '分支策略：all（全部）、conditional（条件）、weighted（权重）',
-          defaultValue: 'all'
+          defaultValue: 'all',
         },
         {
           name: 'maxConcurrency',
           type: 'number',
           required: false,
           description: '最大并发数',
-          defaultValue: 5
-        }
-      ]
+          defaultValue: 5,
+        },
+      ],
     };
   }
 
@@ -292,7 +307,7 @@ export class ForkNode extends Node {
     return {
       type: 'object',
       properties: {},
-      required: []
+      required: [],
     };
   }
 
@@ -302,8 +317,8 @@ export class ForkNode extends Node {
       properties: {
         message: { type: 'string', description: '执行消息' },
         branches: { type: 'array', description: '创建的分支列表' },
-        branchCount: { type: 'number', description: '分支数量' }
-      }
+        branchCount: { type: 'number', description: '分支数量' },
+      },
     };
   }
 

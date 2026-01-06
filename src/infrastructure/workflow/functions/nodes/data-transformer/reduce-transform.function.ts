@@ -1,5 +1,9 @@
 import { injectable } from 'inversify';
-import { BaseTransformFunction, TransformFunctionConfig, WorkflowExecutionContext } from './base-transform-function';
+import {
+  BaseTransformFunction,
+  TransformFunctionConfig,
+  WorkflowExecutionContext,
+} from './base-transform-function';
 
 /**
  * Reduce转换函数
@@ -24,22 +28,22 @@ export class ReduceTransformFunction extends BaseTransformFunction<TransformFunc
         name: 'field',
         type: 'string',
         required: false,
-        description: '要聚合的字段名'
+        description: '要聚合的字段名',
       },
       {
         name: 'initialValue',
         type: 'any',
         required: false,
         description: '初始值',
-        defaultValue: 0
+        defaultValue: 0,
       },
       {
         name: 'operation',
         type: 'string',
         required: false,
         description: '聚合操作：sum, multiply, max, min, concat, merge',
-        defaultValue: 'sum'
-      }
+        defaultValue: 'sum',
+      },
     ];
   }
 
@@ -54,11 +58,18 @@ export class ReduceTransformFunction extends BaseTransformFunction<TransformFunc
     return errors;
   }
 
-  override async execute(context: WorkflowExecutionContext, config: TransformFunctionConfig): Promise<any> {
+  override async execute(
+    context: WorkflowExecutionContext,
+    config: TransformFunctionConfig
+  ): Promise<any> {
     this.checkInitialized();
 
     const { sourceData, config: transformConfig } = config;
-    const { field, initialValue = 0, operation = 'sum' } = transformConfig as Record<string, unknown>;
+    const {
+      field,
+      initialValue = 0,
+      operation = 'sum',
+    } = transformConfig as Record<string, unknown>;
 
     if (!Array.isArray(sourceData)) {
       throw new Error('sourceData必须是数组类型');

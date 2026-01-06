@@ -1,6 +1,6 @@
 /**
  * 会话维护服务
- * 
+ *
  * 负责会话的删除、消息添加、清理和统计等维护功能
  */
 
@@ -225,11 +225,10 @@ export class SessionMaintenanceService extends BaseApplicationService {
           total,
           active,
           suspended,
-          terminated
+          terminated,
         };
       },
       { userId }
     );
   }
-
 }

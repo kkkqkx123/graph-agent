@@ -21,7 +21,7 @@ export class TriggerExecutor {
   constructor(
     @inject('FunctionRegistry') private readonly functionRegistry: FunctionRegistry,
     @inject('Logger') private readonly logger: ILogger
-  ) { }
+  ) {}
 
   /**
    * 执行触发器检查
@@ -36,7 +36,7 @@ export class TriggerExecutor {
       this.logger.info('开始执行触发器检查', {
         triggerId: trigger.triggerId.toString(),
         triggerType: trigger.type.toString(),
-        triggerName: trigger.name
+        triggerName: trigger.name,
       });
 
       // 检查触发器是否可以触发
@@ -59,7 +59,7 @@ export class TriggerExecutor {
           }
         },
         getExecutionId: () => context.triggerId,
-        getWorkflowId: () => context.workflowId.toString()
+        getWorkflowId: () => context.workflowId.toString(),
       };
 
       // 直接调用触发器函数
@@ -74,7 +74,7 @@ export class TriggerExecutor {
         triggerType: trigger.type.toString(),
         action: trigger.action.toString(),
         targetNodeId: trigger.targetNodeId?.toString(),
-        ...trigger.config
+        ...trigger.config,
       };
 
       const shouldTrigger = await triggerFunction.execute(functionContext, config);
@@ -85,7 +85,7 @@ export class TriggerExecutor {
         this.logger.info('触发器条件满足', {
           triggerId: trigger.triggerId.toString(),
           triggerName: trigger.name,
-          executionTime
+          executionTime,
         });
 
         return TriggerExecutionResultUtils.success('触发器条件满足')
@@ -93,27 +93,30 @@ export class TriggerExecutor {
             triggerId: trigger.triggerId.toString(),
             triggerType: trigger.type.toString(),
             action: trigger.action.toString(),
-            targetNodeId: trigger.targetNodeId?.toString()
+            targetNodeId: trigger.targetNodeId?.toString(),
           })
           .build();
       } else {
         this.logger.info('触发器条件不满足', {
           triggerId: trigger.triggerId.toString(),
           triggerName: trigger.name,
-          executionTime
+          executionTime,
         });
 
         return TriggerExecutionResultUtils.failure('触发器条件不满足').build();
       }
-
     } catch (error) {
       const executionTime = Date.now() - startTime;
 
-      this.logger.error('触发器执行失败', error instanceof Error ? error : new Error(String(error)), {
-        triggerId: trigger.triggerId.toString(),
-        triggerName: trigger.name,
-        executionTime
-      });
+      this.logger.error(
+        '触发器执行失败',
+        error instanceof Error ? error : new Error(String(error)),
+        {
+          triggerId: trigger.triggerId.toString(),
+          triggerName: trigger.name,
+          executionTime,
+        }
+      );
 
       return TriggerExecutionResultUtils.failure('触发器执行失败', error as Error).build();
     }
@@ -125,7 +128,10 @@ export class TriggerExecutor {
    * @param context 触发器上下文
    * @returns 触发执行结果列表
    */
-  async executeBatch(triggers: Trigger[], context: TriggerContext): Promise<TriggerExecutionResult[]> {
+  async executeBatch(
+    triggers: Trigger[],
+    context: TriggerContext
+  ): Promise<TriggerExecutionResult[]> {
     const results: TriggerExecutionResult[] = [];
 
     for (const trigger of triggers) {
@@ -133,9 +139,7 @@ export class TriggerExecutor {
         const result = await this.execute(trigger, context);
         results.push(result);
       } catch (error) {
-        results.push(
-          TriggerExecutionResultUtils.failure('触发器执行异常', error as Error).build()
-        );
+        results.push(TriggerExecutionResultUtils.failure('触发器执行异常', error as Error).build());
       }
     }
 
@@ -158,7 +162,7 @@ export class TriggerExecutor {
 
     return {
       valid: errors.length === 0,
-      errors
+      errors,
     };
   }
 }

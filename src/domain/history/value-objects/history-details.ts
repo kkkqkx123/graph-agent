@@ -140,7 +140,7 @@ export class HistoryDetails extends ValueObject<HistoryDetailsProps> {
   public merge(other: HistoryDetails): HistoryDetails {
     return HistoryDetails.create({
       ...this.props.data,
-      ...other.props.data
+      ...other.props.data,
     });
   }
 

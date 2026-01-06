@@ -1,5 +1,8 @@
 import { injectable, inject } from 'inversify';
-import { ISnapshotRepository, SnapshotQuery } from '../../../domain/snapshot/repositories/snapshot-repository';
+import {
+  ISnapshotRepository,
+  SnapshotQuery,
+} from '../../../domain/snapshot/repositories/snapshot-repository';
 import { Snapshot } from '../../../domain/snapshot/entities/snapshot';
 import { ID } from '../../../domain/common/value-objects/id';
 import { SnapshotType } from '../../../domain/snapshot/value-objects/snapshot-type';
@@ -11,10 +14,11 @@ import { BaseRepository } from './base-repository';
 import { ConnectionManager } from '../connections/connection-manager';
 
 @injectable()
-export class SnapshotRepository extends BaseRepository<Snapshot, SnapshotModel, ID> implements ISnapshotRepository {
-  constructor(
-    @inject('ConnectionManager') connectionManager: ConnectionManager
-  ) {
+export class SnapshotRepository
+  extends BaseRepository<Snapshot, SnapshotModel, ID>
+  implements ISnapshotRepository
+{
+  constructor(@inject('ConnectionManager') connectionManager: ConnectionManager) {
     super(connectionManager);
   }
 
@@ -42,7 +46,7 @@ export class SnapshotRepository extends BaseRepository<Snapshot, SnapshotModel, 
         isDeleted: model.isDeleted,
         sizeBytes: model.sizeBytes,
         restoreCount: model.restoreCount,
-        lastRestoredAt: model.lastRestoredAt ? Timestamp.create(model.lastRestoredAt) : undefined
+        lastRestoredAt: model.lastRestoredAt ? Timestamp.create(model.lastRestoredAt) : undefined,
       };
 
       return Snapshot.fromProps(snapshotProps);
@@ -95,10 +99,10 @@ export class SnapshotRepository extends BaseRepository<Snapshot, SnapshotModel, 
     return this.find({
       filters: {
         scope: scope.toString(),
-        targetId: targetId.value
+        targetId: targetId.value,
       },
       sortBy: 'createdAt',
-      sortOrder: 'desc'
+      sortOrder: 'desc',
     });
   }
 
@@ -109,7 +113,7 @@ export class SnapshotRepository extends BaseRepository<Snapshot, SnapshotModel, 
     return this.find({
       filters: { scope: scope.toString() },
       sortBy: 'createdAt',
-      sortOrder: 'desc'
+      sortOrder: 'desc',
     });
   }
 
@@ -120,7 +124,7 @@ export class SnapshotRepository extends BaseRepository<Snapshot, SnapshotModel, 
     return this.find({
       filters: { type: type.toString() },
       sortBy: 'createdAt',
-      sortOrder: 'desc'
+      sortOrder: 'desc',
     });
   }
 
@@ -147,7 +151,7 @@ export class SnapshotRepository extends BaseRepository<Snapshot, SnapshotModel, 
       sortBy: 'createdAt',
       sortOrder: 'desc',
       limit: query.limit,
-      offset: query.offset
+      offset: query.offset,
     });
   }
 
@@ -158,8 +162,8 @@ export class SnapshotRepository extends BaseRepository<Snapshot, SnapshotModel, 
     return this.deleteWhere({
       filters: {
         scope: scope.toString(),
-        targetId: targetId.value
-      }
+        targetId: targetId.value,
+      },
     });
   }
 
@@ -168,7 +172,7 @@ export class SnapshotRepository extends BaseRepository<Snapshot, SnapshotModel, 
    */
   async deleteByScope(scope: SnapshotScope): Promise<number> {
     return this.deleteWhere({
-      filters: { scope: scope.toString() }
+      filters: { scope: scope.toString() },
     });
   }
 
@@ -187,7 +191,9 @@ export class SnapshotRepository extends BaseRepository<Snapshot, SnapshotModel, 
 
       return result.affected || 0;
     } catch (error) {
-      throw new Error(`按时间删除快照失败: ${error instanceof Error ? error.message : String(error)}`);
+      throw new Error(
+        `按时间删除快照失败: ${error instanceof Error ? error.message : String(error)}`
+      );
     }
   }
 
@@ -196,7 +202,7 @@ export class SnapshotRepository extends BaseRepository<Snapshot, SnapshotModel, 
    */
   async deleteByType(type: SnapshotType): Promise<number> {
     return this.deleteWhere({
-      filters: { type: type.toString() }
+      filters: { type: type.toString() },
     });
   }
 
@@ -207,10 +213,10 @@ export class SnapshotRepository extends BaseRepository<Snapshot, SnapshotModel, 
     return this.findOne({
       filters: {
         scope: scope.toString(),
-        targetId: targetId.value
+        targetId: targetId.value,
       },
       sortBy: 'createdAt',
-      sortOrder: 'desc'
+      sortOrder: 'desc',
     });
   }
 
@@ -221,18 +227,14 @@ export class SnapshotRepository extends BaseRepository<Snapshot, SnapshotModel, 
     return this.findOne({
       filters: { scope: scope.toString() },
       sortBy: 'createdAt',
-      sortOrder: 'desc'
+      sortOrder: 'desc',
     });
   }
 
   /**
    * 查找指定时间范围内的快照
    */
-  async findByTimeRange(
-    scope: SnapshotScope,
-    startTime: Date,
-    endTime: Date
-  ): Promise<Snapshot[]> {
+  async findByTimeRange(scope: SnapshotScope, startTime: Date, endTime: Date): Promise<Snapshot[]> {
     const repository = await this.getRepository();
     const models = await repository
       .createQueryBuilder('snapshot')
@@ -249,7 +251,7 @@ export class SnapshotRepository extends BaseRepository<Snapshot, SnapshotModel, 
    */
   async countByScope(scope: SnapshotScope): Promise<number> {
     return this.count({
-      filters: { scope: scope.toString() }
+      filters: { scope: scope.toString() },
     });
   }
 
@@ -260,8 +262,8 @@ export class SnapshotRepository extends BaseRepository<Snapshot, SnapshotModel, 
     return this.count({
       filters: {
         scope: scope.toString(),
-        targetId: targetId.value
-      }
+        targetId: targetId.value,
+      },
     });
   }
 
@@ -270,7 +272,7 @@ export class SnapshotRepository extends BaseRepository<Snapshot, SnapshotModel, 
    */
   async countByType(type: SnapshotType): Promise<number> {
     return this.count({
-      filters: { type: type.toString() }
+      filters: { type: type.toString() },
     });
   }
 
@@ -292,7 +294,7 @@ export class SnapshotRepository extends BaseRepository<Snapshot, SnapshotModel, 
     const snapshots = await this.find({
       filters,
       sortBy: 'createdAt',
-      sortOrder: 'desc'
+      sortOrder: 'desc',
     });
 
     const byType: Record<string, number> = {};
@@ -319,7 +321,7 @@ export class SnapshotRepository extends BaseRepository<Snapshot, SnapshotModel, 
       byType,
       totalSizeBytes,
       latestAt,
-      oldestAt
+      oldestAt,
     };
   }
 
@@ -345,7 +347,7 @@ export class SnapshotRepository extends BaseRepository<Snapshot, SnapshotModel, 
     const snapshots = await this.find({
       filters,
       sortBy: 'createdAt',
-      sortOrder: 'desc'
+      sortOrder: 'desc',
     });
 
     let totalRestores = 0;
@@ -370,7 +372,7 @@ export class SnapshotRepository extends BaseRepository<Snapshot, SnapshotModel, 
     return {
       totalRestores,
       mostRestoredSnapshot,
-      lastRestoreAt
+      lastRestoreAt,
     };
   }
 }

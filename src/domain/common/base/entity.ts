@@ -24,12 +24,7 @@ export abstract class Entity {
    * @param updatedAt 更新时间
    * @param version 版本
    */
-  protected constructor(
-    id: ID,
-    createdAt: Timestamp,
-    updatedAt: Timestamp,
-    version: Version
-  ) {
+  protected constructor(id: ID, createdAt: Timestamp, updatedAt: Timestamp, version: Version) {
     this._id = id;
     this._createdAt = createdAt;
     this._updatedAt = updatedAt;
@@ -99,5 +94,4 @@ export abstract class Entity {
   public hashCode(): string {
     return this._id.toString();
   }
-
 }

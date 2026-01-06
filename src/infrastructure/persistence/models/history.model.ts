@@ -1,4 +1,10 @@
-import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn } from 'typeorm';
+import {
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  CreateDateColumn,
+  UpdateDateColumn,
+} from 'typeorm';
 
 @Entity('history')
 export class HistoryModel {
@@ -14,7 +20,7 @@ export class HistoryModel {
   @Column({
     type: 'enum',
     enum: ['created', 'updated', 'deleted', 'executed', 'failed'],
-    default: 'created'
+    default: 'created',
   })
   action!: string;
 

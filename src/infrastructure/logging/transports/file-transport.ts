@@ -87,10 +87,10 @@ export class FileTransport extends BaseTransport {
           includeLevel: true,
           includeContext: true,
           includeStack: true,
-          sanitize: true
+          sanitize: true,
         };
         return new JsonFormatter(jsonOptions);
-      
+
       case LogFormatType.TEXT:
         const textOptions: TextFormatterOptions = {
           colorize: false, // 文件输出不需要颜色
@@ -99,10 +99,10 @@ export class FileTransport extends BaseTransport {
           includeContext: true,
           includeStack: true,
           sanitize: true,
-          separator: ' | '
+          separator: ' | ',
         };
         return new TextFormatter(textOptions);
-      
+
       default:
         throw new Error(`不支持的日志格式: ${format}`);
     }
@@ -121,7 +121,7 @@ export class FileTransport extends BaseTransport {
     }
 
     return new Promise((resolve, reject) => {
-      this.fileStream!.write(message + '\n', (error) => {
+      this.fileStream!.write(message + '\n', error => {
         if (error) {
           reject(error);
         } else {
@@ -157,7 +157,7 @@ export class FileTransport extends BaseTransport {
     this.setupRotationTimer();
 
     // 处理错误
-    this.fileStream.on('error', (error) => {
+    this.fileStream.on('error', error => {
       console.error('文件日志写入错误:', error);
     });
   }
@@ -244,9 +244,12 @@ export class FileTransport extends BaseTransport {
 
       setTimeout(() => {
         this.rotateFile(this.currentFileName);
-        this.rotationTimer = setInterval(() => {
-          this.rotateFile(this.currentFileName);
-        }, 24 * 60 * 60 * 1000); // 每24小时
+        this.rotationTimer = setInterval(
+          () => {
+            this.rotateFile(this.currentFileName);
+          },
+          24 * 60 * 60 * 1000
+        ); // 每24小时
       }, msUntilMidnight);
     }
   }
@@ -256,10 +259,10 @@ export class FileTransport extends BaseTransport {
    */
   private parseSize(sizeStr: string): number {
     const units: Record<string, number> = {
-      'B': 1,
-      'KB': 1024,
-      'MB': 1024 * 1024,
-      'GB': 1024 * 1024 * 1024
+      B: 1,
+      KB: 1024,
+      MB: 1024 * 1024,
+      GB: 1024 * 1024 * 1024,
     };
 
     const match = sizeStr.match(/^(\d+)(B|KB|MB|GB)$/i);
@@ -276,9 +279,11 @@ export class FileTransport extends BaseTransport {
    * 检查是否为同一天
    */
   private isSameDay(date1: Date, date2: Date): boolean {
-    return date1.getFullYear() === date2.getFullYear() &&
-           date1.getMonth() === date2.getMonth() &&
-           date1.getDate() === date2.getDate();
+    return (
+      date1.getFullYear() === date2.getFullYear() &&
+      date1.getMonth() === date2.getMonth() &&
+      date1.getDate() === date2.getDate()
+    );
   }
 
   /**
@@ -293,8 +298,7 @@ export class FileTransport extends BaseTransport {
    * 检查是否为同一月
    */
   private isSameMonth(date1: Date, date2: Date): boolean {
-    return date1.getFullYear() === date2.getFullYear() &&
-           date1.getMonth() === date2.getMonth();
+    return date1.getFullYear() === date2.getFullYear() && date1.getMonth() === date2.getMonth();
   }
 
   /**
@@ -313,18 +317,24 @@ export class FileTransport extends BaseTransport {
   /**
    * 清理旧文件
    */
-  private cleanupOldFiles(dirPath: string, fileName: string, extName: string, maxFiles?: number): void {
+  private cleanupOldFiles(
+    dirPath: string,
+    fileName: string,
+    extName: string,
+    maxFiles?: number
+  ): void {
     if (!maxFiles || maxFiles <= 0) {
       return;
     }
 
     try {
-      const files = fs.readdirSync(dirPath)
+      const files = fs
+        .readdirSync(dirPath)
         .filter(file => file.startsWith(fileName) && file.endsWith(extName))
         .map(file => ({
           name: file,
           path: path.join(dirPath, file),
-          mtime: fs.statSync(path.join(dirPath, file)).mtime
+          mtime: fs.statSync(path.join(dirPath, file)).mtime,
         }))
         .sort((a, b) => b.mtime.getTime() - a.mtime.getTime());
 

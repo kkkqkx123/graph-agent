@@ -1,11 +1,14 @@
 /**
  * 检查点恢复服务
- * 
+ *
  * 负责检查点的恢复、备份和备份链管理功能
  */
 
 import { ThreadCheckpoint } from '../../../../domain/threads/checkpoints/entities/thread-checkpoint';
-import { ThreadCheckpointDomainService, ThreadCheckpointDomainServiceImpl } from '../../../../domain/threads/checkpoints/services/thread-checkpoint-domain-service';
+import {
+  ThreadCheckpointDomainService,
+  ThreadCheckpointDomainServiceImpl,
+} from '../../../../domain/threads/checkpoints/services/thread-checkpoint-domain-service';
 import { IThreadCheckpointRepository } from '../../../../domain/threads/checkpoints/repositories/thread-checkpoint-repository';
 import { BaseApplicationService } from '../../../common/base-application-service';
 import { ILogger } from '../../../../domain/common/types/logger-types';
@@ -65,7 +68,7 @@ export class CheckpointRestoreService extends BaseApplicationService {
 
         this.logOperationSuccess('检查点备份创建成功', {
           originalCheckpointId: checkpointId,
-          backupId: backup.checkpointId.toString()
+          backupId: backup.checkpointId.toString(),
         });
 
         return backup.checkpointId;

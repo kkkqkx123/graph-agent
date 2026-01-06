@@ -208,7 +208,7 @@ export const mapWorkflowToDTO = (workflow: Workflow): WorkflowDTO => {
     createdBy: workflow.createdBy?.toString(),
     createdAt: workflow.createdAt.toISOString(),
     updatedAt: workflow.updatedAt.toISOString(),
-    isDeleted: workflow.isDeleted()
+    isDeleted: workflow.isDeleted(),
   };
 };
 
