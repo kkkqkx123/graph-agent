@@ -1,11 +1,11 @@
 /**
  * 配置继承处理器实现
+ * 统一使用TOML格式，移除JSON和YAML支持
  */
 
 import * as fs from 'fs/promises';
 import * as path from 'path';
 import { parse as parseToml } from 'toml';
-import * as yaml from 'yaml';
 import {
   IConfigProcessor,
   InheritanceProcessorOptions,
@@ -141,22 +141,18 @@ export class InheritanceProcessor implements IConfigProcessor {
 
   /**
    * 解析文件内容
+   *
+   * 统一使用TOML格式，移除JSON和YAML支持
    */
   private parseContent(content: string, filePath: string): Record<string, any> {
     const ext = path.extname(filePath).toLowerCase();
 
+    if (ext !== '.toml') {
+      throw new Error(`不支持的配置文件格式: ${ext}，仅支持TOML格式`);
+    }
+
     try {
-      switch (ext) {
-        case '.toml':
-          return parseToml(content);
-        case '.yaml':
-        case '.yml':
-          return yaml.parse(content);
-        case '.json':
-          return JSON.parse(content);
-        default:
-          throw new Error(`不支持的配置文件格式: ${ext}`);
-      }
+      return parseToml(content);
     } catch (error) {
       throw new Error(`解析配置文件失败 ${filePath}: ${(error as Error).message}`);
     }

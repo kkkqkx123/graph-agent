@@ -27,14 +27,14 @@ export class ConfigDiscovery implements IConfigDiscovery {
   private readonly logger: ILogger;
 
   constructor(options: ConfigDiscoveryOptions = {}, logger: ILogger) {
-    this.includePatterns = options.includePatterns || ['**/*.toml', '**/*.md'];
+    this.includePatterns = options.includePatterns || ['**/*.toml'];
     this.excludePatterns = options.excludePatterns = [
       '**/_*',
       '**/__*',
       '**/test_*',
       '**/*.test.*',
     ];
-    this.fileExtensions = options.fileExtensions || ['.toml', '.md'];
+    this.fileExtensions = options.fileExtensions || ['.toml'];
     this.logger = logger.child({ module: 'ConfigDiscovery' });
   }
 
