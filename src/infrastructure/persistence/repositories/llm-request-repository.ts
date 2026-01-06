@@ -8,13 +8,12 @@ import { LLMMessage } from '../../../domain/llm/value-objects/llm-message';
 import { DeletionStatus } from '../../../domain/checkpoint/value-objects/deletion-status';
 import { LLMRequestModel } from '../models/llm-request.model';
 import { BaseRepository } from './base-repository';
-import { ConnectionManager } from '../connections/connection-manager';
+import { ConnectionManager } from '../connection-manager';
 
 @injectable()
 export class LLMRequestRepository
   extends BaseRepository<LLMRequest, LLMRequestModel, ID>
-  implements ILLMRequestRepository
-{
+  implements ILLMRequestRepository {
   constructor(@inject('ConnectionManager') connectionManager: ConnectionManager) {
     super(connectionManager);
   }
@@ -110,7 +109,7 @@ export class LLMRequestRepository
       model.workflowId = entity.workflowId?.value;
       model.nodeId = entity.nodeId?.value;
       model.model = entity.model;
-      
+
       // 转换消息
       model.messages = entity.messages.map(msg => {
         const msgInterface = msg.toInterface();
@@ -133,7 +132,7 @@ export class LLMRequestRepository
       model.presencePenalty = entity.presencePenalty;
       model.stop = entity.stop;
       model.tools = entity.tools;
-      
+
       // 转换工具选择
       if (entity.toolChoice === 'none' || entity.toolChoice === 'auto' || entity.toolChoice === 'required') {
         model.toolChoice = entity.toolChoice;
@@ -229,7 +228,7 @@ export class LLMRequestRepository
     if (options.threadId) filters['threadId'] = options.threadId.value;
     if (options.workflowId) filters['workflowId'] = options.workflowId.value;
     if (options.nodeId) filters['nodeId'] = options.nodeId.value;
-    
+
     return this.find({
       filters,
       sortBy: 'createdAt',
@@ -249,7 +248,7 @@ export class LLMRequestRepository
       .andWhere('request.isDeleted = :isDeleted', { isDeleted: false })
       .orderBy('request.createdAt', 'DESC')
       .getMany();
-    
+
     return models.map(model => this.toDomain(model));
   }
 
@@ -266,7 +265,7 @@ export class LLMRequestRepository
       .andWhere('request.isDeleted = :isDeleted', { isDeleted: false })
       .orderBy('request.createdAt', 'DESC')
       .getMany();
-    
+
     return models.map(model => this.toDomain(model));
   }
 
@@ -283,7 +282,7 @@ export class LLMRequestRepository
       .andWhere('request.isDeleted = :isDeleted', { isDeleted: false })
       .orderBy('request.createdAt', 'DESC')
       .getMany();
-    
+
     return models.map(model => this.toDomain(model));
   }
 
@@ -459,7 +458,7 @@ export class LLMRequestRepository
       .delete()
       .where('createdAt < :beforeTime', { beforeTime })
       .execute();
-    
+
     return result.affected || 0;
   }
 
@@ -511,15 +510,15 @@ export class LLMRequestRepository
       .getRawMany();
 
     const trendMap = new Map<string, { timestamp: Date; count: number; byModel: Record<string, number> }>();
-    
+
     results.forEach(result => {
       const timestamp = new Date(result.timestamp);
       const key = timestamp.toISOString();
-      
+
       if (!trendMap.has(key)) {
         trendMap.set(key, { timestamp, count: 0, byModel: {} });
       }
-      
+
       const trend = trendMap.get(key)!;
       trend.count += parseInt(result.count);
       trend.byModel[result.model] = (trend.byModel[result.model] || 0) + parseInt(result.count);

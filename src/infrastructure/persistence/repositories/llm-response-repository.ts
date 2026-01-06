@@ -8,13 +8,12 @@ import { LLMMessage } from '../../../domain/llm/value-objects/llm-message';
 import { DeletionStatus } from '../../../domain/checkpoint/value-objects/deletion-status';
 import { LLMResponseModel } from '../models/llm-response.model';
 import { BaseRepository } from './base-repository';
-import { ConnectionManager } from '../connections/connection-manager';
+import { ConnectionManager } from '../connection-manager';
 
 @injectable()
 export class LLMResponseRepository
   extends BaseRepository<LLMResponse, LLMResponseModel, ID>
-  implements ILLMResponseRepository
-{
+  implements ILLMResponseRepository {
   constructor(@inject('ConnectionManager') connectionManager: ConnectionManager) {
     super(connectionManager);
   }
@@ -97,7 +96,7 @@ export class LLMResponseRepository
       model.workflowId = entity.workflowId?.value;
       model.nodeId = entity.nodeId?.value;
       model.model = entity.model;
-      
+
       // 转换选择
       model.choices = entity.choices.map(choice => {
         const msgInterface = choice.message.toInterface();
@@ -222,7 +221,7 @@ export class LLMResponseRepository
     if (options.threadId) filters['threadId'] = options.threadId.value;
     if (options.workflowId) filters['workflowId'] = options.workflowId.value;
     if (options.nodeId) filters['nodeId'] = options.nodeId.value;
-    
+
     return this.find({
       filters,
       sortBy: 'createdAt',
@@ -242,7 +241,7 @@ export class LLMResponseRepository
       .andWhere('response.isDeleted = :isDeleted', { isDeleted: false })
       .orderBy('response.createdAt', 'DESC')
       .getMany();
-    
+
     return models.map(model => this.toDomain(model));
   }
 
@@ -259,7 +258,7 @@ export class LLMResponseRepository
       .andWhere('response.isDeleted = :isDeleted', { isDeleted: false })
       .orderBy('response.createdAt', 'DESC')
       .getMany();
-    
+
     return models.map(model => this.toDomain(model));
   }
 
@@ -276,7 +275,7 @@ export class LLMResponseRepository
       .andWhere('response.isDeleted = :isDeleted', { isDeleted: false })
       .orderBy('response.createdAt', 'DESC')
       .getMany();
-    
+
     return models.map(model => this.toDomain(model));
   }
 
@@ -895,7 +894,7 @@ export class LLMResponseRepository
       .delete()
       .where('createdAt < :beforeTime', { beforeTime })
       .execute();
-    
+
     return result.affected || 0;
   }
 
@@ -967,11 +966,11 @@ export class LLMResponseRepository
       totalCost: number;
       averageDuration: number;
     }>();
-    
+
     results.forEach(result => {
       const timestamp = new Date(result.timestamp);
       const key = timestamp.toISOString();
-      
+
       if (!trendMap.has(key)) {
         trendMap.set(key, {
           timestamp,
@@ -983,7 +982,7 @@ export class LLMResponseRepository
           averageDuration: 0,
         });
       }
-      
+
       const trend = trendMap.get(key)!;
       trend.count += parseInt(result.count);
       trend.byModel[result.model] = (trend.byModel[result.model] || 0) + parseInt(result.count);

@@ -1,17 +1,7 @@
 import { injectable, inject } from 'inversify';
 import { DataSource, DataSourceOptions } from 'typeorm';
-import { ConfigLoadingModule } from '../../config/loading/config-loading-module';
-
-interface DatabaseConfig {
-  type?: 'postgres' | 'sqlite';
-  host?: string;
-  port?: number;
-  username?: string;
-  password?: string;
-  database?: string;
-  synchronize?: boolean;
-  logging?: boolean;
-}
+import { ConfigLoadingModule } from '../config/loading/config-loading-module';
+import { DatabaseConfig } from '../config/loading/schemas';
 
 @injectable()
 export class ConnectionManager {

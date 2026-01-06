@@ -39,7 +39,7 @@ import { FunctionExecutionEngine } from '../../infrastructure/workflow/services/
 import { MonitoringService } from '../../infrastructure/workflow/services/monitoring-service';
 
 // 基础设施服务
-import { ConnectionManager } from '../../infrastructure/persistence/connections/connection-manager';
+import { ConnectionManager } from '../../infrastructure/persistence/connection-manager';
 import { PromptBuilder } from '../../infrastructure/prompts/services/prompt-builder';
 import { TemplateProcessor } from '../../infrastructure/prompts/services/template-processor';
 import { PromptReferenceParser } from '../../infrastructure/prompts/services/prompt-reference-parser';

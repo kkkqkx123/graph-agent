@@ -9,6 +9,7 @@ export { PromptSchema } from './prompt-schema';
 export { PoolSchema } from './pool-schema';
 export { TaskGroupSchema } from './task-group-schema';
 export { WorkflowFunctionSchema } from './workflow-function-schema';
+export { DatabaseSchema, DatabaseConfig } from './database-schema';
 
 // 导入所有Schema用于注册
 import { LLMSchema } from './llm-schema';
@@ -17,6 +18,7 @@ import { PromptSchema } from './prompt-schema';
 import { PoolSchema } from './pool-schema';
 import { TaskGroupSchema } from './task-group-schema';
 import { WorkflowFunctionSchema } from './workflow-function-schema';
+import { DatabaseSchema } from './database-schema';
 
 /**
  * 所有Schema的映射表
@@ -29,4 +31,5 @@ export const SCHEMA_MAP = {
   pool: PoolSchema,
   taskGroup: TaskGroupSchema,
   workflow_functions: WorkflowFunctionSchema,
+  database: DatabaseSchema,
 } as const;

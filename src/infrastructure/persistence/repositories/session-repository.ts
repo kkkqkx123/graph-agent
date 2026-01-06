@@ -10,7 +10,7 @@ import { Version } from '../../../domain/common/value-objects/version';
 import { SessionModel } from '../models/session.model';
 import { In } from 'typeorm';
 import { BaseRepository } from './base-repository';
-import { ConnectionManager } from '../connections/connection-manager';
+import { ConnectionManager } from '../connection-manager';
 import { ThreadCommunicationChannel } from '../../../domain/sessions/value-objects/thread-communication';
 import { ThreadCollection } from '../../../domain/sessions/value-objects/thread-collection';
 import { SharedResources } from '../../../domain/sessions/value-objects/shared-resources';
@@ -21,8 +21,7 @@ import { DeletionStatus } from '../../../domain/checkpoint/value-objects';
 @injectable()
 export class SessionRepository
   extends BaseRepository<Session, SessionModel, ID>
-  implements ISessionRepository
-{
+  implements ISessionRepository {
   constructor(@inject('ConnectionManager') connectionManager: ConnectionManager) {
     super(connectionManager);
   }

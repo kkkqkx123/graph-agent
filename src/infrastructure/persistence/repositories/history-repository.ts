@@ -11,13 +11,12 @@ import { Version } from '../../../domain/common/value-objects/version';
 import { HistoryModel } from '../models/history.model';
 import { In, Between } from 'typeorm';
 import { BaseRepository } from './base-repository';
-import { ConnectionManager } from '../connections/connection-manager';
+import { ConnectionManager } from '../connection-manager';
 
 @injectable()
 export class HistoryRepository
   extends BaseRepository<History, HistoryModel, ID>
-  implements IHistoryRepository
-{
+  implements IHistoryRepository {
   constructor(@inject('ConnectionManager') connectionManager: ConnectionManager) {
     super(connectionManager);
   }

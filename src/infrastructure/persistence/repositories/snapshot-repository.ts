@@ -11,13 +11,12 @@ import { Timestamp } from '../../../domain/common/value-objects/timestamp';
 import { Version } from '../../../domain/common/value-objects/version';
 import { SnapshotModel } from '../models/snapshot.model';
 import { BaseRepository } from './base-repository';
-import { ConnectionManager } from '../connections/connection-manager';
+import { ConnectionManager } from '../connection-manager';
 
 @injectable()
 export class SnapshotRepository
   extends BaseRepository<Snapshot, SnapshotModel, ID>
-  implements ISnapshotRepository
-{
+  implements ISnapshotRepository {
   constructor(@inject('ConnectionManager') connectionManager: ConnectionManager) {
     super(connectionManager);
   }

@@ -12,13 +12,12 @@ import { WorkflowModel } from '../models/workflow.model';
 import { ThreadModel } from '../models/thread.model';
 import { In } from 'typeorm';
 import { BaseRepository } from './base-repository';
-import { ConnectionManager } from '../connections/connection-manager';
+import { ConnectionManager } from '../connection-manager';
 
 @injectable()
 export class WorkflowRepository
   extends BaseRepository<Workflow, WorkflowModel, ID>
-  implements IWorkflowRepository
-{
+  implements IWorkflowRepository {
   constructor(@inject('ConnectionManager') connectionManager: ConnectionManager) {
     super(connectionManager);
   }
@@ -427,7 +426,7 @@ export class WorkflowRepository
   }> {
     const connection = await this.connectionManager.getConnection();
     const queryRunner = connection.createQueryRunner();
-    
+
     try {
       const result = await queryRunner.manager
         .createQueryBuilder(ThreadModel, 'thread')
@@ -444,7 +443,7 @@ export class WorkflowRepository
         .setParameter('failed', 'failed')
         .setParameter('cancelled', 'cancelled')
         .getRawOne();
-      
+
       return {
         executionCount: parseInt(result.executionCount) || 0,
         successCount: parseInt(result.successCount) || 0,
@@ -474,7 +473,7 @@ export class WorkflowRepository
   }>> {
     const connection = await this.connectionManager.getConnection();
     const queryRunner = connection.createQueryRunner();
-    
+
     try {
       const results = await queryRunner.manager
         .createQueryBuilder(ThreadModel, 'thread')
@@ -495,7 +494,7 @@ export class WorkflowRepository
         .setParameter('cancelled', 'cancelled')
         .groupBy('thread.workflowId')
         .getRawMany();
-      
+
       const statsMap = new Map();
       results.forEach(result => {
         statsMap.set(result.workflowId, {
@@ -507,7 +506,7 @@ export class WorkflowRepository
           lastExecutedAt: result.lastExecutedAt,
         });
       });
-      
+
       return statsMap;
     } finally {
       await queryRunner.release();

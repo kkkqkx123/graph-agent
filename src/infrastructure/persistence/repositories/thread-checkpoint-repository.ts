@@ -8,14 +8,13 @@ import { Timestamp } from '../../../domain/common/value-objects/timestamp';
 import { Version } from '../../../domain/common/value-objects/version';
 import { ThreadCheckpointModel } from '../models/thread-checkpoint.model';
 import { BaseRepository } from './base-repository';
-import { ConnectionManager } from '../connections/connection-manager';
+import { ConnectionManager } from '../connection-manager';
 import { In } from 'typeorm';
 
 @injectable()
 export class ThreadCheckpointRepository
   extends BaseRepository<ThreadCheckpoint, ThreadCheckpointModel, ID>
-  implements IThreadCheckpointRepository
-{
+  implements IThreadCheckpointRepository {
   constructor(@inject('ConnectionManager') connectionManager: ConnectionManager) {
     super(connectionManager);
   }

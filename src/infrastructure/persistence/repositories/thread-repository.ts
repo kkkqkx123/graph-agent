@@ -14,7 +14,7 @@ import { Version } from '../../../domain/common/value-objects/version';
 import { ThreadModel } from '../models/thread.model';
 import { In } from 'typeorm';
 import { BaseRepository } from './base-repository';
-import { ConnectionManager } from '../connections/connection-manager';
+import { ConnectionManager } from '../connection-manager';
 import { Metadata } from '../../../domain/checkpoint/value-objects';
 import { DeletionStatus } from '../../../domain/checkpoint/value-objects';
 import { WorkflowState } from '../../../domain/workflow/value-objects';
@@ -22,8 +22,7 @@ import { WorkflowState } from '../../../domain/workflow/value-objects';
 @injectable()
 export class ThreadRepository
   extends BaseRepository<Thread, ThreadModel, ID>
-  implements IThreadRepository
-{
+  implements IThreadRepository {
   constructor(@inject('ConnectionManager') connectionManager: ConnectionManager) {
     super(connectionManager);
   }
@@ -122,7 +121,7 @@ export class ThreadRepository
       model.description = entity.description || '';
       model.state = entity.status.getValue();
       model.priority = entity.priority.getNumericValue();
-      
+
       // 执行状态字段
       model.executionStatus = entity.execution.status.getValue();
       model.progress = entity.execution.progress;
@@ -140,7 +139,7 @@ export class ThreadRepository
       };
       model.nodeExecutions = Object.fromEntries(entity.execution.nodeExecutions);
       model.workflowState = entity.execution.getWorkflowState()?.toProps() as any;
-      
+
       model.context = entity.metadata;
       model.version = entity.version.getValue();
       model.createdAt = entity.createdAt.getDate();

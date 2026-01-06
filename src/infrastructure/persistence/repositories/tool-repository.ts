@@ -13,13 +13,12 @@ import { StateData } from '../../../domain/checkpoint/value-objects/state-data';
 import { ToolModel } from '../models/tool.model';
 import { In } from 'typeorm';
 import { BaseRepository } from './base-repository';
-import { ConnectionManager } from '../connections/connection-manager';
+import { ConnectionManager } from '../connection-manager';
 
 @injectable()
 export class ToolRepository
   extends BaseRepository<Tool, ToolModel, ID>
-  implements IToolRepository
-{
+  implements IToolRepository {
   constructor(@inject('ConnectionManager') connectionManager: ConnectionManager) {
     super(connectionManager);
   }
@@ -620,8 +619,8 @@ export class ToolRepository
     const repository = await this.getRepository();
     const models = await repository
       .createQueryBuilder('tool')
-      .where('tool.id IN (:...dependencyIds)', { 
-        dependencyIds: tool.dependencies.map(depId => depId.value) 
+      .where('tool.id IN (:...dependencyIds)', {
+        dependencyIds: tool.dependencies.map(depId => depId.value)
       })
       .andWhere('tool.isDeleted = :isDeleted', { isDeleted: false })
       .getMany();

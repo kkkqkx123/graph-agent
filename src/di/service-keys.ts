@@ -52,7 +52,7 @@ import { GraphAlgorithmServiceImpl } from '../infrastructure/workflow/services/g
 import { ContextProcessorServiceImpl } from '../infrastructure/workflow/services/context-processor-service';
 import { FunctionExecutionEngine } from '../infrastructure/workflow/services/function-execution-engine';
 import { MonitoringService } from '../infrastructure/workflow/services/monitoring-service';
-import { ConnectionManager } from '../infrastructure/persistence/connections/connection-manager';
+import { ConnectionManager } from '../infrastructure/persistence/connection-manager';
 import { PromptBuilder } from '../infrastructure/prompts/services/prompt-builder';
 import { TemplateProcessor } from '../infrastructure/prompts/services/template-processor';
 import { PromptReferenceParser } from '../infrastructure/prompts/services/prompt-reference-parser';

@@ -5,7 +5,7 @@ import {
   PaginatedResult,
 } from '../../../domain/common/repositories/repository';
 import { ID } from '../../../domain/common/value-objects/id';
-import { ConnectionManager } from '../connections/connection-manager';
+import { ConnectionManager } from '../connection-manager';
 import { DataSource, Repository, FindOptionsWhere, FindManyOptions, ObjectLiteral } from 'typeorm';
 
 /**
@@ -21,7 +21,7 @@ export abstract class BaseRepository<
 > implements IRepository<T, TId> {
   protected abstract getModelClass(): new () => TModel;
 
-  constructor(@inject('ConnectionManager') protected connectionManager: ConnectionManager) {}
+  constructor(@inject('ConnectionManager') protected connectionManager: ConnectionManager) { }
 
   /**
    * 获取TypeORM仓储实例
