@@ -1,0 +1,15 @@
+# Checkpoint基础配置
+# 详细配置请参考 configs/workflow/checkpoint-manager.toml
+[checkpoint]
+enabled = true
+storage_type = "sqlite"
+auto_save = true
+save_interval = 5
+max_checkpoints = 100
+retention_days = 30
+db_path = "storage/checkpoints.db"
+compression = false
+
+# Checkpoint触发条件
+[checkpoint.trigger_conditions]
+events = ["tool_call", "state_change"]
