@@ -7,6 +7,7 @@ import {
   OneToMany,
 } from 'typeorm';
 import { ThreadModel } from './thread.model';
+import { SessionStatusValue } from '../../../domain/sessions/value-objects/session-status';
 
 @Entity('sessions')
 export class SessionModel {
@@ -21,10 +22,10 @@ export class SessionModel {
 
   @Column({
     type: 'enum',
-    enum: ['active', 'paused', 'closed'],
-    default: 'active',
+    enum: Object.values(SessionStatusValue),
+    default: SessionStatusValue.ACTIVE,
   })
-  state!: string;
+  state!: SessionStatusValue;
 
   @Column('jsonb')
   context!: any;

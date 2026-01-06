@@ -3,6 +3,7 @@ import { IThreadRepository } from '../../../domain/threads/repositories/thread-r
 import { Thread } from '../../../domain/threads/entities/thread';
 import { ID } from '../../../domain/common/value-objects/id';
 import { ThreadStatus } from '../../../domain/threads/value-objects/thread-status';
+import { ThreadStatusValue } from '../../../domain/threads/value-objects/thread-status';
 import { ThreadPriority } from '../../../domain/threads/value-objects/thread-priority';
 import { ThreadDefinition } from '../../../domain/threads/value-objects/thread-definition';
 import { ThreadExecution } from '../../../domain/threads/value-objects/thread-execution';
@@ -16,6 +17,7 @@ import { BaseRepository } from './base-repository';
 import { ConnectionManager } from '../connections/connection-manager';
 import { Metadata } from '../../../domain/checkpoint/value-objects';
 import { DeletionStatus } from '../../../domain/checkpoint/value-objects';
+import { WorkflowState } from '../../../domain/workflow/value-objects';
 
 @injectable()
 export class ThreadRepository
@@ -39,7 +41,7 @@ export class ThreadRepository
       const sessionId = new ID(model.sessionId);
       const workflowId = model.workflowId ? new ID(model.workflowId) : ID.empty();
       const status = ThreadStatus.fromString(model.state);
-      const priority = ThreadPriority.fromNumber(parseInt(model.priority));
+      const priority = ThreadPriority.fromNumber(model.priority);
       const title = model.name || undefined;
       const description = model.description || undefined;
       const metadata = model.context || {};
@@ -58,9 +60,26 @@ export class ThreadRepository
         metadata
       );
 
+      // 创建执行上下文
       const promptContext = PromptContext.create('');
       const context = ExecutionContext.create(promptContext);
-      const execution = ThreadExecution.create(id, context);
+
+      // 创建执行状态值对象
+      const execution = ThreadExecution.fromProps({
+        threadId: id,
+        status: ThreadStatus.fromString(model.executionStatus),
+        progress: model.progress,
+        currentStep: model.currentStep,
+        startedAt: model.startedAt ? Timestamp.create(model.startedAt) : undefined,
+        completedAt: model.completedAt ? Timestamp.create(model.completedAt) : undefined,
+        errorMessage: model.errorMessage,
+        retryCount: model.retryCount,
+        lastActivityAt: Timestamp.create(model.lastActivityAt),
+        nodeExecutions: new Map(Object.entries(model.nodeExecutions || {})) as Map<string, any>,
+        context,
+        operationHistory: [],
+        workflowState: model.workflowState ? WorkflowState.fromProps(model.workflowState as any) : undefined,
+      });
 
       const threadData = {
         id,
@@ -102,7 +121,26 @@ export class ThreadRepository
       model.name = entity.title || '';
       model.description = entity.description || '';
       model.state = entity.status.getValue();
-      model.priority = entity.priority.getNumericValue().toString();
+      model.priority = entity.priority.getNumericValue();
+      
+      // 执行状态字段
+      model.executionStatus = entity.execution.status.getValue();
+      model.progress = entity.execution.progress;
+      model.currentStep = entity.execution.currentStep;
+      model.startedAt = entity.execution.startedAt?.getDate();
+      model.completedAt = entity.execution.completedAt?.getDate();
+      model.errorMessage = entity.execution.errorMessage;
+      model.retryCount = entity.execution.retryCount;
+      model.lastActivityAt = entity.execution.lastActivityAt.getDate();
+      model.executionContext = {
+        variables: Object.fromEntries(entity.execution.context.variables),
+        promptContext: entity.execution.context.promptContext,
+        nodeContexts: Object.fromEntries(entity.execution.context.nodeContexts),
+        config: entity.execution.context.config,
+      };
+      model.nodeExecutions = Object.fromEntries(entity.execution.nodeExecutions);
+      model.workflowState = entity.execution.getWorkflowState()?.toProps() as any;
+      
       model.context = entity.metadata;
       model.version = entity.version.getValue();
       model.createdAt = entity.createdAt.getDate();
@@ -312,8 +350,8 @@ export class ThreadRepository
   async batchCancelActiveThreadsForSession(sessionId: ID): Promise<number> {
     const repository = await this.getRepository();
     const result = await repository.update(
-      { sessionId: sessionId.value, state: In(['pending', 'running', 'paused']) },
-      { state: 'cancelled', updatedAt: new Date() }
+      { sessionId: sessionId.value, state: In([ThreadStatusValue.PENDING, ThreadStatusValue.RUNNING, ThreadStatusValue.PAUSED]) },
+      { state: ThreadStatusValue.CANCELLED, updatedAt: new Date() }
     );
     return result.affected || 0;
   }

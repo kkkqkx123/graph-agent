@@ -4,10 +4,12 @@ import { Workflow } from '../../../domain/workflow/entities/workflow';
 import { WorkflowDefinition } from '../../../domain/workflow/value-objects/workflow-definition';
 import { ID } from '../../../domain/common/value-objects/id';
 import { WorkflowStatus } from '../../../domain/workflow/value-objects/workflow-status';
+import { WorkflowStatusValue } from '../../../domain/workflow/value-objects/workflow-status';
 import { WorkflowType } from '../../../domain/workflow/value-objects/workflow-type';
 import { Timestamp } from '../../../domain/common/value-objects/timestamp';
 import { Version } from '../../../domain/common/value-objects/version';
 import { WorkflowModel } from '../models/workflow.model';
+import { ThreadModel } from '../models/thread.model';
 import { In } from 'typeorm';
 import { BaseRepository } from './base-repository';
 import { ConnectionManager } from '../connections/connection-manager';
@@ -316,7 +318,7 @@ export class WorkflowRepository
     await repository.update(
       { id: workflowId.value },
       {
-        state: 'archived',
+        state: WorkflowStatusValue.ARCHIVED,
         updatedAt: new Date(),
       }
     );
@@ -330,7 +332,7 @@ export class WorkflowRepository
     const result = await repository.update(
       { id: In(workflowIds.map(id => id.value)) },
       {
-        state: 'archived',
+        state: WorkflowStatusValue.ARCHIVED,
         updatedAt: new Date(),
       }
     );
@@ -345,7 +347,7 @@ export class WorkflowRepository
     await repository.update(
       { id: workflowId.value },
       {
-        state: 'draft',
+        state: WorkflowStatusValue.DRAFT,
         updatedAt: new Date(),
       }
     );
@@ -405,5 +407,110 @@ export class WorkflowRepository
     });
 
     return result;
+  }
+
+  /**
+   * 获取工作流执行统计信息
+   *
+   * 通过查询 Thread 表计算工作流的执行统计信息
+   *
+   * @param workflowId 工作流ID
+   * @returns 执行统计信息
+   */
+  async getExecutionStatistics(workflowId: ID): Promise<{
+    executionCount: number;
+    successCount: number;
+    failureCount: number;
+    cancelledCount: number;
+    averageExecutionTime: number;
+    lastExecutedAt?: Date;
+  }> {
+    const connection = await this.connectionManager.getConnection();
+    const queryRunner = connection.createQueryRunner();
+    
+    try {
+      const result = await queryRunner.manager
+        .createQueryBuilder(ThreadModel, 'thread')
+        .select([
+          'COUNT(thread.id) as executionCount',
+          'SUM(CASE WHEN thread.state = :completed THEN 1 ELSE 0 END) as successCount',
+          'SUM(CASE WHEN thread.state = :failed THEN 1 ELSE 0 END) as failureCount',
+          'SUM(CASE WHEN thread.state = :cancelled THEN 1 ELSE 0 END) as cancelledCount',
+          'AVG(EXTRACT(EPOCH FROM (thread.updatedAt - thread.createdAt))) as averageExecutionTime',
+          'MAX(thread.updatedAt) as lastExecutedAt',
+        ])
+        .where('thread.workflowId = :workflowId', { workflowId: workflowId.value })
+        .setParameter('completed', 'completed')
+        .setParameter('failed', 'failed')
+        .setParameter('cancelled', 'cancelled')
+        .getRawOne();
+      
+      return {
+        executionCount: parseInt(result.executionCount) || 0,
+        successCount: parseInt(result.successCount) || 0,
+        failureCount: parseInt(result.failureCount) || 0,
+        cancelledCount: parseInt(result.cancelledCount) || 0,
+        averageExecutionTime: parseFloat(result.averageExecutionTime) || 0,
+        lastExecutedAt: result.lastExecutedAt,
+      };
+    } finally {
+      await queryRunner.release();
+    }
+  }
+
+  /**
+   * 批量获取工作流执行统计信息
+   *
+   * @param workflowIds 工作流ID列表
+   * @returns 执行统计信息映射
+   */
+  async getBatchExecutionStatistics(workflowIds: ID[]): Promise<Map<string, {
+    executionCount: number;
+    successCount: number;
+    failureCount: number;
+    cancelledCount: number;
+    averageExecutionTime: number;
+    lastExecutedAt?: Date;
+  }>> {
+    const connection = await this.connectionManager.getConnection();
+    const queryRunner = connection.createQueryRunner();
+    
+    try {
+      const results = await queryRunner.manager
+        .createQueryBuilder(ThreadModel, 'thread')
+        .select([
+          'thread.workflowId as workflowId',
+          'COUNT(thread.id) as executionCount',
+          'SUM(CASE WHEN thread.state = :completed THEN 1 ELSE 0 END) as successCount',
+          'SUM(CASE WHEN thread.state = :failed THEN 1 ELSE 0 END) as failureCount',
+          'SUM(CASE WHEN thread.state = :cancelled THEN 1 ELSE 0 END) as cancelledCount',
+          'AVG(EXTRACT(EPOCH FROM (thread.updatedAt - thread.createdAt))) as averageExecutionTime',
+          'MAX(thread.updatedAt) as lastExecutedAt',
+        ])
+        .where('thread.workflowId IN (:...workflowIds)', {
+          workflowIds: workflowIds.map(id => id.value)
+        })
+        .setParameter('completed', 'completed')
+        .setParameter('failed', 'failed')
+        .setParameter('cancelled', 'cancelled')
+        .groupBy('thread.workflowId')
+        .getRawMany();
+      
+      const statsMap = new Map();
+      results.forEach(result => {
+        statsMap.set(result.workflowId, {
+          executionCount: parseInt(result.executionCount) || 0,
+          successCount: parseInt(result.successCount) || 0,
+          failureCount: parseInt(result.failureCount) || 0,
+          cancelledCount: parseInt(result.cancelledCount) || 0,
+          averageExecutionTime: parseFloat(result.averageExecutionTime) || 0,
+          lastExecutedAt: result.lastExecutedAt,
+        });
+      });
+      
+      return statsMap;
+    } finally {
+      await queryRunner.release();
+    }
   }
 }

@@ -4,9 +4,9 @@ import {
   Column,
   CreateDateColumn,
   UpdateDateColumn,
-  OneToMany,
 } from 'typeorm';
-import { ExecutionStatsModel } from './execution-stats.model';
+import { WorkflowStatusValue } from '../../../domain/workflow/value-objects/workflow-status';
+import { WorkflowTypeValue } from '../../../domain/workflow/value-objects/workflow-type';
 
 @Entity('workflows')
 export class WorkflowModel {
@@ -21,17 +21,17 @@ export class WorkflowModel {
 
   @Column({
     type: 'enum',
-    enum: ['draft', 'active', 'inactive', 'archived'],
-    default: 'draft',
+    enum: Object.values(WorkflowStatusValue),
+    default: WorkflowStatusValue.DRAFT,
   })
-  state!: string;
+  state!: WorkflowStatusValue;
 
   @Column({
     type: 'enum',
-    enum: ['sequential', 'parallel', 'conditional'],
-    default: 'sequential',
+    enum: Object.values(WorkflowTypeValue),
+    default: WorkflowTypeValue.SEQUENTIAL,
   })
-  executionMode!: string;
+  executionMode!: WorkflowTypeValue;
 
   @Column('jsonb', { nullable: true })
   nodes?: any;
@@ -68,7 +68,4 @@ export class WorkflowModel {
 
   @UpdateDateColumn()
   updatedAt!: Date;
-
-  @OneToMany(() => ExecutionStatsModel, stats => stats.workflow)
-  executionStats?: ExecutionStatsModel[];
 }
