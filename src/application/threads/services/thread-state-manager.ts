@@ -1,5 +1,5 @@
 import { ID, Timestamp } from '../../../domain/common/value-objects';
-import { WorkflowState } from '../../../domain/workflow/value-objects/workflow-state';
+import { ThreadWorkflowState } from '../../../domain/threads/value-objects/thread-workflow-state';
 import { IImmerAdapter, createImmerAdapter, Patch } from '../../../infrastructure/common/immer/immer-adapter';
 
 /**
@@ -57,10 +57,10 @@ export interface StateUpdateOptions {
 }
 
 /**
- * 状态管理器
+ * 线程状态管理器
  *
  * 职责：
- * - 管理工作流执行状态
+ * - 管理线程执行状态
  * - 提供状态的初始化、获取、更新、清除操作
  * - 记录状态变更历史
  * - 验证状态数据
@@ -73,11 +73,11 @@ export interface StateUpdateOptions {
  *
  * 不负责：
  * - 状态快照和恢复（由 CheckpointManager 负责）
- * - 执行历史记录（由 HistoryManager 负责）
+ * - 执行历史记录（由 ThreadHistoryManager 负责）
  * - 状态缓存管理（由基础设施层负责）
  */
-export class StateManager {
-	private states: Map<string, WorkflowState>;
+export class ThreadStateManager {
+	private states: Map<string, ThreadWorkflowState>;
 	private stateHistory: Map<string, StateChange[]>;
 	private patchHistories: Map<string, PatchHistory[]>;
 	private stateVersions: Map<string, number>;
@@ -104,16 +104,17 @@ export class StateManager {
 		initialState: Record<string, any> = {},
 		options: StateUpdateOptions = {}
 	): void {
-		const state = WorkflowState.initial(workflowId);
+		const state = ThreadWorkflowState.initial(workflowId);
 
 		// 使用 Immer 更新初始状态
-		const [updatedState, patches, inversePatches] = this.immerAdapter.produceWithPatches(
-			state,
+		const [updatedStateProps, patches, inversePatches] = this.immerAdapter.produceWithPatches(
+			state.toProps(),
 			(draft) => {
 				Object.assign(draft.data, initialState);
 			}
 		);
 
+		const updatedState = ThreadWorkflowState.fromProps(updatedStateProps);
 		this.states.set(threadId, updatedState);
 		this.stateVersions.set(threadId, 0);
 
@@ -127,9 +128,9 @@ export class StateManager {
 	/**
 	 * 获取状态
 	 * @param threadId 线程ID
-	 * @returns 工作流状态，如果不存在则返回 null
+	 * @returns 线程状态，如果不存在则返回 null
 	 */
-	getState(threadId: string): WorkflowState | null {
+	getState(threadId: string): ThreadWorkflowState | null {
 		return this.states.get(threadId) || null;
 	}
 
@@ -144,7 +145,7 @@ export class StateManager {
 		threadId: string,
 		updates: Record<string, any>,
 		options: StateUpdateOptions = {}
-	): WorkflowState {
+	): ThreadWorkflowState {
 		const currentState = this.states.get(threadId);
 
 		if (!currentState) {
@@ -154,13 +155,16 @@ export class StateManager {
 		const currentVersion = this.stateVersions.get(threadId) || 0;
 
 		// 使用 Immer 更新状态
-		const [nextState, patches, inversePatches] = this.immerAdapter.produceWithPatches(
-			currentState,
+		const [nextStateProps, patches, inversePatches] = this.immerAdapter.produceWithPatches(
+			currentState.toProps(),
 			(draft) => {
 				Object.assign(draft.data, updates);
 				draft.updatedAt = Timestamp.now();
 			}
 		);
+
+		// 创建新的状态实例
+		const nextState = ThreadWorkflowState.fromProps(nextStateProps);
 
 		// 保存更新后的状态
 		this.states.set(threadId, nextState);
@@ -182,7 +186,7 @@ export class StateManager {
 	 * @param options 更新选项
 	 * @returns 更新后的状态
 	 */
-	setCurrentNodeId(threadId: string, nodeId: ID, options: StateUpdateOptions = {}): WorkflowState {
+	setCurrentNodeId(threadId: string, nodeId: ID, options: StateUpdateOptions = {}): ThreadWorkflowState {
 		const currentState = this.states.get(threadId);
 
 		if (!currentState) {
@@ -192,13 +196,16 @@ export class StateManager {
 		const currentVersion = this.stateVersions.get(threadId) || 0;
 
 		// 使用 Immer 更新状态
-		const [nextState, patches, inversePatches] = this.immerAdapter.produceWithPatches(
-			currentState,
+		const [nextStateProps, patches, inversePatches] = this.immerAdapter.produceWithPatches(
+			currentState.toProps(),
 			(draft) => {
 				draft.currentNodeId = nodeId;
 				draft.updatedAt = Timestamp.now();
 			}
 		);
+
+		// 创建新的状态实例
+		const nextState = ThreadWorkflowState.fromProps(nextStateProps);
 
 		// 保存更新后的状态
 		this.states.set(threadId, nextState);

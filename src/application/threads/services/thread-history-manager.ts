@@ -1,5 +1,5 @@
 import { ID } from '../../../domain/common/value-objects';
-import { ExecutionHistory } from '../../../domain/workflow/value-objects/workflow-state';
+import { ExecutionHistory } from '../../../domain/workflow/value-objects/execution';
 
 /**
  * 执行历史记录接口
@@ -40,10 +40,10 @@ export interface HistoryStatistics {
 }
 
 /**
- * 历史管理器
+ * 线程历史管理器
  *
  * 职责：
- * - 记录工作流执行历史
+ * - 记录线程执行历史
  * - 查询执行历史
  * - 统计执行历史
  *
@@ -52,7 +52,7 @@ export interface HistoryStatistics {
  * - 支持历史记录查询
  * - 支持历史统计
  */
-export class HistoryManager {
+export class ThreadHistoryManager {
   private histories: Map<string, HistoryRecord[]>;
 
   constructor() {

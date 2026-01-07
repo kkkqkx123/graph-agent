@@ -1,10 +1,10 @@
 import { Workflow } from '../../../domain/workflow/entities/workflow';
 import { NodeId, NodeType } from '../../../domain/workflow/value-objects/node';
-import { WorkflowState } from '../../../domain/workflow/value-objects/workflow-state';
-import { StateManager } from './state-manager';
-import { HistoryManager } from './history-manager';
+import { ThreadWorkflowState } from '../../../domain/threads/value-objects/thread-workflow-state';
+import { ThreadStateManager } from './thread-state-manager';
+import { ThreadHistoryManager } from './thread-history-manager';
 import { CheckpointManager } from '../../../domain/checkpoint/services/checkpoint-manager';
-import { ConditionalRouter } from './conditional-router';
+import { ThreadConditionalRouter } from './thread-conditional-router';
 import { INodeExecutor } from '../../../infrastructure/workflow/nodes/node-executor';
 
 /**
@@ -40,7 +40,7 @@ export interface WorkflowExecutionResult {
   /** 是否成功 */
   readonly success: boolean;
   /** 最终状态 */
-  readonly finalState: WorkflowState;
+  readonly finalState: ThreadWorkflowState;
   /** 执行的节点数量 */
   readonly executedNodes: number;
   /** 执行时间（毫秒） */
@@ -125,7 +125,7 @@ class WorkflowExecutionController implements ExecutionController {
 }
 
 /**
- * 工作流引擎
+ * 工作流执行引擎
  *
  * 职责：
  * - 协调工作流的执行
@@ -142,19 +142,19 @@ class WorkflowExecutionController implements ExecutionController {
  * - 支持错误处理和恢复
  * - 支持执行控制（暂停/恢复/取消）
  */
-export class WorkflowEngine {
-  private stateManager: StateManager;
-  private historyManager: HistoryManager;
+export class WorkflowExecutionEngine {
+  private stateManager: ThreadStateManager;
+  private historyManager: ThreadHistoryManager;
   private checkpointManager: CheckpointManager;
-  private router: ConditionalRouter;
+  private router: ThreadConditionalRouter;
   private nodeExecutor: INodeExecutor;
   private activeExecutions: Map<string, WorkflowExecutionController>;
 
   constructor(
-    stateManager: StateManager,
-    historyManager: HistoryManager,
+    stateManager: ThreadStateManager,
+    historyManager: ThreadHistoryManager,
     checkpointManager: CheckpointManager,
-    router: ConditionalRouter,
+    router: ThreadConditionalRouter,
     nodeExecutor: INodeExecutor
   ) {
     this.stateManager = stateManager;
@@ -347,7 +347,7 @@ export class WorkflowEngine {
 
       return {
         success: false,
-        finalState: currentState || WorkflowState.initial(workflow.workflowId),
+        finalState: currentState || ThreadWorkflowState.initial(workflow.workflowId),
         executedNodes,
         executionTime: Date.now() - startTime,
         error: errorMessage,
@@ -461,14 +461,14 @@ export class WorkflowEngine {
   /**
    * 执行节点（带重试）（私有方法）
    * @param node 节点
-   * @param state 工作流状态
+   * @param state 线程状态
    * @param threadId 线程ID
    * @param options 执行选项
    * @returns 执行结果
    */
   private async executeNodeWithRetry(
     node: any,
-    state: WorkflowState,
+    state: ThreadWorkflowState,
     threadId: string,
     options: { timeout: number; maxRetries: number; retryDelay: number }
   ): Promise<any> {
@@ -560,10 +560,10 @@ export class WorkflowEngine {
 
   /**
    * 构建节点执行上下文（私有方法）
-   * @param state 工作流状态
+   * @param state 线程状态
    * @returns 节点执行上下文
    */
-  private buildNodeContext(state: WorkflowState, threadId: string): any {
+  private buildNodeContext(state: ThreadWorkflowState, threadId: string): any {
     return {
       variables: state.data,
       metadata: state.metadata,

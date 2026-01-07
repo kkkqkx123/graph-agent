@@ -1,6 +1,6 @@
 import { EdgeValueObject } from '../../../domain/workflow/value-objects/edge/edge-value-object';
 import { NodeId } from '../../../domain/workflow/value-objects/node/node-id';
-import { WorkflowState } from '../../../domain/workflow/value-objects/workflow-state';
+import { ThreadWorkflowState } from '../../../domain/threads/value-objects/thread-workflow-state';
 import { ExpressionEvaluator } from '../../../infrastructure/workflow/services/expression-evaluator';
 
 /**
@@ -70,7 +70,7 @@ export interface RoutingOptions {
 }
 
 /**
- * 条件路由器
+ * 线程条件路由器
  *
  * 职责：
  * - 基于边的条件表达式进行路由决策
@@ -84,7 +84,7 @@ export interface RoutingOptions {
  * - 支持边权重和优先级
  * - 支持路由结果缓存
  */
-export class ConditionalRouter {
+export class ThreadConditionalRouter {
   private evaluator: ExpressionEvaluator;
   private routingHistory: Map<string, RoutingResult[]>;
   private decisionLogs: Map<string, RoutingDecisionLog[]>;
@@ -98,13 +98,13 @@ export class ConditionalRouter {
   /**
    * 路由到下一个节点（单路路由）
    * @param edges 边列表
-   * @param state 工作流状态
+   * @param state 线程状态
    * @param options 路由选项
    * @returns 路由结果，如果没有可用的边则返回 null
    */
   async route(
     edges: EdgeValueObject[],
-    state: WorkflowState,
+    state: ThreadWorkflowState,
     options: RoutingOptions = {}
   ): Promise<RoutingResult | null> {
     const context = this.buildContext(state, options.customContext);
@@ -184,13 +184,13 @@ export class ConditionalRouter {
   /**
    * 批量路由（支持多路分支）
    * @param edges 边列表
-   * @param state 工作流状态
+   * @param state 线程状态
    * @param options 路由选项
    * @returns 路由结果数组
    */
   async routeMultiple(
     edges: EdgeValueObject[],
-    state: WorkflowState,
+    state: ThreadWorkflowState,
     options: RoutingOptions = {}
   ): Promise<RoutingResult[]> {
     const context = this.buildContext(state, options.customContext);
@@ -297,12 +297,12 @@ export class ConditionalRouter {
 
   /**
    * 构建评估上下文（私有方法）
-   * @param state 工作流状态
+   * @param state 线程状态
    * @param customContext 自定义上下文
    * @returns 评估上下文
    */
   private buildContext(
-    state: WorkflowState,
+    state: ThreadWorkflowState,
     customContext?: Record<string, any>
   ): Record<string, any> {
     return {

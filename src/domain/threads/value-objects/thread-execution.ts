@@ -1,8 +1,10 @@
 import { ValueObject, ID, Timestamp } from '../../common/value-objects';
 import { ThreadStatus } from './thread-status';
-import { NodeId, WorkflowState, ExecutionHistory } from '../../workflow/value-objects';
+import { NodeId } from '../../workflow/value-objects';
+import { ExecutionHistory } from '../../workflow/value-objects/execution';
 import { NodeExecution } from './node-execution';
 import { ExecutionContext } from './execution-context';
+import { ThreadWorkflowState } from './thread-workflow-state';
 
 /**
  * 操作记录接口
@@ -63,7 +65,7 @@ export interface ThreadExecutionProps {
   readonly operationHistory: OperationRecord[];
   readonly forkInfo?: ForkInfo;
   readonly copyInfo?: CopyInfo;
-  readonly workflowState?: WorkflowState;
+  readonly workflowState?: ThreadWorkflowState;
 }
 
 /**
@@ -522,7 +524,7 @@ export class ThreadExecution extends ValueObject<ThreadExecutionProps> {
    * @param workflowState 新的工作流状态
    * @returns 新的线程执行实例
    */
-  public updateWorkflowState(workflowState: WorkflowState): ThreadExecution {
+  public updateWorkflowState(workflowState: ThreadWorkflowState): ThreadExecution {
     return new ThreadExecution({
       ...this.props,
       workflowState,
@@ -542,13 +544,7 @@ export class ThreadExecution extends ValueObject<ThreadExecutionProps> {
       throw new Error('工作流状态不存在');
     }
 
-    const newData = { ...currentState.data, [key]: value };
-    const newState = WorkflowState.create({
-      ...currentState.toProps(),
-      data: newData,
-      updatedAt: Timestamp.now(),
-    });
-
+    const newState = currentState.setData(key, value);
     return this.updateWorkflowState(newState);
   }
 
@@ -563,12 +559,7 @@ export class ThreadExecution extends ValueObject<ThreadExecutionProps> {
       throw new Error('工作流状态不存在');
     }
 
-    const newState = WorkflowState.create({
-      ...currentState.toProps(),
-      currentNodeId: nodeId,
-      updatedAt: Timestamp.now(),
-    });
-
+    const newState = currentState.setCurrentNodeId(nodeId);
     return this.updateWorkflowState(newState);
   }
 
@@ -583,12 +574,7 @@ export class ThreadExecution extends ValueObject<ThreadExecutionProps> {
       throw new Error('工作流状态不存在');
     }
 
-    const newState = WorkflowState.create({
-      ...currentState.toProps(),
-      history: [...currentState.history, history],
-      updatedAt: Timestamp.now(),
-    });
-
+    const newState = currentState.addHistory(history);
     return this.updateWorkflowState(newState);
   }
 
@@ -596,7 +582,7 @@ export class ThreadExecution extends ValueObject<ThreadExecutionProps> {
    * 获取工作流状态
    * @returns 工作流状态
    */
-  public getWorkflowState(): WorkflowState | undefined {
+  public getWorkflowState(): ThreadWorkflowState | undefined {
     return this.props.workflowState;
   }
 

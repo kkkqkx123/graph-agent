@@ -11,6 +11,10 @@ export * from './thread-management-service';
 
 // 执行服务
 export * from './thread-execution-service';
+export * from './workflow-execution-engine';
+export * from './thread-state-manager';
+export * from './thread-history-manager';
+export * from './thread-conditional-router';
 
 // 监控服务
 export * from './thread-monitoring-service';

@@ -17,7 +17,7 @@ import { BaseRepository } from './base-repository';
 import { ConnectionManager } from '../connection-manager';
 import { Metadata } from '../../../domain/checkpoint/value-objects';
 import { DeletionStatus } from '../../../domain/checkpoint/value-objects';
-import { WorkflowState } from '../../../domain/workflow/value-objects';
+import { ThreadWorkflowState } from '../../../domain/threads/value-objects/thread-workflow-state';
 
 @injectable()
 export class ThreadRepository
@@ -77,7 +77,7 @@ export class ThreadRepository
         nodeExecutions: new Map(Object.entries(model.nodeExecutions || {})) as Map<string, any>,
         context,
         operationHistory: [],
-        workflowState: model.workflowState ? WorkflowState.fromProps(model.workflowState as any) : undefined,
+        workflowState: model.workflowState ? ThreadWorkflowState.fromProps(model.workflowState as any) : undefined,
       });
 
       const threadData = {

@@ -18,11 +18,11 @@ import { Thread, IThreadRepository } from '../../../domain/threads';
 import { Workflow, IWorkflowRepository } from '../../../domain/workflow';
 import { ID, ILogger, Timestamp } from '../../../domain/common';
 import { BaseApplicationService } from '../../common/base-application-service';
-import { WorkflowEngine } from '../../workflow/services/workflow-engine';
-import { StateManager } from '../../workflow/services/state-manager';
-import { HistoryManager } from '../../workflow/services/history-manager';
+import { WorkflowExecutionEngine } from './workflow-execution-engine';
+import { ThreadStateManager } from './thread-state-manager';
+import { ThreadHistoryManager } from './thread-history-manager';
 import { CheckpointManager } from '../../../domain/checkpoint/services/checkpoint-manager';
-import { ConditionalRouter } from '../../workflow/services/conditional-router';
+import { ThreadConditionalRouter } from './thread-conditional-router';
 import { ExpressionEvaluator } from '../../../infrastructure/workflow/services/expression-evaluator';
 import { INodeExecutor } from '../../../infrastructure/workflow/nodes/node-executor';
 import { TYPES } from '../../../di/service-keys';
@@ -65,11 +65,11 @@ export interface SubWorkflowExecutionResult {
  */
 @injectable()
 export class ThreadExecutionService extends BaseApplicationService {
-  private readonly workflowEngine: WorkflowEngine;
-  private readonly stateManager: StateManager;
-  private readonly historyManager: HistoryManager;
+  private readonly workflowEngine: WorkflowExecutionEngine;
+  private readonly stateManager: ThreadStateManager;
+  private readonly historyManager: ThreadHistoryManager;
   private readonly checkpointManager: CheckpointManager;
-  private readonly router: ConditionalRouter;
+  private readonly router: ThreadConditionalRouter;
   private readonly evaluator: ExpressionEvaluator;
 
   constructor(
@@ -84,11 +84,11 @@ export class ThreadExecutionService extends BaseApplicationService {
     // 注意：这些配置值应该从配置文件中读取
     // 这里使用默认值，后续可以通过依赖注入配置对象来覆盖
     this.evaluator = new ExpressionEvaluator();
-    this.stateManager = new StateManager();
-    this.historyManager = new HistoryManager();
+    this.stateManager = new ThreadStateManager();
+    this.historyManager = new ThreadHistoryManager();
     this.checkpointManager = new CheckpointManager(10, 1000); // maxCheckpointsPerThread, maxTotalCheckpoints
-    this.router = new ConditionalRouter(this.evaluator);
-    this.workflowEngine = new WorkflowEngine(
+    this.router = new ThreadConditionalRouter(this.evaluator);
+    this.workflowEngine = new WorkflowExecutionEngine(
       this.stateManager,
       this.historyManager,
       this.checkpointManager,
