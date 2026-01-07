@@ -1,6 +1,6 @@
 import { injectable } from 'inversify';
-import { ID } from '../../../domain/common/value-objects';
-import { ExecutionHistory } from '../../../domain/workflow/value-objects/execution';
+import { ID } from '../../domain/common/value-objects';
+import { ExecutionHistory } from '../../domain/workflow/value-objects/execution';
 
 /**
  * 执行历史记录接口
@@ -52,6 +52,8 @@ export interface HistoryStatistics {
  * - 线程级别的历史隔离
  * - 支持历史记录查询
  * - 支持历史统计
+ *
+ * 属于基础设施层，提供技术性的历史管理支持
  */
 @injectable()
 export class ThreadHistoryManager {

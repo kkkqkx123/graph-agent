@@ -1,8 +1,8 @@
 import { injectable, inject } from 'inversify';
-import { ID, Timestamp } from '../../../domain/common/value-objects';
-import { ThreadWorkflowState } from '../../../domain/threads/value-objects/thread-workflow-state';
-import { IImmerAdapter, Patch } from '../../../infrastructure/common/immer/immer-adapter';
-import { TYPES } from '../../../di/service-keys';
+import { ID, Timestamp } from '../../domain/common/value-objects';
+import { ThreadWorkflowState } from '../../domain/threads/value-objects/thread-workflow-state';
+import { IImmerAdapter, Patch } from '../common/immer/immer-adapter';
+import { TYPES } from '../../di/service-keys';
 
 /**
  * 补丁历史记录
@@ -77,6 +77,8 @@ export interface StateUpdateOptions {
  * - 状态快照和恢复（由 CheckpointManager 负责）
  * - 执行历史记录（由 ThreadHistoryManager 负责）
  * - 状态缓存管理（由基础设施层负责）
+ *
+ * 属于基础设施层，提供技术性的状态管理支持
  */
 @injectable()
 export class ThreadStateManager {

@@ -1,14 +1,14 @@
 import { injectable, inject } from 'inversify';
-import { Workflow } from '../../../domain/workflow/entities/workflow';
-import { NodeId, NodeType } from '../../../domain/workflow/value-objects/node';
-import { ThreadWorkflowState } from '../../../domain/threads/value-objects/thread-workflow-state';
+import { Workflow } from '../../domain/workflow/entities/workflow';
+import { NodeId, NodeType } from '../../domain/workflow/value-objects/node';
+import { ThreadWorkflowState } from '../../domain/threads/value-objects/thread-workflow-state';
 import { ThreadStateManager } from './thread-state-manager';
 import { ThreadHistoryManager } from './thread-history-manager';
-import { CheckpointManager } from '../../../domain/checkpoint/services/checkpoint-manager';
+import { CheckpointManager } from '../../domain/checkpoint/services/checkpoint-manager';
 import { ThreadConditionalRouter } from './thread-conditional-router';
-import { INodeExecutor } from '../../../infrastructure/workflow/nodes/node-executor';
-import { FunctionRegistry } from '../../../infrastructure/workflow/functions/function-registry';
-import { TYPES } from '../../../di/service-keys';
+import { INodeExecutor } from '../workflow/nodes/node-executor';
+import { FunctionRegistry } from '../workflow/functions/function-registry';
+import { TYPES } from '../../di/service-keys';
 
 /**
  * 工作流执行选项接口
@@ -144,6 +144,8 @@ class WorkflowExecutionController implements ExecutionController {
  * - 支持执行超时和最大步数限制
  * - 支持错误处理和恢复
  * - 支持执行控制（暂停/恢复/取消）
+ *
+ * 属于基础设施层，提供技术性的工作流执行支持
  */
 @injectable()
 export class WorkflowExecutionEngine {

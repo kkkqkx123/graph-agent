@@ -11,10 +11,11 @@ export * from './thread-management-service';
 
 // 执行服务
 export * from './thread-execution-service';
-export * from './workflow-execution-engine';
-export * from './thread-state-manager';
-export * from './thread-history-manager';
-export * from './thread-conditional-router';
+// 以下模块已迁移到基础设施层，从基础设施层重新导出以保持向后兼容
+export * from '../../../infrastructure/threads/workflow-execution-engine';
+export * from '../../../infrastructure/threads/thread-state-manager';
+export * from '../../../infrastructure/threads/thread-history-manager';
+export * from '../../../infrastructure/threads/thread-conditional-router';
 
 // 监控服务
 export * from './thread-monitoring-service';
