@@ -1,12 +1,13 @@
 import { PromptContext } from '../../../../domain/workflow/value-objects/context/prompt-context';
-import { BaseContextProcessor } from './base-context-processor';
+import { SingletonContextProcessor } from './singleton-context-processor';
 
 /**
- * 系统上下文处理器
+ * 系统上下文处理器（静态函数）
  *
  * 保留系统级变量和元数据
+ * 逻辑完全固定，无需配置
  */
-export class SystemContextProcessor extends BaseContextProcessor {
+export class SystemContextProcessor extends SingletonContextProcessor {
   override readonly name = 'system_context';
   override readonly description = '保留系统级变量和元数据';
   override readonly version = '1.0.0';

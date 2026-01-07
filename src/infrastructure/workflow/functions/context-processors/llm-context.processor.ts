@@ -1,12 +1,13 @@
 import { PromptContext } from '../../../../domain/workflow/value-objects/context/prompt-context';
-import { BaseContextProcessor } from './base-context-processor';
+import { SingletonContextProcessor } from './singleton-context-processor';
 
 /**
- * LLM上下文处理器
+ * LLM上下文处理器（静态函数）
  *
  * 过滤掉工具调用历史，只保留LLM相关变量
+ * 逻辑完全固定，无需配置
  */
-export class LlmContextProcessor extends BaseContextProcessor {
+export class LlmContextProcessor extends SingletonContextProcessor {
   override readonly name = 'llm_context';
   override readonly description = '过滤掉工具调用历史，只保留LLM相关变量';
   override readonly version = '1.0.0';

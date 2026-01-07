@@ -1,12 +1,13 @@
 import { PromptContext } from '../../../../domain/workflow/value-objects/context/prompt-context';
-import { BaseContextProcessor } from './base-context-processor';
+import { SingletonContextProcessor } from './singleton-context-processor';
 
 /**
- * 工具上下文处理器
+ * 工具上下文处理器（静态函数）
  *
  * 提取工具相关变量
+ * 逻辑完全固定，无需配置
  */
-export class ToolContextProcessor extends BaseContextProcessor {
+export class ToolContextProcessor extends SingletonContextProcessor {
   override readonly name = 'tool_context';
   override readonly description = '提取工具相关变量';
   override readonly version = '1.0.0';

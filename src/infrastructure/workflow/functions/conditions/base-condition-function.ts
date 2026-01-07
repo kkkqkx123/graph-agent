@@ -7,10 +7,16 @@ import {
   ConditionFunctionConfig,
 } from '../types';
 import { WorkflowFunctionType } from '../../../../domain/workflow/value-objects/function-type';
+import { ConfigLoadingModule } from '../../../config/loading/config-loading-module';
 
 /**
  * 条件函数基类
  * 专门用于条件类型的函数，返回 boolean
+ *
+ * 支持配置加载：
+ * - 可以通过 setConfigLoader() 注入配置加载器
+ * - 支持从配置文件加载基础配置
+ * - 支持运行时配置覆盖
  */
 export abstract class BaseConditionFunction<
   TConfig extends ConditionFunctionConfig = ConditionFunctionConfig,
@@ -19,6 +25,11 @@ export abstract class BaseConditionFunction<
   public readonly metadata?: Record<string, any>;
   /** 函数类型标识 */
   public readonly type: WorkflowFunctionType = WorkflowFunctionType.CONDITION;
+  
+  /** 配置加载器 */
+  protected configLoader?: ConfigLoadingModule;
+  /** 基础配置（从配置文件加载） */
+  protected baseConfig: Record<string, any> = {};
 
   constructor(
     public readonly id: string,
@@ -29,6 +40,37 @@ export abstract class BaseConditionFunction<
     metadata?: Record<string, any>
   ) {
     this.metadata = metadata;
+  }
+  
+  /**
+   * 设置配置加载器
+   * @param loader 配置加载器实例
+   */
+  setConfigLoader(loader: ConfigLoadingModule): void {
+    this.configLoader = loader;
+    this.loadBaseConfig();
+  }
+  
+  /**
+   * 加载基础配置
+   * 从配置文件中加载函数的基础配置
+   */
+  protected loadBaseConfig(): void {
+    if (!this.configLoader) return;
+    
+    // 使用函数类名作为配置路径
+    const configPath = `functions.${this.constructor.name}`;
+    this.baseConfig = this.configLoader.get(configPath, {});
+  }
+  
+  /**
+   * 获取配置
+   * 合并基础配置和运行时配置
+   * @param runtimeConfig 运行时配置
+   * @returns 合并后的配置
+   */
+  protected getConfig<T = any>(runtimeConfig?: Record<string, any>): T {
+    return { ...this.baseConfig, ...runtimeConfig } as T;
   }
 
   getParameters(): FunctionParameter[] {

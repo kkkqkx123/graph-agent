@@ -1,12 +1,13 @@
 import { PromptContext } from '../../../../domain/workflow/value-objects/context/prompt-context';
-import { BaseContextProcessor } from './base-context-processor';
+import { SingletonContextProcessor } from './singleton-context-processor';
 
 /**
- * 人工交互上下文处理器
+ * 人工交互上下文处理器（静态函数）
  *
  * 保留用户交互相关数据
+ * 逻辑完全固定，无需配置
  */
-export class HumanContextProcessor extends BaseContextProcessor {
+export class HumanContextProcessor extends SingletonContextProcessor {
   override readonly name = 'human_context';
   override readonly description = '保留用户交互相关数据';
   override readonly version = '1.0.0';

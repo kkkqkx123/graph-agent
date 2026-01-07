@@ -1,6 +1,7 @@
 import { injectable } from 'inversify';
 import { IWorkflowFunction } from './types';
 import { WorkflowFunctionType } from '../../../domain/workflow/value-objects/function-type';
+import { ConfigLoadingModule } from '../../config/loading/config-loading-module';
 
 /**
  * 函数类型映射接口
@@ -15,12 +16,35 @@ export interface TypedFunctionRegistry {
 }
 
 /**
+ * 函数工厂接口
+ * 用于创建动态配置的函数实例
+ */
+export interface FunctionFactory {
+  create(config?: Record<string, any>): IWorkflowFunction;
+}
+
+/**
  * 函数注册表实现
  * 支持分层函数类型：CONDITION、ROUTING、TRIGGER、HOOK等。见doamin层的定义。
  * 提供类型安全的函数注册和获取方法
+ *
+ * 支持两种注册模式：
+ * 1. 单例模式：注册预实例化的函数（静态函数）
+ * 2. 工厂模式：注册函数工厂，支持动态配置（动态函数）
  */
 @injectable()
 export class FunctionRegistry {
+  // 单例函数（静态函数）
+  private singletonFunctions: Map<string, IWorkflowFunction> = new Map();
+  private singletonFunctionsByName: Map<string, IWorkflowFunction> = new Map();
+  
+  // 动态函数工厂（动态函数）
+  private functionFactories: Map<string, FunctionFactory> = new Map();
+  
+  // 配置加载器
+  private configLoader?: ConfigLoadingModule;
+  
+  // 类型化映射（保持向后兼容）
   private functions: Map<string, IWorkflowFunction> = new Map();
   private functionsByName: Map<string, IWorkflowFunction> = new Map();
   private typedFunctions: TypedFunctionRegistry = {
@@ -30,18 +54,23 @@ export class FunctionRegistry {
     hook: new Map(),
     contextProcessor: new Map(),
   };
+  
+  constructor(configLoader?: ConfigLoadingModule) {
+    this.configLoader = configLoader;
+  }
 
   /**
-   * 注册函数
+   * 注册单例函数（静态函数）
+   * 适用于逻辑完全固定、无需配置的函数
    * @param func 工作流函数
    */
-  registerFunction(func: IWorkflowFunction): void {
-    if (this.functions.has(func.id)) {
-      throw new Error(`函数ID ${func.id} 已存在`);
+  registerSingleton(func: IWorkflowFunction): void {
+    if (this.singletonFunctions.has(func.id)) {
+      throw new Error(`单例函数ID ${func.id} 已存在`);
     }
 
-    if (this.functionsByName.has(func.name)) {
-      throw new Error(`函数名称 ${func.name} 已存在`);
+    if (this.singletonFunctionsByName.has(func.name)) {
+      throw new Error(`单例函数名称 ${func.name} 已存在`);
     }
 
     // 验证函数类型
@@ -53,8 +82,34 @@ export class FunctionRegistry {
     // 注册到类型化映射
     this.registerTypedFunction(functionType, func);
 
+    this.singletonFunctions.set(func.id, func);
+    this.singletonFunctionsByName.set(func.name, func);
+    
+    // 同时注册到旧的映射以保持向后兼容
     this.functions.set(func.id, func);
     this.functionsByName.set(func.name, func);
+  }
+  
+  /**
+   * 注册函数工厂（动态函数）
+   * 适用于需要从配置文件加载参数的函数
+   * @param type 函数类型ID
+   * @param factory 函数工厂
+   */
+  registerFactory(type: string, factory: FunctionFactory): void {
+    if (this.functionFactories.has(type)) {
+      throw new Error(`函数工厂 ${type} 已存在`);
+    }
+    this.functionFactories.set(type, factory);
+  }
+  
+  /**
+   * 注册函数（向后兼容）
+   * @param func 工作流函数
+   */
+  registerFunction(func: IWorkflowFunction): void {
+    // 默认作为单例函数注册
+    this.registerSingleton(func);
   }
 
   /**
@@ -103,11 +158,31 @@ export class FunctionRegistry {
   }
 
   /**
-   * 获取函数
+   * 获取函数（统一接口）
    * @param id 函数ID
+   * @param config 运行时配置（仅动态函数需要）
    * @returns 工作流函数
    */
-  getFunction(id: string): IWorkflowFunction | null {
+  getFunction(id: string, config?: Record<string, any>): IWorkflowFunction | null {
+    // 1. 先查找单例函数
+    if (this.singletonFunctions.has(id)) {
+      return this.singletonFunctions.get(id)!;
+    }
+    
+    // 2. 通过工厂创建动态函数
+    const factory = this.functionFactories.get(id);
+    if (factory) {
+      const func = factory.create(config);
+      
+      // 如果有配置加载器，注入到函数中
+      if (this.configLoader && 'setConfigLoader' in func) {
+        (func as any).setConfigLoader(this.configLoader);
+      }
+      
+      return func;
+    }
+    
+    // 3. 查找旧的映射（向后兼容）
     return this.functions.get(id) || null;
   }
 
@@ -117,6 +192,12 @@ export class FunctionRegistry {
    * @returns 工作流函数
    */
   getFunctionByName(name: string): IWorkflowFunction | null {
+    // 1. 先查找单例函数
+    if (this.singletonFunctionsByName.has(name)) {
+      return this.singletonFunctionsByName.get(name)!;
+    }
+    
+    // 2. 查找旧的映射（向后兼容）
     return this.functionsByName.get(name) || null;
   }
 
@@ -134,7 +215,19 @@ export class FunctionRegistry {
    * @returns 是否存在
    */
   hasFunction(id: string): boolean {
-    return this.functions.has(id);
+    return this.singletonFunctions.has(id) || this.functionFactories.has(id) || this.functions.has(id);
+  }
+  
+  /**
+   * 获取所有函数ID
+   * @returns 函数ID列表
+   */
+  getAllFunctionIds(): string[] {
+    return [
+      ...Array.from(this.singletonFunctions.keys()),
+      ...Array.from(this.functionFactories.keys()),
+      ...Array.from(this.functions.keys())
+    ];
   }
 
   /**
