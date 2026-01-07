@@ -9,7 +9,7 @@
  * 注意：不负责文件路径构建和文件系统查找，这些由 PromptLoader 处理
  */
 
-import { ILogger } from '../../../domain/common/types/logger-types';
+import { ILogger } from '../../domain/common/types/logger-types';
 
 /**
  * 提示词引用
@@ -34,7 +34,7 @@ export class PromptReferenceParser {
     'examples',
   ];
 
-  constructor(private readonly logger: ILogger) {}
+  constructor(private readonly logger: ILogger) { }
 
   /**
    * 解析提示词引用

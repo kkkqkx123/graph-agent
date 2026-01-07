@@ -8,12 +8,12 @@
  */
 
 import { injectable, inject } from 'inversify';
-import { IPromptRepository } from '../../../domain/prompts/repositories/prompt-repository';
-import { PromptId } from '../../../domain/prompts/value-objects/prompt-id';
+import { IPromptRepository } from '../../domain/prompts/repositories/prompt-repository';
+import { PromptId } from '../../domain/prompts/value-objects/prompt-id';
 import { TemplateProcessor, TemplateProcessResult } from './template-processor';
-import { PromptContext, ContextProcessor } from '../../../domain/workflow/value-objects/context/prompt-context';
-import { LLMMessage } from '../../../domain/llm/value-objects/llm-message';
-import { ILogger } from '../../../domain/common/types/logger-types';
+import { PromptContext, ContextProcessor } from '../../domain/workflow/value-objects/context/prompt-context';
+import { LLMMessage } from '../../domain/llm/value-objects/llm-message';
+import { ILogger } from '../../domain/common/types/logger-types';
 
 /**
  * 提示词来源类型
@@ -47,7 +47,7 @@ export class PromptBuilder {
     @inject('PromptRepository') private promptRepository: IPromptRepository,
     @inject('TemplateProcessor') private templateProcessor: TemplateProcessor,
     @inject('ILogger') private readonly logger: ILogger
-  ) {}
+  ) { }
 
   /**
    * 构建提示词消息列表

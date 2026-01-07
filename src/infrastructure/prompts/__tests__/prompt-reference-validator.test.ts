@@ -3,7 +3,7 @@
  */
 
 import { PromptReferenceValidator, ReferenceErrorCode } from '../prompt-reference-validator';
-import { ILogger } from '../../../../../domain/common/types/logger-types';
+import { ILogger } from '../../../domain/common/types/logger-types';
 
 describe('PromptReferenceValidator', () => {
   let validator: PromptReferenceValidator;

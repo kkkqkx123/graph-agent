@@ -18,7 +18,7 @@ import {
   PromptBuilder,
   PromptSource,
   PromptBuildConfig,
-} from '../../prompts/services/prompt-builder';
+} from '../../prompts/prompt-builder';
 import { llmContextProcessor } from '../functions/nodes/context-processors';
 
 /**

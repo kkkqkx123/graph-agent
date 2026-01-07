@@ -3,7 +3,7 @@
  */
 
 import { PromptReferenceParser } from '../prompt-reference-parser';
-import { ILogger } from '../../../../../domain/common/types/logger-types';
+import { ILogger } from '../../../domain/common/types/logger-types';
 
 describe('PromptReferenceParser', () => {
   let parser: PromptReferenceParser;
@@ -24,14 +24,12 @@ describe('PromptReferenceParser', () => {
       const result = parser.parse('system.coder');
       expect(result.category).toBe('system');
       expect(result.name).toBe('coder');
-      expect(result.filePath).toBe('configs/prompts/system/coder.toml');
     });
 
     it('应该正确解析复合提示词引用', () => {
       const result = parser.parse('system.coder.code_style');
       expect(result.category).toBe('system');
       expect(result.name).toBe('coder.code_style');
-      expect(result.filePath).toBe('configs/prompts/system/coder/code_style.toml');
     });
 
     it('应该拒绝无效的引用格式', () => {

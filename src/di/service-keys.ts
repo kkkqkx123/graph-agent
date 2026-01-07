@@ -60,10 +60,10 @@ import { FunctionExecutionEngine } from '../infrastructure/workflow/services/fun
 import { MonitoringService } from '../infrastructure/workflow/services/monitoring-service';
 import { FunctionRegistry } from '../infrastructure/workflow/functions/function-registry';
 import { ConnectionManager } from '../infrastructure/persistence/connection-manager';
-import { PromptBuilder } from '../infrastructure/prompts/services/prompt-builder';
-import { TemplateProcessor } from '../infrastructure/prompts/services/template-processor';
-import { PromptReferenceParser } from '../infrastructure/prompts/services/prompt-reference-parser';
-import { PromptReferenceValidator } from '../infrastructure/prompts/services/prompt-reference-validator';
+import { PromptBuilder } from '../infrastructure/prompts/prompt-builder';
+import { TemplateProcessor } from '../infrastructure/prompts/template-processor';
+import { PromptReferenceParser } from '../infrastructure/prompts/prompt-reference-parser';
+import { PromptReferenceValidator } from '../infrastructure/prompts/prompt-reference-validator';
 import { NodeExecutor } from '../infrastructure/workflow/nodes/node-executor';
 import { EdgeExecutor } from '../infrastructure/workflow/edges/edge-executor';
 import { NodeRouter } from '../infrastructure/workflow/services/node-router';

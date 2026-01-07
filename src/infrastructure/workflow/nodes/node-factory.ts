@@ -11,7 +11,7 @@ import { DataTransformNode } from './data-transform-node';
 import { StartNode } from './start-node';
 import { EndNode } from './end-node';
 import { ContextProcessorNode } from './context-processor-node';
-import { PromptSource } from '../../prompts/services/prompt-builder';
+import { PromptSource } from '../../prompts/prompt-builder';
 
 /**
  * 节点配置接口

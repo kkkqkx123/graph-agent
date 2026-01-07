@@ -5,11 +5,8 @@
  */
 
 import { ThreadCheckpoint } from '../../../../domain/threads/checkpoints/entities/thread-checkpoint';
-import {
-  ThreadCheckpointDomainService,
-  ThreadCheckpointDomainServiceImpl,
-} from '../../../../domain/threads/checkpoints/services/thread-checkpoint-domain-service';
-import { IThreadCheckpointRepository } from '../../../../domain/threads/checkpoints/repositories/thread-checkpoint-repository';
+import { CheckpointRestoreService as InfraCheckpointRestoreService } from '../../../../infrastructure/checkpoints/checkpoint-restore-service';
+import { CheckpointBackupService } from '../../../../infrastructure/checkpoints/checkpoint-backup-service';
 import { BaseApplicationService } from '../../../common/base-application-service';
 import { ILogger } from '../../../../domain/common/types/logger-types';
 
@@ -17,14 +14,12 @@ import { ILogger } from '../../../../domain/common/types/logger-types';
  * 检查点恢复服务
  */
 export class CheckpointRestoreService extends BaseApplicationService {
-  private readonly domainService: ThreadCheckpointDomainService;
-
   constructor(
-    private readonly repository: IThreadCheckpointRepository,
+    private readonly restoreService: InfraCheckpointRestoreService,
+    private readonly backupService: CheckpointBackupService,
     logger: ILogger
   ) {
     super(logger);
-    this.domainService = new ThreadCheckpointDomainServiceImpl(repository);
   }
 
   /**
@@ -42,7 +37,7 @@ export class CheckpointRestoreService extends BaseApplicationService {
       '检查点恢复',
       async () => {
         const id = this.parseId(checkpointId, '检查点ID');
-        const stateData = await this.domainService.restoreFromCheckpoint(id);
+        const stateData = await this.restoreService.restoreFromCheckpoint(id);
 
         if (stateData) {
           this.logOperationSuccess('检查点恢复成功', { checkpointId });
@@ -64,7 +59,7 @@ export class CheckpointRestoreService extends BaseApplicationService {
       '检查点备份',
       async () => {
         const id = this.parseId(checkpointId, '检查点ID');
-        const backup = await this.domainService.createBackup(id);
+        const backup = await this.backupService.createBackup(id);
 
         this.logOperationSuccess('检查点备份创建成功', {
           originalCheckpointId: checkpointId,
@@ -85,7 +80,7 @@ export class CheckpointRestoreService extends BaseApplicationService {
       '备份恢复',
       async () => {
         const id = this.parseId(backupId, '备份ID');
-        const stateData = await this.domainService.restoreFromBackup(id);
+        const stateData = await this.backupService.restoreFromBackup(id);
 
         if (stateData) {
           this.logOperationSuccess('备份恢复成功', { backupId });

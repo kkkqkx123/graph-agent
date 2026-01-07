@@ -4,7 +4,7 @@
  * 负责验证提示词引用格式的有效性，并提供详细的验证结果和错误信息
  */
 
-import { ILogger } from '../../../domain/common/types/logger-types';
+import { ILogger } from '../../domain/common/types/logger-types';
 
 /**
  * 验证结果
@@ -41,7 +41,7 @@ export class PromptReferenceValidator {
     'examples',
   ];
 
-  constructor(private readonly logger: ILogger) {}
+  constructor(private readonly logger: ILogger) { }
 
   /**
    * 验证引用格式

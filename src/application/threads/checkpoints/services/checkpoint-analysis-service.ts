@@ -4,12 +4,8 @@
  * 负责检查点的统计、分析、清理和健康检查等功能
  */
 
-import { CheckpointStatistics } from '../../../../domain/threads/checkpoints/value-objects/checkpoint-statistics';
-import {
-  ThreadCheckpointDomainService,
-  ThreadCheckpointDomainServiceImpl,
-} from '../../../../domain/threads/checkpoints/services/thread-checkpoint-domain-service';
-import { IThreadCheckpointRepository } from '../../../../domain/threads/checkpoints/repositories/thread-checkpoint-repository';
+import { CheckpointCleanupService } from '../../../../infrastructure/checkpoints/checkpoint-cleanup-service';
+import { CheckpointAnalysisService as InfraCheckpointAnalysisService } from '../../../../infrastructure/checkpoints/checkpoint-analysis-service';
 import { BaseApplicationService } from '../../../common/base-application-service';
 import { ILogger } from '../../../../domain/common/types';
 
@@ -17,14 +13,12 @@ import { ILogger } from '../../../../domain/common/types';
  * 检查点分析服务
  */
 export class CheckpointAnalysisService extends BaseApplicationService {
-  private readonly domainService: ThreadCheckpointDomainService;
-
   constructor(
-    private readonly repository: IThreadCheckpointRepository,
+    private readonly cleanupService: CheckpointCleanupService,
+    private readonly analysisService: InfraCheckpointAnalysisService,
     logger: ILogger
   ) {
     super(logger);
-    this.domainService = new ThreadCheckpointDomainServiceImpl(repository);
   }
 
   /**
@@ -42,7 +36,7 @@ export class CheckpointAnalysisService extends BaseApplicationService {
       '过期检查点',
       async () => {
         const id = threadId ? this.parseId(threadId, '线程ID') : undefined;
-        const cleanedCount = await this.domainService.cleanupExpiredCheckpoints(id);
+        const cleanedCount = await this.cleanupService.cleanupExpiredCheckpoints(id);
 
         this.logOperationSuccess('过期检查点清理完成', {
           threadId,
@@ -63,7 +57,7 @@ export class CheckpointAnalysisService extends BaseApplicationService {
       '多余检查点',
       async () => {
         const id = this.parseId(threadId, '线程ID');
-        const cleanedCount = await this.domainService.cleanupExcessCheckpoints(id, maxCount);
+        const cleanedCount = await this.cleanupService.cleanupExcessCheckpoints(id, maxCount);
 
         this.logOperationSuccess('多余检查点清理完成', {
           threadId,
@@ -85,7 +79,7 @@ export class CheckpointAnalysisService extends BaseApplicationService {
       '旧检查点',
       async () => {
         const id = this.parseId(threadId, '线程ID');
-        const archivedCount = await this.domainService.archiveOldCheckpoints(id, days);
+        const archivedCount = await this.cleanupService.archiveOldCheckpoints(id, days);
 
         this.logOperationSuccess('旧检查点归档完成', {
           threadId,
@@ -107,7 +101,7 @@ export class CheckpointAnalysisService extends BaseApplicationService {
       '检查点创建频率分析',
       async () => {
         const id = this.parseId(threadId, '线程ID');
-        return await this.domainService.analyzeCheckpointFrequency(id);
+        return await this.analysisService.analyzeCheckpointFrequency(id);
       },
       { threadId }
     );
@@ -121,7 +115,7 @@ export class CheckpointAnalysisService extends BaseApplicationService {
       '检查点大小分布分析',
       async () => {
         const id = this.parseId(threadId, '线程ID');
-        return await this.domainService.analyzeCheckpointSizeDistribution(id);
+        return await this.analysisService.analyzeCheckpointSizeDistribution(id);
       },
       { threadId }
     );
@@ -135,7 +129,7 @@ export class CheckpointAnalysisService extends BaseApplicationService {
       '检查点类型分布分析',
       async () => {
         const id = this.parseId(threadId, '线程ID');
-        return await this.domainService.analyzeCheckpointTypeDistribution(id);
+        return await this.analysisService.analyzeCheckpointTypeDistribution(id);
       },
       { threadId }
     );
@@ -149,7 +143,7 @@ export class CheckpointAnalysisService extends BaseApplicationService {
       '优化策略建议',
       async () => {
         const id = this.parseId(threadId, '线程ID');
-        return await this.domainService.suggestOptimizationStrategy(id);
+        return await this.analysisService.suggestOptimizationStrategy(id);
       },
       { threadId }
     );
@@ -163,7 +157,7 @@ export class CheckpointAnalysisService extends BaseApplicationService {
       '健康检查',
       async () => {
         const id = threadId ? this.parseId(threadId, '线程ID') : undefined;
-        return await this.domainService.healthCheck(id);
+        return await this.analysisService.healthCheck(id);
       },
       { threadId }
     );

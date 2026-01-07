@@ -45,10 +45,10 @@ import { GroupTransformFunction } from '../../infrastructure/workflow/functions/
 
 // 基础设施服务
 import { ConnectionManager } from '../../infrastructure/persistence/connection-manager';
-import { PromptBuilder } from '../../infrastructure/prompts/services/prompt-builder';
-import { TemplateProcessor } from '../../infrastructure/prompts/services/template-processor';
-import { PromptReferenceParser } from '../../infrastructure/prompts/services/prompt-reference-parser';
-import { PromptReferenceValidator } from '../../infrastructure/prompts/services/prompt-reference-validator';
+import { PromptBuilder } from '../../infrastructure/prompts/prompt-builder';
+import { TemplateProcessor } from '../../infrastructure/prompts/template-processor';
+import { PromptReferenceParser } from '../../infrastructure/prompts/prompt-reference-parser';
+import { PromptReferenceValidator } from '../../infrastructure/prompts/prompt-reference-validator';
 import { NodeExecutor } from '../../infrastructure/workflow/nodes/node-executor';
 import { EdgeExecutor } from '../../infrastructure/workflow/edges/edge-executor';
 import { NodeRouter } from '../../infrastructure/workflow/services/node-router';
@@ -102,21 +102,21 @@ export const infrastructureBindings = new ContainerModule((bind: any) => {
   bind(TYPES.GraphAlgorithmServiceImpl).to(GraphAlgorithmServiceImpl).inSingletonScope();
   bind(TYPES.FunctionExecutionEngine).to(FunctionExecutionEngine).inSingletonScope();
   bind(TYPES.MonitoringService).to(MonitoringService).inSingletonScope();
-  
+
   // ========== 函数注册表绑定 ==========
-  
+
   // 创建并配置 FunctionRegistry 单例
   bind(TYPES.FunctionRegistry)
     .toDynamicValue((context: any) => {
       const functionRegistry = new FunctionRegistry();
-      
+
       // 注册内置的转换函数
       functionRegistry.registerSingleton(new MapTransformFunction());
       functionRegistry.registerSingleton(new FilterTransformFunction());
       functionRegistry.registerSingleton(new ReduceTransformFunction());
       functionRegistry.registerSingleton(new SortTransformFunction());
       functionRegistry.registerSingleton(new GroupTransformFunction());
-      
+
       return functionRegistry;
     })
     .inSingletonScope();

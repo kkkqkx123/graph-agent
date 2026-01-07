@@ -12,11 +12,11 @@
  */
 
 import { injectable, inject } from 'inversify';
-import { IPromptRepository } from '../../../domain/prompts/repositories/prompt-repository';
-import { PromptId } from '../../../domain/prompts/value-objects/prompt-id';
+import { IPromptRepository } from '../../domain/prompts/repositories/prompt-repository';
+import { PromptId } from '../../domain/prompts/value-objects/prompt-id';
 import { PromptReferenceParser } from './prompt-reference-parser';
 import { PromptReferenceValidator } from './prompt-reference-validator';
-import { ILogger } from '../../../domain/common/types/logger-types';
+import { ILogger } from '../../domain/common/types/logger-types';
 
 /**
  * 模板处理结果
@@ -38,7 +38,7 @@ export class TemplateProcessor {
     @inject('PromptReferenceParser') private referenceParser: PromptReferenceParser,
     @inject('PromptReferenceValidator') private referenceValidator: PromptReferenceValidator,
     @inject('ILogger') private readonly logger: ILogger
-  ) {}
+  ) { }
 
   /**
    * 处理模板

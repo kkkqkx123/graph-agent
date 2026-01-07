@@ -2,10 +2,13 @@ import { ID } from '../../../../domain/common/value-objects/id';
 import { ThreadCheckpoint } from '../../../../domain/threads/checkpoints/entities/thread-checkpoint';
 import { CheckpointType } from '../../../../domain/checkpoint/value-objects/checkpoint-type';
 import { CheckpointStatistics } from '../../../../domain/threads/checkpoints/value-objects/checkpoint-statistics';
-import {
-  ThreadCheckpointDomainService,
-  ThreadCheckpointDomainServiceImpl,
-} from '../../../../domain/threads/checkpoints/services/thread-checkpoint-domain-service';
+import { CheckpointCreationService } from '../../../../infrastructure/checkpoints/checkpoint-creation-service';
+import { CheckpointRestoreService } from '../../../../infrastructure/checkpoints/checkpoint-restore-service';
+import { CheckpointQueryService } from '../../../../infrastructure/checkpoints/checkpoint-query-service';
+import { CheckpointCleanupService } from '../../../../infrastructure/checkpoints/checkpoint-cleanup-service';
+import { CheckpointBackupService } from '../../../../infrastructure/checkpoints/checkpoint-backup-service';
+import { CheckpointAnalysisService } from '../../../../infrastructure/checkpoints/checkpoint-analysis-service';
+import { CheckpointManagementService } from '../../../../infrastructure/checkpoints/checkpoint-management-service';
 import { IThreadCheckpointRepository } from '../../../../domain/threads/checkpoints/repositories/thread-checkpoint-repository';
 import { ILogger } from '../../../../domain/common/types/logger-types';
 
@@ -110,13 +113,17 @@ export interface CheckpointStatisticsInfo {
  * 提供Thread检查点的应用层服务，整合所有checkpoint功能
  */
 export class CheckpointService {
-  private readonly domainService: ThreadCheckpointDomainService;
-
   constructor(
+    private readonly creationService: CheckpointCreationService,
+    private readonly restoreService: CheckpointRestoreService,
+    private readonly queryService: CheckpointQueryService,
+    private readonly cleanupService: CheckpointCleanupService,
+    private readonly backupService: CheckpointBackupService,
+    private readonly analysisService: CheckpointAnalysisService,
+    private readonly managementService: CheckpointManagementService,
     private readonly repository: IThreadCheckpointRepository,
     private readonly logger: ILogger
   ) {
-    this.domainService = new ThreadCheckpointDomainServiceImpl(repository);
   }
 
   /**
@@ -136,7 +143,7 @@ export class CheckpointService {
 
       switch (request.type) {
         case 'manual':
-          checkpoint = await this.domainService.createManualCheckpoint(
+          checkpoint = await this.creationService.createManualCheckpoint(
             threadId,
             request.stateData,
             request.title,
@@ -148,7 +155,7 @@ export class CheckpointService {
           break;
 
         case 'error':
-          checkpoint = await this.domainService.createErrorCheckpoint(
+          checkpoint = await this.creationService.createErrorCheckpoint(
             threadId,
             request.stateData,
             request.description || '',
@@ -159,7 +166,7 @@ export class CheckpointService {
           break;
 
         case 'milestone':
-          checkpoint = await this.domainService.createMilestoneCheckpoint(
+          checkpoint = await this.creationService.createMilestoneCheckpoint(
             threadId,
             request.stateData,
             request.title || '',
@@ -171,7 +178,7 @@ export class CheckpointService {
 
         case 'auto':
         default:
-          checkpoint = await this.domainService.createAutoCheckpoint(
+          checkpoint = await this.creationService.createAutoCheckpoint(
             threadId,
             request.stateData,
             request.metadata,
@@ -238,7 +245,7 @@ export class CheckpointService {
       this.logger.info('正在从检查点恢复', { checkpointId });
 
       const id = ID.fromString(checkpointId);
-      const stateData = await this.domainService.restoreFromCheckpoint(id);
+      const stateData = await this.restoreService.restoreFromCheckpoint(id);
 
       if (stateData) {
         this.logger.info('检查点恢复成功', { checkpointId });
@@ -278,7 +285,7 @@ export class CheckpointService {
   async getThreadCheckpointHistory(threadId: string, limit?: number): Promise<CheckpointInfo[]> {
     try {
       const id = ID.fromString(threadId);
-      const checkpoints = await this.domainService.getThreadCheckpointHistory(id, limit);
+      const checkpoints = await this.queryService.getThreadCheckpointHistory(id, limit);
 
       return checkpoints.map(cp => this.mapToCheckpointInfo(cp));
     } catch (error) {
@@ -293,7 +300,7 @@ export class CheckpointService {
   async getCheckpointStatistics(threadId?: string): Promise<CheckpointStatisticsInfo> {
     try {
       const id = threadId ? ID.fromString(threadId) : undefined;
-      const statistics = await this.domainService.getCheckpointStatistics(id);
+      const statistics = await this.queryService.getCheckpointStatistics(id);
 
       return this.mapToCheckpointStatisticsInfo(statistics);
     } catch (error) {
@@ -308,7 +315,7 @@ export class CheckpointService {
   async cleanupExpiredCheckpoints(threadId?: string): Promise<number> {
     try {
       const id = threadId ? ID.fromString(threadId) : undefined;
-      const cleanedCount = await this.domainService.cleanupExpiredCheckpoints(id);
+      const cleanedCount = await this.cleanupService.cleanupExpiredCheckpoints(id);
 
       this.logger.info('过期检查点清理完成', {
         threadId,
@@ -328,7 +335,7 @@ export class CheckpointService {
   async cleanupExcessCheckpoints(threadId: string, maxCount: number): Promise<number> {
     try {
       const id = ID.fromString(threadId);
-      const cleanedCount = await this.domainService.cleanupExcessCheckpoints(id, maxCount);
+      const cleanedCount = await this.cleanupService.cleanupExcessCheckpoints(id, maxCount);
 
       this.logger.info('多余检查点清理完成', {
         threadId,
@@ -349,7 +356,7 @@ export class CheckpointService {
   async archiveOldCheckpoints(threadId: string, days: number): Promise<number> {
     try {
       const id = ID.fromString(threadId);
-      const archivedCount = await this.domainService.archiveOldCheckpoints(id, days);
+      const archivedCount = await this.cleanupService.archiveOldCheckpoints(id, days);
 
       this.logger.info('旧检查点归档完成', {
         threadId,
@@ -370,7 +377,7 @@ export class CheckpointService {
   async extendCheckpointExpiration(checkpointId: string, hours: number): Promise<boolean> {
     try {
       const id = ID.fromString(checkpointId);
-      const success = await this.domainService.extendCheckpointExpiration(id, hours);
+      const success = await this.managementService.extendCheckpointExpiration(id, hours);
 
       if (success) {
         this.logger.info('检查点过期时间延长成功', { checkpointId, hours });
@@ -393,7 +400,7 @@ export class CheckpointService {
       this.logger.info('正在创建检查点备份', { checkpointId });
 
       const id = ID.fromString(checkpointId);
-      const backup = await this.domainService.createBackup(id);
+      const backup = await this.backupService.createBackup(id);
 
       this.logger.info('检查点备份创建成功', {
         originalCheckpointId: checkpointId,
@@ -415,7 +422,7 @@ export class CheckpointService {
       this.logger.info('正在从备份恢复', { backupId });
 
       const id = ID.fromString(backupId);
-      const stateData = await this.domainService.restoreFromBackup(id);
+      const stateData = await this.backupService.restoreFromBackup(id);
 
       if (stateData) {
         this.logger.info('备份恢复成功', { backupId });
@@ -436,7 +443,7 @@ export class CheckpointService {
   async getBackupChain(checkpointId: string): Promise<CheckpointInfo[]> {
     try {
       const id = ID.fromString(checkpointId);
-      const backupChain = await this.domainService.getBackupChain(id);
+      const backupChain = await this.backupService.getBackupChain(id);
 
       return backupChain.map(cp => this.mapToCheckpointInfo(cp));
     } catch (error) {
@@ -451,7 +458,7 @@ export class CheckpointService {
   async analyzeCheckpointFrequency(threadId: string): Promise<any> {
     try {
       const id = ID.fromString(threadId);
-      return await this.domainService.analyzeCheckpointFrequency(id);
+      return await this.analysisService.analyzeCheckpointFrequency(id);
     } catch (error) {
       this.logger.error('分析检查点创建频率失败', error as Error);
       throw error;
@@ -464,7 +471,7 @@ export class CheckpointService {
   async analyzeCheckpointSizeDistribution(threadId: string): Promise<any> {
     try {
       const id = ID.fromString(threadId);
-      return await this.domainService.analyzeCheckpointSizeDistribution(id);
+      return await this.analysisService.analyzeCheckpointSizeDistribution(id);
     } catch (error) {
       this.logger.error('分析检查点大小分布失败', error as Error);
       throw error;
@@ -477,7 +484,7 @@ export class CheckpointService {
   async analyzeCheckpointTypeDistribution(threadId: string): Promise<any> {
     try {
       const id = ID.fromString(threadId);
-      return await this.domainService.analyzeCheckpointTypeDistribution(id);
+      return await this.analysisService.analyzeCheckpointTypeDistribution(id);
     } catch (error) {
       this.logger.error('分析检查点类型分布失败', error as Error);
       throw error;
@@ -490,7 +497,7 @@ export class CheckpointService {
   async suggestOptimizationStrategy(threadId: string): Promise<any> {
     try {
       const id = ID.fromString(threadId);
-      return await this.domainService.suggestOptimizationStrategy(id);
+      return await this.analysisService.suggestOptimizationStrategy(id);
     } catch (error) {
       this.logger.error('建议优化策略失败', error as Error);
       throw error;
@@ -503,7 +510,7 @@ export class CheckpointService {
   async healthCheck(threadId?: string): Promise<any> {
     try {
       const id = threadId ? ID.fromString(threadId) : undefined;
-      return await this.domainService.healthCheck(id);
+      return await this.analysisService.healthCheck(id);
     } catch (error) {
       this.logger.error('健康检查失败', error as Error);
       throw error;

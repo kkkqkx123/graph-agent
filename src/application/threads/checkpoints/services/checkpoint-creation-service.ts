@@ -6,11 +6,7 @@
 
 import { ThreadCheckpoint } from '../../../../domain/threads/checkpoints/entities/thread-checkpoint';
 import { CheckpointType } from '../../../../domain/checkpoint/value-objects/checkpoint-type';
-import {
-  ThreadCheckpointDomainService,
-  ThreadCheckpointDomainServiceImpl,
-} from '../../../../domain/threads/checkpoints/services/thread-checkpoint-domain-service';
-import { IThreadCheckpointRepository } from '../../../../domain/threads/checkpoints/repositories/thread-checkpoint-repository';
+import { CheckpointCreationService as InfraCheckpointCreationService } from '../../../../infrastructure/checkpoints/checkpoint-creation-service';
 import { BaseApplicationService } from '../../../common/base-application-service';
 import {
   CreateCheckpointRequest,
@@ -24,14 +20,11 @@ import { ILogger } from '../../../../domain/common/types/logger-types';
  * 检查点创建服务
  */
 export class CheckpointCreationService extends BaseApplicationService {
-  private readonly domainService: ThreadCheckpointDomainService;
-
   constructor(
-    private readonly repository: IThreadCheckpointRepository,
+    private readonly creationService: InfraCheckpointCreationService,
     logger: ILogger
   ) {
     super(logger);
-    this.domainService = new ThreadCheckpointDomainServiceImpl(repository);
   }
 
   /**
@@ -55,7 +48,7 @@ export class CheckpointCreationService extends BaseApplicationService {
 
         switch (request.type) {
           case 'manual':
-            checkpoint = await this.domainService.createManualCheckpoint(
+            checkpoint = await this.creationService.createManualCheckpoint(
               threadId,
               request.stateData,
               request.title,
@@ -67,7 +60,7 @@ export class CheckpointCreationService extends BaseApplicationService {
             break;
 
           case 'error':
-            checkpoint = await this.domainService.createErrorCheckpoint(
+            checkpoint = await this.creationService.createErrorCheckpoint(
               threadId,
               request.stateData,
               request.description || '',
@@ -78,7 +71,7 @@ export class CheckpointCreationService extends BaseApplicationService {
             break;
 
           case 'milestone':
-            checkpoint = await this.domainService.createMilestoneCheckpoint(
+            checkpoint = await this.creationService.createMilestoneCheckpoint(
               threadId,
               request.stateData,
               request.title || '',
@@ -90,7 +83,7 @@ export class CheckpointCreationService extends BaseApplicationService {
 
           case 'auto':
           default:
-            checkpoint = await this.domainService.createAutoCheckpoint(
+            checkpoint = await this.creationService.createAutoCheckpoint(
               threadId,
               request.stateData,
               request.metadata,
