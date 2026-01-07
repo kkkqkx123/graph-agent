@@ -1,14 +1,22 @@
-import { PromptContext } from '../../../../domain/workflow/value-objects/context';
-import { ContextProcessor } from '../../services/context-processor-service';
+import { PromptContext } from '../../../../domain/workflow/value-objects/context/prompt-context';
+import { BaseContextProcessor } from './base-context-processor';
 
 /**
  * 隔离上下文处理器
  *
  * 只保留模板，清空其他所有内容
  */
-export const isolateProcessor: ContextProcessor = (
-  context: PromptContext,
-  config?: Record<string, unknown>
-): PromptContext => {
-  return PromptContext.create(context.template, new Map(), [], {});
-};
+export class IsolateProcessor extends BaseContextProcessor {
+  override readonly name = 'isolate';
+  override readonly description = '只保留模板，清空其他所有内容';
+  override readonly version = '1.0.0';
+
+  process(context: PromptContext, config?: Record<string, unknown>): PromptContext {
+    return PromptContext.create(context.template, new Map(), [], {});
+  }
+}
+
+/**
+ * 隔离上下文处理器实例
+ */
+export const isolateProcessor = new IsolateProcessor().toProcessor();

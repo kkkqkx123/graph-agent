@@ -15,6 +15,7 @@ export * from './condition-node';
 export * from './data-transform-node';
 export * from './wait-node';
 export * from './user-interaction-node';
+export * from './context-processor-node';
 
 // 并行处理节点
 export * from './parallel';

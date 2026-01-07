@@ -39,7 +39,6 @@ import { ThreadExecutionService } from '../application/threads/services/thread-e
 import { ThreadMonitoringService } from '../application/threads/services/thread-monitoring-service';
 import { SessionMonitoringService } from '../application/sessions/services/session-monitoring-service';
 import { GraphAlgorithmService } from '../infrastructure/workflow/services/graph-algorithm-service';
-import { ContextProcessorService } from '../infrastructure/workflow/services/context-processor-service';
 
 // Infrastructure层实现
 import { SessionRepository as SessionInfrastructureRepository } from '../infrastructure/persistence/repositories/session-repository';
@@ -49,7 +48,6 @@ import { PromptRepository as PromptInfrastructureRepository } from '../infrastru
 import { ThreadCheckpointRepository as ThreadCheckpointInfrastructureRepository } from '../infrastructure/persistence/repositories/thread-checkpoint-repository';
 import { HistoryRepository as HistoryInfrastructureRepository } from '../infrastructure/persistence/repositories/history-repository';
 import { GraphAlgorithmServiceImpl } from '../infrastructure/workflow/services/graph-algorithm-service';
-import { ContextProcessorServiceImpl } from '../infrastructure/workflow/services/context-processor-service';
 import { FunctionExecutionEngine } from '../infrastructure/workflow/services/function-execution-engine';
 import { MonitoringService } from '../infrastructure/workflow/services/monitoring-service';
 import { ConnectionManager } from '../infrastructure/persistence/connection-manager';
@@ -117,7 +115,6 @@ export interface ServiceTypes {
 
   // 业务服务接口
   GraphAlgorithmService: GraphAlgorithmService;
-  ContextProcessorService: ContextProcessorService;
 
   // ========== Application层接口（仅用于类型定义） ==========
 
@@ -136,7 +133,6 @@ export interface ServiceTypes {
 
   // 业务服务实现
   GraphAlgorithmServiceImpl: GraphAlgorithmServiceImpl;
-  ContextProcessorServiceImpl: ContextProcessorServiceImpl;
   FunctionExecutionEngine: FunctionExecutionEngine;
   MonitoringService: MonitoringService;
 
@@ -251,9 +247,6 @@ export const TYPES: {
   GraphAlgorithmService: Symbol.for(
     'GraphAlgorithmService'
   ) as TypedServiceIdentifier<'GraphAlgorithmService'>,
-  ContextProcessorService: Symbol.for(
-    'ContextProcessorService'
-  ) as TypedServiceIdentifier<'ContextProcessorService'>,
 
   // ========== Application层接口（仅用于类型定义） ==========
 
@@ -286,9 +279,6 @@ export const TYPES: {
   GraphAlgorithmServiceImpl: Symbol.for(
     'GraphAlgorithmServiceImpl'
   ) as TypedServiceIdentifier<'GraphAlgorithmServiceImpl'>,
-  ContextProcessorServiceImpl: Symbol.for(
-    'ContextProcessorServiceImpl'
-  ) as TypedServiceIdentifier<'ContextProcessorServiceImpl'>,
   FunctionExecutionEngine: Symbol.for(
     'FunctionExecutionEngine'
   ) as TypedServiceIdentifier<'FunctionExecutionEngine'>,

@@ -1,5 +1,4 @@
 export * from './graph-algorithm-service';
-export * from './context-processor-service';
 export {
   FunctionExecutionEngine,
   FunctionExecutionStrategy,

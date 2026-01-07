@@ -17,6 +17,7 @@ export enum NodeTypeValue {
   TOOL = 'tool',
   WAIT = 'wait',
   USER_INTERACTION = 'user-interaction',
+  CONTEXT_PROCESSOR = 'context-processor',
 }
 
 /**
@@ -195,6 +196,17 @@ export class NodeType extends ValueObject<NodeTypeProps> {
   }
 
   /**
+   * 创建上下文处理器节点类型
+   * @param contextType 上下文类型（可选，默认为TRANSFORM）
+   * @returns 上下文处理器节点类型实例
+   */
+  public static contextProcessor(
+    contextType: NodeContextTypeValue = NodeContextTypeValue.TRANSFORM
+  ): NodeType {
+    return new NodeType({ value: NodeTypeValue.CONTEXT_PROCESSOR, contextType });
+  }
+
+  /**
    * 从字符串创建节点类型
    * @param type 类型字符串
    * @param contextType 上下文类型（可选，默认为PASS_THROUGH）
@@ -332,6 +344,14 @@ export class NodeType extends ValueObject<NodeTypeProps> {
   }
 
   /**
+   * 检查是否为上下文处理器节点
+   * @returns 是否为上下文处理器节点
+   */
+  public isContextProcessor(): boolean {
+    return this.props.value === NodeTypeValue.CONTEXT_PROCESSOR;
+  }
+
+  /**
    * 检查是否为用户交互节点
    * @returns 是否为用户交互节点
    */
@@ -367,7 +387,8 @@ export class NodeType extends ValueObject<NodeTypeProps> {
       this.isLLM() ||
       this.isTool() ||
       this.isWait() ||
-      this.isUserInteraction()
+      this.isUserInteraction() ||
+      this.isContextProcessor()
     );
   }
 
@@ -448,6 +469,7 @@ export class NodeType extends ValueObject<NodeTypeProps> {
       [NodeTypeValue.WAIT]: '等待节点，处理等待和延迟逻辑',
       [NodeTypeValue.USER_INTERACTION]: '用户交互节点，通过前端与用户交互进行人工中转',
       [NodeTypeValue.CUSTOM]: '自定义节点，根据特定逻辑执行',
+      [NodeTypeValue.CONTEXT_PROCESSOR]: '上下文处理器节点，处理和转换提示词上下文',
     };
 
     return descriptions[this.props.value];

@@ -11,8 +11,7 @@ import { injectable, inject } from 'inversify';
 import { IPromptRepository } from '../../../domain/prompts/repositories/prompt-repository';
 import { PromptId } from '../../../domain/prompts/value-objects/prompt-id';
 import { TemplateProcessor, TemplateProcessResult } from './template-processor';
-import { PromptContext } from '../../../domain/workflow/value-objects/context/prompt-context';
-import { ContextProcessor } from '../../workflow/services/context-processor-service';
+import { PromptContext, ContextProcessor } from '../../../domain/workflow/value-objects/context/prompt-context';
 import { LLMMessage } from '../../../domain/llm/value-objects/llm-message';
 import { ILogger } from '../../../domain/common/types/logger-types';
 

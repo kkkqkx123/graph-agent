@@ -92,12 +92,6 @@ export const applicationBindings = new ContainerModule((bind: any) => {
     })
     .inSingletonScope();
 
-  bind(TYPES.ContextProcessorService)
-    .toDynamicValue((context: any) => {
-      return context.container.get(TYPES.ContextProcessorServiceImpl);
-    })
-    .inSingletonScope();
-
   // ========== Application层接口到实现的绑定 ==========
   // 注意：Application层服务直接绑定实现类，不使用接口
 });

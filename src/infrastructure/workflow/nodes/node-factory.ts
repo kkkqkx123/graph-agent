@@ -10,6 +10,7 @@ import { ConditionNode } from './condition-node';
 import { DataTransformNode } from './data-transform-node';
 import { StartNode } from './start-node';
 import { EndNode } from './end-node';
+import { ContextProcessorNode } from './context-processor-node';
 import { PromptSource } from '../../prompts/services/prompt-builder';
 import { TransformFunctionRegistry } from '../functions/nodes/data-transformer';
 
@@ -56,6 +57,10 @@ export interface NodeConfig {
   sourceData?: string;
   targetVariable?: string;
   transformConfig?: Record<string, unknown>;
+
+  // 上下文处理器节点配置
+  processorName?: string;
+  processorConfig?: Record<string, unknown>;
 }
 
 /**
@@ -90,6 +95,9 @@ export class NodeFactory {
 
       case NodeTypeValue.DATA_TRANSFORM:
         return this.createDataTransformNode(nodeId, config);
+
+      case NodeTypeValue.CONTEXT_PROCESSOR:
+        return this.createContextProcessorNode(nodeId, config);
 
       default:
         throw new Error(`不支持的节点类型: ${type}`);
@@ -219,6 +227,27 @@ export class NodeFactory {
   }
 
   /**
+   * 创建上下文处理器节点
+   */
+  private static createContextProcessorNode(
+    id: NodeId,
+    config: NodeConfig
+  ): ContextProcessorNode {
+    if (!config.processorName) {
+      throw new Error('上下文处理器节点需要processorName配置');
+    }
+
+    return new ContextProcessorNode(
+      id,
+      config.processorName,
+      config.processorConfig,
+      config.name,
+      config.description,
+      config.position
+    );
+  }
+
+  /**
    * 获取支持的节点类型列表
    */
   static getSupportedNodeTypes(): NodeTypeValue[] {
@@ -229,6 +258,7 @@ export class NodeFactory {
       NodeTypeValue.TOOL,
       NodeTypeValue.CONDITION,
       NodeTypeValue.DATA_TRANSFORM,
+      NodeTypeValue.CONTEXT_PROCESSOR,
     ];
   }
 }
