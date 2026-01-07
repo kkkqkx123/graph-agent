@@ -6,6 +6,7 @@
  * - Checkpoint子模块
  * - 线程领域服务
  * - 线程仓储接口
+ * - 线程异常定义
  */
 
 // 导出实体
@@ -19,3 +20,6 @@ export * from './repositories';
 
 // 导出checkpoint子模块
 export * from './checkpoints';
+
+// 导出异常
+export * from './exceptions';

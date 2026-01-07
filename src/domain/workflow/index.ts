@@ -6,6 +6,7 @@
  * - Workflow子模块核心结构
  * - 工作流领域服务
  * - 工作流仓储接口
+ * - 工作流异常定义
  */
 
 // 导出实体
@@ -16,3 +17,6 @@ export * from './value-objects';
 
 // 导出仓储
 export * from './repositories';
+
+// 导出异常
+export * from './exceptions';

@@ -10,3 +10,6 @@ export * from './value-objects';
 
 // 仓储
 export * from './repositories';
+
+// 异常
+export * from './exceptions';

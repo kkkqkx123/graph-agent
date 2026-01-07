@@ -10,6 +10,9 @@ export abstract class PollingPoolError extends Error {
     this.name = 'PollingPoolError';
     this.code = code;
     this.details = details;
+    
+    // 修复原型链，确保instanceof正常工作
+    Object.setPrototypeOf(this, new.target.prototype);
   }
 }
 

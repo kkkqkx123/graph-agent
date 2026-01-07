@@ -4,3 +4,4 @@
 
 export * from './pool-exceptions';
 export * from './task-group-exceptions';
+export * from './client-exceptions';
