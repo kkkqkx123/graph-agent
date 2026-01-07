@@ -14,20 +14,20 @@
  */
 
 import { injectable, inject } from 'inversify';
-import { Thread, IThreadRepository } from '../../../domain/threads';
-import { Workflow, IWorkflowRepository } from '../../../domain/workflow';
-import { ID, ILogger, Timestamp } from '../../../domain/common';
-import { BaseApplicationService } from '../../common/base-application-service';
-import { WorkflowExecutionEngine } from '../../../infrastructure/threads/workflow-execution-engine';
-import { ThreadStateManager } from '../../../infrastructure/threads/thread-state-manager';
-import { ThreadHistoryManager } from '../../../infrastructure/threads/thread-history-manager';
-import { CheckpointManager } from '../../../domain/checkpoint/services/checkpoint-manager';
-import { ThreadConditionalRouter } from '../../../infrastructure/threads/thread-conditional-router';
-import { INodeExecutor } from '../../../infrastructure/workflow/nodes/node-executor';
-import { FunctionRegistry } from '../../../infrastructure/workflow/functions/function-registry';
-import { TYPES } from '../../../di/service-keys';
-import { SubgraphConfig, VariableMapping } from '../../../infrastructure/workflow/nodes/subgraph/subgraph-node';
-import { ExpressionEvaluator } from '../../../infrastructure/workflow/services/expression-evaluator';
+import { Thread, IThreadRepository } from '../../domain/threads';
+import { Workflow, IWorkflowRepository } from '../../domain/workflow';
+import { ID, ILogger, Timestamp } from '../../domain/common';
+import { BaseApplicationService } from '../common/base-application-service';
+import { WorkflowExecutionEngine } from '../../infrastructure/threads/workflow-execution-engine';
+import { ThreadStateManager } from '../../infrastructure/threads/thread-state-manager';
+import { ThreadHistoryManager } from '../../infrastructure/threads/thread-history-manager';
+import { CheckpointManager } from '../../domain/checkpoint/services/checkpoint-manager';
+import { ThreadConditionalRouter } from '../../infrastructure/threads/thread-conditional-router';
+import { INodeExecutor } from '../../infrastructure/workflow/nodes/node-executor';
+import { FunctionRegistry } from '../../infrastructure/workflow/functions/function-registry';
+import { TYPES } from '../../di/service-keys';
+import { SubgraphConfig, VariableMapping } from '../../infrastructure/workflow/nodes/subgraph/subgraph-node';
+import { ExpressionEvaluator } from '../../infrastructure/workflow/services/expression-evaluator';
 
 /**
  * 线程执行结果接口
@@ -526,7 +526,7 @@ export class ThreadExecutionService extends BaseApplicationService {
     parentContext: any
   ): Promise<SubWorkflowExecutionResult> {
     const startTime = Date.now();
-    
+
     try {
       // 1. 获取父线程的工作流定义
       const parentWorkflow = await this.workflowRepository.findById(parentThread.workflowId);
@@ -589,7 +589,7 @@ export class ThreadExecutionService extends BaseApplicationService {
         output: subWorkflowResult.output,
         executionTime: Date.now() - startTime,
       };
-      
+
     } catch (error) {
       this.logger.error('子工作流执行失败', error as Error, { referenceId });
       throw error;
@@ -620,7 +620,7 @@ export class ThreadExecutionService extends BaseApplicationService {
 
     // 保存子线程
     await this.threadRepository.save(subThread);
-    
+
     this.logger.info('创建子工作流线程', {
       parentThreadId: parentThread.id.toString(),
       subThreadId: subThread.id.toString(),
@@ -669,7 +669,7 @@ export class ThreadExecutionService extends BaseApplicationService {
     const completedThread = workflowResult.success
       ? runningThread.complete()
       : runningThread.fail(workflowResult.error || '执行失败');
-    
+
     await this.threadRepository.save(completedThread);
 
     return {
@@ -689,20 +689,20 @@ export class ThreadExecutionService extends BaseApplicationService {
     configMappings: VariableMapping[] = []
   ): Map<string, any> {
     const result = new Map<string, any>();
-    
+
     // 1. 应用 Workflow 级别的映射
     for (const [target, source] of workflowMapping) {
       const value = this.extractValue(parentContext, source);
       result.set(target, value);
     }
-    
+
     // 2. 应用节点配置的映射（可以覆盖 Workflow 映射）
     for (const mapping of configMappings) {
       const value = this.extractValue(parentContext, mapping.source);
       const transformedValue = this.applyTransform(value, mapping.transform);
       result.set(mapping.target, transformedValue);
     }
-    
+
     return result;
   }
 
@@ -716,20 +716,20 @@ export class ThreadExecutionService extends BaseApplicationService {
   ): Map<string, any> {
     const result = new Map<string, any>();
     const subOutputs = subWorkflowResult.output || {};
-    
+
     // 1. 应用 Workflow 级别的映射
     for (const [target, source] of workflowMapping) {
       const value = this.extractValue(subOutputs, source);
       result.set(target, value);
     }
-    
+
     // 2. 应用节点配置的映射（可以覆盖 Workflow 映射）
     for (const mapping of configMappings) {
       const value = this.extractValue(subOutputs, mapping.source);
       const transformedValue = this.applyTransform(value, mapping.transform);
       result.set(mapping.target, transformedValue);
     }
-    
+
     return result;
   }
 
@@ -738,7 +738,7 @@ export class ThreadExecutionService extends BaseApplicationService {
    */
   private applyTransform(value: any, transform?: string): any {
     if (!transform) return value;
-    
+
     try {
       return this.evaluator.evaluate(transform, { value });
     } catch (error) {
@@ -754,16 +754,16 @@ export class ThreadExecutionService extends BaseApplicationService {
     if (!path.includes('.')) {
       return obj?.[path];
     }
-    
+
     // 支持简单的路径表达式，如: "result.data.items"
     const keys = path.split('.');
     let current = obj;
-    
+
     for (const key of keys) {
       if (current == null) return undefined;
       current = current[key];
     }
-    
+
     return current;
   }
 

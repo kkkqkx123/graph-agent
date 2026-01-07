@@ -6,7 +6,7 @@
  */
 
 import { Container, ContainerModule } from 'inversify';
-import { infrastructureBindings, applicationBindings } from './bindings';
+import { infrastructureBindings, servicesBindings } from './bindings';
 import { TYPES, ServiceIdentifier, GetServiceType, TypedServiceIdentifier } from './service-keys';
 
 /**
@@ -67,8 +67,8 @@ export class ContainerManager {
       // 加载Infrastructure层绑定
       this.container.load(infrastructureBindings);
 
-      // 加载Application层绑定
-      this.container.load(applicationBindings);
+      // 加载Services层绑定
+      this.container.load(servicesBindings);
 
       this.initialized = true;
       if (this.config.enableLogging) {

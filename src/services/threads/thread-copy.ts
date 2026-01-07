@@ -5,9 +5,9 @@
  */
 
 import { injectable, inject } from 'inversify';
-import { ID, ILogger } from '../../../domain/common';
-import { NodeId } from '../../../domain/workflow';
-import { Thread, IThreadRepository } from '../../../domain/threads';
+import { ID, ILogger } from '../../domain/common';
+import { NodeId } from '../../domain/workflow';
+import { Thread, IThreadRepository } from '../../domain/threads';
 import {
   ISessionRepository,
   CopyStrategy,
@@ -17,8 +17,8 @@ import {
   ThreadOperationResult,
   ThreadOperationMetadata,
   ThreadOperationError,
-} from '../../../domain/sessions';
-import { TYPES } from '../../../di/service-keys';
+} from '../../domain/sessions';
+import { TYPES } from '../../di/service-keys';
 
 /**
  * Copy操作输入
@@ -57,7 +57,7 @@ export class ThreadCopyService {
     @inject(TYPES.ThreadRepository) private readonly threadRepository: IThreadRepository,
     @inject(TYPES.SessionRepository) private readonly sessionRepository: ISessionRepository,
     @inject(TYPES.Logger) private readonly logger: ILogger
-  ) {}
+  ) { }
 
   /**
    * 执行Copy操作

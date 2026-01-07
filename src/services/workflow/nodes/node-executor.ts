@@ -5,7 +5,7 @@ import { ILogger } from '../../../domain/common/types/logger-types';
 import { SubgraphNode } from './subgraph/subgraph-node';
 import { Thread } from '../../../domain/threads/entities/thread';
 import { TYPES } from '../../../di/service-keys';
-import { ThreadExecutionService } from '../../../application/threads/services/thread-execution-service';
+import { ThreadExecution } from '../../threads/thread-execution';
 import { NodeType } from '../../../domain/workflow/value-objects/node/node-type';
 
 /**

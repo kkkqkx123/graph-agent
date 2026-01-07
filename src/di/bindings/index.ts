@@ -3,4 +3,4 @@
  */
 
 export { infrastructureBindings } from './infrastructure-bindings';
-export { applicationBindings } from './application-bindings';
+export { servicesBindings } from './services-bindings';
