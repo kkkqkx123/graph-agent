@@ -1,8 +1,9 @@
 {
   "name": "modular-agent-framework",
   "version": "1.0.0",
-  "description": "TypeScript版本的模块化智能体框架",
+  "description": "模块化智能体框架",
   "main": "dist/index.js",
+  "type": "module",
   "scripts": {
     "build": "tsc",
     "build:watch": "tsc --watch",
