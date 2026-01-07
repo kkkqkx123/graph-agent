@@ -59,6 +59,7 @@ export class WorkflowRepository
         id: new ID(model.id),
         definition,
         graph,
+        subWorkflowReferences: new Map(),
         createdAt: Timestamp.create(model.createdAt),
         updatedAt: Timestamp.create(model.updatedAt),
         version: Version.fromString(model.version),

@@ -1,6 +1,6 @@
 import { injectable, inject } from 'inversify';
-import { PollingPool } from '../../../domain/llm/entities/pool';
-import { PoolConfig } from '../../../domain/llm/value-objects/pool-config';
+import { PollingPool, LLMInstance } from '../../../domain/llm/entities/pool';
+import { InstanceConfig } from '../../../domain/llm/value-objects/instance-config';
 import { ID } from '../../../domain/common/value-objects/id';
 import { LLMClientFactory } from '../clients/llm-client-factory';
 import { TYPES } from '../../../di/service-keys';
@@ -34,14 +34,6 @@ export class PollingPoolManager {
       throw new Error(`轮询池已存在: ${name}`);
     }
 
-    // 创建轮询池配置
-    const poolConfig = PoolConfig.create({
-      name,
-      rotationStrategy: config['rotation']?.['strategy'],
-      healthCheck: config['healthCheck'],
-      taskGroups: config['taskGroups'] || [],
-    });
-
     // 构建模型到提供商的映射
     const modelProviderMap = this.buildModelProviderMap(config);
 
@@ -59,12 +51,22 @@ export class PollingPoolManager {
 
     const pool = new PollingPool(
       ID.generate(),
-      poolConfig,
-      this.taskGroupManager,
-      clientProvider
+      {
+        name,
+        rotationStrategy: config['rotation']?.['strategy'] || 'round_robin',
+        healthCheckInterval: config['healthCheck']?.interval || 30,
+        healthCheckTimeout: config['healthCheck']?.timeout || 10,
+        maxFailures: config['healthCheck']?.maxFailures || 3,
+      }
     );
 
-    await pool.initialize();
+    // 从配置创建实例
+    const instances = config['instances'] || [];
+    for (const instanceConfig of instances) {
+      const instance = this.createInstance(instanceConfig, clientProvider);
+      pool.addInstance(instance);
+    }
+
     this.pools.set(name, pool);
 
     return pool;
@@ -90,6 +92,28 @@ export class PollingPoolManager {
     }
     
     return map;
+  }
+
+  /**
+   * 创建LLM实例
+   */
+  private createInstance(
+    instanceConfig: Record<string, any>,
+    clientProvider: (modelName: string) => any
+  ): LLMInstance {
+    const config = InstanceConfig.create({
+      instanceId: instanceConfig['name'] || instanceConfig['instanceId'],
+      modelName: instanceConfig['model'],
+      groupName: instanceConfig['groupName'] || 'default',
+      echelon: instanceConfig['echelon'] || 'default',
+      maxConcurrency: instanceConfig['maxConcurrency'] || 10,
+      weight: instanceConfig['weight'] || 1,
+    });
+  
+    return new LLMInstance(
+      ID.generate(),
+      config
+    );
   }
 
   /**
@@ -140,9 +164,7 @@ export class PollingPoolManager {
    * 关闭所有轮询池
    */
   async shutdownAll(): Promise<void> {
-    for (const pool of this.pools.values()) {
-      await pool.shutdown();
-    }
+    // 清理轮询池
     this.pools.clear();
   }
 
@@ -150,11 +172,7 @@ export class PollingPoolManager {
    * 删除轮询池
    */
   async removePool(name: string): Promise<void> {
-    const pool = this.pools.get(name);
-    if (pool) {
-      await pool.shutdown();
-      this.pools.delete(name);
-    }
+    this.pools.delete(name);
   }
 
   /**
@@ -180,8 +198,7 @@ export class PollingPoolManager {
       throw new Error(`轮询池不存在: ${name}`);
     }
 
-    // 关闭现有池
-    await existingPool.shutdown();
+    // 删除现有池
     this.pools.delete(name);
 
     // 创建新池

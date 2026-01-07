@@ -13,6 +13,7 @@ import { EdgeContextFilter } from '../value-objects/context';
 import { ErrorHandlingStrategy } from '../value-objects/error-handling-strategy';
 import { ExecutionStrategy } from '../value-objects/execution/execution-strategy';
 import { Node } from './node';
+import { WorkflowReference } from '../value-objects/workflow-reference';
 
 /**
  * 工作流图数据接口
@@ -29,6 +30,7 @@ export interface WorkflowProps {
   readonly id: ID;
   readonly definition: WorkflowDefinition;
   readonly graph: WorkflowGraphData;
+  readonly subWorkflowReferences: Map<string, WorkflowReference>;
   readonly createdAt: Timestamp;
   readonly updatedAt: Timestamp;
   readonly version: Version;
@@ -121,10 +123,14 @@ export class Workflow extends Entity {
       edges: new Map(),
     };
 
+    // 创建空的子工作流引用映射
+    const subWorkflowReferences = new Map<string, WorkflowReference>();
+
     const props: WorkflowProps = {
       id: workflowId,
       definition: workflowDefinition,
       graph: workflowGraph,
+      subWorkflowReferences,
       createdAt: now,
       updatedAt: now,
       version: Version.initial(),
@@ -462,6 +468,118 @@ export class Workflow extends Entity {
    */
   public getDefinition(): WorkflowDefinition {
     return this.props.definition;
+  }
+
+  /**
+   * 获取所有子工作流引用
+   * @returns 子工作流引用映射
+   */
+  public getSubWorkflowReferences(): Map<string, WorkflowReference> {
+    return new Map(this.props.subWorkflowReferences);
+  }
+
+  /**
+   * 根据引用ID获取子工作流引用
+   * @param referenceId 引用ID
+   * @returns 子工作流引用或undefined
+   */
+  public getSubWorkflowReference(referenceId: string): WorkflowReference | undefined {
+    return this.props.subWorkflowReferences.get(referenceId);
+  }
+
+  /**
+   * 检查是否存在子工作流引用
+   * @param referenceId 引用ID
+   * @returns 是否存在
+   */
+  public hasSubWorkflowReference(referenceId: string): boolean {
+    return this.props.subWorkflowReferences.has(referenceId);
+  }
+
+  /**
+   * 添加子工作流引用
+   * @param reference 子工作流引用
+   * @param updatedBy 更新者ID
+   * @returns 新工作流实例
+   */
+  public addSubWorkflowReference(reference: WorkflowReference, updatedBy?: ID): Workflow {
+    if (this.hasSubWorkflowReference(reference.referenceId)) {
+      throw new Error(`子工作流引用已存在: ${reference.referenceId}`);
+    }
+
+    if (!this.status.canEdit()) {
+      throw new Error('只能编辑草稿状态工作流的子工作流引用');
+    }
+
+    const newReferences = new Map(this.props.subWorkflowReferences);
+    newReferences.set(reference.referenceId, reference);
+
+    return new Workflow({
+      ...this.props,
+      subWorkflowReferences: newReferences,
+      updatedAt: Timestamp.now(),
+      version: this.props.version.nextPatch(),
+      updatedBy,
+    });
+  }
+
+  /**
+   * 移除子工作流引用
+   * @param referenceId 引用ID
+   * @param updatedBy 更新者ID
+   * @returns 新工作流实例
+   */
+  public removeSubWorkflowReference(referenceId: string, updatedBy?: ID): Workflow {
+    if (!this.hasSubWorkflowReference(referenceId)) {
+      throw new Error(`子工作流引用不存在: ${referenceId}`);
+    }
+
+    if (!this.status.canEdit()) {
+      throw new Error('只能编辑草稿状态工作流的子工作流引用');
+    }
+
+    const newReferences = new Map(this.props.subWorkflowReferences);
+    newReferences.delete(referenceId);
+
+    return new Workflow({
+      ...this.props,
+      subWorkflowReferences: newReferences,
+      updatedAt: Timestamp.now(),
+      version: this.props.version.nextPatch(),
+      updatedBy,
+    });
+  }
+
+  /**
+   * 更新子工作流引用
+   * @param referenceId 引用ID
+   * @param reference 新的引用
+   * @param updatedBy 更新者ID
+   * @returns 新工作流实例
+   */
+  public updateSubWorkflowReference(
+    referenceId: string,
+    reference: WorkflowReference,
+    updatedBy?: ID
+  ): Workflow {
+    if (!this.hasSubWorkflowReference(referenceId)) {
+      throw new Error(`子工作流引用不存在: ${referenceId}`);
+    }
+
+    if (!this.status.canEdit()) {
+      throw new Error('只能编辑草稿状态工作流的子工作流引用');
+    }
+
+    const newReferences = new Map(this.props.subWorkflowReferences);
+    newReferences.set(referenceId, reference);
+
+    return new Workflow({
+      ...this.props,
+      subWorkflowReferences: newReferences,
+      updatedAt: Timestamp.now(),
+      version: this.props.version.nextPatch(),
+      updatedBy,
+    });
   }
 
   /**

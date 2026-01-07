@@ -2,6 +2,11 @@ import { injectable, inject } from 'inversify';
 import { Node, NodeExecutionResult } from '../../../domain/workflow/entities/node';
 import { WorkflowExecutionContext } from '../../../domain/workflow/entities/node';
 import { ILogger } from '../../../domain/common/types/logger-types';
+import { SubgraphNode } from './subgraph/subgraph-node';
+import { Thread } from '../../../domain/threads/entities/thread';
+import { TYPES } from '../../../di/service-keys';
+import { ThreadExecutionService } from '../../../application/threads/services/thread-execution-service';
+import { NodeType } from '../../../domain/workflow/value-objects/node/node-type';
 
 /**
  * 节点执行器接口
@@ -53,7 +58,10 @@ export interface NodeExecutionOptions {
  */
 @injectable()
 export class NodeExecutor {
-  constructor(@inject('Logger') private readonly logger: ILogger) {}
+  constructor(
+    @inject('Logger') private readonly logger: ILogger,
+    @inject(TYPES.ThreadExecutionService) private readonly threadExecutionService: ThreadExecutionService
+  ) {}
 
   /**
    * 执行节点
@@ -98,15 +106,23 @@ export class NodeExecutor {
         };
       }
 
-      // 执行节点（带超时和重试）
-      const result = await this.executeWithRetryAndTimeout(
-        () => node.execute(context),
-        timeout,
-        maxRetries,
-        retryDelay,
-        node.nodeId.toString(),
-        node.type.toString()
-      );
+      // 识别节点类型并执行
+      let result: NodeExecutionResult;
+      
+      if (node.type.isSubworkflow()) {
+        // 子工作流节点，从上下文获取 SubgraphNode 配置并调用 ThreadService 执行
+        result = await this.executeSubgraphNode(node, context, options);
+      } else {
+        // 普通节点，正常执行
+        result = await this.executeWithRetryAndTimeout(
+          () => node.execute(context),
+          timeout,
+          maxRetries,
+          retryDelay,
+          node.nodeId.toString(),
+          node.type.toString()
+        );
+      }
 
       if (verboseLogging) {
         this.logger.info('节点执行完成', {
@@ -140,6 +156,134 @@ export class NodeExecutor {
   }
 
   /**
+   * 执行子工作流节点
+   * @param node 子工作流节点（Node 类型，但类型为 subworkflow）
+   * @param context 执行上下文
+   * @param options 执行选项
+   * @returns 执行结果
+   */
+  private async executeSubgraphNode(
+    node: Node,
+    context: WorkflowExecutionContext,
+    options: NodeExecutionOptions
+  ): Promise<NodeExecutionResult> {
+    const startTime = Date.now();
+    
+    try {
+      this.logger.info('开始执行子工作流节点', {
+        nodeId: node.nodeId.toString(),
+      });
+
+      // 1. 从上下文获取 SubgraphNode 配置
+      const subgraphNode = context.getService<SubgraphNode>('SubgraphNode');
+      if (!subgraphNode) {
+        throw new Error('SubgraphNode 配置不可用');
+      }
+
+      // 2. 获取父 Thread
+      const parentThread = context.getService<Thread>('Thread');
+      if (!parentThread) {
+        throw new Error('Thread 服务不可用');
+      }
+
+      // 3. 调用 Thread 层的子工作流执行能力
+      const subWorkflowResult = await this.threadExecutionService.executeSubWorkflow(
+        parentThread,
+        subgraphNode.getReferenceId(),
+        subgraphNode.getConfig(),
+        context
+      );
+
+      const executionTime = Date.now() - startTime;
+
+      return {
+        success: subWorkflowResult.status === 'completed',
+        output: {
+          message: '子工作流执行完成',
+          referenceId: subgraphNode.getReferenceId(),
+          outputs: subWorkflowResult.output,
+          subWorkflowResult: subWorkflowResult,
+        },
+        executionTime,
+        metadata: {
+          nodeId: node.nodeId.toString(),
+          nodeType: node.type.toString(),
+          referenceId: subgraphNode.getReferenceId(),
+          subWorkflowExecutionId: subWorkflowResult.threadId.toString(),
+          status: subWorkflowResult.status,
+        },
+      };
+      
+    } catch (error) {
+      return this.handleSubgraphExecutionError(node, error, startTime, context);
+    }
+  }
+
+  /**
+   * 处理子工作流节点执行错误
+   * @param node 子工作流节点
+   * @param error 错误对象
+   * @param startTime 开始时间
+   * @param context 执行上下文
+   * @returns 执行结果
+   */
+  private handleSubgraphExecutionError(
+    node: Node,
+    error: any,
+    startTime: number,
+    context: WorkflowExecutionContext
+  ): NodeExecutionResult {
+    const executionTime = Date.now() - startTime;
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    
+    this.logger.error('子工作流节点执行失败', error instanceof Error ? error : new Error(String(error)), {
+      nodeId: node.nodeId.toString(),
+    });
+
+    // 从上下文获取 SubgraphNode 配置
+    const subgraphNode = context.getService<SubgraphNode>('SubgraphNode');
+    if (!subgraphNode) {
+      throw error;
+    }
+
+    // 根据配置决定错误处理策略
+    const config = subgraphNode.getConfig();
+    const errorHandling = config.errorHandling || { strategy: 'propagate' as const };
+
+    switch (errorHandling.strategy) {
+      case 'propagate':
+        throw error;
+
+      case 'catch':
+        return {
+          success: false,
+          error: errorMessage,
+          output: errorHandling.fallbackValue,
+          executionTime,
+          metadata: {
+            nodeId: node.nodeId.toString(),
+            nodeType: node.type.toString(),
+            referenceId: subgraphNode.getReferenceId(),
+            errorStrategy: 'catch',
+          },
+        };
+
+      case 'ignore':
+        return {
+          success: true,
+          output: errorHandling.fallbackValue,
+          executionTime,
+          metadata: {
+            nodeId: node.nodeId.toString(),
+            nodeType: node.type.toString(),
+            referenceId: subgraphNode.getReferenceId(),
+            errorStrategy: 'ignore',
+          },
+        };
+    }
+  }
+
+  /**
    * 验证节点是否可以执行
    * @param node 节点实例
    * @param context 执行上下文
@@ -154,7 +298,7 @@ export class NodeExecutor {
    * @returns 支持的节点类型列表
    */
   getSupportedNodeTypes(): string[] {
-    return ['llm', 'tool', 'condition', 'task', 'data-transform'];
+    return ['llm', 'tool', 'condition', 'task', 'data-transform', 'subworkflow'];
   }
 
   /**

@@ -13,4 +13,3 @@ export * from './model-config';
 export * from './pool-config';
 export * from './pool-instance';
 export * from './prompt-template';
-export * from './rotation-strategy';

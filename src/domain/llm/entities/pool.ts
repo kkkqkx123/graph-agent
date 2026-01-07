@@ -3,22 +3,17 @@ import { ID } from '../../common/value-objects/id';
 import { Timestamp } from '../../common/value-objects/timestamp';
 import { Version } from '../../common/value-objects/version';
 import { InstanceStatus } from '../value-objects/pool-instance';
-import { RotationStrategy } from '../value-objects/rotation-strategy';
-import { LLMMessage } from '../value-objects/llm-message';
 import { InstanceConfig } from '../value-objects/instance-config';
-import { PoolConfig } from '../value-objects/pool-config';
-import { ILLMClient } from '../interfaces/llm-client.interface';
-import { ITaskGroupManager } from '../interfaces/task-group-manager.interface';
-import { LLMRequest } from './llm-request';
 
 /**
  * LLM实例实体
+ * 
+ * 纯领域实体，表示一个LLM实例的状态和配置
  */
 export class LLMInstance extends Entity {
   constructor(
     id: ID,
     private readonly config: InstanceConfig,
-    public readonly client: ILLMClient,
     public status: InstanceStatus = InstanceStatus.HEALTHY,
     public lastHealthCheck: Date = new Date(),
     public failureCount: number = 0,
@@ -153,19 +148,37 @@ export class LLMInstance extends Entity {
 }
 
 /**
+ * 轮询策略枚举
+ */
+export enum RotationStrategy {
+  ROUND_ROBIN = 'round_robin',
+  LEAST_RECENTLY_USED = 'least_recently_used',
+  WEIGHTED = 'weighted',
+}
+
+/**
+ * 轮询池配置
+ */
+export interface PollingPoolConfig {
+  name: string;
+  rotationStrategy: RotationStrategy;
+  healthCheckInterval: number;
+  healthCheckTimeout: number;
+  maxFailures: number;
+}
+
+/**
  * 轮询池实体
+ * 
+ * 纯领域实体，管理LLM实例集合和选择策略
  */
 export class PollingPool extends Entity {
   private instances: LLMInstance[] = [];
-  private scheduler: any;
-  private healthChecker: any;
-  private concurrencyManager: any;
+  private currentIndex: number = 0;
 
   constructor(
     id: ID,
-    private readonly poolConfig: PoolConfig,
-    private readonly taskGroupManager: ITaskGroupManager,
-    private readonly clientProvider: (modelName: string) => ILLMClient
+    private readonly config: PollingPoolConfig
   ) {
     super(id, Timestamp.now(), Timestamp.now(), Version.initial());
   }
@@ -174,288 +187,100 @@ export class PollingPool extends Entity {
    * 获取轮询池名称
    */
   get name(): string {
-    return this.poolConfig.name;
+    return this.config.name;
   }
 
   /**
    * 获取轮询池配置
    */
-  get config(): PoolConfig {
-    return this.poolConfig;
+  get poolConfig(): PollingPoolConfig {
+    return this.config;
   }
 
   /**
    * 验证轮询池有效性
    */
   validate(): void {
-    this.poolConfig.validate();
-  }
-
-  /**
-   * 初始化轮询池
-   */
-  async initialize(): Promise<void> {
-    // 从任务组配置创建实例
-    const taskGroups = this.config['taskGroups'] || [];
-
-    for (const taskGroupRef of taskGroups) {
-      await this.createInstancesFromTaskGroup(taskGroupRef);
+    if (!this.config.name || this.config.name.trim().length === 0) {
+      throw new Error('轮询池名称不能为空');
     }
-
-    // 创建调度器
-    this.scheduler = this.createScheduler();
-
-    // 创建健康检查器
-    this.healthChecker = this.createHealthChecker();
-
-    // 创建并发管理器
-    this.concurrencyManager = this.createConcurrencyManager();
-
-    // 启动健康检查
-    await this.healthChecker.start(this.instances);
-  }
-
-  /**
-   * 从任务组创建实例
-   */
-  private async createInstancesFromTaskGroup(taskGroupRef: string): Promise<void> {
-    try {
-      const models = await this.taskGroupManager.getModelsForGroup(taskGroupRef);
-
-      for (const modelName of models) {
-        // 根据模型名称创建实际的LLM客户端
-        const client = this.clientProvider(modelName);
-
-        // 解析任务组引用
-        const parts = taskGroupRef.split('.');
-        const groupName = parts[0] ?? '';
-        const echelon = parts[1] ?? 'default';
-
-        // 创建实例配置
-        const instanceConfig = InstanceConfig.create({
-          instanceId: `${taskGroupRef}_${modelName}`,
-          modelName,
-          groupName,
-          echelon,
-        });
-
-        const instance = new LLMInstance(
-          ID.generate(),
-          instanceConfig,
-          client
-        );
-        this.instances.push(instance);
-      }
-    } catch (error) {
-      console.error(`从任务组 ${taskGroupRef} 创建实例失败:`, error);
+    if (this.config.healthCheckInterval <= 0) {
+      throw new Error('健康检查间隔必须大于0');
     }
   }
 
   /**
-   * 创建调度器
+   * 添加实例
    */
-  private createScheduler(): any {
-    const strategy = this.poolConfig.rotationStrategy;
-    let currentIndex = 0;
+  addInstance(instance: LLMInstance): void {
+    this.instances.push(instance);
+  }
 
-    return {
-      selectInstance: (instances: LLMInstance[]) => {
-        const availableInstances = instances.filter(inst => inst.canAcceptRequest());
+  /**
+   * 移除实例
+   */
+  removeInstance(instanceId: ID): void {
+    this.instances = this.instances.filter(inst => !inst.id.equals(instanceId));
+  }
 
-        if (availableInstances.length === 0) {
-          return null;
-        }
+  /**
+   * 获取所有实例
+   */
+  getInstances(): LLMInstance[] {
+    return [...this.instances];
+  }
 
-        switch (strategy) {
-          case RotationStrategy.ROUND_ROBIN:
-            const instance = availableInstances[currentIndex % availableInstances.length];
-            currentIndex = (currentIndex + 1) % availableInstances.length;
+  /**
+   * 根据ID获取实例
+   */
+  getInstanceById(instanceId: ID): LLMInstance | undefined {
+    return this.instances.find(inst => inst.id.equals(instanceId));
+  }
+
+  /**
+   * 选择可用实例
+   */
+  selectInstance(): LLMInstance | null {
+    const availableInstances = this.instances.filter(inst => inst.canAcceptRequest());
+
+    if (availableInstances.length === 0) {
+      return null;
+    }
+
+    switch (this.config.rotationStrategy) {
+      case RotationStrategy.ROUND_ROBIN:
+        const instance = availableInstances[this.currentIndex % availableInstances.length];
+        this.currentIndex = (this.currentIndex + 1) % availableInstances.length;
+        return instance ?? null;
+
+      case RotationStrategy.LEAST_RECENTLY_USED:
+        return availableInstances.reduce((leastUsed, current) => {
+          if (!leastUsed?.lastUsed || !current.lastUsed) return current;
+          return current.lastUsed < leastUsed.lastUsed ? current : leastUsed;
+        }, availableInstances[0]) ?? null;
+
+      case RotationStrategy.WEIGHTED:
+        const totalWeight = availableInstances.reduce((sum, inst) => sum + inst.weight, 0);
+        const randomValue = Math.random() * totalWeight;
+        let weightSum = 0;
+
+        for (const instance of availableInstances) {
+          weightSum += instance.weight;
+          if (randomValue <= weightSum) {
             return instance;
-
-          case RotationStrategy.LEAST_RECENTLY_USED:
-            return availableInstances.reduce((leastUsed, current) => {
-              if (!leastUsed?.lastUsed || !current.lastUsed) return current;
-              return current.lastUsed < leastUsed.lastUsed ? current : leastUsed;
-            }, availableInstances[0]);
-
-          case RotationStrategy.WEIGHTED:
-            const totalWeight = availableInstances.reduce((sum, inst) => sum + inst.weight, 0);
-            const randomValue = Math.random() * totalWeight;
-            let weightSum = 0;
-
-            for (const instance of availableInstances) {
-              weightSum += instance.weight;
-              if (randomValue <= weightSum) {
-                return instance;
-              }
-            }
-            return availableInstances[0];
-
-          default:
-            return availableInstances[0];
+          }
         }
-      },
-    };
-  }
+        return availableInstances[0] ?? null;
 
-  /**
-   * 创建健康检查器
-   */
-  private createHealthChecker(): any {
-    const interval = this.poolConfig.healthCheck.interval;
-    let healthCheckInterval: NodeJS.Timeout | null = null;
-
-    return {
-      start: async (instances: LLMInstance[]) => {
-        console.log(`启动健康检查，间隔: ${interval}秒`);
-
-        // 立即执行一次健康检查
-        await this.performHealthCheck(instances);
-
-        // 设置定期健康检查
-        healthCheckInterval = setInterval(async () => {
-          await this.performHealthCheck(instances);
-        }, interval * 1000);
-      },
-      stop: () => {
-        if (healthCheckInterval) {
-          clearInterval(healthCheckInterval);
-          healthCheckInterval = null;
-        }
-        console.log('停止健康检查');
-      },
-    };
-  }
-
-  /**
-   * 创建并发管理器
-   */
-  private createConcurrencyManager(): any {
-    return {
-      getStatus: () => ({
-        enabled: false,
-        currentLoad: this.instances.reduce((sum, inst) => sum + inst.currentLoad, 0),
-        maxLoad: this.instances.reduce((sum, inst) => sum + inst.maxConcurrency, 0),
-      }),
-    };
-  }
-
-  /**
-   * 获取可用实例
-   */
-  async getInstance(): Promise<LLMInstance | null> {
-    const selectedInstance = this.scheduler.selectInstance(this.instances);
-
-    if (selectedInstance) {
-      selectedInstance.increaseLoad();
+      default:
+        return availableInstances[0] ?? null;
     }
-
-    return selectedInstance;
-  }
-
-  /**
-   * 释放实例
-   */
-  async releaseInstance(instance: LLMInstance): Promise<void> {
-    instance.decreaseLoad();
-  }
-
-  /**
-   * 调用LLM
-   */
-  async callLLM(prompt: string, kwargs?: Record<string, any>): Promise<any> {
-    const instance = await this.getInstance();
-
-    if (!instance) {
-      throw new Error('没有可用的LLM实例');
-    }
-
-    try {
-      const startTime = Date.now();
-
-      // TODO: 实现实际的LLM调用
-      const result = await this.callInstance(instance, prompt, kwargs);
-
-      const responseTime = Date.now() - startTime;
-      instance.updatePerformance(responseTime, true);
-
-      return result;
-    } catch (error) {
-      instance.updatePerformance(0, false);
-      throw error;
-    } finally {
-      await this.releaseInstance(instance);
-    }
-  }
-
-  /**
-   * 执行健康检查
-   */
-  private async performHealthCheck(instances: LLMInstance[]): Promise<void> {
-    for (const instance of instances) {
-      try {
-        // 简单的ping检查
-        const isHealthy = await this.checkInstanceHealth(instance);
-        instance.updateHealthStatus(isHealthy);
-
-        if (isHealthy) {
-          console.log(`实例 ${instance.instanceId} 健康检查通过`);
-        } else {
-          console.warn(`实例 ${instance.instanceId} 健康检查失败`);
-        }
-      } catch (error) {
-        console.error(`实例 ${instance.instanceId} 健康检查异常:`, error);
-        instance.updateHealthStatus(false);
-      }
-    }
-  }
-
-  /**
-   * 检查实例健康状态
-   */
-  private async checkInstanceHealth(instance: LLMInstance): Promise<boolean> {
-    try {
-      // 使用客户端的健康检查方法
-      const healthStatus = await instance.client.healthCheck();
-      return healthStatus.status === 'healthy';
-    } catch (error) {
-      return false;
-    }
-  }
-
-  /**
-   * 调用具体实例
-   */
-  private async callInstance(
-    instance: LLMInstance,
-    prompt: string,
-    kwargs?: Record<string, any>
-  ): Promise<any> {
-    // 创建LLM请求
-    const request = LLMRequest.create(instance.modelName, [LLMMessage.createUser(prompt)], {
-      temperature: kwargs?.['temperature'] ?? 0.7,
-      maxTokens: kwargs?.['maxTokens'] ?? 1000,
-      topP: kwargs?.['topP'] ?? 1.0,
-      frequencyPenalty: kwargs?.['frequencyPenalty'] ?? 0.0,
-      presencePenalty: kwargs?.['presencePenalty'] ?? 0.0,
-      stop: kwargs?.['stop'],
-      tools: kwargs?.['tools'],
-      toolChoice: kwargs?.['toolChoice'],
-      stream: kwargs?.['stream'] ?? false,
-      metadata: kwargs?.['metadata'] || {},
-    });
-
-    // 调用LLM客户端
-    const response = await instance.client.generateResponse(request);
-
-    // 返回响应内容
-    return response.getContent();
   }
 
   /**
    * 获取轮询池状态
    */
-  async getStatus(): Promise<Record<string, any>> {
+  getStatus(): Record<string, any> {
     const healthyInstances = this.instances.filter(
       inst => inst.status === InstanceStatus.HEALTHY
     ).length;
@@ -472,15 +297,23 @@ export class PollingPool extends Entity {
       healthyInstances,
       degradedInstances,
       failedInstances,
-      concurrencyStatus: this.concurrencyManager.getStatus(),
+      currentLoad: this.instances.reduce((sum, inst) => sum + inst.currentLoad, 0),
+      maxLoad: this.instances.reduce((sum, inst) => sum + inst.maxConcurrency, 0),
     };
   }
 
   /**
-   * 关闭轮询池
+   * 获取健康检查配置
    */
-  async shutdown(): Promise<void> {
-    this.healthChecker.stop();
-    console.log(`轮询池 ${this.name} 已关闭`);
+  getHealthCheckConfig(): {
+    interval: number;
+    timeout: number;
+    maxFailures: number;
+  } {
+    return {
+      interval: this.config.healthCheckInterval,
+      timeout: this.config.healthCheckTimeout,
+      maxFailures: this.config.maxFailures,
+    };
   }
 }

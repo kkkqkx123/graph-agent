@@ -52,8 +52,7 @@ export class LLMWrapperFactory {
     const wrapper = new TaskGroupWrapper(
       ID.generate(),
       groupName,
-      config || {},
-      this.taskGroupManager
+      config || {}
     );
 
     this.wrappers.set(groupName, wrapper);
@@ -87,7 +86,7 @@ export class LLMWrapperFactory {
     const model = parts[1];
     const client = this.llmClientFactory.createClient(provider, model);
 
-    const wrapper = new DirectLLMWrapper(ID.generate(), clientName, config || {}, client);
+    const wrapper = new DirectLLMWrapper(ID.generate(), clientName, config || {});
 
     this.wrappers.set(clientName, wrapper);
     return wrapper;

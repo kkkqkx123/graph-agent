@@ -3,7 +3,16 @@ import { ID } from '../../common/value-objects/id';
 import { Timestamp } from '../../common/value-objects/timestamp';
 import { Version } from '../../common/value-objects/version';
 import { Echelon } from '../value-objects/echelon';
-import { FallbackConfig } from '../interfaces/task-group-manager.interface';
+
+/**
+ * 降级配置
+ */
+export interface FallbackConfig {
+  strategy: string;
+  maxAttempts: number;
+  retryDelay: number;
+  fallbackGroups?: string[];
+}
 
 /**
  * 任务组实体
