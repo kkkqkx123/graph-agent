@@ -1,4 +1,4 @@
-import { PromptContext, ContextProcessor } from '../../../../domain/workflow/value-objects/context/prompt-context';
+import { PromptContext, ContextProcessor } from '../../../../../domain/workflow/value-objects/context/prompt-context';
 
 /**
  * 上下文处理器基类

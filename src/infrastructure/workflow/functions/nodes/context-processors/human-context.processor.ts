@@ -1,4 +1,4 @@
-import { PromptContext } from '../../../../domain/workflow/value-objects/context/prompt-context';
+import { PromptContext } from '../../../../../domain/workflow/value-objects/context/prompt-context';
 import { SingletonContextProcessor } from './singleton-context-processor';
 
 /**

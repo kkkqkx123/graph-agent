@@ -1,4 +1,4 @@
-import { PromptContext } from '../../../../domain/workflow/value-objects/context/prompt-context';
+import { PromptContext } from '../../../../../domain/workflow/value-objects/context/prompt-context';
 
 /**
  * 静态上下文处理器基类

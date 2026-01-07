@@ -19,7 +19,7 @@ import {
   PromptSource,
   PromptBuildConfig,
 } from '../../prompts/services/prompt-builder';
-import { llmContextProcessor } from '../functions/context-processors';
+import { llmContextProcessor } from '../functions/nodes/context-processors';
 
 /**
  * LLM节点

@@ -10,7 +10,7 @@ export * from './conditions';
 export * from './routing';
 export * from './triggers';
 export * from './hooks';
-export * from './context-processors';
+export * from './nodes';
 
 // 函数注册表
 export { FunctionRegistry } from './function-registry';
