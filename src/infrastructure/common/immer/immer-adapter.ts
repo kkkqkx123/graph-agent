@@ -24,9 +24,7 @@ import {
 	isDraftable,
 	Draft,
 	Patch,
-	PatchListener,
-	IProduce,
-	IProduceWithPatches
+	PatchListener
 } from './immer';
 
 /**
@@ -128,11 +126,12 @@ export class ImmerAdapter implements IImmerAdapter {
 		base: T,
 		recipe: (draft: Draft<T>) => void
 	): [T, Patch[], Patch[]] {
-		return produceWithPatches(base, recipe);
+		const result = produceWithPatches(base, recipe);
+		return [result[0], result[1], result[2]];
 	}
 
 	applyPatches<T>(base: T, patches: Patch[]): T {
-		return applyPatches(base, patches);
+		return applyPatches(base as any, patches) as T;
 	}
 
 	original<T>(value: T): T | undefined {
@@ -175,4 +174,4 @@ export function createImmerAdapter(): ImmerAdapter {
 /**
  * 导出类型定义
  */
-export type { Draft, Patch, PatchListener, IProduce, IProduceWithPatches };
+export type { Draft, Patch, PatchListener };
