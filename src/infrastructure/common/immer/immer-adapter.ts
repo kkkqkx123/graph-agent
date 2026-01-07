@@ -12,16 +12,10 @@
  */
 
 import {
-	produce,
 	produceWithPatches,
-	applyPatches,
 	setAutoFreeze,
 	enablePatches,
 	enableMapSet,
-	original,
-	current,
-	isDraft,
-	isDraftable,
 	Draft,
 	Patch,
 	PatchListener
@@ -32,14 +26,6 @@ import {
  */
 export interface IImmerAdapter {
 	/**
-	 * 使用 produce 更新状态
-	 * @param base 基础状态
-	 * @param recipe 更新函数
-	 * @returns 新状态
-	 */
-	produce<T>(base: T, recipe: (draft: Draft<T>) => void): T;
-
-	/**
 	 * 使用 produceWithPatches 更新状态并生成补丁
 	 * @param base 基础状态
 	 * @param recipe 更新函数
@@ -49,42 +35,6 @@ export interface IImmerAdapter {
 		base: T,
 		recipe: (draft: Draft<T>) => void
 	): [T, Patch[], Patch[]];
-
-	/**
-	 * 应用补丁到状态
-	 * @param base 基础状态
-	 * @param patches 补丁数组
-	 * @returns 新状态
-	 */
-	applyPatches<T>(base: T, patches: Patch[]): T;
-
-	/**
-	 * 获取原始对象（非草稿）
-	 * @param value 草稿对象
-	 * @returns 原始对象
-	 */
-	original<T>(value: T): T | undefined;
-
-	/**
-	 * 获取当前状态的快照
-	 * @param value 草稿对象
-	 * @returns 当前状态快照
-	 */
-	current<T>(value: T): T;
-
-	/**
-	 * 检查是否为草稿对象
-	 * @param value 待检查对象
-	 * @returns 是否为草稿
-	 */
-	isDraft<T>(value: T): boolean;
-
-	/**
-	 * 检查对象是否可草稿化
-	 * @param value 待检查对象
-	 * @returns 是否可草稿化
-	 */
-	isDraftable(value: unknown): boolean;
 
 	/**
 	 * 启用或禁用自动冻结
@@ -118,36 +68,12 @@ export class ImmerAdapter implements IImmerAdapter {
 		setAutoFreeze(true);
 	}
 
-	produce<T>(base: T, recipe: (draft: Draft<T>) => void): T {
-		return produce(base, recipe);
-	}
-
 	produceWithPatches<T>(
 		base: T,
 		recipe: (draft: Draft<T>) => void
 	): [T, Patch[], Patch[]] {
 		const result = produceWithPatches(base, recipe);
 		return [result[0], result[1], result[2]];
-	}
-
-	applyPatches<T>(base: T, patches: Patch[]): T {
-		return applyPatches(base as any, patches) as T;
-	}
-
-	original<T>(value: T): T | undefined {
-		return original(value);
-	}
-
-	current<T>(value: T): T {
-		return current(value);
-	}
-
-	isDraft<T>(value: T): boolean {
-		return isDraft(value);
-	}
-
-	isDraftable(value: unknown): boolean {
-		return isDraftable(value);
 	}
 
 	enableAutoFreeze(enabled: boolean): void {

@@ -25,6 +25,4 @@ export type {
   Draft,
   Patch,
   PatchListener,
-  IProduce,
-  IProduceWithPatches,
 } from './immer/immer-adapter';
