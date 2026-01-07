@@ -22,10 +22,15 @@ export { ThreadManagementService } from './threads/services/thread-management-se
 export { ThreadMaintenanceService } from './threads/services/thread-maintenance-service';
 
 // 检查点模块导出
-export { CheckpointCreationService } from './threads/checkpoints/services/checkpoint-creation-service';
-export { CheckpointRestoreService } from './threads/checkpoints/services/checkpoint-restore-service';
-export { CheckpointManagementService } from './threads/checkpoints/services/checkpoint-management-service';
-export { CheckpointAnalysisService } from './threads/checkpoints/services/checkpoint-analysis-service';
+export { CheckpointService } from './threads/checkpoints/services/checkpoint-service';
+export type {
+  CreateCheckpointRequest,
+  CreateManualCheckpointRequest,
+  CreateErrorCheckpointRequest,
+  CreateMilestoneCheckpointRequest,
+  CheckpointInfo,
+  CheckpointStatisticsInfo,
+} from './threads/checkpoints/services/checkpoint-service';
 
 // 应用层类型定义
 export interface ApplicationService {
@@ -125,10 +130,7 @@ import { SessionMaintenanceService } from './sessions/services/session-maintenan
 import { ThreadLifecycleService } from './threads/services/thread-lifecycle-service';
 import { ThreadManagementService } from './threads/services/thread-management-service';
 import { ThreadMaintenanceService } from './threads/services/thread-maintenance-service';
-import { CheckpointCreationService } from './threads/checkpoints/services/checkpoint-creation-service';
-import { CheckpointRestoreService } from './threads/checkpoints/services/checkpoint-restore-service';
-import { CheckpointManagementService } from './threads/checkpoints/services/checkpoint-management-service';
-import { CheckpointAnalysisService } from './threads/checkpoints/services/checkpoint-analysis-service';
+import { CheckpointService } from './threads/checkpoints/services/checkpoint-service';
 
 /**
  * 应用层服务工厂接口
@@ -141,8 +143,5 @@ export interface ApplicationServiceFactory {
   createThreadLifecycleService(): ThreadLifecycleService;
   createThreadManagementService(): ThreadManagementService;
   createThreadMaintenanceService(): ThreadMaintenanceService;
-  createCheckpointCreationService(): CheckpointCreationService;
-  createCheckpointRestoreService(): CheckpointRestoreService;
-  createCheckpointManagementService(): CheckpointManagementService;
-  createCheckpointAnalysisService(): CheckpointAnalysisService;
+  createCheckpointService(): CheckpointService;
 }

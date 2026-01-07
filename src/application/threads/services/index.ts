@@ -25,7 +25,3 @@ export * from './thread-copy-service';
 
 // 检查点服务
 export * from '../checkpoints/services/checkpoint-service';
-export * from '../checkpoints/services/checkpoint-creation-service';
-export * from '../checkpoints/services/checkpoint-restore-service';
-export * from '../checkpoints/services/checkpoint-management-service';
-export * from '../checkpoints/services/checkpoint-analysis-service';
