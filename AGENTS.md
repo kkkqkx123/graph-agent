@@ -95,7 +95,7 @@ The framework uses a simplified TOML-based configuration system with:
 - Implements concrete versions of domain interfaces for external dependencies
 
 **Application Layer**
-- **Can only depend on domain layer**
+- **Can only depend on domain layer and infrastructure layer**
 - Provides business logic and application services
 - Coordinates between domain components
 

@@ -1,6 +1,8 @@
+import { injectable, inject } from 'inversify';
 import { ID, Timestamp } from '../../../domain/common/value-objects';
 import { ThreadWorkflowState } from '../../../domain/threads/value-objects/thread-workflow-state';
-import { IImmerAdapter, createImmerAdapter, Patch } from '../../../infrastructure/common/immer/immer-adapter';
+import { IImmerAdapter, Patch } from '../../../infrastructure/common/immer/immer-adapter';
+import { TYPES } from '../../../di/service-keys';
 
 /**
  * 补丁历史记录
@@ -76,19 +78,20 @@ export interface StateUpdateOptions {
  * - 执行历史记录（由 ThreadHistoryManager 负责）
  * - 状态缓存管理（由基础设施层负责）
  */
+@injectable()
 export class ThreadStateManager {
 	private states: Map<string, ThreadWorkflowState>;
 	private stateHistory: Map<string, StateChange[]>;
 	private patchHistories: Map<string, PatchHistory[]>;
 	private stateVersions: Map<string, number>;
-	private immerAdapter: IImmerAdapter;
+	private readonly immerAdapter: IImmerAdapter;
 
-	constructor(immerAdapter?: IImmerAdapter) {
+	constructor(@inject(TYPES.ImmerAdapter) immerAdapter: IImmerAdapter) {
 		this.states = new Map();
 		this.stateHistory = new Map();
 		this.patchHistories = new Map();
 		this.stateVersions = new Map();
-		this.immerAdapter = immerAdapter || createImmerAdapter();
+		this.immerAdapter = immerAdapter;
 	}
 
 	/**

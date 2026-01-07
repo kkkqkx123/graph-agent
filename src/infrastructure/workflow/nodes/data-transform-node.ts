@@ -11,7 +11,7 @@ import {
   ValidationResult,
   WorkflowExecutionContext,
 } from '../../../domain/workflow/entities/node';
-import { TransformFunctionRegistry } from '../functions/nodes/data-transformer';
+import { FunctionRegistry } from '../functions/function-registry';
 
 /**
  * 数据转换节点
@@ -25,7 +25,6 @@ export class DataTransformNode extends Node {
     public readonly sourceData: string,
     public readonly targetVariable: string,
     public readonly transformConfig: Record<string, unknown> = {},
-    private readonly transformRegistry: TransformFunctionRegistry,
     name?: string,
     description?: string,
     position?: { x: number; y: number }
@@ -59,8 +58,14 @@ export class DataTransformNode extends Node {
     }
 
     try {
+      // 获取函数注册表
+      const functionRegistry = context.getService<FunctionRegistry>('FunctionRegistry');
+
+      // 构建转换函数ID
+      const transformId = `transform:${this.transformType}`;
+
       // 获取转换函数
-      const transformFunction = this.transformRegistry.getTransformFunction(this.transformType);
+      const transformFunction = functionRegistry.getFunction(transformId);
       if (!transformFunction) {
         return {
           success: false,
@@ -232,7 +237,6 @@ export class DataTransformNode extends Node {
       props.sourceData,
       props.targetVariable,
       props.transformConfig,
-      props.transformRegistry,
       props.name,
       props.description,
       props.position

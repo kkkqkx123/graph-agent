@@ -37,6 +37,14 @@ import { IHumanRelayService } from '../application/llm/services/human-relay-serv
 import { ThreadLifecycleService } from '../application/threads/services/thread-lifecycle-service';
 import { ThreadExecutionService } from '../application/threads/services/thread-execution-service';
 import { ThreadMonitoringService } from '../application/threads/services/thread-monitoring-service';
+import { ThreadManagementService } from '../application/threads/services/thread-management-service';
+import { ThreadMaintenanceService } from '../application/threads/services/thread-maintenance-service';
+import { ThreadForkService } from '../application/threads/services/thread-fork-service';
+import { ThreadCopyService } from '../application/threads/services/thread-copy-service';
+import { ThreadStateManager } from '../application/threads/services/thread-state-manager';
+import { ThreadHistoryManager } from '../application/threads/services/thread-history-manager';
+import { ThreadConditionalRouter } from '../application/threads/services/thread-conditional-router';
+import { WorkflowExecutionEngine } from '../application/threads/services/workflow-execution-engine';
 import { SessionMonitoringService } from '../application/sessions/services/session-monitoring-service';
 import { GraphAlgorithmService } from '../infrastructure/workflow/services/graph-algorithm-service';
 
@@ -50,6 +58,7 @@ import { HistoryRepository as HistoryInfrastructureRepository } from '../infrast
 import { GraphAlgorithmServiceImpl } from '../infrastructure/workflow/services/graph-algorithm-service';
 import { FunctionExecutionEngine } from '../infrastructure/workflow/services/function-execution-engine';
 import { MonitoringService } from '../infrastructure/workflow/services/monitoring-service';
+import { FunctionRegistry } from '../infrastructure/workflow/functions/function-registry';
 import { ConnectionManager } from '../infrastructure/persistence/connection-manager';
 import { PromptBuilder } from '../infrastructure/prompts/services/prompt-builder';
 import { TemplateProcessor } from '../infrastructure/prompts/services/template-processor';
@@ -58,10 +67,11 @@ import { PromptReferenceValidator } from '../infrastructure/prompts/services/pro
 import { NodeExecutor } from '../infrastructure/workflow/nodes/node-executor';
 import { EdgeExecutor } from '../infrastructure/workflow/edges/edge-executor';
 import { NodeRouter } from '../infrastructure/workflow/services/node-router';
-import { WorkflowExecutionEngine } from '../infrastructure/workflow/services/workflow-execution-engine';
 import { HookExecutor } from '../infrastructure/workflow/hooks/hook-executor';
 import { HookFactory } from '../infrastructure/workflow/hooks/hook-factory';
 import { Logger } from '../infrastructure/logging/logger';
+import { ExpressionEvaluator } from '../infrastructure/workflow/services/expression-evaluator';
+import { IImmerAdapter } from '../infrastructure/common/immer/immer-adapter';
 
 // Application层实现
 import { SessionOrchestrationService } from '../application/sessions/services/session-orchestration-service';
@@ -70,6 +80,7 @@ import { SessionLifecycleService } from '../application/sessions/services/sessio
 import { SessionManagementService } from '../application/sessions/services/session-management-service';
 import { SessionMaintenanceService } from '../application/sessions/services/session-maintenance-service';
 import { HumanRelayService } from '../application/llm/services/human-relay-service';
+import { CheckpointManager } from '../domain/checkpoint/services/checkpoint-manager';
 
 // ========== 服务类型映射接口 ==========
 
@@ -135,6 +146,7 @@ export interface ServiceTypes {
   GraphAlgorithmServiceImpl: GraphAlgorithmServiceImpl;
   FunctionExecutionEngine: FunctionExecutionEngine;
   MonitoringService: MonitoringService;
+  FunctionRegistry: FunctionRegistry;
 
   // 基础设施服务
   ConnectionManager: ConnectionManager;
@@ -145,16 +157,26 @@ export interface ServiceTypes {
   NodeExecutor: NodeExecutor;
   EdgeExecutor: EdgeExecutor;
   NodeRouter: NodeRouter;
-  WorkflowExecutionEngine: WorkflowExecutionEngine;
   ThreadExecutionEngine: any;
   HookExecutor: HookExecutor;
   HookFactory: HookFactory;
   Logger: Logger;
+  ImmerAdapter: IImmerAdapter;
+  ExpressionEvaluator: ExpressionEvaluator;
 
   // 线程相关服务
   ThreadLifecycleService: ThreadLifecycleService;
   ThreadExecutionService: ThreadExecutionService;
   ThreadMonitoringService: ThreadMonitoringService;
+  ThreadManagementService: ThreadManagementService;
+  ThreadMaintenanceService: ThreadMaintenanceService;
+  ThreadForkService: ThreadForkService;
+  ThreadCopyService: ThreadCopyService;
+  ThreadStateManager: ThreadStateManager;
+  ThreadHistoryManager: ThreadHistoryManager;
+  ThreadConditionalRouter: ThreadConditionalRouter;
+  WorkflowExecutionEngine: WorkflowExecutionEngine;
+  CheckpointManager: CheckpointManager;
   ThreadDefinitionRepository: any; // TODO: 添加具体类型
   ThreadExecutionRepository: any; // TODO: 添加具体类型
 
@@ -283,6 +305,7 @@ export const TYPES: {
     'FunctionExecutionEngine'
   ) as TypedServiceIdentifier<'FunctionExecutionEngine'>,
   MonitoringService: Symbol.for('MonitoringService') as TypedServiceIdentifier<'MonitoringService'>,
+  FunctionRegistry: Symbol.for('FunctionRegistry') as TypedServiceIdentifier<'FunctionRegistry'>,
 
   // 基础设施服务
   ConnectionManager: Symbol.for('ConnectionManager') as TypedServiceIdentifier<'ConnectionManager'>,
@@ -297,15 +320,13 @@ export const TYPES: {
   NodeExecutor: Symbol.for('NodeExecutor') as TypedServiceIdentifier<'NodeExecutor'>,
   EdgeExecutor: Symbol.for('EdgeExecutor') as TypedServiceIdentifier<'EdgeExecutor'>,
   NodeRouter: Symbol.for('NodeRouter') as TypedServiceIdentifier<'NodeRouter'>,
-  WorkflowExecutionEngine: Symbol.for(
-    'WorkflowExecutionEngine'
-  ) as TypedServiceIdentifier<'WorkflowExecutionEngine'>,
   ThreadExecutionEngine: Symbol.for(
     'ThreadExecutionEngine'
   ) as TypedServiceIdentifier<'ThreadExecutionEngine'>,
   HookExecutor: Symbol.for('HookExecutor') as TypedServiceIdentifier<'HookExecutor'>,
   HookFactory: Symbol.for('HookFactory') as TypedServiceIdentifier<'HookFactory'>,
   Logger: Symbol.for('Logger') as TypedServiceIdentifier<'Logger'>,
+  ImmerAdapter: Symbol.for('ImmerAdapter') as TypedServiceIdentifier<'ImmerAdapter'>,
 
   // 线程相关服务
   ThreadLifecycleService: Symbol.for(
@@ -317,6 +338,36 @@ export const TYPES: {
   ThreadMonitoringService: Symbol.for(
     'ThreadMonitoringService'
   ) as TypedServiceIdentifier<'ThreadMonitoringService'>,
+  ThreadManagementService: Symbol.for(
+    'ThreadManagementService'
+  ) as TypedServiceIdentifier<'ThreadManagementService'>,
+  ThreadMaintenanceService: Symbol.for(
+    'ThreadMaintenanceService'
+  ) as TypedServiceIdentifier<'ThreadMaintenanceService'>,
+  ThreadForkService: Symbol.for(
+    'ThreadForkService'
+  ) as TypedServiceIdentifier<'ThreadForkService'>,
+  ThreadCopyService: Symbol.for(
+    'ThreadCopyService'
+  ) as TypedServiceIdentifier<'ThreadCopyService'>,
+  ThreadStateManager: Symbol.for(
+    'ThreadStateManager'
+  ) as TypedServiceIdentifier<'ThreadStateManager'>,
+  ThreadHistoryManager: Symbol.for(
+    'ThreadHistoryManager'
+  ) as TypedServiceIdentifier<'ThreadHistoryManager'>,
+  ThreadConditionalRouter: Symbol.for(
+    'ThreadConditionalRouter'
+  ) as TypedServiceIdentifier<'ThreadConditionalRouter'>,
+  WorkflowExecutionEngine: Symbol.for(
+    'WorkflowExecutionEngine'
+  ) as TypedServiceIdentifier<'WorkflowExecutionEngine'>,
+  CheckpointManager: Symbol.for(
+    'CheckpointManager'
+  ) as TypedServiceIdentifier<'CheckpointManager'>,
+  ExpressionEvaluator: Symbol.for(
+    'ExpressionEvaluator'
+  ) as TypedServiceIdentifier<'ExpressionEvaluator'>,
   ThreadDefinitionRepository: Symbol.for(
     'ThreadDefinitionRepository'
   ) as TypedServiceIdentifier<'ThreadDefinitionRepository'>,

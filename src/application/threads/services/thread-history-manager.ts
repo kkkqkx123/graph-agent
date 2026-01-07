@@ -1,3 +1,4 @@
+import { injectable } from 'inversify';
 import { ID } from '../../../domain/common/value-objects';
 import { ExecutionHistory } from '../../../domain/workflow/value-objects/execution';
 
@@ -52,6 +53,7 @@ export interface HistoryStatistics {
  * - 支持历史记录查询
  * - 支持历史统计
  */
+@injectable()
 export class ThreadHistoryManager {
   private histories: Map<string, HistoryRecord[]>;
 

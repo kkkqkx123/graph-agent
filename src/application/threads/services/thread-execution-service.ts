@@ -23,10 +23,11 @@ import { ThreadStateManager } from './thread-state-manager';
 import { ThreadHistoryManager } from './thread-history-manager';
 import { CheckpointManager } from '../../../domain/checkpoint/services/checkpoint-manager';
 import { ThreadConditionalRouter } from './thread-conditional-router';
-import { ExpressionEvaluator } from '../../../infrastructure/workflow/services/expression-evaluator';
 import { INodeExecutor } from '../../../infrastructure/workflow/nodes/node-executor';
+import { FunctionRegistry } from '../../../infrastructure/workflow/functions/function-registry';
 import { TYPES } from '../../../di/service-keys';
 import { SubgraphConfig, VariableMapping } from '../../../infrastructure/workflow/nodes/subgraph/subgraph-node';
+import { ExpressionEvaluator } from '../../../infrastructure/workflow/services/expression-evaluator';
 
 /**
  * 线程执行结果接口
@@ -76,25 +77,24 @@ export class ThreadExecutionService extends BaseApplicationService {
     @inject(TYPES.ThreadRepository) private readonly threadRepository: IThreadRepository,
     @inject(TYPES.WorkflowRepository) private readonly workflowRepository: IWorkflowRepository,
     @inject(TYPES.NodeExecutor) private readonly nodeExecutor: INodeExecutor,
-    @inject(TYPES.Logger) logger: ILogger
+    @inject(TYPES.Logger) logger: ILogger,
+    @inject(TYPES.FunctionRegistry) private readonly functionRegistry: FunctionRegistry,
+    @inject(TYPES.ExpressionEvaluator) evaluator: ExpressionEvaluator,
+    @inject(TYPES.ThreadStateManager) stateManager: ThreadStateManager,
+    @inject(TYPES.ThreadHistoryManager) historyManager: ThreadHistoryManager,
+    @inject(TYPES.CheckpointManager) checkpointManager: CheckpointManager,
+    @inject(TYPES.ThreadConditionalRouter) router: ThreadConditionalRouter,
+    @inject(TYPES.WorkflowExecutionEngine) workflowEngine: WorkflowExecutionEngine
   ) {
     super(logger);
 
-    // 初始化领域服务
-    // 注意：这些配置值应该从配置文件中读取
-    // 这里使用默认值，后续可以通过依赖注入配置对象来覆盖
-    this.evaluator = new ExpressionEvaluator();
-    this.stateManager = new ThreadStateManager();
-    this.historyManager = new ThreadHistoryManager();
-    this.checkpointManager = new CheckpointManager(10, 1000); // maxCheckpointsPerThread, maxTotalCheckpoints
-    this.router = new ThreadConditionalRouter(this.evaluator);
-    this.workflowEngine = new WorkflowExecutionEngine(
-      this.stateManager,
-      this.historyManager,
-      this.checkpointManager,
-      this.router,
-      this.nodeExecutor
-    );
+    // 通过依赖注入获取所有依赖
+    this.evaluator = evaluator;
+    this.stateManager = stateManager;
+    this.historyManager = historyManager;
+    this.checkpointManager = checkpointManager;
+    this.router = router;
+    this.workflowEngine = workflowEngine;
   }
 
   /**

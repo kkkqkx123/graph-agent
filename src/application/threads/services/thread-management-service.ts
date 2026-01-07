@@ -4,17 +4,20 @@
  * 负责线程的查询、列表、存在性检查和优先级更新等管理功能
  */
 
+import { injectable, inject } from 'inversify';
 import { Thread, IThreadRepository, ThreadPriority } from '../../../domain/threads';
 import { BaseApplicationService } from '../../common/base-application-service';
 import { ILogger, ID } from '../../../domain/common';
+import { TYPES } from '../../../di/service-keys';
 
 /**
  * 线程管理服务
  */
+@injectable()
 export class ThreadManagementService extends BaseApplicationService {
   constructor(
-    private readonly threadRepository: IThreadRepository,
-    logger: ILogger
+    @inject(TYPES.ThreadRepository) private readonly threadRepository: IThreadRepository,
+    @inject(TYPES.Logger) logger: ILogger
   ) {
     super(logger);
   }

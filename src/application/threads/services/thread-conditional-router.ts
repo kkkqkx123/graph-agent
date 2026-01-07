@@ -1,7 +1,9 @@
+import { injectable, inject } from 'inversify';
 import { EdgeValueObject } from '../../../domain/workflow/value-objects/edge/edge-value-object';
 import { NodeId } from '../../../domain/workflow/value-objects/node/node-id';
 import { ThreadWorkflowState } from '../../../domain/threads/value-objects/thread-workflow-state';
 import { ExpressionEvaluator } from '../../../infrastructure/workflow/services/expression-evaluator';
+import { TYPES } from '../../../di/service-keys';
 
 /**
  * 路由结果接口
@@ -84,12 +86,13 @@ export interface RoutingOptions {
  * - 支持边权重和优先级
  * - 支持路由结果缓存
  */
+@injectable()
 export class ThreadConditionalRouter {
-  private evaluator: ExpressionEvaluator;
+  private readonly evaluator: ExpressionEvaluator;
   private routingHistory: Map<string, RoutingResult[]>;
   private decisionLogs: Map<string, RoutingDecisionLog[]>;
 
-  constructor(evaluator: ExpressionEvaluator) {
+  constructor(@inject(TYPES.ExpressionEvaluator) evaluator: ExpressionEvaluator) {
     this.evaluator = evaluator;
     this.routingHistory = new Map();
     this.decisionLogs = new Map();

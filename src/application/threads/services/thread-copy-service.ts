@@ -4,6 +4,7 @@
  * 负责处理线程Copy操作的业务逻辑编排
  */
 
+import { injectable, inject } from 'inversify';
 import { ID, ILogger } from '../../../domain/common';
 import { NodeId } from '../../../domain/workflow';
 import { Thread, IThreadRepository } from '../../../domain/threads';
@@ -17,6 +18,7 @@ import {
   ThreadOperationMetadata,
   ThreadOperationError,
 } from '../../../domain/sessions';
+import { TYPES } from '../../../di/service-keys';
 
 /**
  * Copy操作输入
@@ -49,11 +51,12 @@ export interface CopyValidationResult {
 /**
  * Thread Copy应用服务
  */
+@injectable()
 export class ThreadCopyService {
   constructor(
-    private readonly threadRepository: IThreadRepository,
-    private readonly sessionRepository: ISessionRepository,
-    private readonly logger: ILogger
+    @inject(TYPES.ThreadRepository) private readonly threadRepository: IThreadRepository,
+    @inject(TYPES.SessionRepository) private readonly sessionRepository: ISessionRepository,
+    @inject(TYPES.Logger) private readonly logger: ILogger
   ) {}
 
   /**

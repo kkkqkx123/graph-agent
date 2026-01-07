@@ -12,7 +12,6 @@ import { StartNode } from './start-node';
 import { EndNode } from './end-node';
 import { ContextProcessorNode } from './context-processor-node';
 import { PromptSource } from '../../prompts/services/prompt-builder';
-import { TransformFunctionRegistry } from '../functions/nodes/data-transformer';
 
 /**
  * 节点配置接口
@@ -210,16 +209,12 @@ export class NodeFactory {
       throw new Error('数据转换节点需要targetVariable配置');
     }
 
-    // 创建转换函数注册表实例
-    const transformRegistry = new TransformFunctionRegistry();
-
     return new DataTransformNode(
       id,
       config.transformType,
       config.sourceData,
       config.targetVariable,
       config.transformConfig || {},
-      transformRegistry,
       config.name,
       config.description,
       config.position

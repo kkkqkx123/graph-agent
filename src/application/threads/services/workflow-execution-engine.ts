@@ -1,3 +1,4 @@
+import { injectable, inject } from 'inversify';
 import { Workflow } from '../../../domain/workflow/entities/workflow';
 import { NodeId, NodeType } from '../../../domain/workflow/value-objects/node';
 import { ThreadWorkflowState } from '../../../domain/threads/value-objects/thread-workflow-state';
@@ -6,6 +7,8 @@ import { ThreadHistoryManager } from './thread-history-manager';
 import { CheckpointManager } from '../../../domain/checkpoint/services/checkpoint-manager';
 import { ThreadConditionalRouter } from './thread-conditional-router';
 import { INodeExecutor } from '../../../infrastructure/workflow/nodes/node-executor';
+import { FunctionRegistry } from '../../../infrastructure/workflow/functions/function-registry';
+import { TYPES } from '../../../di/service-keys';
 
 /**
  * 工作流执行选项接口
@@ -90,7 +93,7 @@ class WorkflowExecutionController implements ExecutionController {
   private resumePromise?: Promise<void>;
   private resumeResolve?: () => void;
 
-  constructor(public readonly threadId: string) {}
+  constructor(public readonly threadId: string) { }
 
   pause(): void {
     this.isPaused = true;
@@ -142,26 +145,30 @@ class WorkflowExecutionController implements ExecutionController {
  * - 支持错误处理和恢复
  * - 支持执行控制（暂停/恢复/取消）
  */
+@injectable()
 export class WorkflowExecutionEngine {
-  private stateManager: ThreadStateManager;
-  private historyManager: ThreadHistoryManager;
-  private checkpointManager: CheckpointManager;
-  private router: ThreadConditionalRouter;
-  private nodeExecutor: INodeExecutor;
+  private readonly stateManager: ThreadStateManager;
+  private readonly historyManager: ThreadHistoryManager;
+  private readonly checkpointManager: CheckpointManager;
+  private readonly router: ThreadConditionalRouter;
+  private readonly nodeExecutor: INodeExecutor;
+  private readonly functionRegistry: FunctionRegistry;
   private activeExecutions: Map<string, WorkflowExecutionController>;
 
   constructor(
-    stateManager: ThreadStateManager,
-    historyManager: ThreadHistoryManager,
-    checkpointManager: CheckpointManager,
-    router: ThreadConditionalRouter,
-    nodeExecutor: INodeExecutor
+    @inject(TYPES.ThreadStateManager) stateManager: ThreadStateManager,
+    @inject(TYPES.ThreadHistoryManager) historyManager: ThreadHistoryManager,
+    @inject(TYPES.CheckpointManager) checkpointManager: CheckpointManager,
+    @inject(TYPES.ThreadConditionalRouter) router: ThreadConditionalRouter,
+    @inject(TYPES.NodeExecutor) nodeExecutor: INodeExecutor,
+    @inject(TYPES.FunctionRegistry) functionRegistry: FunctionRegistry
   ) {
     this.stateManager = stateManager;
     this.historyManager = historyManager;
     this.checkpointManager = checkpointManager;
     this.router = router;
     this.nodeExecutor = nodeExecutor;
+    this.functionRegistry = functionRegistry;
     this.activeExecutions = new Map();
   }
 
@@ -575,6 +582,14 @@ export class WorkflowExecutionEngine {
       getNodeResult: (nodeId: string) => {
         const history = this.historyManager.getNodeHistory(threadId, NodeId.fromString(nodeId));
         return history.length > 0 ? history[history.length - 1]?.result : undefined;
+      },
+      getService: <T>(serviceName: string): T => {
+        // 根据服务名称返回相应的服务
+        if (serviceName === 'FunctionRegistry') {
+          return this.functionRegistry as T;
+        }
+        // 可以在这里添加其他服务的获取逻辑
+        throw new Error(`服务 ${serviceName} 未找到`);
       },
     };
   }

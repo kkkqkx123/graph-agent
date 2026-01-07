@@ -4,6 +4,7 @@
  * 负责处理线程Fork操作的业务逻辑编排
  */
 
+import { injectable, inject } from 'inversify';
 import { ID, ILogger } from '../../../domain/common';
 import { NodeId, PromptContext } from '../../../domain/workflow';
 import {
@@ -21,6 +22,7 @@ import {
   ThreadOperationMetadata,
   ThreadOperationError,
 } from '../../../domain/sessions';
+import { TYPES } from '../../../di/service-keys';
 
 /**
  * Fork操作输入
@@ -53,11 +55,12 @@ export interface ForkValidationResult {
 /**
  * Thread Fork应用服务
  */
+@injectable()
 export class ThreadForkService {
   constructor(
-    private readonly threadRepository: IThreadRepository,
-    private readonly sessionRepository: ISessionRepository,
-    private readonly logger: ILogger
+    @inject(TYPES.ThreadRepository) private readonly threadRepository: IThreadRepository,
+    @inject(TYPES.SessionRepository) private readonly sessionRepository: ISessionRepository,
+    @inject(TYPES.Logger) private readonly logger: ILogger
   ) {}
 
   /**

@@ -4,17 +4,20 @@
  * 负责线程的删除、清理和批量操作等维护功能
  */
 
+import { injectable, inject } from 'inversify';
 import { Thread, IThreadRepository, ThreadStatus } from '../../../domain/threads';
 import { BaseApplicationService } from '../../common/base-application-service';
 import { ILogger } from '../../../domain/common';
+import { TYPES } from '../../../di/service-keys';
 
 /**
  * 线程维护服务
  */
+@injectable()
 export class ThreadMaintenanceService extends BaseApplicationService {
   constructor(
-    private readonly threadRepository: IThreadRepository,
-    logger: ILogger
+    @inject(TYPES.ThreadRepository) private readonly threadRepository: IThreadRepository,
+    @inject(TYPES.Logger) logger: ILogger
   ) {
     super(logger);
   }

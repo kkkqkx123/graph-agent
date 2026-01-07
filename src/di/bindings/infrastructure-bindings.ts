@@ -36,6 +36,12 @@ import { HistoryRepository as HistoryInfrastructureRepository } from '../../infr
 import { GraphAlgorithmServiceImpl } from '../../infrastructure/workflow/services/graph-algorithm-service';
 import { FunctionExecutionEngine } from '../../infrastructure/workflow/services/function-execution-engine';
 import { MonitoringService } from '../../infrastructure/workflow/services/monitoring-service';
+import { FunctionRegistry } from '../../infrastructure/workflow/functions/function-registry';
+import { MapTransformFunction } from '../../infrastructure/workflow/functions/nodes/data-transformer/map-transform.function';
+import { FilterTransformFunction } from '../../infrastructure/workflow/functions/nodes/data-transformer/filter-transform.function';
+import { ReduceTransformFunction } from '../../infrastructure/workflow/functions/nodes/data-transformer/reduce-transform.function';
+import { SortTransformFunction } from '../../infrastructure/workflow/functions/nodes/data-transformer/sort-transform.function';
+import { GroupTransformFunction } from '../../infrastructure/workflow/functions/nodes/data-transformer/group-transform.function';
 
 // 基础设施服务
 import { ConnectionManager } from '../../infrastructure/persistence/connection-manager';
@@ -96,6 +102,24 @@ export const infrastructureBindings = new ContainerModule((bind: any) => {
   bind(TYPES.GraphAlgorithmServiceImpl).to(GraphAlgorithmServiceImpl).inSingletonScope();
   bind(TYPES.FunctionExecutionEngine).to(FunctionExecutionEngine).inSingletonScope();
   bind(TYPES.MonitoringService).to(MonitoringService).inSingletonScope();
+  
+  // ========== 函数注册表绑定 ==========
+  
+  // 创建并配置 FunctionRegistry 单例
+  bind(TYPES.FunctionRegistry)
+    .toDynamicValue((context: any) => {
+      const functionRegistry = new FunctionRegistry();
+      
+      // 注册内置的转换函数
+      functionRegistry.registerSingleton(new MapTransformFunction());
+      functionRegistry.registerSingleton(new FilterTransformFunction());
+      functionRegistry.registerSingleton(new ReduceTransformFunction());
+      functionRegistry.registerSingleton(new SortTransformFunction());
+      functionRegistry.registerSingleton(new GroupTransformFunction());
+      
+      return functionRegistry;
+    })
+    .inSingletonScope();
 
   // ========== 基础设施服务绑定 ==========
 
