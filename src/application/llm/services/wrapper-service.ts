@@ -2,11 +2,11 @@
  * 包装器服务
  *
  * Application 层服务，专注于业务逻辑和编排
- * 技术实现委托给 Infrastructure 层的 LLMWrapperFactory
+ * 技术实现委托给 Infrastructure 层的 LLMWrapperManager
  */
 
 import { injectable, inject } from 'inversify';
-import { LLMWrapperFactory } from '../../../infrastructure/llm/wrappers/wrapper-factory';
+import { LLMWrapperManager } from '../../../infrastructure/llm/managers/llm-wrapper-manager';
 import { LLMRequest } from '../../../domain/llm/entities/llm-request';
 import { LLMResponse } from '../../../domain/llm/entities/llm-response';
 
@@ -17,45 +17,15 @@ import { LLMResponse } from '../../../domain/llm/entities/llm-response';
  */
 @injectable()
 export class WrapperService {
-  constructor(@inject('LLMWrapperFactory') private wrapperFactory: LLMWrapperFactory) {}
-
-  /**
-   * 获取包装器
-   */
-  async getWrapper(wrapperName: string) {
-    return this.wrapperFactory.getWrapper(wrapperName);
-  }
-
-  /**
-   * 创建轮询池包装器
-   */
-  async createPollingPoolWrapper(poolName: string, config?: Record<string, any>) {
-    return this.wrapperFactory.createPollingPoolWrapper(poolName, config);
-  }
-
-  /**
-   * 创建任务组包装器
-   */
-  async createTaskGroupWrapper(groupName: string, config?: Record<string, any>) {
-    return this.wrapperFactory.createTaskGroupWrapper(groupName, config);
-  }
-
-  /**
-   * 创建直接LLM包装器
-   */
-  async createDirectLLMWrapper(clientName: string, config?: Record<string, any>) {
-    return this.wrapperFactory.createDirectLLMWrapper(clientName, config);
-  }
+  constructor(@inject('LLMWrapperManager') private wrapperManager: LLMWrapperManager) {}
 
   /**
    * 生成响应
+   *
+   * wrapperName 格式：pool:poolName | group:groupName | provider:model
    */
   async generateResponse(wrapperName: string, request: LLMRequest): Promise<LLMResponse> {
-    const wrapper = await this.wrapperFactory.getWrapper(wrapperName);
-    if (!wrapper) {
-      throw new Error(`包装器未找到: ${wrapperName}`);
-    }
-    return wrapper.generateResponse(request);
+    return this.wrapperManager.generateResponse(wrapperName, request);
   }
 
   /**
@@ -65,11 +35,7 @@ export class WrapperService {
     wrapperName: string,
     request: LLMRequest
   ): Promise<AsyncIterable<LLMResponse>> {
-    const wrapper = await this.wrapperFactory.getWrapper(wrapperName);
-    if (!wrapper) {
-      throw new Error(`包装器未找到: ${wrapperName}`);
-    }
-    return wrapper.generateResponseStream(request);
+    return this.wrapperManager.generateResponseStream(wrapperName, request);
   }
 
   /**
@@ -77,11 +43,7 @@ export class WrapperService {
    */
   async isWrapperAvailable(wrapperName: string): Promise<boolean> {
     try {
-      const wrapper = await this.wrapperFactory.getWrapper(wrapperName);
-      if (!wrapper) {
-        return false;
-      }
-      return wrapper.isAvailable();
+      return this.wrapperManager.isAvailable(wrapperName);
     } catch {
       return false;
     }
@@ -91,60 +53,14 @@ export class WrapperService {
    * 获取包装器状态
    */
   async getWrapperStatus(wrapperName: string): Promise<Record<string, any>> {
-    const wrapper = await this.wrapperFactory.getWrapper(wrapperName);
-    if (!wrapper) {
-      throw new Error(`包装器未找到: ${wrapperName}`);
-    }
-    return wrapper.getStatus();
-  }
-
-  /**
-   * 获取所有包装器状态
-   */
-  async getAllWrappersStatus(): Promise<Record<string, any>> {
-    const allWrappers = await this.wrapperFactory.getAllWrappers();
-    const status: Record<string, any> = {};
-
-    for (const wrapper of allWrappers) {
-      status[wrapper.getName()] = await wrapper.getStatus();
-    }
-
-    return status;
-  }
-
-  /**
-   * 获取包装器统计信息
-   */
-  async getWrapperStatistics(wrapperName: string): Promise<Record<string, any>> {
-    return this.wrapperFactory.getWrapperStatistics(wrapperName);
+    return this.wrapperManager.getStatus(wrapperName);
   }
 
   /**
    * 获取所有包装器统计信息
    */
   async getAllWrappersStatistics(): Promise<Record<string, any>> {
-    return this.wrapperFactory.getAllWrappersStatistics();
-  }
-
-  /**
-   * 关闭包装器
-   */
-  async closeWrapper(wrapperName: string): Promise<void> {
-    await this.wrapperFactory.removeWrapper(wrapperName);
-  }
-
-  /**
-   * 关闭所有包装器
-   */
-  async closeAllWrappers(): Promise<void> {
-    await this.wrapperFactory.closeAll();
-  }
-
-  /**
-   * 重新加载包装器
-   */
-  async reloadWrapper(wrapperName: string, config?: Record<string, any>): Promise<void> {
-    await this.wrapperFactory.recreateWrapper(wrapperName, config);
+    return this.wrapperManager.getAllWrappersStatistics();
   }
 
   /**
@@ -153,27 +69,7 @@ export class WrapperService {
    * 业务逻辑：聚合和格式化系统级报告
    */
   async getSystemWrapperReport(): Promise<Record<string, any>> {
-    const allStatistics = await this.wrapperFactory.getAllWrappersStatistics();
-    const totalWrappers = Object.keys(allStatistics).length;
-    const totalRequests = Object.values(allStatistics).reduce(
-      (sum, stats) => sum + ((stats['totalRequests'] as number) || 0),
-      0
-    );
-    const successfulRequests = Object.values(allStatistics).reduce(
-      (sum, stats) => sum + ((stats['successfulRequests'] as number) || 0),
-      0
-    );
-
-    const overallSuccessRate = totalRequests > 0 ? successfulRequests / totalRequests : 0;
-
-    return {
-      totalWrappers,
-      totalRequests,
-      successfulRequests,
-      overallSuccessRate,
-      wrappers: allStatistics,
-      timestamp: new Date(),
-    };
+    return this.wrapperManager.getSystemReport();
   }
 
   /**
@@ -182,13 +78,14 @@ export class WrapperService {
    * 业务逻辑：根据需求选择最优包装器
    */
   async getOptimalWrapper(requirements: Record<string, any>): Promise<string | null> {
-    const allWrappers = await this.wrapperFactory.getAllWrappers();
+    const allStatistics = await this.wrapperManager.getAllWrappersStatistics();
 
     // 业务逻辑：返回第一个可用的包装器
     // 可以根据 requirements 实现更复杂的选择策略
-    for (const wrapper of allWrappers) {
-      if (await wrapper.isAvailable()) {
-        return wrapper.getName();
+    for (const [wrapperName, stats] of Object.entries(allStatistics)) {
+      // 简单的可用性检查：有健康的实例或模型
+      if (stats['available'] || stats['healthyInstances'] > 0 || stats['totalModels'] > 0) {
+        return wrapperName;
       }
     }
 
@@ -205,7 +102,7 @@ export class WrapperService {
 
     // 根据包装器类型和名称路由请求
     if (wrapperType && wrapperName) {
-      return this.generateResponse(wrapperName, requestData);
+      return this.generateResponse(`${wrapperType}:${wrapperName}`, requestData);
     }
 
     // 自动选择最优包装器

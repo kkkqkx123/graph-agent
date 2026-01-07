@@ -22,9 +22,9 @@ import { GeminiOpenAIClient } from '../infrastructure/llm/clients/gemini-openai-
 import { MockClient } from '../infrastructure/llm/clients/mock-client';
 import { HumanRelayClient } from '../infrastructure/llm/clients/human-relay-client';
 import { LLMClientFactory } from '../infrastructure/llm/clients/llm-client-factory';
-import { LLMWrapperFactory } from '../infrastructure/llm/wrappers/wrapper-factory';
 import { PollingPoolManager } from '../infrastructure/llm/managers/pool-manager';
 import { TaskGroupManager } from '../infrastructure/llm/managers/task-group-manager';
+import { LLMWrapperManager } from '../infrastructure/llm/managers/llm-wrapper-manager';
 
 // Domain层接口（用于类型定义，不注册到容器）
 import { ISessionRepository } from '../domain/sessions/repositories/session-repository';
@@ -99,11 +99,11 @@ export interface ServiceTypes {
 
   // 工厂类
   LLMClientFactory: LLMClientFactory;
-  LLMWrapperFactory: LLMWrapperFactory;
 
   // 管理器
   PollingPoolManager: PollingPoolManager;
   TaskGroupManager: TaskGroupManager;
+  LLMWrapperManager: LLMWrapperManager;
 
   // ========== Domain层接口（仅用于类型定义） ==========
 
@@ -225,13 +225,13 @@ export const TYPES: {
 
   // 工厂类
   LLMClientFactory: Symbol.for('LLMClientFactory') as TypedServiceIdentifier<'LLMClientFactory'>,
-  LLMWrapperFactory: Symbol.for('LLMWrapperFactory') as TypedServiceIdentifier<'LLMWrapperFactory'>,
 
   // 管理器
   PollingPoolManager: Symbol.for(
     'PollingPoolManager'
   ) as TypedServiceIdentifier<'PollingPoolManager'>,
   TaskGroupManager: Symbol.for('TaskGroupManager') as TypedServiceIdentifier<'TaskGroupManager'>,
+  LLMWrapperManager: Symbol.for('LLMWrapperManager') as TypedServiceIdentifier<'LLMWrapperManager'>,
 
   // ========== Domain层接口（仅用于类型定义） ==========
 

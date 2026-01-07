@@ -20,9 +20,9 @@ import { GeminiOpenAIClient } from '../../infrastructure/llm/clients/gemini-open
 import { MockClient } from '../../infrastructure/llm/clients/mock-client';
 import { HumanRelayClient } from '../../infrastructure/llm/clients/human-relay-client';
 import { LLMClientFactory } from '../../infrastructure/llm/clients/llm-client-factory';
-import { LLMWrapperFactory } from '../../infrastructure/llm/wrappers/wrapper-factory';
 import { PollingPoolManager } from '../../infrastructure/llm/managers/pool-manager';
 import { TaskGroupManager } from '../../infrastructure/llm/managers/task-group-manager';
+import { LLMWrapperManager } from '../../infrastructure/llm/managers/llm-wrapper-manager';
 
 // 仓储实现
 import { SessionRepository as SessionInfrastructureRepository } from '../../infrastructure/persistence/repositories/session-repository';
@@ -75,11 +75,11 @@ export const infrastructureBindings = new ContainerModule((bind: any) => {
 
   // 工厂类
   bind(TYPES.LLMClientFactory).to(LLMClientFactory).inSingletonScope();
-  bind(TYPES.LLMWrapperFactory).to(LLMWrapperFactory).inSingletonScope();
 
   // 管理器
   bind(TYPES.TaskGroupManager).to(TaskGroupManager).inSingletonScope();
   bind(TYPES.PollingPoolManager).to(PollingPoolManager).inSingletonScope();
+  bind(TYPES.LLMWrapperManager).to(LLMWrapperManager).inSingletonScope();
 
   // ========== 仓储绑定 ==========
 

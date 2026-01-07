@@ -11,7 +11,7 @@ import {
   ValidationResult,
   WorkflowExecutionContext,
 } from '../../../domain/workflow/entities/node';
-import { LLMWrapperFactory } from '../../../infrastructure/llm/wrappers/wrapper-factory';
+import { LLMWrapperManager } from '../../../infrastructure/llm/managers/llm-wrapper-manager';
 import { LLMRequest } from '../../../domain/llm/entities/llm-request';
 import { ID } from '../../../domain/common/value-objects/id';
 import {
@@ -50,7 +50,7 @@ export class LLMNode extends Node {
 
     try {
       // 获取服务（从 Infrastructure 层获取）
-      const wrapperFactory = context.getService<LLMWrapperFactory>('LLMWrapperFactory');
+      const wrapperManager = context.getService<LLMWrapperManager>('LLMWrapperManager');
       const promptBuilder = context.getService<PromptBuilder>('PromptBuilder');
 
       // 注册上下文处理器（如果尚未注册）
@@ -94,12 +94,8 @@ export class LLMNode extends Node {
         },
       });
 
-      // 通过包装器工厂调用LLM
-      const wrapper = await wrapperFactory.getWrapper(this.wrapperName);
-      if (!wrapper) {
-        throw new Error(`包装器未找到: ${this.wrapperName}`);
-      }
-      const llmResponse = await wrapper.generateResponse(llmRequest);
+      // 通过包装器管理器调用LLM
+      const llmResponse = await wrapperManager.generateResponse(this.wrapperName, llmRequest);
       const executionTime = Date.now() - startTime;
 
       // 构建结果
