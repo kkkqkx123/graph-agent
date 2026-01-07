@@ -13,3 +13,18 @@ export {
   SerializationConfig,
   SerializationResult,
 } from './utils/serialization-utils';
+
+// Immer 适配器
+export {
+  ImmerAdapter,
+  IImmerAdapter,
+  createImmerAdapter,
+} from './immer/immer-adapter';
+
+export type {
+  Draft,
+  Patch,
+  PatchListener,
+  IProduce,
+  IProduceWithPatches,
+} from './immer/immer-adapter';
