@@ -1,4 +1,4 @@
-import { NodeId } from '../../../domain/workflow/value-objects/node/node-id';
+import { NodeId } from '../../../../domain/workflow/value-objects/node/node-id';
 
 /**
  * 变量映射接口

@@ -1,5 +1,5 @@
-import { WorkflowFunctionType } from '../../../domain/workflow/value-objects/function-type';
-import { ConfigLoadingModule } from '../../../config/loading/config-loading-module';
+import { WorkflowFunctionType } from '../../../../domain/workflow/value-objects/function-type';
+import { ConfigLoadingModule } from '../../../../infrastructure/config/loading/config-loading-module';
 
 /**
  * Hook函数基类

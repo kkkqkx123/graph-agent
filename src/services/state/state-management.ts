@@ -4,10 +4,10 @@ import { Thread } from '../../domain/threads/entities/thread';
 import { Session } from '../../domain/sessions/entities/session';
 import { SnapshotType } from '../../domain/snapshot/value-objects/snapshot-type';
 import { CheckpointType } from '../../domain/checkpoint/value-objects/checkpoint-type';
-import { StateHistoryService } from './state-history-service';
-import { CheckpointService } from '../threads/checkpoints/services/checkpoint-service';
-import { StateSnapshotService } from './state-snapshot-service';
-import { StateRecoveryService } from './state-recovery-service';
+import { StateHistory } from './state-history';
+import { Checkpoint } from '../checkpoints/checkpoint';
+import { StateSnapshot } from './state-snapshot';
+import { StateRecovery } from './state-recovery';
 
 /**
  * 状态管理协调服务
@@ -16,10 +16,10 @@ import { StateRecoveryService } from './state-recovery-service';
 @injectable()
 export class StateManagement {
   constructor(
-    @inject('StateHistoryService') private readonly historyService: StateHistoryService,
-    @inject('CheckpointService') private readonly checkpointService: CheckpointService,
-    @inject('StateSnapshotService') private readonly snapshotService: StateSnapshotService,
-    @inject('StateRecoveryService') private readonly recoveryService: StateRecoveryService
+    @inject('StateHistory') private readonly historyService: StateHistory,
+    @inject('Checkpoint') private readonly checkpointService: Checkpoint,
+    @inject('StateSnapshot') private readonly snapshotService: StateSnapshot,
+    @inject('StateRecovery') private readonly recoveryService: StateRecovery
   ) { }
 
   /**

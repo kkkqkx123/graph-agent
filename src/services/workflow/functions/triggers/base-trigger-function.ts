@@ -6,8 +6,8 @@ import {
   WorkflowExecutionContext,
   TriggerFunctionConfig,
 } from '../types';
-import { WorkflowFunctionType } from '../../../domain/workflow/value-objects/function-type';
-import { ConfigLoadingModule } from '../../../config/loading/config-loading-module';
+import { WorkflowFunctionType } from '../../../../domain/workflow/value-objects/function-type';
+import { ConfigLoadingModule } from '../../../../infrastructure/config/loading/config-loading-module';
 
 /**
  * 触发器函数基类

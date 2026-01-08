@@ -13,7 +13,7 @@
 import { injectable, inject } from 'inversify';
 import { Node } from '../../domain/workflow/entities/node';
 import { WorkflowExecutionContext } from '../../domain/workflow/entities/node';
-import { NodeExecutor } from '../nodes/node-executor';
+import { NodeExecutor } from './nodes/node-executor';
 import { ILogger } from '../../domain/common/types/logger-types';
 
 /**

@@ -1,5 +1,5 @@
-import { ID, Timestamp, Version } from '../../../domain/common/value-objects';
-import { HookPointValue } from '../../../domain/workflow/value-objects/hook-point';
+import { ID, Timestamp, Version } from '../../../../domain/common/value-objects';
+import { HookPointValue } from '../../../../domain/workflow/value-objects/hook-point';
 import {
   Hook,
   HookContext,
@@ -8,7 +8,7 @@ import {
   HookParameter,
   HookValidationResult,
   HookProps,
-} from '../../../domain/workflow/entities/hook';
+} from '../../../../domain/workflow/entities/hook';
 
 /**
  * 执行后钩子配置接口

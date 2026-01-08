@@ -1,7 +1,7 @@
 import { injectable, inject } from 'inversify';
 import { ID, Timestamp } from '../../domain/common/value-objects';
 import { ThreadWorkflowState } from '../../domain/threads/value-objects/thread-workflow-state';
-import { IImmerAdapter, Patch } from '../common/immer/immer-adapter';
+import { IImmerAdapter, Patch } from '../../infrastructure/common/immer/immer-adapter';
 import { TYPES } from '../../di/service-keys';
 
 /**
@@ -114,7 +114,7 @@ export class ThreadStateManager {
 		// 使用 Immer 更新初始状态
 		const [updatedStateProps, patches, inversePatches] = this.immerAdapter.produceWithPatches(
 			state.toProps(),
-			(draft) => {
+			(draft: any) => {
 				Object.assign(draft.data, initialState);
 			}
 		);
@@ -162,7 +162,7 @@ export class ThreadStateManager {
 		// 使用 Immer 更新状态
 		const [nextStateProps, patches, inversePatches] = this.immerAdapter.produceWithPatches(
 			currentState.toProps(),
-			(draft) => {
+			(draft: any) => {
 				Object.assign(draft.data, updates);
 				draft.updatedAt = Timestamp.now();
 			}
@@ -203,7 +203,7 @@ export class ThreadStateManager {
 		// 使用 Immer 更新状态
 		const [nextStateProps, patches, inversePatches] = this.immerAdapter.produceWithPatches(
 			currentState.toProps(),
-			(draft) => {
+			(draft: any) => {
 				draft.currentNodeId = nodeId;
 				draft.updatedAt = Timestamp.now();
 			}

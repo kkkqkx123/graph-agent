@@ -5,7 +5,7 @@ import {
   FunctionMetadata,
   WorkflowExecutionContext,
 } from '../../types';
-import { WorkflowFunctionType } from '../../../../domain/workflow/value-objects/function-type';
+import { WorkflowFunctionType } from '@/domain/workflow/value-objects/function-type';
 
 // 重新导出以供子类使用
 export type { WorkflowExecutionContext };

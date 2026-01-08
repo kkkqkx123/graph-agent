@@ -1,4 +1,4 @@
-import { PromptContext } from '../../../../domain/workflow/value-objects/context/prompt-context';
+import { PromptContext } from '@/domain/workflow/value-objects/context/prompt-context';
 import { BaseContextProcessor } from './base-context-processor';
 
 /**
@@ -50,7 +50,7 @@ export class RegexFilterProcessor extends BaseContextProcessor {
   /**
     * 验证配置参数
     */
-  validateConfig(config: Record<string, unknown>): { valid: boolean; errors: string[] } {
+  override validateConfig(config: Record<string, unknown>): { valid: boolean; errors: string[] } {
     const errors: string[] = [];
 
     if (!config['pattern'] || typeof config['pattern'] !== 'string') {

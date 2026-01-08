@@ -7,8 +7,8 @@
 import { injectable, inject } from 'inversify';
 import { Workflow, IWorkflowRepository } from '../../domain/workflow';
 import { ID, ILogger } from '../../domain/common';
-import { BaseService } from '../../common/base-service';
-import { WorkflowDTO, mapWorkflowToDTO, mapWorkflowsToDTOs } from '../dtos/workflow-dto';
+import { BaseService } from '../common/base-service';
+import { WorkflowDTO, mapWorkflowToDTO, mapWorkflowsToDTOs } from './dtos/workflow-dto';
 
 /**
  * 更新工作流参数
@@ -119,7 +119,7 @@ export class WorkflowManagement extends BaseService {
   /**
    * 获取服务名称
    */
-  protected override getServiceName(): string {
+  protected getServiceName(): string {
     return '工作流管理服务';
   }
 
