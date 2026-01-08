@@ -11,9 +11,9 @@ import {
   WorkflowType,
   WorkflowConfig,
   IWorkflowRepository,
-} from '../../../domain/workflow';
-import { ID, ILogger } from '../../../domain/common';
-import { BaseApplicationService } from '../../common/base-application-service';
+} from '../../domain/workflow';
+import { ID, ILogger } from '../../domain/common';
+import { BaseService } from '../common/base-service';
 import { WorkflowDTO, mapWorkflowToDTO } from '../dtos/workflow-dto';
 
 /**
@@ -66,7 +66,7 @@ export interface DeleteWorkflowParams {
  * 工作流生命周期服务
  */
 @injectable()
-export class WorkflowLifecycle extends BaseApplicationService {
+export class WorkflowLifecycle extends BaseService {
   constructor(
     @inject('WorkflowRepository') private readonly workflowRepository: IWorkflowRepository,
     @inject('Logger') logger: ILogger

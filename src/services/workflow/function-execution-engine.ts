@@ -11,10 +11,10 @@
  */
 
 import { injectable, inject } from 'inversify';
-import { Node } from '../../../domain/workflow/entities/node';
-import { WorkflowExecutionContext } from '../../../domain/workflow/entities/node';
+import { Node } from '../../domain/workflow/entities/node';
+import { WorkflowExecutionContext } from '../../domain/workflow/entities/node';
 import { NodeExecutor } from '../nodes/node-executor';
-import { ILogger } from '../../../domain/common/types/logger-types';
+import { ILogger } from '../../domain/common/types/logger-types';
 
 /**
  * 函数执行策略枚举
@@ -97,7 +97,7 @@ export class FunctionExecutionEngine {
   constructor(
     @inject('NodeExecutor') private readonly nodeExecutor: NodeExecutor,
     @inject('Logger') private readonly logger: ILogger
-  ) {}
+  ) { }
 
   /**
    * 执行函数

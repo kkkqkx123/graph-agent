@@ -2,7 +2,7 @@
  * 工作流函数类型枚举
  * 从领域层重新导出，保持单一数据源
  */
-export { WorkflowFunctionType } from '../../../domain/workflow/value-objects/function-type';
+export { WorkflowFunctionType } from '../../domain/workflow/value-objects/function-type';
 
 /**
  * 函数参数接口

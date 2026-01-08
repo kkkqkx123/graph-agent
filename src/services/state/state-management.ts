@@ -1,9 +1,9 @@
 import { injectable, inject } from 'inversify';
-import { ID } from '../../../domain/common/value-objects/id';
-import { Thread } from '../../../domain/threads/entities/thread';
-import { Session } from '../../../domain/sessions/entities/session';
-import { SnapshotType } from '../../../domain/snapshot/value-objects/snapshot-type';
-import { CheckpointType } from '../../../domain/checkpoint/value-objects/checkpoint-type';
+import { ID } from '../../domain/common/value-objects/id';
+import { Thread } from '../../domain/threads/entities/thread';
+import { Session } from '../../domain/sessions/entities/session';
+import { SnapshotType } from '../../domain/snapshot/value-objects/snapshot-type';
+import { CheckpointType } from '../../domain/checkpoint/value-objects/checkpoint-type';
 import { StateHistoryService } from './state-history-service';
 import { CheckpointService } from '../../threads/checkpoints/services/checkpoint-service';
 import { StateSnapshotService } from './state-snapshot-service';
@@ -20,7 +20,7 @@ export class StateManagement {
     @inject('CheckpointService') private readonly checkpointService: CheckpointService,
     @inject('StateSnapshotService') private readonly snapshotService: StateSnapshotService,
     @inject('StateRecoveryService') private readonly recoveryService: StateRecoveryService
-  ) {}
+  ) { }
 
   /**
    * 捕获Thread状态变更

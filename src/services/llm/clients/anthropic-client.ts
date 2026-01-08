@@ -9,10 +9,10 @@ import { AnthropicParameterMapper } from '../parameter-mappers/anthropic-paramet
 import { AnthropicEndpointStrategy } from '../endpoint-strategies/anthropic-endpoint-strategy';
 import { BaseFeatureSupport } from '../parameter-mappers/interfaces/feature-support.interface';
 import { TYPES } from '../../../di/service-keys';
-import { HttpClient } from '../../common/http/http-client';
+import { HttpClient } from '../../../infrastructure/common/http/http-client';
 import { TokenBucketLimiter } from '../rate-limiters/token-bucket-limiter';
 import { TokenCalculator } from '../token-calculators/token-calculator';
-import { ConfigLoadingModule } from '../../config/loading/config-loading-module';
+import { ConfigLoadingModule } from '../../../infrastructure/config/loading/config-loading-module';
 
 @injectable()
 export class AnthropicClient extends BaseLLMClient {

@@ -5,7 +5,7 @@ import {
   FunctionMetadata,
   WorkflowExecutionContext,
 } from '../../types';
-import { WorkflowFunctionType } from '../../../../../domain/workflow/value-objects/function-type';
+import { WorkflowFunctionType } from '../../../../domain/workflow/value-objects/function-type';
 
 // 重新导出以供子类使用
 export type { WorkflowExecutionContext };
@@ -35,7 +35,7 @@ export abstract class BaseTransformFunction<
     public readonly description: string,
     public readonly version: string = '1.0.0',
     public readonly category: string = 'transform'
-  ) {}
+  ) { }
 
   getParameters(): FunctionParameter[] {
     return [

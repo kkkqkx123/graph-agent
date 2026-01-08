@@ -1,12 +1,12 @@
-import { ID } from '../../../domain/common/value-objects/id';
-import { Timestamp } from '../../../domain/common/value-objects/timestamp';
-import { Thread } from '../../../domain/threads/entities/thread';
-import { ThreadStatus } from '../../../domain/threads/value-objects/thread-status';
-import { ThreadCheckpoint } from '../../../domain/threads/checkpoints/entities/thread-checkpoint';
-import { History } from '../../../domain/history/entities/history';
-import { HistoryType } from '../../../domain/history/value-objects/history-type';
-import { IHistoryRepository } from '../../../domain/history/repositories/history-repository';
-import { ILogger } from '../../../domain/common/types/logger-types';
+import { ID } from '../../domain/common/value-objects/id';
+import { Timestamp } from '../../domain/common/value-objects/timestamp';
+import { Thread } from '../../domain/threads/entities/thread';
+import { ThreadStatus } from '../../domain/threads/value-objects/thread-status';
+import { ThreadCheckpoint } from '../../domain/threads/checkpoints/entities/thread-checkpoint';
+import { History } from '../../domain/history/entities/history';
+import { HistoryType } from '../../domain/history/value-objects/history-type';
+import { IHistoryRepository } from '../../domain/history/repositories/history-repository';
+import { ILogger } from '../../domain/common/types/logger-types';
 
 /**
  * 状态历史服务
@@ -21,7 +21,7 @@ export class StateHistory {
   constructor(
     private readonly historyRepository: IHistoryRepository,
     private readonly logger: ILogger
-  ) {}
+  ) { }
 
   /**
    * 创建状态变更History

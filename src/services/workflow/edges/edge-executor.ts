@@ -13,7 +13,7 @@ export class EdgeExecutor {
   constructor(
     @inject('FunctionRegistry') private readonly functionRegistry: FunctionRegistry,
     @inject('Logger') private readonly logger: ILogger
-  ) {}
+  ) { }
 
   /**
    * 执行边

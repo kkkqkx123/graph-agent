@@ -1,4 +1,4 @@
-import { PromptContext } from '../../../../../domain/workflow/value-objects/context';
+import { PromptContext } from '../../../../domain/workflow/value-objects/context';
 import { BaseContextProcessor } from './base-context-processor';
 
 /**

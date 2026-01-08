@@ -9,7 +9,7 @@ import { MockClient } from './mock-client';
 import { HumanRelayClient } from './human-relay-client';
 import { HumanRelayMode } from '../../../domain/llm/value-objects/human-relay-mode';
 import { TYPES } from '../../../di/service-keys';
-import { ConfigLoadingModule } from '../../config/loading/config-loading-module';
+import { ConfigLoadingModule } from '../../../infrastructure/config/loading/config-loading-module';
 
 /**
  * LLM客户端工厂
@@ -28,7 +28,7 @@ export class LLMClientFactory {
     @inject(TYPES.MockClient) private mockClient: MockClient,
     @inject(TYPES.HumanRelayClient) private humanRelayClient: HumanRelayClient,
     @inject(TYPES.ConfigLoadingModule) private configManager: ConfigLoadingModule
-  ) {}
+  ) { }
 
   /**
    * 创建LLM客户端

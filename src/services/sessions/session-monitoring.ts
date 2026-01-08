@@ -13,12 +13,12 @@
  */
 
 import { injectable, inject } from 'inversify';
-import { Session, ISessionRepository } from '../../../domain/sessions';
-import { Thread, IThreadRepository } from '../../../domain/threads';
-import { ID, ILogger, Timestamp } from '../../../domain/common';
-import { BaseApplicationService } from '../../common/base-application-service';
-import { MonitoringService } from '../../../infrastructure/workflow/services/monitoring-service';
-import { TYPES } from '../../../di/service-keys';
+import { Session, ISessionRepository } from '../../domain/sessions';
+import { Thread, IThreadRepository } from '../../domain/threads';
+import { ID, ILogger, Timestamp } from '../../domain/common';
+import { BaseService } from '../common/base-service';
+import { MonitoringService } from '../workflow/monitoring';
+import { TYPES } from '../../di/service-keys';
 
 /**
  * 会话监控指标
@@ -94,7 +94,7 @@ export interface SessionHealthStatus {
  * 会话监控服务
  */
 @injectable()
-export class SessionMonitoring extends BaseApplicationService {
+export class SessionMonitoring extends BaseService {
   constructor(
     @inject(TYPES.SessionRepository) private readonly sessionRepository: ISessionRepository,
     @inject(TYPES.ThreadRepository) private readonly threadRepository: IThreadRepository,
@@ -190,9 +190,9 @@ export class SessionMonitoring extends BaseApplicationService {
           try {
             const alerts = await this.monitoringService.getAlerts(thread.id.toString());
             totalAlerts += alerts.length;
-            activeAlerts += alerts.filter(a => !a.resolved).length;
-            criticalAlerts += alerts.filter(a => !a.resolved && a.severity === 'critical').length;
-            highAlerts += alerts.filter(a => !a.resolved && a.severity === 'high').length;
+            activeAlerts += alerts.filter((a: { resolved: any; }) => !a.resolved).length;
+            criticalAlerts += alerts.filter((a: { resolved: any; severity: string; }) => !a.resolved && a.severity === 'critical').length;
+            highAlerts += alerts.filter((a: { resolved: any; severity: string; }) => !a.resolved && a.severity === 'high').length;
           } catch (error) {
             this.logger.warn(
               '获取线程告警失败',
@@ -353,7 +353,7 @@ export class SessionMonitoring extends BaseApplicationService {
           try {
             const alerts = await this.monitoringService.getAlerts(thread.id.toString(), resolved);
             allAlerts.push(
-              ...alerts.map(alert => ({
+              ...alerts.map((alert: { id: any; type: any; severity: any; message: any; timestamp: { toISOString: () => any; }; resolved: any; resolvedAt: { toISOString: () => any; }; }) => ({
                 id: alert.id,
                 threadId: thread.id.toString(),
                 type: alert.type,

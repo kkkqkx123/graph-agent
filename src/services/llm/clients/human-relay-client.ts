@@ -14,11 +14,11 @@ import { HumanRelayMode } from '../../../domain/llm/value-objects/human-relay-mo
 import { TYPES } from '../../../di/service-keys';
 import { ProviderConfig, ApiType, ProviderConfigBuilder } from '../parameter-mappers';
 import { BaseFeatureSupport } from '../parameter-mappers/interfaces/feature-support.interface';
-import { ConfigLoadingModule } from '../../config/loading/config-loading-module';
+import { ConfigLoadingModule } from '../../../infrastructure/config/loading/config-loading-module';
 import {
   IHumanRelayService,
   HumanRelayConfig,
-} from '../../human-relay';
+} from '../human-relay';
 
 /**
  * HumanRelay客户端配置接口

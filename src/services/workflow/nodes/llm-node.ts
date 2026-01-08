@@ -11,7 +11,7 @@ import {
   ValidationResult,
   WorkflowExecutionContext,
 } from '../../../domain/workflow/entities/node';
-import { LLMWrapperManager } from '../../../infrastructure/llm/managers/llm-wrapper-manager';
+import { LLMWrapperManager } from '../../llm/managers/llm-wrapper-manager';
 import { LLMRequest } from '../../../domain/llm/entities/llm-request';
 import { ID } from '../../../domain/common/value-objects/id';
 import {

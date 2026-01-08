@@ -60,8 +60,8 @@ export interface NodeExecutionOptions {
 export class NodeExecutor {
   constructor(
     @inject('Logger') private readonly logger: ILogger,
-    @inject(TYPES.ThreadExecutionService) private readonly threadExecutionService: ThreadExecutionService
-  ) {}
+    @inject(TYPES.ThreadExecution) private readonly threadExecution: ThreadExecution
+  ) { }
 
   /**
    * 执行节点
@@ -108,7 +108,7 @@ export class NodeExecutor {
 
       // 识别节点类型并执行
       let result: NodeExecutionResult;
-      
+
       if (node.type.isSubworkflow()) {
         // 子工作流节点，从上下文获取 SubgraphNode 配置并调用 ThreadService 执行
         result = await this.executeSubgraphNode(node, context, options);
@@ -168,7 +168,7 @@ export class NodeExecutor {
     options: NodeExecutionOptions
   ): Promise<NodeExecutionResult> {
     const startTime = Date.now();
-    
+
     try {
       this.logger.info('开始执行子工作流节点', {
         nodeId: node.nodeId.toString(),
@@ -187,7 +187,7 @@ export class NodeExecutor {
       }
 
       // 3. 调用 Thread 层的子工作流执行能力
-      const subWorkflowResult = await this.threadExecutionService.executeSubWorkflow(
+      const subWorkflowResult = await this.threadExecution.executeSubWorkflow(
         parentThread,
         subgraphNode.getReferenceId(),
         subgraphNode.getConfig(),
@@ -213,7 +213,7 @@ export class NodeExecutor {
           status: subWorkflowResult.status,
         },
       };
-      
+
     } catch (error) {
       return this.handleSubgraphExecutionError(node, error, startTime, context);
     }
@@ -235,7 +235,7 @@ export class NodeExecutor {
   ): NodeExecutionResult {
     const executionTime = Date.now() - startTime;
     const errorMessage = error instanceof Error ? error.message : String(error);
-    
+
     this.logger.error('子工作流节点执行失败', error instanceof Error ? error : new Error(String(error)), {
       nodeId: node.nodeId.toString(),
     });

@@ -1,5 +1,5 @@
-import { Workflow } from '../../../domain/workflow/entities/workflow';
-import { NodeId } from '../../../domain/workflow/value-objects';
+import { Workflow } from '../../domain/workflow/entities/workflow';
+import { NodeId } from '../../domain/workflow/value-objects';
 
 /**
  * 节点路由器

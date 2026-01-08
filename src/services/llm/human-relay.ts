@@ -6,10 +6,10 @@
  */
 
 import { injectable } from 'inversify';
-import { LLMRequest } from '../../../domain/llm/entities/llm-request';
-import { LLMResponse } from '../../../domain/llm/entities/llm-response';
-import { LLMMessage, LLMMessageRole } from '../../../domain/llm/value-objects/llm-message';
-import { HumanRelayMode } from '../../../domain/llm/value-objects/human-relay-mode';
+import { LLMRequest } from '../../domain/llm/entities/llm-request';
+import { LLMResponse } from '../../domain/llm/entities/llm-response';
+import { LLMMessage, LLMMessageRole } from '../../domain/llm/value-objects/llm-message';
+import { HumanRelayMode } from '../../domain/llm/value-objects/human-relay-mode';
 
 /**
  * HumanRelay配置接口

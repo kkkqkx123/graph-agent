@@ -4,7 +4,7 @@
  */
 
 import { injectable, inject } from 'inversify';
-import { ILogger } from '../../../domain/common';
+import { ILogger } from '../../domain/common';
 
 /**
  * 工作流函数类型枚举
@@ -104,7 +104,7 @@ export class FunctionManagement {
   private readonly versionRegistry = new Map<string, FunctionVersionInfo[]>();
   private readonly deploymentRegistry = new Map<string, FunctionDeploymentStatus[]>();
 
-  constructor(@inject('Logger') private readonly logger: ILogger) {}
+  constructor(@inject('Logger') private readonly logger: ILogger) { }
 
   /**
    * 部署函数

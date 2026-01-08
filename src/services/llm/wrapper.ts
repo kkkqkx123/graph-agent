@@ -6,9 +6,9 @@
  */
 
 import { injectable, inject } from 'inversify';
-import { LLMWrapperManager } from '../../../infrastructure/llm/managers/llm-wrapper-manager';
-import { LLMRequest } from '../../../domain/llm/entities/llm-request';
-import { LLMResponse } from '../../../domain/llm/entities/llm-response';
+import { LLMWrapperManager } from './managers/llm-wrapper-manager';
+import { LLMRequest } from '../../domain/llm/entities/llm-request';
+import { LLMResponse } from '../../domain/llm/entities/llm-response';
 
 /**
  * 包装器服务
@@ -17,7 +17,7 @@ import { LLMResponse } from '../../../domain/llm/entities/llm-response';
  */
 @injectable()
 export class Wrapper {
-  constructor(@inject('LLMWrapperManager') private wrapperManager: LLMWrapperManager) {}
+  constructor(@inject('LLMWrapperManager') private wrapperManager: LLMWrapperManager) { }
 
   /**
    * 生成响应

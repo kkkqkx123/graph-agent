@@ -38,16 +38,16 @@ export class HookFactory {
 
     switch (hookPointValue.getValue()) {
       case 'before_execute':
-        return this.createBeforeExecuteHook(config);
+        return this.createBeforeExecuteHook(config) as unknown as Hook;
 
       case 'after_execute':
-        return this.createAfterExecuteHook(config);
+        return this.createAfterExecuteHook(config) as unknown as Hook;
 
       case 'before_node_execute':
-        return this.createBeforeNodeExecuteHook(config);
+        return this.createBeforeNodeExecuteHook(config) as unknown as Hook;
 
       case 'after_node_execute':
-        return this.createAfterNodeExecuteHook(config);
+        return this.createAfterNodeExecuteHook(config) as unknown as Hook;
 
       default:
         throw new Error(`不支持的钩子点: ${hookPoint}`);
@@ -62,16 +62,16 @@ export class HookFactory {
   public static fromProps(props: HookProps): Hook {
     switch (props.hookPoint.getValue()) {
       case 'before_execute':
-        return BeforeExecuteHook.fromProps(props);
+        return BeforeExecuteHook.fromProps(props) as Hook;
 
       case 'after_execute':
-        return AfterExecuteHook.fromProps(props);
+        return AfterExecuteHook.fromProps(props) as Hook;
 
       case 'before_node_execute':
-        return BeforeNodeExecuteHook.fromProps(props);
+        return BeforeNodeExecuteHook.fromProps(props) as Hook;
 
       case 'after_node_execute':
-        return AfterNodeExecuteHook.fromProps(props);
+        return AfterNodeExecuteHook.fromProps(props) as Hook;
 
       default:
         throw new Error(`不支持的钩子点: ${props.hookPoint.toString()}`);

@@ -10,9 +10,9 @@ import {
   SessionStatus,
   SessionConfig,
   SessionConfigProps,
-} from '../../../domain/sessions';
-import { BaseApplicationService } from '../../common/base-application-service';
-import { ILogger, ID } from '../../../domain/common';
+} from '../../domain/sessions';
+import { BaseService } from '../common/base-service';
+import { ILogger, ID } from '../../domain/common';
 
 /**
  * 创建会话请求
@@ -26,7 +26,7 @@ export interface CreateSessionRequest {
 /**
  * 会话生命周期服务
  */
-export class SessionLifecycle extends BaseApplicationService {
+export class SessionLifecycle extends BaseService {
   constructor(
     private readonly sessionRepository: ISessionRepository,
     logger: ILogger

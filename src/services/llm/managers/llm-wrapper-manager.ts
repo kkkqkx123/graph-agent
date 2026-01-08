@@ -1,6 +1,6 @@
 import { injectable, inject } from 'inversify';
-import { LLMRequest } from '../../../domain/llm/entities/llm-request';
-import { LLMResponse } from '../../../domain/llm/entities/llm-response';
+import { LLMRequest } from '../../domain/llm/entities/llm-request';
+import { LLMResponse } from '../../domain/llm/entities/llm-response';
 import { TYPES } from '../../../di/service-keys';
 import { LLMClientFactory } from '../clients/llm-client-factory';
 import { PollingPoolManager } from './pool-manager';
@@ -21,7 +21,7 @@ export class LLMWrapperManager {
     @inject(TYPES.LLMClientFactory) private llmClientFactory: LLMClientFactory,
     @inject(TYPES.PollingPoolManager) private poolManager: PollingPoolManager,
     @inject(TYPES.TaskGroupManager) private taskGroupManager: TaskGroupManager
-  ) {}
+  ) { }
 
   /**
    * 解析包装器名称
@@ -117,18 +117,18 @@ export class LLMWrapperManager {
     request: LLMRequest
   ): Promise<LLMResponse> {
     const parts = wrapperName.split(':');
-    
+
     if (parts.length < 2) {
       throw new Error(`无效的客户端名称: ${wrapperName}`);
     }
 
     const provider = parts[0];
     const model = parts.slice(1).join(':');
-    
+
     if (!provider || !model) {
       throw new Error(`无效的客户端名称: ${wrapperName}`);
     }
-    
+
     const client = this.llmClientFactory.createClient(provider, model);
 
     return client.generateResponse(request);
@@ -142,18 +142,18 @@ export class LLMWrapperManager {
     request: LLMRequest
   ): Promise<AsyncIterable<LLMResponse>> {
     const parts = wrapperName.split(':');
-    
+
     if (parts.length < 2) {
       throw new Error(`无效的客户端名称: ${wrapperName}`);
     }
 
     const provider = parts[0];
     const model = parts.slice(1).join(':');
-    
+
     if (!provider || !model) {
       throw new Error(`无效的客户端名称: ${wrapperName}`);
     }
-    
+
     const client = this.llmClientFactory.createClient(provider, model);
 
     return client.generateResponseStream(request);
@@ -164,18 +164,18 @@ export class LLMWrapperManager {
    */
   private async isDirectAvailable(wrapperName: string): Promise<boolean> {
     const parts = wrapperName.split(':');
-    
+
     if (parts.length < 2) {
       return false;
     }
 
     const provider = parts[0];
     const model = parts.slice(1).join(':');
-    
+
     if (!provider || !model) {
       return false;
     }
-    
+
     const client = this.llmClientFactory.createClient(provider, model);
 
     return client.isModelAvailable();
@@ -186,7 +186,7 @@ export class LLMWrapperManager {
    */
   private async getDirectStatus(wrapperName: string): Promise<Record<string, any>> {
     const parts = wrapperName.split(':');
-    
+
     if (parts.length < 2) {
       return {
         name: wrapperName,
@@ -198,7 +198,7 @@ export class LLMWrapperManager {
 
     const provider = parts[0];
     const model = parts.slice(1).join(':');
-    
+
     if (!provider || !model) {
       return {
         name: wrapperName,
@@ -207,7 +207,7 @@ export class LLMWrapperManager {
         message: '无效的客户端名称',
       };
     }
-    
+
     const client = this.llmClientFactory.createClient(provider, model);
 
     const health = await client.healthCheck();
@@ -232,7 +232,7 @@ export class LLMWrapperManager {
     request: LLMRequest
   ): Promise<LLMResponse> {
     const pool = await this.poolManager.getPool(poolName);
-    
+
     if (!pool) {
       throw new Error(`轮询池不存在: ${poolName}`);
     }
@@ -258,7 +258,7 @@ export class LLMWrapperManager {
     request: LLMRequest
   ): Promise<AsyncIterable<LLMResponse>> {
     const pool = await this.poolManager.getPool(poolName);
-    
+
     if (!pool) {
       throw new Error(`轮询池不存在: ${poolName}`);
     }
@@ -281,7 +281,7 @@ export class LLMWrapperManager {
    */
   private async isPoolAvailable(poolName: string): Promise<boolean> {
     const pool = await this.poolManager.getPool(poolName);
-    
+
     if (!pool) {
       return false;
     }
@@ -289,7 +289,7 @@ export class LLMWrapperManager {
     const status = await pool.getStatus();
     const healthyInstances = status['healthyInstances'] as number || 0;
     const degradedInstances = status['degradedInstances'] as number || 0;
-    
+
     return healthyInstances > 0 || degradedInstances > 0;
   }
 
@@ -298,7 +298,7 @@ export class LLMWrapperManager {
    */
   private async getPoolStatus(poolName: string): Promise<Record<string, any>> {
     const pool = await this.poolManager.getPool(poolName);
-    
+
     if (!pool) {
       return {
         name: poolName,
@@ -328,18 +328,18 @@ export class LLMWrapperManager {
   ): Promise<LLMResponse> {
     // 获取任务组的模型列表
     const models = await this.taskGroupManager.getModelsForGroup(groupName);
-    
+
     if (models.length === 0) {
       throw new Error(`任务组 ${groupName} 中没有可用的模型`);
     }
 
     // 使用第一个模型（可以根据优先级策略改进）
     const model = models[0];
-    
+
     if (!model) {
       throw new Error(`任务组 ${groupName} 中的模型名称为空`);
     }
-    
+
     const client = this.llmClientFactory.createClient(model, model);
 
     return client.generateResponse(request);
@@ -354,18 +354,18 @@ export class LLMWrapperManager {
   ): Promise<AsyncIterable<LLMResponse>> {
     // 获取任务组的模型列表
     const models = await this.taskGroupManager.getModelsForGroup(groupName);
-    
+
     if (models.length === 0) {
       throw new Error(`任务组 ${groupName} 中没有可用的模型`);
     }
 
     // 使用第一个模型（可以根据优先级策略改进）
     const model = models[0];
-    
+
     if (!model) {
       throw new Error(`任务组 ${groupName} 中的模型名称为空`);
     }
-    
+
     const client = this.llmClientFactory.createClient(model, model);
 
     return client.generateResponseStream(request);

@@ -1,4 +1,4 @@
-import { WorkflowFunctionType } from '../../../../domain/workflow/value-objects/function-type';
+import { WorkflowFunctionType } from '../../../domain/workflow/value-objects/function-type';
 import { ConfigLoadingModule } from '../../../config/loading/config-loading-module';
 
 /**
@@ -42,7 +42,7 @@ export abstract class BaseHookFunction {
    * 函数类型标识
    */
   readonly type: WorkflowFunctionType = WorkflowFunctionType.HOOK;
-  
+
   /** 配置加载器 */
   protected configLoader?: ConfigLoadingModule;
   /** 基础配置（从配置文件加载） */
@@ -56,19 +56,19 @@ export abstract class BaseHookFunction {
     this.configLoader = loader;
     this.loadBaseConfig();
   }
-  
+
   /**
    * 加载基础配置
    * 从配置文件中加载函数的基础配置
    */
   protected loadBaseConfig(): void {
     if (!this.configLoader) return;
-    
+
     // 使用函数类名作为配置路径
     const configPath = `functions.${this.constructor.name}`;
     this.baseConfig = this.configLoader.get(configPath, {});
   }
-  
+
   /**
    * 获取配置
    * 合并基础配置和运行时配置

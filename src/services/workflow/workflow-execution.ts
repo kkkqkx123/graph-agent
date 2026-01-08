@@ -12,13 +12,13 @@
  */
 
 import { injectable, inject } from 'inversify';
-import { Workflow } from '../../../domain/workflow/entities/workflow';
-import { NodeId } from '../../../domain/workflow/value-objects';
-import { ExecutionContext } from '../../../domain/threads/value-objects/execution-context';
+import { Workflow } from '../../domain/workflow/entities/workflow';
+import { NodeId } from '../../domain/workflow/value-objects';
+import { ExecutionContext } from '../../domain/threads/value-objects/execution-context';
 import { ExpressionEvaluator } from './expression-evaluator';
 import { NodeRouter } from './node-router';
-import { NodeExecutor } from '../nodes/node-executor';
-import { ILogger } from '../../../domain/common/types/logger-types';
+import { NodeExecutor } from './nodes/node-executor';
+import { ILogger } from '../../domain/common/types/logger-types';
 
 /**
  * 执行结果接口

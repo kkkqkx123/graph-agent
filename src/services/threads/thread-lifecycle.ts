@@ -8,7 +8,7 @@ import { injectable, inject } from 'inversify';
 import { Thread, IThreadRepository, ThreadStatus, ThreadPriority } from '../../domain/threads';
 import { ISessionRepository } from '../../domain/sessions';
 import { IWorkflowRepository } from '../../domain/workflow';
-import { BaseApplicationService } from '../common/base-application-service';
+import { BaseService } from '../common/base-service';
 import { ILogger, ID } from '../../domain/common';
 import { TYPES } from '../../di/service-keys';
 
@@ -16,7 +16,7 @@ import { TYPES } from '../../di/service-keys';
  * 线程生命周期服务
  */
 @injectable()
-export class ThreadLifecycle extends BaseApplicationService {
+export class ThreadLifecycle extends BaseService {
   constructor(
     @inject(TYPES.ThreadRepository) private readonly threadRepository: IThreadRepository,
     @inject(TYPES.SessionRepository) private readonly sessionRepository: ISessionRepository,

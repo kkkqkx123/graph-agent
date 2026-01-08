@@ -12,7 +12,7 @@ import { CheckpointAnalysis } from './checkpoint-analysis';
 import { CheckpointManagement } from './checkpoint-management';
 import { IThreadCheckpointRepository } from '../../domain/threads/checkpoints/repositories/thread-checkpoint-repository';
 import { ILogger } from '../../domain/common/types/logger-types';
-import { BaseApplicationService } from '../common/base-application-service';
+import { BaseService } from '../common/base-service';
 
 /**
  * 创建检查点请求DTO
@@ -115,7 +115,7 @@ export interface CheckpointStatisticsInfo {
  * 提供Thread检查点的应用层服务，整合所有checkpoint功能
  */
 @injectable()
-export class Checkpoint extends BaseApplicationService {
+export class Checkpoint extends BaseService {
   constructor(
     private readonly creationService: CheckpointCreation,
     private readonly restoreService: CheckpointRestore,

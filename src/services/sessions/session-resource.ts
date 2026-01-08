@@ -5,7 +5,7 @@
  */
 
 import { injectable, inject } from 'inversify';
-import { ISessionRepository } from '../../../domain/sessions';
+import { ISessionRepository } from '../../domain/sessions';
 import {
   ID,
   ResourceAllocation,
@@ -14,22 +14,22 @@ import {
   SessionQuota,
   QuotaUsage,
   ILogger,
-} from '../../../domain/common';
-import { BaseApplicationService } from '../../common/base-application-service';
-import { TYPES } from '../../../di/service-keys';
+} from '../../domain/common';
+import { BaseService } from '../common/base-service';
+import { TYPES } from '../../di/service-keys';
 import {
   ResourceAllocationDTO,
   ResourceLimitsDTO,
   SessionQuotaDTO,
   QuotaUsageDTO,
   mapResourceAllocationToDTO,
-} from '../dtos';
+} from './dtos';
 
 /**
  * 会话资源服务
  */
 @injectable()
-export class SessionResource extends BaseApplicationService {
+export class SessionResource extends BaseService {
   constructor(
     @inject(TYPES.SessionRepository) private readonly sessionRepository: ISessionRepository,
     @inject(TYPES.Logger) logger: ILogger

@@ -14,7 +14,7 @@
 import { injectable, inject } from 'inversify';
 import { Thread, IThreadRepository } from '../../domain/threads';
 import { ID, ILogger, Timestamp } from '../../domain/common';
-import { BaseApplicationService } from '../common/base-application-service';
+import { BaseService } from '../common/base-service';
 import { MonitoringService } from '../workflow/monitoring';
 import { TYPES } from '../../di/service-keys';
 
@@ -87,7 +87,7 @@ export interface ThreadHealthStatus {
  * 线程监控服务
  */
 @injectable()
-export class ThreadMonitoring extends BaseApplicationService {
+export class ThreadMonitoring extends BaseService {
   constructor(
     @inject(TYPES.ThreadRepository) private readonly threadRepository: IThreadRepository,
     @inject(TYPES.MonitoringService) private readonly monitoringService: MonitoringService,

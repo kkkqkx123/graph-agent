@@ -3,7 +3,7 @@
  */
 
 import { PromptReferenceParser } from '../prompt-reference-parser';
-import { ILogger } from '../../../domain/common/types/logger-types';
+import { ILogger } from '../../domain/common/types/logger-types';
 
 describe('PromptReferenceParser', () => {
   let parser: PromptReferenceParser;

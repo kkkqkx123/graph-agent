@@ -15,7 +15,7 @@ import { HookExecutionResult, HookExecutionResultBuilder } from './hook-executio
  */
 @injectable()
 export class HookExecutor {
-  constructor(@inject('Logger') private readonly logger: ILogger) {}
+  constructor(@inject('Logger') private readonly logger: ILogger) { }
 
   /**
    * 执行单个钩子

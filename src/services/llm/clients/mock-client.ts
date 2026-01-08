@@ -10,9 +10,9 @@ import { MockParameterMapper } from '../parameter-mappers/mock-parameter-mapper'
 import { MockEndpointStrategy } from '../endpoint-strategies/mock-endpoint-strategy';
 import { BaseFeatureSupport } from '../parameter-mappers/interfaces/feature-support.interface';
 import { TYPES } from '../../../di/service-keys';
-import { HttpClient } from '../../common/http/http-client';
+import { HttpClient } from '../../../infrastructure/common/http/http-client';
 import { TokenBucketLimiter } from '../rate-limiters/token-bucket-limiter';
-import { ConfigLoadingModule } from '../../config/loading/config-loading-module';
+import { ConfigLoadingModule } from '../../../infrastructure/config/loading/config-loading-module';
 
 @injectable()
 export class MockClient extends BaseLLMClient {

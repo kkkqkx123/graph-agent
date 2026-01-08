@@ -17,7 +17,7 @@ import { injectable, inject } from 'inversify';
 import { Thread, IThreadRepository } from '../../domain/threads';
 import { Workflow, IWorkflowRepository } from '../../domain/workflow';
 import { ID, ILogger, Timestamp } from '../../domain/common';
-import { BaseApplicationService } from '../common/base-application-service';
+import { BaseService } from '../common/base-service';
 import { WorkflowExecutionEngine } from './workflow-execution-engine';
 import { ThreadStateManager } from './thread-state-manager';
 import { ThreadHistoryManager } from './thread-history-manager';
@@ -65,7 +65,7 @@ export interface SubWorkflowExecutionResult {
  * 线程执行服务
  */
 @injectable()
-export class ThreadExecution extends BaseApplicationService {
+export class ThreadExecution extends BaseService {
   private readonly workflowEngine: WorkflowExecutionEngine;
   private readonly stateManager: ThreadStateManager;
   private readonly historyManager: ThreadHistoryManager;

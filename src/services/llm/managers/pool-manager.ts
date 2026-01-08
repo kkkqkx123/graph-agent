@@ -1,7 +1,7 @@
 import { injectable, inject } from 'inversify';
-import { PollingPool, LLMInstance } from '../../../domain/llm/entities/pool';
-import { InstanceConfig } from '../../../domain/llm/value-objects/instance-config';
-import { ID } from '../../../domain/common/value-objects/id';
+import { PollingPool, LLMInstance } from '../../domain/llm/entities/pool';
+import { InstanceConfig } from '../../domain/llm/value-objects/instance-config';
+import { ID } from '../../domain/common/value-objects/id';
 import { LLMClientFactory } from '../clients/llm-client-factory';
 import { TYPES } from '../../../di/service-keys';
 
@@ -17,7 +17,7 @@ export class PollingPoolManager {
   constructor(
     @inject(TYPES.TaskGroupManager) private taskGroupManager: any,
     @inject(TYPES.LLMClientFactory) private llmClientFactory: LLMClientFactory
-  ) {}
+  ) { }
 
   /**
    * 获取轮询池
@@ -80,7 +80,7 @@ export class PollingPoolManager {
    */
   private buildModelProviderMap(config: Record<string, any>): Map<string, string> {
     const map = new Map<string, string>();
-    
+
     // 从instances配置中提取模型到提供商的映射
     const instances = config['instances'] || [];
     for (const instance of instances) {
@@ -90,7 +90,7 @@ export class PollingPoolManager {
         map.set(model, provider);
       }
     }
-    
+
     return map;
   }
 
@@ -109,7 +109,7 @@ export class PollingPoolManager {
       maxConcurrency: instanceConfig['maxConcurrency'] || 10,
       weight: instanceConfig['weight'] || 1,
     });
-  
+
     return new LLMInstance(
       ID.generate(),
       config
@@ -127,18 +127,18 @@ export class PollingPoolManager {
   ): void {
     const instances = config['instances'] || [];
     const missingProviders: string[] = [];
-    
+
     for (const instance of instances) {
       const model = instance['model'];
       const provider = instance['provider'];
-      
+
       if (!model) {
         missingProviders.push(`实例 ${instance['name'] || 'unknown'} 缺少model字段`);
       } else if (!provider) {
         missingProviders.push(`模型 ${model} 缺少provider字段`);
       }
     }
-    
+
     if (missingProviders.length > 0) {
       throw new Error(
         `配置验证失败:\n${missingProviders.map(msg => `  - ${msg}`).join('\n')}\n` +
@@ -224,7 +224,7 @@ export class PollingPoolManager {
       availabilityRate:
         status['totalInstances'] > 0
           ? ((status['healthyInstances'] as number) + (status['degradedInstances'] as number)) /
-            (status['totalInstances'] as number)
+          (status['totalInstances'] as number)
           : 0,
     };
   }
@@ -246,7 +246,7 @@ export class PollingPoolManager {
         availabilityRate:
           status['totalInstances'] > 0
             ? ((status['healthyInstances'] as number) + (status['degradedInstances'] as number)) /
-              (status['totalInstances'] as number)
+            (status['totalInstances'] as number)
             : 0,
       };
     }

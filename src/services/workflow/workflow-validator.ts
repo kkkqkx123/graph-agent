@@ -1,6 +1,6 @@
 import { injectable, inject } from 'inversify';
-import { Workflow, IWorkflowRepository } from '../../../domain/workflow';
-import { ID, ILogger } from '../../../domain/common';
+import { Workflow, IWorkflowRepository } from '../../domain/workflow';
+import { ID, ILogger } from '../../domain/common';
 
 /**
  * 验证结果
@@ -42,7 +42,7 @@ export class WorkflowValidator {
   constructor(
     @inject('WorkflowRepository') private readonly workflowRepository: IWorkflowRepository,
     @inject('Logger') private readonly logger: ILogger
-  ) {}
+  ) { }
 
   /**
    * 验证工作流

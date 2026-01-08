@@ -1,16 +1,16 @@
 import { injectable, inject } from 'inversify';
-import { ID } from '../../../domain/common/value-objects/id';
-import { ThreadCheckpoint } from '../../../domain/threads/checkpoints/entities/thread-checkpoint';
-import { Snapshot } from '../../../domain/snapshot/entities/snapshot';
-import { IThreadCheckpointRepository } from '../../../domain/threads/checkpoints/repositories/thread-checkpoint-repository';
-import { ISnapshotRepository } from '../../../domain/snapshot/repositories/snapshot-repository';
-import { Thread } from '../../../domain/threads/entities/thread';
-import { History } from '../../../domain/history/entities/history';
-import { HistoryType } from '../../../domain/history/value-objects/history-type';
-import { IHistoryRepository } from '../../../domain/history/repositories/history-repository';
-import { SnapshotScopeValue } from '../../../domain/snapshot/value-objects/snapshot-scope';
-import { CheckpointTypeValue } from '../../../domain/checkpoint/value-objects/checkpoint-type';
-import { HistoryTypeValue } from '../../../domain/history/value-objects/history-type';
+import { ID } from '../../domain/common/value-objects/id';
+import { ThreadCheckpoint } from '../../domain/threads/checkpoints/entities/thread-checkpoint';
+import { Snapshot } from '../../domain/snapshot/entities/snapshot';
+import { IThreadCheckpointRepository } from '../../domain/threads/checkpoints/repositories/thread-checkpoint-repository';
+import { ISnapshotRepository } from '../../domain/snapshot/repositories/snapshot-repository';
+import { Thread } from '../../domain/threads/entities/thread';
+import { History } from '../../domain/history/entities/history';
+import { HistoryType } from '../../domain/history/value-objects/history-type';
+import { IHistoryRepository } from '../../domain/history/repositories/history-repository';
+import { SnapshotScopeValue } from '../../domain/snapshot/value-objects/snapshot-scope';
+import { CheckpointTypeValue } from '../../domain/checkpoint/value-objects/checkpoint-type';
+import { HistoryTypeValue } from '../../domain/history/value-objects/history-type';
 
 /**
  * 状态恢复服务
@@ -30,7 +30,7 @@ export class StateRecovery {
     private readonly checkpointRepository: IThreadCheckpointRepository,
     @inject('SnapshotRepository') private readonly snapshotRepository: ISnapshotRepository,
     @inject('HistoryRepository') private readonly historyRepository: IHistoryRepository
-  ) {}
+  ) { }
 
   /**
    * 从Checkpoint恢复Thread

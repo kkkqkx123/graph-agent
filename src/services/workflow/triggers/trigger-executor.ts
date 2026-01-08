@@ -1,8 +1,8 @@
 import { injectable, inject } from 'inversify';
-import { Trigger } from '../../../domain/workflow/entities/trigger';
+import { Trigger } from '../../domain/workflow/entities/trigger';
 import { FunctionRegistry } from '../functions/function-registry';
 import { WorkflowExecutionContext } from '../functions/types';
-import { ILogger } from '../../../domain/common/types/logger-types';
+import { ILogger } from '../../domain/common/types/logger-types';
 import { TriggerContext } from './trigger-context';
 import { TriggerExecutionResult, TriggerExecutionResultUtils } from './trigger-execution-result';
 
@@ -21,7 +21,7 @@ export class TriggerExecutor {
   constructor(
     @inject('FunctionRegistry') private readonly functionRegistry: FunctionRegistry,
     @inject('Logger') private readonly logger: ILogger
-  ) {}
+  ) { }
 
   /**
    * 执行触发器检查

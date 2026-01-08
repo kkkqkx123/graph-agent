@@ -12,8 +12,8 @@
  */
 
 import { injectable, inject } from 'inversify';
-import { Timestamp } from '../../../domain/common/value-objects/timestamp';
-import { ILogger } from '../../../domain/common/types/logger-types';
+import { Timestamp } from '../../domain/common/value-objects/timestamp';
+import { ILogger } from '../../domain/common/types/logger-types';
 
 /**
  * 函数执行结果接口

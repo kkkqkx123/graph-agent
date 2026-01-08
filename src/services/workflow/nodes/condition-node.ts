@@ -1,16 +1,16 @@
-import { NodeId } from '../../../domain/workflow/value-objects/node/node-id';
+import { NodeId } from '../../domain/workflow/value-objects/node/node-id';
 import {
   NodeType,
   NodeTypeValue,
   NodeContextTypeValue,
-} from '../../../domain/workflow/value-objects/node/node-type';
+} from '../../domain/workflow/value-objects/node/node-type';
 import {
   Node,
   NodeExecutionResult,
   NodeMetadata,
   ValidationResult,
   WorkflowExecutionContext,
-} from '../../../domain/workflow/entities/node';
+} from '../../domain/workflow/entities/node';
 
 /**
  * 条件检查节点

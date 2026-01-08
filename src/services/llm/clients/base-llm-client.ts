@@ -3,12 +3,12 @@ import { LLMRequest } from '../../../domain/llm/entities/llm-request';
 import { LLMResponse } from '../../../domain/llm/entities/llm-response';
 import { ModelConfig } from '../../../domain/llm/value-objects/model-config';
 import { ID } from '../../../domain/common/value-objects/id';
-import { HttpClient } from '../../common/http/http-client';
+import { HttpClient } from '../../../infrastructure/common/http/http-client';
 import { TokenBucketLimiter } from '../rate-limiters/token-bucket-limiter';
 import { TokenCalculator } from '../token-calculators/token-calculator';
 import { ProviderConfig } from '../parameter-mappers/interfaces/provider-config.interface';
 import { TYPES } from '../../../di/service-keys';
-import { ConfigLoadingModule } from '../../config/loading/config-loading-module';
+import { ConfigLoadingModule } from '../../../infrastructure/config/loading/config-loading-module';
 
 /**
  * LLM客户端抽象基类

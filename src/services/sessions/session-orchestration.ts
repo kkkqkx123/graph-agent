@@ -14,17 +14,17 @@
  */
 
 import { injectable, inject } from 'inversify';
-import { ISessionRepository } from '../../../domain/sessions';
-import { IThreadRepository } from '../../../domain/threads';
+import { ISessionRepository } from '../../domain/sessions';
+import { IThreadRepository } from '../../domain/threads';
 import { SessionResourceService } from './session-resource-service';
 import { ThreadLifecycleService } from '../../threads/services/thread-lifecycle-service';
 import { ThreadExecutionService } from '../../threads/services/thread-execution-service';
-import { ID, ILogger } from '../../../domain/common';
+import { ID, ILogger } from '../../domain/common';
 import { TYPES } from '../../../di/service-keys';
-import { BaseApplicationService } from '../../common/base-application-service';
-import { NodeId } from '../../../domain/workflow';
-import { ForkStrategy, ForkOptions } from '../../../domain/sessions';
-import { ThreadMessageType } from '../../../domain/sessions/value-objects/thread-communication';
+import { BaseService } from '../../common/base-service';
+import { NodeId } from '../../domain/workflow';
+import { ForkStrategy, ForkOptions } from '../../domain/sessions';
+import { ThreadMessageType } from '../../domain/sessions/value-objects/thread-communication';
 
 /**
  * 线程动作类型
@@ -46,7 +46,7 @@ export interface StateChange {
  * 会话编排服务
  */
 @injectable()
-export class SessionOrchestration extends BaseApplicationService {
+export class SessionOrchestration extends BaseService {
   constructor(
     @inject(TYPES.SessionRepository) private readonly sessionRepository: ISessionRepository,
     @inject(TYPES.ThreadRepository) private readonly threadRepository: IThreadRepository,

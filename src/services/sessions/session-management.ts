@@ -9,14 +9,14 @@ import {
   ISessionRepository,
   SessionConfig,
   SessionConfigProps,
-} from '../../../domain/sessions';
-import { BaseApplicationService } from '../../common/base-application-service';
-import { ILogger } from '../../../domain/common';
+} from '../../domain/sessions';
+import { BaseService } from '../common/base-service';
+import { ILogger } from '../../domain/common';
 
 /**
  * 会话管理服务
  */
-export class SessionManagement extends BaseApplicationService {
+export class SessionManagement extends BaseService {
   constructor(
     private readonly sessionRepository: ISessionRepository,
     logger: ILogger

@@ -9,10 +9,10 @@ import { OpenAIParameterMapper } from '../parameter-mappers/openai-parameter-map
 import { OpenAICompatibleEndpointStrategy } from '../endpoint-strategies/openai-compatible-endpoint-strategy';
 import { BaseFeatureSupport } from '../parameter-mappers/interfaces/feature-support.interface';
 import { TYPES } from '../../../di/service-keys';
-import { HttpClient } from '../../common/http/http-client';
+import { HttpClient } from '../../../infrastructure/common/http/http-client';
 import { TokenBucketLimiter } from '../rate-limiters/token-bucket-limiter';
 import { TokenCalculator } from '../token-calculators/token-calculator';
-import { ConfigLoadingModule } from '../../config/loading/config-loading-module';
+import { ConfigLoadingModule } from '../../../infrastructure/config/loading/config-loading-module';
 
 @injectable()
 export class OpenAIChatClient extends BaseLLMClient {

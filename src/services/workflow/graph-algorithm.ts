@@ -1,9 +1,9 @@
 import { injectable } from 'inversify';
-import { Workflow } from '../../../domain/workflow/entities/workflow';
-import { Node } from '../../../domain/workflow/entities/node';
-import { EdgeValueObject } from '../../../domain/workflow/value-objects/edge';
-import { ID } from '../../../domain/common/value-objects/id';
-import { NodeId } from '../../../domain/workflow/value-objects';
+import { Workflow } from '../../domain/workflow/entities/workflow';
+import { Node } from '../../domain/workflow/entities/node';
+import { EdgeValueObject } from '../../domain/workflow/value-objects/edge';
+import { ID } from '../../domain/common/value-objects/id';
+import { NodeId } from '../../domain/workflow/value-objects';
 
 /**
  * 图复杂度指标

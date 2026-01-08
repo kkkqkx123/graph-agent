@@ -1,4 +1,4 @@
-import { NodeId } from '../../../../domain/workflow/value-objects/node/node-id';
+import { NodeId } from '../../../domain/workflow/value-objects/node/node-id';
 
 /**
  * 变量映射接口
@@ -76,7 +76,7 @@ export class SubgraphNode {
     public readonly name?: string,
     public readonly description?: string,
     public readonly position?: { x: number; y: number }
-  ) {}
+  ) { }
 
   /**
    * 获取引用ID

@@ -5,9 +5,9 @@
  */
 
 import { injectable, inject } from 'inversify';
-import { Workflow, IWorkflowRepository } from '../../../domain/workflow';
-import { ID, ILogger } from '../../../domain/common';
-import { BaseApplicationService } from '../../common/base-application-service';
+import { Workflow, IWorkflowRepository } from '../../domain/workflow';
+import { ID, ILogger } from '../../domain/common';
+import { BaseService } from '../../common/base-service';
 import { WorkflowDTO, mapWorkflowToDTO, mapWorkflowsToDTOs } from '../dtos/workflow-dto';
 
 /**
@@ -108,7 +108,7 @@ export interface WorkflowListResult {
  * 工作流管理服务
  */
 @injectable()
-export class WorkflowManagement extends BaseApplicationService {
+export class WorkflowManagement extends BaseService {
   constructor(
     @inject('WorkflowRepository') private readonly workflowRepository: IWorkflowRepository,
     @inject('Logger') logger: ILogger
@@ -404,7 +404,7 @@ export class WorkflowManagement extends BaseApplicationService {
    * 解析工作流状态
    */
   private parseWorkflowStatus(status: string) {
-    const { WorkflowStatus } = require('../../../domain/workflow');
+    const { WorkflowStatus } = require('../../domain/workflow');
     return WorkflowStatus.fromString(status);
   }
 
@@ -412,7 +412,7 @@ export class WorkflowManagement extends BaseApplicationService {
    * 解析工作流类型
    */
   private parseWorkflowType(type: string) {
-    const { WorkflowType } = require('../../../domain/workflow');
+    const { WorkflowType } = require('../../domain/workflow');
     return WorkflowType.fromString(type);
   }
 }
