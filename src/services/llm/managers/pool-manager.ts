@@ -1,7 +1,7 @@
 import { injectable, inject } from 'inversify';
-import { PollingPool, LLMInstance } from '../../domain/llm/entities/pool';
-import { InstanceConfig } from '../../domain/llm/value-objects/instance-config';
-import { ID } from '../../domain/common/value-objects/id';
+import { PollingPool, LLMInstance } from '../../../domain/llm/entities/pool';
+import { InstanceConfig } from '../../../domain/llm/value-objects/instance-config';
+import { ID } from '../../../domain/common/value-objects/id';
 import { LLMClientFactory } from '../clients/llm-client-factory';
 import { TYPES } from '../../../di/service-keys';
 

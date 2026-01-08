@@ -62,16 +62,16 @@ export class HookFactory {
   public static fromProps(props: HookProps): Hook {
     switch (props.hookPoint.getValue()) {
       case 'before_execute':
-        return BeforeExecuteHook.fromProps(props) as Hook;
+        return BeforeExecuteHook.fromProps(props) as unknown as Hook;
 
       case 'after_execute':
-        return AfterExecuteHook.fromProps(props) as Hook;
+        return AfterExecuteHook.fromProps(props) as unknown as Hook;
 
       case 'before_node_execute':
-        return BeforeNodeExecuteHook.fromProps(props) as Hook;
+        return BeforeNodeExecuteHook.fromProps(props) as unknown as Hook;
 
       case 'after_node_execute':
-        return AfterNodeExecuteHook.fromProps(props) as Hook;
+        return AfterNodeExecuteHook.fromProps(props) as unknown as Hook;
 
       default:
         throw new Error(`不支持的钩子点: ${props.hookPoint.toString()}`);

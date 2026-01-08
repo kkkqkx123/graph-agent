@@ -9,19 +9,19 @@
  * - 线程间通信
  * - 状态同步
  *
- * 不负责工作流执行逻辑，工作流执行由 WorkflowOrchestrationService 负责
- * 不负责线程执行逻辑，线程执行由 ThreadExecutionService 负责
+ * 不负责工作流执行逻辑，工作流执行由 WorkflowOrchestration 负责
+ * 不负责线程执行逻辑，线程执行由 ThreadExecution 负责
  */
 
 import { injectable, inject } from 'inversify';
 import { ISessionRepository } from '../../domain/sessions';
 import { IThreadRepository } from '../../domain/threads';
-import { SessionResourceService } from './session-resource-service';
-import { ThreadLifecycleService } from '../../threads/services/thread-lifecycle-service';
-import { ThreadExecutionService } from '../../threads/services/thread-execution-service';
+import { SessionResource } from './session-resource';
+import { ThreadLifecycle } from '../threads/thread-lifecycle';
+import { ThreadExecution } from '../threads/thread-execution';
 import { ID, ILogger } from '../../domain/common';
-import { TYPES } from '../../../di/service-keys';
-import { BaseService } from '../../common/base-service';
+import { TYPES } from '../../di/service-keys';
+import { BaseService } from '../common/base-service';
 import { NodeId } from '../../domain/workflow';
 import { ForkStrategy, ForkOptions } from '../../domain/sessions';
 import { ThreadMessageType } from '../../domain/sessions/value-objects/thread-communication';
@@ -50,10 +50,10 @@ export class SessionOrchestration extends BaseService {
   constructor(
     @inject(TYPES.SessionRepository) private readonly sessionRepository: ISessionRepository,
     @inject(TYPES.ThreadRepository) private readonly threadRepository: IThreadRepository,
-    @inject(TYPES.SessionResourceServiceImpl)
-    private readonly sessionResourceService: SessionResourceService,
-    @inject(TYPES.ThreadLifecycleService)
-    private readonly threadLifecycleService: ThreadLifecycleService,
+    @inject(TYPES.SessionResource)
+    private readonly sessionResource: SessionResource,
+    @inject(TYPES.ThreadLifecycle)
+    private readonly threadLifecycle: ThreadLifecycle,
     @inject(TYPES.Logger) logger: ILogger
   ) {
     super(logger);
@@ -87,8 +87,8 @@ export class SessionOrchestration extends BaseService {
     return this.executeBusinessOperation(
       '创建线程',
       async () => {
-        // 使用ThreadLifecycleService创建线程
-        const thread = await this.threadLifecycleService.createThread(
+        // 使用threadLifecycle创建线程
+        const thread = await this.threadLifecycle.createThread(
           sessionId,
           workflowId,
           priority,
@@ -137,22 +137,22 @@ export class SessionOrchestration extends BaseService {
         // 检查会话是否存在
         await this.sessionRepository.findByIdOrFail(sessionIdObj);
 
-        // 根据动作调用相应的ThreadLifecycleService方法
+        // 根据动作调用相应的threadLifecycle方法
         switch (action) {
           case 'start':
-            await this.threadLifecycleService.startThread(threadId, userId);
+            await this.threadLifecycle.startThread(threadId, userId);
             break;
           case 'pause':
-            await this.threadLifecycleService.pauseThread(threadId, userId, reason);
+            await this.threadLifecycle.pauseThread(threadId, userId, reason);
             break;
           case 'resume':
-            await this.threadLifecycleService.resumeThread(threadId, userId, reason);
+            await this.threadLifecycle.resumeThread(threadId, userId, reason);
             break;
           case 'complete':
-            await this.threadLifecycleService.completeThread(threadId, userId, reason);
+            await this.threadLifecycle.completeThread(threadId, userId, reason);
             break;
           case 'fail':
-            await this.threadLifecycleService.failThread(
+            await this.threadLifecycle.failThread(
               threadId,
               reason || '线程失败',
               userId,
@@ -160,7 +160,7 @@ export class SessionOrchestration extends BaseService {
             );
             break;
           case 'cancel':
-            await this.threadLifecycleService.cancelThread(threadId, userId, reason);
+            await this.threadLifecycle.cancelThread(threadId, userId, reason);
             break;
         }
 
@@ -224,7 +224,7 @@ export class SessionOrchestration extends BaseService {
         const session = await this.sessionRepository.findByIdOrFail(sessionIdObj);
 
         // 检查是否可以创建线程
-        const canCreate = await this.sessionResourceService.canCreateThread(sessionId);
+        const canCreate = await this.sessionResource.canCreateThread(sessionId);
         if (!canCreate) {
           throw new Error('会话线程数量已达上限');
         }

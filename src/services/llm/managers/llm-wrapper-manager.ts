@@ -1,6 +1,6 @@
 import { injectable, inject } from 'inversify';
-import { LLMRequest } from '../../domain/llm/entities/llm-request';
-import { LLMResponse } from '../../domain/llm/entities/llm-response';
+import { LLMRequest } from '../../../domain/llm/entities/llm-request';
+import { LLMResponse } from '../../../domain/llm/entities/llm-response';
 import { TYPES } from '../../../di/service-keys';
 import { LLMClientFactory } from '../clients/llm-client-factory';
 import { PollingPoolManager } from './pool-manager';

@@ -8,7 +8,7 @@ import { injectable, inject } from 'inversify';
 import { Tool } from '../../../domain/tools/entities/tool';
 import { ToolExecution } from '../../../domain/tools/entities/tool-execution';
 import { ToolResult } from '../../../domain/tools/entities/tool-result';
-import { HttpClient } from '../../common/http/http-client';
+import { HttpClient } from '../../../infrastructure/common/http/http-client';
 import {
   ToolExecutorBase,
   ToolExecutorConfigSchema,

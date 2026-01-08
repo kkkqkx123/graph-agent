@@ -1,5 +1,5 @@
-import { ID, Timestamp, Version } from '../../../domain/common/value-objects';
-import { HookPointValue } from '../../../domain/workflow/value-objects/hook-point';
+import { ID, Timestamp, Version } from '../../../../domain/common/value-objects';
+import { HookPointValue } from '../../../../domain/workflow/value-objects/hook-point';
 import {
   Hook,
   HookContext,
@@ -8,7 +8,7 @@ import {
   HookParameter,
   HookValidationResult,
   HookProps,
-} from '../../../domain/workflow/entities/hook';
+} from '../../../../domain/workflow/entities/hook';
 
 /**
  * 执行前钩子配置接口
@@ -91,7 +91,7 @@ export class BeforeExecuteHook extends Hook {
    * @param context Hook上下文
    * @returns 执行结果
    */
-  public override async execute(context: HookContext): Promise<HookExecutionResult> {
+  public async execute(context: HookContext): Promise<HookExecutionResult> {
     const startTime = Date.now();
 
     try {

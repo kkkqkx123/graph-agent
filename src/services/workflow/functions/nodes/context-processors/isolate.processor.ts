@@ -7,8 +7,8 @@ import { BaseContextProcessor } from './base-context-processor';
  * 只保留模板，清空其他所有内容
  */
 export class IsolateProcessor extends BaseContextProcessor {
-  override readonly name = 'isolate';
-  override readonly description = '只保留模板，清空其他所有内容';
+  readonly name = 'isolate';
+  readonly description = '只保留模板，清空其他所有内容';
   override readonly version = '1.0.0';
 
   process(context: PromptContext, config?: Record<string, unknown>): PromptContext {

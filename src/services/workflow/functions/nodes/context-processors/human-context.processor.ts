@@ -8,8 +8,8 @@ import { SingletonContextProcessor } from './singleton-context-processor';
  * 逻辑完全固定，无需配置
  */
 export class HumanContextProcessor extends SingletonContextProcessor {
-  override readonly name = 'human_context';
-  override readonly description = '保留用户交互相关数据';
+  readonly name = 'human_context';
+  readonly description = '保留用户交互相关数据';
   override readonly version = '1.0.0';
 
   process(context: PromptContext, config?: Record<string, unknown>): PromptContext {
@@ -22,7 +22,7 @@ export class HumanContextProcessor extends SingletonContextProcessor {
     }
 
     // 保留人工交互相关历史
-    const humanHistory = context.history.filter(entry => entry.metadata?.['humanInteraction']);
+    const humanHistory = context.history.filter((entry: any) => entry.metadata?.['humanInteraction']);
 
     return PromptContext.create(context.template, humanVariables, humanHistory, context.metadata);
   }

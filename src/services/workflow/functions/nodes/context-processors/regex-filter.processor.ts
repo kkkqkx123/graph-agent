@@ -1,4 +1,4 @@
-import { PromptContext } from '../../../../domain/workflow/value-objects/context';
+import { PromptContext } from '../../../../domain/workflow/value-objects/context/prompt-context';
 import { BaseContextProcessor } from './base-context-processor';
 
 /**
@@ -30,8 +30,8 @@ export interface RegexFilterConfig {
  * - 搜索范围（变量、历史记录、模板）
  */
 export class RegexFilterProcessor extends BaseContextProcessor {
-  override readonly name = 'regex_filter';
-  override readonly description = '基于正则表达式提取局部上下文内容，支持配置前后保留行数';
+  readonly name = 'regex_filter';
+  readonly description = '基于正则表达式提取局部上下文内容，支持配置前后保留行数';
   override readonly version = '1.0.0';
 
   /**
@@ -50,7 +50,7 @@ export class RegexFilterProcessor extends BaseContextProcessor {
   /**
     * 验证配置参数
     */
-  override validateConfig(config: Record<string, unknown>): { valid: boolean; errors: string[] } {
+  validateConfig(config: Record<string, unknown>): { valid: boolean; errors: string[] } {
     const errors: string[] = [];
 
     if (!config['pattern'] || typeof config['pattern'] !== 'string') {

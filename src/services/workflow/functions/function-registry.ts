@@ -1,7 +1,7 @@
 import { injectable } from 'inversify';
 import { IWorkflowFunction } from './types';
-import { WorkflowFunctionType } from '../../domain/workflow/value-objects/function-type';
-import { ConfigLoadingModule } from '../../config/loading/config-loading-module';
+import { WorkflowFunctionType } from '../../../domain/workflow/value-objects/function-type';
+import { ConfigLoadingModule } from '../../../config/loading/config-loading-module';
 
 /**
  * 函数类型映射接口

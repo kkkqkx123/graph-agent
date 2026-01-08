@@ -7,8 +7,8 @@ import { BaseContextProcessor } from './base-context-processor';
  * 不做任何过滤，直接传递上下文
  */
 export class PassThroughProcessor extends BaseContextProcessor {
-  override readonly name = 'pass_through';
-  override readonly description = '不做任何过滤，直接传递上下文';
+  readonly name = 'pass_through';
+  readonly description = '不做任何过滤，直接传递上下文';
   override readonly version = '1.0.0';
 
   process(context: PromptContext, config?: Record<string, unknown>): PromptContext {

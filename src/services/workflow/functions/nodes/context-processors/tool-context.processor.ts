@@ -8,8 +8,8 @@ import { SingletonContextProcessor } from './singleton-context-processor';
  * 逻辑完全固定，无需配置
  */
 export class ToolContextProcessor extends SingletonContextProcessor {
-  override readonly name = 'tool_context';
-  override readonly description = '提取工具相关变量';
+  readonly name = 'tool_context';
+  readonly description = '提取工具相关变量';
   override readonly version = '1.0.0';
 
   process(context: PromptContext, config?: Record<string, unknown>): PromptContext {

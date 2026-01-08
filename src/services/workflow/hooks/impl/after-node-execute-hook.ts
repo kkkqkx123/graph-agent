@@ -101,7 +101,7 @@ export class AfterNodeExecuteHook extends Hook {
    * @param context Hook上下文
    * @returns 执行结果
    */
-  public override async execute(context: HookContext): Promise<HookExecutionResult> {
+  public async execute(context: HookContext): Promise<HookExecutionResult> {
     const startTime = Date.now();
     const config = this.props.config as AfterNodeExecuteHookConfig;
 

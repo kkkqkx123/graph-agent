@@ -8,13 +8,13 @@ import { SingletonContextProcessor } from './singleton-context-processor';
  * 逻辑完全固定，无需配置
  */
 export class LlmContextProcessor extends SingletonContextProcessor {
-  override readonly name = 'llm_context';
-  override readonly description = '过滤掉工具调用历史，只保留LLM相关变量';
+  readonly name = 'llm_context';
+  readonly description = '过滤掉工具调用历史，只保留LLM相关变量';
   override readonly version = '1.0.0';
 
   process(context: PromptContext, config?: Record<string, unknown>): PromptContext {
     // 过滤掉工具调用历史
-    const filteredHistory = context.history.filter(entry => !entry.metadata?.['toolCall']);
+    const filteredHistory = context.history.filter((entry: any) => !entry.metadata?.['toolCall']);
 
     // 只保留LLM相关变量
     const filteredVariables = new Map<string, unknown>();

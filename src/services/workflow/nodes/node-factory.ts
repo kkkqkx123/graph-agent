@@ -180,7 +180,7 @@ export class NodeFactory {
   /**
    * 创建条件节点
    */
-  private static createConditionNode(id: NodeId, config: NodeConfig): ConditionNode {
+  private static createConditionNode(id: NodeId, config: NodeConfig): Node {
     if (!config.condition) {
       throw new Error('条件节点需要condition配置');
     }

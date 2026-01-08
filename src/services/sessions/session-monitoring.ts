@@ -21,6 +21,20 @@ import { MonitoringService } from '../workflow/monitoring';
 import { TYPES } from '../../di/service-keys';
 
 /**
+ * 会话告警DTO
+ */
+export interface SessionAlertDTO {
+  id: string;
+  threadId: string;
+  type: string;
+  severity: string;
+  message: string;
+  timestamp: string;
+  resolved: boolean;
+  resolvedAt?: string;
+}
+
+/**
  * 会话监控指标
  */
 export interface SessionMonitoringMetrics {
@@ -310,21 +324,7 @@ export class SessionMonitoring extends BaseService {
    * @param resolved 是否已解决
    * @returns 告警列表
    */
-  async getSessionAlerts(
-    sessionId: string,
-    resolved?: boolean
-  ): Promise<
-    Array<{
-      id: string;
-      threadId: string;
-      type: string;
-      severity: string;
-      message: string;
-      timestamp: string;
-      resolved: boolean;
-      resolvedAt?: string;
-    }>
-  > {
+  async getSessionAlerts(sessionId: string, resolved?: boolean): Promise<SessionAlertDTO[]> {
     const result = await this.executeGetOperation(
       '会话告警',
       async () => {
@@ -338,22 +338,13 @@ export class SessionMonitoring extends BaseService {
         // 获取会话的所有线程
         const threads = await this.threadRepository.findActiveThreadsForSession(id);
 
-        const allAlerts: Array<{
-          id: string;
-          threadId: string;
-          type: string;
-          severity: string;
-          message: string;
-          timestamp: string;
-          resolved: boolean;
-          resolvedAt?: string;
-        }> = [];
+        const allAlerts: SessionAlertDTO[] = [];
 
         for (const thread of threads) {
           try {
             const alerts = await this.monitoringService.getAlerts(thread.id.toString(), resolved);
             allAlerts.push(
-              ...alerts.map((alert: { id: any; type: any; severity: any; message: any; timestamp: { toISOString: () => any; }; resolved: any; resolvedAt: { toISOString: () => any; }; }) => ({
+              ...alerts.map((alert) => ({
                 id: alert.id,
                 threadId: thread.id.toString(),
                 type: alert.type,

@@ -1,5 +1,5 @@
 import { injectable, inject } from 'inversify';
-import { ConfigLoadingModule } from '../../config/loading/config-loading-module';
+import { ConfigLoadingModule } from '../../../config/loading/config-loading-module';
 import { TYPES } from '../../../di/service-keys';
 
 /**

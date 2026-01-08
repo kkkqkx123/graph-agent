@@ -14,7 +14,7 @@ import {
 } from '../../domain/workflow';
 import { ID, ILogger } from '../../domain/common';
 import { BaseService } from '../common/base-service';
-import { WorkflowDTO, mapWorkflowToDTO } from '../dtos/workflow-dto';
+import { WorkflowDTO, mapWorkflowToDTO } from './dtos/workflow-dto';
 
 /**
  * 创建工作流参数

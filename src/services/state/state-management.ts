@@ -5,7 +5,7 @@ import { Session } from '../../domain/sessions/entities/session';
 import { SnapshotType } from '../../domain/snapshot/value-objects/snapshot-type';
 import { CheckpointType } from '../../domain/checkpoint/value-objects/checkpoint-type';
 import { StateHistoryService } from './state-history-service';
-import { CheckpointService } from '../../threads/checkpoints/services/checkpoint-service';
+import { CheckpointService } from '../threads/checkpoints/services/checkpoint-service';
 import { StateSnapshotService } from './state-snapshot-service';
 import { StateRecoveryService } from './state-recovery-service';
 
