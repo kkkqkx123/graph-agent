@@ -9,7 +9,7 @@ import { ILogger } from '../../domain/common/types/logger-types';
  *
  * 负责检查点的备份和备份链管理
  */
-export class CheckpointBackupService {
+export class CheckpointBackup {
   constructor(
     private readonly repository: IThreadCheckpointRepository,
     private readonly logger: ILogger

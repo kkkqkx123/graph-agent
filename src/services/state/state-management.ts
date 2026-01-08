@@ -14,7 +14,7 @@ import { StateRecoveryService } from './state-recovery-service';
  * 负责协调各个状态管理子服务，提供统一的状态管理接口
  */
 @injectable()
-export class StateManagementService {
+export class StateManagement {
   constructor(
     @inject('StateHistoryService') private readonly historyService: StateHistoryService,
     @inject('CheckpointService') private readonly checkpointService: CheckpointService,

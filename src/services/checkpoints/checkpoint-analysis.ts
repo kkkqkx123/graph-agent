@@ -8,7 +8,7 @@ import { ILogger } from '../../domain/common/types/logger-types';
  *
  * 负责检查点的分析和健康检查
  */
-export class CheckpointAnalysisService {
+export class CheckpointAnalysis {
   constructor(
     private readonly repository: IThreadCheckpointRepository,
     private readonly logger: ILogger

@@ -11,16 +11,16 @@ import { TYPES } from '../service-keys';
 // Infrastructure层服务实现
 import { HttpClient } from '../../infrastructure/common/http/http-client';
 import { ConfigLoadingModule } from '../../infrastructure/config/loading/config-loading-module';
-import { TokenBucketLimiter } from '../../services/llm/llm/rate-limiters/token-bucket-limiter';
-import { TokenCalculator } from '../../services/llm/llm/token-calculators/token-calculator';
-import { OpenAIChatClient } from '../../services/llm/llm/clients/openai-chat-client';
-import { OpenAIResponseClient } from '../../services/llm/llm/clients/openai-response-client';
-import { AnthropicClient } from '../../services/llm/llm/clients/anthropic-client';
-import { GeminiClient } from '../../services/llm/llm/clients/gemini-client';
-import { GeminiOpenAIClient } from '../../services/llm/llm/clients/gemini-openai-client';
-import { MockClient } from '../../services/llm/llm/clients/mock-client';
-import { HumanRelayClient } from '../../services/llm/llm/clients/human-relay-client';
-import { LLMClientFactory } from '../../services/llm/llm/clients/llm-client-factory';
+import { TokenBucketLimiter } from '../../services/llm/rate-limiters/token-bucket-limiter';
+import { TokenCalculator } from '../../services/llm/token-calculators/token-calculator';
+import { OpenAIChatClient } from '../../services/llm/clients/openai-chat-client';
+import { OpenAIResponseClient } from '../../services/llm/clients/openai-response-client';
+import { AnthropicClient } from '../../services/llm/clients/anthropic-client';
+import { GeminiClient } from '../../services/llm/clients/gemini-client';
+import { GeminiOpenAIClient } from '../../services/llm/clients/gemini-openai-client';
+import { MockClient } from '../../services/llm/clients/mock-client';
+import { HumanRelayClient } from '../../services/llm/clients/human-relay-client';
+import { LLMClientFactory } from '../../services/llm/clients/llm-client-factory';
 
 // 仓储实现
 import { SessionRepository as SessionInfrastructureRepository } from '../../infrastructure/persistence/repositories/session-repository';

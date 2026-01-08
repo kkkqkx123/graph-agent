@@ -24,7 +24,7 @@ import { HistoryTypeValue } from '../../../domain/history/value-objects/history-
  * 实际的恢复操作应该通过 WorkflowEngine.resumeFromCheckpoint() 方法执行
  */
 @injectable()
-export class StateRecoveryService {
+export class StateRecovery {
   constructor(
     @inject('ThreadCheckpointRepository')
     private readonly checkpointRepository: IThreadCheckpointRepository,

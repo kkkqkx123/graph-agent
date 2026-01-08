@@ -12,19 +12,19 @@
 // LLM模块服务
 import { HttpClient } from '../infrastructure/common/http/http-client';
 import { ConfigLoadingModule } from '../infrastructure/config/loading/config-loading-module';
-import { TokenBucketLimiter } from '../services/llm/llm/rate-limiters/token-bucket-limiter';
-import { TokenCalculator } from '../services/llm/llm/token-calculators/token-calculator';
-import { OpenAIChatClient } from '../services/llm/llm/clients/openai-chat-client';
-import { OpenAIResponseClient } from '../services/llm/llm/clients/openai-response-client';
-import { AnthropicClient } from '../services/llm/llm/clients/anthropic-client';
-import { GeminiClient } from '../services/llm/llm/clients/gemini-client';
-import { GeminiOpenAIClient } from '../services/llm/llm/clients/gemini-openai-client';
-import { MockClient } from '../services/llm/llm/clients/mock-client';
-import { HumanRelayClient } from '../services/llm/llm/clients/human-relay-client';
-import { LLMClientFactory } from '../services/llm/llm/clients/llm-client-factory';
-import { PollingPoolManager } from '../services/llm/llm/managers/pool-manager';
-import { TaskGroupManager } from '../services/llm/llm/managers/task-group-manager';
-import { LLMWrapperManager } from '../services/llm/llm/managers/llm-wrapper-manager';
+import { TokenBucketLimiter } from '../services/llm/rate-limiters/token-bucket-limiter';
+import { TokenCalculator } from '../services/llm/token-calculators/token-calculator';
+import { OpenAIChatClient } from '../services/llm/clients/openai-chat-client';
+import { OpenAIResponseClient } from '../services/llm/clients/openai-response-client';
+import { AnthropicClient } from '../services/llm/clients/anthropic-client';
+import { GeminiClient } from '../services/llm/clients/gemini-client';
+import { GeminiOpenAIClient } from '../services/llm/clients/gemini-openai-client';
+import { MockClient } from '../services/llm/clients/mock-client';
+import { HumanRelayClient } from '../services/llm/clients/human-relay-client';
+import { LLMClientFactory } from '../services/llm/clients/llm-client-factory';
+import { PollingPoolManager } from '../services/llm/managers/pool-manager';
+import { TaskGroupManager } from '../services/llm/managers/task-group-manager';
+import { LLMWrapperManager } from '../services/llm/managers/llm-wrapper-manager';
 
 // Domain层接口（用于类型定义，不注册到容器）
 import { ISessionRepository } from '../domain/sessions/repositories/session-repository';
@@ -61,10 +61,10 @@ import { WorkflowManagement } from '../services/workflow/workflow-management';
 import { WorkflowValidator } from '../services/workflow/workflow-validator';
 import { ExpressionEvaluator } from '../services/workflow/expression-evaluator';
 import { FunctionExecutionEngine } from '../services/workflow/function-execution-engine';
-import { GraphAlgorithm } from '../services/workflow/graph-algorithm';
-import { Monitoring } from '../services/workflow/monitoring';
+import { GraphAlgorithmImpl } from '../services/workflow/graph-algorithm';
+import { MonitoringService } from '../services/workflow/monitoring';
 import { NodeRouter } from '../services/workflow/node-router';
-import { WorkflowExecution } from '../services/workflow/workflow-execution';
+import { WorkflowExecutionEngine as WorkflowExecution } from '../services/workflow/workflow-execution';
 import { Checkpoint } from '../services/checkpoints/checkpoint';
 import { CheckpointAnalysis } from '../services/checkpoints/checkpoint-analysis';
 import { CheckpointBackup } from '../services/checkpoints/checkpoint-backup';
@@ -97,7 +97,7 @@ import { ThreadCheckpointRepository as ThreadCheckpointInfrastructureRepository 
 import { HistoryRepository as HistoryInfrastructureRepository } from '../infrastructure/persistence/repositories/history-repository';
 import { ConnectionManager } from '../infrastructure/persistence/connection-manager';
 import { Logger } from '../infrastructure/logging/logger';
-import { IImmerAdapter } from '../infrastructure/common/immer/immer-adapter';
+import { ImmerAdapter } from '../infrastructure/common/immer/immer-adapter';
 
 // ========== 服务类型映射接口 ==========
 
@@ -184,8 +184,8 @@ export interface ServiceTypes {
   WorkflowValidator: WorkflowValidator;
   ExpressionEvaluator: ExpressionEvaluator;
   FunctionExecutionEngine: FunctionExecutionEngine;
-  GraphAlgorithm: GraphAlgorithm;
-  Monitoring: Monitoring;
+  GraphAlgorithm: GraphAlgorithmImpl;
+  MonitoringService: MonitoringService;
   NodeRouter: NodeRouter;
   WorkflowExecution: WorkflowExecution;
 
@@ -227,7 +227,7 @@ export interface ServiceTypes {
   // 基础设施服务
   ConnectionManager: ConnectionManager;
   Logger: Logger;
-  ImmerAdapter: IImmerAdapter;
+  ImmerAdapter: ImmerAdapter;
 
   // Domain服务
   CheckpointManager: CheckpointManager;
@@ -363,7 +363,7 @@ export const TYPES: {
     'FunctionExecutionEngine'
   ) as TypedServiceIdentifier<'FunctionExecutionEngine'>,
   GraphAlgorithm: Symbol.for('GraphAlgorithm') as TypedServiceIdentifier<'GraphAlgorithm'>,
-  Monitoring: Symbol.for('Monitoring') as TypedServiceIdentifier<'Monitoring'>,
+  MonitoringService: Symbol.for('MonitoringService') as TypedServiceIdentifier<'MonitoringService'>,
   NodeRouter: Symbol.for('NodeRouter') as TypedServiceIdentifier<'NodeRouter'>,
   WorkflowExecution: Symbol.for('WorkflowExecution') as TypedServiceIdentifier<'WorkflowExecution'>,
 

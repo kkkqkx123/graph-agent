@@ -99,7 +99,7 @@ export interface FunctionDeploymentStatus {
  * 函数管理服务
  */
 @injectable()
-export class FunctionManagementService {
+export class FunctionManagement {
   private readonly functionRegistry = new Map<string, FunctionDefinition>();
   private readonly versionRegistry = new Map<string, FunctionVersionInfo[]>();
   private readonly deploymentRegistry = new Map<string, FunctionDeploymentStatus[]>();

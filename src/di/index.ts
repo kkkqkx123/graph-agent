@@ -11,7 +11,7 @@ export { TYPES } from './service-keys';
 export { diContainer, container, ContainerManager, AppContainer } from './container';
 
 // 导出绑定模块
-export { infrastructureBindings, applicationBindings } from './bindings';
+export { infrastructureBindings, servicesBindings } from './bindings';
 
 // 导出类型
 export type { ContainerConfig } from './container';

@@ -17,7 +17,7 @@ import { ILogger } from '../../../domain/common/types/logger-types';
  * - 查询History记录
  * - 管理History生命周期
  */
-export class StateHistoryService {
+export class StateHistory {
   constructor(
     private readonly historyRepository: IHistoryRepository,
     private readonly logger: ILogger

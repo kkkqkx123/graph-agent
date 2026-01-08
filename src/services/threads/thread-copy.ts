@@ -52,7 +52,7 @@ export interface CopyValidationResult {
  * Thread Copy应用服务
  */
 @injectable()
-export class ThreadCopyService {
+export class ThreadCopy {
   constructor(
     @inject(TYPES.ThreadRepository) private readonly threadRepository: IThreadRepository,
     @inject(TYPES.SessionRepository) private readonly sessionRepository: ISessionRepository,

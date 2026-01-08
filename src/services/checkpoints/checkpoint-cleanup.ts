@@ -8,7 +8,7 @@ import { ILogger } from '../../domain/common/types/logger-types';
  *
  * 负责清理和归档检查点
  */
-export class CheckpointCleanupService {
+export class CheckpointCleanup {
   constructor(
     private readonly repository: IThreadCheckpointRepository,
     private readonly logger: ILogger

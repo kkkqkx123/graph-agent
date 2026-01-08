@@ -2,7 +2,7 @@ import { injectable, inject } from 'inversify';
 import { EdgeValueObject } from '../../domain/workflow/value-objects/edge/edge-value-object';
 import { NodeId } from '../../domain/workflow/value-objects/node/node-id';
 import { ThreadWorkflowState } from '../../domain/threads/value-objects/thread-workflow-state';
-import { ExpressionEvaluator } from '../workflow/services/expression-evaluator';
+import { ExpressionEvaluator } from '../workflow/expression-evaluator';
 import { TYPES } from '../../di/service-keys';
 
 /**

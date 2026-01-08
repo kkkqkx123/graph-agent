@@ -51,7 +51,7 @@ interface Prompt {
 }
 
 @injectable()
-export class HumanRelayService implements IHumanRelayService {
+export class HumanRelay implements IHumanRelayService {
   private conversationHistory: any[] = [];
 
   async processRequest(request: LLMRequest, config: HumanRelayConfig): Promise<LLMResponse> {

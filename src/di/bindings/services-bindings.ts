@@ -33,10 +33,9 @@ import { WorkflowManagement } from '../../services/workflow/workflow-management'
 import { WorkflowValidator } from '../../services/workflow/workflow-validator';
 import { ExpressionEvaluator } from '../../services/workflow/expression-evaluator';
 import { FunctionExecutionEngine } from '../../services/workflow/function-execution-engine';
-import { GraphAlgorithm } from '../../services/workflow/graph-algorithm';
-import { Monitoring } from '../../services/workflow/monitoring';
+import { GraphAlgorithmImpl } from '../../services/workflow/graph-algorithm';
+import { MonitoringService } from '../../services/workflow/monitoring';
 import { NodeRouter } from '../../services/workflow/node-router';
-import { WorkflowExecution } from '../../services/workflow/workflow-execution';
 import { Checkpoint } from '../../services/checkpoints/checkpoint';
 import { CheckpointAnalysis } from '../../services/checkpoints/checkpoint-analysis';
 import { CheckpointBackup } from '../../services/checkpoints/checkpoint-backup';
@@ -114,10 +113,10 @@ export const servicesBindings = new ContainerModule((bind: any) => {
   bind(TYPES.WorkflowValidator).to(WorkflowValidator).inSingletonScope();
   bind(TYPES.ExpressionEvaluator).to(ExpressionEvaluator).inSingletonScope();
   bind(TYPES.FunctionExecutionEngine).to(FunctionExecutionEngine).inSingletonScope();
-  bind(TYPES.GraphAlgorithm).to(GraphAlgorithm).inSingletonScope();
-  bind(TYPES.Monitoring).to(Monitoring).inSingletonScope();
+  bind(TYPES.GraphAlgorithm).to(GraphAlgorithmImpl).inSingletonScope();
+  bind(TYPES.MonitoringService).to(MonitoringService).inSingletonScope();
   bind(TYPES.NodeRouter).to(NodeRouter).inSingletonScope();
-  bind(TYPES.WorkflowExecution).to(WorkflowExecution).inSingletonScope();
+  bind(TYPES.WorkflowExecution).to(WorkflowExecutionEngine).inSingletonScope();
 
   // 检查点服务
   bind(TYPES.Checkpoint).to(Checkpoint).inSingletonScope();

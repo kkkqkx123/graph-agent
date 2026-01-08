@@ -5,14 +5,14 @@
  */
 
 import { injectable, inject } from 'inversify';
-import { ID, ILogger } from '../../../domain/common';
-import { NodeId, PromptContext } from '../../../domain/workflow';
+import { ID, ILogger } from '../../domain/common';
+import { NodeId, PromptContext } from '../../domain/workflow';
 import {
   Thread,
   IThreadRepository,
   ExecutionContext,
   NodeExecutionSnapshot,
-} from '../../../domain/threads';
+} from '../../domain/threads';
 import {
   ISessionRepository,
   ForkStrategy,
@@ -21,8 +21,8 @@ import {
   ThreadOperationResult,
   ThreadOperationMetadata,
   ThreadOperationError,
-} from '../../../domain/sessions';
-import { TYPES } from '../../../di/service-keys';
+} from '../../domain/sessions';
+import { TYPES } from '../../di/service-keys';
 
 /**
  * Fork操作输入
@@ -56,7 +56,7 @@ export interface ForkValidationResult {
  * Thread Fork应用服务
  */
 @injectable()
-export class ThreadForkService {
+export class ThreadFork {
   constructor(
     @inject(TYPES.ThreadRepository) private readonly threadRepository: IThreadRepository,
     @inject(TYPES.SessionRepository) private readonly sessionRepository: ISessionRepository,

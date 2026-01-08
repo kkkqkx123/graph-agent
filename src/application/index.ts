@@ -9,20 +9,20 @@
 export * from './common';
 
 // LLM模块导出
-export { WrapperService } from './llm/services/wrapper-service';
+export { Wrapper } from '../services/llm/wrapper';
 
 // 会话模块导出
-export { SessionLifecycleService } from './sessions/services/session-lifecycle-service';
-export { SessionManagementService } from './sessions/services/session-management-service';
-export { SessionMaintenanceService } from './sessions/services/session-maintenance-service';
+export { SessionLifecycle } from '../services/sessions/session-lifecycle';
+export { SessionManagement } from '../services/sessions/session-management';
+export { SessionMaintenance } from '../services/sessions/session-maintenance';
 
 // 线程模块导出
-export { ThreadLifecycleService } from './threads/services/thread-lifecycle-service';
-export { ThreadManagementService } from './threads/services/thread-management-service';
-export { ThreadMaintenanceService } from './threads/services/thread-maintenance-service';
+export { ThreadLifecycle } from '../services/threads/thread-lifecycle';
+export { ThreadManagement } from '../services/threads/thread-management';
+export { ThreadMaintenance } from '../services/threads/thread-maintenance';
 
 // 检查点模块导出
-export { CheckpointService } from './threads/checkpoints/services/checkpoint-service';
+export { Checkpoint } from '../services/checkpoints/checkpoint';
 export type {
   CreateCheckpointRequest,
   CreateManualCheckpointRequest,
@@ -30,7 +30,7 @@ export type {
   CreateMilestoneCheckpointRequest,
   CheckpointInfo,
   CheckpointStatisticsInfo,
-} from './threads/checkpoints/services/checkpoint-service';
+} from '../services/checkpoints/checkpoint';
 
 // 应用层类型定义
 export interface ApplicationService {
@@ -123,25 +123,25 @@ export interface SortParams {
 }
 
 // 导入服务类型用于接口定义
-import { WrapperService } from './llm/services/wrapper-service';
-import { SessionLifecycleService } from './sessions/services/session-lifecycle-service';
-import { SessionManagementService } from './sessions/services/session-management-service';
-import { SessionMaintenanceService } from './sessions/services/session-maintenance-service';
-import { ThreadLifecycleService } from './threads/services/thread-lifecycle-service';
-import { ThreadManagementService } from './threads/services/thread-management-service';
-import { ThreadMaintenanceService } from './threads/services/thread-maintenance-service';
-import { CheckpointService } from './threads/checkpoints/services/checkpoint-service';
+import { Wrapper } from '../services/llm/wrapper';
+import { SessionLifecycle } from '../services/sessions/session-lifecycle';
+import { SessionManagement } from '../services/sessions/session-management';
+import { SessionMaintenance } from '../services/sessions/session-maintenance';
+import { ThreadLifecycle } from '../services/threads/thread-lifecycle';
+import { ThreadManagement } from '../services/threads/thread-management';
+import { ThreadMaintenance } from '../services/threads/thread-maintenance';
+import { Checkpoint } from '../services/checkpoints/checkpoint';
 
 /**
  * 应用层服务工厂接口
  */
 export interface ApplicationServiceFactory {
-  createWrapperService(): WrapperService;
-  createSessionLifecycleService(): SessionLifecycleService;
-  createSessionManagementService(): SessionManagementService;
-  createSessionMaintenanceService(): SessionMaintenanceService;
-  createThreadLifecycleService(): ThreadLifecycleService;
-  createThreadManagementService(): ThreadManagementService;
-  createThreadMaintenanceService(): ThreadMaintenanceService;
-  createCheckpointService(): CheckpointService;
+  createWrapperService(): Wrapper;
+  createSessionLifecycleService(): SessionLifecycle;
+  createSessionManagementService(): SessionManagement;
+  createSessionMaintenanceService(): SessionMaintenance;
+  createThreadLifecycleService(): ThreadLifecycle;
+  createThreadManagementService(): ThreadManagement;
+  createThreadMaintenanceService(): ThreadMaintenance;
+  createCheckpointService(): Checkpoint;
 }

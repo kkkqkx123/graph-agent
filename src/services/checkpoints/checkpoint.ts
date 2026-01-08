@@ -1,18 +1,18 @@
 import { injectable } from 'inversify';
-import { ID } from '../../../../domain/common/value-objects/id';
-import { ThreadCheckpoint } from '../../../../domain/threads/checkpoints/entities/thread-checkpoint';
-import { CheckpointType } from '../../../../domain/checkpoint/value-objects/checkpoint-type';
-import { CheckpointStatistics } from '../../../../domain/threads/checkpoints/value-objects/checkpoint-statistics';
-import { CheckpointCreationService } from '../../../../infrastructure/checkpoints/checkpoint-creation-service';
-import { CheckpointRestoreService } from '../../../../infrastructure/checkpoints/checkpoint-restore-service';
-import { CheckpointQueryService } from '../../../../infrastructure/checkpoints/checkpoint-query-service';
-import { CheckpointCleanupService } from '../../../../infrastructure/checkpoints/checkpoint-cleanup-service';
-import { CheckpointBackupService } from '../../../../infrastructure/checkpoints/checkpoint-backup-service';
-import { CheckpointAnalysisService } from '../../../../infrastructure/checkpoints/checkpoint-analysis-service';
-import { CheckpointManagementService } from '../../../../infrastructure/checkpoints/checkpoint-management-service';
-import { IThreadCheckpointRepository } from '../../../../domain/threads/checkpoints/repositories/thread-checkpoint-repository';
-import { ILogger } from '../../../../domain/common/types/logger-types';
-import { BaseApplicationService } from '../../../common/base-application-service';
+import { ID } from '../../domain/common/value-objects/id';
+import { ThreadCheckpoint } from '../../domain/threads/checkpoints/entities/thread-checkpoint';
+import { CheckpointType } from '../../domain/checkpoint/value-objects/checkpoint-type';
+import { CheckpointStatistics } from '../../domain/threads/checkpoints/value-objects/checkpoint-statistics';
+import { CheckpointCreation } from './checkpoint-creation';
+import { CheckpointRestore } from './checkpoint-restore';
+import { CheckpointQuery } from './checkpoint-query';
+import { CheckpointCleanup } from './checkpoint-cleanup';
+import { CheckpointBackup } from './checkpoint-backup';
+import { CheckpointAnalysis } from './checkpoint-analysis';
+import { CheckpointManagement } from './checkpoint-management';
+import { IThreadCheckpointRepository } from '../../domain/threads/checkpoints/repositories/thread-checkpoint-repository';
+import { ILogger } from '../../domain/common/types/logger-types';
+import { BaseApplicationService } from '../common/base-application-service';
 
 /**
  * 创建检查点请求DTO
@@ -115,15 +115,15 @@ export interface CheckpointStatisticsInfo {
  * 提供Thread检查点的应用层服务，整合所有checkpoint功能
  */
 @injectable()
-export class CheckpointService extends BaseApplicationService {
+export class Checkpoint extends BaseApplicationService {
   constructor(
-    private readonly creationService: CheckpointCreationService,
-    private readonly restoreService: CheckpointRestoreService,
-    private readonly queryService: CheckpointQueryService,
-    private readonly cleanupService: CheckpointCleanupService,
-    private readonly backupService: CheckpointBackupService,
-    private readonly analysisService: CheckpointAnalysisService,
-    private readonly managementService: CheckpointManagementService,
+    private readonly creationService: CheckpointCreation,
+    private readonly restoreService: CheckpointRestore,
+    private readonly queryService: CheckpointQuery,
+    private readonly cleanupService: CheckpointCleanup,
+    private readonly backupService: CheckpointBackup,
+    private readonly analysisService: CheckpointAnalysis,
+    private readonly managementService: CheckpointManagement,
     private readonly repository: IThreadCheckpointRepository,
     logger: ILogger
   ) {

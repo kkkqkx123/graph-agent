@@ -16,7 +16,7 @@ import { ILogger } from '../../../domain/common';
 /**
  * 会话管理服务
  */
-export class SessionManagementService extends BaseApplicationService {
+export class SessionManagement extends BaseApplicationService {
   constructor(
     private readonly sessionRepository: ISessionRepository,
     logger: ILogger

@@ -66,7 +66,7 @@ export interface DeleteWorkflowParams {
  * 工作流生命周期服务
  */
 @injectable()
-export class WorkflowLifecycleService extends BaseApplicationService {
+export class WorkflowLifecycle extends BaseApplicationService {
   constructor(
     @inject('WorkflowRepository') private readonly workflowRepository: IWorkflowRepository,
     @inject('Logger') logger: ILogger

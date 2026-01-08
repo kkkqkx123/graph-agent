@@ -8,7 +8,7 @@ import { ILogger } from '../../domain/common/types/logger-types';
  *
  * 负责检查点的恢复操作
  */
-export class CheckpointRestoreService {
+export class CheckpointRestore {
   constructor(
     private readonly repository: IThreadCheckpointRepository,
     private readonly logger: ILogger

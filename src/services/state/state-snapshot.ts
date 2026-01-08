@@ -13,7 +13,7 @@ import { ThreadExecution } from '../../../domain/threads/value-objects/thread-ex
  * 负责管理Thread、Session和全局的快照
  */
 @injectable()
-export class StateSnapshotService {
+export class StateSnapshot {
   constructor(
     @inject('SnapshotRepository') private readonly snapshotRepository: ISnapshotRepository
   ) {}

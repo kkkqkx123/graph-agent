@@ -18,16 +18,16 @@ import { Thread, IThreadRepository } from '../../domain/threads';
 import { Workflow, IWorkflowRepository } from '../../domain/workflow';
 import { ID, ILogger, Timestamp } from '../../domain/common';
 import { BaseApplicationService } from '../common/base-application-service';
-import { WorkflowExecutionEngine } from '../../infrastructure/threads/workflow-execution-engine';
-import { ThreadStateManager } from '../../infrastructure/threads/thread-state-manager';
-import { ThreadHistoryManager } from '../../infrastructure/threads/thread-history-manager';
+import { WorkflowExecutionEngine } from './workflow-execution-engine';
+import { ThreadStateManager } from './thread-state-manager';
+import { ThreadHistoryManager } from './thread-history-manager';
 import { CheckpointManager } from '../../domain/checkpoint/services/checkpoint-manager';
-import { ThreadConditionalRouter } from '../../infrastructure/threads/thread-conditional-router';
-import { INodeExecutor } from '../../infrastructure/workflow/nodes/node-executor';
-import { FunctionRegistry } from '../../infrastructure/workflow/functions/function-registry';
+import { ThreadConditionalRouter } from './thread-conditional-router';
+import { INodeExecutor } from '../workflow/nodes/node-executor';
+import { FunctionRegistry } from '../workflow/functions/function-registry';
 import { TYPES } from '../../di/service-keys';
-import { SubgraphConfig, VariableMapping } from '../../infrastructure/workflow/nodes/subgraph/subgraph-node';
-import { ExpressionEvaluator } from '../../infrastructure/workflow/services/expression-evaluator';
+import { SubgraphConfig, VariableMapping } from '../workflow/nodes/subgraph/subgraph-node';
+import { ExpressionEvaluator } from '../workflow/expression-evaluator';
 
 /**
  * 线程执行结果接口
@@ -65,7 +65,7 @@ export interface SubWorkflowExecutionResult {
  * 线程执行服务
  */
 @injectable()
-export class ThreadExecutionService extends BaseApplicationService {
+export class ThreadExecution extends BaseApplicationService {
   private readonly workflowEngine: WorkflowExecutionEngine;
   private readonly stateManager: ThreadStateManager;
   private readonly historyManager: ThreadHistoryManager;

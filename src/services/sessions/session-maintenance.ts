@@ -12,7 +12,7 @@ import { ILogger, ID } from '../../../domain/common';
 /**
  * 会话维护服务
  */
-export class SessionMaintenanceService extends BaseApplicationService {
+export class SessionMaintenance extends BaseApplicationService {
   constructor(
     private readonly sessionRepository: ISessionRepository,
     private readonly threadRepository: IThreadRepository,

@@ -46,7 +46,7 @@ export interface StateChange {
  * 会话编排服务
  */
 @injectable()
-export class SessionOrchestrationService extends BaseApplicationService {
+export class SessionOrchestration extends BaseApplicationService {
   constructor(
     @inject(TYPES.SessionRepository) private readonly sessionRepository: ISessionRepository,
     @inject(TYPES.ThreadRepository) private readonly threadRepository: IThreadRepository,

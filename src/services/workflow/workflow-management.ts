@@ -108,7 +108,7 @@ export interface WorkflowListResult {
  * 工作流管理服务
  */
 @injectable()
-export class WorkflowManagementService extends BaseApplicationService {
+export class WorkflowManagement extends BaseApplicationService {
   constructor(
     @inject('WorkflowRepository') private readonly workflowRepository: IWorkflowRepository,
     @inject('Logger') logger: ILogger

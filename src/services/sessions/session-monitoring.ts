@@ -94,7 +94,7 @@ export interface SessionHealthStatus {
  * 会话监控服务
  */
 @injectable()
-export class SessionMonitoringService extends BaseApplicationService {
+export class SessionMonitoring extends BaseApplicationService {
   constructor(
     @inject(TYPES.SessionRepository) private readonly sessionRepository: ISessionRepository,
     @inject(TYPES.ThreadRepository) private readonly threadRepository: IThreadRepository,

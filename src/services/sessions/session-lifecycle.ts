@@ -26,7 +26,7 @@ export interface CreateSessionRequest {
 /**
  * 会话生命周期服务
  */
-export class SessionLifecycleService extends BaseApplicationService {
+export class SessionLifecycle extends BaseApplicationService {
   constructor(
     private readonly sessionRepository: ISessionRepository,
     logger: ILogger

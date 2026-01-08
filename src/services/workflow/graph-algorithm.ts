@@ -118,7 +118,7 @@ function getOutgoingEdges(edges: Map<string, EdgeValueObject>, nodeId: NodeId): 
  * 此实现可以替换为其他算法实现（如性能优化版本、并行版本等）。
  */
 @injectable()
-export class GraphAlgorithmServiceImpl implements GraphAlgorithmService {
+export class GraphAlgorithmImpl implements GraphAlgorithmService {
   /**
    * 获取图的拓扑排序
    * @param workflow 工作流

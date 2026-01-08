@@ -16,7 +16,7 @@ import { LLMResponse } from '../../../domain/llm/entities/llm-response';
  * 提供业务逻辑和编排功能
  */
 @injectable()
-export class WrapperService {
+export class Wrapper {
   constructor(@inject('LLMWrapperManager') private wrapperManager: LLMWrapperManager) {}
 
   /**

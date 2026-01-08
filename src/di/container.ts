@@ -275,14 +275,14 @@ export class AppContainer {
    * 获取会话编排服务
    */
   static getSessionOrchestrationService() {
-    return this.getService(TYPES.SessionOrchestrationServiceImpl);
+    return this.getService(TYPES.SessionOrchestration);
   }
 
   /**
    * 获取图算法服务
    */
   static getGraphAlgorithmService() {
-    return this.getService(TYPES.GraphAlgorithmService);
+    return this.getService(TYPES.GraphAlgorithm);
   }
 
   /**

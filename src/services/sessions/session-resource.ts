@@ -29,7 +29,7 @@ import {
  * 会话资源服务
  */
 @injectable()
-export class SessionResourceService extends BaseApplicationService {
+export class SessionResource extends BaseApplicationService {
   constructor(
     @inject(TYPES.SessionRepository) private readonly sessionRepository: ISessionRepository,
     @inject(TYPES.Logger) logger: ILogger
