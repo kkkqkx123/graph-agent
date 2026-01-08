@@ -7,10 +7,11 @@
 // 触发器执行器
 export { TriggerExecutor } from './trigger-executor';
 
-// 触发器上下文和执行结果
-export type { TriggerContext } from './trigger-context';
+// 触发器执行上下文和执行结果
+// 注意：这些是 TriggerExecutor 使用的接口，与 domain 层的接口不同
+export type { TriggerExecutionContext } from './trigger-context';
 export {
-  TriggerExecutionResult,
-  TriggerExecutionResultBuilder,
-  TriggerExecutionResultUtils,
+  TriggerExecutorResult,
+  TriggerExecutorResultBuilder,
+  TriggerExecutorResultUtils,
 } from './trigger-execution-result';

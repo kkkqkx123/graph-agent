@@ -7,8 +7,8 @@
  * - 自定义处理器时，可直接从本模块导入 BaseContextProcessor 并扩展
  */
 
-// 基类（用于扩展自定义处理器）
-export { BaseContextProcessor } from './base-context-processor';
+// 基类和类型定义（用于扩展自定义处理器）
+export { BaseContextProcessor, ContextProcessor, ContextProcessorMetadata, ContextProcessorRegistration } from './base-context-processor';
 
 // 预实例化的处理器函数
 export { llmContextProcessor } from './llm-context.processor';

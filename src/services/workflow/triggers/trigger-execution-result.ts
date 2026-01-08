@@ -1,7 +1,10 @@
 /**
  * 触发器执行结果
+ *
+ * 注意：这是 TriggerExecutor 返回的执行结果，与 domain 层的 TriggerExecutionResult 不同
+ * domain 层的 TriggerExecutionResult 用于 Trigger 实体的 evaluate() 方法
  */
-export interface TriggerExecutionResult {
+export interface TriggerExecutorResult {
   /**
    * 触发器ID
    */
@@ -41,7 +44,7 @@ export interface TriggerExecutionResult {
 /**
  * 触发器执行结果构建器
  */
-export class TriggerExecutionResultBuilder {
+export class TriggerExecutorResultBuilder {
   private triggerId: string = '';
   private shouldTrigger: boolean = false;
   private success: boolean = true;
@@ -53,7 +56,7 @@ export class TriggerExecutionResultBuilder {
   /**
    * 设置触发器ID
    */
-  setTriggerId(triggerId: string): TriggerExecutionResultBuilder {
+  setTriggerId(triggerId: string): TriggerExecutorResultBuilder {
     this.triggerId = triggerId;
     return this;
   }
@@ -61,7 +64,7 @@ export class TriggerExecutionResultBuilder {
   /**
    * 设置是否应该触发
    */
-  setShouldTrigger(shouldTrigger: boolean): TriggerExecutionResultBuilder {
+  setShouldTrigger(shouldTrigger: boolean): TriggerExecutorResultBuilder {
     this.shouldTrigger = shouldTrigger;
     return this;
   }
@@ -69,7 +72,7 @@ export class TriggerExecutionResultBuilder {
   /**
    * 设置执行成功状态
    */
-  setSuccess(success: boolean): TriggerExecutionResultBuilder {
+  setSuccess(success: boolean): TriggerExecutorResultBuilder {
     this.success = success;
     return this;
   }
@@ -77,7 +80,7 @@ export class TriggerExecutionResultBuilder {
   /**
    * 设置执行错误
    */
-  setError(error: Error): TriggerExecutionResultBuilder {
+  setError(error: Error): TriggerExecutorResultBuilder {
     this.error = error;
     return this;
   }
@@ -85,7 +88,7 @@ export class TriggerExecutionResultBuilder {
   /**
    * 设置执行时间
    */
-  setExecutionTime(executionTime: number): TriggerExecutionResultBuilder {
+  setExecutionTime(executionTime: number): TriggerExecutorResultBuilder {
     this.executionTime = executionTime;
     return this;
   }
@@ -93,7 +96,7 @@ export class TriggerExecutionResultBuilder {
   /**
    * 设置触发数据
    */
-  setData(data: Record<string, any>): TriggerExecutionResultBuilder {
+  setData(data: Record<string, any>): TriggerExecutorResultBuilder {
     this.data = { ...this.data, ...data };
     return this;
   }
@@ -101,7 +104,7 @@ export class TriggerExecutionResultBuilder {
   /**
    * 设置消息
    */
-  setMessage(message: string): TriggerExecutionResultBuilder {
+  setMessage(message: string): TriggerExecutorResultBuilder {
     this.message = message;
     return this;
   }
@@ -109,7 +112,7 @@ export class TriggerExecutionResultBuilder {
   /**
    * 构建触发器执行结果
    */
-  build(): TriggerExecutionResult {
+  build(): TriggerExecutorResult {
     return {
       triggerId: this.triggerId,
       shouldTrigger: this.shouldTrigger,
@@ -125,12 +128,12 @@ export class TriggerExecutionResultBuilder {
 /**
  * 触发器执行结果工具类
  */
-export class TriggerExecutionResultUtils {
+export class TriggerExecutorResultUtils {
   /**
    * 创建成功的触发结果
    */
-  static success(message: string = '触发器条件满足'): TriggerExecutionResultBuilder {
-    return new TriggerExecutionResultBuilder()
+  static success(message: string = '触发器条件满足'): TriggerExecutorResultBuilder {
+    return new TriggerExecutorResultBuilder()
       .setShouldTrigger(true)
       .setSuccess(true)
       .setMessage(message);
@@ -142,8 +145,8 @@ export class TriggerExecutionResultUtils {
   static failure(
     message: string = '触发器条件不满足',
     error?: Error
-  ): TriggerExecutionResultBuilder {
-    const builder = new TriggerExecutionResultBuilder()
+  ): TriggerExecutorResultBuilder {
+    const builder = new TriggerExecutorResultBuilder()
       .setShouldTrigger(false)
       .setSuccess(error ? false : true)
       .setMessage(message);

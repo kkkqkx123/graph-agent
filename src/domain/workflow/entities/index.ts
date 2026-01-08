@@ -35,7 +35,5 @@ export {
   Trigger,
   TriggerProps,
   TriggerConfig,
-  TriggerContext,
   TriggerValidationResult,
-  TriggerExecutionResult,
 } from './trigger';

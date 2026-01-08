@@ -3,8 +3,8 @@ import { Trigger } from '../../../domain/workflow/entities/trigger';
 import { FunctionRegistry } from '../functions/function-registry';
 import { WorkflowExecutionContext } from '../functions/types';
 import { ILogger } from '../../../domain/common/types/logger-types';
-import { TriggerContext } from './trigger-context';
-import { TriggerExecutionResult, TriggerExecutionResultUtils } from './trigger-execution-result';
+import { TriggerExecutionContext } from './trigger-context';
+import { TriggerExecutorResult, TriggerExecutorResultUtils } from './trigger-execution-result';
 
 /**
  * 触发器执行器
@@ -29,7 +29,7 @@ export class TriggerExecutor {
    * @param context 触发器上下文
    * @returns 触发执行结果
    */
-  async execute(trigger: Trigger, context: TriggerContext): Promise<TriggerExecutionResult> {
+  async execute(trigger: Trigger, context: TriggerExecutionContext): Promise<TriggerExecutorResult> {
     const startTime = Date.now();
 
     try {
@@ -41,7 +41,7 @@ export class TriggerExecutor {
 
       // 检查触发器是否可以触发
       if (!trigger.canTrigger()) {
-        return TriggerExecutionResultUtils.failure('触发器未启用或已触发').build();
+        return TriggerExecutorResultUtils.failure('触发器未启用或已触发').build();
       }
 
       // 构建函数执行上下文
@@ -88,7 +88,7 @@ export class TriggerExecutor {
           executionTime,
         });
 
-        return TriggerExecutionResultUtils.success('触发器条件满足')
+        return TriggerExecutorResultUtils.success('触发器条件满足')
           .setData({
             triggerId: trigger.triggerId.toString(),
             triggerType: trigger.type.toString(),
@@ -103,7 +103,7 @@ export class TriggerExecutor {
           executionTime,
         });
 
-        return TriggerExecutionResultUtils.failure('触发器条件不满足').build();
+        return TriggerExecutorResultUtils.failure('触发器条件不满足').build();
       }
     } catch (error) {
       const executionTime = Date.now() - startTime;
@@ -118,7 +118,7 @@ export class TriggerExecutor {
         }
       );
 
-      return TriggerExecutionResultUtils.failure('触发器执行失败', error as Error).build();
+      return TriggerExecutorResultUtils.failure('触发器执行失败', error as Error).build();
     }
   }
 
@@ -130,16 +130,16 @@ export class TriggerExecutor {
    */
   async executeBatch(
     triggers: Trigger[],
-    context: TriggerContext
-  ): Promise<TriggerExecutionResult[]> {
-    const results: TriggerExecutionResult[] = [];
+    context: TriggerExecutionContext
+  ): Promise<TriggerExecutorResult[]> {
+    const results: TriggerExecutorResult[] = [];
 
     for (const trigger of triggers) {
       try {
         const result = await this.execute(trigger, context);
         results.push(result);
       } catch (error) {
-        results.push(TriggerExecutionResultUtils.failure('触发器执行异常', error as Error).build());
+        results.push(TriggerExecutorResultUtils.failure('触发器执行异常', error as Error).build());
       }
     }
 

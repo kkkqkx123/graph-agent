@@ -2,8 +2,11 @@
  * 触发器执行上下文
  *
  * 提供触发器执行时所需的上下文信息
+ *
+ * 注意：这是 TriggerExecutor 使用的执行上下文，与 domain 层的 TriggerContext 不同
+ * domain 层的 TriggerContext 用于 Trigger 实体的 evaluate() 方法
  */
-export interface TriggerContext {
+export interface TriggerExecutionContext {
   /**
    * 工作流ID
    */

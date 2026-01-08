@@ -43,34 +43,18 @@ export interface TriggerValidationResult {
 }
 
 /**
- * 触发器执行结果接口
- */
-export interface TriggerExecutionResult {
-  readonly shouldTrigger: boolean;
-  readonly reason: string;
-  readonly metadata?: Record<string, unknown>;
-}
-
-/**
- * 触发器上下文接口
- */
-export interface TriggerContext {
-  readonly workflowId: string;
-  readonly currentTime: number;
-  readonly state?: Record<string, unknown>;
-  readonly events?: Array<{ type: string; data: unknown; timestamp: number }>;
-}
-
-/**
  * Trigger 实体
  *
  * 根据DDD原则，Trigger是领域实体，负责：
  * 1. 触发器生命周期管理（创建、启用、禁用、触发）
  * 2. 触发器状态管理（ENABLED/DISABLED/TRIGGERED）
- * 3. 触发器验证和评估
+ * 3. 触发器验证
  * 4. 触发器配置管理
+ *
+ * 注意：Trigger 采用函数式设计，实际的触发逻辑由 TriggerFunction 实现
+ * TriggerExecutor 负责调用对应的 TriggerFunction
  */
-export abstract class Trigger extends Entity {
+export class Trigger extends Entity {
   protected readonly props: TriggerProps;
 
   /**
@@ -88,8 +72,7 @@ export abstract class Trigger extends Entity {
    * @returns 触发器实例
    */
   public static fromProps(props: TriggerProps): Trigger {
-    // 由子类实现
-    throw new Error('Trigger.fromProps() 必须由子类实现');
+    return new Trigger(props);
   }
 
   /**
@@ -395,13 +378,6 @@ export abstract class Trigger extends Entity {
       warnings,
     };
   }
-
-  /**
-   * 评估触发器（抽象方法，由子类实现）
-   * @param context 触发器上下文
-   * @returns 执行结果
-   */
-  public abstract evaluate(context: TriggerContext): Promise<TriggerExecutionResult>;
 
   /**
    * 更新实体
