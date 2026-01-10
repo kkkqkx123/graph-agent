@@ -11,8 +11,6 @@ export * from './workflow';
 export {
   Hook,
   HookProps,
-  HookContext,
-  HookExecutionResult,
   HookMetadata,
   HookParameter,
   HookPluginConfig,

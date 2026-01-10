@@ -2,7 +2,8 @@ import { injectable, inject } from 'inversify';
 import { EdgeValueObject } from '../../domain/workflow/value-objects/edge/edge-value-object';
 import { NodeId } from '../../domain/workflow/value-objects/node/node-id';
 import { ThreadWorkflowState } from '../../domain/threads/value-objects/thread-workflow-state';
-import { ExpressionEvaluator } from '../workflow/expression-evaluator';
+import { FunctionRegistry } from '../workflow/functions/function-registry';
+import { WorkflowExecutionContext } from '../workflow/functions/types';
 import { TYPES } from '../../di/service-keys';
 
 /**
@@ -90,12 +91,12 @@ export interface RoutingOptions {
  */
 @injectable()
 export class ThreadConditionalRouter {
-  private readonly evaluator: ExpressionEvaluator;
+  private readonly functionRegistry: FunctionRegistry;
   private routingHistory: Map<string, RoutingResult[]>;
   private decisionLogs: Map<string, RoutingDecisionLog[]>;
 
-  constructor(@inject(TYPES.ExpressionEvaluator) evaluator: ExpressionEvaluator) {
-    this.evaluator = evaluator;
+  constructor(@inject(TYPES.FunctionRegistry) functionRegistry: FunctionRegistry) {
+    this.functionRegistry = functionRegistry;
     this.routingHistory = new Map();
     this.decisionLogs = new Map();
   }
@@ -279,25 +280,32 @@ export class ThreadConditionalRouter {
       return { matched: true };
     }
 
-    // 获取条件表达式
+    // 获取条件函数引用
     const condition = edge.getConditionExpression();
     if (!condition) {
       return { matched: true };
     }
 
-    // 评估条件表达式
-    const evaluationResult = await this.evaluator.evaluate(condition, context);
-
-    if (evaluationResult.success) {
-      return {
-        matched: Boolean(evaluationResult.value),
-        conditionResult: Boolean(evaluationResult.value),
-      };
+    // 获取条件函数
+    const conditionFunc = this.functionRegistry.getConditionFunction(condition.functionId);
+    if (!conditionFunc) {
+      console.error(`条件函数不存在: ${condition.functionId}`);
+      return { matched: false };
     }
 
-    // 条件评估失败，记录错误但不抛出异常
-    console.error(`条件评估失败: ${evaluationResult.error}`);
-    return { matched: false };
+    // 执行条件函数
+    try {
+      // 将 Record<string, any> 转换为 WorkflowExecutionContext
+      const workflowContext = this.convertToWorkflowExecutionContext(context);
+      const result = await conditionFunc.execute(workflowContext, condition.config || {});
+      return {
+        matched: Boolean(result),
+        conditionResult: Boolean(result),
+      };
+    } catch (error) {
+      console.error(`条件函数执行失败: ${error instanceof Error ? error.message : String(error)}`);
+      return { matched: false };
+    }
   }
 
   /**
@@ -317,6 +325,60 @@ export class ThreadConditionalRouter {
         workflowId: state.workflowId.value,
       },
       ...customContext,
+    };
+  }
+
+  /**
+   * 将 Record<string, any> 转换为 WorkflowExecutionContext
+   * @param context 评估上下文
+   * @returns 工作流执行上下文
+   */
+  private convertToWorkflowExecutionContext(context: Record<string, any>): WorkflowExecutionContext {
+    return {
+      getVariable: (key: string) => {
+        // 从 state 中获取变量
+        const state = context['state'];
+        if (state && key in state) {
+          return state[key];
+        }
+        // 从顶层获取变量
+        if (key in context) {
+          return context[key];
+        }
+        return undefined;
+      },
+      setVariable: (key: string, value: any) => {
+        // 简单实现：设置到 context 中
+        context[key] = value;
+      },
+      getExecutionId: () => {
+        const state = context['state'];
+        return state?.executionId || '';
+      },
+      getWorkflowId: () => {
+        const state = context['state'];
+        return state?.workflowId || '';
+      },
+      getNodeResult: (nodeId: string) => {
+        // 从 state 中获取节点结果
+        const state = context['state'];
+        if (state?.nodeResults && nodeId in state.nodeResults) {
+          return state.nodeResults[nodeId];
+        }
+        return undefined;
+      },
+      setNodeResult: (nodeId: string, result: any) => {
+        // 简单实现：设置到 state 中
+        let state = context['state'];
+        if (!state) {
+          state = {};
+          context['state'] = state;
+        }
+        if (!state.nodeResults) {
+          state.nodeResults = {};
+        }
+        state.nodeResults[nodeId] = result;
+      },
     };
   }
 
@@ -363,7 +425,7 @@ export class ThreadConditionalRouter {
         details: {
           edgeId: edge.id.value,
           edgeType: edge.type.toString(),
-          condition: edge.condition,
+          condition: edge.condition ? JSON.stringify(edge.condition) : undefined,
           evaluationTime: Date.now() - startTime,
           timestamp: new Date().toISOString(),
         },
@@ -374,7 +436,7 @@ export class ThreadConditionalRouter {
         details: {
           edgeId: edge.id.value,
           edgeType: edge.type.toString(),
-          condition: edge.condition,
+          condition: edge.condition ? JSON.stringify(edge.condition) : undefined,
           evaluationTime: Date.now() - startTime,
           timestamp: new Date().toISOString(),
           error: error instanceof Error ? error.message : String(error),

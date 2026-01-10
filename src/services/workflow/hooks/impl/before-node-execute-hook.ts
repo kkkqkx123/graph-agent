@@ -1,9 +1,8 @@
 import { ID, Timestamp, Version } from '../../../../domain/common/value-objects';
 import { HookPointValue } from '../../../../domain/workflow/value-objects/hook-point';
+import { HookContextValue, HookExecutionResultValue } from '../../../../domain/workflow/value-objects/hook';
 import {
   Hook,
-  HookContext,
-  HookExecutionResult,
   HookMetadata,
   HookParameter,
   HookValidationResult,
@@ -100,7 +99,7 @@ export class BeforeNodeExecuteHook extends Hook {
    * @param context Hook上下文
    * @returns 执行结果
    */
-  public async execute(context: HookContext): Promise<HookExecutionResult> {
+  public async execute(context: HookContextValue): Promise<HookExecutionResultValue> {
     const startTime = Date.now();
     const config = this.props.config as BeforeNodeExecuteHookConfig;
 
@@ -111,52 +110,50 @@ export class BeforeNodeExecuteHook extends Hook {
       if (config.inputValidation) {
         const validationResult = this.validateNodeInput(context, config.inputValidation);
         if (!validationResult.valid) {
-          return {
-            success: false,
-            output: {
+          return HookExecutionResultValue.failure(
+            this.props.id.toString(),
+            '输入验证失败',
+            Date.now() - startTime,
+            false,
+            {
               validationErrors: validationResult.errors,
-            },
-            error: '输入验证失败',
-            shouldContinue: false,
-            executionTime: Date.now() - startTime,
-            metadata: {
               hookPoint: 'before_node_execute',
               nodeId: config.nodeId,
               nodeType: config.nodeType,
               timestamp: Date.now(),
-            },
-          };
+            }
+          );
         }
       }
 
       // 记录节点执行开始
       data['executionStarted'] = true;
 
-      return {
-        success: true,
-        output: data,
-        shouldContinue: true,
-        executionTime: Date.now() - startTime,
-        metadata: {
+      return HookExecutionResultValue.success(
+        this.props.id.toString(),
+        data,
+        Date.now() - startTime,
+        true,
+        {
           hookPoint: 'before_node_execute',
           nodeId: config.nodeId,
           nodeType: config.nodeType,
           timestamp: Date.now(),
-        },
-      };
+        }
+      );
     } catch (error) {
-      return {
-        success: false,
-        error: error instanceof Error ? error.message : String(error),
-        shouldContinue: this.props.continueOnError,
-        executionTime: Date.now() - startTime,
-        metadata: {
+      return HookExecutionResultValue.failure(
+        this.props.id.toString(),
+        error instanceof Error ? error.message : String(error),
+        Date.now() - startTime,
+        this.props.continueOnError,
+        {
           hookPoint: 'before_node_execute',
           nodeId: config.nodeId,
           nodeType: config.nodeType,
           timestamp: Date.now(),
-        },
-      };
+        }
+      );
     }
   }
 
@@ -236,7 +233,7 @@ export class BeforeNodeExecuteHook extends Hook {
    * @returns 验证结果
    */
   private validateNodeInput(
-    context: HookContext,
+    context: HookContextValue,
     rules: BeforeNodeExecuteHookConfig['inputValidation']
   ): { valid: boolean; errors: string[] } {
     const errors: string[] = [];

@@ -679,7 +679,7 @@ export class Workflow extends Entity {
    * @param type 边类型
    * @param fromNodeId 源节点ID
    * @param toNodeId 目标节点ID
-   * @param condition 条件表达式
+   * @param condition 条件函数引用
    * @param weight 权重
    * @param properties 边属性
    * @param contextFilter 上下文过滤器（可选，默认为传递所有）
@@ -691,7 +691,7 @@ export class Workflow extends Entity {
     type: EdgeType,
     fromNodeId: NodeId,
     toNodeId: NodeId,
-    condition?: string,
+    condition?: import('../value-objects/edge/edge-value-object').EdgeCondition,
     weight?: number,
     properties?: Record<string, unknown>,
     contextFilter?: EdgeContextFilter,

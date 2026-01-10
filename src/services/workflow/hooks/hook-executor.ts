@@ -1,9 +1,7 @@
 import { injectable, inject } from 'inversify';
 import { Hook } from '../../../domain/workflow/entities/hook';
 import { ILogger } from '../../../domain/common/types/logger-types';
-import { HookContext as DomainHookContext } from '../../../domain/workflow/entities/hook';
-import { HookContext } from './hook-context';
-import { HookExecutionResult, HookExecutionResultBuilder } from './hook-execution-result';
+import { HookContextValue, HookExecutionResultValue } from '../../../domain/workflow/value-objects/hook';
 
 /**
  * 钩子执行器
@@ -23,7 +21,7 @@ export class HookExecutor {
    * @param context 钩子上下文
    * @returns 钩子执行结果
    */
-  async execute(hook: Hook, context: DomainHookContext): Promise<HookExecutionResult> {
+  async execute(hook: Hook, context: HookContextValue): Promise<HookExecutionResultValue> {
     const startTime = Date.now();
 
     try {
@@ -37,12 +35,10 @@ export class HookExecutor {
 
       // 检查钩子是否应该执行
       if (!hook.shouldExecute()) {
-        return new HookExecutionResultBuilder()
-          .setHookId(hook.hookId.toString())
-          .setSuccess(true)
-          .setExecutionTime(Date.now() - startTime)
-          .setMetadata({ skipped: true, reason: 'hook is disabled' })
-          .build();
+        return HookExecutionResultValue.skipped(
+          hook.hookId.toString(),
+          { skipped: true, reason: 'hook is disabled' }
+        );
       }
 
       // 执行钩子
@@ -53,21 +49,10 @@ export class HookExecutor {
         hookId: hook.hookId.toString(),
         hookName: hook.name,
         executionTime,
-        success: result.success,
+        success: result.isSuccess(),
       });
 
-      const builder = new HookExecutionResultBuilder()
-        .setHookId(hook.hookId.toString())
-        .setSuccess(result.success)
-        .setResult(result.output)
-        .setExecutionTime(executionTime)
-        .setShouldContinue(result.shouldContinue);
-
-      if (result.error) {
-        builder.setError(result.error);
-      }
-
-      return builder.build();
+      return result;
     } catch (error) {
       const executionTime = Date.now() - startTime;
 
@@ -77,13 +62,12 @@ export class HookExecutor {
         executionTime,
       });
 
-      return new HookExecutionResultBuilder()
-        .setHookId(hook.hookId.toString())
-        .setSuccess(false)
-        .setError(error as Error)
-        .setExecutionTime(executionTime)
-        .setShouldContinue(hook.shouldContinueOnError())
-        .build();
+      return HookExecutionResultValue.failure(
+        hook.hookId.toString(),
+        error instanceof Error ? error.message : String(error),
+        executionTime,
+        hook.shouldContinueOnError()
+      );
     }
   }
 
@@ -93,8 +77,8 @@ export class HookExecutor {
    * @param context 钩子上下文
    * @returns 钩子执行结果列表
    */
-  async executeBatch(hooks: Hook[], context: DomainHookContext): Promise<HookExecutionResult[]> {
-    const results: HookExecutionResult[] = [];
+  async executeBatch(hooks: Hook[], context: HookContextValue): Promise<HookExecutionResultValue[]> {
+    const results: HookExecutionResultValue[] = [];
 
     // 按优先级排序（优先级高的先执行）
     const sortedHooks = [...hooks].sort((a, b) => b.priority - a.priority);
@@ -105,7 +89,7 @@ export class HookExecutor {
         results.push(result);
 
         // 如果钩子要求停止执行，则中断后续钩子
-        if (!result.shouldContinue) {
+        if (!result.shouldContinue()) {
           this.logger.info('钩子要求停止执行后续钩子', {
             hookId: hook.hookId.toString(),
             hookName: hook.name,
@@ -114,13 +98,12 @@ export class HookExecutor {
         }
       } catch (error) {
         results.push(
-          new HookExecutionResultBuilder()
-            .setHookId(hook.hookId.toString())
-            .setSuccess(false)
-            .setError(error as Error)
-            .setExecutionTime(0)
-            .setShouldContinue(hook.shouldContinueOnError())
-            .build()
+          HookExecutionResultValue.failure(
+            hook.hookId.toString(),
+            error instanceof Error ? error.message : String(error),
+            0,
+            hook.shouldContinueOnError()
+          )
         );
 
         // 如果错误处理策略是 fail-fast，则中断后续钩子

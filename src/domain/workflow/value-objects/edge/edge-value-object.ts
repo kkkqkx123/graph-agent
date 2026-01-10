@@ -18,9 +18,9 @@ export interface ConditionFunctionReference {
 
 /**
  * 边条件类型
- * 支持字符串表达式和函数引用两种格式
+ * 统一使用函数引用格式
  */
-export type EdgeCondition = string | ConditionFunctionReference;
+export type EdgeCondition = ConditionFunctionReference;
 
 /**
  * 边值对象属性接口
@@ -129,29 +129,6 @@ export class EdgeValueObject extends ValueObject<EdgeValueObjectProps> {
   }
 
   /**
-   * 判断是否为函数式条件
-   */
-  public isFunctionCondition(): boolean {
-    return this.isConditionFunctionReference(this.props.condition);
-  }
-
-  /**
-   * 判断是否为表达式式条件
-   */
-  public isExpressionCondition(): boolean {
-    return typeof this.props.condition === 'string';
-  }
-
-  /**
-   * 类型守卫：判断条件是否为函数引用
-   */
-  private isConditionFunctionReference(
-    condition: EdgeCondition | undefined
-  ): condition is ConditionFunctionReference {
-    return typeof condition === 'object' && condition !== null && condition.type === 'function';
-  }
-
-  /**
    * 过滤上下文
    * @param context 提示词上下文
    * @returns 过滤后的提示词上下文
@@ -248,14 +225,8 @@ export class EdgeValueObject extends ValueObject<EdgeValueObjectProps> {
     }
 
     try {
-      // 判断条件类型并选择评估方式
-      if (this.isConditionFunctionReference(condition)) {
-        // 函数式条件
-        return await this.evaluateFunctionCondition(condition, context, functionRegistry);
-      } else {
-        // 表达式式条件（向后兼容）
-        return await this.evaluateExpressionCondition(condition, context, expressionEvaluator);
-      }
+      // 直接使用函数引用评估
+      return await this.evaluateFunctionCondition(condition, context, functionRegistry);
     } catch (error) {
       return {
         satisfied: false,
@@ -309,73 +280,6 @@ export class EdgeValueObject extends ValueObject<EdgeValueObjectProps> {
         satisfied: false,
         error: error instanceof Error ? error.message : String(error),
       };
-    }
-  }
-
-  /**
-   * 评估表达式式条件（向后兼容）
-   *
-   * @param expression 条件表达式
-   * @param context 执行上下文
-   * @param expressionEvaluator 表达式评估器
-   * @returns 评估结果
-   */
-  private async evaluateExpressionCondition(
-    expression: string,
-    context: ExecutionContext,
-    expressionEvaluator?: any
-  ): Promise<{ satisfied: boolean; error?: string }> {
-    try {
-      // 使用提供的表达式评估器或默认的评估逻辑
-      if (expressionEvaluator) {
-        const result = await expressionEvaluator.evaluate(
-          expression,
-          Object.fromEntries(context.variables)
-        );
-        return {
-          satisfied: result.success && Boolean(result.value),
-          error: result.success ? undefined : result.error,
-        };
-      } else {
-        // 简单的评估逻辑（可以后续替换为更复杂的实现）
-        const variables = Object.fromEntries(context.variables);
-        const result = this.evaluateSimpleCondition(expression, variables);
-        return { satisfied: result };
-      }
-    } catch (error) {
-      return {
-        satisfied: false,
-        error: error instanceof Error ? error.message : String(error),
-      };
-    }
-  }
-
-  /**
-   * 简单的条件评估（内部方法）
-   *
-   * @param condition 条件表达式
-   * @param variables 变量映射
-   * @returns 评估结果
-   */
-  private evaluateSimpleCondition(condition: string, variables: Record<string, any>): boolean {
-    try {
-      // 创建安全的评估函数
-      const func = new Function(
-        'context',
-        `
-        'use strict';
-        with(context) {
-          try {
-            return (${condition});
-          } catch (error) {
-            return false;
-          }
-        }
-      `
-      );
-      return func(variables);
-    } catch (error) {
-      return false;
     }
   }
 

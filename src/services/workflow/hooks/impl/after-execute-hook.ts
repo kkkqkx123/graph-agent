@@ -1,9 +1,8 @@
 import { ID, Timestamp, Version } from '../../../../domain/common/value-objects';
 import { HookPointValue } from '../../../../domain/workflow/value-objects/hook-point';
+import { HookContextValue, HookExecutionResultValue } from '../../../../domain/workflow/value-objects/hook';
 import {
   Hook,
-  HookContext,
-  HookExecutionResult,
   HookMetadata,
   HookParameter,
   HookValidationResult,
@@ -95,7 +94,7 @@ export class AfterExecuteHook extends Hook {
    * @param context Hook上下文
    * @returns 执行结果
    */
-  public async execute(context: HookContext): Promise<HookExecutionResult> {
+  public async execute(context: HookContextValue): Promise<HookExecutionResultValue> {
     const startTime = Date.now();
 
     try {
@@ -117,27 +116,27 @@ export class AfterExecuteHook extends Hook {
         data['cleaned'] = this.cleanupResources(context, config.cleanup);
       }
 
-      return {
-        success: true,
-        output: data,
-        shouldContinue: true,
-        executionTime: Date.now() - startTime,
-        metadata: {
+      return HookExecutionResultValue.success(
+        this.props.id.toString(),
+        data,
+        Date.now() - startTime,
+        true,
+        {
           hookPoint: 'after_execute',
           timestamp: Date.now(),
-        },
-      };
+        }
+      );
     } catch (error) {
-      return {
-        success: false,
-        error: error instanceof Error ? error.message : String(error),
-        shouldContinue: this.props.continueOnError,
-        executionTime: Date.now() - startTime,
-        metadata: {
+      return HookExecutionResultValue.failure(
+        this.props.id.toString(),
+        error instanceof Error ? error.message : String(error),
+        Date.now() - startTime,
+        this.props.continueOnError,
+        {
           hookPoint: 'after_execute',
           timestamp: Date.now(),
-        },
-      };
+        }
+      );
     }
   }
 
@@ -217,7 +216,7 @@ export class AfterExecuteHook extends Hook {
    * @returns 后处理结果
    */
   private postprocessContext(
-    context: HookContext,
+    context: HookContextValue,
     postprocessing: AfterExecuteHookConfig['postprocessing']
   ): any {
     const result: Record<string, any> = {};
@@ -244,7 +243,7 @@ export class AfterExecuteHook extends Hook {
    * @param logging 日志配置
    * @returns 日志记录
    */
-  private logExecution(context: HookContext, logging: AfterExecuteHookConfig['logging']): any {
+  private logExecution(context: HookContextValue, logging: AfterExecuteHookConfig['logging']): any {
     const logs: any[] = [];
 
     if (!logging) {
@@ -273,7 +272,7 @@ export class AfterExecuteHook extends Hook {
     if (logging.logMetadata) {
       logs.push({
         type: 'metadata',
-        data: context.metadata,
+        data: context.getMetadata(),
         timestamp: Date.now(),
       });
     }
@@ -287,7 +286,7 @@ export class AfterExecuteHook extends Hook {
    * @param cleanup 清理配置
    * @returns 清理结果
    */
-  private cleanupResources(context: HookContext, cleanup: AfterExecuteHookConfig['cleanup']): any {
+  private cleanupResources(context: HookContextValue, cleanup: AfterExecuteHookConfig['cleanup']): any {
     const cleaned: Record<string, any> = {};
 
     if (!cleanup) {

@@ -15,10 +15,9 @@ import { injectable, inject } from 'inversify';
 import { Workflow } from '../../domain/workflow/entities/workflow';
 import { NodeId } from '../../domain/workflow/value-objects';
 import { ExecutionContext } from '../../domain/threads/value-objects/execution-context';
-import { ExpressionEvaluator } from './expression-evaluator';
 import { NodeRouter } from './node-router';
 import { NodeExecutor } from './nodes/node-executor';
-import { FunctionRegistry } from './functions/function-registry';
+import { EdgeExecutor } from './edges/edge-executor';
 import { ILogger } from '../../domain/common/types/logger-types';
 
 /**
@@ -62,23 +61,20 @@ export interface RoutingDecision {
  */
 @injectable()
 export class WorkflowExecutionEngine {
-  private readonly expressionEvaluator: ExpressionEvaluator;
-  private readonly functionRegistry: FunctionRegistry;
   private readonly nodeRouter: NodeRouter;
   private readonly nodeExecutor: NodeExecutor;
+  private readonly edgeExecutor: EdgeExecutor;
   private readonly logger: ILogger;
 
   constructor(
-    @inject('ExpressionEvaluator') expressionEvaluator: ExpressionEvaluator,
-    @inject('FunctionRegistry') functionRegistry: FunctionRegistry,
     @inject('NodeRouter') nodeRouter: NodeRouter,
     @inject('NodeExecutor') nodeExecutor: NodeExecutor,
+    @inject('EdgeExecutor') edgeExecutor: EdgeExecutor,
     @inject('Logger') logger: ILogger
   ) {
-    this.expressionEvaluator = expressionEvaluator;
-    this.functionRegistry = functionRegistry;
     this.nodeRouter = nodeRouter;
     this.nodeExecutor = nodeExecutor;
+    this.edgeExecutor = edgeExecutor;
     this.logger = logger;
   }
 
@@ -197,15 +193,12 @@ export class WorkflowExecutionEngine {
       };
     }
 
-    // 评估所有出边
+    // 使用 EdgeExecutor 评估所有出边
     const satisfiedEdges: typeof outgoingEdges = [];
     for (const edge of outgoingEdges) {
-      const result = await edge.evaluateCondition(
-        context,
-        this.expressionEvaluator,
-        this.functionRegistry
-      );
-      if (result.satisfied) {
+      // 委托给 EdgeExecutor 验证边是否可执行
+      const canExecute = await this.edgeExecutor.canExecute(edge, context as any);
+      if (canExecute) {
         satisfiedEdges.push(edge);
       }
     }

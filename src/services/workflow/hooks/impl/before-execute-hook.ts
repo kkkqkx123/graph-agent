@@ -1,9 +1,8 @@
 import { ID, Timestamp, Version } from '../../../../domain/common/value-objects';
 import { HookPointValue } from '../../../../domain/workflow/value-objects/hook-point';
+import { HookContextValue, HookExecutionResultValue } from '../../../../domain/workflow/value-objects/hook';
 import {
   Hook,
-  HookContext,
-  HookExecutionResult,
   HookMetadata,
   HookParameter,
   HookValidationResult,
@@ -91,7 +90,7 @@ export class BeforeExecuteHook extends Hook {
    * @param context Hook上下文
    * @returns 执行结果
    */
-  public async execute(context: HookContext): Promise<HookExecutionResult> {
+  public async execute(context: HookContextValue): Promise<HookExecutionResultValue> {
     const startTime = Date.now();
 
     try {
@@ -102,19 +101,17 @@ export class BeforeExecuteHook extends Hook {
       if (config.validationRules) {
         const validationResult = this.validateContext(context, config.validationRules);
         if (!validationResult.valid) {
-          return {
-            success: false,
-            output: {
+          return HookExecutionResultValue.failure(
+            this.props.id.toString(),
+            '验证失败',
+            Date.now() - startTime,
+            false,
+            {
               validationErrors: validationResult.errors,
-            },
-            error: '验证失败',
-            shouldContinue: false,
-            executionTime: Date.now() - startTime,
-            metadata: {
               hookPoint: 'before_execute',
               timestamp: Date.now(),
-            },
-          };
+            }
+          );
         }
       }
 
@@ -123,27 +120,27 @@ export class BeforeExecuteHook extends Hook {
         data['preprocessed'] = this.preprocessContext(context, config.preprocessing);
       }
 
-      return {
-        success: true,
-        output: data,
-        shouldContinue: true,
-        executionTime: Date.now() - startTime,
-        metadata: {
+      return HookExecutionResultValue.success(
+        this.props.id.toString(),
+        data,
+        Date.now() - startTime,
+        true,
+        {
           hookPoint: 'before_execute',
           timestamp: Date.now(),
-        },
-      };
+        }
+      );
     } catch (error) {
-      return {
-        success: false,
-        error: error instanceof Error ? error.message : String(error),
-        shouldContinue: this.props.continueOnError,
-        executionTime: Date.now() - startTime,
-        metadata: {
+      return HookExecutionResultValue.failure(
+        this.props.id.toString(),
+        error instanceof Error ? error.message : String(error),
+        Date.now() - startTime,
+        this.props.continueOnError,
+        {
           hookPoint: 'before_execute',
           timestamp: Date.now(),
-        },
-      };
+        }
+      );
     }
   }
 
@@ -213,7 +210,7 @@ export class BeforeExecuteHook extends Hook {
    * @returns 验证结果
    */
   private validateContext(
-    context: HookContext,
+    context: HookContextValue,
     rules: BeforeExecuteHookConfig['validationRules']
   ): { valid: boolean; errors: string[] } {
     const errors: string[] = [];
@@ -254,7 +251,7 @@ export class BeforeExecuteHook extends Hook {
    * @returns 预处理结果
    */
   private preprocessContext(
-    context: HookContext,
+    context: HookContextValue,
     preprocessing: BeforeExecuteHookConfig['preprocessing']
   ): any {
     const result: Record<string, any> = {};

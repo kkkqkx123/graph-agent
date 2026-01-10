@@ -2,6 +2,8 @@ import { injectable, inject } from 'inversify';
 import { EdgeValueObject } from '../../../domain/workflow/value-objects/edge/edge-value-object';
 import { FunctionRegistry } from '../functions/function-registry';
 import { WorkflowExecutionContext } from '../functions/types';
+import { ExecutionContext } from '../../../domain/threads/value-objects/execution-context';
+import { PromptContext } from '../../../domain/workflow/value-objects/context/prompt-context';
 import { ILogger } from '../../../domain/common/types/logger-types';
 
 /**
@@ -104,14 +106,21 @@ export class EdgeExecutor {
       if (edge.requiresConditionEvaluation()) {
         const condition = edge.getConditionExpression();
         if (condition) {
-          // 简单的条件评估逻辑
-          const variables = this.extractVariables(context);
-          const satisfied = this.evaluateCondition(condition, variables);
+          // 将 WorkflowExecutionContext 转换为 ExecutionContext
+          const executionContext = this.convertToExecutionContext(context);
+          
+          // 使用 EdgeValueObject 的 evaluateCondition 方法
+          const result = await edge.evaluateCondition(
+            executionContext,
+            undefined, // expressionEvaluator - EdgeExecutor 不需要
+            this.functionRegistry
+          );
 
-          if (!satisfied) {
+          if (!result.satisfied) {
             this.logger.debug('边条件不满足', {
               edgeId: edge.id.toString(),
-              condition,
+              condition: JSON.stringify(condition),
+              error: result.error,
             });
             return false;
           }
@@ -149,78 +158,6 @@ export class EdgeExecutor {
   }
 
   /**
-   * 从上下文中提取变量
-   * @param context 执行上下文
-   * @returns 变量映射
-   */
-  private extractVariables(context: WorkflowExecutionContext): Record<string, unknown> {
-    const variables: Record<string, unknown> = {};
-
-    // 尝试获取常见的变量
-    try {
-      variables['executionId'] = context.getExecutionId();
-      variables['workflowId'] = context.getWorkflowId();
-
-      // 尝试获取一些常见的上下文变量
-      const commonKeys = ['messages', 'errors', 'tool_calls', 'condition_results'];
-      for (const key of commonKeys) {
-        try {
-          const value = context.getVariable(key);
-          if (value !== undefined) {
-            variables[key] = value;
-          }
-        } catch {
-          // 忽略获取变量时的错误
-        }
-      }
-    } catch {
-      // 忽略提取变量时的错误
-    }
-
-    return variables;
-  }
-
-  /**
-   * 简单的条件评估
-   * @param condition 条件表达式
-   * @param variables 变量映射
-   * @returns 评估结果
-   */
-  private evaluateCondition(condition: string, variables: Record<string, unknown>): boolean {
-    try {
-      // 替换变量引用
-      let expression = condition;
-
-      // 简单的变量替换，格式为 ${variableName}
-      expression = expression.replace(/\$\{([^}]+)\}/g, (match, varName) => {
-        const value = variables[varName];
-        if (typeof value === 'string') {
-          return `'${value}'`;
-        }
-        return String(value);
-      });
-
-      // 安全检查，只允许基本的比较操作
-      const allowedOperators = ['===', '!==', '==', '!=', '>', '<', '>=', '<=', '&&', '||', '!'];
-      const hasUnsafeContent = /eval|function|new|delete|typeof|void|in|instanceof/.test(
-        expression
-      );
-
-      if (hasUnsafeContent) {
-        this.logger.warn('条件表达式包含不安全的内容', { condition });
-        return false;
-      }
-
-      // 使用Function构造函数而不是eval，相对更安全
-      const func = new Function('return ' + expression);
-      return Boolean(func());
-    } catch (error) {
-      this.logger.warn('条件表达式解析失败', { condition, error });
-      return false;
-    }
-  }
-
-  /**
    * 获取执行器支持的边类型
    * @returns 支持的边类型列表
    */
@@ -232,5 +169,44 @@ export class EdgeExecutor {
     );
 
     return routingFunctions.map(func => func.id);
+  }
+
+  /**
+   * 将 WorkflowExecutionContext 转换为 ExecutionContext
+   * @param workflowContext 工作流执行上下文
+   * @returns 执行上下文
+   */
+  private convertToExecutionContext(workflowContext: WorkflowExecutionContext): ExecutionContext {
+    // 从 WorkflowExecutionContext 提取变量
+    const variables = new Map<string, unknown>();
+    try {
+      // 尝试获取一些常见的变量
+      const commonKeys = ['messages', 'errors', 'tool_calls', 'condition_results', 'input', 'output'];
+      for (const key of commonKeys) {
+        try {
+          const value = workflowContext.getVariable(key);
+          if (value !== undefined) {
+            variables.set(key, value);
+          }
+        } catch {
+          // 忽略获取变量时的错误
+        }
+      }
+    } catch {
+      // 忽略提取变量时的错误
+    }
+
+    // 创建 PromptContext（使用默认模板）
+    const promptContext = PromptContext.create(
+      '', // template
+      variables, // variables
+      [], // history
+      {} // metadata
+    );
+
+    // 创建 ExecutionContext
+    return ExecutionContext.create(promptContext, {
+      enableLogging: true,
+    });
   }
 }

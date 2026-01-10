@@ -1,9 +1,8 @@
 import { ID, Timestamp, Version } from '../../../../domain/common/value-objects';
 import { HookPointValue } from '../../../../domain/workflow/value-objects/hook-point';
+import { HookContextValue, HookExecutionResultValue } from '../../../../domain/workflow/value-objects/hook';
 import {
   Hook,
-  HookContext,
-  HookExecutionResult,
   HookMetadata,
   HookParameter,
   HookValidationResult,
@@ -101,7 +100,7 @@ export class AfterNodeExecuteHook extends Hook {
    * @param context Hook上下文
    * @returns 执行结果
    */
-  public async execute(context: HookContext): Promise<HookExecutionResult> {
+  public async execute(context: HookContextValue): Promise<HookExecutionResultValue> {
     const startTime = Date.now();
     const config = this.props.config as AfterNodeExecuteHookConfig;
 
@@ -116,31 +115,31 @@ export class AfterNodeExecuteHook extends Hook {
       // 记录节点执行完成
       data['executionCompleted'] = true;
 
-      return {
-        success: true,
-        output: data,
-        shouldContinue: true,
-        executionTime: Date.now() - startTime,
-        metadata: {
+      return HookExecutionResultValue.success(
+        this.props.id.toString(),
+        data,
+        Date.now() - startTime,
+        true,
+        {
           hookPoint: 'after_node_execute',
           nodeId: config.nodeId,
           nodeType: config.nodeType,
           timestamp: Date.now(),
-        },
-      };
+        }
+      );
     } catch (error) {
-      return {
-        success: false,
-        error: error instanceof Error ? error.message : String(error),
-        shouldContinue: this.props.continueOnError,
-        executionTime: Date.now() - startTime,
-        metadata: {
+      return HookExecutionResultValue.failure(
+        this.props.id.toString(),
+        error instanceof Error ? error.message : String(error),
+        Date.now() - startTime,
+        this.props.continueOnError,
+        {
           hookPoint: 'after_node_execute',
           nodeId: config.nodeId,
           nodeType: config.nodeType,
           timestamp: Date.now(),
-        },
-      };
+        }
+      );
     }
   }
 

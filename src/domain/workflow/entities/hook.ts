@@ -1,18 +1,7 @@
 import { Entity } from '../../common/base/entity';
 import { ID, Timestamp, Version } from '../../common/value-objects';
 import { HookPointValue } from '../value-objects/hook-point';
-
-/**
- * 钩子执行结果接口
- */
-export interface HookExecutionResult {
-  readonly success: boolean;
-  readonly output?: any;
-  readonly error?: string;
-  readonly metadata?: Record<string, any>;
-  readonly shouldContinue: boolean;
-  readonly executionTime: number;
-}
+import { HookContextValue, HookExecutionResultValue } from '../value-objects/hook';
 
 /**
  * 钩子插件配置接口
@@ -45,23 +34,6 @@ export interface HookParameter {
   readonly required: boolean;
   readonly description: string;
   readonly defaultValue?: any;
-}
-
-/**
- * 钩子上下文接口
- */
-export interface HookContext {
-  readonly workflowId?: ID;
-  readonly executionId?: string;
-  readonly nodeId?: string;
-  readonly edgeId?: string;
-  readonly variables: Map<string, any>;
-  readonly metadata?: Record<string, any>;
-  getVariable(key: string): any;
-  setVariable(key: string, value: any): void;
-  getAllVariables(): Record<string, any>;
-  getNodeResult(nodeId: string): any;
-  setNodeResult(nodeId: string, result: any): void;
 }
 
 /**
@@ -193,7 +165,7 @@ export abstract class Hook extends Entity {
    * @param context Hook上下文
    * @returns 执行结果
    */
-  public abstract execute(context: HookContext): Promise<HookExecutionResult>;
+  public abstract execute(context: HookContextValue): Promise<HookExecutionResultValue>;
 
   /**
    * 验证Hook配置
