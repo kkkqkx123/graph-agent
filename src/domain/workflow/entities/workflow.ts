@@ -9,7 +9,6 @@ import {
   NodeType,
 } from '../value-objects';
 import { EdgeId, EdgeType, EdgeValueObject } from '../value-objects/edge';
-import { EdgeContextFilter } from '../value-objects/context';
 import { ErrorHandlingStrategy } from '../value-objects/error-handling-strategy';
 import { ExecutionStrategy } from '../value-objects/execution/execution-strategy';
 import { Node } from './node';
@@ -682,7 +681,6 @@ export class Workflow extends Entity {
    * @param condition 条件函数引用
    * @param weight 权重
    * @param properties 边属性
-   * @param contextFilter 上下文过滤器（可选，默认为传递所有）
    * @param updatedBy 更新者ID
    * @returns 新工作流实例
    */
@@ -694,7 +692,6 @@ export class Workflow extends Entity {
     condition?: import('../value-objects/edge/edge-value-object').EdgeCondition,
     weight?: number,
     properties?: Record<string, unknown>,
-    contextFilter?: EdgeContextFilter,
     updatedBy?: ID
   ): Workflow {
     if (this.hasEdge(edgeId)) {
@@ -714,7 +711,7 @@ export class Workflow extends Entity {
       throw new Error('目标节点不存在');
     }
 
-    // 创建边值对象，使用默认的上下文过滤器
+    // 创建边值对象
     const edge = EdgeValueObject.create({
       id: edgeId,
       type,
@@ -723,7 +720,6 @@ export class Workflow extends Entity {
       condition,
       weight,
       properties: properties || {},
-      contextFilter: contextFilter || EdgeContextFilter.passAll(),
     });
 
     const newEdges = new Map(this.props.graph.edges);

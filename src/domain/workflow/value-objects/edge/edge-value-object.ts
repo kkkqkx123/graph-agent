@@ -2,8 +2,6 @@ import { ValueObject } from '../../../common/value-objects';
 import { EdgeId } from './edge-id';
 import { EdgeType } from './edge-type';
 import { NodeId } from '../node/node-id';
-import { EdgeContextFilter } from '../context/edge-context-filter';
-import { PromptContext } from '../context/prompt-context';
 import { ExecutionContext } from '../../../threads/value-objects/execution-context';
 
 /**
@@ -33,7 +31,6 @@ export interface EdgeValueObjectProps {
   readonly condition?: EdgeCondition;
   readonly weight?: number;
   readonly properties: Record<string, unknown>;
-  readonly contextFilter: EdgeContextFilter;
 }
 
 /**
@@ -57,9 +54,6 @@ export class EdgeValueObject extends ValueObject<EdgeValueObjectProps> {
     }
     if (!props.toNodeId) {
       throw new Error('目标节点ID不能为空');
-    }
-    if (!props.contextFilter) {
-      throw new Error('边上下文过滤器不能为空');
     }
 
     return new EdgeValueObject(props);
@@ -115,26 +109,10 @@ export class EdgeValueObject extends ValueObject<EdgeValueObjectProps> {
   }
 
   /**
-   * 获取上下文过滤器
-   */
-  public get contextFilter(): EdgeContextFilter {
-    return this.props.contextFilter;
-  }
-
-  /**
    * 获取条件表达式
    */
   public getConditionExpression(): EdgeCondition | undefined {
     return this.props.condition;
-  }
-
-  /**
-   * 过滤上下文
-   * @param context 提示词上下文
-   * @returns 过滤后的提示词上下文
-   */
-  public filterContext(context: PromptContext): PromptContext {
-    return this.props.contextFilter.applyFilter(context);
   }
 
   /**
