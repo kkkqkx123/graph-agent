@@ -1,5 +1,5 @@
 import { ID, Timestamp, Version } from '../../../../domain/common/value-objects';
-import { HookPointValue } from '../../../../domain/workflow/value-objects/hook-point';
+import { HookPoint } from '../../../../domain/workflow/value-objects/hook/hook-point';
 import { HookContextValue, HookExecutionResultValue } from '../../../../domain/workflow/value-objects/hook';
 import {
   Hook,
@@ -56,7 +56,7 @@ export class AfterExecuteHook extends Hook {
 
     const props: HookProps = {
       id: hookId,
-      hookPoint: HookPointValue.afterExecute(),
+      hookPoint: HookPoint.afterExecute(),
       name,
       description,
       config,

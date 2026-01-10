@@ -6,7 +6,6 @@
 
 export * from './node';
 export * from './edge';
-export { HookPoint, HookPointValue, HookPointValueProps } from './hook-point';
 export * from './hook';
 
 export * from './workflow-status';

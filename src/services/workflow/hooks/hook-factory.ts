@@ -1,4 +1,4 @@
-import { HookPointValue } from '../../../domain/workflow/value-objects/hook-point';
+import { HookPoint } from '../../../domain/workflow/value-objects/hook/hook-point';
 import { Hook, HookProps } from '../../../domain/workflow/entities/hook';
 import { BeforeExecuteHook, BeforeExecuteHookConfig } from './impl/before-execute-hook';
 import { AfterExecuteHook, AfterExecuteHookConfig } from './impl/after-execute-hook';
@@ -34,7 +34,7 @@ export class HookFactory {
    * @returns Hook实例
    */
   public static createHook(hookPoint: string, config: HookConfig): Hook {
-    const hookPointValue = HookPointValue.fromString(hookPoint);
+    const hookPointValue = HookPoint.fromString(hookPoint);
 
     switch (hookPointValue.getValue()) {
       case 'before_execute':

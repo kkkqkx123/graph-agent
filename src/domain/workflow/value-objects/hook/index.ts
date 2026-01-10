@@ -4,5 +4,6 @@
  * 导出所有钩子相关的值对象
  */
 
-export { HookContextValue, HookContextProps } from './hook-context-value';
+export { HookContext as HookContextValue, HookContextProps } from './hook-context';
 export { HookExecutionResultValue, HookExecutionResultProps } from './hook-execution-result-value';
+export { HookPoint, HookPointValue, HookPointProps } from './hook-point';

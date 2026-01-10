@@ -1,6 +1,6 @@
 import { Entity } from '../../common/base/entity';
 import { ID, Timestamp, Version } from '../../common/value-objects';
-import { HookPointValue } from '../value-objects/hook-point';
+import { HookPoint } from '../value-objects/hook/hook-point';
 import { HookContextValue, HookExecutionResultValue } from '../value-objects/hook';
 
 /**
@@ -49,7 +49,7 @@ export interface HookValidationResult {
  */
 export interface HookProps {
   readonly id: ID;
-  readonly hookPoint: HookPointValue;
+  readonly hookPoint: HookPoint;
   readonly name: string;
   readonly description?: string;
   readonly config: Record<string, any>;
@@ -100,7 +100,7 @@ export abstract class Hook extends Entity {
    * 获取钩子点
    * @returns 钩子点
    */
-  public get hookPoint(): HookPointValue {
+  public get hookPoint(): HookPoint {
     return this.props.hookPoint;
   }
 

@@ -1,5 +1,5 @@
 import { ID, Timestamp, Version } from '../../../../domain/common/value-objects';
-import { HookPointValue } from '../../../../domain/workflow/value-objects/hook-point';
+import { HookPoint } from '../../../../domain/workflow/value-objects/hook/hook-point';
 import { HookContextValue, HookExecutionResultValue } from '../../../../domain/workflow/value-objects/hook';
 import {
   Hook,
@@ -52,7 +52,7 @@ export class BeforeExecuteHook extends Hook {
 
     const props: HookProps = {
       id: hookId,
-      hookPoint: HookPointValue.beforeExecute(),
+      hookPoint: HookPoint.beforeExecute(),
       name,
       description,
       config,

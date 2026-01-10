@@ -1,6 +1,6 @@
 import { ValueObject } from '../../../common/value-objects';
 import { ID } from '../../../common/value-objects';
-import { HookPointValue } from '../hook-point';
+import { HookPoint } from './hook-point';
 
 /**
  * 钩子上下文值对象属性接口
@@ -13,7 +13,7 @@ export interface HookContextProps {
   variables: Map<string, any>;
   config?: Record<string, any>;
   metadata?: Record<string, any>;
-  hookPoint?: HookPointValue;
+  hookPoint?: HookPoint;
   eventType?: string;
   eventData?: Record<string, any>;
 }
@@ -23,7 +23,7 @@ export interface HookContextProps {
  *
  * 提供钩子执行时所需的上下文信息
  */
-export class HookContextValue extends ValueObject<HookContextProps> {
+export class HookContext extends ValueObject<HookContextProps> {
   private nodeResults: Map<string, any> = new Map();
 
   constructor(props: HookContextProps) {
@@ -85,7 +85,7 @@ export class HookContextValue extends ValueObject<HookContextProps> {
   /**
    * 获取钩子执行点
    */
-  public getHookPoint(): HookPointValue | undefined {
+  public getHookPoint(): HookPoint | undefined {
     return this.props.hookPoint;
   }
 
@@ -145,15 +145,15 @@ export class HookContextValue extends ValueObject<HookContextProps> {
   /**
    * 创建钩子上下文值对象
    */
-  public static create(props: HookContextProps): HookContextValue {
-    return new HookContextValue(props);
+  public static create(props: HookContextProps): HookContext {
+    return new HookContext(props);
   }
 
   /**
    * 创建空的钩子上下文
    */
-  public static empty(): HookContextValue {
-    return new HookContextValue({
+  public static empty(): HookContext {
+    return new HookContext({
       variables: new Map(),
     });
   }
@@ -163,13 +163,13 @@ export class HookContextValue extends ValueObject<HookContextProps> {
    */
   public override equals(vo?: ValueObject<HookContextProps>): boolean {
     if (!vo) return false;
-    const other = vo as HookContextValue;
-    
+    const other = vo as HookContext;
+
     const workflowIdEquals =
       this.props.workflowId && other.props.workflowId
         ? this.props.workflowId.equals(other.props.workflowId)
         : this.props.workflowId === other.props.workflowId;
-    
+
     return (
       workflowIdEquals &&
       this.props.executionId === other.props.executionId &&
