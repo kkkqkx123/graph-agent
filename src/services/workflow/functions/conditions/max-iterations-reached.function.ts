@@ -3,10 +3,30 @@ import { BaseConditionFunction } from './base-condition-function';
 import { ConditionFunctionConfig, WorkflowExecutionContext } from '../types';
 
 /**
+ * 最大迭代次数配置接口
+ */
+export interface MaxIterationsConfig extends ConditionFunctionConfig {
+  /** 最大迭代次数 */
+  maxIterations?: number;
+}
+
+/**
  * 检查是否达到最大迭代次数的条件函数
+ *
+ * 支持配置：
+ * - maxIterations：最大迭代次数（默认为10）
+ * - 支持从配置文件加载基础配置
+ * - 支持运行时配置覆盖
  */
 @injectable()
-export class MaxIterationsReachedConditionFunction extends BaseConditionFunction<ConditionFunctionConfig> {
+export class MaxIterationsReachedConditionFunction extends BaseConditionFunction<MaxIterationsConfig> {
+  /**
+   * 默认配置
+   */
+  private readonly defaultConfig: Required<MaxIterationsConfig> = {
+    maxIterations: 10,
+  };
+
   constructor() {
     super(
       'condition:max_iterations_reached',
@@ -44,11 +64,15 @@ export class MaxIterationsReachedConditionFunction extends BaseConditionFunction
 
   override async execute(
     context: WorkflowExecutionContext,
-    config: ConditionFunctionConfig
+    config: MaxIterationsConfig
   ): Promise<boolean> {
     this.checkInitialized();
 
-    const maxIterations = config['maxIterations'] || 10;
+    // 合并基础配置和运行时配置
+    const mergedConfig = this.getConfig<MaxIterationsConfig>(config);
+    const finalConfig = { ...this.defaultConfig, ...mergedConfig };
+
+    const maxIterations = finalConfig.maxIterations || 10;
     const currentIteration = context.getVariable('iteration') || 0;
 
     return currentIteration >= maxIterations;

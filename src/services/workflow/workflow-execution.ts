@@ -18,6 +18,7 @@ import { ExecutionContext } from '../../domain/threads/value-objects/execution-c
 import { ExpressionEvaluator } from './expression-evaluator';
 import { NodeRouter } from './node-router';
 import { NodeExecutor } from './nodes/node-executor';
+import { FunctionRegistry } from './functions/function-registry';
 import { ILogger } from '../../domain/common/types/logger-types';
 
 /**
@@ -62,17 +63,20 @@ export interface RoutingDecision {
 @injectable()
 export class WorkflowExecutionEngine {
   private readonly expressionEvaluator: ExpressionEvaluator;
+  private readonly functionRegistry: FunctionRegistry;
   private readonly nodeRouter: NodeRouter;
   private readonly nodeExecutor: NodeExecutor;
   private readonly logger: ILogger;
 
   constructor(
     @inject('ExpressionEvaluator') expressionEvaluator: ExpressionEvaluator,
+    @inject('FunctionRegistry') functionRegistry: FunctionRegistry,
     @inject('NodeRouter') nodeRouter: NodeRouter,
     @inject('NodeExecutor') nodeExecutor: NodeExecutor,
     @inject('Logger') logger: ILogger
   ) {
     this.expressionEvaluator = expressionEvaluator;
+    this.functionRegistry = functionRegistry;
     this.nodeRouter = nodeRouter;
     this.nodeExecutor = nodeExecutor;
     this.logger = logger;
@@ -196,7 +200,11 @@ export class WorkflowExecutionEngine {
     // 评估所有出边
     const satisfiedEdges: typeof outgoingEdges = [];
     for (const edge of outgoingEdges) {
-      const result = await edge.evaluateCondition(context, this.expressionEvaluator);
+      const result = await edge.evaluateCondition(
+        context,
+        this.expressionEvaluator,
+        this.functionRegistry
+      );
       if (result.satisfied) {
         satisfiedEdges.push(edge);
       }

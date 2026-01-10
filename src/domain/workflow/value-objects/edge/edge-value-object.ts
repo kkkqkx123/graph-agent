@@ -7,6 +7,22 @@ import { PromptContext } from '../context/prompt-context';
 import { ExecutionContext } from '../../../threads/value-objects/execution-context';
 
 /**
+ * 条件函数引用接口
+ * 用于支持函数式条件评估
+ */
+export interface ConditionFunctionReference {
+  readonly type: 'function';
+  readonly functionId: string;
+  readonly config?: Record<string, any>;
+}
+
+/**
+ * 边条件类型
+ * 支持字符串表达式和函数引用两种格式
+ */
+export type EdgeCondition = string | ConditionFunctionReference;
+
+/**
  * 边值对象属性接口
  */
 export interface EdgeValueObjectProps {
@@ -14,7 +30,7 @@ export interface EdgeValueObjectProps {
   readonly type: EdgeType;
   readonly fromNodeId: NodeId;
   readonly toNodeId: NodeId;
-  readonly condition?: string;
+  readonly condition?: EdgeCondition;
   readonly weight?: number;
   readonly properties: Record<string, unknown>;
   readonly contextFilter: EdgeContextFilter;
@@ -80,7 +96,7 @@ export class EdgeValueObject extends ValueObject<EdgeValueObjectProps> {
   /**
    * 获取条件表达式
    */
-  public get condition(): string | undefined {
+  public get condition(): EdgeCondition | undefined {
     return this.props.condition;
   }
 
@@ -108,8 +124,31 @@ export class EdgeValueObject extends ValueObject<EdgeValueObjectProps> {
   /**
    * 获取条件表达式
    */
-  public getConditionExpression(): string | undefined {
+  public getConditionExpression(): EdgeCondition | undefined {
     return this.props.condition;
+  }
+
+  /**
+   * 判断是否为函数式条件
+   */
+  public isFunctionCondition(): boolean {
+    return this.isConditionFunctionReference(this.props.condition);
+  }
+
+  /**
+   * 判断是否为表达式式条件
+   */
+  public isExpressionCondition(): boolean {
+    return typeof this.props.condition === 'string';
+  }
+
+  /**
+   * 类型守卫：判断条件是否为函数引用
+   */
+  private isConditionFunctionReference(
+    condition: EdgeCondition | undefined
+  ): condition is ConditionFunctionReference {
+    return typeof condition === 'object' && condition !== null && condition.type === 'function';
   }
 
   /**
@@ -189,11 +228,13 @@ export class EdgeValueObject extends ValueObject<EdgeValueObjectProps> {
    *
    * @param context 执行上下文
    * @param expressionEvaluator 表达式评估器（可选，用于测试）
+   * @param functionRegistry 函数注册表（可选，用于函数式条件）
    * @returns 评估结果
    */
   public async evaluateCondition(
     context: ExecutionContext,
-    expressionEvaluator?: any
+    expressionEvaluator?: any,
+    functionRegistry?: any
   ): Promise<{ satisfied: boolean; error?: string }> {
     // 如果不需要条件评估，默认满足
     if (!this.requiresConditionEvaluation()) {
@@ -207,10 +248,88 @@ export class EdgeValueObject extends ValueObject<EdgeValueObjectProps> {
     }
 
     try {
+      // 判断条件类型并选择评估方式
+      if (this.isConditionFunctionReference(condition)) {
+        // 函数式条件
+        return await this.evaluateFunctionCondition(condition, context, functionRegistry);
+      } else {
+        // 表达式式条件（向后兼容）
+        return await this.evaluateExpressionCondition(condition, context, expressionEvaluator);
+      }
+    } catch (error) {
+      return {
+        satisfied: false,
+        error: error instanceof Error ? error.message : String(error),
+      };
+    }
+  }
+
+  /**
+   * 评估函数式条件
+   *
+   * @param conditionRef 条件函数引用
+   * @param context 执行上下文
+   * @param functionRegistry 函数注册表
+   * @returns 评估结果
+   */
+  private async evaluateFunctionCondition(
+    conditionRef: ConditionFunctionReference,
+    context: ExecutionContext,
+    functionRegistry?: any
+  ): Promise<{ satisfied: boolean; error?: string }> {
+    if (!functionRegistry) {
+      return {
+        satisfied: false,
+        error: '函数式条件需要FunctionRegistry',
+      };
+    }
+
+    try {
+      // 获取条件函数
+      const conditionFunc = functionRegistry.getConditionFunction(conditionRef.functionId);
+      if (!conditionFunc) {
+        return {
+          satisfied: false,
+          error: `条件函数不存在: ${conditionRef.functionId}`,
+        };
+      }
+
+      // 调用条件函数
+      const result = await conditionFunc.execute(
+        context as any,
+        conditionRef.config || {}
+      );
+
+      return {
+        satisfied: Boolean(result),
+        error: undefined,
+      };
+    } catch (error) {
+      return {
+        satisfied: false,
+        error: error instanceof Error ? error.message : String(error),
+      };
+    }
+  }
+
+  /**
+   * 评估表达式式条件（向后兼容）
+   *
+   * @param expression 条件表达式
+   * @param context 执行上下文
+   * @param expressionEvaluator 表达式评估器
+   * @returns 评估结果
+   */
+  private async evaluateExpressionCondition(
+    expression: string,
+    context: ExecutionContext,
+    expressionEvaluator?: any
+  ): Promise<{ satisfied: boolean; error?: string }> {
+    try {
       // 使用提供的表达式评估器或默认的评估逻辑
       if (expressionEvaluator) {
         const result = await expressionEvaluator.evaluate(
-          condition,
+          expression,
           Object.fromEntries(context.variables)
         );
         return {
@@ -220,7 +339,7 @@ export class EdgeValueObject extends ValueObject<EdgeValueObjectProps> {
       } else {
         // 简单的评估逻辑（可以后续替换为更复杂的实现）
         const variables = Object.fromEntries(context.variables);
-        const result = this.evaluateSimpleCondition(condition, variables);
+        const result = this.evaluateSimpleCondition(expression, variables);
         return { satisfied: result };
       }
     } catch (error) {
