@@ -97,7 +97,6 @@ import { ThreadCheckpointRepository as ThreadCheckpointInfrastructureRepository 
 import { HistoryRepository as HistoryInfrastructureRepository } from '../infrastructure/persistence/repositories/history-repository';
 import { ConnectionManager } from '../infrastructure/persistence/connection-manager';
 import { Logger } from '../infrastructure/logging/logger';
-import { ImmerAdapter } from '../infrastructure/common/immer/immer-adapter';
 
 // ========== 服务类型映射接口 ==========
 
@@ -227,7 +226,6 @@ export interface ServiceTypes {
   // 基础设施服务
   ConnectionManager: ConnectionManager;
   Logger: Logger;
-  ImmerAdapter: ImmerAdapter;
 
   // Domain服务
   CheckpointManager: CheckpointManager;
@@ -423,7 +421,6 @@ export const TYPES: {
   // 基础设施服务
   ConnectionManager: Symbol.for('ConnectionManager') as TypedServiceIdentifier<'ConnectionManager'>,
   Logger: Symbol.for('Logger') as TypedServiceIdentifier<'Logger'>,
-  ImmerAdapter: Symbol.for('ImmerAdapter') as TypedServiceIdentifier<'ImmerAdapter'>,
 
   // Domain服务
   CheckpointManager: Symbol.for('CheckpointManager') as TypedServiceIdentifier<'CheckpointManager'>,

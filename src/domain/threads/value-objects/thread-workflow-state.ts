@@ -1,12 +1,11 @@
 import { ValueObject, ID, Timestamp } from '../../common/value-objects';
-import { NodeId } from '../../workflow/value-objects';
 import { ExecutionHistory } from '../../workflow/value-objects/execution';
-import { createImmerAdapter, Draft } from '../../../infrastructure/common/immer/immer-adapter';
 
 /**
  * ThreadWorkflowState 值对象属性接口
  *
- * 使用 Immer 管理状态，避免频繁的对象创建
+ * 纯值对象，不包含状态更新逻辑
+ * 状态更新由Services层的ThreadStateManager负责
  */
 export interface ThreadWorkflowStateProps {
   readonly workflowId: ID;
@@ -22,19 +21,17 @@ export interface ThreadWorkflowStateProps {
  * ThreadWorkflowState 值对象
  *
  * 职责：
- * - 管理线程执行过程中的工作流状态
- * - 跟踪当前执行节点
- * - 维护执行上下文数据
- * - 记录执行历史
+ * - 表示线程执行过程中的工作流状态
+ * - 提供状态数据的只读访问
+ * - 支持状态验证和快照
  *
  * 设计特点：
- * - 使用 Immer 管理状态，避免频繁的对象创建
- * - 提供不可变的状态更新
+ * - 纯值对象，不包含状态更新逻辑
+ * - 状态更新由Services层的ThreadStateManager负责
+ * - 提供不可变的状态访问
  * - 支持状态快照和恢复
  */
 export class ThreadWorkflowState extends ValueObject<ThreadWorkflowStateProps> {
-  private readonly immerAdapter = createImmerAdapter();
-
   private constructor(props: ThreadWorkflowStateProps) {
     super(props);
   }
@@ -152,111 +149,6 @@ export class ThreadWorkflowState extends ValueObject<ThreadWorkflowStateProps> {
     return key in this.props.data;
   }
 
-  /**
-   * 设置当前节点ID
-   * @param nodeId 节点ID
-   * @returns 新的工作流状态实例
-   */
-  public setCurrentNodeId(nodeId: ID): ThreadWorkflowState {
-    const [newState] = this.immerAdapter.produceWithPatches(this.props, (draft) => {
-      draft.currentNodeId = nodeId;
-      draft.updatedAt = Timestamp.now();
-    });
-    return new ThreadWorkflowState(newState);
-  }
-
-  /**
-   * 设置数据
-   * @param key 键名
-   * @param value 键值
-   * @returns 新的工作流状态实例
-   */
-  public setData(key: string, value: any): ThreadWorkflowState {
-    const [newState] = this.immerAdapter.produceWithPatches(this.props, (draft) => {
-      draft.data[key] = value;
-      draft.updatedAt = Timestamp.now();
-    });
-    return new ThreadWorkflowState(newState);
-  }
-
-  /**
-   * 批量设置数据
-   * @param data 数据对象
-   * @returns 新的工作流状态实例
-   */
-  public setDataBatch(data: Record<string, any>): ThreadWorkflowState {
-    const [newState] = this.immerAdapter.produceWithPatches(this.props, (draft) => {
-      Object.assign(draft.data, data);
-      draft.updatedAt = Timestamp.now();
-    });
-    return new ThreadWorkflowState(newState);
-  }
-
-  /**
-   * 删除数据
-   * @param key 键名
-   * @returns 新的工作流状态实例
-   */
-  public deleteData(key: string): ThreadWorkflowState {
-    const [newState] = this.immerAdapter.produceWithPatches(this.props, (draft) => {
-      delete draft.data[key];
-      draft.updatedAt = Timestamp.now();
-    });
-    return new ThreadWorkflowState(newState);
-  }
-
-  /**
-   * 添加执行历史记录
-   * @param history 执行历史
-   * @returns 新的工作流状态实例
-   */
-  public addHistory(history: ExecutionHistory): ThreadWorkflowState {
-    const [newState] = this.immerAdapter.produceWithPatches(this.props, (draft) => {
-      draft.history.push(history);
-      draft.updatedAt = Timestamp.now();
-    });
-    return new ThreadWorkflowState(newState);
-  }
-
-  /**
-   * 批量添加执行历史记录
-   * @param histories 执行历史数组
-   * @returns 新的工作流状态实例
-   */
-  public addHistoryBatch(histories: ExecutionHistory[]): ThreadWorkflowState {
-    const [newState] = this.immerAdapter.produceWithPatches(this.props, (draft) => {
-      draft.history.push(...histories);
-      draft.updatedAt = Timestamp.now();
-    });
-    return new ThreadWorkflowState(newState);
-  }
-
-  /**
-   * 设置元数据
-   * @param key 键名
-   * @param value 键值
-   * @returns 新的工作流状态实例
-   */
-  public setMetadata(key: string, value: any): ThreadWorkflowState {
-    const [newState] = this.immerAdapter.produceWithPatches(this.props, (draft) => {
-      draft.metadata[key] = value;
-      draft.updatedAt = Timestamp.now();
-    });
-    return new ThreadWorkflowState(newState);
-  }
-
-  /**
-   * 批量设置元数据
-   * @param metadata 元数据对象
-   * @returns 新的工作流状态实例
-   */
-  public setMetadataBatch(metadata: Record<string, any>): ThreadWorkflowState {
-    const [newState] = this.immerAdapter.produceWithPatches(this.props, (draft) => {
-      Object.assign(draft.metadata, metadata);
-      draft.updatedAt = Timestamp.now();
-    });
-    return new ThreadWorkflowState(newState);
-  }
 
   /**
    * 转换为属性对象
@@ -403,7 +295,7 @@ export class ThreadWorkflowState extends ValueObject<ThreadWorkflowStateProps> {
     return (
       this.props.workflowId.equals(other.props.workflowId) &&
       this.props.currentNodeId?.equals(other.props.currentNodeId || ID.empty()) ===
-        (other.props.currentNodeId?.equals(this.props.currentNodeId || ID.empty()) || false) &&
+      (other.props.currentNodeId?.equals(this.props.currentNodeId || ID.empty()) || false) &&
       JSON.stringify(this.props.data) === JSON.stringify(other.props.data) &&
       JSON.stringify(this.props.history) === JSON.stringify(other.props.history) &&
       JSON.stringify(this.props.metadata) === JSON.stringify(other.props.metadata)

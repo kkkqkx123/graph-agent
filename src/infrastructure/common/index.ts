@@ -14,15 +14,10 @@ export {
   SerializationResult,
 } from './utils/serialization-utils';
 
-// Immer 适配器
+// 不可变状态更新工具
 export {
-  ImmerAdapter,
-  IImmerAdapter,
-  createImmerAdapter,
-} from './immer/immer-adapter';
-
-export type {
-  Draft,
-  Patch,
-  PatchListener,
-} from './immer/immer-adapter';
+  updateState,
+  updateNestedState,
+  updateArray,
+  createImmutableState,
+} from './utils/immutable-state';

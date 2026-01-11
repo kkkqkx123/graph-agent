@@ -544,7 +544,13 @@ export class ThreadExecution extends ValueObject<ThreadExecutionProps> {
       throw new Error('工作流状态不存在');
     }
 
-    const newState = currentState.setData(key, value);
+    // 使用展开运算符更新状态
+    const newStateProps = {
+      ...currentState.toProps(),
+      data: { ...currentState.data, [key]: value },
+      updatedAt: Timestamp.now()
+    };
+    const newState = ThreadWorkflowState.fromProps(newStateProps);
     return this.updateWorkflowState(newState);
   }
 
@@ -559,7 +565,13 @@ export class ThreadExecution extends ValueObject<ThreadExecutionProps> {
       throw new Error('工作流状态不存在');
     }
 
-    const newState = currentState.setCurrentNodeId(nodeId);
+    // 使用展开运算符更新状态
+    const newStateProps = {
+      ...currentState.toProps(),
+      currentNodeId: nodeId,
+      updatedAt: Timestamp.now()
+    };
+    const newState = ThreadWorkflowState.fromProps(newStateProps);
     return this.updateWorkflowState(newState);
   }
 
@@ -574,7 +586,13 @@ export class ThreadExecution extends ValueObject<ThreadExecutionProps> {
       throw new Error('工作流状态不存在');
     }
 
-    const newState = currentState.addHistory(history);
+    // 使用展开运算符更新状态
+    const newStateProps = {
+      ...currentState.toProps(),
+      history: [...currentState.history, history],
+      updatedAt: Timestamp.now()
+    };
+    const newState = ThreadWorkflowState.fromProps(newStateProps);
     return this.updateWorkflowState(newState);
   }
 

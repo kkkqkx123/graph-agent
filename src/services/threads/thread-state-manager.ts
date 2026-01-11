@@ -1,29 +1,15 @@
-import { injectable, inject } from 'inversify';
+import { injectable } from 'inversify';
 import { ID, Timestamp } from '../../domain/common/value-objects';
 import { ThreadWorkflowState } from '../../domain/threads/value-objects/thread-workflow-state';
-import { IImmerAdapter, Patch } from '../../infrastructure/common/immer/immer-adapter';
-import { TYPES } from '../../di/service-keys';
-
-/**
- * 补丁历史记录
- */
-export interface PatchHistory {
-	/** 版本号 */
-	version: number;
-	/** 时间戳 */
-	timestamp: number;
-	/** 补丁数组 */
-	patches: Patch[];
-	/** 反向补丁数组 */
-	inversePatches: Patch[];
-}
+import { ExecutionHistory } from '../../domain/workflow/value-objects/execution';
+import { updateState, updateNestedState, updateArray } from '../../infrastructure/common/utils/immutable-state';
 
 /**
  * 状态变更接口
  */
 export interface StateChange {
 	/** 变更类型 */
-	type: 'initialize' | 'update' | 'set_current_node';
+	type: 'initialize' | 'update' | 'set_current_node' | 'add_history' | 'set_metadata';
 	/** 时间戳 */
 	timestamp: number;
 	/** 变更前的数据 */
@@ -84,16 +70,12 @@ export interface StateUpdateOptions {
 export class ThreadStateManager {
 	private states: Map<string, ThreadWorkflowState>;
 	private stateHistory: Map<string, StateChange[]>;
-	private patchHistories: Map<string, PatchHistory[]>;
 	private stateVersions: Map<string, number>;
-	private readonly immerAdapter: IImmerAdapter;
 
-	constructor(@inject(TYPES.ImmerAdapter) immerAdapter: IImmerAdapter) {
+	constructor() {
 		this.states = new Map();
 		this.stateHistory = new Map();
-		this.patchHistories = new Map();
 		this.stateVersions = new Map();
-		this.immerAdapter = immerAdapter;
 	}
 
 	/**
@@ -111,13 +93,10 @@ export class ThreadStateManager {
 	): void {
 		const state = ThreadWorkflowState.initial(workflowId);
 
-		// 使用 Immer 更新初始状态
-		const [updatedStateProps, patches, inversePatches] = this.immerAdapter.produceWithPatches(
-			state.toProps(),
-			(draft: any) => {
-				Object.assign(draft.data, initialState);
-			}
-		);
+		// 使用轻量级工具更新初始状态
+		const updatedStateProps = updateNestedState(state.toProps(), 'data', (draft) => {
+			Object.assign(draft, initialState);
+		});
 
 		const updatedState = ThreadWorkflowState.fromProps(updatedStateProps);
 		this.states.set(threadId, updatedState);
@@ -126,7 +105,6 @@ export class ThreadStateManager {
 		// 记录初始化历史
 		if (options.recordHistory !== false) {
 			this.recordStateChange(threadId, 'initialize', {}, updatedState.data);
-			this.recordPatches(threadId, 0, patches, inversePatches);
 		}
 	}
 
@@ -159,14 +137,13 @@ export class ThreadStateManager {
 
 		const currentVersion = this.stateVersions.get(threadId) || 0;
 
-		// 使用 Immer 更新状态
-		const [nextStateProps, patches, inversePatches] = this.immerAdapter.produceWithPatches(
-			currentState.toProps(),
-			(draft: any) => {
-				Object.assign(draft.data, updates);
-				draft.updatedAt = Timestamp.now();
-			}
-		);
+		// 使用轻量级工具更新状态
+		const updatedData = updateNestedState(currentState.toProps(), 'data', (draft) => {
+			Object.assign(draft, updates);
+		});
+		const nextStateProps = updateState(updatedData, (draft) => {
+			draft.updatedAt = Timestamp.now();
+		});
 
 		// 创建新的状态实例
 		const nextState = ThreadWorkflowState.fromProps(nextStateProps);
@@ -178,7 +155,6 @@ export class ThreadStateManager {
 		// 记录变更历史
 		if (options.recordHistory !== false) {
 			this.recordStateChange(threadId, 'update', currentState.data, nextState.data, updates);
-			this.recordPatches(threadId, currentVersion + 1, patches, inversePatches);
 		}
 
 		return nextState;
@@ -200,14 +176,11 @@ export class ThreadStateManager {
 
 		const currentVersion = this.stateVersions.get(threadId) || 0;
 
-		// 使用 Immer 更新状态
-		const [nextStateProps, patches, inversePatches] = this.immerAdapter.produceWithPatches(
-			currentState.toProps(),
-			(draft: any) => {
-				draft.currentNodeId = nodeId;
-				draft.updatedAt = Timestamp.now();
-			}
-		);
+		// 使用轻量级工具更新状态
+		const nextStateProps = updateState(currentState.toProps(), (draft) => {
+			draft.currentNodeId = nodeId;
+			draft.updatedAt = Timestamp.now();
+		});
 
 		// 创建新的状态实例
 		const nextState = ThreadWorkflowState.fromProps(nextStateProps);
@@ -219,7 +192,6 @@ export class ThreadStateManager {
 		// 记录变更历史
 		if (options.recordHistory !== false) {
 			this.recordStateChange(threadId, 'set_current_node', currentState.data, nextState.data);
-			this.recordPatches(threadId, currentVersion + 1, patches, inversePatches);
 		}
 
 		return nextState;
@@ -242,6 +214,281 @@ export class ThreadStateManager {
 	}
 
 	/**
+	 * 设置单个数据项
+	 * @param threadId 线程ID
+	 * @param key 键名
+	 * @param value 键值
+	 * @param options 更新选项
+	 * @returns 更新后的状态
+	 */
+	setData(threadId: string, key: string, value: any, options: StateUpdateOptions = {}): ThreadWorkflowState {
+		const currentState = this.states.get(threadId);
+
+		if (!currentState) {
+			throw new Error(`线程 ${threadId} 的状态不存在`);
+		}
+
+		const currentVersion = this.stateVersions.get(threadId) || 0;
+
+		// 使用轻量级工具更新状态
+		const updatedData = updateNestedState(currentState.toProps(), 'data', (draft) => {
+			draft[key] = value;
+		});
+		const nextStateProps = updateState(updatedData, (draft) => {
+			draft.updatedAt = Timestamp.now();
+		});
+
+		// 创建新的状态实例
+		const nextState = ThreadWorkflowState.fromProps(nextStateProps);
+
+		// 保存更新后的状态
+		this.states.set(threadId, nextState);
+		this.stateVersions.set(threadId, currentVersion + 1);
+
+		// 记录变更历史
+		if (options.recordHistory !== false) {
+			this.recordStateChange(threadId, 'update', currentState.data, nextState.data, { [key]: value });
+		}
+
+		return nextState;
+	}
+
+	/**
+	 * 批量设置数据
+	 * @param threadId 线程ID
+	 * @param data 数据对象
+	 * @param options 更新选项
+	 * @returns 更新后的状态
+	 */
+	setDataBatch(threadId: string, data: Record<string, any>, options: StateUpdateOptions = {}): ThreadWorkflowState {
+		const currentState = this.states.get(threadId);
+
+		if (!currentState) {
+			throw new Error(`线程 ${threadId} 的状态不存在`);
+		}
+
+		const currentVersion = this.stateVersions.get(threadId) || 0;
+
+		// 使用轻量级工具更新状态
+		const updatedData = updateNestedState(currentState.toProps(), 'data', (draft) => {
+			Object.assign(draft, data);
+		});
+		const nextStateProps = updateState(updatedData, (draft) => {
+			draft.updatedAt = Timestamp.now();
+		});
+
+		// 创建新的状态实例
+		const nextState = ThreadWorkflowState.fromProps(nextStateProps);
+
+		// 保存更新后的状态
+		this.states.set(threadId, nextState);
+		this.stateVersions.set(threadId, currentVersion + 1);
+
+		// 记录变更历史
+		if (options.recordHistory !== false) {
+			this.recordStateChange(threadId, 'update', currentState.data, nextState.data, data);
+		}
+
+		return nextState;
+	}
+
+	/**
+	 * 删除数据项
+	 * @param threadId 线程ID
+	 * @param key 键名
+	 * @param options 更新选项
+	 * @returns 更新后的状态
+	 */
+	deleteData(threadId: string, key: string, options: StateUpdateOptions = {}): ThreadWorkflowState {
+		const currentState = this.states.get(threadId);
+
+		if (!currentState) {
+			throw new Error(`线程 ${threadId} 的状态不存在`);
+		}
+
+		const currentVersion = this.stateVersions.get(threadId) || 0;
+
+		// 使用轻量级工具更新状态
+		const updatedData = updateNestedState(currentState.toProps(), 'data', (draft) => {
+			delete draft[key];
+		});
+		const nextStateProps = updateState(updatedData, (draft) => {
+			draft.updatedAt = Timestamp.now();
+		});
+
+		// 创建新的状态实例
+		const nextState = ThreadWorkflowState.fromProps(nextStateProps);
+
+		// 保存更新后的状态
+		this.states.set(threadId, nextState);
+		this.stateVersions.set(threadId, currentVersion + 1);
+
+		// 记录变更历史
+		if (options.recordHistory !== false) {
+			this.recordStateChange(threadId, 'update', currentState.data, nextState.data);
+		}
+
+		return nextState;
+	}
+
+	/**
+	 * 添加执行历史记录
+	 * @param threadId 线程ID
+	 * @param history 执行历史
+	 * @param options 更新选项
+	 * @returns 更新后的状态
+	 */
+	addHistory(threadId: string, history: ExecutionHistory, options: StateUpdateOptions = {}): ThreadWorkflowState {
+		const currentState = this.states.get(threadId);
+
+		if (!currentState) {
+			throw new Error(`线程 ${threadId} 的状态不存在`);
+		}
+
+		const currentVersion = this.stateVersions.get(threadId) || 0;
+
+		// 使用轻量级工具更新状态
+		const updatedHistory = updateNestedState(currentState.toProps(), 'history', (draft) => {
+			draft.push(history);
+		});
+		const nextStateProps = updateState(updatedHistory, (draft) => {
+			draft.updatedAt = Timestamp.now();
+		});
+
+		// 创建新的状态实例
+		const nextState = ThreadWorkflowState.fromProps(nextStateProps);
+
+		// 保存更新后的状态
+		this.states.set(threadId, nextState);
+		this.stateVersions.set(threadId, currentVersion + 1);
+
+		// 记录变更历史
+		if (options.recordHistory !== false) {
+			this.recordStateChange(threadId, 'add_history', currentState.data, nextState.data);
+		}
+
+		return nextState;
+	}
+
+	/**
+	 * 批量添加执行历史记录
+	 * @param threadId 线程ID
+	 * @param histories 执行历史数组
+	 * @param options 更新选项
+	 * @returns 更新后的状态
+	 */
+	addHistoryBatch(threadId: string, histories: ExecutionHistory[], options: StateUpdateOptions = {}): ThreadWorkflowState {
+		const currentState = this.states.get(threadId);
+
+		if (!currentState) {
+			throw new Error(`线程 ${threadId} 的状态不存在`);
+		}
+
+		const currentVersion = this.stateVersions.get(threadId) || 0;
+
+		// 使用轻量级工具更新状态
+		const updatedHistory = updateNestedState(currentState.toProps(), 'history', (draft) => {
+			draft.push(...histories);
+		});
+		const nextStateProps = updateState(updatedHistory, (draft) => {
+			draft.updatedAt = Timestamp.now();
+		});
+
+		// 创建新的状态实例
+		const nextState = ThreadWorkflowState.fromProps(nextStateProps);
+
+		// 保存更新后的状态
+		this.states.set(threadId, nextState);
+		this.stateVersions.set(threadId, currentVersion + 1);
+
+		// 记录变更历史
+		if (options.recordHistory !== false) {
+			this.recordStateChange(threadId, 'add_history', currentState.data, nextState.data);
+		}
+
+		return nextState;
+	}
+
+	/**
+	 * 设置元数据
+	 * @param threadId 线程ID
+	 * @param key 键名
+	 * @param value 键值
+	 * @param options 更新选项
+	 * @returns 更新后的状态
+	 */
+	setMetadata(threadId: string, key: string, value: any, options: StateUpdateOptions = {}): ThreadWorkflowState {
+		const currentState = this.states.get(threadId);
+
+		if (!currentState) {
+			throw new Error(`线程 ${threadId} 的状态不存在`);
+		}
+
+		const currentVersion = this.stateVersions.get(threadId) || 0;
+
+		// 使用轻量级工具更新状态
+		const updatedMetadata = updateNestedState(currentState.toProps(), 'metadata', (draft) => {
+			draft[key] = value;
+		});
+		const nextStateProps = updateState(updatedMetadata, (draft) => {
+			draft.updatedAt = Timestamp.now();
+		});
+
+		// 创建新的状态实例
+		const nextState = ThreadWorkflowState.fromProps(nextStateProps);
+
+		// 保存更新后的状态
+		this.states.set(threadId, nextState);
+		this.stateVersions.set(threadId, currentVersion + 1);
+
+		// 记录变更历史
+		if (options.recordHistory !== false) {
+			this.recordStateChange(threadId, 'set_metadata', currentState.data, nextState.data);
+		}
+
+		return nextState;
+	}
+
+	/**
+	 * 批量设置元数据
+	 * @param threadId 线程ID
+	 * @param metadata 元数据对象
+	 * @param options 更新选项
+	 * @returns 更新后的状态
+	 */
+	setMetadataBatch(threadId: string, metadata: Record<string, any>, options: StateUpdateOptions = {}): ThreadWorkflowState {
+		const currentState = this.states.get(threadId);
+
+		if (!currentState) {
+			throw new Error(`线程 ${threadId} 的状态不存在`);
+		}
+
+		const currentVersion = this.stateVersions.get(threadId) || 0;
+
+		// 使用轻量级工具更新状态
+		const updatedMetadata = updateNestedState(currentState.toProps(), 'metadata', (draft) => {
+			Object.assign(draft, metadata);
+		});
+		const nextStateProps = updateState(updatedMetadata, (draft) => {
+			draft.updatedAt = Timestamp.now();
+		});
+
+		// 创建新的状态实例
+		const nextState = ThreadWorkflowState.fromProps(nextStateProps);
+
+		// 保存更新后的状态
+		this.states.set(threadId, nextState);
+		this.stateVersions.set(threadId, currentVersion + 1);
+
+		// 记录变更历史
+		if (options.recordHistory !== false) {
+			this.recordStateChange(threadId, 'set_metadata', currentState.data, nextState.data);
+		}
+
+		return nextState;
+	}
+
+	/**
 	 * 清除状态
 	 * @param threadId 线程ID
 	 */
@@ -249,7 +496,6 @@ export class ThreadStateManager {
 		this.states.delete(threadId);
 		this.stateVersions.delete(threadId);
 		this.stateHistory.delete(threadId);
-		this.patchHistories.delete(threadId);
 	}
 
 	/**
@@ -259,7 +505,6 @@ export class ThreadStateManager {
 		this.states.clear();
 		this.stateVersions.clear();
 		this.stateHistory.clear();
-		this.patchHistories.clear();
 	}
 
 	/**
@@ -298,14 +543,6 @@ export class ThreadStateManager {
 		return limit ? history.slice(-limit) : history;
 	}
 
-	/**
-	 * 获取补丁历史
-	 * @param threadId 线程ID
-	 * @returns 补丁历史数组
-	 */
-	getPatchHistory(threadId: string): PatchHistory[] {
-		return this.patchHistories.get(threadId) || [];
-	}
 
 	/**
 	 * 获取当前版本号
@@ -404,37 +641,6 @@ export class ThreadStateManager {
 		history.push(change);
 
 		// 限制历史记录数量
-		if (history.length > 1000) {
-			history.shift();
-		}
-	}
-
-	/**
-	 * 记录补丁（私有方法）
-	 * @param threadId 线程ID
-	 * @param version 版本号
-	 * @param patches 补丁数组
-	 * @param inversePatches 反向补丁数组
-	 */
-	private recordPatches(
-		threadId: string,
-		version: number,
-		patches: Patch[],
-		inversePatches: Patch[]
-	): void {
-		if (!this.patchHistories.has(threadId)) {
-			this.patchHistories.set(threadId, []);
-		}
-
-		const history = this.patchHistories.get(threadId)!;
-		history.push({
-			version,
-			timestamp: Date.now(),
-			patches,
-			inversePatches,
-		});
-
-		// 限制补丁历史数量
 		if (history.length > 1000) {
 			history.shift();
 		}
