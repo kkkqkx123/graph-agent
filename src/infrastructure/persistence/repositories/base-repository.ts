@@ -6,7 +6,7 @@ import {
 } from '../../../domain/common/repositories/repository';
 import { ID } from '../../../domain/common/value-objects/id';
 import { ConnectionManager } from '../connection-manager';
-import { DataSource, Repository, FindOptionsWhere, FindManyOptions, ObjectLiteral } from 'typeorm';
+import { DataSource, Repository, FindOptionsWhere, FindManyOptions, ObjectLiteral, EntityManager, QueryRunner } from 'typeorm';
 
 /**
  * 通用仓储基类（简化版）
@@ -311,5 +311,98 @@ export abstract class BaseRepository<
       console.error('统计实体数量失败:', error);
       throw error;
     }
+  }
+
+  // ========== 事务管理 ==========
+
+  /**
+   * 在事务中执行操作
+   * 使用 EntityManager 事务（推荐）
+   *
+   * @param callback 事务回调函数
+   * @returns 回调函数的返回值
+   */
+  async executeInTransaction<T>(
+    callback: (manager: EntityManager) => Promise<T>
+  ): Promise<T> {
+    const dataSource = await this.getDataSource();
+    return dataSource.manager.transaction(async (transactionalEntityManager) => {
+      return callback(transactionalEntityManager);
+    });
+  }
+
+  /**
+   * 使用 QueryRunner 手动管理事务
+   * 提供更细粒度的控制
+   *
+   * @param callback 事务回调函数
+   * @returns 回调函数的返回值
+   */
+  async executeWithManualTransaction<T>(
+    callback: (queryRunner: QueryRunner) => Promise<T>
+  ): Promise<T> {
+    const dataSource = await this.getDataSource();
+    const queryRunner = dataSource.createQueryRunner();
+
+    try {
+      await queryRunner.connect();
+      await queryRunner.startTransaction();
+
+      const result = await callback(queryRunner);
+
+      await queryRunner.commitTransaction();
+      return result;
+    } catch (error) {
+      await queryRunner.rollbackTransaction();
+      throw error;
+    } finally {
+      await queryRunner.release();
+    }
+  }
+
+  /**
+   * 批量保存实体（在事务中）
+   *
+   * @param entities 实体数组
+   * @returns 保存后的实体数组
+   */
+  async saveBatchInTransaction(entities: T[]): Promise<T[]> {
+    return this.executeInTransaction(async (manager) => {
+      const repository = manager.getRepository<TModel>(this.getModelClass());
+      const models = entities.map(entity => this.toModel(entity));
+      const savedModels = await repository.save(models);
+      return savedModels.map(model => this.toDomain(model));
+    });
+  }
+
+  /**
+   * 批量删除实体（在事务中）
+   *
+   * @param entities 实体数组
+   */
+  async deleteBatchInTransaction(entities: T[]): Promise<void> {
+    return this.executeInTransaction(async (manager) => {
+      const repository = manager.getRepository<TModel>(this.getModelClass());
+      const models = entities.map(entity => this.toModel(entity));
+      await repository.remove(models);
+    });
+  }
+
+  /**
+   * 根据条件批量更新（在事务中）
+   *
+   * @param where 更新条件
+   * @param data 更新数据
+   * @returns 影响的行数
+   */
+  async updateWhereInTransaction(
+    where: FindOptionsWhere<TModel>,
+    data: Partial<TModel>
+  ): Promise<number> {
+    return this.executeInTransaction(async (manager) => {
+      const repository = manager.getRepository<TModel>(this.getModelClass());
+      const result = await repository.update(where, data);
+      return result.affected || 0;
+    });
   }
 }

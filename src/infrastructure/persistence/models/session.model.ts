@@ -5,11 +5,15 @@ import {
   CreateDateColumn,
   UpdateDateColumn,
   OneToMany,
+  Index,
 } from 'typeorm';
 import { ThreadModel } from './thread.model';
 import { SessionStatusValue } from '../../../domain/sessions/value-objects/session-status';
 
 @Entity('sessions')
+@Index(['userId'])  // 用户查询
+@Index(['state'])  // 状态查询
+@Index(['createdAt'])  // 时间查询
 export class SessionModel {
   @PrimaryGeneratedColumn('uuid')
   id!: string;

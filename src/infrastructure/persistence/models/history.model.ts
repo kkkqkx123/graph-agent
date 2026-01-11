@@ -4,9 +4,14 @@ import {
   Column,
   CreateDateColumn,
   UpdateDateColumn,
+  Index,
 } from 'typeorm';
 
 @Entity('history')
+@Index(['threadId'])  // 线程查询
+@Index(['sessionId'])  // 会话查询
+@Index(['createdAt'])  // 时间查询
+@Index(['threadId', 'createdAt'])  // 复合索引
 export class HistoryModel {
   @PrimaryGeneratedColumn('uuid')
   id!: string;

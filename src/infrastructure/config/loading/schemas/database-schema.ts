@@ -18,6 +18,13 @@ export const DatabaseSchema = z.object({
   database: z.string().optional(),
   synchronize: z.boolean().optional(),
   logging: z.boolean().optional(),
+  // 连接池配置
+  poolSize: z.number().min(1).max(100).optional(),
+  maxConnections: z.number().min(1).max(100).optional(),
+  minConnections: z.number().min(0).max(50).optional(),
+  idleTimeout: z.number().min(1000).max(300000).optional(),
+  connectionTimeout: z.number().min(1000).max(60000).optional(),
+  acquireTimeout: z.number().min(1000).max(60000).optional(),
 });
 
 /**

@@ -1,10 +1,11 @@
 import { Entity, PrimaryColumn, Column, CreateDateColumn, UpdateDateColumn, Index } from 'typeorm';
 
 @Entity('thread_checkpoints')
-@Index(['threadId'])
-@Index(['status'])
-@Index(['type'])
-@Index(['expiresAt'])
+@Index(['threadId'])  // 线程查询
+@Index(['threadId', 'createdAt'])  // 复合索引（按时间排序）
+@Index(['expiresAt'])  // 过期清理
+@Index(['status'])  // 状态查询
+@Index(['type'])  // 类型查询
 export class ThreadCheckpointModel {
   @PrimaryColumn('uuid')
   id!: string;

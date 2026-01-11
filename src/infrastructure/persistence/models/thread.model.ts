@@ -6,6 +6,7 @@ import {
   UpdateDateColumn,
   ManyToOne,
   OneToMany,
+  Index,
 } from 'typeorm';
 import { SessionModel } from './session.model';
 import { MessageModel } from './message.model';
@@ -13,6 +14,11 @@ import { ThreadStatusValue } from '../../../domain/threads/value-objects/thread-
 import { ThreadPriorityValue } from '../../../domain/threads/value-objects/thread-priority';
 
 @Entity('threads')
+@Index(['sessionId'])  // 会话查询
+@Index(['workflowId'])  // 工作流查询
+@Index(['state'])  // 状态查询
+@Index(['executionStatus'])  // 执行状态查询
+@Index(['sessionId', 'state'])  // 复合索引
 export class ThreadModel {
   @PrimaryGeneratedColumn('uuid')
   id!: string;
