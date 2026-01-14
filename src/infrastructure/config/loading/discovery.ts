@@ -4,7 +4,6 @@
 
 import * as fs from 'fs/promises';
 import * as path from 'path';
-import { minimatch } from 'minimatch';
 import { IConfigDiscovery, ConfigFile } from './types';
 import { ILogger } from '../../../domain/common/types';
 
@@ -28,7 +27,7 @@ export class ConfigDiscovery implements IConfigDiscovery {
 
   constructor(options: ConfigDiscoveryOptions = {}, logger: ILogger) {
     this.includePatterns = options.includePatterns || ['**/*.toml'];
-    this.excludePatterns = options.excludePatterns = [
+    this.excludePatterns = options.excludePatterns || [
       '**/_*',
       '**/__*',
       '**/test_*',
@@ -155,14 +154,48 @@ export class ConfigDiscovery implements IConfigDiscovery {
    * 检查是否匹配包含模式
    */
   private matchesIncludePatterns(relativePath: string): boolean {
-    return this.includePatterns.some(pattern => minimatch(relativePath, pattern));
+    return this.includePatterns.some(pattern => this.matchPattern(relativePath, pattern));
   }
 
   /**
    * 检查是否匹配排除模式
    */
   private matchesExcludePatterns(relativePath: string): boolean {
-    return this.excludePatterns.some(pattern => minimatch(relativePath, pattern));
+    return this.excludePatterns.some(pattern => this.matchPattern(relativePath, pattern));
+  }
+
+  /**
+   * 简单的模式匹配实现
+   * 支持 glob 模式匹配
+   */
+  private matchPattern(filePath: string, pattern: string): boolean {
+    // 规范化路径分隔符
+    const normalizedPath = filePath.replace(/\\/g, '/');
+    const normalizedPattern = pattern.replace(/\\/g, '/');
+
+    // 处理 **/*.test.* 模式（优先处理）
+    if (normalizedPattern.startsWith('**/') && normalizedPattern.includes('.test.')) {
+      return normalizedPath.includes('.test.');
+    }
+
+    // 处理 **/*.ext 模式
+    if (normalizedPattern.startsWith('**/') && normalizedPattern.includes('*.')) {
+      const ext = normalizedPattern.substring(normalizedPattern.lastIndexOf('.'));
+      return normalizedPath.endsWith(ext);
+    }
+
+    // 处理 **/prefix* 模式
+    if (normalizedPattern.startsWith('**/')) {
+      const suffix = normalizedPattern.substring(3);
+      if (suffix.includes('*')) {
+        const parts = suffix.split('*');
+        return parts.every(part => normalizedPath.includes(part));
+      }
+      return normalizedPath.includes(suffix);
+    }
+
+    // 精确匹配
+    return normalizedPath === normalizedPattern;
   }
 
   /**
@@ -179,7 +212,7 @@ export class ConfigDiscovery implements IConfigDiscovery {
 
     return {
       path: filePath,
-      type: ext.substring(1), // 移除点号
+      type: ext.substring(1),
       moduleType,
       priority,
       metadata: {
@@ -194,11 +227,18 @@ export class ConfigDiscovery implements IConfigDiscovery {
    * 检测模块类型
    */
   private detectModuleType(relativePath: string): string {
-    const parts = relativePath.split(path.sep);
-    const firstDir = parts[0];
+    // 规范化路径分隔符，统一使用 /
+    const normalizedPath = relativePath.replace(/\\/g, '/');
+    const parts = normalizedPath.split('/').filter(p => p);
 
-    if (!firstDir) {
+    if (parts.length === 0) {
       return 'unknown';
+    }
+
+    // 特殊文件优先处理（检查所有路径段，包括文件名）
+    const hasRegistry = parts.some(part => part === '__registry__' || part.startsWith('__registry__'));
+    if (hasRegistry) {
+      return 'registry';
     }
 
     // 预定义的目录到模块类型映射
@@ -211,14 +251,32 @@ export class ConfigDiscovery implements IConfigDiscovery {
       nodes: 'nodes',
       edges: 'edges',
       prompts: 'prompts',
-      storage: 'storage',
       history: 'history',
-      plugins: 'plugins',
       trigger_compositions: 'triggers',
       trigger_functions: 'triggers',
+      database: 'database',
+      threads: 'threads',
     };
 
-    return MODULE_MAPPING[firstDir] || 'unknown';
+    // 检查第一级目录或文件名
+    const firstPart = parts[0];
+    if (!firstPart) {
+      return 'unknown';
+    }
+    
+    // 提取目录名（如果是文件名，去掉扩展名）
+    const firstDir = firstPart.includes('.') ? firstPart.substring(0, firstPart.lastIndexOf('.')) : firstPart;
+    
+    if (MODULE_MAPPING[firstDir]) {
+      return MODULE_MAPPING[firstDir];
+    }
+
+    // 检查是否在 examples 目录下
+    if (firstDir === 'examples') {
+      return 'example';
+    }
+
+    return 'unknown';
   }
 
   /**
@@ -226,44 +284,56 @@ export class ConfigDiscovery implements IConfigDiscovery {
    */
   private calculatePriority(relativePath: string, moduleType: string): number {
     let priority = 100;
+    // 规范化路径分隔符，统一使用 /
+    const normalizedPath = relativePath.replace(/\\/g, '/');
+    const pathParts = normalizedPath.split('/').filter(p => p);
 
-    // 基础配置文件优先级更高
-    if (relativePath.includes('global')) {
-      priority += 1000;
-    }
-
-    // 环境配置优先级较高
-    if (relativePath.includes('environments')) {
-      priority += 800;
-    }
-
-    // 注册表文件优先级较高
-    if (relativePath.includes('__registry__')) {
+    // 注册表文件优先级最高（检查所有路径段，包括文件名）
+    if (pathParts.some(part => part === '__registry__' || part.startsWith('__registry__'))) {
       priority += 600;
     }
 
-    // 通用配置文件优先级较高
-    if (relativePath.includes('common')) {
+    // 通用配置文件优先级较高（检查目录名，不包括文件名）
+    const dirParts = pathParts.slice(0, -1);
+    const hasCommon = dirParts.some(part => part === 'common');
+    if (hasCommon) {
       priority += 500;
     }
 
-    // 分组配置文件优先级较高
-    if (relativePath.includes('_group')) {
+    // 分组配置文件优先级较高（检查路径段是否包含 _group）
+    if (pathParts.some(part => part.includes('_group'))) {
       priority += 400;
     }
 
-    // 提供商配置优先级中等
-    if (relativePath.includes('provider')) {
+    // 提供商配置优先级中等（检查目录名，不包括文件名）
+    const hasProvider = dirParts.some(part => part === 'provider');
+    if (hasProvider) {
       priority += 300;
     }
 
-    // 示例配置优先级较低
-    if (relativePath.includes('examples')) {
-      priority -= 200;
+    // 基础配置文件优先级更高（精确匹配第一级目录或文件名）
+    const firstPart = pathParts[0];
+    if (firstPart) {
+      const firstDir = firstPart.includes('.') ? firstPart.substring(0, firstPart.lastIndexOf('.')) : firstPart;
+      
+      if (firstDir === 'global') {
+        priority += 1000;
+      }
+
+      // 环境配置优先级较高（精确匹配第一级目录）
+      if (firstDir === 'environments') {
+        priority += 800;
+      }
+
+      // 示例配置优先级较低（精确匹配第一级目录）
+      if (firstDir === 'examples') {
+        priority -= 200;
+      }
     }
 
-    // 测试配置优先级最低
-    if (relativePath.includes('test')) {
+    // 测试配置优先级最低（检查目录名和文件名）
+    const hasTest = pathParts.some(part => part.includes('test'));
+    if (hasTest) {
       priority -= 400;
     }
 

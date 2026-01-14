@@ -16,6 +16,7 @@ import { ILogger } from '../../../domain/common/types';
 import * as fs from 'fs/promises';
 import * as path from 'path';
 import { parse as parseToml } from 'toml';
+import { SCHEMA_MAP } from './schemas';
 
 /**
  * 配置加载模块选项
@@ -48,7 +49,7 @@ export class ConfigLoadingModule {
 
     // 初始化组件
     this.discovery = new ConfigDiscovery({}, this.logger);
-    this.registry = new SchemaRegistry(this.logger) as any;
+    this.registry = new SchemaRegistry(this.logger, SCHEMA_MAP);
     
     // 初始化文件组织器
     this.fileOrganizer = new SplitFileOrganizer(this.logger, {
@@ -62,14 +63,6 @@ export class ConfigLoadingModule {
     this.processorPipeline = new ProcessorPipeline(this.logger);
     this.processorPipeline.addProcessor(new InheritanceProcessor({}, this.logger));
     this.processorPipeline.addProcessor(new EnvironmentProcessor({}, this.logger));
-  }
-
-  /**
-   * 注册Schema
-   */
-  registerSchema(moduleType: string, schema: any): void {
-    this.logger.debug('注册模块Schema', { moduleType });
-    this.registry.registerSchema(moduleType, schema);
   }
 
   /**

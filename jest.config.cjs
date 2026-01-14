@@ -39,8 +39,7 @@ module.exports = {
     '^@domain/(.*)$': '<rootDir>/src/domain/$1',
     '^@application/(.*)$': '<rootDir>/src/application/$1',
     '^@infrastructure/(.*)$': '<rootDir>/src/infrastructure/$1',
-    '^@interfaces/(.*)$': '<rootDir>/src/interfaces/$1',
-    '^@shared/(.*)$': '<rootDir>/src/shared/$1',
+    '^@services/(.*)$': '<rootDir>/src/services/$1',
     'uuid': '<rootDir>/src/tests/mocks/uuid.mock.js'
   },
   testTimeout: 30000,

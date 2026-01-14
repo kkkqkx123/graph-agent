@@ -14,8 +14,12 @@ export class SchemaRegistry {
   private readonly schemas: Map<string, z.ZodType<any>> = new Map();
   private readonly logger: ILogger;
 
-  constructor(logger: ILogger) {
+  constructor(logger: ILogger, schemaMap?: Record<string, z.ZodType<any>>) {
     this.logger = logger.child({ module: 'SchemaRegistry' });
+    
+    if (schemaMap) {
+      this.registerAllSchemas(schemaMap);
+    }
   }
 
   /**
@@ -33,6 +37,22 @@ export class SchemaRegistry {
       });
       throw new Error(`注册模块Schema ${moduleType} 失败: ${(error as Error).message}`);
     }
+  }
+
+  /**
+   * 批量注册所有Schema
+   */
+  registerAllSchemas(schemaMap: Record<string, z.ZodType<any>>): void {
+    this.logger.debug('批量注册模块Schema', { count: Object.keys(schemaMap).length });
+    
+    Object.entries(schemaMap).forEach(([moduleType, schema]) => {
+      try {
+        this.registerSchema(moduleType, schema);
+      } catch (error) {
+        this.logger.error('模块Schema注册失败', error as Error, { moduleType });
+        // 继续注册其他schema
+      }
+    });
   }
 
   /**
