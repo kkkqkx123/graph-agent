@@ -18,7 +18,6 @@ import { ISessionRepository } from '../../domain/sessions';
 import { IThreadRepository } from '../../domain/threads';
 import { SessionResource } from './session-resource';
 import { ThreadLifecycle } from '../threads/thread-lifecycle';
-import { ThreadExecution } from '../threads/thread-execution';
 import { ID, ILogger } from '../../domain/common';
 import { TYPES } from '../../di/service-keys';
 import { BaseService } from '../common/base-service';

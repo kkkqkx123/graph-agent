@@ -113,7 +113,7 @@ export class ThreadCollection extends ValueObject<Map<string, Thread>> {
    * @returns 活跃线程数量
    */
   public getActiveThreadCount(): number {
-    return this.getAll().filter(thread => thread.status.isActive()).length;
+    return this.getAll().filter(thread => thread.isActive()).length;
   }
 
   /**
@@ -121,7 +121,7 @@ export class ThreadCollection extends ValueObject<Map<string, Thread>> {
    * @returns 已完成线程数量
    */
   public getCompletedThreadCount(): number {
-    return this.getAll().filter(thread => thread.status.isCompleted()).length;
+    return this.getAll().filter(thread => thread.isCompleted()).length;
   }
 
   /**
@@ -129,7 +129,7 @@ export class ThreadCollection extends ValueObject<Map<string, Thread>> {
    * @returns 失败线程数量
    */
   public getFailedThreadCount(): number {
-    return this.getAll().filter(thread => thread.status.isFailed()).length;
+    return this.getAll().filter(thread => thread.isFailed()).length;
   }
 
   /**
@@ -143,7 +143,7 @@ export class ThreadCollection extends ValueObject<Map<string, Thread>> {
 
     return this.getAll().every(
       thread =>
-        thread.status.isCompleted() || thread.status.isFailed() || thread.status.isCancelled()
+        thread.isCompleted() || thread.isFailed() || thread.isCancelled()
     );
   }
 

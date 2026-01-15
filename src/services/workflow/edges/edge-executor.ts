@@ -197,16 +197,7 @@ export class EdgeExecutor {
     }
 
     // 创建 PromptContext（使用默认模板）
-    const promptContext = PromptContext.create(
-      '', // template
-      variables, // variables
-      [], // history
-      {} // metadata
-    );
-
     // 创建 ExecutionContext
-    return ExecutionContext.create(promptContext, {
-      enableLogging: true,
-    });
+    return ExecutionContext.create();
   }
 }

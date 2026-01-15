@@ -46,13 +46,13 @@ export class ThreadMaintenance extends BaseService {
         }
 
         // 检查线程状态是否允许删除
-        if (thread.status.isRunning()) {
+        if (thread.isRunning()) {
           throw new Error('无法删除运行中的线程');
         }
 
         // 标记线程为已删除
-        thread.markAsDeleted();
-        await this.threadRepository.save(thread);
+        const deletedThread = thread.markAsDeleted();
+        await this.threadRepository.save(deletedThread);
 
         return true;
       },
@@ -177,7 +177,7 @@ export class ThreadMaintenance extends BaseService {
 
         const thread = await this.threadRepository.findByIdOrFail(id);
 
-        if (!thread.status.isFailed()) {
+        if (!thread.isFailed()) {
           throw new Error('只能重试失败状态的线程');
         }
 
@@ -186,10 +186,10 @@ export class ThreadMaintenance extends BaseService {
         // await this.threadDomainService.validateThreadRetry(id);
 
         // 重置线程状态为待执行
-        thread.start(user); // 先启动
-        thread.pause(user, '准备重试'); // 再暂停，表示准备重试
+        const startedThread = thread.start(); // 先启动
+        const pausedThread = startedThread.pause(); // 再暂停，表示准备重试
 
-        return await this.threadRepository.save(thread);
+        return await this.threadRepository.save(pausedThread);
       },
       { threadId, userId }
     );

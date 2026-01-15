@@ -90,19 +90,25 @@ export class RegexFilterProcessor extends BaseContextProcessor {
   /**
    * 执行上下文处理
    */
-  process(context: PromptContext, config?: Record<string, unknown>): PromptContext {
+  process(
+    context: PromptContext,
+    variables: Map<string, unknown>,
+    config?: Record<string, unknown>
+  ): { context: PromptContext; variables: Map<string, unknown> } {
     const mergedConfig = this.mergeConfig(config);
 
     // 提取匹配内容
-    const extractedContent = this.extractContent(context, mergedConfig);
+    const extractedContent = this.extractContent(context, variables, mergedConfig);
 
     // 创建新的上下文，只包含提取的内容
-    return PromptContext.create(
-      extractedContent.template,
-      extractedContent.variables,
-      extractedContent.history,
-      extractedContent.metadata
-    );
+    return {
+      context: PromptContext.create(
+        extractedContent.template,
+        extractedContent.history,
+        extractedContent.metadata
+      ),
+      variables: extractedContent.variables
+    };
   }
 
   /**
@@ -126,6 +132,7 @@ export class RegexFilterProcessor extends BaseContextProcessor {
    */
   private extractContent(
     context: PromptContext,
+    variables: Map<string, unknown>,
     config: Required<RegexFilterConfig>
   ): {
     template: string;
@@ -148,7 +155,7 @@ export class RegexFilterProcessor extends BaseContextProcessor {
 
     // 在变量中搜索
     if (config.searchInVariables) {
-      for (const [key, value] of context.variables.entries()) {
+      for (const [key, value] of variables.entries()) {
         if (typeof value === 'string') {
           const extracted = this.extractWithContext(value, regex, config);
           if (extracted !== value) {

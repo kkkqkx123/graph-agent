@@ -1,15 +1,13 @@
 import { Entity } from '../../common/base/entity';
 import { ID, Timestamp, Version } from '../../common/value-objects';
-import {
-  ThreadStatus,
-  ThreadPriority,
-  ThreadDefinition,
-  ThreadExecution,
-  ExecutionContext,
-} from '../value-objects';
-import { PromptContext } from '../../workflow/value-objects/context';
+import { ThreadPriority } from '../value-objects';
+import { ThreadStatusValue } from '../value-objects/thread-status';
 import { Metadata } from '../../checkpoint/value-objects';
 import { DeletionStatus } from '../../checkpoint/value-objects';
+import { State } from '../../state/entities/state';
+import { StateEntityType } from '../../state/value-objects/state-entity-type';
+import { ExecutionContext, ExecutionConfig } from '../value-objects/execution-context';
+
 /**
  * Thread实体属性接口
  */
@@ -17,17 +15,17 @@ export interface ThreadProps {
   readonly id: ID;
   readonly sessionId: ID;
   readonly workflowId: ID;
-  readonly status: ThreadStatus;
   readonly priority: ThreadPriority;
   readonly title?: string;
   readonly description?: string;
   readonly metadata: Metadata;
-  readonly definition: ThreadDefinition;
-  readonly execution: ThreadExecution;
   readonly deletionStatus: DeletionStatus;
   readonly createdAt: Timestamp;
   readonly updatedAt: Timestamp;
   readonly version: Version;
+  readonly state: State;
+  readonly executionContext: ExecutionContext;
+  readonly executionConfig: ExecutionConfig;
 }
 
 /**
@@ -36,7 +34,7 @@ export interface ThreadProps {
  * 线程聚合根，专注于串行执行流程协调
  * 职责：
  * - 串行执行流程协调
- * - 单线程内的状态管理
+ * - 单线程内的状态管理（通过State实体）
  * - 执行步骤的顺序控制
  * - 错误处理和恢复
  */
@@ -73,41 +71,55 @@ export class Thread extends Entity {
     const now = Timestamp.now();
     const threadId = ID.generate();
     const threadPriority = priority || ThreadPriority.normal();
-    const threadStatus = ThreadStatus.pending();
 
-    // 创建线程定义值对象
-    const definition = ThreadDefinition.create(
+    // 创建统一状态管理
+    const state = State.create(
       threadId,
-      sessionId,
-      workflowId,
-      threadPriority,
-      title,
-      description,
-      metadata
+      StateEntityType.thread(),
+      {
+        status: 'pending',
+        execution: {
+          progress: 0,
+          currentStep: undefined,
+          startedAt: undefined,
+          completedAt: undefined,
+          errorMessage: undefined,
+          retryCount: 0,
+          lastActivityAt: now.toISOString(),
+        },
+        context: {
+          variables: {},
+          nodeContexts: {},
+          promptContext: {},
+        },
+      },
+      {
+        workflowId: workflowId.value,
+        sessionId: sessionId.value,
+      }
     );
 
     // 创建执行上下文
-    const promptContext = PromptContext.create('');
-    const context = ExecutionContext.create(promptContext);
+    const executionContext = ExecutionContext.create();
 
-    // 创建线程执行值对象
-    const execution = ThreadExecution.create(threadId, context);
+    // 创建执行配置
+    const executionConfig: ExecutionConfig = {};
 
     const props: ThreadProps = {
       id: threadId,
       sessionId,
       workflowId,
-      status: threadStatus,
       priority: threadPriority,
       title,
       description,
       metadata: Metadata.create(metadata || {}),
-      definition,
-      execution,
       deletionStatus: DeletionStatus.active(),
       createdAt: now,
       updatedAt: now,
       version: Version.initial(),
+      state,
+      executionContext,
+      executionConfig,
     };
 
     const thread = new Thread(props);
@@ -123,294 +135,6 @@ export class Thread extends Entity {
   public static fromProps(props: ThreadProps): Thread {
     return new Thread(props);
   }
-
-  // 状态管理方法
-
-  /**
-   * 启动线程
-   * @param startedBy 启动者ID
-   * @returns 新线程实例
-   */
-  public start(startedBy?: ID): Thread {
-    this.props.deletionStatus.ensureActive();
-
-    if (!this.props.status.isPending()) {
-      throw new Error('只能启动待执行状态的线程');
-    }
-
-    const oldStatus = this.props.status;
-    const newStatus = ThreadStatus.running();
-    const newExecution = this.props.execution.start();
-
-    return new Thread({
-      ...this.props,
-      status: newStatus,
-      execution: newExecution,
-      updatedAt: Timestamp.now(),
-      version: this.props.version.nextPatch(),
-    });
-  }
-
-  /**
-   * 暂停线程
-   * @param pausedBy 暂停者ID
-   * @param reason 暂停原因
-   * @returns 新线程实例
-   */
-  public pause(pausedBy?: ID, reason?: string): Thread {
-    this.props.deletionStatus.ensureActive();
-
-    if (!this.props.status.isRunning()) {
-      throw new Error('只能暂停运行中的线程');
-    }
-
-    const oldStatus = this.props.status;
-    const newStatus = ThreadStatus.paused();
-    const newExecution = this.props.execution.pause();
-
-    return new Thread({
-      ...this.props,
-      status: newStatus,
-      execution: newExecution,
-      updatedAt: Timestamp.now(),
-      version: this.props.version.nextPatch(),
-    });
-  }
-
-  /**
-   * 恢复线程
-   * @param resumedBy 恢复者ID
-   * @param reason 恢复原因
-   * @returns 新线程实例
-   */
-  public resume(resumedBy?: ID, reason?: string): Thread {
-    this.props.deletionStatus.ensureActive();
-
-    if (!this.props.status.isPaused()) {
-      throw new Error('只能恢复暂停状态的线程');
-    }
-
-    const oldStatus = this.props.status;
-    const newStatus = ThreadStatus.running();
-    const newExecution = this.props.execution.resume();
-
-    return new Thread({
-      ...this.props,
-      status: newStatus,
-      execution: newExecution,
-      updatedAt: Timestamp.now(),
-      version: this.props.version.nextPatch(),
-    });
-  }
-
-  /**
-   * 完成线程
-   * @param completedBy 完成者ID
-   * @param reason 完成原因
-   * @returns 新线程实例
-   */
-  public complete(completedBy?: ID, reason?: string): Thread {
-    this.props.deletionStatus.ensureActive();
-
-    if (!this.props.status.isActive()) {
-      throw new Error('只能完成活跃状态的线程');
-    }
-
-    const oldStatus = this.props.status;
-    const newStatus = ThreadStatus.completed();
-    const newExecution = this.props.execution.complete();
-
-    return new Thread({
-      ...this.props,
-      status: newStatus,
-      execution: newExecution,
-      updatedAt: Timestamp.now(),
-      version: this.props.version.nextPatch(),
-    });
-  }
-
-  /**
-   * 失败线程
-   * @param errorMessage 错误信息
-   * @param failedBy 失败者ID
-   * @param reason 失败原因
-   * @returns 新线程实例
-   */
-  public fail(errorMessage: string, failedBy?: ID, reason?: string): Thread {
-    this.props.deletionStatus.ensureActive();
-
-    if (!this.props.status.isActive()) {
-      throw new Error('只能设置活跃状态的线程为失败状态');
-    }
-
-    const oldStatus = this.props.status;
-    const newStatus = ThreadStatus.failed();
-    const newExecution = this.props.execution.fail(errorMessage);
-
-    return new Thread({
-      ...this.props,
-      status: newStatus,
-      execution: newExecution,
-      updatedAt: Timestamp.now(),
-      version: this.props.version.nextPatch(),
-    });
-  }
-
-  /**
-   * 取消线程
-   * @param cancelledBy 取消者ID
-   * @param reason 取消原因
-   * @returns 新线程实例
-   */
-  public cancel(cancelledBy?: ID, reason?: string): Thread {
-    this.props.deletionStatus.ensureActive();
-
-    if (this.props.status.isTerminal()) {
-      throw new Error('无法取消已终止状态的线程');
-    }
-
-    const oldStatus = this.props.status;
-    const newStatus = ThreadStatus.cancelled();
-    const newExecution = this.props.execution.cancel();
-
-    return new Thread({
-      ...this.props,
-      status: newStatus,
-      execution: newExecution,
-      updatedAt: Timestamp.now(),
-      version: this.props.version.nextPatch(),
-    });
-  }
-
-  /**
-   * 更新线程标题
-   * @param title 新标题
-   * @returns 新线程实例
-   */
-  public updateTitle(title: string): Thread {
-    this.props.deletionStatus.ensureActive();
-
-    if (!this.props.status.canOperate()) {
-      throw new Error('无法更新非活跃状态的线程');
-    }
-
-    const newDefinition = this.props.definition.updateTitle(title);
-
-    return new Thread({
-      ...this.props,
-      title,
-      definition: newDefinition,
-      updatedAt: Timestamp.now(),
-      version: this.props.version.nextPatch(),
-    });
-  }
-
-  /**
-   * 更新线程描述
-   * @param description 新描述
-   * @returns 新线程实例
-   */
-  public updateDescription(description: string): Thread {
-    this.props.deletionStatus.ensureActive();
-
-    if (!this.props.status.canOperate()) {
-      throw new Error('无法更新非活跃状态的线程');
-    }
-
-    const newDefinition = this.props.definition.updateDescription(description);
-
-    return new Thread({
-      ...this.props,
-      description,
-      definition: newDefinition,
-      updatedAt: Timestamp.now(),
-      version: this.props.version.nextPatch(),
-    });
-  }
-
-  /**
-   * 更新线程优先级
-   * @param priority 新优先级
-   * @returns 新线程实例
-   */
-  public updatePriority(priority: ThreadPriority): Thread {
-    this.props.deletionStatus.ensureActive();
-
-    if (!this.props.status.canOperate()) {
-      throw new Error('无法更新非活跃状态线程的优先级');
-    }
-
-    const newDefinition = this.props.definition.updatePriority(priority);
-
-    return new Thread({
-      ...this.props,
-      priority,
-      definition: newDefinition,
-      updatedAt: Timestamp.now(),
-      version: this.props.version.nextPatch(),
-    });
-  }
-
-  /**
-   * 更新元数据
-   * @param metadata 新元数据
-   * @returns 新线程实例
-   */
-  public updateMetadata(metadata: Record<string, unknown>): Thread {
-    this.props.deletionStatus.ensureActive();
-
-    const newDefinition = this.props.definition.updateMetadata(metadata);
-
-    return new Thread({
-      ...this.props,
-      metadata: Metadata.create(metadata),
-      definition: newDefinition,
-      updatedAt: Timestamp.now(),
-      version: this.props.version.nextPatch(),
-    });
-  }
-
-  /**
-   * 更新执行进度
-   * @param progress 进度（0-100）
-   * @param currentStep 当前步骤
-   * @returns 新线程实例
-   */
-  public updateProgress(progress: number, currentStep?: string): Thread {
-    this.props.deletionStatus.ensureActive();
-
-    if (!this.props.status.isActive()) {
-      throw new Error('只能更新活跃状态的线程进度');
-    }
-
-    const newExecution = this.props.execution.updateProgress(progress, currentStep);
-
-    return new Thread({
-      ...this.props,
-      execution: newExecution,
-      updatedAt: Timestamp.now(),
-      version: this.props.version.nextPatch(),
-    });
-  }
-
-  /**
-   * 标记线程为已删除
-   * @returns 新线程实例
-   */
-  public markAsDeleted(): Thread {
-    if (this.props.deletionStatus.isDeleted()) {
-      return this;
-    }
-
-    return new Thread({
-      ...this.props,
-      deletionStatus: this.props.deletionStatus.markAsDeleted(),
-      updatedAt: Timestamp.now(),
-      version: this.props.version.nextPatch(),
-    });
-  }
-
-  // 属性访问器
 
   /**
    * 获取线程ID
@@ -437,11 +161,11 @@ export class Thread extends Entity {
   }
 
   /**
-   * 获取线程状态
-   * @returns 线程状态
+   * 获取线程状态值
+   * @returns 状态值
    */
-  public get status(): ThreadStatus {
-    return this.props.status;
+  public get status(): ThreadStatusValue {
+    return this.props.state.data.getValue('status') as ThreadStatusValue;
   }
 
   /**
@@ -477,19 +201,11 @@ export class Thread extends Entity {
   }
 
   /**
-   * 获取线程定义
-   * @returns 线程定义
+   * 获取执行信息
+   * @returns 执行信息对象
    */
-  public get definition(): ThreadDefinition {
-    return this.props.definition;
-  }
-
-  /**
-   * 获取线程执行
-   * @returns 线程执行
-   */
-  public get execution(): ThreadExecution {
-    return this.props.execution;
+  public get execution(): Record<string, unknown> {
+    return this.props.state.data.getValue('execution') as Record<string, unknown>;
   }
 
   /**
@@ -497,7 +213,8 @@ export class Thread extends Entity {
    * @returns 开始时间
    */
   public get startedAt(): Timestamp | undefined {
-    return this.props.execution.startedAt;
+    const startedAt = this.execution['startedAt'];
+    return startedAt ? Timestamp.fromString(startedAt as string) : undefined;
   }
 
   /**
@@ -505,7 +222,8 @@ export class Thread extends Entity {
    * @returns 完成时间
    */
   public get completedAt(): Timestamp | undefined {
-    return this.props.execution.completedAt;
+    const completedAt = this.execution['completedAt'];
+    return completedAt ? Timestamp.fromString(completedAt as string) : undefined;
   }
 
   /**
@@ -513,7 +231,220 @@ export class Thread extends Entity {
    * @returns 错误信息
    */
   public get errorMessage(): string | undefined {
-    return this.props.execution.errorMessage;
+    return this.execution['errorMessage'] as string | undefined;
+  }
+
+  /**
+   * 获取进度
+   * @returns 进度（0-100）
+   */
+  public get progress(): number {
+    return this.execution['progress'] as number;
+  }
+
+  /**
+   * 获取当前步骤
+   * @returns 当前步骤
+   */
+  public get currentStep(): string | undefined {
+    return this.execution['currentStep'] as string | undefined;
+  }
+
+  /**
+   * 获取重试次数
+   * @returns 重试次数
+   */
+  public get retryCount(): number {
+    return this.execution['retryCount'] as number;
+  }
+
+  /**
+   * 获取状态实体
+   * @returns 状态实体
+   */
+  public get state(): State {
+    return this.props.state;
+  }
+
+  /**
+   * 获取执行上下文
+   * @returns 执行上下文
+   */
+  public get executionContext(): ExecutionContext {
+    return this.props.executionContext;
+  }
+
+  /**
+   * 获取执行配置
+   * @returns 执行配置
+   */
+  public get executionConfig(): ExecutionConfig {
+    return { ...this.props.executionConfig };
+  }
+
+  /**
+   * 更新执行上下文
+   * @param context 新的执行上下文
+   * @returns 新线程实例
+   */
+  public updateExecutionContext(context: ExecutionContext): Thread {
+    return new Thread({
+      ...this.props,
+      executionContext: context,
+      updatedAt: Timestamp.now(),
+      version: this.props.version.nextPatch(),
+    });
+  }
+
+  /**
+   * 更新执行配置
+   * @param config 新的执行配置
+   * @returns 新线程实例
+   */
+  public updateExecutionConfig(config: ExecutionConfig): Thread {
+    return new Thread({
+      ...this.props,
+      executionConfig: { ...this.props.executionConfig, ...config },
+      updatedAt: Timestamp.now(),
+      version: this.props.version.nextPatch(),
+    });
+  }
+
+  /**
+   * 设置变量
+   * @param key 变量名
+   * @param value 变量值
+   * @returns 新线程实例
+   */
+  public setVariable(key: string, value: unknown): Thread {
+    const newContext = this.props.executionContext.setVariable(key, value);
+    return this.updateExecutionContext(newContext);
+  }
+
+  /**
+   * 获取变量
+   * @param key 变量名
+   * @returns 变量值
+   */
+  public getVariable(key: string): unknown | undefined {
+    return this.props.executionContext.getVariable(key);
+  }
+
+  /**
+   * 批量设置变量
+   * @param variables 变量映射
+   * @returns 新线程实例
+   */
+  public setVariables(variables: Map<string, unknown>): Thread {
+    const newContext = this.props.executionContext.setVariables(variables);
+    return this.updateExecutionContext(newContext);
+  }
+
+  /**
+   * 删除变量
+   * @param key 变量名
+   * @returns 新线程实例
+   */
+  public deleteVariable(key: string): Thread {
+    const newContext = this.props.executionContext.deleteVariable(key);
+    return this.updateExecutionContext(newContext);
+  }
+
+  /**
+   * 更新状态
+   * @param updates 状态更新
+   * @returns 新线程实例
+   */
+  public updateState(updates: Record<string, unknown>): Thread {
+    const newState = this.props.state.updateData(updates);
+
+    return new Thread({
+      ...this.props,
+      state: newState,
+      updatedAt: Timestamp.now(),
+      version: this.props.version.nextPatch(),
+    });
+  }
+
+  /**
+   * 更新线程标题
+   * @param title 新标题
+   * @returns 新线程实例
+   */
+  public updateTitle(title: string): Thread {
+    this.props.deletionStatus.ensureActive();
+
+    return new Thread({
+      ...this.props,
+      title,
+      updatedAt: Timestamp.now(),
+      version: this.props.version.nextPatch(),
+    });
+  }
+
+  /**
+   * 更新线程描述
+   * @param description 新描述
+   * @returns 新线程实例
+   */
+  public updateDescription(description: string): Thread {
+    this.props.deletionStatus.ensureActive();
+
+    return new Thread({
+      ...this.props,
+      description,
+      updatedAt: Timestamp.now(),
+      version: this.props.version.nextPatch(),
+    });
+  }
+
+  /**
+   * 更新线程优先级
+   * @param priority 新优先级
+   * @returns 新线程实例
+   */
+  public updatePriority(priority: ThreadPriority): Thread {
+    this.props.deletionStatus.ensureActive();
+
+    return new Thread({
+      ...this.props,
+      priority,
+      updatedAt: Timestamp.now(),
+      version: this.props.version.nextPatch(),
+    });
+  }
+
+  /**
+   * 更新元数据
+   * @param metadata 新元数据
+   * @returns 新线程实例
+   */
+  public updateMetadata(metadata: Record<string, unknown>): Thread {
+    this.props.deletionStatus.ensureActive();
+
+    return new Thread({
+      ...this.props,
+      metadata: Metadata.create(metadata),
+      updatedAt: Timestamp.now(),
+      version: this.props.version.nextPatch(),
+    });
+  }
+
+  /**
+   * 标记线程为已删除
+   * @returns 新线程实例
+   */
+  public markAsDeleted(): Thread {
+    if (this.props.deletionStatus.isDeleted()) {
+      return this;
+    }
+
+    return new Thread({
+      ...this.props,
+      deletionStatus: this.props.deletionStatus.markAsDeleted(),
+      updatedAt: Timestamp.now(),
+      version: this.props.version.nextPatch(),
+    });
   }
 
   /**
@@ -529,7 +460,279 @@ export class Thread extends Entity {
    * @returns 是否活跃
    */
   public isActive(): boolean {
-    return this.props.deletionStatus.isActive();
+    const status = this.status;
+    return status === 'running' || status === 'pending';
+  }
+
+  /**
+   * 检查状态是否为已完成
+   * @returns 是否已完成
+   */
+  public isCompleted(): boolean {
+    return this.status === 'completed';
+  }
+
+  /**
+   * 检查状态是否为失败
+   * @returns 是否失败
+   */
+  public isFailed(): boolean {
+    return this.status === 'failed';
+  }
+
+  /**
+   * 检查状态是否为已取消
+   * @returns 是否已取消
+   */
+  public isCancelled(): boolean {
+    return this.status === 'cancelled';
+  }
+
+  /**
+   * 检查状态是否为待执行
+   * @returns 是否待执行
+   */
+  public isPending(): boolean {
+    return this.status === ThreadStatusValue.PENDING;
+  }
+
+  /**
+   * 检查状态是否为运行中
+   * @returns 是否运行中
+   */
+  public isRunning(): boolean {
+    return this.status === ThreadStatusValue.RUNNING;
+  }
+
+  /**
+   * 检查状态是否为暂停
+   * @returns 是否暂停
+   */
+  public isPaused(): boolean {
+    return this.status === ThreadStatusValue.PAUSED;
+  }
+
+  /**
+   * 检查状态是否为终止状态
+   * @returns 是否终止
+   */
+  public isTerminal(): boolean {
+    return (
+      this.status === ThreadStatusValue.COMPLETED ||
+      this.status === ThreadStatusValue.FAILED ||
+      this.status === ThreadStatusValue.CANCELLED
+    );
+  }
+
+  /**
+   * 启动线程
+   * @returns 新线程实例
+   */
+  public start(): Thread {
+    if (this.status !== ThreadStatusValue.PENDING) {
+      throw new Error(`只能启动待执行状态的线程，当前状态: ${this.status}`);
+    }
+
+    const now = Timestamp.now();
+    const newExecution = {
+      ...this.execution,
+      startedAt: now.toISOString(),
+      lastActivityAt: now.toISOString(),
+    };
+
+    const newState = this.props.state.updateData({
+      status: ThreadStatusValue.RUNNING,
+      execution: newExecution,
+    });
+
+    return new Thread({
+      ...this.props,
+      state: newState,
+      updatedAt: now,
+      version: this.props.version.nextPatch(),
+    });
+  }
+
+  /**
+   * 完成线程
+   * @returns 新线程实例
+   */
+  public complete(): Thread {
+    if (!this.isActive()) {
+      throw new Error(`只能完成活跃状态的线程，当前状态: ${this.status}`);
+    }
+
+    const now = Timestamp.now();
+    const newExecution = {
+      ...this.execution,
+      progress: 100,
+      completedAt: now.toISOString(),
+      lastActivityAt: now.toISOString(),
+    };
+
+    const newState = this.props.state.updateData({
+      status: ThreadStatusValue.COMPLETED,
+      execution: newExecution,
+    });
+
+    return new Thread({
+      ...this.props,
+      state: newState,
+      updatedAt: now,
+      version: this.props.version.nextPatch(),
+    });
+  }
+
+  /**
+   * 失败线程
+   * @param errorMessage 错误信息
+   * @returns 新线程实例
+   */
+  public fail(errorMessage: string): Thread {
+    if (!this.isActive()) {
+      throw new Error(`只能标记活跃状态的线程为失败，当前状态: ${this.status}`);
+    }
+
+    const now = Timestamp.now();
+    const newExecution = {
+      ...this.execution,
+      errorMessage,
+      lastActivityAt: now.toISOString(),
+    };
+
+    const newState = this.props.state.updateData({
+      status: ThreadStatusValue.FAILED,
+      execution: newExecution,
+    });
+
+    return new Thread({
+      ...this.props,
+      state: newState,
+      updatedAt: now,
+      version: this.props.version.nextPatch(),
+    });
+  }
+
+  /**
+   * 暂停线程
+   * @returns 新线程实例
+   */
+  public pause(): Thread {
+    if (this.status !== ThreadStatusValue.RUNNING) {
+      throw new Error(`只能暂停运行中的线程，当前状态: ${this.status}`);
+    }
+
+    const now = Timestamp.now();
+    const newExecution = {
+      ...this.execution,
+      lastActivityAt: now.toISOString(),
+    };
+
+    const newState = this.props.state.updateData({
+      status: ThreadStatusValue.PAUSED,
+      execution: newExecution,
+    });
+
+    return new Thread({
+      ...this.props,
+      state: newState,
+      updatedAt: now,
+      version: this.props.version.nextPatch(),
+    });
+  }
+
+  /**
+   * 恢复线程
+   * @returns 新线程实例
+   */
+  public resume(): Thread {
+    if (this.status !== ThreadStatusValue.PAUSED && this.status !== ThreadStatusValue.FAILED) {
+      throw new Error(`只能恢复暂停或失败状态的线程，当前状态: ${this.status}`);
+    }
+
+    const now = Timestamp.now();
+    const newExecution = {
+      ...this.execution,
+      lastActivityAt: now.toISOString(),
+    };
+
+    const newState = this.props.state.updateData({
+      status: ThreadStatusValue.RUNNING,
+      execution: newExecution,
+    });
+
+    return new Thread({
+      ...this.props,
+      state: newState,
+      updatedAt: now,
+      version: this.props.version.nextPatch(),
+    });
+  }
+
+  /**
+   * 取消线程
+   * @param userId 用户ID
+   * @param reason 取消原因
+   * @returns 新线程实例
+   */
+  public cancel(userId?: ID, reason?: string): Thread {
+    if (this.isTerminal()) {
+      throw new Error(`无法取消已终止状态的线程，当前状态: ${this.status}`);
+    }
+
+    const now = Timestamp.now();
+    const newExecution = {
+      ...this.execution,
+      errorMessage: reason || '线程已取消',
+      lastActivityAt: now.toISOString(),
+    };
+
+    const newState = this.props.state.updateData({
+      status: ThreadStatusValue.CANCELLED,
+      execution: newExecution,
+    });
+
+    return new Thread({
+      ...this.props,
+      state: newState,
+      updatedAt: now,
+      version: this.props.version.nextPatch(),
+    });
+  }
+
+  /**
+   * 更新进度
+   * @param progress 进度（0-100）
+   * @param currentStep 当前步骤
+   * @returns 新线程实例
+   */
+  public updateProgress(progress: number, currentStep?: string): Thread {
+    if (!this.isActive()) {
+      throw new Error(`只能更新活跃状态的线程进度，当前状态: ${this.status}`);
+    }
+
+    if (progress < 0 || progress > 100) {
+      throw new Error(`进度值必须在0-100之间，当前值: ${progress}`);
+    }
+
+    const now = Timestamp.now();
+    const newExecution = {
+      ...this.execution,
+      progress,
+      currentStep,
+      lastActivityAt: now.toISOString(),
+    };
+
+    const newState = this.props.state.updateData({
+      execution: newExecution,
+    });
+
+    return new Thread({
+      ...this.props,
+      state: newState,
+      updatedAt: now,
+      version: this.props.version.nextPatch(),
+    });
   }
 
   /**

@@ -165,59 +165,48 @@ export class ForkStrategy extends ValueObject<{
    * @param thread 线程
    * @param forkPoint Fork点
    * @returns 上下文保留计划
+   *
+   * 注意：sessionId 和 workflowId 是 Thread 的属性，不需要在上下文中保留
+   * 真正的执行上下文变量从 Thread.ExecutionContext 获取
    */
   public calculateContextRetention(thread: Thread, forkPoint: NodeId): ContextRetentionPlan {
-    const execution = thread.execution;
-    const context = execution.context;
-
-    let variablesToRetain = new Set<string>();
-    let nodeStatesToRetain = new Map<string, NodeExecutionSnapshot>();
     let includePromptContext = false;
     let includeHistory = false;
     let includeMetadata = false;
 
+    // 根据上下文保留类型设置标志
     switch (this.props.contextRetention) {
       case 'full':
-        // 保留所有变量
-        variablesToRetain = new Set(context.variables.keys());
-        // 保留所有节点状态
-        for (const [nodeId, nodeExecution] of execution.nodeExecutions.entries()) {
-          nodeStatesToRetain.set(nodeId, nodeExecution.createSnapshot());
-        }
+        // 完整保留：包含提示词上下文、历史记录和元数据
         includePromptContext = true;
         includeHistory = true;
         includeMetadata = true;
         break;
 
       case 'partial':
-        // 保留部分变量（Fork点之前的变量）
-        const forkPointExecution = execution.getNodeExecution(forkPoint);
-        if (forkPointExecution) {
-          // 保留Fork点之前的所有变量
-          for (const [key] of context.variables.entries()) {
-            variablesToRetain.add(key);
-          }
-        }
-        // 保留Fork点之前的节点状态
-        for (const [nodeId, nodeExecution] of execution.nodeExecutions.entries()) {
-          if (nodeExecution.status.isCompleted() || nodeExecution.status.isSkipped()) {
-            nodeStatesToRetain.set(nodeId, nodeExecution.createSnapshot());
-          }
-        }
+        // 部分保留：包含提示词上下文和历史记录
         includePromptContext = true;
         includeHistory = true;
         includeMetadata = false;
         break;
 
       case 'minimal':
-        // 只保留必要的变量
-        variablesToRetain = new Set(['sessionId', 'workflowId']);
-        // 不保留节点状态
-        nodeStatesToRetain = new Map();
+        // 最小保留：不包含额外上下文
         includePromptContext = false;
         includeHistory = false;
         includeMetadata = false;
         break;
+    }
+
+    // 从Thread.ExecutionContext获取变量
+    const variablesToRetain = new Set<string>(thread.executionContext.variables.keys());
+
+    // 从Thread.ExecutionContext获取节点上下文
+    const nodeStatesToRetain = new Map<string, NodeExecutionSnapshot>();
+    for (const [nodeId, context] of thread.executionContext.nodeContexts.entries()) {
+      // TODO: 将NodeContext转换为NodeExecutionSnapshot
+      // 当前简化处理，直接跳过
+      // 需要实现NodeContext到NodeExecutionSnapshot的转换逻辑
     }
 
     return {

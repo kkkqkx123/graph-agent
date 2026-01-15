@@ -39,10 +39,10 @@ export class StateManagement {
         threadId: thread.threadId.toString(),
         type: 'auto',
         stateData: {
-          status: thread.status.value,
+          status: thread.status,
           metadata: thread.metadata,
         },
-        title: `自动检查点: ${thread.status.value}`,
+        title: `自动检查点: ${thread.status}`,
         tags: ['automatic'],
       });
     }
@@ -91,7 +91,7 @@ export class StateManagement {
     await this.checkpointService.createManualCheckpoint({
       threadId: thread.threadId.toString(),
       stateData: {
-        status: thread.status.value,
+        status: thread.status,
         metadata: thread.metadata,
       },
       title,
@@ -127,7 +127,7 @@ export class StateManagement {
     await this.checkpointService.createMilestoneCheckpoint({
       threadId: thread.threadId.toString(),
       stateData: {
-        status: thread.status.value,
+        status: thread.status,
         metadata: thread.metadata,
       },
       milestoneName,
@@ -150,7 +150,7 @@ export class StateManagement {
     await this.checkpointService.createErrorCheckpoint({
       threadId: thread.threadId.toString(),
       stateData: {
-        status: thread.status.value,
+        status: thread.status,
         metadata: thread.metadata,
         errorMessage: error.message,
         errorStack: error.stack,

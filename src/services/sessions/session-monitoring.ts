@@ -13,9 +13,9 @@
  */
 
 import { injectable, inject } from 'inversify';
-import { Session, ISessionRepository } from '../../domain/sessions';
+import { ISessionRepository } from '../../domain/sessions';
 import { Thread, IThreadRepository } from '../../domain/threads';
-import { ID, ILogger, Timestamp } from '../../domain/common';
+import { ILogger, Timestamp } from '../../domain/common';
 import { BaseService } from '../common/base-service';
 import { MonitoringService } from '../workflow/monitoring';
 import { TYPES } from '../../di/service-keys';
@@ -147,18 +147,20 @@ export class SessionMonitoring extends BaseService {
 
         // 统计线程状态
         const totalThreads = threads.length;
-        const activeThreads = threads.filter((t: Thread) => t.status.isActive()).length;
-        const completedThreads = threads.filter((t: Thread) => t.status.isCompleted()).length;
-        const failedThreads = threads.filter((t: Thread) => t.status.isFailed()).length;
+        const activeThreads = threads.filter((t: Thread) => t.isActive()).length;
+        const completedThreads = threads.filter((t: Thread) => t.isCompleted()).length;
+        const failedThreads = threads.filter((t: Thread) => t.isFailed()).length;
 
         // 计算执行耗时
         let totalDuration = 0;
         let completedCount = 0;
         for (const thread of threads) {
-          if (thread.execution.startedAt && thread.execution.completedAt) {
+          const startedAt = thread.execution['startedAt'] as string | undefined;
+          const completedAt = thread.execution['completedAt'] as string | undefined;
+          if (startedAt && completedAt) {
             const duration =
-              thread.execution.completedAt.getMilliseconds() -
-              thread.execution.startedAt.getMilliseconds();
+              new Date(completedAt).getTime() -
+              new Date(startedAt).getTime();
             totalDuration += duration;
             completedCount++;
           }
@@ -265,10 +267,10 @@ export class SessionMonitoring extends BaseService {
         const threads = await this.threadRepository.findActiveThreadsForSession(id);
 
         // 统计活跃线程数
-        const activeThreads = threads.filter((t: Thread) => t.status.isActive()).length;
+        const activeThreads = threads.filter((t: Thread) => t.isActive()).length;
 
         // 计算失败率
-        const failedThreads = threads.filter((t: Thread) => t.status.isFailed()).length;
+        const failedThreads = threads.filter((t: Thread) => t.isFailed()).length;
         const failureRate = threads.length > 0 ? failedThreads / threads.length : 0;
 
         // 统计活跃告警数
@@ -406,11 +408,11 @@ export class SessionMonitoring extends BaseService {
         return threads.map((thread: Thread) => ({
           threadId: thread.id.toString(),
           workflowId: thread.workflowId.toString(),
-          status: thread.status.toString(),
-          progress: thread.execution.progress,
-          startedAt: thread.execution.startedAt?.toISOString(),
-          completedAt: thread.execution.completedAt?.toISOString(),
-          errorMessage: thread.execution.errorMessage,
+          status: thread.status,
+          progress: thread.execution['progress'] as number,
+          startedAt: thread.execution['startedAt'] as string | undefined,
+          completedAt: thread.execution['completedAt'] as string | undefined,
+          errorMessage: thread.execution['errorMessage'] as string | undefined,
         }));
       },
       { sessionId }
@@ -491,7 +493,7 @@ export class SessionMonitoring extends BaseService {
         // 添加活跃线程数
         const result = trend.map(point => ({
           ...point,
-          activeThreads: threads.filter((t: Thread) => t.status.isActive()).length,
+          activeThreads: threads.filter((t: Thread) => t.isActive()).length,
         }));
         return result;
       },

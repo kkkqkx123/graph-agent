@@ -6,8 +6,6 @@ import { ValueObject } from '../../../common/value-objects';
 export interface PromptContextProps {
   /** 提示词模板 */
   template: string;
-  /** 提示词变量 */
-  variables: Map<string, unknown>;
   /** 提示词历史记录 */
   history: PromptHistoryEntry[];
   /** 元数据 */
@@ -46,20 +44,17 @@ export class PromptContext extends ValueObject<PromptContextProps> {
   /**
    * 创建提示词上下文
    * @param template 提示词模板
-   * @param variables 提示词变量
    * @param history 历史记录
    * @param metadata 元数据
    * @returns 提示词上下文实例
    */
   public static create(
     template: string,
-    variables: Map<string, unknown> = new Map(),
     history: PromptHistoryEntry[] = [],
     metadata: Record<string, unknown> = {}
   ): PromptContext {
     return new PromptContext({
       template,
-      variables: new Map(variables),
       history: [...history],
       metadata: { ...metadata },
     });
@@ -73,7 +68,6 @@ export class PromptContext extends ValueObject<PromptContextProps> {
   public static fromProps(props: PromptContextProps): PromptContext {
     return new PromptContext({
       template: props.template,
-      variables: new Map(props.variables),
       history: [...props.history],
       metadata: { ...props.metadata },
     });
@@ -85,14 +79,6 @@ export class PromptContext extends ValueObject<PromptContextProps> {
    */
   public get template(): string {
     return this.props.template;
-  }
-
-  /**
-   * 获取提示词变量
-   * @returns 提示词变量映射
-   */
-  public get variables(): Map<string, unknown> {
-    return new Map(this.props.variables);
   }
 
   /**
@@ -109,77 +95,6 @@ export class PromptContext extends ValueObject<PromptContextProps> {
    */
   public get metadata(): Record<string, unknown> {
     return { ...this.props.metadata };
-  }
-
-  /**
-   * 获取变量值
-   * @param key 变量名
-   * @returns 变量值
-   */
-  public getVariable(key: string): unknown | undefined {
-    return this.props.variables.get(key);
-  }
-
-  /**
-   * 检查变量是否存在
-   * @param key 变量名
-   * @returns 是否存在
-   */
-  public hasVariable(key: string): boolean {
-    return this.props.variables.has(key);
-  }
-
-  /**
-   * 获取所有变量名
-   * @returns 变量名数组
-   */
-  public getVariableNames(): string[] {
-    return Array.from(this.props.variables.keys());
-  }
-
-  /**
-   * 设置变量值（创建新实例）
-   * @param key 变量名
-   * @param value 变量值
-   * @returns 新的提示词上下文实例
-   */
-  public setVariable(key: string, value: unknown): PromptContext {
-    const newVariables = new Map(this.props.variables);
-    newVariables.set(key, value);
-    return new PromptContext({
-      ...this.props,
-      variables: newVariables,
-    });
-  }
-
-  /**
-   * 批量设置变量（创建新实例）
-   * @param variables 变量映射
-   * @returns 新的提示词上下文实例
-   */
-  public setVariables(variables: Map<string, unknown>): PromptContext {
-    const newVariables = new Map(this.props.variables);
-    for (const [key, value] of variables.entries()) {
-      newVariables.set(key, value);
-    }
-    return new PromptContext({
-      ...this.props,
-      variables: newVariables,
-    });
-  }
-
-  /**
-   * 删除变量（创建新实例）
-   * @param key 变量名
-   * @returns 新的提示词上下文实例
-   */
-  public removeVariable(key: string): PromptContext {
-    const newVariables = new Map(this.props.variables);
-    newVariables.delete(key);
-    return new PromptContext({
-      ...this.props,
-      variables: newVariables,
-    });
   }
 
   /**
@@ -238,24 +153,19 @@ export class PromptContext extends ValueObject<PromptContextProps> {
 
   /**
    * 渲染提示词
-   * @param additionalVariables 额外变量
+   * @param variables 变量映射（从ExecutionContext传入）
    * @returns 渲染后的提示词
    */
-  public render(additionalVariables?: Map<string, unknown>): string {
+  public render(variables?: Map<string, unknown>): string {
     let rendered = this.props.template;
-    const allVariables = new Map(this.props.variables);
 
-    if (additionalVariables) {
-      for (const [key, value] of additionalVariables.entries()) {
-        allVariables.set(key, value);
+    if (variables) {
+      // 替换 {{variable}} 格式的变量
+      for (const [key, value] of variables.entries()) {
+        const placeholder = `{{${key}}}`;
+        const valueStr = value !== undefined && value !== null ? String(value) : '';
+        rendered = rendered.replace(new RegExp(placeholder, 'g'), valueStr);
       }
-    }
-
-    // 替换 {{variable}} 格式的变量
-    for (const [key, value] of allVariables.entries()) {
-      const placeholder = `{{${key}}}`;
-      const valueStr = value !== undefined && value !== null ? String(value) : '';
-      rendered = rendered.replace(new RegExp(placeholder, 'g'), valueStr);
     }
 
     return rendered;
@@ -268,7 +178,6 @@ export class PromptContext extends ValueObject<PromptContextProps> {
   public clone(): PromptContext {
     return new PromptContext({
       template: this.props.template,
-      variables: new Map(this.props.variables),
       history: [...this.props.history],
       metadata: { ...this.props.metadata },
     });
@@ -285,8 +194,6 @@ export class PromptContext extends ValueObject<PromptContextProps> {
     }
     return (
       this.props.template === context.template &&
-      JSON.stringify(Array.from(this.props.variables.entries())) ===
-        JSON.stringify(Array.from(context.variables.entries())) &&
       JSON.stringify(this.props.history) === JSON.stringify(context.history)
     );
   }
@@ -296,7 +203,7 @@ export class PromptContext extends ValueObject<PromptContextProps> {
    * @returns 字符串表示
    */
   public override toString(): string {
-    return `PromptContext(template="${this.props.template}", variables=${this.props.variables.size}, history=${this.props.history.length})`;
+    return `PromptContext(template="${this.props.template}", history=${this.props.history.length})`;
   }
 
   /**

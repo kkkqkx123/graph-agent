@@ -173,9 +173,7 @@ export class CopyStrategy extends ValueObject<{
     switch (this.props.type) {
       case 'full':
         // 复制所有节点
-        nodeIds = Array.from(thread.execution.nodeExecutions.keys()).map(
-          id => ({ toString: () => id }) as NodeId
-        );
+        nodeIds = [];
         includeVariables = true;
         includeNodeStates = !this.props.resetState;
         includeContext = true;
@@ -184,11 +182,6 @@ export class CopyStrategy extends ValueObject<{
       case 'partial':
         // 复制部分节点（已完成或跳过的节点）
         nodeIds = [];
-        for (const [nodeId, nodeExecution] of thread.execution.nodeExecutions.entries()) {
-          if (nodeExecution.status.isCompleted() || nodeExecution.status.isSkipped()) {
-            nodeIds.push({ toString: () => nodeId } as NodeId);
-          }
-        }
         includeVariables = false;
         includeNodeStates = false;
         includeContext = false;
@@ -223,12 +216,12 @@ export class CopyStrategy extends ValueObject<{
     }
 
     // 如果线程已完成，建议重置状态
-    if (thread.status.isCompleted()) {
+    if (thread.isCompleted()) {
       return true;
     }
 
     // 如果线程失败，建议重置状态
-    if (thread.status.isFailed()) {
+    if (thread.isFailed()) {
       return true;
     }
 

@@ -6,7 +6,6 @@ import { SnapshotScope } from '../../domain/snapshot/value-objects/snapshot-scop
 import { ISnapshotRepository } from '../../domain/snapshot/repositories/snapshot-repository';
 import { Thread } from '../../domain/threads/entities/thread';
 import { Session } from '../../domain/sessions/entities/session';
-import { ThreadExecution } from '../../domain/threads/value-objects/thread-execution';
 
 /**
  * 状态快照服务
@@ -42,7 +41,7 @@ export class StateSnapshot {
         threadId: thread.id.value,
         sessionId: thread.sessionId.value,
         workflowId: thread.workflowId.value,
-        status: thread.status.value,
+        status: thread.status,
         createdAt: new Date().toISOString(),
       }
     );
@@ -280,36 +279,10 @@ export class StateSnapshot {
       threadId: thread.id.value,
       sessionId: thread.sessionId.value,
       workflowId: thread.workflowId.value,
-      status: thread.status.value,
-      execution: this.serializeThreadExecution(thread.execution),
+      status: thread.status,
+      execution: thread.execution,
       createdAt: thread.createdAt.toISOString(),
       updatedAt: thread.updatedAt.toISOString(),
-    };
-  }
-
-  /**
-   * 序列化ThreadExecution
-   */
-  private serializeThreadExecution(execution: ThreadExecution): Record<string, unknown> {
-    return {
-      threadId: execution.threadId.value,
-      status: execution.status.value,
-      progress: execution.progress,
-      currentStep: execution.currentStep,
-      startedAt: execution.startedAt?.toISOString(),
-      completedAt: execution.completedAt?.toISOString(),
-      errorMessage: execution.errorMessage,
-      retryCount: execution.retryCount,
-      lastActivityAt: execution.lastActivityAt.toISOString(),
-      context: execution.context,
-      operationHistory: execution.operationHistory.map(op => ({
-        operationId: op.operationId.value,
-        operationType: op.operationType,
-        timestamp: op.timestamp.toISOString(),
-        operatorId: op.operatorId?.value,
-        reason: op.reason,
-        metadata: op.metadata,
-      })),
     };
   }
 

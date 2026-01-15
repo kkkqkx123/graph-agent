@@ -369,7 +369,7 @@ export class Session extends Entity {
     const thread = this.props.threads.get(threadId)!;
 
     // 检查线程是否可以删除
-    if (thread.status.isActive()) {
+    if (thread.isActive()) {
       throw new Error('无法删除活跃状态的线程');
     }
 
@@ -528,7 +528,7 @@ export class Session extends Entity {
       this.props.id,
       workflowId,
       undefined,
-      `${sourceThread.title} (分支)`,
+      undefined,
       undefined,
       forkOptions as Record<string, unknown> | undefined
     );

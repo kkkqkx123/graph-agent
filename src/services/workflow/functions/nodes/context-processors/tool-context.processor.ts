@@ -12,16 +12,23 @@ export class ToolContextProcessor extends SingletonContextProcessor {
   readonly description = '提取工具相关变量';
   override readonly version = '1.0.0';
 
-  process(context: PromptContext, config?: Record<string, unknown>): PromptContext {
+  process(
+    context: PromptContext,
+    variables: Map<string, unknown>,
+    config?: Record<string, unknown>
+  ): { context: PromptContext; variables: Map<string, unknown> } {
     // 提取工具相关变量
     const toolVariables = new Map<string, unknown>();
-    for (const [key, value] of context.variables.entries()) {
+    for (const [key, value] of variables.entries()) {
       if (key.startsWith('tool.') || key.startsWith('function.')) {
         toolVariables.set(key, value);
       }
     }
 
-    return PromptContext.create(context.template, toolVariables, context.history, context.metadata);
+    return {
+      context: PromptContext.create(context.template, context.history, context.metadata),
+      variables: toolVariables
+    };
   }
 }
 

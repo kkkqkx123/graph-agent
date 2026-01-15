@@ -38,7 +38,7 @@ export class ThreadManagement extends BaseService {
   ): Promise<void> {
     const thread = await this.threadRepository.findByIdOrFail(threadId);
 
-    if (!thread.status.canOperate()) {
+    if (!thread.isActive()) {
       throw new Error('无法更新非活跃状态线程的优先级');
     }
 

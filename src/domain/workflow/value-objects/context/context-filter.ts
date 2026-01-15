@@ -87,10 +87,14 @@ export class ContextFilter extends ValueObject<ContextFilterProps> {
   /**
    * 应用过滤规则到上下文
    * @param context 提示词上下文
-   * @returns 过滤后的提示词上下文
+   * @param variables 变量映射（从ExecutionContext传入）
+   * @returns 过滤后的提示词上下文和变量
    */
-  public apply(context: PromptContext): PromptContext {
-    let filteredVariables = new Map(context.variables);
+  public apply(context: PromptContext, variables?: Map<string, unknown>): {
+    context: PromptContext;
+    variables: Map<string, unknown>
+  } {
+    let filteredVariables = variables ? new Map(variables) : new Map();
     let filteredHistory = [...context.history];
     let filteredMetadata = { ...context.metadata };
 
@@ -104,7 +108,7 @@ export class ContextFilter extends ValueObject<ContextFilterProps> {
 
     for (const rule of sortedRules) {
       // 检查条件表达式
-      if (rule.condition && !this.evaluateCondition(rule.condition, context)) {
+      if (rule.condition && !this.evaluateCondition(rule.condition, context, filteredVariables)) {
         continue;
       }
 
@@ -162,12 +166,14 @@ export class ContextFilter extends ValueObject<ContextFilterProps> {
       filteredMetadata = {};
     }
 
-    return PromptContext.create(
-      context.template,
-      filteredVariables,
-      filteredHistory,
-      filteredMetadata
-    );
+    return {
+      context: PromptContext.create(
+        context.template,
+        filteredHistory,
+        filteredMetadata
+      ),
+      variables: filteredVariables
+    };
   }
 
   /**
@@ -332,13 +338,13 @@ export class ContextFilter extends ValueObject<ContextFilterProps> {
   /**
    * 评估条件表达式
    */
-  private evaluateCondition(condition: string, context: PromptContext): boolean {
+  private evaluateCondition(condition: string, context: PromptContext, variables: Map<string, unknown>): boolean {
     // 简化的条件评估逻辑
     // 实际实现应该使用更安全的表达式解析器
     try {
-      const variables = Object.fromEntries(context.variables);
+      const variablesObj = Object.fromEntries(variables);
       const func = new Function('context', 'variables', `return ${condition}`);
-      return func(context, variables);
+      return func(context, variablesObj);
     } catch (error) {
       console.warn(`条件表达式评估失败: ${condition}`, error);
       return false;

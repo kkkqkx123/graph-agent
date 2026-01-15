@@ -170,12 +170,11 @@ export class ThreadFork {
     }
 
     // 验证Fork点是否存在
-    if (!input.parentThread.execution.hasNodeExecution(input.forkPoint)) {
-      return { valid: false, error: `Fork点不存在: ${input.forkPoint.toString()}` };
-    }
+    // 注意：节点执行状态现在由其他服务管理，这里暂时跳过验证
+    // TODO: 从节点执行服务获取节点执行状态进行验证
 
     // 验证父线程状态
-    if (!input.parentThread.status.isActive()) {
+    if (!input.parentThread.isActive()) {
       return { valid: false, error: '只能从活跃状态的线程Fork' };
     }
 
@@ -196,12 +195,8 @@ export class ThreadFork {
     // 这里假设验证通过，如果有异常会在上层捕获
 
     // 验证Fork点状态
-    const forkPointExecution = input.parentThread.execution.getNodeExecution(input.forkPoint);
-    if (forkPointExecution) {
-      if (forkPointExecution.status.isPending()) {
-        warnings.push('Fork点尚未执行，可能无法获得完整的上下文');
-      }
-    }
+    // 注意：节点执行状态现在由其他服务管理，这里暂时跳过验证
+    // TODO: 从节点执行服务获取节点执行状态进行验证
 
     // 验证上下文保留策略
     const forkOptions = input.forkOptions || ForkOptions.createDefault();
@@ -229,24 +224,19 @@ export class ThreadFork {
     const retentionPlan = forkStrategy.calculateContextRetention(parentThread, forkPoint);
 
     // 构建变量快照
+    // 注意：上下文现在由其他服务管理，这里暂时创建空快照
+    // TODO: 从上下文服务获取变量快照
     const variableSnapshot = new Map<string, unknown>();
-    for (const key of retentionPlan.variablesToRetain) {
-      const value = parentThread.execution.context.getVariable(key);
-      if (value !== undefined) {
-        variableSnapshot.set(key, value);
-      }
-    }
 
     // 构建节点状态快照
+    // 注意：节点执行状态现在由其他服务管理，这里暂时创建空快照
+    // TODO: 从节点执行服务获取节点状态快照
     const nodeStateSnapshot = new Map<string, NodeExecutionSnapshot>();
-    for (const [nodeId, snapshot] of retentionPlan.nodeStatesToRetain.entries()) {
-      nodeStateSnapshot.set(nodeId, snapshot);
-    }
 
     // 获取提示词上下文快照
-    const promptContextSnapshot = retentionPlan.includePromptContext
-      ? parentThread.execution.context.promptContext
-      : PromptContext.create('');
+    // 注意：提示词上下文现在由其他服务管理，这里暂时创建空上下文
+    // TODO: 从上下文服务获取提示词上下文快照
+    const promptContextSnapshot = PromptContext.create('', [], {});
 
     return ForkContext.create(
       parentThread.threadId,

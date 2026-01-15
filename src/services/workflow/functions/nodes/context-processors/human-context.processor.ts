@@ -12,10 +12,14 @@ export class HumanContextProcessor extends SingletonContextProcessor {
   readonly description = '保留用户交互相关数据';
   override readonly version = '1.0.0';
 
-  process(context: PromptContext, config?: Record<string, unknown>): PromptContext {
+  process(
+    context: PromptContext,
+    variables: Map<string, unknown>,
+    config?: Record<string, unknown>
+  ): { context: PromptContext; variables: Map<string, unknown> } {
     // 保留用户交互相关变量
     const humanVariables = new Map<string, unknown>();
-    for (const [key, value] of context.variables.entries()) {
+    for (const [key, value] of variables.entries()) {
       if (key.startsWith('user.') || key.startsWith('human.') || key.startsWith('input.')) {
         humanVariables.set(key, value);
       }
@@ -24,7 +28,10 @@ export class HumanContextProcessor extends SingletonContextProcessor {
     // 保留人工交互相关历史
     const humanHistory = context.history.filter((entry: any) => entry.metadata?.['humanInteraction']);
 
-    return PromptContext.create(context.template, humanVariables, humanHistory, context.metadata);
+    return {
+      context: PromptContext.create(context.template, humanHistory, context.metadata),
+      variables: humanVariables
+    };
   }
 }
 

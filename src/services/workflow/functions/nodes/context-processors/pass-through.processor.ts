@@ -11,8 +11,15 @@ export class PassThroughProcessor extends BaseContextProcessor {
   readonly description = '不做任何过滤，直接传递上下文';
   override readonly version = '1.0.0';
 
-  process(context: PromptContext, config?: Record<string, unknown>): PromptContext {
-    return context.clone();
+  process(
+    context: PromptContext,
+    variables: Map<string, unknown>,
+    config?: Record<string, unknown>
+  ): { context: PromptContext; variables: Map<string, unknown> } {
+    return {
+      context: context.clone(),
+      variables: new Map(variables)
+    };
   }
 }
 

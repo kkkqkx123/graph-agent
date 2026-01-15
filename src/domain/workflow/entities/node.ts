@@ -44,7 +44,7 @@ export interface NodeParameter {
 export interface NodeContext {
   readonly workflowId?: ID;
   readonly executionId?: string;
-  readonly variables: Map<string, any>;
+  readonly localVariables: Map<string, any>;
   readonly metadata?: Record<string, any>;
   getVariable(key: string): any;
   setVariable(key: string, value: any): void;

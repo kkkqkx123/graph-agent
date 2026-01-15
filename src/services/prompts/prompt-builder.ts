@@ -125,15 +125,19 @@ export class PromptBuilder {
 
     // 应用上下文处理器
     let processedContext = context;
+    let processedVariables = new Map(Object.entries(context));
+    
     if (source.type === 'template' && contextProcessorName && contextProcessors) {
-      // 创建 PromptContext
-      const promptContext = PromptContext.create(content, new Map(Object.entries(context)));
+      // 创建 PromptContext（不包含variables）
+      const promptContext = PromptContext.create(content);
 
       // 应用处理器
       const processor = contextProcessors.get(contextProcessorName);
       if (processor) {
-        const processed = processor(promptContext);
-        processedContext = Object.fromEntries(processed.variables.entries());
+        const result = processor(promptContext, processedVariables);
+        // 处理器返回处理后的context和variables
+        processedContext = { ...context, ...Object.fromEntries(result.variables.entries()) };
+        processedVariables = result.variables;
       }
     }
 

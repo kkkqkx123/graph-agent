@@ -7,7 +7,7 @@ import { ThreadStatusValue } from '../../../domain/threads/value-objects/thread-
 import { ThreadPriority } from '../../../domain/threads/value-objects/thread-priority';
 import { ThreadDefinition } from '../../../domain/threads/value-objects/thread-definition';
 import { ThreadExecution } from '../../../domain/threads/value-objects/thread-execution';
-import { ExecutionContext } from '../../../domain/threads/value-objects/execution-context';
+import { ExecutionContext, ExecutionConfig } from '../../../domain/threads/value-objects/execution-context';
 import { PromptContext } from '../../../domain/workflow/value-objects/context/prompt-context';
 import { Timestamp } from '../../../domain/common/value-objects/timestamp';
 import { Version } from '../../../domain/common/value-objects/version';
@@ -17,7 +17,8 @@ import { BaseRepository } from './base-repository';
 import { ConnectionManager } from '../connection-manager';
 import { Metadata } from '../../../domain/checkpoint/value-objects';
 import { DeletionStatus } from '../../../domain/checkpoint/value-objects';
-import { ThreadWorkflowState } from '../../../domain/threads/value-objects/thread-workflow-state';
+import { State } from '../../../domain/state/entities/state';
+import { StateEntityType } from '../../../domain/state/value-objects/state-entity-type';
 
 @injectable()
 export class ThreadRepository
@@ -39,7 +40,6 @@ export class ThreadRepository
       const id = new ID(model.id);
       const sessionId = new ID(model.sessionId);
       const workflowId = model.workflowId ? new ID(model.workflowId) : ID.empty();
-      const status = ThreadStatus.fromString(model.state);
       const priority = ThreadPriority.fromNumber(model.priority);
       const title = model.name || undefined;
       const description = model.description || undefined;
@@ -49,52 +49,62 @@ export class ThreadRepository
       const version = Version.fromString(model.version);
       const isDeleted = (model.metadata?.isDeleted as boolean) || false;
 
-      const definition = ThreadDefinition.create(
+      // 创建State实体
+      const state = State.create(
         id,
-        sessionId,
-        workflowId,
-        priority,
-        title,
-        description,
-        metadata
+        StateEntityType.thread(),
+        {
+          status: model.state,
+          execution: {
+            progress: model.progress,
+            currentStep: model.currentStep,
+            startedAt: model.startedAt?.toISOString(),
+            completedAt: model.completedAt?.toISOString(),
+            errorMessage: model.errorMessage,
+            retryCount: model.retryCount,
+            lastActivityAt: model.lastActivityAt.toISOString(),
+          },
+          context: {
+            variables: (model.metadata?.context?.variables as Record<string, unknown>) || {},
+            nodeContexts: (model.metadata?.context?.nodeContexts as Record<string, unknown>) || {},
+            promptContext: (model.metadata?.context?.promptContext as Record<string, unknown>) || {},
+          },
+        },
+        {
+          workflowId: workflowId.value,
+          sessionId: sessionId.value,
+        }
       );
 
-      // 创建执行上下文
-      const promptContext = PromptContext.create('');
-      const context = ExecutionContext.create(promptContext);
+      // 创建ExecutionContext
+      const contextVariables = new Map(
+        Object.entries((model.metadata?.context?.variables as Record<string, unknown>) || {})
+      );
+      const executionContext = ExecutionContext.create();
+      
+      // 设置变量
+      for (const [key, value] of contextVariables.entries()) {
+        executionContext.setVariable(key, value);
+      }
 
-      // 创建执行状态值对象
-      const execution = ThreadExecution.fromProps({
-        threadId: id,
-        status: ThreadStatus.fromString(model.executionStatus),
-        progress: model.progress,
-        currentStep: model.currentStep,
-        startedAt: model.startedAt ? Timestamp.create(model.startedAt) : undefined,
-        completedAt: model.completedAt ? Timestamp.create(model.completedAt) : undefined,
-        errorMessage: model.errorMessage,
-        retryCount: model.retryCount,
-        lastActivityAt: Timestamp.create(model.lastActivityAt),
-        nodeExecutions: new Map(Object.entries(model.nodeExecutions || {})) as Map<string, any>,
-        context,
-        operationHistory: [],
-        workflowState: model.workflowState ? ThreadWorkflowState.fromProps(model.workflowState as any) : undefined,
-      });
+      // 创建ExecutionConfig
+      const executionConfig: ExecutionConfig = (model.metadata?.context?.executionConfig as ExecutionConfig) || {};
 
       const threadData = {
         id,
         sessionId,
         workflowId,
-        status,
         priority,
         title,
         description,
         metadata: Metadata.create(metadata),
-        definition,
-        execution,
         deletionStatus: DeletionStatus.fromBoolean(isDeleted),
         createdAt,
         updatedAt,
         version,
+        state,
+        executionContext,
+        executionConfig,
       };
 
       return Thread.fromProps(threadData);
@@ -119,35 +129,48 @@ export class ThreadRepository
       model.workflowId = entity.workflowId ? entity.workflowId.value : undefined;
       model.name = entity.title || '';
       model.description = entity.description || '';
-      model.state = entity.status.getValue();
+      model.state = entity.status as ThreadStatusValue;
       model.priority = entity.priority.getNumericValue();
 
       // 执行状态字段
-      model.executionStatus = entity.execution.status.getValue();
-      model.progress = entity.execution.progress;
-      model.currentStep = entity.execution.currentStep;
-      model.startedAt = entity.execution.startedAt?.getDate();
-      model.completedAt = entity.execution.completedAt?.getDate();
-      model.errorMessage = entity.execution.errorMessage;
-      model.retryCount = entity.execution.retryCount;
-      model.lastActivityAt = entity.execution.lastActivityAt.getDate();
-      model.executionContext = {
-        variables: Object.fromEntries(entity.execution.context.variables),
-        promptContext: entity.execution.context.promptContext,
-        nodeContexts: Object.fromEntries(entity.execution.context.nodeContexts),
-        config: entity.execution.context.config,
-      };
-      model.nodeExecutions = Object.fromEntries(entity.execution.nodeExecutions);
-      model.workflowState = entity.execution.getWorkflowState()?.toProps() as any;
+      const execution = entity.execution;
+      model.executionStatus = entity.status as ThreadStatusValue;
+      model.progress = execution['progress'] as number;
+      model.currentStep = execution['currentStep'] as string | undefined;
+      model.startedAt = execution['startedAt'] ? new Date(execution['startedAt'] as string) : undefined;
+      model.completedAt = execution['completedAt'] ? new Date(execution['completedAt'] as string) : undefined;
+      model.errorMessage = execution['errorMessage'] as string | undefined;
+      model.retryCount = execution['retryCount'] as number;
+      model.lastActivityAt = new Date(execution['lastActivityAt'] as string);
 
-      model.context = entity.metadata;
+      model.context = entity.metadata.toRecord();
       model.version = entity.version.getValue();
       model.createdAt = entity.createdAt.getDate();
       model.updatedAt = entity.updatedAt.getDate();
 
+      // 序列化ExecutionContext到metadata
+      const contextData = {
+        variables: Object.fromEntries(entity.executionContext.variables),
+        nodeResults: Object.fromEntries(entity.executionContext.nodeResults),
+        nodeContexts: Object.fromEntries(
+          Array.from(entity.executionContext.nodeContexts.entries()).map(([nodeId, context]) => [
+            nodeId,
+            {
+              nodeId: context.nodeId.toString(),
+              localVariables: Object.fromEntries(context.localVariables),
+              metadata: context.metadata,
+              lastAccessedAt: context.lastAccessedAt.toISOString(),
+            },
+          ])
+        ),
+        metadata: entity.executionContext.metadata,
+        executionConfig: entity.executionConfig,
+      };
+
       model.metadata = {
         ...entity.metadata.toRecord(),
         isDeleted: entity.isDeleted(),
+        context: contextData,
       };
 
       return model;
@@ -448,7 +471,7 @@ export class ThreadRepository
     }
     return {
       threadId: threadId.value,
-      status: thread.status.getValue(),
+      status: thread.status,
       priority: thread.priority.getNumericValue(),
       createdAt: thread.createdAt.getDate(),
       updatedAt: thread.updatedAt.getDate(),

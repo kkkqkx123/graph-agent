@@ -128,8 +128,8 @@ export class ThreadExecution extends BaseService {
         const thread = await this.threadRepository.findByIdOrFail(id);
 
         // 验证线程状态
-        if (!thread.status.isPending()) {
-          throw new Error(`只能执行待执行状态的线程，当前状态: ${thread.status.toString()}`);
+        if (!thread.isPending()) {
+          throw new Error(`只能执行待执行状态的线程，当前状态: ${thread.status}`);
         }
 
         // 获取工作流
@@ -246,8 +246,8 @@ export class ThreadExecution extends BaseService {
         const thread = await this.threadRepository.findByIdOrFail(id);
 
         // 验证线程状态
-        if (!thread.status.isPaused() && !thread.status.isFailed()) {
-          throw new Error(`只能恢复暂停或失败状态的线程，当前状态: ${thread.status.toString()}`);
+        if (!thread.isPaused() && !thread.isFailed()) {
+          throw new Error(`只能恢复暂停或失败状态的线程，当前状态: ${thread.status}`);
         }
 
         // 获取工作流
@@ -419,8 +419,8 @@ export class ThreadExecution extends BaseService {
         const thread = await this.threadRepository.findByIdOrFail(id);
 
         // 验证线程状态
-        if (thread.status.isTerminal()) {
-          throw new Error(`无法取消已终止状态的线程，当前状态: ${thread.status.toString()}`);
+        if (thread.isTerminal()) {
+          throw new Error(`无法取消已终止状态的线程，当前状态: ${thread.status}`);
         }
 
         // 取消线程
@@ -460,12 +460,12 @@ export class ThreadExecution extends BaseService {
 
         return {
           threadId: thread.id.toString(),
-          status: thread.status.toString(),
-          progress: thread.execution.progress,
-          startedAt: thread.execution.startedAt?.toISOString(),
-          completedAt: thread.execution.completedAt?.toISOString(),
-          errorMessage: thread.execution.errorMessage,
-          currentStep: thread.execution.currentStep,
+          status: thread.status,
+          progress: thread.execution['progress'] as number,
+          startedAt: thread.execution['startedAt'] as string | undefined,
+          completedAt: thread.execution['completedAt'] as string | undefined,
+          errorMessage: thread.execution['errorMessage'] as string | undefined,
+          currentStep: thread.execution['currentStep'] as string | undefined,
         };
       },
       { threadId }
@@ -491,8 +491,8 @@ export class ThreadExecution extends BaseService {
         const thread = await this.threadRepository.findByIdOrFail(id);
 
         // 验证线程状态
-        if (!thread.status.isActive()) {
-          throw new Error(`只能更新活跃状态的线程进度，当前状态: ${thread.status.toString()}`);
+        if (!thread.isActive()) {
+          throw new Error(`只能更新活跃状态的线程进度，当前状态: ${thread.status}`);
         }
 
         // 验证进度值

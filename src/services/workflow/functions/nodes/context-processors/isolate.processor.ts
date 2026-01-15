@@ -11,8 +11,15 @@ export class IsolateProcessor extends BaseContextProcessor {
   readonly description = '只保留模板，清空其他所有内容';
   override readonly version = '1.0.0';
 
-  process(context: PromptContext, config?: Record<string, unknown>): PromptContext {
-    return PromptContext.create(context.template, new Map(), [], {});
+  process(
+    context: PromptContext,
+    variables: Map<string, unknown>,
+    config?: Record<string, unknown>
+  ): { context: PromptContext; variables: Map<string, unknown> } {
+    return {
+      context: PromptContext.create(context.template, [], {}),
+      variables: new Map()
+    };
   }
 }
 

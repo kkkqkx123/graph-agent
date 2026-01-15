@@ -125,22 +125,24 @@ export class ThreadMonitoring extends BaseService {
           threadId: thread.id.toString(),
           workflowId: thread.workflowId.toString(),
           sessionId: thread.sessionId.toString(),
-          status: thread.status.toString(),
-          progress: thread.execution.progress,
-          startedAt: thread.execution.startedAt?.toISOString(),
-          completedAt: thread.execution.completedAt?.toISOString(),
-          errorMessage: thread.execution.errorMessage,
-          currentStep: thread.execution.currentStep,
+          status: thread.status,
+          progress: thread.execution['progress'] as number,
+          startedAt: thread.execution['startedAt'] as string | undefined,
+          completedAt: thread.execution['completedAt'] as string | undefined,
+          errorMessage: thread.execution['errorMessage'] as string | undefined,
+          currentStep: thread.execution['currentStep'] as string | undefined,
         };
 
         // 计算执行耗时
-        if (thread.execution.startedAt && thread.execution.completedAt) {
+        const startedAt = thread.execution['startedAt'] as string | undefined;
+        const completedAt = thread.execution['completedAt'] as string | undefined;
+        if (startedAt && completedAt) {
           metrics.duration =
-            thread.execution.completedAt.getMilliseconds() -
-            thread.execution.startedAt.getMilliseconds();
-        } else if (thread.execution.startedAt) {
+            new Date(completedAt).getTime() -
+            new Date(startedAt).getTime();
+        } else if (startedAt) {
           metrics.duration =
-            Timestamp.now().getMilliseconds() - thread.execution.startedAt.getMilliseconds();
+            Timestamp.now().getMilliseconds() - new Date(startedAt).getTime();
         }
 
         // 获取函数执行指标（从监控服务）
@@ -232,21 +234,22 @@ export class ThreadMonitoring extends BaseService {
 
         // 如果无法从监控服务获取，返回基于线程状态的健康状态
         let status: ThreadHealthStatus['status'] = 'healthy';
-        if (thread.status.isFailed()) {
+        if (thread.isFailed()) {
           status = 'critical';
-        } else if (thread.status.isRunning() && thread.execution.errorMessage) {
+        } else if (thread.isRunning() && thread.execution['errorMessage']) {
           status = 'warning';
         }
 
+        const startedAt = thread.execution['startedAt'] as string | undefined;
         return {
           threadId: thread.id.toString(),
           status,
           lastCheck: Timestamp.now().toISOString(),
-          uptime: thread.execution.startedAt
-            ? Timestamp.now().getMilliseconds() - thread.execution.startedAt.getMilliseconds()
+          uptime: startedAt
+            ? Timestamp.now().getMilliseconds() - new Date(startedAt).getTime()
             : 0,
           responseTime: 0,
-          errorRate: thread.status.isFailed() ? 1 : 0,
+          errorRate: thread.isFailed() ? 1 : 0,
           activeAlerts: 0,
         };
       },

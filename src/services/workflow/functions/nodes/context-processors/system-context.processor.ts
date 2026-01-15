@@ -12,10 +12,14 @@ export class SystemContextProcessor extends SingletonContextProcessor {
   readonly description = '保留系统级变量和元数据';
   override readonly version = '1.0.0';
 
-  process(context: PromptContext, config?: Record<string, unknown>): PromptContext {
+  process(
+    context: PromptContext,
+    variables: Map<string, unknown>,
+    config?: Record<string, unknown>
+  ): { context: PromptContext; variables: Map<string, unknown> } {
     // 保留系统级变量
     const systemVariables = new Map<string, unknown>();
-    for (const [key, value] of context.variables.entries()) {
+    for (const [key, value] of variables.entries()) {
       if (key.startsWith('system.') || key.startsWith('config.') || key.startsWith('env.')) {
         systemVariables.set(key, value);
       }
@@ -29,7 +33,10 @@ export class SystemContextProcessor extends SingletonContextProcessor {
       }
     }
 
-    return PromptContext.create(context.template, systemVariables, [], systemMetadata);
+    return {
+      context: PromptContext.create(context.template, [], systemMetadata),
+      variables: systemVariables
+    };
   }
 }
 

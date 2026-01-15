@@ -1,13 +1,12 @@
 import { ValueObject, ID, Timestamp } from '../../common/value-objects';
 import { NodeId } from '../../workflow/value-objects';
-import { PromptContext } from '../../workflow/value-objects/context';
 
 /**
  * 节点上下文接口
  */
 export interface NodeContext {
   readonly nodeId: NodeId;
-  readonly variables: Map<string, unknown>;
+  readonly localVariables: Map<string, unknown>;
   readonly metadata: Record<string, unknown>;
   readonly lastAccessedAt: Timestamp;
 }
@@ -29,9 +28,9 @@ export interface ExecutionConfig {
  */
 export interface ContextSnapshot {
   readonly variables: Map<string, unknown>;
+  readonly nodeResults: Map<string, unknown>;
   readonly nodeContexts: Map<string, NodeContext>;
-  readonly promptContext: PromptContext;
-  readonly config: ExecutionConfig;
+  readonly metadata: Record<string, unknown>;
   readonly snapshotAt: Timestamp;
 }
 
@@ -40,29 +39,27 @@ export interface ContextSnapshot {
  */
 export interface ExecutionContextProps {
   readonly variables: Map<string, unknown>;
-  readonly promptContext: PromptContext;
+  readonly nodeResults: Map<string, unknown>;
   readonly nodeContexts: Map<string, NodeContext>;
-  readonly config: ExecutionConfig;
+  readonly metadata: Record<string, unknown>;
 }
 
 /**
  * ExecutionContext值对象
  *
- * 表示线程执行的上下文，包含变量、节点上下文和配置信息
+ * 表示线程执行的上下文，包含全局变量、节点执行结果和节点上下文
  */
 export class ExecutionContext extends ValueObject<ExecutionContextProps> {
   /**
    * 创建执行上下文
-   * @param promptContext 提示词上下文
-   * @param config 执行配置
    * @returns 执行上下文实例
    */
-  public static create(promptContext: PromptContext, config?: ExecutionConfig): ExecutionContext {
+  public static create(): ExecutionContext {
     return new ExecutionContext({
       variables: new Map(),
-      promptContext,
+      nodeResults: new Map(),
       nodeContexts: new Map(),
-      config: config || {},
+      metadata: {},
     });
   }
 
@@ -84,11 +81,11 @@ export class ExecutionContext extends ValueObject<ExecutionContextProps> {
   }
 
   /**
-   * 获取提示词上下文
-   * @returns 提示词上下文
+   * 获取节点执行结果
+   * @returns 节点执行结果映射
    */
-  public get promptContext(): PromptContext {
-    return this.props.promptContext;
+  public get nodeResults(): Map<string, unknown> {
+    return new Map(this.props.nodeResults);
   }
 
   /**
@@ -100,11 +97,11 @@ export class ExecutionContext extends ValueObject<ExecutionContextProps> {
   }
 
   /**
-   * 获取执行配置
-   * @returns 执行配置
+   * 获取元数据
+   * @returns 元数据
    */
-  public get config(): ExecutionConfig {
-    return { ...this.props.config };
+  public get metadata(): Record<string, unknown> {
+    return { ...this.props.metadata };
   }
 
   /**
@@ -214,14 +211,14 @@ export class ExecutionContext extends ValueObject<ExecutionContextProps> {
       throw new Error(`节点上下文不存在: ${nodeId.toString()}`);
     }
 
-    const newVariables = new Map(existingContext.variables);
+    const newVariables = new Map(existingContext.localVariables);
     for (const [key, value] of variables.entries()) {
       newVariables.set(key, value);
     }
 
     const newContext: NodeContext = {
       ...existingContext,
-      variables: newVariables,
+      localVariables: newVariables,
       lastAccessedAt: Timestamp.now(),
     };
 
@@ -235,26 +232,39 @@ export class ExecutionContext extends ValueObject<ExecutionContextProps> {
   }
 
   /**
-   * 更新提示词上下文
-   * @param promptContext 新的提示词上下文
+   * 设置节点执行结果
+   * @param nodeId 节点ID
+   * @param result 执行结果
    * @returns 新的执行上下文实例
    */
-  public updatePromptContext(promptContext: PromptContext): ExecutionContext {
+  public setNodeResult(nodeId: NodeId, result: unknown): ExecutionContext {
+    const newNodeResults = new Map(this.props.nodeResults);
+    newNodeResults.set(nodeId.toString(), result);
+
     return new ExecutionContext({
       ...this.props,
-      promptContext,
+      nodeResults: newNodeResults,
     });
   }
 
   /**
-   * 更新执行配置
-   * @param config 新的执行配置
+   * 获取节点执行结果
+   * @param nodeId 节点ID
+   * @returns 节点执行结果
+   */
+  public getNodeResult(nodeId: NodeId): unknown | undefined {
+    return this.props.nodeResults.get(nodeId.toString());
+  }
+
+  /**
+   * 更新元数据
+   * @param metadata 新的元数据
    * @returns 新的执行上下文实例
    */
-  public updateConfig(config: ExecutionConfig): ExecutionContext {
+  public updateMetadata(metadata: Record<string, unknown>): ExecutionContext {
     return new ExecutionContext({
       ...this.props,
-      config: { ...this.props.config, ...config },
+      metadata: { ...this.props.metadata, ...metadata },
     });
   }
 
@@ -288,10 +298,16 @@ export class ExecutionContext extends ValueObject<ExecutionContextProps> {
       totalSize += this.calculateValueSize(value);
     }
 
+    // 计算节点执行结果大小
+    for (const [nodeId, result] of this.props.nodeResults.entries()) {
+      totalSize += nodeId.length * 2;
+      totalSize += this.calculateValueSize(result);
+    }
+
     // 计算节点上下文大小
     for (const [nodeId, context] of this.props.nodeContexts.entries()) {
       totalSize += nodeId.length * 2;
-      for (const [key, value] of context.variables.entries()) {
+      for (const [key, value] of context.localVariables.entries()) {
         totalSize += key.length * 2;
         totalSize += this.calculateValueSize(value);
       }
@@ -307,9 +323,9 @@ export class ExecutionContext extends ValueObject<ExecutionContextProps> {
   public createSnapshot(): ContextSnapshot {
     return {
       variables: new Map(this.props.variables),
+      nodeResults: new Map(this.props.nodeResults),
       nodeContexts: new Map(this.props.nodeContexts),
-      promptContext: this.props.promptContext,
-      config: { ...this.props.config },
+      metadata: { ...this.props.metadata },
       snapshotAt: Timestamp.now(),
     };
   }
@@ -322,9 +338,9 @@ export class ExecutionContext extends ValueObject<ExecutionContextProps> {
   public static restoreFromSnapshot(snapshot: ContextSnapshot): ExecutionContext {
     return new ExecutionContext({
       variables: new Map(snapshot.variables),
+      nodeResults: new Map(snapshot.nodeResults),
       nodeContexts: new Map(snapshot.nodeContexts),
-      promptContext: snapshot.promptContext,
-      config: { ...snapshot.config },
+      metadata: { ...snapshot.metadata },
     });
   }
 
@@ -374,8 +390,6 @@ export class ExecutionContext extends ValueObject<ExecutionContextProps> {
    * 验证执行上下文的有效性
    */
   public validate(): void {
-    if (!this.props.promptContext) {
-      throw new Error('提示词上下文不能为空');
-    }
+    // ExecutionContext现在不包含promptContext，无需验证
   }
 }

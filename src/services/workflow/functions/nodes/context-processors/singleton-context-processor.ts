@@ -35,10 +35,15 @@ export abstract class SingletonContextProcessor {
    * 执行上下文处理
    *
    * @param context 提示词上下文
+   * @param variables 变量映射
    * @param config 处理器配置（静态处理器通常忽略此参数）
-   * @returns 处理后的提示词上下文
+   * @returns 处理后的上下文（包含context和variables）
    */
-  abstract process(context: PromptContext, config?: Record<string, unknown>): PromptContext;
+  abstract process(
+    context: PromptContext,
+    variables: Map<string, unknown>,
+    config?: Record<string, unknown>
+  ): { context: PromptContext; variables: Map<string, unknown> };
 
   /**
    * 验证配置参数
@@ -53,9 +58,13 @@ export abstract class SingletonContextProcessor {
    *
    * @returns ContextProcessor 函数
    */
-  toProcessor(): (context: PromptContext, config?: Record<string, unknown>) => PromptContext {
-    return (context: PromptContext, config?: Record<string, unknown>) => {
-      return this.process(context, config);
+  toProcessor(): (
+    context: PromptContext,
+    variables: Map<string, unknown>,
+    config?: Record<string, unknown>
+  ) => { context: PromptContext; variables: Map<string, unknown> } {
+    return (context: PromptContext, variables: Map<string, unknown>, config?: Record<string, unknown>) => {
+      return this.process(context, variables, config);
     };
   }
 

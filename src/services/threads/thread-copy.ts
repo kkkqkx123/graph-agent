@@ -174,13 +174,8 @@ export class ThreadCopy {
     }
 
     // 验证选中的节点是否存在
-    if (input.selectedNodeIds) {
-      for (const nodeId of input.selectedNodeIds) {
-        if (!input.sourceThread.execution.hasNodeExecution(nodeId)) {
-          return { valid: false, error: `选中的节点不存在: ${nodeId.toString()}` };
-        }
-      }
-    }
+    // 注意：节点执行状态现在由其他服务管理，这里暂时跳过验证
+    // TODO: 从节点执行服务获取节点执行状态进行验证
 
     return { valid: true };
   }
@@ -198,7 +193,7 @@ export class ThreadCopy {
     // 这里假设验证通过，如果有异常会在上层捕获
 
     // 验证源线程状态
-    if (input.sourceThread.status.isRunning()) {
+    if (input.sourceThread.isActive()) {
       warnings.push('正在运行的线程可能无法完整复制');
     }
 

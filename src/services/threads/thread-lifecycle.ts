@@ -59,7 +59,7 @@ export class ThreadLifecycle extends BaseService {
   private async validateThreadStart(threadId: ID): Promise<void> {
     const thread = await this.threadRepository.findByIdOrFail(threadId);
 
-    if (!thread.status.isPending()) {
+    if (!thread.isPending()) {
       throw new Error('只能启动待执行状态的线程');
     }
 
@@ -76,7 +76,7 @@ export class ThreadLifecycle extends BaseService {
   private async validateThreadPause(threadId: ID): Promise<void> {
     const thread = await this.threadRepository.findByIdOrFail(threadId);
 
-    if (!thread.status.isRunning()) {
+    if (!thread.isRunning()) {
       throw new Error('只能暂停运行中的线程');
     }
   }
@@ -87,7 +87,7 @@ export class ThreadLifecycle extends BaseService {
   private async validateThreadResume(threadId: ID): Promise<void> {
     const thread = await this.threadRepository.findByIdOrFail(threadId);
 
-    if (!thread.status.isPaused()) {
+    if (!thread.isPaused()) {
       throw new Error('只能恢复暂停状态的线程');
     }
 
@@ -104,7 +104,7 @@ export class ThreadLifecycle extends BaseService {
   private async validateThreadCompletion(threadId: ID): Promise<void> {
     const thread = await this.threadRepository.findByIdOrFail(threadId);
 
-    if (!thread.status.isActive()) {
+    if (!thread.isActive()) {
       throw new Error('只能完成活跃状态的线程');
     }
   }
@@ -115,7 +115,7 @@ export class ThreadLifecycle extends BaseService {
   private async validateThreadFailure(threadId: ID): Promise<void> {
     const thread = await this.threadRepository.findByIdOrFail(threadId);
 
-    if (!thread.status.isActive()) {
+    if (!thread.isActive()) {
       throw new Error('只能设置活跃状态的线程为失败状态');
     }
   }
@@ -126,7 +126,7 @@ export class ThreadLifecycle extends BaseService {
   private async validateThreadCancellation(threadId: ID): Promise<void> {
     const thread = await this.threadRepository.findByIdOrFail(threadId);
 
-    if (thread.status.isTerminal()) {
+    if (thread.isTerminal()) {
       throw new Error('无法取消已终止状态的线程');
     }
   }
@@ -206,9 +206,9 @@ export class ThreadLifecycle extends BaseService {
         await this.validateThreadStart(id);
 
         const thread = await this.threadRepository.findByIdOrFail(id);
-        thread.start(user);
+        const startedThread = thread.start();
 
-        return await this.threadRepository.save(thread);
+        return await this.threadRepository.save(startedThread);
       },
       { threadId, userId }
     );
@@ -232,9 +232,9 @@ export class ThreadLifecycle extends BaseService {
         await this.validateThreadPause(id);
 
         const thread = await this.threadRepository.findByIdOrFail(id);
-        thread.pause(user, reason);
+        const pausedThread = thread.pause();
 
-        return await this.threadRepository.save(thread);
+        return await this.threadRepository.save(pausedThread);
       },
       { threadId, userId, reason }
     );
@@ -258,9 +258,9 @@ export class ThreadLifecycle extends BaseService {
         await this.validateThreadResume(id);
 
         const thread = await this.threadRepository.findByIdOrFail(id);
-        thread.resume(user, reason);
+        const resumedThread = thread.resume();
 
-        return await this.threadRepository.save(thread);
+        return await this.threadRepository.save(resumedThread);
       },
       { threadId, userId, reason }
     );
@@ -284,9 +284,9 @@ export class ThreadLifecycle extends BaseService {
         await this.validateThreadCompletion(id);
 
         const thread = await this.threadRepository.findByIdOrFail(id);
-        thread.complete(user, reason);
+        const completedThread = thread.complete();
 
-        return await this.threadRepository.save(thread);
+        return await this.threadRepository.save(completedThread);
       },
       { threadId, userId, reason }
     );
@@ -316,9 +316,9 @@ export class ThreadLifecycle extends BaseService {
         await this.validateThreadFailure(id);
 
         const thread = await this.threadRepository.findByIdOrFail(id);
-        thread.fail(errorMessage, user, reason);
+        const failedThread = thread.fail(errorMessage);
 
-        return await this.threadRepository.save(thread);
+        return await this.threadRepository.save(failedThread);
       },
       { threadId, errorMessage, userId, reason }
     );
@@ -342,9 +342,9 @@ export class ThreadLifecycle extends BaseService {
         await this.validateThreadCancellation(id);
 
         const thread = await this.threadRepository.findByIdOrFail(id);
-        thread.cancel(user, reason);
+        const cancelledThread = thread.cancel(user, reason);
 
-        return await this.threadRepository.save(thread);
+        return await this.threadRepository.save(cancelledThread);
       },
       { threadId, userId, reason }
     );

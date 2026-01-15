@@ -12,24 +12,26 @@ export class LlmContextProcessor extends SingletonContextProcessor {
   readonly description = '过滤掉工具调用历史，只保留LLM相关变量';
   override readonly version = '1.0.0';
 
-  process(context: PromptContext, config?: Record<string, unknown>): PromptContext {
+  process(
+    context: PromptContext,
+    variables: Map<string, unknown>,
+    config?: Record<string, unknown>
+  ): { context: PromptContext; variables: Map<string, unknown> } {
     // 过滤掉工具调用历史
     const filteredHistory = context.history.filter((entry: any) => !entry.metadata?.['toolCall']);
 
     // 只保留LLM相关变量
     const filteredVariables = new Map<string, unknown>();
-    for (const [key, value] of context.variables.entries()) {
+    for (const [key, value] of variables.entries()) {
       if (key.startsWith('llm.') || key.startsWith('prompt.') || key.startsWith('model.')) {
         filteredVariables.set(key, value);
       }
     }
 
-    return PromptContext.create(
-      context.template,
-      filteredVariables,
-      filteredHistory,
-      context.metadata
-    );
+    return {
+      context: PromptContext.create(context.template, filteredHistory, context.metadata),
+      variables: filteredVariables
+    };
   }
 }
 
