@@ -152,11 +152,11 @@ export class PromptContext extends ValueObject<PromptContextProps> {
   }
 
   /**
-   * 渲染提示词
+   * 填充变量
    * @param variables 变量映射（从ExecutionContext传入）
-   * @returns 渲染后的提示词
+   * @returns 填充变量后的提示词
    */
-  public render(variables?: Map<string, unknown>): string {
+  public fillVariables(variables?: Map<string, unknown>): string {
     let rendered = this.props.template;
 
     if (variables) {

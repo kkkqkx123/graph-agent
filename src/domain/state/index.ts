@@ -14,7 +14,7 @@ export * from './entities/state';
 // 导出值对象
 export * from './value-objects/state-id';
 export * from './value-objects/state-entity-type';
-export * from './value-objects/state-data';
+// StateData 已迁移到 checkpoint 模块，从那里导入
 
 // 导出仓库接口
 export * from './repositories/state-repository';

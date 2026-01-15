@@ -101,10 +101,20 @@ export const servicesBindings = new ContainerModule((bind: any) => {
   bind(TYPES.SessionResource).to(SessionResource).inSingletonScope();
 
   // 状态服务
-  bind(TYPES.StateHistory).to(StateHistory).inSingletonScope();
+  bind(TYPES.StateHistory).toDynamicValue((context: any) => {
+    return new StateHistory(context.container.get(TYPES.Logger));
+  }).inSingletonScope();
   bind(TYPES.StateManagement).to(StateManagement).inSingletonScope();
-  bind(TYPES.StateRecovery).to(StateRecovery).inSingletonScope();
-  bind(TYPES.StateSnapshot).to(StateSnapshot).inSingletonScope();
+  bind(TYPES.StateRecovery).toDynamicValue((context: any) => {
+    return new StateRecovery(
+      context.container.get(TYPES.ThreadCheckpointRepository),
+      context.container.get('SnapshotRepository'),
+      context.container.get(TYPES.Logger)
+    );
+  }).inSingletonScope();
+  bind(TYPES.StateSnapshot).toDynamicValue((context: any) => {
+    return new StateSnapshot(context.container.get('SnapshotRepository'));
+  }).inSingletonScope();
 
   // 工作流服务
   bind(TYPES.FunctionManagement).to(FunctionManagement).inSingletonScope();

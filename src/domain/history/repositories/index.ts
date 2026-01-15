@@ -1,1 +1,0 @@
-export { IHistoryRepository } from './history-repository';

@@ -14,7 +14,7 @@ import { Session } from '../../domain/sessions/entities/session';
 @injectable()
 export class StateSnapshot {
   constructor(
-    @inject('SnapshotRepository') private readonly snapshotRepository: ISnapshotRepository
+    @inject('ISnapshotRepository') private readonly snapshotRepository: ISnapshotRepository
   ) { }
 
   /**

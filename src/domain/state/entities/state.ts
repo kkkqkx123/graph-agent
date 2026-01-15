@@ -1,11 +1,8 @@
 import { Entity } from '../../common/base/entity';
-import { ID, Timestamp, Version } from '../../common/value-objects';
+import { ID, Timestamp, Version, Metadata } from '../../common/value-objects';
 import { StateId } from '../value-objects/state-id';
 import { StateEntityType } from '../value-objects/state-entity-type';
-import { StateData } from '../value-objects/state-data';
-import { Metadata } from '../../checkpoint/value-objects/metadata';
-import { Checkpoint } from '../../checkpoint/entities/checkpoint';
-import { CheckpointType } from '../../checkpoint/value-objects/checkpoint-type';
+import { StateData } from '../../checkpoint/value-objects/state-data';
 
 /**
  * 状态实体属性接口
@@ -27,9 +24,12 @@ export interface StateProps {
  * 表示Workflow、Thread或Session的运行时状态
  * 职责：
  * - 状态数据管理
- * - Checkpoint创建
  * - 状态验证
- * - 快照支持
+ * - 状态更新
+ *
+ * 不负责：
+ * - Checkpoint创建（由Services层处理）
+ * - 持久化（由Infrastructure层处理）
  */
 export class State extends Entity {
   private readonly props: StateProps;
@@ -144,46 +144,6 @@ export class State extends Entity {
     return new State({
       ...this.props,
       data: this.props.data.setValue(key, value),
-      updatedAt: Timestamp.now(),
-      version: this.props.version.nextPatch(),
-    });
-  }
-
-  /**
-   * 创建Checkpoint
-   * @param type Checkpoint类型
-   * @param title 标题
-   * @param description 描述
-   * @returns Checkpoint实例
-   */
-  public createCheckpoint(
-    type: CheckpointType,
-    title?: string,
-    description?: string
-  ): Checkpoint {
-    return Checkpoint.create(
-      this.props.entityId,
-      type,
-      this.props.data.toRecord(),
-      title,
-      description,
-      ['state-checkpoint'],
-      {
-        stateId: this.props.id.value,
-        entityType: this.props.entityType.getDescription(),
-      }
-    );
-  }
-
-  /**
-   * 从Checkpoint恢复状态
-   * @param checkpoint Checkpoint实例
-   * @returns 新状态实例
-   */
-  public restoreFromCheckpoint(checkpoint: Checkpoint): State {
-    return new State({
-      ...this.props,
-      data: checkpoint.stateData,
       updatedAt: Timestamp.now(),
       version: this.props.version.nextPatch(),
     });

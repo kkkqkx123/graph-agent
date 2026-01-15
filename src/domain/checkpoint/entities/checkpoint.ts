@@ -2,12 +2,11 @@ import { Entity } from '../../common/base/entity';
 import { ID } from '../../common/value-objects/id';
 import { Timestamp } from '../../common/value-objects/timestamp';
 import { Version } from '../../common/value-objects/version';
+import { Metadata, DeletionStatus } from '../../common/value-objects';
 import { CheckpointType } from '../value-objects/checkpoint-type';
 import { CheckpointId } from '../value-objects/checkpoint-id';
 import { StateData } from '../value-objects/state-data';
-import { Metadata } from '../value-objects/metadata';
 import { Tags } from '../value-objects/tags';
-import { DeletionStatus } from '../value-objects/deletion-status';
 
 /**
  * 检查点实体接口

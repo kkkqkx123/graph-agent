@@ -1,4 +1,4 @@
-import { ValueObject } from '../../common/value-objects';
+import { ValueObject } from '../value-objects';
 
 /**
  * 删除状态值对象接口
@@ -10,7 +10,7 @@ export interface DeletionStatusProps {
 /**
  * 删除状态值对象
  *
- * 用于封装检查点的删除状态
+ * 用于封装实体的删除状态
  * 职责：
  * - 删除状态的封装和访问
  * - 删除状态的验证
@@ -94,7 +94,7 @@ export class DeletionStatus extends ValueObject<DeletionStatusProps> {
    */
   public ensureActive(): void {
     if (this.props.isDeleted) {
-      throw new Error('无法操作已删除的检查点');
+      throw new Error('无法操作已删除的实体');
     }
   }
 
@@ -104,7 +104,7 @@ export class DeletionStatus extends ValueObject<DeletionStatusProps> {
    */
   public ensureDeleted(): void {
     if (!this.props.isDeleted) {
-      throw new Error('操作需要检查点已删除');
+      throw new Error('操作需要实体已删除');
     }
   }
 

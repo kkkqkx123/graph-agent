@@ -10,6 +10,8 @@ export { UserId } from './value-objects/user-id';
 export { Timestamp } from './value-objects/timestamp';
 export { Version } from './value-objects/version';
 export { ValueObject } from './value-objects/value-object';
+export { Metadata } from './value-objects/metadata';
+export { DeletionStatus } from './value-objects/deletion-status';
 
 // 基础类
 export { Entity } from './base/entity';

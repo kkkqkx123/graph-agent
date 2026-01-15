@@ -9,3 +9,5 @@ export { ID } from './id';
 export { Timestamp } from './timestamp';
 export { Version } from './version';
 export { UserId } from './user-id';
+export { Metadata } from './metadata';
+export { DeletionStatus } from './deletion-status';

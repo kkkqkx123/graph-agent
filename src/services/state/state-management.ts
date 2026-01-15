@@ -30,8 +30,8 @@ export class StateManagement {
     changeType: string,
     details?: Record<string, unknown>
   ): Promise<void> {
-    // 1. 记录状态变更History（使用操作History）
-    await this.historyService.createOperationHistory(thread, changeType, details || {});
+    // 1. 记录状态变更日志
+    await this.historyService.recordOperation(thread, changeType, details || {});
 
     // 2. 根据变更类型决定是否创建Checkpoint
     if (this.shouldCreateCheckpoint(changeType)) {
@@ -143,8 +143,8 @@ export class StateManagement {
     error: Error,
     context?: Record<string, unknown>
   ): Promise<void> {
-    // 1. 记录错误History
-    await this.historyService.createErrorHistory(thread, error);
+    // 1. 记录错误日志
+    await this.historyService.recordError(thread, error);
 
     // 2. 创建错误Checkpoint
     await this.checkpointService.createErrorCheckpoint({
@@ -224,7 +224,7 @@ export class StateManagement {
     }
 
     // 3. 记录恢复后的状态变更
-    await this.historyService.createOperationHistory(restoredThread, 'state_restored', {
+    await this.historyService.recordOperation(restoredThread, 'state_restored', {
       restoreType,
       restorePointId: restorePointId?.value,
       restoredAt: new Date().toISOString(),
@@ -237,18 +237,15 @@ export class StateManagement {
    * 获取Thread状态历史
    */
   public async getThreadStateHistory(threadId: ID): Promise<{
-    history: any[];
     checkpoints: any[];
     snapshots: any[];
   }> {
-    const [history, checkpoints, snapshots] = await Promise.all([
-      this.historyService.getThreadHistory(threadId),
+    const [checkpoints, snapshots] = await Promise.all([
       this.checkpointService.getThreadCheckpointHistory(threadId.toString()),
       this.snapshotService.getThreadSnapshots(threadId),
     ]);
 
     return {
-      history,
       checkpoints,
       snapshots,
     };
@@ -258,16 +255,11 @@ export class StateManagement {
    * 获取Session状态历史
    */
   public async getSessionStateHistory(sessionId: ID): Promise<{
-    history: any[];
     snapshots: any[];
   }> {
-    const [history, snapshots] = await Promise.all([
-      this.historyService.getSessionHistory(sessionId),
-      this.snapshotService.getSessionSnapshots(sessionId),
-    ]);
+    const snapshots = await this.snapshotService.getSessionSnapshots(sessionId);
 
     return {
-      history,
       snapshots,
     };
   }
@@ -276,18 +268,15 @@ export class StateManagement {
    * 清理过期状态数据
    */
   public async cleanupExpiredStateData(retentionDays: number = 30): Promise<{
-    expiredHistory: number;
     expiredCheckpoints: number;
     expiredSnapshots: number;
   }> {
-    const [expiredHistory, expiredCheckpoints, expiredSnapshots] = await Promise.all([
-      this.historyService.cleanupExpiredHistory(retentionDays),
+    const [expiredCheckpoints, expiredSnapshots] = await Promise.all([
       this.checkpointService.cleanupExpiredCheckpoints(),
       this.snapshotService.cleanupExpiredSnapshots(),
     ]);
 
     return {
-      expiredHistory,
       expiredCheckpoints,
       expiredSnapshots,
     };

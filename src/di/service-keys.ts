@@ -32,7 +32,6 @@ import { IThreadRepository } from '../domain/threads/repositories/thread-reposit
 import { IWorkflowRepository } from '../domain/workflow/repositories/workflow-repository';
 import { IPromptRepository as PromptDomainRepository } from '../domain/prompts/repositories/prompt-repository';
 import { IThreadCheckpointRepository } from '../domain/threads/checkpoints/repositories/thread-checkpoint-repository';
-import { IHistoryRepository } from '../domain/history/repositories/history-repository';
 import { IHumanRelayService } from '../services/llm/human-relay';
 
 // Services层实现
@@ -94,7 +93,6 @@ import { ThreadRepository as ThreadInfrastructureRepository } from '../infrastru
 import { WorkflowRepository as WorkflowInfrastructureRepository } from '../infrastructure/persistence/repositories/workflow-repository';
 import { PromptRepository as PromptInfrastructureRepository } from '../infrastructure/persistence/repositories/prompt-repository';
 import { ThreadCheckpointRepository as ThreadCheckpointInfrastructureRepository } from '../infrastructure/persistence/repositories/thread-checkpoint-repository';
-import { HistoryRepository as HistoryInfrastructureRepository } from '../infrastructure/persistence/repositories/history-repository';
 import { ConnectionManager } from '../infrastructure/persistence/connection-manager';
 import { Logger } from '../infrastructure/logging/logger';
 
@@ -138,7 +136,6 @@ export interface ServiceTypes {
   WorkflowRepository: IWorkflowRepository;
   PromptRepository: PromptDomainRepository;
   ThreadCheckpointRepository: IThreadCheckpointRepository;
-  HistoryRepository: IHistoryRepository;
 
   // 业务服务接口
   HumanRelayService: IHumanRelayService;
@@ -221,7 +218,6 @@ export interface ServiceTypes {
   WorkflowRepositoryImpl: WorkflowInfrastructureRepository;
   PromptRepositoryImpl: PromptInfrastructureRepository;
   ThreadCheckpointRepositoryImpl: ThreadCheckpointInfrastructureRepository;
-  HistoryRepositoryImpl: HistoryInfrastructureRepository;
 
   // 基础设施服务
   ConnectionManager: ConnectionManager;
@@ -299,7 +295,6 @@ export const TYPES: {
   ThreadCheckpointRepository: Symbol.for(
     'ThreadCheckpointRepository'
   ) as TypedServiceIdentifier<'ThreadCheckpointRepository'>,
-  HistoryRepository: Symbol.for('HistoryRepository') as TypedServiceIdentifier<'HistoryRepository'>,
 
   // 业务服务接口
   HumanRelayService: Symbol.for('HumanRelayService') as TypedServiceIdentifier<'HumanRelayService'>,
@@ -414,9 +409,6 @@ export const TYPES: {
   ThreadCheckpointRepositoryImpl: Symbol.for(
     'ThreadCheckpointRepositoryImpl'
   ) as TypedServiceIdentifier<'ThreadCheckpointRepositoryImpl'>,
-  HistoryRepositoryImpl: Symbol.for(
-    'HistoryRepositoryImpl'
-  ) as TypedServiceIdentifier<'HistoryRepositoryImpl'>,
 
   // 基础设施服务
   ConnectionManager: Symbol.for('ConnectionManager') as TypedServiceIdentifier<'ConnectionManager'>,

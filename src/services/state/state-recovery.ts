@@ -5,12 +5,7 @@ import { Snapshot } from '../../domain/snapshot/entities/snapshot';
 import { IThreadCheckpointRepository } from '../../domain/threads/checkpoints/repositories/thread-checkpoint-repository';
 import { ISnapshotRepository } from '../../domain/snapshot/repositories/snapshot-repository';
 import { Thread } from '../../domain/threads/entities/thread';
-import { History } from '../../domain/history/entities/history';
-import { HistoryType } from '../../domain/history/value-objects/history-type';
-import { IHistoryRepository } from '../../domain/history/repositories/history-repository';
-import { SnapshotScopeValue } from '../../domain/snapshot/value-objects/snapshot-scope';
-import { CheckpointTypeValue } from '../../domain/checkpoint/value-objects/checkpoint-type';
-import { HistoryTypeValue } from '../../domain/history/value-objects/history-type';
+import { ILogger } from '../../domain/common/types/logger-types';
 
 /**
  * 状态恢复服务
@@ -29,7 +24,7 @@ export class StateRecovery {
     @inject('ThreadCheckpointRepository')
     private readonly checkpointRepository: IThreadCheckpointRepository,
     @inject('SnapshotRepository') private readonly snapshotRepository: ISnapshotRepository,
-    @inject('HistoryRepository') private readonly historyRepository: IHistoryRepository
+    @inject('Logger') private readonly logger: ILogger
   ) { }
 
   /**
@@ -57,27 +52,14 @@ export class StateRecovery {
       throw new Error(`Checkpoint ${checkpointId.value} is deleted`);
     }
 
-    // 4. 记录恢复History
-    const history = History.create(
-      HistoryType.checkpointCreated(),
-      {
-        entityType: 'thread',
-        entityId: thread.threadId.value,
-        checkpointId: checkpointId.value,
-        checkpointType: checkpoint.type.getValue(),
-        restoredAt: new Date().toISOString(),
-      },
-      thread.sessionId,
-      thread.threadId,
-      undefined,
-      `Thread从Checkpoint恢复`,
-      `从检查点 ${checkpointId.toString()} 恢复`,
-      {
-        timestamp: new Date().toISOString(),
-      }
-    );
-
-    await this.historyRepository.save(history);
+    // 4. 记录恢复日志
+    this.logger.info('Thread从Checkpoint恢复', {
+      threadId: thread.threadId.value,
+      sessionId: thread.sessionId?.value,
+      checkpointId: checkpointId.value,
+      checkpointType: checkpoint.type.getValue(),
+      restoredAt: new Date().toISOString(),
+    });
 
     // 注意：实际的恢复操作应该通过 WorkflowEngine.resumeFromCheckpoint() 执行
     // 这里只返回原始的 thread 对象
@@ -116,27 +98,14 @@ export class StateRecovery {
     snapshot.markRestored();
     await this.snapshotRepository.save(snapshot);
 
-    // 6. 记录恢复History
-    const history = History.create(
-      HistoryType.checkpointCreated(),
-      {
-        entityType: 'thread',
-        entityId: thread.threadId.value,
-        snapshotId: snapshotId.value,
-        snapshotType: snapshot.type.value,
-        restoredAt: new Date().toISOString(),
-      },
-      thread.sessionId,
-      thread.threadId,
-      undefined,
-      `Thread从Snapshot恢复`,
-      `从快照 ${snapshotId.toString()} 恢复`,
-      {
-        timestamp: new Date().toISOString(),
-      }
-    );
-
-    await this.historyRepository.save(history);
+    // 6. 记录恢复日志
+    this.logger.info('Thread从Snapshot恢复', {
+      threadId: thread.threadId.value,
+      sessionId: thread.sessionId?.value,
+      snapshotId: snapshotId.value,
+      snapshotType: snapshot.type.value,
+      restoredAt: new Date().toISOString(),
+    });
 
     // 注意：实际的恢复操作应该通过 WorkflowEngine.resumeFromCheckpoint() 执行
     // 这里只返回原始的 thread 对象
@@ -175,28 +144,14 @@ export class StateRecovery {
     snapshot.markRestored();
     await this.snapshotRepository.save(snapshot);
 
-    // 7. 记录恢复History
-    const history = History.create(
-      HistoryType.checkpointCreated(),
-      {
-        entityType: 'session',
-        entityId: sessionId.value,
-        snapshotId: snapshotId.value,
-        snapshotType: snapshot.type.value,
-        restoredAt: new Date().toISOString(),
-        threadCount: sessionState['threadCount'] as number,
-      },
-      sessionId,
-      undefined,
-      undefined,
-      `Session从Snapshot恢复`,
-      `从快照 ${snapshotId.toString()} 恢复`,
-      {
-        timestamp: new Date().toISOString(),
-      }
-    );
-
-    await this.historyRepository.save(history);
+    // 7. 记录恢复日志
+    this.logger.info('Session从Snapshot恢复', {
+      sessionId: sessionId.value,
+      snapshotId: snapshotId.value,
+      snapshotType: snapshot.type.value,
+      restoredAt: new Date().toISOString(),
+      threadCount: sessionState['threadCount'] as number,
+    });
 
     // 注意：Session的实际恢复逻辑由SessionService处理
     // 这里只负责验证和记录
@@ -290,7 +245,6 @@ export class StateRecovery {
   public async getThreadRecoveryHistory(threadId: ID): Promise<{
     checkpointRestores: ThreadCheckpoint[];
     snapshotRestores: Snapshot[];
-    historyRecords: History[];
   }> {
     // 获取所有Checkpoint
     const checkpoints = await this.checkpointRepository.findByThreadId(threadId);
@@ -303,16 +257,9 @@ export class StateRecovery {
     );
     const snapshotRestores = snapshots.filter(sn => sn.restoreCount > 0);
 
-    // 获取History记录
-    const allHistory = await this.historyRepository.findByThreadId(threadId);
-    const historyRecords = allHistory.filter(
-      h => h.type.getValue() === HistoryTypeValue.CHECKPOINT_CREATED
-    );
-
     return {
       checkpointRestores,
       snapshotRestores,
-      historyRecords,
     };
   }
 
@@ -321,7 +268,6 @@ export class StateRecovery {
    */
   public async getSessionRecoveryHistory(sessionId: ID): Promise<{
     snapshotRestores: Snapshot[];
-    historyRecords: History[];
   }> {
     // 获取所有Snapshot
     const snapshots = await this.snapshotRepository.findByScopeAndTarget(
@@ -330,15 +276,8 @@ export class StateRecovery {
     );
     const snapshotRestores = snapshots.filter(sn => sn.restoreCount > 0);
 
-    // 获取History记录
-    const allHistory = await this.historyRepository.findBySessionId(sessionId);
-    const historyRecords = allHistory.filter(
-      h => h.type.getValue() === HistoryTypeValue.CHECKPOINT_CREATED
-    );
-
     return {
       snapshotRestores,
-      historyRecords,
     };
   }
 
