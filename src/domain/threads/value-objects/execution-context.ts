@@ -1,5 +1,7 @@
 import { ValueObject, ID, Timestamp } from '../../common/value-objects';
 import { NodeId } from '../../workflow/value-objects';
+import { VariableManager } from './variable-manager';
+import { VariableScope } from './variable-scope';
 
 /**
  * 节点上下文接口
@@ -50,17 +52,20 @@ export interface ExecutionContextProps {
  * 表示线程执行的上下文，包含全局变量、节点执行结果和节点上下文
  */
 export class ExecutionContext extends ValueObject<ExecutionContextProps> {
+  private variableManager: VariableManager;
+
   /**
    * 创建执行上下文
    * @returns 执行上下文实例
    */
   public static create(): ExecutionContext {
-    return new ExecutionContext({
+    const props: ExecutionContextProps = {
       variables: new Map(),
       nodeResults: new Map(),
       nodeContexts: new Map(),
       metadata: {},
-    });
+    };
+    return new ExecutionContext(props);
   }
 
   /**
@@ -70,6 +75,19 @@ export class ExecutionContext extends ValueObject<ExecutionContextProps> {
    */
   public static fromProps(props: ExecutionContextProps): ExecutionContext {
     return new ExecutionContext(props);
+  }
+
+  /**
+   * 私有构造函数
+   */
+  private constructor(props: ExecutionContextProps) {
+    super(props);
+    // 初始化VariableManager
+    this.variableManager = VariableManager.create({
+      globalVariables: props.variables,
+      nodeResults: props.nodeResults,
+      localVariables: new Map(), // 默认为空，由外部设置
+    });
   }
 
   /**
@@ -105,68 +123,109 @@ export class ExecutionContext extends ValueObject<ExecutionContextProps> {
   }
 
   /**
-   * 获取变量值
+   * 获取变量值（按作用域顺序查找）
+   * 查找顺序：节点局部变量 -> 全局变量 -> 节点执行结果
    * @param key 变量名
+   * @param nodeId 节点ID（可选，用于查找节点局部变量）
    * @returns 变量值
    */
-  public getVariable(key: string): unknown | undefined {
-    return this.props.variables.get(key);
+  public getVariable(key: string, nodeId?: NodeId): unknown | undefined {
+    // 如果指定了节点ID，先查找该节点的局部变量
+    if (nodeId) {
+      const nodeContext = this.props.nodeContexts.get(nodeId.toString());
+      if (nodeContext && nodeContext.localVariables.has(key)) {
+        return nodeContext.localVariables.get(key);
+      }
+    }
+    // 使用VariableManager查找
+    return this.variableManager.getVariable(key);
   }
 
   /**
    * 检查变量是否存在
    * @param key 变量名
+   * @param nodeId 节点ID（可选）
    * @returns 是否存在
    */
-  public hasVariable(key: string): boolean {
-    return this.props.variables.has(key);
+  public hasVariable(key: string, nodeId?: NodeId): boolean {
+    // 如果指定了节点ID，检查该节点的局部变量
+    if (nodeId) {
+      const nodeContext = this.props.nodeContexts.get(nodeId.toString());
+      if (nodeContext && nodeContext.localVariables.has(key)) {
+        return true;
+      }
+    }
+    // 使用VariableManager检查
+    return this.variableManager.hasVariable(key);
   }
 
   /**
-   * 设置变量
+   * 设置变量（指定作用域）
    * @param key 变量名
    * @param value 变量值
+   * @param scope 作用域（默认为全局）
    * @returns 新的执行上下文实例
    */
-  public setVariable(key: string, value: unknown): ExecutionContext {
-    const newVariables = new Map(this.props.variables);
-    newVariables.set(key, value);
-
+  public setVariable(
+    key: string,
+    value: unknown,
+    scope: VariableScope = VariableScope.GLOBAL
+  ): ExecutionContext {
+    const newManager = this.variableManager.setVariable(key, value, scope);
     return new ExecutionContext({
       ...this.props,
-      variables: newVariables,
+      variables: newManager.globalVariables,
+      nodeResults: newManager.nodeResults,
     });
   }
 
   /**
-   * 批量设置变量
+   * 批量设置变量（指定作用域）
    * @param variables 变量映射
+   * @param scope 作用域（默认为全局）
    * @returns 新的执行上下文实例
    */
-  public setVariables(variables: Map<string, unknown>): ExecutionContext {
-    const newVariables = new Map(this.props.variables);
+  public setVariables(
+    variables: Map<string, unknown>,
+    scope: VariableScope = VariableScope.GLOBAL
+  ): ExecutionContext {
+    let newManager = this.variableManager;
     for (const [key, value] of variables.entries()) {
-      newVariables.set(key, value);
+      newManager = newManager.setVariable(key, value, scope);
     }
-
     return new ExecutionContext({
       ...this.props,
-      variables: newVariables,
+      variables: newManager.globalVariables,
+      nodeResults: newManager.nodeResults,
     });
   }
 
   /**
-   * 删除变量
+   * 删除变量（从所有作用域）
    * @param key 变量名
    * @returns 新的执行上下文实例
    */
   public deleteVariable(key: string): ExecutionContext {
-    const newVariables = new Map(this.props.variables);
-    newVariables.delete(key);
-
+    const newManager = this.variableManager.deleteVariable(key);
     return new ExecutionContext({
       ...this.props,
-      variables: newVariables,
+      variables: newManager.globalVariables,
+      nodeResults: newManager.nodeResults,
+    });
+  }
+
+  /**
+   * 删除指定作用域的变量
+   * @param key 变量名
+   * @param scope 作用域
+   * @returns 新的执行上下文实例
+   */
+  public deleteVariableInScope(key: string, scope: VariableScope): ExecutionContext {
+    const newManager = this.variableManager.deleteVariableInScope(key, scope);
+    return new ExecutionContext({
+      ...this.props,
+      variables: newManager.globalVariables,
+      nodeResults: newManager.nodeResults,
     });
   }
 
@@ -238,12 +297,11 @@ export class ExecutionContext extends ValueObject<ExecutionContextProps> {
    * @returns 新的执行上下文实例
    */
   public setNodeResult(nodeId: NodeId, result: unknown): ExecutionContext {
-    const newNodeResults = new Map(this.props.nodeResults);
-    newNodeResults.set(nodeId.toString(), result);
-
+    const newManager = this.variableManager.setNodeResult(nodeId.toString(), result);
     return new ExecutionContext({
       ...this.props,
-      nodeResults: newNodeResults,
+      variables: newManager.globalVariables,
+      nodeResults: newManager.nodeResults,
     });
   }
 
@@ -253,7 +311,7 @@ export class ExecutionContext extends ValueObject<ExecutionContextProps> {
    * @returns 节点执行结果
    */
   public getNodeResult(nodeId: NodeId): unknown | undefined {
-    return this.props.nodeResults.get(nodeId.toString());
+    return this.variableManager.nodeResults.get(nodeId.toString());
   }
 
   /**
@@ -269,20 +327,12 @@ export class ExecutionContext extends ValueObject<ExecutionContextProps> {
   }
 
   /**
-   * 验证变量
+   * 验证变量名
    * @param key 变量名
    * @returns 验证结果
    */
   public validateVariable(key: string): { valid: boolean; error?: string } {
-    if (!key || key.trim().length === 0) {
-      return { valid: false, error: '变量名不能为空' };
-    }
-
-    if (!/^[a-zA-Z_][a-zA-Z0-9_]*$/.test(key)) {
-      return { valid: false, error: '变量名格式不正确' };
-    }
-
-    return { valid: true };
+    return this.variableManager.validateVariableName(key);
   }
 
   /**
