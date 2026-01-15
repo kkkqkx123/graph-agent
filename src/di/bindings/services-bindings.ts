@@ -26,7 +26,6 @@ import { SessionResource } from '../../services/sessions/session-resource';
 import { StateHistory } from '../../services/state/state-history';
 import { StateManagement } from '../../services/state/state-management';
 import { StateRecovery } from '../../services/state/state-recovery';
-import { StateSnapshot } from '../../services/state/state-snapshot';
 import { FunctionManagement } from '../../services/workflow/function-management';
 import { WorkflowLifecycle } from '../../services/workflow/workflow-lifecycle';
 import { WorkflowManagement } from '../../services/workflow/workflow-management';
@@ -108,12 +107,8 @@ export const servicesBindings = new ContainerModule((bind: any) => {
   bind(TYPES.StateRecovery).toDynamicValue((context: any) => {
     return new StateRecovery(
       context.container.get(TYPES.ThreadCheckpointRepository),
-      context.container.get('SnapshotRepository'),
       context.container.get(TYPES.Logger)
     );
-  }).inSingletonScope();
-  bind(TYPES.StateSnapshot).toDynamicValue((context: any) => {
-    return new StateSnapshot(context.container.get('SnapshotRepository'));
   }).inSingletonScope();
 
   // 工作流服务

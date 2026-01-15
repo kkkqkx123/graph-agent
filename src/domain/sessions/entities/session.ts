@@ -1,12 +1,11 @@
 import { Entity } from '../../common/base/entity';
 import { ID, Timestamp, Version } from '../../common/value-objects';
+import { Metadata, DeletionStatus } from '../../common/value-objects';
 import { SessionStatus, SessionConfig, SessionActivity } from '../value-objects';
 import { Thread } from '../../threads/entities/thread';
 import { ParallelStrategy } from '../value-objects/parallel-strategy';
 import { SharedResources } from '../value-objects/shared-resources';
 import { ThreadCollection } from '../value-objects/thread-collection';
-import { Metadata } from '../../checkpoint/value-objects';
-import { DeletionStatus } from '../../checkpoint/value-objects';
 
 /**
  * Session实体属性接口

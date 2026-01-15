@@ -1,9 +1,10 @@
 import { injectable, inject } from 'inversify';
 import { IThreadCheckpointRepository } from '../../../domain/threads/checkpoints/repositories/thread-checkpoint-repository';
 import { ThreadCheckpoint } from '../../../domain/threads/checkpoints/entities/thread-checkpoint';
-import { ID } from '../../../domain/common/value-objects/id';
+import { CheckpointScope } from '../../../domain/threads/checkpoints/value-objects/checkpoint-scope';
 import { CheckpointStatus } from '../../../domain/threads/checkpoints/value-objects/checkpoint-status';
 import { CheckpointType } from '../../../domain/checkpoint/value-objects/checkpoint-type';
+import { ID } from '../../../domain/common/value-objects/id';
 import { Timestamp } from '../../../domain/common/value-objects/timestamp';
 import { Version } from '../../../domain/common/value-objects/version';
 import { ThreadCheckpointModel } from '../models/thread-checkpoint.model';
@@ -31,6 +32,8 @@ export class ThreadCheckpointRepository
       const props = {
         id: new ID(model.id),
         threadId: new ID(model.threadId),
+        scope: CheckpointScope.fromString(model.scope || 'thread'),
+        targetId: model.targetId ? new ID(model.targetId) : undefined,
         type: CheckpointType.fromString(model.type),
         status: CheckpointStatus.fromString(model.status),
         title: model.title,
@@ -67,7 +70,9 @@ export class ThreadCheckpointRepository
 
       model.id = entity.checkpointId.value;
       model.threadId = entity.threadId.value;
-      model.type = entity.type.getValue();
+      model.scope = entity.scope.toString();
+      model.targetId = entity.targetId?.value;
+      model.type = entity.type.toString();
       model.status = entity.status.value;
       model.title = entity.title;
       model.description = entity.description;
@@ -121,6 +126,33 @@ export class ThreadCheckpointRepository
   async findByType(type: CheckpointType): Promise<ThreadCheckpoint[]> {
     return this.find({
       filters: { type: type.value },
+      sortBy: 'createdAt',
+      sortOrder: 'desc',
+    });
+  }
+
+  /**
+   * 根据范围和目标ID查找检查点
+   */
+  async findByScopeAndTarget(scope: CheckpointScope, targetId: ID): Promise<ThreadCheckpoint[]> {
+    return this.find({
+      filters: {
+        scope: scope.toString(),
+        targetId: targetId.value,
+      },
+      sortBy: 'createdAt',
+      sortOrder: 'desc',
+    });
+  }
+
+  /**
+   * 根据范围查找检查点
+   */
+  async findByScope(scope: CheckpointScope): Promise<ThreadCheckpoint[]> {
+    return this.find({
+      filters: {
+        scope: scope.toString(),
+      },
       sortBy: 'createdAt',
       sortOrder: 'desc',
     });

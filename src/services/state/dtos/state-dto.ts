@@ -53,30 +53,6 @@ export interface CheckpointCreateDTO {
 }
 
 /**
- * 快照DTO
- */
-export interface SnapshotDTO {
-  id: string;
-  scope: string;
-  targetId?: string;
-  type: string;
-  stateData: Record<string, unknown>;
-  createdAt: string;
-  restoreCount: number;
-  canRestore: boolean;
-}
-
-/**
- * 快照创建DTO
- */
-export interface SnapshotCreateDTO {
-  scope: string;
-  targetId?: string;
-  type: string;
-  stateData: Record<string, unknown>;
-}
-
-/**
  * 状态恢复DTO
  */
 export interface StateRecoveryDTO {
@@ -96,7 +72,6 @@ export interface StateStatisticsDTO {
   activeStates: number;
   archivedStates: number;
   totalCheckpoints: number;
-  totalSnapshots: number;
   totalRecoveries: number;
   successfulRecoveries: number;
   failedRecoveries: number;
@@ -160,29 +135,6 @@ export const mapCheckpointToDTO = (checkpoint: any): CheckpointDTO => {
  */
 export const mapCheckpointsToDTOs = (checkpoints: any[]): CheckpointDTO[] => {
   return checkpoints.map(mapCheckpointToDTO);
-};
-
-/**
- * 将快照领域对象转换为SnapshotDTO
- */
-export const mapSnapshotToDTO = (snapshot: any): SnapshotDTO => {
-  return {
-    id: snapshot.id?.toString() || '',
-    scope: snapshot.scope?.getValue() || snapshot.scope || '',
-    targetId: snapshot.targetId?.toString(),
-    type: snapshot.type?.value || snapshot.type || '',
-    stateData: snapshot.stateData || {},
-    createdAt: snapshot.createdAt?.toISOString() || new Date().toISOString(),
-    restoreCount: snapshot.restoreCount || 0,
-    canRestore: snapshot.canRestore?.() || snapshot.canRestore || false,
-  };
-};
-
-/**
- * 批量将快照领域对象转换为SnapshotDTO
- */
-export const mapSnapshotsToDTOs = (snapshots: any[]): SnapshotDTO[] => {
-  return snapshots.map(mapSnapshotToDTO);
 };
 
 /**

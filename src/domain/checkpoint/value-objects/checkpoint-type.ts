@@ -7,6 +7,7 @@ export enum CheckpointTypeValue {
   MANUAL = 'manual',
   ERROR = 'error',
   MILESTONE = 'milestone',
+  SCHEDULED = 'scheduled',
 }
 
 /**
@@ -52,6 +53,14 @@ export class CheckpointType extends ValueObject<CheckpointTypeProps> {
    */
   public static milestone(): CheckpointType {
     return new CheckpointType({ value: CheckpointTypeValue.MILESTONE });
+  }
+
+  /**
+   * 创建计划检查点类型
+   * @returns 计划检查点类型实例
+   */
+  public static scheduled(): CheckpointType {
+    return new CheckpointType({ value: CheckpointTypeValue.SCHEDULED });
   }
 
   /**
@@ -107,6 +116,14 @@ export class CheckpointType extends ValueObject<CheckpointTypeProps> {
   }
 
   /**
+   * 检查是否为计划检查点
+   * @returns 是否为计划检查点
+   */
+  public isScheduled(): boolean {
+    return this.props.value === CheckpointTypeValue.SCHEDULED;
+  }
+
+  /**
    * 检查是否为用户创建的检查点
    * @returns 是否为用户创建的检查点
    */
@@ -157,6 +174,7 @@ export class CheckpointType extends ValueObject<CheckpointTypeProps> {
       [CheckpointTypeValue.MANUAL]: '手动检查点，由用户手动创建',
       [CheckpointTypeValue.ERROR]: '错误检查点，在发生错误时自动创建',
       [CheckpointTypeValue.MILESTONE]: '里程碑检查点，标记重要的执行节点',
+      [CheckpointTypeValue.SCHEDULED]: '计划检查点，按计划定时创建',
     };
 
     return descriptions[this.props.value];

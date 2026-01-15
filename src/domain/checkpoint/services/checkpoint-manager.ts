@@ -1,6 +1,7 @@
 import { ID } from '../../common/value-objects';
 import { ThreadCheckpoint } from '../../threads/checkpoints/entities/thread-checkpoint';
 import { CheckpointType } from '../../checkpoint/value-objects/checkpoint-type';
+import { CheckpointScope } from '../../threads/checkpoints/value-objects/checkpoint-scope';
 
 /**
  * 检查点管理器
@@ -50,12 +51,15 @@ export class CheckpointManager {
   ): string {
     const checkpoint = ThreadCheckpoint.create(
       ID.fromString(threadId),
+      CheckpointScope.thread(),
       CheckpointType.auto(),
       stateData,
       undefined,
       undefined,
       undefined,
-      metadata
+      metadata,
+      undefined,
+      ID.fromString(threadId)
     );
 
     const checkpointId = checkpoint.checkpointId.toString();

@@ -3,7 +3,7 @@ import { ID } from '../../common/value-objects/id';
 import { Timestamp } from '../../common/value-objects/timestamp';
 import { Version } from '../../common/value-objects/version';
 import { LLMMessage } from '../value-objects/llm-message';
-import { DeletionStatus } from '../../checkpoint/value-objects/deletion-status';
+import { DeletionStatus } from '../../common/value-objects';
 
 /**
  * Token使用统计接口

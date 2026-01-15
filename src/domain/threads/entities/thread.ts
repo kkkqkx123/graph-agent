@@ -1,9 +1,7 @@
 import { Entity } from '../../common/base/entity';
-import { ID, Timestamp, Version } from '../../common/value-objects';
+import { ID, Timestamp, Version, Metadata, DeletionStatus } from '../../common/value-objects';
 import { ThreadPriority } from '../value-objects';
 import { ThreadStatusValue } from '../value-objects/thread-status';
-import { Metadata } from '../../checkpoint/value-objects';
-import { DeletionStatus } from '../../checkpoint/value-objects';
 import { State } from '../../state/entities/state';
 import { StateEntityType } from '../../state/value-objects/state-entity-type';
 import { ExecutionContext, ExecutionConfig } from '../value-objects/execution-context';

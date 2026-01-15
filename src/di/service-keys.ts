@@ -53,7 +53,6 @@ import { SessionResource } from '../services/sessions/session-resource';
 import { StateHistory } from '../services/state/state-history';
 import { StateManagement } from '../services/state/state-management';
 import { StateRecovery } from '../services/state/state-recovery';
-import { StateSnapshot } from '../services/state/state-snapshot';
 import { FunctionManagement } from '../services/workflow/function-management';
 import { WorkflowLifecycle } from '../services/workflow/workflow-lifecycle';
 import { WorkflowManagement } from '../services/workflow/workflow-management';
@@ -171,7 +170,6 @@ export interface ServiceTypes {
   StateHistory: StateHistory;
   StateManagement: StateManagement;
   StateRecovery: StateRecovery;
-  StateSnapshot: StateSnapshot;
 
   // 工作流服务
   FunctionManagement: FunctionManagement;
@@ -344,7 +342,6 @@ export const TYPES: {
   StateHistory: Symbol.for('StateHistory') as TypedServiceIdentifier<'StateHistory'>,
   StateManagement: Symbol.for('StateManagement') as TypedServiceIdentifier<'StateManagement'>,
   StateRecovery: Symbol.for('StateRecovery') as TypedServiceIdentifier<'StateRecovery'>,
-  StateSnapshot: Symbol.for('StateSnapshot') as TypedServiceIdentifier<'StateSnapshot'>,
 
   // 工作流服务
   FunctionManagement: Symbol.for('FunctionManagement') as TypedServiceIdentifier<'FunctionManagement'>,

@@ -2,11 +2,11 @@ import { injectable, inject } from 'inversify';
 import { ID } from '../../domain/common/value-objects/id';
 import { Thread } from '../../domain/threads/entities/thread';
 import { Session } from '../../domain/sessions/entities/session';
-import { SnapshotType } from '../../domain/snapshot/value-objects/snapshot-type';
 import { CheckpointType } from '../../domain/checkpoint/value-objects/checkpoint-type';
+import { CheckpointScope } from '../../domain/threads/checkpoints/value-objects/checkpoint-scope';
 import { StateHistory } from './state-history';
 import { Checkpoint } from '../checkpoints/checkpoint';
-import { StateSnapshot } from './state-snapshot';
+import { CheckpointManagement } from '../checkpoints/checkpoint-management';
 import { StateRecovery } from './state-recovery';
 
 /**
@@ -18,9 +18,9 @@ export class StateManagement {
   constructor(
     @inject('StateHistory') private readonly historyService: StateHistory,
     @inject('Checkpoint') private readonly checkpointService: Checkpoint,
-    @inject('StateSnapshot') private readonly snapshotService: StateSnapshot,
+    @inject('CheckpointManagement') private readonly checkpointManagement: CheckpointManagement,
     @inject('StateRecovery') private readonly recoveryService: StateRecovery
-  ) { }
+  ) {}
 
   /**
    * 捕获Thread状态变更
@@ -35,25 +35,23 @@ export class StateManagement {
 
     // 2. 根据变更类型决定是否创建Checkpoint
     if (this.shouldCreateCheckpoint(changeType)) {
-      await this.checkpointService.createCheckpoint({
-        threadId: thread.threadId.toString(),
-        type: 'auto',
-        stateData: {
-          status: thread.status,
-          metadata: thread.metadata,
-        },
-        title: `自动检查点: ${thread.status}`,
-        tags: ['automatic'],
-      });
+      await this.checkpointManagement.createThreadCheckpoint(
+        thread,
+        CheckpointType.auto(),
+        `自动检查点: ${thread.status}`,
+        `Automatic checkpoint triggered by ${changeType}`,
+        ['automatic']
+      );
     }
 
-    // 3. 根据变更类型决定是否创建Snapshot
+    // 3. 根据变更类型决定是否创建Snapshot（现在使用Checkpoint）
     if (this.shouldCreateSnapshot(changeType)) {
-      await this.snapshotService.createThreadSnapshot(
+      await this.checkpointManagement.createThreadCheckpoint(
         thread,
-        SnapshotType.automatic(),
+        CheckpointType.scheduled(),
         `Auto Snapshot - ${changeType}`,
-        `Automatic snapshot triggered by ${changeType}`
+        `Automatic snapshot triggered by ${changeType}`,
+        ['snapshot', 'automatic']
       );
     }
   }
@@ -67,15 +65,16 @@ export class StateManagement {
     details?: Record<string, unknown>
   ): Promise<void> {
     // 注意：Session的History记录需要通过SessionService处理
-    // 这里暂时只创建Snapshot
+    // 这里暂时只创建Checkpoint（替代Snapshot）
 
-    // 2. 根据变更类型决定是否创建Snapshot
+    // 根据变更类型决定是否创建Checkpoint
     if (this.shouldCreateSnapshot(changeType)) {
-      await this.snapshotService.createSessionSnapshot(
+      await this.checkpointManagement.createSessionCheckpoint(
         session,
-        SnapshotType.automatic(),
+        CheckpointType.scheduled(),
         `Auto Snapshot - ${changeType}`,
-        `Automatic snapshot triggered by ${changeType}`
+        `Automatic snapshot triggered by ${changeType}`,
+        ['snapshot', 'automatic']
       );
     }
   }
@@ -88,31 +87,29 @@ export class StateManagement {
     title?: string,
     description?: string
   ): Promise<void> {
-    await this.checkpointService.createManualCheckpoint({
-      threadId: thread.threadId.toString(),
-      stateData: {
-        status: thread.status,
-        metadata: thread.metadata,
-      },
+    await this.checkpointManagement.createThreadCheckpoint(
+      thread,
+      CheckpointType.manual(),
       title,
       description,
-      tags: ['manual'],
-    });
+      ['manual']
+    );
   }
 
   /**
-   * 创建手动Snapshot
+   * 创建手动Snapshot（现在使用Checkpoint）
    */
   public async createManualSnapshot(
     thread: Thread,
     title?: string,
     description?: string
   ): Promise<void> {
-    await this.snapshotService.createThreadSnapshot(
+    await this.checkpointManagement.createThreadCheckpoint(
       thread,
-      SnapshotType.manual(),
+      CheckpointType.manual(),
       title,
-      description
+      description,
+      ['snapshot', 'manual']
     );
   }
 
@@ -124,15 +121,13 @@ export class StateManagement {
     milestoneName: string,
     description?: string
   ): Promise<void> {
-    await this.checkpointService.createMilestoneCheckpoint({
-      threadId: thread.threadId.toString(),
-      stateData: {
-        status: thread.status,
-        metadata: thread.metadata,
-      },
+    await this.checkpointManagement.createThreadCheckpoint(
+      thread,
+      CheckpointType.milestone(),
       milestoneName,
       description,
-    });
+      ['milestone']
+    );
   }
 
   /**
@@ -147,28 +142,33 @@ export class StateManagement {
     await this.historyService.recordError(thread, error);
 
     // 2. 创建错误Checkpoint
-    await this.checkpointService.createErrorCheckpoint({
-      threadId: thread.threadId.toString(),
-      stateData: {
-        status: thread.status,
-        metadata: thread.metadata,
-        errorMessage: error.message,
-        errorStack: error.stack,
-      },
-      errorMessage: error.message,
-      errorType: error.name,
-      metadata: {
+    await this.checkpointManagement.createThreadCheckpoint(
+      thread,
+      CheckpointType.error(),
+      `Error Checkpoint - ${error.name}`,
+      error.message,
+      ['error'],
+      {
         errorName: error.name,
         errorMessage: error.message,
-      },
-    });
+        errorStack: error.stack,
+        ...context,
+      }
+    );
 
-    // 3. 创建错误Snapshot
-    await this.snapshotService.createThreadSnapshot(
+    // 3. 创建错误Snapshot（现在使用Checkpoint）
+    await this.checkpointManagement.createThreadCheckpoint(
       thread,
-      SnapshotType.error(),
+      CheckpointType.error(),
       `Error Snapshot - ${error.name}`,
-      error.message
+      error.message,
+      ['snapshot', 'error'],
+      {
+        errorName: error.name,
+        errorMessage: error.message,
+        errorStack: error.stack,
+        ...context,
+      }
     );
   }
 
@@ -177,14 +177,13 @@ export class StateManagement {
    */
   public async restoreThreadState(
     thread: Thread,
-    restoreType: 'checkpoint' | 'snapshot' | 'auto',
+    restoreType: 'checkpoint' | 'auto',
     restorePointId?: ID
   ): Promise<Thread> {
     // 1. 验证恢复条件
     const validation = await this.recoveryService.validateRecoveryConditions(
       thread.id,
-      restoreType === 'checkpoint' ? restorePointId : undefined,
-      restoreType === 'snapshot' ? restorePointId : undefined
+      restoreType === 'checkpoint' ? restorePointId : undefined
     );
 
     if (!validation.canRestore) {
@@ -201,24 +200,15 @@ export class StateManagement {
         throw new Error('No recovery point available');
       }
 
-      if (bestPoint.type === 'checkpoint') {
-        restoredThread = await this.recoveryService.restoreThreadFromCheckpoint(
-          thread,
-          bestPoint.point.id
-        );
-      } else {
-        restoredThread = await this.recoveryService.restoreThreadFromSnapshot(
-          thread,
-          bestPoint.point.id
-        );
-      }
+      restoredThread = await this.recoveryService.restoreThreadFromCheckpoint(
+        thread,
+        bestPoint.point.checkpointId
+      );
     } else if (restoreType === 'checkpoint' && restorePointId) {
       restoredThread = await this.recoveryService.restoreThreadFromCheckpoint(
         thread,
         restorePointId
       );
-    } else if (restoreType === 'snapshot' && restorePointId) {
-      restoredThread = await this.recoveryService.restoreThreadFromSnapshot(thread, restorePointId);
     } else {
       throw new Error('Invalid restore parameters');
     }
@@ -238,16 +228,11 @@ export class StateManagement {
    */
   public async getThreadStateHistory(threadId: ID): Promise<{
     checkpoints: any[];
-    snapshots: any[];
   }> {
-    const [checkpoints, snapshots] = await Promise.all([
-      this.checkpointService.getThreadCheckpointHistory(threadId.toString()),
-      this.snapshotService.getThreadSnapshots(threadId),
-    ]);
+    const checkpoints = await this.checkpointManagement.getThreadCheckpoints(threadId);
 
     return {
-      checkpoints,
-      snapshots,
+      checkpoints: checkpoints.map(cp => cp.toDict()),
     };
   }
 
@@ -255,12 +240,12 @@ export class StateManagement {
    * 获取Session状态历史
    */
   public async getSessionStateHistory(sessionId: ID): Promise<{
-    snapshots: any[];
+    checkpoints: any[];
   }> {
-    const snapshots = await this.snapshotService.getSessionSnapshots(sessionId);
+    const checkpoints = await this.checkpointManagement.getSessionCheckpoints(sessionId);
 
     return {
-      snapshots,
+      checkpoints: checkpoints.map(cp => cp.toDict()),
     };
   }
 
@@ -269,16 +254,11 @@ export class StateManagement {
    */
   public async cleanupExpiredStateData(retentionDays: number = 30): Promise<{
     expiredCheckpoints: number;
-    expiredSnapshots: number;
   }> {
-    const [expiredCheckpoints, expiredSnapshots] = await Promise.all([
-      this.checkpointService.cleanupExpiredCheckpoints(),
-      this.snapshotService.cleanupExpiredSnapshots(),
-    ]);
+    const expiredCheckpoints = await this.checkpointManagement.cleanupExpiredCheckpoints();
 
     return {
       expiredCheckpoints,
-      expiredSnapshots,
     };
   }
 
@@ -287,20 +267,17 @@ export class StateManagement {
    */
   public async cleanupExcessStateData(
     threadId: ID,
-    maxCheckpoints: number,
-    maxSnapshots: number
+    maxCheckpoints: number
   ): Promise<{
     excessCheckpoints: number;
-    excessSnapshots: number;
   }> {
-    const [excessCheckpoints, excessSnapshots] = await Promise.all([
-      this.checkpointService.cleanupExcessCheckpoints(threadId.toString(), maxCheckpoints),
-      this.snapshotService.cleanupExcessSnapshots(threadId, maxSnapshots),
-    ]);
+    const excessCheckpoints = await this.checkpointManagement.cleanupExcessCheckpoints(
+      threadId,
+      maxCheckpoints
+    );
 
     return {
       excessCheckpoints,
-      excessSnapshots,
     };
   }
 
@@ -308,7 +285,7 @@ export class StateManagement {
    * 获取状态管理统计信息
    */
   public async getStateManagementStatistics(): Promise<{
-    snapshots: {
+    checkpoints: {
       total: number;
       byType: Record<string, number>;
       byScope: Record<string, number>;
@@ -319,27 +296,27 @@ export class StateManagement {
       totalRestores: number;
       byType: Record<string, number>;
       byScope: Record<string, number>;
-      mostRestoredSnapshotId: string | null;
+      mostRestoredCheckpointId: string | null;
     };
   }> {
-    const [snapshotStats, restoreStats] = await Promise.all([
-      this.snapshotService.getSnapshotStatistics(),
-      this.snapshotService.getRestoreStatistics(),
+    const [checkpointStats, restoreStats] = await Promise.all([
+      this.checkpointManagement.getCheckpointStatistics(),
+      this.checkpointManagement.getRestoreStatistics(),
     ]);
 
     return {
-      snapshots: {
-        total: snapshotStats.total,
-        byType: snapshotStats.byType,
-        byScope: snapshotStats.byScope,
-        totalSizeBytes: snapshotStats.totalSizeBytes,
-        averageSizeBytes: snapshotStats.averageSizeBytes,
+      checkpoints: {
+        total: checkpointStats.total,
+        byType: checkpointStats.byType,
+        byScope: checkpointStats.byScope,
+        totalSizeBytes: checkpointStats.totalSizeBytes,
+        averageSizeBytes: checkpointStats.averageSizeBytes,
       },
       recovery: {
         totalRestores: restoreStats.totalRestores,
         byType: restoreStats.byType,
         byScope: restoreStats.byScope,
-        mostRestoredSnapshotId: restoreStats.mostRestoredSnapshotId,
+        mostRestoredCheckpointId: restoreStats.mostRestoredCheckpointId,
       },
     };
   }
@@ -360,7 +337,7 @@ export class StateManagement {
   }
 
   /**
-   * 判断是否应该创建Snapshot
+   * 判断是否应该创建Snapshot（现在使用Checkpoint）
    */
   private shouldCreateSnapshot(changeType: string): boolean {
     // 定义需要创建Snapshot的变更类型

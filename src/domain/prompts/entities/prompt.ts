@@ -9,8 +9,8 @@ import { Version } from '../../common/value-objects/version';
 import { PromptId } from '../value-objects/prompt-id';
 import { PromptType } from '../value-objects/prompt-type';
 import { PromptStatus } from '../value-objects/prompt-status';
-import { Metadata } from '../../checkpoint/value-objects/metadata';
-import { DeletionStatus } from '../../checkpoint/value-objects/deletion-status';
+import { Metadata } from '../../common/value-objects';
+import { DeletionStatus } from '../../common/value-objects';
 
 /**
  * 提示词变量

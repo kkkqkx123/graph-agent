@@ -1,10 +1,7 @@
 import { Entity } from '../../common/base/entity';
-import { ID } from '../../common/value-objects/id';
-import { Timestamp } from '../../common/value-objects/timestamp';
-import { Version } from '../../common/value-objects/version';
+import { ID, Timestamp, Version, DeletionStatus } from '../../common/value-objects';
 import { LLMMessage, LLMMessageRole } from '../value-objects/llm-message';
 import { LLMRequestOptions } from '../value-objects/llm-request-options';
-import { DeletionStatus } from '../../checkpoint/value-objects/deletion-status';
 
 /**
  * LLM请求实体接口

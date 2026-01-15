@@ -13,8 +13,8 @@ import {
   inferPromptTypeFromCategory,
 } from '../../../domain/prompts/value-objects/prompt-type';
 import { PromptStatus } from '../../../domain/prompts/value-objects/prompt-status';
-import { Metadata } from '../../../domain/checkpoint/value-objects/metadata';
-import { DeletionStatus } from '../../../domain/checkpoint/value-objects/deletion-status';
+import { Metadata } from '../../../domain/common/value-objects';
+import { DeletionStatus } from '../../../domain/common/value-objects';
 import { Timestamp } from '../../../domain/common/value-objects/timestamp';
 import { Version } from '../../../domain/common/value-objects/version';
 import {

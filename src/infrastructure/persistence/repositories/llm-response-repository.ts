@@ -5,7 +5,7 @@ import { ID } from '../../../domain/common/value-objects/id';
 import { Timestamp } from '../../../domain/common/value-objects/timestamp';
 import { Version } from '../../../domain/common/value-objects/version';
 import { LLMMessage } from '../../../domain/llm/value-objects/llm-message';
-import { DeletionStatus } from '../../../domain/checkpoint/value-objects/deletion-status';
+import { DeletionStatus } from '../../../domain/common/value-objects';
 import { LLMResponseModel } from '../models/llm-response.model';
 import { BaseRepository } from './base-repository';
 import { ConnectionManager } from '../connection-manager';

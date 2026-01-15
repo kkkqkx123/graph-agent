@@ -15,8 +15,7 @@ import { ThreadCommunicationChannel } from '../../../domain/sessions/value-objec
 import { ThreadCollection } from '../../../domain/sessions/value-objects/thread-collection';
 import { SharedResources } from '../../../domain/sessions/value-objects/shared-resources';
 import { ParallelStrategy } from '../../../domain/sessions/value-objects/parallel-strategy';
-import { Metadata } from '../../../domain/checkpoint/value-objects';
-import { DeletionStatus } from '../../../domain/checkpoint/value-objects';
+import { Metadata, DeletionStatus } from '../../../domain/common/value-objects';
 
 @injectable()
 export class SessionRepository

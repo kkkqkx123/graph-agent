@@ -4,6 +4,7 @@ import { Timestamp } from '../../../common/value-objects/timestamp';
 import { Version } from '../../../common/value-objects/version';
 import { CheckpointType } from '../../../checkpoint/value-objects/checkpoint-type';
 import { CheckpointStatus } from '../value-objects/checkpoint-status';
+import { CheckpointScope } from '../value-objects/checkpoint-scope';
 
 /**
  * Thread检查点实体接口
@@ -11,6 +12,8 @@ import { CheckpointStatus } from '../value-objects/checkpoint-status';
 export interface ThreadCheckpointProps {
   id: ID;
   threadId: ID;
+  scope: CheckpointScope;
+  targetId?: ID;
   type: CheckpointType;
   status: CheckpointStatus;
   title?: string;
@@ -31,7 +34,13 @@ export interface ThreadCheckpointProps {
 /**
  * Thread检查点实体
  *
- * 表示线程执行过程中的检查点，包含Python实现的所有功能
+ * 表示线程、会话或全局的检查点，支持多种范围和类型
+ * 职责：
+ * - 检查点基本信息管理
+ * - 状态数据管理
+ * - 恢复功能
+ * - 过期管理
+ * - 统计信息管理
  */
 export class ThreadCheckpoint extends Entity {
   private readonly props: ThreadCheckpointProps;
@@ -48,6 +57,7 @@ export class ThreadCheckpoint extends Entity {
   /**
    * 创建新检查点
    * @param threadId 线程ID
+   * @param scope 检查点范围
    * @param type 检查点类型
    * @param stateData 状态数据
    * @param title 标题
@@ -59,17 +69,28 @@ export class ThreadCheckpoint extends Entity {
    */
   public static create(
     threadId: ID,
+    scope: CheckpointScope,
     type: CheckpointType,
     stateData: Record<string, unknown>,
     title?: string,
     description?: string,
     tags?: string[],
     metadata?: Record<string, unknown>,
-    expirationHours?: number
+    expirationHours?: number,
+    targetId?: ID
   ): ThreadCheckpoint {
     const now = Timestamp.now();
     const checkpointId = ID.generate();
     const status = CheckpointStatus.active();
+
+    // 验证范围和目标ID的匹配
+    if (scope.requiresTargetId() && !targetId) {
+      throw new Error(`${scope.getDescription()}需要提供目标ID`);
+    }
+
+    if (!scope.requiresTargetId() && targetId) {
+      throw new Error(`${scope.getDescription()}不需要提供目标ID`);
+    }
 
     // 计算数据大小
     const sizeBytes = JSON.stringify(stateData).length;
@@ -83,6 +104,8 @@ export class ThreadCheckpoint extends Entity {
     const props: ThreadCheckpointProps = {
       id: checkpointId,
       threadId,
+      scope,
+      targetId,
       type,
       status,
       title,
@@ -125,6 +148,20 @@ export class ThreadCheckpoint extends Entity {
    */
   public get threadId(): ID {
     return this.props.threadId;
+  }
+
+  /**
+   * 获取检查点范围
+   */
+  public get scope(): CheckpointScope {
+    return this.props.scope;
+  }
+
+  /**
+   * 获取目标ID
+   */
+  public get targetId(): ID | undefined {
+    return this.props.targetId;
   }
 
   /**
@@ -546,6 +583,18 @@ export class ThreadCheckpoint extends Entity {
       throw new Error('线程ID不能为空');
     }
 
+    if (!this.props.scope) {
+      throw new Error('检查点范围不能为空');
+    }
+
+    if (this.props.scope.requiresTargetId() && !this.props.targetId) {
+      throw new Error(`${this.props.scope.getDescription()}需要提供目标ID`);
+    }
+
+    if (!this.props.scope.requiresTargetId() && this.props.targetId) {
+      throw new Error(`${this.props.scope.getDescription()}不需要提供目标ID`);
+    }
+
     if (!this.props.type) {
       throw new Error('检查点类型不能为空');
     }
@@ -586,6 +635,8 @@ export class ThreadCheckpoint extends Entity {
     return {
       id: this.props.id.toString(),
       threadId: this.props.threadId.toString(),
+      scope: this.props.scope.toString(),
+      targetId: this.props.targetId?.toString(),
       type: this.props.type.value,
       status: this.props.status.value,
       title: this.props.title,
@@ -611,6 +662,8 @@ export class ThreadCheckpoint extends Entity {
     const props: ThreadCheckpointProps = {
       id: ID.fromString(data['id'] as string),
       threadId: ID.fromString(data['threadId'] as string),
+      scope: CheckpointScope.fromString(data['scope'] as string || 'thread'),
+      targetId: data['targetId'] ? ID.fromString(data['targetId'] as string) : undefined,
       type: CheckpointType.fromString(data['type'] as string),
       status: CheckpointStatus.fromString(data['status'] as string),
       title: data['title'] as string | undefined,

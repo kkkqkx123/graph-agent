@@ -3,6 +3,7 @@ import { ID } from '../../../common/value-objects/id';
 import { ThreadCheckpoint } from '../entities/thread-checkpoint';
 import { CheckpointStatus } from '../value-objects/checkpoint-status';
 import { CheckpointType } from '../../../checkpoint/value-objects/checkpoint-type';
+import { CheckpointScope } from '../value-objects/checkpoint-scope';
 
 /**
  * Thread检查点仓储接口
@@ -31,6 +32,21 @@ export interface IThreadCheckpointRepository extends Repository<ThreadCheckpoint
    * @returns 检查点列表
    */
   findByType(type: CheckpointType): Promise<ThreadCheckpoint[]>;
+
+  /**
+   * 根据范围和目标ID查找检查点
+   * @param scope 检查点范围
+   * @param targetId 目标ID
+   * @returns 检查点列表
+   */
+  findByScopeAndTarget(scope: CheckpointScope, targetId: ID): Promise<ThreadCheckpoint[]>;
+
+  /**
+   * 根据范围查找检查点
+   * @param scope 检查点范围
+   * @returns 检查点列表
+   */
+  findByScope(scope: CheckpointScope): Promise<ThreadCheckpoint[]>;
 
   /**
    * 获取线程的检查点历史

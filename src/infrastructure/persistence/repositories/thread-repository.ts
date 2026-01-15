@@ -16,8 +16,7 @@ import { ThreadModel } from '../models/thread.model';
 import { In } from 'typeorm';
 import { BaseRepository } from './base-repository';
 import { ConnectionManager } from '../connection-manager';
-import { Metadata } from '../../../domain/checkpoint/value-objects';
-import { DeletionStatus } from '../../../domain/checkpoint/value-objects';
+import { Metadata, DeletionStatus } from '../../../domain/common/value-objects';
 import { State } from '../../../domain/state/entities/state';
 import { StateEntityType } from '../../../domain/state/value-objects/state-entity-type';
 

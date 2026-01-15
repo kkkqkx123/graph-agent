@@ -3,6 +3,7 @@ import { Entity, PrimaryColumn, Column, CreateDateColumn, UpdateDateColumn, Inde
 @Entity('thread_checkpoints')
 @Index(['threadId'])  // 线程查询
 @Index(['threadId', 'createdAt'])  // 复合索引（按时间排序）
+@Index(['scope', 'targetId'])  // 范围和目标ID查询
 @Index(['expiresAt'])  // 过期清理
 @Index(['status'])  // 状态查询
 @Index(['type'])  // 类型查询
@@ -12,6 +13,12 @@ export class ThreadCheckpointModel {
 
   @Column({ type: 'uuid', name: 'thread_id' })
   threadId!: string;
+
+  @Column({ type: 'varchar', length: 20, name: 'scope' })
+  scope!: string;
+
+  @Column({ type: 'uuid', name: 'target_id', nullable: true })
+  targetId?: string;
 
   @Column({ type: 'varchar', length: 50, name: 'checkpoint_type' })
   type!: string;

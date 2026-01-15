@@ -2,9 +2,9 @@ import { Entity } from '../../common/base/entity';
 import { ID, Timestamp, Version } from '../../common/value-objects';
 import { ToolType } from '../value-objects/tool-type';
 import { ToolStatus } from '../value-objects/tool-status';
-import { Metadata } from '../../checkpoint/value-objects/metadata';
+import { Metadata } from '../../common/value-objects';
 import { Tags } from '../../checkpoint/value-objects/tags';
-import { DeletionStatus } from '../../checkpoint/value-objects/deletion-status';
+import { DeletionStatus } from '../../common/value-objects';
 import { StateData } from '../../checkpoint/value-objects/state-data';
 
 /**

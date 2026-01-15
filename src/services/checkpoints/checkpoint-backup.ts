@@ -1,6 +1,7 @@
 import { ID } from '../../domain/common/value-objects/id';
 import { ThreadCheckpoint } from '../../domain/threads/checkpoints/entities/thread-checkpoint';
 import { CheckpointType } from '../../domain/checkpoint/value-objects/checkpoint-type';
+import { CheckpointScope } from '../../domain/threads/checkpoints/value-objects/checkpoint-scope';
 import { IThreadCheckpointRepository } from '../../domain/threads/checkpoints/repositories/thread-checkpoint-repository';
 import { ILogger } from '../../domain/common/types/logger-types';
 
@@ -32,12 +33,15 @@ export class CheckpointBackup {
 
     const backup = ThreadCheckpoint.create(
       original.threadId,
+      original.scope,
       CheckpointType.manual(),
       original.stateData,
       `${original.title || '检查点'} - 备份`,
       original.description,
       [...original.tags, 'backup'],
-      backupMetadata
+      backupMetadata,
+      undefined,
+      original.targetId
     );
 
     await this.repository.save(backup);
