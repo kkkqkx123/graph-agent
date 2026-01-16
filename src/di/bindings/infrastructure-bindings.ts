@@ -27,7 +27,7 @@ import { SessionRepository as SessionInfrastructureRepository } from '../../infr
 import { ThreadRepository as ThreadInfrastructureRepository } from '../../infrastructure/persistence/repositories/thread-repository';
 import { WorkflowRepository as WorkflowInfrastructureRepository } from '../../infrastructure/persistence/repositories/workflow-repository';
 import { PromptRepository as PromptInfrastructureRepository } from '../../infrastructure/persistence/repositories/prompt-repository';
-import { ThreadCheckpointRepository as ThreadCheckpointInfrastructureRepository } from '../../infrastructure/persistence/repositories/thread-checkpoint-repository';
+import { CheckpointRepository as CheckpointInfrastructureRepository } from '../../infrastructure/persistence/repositories/checkpoint-repository';
 
 // 基础设施服务
 import { ConnectionManager } from '../../infrastructure/persistence/connection-manager';
@@ -63,8 +63,8 @@ export const infrastructureBindings = new ContainerModule((bind: any) => {
   bind(TYPES.ThreadRepositoryImpl).to(ThreadInfrastructureRepository).inSingletonScope();
   bind(TYPES.WorkflowRepositoryImpl).to(WorkflowInfrastructureRepository).inSingletonScope();
   bind(TYPES.PromptRepositoryImpl).to(PromptInfrastructureRepository).inSingletonScope();
-  bind(TYPES.ThreadCheckpointRepositoryImpl)
-    .to(ThreadCheckpointInfrastructureRepository)
+  bind(TYPES.CheckpointRepositoryImpl)
+    .to(CheckpointInfrastructureRepository)
     .inSingletonScope();
 
   // ========== 基础设施服务绑定 ==========

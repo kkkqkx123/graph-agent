@@ -106,7 +106,7 @@ export const servicesBindings = new ContainerModule((bind: any) => {
   bind(TYPES.StateManagement).to(StateManagement).inSingletonScope();
   bind(TYPES.StateRecovery).toDynamicValue((context: any) => {
     return new StateRecovery(
-      context.container.get(TYPES.ThreadCheckpointRepository),
+      context.container.get(TYPES.CheckpointRepository),
       context.container.get(TYPES.Logger)
     );
   }).inSingletonScope();

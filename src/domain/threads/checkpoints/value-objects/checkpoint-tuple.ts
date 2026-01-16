@@ -1,12 +1,12 @@
 import { ValueObject } from '../../../common/value-objects';
-import { ThreadCheckpoint } from '../entities/thread-checkpoint';
+import { Checkpoint } from '../entities/checkpoint';
 
 /**
  * 检查点元组接口
  */
 export interface CheckpointTupleProps {
   config: Record<string, unknown>;
-  checkpoint: ThreadCheckpoint;
+  checkpoint: Checkpoint;
   parentConfig?: Record<string, unknown>;
   pendingWrites?: unknown[];
 }
@@ -33,7 +33,7 @@ export class CheckpointTuple extends ValueObject<CheckpointTupleProps> {
    */
   public static create(
     config: Record<string, unknown>,
-    checkpoint: ThreadCheckpoint,
+    checkpoint: Checkpoint,
     parentConfig?: Record<string, unknown>,
     pendingWrites?: unknown[]
   ): CheckpointTuple {
@@ -70,7 +70,7 @@ export class CheckpointTuple extends ValueObject<CheckpointTupleProps> {
   /**
    * 获取检查点
    */
-  public get checkpoint(): ThreadCheckpoint {
+  public get checkpoint(): Checkpoint {
     return this.props.checkpoint;
   }
 

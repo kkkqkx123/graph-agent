@@ -21,7 +21,7 @@ import { BaseService } from '../common/base-service';
 import { WorkflowExecutionEngine } from './workflow-execution-engine';
 import { ThreadStateManager } from './thread-state-manager';
 import { ThreadHistoryManager } from './thread-history-manager';
-import { CheckpointManager } from '../../domain/checkpoint/services/checkpoint-manager';
+import { CheckpointManagement } from '../checkpoints/checkpoint-management';
 import { ThreadConditionalRouter } from './thread-conditional-router';
 import { INodeExecutor } from '../workflow/nodes/node-executor';
 import { FunctionRegistry } from '../workflow/functions/function-registry';
@@ -69,7 +69,7 @@ export class ThreadExecution extends BaseService {
   private readonly workflowEngine: WorkflowExecutionEngine;
   private readonly stateManager: ThreadStateManager;
   private readonly historyManager: ThreadHistoryManager;
-  private readonly checkpointManager: CheckpointManager;
+  private readonly checkpointManagement: CheckpointManagement;
   private readonly router: ThreadConditionalRouter;
   private readonly evaluator: ExpressionEvaluator;
 
@@ -82,7 +82,7 @@ export class ThreadExecution extends BaseService {
     @inject(TYPES.ExpressionEvaluator) evaluator: ExpressionEvaluator,
     @inject(TYPES.ThreadStateManager) stateManager: ThreadStateManager,
     @inject(TYPES.ThreadHistoryManager) historyManager: ThreadHistoryManager,
-    @inject(TYPES.CheckpointManager) checkpointManager: CheckpointManager,
+    @inject(TYPES.CheckpointManagement) checkpointManagement: CheckpointManagement,
     @inject(TYPES.ThreadConditionalRouter) router: ThreadConditionalRouter,
     @inject(TYPES.WorkflowExecutionEngine) workflowEngine: WorkflowExecutionEngine
   ) {
@@ -92,7 +92,7 @@ export class ThreadExecution extends BaseService {
     this.evaluator = evaluator;
     this.stateManager = stateManager;
     this.historyManager = historyManager;
-    this.checkpointManager = checkpointManager;
+    this.checkpointManagement = checkpointManagement;
     this.router = router;
     this.workflowEngine = workflowEngine;
   }
@@ -357,7 +357,8 @@ export class ThreadExecution extends BaseService {
     const result = await this.executeGetOperation(
       '获取线程检查点',
       async () => {
-        const checkpoints = this.checkpointManager.getThreadCheckpoints(threadId);
+        const id = this.parseId(threadId, '线程ID');
+        const checkpoints = await this.checkpointManagement.getThreadCheckpoints(id);
         return checkpoints.map((cp: any) => ({
           id: cp.checkpointId.toString(),
           workflowId: cp.threadId.toString(),
@@ -386,7 +387,8 @@ export class ThreadExecution extends BaseService {
     return this.executeGetOperation(
       '获取最新检查点',
       async () => {
-        const checkpoint = this.checkpointManager.getLatestCheckpoint(threadId);
+        const id = this.parseId(threadId, '线程ID');
+        const checkpoint = await this.checkpointManagement.getLatestThreadCheckpoint(id);
         if (!checkpoint) {
           return null;
         }

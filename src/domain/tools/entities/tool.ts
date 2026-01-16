@@ -3,9 +3,9 @@ import { ID, Timestamp, Version } from '../../common/value-objects';
 import { ToolType } from '../value-objects/tool-type';
 import { ToolStatus } from '../value-objects/tool-status';
 import { Metadata } from '../../common/value-objects';
-import { Tags } from '../../checkpoint/value-objects/tags';
+import { Tags } from '../../threads/checkpoints/value-objects/tags';
 import { DeletionStatus } from '../../common/value-objects';
-import { StateData } from '../../checkpoint/value-objects/state-data';
+import { StateData } from '../../threads/checkpoints/value-objects/state-data';
 
 /**
  * Tool实体属性接口

@@ -1,8 +1,8 @@
 import { ID } from '../../domain/common/value-objects/id';
-import { ThreadCheckpoint } from '../../domain/threads/checkpoints/entities/thread-checkpoint';
-import { CheckpointType } from '../../domain/checkpoint/value-objects/checkpoint-type';
+import { Checkpoint } from '../../domain/threads/checkpoints/entities/checkpoint';
+import { CheckpointType } from '../../domain/threads/checkpoints/value-objects/checkpoint-type';
 import { CheckpointScope } from '../../domain/threads/checkpoints/value-objects/checkpoint-scope';
-import { IThreadCheckpointRepository } from '../../domain/threads/checkpoints/repositories/thread-checkpoint-repository';
+import { ICheckpointRepository } from '../../domain/threads/checkpoints/repositories/checkpoint-repository';
 import { ILogger } from '../../domain/common/types/logger-types';
 
 /**
@@ -12,7 +12,7 @@ import { ILogger } from '../../domain/common/types/logger-types';
  */
 export class CheckpointCreation {
   constructor(
-    private readonly repository: IThreadCheckpointRepository,
+    private readonly repository: ICheckpointRepository,
     private readonly logger: ILogger
   ) {}
 
@@ -24,18 +24,16 @@ export class CheckpointCreation {
     stateData: Record<string, unknown>,
     metadata?: Record<string, unknown>,
     expirationHours?: number
-  ): Promise<ThreadCheckpoint> {
-    const checkpoint = ThreadCheckpoint.create(
+  ): Promise<Checkpoint> {
+    const checkpoint = Checkpoint.create(
       threadId,
-      CheckpointScope.thread(),
       CheckpointType.auto(),
       stateData,
       undefined,
       undefined,
       undefined,
       metadata,
-      expirationHours,
-      threadId
+      expirationHours
     );
 
     await this.repository.save(checkpoint);
@@ -53,18 +51,16 @@ export class CheckpointCreation {
     tags?: string[],
     metadata?: Record<string, unknown>,
     expirationHours?: number
-  ): Promise<ThreadCheckpoint> {
-    const checkpoint = ThreadCheckpoint.create(
+  ): Promise<Checkpoint> {
+    const checkpoint = Checkpoint.create(
       threadId,
-      CheckpointScope.thread(),
       CheckpointType.manual(),
       stateData,
       title,
       description,
       tags,
       metadata,
-      expirationHours,
-      threadId
+      expirationHours
     );
 
     await this.repository.save(checkpoint);
@@ -81,7 +77,7 @@ export class CheckpointCreation {
     errorType?: string,
     metadata?: Record<string, unknown>,
     expirationHours?: number
-  ): Promise<ThreadCheckpoint> {
+  ): Promise<Checkpoint> {
     const errorMetadata = {
       ...metadata,
       errorMessage,
@@ -89,17 +85,15 @@ export class CheckpointCreation {
       createdAt: new Date().toISOString(),
     };
 
-    const checkpoint = ThreadCheckpoint.create(
+    const checkpoint = Checkpoint.create(
       threadId,
-      CheckpointScope.thread(),
       CheckpointType.error(),
       stateData,
       undefined,
       errorMessage,
       ['error'],
       errorMetadata,
-      expirationHours,
-      threadId
+      expirationHours
     );
 
     await this.repository.save(checkpoint);
@@ -116,24 +110,22 @@ export class CheckpointCreation {
     description?: string,
     metadata?: Record<string, unknown>,
     expirationHours?: number
-  ): Promise<ThreadCheckpoint> {
+  ): Promise<Checkpoint> {
     const milestoneMetadata = {
       ...metadata,
       milestoneName,
       createdAt: new Date().toISOString(),
     };
 
-    const checkpoint = ThreadCheckpoint.create(
+    const checkpoint = Checkpoint.create(
       threadId,
-      CheckpointScope.thread(),
       CheckpointType.milestone(),
       stateData,
       milestoneName,
       description,
       ['milestone'],
       milestoneMetadata,
-      expirationHours,
-      threadId
+      expirationHours
     );
 
     await this.repository.save(checkpoint);

@@ -2,7 +2,7 @@ import { Entity } from '../../common/base/entity';
 import { ID, Timestamp, Version, Metadata } from '../../common/value-objects';
 import { StateId } from '../value-objects/state-id';
 import { StateEntityType } from '../value-objects/state-entity-type';
-import { StateData } from '../../checkpoint/value-objects/state-data';
+import { StateData } from '../../threads/checkpoints/value-objects/state-data';
 
 /**
  * 状态实体属性接口

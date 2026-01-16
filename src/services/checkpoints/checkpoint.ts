@@ -1,7 +1,7 @@
 import { injectable } from 'inversify';
 import { ID } from '../../domain/common/value-objects/id';
-import { ThreadCheckpoint } from '../../domain/threads/checkpoints/entities/thread-checkpoint';
-import { CheckpointType } from '../../domain/checkpoint/value-objects/checkpoint-type';
+import { Checkpoint } from '../../domain/threads/checkpoints/entities/checkpoint';
+import { CheckpointType } from '../../domain/threads/checkpoints/value-objects/checkpoint-type';
 import { CheckpointStatistics } from '../../domain/threads/checkpoints/value-objects/checkpoint-statistics';
 import { CheckpointCreation } from './checkpoint-creation';
 import { CheckpointRestore } from './checkpoint-restore';
@@ -10,7 +10,7 @@ import { CheckpointCleanup } from './checkpoint-cleanup';
 import { CheckpointBackup } from './checkpoint-backup';
 import { CheckpointAnalysis } from './checkpoint-analysis';
 import { CheckpointManagement } from './checkpoint-management';
-import { IThreadCheckpointRepository } from '../../domain/threads/checkpoints/repositories/thread-checkpoint-repository';
+import { ICheckpointRepository } from '../../domain/threads/checkpoints/repositories/checkpoint-repository';
 import { ILogger } from '../../domain/common/types/logger-types';
 import { BaseService } from '../common/base-service';
 
@@ -110,12 +110,12 @@ export interface CheckpointStatisticsInfo {
 }
 
 /**
- * Thread检查点应用服务
+ * Checkpoint 应用服务
  *
- * 提供Thread检查点的应用层服务，整合所有checkpoint功能
+ * 提供 Checkpoint 的应用层服务，整合所有 checkpoint 功能
  */
 @injectable()
-export class Checkpoint extends BaseService {
+export class CheckpointService extends BaseService {
   constructor(
     private readonly creationService: CheckpointCreation,
     private readonly restoreService: CheckpointRestore,
@@ -124,7 +124,7 @@ export class Checkpoint extends BaseService {
     private readonly backupService: CheckpointBackup,
     private readonly analysisService: CheckpointAnalysis,
     private readonly managementService: CheckpointManagement,
-    private readonly repository: IThreadCheckpointRepository,
+    private readonly repository: ICheckpointRepository,
     logger: ILogger
   ) {
     super(logger);
@@ -141,64 +141,64 @@ export class Checkpoint extends BaseService {
    * 创建检查点
    */
   async createCheckpoint(request: CreateCheckpointRequest): Promise<string> {
-    return this.executeCreateOperation(
-      '检查点',
-      async () => {
-        const threadId = this.parseId(request.threadId, '线程ID');
-        const type = this.mapCheckpointType(request.type);
+    const threadId = this.parseId(request.threadId, '线程ID');
+    const type = this.mapCheckpointType(request.type);
 
-        let checkpoint: ThreadCheckpoint;
+    let checkpoint: Checkpoint;
 
-        switch (request.type) {
-          case 'manual':
-            checkpoint = await this.creationService.createManualCheckpoint(
-              threadId,
-              request.stateData,
-              request.title,
-              request.description,
-              request.tags,
-              request.metadata,
-              request.expirationHours
-            );
-            break;
+    switch (request.type) {
+      case 'manual':
+        checkpoint = await this.creationService.createManualCheckpoint(
+          threadId,
+          request.stateData,
+          request.title,
+          request.description,
+          request.tags,
+          request.metadata,
+          request.expirationHours
+        );
+        break;
 
-          case 'error':
-            checkpoint = await this.creationService.createErrorCheckpoint(
-              threadId,
-              request.stateData,
-              request.description || '',
-              request.metadata?.['errorType'] as string,
-              request.metadata,
-              request.expirationHours
-            );
-            break;
+      case 'error':
+        checkpoint = await this.creationService.createErrorCheckpoint(
+          threadId,
+          request.stateData,
+          request.description || '',
+          request.metadata?.['errorType'] as string,
+          request.metadata,
+          request.expirationHours
+        );
+        break;
 
-          case 'milestone':
-            checkpoint = await this.creationService.createMilestoneCheckpoint(
-              threadId,
-              request.stateData,
-              request.title || '',
-              request.description,
-              request.metadata,
-              request.expirationHours
-            );
-            break;
+      case 'milestone':
+        checkpoint = await this.creationService.createMilestoneCheckpoint(
+          threadId,
+          request.stateData,
+          request.title || '',
+          request.description,
+          request.metadata,
+          request.expirationHours
+        );
+        break;
 
-          case 'auto':
-          default:
-            checkpoint = await this.creationService.createAutoCheckpoint(
-              threadId,
-              request.stateData,
-              request.metadata,
-              request.expirationHours
-            );
-            break;
-        }
+      case 'auto':
+      default:
+        checkpoint = await this.creationService.createAutoCheckpoint(
+          threadId,
+          request.stateData,
+          request.metadata,
+          request.expirationHours
+        );
+        break;
+    }
 
-        return checkpoint.checkpointId;
-      },
-      { threadId: request.threadId, type: request.type }
-    );
+    this.logOperationSuccess('检查点创建成功', {
+      checkpointId: checkpoint.checkpointId.value,
+      threadId: request.threadId,
+      type: request.type,
+    });
+
+    return checkpoint.checkpointId.value.toString();
   }
 
   /**
@@ -406,21 +406,15 @@ export class Checkpoint extends BaseService {
    * 创建检查点备份
    */
   async createBackup(checkpointId: string): Promise<string> {
-    return this.executeCreateOperation(
-      '检查点备份',
-      async () => {
-        const id = this.parseId(checkpointId, '检查点ID');
-        const backup = await this.backupService.createBackup(id);
+    const id = this.parseId(checkpointId, '检查点ID');
+    const backup = await this.backupService.createBackup(id);
 
-        this.logOperationSuccess('检查点备份创建成功', {
-          originalCheckpointId: checkpointId,
-          backupId: backup.checkpointId.toString(),
-        });
+    this.logOperationSuccess('检查点备份创建成功', {
+      originalCheckpointId: checkpointId,
+      backupId: backup.checkpointId.value,
+    });
 
-        return backup.checkpointId;
-      },
-      { checkpointId }
-    );
+    return backup.checkpointId.value.toString();
   }
 
   /**
@@ -549,12 +543,12 @@ export class Checkpoint extends BaseService {
   /**
    * 映射到检查点信息DTO
    */
-  private mapToCheckpointInfo(checkpoint: ThreadCheckpoint): CheckpointInfo {
+  private mapToCheckpointInfo(checkpoint: Checkpoint): CheckpointInfo {
     return {
-      checkpointId: checkpoint.checkpointId.toString(),
-      threadId: checkpoint.threadId.toString(),
-      type: checkpoint.type.getValue(),
-      status: checkpoint.status.statusValue,
+      checkpointId: checkpoint.checkpointId.value,
+      threadId: checkpoint.threadId.value,
+      type: checkpoint.type.toString(),
+      status: checkpoint.status.toString(),
       title: checkpoint.title,
       description: checkpoint.description,
       tags: checkpoint.tags,
@@ -596,3 +590,5 @@ export class Checkpoint extends BaseService {
     };
   }
 }
+
+export { CheckpointService as Checkpoint };

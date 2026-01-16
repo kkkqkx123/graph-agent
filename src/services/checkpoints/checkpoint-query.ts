@@ -1,7 +1,7 @@
 import { ID } from '../../domain/common/value-objects/id';
-import { ThreadCheckpoint } from '../../domain/threads/checkpoints/entities/thread-checkpoint';
+import { Checkpoint } from '../../domain/threads/checkpoints/entities/checkpoint';
 import { CheckpointStatistics } from '../../domain/threads/checkpoints/value-objects/checkpoint-statistics';
-import { IThreadCheckpointRepository } from '../../domain/threads/checkpoints/repositories/thread-checkpoint-repository';
+import { ICheckpointRepository } from '../../domain/threads/checkpoints/repositories/checkpoint-repository';
 import { ILogger } from '../../domain/common/types/logger-types';
 
 /**
@@ -11,14 +11,14 @@ import { ILogger } from '../../domain/common/types/logger-types';
  */
 export class CheckpointQuery {
   constructor(
-    private readonly repository: IThreadCheckpointRepository,
+    private readonly repository: ICheckpointRepository,
     private readonly logger: ILogger
   ) {}
 
   /**
    * 获取线程的检查点历史
    */
-  async getThreadCheckpointHistory(threadId: ID, limit?: number): Promise<ThreadCheckpoint[]> {
+  async getThreadCheckpointHistory(threadId: ID, limit?: number): Promise<Checkpoint[]> {
     return await this.repository.getThreadHistory(threadId, limit);
   }
 

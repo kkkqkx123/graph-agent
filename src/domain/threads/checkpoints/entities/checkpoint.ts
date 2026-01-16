@@ -2,18 +2,17 @@ import { Entity } from '../../../common/base/entity';
 import { ID } from '../../../common/value-objects/id';
 import { Timestamp } from '../../../common/value-objects/timestamp';
 import { Version } from '../../../common/value-objects/version';
-import { CheckpointType } from '../../../checkpoint/value-objects/checkpoint-type';
+import { CheckpointType } from '../value-objects/checkpoint-type';
 import { CheckpointStatus } from '../value-objects/checkpoint-status';
 import { CheckpointScope } from '../value-objects/checkpoint-scope';
 
 /**
- * Thread检查点实体接口
+ * Checkpoint 实体属性接口
  */
-export interface ThreadCheckpointProps {
+export interface CheckpointProps {
   id: ID;
   threadId: ID;
   scope: CheckpointScope;
-  targetId?: ID;
   type: CheckpointType;
   status: CheckpointStatus;
   title?: string;
@@ -32,9 +31,15 @@ export interface ThreadCheckpointProps {
 }
 
 /**
- * Thread检查点实体
+ * Checkpoint 实体
  *
- * 表示线程、会话或全局的检查点，支持多种范围和类型
+ * 表示 Thread 的检查点，专注于 Thread 的状态记录
+ * 
+ * 设计原则：
+ * - Thread 是唯一的执行引擎，负责实际的 workflow 执行和状态管理
+ * - Checkpoint 只记录 Thread 的状态快照
+ * - Session 的状态通过聚合其 Thread 的 checkpoint 间接获取
+ * 
  * 职责：
  * - 检查点基本信息管理
  * - 状态数据管理
@@ -42,14 +47,14 @@ export interface ThreadCheckpointProps {
  * - 过期管理
  * - 统计信息管理
  */
-export class ThreadCheckpoint extends Entity {
-  private readonly props: ThreadCheckpointProps;
+export class Checkpoint extends Entity {
+  private readonly props: CheckpointProps;
 
   /**
    * 构造函数
    * @param props 检查点属性
    */
-  private constructor(props: ThreadCheckpointProps) {
+  private constructor(props: CheckpointProps) {
     super(props.id, props.createdAt, props.updatedAt, props.version);
     this.props = Object.freeze(props);
   }
@@ -57,7 +62,6 @@ export class ThreadCheckpoint extends Entity {
   /**
    * 创建新检查点
    * @param threadId 线程ID
-   * @param scope 检查点范围
    * @param type 检查点类型
    * @param stateData 状态数据
    * @param title 标题
@@ -69,28 +73,18 @@ export class ThreadCheckpoint extends Entity {
    */
   public static create(
     threadId: ID,
-    scope: CheckpointScope,
     type: CheckpointType,
     stateData: Record<string, unknown>,
     title?: string,
     description?: string,
     tags?: string[],
     metadata?: Record<string, unknown>,
-    expirationHours?: number,
-    targetId?: ID
-  ): ThreadCheckpoint {
+    expirationHours?: number
+  ): Checkpoint {
     const now = Timestamp.now();
     const checkpointId = ID.generate();
     const status = CheckpointStatus.active();
-
-    // 验证范围和目标ID的匹配
-    if (scope.requiresTargetId() && !targetId) {
-      throw new Error(`${scope.getDescription()}需要提供目标ID`);
-    }
-
-    if (!scope.requiresTargetId() && targetId) {
-      throw new Error(`${scope.getDescription()}不需要提供目标ID`);
-    }
+    const scope = CheckpointScope.thread();
 
     // 计算数据大小
     const sizeBytes = JSON.stringify(stateData).length;
@@ -101,11 +95,10 @@ export class ThreadCheckpoint extends Entity {
       expiresAt = now.addHours(expirationHours);
     }
 
-    const props: ThreadCheckpointProps = {
+    const props: CheckpointProps = {
       id: checkpointId,
       threadId,
       scope,
-      targetId,
       type,
       status,
       title,
@@ -122,8 +115,7 @@ export class ThreadCheckpoint extends Entity {
       restoreCount: 0,
     };
 
-    const checkpoint = new ThreadCheckpoint(props);
-    // 验证由值对象在构造时完成，这里不需要额外验证
+    const checkpoint = new Checkpoint(props);
     return checkpoint;
   }
 
@@ -132,8 +124,8 @@ export class ThreadCheckpoint extends Entity {
    * @param props 检查点属性
    * @returns 检查点实例
    */
-  public static fromProps(props: ThreadCheckpointProps): ThreadCheckpoint {
-    return new ThreadCheckpoint(props);
+  public static fromProps(props: CheckpointProps): Checkpoint {
+    return new Checkpoint(props);
   }
 
   /**
@@ -155,13 +147,6 @@ export class ThreadCheckpoint extends Entity {
    */
   public get scope(): CheckpointScope {
     return this.props.scope;
-  }
-
-  /**
-   * 获取目标ID
-   */
-  public get targetId(): ID | undefined {
-    return this.props.targetId;
   }
 
   /**
@@ -568,7 +553,7 @@ export class ThreadCheckpoint extends Entity {
    * 获取业务标识
    */
   public getBusinessIdentifier(): string {
-    return `thread-checkpoint:${this.props.id.toString()}`;
+    return `checkpoint:${this.props.id.toString()}`;
   }
 
   /**
@@ -585,14 +570,6 @@ export class ThreadCheckpoint extends Entity {
 
     if (!this.props.scope) {
       throw new Error('检查点范围不能为空');
-    }
-
-    if (this.props.scope.requiresTargetId() && !this.props.targetId) {
-      throw new Error(`${this.props.scope.getDescription()}需要提供目标ID`);
-    }
-
-    if (!this.props.scope.requiresTargetId() && this.props.targetId) {
-      throw new Error(`${this.props.scope.getDescription()}不需要提供目标ID`);
     }
 
     if (!this.props.type) {
@@ -636,7 +613,6 @@ export class ThreadCheckpoint extends Entity {
       id: this.props.id.toString(),
       threadId: this.props.threadId.toString(),
       scope: this.props.scope.toString(),
-      targetId: this.props.targetId?.toString(),
       type: this.props.type.value,
       status: this.props.status.value,
       title: this.props.title,
@@ -658,12 +634,11 @@ export class ThreadCheckpoint extends Entity {
   /**
    * 从字典创建实例
    */
-  public static fromDict(data: Record<string, unknown>): ThreadCheckpoint {
-    const props: ThreadCheckpointProps = {
+  public static fromDict(data: Record<string, unknown>): Checkpoint {
+    const props: CheckpointProps = {
       id: ID.fromString(data['id'] as string),
       threadId: ID.fromString(data['threadId'] as string),
       scope: CheckpointScope.fromString(data['scope'] as string || 'thread'),
-      targetId: data['targetId'] ? ID.fromString(data['targetId'] as string) : undefined,
       type: CheckpointType.fromString(data['type'] as string),
       status: CheckpointStatus.fromString(data['status'] as string),
       title: data['title'] as string | undefined,
@@ -685,6 +660,6 @@ export class ThreadCheckpoint extends Entity {
         : undefined,
     };
 
-    return ThreadCheckpoint.fromProps(props);
+    return Checkpoint.fromProps(props);
   }
 }

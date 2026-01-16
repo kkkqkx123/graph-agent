@@ -1,6 +1,6 @@
 import { ID } from '../../domain/common/value-objects/id';
-import { ThreadCheckpoint } from '../../domain/threads/checkpoints/entities/thread-checkpoint';
-import { IThreadCheckpointRepository } from '../../domain/threads/checkpoints/repositories/thread-checkpoint-repository';
+import { Checkpoint } from '../../domain/threads/checkpoints/entities/checkpoint';
+import { ICheckpointRepository } from '../../domain/threads/checkpoints/repositories/checkpoint-repository';
 import { ILogger } from '../../domain/common/types/logger-types';
 
 /**
@@ -10,7 +10,7 @@ import { ILogger } from '../../domain/common/types/logger-types';
  */
 export class CheckpointRestore {
   constructor(
-    private readonly repository: IThreadCheckpointRepository,
+    private readonly repository: ICheckpointRepository,
     private readonly logger: ILogger
   ) {}
 

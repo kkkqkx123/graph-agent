@@ -1,4 +1,4 @@
-import { ValueObject } from '../../common/value-objects';
+import { ValueObject } from '../../../common/value-objects';
 
 /**
  * 标签值对象接口

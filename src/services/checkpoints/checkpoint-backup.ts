@@ -1,8 +1,8 @@
 import { ID } from '../../domain/common/value-objects/id';
-import { ThreadCheckpoint } from '../../domain/threads/checkpoints/entities/thread-checkpoint';
-import { CheckpointType } from '../../domain/checkpoint/value-objects/checkpoint-type';
+import { Checkpoint } from '../../domain/threads/checkpoints/entities/checkpoint';
+import { CheckpointType } from '../../domain/threads/checkpoints/value-objects/checkpoint-type';
 import { CheckpointScope } from '../../domain/threads/checkpoints/value-objects/checkpoint-scope';
-import { IThreadCheckpointRepository } from '../../domain/threads/checkpoints/repositories/thread-checkpoint-repository';
+import { ICheckpointRepository } from '../../domain/threads/checkpoints/repositories/checkpoint-repository';
 import { ILogger } from '../../domain/common/types/logger-types';
 
 /**
@@ -12,14 +12,14 @@ import { ILogger } from '../../domain/common/types/logger-types';
  */
 export class CheckpointBackup {
   constructor(
-    private readonly repository: IThreadCheckpointRepository,
+    private readonly repository: ICheckpointRepository,
     private readonly logger: ILogger
   ) {}
 
   /**
    * 创建检查点备份
    */
-  async createBackup(checkpointId: ID): Promise<ThreadCheckpoint> {
+  async createBackup(checkpointId: ID): Promise<Checkpoint> {
     const original = await this.repository.findById(checkpointId);
     if (!original) {
       throw new Error('原始检查点不存在');
@@ -27,21 +27,19 @@ export class CheckpointBackup {
 
     const backupMetadata = {
       ...original.metadata,
-      backupOf: checkpointId.toString(),
+      backupOf: checkpointId.value,
       backupTimestamp: new Date().toISOString(),
     };
 
-    const backup = ThreadCheckpoint.create(
+    const backup = Checkpoint.create(
       original.threadId,
-      original.scope,
       CheckpointType.manual(),
       original.stateData,
       `${original.title || '检查点'} - 备份`,
       original.description,
       [...original.tags, 'backup'],
       backupMetadata,
-      undefined,
-      original.targetId
+      undefined
     );
 
     await this.repository.save(backup);
@@ -66,7 +64,7 @@ export class CheckpointBackup {
   /**
    * 获取备份链
    */
-  async getBackupChain(checkpointId: ID): Promise<ThreadCheckpoint[]> {
+  async getBackupChain(checkpointId: ID): Promise<Checkpoint[]> {
     const checkpoint = await this.repository.findById(checkpointId);
     if (!checkpoint) {
       return [];
@@ -75,7 +73,7 @@ export class CheckpointBackup {
     // 查找所有带有backup标签的检查点
     const allCheckpoints = await this.repository.findByThreadId(checkpoint.threadId);
     const backupCheckpoints = allCheckpoints.filter(
-      cp => cp.tags.includes('backup') && cp.metadata?.['backupOf'] === checkpointId.toString()
+      cp => cp.tags.includes('backup') && cp.metadata?.['backupOf'] === checkpointId.value
     );
 
     return backupCheckpoints;

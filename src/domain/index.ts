@@ -9,9 +9,6 @@
 // 导出通用领域模块
 export * from './common';
 
-// 导出检查点领域模块
-export * from './checkpoint';
-
 // 导出LLM领域模块
 export * from './llm';
 

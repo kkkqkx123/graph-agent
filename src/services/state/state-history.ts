@@ -2,7 +2,7 @@ import { ID } from '../../domain/common/value-objects/id';
 import { Timestamp } from '../../domain/common/value-objects/timestamp';
 import { Thread } from '../../domain/threads/entities/thread';
 import { ThreadStatus } from '../../domain/threads/value-objects/thread-status';
-import { ThreadCheckpoint } from '../../domain/threads/checkpoints/entities/thread-checkpoint';
+import { Checkpoint } from '../../domain/threads/checkpoints/entities/checkpoint';
 import { ILogger } from '../../domain/common/types/logger-types';
 
 /**
@@ -44,7 +44,7 @@ export class StateHistory {
    * @param thread Thread实体
    * @param checkpoint Checkpoint实体
    */
-  async recordRestore(thread: Thread, checkpoint: ThreadCheckpoint): Promise<void> {
+  async recordRestore(thread: Thread, checkpoint: Checkpoint): Promise<void> {
     this.logger.info('Thread从Checkpoint恢复', {
       threadId: thread.threadId.value,
       sessionId: thread.sessionId?.value,

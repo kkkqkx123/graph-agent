@@ -1,6 +1,6 @@
 import { ValueObject } from '../../../common/value-objects';
 import { CheckpointStatus } from './checkpoint-status';
-import { CheckpointType } from '../../../checkpoint/value-objects';
+import { CheckpointType } from './checkpoint-type';
 
 /**
  * 检查点统计信息接口

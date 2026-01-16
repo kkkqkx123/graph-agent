@@ -1,16 +1,16 @@
 import { ID } from '../../domain/common/value-objects/id';
-import { ThreadCheckpoint } from '../../domain/threads/checkpoints/entities/thread-checkpoint';
-import { IThreadCheckpointRepository } from '../../domain/threads/checkpoints/repositories/thread-checkpoint-repository';
+import { Checkpoint } from '../../domain/threads/checkpoints/entities/checkpoint';
+import { ICheckpointRepository } from '../../domain/threads/checkpoints/repositories/checkpoint-repository';
 import { ILogger } from '../../domain/common/types/logger-types';
 
 /**
  * 检查点清理服务
  *
- * 负责清理和归档检查点
+ * 负责清理过期、多余和旧的检查点
  */
 export class CheckpointCleanup {
   constructor(
-    private readonly repository: IThreadCheckpointRepository,
+    private readonly repository: ICheckpointRepository,
     private readonly logger: ILogger
   ) {}
 
@@ -22,37 +22,41 @@ export class CheckpointCleanup {
       ? await this.repository.findByThreadId(threadId)
       : await this.repository.findAll();
 
-    const expiredCheckpoints = checkpoints.filter(cp => cp.isExpired());
-    let cleanedCount = 0;
+    const expiredCheckpoints = checkpoints.filter((cp: Checkpoint) => cp.isExpired());
+    let deletedCount = 0;
 
     for (const checkpoint of expiredCheckpoints) {
-      checkpoint.markExpired();
-      await this.repository.save(checkpoint);
-      cleanedCount++;
+      await this.repository.deleteById(checkpoint.checkpointId);
+      deletedCount++;
     }
 
-    return cleanedCount;
+    this.logger.info('过期检查点清理完成', { threadId: threadId?.value, deletedCount });
+    return deletedCount;
   }
 
   /**
-   * 清理多余的检查点
+   * 清理多余检查点
    */
   async cleanupExcessCheckpoints(threadId: ID, maxCount: number): Promise<number> {
     const checkpoints = await this.repository.findByThreadId(threadId);
+
     if (checkpoints.length <= maxCount) {
       return 0;
     }
 
-    // 按创建时间排序，保留最新的maxCount个
-    checkpoints.sort((a, b) => b.createdAt.toISOString().localeCompare(a.createdAt.toISOString()));
-    const toDelete = checkpoints.slice(maxCount);
+    checkpoints.sort((a: Checkpoint, b: Checkpoint) => 
+      b.createdAt.toISOString().localeCompare(a.createdAt.toISOString())
+    );
 
+    const checkpointsToDelete = checkpoints.slice(maxCount);
     let deletedCount = 0;
-    for (const checkpoint of toDelete) {
-      await this.repository.delete(checkpoint);
+
+    for (const checkpoint of checkpointsToDelete) {
+      await this.repository.deleteById(checkpoint.checkpointId);
       deletedCount++;
     }
 
+    this.logger.info('多余检查点清理完成', { threadId: threadId.value, maxCount, deletedCount });
     return deletedCount;
   }
 
@@ -64,8 +68,9 @@ export class CheckpointCleanup {
     const cutoffTime = new Date();
     cutoffTime.setDate(cutoffTime.getDate() - days);
 
-    const oldCheckpoints = checkpoints.filter(cp => cp.createdAt.getDate() < cutoffTime);
-
+    const oldCheckpoints = checkpoints.filter((cp: Checkpoint) => 
+      cp.createdAt.getDate() < cutoffTime
+    );
     let archivedCount = 0;
 
     for (const checkpoint of oldCheckpoints) {
@@ -74,6 +79,7 @@ export class CheckpointCleanup {
       archivedCount++;
     }
 
+    this.logger.info('旧检查点归档完成', { threadId: threadId.value, days, archivedCount });
     return archivedCount;
   }
 }

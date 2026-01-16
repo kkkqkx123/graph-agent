@@ -3,7 +3,7 @@ export { ThreadModel } from './thread.model';
 export { MessageModel } from './message.model';
 export { WorkflowModel } from './workflow.model';
 export { HistoryModel } from './history.model';
-export { ThreadCheckpointModel } from './thread-checkpoint.model';
+export { CheckpointModel } from './checkpoint.model';
 export { ToolModel } from './tool.model';
 export { LLMRequestModel } from './llm-request.model';
 export { LLMResponseModel } from './llm-response.model';

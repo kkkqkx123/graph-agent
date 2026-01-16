@@ -1,6 +1,7 @@
 import { ID } from '../../domain/common/value-objects/id';
+import { Checkpoint } from '../../domain/threads/checkpoints/entities/checkpoint';
 import { CheckpointStatistics } from '../../domain/threads/checkpoints/value-objects/checkpoint-statistics';
-import { IThreadCheckpointRepository } from '../../domain/threads/checkpoints/repositories/thread-checkpoint-repository';
+import { ICheckpointRepository } from '../../domain/threads/checkpoints/repositories/checkpoint-repository';
 import { ILogger } from '../../domain/common/types/logger-types';
 
 /**
@@ -10,7 +11,7 @@ import { ILogger } from '../../domain/common/types/logger-types';
  */
 export class CheckpointAnalysis {
   constructor(
-    private readonly repository: IThreadCheckpointRepository,
+    private readonly repository: ICheckpointRepository,
     private readonly logger: ILogger
   ) {}
 
@@ -61,10 +62,10 @@ export class CheckpointAnalysis {
 
     // 简化实现
     return {
-      totalSize: checkpoints.reduce((sum, cp) => sum + cp.sizeBytes, 0),
+      totalSize: checkpoints.reduce((sum: number, cp: Checkpoint) => sum + cp.sizeBytes, 0),
       averageSize:
         checkpoints.length > 0
-          ? checkpoints.reduce((sum, cp) => sum + cp.sizeBytes, 0) / checkpoints.length
+          ? checkpoints.reduce((sum: number, cp: Checkpoint) => sum + cp.sizeBytes, 0) / checkpoints.length
           : 0,
       medianSize: 0,
       sizeRanges: [],

@@ -1,39 +1,38 @@
 import { injectable, inject } from 'inversify';
-import { IThreadCheckpointRepository } from '../../../domain/threads/checkpoints/repositories/thread-checkpoint-repository';
-import { ThreadCheckpoint } from '../../../domain/threads/checkpoints/entities/thread-checkpoint';
-import { CheckpointScope } from '../../../domain/threads/checkpoints/value-objects/checkpoint-scope';
+import { ICheckpointRepository } from '../../../domain/threads/checkpoints/repositories/checkpoint-repository';
+import { Checkpoint } from '../../../domain/threads/checkpoints/entities/checkpoint';
 import { CheckpointStatus } from '../../../domain/threads/checkpoints/value-objects/checkpoint-status';
-import { CheckpointType } from '../../../domain/checkpoint/value-objects/checkpoint-type';
+import { CheckpointType } from '../../../domain/threads/checkpoints/value-objects/checkpoint-type';
+import { CheckpointScope } from '../../../domain/threads/checkpoints/value-objects/checkpoint-scope';
 import { ID } from '../../../domain/common/value-objects/id';
 import { Timestamp } from '../../../domain/common/value-objects/timestamp';
 import { Version } from '../../../domain/common/value-objects/version';
-import { ThreadCheckpointModel } from '../models/thread-checkpoint.model';
+import { CheckpointModel } from '../models/checkpoint.model';
 import { BaseRepository } from './base-repository';
 import { ConnectionManager } from '../connection-manager';
 import { In } from 'typeorm';
 
 @injectable()
-export class ThreadCheckpointRepository
-  extends BaseRepository<ThreadCheckpoint, ThreadCheckpointModel, ID>
-  implements IThreadCheckpointRepository {
+export class CheckpointRepository
+  extends BaseRepository<Checkpoint, CheckpointModel, ID>
+  implements ICheckpointRepository {
   constructor(@inject('ConnectionManager') connectionManager: ConnectionManager) {
     super(connectionManager);
   }
 
-  protected getModelClass(): new () => ThreadCheckpointModel {
-    return ThreadCheckpointModel;
+  protected getModelClass(): new () => CheckpointModel {
+    return CheckpointModel;
   }
 
   /**
    * 将模型转换为领域实体
    */
-  protected override toDomain(model: ThreadCheckpointModel): ThreadCheckpoint {
+  protected override toDomain(model: CheckpointModel): Checkpoint {
     try {
       const props = {
         id: new ID(model.id),
         threadId: new ID(model.threadId),
         scope: CheckpointScope.fromString(model.scope || 'thread'),
-        targetId: model.targetId ? new ID(model.targetId) : undefined,
         type: CheckpointType.fromString(model.type),
         status: CheckpointStatus.fromString(model.status),
         title: model.title,
@@ -51,9 +50,9 @@ export class ThreadCheckpointRepository
         lastRestoredAt: model.lastRestoredAt ? Timestamp.create(model.lastRestoredAt) : undefined,
       };
 
-      return ThreadCheckpoint.fromProps(props);
+      return Checkpoint.fromProps(props);
     } catch (error) {
-      const errorMessage = `ThreadCheckpoint模型转换失败: ${error instanceof Error ? error.message : String(error)}`;
+      const errorMessage = `Checkpoint模型转换失败: ${error instanceof Error ? error.message : String(error)}`;
       const customError = new Error(errorMessage);
       (customError as any).code = 'MAPPING_ERROR';
       (customError as any).context = { modelId: model.id, operation: 'toDomain' };
@@ -64,14 +63,13 @@ export class ThreadCheckpointRepository
   /**
    * 将领域实体转换为模型
    */
-  protected override toModel(entity: ThreadCheckpoint): ThreadCheckpointModel {
+  protected override toModel(entity: Checkpoint): CheckpointModel {
     try {
-      const model = new ThreadCheckpointModel();
+      const model = new CheckpointModel();
 
       model.id = entity.checkpointId.value;
       model.threadId = entity.threadId.value;
       model.scope = entity.scope.toString();
-      model.targetId = entity.targetId?.value;
       model.type = entity.type.toString();
       model.status = entity.status.value;
       model.title = entity.title;
@@ -90,7 +88,7 @@ export class ThreadCheckpointRepository
 
       return model;
     } catch (error) {
-      const errorMessage = `ThreadCheckpoint实体转换失败: ${error instanceof Error ? error.message : String(error)}`;
+      const errorMessage = `Checkpoint实体转换失败: ${error instanceof Error ? error.message : String(error)}`;
       const customError = new Error(errorMessage);
       (customError as any).code = 'MAPPING_ERROR';
       (customError as any).context = { entityId: entity.checkpointId.value, operation: 'toModel' };
@@ -101,7 +99,7 @@ export class ThreadCheckpointRepository
   /**
    * 根据线程ID查找检查点
    */
-  async findByThreadId(threadId: ID): Promise<ThreadCheckpoint[]> {
+  async findByThreadId(threadId: ID): Promise<Checkpoint[]> {
     return this.find({
       filters: { threadId: threadId.value },
       sortBy: 'createdAt',
@@ -112,7 +110,7 @@ export class ThreadCheckpointRepository
   /**
    * 根据状态查找检查点
    */
-  async findByStatus(status: CheckpointStatus): Promise<ThreadCheckpoint[]> {
+  async findByStatus(status: CheckpointStatus): Promise<Checkpoint[]> {
     return this.find({
       filters: { status: status.value },
       sortBy: 'createdAt',
@@ -123,36 +121,9 @@ export class ThreadCheckpointRepository
   /**
    * 根据类型查找检查点
    */
-  async findByType(type: CheckpointType): Promise<ThreadCheckpoint[]> {
+  async findByType(type: CheckpointType): Promise<Checkpoint[]> {
     return this.find({
       filters: { type: type.value },
-      sortBy: 'createdAt',
-      sortOrder: 'desc',
-    });
-  }
-
-  /**
-   * 根据范围和目标ID查找检查点
-   */
-  async findByScopeAndTarget(scope: CheckpointScope, targetId: ID): Promise<ThreadCheckpoint[]> {
-    return this.find({
-      filters: {
-        scope: scope.toString(),
-        targetId: targetId.value,
-      },
-      sortBy: 'createdAt',
-      sortOrder: 'desc',
-    });
-  }
-
-  /**
-   * 根据范围查找检查点
-   */
-  async findByScope(scope: CheckpointScope): Promise<ThreadCheckpoint[]> {
-    return this.find({
-      filters: {
-        scope: scope.toString(),
-      },
       sortBy: 'createdAt',
       sortOrder: 'desc',
     });
@@ -165,7 +136,7 @@ export class ThreadCheckpointRepository
     threadId: ID,
     limit?: number,
     offset?: number
-  ): Promise<ThreadCheckpoint[]> {
+  ): Promise<Checkpoint[]> {
     return this.find({
       filters: { threadId: threadId.value },
       sortBy: 'createdAt',
@@ -178,7 +149,7 @@ export class ThreadCheckpointRepository
   /**
    * 获取最新的检查点
    */
-  async getLatest(threadId: ID): Promise<ThreadCheckpoint | null> {
+  async getLatest(threadId: ID): Promise<Checkpoint | null> {
     return this.findOne({
       filters: { threadId: threadId.value },
       sortBy: 'createdAt',

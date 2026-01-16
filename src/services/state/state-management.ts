@@ -2,7 +2,7 @@ import { injectable, inject } from 'inversify';
 import { ID } from '../../domain/common/value-objects/id';
 import { Thread } from '../../domain/threads/entities/thread';
 import { Session } from '../../domain/sessions/entities/session';
-import { CheckpointType } from '../../domain/checkpoint/value-objects/checkpoint-type';
+import { CheckpointType } from '../../domain/threads/checkpoints/value-objects/checkpoint-type';
 import { CheckpointScope } from '../../domain/threads/checkpoints/value-objects/checkpoint-scope';
 import { StateHistory } from './state-history';
 import { Checkpoint } from '../checkpoints/checkpoint';
@@ -58,25 +58,15 @@ export class StateManagement {
 
   /**
    * 捕获Session状态变更
+   * 注意：Session 不应该有独立的 checkpoint，Session 的状态通过聚合其 Thread 的 checkpoint 间接获取
    */
   public async captureSessionStateChange(
     session: Session,
     changeType: string,
     details?: Record<string, unknown>
   ): Promise<void> {
-    // 注意：Session的History记录需要通过SessionService处理
-    // 这里暂时只创建Checkpoint（替代Snapshot）
-
-    // 根据变更类型决定是否创建Checkpoint
-    if (this.shouldCreateSnapshot(changeType)) {
-      await this.checkpointManagement.createSessionCheckpoint(
-        session,
-        CheckpointType.scheduled(),
-        `Auto Snapshot - ${changeType}`,
-        `Automatic snapshot triggered by ${changeType}`,
-        ['snapshot', 'automatic']
-      );
-    }
+    // Session 的状态变更记录应该通过 SessionService 处理
+    // 这里暂时不做任何操作，因为 Session 不应该有独立的 checkpoint
   }
 
   /**
@@ -238,14 +228,15 @@ export class StateManagement {
 
   /**
    * 获取Session状态历史
+   * 注意：Session 的状态历史通过聚合其 Thread 的 checkpoint 获取
    */
   public async getSessionStateHistory(sessionId: ID): Promise<{
     checkpoints: any[];
   }> {
-    const checkpoints = await this.checkpointManagement.getSessionCheckpoints(sessionId);
-
+    // Session 的 checkpoint 历史应该通过 SessionService 聚合其 Thread 的 checkpoint
+    // 这里暂时返回空数组
     return {
-      checkpoints: checkpoints.map(cp => cp.toDict()),
+      checkpoints: [],
     };
   }
 
@@ -288,14 +279,12 @@ export class StateManagement {
     checkpoints: {
       total: number;
       byType: Record<string, number>;
-      byScope: Record<string, number>;
       totalSizeBytes: number;
       averageSizeBytes: number;
     };
     recovery: {
       totalRestores: number;
       byType: Record<string, number>;
-      byScope: Record<string, number>;
       mostRestoredCheckpointId: string | null;
     };
   }> {
@@ -308,14 +297,12 @@ export class StateManagement {
       checkpoints: {
         total: checkpointStats.total,
         byType: checkpointStats.byType,
-        byScope: checkpointStats.byScope,
         totalSizeBytes: checkpointStats.totalSizeBytes,
         averageSizeBytes: checkpointStats.averageSizeBytes,
       },
       recovery: {
         totalRestores: restoreStats.totalRestores,
         byType: restoreStats.byType,
-        byScope: restoreStats.byScope,
         mostRestoredCheckpointId: restoreStats.mostRestoredCheckpointId,
       },
     };

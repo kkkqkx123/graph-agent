@@ -1,26 +1,29 @@
 import { ID } from '../../domain/common/value-objects/id';
-import { ThreadCheckpoint } from '../../domain/threads/checkpoints/entities/thread-checkpoint';
-import { CheckpointType } from '../../domain/checkpoint/value-objects/checkpoint-type';
-import { CheckpointScope } from '../../domain/threads/checkpoints/value-objects/checkpoint-scope';
-import { IThreadCheckpointRepository } from '../../domain/threads/checkpoints/repositories/thread-checkpoint-repository';
+import { Checkpoint } from '../../domain/threads/checkpoints/entities/checkpoint';
+import { CheckpointType } from '../../domain/threads/checkpoints/value-objects/checkpoint-type';
+import { ICheckpointRepository } from '../../domain/threads/checkpoints/repositories/checkpoint-repository';
 import { ILogger } from '../../domain/common/types/logger-types';
 import { Thread } from '../../domain/threads/entities/thread';
-import { Session } from '../../domain/sessions/entities/session';
 
 /**
  * 检查点管理服务
  *
  * 负责检查点的管理操作，包括创建、查询、清理和统计
- * 支持Thread、Session和Global三种范围的检查点
+ * Checkpoint 专注于 Thread 的状态记录
+ * 
+ * 设计原则：
+ * - Thread 是唯一的执行引擎，负责实际的 workflow 执行和状态管理
+ * - Checkpoint 只记录 Thread 的状态快照
+ * - Session 的状态通过聚合其 Thread 的 checkpoint 间接获取
  */
 export class CheckpointManagement {
   constructor(
-    private readonly repository: IThreadCheckpointRepository,
+    private readonly repository: ICheckpointRepository,
     private readonly logger: ILogger
   ) {}
 
   /**
-   * 创建Thread检查点
+   * 创建 Thread 检查点
    */
   async createThreadCheckpoint(
     thread: Thread,
@@ -30,12 +33,11 @@ export class CheckpointManagement {
     tags?: string[],
     metadata?: Record<string, unknown>,
     expirationHours?: number
-  ): Promise<ThreadCheckpoint> {
+  ): Promise<Checkpoint> {
     const stateData = this.serializeThreadState(thread);
 
-    const checkpoint = ThreadCheckpoint.create(
+    const checkpoint = Checkpoint.create(
       thread.id,
-      CheckpointScope.thread(),
       type,
       stateData,
       title || `Thread Checkpoint - ${thread.id.value}`,
@@ -49,12 +51,11 @@ export class CheckpointManagement {
         status: thread.status,
         createdAt: new Date().toISOString(),
       },
-      expirationHours,
-      thread.id
+      expirationHours
     );
 
     await this.repository.save(checkpoint);
-    this.logger.info('Thread检查点创建成功', {
+    this.logger.info('Thread 检查点创建成功', {
       checkpointId: checkpoint.checkpointId.value,
       threadId: thread.id.value,
       type: type.value,
@@ -64,150 +65,31 @@ export class CheckpointManagement {
   }
 
   /**
-   * 创建Session检查点
+   * 查询 Thread 的所有检查点
    */
-  async createSessionCheckpoint(
-    session: Session,
-    type: CheckpointType,
-    title?: string,
-    description?: string,
-    tags?: string[],
-    metadata?: Record<string, unknown>,
-    expirationHours?: number
-  ): Promise<ThreadCheckpoint> {
-    const stateData = this.serializeSessionState(session);
-
-    const checkpoint = ThreadCheckpoint.create(
-      ID.generate(), // Session检查点使用生成的ID作为threadId
-      CheckpointScope.session(),
-      type,
-      stateData,
-      title || `Session Checkpoint - ${session.id.value}`,
-      description || `Automatic checkpoint for session ${session.id.value}`,
-      tags,
-      {
-        ...metadata,
-        sessionId: session.id.value,
-        threadCount: session.threadCount,
-        status: session.status.value,
-        createdAt: new Date().toISOString(),
-      },
-      expirationHours,
-      session.id
-    );
-
-    await this.repository.save(checkpoint);
-    this.logger.info('Session检查点创建成功', {
-      checkpointId: checkpoint.checkpointId.value,
-      sessionId: session.id.value,
-      type: type.value,
-    });
-
-    return checkpoint;
+  async getThreadCheckpoints(threadId: ID): Promise<Checkpoint[]> {
+    return await this.repository.findByThreadId(threadId);
   }
 
   /**
-   * 创建全局检查点
+   * 获取 Thread 的最新检查点
    */
-  async createGlobalCheckpoint(
-    type: CheckpointType,
-    title?: string,
-    description?: string,
-    tags?: string[],
-    metadata?: Record<string, unknown>,
-    expirationHours?: number
-  ): Promise<ThreadCheckpoint> {
-    const stateData = {
-      timestamp: new Date().toISOString(),
-      checkpointType: type.value,
-    };
-
-    const checkpoint = ThreadCheckpoint.create(
-      ID.generate(), // 全局检查点使用生成的ID作为threadId
-      CheckpointScope.global(),
-      type,
-      stateData,
-      title || `Global Checkpoint - ${new Date().toISOString()}`,
-      description || 'Global system checkpoint',
-      tags,
-      {
-        ...metadata,
-        createdAt: new Date().toISOString(),
-      },
-      expirationHours
-    );
-
-    await this.repository.save(checkpoint);
-    this.logger.info('全局检查点创建成功', {
-      checkpointId: checkpoint.checkpointId.value,
-      type: type.value,
-    });
-
-    return checkpoint;
-  }
-
-  /**
-   * 查询Thread的所有检查点
-   */
-  async getThreadCheckpoints(threadId: ID): Promise<ThreadCheckpoint[]> {
-    return await this.repository.findByScopeAndTarget(CheckpointScope.thread(), threadId);
-  }
-
-  /**
-   * 查询Session的所有检查点
-   */
-  async getSessionCheckpoints(sessionId: ID): Promise<ThreadCheckpoint[]> {
-    return await this.repository.findByScopeAndTarget(CheckpointScope.session(), sessionId);
-  }
-
-  /**
-   * 查询所有全局检查点
-   */
-  async getGlobalCheckpoints(): Promise<ThreadCheckpoint[]> {
-    return await this.repository.findByScope(CheckpointScope.global());
-  }
-
-  /**
-   * 获取Thread的最新检查点
-   */
-  async getLatestThreadCheckpoint(threadId: ID): Promise<ThreadCheckpoint | null> {
-    const checkpoints = await this.getThreadCheckpoints(threadId);
-    if (checkpoints.length === 0) {
-      return null;
-    }
-    const sortedCheckpoints = checkpoints.sort((a, b) =>
-      b.createdAt.differenceInSeconds(a.createdAt)
-    );
-    return sortedCheckpoints[0] || null;
-  }
-
-  /**
-   * 获取Session的最新检查点
-   */
-  async getLatestSessionCheckpoint(sessionId: ID): Promise<ThreadCheckpoint | null> {
-    const checkpoints = await this.getSessionCheckpoints(sessionId);
-    if (checkpoints.length === 0) {
-      return null;
-    }
-    const sortedCheckpoints = checkpoints.sort((a, b) =>
-      b.createdAt.differenceInSeconds(a.createdAt)
-    );
-    return sortedCheckpoints[0] || null;
+  async getLatestThreadCheckpoint(threadId: ID): Promise<Checkpoint | null> {
+    return await this.repository.getLatest(threadId);
   }
 
   /**
    * 按类型查询检查点
    */
-  async getCheckpointsByType(type: CheckpointType): Promise<ThreadCheckpoint[]> {
-    const allCheckpoints = await this.repository.findAll();
-    return allCheckpoints.filter(checkpoint => checkpoint.type.equals(type));
+  async getCheckpointsByType(type: CheckpointType): Promise<Checkpoint[]> {
+    return await this.repository.findByType(type);
   }
 
   /**
-   * 按范围查询检查点
+   * 按状态查询检查点
    */
-  async getCheckpointsByScope(scope: CheckpointScope): Promise<ThreadCheckpoint[]> {
-    return await this.repository.findByScope(scope);
+  async getCheckpointsByStatus(status: any): Promise<Checkpoint[]> {
+    return await this.repository.findByStatus(status);
   }
 
   /**
@@ -254,11 +136,7 @@ export class CheckpointManagement {
       return 0;
     }
 
-    const sortedCheckpoints = checkpoints.sort((a, b) =>
-      b.createdAt.differenceInSeconds(a.createdAt)
-    );
-
-    const checkpointsToDelete = sortedCheckpoints.slice(maxCount);
+    const checkpointsToDelete = checkpoints.slice(maxCount);
     let deletedCount = 0;
 
     for (const checkpoint of checkpointsToDelete) {
@@ -279,29 +157,23 @@ export class CheckpointManagement {
   async getCheckpointStatistics(): Promise<{
     total: number;
     byType: Record<string, number>;
-    byScope: Record<string, number>;
     totalSizeBytes: number;
     averageSizeBytes: number;
   }> {
     const allCheckpoints = await this.repository.findAll();
 
     const byType: Record<string, number> = {};
-    const byScope: Record<string, number> = {};
     let totalSizeBytes = 0;
 
     for (const checkpoint of allCheckpoints) {
       const type = checkpoint.type.toString();
-      const scope = checkpoint.scope.toString();
-
       byType[type] = (byType[type] || 0) + 1;
-      byScope[scope] = (byScope[scope] || 0) + 1;
       totalSizeBytes += checkpoint.sizeBytes;
     }
 
     return {
       total: allCheckpoints.length,
       byType,
-      byScope,
       totalSizeBytes,
       averageSizeBytes: totalSizeBytes / Math.max(allCheckpoints.length, 1),
     };
@@ -313,23 +185,19 @@ export class CheckpointManagement {
   async getRestoreStatistics(): Promise<{
     totalRestores: number;
     byType: Record<string, number>;
-    byScope: Record<string, number>;
     mostRestoredCheckpointId: string | null;
   }> {
     const allCheckpoints = await this.repository.findAll();
 
     const byType: Record<string, number> = {};
-    const byScope: Record<string, number> = {};
     let totalRestores = 0;
-    let mostRestoredCheckpoint: ThreadCheckpoint | null = null;
+    let mostRestoredCheckpoint: Checkpoint | null = null;
 
     for (const checkpoint of allCheckpoints) {
       const type = checkpoint.type.toString();
-      const scope = checkpoint.scope.toString();
       const restoreCount = checkpoint.restoreCount;
 
       byType[type] = (byType[type] || 0) + restoreCount;
-      byScope[scope] = (byScope[scope] || 0) + restoreCount;
       totalRestores += restoreCount;
 
       if (!mostRestoredCheckpoint || restoreCount > mostRestoredCheckpoint.restoreCount) {
@@ -340,7 +208,6 @@ export class CheckpointManagement {
     return {
       totalRestores,
       byType,
-      byScope,
       mostRestoredCheckpointId: mostRestoredCheckpoint?.checkpointId.value || null,
     };
   }
@@ -366,10 +233,10 @@ export class CheckpointManagement {
     checkpointIds: ID[],
     title?: string,
     description?: string
-  ): Promise<ThreadCheckpoint> {
+  ): Promise<Checkpoint> {
     const checkpoints = await Promise.all(checkpointIds.map(id => this.repository.findById(id)));
 
-    const validCheckpoints = checkpoints.filter(cp => cp !== null) as ThreadCheckpoint[];
+    const validCheckpoints = checkpoints.filter(cp => cp !== null) as Checkpoint[];
     if (validCheckpoints.length === 0) {
       throw new Error('没有找到有效的检查点');
     }
@@ -386,17 +253,15 @@ export class CheckpointManagement {
       mergedAt: new Date().toISOString(),
     };
 
-    const merged = ThreadCheckpoint.create(
+    const merged = Checkpoint.create(
       latest.threadId,
-      latest.scope,
       CheckpointType.manual(),
       mergedStateData,
       title || `合并检查点 (${checkpointIds.length}个)`,
       description,
       ['merged'],
       mergedMetadata,
-      undefined,
-      latest.targetId
+      undefined
     );
 
     await this.repository.save(merged);
@@ -435,7 +300,7 @@ export class CheckpointManagement {
     threadId: ID,
     data: string,
     format: 'json' | 'yaml' | 'xml'
-  ): Promise<ThreadCheckpoint> {
+  ): Promise<Checkpoint> {
     let parsedData: Record<string, unknown>;
 
     try {
@@ -455,13 +320,13 @@ export class CheckpointManagement {
       throw new Error(`数据解析失败: ${error}`);
     }
 
-    const checkpoint = ThreadCheckpoint.fromDict(parsedData);
+    const checkpoint = Checkpoint.fromDict(parsedData);
     await this.repository.save(checkpoint);
     return checkpoint;
   }
 
   /**
-   * 序列化Thread状态
+   * 序列化 Thread 状态
    */
   private serializeThreadState(thread: Thread): Record<string, unknown> {
     return {
@@ -472,19 +337,6 @@ export class CheckpointManagement {
       execution: thread.execution,
       createdAt: thread.createdAt.toISOString(),
       updatedAt: thread.updatedAt.toISOString(),
-    };
-  }
-
-  /**
-   * 序列化Session状态
-   */
-  private serializeSessionState(session: Session): Record<string, unknown> {
-    return {
-      sessionId: session.id.value,
-      threadCount: session.threadCount,
-      status: session.status.value,
-      createdAt: session.createdAt.toISOString(),
-      updatedAt: session.updatedAt.toISOString(),
     };
   }
 }

@@ -1,4 +1,5 @@
-import { ValueObject } from '../../common/value-objects';
+import { ValueObject } from '../../../common/value-objects';
+
 /**
  * 检查点类型枚举
  */

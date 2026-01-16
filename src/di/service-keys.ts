@@ -31,7 +31,7 @@ import { ISessionRepository } from '../domain/sessions/repositories/session-repo
 import { IThreadRepository } from '../domain/threads/repositories/thread-repository';
 import { IWorkflowRepository } from '../domain/workflow/repositories/workflow-repository';
 import { IPromptRepository as PromptDomainRepository } from '../domain/prompts/repositories/prompt-repository';
-import { IThreadCheckpointRepository } from '../domain/threads/checkpoints/repositories/thread-checkpoint-repository';
+import { ICheckpointRepository } from '../domain/threads/checkpoints/repositories/checkpoint-repository';
 import { IHumanRelayService } from '../services/llm/human-relay';
 
 // Services层实现
@@ -84,14 +84,13 @@ import { PromptBuilder } from '../services/prompts/prompt-builder';
 import { TemplateProcessor } from '../services/prompts/template-processor';
 import { PromptReferenceParser } from '../services/prompts/prompt-reference-parser';
 import { PromptReferenceValidator } from '../services/prompts/prompt-reference-validator';
-import { CheckpointManager } from '../domain/checkpoint/services/checkpoint-manager';
 
 // Infrastructure层实现
 import { SessionRepository as SessionInfrastructureRepository } from '../infrastructure/persistence/repositories/session-repository';
 import { ThreadRepository as ThreadInfrastructureRepository } from '../infrastructure/persistence/repositories/thread-repository';
 import { WorkflowRepository as WorkflowInfrastructureRepository } from '../infrastructure/persistence/repositories/workflow-repository';
 import { PromptRepository as PromptInfrastructureRepository } from '../infrastructure/persistence/repositories/prompt-repository';
-import { ThreadCheckpointRepository as ThreadCheckpointInfrastructureRepository } from '../infrastructure/persistence/repositories/thread-checkpoint-repository';
+import { CheckpointRepository as CheckpointInfrastructureRepository } from '../infrastructure/persistence/repositories/checkpoint-repository';
 import { ConnectionManager } from '../infrastructure/persistence/connection-manager';
 import { Logger } from '../infrastructure/logging/logger';
 
@@ -134,7 +133,7 @@ export interface ServiceTypes {
   ThreadRepository: IThreadRepository;
   WorkflowRepository: IWorkflowRepository;
   PromptRepository: PromptDomainRepository;
-  ThreadCheckpointRepository: IThreadCheckpointRepository;
+  CheckpointRepository: ICheckpointRepository;
 
   // 业务服务接口
   HumanRelayService: IHumanRelayService;
@@ -215,14 +214,11 @@ export interface ServiceTypes {
   ThreadRepositoryImpl: ThreadInfrastructureRepository;
   WorkflowRepositoryImpl: WorkflowInfrastructureRepository;
   PromptRepositoryImpl: PromptInfrastructureRepository;
-  ThreadCheckpointRepositoryImpl: ThreadCheckpointInfrastructureRepository;
+  CheckpointRepositoryImpl: CheckpointInfrastructureRepository;
 
   // 基础设施服务
   ConnectionManager: ConnectionManager;
   Logger: Logger;
-
-  // Domain服务
-  CheckpointManager: CheckpointManager;
 }
 
 /**
@@ -290,9 +286,9 @@ export const TYPES: {
     'WorkflowRepository'
   ) as TypedServiceIdentifier<'WorkflowRepository'>,
   PromptRepository: Symbol.for('PromptRepository') as TypedServiceIdentifier<'PromptRepository'>,
-  ThreadCheckpointRepository: Symbol.for(
-    'ThreadCheckpointRepository'
-  ) as TypedServiceIdentifier<'ThreadCheckpointRepository'>,
+  CheckpointRepository: Symbol.for(
+    'CheckpointRepository'
+  ) as TypedServiceIdentifier<'CheckpointRepository'>,
 
   // 业务服务接口
   HumanRelayService: Symbol.for('HumanRelayService') as TypedServiceIdentifier<'HumanRelayService'>,
@@ -403,16 +399,13 @@ export const TYPES: {
   PromptRepositoryImpl: Symbol.for(
     'PromptRepositoryImpl'
   ) as TypedServiceIdentifier<'PromptRepositoryImpl'>,
-  ThreadCheckpointRepositoryImpl: Symbol.for(
-    'ThreadCheckpointRepositoryImpl'
-  ) as TypedServiceIdentifier<'ThreadCheckpointRepositoryImpl'>,
+  CheckpointRepositoryImpl: Symbol.for(
+    'CheckpointRepositoryImpl'
+  ) as TypedServiceIdentifier<'CheckpointRepositoryImpl'>,
 
   // 基础设施服务
   ConnectionManager: Symbol.for('ConnectionManager') as TypedServiceIdentifier<'ConnectionManager'>,
   Logger: Symbol.for('Logger') as TypedServiceIdentifier<'Logger'>,
-
-  // Domain服务
-  CheckpointManager: Symbol.for('CheckpointManager') as TypedServiceIdentifier<'CheckpointManager'>,
 };
 
 /**
