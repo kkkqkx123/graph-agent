@@ -59,7 +59,7 @@ export abstract class BaseLLMClient {
         this.providerConfig,
         providerRequest
       );
-      const headers = this.providerConfig.endpointStrategy.buildHeaders(this.providerConfig);
+      const headers = this.providerConfig.endpointStrategy.buildHeaders(this.providerConfig, request);
 
       // 3. 发送请求
       const response = await this.httpClient.post(endpoint, providerRequest, { headers });
@@ -116,7 +116,7 @@ export abstract class BaseLLMClient {
         this.providerConfig,
         providerRequest
       );
-      const headers = this.providerConfig.endpointStrategy.buildHeaders(this.providerConfig);
+      const headers = this.providerConfig.endpointStrategy.buildHeaders(this.providerConfig, request);
 
       // 4. 发送流式请求
       const response = await this.httpClient.post(endpoint, providerRequest, {

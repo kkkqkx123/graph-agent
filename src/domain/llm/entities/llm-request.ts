@@ -34,6 +34,8 @@ export interface LLMRequestProps {
   readonly verbosity?: 'concise' | 'normal' | 'detailed';
   readonly previousResponseId?: string;
   readonly metadata: Record<string, unknown>;
+  readonly headers?: Record<string, string>;
+  readonly queryParams?: Record<string, string>;
   readonly createdAt: Timestamp;
   readonly updatedAt: Timestamp;
   readonly version: Version;
@@ -101,6 +103,8 @@ export class LLMRequest extends Entity {
       verbosity?: 'concise' | 'normal' | 'detailed';
       previousResponseId?: string;
       metadata?: Record<string, unknown>;
+      headers?: Record<string, string>;
+      queryParams?: Record<string, string>;
     }
   ): LLMRequest {
     const now = Timestamp.now();
@@ -127,6 +131,8 @@ export class LLMRequest extends Entity {
       verbosity: options?.verbosity,
       previousResponseId: options?.previousResponseId,
       metadata: options?.metadata || {},
+      headers: options?.headers,
+      queryParams: options?.queryParams,
       createdAt: now,
       updatedAt: now,
       version: Version.initial(),
@@ -317,6 +323,22 @@ export class LLMRequest extends Entity {
    */
   public get metadata(): Record<string, unknown> {
     return { ...this.props.metadata };
+  }
+
+  /**
+   * 获取自定义请求头
+   * @returns 自定义请求头
+   */
+  public get headers(): Record<string, string> | undefined {
+    return this.props.headers ? { ...this.props.headers } : undefined;
+  }
+
+  /**
+   * 获取自定义查询参数
+   * @returns 自定义查询参数
+   */
+  public get queryParams(): Record<string, string> | undefined {
+    return this.props.queryParams ? { ...this.props.queryParams } : undefined;
   }
 
   /**

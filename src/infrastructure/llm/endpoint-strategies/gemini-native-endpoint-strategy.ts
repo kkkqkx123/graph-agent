@@ -1,7 +1,8 @@
 import { z } from 'zod';
 import { BaseEndpointStrategy, BaseEndpointConfigSchema } from './base-endpoint-strategy';
 import { ProviderConfig } from '../parameter-mappers/interfaces/provider-config.interface';
-import { ProviderRequest } from '../parameter-mappers/base-parameter-mapper';
+import { ProviderRequest } from '../parameter-mappers/base-parameter-mapper'
+import { LLMRequest } from '../../../domain/llm/entities/llm-request';;
 
 /**
  * Gemini 原生端点配置 Schema
@@ -67,8 +68,8 @@ export class GeminiNativeEndpointStrategy extends BaseEndpointStrategy {
   /**
    * 构建请求头
    */
-  override buildHeaders(config: ProviderConfig): Record<string, string> {
-    const headers = super.buildHeaders(config);
+  override buildHeaders(config: ProviderConfig, request?: LLMRequest): Record<string, string> {
+    const headers = super.buildHeaders(config, request);
 
     // Gemini 原生 API 不需要在请求头中包含 API 密钥
     // 因为 API 密钥已经在 URL 中

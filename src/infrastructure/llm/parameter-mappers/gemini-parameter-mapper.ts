@@ -43,6 +43,7 @@ const GEMINI_SPECIFIC_KEYS = [
  */
 export class GeminiParameterMapper extends BaseParameterMapper {
   constructor() {
+    // 注册已知的元数据键（如果有）
     super('GeminiParameterMapper', '2.0.0', GeminiParameterSchema);
   }
 
@@ -101,6 +102,9 @@ export class GeminiParameterMapper extends BaseParameterMapper {
     // 流式选项
     this.addOptionalParam(geminiRequest, 'stream', request.stream);
     this.addMetadataParam(geminiRequest, request.metadata, 'streamOptions', 'stream_options');
+
+    // 传递未知的元数据参数（支持通用参数传递）
+    this.passUnknownMetadataParams(geminiRequest, request.metadata);
 
     return geminiRequest;
   }

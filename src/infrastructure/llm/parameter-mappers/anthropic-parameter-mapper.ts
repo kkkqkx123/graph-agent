@@ -33,6 +33,7 @@ const ANTHROPIC_SPECIFIC_KEYS = ['topK', 'system', 'metadata'];
  */
 export class AnthropicParameterMapper extends BaseParameterMapper {
   constructor() {
+    // 注册已知的元数据键（如果有）
     super('AnthropicParameterMapper', '2.0.0', AnthropicParameterSchema);
   }
 
@@ -87,6 +88,9 @@ export class AnthropicParameterMapper extends BaseParameterMapper {
 
     // 流式响应
     this.addOptionalParam(anthropicRequest, 'stream', request.stream);
+
+    // 传递未知的元数据参数（支持通用参数传递）
+    this.passUnknownMetadataParams(anthropicRequest, request.metadata);
 
     return anthropicRequest;
   }

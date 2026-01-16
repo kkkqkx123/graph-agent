@@ -1,7 +1,8 @@
 import { z } from 'zod';
 import { BaseEndpointStrategy, BaseEndpointConfigSchema } from './base-endpoint-strategy';
 import { ProviderConfig } from '../parameter-mappers/interfaces/provider-config.interface';
-import { ProviderRequest } from '../parameter-mappers/base-parameter-mapper';
+import { ProviderRequest } from '../parameter-mappers/base-parameter-mapper'
+import { LLMRequest } from '../../../domain/llm/entities/llm-request';;
 
 /**
  * Mock 端点配置 Schema
@@ -45,8 +46,8 @@ export class MockEndpointStrategy extends BaseEndpointStrategy {
   /**
    * 构建请求头
    */
-  override buildHeaders(config: ProviderConfig): Record<string, string> {
-    const headers = super.buildHeaders(config);
+  override buildHeaders(config: ProviderConfig, request?: LLMRequest): Record<string, string> {
+    const headers = super.buildHeaders(config, request);
 
     // Mock API 使用自定义头部进行认证
     headers['x-mock-api-key'] = config.apiKey || 'mock-key';

@@ -23,6 +23,7 @@ const MockParameterSchema = BaseParameterSchema;
  */
 export class MockParameterMapper extends BaseParameterMapper {
   constructor() {
+    // 注册已知的元数据键（如果有）
     super('MockParameterMapper', '2.0.0', MockParameterSchema);
   }
 
@@ -40,6 +41,9 @@ export class MockParameterMapper extends BaseParameterMapper {
     this.addOptionalParam(mockRequest, 'temperature', request.temperature);
     this.addOptionalParam(mockRequest, 'max_tokens', request.maxTokens);
     this.addOptionalParam(mockRequest, 'stream', request.stream);
+
+    // 传递未知的元数据参数（支持通用参数传递）
+    this.passUnknownMetadataParams(mockRequest, request.metadata);
 
     return mockRequest;
   }

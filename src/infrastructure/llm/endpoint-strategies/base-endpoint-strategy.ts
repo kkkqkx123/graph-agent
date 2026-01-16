@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import { ProviderConfig } from '../parameter-mappers/interfaces/provider-config.interface';
 import { ProviderRequest } from '../parameter-mappers/base-parameter-mapper';
+import { LLMRequest } from '../../../domain/llm/entities/llm-request';
 
 /**
  * 基础端点配置 Schema
@@ -64,11 +65,21 @@ export abstract class BaseEndpointStrategy {
   /**
    * 构建请求头
    * 默认实现包含 Content-Type，子类可以扩展
+   * @param config 提供商配置
+   * @param request LLM请求（可选，用于支持请求级自定义头部）
+   * @returns 请求头对象
    */
-  buildHeaders(config: ProviderConfig): Record<string, string> {
-    return {
+  buildHeaders(config: ProviderConfig, request?: LLMRequest): Record<string, string> {
+    const headers: Record<string, string> = {
       'Content-Type': 'application/json',
     };
+
+    // 合并请求级自定义头部
+    if (request?.headers) {
+      Object.assign(headers, request.headers);
+    }
+
+    return headers;
   }
 
   /**

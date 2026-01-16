@@ -2,6 +2,7 @@ import { z } from 'zod';
 import { BaseEndpointStrategy, BaseEndpointConfigSchema } from './base-endpoint-strategy';
 import { ProviderConfig } from '../parameter-mappers/interfaces/provider-config.interface';
 import { ProviderRequest } from '../parameter-mappers/base-parameter-mapper';
+import { LLMRequest } from '../../../domain/llm/entities/llm-request';
 
 /**
  * OpenAI 兼容端点配置 Schema
@@ -58,8 +59,8 @@ export class OpenAICompatibleEndpointStrategy extends BaseEndpointStrategy {
   /**
    * 构建请求头
    */
-  override buildHeaders(config: ProviderConfig): Record<string, string> {
-    const headers = super.buildHeaders(config);
+  override buildHeaders(config: ProviderConfig, request?: LLMRequest): Record<string, string> {
+    const headers = super.buildHeaders(config, request);
 
     // 添加 Bearer token 认证
     headers['Authorization'] = `Bearer ${config.apiKey}`;

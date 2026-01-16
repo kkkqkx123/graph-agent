@@ -52,6 +52,7 @@ export abstract class BaseParameterMapper {
   protected readonly name: string;
   protected readonly version: string;
   protected readonly parameterSchema: z.ZodSchema;
+  protected readonly knownMetadataKeys: string[] = [];
 
   constructor(name: string, version: string, parameterSchema?: z.ZodSchema) {
     this.name = name;
@@ -217,6 +218,38 @@ export abstract class BaseParameterMapper {
   ): void {
     if (metadata && metadata[key] !== undefined) {
       target[targetKey || key] = metadata[key];
+    }
+  }
+
+  /**
+   * 添加已知的元数据键
+   * 子类可以调用此方法来注册它们处理的元数据键
+   */
+  protected addKnownMetadataKey(key: string): void {
+    if (!this.knownMetadataKeys.includes(key)) {
+      this.knownMetadataKeys.push(key);
+    }
+  }
+
+  /**
+   * 传递未知的元数据参数
+   * 将 metadata 中未在 knownMetadataKeys 中注册的参数直接传递到目标对象
+   * @param target 目标对象
+   * @param metadata 元数据对象
+   */
+  protected passUnknownMetadataParams(
+    target: Record<string, any>,
+    metadata: Record<string, any> | undefined
+  ): void {
+    if (!metadata) {
+      return;
+    }
+
+    for (const [key, value] of Object.entries(metadata)) {
+      // 只传递未知的参数
+      if (!this.knownMetadataKeys.includes(key)) {
+        target[key] = value;
+      }
     }
   }
 }

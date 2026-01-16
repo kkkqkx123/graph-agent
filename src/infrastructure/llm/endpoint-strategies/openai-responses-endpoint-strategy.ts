@@ -1,7 +1,8 @@
 import { z } from 'zod';
 import { BaseEndpointStrategy, BaseEndpointConfigSchema } from './base-endpoint-strategy';
 import { ProviderConfig } from '../parameter-mappers/interfaces/provider-config.interface';
-import { ProviderRequest } from '../parameter-mappers/base-parameter-mapper';
+import { ProviderRequest } from '../parameter-mappers/base-parameter-mapper'
+import { LLMRequest } from '../../../domain/llm/entities/llm-request';;
 
 /**
  * 自定义认证配置 Schema
@@ -135,8 +136,8 @@ export class OpenAIResponsesEndpointStrategy extends BaseEndpointStrategy {
    *
    * 完全配置驱动的请求头构建，支持任意自定义头部
    */
-  override buildHeaders(config: ProviderConfig): Record<string, string> {
-    const headers = super.buildHeaders(config);
+  override buildHeaders(config: ProviderConfig, request?: LLMRequest): Record<string, string> {
+    const headers = super.buildHeaders(config, request);
 
     // 从配置中获取默认请求头
     const defaultHeaders = config.extraConfig?.['defaultHeaders'] || {};

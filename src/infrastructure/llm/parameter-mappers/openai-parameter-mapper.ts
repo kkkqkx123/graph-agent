@@ -52,6 +52,17 @@ const OPENAI_SPECIFIC_KEYS = [
 export class OpenAIParameterMapper extends BaseParameterMapper {
   constructor() {
     super('OpenAIParameterMapper', '2.0.0', OpenAIParameterSchema);
+    
+    // 注册已知的元数据键
+    this.addKnownMetadataKey('responseFormat');
+    this.addKnownMetadataKey('seed');
+    this.addKnownMetadataKey('serviceTier');
+    this.addKnownMetadataKey('user');
+    this.addKnownMetadataKey('n');
+    this.addKnownMetadataKey('logitBias');
+    this.addKnownMetadataKey('topLogprobs');
+    this.addKnownMetadataKey('store');
+    this.addKnownMetadataKey('streamOptions');
   }
 
   /**
@@ -100,6 +111,9 @@ export class OpenAIParameterMapper extends BaseParameterMapper {
     if (request.toolChoice) {
       openaiRequest['tool_choice'] = request.toolChoice;
     }
+
+    // 传递未知的元数据参数（支持通用参数传递）
+    this.passUnknownMetadataParams(openaiRequest, request.metadata);
 
     return openaiRequest;
   }
