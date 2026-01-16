@@ -1,9 +1,0 @@
-# 状态管理器配置
-# 从global.toml迁移而来
-
-# 状态管理器配置
-[state_manager]
-# 最大缓存状态数量
-max_cache_size = 1000
-# 最大历史记录数量
-max_history_size = 100

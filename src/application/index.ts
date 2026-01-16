@@ -30,11 +30,6 @@ export { CheckpointBackup } from '../services/checkpoints/checkpoint-backup';
 export { CheckpointAnalysis } from '../services/checkpoints/checkpoint-analysis';
 export { CheckpointManagement } from '../services/checkpoints/checkpoint-management';
 
-// 应用层类型定义
-export interface ApplicationService {
-  // 应用服务的通用接口定义
-}
-
 /**
  * 应用层配置接口
  */
@@ -82,7 +77,7 @@ export class ApplicationResult<T> {
     public readonly success: boolean,
     public readonly data?: T,
     public readonly error?: ApplicationError
-  ) {}
+  ) { }
 
   static success<T>(data: T): ApplicationResult<T> {
     return new ApplicationResult(true, data);
