@@ -1,8 +1,5 @@
 /**
  * 包装器服务
- *
- * Application 层服务，专注于业务逻辑和编排
- * 技术实现委托给 Infrastructure 层的 LLMWrapperManager
  */
 
 import { injectable, inject } from 'inversify';

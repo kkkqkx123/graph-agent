@@ -18,7 +18,7 @@ import { ConfigLoadingModule } from '../../../infrastructure/config/loading/conf
 import {
   IHumanRelayService,
   HumanRelayConfig,
-} from '../human-relay';
+} from '../../../services/llm/human-relay';
 
 /**
  * HumanRelay客户端配置接口

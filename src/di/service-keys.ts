@@ -12,16 +12,16 @@
 // LLM模块服务
 import { HttpClient } from '../infrastructure/common/http/http-client';
 import { ConfigLoadingModule } from '../infrastructure/config/loading/config-loading-module';
-import { TokenBucketLimiter } from '../services/llm/rate-limiters/token-bucket-limiter';
-import { TokenCalculator } from '../services/llm/token-calculators/token-calculator';
-import { OpenAIChatClient } from '../services/llm/clients/openai-chat-client';
-import { OpenAIResponseClient } from '../services/llm/clients/openai-response-client';
-import { AnthropicClient } from '../services/llm/clients/anthropic-client';
-import { GeminiClient } from '../services/llm/clients/gemini-client';
-import { GeminiOpenAIClient } from '../services/llm/clients/gemini-openai-client';
-import { MockClient } from '../services/llm/clients/mock-client';
-import { HumanRelayClient } from '../services/llm/clients/human-relay-client';
-import { LLMClientFactory } from '../services/llm/clients/llm-client-factory';
+import { TokenBucketLimiter } from '../infrastructure/llm/rate-limiters/token-bucket-limiter';
+import { TokenCalculator } from '../infrastructure/llm/token-calculators/token-calculator';
+import { OpenAIChatClient } from '../infrastructure/llm/clients/openai-chat-client';
+import { OpenAIResponseClient } from '../infrastructure/llm/clients/openai-response-client';
+import { AnthropicClient } from '../infrastructure/llm/clients/anthropic-client';
+import { GeminiClient } from '../infrastructure/llm/clients/gemini-client';
+import { GeminiOpenAIClient } from '../infrastructure/llm/clients/gemini-openai-client';
+import { MockClient } from '../infrastructure/llm/clients/mock-client';
+import { HumanRelayClient } from '../infrastructure/llm/clients/human-relay-client';
+import { LLMClientFactory } from '../infrastructure/llm/clients/llm-client-factory';
 import { PollingPoolManager } from '../services/llm/managers/pool-manager';
 import { TaskGroupManager } from '../services/llm/managers/task-group-manager';
 import { LLMWrapperManager } from '../services/llm/managers/llm-wrapper-manager';

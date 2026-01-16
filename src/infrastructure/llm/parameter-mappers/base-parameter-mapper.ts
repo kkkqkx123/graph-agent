@@ -36,7 +36,7 @@ export const BaseParameterSchema = z.object({
 /**
  * 参数验证结果
  */
-export interface ValidationResult {
+export interface ParameterValidationResult {
   isValid: boolean;
   errors: string[];
   warnings: string[];
@@ -75,7 +75,7 @@ export abstract class BaseParameterMapper {
    * 验证请求参数
    * 使用 zod schema 进行验证
    */
-  validateRequest(request: LLMRequest): ValidationResult {
+  validateRequest(request: LLMRequest): ParameterValidationResult {
     const errors: string[] = [];
     const warnings: string[] = [];
 

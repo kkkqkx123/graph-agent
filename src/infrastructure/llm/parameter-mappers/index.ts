@@ -10,7 +10,7 @@ export {
   ProviderRequest,
   ProviderResponse,
   BaseParameterSchema,
-  ValidationResult,
+  ParameterValidationResult,
 } from './base-parameter-mapper';
 export {
   ProviderConfig,
