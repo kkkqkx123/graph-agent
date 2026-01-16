@@ -22,15 +22,13 @@ export { ThreadManagement } from '../services/threads/thread-management';
 export { ThreadMaintenance } from '../services/threads/thread-maintenance';
 
 // 检查点模块导出
-export { Checkpoint } from '../services/checkpoints/checkpoint';
-export type {
-  CreateCheckpointRequest,
-  CreateManualCheckpointRequest,
-  CreateErrorCheckpointRequest,
-  CreateMilestoneCheckpointRequest,
-  CheckpointInfo,
-  CheckpointStatisticsInfo,
-} from '../services/checkpoints/checkpoint';
+export { CheckpointCreation } from '../services/checkpoints/checkpoint-creation';
+export { CheckpointRestore } from '../services/checkpoints/checkpoint-restore';
+export { CheckpointQuery } from '../services/checkpoints/checkpoint-query';
+export { CheckpointCleanup } from '../services/checkpoints/checkpoint-cleanup';
+export { CheckpointBackup } from '../services/checkpoints/checkpoint-backup';
+export { CheckpointAnalysis } from '../services/checkpoints/checkpoint-analysis';
+export { CheckpointManagement } from '../services/checkpoints/checkpoint-management';
 
 // 应用层类型定义
 export interface ApplicationService {
@@ -130,7 +128,13 @@ import { SessionMaintenance } from '../services/sessions/session-maintenance';
 import { ThreadLifecycle } from '../services/threads/thread-lifecycle';
 import { ThreadManagement } from '../services/threads/thread-management';
 import { ThreadMaintenance } from '../services/threads/thread-maintenance';
-import { Checkpoint } from '../services/checkpoints/checkpoint';
+import { CheckpointCreation } from '../services/checkpoints/checkpoint-creation';
+import { CheckpointRestore } from '../services/checkpoints/checkpoint-restore';
+import { CheckpointQuery } from '../services/checkpoints/checkpoint-query';
+import { CheckpointCleanup } from '../services/checkpoints/checkpoint-cleanup';
+import { CheckpointBackup } from '../services/checkpoints/checkpoint-backup';
+import { CheckpointAnalysis } from '../services/checkpoints/checkpoint-analysis';
+import { CheckpointManagement } from '../services/checkpoints/checkpoint-management';
 
 /**
  * 应用层服务工厂接口
@@ -143,5 +147,11 @@ export interface ApplicationServiceFactory {
   createThreadLifecycleService(): ThreadLifecycle;
   createThreadManagementService(): ThreadManagement;
   createThreadMaintenanceService(): ThreadMaintenance;
-  createCheckpointService(): Checkpoint;
+  createCheckpointCreationService(): CheckpointCreation;
+  createCheckpointRestoreService(): CheckpointRestore;
+  createCheckpointQueryService(): CheckpointQuery;
+  createCheckpointCleanupService(): CheckpointCleanup;
+  createCheckpointBackupService(): CheckpointBackup;
+  createCheckpointAnalysisService(): CheckpointAnalysis;
+  createCheckpointManagementService(): CheckpointManagement;
 }

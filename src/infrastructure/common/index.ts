@@ -8,12 +8,6 @@ export {
   ValidationRule as CommonValidationRule,
 } from './utils/validation-utils';
 
-export {
-  SerializationUtils,
-  SerializationConfig,
-  SerializationResult,
-} from './utils/serialization-utils';
-
 // 不可变状态更新工具
 export {
   updateState,

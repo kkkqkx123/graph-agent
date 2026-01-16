@@ -1,14 +1,19 @@
 import { ID } from '../../domain/common/value-objects/id';
 import { Checkpoint } from '../../domain/threads/checkpoints/entities/checkpoint';
 import { CheckpointType } from '../../domain/threads/checkpoints/value-objects/checkpoint-type';
-import { CheckpointScope } from '../../domain/threads/checkpoints/value-objects/checkpoint-scope';
 import { ICheckpointRepository } from '../../domain/threads/checkpoints/repositories/checkpoint-repository';
 import { ILogger } from '../../domain/common/types/logger-types';
+import { Thread } from '../../domain/threads/entities/thread';
 
 /**
  * 检查点创建服务
  *
  * 负责各种类型检查点的创建和策略验证
+ * 
+ * 设计原则：
+ * - 接受 Thread 对象，内部处理状态序列化
+ * - 包含检查点创建策略（何时创建检查点）
+ * - 提供不同类型的检查点创建方法
  */
 export class CheckpointCreation {
   constructor(
@@ -17,178 +22,269 @@ export class CheckpointCreation {
   ) {}
 
   /**
+   * 根据状态变更类型自动创建检查点
+   * 
+   * @param thread 线程对象
+   * @param changeType 状态变更类型
+   * @param metadata 额外元数据
+   * @returns 创建的检查点，如果不满足创建条件则返回 null
+   */
+  async createAutoCheckpointIfNeeded(
+    thread: Thread,
+    changeType: string,
+    metadata?: Record<string, unknown>
+  ): Promise<Checkpoint | null> {
+    // 判断是否需要创建检查点
+    if (!this.shouldCreateCheckpoint(changeType)) {
+      return null;
+    }
+
+    // 创建自动检查点
+    return await this.createAutoCheckpoint(
+      thread,
+      {
+        ...metadata,
+        changeType,
+        triggeredAt: new Date().toISOString(),
+      }
+    );
+  }
+
+  /**
    * 创建自动检查点
+   * 
+   * @param thread 线程对象
+   * @param metadata 额外元数据
+   * @returns 创建的检查点
    */
   async createAutoCheckpoint(
-    threadId: ID,
-    stateData: Record<string, unknown>,
-    metadata?: Record<string, unknown>,
-    expirationHours?: number
+    thread: Thread,
+    metadata?: Record<string, unknown>
   ): Promise<Checkpoint> {
+    const stateData = this.serializeThreadState(thread);
+    
     const checkpoint = Checkpoint.create(
-      threadId,
+      thread.id,
       CheckpointType.auto(),
       stateData,
-      undefined,
-      undefined,
-      undefined,
-      metadata,
-      expirationHours
+      `自动检查点: ${thread.status}`,
+      `Automatic checkpoint for thread ${thread.id.value}`,
+      ['automatic'],
+      {
+        ...metadata,
+        threadId: thread.id.value,
+        sessionId: thread.sessionId.value,
+        workflowId: thread.workflowId.value,
+        status: thread.status,
+        createdAt: new Date().toISOString(),
+      }
     );
 
     await this.repository.save(checkpoint);
+    this.logger.info('自动检查点创建成功', {
+      checkpointId: checkpoint.checkpointId.value,
+      threadId: thread.id.value,
+    });
+
     return checkpoint;
   }
 
   /**
    * 创建手动检查点
+   * 
+   * @param thread 线程对象
+   * @param title 检查点标题
+   * @param description 检查点描述
+   * @param tags 标签
+   * @param metadata 额外元数据
+   * @returns 创建的检查点
    */
   async createManualCheckpoint(
-    threadId: ID,
-    stateData: Record<string, unknown>,
+    thread: Thread,
     title?: string,
     description?: string,
     tags?: string[],
-    metadata?: Record<string, unknown>,
-    expirationHours?: number
+    metadata?: Record<string, unknown>
   ): Promise<Checkpoint> {
+    const stateData = this.serializeThreadState(thread);
+    
     const checkpoint = Checkpoint.create(
-      threadId,
+      thread.id,
       CheckpointType.manual(),
       stateData,
-      title,
-      description,
-      tags,
-      metadata,
-      expirationHours
+      title || `手动检查点 - ${thread.id.value}`,
+      description || `Manual checkpoint for thread ${thread.id.value}`,
+      tags || ['manual'],
+      {
+        ...metadata,
+        threadId: thread.id.value,
+        sessionId: thread.sessionId.value,
+        workflowId: thread.workflowId.value,
+        status: thread.status,
+        createdAt: new Date().toISOString(),
+      }
     );
 
     await this.repository.save(checkpoint);
+    this.logger.info('手动检查点创建成功', {
+      checkpointId: checkpoint.checkpointId.value,
+      threadId: thread.id.value,
+    });
+
     return checkpoint;
   }
 
   /**
    * 创建错误检查点
+   * 
+   * @param thread 线程对象
+   * @param error 错误对象
+   * @param context 错误上下文
+   * @returns 创建的检查点
    */
   async createErrorCheckpoint(
-    threadId: ID,
-    stateData: Record<string, unknown>,
-    errorMessage: string,
-    errorType?: string,
-    metadata?: Record<string, unknown>,
-    expirationHours?: number
+    thread: Thread,
+    error: Error,
+    context?: Record<string, unknown>
   ): Promise<Checkpoint> {
+    const stateData = this.serializeThreadState(thread);
+    
     const errorMetadata = {
-      ...metadata,
-      errorMessage,
-      errorType,
+      errorName: error.name,
+      errorMessage: error.message,
+      errorStack: error.stack,
+      ...context,
+      threadId: thread.id.value,
+      sessionId: thread.sessionId.value,
+      workflowId: thread.workflowId.value,
+      status: thread.status,
       createdAt: new Date().toISOString(),
     };
 
     const checkpoint = Checkpoint.create(
-      threadId,
+      thread.id,
       CheckpointType.error(),
       stateData,
-      undefined,
-      errorMessage,
+      `错误检查点: ${error.name}`,
+      error.message,
       ['error'],
-      errorMetadata,
-      expirationHours
+      errorMetadata
     );
 
     await this.repository.save(checkpoint);
+    this.logger.info('错误检查点创建成功', {
+      checkpointId: checkpoint.checkpointId.value,
+      threadId: thread.id.value,
+      errorName: error.name,
+    });
+
     return checkpoint;
   }
 
   /**
    * 创建里程碑检查点
+   * 
+   * @param thread 线程对象
+   * @param milestoneName 里程碑名称
+   * @param description 里程碑描述
+   * @param metadata 额外元数据
+   * @returns 创建的检查点
    */
   async createMilestoneCheckpoint(
-    threadId: ID,
-    stateData: Record<string, unknown>,
+    thread: Thread,
     milestoneName: string,
     description?: string,
-    metadata?: Record<string, unknown>,
-    expirationHours?: number
+    metadata?: Record<string, unknown>
   ): Promise<Checkpoint> {
+    const stateData = this.serializeThreadState(thread);
+    
     const milestoneMetadata = {
-      ...metadata,
       milestoneName,
+      ...metadata,
+      threadId: thread.id.value,
+      sessionId: thread.sessionId.value,
+      workflowId: thread.workflowId.value,
+      status: thread.status,
       createdAt: new Date().toISOString(),
     };
 
     const checkpoint = Checkpoint.create(
-      threadId,
+      thread.id,
       CheckpointType.milestone(),
       stateData,
       milestoneName,
-      description,
+      description || `Milestone: ${milestoneName}`,
       ['milestone'],
-      milestoneMetadata,
-      expirationHours
+      milestoneMetadata
     );
 
     await this.repository.save(checkpoint);
+    this.logger.info('里程碑检查点创建成功', {
+      checkpointId: checkpoint.checkpointId.value,
+      threadId: thread.id.value,
+      milestone: milestoneName,
+    });
+
     return checkpoint;
   }
 
   /**
-   * 验证检查点策略
+   * 判断是否应该创建检查点
+   * 
+   * @param changeType 状态变更类型
+   * @returns 是否应该创建检查点
    */
-  async shouldCreateCheckpoint(
-    threadId: ID,
-    stateData: Record<string, unknown>,
-    context: Record<string, unknown>
-  ): Promise<boolean> {
-    const recentCheckpoints = await this.repository.findByThreadId(threadId);
-    const activeCheckpoints = recentCheckpoints.filter(cp => cp.status.isActive());
+  private shouldCreateCheckpoint(changeType: string): boolean {
+    const checkpointTriggers = [
+      'node_completed',
+      'node_failed',
+      'workflow_paused',
+      'workflow_resumed',
+      'workflow_completed',
+      'workflow_failed',
+      'thread_created',
+      'thread_destroyed',
+    ];
 
-    // 如果活跃检查点太多，不创建新的
-    if (activeCheckpoints.length >= 50) {
-      return false;
-    }
-
-    // 如果距离上次检查点创建时间太短，不创建新的
-    const latest = await this.repository.getLatest(threadId);
-    if (latest && latest.getAgeInSeconds() < 300) {
-      // 5分钟
-      return false;
-    }
-
-    return true;
+    return checkpointTriggers.includes(changeType);
   }
 
   /**
-   * 获取检查点建议
+   * 序列化 Thread 状态
+   * 
+   * @param thread 线程对象
+   * @returns 序列化后的状态数据
    */
-  async getCheckpointRecommendation(
-    threadId: ID,
-    stateData: Record<string, unknown>,
-    context: Record<string, unknown>
-  ): Promise<{
-    shouldCreate: boolean;
-    recommendedType: CheckpointType;
-    reason: string;
-    suggestedTitle?: string;
-    suggestedDescription?: string;
-    suggestedTags?: string[];
-  }> {
-    const shouldCreate = await this.shouldCreateCheckpoint(threadId, stateData, context);
-
-    if (!shouldCreate) {
-      return {
-        shouldCreate: false,
-        recommendedType: CheckpointType.auto(),
-        reason: '检查点创建条件不满足',
-      };
-    }
-
-    // 简化的推荐逻辑
+  private serializeThreadState(thread: Thread): Record<string, unknown> {
     return {
-      shouldCreate: true,
-      recommendedType: CheckpointType.auto(),
-      reason: '满足自动检查点创建条件',
-      suggestedTags: ['auto'],
+      // Thread 基本信息
+      threadId: thread.id.value,
+      sessionId: thread.sessionId.value,
+      workflowId: thread.workflowId.value,
+      title: thread.title,
+      description: thread.description,
+      priority: thread.priority.toString(),
+      
+      // Thread 状态（包含完整 State）
+      status: thread.status,
+      execution: thread.execution,
+      
+      // 完整序列化 State 实体
+      state: {
+        data: thread.state.data.toRecord(),
+        metadata: thread.state.metadata.toRecord(),
+        version: thread.state.version.toString(),
+        createdAt: thread.state.createdAt.toISOString(),
+        updatedAt: thread.state.updatedAt.toISOString(),
+      },
+      
+      // Thread 元数据
+      metadata: thread.metadata.toRecord(),
+      
+      // 时间戳
+      createdAt: thread.createdAt.toISOString(),
+      updatedAt: thread.updatedAt.toISOString(),
+      version: thread.version.toString(),
     };
   }
 }

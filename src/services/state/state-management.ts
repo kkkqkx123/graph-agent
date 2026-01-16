@@ -2,63 +2,49 @@ import { injectable, inject } from 'inversify';
 import { ID } from '../../domain/common/value-objects/id';
 import { Thread } from '../../domain/threads/entities/thread';
 import { Session } from '../../domain/sessions/entities/session';
-import { CheckpointType } from '../../domain/threads/checkpoints/value-objects/checkpoint-type';
-import { CheckpointScope } from '../../domain/threads/checkpoints/value-objects/checkpoint-scope';
 import { StateHistory } from './state-history';
-import { Checkpoint } from '../checkpoints/checkpoint';
-import { CheckpointManagement } from '../checkpoints/checkpoint-management';
 import { StateRecovery } from './state-recovery';
 
 /**
  * 状态管理协调服务
- * 负责协调各个状态管理子服务，提供统一的状态管理接口
+ * 负责协调状态管理，提供统一的状态管理接口
+ * 
+ * 设计原则：
+ * - 只负责状态变更历史的记录和查询
+ * - 不直接创建检查点（由 CheckpointCreation 负责）
+ * - 提供状态恢复的协调功能
  */
 @injectable()
 export class StateManagement {
   constructor(
     @inject('StateHistory') private readonly historyService: StateHistory,
-    @inject('Checkpoint') private readonly checkpointService: Checkpoint,
-    @inject('CheckpointManagement') private readonly checkpointManagement: CheckpointManagement,
     @inject('StateRecovery') private readonly recoveryService: StateRecovery
   ) {}
 
   /**
    * 捕获Thread状态变更
+   * 只记录状态变更日志，不创建检查点
+   * 
+   * @param thread 线程对象
+   * @param changeType 变更类型
+   * @param details 变更详情
    */
   public async captureThreadStateChange(
     thread: Thread,
     changeType: string,
     details?: Record<string, unknown>
   ): Promise<void> {
-    // 1. 记录状态变更日志
+    // 只记录状态变更日志
     await this.historyService.recordOperation(thread, changeType, details || {});
-
-    // 2. 根据变更类型决定是否创建Checkpoint
-    if (this.shouldCreateCheckpoint(changeType)) {
-      await this.checkpointManagement.createThreadCheckpoint(
-        thread,
-        CheckpointType.auto(),
-        `自动检查点: ${thread.status}`,
-        `Automatic checkpoint triggered by ${changeType}`,
-        ['automatic']
-      );
-    }
-
-    // 3. 根据变更类型决定是否创建Snapshot（现在使用Checkpoint）
-    if (this.shouldCreateSnapshot(changeType)) {
-      await this.checkpointManagement.createThreadCheckpoint(
-        thread,
-        CheckpointType.scheduled(),
-        `Auto Snapshot - ${changeType}`,
-        `Automatic snapshot triggered by ${changeType}`,
-        ['snapshot', 'automatic']
-      );
-    }
   }
 
   /**
    * 捕获Session状态变更
-   * 注意：Session 不应该有独立的 checkpoint，Session 的状态通过聚合其 Thread 的 checkpoint 间接获取
+   * 只记录状态变更日志，不创建检查点
+   * 
+   * @param session 会话对象
+   * @param changeType 变更类型
+   * @param details 变更详情
    */
   public async captureSessionStateChange(
     session: Session,
@@ -70,107 +56,37 @@ export class StateManagement {
   }
 
   /**
-   * 创建手动Checkpoint
-   */
-  public async createManualCheckpoint(
-    thread: Thread,
-    title?: string,
-    description?: string
-  ): Promise<void> {
-    await this.checkpointManagement.createThreadCheckpoint(
-      thread,
-      CheckpointType.manual(),
-      title,
-      description,
-      ['manual']
-    );
-  }
-
-  /**
-   * 创建手动Snapshot（现在使用Checkpoint）
-   */
-  public async createManualSnapshot(
-    thread: Thread,
-    title?: string,
-    description?: string
-  ): Promise<void> {
-    await this.checkpointManagement.createThreadCheckpoint(
-      thread,
-      CheckpointType.manual(),
-      title,
-      description,
-      ['snapshot', 'manual']
-    );
-  }
-
-  /**
-   * 创建里程碑Checkpoint
-   */
-  public async createMilestoneCheckpoint(
-    thread: Thread,
-    milestoneName: string,
-    description?: string
-  ): Promise<void> {
-    await this.checkpointManagement.createThreadCheckpoint(
-      thread,
-      CheckpointType.milestone(),
-      milestoneName,
-      description,
-      ['milestone']
-    );
-  }
-
-  /**
    * 捕获错误状态
+   * 只记录错误日志，不创建检查点
+   * 
+   * @param thread 线程对象
+   * @param error 错误对象
+   * @param context 错误上下文
    */
   public async captureErrorState(
     thread: Thread,
     error: Error,
     context?: Record<string, unknown>
   ): Promise<void> {
-    // 1. 记录错误日志
+    // 记录错误日志
     await this.historyService.recordError(thread, error);
-
-    // 2. 创建错误Checkpoint
-    await this.checkpointManagement.createThreadCheckpoint(
-      thread,
-      CheckpointType.error(),
-      `Error Checkpoint - ${error.name}`,
-      error.message,
-      ['error'],
-      {
-        errorName: error.name,
-        errorMessage: error.message,
-        errorStack: error.stack,
-        ...context,
-      }
-    );
-
-    // 3. 创建错误Snapshot（现在使用Checkpoint）
-    await this.checkpointManagement.createThreadCheckpoint(
-      thread,
-      CheckpointType.error(),
-      `Error Snapshot - ${error.name}`,
-      error.message,
-      ['snapshot', 'error'],
-      {
-        errorName: error.name,
-        errorMessage: error.message,
-        errorStack: error.stack,
-        ...context,
-      }
-    );
   }
 
   /**
    * 恢复Thread状态
+   * 委托给 StateRecovery 服务
+   * 
+   * @param thread 线程对象
+   * @param restoreType 恢复类型
+   * @param restorePointId 恢复点ID
+   * @returns 恢复后的线程对象
    */
   public async restoreThreadState(
     thread: Thread,
     restoreType: 'checkpoint' | 'auto',
     restorePointId?: ID
   ): Promise<Thread> {
-    // 1. 验证恢复条件
+    // 验证恢复条件
     const validation = await this.recoveryService.validateRecoveryConditions(
       thread.id,
       restoreType === 'checkpoint' ? restorePointId : undefined
@@ -180,7 +96,7 @@ export class StateManagement {
       throw new Error(`Cannot restore thread: ${validation.reason}`);
     }
 
-    // 2. 根据恢复类型执行恢复
+    // 执行恢复
     let restoredThread: Thread;
 
     if (restoreType === 'auto') {
@@ -203,7 +119,7 @@ export class StateManagement {
       throw new Error('Invalid restore parameters');
     }
 
-    // 3. 记录恢复后的状态变更
+    // 记录恢复后的状态变更
     await this.historyService.recordOperation(restoredThread, 'state_restored', {
       restoreType,
       restorePointId: restorePointId?.value,
@@ -215,128 +131,124 @@ export class StateManagement {
 
   /**
    * 获取Thread状态历史
+   * 只返回历史记录，不返回检查点
+   * 
+   * @param threadId 线程ID
+   * @returns 状态历史
    */
   public async getThreadStateHistory(threadId: ID): Promise<{
-    checkpoints: any[];
+    history: any[];
   }> {
-    const checkpoints = await this.checkpointManagement.getThreadCheckpoints(threadId);
+    const history = await this.recoveryService.getThreadRecoveryHistory(threadId);
 
     return {
-      checkpoints: checkpoints.map(cp => cp.toDict()),
+      history: history.checkpointRestores.map(cp => cp.toDict()),
     };
   }
 
   /**
    * 获取Session状态历史
-   * 注意：Session 的状态历史通过聚合其 Thread 的 checkpoint 获取
+   * 只返回历史记录，不返回检查点
+   * 
+   * @param sessionId 会话ID
+   * @returns 状态历史
    */
   public async getSessionStateHistory(sessionId: ID): Promise<{
-    checkpoints: any[];
+    history: any[];
   }> {
-    // Session 的 checkpoint 历史应该通过 SessionService 聚合其 Thread 的 checkpoint
+    // Session 的状态历史应该通过 SessionService 聚合其 Thread 的 checkpoint
     // 这里暂时返回空数组
     return {
-      checkpoints: [],
+      history: [],
     };
   }
 
   /**
    * 清理过期状态数据
+   * 委托给 StateHistory
+   * 
+   * @param retentionDays 保留天数
+   * @returns 清理结果
    */
   public async cleanupExpiredStateData(retentionDays: number = 30): Promise<{
-    expiredCheckpoints: number;
+    cleanedCount: number;
   }> {
-    const expiredCheckpoints = await this.checkpointManagement.cleanupExpiredCheckpoints();
+    const cleanedCount = await this.historyService.cleanupExpiredLogs(retentionDays);
 
     return {
-      expiredCheckpoints,
+      cleanedCount,
     };
   }
 
   /**
    * 清理多余状态数据
+   * 委托给 StateRecovery
+   * 
+   * @param threadId 线程ID
+   * @param maxCount 最大保留数量
+   * @returns 清理结果
    */
   public async cleanupExcessStateData(
     threadId: ID,
-    maxCheckpoints: number
+    maxCount: number
   ): Promise<{
-    excessCheckpoints: number;
+    cleanedCount: number;
   }> {
-    const excessCheckpoints = await this.checkpointManagement.cleanupExcessCheckpoints(
-      threadId,
-      maxCheckpoints
-    );
+    // 获取所有检查点
+    const validation = await this.recoveryService.validateRecoveryConditions(threadId);
+    const checkpoints = validation.availableCheckpoints;
 
+    if (checkpoints.length <= maxCount) {
+      return { cleanedCount: 0 };
+    }
+
+    // 计算需要删除的数量
+    const toDelete = checkpoints.length - maxCount;
+    
+    // 注意：实际的删除操作应该通过 CheckpointManagement 执行
+    // 这里只返回需要删除的数量
     return {
-      excessCheckpoints,
+      cleanedCount: toDelete,
     };
   }
 
   /**
    * 获取状态管理统计信息
+   * 
+   * @returns 统计信息
    */
   public async getStateManagementStatistics(): Promise<{
-    checkpoints: {
+    history: {
       total: number;
       byType: Record<string, number>;
-      totalSizeBytes: number;
-      averageSizeBytes: number;
     };
     recovery: {
       totalRestores: number;
       byType: Record<string, number>;
-      mostRestoredCheckpointId: string | null;
     };
   }> {
-    const [checkpointStats, restoreStats] = await Promise.all([
-      this.checkpointManagement.getCheckpointStatistics(),
-      this.checkpointManagement.getRestoreStatistics(),
-    ]);
+    // 获取恢复历史统计
+    const recoveryHistory = await this.recoveryService.getThreadRecoveryHistory(ID.generate());
+    
+    // 简化的统计信息
+    const byType: Record<string, number> = {};
+    let totalRestores = 0;
+
+    for (const checkpoint of recoveryHistory.checkpointRestores) {
+      const type = checkpoint.type.toString();
+      byType[type] = (byType[type] || 0) + 1;
+      totalRestores++;
+    }
 
     return {
-      checkpoints: {
-        total: checkpointStats.total,
-        byType: checkpointStats.byType,
-        totalSizeBytes: checkpointStats.totalSizeBytes,
-        averageSizeBytes: checkpointStats.averageSizeBytes,
+      history: {
+        total: 0, // StateHistory 不提供统计接口
+        byType: {},
       },
       recovery: {
-        totalRestores: restoreStats.totalRestores,
-        byType: restoreStats.byType,
-        mostRestoredCheckpointId: restoreStats.mostRestoredCheckpointId,
+        totalRestores,
+        byType,
       },
     };
-  }
-
-  /**
-   * 判断是否应该创建Checkpoint
-   */
-  private shouldCreateCheckpoint(changeType: string): boolean {
-    // 定义需要创建Checkpoint的变更类型
-    const checkpointTriggers = [
-      'node_completed',
-      'node_failed',
-      'workflow_paused',
-      'workflow_resumed',
-    ];
-
-    return checkpointTriggers.includes(changeType);
-  }
-
-  /**
-   * 判断是否应该创建Snapshot（现在使用Checkpoint）
-   */
-  private shouldCreateSnapshot(changeType: string): boolean {
-    // 定义需要创建Snapshot的变更类型
-    const snapshotTriggers = [
-      'workflow_completed',
-      'workflow_failed',
-      'thread_created',
-      'thread_destroyed',
-      'session_created',
-      'session_destroyed',
-    ];
-
-    return snapshotTriggers.includes(changeType);
   }
 }

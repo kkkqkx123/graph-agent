@@ -50,6 +50,7 @@ import { SessionManagement } from '../services/sessions/session-management';
 import { SessionMonitoring } from '../services/sessions/session-monitoring';
 import { SessionOrchestration } from '../services/sessions/session-orchestration';
 import { SessionResource } from '../services/sessions/session-resource';
+import { SessionCheckpointManagement } from '../services/sessions/session-checkpoint-management';
 import { StateHistory } from '../services/state/state-history';
 import { StateManagement } from '../services/state/state-management';
 import { StateRecovery } from '../services/state/state-recovery';
@@ -63,7 +64,6 @@ import { GraphAlgorithmImpl } from '../services/workflow/graph-algorithm';
 import { MonitoringService } from '../services/workflow/monitoring';
 import { NodeRouter } from '../services/workflow/node-router';
 import { WorkflowExecutionEngine as WorkflowExecution } from '../services/workflow/workflow-execution';
-import { Checkpoint } from '../services/checkpoints/checkpoint';
 import { CheckpointAnalysis } from '../services/checkpoints/checkpoint-analysis';
 import { CheckpointBackup } from '../services/checkpoints/checkpoint-backup';
 import { CheckpointCleanup } from '../services/checkpoints/checkpoint-cleanup';
@@ -164,6 +164,7 @@ export interface ServiceTypes {
   SessionMonitoring: SessionMonitoring;
   SessionOrchestration: SessionOrchestration;
   SessionResource: SessionResource;
+  SessionCheckpointManagement: SessionCheckpointManagement;
 
   // 状态服务
   StateHistory: StateHistory;
@@ -183,7 +184,6 @@ export interface ServiceTypes {
   WorkflowExecution: WorkflowExecution;
 
   // 检查点服务
-  Checkpoint: Checkpoint;
   CheckpointAnalysis: CheckpointAnalysis;
   CheckpointBackup: CheckpointBackup;
   CheckpointCleanup: CheckpointCleanup;
@@ -333,6 +333,9 @@ export const TYPES: {
     'SessionOrchestration'
   ) as TypedServiceIdentifier<'SessionOrchestration'>,
   SessionResource: Symbol.for('SessionResource') as TypedServiceIdentifier<'SessionResource'>,
+  SessionCheckpointManagement: Symbol.for(
+    'SessionCheckpointManagement'
+  ) as TypedServiceIdentifier<'SessionCheckpointManagement'>,
 
   // 状态服务
   StateHistory: Symbol.for('StateHistory') as TypedServiceIdentifier<'StateHistory'>,
@@ -354,7 +357,6 @@ export const TYPES: {
   WorkflowExecution: Symbol.for('WorkflowExecution') as TypedServiceIdentifier<'WorkflowExecution'>,
 
   // 检查点服务
-  Checkpoint: Symbol.for('Checkpoint') as TypedServiceIdentifier<'Checkpoint'>,
   CheckpointAnalysis: Symbol.for('CheckpointAnalysis') as TypedServiceIdentifier<'CheckpointAnalysis'>,
   CheckpointBackup: Symbol.for('CheckpointBackup') as TypedServiceIdentifier<'CheckpointBackup'>,
   CheckpointCleanup: Symbol.for('CheckpointCleanup') as TypedServiceIdentifier<'CheckpointCleanup'>,

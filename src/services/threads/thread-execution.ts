@@ -22,6 +22,7 @@ import { WorkflowExecutionEngine } from './workflow-execution-engine';
 import { ThreadStateManager } from './thread-state-manager';
 import { ThreadHistoryManager } from './thread-history-manager';
 import { CheckpointManagement } from '../checkpoints/checkpoint-management';
+import { CheckpointCreation } from '../checkpoints/checkpoint-creation';
 import { ThreadConditionalRouter } from './thread-conditional-router';
 import { INodeExecutor } from '../workflow/nodes/node-executor';
 import { FunctionRegistry } from '../workflow/functions/function-registry';
@@ -70,6 +71,7 @@ export class ThreadExecution extends BaseService {
   private readonly stateManager: ThreadStateManager;
   private readonly historyManager: ThreadHistoryManager;
   private readonly checkpointManagement: CheckpointManagement;
+  private readonly checkpointCreation: CheckpointCreation;
   private readonly router: ThreadConditionalRouter;
   private readonly evaluator: ExpressionEvaluator;
 
@@ -83,6 +85,7 @@ export class ThreadExecution extends BaseService {
     @inject(TYPES.ThreadStateManager) stateManager: ThreadStateManager,
     @inject(TYPES.ThreadHistoryManager) historyManager: ThreadHistoryManager,
     @inject(TYPES.CheckpointManagement) checkpointManagement: CheckpointManagement,
+    @inject(TYPES.CheckpointCreation) checkpointCreation: CheckpointCreation,
     @inject(TYPES.ThreadConditionalRouter) router: ThreadConditionalRouter,
     @inject(TYPES.WorkflowExecutionEngine) workflowEngine: WorkflowExecutionEngine
   ) {
@@ -93,6 +96,7 @@ export class ThreadExecution extends BaseService {
     this.stateManager = stateManager;
     this.historyManager = historyManager;
     this.checkpointManagement = checkpointManagement;
+    this.checkpointCreation = checkpointCreation;
     this.router = router;
     this.workflowEngine = workflowEngine;
   }
@@ -152,6 +156,13 @@ export class ThreadExecution extends BaseService {
           workflowId: thread.workflowId.toString(),
         });
 
+        // 创建线程启动里程碑检查点
+        await this.checkpointCreation.createMilestoneCheckpoint(
+          thread,
+          `Thread Started: ${thread.id.value}`,
+          `Thread execution started for workflow ${thread.workflowId.value}`
+        );
+
         try {
           // 使用新的 WorkflowEngine 执行工作流
           const workflowResult = await this.workflowEngine.execute(
@@ -171,6 +182,13 @@ export class ThreadExecution extends BaseService {
           if (workflowResult.success) {
             thread.complete();
             await this.threadRepository.save(thread);
+
+            // 创建线程完成里程碑检查点
+            await this.checkpointCreation.createMilestoneCheckpoint(
+              thread,
+              `Thread Completed: ${thread.id.value}`,
+              `Thread execution completed successfully`
+            );
 
             this.logger.info('线程执行完成', {
               threadId: thread.id.toString(),
@@ -192,6 +210,16 @@ export class ThreadExecution extends BaseService {
             thread.fail(errorMessage);
             await this.threadRepository.save(thread);
 
+            // 创建错误检查点
+            await this.checkpointCreation.createErrorCheckpoint(
+              thread,
+              new Error(errorMessage),
+              {
+                phase: 'workflow_execution',
+                executedNodes: workflowResult.executedNodes,
+              }
+            );
+
             this.logger.error('线程执行失败', new Error(errorMessage), {
               threadId: thread.id.toString(),
               duration: workflowResult.executionTime,
@@ -212,6 +240,15 @@ export class ThreadExecution extends BaseService {
 
           thread.fail(errorMessage);
           await this.threadRepository.save(thread);
+
+          // 创建错误检查点
+          await this.checkpointCreation.createErrorCheckpoint(
+            thread,
+            error instanceof Error ? error : new Error(errorMessage),
+            {
+              phase: 'thread_execution_exception',
+            }
+          );
 
           this.logger.error('线程执行异常', error as Error, {
             threadId: thread.id.toString(),
@@ -327,6 +364,16 @@ export class ThreadExecution extends BaseService {
 
           thread.fail(errorMessage);
           await this.threadRepository.save(thread);
+
+          // 创建错误检查点
+          await this.checkpointCreation.createErrorCheckpoint(
+            thread,
+            error instanceof Error ? error : new Error(errorMessage),
+            {
+              phase: 'thread_resume_exception',
+              checkpointId,
+            }
+          );
 
           this.logger.error('线程恢复执行异常', error as Error, {
             threadId: thread.id.toString(),

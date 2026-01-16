@@ -1,6 +1,5 @@
 /**
  * 简单的事件发射器实现
- * 技术基础设施组件，从domain层迁移而来
  */
 
 export interface IEventEmitter {

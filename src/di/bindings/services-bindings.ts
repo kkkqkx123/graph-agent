@@ -23,6 +23,7 @@ import { SessionManagement } from '../../services/sessions/session-management';
 import { SessionMonitoring } from '../../services/sessions/session-monitoring';
 import { SessionOrchestration } from '../../services/sessions/session-orchestration';
 import { SessionResource } from '../../services/sessions/session-resource';
+import { SessionCheckpointManagement } from '../../services/sessions/session-checkpoint-management';
 import { StateHistory } from '../../services/state/state-history';
 import { StateManagement } from '../../services/state/state-management';
 import { StateRecovery } from '../../services/state/state-recovery';
@@ -35,7 +36,6 @@ import { FunctionExecutionEngine } from '../../services/workflow/function-execut
 import { GraphAlgorithmImpl } from '../../services/workflow/graph-algorithm';
 import { MonitoringService } from '../../services/workflow/monitoring';
 import { NodeRouter } from '../../services/workflow/node-router';
-import { Checkpoint } from '../../services/checkpoints/checkpoint';
 import { CheckpointAnalysis } from '../../services/checkpoints/checkpoint-analysis';
 import { CheckpointBackup } from '../../services/checkpoints/checkpoint-backup';
 import { CheckpointCleanup } from '../../services/checkpoints/checkpoint-cleanup';
@@ -98,6 +98,7 @@ export const servicesBindings = new ContainerModule((bind: any) => {
   bind(TYPES.SessionMonitoring).to(SessionMonitoring).inSingletonScope();
   bind(TYPES.SessionOrchestration).to(SessionOrchestration).inSingletonScope();
   bind(TYPES.SessionResource).to(SessionResource).inSingletonScope();
+  bind(TYPES.SessionCheckpointManagement).to(SessionCheckpointManagement).inSingletonScope();
 
   // 状态服务
   bind(TYPES.StateHistory).toDynamicValue((context: any) => {
@@ -124,7 +125,6 @@ export const servicesBindings = new ContainerModule((bind: any) => {
   bind(TYPES.WorkflowExecution).to(WorkflowExecutionEngine).inSingletonScope();
 
   // 检查点服务
-  bind(TYPES.Checkpoint).to(Checkpoint).inSingletonScope();
   bind(TYPES.CheckpointAnalysis).to(CheckpointAnalysis).inSingletonScope();
   bind(TYPES.CheckpointBackup).to(CheckpointBackup).inSingletonScope();
   bind(TYPES.CheckpointCleanup).to(CheckpointCleanup).inSingletonScope();
