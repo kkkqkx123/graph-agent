@@ -3,16 +3,11 @@ import { Checkpoint } from '../../domain/threads/checkpoints/entities/checkpoint
 import { CheckpointType } from '../../domain/threads/checkpoints/value-objects/checkpoint-type';
 import { ICheckpointRepository } from '../../domain/threads/checkpoints/repositories/checkpoint-repository';
 import { ILogger } from '../../domain/common/types/logger-types';
-import { Thread, ThreadProps } from '../../domain/threads/entities/thread';
-import { State } from '../../domain/state/entities/state';
-import { StateId } from '../../domain/state/value-objects/state-id';
-import { StateEntityType } from '../../domain/state/value-objects/state-entity-type';
-import { ThreadPriority } from '../../domain/threads/value-objects/thread-priority';
-import { DeletionStatus } from '../../domain/common/value-objects/deletion-status';
-import { Metadata } from '../../domain/common/value-objects/metadata';
-import { Version } from '../../domain/common/value-objects/version';
-import { Timestamp } from '../../domain/common/value-objects/timestamp';
-import { ExecutionContext, ExecutionConfig } from '../../domain/threads/value-objects/execution-context';
+import { Thread } from '../../domain/threads/entities/thread';
+import { CheckpointSerializationUtils } from './utils/serialization-utils';
+import { FormatConverter, DataFormat } from '../../infrastructure/common/utils/format-converter';
+import { StatisticsUtils } from '../../infrastructure/common/utils/statistics-utils';
+import { CheckpointCleanup } from './checkpoint-cleanup';
 
 /**
  * 检查点管理服务
@@ -26,10 +21,14 @@ import { ExecutionContext, ExecutionConfig } from '../../domain/threads/value-ob
  * - Session 的状态通过聚合其 Thread 的 checkpoint 间接获取
  */
 export class CheckpointManagement {
+  private readonly cleanupService: CheckpointCleanup;
+
   constructor(
     private readonly repository: ICheckpointRepository,
     private readonly logger: ILogger
-  ) {}
+  ) {
+    this.cleanupService = new CheckpointCleanup(repository, logger);
+  }
 
   /**
    * 创建 Thread 检查点
@@ -43,7 +42,7 @@ export class CheckpointManagement {
     metadata?: Record<string, unknown>,
     expirationHours?: number
   ): Promise<Checkpoint> {
-    const stateData = this.serializeThreadState(thread);
+    const stateData = CheckpointSerializationUtils.serializeThreadState(thread);
 
     const checkpoint = Checkpoint.create(
       thread.id,
@@ -120,44 +119,26 @@ export class CheckpointManagement {
 
   /**
    * 清理过期检查点
+   * 委托给 CheckpointCleanup 服务
    */
   async cleanupExpiredCheckpoints(): Promise<number> {
-    const allCheckpoints = await this.repository.findAll();
-    const expiredCheckpoints = allCheckpoints.filter(cp => cp.isExpired());
-    let deletedCount = 0;
-
-    for (const checkpoint of expiredCheckpoints) {
-      await this.repository.deleteById(checkpoint.checkpointId);
-      deletedCount++;
-    }
-
-    this.logger.info('过期检查点清理完成', { deletedCount });
-    return deletedCount;
+    return await this.cleanupService.cleanupExpiredCheckpoints();
   }
 
   /**
    * 清理多余检查点（保留最新的N个）
+   * 委托给 CheckpointCleanup 服务
    */
   async cleanupExcessCheckpoints(threadId: ID, maxCount: number): Promise<number> {
-    const checkpoints = await this.getThreadCheckpoints(threadId);
+    return await this.cleanupService.cleanupExcessCheckpoints(threadId, maxCount);
+  }
 
-    if (checkpoints.length <= maxCount) {
-      return 0;
-    }
-
-    const checkpointsToDelete = checkpoints.slice(maxCount);
-    let deletedCount = 0;
-
-    for (const checkpoint of checkpointsToDelete) {
-      await this.repository.deleteById(checkpoint.checkpointId);
-      deletedCount++;
-    }
-
-    this.logger.info('多余检查点清理完成', {
-      threadId: threadId.value,
-      deletedCount,
-    });
-    return deletedCount;
+  /**
+   * 归档旧检查点
+   * 委托给 CheckpointCleanup 服务
+   */
+  async archiveOldCheckpoints(threadId: ID, days: number): Promise<number> {
+    return await this.cleanupService.archiveOldCheckpoints(threadId, days);
   }
 
   /**
@@ -170,22 +151,7 @@ export class CheckpointManagement {
     averageSizeBytes: number;
   }> {
     const allCheckpoints = await this.repository.findAll();
-
-    const byType: Record<string, number> = {};
-    let totalSizeBytes = 0;
-
-    for (const checkpoint of allCheckpoints) {
-      const type = checkpoint.type.toString();
-      byType[type] = (byType[type] || 0) + 1;
-      totalSizeBytes += checkpoint.sizeBytes;
-    }
-
-    return {
-      total: allCheckpoints.length,
-      byType,
-      totalSizeBytes,
-      averageSizeBytes: totalSizeBytes / Math.max(allCheckpoints.length, 1),
-    };
+    return StatisticsUtils.calculateSizeStatistics(allCheckpoints);
   }
 
   /**
@@ -197,27 +163,10 @@ export class CheckpointManagement {
     mostRestoredCheckpointId: string | null;
   }> {
     const allCheckpoints = await this.repository.findAll();
-
-    const byType: Record<string, number> = {};
-    let totalRestores = 0;
-    let mostRestoredCheckpoint: Checkpoint | null = null;
-
-    for (const checkpoint of allCheckpoints) {
-      const type = checkpoint.type.toString();
-      const restoreCount = checkpoint.restoreCount;
-
-      byType[type] = (byType[type] || 0) + restoreCount;
-      totalRestores += restoreCount;
-
-      if (!mostRestoredCheckpoint || restoreCount > mostRestoredCheckpoint.restoreCount) {
-        mostRestoredCheckpoint = checkpoint;
-      }
-    }
-
+    const stats = StatisticsUtils.calculateRestoreStatistics(allCheckpoints);
     return {
-      totalRestores,
-      byType,
-      mostRestoredCheckpointId: mostRestoredCheckpoint?.checkpointId.value || null,
+      ...stats,
+      mostRestoredCheckpointId: stats.mostRestoredId,
     };
   }
 
@@ -280,26 +229,14 @@ export class CheckpointManagement {
   /**
    * 导出检查点
    */
-  async exportCheckpoint(checkpointId: ID, format: 'json' | 'yaml' | 'xml'): Promise<string> {
+  async exportCheckpoint(checkpointId: ID, format: DataFormat): Promise<string> {
     const checkpoint = await this.repository.findById(checkpointId);
     if (!checkpoint) {
       throw new Error('检查点不存在');
     }
 
     const data = checkpoint.toDict();
-
-    switch (format) {
-      case 'json':
-        return JSON.stringify(data, null, 2);
-      case 'yaml':
-        // 简化实现，实际需要yaml库
-        return `# YAML export\n${JSON.stringify(data, null, 2)}`;
-      case 'xml':
-        // 简化实现，实际需要xml库
-        return `<?xml version="1.0"?>\n<checkpoint>${JSON.stringify(data)}</checkpoint>`;
-      default:
-        throw new Error(`不支持的导出格式: ${format}`);
-    }
+    return FormatConverter.convertToFormat(data, format);
   }
 
   /**
@@ -308,99 +245,11 @@ export class CheckpointManagement {
   async importCheckpoint(
     threadId: ID,
     data: string,
-    format: 'json' | 'yaml' | 'xml'
+    format: DataFormat
   ): Promise<Checkpoint> {
-    let parsedData: Record<string, unknown>;
-
-    try {
-      switch (format) {
-        case 'json':
-          parsedData = JSON.parse(data);
-          break;
-        case 'yaml':
-        case 'xml':
-          // 简化实现
-          parsedData = JSON.parse(data);
-          break;
-        default:
-          throw new Error(`不支持的导入格式: ${format}`);
-      }
-    } catch (error) {
-      throw new Error(`数据解析失败: ${error}`);
-    }
-
+    const parsedData = FormatConverter.parseFromFormat(data, format);
     const checkpoint = Checkpoint.fromDict(parsedData);
     await this.repository.save(checkpoint);
     return checkpoint;
-  }
-
-  /**
-   * 序列化 Thread 完整状态
-   * 包含 Thread 的所有属性和完整的 State 实体
-   */
-  private serializeThreadState(thread: Thread): Record<string, unknown> {
-    return {
-      // Thread 基本信息
-      threadId: thread.id.value,
-      sessionId: thread.sessionId.value,
-      workflowId: thread.workflowId.value,
-      title: thread.title,
-      description: thread.description,
-      priority: thread.priority.toString(),
-      
-      // Thread 状态（包含完整 State）
-      status: thread.status,
-      execution: thread.execution,
-      
-      // ✅ 完整序列化 State 实体
-      state: {
-        data: thread.state.data.toRecord(),
-        metadata: thread.state.metadata.toRecord(),
-        version: thread.state.version.toString(),
-        createdAt: thread.state.createdAt.toISOString(),
-        updatedAt: thread.state.updatedAt.toISOString(),
-      },
-      
-      // Thread 元数据
-      metadata: thread.metadata.toRecord(),
-      
-      // 时间戳
-      createdAt: thread.createdAt.toISOString(),
-      updatedAt: thread.updatedAt.toISOString(),
-      version: thread.version.toString(),
-    };
-  }
-
-  /**
-   * 反序列化 Thread 状态
-   * 从 Checkpoint 的 stateData 重建 Thread 对象
-   */
-  private deserializeThreadState(stateData: Record<string, unknown>): Partial<ThreadProps> {
-    return {
-      id: ID.fromString(stateData['threadId'] as string),
-      sessionId: ID.fromString(stateData['sessionId'] as string),
-      workflowId: ID.fromString(stateData['workflowId'] as string),
-      title: stateData['title'] as string,
-      description: stateData['description'] as string,
-      priority: ThreadPriority.fromString(stateData['priority'] as string),
-      
-      // 反序列化 State
-      state: State.fromProps({
-        id: StateId.generate(), // 创建新的 State ID
-        entityId: ID.fromString(stateData['threadId'] as string),
-        entityType: StateEntityType.thread(),
-        data: (stateData['state'] as any).data,
-        metadata: (stateData['state'] as any).metadata,
-        version: Version.fromString((stateData['state'] as any).version),
-        createdAt: Timestamp.fromString((stateData['state'] as any).createdAt),
-        updatedAt: Timestamp.fromString((stateData['state'] as any).updatedAt),
-      }),
-      
-      metadata: Metadata.create(stateData['metadata'] as Record<string, unknown>),
-      deletionStatus: DeletionStatus.active(), // 恢复时默认为活跃状态
-      createdAt: Timestamp.fromString(stateData['createdAt'] as string),
-      updatedAt: Timestamp.fromString(stateData['updatedAt'] as string),
-      version: Version.fromString(stateData['version'] as string),
-    };
   }
 }

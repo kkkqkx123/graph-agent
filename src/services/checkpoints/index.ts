@@ -11,3 +11,4 @@ export * from './checkpoint-creation';
 export * from './checkpoint-restore';
 export * from './checkpoint-query';
 export * from './checkpoint-management';
+export * from './checkpoint-validation';

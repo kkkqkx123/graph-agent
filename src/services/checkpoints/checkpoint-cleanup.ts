@@ -2,6 +2,7 @@ import { ID } from '../../domain/common/value-objects/id';
 import { Checkpoint } from '../../domain/threads/checkpoints/entities/checkpoint';
 import { ICheckpointRepository } from '../../domain/threads/checkpoints/repositories/checkpoint-repository';
 import { ILogger } from '../../domain/common/types/logger-types';
+import { Timestamp } from '../../domain/common/value-objects/timestamp';
 
 /**
  * 检查点清理服务
@@ -65,11 +66,12 @@ export class CheckpointCleanup {
    */
   async archiveOldCheckpoints(threadId: ID, days: number): Promise<number> {
     const checkpoints = await this.repository.findByThreadId(threadId);
-    const cutoffTime = new Date();
-    cutoffTime.setDate(cutoffTime.getDate() - days);
+    const cutoffDate = new Date();
+    cutoffDate.setDate(cutoffDate.getDate() - days);
+    const cutoffTime = Timestamp.create(cutoffDate);
 
-    const oldCheckpoints = checkpoints.filter((cp: Checkpoint) => 
-      cp.createdAt.getDate() < cutoffTime
+    const oldCheckpoints = checkpoints.filter((cp: Checkpoint) =>
+      cp.createdAt.isBefore(cutoffTime)
     );
     let archivedCount = 0;
 

@@ -4,6 +4,7 @@ import { CheckpointType } from '../../domain/threads/checkpoints/value-objects/c
 import { ICheckpointRepository } from '../../domain/threads/checkpoints/repositories/checkpoint-repository';
 import { ILogger } from '../../domain/common/types/logger-types';
 import { Thread } from '../../domain/threads/entities/thread';
+import { CheckpointSerializationUtils } from './utils/serialization-utils';
 
 /**
  * 检查点创建服务
@@ -61,7 +62,7 @@ export class CheckpointCreation {
     thread: Thread,
     metadata?: Record<string, unknown>
   ): Promise<Checkpoint> {
-    const stateData = this.serializeThreadState(thread);
+    const stateData = CheckpointSerializationUtils.serializeThreadState(thread);
     
     const checkpoint = Checkpoint.create(
       thread.id,
@@ -106,7 +107,7 @@ export class CheckpointCreation {
     tags?: string[],
     metadata?: Record<string, unknown>
   ): Promise<Checkpoint> {
-    const stateData = this.serializeThreadState(thread);
+    const stateData = CheckpointSerializationUtils.serializeThreadState(thread);
     
     const checkpoint = Checkpoint.create(
       thread.id,
@@ -147,7 +148,7 @@ export class CheckpointCreation {
     error: Error,
     context?: Record<string, unknown>
   ): Promise<Checkpoint> {
-    const stateData = this.serializeThreadState(thread);
+    const stateData = CheckpointSerializationUtils.serializeThreadState(thread);
     
     const errorMetadata = {
       errorName: error.name,
@@ -196,7 +197,7 @@ export class CheckpointCreation {
     description?: string,
     metadata?: Record<string, unknown>
   ): Promise<Checkpoint> {
-    const stateData = this.serializeThreadState(thread);
+    const stateData = CheckpointSerializationUtils.serializeThreadState(thread);
     
     const milestoneMetadata = {
       milestoneName,
@@ -230,7 +231,7 @@ export class CheckpointCreation {
 
   /**
    * 判断是否应该创建检查点
-   * 
+   *
    * @param changeType 状态变更类型
    * @returns 是否应该创建检查点
    */
@@ -247,44 +248,5 @@ export class CheckpointCreation {
     ];
 
     return checkpointTriggers.includes(changeType);
-  }
-
-  /**
-   * 序列化 Thread 状态
-   * 
-   * @param thread 线程对象
-   * @returns 序列化后的状态数据
-   */
-  private serializeThreadState(thread: Thread): Record<string, unknown> {
-    return {
-      // Thread 基本信息
-      threadId: thread.id.value,
-      sessionId: thread.sessionId.value,
-      workflowId: thread.workflowId.value,
-      title: thread.title,
-      description: thread.description,
-      priority: thread.priority.toString(),
-      
-      // Thread 状态（包含完整 State）
-      status: thread.status,
-      execution: thread.execution,
-      
-      // 完整序列化 State 实体
-      state: {
-        data: thread.state.data.toRecord(),
-        metadata: thread.state.metadata.toRecord(),
-        version: thread.state.version.toString(),
-        createdAt: thread.state.createdAt.toISOString(),
-        updatedAt: thread.state.updatedAt.toISOString(),
-      },
-      
-      // Thread 元数据
-      metadata: thread.metadata.toRecord(),
-      
-      // 时间戳
-      createdAt: thread.createdAt.toISOString(),
-      updatedAt: thread.updatedAt.toISOString(),
-      version: thread.version.toString(),
-    };
   }
 }
