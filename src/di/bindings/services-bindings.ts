@@ -33,7 +33,6 @@ import { WorkflowManagement } from '../../services/workflow/workflow-management'
 import { WorkflowValidator } from '../../services/workflow/workflow-validator';
 import { ExpressionEvaluator } from '../../services/workflow/expression-evaluator';
 import { FunctionExecutionEngine } from '../../services/workflow/function-execution-engine';
-import { GraphAlgorithmImpl } from '../../services/workflow/graph-algorithm';
 import { MonitoringService } from '../../services/workflow/monitoring';
 import { NodeRouter } from '../../services/workflow/node-router';
 import { CheckpointAnalysis } from '../../services/checkpoints/checkpoint-analysis';
@@ -119,7 +118,6 @@ export const servicesBindings = new ContainerModule((bind: any) => {
   bind(TYPES.WorkflowValidator).to(WorkflowValidator).inSingletonScope();
   bind(TYPES.ExpressionEvaluator).to(ExpressionEvaluator).inSingletonScope();
   bind(TYPES.FunctionExecutionEngine).to(FunctionExecutionEngine).inSingletonScope();
-  bind(TYPES.GraphAlgorithm).to(GraphAlgorithmImpl).inSingletonScope();
   bind(TYPES.MonitoringService).to(MonitoringService).inSingletonScope();
   bind(TYPES.NodeRouter).to(NodeRouter).inSingletonScope();
   bind(TYPES.WorkflowExecution).to(WorkflowExecutionEngine).inSingletonScope();

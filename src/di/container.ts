@@ -278,12 +278,6 @@ export class AppContainer {
     return this.getService(TYPES.SessionOrchestration);
   }
 
-  /**
-   * 获取图算法服务
-   */
-  static getGraphAlgorithmService() {
-    return this.getService(TYPES.GraphAlgorithm);
-  }
 
   /**
    * 获取工作流仓储

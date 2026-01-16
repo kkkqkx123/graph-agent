@@ -1,0 +1,98 @@
+# LLM调用基础子工作流
+# 封装LLM调用+工具执行的基础操作
+# 这是一个无状态的子工作流，可以被其他工作流引用
+
+[workflow]
+id = "base_llm_call"
+name = "LLM调用基础操作"
+description = "封装LLM调用和工具执行的基础操作"
+version = "1.0.0"
+
+# 可配置参数（用于在具体工作流中通过参数修改内部逻辑）
+[workflow.parameters.llm_provider]
+type = "string"
+default = "openai"
+description = "LLM包装器名称"
+
+[workflow.parameters.temperature]
+type = "number"
+default = 0.7
+description = "温度参数"
+
+[workflow.parameters.max_tokens]
+type = "number"
+default = 2000
+description = "最大token数"
+
+[workflow.parameters.stream]
+type = "boolean"
+default = true
+description = "是否流式响应"
+
+[workflow.parameters.prompt]
+type = "string"
+required = true
+description = "LLM提示词"
+
+[workflow.parameters.system_prompt]
+type = "string"
+default = ""
+description = "系统提示词"
+
+[workflow.parameters.tool_timeout]
+type = "number"
+default = 30000
+description = "工具执行超时时间（毫秒）"
+
+# 定义工作流节点
+[[workflow.nodes]]
+id = "llm_node"
+type = "llm"
+name = "LLM调用"
+
+[workflow.nodes.config]
+# LLM包装器名称
+wrapper_name = "{{parameters.llm_provider}}"
+
+# 提示词配置
+[workflow.nodes.config.prompt]
+type = "direct"
+content = "{{parameters.prompt}}"
+
+[workflow.nodes.config.system_prompt]
+type = "direct"
+content = "{{parameters.system_prompt}}"
+
+# 生成参数
+temperature = "{{parameters.temperature}}"
+max_tokens = "{{parameters.max_tokens}}"
+stream = "{{parameters.stream}}"
+
+[[workflow.nodes]]
+id = "check_tool_calls"
+type = "condition"
+name = "检查工具调用"
+
+[workflow.nodes.config]
+condition_type = "tool_calls_check"
+
+[[workflow.nodes]]
+id = "tool_executor"
+type = "tool"
+name = "工具执行器"
+
+[workflow.nodes.config]
+# 工具名称和参数从LLM响应中自动提取
+tool_name = "auto"
+tool_parameters = "auto"
+timeout = "{{parameters.tool_timeout}}"
+
+# 定义边连接
+[[workflow.edges]]
+from = "llm_node"
+to = "check_tool_calls"
+
+[[workflow.edges]]
+from = "check_tool_calls"
+to = "tool_executor"
+condition = "has_tool_calls"

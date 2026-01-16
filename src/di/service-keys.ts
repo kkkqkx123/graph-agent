@@ -60,7 +60,6 @@ import { WorkflowManagement } from '../services/workflow/workflow-management';
 import { WorkflowValidator } from '../services/workflow/workflow-validator';
 import { ExpressionEvaluator } from '../services/workflow/expression-evaluator';
 import { FunctionExecutionEngine } from '../services/workflow/function-execution-engine';
-import { GraphAlgorithmImpl } from '../services/workflow/graph-algorithm';
 import { MonitoringService } from '../services/workflow/monitoring';
 import { NodeRouter } from '../services/workflow/node-router';
 import { WorkflowExecutionEngine as WorkflowExecution } from '../services/workflow/workflow-execution';
@@ -178,7 +177,6 @@ export interface ServiceTypes {
   WorkflowValidator: WorkflowValidator;
   ExpressionEvaluator: ExpressionEvaluator;
   FunctionExecutionEngine: FunctionExecutionEngine;
-  GraphAlgorithm: GraphAlgorithmImpl;
   MonitoringService: MonitoringService;
   NodeRouter: NodeRouter;
   WorkflowExecution: WorkflowExecution;
@@ -351,7 +349,6 @@ export const TYPES: {
   FunctionExecutionEngine: Symbol.for(
     'FunctionExecutionEngine'
   ) as TypedServiceIdentifier<'FunctionExecutionEngine'>,
-  GraphAlgorithm: Symbol.for('GraphAlgorithm') as TypedServiceIdentifier<'GraphAlgorithm'>,
   MonitoringService: Symbol.for('MonitoringService') as TypedServiceIdentifier<'MonitoringService'>,
   NodeRouter: Symbol.for('NodeRouter') as TypedServiceIdentifier<'NodeRouter'>,
   WorkflowExecution: Symbol.for('WorkflowExecution') as TypedServiceIdentifier<'WorkflowExecution'>,

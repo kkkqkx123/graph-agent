@@ -58,8 +58,6 @@ export interface WorkflowValidationResult {
  *
  * 不负责：
  * - 复杂的验证逻辑（由GraphValidationService负责）
- * - 图遍历和算法（由GraphAlgorithmService负责）
- * - 复杂度计算（由GraphAlgorithmService负责）
  * - 执行状态管理（由Thread负责）
  * - 进度跟踪（由Thread负责）
  * - UI相关的布局和可视化

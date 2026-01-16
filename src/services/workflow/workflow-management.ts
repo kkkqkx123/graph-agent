@@ -2,6 +2,7 @@
  * 工作流管理服务
  *
  * 负责工作流的查询、列表、搜索、更新和标签管理等管理功能
+ * 支持子工作流加载、验证和合并
  */
 
 import { injectable, inject } from 'inversify';
@@ -9,6 +10,20 @@ import { Workflow, IWorkflowRepository } from '../../domain/workflow';
 import { ID, ILogger } from '../../domain/common';
 import { BaseService } from '../common/base-service';
 import { WorkflowDTO, mapWorkflowToDTO, mapWorkflowsToDTOs } from './dtos/workflow-dto';
+import { WorkflowConfigLoader } from '../../infrastructure/config/loading/workflow-config-loader';
+import { WorkflowMerger } from './merger/workflow-merger';
+import { SubWorkflowValidator, SubWorkflowValidationResult } from './validators/subworkflow-validator';
+import { LLMNode } from './nodes/llm-node';
+import { ToolCallNode } from './nodes/tool-call-node';
+import { NodeId } from '../../domain/workflow/value-objects/node/node-id';
+import { NodeType, NodeContextTypeValue } from '../../domain/workflow/value-objects/node/node-type';
+import { EdgeId, EdgeType } from '../../domain/workflow/value-objects/edge';
+import { WorkflowConfig } from '../../domain/workflow/value-objects/workflow-config';
+import { ErrorHandlingStrategy } from '../../domain/workflow/value-objects/error-handling-strategy';
+import { ExecutionStrategy } from '../../domain/workflow/value-objects/execution/execution-strategy';
+import { WorkflowStatus } from '../../domain/workflow/value-objects/workflow-status';
+import { Version } from '../../domain/common/value-objects/version';
+import { Timestamp } from '../../domain/common/value-objects/timestamp';
 
 /**
  * 更新工作流参数
@@ -111,6 +126,9 @@ export interface WorkflowListResult {
 export class WorkflowManagement extends BaseService {
   constructor(
     @inject('WorkflowRepository') private readonly workflowRepository: IWorkflowRepository,
+    @inject('WorkflowConfigLoader') private readonly configLoader: WorkflowConfigLoader,
+    @inject('WorkflowMerger') private readonly workflowMerger: WorkflowMerger,
+    @inject('SubWorkflowValidator') private readonly subWorkflowValidator: SubWorkflowValidator,
     @inject('Logger') logger: ILogger
   ) {
     super(logger);
@@ -398,6 +416,194 @@ export class WorkflowManagement extends BaseService {
       },
       { keyword: params.keyword, searchIn: params.searchIn }
     );
+  }
+
+  /**
+   * 加载工作流（包括子工作流合并）
+   * @param workflowId 工作流ID
+   * @param parameters 参数值（可选）
+   * @returns 工作流实例
+   */
+  async loadWorkflow(workflowId: string, parameters?: Record<string, any>): Promise<Workflow> {
+    return this.executeBusinessOperation(
+      '工作流加载',
+      async () => {
+        this.logger.info('开始加载工作流', { workflowId, parameters: parameters ? Object.keys(parameters) : [] });
+
+        // 1. 加载工作流配置
+        const config = await this.configLoader.loadWorkflowConfig(workflowId, parameters);
+        this.logger.debug('工作流配置加载完成', { workflowId });
+
+        // 2. 转换为Workflow对象
+        const workflow = this.convertConfigToWorkflow(config);
+        this.logger.debug('工作流对象创建完成', { workflowId });
+
+        // 3. 检查是否有子工作流引用
+        const subWorkflowRefs = workflow.getSubWorkflowReferences();
+        
+        if (subWorkflowRefs.size > 0) {
+          this.logger.info('工作流包含子工作流引用，开始合并', {
+            workflowId,
+            subWorkflowCount: subWorkflowRefs.size
+          });
+
+          // 4. 递归合并子工作流
+          const mergeResult = await this.workflowMerger.mergeWorkflow(workflow);
+          this.logger.info('子工作流合并完成', { workflowId });
+
+          return mergeResult.mergedWorkflow;
+        }
+
+        this.logger.info('工作流加载完成（无子工作流）', { workflowId });
+        return workflow;
+      },
+      { workflowId, hasParameters: !!parameters }
+    );
+  }
+
+  /**
+   * 验证子工作流标准
+   * @param workflowId 工作流ID
+   * @returns 验证结果
+   */
+  async validateSubWorkflowStandards(workflowId: string): Promise<SubWorkflowValidationResult> {
+    return this.executeBusinessOperation(
+      '子工作流验证',
+      async () => {
+        this.logger.info('开始验证子工作流标准', { workflowId });
+
+        // 1. 加载工作流
+        const workflow = await this.loadWorkflow(workflowId);
+        this.logger.debug('工作流加载完成', { workflowId });
+
+        // 2. 验证子工作流标准
+        const validationResult = await this.subWorkflowValidator.validateSubWorkflow(workflow);
+        
+        this.logger.info('子工作流验证完成', {
+          workflowId,
+          isValid: validationResult.isValid,
+          workflowType: validationResult.workflowType,
+          errorCount: validationResult.errors.length,
+          warningCount: validationResult.warnings.length
+        });
+
+        return validationResult;
+      },
+      { workflowId }
+    );
+  }
+
+  /**
+   * 将配置转换为Workflow对象
+   * @param config 工作流配置
+   * @returns Workflow实例
+   */
+  private convertConfigToWorkflow(config: any): Workflow {
+    try {
+      const workflowConfig = config.workflow;
+      
+      // 1. 创建Workflow实例
+      const workflow = Workflow.create(
+        workflowConfig.name,
+        workflowConfig.description
+      );
+      
+      // 2. 添加节点
+      for (const nodeConfig of workflowConfig.nodes || []) {
+        const node = this.createNodeFromConfig(nodeConfig);
+        workflow.addNode(node);
+      }
+      
+      // 3. 添加边
+      for (const edgeConfig of workflowConfig.edges || []) {
+        const edgeId = EdgeId.fromString(`${edgeConfig.from}_${edgeConfig.to}`);
+        const edgeType = EdgeType.default();
+        const fromNodeId = NodeId.fromString(edgeConfig.from);
+        const toNodeId = NodeId.fromString(edgeConfig.to);
+        
+        // 构建条件对象
+        let condition;
+        if (edgeConfig.condition) {
+          condition = {
+            type: 'function' as const,
+            functionId: edgeConfig.condition
+          };
+        }
+        
+        workflow.addEdge(
+          edgeId,
+          edgeType,
+          fromNodeId,
+          toNodeId,
+          condition,
+          edgeConfig.weight,
+          edgeConfig.properties
+        );
+      }
+      
+      this.logger.debug('配置转换为Workflow对象完成', {
+        workflowId: workflowConfig.id,
+        nodeCount: workflowConfig.nodes?.length || 0,
+        edgeCount: workflowConfig.edges?.length || 0
+      });
+      
+      return workflow;
+    } catch (error) {
+      this.logger.error('配置转换失败', error as Error);
+      throw new Error(`配置转换为Workflow对象失败: ${(error as Error).message}`);
+    }
+  }
+  
+  /**
+   * 根据配置创建节点
+   * @param nodeConfig 节点配置
+   * @returns Node实例
+   */
+  private createNodeFromConfig(nodeConfig: any): any {
+    const nodeId = NodeId.fromString(nodeConfig.id);
+    const nodeType = nodeConfig.type;
+    const config = nodeConfig.config || {};
+    
+    switch (nodeType) {
+      case 'llm':
+        return new LLMNode(
+          nodeId,
+          config.wrapper_name || 'openai',
+          config.prompt || { type: 'direct', content: '' },
+          config.system_prompt,
+          config.context_processor_name || 'llm',
+          config.temperature,
+          config.max_tokens,
+          config.stream || false,
+          nodeConfig.name,
+          nodeConfig.description,
+          nodeConfig.position
+        );
+      
+      case 'tool':
+        return new ToolCallNode(
+          nodeId,
+          config.tool_name || '',
+          config.tool_parameters || {},
+          config.timeout || 30000,
+          nodeConfig.name,
+          nodeConfig.description,
+          nodeConfig.position
+        );
+      
+      default:
+        // 对于其他节点类型，创建通用节点
+        const { Node } = require('../../domain/workflow/entities/node');
+        const nodeTypeVO = NodeType.fromString(nodeType, NodeContextTypeValue.PASS_THROUGH);
+        
+        return Node.create(
+          nodeId,
+          nodeTypeVO,
+          nodeConfig.name || nodeType,
+          nodeConfig.description || '',
+          config
+        );
+    }
   }
 
   /**
