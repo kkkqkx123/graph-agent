@@ -1,4 +1,4 @@
-import { PromptContext } from '@/domain/workflow/value-objects/context/prompt-context';
+import { PromptState } from '@/domain/workflow/value-objects/context';
 import { BaseContextProcessor } from './base-context-processor';
 
 /**
@@ -12,12 +12,12 @@ export class PassThroughProcessor extends BaseContextProcessor {
   override readonly version = '1.0.0';
 
   process(
-    context: PromptContext,
+    promptState: PromptState,
     variables: Map<string, unknown>,
     config?: Record<string, unknown>
-  ): { context: PromptContext; variables: Map<string, unknown> } {
+  ): { promptState: PromptState; variables: Map<string, unknown> } {
     return {
-      context: context.clone(),
+      promptState: PromptState.fromProps(promptState),
       variables: new Map(variables)
     };
   }

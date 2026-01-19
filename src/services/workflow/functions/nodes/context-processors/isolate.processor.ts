@@ -1,23 +1,23 @@
-import { PromptContext } from '@/domain/workflow/value-objects/context/prompt-context';
+import { PromptState } from '@/domain/workflow/value-objects/context';
 import { BaseContextProcessor } from './base-context-processor';
 
 /**
  * 隔离上下文处理器
  *
- * 只保留模板，清空其他所有内容
+ * 清空所有内容
  */
 export class IsolateProcessor extends BaseContextProcessor {
   readonly name = 'isolate';
-  readonly description = '只保留模板，清空其他所有内容';
+  readonly description = '清空所有内容';
   override readonly version = '1.0.0';
 
   process(
-    context: PromptContext,
+    promptState: PromptState,
     variables: Map<string, unknown>,
     config?: Record<string, unknown>
-  ): { context: PromptContext; variables: Map<string, unknown> } {
+  ): { promptState: PromptState; variables: Map<string, unknown> } {
     return {
-      context: PromptContext.create(context.template, [], {}),
+      promptState: PromptState.create(),
       variables: new Map()
     };
   }

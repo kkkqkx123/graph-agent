@@ -1,4 +1,4 @@
-import { PromptContext } from '@/domain/workflow/value-objects/context/prompt-context';
+import { PromptState } from '@/domain/workflow/value-objects/context';
 import { SingletonContextProcessor } from './singleton-context-processor';
 
 /**
@@ -13,12 +13,12 @@ export class LlmContextProcessor extends SingletonContextProcessor {
   override readonly version = '1.0.0';
 
   process(
-    context: PromptContext,
+    promptState: PromptState,
     variables: Map<string, unknown>,
     config?: Record<string, unknown>
-  ): { context: PromptContext; variables: Map<string, unknown> } {
+  ): { promptState: PromptState; variables: Map<string, unknown> } {
     // 过滤掉工具调用历史
-    const filteredHistory = context.history.filter((entry: any) => !entry.metadata?.['toolCall']);
+    const filteredHistory = promptState.history.filter((entry: any) => !entry.metadata?.['toolCall']);
 
     // 只保留LLM相关变量
     const filteredVariables = new Map<string, unknown>();
@@ -28,8 +28,20 @@ export class LlmContextProcessor extends SingletonContextProcessor {
       }
     }
 
+    // 创建新的PromptState
+    let newPromptState = PromptState.create();
+    for (const entry of filteredHistory) {
+      newPromptState = newPromptState.addMessage(
+        entry.role,
+        entry.content,
+        entry.toolCalls,
+        entry.toolCallId,
+        entry.metadata
+      );
+    }
+
     return {
-      context: PromptContext.create(context.template, filteredHistory, context.metadata),
+      promptState: newPromptState,
       variables: filteredVariables
     };
   }

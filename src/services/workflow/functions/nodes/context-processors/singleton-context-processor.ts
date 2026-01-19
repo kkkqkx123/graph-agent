@@ -1,4 +1,4 @@
-import { PromptContext } from '@/domain/workflow/value-objects/context/prompt-context';
+import { PromptState } from '@/domain/workflow/value-objects/context';
 
 /**
  * 静态上下文处理器基类
@@ -34,16 +34,16 @@ export abstract class SingletonContextProcessor {
   /**
    * 执行上下文处理
    *
-   * @param context 提示词上下文
+   * @param promptState 提示词状态
    * @param variables 变量映射
    * @param config 处理器配置（静态处理器通常忽略此参数）
-   * @returns 处理后的上下文（包含context和variables）
+   * @returns 处理后的状态（包含promptState和variables）
    */
   abstract process(
-    context: PromptContext,
+    promptState: PromptState,
     variables: Map<string, unknown>,
     config?: Record<string, unknown>
-  ): { context: PromptContext; variables: Map<string, unknown> };
+  ): { promptState: PromptState; variables: Map<string, unknown> };
 
   /**
    * 验证配置参数
@@ -59,12 +59,12 @@ export abstract class SingletonContextProcessor {
    * @returns ContextProcessor 函数
    */
   toProcessor(): (
-    context: PromptContext,
+    promptState: PromptState,
     variables: Map<string, unknown>,
     config?: Record<string, unknown>
-  ) => { context: PromptContext; variables: Map<string, unknown> } {
-    return (context: PromptContext, variables: Map<string, unknown>, config?: Record<string, unknown>) => {
-      return this.process(context, variables, config);
+  ) => { promptState: PromptState; variables: Map<string, unknown> } {
+    return (promptState: PromptState, variables: Map<string, unknown>, config?: Record<string, unknown>) => {
+      return this.process(promptState, variables, config);
     };
   }
 

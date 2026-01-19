@@ -3,7 +3,6 @@ import { EdgeValueObject } from '../../../domain/workflow/value-objects/edge/edg
 import { FunctionRegistry } from '../functions/function-registry';
 import { WorkflowExecutionContext } from '../functions/types';
 import { ExecutionContext } from '../../../domain/threads/value-objects/execution-context';
-import { PromptContext } from '../../../domain/workflow/value-objects/context/prompt-context';
 import { ILogger } from '../../../domain/common/types/logger-types';
 
 /**
@@ -196,7 +195,6 @@ export class EdgeExecutor {
       // 忽略提取变量时的错误
     }
 
-    // 创建 PromptContext（使用默认模板）
     // 创建 ExecutionContext
     return ExecutionContext.create();
   }

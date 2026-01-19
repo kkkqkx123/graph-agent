@@ -1,6 +1,6 @@
 import { ID, Timestamp, ValueObject } from '../../../../common/value-objects';
 import { NodeId } from '../../../../workflow/value-objects';
-import { PromptContext } from '../../../../workflow/value-objects/context';
+import { PromptState } from '../../../../workflow/value-objects/context';
 import { NodeExecutionSnapshot } from '../../../../threads/value-objects/node-execution';
 
 /**
@@ -122,7 +122,7 @@ export class ForkContext extends ValueObject<{
   readonly timestamp: Timestamp;
   readonly variableSnapshot: Map<string, unknown>;
   readonly nodeStateSnapshot: Map<string, NodeExecutionSnapshot>;
-  readonly promptContextSnapshot: PromptContext;
+  readonly promptStateSnapshot: PromptState;
   readonly options: ForkOptions;
 }> {
   private constructor(props: {
@@ -132,7 +132,7 @@ export class ForkContext extends ValueObject<{
     timestamp: Timestamp;
     variableSnapshot: Map<string, unknown>;
     nodeStateSnapshot: Map<string, NodeExecutionSnapshot>;
-    promptContextSnapshot: PromptContext;
+    promptStateSnapshot: PromptState;
     options: ForkOptions;
   }) {
     super(props);
@@ -146,7 +146,7 @@ export class ForkContext extends ValueObject<{
     forkPoint: NodeId,
     variableSnapshot: Map<string, unknown>,
     nodeStateSnapshot: Map<string, NodeExecutionSnapshot>,
-    promptContextSnapshot: PromptContext,
+    promptStateSnapshot: PromptState,
     options: ForkOptions
   ): ForkContext {
     return new ForkContext({
@@ -156,7 +156,7 @@ export class ForkContext extends ValueObject<{
       timestamp: Timestamp.now(),
       variableSnapshot: new Map(variableSnapshot),
       nodeStateSnapshot: new Map(nodeStateSnapshot),
-      promptContextSnapshot,
+      promptStateSnapshot,
       options,
     });
   }
@@ -185,8 +185,8 @@ export class ForkContext extends ValueObject<{
     return new Map(this.props.nodeStateSnapshot);
   }
 
-  public get promptContextSnapshot(): PromptContext {
-    return this.props.promptContextSnapshot;
+  public get promptStateSnapshot(): PromptState {
+    return this.props.promptStateSnapshot;
   }
 
   public get options(): ForkOptions {

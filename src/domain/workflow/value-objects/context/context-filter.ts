@@ -1,5 +1,5 @@
 import { ValueObject } from '../../../common/value-objects';
-import { PromptContext } from './prompt-context';
+import { PromptState } from './prompt-state';
 
 /**
  * 上下文过滤规则
@@ -86,17 +86,17 @@ export class ContextFilter extends ValueObject<ContextFilterProps> {
 
   /**
    * 应用过滤规则到上下文
-   * @param context 提示词上下文
+   * @param promptState 提示词状态
    * @param variables 变量映射（从ExecutionContext传入）
-   * @returns 过滤后的提示词上下文和变量
+   * @returns 过滤后的提示词状态和变量
    */
-  public apply(context: PromptContext, variables?: Map<string, unknown>): {
-    context: PromptContext;
+  public apply(promptState: PromptState, variables?: Map<string, unknown>): {
+    promptState: PromptState;
     variables: Map<string, unknown>
   } {
     let filteredVariables = variables ? new Map(variables) : new Map();
-    let filteredHistory = [...context.history];
-    let filteredMetadata = { ...context.metadata };
+    let filteredHistory = [...promptState.history];
+    let filteredMetadata = {};
 
     // 按优先级排序规则
     const sortedRules = [...this.props.filterRules].sort((a, b) => {
@@ -108,7 +108,7 @@ export class ContextFilter extends ValueObject<ContextFilterProps> {
 
     for (const rule of sortedRules) {
       // 检查条件表达式
-      if (rule.condition && !this.evaluateCondition(rule.condition, context, filteredVariables)) {
+      if (rule.condition && !this.evaluateCondition(rule.condition, promptState, filteredVariables)) {
         continue;
       }
 
@@ -166,12 +166,20 @@ export class ContextFilter extends ValueObject<ContextFilterProps> {
       filteredMetadata = {};
     }
 
+    // 创建新的 PromptState
+    let newPromptState = PromptState.create();
+    for (const entry of filteredHistory) {
+      newPromptState = newPromptState.addMessage(
+        entry.role,
+        entry.content,
+        entry.toolCalls,
+        entry.toolCallId,
+        entry.metadata
+      );
+    }
+
     return {
-      context: PromptContext.create(
-        context.template,
-        filteredHistory,
-        filteredMetadata
-      ),
+      promptState: newPromptState,
       variables: filteredVariables
     };
   }
@@ -338,13 +346,13 @@ export class ContextFilter extends ValueObject<ContextFilterProps> {
   /**
    * 评估条件表达式
    */
-  private evaluateCondition(condition: string, context: PromptContext, variables: Map<string, unknown>): boolean {
+  private evaluateCondition(condition: string, promptState: PromptState, variables: Map<string, unknown>): boolean {
     // 简化的条件评估逻辑
     // 实际实现应该使用更安全的表达式解析器
     try {
       const variablesObj = Object.fromEntries(variables);
-      const func = new Function('context', 'variables', `return ${condition}`);
-      return func(context, variablesObj);
+      const func = new Function('promptState', 'variables', `return ${condition}`);
+      return func(promptState, variablesObj);
     } catch (error) {
       console.warn(`条件表达式评估失败: ${condition}`, error);
       return false;

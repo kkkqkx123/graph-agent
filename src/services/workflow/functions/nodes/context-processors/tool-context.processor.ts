@@ -1,4 +1,4 @@
-import { PromptContext } from '@/domain/workflow/value-objects/context/prompt-context';
+import { PromptState } from '@/domain/workflow/value-objects/context';
 import { SingletonContextProcessor } from './singleton-context-processor';
 
 /**
@@ -13,10 +13,10 @@ export class ToolContextProcessor extends SingletonContextProcessor {
   override readonly version = '1.0.0';
 
   process(
-    context: PromptContext,
+    promptState: PromptState,
     variables: Map<string, unknown>,
     config?: Record<string, unknown>
-  ): { context: PromptContext; variables: Map<string, unknown> } {
+  ): { promptState: PromptState; variables: Map<string, unknown> } {
     // 提取工具相关变量
     const toolVariables = new Map<string, unknown>();
     for (const [key, value] of variables.entries()) {
@@ -26,7 +26,7 @@ export class ToolContextProcessor extends SingletonContextProcessor {
     }
 
     return {
-      context: PromptContext.create(context.template, context.history, context.metadata),
+      promptState: PromptState.fromProps(promptState),
       variables: toolVariables
     };
   }

@@ -9,7 +9,6 @@ import { ThreadDefinition } from '../../../domain/threads/value-objects/thread-d
 import { ThreadExecution } from '../../../domain/threads/value-objects/thread-execution';
 import { ExecutionContext, ExecutionConfig } from '../../../domain/threads/value-objects/execution-context';
 import { VariableManager } from '../../../domain/threads/value-objects/variable-manager';
-import { PromptContext } from '../../../domain/workflow/value-objects/context/prompt-context';
 import { Timestamp } from '../../../domain/common/value-objects/timestamp';
 import { Version } from '../../../domain/common/value-objects/version';
 import { ThreadModel } from '../models/thread.model';

@@ -1,4 +1,4 @@
-import { PromptContext } from '@/domain/workflow/value-objects/context/prompt-context';
+import { PromptState } from '@/domain/workflow/value-objects/context';
 import { SingletonContextProcessor } from './singleton-context-processor';
 
 /**
@@ -13,10 +13,10 @@ export class HumanContextProcessor extends SingletonContextProcessor {
   override readonly version = '1.0.0';
 
   process(
-    context: PromptContext,
+    promptState: PromptState,
     variables: Map<string, unknown>,
     config?: Record<string, unknown>
-  ): { context: PromptContext; variables: Map<string, unknown> } {
+  ): { promptState: PromptState; variables: Map<string, unknown> } {
     // 保留用户交互相关变量
     const humanVariables = new Map<string, unknown>();
     for (const [key, value] of variables.entries()) {
@@ -26,10 +26,22 @@ export class HumanContextProcessor extends SingletonContextProcessor {
     }
 
     // 保留人工交互相关历史
-    const humanHistory = context.history.filter((entry: any) => entry.metadata?.['humanInteraction']);
+    const humanHistory = promptState.history.filter((entry: any) => entry.metadata?.['humanInteraction']);
+
+    // 创建新的PromptState
+    let newPromptState = PromptState.create();
+    for (const entry of humanHistory) {
+      newPromptState = newPromptState.addMessage(
+        entry.role,
+        entry.content,
+        entry.toolCalls,
+        entry.toolCallId,
+        entry.metadata
+      );
+    }
 
     return {
-      context: PromptContext.create(context.template, humanHistory, context.metadata),
+      promptState: newPromptState,
       variables: humanVariables
     };
   }

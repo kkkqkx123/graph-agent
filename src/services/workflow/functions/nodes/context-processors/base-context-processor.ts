@@ -1,18 +1,18 @@
-import { PromptContext } from '@/domain/workflow/value-objects/context/prompt-context';
+import { PromptState } from '@/domain/workflow/value-objects/context';
 
 /**
  * 上下文处理器函数类型
  *
- * @param context 提示词上下文
+ * @param promptState 提示词状态
  * @param variables 变量映射（从ExecutionContext传入）
  * @param config 处理器配置（可选）
- * @returns 处理后的上下文（包含context和variables）
+ * @returns 处理后的状态（包含promptState和variables）
  */
 export type ContextProcessor = (
-  context: PromptContext,
+  promptState: PromptState,
   variables: Map<string, unknown>,
   config?: Record<string, unknown>
-) => { context: PromptContext; variables: Map<string, unknown> };
+) => { promptState: PromptState; variables: Map<string, unknown> };
 
 /**
  * 上下文处理器元数据
@@ -69,16 +69,16 @@ export abstract class BaseContextProcessor {
   /**
    * 执行上下文处理
    *
-   * @param context 提示词上下文
+   * @param promptState 提示词状态
    * @param variables 变量映射
    * @param config 处理器配置（可选）
-   * @returns 处理后的上下文（包含context和variables）
+   * @returns 处理后的状态（包含promptState和variables）
    */
   abstract process(
-    context: PromptContext,
+    promptState: PromptState,
     variables: Map<string, unknown>,
     config?: Record<string, unknown>
-  ): { context: PromptContext; variables: Map<string, unknown> };
+  ): { promptState: PromptState; variables: Map<string, unknown> };
 
   /**
    * 验证配置参数
@@ -94,7 +94,7 @@ export abstract class BaseContextProcessor {
    * @returns ContextProcessor 函数
    */
   toProcessor(): ContextProcessor {
-    return (context: PromptContext, variables: Map<string, unknown>, config?: Record<string, unknown>) => {
+    return (promptState: PromptState, variables: Map<string, unknown>, config?: Record<string, unknown>) => {
       // 如果有验证方法且提供了配置，先验证配置
       if (this.validateConfig && config) {
         const validation = this.validateConfig(config);
@@ -102,7 +102,7 @@ export abstract class BaseContextProcessor {
           throw new Error(`配置验证失败: ${validation.errors.join(', ')}`);
         }
       }
-      return this.process(context, variables, config);
+      return this.process(promptState, variables, config);
     };
   }
 

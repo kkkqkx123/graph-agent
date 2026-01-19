@@ -11,7 +11,7 @@ import { injectable, inject } from 'inversify';
 import { IPromptRepository } from '../../domain/prompts/repositories/prompt-repository';
 import { PromptId } from '../../domain/prompts/value-objects/prompt-id';
 import { TemplateProcessor, TemplateProcessResult } from './template-processor';
-import { PromptContext } from '../../domain/workflow/value-objects/context/prompt-context';
+import { PromptState } from '../../domain/workflow/value-objects/context';
 import { ContextProcessor } from '../workflow/functions/nodes/context-processors/base-context-processor';
 import { LLMMessage } from '../../domain/llm/value-objects/llm-message';
 import { ILogger } from '../../domain/common/types/logger-types';
@@ -128,14 +128,14 @@ export class PromptBuilder {
     let processedVariables = new Map(Object.entries(context));
     
     if (source.type === 'template' && contextProcessorName && contextProcessors) {
-      // 创建 PromptContext（不包含variables）
-      const promptContext = PromptContext.create(content);
+      // 创建 PromptState（不包含variables）
+      const promptState = PromptState.create();
 
       // 应用处理器
       const processor = contextProcessors.get(contextProcessorName);
       if (processor) {
-        const result = processor(promptContext, processedVariables);
-        // 处理器返回处理后的context和variables
+        const result = processor(promptState, processedVariables);
+        // 处理器返回处理后的promptState和variables
         processedContext = { ...context, ...Object.fromEntries(result.variables.entries()) };
         processedVariables = result.variables;
       }

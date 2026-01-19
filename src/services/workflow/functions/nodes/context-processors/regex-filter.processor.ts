@@ -1,4 +1,4 @@
-import { PromptContext } from '@/domain/workflow/value-objects/context/prompt-context';
+import { PromptState } from '@/domain/workflow/value-objects/context';
 import { BaseContextProcessor } from './base-context-processor';
 
 /**
@@ -17,8 +17,6 @@ export interface RegexFilterConfig {
   searchInVariables?: boolean;
   /** 是否在历史记录中搜索（默认为 true） */
   searchInHistory?: boolean;
-  /** 是否在模板中搜索（默认为 false） */
-  searchInTemplate?: boolean;
 }
 
 /**
@@ -27,7 +25,7 @@ export interface RegexFilterConfig {
  * 基于正则表达式提取局部上下文内容，支持配置：
  * - 正则表达式内容和标志
  * - 前后保留的行数
- * - 搜索范围（变量、历史记录、模板）
+ * - 搜索范围（变量、历史记录）
  */
 export class RegexFilterProcessor extends BaseContextProcessor {
   readonly name = 'regex_filter';
@@ -35,8 +33,8 @@ export class RegexFilterProcessor extends BaseContextProcessor {
   override readonly version = '1.0.0';
 
   /**
-   * 默认配置
-   */
+    * 默认配置
+    */
   private readonly defaultConfig: Required<RegexFilterConfig> = {
     pattern: '',
     flags: 'gim',
@@ -44,12 +42,11 @@ export class RegexFilterProcessor extends BaseContextProcessor {
     linesAfter: 3,
     searchInVariables: true,
     searchInHistory: true,
-    searchInTemplate: false,
   };
 
   /**
-    * 验证配置参数
-    */
+     * 验证配置参数
+     */
   override validateConfig(config: Record<string, unknown>): { valid: boolean; errors: string[] } {
     const errors: string[] = [];
 
@@ -77,10 +74,6 @@ export class RegexFilterProcessor extends BaseContextProcessor {
       errors.push('searchInHistory 必须是布尔值');
     }
 
-    if (config['searchInTemplate'] !== undefined && typeof config['searchInTemplate'] !== 'boolean') {
-      errors.push('searchInTemplate 必须是布尔值');
-    }
-
     return {
       valid: errors.length === 0,
       errors,
@@ -91,22 +84,29 @@ export class RegexFilterProcessor extends BaseContextProcessor {
    * 执行上下文处理
    */
   process(
-    context: PromptContext,
+    promptState: PromptState,
     variables: Map<string, unknown>,
     config?: Record<string, unknown>
-  ): { context: PromptContext; variables: Map<string, unknown> } {
+  ): { promptState: PromptState; variables: Map<string, unknown> } {
     const mergedConfig = this.mergeConfig(config);
 
     // 提取匹配内容
-    const extractedContent = this.extractContent(context, variables, mergedConfig);
+    const extractedContent = this.extractContent(promptState, variables, mergedConfig);
 
-    // 创建新的上下文，只包含提取的内容
+    // 创建新的PromptState，只包含提取的内容
+    let newPromptState = PromptState.create();
+    for (const entry of extractedContent.history) {
+      newPromptState = newPromptState.addMessage(
+        entry.role,
+        entry.content,
+        entry.toolCalls,
+        entry.toolCallId,
+        entry.metadata
+      );
+    }
+
     return {
-      context: PromptContext.create(
-        extractedContent.template,
-        extractedContent.history,
-        extractedContent.metadata
-      ),
+      promptState: newPromptState,
       variables: extractedContent.variables
     };
   }
@@ -131,27 +131,18 @@ export class RegexFilterProcessor extends BaseContextProcessor {
    * 提取匹配内容
    */
   private extractContent(
-    context: PromptContext,
+    promptState: PromptState,
     variables: Map<string, unknown>,
     config: Required<RegexFilterConfig>
   ): {
-    template: string;
     variables: Map<string, unknown>;
     history: any[];
-    metadata: Record<string, unknown>;
   } {
     const regex = new RegExp(config.pattern, config.flags);
     const result = {
-      template: context.template,
       variables: new Map<string, unknown>(),
       history: [] as any[],
-      metadata: { ...context.metadata, regexFilter: config },
     };
-
-    // 在模板中搜索
-    if (config.searchInTemplate) {
-      result.template = this.extractWithContext(context.template, regex, config);
-    }
 
     // 在变量中搜索
     if (config.searchInVariables) {
@@ -170,7 +161,7 @@ export class RegexFilterProcessor extends BaseContextProcessor {
 
     // 在历史记录中搜索
     if (config.searchInHistory) {
-      for (const entry of context.history) {
+      for (const entry of promptState.history) {
         const extractedEntry = this.extractFromHistoryEntry(entry, regex, config);
         if (extractedEntry) {
           result.history.push(extractedEntry);
@@ -227,15 +218,12 @@ export class RegexFilterProcessor extends BaseContextProcessor {
     config: Required<RegexFilterConfig>
   ): any | null {
     // 检查消息内容
-    if (entry.message && typeof entry.message.content === 'string') {
-      const extracted = this.extractWithContext(entry.message.content, regex, config);
-      if (extracted !== entry.message.content) {
+    if (entry.content && typeof entry.content === 'string') {
+      const extracted = this.extractWithContext(entry.content, regex, config);
+      if (extracted !== entry.content) {
         return {
           ...entry,
-          message: {
-            ...entry.message,
-            content: extracted,
-          },
+          content: extracted,
         };
       }
     }

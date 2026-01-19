@@ -12,7 +12,7 @@ import {
   WorkflowExecutionContext,
 } from '../../../domain/workflow/entities/node';
 import { FunctionRegistry } from '../functions/function-registry';
-import { PromptContext } from '../../../domain/workflow/value-objects/context/prompt-context';
+import { PromptState } from '../../../domain/workflow/value-objects/context';
 
 /**
  * 上下文处理器节点
@@ -54,26 +54,26 @@ export class ContextProcessorNode extends Node {
         throw new Error(`上下文处理器 "${this.processorName}" 不存在`);
       }
 
-      // 从上下文中获取 PromptContext
-      const promptContext = context.getVariable('promptContext') as PromptContext;
-      if (!promptContext) {
-        throw new Error('上下文中缺少 promptContext 变量');
+      // 从上下文中获取 PromptState
+      const promptState = context.getVariable('promptState') as PromptState;
+      if (!promptState) {
+        throw new Error('上下文中缺少 promptState 变量');
       }
 
       // 执行处理器
-      const processedContext = await processorFunction.execute(
+      const processedState = await processorFunction.execute(
         context,
         this.processorConfig
       );
 
-      // 更新上下文中的 PromptContext
-      context.setVariable('promptContext', processedContext);
+      // 更新上下文中的 PromptState
+      context.setVariable('promptState', processedState);
 
       const executionTime = Date.now() - startTime;
 
       return {
         success: true,
-        output: processedContext,
+        output: processedState,
         executionTime,
         metadata: {
           processorName: this.processorName,
@@ -141,12 +141,12 @@ export class ContextProcessorNode extends Node {
     return {
       type: 'object',
       properties: {
-        promptContext: {
+        promptState: {
           type: 'object',
-          description: '提示词上下文',
+          description: '提示词状态',
         },
       },
-      required: ['promptContext'],
+      required: ['promptState'],
     };
   }
 
@@ -154,12 +154,12 @@ export class ContextProcessorNode extends Node {
     return {
       type: 'object',
       properties: {
-        promptContext: {
+        promptState: {
           type: 'object',
-          description: '处理后的提示词上下文',
+          description: '处理后的提示词状态',
         },
       },
-      required: ['promptContext'],
+      required: ['promptState'],
     };
   }
 

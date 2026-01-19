@@ -6,7 +6,8 @@
 
 import { injectable, inject } from 'inversify';
 import { ID, ILogger } from '../../domain/common';
-import { NodeId, PromptContext } from '../../domain/workflow';
+import { NodeId } from '../../domain/workflow';
+import { PromptState } from '../../domain/workflow/value-objects/context';
 import {
   Thread,
   IThreadRepository,
@@ -233,17 +234,17 @@ export class ThreadFork {
     // TODO: 从节点执行服务获取节点状态快照
     const nodeStateSnapshot = new Map<string, NodeExecutionSnapshot>();
 
-    // 获取提示词上下文快照
-    // 注意：提示词上下文现在由其他服务管理，这里暂时创建空上下文
-    // TODO: 从上下文服务获取提示词上下文快照
-    const promptContextSnapshot = PromptContext.create('', [], {});
+    // 获取提示词状态快照
+    // 注意：提示词状态现在由其他服务管理，这里暂时创建空状态
+    // TODO: 从上下文服务获取提示词状态快照
+    const promptStateSnapshot = PromptState.create();
 
     return ForkContext.create(
       parentThread.threadId,
       forkPoint,
       variableSnapshot,
       nodeStateSnapshot,
-      promptContextSnapshot,
+      promptStateSnapshot,
       forkOptions
     );
   }
