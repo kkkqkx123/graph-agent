@@ -115,6 +115,35 @@ context.setVariable('tool_calls', toolCalls);
 
 ### LLM 节点
 
+LLM节点使用结构化的wrapper配置，支持三种类型的wrapper：
+
+#### Wrapper配置方式
+
+由于TOML不支持嵌套的对象参数定义，wrapper配置使用多个独立参数：
+
+```toml
+# 参数定义
+[workflow.parameters.wrapper_type]
+type = "string"
+default = "pool"
+description = "Wrapper类型：pool | group | direct"
+
+[workflow.parameters.wrapper_name]
+type = "string"
+default = "default_pool"
+description = "Wrapper名称（pool或group类型）"
+
+[workflow.parameters.wrapper_provider]
+type = "string"
+description = "提供商名称（direct类型）"
+
+[workflow.parameters.wrapper_model]
+type = "string"
+description = "模型名称（direct类型）"
+```
+
+#### LLM节点配置示例
+
 ```toml
 [[workflow.nodes]]
 id = "llm_node"
@@ -122,8 +151,11 @@ type = "llm"
 name = "LLM调用"
 
 [workflow.nodes.config]
-# LLM包装器名称
-wrapper_name = "{{parameters.llm_provider}}"
+# LLM包装器配置（结构化对象）
+wrapper_type = "{{parameters.wrapper_type}}"
+wrapper_name = "{{parameters.wrapper_name}}"
+wrapper_provider = "{{parameters.wrapper_provider}}"
+wrapper_model = "{{parameters.wrapper_model}}"
 
 # 提示词配置
 [workflow.nodes.config.prompt]
@@ -134,12 +166,22 @@ content = "{{parameters.prompt}}"
 [workflow.nodes.config.system_prompt]
 type = "direct"
 content = "{{parameters.system_prompt}}"
-
-# 生成参数
-temperature = "{{parameters.temperature}}"
-max_tokens = "{{parameters.max_tokens}}"
-stream = "{{parameters.stream}}"
 ```
+
+#### Wrapper类型说明
+
+| 类型 | 配置参数 | 说明 | 示例 |
+|------|---------|------|------|
+| `pool` | `wrapper_name` | 使用轮询池 | `type="pool", name="default_pool"` |
+| `group` | `wrapper_name` | 使用任务组 | `type="group", name="default_group"` |
+| `direct` | `wrapper_provider`, `wrapper_model` | 直接使用模型 | `type="direct", provider="openai", model="gpt-4o"` |
+
+#### Wrapper配置优势
+
+1. **类型安全**：使用结构化配置，避免字符串拼接错误
+2. **自动参数继承**：wrapper服务可以自动获取模型的默认参数
+3. **易于维护**：配置清晰，易于理解和修改
+4. **向后兼容**：支持旧的字符串格式（通过转换）
 
 ### 工具调用节点
 
@@ -256,25 +298,23 @@ description = "封装LLM调用和工具执行的基础操作"
 version = "1.0.0"
 
 # 可配置参数
-[workflow.parameters.llm_provider]
+[workflow.parameters.wrapper_type]
 type = "string"
-default = "openai"
-description = "LLM包装器名称"
+default = "pool"
+description = "Wrapper类型：pool | group | direct"
 
-[workflow.parameters.temperature]
-type = "number"
-default = 0.7
-description = "温度参数"
+[workflow.parameters.wrapper_name]
+type = "string"
+default = "default_pool"
+description = "Wrapper名称（pool或group类型）"
 
-[workflow.parameters.max_tokens]
-type = "number"
-default = 2000
-description = "最大token数"
+[workflow.parameters.wrapper_provider]
+type = "string"
+description = "提供商名称（direct类型）"
 
-[workflow.parameters.stream]
-type = "boolean"
-default = false
-description = "是否流式响应"
+[workflow.parameters.wrapper_model]
+type = "string"
+description = "模型名称（direct类型）"
 
 [workflow.parameters.prompt]
 type = "string"
@@ -298,8 +338,13 @@ type = "llm"
 name = "LLM调用"
 
 [workflow.nodes.config]
-wrapper_name = "{{parameters.llm_provider}}"
+# LLM包装器配置（结构化对象）
+wrapper_type = "{{parameters.wrapper_type}}"
+wrapper_name = "{{parameters.wrapper_name}}"
+wrapper_provider = "{{parameters.wrapper_provider}}"
+wrapper_model = "{{parameters.wrapper_model}}"
 
+# 提示词配置
 [workflow.nodes.config.prompt]
 type = "direct"
 content = "{{parameters.prompt}}"
@@ -307,10 +352,6 @@ content = "{{parameters.prompt}}"
 [workflow.nodes.config.system_prompt]
 type = "direct"
 content = "{{parameters.system_prompt}}"
-
-temperature = "{{parameters.temperature}}"
-max_tokens = "{{parameters.max_tokens}}"
-stream = "{{parameters.stream}}"
 
 [[workflow.nodes]]
 id = "check_tool_calls"
@@ -372,8 +413,9 @@ workflow_id = "base_llm_call"
 
 # 参数覆盖
 parameters = {
-  llm_provider = "gemini",
-  model = "gemini-pro",
+  wrapper_type = "direct",
+  wrapper_provider = "openai",
+  wrapper_model = "gpt-4o",
   prompt = "分析以下数据：{{context.data}}"
 }
 ```
@@ -393,3 +435,5 @@ parameters = {
 6. **条件函数**：确保引用的条件函数已注册
 7. **版本管理**：子工作流变更时更新版本号
 8. **无状态性**：子工作流应该是无状态的，不依赖外部状态
+9. **Wrapper配置**：使用结构化的wrapper配置，避免字符串拼接错误
+10. **参数继承**：wrapper服务会自动获取模型的默认参数，无需手动配置

@@ -11,7 +11,7 @@ import {
   ValidationResult,
   WorkflowExecutionContext,
 } from '../../../domain/workflow/entities/node';
-import { LLMWrapperManager } from '../../llm/managers/llm-wrapper-manager';
+import { Wrapper } from '../../llm/wrapper';
 import { LLMRequest } from '../../../domain/llm/entities/llm-request';
 import { ID } from '../../../domain/common/value-objects/id';
 import {
@@ -20,6 +20,7 @@ import {
   PromptBuildConfig,
 } from '../../prompts/prompt-builder';
 import { llmContextProcessor } from '../functions/nodes/context-processors';
+import { WrapperConfig, validateWrapperConfig } from '../../../domain/llm/value-objects/wrapper-reference';
 
 /**
  * LLM节点
@@ -27,11 +28,13 @@ import { llmContextProcessor } from '../functions/nodes/context-processors';
  * - 轮询池包装器（负载均衡）
  * - 任务组包装器（降级策略）
  * - 直接LLM包装器（直接调用）
+ *
+ * 使用结构化的wrapper配置，提供类型安全和自动参数继承
  */
 export class LLMNode extends Node {
   constructor(
     id: NodeId,
-    public readonly wrapperName: string,
+    public readonly wrapperConfig: WrapperConfig,
     public readonly prompt: PromptSource,
     public readonly systemPrompt?: PromptSource,
     public readonly contextProcessorName: string = 'llm',
@@ -49,8 +52,8 @@ export class LLMNode extends Node {
     const startTime = Date.now();
 
     try {
-      // 获取服务（从 Infrastructure 层获取）
-      const wrapperManager = context.getService<LLMWrapperManager>('LLMWrapperManager');
+      // 获取服务
+      const wrapper = context.getService<Wrapper>('Wrapper');
       const promptBuilder = context.getService<PromptBuilder>('PromptBuilder');
 
       // 注册上下文处理器（如果尚未注册）
@@ -89,13 +92,24 @@ export class LLMNode extends Node {
         maxTokens: this.maxTokens,
         stream: this.stream,
         metadata: {
-          wrapperName: this.wrapperName,
+          wrapperConfig: this.wrapperConfig,
           executionId: context.getExecutionId(),
         },
       });
 
-      // 通过包装器管理器调用LLM
-      const llmResponse = await wrapperManager.generateResponse(this.wrapperName, llmRequest);
+      // 根据 wrapper 类型选择合适的调用方式
+      let llmResponse;
+      if (this.wrapperConfig.type === 'direct') {
+        // 对于 direct 类型，使用直接调用方式避免额外开销
+        llmResponse = await wrapper.generateDirectResponse(
+          this.wrapperConfig.provider!,
+          this.wrapperConfig.model!,
+          llmRequest
+        );
+      } else {
+        // 对于 pool/group 类型，使用原有的 wrapper 调用方式
+        llmResponse = await wrapper.generateResponse(this.wrapperConfig, llmRequest);
+      }
       const executionTime = Date.now() - startTime;
 
       // 构建结果
@@ -130,7 +144,7 @@ export class LLMNode extends Node {
         output: result,
         executionTime,
         metadata: {
-          wrapperName: this.wrapperName,
+          wrapperConfig: this.wrapperConfig,
           model: result.model,
           temperature: this.temperature || 'default',
           maxTokens: this.maxTokens || 'default',
@@ -149,7 +163,7 @@ export class LLMNode extends Node {
         error: errorMessage,
         executionTime,
         metadata: {
-          wrapperName: this.wrapperName,
+          wrapperConfig: this.wrapperConfig,
           temperature: this.temperature || 'default',
           maxTokens: this.maxTokens || 'default',
         },
@@ -160,8 +174,14 @@ export class LLMNode extends Node {
   validate(): ValidationResult {
     const errors: string[] = [];
 
-    if (!this.wrapperName || typeof this.wrapperName !== 'string') {
-      errors.push('wrapperName是必需的字符串参数');
+    if (!this.wrapperConfig || typeof this.wrapperConfig !== 'object') {
+      errors.push('wrapperConfig是必需的对象参数');
+    } else {
+      // 使用集中验证函数
+      const validation = validateWrapperConfig(this.wrapperConfig);
+      if (!validation.isValid) {
+        errors.push(...validation.errors);
+      }
     }
 
     if (!this.prompt || typeof this.prompt !== 'object') {
@@ -228,10 +248,10 @@ export class LLMNode extends Node {
       status: this.status.toString(),
       parameters: [
         {
-          name: 'wrapperName',
-          type: 'string',
+          name: 'wrapperConfig',
+          type: 'WrapperConfig',
           required: true,
-          description: 'LLM包装器名称（轮询池/任务组/直接LLM）',
+          description: 'LLM包装器配置（结构化对象）',
         },
         {
           name: 'prompt',
@@ -300,7 +320,7 @@ export class LLMNode extends Node {
   protected createNodeFromProps(props: any): any {
     return new LLMNode(
       props.id,
-      props.wrapperName,
+      props.wrapperConfig,
       props.prompt,
       props.systemPrompt,
       props.contextProcessorName,

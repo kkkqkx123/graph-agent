@@ -4,8 +4,10 @@
 
 import { injectable, inject } from 'inversify';
 import { LLMWrapperManager } from './managers/llm-wrapper-manager';
+import { LLMClientFactory } from '../../infrastructure/llm/clients/llm-client-factory';
 import { LLMRequest } from '../../domain/llm/entities/llm-request';
 import { LLMResponse } from '../../domain/llm/entities/llm-response';
+import { WrapperConfig } from '../../domain/llm/value-objects/wrapper-reference';
 
 /**
  * 包装器服务
@@ -14,33 +16,69 @@ import { LLMResponse } from '../../domain/llm/entities/llm-response';
  */
 @injectable()
 export class Wrapper {
-  constructor(@inject('LLMWrapperManager') private wrapperManager: LLMWrapperManager) { }
+  constructor(
+    @inject('LLMWrapperManager') private wrapperManager: LLMWrapperManager,
+    @inject('LLMClientFactory') private llmClientFactory: LLMClientFactory
+  ) { }
 
   /**
-   * 生成响应
-   *
-   * wrapperName 格式：pool:poolName | group:groupName | provider:model
+   * 直接生成响应（跳过 wrapper 抽象层，避免额外开销）
+   * @param provider 提供商名称
+   * @param model 模型名称
+   * @param request LLM请求
    */
-  async generateResponse(wrapperName: string, request: LLMRequest): Promise<LLMResponse> {
-    return this.wrapperManager.generateResponse(wrapperName, request);
+  async generateDirectResponse(
+    provider: string,
+    model: string,
+    request: LLMRequest
+  ): Promise<LLMResponse> {
+    const client = this.llmClientFactory.createClient(provider, model);
+    return client.generateResponse(request);
   }
 
   /**
-   * 流式生成响应
+   * 直接流式生成响应（跳过 wrapper 抽象层，避免额外开销）
+   * @param provider 提供商名称
+   * @param model 模型名称
+   * @param request LLM请求
    */
-  async generateResponseStream(
-    wrapperName: string,
+  async generateDirectResponseStream(
+    provider: string,
+    model: string,
     request: LLMRequest
   ): Promise<AsyncIterable<LLMResponse>> {
-    return this.wrapperManager.generateResponseStream(wrapperName, request);
+    const client = this.llmClientFactory.createClient(provider, model);
+    return client.generateResponseStream(request);
+  }
+
+  /**
+   * 生成响应（保留用于 pool/group 类型）
+   * @param wrapper wrapper配置
+   * @param request LLM请求
+   */
+  async generateResponse(wrapper: WrapperConfig, request: LLMRequest): Promise<LLMResponse> {
+    return this.wrapperManager.generateResponse(wrapper, request);
+  }
+
+  /**
+   * 流式生成响应（保留用于 pool/group 类型）
+   * @param wrapper wrapper配置
+   * @param request LLM请求
+   */
+  async generateResponseStream(
+    wrapper: WrapperConfig,
+    request: LLMRequest
+  ): Promise<AsyncIterable<LLMResponse>> {
+    return this.wrapperManager.generateResponseStream(wrapper, request);
   }
 
   /**
    * 检查包装器是否可用
+   * @param wrapper wrapper配置
    */
-  async isWrapperAvailable(wrapperName: string): Promise<boolean> {
+  async isWrapperAvailable(wrapper: WrapperConfig): Promise<boolean> {
     try {
-      return this.wrapperManager.isAvailable(wrapperName);
+      return this.wrapperManager.isAvailable(wrapper);
     } catch {
       return false;
     }
@@ -48,9 +86,10 @@ export class Wrapper {
 
   /**
    * 获取包装器状态
+   * @param wrapper wrapper配置
    */
-  async getWrapperStatus(wrapperName: string): Promise<Record<string, any>> {
-    return this.wrapperManager.getStatus(wrapperName);
+  async getWrapperStatus(wrapper: WrapperConfig): Promise<Record<string, any>> {
+    return this.wrapperManager.getStatus(wrapper);
   }
 
   /**
@@ -74,7 +113,7 @@ export class Wrapper {
    *
    * 业务逻辑：根据需求选择最优包装器
    */
-  async getOptimalWrapper(requirements: Record<string, any>): Promise<string | null> {
+  async getOptimalWrapper(requirements: Record<string, any>): Promise<WrapperConfig | null> {
     const allStatistics = await this.wrapperManager.getAllWrappersStatistics();
 
     // 业务逻辑：返回第一个可用的包装器
@@ -82,12 +121,48 @@ export class Wrapper {
     for (const [wrapperName, stats] of Object.entries(allStatistics)) {
       // 简单的可用性检查：有健康的实例或模型
       if (stats['available'] || stats['healthyInstances'] > 0 || stats['totalModels'] > 0) {
-        return wrapperName;
+        // 将字符串格式的wrapper名称转换为WrapperConfig
+        return this.parseWrapperName(wrapperName);
       }
     }
 
     return null;
   }
+
+  /**
+   * 解析wrapper名称
+   * @param wrapperName wrapper名称（格式：type:name 或 provider:model）
+   * @returns WrapperConfig对象
+   */
+  private parseWrapperName(wrapperName: string): WrapperConfig {
+    const parts = wrapperName.split(':');
+    if (parts.length < 2) {
+      throw new Error(`无效的wrapper名称格式: ${wrapperName}`);
+    }
+
+    const type = parts[0] as 'pool' | 'group' | 'direct';
+    const name = parts.slice(1).join(':');
+
+    switch (type) {
+      case 'pool':
+      case 'group':
+        return { type, name };
+      case 'direct':
+        // 对于direct类型，name实际上是provider:model的格式
+        const providerParts = name.split(':');
+        if (providerParts.length < 2) {
+          throw new Error(`无效的direct wrapper格式: ${wrapperName}`);
+        }
+        return {
+          type: 'direct',
+          provider: providerParts[0],
+          model: providerParts.slice(1).join(':'),
+        };
+      default:
+        throw new Error(`未知的wrapper类型: ${type}`);
+    }
+  }
+
 
   /**
    * 路由请求到合适的包装器
@@ -99,7 +174,17 @@ export class Wrapper {
 
     // 根据包装器类型和名称路由请求
     if (wrapperType && wrapperName) {
-      return this.generateResponse(`${wrapperType}:${wrapperName}`, requestData);
+      // 对于 direct 类型，直接使用 generateDirectResponse 避免额外开销
+      if (wrapperType === 'direct') {
+        const [provider, model] = wrapperName.split(':');
+        if (!provider || !model) {
+          throw new Error(`无效的 direct wrapper 格式: ${wrapperName}`);
+        }
+        return this.generateDirectResponse(provider, model, requestData);
+      }
+      
+      const wrapper: WrapperConfig = { type: wrapperType as 'pool' | 'group', name: wrapperName };
+      return this.generateResponse(wrapper, requestData);
     }
 
     // 自动选择最优包装器
@@ -109,5 +194,14 @@ export class Wrapper {
     }
 
     throw new Error('没有可用的包装器来处理请求');
+  }
+
+  /**
+   * 获取wrapper的模型配置
+   * @param wrapper wrapper配置
+   * @returns 模型配置
+   */
+  async getWrapperModelConfig(wrapper: WrapperConfig): Promise<Record<string, any>> {
+    return this.wrapperManager.getWrapperModelConfig(wrapper);
   }
 }

@@ -12,6 +12,10 @@ import { StartNode } from './start-node';
 import { EndNode } from './end-node';
 import { ContextProcessorNode } from './context-processor-node';
 import { PromptSource } from '../../prompts/prompt-builder';
+import {
+  WrapperConfig,
+  validateWrapperConfig
+} from '../../../domain/llm/value-objects/wrapper-reference';
 
 /**
  * 节点配置接口
@@ -34,7 +38,12 @@ export interface NodeConfig {
   returnVariables?: string[];
 
   // LLM节点配置
-  wrapperName?: string;
+  wrapperConfig?: WrapperConfig;
+  // 支持从配置文件中的独立参数构建wrapperConfig
+  wrapper_type?: 'pool' | 'group' | 'direct';
+  wrapper_name?: string;
+  wrapper_provider?: string;
+  wrapper_model?: string;
   prompt?: PromptSource;
   systemPrompt?: PromptSource;
   contextProcessorName?: string;
@@ -136,16 +145,27 @@ export class NodeFactory {
    * 创建LLM节点
    */
   private static createLLMNode(id: NodeId, config: NodeConfig): LLMNode {
-    if (!config.wrapperName) {
-      throw new Error('LLM节点需要wrapperName配置');
-    }
     if (!config.prompt) {
       throw new Error('LLM节点需要prompt配置');
     }
 
+    // 构建wrapper配置
+    let wrapperConfig: WrapperConfig;
+
+    // 优先使用wrapperConfig
+    if (config.wrapperConfig) {
+      wrapperConfig = config.wrapperConfig;
+    }
+    // 其次使用wrapper_type等独立参数
+    else if (config.wrapper_type) {
+      wrapperConfig = this.buildWrapperConfigFromParams(config);
+    } else {
+      throw new Error('LLM节点需要wrapperConfig配置');
+    }
+
     return new LLMNode(
       id,
-      config.wrapperName,
+      wrapperConfig,
       config.prompt,
       config.systemPrompt,
       config.contextProcessorName || 'llm',
@@ -156,6 +176,39 @@ export class NodeFactory {
       config.description,
       config.position
     );
+  }
+
+  /**
+   * 从独立参数构建wrapper配置
+   */
+  private static buildWrapperConfigFromParams(config: NodeConfig): WrapperConfig {
+    const wrapperConfig: WrapperConfig = {
+      type: config.wrapper_type!,
+    };
+
+    if (config.wrapper_type === 'pool' || config.wrapper_type === 'group') {
+      if (!config.wrapper_name) {
+        throw new Error(`${config.wrapper_type}类型需要wrapper_name参数`);
+      }
+      wrapperConfig.name = config.wrapper_name;
+    } else if (config.wrapper_type === 'direct') {
+      if (!config.wrapper_provider) {
+        throw new Error('direct类型需要wrapper_provider参数');
+      }
+      if (!config.wrapper_model) {
+        throw new Error('direct类型需要wrapper_model参数');
+      }
+      wrapperConfig.provider = config.wrapper_provider;
+      wrapperConfig.model = config.wrapper_model;
+    }
+
+    // 验证配置
+    const validation = validateWrapperConfig(wrapperConfig);
+    if (!validation.isValid) {
+      throw new Error(`wrapper配置验证失败: ${validation.errors.join(', ')}`);
+    }
+
+    return wrapperConfig;
   }
 
   /**

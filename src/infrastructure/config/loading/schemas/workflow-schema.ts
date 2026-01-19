@@ -6,6 +6,31 @@
 import { z } from 'zod';
 
 /**
+ * Wrapper配置Schema
+ * 支持结构化的wrapper配置，替代字符串格式
+ */
+export const WrapperConfigSchema = z.object({
+  type: z.enum(['pool', 'group', 'direct']),
+  name: z.string().optional(),
+  provider: z.string().optional(),
+  model: z.string().optional(),
+}).refine(
+  (data) => {
+    // 验证必需字段
+    if (data.type === 'pool' || data.type === 'group') {
+      return data.name !== undefined;
+    }
+    if (data.type === 'direct') {
+      return data.provider !== undefined && data.model !== undefined;
+    }
+    return false;
+  },
+  {
+    message: 'wrapper配置验证失败：pool/group类型需要name字段，direct类型需要provider和model字段',
+  }
+);
+
+/**
  * 参数定义Schema
  */
 export const ParameterDefinitionSchema = z.object({
@@ -91,3 +116,4 @@ export type ParameterDefinition = z.infer<typeof ParameterDefinitionSchema>;
 export type NodeConfig = z.infer<typeof NodeConfigSchema>;
 export type EdgeConfig = z.infer<typeof EdgeConfigSchema>;
 export type SubWorkflowReferenceConfig = z.infer<typeof SubWorkflowReferenceConfigSchema>;
+export type WrapperConfig = z.infer<typeof WrapperConfigSchema>;
