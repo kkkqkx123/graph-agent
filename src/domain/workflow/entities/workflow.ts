@@ -13,6 +13,7 @@ import { ErrorHandlingStrategy } from '../value-objects/error-handling-strategy'
 import { ExecutionStrategy } from '../value-objects/execution/execution-strategy';
 import { Node } from './node';
 import { WorkflowReference } from '../value-objects/workflow-reference';
+import { SubWorkflowType } from '../value-objects/subworkflow-type';
 
 /**
  * 工作流图数据接口
@@ -30,6 +31,7 @@ export interface WorkflowProps {
   readonly definition: WorkflowDefinition;
   readonly graph: WorkflowGraphData;
   readonly subWorkflowReferences: Map<string, WorkflowReference>;
+  readonly subWorkflowType?: SubWorkflowType;
   readonly createdAt: Timestamp;
   readonly updatedAt: Timestamp;
   readonly version: Version;
@@ -128,6 +130,7 @@ export class Workflow extends Entity {
       definition: workflowDefinition,
       graph: workflowGraph,
       subWorkflowReferences,
+      subWorkflowType: undefined,
       createdAt: now,
       updatedAt: now,
       version: Version.initial(),
@@ -573,6 +576,50 @@ export class Workflow extends Entity {
     return new Workflow({
       ...this.props,
       subWorkflowReferences: newReferences,
+      updatedAt: Timestamp.now(),
+      version: this.props.version.nextPatch(),
+      updatedBy,
+    });
+  }
+
+  /**
+   * 获取子工作流类型
+   * @returns 子工作流类型，如果不是子工作流则返回undefined
+   */
+  public getSubWorkflowType(): SubWorkflowType | undefined {
+    return this.props.subWorkflowType;
+  }
+
+  /**
+   * 检查是否为基础子工作流
+   * @returns 是否为基础子工作流
+   */
+  public isBaseSubWorkflow(): boolean {
+    return this.props.subWorkflowType?.isBase() ?? false;
+  }
+
+  /**
+   * 检查是否为功能子工作流
+   * @returns 是否为功能子工作流
+   */
+  public isFeatureSubWorkflow(): boolean {
+    return this.props.subWorkflowType?.isFeature() ?? false;
+  }
+
+  /**
+   * 设置子工作流类型
+   * @param type 子工作流类型
+   * @param updatedBy 更新者ID
+   * @returns 新工作流实例
+   */
+  public setSubWorkflowType(type: SubWorkflowType, updatedBy?: ID): Workflow {
+    if (!this.status.canEdit()) {
+      throw new Error('只能编辑草稿状态工作流的子工作流类型');
+    }
+
+    return new Workflow({
+      ...this.props,
+      subWorkflowType: type,
       updatedAt: Timestamp.now(),
       version: this.props.version.nextPatch(),
       updatedBy,

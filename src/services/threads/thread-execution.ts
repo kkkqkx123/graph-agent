@@ -7,7 +7,6 @@
  * - 线程状态管理
  * - 执行结果处理
  * - 检查点恢复
- * - 子工作流执行
  *
  * 属于应用层，负责业务流程编排
  * 使用领域层的 WorkflowEngine 执行工作流
@@ -27,8 +26,6 @@ import { ThreadConditionalRouter } from './thread-conditional-router';
 import { INodeExecutor } from '../workflow/nodes/node-executor';
 import { FunctionRegistry } from '../workflow/functions/function-registry';
 import { TYPES } from '../../di/service-keys';
-import { SubgraphConfig, VariableMapping } from '../workflow/nodes/subgraph/subgraph-node';
-import { ExpressionEvaluator } from '../workflow/expression-evaluator';
 
 /**
  * 线程执行结果接口
@@ -46,20 +43,6 @@ export interface ThreadExecutionResult {
   duration: number;
   /** 执行状态 */
   status: 'completed' | 'failed' | 'cancelled';
-}
-
-/**
- * 子工作流执行结果接口
- */
-export interface SubWorkflowExecutionResult {
-  /** 子线程ID */
-  threadId: ID;
-  /** 执行状态 */
-  status: 'completed' | 'failed' | 'cancelled';
-  /** 输出数据 */
-  output: any;
-  /** 执行耗时（毫秒） */
-  executionTime: number;
 }
 
 /**
@@ -81,7 +64,6 @@ export class ThreadExecution extends BaseService {
     @inject(TYPES.NodeExecutor) private readonly nodeExecutor: INodeExecutor,
     @inject(TYPES.Logger) logger: ILogger,
     @inject(TYPES.FunctionRegistry) private readonly functionRegistry: FunctionRegistry,
-    @inject(TYPES.ExpressionEvaluator) evaluator: ExpressionEvaluator,
     @inject(TYPES.ThreadStateManager) stateManager: ThreadStateManager,
     @inject(TYPES.ThreadHistoryManager) historyManager: ThreadHistoryManager,
     @inject(TYPES.CheckpointManagement) checkpointManagement: CheckpointManagement,
@@ -92,7 +74,6 @@ export class ThreadExecution extends BaseService {
     super(logger);
 
     // 通过依赖注入获取所有依赖
-    this.evaluator = evaluator;
     this.stateManager = stateManager;
     this.historyManager = historyManager;
     this.checkpointManagement = checkpointManagement;
@@ -559,272 +540,4 @@ export class ThreadExecution extends BaseService {
     );
   }
 
-  /**
-   * 执行子工作流
-   *
-   * @param parentThread 父线程
-   * @param referenceId 子工作流引用ID
-   * @param config 子工作流配置
-   * @param parentContext 父上下文
-   * @returns 子工作流执行结果
-   */
-  async executeSubWorkflow(
-    parentThread: Thread,
-    referenceId: string,
-    config: SubgraphConfig,
-    parentContext: any
-  ): Promise<SubWorkflowExecutionResult> {
-    const startTime = Date.now();
-
-    try {
-      // 1. 获取父线程的工作流定义
-      const parentWorkflow = await this.workflowRepository.findById(parentThread.workflowId);
-      if (!parentWorkflow) {
-        throw new Error(`父工作流不存在: ${parentThread.workflowId.toString()}`);
-      }
-
-      // 2. 查找子工作流引用
-      const subWorkflowRef = parentWorkflow.getSubWorkflowReference(referenceId);
-      if (!subWorkflowRef) {
-        throw new Error(`未找到子工作流引用: ${referenceId}`);
-      }
-
-      // 3. 加载子工作流定义
-      const subWorkflow = await this.workflowRepository.findById(subWorkflowRef.workflowId);
-      if (!subWorkflow) {
-        throw new Error(`子工作流不存在: ${subWorkflowRef.workflowId.toString()}`);
-      }
-
-      this.logger.info('加载子工作流定义', {
-        referenceId,
-        workflowId: subWorkflowRef.workflowId.toString(),
-      });
-
-      // 4. 创建子线程
-      const subThread = await this.createSubWorkflowThread(
-        parentThread,
-        subWorkflowRef.workflowId,
-        config
-      );
-
-      // 5. 映射输入变量
-      const subWorkflowInput = this.mapInputVariables(
-        parentContext,
-        subWorkflowRef.inputMapping,
-        config.inputMappings
-      );
-
-      // 6. 执行子工作流
-      const subWorkflowResult = await this.executeWorkflowInThread(
-        subThread,
-        subWorkflow,
-        subWorkflowInput,
-        config
-      );
-
-      // 7. 映射输出变量
-      const outputVariables = this.mapOutputVariables(
-        subWorkflowResult,
-        subWorkflowRef.outputMapping,
-        config.outputMappings
-      );
-
-      // 8. 更新父线程上下文
-      this.updateParentContext(parentContext, outputVariables);
-
-      return {
-        threadId: subThread.id,
-        status: subWorkflowResult.status,
-        output: subWorkflowResult.output,
-        executionTime: Date.now() - startTime,
-      };
-
-    } catch (error) {
-      this.logger.error('子工作流执行失败', error as Error, { referenceId });
-      throw error;
-    }
-  }
-
-  /**
-   * 创建子工作流线程
-   */
-  private async createSubWorkflowThread(
-    parentThread: Thread,
-    workflowId: ID,
-    config: SubgraphConfig
-  ): Promise<Thread> {
-    // 创建子线程，关联父线程
-    const subThread = Thread.create(
-      parentThread.sessionId,
-      workflowId,
-      parentThread.priority,
-      `子工作流: ${workflowId.toString()}`,
-      undefined,
-      {
-        parentThreadId: parentThread.id.toString(),
-        isSubWorkflow: true,
-        timeout: config.timeout,
-      }
-    );
-
-    // 保存子线程
-    await this.threadRepository.save(subThread);
-
-    this.logger.info('创建子工作流线程', {
-      parentThreadId: parentThread.id.toString(),
-      subThreadId: subThread.id.toString(),
-      workflowId: workflowId.toString(),
-    });
-
-    return subThread;
-  }
-
-  /**
-   * 在线程中执行工作流
-   */
-  private async executeWorkflowInThread(
-    thread: Thread,
-    workflow: Workflow,
-    inputVariables: Map<string, any>,
-    config: SubgraphConfig
-  ): Promise<SubWorkflowExecutionResult> {
-    const startTime = Date.now();
-
-    // 1. 启动线程
-    const runningThread = thread.start();
-    await this.threadRepository.save(runningThread);
-
-    // 2. 设置输入变量到上下文
-    const inputData: Record<string, any> = {};
-    for (const [key, value] of inputVariables) {
-      inputData[key] = value;
-    }
-
-    // 3. 执行工作流
-    const workflowResult = await this.workflowEngine.execute(
-      workflow,
-      thread.id.value,
-      inputData,
-      {
-        enableCheckpoints: false, // 子工作流默认不启用检查点
-        checkpointInterval: 0,
-        timeout: config.timeout || 300000, // 默认5分钟
-        maxSteps: 1000,
-        recordRoutingHistory: false,
-      }
-    );
-
-    // 4. 更新线程状态
-    const completedThread = workflowResult.success
-      ? runningThread.complete()
-      : runningThread.fail(workflowResult.error || '执行失败');
-
-    await this.threadRepository.save(completedThread);
-
-    return {
-      threadId: thread.id,
-      status: workflowResult.success ? 'completed' : 'failed',
-      output: workflowResult.finalState.data,
-      executionTime: Date.now() - startTime,
-    };
-  }
-
-  /**
-   * 映射输入变量
-   */
-  private mapInputVariables(
-    parentContext: any,
-    workflowMapping: Map<string, string>,
-    configMappings: VariableMapping[] = []
-  ): Map<string, any> {
-    const result = new Map<string, any>();
-
-    // 1. 应用 Workflow 级别的映射
-    for (const [target, source] of workflowMapping) {
-      const value = this.extractValue(parentContext, source);
-      result.set(target, value);
-    }
-
-    // 2. 应用节点配置的映射（可以覆盖 Workflow 映射）
-    for (const mapping of configMappings) {
-      const value = this.extractValue(parentContext, mapping.source);
-      const transformedValue = this.applyTransform(value, mapping.transform);
-      result.set(mapping.target, transformedValue);
-    }
-
-    return result;
-  }
-
-  /**
-   * 映射输出变量
-   */
-  private mapOutputVariables(
-    subWorkflowResult: SubWorkflowExecutionResult,
-    workflowMapping: Map<string, string>,
-    configMappings: VariableMapping[] = []
-  ): Map<string, any> {
-    const result = new Map<string, any>();
-    const subOutputs = subWorkflowResult.output || {};
-
-    // 1. 应用 Workflow 级别的映射
-    for (const [target, source] of workflowMapping) {
-      const value = this.extractValue(subOutputs, source);
-      result.set(target, value);
-    }
-
-    // 2. 应用节点配置的映射（可以覆盖 Workflow 映射）
-    for (const mapping of configMappings) {
-      const value = this.extractValue(subOutputs, mapping.source);
-      const transformedValue = this.applyTransform(value, mapping.transform);
-      result.set(mapping.target, transformedValue);
-    }
-
-    return result;
-  }
-
-  /**
-   * 应用转换函数
-   */
-  private applyTransform(value: any, transform?: string): any {
-    if (!transform) return value;
-
-    try {
-      return this.evaluator.evaluate(transform, { value });
-    } catch (error) {
-      this.logger.error('转换函数执行失败', error as Error, { transform, value });
-      return value;  // 转换失败返回原值
-    }
-  }
-
-  /**
-   * 提取值（支持路径表达式）
-   */
-  private extractValue(obj: any, path: string): any {
-    if (!path.includes('.')) {
-      return obj?.[path];
-    }
-
-    // 支持简单的路径表达式，如: "result.data.items"
-    const keys = path.split('.');
-    let current = obj;
-
-    for (const key of keys) {
-      if (current == null) return undefined;
-      current = current[key];
-    }
-
-    return current;
-  }
-
-  /**
-   * 更新父线程上下文
-   */
-  private updateParentContext(
-    parentContext: any,
-    outputVariables: Map<string, any>
-  ): void {
-    for (const [key, value] of outputVariables) {
-      parentContext.setVariable(key, value);
-    }
-  }
 }

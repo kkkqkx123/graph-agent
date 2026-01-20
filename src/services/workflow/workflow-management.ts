@@ -13,6 +13,7 @@ import { WorkflowDTO, mapWorkflowToDTO, mapWorkflowsToDTOs } from './dtos/workfl
 import { WorkflowConfigLoader } from '../../infrastructure/config/loading/workflow-config-loader';
 import { WorkflowMerger } from './workflow-merger';
 import { SubWorkflowValidator, SubWorkflowValidationResult } from './validators/subworkflow-validator';
+import { SubWorkflowType } from '../../domain/workflow/value-objects/subworkflow-type';
 import { LLMNode } from './nodes/llm-node';
 import { ToolCallNode } from './nodes/tool-call-node';
 import { NodeId } from '../../domain/workflow/value-objects/node/node-id';
@@ -477,12 +478,12 @@ export class WorkflowManagement extends BaseService {
         this.logger.debug('工作流加载完成', { workflowId });
 
         // 2. 验证子工作流标准
-        const validationResult = await this.subWorkflowValidator.validateSubWorkflow(workflow);
+        const validationResult = await this.subWorkflowValidator.validate(workflow);
 
         this.logger.info('子工作流验证完成', {
           workflowId,
           isValid: validationResult.isValid,
-          workflowType: validationResult.workflowType,
+          subWorkflowType: validationResult.subWorkflowType?.toString(),
           errorCount: validationResult.errors.length,
           warningCount: validationResult.warnings.length
         });
@@ -508,13 +509,21 @@ export class WorkflowManagement extends BaseService {
         workflowConfig.description
       );
 
-      // 2. 添加节点
+      // 2. 设置子工作流类型（如果配置中指定）
+      if (workflowConfig.type === 'base' || workflowConfig.type === 'feature') {
+        const subWorkflowType = workflowConfig.type === 'base'
+          ? SubWorkflowType.base()
+          : SubWorkflowType.feature();
+        workflow.setSubWorkflowType(subWorkflowType);
+      }
+
+      // 3. 添加节点
       for (const nodeConfig of workflowConfig.nodes || []) {
         const node = this.createNodeFromConfig(nodeConfig);
         workflow.addNode(node);
       }
 
-      // 3. 添加边
+      // 4. 添加边
       for (const edgeConfig of workflowConfig.edges || []) {
         const edgeId = EdgeId.fromString(`${edgeConfig.from}_${edgeConfig.to}`);
         const edgeType = EdgeType.default();
@@ -544,7 +553,8 @@ export class WorkflowManagement extends BaseService {
       this.logger.debug('配置转换为Workflow对象完成', {
         workflowId: workflowConfig.id,
         nodeCount: workflowConfig.nodes?.length || 0,
-        edgeCount: workflowConfig.edges?.length || 0
+        edgeCount: workflowConfig.edges?.length || 0,
+        subWorkflowType: workflowConfig.type
       });
 
       return workflow;

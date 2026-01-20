@@ -25,3 +25,7 @@ export {
   TriggerStatus,
   TriggerStatusValue,
 } from './trigger-value-object';
+
+// 子工作流值对象
+export * from './subworkflow-type';
+export * from './subworkflow-standard';

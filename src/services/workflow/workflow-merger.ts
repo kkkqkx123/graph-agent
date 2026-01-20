@@ -216,7 +216,7 @@ export class WorkflowMerger {
       }
 
       // 验证子工作流标准
-      const validationResult = await this.subWorkflowValidator.validateSubWorkflow(subWorkflow);
+      const validationResult = await this.subWorkflowValidator.validate(subWorkflow);
 
       if (!validationResult.isValid) {
         throw new Error(
@@ -528,17 +528,34 @@ export class WorkflowMerger {
       return null;
     }
 
-    // 如果有多个入口节点，返回第一个
-    const node = entryNodes[0];
-    if (!node) {
+    if (entryNodes.length > 1) {
+      this.logger.warn('子工作流有多个入口节点，使用第一个', {
+        referenceId,
+        entryNodes: entryNodes.map(n => n.nodeId.toString())
+      });
+    }
+
+    const entryNode = entryNodes[0];
+    if (!entryNode) {
       return null;
     }
+
+    // 验证入口节点类型（仅对feature子工作流）
+    if (subWorkflow.isFeatureSubWorkflow() && !entryNode.type.isStart()) {
+      this.logger.warn('功能子工作流的入口节点不是start节点', {
+        referenceId,
+        nodeId: entryNode.nodeId.toString(),
+        nodeType: entryNode.type.toString()
+      });
+    }
+
     this.logger.debug('找到子工作流入口节点', {
       referenceId,
-      nodeId: node.nodeId.toString(),
+      nodeId: entryNode.nodeId.toString(),
       inDegree: 0,
+      nodeType: entryNode.type.toString(),
     });
-    return node;
+    return entryNode;
   }
 
   /**
@@ -570,17 +587,34 @@ export class WorkflowMerger {
       return null;
     }
 
-    // 如果有多个出口节点，返回最后一个
-    const node = exitNodes[exitNodes.length - 1];
-    if (!node) {
+    if (exitNodes.length > 1) {
+      this.logger.warn('子工作流有多个出口节点，使用最后一个', {
+        referenceId,
+        exitNodes: exitNodes.map(n => n.nodeId.toString())
+      });
+    }
+
+    const exitNode = exitNodes[exitNodes.length - 1];
+    if (!exitNode) {
       return null;
     }
+
+    // 验证出口节点类型（仅对feature子工作流）
+    if (subWorkflow.isFeatureSubWorkflow() && !exitNode.type.isEnd()) {
+      this.logger.warn('功能子工作流的出口节点不是end节点', {
+        referenceId,
+        nodeId: exitNode.nodeId.toString(),
+        nodeType: exitNode.type.toString()
+      });
+    }
+
     this.logger.debug('找到子工作流出口节点', {
       referenceId,
-      nodeId: node.nodeId.toString(),
+      nodeId: exitNode.nodeId.toString(),
       outDegree: 0,
+      nodeType: exitNode.type.toString(),
     });
-    return node;
+    return exitNode;
   }
 
   /**
