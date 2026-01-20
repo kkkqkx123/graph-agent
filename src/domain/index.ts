@@ -25,7 +25,7 @@ export {
   ThreadPriority,
   ThreadDefinition,
   ThreadExecution,
-  ExecutionContext,
+  ThreadExecutionContext,
   NodeExecution,
 } from './threads';
 

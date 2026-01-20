@@ -10,10 +10,10 @@
  */
 
 import { injectable, inject } from 'inversify';
-import { Workflow, IWorkflowRepository, Node, NodeId, EdgeId, EdgeType } from '../../../domain/workflow';
-import { ID, ILogger, Timestamp } from '../../../domain/common';
-import { SubWorkflowValidator, WorkflowStructureValidator } from '../validators';
-import { EdgeValueObject } from '../../../domain/workflow/value-objects/edge';
+import { Workflow, IWorkflowRepository, Node, NodeId, EdgeId, EdgeType } from '../../domain/workflow';
+import { ID, ILogger, Timestamp } from '../../domain/common';
+import { SubWorkflowValidator, WorkflowStructureValidator } from './validators';
+import { EdgeValueObject } from '../../domain/workflow/value-objects/edge';
 
 /**
  * 工作流合并结果
@@ -62,7 +62,7 @@ export class WorkflowMerger {
     @inject('SubWorkflowValidator') private readonly subWorkflowValidator: SubWorkflowValidator,
     @inject('WorkflowStructureValidator') private readonly structureValidator: WorkflowStructureValidator,
     @inject('Logger') private readonly logger: ILogger
-  ) {}
+  ) { }
 
   /**
    * 合并工作流
@@ -125,7 +125,7 @@ export class WorkflowMerger {
     // 验证合并后的工作流结构（仅针对业务工作流）
     // 注意：子工作流不需要 start/end 节点，只有合并后的业务工作流需要验证
     const structureResult = await this.structureValidator.validate(mergedWorkflow);
-    
+
     if (!structureResult.isValid) {
       const error = new Error(
         `合并后的工作流结构验证失败: ${structureResult.errors.join('; ')}`
@@ -341,7 +341,7 @@ export class WorkflowMerger {
   private cloneNodeWithNewId(node: Node, newNodeId: NodeId): Node {
     // 获取节点的属性
     const nodeProps = node.toProps();
-    
+
     // 创建新的属性对象，使用新的节点ID
     const newProps = {
       ...nodeProps,

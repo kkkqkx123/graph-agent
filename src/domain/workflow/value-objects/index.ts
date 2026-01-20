@@ -16,7 +16,7 @@ export * from './error-handling-strategy';
 export * from './execution';
 export * from './context';
 
-// 触发器值对象（仅保留类型相关的值对象）
+// 触发器值对象
 export {
   TriggerType,
   TriggerTypeValue,

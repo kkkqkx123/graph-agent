@@ -11,7 +11,7 @@ import { ID, ILogger } from '../../domain/common';
 import { BaseService } from '../common/base-service';
 import { WorkflowDTO, mapWorkflowToDTO, mapWorkflowsToDTOs } from './dtos/workflow-dto';
 import { WorkflowConfigLoader } from '../../infrastructure/config/loading/workflow-config-loader';
-import { WorkflowMerger } from './merger/workflow-merger';
+import { WorkflowMerger } from './workflow-merger';
 import { SubWorkflowValidator, SubWorkflowValidationResult } from './validators/subworkflow-validator';
 import { LLMNode } from './nodes/llm-node';
 import { ToolCallNode } from './nodes/tool-call-node';
@@ -440,7 +440,7 @@ export class WorkflowManagement extends BaseService {
 
         // 3. 检查是否有子工作流引用
         const subWorkflowRefs = workflow.getSubWorkflowReferences();
-        
+
         if (subWorkflowRefs.size > 0) {
           this.logger.info('工作流包含子工作流引用，开始合并', {
             workflowId,
@@ -478,7 +478,7 @@ export class WorkflowManagement extends BaseService {
 
         // 2. 验证子工作流标准
         const validationResult = await this.subWorkflowValidator.validateSubWorkflow(workflow);
-        
+
         this.logger.info('子工作流验证完成', {
           workflowId,
           isValid: validationResult.isValid,
@@ -501,26 +501,26 @@ export class WorkflowManagement extends BaseService {
   private convertConfigToWorkflow(config: any): Workflow {
     try {
       const workflowConfig = config.workflow;
-      
+
       // 1. 创建Workflow实例
       const workflow = Workflow.create(
         workflowConfig.name,
         workflowConfig.description
       );
-      
+
       // 2. 添加节点
       for (const nodeConfig of workflowConfig.nodes || []) {
         const node = this.createNodeFromConfig(nodeConfig);
         workflow.addNode(node);
       }
-      
+
       // 3. 添加边
       for (const edgeConfig of workflowConfig.edges || []) {
         const edgeId = EdgeId.fromString(`${edgeConfig.from}_${edgeConfig.to}`);
         const edgeType = EdgeType.default();
         const fromNodeId = NodeId.fromString(edgeConfig.from);
         const toNodeId = NodeId.fromString(edgeConfig.to);
-        
+
         // 构建条件对象
         let condition;
         if (edgeConfig.condition) {
@@ -529,7 +529,7 @@ export class WorkflowManagement extends BaseService {
             functionId: edgeConfig.condition
           };
         }
-        
+
         workflow.addEdge(
           edgeId,
           edgeType,
@@ -540,20 +540,20 @@ export class WorkflowManagement extends BaseService {
           edgeConfig.properties
         );
       }
-      
+
       this.logger.debug('配置转换为Workflow对象完成', {
         workflowId: workflowConfig.id,
         nodeCount: workflowConfig.nodes?.length || 0,
         edgeCount: workflowConfig.edges?.length || 0
       });
-      
+
       return workflow;
     } catch (error) {
       this.logger.error('配置转换失败', error as Error);
       throw new Error(`配置转换为Workflow对象失败: ${(error as Error).message}`);
     }
   }
-  
+
   /**
    * 根据配置创建节点
    * @param nodeConfig 节点配置
@@ -563,7 +563,7 @@ export class WorkflowManagement extends BaseService {
     const nodeId = NodeId.fromString(nodeConfig.id);
     const nodeType = nodeConfig.type;
     const config = nodeConfig.config || {};
-    
+
     switch (nodeType) {
       case 'llm':
         return new LLMNode(
@@ -579,7 +579,7 @@ export class WorkflowManagement extends BaseService {
           nodeConfig.description,
           nodeConfig.position
         );
-      
+
       case 'tool':
         return new ToolCallNode(
           nodeId,
@@ -590,12 +590,12 @@ export class WorkflowManagement extends BaseService {
           nodeConfig.description,
           nodeConfig.position
         );
-      
+
       default:
         // 对于其他节点类型，创建通用节点
         const { Node } = require('../../domain/workflow/entities/node');
         const nodeTypeVO = NodeType.fromString(nodeType, NodeContextTypeValue.PASS_THROUGH);
-        
+
         return Node.create(
           nodeId,
           nodeTypeVO,

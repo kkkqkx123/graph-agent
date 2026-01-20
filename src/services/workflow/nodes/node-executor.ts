@@ -6,7 +6,6 @@ import { SubgraphNode } from './subgraph/subgraph-node';
 import { Thread } from '../../../domain/threads/entities/thread';
 import { TYPES } from '../../../di/service-keys';
 import { ThreadExecution } from '../../threads/thread-execution';
-import { NodeType } from '../../../domain/workflow/value-objects/node/node-type';
 
 /**
  * 节点执行器接口

@@ -98,7 +98,7 @@ export class Thread extends Entity {
     );
 
     // 创建执行上下文
-    const executionContext = ExecutionContext.create();
+    const executionContext = ThreadExecutionContext.create();
 
     // 创建执行配置
     const executionConfig: ExecutionConfig = {};
@@ -268,7 +268,7 @@ export class Thread extends Entity {
    * 获取执行上下文
    * @returns 执行上下文
    */
-  public get executionContext(): ExecutionContext {
+  public get executionContext(): ThreadExecutionContext {
     return this.props.executionContext;
   }
 
@@ -285,7 +285,7 @@ export class Thread extends Entity {
    * @param context 新的执行上下文
    * @returns 新线程实例
    */
-  public updateExecutionContext(context: ExecutionContext): Thread {
+  public updateExecutionContext(context: ThreadExecutionContext): Thread {
     return new Thread({
       ...this.props,
       executionContext: context,
