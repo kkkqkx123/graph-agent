@@ -3,7 +3,7 @@ import { ThreadStatus } from './thread-status';
 import { NodeId } from '../../workflow/value-objects';
 import { ExecutionHistory } from '../../workflow/value-objects/execution';
 import { NodeExecution } from './node-execution';
-import { ExecutionContext } from './execution-context';
+import { ThreadExecutionContext } from './execution-context';
 import { ThreadWorkflowState } from './thread-workflow-state';
 
 /**
@@ -61,7 +61,7 @@ export interface ThreadExecutionProps {
   readonly retryCount: number;
   readonly lastActivityAt: Timestamp;
   readonly nodeExecutions: Map<string, NodeExecution>;
-  readonly context: ExecutionContext;
+  readonly context: ThreadExecutionContext;
   readonly operationHistory: OperationRecord[];
   readonly forkInfo?: ForkInfo;
   readonly copyInfo?: CopyInfo;
@@ -81,7 +81,7 @@ export class ThreadExecution extends ValueObject<ThreadExecutionProps> {
    * @param context 执行上下文
    * @returns 线程执行值对象
    */
-  public static create(threadId: ID, context: ExecutionContext): ThreadExecution {
+  public static create(threadId: ID, context: ThreadExecutionContext): ThreadExecution {
     const now = Timestamp.now();
     const threadStatus = ThreadStatus.pending();
 
@@ -190,7 +190,7 @@ export class ThreadExecution extends ValueObject<ThreadExecutionProps> {
    * 获取执行上下文
    * @returns 执行上下文
    */
-  public get context(): ExecutionContext {
+  public get context(): ThreadExecutionContext {
     return this.props.context;
   }
 
@@ -469,7 +469,7 @@ export class ThreadExecution extends ValueObject<ThreadExecutionProps> {
    * @param context 新的执行上下文
    * @returns 新的线程执行值对象
    */
-  public updateContext(context: ExecutionContext): ThreadExecution {
+  public updateContext(context: ThreadExecutionContext): ThreadExecution {
     return new ThreadExecution({
       ...this.props,
       context,

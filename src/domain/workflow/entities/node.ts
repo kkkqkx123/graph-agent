@@ -42,7 +42,7 @@ export interface NodeParameter {
  * 节点上下文接口
  */
 export interface NodeContext {
-  readonly workflowId?: ID;
+  readonly workflowId?: string;
   readonly executionId?: string;
   readonly localVariables: Map<string, any>;
   readonly metadata?: Record<string, any>;
@@ -59,8 +59,48 @@ export interface NodeContext {
 /**
  * 工作流执行上下文接口（兼容infrastructure层）
  * WorkflowExecutionContext是NodeContext的扩展，增加了getService方法
+ *
+ * 注意：此接口现在兼容WorkflowContext，支持不可变更新模式
  */
 export interface WorkflowExecutionContext extends NodeContext {
+  /**
+   * 获取变量
+   */
+  getVariable(key: string): any;
+
+  /**
+   * 设置变量（注意：在WorkflowContext中，此方法不会修改原上下文）
+   */
+  setVariable(key: string, value: any): void;
+
+  /**
+   * 获取所有变量
+   */
+  getAllVariables(): Record<string, any>;
+
+  /**
+   * 获取执行ID
+   */
+  getExecutionId(): string;
+
+  /**
+   * 获取工作流ID
+   */
+  getWorkflowId(): string;
+
+  /**
+   * 获取节点结果
+   */
+  getNodeResult(nodeId: string): any;
+
+  /**
+   * 设置节点结果（注意：在WorkflowContext中，此方法不会修改原上下文）
+   */
+  setNodeResult(nodeId: string, result: any): void;
+
+  /**
+   * 获取服务（用于依赖注入）
+   */
   getService<T>(serviceName: string): T;
 }
 

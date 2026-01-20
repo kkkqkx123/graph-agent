@@ -46,13 +46,24 @@ export class TriggerExecutor {
 
       // 构建函数执行上下文
       const functionContext: WorkflowExecutionContext = {
-        getVariable: (key: string) => context.triggerData?.[key],
+        getVariable: (key: string) => {
+          if (context.triggerData && key in context.triggerData) {
+            return context.triggerData[key];
+          }
+          return undefined;
+        },
         setVariable: (key: string, value: any) => {
           if (context.triggerData) {
             context.triggerData[key] = value;
           }
         },
-        getNodeResult: (nodeId: string) => context.metadata?.[nodeId],
+        getAllVariables: () => context.triggerData || {},
+        getNodeResult: (nodeId: string) => {
+          if (context.metadata && nodeId in context.metadata) {
+            return context.metadata[nodeId];
+          }
+          return undefined;
+        },
         setNodeResult: (nodeId: string, result: any) => {
           if (context.metadata) {
             context.metadata[nodeId] = result;
@@ -60,6 +71,11 @@ export class TriggerExecutor {
         },
         getExecutionId: () => context.triggerId,
         getWorkflowId: () => context.workflowId.toString(),
+        getService: <T>(serviceName: string): T => {
+          // 简单实现：返回undefined，实际应该从依赖注入容器获取
+          return undefined as T;
+        },
+        localVariables: new Map<string, any>(),
       };
 
       // 直接调用触发器函数

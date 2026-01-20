@@ -2,23 +2,16 @@ import { ValueObject } from '../../../common/value-objects';
 import { EdgeId } from './edge-id';
 import { EdgeType } from './edge-type';
 import { NodeId } from '../node/node-id';
-import { ExecutionContext } from '../../../threads/value-objects/execution-context';
-
-/**
- * 条件函数引用接口
- * 用于支持函数式条件评估
- */
-export interface ConditionFunctionReference {
-  readonly type: 'function';
-  readonly functionId: string;
-  readonly config?: Record<string, any>;
-}
 
 /**
  * 边条件类型
  * 统一使用函数引用格式
  */
-export type EdgeCondition = ConditionFunctionReference;
+export type EdgeCondition = {
+  readonly type: 'function';
+  readonly functionId: string;
+  readonly config?: Record<string, any>;
+};
 
 /**
  * 边值对象属性接口
@@ -176,89 +169,6 @@ export class EdgeValueObject extends ValueObject<EdgeValueObjectProps> {
    */
   public isTimeout(): boolean {
     return this.props.type.isTimeout();
-  }
-
-  /**
-   * 评估边的条件
-   *
-   * @param context 执行上下文
-   * @param expressionEvaluator 表达式评估器（可选，用于测试）
-   * @param functionRegistry 函数注册表（可选，用于函数式条件）
-   * @returns 评估结果
-   */
-  public async evaluateCondition(
-    context: ExecutionContext,
-    expressionEvaluator?: any,
-    functionRegistry?: any
-  ): Promise<{ satisfied: boolean; error?: string }> {
-    // 如果不需要条件评估，默认满足
-    if (!this.requiresConditionEvaluation()) {
-      return { satisfied: true };
-    }
-
-    // 如果没有条件表达式，默认满足
-    const condition = this.getConditionExpression();
-    if (!condition) {
-      return { satisfied: true };
-    }
-
-    try {
-      // 直接使用函数引用评估
-      return await this.evaluateFunctionCondition(condition, context, functionRegistry);
-    } catch (error) {
-      return {
-        satisfied: false,
-        error: error instanceof Error ? error.message : String(error),
-      };
-    }
-  }
-
-  /**
-   * 评估函数式条件
-   *
-   * @param conditionRef 条件函数引用
-   * @param context 执行上下文
-   * @param functionRegistry 函数注册表
-   * @returns 评估结果
-   */
-  private async evaluateFunctionCondition(
-    conditionRef: ConditionFunctionReference,
-    context: ExecutionContext,
-    functionRegistry?: any
-  ): Promise<{ satisfied: boolean; error?: string }> {
-    if (!functionRegistry) {
-      return {
-        satisfied: false,
-        error: '函数式条件需要FunctionRegistry',
-      };
-    }
-
-    try {
-      // 获取条件函数
-      const conditionFunc = functionRegistry.getConditionFunction(conditionRef.functionId);
-      if (!conditionFunc) {
-        return {
-          satisfied: false,
-          error: `条件函数不存在: ${conditionRef.functionId}`,
-        };
-      }
-
-      // 调用条件函数
-      const result = await conditionFunc.execute(
-        context as any,
-        conditionRef.config || {}
-      );
-
-      return {
-        satisfied: Boolean(result),
-        error: undefined,
-      };
-    } catch (error) {
-      return {
-        satisfied: false,
-        error: error instanceof Error ? error.message : String(error),
-      };
-    }
   }
 
   /**

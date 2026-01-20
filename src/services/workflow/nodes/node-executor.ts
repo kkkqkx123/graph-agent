@@ -1,6 +1,6 @@
 import { injectable, inject } from 'inversify';
 import { Node, NodeExecutionResult } from '../../../domain/workflow/entities/node';
-import { WorkflowExecutionContext } from '../../../domain/workflow/entities/node';
+import { WorkflowContext } from '../../../domain/workflow/value-objects/context/workflow-context';
 import { ILogger } from '../../../domain/common/types/logger-types';
 import { SubgraphNode } from './subgraph/subgraph-node';
 import { Thread } from '../../../domain/threads/entities/thread';
@@ -66,13 +66,13 @@ export class NodeExecutor {
   /**
    * 执行节点
    * @param node 节点实例
-   * @param context 执行上下文
+   * @param context 工作流上下文
    * @param options 执行选项
    * @returns 执行结果
    */
   async execute(
     node: Node,
-    context: WorkflowExecutionContext,
+    context: WorkflowContext,
     options: NodeExecutionOptions = {}
   ): Promise<NodeExecutionResult> {
     const { timeout = 30000, maxRetries = 0, retryDelay = 1000, verboseLogging = false } = options;
@@ -158,13 +158,13 @@ export class NodeExecutor {
   /**
    * 执行子工作流节点
    * @param node 子工作流节点（Node 类型，但类型为 subworkflow）
-   * @param context 执行上下文
+   * @param context 工作流上下文
    * @param options 执行选项
    * @returns 执行结果
    */
   private async executeSubgraphNode(
     node: Node,
-    context: WorkflowExecutionContext,
+    context: WorkflowContext,
     options: NodeExecutionOptions
   ): Promise<NodeExecutionResult> {
     const startTime = Date.now();
@@ -224,14 +224,14 @@ export class NodeExecutor {
    * @param node 子工作流节点
    * @param error 错误对象
    * @param startTime 开始时间
-   * @param context 执行上下文
+   * @param context 工作流上下文
    * @returns 执行结果
    */
   private handleSubgraphExecutionError(
     node: Node,
     error: any,
     startTime: number,
-    context: WorkflowExecutionContext
+    context: WorkflowContext
   ): NodeExecutionResult {
     const executionTime = Date.now() - startTime;
     const errorMessage = error instanceof Error ? error.message : String(error);
@@ -286,10 +286,10 @@ export class NodeExecutor {
   /**
    * 验证节点是否可以执行
    * @param node 节点实例
-   * @param context 执行上下文
+   * @param context 工作流上下文
    * @returns 是否可以执行
    */
-  async canExecute(node: Node, context: WorkflowExecutionContext): Promise<boolean> {
+  async canExecute(node: Node, context: WorkflowContext): Promise<boolean> {
     return node.canExecute();
   }
 
@@ -304,13 +304,13 @@ export class NodeExecutor {
   /**
    * 批量执行节点
    * @param nodes 节点列表
-   * @param context 执行上下文
+   * @param context 工作流上下文
    * @param options 执行选项
    * @returns 执行结果列表
    */
   async executeBatch(
     nodes: Node[],
-    context: WorkflowExecutionContext,
+    context: WorkflowContext,
     options: NodeExecutionOptions = {}
   ): Promise<NodeExecutionResult[]> {
     const results: NodeExecutionResult[] = [];

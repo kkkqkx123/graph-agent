@@ -7,8 +7,7 @@ import { ThreadStatusValue } from '../../../domain/threads/value-objects/thread-
 import { ThreadPriority } from '../../../domain/threads/value-objects/thread-priority';
 import { ThreadDefinition } from '../../../domain/threads/value-objects/thread-definition';
 import { ThreadExecution } from '../../../domain/threads/value-objects/thread-execution';
-import { ExecutionContext, ExecutionConfig } from '../../../domain/threads/value-objects/execution-context';
-import { VariableManager } from '../../../domain/threads/value-objects/variable-manager';
+import { ThreadExecutionContext, ExecutionConfig } from '../../../domain/threads/value-objects/execution-context';
 import { Timestamp } from '../../../domain/common/value-objects/timestamp';
 import { Version } from '../../../domain/common/value-objects/version';
 import { ThreadModel } from '../models/thread.model';
@@ -75,31 +74,16 @@ export class ThreadRepository
         }
       );
 
-      // 创建ExecutionContext（使用VariableManager）
-      const contextVariables = new Map(
-        Object.entries((model.metadata?.context?.variables as Record<string, unknown>) || {})
-      );
-      const nodeResults = new Map(
-        Object.entries((model.metadata?.context?.nodeResults as Record<string, unknown>) || {})
-      );
-      
-      // 创建VariableManager
-      const variableManager = VariableManager.create({
-        globalVariables: contextVariables,
-        nodeResults: nodeResults,
-        localVariables: new Map(),
-      });
-
-      // 创建ExecutionContext
-      const executionContext = ExecutionContext.fromProps({
-        variables: variableManager.globalVariables,
-        nodeResults: variableManager.nodeResults,
-        nodeContexts: new Map(),
+      // 创建ThreadExecutionContext
+      const executionContext = ThreadExecutionContext.fromObject({
+        variables: (model.metadata?.context?.variables as Record<string, unknown>) || {},
+        nodeContexts: (model.metadata?.context?.nodeContexts as Record<string, any>) || {},
         metadata: (model.metadata?.context?.metadata as Record<string, unknown>) || {},
+        executionConfig: (model.metadata?.context?.executionConfig as ExecutionConfig) || {},
       });
 
       // 创建ExecutionConfig
-      const executionConfig: ExecutionConfig = (model.metadata?.context?.executionConfig as ExecutionConfig) || {};
+      const executionConfig: ExecutionConfig = executionContext.executionConfig || {};
 
       const threadData = {
         id,
@@ -159,30 +143,8 @@ export class ThreadRepository
       model.createdAt = entity.createdAt.getDate();
       model.updatedAt = entity.updatedAt.getDate();
 
-      // 序列化ExecutionContext到metadata（使用VariableManager）
-      const variableManager = VariableManager.create({
-        globalVariables: entity.executionContext.variables,
-        nodeResults: entity.executionContext.nodeResults,
-        localVariables: new Map(), // 节点局部变量在nodeContexts中
-      });
-
-      const contextData = {
-        variables: Object.fromEntries(variableManager.globalVariables),
-        nodeResults: Object.fromEntries(variableManager.nodeResults),
-        nodeContexts: Object.fromEntries(
-          Array.from(entity.executionContext.nodeContexts.entries()).map(([nodeId, context]) => [
-            nodeId,
-            {
-              nodeId: context.nodeId.toString(),
-              localVariables: Object.fromEntries(context.localVariables),
-              metadata: context.metadata,
-              lastAccessedAt: context.lastAccessedAt.toISOString(),
-            },
-          ])
-        ),
-        metadata: entity.executionContext.metadata,
-        executionConfig: entity.executionConfig,
-      };
+      // 序列化ThreadExecutionContext到metadata
+      const contextData = entity.executionContext.toObject();
 
       model.metadata = {
         ...entity.metadata.toRecord(),

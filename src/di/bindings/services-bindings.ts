@@ -27,6 +27,7 @@ import { SessionCheckpointManagement } from '../../services/sessions/session-che
 import { StateHistory } from '../../services/state/state-history';
 import { StateManagement } from '../../services/state/state-management';
 import { StateRecovery } from '../../services/state/state-recovery';
+import { ContextManagement } from '../../services/workflow/context-management';
 import { FunctionManagement } from '../../services/workflow/function-management';
 import { WorkflowLifecycle } from '../../services/workflow/workflow-lifecycle';
 import { WorkflowManagement } from '../../services/workflow/workflow-management';
@@ -112,6 +113,7 @@ export const servicesBindings = new ContainerModule((bind: any) => {
   }).inSingletonScope();
 
   // 工作流服务
+  bind(TYPES.ContextManagement).to(ContextManagement).inSingletonScope();
   bind(TYPES.FunctionManagement).to(FunctionManagement).inSingletonScope();
   bind(TYPES.WorkflowLifecycle).to(WorkflowLifecycle).inSingletonScope();
   bind(TYPES.WorkflowManagement).to(WorkflowManagement).inSingletonScope();

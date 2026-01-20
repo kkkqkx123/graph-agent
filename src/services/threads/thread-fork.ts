@@ -11,7 +11,7 @@ import { PromptState } from '../../domain/workflow/value-objects/context';
 import {
   Thread,
   IThreadRepository,
-  ExecutionContext,
+  ThreadExecutionContext,
   NodeExecutionSnapshot,
 } from '../../domain/threads';
 import {

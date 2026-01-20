@@ -54,6 +54,7 @@ import { SessionCheckpointManagement } from '../services/sessions/session-checkp
 import { StateHistory } from '../services/state/state-history';
 import { StateManagement } from '../services/state/state-management';
 import { StateRecovery } from '../services/state/state-recovery';
+import { ContextManagement } from '../services/workflow/context-management';
 import { FunctionManagement } from '../services/workflow/function-management';
 import { WorkflowLifecycle } from '../services/workflow/workflow-lifecycle';
 import { WorkflowManagement } from '../services/workflow/workflow-management';
@@ -171,6 +172,7 @@ export interface ServiceTypes {
   StateRecovery: StateRecovery;
 
   // 工作流服务
+  ContextManagement: ContextManagement;
   FunctionManagement: FunctionManagement;
   WorkflowLifecycle: WorkflowLifecycle;
   WorkflowManagement: WorkflowManagement;
@@ -341,6 +343,7 @@ export const TYPES: {
   StateRecovery: Symbol.for('StateRecovery') as TypedServiceIdentifier<'StateRecovery'>,
 
   // 工作流服务
+  ContextManagement: Symbol.for('ContextManagement') as TypedServiceIdentifier<'ContextManagement'>,
   FunctionManagement: Symbol.for('FunctionManagement') as TypedServiceIdentifier<'FunctionManagement'>,
   WorkflowLifecycle: Symbol.for('WorkflowLifecycle') as TypedServiceIdentifier<'WorkflowLifecycle'>,
   WorkflowManagement: Symbol.for('WorkflowManagement') as TypedServiceIdentifier<'WorkflowManagement'>,

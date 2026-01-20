@@ -14,11 +14,15 @@
 import { injectable, inject } from 'inversify';
 import { Workflow } from '../../domain/workflow/entities/workflow';
 import { NodeId } from '../../domain/workflow/value-objects';
-import { ExecutionContext } from '../../domain/threads/value-objects/execution-context';
+import { WorkflowContext } from '../../domain/workflow/value-objects/context/workflow-context';
+import { NodeExecutionState } from '../../domain/workflow/value-objects/execution/node-execution-state';
+import { NodeStatusValue } from '../../domain/workflow/value-objects/node/node-status';
 import { NodeRouter } from './node-router';
 import { NodeExecutor } from './nodes/node-executor';
 import { EdgeExecutor } from './edges/edge-executor';
+import { ContextManagement } from './context-management';
 import { ILogger } from '../../domain/common/types/logger-types';
+import { TYPES } from '../../di/service-keys';
 
 /**
  * 执行结果接口
@@ -64,17 +68,20 @@ export class WorkflowExecutionEngine {
   private readonly nodeRouter: NodeRouter;
   private readonly nodeExecutor: NodeExecutor;
   private readonly edgeExecutor: EdgeExecutor;
+  private readonly contextManagement: ContextManagement;
   private readonly logger: ILogger;
 
   constructor(
     @inject('NodeRouter') nodeRouter: NodeRouter,
     @inject('NodeExecutor') nodeExecutor: NodeExecutor,
     @inject('EdgeExecutor') edgeExecutor: EdgeExecutor,
+    @inject(TYPES.ContextManagement) contextManagement: ContextManagement,
     @inject('Logger') logger: ILogger
   ) {
     this.nodeRouter = nodeRouter;
     this.nodeExecutor = nodeExecutor;
     this.edgeExecutor = edgeExecutor;
+    this.contextManagement = contextManagement;
     this.logger = logger;
   }
 
@@ -82,12 +89,12 @@ export class WorkflowExecutionEngine {
    * 执行工作流
    *
    * @param workflow 工作流
-   * @param context 执行上下文
+   * @param executionId 执行ID
    * @returns 执行结果
    */
   public async execute(
     workflow: Workflow,
-    context: ExecutionContext
+    executionId: string
   ): Promise<WorkflowExecutionResult> {
     const startTime = Date.now();
     const executedNodes: NodeId[] = [];
@@ -95,21 +102,45 @@ export class WorkflowExecutionEngine {
     let currentNodeId: NodeId | null = null;
 
     try {
-      // 1. 获取起始节点
+      // 1. 创建工作流上下文
+      let context = this.contextManagement.createContext(
+        workflow.workflowId.toString(),
+        executionId
+      );
+
+      // 2. 获取起始节点
       const startNodes = this.nodeRouter.getStartNodes(workflow);
       if (startNodes.length === 0) {
         throw new Error('工作流没有起始节点');
       }
 
-      // 2. 从第一个起始节点开始执行
+      // 3. 从第一个起始节点开始执行
       currentNodeId = startNodes[0] || null;
 
-      // 3. 遍历执行节点
+      // 4. 遍历执行节点
       while (currentNodeId) {
+        // 设置当前节点
+        context = context.setCurrentNode(currentNodeId.toString());
+
+        // 标记节点开始执行
+        context = context.appendNodeExecution(
+          NodeExecutionState.create(currentNodeId.toString(), NodeStatusValue.RUNNING).start()
+        );
+
         // 执行节点
         const result = await this.executeNode(workflow, currentNodeId, context);
         executedNodes.push(currentNodeId);
         results.set(currentNodeId, result);
+
+        // 标记节点完成
+        context = context.updateNodeExecution(currentNodeId.toString(), {
+          status: NodeStatusValue.COMPLETED,
+          endTime: new Date(),
+          result: result,
+        });
+
+        // 更新上下文
+        this.contextManagement.updateContext(executionId, () => context);
 
         // 确定下一个节点
         const decision = await this.determineNextNode(workflow, currentNodeId, context);
@@ -117,22 +148,31 @@ export class WorkflowExecutionEngine {
 
         // 如果没有下一个节点，结束执行
         if (!currentNodeId) {
+          context = context.completeWorkflow();
+          this.contextManagement.updateContext(executionId, () => context);
           this.logger.info('工作流执行完成', { executedNodes: executedNodes.length });
           break;
         }
       }
 
-      // 4. 返回执行结果
+      // 5. 返回执行结果
       return {
         success: true,
         executedNodes,
         results,
         duration: Date.now() - startTime,
-        statistics: this.calculateStatistics(workflow, executedNodes),
+        statistics: context.getExecutionStatistics(),
       };
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : String(error);
       this.logger.error('工作流执行失败', error as Error, { executedNodes });
+
+      // 标记工作流失败
+      if (this.contextManagement.hasContext(executionId)) {
+        const failedContext = this.contextManagement.getContext(executionId)!;
+        const updatedContext = failedContext.failWorkflow(errorMessage);
+        this.contextManagement.updateContext(executionId, () => updatedContext);
+      }
 
       return {
         success: false,
@@ -140,7 +180,9 @@ export class WorkflowExecutionEngine {
         results,
         error: errorMessage,
         duration: Date.now() - startTime,
-        statistics: this.calculateStatistics(workflow, executedNodes),
+        statistics: this.contextManagement.hasContext(executionId)
+          ? this.contextManagement.getContext(executionId)!.getExecutionStatistics()
+          : this.calculateStatistics(workflow, executedNodes),
       };
     }
   }
@@ -150,13 +192,13 @@ export class WorkflowExecutionEngine {
    *
    * @param workflow 工作流
    * @param nodeId 节点ID
-   * @param context 执行上下文
+   * @param context 工作流上下文
    * @returns 执行结果
    */
   private async executeNode(
     workflow: Workflow,
     nodeId: NodeId,
-    context: ExecutionContext
+    context: WorkflowContext
   ): Promise<unknown> {
     const node = workflow.getNode(nodeId);
     if (!node) {
@@ -166,7 +208,7 @@ export class WorkflowExecutionEngine {
     this.logger.info('执行节点', { nodeId: nodeId.toString() });
 
     // 执行节点
-    const result = await this.nodeExecutor.execute(node, context as any);
+    const result = await this.nodeExecutor.execute(node, context);
 
     return result;
   }
@@ -176,13 +218,13 @@ export class WorkflowExecutionEngine {
    *
    * @param workflow 工作流
    * @param currentNodeId 当前节点ID
-   * @param context 执行上下文
+   * @param context 工作流上下文
    * @returns 路由决策
    */
   private async determineNextNode(
     workflow: Workflow,
     currentNodeId: NodeId,
-    context: ExecutionContext
+    context: WorkflowContext
   ): Promise<RoutingDecision> {
     const outgoingEdges = workflow.getOutgoingEdges(currentNodeId);
 
@@ -197,7 +239,7 @@ export class WorkflowExecutionEngine {
     const satisfiedEdges: typeof outgoingEdges = [];
     for (const edge of outgoingEdges) {
       // 委托给 EdgeExecutor 验证边是否可执行
-      const canExecute = await this.edgeExecutor.canExecute(edge, context as any);
+      const canExecute = await this.edgeExecutor.canExecute(edge, context);
       if (canExecute) {
         satisfiedEdges.push(edge);
       }
@@ -232,7 +274,7 @@ export class WorkflowExecutionEngine {
   }
 
   /**
-   * 计算执行统计
+   * 计算执行统计（备用方法，当上下文不可用时使用）
    *
    * @param workflow 工作流
    * @param executedNodes 已执行的节点列表

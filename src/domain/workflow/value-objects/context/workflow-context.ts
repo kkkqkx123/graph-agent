@@ -3,6 +3,7 @@ import { ExecutionState, ExecutionStatistics } from '../execution/execution-stat
 import { PromptState } from './prompt-state';
 import { NodeExecutionState } from '../execution/node-execution-state';
 import { PromptHistoryEntry } from './prompt-history-entry';
+import { WorkflowExecutionContext } from '../../entities/node';
 
 /**
  * 工作流上下文属性接口
@@ -30,8 +31,9 @@ export interface WorkflowContextProps {
  * 工作流上下文值对象
  *
  * 统一的工作流上下文，整合执行状态、提示词历史、全局变量和元数据
+ * 实现WorkflowExecutionContext接口以兼容现有代码
  */
-export class WorkflowContext extends ValueObject<WorkflowContextProps> {
+export class WorkflowContext extends ValueObject<WorkflowContextProps> implements WorkflowExecutionContext {
   private constructor(props: WorkflowContextProps) {
     super(props);
     this.validate();
@@ -113,6 +115,14 @@ export class WorkflowContext extends ValueObject<WorkflowContextProps> {
    */
   public get variables(): Map<string, unknown> {
     return new Map(this.props.variables);
+  }
+
+  /**
+   * 局部变量（用于节点级别的变量）
+   * @returns 局部变量映射
+   */
+  public get localVariables(): Map<string, unknown> {
+    return new Map(); // WorkflowContext不使用局部变量，返回空Map
   }
 
   /**
@@ -294,6 +304,51 @@ export class WorkflowContext extends ValueObject<WorkflowContextProps> {
   }
 
   /**
+   * 设置变量值（注意：此方法不会修改原上下文，仅用于兼容接口）
+   * @param key 变量名
+   * @param value 变量值
+   * @deprecated 使用updateVariable方法进行不可变更新
+   */
+  public setVariable(key: string, value: unknown): void {
+    // WorkflowContext使用不可变更新模式，此方法仅用于兼容接口
+    // 实际更新应该通过ContextManagement.updateContext完成
+    console.warn(`WorkflowContext.setVariable() is deprecated. Use ContextManagement.updateContext() instead.`);
+  }
+
+  /**
+   * 获取节点结果
+   * @param nodeId 节点ID
+   * @returns 节点结果
+   */
+  public getNodeResult(nodeId: string): unknown {
+    const nodeExecution = this.props.executionState.nodeExecutions.get(nodeId);
+    return nodeExecution?.result;
+  }
+
+  /**
+   * 设置节点结果（注意：此方法不会修改原上下文，仅用于兼容接口）
+   * @param nodeId 节点ID
+   * @param result 节点结果
+   * @deprecated 使用updateNodeExecution方法进行不可变更新
+   */
+  public setNodeResult(nodeId: string, result: unknown): void {
+    // WorkflowContext使用不可变更新模式，此方法仅用于兼容接口
+    // 实际更新应该通过ContextManagement.updateContext完成
+    console.warn(`WorkflowContext.setNodeResult() is deprecated. Use ContextManagement.updateContext() instead.`);
+  }
+
+  /**
+   * 获取服务（用于依赖注入）
+   * @param serviceName 服务名称
+   * @returns 服务实例
+   */
+  public getService<T>(serviceName: string): T {
+    // WorkflowContext本身不提供服务，此方法仅用于兼容接口
+    // 实际服务应该通过依赖注入容器获取
+    throw new Error(`WorkflowContext.getService() is not supported. Use dependency injection instead.`);
+  }
+
+  /**
    * 检查变量是否存在
    * @param key 变量名
    * @returns 是否存在
@@ -328,6 +383,22 @@ export class WorkflowContext extends ValueObject<WorkflowContextProps> {
       result[key] = value;
     }
     return result;
+  }
+
+  /**
+   * 获取执行ID（实现WorkflowExecutionContext接口）
+   * @returns 执行ID
+   */
+  public getExecutionId(): string {
+    return this.props.executionId;
+  }
+
+  /**
+   * 获取工作流ID（实现WorkflowExecutionContext接口）
+   * @returns 工作流ID
+   */
+  public getWorkflowId(): string {
+    return this.props.workflowId;
   }
 
   /**

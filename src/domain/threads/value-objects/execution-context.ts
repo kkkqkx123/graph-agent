@@ -1,7 +1,5 @@
 import { ValueObject, ID, Timestamp } from '../../common/value-objects';
 import { NodeId } from '../../workflow/value-objects';
-import { VariableManager } from './variable-manager';
-import { VariableScope } from './variable-scope';
 
 /**
  * 节点上下文接口
@@ -26,68 +24,80 @@ export interface ExecutionConfig {
 }
 
 /**
- * 上下文快照接口
+ * ThreadExecutionContext值对象属性接口
  */
-export interface ContextSnapshot {
+export interface ThreadExecutionContextProps {
   readonly variables: Map<string, unknown>;
-  readonly nodeResults: Map<string, unknown>;
   readonly nodeContexts: Map<string, NodeContext>;
   readonly metadata: Record<string, unknown>;
-  readonly snapshotAt: Timestamp;
+  readonly executionConfig?: ExecutionConfig;
 }
 
 /**
- * ExecutionContext值对象属性接口
- */
-export interface ExecutionContextProps {
-  readonly variables: Map<string, unknown>;
-  readonly nodeResults: Map<string, unknown>;
-  readonly nodeContexts: Map<string, NodeContext>;
-  readonly metadata: Record<string, unknown>;
-}
-
-/**
- * ExecutionContext值对象
+ * ThreadExecutionContext值对象
  *
- * 表示线程执行的上下文，包含全局变量、节点执行结果和节点上下文
+ * 表示线程执行的上下文，专注于线程层实际使用的功能：
+ * - 全局变量存储
+ * - 节点上下文管理（用于线程分叉）
+ * - 元数据和执行配置
  */
-export class ExecutionContext extends ValueObject<ExecutionContextProps> {
-  private variableManager: VariableManager;
-
+export class ThreadExecutionContext extends ValueObject<ThreadExecutionContextProps> {
   /**
-   * 创建执行上下文
-   * @returns 执行上下文实例
+   * 创建线程执行上下文
+   * @returns 线程执行上下文实例
    */
-  public static create(): ExecutionContext {
-    const props: ExecutionContextProps = {
+  public static create(): ThreadExecutionContext {
+    const props: ThreadExecutionContextProps = {
       variables: new Map(),
-      nodeResults: new Map(),
       nodeContexts: new Map(),
       metadata: {},
     };
-    return new ExecutionContext(props);
+    return new ThreadExecutionContext(props);
   }
 
   /**
-   * 从已有属性重建执行上下文
-   * @param props 执行上下文属性
-   * @returns 执行上下文实例
+   * 从已有属性重建线程执行上下文
+   * @param props 线程执行上下文属性
+   * @returns 线程执行上下文实例
    */
-  public static fromProps(props: ExecutionContextProps): ExecutionContext {
-    return new ExecutionContext(props);
+  public static fromProps(props: ThreadExecutionContextProps): ThreadExecutionContext {
+    return new ThreadExecutionContext(props);
+  }
+
+  /**
+   * 从对象反序列化
+   * @param obj 序列化对象
+   * @returns 线程执行上下文实例
+   */
+  public static fromObject(obj: {
+    variables?: Record<string, unknown>;
+    nodeContexts?: Record<string, any>;
+    metadata?: Record<string, unknown>;
+    executionConfig?: ExecutionConfig;
+  }): ThreadExecutionContext {
+    return new ThreadExecutionContext({
+      variables: new Map(Object.entries(obj.variables || {})),
+      nodeContexts: new Map(
+        Object.entries(obj.nodeContexts || {}).map(([nodeId, data]) => [
+          nodeId,
+          {
+            nodeId: NodeId.fromString(data.nodeId),
+            localVariables: new Map(Object.entries(data.localVariables || {})),
+            metadata: data.metadata || {},
+            lastAccessedAt: Timestamp.fromString(data.lastAccessedAt),
+          },
+        ])
+      ),
+      metadata: obj.metadata || {},
+      executionConfig: obj.executionConfig,
+    });
   }
 
   /**
    * 私有构造函数
    */
-  private constructor(props: ExecutionContextProps) {
+  private constructor(props: ThreadExecutionContextProps) {
     super(props);
-    // 初始化VariableManager
-    this.variableManager = VariableManager.create({
-      globalVariables: props.variables,
-      nodeResults: props.nodeResults,
-      localVariables: new Map(), // 默认为空，由外部设置
-    });
   }
 
   /**
@@ -96,14 +106,6 @@ export class ExecutionContext extends ValueObject<ExecutionContextProps> {
    */
   public get variables(): Map<string, unknown> {
     return new Map(this.props.variables);
-  }
-
-  /**
-   * 获取节点执行结果
-   * @returns 节点执行结果映射
-   */
-  public get nodeResults(): Map<string, unknown> {
-    return new Map(this.props.nodeResults);
   }
 
   /**
@@ -123,109 +125,73 @@ export class ExecutionContext extends ValueObject<ExecutionContextProps> {
   }
 
   /**
-   * 获取变量值（按作用域顺序查找）
-   * 查找顺序：节点局部变量 -> 全局变量 -> 节点执行结果
+   * 获取执行配置
+   * @returns 执行配置
+   */
+  public get executionConfig(): ExecutionConfig | undefined {
+    return this.props.executionConfig;
+  }
+
+  /**
+   * 获取变量值
    * @param key 变量名
-   * @param nodeId 节点ID（可选，用于查找节点局部变量）
    * @returns 变量值
    */
-  public getVariable(key: string, nodeId?: NodeId): unknown | undefined {
-    // 如果指定了节点ID，先查找该节点的局部变量
-    if (nodeId) {
-      const nodeContext = this.props.nodeContexts.get(nodeId.toString());
-      if (nodeContext && nodeContext.localVariables.has(key)) {
-        return nodeContext.localVariables.get(key);
-      }
-    }
-    // 使用VariableManager查找
-    return this.variableManager.getVariable(key);
+  public getVariable(key: string): unknown | undefined {
+    return this.props.variables.get(key);
   }
 
   /**
    * 检查变量是否存在
    * @param key 变量名
-   * @param nodeId 节点ID（可选）
    * @returns 是否存在
    */
-  public hasVariable(key: string, nodeId?: NodeId): boolean {
-    // 如果指定了节点ID，检查该节点的局部变量
-    if (nodeId) {
-      const nodeContext = this.props.nodeContexts.get(nodeId.toString());
-      if (nodeContext && nodeContext.localVariables.has(key)) {
-        return true;
-      }
-    }
-    // 使用VariableManager检查
-    return this.variableManager.hasVariable(key);
+  public hasVariable(key: string): boolean {
+    return this.props.variables.has(key);
   }
 
   /**
-   * 设置变量（指定作用域）
+   * 设置变量
    * @param key 变量名
    * @param value 变量值
-   * @param scope 作用域（默认为全局）
-   * @returns 新的执行上下文实例
+   * @returns 新的线程执行上下文实例
    */
-  public setVariable(
-    key: string,
-    value: unknown,
-    scope: VariableScope = VariableScope.GLOBAL
-  ): ExecutionContext {
-    const newManager = this.variableManager.setVariable(key, value, scope);
-    return new ExecutionContext({
+  public setVariable(key: string, value: unknown): ThreadExecutionContext {
+    const newVariables = new Map(this.props.variables);
+    newVariables.set(key, value);
+    return new ThreadExecutionContext({
       ...this.props,
-      variables: newManager.globalVariables,
-      nodeResults: newManager.nodeResults,
+      variables: newVariables,
     });
   }
 
   /**
-   * 批量设置变量（指定作用域）
+   * 批量设置变量
    * @param variables 变量映射
-   * @param scope 作用域（默认为全局）
-   * @returns 新的执行上下文实例
+   * @returns 新的线程执行上下文实例
    */
-  public setVariables(
-    variables: Map<string, unknown>,
-    scope: VariableScope = VariableScope.GLOBAL
-  ): ExecutionContext {
-    let newManager = this.variableManager;
+  public setVariables(variables: Map<string, unknown>): ThreadExecutionContext {
+    const newVariables = new Map(this.props.variables);
     for (const [key, value] of variables.entries()) {
-      newManager = newManager.setVariable(key, value, scope);
+      newVariables.set(key, value);
     }
-    return new ExecutionContext({
+    return new ThreadExecutionContext({
       ...this.props,
-      variables: newManager.globalVariables,
-      nodeResults: newManager.nodeResults,
+      variables: newVariables,
     });
   }
 
   /**
-   * 删除变量（从所有作用域）
+   * 删除变量
    * @param key 变量名
-   * @returns 新的执行上下文实例
+   * @returns 新的线程执行上下文实例
    */
-  public deleteVariable(key: string): ExecutionContext {
-    const newManager = this.variableManager.deleteVariable(key);
-    return new ExecutionContext({
+  public deleteVariable(key: string): ThreadExecutionContext {
+    const newVariables = new Map(this.props.variables);
+    newVariables.delete(key);
+    return new ThreadExecutionContext({
       ...this.props,
-      variables: newManager.globalVariables,
-      nodeResults: newManager.nodeResults,
-    });
-  }
-
-  /**
-   * 删除指定作用域的变量
-   * @param key 变量名
-   * @param scope 作用域
-   * @returns 新的执行上下文实例
-   */
-  public deleteVariableInScope(key: string, scope: VariableScope): ExecutionContext {
-    const newManager = this.variableManager.deleteVariableInScope(key, scope);
-    return new ExecutionContext({
-      ...this.props,
-      variables: newManager.globalVariables,
-      nodeResults: newManager.nodeResults,
+      variables: newVariables,
     });
   }
 
@@ -242,13 +208,12 @@ export class ExecutionContext extends ValueObject<ExecutionContextProps> {
    * 设置节点上下文
    * @param nodeId 节点ID
    * @param context 节点上下文
-   * @returns 新的执行上下文实例
+   * @returns 新的线程执行上下文实例
    */
-  public setNodeContext(nodeId: NodeId, context: NodeContext): ExecutionContext {
+  public setNodeContext(nodeId: NodeId, context: NodeContext): ThreadExecutionContext {
     const newNodeContexts = new Map(this.props.nodeContexts);
     newNodeContexts.set(nodeId.toString(), context);
-
-    return new ExecutionContext({
+    return new ThreadExecutionContext({
       ...this.props,
       nodeContexts: newNodeContexts,
     });
@@ -258,12 +223,12 @@ export class ExecutionContext extends ValueObject<ExecutionContextProps> {
    * 更新节点上下文变量
    * @param nodeId 节点ID
    * @param variables 变量映射
-   * @returns 新的执行上下文实例
+   * @returns 新的线程执行上下文实例
    */
   public updateNodeContextVariables(
     nodeId: NodeId,
     variables: Map<string, unknown>
-  ): ExecutionContext {
+  ): ThreadExecutionContext {
     const existingContext = this.props.nodeContexts.get(nodeId.toString());
 
     if (!existingContext) {
@@ -284,162 +249,68 @@ export class ExecutionContext extends ValueObject<ExecutionContextProps> {
     const newNodeContexts = new Map(this.props.nodeContexts);
     newNodeContexts.set(nodeId.toString(), newContext);
 
-    return new ExecutionContext({
+    return new ThreadExecutionContext({
       ...this.props,
       nodeContexts: newNodeContexts,
     });
   }
 
   /**
-   * 设置节点执行结果
-   * @param nodeId 节点ID
-   * @param result 执行结果
-   * @returns 新的执行上下文实例
-   */
-  public setNodeResult(nodeId: NodeId, result: unknown): ExecutionContext {
-    const newManager = this.variableManager.setNodeResult(nodeId.toString(), result);
-    return new ExecutionContext({
-      ...this.props,
-      variables: newManager.globalVariables,
-      nodeResults: newManager.nodeResults,
-    });
-  }
-
-  /**
-   * 获取节点执行结果
-   * @param nodeId 节点ID
-   * @returns 节点执行结果
-   */
-  public getNodeResult(nodeId: NodeId): unknown | undefined {
-    return this.variableManager.nodeResults.get(nodeId.toString());
-  }
-
-  /**
    * 更新元数据
    * @param metadata 新的元数据
-   * @returns 新的执行上下文实例
+   * @returns 新的线程执行上下文实例
    */
-  public updateMetadata(metadata: Record<string, unknown>): ExecutionContext {
-    return new ExecutionContext({
+  public updateMetadata(metadata: Record<string, unknown>): ThreadExecutionContext {
+    return new ThreadExecutionContext({
       ...this.props,
       metadata: { ...this.props.metadata, ...metadata },
     });
   }
 
   /**
-   * 验证变量名
-   * @param key 变量名
-   * @returns 验证结果
+   * 更新执行配置
+   * @param config 新的执行配置
+   * @returns 新的线程执行上下文实例
    */
-  public validateVariable(key: string): { valid: boolean; error?: string } {
-    return this.variableManager.validateVariableName(key);
-  }
-
-  /**
-   * 计算内存使用量
-   * @returns 内存使用量（字节）
-   */
-  public calculateMemoryUsage(): number {
-    let totalSize = 0;
-
-    // 计算变量大小
-    for (const [key, value] of this.props.variables.entries()) {
-      totalSize += key.length * 2; // UTF-16
-      totalSize += this.calculateValueSize(value);
-    }
-
-    // 计算节点执行结果大小
-    for (const [nodeId, result] of this.props.nodeResults.entries()) {
-      totalSize += nodeId.length * 2;
-      totalSize += this.calculateValueSize(result);
-    }
-
-    // 计算节点上下文大小
-    for (const [nodeId, context] of this.props.nodeContexts.entries()) {
-      totalSize += nodeId.length * 2;
-      for (const [key, value] of context.localVariables.entries()) {
-        totalSize += key.length * 2;
-        totalSize += this.calculateValueSize(value);
-      }
-    }
-
-    return totalSize;
-  }
-
-  /**
-   * 创建快照
-   * @returns 上下文快照
-   */
-  public createSnapshot(): ContextSnapshot {
-    return {
-      variables: new Map(this.props.variables),
-      nodeResults: new Map(this.props.nodeResults),
-      nodeContexts: new Map(this.props.nodeContexts),
-      metadata: { ...this.props.metadata },
-      snapshotAt: Timestamp.now(),
-    };
-  }
-
-  /**
-   * 从快照恢复
-   * @param snapshot 上下文快照
-   * @returns 执行上下文实例
-   */
-  public static restoreFromSnapshot(snapshot: ContextSnapshot): ExecutionContext {
-    return new ExecutionContext({
-      variables: new Map(snapshot.variables),
-      nodeResults: new Map(snapshot.nodeResults),
-      nodeContexts: new Map(snapshot.nodeContexts),
-      metadata: { ...snapshot.metadata },
+  public updateExecutionConfig(config: ExecutionConfig): ThreadExecutionContext {
+    return new ThreadExecutionContext({
+      ...this.props,
+      executionConfig: { ...this.props.executionConfig, ...config },
     });
   }
 
   /**
-   * 计算值的大小
-   * @param value 值
-   * @returns 大小（字节）
+   * 序列化为对象
+   * @returns 序列化后的对象
    */
-  private calculateValueSize(value: unknown): number {
-    if (value === null || value === undefined) {
-      return 0;
-    }
-
-    if (typeof value === 'string') {
-      return value.length * 2; // UTF-16
-    }
-
-    if (typeof value === 'number') {
-      return 8; // 64位数字
-    }
-
-    if (typeof value === 'boolean') {
-      return 1;
-    }
-
-    if (value instanceof Date) {
-      return 8; // 时间戳
-    }
-
-    if (Array.isArray(value)) {
-      return value.reduce((sum, item) => sum + this.calculateValueSize(item), 0);
-    }
-
-    if (typeof value === 'object') {
-      let size = 0;
-      for (const [key, val] of Object.entries(value)) {
-        size += key.length * 2;
-        size += this.calculateValueSize(val);
-      }
-      return size;
-    }
-
-    return 0;
+  public toObject(): {
+    variables: Record<string, unknown>;
+    nodeContexts: Record<string, any>;
+    metadata: Record<string, unknown>;
+    executionConfig?: ExecutionConfig;
+  } {
+    return {
+      variables: Object.fromEntries(this.props.variables),
+      nodeContexts: Object.fromEntries(
+        Array.from(this.props.nodeContexts.entries()).map(([nodeId, context]) => [
+          nodeId,
+          {
+            nodeId: context.nodeId.toString(),
+            localVariables: Object.fromEntries(context.localVariables),
+            metadata: context.metadata,
+            lastAccessedAt: context.lastAccessedAt.toISOString(),
+          },
+        ])
+      ),
+      metadata: this.props.metadata,
+      executionConfig: this.props.executionConfig,
+    };
   }
 
   /**
-   * 验证执行上下文的有效性
+   * 验证值对象的有效性
    */
   public validate(): void {
-    // ExecutionContext现在不包含promptContext，无需验证
+    // ThreadExecutionContext 不需要特殊验证
   }
 }

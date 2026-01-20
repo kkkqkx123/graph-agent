@@ -5,6 +5,15 @@
 export { WorkflowFunctionType } from '../../../domain/workflow/value-objects/function-type';
 
 /**
+ * 工作流执行上下文接口
+ * 从领域层重新导出，保持单一数据源
+ */
+export type { WorkflowExecutionContext } from '../../../domain/workflow/entities/node';
+
+// 导入WorkflowExecutionContext类型供内部使用
+import type { WorkflowExecutionContext } from '../../../domain/workflow/entities/node';
+
+/**
  * 函数参数接口
  */
 export interface FunctionParameter {
@@ -35,42 +44,6 @@ export interface FunctionMetadata {
   category: string;
   parameters: FunctionParameter[];
   returnType: string;
-}
-
-/**
- * 工作流执行上下文接口
- * 提供统一的上下文访问方式
- */
-export interface WorkflowExecutionContext {
-  /**
-   * 获取变量
-   */
-  getVariable(key: string): any;
-
-  /**
-   * 设置变量
-   */
-  setVariable(key: string, value: any): void;
-
-  /**
-   * 获取执行ID
-   */
-  getExecutionId(): string;
-
-  /**
-   * 获取工作流ID
-   */
-  getWorkflowId(): string;
-
-  /**
-   * 获取节点结果
-   */
-  getNodeResult(nodeId: string): any;
-
-  /**
-   * 设置节点结果
-   */
-  setNodeResult(nodeId: string, result: any): void;
 }
 
 /**

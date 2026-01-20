@@ -1,7 +1,7 @@
 import { ValueObject, ID } from '../../../../common/value-objects';
 import { NodeId } from '../../../../workflow/value-objects';
 import { Thread } from '../../../../threads/entities/thread';
-import { ExecutionContext } from '../../../../threads/value-objects/execution-context';
+import { ThreadExecutionContext } from '../../../../threads/value-objects/execution-context';
 import { NodeExecutionSnapshot } from '../../../../threads/value-objects/node-execution';
 
 /**

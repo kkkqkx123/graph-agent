@@ -351,6 +351,14 @@ export class ThreadConditionalRouter {
         // 简单实现：设置到 context 中
         context[key] = value;
       },
+      getAllVariables: () => {
+        // 返回所有变量
+        const state = context['state'];
+        return {
+          ...state,
+          ...context,
+        };
+      },
       getExecutionId: () => {
         const state = context['state'];
         return state?.executionId || '';
@@ -379,6 +387,11 @@ export class ThreadConditionalRouter {
         }
         state.nodeResults[nodeId] = result;
       },
+      getService: <T>(serviceName: string): T => {
+        // 简单实现：从 context 中获取服务
+        return context[serviceName] as T;
+      },
+      localVariables: new Map<string, any>(),
     };
   }
 

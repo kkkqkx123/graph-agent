@@ -4,7 +4,7 @@ import { ThreadPriority } from '../value-objects';
 import { ThreadStatusValue } from '../value-objects/thread-status';
 import { State } from '../../state/entities/state';
 import { StateEntityType } from '../../state/value-objects/state-entity-type';
-import { ExecutionContext, ExecutionConfig } from '../value-objects/execution-context';
+import { ThreadExecutionContext, ExecutionConfig } from '../value-objects/execution-context';
 
 /**
  * Thread实体属性接口
@@ -22,7 +22,7 @@ export interface ThreadProps {
   readonly updatedAt: Timestamp;
   readonly version: Version;
   readonly state: State;
-  readonly executionContext: ExecutionContext;
+  readonly executionContext: ThreadExecutionContext;
   readonly executionConfig: ExecutionConfig;
 }
 

@@ -12,7 +12,7 @@
 
 import { injectable, inject } from 'inversify';
 import { Node } from '../../domain/workflow/entities/node';
-import { WorkflowExecutionContext } from '../../domain/workflow/entities/node';
+import { WorkflowContext } from '../../domain/workflow/value-objects/context/workflow-context';
 import { NodeExecutor } from './nodes/node-executor';
 import { ILogger } from '../../domain/common/types/logger-types';
 
@@ -103,13 +103,13 @@ export class FunctionExecutionEngine {
    * 执行函数
    *
    * @param functions 函数列表
-   * @param context 执行上下文
+   * @param context 工作流上下文
    * @param config 执行配置
    * @returns 执行结果列表
    */
   async execute(
     functions: Node[],
-    context: WorkflowExecutionContext,
+    context: WorkflowContext,
     config: FunctionExecutionConfig
   ): Promise<FunctionExecutionResult[]> {
     this.logger.info('开始执行函数', {
@@ -133,13 +133,13 @@ export class FunctionExecutionEngine {
    * 顺序执行函数
    *
    * @param functions 函数列表
-   * @param context 执行上下文
+   * @param context 工作流上下文
    * @param config 执行配置
    * @returns 执行结果列表
    */
   private async executeSequential(
     functions: Node[],
-    context: WorkflowExecutionContext,
+    context: WorkflowContext,
     config: FunctionExecutionConfig
   ): Promise<FunctionExecutionResult[]> {
     const results: FunctionExecutionResult[] = [];
@@ -165,13 +165,13 @@ export class FunctionExecutionEngine {
    * 并行执行函数
    *
    * @param functions 函数列表
-   * @param context 执行上下文
+   * @param context 工作流上下文
    * @param config 执行配置
    * @returns 执行结果列表
    */
   private async executeParallel(
     functions: Node[],
-    context: WorkflowExecutionContext,
+    context: WorkflowContext,
     config: FunctionExecutionConfig
   ): Promise<FunctionExecutionResult[]> {
     const maxConcurrency = config.maxConcurrency || functions.length;
@@ -193,13 +193,13 @@ export class FunctionExecutionEngine {
    * 条件执行函数
    *
    * @param functions 函数列表
-   * @param context 执行上下文
+   * @param context 工作流上下文
    * @param config 执行配置
    * @returns 执行结果列表
    */
   private async executeConditional(
     functions: Node[],
-    context: WorkflowExecutionContext,
+    context: WorkflowContext,
     config: FunctionExecutionConfig
   ): Promise<FunctionExecutionResult[]> {
     const results: FunctionExecutionResult[] = [];
@@ -234,13 +234,13 @@ export class FunctionExecutionEngine {
    * 执行单个函数
    *
    * @param func 函数
-   * @param context 执行上下文
+   * @param context 工作流上下文
    * @param config 执行配置
    * @returns 执行结果
    */
   private async executeFunction(
     func: Node,
-    context: WorkflowExecutionContext,
+    context: WorkflowContext,
     config: FunctionExecutionConfig
   ): Promise<FunctionExecutionResult> {
     const startTime = Date.now();
@@ -304,13 +304,13 @@ export class FunctionExecutionEngine {
    * 带重试的执行
    *
    * @param func 函数
-   * @param context 执行上下文
+   * @param context 工作流上下文
    * @param config 执行配置
    * @returns 执行结果
    */
   private async executeWithRetry(
     func: Node,
-    context: WorkflowExecutionContext,
+    context: WorkflowContext,
     config: FunctionExecutionConfig
   ): Promise<any> {
     const retryCount = config.retryCount || 0;
@@ -372,13 +372,13 @@ export class FunctionExecutionEngine {
    * 应用上下文处理器
    *
    * @param func 函数
-   * @param context 执行上下文
+   * @param context 工作流上下文
    * @returns 处理后的上下文
    */
   private applyContextProcessor(
     func: Node,
-    context: WorkflowExecutionContext
-  ): WorkflowExecutionContext {
+    context: WorkflowContext
+  ): WorkflowContext {
     // 简化实现：暂时不应用上下文处理器
     // TODO: 根据实际需求实现上下文处理逻辑
     return context;

@@ -1,9 +1,9 @@
 import { injectable, inject } from 'inversify';
 import { EdgeValueObject } from '../../../domain/workflow/value-objects/edge/edge-value-object';
 import { FunctionRegistry } from '../functions/function-registry';
-import { WorkflowExecutionContext } from '../functions/types';
-import { ExecutionContext } from '../../../domain/threads/value-objects/execution-context';
+import { WorkflowContext } from '../../../domain/workflow/value-objects/context/workflow-context';
 import { ILogger } from '../../../domain/common/types/logger-types';
+import { ExpressionEvaluator } from '../expression-evaluator';
 
 /**
  * 边执行器
@@ -13,16 +13,17 @@ import { ILogger } from '../../../domain/common/types/logger-types';
 export class EdgeExecutor {
   constructor(
     @inject('FunctionRegistry') private readonly functionRegistry: FunctionRegistry,
+    @inject('ExpressionEvaluator') private readonly expressionEvaluator: ExpressionEvaluator,
     @inject('Logger') private readonly logger: ILogger
   ) { }
 
   /**
    * 执行边
    * @param edge 边值对象
-   * @param context 执行上下文
+   * @param context 工作流上下文
    * @returns 执行结果
    */
-  async execute(edge: EdgeValueObject, context: WorkflowExecutionContext): Promise<any> {
+  async execute(edge: EdgeValueObject, context: WorkflowContext): Promise<any> {
     this.logger.debug('开始执行边', {
       edgeId: edge.id.toString(),
       edgeType: edge.type.toString(),
@@ -86,10 +87,10 @@ export class EdgeExecutor {
   /**
    * 验证边是否可以执行
    * @param edge 边值对象
-   * @param context 执行上下文
+   * @param context 工作流上下文
    * @returns 是否可以执行
    */
-  async canExecute(edge: EdgeValueObject, context: WorkflowExecutionContext): Promise<boolean> {
+  async canExecute(edge: EdgeValueObject, context: WorkflowContext): Promise<boolean> {
     try {
       // 1. 检查边函数是否存在
       const edgeFunction = this.functionRegistry.getRoutingFunction(edge.type.toString());
@@ -105,21 +106,20 @@ export class EdgeExecutor {
       if (edge.requiresConditionEvaluation()) {
         const condition = edge.getConditionExpression();
         if (condition) {
-          // 将 WorkflowExecutionContext 转换为 ExecutionContext
-          const executionContext = this.convertToExecutionContext(context);
-          
-          // 使用 EdgeValueObject 的 evaluateCondition 方法
-          const result = await edge.evaluateCondition(
-            executionContext,
-            undefined, // expressionEvaluator - EdgeExecutor 不需要
-            this.functionRegistry
+          // 将 WorkflowContext 转换为变量上下文
+          const variableContext = this.convertToVariableContext(context);
+
+          // 使用 ExpressionEvaluator 评估条件
+          const evaluationResult = await this.expressionEvaluator.evaluate(
+            condition.functionId,
+            variableContext
           );
 
-          if (!result.satisfied) {
+          if (!evaluationResult.success || !evaluationResult.value) {
             this.logger.debug('边条件不满足', {
               edgeId: edge.id.toString(),
-              condition: JSON.stringify(condition),
-              error: result.error,
+              condition: condition.functionId,
+              error: evaluationResult.error,
             });
             return false;
           }
@@ -171,13 +171,13 @@ export class EdgeExecutor {
   }
 
   /**
-   * 将 WorkflowExecutionContext 转换为 ExecutionContext
-   * @param workflowContext 工作流执行上下文
-   * @returns 执行上下文
+   * 将 WorkflowContext 转换为变量上下文
+   * @param workflowContext 工作流上下文
+   * @returns 变量上下文
    */
-  private convertToExecutionContext(workflowContext: WorkflowExecutionContext): ExecutionContext {
-    // 从 WorkflowExecutionContext 提取变量
-    const variables = new Map<string, unknown>();
+  private convertToVariableContext(workflowContext: WorkflowContext): Record<string, any> {
+    const variables: Record<string, any> = {};
+
     try {
       // 尝试获取一些常见的变量
       const commonKeys = ['messages', 'errors', 'tool_calls', 'condition_results', 'input', 'output'];
@@ -185,7 +185,7 @@ export class EdgeExecutor {
         try {
           const value = workflowContext.getVariable(key);
           if (value !== undefined) {
-            variables.set(key, value);
+            variables[key] = value;
           }
         } catch {
           // 忽略获取变量时的错误
@@ -195,7 +195,10 @@ export class EdgeExecutor {
       // 忽略提取变量时的错误
     }
 
-    // 创建 ExecutionContext
-    return ExecutionContext.create();
+    // 添加执行上下文信息
+    variables['executionId'] = workflowContext.getExecutionId();
+    variables['workflowId'] = workflowContext.getWorkflowId();
+
+    return variables;
   }
 }
