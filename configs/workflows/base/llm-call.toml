@@ -7,6 +7,7 @@ id = "base_llm_call"
 name = "LLM调用基础操作"
 description = "封装LLM调用和工具执行的基础操作"
 version = "1.0.0"
+type = "base"
 
 # 可配置参数（用于在具体工作流中通过参数修改内部逻辑）
 [workflow.parameters.wrapper_type]

@@ -1,5 +1,6 @@
-import { ValueObject } from '../../../common/value-objects';
+import { ValueObject } from '../../common/value-objects';
 import { SubWorkflowType } from './subworkflow-type';
+import { WorkflowDefinitionProps } from './workflow-definition';
 
 /**
  * 子工作流标准接口
@@ -29,6 +30,26 @@ export interface SubWorkflowStandardProps {
 export class SubWorkflowStandard extends ValueObject<SubWorkflowStandardProps> {
   private constructor(props: SubWorkflowStandardProps) {
     super(props);
+    this.validate();
+  }
+
+  /**
+   * 验证值对象的有效性
+   * 实现基类的抽象方法
+   */
+  public validate(): void {
+    if (this.props.minInDegree < 0) {
+      throw new Error('最小入度不能为负数');
+    }
+    if (this.props.maxInDegree < this.props.minInDegree) {
+      throw new Error('最大入度不能小于最小入度');
+    }
+    if (this.props.minOutDegree < 0) {
+      throw new Error('最小出度不能为负数');
+    }
+    if (this.props.maxOutDegree < this.props.minOutDegree) {
+      throw new Error('最大出度不能小于最小出度');
+    }
   }
 
   /**
@@ -80,7 +101,47 @@ export class SubWorkflowStandard extends ValueObject<SubWorkflowStandardProps> {
   }
 
   /**
-   * 验证工作流是否符合标准
+   * 验证工作流定义是否符合基本规则
+   * 子工作流首先必须满足工作流本身的定义规则
+   * @param definitionProps 工作流定义属性
+   * @returns 验证结果
+   */
+  public validateDefinition(definitionProps: WorkflowDefinitionProps): { valid: boolean; errors: string[] } {
+    const errors: string[] = [];
+
+    // 验证工作流名称
+    if (!definitionProps.name || definitionProps.name.trim().length === 0) {
+      errors.push('工作流名称不能为空');
+    }
+
+    if (definitionProps.name.length > 100) {
+      errors.push('工作流名称不能超过100个字符');
+    }
+
+    // 验证工作流描述
+    if (definitionProps.description && definitionProps.description.length > 500) {
+      errors.push('工作流描述不能超过500个字符');
+    }
+
+    // 验证标签
+    if (definitionProps.tags.length > 20) {
+      errors.push('标签数量不能超过20个');
+    }
+
+    for (const tag of definitionProps.tags) {
+      if (tag.length > 50) {
+        errors.push('标签长度不能超过50个字符');
+      }
+    }
+
+    return {
+      valid: errors.length === 0,
+      errors,
+    };
+  }
+
+  /**
+   * 验证工作流是否符合子工作流标准
    * @param entryInDegree 入口节点入度
    * @param entryOutDegree 入口节点出度
    * @param exitInDegree 出口节点入度
@@ -89,7 +150,7 @@ export class SubWorkflowStandard extends ValueObject<SubWorkflowStandardProps> {
    * @param hasEndNode 是否有end节点
    * @returns 验证结果
    */
-  public validate(
+  public validateSubWorkflow(
     entryInDegree: number,
     entryOutDegree: number,
     exitInDegree: number,

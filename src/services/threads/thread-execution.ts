@@ -56,7 +56,6 @@ export class ThreadExecution extends BaseService {
   private readonly checkpointManagement: CheckpointManagement;
   private readonly checkpointCreation: CheckpointCreation;
   private readonly router: ThreadConditionalRouter;
-  private readonly evaluator: ExpressionEvaluator;
 
   constructor(
     @inject(TYPES.ThreadRepository) private readonly threadRepository: IThreadRepository,

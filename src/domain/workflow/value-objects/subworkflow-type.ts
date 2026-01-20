@@ -1,4 +1,4 @@
-import { ValueObject } from '../../../common/value-objects';
+import { ValueObject } from '../../common/value-objects';
 
 /**
  * 子工作流类型枚举
@@ -16,6 +16,20 @@ export enum SubWorkflowTypeValue {
 export class SubWorkflowType extends ValueObject<{ value: SubWorkflowTypeValue }> {
   private constructor(props: { value: SubWorkflowTypeValue }) {
     super(props);
+    this.validate();
+  }
+
+  /**
+   * 验证值对象的有效性
+   * 实现基类的抽象方法
+   *
+   * 注意：由于值只能通过 base() 和 feature() 静态工厂方法创建，
+   * 且 fromString() 方法已经做了验证，所以这个方法实际上永远不会抛出异常。
+   * 保留此方法是为了符合 ValueObject 基类的抽象方法要求。
+   */
+  public validate(): void {
+    // 值对象总是有效的，因为只能通过静态工厂方法创建
+    // 此方法仅为了满足基类抽象方法的要求
   }
 
   /**

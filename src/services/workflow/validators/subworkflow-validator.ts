@@ -136,7 +136,7 @@ export class SubWorkflowValidator {
     result.standard = standard;
 
     // 6. 验证是否符合标准
-    const validationResult = standard.validate(
+    const validationResult = standard.validateSubWorkflow(
       entryNode!.inDegree,
       entryNode!.outDegree,
       exitNode!.inDegree,

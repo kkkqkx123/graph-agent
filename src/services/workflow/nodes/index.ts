@@ -20,9 +20,6 @@ export * from './context-processor-node';
 // 并行处理节点
 export * from './parallel';
 
-// 子工作流节点
-export * from './subgraph';
-
 // 工厂类
 export * from './node-factory';
 
