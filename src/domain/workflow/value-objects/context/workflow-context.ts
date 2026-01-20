@@ -1,7 +1,7 @@
 import { ValueObject } from '../../../common/value-objects';
-import { ExecutionState, ExecutionStatistics } from './execution-state';
+import { ExecutionState, ExecutionStatistics } from '../execution/execution-state';
 import { PromptState } from './prompt-state';
-import { NodeExecutionState } from './node-execution-state';
+import { NodeExecutionState } from '../execution/node-execution-state';
 import { PromptHistoryEntry } from './prompt-history-entry';
 
 /**
