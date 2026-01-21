@@ -11,7 +11,6 @@ import { PromptState } from '../../domain/workflow/value-objects/context';
 import {
   Thread,
   IThreadRepository,
-  ThreadExecutionContext,
   NodeExecutionSnapshot,
 } from '../../domain/threads';
 import {
@@ -62,7 +61,7 @@ export class ThreadFork {
     @inject(TYPES.ThreadRepository) private readonly threadRepository: IThreadRepository,
     @inject(TYPES.SessionRepository) private readonly sessionRepository: ISessionRepository,
     @inject(TYPES.Logger) private readonly logger: ILogger
-  ) {}
+  ) { }
 
   /**
    * 执行Fork操作

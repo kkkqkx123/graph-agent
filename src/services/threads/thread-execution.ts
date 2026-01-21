@@ -14,7 +14,6 @@
 
 import { injectable, inject } from 'inversify';
 import { Thread, IThreadRepository } from '../../domain/threads';
-import { IWorkflowRepository } from '../../domain/workflow';
 import { ILogger } from '../../domain/common';
 import { BaseService } from '../common/base-service';
 import { WorkflowExecutionEngine } from './workflow-execution-engine';
@@ -25,6 +24,7 @@ import { CheckpointCreation } from '../checkpoints/checkpoint-creation';
 import { ThreadConditionalRouter } from './thread-conditional-router';
 import { INodeExecutor } from '../workflow/nodes/node-executor';
 import { FunctionRegistry } from '../workflow/functions/function-registry';
+import { WorkflowManagement } from '../workflow/workflow-management';
 import { TYPES } from '../../di/service-keys';
 
 /**
@@ -59,7 +59,7 @@ export class ThreadExecution extends BaseService {
 
   constructor(
     @inject(TYPES.ThreadRepository) private readonly threadRepository: IThreadRepository,
-    @inject(TYPES.WorkflowRepository) private readonly workflowRepository: IWorkflowRepository,
+    @inject(TYPES.WorkflowManagement) private readonly workflowManagement: WorkflowManagement,
     @inject(TYPES.NodeExecutor) private readonly nodeExecutor: INodeExecutor,
     @inject(TYPES.Logger) logger: ILogger,
     @inject(TYPES.FunctionRegistry) private readonly functionRegistry: FunctionRegistry,
@@ -116,11 +116,10 @@ export class ThreadExecution extends BaseService {
           throw new Error(`只能执行待执行状态的线程，当前状态: ${thread.status}`);
         }
 
-        // 获取工作流
-        const workflow = await this.workflowRepository.findById(thread.workflowId);
-        if (!workflow) {
-          throw new Error(`工作流不存在: ${thread.workflowId.toString()}`);
-        }
+        // 通过 WorkflowManagement 获取已合并的可执行 workflow
+        const workflow = await this.workflowManagement.getExecutableWorkflow(
+          thread.workflowId.toString()
+        );
 
         // 验证工作流状态
         if (!workflow.status.isActive()) {
@@ -267,11 +266,10 @@ export class ThreadExecution extends BaseService {
           throw new Error(`只能恢复暂停或失败状态的线程，当前状态: ${thread.status}`);
         }
 
-        // 获取工作流
-        const workflow = await this.workflowRepository.findById(thread.workflowId);
-        if (!workflow) {
-          throw new Error(`工作流不存在: ${thread.workflowId.toString()}`);
-        }
+        // 通过 WorkflowManagement 获取已合并的可执行 workflow
+        const workflow = await this.workflowManagement.getExecutableWorkflow(
+          thread.workflowId.toString()
+        );
 
         // 验证工作流状态
         if (!workflow.status.isActive()) {

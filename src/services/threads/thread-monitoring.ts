@@ -12,8 +12,8 @@
  */
 
 import { injectable, inject } from 'inversify';
-import { Thread, IThreadRepository } from '../../domain/threads';
-import { ID, ILogger, Timestamp } from '../../domain/common';
+import { IThreadRepository } from '../../domain/threads';
+import { ILogger, Timestamp } from '../../domain/common';
 import { BaseService } from '../common/base-service';
 import { MonitoringService } from '../workflow/monitoring';
 import { TYPES } from '../../di/service-keys';

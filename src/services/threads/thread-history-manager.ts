@@ -1,6 +1,5 @@
 import { injectable } from 'inversify';
 import { ID } from '../../domain/common/value-objects';
-import { ExecutionHistory } from '../../domain/workflow/value-objects/execution';
 
 /**
  * 执行历史记录接口

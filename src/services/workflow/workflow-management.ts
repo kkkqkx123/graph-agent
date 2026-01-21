@@ -7,22 +7,13 @@
 
 import { injectable, inject } from 'inversify';
 import { Workflow, IWorkflowRepository, WorkflowType, WorkflowQueryFilter, PaginationParams } from '../../domain/workflow';
-import { ID, ILogger } from '../../domain/common';
+import { ILogger } from '../../domain/common';
 import { BaseService } from '../common/base-service';
 import { WorkflowDTO, mapWorkflowToDTO, mapWorkflowsToDTOs } from './dtos/workflow-dto';
 import { WorkflowMerger } from './workflow-merger';
 import { SubWorkflowValidator, SubWorkflowValidationResult } from './validators/subworkflow-validator';
-import { SubWorkflowType } from '../../domain/workflow/value-objects/subworkflow-type';
-import { WorkflowReference } from '../../domain/workflow/value-objects/workflow-reference';
-import { NodeId } from '../../domain/workflow/value-objects/node/node-id';
-import { NodeType, NodeContextTypeValue } from '../../domain/workflow/value-objects/node/node-type';
-import { EdgeId, EdgeType } from '../../domain/workflow/value-objects/edge';
 import { WorkflowConfig } from '../../domain/workflow/value-objects/workflow-config';
-import { ErrorHandlingStrategy } from '../../domain/workflow/value-objects/error-handling-strategy';
-import { ExecutionStrategy } from '../../domain/workflow/value-objects/execution/execution-strategy';
 import { WorkflowStatus } from '../../domain/workflow/value-objects/workflow-status';
-import { Version } from '../../domain/common/value-objects/version';
-import { Timestamp } from '../../domain/common/value-objects/timestamp';
 
 /**
  * 更新工作流参数
@@ -176,12 +167,12 @@ export class WorkflowManagement extends BaseService {
    * @returns 创建的工作流DTO
    */
   async createWorkflow(params: CreateWorkflowParams): Promise<WorkflowDTO> {
-    return this.executeCreateOperation(
+    return this.executeUpdateOperation(
       '工作流',
       async () => {
         const createdBy = this.parseOptionalId(params.createdBy, '创建者ID');
-        
-        const workflow = Workflow.create(
+
+        let workflow = Workflow.create(
           params.name,
           params.description,
           params.type ? this.parseWorkflowType(params.type) : undefined,
@@ -202,7 +193,7 @@ export class WorkflowManagement extends BaseService {
         }
 
         const savedWorkflow = await this.workflowRepository.save(workflow);
-        
+
         this.logger.info('工作流创建成功', {
           workflowId: savedWorkflow.workflowId.toString(),
           name: savedWorkflow.name
@@ -224,7 +215,7 @@ export class WorkflowManagement extends BaseService {
       '工作流',
       async () => {
         const workflowId = this.parseId(params.workflowId, '工作流ID');
-        const workflow = await this.workflowRepository.findByIdOrFail(workflowId);
+        let workflow = await this.workflowRepository.findByIdOrFail(workflowId);
 
         if (!workflow.status.canEdit()) {
           throw new Error('只能编辑草稿状态的工作流');
@@ -278,7 +269,7 @@ export class WorkflowManagement extends BaseService {
 
         if (params.permanent) {
           // 硬删除
-          await this.workflowRepository.delete(workflowId);
+          await this.workflowRepository.delete(workflow);
           this.logger.warn('工作流已永久删除', { workflowId: workflowId.toString() });
         } else {
           // 软删除
@@ -299,12 +290,12 @@ export class WorkflowManagement extends BaseService {
    * @returns 复制后的工作流DTO
    */
   async duplicateWorkflow(params: DuplicateWorkflowParams): Promise<WorkflowDTO> {
-    return this.executeCreateOperation(
+    return this.executeUpdateOperation(
       '工作流副本',
       async () => {
         const workflowId = this.parseId(params.workflowId, '工作流ID');
         const userId = this.parseOptionalId(params.userId, '用户ID');
-        
+
         const originalWorkflow = await this.workflowRepository.findByIdOrFail(workflowId);
 
         let duplicatedWorkflow = Workflow.create(
@@ -343,12 +334,12 @@ export class WorkflowManagement extends BaseService {
         for (const tag of originalWorkflow.tags) {
           duplicatedWorkflow = duplicatedWorkflow.addTag(tag, userId);
         }
-        
+
         // 复制元数据
         duplicatedWorkflow = duplicatedWorkflow.updateMetadata(originalWorkflow.metadata, userId);
 
         const savedWorkflow = await this.workflowRepository.save(duplicatedWorkflow);
-        
+
         this.logger.info('工作流复制成功', {
           originalId: params.workflowId,
           newId: savedWorkflow.workflowId.toString()
@@ -541,7 +532,7 @@ export class WorkflowManagement extends BaseService {
       async () => {
         // 使用仓储层的搜索能力
         let workflows: Workflow[] = [];
-        
+
         switch (params.searchIn) {
           case 'name':
             workflows = await this.workflowRepository.searchByName(params.keyword);
@@ -556,7 +547,7 @@ export class WorkflowManagement extends BaseService {
               this.workflowRepository.searchByName(params.keyword),
               this.workflowRepository.searchByDescription(params.keyword)
             ]);
-            
+
             // 使用 Map 去重，比 filter 更高效
             const workflowMap = new Map<string, Workflow>();
             [...nameResults, ...descResults].forEach(wf => {
@@ -611,6 +602,40 @@ export class WorkflowManagement extends BaseService {
         });
 
         return validationResult;
+      },
+      { workflowId }
+    );
+  }
+
+  /**
+   * 获取可执行的工作流（已合并子工作流）
+   * @param workflowId 工作流ID
+   * @returns 合并后的工作流
+   */
+  async getExecutableWorkflow(workflowId: string): Promise<Workflow> {
+    return this.executeBusinessOperation(
+      '获取可执行工作流',
+      async () => {
+        this.logger.info('开始获取可执行工作流', { workflowId });
+
+        const id = this.parseId(workflowId, '工作流ID');
+
+        // 获取原始 workflow
+        const workflow = await this.workflowRepository.findByIdOrFail(id);
+
+        // 合并 workflow
+        const mergeResult = await this.workflowMerger.mergeWorkflow(workflow);
+        const mergedWorkflow = mergeResult.mergedWorkflow;
+
+        // 记录合并信息
+        this.logger.info('工作流合并完成', {
+          workflowId: workflow.workflowId.toString(),
+          originalNodeCount: mergeResult.statistics.originalNodeCount,
+          mergedNodeCount: mergeResult.statistics.mergedNodeCount,
+          subWorkflowCount: mergeResult.statistics.subWorkflowCount,
+        });
+
+        return mergedWorkflow;
       },
       { workflowId }
     );

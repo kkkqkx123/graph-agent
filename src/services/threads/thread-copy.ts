@@ -12,7 +12,6 @@ import {
   ISessionRepository,
   CopyStrategy,
   CopyOptions,
-  CopyScope,
   CopyContext,
   ThreadOperationResult,
   ThreadOperationMetadata,
