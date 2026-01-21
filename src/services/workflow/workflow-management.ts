@@ -10,12 +10,10 @@ import { Workflow, IWorkflowRepository } from '../../domain/workflow';
 import { ID, ILogger } from '../../domain/common';
 import { BaseService } from '../common/base-service';
 import { WorkflowDTO, mapWorkflowToDTO, mapWorkflowsToDTOs } from './dtos/workflow-dto';
-import { WorkflowConfigLoader } from '../../infrastructure/config/loading/workflow-config-loader';
 import { WorkflowMerger } from './workflow-merger';
 import { SubWorkflowValidator, SubWorkflowValidationResult } from './validators/subworkflow-validator';
 import { SubWorkflowType } from '../../domain/workflow/value-objects/subworkflow-type';
-import { LLMNode } from './nodes/llm-node';
-import { ToolCallNode } from './nodes/tool-call-node';
+import { WorkflowReference } from '../../domain/workflow/value-objects/workflow-reference';
 import { NodeId } from '../../domain/workflow/value-objects/node/node-id';
 import { NodeType, NodeContextTypeValue } from '../../domain/workflow/value-objects/node/node-type';
 import { EdgeId, EdgeType } from '../../domain/workflow/value-objects/edge';
@@ -64,6 +62,37 @@ export interface BatchUpdateWorkflowStatusParams {
   status: string;
   userId?: string;
   reason?: string;
+}
+
+/**
+ * 创建工作流参数
+ */
+export interface CreateWorkflowParams {
+  name: string;
+  description?: string;
+  type?: string;
+  config?: Record<string, any>;
+  metadata?: Record<string, unknown>;
+  tags?: string[];
+  createdBy?: string;
+}
+
+/**
+ * 删除工作流参数
+ */
+export interface DeleteWorkflowParams {
+  workflowId: string;
+  userId?: string;
+  permanent?: boolean;
+}
+
+/**
+ * 复制工作流参数
+ */
+export interface DuplicateWorkflowParams {
+  workflowId: string;
+  newName?: string;
+  userId?: string;
 }
 
 /**
@@ -127,7 +156,6 @@ export interface WorkflowListResult {
 export class WorkflowManagement extends BaseService {
   constructor(
     @inject('WorkflowRepository') private readonly workflowRepository: IWorkflowRepository,
-    @inject('WorkflowConfigLoader') private readonly configLoader: WorkflowConfigLoader,
     @inject('WorkflowMerger') private readonly workflowMerger: WorkflowMerger,
     @inject('SubWorkflowValidator') private readonly subWorkflowValidator: SubWorkflowValidator,
     @inject('Logger') logger: ILogger
@@ -140,6 +168,50 @@ export class WorkflowManagement extends BaseService {
    */
   protected getServiceName(): string {
     return '工作流管理服务';
+  }
+
+  /**
+   * 创建工作流
+   * @param params 创建工作流参数
+   * @returns 创建的工作流DTO
+   */
+  async createWorkflow(params: CreateWorkflowParams): Promise<WorkflowDTO> {
+    return this.executeCreateOperation(
+      '工作流',
+      async () => {
+        const createdBy = this.parseOptionalId(params.createdBy, '创建者ID');
+        
+        const workflow = Workflow.create(
+          params.name,
+          params.description,
+          params.type ? this.parseWorkflowType(params.type) : undefined,
+          params.config ? this.parseWorkflowConfig(params.config) : undefined,
+          createdBy
+        );
+
+        // 添加标签
+        if (params.tags) {
+          for (const tag of params.tags) {
+            workflow = workflow.addTag(tag, createdBy);
+          }
+        }
+
+        // 更新元数据
+        if (params.metadata) {
+          workflow = workflow.updateMetadata(params.metadata, createdBy);
+        }
+
+        const savedWorkflow = await this.workflowRepository.save(workflow);
+        
+        this.logger.info('工作流创建成功', {
+          workflowId: savedWorkflow.workflowId.toString(),
+          name: savedWorkflow.name
+        });
+
+        return mapWorkflowToDTO(savedWorkflow);
+      },
+      { name: params.name }
+    );
   }
 
   /**
@@ -162,23 +234,23 @@ export class WorkflowManagement extends BaseService {
 
         // 更新名称
         if (params.name !== undefined) {
-          workflow.updateName(params.name, userId);
+          workflow = workflow.updateName(params.name, userId);
         }
 
         // 更新描述
         if (params.description !== undefined) {
-          workflow.updateDescription(params.description, userId);
+          workflow = workflow.updateDescription(params.description, userId);
         }
 
         // 更新配置
         if (params.config !== undefined) {
-          const config = params.config as any;
-          workflow.updateConfig(config, userId);
+          const config = this.parseWorkflowConfig(params.config);
+          workflow = workflow.updateConfig(config, userId);
         }
 
         // 更新元数据
         if (params.metadata !== undefined) {
-          workflow.updateMetadata(params.metadata, userId);
+          workflow = workflow.updateMetadata(params.metadata, userId);
         }
 
         // 保存工作流
@@ -187,6 +259,104 @@ export class WorkflowManagement extends BaseService {
         return mapWorkflowToDTO(updatedWorkflow);
       },
       { workflowId: params.workflowId }
+    );
+  }
+
+  /**
+   * 删除工作流
+   * @param params 删除工作流参数
+   * @returns 删除是否成功
+   */
+  async deleteWorkflow(params: DeleteWorkflowParams): Promise<boolean> {
+    return this.executeDeleteOperation(
+      '工作流',
+      async () => {
+        const workflowId = this.parseId(params.workflowId, '工作流ID');
+        const userId = this.parseOptionalId(params.userId, '用户ID');
+
+        const workflow = await this.workflowRepository.findByIdOrFail(workflowId);
+
+        if (params.permanent) {
+          // 硬删除
+          await this.workflowRepository.delete(workflowId);
+          this.logger.warn('工作流已永久删除', { workflowId: workflowId.toString() });
+        } else {
+          // 软删除
+          const deletedWorkflow = workflow.markAsDeleted();
+          await this.workflowRepository.save(deletedWorkflow);
+          this.logger.info('工作流已软删除', { workflowId: workflowId.toString() });
+        }
+
+        return true;
+      },
+      { workflowId: params.workflowId, permanent: params.permanent }
+    );
+  }
+
+  /**
+   * 复制工作流
+   * @param params 复制工作流参数
+   * @returns 复制后的工作流DTO
+   */
+  async duplicateWorkflow(params: DuplicateWorkflowParams): Promise<WorkflowDTO> {
+    return this.executeCreateOperation(
+      '工作流副本',
+      async () => {
+        const workflowId = this.parseId(params.workflowId, '工作流ID');
+        const userId = this.parseOptionalId(params.userId, '用户ID');
+        
+        const originalWorkflow = await this.workflowRepository.findByIdOrFail(workflowId);
+
+        let duplicatedWorkflow = Workflow.create(
+          params.newName || `${originalWorkflow.name} (副本)`,
+          originalWorkflow.description,
+          originalWorkflow.type,
+          originalWorkflow.config,
+          userId
+        );
+
+        // 复制节点
+        for (const node of originalWorkflow.getNodes().values()) {
+          duplicatedWorkflow = duplicatedWorkflow.addNode(node, userId);
+        }
+
+        // 复制边
+        for (const edge of originalWorkflow.getEdges().values()) {
+          duplicatedWorkflow = duplicatedWorkflow.addEdge(
+            edge.id,
+            edge.type,
+            edge.fromNodeId,
+            edge.toNodeId,
+            edge.condition,
+            edge.weight,
+            edge.properties,
+            userId
+          );
+        }
+
+        // 复制子工作流引用
+        for (const reference of originalWorkflow.getSubWorkflowReferences().values()) {
+          duplicatedWorkflow = duplicatedWorkflow.addSubWorkflowReference(reference, userId);
+        }
+
+        // 复制标签
+        for (const tag of originalWorkflow.tags) {
+          duplicatedWorkflow = duplicatedWorkflow.addTag(tag, userId);
+        }
+        
+        // 复制元数据
+        duplicatedWorkflow = duplicatedWorkflow.updateMetadata(originalWorkflow.metadata, userId);
+
+        const savedWorkflow = await this.workflowRepository.save(duplicatedWorkflow);
+        
+        this.logger.info('工作流复制成功', {
+          originalId: params.workflowId,
+          newId: savedWorkflow.workflowId.toString()
+        });
+
+        return mapWorkflowToDTO(savedWorkflow);
+      },
+      { originalWorkflowId: params.workflowId, newName: params.newName }
     );
   }
 
@@ -205,10 +375,10 @@ export class WorkflowManagement extends BaseService {
         const workflow = await this.workflowRepository.findByIdOrFail(workflowId);
 
         // 添加标签
-        workflow.addTag(params.tag, userId);
+        const updatedWorkflow = workflow.addTag(params.tag, userId);
 
         // 保存工作流
-        const savedWorkflow = await this.workflowRepository.save(workflow);
+        const savedWorkflow = await this.workflowRepository.save(updatedWorkflow);
 
         return mapWorkflowToDTO(savedWorkflow);
       },
@@ -231,10 +401,10 @@ export class WorkflowManagement extends BaseService {
         const workflow = await this.workflowRepository.findByIdOrFail(workflowId);
 
         // 移除标签
-        workflow.removeTag(params.tag, userId);
+        const updatedWorkflow = workflow.removeTag(params.tag, userId);
 
         // 保存工作流
-        const savedWorkflow = await this.workflowRepository.save(workflow);
+        const savedWorkflow = await this.workflowRepository.save(updatedWorkflow);
 
         return mapWorkflowToDTO(savedWorkflow);
       },
@@ -380,85 +550,48 @@ export class WorkflowManagement extends BaseService {
     return this.executeQueryOperation(
       '工作流搜索',
       async () => {
-        // 根据搜索范围构建查询
+        // 使用仓储层的搜索能力
         let workflows: Workflow[] = [];
-
-        if (params.searchIn === 'name' || params.searchIn === 'all') {
-          const nameResults = await this.workflowRepository.searchByName(params.keyword);
-          workflows = workflows.concat(nameResults);
+        
+        switch (params.searchIn) {
+          case 'name':
+            workflows = await this.workflowRepository.searchByName(params.keyword);
+            break;
+          case 'description':
+            workflows = await this.workflowRepository.searchByDescription(params.keyword);
+            break;
+          case 'all':
+          default:
+            // 并行搜索名称和描述
+            const [nameResults, descResults] = await Promise.all([
+              this.workflowRepository.searchByName(params.keyword),
+              this.workflowRepository.searchByDescription(params.keyword)
+            ]);
+            
+            // 使用 Map 去重，比 filter 更高效
+            const workflowMap = new Map<string, Workflow>();
+            [...nameResults, ...descResults].forEach(wf => {
+              workflowMap.set(wf.workflowId.toString(), wf);
+            });
+            workflows = Array.from(workflowMap.values());
+            break;
         }
-
-        if (params.searchIn === 'description' || params.searchIn === 'all') {
-          const descResults = await this.workflowRepository.searchByDescription(params.keyword);
-          workflows = workflows.concat(descResults);
-        }
-
-        // 去重
-        const uniqueWorkflows = workflows.filter(
-          (workflow, index, self) =>
-            index === self.findIndex(w => w.workflowId.equals(workflow.workflowId))
-        );
 
         // 应用分页
         const page = params.pagination?.page || 1;
         const size = params.pagination?.size || 20;
         const startIndex = (page - 1) * size;
         const endIndex = startIndex + size;
-        const paginatedWorkflows = uniqueWorkflows.slice(startIndex, endIndex);
+        const paginatedWorkflows = workflows.slice(startIndex, endIndex);
 
-        const result: WorkflowListResult = {
+        return {
           workflows: mapWorkflowsToDTOs(paginatedWorkflows),
-          total: uniqueWorkflows.length,
+          total: workflows.length,
           page,
-          size: paginatedWorkflows.length,
+          size: paginatedWorkflows.length
         };
-
-        return result;
       },
       { keyword: params.keyword, searchIn: params.searchIn }
-    );
-  }
-
-  /**
-   * 加载工作流（包括子工作流合并）
-   * @param workflowId 工作流ID
-   * @param parameters 参数值（可选）
-   * @returns 工作流实例
-   */
-  async loadWorkflow(workflowId: string, parameters?: Record<string, any>): Promise<Workflow> {
-    return this.executeBusinessOperation(
-      '工作流加载',
-      async () => {
-        this.logger.info('开始加载工作流', { workflowId, parameters: parameters ? Object.keys(parameters) : [] });
-
-        // 1. 加载工作流配置
-        const config = await this.configLoader.loadWorkflowConfig(workflowId, parameters);
-        this.logger.debug('工作流配置加载完成', { workflowId });
-
-        // 2. 转换为Workflow对象
-        const workflow = this.convertConfigToWorkflow(config);
-        this.logger.debug('工作流对象创建完成', { workflowId });
-
-        // 3. 检查是否有子工作流引用
-        const subWorkflowRefs = workflow.getSubWorkflowReferences();
-
-        if (subWorkflowRefs.size > 0) {
-          this.logger.info('工作流包含子工作流引用，开始合并', {
-            workflowId,
-            subWorkflowCount: subWorkflowRefs.size
-          });
-
-          // 4. 递归合并子工作流
-          const mergeResult = await this.workflowMerger.mergeWorkflow(workflow);
-          this.logger.info('子工作流合并完成', { workflowId });
-
-          return mergeResult.mergedWorkflow;
-        }
-
-        this.logger.info('工作流加载完成（无子工作流）', { workflowId });
-        return workflow;
-      },
-      { workflowId, hasParameters: !!parameters }
     );
   }
 
@@ -473,9 +606,9 @@ export class WorkflowManagement extends BaseService {
       async () => {
         this.logger.info('开始验证子工作流标准', { workflowId });
 
-        // 1. 加载工作流
-        const workflow = await this.loadWorkflow(workflowId);
-        this.logger.debug('工作流加载完成', { workflowId });
+        // 1. 获取工作流
+        const id = this.parseId(workflowId, '工作流ID');
+        const workflow = await this.workflowRepository.findByIdOrFail(id);
 
         // 2. 验证子工作流标准
         const validationResult = await this.subWorkflowValidator.validate(workflow);
@@ -495,128 +628,6 @@ export class WorkflowManagement extends BaseService {
   }
 
   /**
-   * 将配置转换为Workflow对象
-   * @param config 工作流配置
-   * @returns Workflow实例
-   */
-  private convertConfigToWorkflow(config: any): Workflow {
-    try {
-      const workflowConfig = config.workflow;
-
-      // 1. 创建Workflow实例
-      const workflow = Workflow.create(
-        workflowConfig.name,
-        workflowConfig.description
-      );
-
-      // 2. 设置子工作流类型（如果配置中指定）
-      if (workflowConfig.type === 'base' || workflowConfig.type === 'feature') {
-        const subWorkflowType = workflowConfig.type === 'base'
-          ? SubWorkflowType.base()
-          : SubWorkflowType.feature();
-        workflow.setSubWorkflowType(subWorkflowType);
-      }
-
-      // 3. 添加节点
-      for (const nodeConfig of workflowConfig.nodes || []) {
-        const node = this.createNodeFromConfig(nodeConfig);
-        workflow.addNode(node);
-      }
-
-      // 4. 添加边
-      for (const edgeConfig of workflowConfig.edges || []) {
-        const edgeId = EdgeId.fromString(`${edgeConfig.from}_${edgeConfig.to}`);
-        const edgeType = EdgeType.default();
-        const fromNodeId = NodeId.fromString(edgeConfig.from);
-        const toNodeId = NodeId.fromString(edgeConfig.to);
-
-        // 构建条件对象
-        let condition;
-        if (edgeConfig.condition) {
-          condition = {
-            type: 'function' as const,
-            functionId: edgeConfig.condition
-          };
-        }
-
-        workflow.addEdge(
-          edgeId,
-          edgeType,
-          fromNodeId,
-          toNodeId,
-          condition,
-          edgeConfig.weight,
-          edgeConfig.properties
-        );
-      }
-
-      this.logger.debug('配置转换为Workflow对象完成', {
-        workflowId: workflowConfig.id,
-        nodeCount: workflowConfig.nodes?.length || 0,
-        edgeCount: workflowConfig.edges?.length || 0,
-        subWorkflowType: workflowConfig.type
-      });
-
-      return workflow;
-    } catch (error) {
-      this.logger.error('配置转换失败', error as Error);
-      throw new Error(`配置转换为Workflow对象失败: ${(error as Error).message}`);
-    }
-  }
-
-  /**
-   * 根据配置创建节点
-   * @param nodeConfig 节点配置
-   * @returns Node实例
-   */
-  private createNodeFromConfig(nodeConfig: any): any {
-    const nodeId = NodeId.fromString(nodeConfig.id);
-    const nodeType = nodeConfig.type;
-    const config = nodeConfig.config || {};
-
-    switch (nodeType) {
-      case 'llm':
-        return new LLMNode(
-          nodeId,
-          config.wrapper_name || 'openai',
-          config.prompt || { type: 'direct', content: '' },
-          config.system_prompt,
-          config.context_processor_name || 'llm',
-          config.temperature,
-          config.max_tokens,
-          config.stream || false,
-          nodeConfig.name,
-          nodeConfig.description,
-          nodeConfig.position
-        );
-
-      case 'tool':
-        return new ToolCallNode(
-          nodeId,
-          config.tool_name || '',
-          config.tool_parameters || {},
-          config.timeout || 30000,
-          nodeConfig.name,
-          nodeConfig.description,
-          nodeConfig.position
-        );
-
-      default:
-        // 对于其他节点类型，创建通用节点
-        const { Node } = require('../../domain/workflow/entities/node');
-        const nodeTypeVO = NodeType.fromString(nodeType, NodeContextTypeValue.PASS_THROUGH);
-
-        return Node.create(
-          nodeId,
-          nodeTypeVO,
-          nodeConfig.name || nodeType,
-          nodeConfig.description || '',
-          config
-        );
-    }
-  }
-
-  /**
    * 解析工作流状态
    */
   private parseWorkflowStatus(status: string) {
@@ -630,5 +641,13 @@ export class WorkflowManagement extends BaseService {
   private parseWorkflowType(type: string) {
     const { WorkflowType } = require('../../domain/workflow');
     return WorkflowType.fromString(type);
+  }
+
+  /**
+   * 解析工作流配置
+   */
+  private parseWorkflowConfig(config: Record<string, any>) {
+    const { WorkflowConfig } = require('../../domain/workflow');
+    return WorkflowConfig.create(config);
   }
 }
