@@ -1,5 +1,5 @@
 /**
- * 应用程序主类
+ * 应用程序主类(sdk不需要使用该类启动)
  */
 
 import { AppContainer } from '../../di/container';
