@@ -1,8 +1,8 @@
 /**
- * 工作流配置转换器
+ * 工作流构建器
  *
- * 负责将配置数据转换为 Workflow 领域对象
- * 遵循单一职责原则，专注于配置转换逻辑
+ * 负责从配置数据构建 Workflow 实例
+ * 遵循单一职责原则，专注于工作流构建逻辑
  */
 
 import { injectable, inject } from 'inversify';
@@ -11,80 +11,28 @@ import {
   WorkflowType,
   WorkflowStatus,
   WorkflowConfig,
-  ErrorHandlingStrategy,
-  ExecutionStrategy,
   NodeId,
-  NodeType,
   EdgeId,
   EdgeType,
-  WorkflowReference,
-  NodeContextTypeValue
 } from '../../domain/workflow';
 import { ID } from '../../domain/common';
 import { BaseService } from '../common/base-service';
 import { ILogger } from '../../domain/common';
-import { NodeFactory, NodeConfig } from './node-factory';
+import { NodeFactory, NodeConfig } from './nodes/node-factory';
+import {
+  WorkflowConfigData,
+  EdgeConfig,
+  SubWorkflowReferenceConfig,
+} from './config-parser';
+import { WorkflowReference } from '../../domain/workflow/value-objects/workflow-reference';
+import { ErrorHandlingStrategy } from '../../domain/workflow/value-objects/error-handling-strategy';
+import { ExecutionStrategy } from '../../domain/workflow/value-objects/execution/execution-strategy';
 
 /**
- * 工作流配置数据接口
- */
-export interface WorkflowConfigData {
-  workflow: {
-    id?: string;
-    name: string;
-    description?: string;
-    type?: string;
-    status?: string;
-    config?: Record<string, any>;
-    errorHandlingStrategy?: string;
-    executionStrategy?: string;
-    nodes: NodeConfig[];
-    edges: EdgeConfig[];
-    subWorkflowReferences?: SubWorkflowReferenceConfig[];
-    tags?: string[];
-    metadata?: Record<string, unknown>;
-  };
-}
-
-/**
- * 边配置接口
- */
-export interface EdgeConfig {
-  from: string;
-  to: string;
-  type?: string;
-  condition?: EdgeConditionConfig;
-  weight?: number;
-  properties?: Record<string, unknown>;
-}
-
-/**
- * 边条件配置接口
- */
-export interface EdgeConditionConfig {
-  type: 'function' | 'expression' | 'script';
-  value: string;
-  parameters?: Record<string, any>;
-  language?: string;
-}
-
-/**
- * 子工作流引用配置接口
- */
-export interface SubWorkflowReferenceConfig {
-  referenceId: string;
-  workflowId: string;
-  version?: string;
-  inputMapping?: Record<string, string>;
-  outputMapping?: Record<string, string>;
-  description?: string;
-}
-
-/**
- * 工作流配置转换器
+ * 工作流构建器
  */
 @injectable()
-export class WorkflowConfigConverter extends BaseService {
+export class WorkflowBuilder extends BaseService {
   constructor(
     @inject('NodeFactory') private readonly nodeFactory: NodeFactory,
     @inject('Logger') logger: ILogger
@@ -93,26 +41,25 @@ export class WorkflowConfigConverter extends BaseService {
   }
 
   /**
-   * 转换配置数据为 Workflow 对象
+   * 从配置数据构建 Workflow 实例
    * @param configData 配置数据
-   * @param parameters 参数值（可选）
    * @returns Workflow 实例
    */
-  convert(configData: WorkflowConfigData, parameters?: Record<string, any>): Workflow {
+  async build(configData: WorkflowConfigData): Promise<Workflow> {
     return this.executeBusinessOperation(
-      '转换工作流配置',
-      () => this.doConvert(configData, parameters),
+      '构建工作流',
+      () => this.doBuild(configData),
       { workflowName: configData.workflow.name }
     );
   }
 
   /**
-   * 执行实际的转换逻辑
+   * 执行实际的构建逻辑
    */
-  private doConvert(configData: WorkflowConfigData, parameters?: Record<string, any>): Workflow {
+  private async doBuild(configData: WorkflowConfigData): Promise<Workflow> {
     const workflowConfig = configData.workflow;
 
-    // 1. 创建工作流基本实例
+    // 1. 创建工作流实例
     let workflow = Workflow.create(
       workflowConfig.name,
       workflowConfig.description,
@@ -127,20 +74,16 @@ export class WorkflowConfigConverter extends BaseService {
       workflow = workflow.changeStatus(status);
     }
 
-    // 3. 设置错误处理策略
+    // 3. 设置错误处理策略（通过元数据）
     if (workflowConfig.errorHandlingStrategy) {
       const strategy = this.parseErrorHandlingStrategy(workflowConfig.errorHandlingStrategy);
-      const currentConfig = workflow.config;
-      const newConfig = currentConfig.updateErrorHandlingStrategy(strategy);
-      workflow = workflow.updateConfig(newConfig);
+      workflow = workflow.updateMetadata({ errorHandlingStrategy: strategy.toString() });
     }
 
-    // 4. 设置执行策略
+    // 4. 设置执行策略（通过元数据）
     if (workflowConfig.executionStrategy) {
       const strategy = this.parseExecutionStrategy(workflowConfig.executionStrategy);
-      const currentConfig = workflow.config;
-      const newConfig = currentConfig.updateExecutionStrategy(strategy);
-      workflow = workflow.updateConfig(newConfig);
+      workflow = workflow.updateMetadata({ executionStrategy: strategy.toString() });
     }
 
     // 5. 添加节点
@@ -151,22 +94,7 @@ export class WorkflowConfigConverter extends BaseService {
 
     // 6. 添加边
     for (const edgeConfig of workflowConfig.edges || []) {
-      const edgeId = EdgeId.fromString(`${edgeConfig.from}_${edgeConfig.to}`);
-      const edgeType = EdgeType.fromString(edgeConfig.type || 'default');
-      const fromNodeId = NodeId.fromString(edgeConfig.from);
-      const toNodeId = NodeId.fromString(edgeConfig.to);
-
-      const condition = this.parseEdgeCondition(edgeConfig.condition);
-
-      workflow = workflow.addEdge(
-        edgeId,
-        edgeType,
-        fromNodeId,
-        toNodeId,
-        condition,
-        edgeConfig.weight,
-        edgeConfig.properties
-      );
+      workflow = this.addEdge(workflow, edgeConfig);
     }
 
     // 7. 添加子工作流引用
@@ -178,7 +106,7 @@ export class WorkflowConfigConverter extends BaseService {
           version: refConfig.version,
           inputMapping: new Map(Object.entries(refConfig.inputMapping || {})),
           outputMapping: new Map(Object.entries(refConfig.outputMapping || {})),
-          description: refConfig.description
+          description: refConfig.description,
         });
 
         workflow = workflow.addSubWorkflowReference(reference);
@@ -197,11 +125,11 @@ export class WorkflowConfigConverter extends BaseService {
       workflow = workflow.updateMetadata(workflowConfig.metadata);
     }
 
-    this.logger.debug('配置转换完成', {
+    this.logger.debug('工作流构建完成', {
       workflowId: workflow.workflowId.toString(),
       nodeCount: workflow.getNodeCount(),
       edgeCount: workflow.getEdgeCount(),
-      subWorkflowRefCount: workflow.getSubWorkflowReferences().size
+      subWorkflowRefCount: workflow.getSubWorkflowReferences().size,
     });
 
     return workflow;
@@ -238,33 +166,88 @@ export class WorkflowConfigConverter extends BaseService {
    * 解析错误处理策略
    */
   private parseErrorHandlingStrategy(strategy: string): ErrorHandlingStrategy {
-    return ErrorHandlingStrategy.fromString(strategy);
+    switch (strategy) {
+      case 'stop_on_error':
+        return ErrorHandlingStrategy.stopOnError();
+      case 'continue_on_error':
+        return ErrorHandlingStrategy.continueOnError();
+      case 'retry':
+        return ErrorHandlingStrategy.retry(3, 1000);
+      case 'skip':
+        return ErrorHandlingStrategy.skip();
+      default:
+        return ErrorHandlingStrategy.stopOnError();
+    }
   }
 
   /**
    * 解析执行策略
    */
   private parseExecutionStrategy(strategy: string): ExecutionStrategy {
-    return ExecutionStrategy.fromString(strategy);
+    switch (strategy) {
+      case 'sequential':
+        return ExecutionStrategy.sequential();
+      case 'parallel':
+        return ExecutionStrategy.parallel();
+      case 'conditional':
+        return ExecutionStrategy.conditional('true');
+      default:
+        return ExecutionStrategy.sequential();
+    }
+  }
+
+  /**
+   * 添加边到工作流
+   */
+  private addEdge(workflow: Workflow, edgeConfig: EdgeConfig): Workflow {
+    const edgeId = EdgeId.fromString(`${edgeConfig.from}_${edgeConfig.to}`);
+    const edgeType = EdgeType.fromString(edgeConfig.type || 'default');
+    const fromNodeId = NodeId.fromString(edgeConfig.from);
+    const toNodeId = NodeId.fromString(edgeConfig.to);
+
+    const condition = this.parseEdgeCondition(edgeConfig.condition);
+
+    return workflow.addEdge(
+      edgeId,
+      edgeType,
+      fromNodeId,
+      toNodeId,
+      condition,
+      edgeConfig.weight,
+      edgeConfig.properties
+    );
   }
 
   /**
    * 解析边条件
    */
-  private parseEdgeCondition(conditionConfig?: EdgeConditionConfig) {
+  private parseEdgeCondition(conditionConfig?: EdgeConfig['condition']) {
     if (!conditionConfig) {
       return undefined;
     }
 
+    // 将配置条件转换为 EdgeCondition 格式
+    // EdgeCondition 只支持 function 类型
+    if (conditionConfig.type === 'function') {
+      return {
+        type: 'function' as const,
+        functionId: conditionConfig.value,
+        config: conditionConfig.parameters,
+      };
+    }
+
+    // 对于 expression 和 script 类型，转换为 function 类型
     return {
-      type: conditionConfig.type,
-      value: conditionConfig.value,
-      parameters: conditionConfig.parameters,
-      language: conditionConfig.language
+      type: 'function' as const,
+      functionId: conditionConfig.value,
+      config: {
+        ...conditionConfig.parameters,
+        language: conditionConfig.language,
+      },
     };
   }
 
   protected getServiceName(): string {
-    return '工作流配置转换器';
+    return '工作流构建器';
   }
 }

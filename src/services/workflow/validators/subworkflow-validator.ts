@@ -7,7 +7,7 @@
  * - 状态检查（无状态、无外部依赖）
  *
  * 设计原则：
- * - 完全基于图结构计算，不依赖配置文件中的标准声明
+ * - 完全基于图结构计算
  * - 静态分析，在加载时进行验证
  * - 自动确定工作流类型
  * - 使用domain层的SubWorkflowStandard值对象进行验证
@@ -58,7 +58,7 @@ export interface SubWorkflowValidationResult {
  */
 @injectable()
 export class SubWorkflowValidator {
-  constructor(@inject('Logger') private readonly logger: ILogger) {}
+  constructor(@inject('Logger') private readonly logger: ILogger) { }
 
   /**
    * 验证子工作流
