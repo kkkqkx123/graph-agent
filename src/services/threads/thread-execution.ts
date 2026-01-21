@@ -14,8 +14,8 @@
 
 import { injectable, inject } from 'inversify';
 import { Thread, IThreadRepository } from '../../domain/threads';
-import { Workflow, IWorkflowRepository } from '../../domain/workflow';
-import { ID, ILogger, Timestamp } from '../../domain/common';
+import { IWorkflowRepository } from '../../domain/workflow';
+import { ILogger } from '../../domain/common';
 import { BaseService } from '../common/base-service';
 import { WorkflowExecutionEngine } from './workflow-execution-engine';
 import { ThreadStateManager } from './thread-state-manager';
