@@ -6,7 +6,7 @@
  */
 
 import { injectable, inject } from 'inversify';
-import { Workflow, IWorkflowRepository } from '../../domain/workflow';
+import { Workflow, IWorkflowRepository, WorkflowType, WorkflowQueryFilter, PaginationParams } from '../../domain/workflow';
 import { ID, ILogger } from '../../domain/common';
 import { BaseService } from '../common/base-service';
 import { WorkflowDTO, mapWorkflowToDTO, mapWorkflowsToDTOs } from './dtos/workflow-dto';
@@ -470,54 +470,43 @@ export class WorkflowManagement extends BaseService {
     return this.executeQueryOperation(
       '工作流列表',
       async () => {
-        // 获取所有工作流
-        const allWorkflows = await this.workflowRepository.findAll();
-
-        // 应用过滤条件
-        let filteredWorkflows = allWorkflows;
+        // 构建查询过滤器
+        const filter: WorkflowQueryFilter = {};
 
         if (params.filters?.status) {
-          const status = this.parseWorkflowStatus(params.filters.status);
-          filteredWorkflows = allWorkflows.filter(wf => wf.status.equals(status));
+          filter.status = this.parseWorkflowStatus(params.filters.status);
         }
 
         if (params.filters?.type) {
-          const type = this.parseWorkflowType(params.filters.type);
-          filteredWorkflows = filteredWorkflows.filter(wf => wf.type.equals(type));
+          filter.type = this.parseWorkflowType(params.filters.type);
         }
 
         if (params.filters?.createdBy) {
-          const createdBy = this.parseId(params.filters.createdBy, '创建者ID');
-          filteredWorkflows = filteredWorkflows.filter(wf => wf.createdBy?.equals(createdBy));
+          filter.createdBy = this.parseId(params.filters.createdBy, '创建者ID');
         }
 
         if (params.filters?.name) {
-          filteredWorkflows = filteredWorkflows.filter(wf =>
-            wf.name.toLowerCase().includes(params.filters!.name!.toLowerCase())
-          );
+          filter.nameKeyword = params.filters.name;
         }
 
         if (params.filters?.tags && params.filters.tags.length > 0) {
-          filteredWorkflows = filteredWorkflows.filter(wf =>
-            params.filters!.tags!.some((tag: string) => wf.tags.includes(tag))
-          );
+          filter.tags = params.filters.tags;
         }
 
-        // 应用分页
+        // 构建分页参数
         const page = params.pagination?.page || 1;
         const size = params.pagination?.size || 20;
-        const startIndex = (page - 1) * size;
-        const endIndex = startIndex + size;
-        const paginatedWorkflows = filteredWorkflows.slice(startIndex, endIndex);
+        const pagination: PaginationParams = { page, size };
 
-        const result: WorkflowListResult = {
-          workflows: mapWorkflowsToDTOs(paginatedWorkflows),
-          total: filteredWorkflows.length,
-          page,
-          size: paginatedWorkflows.length,
+        // 使用仓储层的复合查询方法
+        const paginatedResult = await this.workflowRepository.queryWithFilter(filter, pagination);
+
+        return {
+          workflows: mapWorkflowsToDTOs(paginatedResult.items),
+          total: paginatedResult.total,
+          page: paginatedResult.page,
+          size: paginatedResult.size,
         };
-
-        return result;
       },
       { filters: params.filters, pagination: params.pagination }
     );
@@ -630,24 +619,21 @@ export class WorkflowManagement extends BaseService {
   /**
    * 解析工作流状态
    */
-  private parseWorkflowStatus(status: string) {
-    const { WorkflowStatus } = require('../../domain/workflow');
+  private parseWorkflowStatus(status: string): WorkflowStatus {
     return WorkflowStatus.fromString(status);
   }
 
   /**
    * 解析工作流类型
    */
-  private parseWorkflowType(type: string) {
-    const { WorkflowType } = require('../../domain/workflow');
+  private parseWorkflowType(type: string): WorkflowType {
     return WorkflowType.fromString(type);
   }
 
   /**
    * 解析工作流配置
    */
-  private parseWorkflowConfig(config: Record<string, any>) {
-    const { WorkflowConfig } = require('../../domain/workflow');
+  private parseWorkflowConfig(config: Record<string, any>): WorkflowConfig {
     return WorkflowConfig.create(config);
   }
 }

@@ -5,6 +5,52 @@ import { WorkflowStatus } from '../value-objects/workflow-status';
 import { WorkflowType } from '../value-objects/workflow-type';
 
 /**
+ * 工作流查询过滤器
+ */
+export interface WorkflowQueryFilter {
+  /** 工作流状态 */
+  status?: WorkflowStatus;
+  /** 工作流类型 */
+  type?: WorkflowType;
+  /** 创建者ID */
+  createdBy?: ID;
+  /** 名称关键词 */
+  nameKeyword?: string;
+  /** 标签列表 */
+  tags?: string[];
+}
+
+/**
+ * 分页参数
+ */
+export interface PaginationParams {
+  /** 页码（从1开始） */
+  page: number;
+  /** 每页大小 */
+  size: number;
+}
+
+/**
+ * 分页结果
+ */
+export interface PaginatedResult<T> {
+  /** 数据列表 */
+  items: T[];
+  /** 总数 */
+  total: number;
+  /** 当前页码 */
+  page: number;
+  /** 每页大小 */
+  size: number;
+  /** 总页数 */
+  totalPages: number;
+  /** 是否有下一页 */
+  hasNext: boolean;
+  /** 是否有上一页 */
+  hasPrevious: boolean;
+}
+
+/**
  * 工作流仓储接口
  *
  * 定义工作流持久化和查询的契约
@@ -179,4 +225,15 @@ export interface IWorkflowRepository extends Repository<Workflow, ID> {
    * @returns 标签统计信息
    */
   getWorkflowTagStats(): Promise<Record<string, number>>;
+
+  /**
+   * 复合查询工作流（支持过滤和分页）
+   * @param filter 查询过滤器
+   * @param pagination 分页参数
+   * @returns 分页结果
+   */
+  queryWithFilter(
+    filter: WorkflowQueryFilter,
+    pagination: PaginationParams
+  ): Promise<PaginatedResult<Workflow>>;
 }

@@ -19,60 +19,137 @@ import {
 } from '../../../domain/llm/value-objects/wrapper-reference';
 import { ILogger } from '../../../domain/common';
 import { BaseService } from '../../common/base-service';
+import { NodeTypeConfig } from './node-type-config';
 
 /**
- * 节点配置接口
- * 统一的节点配置接口，支持所有节点类型
+ * 通用节点配置属性
  */
-export interface NodeConfig {
-  // 通用属性
+export interface BaseNodeConfig {
+  /** 节点ID */
   id?: string;
-  type: string;
+  /** 节点名称 */
   name?: string;
+  /** 节点描述 */
   description?: string;
+  /** 节点位置 */
   position?: { x: number; y: number };
+}
 
-  // 开始节点配置
+/**
+ * 开始节点配置
+ */
+export interface StartNodeConfig extends BaseNodeConfig {
+  type: 'start';
+  /** 初始变量 */
   initialVariables?: Record<string, unknown>;
+  /** 是否初始化上下文 */
   initializeContext?: boolean;
+}
 
-  // 结束节点配置
+/**
+ * 结束节点配置
+ */
+export interface EndNodeConfig extends BaseNodeConfig {
+  type: 'end';
+  /** 是否收集结果 */
   collectResults?: boolean;
+  /** 是否清理资源 */
   cleanupResources?: boolean;
+  /** 返回变量列表 */
   returnVariables?: string[];
+}
 
-  // LLM节点配置
+/**
+ * LLM节点配置
+ */
+export interface LLMNodeConfig extends BaseNodeConfig {
+  type: 'llm';
+  /** Wrapper配置 */
   wrapperConfig?: WrapperConfig;
+  /** Wrapper类型 */
   wrapper_type?: 'pool' | 'group' | 'direct';
+  /** Wrapper名称 */
   wrapper_name?: string;
+  /** Wrapper提供商 */
   wrapper_provider?: string;
+  /** Wrapper模型 */
   wrapper_model?: string;
-  prompt?: PromptSource;
+  /** 提示词 */
+  prompt: PromptSource;
+  /** 系统提示词 */
   systemPrompt?: PromptSource;
+  /** 上下文处理器名称 */
   contextProcessorName?: string;
+  /** 温度 */
   temperature?: number;
+  /** 最大Token数 */
   maxTokens?: number;
+  /** 是否流式输出 */
   stream?: boolean;
+}
 
-  // 工具调用节点配置
-  toolName?: string;
+/**
+ * 工具调用节点配置
+ */
+export interface ToolCallNodeConfig extends BaseNodeConfig {
+  type: 'tool' | 'tool-call';
+  /** 工具名称 */
+  toolName: string;
+  /** 工具参数 */
   toolParameters?: Record<string, unknown>;
+  /** 超时时间（毫秒） */
   timeout?: number;
+}
 
-  // 条件节点配置
-  condition?: string;
+/**
+ * 条件节点配置
+ */
+export interface ConditionNodeConfig extends BaseNodeConfig {
+  type: 'condition';
+  /** 条件表达式 */
+  condition: string;
+  /** 变量 */
   variables?: Record<string, unknown>;
+}
 
-  // 数据转换节点配置
-  transformType?: 'map' | 'filter' | 'reduce' | 'sort' | 'group';
-  sourceData?: string;
-  targetVariable?: string;
+/**
+ * 数据转换节点配置
+ */
+export interface DataTransformNodeConfig extends BaseNodeConfig {
+  type: 'data-transform';
+  /** 转换类型 */
+  transformType: 'map' | 'filter' | 'reduce' | 'sort' | 'group';
+  /** 源数据 */
+  sourceData: string;
+  /** 目标变量 */
+  targetVariable: string;
+  /** 转换配置 */
   transformConfig?: Record<string, unknown>;
+}
 
-  // 上下文处理器节点配置
-  processorName?: string;
+/**
+ * 上下文处理器节点配置
+ */
+export interface ContextProcessorNodeConfig extends BaseNodeConfig {
+  type: 'context-processor';
+  /** 处理器名称 */
+  processorName: string;
+  /** 处理器配置 */
   processorConfig?: Record<string, unknown>;
 }
+
+/**
+ * 节点配置联合类型
+ * 使用 discriminated union 提供类型安全
+ */
+export type NodeConfig =
+  | StartNodeConfig
+  | EndNodeConfig
+  | LLMNodeConfig
+  | ToolCallNodeConfig
+  | ConditionNodeConfig
+  | DataTransformNodeConfig
+  | ContextProcessorNodeConfig;
 
 /**
  * 节点工厂类
@@ -80,22 +157,8 @@ export interface NodeConfig {
  */
 @injectable()
 export class NodeFactory extends BaseService {
-  private readonly typeAliases: Map<string, NodeTypeValue>;
-
   constructor(@inject('Logger') logger: ILogger) {
     super(logger);
-
-    // 初始化类型别名映射
-    this.typeAliases = new Map<string, NodeTypeValue>([
-      ['start', NodeTypeValue.START],
-      ['end', NodeTypeValue.END],
-      ['llm', NodeTypeValue.LLM],
-      ['tool', NodeTypeValue.TOOL],
-      ['tool-call', NodeTypeValue.TOOL],
-      ['condition', NodeTypeValue.CONDITION],
-      ['data-transform', NodeTypeValue.DATA_TRANSFORM],
-      ['context-processor', NodeTypeValue.CONTEXT_PROCESSOR],
-    ]);
   }
 
   /**
@@ -105,35 +168,33 @@ export class NodeFactory extends BaseService {
    */
   create(config: NodeConfig): Node {
     const nodeId = config.id ? NodeId.fromString(config.id) : NodeId.generate();
-    const nodeType = this.parseNodeType(config.type);
 
     this.logger.debug('创建节点', { nodeType: config.type, nodeId: config.id });
 
-    // 根据节点类型创建节点
-    switch (nodeType) {
-      case NodeTypeValue.START:
+    // 使用类型守卫根据 config.type 创建节点
+    // TypeScript 的 exhaustiveness check 会确保我们处理了所有情况
+    switch (config.type) {
+      case 'start':
         return this.createStartNode(nodeId, config);
 
-      case NodeTypeValue.END:
+      case 'end':
         return this.createEndNode(nodeId, config);
 
-      case NodeTypeValue.LLM:
+      case 'llm':
         return this.createLLMNode(nodeId, config);
 
-      case NodeTypeValue.TOOL:
+      case 'tool':
+      case 'tool-call':
         return this.createToolCallNode(nodeId, config);
 
-      case NodeTypeValue.CONDITION:
+      case 'condition':
         return this.createConditionNode(nodeId, config);
 
-      case NodeTypeValue.DATA_TRANSFORM:
+      case 'data-transform':
         return this.createDataTransformNode(nodeId, config);
 
-      case NodeTypeValue.CONTEXT_PROCESSOR:
+      case 'context-processor':
         return this.createContextProcessorNode(nodeId, config);
-
-      default:
-        throw new Error(`不支持的节点类型: ${config.type}`);
     }
   }
 
@@ -143,17 +204,13 @@ export class NodeFactory extends BaseService {
    * @returns 节点类型枚举值
    */
   private parseNodeType(type: string): NodeTypeValue {
-    const nodeType = this.typeAliases.get(type.toLowerCase());
-    if (!nodeType) {
-      throw new Error(`未知的节点类型: ${type}`);
-    }
-    return nodeType;
+    return NodeTypeConfig.getTypeByAlias(type);
   }
 
   /**
    * 创建开始节点
    */
-  private createStartNode(id: NodeId, config: NodeConfig): StartNode {
+  private createStartNode(id: NodeId, config: StartNodeConfig): StartNode {
     return new StartNode(
       id,
       config.initialVariables,
@@ -167,7 +224,7 @@ export class NodeFactory extends BaseService {
   /**
    * 创建结束节点
    */
-  private createEndNode(id: NodeId, config: NodeConfig): EndNode {
+  private createEndNode(id: NodeId, config: EndNodeConfig): EndNode {
     return new EndNode(
       id,
       config.collectResults !== undefined ? config.collectResults : true,
@@ -182,11 +239,7 @@ export class NodeFactory extends BaseService {
   /**
    * 创建LLM节点
    */
-  private createLLMNode(id: NodeId, config: NodeConfig): LLMNode {
-    if (!config.prompt) {
-      throw new Error('LLM节点需要prompt配置');
-    }
-
+  private createLLMNode(id: NodeId, config: LLMNodeConfig): LLMNode {
     // 构建wrapper配置
     let wrapperConfig: WrapperConfig;
 
@@ -216,7 +269,7 @@ export class NodeFactory extends BaseService {
   /**
    * 从独立参数构建wrapper配置
    */
-  private buildWrapperConfigFromParams(config: NodeConfig): WrapperConfig {
+  private buildWrapperConfigFromParams(config: LLMNodeConfig): WrapperConfig {
     const wrapperConfig: WrapperConfig = {
       type: config.wrapper_type!,
     };
@@ -249,11 +302,7 @@ export class NodeFactory extends BaseService {
   /**
    * 创建工具调用节点
    */
-  private createToolCallNode(id: NodeId, config: NodeConfig): ToolCallNode {
-    if (!config.toolName) {
-      throw new Error('工具调用节点需要toolName配置');
-    }
-
+  private createToolCallNode(id: NodeId, config: ToolCallNodeConfig): ToolCallNode {
     return new ToolCallNode(
       id,
       config.toolName,
@@ -268,11 +317,7 @@ export class NodeFactory extends BaseService {
   /**
    * 创建条件节点
    */
-  private createConditionNode(id: NodeId, config: NodeConfig): ConditionNode {
-    if (!config.condition) {
-      throw new Error('条件节点需要condition配置');
-    }
-
+  private createConditionNode(id: NodeId, config: ConditionNodeConfig): ConditionNode {
     return new ConditionNode(
       id,
       config.condition,
@@ -286,17 +331,7 @@ export class NodeFactory extends BaseService {
   /**
    * 创建数据转换节点
    */
-  private createDataTransformNode(id: NodeId, config: NodeConfig): DataTransformNode {
-    if (!config.transformType) {
-      throw new Error('数据转换节点需要transformType配置');
-    }
-    if (!config.sourceData) {
-      throw new Error('数据转换节点需要sourceData配置');
-    }
-    if (!config.targetVariable) {
-      throw new Error('数据转换节点需要targetVariable配置');
-    }
-
+  private createDataTransformNode(id: NodeId, config: DataTransformNodeConfig): DataTransformNode {
     return new DataTransformNode(
       id,
       config.transformType,
@@ -312,11 +347,7 @@ export class NodeFactory extends BaseService {
   /**
    * 创建上下文处理器节点
    */
-  private createContextProcessorNode(id: NodeId, config: NodeConfig): ContextProcessorNode {
-    if (!config.processorName) {
-      throw new Error('上下文处理器节点需要processorName配置');
-    }
-
+  private createContextProcessorNode(id: NodeId, config: ContextProcessorNodeConfig): ContextProcessorNode {
     return new ContextProcessorNode(
       id,
       config.processorName,
@@ -332,7 +363,24 @@ export class NodeFactory extends BaseService {
    * @returns 节点类型列表
    */
   getSupportedNodeTypes(): string[] {
-    return Array.from(this.typeAliases.keys());
+    return NodeTypeConfig.getAllAliases();
+  }
+
+  /**
+   * 获取节点类型映射信息
+   * @param alias 类型别名
+   * @returns 节点类型映射信息
+   */
+  getNodeTypeMapping(alias: string) {
+    return NodeTypeConfig.getMapping(alias);
+  }
+
+  /**
+   * 获取所有节点类型映射信息
+   * @returns 所有节点类型映射信息
+   */
+  getAllNodeTypeMappings() {
+    return NodeTypeConfig.getAllMappings();
   }
 
   protected getServiceName(): string {
