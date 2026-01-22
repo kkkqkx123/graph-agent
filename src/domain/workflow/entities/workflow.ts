@@ -89,7 +89,7 @@ export class Workflow extends Entity {
   public static create(
     name: string,
     description?: string,
-    type?: WorkflowType,
+    type: WorkflowType = WorkflowType.SEQUENTIAL,
     config?: WorkflowConfig,
     createdBy?: ID
   ): Workflow {
@@ -102,7 +102,7 @@ export class Workflow extends Entity {
       name,
       description,
       status: WorkflowStatus.draft(),
-      type: type || WorkflowType.sequential(),
+      type: type || WorkflowType.SEQUENTIAL,
       config: config || WorkflowConfig.default(),
       errorHandlingStrategy: ErrorHandlingStrategy.stopOnError(),
       executionStrategy: ExecutionStrategy.sequential(),
@@ -830,5 +830,60 @@ export class Workflow extends Entity {
       version: this.props.version.nextPatch(),
       updatedBy,
     });
+  }
+
+  /**
+   * 检测工作流的执行模式
+   * @returns 执行模式
+   */
+  public detectExecutionMode(): 'sequential' | 'parallel' | 'loop' {
+    const nodes = Array.from(this.props.graph.nodes.values());
+
+    // 检查是否包含Fork节点
+    const hasForkNode = nodes.some(node => node.type.isFork());
+    if (hasForkNode) {
+      return 'parallel';
+    }
+
+    // 检查是否包含LoopStart节点
+    const hasLoopStartNode = nodes.some(node => node.type.isLoopStart());
+    if (hasLoopStartNode) {
+      return 'loop';
+    }
+
+    // 默认为串行
+    return 'sequential';
+  }
+
+  /**
+   * 获取所有Fork节点
+   */
+  public getForkNodes(): Node[] {
+    return Array.from(this.props.graph.nodes.values())
+      .filter(node => node.type.isFork());
+  }
+
+  /**
+   * 获取所有Join节点
+   */
+  public getJoinNodes(): Node[] {
+    return Array.from(this.props.graph.nodes.values())
+      .filter(node => node.type.isJoin());
+  }
+
+  /**
+   * 获取所有LoopStart节点
+   */
+  public getLoopStartNodes(): Node[] {
+    return Array.from(this.props.graph.nodes.values())
+      .filter(node => node.type.isLoopStart());
+  }
+
+  /**
+   * 获取所有LoopEnd节点
+   */
+  public getLoopEndNodes(): Node[] {
+    return Array.from(this.props.graph.nodes.values())
+      .filter(node => node.type.isLoopEnd());
   }
 }

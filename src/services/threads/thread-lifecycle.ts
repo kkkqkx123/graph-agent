@@ -11,6 +11,7 @@ import { IWorkflowRepository } from '../../domain/workflow';
 import { BaseService } from '../common/base-service';
 import { ILogger, ID } from '../../domain/common';
 import { TYPES } from '../../di/service-keys';
+import { WorkflowExecutionEngine } from './workflow-execution-engine';
 
 /**
  * 线程生命周期服务
@@ -21,6 +22,7 @@ export class ThreadLifecycle extends BaseService {
     @inject(TYPES.ThreadRepository) private readonly threadRepository: IThreadRepository,
     @inject(TYPES.SessionRepository) private readonly sessionRepository: ISessionRepository,
     @inject(TYPES.WorkflowRepository) private readonly workflowRepository: IWorkflowRepository,
+    @inject(TYPES.WorkflowExecutionEngine) private readonly workflowExecutionEngine: WorkflowExecutionEngine,
     @inject(TYPES.Logger) logger: ILogger
   ) {
     super(logger);
@@ -361,24 +363,51 @@ export class ThreadLifecycle extends BaseService {
       '线程执行',
       async () => {
         const id = this.parseId(threadId, '线程ID');
-
         const thread = await this.threadRepository.findByIdOrFail(id);
 
         // 验证线程启动的业务规则
         await this.validateThreadStart(id);
 
-        // 执行线程（这里应该调用工作流执行服务）
-        // 暂时返回模拟结果
-        const result = {
-          success: true,
-          data: inputData,
-          message: '线程执行完成',
-        };
+        // 获取工作流
+        const workflow = await this.workflowRepository.findById(thread.workflowId);
+        if (!workflow) {
+          throw new Error(`工作流不存在: ${thread.workflowId.toString()}`);
+        }
 
-        // 保存线程状态
-        await this.threadRepository.save(thread);
+        // 启动线程
+        const startedThread = thread.start();
+        await this.threadRepository.save(startedThread);
 
-        return result;
+        // 调用工作流执行引擎
+        const executionResult = await this.workflowExecutionEngine.execute(
+          workflow,
+          threadId,
+          inputData as Record<string, any>,
+          {
+            enableCheckpoints: true,
+            checkpointInterval: 1,
+            maxSteps: 1000,
+            timeout: 300000,
+            nodeTimeout: 30000,
+            maxNodeRetries: 0,
+            nodeRetryDelay: 1000,
+            enableErrorRecovery: false,
+          }
+        );
+
+        // 根据执行结果更新线程状态
+        if (executionResult.success) {
+          await this.completeThread(threadId, undefined, '工作流执行成功');
+        } else {
+          await this.failThread(
+            threadId,
+            executionResult.error || '工作流执行失败',
+            undefined,
+            `执行状态: ${executionResult.status}`
+          );
+        }
+
+        return executionResult;
       },
       { threadId }
     );

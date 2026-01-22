@@ -63,7 +63,6 @@ import { ExpressionEvaluator } from '../services/workflow/expression-evaluator';
 import { FunctionExecutionEngine } from '../services/workflow/function-execution-engine';
 import { MonitoringService } from '../services/workflow/monitoring';
 import { NodeRouter } from '../services/workflow/node-router';
-import { WorkflowExecutionEngine as WorkflowExecution } from '../services/workflow/workflow-execution';
 import { CheckpointAnalysis } from '../services/checkpoints/checkpoint-analysis';
 import { CheckpointBackup } from '../services/checkpoints/checkpoint-backup';
 import { CheckpointCleanup } from '../services/checkpoints/checkpoint-cleanup';
@@ -181,7 +180,6 @@ export interface ServiceTypes {
   FunctionExecutionEngine: FunctionExecutionEngine;
   MonitoringService: MonitoringService;
   NodeRouter: NodeRouter;
-  WorkflowExecution: WorkflowExecution;
 
   // 检查点服务
   CheckpointAnalysis: CheckpointAnalysis;
@@ -354,7 +352,6 @@ export const TYPES: {
   ) as TypedServiceIdentifier<'FunctionExecutionEngine'>,
   MonitoringService: Symbol.for('MonitoringService') as TypedServiceIdentifier<'MonitoringService'>,
   NodeRouter: Symbol.for('NodeRouter') as TypedServiceIdentifier<'NodeRouter'>,
-  WorkflowExecution: Symbol.for('WorkflowExecution') as TypedServiceIdentifier<'WorkflowExecution'>,
 
   // 检查点服务
   CheckpointAnalysis: Symbol.for('CheckpointAnalysis') as TypedServiceIdentifier<'CheckpointAnalysis'>,

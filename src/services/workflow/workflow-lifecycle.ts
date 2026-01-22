@@ -8,10 +8,10 @@ import { injectable, inject } from 'inversify';
 import {
   Workflow,
   WorkflowStatus,
-  WorkflowType,
   WorkflowConfig,
   IWorkflowRepository,
 } from '../../domain/workflow';
+import { WorkflowType, parseWorkflowType } from '../../domain/workflow/value-objects/workflow-type';
 import { ID, ILogger } from '../../domain/common';
 import { BaseService } from '../common/base-service';
 import { WorkflowDTO, mapWorkflowToDTO } from './dtos/workflow-dto';
@@ -91,7 +91,7 @@ export class WorkflowLifecycle extends BaseService {
       '工作流',
       async () => {
         // 转换命令参数
-        const type = params.type ? WorkflowType.fromString(params.type) : undefined;
+        const type = params.type ? parseWorkflowType(params.type) : undefined;
         const config = params.config ? (params.config as any) : undefined;
         const createdBy = params.createdBy ? ID.fromString(params.createdBy) : undefined;
 

@@ -6,7 +6,7 @@ import {
   UpdateDateColumn,
 } from 'typeorm';
 import { WorkflowStatusValue } from '../../../domain/workflow/value-objects/workflow-status';
-import { WorkflowTypeValue } from '../../../domain/workflow/value-objects/workflow-type';
+import { WorkflowType } from '../../../domain/workflow/value-objects/workflow-type';
 
 @Entity('workflows')
 export class WorkflowModel {
@@ -28,10 +28,10 @@ export class WorkflowModel {
 
   @Column({
     type: 'enum',
-    enum: Object.values(WorkflowTypeValue),
-    default: WorkflowTypeValue.SEQUENTIAL,
+    enum: Object.values(WorkflowType),
+    default: WorkflowType.SEQUENTIAL,
   })
-  executionMode!: WorkflowTypeValue;
+  executionMode!: WorkflowType;
 
   @Column('jsonb', { nullable: true })
   nodes?: any;

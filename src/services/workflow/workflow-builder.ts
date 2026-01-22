@@ -8,13 +8,13 @@
 import { injectable, inject } from 'inversify';
 import {
   Workflow,
-  WorkflowType,
   WorkflowStatus,
   WorkflowConfig,
   NodeId,
   EdgeId,
   EdgeType,
 } from '../../domain/workflow';
+import { WorkflowType, parseWorkflowType } from '../../domain/workflow/value-objects/workflow-type';
 import { ID } from '../../domain/common';
 import { BaseService } from '../common/base-service';
 import { ILogger } from '../../domain/common';
@@ -140,9 +140,9 @@ export class WorkflowBuilder extends BaseService {
    */
   private parseWorkflowType(type?: string): WorkflowType {
     if (!type) {
-      return WorkflowType.sequential();
+      return WorkflowType.SEQUENTIAL;
     }
-    return WorkflowType.fromString(type);
+    return parseWorkflowType(type);
   }
 
   /**

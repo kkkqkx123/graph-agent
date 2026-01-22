@@ -4,7 +4,6 @@
  * 负责验证子工作流是否符合标准，包括：
  * - 入度/出度检查（基于图结构计算）
  * - 入口/出口节点类型检查（仅对feature子工作流）
- * - 状态检查（无状态、无外部依赖）
  *
  * 设计原则：
  * - 完全基于图结构计算
@@ -164,9 +163,6 @@ export class SubWorkflowValidator {
       }
     }
 
-    // 8. 验证状态标准
-    this.validateStateStandards(workflow, result);
-
     this.logger.info('子工作流验证完成', {
       workflowId: workflow.workflowId.toString(),
       isValid: result.isValid,
@@ -316,49 +312,4 @@ export class SubWorkflowValidator {
     }
   }
 
-  /**
-   * 验证状态标准
-   * @param workflow 工作流
-   * @param result 验证结果
-   */
-  private validateStateStandards(workflow: Workflow, result: SubWorkflowValidationResult): void {
-    const graph = workflow.getGraph();
-    const nodes = Array.from(graph.nodes.values());
-
-    // 检查是否有状态相关的节点类型
-    const statefulNodeTypes = ['state', 'checkpoint', 'memory'];
-    const statefulNodes = nodes.filter((node) => statefulNodeTypes.includes(node.type.toString()));
-
-    if (statefulNodes.length > 0) {
-      result.errors.push(
-        `子工作流包含状态节点（${statefulNodes.map((n) => n.nodeId.toString()).join(', ')}），不符合无状态标准`
-      );
-      result.isValid = false;
-    }
-
-    // 检查是否有外部依赖
-    const nodesWithExternalDeps = nodes.filter((node) => {
-      const config = node.properties;
-      return this.hasExternalDependencies(config);
-    });
-
-    if (nodesWithExternalDeps.length > 0) {
-      result.warnings.push(
-        `子工作流可能包含外部依赖（${nodesWithExternalDeps.map((n) => n.nodeId.toString()).join(', ')}）`
-      );
-    }
-  }
-
-  /**
-   * 检查节点配置是否有外部依赖
-   * @param config 节点配置
-   * @returns 是否有外部依赖
-   */
-  private hasExternalDependencies(config: Record<string, any>): boolean {
-    // 检查常见的外部依赖模式
-    const externalPatterns = ['http://', 'https://', 'ws://', 'wss://', 'tcp://', 'udp://'];
-    const configStr = JSON.stringify(config);
-
-    return externalPatterns.some((pattern) => configStr.includes(pattern));
-  }
 }

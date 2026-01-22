@@ -6,7 +6,8 @@
  */
 
 import { injectable, inject } from 'inversify';
-import { Workflow, IWorkflowRepository, WorkflowType, WorkflowQueryFilter, PaginationParams } from '../../domain/workflow';
+import { Workflow, IWorkflowRepository, WorkflowQueryFilter, PaginationParams } from '../../domain/workflow';
+import { WorkflowType, parseWorkflowType } from '../../domain/workflow/value-objects/workflow-type';
 import { ILogger } from '../../domain/common';
 import { BaseService } from '../common/base-service';
 import { WorkflowDTO, mapWorkflowToDTO, mapWorkflowsToDTOs } from './dtos/workflow-dto';
@@ -652,7 +653,7 @@ export class WorkflowManagement extends BaseService {
    * 解析工作流类型
    */
   private parseWorkflowType(type: string): WorkflowType {
-    return WorkflowType.fromString(type);
+    return parseWorkflowType(type);
   }
 
   /**

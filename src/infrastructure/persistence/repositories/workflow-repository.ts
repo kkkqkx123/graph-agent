@@ -5,7 +5,7 @@ import { WorkflowDefinition } from '../../../domain/workflow/value-objects/workf
 import { ID } from '../../../domain/common/value-objects/id';
 import { WorkflowStatus } from '../../../domain/workflow/value-objects/workflow-status';
 import { WorkflowStatusValue } from '../../../domain/workflow/value-objects/workflow-status';
-import { WorkflowType } from '../../../domain/workflow/value-objects/workflow-type';
+import { WorkflowType, parseWorkflowType } from '../../../domain/workflow/value-objects/workflow-type';
 import { Timestamp } from '../../../domain/common/value-objects/timestamp';
 import { Version } from '../../../domain/common/value-objects/version';
 import { WorkflowModel } from '../models/workflow.model';
@@ -36,7 +36,7 @@ export class WorkflowRepository
         name: model.name,
         description: model.description || undefined,
         status: WorkflowStatus.fromString(model.state),
-        type: WorkflowType.fromString(model.executionMode),
+        type: parseWorkflowType(model.executionMode),
         config: model.configuration || {},
         errorHandlingStrategy: {} as any,
         executionStrategy: {} as any,
@@ -86,7 +86,7 @@ export class WorkflowRepository
       model.name = entity.name;
       model.description = entity.description || undefined;
       model.state = entity.status.getValue();
-      model.executionMode = entity.type.getValue();
+      model.executionMode = entity.type;
       model.metadata = {
         ...entity.metadata,
         tags: entity.tags,
@@ -139,7 +139,7 @@ export class WorkflowRepository
    */
   async findByType(type: WorkflowType): Promise<Workflow[]> {
     return this.find({
-      filters: { executionMode: type.getValue() },
+      filters: { executionMode: type },
       sortBy: 'createdAt',
       sortOrder: 'desc',
     });
@@ -429,7 +429,7 @@ export class WorkflowRepository
     }
 
     if (filter.type) {
-      queryBuilder = queryBuilder.andWhere('workflow.executionMode = :type', { type: filter.type.getValue() });
+      queryBuilder = queryBuilder.andWhere('workflow.executionMode = :type', { type: filter.type });
     }
 
     if (filter.createdBy) {

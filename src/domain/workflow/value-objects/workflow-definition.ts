@@ -13,7 +13,7 @@ export interface WorkflowDefinitionProps {
   readonly name: string;
   readonly description?: string;
   readonly status: WorkflowStatus;
-  readonly type: WorkflowType;
+  readonly type: WorkflowType; // 现在是枚举类型
   readonly config: WorkflowConfig;
   readonly errorHandlingStrategy: ErrorHandlingStrategy;
   readonly executionStrategy: ExecutionStrategy;

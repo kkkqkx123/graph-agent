@@ -122,7 +122,6 @@ export const servicesBindings = new ContainerModule((bind: any) => {
   bind(TYPES.FunctionExecutionEngine).to(FunctionExecutionEngine).inSingletonScope();
   bind(TYPES.MonitoringService).to(MonitoringService).inSingletonScope();
   bind(TYPES.NodeRouter).to(NodeRouter).inSingletonScope();
-  bind(TYPES.WorkflowExecution).to(WorkflowExecutionEngine).inSingletonScope();
 
   // 检查点服务
   bind(TYPES.CheckpointAnalysis).to(CheckpointAnalysis).inSingletonScope();

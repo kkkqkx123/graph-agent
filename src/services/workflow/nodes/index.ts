@@ -17,6 +17,9 @@ export * from './wait-node';
 export * from './user-interaction-node';
 export * from './context-processor-node';
 
+// 子工作流节点
+export * from './subworkflow';
+
 // 并行处理节点
 export * from './parallel';
 

@@ -18,6 +18,8 @@ export enum NodeTypeValue {
   WAIT = 'wait',
   USER_INTERACTION = 'user-interaction',
   CONTEXT_PROCESSOR = 'context-processor',
+  LOOP_START = 'loop-start',
+  LOOP_END = 'loop-end',
 }
 
 /**
@@ -207,6 +209,28 @@ export class NodeType extends ValueObject<NodeTypeProps> {
   }
 
   /**
+   * 创建循环开始节点类型
+   * @param contextType 上下文类型（可选，默认为PASS_THROUGH）
+   * @returns 循环开始节点类型实例
+   */
+  public static loopStart(
+    contextType: NodeContextTypeValue = NodeContextTypeValue.PASS_THROUGH
+  ): NodeType {
+    return new NodeType({ value: NodeTypeValue.LOOP_START, contextType });
+  }
+
+  /**
+   * 创建循环结束节点类型
+   * @param contextType 上下文类型（可选，默认为PASS_THROUGH）
+   * @returns 循环结束节点类型实例
+   */
+  public static loopEnd(
+    contextType: NodeContextTypeValue = NodeContextTypeValue.PASS_THROUGH
+  ): NodeType {
+    return new NodeType({ value: NodeTypeValue.LOOP_END, contextType });
+  }
+
+  /**
    * 从字符串创建节点类型
    * @param type 类型字符串
    * @param contextType 上下文类型（可选，默认为PASS_THROUGH）
@@ -352,6 +376,22 @@ export class NodeType extends ValueObject<NodeTypeProps> {
   }
 
   /**
+   * 检查是否为循环开始节点
+   * @returns 是否为循环开始节点
+   */
+  public isLoopStart(): boolean {
+    return this.props.value === NodeTypeValue.LOOP_START;
+  }
+
+  /**
+   * 检查是否为循环结束节点
+   * @returns 是否为循环结束节点
+   */
+  public isLoopEnd(): boolean {
+    return this.props.value === NodeTypeValue.LOOP_END;
+  }
+
+  /**
    * 检查是否为用户交互节点
    * @returns 是否为用户交互节点
    */
@@ -370,7 +410,9 @@ export class NodeType extends ValueObject<NodeTypeProps> {
       this.isCondition() ||
       this.isMerge() ||
       this.isFork() ||
-      this.isJoin()
+      this.isJoin() ||
+      this.isLoopStart() ||
+      this.isLoopEnd()
     );
   }
 
@@ -470,6 +512,8 @@ export class NodeType extends ValueObject<NodeTypeProps> {
       [NodeTypeValue.USER_INTERACTION]: '用户交互节点，通过前端与用户交互进行人工中转',
       [NodeTypeValue.CUSTOM]: '自定义节点，根据特定逻辑执行',
       [NodeTypeValue.CONTEXT_PROCESSOR]: '上下文处理器节点，处理和转换提示词上下文',
+      [NodeTypeValue.LOOP_START]: '循环开始节点，标记循环的开始，设置循环条件和策略',
+      [NodeTypeValue.LOOP_END]: '循环结束节点，标记循环的结束，决定是否继续循环',
     };
 
     return descriptions[this.props.value];

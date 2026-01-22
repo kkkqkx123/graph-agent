@@ -1,6 +1,5 @@
 import { ValueObject } from '../../common/value-objects';
 import { SubWorkflowType } from './subworkflow-type';
-import { WorkflowDefinitionProps } from './workflow-definition';
 
 /**
  * 子工作流标准接口
@@ -98,46 +97,6 @@ export class SubWorkflowStandard extends ValueObject<SubWorkflowStandardProps> {
       requiresStartNode: true,
       requiresEndNode: true,
     });
-  }
-
-  /**
-   * 验证工作流定义是否符合基本规则
-   * 子工作流首先必须满足工作流本身的定义规则
-   * @param definitionProps 工作流定义属性
-   * @returns 验证结果
-   */
-  public validateDefinition(definitionProps: WorkflowDefinitionProps): { valid: boolean; errors: string[] } {
-    const errors: string[] = [];
-
-    // 验证工作流名称
-    if (!definitionProps.name || definitionProps.name.trim().length === 0) {
-      errors.push('工作流名称不能为空');
-    }
-
-    if (definitionProps.name.length > 100) {
-      errors.push('工作流名称不能超过100个字符');
-    }
-
-    // 验证工作流描述
-    if (definitionProps.description && definitionProps.description.length > 500) {
-      errors.push('工作流描述不能超过500个字符');
-    }
-
-    // 验证标签
-    if (definitionProps.tags.length > 20) {
-      errors.push('标签数量不能超过20个');
-    }
-
-    for (const tag of definitionProps.tags) {
-      if (tag.length > 50) {
-        errors.push('标签长度不能超过50个字符');
-      }
-    }
-
-    return {
-      valid: errors.length === 0,
-      errors,
-    };
   }
 
   /**
