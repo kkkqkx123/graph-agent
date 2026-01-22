@@ -410,6 +410,66 @@ export class WorkflowRepository
   }
 
   /**
+   * 复合查询工作流（支持过滤和分页）
+   *
+   * @param filter 查询过滤器
+   * @param pagination 分页参数
+   * @returns 分页结果
+   */
+  async queryWithFilter(
+    filter: { status?: WorkflowStatus; type?: WorkflowType; createdBy?: ID; nameKeyword?: string; tags?: string[] },
+    pagination: { page: number; size: number }
+  ): Promise<{ items: Workflow[]; total: number; page: number; size: number; totalPages: number; hasNext: boolean; hasPrevious: boolean }> {
+    const repository = await this.getRepository();
+    let queryBuilder = repository.createQueryBuilder('workflow');
+
+    // 应用过滤条件
+    if (filter.status) {
+      queryBuilder = queryBuilder.where('workflow.state = :status', { status: filter.status.getValue() });
+    }
+
+    if (filter.type) {
+      queryBuilder = queryBuilder.andWhere('workflow.executionMode = :type', { type: filter.type.getValue() });
+    }
+
+    if (filter.createdBy) {
+      queryBuilder = queryBuilder.andWhere('workflow.createdBy = :createdBy', { createdBy: filter.createdBy.value });
+    }
+
+    if (filter.nameKeyword) {
+      queryBuilder = queryBuilder.andWhere('workflow.name LIKE :nameKeyword', { nameKeyword: `%${filter.nameKeyword}%` });
+    }
+
+    if (filter.tags && filter.tags.length > 0) {
+      queryBuilder = queryBuilder.andWhere("workflow.metadata->>'tags' @> :tags", { tags: JSON.stringify(filter.tags) });
+    }
+
+    // 获取总数
+    const total = await queryBuilder.getCount();
+
+    // 应用分页
+    const skip = (pagination.page - 1) * pagination.size;
+    const models = await queryBuilder
+      .skip(skip)
+      .take(pagination.size)
+      .orderBy('workflow.createdAt', 'DESC')
+      .getMany();
+
+    const items = models.map(model => this.toDomain(model));
+    const totalPages = Math.ceil(total / pagination.size);
+
+    return {
+      items,
+      total,
+      page: pagination.page,
+      size: pagination.size,
+      totalPages,
+      hasNext: pagination.page < totalPages,
+      hasPrevious: pagination.page > 1,
+    };
+  }
+
+  /**
    * 获取工作流执行统计信息
    *
    * 通过查询 Thread 表计算工作流的执行统计信息
