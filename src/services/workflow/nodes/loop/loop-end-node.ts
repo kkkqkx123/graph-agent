@@ -1,7 +1,6 @@
 import { NodeId } from '../../../../domain/workflow/value-objects/node/node-id';
 import {
   NodeType,
-  NodeTypeValue,
   NodeContextTypeValue,
 } from '../../../../domain/workflow/value-objects/node/node-type';
 import {
@@ -14,12 +13,23 @@ import {
 
 /**
  * LoopEnd节点
- * 标记循环的结束，决定是否继续循环
+ * 
+ * 标记循环的结束，增加迭代计数并检查是否继续
+ * 
+ * 核心功能：
+ * - 增加迭代计数
+ * - 检查是否超过最大迭代次数
+ * - 清理循环状态（如果循环结束）
+ * 
+ * 注意：
+ * - 不负责条件判断（使用ConditionNode）
+ * - 不负责数据转换（使用DataTransformNode）
+ * - 不负责流程控制（使用分支节点）
+ * - 退出逻辑通过ConditionNode + 分支节点实现
  */
 export class LoopEndNode extends Node {
   constructor(
     id: NodeId,
-    public readonly breakOnCondition?: string,
     name?: string,
     description?: string,
     position?: { x: number; y: number }
@@ -58,16 +68,8 @@ export class LoopEndNode extends Node {
       loopState.iteration++;
       context.setVariable('loop_iteration', loopState.iteration);
 
-      // 如果是迭代策略，更新迭代变量
-      if (loopState.strategy === 'iterate' && loopState.iterateCollection) {
-        const collection = context.getVariable(loopState.iterateCollection);
-        if (Array.isArray(collection) && loopState.iteration < collection.length) {
-          context.setVariable(loopState.iterateVariable, collection[loopState.iteration]);
-        }
-      }
-
-      // 检查是否应该继续循环
-      const shouldContinue = this.shouldContinueLoop(loopState, context);
+      // 检查是否超过最大迭代次数
+      const shouldContinue = loopState.iteration < loopState.maxIterations;
 
       if (!shouldContinue) {
         // 循环结束，清理状态
@@ -107,76 +109,6 @@ export class LoopEndNode extends Node {
     }
   }
 
-  /**
-   * 判断是否应该继续循环
-   */
-  private shouldContinueLoop(loopState: any, context: WorkflowExecutionContext): boolean {
-    // 检查最大迭代次数
-    if (loopState.iteration >= loopState.maxIterations) {
-      return false;
-    }
-
-    // 检查break条件
-    if (this.breakOnCondition) {
-      const shouldBreak = this.evaluateCondition(this.breakOnCondition, context);
-      if (shouldBreak) {
-        return false;
-      }
-    }
-
-    // 根据策略判断
-    switch (loopState.strategy) {
-      case 'count':
-        return loopState.iteration < loopState.maxIterations;
-
-      case 'condition':
-        return this.evaluateCondition(loopState.condition, context);
-
-      case 'iterate':
-        const collection = context.getVariable(loopState.iterateCollection);
-        if (!Array.isArray(collection)) {
-          return false;
-        }
-        return loopState.iteration < collection.length;
-
-      default:
-        return false;
-    }
-  }
-
-  /**
-   * 评估条件表达式
-   */
-  private evaluateCondition(condition: string, context: WorkflowExecutionContext): boolean {
-    try {
-      // 简化的条件评估逻辑
-      const variables: Record<string, unknown> = {
-        iteration: context.getVariable('loop_iteration'),
-      };
-
-      // 替换变量引用
-      let expression = condition;
-      expression = expression.replace(/\$\{([^}]+)\}/g, (match, varName) => {
-        const value = variables[varName];
-        if (typeof value === 'string') {
-          return `'${value}'`;
-        }
-        return String(value);
-      });
-
-      // 安全检查
-      const hasUnsafeContent = /eval|function|new|delete|typeof|void|in|instanceof/.test(expression);
-      if (hasUnsafeContent) {
-        return false;
-      }
-
-      const func = new Function('return ' + expression);
-      return Boolean(func());
-    } catch {
-      return false;
-    }
-  }
-
   validate(): ValidationResult {
     const errors: string[] = [];
     return { valid: errors.length === 0, errors };
@@ -189,14 +121,7 @@ export class LoopEndNode extends Node {
       name: this.name,
       description: this.description,
       status: this.status.toString(),
-      parameters: [
-        {
-          name: 'breakOnCondition',
-          type: 'string',
-          required: false,
-          description: '中断循环的条件表达式（可选）',
-        },
-      ],
+      parameters: [],
     };
   }
 
@@ -213,7 +138,7 @@ export class LoopEndNode extends Node {
       type: 'object',
       properties: {
         message: { type: 'string', description: '执行消息' },
-        shouldContinue: { type: 'boolean', description: '是否继续循环' },
+        shouldContinue: { type: 'boolean', description: '是否继续循环（基于最大迭代次数）' },
         iteration: { type: 'number', description: '当前迭代次数' },
       },
     };
@@ -222,7 +147,6 @@ export class LoopEndNode extends Node {
   protected createNodeFromProps(props: any): any {
     return new LoopEndNode(
       props.id,
-      props.breakOnCondition,
       props.name,
       props.description,
       props.position

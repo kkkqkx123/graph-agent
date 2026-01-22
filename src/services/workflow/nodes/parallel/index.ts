@@ -4,4 +4,4 @@
  */
 
 export { ForkNode, BranchConfig } from './fork-node';
-export { JoinNode, JoinStrategy, BranchResult } from './join-node';
+export { JoinNode } from './join-node';

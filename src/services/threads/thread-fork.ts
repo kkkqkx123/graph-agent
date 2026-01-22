@@ -30,6 +30,13 @@ import { TYPES } from '../../di/service-keys';
 export interface ForkInput {
   readonly parentThread: Thread;
   readonly forkPoint: NodeId;
+  readonly branches: Array<{
+    branchId: string;
+    targetNodeId: string;
+    name?: string;
+    condition?: string;
+    weight?: number;
+  }>;
   readonly forkStrategy?: ForkStrategy;
   readonly forkOptions?: ForkOptions;
 }
@@ -39,7 +46,7 @@ export interface ForkInput {
  */
 export interface ForkOutput {
   readonly forkContext: ForkContext;
-  readonly forkedThreadId: ID;
+  readonly forkedThreadIds: ID[];
   readonly forkStrategy: ForkStrategy;
 }
 
@@ -74,6 +81,7 @@ export class ThreadFork {
       this.logger.info('开始执行Fork操作', {
         parentThreadId: input.parentThread.threadId.toString(),
         forkPoint: input.forkPoint.toString(),
+        branchCount: input.branches.length,
       });
 
       // 验证输入
@@ -104,20 +112,17 @@ export class ThreadFork {
         return ThreadOperationResult.createFailure<ForkOutput>(error, metadata);
       }
 
+      // 创建子线程
+      const childThreads = await this.createChildThreads(input);
+
       // 创建Fork上下文
       const forkContext = this.createForkContext(input);
-
-      // 生成新的线程ID
-      const forkedThreadId = ID.generate();
-
-      // 获取Fork策略
-      const forkStrategy = input.forkStrategy || ForkStrategy.createPartial();
 
       // 创建Fork输出
       const output: ForkOutput = {
         forkContext,
-        forkedThreadId,
-        forkStrategy,
+        forkedThreadIds: childThreads.map(t => t.threadId),
+        forkStrategy: input.forkStrategy || ForkStrategy.createPartial(),
       };
 
       // 创建操作元数据
@@ -129,14 +134,14 @@ export class ThreadFork {
         {
           parentThreadId: input.parentThread.threadId.toString(),
           forkPoint: input.forkPoint.toString(),
-          forkedThreadId: forkedThreadId.toString(),
-          forkStrategy: forkStrategy.type,
+          forkedThreadCount: childThreads.length,
+          forkStrategy: input.forkStrategy?.type,
           warnings: forkValidation.warnings,
         }
       );
 
       this.logger.info('Fork操作执行成功', {
-        forkedThreadId: forkedThreadId.toString(),
+        forkedThreadCount: childThreads.length,
         duration,
       });
 
@@ -169,9 +174,9 @@ export class ThreadFork {
       return { valid: false, error: 'Fork点不能为空' };
     }
 
-    // 验证Fork点是否存在
-    // 注意：节点执行状态现在由其他服务管理，这里暂时跳过验证
-    // TODO: 从节点执行服务获取节点执行状态进行验证
+    if (!input.branches || input.branches.length === 0) {
+      return { valid: false, error: '分支列表不能为空' };
+    }
 
     // 验证父线程状态
     if (!input.parentThread.isActive()) {
@@ -194,9 +199,15 @@ export class ThreadFork {
     // Note: ForkStrategy的validate方法返回void，如果有验证错误会抛出异常
     // 这里假设验证通过，如果有异常会在上层捕获
 
-    // 验证Fork点状态
-    // 注意：节点执行状态现在由其他服务管理，这里暂时跳过验证
-    // TODO: 从节点执行服务获取节点执行状态进行验证
+    // 验证分支配置
+    input.branches.forEach((branch, index) => {
+      if (!branch.branchId || typeof branch.branchId !== 'string') {
+        errors.push(`分支[${index}]缺少branchId`);
+      }
+      if (!branch.targetNodeId || typeof branch.targetNodeId !== 'string') {
+        errors.push(`分支[${index}]缺少targetNodeId`);
+      }
+    });
 
     // 验证上下文保留策略
     const forkOptions = input.forkOptions || ForkOptions.createDefault();
@@ -209,6 +220,35 @@ export class ThreadFork {
       errors,
       warnings,
     };
+  }
+
+  /**
+   * 创建子线程
+   */
+  private async createChildThreads(input: ForkInput): Promise<Thread[]> {
+    const childThreads: Thread[] = [];
+
+    for (const branch of input.branches) {
+      // 创建子线程
+      const childThread = Thread.create(
+        input.parentThread.sessionId,
+        input.parentThread.workflowId,
+        input.parentThread.priority,
+        `${input.parentThread.title || 'Thread'} - ${branch.name || branch.branchId}`,
+        `Forked from thread ${input.parentThread.threadId.toString()} at ${input.forkPoint.toString()}`,
+        {
+          parentThreadId: input.parentThread.threadId.toString(),
+          forkPoint: input.forkPoint.toString(),
+          branchId: branch.branchId,
+        }
+      );
+
+      // 保存子线程
+      await this.threadRepository.save(childThread);
+      childThreads.push(childThread);
+    }
+
+    return childThreads;
   }
 
   /**
