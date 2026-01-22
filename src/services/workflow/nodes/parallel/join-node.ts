@@ -10,25 +10,28 @@ import {
   ValidationResult,
   WorkflowExecutionContext,
 } from '../../../../domain/workflow/entities/node';
+import { MarkerNode } from '../../../../domain/workflow/value-objects/node/marker-node';
 
 /**
  * Join节点
- * 
- * 标记并行分支的结束，触发ThreadJoin服务等待子线程完成
- * 
+ *
+ * 标记并行分支的结束，由WorkflowExecutionEngine调用ThreadJoin服务等待子线程完成
+ *
  * 核心功能：
  * - 标记join点
- * - 触发ThreadJoin服务
- * - 等待join完成
- * - 清理分支变量
- * 
+ * - 存储标记信息到上下文
+ * - 由WorkflowExecutionEngine调用ThreadJoin服务
+ *
  * 注意：
  * - 不负责合并策略（由ThreadJoin负责）
  * - 不负责超时控制（由ThreadJoin负责）
  * - 不负责结果合并（由ThreadJoin负责）
  * - 不负责检查合并条件（由ThreadJoin负责）
+ * - 不负责调用ThreadJoin服务（由WorkflowExecutionEngine负责）
  */
 export class JoinNode extends Node {
+  private readonly marker: MarkerNode;
+
   constructor(
     id: NodeId,
     name?: string,
@@ -42,16 +45,30 @@ export class JoinNode extends Node {
       description || '并行分支合并节点',
       position
     );
+    
+    // 创建标记节点值对象
+    this.marker = MarkerNode.join(id);
+  }
+
+  /**
+   * 获取标记节点
+   */
+  getMarker(): MarkerNode {
+    return this.marker;
   }
 
   async execute(context: WorkflowExecutionContext): Promise<NodeExecutionResult> {
     const startTime = Date.now();
 
     try {
-      // 获取分支信息
+      // 存储标记信息到上下文
+      // WorkflowExecutionEngine会读取这些信息并调用ThreadJoin服务
+      context.setVariable('marker_node', this.marker.toJSON());
+      context.setVariable('join_node_id', this.nodeId.toString());
+
+      // 获取分支信息（由WorkflowExecutionEngine的ThreadJoin服务填充）
       const forkBranches = context.getVariable('fork_branches') || [];
       const forkBranchCount = context.getVariable('fork_branch_count') || 0;
-      const forkExecutionId = context.getVariable('fork_execution_id');
 
       if (!forkBranches || forkBranches.length === 0) {
         return {
@@ -171,8 +188,8 @@ export class JoinNode extends Node {
   }
 
   validate(): ValidationResult {
-    const errors: string[] = [];
-    return { valid: errors.length === 0, errors };
+    // Join节点不需要验证
+    return { valid: true, errors: [] };
   }
 
   getMetadata(): NodeMetadata {

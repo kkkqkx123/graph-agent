@@ -10,6 +10,10 @@ import {
   ValidationResult,
   WorkflowExecutionContext,
 } from '../../../../domain/workflow/entities/node';
+import {
+  MarkerNode,
+  SubWorkflowConfig,
+} from '../../../../domain/workflow/value-objects/node/marker-node';
 
 /**
  * SubWorkflow节点配置接口
@@ -31,19 +35,22 @@ export interface SubWorkflowNodeConfig {
 
 /**
  * SubWorkflow节点
- * 
+ *
  * 这是一个占位符节点，用于标记子工作流的引用位置。
  * 在工作流合并时，这个节点会被替换为子工作流的实际节点。
- * 
+ *
  * 注意：
  * - 这个节点不执行任何逻辑，只是一个标记
  * - 在WorkflowMerger中，类型为'subworkflow'的节点会被过滤掉
  * - 子工作流的实际节点会通过referenceId找到并合并到父工作流中
+ * - 使用MarkerNode值对象存储配置信息
  */
 export class SubWorkflowNode extends Node {
+  private readonly marker: MarkerNode;
+
   constructor(
     id: NodeId,
-    public readonly config: SubWorkflowNodeConfig,
+    config: SubWorkflowNodeConfig,
     name?: string,
     description?: string,
     position?: { x: number; y: number }
@@ -55,11 +62,41 @@ export class SubWorkflowNode extends Node {
       description || config.description || `子工作流引用: ${config.workflowId}`,
       position
     );
+    
+    // 创建标记节点值对象
+    this.marker = MarkerNode.subworkflow(id, {
+      referenceId: config.referenceId,
+      workflowId: config.workflowId,
+      version: config.version,
+      inputMapping: config.inputMapping,
+      outputMapping: config.outputMapping,
+    });
+  }
+
+  /**
+   * 获取配置
+   */
+  get config(): SubWorkflowNodeConfig {
+    const markerConfig = this.marker.getSubWorkflowConfig();
+    return {
+      referenceId: markerConfig.referenceId,
+      workflowId: markerConfig.workflowId,
+      version: markerConfig.version,
+      inputMapping: markerConfig.inputMapping,
+      outputMapping: markerConfig.outputMapping,
+    };
+  }
+
+  /**
+   * 获取标记节点
+   */
+  getMarker(): MarkerNode {
+    return this.marker;
   }
 
   /**
    * 执行节点
-   * 
+   *
    * 注意：SubWorkflow节点不应该被执行，因为它只是一个占位符。
    * 在工作流合并时，这个节点会被移除，替换为子工作流的实际节点。
    * 如果这个方法被调用，说明工作流没有被正确合并。
@@ -68,6 +105,12 @@ export class SubWorkflowNode extends Node {
     const startTime = Date.now();
 
     try {
+      // 存储标记信息到上下文
+      // WorkflowMerger会读取这些信息并合并子工作流
+      context.setVariable('marker_node', this.marker.toJSON());
+      context.setVariable('subworkflow_reference_id', this.config.referenceId);
+      context.setVariable('subworkflow_workflow_id', this.config.workflowId);
+
       // 这个节点不应该被执行
       // 如果执行到这里，说明工作流没有被正确合并
       return {
@@ -101,44 +144,8 @@ export class SubWorkflowNode extends Node {
    * 验证节点配置
    */
   validate(): ValidationResult {
-    const errors: string[] = [];
-
-    if (!this.config.referenceId || this.config.referenceId.trim().length === 0) {
-      errors.push('referenceId不能为空');
-    }
-
-    if (!this.config.workflowId || this.config.workflowId.trim().length === 0) {
-      errors.push('workflowId不能为空');
-    }
-
-    // 验证输入映射
-    if (this.config.inputMapping) {
-      for (const [key, value] of Object.entries(this.config.inputMapping)) {
-        if (!key || key.trim().length === 0) {
-          errors.push(`inputMapping中的键不能为空: ${key}`);
-        }
-        if (!value || value.trim().length === 0) {
-          errors.push(`inputMapping中的值不能为空: ${value}`);
-        }
-      }
-    }
-
-    // 验证输出映射
-    if (this.config.outputMapping) {
-      for (const [key, value] of Object.entries(this.config.outputMapping)) {
-        if (!key || key.trim().length === 0) {
-          errors.push(`outputMapping中的键不能为空: ${key}`);
-        }
-        if (!value || value.trim().length === 0) {
-          errors.push(`outputMapping中的值不能为空: ${value}`);
-        }
-      }
-    }
-
-    return {
-      valid: errors.length === 0,
-      errors,
-    };
+    // 验证由MarkerNode在创建时完成
+    return { valid: true, errors: [] };
   }
 
   /**

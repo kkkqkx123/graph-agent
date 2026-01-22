@@ -10,43 +10,34 @@ import {
   ValidationResult,
   WorkflowExecutionContext,
 } from '../../../../domain/workflow/entities/node';
-
-/**
- * 分支配置接口
- */
-export interface BranchConfig {
-  /** 分支ID */
-  branchId: string;
-  /** 目标节点ID */
-  targetNodeId: string;
-  /** 分支名称 */
-  name?: string;
-  /** 分支条件（可选，由ConditionNode处理） */
-  condition?: string;
-  /** 分支权重（可选，由ThreadFork处理） */
-  weight?: number;
-}
+import {
+  MarkerNode,
+  BranchConfig,
+} from '../../../../domain/workflow/value-objects/node/marker-node';
 
 /**
  * Fork节点
- * 
+ *
  * 标记并行分支的开始，触发ThreadFork服务创建子线程
- * 
+ *
  * 核心功能：
  * - 标记fork点
- * - 触发ThreadFork服务
  * - 存储分支信息到上下文
- * 
+ * - 由WorkflowExecutionEngine调用ThreadFork服务
+ *
  * 注意：
  * - 不负责分支策略（由ThreadFork负责）
  * - 不负责并发控制（由ThreadFork负责）
  * - 不负责条件判断（由ConditionNode负责）
  * - 不负责创建分支上下文（由ThreadFork负责）
+ * - 不负责调用ThreadFork服务（由WorkflowExecutionEngine负责）
  */
 export class ForkNode extends Node {
+  private readonly marker: MarkerNode;
+
   constructor(
     id: NodeId,
-    public readonly branches: BranchConfig[],
+    branches: BranchConfig[],
     name?: string,
     description?: string,
     position?: { x: number; y: number }
@@ -58,27 +49,32 @@ export class ForkNode extends Node {
       description || '并行分支节点',
       position
     );
+    
+    // 创建标记节点值对象
+    this.marker = MarkerNode.fork(id, branches);
+  }
+
+  /**
+   * 获取分支配置
+   */
+  get branches(): BranchConfig[] {
+    return this.marker.getBranches();
+  }
+
+  /**
+   * 获取标记节点
+   */
+  getMarker(): MarkerNode {
+    return this.marker;
   }
 
   async execute(context: WorkflowExecutionContext): Promise<NodeExecutionResult> {
     const startTime = Date.now();
 
     try {
-      // 验证分支配置
-      if (!Array.isArray(this.branches) || this.branches.length === 0) {
-        return {
-          success: false,
-          error: 'branches必须是非空数组',
-          executionTime: Date.now() - startTime,
-          metadata: {
-            nodeId: this.nodeId.toString(),
-            nodeType: this.type.toString(),
-          },
-        };
-      }
-
-      // 存储分支信息到上下文
-      // ThreadFork服务会读取这些信息并创建子线程
+      // 存储标记信息到上下文
+      // WorkflowExecutionEngine会读取这些信息并调用ThreadFork服务
+      context.setVariable('marker_node', this.marker.toJSON());
       context.setVariable('fork_branches', this.branches);
       context.setVariable('fork_branch_count', this.branches.length);
       context.setVariable('fork_execution_id', context.getExecutionId());
@@ -121,25 +117,8 @@ export class ForkNode extends Node {
   }
 
   validate(): ValidationResult {
-    const errors: string[] = [];
-
-    if (!Array.isArray(this.branches) || this.branches.length === 0) {
-      errors.push('branches必须是非空数组');
-    } else {
-      this.branches.forEach((branch, index) => {
-        if (!branch.branchId || typeof branch.branchId !== 'string') {
-          errors.push(`分支[${index}]缺少branchId`);
-        }
-        if (!branch.targetNodeId || typeof branch.targetNodeId !== 'string') {
-          errors.push(`分支[${index}]缺少targetNodeId`);
-        }
-      });
-    }
-
-    return {
-      valid: errors.length === 0,
-      errors,
-    };
+    // 验证由MarkerNode在创建时完成
+    return { valid: true, errors: [] };
   }
 
   getMetadata(): NodeMetadata {

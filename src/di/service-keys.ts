@@ -38,6 +38,7 @@ import { IHumanRelayService } from '../services/llm/human-relay';
 import { ThreadCopy } from '../services/threads/thread-copy';
 import { ThreadExecution } from '../services/threads/thread-execution';
 import { ThreadFork } from '../services/threads/thread-fork';
+import { ThreadJoin } from '../services/threads/thread-join';
 import { ThreadLifecycle } from '../services/threads/thread-lifecycle';
 import { ThreadMaintenance } from '../services/threads/thread-maintenance';
 import { ThreadManagement } from '../services/threads/thread-management';
@@ -143,6 +144,7 @@ export interface ServiceTypes {
   ThreadCopy: ThreadCopy;
   ThreadExecution: ThreadExecution;
   ThreadFork: ThreadFork;
+  ThreadJoin: ThreadJoin;
   ThreadLifecycle: ThreadLifecycle;
   ThreadMaintenance: ThreadMaintenance;
   ThreadManagement: ThreadManagement;
@@ -297,6 +299,7 @@ export const TYPES: {
   ThreadCopy: Symbol.for('ThreadCopy') as TypedServiceIdentifier<'ThreadCopy'>,
   ThreadExecution: Symbol.for('ThreadExecution') as TypedServiceIdentifier<'ThreadExecution'>,
   ThreadFork: Symbol.for('ThreadFork') as TypedServiceIdentifier<'ThreadFork'>,
+  ThreadJoin: Symbol.for('ThreadJoin') as TypedServiceIdentifier<'ThreadJoin'>,
   ThreadLifecycle: Symbol.for('ThreadLifecycle') as TypedServiceIdentifier<'ThreadLifecycle'>,
   ThreadMaintenance: Symbol.for(
     'ThreadMaintenance'

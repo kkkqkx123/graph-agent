@@ -8,6 +8,14 @@ import { CheckpointManagement } from '../checkpoints/checkpoint-management';
 import { ThreadConditionalRouter } from './thread-conditional-router';
 import { INodeExecutor } from '../workflow/nodes/node-executor';
 import { FunctionRegistry } from '../workflow/functions/function-registry';
+import { ThreadFork } from './thread-fork';
+import { ThreadJoin } from './thread-join';
+import { ForkNode } from '../workflow/nodes/parallel/fork-node';
+import { JoinNode } from '../workflow/nodes/parallel/join-node';
+import { MarkerNode } from '../../domain/workflow/value-objects/node/marker-node';
+import { IThreadRepository } from '../../domain/threads/repositories/thread-repository';
+import { Thread } from '../../domain/threads/entities/thread';
+import { ID } from '../../domain/common/value-objects/id';
 import { TYPES } from '../../di/service-keys';
 
 /**
@@ -155,6 +163,9 @@ export class WorkflowExecutionEngine {
   private readonly router: ThreadConditionalRouter;
   private readonly nodeExecutor: INodeExecutor;
   private readonly functionRegistry: FunctionRegistry;
+  private readonly threadFork: ThreadFork;
+  private readonly threadJoin: ThreadJoin;
+  private readonly threadRepository: IThreadRepository;
   private activeExecutions: Map<string, WorkflowExecutionController>;
 
   constructor(
@@ -163,7 +174,10 @@ export class WorkflowExecutionEngine {
     @inject(TYPES.CheckpointManagement) checkpointManagement: CheckpointManagement,
     @inject(TYPES.ThreadConditionalRouter) router: ThreadConditionalRouter,
     @inject(TYPES.NodeExecutor) nodeExecutor: INodeExecutor,
-    @inject(TYPES.FunctionRegistry) functionRegistry: FunctionRegistry
+    @inject(TYPES.FunctionRegistry) functionRegistry: FunctionRegistry,
+    @inject(TYPES.ThreadFork) threadFork: ThreadFork,
+    @inject(TYPES.ThreadJoin) threadJoin: ThreadJoin,
+    @inject(TYPES.ThreadRepository) threadRepository: IThreadRepository
   ) {
     this.stateManager = stateManager;
     this.historyManager = historyManager;
@@ -171,6 +185,9 @@ export class WorkflowExecutionEngine {
     this.router = router;
     this.nodeExecutor = nodeExecutor;
     this.functionRegistry = functionRegistry;
+    this.threadFork = threadFork;
+    this.threadJoin = threadJoin;
+    this.threadRepository = threadRepository;
     this.activeExecutions = new Map();
   }
 
@@ -276,6 +293,16 @@ export class WorkflowExecutionEngine {
             nodeResult.success ? 'success' : 'failure',
             nodeResult.metadata
           );
+
+          // 处理Fork节点
+          if (node instanceof ForkNode && nodeResult.success) {
+            await this.handleForkNode(node, currentState, threadId, workflow);
+          }
+
+          // 处理Join节点
+          if (node instanceof JoinNode && nodeResult.success) {
+            await this.handleJoinNode(node, currentState, threadId);
+          }
 
           executedNodes++;
         } catch (error) {
@@ -483,6 +510,168 @@ export class WorkflowExecutionEngine {
 
     // 否则直接执行
     return await this.nodeExecutor.execute(node, nodeContext);
+  }
+
+  /**
+   * 处理Fork节点（私有方法）
+   * @param node Fork节点
+   * @param state 线程状态
+   * @param threadId 线程ID
+   * @param workflow 工作流
+   */
+  private async handleForkNode(
+    node: ForkNode,
+    state: ThreadWorkflowState,
+    threadId: string,
+    workflow: Workflow
+  ): Promise<void> {
+    try {
+      // 获取当前线程
+      const currentThread = await this.getCurrentThread(threadId);
+      if (!currentThread) {
+        throw new Error(`线程 ${threadId} 不存在`);
+      }
+
+      // 调用ThreadFork服务
+      const forkResult = await this.threadFork.executeFork({
+        parentThread: currentThread,
+        forkPoint: node.nodeId,
+        branches: node.branches,
+      });
+
+      if (!forkResult.success) {
+        throw new Error(`Fork操作失败: ${forkResult.error?.message}`);
+      }
+
+      // 存储子线程ID到状态
+      this.stateManager.updateState(threadId, {
+        child_thread_ids: forkResult.result?.forkedThreadIds || [],
+      });
+
+      // 启动子线程
+      for (const childThreadId of forkResult.result?.forkedThreadIds || []) {
+        await this.startChildThread(childThreadId.toString(), workflow, state);
+      }
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      throw new Error(`处理Fork节点失败: ${errorMessage}`);
+    }
+  }
+
+  /**
+   * 处理Join节点（私有方法）
+   * @param node Join节点
+   * @param state 线程状态
+   * @param threadId 线程ID
+   */
+  private async handleJoinNode(
+    node: JoinNode,
+    state: ThreadWorkflowState,
+    threadId: string
+  ): Promise<void> {
+    try {
+      // 获取当前线程
+      const currentThread = await this.getCurrentThread(threadId);
+      if (!currentThread) {
+        throw new Error(`线程 ${threadId} 不存在`);
+      }
+
+      // 获取子线程ID
+      const childThreadIds = state.getData('child_thread_ids') || [];
+
+      if (childThreadIds.length === 0) {
+        // 没有子线程，直接返回
+        return;
+      }
+
+      // 调用ThreadJoin服务
+      const joinResult = await this.threadJoin.executeJoin({
+        parentThread: currentThread,
+        joinPoint: node.nodeId,
+        childThreadIds,
+      });
+
+      if (!joinResult.success) {
+        throw new Error(`Join操作失败: ${joinResult.error?.message}`);
+      }
+
+      // 存储合并结果到状态
+      this.stateManager.updateState(threadId, {
+        merged_results: joinResult.result?.mergedResults || {},
+        branch_results: joinResult.result?.branchResults || [],
+      });
+
+      // 清理子线程ID
+      this.stateManager.updateState(threadId, {
+        child_thread_ids: [],
+      });
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      throw new Error(`处理Join节点失败: ${errorMessage}`);
+    }
+  }
+
+  /**
+   * 获取当前线程（私有方法）
+   * @param threadId 线程ID
+   * @returns 线程实例
+   */
+  private async getCurrentThread(threadId: string): Promise<Thread | null> {
+    try {
+      const thread = await this.threadRepository.findById(ID.fromString(threadId));
+      return thread || null;
+    } catch (error) {
+      console.error(`获取线程 ${threadId} 失败:`, error);
+      return null;
+    }
+  }
+
+  /**
+   * 启动子线程（私有方法）
+   * @param childThreadId 子线程ID
+   * @param workflow 工作流
+   * @param parentState 父线程状态
+   */
+  private async startChildThread(
+    childThreadId: string,
+    workflow: Workflow,
+    parentState: ThreadWorkflowState
+  ): Promise<void> {
+    try {
+      // 获取子线程
+      const childThread = await this.threadRepository.findById(ID.fromString(childThreadId));
+      if (!childThread) {
+        throw new Error(`子线程 ${childThreadId} 不存在`);
+      }
+
+      // 初始化子线程状态
+      this.stateManager.initialize(
+        childThreadId,
+        workflow.workflowId,
+        parentState.data
+      );
+
+      // 查找起始节点
+      const startNodeId = this.findStartNode(workflow);
+      if (!startNodeId) {
+        throw new Error('工作流没有起始节点');
+      }
+
+      // 执行子线程工作流
+      await this.execute(
+        workflow,
+        childThreadId,
+        parentState.data,
+        {
+          enableCheckpoints: false,
+          maxSteps: 1000,
+          timeout: 300000,
+        }
+      );
+    } catch (error) {
+      console.error(`启动子线程 ${childThreadId} 失败:`, error);
+      throw error;
+    }
   }
 
   /**
