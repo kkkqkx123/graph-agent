@@ -53,8 +53,6 @@ export class MapTransformFunction extends BaseTransformFunction<TransformFunctio
     context: WorkflowExecutionContext,
     config: TransformFunctionConfig
   ): Promise<any[]> {
-    this.checkInitialized();
-
     const { sourceData, config: transformConfig } = config;
     const { field, expression } = transformConfig as Record<string, unknown>;
 

@@ -54,8 +54,6 @@ export class SortTransformFunction extends BaseTransformFunction<TransformFuncti
     context: WorkflowExecutionContext,
     config: TransformFunctionConfig
   ): Promise<any[]> {
-    this.checkInitialized();
-
     const { sourceData, config: transformConfig } = config;
     const { field, order = 'asc' } = transformConfig as Record<string, unknown>;
 

@@ -52,8 +52,6 @@ export class TimeTriggerFunction extends BaseTriggerFunction<TriggerFunctionConf
     context: WorkflowExecutionContext,
     config: TriggerFunctionConfig
   ): Promise<boolean> {
-    this.checkInitialized();
-
     const triggerTime = config['triggerTime'];
     const lastTriggered = config['lastTriggered'];
 

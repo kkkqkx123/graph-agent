@@ -97,8 +97,6 @@ export class ConditionalRoutingFunction extends BaseTargetRoutingFunction<Routin
     context: WorkflowExecutionContext,
     config: RoutingFunctionConfig
   ): Promise<string | string[]> {
-    this.checkInitialized();
-
     const conditions = config['conditions'] || [];
     const defaultNodeId = config['defaultNodeId'] || 'default';
     const matchMode = config['matchMode'] || 'first';

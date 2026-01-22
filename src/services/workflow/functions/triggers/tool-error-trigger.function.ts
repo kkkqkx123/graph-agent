@@ -71,8 +71,6 @@ export class ToolErrorTriggerFunction extends BaseTriggerFunction<TriggerFunctio
     context: WorkflowExecutionContext,
     config: TriggerFunctionConfig
   ): Promise<boolean> {
-    this.checkInitialized();
-
     const maxErrorCount = config['maxErrorCount'] || 3;
     const toolName = config['toolName'];
     const errorType = config['errorType'];

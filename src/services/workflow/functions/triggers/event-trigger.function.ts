@@ -61,8 +61,6 @@ export class EventTriggerFunction extends BaseTriggerFunction<TriggerFunctionCon
     context: WorkflowExecutionContext,
     config: TriggerFunctionConfig
   ): Promise<boolean> {
-    this.checkInitialized();
-
     const eventType = config['eventType'];
     const eventSource = config['eventSource'];
     const eventDataFilter = config['eventDataFilter'] || {};

@@ -133,20 +133,6 @@ export abstract class ToolExecutorBase {
   abstract healthCheck(): Promise<ToolExecutorHealthCheck>;
 
   /**
-   * 初始化执行器
-   */
-  async initialize(config: Record<string, unknown>): Promise<boolean> {
-    try {
-      this.config = config;
-      this.isInitialized = true;
-      return true;
-    } catch (error) {
-      console.error(`初始化${this.getName()}失败:`, error);
-      return false;
-    }
-  }
-
-  /**
    * 配置执行器
    */
   async configure(config: Record<string, unknown>): Promise<boolean> {

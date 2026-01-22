@@ -61,8 +61,6 @@ export class IterationLimitTriggerFunction extends BaseTriggerFunction<TriggerFu
     context: WorkflowExecutionContext,
     config: TriggerFunctionConfig
   ): Promise<boolean> {
-    this.checkInitialized();
-
     const maxIterations = config['maxIterations'];
     const iterationVariable = config['iterationVariable'] || 'iteration';
 

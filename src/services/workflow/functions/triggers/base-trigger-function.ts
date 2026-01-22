@@ -21,7 +21,6 @@ import { IConfigManager } from '../../../../infrastructure/config/loading/config
 export abstract class BaseTriggerFunction<
   TConfig extends TriggerFunctionConfig = TriggerFunctionConfig,
 > implements IWorkflowFunction {
-  protected _initialized: boolean = false;
   public readonly metadata?: Record<string, any>;
   /** 函数类型标识 */
   public readonly type: WorkflowFunctionType = WorkflowFunctionType.TRIGGER;
@@ -123,31 +122,6 @@ export abstract class BaseTriggerFunction<
    */
   protected validateCustomConfig(config: any): string[] {
     return [];
-  }
-
-  /**
-   * 初始化函数
-   */
-  initialize(config?: any): boolean {
-    this._initialized = true;
-    return true;
-  }
-
-  /**
-   * 清理函数资源
-   */
-  cleanup(): boolean {
-    this._initialized = false;
-    return true;
-  }
-
-  /**
-   * 检查函数是否已初始化
-   */
-  protected checkInitialized(): void {
-    if (!this._initialized) {
-      throw new Error(`函数 ${this.name} 尚未初始化`);
-    }
   }
 
   /**

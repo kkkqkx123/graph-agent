@@ -69,8 +69,6 @@ export class MaxIterationsReachedConditionFunction extends BaseConditionFunction
     context: WorkflowExecutionContext,
     config: MaxIterationsConfig
   ): Promise<boolean> {
-    this.checkInitialized();
-
     // 合并基础配置和运行时配置
     const mergedConfig = this.getConfig<MaxIterationsConfig>(config);
     const finalConfig = { ...this.defaultConfig, ...mergedConfig };

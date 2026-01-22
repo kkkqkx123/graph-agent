@@ -47,8 +47,6 @@ export class GroupTransformFunction extends BaseTransformFunction<TransformFunct
     context: WorkflowExecutionContext,
     config: TransformFunctionConfig
   ): Promise<Record<string, any[]>> {
-    this.checkInitialized();
-
     const { sourceData, config: transformConfig } = config;
     const { field } = transformConfig as Record<string, unknown>;
 

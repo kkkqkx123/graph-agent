@@ -77,9 +77,6 @@ export class DataTransformNode extends Node {
         };
       }
 
-      // 初始化转换函数
-      transformFunction.initialize();
-
       // 执行转换
       const result = await transformFunction.execute(context, {
         sourceData: data,

@@ -57,8 +57,6 @@ export class StateTriggerFunction extends BaseTriggerFunction<TriggerFunctionCon
     context: WorkflowExecutionContext,
     config: TriggerFunctionConfig
   ): Promise<boolean> {
-    this.checkInitialized();
-
     const stateVariable = config['stateVariable'];
     const expectedValue = config['expectedValue'];
     const operator = config['operator'] || '===';

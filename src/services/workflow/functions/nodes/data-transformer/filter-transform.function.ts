@@ -56,8 +56,6 @@ export class FilterTransformFunction extends BaseTransformFunction<TransformFunc
     context: WorkflowExecutionContext,
     config: TransformFunctionConfig
   ): Promise<any[]> {
-    this.checkInitialized();
-
     const { sourceData, config: transformConfig } = config;
     const {
       field,

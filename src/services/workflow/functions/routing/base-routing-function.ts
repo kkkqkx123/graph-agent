@@ -21,7 +21,6 @@ import { IConfigManager } from '../../../../infrastructure/config/loading/config
 export abstract class BaseConditionRoutingFunction<
   TConfig extends RoutingFunctionConfig = RoutingFunctionConfig,
 > implements IWorkflowFunction {
-  protected _initialized: boolean = false;
   public readonly metadata?: Record<string, any>;
   /** 函数类型标识 */
   public readonly type: WorkflowFunctionType = WorkflowFunctionType.ROUTING;
@@ -126,31 +125,6 @@ export abstract class BaseConditionRoutingFunction<
   }
 
   /**
-   * 初始化函数
-   */
-  initialize(config?: any): boolean {
-    this._initialized = true;
-    return true;
-  }
-
-  /**
-   * 清理函数资源
-   */
-  cleanup(): boolean {
-    this._initialized = false;
-    return true;
-  }
-
-  /**
-   * 检查函数是否已初始化
-   */
-  protected checkInitialized(): void {
-    if (!this._initialized) {
-      throw new Error(`函数 ${this.name} 尚未初始化`);
-    }
-  }
-
-  /**
    * 执行函数（抽象方法，子类必须实现）
    * 使用类型安全的参数
    */
@@ -176,7 +150,6 @@ export abstract class BaseConditionRoutingFunction<
 export abstract class BaseTargetRoutingFunction<
   TConfig extends RoutingFunctionConfig = RoutingFunctionConfig,
 > implements IWorkflowFunction {
-  protected _initialized: boolean = false;
   public readonly metadata?: Record<string, any>;
   /** 函数类型标识 */
   public readonly type: WorkflowFunctionType = WorkflowFunctionType.ROUTING;
@@ -278,31 +251,6 @@ export abstract class BaseTargetRoutingFunction<
    */
   protected validateCustomConfig(config: any): string[] {
     return [];
-  }
-
-  /**
-   * 初始化函数
-   */
-  initialize(config?: any): boolean {
-    this._initialized = true;
-    return true;
-  }
-
-  /**
-   * 清理函数资源
-   */
-  cleanup(): boolean {
-    this._initialized = false;
-    return true;
-  }
-
-  /**
-   * 检查函数是否已初始化
-   */
-  protected checkInitialized(): void {
-    if (!this._initialized) {
-      throw new Error(`函数 ${this.name} 尚未初始化`);
-    }
   }
 
   /**

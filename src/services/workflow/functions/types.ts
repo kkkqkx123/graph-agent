@@ -102,8 +102,6 @@ export interface IWorkflowFunction {
   getReturnType(): string;
   validateConfig(config: any): ValidationResult;
   getMetadata(): FunctionMetadata;
-  initialize(config?: any): boolean;
-  cleanup(): boolean;
   execute(context: WorkflowExecutionContext, config: any): Promise<any>;
   validateParameters(...args: any[]): { isValid: boolean; errors: string[] };
 }
