@@ -1,5 +1,5 @@
 import { WorkflowFunctionType } from '../../../../domain/workflow/value-objects/function-type';
-import { ConfigLoadingModule } from '../../../../infrastructure/config/loading/config-loading-module';
+import { IConfigManager } from '../../../../infrastructure/config/loading/config-manager.interface';
 
 /**
  * Hook函数基类
@@ -13,7 +13,7 @@ import { ConfigLoadingModule } from '../../../../infrastructure/config/loading/c
  * - 可以被多个Hook实体复用
  *
  * 支持配置加载：
- * - 可以通过 setConfigLoader() 注入配置加载器
+ * - 通过构造函数注入配置管理器
  * - 支持从配置文件加载基础配置
  * - 支持运行时配置覆盖
  */
@@ -43,17 +43,13 @@ export abstract class BaseHookFunction {
    */
   readonly type: WorkflowFunctionType = WorkflowFunctionType.HOOK;
 
-  /** 配置加载器 */
-  protected configLoader?: ConfigLoadingModule;
+  /** 配置管理器 */
+  protected configManager: IConfigManager;
   /** 基础配置（从配置文件加载） */
   protected baseConfig: Record<string, any> = {};
 
-  /**
-   * 设置配置加载器
-   * @param loader 配置加载器实例
-   */
-  setConfigLoader(loader: ConfigLoadingModule): void {
-    this.configLoader = loader;
+  constructor(configManager: IConfigManager) {
+    this.configManager = configManager;
     this.loadBaseConfig();
   }
 
@@ -62,11 +58,9 @@ export abstract class BaseHookFunction {
    * 从配置文件中加载函数的基础配置
    */
   protected loadBaseConfig(): void {
-    if (!this.configLoader) return;
-
     // 使用函数类名作为配置路径
     const configPath = `functions.${this.constructor.name}`;
-    this.baseConfig = this.configLoader.get(configPath, {});
+    this.baseConfig = this.configManager.get(configPath, {});
   }
 
   /**

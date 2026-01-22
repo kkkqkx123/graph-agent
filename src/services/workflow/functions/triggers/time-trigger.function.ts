@@ -1,17 +1,20 @@
-import { injectable } from 'inversify';
+import { injectable, inject } from 'inversify';
 import { BaseTriggerFunction } from './base-trigger-function';
 import { TriggerFunctionConfig, WorkflowExecutionContext } from '../types';
+import { IConfigManager } from '../../../../infrastructure/config/loading/config-manager.interface';
+import { TYPES } from '../../../../di/service-keys';
 
 /**
  * 时间触发器函数
  */
 @injectable()
 export class TimeTriggerFunction extends BaseTriggerFunction<TriggerFunctionConfig> {
-  constructor() {
+  constructor(@inject(TYPES.ConfigManager) configManager: IConfigManager) {
     super(
       'trigger:time',
       'time_trigger',
       '基于时间条件的触发器，支持间隔时间和特定时间点两种模式',
+      configManager,
       '1.0.0',
       'builtin'
     );

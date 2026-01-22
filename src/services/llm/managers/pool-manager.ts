@@ -4,6 +4,7 @@ import { InstanceConfig } from '../../../domain/llm/value-objects/instance-confi
 import { ID } from '../../../domain/common/value-objects/id';
 import { LLMClientFactory } from '../../../infrastructure/llm/clients/llm-client-factory';
 import { TYPES } from '../../../di/service-keys';
+import { TaskGroupManager } from './task-group-manager';
 
 /**
  * 轮询池管理器
@@ -15,7 +16,7 @@ export class PollingPoolManager {
   private pools: Map<string, PollingPool> = new Map();
 
   constructor(
-    @inject(TYPES.TaskGroupManager) private taskGroupManager: any,
+    @inject(TYPES.TaskGroupManager) private taskGroupManager: TaskGroupManager,
     @inject(TYPES.LLMClientFactory) private llmClientFactory: LLMClientFactory
   ) { }
 

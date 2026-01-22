@@ -143,7 +143,8 @@ export const servicesBindings = new ContainerModule((bind: any) => {
   // 创建并配置 FunctionRegistry 单例
   bind(TYPES.FunctionRegistry)
     .toDynamicValue((context: any) => {
-      const functionRegistry = new FunctionRegistry();
+      const configManager = context.container.get(TYPES.ConfigManager);
+      const functionRegistry = new FunctionRegistry(configManager);
 
       // 注册内置的转换函数
       functionRegistry.registerSingleton(new MapTransformFunction());

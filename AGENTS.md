@@ -7,7 +7,6 @@ This document provides essential information for AI agents working with the Modu
 The Modular Agent Framework is a TypeScript-based multi-agent system built on Graph Workflow, featuring:
 - **Multi-model LLM integration** (OpenAI, Gemini, Anthropic, Mock)
 - **Flexible tool system** supporting built-in, native, REST, and MCP tools
-- **Configuration-driven architecture** with TOML-based configs and environment variable injection
 - **Simplified 3-layer architecture**: Domain + Services + Infrastructure + Application
 - **RESTful API** for external integration
 - **Session and thread management** with checkpoint persistence

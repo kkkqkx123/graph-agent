@@ -1,14 +1,16 @@
-import { injectable } from 'inversify';
+import { injectable, inject } from 'inversify';
 import { BaseTriggerFunction } from './base-trigger-function';
 import { TriggerFunctionConfig, WorkflowExecutionContext } from '../types';
+import { IConfigManager } from '../../../../infrastructure/config/loading/config-manager.interface';
+import { TYPES } from '../../../../di/service-keys';
 
 /**
  * 基于事件类型的触发器函数
  */
 @injectable()
 export class EventTriggerFunction extends BaseTriggerFunction<TriggerFunctionConfig> {
-  constructor() {
-    super('trigger:event', 'event_trigger', '基于工作流事件类型的触发器', '1.0.0', 'builtin');
+  constructor(@inject(TYPES.ConfigManager) configManager: IConfigManager) {
+    super('trigger:event', 'event_trigger', '基于工作流事件类型的触发器', configManager, '1.0.0', 'builtin');
   }
 
   override getParameters() {

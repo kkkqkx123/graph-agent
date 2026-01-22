@@ -1,5 +1,5 @@
 import { injectable, inject } from 'inversify';
-import { ConfigLoadingModule } from '../../../infrastructure/config/loading/config-loading-module';
+import { IConfigManager } from '../../../infrastructure/config/loading/config-manager.interface';
 import { TYPES } from '../../../di/service-keys';
 
 /**
@@ -9,7 +9,7 @@ import { TYPES } from '../../../di/service-keys';
  */
 @injectable()
 export class TaskGroupManager {
-  constructor(@inject(TYPES.ConfigLoadingModule) private configManager: ConfigLoadingModule) {}
+  constructor(@inject(TYPES.ConfigManager) private configManager: IConfigManager) {}
 
   /**
    * 获取组引用对应的模型列表
@@ -331,8 +331,8 @@ export class TaskGroupManager {
    * 重新加载配置
    */
   async reloadConfig(): Promise<void> {
-    // ConfigLoadingModule 不需要手动重载，配置会自动更新
-    // await this.configManager.reload();
+    // 使用IConfigManager的refresh方法刷新配置
+    await this.configManager.refresh();
   }
 
   /**

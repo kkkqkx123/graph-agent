@@ -7,14 +7,14 @@ import {
   RoutingFunctionConfig,
 } from '../types';
 import { WorkflowFunctionType } from '../../../../domain/workflow/value-objects/function-type';
-import { ConfigLoadingModule } from '../../../../infrastructure/config/loading/config-loading-module';
+import { IConfigManager } from '../../../../infrastructure/config/loading/config-manager.interface';
 
 /**
  * 条件路由函数基类
  * 用于条件判断型路由函数，返回 boolean
  *
  * 支持配置加载：
- * - 可以通过 setConfigLoader() 注入配置加载器
+ * - 通过构造函数注入配置管理器
  * - 支持从配置文件加载基础配置
  * - 支持运行时配置覆盖
  */
@@ -26,8 +26,8 @@ export abstract class BaseConditionRoutingFunction<
   /** 函数类型标识 */
   public readonly type: WorkflowFunctionType = WorkflowFunctionType.ROUTING;
 
-  /** 配置加载器 */
-  protected configLoader?: ConfigLoadingModule;
+  /** 配置管理器 */
+  protected configManager: IConfigManager;
   /** 基础配置（从配置文件加载） */
   protected baseConfig: Record<string, any> = {};
 
@@ -35,19 +35,13 @@ export abstract class BaseConditionRoutingFunction<
     public readonly id: string,
     public readonly name: string,
     public readonly description: string,
+    configManager: IConfigManager,
     public readonly version: string = '1.0.0',
     public readonly category: string = 'builtin',
     metadata?: Record<string, any>
   ) {
     this.metadata = metadata;
-  }
-
-  /**
-   * 设置配置加载器
-   * @param loader 配置加载器实例
-   */
-  setConfigLoader(loader: ConfigLoadingModule): void {
-    this.configLoader = loader;
+    this.configManager = configManager;
     this.loadBaseConfig();
   }
 
@@ -56,11 +50,9 @@ export abstract class BaseConditionRoutingFunction<
    * 从配置文件中加载函数的基础配置
    */
   protected loadBaseConfig(): void {
-    if (!this.configLoader) return;
-
     // 使用函数类名作为配置路径
     const configPath = `functions.${this.constructor.name}`;
-    this.baseConfig = this.configLoader.get(configPath, {});
+    this.baseConfig = this.configManager.get(configPath, {});
   }
 
   /**
@@ -177,7 +169,7 @@ export abstract class BaseConditionRoutingFunction<
  * 用于目标选择型路由函数，返回目标节点 ID
  *
  * 支持配置加载：
- * - 可以通过 setConfigLoader() 注入配置加载器
+ * - 通过构造函数注入配置管理器
  * - 支持从配置文件加载基础配置
  * - 支持运行时配置覆盖
  */
@@ -189,8 +181,8 @@ export abstract class BaseTargetRoutingFunction<
   /** 函数类型标识 */
   public readonly type: WorkflowFunctionType = WorkflowFunctionType.ROUTING;
 
-  /** 配置加载器 */
-  protected configLoader?: ConfigLoadingModule;
+  /** 配置管理器 */
+  protected configManager: IConfigManager;
   /** 基础配置（从配置文件加载） */
   protected baseConfig: Record<string, any> = {};
 
@@ -198,19 +190,13 @@ export abstract class BaseTargetRoutingFunction<
     public readonly id: string,
     public readonly name: string,
     public readonly description: string,
+    configManager: IConfigManager,
     public readonly version: string = '1.0.0',
     public readonly category: string = 'builtin',
     metadata?: Record<string, any>
   ) {
     this.metadata = metadata;
-  }
-
-  /**
-   * 设置配置加载器
-   * @param loader 配置加载器实例
-   */
-  setConfigLoader(loader: ConfigLoadingModule): void {
-    this.configLoader = loader;
+    this.configManager = configManager;
     this.loadBaseConfig();
   }
 
@@ -219,11 +205,9 @@ export abstract class BaseTargetRoutingFunction<
    * 从配置文件中加载函数的基础配置
    */
   protected loadBaseConfig(): void {
-    if (!this.configLoader) return;
-
     // 使用函数类名作为配置路径
     const configPath = `functions.${this.constructor.name}`;
-    this.baseConfig = this.configLoader.get(configPath, {});
+    this.baseConfig = this.configManager.get(configPath, {});
   }
 
   /**

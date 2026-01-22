@@ -20,5 +20,3 @@ export * from './repositories';
 
 // 导出异常
 export * from './exceptions';
-
-// 操作相关值对象已移至 value-objects/operations
