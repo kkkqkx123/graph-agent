@@ -46,7 +46,7 @@ import { CheckpointRestore } from '../../services/checkpoints/checkpoint-restore
 import { ThreadStateManager } from '../../services/threads/thread-state-manager';
 import { ThreadHistoryManager } from '../../services/threads/thread-history-manager';
 import { ThreadConditionalRouter } from '../../services/threads/thread-conditional-router';
-import { WorkflowExecutionEngine } from '../../services/threads/workflow-execution-engine';
+import { ThreadWorkflowExecutor } from '../../services/threads/thread-workflow-executor';
 import { FunctionRegistry } from '../../services/workflow/functions/function-registry';
 import { MapTransformFunction } from '../../services/workflow/functions/nodes/data-transformer/map-transform.function';
 import { FilterTransformFunction } from '../../services/workflow/functions/nodes/data-transformer/filter-transform.function';
@@ -82,7 +82,7 @@ export const servicesBindings = new ContainerModule((bind: any) => {
   bind(TYPES.ThreadStateManager).to(ThreadStateManager).inSingletonScope();
   bind(TYPES.ThreadHistoryManager).to(ThreadHistoryManager).inSingletonScope();
   bind(TYPES.ThreadConditionalRouter).to(ThreadConditionalRouter).inSingletonScope();
-  bind(TYPES.WorkflowExecutionEngine).to(WorkflowExecutionEngine).inSingletonScope();
+  bind(TYPES.ThreadWorkflowExecutor).to(ThreadWorkflowExecutor).inSingletonScope();
 
   // LLM服务
   bind(TYPES.HumanRelay).to(HumanRelay).inSingletonScope();

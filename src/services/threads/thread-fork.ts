@@ -233,7 +233,6 @@ export class ThreadFork {
       const childThread = Thread.create(
         input.parentThread.sessionId,
         input.parentThread.workflowId,
-        input.parentThread.priority,
         `${input.parentThread.title || 'Thread'} - ${branch.name || branch.branchId}`,
         `Forked from thread ${input.parentThread.threadId.toString()} at ${input.forkPoint.toString()}`,
         {

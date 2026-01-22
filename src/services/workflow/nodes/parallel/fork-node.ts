@@ -23,14 +23,14 @@ import {
  * 核心功能：
  * - 标记fork点
  * - 存储分支信息到上下文
- * - 由WorkflowExecutionEngine调用ThreadFork服务
+ * - 由ThreadExecution调用ThreadFork服务
  *
  * 注意：
  * - 不负责分支策略（由ThreadFork负责）
  * - 不负责并发控制（由ThreadFork负责）
  * - 不负责条件判断（由ConditionNode负责）
  * - 不负责创建分支上下文（由ThreadFork负责）
- * - 不负责调用ThreadFork服务（由WorkflowExecutionEngine负责）
+ * - 不负责调用ThreadFork服务（由ThreadExecution负责）
  */
 export class ForkNode extends Node {
   private readonly marker: MarkerNode;
@@ -73,7 +73,7 @@ export class ForkNode extends Node {
 
     try {
       // 存储标记信息到上下文
-      // WorkflowExecutionEngine会读取这些信息并调用ThreadFork服务
+      // ThreadExecution会读取这些信息并调用ThreadFork服务
       context.setVariable('marker_node', this.marker.toJSON());
       context.setVariable('fork_branches', this.branches);
       context.setVariable('fork_branch_count', this.branches.length);

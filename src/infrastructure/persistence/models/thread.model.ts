@@ -11,7 +11,6 @@ import {
 import { SessionModel } from './session.model';
 import { MessageModel } from './message.model';
 import { ThreadStatusValue } from '../../../domain/threads/value-objects/thread-status';
-import { ThreadPriorityValue } from '../../../domain/threads/value-objects/thread-priority';
 
 @Entity('threads')
 @Index(['sessionId'])  // 会话查询
@@ -41,13 +40,6 @@ export class ThreadModel {
     default: ThreadStatusValue.PENDING,
   })
   state!: ThreadStatusValue;
-
-  @Column({
-    type: 'enum',
-    enum: Object.values(ThreadPriorityValue),
-    default: ThreadPriorityValue.NORMAL,
-  })
-  priority!: ThreadPriorityValue;
 
   // 执行状态字段
   @Column({

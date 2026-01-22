@@ -1,6 +1,5 @@
 import { Entity } from '../../common/base/entity';
 import { ID, Timestamp, Version, Metadata, DeletionStatus } from '../../common/value-objects';
-import { ThreadPriority } from '../value-objects';
 import { ThreadStatusValue } from '../value-objects/thread-status';
 import { State } from '../../state/entities/state';
 import { StateEntityType } from '../../state/value-objects/state-entity-type';
@@ -13,7 +12,6 @@ export interface ThreadProps {
   readonly id: ID;
   readonly sessionId: ID;
   readonly workflowId: ID;
-  readonly priority: ThreadPriority;
   readonly title?: string;
   readonly description?: string;
   readonly metadata: Metadata;
@@ -52,7 +50,6 @@ export class Thread extends Entity {
    * 创建新线程
    * @param sessionId 会话ID
    * @param workflowId 工作流ID
-   * @param priority 线程优先级
    * @param title 线程标题
    * @param description 线程描述
    * @param metadata 元数据
@@ -61,14 +58,12 @@ export class Thread extends Entity {
   public static create(
     sessionId: ID,
     workflowId: ID,
-    priority?: ThreadPriority,
     title?: string,
     description?: string,
     metadata?: Record<string, unknown>
   ): Thread {
     const now = Timestamp.now();
     const threadId = ID.generate();
-    const threadPriority = priority || ThreadPriority.normal();
 
     // 创建统一状态管理
     const state = State.create(
@@ -107,7 +102,6 @@ export class Thread extends Entity {
       id: threadId,
       sessionId,
       workflowId,
-      priority: threadPriority,
       title,
       description,
       metadata: Metadata.create(metadata || {}),
@@ -165,15 +159,6 @@ export class Thread extends Entity {
   public get status(): ThreadStatusValue {
     return this.props.state.data.getValue('status') as ThreadStatusValue;
   }
-
-  /**
-   * 获取线程优先级
-   * @returns 线程优先级
-   */
-  public get priority(): ThreadPriority {
-    return this.props.priority;
-  }
-
   /**
    * 获取线程标题
    * @returns 线程标题
@@ -391,22 +376,6 @@ export class Thread extends Entity {
     return new Thread({
       ...this.props,
       description,
-      updatedAt: Timestamp.now(),
-      version: this.props.version.nextPatch(),
-    });
-  }
-
-  /**
-   * 更新线程优先级
-   * @param priority 新优先级
-   * @returns 新线程实例
-   */
-  public updatePriority(priority: ThreadPriority): Thread {
-    this.props.deletionStatus.ensureActive();
-
-    return new Thread({
-      ...this.props,
-      priority,
       updatedAt: Timestamp.now(),
       version: this.props.version.nextPatch(),
     });

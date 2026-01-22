@@ -2,7 +2,6 @@ import { Repository } from '../../common/repositories/repository';
 import { Thread } from '../entities/thread';
 import { ID } from '../../common/value-objects/id';
 import { ThreadStatus } from '../value-objects/thread-status';
-import { ThreadPriority } from '../value-objects/thread-priority';
 
 /**
  * 线程仓储接口

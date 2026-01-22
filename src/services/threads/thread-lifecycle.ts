@@ -5,13 +5,13 @@
  */
 
 import { injectable, inject } from 'inversify';
-import { Thread, IThreadRepository, ThreadStatus, ThreadPriority } from '../../domain/threads';
+import { Thread, IThreadRepository } from '../../domain/threads';
 import { ISessionRepository } from '../../domain/sessions';
 import { IWorkflowRepository } from '../../domain/workflow';
 import { BaseService } from '../common/base-service';
 import { ILogger, ID } from '../../domain/common';
 import { TYPES } from '../../di/service-keys';
-import { WorkflowExecutionEngine } from './workflow-execution-engine';
+import { ThreadWorkflowExecutor } from './thread-workflow-executor';
 
 /**
  * 线程生命周期服务
@@ -22,7 +22,7 @@ export class ThreadLifecycle extends BaseService {
     @inject(TYPES.ThreadRepository) private readonly threadRepository: IThreadRepository,
     @inject(TYPES.SessionRepository) private readonly sessionRepository: ISessionRepository,
     @inject(TYPES.WorkflowRepository) private readonly workflowRepository: IWorkflowRepository,
-    @inject(TYPES.WorkflowExecutionEngine) private readonly workflowExecutionEngine: WorkflowExecutionEngine,
+    @inject(TYPES.ThreadWorkflowExecutor) private readonly workflowExecutionEngine: ThreadWorkflowExecutor,
     @inject(TYPES.Logger) logger: ILogger
   ) {
     super(logger);
@@ -41,17 +41,11 @@ export class ThreadLifecycle extends BaseService {
   private async validateThreadCreation(
     sessionId: ID,
     workflowId: ID,
-    priority?: ThreadPriority
   ): Promise<void> {
     // 验证会话是否有活跃线程（Session负责多线程并行管理）
     const hasActiveThreads = await this.threadRepository.hasActiveThreads(sessionId);
     if (hasActiveThreads) {
       throw new Error('会话已有活跃线程，无法创建新线程');
-    }
-
-    // 验证优先级
-    if (priority) {
-      priority.validate();
     }
   }
 
@@ -168,17 +162,13 @@ export class ThreadLifecycle extends BaseService {
           throw new Error(`工作流不存在: ${workflowId}`);
         }
 
-        // 转换请求参数
-        const threadPriority = priority ? ThreadPriority.fromNumber(priority) : undefined;
-
         // 验证线程创建的业务规则
-        await this.validateThreadCreation(sessionObjId, workflowObjId, threadPriority);
+        await this.validateThreadCreation(sessionObjId, workflowObjId);
 
         // 创建线程
         const thread = Thread.create(
           sessionObjId,
           workflowObjId,
-          threadPriority,
           title,
           description,
           metadata

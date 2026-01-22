@@ -7,7 +7,7 @@
 
 import { Container, ContainerModule } from 'inversify';
 import { infrastructureBindings, servicesBindings } from './bindings';
-import { TYPES, ServiceIdentifier, GetServiceType, TypedServiceIdentifier } from './service-keys';
+import { TYPES } from './service-keys';
 
 /**
  * 全局容器实例
@@ -118,32 +118,28 @@ export class ContainerManager {
   }
 
   /**
-   * 获取服务（类型安全版本）
+   * 获取服务
    * @param serviceIdentifier 服务标识符
    * @returns 服务实例
    */
-  getService<K extends ServiceIdentifier>(
-    serviceIdentifier: TypedServiceIdentifier<K>
-  ): GetServiceType<K> {
+  getService<T>(serviceIdentifier: symbol): T {
     if (!this.initialized) {
       throw new Error('[DI] 容器未初始化，请先调用initialize()方法');
     }
-    return this.container.get(serviceIdentifier) as GetServiceType<K>;
+    return this.container.get(serviceIdentifier) as T;
   }
 
   /**
-   * 尝试获取服务（类型安全版本）
+   * 尝试获取服务
    * @param serviceIdentifier 服务标识符
    * @returns 服务实例或null
    */
-  tryGetService<K extends ServiceIdentifier>(
-    serviceIdentifier: TypedServiceIdentifier<K>
-  ): GetServiceType<K> | null {
+  tryGetService<T>(serviceIdentifier: symbol): T | null {
     if (!this.initialized) {
       return null;
     }
     try {
-      return this.container.get(serviceIdentifier) as GetServiceType<K>;
+      return this.container.get(serviceIdentifier) as T;
     } catch (error) {
       return null;
     }
@@ -159,7 +155,7 @@ export class ContainerManager {
   /**
    * 重新绑定服务
    */
-  rebind<K extends ServiceIdentifier>(serviceIdentifier: TypedServiceIdentifier<K>): void {
+  rebind(serviceIdentifier: symbol): void {
     this.container.rebind(serviceIdentifier);
   }
 
@@ -224,25 +220,21 @@ export class AppContainer {
   }
 
   /**
-   * 获取服务（类型安全版本）
+   * 获取服务
    * @param serviceIdentifier 服务标识符
    * @returns 服务实例
    */
-  static getService<K extends ServiceIdentifier>(
-    serviceIdentifier: TypedServiceIdentifier<K>
-  ): GetServiceType<K> {
-    return this.getContainerManager().getService<K>(serviceIdentifier);
+  static getService<T>(serviceIdentifier: symbol): T {
+    return this.getContainerManager().getService<T>(serviceIdentifier);
   }
 
   /**
-   * 尝试获取服务（类型安全版本）
+   * 尝试获取服务
    * @param serviceIdentifier 服务标识符
    * @returns 服务实例或null
    */
-  static tryGetService<K extends ServiceIdentifier>(
-    serviceIdentifier: TypedServiceIdentifier<K>
-  ): GetServiceType<K> | null {
-    return this.getContainerManager().tryGetService<K>(serviceIdentifier);
+  static tryGetService<T>(serviceIdentifier: symbol): T | null {
+    return this.getContainerManager().tryGetService<T>(serviceIdentifier);
   }
 
   /**

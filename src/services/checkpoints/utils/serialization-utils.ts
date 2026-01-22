@@ -3,7 +3,6 @@ import { Thread, ThreadProps } from '../../../domain/threads/entities/thread';
 import { State } from '../../../domain/state/entities/state';
 import { StateId } from '../../../domain/state/value-objects/state-id';
 import { StateEntityType } from '../../../domain/state/value-objects/state-entity-type';
-import { ThreadPriority } from '../../../domain/threads/value-objects/thread-priority';
 import { DeletionStatus } from '../../../domain/common/value-objects/deletion-status';
 import { Metadata } from '../../../domain/common/value-objects/metadata';
 import { Version } from '../../../domain/common/value-objects/version';
@@ -28,8 +27,6 @@ export class CheckpointSerializationUtils {
       workflowId: thread.workflowId.value,
       title: thread.title,
       description: thread.description,
-      priority: thread.priority.toString(),
-
       // Thread 状态（包含完整 State）
       status: thread.status,
       execution: thread.execution,
@@ -64,7 +61,6 @@ export class CheckpointSerializationUtils {
       workflowId: ID.fromString(stateData['workflowId'] as string),
       title: stateData['title'] as string,
       description: stateData['description'] as string,
-      priority: ThreadPriority.fromString(stateData['priority'] as string),
 
       // 反序列化 State
       state: State.fromProps({

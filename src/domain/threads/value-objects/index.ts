@@ -6,7 +6,6 @@
 
 // ThreadId从common模块导出，这里不再重复导出以避免冲突
 export * from './thread-status';
-export * from './thread-priority';
 export * from './thread-definition';
 export * from './thread-execution';
 export * from './node-execution';

@@ -5,7 +5,7 @@
  */
 
 import { injectable, inject } from 'inversify';
-import { Thread, IThreadRepository, ThreadPriority } from '../../domain/threads';
+import { Thread, IThreadRepository } from '../../domain/threads';
 import { BaseService } from '../common/base-service';
 import { ILogger, ID } from '../../domain/common';
 import { TYPES } from '../../di/service-keys';
@@ -27,22 +27,6 @@ export class ThreadManagement extends BaseService {
    */
   protected getServiceName(): string {
     return '线程管理';
-  }
-
-  /**
-   * 验证线程优先级更新的业务规则
-   */
-  private async validateThreadPriorityUpdate(
-    threadId: ID,
-    newPriority: ThreadPriority
-  ): Promise<void> {
-    const thread = await this.threadRepository.findByIdOrFail(threadId);
-
-    if (!thread.isActive()) {
-      throw new Error('无法更新非活跃状态线程的优先级');
-    }
-
-    newPriority.validate();
   }
 
   /**
@@ -100,31 +84,6 @@ export class ThreadManagement extends BaseService {
         return await this.threadRepository.exists(id);
       },
       { threadId }
-    );
-  }
-
-  /**
-   * 更新线程优先级
-   * @param threadId 线程ID
-   * @param priority 新优先级
-   * @returns 更新后的线程领域对象
-   */
-  async updateThreadPriority(threadId: string, priority: number): Promise<Thread> {
-    return this.executeUpdateOperation(
-      '线程优先级',
-      async () => {
-        const id = this.parseId(threadId, '线程ID');
-        const threadPriority = ThreadPriority.fromNumber(priority);
-
-        // 验证线程优先级更新的业务规则
-        await this.validateThreadPriorityUpdate(id, threadPriority);
-
-        const thread = await this.threadRepository.findByIdOrFail(id);
-        thread.updatePriority(threadPriority);
-
-        return await this.threadRepository.save(thread);
-      },
-      { threadId, priority }
     );
   }
 

@@ -4,9 +4,6 @@ import { Thread } from '../../../domain/threads/entities/thread';
 import { ID } from '../../../domain/common/value-objects/id';
 import { ThreadStatus } from '../../../domain/threads/value-objects/thread-status';
 import { ThreadStatusValue } from '../../../domain/threads/value-objects/thread-status';
-import { ThreadPriority } from '../../../domain/threads/value-objects/thread-priority';
-import { ThreadDefinition } from '../../../domain/threads/value-objects/thread-definition';
-import { ThreadExecution } from '../../../domain/threads/value-objects/thread-execution';
 import { ThreadExecutionContext, ExecutionConfig } from '../../../domain/threads/value-objects/execution-context';
 import { Timestamp } from '../../../domain/common/value-objects/timestamp';
 import { Version } from '../../../domain/common/value-objects/version';
@@ -38,7 +35,6 @@ export class ThreadRepository
       const id = new ID(model.id);
       const sessionId = new ID(model.sessionId);
       const workflowId = model.workflowId ? new ID(model.workflowId) : ID.empty();
-      const priority = ThreadPriority.fromNumber(model.priority);
       const title = model.name || undefined;
       const description = model.description || undefined;
       const metadata = model.context || {};
@@ -89,7 +85,6 @@ export class ThreadRepository
         id,
         sessionId,
         workflowId,
-        priority,
         title,
         description,
         metadata: Metadata.create(metadata),
@@ -125,7 +120,6 @@ export class ThreadRepository
       model.name = entity.title || '';
       model.description = entity.description || '';
       model.state = entity.status as ThreadStatusValue;
-      model.priority = entity.priority.getNumericValue();
 
       // 执行状态字段
       const execution = entity.execution;
@@ -451,7 +445,6 @@ export class ThreadRepository
     return {
       threadId: threadId.value,
       status: thread.status,
-      priority: thread.priority.getNumericValue(),
       createdAt: thread.createdAt.getDate(),
       updatedAt: thread.updatedAt.getDate(),
     };

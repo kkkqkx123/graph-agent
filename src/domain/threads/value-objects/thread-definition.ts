@@ -1,5 +1,4 @@
 import { ValueObject, ID, Timestamp } from '../../common/value-objects';
-import { ThreadPriority } from './thread-priority';
 
 /**
  * ThreadDefinition值对象属性接口
@@ -8,7 +7,6 @@ export interface ThreadDefinitionProps {
   readonly threadId: ID;
   readonly sessionId: ID;
   readonly workflowId?: ID;
-  readonly priority: ThreadPriority;
   readonly title?: string;
   readonly description?: string;
   readonly metadata: Record<string, unknown>;
@@ -27,7 +25,6 @@ export class ThreadDefinition extends ValueObject<ThreadDefinitionProps> {
    * @param threadId 线程ID
    * @param sessionId 会话ID
    * @param workflowId 工作流ID
-   * @param priority 线程优先级
    * @param title 线程标题
    * @param description 线程描述
    * @param metadata 元数据
@@ -37,19 +34,16 @@ export class ThreadDefinition extends ValueObject<ThreadDefinitionProps> {
     threadId: ID,
     sessionId: ID,
     workflowId?: ID,
-    priority?: ThreadPriority,
     title?: string,
     description?: string,
     metadata?: Record<string, unknown>
   ): ThreadDefinition {
     const now = Timestamp.now();
-    const threadPriority = priority || ThreadPriority.normal();
 
     return new ThreadDefinition({
       threadId,
       sessionId,
       workflowId,
-      priority: threadPriority,
       title,
       description,
       metadata: metadata || {},
@@ -88,14 +82,6 @@ export class ThreadDefinition extends ValueObject<ThreadDefinitionProps> {
    */
   public get workflowId(): ID | undefined {
     return this.props.workflowId;
-  }
-
-  /**
-   * 获取线程优先级
-   * @returns 线程优先级
-   */
-  public get priority(): ThreadPriority {
-    return this.props.priority;
   }
 
   /**
@@ -155,18 +141,6 @@ export class ThreadDefinition extends ValueObject<ThreadDefinitionProps> {
   }
 
   /**
-   * 更新优先级（创建新实例）
-   * @param priority 新优先级
-   * @returns 新的线程定义值对象
-   */
-  public updatePriority(priority: ThreadPriority): ThreadDefinition {
-    return new ThreadDefinition({
-      ...this.props,
-      priority,
-    });
-  }
-
-  /**
    * 更新元数据（创建新实例）
    * @param metadata 新元数据
    * @returns 新的线程定义值对象
@@ -188,10 +162,6 @@ export class ThreadDefinition extends ValueObject<ThreadDefinitionProps> {
 
     if (!this.props.sessionId) {
       throw new Error('会话ID不能为空');
-    }
-
-    if (!this.props.priority) {
-      throw new Error('线程优先级不能为空');
     }
 
     if (this.props.title && this.props.title.trim().length === 0) {

@@ -74,7 +74,7 @@ import { CheckpointRestore } from '../services/checkpoints/checkpoint-restore';
 import { ThreadStateManager } from '../services/threads/thread-state-manager';
 import { ThreadHistoryManager } from '../services/threads/thread-history-manager';
 import { ThreadConditionalRouter } from '../services/threads/thread-conditional-router';
-import { WorkflowExecutionEngine } from '../services/threads/workflow-execution-engine';
+import { ThreadWorkflowExecutor } from '../services/threads/thread-workflow-executor';
 import { FunctionRegistry } from '../services/workflow/functions/function-registry';
 import { NodeExecutor } from '../services/workflow/nodes/node-executor';
 import { EdgeExecutor } from '../services/workflow/edges/edge-executor';
@@ -152,7 +152,7 @@ export interface ServiceTypes {
   ThreadStateManager: ThreadStateManager;
   ThreadHistoryManager: ThreadHistoryManager;
   ThreadConditionalRouter: ThreadConditionalRouter;
-  WorkflowExecutionEngine: WorkflowExecutionEngine;
+  ThreadWorkflowExecutor: ThreadWorkflowExecutor;
 
   // LLM服务
   HumanRelay: HumanRelay;
@@ -198,10 +198,8 @@ export interface ServiceTypes {
   PromptReferenceParser: PromptReferenceParser;
   PromptReferenceValidator: PromptReferenceValidator;
 
-  // 函数注册表
+  // 工作流节点服务
   FunctionRegistry: FunctionRegistry;
-
-  // 节点和边执行器
   NodeExecutor: NodeExecutor;
   EdgeExecutor: EdgeExecutor;
   HookExecutor: HookExecutor;
@@ -210,222 +208,138 @@ export interface ServiceTypes {
   // ========== Infrastructure层实现 ==========
 
   // 仓储实现
-  SessionRepositoryImpl: SessionInfrastructureRepository;
-  ThreadRepositoryImpl: ThreadInfrastructureRepository;
-  WorkflowRepositoryImpl: WorkflowInfrastructureRepository;
-  PromptRepositoryImpl: PromptInfrastructureRepository;
-  CheckpointRepositoryImpl: CheckpointInfrastructureRepository;
+  SessionInfrastructureRepository: SessionInfrastructureRepository;
+  ThreadInfrastructureRepository: ThreadInfrastructureRepository;
+  WorkflowInfrastructureRepository: WorkflowInfrastructureRepository;
+  PromptInfrastructureRepository: PromptInfrastructureRepository;
+  CheckpointInfrastructureRepository: CheckpointInfrastructureRepository;
 
-  // 基础设施服务
+  // 基础设施组件
   ConnectionManager: ConnectionManager;
   Logger: Logger;
 }
 
-/**
- * 服务标识符类型
- * 提取ServiceTypes的所有键作为服务标识符类型
- */
-export type ServiceIdentifier = keyof ServiceTypes;
+// ========== 服务标识符常量 ==========
 
 /**
- * 类型化的服务标识符
- * 将服务标识符与对应的类型关联
+ * 服务标识符常量
+ * 用于在运行时获取服务实例
  */
-export type TypedServiceIdentifier<K extends ServiceIdentifier> = symbol & {
-  __serviceType: ServiceTypes[K];
-};
-
-/**
- * 服务标识符映射
- * 将服务名称映射到类型化的symbol
- */
-export const TYPES: {
-  [K in ServiceIdentifier]: TypedServiceIdentifier<K>;
-} = {
+export const TYPES = {
   // ========== LLM模块服务 ==========
 
   // 基础设施组件
-  HttpClient: Symbol.for('HttpClient') as TypedServiceIdentifier<'HttpClient'>,
-  ConfigLoadingModule: Symbol.for(
-    'ConfigLoadingModule'
-  ) as TypedServiceIdentifier<'ConfigLoadingModule'>,
-  TokenBucketLimiter: Symbol.for(
-    'TokenBucketLimiter'
-  ) as TypedServiceIdentifier<'TokenBucketLimiter'>,
-  TokenCalculator: Symbol.for('TokenCalculator') as TypedServiceIdentifier<'TokenCalculator'>,
+  HttpClient: Symbol.for('HttpClient'),
+  ConfigLoadingModule: Symbol.for('ConfigLoadingModule'),
+  TokenBucketLimiter: Symbol.for('TokenBucketLimiter'),
+  TokenCalculator: Symbol.for('TokenCalculator'),
 
   // 客户端实现
-  OpenAIChatClient: Symbol.for('OpenAIChatClient') as TypedServiceIdentifier<'OpenAIChatClient'>,
-  OpenAIResponseClient: Symbol.for(
-    'OpenAIResponseClient'
-  ) as TypedServiceIdentifier<'OpenAIResponseClient'>,
-  AnthropicClient: Symbol.for('AnthropicClient') as TypedServiceIdentifier<'AnthropicClient'>,
-  GeminiClient: Symbol.for('GeminiClient') as TypedServiceIdentifier<'GeminiClient'>,
-  GeminiOpenAIClient: Symbol.for(
-    'GeminiOpenAIClient'
-  ) as TypedServiceIdentifier<'GeminiOpenAIClient'>,
-  MockClient: Symbol.for('MockClient') as TypedServiceIdentifier<'MockClient'>,
-  HumanRelayClient: Symbol.for('HumanRelayClient') as TypedServiceIdentifier<'HumanRelayClient'>,
+  OpenAIChatClient: Symbol.for('OpenAIChatClient'),
+  OpenAIResponseClient: Symbol.for('OpenAIResponseClient'),
+  AnthropicClient: Symbol.for('AnthropicClient'),
+  GeminiClient: Symbol.for('GeminiClient'),
+  GeminiOpenAIClient: Symbol.for('GeminiOpenAIClient'),
+  MockClient: Symbol.for('MockClient'),
+  HumanRelayClient: Symbol.for('HumanRelayClient'),
 
   // 工厂类
-  LLMClientFactory: Symbol.for('LLMClientFactory') as TypedServiceIdentifier<'LLMClientFactory'>,
+  LLMClientFactory: Symbol.for('LLMClientFactory'),
 
   // 管理器
-  PollingPoolManager: Symbol.for(
-    'PollingPoolManager'
-  ) as TypedServiceIdentifier<'PollingPoolManager'>,
-  TaskGroupManager: Symbol.for('TaskGroupManager') as TypedServiceIdentifier<'TaskGroupManager'>,
-  LLMWrapperManager: Symbol.for('LLMWrapperManager') as TypedServiceIdentifier<'LLMWrapperManager'>,
+  PollingPoolManager: Symbol.for('PollingPoolManager'),
+  TaskGroupManager: Symbol.for('TaskGroupManager'),
+  LLMWrapperManager: Symbol.for('LLMWrapperManager'),
 
-  // ========== Domain层接口（仅用于类型定义） ==========
+  // ========== Domain层接口 ==========
 
   // 仓储接口
-  SessionRepository: Symbol.for('SessionRepository') as TypedServiceIdentifier<'SessionRepository'>,
-  ThreadRepository: Symbol.for('ThreadRepository') as TypedServiceIdentifier<'ThreadRepository'>,
-  WorkflowRepository: Symbol.for(
-    'WorkflowRepository'
-  ) as TypedServiceIdentifier<'WorkflowRepository'>,
-  PromptRepository: Symbol.for('PromptRepository') as TypedServiceIdentifier<'PromptRepository'>,
-  CheckpointRepository: Symbol.for(
-    'CheckpointRepository'
-  ) as TypedServiceIdentifier<'CheckpointRepository'>,
+  SessionRepository: Symbol.for('SessionRepository'),
+  ThreadRepository: Symbol.for('ThreadRepository'),
+  WorkflowRepository: Symbol.for('WorkflowRepository'),
+  PromptRepository: Symbol.for('PromptRepository'),
+  CheckpointRepository: Symbol.for('CheckpointRepository'),
 
   // 业务服务接口
-  HumanRelayService: Symbol.for('HumanRelayService') as TypedServiceIdentifier<'HumanRelayService'>,
+  HumanRelayService: Symbol.for('HumanRelayService'),
 
   // ========== Services层实现 ==========
 
   // 线程服务
-  ThreadCopy: Symbol.for('ThreadCopy') as TypedServiceIdentifier<'ThreadCopy'>,
-  ThreadExecution: Symbol.for('ThreadExecution') as TypedServiceIdentifier<'ThreadExecution'>,
-  ThreadFork: Symbol.for('ThreadFork') as TypedServiceIdentifier<'ThreadFork'>,
-  ThreadJoin: Symbol.for('ThreadJoin') as TypedServiceIdentifier<'ThreadJoin'>,
-  ThreadLifecycle: Symbol.for('ThreadLifecycle') as TypedServiceIdentifier<'ThreadLifecycle'>,
-  ThreadMaintenance: Symbol.for(
-    'ThreadMaintenance'
-  ) as TypedServiceIdentifier<'ThreadMaintenance'>,
-  ThreadManagement: Symbol.for('ThreadManagement') as TypedServiceIdentifier<'ThreadManagement'>,
-  ThreadMonitoring: Symbol.for('ThreadMonitoring') as TypedServiceIdentifier<'ThreadMonitoring'>,
-  ThreadStateManager: Symbol.for(
-    'ThreadStateManager'
-  ) as TypedServiceIdentifier<'ThreadStateManager'>,
-  ThreadHistoryManager: Symbol.for(
-    'ThreadHistoryManager'
-  ) as TypedServiceIdentifier<'ThreadHistoryManager'>,
-  ThreadConditionalRouter: Symbol.for(
-    'ThreadConditionalRouter'
-  ) as TypedServiceIdentifier<'ThreadConditionalRouter'>,
-  WorkflowExecutionEngine: Symbol.for(
-    'WorkflowExecutionEngine'
-  ) as TypedServiceIdentifier<'WorkflowExecutionEngine'>,
+  ThreadCopy: Symbol.for('ThreadCopy'),
+  ThreadExecution: Symbol.for('ThreadExecution'),
+  ThreadFork: Symbol.for('ThreadFork'),
+  ThreadJoin: Symbol.for('ThreadJoin'),
+  ThreadLifecycle: Symbol.for('ThreadLifecycle'),
+  ThreadMaintenance: Symbol.for('ThreadMaintenance'),
+  ThreadManagement: Symbol.for('ThreadManagement'),
+  ThreadMonitoring: Symbol.for('ThreadMonitoring'),
+  ThreadStateManager: Symbol.for('ThreadStateManager'),
+  ThreadHistoryManager: Symbol.for('ThreadHistoryManager'),
+  ThreadConditionalRouter: Symbol.for('ThreadConditionalRouter'),
+  ThreadWorkflowExecutor: Symbol.for('ThreadWorkflowExecutor'),
 
   // LLM服务
-  HumanRelay: Symbol.for('HumanRelay') as TypedServiceIdentifier<'HumanRelay'>,
-  Wrapper: Symbol.for('Wrapper') as TypedServiceIdentifier<'Wrapper'>,
+  HumanRelay: Symbol.for('HumanRelay'),
+  Wrapper: Symbol.for('Wrapper'),
 
   // 会话服务
-  SessionLifecycle: Symbol.for('SessionLifecycle') as TypedServiceIdentifier<'SessionLifecycle'>,
-  SessionMaintenance: Symbol.for(
-    'SessionMaintenance'
-  ) as TypedServiceIdentifier<'SessionMaintenance'>,
-  SessionManagement: Symbol.for('SessionManagement') as TypedServiceIdentifier<'SessionManagement'>,
-  SessionMonitoring: Symbol.for('SessionMonitoring') as TypedServiceIdentifier<'SessionMonitoring'>,
-  SessionOrchestration: Symbol.for(
-    'SessionOrchestration'
-  ) as TypedServiceIdentifier<'SessionOrchestration'>,
-  SessionResource: Symbol.for('SessionResource') as TypedServiceIdentifier<'SessionResource'>,
-  SessionCheckpointManagement: Symbol.for(
-    'SessionCheckpointManagement'
-  ) as TypedServiceIdentifier<'SessionCheckpointManagement'>,
+  SessionLifecycle: Symbol.for('SessionLifecycle'),
+  SessionMaintenance: Symbol.for('SessionMaintenance'),
+  SessionManagement: Symbol.for('SessionManagement'),
+  SessionMonitoring: Symbol.for('SessionMonitoring'),
+  SessionOrchestration: Symbol.for('SessionOrchestration'),
+  SessionResource: Symbol.for('SessionResource'),
+  SessionCheckpointManagement: Symbol.for('SessionCheckpointManagement'),
 
   // 状态服务
-  StateHistory: Symbol.for('StateHistory') as TypedServiceIdentifier<'StateHistory'>,
-  StateManagement: Symbol.for('StateManagement') as TypedServiceIdentifier<'StateManagement'>,
-  StateRecovery: Symbol.for('StateRecovery') as TypedServiceIdentifier<'StateRecovery'>,
+  StateHistory: Symbol.for('StateHistory'),
+  StateManagement: Symbol.for('StateManagement'),
+  StateRecovery: Symbol.for('StateRecovery'),
 
   // 工作流服务
-  ContextManagement: Symbol.for('ContextManagement') as TypedServiceIdentifier<'ContextManagement'>,
-  FunctionManagement: Symbol.for('FunctionManagement') as TypedServiceIdentifier<'FunctionManagement'>,
-  WorkflowLifecycle: Symbol.for('WorkflowLifecycle') as TypedServiceIdentifier<'WorkflowLifecycle'>,
-  WorkflowManagement: Symbol.for('WorkflowManagement') as TypedServiceIdentifier<'WorkflowManagement'>,
-  WorkflowValidator: Symbol.for('WorkflowValidator') as TypedServiceIdentifier<'WorkflowValidator'>,
-  ExpressionEvaluator: Symbol.for('ExpressionEvaluator') as TypedServiceIdentifier<'ExpressionEvaluator'>,
-  FunctionExecutionEngine: Symbol.for(
-    'FunctionExecutionEngine'
-  ) as TypedServiceIdentifier<'FunctionExecutionEngine'>,
-  MonitoringService: Symbol.for('MonitoringService') as TypedServiceIdentifier<'MonitoringService'>,
-  NodeRouter: Symbol.for('NodeRouter') as TypedServiceIdentifier<'NodeRouter'>,
+  ContextManagement: Symbol.for('ContextManagement'),
+  FunctionManagement: Symbol.for('FunctionManagement'),
+  WorkflowLifecycle: Symbol.for('WorkflowLifecycle'),
+  WorkflowManagement: Symbol.for('WorkflowManagement'),
+  WorkflowValidator: Symbol.for('WorkflowValidator'),
+  ExpressionEvaluator: Symbol.for('ExpressionEvaluator'),
+  FunctionExecutionEngine: Symbol.for('FunctionExecutionEngine'),
+  MonitoringService: Symbol.for('MonitoringService'),
+  NodeRouter: Symbol.for('NodeRouter'),
 
   // 检查点服务
-  CheckpointAnalysis: Symbol.for('CheckpointAnalysis') as TypedServiceIdentifier<'CheckpointAnalysis'>,
-  CheckpointBackup: Symbol.for('CheckpointBackup') as TypedServiceIdentifier<'CheckpointBackup'>,
-  CheckpointCleanup: Symbol.for('CheckpointCleanup') as TypedServiceIdentifier<'CheckpointCleanup'>,
-  CheckpointCreation: Symbol.for('CheckpointCreation') as TypedServiceIdentifier<'CheckpointCreation'>,
-  CheckpointManagement: Symbol.for(
-    'CheckpointManagement'
-  ) as TypedServiceIdentifier<'CheckpointManagement'>,
-  CheckpointQuery: Symbol.for('CheckpointQuery') as TypedServiceIdentifier<'CheckpointQuery'>,
-  CheckpointRestore: Symbol.for('CheckpointRestore') as TypedServiceIdentifier<'CheckpointRestore'>,
+  CheckpointAnalysis: Symbol.for('CheckpointAnalysis'),
+  CheckpointBackup: Symbol.for('CheckpointBackup'),
+  CheckpointCleanup: Symbol.for('CheckpointCleanup'),
+  CheckpointCreation: Symbol.for('CheckpointCreation'),
+  CheckpointManagement: Symbol.for('CheckpointManagement'),
+  CheckpointQuery: Symbol.for('CheckpointQuery'),
+  CheckpointRestore: Symbol.for('CheckpointRestore'),
 
   // Prompt服务
-  PromptBuilder: Symbol.for('PromptBuilder') as TypedServiceIdentifier<'PromptBuilder'>,
-  TemplateProcessor: Symbol.for('TemplateProcessor') as TypedServiceIdentifier<'TemplateProcessor'>,
-  PromptReferenceParser: Symbol.for(
-    'PromptReferenceParser'
-  ) as TypedServiceIdentifier<'PromptReferenceParser'>,
-  PromptReferenceValidator: Symbol.for(
-    'PromptReferenceValidator'
-  ) as TypedServiceIdentifier<'PromptReferenceValidator'>,
+  PromptBuilder: Symbol.for('PromptBuilder'),
+  TemplateProcessor: Symbol.for('TemplateProcessor'),
+  PromptReferenceParser: Symbol.for('PromptReferenceParser'),
+  PromptReferenceValidator: Symbol.for('PromptReferenceValidator'),
 
-  // 函数注册表
-  FunctionRegistry: Symbol.for('FunctionRegistry') as TypedServiceIdentifier<'FunctionRegistry'>,
-
-  // 节点和边执行器
-  NodeExecutor: Symbol.for('NodeExecutor') as TypedServiceIdentifier<'NodeExecutor'>,
-  EdgeExecutor: Symbol.for('EdgeExecutor') as TypedServiceIdentifier<'EdgeExecutor'>,
-  HookExecutor: Symbol.for('HookExecutor') as TypedServiceIdentifier<'HookExecutor'>,
-  HookFactory: Symbol.for('HookFactory') as TypedServiceIdentifier<'HookFactory'>,
+  // 工作流节点服务
+  FunctionRegistry: Symbol.for('FunctionRegistry'),
+  NodeExecutor: Symbol.for('NodeExecutor'),
+  EdgeExecutor: Symbol.for('EdgeExecutor'),
+  HookExecutor: Symbol.for('HookExecutor'),
+  HookFactory: Symbol.for('HookFactory'),
 
   // ========== Infrastructure层实现 ==========
 
   // 仓储实现
-  SessionRepositoryImpl: Symbol.for(
-    'SessionRepositoryImpl'
-  ) as TypedServiceIdentifier<'SessionRepositoryImpl'>,
-  ThreadRepositoryImpl: Symbol.for(
-    'ThreadRepositoryImpl'
-  ) as TypedServiceIdentifier<'ThreadRepositoryImpl'>,
-  WorkflowRepositoryImpl: Symbol.for(
-    'WorkflowRepositoryImpl'
-  ) as TypedServiceIdentifier<'WorkflowRepositoryImpl'>,
-  PromptRepositoryImpl: Symbol.for(
-    'PromptRepositoryImpl'
-  ) as TypedServiceIdentifier<'PromptRepositoryImpl'>,
-  CheckpointRepositoryImpl: Symbol.for(
-    'CheckpointRepositoryImpl'
-  ) as TypedServiceIdentifier<'CheckpointRepositoryImpl'>,
+  SessionInfrastructureRepository: Symbol.for('SessionInfrastructureRepository'),
+  ThreadInfrastructureRepository: Symbol.for('ThreadInfrastructureRepository'),
+  WorkflowInfrastructureRepository: Symbol.for('WorkflowInfrastructureRepository'),
+  PromptInfrastructureRepository: Symbol.for('PromptInfrastructureRepository'),
+  CheckpointInfrastructureRepository: Symbol.for('CheckpointInfrastructureRepository'),
 
-  // 基础设施服务
-  ConnectionManager: Symbol.for('ConnectionManager') as TypedServiceIdentifier<'ConnectionManager'>,
-  Logger: Symbol.for('Logger') as TypedServiceIdentifier<'Logger'>,
+  // 基础设施组件
+  ConnectionManager: Symbol.for('ConnectionManager'),
+  Logger: Symbol.for('Logger'),
 };
-
-/**
- * 获取服务的类型
- * @param K 服务标识符
- * @returns 服务类型
- */
-export type GetServiceType<K extends ServiceIdentifier> = ServiceTypes[K];
-
-/**
- * 类型安全的容器获取服务辅助函数
- * @param container Inversify容器
- * @param serviceIdentifier 服务标识符
- * @returns 服务实例
- */
-export function getService<K extends ServiceIdentifier>(
-  container: any,
-  serviceIdentifier: TypedServiceIdentifier<K>
-): GetServiceType<K> {
-  return container.get(serviceIdentifier) as GetServiceType<K>;
-}

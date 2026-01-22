@@ -22,7 +22,6 @@ export * from './sessions';
 export {
   Thread,
   ThreadStatus,
-  ThreadPriority,
   ThreadDefinition,
   ThreadExecution,
   ThreadExecutionContext,

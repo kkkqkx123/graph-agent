@@ -528,7 +528,6 @@ export class Session extends Entity {
       workflowId,
       undefined,
       undefined,
-      undefined,
       forkOptions as Record<string, unknown> | undefined
     );
 

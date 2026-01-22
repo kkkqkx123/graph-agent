@@ -15,14 +15,9 @@ import { injectable, inject } from 'inversify';
 import { Thread, IThreadRepository } from '../../domain/threads';
 import { ILogger } from '../../domain/common';
 import { BaseService } from '../common/base-service';
-import { WorkflowExecutionEngine } from './workflow-execution-engine';
-import { ThreadStateManager } from './thread-state-manager';
-import { ThreadHistoryManager } from './thread-history-manager';
-import { CheckpointManagement } from '../checkpoints/checkpoint-management';
+import { ThreadWorkflowExecutor } from './thread-workflow-executor';
 import { CheckpointCreation } from '../checkpoints/checkpoint-creation';
-import { ThreadConditionalRouter } from './thread-conditional-router';
-import { INodeExecutor } from '../workflow/nodes/node-executor';
-import { FunctionRegistry } from '../workflow/functions/function-registry';
+import { CheckpointManagement } from '../checkpoints/checkpoint-management';
 import { WorkflowManagement } from '../workflow/workflow-management';
 import { TYPES } from '../../di/service-keys';
 
@@ -49,34 +44,22 @@ export interface ThreadExecutionResult {
  */
 @injectable()
 export class ThreadExecution extends BaseService {
-  private readonly workflowEngine: WorkflowExecutionEngine;
-  private readonly stateManager: ThreadStateManager;
-  private readonly historyManager: ThreadHistoryManager;
-  private readonly checkpointManagement: CheckpointManagement;
+  private readonly workflowEngine: ThreadWorkflowExecutor;
   private readonly checkpointCreation: CheckpointCreation;
-  private readonly router: ThreadConditionalRouter;
+  private readonly checkpointManagement: CheckpointManagement;
 
   constructor(
     @inject(TYPES.ThreadRepository) private readonly threadRepository: IThreadRepository,
     @inject(TYPES.WorkflowManagement) private readonly workflowManagement: WorkflowManagement,
-    @inject(TYPES.NodeExecutor) private readonly nodeExecutor: INodeExecutor,
     @inject(TYPES.Logger) logger: ILogger,
-    @inject(TYPES.FunctionRegistry) private readonly functionRegistry: FunctionRegistry,
-    @inject(TYPES.ThreadStateManager) stateManager: ThreadStateManager,
-    @inject(TYPES.ThreadHistoryManager) historyManager: ThreadHistoryManager,
-    @inject(TYPES.CheckpointManagement) checkpointManagement: CheckpointManagement,
     @inject(TYPES.CheckpointCreation) checkpointCreation: CheckpointCreation,
-    @inject(TYPES.ThreadConditionalRouter) router: ThreadConditionalRouter,
-    @inject(TYPES.WorkflowExecutionEngine) workflowEngine: WorkflowExecutionEngine
+    @inject(TYPES.CheckpointManagement) checkpointManagement: CheckpointManagement,
+    @inject(TYPES.ThreadWorkflowExecutor) workflowEngine: ThreadWorkflowExecutor
   ) {
     super(logger);
 
-    // 通过依赖注入获取所有依赖
-    this.stateManager = stateManager;
-    this.historyManager = historyManager;
-    this.checkpointManagement = checkpointManagement;
     this.checkpointCreation = checkpointCreation;
-    this.router = router;
+    this.checkpointManagement = checkpointManagement;
     this.workflowEngine = workflowEngine;
   }
 

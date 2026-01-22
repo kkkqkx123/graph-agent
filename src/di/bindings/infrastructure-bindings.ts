@@ -59,11 +59,11 @@ export const infrastructureBindings = new ContainerModule((bind: any) => {
 
   // ========== 仓储绑定 ==========
 
-  bind(TYPES.SessionRepositoryImpl).to(SessionInfrastructureRepository).inSingletonScope();
-  bind(TYPES.ThreadRepositoryImpl).to(ThreadInfrastructureRepository).inSingletonScope();
-  bind(TYPES.WorkflowRepositoryImpl).to(WorkflowInfrastructureRepository).inSingletonScope();
-  bind(TYPES.PromptRepositoryImpl).to(PromptInfrastructureRepository).inSingletonScope();
-  bind(TYPES.CheckpointRepositoryImpl)
+  bind(TYPES.SessionRepository).to(SessionInfrastructureRepository).inSingletonScope();
+  bind(TYPES.ThreadRepository).to(ThreadInfrastructureRepository).inSingletonScope();
+  bind(TYPES.WorkflowRepository).to(WorkflowInfrastructureRepository).inSingletonScope();
+  bind(TYPES.PromptRepository).to(PromptInfrastructureRepository).inSingletonScope();
+  bind(TYPES.CheckpointRepository)
     .to(CheckpointInfrastructureRepository)
     .inSingletonScope();
 
