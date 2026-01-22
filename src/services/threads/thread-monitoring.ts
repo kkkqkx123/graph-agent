@@ -6,9 +6,6 @@
  * - 线程性能指标查询
  * - 线程告警管理
  * - 线程健康状态查询
- *
- * 属于应用层，提供业务相关的监控接口
- * 调用基础设施层的MonitoringService获取监控数据
  */
 
 import { injectable, inject } from 'inversify';

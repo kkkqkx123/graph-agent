@@ -1,6 +1,5 @@
 import { injectable, inject } from 'inversify';
 import { EdgeValueObject } from '../../domain/workflow/value-objects/edge/edge-value-object';
-import { NodeId } from '../../domain/workflow/value-objects/node/node-id';
 import { ThreadWorkflowState } from '../../domain/threads/value-objects/thread-workflow-state';
 import { FunctionRegistry } from '../workflow/functions/function-registry';
 import { WorkflowExecutionContext } from '../workflow/functions/types';
@@ -86,8 +85,6 @@ export interface RoutingOptions {
  * - 支持复杂的条件表达式
  * - 支持边权重和优先级
  * - 支持路由结果缓存
- *
- * 属于基础设施层，提供技术性的路由支持
  */
 @injectable()
 export class ThreadConditionalRouter {

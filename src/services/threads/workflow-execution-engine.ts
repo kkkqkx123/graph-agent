@@ -12,7 +12,6 @@ import { ThreadFork } from './thread-fork';
 import { ThreadJoin } from './thread-join';
 import { ForkNode } from '../workflow/nodes/parallel/fork-node';
 import { JoinNode } from '../workflow/nodes/parallel/join-node';
-import { MarkerNode } from '../../domain/workflow/value-objects/node/marker-node';
 import { IThreadRepository } from '../../domain/threads/repositories/thread-repository';
 import { Thread } from '../../domain/threads/entities/thread';
 import { ID } from '../../domain/common/value-objects/id';
@@ -137,24 +136,8 @@ class WorkflowExecutionController implements ExecutionController {
 
 /**
  * 工作流执行引擎
- *
- * 职责：
- * - 协调工作流的执行
- * - 管理节点执行顺序
- * - 处理路由决策
- * - 管理状态和检查点
- * - 提供执行控制（暂停/恢复/取消）
- * - 处理错误和恢复
- *
- * 特性：
- * - 支持顺序执行和条件路由
- * - 支持检查点和恢复
- * - 支持执行超时和最大步数限制
- * - 支持错误处理和恢复
- * - 支持执行控制（暂停/恢复/取消）
- *
- * 属于基础设施层，提供技术性的工作流执行支持
  */
+
 @injectable()
 export class WorkflowExecutionEngine {
   private readonly stateManager: ThreadStateManager;

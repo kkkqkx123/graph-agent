@@ -9,7 +9,6 @@
  * - 检查点恢复
  *
  * 属于应用层，负责业务流程编排
- * 使用领域层的 WorkflowEngine 执行工作流
  */
 
 import { injectable, inject } from 'inversify';

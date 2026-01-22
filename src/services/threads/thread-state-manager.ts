@@ -46,25 +46,6 @@ export interface StateUpdateOptions {
 
 /**
  * 线程状态管理器
- *
- * 职责：
- * - 管理线程执行状态
- * - 提供状态的初始化、获取、更新、清除操作
- * - 记录状态变更历史
- * - 验证状态数据
- *
- * 特性：
- * - 不可变的状态更新
- * - 线程级别的状态隔离
- * - 状态变更历史记录
- * - 状态数据验证
- *
- * 不负责：
- * - 状态快照和恢复（由 CheckpointManager 负责）
- * - 执行历史记录（由 ThreadHistoryManager 负责）
- * - 状态缓存管理（由基础设施层负责）
- *
- * 属于基础设施层，提供技术性的状态管理支持
  */
 @injectable()
 export class ThreadStateManager {

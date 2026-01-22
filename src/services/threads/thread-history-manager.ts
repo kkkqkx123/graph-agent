@@ -41,18 +41,6 @@ export interface HistoryStatistics {
 
 /**
  * 线程历史管理器
- *
- * 职责：
- * - 记录线程执行历史
- * - 查询执行历史
- * - 统计执行历史
- *
- * 特性：
- * - 线程级别的历史隔离
- * - 支持历史记录查询
- * - 支持历史统计
- *
- * 属于基础设施层，提供技术性的历史管理支持
  */
 @injectable()
 export class ThreadHistoryManager {
