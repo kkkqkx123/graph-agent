@@ -47,7 +47,7 @@ export class HumanRelayClient extends BaseLLMClient {
     protected override tokenCalculator: any,
     @inject(TYPES.ConfigLoadingModule)
     protected override configLoadingModule: ConfigLoadingModule,
-    @inject('IHumanRelayService')
+    @inject(TYPES.HumanRelayService)
     private humanRelayService: IHumanRelayService,
     clientConfig: HumanRelayClientConfig
   ) {

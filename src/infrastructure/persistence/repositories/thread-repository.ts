@@ -14,12 +14,13 @@ import { ConnectionManager } from '../connection-manager';
 import { Metadata, DeletionStatus } from '../../../domain/common/value-objects';
 import { State } from '../../../domain/state/entities/state';
 import { StateEntityType } from '../../../domain/state/value-objects/state-entity-type';
+import { TYPES } from '../../../di/service-keys';
 
 @injectable()
 export class ThreadRepository
   extends BaseRepository<Thread, ThreadModel, ID>
   implements IThreadRepository {
-  constructor(@inject('ConnectionManager') connectionManager: ConnectionManager) {
+  constructor(@inject(TYPES.ConnectionManager) connectionManager: ConnectionManager) {
     super(connectionManager);
   }
 
@@ -134,8 +135,8 @@ export class ThreadRepository
 
       model.context = entity.metadata.toRecord();
       model.version = entity.version.getValue();
-      model.createdAt = entity.createdAt.getDate();
-      model.updatedAt = entity.updatedAt.getDate();
+      model.createdAt = entity.createdAt.toDate();
+      model.updatedAt = entity.updatedAt.toDate();
 
       // 序列化ThreadExecutionContext到metadata
       const contextData = entity.executionContext.toObject();
@@ -445,8 +446,8 @@ export class ThreadRepository
     return {
       threadId: threadId.value,
       status: thread.status,
-      createdAt: thread.createdAt.getDate(),
-      updatedAt: thread.updatedAt.getDate(),
+      createdAt: thread.createdAt.toDate(),
+      updatedAt: thread.updatedAt.toDate(),
     };
   }
 }

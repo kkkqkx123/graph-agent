@@ -4,6 +4,7 @@ import { Checkpoint } from '../../domain/threads/checkpoints/entities/checkpoint
 import { ICheckpointRepository } from '../../domain/threads/checkpoints/repositories/checkpoint-repository';
 import { Thread } from '../../domain/threads/entities/thread';
 import { ILogger } from '../../domain/common/types/logger-types';
+import { TYPES } from '../../di/service-keys';
 
 /**
  * 状态恢复服务
@@ -19,9 +20,9 @@ import { ILogger } from '../../domain/common/types/logger-types';
 @injectable()
 export class StateRecovery {
   constructor(
-    @inject('CheckpointRepository')
+    @inject(TYPES.CheckpointRepository)
     private readonly checkpointRepository: ICheckpointRepository,
-    @inject('Logger') private readonly logger: ILogger
+    @inject(TYPES.Logger) private readonly logger: ILogger
   ) {}
 
   /**

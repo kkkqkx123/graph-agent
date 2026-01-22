@@ -16,12 +16,13 @@ import { ThreadCollection } from '../../../domain/sessions/value-objects/thread-
 import { SharedResources } from '../../../domain/sessions/value-objects/shared-resources';
 import { ParallelStrategy } from '../../../domain/sessions/value-objects/parallel-strategy';
 import { Metadata, DeletionStatus } from '../../../domain/common/value-objects';
+import { TYPES } from '../../../di/service-keys';
 
 @injectable()
 export class SessionRepository
   extends BaseRepository<Session, SessionModel, ID>
   implements ISessionRepository {
-  constructor(@inject('ConnectionManager') connectionManager: ConnectionManager) {
+  constructor(@inject(TYPES.ConnectionManager) connectionManager: ConnectionManager) {
     super(connectionManager);
   }
 
@@ -96,8 +97,8 @@ export class SessionRepository
       model.state = entity.status.getValue();
       model.context = entity.config.value;
       model.version = entity.version.getValue();
-      model.createdAt = entity.createdAt.getDate();
-      model.updatedAt = entity.updatedAt.getDate();
+      model.createdAt = entity.createdAt.toDate();
+      model.updatedAt = entity.updatedAt.toDate();
 
       model.metadata = {
         title: entity.title,
@@ -139,7 +140,7 @@ export class SessionRepository
     const repository = await this.getRepository();
     const models = await repository
       .createQueryBuilder('session')
-      .where('session.createdAt < :beforeDate', { beforeDate: beforeDate.getDate() })
+      .where('session.createdAt < :beforeDate', { beforeDate: beforeDate.toDate() })
       .andWhere('session.state != :terminatedState', { terminatedState: 'terminated' })
       .orderBy('session.createdAt', 'ASC')
       .getMany();

@@ -1,4 +1,6 @@
 import { injectable, inject } from 'inversify';
+import { TYPES } from '../../../di/service-keys';
+import { IConfigManager } from '../../config/loading/config-manager.interface';
 
 interface RequestRecord {
   timestamp: number;
@@ -10,7 +12,7 @@ export class SlidingWindowLimiter {
   private readonly maxRequests: number;
   private readonly windowSizeMs: number;
 
-  constructor(@inject('ConfigManager') private configManager: any) {
+  constructor(@inject(TYPES.ConfigManager) private configManager: IConfigManager) {
     this.maxRequests = this.configManager.get('llm.rateLimit.maxRequests', 60);
     this.windowSizeMs = this.configManager.get('llm.rateLimit.windowSizeMs', 60000); // 1 minute
   }

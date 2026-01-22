@@ -13,12 +13,13 @@ import { ThreadModel } from '../models/thread.model';
 import { In } from 'typeorm';
 import { BaseRepository } from './base-repository';
 import { ConnectionManager } from '../connection-manager';
+import { TYPES } from '../../../di/service-keys';
 
 @injectable()
 export class WorkflowRepository
   extends BaseRepository<Workflow, WorkflowModel, ID>
   implements IWorkflowRepository {
-  constructor(@inject('ConnectionManager') connectionManager: ConnectionManager) {
+  constructor(@inject(TYPES.ConnectionManager) connectionManager: ConnectionManager) {
     super(connectionManager);
   }
 
@@ -98,8 +99,8 @@ export class WorkflowRepository
       model.revision = parseInt(entity.version.getValue().split('.')[2] || '0');
       model.createdBy = entity.createdBy ? entity.createdBy.value : undefined;
       model.updatedBy = entity.updatedBy ? entity.updatedBy.value : undefined;
-      model.createdAt = entity.createdAt.getDate();
-      model.updatedAt = entity.updatedAt.getDate();
+      model.createdAt = entity.createdAt.toDate();
+      model.updatedAt = entity.updatedAt.toDate();
 
       return model;
     } catch (error) {

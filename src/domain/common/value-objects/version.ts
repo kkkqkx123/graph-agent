@@ -104,24 +104,6 @@ export class Version extends ValueObject<VersionProps> {
   }
 
   /**
-   * 创建下一个主版本
-   * @returns 下一个主版本
-   */
-  public nextMajor(): Version {
-    const parts = this.parseVersion();
-    return Version.fromParts(parts.major + 1, 0, 0);
-  }
-
-  /**
-   * 创建下一个次版本
-   * @returns 下一个次版本
-   */
-  public nextMinor(): Version {
-    const parts = this.parseVersion();
-    return Version.fromParts(parts.major, parts.minor + 1, 0);
-  }
-
-  /**
    * 创建下一个补丁版本
    * @returns 下一个补丁版本
    */
@@ -140,51 +122,6 @@ export class Version extends ValueObject<VersionProps> {
       return false;
     }
     return this.props.value === other.getValue();
-  }
-
-  /**
-   * 检查当前版本是否大于另一个版本
-   * @param other 另一个版本
-   * @returns 是否大于
-   */
-  public greaterThan(other: Version): boolean {
-    const thisParts = this.parseVersion();
-    const otherParts = other.parseVersion();
-
-    if (thisParts.major !== otherParts.major) {
-      return thisParts.major > otherParts.major;
-    }
-    if (thisParts.minor !== otherParts.minor) {
-      return thisParts.minor > otherParts.minor;
-    }
-    return thisParts.patch > otherParts.patch;
-  }
-
-  /**
-   * 检查当前版本是否小于另一个版本
-   * @param other 另一个版本
-   * @returns 是否小于
-   */
-  public lessThan(other: Version): boolean {
-    return other.greaterThan(this);
-  }
-
-  /**
-   * 检查当前版本是否大于等于另一个版本
-   * @param other 另一个版本
-   * @returns 是否大于等于
-   */
-  public greaterThanOrEqual(other: Version): boolean {
-    return this.equals(other) || this.greaterThan(other);
-  }
-
-  /**
-   * 检查当前版本是否小于等于另一个版本
-   * @param other 另一个版本
-   * @returns 是否小于等于
-   */
-  public lessThanOrEqual(other: Version): boolean {
-    return this.equals(other) || this.lessThan(other);
   }
 
   /**

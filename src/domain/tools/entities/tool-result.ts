@@ -270,8 +270,8 @@ export class ToolResult extends Entity {
       data: json['data'],
       error: json['error'] as string,
       duration: json['duration'] as number,
-      createdAt: Timestamp.fromDate(new Date(json['createdAt'] as string)),
-      updatedAt: Timestamp.fromDate(new Date(json['updatedAt'] as string)),
+      createdAt: Timestamp.create(new Date(json['createdAt'] as string)),
+      updatedAt: Timestamp.create(new Date(json['updatedAt'] as string)),
       version: Version.create(json['version'] as string),
       metadata: json['metadata'] as Record<string, unknown>,
       type: json['type'] as string,
@@ -287,7 +287,7 @@ export class ToolResult extends Entity {
       signature: json['signature'] as ToolResultSignature,
       checksum: json['checksum'] as ToolResultChecksum,
       expiresAt: json['expiresAt']
-        ? Timestamp.fromDate(new Date(json['expiresAt'] as string))
+        ? Timestamp.create(new Date(json['expiresAt'] as string))
         : undefined,
       permissions: json['permissions'] as ToolResultPermissions,
       tags: json['tags'] as string[],

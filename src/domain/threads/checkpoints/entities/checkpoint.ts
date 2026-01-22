@@ -646,17 +646,17 @@ export class Checkpoint extends Entity {
       stateData: data['stateData'] as Record<string, unknown>,
       tags: (data['tags'] as string[]) || [],
       metadata: (data['metadata'] as Record<string, unknown>) || {},
-      createdAt: Timestamp.fromISOString(data['createdAt'] as string),
-      updatedAt: Timestamp.fromISOString(data['updatedAt'] as string),
+      createdAt: Timestamp.fromString(data['createdAt'] as string),
+      updatedAt: Timestamp.fromString(data['updatedAt'] as string),
       version: Version.fromString(data['version'] as string),
       isDeleted: data['isDeleted'] as boolean,
       expiresAt: data['expiresAt']
-        ? Timestamp.fromISOString(data['expiresAt'] as string)
+        ? Timestamp.fromString(data['expiresAt'] as string)
         : undefined,
       sizeBytes: data['sizeBytes'] as number,
       restoreCount: data['restoreCount'] as number,
       lastRestoredAt: data['lastRestoredAt']
-        ? Timestamp.fromISOString(data['lastRestoredAt'] as string)
+        ? Timestamp.fromString(data['lastRestoredAt'] as string)
         : undefined,
     };
 

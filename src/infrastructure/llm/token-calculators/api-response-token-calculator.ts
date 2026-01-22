@@ -1,5 +1,7 @@
 import { injectable, inject } from 'inversify';
 import { BaseTokenCalculator, TokenUsage } from './base-token-calculator';
+import { TYPES } from '../../../di/service-keys';
+import { IConfigManager } from '../../config/loading/config-manager.interface';
 
 /**
  * API响应Token计算器
@@ -10,7 +12,7 @@ import { BaseTokenCalculator, TokenUsage } from './base-token-calculator';
 @injectable()
 export class ApiResponseTokenCalculator extends BaseTokenCalculator {
   constructor(
-    @inject('ConfigManager') private configManager: any,
+    @inject(TYPES.ConfigManager) private configManager: IConfigManager,
     modelName: string = 'gpt-3.5-turbo'
   ) {
     super('api-response', modelName);

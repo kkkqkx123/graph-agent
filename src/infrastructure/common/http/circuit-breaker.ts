@@ -1,4 +1,6 @@
 import { injectable, inject } from 'inversify';
+import { TYPES } from '../../../di/service-keys';
+import { IConfigManager } from '../../config/loading/config-manager.interface';
 
 enum CircuitState {
   CLOSED = 'CLOSED',
@@ -19,7 +21,7 @@ export class CircuitBreaker {
   private timeout: number;
   private resetTimeout: number;
 
-  constructor(@inject('ConfigManager') private configManager: any) {
+  constructor(@inject(TYPES.ConfigManager) private configManager: IConfigManager) {
     this.failureThreshold = this.configManager.get('http.circuitBreaker.failureThreshold', 5);
     this.successThreshold = this.configManager.get('http.circuitBreaker.successThreshold', 3);
     this.timeout = this.configManager.get('http.circuitBreaker.timeout', 60000);

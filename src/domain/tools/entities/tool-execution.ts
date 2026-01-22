@@ -162,9 +162,9 @@ export class ToolExecution extends Entity {
       parameters: json['parameters'] as Record<string, unknown>,
       result: json['result'],
       error: json['error'] as string,
-      startedAt: Timestamp.fromDate(new Date(json['startedAt'] as string)),
+      startedAt: Timestamp.create(new Date(json['startedAt'] as string)),
       endedAt: json['endedAt']
-        ? Timestamp.fromDate(new Date(json['endedAt'] as string))
+        ? Timestamp.create(new Date(json['endedAt'] as string))
         : undefined,
       duration: json['duration'] as number,
       executorId: json['executorId'] ? ID.fromString(json['executorId'] as string) : undefined,
@@ -190,8 +190,8 @@ export class ToolExecution extends Entity {
         data: log.data,
       })),
       metrics: json['metrics'] as ToolExecutionMetrics,
-      createdAt: Timestamp.fromDate(new Date(json['createdAt'] as string)),
-      updatedAt: Timestamp.fromDate(new Date(json['updatedAt'] as string)),
+      createdAt: Timestamp.create(new Date(json['createdAt'] as string)),
+      updatedAt: Timestamp.create(new Date(json['updatedAt'] as string)),
       version: Version.create(json['version'] as string),
     };
 

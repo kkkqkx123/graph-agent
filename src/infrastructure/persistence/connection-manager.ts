@@ -3,6 +3,7 @@ import { DataSource, DataSourceOptions } from 'typeorm';
 import { ConfigLoadingModule } from '../config/loading/config-loading-module';
 import { DatabaseConfig } from '../config/loading/schemas';
 import { ILogger } from '../../domain/common/types/logger-types';
+import { TYPES } from '../../di/service-keys';
 
 /**
  * 连接健康检查结果
@@ -23,8 +24,8 @@ export class ConnectionManager {
   private healthCheckInterval: NodeJS.Timeout | null = null;
 
   constructor(
-    @inject('ConfigLoadingModule') private configManager: ConfigLoadingModule,
-    @inject('Logger') private logger: ILogger
+    @inject(TYPES.ConfigLoadingModule) private configManager: ConfigLoadingModule,
+    @inject(TYPES.Logger) private logger: ILogger
   ) {
     this.config = this.buildConnectionConfig();
   }

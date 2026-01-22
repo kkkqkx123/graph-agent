@@ -7,6 +7,7 @@ import {
 import { ID } from '../../../domain/common/value-objects/id';
 import { ConnectionManager } from '../connection-manager';
 import { DataSource, Repository, FindOptionsWhere, FindManyOptions, ObjectLiteral, EntityManager, QueryRunner } from 'typeorm';
+import { TYPES } from '../../../di/service-keys';
 
 /**
  * 通用仓储基类（简化版）
@@ -21,7 +22,7 @@ export abstract class BaseRepository<
 > implements IRepository<T, TId> {
   protected abstract getModelClass(): new () => TModel;
 
-  constructor(@inject('ConnectionManager') protected connectionManager: ConnectionManager) { }
+  constructor(@inject(TYPES.ConnectionManager) protected connectionManager: ConnectionManager) { }
 
   /**
    * 获取TypeORM仓储实例

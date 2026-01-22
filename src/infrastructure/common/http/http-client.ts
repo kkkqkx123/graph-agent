@@ -8,6 +8,8 @@ import axios, {
 import { RetryHandler } from './retry-handler';
 import { CircuitBreaker } from './circuit-breaker';
 import { RateLimiter } from './rate-limiter';
+import { TYPES } from '../../../di/service-keys';
+import { IConfigManager } from '../../config/loading/config-manager.interface';
 
 interface ExtendedAxiosRequestConfig extends InternalAxiosRequestConfig {
   metadata?: {
@@ -23,10 +25,10 @@ export class HttpClient {
   private rateLimiter: RateLimiter;
 
   constructor(
-    @inject('ConfigManager') private configManager: any,
-    @inject('RetryHandler') retryHandler: RetryHandler,
-    @inject('CircuitBreaker') circuitBreaker: CircuitBreaker,
-    @inject('RateLimiter') rateLimiter: RateLimiter
+    @inject(TYPES.ConfigManager) private configManager: IConfigManager,
+    @inject(TYPES.RetryHandler) retryHandler: RetryHandler,
+    @inject(TYPES.CircuitBreaker) circuitBreaker: CircuitBreaker,
+    @inject(TYPES.RateLimiter) rateLimiter: RateLimiter
   ) {
     this.retryHandler = retryHandler;
     this.circuitBreaker = circuitBreaker;

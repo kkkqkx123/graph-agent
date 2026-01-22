@@ -132,7 +132,7 @@ export class SessionCheckpointManagement extends BaseService {
 
         // 按创建时间排序，返回最新的
         validCheckpoints.sort(
-          (a, b) => b.createdAt.getDate().getTime() - a.createdAt.getDate().getTime()
+          (a, b) => b.createdAt.toDate().getTime() - a.createdAt.toDate().getTime()
         );
 
         return validCheckpoints[0];
@@ -243,7 +243,7 @@ export class SessionCheckpointManagement extends BaseService {
             checkpointsByType.set(typeValue, (checkpointsByType.get(typeValue) || 0) + 1);
 
             // 更新最新 checkpoint 时间
-            const checkpointDate = checkpoint.createdAt.getDate();
+            const checkpointDate = checkpoint.createdAt.toDate();
             if (!latestCheckpointAt || checkpointDate > latestCheckpointAt) {
               latestCheckpointAt = checkpointDate;
             }

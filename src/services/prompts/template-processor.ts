@@ -17,6 +17,7 @@ import { PromptId } from '../../domain/prompts/value-objects/prompt-id';
 import { PromptReferenceParser } from './prompt-reference-parser';
 import { PromptReferenceValidator } from './prompt-reference-validator';
 import { ILogger } from '../../domain/common/types/logger-types';
+import { TYPES } from '../../di/service-keys';
 
 /**
  * 模板处理结果
@@ -34,10 +35,10 @@ export interface TemplateProcessResult {
 @injectable()
 export class TemplateProcessor {
   constructor(
-    @inject('PromptRepository') private promptRepository: IPromptRepository,
-    @inject('PromptReferenceParser') private referenceParser: PromptReferenceParser,
-    @inject('PromptReferenceValidator') private referenceValidator: PromptReferenceValidator,
-    @inject('ILogger') private readonly logger: ILogger
+    @inject(TYPES.PromptRepository) private promptRepository: IPromptRepository,
+    @inject(TYPES.PromptReferenceParser) private referenceParser: PromptReferenceParser,
+    @inject(TYPES.PromptReferenceValidator) private referenceValidator: PromptReferenceValidator,
+    @inject(TYPES.ILogger) private readonly logger: ILogger
   ) { }
 
   /**

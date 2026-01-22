@@ -8,6 +8,7 @@ import { LLMClientFactory } from '../../infrastructure/llm/clients/llm-client-fa
 import { LLMRequest } from '../../domain/llm/entities/llm-request';
 import { LLMResponse } from '../../domain/llm/entities/llm-response';
 import { WrapperConfig } from '../../domain/llm/value-objects/wrapper-reference';
+import { TYPES } from '../../di/service-keys';
 
 /**
  * 包装器服务
@@ -17,8 +18,8 @@ import { WrapperConfig } from '../../domain/llm/value-objects/wrapper-reference'
 @injectable()
 export class Wrapper {
   constructor(
-    @inject('LLMWrapperManager') private wrapperManager: LLMWrapperManager,
-    @inject('LLMClientFactory') private llmClientFactory: LLMClientFactory
+    @inject(TYPES.LLMWrapperManager) private wrapperManager: LLMWrapperManager,
+    @inject(TYPES.LLMClientFactory) private llmClientFactory: LLMClientFactory
   ) { }
 
   /**

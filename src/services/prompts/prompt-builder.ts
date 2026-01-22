@@ -15,6 +15,7 @@ import { PromptState } from '../../domain/workflow/value-objects/context';
 import { ContextProcessor } from '../workflow/functions/nodes/context-processors/base-context-processor';
 import { LLMMessage } from '../../domain/llm/value-objects/llm-message';
 import { ILogger } from '../../domain/common/types/logger-types';
+import { TYPES } from '../../di/service-keys';
 
 /**
  * 提示词来源类型
@@ -45,9 +46,9 @@ export class PromptBuilder {
   private contextProcessors: Map<string, ContextProcessor> = new Map();
 
   constructor(
-    @inject('PromptRepository') private promptRepository: IPromptRepository,
-    @inject('TemplateProcessor') private templateProcessor: TemplateProcessor,
-    @inject('ILogger') private readonly logger: ILogger
+    @inject(TYPES.PromptRepository) private promptRepository: IPromptRepository,
+    @inject(TYPES.TemplateProcessor) private templateProcessor: TemplateProcessor,
+    @inject(TYPES.ILogger) private readonly logger: ILogger
   ) { }
 
   /**

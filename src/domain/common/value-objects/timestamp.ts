@@ -43,15 +43,6 @@ export class Timestamp extends ValueObject<TimestampProps> {
   }
 
   /**
-   * 从ISO字符串创建时间戳
-   * @param dateString ISO日期字符串
-   * @returns 时间戳实例
-   */
-  public static fromISOString(dateString: string): Timestamp {
-    return Timestamp.fromString(dateString);
-  }
-
-  /**
    * 从时间戳毫秒数创建时间戳
    * @param milliseconds 毫秒数
    * @returns 时间戳实例
@@ -65,24 +56,7 @@ export class Timestamp extends ValueObject<TimestampProps> {
   }
 
   /**
-   * 从Date对象创建时间戳
-   * @param date Date对象
-   * @returns 时间戳实例
-   */
-  public static fromDate(date: Date): Timestamp {
-    return Timestamp.create(date);
-  }
-
-  /**
    * 获取时间戳的Date对象
-   * @returns Date对象
-   */
-  public getDate(): Date {
-    return this.props.value;
-  }
-
-  /**
-   * 获取时间戳的Date对象（别名）
    * @returns Date对象
    */
   public toDate(): Date {
@@ -119,7 +93,7 @@ export class Timestamp extends ValueObject<TimestampProps> {
    * @returns 是否在之前
    */
   public isBefore(other: Timestamp): boolean {
-    return this.props.value < other.getDate();
+    return this.props.value < other.toDate();
   }
 
   /**
@@ -128,7 +102,7 @@ export class Timestamp extends ValueObject<TimestampProps> {
    * @returns 是否在之后
    */
   public isAfter(other: Timestamp): boolean {
-    return this.props.value > other.getDate();
+    return this.props.value > other.toDate();
   }
 
   /**
@@ -149,15 +123,6 @@ export class Timestamp extends ValueObject<TimestampProps> {
    * @returns 差值（毫秒）
    */
   public diff(other: Timestamp): number {
-    return this.props.value.getTime() - other.getMilliseconds();
-  }
-
-  /**
-   * 比较两个时间戳
-   * @param other 另一个时间戳
-   * @returns 负数表示当前时间戳更早，0表示相等，正数表示当前时间戳更晚
-   */
-  public compare(other: Timestamp): number {
     return this.props.value.getTime() - other.getMilliseconds();
   }
 

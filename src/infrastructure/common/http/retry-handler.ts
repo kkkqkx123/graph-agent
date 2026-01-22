@@ -1,4 +1,6 @@
 import { injectable, inject } from 'inversify';
+import { TYPES } from '../../../di/service-keys';
+import { IConfigManager } from '../../config/loading/config-manager.interface';
 
 @injectable()
 export class RetryHandler {
@@ -15,7 +17,7 @@ export class RetryHandler {
   private failedAttempts: number = 0;
   private totalResponseTime: number = 0;
 
-  constructor(@inject('ConfigManager') private configManager: any) {
+  constructor(@inject(TYPES.ConfigManager) private configManager: IConfigManager) {
     this.maxRetries = this.configManager.get('http.retry.maxRetries', 3);
     this.baseDelay = this.configManager.get('http.retry.baseDelay', 1000);
     this.maxDelay = this.configManager.get('http.retry.maxDelay', 30000);

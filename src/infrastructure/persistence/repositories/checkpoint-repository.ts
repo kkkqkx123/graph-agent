@@ -11,12 +11,13 @@ import { CheckpointModel } from '../models/checkpoint.model';
 import { BaseRepository } from './base-repository';
 import { ConnectionManager } from '../connection-manager';
 import { In } from 'typeorm';
+import { TYPES } from '../../../di/service-keys';
 
 @injectable()
 export class CheckpointRepository
   extends BaseRepository<Checkpoint, CheckpointModel, ID>
   implements ICheckpointRepository {
-  constructor(@inject('ConnectionManager') connectionManager: ConnectionManager) {
+  constructor(@inject(TYPES.ConnectionManager) connectionManager: ConnectionManager) {
     super(connectionManager);
   }
 
@@ -77,14 +78,14 @@ export class CheckpointRepository
       model.stateData = entity.stateData;
       model.tags = entity.tags;
       model.metadata = entity.metadata;
-      model.createdAt = entity.createdAt.getDate();
-      model.updatedAt = entity.updatedAt.getDate();
+      model.createdAt = entity.createdAt.toDate();
+      model.updatedAt = entity.updatedAt.toDate();
       model.version = entity.version.toString();
       model.isDeleted = entity.isDeleted();
-      model.expiresAt = entity.expiresAt?.getDate();
+      model.expiresAt = entity.expiresAt?.toDate();
       model.sizeBytes = entity.sizeBytes;
       model.restoreCount = entity.restoreCount;
-      model.lastRestoredAt = entity.lastRestoredAt?.getDate();
+      model.lastRestoredAt = entity.lastRestoredAt?.toDate();
 
       return model;
     } catch (error) {

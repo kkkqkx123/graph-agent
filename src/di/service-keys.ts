@@ -12,6 +12,7 @@
 // LLM模块服务
 import { HttpClient } from '../infrastructure/common/http/http-client';
 import { ConfigLoadingModule } from '../infrastructure/config/loading/config-loading-module';
+import { IConfigManager } from '../infrastructure/config/loading/config-manager.interface';
 import { TokenBucketLimiter } from '../infrastructure/llm/rate-limiters/token-bucket-limiter';
 import { TokenCalculator } from '../infrastructure/llm/token-calculators/token-calculator';
 import { OpenAIChatClient } from '../infrastructure/llm/clients/openai-chat-client';
@@ -106,6 +107,7 @@ export interface ServiceTypes {
   // 基础设施组件
   HttpClient: HttpClient;
   ConfigLoadingModule: ConfigLoadingModule;
+  ConfigManager: IConfigManager;
   TokenBucketLimiter: TokenBucketLimiter;
   TokenCalculator: TokenCalculator;
 
@@ -303,6 +305,10 @@ export const TYPES = {
   WorkflowLifecycle: Symbol.for('WorkflowLifecycle'),
   WorkflowManagement: Symbol.for('WorkflowManagement'),
   WorkflowValidator: Symbol.for('WorkflowValidator'),
+  WorkflowMerger: Symbol.for('WorkflowMerger'),
+  WorkflowStructureValidator: Symbol.for('WorkflowStructureValidator'),
+  SubWorkflowValidator: Symbol.for('SubWorkflowValidator'),
+  NodeFactory: Symbol.for('NodeFactory'),
   ExpressionEvaluator: Symbol.for('ExpressionEvaluator'),
   FunctionExecutionEngine: Symbol.for('FunctionExecutionEngine'),
   MonitoringService: Symbol.for('MonitoringService'),
@@ -342,4 +348,18 @@ export const TYPES = {
   // 基础设施组件
   ConnectionManager: Symbol.for('ConnectionManager'),
   Logger: Symbol.for('Logger'),
+  ConfigManager: Symbol.for('ConfigManager'), // IConfigManager 接口
+
+  // ========== 其他服务 ==========
+  
+  // HTTP 组件
+  RetryHandler: Symbol.for('RetryHandler'),
+  CircuitBreaker: Symbol.for('CircuitBreaker'),
+  RateLimiter: Symbol.for('RateLimiter'),
+
+  // MCP 相关
+  McpClientFactory: Symbol.for('McpClientFactory'),
+
+  // 接口类型
+  ILogger: Symbol.for('ILogger'),
 };

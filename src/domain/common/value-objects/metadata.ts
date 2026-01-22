@@ -87,38 +87,6 @@ export class Metadata extends ValueObject<MetadataProps> {
   }
 
   /**
-   * 转换为记录对象
-   * @returns 记录对象
-   */
-  public toRecord(): Record<string, unknown> {
-    return { ...this.props.data };
-  }
-
-  /**
-   * 获取所有键
-   * @returns 键数组
-   */
-  public keys(): string[] {
-    return Object.keys(this.props.data);
-  }
-
-  /**
-   * 获取所有值
-   * @returns 值数组
-   */
-  public values(): unknown[] {
-    return Object.values(this.props.data);
-  }
-
-  /**
-   * 获取键值对数组
-   * @returns 键值对数组
-   */
-  public entries(): [string, unknown][] {
-    return Object.entries(this.props.data);
-  }
-
-  /**
    * 检查是否为空
    * @returns 是否为空
    */
@@ -127,22 +95,11 @@ export class Metadata extends ValueObject<MetadataProps> {
   }
 
   /**
-   * 获取数据大小
-   * @returns 数据大小
+   * 转换为记录对象
+   * @returns 记录对象
    */
-  public size(): number {
-    return Object.keys(this.props.data).length;
-  }
-
-  /**
-   * 合并其他元数据
-   * @param other 其他元数据
-   * @returns 合并后的元数据
-   */
-  public merge(other: Metadata): Metadata {
-    return new Metadata({
-      data: { ...this.props.data, ...other.toRecord() },
-    });
+  public toRecord(): Record<string, unknown> {
+    return { ...this.props.data };
   }
 
   /**
@@ -154,28 +111,7 @@ export class Metadata extends ValueObject<MetadataProps> {
     if (other === null || other === undefined) {
       return false;
     }
-
-    const thisKeys = this.keys();
-    const otherKeys = other.keys();
-
-    if (thisKeys.length !== otherKeys.length) {
-      return false;
-    }
-
-    for (const key of thisKeys) {
-      if (!other.has(key)) {
-        return false;
-      }
-
-      const thisValue = this.getValue(key);
-      const otherValue = other.getValue(key);
-
-      if (thisValue !== otherValue) {
-        return false;
-      }
-    }
-
-    return true;
+    return JSON.stringify(this.props.data) === JSON.stringify(other.props.data);
   }
 
   /**

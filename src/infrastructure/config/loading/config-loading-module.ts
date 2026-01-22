@@ -13,6 +13,7 @@ import { EnvironmentProcessor } from '../processors/environment-processor';
 import { IFileOrganizer, SplitFileOrganizer } from '../organizers';
 import { ProcessorPipeline } from '../pipelines';
 import { ILogger } from '../../../domain/common/types';
+import { IConfigManager } from './config-manager.interface';
 import * as fs from 'fs/promises';
 import * as path from 'path';
 import { parse as parseToml } from 'toml';
@@ -28,8 +29,9 @@ export interface ConfigLoadingModuleOptions {
 
 /**
  * 配置加载模块主类
+ * 实现 IConfigManager 接口，提供类型安全的配置访问
  */
-export class ConfigLoadingModule {
+export class ConfigLoadingModule implements IConfigManager {
   private readonly discovery: IConfigDiscovery;
   private readonly registry: SchemaRegistry;
   private readonly fileOrganizer: IFileOrganizer;
@@ -167,6 +169,11 @@ export class ConfigLoadingModule {
 
   /**
    * 获取配置值
+   *
+   * @template T - 返回值的类型
+   * @param key - 配置键，支持点号分隔的嵌套路径
+   * @param defaultValue - 默认值，当配置不存在时返回
+   * @returns 配置值或默认值
    */
   get<T = any>(key: string, defaultValue?: T): T {
     if (!this.isInitialized) {
@@ -179,6 +186,8 @@ export class ConfigLoadingModule {
 
   /**
    * 获取所有配置
+   *
+   * @returns 所有配置的浅拷贝对象
    */
   getAll(): Record<string, any> {
     if (!this.isInitialized) {
@@ -190,6 +199,9 @@ export class ConfigLoadingModule {
 
   /**
    * 检查配置键是否存在
+   *
+   * @param key - 配置键，支持点号分隔的嵌套路径
+   * @returns 如果配置存在且不为 undefined，返回 true
    */
   has(key: string): boolean {
     if (!this.isInitialized) {
@@ -197,6 +209,33 @@ export class ConfigLoadingModule {
     }
 
     return this.getNestedValue(this.configs, key) !== undefined;
+  }
+
+  /**
+   * 设置配置值
+   *
+   * @param key - 配置键，支持点号分隔的嵌套路径
+   * @param value - 要设置的值
+   */
+  set(key: string, value: any): void {
+    if (!this.isInitialized) {
+      throw new Error('配置加载模块尚未初始化');
+    }
+
+    const keys = key.split('.');
+    let current = this.configs;
+
+    // 遍历到倒数第二层
+    for (let i = 0; i < keys.length - 1; i++) {
+      const k = keys[i];
+      if (!(k in current)) {
+        current[k] = {};
+      }
+      current = current[k];
+    }
+
+    // 设置最后一层的值
+    current[keys[keys.length - 1]] = value;
   }
 
   /**

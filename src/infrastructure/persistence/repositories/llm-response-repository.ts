@@ -9,12 +9,13 @@ import { DeletionStatus } from '../../../domain/common/value-objects';
 import { LLMResponseModel } from '../models/llm-response.model';
 import { BaseRepository } from './base-repository';
 import { ConnectionManager } from '../connection-manager';
+import { TYPES } from '../../../di/service-keys';
 
 @injectable()
 export class LLMResponseRepository
   extends BaseRepository<LLMResponse, LLMResponseModel, ID>
   implements ILLMResponseRepository {
-  constructor(@inject('ConnectionManager') connectionManager: ConnectionManager) {
+  constructor(@inject(TYPES.ConnectionManager) connectionManager: ConnectionManager) {
     super(connectionManager);
   }
 
@@ -109,7 +110,7 @@ export class LLMResponseRepository
             functionCall: msgInterface.functionCall,
             toolCalls: msgInterface.toolCalls,
             toolCallId: msgInterface.toolCallId,
-            timestamp: msgInterface.timestamp?.getDate(),
+            timestamp: msgInterface.timestamp?.toDate(),
             metadata: msgInterface.metadata,
           },
           finish_reason: choice.finish_reason,
@@ -121,8 +122,8 @@ export class LLMResponseRepository
       model.duration = entity.duration;
       model.metadata = entity.metadata;
       model.isDeleted = entity.isDeleted();
-      model.createdAt = entity.createdAt.getDate();
-      model.updatedAt = entity.updatedAt.getDate();
+      model.createdAt = entity.createdAt.toDate();
+      model.updatedAt = entity.updatedAt.toDate();
 
       return model;
     } catch (error) {

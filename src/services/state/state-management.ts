@@ -4,11 +4,12 @@ import { Thread } from '../../domain/threads/entities/thread';
 import { Session } from '../../domain/sessions/entities/session';
 import { StateHistory } from './state-history';
 import { StateRecovery } from './state-recovery';
+import { TYPES } from '../../di/service-keys';
 
 /**
  * 状态管理协调服务
  * 负责协调状态管理，提供统一的状态管理接口
- * 
+ *
  * 设计原则：
  * - 只负责状态变更历史的记录和查询
  * - 不直接创建检查点（由 CheckpointCreation 负责）
@@ -17,8 +18,8 @@ import { StateRecovery } from './state-recovery';
 @injectable()
 export class StateManagement {
   constructor(
-    @inject('StateHistory') private readonly historyService: StateHistory,
-    @inject('StateRecovery') private readonly recoveryService: StateRecovery
+    @inject(TYPES.StateHistory) private readonly historyService: StateHistory,
+    @inject(TYPES.StateRecovery) private readonly recoveryService: StateRecovery
   ) {}
 
   /**

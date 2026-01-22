@@ -99,16 +99,6 @@ export class DeletionStatus extends ValueObject<DeletionStatusProps> {
   }
 
   /**
-   * 确保为已删除状态，如果未删除则抛出异常
-   * @throws Error 如果未删除
-   */
-  public ensureDeleted(): void {
-    if (!this.props.isDeleted) {
-      throw new Error('操作需要实体已删除');
-    }
-  }
-
-  /**
    * 比较两个删除状态是否相等
    * @param other 其他删除状态
    * @returns 是否相等

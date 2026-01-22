@@ -3,6 +3,7 @@ import { BaseTokenCalculator, TokenUsage } from './base-token-calculator';
 import { LocalTokenCalculator } from './local-token-calculator';
 import { ApiResponseTokenCalculator } from './api-response-token-calculator';
 import { LLMRequest } from '../../../domain/llm/entities/llm-request';
+import { TYPES } from '../../../di/service-keys';
 
 /**
  * 统一的Token计算器
@@ -21,7 +22,7 @@ export class TokenCalculator extends BaseTokenCalculator {
   private apiResponseCalculator: ApiResponseTokenCalculator;
 
   constructor(
-    @inject('ConfigManager') configManager: any,
+    @inject(TYPES.ConfigManager) configManager: any,
     modelName: string = 'gpt-3.5-turbo',
     enableCache: boolean = true
   ) {

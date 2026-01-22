@@ -14,12 +14,13 @@ import { ToolModel } from '../models/tool.model';
 import { In } from 'typeorm';
 import { BaseRepository } from './base-repository';
 import { ConnectionManager } from '../connection-manager';
+import { TYPES } from '../../../di/service-keys';
 
 @injectable()
 export class ToolRepository
   extends BaseRepository<Tool, ToolModel, ID>
   implements IToolRepository {
-  constructor(@inject('ConnectionManager') connectionManager: ConnectionManager) {
+  constructor(@inject(TYPES.ConnectionManager) connectionManager: ConnectionManager) {
     super(connectionManager);
   }
 
@@ -105,8 +106,8 @@ export class ToolRepository
       model.permissions = entity.permissions;
       model.dependencies = entity.dependencies.map(depId => depId.value);
       model.isDeleted = entity.isDeleted();
-      model.createdAt = entity.createdAt.getDate();
-      model.updatedAt = entity.updatedAt.getDate();
+      model.createdAt = entity.createdAt.toDate();
+      model.updatedAt = entity.updatedAt.toDate();
 
       return model;
     } catch (error) {

@@ -21,16 +21,6 @@ export class UserId {
   }
 
   /**
-   * 从ID创建用户ID
-   *
-   * @param id ID
-   * @returns 用户ID
-   */
-  static fromId(id: ID): UserId {
-    return new UserId(id);
-  }
-
-  /**
    * 从字符串创建用户ID
    *
    * @param value 字符串值
@@ -47,15 +37,6 @@ export class UserId {
    */
   static generate(): UserId {
     return new UserId(ID.generate());
-  }
-
-  /**
-   * 获取显示名称
-   *
-   * @returns 显示名称
-   */
-  getDisplayName(): string {
-    return `User-${this.value.toShort()}`;
   }
 
   /**
@@ -87,25 +68,6 @@ export class UserId {
   }
 
   /**
-   * 哈希值
-   *
-   * @returns 哈希值
-   */
-  hashCode(): number {
-    return this.value.hashCode();
-  }
-
-  /**
-   * 比较两个用户ID
-   *
-   * @param other 另一个用户ID
-   * @returns 比较结果
-   */
-  compareTo(other: UserId): number {
-    return this.value.compareTo(other.value);
-  }
-
-  /**
    * 检查是否为空用户ID
    *
    * @returns 是否为空
@@ -131,32 +93,5 @@ export class UserId {
    */
   static isEmpty(userId: UserId): boolean {
     return userId.isEmpty();
-  }
-
-  /**
-   * 获取ID的短表示
-   *
-   * @returns 短表示
-   */
-  toShort(): string {
-    return this.value.toShort();
-  }
-
-  /**
-   * 克隆用户ID
-   *
-   * @returns 新用户ID
-   */
-  clone(): UserId {
-    return new UserId(this.value.clone());
-  }
-
-  /**
-   * 获取用户ID的字符串表示（用于调试）
-   *
-   * @returns 调试字符串
-   */
-  toDebugString(): string {
-    return `UserId(${this.value.toDebugString()})`;
   }
 }

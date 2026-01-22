@@ -87,25 +87,6 @@ export class SessionId {
   }
 
   /**
-   * 哈希值
-   *
-   * @returns 哈希值
-   */
-  hashCode(): number {
-    return this.value.hashCode();
-  }
-
-  /**
-   * 比较两个会话ID
-   *
-   * @param other 另一个会话ID
-   * @returns 比较结果
-   */
-  compareTo(other: SessionId): number {
-    return this.value.compareTo(other.value);
-  }
-
-  /**
    * 检查是否为空会话ID
    *
    * @returns 是否为空
@@ -148,7 +129,7 @@ export class SessionId {
    * @returns 新会话ID
    */
   clone(): SessionId {
-    return new SessionId(this.value.clone());
+    return new SessionId(new ID(this.value.value));
   }
 
   /**
@@ -157,6 +138,6 @@ export class SessionId {
    * @returns 调试字符串
    */
   toDebugString(): string {
-    return `SessionId(${this.value.toDebugString()})`;
+    return `SessionId(ID(${this.value.value}))`;
   }
 }

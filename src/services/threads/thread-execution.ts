@@ -370,7 +370,7 @@ export class ThreadExecution extends BaseService {
           id: cp.checkpointId.toString(),
           workflowId: cp.threadId.toString(),
           currentNodeId: cp.threadId.toString(),
-          timestamp: cp.createdAt.getDate().getTime(),
+          timestamp: cp.createdAt.toDate().getTime(),
           metadata: cp.metadata,
         }));
       },
@@ -403,7 +403,7 @@ export class ThreadExecution extends BaseService {
           id: checkpoint.checkpointId.toString(),
           workflowId: checkpoint.threadId.toString(),
           currentNodeId: checkpoint.threadId.toString(),
-          timestamp: checkpoint.createdAt.getDate().getTime(),
+          timestamp: checkpoint.createdAt.toDate().getTime(),
           metadata: checkpoint.metadata,
         };
       },
