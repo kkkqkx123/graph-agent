@@ -1,26 +1,26 @@
 import { injectable, inject } from 'inversify';
 import { IWorkflowRepository } from '../../../domain/workflow/repositories/workflow-repository';
 import { Workflow } from '../../../domain/workflow/entities/workflow';
-import { WorkflowDefinition } from '../../../domain/workflow/value-objects/workflow-definition';
 import { ID } from '../../../domain/common/value-objects/id';
-import { WorkflowStatus } from '../../../domain/workflow/value-objects/workflow-status';
-import { WorkflowStatusValue } from '../../../domain/workflow/value-objects/workflow-status';
-import { WorkflowType, parseWorkflowType } from '../../../domain/workflow/value-objects/workflow-type';
-import { Timestamp } from '../../../domain/common/value-objects/timestamp';
-import { Version } from '../../../domain/common/value-objects/version';
+import { WorkflowStatus, WorkflowStatusValue } from '../../../domain/workflow/value-objects/workflow-status';
+import { WorkflowType } from '../../../domain/workflow/value-objects/workflow-type';
 import { WorkflowModel } from '../models/workflow.model';
 import { ThreadModel } from '../models/thread.model';
 import { In } from 'typeorm';
 import { BaseRepository } from './base-repository';
 import { ConnectionManager } from '../connection-manager';
 import { TYPES } from '../../../di/service-keys';
+import { WorkflowMapper } from '../mappers/workflow-mapper';
 
 @injectable()
 export class WorkflowRepository
   extends BaseRepository<Workflow, WorkflowModel, ID>
   implements IWorkflowRepository {
+  private mapper: WorkflowMapper;
+
   constructor(@inject(TYPES.ConnectionManager) connectionManager: ConnectionManager) {
     super(connectionManager);
+    this.mapper = new WorkflowMapper();
   }
 
   protected getModelClass(): new () => WorkflowModel {
@@ -28,88 +28,27 @@ export class WorkflowRepository
   }
 
   /**
-   * 重写toDomain方法
+   * 使用Mapper将数据库模型转换为领域实体
    */
   protected override toDomain(model: WorkflowModel): Workflow {
-    try {
-      const definition = WorkflowDefinition.fromProps({
-        id: new ID(model.id),
-        name: model.name,
-        description: model.description || undefined,
-        status: WorkflowStatus.fromString(model.state),
-        type: parseWorkflowType(model.executionMode),
-        config: model.configuration || {},
-        errorHandlingStrategy: {} as any,
-        executionStrategy: {} as any,
-        createdAt: Timestamp.create(model.createdAt),
-        updatedAt: Timestamp.create(model.updatedAt),
-        version: Version.fromString(model.version),
-        tags: model.metadata?.tags || [],
-        metadata: model.metadata || {},
-        isDeleted: model.metadata?.isDeleted || false,
-        createdBy: model.createdBy ? new ID(model.createdBy) : undefined,
-        updatedBy: model.updatedBy ? new ID(model.updatedBy) : undefined,
-      });
-
-      const graph = {
-        nodes: new Map(),
-        edges: new Map(),
-      };
-
-      return Workflow.fromProps({
-        id: new ID(model.id),
-        definition,
-        graph,
-        subWorkflowReferences: new Map(),
-        createdAt: Timestamp.create(model.createdAt),
-        updatedAt: Timestamp.create(model.updatedAt),
-        version: Version.fromString(model.version),
-        createdBy: model.createdBy ? new ID(model.createdBy) : undefined,
-        updatedBy: model.updatedBy ? new ID(model.updatedBy) : undefined,
-      });
-    } catch (error) {
-      const errorMessage = `Workflow模型转换失败: ${error instanceof Error ? error.message : String(error)}`;
-      const customError = new Error(errorMessage);
-      (customError as any).code = 'MAPPING_ERROR';
-      (customError as any).context = { modelId: model.id, operation: 'toDomain' };
-      throw customError;
+    const result = this.mapper.toDomain(model);
+    if (!result.success) {
+      const error = result.error;
+      throw new Error(`${error.message} - ${error.path.join(' -> ')}`);
     }
+    return result.value;
   }
 
   /**
-   * 重写toModel方法
+   * 使用Mapper将领域实体转换为数据库模型
    */
   protected override toModel(entity: Workflow): WorkflowModel {
-    try {
-      const model = new WorkflowModel();
-
-      model.id = entity.workflowId.value;
-      model.name = entity.name;
-      model.description = entity.description || undefined;
-      model.state = entity.status.getValue();
-      model.executionMode = entity.type;
-      model.metadata = {
-        ...entity.metadata,
-        tags: entity.tags,
-        isDeleted: entity.isDeleted(),
-        definition: entity.getDefinition(),
-      };
-      model.configuration = entity.config;
-      model.version = entity.version.getValue();
-      model.revision = parseInt(entity.version.getValue().split('.')[2] || '0');
-      model.createdBy = entity.createdBy ? entity.createdBy.value : undefined;
-      model.updatedBy = entity.updatedBy ? entity.updatedBy.value : undefined;
-      model.createdAt = entity.createdAt.toDate();
-      model.updatedAt = entity.updatedAt.toDate();
-
-      return model;
-    } catch (error) {
-      const errorMessage = `Workflow实体转换失败: ${error instanceof Error ? error.message : String(error)}`;
-      const customError = new Error(errorMessage);
-      (customError as any).code = 'MAPPING_ERROR';
-      (customError as any).context = { entityId: entity.workflowId.value, operation: 'toModel' };
-      throw customError;
+    const result = this.mapper.toModel(entity);
+    if (!result.success) {
+      const error = result.error;
+      throw new Error(`${error.message} - ${error.path.join(' -> ')}`);
     }
+    return result.value;
   }
 
   /**

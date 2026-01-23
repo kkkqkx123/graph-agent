@@ -20,6 +20,8 @@ import {
 import { ILogger } from '../../../domain/common';
 import { BaseService } from '../../common/base-service';
 import { NodeTypeConfig } from './node-type-config';
+import { NodeRetryStrategy } from '../../../domain/workflow/value-objects/node-retry-strategy';
+import { getDefaultRetryStrategy } from '../../../domain/workflow/value-objects/node-retry-defaults';
 
 /**
  * 通用节点配置属性
@@ -33,6 +35,15 @@ export interface BaseNodeConfig {
   description?: string;
   /** 节点位置 */
   position?: { x: number; y: number };
+  /** 节点重试策略配置 */
+  retryStrategy?: Partial<{
+    enabled: boolean;
+    maxRetries: number;
+    retryDelay: number;
+    useExponentialBackoff: boolean;
+    exponentialBase: number;
+    maxRetryDelay: number;
+  }>;
 }
 
 /**
@@ -173,29 +184,47 @@ export class NodeFactory extends BaseService {
 
     // 使用类型守卫根据 config.type 创建节点
     // TypeScript 的 exhaustiveness check 会确保我们处理了所有情况
+    let node: Node;
     switch (config.type) {
       case 'start':
-        return this.createStartNode(nodeId, config);
+        node = this.createStartNode(nodeId, config);
+        break;
 
       case 'end':
-        return this.createEndNode(nodeId, config);
+        node = this.createEndNode(nodeId, config);
+        break;
 
       case 'llm':
-        return this.createLLMNode(nodeId, config);
+        node = this.createLLMNode(nodeId, config);
+        break;
 
       case 'tool':
       case 'tool-call':
-        return this.createToolCallNode(nodeId, config);
+        node = this.createToolCallNode(nodeId, config);
+        break;
 
       case 'condition':
-        return this.createConditionNode(nodeId, config);
+        node = this.createConditionNode(nodeId, config);
+        break;
 
       case 'data-transform':
-        return this.createDataTransformNode(nodeId, config);
+        node = this.createDataTransformNode(nodeId, config);
+        break;
 
       case 'context-processor':
-        return this.createContextProcessorNode(nodeId, config);
+        node = this.createContextProcessorNode(nodeId, config);
+        break;
     }
+
+    // 应用重试策略配置
+    if (config.retryStrategy) {
+      const retryStrategy = NodeRetryStrategy.fromConfig(config.retryStrategy);
+      return node.updateRetryStrategy(retryStrategy);
+    }
+
+    // 如果没有配置重试策略，使用节点类型的默认策略
+    const defaultRetryStrategy = getDefaultRetryStrategy(this.parseNodeType(config.type));
+    return node.updateRetryStrategy(defaultRetryStrategy);
   }
 
   /**

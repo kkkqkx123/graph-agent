@@ -49,6 +49,24 @@ export const PromptConfigSchema = z.object({
 });
 
 /**
+ * 节点重试策略配置Schema
+ */
+export const NodeRetryStrategyConfigSchema = z.object({
+  /** 是否启用重试 */
+  enabled: z.boolean().optional().default(false),
+  /** 最大重试次数 */
+  maxRetries: z.number().optional().default(0),
+  /** 重试延迟（毫秒） */
+  retryDelay: z.number().optional().default(1000),
+  /** 是否使用指数退避 */
+  useExponentialBackoff: z.boolean().optional().default(false),
+  /** 指数退避的基数 */
+  exponentialBase: z.number().optional().default(2),
+  /** 最大重试延迟（毫秒） */
+  maxRetryDelay: z.number().optional().default(60000),
+}).optional();
+
+/**
  * 节点配置Schema
  */
 export const NodeConfigSchema = z.object({
@@ -56,6 +74,8 @@ export const NodeConfigSchema = z.object({
   type: z.string(),
   name: z.string().optional(),
   config: z.record(z.string(), z.any()),
+  /** 节点重试策略配置 */
+  retryStrategy: NodeRetryStrategyConfigSchema,
 });
 
 /**
@@ -117,3 +137,4 @@ export type NodeConfig = z.infer<typeof NodeConfigSchema>;
 export type EdgeConfig = z.infer<typeof EdgeConfigSchema>;
 export type SubWorkflowReferenceConfig = z.infer<typeof SubWorkflowReferenceConfigSchema>;
 export type WrapperConfig = z.infer<typeof WrapperConfigSchema>;
+export type NodeRetryStrategyConfig = z.infer<typeof NodeRetryStrategyConfigSchema>;

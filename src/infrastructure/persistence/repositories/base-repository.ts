@@ -40,18 +40,14 @@ export abstract class BaseRepository<
   }
 
   /**
-   * 默认实体转换方法，子类可以重写
+   * 将数据库模型转换为领域实体（抽象方法，子类必须实现）
    */
-  protected toDomain(model: TModel): T {
-    return model as any;
-  }
+  protected abstract toDomain(model: TModel): T;
 
   /**
-   * 默认模型转换方法，子类可以重写
+   * 将领域实体转换为数据库模型（抽象方法，子类必须实现）
    */
-  protected toModel(domain: T): TModel {
-    return domain as any;
-  }
+  protected abstract toModel(domain: T): TModel;
 
   /**
    * 构建ID查询条件

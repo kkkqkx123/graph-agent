@@ -3,9 +3,6 @@
  * 提供直接类型实现的节点类，替代函数式实现
  */
 
-// 基类和接口
-export * from './node';
-
 // 具体节点实现
 export * from './start-node';
 export * from './end-node';
