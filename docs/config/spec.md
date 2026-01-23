@@ -4,12 +4,21 @@
 
 ### 1.1 分层约束
 - Domain层：只包含业务实体
-- Infrastructure层：定义配置接口，实现配置加载
-- Services层：通过`IConfigManager`接口使用配置
+- Infrastructure层：实现配置加载和函数式接口
+- Services层：通过函数式接口读取配置
 - Application层：使用Services层配置服务
 
-### 1.2 依赖倒置
-Services层必须依赖`IConfigManager`接口，禁止直接依赖具体实现类。
+### 1.2 函数式接口
+Services层使用函数式接口读取配置，无需依赖注入：
+```typescript
+import { getConfig } from '../../infrastructure/config/config';
+
+export class MyService {
+  getConfig() {
+    return getConfig('module.config_key', defaultValue);
+  }
+}
+```
 
 ### 1.3 配置分类
 基于生命周期：
@@ -19,16 +28,27 @@ Services层必须依赖`IConfigManager`接口，禁止直接依赖具体实现�
 
 ## 二、配置获取
 
-### 2.1 统一接口
-所有配置通过`IConfigManager`获取：
+### 2.1 函数式接口
+所有配置通过`getConfig()`函数获取：
 ```typescript
+import { getConfig } from '../../infrastructure/config/config';
+
 export class MyService {
-  constructor(@inject(TYPES.ConfigManager) private configManager: IConfigManager) {}
-  
-  getConfig() {
-    return this.configManager.get('module.config_key', defaultValue);
+  getLLMConfig() {
+    const apiKey = getConfig('llm.openai.apiKey');
+    const defaultModel = getConfig('llm.openai.defaultModel', 'gpt-4');
+    return { apiKey, defaultModel };
   }
 }
+```
+
+### 2.2 配置初始化
+配置初始化在应用启动时进行，由基础设施层负责：
+```typescript
+import { initConfig } from '../../infrastructure/config/config';
+
+// 应用启动时调用
+await initConfig('./configs', logger);
 ```
 
 ### 2.2 配置键规范
@@ -59,18 +79,18 @@ export class MyService {
 
 ## 四、配置热更新
 
-### 4.1 监听机制
+### 4.1 刷新机制
 ```typescript
-const unsubscribe = configManager.watch('key', (newValue) => {
-  // 处理变更
-});
-unsubscribe();
+import { refreshConfig } from '../../infrastructure/config/config';
+
+// 刷新配置
+await refreshConfig();
 ```
 
 ### 4.2 变更处理
-- 配置变更不应导致服务中断
-- 监听器避免执行耗时操作
-- 支持批量变更处理
+- 配置刷新会重新加载所有配置文件
+- 刷新后通过`getConfig()`获取的值会自动更新
+- 刷新操作不应导致服务中断
 
 ## 五、文件组织
 
@@ -91,10 +111,13 @@ configs/
 ## 六、禁止行为
 
 ### 6.1 禁止直接解析文件
-必须通过`IConfigManager`接口获取配置。
+必须通过`getConfig()`函数获取配置。
 
 ### 6.2 禁止硬编码配置
 必须从配置源读取配置值。注意：类别枚举等可以硬编码，这些本身就是固定的。但具体配置选项不能硬编码。
 
-### 6.3 禁止违反分层
-Services层禁止直接依赖Infrastructure具体类。
+### 6.3 禁止在服务层初始化配置
+Services层禁止调用`initConfig()`或`refreshConfig()`，这些操作只能在应用启动时进行。
+
+### 6.4 禁止依赖注入配置管理器
+Services层禁止使用`@inject(TYPES.ConfigManager)`，必须使用函数式接口。
