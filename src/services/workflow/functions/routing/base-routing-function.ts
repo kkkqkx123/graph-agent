@@ -46,7 +46,7 @@ export abstract class BaseConditionRoutingFunction<
   protected loadBaseConfig(): void {
     // 使用函数类名作为配置路径
     const configPath = `functions.${this.constructor.name}`;
-    this.baseConfig = getConfig(configPath, {});
+    this.baseConfig = getConfig().getDynamic(configPath, {});
   }
 
   /**
@@ -170,7 +170,7 @@ export abstract class BaseTargetRoutingFunction<
   protected loadBaseConfig(): void {
     // 使用函数类名作为配置路径
     const configPath = `functions.${this.constructor.name}`;
-    this.baseConfig = getConfig(configPath, {});
+    this.baseConfig = getConfig().getDynamic(configPath, {});
   }
 
   /**

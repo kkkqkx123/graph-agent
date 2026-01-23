@@ -116,7 +116,7 @@ export class ApiResponseTokenCalculator extends BaseTokenCalculator {
    */
   override getSupportedModels(): string[] {
     // 从配置文件获取支持的模型
-    const models = getConfig(`llm.${this.providerName}.supportedModels`, []);
+    const models = getConfig().getDynamic(`llm.${this.providerName}.supported_models`, []);
     if (models.length > 0) {
       return models;
     }
@@ -153,7 +153,7 @@ export class ApiResponseTokenCalculator extends BaseTokenCalculator {
    */
   override getModelPricing(modelName: string): Record<string, number> | null {
     // 从配置文件获取定价信息
-    const pricing = getConfig(`llm.${this.providerName}.pricing.${modelName}`, null);
+    const pricing = getConfig().getDynamic(`llm.${this.providerName}.pricing.${modelName}`, null);
     if (pricing) {
       return pricing;
     }

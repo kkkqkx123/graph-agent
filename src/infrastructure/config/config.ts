@@ -3,16 +3,121 @@
  *
  * 提供纯函数式的配置访问方式，避免依赖注入的复杂性
  * 配置管理器作为内部单例，对外只暴露简单的函数接口
+ * 支持类型安全的配置访问（编译时类型检查）
  */
 
 import { ConfigLoadingModule } from './loading/config-loading-module';
 import { ILogger } from '../../domain/common/types';
+import { AppConfig, AppConfigSchema } from './types';
+import { PathOf, ValueAtPath, IConfigAccessor } from './path-types';
 
 /**
  * 内部配置管理器实例
  */
 let _configManager: ConfigLoadingModule | null = null;
 let _logger: ILogger | null = null;
+
+/**
+ * 类型安全的配置访问器类
+ * 
+ * 提供编译时类型检查的配置访问
+ * 
+ * @example
+ * const config = getConfig();
+ * const apiKey = config.get('llm_runtime.openai.api_key'); // 类型: string
+ * const timeout = config.get('http.timeout'); // 类型: number
+ */
+export class TypedConfigAccessor implements IConfigAccessor<AppConfig> {
+  constructor(private config: AppConfig) {}
+
+  /**
+   * 获取配置值（类型安全）
+   *
+   * @param path - 配置路径，支持点号分隔
+   * @returns 配置值，类型由路径自动推导
+   *
+   * @example
+   * config.get('llm_runtime.openai.api_key') // 返回 string 类型
+   * config.get('http.rate_limit.capacity') // 返回 number 类型
+   */
+  get<P extends PathOf<AppConfig>>(path: P): ValueAtPath<AppConfig, P> {
+    const keys = path.split('.') as (keyof any)[];
+    let value: any = this.config;
+
+    for (const key of keys) {
+      if (value && typeof value === 'object' && key in value) {
+        value = value[key];
+      } else {
+        throw new Error(`配置路径不存在: ${path}`);
+      }
+    }
+
+    return value as ValueAtPath<AppConfig, P>;
+  }
+
+  /**
+   * 获取配置值（带默认值）
+   *
+   * @param path - 配置路径
+   * @param defaultValue - 默认值
+   * @returns 配置值或默认值
+   */
+  getOrDefault<P extends PathOf<AppConfig>>(
+    path: P,
+    defaultValue: ValueAtPath<AppConfig, P>
+  ): ValueAtPath<AppConfig, P> {
+    try {
+      return this.get(path);
+    } catch {
+      return defaultValue;
+    }
+  }
+
+  /**
+   * 获取配置值（动态路径，用于运行时生成的路径）
+   *
+   * @param path - 配置路径，支持点号分隔
+   * @param defaultValue - 默认值
+   * @returns 配置值或默认值
+   *
+   * @example
+   * config.getDynamic('functions.MyFunction', {})
+   */
+  getDynamic<T = any>(path: string, defaultValue?: T): T {
+    const keys = path.split('.') as (keyof any)[];
+    let value: any = this.config;
+
+    for (const key of keys) {
+      if (value && typeof value === 'object' && key in value) {
+        value = value[key];
+      } else {
+        return defaultValue as T;
+      }
+    }
+
+    return value as T;
+  }
+
+  /**
+   * 检查配置路径是否存在
+   *
+   * @param path - 配置路径
+   * @returns 是否存在
+   */
+  has<P extends PathOf<AppConfig>>(path: P): boolean {
+    try {
+      this.get(path);
+      return true;
+    } catch {
+      return false;
+    }
+  }
+}
+
+/**
+ * 全局配置访问器实例
+ */
+let _configAccessor: TypedConfigAccessor | null = null;
 
 /**
  * 初始化配置系统
@@ -37,34 +142,42 @@ export async function initConfig(basePath: string, logger: ILogger): Promise<voi
   _configManager = new ConfigLoadingModule(logger);
   await _configManager.initialize(basePath);
 
+  // 获取所有配置数据
+  const configData = _configManager.getAllConfigs();
+
+  // 验证配置
+  const result = AppConfigSchema.safeParse(configData);
+  if (!result.success) {
+    throw new Error(`配置验证失败: ${result.error.message}`);
+  }
+
+  // 创建类型安全的配置访问器
+  _configAccessor = new TypedConfigAccessor(result.data);
+
   logger.info('配置系统初始化完成', { basePath });
 }
 
 /**
- * 获取配置值
+ * 获取类型安全的配置访问器
  *
- * 支持点号分隔的嵌套路径访问
- *
- * @template T - 返回值的类型
- * @param key - 配置键，支持点号分隔的嵌套路径（如 'llm.rateLimit.capacity'）
- * @param defaultValue - 默认值，当配置不存在时返回
- * @returns 配置值或默认值
+ * @returns 类型安全的配置访问器实例
  *
  * @example
  * ```typescript
- * const capacity = getConfig<number>('llm.rateLimit.capacity', 100);
- * const enabled = getConfig<boolean>('llm.enabled', false);
+ * const config = getConfig();
+ * const apiKey = config.get('llm_runtime.openai.api_key'); // 类型: string
+ * const timeout = config.get('http.timeout'); // 类型: number
  * ```
  *
- * @throws {Error} 如果配置管理器未初始化
+ * @throws {Error} 如果配置系统未初始化
  */
-export function getConfig<T = any>(key: string, defaultValue?: T): T {
-  if (!_configManager) {
+export function getConfig(): TypedConfigAccessor {
+  if (!_configAccessor) {
     throw new Error(
-      '配置管理器未初始化。请确保在应用启动时调用了 initConfig() 方法。'
+      '配置系统未初始化。请确保在应用启动时调用了 initConfig() 方法。'
     );
   }
-  return _configManager.get(key, defaultValue);
+  return _configAccessor;
 }
 
 /**
@@ -78,12 +191,12 @@ export function getConfig<T = any>(key: string, defaultValue?: T): T {
  * await refreshConfig();
  * ```
  *
- * @throws {Error} 如果配置管理器未初始化
+ * @throws {Error} 如果配置系统未初始化
  */
 export async function refreshConfig(): Promise<void> {
   if (!_configManager) {
     throw new Error(
-      '配置管理器未初始化。请确保在应用启动时调用了 initConfig() 方法。'
+      '配置系统未初始化。请确保在应用启动时调用了 initConfig() 方法。'
     );
   }
 
@@ -93,6 +206,19 @@ export async function refreshConfig(): Promise<void> {
 
   _logger.info('开始刷新配置');
   await _configManager.refresh();
+
+  // 获取刷新后的配置数据
+  const configData = _configManager.getAllConfigs();
+
+  // 验证配置
+  const result = AppConfigSchema.safeParse(configData);
+  if (!result.success) {
+    throw new Error(`配置验证失败: ${result.error.message}`);
+  }
+
+  // 更新类型安全的配置访问器
+  _configAccessor = new TypedConfigAccessor(result.data);
+
   _logger.info('配置刷新完成');
 }
 
@@ -153,6 +279,7 @@ export function setConfigManager(configManager: ConfigLoadingModule): void {
 export function resetConfigManager(): void {
   _configManager = null;
   _logger = null;
+  _configAccessor = null;
 }
 
 /**
@@ -163,10 +290,11 @@ export function resetConfigManager(): void {
  * @example
  * ```typescript
  * if (isConfigInitialized()) {
- *   const value = getConfig('some.key');
+ *   const config = getConfig();
+ *   const value = config.get('some.key');
  * }
  * ```
  */
 export function isConfigInitialized(): boolean {
-  return _configManager !== null;
+  return _configManager !== null && _configAccessor !== null;
 }

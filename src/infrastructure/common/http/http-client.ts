@@ -104,10 +104,10 @@ export class HttpClient {
 
   private getDefaultConfig(): AxiosRequestConfig {
     return {
-      timeout: getConfig('http.timeout', 30000),
+      timeout: getConfig().get('http.timeout'),
       headers: {
         'Content-Type': 'application/json',
-        'User-Agent': getConfig('http.userAgent', 'WorkflowAgent/1.0.0'),
+        'User-Agent': getConfig().get('http.user_agent'),
       },
       validateStatus: status => status < 500, // Don't reject on 4xx errors
     };
@@ -121,7 +121,7 @@ export class HttpClient {
         config.metadata = { startTime: Date.now() };
 
         // Log request if enabled
-        if (getConfig('http.logging.enabled', false)) {
+        if (getConfig().get('http.log.enabled')) {
           console.log(`HTTP Request: ${config.method?.toUpperCase()} ${config.url}`, {
             headers: config.headers,
             data: config.data,
@@ -145,7 +145,7 @@ export class HttpClient {
         (response as any).duration = duration;
 
         // Log response if enabled
-        if (getConfig('http.logging.enabled', false)) {
+        if (getConfig().get('http.log.enabled')) {
           console.log(`HTTP Response: ${response.status} ${response.config.url}`, {
             duration: `${duration}ms`,
             headers: response.headers,
@@ -161,7 +161,7 @@ export class HttpClient {
           Date.now() - ((error.config as ExtendedAxiosRequestConfig)?.metadata?.startTime || 0);
 
         // Log error if enabled
-        if (getConfig('http.logging.enabled', false)) {
+        if (getConfig().get('http.log.enabled')) {
           console.error(
             `HTTP Error: ${error.response?.status || 'Network Error'} ${error.config?.url}`,
             {

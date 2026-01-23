@@ -7,8 +7,8 @@ export class TokenBucketLimiter {
   private readonly refillRate: number;
 
   constructor() {
-    this.capacity = getConfig('llm.rateLimit.capacity', 100);
-    this.refillRate = getConfig('llm.rateLimit.refillRate', 10); // tokens per second
+    this.capacity = getConfig().get('llm_runtime.rate_limit.capacity');
+    this.refillRate = getConfig().get('llm_runtime.rate_limit.refill_rate'); // tokens per second
     this.tokens = this.capacity;
     this.lastRefill = Date.now();
   }

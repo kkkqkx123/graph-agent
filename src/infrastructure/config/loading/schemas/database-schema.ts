@@ -19,12 +19,12 @@ export const DatabaseSchema = z.object({
   synchronize: z.boolean().optional(),
   logging: z.boolean().optional(),
   // 连接池配置
-  poolSize: z.number().min(1).max(100).optional(),
-  maxConnections: z.number().min(1).max(100).optional(),
-  minConnections: z.number().min(0).max(50).optional(),
-  idleTimeout: z.number().min(1000).max(300000).optional(),
-  connectionTimeout: z.number().min(1000).max(60000).optional(),
-  acquireTimeout: z.number().min(1000).max(60000).optional(),
+  pool_size: z.number().min(1).max(100).optional(),
+  max_connections: z.number().min(1).max(100).optional(),
+  min_connections: z.number().min(0).max(50).optional(),
+  idle_timeout: z.number().min(1000).max(300000).optional(),
+  connection_timeout: z.number().min(1000).max(60000).optional(),
+  acquire_timeout: z.number().min(1000).max(60000).optional(),
 });
 
 /**

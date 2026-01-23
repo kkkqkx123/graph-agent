@@ -30,7 +30,7 @@ export class PromptRepository implements IPromptRepository {
 
   async findById(id: PromptId): Promise<Prompt | null> {
     const { category, name } = id.parse();
-    const content = getConfig(`prompts.${category}.${name}`);
+    const content = getConfig().getDynamic(`prompts.${category}.${name}`);
 
     if (!content) {
       return null;
@@ -56,7 +56,7 @@ export class PromptRepository implements IPromptRepository {
   }
 
   async findByCategory(category: string): Promise<Prompt[]> {
-    const promptsConfig = getConfig(`prompts.${category}`);
+    const promptsConfig = getConfig().getDynamic(`prompts.${category}`);
     if (!promptsConfig || typeof promptsConfig !== 'object') {
       return [];
     }
@@ -171,7 +171,7 @@ export class PromptRepository implements IPromptRepository {
   }
 
   async listAll(): Promise<Prompt[]> {
-    const promptsConfig = getConfig('prompts');
+    const promptsConfig = getConfig().get('prompts');
     if (!promptsConfig || typeof promptsConfig !== 'object') {
       return [];
     }
@@ -231,7 +231,7 @@ export class PromptRepository implements IPromptRepository {
 
   async exists(id: PromptId): Promise<boolean> {
     const { category, name } = id.parse();
-    const content = getConfig(`prompts.${category}.${name}`);
+    const content = getConfig().getDynamic(`prompts.${category}.${name}`);
     return content !== undefined;
   }
 }

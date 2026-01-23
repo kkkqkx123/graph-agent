@@ -10,8 +10,8 @@ export class SlidingWindowLimiter {
   private readonly windowSizeMs: number;
 
   constructor() {
-    this.maxRequests = getConfig('llm.rateLimit.maxRequests', 60);
-    this.windowSizeMs = getConfig('llm.rateLimit.windowSizeMs', 60000); // 1 minute
+    this.maxRequests = getConfig().get('llm_runtime.rate_limit.max_requests');
+    this.windowSizeMs = getConfig().get('llm_runtime.rate_limit.window_size_ms'); // 1 minute
   }
 
   async checkLimit(): Promise<void> {

@@ -46,7 +46,7 @@ export abstract class BaseConditionFunction<
   protected loadBaseConfig(): void {
     // 使用函数类名作为配置路径
     const configPath = `functions.${this.constructor.name}`;
-    this.baseConfig = getConfig(configPath, {});
+    this.baseConfig = getConfig().getDynamic(configPath, {});
   }
 
   /**

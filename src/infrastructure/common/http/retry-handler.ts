@@ -15,10 +15,10 @@ export class RetryHandler {
   private totalResponseTime: number = 0;
 
   constructor() {
-    this.maxRetries = getConfig('http.retry.maxRetries', 3);
-    this.baseDelay = getConfig('http.retry.baseDelay', 1000);
-    this.maxDelay = getConfig('http.retry.maxDelay', 30000);
-    this.backoffMultiplier = getConfig('http.retry.backoffMultiplier', 2);
+    this.maxRetries = getConfig().get('http.retry.max_retries');
+    this.baseDelay = getConfig().get('http.retry.base_delay');
+    this.maxDelay = getConfig().get('http.retry.max_delay');
+    this.backoffMultiplier = getConfig().get('http.retry.backoff_multiplier');
 
     this.retryableStatusCodes = new Set([
       408, // Request Timeout
@@ -76,7 +76,7 @@ export class RetryHandler {
         const delay = this.calculateDelay(attempt);
 
         // Log retry attempt if enabled
-        if (getConfig('http.logging.enabled', false)) {
+        if (getConfig().get('http.log.enabled')) {
           console.warn(
             `HTTP retry attempt ${attempt + 1}/${this.maxRetries + 1} after ${delay}ms`,
             {

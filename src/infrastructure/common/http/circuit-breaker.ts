@@ -19,10 +19,10 @@ export class CircuitBreaker {
   private resetTimeout: number;
 
   constructor() {
-    this.failureThreshold = getConfig('http.circuitBreaker.failureThreshold', 5);
-    this.successThreshold = getConfig('http.circuitBreaker.successThreshold', 3);
-    this.timeout = getConfig('http.circuitBreaker.timeout', 60000);
-    this.resetTimeout = getConfig('http.circuitBreaker.resetTimeout', 30000);
+    this.failureThreshold = getConfig().get('http.circuit_breaker.failure_threshold');
+    this.successThreshold = getConfig().get('http.circuit_breaker.success_threshold');
+    this.timeout = getConfig().get('http.circuit_breaker.timeout');
+    this.resetTimeout = getConfig().get('http.circuit_breaker.reset_timeout');
   }
 
   async execute<T>(fn: () => Promise<T>): Promise<T> {
@@ -115,7 +115,7 @@ export class CircuitBreaker {
     this.state = newState;
 
     // Log state change if enabled
-    if (getConfig('http.logging.enabled', false)) {
+    if (getConfig().get('http.log.enabled')) {
       console.log(`Circuit breaker state changed: ${oldState} -> ${newState}`, {
         failureCount: this.failureCount,
         successCount: this.successCount,

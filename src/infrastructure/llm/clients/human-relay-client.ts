@@ -55,10 +55,7 @@ export class HumanRelayClient extends BaseLLMClient {
     featureSupport.supportsTools = false;
 
     // 从配置中读取支持的模型列表
-    const supportedModels = getConfig('llm.human-relay.supportedModels', [
-      'single_turn',
-      'multi_turn',
-    ]);
+    const supportedModels = getConfig().get('llm_runtime.human_relay.supported_models');
 
     // 验证配置
     if (!supportedModels || !Array.isArray(supportedModels) || supportedModels.length === 0) {

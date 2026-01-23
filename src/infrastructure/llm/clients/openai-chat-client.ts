@@ -36,20 +36,20 @@ export class OpenAIChatClient extends BaseLLMClient {
     featureSupport.supportsParallelToolCalling = true;
 
     // 从配置中读取必需的配置项
-    const apiKey = getConfig('llm.openai.apiKey');
-    const defaultModel = getConfig('llm.openai.defaultModel');
-    const supportedModels = getConfig('llm.openai.supportedModels');
+    const apiKey = getConfig().get('llm_runtime.openai.api_key');
+    const defaultModel = getConfig().get('llm_runtime.openai.default_model');
+    const supportedModels = getConfig().get('llm_runtime.openai.supported_models');
 
     // 验证必需配置
     if (!apiKey) {
-      throw new Error('OpenAI API密钥未配置。请在配置文件中设置 llm.openai.apiKey。');
+      throw new Error('OpenAI API密钥未配置。请在配置文件中设置 llm_runtime.openai.api_key。');
     }
     if (!defaultModel) {
-      throw new Error('OpenAI默认模型未配置。请在配置文件中设置 llm.openai.defaultModel。');
+      throw new Error('OpenAI默认模型未配置。请在配置文件中设置 llm_runtime.openai.default_model。');
     }
     if (!supportedModels || !Array.isArray(supportedModels) || supportedModels.length === 0) {
       throw new Error(
-        'OpenAI支持的模型列表未配置。请在配置文件中设置 llm.openai.supportedModels。'
+        'OpenAI支持的模型列表未配置。请在配置文件中设置 llm_runtime.openai.supported_models。'
       );
     }
 
@@ -85,7 +85,7 @@ export class OpenAIChatClient extends BaseLLMClient {
       throw new Error('OpenAI默认模型未配置。');
     }
 
-    const configs = getConfig<Record<string, any>>('llm.openai.models', {});
+    const configs = getConfig().get('llm_runtime.openai.models');
     const config = configs[model];
 
     if (!config) {

@@ -7,8 +7,8 @@ export class RateLimiter {
   private refillRate: number;
 
   constructor() {
-    this.capacity = getConfig('http.rateLimit.capacity', 100);
-    this.refillRate = getConfig('http.rateLimit.refillRate', 10); // tokens per second
+    this.capacity = getConfig().get('http.rate_limit.capacity');
+    this.refillRate = getConfig().get('http.rate_limit.refill_rate'); // tokens per second
     this.tokens = this.capacity;
     this.lastRefill = Date.now();
   }

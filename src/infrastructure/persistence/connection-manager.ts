@@ -119,7 +119,7 @@ export class ConnectionManager {
    * 构建连接配置
    */
   private buildConnectionConfig(): DataSourceOptions {
-    const dbConfig = getConfig<DatabaseConfig>('database', {});
+    const dbConfig = getConfig().get('database');
     const dbType = dbConfig.type || 'postgres';
 
     if (dbType === 'sqlite') {
@@ -144,13 +144,13 @@ export class ConnectionManager {
       synchronize: dbConfig.synchronize || false,
       logging: dbConfig.logging || false,
       // 连接池配置
-      poolSize: dbConfig.poolSize || 10,
+      poolSize: dbConfig.pool_size || 10,
       extra: {
-        max: dbConfig.maxConnections || 10,
-        min: dbConfig.minConnections || 2,
-        idleTimeoutMillis: dbConfig.idleTimeout || 30000,
-        connectionTimeoutMillis: dbConfig.connectionTimeout || 2000,
-        acquireTimeoutMillis: dbConfig.acquireTimeout || 10000,
+        max: dbConfig.max_connections || 10,
+        min: dbConfig.min_connections || 2,
+        idleTimeoutMillis: dbConfig.idle_timeout || 30000,
+        connectionTimeoutMillis: dbConfig.connection_timeout || 2000,
+        acquireTimeoutMillis: dbConfig.acquire_timeout || 10000,
         reapIntervalMillis: 1000,
         createRetryIntervalMillis: 200,
       },

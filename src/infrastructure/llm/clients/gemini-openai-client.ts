@@ -38,9 +38,9 @@ export class GeminiOpenAIClient extends BaseLLMClient {
     featureSupport.setProviderSpecificFeature('cached_content', true);
 
     // 从配置中读取必需的配置项
-    const apiKey = getConfig('llm.gemini-openai.apiKey');
-    const defaultModel = getConfig('llm.gemini-openai.defaultModel');
-    const supportedModels = getConfig('llm.gemini-openai.supportedModels');
+    const apiKey = getConfig().get('llm_runtime.gemini_openai.api_key');
+    const defaultModel = getConfig().get('llm_runtime.gemini_openai.default_model');
+    const supportedModels = getConfig().get('llm_runtime.gemini_openai.supported_models');
 
     // 验证必需配置
     if (!apiKey) {
@@ -91,9 +91,8 @@ export class GeminiOpenAIClient extends BaseLLMClient {
       throw new Error('Gemini OpenAI兼容默认模型未配置。');
     }
 
-    const configs: Record<string, any> = getConfig(
-        'llm.gemini-openai.models',
-      {}
+    const configs: Record<string, any> = getConfig().get(
+        'llm_runtime.gemini_openai.models'
     );
     const config = configs[model];
 

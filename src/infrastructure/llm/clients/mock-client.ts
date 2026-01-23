@@ -36,9 +36,9 @@ export class MockClient extends BaseLLMClient {
     featureSupport.supportsMaxTokens = true;
 
     // 从配置中读取必需的配置项
-    const apiKey = getConfig('llm.mock.apiKey', 'mock-key');
-    const defaultModel = getConfig('llm.mock.defaultModel');
-    const supportedModels = getConfig('llm.mock.supportedModels');
+    const apiKey = getConfig().get('llm_runtime.mock.api_key');
+    const defaultModel = getConfig().get('llm_runtime.mock.default_model');
+    const supportedModels = getConfig().get('llm_runtime.mock.supported_models');
 
     // 验证必需配置
     if (!defaultModel) {
@@ -142,7 +142,7 @@ export class MockClient extends BaseLLMClient {
       throw new Error('Mock默认模型未配置。');
     }
 
-    const configs = getConfig<Record<string, any>>('llm.mock.models', {});
+    const configs = getConfig().get('llm_runtime.mock.models');
     const config = configs[model];
 
     if (!config) {

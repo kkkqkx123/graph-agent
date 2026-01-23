@@ -38,9 +38,9 @@ export class GeminiClient extends BaseLLMClient {
     featureSupport.setProviderSpecificFeature('cached_content', true);
 
     // 从配置中读取必需的配置项
-    const apiKey = getConfig('llm.gemini.apiKey');
-    const defaultModel = getConfig('llm.gemini.defaultModel');
-    const supportedModels = getConfig('llm.gemini.supportedModels');
+    const apiKey = getConfig().get('llm_runtime.gemini.api_key');
+    const defaultModel = getConfig().get('llm_runtime.gemini.default_model');
+    const supportedModels = getConfig().get('llm_runtime.gemini.supported_models');
 
     // 验证必需配置
     if (!apiKey) {
@@ -87,7 +87,7 @@ export class GeminiClient extends BaseLLMClient {
       throw new Error('Gemini默认模型未配置。');
     }
 
-    const configs = getConfig<Record<string, any>>('llm.gemini.models', {});
+    const configs = getConfig().get('llm_runtime.gemini.models');
     const config = configs[model];
 
     if (!config) {

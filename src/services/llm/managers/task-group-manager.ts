@@ -286,7 +286,7 @@ export class TaskGroupManager {
    * 获取LLM配置
    */
   private async getLLMConfig(): Promise<Record<string, any>> {
-    return (getConfig<Record<string, any>>('llm') || {}) as Record<string, any>;
+    return getConfig().get('llm') as Record<string, any>;
   }
 
   /**

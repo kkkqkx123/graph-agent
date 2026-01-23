@@ -34,9 +34,9 @@ export class AnthropicClient extends BaseLLMClient {
     featureSupport.supportsParallelToolCalling = true;
 
     // 从配置中读取必需的配置项
-    const apiKey = getConfig('llm.anthropic.apiKey');
-    const defaultModel = getConfig('llm.anthropic.defaultModel');
-    const supportedModels = getConfig('llm.anthropic.supportedModels');
+    const apiKey = getConfig().get('llm_runtime.anthropic.api_key');
+    const defaultModel = getConfig().get('llm_runtime.anthropic.default_model');
+    const supportedModels = getConfig().get('llm_runtime.anthropic.supported_models');
 
     // 验证必需配置
     if (!apiKey) {
@@ -86,7 +86,7 @@ export class AnthropicClient extends BaseLLMClient {
       throw new Error('Anthropic默认模型未配置。');
     }
 
-    const configs = getConfig<Record<string, any>>('llm.anthropic.models', {});
+    const configs = getConfig().get('llm_runtime.anthropic.models');
     const config = configs[model];
 
     if (!config) {

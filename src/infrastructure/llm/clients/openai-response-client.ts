@@ -38,9 +38,9 @@ export class OpenAIResponseClient extends BaseLLMClient {
     featureSupport.setProviderSpecificFeature('verbosity', true);
 
     // 从配置中读取必需的配置项
-    const apiKey = getConfig('llm.openai.apiKey');
-    const defaultModel = getConfig('llm.openai-response.defaultModel');
-    const supportedModels = getConfig('llm.openai-response.supportedModels');
+    const apiKey = getConfig().get('llm_runtime.openai.api_key');
+    const defaultModel = getConfig().get('llm_runtime.openai_response.default_model');
+    const supportedModels = getConfig().get('llm_runtime.openai_response.supported_models');
 
     // 验证必需配置
     if (!apiKey) {
@@ -94,9 +94,8 @@ export class OpenAIResponseClient extends BaseLLMClient {
       throw new Error('OpenAI Response默认模型未配置。');
     }
 
-    const configs: Record<string, any> = getConfig(
-        'llm.openai-response.models',
-      {}
+    const configs: Record<string, any> = getConfig().get(
+        'llm_runtime.openai_response.models'
     );
     const config = configs[model];
 

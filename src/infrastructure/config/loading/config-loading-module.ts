@@ -361,6 +361,18 @@ export class ConfigLoadingModule {
   }
 
   /**
+   * 获取所有配置
+   *
+   * @returns 所有配置的副本
+   */
+  getAllConfigs(): Record<string, any> {
+    if (!this.isInitialized) {
+      throw new Error('配置加载模块尚未初始化');
+    }
+    return this.deepClone(this.configs);
+  }
+
+  /**
    * 刷新配置
    *
    * 重新加载配置文件，清空缓存
