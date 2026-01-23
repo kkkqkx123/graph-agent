@@ -14,6 +14,8 @@ import { PoolSchema } from './loading/schemas/pool-schema';
 import { TaskGroupSchema } from './loading/schemas/task-group-schema';
 import { WorkflowFunctionSchema } from './loading/schemas/workflow-function-schema';
 import { WorkflowConfigSchema } from './loading/schemas/workflow-schema';
+import { GlobalSchema, GlobalConfig } from './loading/schemas/global-schema';
+import { LLMRetrySchema, LLMRetryConfig } from './loading/schemas/llm-retry-schema';
 
 /**
  * HTTP 配置 Schema
@@ -134,8 +136,10 @@ export const FunctionsRuntimeConfigSchema = z.record(z.string(), z.any());
  * 整合所有模块的配置
  */
 export const AppConfigSchema = z.object({
+  global: GlobalSchema,
   database: DatabaseSchema,
   llm: LLMSchema,
+  llm_retry: LLMRetrySchema,
   tools: ToolSchema,
   prompts: PromptSchema,
   pool: PoolSchema,
@@ -176,10 +180,24 @@ export class TypedConfig {
   }
 
   /**
+   * 获取全局配置
+   */
+  get global(): GlobalConfig {
+    return this.config.global as GlobalConfig;
+  }
+
+  /**
    * 获取数据库配置
    */
   get database(): DatabaseConfig {
     return this.config.database as DatabaseConfig;
+  }
+
+  /**
+   * 获取 LLM 重试配置
+   */
+  get llm_retry(): LLMRetryConfig {
+    return this.config.llm_retry as LLMRetryConfig;
   }
 
   /**
