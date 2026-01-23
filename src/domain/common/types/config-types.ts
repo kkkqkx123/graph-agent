@@ -168,7 +168,6 @@ export interface ConfigCacheConfig {
  */
 export interface EnvironmentProcessorOptions {
   pattern?: RegExp;
-  transform?: (value: string) => any;
 }
 
 /**

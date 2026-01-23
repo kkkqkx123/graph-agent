@@ -13,14 +13,6 @@ import {
 } from '../../../domain/common/types';
 
 /**
- * 配置继承接口
- */
-interface ConfigInheritance {
-  inherits_from?: string[];
-  [key: string]: any;
-}
-
-/**
  * 配置继承处理器
  * 处理配置文件之间的继承关系
  */
@@ -29,11 +21,17 @@ export class InheritanceProcessor implements IConfigProcessor {
   private readonly maxDepth: number;
   private readonly logger: ILogger;
   private readonly loadingCache: Map<string, Record<string, any>> = new Map();
+  private readonly basePath: string;
 
-  constructor(options: InheritanceProcessorOptions = {}, logger: ILogger) {
+  constructor(options: InheritanceProcessorOptions = {}, logger: ILogger, basePath: string) {
+    if (!basePath) {
+      throw new Error('InheritanceProcessor必须提供basePath参数');
+    }
+    
     this.separator = options.separator || '.';
     this.maxDepth = options.maxDepth || 10;
     this.logger = logger.child({ module: 'InheritanceProcessor' });
+    this.basePath = basePath;
   }
 
   /**
@@ -129,14 +127,16 @@ export class InheritanceProcessor implements IConfigProcessor {
 
   /**
    * 解析文件路径
+   * 基于配置文件所在目录解析相对路径
    */
   private resolvePath(parentPath: string): string {
-    // 如果是相对路径，相对于当前工作目录
+    // 如果是绝对路径，直接返回
     if (path.isAbsolute(parentPath)) {
       return parentPath;
     }
 
-    return path.resolve(process.cwd(), parentPath);
+    // 相对路径基于配置文件所在目录（basePath）
+    return path.resolve(this.basePath, parentPath);
   }
 
   /**

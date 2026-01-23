@@ -11,15 +11,14 @@ import {
 /**
  * 环境变量处理器
  * 处理配置中的${VAR}和${VAR:default}模式
+ * 自动进行类型转换（字符串 -> 数字/布尔值/JSON等）
  */
 export class EnvironmentProcessor implements IConfigProcessor {
   private readonly pattern: RegExp;
-  private readonly transform: (value: string) => any;
   private readonly logger: ILogger;
 
   constructor(options: EnvironmentProcessorOptions = {}, logger: ILogger) {
     this.pattern = options.pattern || /\$\{([^:}]+)(?::([^}]*))?\}/g;
-    this.transform = options.transform || ((value: string) => value);
     this.logger = logger.child({ module: 'EnvironmentProcessor' });
   }
 
@@ -64,8 +63,9 @@ export class EnvironmentProcessor implements IConfigProcessor {
 
   /**
    * 处理字符串中的环境变量
+   * 自动进行类型转换
    */
-  private processString(str: string): string {
+  private processString(str: string): any {
     return str.replace(this.pattern, (match, varName, defaultValue) => {
       try {
         const envValue = process.env[varName];
@@ -75,7 +75,8 @@ export class EnvironmentProcessor implements IConfigProcessor {
             throw new Error(`环境变量 ${varName} 未设置且没有默认值`);
           }
           this.logger.debug('使用默认值', { varName, defaultValue });
-          return defaultValue;
+          // 默认值也需要类型转换
+          return this.autoConvert(defaultValue);
         }
 
         this.logger.debug('替换环境变量', {
@@ -83,7 +84,8 @@ export class EnvironmentProcessor implements IConfigProcessor {
           value: this.maskSensitiveValue(varName, envValue),
         });
 
-        return this.transform ? this.transform(envValue) : envValue;
+        // 自动类型转换
+        return this.autoConvert(envValue);
       } catch (error) {
         this.logger.error('环境变量处理失败', error as Error, {
           varName,
@@ -91,6 +93,54 @@ export class EnvironmentProcessor implements IConfigProcessor {
         throw error;
       }
     });
+  }
+
+  /**
+   * 自动类型转换
+   * 将字符串值转换为适当的类型（数字、布尔值、JSON等）
+   *
+   * 转换规则：
+   * - "true"/"false" -> boolean
+   * - 纯数字 -> number
+   * - JSON字符串 -> object/array
+   * - 其他 -> string
+   */
+  private autoConvert(value: string): any {
+    const trimmedValue = value.trim();
+
+    // 空字符串返回undefined
+    if (trimmedValue === '') {
+      return undefined;
+    }
+
+    // 尝试转换为布尔值
+    if (trimmedValue.toLowerCase() === 'true') {
+      return true;
+    }
+    if (trimmedValue.toLowerCase() === 'false') {
+      return false;
+    }
+
+    // 尝试转换为数字（整数或浮点数）
+    if (/^-?\d+$/.test(trimmedValue)) {
+      return parseInt(trimmedValue, 10);
+    }
+    if (/^-?\d+\.\d+$/.test(trimmedValue)) {
+      return parseFloat(trimmedValue);
+    }
+
+    // 尝试转换为JSON对象或数组
+    if ((trimmedValue.startsWith('{') && trimmedValue.endsWith('}')) ||
+        (trimmedValue.startsWith('[') && trimmedValue.endsWith(']'))) {
+      try {
+        return JSON.parse(trimmedValue);
+      } catch {
+        // 不是有效的JSON，返回原始字符串
+      }
+    }
+
+    // 返回原始字符串
+    return value;
   }
 
   /**

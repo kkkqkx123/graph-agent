@@ -73,6 +73,13 @@ export class ProcessorPipeline {
   }
 
   /**
+   * 获取所有处理器
+   */
+  getProcessors(): IConfigProcessor[] {
+    return [...this.processors];
+  }
+
+  /**
    * 处理配置
    * 
    * 按顺序执行所有处理器
