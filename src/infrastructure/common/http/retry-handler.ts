@@ -22,6 +22,7 @@ export class RetryHandler {
 
     this.retryableStatusCodes = new Set([
       408, // Request Timeout
+      409, // Conflict (lock timeout)
       429, // Too Many Requests
       500, // Internal Server Error
       502, // Bad Gateway
@@ -44,6 +45,7 @@ export class RetryHandler {
       'EAI_AGAIN',
       'NETWORK_ERROR',
       'TIMEOUT',
+      'ABORT_ERR',
     ]);
   }
 
@@ -73,7 +75,7 @@ export class RetryHandler {
         }
 
         // Calculate delay for next retry
-        const delay = this.calculateDelay(attempt);
+        const delay = this.calculateRetryDelay(error, attempt);
 
         // Log retry attempt if enabled
         if (getConfig().get('http.log.enabled')) {
@@ -99,6 +101,13 @@ export class RetryHandler {
   }
 
   private isRetryableError(error: any): boolean {
+    // Check for server's retry suggestion
+    if (error.response) {
+      const shouldRetryHeader = error.response.headers?.get('x-should-retry');
+      if (shouldRetryHeader === 'true') return true;
+      if (shouldRetryHeader === 'false') return false;
+    }
+
     // Check for retryable HTTP status codes
     if (error.response && this.retryableStatusCodes.has(error.response.status)) {
       return true;
@@ -119,7 +128,8 @@ export class RetryHandler {
       error.message &&
       (error.message.includes('timeout') ||
         error.message.includes('network') ||
-        error.message.includes('connection'))
+        error.message.includes('connection') ||
+        error.message.includes('abort'))
     ) {
       return true;
     }
@@ -127,10 +137,60 @@ export class RetryHandler {
     return false;
   }
 
-  private calculateDelay(attempt: number): number {
-    // Exponential backoff with jitter
+  /**
+   * 计算重试延迟
+   * 优先使用服务器返回的重试建议
+   */
+  private calculateRetryDelay(error: any, attempt: number): number {
+    // 检查服务器返回的重试建议
+    if (error.response) {
+      const retryAfterHeader = error.response.headers?.get('retry-after');
+      if (retryAfterHeader) {
+        const delay = this.parseRetryAfter(retryAfterHeader);
+        if (delay !== null && delay >= 0 && delay < 60000) {
+          return delay;
+        }
+      }
+
+      const retryAfterMsHeader = error.response.headers?.get('retry-after-ms');
+      if (retryAfterMsHeader) {
+        const delay = parseFloat(retryAfterMsHeader);
+        if (!isNaN(delay) && delay >= 0 && delay < 60000) {
+          return delay;
+        }
+      }
+    }
+
+    // 使用默认的指数退避算法
+    return this.calculateDefaultDelay(attempt);
+  }
+
+  /**
+   * 解析 retry-after header
+   * 支持秒数和 HTTP 日期格式
+   */
+  private parseRetryAfter(header: string): number | null {
+    // 尝试解析为秒数
+    const seconds = parseFloat(header);
+    if (!isNaN(seconds)) {
+      return seconds * 1000;
+    }
+
+    // 尝试解析为 HTTP 日期
+    const date = new Date(header);
+    if (!isNaN(date.getTime())) {
+      return date.getTime() - Date.now();
+    }
+
+    return null;
+  }
+
+  /**
+   * 计算默认延迟（指数退避 + 抖动）
+   */
+  private calculateDefaultDelay(attempt: number): number {
     const exponentialDelay = this.baseDelay * Math.pow(this.backoffMultiplier, attempt);
-    const jitter = Math.random() * 0.1 * exponentialDelay; // 10% jitter
+    const jitter = Math.random() * 0.25 * exponentialDelay; // 25% jitter
     const delay = exponentialDelay + jitter;
 
     return Math.min(delay, this.maxDelay);

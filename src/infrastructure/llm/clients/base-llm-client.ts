@@ -59,11 +59,14 @@ export abstract class BaseLLMClient {
       );
       const headers = this.providerConfig.endpointStrategy.buildHeaders(this.providerConfig, request);
 
-      // 3. 发送请求
-      const response = await this.httpClient.post(endpoint, providerRequest, { headers });
+      // 3. 发送请求（HttpClient.post 返回 APIPromise）
+      const apiPromise = this.httpClient.post(endpoint, providerRequest, { headers });
 
-      // 4. 转换响应
-      return this.providerConfig.parameterMapper.mapFromResponse(response.data, request);
+      // 4. 获取响应数据
+      const response = await apiPromise;
+
+      // 5. 转换响应
+      return this.providerConfig.parameterMapper.mapFromResponse(response, request);
     } catch (error) {
       this.handleError(error);
     }
@@ -116,13 +119,16 @@ export abstract class BaseLLMClient {
       );
       const headers = this.providerConfig.endpointStrategy.buildHeaders(this.providerConfig, request);
 
-      // 4. 发送流式请求
-      const response = await this.httpClient.post(endpoint, providerRequest, {
+      // 4. 发送流式请求（使用 stream: true 选项）
+      const apiPromise = this.httpClient.post(endpoint, providerRequest, {
         headers,
-        responseType: 'stream',
+        stream: true,
       });
 
-      // 5. 解析流式响应（子类必须实现）
+      // 5. 获取原始响应（包含流式 body）
+      const { response } = await apiPromise.withResponse();
+
+      // 6. 解析流式响应（子类必须实现）
       return this.parseStreamResponse(response, request);
     } catch (error) {
       this.handleError(error);
