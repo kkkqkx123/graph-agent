@@ -1,8 +1,5 @@
-import { injectable, inject } from 'inversify';
 import { BaseConditionFunction } from './base-condition-function';
 import { ConditionFunctionConfig, WorkflowExecutionContext } from '../types';
-import { IConfigManager } from '../../../../infrastructure/config/loading/config-manager.interface';
-import { TYPES } from '../../../../di/service-keys';
 
 /**
  * 最大迭代次数配置接口
@@ -20,7 +17,6 @@ export interface MaxIterationsConfig extends ConditionFunctionConfig {
  * - 支持从配置文件加载基础配置
  * - 支持运行时配置覆盖
  */
-@injectable()
 export class MaxIterationsReachedConditionFunction extends BaseConditionFunction<MaxIterationsConfig> {
   /**
    * 默认配置
@@ -29,12 +25,11 @@ export class MaxIterationsReachedConditionFunction extends BaseConditionFunction
     maxIterations: 10,
   };
 
-  constructor(@inject(TYPES.ConfigManager) configManager: IConfigManager) {
+  constructor() {
     super(
       'condition:max_iterations_reached',
       'max_iterations_reached',
       '检查工作流执行是否达到最大迭代次数',
-      configManager,
       '1.0.0',
       'builtin'
     );

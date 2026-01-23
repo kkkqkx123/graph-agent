@@ -1,21 +1,16 @@
-import { injectable, inject } from 'inversify';
 import { BaseConditionRoutingFunction } from './base-routing-function';
 import { RoutingFunctionConfig, WorkflowExecutionContext } from '../types';
-import { IConfigManager } from '../../../../infrastructure/config/loading/config-manager.interface';
-import { TYPES } from '../../../../di/service-keys';
 
 /**
  * 所有节点完成路由函数
  * 检查所有节点是否已完成
  */
-@injectable()
 export class AllNodesCompletedRoutingFunction extends BaseConditionRoutingFunction<RoutingFunctionConfig> {
-  constructor(@inject(TYPES.ConfigManager) configManager: IConfigManager) {
+  constructor() {
     super(
       'all_nodes_completed_routing',
       'allNodesCompleted',
       '检查所有节点是否已完成',
-      configManager,
       '1.0.0',
       'builtin'
     );

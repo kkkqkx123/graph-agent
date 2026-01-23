@@ -4,7 +4,7 @@
  * 基于配置加载模块存储提示词。
  */
 
-import { ConfigLoadingModule } from '../../config/loading/config-loading-module';
+import { getConfig } from '../../config/config';
 import { ILogger } from '../../../domain/common/types';
 import { Prompt, PromptProps } from '../../../domain/prompts/entities/prompt';
 import { PromptId } from '../../../domain/prompts/value-objects/prompt-id';
@@ -26,14 +26,11 @@ import {
  * 提示词仓库实现
  */
 export class PromptRepository implements IPromptRepository {
-  constructor(
-    private readonly configLoadingModule: ConfigLoadingModule,
-    private readonly logger: ILogger
-  ) {}
+  constructor(private readonly logger: ILogger) {}
 
   async findById(id: PromptId): Promise<Prompt | null> {
     const { category, name } = id.parse();
-    const content = this.configLoadingModule.get(`prompts.${category}.${name}`);
+    const content = getConfig(`prompts.${category}.${name}`);
 
     if (!content) {
       return null;
@@ -59,7 +56,7 @@ export class PromptRepository implements IPromptRepository {
   }
 
   async findByCategory(category: string): Promise<Prompt[]> {
-    const promptsConfig = this.configLoadingModule.get(`prompts.${category}`);
+    const promptsConfig = getConfig(`prompts.${category}`);
     if (!promptsConfig || typeof promptsConfig !== 'object') {
       return [];
     }
@@ -174,7 +171,7 @@ export class PromptRepository implements IPromptRepository {
   }
 
   async listAll(): Promise<Prompt[]> {
-    const promptsConfig = this.configLoadingModule.get('prompts');
+    const promptsConfig = getConfig('prompts');
     if (!promptsConfig || typeof promptsConfig !== 'object') {
       return [];
     }
@@ -234,7 +231,7 @@ export class PromptRepository implements IPromptRepository {
 
   async exists(id: PromptId): Promise<boolean> {
     const { category, name } = id.parse();
-    const content = this.configLoadingModule.get(`prompts.${category}.${name}`);
+    const content = getConfig(`prompts.${category}.${name}`);
     return content !== undefined;
   }
 }

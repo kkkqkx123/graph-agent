@@ -8,7 +8,6 @@ import { TokenBucketLimiter } from '../rate-limiters/token-bucket-limiter';
 import { TokenCalculator } from '../token-calculators/token-calculator';
 import { ProviderConfig } from '../parameter-mappers/interfaces/provider-config.interface';
 import { TYPES } from '../../../di/service-keys';
-import { ConfigLoadingModule } from '../../../infrastructure/config/loading/config-loading-module';
 
 /**
  * LLM客户端抽象基类
@@ -25,7 +24,6 @@ export abstract class BaseLLMClient {
     @inject(TYPES.HttpClient) protected httpClient: HttpClient,
     @inject(TYPES.TokenBucketLimiter) protected rateLimiter: TokenBucketLimiter,
     @inject(TYPES.TokenCalculator) protected tokenCalculator: TokenCalculator,
-    @inject(TYPES.ConfigLoadingModule) protected configLoadingModule: ConfigLoadingModule,
     providerConfig: ProviderConfig
   ) {
     this.providerName = providerConfig.name;

@@ -1,9 +1,8 @@
-import { injectable, inject } from 'inversify';
+import { injectable } from 'inversify';
 import { BaseTokenCalculator, TokenUsage } from './base-token-calculator';
 import { LocalTokenCalculator } from './local-token-calculator';
 import { ApiResponseTokenCalculator } from './api-response-token-calculator';
 import { LLMRequest } from '../../../domain/llm/entities/llm-request';
-import { TYPES } from '../../../di/service-keys';
 
 /**
  * 统一的Token计算器
@@ -22,7 +21,6 @@ export class TokenCalculator extends BaseTokenCalculator {
   private apiResponseCalculator: ApiResponseTokenCalculator;
 
   constructor(
-    @inject(TYPES.ConfigManager) configManager: any,
     modelName: string = 'gpt-3.5-turbo',
     enableCache: boolean = true
   ) {
@@ -30,7 +28,7 @@ export class TokenCalculator extends BaseTokenCalculator {
 
     // 初始化两个计算器
     this.tiktokenCalculator = new LocalTokenCalculator(modelName, enableCache);
-    this.apiResponseCalculator = new ApiResponseTokenCalculator(configManager, modelName);
+    this.apiResponseCalculator = new ApiResponseTokenCalculator(modelName);
   }
 
   /**

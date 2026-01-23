@@ -14,7 +14,7 @@ import { HumanRelayMode } from '../../../domain/llm/value-objects/human-relay-mo
 import { TYPES } from '../../../di/service-keys';
 import { ProviderConfig, ApiType, ProviderConfigBuilder } from '../parameter-mappers';
 import { BaseFeatureSupport } from '../parameter-mappers/interfaces/feature-support.interface';
-import { ConfigLoadingModule } from '../../../infrastructure/config/loading/config-loading-module';
+import { getConfig } from '../../config/config';
 import {
   IHumanRelayService,
   HumanRelayConfig,
@@ -45,8 +45,6 @@ export class HumanRelayClient extends BaseLLMClient {
     protected override rateLimiter: any,
     @inject(TYPES.TokenCalculator)
     protected override tokenCalculator: any,
-    @inject(TYPES.ConfigLoadingModule)
-    protected override configLoadingModule: ConfigLoadingModule,
     @inject(TYPES.HumanRelayService)
     private humanRelayService: IHumanRelayService,
     clientConfig: HumanRelayClientConfig
@@ -57,7 +55,7 @@ export class HumanRelayClient extends BaseLLMClient {
     featureSupport.supportsTools = false;
 
     // 从配置中读取支持的模型列表
-    const supportedModels = configLoadingModule.get('llm.human-relay.supportedModels', [
+    const supportedModels = getConfig('llm.human-relay.supportedModels', [
       'single_turn',
       'multi_turn',
     ]);
@@ -84,7 +82,7 @@ export class HumanRelayClient extends BaseLLMClient {
       .retryDelay(0)
       .build();
 
-    super(httpClient, rateLimiter, tokenCalculator, configLoadingModule, baseConfig);
+    super(httpClient, rateLimiter, tokenCalculator, baseConfig);
 
     this.mode = clientConfig.mode;
     this.maxHistoryLength = clientConfig.maxHistoryLength;

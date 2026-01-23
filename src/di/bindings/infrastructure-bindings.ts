@@ -41,7 +41,6 @@ export const infrastructureBindings = new ContainerModule((bind: any) => {
 
   // 基础设施组件
   bind(TYPES.ConfigLoadingModule).to(ConfigLoadingModule).inSingletonScope();
-  bind(TYPES.ConfigManager).to(ConfigLoadingModule).inSingletonScope(); // IConfigManager 接口绑定
   bind(TYPES.HttpClient).to(HttpClient).inSingletonScope();
   bind(TYPES.TokenBucketLimiter).to(TokenBucketLimiter).inSingletonScope();
   bind(TYPES.TokenCalculator).to(TokenCalculator).inSingletonScope();

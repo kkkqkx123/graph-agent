@@ -12,15 +12,14 @@ import { TYPES } from '../../../di/service-keys';
 import { HttpClient } from '../../../infrastructure/common/http/http-client';
 import { TokenBucketLimiter } from '../rate-limiters/token-bucket-limiter';
 import { TokenCalculator } from '../token-calculators/token-calculator';
-import { ConfigLoadingModule } from '../../../infrastructure/config/loading/config-loading-module';
+import { getConfig } from '../../config/config';
 
 @injectable()
 export class GeminiOpenAIClient extends BaseLLMClient {
   constructor(
     @inject(TYPES.HttpClient) httpClient: HttpClient,
     @inject(TYPES.TokenBucketLimiter) rateLimiter: TokenBucketLimiter,
-    @inject(TYPES.TokenCalculator) tokenCalculator: TokenCalculator,
-    @inject(TYPES.ConfigLoadingModule) configManager: ConfigLoadingModule
+    @inject(TYPES.TokenCalculator) tokenCalculator: TokenCalculator
   ) {
     // 创建功能支持配置
     const featureSupport = new BaseFeatureSupport();
@@ -39,9 +38,9 @@ export class GeminiOpenAIClient extends BaseLLMClient {
     featureSupport.setProviderSpecificFeature('cached_content', true);
 
     // 从配置中读取必需的配置项
-    const apiKey = configManager.get('llm.gemini-openai.apiKey');
-    const defaultModel = configManager.get('llm.gemini-openai.defaultModel');
-    const supportedModels = configManager.get('llm.gemini-openai.supportedModels');
+    const apiKey = getConfig('llm.gemini-openai.apiKey');
+    const defaultModel = getConfig('llm.gemini-openai.defaultModel');
+    const supportedModels = getConfig('llm.gemini-openai.supportedModels');
 
     // 验证必需配置
     if (!apiKey) {
@@ -76,7 +75,7 @@ export class GeminiOpenAIClient extends BaseLLMClient {
       .retryDelay(1000)
       .build();
 
-    super(httpClient, rateLimiter, tokenCalculator, configManager, providerConfig);
+    super(httpClient, rateLimiter, tokenCalculator, providerConfig);
   }
 
   getSupportedModelsList(): string[] {
@@ -92,8 +91,8 @@ export class GeminiOpenAIClient extends BaseLLMClient {
       throw new Error('Gemini OpenAI兼容默认模型未配置。');
     }
 
-    const configs: Record<string, any> = this.configLoadingModule.get(
-      'llm.gemini-openai.models',
+    const configs: Record<string, any> = getConfig(
+        'llm.gemini-openai.models',
       {}
     );
     const config = configs[model];

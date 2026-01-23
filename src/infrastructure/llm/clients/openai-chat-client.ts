@@ -12,15 +12,14 @@ import { TYPES } from '../../../di/service-keys';
 import { HttpClient } from '../../../infrastructure/common/http/http-client';
 import { TokenBucketLimiter } from '../rate-limiters/token-bucket-limiter';
 import { TokenCalculator } from '../token-calculators/token-calculator';
-import { ConfigLoadingModule } from '../../../infrastructure/config/loading/config-loading-module';
+import { getConfig } from '../../config/config';
 
 @injectable()
 export class OpenAIChatClient extends BaseLLMClient {
   constructor(
     @inject(TYPES.HttpClient) httpClient: HttpClient,
     @inject(TYPES.TokenBucketLimiter) rateLimiter: TokenBucketLimiter,
-    @inject(TYPES.TokenCalculator) tokenCalculator: TokenCalculator,
-    @inject(TYPES.ConfigLoadingModule) configManager: ConfigLoadingModule
+    @inject(TYPES.TokenCalculator) tokenCalculator: TokenCalculator
   ) {
     // 创建 OpenAI 功能支持
     const featureSupport = new BaseFeatureSupport();
@@ -37,9 +36,9 @@ export class OpenAIChatClient extends BaseLLMClient {
     featureSupport.supportsParallelToolCalling = true;
 
     // 从配置中读取必需的配置项
-    const apiKey = configManager.get('llm.openai.apiKey');
-    const defaultModel = configManager.get('llm.openai.defaultModel');
-    const supportedModels = configManager.get('llm.openai.supportedModels');
+    const apiKey = getConfig('llm.openai.apiKey');
+    const defaultModel = getConfig('llm.openai.defaultModel');
+    const supportedModels = getConfig('llm.openai.supportedModels');
 
     // 验证必需配置
     if (!apiKey) {
@@ -70,8 +69,8 @@ export class OpenAIChatClient extends BaseLLMClient {
       .retryDelay(1000)
       .build();
 
-    super(httpClient, rateLimiter, tokenCalculator, configManager, providerConfig);
-  }
+  super(httpClient, rateLimiter, tokenCalculator, providerConfig);
+}
 
   getSupportedModelsList(): string[] {
     if (!this.providerConfig.supportedModels) {
@@ -86,7 +85,7 @@ export class OpenAIChatClient extends BaseLLMClient {
       throw new Error('OpenAI默认模型未配置。');
     }
 
-    const configs = this.configLoadingModule.get<Record<string, any>>('llm.openai.models', {});
+    const configs = getConfig<Record<string, any>>('llm.openai.models', {});
     const config = configs[model];
 
     if (!config) {

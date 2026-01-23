@@ -13,7 +13,6 @@ import { EnvironmentProcessor } from '../processors/environment-processor';
 import { IFileOrganizer, SplitFileOrganizer } from '../organizers';
 import { ProcessorPipeline } from '../pipelines';
 import { ILogger, IConfigProcessor } from '../../../domain/common/types';
-import { IConfigManager } from './config-manager.interface';
 import * as fs from 'fs/promises';
 import * as path from 'path';
 import { parse as parseToml } from 'toml';
@@ -30,9 +29,9 @@ export interface ConfigLoadingModuleOptions {
 
 /**
  * 配置加载模块主类
- * 实现 IConfigManager 接口，提供类型安全的配置访问
+ * 提供类型安全的配置访问
  */
-export class ConfigLoadingModule implements IConfigManager {
+export class ConfigLoadingModule {
   private readonly discovery: IConfigDiscovery;
   private readonly registry: SchemaRegistry;
   private readonly fileOrganizer: IFileOrganizer;

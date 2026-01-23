@@ -1,6 +1,5 @@
-import { injectable, inject } from 'inversify';
-import { IConfigManager } from '../../../infrastructure/config/loading/config-manager.interface';
-import { TYPES } from '../../../di/service-keys';
+import { injectable } from 'inversify';
+import { getConfig } from '../../../infrastructure/config/config';
 
 /**
  * 任务组管理器
@@ -9,7 +8,7 @@ import { TYPES } from '../../../di/service-keys';
  */
 @injectable()
 export class TaskGroupManager {
-  constructor(@inject(TYPES.ConfigManager) private configManager: IConfigManager) {}
+  constructor() {}
 
   /**
    * 获取组引用对应的模型列表
@@ -287,7 +286,7 @@ export class TaskGroupManager {
    * 获取LLM配置
    */
   private async getLLMConfig(): Promise<Record<string, any>> {
-    return (this.configManager.get<Record<string, any>>('llm') || {}) as Record<string, any>;
+    return (getConfig<Record<string, any>>('llm') || {}) as Record<string, any>;
   }
 
   /**
@@ -329,10 +328,16 @@ export class TaskGroupManager {
 
   /**
    * 重新加载配置
+   *
+   * 注意：配置刷新应该通过应用层API触发，而不是由服务层直接调用
+   * 此方法保留用于向后兼容，但已不再使用
+   *
+   * @deprecated 请使用应用层的配置刷新API
    */
   async reloadConfig(): Promise<void> {
-    // 使用IConfigManager的refresh方法刷新配置
-    await this.configManager.refresh();
+    // 配置刷新已移至应用层，此方法不再需要
+    // 如需刷新配置，请调用 refreshConfig() 函数
+    throw new Error('配置刷新已移至应用层。请使用应用层的配置刷新API。');
   }
 
   /**

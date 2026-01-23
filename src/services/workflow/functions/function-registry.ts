@@ -1,8 +1,6 @@
-import { injectable, inject } from 'inversify';
+import { injectable } from 'inversify';
 import { IWorkflowFunction } from './types';
 import { WorkflowFunctionType } from '../../../domain/workflow/value-objects/function-type';
-import { IConfigManager } from '../../../infrastructure/config/loading/config-manager.interface';
-import { TYPES } from '../../../di/service-keys';
 
 /**
  * 函数类型映射接口
@@ -42,9 +40,6 @@ export class FunctionRegistry {
   // 动态函数工厂（动态函数）
   private functionFactories: Map<string, FunctionFactory> = new Map();
 
-  // 配置管理器
-  private configManager: IConfigManager;
-
   // 类型化映射（保持向后兼容）
   private functions: Map<string, IWorkflowFunction> = new Map();
   private functionsByName: Map<string, IWorkflowFunction> = new Map();
@@ -56,9 +51,7 @@ export class FunctionRegistry {
     contextProcessor: new Map(),
   };
 
-  constructor(@inject(TYPES.ConfigManager) configManager: IConfigManager) {
-    this.configManager = configManager;
-  }
+  constructor() {}
 
   /**
    * 注册单例函数（静态函数）
@@ -174,8 +167,6 @@ export class FunctionRegistry {
     const factory = this.functionFactories.get(id);
     if (factory) {
       const func = factory.create(config);
-
-      // 配置管理器已通过构造函数注入，无需额外设置
       return func;
     }
 

@@ -1,8 +1,5 @@
-import { injectable, inject } from 'inversify';
-import { TYPES } from '../../../di/service-keys';
-import { IConfigManager } from '../../config/loading/config-manager.interface';
+import { getConfig } from '../../config/config';
 
-@injectable()
 export class RetryHandler {
   private maxRetries: number;
   private baseDelay: number;
@@ -17,11 +14,11 @@ export class RetryHandler {
   private failedAttempts: number = 0;
   private totalResponseTime: number = 0;
 
-  constructor(@inject(TYPES.ConfigManager) private configManager: IConfigManager) {
-    this.maxRetries = this.configManager.get('http.retry.maxRetries', 3);
-    this.baseDelay = this.configManager.get('http.retry.baseDelay', 1000);
-    this.maxDelay = this.configManager.get('http.retry.maxDelay', 30000);
-    this.backoffMultiplier = this.configManager.get('http.retry.backoffMultiplier', 2);
+  constructor() {
+    this.maxRetries = getConfig('http.retry.maxRetries', 3);
+    this.baseDelay = getConfig('http.retry.baseDelay', 1000);
+    this.maxDelay = getConfig('http.retry.maxDelay', 30000);
+    this.backoffMultiplier = getConfig('http.retry.backoffMultiplier', 2);
 
     this.retryableStatusCodes = new Set([
       408, // Request Timeout
@@ -79,7 +76,7 @@ export class RetryHandler {
         const delay = this.calculateDelay(attempt);
 
         // Log retry attempt if enabled
-        if (this.configManager.get('http.logging.enabled', false)) {
+        if (getConfig('http.logging.enabled', false)) {
           console.warn(
             `HTTP retry attempt ${attempt + 1}/${this.maxRetries + 1} after ${delay}ms`,
             {

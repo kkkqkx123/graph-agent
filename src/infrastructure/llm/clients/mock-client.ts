@@ -12,7 +12,7 @@ import { BaseFeatureSupport } from '../parameter-mappers/interfaces/feature-supp
 import { TYPES } from '../../../di/service-keys';
 import { HttpClient } from '../../../infrastructure/common/http/http-client';
 import { TokenBucketLimiter } from '../rate-limiters/token-bucket-limiter';
-import { ConfigLoadingModule } from '../../../infrastructure/config/loading/config-loading-module';
+import { getConfig } from '../../config/config';
 
 @injectable()
 export class MockClient extends BaseLLMClient {
@@ -21,8 +21,7 @@ export class MockClient extends BaseLLMClient {
   constructor(
     @inject(TYPES.HttpClient) httpClient: HttpClient,
     @inject(TYPES.TokenBucketLimiter) rateLimiter: TokenBucketLimiter,
-    @inject(TYPES.TokenCalculator) tokenCalculator: TokenCalculator,
-    @inject(TYPES.ConfigLoadingModule) configManager: ConfigLoadingModule
+    @inject(TYPES.TokenCalculator) tokenCalculator: TokenCalculator
   ) {
     // 创建功能支持配置
     const featureSupport = new BaseFeatureSupport();
@@ -37,9 +36,9 @@ export class MockClient extends BaseLLMClient {
     featureSupport.supportsMaxTokens = true;
 
     // 从配置中读取必需的配置项
-    const apiKey = configManager.get('llm.mock.apiKey', 'mock-key');
-    const defaultModel = configManager.get('llm.mock.defaultModel');
-    const supportedModels = configManager.get('llm.mock.supportedModels');
+    const apiKey = getConfig('llm.mock.apiKey', 'mock-key');
+    const defaultModel = getConfig('llm.mock.defaultModel');
+    const supportedModels = getConfig('llm.mock.supportedModels');
 
     // 验证必需配置
     if (!defaultModel) {
@@ -65,7 +64,7 @@ export class MockClient extends BaseLLMClient {
       .retryDelay(1000)
       .build();
 
-    super(httpClient, rateLimiter, tokenCalculator, configManager, providerConfig);
+    super(httpClient, rateLimiter, tokenCalculator, providerConfig);
 
     // Initialize some default mock responses
     this.setupDefaultResponses();
@@ -143,7 +142,7 @@ export class MockClient extends BaseLLMClient {
       throw new Error('Mock默认模型未配置。');
     }
 
-    const configs = this.configLoadingModule.get<Record<string, any>>('llm.mock.models', {});
+    const configs = getConfig<Record<string, any>>('llm.mock.models', {});
     const config = configs[model];
 
     if (!config) {

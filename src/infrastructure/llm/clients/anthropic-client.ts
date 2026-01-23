@@ -12,15 +12,14 @@ import { TYPES } from '../../../di/service-keys';
 import { HttpClient } from '../../../infrastructure/common/http/http-client';
 import { TokenBucketLimiter } from '../rate-limiters/token-bucket-limiter';
 import { TokenCalculator } from '../token-calculators/token-calculator';
-import { ConfigLoadingModule } from '../../../infrastructure/config/loading/config-loading-module';
+import { getConfig } from '../../config/config';
 
 @injectable()
 export class AnthropicClient extends BaseLLMClient {
   constructor(
     @inject(TYPES.HttpClient) httpClient: HttpClient,
     @inject(TYPES.TokenBucketLimiter) rateLimiter: TokenBucketLimiter,
-    @inject(TYPES.TokenCalculator) tokenCalculator: TokenCalculator,
-    @inject(TYPES.ConfigLoadingModule) configManager: ConfigLoadingModule
+    @inject(TYPES.TokenCalculator) tokenCalculator: TokenCalculator
   ) {
     // 创建 Anthropic 功能支持
     const featureSupport = new BaseFeatureSupport();
@@ -35,9 +34,9 @@ export class AnthropicClient extends BaseLLMClient {
     featureSupport.supportsParallelToolCalling = true;
 
     // 从配置中读取必需的配置项
-    const apiKey = configManager.get('llm.anthropic.apiKey');
-    const defaultModel = configManager.get('llm.anthropic.defaultModel');
-    const supportedModels = configManager.get('llm.anthropic.supportedModels');
+    const apiKey = getConfig('llm.anthropic.apiKey');
+    const defaultModel = getConfig('llm.anthropic.defaultModel');
+    const supportedModels = getConfig('llm.anthropic.supportedModels');
 
     // 验证必需配置
     if (!apiKey) {
@@ -71,7 +70,7 @@ export class AnthropicClient extends BaseLLMClient {
       })
       .build();
 
-    super(httpClient, rateLimiter, tokenCalculator, configManager, providerConfig);
+    super(httpClient, rateLimiter, tokenCalculator, providerConfig);
   }
 
   getSupportedModelsList(): string[] {
@@ -87,7 +86,7 @@ export class AnthropicClient extends BaseLLMClient {
       throw new Error('Anthropic默认模型未配置。');
     }
 
-    const configs = this.configLoadingModule.get<Record<string, any>>('llm.anthropic.models', {});
+    const configs = getConfig<Record<string, any>>('llm.anthropic.models', {});
     const config = configs[model];
 
     if (!config) {

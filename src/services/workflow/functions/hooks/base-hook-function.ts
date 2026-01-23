@@ -1,5 +1,5 @@
 import { WorkflowFunctionType } from '../../../../domain/workflow/value-objects/function-type';
-import { IConfigManager } from '../../../../infrastructure/config/loading/config-manager.interface';
+import { getConfig } from '../../../../infrastructure/config/config';
 
 /**
  * Hook函数基类
@@ -13,7 +13,6 @@ import { IConfigManager } from '../../../../infrastructure/config/loading/config
  * - 可以被多个Hook实体复用
  *
  * 支持配置加载：
- * - 通过构造函数注入配置管理器
  * - 支持从配置文件加载基础配置
  * - 支持运行时配置覆盖
  */
@@ -43,13 +42,10 @@ export abstract class BaseHookFunction {
    */
   readonly type: WorkflowFunctionType = WorkflowFunctionType.HOOK;
 
-  /** 配置管理器 */
-  protected configManager: IConfigManager;
   /** 基础配置（从配置文件加载） */
   protected baseConfig: Record<string, any> = {};
 
-  constructor(configManager: IConfigManager) {
-    this.configManager = configManager;
+  constructor() {
     this.loadBaseConfig();
   }
 
@@ -60,7 +56,7 @@ export abstract class BaseHookFunction {
   protected loadBaseConfig(): void {
     // 使用函数类名作为配置路径
     const configPath = `functions.${this.constructor.name}`;
-    this.baseConfig = this.configManager.get(configPath, {});
+    this.baseConfig = getConfig(configPath, {});
   }
 
   /**

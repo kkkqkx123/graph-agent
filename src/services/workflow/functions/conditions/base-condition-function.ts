@@ -7,14 +7,13 @@ import {
   ConditionFunctionConfig,
 } from '../types';
 import { WorkflowFunctionType } from '../../../../domain/workflow/value-objects/function-type';
-import { IConfigManager } from '../../../../infrastructure/config/loading/config-manager.interface';
+import { getConfig } from '../../../../infrastructure/config/config';
 
 /**
  * 条件函数基类
  * 专门用于条件类型的函数，返回 boolean
  *
  * 支持配置加载：
- * - 通过构造函数注入配置管理器
  * - 支持从配置文件加载基础配置
  * - 支持运行时配置覆盖
  */
@@ -25,8 +24,6 @@ export abstract class BaseConditionFunction<
   /** 函数类型标识 */
   public readonly type: WorkflowFunctionType = WorkflowFunctionType.CONDITION;
 
-  /** 配置管理器 */
-  protected configManager: IConfigManager;
   /** 基础配置（从配置文件加载） */
   protected baseConfig: Record<string, any> = {};
 
@@ -34,13 +31,11 @@ export abstract class BaseConditionFunction<
     public readonly id: string,
     public readonly name: string,
     public readonly description: string,
-    configManager: IConfigManager,
     public readonly version: string = '1.0.0',
     public readonly category: string = 'builtin',
     metadata?: Record<string, any>
   ) {
     this.metadata = metadata;
-    this.configManager = configManager;
     this.loadBaseConfig();
   }
 
@@ -51,7 +46,7 @@ export abstract class BaseConditionFunction<
   protected loadBaseConfig(): void {
     // 使用函数类名作为配置路径
     const configPath = `functions.${this.constructor.name}`;
-    this.baseConfig = this.configManager.get(configPath, {});
+    this.baseConfig = getConfig(configPath, {});
   }
 
   /**

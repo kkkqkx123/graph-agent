@@ -1,7 +1,6 @@
-import { injectable, inject } from 'inversify';
+import { injectable } from 'inversify';
 import { BaseTokenCalculator, TokenUsage } from './base-token-calculator';
-import { TYPES } from '../../../di/service-keys';
-import { IConfigManager } from '../../config/loading/config-manager.interface';
+import { getConfig } from '../../config/config';
 
 /**
  * API响应Token计算器
@@ -11,10 +10,7 @@ import { IConfigManager } from '../../config/loading/config-manager.interface';
  */
 @injectable()
 export class ApiResponseTokenCalculator extends BaseTokenCalculator {
-  constructor(
-    @inject(TYPES.ConfigManager) private configManager: IConfigManager,
-    modelName: string = 'gpt-3.5-turbo'
-  ) {
+  constructor(modelName: string = 'gpt-3.5-turbo') {
     super('api-response', modelName);
   }
 
@@ -120,7 +116,7 @@ export class ApiResponseTokenCalculator extends BaseTokenCalculator {
    */
   override getSupportedModels(): string[] {
     // 从配置文件获取支持的模型
-    const models = this.configManager.get(`llm.${this.providerName}.supportedModels`, []);
+    const models = getConfig(`llm.${this.providerName}.supportedModels`, []);
     if (models.length > 0) {
       return models;
     }
@@ -157,7 +153,7 @@ export class ApiResponseTokenCalculator extends BaseTokenCalculator {
    */
   override getModelPricing(modelName: string): Record<string, number> | null {
     // 从配置文件获取定价信息
-    const pricing = this.configManager.get(`llm.${this.providerName}.pricing.${modelName}`, null);
+    const pricing = getConfig(`llm.${this.providerName}.pricing.${modelName}`, null);
     if (pricing) {
       return pricing;
     }

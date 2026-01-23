@@ -9,7 +9,7 @@ import { RetryHandler } from './retry-handler';
 import { CircuitBreaker } from './circuit-breaker';
 import { RateLimiter } from './rate-limiter';
 import { TYPES } from '../../../di/service-keys';
-import { IConfigManager } from '../../config/loading/config-manager.interface';
+import { getConfig } from '../../config/config';
 
 interface ExtendedAxiosRequestConfig extends InternalAxiosRequestConfig {
   metadata?: {
@@ -25,7 +25,6 @@ export class HttpClient {
   private rateLimiter: RateLimiter;
 
   constructor(
-    @inject(TYPES.ConfigManager) private configManager: IConfigManager,
     @inject(TYPES.RetryHandler) retryHandler: RetryHandler,
     @inject(TYPES.CircuitBreaker) circuitBreaker: CircuitBreaker,
     @inject(TYPES.RateLimiter) rateLimiter: RateLimiter
@@ -105,10 +104,10 @@ export class HttpClient {
 
   private getDefaultConfig(): AxiosRequestConfig {
     return {
-      timeout: this.configManager.get('http.timeout', 30000),
+      timeout: getConfig('http.timeout', 30000),
       headers: {
         'Content-Type': 'application/json',
-        'User-Agent': this.configManager.get('http.userAgent', 'WorkflowAgent/1.0.0'),
+        'User-Agent': getConfig('http.userAgent', 'WorkflowAgent/1.0.0'),
       },
       validateStatus: status => status < 500, // Don't reject on 4xx errors
     };
@@ -122,7 +121,7 @@ export class HttpClient {
         config.metadata = { startTime: Date.now() };
 
         // Log request if enabled
-        if (this.configManager.get('http.logging.enabled', false)) {
+        if (getConfig('http.logging.enabled', false)) {
           console.log(`HTTP Request: ${config.method?.toUpperCase()} ${config.url}`, {
             headers: config.headers,
             data: config.data,
@@ -146,7 +145,7 @@ export class HttpClient {
         (response as any).duration = duration;
 
         // Log response if enabled
-        if (this.configManager.get('http.logging.enabled', false)) {
+        if (getConfig('http.logging.enabled', false)) {
           console.log(`HTTP Response: ${response.status} ${response.config.url}`, {
             duration: `${duration}ms`,
             headers: response.headers,
@@ -162,7 +161,7 @@ export class HttpClient {
           Date.now() - ((error.config as ExtendedAxiosRequestConfig)?.metadata?.startTime || 0);
 
         // Log error if enabled
-        if (this.configManager.get('http.logging.enabled', false)) {
+        if (getConfig('http.logging.enabled', false)) {
           console.error(
             `HTTP Error: ${error.response?.status || 'Network Error'} ${error.config?.url}`,
             {

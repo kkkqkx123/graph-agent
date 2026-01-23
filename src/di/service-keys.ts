@@ -12,7 +12,6 @@
 // LLM模块服务
 import { HttpClient } from '../infrastructure/common/http/http-client';
 import { ConfigLoadingModule } from '../infrastructure/config/loading/config-loading-module';
-import { IConfigManager } from '../infrastructure/config/loading/config-manager.interface';
 import { TokenBucketLimiter } from '../infrastructure/llm/rate-limiters/token-bucket-limiter';
 import { TokenCalculator } from '../infrastructure/llm/token-calculators/token-calculator';
 import { OpenAIChatClient } from '../infrastructure/llm/clients/openai-chat-client';
@@ -107,7 +106,6 @@ export interface ServiceTypes {
   // 基础设施组件
   HttpClient: HttpClient;
   ConfigLoadingModule: ConfigLoadingModule;
-  ConfigManager: IConfigManager;
   TokenBucketLimiter: TokenBucketLimiter;
   TokenCalculator: TokenCalculator;
 

@@ -12,15 +12,14 @@ import { TYPES } from '../../../di/service-keys';
 import { HttpClient } from '../../../infrastructure/common/http/http-client';
 import { TokenBucketLimiter } from '../rate-limiters/token-bucket-limiter';
 import { TokenCalculator } from '../token-calculators/token-calculator';
-import { ConfigLoadingModule } from '../../../infrastructure/config/loading/config-loading-module';
+import { getConfig } from '../../config/config';
 
 @injectable()
 export class GeminiClient extends BaseLLMClient {
   constructor(
     @inject(TYPES.HttpClient) httpClient: HttpClient,
     @inject(TYPES.TokenBucketLimiter) rateLimiter: TokenBucketLimiter,
-    @inject(TYPES.TokenCalculator) tokenCalculator: TokenCalculator,
-    @inject(TYPES.ConfigLoadingModule) configManager: ConfigLoadingModule
+    @inject(TYPES.TokenCalculator) tokenCalculator: TokenCalculator
   ) {
     // 创建功能支持配置
     const featureSupport = new BaseFeatureSupport();
@@ -39,9 +38,9 @@ export class GeminiClient extends BaseLLMClient {
     featureSupport.setProviderSpecificFeature('cached_content', true);
 
     // 从配置中读取必需的配置项
-    const apiKey = configManager.get('llm.gemini.apiKey');
-    const defaultModel = configManager.get('llm.gemini.defaultModel');
-    const supportedModels = configManager.get('llm.gemini.supportedModels');
+    const apiKey = getConfig('llm.gemini.apiKey');
+    const defaultModel = getConfig('llm.gemini.defaultModel');
+    const supportedModels = getConfig('llm.gemini.supportedModels');
 
     // 验证必需配置
     if (!apiKey) {
@@ -72,7 +71,7 @@ export class GeminiClient extends BaseLLMClient {
       .retryDelay(1000)
       .build();
 
-    super(httpClient, rateLimiter, tokenCalculator, configManager, providerConfig);
+    super(httpClient, rateLimiter, tokenCalculator, providerConfig);
   }
 
   getSupportedModelsList(): string[] {
@@ -88,7 +87,7 @@ export class GeminiClient extends BaseLLMClient {
       throw new Error('Gemini默认模型未配置。');
     }
 
-    const configs = this.configLoadingModule.get<Record<string, any>>('llm.gemini.models', {});
+    const configs = getConfig<Record<string, any>>('llm.gemini.models', {});
     const config = configs[model];
 
     if (!config) {

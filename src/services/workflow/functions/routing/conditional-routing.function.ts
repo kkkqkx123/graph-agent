@@ -1,21 +1,16 @@
-import { injectable, inject } from 'inversify';
 import { BaseTargetRoutingFunction } from './base-routing-function';
 import { RoutingFunctionConfig, WorkflowExecutionContext } from '../types';
-import { IConfigManager } from '../../../../infrastructure/config/loading/config-manager.interface';
-import { TYPES } from '../../../../di/service-keys';
 
 /**
  * 条件路由函数
  * 基于配置的条件数组进行路由决策，支持复杂的条件组合和表达式评估
  */
-@injectable()
 export class ConditionalRoutingFunction extends BaseTargetRoutingFunction<RoutingFunctionConfig> {
-  constructor(@inject(TYPES.ConfigManager) configManager: IConfigManager) {
+  constructor() {
     super(
       'route:conditional',
       'conditional_routing',
       '基于条件结果进行路由决策，支持复杂的条件组合和表达式评估',
-      configManager,
       '1.0.0',
       'builtin'
     );

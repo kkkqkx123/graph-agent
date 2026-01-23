@@ -1,20 +1,15 @@
-import { injectable, inject } from 'inversify';
 import { BaseTriggerFunction } from './base-trigger-function';
 import { TriggerFunctionConfig, WorkflowExecutionContext } from '../types';
-import { IConfigManager } from '../../../../infrastructure/config/loading/config-manager.interface';
-import { TYPES } from '../../../../di/service-keys';
 
 /**
  * 基于工具错误数量的触发器函数
  */
-@injectable()
 export class ToolErrorTriggerFunction extends BaseTriggerFunction<TriggerFunctionConfig> {
-  constructor(@inject(TYPES.ConfigManager) configManager: IConfigManager) {
+  constructor() {
     super(
       'trigger:tool_error',
       'tool_error_trigger',
       '基于工具执行错误数量的触发器',
-      configManager,
       '1.0.0',
       'builtin'
     );

@@ -1,6 +1,6 @@
 import { injectable, inject } from 'inversify';
 import { DataSource, DataSourceOptions } from 'typeorm';
-import { ConfigLoadingModule } from '../config/loading/config-loading-module';
+import { getConfig } from '../config/config';
 import { DatabaseConfig } from '../config/loading/schemas';
 import { ILogger } from '../../domain/common/types/logger-types';
 import { TYPES } from '../../di/service-keys';
@@ -23,10 +23,7 @@ export class ConnectionManager {
   private config: DataSourceOptions;
   private healthCheckInterval: NodeJS.Timeout | null = null;
 
-  constructor(
-    @inject(TYPES.ConfigLoadingModule) private configManager: ConfigLoadingModule,
-    @inject(TYPES.Logger) private logger: ILogger
-  ) {
+  constructor(@inject(TYPES.Logger) private logger: ILogger) {
     this.config = this.buildConnectionConfig();
   }
 
@@ -122,7 +119,7 @@ export class ConnectionManager {
    * 构建连接配置
    */
   private buildConnectionConfig(): DataSourceOptions {
-    const dbConfig = this.configManager.get<DatabaseConfig>('database', {});
+    const dbConfig = getConfig<DatabaseConfig>('database', {});
     const dbType = dbConfig.type || 'postgres';
 
     if (dbType === 'sqlite') {

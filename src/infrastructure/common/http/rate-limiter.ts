@@ -1,17 +1,14 @@
-import { injectable, inject } from 'inversify';
-import { TYPES } from '../../../di/service-keys';
-import { IConfigManager } from '../../config/loading/config-manager.interface';
+import { getConfig } from '../../config/config';
 
-@injectable()
 export class RateLimiter {
   private tokens: number;
   private lastRefill: number;
   private capacity: number;
   private refillRate: number;
 
-  constructor(@inject(TYPES.ConfigManager) private configManager: IConfigManager) {
-    this.capacity = this.configManager.get('http.rateLimit.capacity', 100);
-    this.refillRate = this.configManager.get('http.rateLimit.refillRate', 10); // tokens per second
+  constructor() {
+    this.capacity = getConfig('http.rateLimit.capacity', 100);
+    this.refillRate = getConfig('http.rateLimit.refillRate', 10); // tokens per second
     this.tokens = this.capacity;
     this.lastRefill = Date.now();
   }

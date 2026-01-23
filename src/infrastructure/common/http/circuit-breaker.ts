@@ -1,6 +1,4 @@
-import { injectable, inject } from 'inversify';
-import { TYPES } from '../../../di/service-keys';
-import { IConfigManager } from '../../config/loading/config-manager.interface';
+import { getConfig } from '../../config/config';
 
 enum CircuitState {
   CLOSED = 'CLOSED',
@@ -8,7 +6,6 @@ enum CircuitState {
   HALF_OPEN = 'HALF_OPEN',
 }
 
-@injectable()
 export class CircuitBreaker {
   private state: CircuitState = CircuitState.CLOSED;
   private failureCount: number = 0;
@@ -21,11 +18,11 @@ export class CircuitBreaker {
   private timeout: number;
   private resetTimeout: number;
 
-  constructor(@inject(TYPES.ConfigManager) private configManager: IConfigManager) {
-    this.failureThreshold = this.configManager.get('http.circuitBreaker.failureThreshold', 5);
-    this.successThreshold = this.configManager.get('http.circuitBreaker.successThreshold', 3);
-    this.timeout = this.configManager.get('http.circuitBreaker.timeout', 60000);
-    this.resetTimeout = this.configManager.get('http.circuitBreaker.resetTimeout', 30000);
+  constructor() {
+    this.failureThreshold = getConfig('http.circuitBreaker.failureThreshold', 5);
+    this.successThreshold = getConfig('http.circuitBreaker.successThreshold', 3);
+    this.timeout = getConfig('http.circuitBreaker.timeout', 60000);
+    this.resetTimeout = getConfig('http.circuitBreaker.resetTimeout', 30000);
   }
 
   async execute<T>(fn: () => Promise<T>): Promise<T> {
@@ -118,7 +115,7 @@ export class CircuitBreaker {
     this.state = newState;
 
     // Log state change if enabled
-    if (this.configManager.get('http.logging.enabled', false)) {
+    if (getConfig('http.logging.enabled', false)) {
       console.log(`Circuit breaker state changed: ${oldState} -> ${newState}`, {
         failureCount: this.failureCount,
         successCount: this.successCount,
