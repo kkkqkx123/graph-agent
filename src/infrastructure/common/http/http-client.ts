@@ -79,8 +79,16 @@ export class HttpClient {
     }
 
     try {
+      // 获取请求级别的重试配置
+      const retryConfig = (config as any).retry;
+
+      // 如果有请求级别的重试配置，创建临时的RetryHandler
+      const retryHandler = retryConfig
+        ? this.createRetryHandler(retryConfig)
+        : this.retryHandler;
+
       // Execute request with retry
-      const response = await this.retryHandler.executeWithRetry(async () => {
+      const response = await retryHandler.executeWithRetry(async () => {
         const startTime = Date.now();
         const result = await this.axiosInstance.request<T>(config);
         const duration = Date.now() - startTime;
@@ -100,6 +108,24 @@ export class HttpClient {
       this.circuitBreaker.recordFailure();
       throw error;
     }
+  }
+
+  /**
+   * 创建临时的RetryHandler实例
+   * 用于支持请求级别的重试配置覆盖
+   */
+  private createRetryHandler(config: {
+    maxRetries: number;
+    baseDelay: number;
+    maxDelay: number;
+    backoffMultiplier: number;
+  }): RetryHandler {
+    const handler = new RetryHandler();
+    handler.setMaxRetries(config.maxRetries);
+    handler.setBaseDelay(config.baseDelay);
+    handler.setMaxDelay(config.maxDelay);
+    handler.setBackoffMultiplier(config.backoffMultiplier);
+    return handler;
   }
 
   private getDefaultConfig(): AxiosRequestConfig {

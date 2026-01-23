@@ -13,9 +13,12 @@ import { HttpClient } from '../../../infrastructure/common/http/http-client';
 import { TokenBucketLimiter } from '../rate-limiters/token-bucket-limiter';
 import { TokenCalculator } from '../token-calculators/token-calculator';
 import { getConfig } from '../../config/config';
+import { loadLLMRetryConfig, toHttpRetryConfig, LLMRetryConfig } from '../retry/llm-retry-config';
 
 @injectable()
 export class OpenAIChatClient extends BaseLLMClient {
+  private llmRetryConfig: LLMRetryConfig;
+
   constructor(
     @inject(TYPES.HttpClient) httpClient: HttpClient,
     @inject(TYPES.TokenBucketLimiter) rateLimiter: TokenBucketLimiter,
@@ -69,8 +72,182 @@ export class OpenAIChatClient extends BaseLLMClient {
       .retryDelay(1000)
       .build();
 
-  super(httpClient, rateLimiter, tokenCalculator, providerConfig);
-}
+    super(httpClient, rateLimiter, tokenCalculator, providerConfig);
+
+    // 加载LLM重试配置（必须在super()之后）
+    this.llmRetryConfig = loadLLMRetryConfig('openai');
+  }
+
+  /**
+   * 获取当前使用的模型
+   */
+  private getCurrentModel(): string {
+    return this.providerConfig.defaultModel || 'gpt-4o';
+  }
+
+  /**
+   * 重新加载重试配置（支持动态切换模型）
+   */
+  private reloadRetryConfig(): void {
+    const currentModel = this.getCurrentModel();
+    this.llmRetryConfig = loadLLMRetryConfig(this.providerName, currentModel);
+  }
+
+  /**
+   * 重写generateResponse方法，使用Provider特定的重试配置
+   */
+  public override async generateResponse(request: LLMRequest): Promise<LLMResponse> {
+    await this.rateLimiter.checkLimit();
+
+    try {
+      // 1. 参数映射
+      const providerRequest = this.providerConfig.parameterMapper.mapToProvider(
+        request,
+        this.providerConfig
+      );
+
+      // 2. 构建端点和头部
+      const endpoint = this.providerConfig.endpointStrategy.buildEndpoint(
+        this.providerConfig,
+        providerRequest
+      );
+      const headers = this.providerConfig.endpointStrategy.buildHeaders(
+        this.providerConfig,
+        request
+      );
+
+      // 3. 创建HTTP请求配置，使用Provider特定的重试配置
+      const httpConfig = {
+        headers,
+        timeout: this.providerConfig.timeout,
+        // 使用Provider特定的重试配置
+        retry: toHttpRetryConfig(this.llmRetryConfig),
+      };
+
+      // 4. 发送请求（HTTP层会自动重试）
+      const response = await this.httpClient.post(endpoint, providerRequest, httpConfig);
+
+      // 5. 转换响应
+      return this.providerConfig.parameterMapper.mapFromResponse(response.data, request);
+    } catch (error) {
+      // 6. 处理LLM特定错误
+      return this.handleLLMError(error, request);
+    }
+  }
+
+  /**
+   * 处理LLM特定错误
+   */
+  private async handleLLMError(error: any, request: LLMRequest): Promise<LLMResponse> {
+    // 判断是否是LLM特定的可重试错误
+    if (this.isLLMRetryableError(error) && this.llmRetryConfig.enableLLMRetry) {
+      // 简单的LLM层重试
+      return this.retryWithLLMLogic(error, request);
+    }
+
+    // 不可重试的错误，直接抛出
+    throw error;
+  }
+
+  /**
+   * 判断是否是LLM特定的可重试错误
+   */
+  private isLLMRetryableError(error: any): boolean {
+    const errorMessage = error.message?.toLowerCase() || '';
+
+    // 模型临时不可用
+    if (
+      errorMessage.includes('model is not available') ||
+      errorMessage.includes('model is overloaded') ||
+      errorMessage.includes('model is temporarily unavailable')
+    ) {
+      return true;
+    }
+
+    // Token限制（可调整）
+    if (
+      errorMessage.includes('maximum context length') ||
+      errorMessage.includes('token limit')
+    ) {
+      return true;
+    }
+
+    return false;
+  }
+
+  /**
+   * 使用LLM逻辑重试
+   */
+  private async retryWithLLMLogic(error: any, request: LLMRequest): Promise<LLMResponse> {
+    // 等待指定时间
+    await this.delay(this.llmRetryConfig.llmRetryDelay * 1000);
+
+    // 尝试调整请求参数（如截断文本）
+    const adjustedRequest = this.adjustRequestForRetry(error, request);
+
+    // 重新发送请求
+    return this.generateResponse(adjustedRequest);
+  }
+
+  /**
+   * 根据错误调整请求参数
+   */
+  private adjustRequestForRetry(error: any, request: LLMRequest): LLMRequest {
+    const errorMessage = error.message?.toLowerCase() || '';
+
+    // 如果是Token限制，尝试截断消息
+    if (
+      errorMessage.includes('maximum context length') ||
+      errorMessage.includes('token limit')
+    ) {
+      return this.truncateMessages(request);
+    }
+
+    return request;
+  }
+
+  /**
+   * 截断消息以减少Token数
+   */
+  private truncateMessages(request: LLMRequest): LLMRequest {
+    // 简单实现：移除最早的消息
+    if (request.messages.length > 1) {
+      const truncatedMessages = request.messages.slice(1);
+      return LLMRequest.create(
+        request.model,
+        truncatedMessages,
+        {
+          sessionId: request.sessionId,
+          threadId: request.threadId,
+          workflowId: request.workflowId,
+          nodeId: request.nodeId,
+          temperature: request.temperature,
+          maxTokens: request.maxTokens,
+          topP: request.topP,
+          frequencyPenalty: request.frequencyPenalty,
+          presencePenalty: request.presencePenalty,
+          stop: request.stop,
+          tools: request.tools,
+          toolChoice: request.toolChoice,
+          stream: request.stream,
+          reasoningEffort: request.reasoningEffort,
+          verbosity: request.verbosity,
+          previousResponseId: request.previousResponseId,
+          metadata: request.metadata,
+          headers: request.headers,
+          queryParams: request.queryParams,
+        }
+      );
+    }
+    return request;
+  }
+
+  /**
+   * 延迟函数
+   */
+  private delay(ms: number): Promise<void> {
+    return new Promise(resolve => setTimeout(resolve, ms));
+  }
 
   getSupportedModelsList(): string[] {
     if (!this.providerConfig.supportedModels) {
