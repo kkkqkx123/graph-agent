@@ -2,7 +2,6 @@ import { ValueObject, ID, Timestamp, Version } from '../../common/value-objects'
 import { WorkflowStatus } from './workflow-status';
 import { WorkflowType } from './workflow-type';
 import { WorkflowConfig } from './workflow-config';
-import { ErrorHandlingStrategy } from './error-handling-strategy';
 import { ExecutionStrategy } from './execution/execution-strategy';
 
 /**
@@ -15,7 +14,6 @@ export interface WorkflowDefinitionProps {
   readonly status: WorkflowStatus;
   readonly type: WorkflowType; // 现在是枚举类型
   readonly config: WorkflowConfig;
-  readonly errorHandlingStrategy: ErrorHandlingStrategy;
   readonly executionStrategy: ExecutionStrategy;
   readonly tags: string[];
   readonly metadata: Record<string, unknown>;
@@ -167,13 +165,6 @@ export class WorkflowDefinition extends ValueObject<WorkflowDefinitionProps> {
    */
   public get updatedBy(): ID | undefined {
     return this.props.updatedBy;
-  }
-
-  /**
-   * 获取错误处理策略
-   */
-  public get errorHandlingStrategy(): ErrorHandlingStrategy {
-    return this.props.errorHandlingStrategy;
   }
 
   /**

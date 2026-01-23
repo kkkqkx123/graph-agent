@@ -9,7 +9,6 @@ import {
   NodeType,
 } from '../value-objects';
 import { EdgeId, EdgeType, EdgeValueObject } from '../value-objects/edge';
-import { ErrorHandlingStrategy } from '../value-objects/error-handling-strategy';
 import { ExecutionStrategy } from '../value-objects/execution/execution-strategy';
 import { Node } from './node';
 import { WorkflowReference } from '../value-objects/workflow-reference';
@@ -104,7 +103,6 @@ export class Workflow extends Entity {
       status: WorkflowStatus.draft(),
       type: type || WorkflowType.SEQUENTIAL,
       config: config || WorkflowConfig.default(),
-      errorHandlingStrategy: ErrorHandlingStrategy.stopOnError(),
       executionStrategy: ExecutionStrategy.sequential(),
       tags: [],
       metadata: {},

@@ -1,8 +1,9 @@
 import { Entity } from '../../common/base/entity';
-import { ID, Timestamp, Version } from '../../common/value-objects';
+import { Timestamp, Version } from '../../common/value-objects';
 import { NodeId } from '../value-objects/node/node-id';
 import { NodeType } from '../value-objects/node/node-type';
 import { NodeStatus } from '../value-objects/node/node-status';
+import { NodeRetryStrategy } from '../value-objects/node-retry-strategy';
 
 /**
  * 节点执行结果接口
@@ -123,6 +124,7 @@ export interface NodeProps {
   readonly position?: { x: number; y: number };
   readonly properties: Record<string, any>;
   readonly status: NodeStatus;
+  readonly retryStrategy: NodeRetryStrategy;
   readonly createdAt: Timestamp;
   readonly updatedAt: Timestamp;
   readonly version: Version;
@@ -193,6 +195,7 @@ export abstract class Node extends Entity {
         position,
         properties: {},
         status: NodeStatus.pending(),
+        retryStrategy: NodeRetryStrategy.disabled(),
         createdAt: now,
         updatedAt: now,
         version: Version.initial(),
@@ -256,6 +259,14 @@ export abstract class Node extends Entity {
    */
   public get status(): NodeStatus {
     return this.props.status;
+  }
+
+  /**
+   * 获取Node重试策略
+   * @returns Node重试策略
+   */
+  public get retryStrategy(): NodeRetryStrategy {
+    return this.props.retryStrategy;
   }
 
   /**
@@ -369,6 +380,21 @@ export abstract class Node extends Entity {
     const newProps: NodeProps = {
       ...this.props,
       status,
+      updatedAt: Timestamp.now(),
+      version: this.props.version.nextPatch(),
+    };
+    return this.createNodeFromProps(newProps);
+  }
+
+  /**
+   * 更新Node重试策略
+   * @param retryStrategy 新重试策略
+   * @returns 新Node实例
+   */
+  public updateRetryStrategy(retryStrategy: NodeRetryStrategy): Node {
+    const newProps: NodeProps = {
+      ...this.props,
+      retryStrategy,
       updatedAt: Timestamp.now(),
       version: this.props.version.nextPatch(),
     };
