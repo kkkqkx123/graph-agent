@@ -30,8 +30,6 @@ export class PromptReferenceParser {
     'rules',
     'user_commands',
     'templates',
-    'context',
-    'examples',
   ];
 
   constructor(private readonly logger: ILogger) { }
