@@ -3,7 +3,7 @@
  * 负责LLMResponseModel与LLMResponse实体之间的转换
  */
 
-import { BaseMapper, ok, err, combine, MapperResult } from './base-mapper';
+import { BaseMapper } from './base-mapper';
 import { LLMResponse } from '../../../domain/llm/entities/llm-response';
 import { LLMResponseModel } from '../models/llm-response.model';
 import { ID } from '../../../domain/common/value-objects/id';
@@ -11,23 +11,13 @@ import { Timestamp } from '../../../domain/common/value-objects/timestamp';
 import { Version } from '../../../domain/common/value-objects/version';
 import { LLMMessage } from '../../../domain/llm/value-objects/llm-message';
 import { DeletionStatus } from '../../../domain/common/value-objects';
-import {
-  DomainMappingError,
-  MapperErrorCode,
-  MappingErrorBuilder,
-  safeStringify,
-} from '../errors/mapper-errors';
+import { DomainMappingError, MapperErrorCode } from '../errors/mapper-errors';
 
 export class LLMResponseMapper implements BaseMapper<LLMResponse, LLMResponseModel> {
   /**
    * 将数据库模型转换为领域实体
    */
-  toDomain(model: LLMResponseModel): MapperResult<LLMResponse> {
-    const validationResult = this.validateModel(model);
-    if (!validationResult.success) {
-      return validationResult;
-    }
-
+  toDomain(model: LLMResponseModel): LLMResponse {
     try {
       const id = new ID(model.id);
       const requestId = new ID(model.requestId);
@@ -74,21 +64,12 @@ export class LLMResponseMapper implements BaseMapper<LLMResponse, LLMResponseMod
         deletionStatus: DeletionStatus.fromBoolean(model.isDeleted),
       };
 
-      const response = LLMResponse.fromProps(responseProps);
-      return ok(response);
+      return LLMResponse.fromProps(responseProps);
     } catch (error) {
-      return err(
-        new MappingErrorBuilder()
-          .code(MapperErrorCode.TYPE_CONVERSION_ERROR)
-          .message(`LLMResponse模型转换失败: ${error instanceof Error ? error.message : 'Unknown error'}`)
-          .context({
-            modelId: model.id,
-            modelData: safeStringify(model),
-          })
-          .addPath('LLMResponseMapper')
-          .addPath('toDomain')
-          .cause(error instanceof Error ? error : new Error(String(error)))
-          .build(),
+      throw new DomainMappingError(
+        MapperErrorCode.TYPE_CONVERSION_ERROR,
+        `LLMResponse模型转换失败: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        { modelId: model.id }
       );
     }
   }
@@ -96,7 +77,7 @@ export class LLMResponseMapper implements BaseMapper<LLMResponse, LLMResponseMod
   /**
    * 将领域实体转换为数据库模型
    */
-  toModel(entity: LLMResponse): MapperResult<LLMResponseModel> {
+  toModel(entity: LLMResponse): LLMResponseModel {
     try {
       const model = new LLMResponseModel();
 
@@ -135,69 +116,13 @@ export class LLMResponseMapper implements BaseMapper<LLMResponse, LLMResponseMod
       model.createdAt = entity.createdAt.toDate();
       model.updatedAt = entity.updatedAt.toDate();
 
-      return ok(model);
+      return model;
     } catch (error) {
-      return err(
-        new MappingErrorBuilder()
-          .code(MapperErrorCode.TYPE_CONVERSION_ERROR)
-          .message(`LLMResponse实体转换失败: ${error instanceof Error ? error.message : 'Unknown error'}`)
-          .context({
-            entityId: entity.responseId.value,
-            entityData: safeStringify(entity),
-          })
-          .addPath('LLMResponseMapper')
-          .addPath('toModel')
-          .cause(error instanceof Error ? error : new Error(String(error)))
-          .build(),
+      throw new DomainMappingError(
+        MapperErrorCode.TYPE_CONVERSION_ERROR,
+        `LLMResponse实体转换失败: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        { entityId: entity.responseId.value }
       );
     }
-  }
-
-  /**
-   * 批量转换
-   */
-  toDomainBatch(models: LLMResponseModel[]): MapperResult<LLMResponse[]> {
-    const results = models.map(model => this.toDomain(model));
-    return combine(results);
-  }
-
-  /**
-   * 验证模型数据
-   */
-  private validateModel(model: LLMResponseModel): MapperResult<void> {
-    const errors: string[] = [];
-
-    if (!model.id) {
-      errors.push('Model ID is required');
-    }
-
-    if (!model.requestId) {
-      errors.push('Model requestId is required');
-    }
-
-    if (!model.model) {
-      errors.push('Model name is required');
-    }
-
-    if (!Array.isArray(model.choices)) {
-      errors.push('Choices must be an array');
-    }
-
-    if (errors.length > 0) {
-      return err(
-        new MappingErrorBuilder()
-          .code(MapperErrorCode.VALIDATION_ERROR)
-          .message(`LLMResponse模型验证失败: ${errors.join(', ')}`)
-          .context({
-            modelId: model.id,
-            validationErrors: errors,
-          })
-          .addPath('LLMResponseMapper')
-          .addPath('validateModel')
-          .build(),
-      );
-    }
-
-    return ok(undefined);
   }
 }

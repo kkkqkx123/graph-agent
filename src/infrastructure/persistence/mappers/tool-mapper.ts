@@ -3,7 +3,7 @@
  * 负责ToolModel与Tool实体之间的转换
  */
 
-import { BaseMapper, ok, err, combine, MapperResult } from './base-mapper';
+import { BaseMapper } from './base-mapper';
 import { Tool } from '../../../domain/tools/entities/tool';
 import { ToolModel } from '../models/tool.model';
 import { ID } from '../../../domain/common/value-objects/id';
@@ -15,23 +15,13 @@ import { Metadata } from '../../../domain/common/value-objects';
 import { Tags } from '../../../domain/threads/checkpoints/value-objects/tags';
 import { DeletionStatus } from '../../../domain/common/value-objects';
 import { StateData } from '../../../domain/threads/checkpoints/value-objects/state-data';
-import {
-  DomainMappingError,
-  MapperErrorCode,
-  MappingErrorBuilder,
-  safeStringify,
-} from '../errors/mapper-errors';
+import { DomainMappingError, MapperErrorCode } from '../errors/mapper-errors';
 
 export class ToolMapper implements BaseMapper<Tool, ToolModel> {
   /**
    * 将数据库模型转换为领域实体
    */
-  toDomain(model: ToolModel): MapperResult<Tool> {
-    const validationResult = this.validateModel(model);
-    if (!validationResult.success) {
-      return validationResult;
-    }
-
+  toDomain(model: ToolModel): Tool {
     try {
       const id = new ID(model.id);
       const type = ToolType.fromString(model.type);
@@ -69,21 +59,12 @@ export class ToolMapper implements BaseMapper<Tool, ToolModel> {
         deletionStatus: DeletionStatus.fromBoolean(model.isDeleted),
       };
 
-      const tool = Tool.fromProps(toolData);
-      return ok(tool);
+      return Tool.fromProps(toolData);
     } catch (error) {
-      return err(
-        new MappingErrorBuilder()
-          .code(MapperErrorCode.TYPE_CONVERSION_ERROR)
-          .message(`Tool模型转换失败: ${error instanceof Error ? error.message : 'Unknown error'}`)
-          .context({
-            modelId: model.id,
-            modelData: safeStringify(model),
-          })
-          .addPath('ToolMapper')
-          .addPath('toDomain')
-          .cause(error instanceof Error ? error : new Error(String(error)))
-          .build(),
+      throw new DomainMappingError(
+        MapperErrorCode.TYPE_CONVERSION_ERROR,
+        `Tool模型转换失败: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        { modelId: model.id }
       );
     }
   }
@@ -91,7 +72,7 @@ export class ToolMapper implements BaseMapper<Tool, ToolModel> {
   /**
    * 将领域实体转换为数据库模型
    */
-  toModel(entity: Tool): MapperResult<ToolModel> {
+  toModel(entity: Tool): ToolModel {
     try {
       const model = new ToolModel();
 
@@ -118,69 +99,13 @@ export class ToolMapper implements BaseMapper<Tool, ToolModel> {
       model.createdAt = entity.createdAt.toDate();
       model.updatedAt = entity.updatedAt.toDate();
 
-      return ok(model);
+      return model;
     } catch (error) {
-      return err(
-        new MappingErrorBuilder()
-          .code(MapperErrorCode.TYPE_CONVERSION_ERROR)
-          .message(`Tool实体转换失败: ${error instanceof Error ? error.message : 'Unknown error'}`)
-          .context({
-            entityId: entity.toolId.value,
-            entityData: safeStringify(entity),
-          })
-          .addPath('ToolMapper')
-          .addPath('toModel')
-          .cause(error instanceof Error ? error : new Error(String(error)))
-          .build(),
+      throw new DomainMappingError(
+        MapperErrorCode.TYPE_CONVERSION_ERROR,
+        `Tool实体转换失败: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        { entityId: entity.toolId.value }
       );
     }
-  }
-
-  /**
-   * 批量转换
-   */
-  toDomainBatch(models: ToolModel[]): MapperResult<Tool[]> {
-    const results = models.map(model => this.toDomain(model));
-    return combine(results);
-  }
-
-  /**
-   * 验证模型数据
-   */
-  private validateModel(model: ToolModel): MapperResult<void> {
-    const errors: string[] = [];
-
-    if (!model.id) {
-      errors.push('Model ID is required');
-    }
-
-    if (!model.name) {
-      errors.push('Model name is required');
-    }
-
-    if (!model.type) {
-      errors.push('Model type is required');
-    }
-
-    if (!model.status) {
-      errors.push('Model status is required');
-    }
-
-    if (errors.length > 0) {
-      return err(
-        new MappingErrorBuilder()
-          .code(MapperErrorCode.VALIDATION_ERROR)
-          .message(`Tool模型验证失败: ${errors.join(', ')}`)
-          .context({
-            modelId: model.id,
-            validationErrors: errors,
-          })
-          .addPath('ToolMapper')
-          .addPath('validateModel')
-          .build(),
-      );
-    }
-
-    return ok(undefined);
   }
 }

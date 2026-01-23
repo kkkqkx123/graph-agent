@@ -3,7 +3,7 @@
  * 负责SessionModel与Session实体之间的转换
  */
 
-import { BaseMapper, ok, err, combine, MapperResult } from './base-mapper';
+import { BaseMapper } from './base-mapper';
 import { Session } from '../../../domain/sessions/entities/session';
 import { SessionModel } from '../models/session.model';
 import { ID } from '../../../domain/common/value-objects/id';
@@ -16,23 +16,13 @@ import { Metadata, DeletionStatus } from '../../../domain/common/value-objects';
 import { ThreadCollection } from '../../../domain/sessions/value-objects/thread-collection';
 import { SharedResources } from '../../../domain/sessions/value-objects/shared-resources';
 import { ParallelStrategy } from '../../../domain/sessions/value-objects/parallel-strategy';
-import {
-  DomainMappingError,
-  MapperErrorCode,
-  MappingErrorBuilder,
-  safeStringify,
-} from '../errors/mapper-errors';
+import { DomainMappingError, MapperErrorCode } from '../errors/mapper-errors';
 
 export class SessionMapper implements BaseMapper<Session, SessionModel> {
   /**
    * 将数据库模型转换为领域实体
    */
-  toDomain(model: SessionModel): MapperResult<Session> {
-    const validationResult = this.validateModel(model);
-    if (!validationResult.success) {
-      return validationResult;
-    }
-
+  toDomain(model: SessionModel): Session {
     try {
       const lastActivityAt = Timestamp.create(model.updatedAt);
       const messageCount = (model.metadata?.messageCount as number) || 0;
@@ -74,21 +64,12 @@ export class SessionMapper implements BaseMapper<Session, SessionModel> {
         version: Version.fromString(model.version),
       };
 
-      const session = Session.fromProps(sessionData);
-      return ok(session);
+      return Session.fromProps(sessionData);
     } catch (error) {
-      return err(
-        new MappingErrorBuilder()
-          .code(MapperErrorCode.TYPE_CONVERSION_ERROR)
-          .message(`Session模型转换失败: ${error instanceof Error ? error.message : 'Unknown error'}`)
-          .context({
-            modelId: model.id,
-            modelData: safeStringify(model),
-          })
-          .addPath('SessionMapper')
-          .addPath('toDomain')
-          .cause(error instanceof Error ? error : new Error(String(error)))
-          .build(),
+      throw new DomainMappingError(
+        MapperErrorCode.TYPE_CONVERSION_ERROR,
+        `Session模型转换失败: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        { modelId: model.id }
       );
     }
   }
@@ -96,7 +77,7 @@ export class SessionMapper implements BaseMapper<Session, SessionModel> {
   /**
    * 将领域实体转换为数据库模型
    */
-  toModel(entity: Session): MapperResult<SessionModel> {
+  toModel(entity: Session): SessionModel {
     try {
       const model = new SessionModel();
 
@@ -120,61 +101,13 @@ export class SessionMapper implements BaseMapper<Session, SessionModel> {
 
       model.threadIds = [];
 
-      return ok(model);
+      return model;
     } catch (error) {
-      return err(
-        new MappingErrorBuilder()
-          .code(MapperErrorCode.TYPE_CONVERSION_ERROR)
-          .message(`Session实体转换失败: ${error instanceof Error ? error.message : 'Unknown error'}`)
-          .context({
-            entityId: entity.sessionId.value,
-            entityData: safeStringify(entity),
-          })
-          .addPath('SessionMapper')
-          .addPath('toModel')
-          .cause(error instanceof Error ? error : new Error(String(error)))
-          .build(),
+      throw new DomainMappingError(
+        MapperErrorCode.TYPE_CONVERSION_ERROR,
+        `Session实体转换失败: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        { entityId: entity.sessionId.value }
       );
     }
-  }
-
-  /**
-   * 批量转换
-   */
-  toDomainBatch(models: SessionModel[]): MapperResult<Session[]> {
-    const results = models.map(model => this.toDomain(model));
-    return combine(results);
-  }
-
-  /**
-   * 验证模型数据
-   */
-  private validateModel(model: SessionModel): MapperResult<void> {
-    const errors: string[] = [];
-
-    if (!model.id) {
-      errors.push('Model ID is required');
-    }
-
-    if (!model.state) {
-      errors.push('Model state is required');
-    }
-
-    if (errors.length > 0) {
-      return err(
-        new MappingErrorBuilder()
-          .code(MapperErrorCode.VALIDATION_ERROR)
-          .message(`Session模型验证失败: ${errors.join(', ')}`)
-          .context({
-            modelId: model.id,
-            validationErrors: errors,
-          })
-          .addPath('SessionMapper')
-          .addPath('validateModel')
-          .build(),
-      );
-    }
-
-    return ok(undefined);
   }
 }

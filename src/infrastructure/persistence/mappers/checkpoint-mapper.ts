@@ -3,7 +3,7 @@
  * 负责CheckpointModel与Checkpoint实体之间的转换
  */
 
-import { BaseMapper, ok, err, combine, MapperResult } from './base-mapper';
+import { BaseMapper } from './base-mapper';
 import { Checkpoint } from '../../../domain/threads/checkpoints/entities/checkpoint';
 import { CheckpointModel } from '../models/checkpoint.model';
 import { ID } from '../../../domain/common/value-objects/id';
@@ -12,23 +12,13 @@ import { Version } from '../../../domain/common/value-objects/version';
 import { CheckpointStatus } from '../../../domain/threads/checkpoints/value-objects/checkpoint-status';
 import { CheckpointType } from '../../../domain/threads/checkpoints/value-objects/checkpoint-type';
 import { CheckpointScope } from '../../../domain/threads/checkpoints/value-objects/checkpoint-scope';
-import {
-  DomainMappingError,
-  MapperErrorCode,
-  MappingErrorBuilder,
-  safeStringify,
-} from '../errors/mapper-errors';
+import { DomainMappingError, MapperErrorCode } from '../errors/mapper-errors';
 
 export class CheckpointMapper implements BaseMapper<Checkpoint, CheckpointModel> {
   /**
    * 将数据库模型转换为领域实体
    */
-  toDomain(model: CheckpointModel): MapperResult<Checkpoint> {
-    const validationResult = this.validateModel(model);
-    if (!validationResult.success) {
-      return validationResult;
-    }
-
+  toDomain(model: CheckpointModel): Checkpoint {
     try {
       const props = {
         id: new ID(model.id),
@@ -51,21 +41,12 @@ export class CheckpointMapper implements BaseMapper<Checkpoint, CheckpointModel>
         lastRestoredAt: model.lastRestoredAt ? Timestamp.create(model.lastRestoredAt) : undefined,
       };
 
-      const checkpoint = Checkpoint.fromProps(props);
-      return ok(checkpoint);
+      return Checkpoint.fromProps(props);
     } catch (error) {
-      return err(
-        new MappingErrorBuilder()
-          .code(MapperErrorCode.TYPE_CONVERSION_ERROR)
-          .message(`Checkpoint模型转换失败: ${error instanceof Error ? error.message : 'Unknown error'}`)
-          .context({
-            modelId: model.id,
-            modelData: safeStringify(model),
-          })
-          .addPath('CheckpointMapper')
-          .addPath('toDomain')
-          .cause(error instanceof Error ? error : new Error(String(error)))
-          .build(),
+      throw new DomainMappingError(
+        MapperErrorCode.TYPE_CONVERSION_ERROR,
+        `Checkpoint模型转换失败: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        { modelId: model.id }
       );
     }
   }
@@ -73,7 +54,7 @@ export class CheckpointMapper implements BaseMapper<Checkpoint, CheckpointModel>
   /**
    * 将领域实体转换为数据库模型
    */
-  toModel(entity: Checkpoint): MapperResult<CheckpointModel> {
+  toModel(entity: Checkpoint): CheckpointModel {
     try {
       const model = new CheckpointModel();
 
@@ -96,69 +77,13 @@ export class CheckpointMapper implements BaseMapper<Checkpoint, CheckpointModel>
       model.restoreCount = entity.restoreCount;
       model.lastRestoredAt = entity.lastRestoredAt?.toDate();
 
-      return ok(model);
+      return model;
     } catch (error) {
-      return err(
-        new MappingErrorBuilder()
-          .code(MapperErrorCode.TYPE_CONVERSION_ERROR)
-          .message(`Checkpoint实体转换失败: ${error instanceof Error ? error.message : 'Unknown error'}`)
-          .context({
-            entityId: entity.checkpointId.value,
-            entityData: safeStringify(entity),
-          })
-          .addPath('CheckpointMapper')
-          .addPath('toModel')
-          .cause(error instanceof Error ? error : new Error(String(error)))
-          .build(),
+      throw new DomainMappingError(
+        MapperErrorCode.TYPE_CONVERSION_ERROR,
+        `Checkpoint实体转换失败: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        { entityId: entity.checkpointId.value }
       );
     }
-  }
-
-  /**
-   * 批量转换
-   */
-  toDomainBatch(models: CheckpointModel[]): MapperResult<Checkpoint[]> {
-    const results = models.map(model => this.toDomain(model));
-    return combine(results);
-  }
-
-  /**
-   * 验证模型数据
-   */
-  private validateModel(model: CheckpointModel): MapperResult<void> {
-    const errors: string[] = [];
-
-    if (!model.id) {
-      errors.push('Model ID is required');
-    }
-
-    if (!model.threadId) {
-      errors.push('Model threadId is required');
-    }
-
-    if (!model.type) {
-      errors.push('Model type is required');
-    }
-
-    if (!model.status) {
-      errors.push('Model status is required');
-    }
-
-    if (errors.length > 0) {
-      return err(
-        new MappingErrorBuilder()
-          .code(MapperErrorCode.VALIDATION_ERROR)
-          .message(`Checkpoint模型验证失败: ${errors.join(', ')}`)
-          .context({
-            modelId: model.id,
-            validationErrors: errors,
-          })
-          .addPath('CheckpointMapper')
-          .addPath('validateModel')
-          .build(),
-      );
-    }
-
-    return ok(undefined);
   }
 }

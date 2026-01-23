@@ -27,24 +27,14 @@ export class LLMRequestRepository
    * 使用Mapper将数据库模型转换为领域实体
    */
   protected override toDomain(model: LLMRequestModel): LLMRequest {
-    const result = this.mapper.toDomain(model);
-    if (!result.success) {
-      const error = result.error;
-      throw new Error(`${error.message} - ${error.path.join(' -> ')}`);
-    }
-    return result.value;
+    return this.mapper.toDomain(model);
   }
 
   /**
    * 使用Mapper将领域实体转换为数据库模型
    */
   protected override toModel(entity: LLMRequest): LLMRequestModel {
-    const result = this.mapper.toModel(entity);
-    if (!result.success) {
-      const error = result.error;
-      throw new Error(`${error.message} - ${error.path.join(' -> ')}`);
-    }
-    return result.value;
+    return this.mapper.toModel(entity);
   }
 
   /**

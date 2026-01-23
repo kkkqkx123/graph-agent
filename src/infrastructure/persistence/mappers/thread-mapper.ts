@@ -3,7 +3,7 @@
  * 负责ThreadModel与Thread实体之间的转换
  */
 
-import { BaseMapper, ok, err, combine, MapperResult } from './base-mapper';
+import { BaseMapper } from './base-mapper';
 import { Thread } from '../../../domain/threads/entities/thread';
 import { ThreadModel } from '../models/thread.model';
 import { ID } from '../../../domain/common/value-objects/id';
@@ -13,23 +13,13 @@ import { Metadata, DeletionStatus } from '../../../domain/common/value-objects';
 import { State } from '../../../domain/state/entities/state';
 import { StateEntityType } from '../../../domain/state/value-objects/state-entity-type';
 import { ThreadExecutionContext, ExecutionConfig } from '../../../domain/threads/value-objects/execution-context';
-import {
-  DomainMappingError,
-  MapperErrorCode,
-  MappingErrorBuilder,
-  safeStringify,
-} from '../errors/mapper-errors';
+import { DomainMappingError, MapperErrorCode } from '../errors/mapper-errors';
 
 export class ThreadMapper implements BaseMapper<Thread, ThreadModel> {
   /**
    * 将数据库模型转换为领域实体
    */
-  toDomain(model: ThreadModel): MapperResult<Thread> {
-    const validationResult = this.validateModel(model);
-    if (!validationResult.success) {
-      return validationResult;
-    }
-
+  toDomain(model: ThreadModel): Thread {
     try {
       const id = new ID(model.id);
       const sessionId = new ID(model.sessionId);
@@ -96,21 +86,12 @@ export class ThreadMapper implements BaseMapper<Thread, ThreadModel> {
         executionConfig,
       };
 
-      const thread = Thread.fromProps(threadData);
-      return ok(thread);
+      return Thread.fromProps(threadData);
     } catch (error) {
-      return err(
-        new MappingErrorBuilder()
-          .code(MapperErrorCode.TYPE_CONVERSION_ERROR)
-          .message(`Thread模型转换失败: ${error instanceof Error ? error.message : 'Unknown error'}`)
-          .context({
-            modelId: model.id,
-            modelData: safeStringify(model),
-          })
-          .addPath('ThreadMapper')
-          .addPath('toDomain')
-          .cause(error instanceof Error ? error : new Error(String(error)))
-          .build(),
+      throw new DomainMappingError(
+        MapperErrorCode.TYPE_CONVERSION_ERROR,
+        `Thread模型转换失败: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        { modelId: model.id }
       );
     }
   }
@@ -118,7 +99,7 @@ export class ThreadMapper implements BaseMapper<Thread, ThreadModel> {
   /**
    * 将领域实体转换为数据库模型
    */
-  toModel(entity: Thread): MapperResult<ThreadModel> {
+  toModel(entity: Thread): ThreadModel {
     try {
       const model = new ThreadModel();
 
@@ -154,65 +135,13 @@ export class ThreadMapper implements BaseMapper<Thread, ThreadModel> {
         context: contextData,
       };
 
-      return ok(model);
+      return model;
     } catch (error) {
-      return err(
-        new MappingErrorBuilder()
-          .code(MapperErrorCode.TYPE_CONVERSION_ERROR)
-          .message(`Thread实体转换失败: ${error instanceof Error ? error.message : 'Unknown error'}`)
-          .context({
-            entityId: entity.threadId.value,
-            entityData: safeStringify(entity),
-          })
-          .addPath('ThreadMapper')
-          .addPath('toModel')
-          .cause(error instanceof Error ? error : new Error(String(error)))
-          .build(),
+      throw new DomainMappingError(
+        MapperErrorCode.TYPE_CONVERSION_ERROR,
+        `Thread实体转换失败: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        { entityId: entity.threadId.value }
       );
     }
-  }
-
-  /**
-   * 批量转换
-   */
-  toDomainBatch(models: ThreadModel[]): MapperResult<Thread[]> {
-    const results = models.map(model => this.toDomain(model));
-    return combine(results);
-  }
-
-  /**
-   * 验证模型数据
-   */
-  private validateModel(model: ThreadModel): MapperResult<void> {
-    const errors: string[] = [];
-
-    if (!model.id) {
-      errors.push('Model ID is required');
-    }
-
-    if (!model.sessionId) {
-      errors.push('Model sessionId is required');
-    }
-
-    if (!model.state) {
-      errors.push('Model state is required');
-    }
-
-    if (errors.length > 0) {
-      return err(
-        new MappingErrorBuilder()
-          .code(MapperErrorCode.VALIDATION_ERROR)
-          .message(`Thread模型验证失败: ${errors.join(', ')}`)
-          .context({
-            modelId: model.id,
-            validationErrors: errors,
-          })
-          .addPath('ThreadMapper')
-          .addPath('validateModel')
-          .build(),
-      );
-    }
-
-    return ok(undefined);
   }
 }
