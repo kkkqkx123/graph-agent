@@ -8,7 +8,7 @@ import { z } from 'zod';
 /**
  * 层级配置Schema
  *
- * 注意：简化后，每个层级只配置一个模型，不再使用数组
+ * 注意：每个层级只配置一个模型，不再使用数组
  */
 const EchelonSchema = z.object({
   priority: z.number(),

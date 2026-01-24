@@ -346,8 +346,6 @@ export class WorkflowMerger {
     const newProps = {
       ...nodeProps,
       id: newNodeId,
-      updatedAt: Timestamp.now(),
-      version: nodeProps.version.nextPatch(),
     };
 
     // 使用反射调用createNodeFromProps方法

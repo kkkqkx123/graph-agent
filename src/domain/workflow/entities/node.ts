@@ -121,13 +121,9 @@ export interface NodeProps {
   readonly type: NodeType;
   readonly name?: string;
   readonly description?: string;
-  readonly position?: { x: number; y: number };
   readonly properties: Record<string, any>;
   readonly status: NodeStatus;
   readonly retryStrategy: NodeRetryStrategy;
-  readonly createdAt: Timestamp;
-  readonly updatedAt: Timestamp;
-  readonly version: Version;
 }
 
 /**
@@ -142,9 +138,11 @@ export interface NodeProps {
  * - 节点执行（由 Thread 层的 NodeExecutionHandler 负责）
  * - 节点验证（由配置验证负责）
  * - 节点元数据（由配置负责）
+ *
+ * @template TProps 节点属性类型，默认为 NodeProps
  */
-export abstract class Node extends Entity {
-  protected readonly props: NodeProps;
+export abstract class Node<TProps extends NodeProps = NodeProps> extends Entity {
+  protected readonly props: TProps;
 
   /**
    * 构造函数（完整版本，使用NodeProps）
@@ -172,16 +170,16 @@ export abstract class Node extends Entity {
    * 构造函数实现
    */
   protected constructor(
-    propsOrId: NodeProps | NodeId,
+    propsOrId: TProps | NodeId,
     type?: NodeType,
     name?: string,
-    description?: string,
-    position?: { x: number; y: number }
+    description?: string
   ) {
     if (type === undefined) {
       // 完整版本：使用NodeProps
-      const props = propsOrId as NodeProps;
-      super(props.id, props.createdAt, props.updatedAt, props.version);
+      const props = propsOrId as TProps;
+      const now = Timestamp.now();
+      super(props.id, now, now, Version.initial());
       this.props = Object.freeze(props);
     } else {
       // 简化版本：用于infrastructure层
@@ -192,16 +190,12 @@ export abstract class Node extends Entity {
         type,
         name,
         description,
-        position,
         properties: {},
         status: NodeStatus.pending(),
         retryStrategy: NodeRetryStrategy.disabled(),
-        createdAt: now,
-        updatedAt: now,
-        version: Version.initial(),
       };
-      super(props.id, props.createdAt, props.updatedAt, props.version);
-      this.props = Object.freeze(props);
+      super(props.id, now, now, Version.initial());
+      this.props = Object.freeze(props as TProps);
     }
   }
 
@@ -235,14 +229,6 @@ export abstract class Node extends Entity {
    */
   public get description(): string | undefined {
     return this.props.description;
-  }
-
-  /**
-   * 获取Node位置
-   * @returns Node位置
-   */
-  public get position(): { x: number; y: number } | undefined {
-    return this.props.position;
   }
 
   /**
@@ -306,28 +292,11 @@ export abstract class Node extends Entity {
    * @param properties 新属性
    * @returns 新Node实例
    */
-  public updateProperties(properties: Record<string, any>): Node {
-    const newProps: NodeProps = {
+  public updateProperties(properties: Record<string, any>): Node<TProps> {
+    const newProps: TProps = {
       ...this.props,
       properties: { ...this.props.properties, ...properties },
-      updatedAt: Timestamp.now(),
-      version: this.props.version.nextPatch(),
-    };
-    return this.createNodeFromProps(newProps);
-  }
-
-  /**
-   * 更新Node位置
-   * @param position 新位置
-   * @returns 新Node实例
-   */
-  public updatePosition(position: { x: number; y: number }): Node {
-    const newProps: NodeProps = {
-      ...this.props,
-      position,
-      updatedAt: Timestamp.now(),
-      version: this.props.version.nextPatch(),
-    };
+    } as TProps;
     return this.createNodeFromProps(newProps);
   }
 
@@ -336,13 +305,11 @@ export abstract class Node extends Entity {
    * @param status 新状态
    * @returns 新Node实例
    */
-  public updateStatus(status: NodeStatus): Node {
-    const newProps: NodeProps = {
+  public updateStatus(status: NodeStatus): Node<TProps> {
+    const newProps: TProps = {
       ...this.props,
       status,
-      updatedAt: Timestamp.now(),
-      version: this.props.version.nextPatch(),
-    };
+    } as TProps;
     return this.createNodeFromProps(newProps);
   }
 
@@ -351,14 +318,31 @@ export abstract class Node extends Entity {
    * @param retryStrategy 新重试策略
    * @returns 新Node实例
    */
-  public updateRetryStrategy(retryStrategy: NodeRetryStrategy): Node {
-    const newProps: NodeProps = {
+  public updateRetryStrategy(retryStrategy: NodeRetryStrategy): Node<TProps> {
+    const newProps: TProps = {
       ...this.props,
       retryStrategy,
-      updatedAt: Timestamp.now(),
-      version: this.props.version.nextPatch(),
-    };
+    } as TProps;
     return this.createNodeFromProps(newProps);
+  }
+
+  /**
+   * 获取属性值（类型安全）
+   * @param key 属性键
+   * @returns 属性值
+   */
+  protected getProperty<K extends string>(key: K): any {
+    return this.props.properties[key];
+  }
+
+  /**
+   * 获取属性值（带默认值）
+   * @param key 属性键
+   * @param defaultValue 默认值
+   * @returns 属性值
+   */
+  protected getPropertyOrDefault<K extends string>(key: K, defaultValue: any): any {
+    return this.props.properties[key] ?? defaultValue;
   }
 
   /**
@@ -373,7 +357,7 @@ export abstract class Node extends Entity {
    * 获取Node属性（用于持久化）
    * @returns Node属性
    */
-  public toProps(): NodeProps {
+  public toProps(): TProps {
     return this.props;
   }
 
@@ -382,7 +366,7 @@ export abstract class Node extends Entity {
    * @param props Node属性
    * @returns Node实例
    */
-  protected abstract createNodeFromProps(props: NodeProps): Node;
+  protected abstract createNodeFromProps(props: TProps): Node<TProps>;
 
   /**
    * 转换为字符串
