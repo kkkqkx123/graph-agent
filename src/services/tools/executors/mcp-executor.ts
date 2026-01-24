@@ -106,11 +106,114 @@ export class McpExecutor extends ToolExecutorBase {
     errors: string[];
     warnings: string[];
   }> {
+    const errors: string[] = [];
+    const warnings: string[] = [];
+
+    const schema = tool.parameters;
+    const requiredParams = schema.required || [];
+    const properties = schema.properties || {};
+
+    // 1. 检查必需参数
+    for (const paramName of requiredParams) {
+      if (!(paramName in parameters)) {
+        errors.push(`缺少必需参数: ${paramName}`);
+      }
+    }
+
+    // 2. 验证参数类型和值
+    for (const [paramName, paramValue] of Object.entries(parameters)) {
+      const paramSchema = properties[paramName];
+      
+      if (!paramSchema) {
+        warnings.push(`未知参数: ${paramName}`);
+        continue;
+      }
+
+      // 类型验证
+      const typeError = this.validateParameterType(paramName, paramValue, paramSchema, warnings);
+      if (typeError) {
+        errors.push(typeError);
+      }
+
+      // 枚举值验证
+      if (paramSchema.enum && Array.isArray(paramSchema.enum)) {
+        if (!paramSchema.enum.includes(paramValue as any)) {
+          errors.push(
+            `参数 ${paramName} 的值 ${paramValue} 不在允许的枚举值中: [${paramSchema.enum.join(', ')}]`
+          );
+        }
+      }
+
+      // 数值范围验证
+      if (typeof paramValue === 'number') {
+        const schemaWithRange = paramSchema as any;
+        if (schemaWithRange.minimum !== undefined && paramValue < schemaWithRange.minimum) {
+          errors.push(`参数 ${paramName} 的值 ${paramValue} 小于最小值 ${schemaWithRange.minimum}`);
+        }
+        if (schemaWithRange.maximum !== undefined && paramValue > schemaWithRange.maximum) {
+          errors.push(`参数 ${paramName} 的值 ${paramValue} 大于最大值 ${schemaWithRange.maximum}`);
+        }
+      }
+    }
+
     return {
-      isValid: true,
-      errors: [],
-      warnings: [],
+      isValid: errors.length === 0,
+      errors,
+      warnings,
     };
+  }
+
+  /**
+   * 验证参数类型
+   */
+  private validateParameterType(
+    paramName: string,
+    paramValue: unknown,
+    paramSchema: any,
+    warnings: string[]
+  ): string | null {
+    const expectedType = paramSchema.type;
+
+    switch (expectedType) {
+      case 'string':
+        if (typeof paramValue !== 'string') {
+          return `参数 ${paramName} 应为 string 类型，实际为 ${typeof paramValue}`;
+        }
+        break;
+
+      case 'number':
+      case 'integer':
+        if (typeof paramValue !== 'number') {
+          return `参数 ${paramName} 应为 ${expectedType} 类型，实际为 ${typeof paramValue}`;
+        }
+        if (expectedType === 'integer' && !Number.isInteger(paramValue)) {
+          return `参数 ${paramName} 应为 integer 类型，实际为浮点数`;
+        }
+        break;
+
+      case 'boolean':
+        if (typeof paramValue !== 'boolean') {
+          return `参数 ${paramName} 应为 boolean 类型，实际为 ${typeof paramValue}`;
+        }
+        break;
+
+      case 'array':
+        if (!Array.isArray(paramValue)) {
+          return `参数 ${paramName} 应为 array 类型，实际为 ${typeof paramValue}`;
+        }
+        break;
+
+      case 'object':
+        if (typeof paramValue !== 'object' || paramValue === null || Array.isArray(paramValue)) {
+          return `参数 ${paramName} 应为 object 类型，实际为 ${typeof paramValue}`;
+        }
+        break;
+
+      default:
+        warnings.push(`参数 ${paramName} 有未知类型: ${expectedType}`);
+    }
+
+    return null;
   }
 
   getType(): string {

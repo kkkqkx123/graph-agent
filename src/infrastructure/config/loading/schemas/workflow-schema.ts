@@ -1,9 +1,14 @@
 /**
  * 工作流配置Schema定义
+ * 统一管理工作流定义、函数类型、函数集等所有工作流相关配置
  * 支持子工作流、参数化配置、节点和边定义
  */
 
 import { z } from 'zod';
+
+// ============================================================================
+// 工作流定义相关Schema
+// ============================================================================
 
 /**
  * Wrapper配置Schema
@@ -99,13 +104,13 @@ export const WorkflowConfigSchema = z.object({
     name: z.string(),
     description: z.string().optional(),
     version: z.string(),
-    
+
     // 可配置参数（用于在具体工作流中通过参数修改内部逻辑）
     parameters: z.record(z.string(), ParameterDefinitionSchema).optional(),
-    
+
     // 节点定义
     nodes: z.array(NodeConfigSchema),
-    
+
     // 边定义
     edges: z.array(EdgeConfigSchema),
   }),
@@ -117,24 +122,146 @@ export const WorkflowConfigSchema = z.object({
 export const SubWorkflowReferenceConfigSchema = z.object({
   reference_id: z.string(),
   workflow_id: z.string(),
-  
+
   // 参数覆盖
   parameters: z.record(z.string(), z.any()).optional(),
-  
+
   // 输入映射
   input_mapping: z.record(z.string(), z.string()).optional(),
-  
+
   // 输出映射
   output_mapping: z.record(z.string(), z.string()).optional(),
 });
 
+// ============================================================================
+// 工作流函数相关Schema
+// ============================================================================
+
 /**
- * 导出类型
+ * 函数类型配置Schema
+ */
+const FunctionTypeConfigSchema = z.object({
+  class_path: z.string(),
+  description: z.string(),
+  enabled: z.boolean(),
+});
+
+/**
+ * 函数集配置Schema
+ */
+const FunctionSetConfigSchema = z.object({
+  description: z.string(),
+  enabled: z.boolean(),
+  functions: z.array(z.string()),
+});
+
+/**
+ * 自动发现配置Schema
+ */
+const AutoDiscoveryConfigSchema = z.object({
+  enabled: z.boolean().optional(),
+  scan_directories: z.array(z.string()).optional(),
+  file_patterns: z.array(z.string()).optional(),
+  exclude_patterns: z.array(z.string()).optional(),
+});
+
+// ============================================================================
+// 工作流模块主Schema
+// ============================================================================
+
+/**
+ * 工作流模块Schema
+ * 统一管理所有工作流相关配置
+ */
+export const WorkflowSchema = z.object({
+  // 工作流定义
+  workflows: z.record(z.string(), WorkflowConfigSchema).optional(),
+
+  // 函数类型配置
+  function_types: z.record(z.string(), FunctionTypeConfigSchema).optional(),
+
+  // 函数集配置
+  function_sets: z.record(z.string(), FunctionSetConfigSchema).optional(),
+
+  // 自动发现配置
+  auto_discovery: AutoDiscoveryConfigSchema.optional(),
+
+  // 默认配置
+  defaults: z.record(z.string(), z.any()).optional(),
+
+  // 注册表标识
+  _registry: z.string().optional(),
+});
+
+// ============================================================================
+// 导出类型
+// ============================================================================
+
+/**
+ * 工作流配置类型
  */
 export type WorkflowConfig = z.infer<typeof WorkflowConfigSchema>;
+
+/**
+ * 参数定义类型
+ */
 export type ParameterDefinition = z.infer<typeof ParameterDefinitionSchema>;
+
+/**
+ * 节点配置类型
+ */
 export type NodeConfig = z.infer<typeof NodeConfigSchema>;
+
+/**
+ * 边配置类型
+ */
 export type EdgeConfig = z.infer<typeof EdgeConfigSchema>;
+
+/**
+ * 子工作流引用配置类型
+ */
 export type SubWorkflowReferenceConfig = z.infer<typeof SubWorkflowReferenceConfigSchema>;
+
+/**
+ * Wrapper配置类型
+ */
 export type WrapperConfig = z.infer<typeof WrapperConfigSchema>;
+
+/**
+ * 节点重试策略配置类型
+ */
 export type NodeRetryStrategyConfig = z.infer<typeof NodeRetryStrategyConfigSchema>;
+
+/**
+ * 工作流模块配置类型
+ */
+export type WorkflowModuleConfig = z.infer<typeof WorkflowSchema>;
+
+/**
+ * 函数类型配置类型
+ */
+export type FunctionTypeConfig = z.infer<typeof FunctionTypeConfigSchema>;
+
+/**
+ * 函数集配置类型
+ */
+export type FunctionSetConfig = z.infer<typeof FunctionSetConfigSchema>;
+
+// ============================================================================
+// 导出单个配置Schema（用于拆分后的配置文件）
+// ============================================================================
+
+/**
+ * 单个工作流配置Schema（用于拆分后的配置文件）
+ */
+export const SingleWorkflowSchema = WorkflowConfigSchema;
+
+/**
+ * 单个函数类型配置Schema（用于拆分后的配置文件）
+ */
+export const SingleFunctionTypeSchema = FunctionTypeConfigSchema;
+
+/**
+ * 单个函数集配置Schema（用于拆分后的配置文件）
+ */
+export const SingleFunctionSetSchema = FunctionSetConfigSchema;

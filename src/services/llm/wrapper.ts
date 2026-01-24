@@ -110,27 +110,6 @@ export class Wrapper {
   }
 
   /**
-   * 获取最优包装器选择
-   *
-   * 业务逻辑：根据需求选择最优包装器
-   */
-  async getOptimalWrapper(requirements: Record<string, any>): Promise<WrapperConfig | null> {
-    const allStatistics = await this.wrapperManager.getAllWrappersStatistics();
-
-    // 业务逻辑：返回第一个可用的包装器
-    // 可以根据 requirements 实现更复杂的选择策略
-    for (const [wrapperName, stats] of Object.entries(allStatistics)) {
-      // 简单的可用性检查：有健康的实例或模型
-      if (stats['available'] || stats['healthyInstances'] > 0 || stats['totalModels'] > 0) {
-        // 将字符串格式的wrapper名称转换为WrapperConfig
-        return this.parseWrapperName(wrapperName);
-      }
-    }
-
-    return null;
-  }
-
-  /**
    * 解析wrapper名称
    * @param wrapperName wrapper名称（格式：type:name 或 provider:model）
    * @returns WrapperConfig对象
@@ -183,17 +162,10 @@ export class Wrapper {
         }
         return this.generateDirectResponse(provider, model, requestData);
       }
-      
+
       const wrapper: WrapperConfig = { type: wrapperType as 'pool' | 'group', name: wrapperName };
       return this.generateResponse(wrapper, requestData);
     }
-
-    // 自动选择最优包装器
-    const optimalWrapper = await this.getOptimalWrapper(requestData);
-    if (optimalWrapper) {
-      return this.generateResponse(optimalWrapper, requestData);
-    }
-
     throw new Error('没有可用的包装器来处理请求');
   }
 
