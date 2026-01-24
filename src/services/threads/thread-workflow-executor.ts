@@ -6,7 +6,7 @@ import { ThreadStateManager } from './thread-state-manager';
 import { ThreadHistoryManager } from './thread-history-manager';
 import { CheckpointManagement } from '../checkpoints/checkpoint-management';
 import { ThreadConditionalRouter } from './thread-conditional-router';
-import { INodeExecutor } from '../workflow/nodes/node-executor';
+import { INodeExecutionHandler } from '../workflow/execution/handlers/node-execution-handler';
 import { FunctionRegistry } from '../workflow/functions/function-registry';
 import { IThreadRepository } from '../../domain/threads/repositories/thread-repository';
 import { Thread } from '../../domain/threads/entities/thread';
@@ -90,7 +90,7 @@ export class ThreadWorkflowExecutor {
   private readonly historyManager: ThreadHistoryManager;
   private readonly checkpointManagement: CheckpointManagement;
   private readonly router: ThreadConditionalRouter;
-  private readonly nodeExecutor: INodeExecutor;
+  private readonly nodeExecutionHandler: INodeExecutionHandler;
   private readonly functionRegistry: FunctionRegistry;
   private readonly threadRepository: IThreadRepository;
 
@@ -99,7 +99,7 @@ export class ThreadWorkflowExecutor {
     @inject(TYPES.ThreadHistoryManager) historyManager: ThreadHistoryManager,
     @inject(TYPES.CheckpointManagement) checkpointManagement: CheckpointManagement,
     @inject(TYPES.ThreadConditionalRouter) router: ThreadConditionalRouter,
-    @inject(TYPES.NodeExecutor) nodeExecutor: INodeExecutor,
+    @inject(TYPES.NodeExecutor) nodeExecutionHandler: INodeExecutionHandler,
     @inject(TYPES.FunctionRegistry) functionRegistry: FunctionRegistry,
     @inject(TYPES.ThreadRepository) threadRepository: IThreadRepository
   ) {
@@ -107,7 +107,7 @@ export class ThreadWorkflowExecutor {
     this.historyManager = historyManager;
     this.checkpointManagement = checkpointManagement;
     this.router = router;
-    this.nodeExecutor = nodeExecutor;
+    this.nodeExecutionHandler = nodeExecutionHandler;
     this.functionRegistry = functionRegistry;
     this.threadRepository = threadRepository;
   }
@@ -344,7 +344,7 @@ export class ThreadWorkflowExecutor {
     options: { timeout: number; maxRetries: number; retryDelay: number }
   ): Promise<any> {
     const nodeContext = this.buildNodeContext(state, threadId);
-    const canExecute = await this.nodeExecutor.canExecute(node, nodeContext);
+    const canExecute = await this.nodeExecutionHandler.canExecute(node, nodeContext);
 
     if (!canExecute) {
       throw new Error(`节点 ${node.nodeId.toString()} 无法执行`);
@@ -352,11 +352,11 @@ export class ThreadWorkflowExecutor {
 
     // 如果有重试配置，使用带重试的执行
     if (options.maxRetries > 0) {
-      return await this.nodeExecutor.execute(node, nodeContext);
+      return await this.nodeExecutionHandler.execute(node, nodeContext);
     }
 
     // 否则直接执行
-    return await this.nodeExecutor.execute(node, nodeContext);
+    return await this.nodeExecutionHandler.execute(node, nodeContext);
   }
 
   /**

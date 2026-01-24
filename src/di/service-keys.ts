@@ -76,10 +76,9 @@ import { ThreadHistoryManager } from '../services/threads/thread-history-manager
 import { ThreadConditionalRouter } from '../services/threads/thread-conditional-router';
 import { ThreadWorkflowExecutor } from '../services/threads/thread-workflow-executor';
 import { FunctionRegistry } from '../services/workflow/functions/function-registry';
-import { NodeExecutor } from '../services/workflow/nodes/node-executor';
-import { EdgeExecutor } from '../services/workflow/edges/edge-executor';
-import { HookExecutor } from '../services/workflow/hooks/hook-executor';
-import { HookFactory } from '../services/workflow/hooks/hook-factory';
+import { NodeExecutionHandler } from '../services/workflow/execution/handlers/node-execution-handler';
+import { HookExecutionHandler } from '../services/workflow/execution/handlers/hook-execution-handler';
+import { TriggerExecutionHandler } from '../services/workflow/execution/handlers/trigger-execution-handler';
 import { PromptBuilder } from '../services/prompts/prompt-builder';
 import { TemplateProcessor } from '../services/prompts/template-processor';
 import { PromptReferenceParser } from '../services/prompts/prompt-reference-parser';
@@ -200,10 +199,9 @@ export interface ServiceTypes {
 
   // 工作流节点服务
   FunctionRegistry: FunctionRegistry;
-  NodeExecutor: NodeExecutor;
-  EdgeExecutor: EdgeExecutor;
-  HookExecutor: HookExecutor;
-  HookFactory: HookFactory;
+  NodeExecutor: NodeExecutionHandler;
+  HookExecutor: HookExecutionHandler;
+  TriggerExecutor: TriggerExecutionHandler;
 
   // ========== Infrastructure层实现 ==========
 
@@ -330,9 +328,8 @@ export const TYPES = {
   // 工作流节点服务
   FunctionRegistry: Symbol.for('FunctionRegistry'),
   NodeExecutor: Symbol.for('NodeExecutor'),
-  EdgeExecutor: Symbol.for('EdgeExecutor'),
   HookExecutor: Symbol.for('HookExecutor'),
-  HookFactory: Symbol.for('HookFactory'),
+  TriggerExecutor: Symbol.for('TriggerExecutor'),
 
   // ========== Infrastructure层实现 ==========
 

@@ -4,6 +4,7 @@ import { PromptState } from './prompt-state';
 import { NodeExecutionState } from '../execution/node-execution-state';
 import { PromptHistoryEntry } from './prompt-history-entry';
 import { WorkflowExecutionContext } from '../../entities/node';
+import { ExecutionContext } from '../../../../services/workflow/execution/context/execution-context';
 
 /**
  * 工作流上下文属性接口
@@ -33,7 +34,7 @@ export interface WorkflowContextProps {
  * 统一的工作流上下文，整合执行状态、提示词历史、全局变量和元数据
  * 实现WorkflowExecutionContext接口以兼容现有代码
  */
-export class WorkflowContext extends ValueObject<WorkflowContextProps> implements WorkflowExecutionContext {
+export class WorkflowContext extends ValueObject<WorkflowContextProps> implements WorkflowExecutionContext, ExecutionContext {
   private constructor(props: WorkflowContextProps) {
     super(props);
     this.validate();
@@ -463,5 +464,46 @@ export class WorkflowContext extends ValueObject<WorkflowContextProps> implement
     if (this.props.createdAt > this.props.updatedAt) {
       throw new Error('创建时间不能晚于更新时间');
     }
+  }
+
+  /**
+   * 获取线程ID（实现ExecutionContext接口）
+   * @returns 线程ID（使用executionId作为线程ID）
+   */
+  public get threadId(): string {
+    return this.props.executionId;
+  }
+
+  /**
+   * 初始化变量（实现ExecutionContext接口）
+   * @param variables 变量映射
+   */
+  public initializeVariables(variables: Record<string, any>): void {
+    // WorkflowContext使用不可变更新模式，此方法仅用于兼容接口
+    // 实际更新应该通过ContextManagement.updateContext完成
+    console.warn(`WorkflowContext.initializeVariables() is deprecated. Use ContextManagement.updateContext() instead.`);
+  }
+
+  /**
+   * 获取所有节点结果（实现ExecutionContext接口）
+   * @returns 节点结果映射
+   */
+  public getAllNodeResults(): Map<string, any> {
+    const results = new Map<string, any>();
+    for (const [nodeId, nodeExecution] of this.props.executionState.nodeExecutions.entries()) {
+      results.set(nodeId, nodeExecution.result);
+    }
+    return results;
+  }
+
+  /**
+   * 设置元数据（实现ExecutionContext接口）
+   * @param key 元数据键
+   * @param value 元数据值
+   */
+  public setMetadata(key: string, value: any): void {
+    // WorkflowContext使用不可变更新模式，此方法仅用于兼容接口
+    // 实际更新应该通过ContextManagement.updateContext完成
+    console.warn(`WorkflowContext.setMetadata() is deprecated. Use ContextManagement.updateContext() instead.`);
   }
 }

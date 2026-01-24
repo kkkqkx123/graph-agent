@@ -53,10 +53,9 @@ import { FilterTransformFunction } from '../../services/workflow/functions/nodes
 import { ReduceTransformFunction } from '../../services/workflow/functions/nodes/data-transformer/reduce-transform.function';
 import { SortTransformFunction } from '../../services/workflow/functions/nodes/data-transformer/sort-transform.function';
 import { GroupTransformFunction } from '../../services/workflow/functions/nodes/data-transformer/group-transform.function';
-import { NodeExecutor } from '../../services/workflow/nodes/node-executor';
-import { EdgeExecutor } from '../../services/workflow/edges/edge-executor';
-import { HookExecutor } from '../../services/workflow/hooks/hook-executor';
-import { HookFactory } from '../../services/workflow/hooks/hook-factory';
+import { NodeExecutionHandler } from '../../services/workflow/execution/handlers/node-execution-handler';
+import { HookExecutionHandler } from '../../services/workflow/execution/handlers/hook-execution-handler';
+import { TriggerExecutionHandler } from '../../services/workflow/execution/handlers/trigger-execution-handler';
 import { LLMWrapperManager } from '../../services/llm/managers/llm-wrapper-manager';
 import { PollingPoolManager } from '../../services/llm/managers/pool-manager';
 import { TaskGroupManager } from '../../services/llm/managers/task-group-manager';
@@ -156,10 +155,8 @@ export const servicesBindings = new ContainerModule((bind: any) => {
     })
     .inSingletonScope();
 
-  // ========== 节点和边执行器绑定 ==========
+  // ========== 执行处理器绑定 ==========
 
-  bind(TYPES.NodeExecutor).to(NodeExecutor).inSingletonScope();
-  bind(TYPES.EdgeExecutor).to(EdgeExecutor).inSingletonScope();
-  bind(TYPES.HookExecutor).to(HookExecutor).inSingletonScope();
-  bind(TYPES.HookFactory).to(HookFactory).inSingletonScope();
+  bind(TYPES.NodeExecutor).to(NodeExecutionHandler).inSingletonScope();
+  bind(TYPES.HookExecutor).to(HookExecutionHandler).inSingletonScope();
 });

@@ -6,11 +6,11 @@ import { ThreadStateManager } from './thread-state-manager';
 import { ThreadHistoryManager } from './thread-history-manager';
 import { CheckpointManagement } from '../checkpoints/checkpoint-management';
 import { ThreadConditionalRouter } from './thread-conditional-router';
-import { INodeExecutor } from '../workflow/nodes/node-executor';
+import { INodeExecutionHandler } from '../workflow/execution/handlers/node-execution-handler';
 import { FunctionRegistry } from '../workflow/functions/function-registry';
 import { ThreadFork } from './thread-fork';
 import { ThreadJoin } from './thread-join';
-import { ForkNode, JoinNode } from '../../domain/workflow/entities/node';
+import { ForkNode, JoinNode } from '../../domain/workflow/entities/node/index';
 import { IThreadRepository } from '../../domain/threads/repositories/thread-repository';
 import { Thread } from '../../domain/threads/entities/thread';
 import { ID } from '../../domain/common/value-objects/id';
@@ -143,7 +143,7 @@ export class WorkflowExecutionEngine {
   private readonly historyManager: ThreadHistoryManager;
   private readonly checkpointManagement: CheckpointManagement;
   private readonly router: ThreadConditionalRouter;
-  private readonly nodeExecutor: INodeExecutor;
+  private readonly nodeExecutor: INodeExecutionHandler;
   private readonly functionRegistry: FunctionRegistry;
   private readonly threadFork: ThreadFork;
   private readonly threadJoin: ThreadJoin;
@@ -155,7 +155,7 @@ export class WorkflowExecutionEngine {
     @inject(TYPES.ThreadHistoryManager) historyManager: ThreadHistoryManager,
     @inject(TYPES.CheckpointManagement) checkpointManagement: CheckpointManagement,
     @inject(TYPES.ThreadConditionalRouter) router: ThreadConditionalRouter,
-    @inject(TYPES.NodeExecutor) nodeExecutor: INodeExecutor,
+    @inject(TYPES.NodeExecutor) nodeExecutor: INodeExecutionHandler,
     @inject(TYPES.FunctionRegistry) functionRegistry: FunctionRegistry,
     @inject(TYPES.ThreadFork) threadFork: ThreadFork,
     @inject(TYPES.ThreadJoin) threadJoin: ThreadJoin,
@@ -277,14 +277,16 @@ export class WorkflowExecutionEngine {
           );
 
           // 处理Fork节点
-          if (node instanceof ForkNode && nodeResult.success) {
-            await this.handleForkNode(node, currentState, threadId, workflow);
-          }
+          // TODO: Fork节点执行策略尚未实现
+          // if (node instanceof ForkNode && nodeResult.success) {
+          //   await this.handleForkNode(node, currentState, threadId, workflow);
+          // }
 
           // 处理Join节点
-          if (node instanceof JoinNode && nodeResult.success) {
-            await this.handleJoinNode(node, currentState, threadId);
-          }
+          // TODO: Join节点执行策略尚未实现
+          // if (node instanceof JoinNode && nodeResult.success) {
+          //   await this.handleJoinNode(node, currentState, threadId);
+          // }
 
           executedNodes++;
         } catch (error) {
@@ -496,11 +498,9 @@ export class WorkflowExecutionEngine {
 
   /**
    * 处理Fork节点（私有方法）
-   * @param node Fork节点
-   * @param state 线程状态
-   * @param threadId 线程ID
-   * @param workflow 工作流
+   * TODO: Fork节点执行策略尚未实现
    */
+  /*
   private async handleForkNode(
     node: ForkNode,
     state: ThreadWorkflowState,
@@ -539,13 +539,13 @@ export class WorkflowExecutionEngine {
       throw new Error(`处理Fork节点失败: ${errorMessage}`);
     }
   }
+  */
 
   /**
    * 处理Join节点（私有方法）
-   * @param node Join节点
-   * @param state 线程状态
-   * @param threadId 线程ID
+   * TODO: Join节点执行策略尚未实现
    */
+  /*
   private async handleJoinNode(
     node: JoinNode,
     state: ThreadWorkflowState,
@@ -592,6 +592,7 @@ export class WorkflowExecutionEngine {
       throw new Error(`处理Join节点失败: ${errorMessage}`);
     }
   }
+  */
 
   /**
    * 获取当前线程（私有方法）

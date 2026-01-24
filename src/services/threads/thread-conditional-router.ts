@@ -273,12 +273,12 @@ export class ThreadConditionalRouter {
     context: Record<string, any>
   ): Promise<{ matched: boolean; conditionResult?: boolean }> {
     // 无条件边直接匹配
-    if (!edge.requiresConditionEvaluation()) {
+    if (!edge.condition) {
       return { matched: true };
     }
 
     // 获取条件函数引用
-    const condition = edge.getConditionExpression();
+    const condition = edge.condition;
     if (!condition) {
       return { matched: true };
     }

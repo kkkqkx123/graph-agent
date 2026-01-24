@@ -13,8 +13,9 @@
 import { injectable, inject } from 'inversify';
 import { Node } from '../../domain/workflow/entities/node';
 import { WorkflowContext } from '../../domain/workflow/value-objects/context/workflow-context';
-import { NodeExecutor } from './nodes/node-executor';
+import { INodeExecutionHandler } from './execution/handlers/node-execution-handler';
 import { ILogger } from '../../domain/common/types/logger-types';
+import { TYPES } from '../../di/service-keys';
 
 /**
  * 函数执行策略枚举
@@ -95,7 +96,7 @@ export interface FunctionExecutionConfig {
 @injectable()
 export class FunctionExecutionEngine {
   constructor(
-    @inject('NodeExecutor') private readonly nodeExecutor: NodeExecutor,
+    @inject(TYPES.NodeExecutor) private readonly nodeExecutionHandler: INodeExecutionHandler,
     @inject('Logger') private readonly logger: ILogger
   ) { }
 
@@ -206,7 +207,7 @@ export class FunctionExecutionEngine {
 
     for (const func of functions) {
       // 检查是否可以执行
-      const canExecute = await this.nodeExecutor.canExecute(func, context);
+      const canExecute = await this.nodeExecutionHandler.canExecute(func, context);
       if (!canExecute) {
         this.logger.debug('函数不满足执行条件，跳过', {
           functionId: func.id.toString(),
@@ -321,7 +322,7 @@ export class FunctionExecutionEngine {
     for (let attempt = 0; attempt <= retryCount; attempt++) {
       try {
         // 执行函数
-        const result = await this.nodeExecutor.execute(func, context);
+        const result = await this.nodeExecutionHandler.execute(func, context);
 
         // 如果执行成功，返回结果
         if (result.success) {
