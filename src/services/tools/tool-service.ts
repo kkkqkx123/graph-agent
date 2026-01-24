@@ -90,7 +90,7 @@ export class ToolService {
    * 获取工具配置
    */
   private getToolConfig(toolId: string): ToolConfig | undefined {
-    const toolsConfig = this.configManager.getRef<Record<string, ToolConfig>>('tools.tools');
+    const toolsConfig = this.configManager.get<Record<string, ToolConfig>>('tools.tools');
     return toolsConfig?.[toolId];
   }
 
@@ -98,7 +98,7 @@ export class ToolService {
    * 获取所有工具配置
    */
   private getAllToolConfigs(): Record<string, ToolConfig> {
-    return this.configManager.getRef<Record<string, ToolConfig>>('tools.tools') || {};
+    return this.configManager.get<Record<string, ToolConfig>>('tools.tools') || {};
   }
 
   /**

@@ -1,6 +1,7 @@
 /**
  * 配置继承处理器实现
  * 统一使用TOML格式，移除JSON和YAML支持
+ * 修复异步问题，使用统一的文件服务
  */
 
 import * as fs from 'fs/promises';
@@ -12,6 +13,7 @@ import {
   ILogger,
 } from '../../../domain/common/types';
 import { ParameterValidationError, InvalidConfigurationError } from '../../../domain/common/exceptions';
+import { ConfigFileService } from '../services/config-file-service';
 
 /**
  * 配置继承处理器
@@ -23,6 +25,7 @@ export class InheritanceProcessor implements IConfigProcessor {
   private readonly logger: ILogger;
   private readonly loadingCache: Map<string, Record<string, any>> = new Map();
   private readonly basePath: string;
+  private readonly fileService: ConfigFileService;
 
   constructor(options: InheritanceProcessorOptions = {}, logger: ILogger, basePath: string) {
     if (!basePath) {
@@ -33,18 +36,19 @@ export class InheritanceProcessor implements IConfigProcessor {
     this.maxDepth = options.maxDepth || 10;
     this.logger = logger;
     this.basePath = basePath;
+    this.fileService = new ConfigFileService(logger, ['.toml']);
   }
 
   /**
    * 处理配置继承
    */
-  process(config: Record<string, any>): Record<string, any> {
+  async process(config: Record<string, any>): Promise<Record<string, any>> {
     this.logger.debug('开始处理配置继承');
 
     // 清空缓存
     this.loadingCache.clear();
 
-    const processed = this.processInheritance(config, new Set<string>());
+    const processed = await this.processInheritance(config, new Set<string>());
 
     this.logger.debug('配置继承处理完成');
     return processed;
@@ -53,10 +57,10 @@ export class InheritanceProcessor implements IConfigProcessor {
   /**
    * 递归处理继承关系
    */
-  private processInheritance(
+  private async processInheritance(
     config: Record<string, any>,
     visited: Set<string>
-  ): Record<string, any> {
+  ): Promise<Record<string, any>> {
     // 检查是否包含继承信息
     if (!config['inherits_from'] || !Array.isArray(config['inherits_from'])) {
       return config;
@@ -81,7 +85,7 @@ export class InheritanceProcessor implements IConfigProcessor {
       try {
         this.logger.debug('加载父配置', { path: parentPath });
 
-        const parentConfig = this.loadParentConfig(parentPath, visited);
+        const parentConfig = await this.loadParentConfig(parentPath, visited);
         result = this.mergeConfigs(result, parentConfig);
       } catch (error) {
         this.logger.error('加载父配置失败', error as Error, {
@@ -100,8 +104,9 @@ export class InheritanceProcessor implements IConfigProcessor {
 
   /**
    * 加载父配置文件
+   * 修复：改为异步方法，使用统一的文件服务
    */
-  private loadParentConfig(parentPath: string, visited: Set<string>): Record<string, any> {
+  private async loadParentConfig(parentPath: string, visited: Set<string>): Promise<Record<string, any>> {
     // 检查缓存
     if (this.loadingCache.has(parentPath)) {
       return this.loadingCache.get(parentPath)!;
@@ -110,9 +115,14 @@ export class InheritanceProcessor implements IConfigProcessor {
     // 解析路径
     const resolvedPath = this.resolvePath(parentPath);
 
-    // 读取文件
-    const content = require('fs').readFileSync(resolvedPath, 'utf8');
-    const config = this.parseContent(content, resolvedPath);
+    // 检查文件是否存在
+    const exists = await this.fileService.fileExists(resolvedPath);
+    if (!exists) {
+      throw new InvalidConfigurationError('file', `父配置文件不存在: ${resolvedPath}`);
+    }
+
+    // 读取并解析文件（使用统一的文件服务）
+    const config = await this.fileService.readAndParse(resolvedPath);
 
     // 递归处理继承
     const newVisited = new Set(visited);
@@ -138,25 +148,6 @@ export class InheritanceProcessor implements IConfigProcessor {
 
     // 相对路径基于配置文件所在目录（basePath）
     return path.resolve(this.basePath, parentPath);
-  }
-
-  /**
-   * 解析文件内容
-   *
-   * 统一使用TOML格式，移除JSON和YAML支持
-   */
-  private parseContent(content: string, filePath: string): Record<string, any> {
-    const ext = path.extname(filePath).toLowerCase();
-
-    if (ext !== '.toml') {
-      throw new InvalidConfigurationError('format', `不支持的配置文件格式: ${ext}，仅支持TOML格式`);
-    }
-
-    try {
-      return parseToml(content);
-    } catch (error) {
-      throw new InvalidConfigurationError('content', `解析配置文件失败 ${filePath}: ${(error as Error).message}`);
-    }
   }
 
   /**

@@ -7,7 +7,7 @@
  * 配置处理器接口
  */
 export interface IConfigProcessor {
-  process(config: Record<string, any>): Record<string, any>;
+  process(config: Record<string, any>): Record<string, any> | Promise<Record<string, any>>;
 }
 
 /**

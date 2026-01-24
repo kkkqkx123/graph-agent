@@ -81,9 +81,9 @@ export class ProcessorPipeline {
 
   /**
    * 处理配置
-   * 
-   * 按顺序执行所有处理器
-   * 
+   *
+   * 按顺序执行所有处理器，支持同步和异步处理器
+   *
    * @param config - 配置对象
    * @returns 处理后的配置对象
    */
@@ -95,7 +95,8 @@ export class ProcessorPipeline {
     for (const processor of this.processors) {
       try {
         this.logger.debug('执行处理器', { processor: processor.constructor.name });
-        result = processor.process(result);
+        const processed = processor.process(result);
+        result = processed instanceof Promise ? await processed : processed;
         this.logger.debug('处理器执行完成', { processor: processor.constructor.name });
       } catch (error) {
         this.logger.error('处理器执行失败', error as Error, {
