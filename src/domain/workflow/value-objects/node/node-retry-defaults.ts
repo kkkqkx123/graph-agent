@@ -1,5 +1,5 @@
 import { NodeRetryStrategy } from './node-retry-strategy';
-import { NodeTypeValue } from './node/node-type';
+import { NodeTypeValue } from './node-type';
 
 /**
  * 节点类型默认重试策略映射

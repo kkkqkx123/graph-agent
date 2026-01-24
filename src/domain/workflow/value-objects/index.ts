@@ -12,8 +12,8 @@ export * from './workflow-status';
 export * from './workflow-type';
 export * from './workflow-config';
 export * from './workflow-definition';
-export * from './node-retry-strategy';
-export * from './node-retry-defaults';
+export * from './node/node-retry-strategy';
+export * from './node/node-retry-defaults';
 export * from './execution';
 export * from './context';
 

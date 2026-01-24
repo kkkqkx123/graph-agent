@@ -20,8 +20,8 @@ import {
 import { ILogger } from '../../../domain/common';
 import { BaseService } from '../../common/base-service';
 import { NodeTypeConfig } from './node-type-config';
-import { NodeRetryStrategy } from '../../../domain/workflow/value-objects/node-retry-strategy';
-import { getDefaultRetryStrategy } from '../../../domain/workflow/value-objects/node-retry-defaults';
+import { NodeRetryStrategy } from '../../../domain/workflow/value-objects/node/node-retry-strategy';
+import { getDefaultRetryStrategy } from '../../../domain/workflow/value-objects/node/node-retry-defaults';
 
 /**
  * 通用节点配置属性

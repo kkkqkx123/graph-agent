@@ -3,7 +3,7 @@ import { Timestamp, Version } from '../../common/value-objects';
 import { NodeId } from '../value-objects/node/node-id';
 import { NodeType } from '../value-objects/node/node-type';
 import { NodeStatus } from '../value-objects/node/node-status';
-import { NodeRetryStrategy } from '../value-objects/node-retry-strategy';
+import { NodeRetryStrategy } from '../value-objects/node/node-retry-strategy';
 
 /**
  * 节点执行结果接口

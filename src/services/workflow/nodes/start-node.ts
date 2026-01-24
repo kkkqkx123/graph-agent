@@ -11,7 +11,7 @@ import {
   ValidationResult,
   WorkflowExecutionContext,
 } from '../../../domain/workflow/entities/node';
-import { NodeRetryStrategy } from '../../../domain/workflow/value-objects/node-retry-strategy';
+import { NodeRetryStrategy } from '../../../domain/workflow/value-objects/node/node-retry-strategy';
 
 /**
  * 开始节点
@@ -163,7 +163,7 @@ export class StartNode extends Node {
       props.description,
       props.position
     );
-    
+
     // 如果有重试策略配置，更新节点的重试策略
     if (props.retryStrategy) {
       return node.updateRetryStrategy(
@@ -172,7 +172,7 @@ export class StartNode extends Node {
           : NodeRetryStrategy.fromConfig(props.retryStrategy)
       ) as StartNode;
     }
-    
+
     return node;
   }
 }

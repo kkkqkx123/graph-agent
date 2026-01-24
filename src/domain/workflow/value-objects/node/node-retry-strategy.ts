@@ -1,4 +1,4 @@
-import { ValueObject } from '../../common/value-objects';
+import { ValueObject } from '../../../common/value-objects';
 
 /**
  * 节点重试策略属性接口
