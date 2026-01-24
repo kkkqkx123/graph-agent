@@ -15,7 +15,6 @@ export enum NodeTypeValue {
   CONDITION = 'condition',
   LLM = 'llm',
   TOOL = 'tool',
-  WAIT = 'wait',
   USER_INTERACTION = 'user-interaction',
   CONTEXT_PROCESSOR = 'context-processor',
   LOOP_START = 'loop-start',
@@ -162,17 +161,6 @@ export class NodeType extends ValueObject<NodeTypeProps> {
     contextType: NodeContextTypeValue = NodeContextTypeValue.TOOL_CONTEXT
   ): NodeType {
     return new NodeType({ value: NodeTypeValue.TOOL, contextType });
-  }
-
-  /**
-   * 创建等待节点类型
-   * @param contextType 上下文类型（可选，默认为PASS_THROUGH）
-   * @returns 等待节点类型实例
-   */
-  public static wait(
-    contextType: NodeContextTypeValue = NodeContextTypeValue.PASS_THROUGH
-  ): NodeType {
-    return new NodeType({ value: NodeTypeValue.WAIT, contextType });
   }
 
   /**
@@ -352,14 +340,6 @@ export class NodeType extends ValueObject<NodeTypeProps> {
   }
 
   /**
-   * 检查是否为等待节点
-   * @returns 是否为等待节点
-   */
-  public isWait(): boolean {
-    return this.props.value === NodeTypeValue.WAIT;
-  }
-
-  /**
    * 检查是否为自定义节点
    * @returns 是否为自定义节点
    */
@@ -428,7 +408,6 @@ export class NodeType extends ValueObject<NodeTypeProps> {
       this.isCondition() ||
       this.isLLM() ||
       this.isTool() ||
-      this.isWait() ||
       this.isUserInteraction() ||
       this.isContextProcessor()
     );
@@ -508,7 +487,6 @@ export class NodeType extends ValueObject<NodeTypeProps> {
       [NodeTypeValue.CONDITION]: '条件节点，根据状态进行条件判断和路由决策',
       [NodeTypeValue.LLM]: 'LLM节点，调用大语言模型进行文本生成',
       [NodeTypeValue.TOOL]: '工具节点，执行工具调用并处理结果',
-      [NodeTypeValue.WAIT]: '等待节点，处理等待和延迟逻辑',
       [NodeTypeValue.USER_INTERACTION]: '用户交互节点，通过前端与用户交互进行人工中转',
       [NodeTypeValue.CUSTOM]: '自定义节点，根据特定逻辑执行',
       [NodeTypeValue.CONTEXT_PROCESSOR]: '上下文处理器节点，处理和转换提示词上下文',

@@ -5,13 +5,11 @@ import {
   NodeContextTypeValue,
 } from '../../../domain/workflow/value-objects/node/node-type';
 import { Node } from '../../../domain/workflow/entities/node';
-import { LLMNode } from './llm-node';
-import { ToolCallNode } from './tool-call-node';
+import { PlaceholderNode } from '../../../domain/workflow/value-objects/node/placeholder-node';
 import { ConditionNode } from './condition-node';
 import { DataTransformNode } from './data-transform-node';
 import { StartNode } from './start-node';
 import { EndNode } from './end-node';
-import { ContextProcessorNode } from './context-processor-node';
 import { PromptSource } from '../../prompts/prompt-builder';
 import {
   WrapperConfig,
@@ -71,9 +69,12 @@ export interface EndNodeConfig extends BaseNodeConfig {
 }
 
 /**
- * LLM节点配置
+ * LLM节点工厂配置
+ *
+ * 注意：这是工厂配置接口，用于从外部配置创建节点
+ * 实际的节点配置使用 LLMNodeConfig 值对象
  */
-export interface LLMNodeConfig extends BaseNodeConfig {
+export interface LLMNodeFactoryConfig extends BaseNodeConfig {
   type: 'llm';
   /** Wrapper配置 */
   wrapperConfig?: WrapperConfig;
@@ -97,12 +98,21 @@ export interface LLMNodeConfig extends BaseNodeConfig {
   maxTokens?: number;
   /** 是否流式输出 */
   stream?: boolean;
+  /** 工具调用模式 */
+  toolMode?: 'none' | 'auto' | 'required';
+  /** 可用工具列表 */
+  availableTools?: string[];
+  /** 最大迭代次数 */
+  maxIterations?: number;
 }
 
 /**
- * 工具调用节点配置
+ * 工具节点工厂配置
+ *
+ * 注意：这是工厂配置接口，用于从外部配置创建节点
+ * 实际的节点配置使用 ToolNodeConfig 值对象
  */
-export interface ToolCallNodeConfig extends BaseNodeConfig {
+export interface ToolNodeFactoryConfig extends BaseNodeConfig {
   type: 'tool' | 'tool-call';
   /** 工具名称 */
   toolName: string;
@@ -139,9 +149,12 @@ export interface DataTransformNodeConfig extends BaseNodeConfig {
 }
 
 /**
- * 上下文处理器节点配置
+ * 上下文处理器节点工厂配置
+ *
+ * 注意：这是工厂配置接口，用于从外部配置创建节点
+ * 实际的节点配置使用 ContextProcessorConfig 值对象
  */
-export interface ContextProcessorNodeConfig extends BaseNodeConfig {
+export interface ContextProcessorFactoryConfig extends BaseNodeConfig {
   type: 'context-processor';
   /** 处理器名称 */
   processorName: string;
@@ -156,11 +169,17 @@ export interface ContextProcessorNodeConfig extends BaseNodeConfig {
 export type NodeConfig =
   | StartNodeConfig
   | EndNodeConfig
-  | LLMNodeConfig
-  | ToolCallNodeConfig
+  | LLMNodeFactoryConfig
+  | ToolNodeFactoryConfig
   | ConditionNodeConfig
   | DataTransformNodeConfig
-  | ContextProcessorNodeConfig;
+  | ContextProcessorFactoryConfig;
+
+/**
+ * 节点创建结果联合类型
+ * 可以是 Node 实体或 PlaceholderNode 值对象
+ */
+export type NodeCreationResult = Node | PlaceholderNode;
 
 /**
  * 节点工厂类
@@ -175,56 +194,61 @@ export class NodeFactory extends BaseService {
   /**
    * 创建节点（通用方法）
    * @param config 节点配置
-   * @returns 节点实例
+   * @returns 节点实例或占位符节点
    */
-  create(config: NodeConfig): Node {
+  create(config: NodeConfig): NodeCreationResult {
     const nodeId = config.id ? NodeId.fromString(config.id) : NodeId.generate();
 
     this.logger.debug('创建节点', { nodeType: config.type, nodeId: config.id });
 
     // 使用类型守卫根据 config.type 创建节点
     // TypeScript 的 exhaustiveness check 会确保我们处理了所有情况
-    let node: Node;
+    let result: NodeCreationResult;
     switch (config.type) {
       case 'start':
-        node = this.createStartNode(nodeId, config);
+        result = this.createStartNode(nodeId, config);
         break;
 
       case 'end':
-        node = this.createEndNode(nodeId, config);
+        result = this.createEndNode(nodeId, config);
         break;
 
       case 'llm':
-        node = this.createLLMNode(nodeId, config);
+        result = this.createLLMPlaceholder(nodeId, config);
         break;
 
       case 'tool':
       case 'tool-call':
-        node = this.createToolCallNode(nodeId, config);
+        result = this.createToolPlaceholder(nodeId, config);
         break;
 
       case 'condition':
-        node = this.createConditionNode(nodeId, config);
+        result = this.createConditionNode(nodeId, config);
         break;
 
       case 'data-transform':
-        node = this.createDataTransformNode(nodeId, config);
+        result = this.createDataTransformNode(nodeId, config);
         break;
 
       case 'context-processor':
-        node = this.createContextProcessorNode(nodeId, config);
+        result = this.createContextProcessorPlaceholder(nodeId, config);
         break;
     }
 
-    // 应用重试策略配置
-    if (config.retryStrategy) {
-      const retryStrategy = NodeRetryStrategy.fromConfig(config.retryStrategy);
-      return node.updateRetryStrategy(retryStrategy);
+    // 对于 Node 类型，应用重试策略配置
+    if (result instanceof Node) {
+      if (config.retryStrategy) {
+        const retryStrategy = NodeRetryStrategy.fromConfig(config.retryStrategy);
+        return result.updateRetryStrategy(retryStrategy);
+      }
+
+      // 如果没有配置重试策略，使用节点类型的默认策略
+      const defaultRetryStrategy = getDefaultRetryStrategy(this.parseNodeType(config.type));
+      return result.updateRetryStrategy(defaultRetryStrategy);
     }
 
-    // 如果没有配置重试策略，使用节点类型的默认策略
-    const defaultRetryStrategy = getDefaultRetryStrategy(this.parseNodeType(config.type));
-    return node.updateRetryStrategy(defaultRetryStrategy);
+    // PlaceholderNode 不需要重试策略
+    return result;
   }
 
   /**
@@ -266,81 +290,54 @@ export class NodeFactory extends BaseService {
   }
 
   /**
-   * 创建LLM节点
+   * 创建LLM占位符节点
    */
-  private createLLMNode(id: NodeId, config: LLMNodeConfig): LLMNode {
-    // 构建wrapper配置
-    let wrapperConfig: WrapperConfig;
-
-    if (config.wrapperConfig) {
-      wrapperConfig = config.wrapperConfig;
-    } else if (config.wrapper_type) {
-      wrapperConfig = this.buildWrapperConfigFromParams(config);
-    } else {
-      throw new Error('LLM节点需要wrapperConfig配置');
-    }
-
-    return new LLMNode(
-      id,
-      wrapperConfig,
-      config.prompt,
-      config.systemPrompt,
-      config.contextProcessorName || 'llm',
-      config.temperature,
-      config.maxTokens,
-      config.stream || false,
-      config.name,
-      config.description,
-      config.position
-    );
-  }
-
-  /**
-   * 从独立参数构建wrapper配置
-   */
-  private buildWrapperConfigFromParams(config: LLMNodeConfig): WrapperConfig {
-    const wrapperConfig: WrapperConfig = {
-      type: config.wrapper_type!,
+  private createLLMPlaceholder(id: NodeId, config: LLMNodeFactoryConfig): PlaceholderNode {
+    const llmConfig = {
+      provider: config.wrapper_provider || config.wrapper_name || 'default',
+      model: config.wrapper_model || config.wrapper_name || 'default',
+      temperature: config.temperature,
+      maxTokens: config.maxTokens,
+      systemPrompt: this.extractPromptContent(config.systemPrompt),
+      userPrompt: this.extractPromptContent(config.prompt),
+      stream: config.stream,
+      toolMode: config.toolMode,
+      availableTools: config.availableTools,
+      maxIterations: config.maxIterations
     };
 
-    if (config.wrapper_type === 'pool' || config.wrapper_type === 'group') {
-      if (!config.wrapper_name) {
-        throw new Error(`${config.wrapper_type}类型需要wrapper_name参数`);
-      }
-      wrapperConfig.name = config.wrapper_name;
-    } else if (config.wrapper_type === 'direct') {
-      if (!config.wrapper_provider) {
-        throw new Error('direct类型需要wrapper_provider参数');
-      }
-      if (!config.wrapper_model) {
-        throw new Error('direct类型需要wrapper_model参数');
-      }
-      wrapperConfig.provider = config.wrapper_provider;
-      wrapperConfig.model = config.wrapper_model;
-    }
-
-    // 验证配置
-    const validation = validateWrapperConfig(wrapperConfig);
-    if (!validation.isValid) {
-      throw new Error(`wrapper配置验证失败: ${validation.errors.join(', ')}`);
-    }
-
-    return wrapperConfig;
+    return PlaceholderNode.llm(id, llmConfig, config.name, config.description);
   }
 
   /**
-   * 创建工具调用节点
+   * 从 PromptSource 提取内容
    */
-  private createToolCallNode(id: NodeId, config: ToolCallNodeConfig): ToolCallNode {
-    return new ToolCallNode(
-      id,
-      config.toolName,
-      config.toolParameters || {},
-      config.timeout || 30000,
-      config.name,
-      config.description,
-      config.position
-    );
+  private extractPromptContent(promptSource?: PromptSource): string {
+    if (!promptSource) {
+      return '';
+    }
+    
+    if (promptSource.type === 'direct') {
+      return promptSource.content;
+    } else if (promptSource.type === 'template') {
+      // 对于模板类型，返回模板标识
+      return `${promptSource.category}:${promptSource.name}`;
+    }
+    
+    return '';
+  }
+
+  /**
+   * 创建工具占位符节点
+   */
+  private createToolPlaceholder(id: NodeId, config: ToolNodeFactoryConfig): PlaceholderNode {
+    const toolConfig = {
+      toolName: config.toolName,
+      parameters: config.toolParameters || {},
+      timeout: config.timeout
+    };
+
+    return PlaceholderNode.tool(id, toolConfig, config.name, config.description);
   }
 
   /**
@@ -374,17 +371,15 @@ export class NodeFactory extends BaseService {
   }
 
   /**
-   * 创建上下文处理器节点
+   * 创建上下文处理器占位符节点
    */
-  private createContextProcessorNode(id: NodeId, config: ContextProcessorNodeConfig): ContextProcessorNode {
-    return new ContextProcessorNode(
-      id,
-      config.processorName,
-      config.processorConfig,
-      config.name,
-      config.description,
-      config.position
-    );
+  private createContextProcessorPlaceholder(id: NodeId, config: ContextProcessorFactoryConfig): PlaceholderNode {
+    const contextProcessorConfig = {
+      processorName: config.processorName,
+      processorConfig: config.processorConfig
+    };
+
+    return PlaceholderNode.contextProcessor(id, contextProcessorConfig, config.name, config.description);
   }
 
   /**

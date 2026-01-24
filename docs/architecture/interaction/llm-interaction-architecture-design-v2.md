@@ -1,4 +1,4 @@
-# LLM Interaction 架构设计文档
+# LLM Interaction 架构设计文档 V2
 
 ## 一、核心设计目标
 
@@ -9,9 +9,15 @@
 
 ### 1.2 命名规范
 为避免混淆，采用以下命名：
-- **Interaction Layer**：LLM 交互层（原 Agent Layer）
-- **InteractionEngine**：LLM 交互引擎（原 AgentEngine）
-- **InteractionContext**：LLM 交互上下文（原 AgentContext）
+- **Interaction Layer**：LLM 交互层
+- **InteractionEngine**：LLM 交互引擎
+- **InteractionContext**：LLM 交互上下文
+
+### 1.3 节点设计原则
+参考 [`MarkerNode`](src/domain/workflow/value-objects/node/marker-node.ts:90) 的设计模式：
+- 节点是**值对象**，不可变，没有身份标识
+- 节点**不执行业务逻辑**，只负责存储配置
+- 节点的配置由 **Thread** 处理
 
 ## 二、架构分层
 
@@ -33,8 +39,7 @@ graph TB
     
     subgraph "Interaction Layer"
         C1[InteractionEngine]
-        C2[ContextManager]
-        C3[ToolExecutor]
+        C2[ToolExecutor]
     end
     
     subgraph "Domain Layer"
@@ -42,162 +47,385 @@ graph TB
         D2[Workflow]
         D3[Node]
         D4[InteractionContext]
+        D5[LLMNodeConfig]
+        D6[ToolNodeConfig]
+        D7[ContextProcessorConfig]
     end
 ```
 
-## 三、各层职责定义
+## 三、节点设计（基于 MarkerNode 模式）
 
-### 3.1 Workflow 层（纯配置）
+### 3.1 LLM 节点配置（值对象）
 
-**核心原则**：只包含配置信息，不包含任何执行逻辑
-
-#### LLM Node（配置）
 ```typescript
-export interface LLMNodeConfig {
-  provider: string;           // LLM提供商
-  model: string;              // 模型名称
-  temperature?: number;       // 温度参数
-  maxTokens?: number;         // 最大token数
-  systemPrompt?: string;      // 系统提示词
-  userPrompt: string;         // 用户提示词（支持模板）
-  stream?: boolean;           // 是否流式输出
-  toolMode?: 'none' | 'auto' | 'required';  // 工具调用模式
-  availableTools?: string[];  // 可用工具列表
-  maxIterations?: number;     // 最大迭代次数（用于ReAct模式）
-}
+/**
+ * LLM节点配置值对象
+ * 
+ * 参考 MarkerNode 设计模式：
+ * - 不可变值对象
+ * - 不包含执行逻辑
+ * - 仅存储配置信息
+ * - 由 Thread 处理执行
+ */
+export class LLMNodeConfig {
+  private readonly _provider: string;
+  private readonly _model: string;
+  private readonly _temperature?: number;
+  private readonly _maxTokens?: number;
+  private readonly _systemPrompt?: string;
+  private readonly _userPrompt: string;
+  private readonly _stream?: boolean;
+  private readonly _toolMode: 'none' | 'auto' | 'required';
+  private readonly _availableTools?: string[];
+  private readonly _maxIterations?: number;
 
-export class LLMNode extends Node {
-  constructor(
-    id: NodeId,
-    public readonly config: LLMNodeConfig,
-    name?: string,
-    description?: string,
-    position?: { x: number; y: number }
-  ) {
-    super(id, NodeType.llm(), name, description, position);
+  private constructor(props: {
+    provider: string;
+    model: string;
+    temperature?: number;
+    maxTokens?: number;
+    systemPrompt?: string;
+    userPrompt: string;
+    stream?: boolean;
+    toolMode?: 'none' | 'auto' | 'required';
+    availableTools?: string[];
+    maxIterations?: number;
+  }) {
+    this._provider = props.provider;
+    this._model = props.model;
+    this._temperature = props.temperature;
+    this._maxTokens = props.maxTokens;
+    this._systemPrompt = props.systemPrompt;
+    this._userPrompt = props.userPrompt;
+    this._stream = props.stream;
+    this._toolMode = props.toolMode || 'none';
+    this._availableTools = props.availableTools;
+    this._maxIterations = props.maxIterations;
   }
 
-  // 执行逻辑完全委托给Thread
-  async execute(context: WorkflowExecutionContext): Promise<NodeExecutionResult> {
-    const thread = context.getService<Thread>('Thread');
-    return thread.executeNode(this, context);
+  // Getters
+  get provider(): string { return this._provider; }
+  get model(): string { return this._model; }
+  get temperature(): number | undefined { return this._temperature; }
+  get maxTokens(): number | undefined { return this._maxTokens; }
+  get systemPrompt(): string | undefined { return this._systemPrompt; }
+  get userPrompt(): string { return this._userPrompt; }
+  get stream(): boolean | undefined { return this._stream; }
+  get toolMode(): 'none' | 'auto' | 'required' { return this._toolMode; }
+  get availableTools(): string[] | undefined { return this._availableTools; }
+  get maxIterations(): number | undefined { return this._maxIterations; }
+
+  /**
+   * 创建 LLM 节点配置
+   */
+  static create(props: {
+    provider: string;
+    model: string;
+    temperature?: number;
+    maxTokens?: number;
+    systemPrompt?: string;
+    userPrompt: string;
+    stream?: boolean;
+    toolMode?: 'none' | 'auto' | 'required';
+    availableTools?: string[];
+    maxIterations?: number;
+  }): LLMNodeConfig {
+    if (!props.provider) {
+      throw new Error('provider is required');
+    }
+    if (!props.model) {
+      throw new Error('model is required');
+    }
+    if (!props.userPrompt) {
+      throw new Error('userPrompt is required');
+    }
+
+    return new LLMNodeConfig(props);
   }
 
-  validate(): ValidationResult {
-    // 仅验证配置完整性
-    const errors: string[] = [];
-    if (!this.config.provider) errors.push('provider is required');
-    if (!this.config.model) errors.push('model is required');
-    if (!this.config.userPrompt) errors.push('userPrompt is required');
-    return { valid: errors.length === 0, errors };
+  /**
+   * 从属性创建
+   */
+  static fromProps(props: Record<string, any>): LLMNodeConfig {
+    return LLMNodeConfig.create({
+      provider: props.provider,
+      model: props.model,
+      temperature: props.temperature,
+      maxTokens: props.maxTokens,
+      systemPrompt: props.systemPrompt,
+      userPrompt: props.userPrompt,
+      stream: props.stream,
+      toolMode: props.toolMode,
+      availableTools: props.availableTools,
+      maxIterations: props.maxIterations
+    });
+  }
+
+  /**
+   * 转换为 JSON
+   */
+  toJSON(): Record<string, any> {
+    return {
+      provider: this._provider,
+      model: this._model,
+      temperature: this._temperature,
+      maxTokens: this._maxTokens,
+      systemPrompt: this._systemPrompt,
+      userPrompt: this._userPrompt,
+      stream: this._stream,
+      toolMode: this._toolMode,
+      availableTools: this._availableTools,
+      maxIterations: this._maxIterations
+    };
+  }
+
+  /**
+   * 判断相等
+   */
+  equals(other: LLMNodeConfig): boolean {
+    return JSON.stringify(this.toJSON()) === JSON.stringify(other.toJSON());
   }
 }
 ```
 
-#### Tool Call Node（配置）
+### 3.2 工具节点配置（值对象）
+
 ```typescript
-export interface ToolCallNodeConfig {
-  toolName: string;                    // 工具名称
-  parameters: Record<string, any>;     // 工具参数（支持表达式）
-  timeout?: number;                    // 超时时间
-}
+/**
+ * 工具节点配置值对象
+ * 
+ * 参考 MarkerNode 设计模式
+ */
+export class ToolNodeConfig {
+  private readonly _toolName: string;
+  private readonly _parameters: Record<string, any>;
+  private readonly _timeout?: number;
 
-export class ToolCallNode extends Node {
-  constructor(
-    id: NodeId,
-    public readonly config: ToolCallNodeConfig,
-    name?: string,
-    description?: string,
-    position?: { x: number; y: number }
-  ) {
-    super(id, NodeType.tool(), name, description, position);
+  private constructor(props: {
+    toolName: string;
+    parameters: Record<string, any>;
+    timeout?: number;
+  }) {
+    this._toolName = props.toolName;
+    this._parameters = { ...props.parameters };
+    this._timeout = props.timeout;
   }
 
-  // 执行逻辑完全委托给Thread
-  async execute(context: WorkflowExecutionContext): Promise<NodeExecutionResult> {
-    const thread = context.getService<Thread>('Thread');
-    return thread.executeNode(this, context);
+  get toolName(): string { return this._toolName; }
+  get parameters(): Record<string, any> { return { ...this._parameters }; }
+  get timeout(): number | undefined { return this._timeout; }
+
+  /**
+   * 创建工具节点配置
+   */
+  static create(props: {
+    toolName: string;
+    parameters: Record<string, any>;
+    timeout?: number;
+  }): ToolNodeConfig {
+    if (!props.toolName) {
+      throw new Error('toolName is required');
+    }
+
+    return new ToolNodeConfig(props);
   }
 
-  validate(): ValidationResult {
-    const errors: string[] = [];
-    if (!this.config.toolName) errors.push('toolName is required');
-    return { valid: errors.length === 0, errors };
+  /**
+   * 从属性创建
+   */
+  static fromProps(props: Record<string, any>): ToolNodeConfig {
+    return ToolNodeConfig.create({
+      toolName: props.toolName,
+      parameters: props.parameters || {},
+      timeout: props.timeout
+    });
+  }
+
+  /**
+   * 转换为 JSON
+   */
+  toJSON(): Record<string, any> {
+    return {
+      toolName: this._toolName,
+      parameters: this._parameters,
+      timeout: this._timeout
+    };
+  }
+
+  /**
+   * 判断相等
+   */
+  equals(other: ToolNodeConfig): boolean {
+    return JSON.stringify(this.toJSON()) === JSON.stringify(other.toJSON());
   }
 }
 ```
 
-#### Context Processor Node（配置）
+### 3.3 上下文处理器配置（值对象）
+
 ```typescript
-export interface ContextProcessorNodeConfig {
-  processorName: string;               // 处理器名称
-  processorConfig?: Record<string, unknown>;  // 处理器配置
-}
+/**
+ * 上下文处理器配置值对象
+ * 
+ * 参考 MarkerNode 设计模式
+ */
+export class ContextProcessorConfig {
+  private readonly _processorName: string;
+  private readonly _processorConfig: Record<string, unknown>;
 
-export class ContextProcessorNode extends Node {
-  constructor(
-    id: NodeId,
-    public readonly config: ContextProcessorNodeConfig,
-    name?: string,
-    description?: string,
-    position?: { x: number; y: number }
-  ) {
-    super(id, NodeType.contextProcessor(), name, description, position);
+  private constructor(props: {
+    processorName: string;
+    processorConfig?: Record<string, unknown>;
+  }) {
+    this._processorName = props.processorName;
+    this._processorConfig = { ...props.processorConfig };
   }
 
-  // 执行逻辑完全委托给Thread
-  async execute(context: WorkflowExecutionContext): Promise<NodeExecutionResult> {
-    const thread = context.getService<Thread>('Thread');
-    return thread.executeNode(this, context);
+  get processorName(): string { return this._processorName; }
+  get processorConfig(): Record<string, unknown> { return { ...this._processorConfig }; }
+
+  /**
+   * 创建上下文处理器配置
+   */
+  static create(props: {
+    processorName: string;
+    processorConfig?: Record<string, unknown>;
+  }): ContextProcessorConfig {
+    if (!props.processorName) {
+      throw new Error('processorName is required');
+    }
+
+    return new ContextProcessorConfig(props);
   }
 
-  validate(): ValidationResult {
-    const errors: string[] = [];
-    if (!this.config.processorName) errors.push('processorName is required');
-    return { valid: errors.length === 0, errors };
+  /**
+   * 从属性创建
+   */
+  static fromProps(props: Record<string, any>): ContextProcessorConfig {
+    return ContextProcessorConfig.create({
+      processorName: props.processorName,
+      processorConfig: props.processorConfig || {}
+    });
+  }
+
+  /**
+   * 转换为 JSON
+   */
+  toJSON(): Record<string, any> {
+    return {
+      processorName: this._processorName,
+      processorConfig: this._processorConfig
+    };
+  }
+
+  /**
+   * 判断相等
+   */
+  equals(other: ContextProcessorConfig): boolean {
+    return JSON.stringify(this.toJSON()) === JSON.stringify(other.toJSON());
   }
 }
 ```
 
-### 3.2 Thread 层（执行协调）
-
-**核心职责**：
-- 管理 Workflow 执行生命周期
-- 协调节点执行顺序
-- 管理 InteractionEngine 生命周期
-- 维护跨节点的执行状态
-- 调用 InteractionEngine 执行 LLM 相关操作
+### 3.4 节点类型扩展
 
 ```typescript
+/**
+ * 节点类型枚举
+ */
+export enum NodeType {
+  /** LLM 节点 */
+  LLM = 'llm',
+  /** 工具节点 */
+  TOOL = 'tool',
+  /** 上下文处理器节点 */
+  CONTEXT_PROCESSOR = 'context_processor',
+  /** 标记节点 */
+  MARKER = 'marker',
+  /** 其他节点类型... */
+}
+
+/**
+ * 节点配置联合类型
+ */
+export type NodeConfig = 
+  | LLMNodeConfig 
+  | ToolNodeConfig 
+  | ContextProcessorConfig 
+  | MarkerNode;
+```
+
+## 四、Thread 层（执行协调）
+
+### 4.1 Thread 接口
+
+```typescript
+/**
+ * Thread 接口
+ * 
+ * 负责协调 workflow 执行和管理 InteractionEngine
+ * 所有节点的执行逻辑都由 Thread 处理
+ */
 export interface IThread {
-  // 执行节点（统一入口）
+  /**
+   * 执行节点（统一入口）
+   * @param node 节点
+   * @param context 执行上下文
+   * @returns 执行结果
+   */
   executeNode(
     node: Node,
     context: WorkflowExecutionContext
   ): Promise<NodeExecutionResult>;
 
-  // 执行LLM节点
+  /**
+   * 执行 LLM 节点
+   * @param config LLM 节点配置
+   * @param context 执行上下文
+   * @returns 执行结果
+   */
   executeLLMNode(
-    node: LLMNode,
+    config: LLMNodeConfig,
     context: WorkflowExecutionContext
   ): Promise<NodeExecutionResult>;
 
-  // 执行工具节点
+  /**
+   * 执行工具节点
+   * @param config 工具节点配置
+   * @param context 执行上下文
+   * @returns 执行结果
+   */
   executeToolNode(
-    node: ToolCallNode,
+    config: ToolNodeConfig,
     context: WorkflowExecutionContext
   ): Promise<NodeExecutionResult>;
 
-  // 执行上下文处理器节点
+  /**
+   * 执行上下文处理器节点
+   * @param config 上下文处理器配置
+   * @param context 执行上下文
+   * @returns 执行结果
+   */
   executeContextProcessorNode(
-    node: ContextProcessorNode,
+    config: ContextProcessorConfig,
     context: WorkflowExecutionContext
   ): Promise<NodeExecutionResult>;
 
-  // 获取 InteractionEngine
+  /**
+   * 获取 InteractionEngine
+   */
   getInteractionEngine(): InteractionEngine;
 }
+```
 
+### 4.2 Thread 实现
+
+```typescript
+/**
+ * Thread 实现
+ * 
+ * 负责协调 workflow 执行和管理 InteractionEngine
+ */
 export class Thread implements IThread {
   private interactionEngine: InteractionEngine;
   private executionState: ExecutionState;
@@ -205,46 +433,58 @@ export class Thread implements IThread {
   constructor(
     private threadId: string,
     private workflowId: string,
-    private sessionId: string
+    private sessionId: string,
+    interactionEngine?: InteractionEngine
   ) {
-    this.interactionEngine = new InteractionEngine();
+    this.interactionEngine = interactionEngine || new InteractionEngine();
     this.executionState = new ExecutionState();
   }
 
-  // 统一节点执行入口
+  /**
+   * 执行节点（统一入口）
+   * 
+   * 根据 node.config 的类型分发到对应的执行方法
+   */
   async executeNode(
     node: Node,
     context: WorkflowExecutionContext
   ): Promise<NodeExecutionResult> {
-    // 验证节点
-    const validation = node.validate();
-    if (!validation.valid) {
-      return {
-        success: false,
-        error: `Validation failed: ${validation.errors.join(', ')}`,
-        executionTime: 0
-      };
-    }
+    const startTime = Date.now();
 
-    // 根据节点类型分发
-    if (node instanceof LLMNode) {
-      return this.executeLLMNode(node, context);
-    } else if (node instanceof ToolCallNode) {
-      return this.executeToolNode(node, context);
-    } else if (node instanceof ContextProcessorNode) {
-      return this.executeContextProcessorNode(node, context);
-    } else {
+    try {
+      // 获取节点配置
+      const config = node.config;
+
+      // 根据配置类型分发
+      if (config instanceof LLMNodeConfig) {
+        return this.executeLLMNode(config, context);
+      } else if (config instanceof ToolNodeConfig) {
+        return this.executeToolNode(config, context);
+      } else if (config instanceof ContextProcessorConfig) {
+        return this.executeContextProcessorNode(config, context);
+      } else if (config instanceof MarkerNode) {
+        return this.executeMarkerNode(config, context);
+      } else {
+        return {
+          success: false,
+          error: `Unknown node config type: ${config.constructor.name}`,
+          executionTime: Date.now() - startTime
+        };
+      }
+    } catch (error) {
       return {
         success: false,
-        error: `Unknown node type: ${node.type}`,
-        executionTime: 0
+        error: error.message,
+        executionTime: Date.now() - startTime
       };
     }
   }
 
-  // 执行LLM节点
+  /**
+   * 执行 LLM 节点
+   */
   async executeLLMNode(
-    node: LLMNode,
+    config: LLMNodeConfig,
     context: WorkflowExecutionContext
   ): Promise<NodeExecutionResult> {
     const startTime = Date.now();
@@ -253,13 +493,10 @@ export class Thread implements IThread {
       // 1. 准备 InteractionContext
       const interactionContext = this.prepareInteractionContext(context);
 
-      // 2. 调用 InteractionEngine 执行LLM
-      const result = await this.interactionEngine.executeLLM(
-        node.config,
-        interactionContext
-      );
+      // 2. 调用 InteractionEngine 执行 LLM
+      const result = await this.interactionEngine.executeLLM(config, interactionContext);
 
-      // 3. 更新Workflow上下文
+      // 3. 更新 Workflow 上下文
       context.setVariable('output', result.output);
       context.setVariable('messages', result.context.messages);
       context.setVariable('llmCalls', result.context.llmCalls);
@@ -288,24 +525,26 @@ export class Thread implements IThread {
     }
   }
 
-  // 执行工具节点
+  /**
+   * 执行工具节点
+   */
   async executeToolNode(
-    node: ToolCallNode,
+    config: ToolNodeConfig,
     context: WorkflowExecutionContext
   ): Promise<NodeExecutionResult> {
     const startTime = Date.now();
 
     try {
       // 1. 准备参数（支持表达式求值）
-      const parameters = this.evaluateParameters(node.config.parameters, context);
+      const parameters = this.evaluateParameters(config.parameters, context);
 
       // 2. 调用 InteractionEngine 执行工具
       const result = await this.interactionEngine.executeTool(
-        node.config.toolName,
+        config.toolName,
         parameters
       );
 
-      // 3. 更新Workflow上下文
+      // 3. 更新 Workflow 上下文
       context.setVariable('output', result.output);
 
       const executionTime = Date.now() - startTime;
@@ -315,7 +554,7 @@ export class Thread implements IThread {
         output: result.output,
         executionTime,
         metadata: {
-          toolName: node.config.toolName,
+          toolName: config.toolName,
           executionTime
         }
       };
@@ -330,9 +569,11 @@ export class Thread implements IThread {
     }
   }
 
-  // 执行上下文处理器节点
+  /**
+   * 执行上下文处理器节点
+   */
   async executeContextProcessorNode(
-    node: ContextProcessorNode,
+    config: ContextProcessorConfig,
     context: WorkflowExecutionContext
   ): Promise<NodeExecutionResult> {
     const startTime = Date.now();
@@ -340,12 +581,12 @@ export class Thread implements IThread {
     try {
       // 1. 调用 InteractionEngine 处理上下文
       const result = await this.interactionEngine.processContext(
-        node.config.processorName,
-        node.config.processorConfig || {},
+        config.processorName,
+        config.processorConfig,
         this.interactionEngine.getContext()
       );
 
-      // 2. 更新Workflow上下文
+      // 2. 更新 Workflow 上下文
       if (result.processedContext) {
         context.setVariable('context', result.processedContext);
       }
@@ -357,7 +598,7 @@ export class Thread implements IThread {
         output: result.output,
         executionTime,
         metadata: {
-          processorName: node.config.processorName
+          processorName: config.processorName
         }
       };
     } catch (error) {
@@ -371,7 +612,65 @@ export class Thread implements IThread {
     }
   }
 
-  // 准备InteractionContext
+  /**
+   * 执行标记节点
+   */
+  async executeMarkerNode(
+    config: MarkerNode,
+    context: WorkflowExecutionContext
+  ): Promise<NodeExecutionResult> {
+    const startTime = Date.now();
+
+    try {
+      // 标记节点由相应的服务处理
+      // Fork -> ThreadFork
+      // Join -> ThreadJoin
+      // SubWorkflow -> WorkflowMerger
+      // LoopStart/LoopEnd -> LoopExecution
+
+      if (config.isFork()) {
+        const threadFork = context.getService<ThreadFork>('ThreadFork');
+        const result = await threadFork.executeFork({
+          parentThread: this,
+          forkPoint: config.id,
+          branches: config.getBranches()
+        });
+        return {
+          success: true,
+          output: result,
+          executionTime: Date.now() - startTime
+        };
+      } else if (config.isJoin()) {
+        const threadJoin = context.getService<ThreadJoin>('ThreadJoin');
+        const result = await threadJoin.executeJoin({
+          parentThread: this,
+          joinPoint: config.id,
+          childThreadIds: context.getVariable('child_thread_ids') || []
+        });
+        return {
+          success: true,
+          output: result,
+          executionTime: Date.now() - startTime
+        };
+      } else {
+        return {
+          success: false,
+          error: `Unsupported marker node type: ${config.type}`,
+          executionTime: Date.now() - startTime
+        };
+      }
+    } catch (error) {
+      return {
+        success: false,
+        error: error.message,
+        executionTime: Date.now() - startTime
+      };
+    }
+  }
+
+  /**
+   * 准备 InteractionContext
+   */
   private prepareInteractionContext(
     context: WorkflowExecutionContext
   ): InteractionContext {
@@ -388,7 +687,9 @@ export class Thread implements IThread {
     };
   }
 
-  // 参数求值（支持表达式）
+  /**
+   * 参数求值（支持表达式）
+   */
   private evaluateParameters(
     parameters: Record<string, any>,
     context: WorkflowExecutionContext
@@ -407,6 +708,9 @@ export class Thread implements IThread {
     return evaluated;
   }
 
+  /**
+   * 表达式求值
+   */
   private evaluateExpression(
     expression: string,
     context: WorkflowExecutionContext
@@ -422,60 +726,79 @@ export class Thread implements IThread {
 }
 ```
 
-### 3.3 Interaction 层（LLM 交互引擎）
+## 五、Interaction 层（LLM 交互引擎）
 
-**核心职责**：
-- 维护提示词上下文（messages 列表）
-- 执行 LLM API 调用
-- 协调工具调用（工具调用由 InteractionEngine 统一管理）
-- 管理上下文摘要（防止 token 溢出，参考 Mini-Agent）
-- 处理 LLM 响应和工具结果
+### 5.1 InteractionEngine 接口
 
 ```typescript
+/**
+ * InteractionEngine 接口
+ * 
+ * 负责所有 LLM 交互逻辑
+ */
 export interface IInteractionEngine {
-  // 执行LLM调用
+  /**
+   * 执行 LLM 调用
+   * @param config LLM 节点配置
+   * @param context Interaction 上下文
+   * @returns 执行结果
+   */
   executeLLM(
     config: LLMNodeConfig,
     context: InteractionContext
   ): Promise<InteractionLLMResult>;
 
-  // 执行工具调用
+  /**
+   * 执行工具调用
+   * @param toolName 工具名称
+   * @param parameters 工具参数
+   * @returns 执行结果
+   */
   executeTool(
     toolName: string,
     parameters: Record<string, any>
   ): Promise<InteractionToolResult>;
 
-  // 处理上下文
+  /**
+   * 处理上下文
+   * @param processorName 处理器名称
+   * @param config 处理器配置
+   * @param context Interaction 上下文
+   * @returns 处理结果
+   */
   processContext(
     processorName: string,
     config: Record<string, unknown>,
     context: InteractionContext
   ): Promise<InteractionContextResult>;
 
-  // 获取当前上下文
+  /**
+   * 获取当前上下文
+   */
   getContext(): InteractionContext;
 
-  // 更新上下文
+  /**
+   * 更新上下文
+   */
   updateContext(
     updater: (context: InteractionContext) => InteractionContext
   ): void;
 
-  // 摘要上下文（防止token溢出）
+  /**
+   * 摘要上下文（防止 token 溢出）
+   */
   summarizeContext(): Promise<void>;
 }
+```
 
-export interface InteractionContext {
-  messages: Message[];           // 消息历史
-  variables: Map<string, any>;   // 上下文变量
-  toolCalls: ToolCall[];         // 工具调用历史
-  llmCalls: LLMCall[];           // LLM调用历史
-  tokenUsage: {                  // Token使用量
-    promptTokens: number;
-    completionTokens: number;
-    totalTokens: number;
-  };
-}
+### 5.2 InteractionEngine 实现
 
+```typescript
+/**
+ * InteractionEngine 实现
+ * 
+ * 参考 Mini-Agent 的设计
+ */
 export class InteractionEngine implements IInteractionEngine {
   private context: InteractionContext;
   private llmClient: LLMClient;
@@ -504,23 +827,25 @@ export class InteractionEngine implements IInteractionEngine {
     };
   }
 
-  // 执行LLM调用（核心方法）
+  /**
+   * 执行 LLM 调用（核心方法）
+   */
   async executeLLM(
     config: LLMNodeConfig,
     context: InteractionContext
   ): Promise<InteractionLLMResult> {
     const startTime = Date.now();
 
-    // 1. 检查token使用量，必要时进行摘要
+    // 1. 检查 token 使用量，必要时进行摘要
     await this.summarizeContext();
 
-    // 2. 构建LLM请求
+    // 2. 构建 LLM 请求
     const llmRequest = this.buildLLMRequest(config, context);
 
-    // 3. 调用LLM
+    // 3. 调用 LLM
     const llmResponse = await this.llmClient.generate(llmRequest);
 
-    // 4. 记录LLM调用
+    // 4. 记录 LLM 调用
     const llmCall = this.createLLMCall(llmRequest, llmResponse);
     context.llmCalls.push(llmCall);
 
@@ -550,7 +875,7 @@ export class InteractionEngine implements IInteractionEngine {
         context.messages.push(toolMessage);
       }
 
-      // 如果有工具调用，继续下一轮LLM调用（ReAct模式）
+      // 如果有工具调用，继续下一轮 LLM 调用（ReAct 模式）
       if (config.toolMode === 'auto') {
         return this.executeLLM(config, context);
       }
@@ -566,7 +891,9 @@ export class InteractionEngine implements IInteractionEngine {
     };
   }
 
-  // 执行工具调用
+  /**
+   * 执行工具调用
+   */
   async executeTool(
     toolName: string,
     parameters: Record<string, any>
@@ -574,7 +901,7 @@ export class InteractionEngine implements IInteractionEngine {
     const startTime = Date.now();
 
     try {
-      // 调用ToolExecutor执行工具
+      // 调用 ToolExecutor 执行工具
       const result = await this.toolExecutor.execute(toolName, parameters);
 
       // 记录工具调用
@@ -601,7 +928,9 @@ export class InteractionEngine implements IInteractionEngine {
     }
   }
 
-  // 处理上下文
+  /**
+   * 处理上下文
+   */
   async processContext(
     processorName: string,
     config: Record<string, unknown>,
@@ -631,9 +960,11 @@ export class InteractionEngine implements IInteractionEngine {
     }
   }
 
-  // 摘要上下文（防止token溢出，参考Mini-Agent）
+  /**
+   * 摘要上下文（防止 token 溢出，参考 Mini-Agent）
+   */
   async summarizeContext(): Promise<void> {
-    // 估算token使用量
+    // 估算 token 使用量
     const estimatedTokens = this.estimateTokens(this.context.messages);
 
     if (estimatedTokens <= this.tokenLimit) {
@@ -688,13 +1019,15 @@ export class InteractionEngine implements IInteractionEngine {
     // 替换消息列表
     this.context.messages = newMessages;
 
-    // 重新估算token使用量
+    // 重新估算 token 使用量
     const newTokens = this.estimateTokens(this.context.messages);
     console.log(`Summarization completed: ${estimatedTokens} -> ${newTokens} tokens`);
     console.log(`Structure: system + ${userIndices.length} user messages + ${summaryCount} summaries`);
   }
 
-  // 创建摘要（参考Mini-Agent）
+  /**
+   * 创建摘要（参考 Mini-Agent）
+   */
   private async createSummary(
     messages: Message[],
     roundNum: number
@@ -720,7 +1053,7 @@ export class InteractionEngine implements IInteractionEngine {
       }
     }
 
-    // 调用LLM生成简洁摘要
+    // 调用 LLM 生成简洁摘要
     try {
       const summaryPrompt = `Please provide a concise summary of the following execution process:\n\n${summaryContent}\n\nRequirements:\n1. Focus on completed tasks and tool calls\n2. Keep key results and findings\n3. Be concise and clear, within 1000 words\n4. Do not include user content, only summarize the execution process`;
 
@@ -748,19 +1081,23 @@ export class InteractionEngine implements IInteractionEngine {
     }
   }
 
-  // 估算token使用量
+  /**
+   * 估算 token 使用量
+   */
   private estimateTokens(messages: Message[]): number {
-    // 简化的token估算
+    // 简化的 token 估算
     let totalChars = 0;
     for (const msg of messages) {
       const content = typeof msg.content === 'string' ? msg.content : JSON.stringify(msg.content);
       totalChars += content.length;
     }
-    // 假设：平均2.5字符 = 1 token
+    // 假设：平均 2.5 字符 = 1 token
     return Math.floor(totalChars / 2.5);
   }
 
-  // 构建LLM请求
+  /**
+   * 构建 LLM 请求
+   */
   private buildLLMRequest(
     config: LLMNodeConfig,
     context: InteractionContext
@@ -786,7 +1123,7 @@ export class InteractionEngine implements IInteractionEngine {
       content: userPrompt
     });
 
-    // 构建LLM请求
+    // 构建 LLM 请求
     return {
       messages,
       provider: config.provider,
@@ -798,7 +1135,9 @@ export class InteractionEngine implements IInteractionEngine {
     };
   }
 
-  // 处理模板变量
+  /**
+   * 处理模板变量
+   */
   private processTemplate(
     template: string,
     variables: Map<string, any>
@@ -812,17 +1151,21 @@ export class InteractionEngine implements IInteractionEngine {
     return result;
   }
 
-  // 获取可用工具
+  /**
+   * 获取可用工具
+   */
   private getAvailableTools(availableTools?: string[]): any[] {
     if (!availableTools || availableTools.length === 0) {
       return [];
     }
 
-    // 从ToolExecutor获取工具schema
+    // 从 ToolExecutor 获取工具 schema
     return this.toolExecutor.getToolSchemas(availableTools);
   }
 
-  // 创建LLM调用记录
+  /**
+   * 创建 LLM 调用记录
+   */
   private createLLMCall(
     request: LLMRequest,
     response: LLMResponse
@@ -839,7 +1182,9 @@ export class InteractionEngine implements IInteractionEngine {
     };
   }
 
-  // 获取上下文处理器
+  /**
+   * 获取上下文处理器
+   */
   private getContextProcessor(processorName: string): ContextProcessor {
     // 从注册表中获取处理器
     const processors = new Map<string, ContextProcessor>();
@@ -858,14 +1203,14 @@ export class InteractionEngine implements IInteractionEngine {
 }
 ```
 
-## 四、执行流程
+## 六、执行流程
 
-### 4.1 LLM 节点执行流程
+### 6.1 LLM 节点执行流程
 
 ```mermaid
 sequenceDiagram
     participant Workflow as Workflow Engine
-    participant Node as LLM Node
+    participant Node as Node (with LLMNodeConfig)
     participant Thread as Thread
     participant Engine as InteractionEngine
     participant LLM as LLM Client
@@ -873,10 +1218,13 @@ sequenceDiagram
 
     Workflow->>Node: execute(context)
     Node->>Thread: executeNode(node, context)
-
+    
+    Thread->>Thread: Check node.config type
+    Thread->>Thread: Dispatch to executeLLMNode()
+    
     Thread->>Engine: executeLLM(config, context)
 
-    loop ReAct Loop (在Engine内部)
+    loop ReAct Loop (在 Engine 内部)
       Engine->>Engine: summarizeContext() if needed
       Engine->>LLM: generate(request)
       LLM-->>Engine: response
@@ -895,139 +1243,88 @@ sequenceDiagram
     Node-->>Workflow: result
 ```
 
-### 4.2 工具调用节点执行流程
+### 6.2 节点配置与执行分离
 
 ```mermaid
-sequenceDiagram
-    participant Workflow as Workflow Engine
-    participant Node as Tool Call Node
-    participant Thread as Thread
-    participant Engine as InteractionEngine
-    participant Tool as Tool Executor
-
-    Workflow->>Node: execute(context)
-    Node->>Thread: executeNode(node, context)
-    Thread->>Engine: executeTool(toolName, params)
-    Engine->>Tool: execute(toolName, params)
-    Tool-->>Engine: result
-    Engine->>Engine: Record tool call
-    Engine-->>Thread: InteractionToolResult
-    Thread->>Thread: Update workflow context
-    Thread-->>Node: NodeExecutionResult
-    Node-->>Workflow: result
+graph LR
+    A[Workflow Definition] --> B[Node with Config]
+    B --> C[Thread.executeNode]
+    C --> D{Config Type}
+    D -->|LLMNodeConfig| E[Thread.executeLLMNode]
+    D -->|ToolNodeConfig| F[Thread.executeToolNode]
+    D -->|ContextProcessorConfig| G[Thread.executeContextProcessorNode]
+    D -->|MarkerNode| H[Thread.executeMarkerNode]
+    
+    E --> I[InteractionEngine.executeLLM]
+    F --> J[InteractionEngine.executeTool]
+    G --> K[InteractionEngine.processContext]
+    H --> L[ThreadFork/ThreadJoin/etc]
 ```
 
-## 五、与 Mini-Agent 的对比
+## 七、与 MarkerNode 的对比
 
-### 5.1 Mini-Agent 核心逻辑
+### 7.1 设计模式一致性
 
-```python
-class Agent:
-    def __init__(self, llm_client, system_prompt, tools):
-        self.llm = llm_client
-        self.tools = {tool.name: tool for tool in tools}
-        self.messages = [Message(role="system", content=system_prompt)]
-        self.logger = AgentLogger()
+| 特性 | MarkerNode | LLMNodeConfig | ToolNodeConfig | ContextProcessorConfig |
+|------|-----------|---------------|----------------|----------------------|
+| **类型** | 值对象 | 值对象 | 值对象 | 值对象 |
+| **可变性** | 不可变 | 不可变 | 不可变 | 不可变 |
+| **执行逻辑** | 无 | 无 | 无 | 无 |
+| **配置存储** | 是 | 是 | 是 | 是 |
+| **执行处理** | Thread | Thread | Thread | Thread |
 
-    async def run(self):
-        # 1. 摘要消息历史
-        await self._summarize_messages()
+### 7.2 优势
 
-        # 2. 获取工具schema
-        tool_schemas = [tool.to_schema() for tool in self.tools.values()]
+1. **一致性**：所有节点配置都采用相同的设计模式
+2. **简洁性**：节点配置只关心配置，不关心执行
+3. **可测试性**：配置可以独立测试
+4. **可维护性**：职责清晰，易于维护
 
-        # 3. 调用LLM
-        response = await self.llm.generate(messages=self.messages, tools=tool_schemas)
+## 八、实施计划
 
-        # 4. 处理工具调用
-        if response.tool_calls:
-            for tool_call in response.tool_calls:
-                tool = self.tools[tool_call.function.name]
-                result = await tool.execute(**tool_call.function.arguments)
+### 阶段 1：创建节点配置值对象（1 天）
 
-                # 添加工具结果到messages
-                self.messages.append(Message(
-                    role="tool",
-                    tool_call_id=tool_call.id,
-                    content=result
-                ))
+- [ ] 创建 `src/domain/workflow/value-objects/node/configs/` 目录
+- [ ] 实现 `LLMNodeConfig` 值对象
+- [ ] 实现 `ToolNodeConfig` 值对象
+- [ ] 实现 `ContextProcessorConfig` 值对象
+- [ ] 编写单元测试
 
-            # 继续下一轮
-            return await self.run()
-
-        # 5. 返回最终结果
-        return response.content
-```
-
-### 5.2 我们的设计优势
-
-| 特性 | Mini-Agent | 我们的设计 |
-|------|-----------|-----------|
-| **职责分离** | Agent 包含所有逻辑 | Workflow/Thread/Interaction 三层分离 |
-| **流程控制** | 简单循环 | Thread 协调复杂流程（并行、分支等） |
-| **上下文管理** | 简单 messages 列表 | 完整的 InteractionContext，支持摘要 |
-| **工具集成** | 直接调用 | 统一的 ToolExecutor，支持多种工具类型 |
-| **可扩展性** | 有限 | 支持多种 InteractionEngine 策略 |
-| **监控调试** | 日志文件 | 完整的执行历史和监控 |
-
-## 六、命名调整说明
-
-### 6.1 命名变更
-
-| 旧命名 | 新命名 | 理由 |
-|--------|--------|------|
-| Agent Layer | Interaction Layer | 避免与现有 Agent 概念混淆，更准确地描述 LLM 交互职责 |
-| AgentEngine | InteractionEngine | 同上 |
-| AgentContext | InteractionContext | 同上 |
-| AgentExecutionResult | InteractionLLMResult | 更具体的命名 |
-
-### 6.2 命名空间
-
-```
-src/domain/interaction/     # Interaction 领域模型
-src/services/interaction/   # Interaction 服务实现
-src/domain/thread/          # Thread 领域模型（保持不变）
-src/services/thread/        # Thread 服务实现（保持不变）
-src/domain/workflow/        # Workflow 领域模型（保持不变）
-src/services/workflow/      # Workflow 服务实现（保持不变）
-```
-
-## 七、实施计划
-
-### 阶段 1：创建 Interaction 层基础（2 天）
+### 阶段 2：创建 Interaction 层基础（2 天）
 
 - [ ] 创建 `src/domain/interaction/` 目录结构
-- [ ] 定义 InteractionContext 接口
-- [ ] 定义 Message、ToolCall、LLMCall 等值对象
-- [ ] 定义 IInteractionEngine 接口
+- [ ] 定义 `InteractionContext` 接口
+- [ ] 定义 `Message`、`ToolCall`、`LLMCall` 等值对象
+- [ ] 定义 `IInteractionEngine` 接口
 
-### 阶段 2：实现 InteractionEngine 核心（3 天）
+### 阶段 3：实现 InteractionEngine 核心（3 天）
 
-- [ ] 实现 InteractionEngine 类
+- [ ] 实现 `InteractionEngine` 类
 - [ ] 实现 LLM 调用逻辑
 - [ ] 实现工具调用协调
 - [ ] 实现上下文摘要逻辑（参考 Mini-Agent）
 - [ ] 实现 Token 使用监控
 - [ ] 编写单元测试
 
-### 阶段 3：重构 Thread 层（2 天）
+### 阶段 4：重构 Thread 层（2 天）
 
 - [ ] 在 Thread 中集成 InteractionEngine
-- [ ] 实现 Thread.executeNode() 统一入口
-- [ ] 实现 Thread.executeLLMNode()
-- [ ] 实现 Thread.executeToolNode()
-- [ ] 实现 Thread.executeContextProcessorNode()
+- [ ] 实现 `Thread.executeNode()` 统一入口
+- [ ] 实现 `Thread.executeLLMNode()`
+- [ ] 实现 `Thread.executeToolNode()`
+- [ ] 实现 `Thread.executeContextProcessorNode()`
+- [ ] 实现 `Thread.executeMarkerNode()`
 - [ ] 更新 ThreadLifecycle
 
-### 阶段 4：重构 Workflow 节点（2 天）
+### 阶段 5：重构 Workflow 节点（1 天）
 
-- [ ] 重构 LLMNode（移除执行逻辑，改为委托）
-- [ ] 重构 ToolCallNode（移除执行逻辑，改为委托）
-- [ ] 重构 ContextProcessorNode（移除执行逻辑，改为委托）
+- [ ] 重构 `LLMNode`（使用 LLMNodeConfig）
+- [ ] 重构 `ToolCallNode`（使用 ToolNodeConfig）
+- [ ] 重构 `ContextProcessorNode`（使用 ContextProcessorConfig）
 - [ ] 更新节点验证逻辑
 - [ ] 更新节点类型定义
 
-### 阶段 5：集成测试（2 天）
+### 阶段 6：集成测试（2 天）
 
 - [ ] 编写集成测试
 - [ ] 测试 LLM 节点执行
@@ -1038,18 +1335,17 @@ src/services/workflow/      # Workflow 服务实现（保持不变）
 
 **总计：11 天**
 
-## 八、关键决策
+## 九、关键决策
 
-### 8.1 为什么 Workflow 节点不包含执行逻辑？
+### 9.1 为什么采用 MarkerNode 模式？
 
 **理由**：
-1. 符合单一职责原则
-2. 执行逻辑集中在 InteractionEngine，便于维护和测试
-3. 支持多种执行策略（由 InteractionEngine 决定）
-4. 与 Mini-Agent 设计一致
-5. 节点只关心配置，不关心执行
+1. **一致性**：与现有 MarkerNode 设计保持一致
+2. **简洁性**：节点配置只关心配置，不关心执行
+3. **可测试性**：配置可以独立测试
+4. **可维护性**：职责清晰，易于维护
 
-### 8.2 为什么需要 Thread 层？
+### 9.2 为什么需要 Thread 层？
 
 **理由**：
 1. Thread 管理 workflow 执行生命周期
@@ -1059,7 +1355,7 @@ src/services/workflow/      # Workflow 服务实现（保持不变）
 5. Thread 集成检查点和恢复功能
 6. Thread 负责节点分发和结果聚合
 
-### 8.3 InteractionEngine 是否只处理 LLM 交互？
+### 9.3 InteractionEngine 是否只处理 LLM 交互？
 
 **是的**，InteractionEngine 的职责：
 - ✅ 维护提示词上下文
@@ -1070,14 +1366,33 @@ src/services/workflow/      # Workflow 服务实现（保持不变）
 - ❌ 不包含节点路由
 - ❌ 不包含并行协调
 
-## 九、后续扩展
+## 十、后续扩展
 
-### 9.1 支持多种 InteractionEngine 策略
+### 10.1 支持更多节点配置类型
+
+```typescript
+// 循环节点配置
+export class LoopNodeConfig {
+  // 配置循环条件和最大次数
+}
+
+// 并行节点配置
+export class ParallelNodeConfig {
+  // 配置并行执行的分支
+}
+
+// 条件节点配置
+export class ConditionNodeConfig {
+  // 配置条件表达式
+}
+```
+
+### 10.2 支持多种 InteractionEngine 策略
 
 ```typescript
 // ReAct InteractionEngine
 class ReActInteractionEngine implements IInteractionEngine {
-  // 实现ReAct逻辑
+  // 实现 ReAct 逻辑
 }
 
 // Plan-and-Execute InteractionEngine
@@ -1087,40 +1402,21 @@ class PlanAndExecuteInteractionEngine implements IInteractionEngine {
 
 // Multi-LLM InteractionEngine
 class MultiLLMInteractionEngine implements IInteractionEngine {
-  // 多个LLM协作
+  // 多个 LLM 协作
 }
 ```
 
-### 9.2 支持更多节点类型
-
-```typescript
-// 循环节点
-class LoopNode extends Node {
-  // 配置循环条件和最大次数
-}
-
-// 并行节点
-class ParallelNode extends Node {
-  // 配置并行执行的分支
-}
-
-// 条件节点
-class ConditionNode extends Node {
-  // 配置条件表达式
-}
-```
-
-### 9.3 增强监控和调试
+### 10.3 增强监控和调试
 
 ```typescript
 interface ExecutionMonitor {
-  // 监控LLM调用
+  // 监控 LLM 调用
   onLLMCall(call: LLMCall): void;
 
   // 监控工具调用
   onToolCall(call: ToolCall): void;
 
-  // 监控Token使用
+  // 监控 Token 使用
   onTokenUsage(usage: TokenUsage): void;
 
   // 监控上下文摘要
@@ -1133,7 +1429,8 @@ interface ExecutionMonitor {
 **设计完成日期**：2024年
 **审核状态**：待审核
 **关键改进**：
-1. Workflow 节点仅包含配置，无执行逻辑
-2. Thread 负责执行协调和节点分发
-3. InteractionEngine 专注于 LLM 交互，参考 Mini-Agent 设计
-4. 命名调整避免混淆
+1. 采用 MarkerNode 模式设计节点配置
+2. 节点配置是值对象，不可变，无执行逻辑
+3. Thread 负责所有节点执行
+4. InteractionEngine 专注于 LLM 交互，参考 Mini-Agent 设计
+5. 命名调整避免混淆

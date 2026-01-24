@@ -50,12 +50,6 @@ export const NODE_TYPE_RETRY_DEFAULTS: Record<NodeTypeValue, NodeRetryStrategy> 
   [NodeTypeValue.USER_INTERACTION]: NodeRetryStrategy.disabled(),
 
   /**
-   * WAIT节点：不重试
-   * 原因：等待超时可以跳过，重试无意义
-   */
-  [NodeTypeValue.WAIT]: NodeRetryStrategy.disabled(),
-
-  /**
    * CONTEXT_PROCESSOR节点：不重试
    * 原因：上下文处理失败可以使用默认值，重试无意义
    */
