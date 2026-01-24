@@ -8,7 +8,7 @@ import {
   NodeId,
   NodeType,
 } from '../value-objects';
-import { EdgeId, EdgeType, EdgeValueObject } from '../value-objects/edge';
+import { EdgeId, EdgeValueObject, EdgeType } from '../value-objects/edge';
 import { ExecutionStrategy } from '../value-objects/execution/execution-strategy';
 import { Node } from './node';
 import { WorkflowReference } from '../value-objects/workflow-reference';

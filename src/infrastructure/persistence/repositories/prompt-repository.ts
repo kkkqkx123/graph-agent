@@ -64,11 +64,12 @@ export class PromptRepository implements IPromptRepository {
     const prompts: Prompt[] = [];
     for (const [name, content] of Object.entries(promptsConfig)) {
       const id = PromptId.create(category, name);
+      if (typeof content !== 'string') continue;
       const promptProps: PromptProps = {
         id,
         name,
         type: inferPromptTypeFromCategory(category),
-        content: content as string,
+        content,
         category,
         metadata: Metadata.create({}),
         version: Version.create('1.0.0'),
@@ -181,11 +182,12 @@ export class PromptRepository implements IPromptRepository {
       if (typeof categoryPrompts !== 'object') continue;
       for (const [name, content] of Object.entries(categoryPrompts ?? {})) {
         const id = PromptId.create(category, name);
+        if (typeof content !== 'string') continue;
         const promptProps: PromptProps = {
           id,
           name,
           type: inferPromptTypeFromCategory(category),
-          content: content as string,
+          content,
           category,
           metadata: Metadata.create({}),
           version: Version.create('1.0.0'),

@@ -4,7 +4,7 @@ import { PromptState } from './prompt-state';
 import { NodeExecutionState } from '../execution/node-execution-state';
 import { PromptHistoryEntry } from './prompt-history-entry';
 import { WorkflowExecutionContext } from '../../entities/node';
-import { ExecutionContext } from '../../../../services/workflow/execution/context/execution-context';
+import { ExecutionContext } from '../../../../services/threads/execution/context/execution-context';
 
 /**
  * 工作流上下文属性接口

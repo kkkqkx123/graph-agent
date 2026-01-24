@@ -76,9 +76,9 @@ import { ThreadHistoryManager } from '../services/threads/thread-history-manager
 import { ThreadConditionalRouter } from '../services/threads/thread-conditional-router';
 import { ThreadWorkflowExecutor } from '../services/threads/thread-workflow-executor';
 import { FunctionRegistry } from '../services/workflow/functions/function-registry';
-import { NodeExecutionHandler } from '../services/workflow/execution/handlers/node-execution-handler';
-import { HookExecutionHandler } from '../services/workflow/execution/handlers/hook-execution-handler';
-import { TriggerExecutionHandler } from '../services/workflow/execution/handlers/trigger-execution-handler';
+import { NodeExecutionHandler } from '../services/threads/execution/handlers/node-execution-handler';
+import { HookExecutionHandler } from '../services/threads/execution/handlers/hook-execution-handler';
+import { TriggerExecutionHandler } from '../services/threads/execution/handlers/trigger-execution-handler';
 import { PromptBuilder } from '../services/prompts/prompt-builder';
 import { TemplateProcessor } from '../services/prompts/template-processor';
 import { PromptReferenceParser } from '../services/prompts/prompt-reference-parser';
@@ -346,7 +346,7 @@ export const TYPES = {
   ConfigManager: Symbol.for('ConfigManager'), // IConfigManager 接口
 
   // ========== 其他服务 ==========
-  
+
   // HTTP 组件
   RetryHandler: Symbol.for('RetryHandler'),
   CircuitBreaker: Symbol.for('CircuitBreaker'),

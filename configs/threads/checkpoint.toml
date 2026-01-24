@@ -1,5 +1,4 @@
 # Checkpoint基础配置
-# 详细配置请参考 configs/workflow/checkpoint-manager.toml
 [checkpoint]
 enabled = true
 storage_type = "sqlite"

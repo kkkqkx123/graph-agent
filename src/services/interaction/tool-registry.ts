@@ -4,7 +4,7 @@
  * 统一管理所有可用的工具
  */
 
-import { injectable } from 'inversify';
+import { injectable, inject } from 'inversify';
 import { ILogger } from '../../domain/common/types/logger-types';
 
 /**

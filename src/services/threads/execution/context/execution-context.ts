@@ -1,6 +1,6 @@
 /**
  * 执行上下文接口
- * 
+ *
  * 提供工作流执行的环境，包括变量管理、节点结果管理和服务访问
  */
 export interface ExecutionContext {
@@ -8,10 +8,12 @@ export interface ExecutionContext {
   readonly workflowId: string;
   readonly executionId: string;
   readonly threadId: string;
+  readonly localVariables: Map<string, any>;
 
   // 变量管理
   getVariable(key: string): any;
   setVariable(key: string, value: any): void;
+  deleteVariable(key: string): void;
   getAllVariables(): Record<string, any>;
   initializeVariables(variables: Record<string, any>): void;
 
@@ -26,6 +28,10 @@ export interface ExecutionContext {
   // 元数据
   getMetadata(key: string): any;
   setMetadata(key: string, value: any): void;
+
+  // 兼容 WorkflowExecutionContext
+  getExecutionId(): string;
+  getWorkflowId(): string;
 }
 
 /**
@@ -41,7 +47,8 @@ export class WorkflowExecutionContext implements ExecutionContext {
     public readonly workflowId: string,
     public readonly executionId: string,
     public readonly threadId: string,
-    services: Map<string, any>
+    services: Map<string, any>,
+    public readonly localVariables: Map<string, any> = new Map()
   ) {
     this.variables = new Map();
     this.nodeResults = new Map();
@@ -55,6 +62,18 @@ export class WorkflowExecutionContext implements ExecutionContext {
 
   setVariable(key: string, value: any): void {
     this.variables.set(key, value);
+  }
+
+  deleteVariable(key: string): void {
+    this.variables.delete(key);
+  }
+
+  getExecutionId(): string {
+    return this.executionId;
+  }
+
+  getWorkflowId(): string {
+    return this.workflowId;
   }
 
   getAllVariables(): Record<string, any> {

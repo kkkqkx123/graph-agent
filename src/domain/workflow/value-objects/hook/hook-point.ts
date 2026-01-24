@@ -128,17 +128,6 @@ export class HookPoint extends ValueObject<HookPointProps> {
   }
 
   /**
-   * 从字符串创建钩子点
-   */
-  public static fromString(value: string): HookPoint {
-    const hookPoint = Object.values(HookPointValue).find(h => h === value);
-    if (!hookPoint) {
-      throw new Error(`无法识别的钩子点字符串: ${value}`);
-    }
-    return new HookPoint({ value: hookPoint });
-  }
-
-  /**
    * 获取钩子点值
    */
   public getValue(): HookPointValue {

@@ -1,6 +1,6 @@
 /**
  * Agent 执行循环
- * 
+ *
  * 实现完整的 Agent 执行流程
  */
 
@@ -148,16 +148,16 @@ export class AgentLoop {
       const toolSchemas = this.toolRegistry.getAllSchemas();
 
       // 3. 调用 LLM
-      const llmResult = await this.engine.executeLLM({
+      const llmConfig = new LLMConfig({
         provider,
         model,
         systemPrompt,
         prompt: '', // 使用上下文中的消息
-        tools: toolSchemas,
-      }, context);
+      });
+      const llmResult = await this.engine.executeLLM(llmConfig, context);
 
       if (!llmResult.success) {
-        this.logger.error('LLM 调用失败', {
+        this.logger.error('LLM 调用失败', undefined, {
           error: llmResult.error,
           step: step + 1,
         });
@@ -198,10 +198,11 @@ export class AgentLoop {
       this.logger.debug(`执行 ${llmResult.toolCalls.length} 个工具调用`);
       
       for (const toolCall of llmResult.toolCalls) {
-        const toolResult = await this.engine.executeTool({
+        const toolConfig = new ToolConfig({
           toolId: toolCall.name,
           parameters: toolCall.arguments,
-        }, context);
+        });
+        const toolResult = await this.engine.executeTool(toolConfig, context);
 
         // 添加工具结果到上下文
         context.addMessage(new Message({

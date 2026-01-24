@@ -7,10 +7,10 @@
 import { injectable, inject } from 'inversify';
 import { Message } from '../../domain/interaction/value-objects/message';
 import { MessageRole } from '../../domain/interaction/value-objects/message-role';
-import { ILLMExecutor } from './llm-executor';
+import { ILLMExecutor } from './executors/llm-executor';
 import { LLMConfig } from '../../domain/interaction/value-objects/llm-config';
-import { IInteractionContext } from '../interaction-context';
-import { InteractionContext } from '../interaction-context';
+import { IInteractionContext } from './interaction-context';
+import { InteractionContext } from './interaction-context';
 import { ILogger } from '../../domain/common/types/logger-types';
 import { TokenCalculator } from '../../infrastructure/llm/token-calculators/token-calculator';
 
@@ -56,17 +56,22 @@ export class MessageSummarizer {
     }
 
     // 4. 构建新的消息列表
-    const newMessages: Message[] = [messages[0]]; // 保留系统提示
+    const newMessages: Message[] = messages.length > 0 && messages[0] ? [messages[0]] : []; // 保留系统提示
     let summaryCount = 0;
 
     // 5. 对每轮对话进行摘要
     for (let i = 0; i < userIndices.length; i++) {
       const userIdx = userIndices[i];
-      newMessages.push(messages[userIdx]);
+      if (userIdx === undefined) continue;
+      
+      const userMessage = messages[userIdx];
+      if (!userMessage) continue;
+      
+      newMessages.push(userMessage);
 
       // 确定要摘要的消息范围
-      const nextUserIdx = i < userIndices.length - 1 
-        ? userIndices[i + 1] 
+      const nextUserIdx = i < userIndices.length - 1
+        ? userIndices[i + 1]
         : messages.length;
 
       const executionMessages = messages.slice(userIdx + 1, nextUserIdx);
@@ -153,12 +158,13 @@ Requirements:
 5. Do not include "user" related content, only summarize the Agent's execution process`;
 
     try {
-      const result = await this.llmExecutor.execute({
+      const llmConfig = new LLMConfig({
         provider: 'openai',
         model: 'gpt-4',
         systemPrompt: 'You are an assistant skilled at summarizing Agent execution processes.',
         prompt: summaryPrompt,
-      }, new InteractionContext());
+      });
+      const result = await this.llmExecutor.execute(llmConfig, new InteractionContext());
 
       if (result.success && result.output) {
         this.logger.debug(`第 ${roundNum} 轮摘要生成成功`);

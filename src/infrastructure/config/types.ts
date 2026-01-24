@@ -10,12 +10,8 @@ import { DatabaseSchema, DatabaseConfig } from './loading/schemas/database-schem
 import { LLMSchema } from './loading/schemas/llm-schema';
 import { ToolSchema } from './loading/schemas/tool-schema';
 import { PromptSchema } from './loading/schemas/prompt-schema';
-import { PoolSchema } from './loading/schemas/pool-schema';
-import { TaskGroupSchema } from './loading/schemas/task-group-schema';
-import { WorkflowFunctionSchema } from './loading/schemas/workflow-function-schema';
 import { WorkflowConfigSchema } from './loading/schemas/workflow-schema';
 import { GlobalSchema, GlobalConfig } from './loading/schemas/global-schema';
-import { LLMRetrySchema, LLMRetryConfig } from './loading/schemas/llm-retry-schema';
 
 /**
  * HTTP 配置 Schema
@@ -139,12 +135,12 @@ export const AppConfigSchema = z.object({
   global: GlobalSchema,
   database: DatabaseSchema,
   llm: LLMSchema,
-  llm_retry: LLMRetrySchema,
+  // llm_retry: LLMRetrySchema, // TODO: 待实现
   tools: ToolSchema,
   prompts: PromptSchema,
-  pool: PoolSchema,
-  taskGroup: TaskGroupSchema,
-  workflow_functions: WorkflowFunctionSchema,
+  // pool: PoolSchema, // TODO: 待实现
+  // taskGroup: TaskGroupSchema, // TODO: 待实现
+  // workflow_functions: WorkflowFunctionSchema, // TODO: 待实现
   workflow: WorkflowConfigSchema,
   http: HttpConfigSchema,
   llm_runtime: LLMRuntimeConfigSchema,
@@ -170,7 +166,7 @@ export type AppConfig = z.infer<typeof AppConfigSchema>;
  * 提供编译时类型检查和 IDE 自动补全
  */
 export class TypedConfig {
-  private config: Partial<AppConfig> = {};
+  private config: Partial<AppConfig> & Record<string, any> = {};
 
   /**
    * 设置配置（用于初始化）
@@ -196,8 +192,8 @@ export class TypedConfig {
   /**
    * 获取 LLM 重试配置
    */
-  get llm_retry(): LLMRetryConfig {
-    return this.config.llm_retry as LLMRetryConfig;
+  get ['llm_retry'](): any {
+    return (this.config as any)['llm_retry'];
   }
 
   /**
@@ -224,22 +220,22 @@ export class TypedConfig {
   /**
    * 获取 Pool 配置
    */
-  get pool(): z.infer<typeof PoolSchema> {
-    return this.config.pool as z.infer<typeof PoolSchema>;
+  get ['pool'](): any {
+    return (this.config as any)['pool'];
   }
 
   /**
    * 获取 TaskGroup 配置
    */
-  get taskGroup(): z.infer<typeof TaskGroupSchema> {
-    return this.config.taskGroup as z.infer<typeof TaskGroupSchema>;
+  get ['taskGroup'](): any {
+    return (this.config as any)['taskGroup'];
   }
 
   /**
    * 获取 Workflow Functions 配置
    */
-  get workflow_functions(): z.infer<typeof WorkflowFunctionSchema> {
-    return this.config.workflow_functions as z.infer<typeof WorkflowFunctionSchema>;
+  get ['workflow_functions'](): any {
+    return (this.config as any)['workflow_functions'];
   }
 
   /**

@@ -10,8 +10,8 @@
  */
 
 import { injectable, inject } from 'inversify';
-import { Workflow, IWorkflowRepository, Node, NodeId, EdgeId, EdgeType } from '../../domain/workflow';
-import { ID, ILogger, Timestamp } from '../../domain/common';
+import { Workflow, IWorkflowRepository, Node, NodeId, EdgeId } from '../../domain/workflow';
+import { ILogger } from '../../domain/common';
 import { SubWorkflowValidator, WorkflowStructureValidator } from './validators';
 import { EdgeValueObject } from '../../domain/workflow/value-objects/edge';
 

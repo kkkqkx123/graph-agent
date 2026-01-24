@@ -3,7 +3,6 @@ import { NodeType } from '../../value-objects/node/node-type';
 import { NodeId } from '../../value-objects/node/node-id';
 import { NodeStatus } from '../../value-objects/node/node-status';
 import { NodeRetryStrategy } from '../../value-objects/node/node-retry-strategy';
-import { Timestamp, Version } from '../../../common/value-objects';
 
 /**
  * StartNode 属性接口
