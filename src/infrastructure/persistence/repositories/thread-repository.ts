@@ -9,6 +9,7 @@ import { BaseRepository } from './base-repository';
 import { ConnectionManager } from '../connection-manager';
 import { TYPES } from '../../../di/service-keys';
 import { ThreadMapper } from '../mappers/thread-mapper';
+import { EntityNotFoundError } from '../../../../common/exceptions';
 
 @injectable()
 export class ThreadRepository
@@ -323,7 +324,7 @@ export class ThreadRepository
   async getThreadExecutionStats(threadId: ID): Promise<any> {
     const thread = await this.findById(threadId);
     if (!thread) {
-      throw new Error('线程不存在');
+      throw new EntityNotFoundError('Thread', threadId.value);
     }
     return {
       threadId: threadId.value,

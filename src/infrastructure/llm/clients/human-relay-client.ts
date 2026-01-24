@@ -19,6 +19,7 @@ import {
   IHumanRelayService,
   HumanRelayConfig,
 } from '../../../services/llm/human-relay';
+import { MissingConfigurationError, ExecutionError } from '../../../../common/exceptions';
 
 /**
  * HumanRelay客户端配置接口
@@ -59,8 +60,8 @@ export class HumanRelayClient extends BaseLLMClient {
 
     // 验证配置
     if (!supportedModels || !Array.isArray(supportedModels) || supportedModels.length === 0) {
-      throw new Error(
-        'HumanRelay支持的模型列表未配置。请在配置文件中设置 llm.human-relay.supportedModels。'
+      throw new MissingConfigurationError(
+        'llm.human-relay.supportedModels'
       );
     }
 
@@ -91,7 +92,7 @@ export class HumanRelayClient extends BaseLLMClient {
    */
   protected override getSupportedModelsList(): string[] {
     if (!this.providerConfig.supportedModels) {
-      throw new Error('HumanRelay支持的模型列表未配置。');
+      throw new MissingConfigurationError('llm.human-relay.supportedModels');
     }
     return this.providerConfig.supportedModels;
   }
@@ -131,7 +132,7 @@ export class HumanRelayClient extends BaseLLMClient {
   ): Promise<AsyncIterable<LLMResponse>> {
     // HumanRelay 完全覆盖了 generateResponseStream，这个方法不会被调用
     // 但为了满足抽象方法要求，提供一个实现
-    throw new Error(
+    throw new ExecutionError(
       'HumanRelayClient 不应该调用 parseStreamResponse，因为它完全覆盖了 generateResponseStream'
     );
   }
@@ -233,6 +234,6 @@ export class HumanRelayClient extends BaseLLMClient {
    */
   public override handleError(error: any): never {
     const errorMessage = error instanceof Error ? error.message : String(error);
-    throw new Error(`HumanRelay客户端错误: ${errorMessage}`);
+    throw new ExecutionError(`HumanRelay客户端错误: ${errorMessage}`);
   }
 }

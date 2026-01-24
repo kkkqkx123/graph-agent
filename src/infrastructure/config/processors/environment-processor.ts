@@ -7,6 +7,7 @@ import {
   EnvironmentProcessorOptions,
   ILogger,
 } from '../../../domain/common/types';
+import { MissingConfigurationError } from '../../../../common/exceptions';
 
 /**
  * 环境变量处理器
@@ -72,7 +73,7 @@ export class EnvironmentProcessor implements IConfigProcessor {
 
         if (envValue === undefined) {
           if (defaultValue === undefined) {
-            throw new Error(`环境变量 ${varName} 未设置且没有默认值`);
+            throw new MissingConfigurationError(varName);
           }
           this.logger.debug('使用默认值', { varName, defaultValue });
           // 默认值也需要类型转换

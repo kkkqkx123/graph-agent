@@ -1,6 +1,7 @@
 import { BaseEndpointStrategy } from '../../endpoint-strategies/base-endpoint-strategy';
 import { BaseParameterMapper } from '../base-parameter-mapper';
 import { FeatureSupport } from './feature-support.interface';
+import { ConfigurationError } from '../../../../../common/exceptions';
 
 /**
  * API 类型枚举
@@ -198,25 +199,25 @@ export class ProviderConfigBuilder {
    */
   build(): ProviderConfig {
     if (!this.config.name) {
-      throw new Error('Provider name is required');
+      throw new ConfigurationError('Provider name is required');
     }
     if (!this.config.apiType) {
-      throw new Error('API type is required');
+      throw new ConfigurationError('API type is required');
     }
     if (!this.config.baseURL) {
-      throw new Error('Base URL is required');
+      throw new ConfigurationError('Base URL is required');
     }
     if (!this.config.apiKey) {
-      throw new Error('API key is required');
+      throw new ConfigurationError('API key is required');
     }
     if (!this.config.endpointStrategy) {
-      throw new Error('Endpoint strategy is required');
+      throw new ConfigurationError('Endpoint strategy is required');
     }
     if (!this.config.parameterMapper) {
-      throw new Error('Parameter mapper is required');
+      throw new ConfigurationError('Parameter mapper is required');
     }
     if (!this.config.featureSupport) {
-      throw new Error('Feature support is required');
+      throw new ConfigurationError('Feature support is required');
     }
 
     return this.config as ProviderConfig;

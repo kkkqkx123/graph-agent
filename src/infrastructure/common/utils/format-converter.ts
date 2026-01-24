@@ -1,6 +1,7 @@
 import * as yaml from 'yaml';
 import { create } from 'xmlbuilder2';
 import { XMLParser } from 'fast-xml-parser';
+import { InvalidConfigurationError, ValidationError } from '../../../common/exceptions';
 
 /**
  * 支持的数据格式
@@ -37,7 +38,7 @@ export class FormatConverter {
         const xmlDoc = create({ version: '1.0' }).ele('checkpoint', xmlObj);
         return xmlDoc.end({ prettyPrint: true });
       default:
-        throw new Error(`不支持的导出格式: ${format}`);
+        throw new InvalidConfigurationError('format', `不支持的导出格式: ${format}`);
     }
   }
 
@@ -58,10 +59,10 @@ export class FormatConverter {
         case 'xml':
           return this.xmlParser.parse(data) as Record<string, unknown>;
         default:
-          throw new Error(`不支持的导入格式: ${format}`);
+          throw new InvalidConfigurationError('format', `不支持的导入格式: ${format}`);
       }
     } catch (error) {
-      throw new Error(`数据解析失败: ${error}`);
+      throw new ValidationError(`数据解析失败: ${error}`);
     }
   }
 

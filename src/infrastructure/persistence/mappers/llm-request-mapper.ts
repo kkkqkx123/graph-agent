@@ -11,6 +11,7 @@ import { Timestamp } from '../../../domain/common/value-objects/timestamp';
 import { Version } from '../../../domain/common/value-objects/version';
 import { LLMMessage } from '../../../domain/llm/value-objects/llm-message';
 import { DeletionStatus } from '../../../domain/common/value-objects';
+import { ExecutionError } from '../../../../common/exceptions';
 
 export class LLMRequestMapper implements BaseMapper<LLMRequest, LLMRequestModel> {
   /**
@@ -79,7 +80,7 @@ export class LLMRequestMapper implements BaseMapper<LLMRequest, LLMRequestModel>
 
       return LLMRequest.fromProps(requestProps);
     } catch (error) {
-      throw new Error(`LLMRequest模型转换失败: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      throw new ExecutionError(`LLMRequest模型转换失败: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   }
 
@@ -138,7 +139,7 @@ export class LLMRequestMapper implements BaseMapper<LLMRequest, LLMRequestModel>
 
       return model;
     } catch (error) {
-      throw new Error(`LLMRequest实体转换失败: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      throw new ExecutionError(`LLMRequest实体转换失败: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   }
 }

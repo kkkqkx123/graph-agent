@@ -281,7 +281,7 @@ export abstract class BaseLLMClient {
   }
 
   public async parseResponse(response: any): Promise<LLMResponse> {
-    throw new Error(`parseResponse not implemented for ${this.providerName} client`);
+    throw new ExecutionError(`parseResponse not implemented for ${this.providerName} client`);
   }
 
   public async handleErrorWithResponse(error: any): Promise<LLMResponse> {

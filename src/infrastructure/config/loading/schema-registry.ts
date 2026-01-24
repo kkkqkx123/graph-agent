@@ -6,6 +6,7 @@
 import { z, ZodError } from 'zod';
 import { ILogger } from '../../../domain/common/types';
 import { ValidationError, ValidationResult, ValidationSeverity } from './types';
+import { ConfigurationError } from '../../../../common/exceptions';
 
 /**
  * 简化的Schema注册表
@@ -35,7 +36,7 @@ export class SchemaRegistry {
       this.logger.error('模块Schema注册失败', error as Error, {
         moduleType,
       });
-      throw new Error(`注册模块Schema ${moduleType} 失败: ${(error as Error).message}`);
+      throw new ConfigurationError(`注册模块Schema ${moduleType} 失败: ${(error as Error).message}`);
     }
   }
 

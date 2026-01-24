@@ -10,6 +10,7 @@ import { BaseRepository } from './base-repository';
 import { ConnectionManager } from '../connection-manager';
 import { TYPES } from '../../../di/service-keys';
 import { ToolMapper } from '../mappers/tool-mapper';
+import { EntityNotFoundError } from '../../../../common/exceptions';
 
 @injectable()
 export class ToolRepository
@@ -627,9 +628,10 @@ export class ToolRepository
    * 更新工具使用统计
    */
   async updateUsageStatistics(toolId: ID, executionTime: number, success: boolean): Promise<void> {
+
     const tool = await this.findById(toolId);
     if (!tool) {
-      throw new Error('工具不存在');
+      throw new EntityNotFoundError('Tool', toolId.value);
     }
 
     // 更新元数据中的使用统计

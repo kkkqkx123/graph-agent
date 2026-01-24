@@ -7,6 +7,7 @@ import { LoggerConfig, LogOutputType } from './logger-config';
 import { ConsoleTransport } from './transports/console-transport';
 import { FileTransport } from './transports/file-transport';
 import { LogLevelUtils } from './utils';
+import { InvalidConfigurationError } from '../../../common/exceptions';
 
 /**
  * Winston日志记录器实现
@@ -115,7 +116,7 @@ export class Logger implements ILogger {
       case LogOutputType.FILE:
         return new FileTransport(config);
       default:
-        throw new Error(`不支持的日志传输器类型: ${config.type}`);
+        throw new InvalidConfigurationError('transport.type', `不支持的日志传输器类型: ${config.type}`);
     }
   }
 

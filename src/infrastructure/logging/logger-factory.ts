@@ -174,7 +174,7 @@ export class LoggerFactory {
           });
           break;
         default:
-          throw new Error(`不支持的输出类型: ${output.type}`);
+          throw new InvalidConfigurationError('output.type', `不支持的输出类型: ${output.type}`);
       }
     }
 

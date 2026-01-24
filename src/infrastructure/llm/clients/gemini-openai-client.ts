@@ -13,6 +13,7 @@ import { HttpClient } from '../../../infrastructure/common/http/http-client';
 import { TokenBucketLimiter } from '../rate-limiters/token-bucket-limiter';
 import { TokenCalculator } from '../token-calculators/token-calculator';
 import { getConfig } from '../../config/config';
+import { MissingConfigurationError, InvalidConfigurationError } from '../../../../common/exceptions';
 
 @injectable()
 export class GeminiOpenAIClient extends BaseLLMClient {
@@ -44,18 +45,18 @@ export class GeminiOpenAIClient extends BaseLLMClient {
 
     // 验证必需配置
     if (!apiKey) {
-      throw new Error(
-        'Gemini OpenAI兼容API密钥未配置。请在配置文件中设置 llm.gemini-openai.apiKey。'
+      throw new MissingConfigurationError(
+        'llm.gemini-openai.apiKey'
       );
     }
     if (!defaultModel) {
-      throw new Error(
-        'Gemini OpenAI兼容默认模型未配置。请在配置文件中设置 llm.gemini-openai.defaultModel。'
+      throw new MissingConfigurationError(
+        'llm.gemini-openai.defaultModel'
       );
     }
     if (!supportedModels || !Array.isArray(supportedModels) || supportedModels.length === 0) {
-      throw new Error(
-        'Gemini OpenAI兼容支持的模型列表未配置。请在配置文件中设置 llm.gemini-openai.supportedModels。'
+      throw new MissingConfigurationError(
+        'llm.gemini-openai.supportedModels'
       );
     }
 
@@ -80,7 +81,7 @@ export class GeminiOpenAIClient extends BaseLLMClient {
 
   getSupportedModelsList(): string[] {
     if (!this.providerConfig.supportedModels) {
-      throw new Error('Gemini OpenAI兼容支持的模型列表未配置。');
+      throw new MissingConfigurationError('llm.gemini-openai.supportedModels');
     }
     return this.providerConfig.supportedModels;
   }
@@ -88,7 +89,7 @@ export class GeminiOpenAIClient extends BaseLLMClient {
   getModelConfig(): ModelConfig {
     const model = this.providerConfig.defaultModel;
     if (!model) {
-      throw new Error('Gemini OpenAI兼容默认模型未配置。');
+      throw new MissingConfigurationError('llm.gemini-openai.defaultModel');
     }
 
     const configs: Record<string, any> = getConfig().get(
@@ -97,7 +98,8 @@ export class GeminiOpenAIClient extends BaseLLMClient {
     const config = configs[model];
 
     if (!config) {
-      throw new Error(
+      throw new InvalidConfigurationError(
+        model,
         `Gemini OpenAI兼容模型配置未找到: ${model}。请在配置文件中提供该模型的完整配置。`
       );
     }
@@ -113,7 +115,7 @@ export class GeminiOpenAIClient extends BaseLLMClient {
     ];
     for (const field of requiredFields) {
       if (config[field] === undefined || config[field] === null) {
-        throw new Error(`Gemini OpenAI兼容模型 ${model} 缺少必需配置字段: ${field}`);
+        throw new InvalidConfigurationError(field, `Gemini OpenAI兼容模型 ${model} 缺少必需配置字段: ${field}`);
       }
     }
 

@@ -10,7 +10,6 @@ import { INodeExecutionHandler } from './execution/handlers/node-execution-handl
 import { FunctionRegistry } from '../workflow/functions/function-registry';
 import { ThreadFork } from './thread-fork';
 import { ThreadJoin } from './thread-join';
-import { ForkNode, JoinNode } from '../../domain/workflow/entities/node/index';
 import { IThreadRepository } from '../../domain/threads/repositories/thread-repository';
 import { Thread } from '../../domain/threads/entities/thread';
 import { ID } from '../../domain/common/value-objects/id';

@@ -8,6 +8,7 @@ import { ID } from '../../../domain/common/value-objects/id';
 import { ConnectionManager } from '../connection-manager';
 import { DataSource, Repository, FindOptionsWhere, FindManyOptions, ObjectLiteral, EntityManager, QueryRunner } from 'typeorm';
 import { TYPES } from '../../../di/service-keys';
+import { EntityNotFoundError } from '../../../../common/exceptions';
 
 /**
  * 通用仓储基类（简化版）
@@ -111,7 +112,7 @@ export abstract class BaseRepository<
   async findByIdOrFail(id: TId): Promise<T> {
     const entity = await this.findById(id);
     if (!entity) {
-      throw new Error(`实体不存在: ${id}`);
+      throw new EntityNotFoundError('Entity', typeof id === 'string' ? id : (id as ID).value);
     }
     return entity;
   }
@@ -158,7 +159,7 @@ export abstract class BaseRepository<
   async findOneOrFail(options: IQueryOptions): Promise<T> {
     const entity = await this.findOne(options);
     if (!entity) {
-      throw new Error('未找到符合条件的实体');
+      throw new EntityNotFoundError('Entity', 'with specified conditions');
     }
     return entity;
   }

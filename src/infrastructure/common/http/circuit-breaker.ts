@@ -1,4 +1,5 @@
 import { getConfig } from '../../config/config';
+import { ExecutionError } from '../../../../common/exceptions';
 
 enum CircuitState {
   CLOSED = 'CLOSED',
@@ -27,7 +28,7 @@ export class CircuitBreaker {
 
   async execute<T>(fn: () => Promise<T>): Promise<T> {
     if (this.isOpen()) {
-      throw new Error('Circuit breaker is OPEN. Request blocked.');
+      throw new ExecutionError('Circuit breaker is OPEN. Request blocked.');
     }
 
     try {

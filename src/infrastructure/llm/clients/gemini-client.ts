@@ -13,6 +13,7 @@ import { HttpClient } from '../../../infrastructure/common/http/http-client';
 import { TokenBucketLimiter } from '../rate-limiters/token-bucket-limiter';
 import { TokenCalculator } from '../token-calculators/token-calculator';
 import { getConfig } from '../../config/config';
+import { MissingConfigurationError, InvalidConfigurationError } from '../../../../common/exceptions';
 
 @injectable()
 export class GeminiClient extends BaseLLMClient {
@@ -44,15 +45,13 @@ export class GeminiClient extends BaseLLMClient {
 
     // 验证必需配置
     if (!apiKey) {
-      throw new Error('Gemini API密钥未配置。请在配置文件中设置 llm.gemini.apiKey。');
+      throw new MissingConfigurationError('llm.gemini.apiKey');
     }
     if (!defaultModel) {
-      throw new Error('Gemini默认模型未配置。请在配置文件中设置 llm.gemini.defaultModel。');
+      throw new MissingConfigurationError('llm.gemini.defaultModel');
     }
     if (!supportedModels || !Array.isArray(supportedModels) || supportedModels.length === 0) {
-      throw new Error(
-        'Gemini支持的模型列表未配置。请在配置文件中设置 llm.gemini.supportedModels。'
-      );
+      throw new MissingConfigurationError('llm.gemini.supportedModels');
     }
 
     // 创建提供商配置
@@ -76,7 +75,7 @@ export class GeminiClient extends BaseLLMClient {
 
   getSupportedModelsList(): string[] {
     if (!this.providerConfig.supportedModels) {
-      throw new Error('Gemini支持的模型列表未配置。');
+      throw new MissingConfigurationError('llm.gemini.supportedModels');
     }
     return this.providerConfig.supportedModels;
   }
@@ -84,14 +83,14 @@ export class GeminiClient extends BaseLLMClient {
   getModelConfig(): ModelConfig {
     const model = this.providerConfig.defaultModel;
     if (!model) {
-      throw new Error('Gemini默认模型未配置。');
+      throw new MissingConfigurationError('llm.gemini.defaultModel');
     }
 
     const configs = getConfig().get('llm_runtime.gemini.models');
     const config = configs[model];
 
     if (!config) {
-      throw new Error(`Gemini模型配置未找到: ${model}。请在配置文件中提供该模型的完整配置。`);
+      throw new InvalidConfigurationError(model, `Gemini模型配置未找到: ${model}。请在配置文件中提供该模型的完整配置。`);
     }
 
     // 验证必需的配置字段
@@ -105,7 +104,7 @@ export class GeminiClient extends BaseLLMClient {
     ];
     for (const field of requiredFields) {
       if (config[field] === undefined || config[field] === null) {
-        throw new Error(`Gemini模型 ${model} 缺少必需配置字段: ${field}`);
+        throw new InvalidConfigurationError(field, `Gemini模型 ${model} 缺少必需配置字段: ${field}`);
       }
     }
 

@@ -9,6 +9,7 @@ import {
   BaseParameterSchema,
 } from './base-parameter-mapper';
 import { ProviderConfig } from './interfaces/provider-config.interface';
+import { ValidationError } from '../../../../common/exceptions';
 
 /**
  * Gemini 参数 Schema
@@ -118,7 +119,7 @@ export class GeminiParameterMapper extends BaseParameterMapper {
     const usageMetadata = response['usageMetadata'];
 
     if (!candidate) {
-      throw new Error('Invalid Gemini response: no candidates found');
+      throw new ValidationError('Invalid Gemini response: no candidates found');
     }
 
     // 提取内容

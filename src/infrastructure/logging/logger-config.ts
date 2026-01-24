@@ -3,6 +3,7 @@
  */
 
 import { LogLevel } from '../../domain/common/types/logger-types';
+import { ConfigurationError, InvalidConfigurationError, ValidationError } from '../../../common/exceptions';
 
 /**
  * 日志输出类型
@@ -199,10 +200,10 @@ export class LoggerConfigBuilder {
    */
   build(): LoggerConfig {
     if (!this.config.level) {
-      throw new Error('日志级别必须设置');
+      throw new InvalidConfigurationError('level', '日志级别必须设置');
     }
     if (!this.config.outputs || this.config.outputs.length === 0) {
-      throw new Error('至少需要配置一个日志输出');
+      throw new InvalidConfigurationError('outputs', '至少需要配置一个日志输出');
     }
     return this.config as LoggerConfig;
   }
@@ -348,7 +349,7 @@ export class LoggerConfigManager {
         } as LogOutputConfig;
 
       default:
-        throw new Error(`不支持的日志输出类型: ${output.type}`);
+        throw new InvalidConfigurationError('output.type', `不支持的日志输出类型: ${output.type}`);
     }
   }
 
@@ -392,25 +393,25 @@ export class LoggerConfigManager {
   validateConfig(config: LoggerConfig): boolean {
     // 验证日志级别
     if (!Object.values(LogLevel).includes(config.level)) {
-      throw new Error(`无效的日志级别: ${config.level}`);
+      throw new InvalidConfigurationError('level', `无效的日志级别: ${config.level}`);
     }
 
     // 验证输出配置
     if (!config.outputs || config.outputs.length === 0) {
-      throw new Error('至少需要配置一个日志输出');
+      throw new InvalidConfigurationError('outputs', '至少需要配置一个日志输出');
     }
 
     for (const output of config.outputs) {
       if (!Object.values(LogOutputType).includes(output.type)) {
-        throw new Error(`无效的日志输出类型: ${output.type}`);
+        throw new InvalidConfigurationError('output.type', `无效的日志输出类型: ${output.type}`);
       }
 
       if (!Object.values(LogLevel).includes(output.level)) {
-        throw new Error(`无效的日志级别: ${output.level}`);
+        throw new InvalidConfigurationError('output.level', `无效的日志级别: ${output.level}`);
       }
 
       if (output.type === LogOutputType.FILE && !(output as any).path) {
-        throw new Error('文件输出必须指定路径');
+        throw new InvalidConfigurationError('output.path', '文件输出必须指定路径');
       }
     }
 

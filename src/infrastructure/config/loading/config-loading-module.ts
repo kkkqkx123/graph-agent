@@ -17,6 +17,7 @@ import * as fs from 'fs/promises';
 import * as path from 'path';
 import { parse as parseToml } from 'toml';
 import { SCHEMA_MAP } from './schemas';
+import { ConfigurationError, InvalidConfigurationError, ValidationError } from '../../../../common/exceptions';
 
 /**
  * 配置加载模块选项
@@ -152,7 +153,7 @@ export class ConfigLoadingModule {
     if (this.options.enableValidation) {
       const validatedFiles = await this.preValidateFiles(moduleType, sortedFiles);
       if (validatedFiles.length === 0) {
-        throw new Error(`模块 ${moduleType} 没有有效的配置文件`);
+        throw new InvalidConfigurationError(moduleType, `模块 ${moduleType} 没有有效的配置文件`);
       }
       sortedFiles.length = 0;
       sortedFiles.push(...validatedFiles);
@@ -327,7 +328,7 @@ export class ConfigLoadingModule {
     // 如果所有文件都加载失败，抛出错误
     if (loadedFiles.length === 0 && failedFiles.length > 0) {
       const errorSummary = failedFiles.map(f => `  - ${f.path}: ${f.error}`).join('\n');
-      throw new Error(`所有配置文件加载失败:\n${errorSummary}`);
+      throw new ConfigurationError(`所有配置文件加载失败:\n${errorSummary}`);
     }
 
     // 如果有部分文件加载失败，记录警告
@@ -353,7 +354,7 @@ export class ConfigLoadingModule {
    */
   get<T = any>(key: string, defaultValue?: T): T {
     if (!this.isInitialized) {
-      throw new Error('配置加载模块尚未初始化');
+      throw new ConfigurationError('配置加载模块尚未初始化');
     }
 
     const value = this.getNestedValue(this.configs, key);
@@ -367,7 +368,7 @@ export class ConfigLoadingModule {
    */
   getAllConfigs(): Record<string, any> {
     if (!this.isInitialized) {
-      throw new Error('配置加载模块尚未初始化');
+      throw new ConfigurationError('配置加载模块尚未初始化');
     }
     return this.deepClone(this.configs);
   }
@@ -380,7 +381,7 @@ export class ConfigLoadingModule {
    */
   async refresh(): Promise<void> {
     if (!this.isInitialized) {
-      throw new Error('配置加载模块尚未初始化');
+      throw new ConfigurationError('配置加载模块尚未初始化');
     }
 
     this.logger.info('开始刷新配置');
@@ -426,13 +427,13 @@ export class ConfigLoadingModule {
     const ext = path.extname(filePath).toLowerCase();
 
     if (ext !== '.toml') {
-      throw new Error(`不支持的配置文件格式: ${ext}，仅支持TOML格式`);
+      throw new InvalidConfigurationError('format', `不支持的配置文件格式: ${ext}，仅支持TOML格式`);
     }
 
     try {
       return parseToml(content);
     } catch (error) {
-      throw new Error(`解析配置文件失败 ${filePath}: ${(error as Error).message}`);
+      throw new InvalidConfigurationError('content', `解析配置文件失败 ${filePath}: ${(error as Error).message}`);
     }
   }
 
@@ -474,7 +475,7 @@ export class ConfigLoadingModule {
       });
 
       const errorMessages = validation.errors.map(e => `${e.path}: ${e.message}`);
-      throw new Error(`配置验证失败（${validation.severity}）:\n${errorMessages.join('\n')}`);
+      throw new ValidationError(`配置验证失败（${validation.severity}）:\n${errorMessages.join('\n')}`);
     }
   }
 }

@@ -12,6 +12,7 @@ import { Version } from '../../../domain/common/value-objects/version';
 import { CheckpointStatus } from '../../../domain/threads/checkpoints/value-objects/checkpoint-status';
 import { CheckpointType } from '../../../domain/threads/checkpoints/value-objects/checkpoint-type';
 import { CheckpointScope } from '../../../domain/threads/checkpoints/value-objects/checkpoint-scope';
+import { ExecutionError } from '../../../../common/exceptions';
 
 export class CheckpointMapper implements BaseMapper<Checkpoint, CheckpointModel> {
   /**
@@ -42,7 +43,7 @@ export class CheckpointMapper implements BaseMapper<Checkpoint, CheckpointModel>
 
       return Checkpoint.fromProps(props);
     } catch (error) {
-      throw new Error(`Checkpoint模型转换失败: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      throw new ExecutionError(`Checkpoint模型转换失败: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   }
 
@@ -74,7 +75,7 @@ export class CheckpointMapper implements BaseMapper<Checkpoint, CheckpointModel>
 
       return model;
     } catch (error) {
-      throw new Error(`Checkpoint实体转换失败: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      throw new ExecutionError(`Checkpoint实体转换失败: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   }
 }

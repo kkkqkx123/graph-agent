@@ -1,4 +1,5 @@
 import { getConfig } from '../../config/config';
+import { ExecutionError } from '../../../../common/exceptions';
 
 export class RateLimiter {
   private tokens: number;
@@ -18,7 +19,7 @@ export class RateLimiter {
 
     if (this.tokens < 1) {
       const waitTime = this.calculateWaitTime();
-      throw new Error(
+      throw new ExecutionError(
         `Rate limit exceeded. Please wait ${waitTime}ms before making another request.`
       );
     }

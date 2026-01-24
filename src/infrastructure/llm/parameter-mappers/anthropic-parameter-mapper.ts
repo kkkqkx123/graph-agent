@@ -9,6 +9,7 @@ import {
   BaseParameterSchema,
 } from './base-parameter-mapper';
 import { ProviderConfig } from './interfaces/provider-config.interface';
+import { ValidationError } from '../../../../common/exceptions';
 
 /**
  * Anthropic 参数 Schema
@@ -103,7 +104,7 @@ export class AnthropicParameterMapper extends BaseParameterMapper {
     const usage = response['usage'];
 
     if (!content || content.length === 0) {
-      throw new Error('Invalid Anthropic response: no content found');
+      throw new ValidationError('Invalid Anthropic response: no content found');
     }
 
     // 提取文本内容

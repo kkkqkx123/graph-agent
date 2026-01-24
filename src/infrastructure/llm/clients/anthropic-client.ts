@@ -13,6 +13,7 @@ import { HttpClient } from '../../../infrastructure/common/http/http-client';
 import { TokenBucketLimiter } from '../rate-limiters/token-bucket-limiter';
 import { TokenCalculator } from '../token-calculators/token-calculator';
 import { getConfig } from '../../config/config';
+import { MissingConfigurationError, InvalidConfigurationError, ExecutionError } from '../../../../common/exceptions';
 
 @injectable()
 export class AnthropicClient extends BaseLLMClient {
@@ -40,15 +41,13 @@ export class AnthropicClient extends BaseLLMClient {
 
     // 验证必需配置
     if (!apiKey) {
-      throw new Error('Anthropic API密钥未配置。请在配置文件中设置 llm.anthropic.apiKey。');
+      throw new MissingConfigurationError('llm.anthropic.apiKey');
     }
     if (!defaultModel) {
-      throw new Error('Anthropic默认模型未配置。请在配置文件中设置 llm.anthropic.defaultModel。');
+      throw new MissingConfigurationError('llm.anthropic.defaultModel');
     }
     if (!supportedModels || !Array.isArray(supportedModels) || supportedModels.length === 0) {
-      throw new Error(
-        'Anthropic支持的模型列表未配置。请在配置文件中设置 llm.anthropic.supportedModels。'
-      );
+      throw new MissingConfigurationError('llm.anthropic.supportedModels');
     }
 
     // 创建 Anthropic 供应商配置
@@ -75,7 +74,7 @@ export class AnthropicClient extends BaseLLMClient {
 
   getSupportedModelsList(): string[] {
     if (!this.providerConfig.supportedModels) {
-      throw new Error('Anthropic支持的模型列表未配置。');
+      throw new MissingConfigurationError('llm.anthropic.supportedModels');
     }
     return this.providerConfig.supportedModels;
   }
@@ -83,14 +82,14 @@ export class AnthropicClient extends BaseLLMClient {
   getModelConfig(): ModelConfig {
     const model = this.providerConfig.defaultModel;
     if (!model) {
-      throw new Error('Anthropic默认模型未配置。');
+      throw new MissingConfigurationError('llm.anthropic.defaultModel');
     }
 
     const configs = getConfig().get('llm_runtime.anthropic.models');
     const config = configs[model];
 
     if (!config) {
-      throw new Error(`Anthropic模型配置未找到: ${model}。请在配置文件中提供该模型的完整配置。`);
+      throw new InvalidConfigurationError(model, `Anthropic模型配置未找到: ${model}。请在配置文件中提供该模型的完整配置。`);
     }
 
     // 验证必需的配置字段
@@ -104,7 +103,7 @@ export class AnthropicClient extends BaseLLMClient {
     ];
     for (const field of requiredFields) {
       if (config[field] === undefined || config[field] === null) {
-        throw new Error(`Anthropic模型 ${model} 缺少必需配置字段: ${field}`);
+        throw new InvalidConfigurationError(field, `Anthropic模型 ${model} 缺少必需配置字段: ${field}`);
       }
     }
 
@@ -192,7 +191,7 @@ export class AnthropicClient extends BaseLLMClient {
 
             case 'error':
               // 错误事件
-              throw new Error(`Anthropic流式响应错误: ${data.error?.message || 'Unknown error'}`);
+              throw new ExecutionError(`Anthropic流式响应错误: ${data.error?.message || 'Unknown error'}`);
 
             default:
               // 其他事件类型忽略

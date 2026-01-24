@@ -16,6 +16,7 @@ import { Metadata, DeletionStatus } from '../../../domain/common/value-objects';
 import { ThreadCollection } from '../../../domain/sessions/value-objects/thread-collection';
 import { SharedResources } from '../../../domain/sessions/value-objects/shared-resources';
 import { ParallelStrategy } from '../../../domain/sessions/value-objects/parallel-strategy';
+import { ExecutionError } from '../../../../common/exceptions';
 
 export class SessionMapper implements BaseMapper<Session, SessionModel> {
   /**
@@ -65,7 +66,7 @@ export class SessionMapper implements BaseMapper<Session, SessionModel> {
 
       return Session.fromProps(sessionData);
     } catch (error) {
-      throw new Error(`Session模型转换失败: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      throw new ExecutionError(`Session模型转换失败: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   }
 
@@ -98,7 +99,7 @@ export class SessionMapper implements BaseMapper<Session, SessionModel> {
 
       return model;
     } catch (error) {
-      throw new Error(`Session实体转换失败: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      throw new ExecutionError(`Session实体转换失败: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   }
 }

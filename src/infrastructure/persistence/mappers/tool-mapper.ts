@@ -15,6 +15,7 @@ import { Metadata } from '../../../domain/common/value-objects';
 import { Tags } from '../../../domain/threads/checkpoints/value-objects/tags';
 import { DeletionStatus } from '../../../domain/common/value-objects';
 import { StateData } from '../../../domain/threads/checkpoints/value-objects/state-data';
+import { ExecutionError } from '../../../../common/exceptions';
 
 export class ToolMapper implements BaseMapper<Tool, ToolModel> {
   /**
@@ -60,7 +61,7 @@ export class ToolMapper implements BaseMapper<Tool, ToolModel> {
 
       return Tool.fromProps(toolData);
     } catch (error) {
-      throw new Error(`Tool模型转换失败: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      throw new ExecutionError(`Tool模型转换失败: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   }
 
@@ -96,7 +97,7 @@ export class ToolMapper implements BaseMapper<Tool, ToolModel> {
 
       return model;
     } catch (error) {
-      throw new Error(`Tool实体转换失败: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      throw new ExecutionError(`Tool实体转换失败: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   }
 }

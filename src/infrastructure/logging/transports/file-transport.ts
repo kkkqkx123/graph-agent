@@ -8,6 +8,7 @@ import { LogEntry } from '../../../domain/common/types/logger-types';
 import { FileLogOutputConfig, LogRotationStrategy } from '../logger-config';
 import { BaseTransport } from './base-transport';
 import { FormatterFactory } from '../formatters/formatter-factory';
+import { InvalidConfigurationError } from '../../../../common/exceptions';
 
 /**
  * 文件传输器
@@ -210,7 +211,7 @@ export class FileTransport extends BaseTransport {
 
     const match = sizeStr.match(/^(\d+)(B|KB|MB|GB)$/i);
     if (!match) {
-      throw new Error(`无效的文件大小格式: ${sizeStr}`);
+      throw new InvalidConfigurationError('size', `无效的文件大小格式: ${sizeStr}`);
     }
 
     const value = parseInt(match[1]!, 10);

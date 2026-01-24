@@ -21,6 +21,7 @@ import {
   IPromptRepository,
   PromptSearchCriteria,
 } from '../../../domain/prompts/repositories/prompt-repository';
+import { ExecutionError, EntityNotFoundError } from '../../../../common/exceptions';
 
 /**
  * 提示词仓库实现
@@ -89,43 +90,43 @@ export class PromptRepository implements IPromptRepository {
   async save(prompt: Prompt): Promise<Prompt> {
     // 提示词配置是只读的，不支持保存
     this.logger.warn('提示词仓库不支持保存操作', { promptId: prompt.id.toString() });
-    throw new Error('提示词仓库不支持保存操作');
+    throw new ExecutionError('提示词仓库不支持保存操作');
   }
 
   async saveBatch(prompts: Prompt[]): Promise<Prompt[]> {
     // 提示词配置是只读的，不支持保存
     this.logger.warn('提示词仓库不支持批量保存操作');
-    throw new Error('提示词仓库不支持批量保存操作');
+    throw new ExecutionError('提示词仓库不支持批量保存操作');
   }
 
   async delete(prompt: Prompt): Promise<void> {
     // 提示词配置是只读的，不支持删除
     this.logger.warn('提示词仓库不支持删除操作', { promptId: prompt.id.toString() });
-    throw new Error('提示词仓库不支持删除操作');
+    throw new ExecutionError('提示词仓库不支持删除操作');
   }
 
   async deleteById(id: PromptId): Promise<void> {
     // 提示词配置是只读的，不支持删除
     this.logger.warn('提示词仓库不支持删除操作', { promptId: id.toString() });
-    throw new Error('提示词仓库不支持删除操作');
+    throw new ExecutionError('提示词仓库不支持删除操作');
   }
 
   async deleteBatch(prompts: Prompt[]): Promise<void> {
     // 提示词配置是只读的，不支持删除
     this.logger.warn('提示词仓库不支持批量删除操作');
-    throw new Error('提示词仓库不支持批量删除操作');
+    throw new ExecutionError('提示词仓库不支持批量删除操作');
   }
 
   async deleteWhere(options: any): Promise<number> {
     // 提示词配置是只读的，不支持删除
     this.logger.warn('提示词仓库不支持条件删除操作');
-    throw new Error('提示词仓库不支持条件删除操作');
+    throw new ExecutionError('提示词仓库不支持条件删除操作');
   }
 
   async findByIdOrFail(id: PromptId): Promise<Prompt> {
     const prompt = await this.findById(id);
     if (!prompt) {
-      throw new Error(`提示词 ${id.getValue()} 未找到`);
+      throw new EntityNotFoundError('Prompt', id.getValue());
     }
     return prompt;
   }
@@ -147,7 +148,7 @@ export class PromptRepository implements IPromptRepository {
   async findOneOrFail(options: any): Promise<Prompt> {
     const prompt = await this.findOne(options);
     if (!prompt) {
-      throw new Error('未找到符合条件的提示词');
+      throw new EntityNotFoundError('Prompt', 'with specified conditions');
     }
     return prompt;
   }

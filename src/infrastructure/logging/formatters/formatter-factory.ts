@@ -5,6 +5,7 @@
 import { LogFormatType, ConsoleLogOutputConfig, FileLogOutputConfig } from '../logger-config';
 import { JsonFormatter, JsonFormatterOptions } from './json-formatter';
 import { TextFormatter, TextFormatterOptions } from './text-formatter';
+import { InvalidConfigurationError } from '../../../common/exceptions';
 
 /**
  * Formatter工厂 - 统一管理formatter创建逻辑
@@ -37,7 +38,7 @@ export class FormatterFactory {
         });
 
       default:
-        throw new Error(`不支持的日志格式: ${config.format}`);
+        throw new InvalidConfigurationError('format', `不支持的日志格式: ${config.format}`);
     }
   }
 
@@ -68,7 +69,7 @@ export class FormatterFactory {
         });
 
       default:
-        throw new Error(`不支持的日志格式: ${config.format}`);
+        throw new InvalidConfigurationError('format', `不支持的日志格式: ${config.format}`);
     }
   }
 }

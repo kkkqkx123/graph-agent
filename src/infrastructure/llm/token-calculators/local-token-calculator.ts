@@ -1,5 +1,6 @@
 import { injectable } from 'inversify';
 import { BaseTokenCalculator, TokenUsage, TokenCalculationStats } from './base-token-calculator';
+import { ExecutionError } from '../../../../common/exceptions';
 
 /**
  * Tiktoken Token本地计算器
@@ -36,7 +37,7 @@ export class LocalTokenCalculator extends BaseTokenCalculator {
       console.debug(`Tiktoken计算器使用编码器: ${this.encoding.name}`);
     } catch (error) {
       console.error('加载tiktoken编码器失败:', error);
-      throw new Error(
+      throw new ExecutionError(
         'tiktoken is required for token processing. ' +
           'Please install it with: npm install tiktoken'
       );

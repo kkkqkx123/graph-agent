@@ -1,4 +1,5 @@
 import { getConfig } from '../../config/config';
+import { ExecutionError } from '../../../common/exceptions';
 
 interface RequestRecord {
   timestamp: number;
@@ -21,7 +22,7 @@ export class SlidingWindowLimiter {
       const oldestRequest = this.requests[0];
       if (oldestRequest) {
         const waitTime = this.windowSizeMs - (Date.now() - oldestRequest.timestamp);
-        throw new Error(
+        throw new ExecutionError(
           `Rate limit exceeded. Please wait ${Math.ceil(waitTime)}ms before making another request.`
         );
       }

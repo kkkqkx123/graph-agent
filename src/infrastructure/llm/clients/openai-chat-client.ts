@@ -14,6 +14,7 @@ import { TokenBucketLimiter } from '../rate-limiters/token-bucket-limiter';
 import { TokenCalculator } from '../token-calculators/token-calculator';
 import { getConfig } from '../../config/config';
 import { loadLLMRetryConfig, toHttpRetryConfig, LLMRetryConfig } from '../retry/llm-retry-config';
+import { MissingConfigurationError, InvalidConfigurationError } from '../../../../common/exceptions';
 
 @injectable()
 export class OpenAIChatClient extends BaseLLMClient {
@@ -45,15 +46,13 @@ export class OpenAIChatClient extends BaseLLMClient {
 
     // 验证必需配置
     if (!apiKey) {
-      throw new Error('OpenAI API密钥未配置。请在配置文件中设置 llm_runtime.openai.api_key。');
+      throw new MissingConfigurationError('llm_runtime.openai.api_key');
     }
     if (!defaultModel) {
-      throw new Error('OpenAI默认模型未配置。请在配置文件中设置 llm_runtime.openai.default_model。');
+      throw new MissingConfigurationError('llm_runtime.openai.default_model');
     }
     if (!supportedModels || !Array.isArray(supportedModels) || supportedModels.length === 0) {
-      throw new Error(
-        'OpenAI支持的模型列表未配置。请在配置文件中设置 llm_runtime.openai.supported_models。'
-      );
+      throw new MissingConfigurationError('llm_runtime.openai.supported_models');
     }
 
     // 创建 OpenAI 供应商配置
@@ -251,7 +250,7 @@ export class OpenAIChatClient extends BaseLLMClient {
 
   getSupportedModelsList(): string[] {
     if (!this.providerConfig.supportedModels) {
-      throw new Error('OpenAI支持的模型列表未配置。');
+      throw new MissingConfigurationError('llm_runtime.openai.supported_models');
     }
     return this.providerConfig.supportedModels;
   }
@@ -259,14 +258,14 @@ export class OpenAIChatClient extends BaseLLMClient {
   public getModelConfig(): ModelConfig {
     const model = this.providerConfig.defaultModel;
     if (!model) {
-      throw new Error('OpenAI默认模型未配置。');
+      throw new MissingConfigurationError('llm_runtime.openai.default_model');
     }
 
     const configs = getConfig().get('llm_runtime.openai.models');
     const config = configs[model];
 
     if (!config) {
-      throw new Error(`OpenAI模型配置未找到: ${model}。请在配置文件中提供该模型的完整配置。`);
+      throw new InvalidConfigurationError(model, `OpenAI模型配置未找到: ${model}。请在配置文件中提供该模型的完整配置。`);
     }
 
     // 验证必需的配置字段
@@ -280,7 +279,7 @@ export class OpenAIChatClient extends BaseLLMClient {
     ];
     for (const field of requiredFields) {
       if (config[field] === undefined || config[field] === null) {
-        throw new Error(`OpenAI模型 ${model} 缺少必需配置字段: ${field}`);
+        throw new InvalidConfigurationError(field, `OpenAI模型 ${model} 缺少必需配置字段: ${field}`);
       }
     }
 

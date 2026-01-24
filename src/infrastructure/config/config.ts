@@ -10,6 +10,7 @@ import { ConfigLoadingModule } from './loading/config-loading-module';
 import { ILogger } from '../../domain/common/types';
 import { AppConfig, AppConfigSchema } from './types';
 import { PathOf, ValueAtPath, IConfigAccessor } from './path-types';
+import { InvalidConfigurationError, ConfigurationError } from '../../../common/exceptions';
 
 /**
  * 内部配置管理器实例
@@ -48,7 +49,7 @@ export class TypedConfigAccessor implements IConfigAccessor<AppConfig> {
       if (value && typeof value === 'object' && key in value) {
         value = value[key];
       } else {
-        throw new Error(`配置路径不存在: ${path}`);
+        throw new InvalidConfigurationError(path, `配置路径不存在: ${path}`);
       }
     }
 
@@ -148,7 +149,7 @@ export async function initConfig(basePath: string, logger: ILogger): Promise<voi
   // 验证配置
   const result = AppConfigSchema.safeParse(configData);
   if (!result.success) {
-    throw new Error(`配置验证失败: ${result.error.message}`);
+    throw new ConfigurationError(`配置验证失败: ${result.error.message}`);
   }
 
   // 创建类型安全的配置访问器
@@ -173,7 +174,7 @@ export async function initConfig(basePath: string, logger: ILogger): Promise<voi
  */
 export function getConfig(): TypedConfigAccessor {
   if (!_configAccessor) {
-    throw new Error(
+    throw new ConfigurationError(
       '配置系统未初始化。请确保在应用启动时调用了 initConfig() 方法。'
     );
   }
@@ -195,13 +196,13 @@ export function getConfig(): TypedConfigAccessor {
  */
 export async function refreshConfig(): Promise<void> {
   if (!_configManager) {
-    throw new Error(
+    throw new ConfigurationError(
       '配置系统未初始化。请确保在应用启动时调用了 initConfig() 方法。'
     );
   }
 
   if (!_logger) {
-    throw new Error('日志记录器未初始化');
+    throw new ConfigurationError('日志记录器未初始化');
   }
 
   _logger.info('开始刷新配置');
@@ -213,7 +214,7 @@ export async function refreshConfig(): Promise<void> {
   // 验证配置
   const result = AppConfigSchema.safeParse(configData);
   if (!result.success) {
-    throw new Error(`配置验证失败: ${result.error.message}`);
+    throw new ConfigurationError(`配置验证失败: ${result.error.message}`);
   }
 
   // 更新类型安全的配置访问器
@@ -240,7 +241,7 @@ export async function refreshConfig(): Promise<void> {
  */
 export function getConfigManager(): ConfigLoadingModule {
   if (!_configManager) {
-    throw new Error(
+    throw new ConfigurationError(
       '配置管理器未初始化。请确保在应用启动时调用了 initConfig() 方法。'
     );
   }

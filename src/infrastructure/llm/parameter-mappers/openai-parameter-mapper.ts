@@ -9,6 +9,7 @@ import {
   BaseParameterSchema,
 } from './base-parameter-mapper';
 import { ProviderConfig } from './interfaces/provider-config.interface';
+import { ValidationError } from '../../../../common/exceptions';
 
 /**
  * OpenAI 参数 Schema
@@ -126,7 +127,7 @@ export class OpenAIParameterMapper extends BaseParameterMapper {
     const usage = response['usage'];
 
     if (!choice) {
-      throw new Error('Invalid OpenAI response: no choices found');
+      throw new ValidationError('Invalid OpenAI response: no choices found');
     }
 
     // 解析详细信息

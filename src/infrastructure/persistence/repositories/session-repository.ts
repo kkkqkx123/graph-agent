@@ -10,6 +10,7 @@ import { BaseRepository } from './base-repository';
 import { ConnectionManager } from '../connection-manager';
 import { TYPES } from '../../../di/service-keys';
 import { SessionMapper } from '../mappers/session-mapper';
+import { ExecutionError } from '../../../../common/exceptions';
 
 @injectable()
 export class SessionRepository
@@ -214,7 +215,7 @@ export class SessionRepository
     const session = await this.findById(sessionId);
     if (session && session.isDeleted()) {
       // 需要实现恢复逻辑，这里暂时抛出异常
-      throw new Error('恢复软删除功能尚未实现');
+      throw new ExecutionError('恢复软删除功能尚未实现');
     }
   }
 

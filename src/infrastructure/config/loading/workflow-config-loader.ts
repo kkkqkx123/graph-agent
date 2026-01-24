@@ -9,6 +9,7 @@ import { parse as parseToml } from 'toml';
 import { WorkflowConfigSchema, WorkflowConfig } from './schemas/workflow-schema';
 import { ParameterReplacer } from './parameter-replacer';
 import { ILogger } from '../../../domain/common';
+import { EntityNotFoundError, ValidationError } from '../../../../common/exceptions';
 
 /**
  * 工作流配置加载选项
@@ -123,7 +124,7 @@ export class WorkflowConfigLoader {
       }
     }
 
-    throw new Error(`找不到工作流配置文件: ${workflowId}.toml`);
+    throw new EntityNotFoundError('WorkflowConfig', workflowId);
   }
 
   /**
@@ -134,7 +135,7 @@ export class WorkflowConfigLoader {
     try {
       WorkflowConfigSchema.parse(config);
     } catch (error) {
-      throw new Error(`工作流配置验证失败: ${(error as Error).message}`);
+      throw new ValidationError(`工作流配置验证失败: ${(error as Error).message}`);
     }
   }
 

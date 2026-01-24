@@ -13,6 +13,7 @@ import { TYPES } from '../../../di/service-keys';
 import { HttpClient } from '../../../infrastructure/common/http/http-client';
 import { TokenBucketLimiter } from '../rate-limiters/token-bucket-limiter';
 import { getConfig } from '../../config/config';
+import { MissingConfigurationError, InvalidConfigurationError, ExecutionError } from '../../../../common/exceptions';
 
 @injectable()
 export class MockClient extends BaseLLMClient {
@@ -42,10 +43,10 @@ export class MockClient extends BaseLLMClient {
 
     // 验证必需配置
     if (!defaultModel) {
-      throw new Error('Mock默认模型未配置。请在配置文件中设置 llm.mock.defaultModel。');
+      throw new MissingConfigurationError('llm.mock.defaultModel');
     }
     if (!supportedModels || !Array.isArray(supportedModels) || supportedModels.length === 0) {
-      throw new Error('Mock支持的模型列表未配置。请在配置文件中设置 llm.mock.supportedModels。');
+      throw new MissingConfigurationError('llm.mock.supportedModels');
     }
 
     // 创建提供商配置
@@ -78,7 +79,7 @@ export class MockClient extends BaseLLMClient {
       return await this.generateMockResponse(request);
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : String(error);
-      throw new Error(`Mock client error: ${errorMessage}`);
+      throw new ExecutionError(`Mock client error: ${errorMessage}`);
     }
   }
 
@@ -131,7 +132,7 @@ export class MockClient extends BaseLLMClient {
 
   getSupportedModelsList(): string[] {
     if (!this.providerConfig.supportedModels) {
-      throw new Error('Mock支持的模型列表未配置。');
+      throw new MissingConfigurationError('llm.mock.supportedModels');
     }
     return this.providerConfig.supportedModels;
   }
@@ -139,14 +140,14 @@ export class MockClient extends BaseLLMClient {
   public getModelConfig(): ModelConfig {
     const model = this.providerConfig.defaultModel;
     if (!model) {
-      throw new Error('Mock默认模型未配置。');
+      throw new MissingConfigurationError('llm.mock.defaultModel');
     }
 
     const configs = getConfig().get('llm_runtime.mock.models');
     const config = configs[model];
 
     if (!config) {
-      throw new Error(`Mock模型配置未找到: ${model}。请在配置文件中提供该模型的完整配置。`);
+      throw new InvalidConfigurationError(model, `Mock模型配置未找到: ${model}。请在配置文件中提供该模型的完整配置。`);
     }
 
     // 验证必需的配置字段
@@ -160,7 +161,7 @@ export class MockClient extends BaseLLMClient {
     ];
     for (const field of requiredFields) {
       if (config[field] === undefined || config[field] === null) {
-        throw new Error(`Mock模型 ${model} 缺少必需配置字段: ${field}`);
+        throw new InvalidConfigurationError(field, `Mock模型 ${model} 缺少必需配置字段: ${field}`);
       }
     }
 
@@ -252,7 +253,7 @@ export class MockClient extends BaseLLMClient {
   ): Promise<AsyncIterable<LLMResponse>> {
     // MockClient 完全覆盖了 generateResponseStream，这个方法不会被调用
     // 但为了满足抽象方法要求，提供一个实现
-    throw new Error(
+    throw new ExecutionError(
       'MockClient 不应该调用 parseStreamResponse，因为它完全覆盖了 generateResponseStream'
     );
   }

@@ -13,6 +13,7 @@ import { WorkflowStatus } from '../../../domain/workflow/value-objects/workflow-
 import { parseWorkflowType } from '../../../domain/workflow/value-objects/workflow-type';
 import { Timestamp } from '../../../domain/common/value-objects/timestamp';
 import { Version } from '../../../domain/common/value-objects/version';
+import { ExecutionError } from '../../../../common/exceptions';
 
 export class WorkflowMapper implements BaseMapper<Workflow, WorkflowModel> {
   /**
@@ -51,7 +52,7 @@ export class WorkflowMapper implements BaseMapper<Workflow, WorkflowModel> {
       });
       return workflow;
     } catch (error) {
-      throw new Error(`Workflow实体创建失败: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      throw new ExecutionError(`Workflow实体创建失败: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   }
 
@@ -83,7 +84,7 @@ export class WorkflowMapper implements BaseMapper<Workflow, WorkflowModel> {
 
       return model;
     } catch (error) {
-      throw new Error(`Workflow实体转换失败: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      throw new ExecutionError(`Workflow实体转换失败: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   }
 }

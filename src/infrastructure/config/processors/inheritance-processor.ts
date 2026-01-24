@@ -11,6 +11,7 @@ import {
   InheritanceProcessorOptions,
   ILogger,
 } from '../../../domain/common/types';
+import { ParameterValidationError, InvalidConfigurationError } from '../../../../common/exceptions';
 
 /**
  * 配置继承处理器
@@ -25,9 +26,9 @@ export class InheritanceProcessor implements IConfigProcessor {
 
   constructor(options: InheritanceProcessorOptions = {}, logger: ILogger, basePath: string) {
     if (!basePath) {
-      throw new Error('InheritanceProcessor必须提供basePath参数');
+      throw new ParameterValidationError('basePath', 'InheritanceProcessor必须提供basePath参数');
     }
-    
+
     this.separator = options.separator || '.';
     this.maxDepth = options.maxDepth || 10;
     this.logger = logger;
@@ -148,13 +149,13 @@ export class InheritanceProcessor implements IConfigProcessor {
     const ext = path.extname(filePath).toLowerCase();
 
     if (ext !== '.toml') {
-      throw new Error(`不支持的配置文件格式: ${ext}，仅支持TOML格式`);
+      throw new InvalidConfigurationError('format', `不支持的配置文件格式: ${ext}，仅支持TOML格式`);
     }
 
     try {
       return parseToml(content);
     } catch (error) {
-      throw new Error(`解析配置文件失败 ${filePath}: ${(error as Error).message}`);
+      throw new InvalidConfigurationError('content', `解析配置文件失败 ${filePath}: ${(error as Error).message}`);
     }
   }
 
