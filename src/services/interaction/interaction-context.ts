@@ -1,10 +1,13 @@
 /**
  * Interaction 上下文接口
- * 
+ *
  * 负责维护交互过程中的状态，包括消息历史、变量、工具调用记录等
  */
 
-import { Message, ToolCall, LLMCall, TokenUsage } from './types/interaction-types';
+import { Message } from '../../domain/interaction/value-objects/message';
+import { ToolCall } from '../../domain/interaction/value-objects/tool-call';
+import { LLMCall } from '../../domain/interaction/value-objects/llm-call';
+import { InteractionTokenUsage } from '../../domain/interaction/value-objects/token-usage';
 
 /**
  * Interaction 上下文接口
@@ -63,12 +66,12 @@ export interface IInteractionContext {
   /**
    * 获取 Token 使用情况
    */
-  getTokenUsage(): TokenUsage;
+  getTokenUsage(): InteractionTokenUsage;
 
   /**
    * 更新 Token 使用情况
    */
-  updateTokenUsage(usage: TokenUsage): void;
+  updateTokenUsage(usage: InteractionTokenUsage): void;
 
   /**
    * 获取元数据
@@ -94,7 +97,7 @@ export class InteractionContext implements IInteractionContext {
   private variables: Map<string, any>;
   private toolCalls: ToolCall[];
   private llmCalls: LLMCall[];
-  private tokenUsage: TokenUsage;
+  private tokenUsage: InteractionTokenUsage;
   private metadata: Map<string, any>;
 
   constructor() {
@@ -102,11 +105,11 @@ export class InteractionContext implements IInteractionContext {
     this.variables = new Map();
     this.toolCalls = [];
     this.llmCalls = [];
-    this.tokenUsage = {
+    this.tokenUsage = new InteractionTokenUsage({
       promptTokens: 0,
       completionTokens: 0,
       totalTokens: 0,
-    };
+    });
     this.metadata = new Map();
   }
 
@@ -150,16 +153,12 @@ export class InteractionContext implements IInteractionContext {
     this.llmCalls.push(llmCall);
   }
 
-  getTokenUsage(): TokenUsage {
-    return { ...this.tokenUsage };
+  getTokenUsage(): InteractionTokenUsage {
+    return this.tokenUsage;
   }
 
-  updateTokenUsage(usage: TokenUsage): void {
-    this.tokenUsage = {
-      promptTokens: this.tokenUsage.promptTokens + usage.promptTokens,
-      completionTokens: this.tokenUsage.completionTokens + usage.completionTokens,
-      totalTokens: this.tokenUsage.totalTokens + usage.totalTokens,
-    };
+  updateTokenUsage(usage: InteractionTokenUsage): void {
+    this.tokenUsage = this.tokenUsage.add(usage);
   }
 
   getMetadata(key: string): any {
@@ -174,7 +173,7 @@ export class InteractionContext implements IInteractionContext {
     const cloned = new InteractionContext();
     
     // 克隆消息
-    cloned.messages = this.messages.map(msg => ({ ...msg }));
+    cloned.messages = [...this.messages];
     
     // 克隆变量
     this.variables.forEach((value, key) => {
@@ -182,13 +181,13 @@ export class InteractionContext implements IInteractionContext {
     });
     
     // 克隆工具调用
-    cloned.toolCalls = this.toolCalls.map(call => ({ ...call }));
+    cloned.toolCalls = [...this.toolCalls];
     
     // 克隆 LLM 调用
-    cloned.llmCalls = this.llmCalls.map(call => ({ ...call }));
+    cloned.llmCalls = [...this.llmCalls];
     
     // 克隆 Token 使用情况
-    cloned.tokenUsage = { ...this.tokenUsage };
+    cloned.tokenUsage = this.tokenUsage;
     
     // 克隆元数据
     this.metadata.forEach((value, key) => {

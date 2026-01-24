@@ -28,6 +28,30 @@ export {
   NodeExecution,
 } from './threads';
 
+// 导出交互领域模块
+export {
+  InteractionSession,
+  InteractionMessage,
+  InteractionToolCall,
+  InteractionLLMCall,
+  MessageRole,
+  Message,
+  ToolCall,
+  LLMCall,
+  InteractionTokenUsage,
+  LLMConfig,
+  ToolConfig,
+  UserInteractionConfig,
+  InteractionException,
+  InteractionSessionNotFoundException,
+  InteractionExecutionException,
+  LLMExecutionException,
+  ToolExecutionException,
+  UserInteractionException,
+  TokenLimitExceededException,
+  IInteractionSessionRepository,
+} from './interaction';
+
 // 导出工具领域模块
 export * from './tools';
 

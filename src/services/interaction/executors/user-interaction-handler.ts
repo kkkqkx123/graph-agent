@@ -6,7 +6,8 @@
 
 import { injectable, inject } from 'inversify';
 import { IInteractionContext } from '../interaction-context';
-import { UserInteractionConfig, UserInteractionResult } from '../types/interaction-types';
+import { UserInteractionResult } from '../interaction-engine';
+import { UserInteractionConfig } from '../../../domain/interaction/value-objects/user-interaction-config';
 import { ILogger } from '../../../domain/common/types/logger-types';
 
 /**

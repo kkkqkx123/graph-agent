@@ -56,7 +56,7 @@ import { GroupTransformFunction } from '../../services/workflow/functions/nodes/
 import { NodeExecutionHandler } from '../../services/workflow/execution/handlers/node-execution-handler';
 import { HookExecutionHandler } from '../../services/workflow/execution/handlers/hook-execution-handler';
 import { TriggerExecutionHandler } from '../../services/workflow/execution/handlers/trigger-execution-handler';
-import { InteractionEngine } from '../../services/interaction/interaction-engine-impl';
+import { InteractionEngine } from '../../services/interaction/interaction-engine';
 import { LLMExecutor } from '../../services/interaction/executors/llm-executor';
 import { ToolExecutor } from '../../services/interaction/executors/tool-executor';
 import { UserInteractionHandler } from '../../services/interaction/executors/user-interaction-handler';

@@ -10,9 +10,9 @@ import { ToolNode } from '../../../../domain/workflow/entities/node/tool-node';
 import { NodeExecutionResult } from '../../../../domain/workflow/entities/node';
 import { ExecutionContext } from '../context/execution-context';
 import { INodeExecutionStrategy } from './node-execution-strategy';
-import { IInteractionEngine } from '../../../interaction/interaction-engine';
+import { InteractionEngine } from '../../../interaction/interaction-engine';
 import { IInteractionContext } from '../../../interaction/interaction-context';
-import { ToolConfig } from '../../../interaction/types/interaction-types';
+import { ToolConfig } from '../../../../domain/interaction/value-objects/tool-config';
 import { ILogger } from '../../../../domain/common/types/logger-types';
 
 /**
@@ -22,7 +22,7 @@ import { ILogger } from '../../../../domain/common/types/logger-types';
 export class ToolNodeStrategy implements INodeExecutionStrategy {
   constructor(
     @inject('Logger') private readonly logger: ILogger,
-    @inject('InteractionEngine') private readonly interactionEngine: IInteractionEngine
+    @inject('InteractionEngine') private readonly interactionEngine: InteractionEngine
   ) {}
 
   canExecute(node: Node): boolean {
@@ -50,11 +50,11 @@ export class ToolNodeStrategy implements INodeExecutionStrategy {
 
     try {
       // 构建工具配置
-      const config: ToolConfig = {
+      const config = new ToolConfig({
         toolId: node.toolId,
         parameters: node.parameters,
         timeout: node.timeout,
-      };
+      });
 
       // 获取 Interaction 上下文
       let interactionContext = context.getMetadata('interactionContext') as IInteractionContext;

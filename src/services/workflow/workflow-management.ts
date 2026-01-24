@@ -10,7 +10,6 @@ import { Workflow, IWorkflowRepository, WorkflowQueryFilter, PaginationParams } 
 import { WorkflowType, parseWorkflowType } from '../../domain/workflow/value-objects/workflow-type';
 import { ILogger } from '../../domain/common';
 import { BaseService } from '../common/base-service';
-import { WorkflowDTO, mapWorkflowToDTO, mapWorkflowsToDTOs } from './dtos/workflow-dto';
 import { WorkflowMerger } from './workflow-merger';
 import { SubWorkflowValidator, SubWorkflowValidationResult } from './validators/subworkflow-validator';
 import { WorkflowConfig } from '../../domain/workflow/value-objects/workflow-config';
@@ -135,7 +134,7 @@ export interface GetWorkflowStatusParams {
  * 工作流列表结果
  */
 export interface WorkflowListResult {
-  workflows: WorkflowDTO[];
+  workflows: Workflow[];
   total: number;
   page: number;
   size: number;
@@ -165,9 +164,9 @@ export class WorkflowManagement extends BaseService {
   /**
    * 创建工作流
    * @param params 创建工作流参数
-   * @returns 创建的工作流DTO
+   * @returns 创建的工作流
    */
-  async createWorkflow(params: CreateWorkflowParams): Promise<WorkflowDTO> {
+  async createWorkflow(params: CreateWorkflowParams): Promise<Workflow> {
     return this.executeUpdateOperation(
       '工作流',
       async () => {
@@ -200,7 +199,7 @@ export class WorkflowManagement extends BaseService {
           name: savedWorkflow.name
         });
 
-        return mapWorkflowToDTO(savedWorkflow);
+        return savedWorkflow;
       },
       { name: params.name }
     );
@@ -209,9 +208,9 @@ export class WorkflowManagement extends BaseService {
   /**
    * 更新工作流
    * @param params 更新工作流参数
-   * @returns 更新后的工作流DTO
+   * @returns 更新后的工作流
    */
-  async updateWorkflow(params: UpdateWorkflowParams): Promise<WorkflowDTO> {
+  async updateWorkflow(params: UpdateWorkflowParams): Promise<Workflow> {
     return this.executeUpdateOperation(
       '工作流',
       async () => {
@@ -248,7 +247,7 @@ export class WorkflowManagement extends BaseService {
         // 保存工作流
         const updatedWorkflow = await this.workflowRepository.save(workflow);
 
-        return mapWorkflowToDTO(updatedWorkflow);
+        return updatedWorkflow;
       },
       { workflowId: params.workflowId }
     );
@@ -288,9 +287,9 @@ export class WorkflowManagement extends BaseService {
   /**
    * 复制工作流
    * @param params 复制工作流参数
-   * @returns 复制后的工作流DTO
+   * @returns 复制后的工作流
    */
-  async duplicateWorkflow(params: DuplicateWorkflowParams): Promise<WorkflowDTO> {
+  async duplicateWorkflow(params: DuplicateWorkflowParams): Promise<Workflow> {
     return this.executeUpdateOperation(
       '工作流副本',
       async () => {
@@ -346,7 +345,7 @@ export class WorkflowManagement extends BaseService {
           newId: savedWorkflow.workflowId.toString()
         });
 
-        return mapWorkflowToDTO(savedWorkflow);
+        return savedWorkflow;
       },
       { originalWorkflowId: params.workflowId, newName: params.newName }
     );
@@ -355,9 +354,9 @@ export class WorkflowManagement extends BaseService {
   /**
    * 添加工作流标签
    * @param params 添加工作流标签参数
-   * @returns 更新后的工作流DTO
+   * @returns 更新后的工作流
    */
-  async addWorkflowTag(params: AddWorkflowTagParams): Promise<WorkflowDTO> {
+  async addWorkflowTag(params: AddWorkflowTagParams): Promise<Workflow> {
     return this.executeUpdateOperation(
       '工作流',
       async () => {
@@ -372,7 +371,7 @@ export class WorkflowManagement extends BaseService {
         // 保存工作流
         const savedWorkflow = await this.workflowRepository.save(updatedWorkflow);
 
-        return mapWorkflowToDTO(savedWorkflow);
+        return savedWorkflow;
       },
       { workflowId: params.workflowId, tag: params.tag }
     );
@@ -381,9 +380,9 @@ export class WorkflowManagement extends BaseService {
   /**
    * 移除工作流标签
    * @param params 移除工作流标签参数
-   * @returns 更新后的工作流DTO
+   * @returns 更新后的工作流
    */
-  async removeWorkflowTag(params: RemoveWorkflowTagParams): Promise<WorkflowDTO> {
+  async removeWorkflowTag(params: RemoveWorkflowTagParams): Promise<Workflow> {
     return this.executeUpdateOperation(
       '工作流',
       async () => {
@@ -398,7 +397,7 @@ export class WorkflowManagement extends BaseService {
         // 保存工作流
         const savedWorkflow = await this.workflowRepository.save(updatedWorkflow);
 
-        return mapWorkflowToDTO(savedWorkflow);
+        return savedWorkflow;
       },
       { workflowId: params.workflowId, tag: params.tag }
     );
@@ -434,9 +433,9 @@ export class WorkflowManagement extends BaseService {
   /**
    * 获取工作流
    * @param params 获取工作流参数
-   * @returns 工作流DTO或null
+   * @returns 工作流或null
    */
-  async getWorkflow(params: GetWorkflowParams): Promise<WorkflowDTO | null> {
+  async getWorkflow(params: GetWorkflowParams): Promise<Workflow | null> {
     return this.executeGetOperation(
       '工作流',
       async () => {
@@ -447,7 +446,7 @@ export class WorkflowManagement extends BaseService {
           return null;
         }
 
-        return mapWorkflowToDTO(workflow);
+        return workflow;
       },
       { workflowId: params.workflowId }
     );
@@ -494,7 +493,7 @@ export class WorkflowManagement extends BaseService {
         const paginatedResult = await this.workflowRepository.queryWithFilter(filter, pagination);
 
         return {
-          workflows: mapWorkflowsToDTOs(paginatedResult.items),
+          workflows: paginatedResult.items,
           total: paginatedResult.total,
           page: paginatedResult.page,
           size: paginatedResult.size,
@@ -566,7 +565,7 @@ export class WorkflowManagement extends BaseService {
         const paginatedWorkflows = workflows.slice(startIndex, endIndex);
 
         return {
-          workflows: mapWorkflowsToDTOs(paginatedWorkflows),
+          workflows: paginatedWorkflows,
           total: workflows.length,
           page,
           size: paginatedWorkflows.length

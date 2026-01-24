@@ -10,9 +10,9 @@ import { LLMNode } from '../../../../domain/workflow/entities/node/llm-node';
 import { NodeExecutionResult } from '../../../../domain/workflow/entities/node';
 import { ExecutionContext } from '../context/execution-context';
 import { INodeExecutionStrategy } from './node-execution-strategy';
-import { IInteractionEngine } from '../../../interaction/interaction-engine';
+import { InteractionEngine } from '../../../interaction/interaction-engine';
 import { IInteractionContext, InteractionContext } from '../../../interaction/interaction-context';
-import { LLMConfig } from '../../../interaction/types/interaction-types';
+import { LLMConfig } from '../../../../domain/interaction/value-objects/llm-config';
 import { ILogger } from '../../../../domain/common/types/logger-types';
 
 /**
@@ -22,7 +22,7 @@ import { ILogger } from '../../../../domain/common/types/logger-types';
 export class LLMNodeStrategy implements INodeExecutionStrategy {
   constructor(
     @inject('Logger') private readonly logger: ILogger,
-    @inject('InteractionEngine') private readonly interactionEngine: IInteractionEngine
+    @inject('InteractionEngine') private readonly interactionEngine: InteractionEngine
   ) {}
 
   canExecute(node: Node): boolean {
@@ -50,7 +50,7 @@ export class LLMNodeStrategy implements INodeExecutionStrategy {
 
     try {
       // 构建 LLM 配置
-      const config: LLMConfig = {
+      const config = new LLMConfig({
         provider: 'openai', // TODO: 从配置或节点属性中获取
         model: node.model,
         prompt: node.prompt,
@@ -60,7 +60,7 @@ export class LLMNodeStrategy implements INodeExecutionStrategy {
         frequencyPenalty: node.frequencyPenalty,
         presencePenalty: node.presencePenalty,
         stopSequences: node.stopSequences,
-      };
+      });
 
       // 创建或获取 Interaction 上下文
       let interactionContext = context.getMetadata('interactionContext') as IInteractionContext;

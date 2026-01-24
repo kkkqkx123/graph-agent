@@ -6,7 +6,13 @@
 
 import { injectable, inject } from 'inversify';
 import { IInteractionContext } from '../interaction-context';
-import { LLMConfig, LLMExecutionResult, Message, MessageRole, ToolCall, LLMCall, TokenUsage } from '../types/interaction-types';
+import { LLMExecutionResult } from '../interaction-engine';
+import { LLMConfig } from '../../../domain/interaction/value-objects/llm-config';
+import { Message } from '../../../domain/interaction/value-objects/message';
+import { MessageRole } from '../../../domain/interaction/value-objects/message-role';
+import { ToolCall } from '../../../domain/interaction/value-objects/tool-call';
+import { LLMCall } from '../../../domain/interaction/value-objects/llm-call';
+import { InteractionTokenUsage as TokenUsage } from '../../../domain/interaction/value-objects/token-usage';
 import { ILogger } from '../../../domain/common/types/logger-types';
 
 /**
@@ -104,22 +110,20 @@ export class LLMExecutor implements ILLMExecutor {
 
     // 添加系统消息
     if (config.systemPrompt) {
-      messages.push({
+      messages.push(new Message({
         role: MessageRole.SYSTEM,
         content: config.systemPrompt,
-        timestamp: new Date().toISOString(),
-      });
+      }));
     }
 
     // 添加上下文中的历史消息
     messages.push(...context.getMessages());
 
     // 添加当前用户消息
-    messages.push({
+    messages.push(new Message({
       role: MessageRole.USER,
       content: config.prompt,
-      timestamp: new Date().toISOString(),
-    });
+    }));
 
     return messages;
   }
@@ -142,7 +146,7 @@ export class LLMExecutor implements ILLMExecutor {
     usage?: TokenUsage,
     executionTime?: number
   ): LLMCall {
-    return {
+    return new LLMCall({
       id: `llm_${Date.now()}`,
       provider: config.provider,
       model: config.model,
@@ -152,6 +156,6 @@ export class LLMExecutor implements ILLMExecutor {
       usage,
       timestamp: new Date().toISOString(),
       executionTime,
-    };
+    });
   }
 }

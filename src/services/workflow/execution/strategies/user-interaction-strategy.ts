@@ -10,9 +10,9 @@ import { UserInteractionNode } from '../../../../domain/workflow/entities/node/u
 import { NodeExecutionResult } from '../../../../domain/workflow/entities/node';
 import { ExecutionContext } from '../context/execution-context';
 import { INodeExecutionStrategy } from './node-execution-strategy';
-import { IInteractionEngine } from '../../../interaction/interaction-engine';
+import { InteractionEngine } from '../../../interaction/interaction-engine';
 import { IInteractionContext } from '../../../interaction/interaction-context';
-import { UserInteractionConfig } from '../../../interaction/types/interaction-types';
+import { UserInteractionConfig } from '../../../../domain/interaction/value-objects/user-interaction-config';
 import { ILogger } from '../../../../domain/common/types/logger-types';
 
 /**
@@ -22,7 +22,7 @@ import { ILogger } from '../../../../domain/common/types/logger-types';
 export class UserInteractionStrategy implements INodeExecutionStrategy {
   constructor(
     @inject('Logger') private readonly logger: ILogger,
-    @inject('InteractionEngine') private readonly interactionEngine: IInteractionEngine
+    @inject('InteractionEngine') private readonly interactionEngine: InteractionEngine
   ) {}
 
   canExecute(node: Node): boolean {
@@ -50,12 +50,12 @@ export class UserInteractionStrategy implements INodeExecutionStrategy {
 
     try {
       // 构建用户交互配置
-      const config: UserInteractionConfig = {
+      const config = new UserInteractionConfig({
         interactionType: node.interactionType,
         prompt: node.prompt,
         options: node.options,
         timeout: node.timeout,
-      };
+      });
 
       // 获取 Interaction 上下文
       let interactionContext = context.getMetadata('interactionContext') as IInteractionContext;

@@ -6,7 +6,9 @@
 
 import { injectable, inject } from 'inversify';
 import { IInteractionContext } from '../interaction-context';
-import { ToolConfig, ToolExecutionResult, ToolCall } from '../types/interaction-types';
+import { ToolExecutionResult } from '../interaction-engine';
+import { ToolConfig } from '../../../domain/interaction/value-objects/tool-config';
+import { ToolCall } from '../../../domain/interaction/value-objects/tool-call';
 import { ILogger } from '../../../domain/common/types/logger-types';
 
 /**
@@ -119,13 +121,13 @@ export class ToolExecutor implements IToolExecutor {
     result: any,
     executionTime: number
   ): ToolCall {
-    return {
+    return new ToolCall({
       id: `tool_${Date.now()}`,
       name: config.toolId,
       arguments: config.parameters,
       result,
       executionTime,
       timestamp: new Date().toISOString(),
-    };
+    });
   }
 }

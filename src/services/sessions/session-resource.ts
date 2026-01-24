@@ -10,20 +10,37 @@ import {
   ID,
   ResourceAllocation,
   ResourceRequirement,
-  ResourceLimits, //等待后续集成
-  SessionQuota,
-  QuotaUsage,
   ILogger,
 } from '../../domain/common';
 import { BaseService } from '../common/base-service';
 import { TYPES } from '../../di/service-keys';
-import {
-  ResourceAllocationDTO,
-  ResourceLimitsDTO,
-  SessionQuotaDTO,
-  QuotaUsageDTO,
-  mapResourceAllocationToDTO,
-} from './dtos';
+
+/**
+ * 资源限制
+ */
+export interface ResourceLimits {
+  maxMemory: number;
+  maxThreads: number;
+  maxExecutionTime: number;
+  maxStorage: number;
+}
+
+/**
+ * 会话配额
+ */
+export interface SessionQuota {
+  remainingThreads: number;
+  remainingExecutionTime: number;
+  remainingMemory: number;
+  remainingStorage: number;
+}
+
+/**
+ * 配额使用情况
+ */
+export interface QuotaUsage {
+  threadsUsed: number;
+}
 
 /**
  * 会话资源服务
@@ -62,12 +79,12 @@ export class SessionResource extends BaseService {
    * 分配资源
    * @param sessionId 会话ID
    * @param requirements 资源需求列表
-   * @returns 资源分配DTO
+   * @returns 资源分配
    */
   async allocateResources(
     sessionId: string,
     requirements: ResourceRequirement[]
-  ): Promise<ResourceAllocationDTO> {
+  ): Promise<ResourceAllocation> {
     return this.executeBusinessOperation(
       '分配资源',
       async () => {
@@ -95,7 +112,7 @@ export class SessionResource extends BaseService {
           expiresAt: new Date(Date.now() + 3600000), // 1小时后过期
         };
 
-        return mapResourceAllocationToDTO(allocation);
+        return allocation;
       },
       { sessionId, requirementCount: requirements.length }
     );
@@ -104,9 +121,9 @@ export class SessionResource extends BaseService {
   /**
    * 释放资源
    * @param sessionId 会话ID
-   * @param allocation 资源分配DTO
+   * @param allocation 资源分配
    */
-  async releaseResources(sessionId: string, allocation: ResourceAllocationDTO): Promise<void> {
+  async releaseResources(sessionId: string, allocation: ResourceAllocation): Promise<void> {
     return this.executeBusinessOperation(
       '释放资源',
       async () => {
@@ -124,9 +141,9 @@ export class SessionResource extends BaseService {
   /**
    * 检查资源限制
    * @param sessionId 会话ID
-   * @returns 资源限制DTO
+   * @returns 资源限制
    */
-  async checkResourceLimits(sessionId: string): Promise<ResourceLimitsDTO> {
+  async checkResourceLimits(sessionId: string): Promise<ResourceLimits> {
     return this.executeQueryOperation(
       '检查资源限制',
       async () => {
@@ -200,9 +217,9 @@ export class SessionResource extends BaseService {
   /**
    * 获取剩余配额
    * @param sessionId 会话ID
-   * @returns 会话配额DTO
+   * @returns 会话配额
    */
-  async getRemainingQuota(sessionId: string): Promise<SessionQuotaDTO> {
+  async getRemainingQuota(sessionId: string): Promise<SessionQuota> {
     return this.executeQueryOperation(
       '获取剩余配额',
       async () => {
@@ -223,9 +240,9 @@ export class SessionResource extends BaseService {
   /**
    * 更新配额使用情况
    * @param sessionId 会话ID
-   * @param usage 配额使用DTO
+   * @param usage 配额使用情况
    */
-  async updateQuotaUsage(sessionId: string, usage: QuotaUsageDTO): Promise<void> {
+  async updateQuotaUsage(sessionId: string, usage: QuotaUsage): Promise<void> {
     return this.executeBusinessOperation(
       '更新配额使用情况',
       async () => {

@@ -1,10 +1,10 @@
 /**
  * 节点执行策略注册表
- * 
+ *
  * 管理不同节点类型的执行策略
  */
 
-import { injectable } from 'inversify';
+import { injectable, inject } from 'inversify';
 import { NodeType } from '../../../../domain/workflow/value-objects/node/node-type';
 import { INodeExecutionStrategy } from './node-execution-strategy';
 import { ILogger } from '../../../../domain/common/types/logger-types';

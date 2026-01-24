@@ -14,7 +14,6 @@ import {
 import { WorkflowType, parseWorkflowType } from '../../domain/workflow/value-objects/workflow-type';
 import { ID, ILogger } from '../../domain/common';
 import { BaseService } from '../common/base-service';
-import { WorkflowDTO, mapWorkflowToDTO } from './dtos/workflow-dto';
 
 /**
  * 创建工作流参数
@@ -84,9 +83,9 @@ export class WorkflowLifecycle extends BaseService {
   /**
    * 创建工作流
    * @param params 创建工作流参数
-   * @returns 创建的工作流DTO
+   * @returns 创建的工作流
    */
-  async createWorkflow(params: CreateWorkflowParams): Promise<WorkflowDTO> {
+  async createWorkflow(params: CreateWorkflowParams): Promise<Workflow> {
     return this.executeBusinessOperation(
       '工作流',
       async () => {
@@ -104,7 +103,7 @@ export class WorkflowLifecycle extends BaseService {
         // 保存工作流
         const savedWorkflow = await this.workflowRepository.save(workflow);
 
-        return mapWorkflowToDTO(savedWorkflow);
+        return savedWorkflow;
       },
       { name: params.name, type: params.type, workflowId: params.workflowId }
     );
@@ -113,9 +112,9 @@ export class WorkflowLifecycle extends BaseService {
   /**
    * 激活工作流
    * @param params 激活工作流参数
-   * @returns 激活后的工作流DTO
+   * @returns 激活后的工作流
    */
-  async activateWorkflow(params: ActivateWorkflowParams): Promise<WorkflowDTO> {
+  async activateWorkflow(params: ActivateWorkflowParams): Promise<Workflow> {
     return this.executeUpdateOperation(
       '工作流',
       async () => {
@@ -133,7 +132,7 @@ export class WorkflowLifecycle extends BaseService {
         // 保存工作流
         const savedWorkflow = await this.workflowRepository.save(workflow);
 
-        return mapWorkflowToDTO(savedWorkflow);
+        return savedWorkflow;
       },
       { workflowId: params.workflowId }
     );
@@ -142,9 +141,9 @@ export class WorkflowLifecycle extends BaseService {
   /**
    * 停用工作流
    * @param params 停用工作流参数
-   * @returns 停用后的工作流DTO
+   * @returns 停用后的工作流
    */
-  async deactivateWorkflow(params: DeactivateWorkflowParams): Promise<WorkflowDTO> {
+  async deactivateWorkflow(params: DeactivateWorkflowParams): Promise<Workflow> {
     return this.executeUpdateOperation(
       '工作流',
       async () => {
@@ -162,7 +161,7 @@ export class WorkflowLifecycle extends BaseService {
         // 保存工作流
         const savedWorkflow = await this.workflowRepository.save(workflow);
 
-        return mapWorkflowToDTO(savedWorkflow);
+        return savedWorkflow;
       },
       { workflowId: params.workflowId }
     );
@@ -171,9 +170,9 @@ export class WorkflowLifecycle extends BaseService {
   /**
    * 归档工作流
    * @param params 归档工作流参数
-   * @returns 归档后的工作流DTO
+   * @returns 归档后的工作流
    */
-  async archiveWorkflow(params: ArchiveWorkflowParams): Promise<WorkflowDTO> {
+  async archiveWorkflow(params: ArchiveWorkflowParams): Promise<Workflow> {
     return this.executeUpdateOperation(
       '工作流',
       async () => {
@@ -191,7 +190,7 @@ export class WorkflowLifecycle extends BaseService {
         // 保存工作流
         const savedWorkflow = await this.workflowRepository.save(workflow);
 
-        return mapWorkflowToDTO(savedWorkflow);
+        return savedWorkflow;
       },
       { workflowId: params.workflowId }
     );

@@ -2,7 +2,6 @@
 export * from './managers';
 export * from './wrapper';
 export * from './human-relay';
-export * from './dtos';
 
 // 导出管理器
 export { PollingPoolManager } from './managers/pool-manager';
