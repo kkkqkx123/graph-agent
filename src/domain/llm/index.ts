@@ -10,6 +10,3 @@ export * from './entities';
 
 // 仓储
 export * from './repositories';
-
-// 异常
-export * from './exceptions';

@@ -12,7 +12,6 @@ import { Version } from '../../../domain/common/value-objects/version';
 import { CheckpointStatus } from '../../../domain/threads/checkpoints/value-objects/checkpoint-status';
 import { CheckpointType } from '../../../domain/threads/checkpoints/value-objects/checkpoint-type';
 import { CheckpointScope } from '../../../domain/threads/checkpoints/value-objects/checkpoint-scope';
-import { DomainMappingError, MapperErrorCode } from '../errors/mapper-errors';
 
 export class CheckpointMapper implements BaseMapper<Checkpoint, CheckpointModel> {
   /**
@@ -43,11 +42,7 @@ export class CheckpointMapper implements BaseMapper<Checkpoint, CheckpointModel>
 
       return Checkpoint.fromProps(props);
     } catch (error) {
-      throw new DomainMappingError(
-        MapperErrorCode.TYPE_CONVERSION_ERROR,
-        `Checkpoint模型转换失败: ${error instanceof Error ? error.message : 'Unknown error'}`,
-        { modelId: model.id }
-      );
+      throw new Error(`Checkpoint模型转换失败: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   }
 
@@ -79,11 +74,7 @@ export class CheckpointMapper implements BaseMapper<Checkpoint, CheckpointModel>
 
       return model;
     } catch (error) {
-      throw new DomainMappingError(
-        MapperErrorCode.TYPE_CONVERSION_ERROR,
-        `Checkpoint实体转换失败: ${error instanceof Error ? error.message : 'Unknown error'}`,
-        { entityId: entity.checkpointId.value }
-      );
+      throw new Error(`Checkpoint实体转换失败: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   }
 }

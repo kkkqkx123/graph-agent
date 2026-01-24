@@ -13,7 +13,6 @@ import { Metadata, DeletionStatus } from '../../../domain/common/value-objects';
 import { State } from '../../../domain/state/entities/state';
 import { StateEntityType } from '../../../domain/state/value-objects/state-entity-type';
 import { ThreadExecutionContext, ExecutionConfig } from '../../../domain/threads/value-objects/execution-context';
-import { DomainMappingError, MapperErrorCode } from '../errors/mapper-errors';
 
 export class ThreadMapper implements BaseMapper<Thread, ThreadModel> {
   /**
@@ -88,11 +87,7 @@ export class ThreadMapper implements BaseMapper<Thread, ThreadModel> {
 
       return Thread.fromProps(threadData);
     } catch (error) {
-      throw new DomainMappingError(
-        MapperErrorCode.TYPE_CONVERSION_ERROR,
-        `Thread模型转换失败: ${error instanceof Error ? error.message : 'Unknown error'}`,
-        { modelId: model.id }
-      );
+      throw new Error(`Thread模型转换失败: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   }
 
@@ -137,11 +132,7 @@ export class ThreadMapper implements BaseMapper<Thread, ThreadModel> {
 
       return model;
     } catch (error) {
-      throw new DomainMappingError(
-        MapperErrorCode.TYPE_CONVERSION_ERROR,
-        `Thread实体转换失败: ${error instanceof Error ? error.message : 'Unknown error'}`,
-        { entityId: entity.threadId.value }
-      );
+      throw new Error(`Thread实体转换失败: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   }
 }

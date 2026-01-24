@@ -11,7 +11,6 @@ import { Timestamp } from '../../../domain/common/value-objects/timestamp';
 import { Version } from '../../../domain/common/value-objects/version';
 import { LLMMessage } from '../../../domain/llm/value-objects/llm-message';
 import { DeletionStatus } from '../../../domain/common/value-objects';
-import { DomainMappingError, MapperErrorCode } from '../errors/mapper-errors';
 
 export class LLMRequestMapper implements BaseMapper<LLMRequest, LLMRequestModel> {
   /**
@@ -80,11 +79,7 @@ export class LLMRequestMapper implements BaseMapper<LLMRequest, LLMRequestModel>
 
       return LLMRequest.fromProps(requestProps);
     } catch (error) {
-      throw new DomainMappingError(
-        MapperErrorCode.TYPE_CONVERSION_ERROR,
-        `LLMRequest模型转换失败: ${error instanceof Error ? error.message : 'Unknown error'}`,
-        { modelId: model.id }
-      );
+      throw new Error(`LLMRequest模型转换失败: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   }
 
@@ -143,11 +138,7 @@ export class LLMRequestMapper implements BaseMapper<LLMRequest, LLMRequestModel>
 
       return model;
     } catch (error) {
-      throw new DomainMappingError(
-        MapperErrorCode.TYPE_CONVERSION_ERROR,
-        `LLMRequest实体转换失败: ${error instanceof Error ? error.message : 'Unknown error'}`,
-        { entityId: entity.requestId.value }
-      );
+      throw new Error(`LLMRequest实体转换失败: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   }
 }

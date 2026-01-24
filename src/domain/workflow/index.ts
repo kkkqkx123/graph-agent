@@ -17,6 +17,3 @@ export * from './value-objects';
 
 // 导出仓储
 export * from './repositories';
-
-// 导出异常
-export * from './exceptions';

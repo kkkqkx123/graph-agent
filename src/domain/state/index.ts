@@ -18,6 +18,3 @@ export * from './value-objects/state-entity-type';
 
 // 导出仓库接口
 export * from './repositories/state-repository';
-
-// 导出异常
-export * from './exceptions';

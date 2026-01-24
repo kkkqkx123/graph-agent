@@ -13,7 +13,7 @@ export interface BaseMapper<TDomain, TModel> {
    * 将数据库模型转换为领域实体
    * @param model - 数据库模型
    * @returns 领域实体
-   * @throws {DomainMappingError} 转换失败时抛出
+   * @throws {Error} 转换失败时抛出
    */
   toDomain(model: TModel): TDomain;
 
@@ -21,7 +21,7 @@ export interface BaseMapper<TDomain, TModel> {
    * 将领域实体转换为数据库模型
    * @param domain - 领域实体
    * @returns 数据库模型
-   * @throws {DomainMappingError} 转换失败时抛出
+   * @throws {Error} 转换失败时抛出
    */
   toModel(domain: TDomain): TModel;
 }

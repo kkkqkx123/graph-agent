@@ -20,6 +20,3 @@ export * from './repositories';
 
 // 导出checkpoint子模块
 export * from './checkpoints';
-
-// 导出异常
-export * from './exceptions';
