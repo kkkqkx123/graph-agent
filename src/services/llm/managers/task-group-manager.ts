@@ -1,5 +1,6 @@
 import { injectable } from 'inversify';
 import { getConfig } from '../../../infrastructure/config/config';
+import { InvalidConfigurationError } from '../../../common/exceptions';
 
 /**
  * 任务组管理器
@@ -337,7 +338,7 @@ export class TaskGroupManager {
   async reloadConfig(): Promise<void> {
     // 配置刷新已移至应用层，此方法不再需要
     // 如需刷新配置，请调用 refreshConfig() 函数
-    throw new Error('配置刷新已移至应用层。请使用应用层的配置刷新API。');
+    throw new InvalidConfigurationError('config', '配置刷新已移至应用层。请使用应用层的配置刷新API。');
   }
 
   /**

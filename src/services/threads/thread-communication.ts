@@ -10,6 +10,7 @@ import { ISessionRepository } from '../../domain/sessions';
 import { ThreadMessageType } from '../../domain/sessions/value-objects/thread-communication';
 import { TYPES } from '../../di/service-keys';
 import { BaseService } from '../common/base-service';
+import { EntityNotFoundError } from '../../common/exceptions';
 
 /**
  * Thread Communication应用服务
@@ -58,11 +59,11 @@ export class ThreadCommunication extends BaseService {
 
         // 检查线程是否存在
         if (!session.hasThread(fromThreadId)) {
-          throw new Error('发送线程不存在');
+          throw new EntityNotFoundError('Thread', fromThreadId);
         }
 
         if (!session.hasThread(toThreadId)) {
-          throw new Error('接收线程不存在');
+          throw new EntityNotFoundError('Thread', toThreadId);
         }
 
         // 发送消息
@@ -111,7 +112,7 @@ export class ThreadCommunication extends BaseService {
 
         // 检查发送线程是否存在
         if (!session.hasThread(fromThreadId)) {
-          throw new Error('发送线程不存在');
+          throw new EntityNotFoundError('Thread', fromThreadId);
         }
 
         // 广播消息

@@ -8,6 +8,7 @@
 import { injectable, inject } from 'inversify';
 import { WorkflowContext } from '../../domain/workflow/value-objects/context/workflow-context';
 import { ILogger } from '../../domain/common/types/logger-types';
+import { EntityNotFoundError } from '../../common/exceptions';
 
 /**
  * 上下文更新器类型
@@ -62,7 +63,7 @@ export class ContextManagement {
   updateContext(executionId: string, updater: ContextUpdater): WorkflowContext {
     const context = this.contexts.get(executionId);
     if (!context) {
-      throw new Error(`工作流上下文不存在: ${executionId}`);
+      throw new EntityNotFoundError('WorkflowContext', executionId);
     }
 
     const newContext = updater(context);

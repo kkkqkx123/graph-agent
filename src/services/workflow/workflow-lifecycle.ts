@@ -14,6 +14,7 @@ import {
 import { WorkflowType, parseWorkflowType } from '../../domain/workflow/value-objects/workflow-type';
 import { ID, ILogger } from '../../domain/common';
 import { BaseService } from '../common/base-service';
+import { ValidationError, InvalidStatusError } from '../../common/exceptions';
 
 /**
  * 创建工作流参数
@@ -214,7 +215,7 @@ export class WorkflowLifecycle extends BaseService {
 
         // 检查工作流状态是否允许删除
         if (workflow.status.isActive()) {
-          throw new Error('无法删除活跃状态的工作流');
+          throw new InvalidStatusError('active', 'inactive or archived');
         }
 
         // 标记工作流为已删除
@@ -238,7 +239,7 @@ export class WorkflowLifecycle extends BaseService {
     // 验证工作流名称是否已存在
     const exists = await this.workflowRepository.existsByName(name);
     if (exists) {
-      throw new Error(`工作流名称 "${name}" 已存在`);
+      throw new ValidationError(`工作流名称 "${name}" 已存在`);
     }
 
     // 验证配置
@@ -255,22 +256,22 @@ export class WorkflowLifecycle extends BaseService {
 
     // 已归档的工作流不能变更到其他状态
     if (currentStatus.isArchived() && !newStatus.isArchived()) {
-      throw new Error('已归档的工作流不能变更到其他状态');
+      throw new InvalidStatusError('archived', 'archived');
     }
 
     // 草稿状态只能激活或归档
     if (currentStatus.isDraft() && !newStatus.isActive() && !newStatus.isArchived()) {
-      throw new Error('草稿状态的工作流只能激活或归档');
+      throw new InvalidStatusError('draft', 'active or archived');
     }
 
     // 活跃状态只能变为非活跃或归档
     if (currentStatus.isActive() && !newStatus.isInactive() && !newStatus.isArchived()) {
-      throw new Error('活跃状态的工作流只能变为非活跃或归档');
+      throw new InvalidStatusError('active', 'inactive or archived');
     }
 
     // 非活跃状态只能变为活跃或归档
     if (currentStatus.isInactive() && !newStatus.isActive() && !newStatus.isArchived()) {
-      throw new Error('非活跃状态的工作流只能变为活跃或归档');
+      throw new InvalidStatusError('inactive', 'active or archived');
     }
   }
 }

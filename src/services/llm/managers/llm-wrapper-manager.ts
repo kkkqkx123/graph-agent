@@ -10,6 +10,7 @@ import {
   WrapperModelConfig,
   validateWrapperConfig
 } from '../../../domain/llm/value-objects/wrapper-reference';
+import { ValidationError, EntityNotFoundError, InvalidConfigurationError } from '../../../common/exceptions';
 
 /**
  * LLM包装器管理器
@@ -36,7 +37,7 @@ export class LLMWrapperManager {
   private validateWrapperConfig(config: WrapperConfig): void {
     const validation = validateWrapperConfig(config);
     if (!validation.isValid) {
-      throw new Error(`wrapper配置验证失败: ${validation.errors.join(', ')}`);
+      throw new ValidationError(`wrapper配置验证失败: ${validation.errors.join(', ')}`);
     }
   }
 
@@ -63,7 +64,7 @@ export class LLMWrapperManager {
           request
         );
       default:
-        throw new Error(`未知的wrapper类型: ${wrapper.type}`);
+        throw new InvalidConfigurationError(`type`, `未知的wrapper类型: ${wrapper.type}`);
     }
   }
 
@@ -90,7 +91,7 @@ export class LLMWrapperManager {
           request
         );
       default:
-        throw new Error(`未知的wrapper类型: ${wrapper.type}`);
+        throw new InvalidConfigurationError(`type`, `未知的wrapper类型: ${wrapper.type}`);
     }
   }
 
@@ -200,13 +201,13 @@ export class LLMWrapperManager {
     const pool = await this.poolManager.getPool(poolName);
 
     if (!pool) {
-      throw new Error(`轮询池不存在: ${poolName}`);
+      throw new EntityNotFoundError('PollingPool', poolName);
     }
 
     // 从池中选择一个可用的实例
     const instance = pool.selectInstance();
     if (!instance) {
-      throw new Error(`轮询池 ${poolName} 中没有可用的实例`);
+      throw new ValidationError(`轮询池 ${poolName} 中没有可用的实例`);
     }
 
     // 获取实例的模型名称
@@ -226,13 +227,13 @@ export class LLMWrapperManager {
     const pool = await this.poolManager.getPool(poolName);
 
     if (!pool) {
-      throw new Error(`轮询池不存在: ${poolName}`);
+      throw new EntityNotFoundError('PollingPool', poolName);
     }
 
     // 从池中选择一个可用的实例
     const instance = pool.selectInstance();
     if (!instance) {
-      throw new Error(`轮询池 ${poolName} 中没有可用的实例`);
+      throw new ValidationError(`轮询池 ${poolName} 中没有可用的实例`);
     }
 
     // 获取实例的模型名称
@@ -296,14 +297,14 @@ export class LLMWrapperManager {
     const models = await this.taskGroupManager.getModelsForGroup(groupName);
 
     if (models.length === 0) {
-      throw new Error(`任务组 ${groupName} 中没有可用的模型`);
+      throw new ValidationError(`任务组 ${groupName} 中没有可用的模型`);
     }
 
     // 使用第一个模型（可以根据优先级策略改进）
     const model = models[0];
 
     if (!model) {
-      throw new Error(`任务组 ${groupName} 中的模型名称为空`);
+      throw new ValidationError(`任务组 ${groupName} 中的模型名称为空`);
     }
 
     const client = this.llmClientFactory.createClient(model, model);
@@ -322,14 +323,14 @@ export class LLMWrapperManager {
     const models = await this.taskGroupManager.getModelsForGroup(groupName);
 
     if (models.length === 0) {
-      throw new Error(`任务组 ${groupName} 中没有可用的模型`);
+      throw new ValidationError(`任务组 ${groupName} 中没有可用的模型`);
     }
 
     // 使用第一个模型（可以根据优先级策略改进）
     const model = models[0];
 
     if (!model) {
-      throw new Error(`任务组 ${groupName} 中的模型名称为空`);
+      throw new ValidationError(`任务组 ${groupName} 中的模型名称为空`);
     }
 
     const client = this.llmClientFactory.createClient(model, model);
@@ -417,7 +418,7 @@ export class LLMWrapperManager {
       case 'direct':
         return this.getDirectModelConfig(wrapper.provider!, wrapper.model!);
       default:
-        throw new Error(`未知的wrapper类型: ${wrapper.type}`);
+        throw new InvalidConfigurationError(`type`, `未知的wrapper类型: ${wrapper.type}`);
     }
   }
 
@@ -427,13 +428,13 @@ export class LLMWrapperManager {
   private async getPoolModelConfig(poolName: string): Promise<WrapperModelConfig> {
     const pool = await this.poolManager.getPool(poolName);
     if (!pool) {
-      throw new Error(`轮询池不存在: ${poolName}`);
+      throw new EntityNotFoundError('PollingPool', poolName);
     }
 
     // 从池中选择一个可用的实例
     const instance = pool.selectInstance();
     if (!instance) {
-      throw new Error(`轮询池 ${poolName} 中没有可用的实例`);
+      throw new ValidationError(`轮询池 ${poolName} 中没有可用的实例`);
     }
 
     // 获取实例的模型信息
@@ -461,13 +462,13 @@ export class LLMWrapperManager {
   private async getGroupModelConfig(groupName: string): Promise<WrapperModelConfig> {
     const models = await this.taskGroupManager.getModelsForGroup(groupName);
     if (models.length === 0) {
-      throw new Error(`任务组 ${groupName} 中没有可用的模型`);
+      throw new ValidationError(`任务组 ${groupName} 中没有可用的模型`);
     }
 
     // 使用第一个模型（可以根据优先级策略改进）
     const model = models[0];
     if (!model) {
-      throw new Error(`任务组 ${groupName} 中的模型名称为空`);
+      throw new ValidationError(`任务组 ${groupName} 中的模型名称为空`);
     }
 
     const provider = await this.getProviderForModel(model);

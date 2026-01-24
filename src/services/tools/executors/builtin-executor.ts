@@ -8,6 +8,7 @@ import {
   ToolExecutorCapabilities,
   ToolExecutorHealthCheck,
 } from './tool-executor-base';
+import { EntityNotFoundError, ValidationError } from '../../../common/exceptions';
 
 @injectable()
 export class BuiltinExecutor extends ToolExecutorBase {
@@ -24,7 +25,7 @@ export class BuiltinExecutor extends ToolExecutorBase {
       const func = this.builtinFunctions.get(functionName);
 
       if (!func) {
-        throw new Error(`Builtin function '${functionName}' not found`);
+        throw new EntityNotFoundError('BuiltinFunction', functionName);
       }
 
       // Execute the builtin function
@@ -249,7 +250,7 @@ export class BuiltinExecutor extends ToolExecutorBase {
       (params: { a: number; b: number }) => params.a * params.b
     );
     this.builtinFunctions.set('divide', (params: { a: number; b: number }) => {
-      if (params.b === 0) throw new Error('Division by zero');
+      if (params.b === 0) throw new ValidationError('Division by zero');
       return params.a / params.b;
     });
     this.builtinFunctions.set('pow', (params: { base: number; exponent: number }) =>
@@ -287,7 +288,7 @@ export class BuiltinExecutor extends ToolExecutorBase {
       params.array.reduce((sum, val) => sum + val, 0)
     );
     this.builtinFunctions.set('arrayAverage', (params: { array: number[] }) => {
-      if (params.array.length === 0) throw new Error('Cannot calculate average of empty array');
+      if (params.array.length === 0) throw new ValidationError('Cannot calculate average of empty array');
       return params.array.reduce((sum, val) => sum + val, 0) / params.array.length;
     });
     this.builtinFunctions.set('arrayMax', (params: { array: number[] }) =>

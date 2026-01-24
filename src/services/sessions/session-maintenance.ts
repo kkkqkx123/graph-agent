@@ -8,6 +8,7 @@ import { Session, ISessionRepository, SessionStatus } from '../../domain/session
 import { IThreadRepository } from '../../domain/threads';
 import { BaseService } from '../common/base-service';
 import { ILogger, ID } from '../../domain/common';
+import { ValidationError, InvalidStatusError } from '../../common/exceptions';
 
 /**
  * 会话维护服务
@@ -27,7 +28,7 @@ export class SessionMaintenance extends BaseService {
   private validateOperationPermission(session: Session, userId?: ID): void {
     // 验证用户是否有权限操作此会话
     if (userId && session.userId && !session.userId.equals(userId)) {
-      throw new Error('无权限操作此会话');
+      throw new ValidationError('无权限操作此会话');
     }
   }
 
@@ -37,7 +38,7 @@ export class SessionMaintenance extends BaseService {
   private validateMessageAddition(session: Session): void {
     // 验证是否可以添加消息
     if (!session.status.isActive()) {
-      throw new Error('只能在活跃状态的会话中添加消息');
+      throw new InvalidStatusError(session.status.toString(), 'active');
     }
   }
 
@@ -85,7 +86,7 @@ export class SessionMaintenance extends BaseService {
         // 检查会话是否有活跃线程
         const hasActiveThreads = await this.threadRepository.hasActiveThreads(id);
         if (hasActiveThreads) {
-          throw new Error('无法删除有活跃线程的会话');
+          throw new ValidationError('无法删除有活跃线程的会话');
         }
 
         // 标记会话为已删除
@@ -209,7 +210,7 @@ export class SessionMaintenance extends BaseService {
       async () => {
         const user = this.parseOptionalId(userId, '用户ID');
         if (!user) {
-          throw new Error('获取会话统计信息需要提供用户ID');
+          throw new ValidationError('获取会话统计信息需要提供用户ID');
         }
 
         // 获取用户的所有会话

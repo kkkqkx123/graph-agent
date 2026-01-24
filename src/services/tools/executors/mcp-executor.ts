@@ -8,6 +8,7 @@ import {
   ToolExecutorCapabilities,
   ToolExecutorHealthCheck,
 } from './tool-executor-base';
+import { ExecutionError } from '../../../common/exceptions';
 
 // 简化的 MCP 客户端类
 class McpClient {
@@ -281,7 +282,7 @@ export class McpExecutor extends ToolExecutorBase {
       const client = await this.getMcpClient(serverName);
       return await client.listTools();
     } catch (error) {
-      throw new Error(
+      throw new ExecutionError(
         `Failed to list tools for MCP server '${serverName}': ${error instanceof Error ? error.message : String(error)}`
       );
     }
@@ -292,7 +293,7 @@ export class McpExecutor extends ToolExecutorBase {
       const client = await this.getMcpClient(serverName);
       return await client.getToolSchema(toolName);
     } catch (error) {
-      throw new Error(
+      throw new ExecutionError(
         `Failed to get schema for tool '${toolName}' on MCP server '${serverName}': ${error instanceof Error ? error.message : String(error)}`
       );
     }

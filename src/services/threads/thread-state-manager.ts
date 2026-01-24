@@ -3,6 +3,7 @@ import { ID, Timestamp } from '../../domain/common/value-objects';
 import { ThreadWorkflowState } from '../../domain/threads/value-objects/thread-workflow-state';
 import { ExecutionHistory } from '../../domain/workflow/value-objects/execution';
 import { updateState, updateNestedState, updateArray } from '../../infrastructure/common/utils/immutable-state';
+import { EntityNotFoundError } from '../../common/exceptions';
 
 /**
  * 状态变更接口
@@ -113,7 +114,7 @@ export class ThreadStateManager {
 		const currentState = this.states.get(threadId);
 
 		if (!currentState) {
-			throw new Error(`线程 ${threadId} 的状态不存在`);
+			throw new EntityNotFoundError('ThreadState', threadId);
 		}
 
 		const currentVersion = this.stateVersions.get(threadId) || 0;
@@ -152,7 +153,7 @@ export class ThreadStateManager {
 		const currentState = this.states.get(threadId);
 
 		if (!currentState) {
-			throw new Error(`线程 ${threadId} 的状态不存在`);
+			throw new EntityNotFoundError('ThreadState', threadId);
 		}
 
 		const currentVersion = this.stateVersions.get(threadId) || 0;
@@ -188,7 +189,7 @@ export class ThreadStateManager {
 		const state = this.states.get(threadId);
 
 		if (!state) {
-			throw new Error(`线程 ${threadId} 的状态不存在`);
+			throw new EntityNotFoundError('ThreadState', threadId);
 		}
 
 		return state.getData(key);
@@ -206,7 +207,7 @@ export class ThreadStateManager {
 		const currentState = this.states.get(threadId);
 
 		if (!currentState) {
-			throw new Error(`线程 ${threadId} 的状态不存在`);
+			throw new EntityNotFoundError('ThreadState', threadId);
 		}
 
 		const currentVersion = this.stateVersions.get(threadId) || 0;
@@ -245,7 +246,7 @@ export class ThreadStateManager {
 		const currentState = this.states.get(threadId);
 
 		if (!currentState) {
-			throw new Error(`线程 ${threadId} 的状态不存在`);
+			throw new EntityNotFoundError('ThreadState', threadId);
 		}
 
 		const currentVersion = this.stateVersions.get(threadId) || 0;
@@ -284,7 +285,7 @@ export class ThreadStateManager {
 		const currentState = this.states.get(threadId);
 
 		if (!currentState) {
-			throw new Error(`线程 ${threadId} 的状态不存在`);
+			throw new EntityNotFoundError('ThreadState', threadId);
 		}
 
 		const currentVersion = this.stateVersions.get(threadId) || 0;
@@ -323,7 +324,7 @@ export class ThreadStateManager {
 		const currentState = this.states.get(threadId);
 
 		if (!currentState) {
-			throw new Error(`线程 ${threadId} 的状态不存在`);
+			throw new EntityNotFoundError('ThreadState', threadId);
 		}
 
 		const currentVersion = this.stateVersions.get(threadId) || 0;
@@ -362,7 +363,7 @@ export class ThreadStateManager {
 		const currentState = this.states.get(threadId);
 
 		if (!currentState) {
-			throw new Error(`线程 ${threadId} 的状态不存在`);
+			throw new EntityNotFoundError('ThreadState', threadId);
 		}
 
 		const currentVersion = this.stateVersions.get(threadId) || 0;
@@ -402,7 +403,7 @@ export class ThreadStateManager {
 		const currentState = this.states.get(threadId);
 
 		if (!currentState) {
-			throw new Error(`线程 ${threadId} 的状态不存在`);
+			throw new EntityNotFoundError('ThreadState', threadId);
 		}
 
 		const currentVersion = this.stateVersions.get(threadId) || 0;
@@ -441,7 +442,7 @@ export class ThreadStateManager {
 		const currentState = this.states.get(threadId);
 
 		if (!currentState) {
-			throw new Error(`线程 ${threadId} 的状态不存在`);
+			throw new EntityNotFoundError('ThreadState', threadId);
 		}
 
 		const currentVersion = this.stateVersions.get(threadId) || 0;

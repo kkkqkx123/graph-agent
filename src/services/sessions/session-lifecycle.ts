@@ -13,6 +13,7 @@ import {
 } from '../../domain/sessions';
 import { BaseService } from '../common/base-service';
 import { ILogger, ID } from '../../domain/common';
+import { InvalidStatusError, ValidationError } from '../../common/exceptions';
 
 /**
  * 创建会话请求
@@ -57,7 +58,7 @@ export class SessionLifecycle extends BaseService {
   private validateStatusTransition(session: Session, newStatus: SessionStatus, userId?: ID): void {
     // 验证状态转换是否合法
     if (session.status.isTerminated()) {
-      throw new Error('已终止的会话无法转换状态');
+      throw new InvalidStatusError('terminated', 'non-terminated');
     }
   }
 
@@ -67,7 +68,7 @@ export class SessionLifecycle extends BaseService {
   private validateConfigUpdate(session: Session, newConfig: SessionConfig): void {
     // 验证配置更新是否合法
     if (session.status.isTerminated()) {
-      throw new Error('已终止的会话无法更新配置');
+      throw new InvalidStatusError('terminated', 'non-terminated');
     }
     newConfig.validate();
   }
@@ -78,7 +79,7 @@ export class SessionLifecycle extends BaseService {
   private validateOperationPermission(session: Session, userId?: ID): void {
     // 验证用户是否有权限操作此会话
     if (userId && session.userId && !session.userId.equals(userId)) {
-      throw new Error('无权限操作此会话');
+      throw new ValidationError('无权限操作此会话');
     }
   }
 
@@ -88,7 +89,7 @@ export class SessionLifecycle extends BaseService {
   private validateMessageAddition(session: Session): void {
     // 验证是否可以添加消息
     if (!session.status.isActive()) {
-      throw new Error('只能在活跃状态的会话中添加消息');
+      throw new InvalidStatusError(session.status.toString(), 'active');
     }
   }
 
@@ -159,7 +160,7 @@ export class SessionLifecycle extends BaseService {
         }
 
         if (session.status.isTerminated()) {
-          throw new Error('无法激活已终止的会话');
+          throw new InvalidStatusError('terminated', 'non-terminated');
         }
 
         // 验证状态转换
@@ -197,11 +198,11 @@ export class SessionLifecycle extends BaseService {
         }
 
         if (session.status.isTerminated()) {
-          throw new Error('无法暂停已终止的会话');
+          throw new InvalidStatusError('terminated', 'non-terminated');
         }
 
         if (!session.status.isActive()) {
-          throw new Error('只能暂停活跃状态的会话');
+          throw new InvalidStatusError(session.status.toString(), 'active');
         }
 
         // 暂停会话

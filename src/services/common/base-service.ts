@@ -6,6 +6,7 @@
  */
 
 import { ID, ILogger, IService } from '../../domain/common';
+import { ValidationError } from '../../common/exceptions';
 
 /**
  * 服务基类
@@ -91,7 +92,7 @@ export abstract class BaseService implements IService {
     try {
       return ID.fromString(idString);
     } catch (error) {
-      throw new Error(`无效的${fieldName}: ${idString}`);
+      throw new ValidationError(`无效的${fieldName}: ${idString}`);
     }
   }
 

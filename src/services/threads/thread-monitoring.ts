@@ -14,6 +14,7 @@ import { ILogger, Timestamp } from '../../domain/common';
 import { BaseService } from '../common/base-service';
 import { MonitoringService } from '../workflow/monitoring';
 import { TYPES } from '../../di/service-keys';
+import { EntityNotFoundError } from '../../common/exceptions';
 
 /**
  * 线程监控指标
@@ -325,7 +326,7 @@ export class ThreadMonitoring extends BaseService {
         const thread = await this.threadRepository.findById(id);
 
         if (!thread) {
-          throw new Error(`线程不存在: ${threadId}`);
+          throw new EntityNotFoundError('Thread', threadId);
         }
 
         try {

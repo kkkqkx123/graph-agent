@@ -8,6 +8,7 @@ import { CheckpointSerializationUtils } from './utils/serialization-utils';
 import { FormatConverter, DataFormat } from '../../infrastructure/common/utils/format-converter';
 import { StatisticsUtils } from '../../infrastructure/common/utils/statistics-utils';
 import { CheckpointCleanup } from './checkpoint-cleanup';
+import { EntityNotFoundError, ValidationError } from '../../common/exceptions';
 
 /**
  * 检查点管理服务
@@ -106,7 +107,7 @@ export class CheckpointManagement {
   async markCheckpointRestored(checkpointId: ID): Promise<void> {
     const checkpoint = await this.repository.findById(checkpointId);
     if (!checkpoint) {
-      throw new Error(`Checkpoint not found: ${checkpointId.value}`);
+      throw new EntityNotFoundError('Checkpoint', checkpointId.value);
     }
 
     checkpoint.markRestored();
@@ -196,7 +197,7 @@ export class CheckpointManagement {
 
     const validCheckpoints = checkpoints.filter(cp => cp !== null) as Checkpoint[];
     if (validCheckpoints.length === 0) {
-      throw new Error('没有找到有效的检查点');
+      throw new ValidationError('没有找到有效的检查点');
     }
 
     // 使用最新的检查点作为基础
@@ -232,7 +233,7 @@ export class CheckpointManagement {
   async exportCheckpoint(checkpointId: ID, format: DataFormat): Promise<string> {
     const checkpoint = await this.repository.findById(checkpointId);
     if (!checkpoint) {
-      throw new Error('检查点不存在');
+      throw new EntityNotFoundError('Checkpoint', checkpointId.toString());
     }
 
     const data = checkpoint.toDict();

@@ -13,6 +13,7 @@ import { PromptReferenceParser } from './prompt-reference-parser';
 import { PromptReferenceValidator } from './prompt-reference-validator';
 import { ILogger } from '../../domain/common/types/logger-types';
 import { TYPES } from '../../di/service-keys';
+import { EntityNotFoundError, ValidationError } from '../../common/exceptions';
 
 /**
  * 模板处理结果
@@ -55,7 +56,7 @@ export class TemplateProcessor {
     const prompt = await this.promptRepository.findById(promptId);
 
     if (!prompt) {
-      throw new Error(`模板 ${category}.${name} 未找到`);
+      throw new EntityNotFoundError('Template', `${category}.${name}`);
     }
 
     const templateObj = {
@@ -95,7 +96,7 @@ export class TemplateProcessor {
     for (const [key, config] of Object.entries(templateData.variables)) {
       const configObj = config as any;
       if (configObj.required && !(key in providedVariables)) {
-        throw new Error(`模板 ${templateData.name} 缺少必需的变量: ${key}`);
+        throw new ValidationError(`模板 ${templateData.name} 缺少必需的变量: ${key}`);
       }
     }
   }
@@ -135,7 +136,7 @@ export class TemplateProcessor {
         const partPrompt = await this.promptRepository.findById(partPromptId);
 
         if (!partPrompt) {
-          throw new Error(`提示词片段 ${ref.category}.${ref.name} 未找到`);
+          throw new EntityNotFoundError('PromptPart', `${ref.category}.${ref.name}`);
         }
 
         // 提取内容
@@ -145,7 +146,7 @@ export class TemplateProcessor {
       } catch (error) {
         const errorMessage = error instanceof Error ? error.message : String(error);
         this.logger.error(`无法加载提示词片段 ${partName}: ${errorMessage}`);
-        throw new Error(`无法加载提示词片段 ${partName}: ${errorMessage}`);
+        throw new ValidationError(`无法加载提示词片段 ${partName}: ${errorMessage}`);
       }
     }
 

@@ -12,6 +12,7 @@ import { BaseService } from '../common/base-service';
 import { ILogger, ID } from '../../domain/common';
 import { TYPES } from '../../di/service-keys';
 import { ThreadWorkflowExecutor } from './thread-workflow-executor';
+import { ValidationError, InvalidStatusError, EntityNotFoundError } from '../../common/exceptions';
 
 /**
  * 线程生命周期服务
@@ -45,7 +46,7 @@ export class ThreadLifecycle extends BaseService {
     // 验证会话是否有活跃线程（Session负责多线程并行管理）
     const hasActiveThreads = await this.threadRepository.hasActiveThreads(sessionId);
     if (hasActiveThreads) {
-      throw new Error('会话已有活跃线程，无法创建新线程');
+      throw new ValidationError('会话已有活跃线程，无法创建新线程');
     }
   }
 
@@ -56,13 +57,13 @@ export class ThreadLifecycle extends BaseService {
     const thread = await this.threadRepository.findByIdOrFail(threadId);
 
     if (!thread.isPending()) {
-      throw new Error('只能启动待执行状态的线程');
+      throw new InvalidStatusError(thread.status.toString(), 'pending');
     }
 
     // 检查会话是否有其他运行中的线程（Session负责并行管理）
     const hasRunningThreads = await this.threadRepository.hasRunningThreads(thread.sessionId);
     if (hasRunningThreads) {
-      throw new Error('会话已有运行中的线程，无法启动其他线程');
+      throw new ValidationError('会话已有运行中的线程，无法启动其他线程');
     }
   }
 
@@ -73,7 +74,7 @@ export class ThreadLifecycle extends BaseService {
     const thread = await this.threadRepository.findByIdOrFail(threadId);
 
     if (!thread.isRunning()) {
-      throw new Error('只能暂停运行中的线程');
+      throw new InvalidStatusError(thread.status.toString(), 'running');
     }
   }
 
@@ -84,13 +85,13 @@ export class ThreadLifecycle extends BaseService {
     const thread = await this.threadRepository.findByIdOrFail(threadId);
 
     if (!thread.isPaused()) {
-      throw new Error('只能恢复暂停状态的线程');
+      throw new InvalidStatusError(thread.status.toString(), 'paused');
     }
 
     // 检查会话是否有其他运行中的线程（Session负责并行管理）
     const hasRunningThreads = await this.threadRepository.hasRunningThreads(thread.sessionId);
     if (hasRunningThreads) {
-      throw new Error('会话已有运行中的线程，无法恢复其他线程');
+      throw new ValidationError('会话已有运行中的线程，无法恢复其他线程');
     }
   }
 
@@ -101,7 +102,7 @@ export class ThreadLifecycle extends BaseService {
     const thread = await this.threadRepository.findByIdOrFail(threadId);
 
     if (!thread.isActive()) {
-      throw new Error('只能完成活跃状态的线程');
+      throw new InvalidStatusError(thread.status.toString(), 'active');
     }
   }
 
@@ -112,7 +113,7 @@ export class ThreadLifecycle extends BaseService {
     const thread = await this.threadRepository.findByIdOrFail(threadId);
 
     if (!thread.isActive()) {
-      throw new Error('只能设置活跃状态的线程为失败状态');
+      throw new InvalidStatusError(thread.status.toString(), 'active');
     }
   }
 
@@ -123,7 +124,7 @@ export class ThreadLifecycle extends BaseService {
     const thread = await this.threadRepository.findByIdOrFail(threadId);
 
     if (thread.isTerminal()) {
-      throw new Error('无法取消已终止状态的线程');
+      throw new InvalidStatusError(thread.status.toString(), 'non-terminal');
     }
   }
 
@@ -152,14 +153,14 @@ export class ThreadLifecycle extends BaseService {
         const sessionObjId = this.parseId(sessionId, '会话ID');
         const session = await this.sessionRepository.findById(sessionObjId);
         if (!session) {
-          throw new Error(`会话不存在: ${sessionId}`);
+          throw new EntityNotFoundError('Session', sessionId);
         }
 
         // 验证工作流存在
         const workflowObjId = this.parseId(workflowId, '工作流ID');
         const workflow = await this.workflowRepository.findById(workflowObjId);
         if (!workflow) {
-          throw new Error(`工作流不存在: ${workflowId}`);
+          throw new EntityNotFoundError('Workflow', workflowId);
         }
 
         // 验证线程创建的业务规则
@@ -361,7 +362,7 @@ export class ThreadLifecycle extends BaseService {
         // 获取工作流
         const workflow = await this.workflowRepository.findById(thread.workflowId);
         if (!workflow) {
-          throw new Error(`工作流不存在: ${thread.workflowId.toString()}`);
+          throw new EntityNotFoundError('Workflow', thread.workflowId.toString());
         }
 
         // 启动线程

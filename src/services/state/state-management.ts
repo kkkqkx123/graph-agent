@@ -5,6 +5,7 @@ import { Session } from '../../domain/sessions/entities/session';
 import { StateHistory } from './state-history';
 import { StateRecovery } from './state-recovery';
 import { TYPES } from '../../di/service-keys';
+import { ValidationError, ExecutionError } from '../../common/exceptions';
 
 /**
  * 状态管理协调服务
@@ -94,7 +95,7 @@ export class StateManagement {
     );
 
     if (!validation.canRestore) {
-      throw new Error(`Cannot restore thread: ${validation.reason}`);
+      throw new ValidationError(`Cannot restore thread: ${validation.reason}`);
     }
 
     // 执行恢复
@@ -104,7 +105,7 @@ export class StateManagement {
       // 自动选择最佳恢复点
       const bestPoint = await this.recoveryService.getBestRecoveryPoint(thread.id);
       if (!bestPoint) {
-        throw new Error('No recovery point available');
+        throw new ValidationError('No recovery point available');
       }
 
       restoredThread = await this.recoveryService.restoreThreadFromCheckpoint(
@@ -117,7 +118,7 @@ export class StateManagement {
         restorePointId
       );
     } else {
-      throw new Error('Invalid restore parameters');
+      throw new ValidationError('Invalid restore parameters');
     }
 
     // 记录恢复后的状态变更

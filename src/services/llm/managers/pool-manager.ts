@@ -2,6 +2,7 @@ import { injectable, inject } from 'inversify';
 import { PollingPool } from '../../../domain/llm/entities/pool';
 import { TYPES } from '../../../di/service-keys';
 import { TaskGroupManager } from './task-group-manager';
+import { EntityNotFoundError } from '../../../common/exceptions';
 
 /**
  * 轮询池管理器
@@ -71,7 +72,7 @@ export class PollingPoolManager {
   async getPoolStatistics(name: string): Promise<Record<string, any>> {
     const pool = await this.getPool(name);
     if (!pool) {
-      throw new Error(`轮询池不存在: ${name}`);
+      throw new EntityNotFoundError('PollingPool', name);
     }
 
     const status = await pool.getStatus();

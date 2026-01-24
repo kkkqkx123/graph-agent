@@ -5,6 +5,7 @@ import { ICheckpointRepository } from '../../domain/threads/checkpoints/reposito
 import { Thread } from '../../domain/threads/entities/thread';
 import { ILogger } from '../../domain/common/types/logger-types';
 import { TYPES } from '../../di/service-keys';
+import { EntityNotFoundError, ValidationError } from '../../common/exceptions';
 
 /**
  * 状态恢复服务
@@ -35,17 +36,17 @@ export class StateRecovery {
     // 1. 获取Checkpoint
     const checkpoint = await this.checkpointRepository.findById(checkpointId);
     if (!checkpoint) {
-      throw new Error(`Checkpoint not found: ${checkpointId.value}`);
+      throw new EntityNotFoundError('Checkpoint', checkpointId.value);
     }
 
     // 2. 验证Checkpoint是否属于该Thread
     if (!checkpoint.threadId.equals(thread.threadId)) {
-      throw new Error(`Checkpoint ${checkpointId.value} does not belong to thread ${thread.threadId.value}`);
+      throw new ValidationError(`Checkpoint ${checkpointId.value} does not belong to thread ${thread.threadId.value}`);
     }
 
     // 3. 验证Checkpoint是否已删除
     if (checkpoint.isDeleted()) {
-      throw new Error(`Checkpoint ${checkpointId.value} is deleted`);
+      throw new ValidationError(`Checkpoint ${checkpointId.value} is deleted`);
     }
 
     // 4. 记录恢复日志

@@ -12,6 +12,7 @@ import { IThreadRepository } from '../../domain/threads/repositories/thread-repo
 import { Thread } from '../../domain/threads/entities/thread';
 import { ID } from '../../domain/common/value-objects/id';
 import { TYPES } from '../../di/service-keys';
+import { ValidationError, ExecutionTimeoutError, EntityNotFoundError, ExecutionError } from '../../common/exceptions';
 
 /**
  * 工作流执行选项接口
@@ -148,7 +149,7 @@ export class ThreadWorkflowExecutor {
       // 查找起始节点
       currentNodeId = this.findStartNode(workflow);
       if (!currentNodeId) {
-        throw new Error('工作流没有起始节点');
+        throw new ValidationError('工作流没有起始节点');
       }
 
       let lastCheckpointStep = 0;
@@ -157,19 +158,19 @@ export class ThreadWorkflowExecutor {
       while (this.shouldContinueExecution(currentNodeId, executedNodes, maxSteps)) {
         // 检查超时
         if (Date.now() - startTime > timeout) {
-          throw new Error('工作流执行超时');
+          throw new ExecutionTimeoutError(timeout);
         }
 
         // 获取当前节点
         const node = workflow.getNode(NodeId.fromString(currentNodeId));
         if (!node) {
-          throw new Error(`节点 ${currentNodeId} 不存在`);
+          throw new EntityNotFoundError('Node', currentNodeId);
         }
 
         // 获取当前状态
         const currentState = this.stateManager.getState(threadId);
         if (!currentState) {
-          throw new Error(`线程 ${threadId} 的状态不存在`);
+          throw new EntityNotFoundError('ThreadState', threadId);
         }
 
         // 创建检查点
@@ -308,7 +309,7 @@ export class ThreadWorkflowExecutor {
     // 注意：这里需要通过 CheckpointManagement 恢复检查点
     // 由于 CheckpointManagement 的接口不同，这里暂时抛出错误
     // 实际实现需要重构以支持恢复检查点
-    throw new Error('从检查点恢复功能需要重构以支持新的 CheckpointManagement 接口');
+    throw new ValidationError('从检查点恢复功能需要重构以支持新的 CheckpointManagement 接口');
   }
 
   /**
@@ -347,7 +348,7 @@ export class ThreadWorkflowExecutor {
     const canExecute = await this.nodeExecutionHandler.canExecute(node, nodeContext);
 
     if (!canExecute) {
-      throw new Error(`节点 ${node.nodeId.toString()} 无法执行`);
+      throw new ExecutionError(`节点 ${node.nodeId.toString()} 无法执行`);
     }
 
     // 如果有重试配置，使用带重试的执行
@@ -453,7 +454,7 @@ export class ThreadWorkflowExecutor {
           return this.functionRegistry as T;
         }
         // 可以在这里添加其他服务的获取逻辑
-        throw new Error(`服务 ${serviceName} 未找到`);
+        throw new EntityNotFoundError('Service', serviceName);
       },
     };
   }

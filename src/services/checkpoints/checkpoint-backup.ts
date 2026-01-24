@@ -4,6 +4,7 @@ import { CheckpointType } from '../../domain/threads/checkpoints/value-objects/c
 import { CheckpointScope } from '../../domain/threads/checkpoints/value-objects/checkpoint-scope';
 import { ICheckpointRepository } from '../../domain/threads/checkpoints/repositories/checkpoint-repository';
 import { ILogger } from '../../domain/common/types/logger-types';
+import { EntityNotFoundError } from '../../common/exceptions';
 
 /**
  * 检查点备份服务
@@ -22,7 +23,7 @@ export class CheckpointBackup {
   async createBackup(checkpointId: ID): Promise<Checkpoint> {
     const original = await this.repository.findById(checkpointId);
     if (!original) {
-      throw new Error('原始检查点不存在');
+      throw new EntityNotFoundError('Checkpoint', checkpointId.toString());
     }
 
     const backupMetadata = {

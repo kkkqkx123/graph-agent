@@ -9,6 +9,7 @@ import { LLMRequest } from '../../domain/llm/entities/llm-request';
 import { LLMResponse } from '../../domain/llm/entities/llm-response';
 import { WrapperConfig } from '../../domain/llm/value-objects/wrapper-reference';
 import { TYPES } from '../../di/service-keys';
+import { ValidationError, InvalidConfigurationError } from '../../common/exceptions';
 
 /**
  * 包装器服务
@@ -117,7 +118,7 @@ export class Wrapper {
   private parseWrapperName(wrapperName: string): WrapperConfig {
     const parts = wrapperName.split(':');
     if (parts.length < 2) {
-      throw new Error(`无效的wrapper名称格式: ${wrapperName}`);
+      throw new ValidationError(`无效的wrapper名称格式: ${wrapperName}`);
     }
 
     const type = parts[0] as 'pool' | 'group' | 'direct';
@@ -131,7 +132,7 @@ export class Wrapper {
         // 对于direct类型，name实际上是provider:model的格式
         const providerParts = name.split(':');
         if (providerParts.length < 2) {
-          throw new Error(`无效的direct wrapper格式: ${wrapperName}`);
+          throw new ValidationError(`无效的direct wrapper格式: ${wrapperName}`);
         }
         return {
           type: 'direct',
@@ -139,7 +140,7 @@ export class Wrapper {
           model: providerParts.slice(1).join(':'),
         };
       default:
-        throw new Error(`未知的wrapper类型: ${type}`);
+        throw new InvalidConfigurationError(`type`, `未知的wrapper类型: ${type}`);
     }
   }
 
@@ -158,7 +159,7 @@ export class Wrapper {
       if (wrapperType === 'direct') {
         const [provider, model] = wrapperName.split(':');
         if (!provider || !model) {
-          throw new Error(`无效的 direct wrapper 格式: ${wrapperName}`);
+          throw new ValidationError(`无效的 direct wrapper 格式: ${wrapperName}`);
         }
         return this.generateDirectResponse(provider, model, requestData);
       }
@@ -166,7 +167,7 @@ export class Wrapper {
       const wrapper: WrapperConfig = { type: wrapperType as 'pool' | 'group', name: wrapperName };
       return this.generateResponse(wrapper, requestData);
     }
-    throw new Error('没有可用的包装器来处理请求');
+    throw new InvalidConfigurationError('wrapper', '没有可用的包装器来处理请求');
   }
 
   /**

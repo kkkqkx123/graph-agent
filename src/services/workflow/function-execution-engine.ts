@@ -16,6 +16,7 @@ import { WorkflowContext } from '../../domain/workflow/value-objects/context/wor
 import { INodeExecutionHandler } from '../threads/execution/handlers/node-execution-handler';
 import { ILogger } from '../../domain/common/types/logger-types';
 import { TYPES } from '../../di/service-keys';
+import { InvalidConfigurationError } from '../../common/exceptions';
 
 /**
  * 函数执行策略枚举
@@ -126,7 +127,7 @@ export class FunctionExecutionEngine {
       case FunctionExecutionStrategy.CONDITIONAL:
         return this.executeConditional(functions, context, config);
       default:
-        throw new Error(`不支持的执行策略: ${config.strategy}`);
+        throw new InvalidConfigurationError(`strategy`, `不支持的执行策略: ${config.strategy}`);
     }
   }
 

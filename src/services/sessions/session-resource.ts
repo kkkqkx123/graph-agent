@@ -14,6 +14,7 @@ import {
 } from '../../domain/common';
 import { BaseService } from '../common/base-service';
 import { TYPES } from '../../di/service-keys';
+import { EntityNotFoundError, ValidationError } from '../../common/exceptions';
 
 /**
  * 资源限制
@@ -70,7 +71,7 @@ export class SessionResource extends BaseService {
     const id = this.parseId(sessionId, '会话ID');
     const session = await this.sessionRepository.findById(id);
     if (!session) {
-      throw new Error(`会话 ${sessionId} 不存在`);
+      throw new EntityNotFoundError('Session', sessionId);
     }
     return session;
   }
@@ -100,7 +101,7 @@ export class SessionResource extends BaseService {
 
         // 检查是否超出限制
         if (totalMemory > limits.maxMemory) {
-          throw new Error(`内存需求 ${totalMemory} 超出限制 ${limits.maxMemory}`);
+          throw new ValidationError(`内存需求 ${totalMemory} 超出限制 ${limits.maxMemory}`);
         }
 
         // 创建资源分配

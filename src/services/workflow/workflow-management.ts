@@ -14,6 +14,7 @@ import { WorkflowMerger } from './workflow-merger';
 import { SubWorkflowValidator, SubWorkflowValidationResult } from './validators/subworkflow-validator';
 import { WorkflowConfig } from '../../domain/workflow/value-objects/workflow-config';
 import { WorkflowStatus } from '../../domain/workflow/value-objects/workflow-status';
+import { InvalidStatusError } from '../../common/exceptions';
 
 /**
  * 更新工作流参数
@@ -218,7 +219,7 @@ export class WorkflowManagement extends BaseService {
         let workflow = await this.workflowRepository.findByIdOrFail(workflowId);
 
         if (!workflow.status.canEdit()) {
-          throw new Error('只能编辑草稿状态的工作流');
+          throw new InvalidStatusError(workflow.status.toString(), 'draft');
         }
 
         const userId = this.parseOptionalId(params.userId, '用户ID');

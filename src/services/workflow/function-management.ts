@@ -5,6 +5,7 @@
 
 import { injectable, inject } from 'inversify';
 import { ILogger } from '../../domain/common';
+import { ValidationError, EntityNotFoundError } from '../../common/exceptions';
 
 /**
  * 工作流函数类型枚举
@@ -123,7 +124,7 @@ export class FunctionManagement {
       // 1. 验证函数定义
       const validationResult = await this.validateFunctionDefinition(functionDefinition);
       if (!validationResult.valid) {
-        throw new Error(`函数定义验证失败: ${validationResult.errors.join(', ')}`);
+        throw new ValidationError(`函数定义验证失败: ${validationResult.errors.join(', ')}`);
       }
 
       // 2. 检查函数是否已存在
@@ -212,7 +213,7 @@ export class FunctionManagement {
     try {
       const existingFunction = this.functionRegistry.get(functionId);
       if (!existingFunction) {
-        throw new Error(`函数不存在: ${functionId}`);
+        throw new EntityNotFoundError('Function', functionId);
       }
 
       // 应用更新
@@ -225,7 +226,7 @@ export class FunctionManagement {
       // 验证更新后的函数
       const validationResult = await this.validateFunctionDefinition(updatedFunction);
       if (!validationResult.valid) {
-        throw new Error(`更新后的函数验证失败: ${validationResult.errors.join(', ')}`);
+        throw new ValidationError(`更新后的函数验证失败: ${validationResult.errors.join(', ')}`);
       }
 
       // 更新注册表

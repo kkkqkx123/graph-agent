@@ -14,6 +14,7 @@ import { Workflow, IWorkflowRepository, Node, NodeId, EdgeId } from '../../domai
 import { ILogger } from '../../domain/common';
 import { SubWorkflowValidator, WorkflowStructureValidator } from './validators';
 import { EdgeValueObject } from '../../domain/workflow/value-objects/edge';
+import { ValidationError, EntityNotFoundError, InvalidStateTransitionError } from '../../common/exceptions';
 
 /**
  * 工作流合并结果
@@ -185,7 +186,7 @@ export class WorkflowMerger {
 
     // 检查循环引用
     if (processedWorkflowIds.has(workflowId)) {
-      throw new Error(`检测到循环引用：${Array.from(processedWorkflowIds).join(' -> ')} -> ${workflowId}`);
+      throw new ValidationError(`检测到循环引用：${Array.from(processedWorkflowIds).join(' -> ')} -> ${workflowId}`);
     }
 
     processedWorkflowIds.add(workflowId);
@@ -212,14 +213,14 @@ export class WorkflowMerger {
       // 加载子工作流
       const subWorkflow = await this.workflowRepository.findById(reference.workflowId);
       if (!subWorkflow) {
-        throw new Error(`子工作流不存在：${reference.workflowId.toString()}`);
+        throw new EntityNotFoundError('Workflow', reference.workflowId.toString());
       }
 
       // 验证子工作流标准
       const validationResult = await this.subWorkflowValidator.validate(subWorkflow);
 
       if (!validationResult.isValid) {
-        throw new Error(
+        throw new ValidationError(
           `子工作流验证失败（${reference.workflowId.toString()}）：${validationResult.errors.join(', ')}`
         );
       }
@@ -389,7 +390,7 @@ export class WorkflowMerger {
       const newToNodeId = nodeIdMap.get(edge.toNodeId.toString());
 
       if (!newFromNodeId || !newToNodeId) {
-        throw new Error(`无法找到节点ID映射：${edge.fromNodeId.toString()} -> ${edge.toNodeId.toString()}`);
+        throw new ValidationError(`无法找到节点ID映射：${edge.fromNodeId.toString()} -> ${edge.toNodeId.toString()}`);
       }
 
       // 创建新的边
@@ -427,7 +428,7 @@ export class WorkflowMerger {
     const exitNode = this.findExitNode(subWorkflow, referenceId);
 
     if (!entryNode || !exitNode) {
-      throw new Error(
+      throw new ValidationError(
         `无法找到子工作流的入口或出口节点：${referenceId}。` +
         `入口节点：${entryNode ? entryNode.nodeId.toString() : '未找到'}，` +
         `出口节点：${exitNode ? exitNode.nodeId.toString() : '未找到'}`
@@ -439,7 +440,7 @@ export class WorkflowMerger {
     const subWorkflowExitMapping = nodeIdMappings.find((m) => m.originalId === exitNode.nodeId.toString());
 
     if (!subWorkflowEntryMapping || !subWorkflowExitMapping) {
-      throw new Error(
+      throw new ValidationError(
         `无法找到子工作流入口或出口节点的映射：${referenceId}。` +
         `入口映射：${subWorkflowEntryMapping ? subWorkflowEntryMapping.mergedId : '未找到'}，` +
         `出口映射：${subWorkflowExitMapping ? subWorkflowExitMapping.mergedId : '未找到'}`

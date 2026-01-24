@@ -9,6 +9,7 @@ import { Thread, IThreadRepository, ThreadStatus } from '../../domain/threads';
 import { BaseService } from '../common/base-service';
 import { ILogger } from '../../domain/common';
 import { TYPES } from '../../di/service-keys';
+import { InvalidStatusError, ValidationError } from '../../common/exceptions';
 
 /**
  * 线程维护服务
@@ -47,7 +48,7 @@ export class ThreadMaintenance extends BaseService {
 
         // 检查线程状态是否允许删除
         if (thread.isRunning()) {
-          throw new Error('无法删除运行中的线程');
+          throw new InvalidStatusError('running', 'non-running');
         }
 
         // 标记线程为已删除
@@ -151,7 +152,7 @@ export class ThreadMaintenance extends BaseService {
         // 检查是否有运行中的线程
         const hasRunningThreads = await this.threadRepository.hasRunningThreads(id);
         if (hasRunningThreads) {
-          throw new Error('无法删除有运行中线程的会话');
+          throw new ValidationError('无法删除有运行中线程的会话');
         }
 
         return await this.threadRepository.deleteAllThreadsForSession(id);
@@ -178,7 +179,7 @@ export class ThreadMaintenance extends BaseService {
         const thread = await this.threadRepository.findByIdOrFail(id);
 
         if (!thread.isFailed()) {
-          throw new Error('只能重试失败状态的线程');
+          throw new InvalidStatusError(thread.status.toString(), 'failed');
         }
 
         // 验证重试条件

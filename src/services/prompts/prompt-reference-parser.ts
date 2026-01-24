@@ -10,6 +10,7 @@
  */
 
 import { ILogger } from '../../domain/common/types/logger-types';
+import { ValidationError } from '../../common/exceptions';
 
 /**
  * 提示词引用
@@ -46,7 +47,7 @@ export class PromptReferenceParser {
     const parts = reference.split('.');
 
     if (parts.length < 2) {
-      throw new Error(
+      throw new ValidationError(
         `无效的提示词引用格式: ${reference}，格式应为 "category.name" 或 "category.composite.part"`
       );
     }
@@ -56,14 +57,14 @@ export class PromptReferenceParser {
 
     // 验证类别
     if (!this.validCategories.includes(category)) {
-      throw new Error(`无效的类别: ${category}，有效类别: ${this.validCategories.join(', ')}`);
+      throw new ValidationError(`无效的类别: ${category}，有效类别: ${this.validCategories.join(', ')}`);
     }
 
     // 验证名称格式
     const nameParts = parts.slice(1);
     for (const part of nameParts) {
       if (!part || !/^[a-zA-Z0-9_-]+$/.test(part)) {
-        throw new Error(`名称包含无效字符: ${part}，只允许字母、数字、下划线和连字符`);
+        throw new ValidationError(`名称包含无效字符: ${part}，只允许字母、数字、下划线和连字符`);
       }
     }
 

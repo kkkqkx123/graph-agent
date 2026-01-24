@@ -20,6 +20,7 @@ import { CheckpointCreation } from '../checkpoints/checkpoint-creation';
 import { CheckpointManagement } from '../checkpoints/checkpoint-management';
 import { WorkflowManagement } from '../workflow/workflow-management';
 import { TYPES } from '../../di/service-keys';
+import { InvalidStatusError, ValidationError, ExecutionError } from '../../common/exceptions';
 
 /**
  * 线程执行结果接口
@@ -95,7 +96,7 @@ export class ThreadExecution extends BaseService {
 
         // 验证线程状态
         if (!thread.isPending()) {
-          throw new Error(`只能执行待执行状态的线程，当前状态: ${thread.status}`);
+          throw new InvalidStatusError(thread.status.toString(), 'pending');
         }
 
         // 通过 WorkflowManagement 获取已合并的可执行 workflow
@@ -105,7 +106,7 @@ export class ThreadExecution extends BaseService {
 
         // 验证工作流状态
         if (!workflow.status.isActive()) {
-          throw new Error(`工作流不是活跃状态，当前状态: ${workflow.status.toString()}`);
+          throw new InvalidStatusError(workflow.status.toString(), 'active');
         }
 
         // 启动线程
@@ -245,7 +246,7 @@ export class ThreadExecution extends BaseService {
 
         // 验证线程状态
         if (!thread.isPaused() && !thread.isFailed()) {
-          throw new Error(`只能恢复暂停或失败状态的线程，当前状态: ${thread.status}`);
+          throw new InvalidStatusError(thread.status.toString(), 'paused or failed');
         }
 
         // 通过 WorkflowManagement 获取已合并的可执行 workflow
@@ -255,7 +256,7 @@ export class ThreadExecution extends BaseService {
 
         // 验证工作流状态
         if (!workflow.status.isActive()) {
-          throw new Error(`工作流不是活跃状态，当前状态: ${workflow.status.toString()}`);
+          throw new InvalidStatusError(workflow.status.toString(), 'active');
         }
 
         // 恢复线程
@@ -429,7 +430,7 @@ export class ThreadExecution extends BaseService {
 
         // 验证线程状态
         if (thread.isTerminal()) {
-          throw new Error(`无法取消已终止状态的线程，当前状态: ${thread.status}`);
+          throw new InvalidStatusError(thread.status.toString(), 'non-terminal');
         }
 
         // 取消线程
@@ -501,12 +502,12 @@ export class ThreadExecution extends BaseService {
 
         // 验证线程状态
         if (!thread.isActive()) {
-          throw new Error(`只能更新活跃状态的线程进度，当前状态: ${thread.status}`);
+          throw new InvalidStatusError(thread.status.toString(), 'active');
         }
 
         // 验证进度值
         if (progress < 0 || progress > 100) {
-          throw new Error(`进度值必须在0-100之间，当前值: ${progress}`);
+          throw new ValidationError(`进度值必须在0-100之间，当前值: ${progress}`);
         }
 
         // 更新进度

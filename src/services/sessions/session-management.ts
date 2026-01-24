@@ -12,6 +12,7 @@ import {
 } from '../../domain/sessions';
 import { BaseService } from '../common/base-service';
 import { ILogger } from '../../domain/common';
+import { InvalidStatusError } from '../../common/exceptions';
 
 /**
  * 会话管理服务
@@ -30,7 +31,7 @@ export class SessionManagement extends BaseService {
   private validateConfigUpdate(session: Session, newConfig: SessionConfig): void {
     // 验证配置更新是否合法
     if (session.status.isTerminated()) {
-      throw new Error('已终止的会话无法更新配置');
+      throw new InvalidStatusError('terminated', 'non-terminated');
     }
     newConfig.validate();
   }

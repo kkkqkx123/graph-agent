@@ -15,6 +15,7 @@ import { IThreadRepository } from '../../domain/threads/repositories/thread-repo
 import { Thread } from '../../domain/threads/entities/thread';
 import { ID } from '../../domain/common/value-objects/id';
 import { TYPES } from '../../di/service-keys';
+import { ValidationError, ExecutionError, ExecutionCancelledError, ExecutionTimeoutError, EntityNotFoundError } from '../../common/exceptions';
 
 /**
  * 工作流执行选项接口
@@ -213,7 +214,7 @@ export class WorkflowExecutionEngine {
       // 查找起始节点
       currentNodeId = this.findStartNode(workflow);
       if (!currentNodeId) {
-        throw new Error('工作流没有起始节点');
+        throw new ValidationError('工作流没有起始节点');
       }
 
       let lastCheckpointStep = 0;
@@ -227,24 +228,24 @@ export class WorkflowExecutionEngine {
 
         // 检查是否取消
         if (controller.isCancelled) {
-          throw new Error('Execution cancelled');
+          throw new ExecutionCancelledError('Execution cancelled');
         }
 
         // 检查超时
         if (Date.now() - startTime > timeout) {
-          throw new Error('工作流执行超时');
+          throw new ExecutionTimeoutError(timeout);
         }
 
         // 获取当前节点
         const node = workflow.getNode(NodeId.fromString(currentNodeId));
         if (!node) {
-          throw new Error(`节点 ${currentNodeId} 不存在`);
+          throw new EntityNotFoundError('Node', currentNodeId);
         }
 
         // 获取当前状态
         const currentState = this.stateManager.getState(threadId);
         if (!currentState) {
-          throw new Error(`线程 ${threadId} 的状态不存在`);
+          throw new EntityNotFoundError('ThreadState', threadId);
         }
 
         // 创建检查点
@@ -399,7 +400,7 @@ export class WorkflowExecutionEngine {
     // 注意：这里需要通过 CheckpointManagement 恢复检查点
     // 由于 CheckpointManagement 的接口不同，这里暂时抛出错误
     // 实际实现需要重构以支持恢复检查点
-    throw new Error('从检查点恢复功能需要重构以支持新的 CheckpointManagement 接口');
+    throw new ValidationError('从检查点恢复功能需要重构以支持新的 CheckpointManagement 接口');
   }
 
   /**
@@ -484,7 +485,7 @@ export class WorkflowExecutionEngine {
     const canExecute = await this.nodeExecutor.canExecute(node, nodeContext);
 
     if (!canExecute) {
-      throw new Error(`节点 ${node.nodeId.toString()} 无法执行`);
+      throw new ExecutionError(`节点 ${node.nodeId.toString()} 无法执行`);
     }
 
     // 如果有重试配置，使用带重试的执行
@@ -511,7 +512,7 @@ export class WorkflowExecutionEngine {
       // 获取当前线程
       const currentThread = await this.getCurrentThread(threadId);
       if (!currentThread) {
-        throw new Error(`线程 ${threadId} 不存在`);
+        throw new EntityNotFoundError('Thread', threadId);
       }
 
       // 调用ThreadFork服务
@@ -522,7 +523,7 @@ export class WorkflowExecutionEngine {
       });
 
       if (!forkResult.success) {
-        throw new Error(`Fork操作失败: ${forkResult.error?.message}`);
+        throw new ExecutionError(`Fork操作失败: ${forkResult.error?.message}`);
       }
 
       // 存储子线程ID到状态
@@ -536,7 +537,7 @@ export class WorkflowExecutionEngine {
       }
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : String(error);
-      throw new Error(`处理Fork节点失败: ${errorMessage}`);
+      throw new ExecutionError(`处理Fork节点失败: ${errorMessage}`);
     }
   }
   */
@@ -555,7 +556,7 @@ export class WorkflowExecutionEngine {
       // 获取当前线程
       const currentThread = await this.getCurrentThread(threadId);
       if (!currentThread) {
-        throw new Error(`线程 ${threadId} 不存在`);
+        throw new EntityNotFoundError('Thread', threadId);
       }
 
       // 获取子线程ID
@@ -574,7 +575,7 @@ export class WorkflowExecutionEngine {
       });
 
       if (!joinResult.success) {
-        throw new Error(`Join操作失败: ${joinResult.error?.message}`);
+        throw new ExecutionError(`Join操作失败: ${joinResult.error?.message}`);
       }
 
       // 存储合并结果到状态
@@ -589,7 +590,7 @@ export class WorkflowExecutionEngine {
       });
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : String(error);
-      throw new Error(`处理Join节点失败: ${errorMessage}`);
+      throw new ExecutionError(`处理Join节点失败: ${errorMessage}`);
     }
   }
   */
@@ -610,6 +611,21 @@ export class WorkflowExecutionEngine {
   }
 
   /**
+   * 获取子线程
+   * @param childThreadId 子线程ID
+   * @returns 子线程实例
+   */
+  private async getChildThread(childThreadId: string): Promise<Thread | null> {
+    try {
+      const thread = await this.threadRepository.findById(ID.fromString(childThreadId));
+      return thread || null;
+    } catch (error) {
+      console.error(`获取子线程 ${childThreadId} 失败:`, error);
+      return null;
+    }
+  }
+
+  /**
    * 启动子线程（私有方法）
    * @param childThreadId 子线程ID
    * @param workflow 工作流
@@ -622,9 +638,9 @@ export class WorkflowExecutionEngine {
   ): Promise<void> {
     try {
       // 获取子线程
-      const childThread = await this.threadRepository.findById(ID.fromString(childThreadId));
+      const childThread = await this.getChildThread(childThreadId);
       if (!childThread) {
-        throw new Error(`子线程 ${childThreadId} 不存在`);
+        throw new EntityNotFoundError('ChildThread', childThreadId);
       }
 
       // 初始化子线程状态
@@ -637,7 +653,7 @@ export class WorkflowExecutionEngine {
       // 查找起始节点
       const startNodeId = this.findStartNode(workflow);
       if (!startNodeId) {
-        throw new Error('工作流没有起始节点');
+        throw new ValidationError('工作流没有起始节点');
       }
 
       // 执行子线程工作流
@@ -751,7 +767,7 @@ export class WorkflowExecutionEngine {
           return this.functionRegistry as T;
         }
         // 可以在这里添加其他服务的获取逻辑
-        throw new Error(`服务 ${serviceName} 未找到`);
+        throw new EntityNotFoundError('Service', serviceName);
       },
     };
   }
