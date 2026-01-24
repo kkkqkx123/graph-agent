@@ -3,7 +3,7 @@
  */
 
 import { ILogger, LogContext } from '../../domain/common/types/logger-types';
-import { LoggerConfig, LoggerConfigBuilder, LogOutputType, LogFormatType } from './interfaces';
+import { LoggerConfig, LoggerConfigBuilder, LogOutputType, LogFormatType } from './logger-config';
 import { Logger } from './logger';
 import { LoggerConfigManager } from './logger-config';
 

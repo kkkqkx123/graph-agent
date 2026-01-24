@@ -2,13 +2,13 @@
  * 基础日志传输器 - 简化版本，移除重复的日志级别检查和不必要的getter
  */
 
-import { ILoggerTransport, LogEntry, LogOutputConfig } from '../interfaces';
-import { LogLevel } from '../../../domain/common/types/logger-types';
+import { LogLevel, LogEntry } from '../../../domain/common/types/logger-types';
+import { LogOutputConfig } from '../logger-config';
 
 /**
  * 基础日志传输器抽象类
  */
-export abstract class BaseTransport implements ILoggerTransport {
+export abstract class BaseTransport {
   abstract readonly name: string;
   readonly config: LogOutputConfig;
 

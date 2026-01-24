@@ -2,7 +2,7 @@
  * JSON日志格式化器
  */
 
-import { LogEntry } from '../interfaces';
+import { LogEntry } from '../../../domain/common/types/logger-types';
 import { BaseFormatter } from './base-formatter';
 import { RedactorUtils } from '../utils';
 

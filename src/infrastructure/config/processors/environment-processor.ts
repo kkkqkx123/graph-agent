@@ -19,7 +19,7 @@ export class EnvironmentProcessor implements IConfigProcessor {
 
   constructor(options: EnvironmentProcessorOptions = {}, logger: ILogger) {
     this.pattern = options.pattern || /\$\{([^:}]+)(?::([^}]*))?\}/g;
-    this.logger = logger.child({ module: 'EnvironmentProcessor' });
+    this.logger = logger;
   }
 
   /**

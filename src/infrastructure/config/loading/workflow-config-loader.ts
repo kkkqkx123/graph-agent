@@ -35,7 +35,7 @@ export class WorkflowConfigLoader {
     logger: ILogger,
     options: WorkflowConfigLoaderOptions = {}
   ) {
-    this.logger = logger.child({ module: 'WorkflowConfigLoader' });
+    this.logger = logger;
     this.basePath = options.basePath || 'configs/workflows';
     this.enableValidation = options.enableValidation ?? true;
     this.enableParameterReplacement = options.enableParameterReplacement ?? true;

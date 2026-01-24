@@ -2,7 +2,7 @@
  * 敏感数据脱敏工具类
  */
 
-import { RedactorConfig } from '../interfaces';
+import { RedactorConfig } from '../logger-config';
 
 /**
  * 敏感数据脱敏工具类

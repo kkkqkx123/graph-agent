@@ -2,7 +2,7 @@
  * 日志格式化器工厂 - 消除transport中的重复formatter创建代码
  */
 
-import { LogFormatType, ConsoleLogOutputConfig, FileLogOutputConfig } from '../interfaces';
+import { LogFormatType, ConsoleLogOutputConfig, FileLogOutputConfig } from '../logger-config';
 import { JsonFormatter, JsonFormatterOptions } from './json-formatter';
 import { TextFormatter, TextFormatterOptions } from './text-formatter';
 

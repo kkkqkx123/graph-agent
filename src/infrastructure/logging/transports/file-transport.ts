@@ -4,7 +4,8 @@
 
 import * as fs from 'fs';
 import * as path from 'path';
-import { LogEntry, FileLogOutputConfig, LogRotationStrategy } from '../interfaces';
+import { LogEntry } from '../../../domain/common/types/logger-types';
+import { FileLogOutputConfig, LogRotationStrategy } from '../logger-config';
 import { BaseTransport } from './base-transport';
 import { FormatterFactory } from '../formatters/formatter-factory';
 

@@ -15,7 +15,7 @@ export class SchemaRegistry {
   private readonly logger: ILogger;
 
   constructor(logger: ILogger, schemaMap?: Record<string, z.ZodType<any>>) {
-    this.logger = logger.child({ module: 'SchemaRegistry' });
+    this.logger = logger;
     
     if (schemaMap) {
       this.registerAllSchemas(schemaMap);

@@ -34,7 +34,7 @@ export class ConfigDiscovery implements IConfigDiscovery {
       '**/*.test.*',
     ];
     this.fileExtensions = options.fileExtensions || ['.toml'];
-    this.logger = logger.child({ module: 'ConfigDiscovery' });
+    this.logger = logger;
   }
 
   /**

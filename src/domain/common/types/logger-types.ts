@@ -22,7 +22,23 @@ export interface LogContext {
 }
 
 /**
- * 日志记录器接口
+ * 日志条目接口
+ */
+export interface LogEntry {
+  level: LogLevel;
+  message: string;
+  timestamp: Date;
+  context?: LogContext;
+  error?: Error;
+  meta?: Record<string, any>;
+}
+
+/**
+ * 日志记录器接口 - 简化版本
+ * 
+ * 设计决策：为了保持接口简洁，不提供child()方法。
+ * 如需为特定模块添加上下文，在模块中定义常量并显式传递。
+ * 详见: LOGGER_CHILD_NECESSITY_ANALYSIS.md
  */
 export interface ILogger {
   debug(message: string, context?: LogContext): void;

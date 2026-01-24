@@ -16,7 +16,7 @@ export class MergedFileOrganizer implements IFileOrganizer {
   private readonly logger: ILogger;
 
   constructor(logger: ILogger) {
-    this.logger = logger.child({ module: 'MergedFileOrganizer' });
+    this.logger = logger;
   }
 
   /**

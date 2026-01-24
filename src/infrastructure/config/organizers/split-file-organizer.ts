@@ -30,7 +30,7 @@ export class SplitFileOrganizer implements IFileOrganizer {
   private readonly directoryMapping: Record<string, string>;
 
   constructor(logger: ILogger, options: SplitFileOrganizerOptions = {}) {
-    this.logger = logger.child({ module: 'SplitFileOrganizer' });
+    this.logger = logger;
     this.directoryMapping = options.directoryMapping || {
       'pools': 'pools',
       'taskGroups': 'task_groups',

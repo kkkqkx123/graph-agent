@@ -44,7 +44,7 @@ export class ConfigLoadingModule {
   private configCache: Map<string, { config: any; timestamp: number }> = new Map();
 
   constructor(logger: ILogger, options: ConfigLoadingModuleOptions = {}) {
-    this.logger = logger.child({ module: 'ConfigLoadingModule' });
+    this.logger = logger;
     this.options = {
       enableValidation: true,
       enableCache: true,

@@ -30,7 +30,7 @@ export class InheritanceProcessor implements IConfigProcessor {
     
     this.separator = options.separator || '.';
     this.maxDepth = options.maxDepth || 10;
-    this.logger = logger.child({ module: 'InheritanceProcessor' });
+    this.logger = logger;
     this.basePath = basePath;
   }
 

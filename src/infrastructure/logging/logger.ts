@@ -2,8 +2,8 @@
  * 日志记录器实现 - 简化为同步日志记录
  */
 
-import { ILogger, LogLevel, LogContext } from '../../domain/common/types/logger-types';
-import { LoggerConfig, LogEntry, LogOutputType } from './interfaces';
+import { ILogger, LogLevel, LogContext, LogEntry } from '../../domain/common/types/logger-types';
+import { LoggerConfig, LogOutputType } from './logger-config';
 import { ConsoleTransport } from './transports/console-transport';
 import { FileTransport } from './transports/file-transport';
 import { LogLevelUtils } from './utils';

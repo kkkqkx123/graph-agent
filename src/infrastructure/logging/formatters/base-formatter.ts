@@ -2,13 +2,13 @@
  * 基础日志格式化器 - 简化为只包含通用辅助方法
  */
 
-import { ILoggerFormatter, LogEntry } from '../interfaces';
 import { LogLevelUtils } from '../utils';
+import { LogEntry } from '../../../domain/common/types/logger-types';
 
 /**
  * 基础日志格式化器抽象类 - 仅包含共用的工具方法
  */
-export abstract class BaseFormatter implements ILoggerFormatter {
+export abstract class BaseFormatter {
   abstract readonly name: string;
 
   /**

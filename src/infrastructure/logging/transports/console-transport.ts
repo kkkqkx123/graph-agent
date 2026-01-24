@@ -2,7 +2,8 @@
  * 控制台日志传输器
  */
 
-import { LogEntry, ConsoleLogOutputConfig } from '../interfaces';
+import { LogEntry } from '../../../domain/common/types/logger-types';
+import { ConsoleLogOutputConfig } from '../logger-config';
 import { BaseTransport } from './base-transport';
 import { FormatterFactory } from '../formatters/formatter-factory';
 

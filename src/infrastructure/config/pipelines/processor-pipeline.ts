@@ -27,7 +27,7 @@ export class ProcessorPipeline {
   private readonly options: ProcessorPipelineOptions;
 
   constructor(logger: ILogger, options: ProcessorPipelineOptions = {}) {
-    this.logger = logger.child({ module: 'ProcessorPipeline' });
+    this.logger = logger;
     this.options = {
       continueOnError: false,
       ...options,

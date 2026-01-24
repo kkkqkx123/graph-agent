@@ -2,9 +2,6 @@
  * 日志系统主入口
  */
 
-// 导出接口
-export * from './interfaces';
-
 // 导出配置
 export * from './logger-config';
 
