@@ -1,7 +1,7 @@
 import { ValueObject } from '../../common/value-objects';
 import { EdgeId, EdgeType } from './edge';
 import { NodeId } from './node';
-import { ValidationError } from '../../../common/exceptions';
+import { ValidationError } from '../../common/exceptions';
 
 /**
  * 边值对象属性接口

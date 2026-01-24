@@ -2,7 +2,7 @@ import { ValueObject } from '../../../common/value-objects';
 import { EdgeId } from './edge-id';
 import { EdgeType } from './edge-type';
 import { NodeId } from '../node/node-id';
-import { ValidationError } from '../../../../common/exceptions';
+import { ValidationError } from '../../../common/exceptions';
 
 /**
  * 边条件类型

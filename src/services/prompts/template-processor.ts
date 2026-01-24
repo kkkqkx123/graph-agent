@@ -13,7 +13,7 @@ import { PromptReferenceParser } from './prompt-reference-parser';
 import { PromptReferenceValidator } from './prompt-reference-validator';
 import { ILogger } from '../../domain/common/types/logger-types';
 import { TYPES } from '../../di/service-keys';
-import { EntityNotFoundError, ValidationError } from '../../common/exceptions';
+import { EntityNotFoundError, ValidationError } from '../../domain/common/exceptions';
 
 /**
  * 模板处理结果

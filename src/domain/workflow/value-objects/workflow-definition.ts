@@ -3,7 +3,7 @@ import { WorkflowStatus } from './workflow-status';
 import { WorkflowType } from './workflow-type';
 import { WorkflowConfig } from './workflow-config';
 import { ExecutionStrategy } from './execution/execution-strategy';
-import { ValidationError } from '../../../common/exceptions';
+import { ValidationError } from '../../common/exceptions';
 
 /**
  * WorkflowDefinition值对象属性接口

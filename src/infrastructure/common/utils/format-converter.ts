@@ -1,7 +1,7 @@
 import * as yaml from 'yaml';
 import { create } from 'xmlbuilder2';
 import { XMLParser } from 'fast-xml-parser';
-import { InvalidConfigurationError, ValidationError } from '../../../common/exceptions';
+import { InvalidConfigurationError, ValidationError } from '../../../domain/common/exceptions';
 
 /**
  * 支持的数据格式

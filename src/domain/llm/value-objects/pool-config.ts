@@ -1,6 +1,6 @@
 import { ValueObject } from '../../common/value-objects';
 import { RotationStrategy } from './rotation-strategy';
-import { ValidationError } from '../../../common/exceptions';
+import { ValidationError } from '../../common/exceptions';
 
 /**
  * 健康检查配置

@@ -1,6 +1,6 @@
 import { ValueObject } from '../../../common/value-objects';
 import { PromptState } from './prompt-state';
-import { ValidationError } from '../../../../common/exceptions';
+import { ValidationError } from '../../../common/exceptions';
 
 /**
  * 上下文过滤规则

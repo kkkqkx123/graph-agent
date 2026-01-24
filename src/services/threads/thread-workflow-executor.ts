@@ -12,7 +12,7 @@ import { IThreadRepository } from '../../domain/threads/repositories/thread-repo
 import { Thread } from '../../domain/threads/entities/thread';
 import { ID } from '../../domain/common/value-objects/id';
 import { TYPES } from '../../di/service-keys';
-import { ValidationError, ExecutionTimeoutError, EntityNotFoundError, ExecutionError } from '../../common/exceptions';
+import { ValidationError, ExecutionTimeoutError, EntityNotFoundError, ExecutionError } from '../../domain/common/exceptions';
 
 /**
  * 工作流执行选项接口

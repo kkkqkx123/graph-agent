@@ -1,5 +1,5 @@
 import { ValueObject } from '../../common/value-objects';
-import { ValidationError } from '../../../common/exceptions';
+import { ValidationError } from '../../common/exceptions';
 
 /**
  * LLM实例配置值对象

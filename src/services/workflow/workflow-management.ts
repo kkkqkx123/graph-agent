@@ -14,7 +14,7 @@ import { WorkflowMerger } from './workflow-merger';
 import { SubWorkflowValidator, SubWorkflowValidationResult } from './validators/subworkflow-validator';
 import { WorkflowConfig } from '../../domain/workflow/value-objects/workflow-config';
 import { WorkflowStatus } from '../../domain/workflow/value-objects/workflow-status';
-import { InvalidStatusError } from '../../common/exceptions';
+import { InvalidStatusError } from '../../domain/common/exceptions';
 
 /**
  * 更新工作流参数

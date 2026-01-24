@@ -1,5 +1,5 @@
 import { ValueObject } from '../value-objects';
-import { ValidationError } from '../../../common/exceptions';
+import { ValidationError } from '../exceptions';
 
 /**
  * 删除状态值对象接口

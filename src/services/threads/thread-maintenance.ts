@@ -9,7 +9,7 @@ import { Thread, IThreadRepository, ThreadStatus } from '../../domain/threads';
 import { BaseService } from '../common/base-service';
 import { ILogger } from '../../domain/common';
 import { TYPES } from '../../di/service-keys';
-import { InvalidStatusError, ValidationError } from '../../common/exceptions';
+import { InvalidStatusError, ValidationError } from '../../domain/common/exceptions';
 
 /**
  * 线程维护服务
@@ -265,14 +265,14 @@ export class ThreadMaintenance extends BaseService {
         const baseStats = id
           ? await this.threadRepository.getThreadExecutionStats(id)
           : {
-              total: 0,
-              pending: 0,
-              running: 0,
-              paused: 0,
-              completed: 0,
-              failed: 0,
-              cancelled: 0,
-            };
+            total: 0,
+            pending: 0,
+            running: 0,
+            paused: 0,
+            completed: 0,
+            failed: 0,
+            cancelled: 0,
+          };
 
         // 获取需要清理的线程数量
         const needsCleanupThreads = await this.threadRepository.findThreadsNeedingCleanup(24); // 24小时

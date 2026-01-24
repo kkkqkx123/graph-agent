@@ -16,7 +16,7 @@ import { Metadata, DeletionStatus } from '../../../domain/common/value-objects';
 import { ThreadCollection } from '../../../domain/sessions/value-objects/thread-collection';
 import { SharedResources } from '../../../domain/sessions/value-objects/shared-resources';
 import { ParallelStrategy } from '../../../domain/sessions/value-objects/parallel-strategy';
-import { ExecutionError } from '../../../common/exceptions';
+import { ExecutionError } from '../../../domain/common/exceptions';
 
 export class SessionMapper implements BaseMapper<Session, SessionModel> {
   /**

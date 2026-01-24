@@ -5,7 +5,7 @@ import { NodeExecutionState } from '../execution/node-execution-state';
 import { PromptHistoryEntry } from './prompt-history-entry';
 import { WorkflowExecutionContext } from '../../entities/node';
 import { ExecutionContext } from '../../../../services/threads/execution/context/execution-context';
-import { ValidationError } from '../../../../common/exceptions';
+import { ValidationError } from '../../../common/exceptions';
 
 /**
  * 工作流上下文属性接口

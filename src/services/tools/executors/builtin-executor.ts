@@ -8,7 +8,7 @@ import {
   ToolExecutorCapabilities,
   ToolExecutorHealthCheck,
 } from './tool-executor-base';
-import { EntityNotFoundError, ValidationError } from '../../../common/exceptions';
+import { EntityNotFoundError, ValidationError } from '../../../domain/common/exceptions';
 
 @injectable()
 export class BuiltinExecutor extends ToolExecutorBase {

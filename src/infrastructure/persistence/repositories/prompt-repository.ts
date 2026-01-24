@@ -21,13 +21,13 @@ import {
   IPromptRepository,
   PromptSearchCriteria,
 } from '../../../domain/prompts/repositories/prompt-repository';
-import { ExecutionError, EntityNotFoundError } from '../../../common/exceptions';
+import { ExecutionError, EntityNotFoundError } from '../../../domain/common/exceptions';
 
 /**
  * 提示词仓库实现
  */
 export class PromptRepository implements IPromptRepository {
-  constructor(private readonly logger: ILogger) {}
+  constructor(private readonly logger: ILogger) { }
 
   async findById(id: PromptId): Promise<Prompt | null> {
     const { category, name } = id.parse();

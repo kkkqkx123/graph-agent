@@ -17,7 +17,7 @@ import * as fs from 'fs/promises';
 import * as path from 'path';
 import { parse as parseToml } from 'toml';
 import { SCHEMA_MAP } from './schemas';
-import { ConfigurationError, InvalidConfigurationError, ValidationError } from '../../../common/exceptions';
+import { ConfigurationError, InvalidConfigurationError, ValidationError } from '../../../domain/common/exceptions';
 
 /**
  * 配置加载模块选项

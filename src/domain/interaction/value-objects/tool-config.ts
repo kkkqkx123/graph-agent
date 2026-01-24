@@ -1,5 +1,5 @@
 import { ValueObject } from '../../common/value-objects/value-object';
-import { ValidationError } from '../../../common/exceptions';
+import { ValidationError } from '../../common/exceptions';
 
 /**
  * 工具配置值对象

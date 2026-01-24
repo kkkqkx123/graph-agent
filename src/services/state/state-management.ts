@@ -5,7 +5,7 @@ import { Session } from '../../domain/sessions/entities/session';
 import { StateHistory } from './state-history';
 import { StateRecovery } from './state-recovery';
 import { TYPES } from '../../di/service-keys';
-import { ValidationError, ExecutionError } from '../../common/exceptions';
+import { ValidationError, ExecutionError } from '../../domain/common/exceptions';
 
 /**
  * 状态管理协调服务
@@ -21,7 +21,7 @@ export class StateManagement {
   constructor(
     @inject(TYPES.StateHistory) private readonly historyService: StateHistory,
     @inject(TYPES.StateRecovery) private readonly recoveryService: StateRecovery
-  ) {}
+  ) { }
 
   /**
    * 捕获Thread状态变更
@@ -206,7 +206,7 @@ export class StateManagement {
 
     // 计算需要删除的数量
     const toDelete = checkpoints.length - maxCount;
-    
+
     // 注意：实际的删除操作应该通过 CheckpointManagement 执行
     // 这里只返回需要删除的数量
     return {
@@ -231,7 +231,7 @@ export class StateManagement {
   }> {
     // 获取恢复历史统计
     const recoveryHistory = await this.recoveryService.getThreadRecoveryHistory(ID.generate());
-    
+
     // 简化的统计信息
     const byType: Record<string, number> = {};
     let totalRestores = 0;

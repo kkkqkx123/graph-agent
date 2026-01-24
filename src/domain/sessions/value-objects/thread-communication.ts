@@ -1,5 +1,5 @@
 import { ID, Timestamp, ValueObject } from '../../common/value-objects';
-import { ValidationError } from '../../../common/exceptions';
+import { ValidationError } from '../../common/exceptions';
 
 /**
  * 线程间消息类型

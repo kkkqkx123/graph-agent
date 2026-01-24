@@ -8,7 +8,7 @@ import { CheckpointSerializationUtils } from './utils/serialization-utils';
 import { FormatConverter, DataFormat } from '../../infrastructure/common/utils/format-converter';
 import { StatisticsUtils } from '../../infrastructure/common/utils/statistics-utils';
 import { CheckpointCleanup } from './checkpoint-cleanup';
-import { EntityNotFoundError, ValidationError } from '../../common/exceptions';
+import { EntityNotFoundError, ValidationError } from '../../domain/common/exceptions';
 
 /**
  * 检查点管理服务

@@ -13,7 +13,7 @@ import { TYPES } from '../../../di/service-keys';
 import { HttpClient } from '../../../infrastructure/common/http/http-client';
 import { TokenBucketLimiter } from '../rate-limiters/token-bucket-limiter';
 import { getConfig } from '../../config/config';
-import { MissingConfigurationError, InvalidConfigurationError, ExecutionError } from '../../../common/exceptions';
+import { MissingConfigurationError, InvalidConfigurationError, ExecutionError } from '../../../domain/common/exceptions';
 
 @injectable()
 export class MockClient extends BaseLLMClient {

@@ -1,7 +1,7 @@
 import { ValueObject } from '../../../common/value-objects';
 import { CheckpointStatus } from './checkpoint-status';
 import { CheckpointType } from './checkpoint-type';
-import { ValidationError } from '../../../../common/exceptions';
+import { ValidationError } from '../../../common/exceptions';
 
 /**
  * 检查点统计信息接口

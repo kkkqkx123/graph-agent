@@ -20,7 +20,7 @@ import { CheckpointCreation } from '../checkpoints/checkpoint-creation';
 import { CheckpointManagement } from '../checkpoints/checkpoint-management';
 import { WorkflowManagement } from '../workflow/workflow-management';
 import { TYPES } from '../../di/service-keys';
-import { InvalidStatusError, ValidationError, ExecutionError } from '../../common/exceptions';
+import { InvalidStatusError, ValidationError, ExecutionError } from '../../domain/common/exceptions';
 
 /**
  * 线程执行结果接口

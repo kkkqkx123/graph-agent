@@ -9,7 +9,7 @@ import { LLMRequest } from '../../domain/llm/entities/llm-request';
 import { LLMResponse } from '../../domain/llm/entities/llm-response';
 import { WrapperConfig } from '../../domain/llm/value-objects/wrapper-reference';
 import { TYPES } from '../../di/service-keys';
-import { ValidationError, InvalidConfigurationError } from '../../common/exceptions';
+import { ValidationError, InvalidConfigurationError } from '../../domain/common/exceptions';
 
 /**
  * 包装器服务

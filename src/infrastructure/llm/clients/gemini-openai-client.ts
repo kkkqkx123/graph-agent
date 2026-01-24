@@ -13,7 +13,7 @@ import { HttpClient } from '../../../infrastructure/common/http/http-client';
 import { TokenBucketLimiter } from '../rate-limiters/token-bucket-limiter';
 import { TokenCalculator } from '../token-calculators/token-calculator';
 import { getConfig } from '../../config/config';
-import { MissingConfigurationError, InvalidConfigurationError } from '../../../common/exceptions';
+import { MissingConfigurationError, InvalidConfigurationError } from '../../../domain/common/exceptions';
 
 @injectable()
 export class GeminiOpenAIClient extends BaseLLMClient {
@@ -93,7 +93,7 @@ export class GeminiOpenAIClient extends BaseLLMClient {
     }
 
     const configs: Record<string, any> = getConfig().get(
-        'llm_runtime.gemini_openai.models'
+      'llm_runtime.gemini_openai.models'
     );
     const config = configs[model];
 

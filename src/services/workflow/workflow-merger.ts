@@ -14,7 +14,7 @@ import { Workflow, IWorkflowRepository, Node, NodeId, EdgeId } from '../../domai
 import { ILogger } from '../../domain/common';
 import { SubWorkflowValidator, WorkflowStructureValidator } from './validators';
 import { EdgeValueObject } from '../../domain/workflow/value-objects/edge';
-import { ValidationError, EntityNotFoundError, InvalidStateTransitionError } from '../../common/exceptions';
+import { ValidationError, EntityNotFoundError, InvalidStateTransitionError } from '../../domain/common/exceptions';
 
 /**
  * 工作流合并结果

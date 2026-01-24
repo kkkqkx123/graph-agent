@@ -1,6 +1,6 @@
 import { ValueObject } from '../../common/value-objects';
 import { SubWorkflowType } from './subworkflow-type';
-import { ValidationError } from '../../../common/exceptions';
+import { ValidationError } from '../../common/exceptions';
 
 /**
  * 子工作流标准接口

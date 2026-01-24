@@ -1,5 +1,5 @@
 import { ValueObject } from '../../../common/value-objects/value-object';
-import { ValidationError } from '../../../../common/exceptions';
+import { ValidationError } from '../../../common/exceptions';
 
 /**
  * 检查点范围枚举

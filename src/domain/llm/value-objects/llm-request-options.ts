@@ -3,7 +3,7 @@
  */
 
 import { ValueObject } from '../../common/value-objects';
-import { ValidationError } from '../../../common/exceptions';
+import { ValidationError } from '../../common/exceptions';
 
 /**
  * LLM请求选项属性接口

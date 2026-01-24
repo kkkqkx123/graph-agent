@@ -1,6 +1,6 @@
 import { ID } from '../../common/value-objects';
 import { ValueObject } from '../../common/value-objects/value-object';
-import { ValidationError } from '../../../common/exceptions';
+import { ValidationError } from '../../common/exceptions';
 
 /**
  * 子工作流引用属性接口

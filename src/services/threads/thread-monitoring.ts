@@ -14,7 +14,7 @@ import { ILogger, Timestamp } from '../../domain/common';
 import { BaseService } from '../common/base-service';
 import { MonitoringService } from '../workflow/monitoring';
 import { TYPES } from '../../di/service-keys';
-import { EntityNotFoundError } from '../../common/exceptions';
+import { EntityNotFoundError } from '../../domain/common/exceptions';
 
 /**
  * 线程监控指标

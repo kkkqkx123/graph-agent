@@ -5,7 +5,7 @@
 import { LogFormatType, ConsoleLogOutputConfig, FileLogOutputConfig } from '../logger-config';
 import { JsonFormatter, JsonFormatterOptions } from './json-formatter';
 import { TextFormatter, TextFormatterOptions } from './text-formatter';
-import { InvalidConfigurationError } from '../../../common/exceptions';
+import { InvalidConfigurationError } from '../../../domain/common/exceptions';
 
 /**
  * Formatter工厂 - 统一管理formatter创建逻辑

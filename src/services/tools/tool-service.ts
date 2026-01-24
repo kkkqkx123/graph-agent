@@ -23,7 +23,7 @@ import { BuiltinExecutor } from './executors/builtin-executor';
 import { NativeExecutor } from './executors/native-executor';
 import { RestExecutor } from './executors/rest-executor';
 import { McpExecutor } from './executors/mcp-executor';
-import { EntityNotFoundError, ValidationError } from '../../common/exceptions';
+import { EntityNotFoundError, ValidationError } from '../../domain/common/exceptions';
 import { ConfigLoadingModule } from '../../infrastructure/config/loading/config-loading-module';
 
 /**

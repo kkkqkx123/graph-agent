@@ -7,7 +7,7 @@ import { LoggerConfig, LogOutputType } from './logger-config';
 import { ConsoleTransport } from './transports/console-transport';
 import { FileTransport } from './transports/file-transport';
 import { LogLevelUtils } from './utils';
-import { InvalidConfigurationError } from '../../common/exceptions';
+import { InvalidConfigurationError } from '../../domain/common/exceptions';
 
 /**
  * Winston日志记录器实现

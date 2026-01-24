@@ -2,7 +2,7 @@ import { ValueObject } from '../../common/value-objects/value-object';
 import { InteractionMessage } from './interaction-message';
 import { InteractionToolCall } from './interaction-tool-call';
 import { InteractionTokenUsage } from '../value-objects/token-usage';
-import { ValidationError } from '../../../common/exceptions';
+import { ValidationError } from '../../common/exceptions';
 
 /**
  * 交互LLM调用实体

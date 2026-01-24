@@ -1,7 +1,7 @@
 import { ValueObject } from '../../../common/value-objects';
 import { ID } from '../../../common/value-objects';
 import { HookPoint } from './hook-point';
-import { ValidationError } from '../../../../common/exceptions';
+import { ValidationError } from '../../../common/exceptions';
 
 /**
  * 钩子上下文值对象属性接口

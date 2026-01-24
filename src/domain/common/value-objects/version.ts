@@ -1,5 +1,5 @@
 import { ValueObject } from './value-object';
-import { ValidationError } from '../../../common/exceptions';
+import { ValidationError } from '../exceptions';
 /**
  * 版本值对象接口
  */

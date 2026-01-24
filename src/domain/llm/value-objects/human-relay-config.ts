@@ -6,7 +6,7 @@
 
 import { ValueObject } from '../../common/value-objects';
 import { HumanRelayMode } from './human-relay-mode';
-import { ValidationError } from '../../../common/exceptions';
+import { ValidationError } from '../../common/exceptions';
 
 /**
  * 前端配置接口

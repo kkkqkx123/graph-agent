@@ -1,6 +1,6 @@
 import { ValueObject } from '../../../common/value-objects';
 import { Checkpoint } from '../entities/checkpoint';
-import { ValidationError } from '../../../../common/exceptions';
+import { ValidationError } from '../../../common/exceptions';
 
 /**
  * 检查点元组接口

@@ -1,6 +1,6 @@
 import { ValueObject, ID, Timestamp } from '../../common/value-objects';
 import { NodeId, NodeStatus } from '../../workflow/value-objects';
-import { ValidationError } from '../../../common/exceptions';
+import { ValidationError } from '../../common/exceptions';
 
 /**
  * LLM调用记录接口

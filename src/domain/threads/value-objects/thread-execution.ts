@@ -5,7 +5,7 @@ import { ExecutionHistory } from '../../workflow/value-objects/execution';
 import { NodeExecution } from './node-execution';
 import { ThreadExecutionContext } from './execution-context';
 import { ThreadWorkflowState } from './thread-workflow-state';
-import { ValidationError } from '../../../common/exceptions';
+import { ValidationError } from '../../common/exceptions';
 
 /**
  * 操作记录接口
@@ -13,14 +13,14 @@ import { ValidationError } from '../../../common/exceptions';
 export interface OperationRecord {
   readonly operationId: ID;
   readonly operationType:
-    | 'start'
-    | 'pause'
-    | 'resume'
-    | 'complete'
-    | 'fail'
-    | 'cancel'
-    | 'fork'
-    | 'copy';
+  | 'start'
+  | 'pause'
+  | 'resume'
+  | 'complete'
+  | 'fail'
+  | 'cancel'
+  | 'fork'
+  | 'copy';
   readonly timestamp: Timestamp;
   readonly operatorId?: ID;
   readonly reason?: string;

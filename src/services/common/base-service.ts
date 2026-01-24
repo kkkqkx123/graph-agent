@@ -6,7 +6,7 @@
  */
 
 import { ID, ILogger, IService } from '../../domain/common';
-import { ValidationError } from '../../common/exceptions';
+import { ValidationError } from '../../domain/common/exceptions';
 
 /**
  * 服务基类

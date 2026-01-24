@@ -3,7 +3,7 @@
  */
 
 import { ID } from '../../common/value-objects';
-import { ValidationError } from '../../../common/exceptions';
+import { ValidationError } from '../../common/exceptions';
 
 export class PromptId extends ID {
   constructor(value: string) {

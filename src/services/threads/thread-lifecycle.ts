@@ -12,7 +12,7 @@ import { BaseService } from '../common/base-service';
 import { ILogger, ID } from '../../domain/common';
 import { TYPES } from '../../di/service-keys';
 import { ThreadWorkflowExecutor } from './thread-workflow-executor';
-import { ValidationError, InvalidStatusError, EntityNotFoundError } from '../../common/exceptions';
+import { ValidationError, InvalidStatusError, EntityNotFoundError } from '../../domain/common/exceptions';
 
 /**
  * 线程生命周期服务

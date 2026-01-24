@@ -2,7 +2,7 @@ import { ValueObject, Timestamp } from '../../common/value-objects';
 import { LLMStatistics } from './statiscs/llm-statistics';
 import { PerformanceStatistics } from './statiscs/performance-statistics';
 import { ResourceUsage } from './statiscs/resource-usage';
-import { ValidationError } from '../../../common/exceptions';
+import { ValidationError } from '../../common/exceptions';
 
 /**
  * 会话活动值对象属性接口

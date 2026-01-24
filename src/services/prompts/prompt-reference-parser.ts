@@ -10,7 +10,7 @@
  */
 
 import { ILogger } from '../../domain/common/types/logger-types';
-import { ValidationError } from '../../common/exceptions';
+import { ValidationError } from '../../domain/common/exceptions';
 
 /**
  * 提示词引用

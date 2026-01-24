@@ -11,7 +11,7 @@ import {
   InheritanceProcessorOptions,
   ILogger,
 } from '../../../domain/common/types';
-import { ParameterValidationError, InvalidConfigurationError } from '../../../common/exceptions';
+import { ParameterValidationError, InvalidConfigurationError } from '../../../domain/common/exceptions';
 
 /**
  * 配置继承处理器

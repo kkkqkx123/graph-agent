@@ -1,4 +1,4 @@
-import { ValidationError } from '../../../common/exceptions';
+import { ValidationError } from '../../common/exceptions';
 
 /**
  * 工具状态值对象

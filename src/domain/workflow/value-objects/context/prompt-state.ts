@@ -1,6 +1,6 @@
 import { ValueObject } from '../../../common/value-objects';
 import { PromptHistoryEntry, PromptHistoryEntryRole, ToolCall } from './prompt-history-entry';
-import { ValidationError } from '../../../../common/exceptions';
+import { ValidationError } from '../../../common/exceptions';
 
 /**
  * 提示词状态属性接口

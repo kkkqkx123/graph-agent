@@ -9,7 +9,7 @@ import { parse as parseToml } from 'toml';
 import { WorkflowConfigSchema, WorkflowConfig } from './schemas/workflow-schema';
 import { ParameterReplacer } from './parameter-replacer';
 import { ILogger } from '../../../domain/common';
-import { EntityNotFoundError, ValidationError } from '../../../common/exceptions';
+import { EntityNotFoundError, ValidationError } from '../../../domain/common/exceptions';
 
 /**
  * 工作流配置加载选项
@@ -72,8 +72,8 @@ export class WorkflowConfigLoader {
           new Set(Object.keys(parameters))
         );
         if (undefinedParams.length > 0) {
-          this.logger.warn('配置中包含未定义的参数引用', { 
-            workflowId, 
+          this.logger.warn('配置中包含未定义的参数引用', {
+            workflowId,
             undefinedParams,
             availableParams: Object.keys(parameters)
           });

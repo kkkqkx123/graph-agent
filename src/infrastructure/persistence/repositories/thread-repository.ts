@@ -9,7 +9,7 @@ import { BaseRepository } from './base-repository';
 import { ConnectionManager } from '../connection-manager';
 import { TYPES } from '../../../di/service-keys';
 import { ThreadMapper } from '../mappers/thread-mapper';
-import { EntityNotFoundError } from '../../../common/exceptions';
+import { EntityNotFoundError } from '../../../domain/common/exceptions';
 
 @injectable()
 export class ThreadRepository

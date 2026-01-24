@@ -11,7 +11,7 @@ import { PromptType } from '../value-objects/prompt-type';
 import { PromptStatus } from '../value-objects/prompt-status';
 import { Metadata } from '../../common/value-objects';
 import { DeletionStatus } from '../../common/value-objects';
-import { ValidationError } from '../../../common/exceptions';
+import { ValidationError } from '../../common/exceptions';
 
 /**
  * 提示词变量

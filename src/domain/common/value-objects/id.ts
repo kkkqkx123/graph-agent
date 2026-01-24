@@ -1,5 +1,5 @@
 import { v4 as uuidv4 } from 'uuid';
-import { ValidationError } from '../../../common/exceptions';
+import { ValidationError } from '../exceptions';
 
 /**
  * ID值对象

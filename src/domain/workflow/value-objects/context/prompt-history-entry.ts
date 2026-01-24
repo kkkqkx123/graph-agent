@@ -1,5 +1,5 @@
 import { ValueObject } from '../../../common/value-objects';
-import { ValidationError } from '../../../../common/exceptions';
+import { ValidationError } from '../../../common/exceptions';
 
 /**
  * 提示词历史条目角色枚举（合并了原来的 type 和 role）

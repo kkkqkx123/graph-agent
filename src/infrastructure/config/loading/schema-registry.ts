@@ -6,7 +6,7 @@
 import { z, ZodError } from 'zod';
 import { ILogger } from '../../../domain/common/types';
 import { ValidationError, ValidationResult, ValidationSeverity } from './types';
-import { ConfigurationError } from '../../../common/exceptions';
+import { ConfigurationError } from '../../../domain/common/exceptions';
 
 /**
  * 简化的Schema注册表
@@ -17,7 +17,7 @@ export class SchemaRegistry {
 
   constructor(logger: ILogger, schemaMap?: Record<string, z.ZodType<any>>) {
     this.logger = logger;
-    
+
     if (schemaMap) {
       this.registerAllSchemas(schemaMap);
     }
@@ -45,7 +45,7 @@ export class SchemaRegistry {
    */
   registerAllSchemas(schemaMap: Record<string, z.ZodType<any>>): void {
     this.logger.debug('批量注册模块Schema', { count: Object.keys(schemaMap).length });
-    
+
     Object.entries(schemaMap).forEach(([moduleType, schema]) => {
       try {
         this.registerSchema(moduleType, schema);

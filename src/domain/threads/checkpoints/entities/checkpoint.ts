@@ -5,7 +5,7 @@ import { Version } from '../../../common/value-objects/version';
 import { CheckpointType } from '../value-objects/checkpoint-type';
 import { CheckpointStatus } from '../value-objects/checkpoint-status';
 import { CheckpointScope } from '../value-objects/checkpoint-scope';
-import { ValidationError } from '../../../../common/exceptions';
+import { ValidationError } from '../../../common/exceptions';
 
 /**
  * Checkpoint 实体属性接口

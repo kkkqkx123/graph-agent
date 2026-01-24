@@ -7,7 +7,7 @@ import {
   EnvironmentProcessorOptions,
   ILogger,
 } from '../../../domain/common/types';
-import { MissingConfigurationError } from '../../../common/exceptions';
+import { MissingConfigurationError } from '../../../domain/common/exceptions';
 
 /**
  * 环境变量处理器
@@ -132,7 +132,7 @@ export class EnvironmentProcessor implements IConfigProcessor {
 
     // 尝试转换为JSON对象或数组
     if ((trimmedValue.startsWith('{') && trimmedValue.endsWith('}')) ||
-        (trimmedValue.startsWith('[') && trimmedValue.endsWith(']'))) {
+      (trimmedValue.startsWith('[') && trimmedValue.endsWith(']'))) {
       try {
         return JSON.parse(trimmedValue);
       } catch {

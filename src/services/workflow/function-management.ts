@@ -5,7 +5,7 @@
 
 import { injectable, inject } from 'inversify';
 import { ILogger } from '../../domain/common';
-import { ValidationError, EntityNotFoundError } from '../../common/exceptions';
+import { ValidationError, EntityNotFoundError } from '../../domain/common/exceptions';
 
 /**
  * 工作流函数类型枚举

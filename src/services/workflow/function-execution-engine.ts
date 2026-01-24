@@ -16,7 +16,7 @@ import { WorkflowContext } from '../../domain/workflow/value-objects/context/wor
 import { INodeExecutionHandler } from '../threads/execution/handlers/node-execution-handler';
 import { ILogger } from '../../domain/common/types/logger-types';
 import { TYPES } from '../../di/service-keys';
-import { InvalidConfigurationError } from '../../common/exceptions';
+import { InvalidConfigurationError } from '../../domain/common/exceptions';
 
 /**
  * 函数执行策略枚举

@@ -13,7 +13,7 @@ import {
 } from '../../domain/sessions';
 import { BaseService } from '../common/base-service';
 import { ILogger, ID } from '../../domain/common';
-import { InvalidStatusError, ValidationError } from '../../common/exceptions';
+import { InvalidStatusError, ValidationError } from '../../domain/common/exceptions';
 
 /**
  * 创建会话请求

@@ -4,7 +4,7 @@ import { ThreadStatusValue } from '../value-objects/thread-status';
 import { State } from '../../state/entities/state';
 import { StateEntityType } from '../../state/value-objects/state-entity-type';
 import { ThreadExecutionContext, ExecutionConfig } from '../value-objects/execution-context';
-import { ValidationError } from '../../../common/exceptions';
+import { ValidationError } from '../../common/exceptions';
 
 /**
  * Thread实体属性接口

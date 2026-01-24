@@ -1,5 +1,5 @@
 import { ValueObject } from '../../common/value-objects';
-import { ValidationError } from '../../../common/exceptions';
+import { ValidationError } from '../../common/exceptions';
 
 // 轮询策略枚举
 export enum RotationStrategy {

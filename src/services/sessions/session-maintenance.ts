@@ -8,7 +8,7 @@ import { Session, ISessionRepository, SessionStatus } from '../../domain/session
 import { IThreadRepository } from '../../domain/threads';
 import { BaseService } from '../common/base-service';
 import { ILogger, ID } from '../../domain/common';
-import { ValidationError, InvalidStatusError } from '../../common/exceptions';
+import { ValidationError, InvalidStatusError } from '../../domain/common/exceptions';
 
 /**
  * 会话维护服务

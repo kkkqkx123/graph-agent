@@ -5,7 +5,7 @@
  */
 
 import { ValueObject } from '../../common/value-objects';
-import { ValidationError } from '../../../common/exceptions';
+import { ValidationError } from '../../common/exceptions';
 
 /**
  * 提示词模板属性接口

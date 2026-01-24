@@ -1,6 +1,6 @@
 import { injectable } from 'inversify';
 import { getConfig } from '../../../infrastructure/config/config';
-import { InvalidConfigurationError } from '../../../common/exceptions';
+import { InvalidConfigurationError } from '../../../domain/common/exceptions';
 
 /**
  * 任务组管理器
@@ -9,7 +9,7 @@ import { InvalidConfigurationError } from '../../../common/exceptions';
  */
 @injectable()
 export class TaskGroupManager {
-  constructor() {}
+  constructor() { }
 
   /**
    * 获取组引用对应的模型列表
@@ -38,7 +38,7 @@ export class TaskGroupManager {
     } else {
       // 如果没有指定层级，返回所有层级的模型
       const allModels: string[] = [];
-      
+
       // 新格式：echelon配置直接在taskGroup中，不在echelons对象中
       for (let i = 1; i <= 3; i++) {
         const echelonKey = `echelon${i}`;
@@ -138,7 +138,7 @@ export class TaskGroupManager {
     }
 
     const echelonList: Array<[string, number, string[]]> = [];
-    
+
     // 新格式：echelon配置直接在taskGroup中
     for (let i = 1; i <= 3; i++) {
       const echelonKey = `echelon${i}`;
@@ -209,10 +209,10 @@ export class TaskGroupManager {
         retryDelay: fallbackConfig['retryDelay'] || 1.0,
         circuitBreaker: fallbackConfig['circuitBreaker']
           ? {
-              failureThreshold: fallbackConfig['circuitBreaker']['failureThreshold'] || 5,
-              recoveryTime: fallbackConfig['circuitBreaker']['recoveryTime'] || 60,
-              halfOpenRequests: fallbackConfig['circuitBreaker']['halfOpenRequests'] || 1,
-            }
+            failureThreshold: fallbackConfig['circuitBreaker']['failureThreshold'] || 5,
+            recoveryTime: fallbackConfig['circuitBreaker']['recoveryTime'] || 60,
+            halfOpenRequests: fallbackConfig['circuitBreaker']['halfOpenRequests'] || 1,
+          }
           : null,
       };
     }

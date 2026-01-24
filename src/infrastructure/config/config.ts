@@ -10,7 +10,7 @@ import { ConfigLoadingModule } from './loading/config-loading-module';
 import { ILogger } from '../../domain/common/types';
 import { AppConfig, AppConfigSchema } from './types';
 import { PathOf, ValueAtPath, IConfigAccessor } from './path-types';
-import { InvalidConfigurationError, ConfigurationError } from '../../common/exceptions';
+import { InvalidConfigurationError, ConfigurationError } from '../../domain/common/exceptions';
 
 /**
  * 内部配置管理器实例
@@ -29,7 +29,7 @@ let _logger: ILogger | null = null;
  * const timeout = config.get('http.timeout'); // 类型: number
  */
 export class TypedConfigAccessor implements IConfigAccessor<AppConfig> {
-  constructor(private config: AppConfig) {}
+  constructor(private config: AppConfig) { }
 
   /**
    * 获取配置值（类型安全）

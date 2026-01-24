@@ -4,7 +4,7 @@ import { CheckpointType } from '../../domain/threads/checkpoints/value-objects/c
 import { CheckpointScope } from '../../domain/threads/checkpoints/value-objects/checkpoint-scope';
 import { ICheckpointRepository } from '../../domain/threads/checkpoints/repositories/checkpoint-repository';
 import { ILogger } from '../../domain/common/types/logger-types';
-import { EntityNotFoundError } from '../../common/exceptions';
+import { EntityNotFoundError } from '../../domain/common/exceptions';
 
 /**
  * 检查点备份服务
@@ -15,7 +15,7 @@ export class CheckpointBackup {
   constructor(
     private readonly repository: ICheckpointRepository,
     private readonly logger: ILogger
-  ) {}
+  ) { }
 
   /**
    * 创建检查点备份

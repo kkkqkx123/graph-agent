@@ -1,5 +1,5 @@
 import { ValueObject } from '../../common/value-objects/value-object';
-import { ValidationError } from '../../../common/exceptions';
+import { ValidationError } from '../../common/exceptions';
 
 /**
  * Token 使用情况值对象

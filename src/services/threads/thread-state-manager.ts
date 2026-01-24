@@ -3,7 +3,7 @@ import { ID, Timestamp } from '../../domain/common/value-objects';
 import { ThreadWorkflowState } from '../../domain/threads/value-objects/thread-workflow-state';
 import { ExecutionHistory } from '../../domain/workflow/value-objects/execution';
 import { updateState, updateNestedState, updateArray } from '../../infrastructure/common/utils/immutable-state';
-import { EntityNotFoundError } from '../../common/exceptions';
+import { EntityNotFoundError } from '../../domain/common/exceptions';
 
 /**
  * 状态变更接口

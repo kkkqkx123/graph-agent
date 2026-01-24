@@ -1,6 +1,6 @@
 import { ValueObject, ID, Timestamp } from '../../common/value-objects';
 import { ExecutionHistory } from '../../workflow/value-objects/execution';
-import { ValidationError } from '../../../common/exceptions';
+import { ValidationError } from '../../common/exceptions';
 
 /**
  * ThreadWorkflowState 值对象属性接口

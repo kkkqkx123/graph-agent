@@ -3,7 +3,7 @@
  */
 
 import { ValueObject, Timestamp } from '../../common/value-objects';
-import { ValidationError } from '../../../common/exceptions';
+import { ValidationError } from '../../common/exceptions';
 
 /**
  * LLM消息角色枚举

@@ -10,7 +10,7 @@ import {
   WrapperModelConfig,
   validateWrapperConfig
 } from '../../../domain/llm/value-objects/wrapper-reference';
-import { ValidationError, EntityNotFoundError, InvalidConfigurationError } from '../../../common/exceptions';
+import { ValidationError, EntityNotFoundError, InvalidConfigurationError } from '../../../domain/common/exceptions';
 
 /**
  * LLM包装器管理器
@@ -523,7 +523,7 @@ export class LLMWrapperManager {
     // TODO: 从配置文件中加载模型默认参数
     // 这里暂时返回一些默认值
     // 实际实现应该从 configs/llms/provider/{provider}/{model}.toml 中读取
-    
+
     const client = this.llmClientFactory.createClient(provider, model);
     const modelInfo = await client.getModelInfo();
 

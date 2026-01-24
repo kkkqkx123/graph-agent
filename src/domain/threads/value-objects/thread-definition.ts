@@ -1,5 +1,5 @@
 import { ValueObject, ID, Timestamp } from '../../common/value-objects';
-import { ValidationError } from '../../../common/exceptions';
+import { ValidationError } from '../../common/exceptions';
 
 /**
  * ThreadDefinition值对象属性接口

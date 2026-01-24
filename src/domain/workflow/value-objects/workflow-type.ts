@@ -1,4 +1,4 @@
-import { ValidationError } from '../../../common/exceptions';
+import { ValidationError } from '../../common/exceptions';
 
 /**
  * 工作流类型枚举（简化版）

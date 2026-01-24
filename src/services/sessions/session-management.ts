@@ -12,7 +12,7 @@ import {
 } from '../../domain/sessions';
 import { BaseService } from '../common/base-service';
 import { ILogger } from '../../domain/common';
-import { InvalidStatusError } from '../../common/exceptions';
+import { InvalidStatusError } from '../../domain/common/exceptions';
 
 /**
  * 会话管理服务

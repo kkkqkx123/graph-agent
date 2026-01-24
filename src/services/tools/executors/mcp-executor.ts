@@ -8,7 +8,7 @@ import {
   ToolExecutorCapabilities,
   ToolExecutorHealthCheck,
 } from './tool-executor-base';
-import { ExecutionError } from '../../../common/exceptions';
+import { ExecutionError } from '../../../domain/common/exceptions';
 
 // 简化的 MCP 客户端类
 class McpClient {
@@ -124,7 +124,7 @@ export class McpExecutor extends ToolExecutorBase {
     // 2. 验证参数类型和值
     for (const [paramName, paramValue] of Object.entries(parameters)) {
       const paramSchema = properties[paramName];
-      
+
       if (!paramSchema) {
         warnings.push(`未知参数: ${paramName}`);
         continue;

@@ -1,7 +1,7 @@
 import { ValueObject } from '../../../common/value-objects';
 import { NodeExecutionState, NodeExecutionStateProps } from './node-execution-state';
 import { NodeStatusValue } from '../node/node-status';
-import { ValidationError } from '../../../../common/exceptions';
+import { ValidationError } from '../../../common/exceptions';
 
 /**
  * 执行统计信息接口

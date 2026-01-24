@@ -1,6 +1,6 @@
 import { ValueObject } from '../../../common/value-objects';
 import { NodeStatusValue } from '../node/node-status';
-import { ValidationError } from '../../../../common/exceptions';
+import { ValidationError } from '../../../common/exceptions';
 
 /**
  * 节点执行状态属性接口

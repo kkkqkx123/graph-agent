@@ -9,7 +9,7 @@ import {
   BaseParameterSchema,
 } from './base-parameter-mapper';
 import { ProviderConfig } from './interfaces/provider-config.interface';
-import { ValidationError } from '../../../common/exceptions';
+import { ValidationError } from '../../../domain/common/exceptions';
 
 /**
  * OpenAI 参数 Schema
@@ -53,7 +53,7 @@ const OPENAI_SPECIFIC_KEYS = [
 export class OpenAIParameterMapper extends BaseParameterMapper {
   constructor() {
     super('OpenAIParameterMapper', '2.0.0', OpenAIParameterSchema);
-    
+
     // 注册已知的元数据键
     this.addKnownMetadataKey('responseFormat');
     this.addKnownMetadataKey('seed');

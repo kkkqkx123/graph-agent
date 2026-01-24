@@ -1,7 +1,7 @@
 import { ID, Timestamp, ValueObject } from '../../../../common';
 import { NodeId } from '../../../../workflow';
 import { NodeExecutionSnapshot } from '../../../../threads';
-import { ValidationError } from '../../../../../common/exceptions';
+import { ValidationError } from '../../../../common/exceptions';
 
 /**
  * Copy选项值对象

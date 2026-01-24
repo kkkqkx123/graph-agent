@@ -14,7 +14,7 @@ import {
 import { WorkflowType, parseWorkflowType } from '../../domain/workflow/value-objects/workflow-type';
 import { ID, ILogger } from '../../domain/common';
 import { BaseService } from '../common/base-service';
-import { ValidationError, InvalidStatusError } from '../../common/exceptions';
+import { ValidationError, InvalidStatusError } from '../../domain/common/exceptions';
 
 /**
  * 创建工作流参数

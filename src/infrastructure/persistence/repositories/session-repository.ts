@@ -10,7 +10,7 @@ import { BaseRepository } from './base-repository';
 import { ConnectionManager } from '../connection-manager';
 import { TYPES } from '../../../di/service-keys';
 import { SessionMapper } from '../mappers/session-mapper';
-import { ExecutionError } from '../../../common/exceptions';
+import { ExecutionError } from '../../../domain/common/exceptions';
 
 @injectable()
 export class SessionRepository

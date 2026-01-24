@@ -1,7 +1,7 @@
 import { ValueObject } from '../../common/value-objects/value-object';
 import { MessageRole } from './message-role';
 import { InteractionToolCall } from '../entities/interaction-tool-call';
-import { ValidationError } from '../../../common/exceptions';
+import { ValidationError } from '../../common/exceptions';
 
 /**
  * 消息值对象

@@ -13,7 +13,7 @@ import { Metadata, DeletionStatus } from '../../../domain/common/value-objects';
 import { State } from '../../../domain/state/entities/state';
 import { StateEntityType } from '../../../domain/state/value-objects/state-entity-type';
 import { ThreadExecutionContext, ExecutionConfig } from '../../../domain/threads/value-objects/execution-context';
-import { ExecutionError } from '../../../common/exceptions';
+import { ExecutionError } from '../../../domain/common/exceptions';
 
 export class ThreadMapper implements BaseMapper<Thread, ThreadModel> {
   /**

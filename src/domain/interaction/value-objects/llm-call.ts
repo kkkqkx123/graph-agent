@@ -2,7 +2,7 @@ import { ValueObject } from '../../common/value-objects/value-object';
 import { Message } from './message';
 import { ToolCall } from './tool-call';
 import { InteractionTokenUsage } from './token-usage';
-import { ValidationError } from '../../../common/exceptions';
+import { ValidationError } from '../../common/exceptions';
 
 /**
  * LLM 调用值对象

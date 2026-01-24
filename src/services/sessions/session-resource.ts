@@ -14,7 +14,7 @@ import {
 } from '../../domain/common';
 import { BaseService } from '../common/base-service';
 import { TYPES } from '../../di/service-keys';
-import { EntityNotFoundError, ValidationError } from '../../common/exceptions';
+import { EntityNotFoundError, ValidationError } from '../../domain/common/exceptions';
 
 /**
  * 资源限制

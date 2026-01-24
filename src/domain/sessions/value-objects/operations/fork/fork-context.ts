@@ -2,7 +2,7 @@ import { ID, Timestamp, ValueObject } from '../../../../common/value-objects';
 import { NodeId } from '../../../../workflow/value-objects';
 import { PromptState } from '../../../../workflow/value-objects/context';
 import { NodeExecutionSnapshot } from '../../../../threads/value-objects/node-execution';
-import { ValidationError } from '../../../../../common/exceptions';
+import { ValidationError } from '../../../../common/exceptions';
 
 /**
  * Fork选项值对象

@@ -5,7 +5,7 @@ import { ICheckpointRepository } from '../../domain/threads/checkpoints/reposito
 import { Thread } from '../../domain/threads/entities/thread';
 import { ILogger } from '../../domain/common/types/logger-types';
 import { TYPES } from '../../di/service-keys';
-import { EntityNotFoundError, ValidationError } from '../../common/exceptions';
+import { EntityNotFoundError, ValidationError } from '../../domain/common/exceptions';
 
 /**
  * 状态恢复服务
@@ -24,7 +24,7 @@ export class StateRecovery {
     @inject(TYPES.CheckpointRepository)
     private readonly checkpointRepository: ICheckpointRepository,
     @inject(TYPES.Logger) private readonly logger: ILogger
-  ) {}
+  ) { }
 
   /**
    * 从Checkpoint恢复Thread

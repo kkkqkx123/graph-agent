@@ -8,7 +8,7 @@
 import { injectable, inject } from 'inversify';
 import { WorkflowContext } from '../../domain/workflow/value-objects/context/workflow-context';
 import { ILogger } from '../../domain/common/types/logger-types';
-import { EntityNotFoundError } from '../../common/exceptions';
+import { EntityNotFoundError } from '../../domain/common/exceptions';
 
 /**
  * 上下文更新器类型

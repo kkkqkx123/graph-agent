@@ -10,7 +10,7 @@ import { ISessionRepository } from '../../domain/sessions';
 import { ThreadMessageType } from '../../domain/sessions/value-objects/thread-communication';
 import { TYPES } from '../../di/service-keys';
 import { BaseService } from '../common/base-service';
-import { EntityNotFoundError } from '../../common/exceptions';
+import { EntityNotFoundError } from '../../domain/common/exceptions';
 
 /**
  * Thread Communication应用服务
