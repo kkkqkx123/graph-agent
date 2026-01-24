@@ -2,7 +2,7 @@
  * 日志工厂类
  */
 
-import { ILogger, LogContext } from '../../domain/common/types/logger-types';
+import { ILogger } from '../../domain/common/types/logger-types';
 import { LoggerConfig, LoggerConfigBuilder, LogOutputType, LogFormatType } from './logger-config';
 import { Logger } from './logger';
 import { LoggerConfigManager } from './logger-config';
@@ -31,8 +31,11 @@ export class LoggerFactory {
 
   /**
    * 创建日志记录器
+   * 
+   * 注意：Logger 不再维护实例级上下文
+   * 上下文由调用方在每次日志调用时提供
    */
-  createLogger(config?: Partial<LoggerConfig>, context?: LogContext): ILogger {
+  createLogger(config?: Partial<LoggerConfig>): ILogger {
     let loggerConfig: LoggerConfig;
 
     if (config) {
@@ -44,47 +47,39 @@ export class LoggerFactory {
       loggerConfig = this.configManager.getConfig();
     }
 
-    return new Logger(loggerConfig, context);
+    return new Logger(loggerConfig);
   }
 
   /**
    * 创建默认日志记录器
    */
-  createDefaultLogger(context?: LogContext): ILogger {
+  createDefaultLogger(): ILogger {
     if (!this.defaultLogger) {
-      this.defaultLogger = this.createLogger(undefined, context);
+      this.defaultLogger = this.createLogger();
     }
     return this.defaultLogger;
   }
 
   /**
-   * 创建子日志记录器
-   */
-  createChildLogger(context: LogContext): ILogger {
-    const parentConfig = this.configManager.getConfig();
-    return new Logger(parentConfig, context);
-  }
-
-  /**
    * 从TOML配置创建日志记录器
    */
-  createFromToml(tomlConfig: any, context?: LogContext): ILogger {
+  createFromToml(tomlConfig: any): ILogger {
     this.configManager.loadFromToml(tomlConfig);
-    return this.createLogger(undefined, context);
+    return this.createLogger();
   }
 
   /**
    * 从环境变量创建日志记录器
    */
-  createFromEnv(context?: LogContext): ILogger {
+  createFromEnv(): ILogger {
     this.configManager.loadFromEnv();
-    return this.createLogger(undefined, context);
+    return this.createLogger();
   }
 
   /**
    * 创建开发环境日志记录器
    */
-  createDevelopmentLogger(context?: LogContext): ILogger {
+  createDevelopmentLogger(): ILogger {
     const config = new LoggerConfigBuilder()
       .setLevel('DEBUG' as any)
       .addConsoleOutput({
@@ -103,13 +98,13 @@ export class LoggerFactory {
       })
       .build();
 
-    return new Logger(config, context);
+    return new Logger(config);
   }
 
   /**
    * 创建生产环境日志记录器
    */
-  createProductionLogger(context?: LogContext): ILogger {
+  createProductionLogger(): ILogger {
     const config = new LoggerConfigBuilder()
       .setLevel('INFO' as any)
       .addConsoleOutput({
@@ -129,13 +124,13 @@ export class LoggerFactory {
       })
       .build();
 
-    return new Logger(config, context);
+    return new Logger(config);
   }
 
   /**
    * 创建测试环境日志记录器
    */
-  createTestLogger(context?: LogContext): ILogger {
+  createTestLogger(): ILogger {
     const config = new LoggerConfigBuilder()
       .setLevel('ERROR' as any)
       .addConsoleOutput({
@@ -146,7 +141,7 @@ export class LoggerFactory {
       })
       .build();
 
-    return new Logger(config, context);
+    return new Logger(config);
   }
 
   /**
@@ -158,8 +153,7 @@ export class LoggerFactory {
       type: LogOutputType;
       format: LogFormatType;
       config?: any;
-    }>,
-    context?: LogContext
+    }>
   ): ILogger {
     const builder = new LoggerConfigBuilder().setLevel(level as any);
 
@@ -185,7 +179,7 @@ export class LoggerFactory {
     }
 
     const config = builder.build();
-    return new Logger(config, context);
+    return new Logger(config);
   }
 
   /**

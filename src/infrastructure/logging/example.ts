@@ -21,9 +21,8 @@ async function basicUsageExample(): Promise<void> {
   logger.error('这是错误信息', new Error('示例错误'));
   logger.fatal('这是致命错误', new Error('致命错误示例'));
 
-  // 创建子日志记录器
-  const childLogger = LoggerFactory.getInstance().createChildLogger({ module: 'UserService', requestId: 'req-123' });
-  childLogger.info('子日志记录器消息');
+  // 在调用时显式传入上下文
+  logger.info('模块化日志消息', { module: 'UserService', requestId: 'req-123' });
 
   await logger.flush?.();
   await logger.close?.();
@@ -132,11 +131,10 @@ async function customTransportExample(): Promise<void> {
           pretty: true,
         },
       },
-    ],
-    { module: 'CustomExample' }
+    ]
   );
 
-  logger.info('自定义配置日志', { custom: true });
+  logger.info('自定义配置日志', { custom: true, module: 'CustomExample' });
   logger.warn('自定义警告');
 
   await logger.flush?.();

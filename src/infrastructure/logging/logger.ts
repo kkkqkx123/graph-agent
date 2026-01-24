@@ -10,15 +10,18 @@ import { LogLevelUtils } from './utils';
 
 /**
  * Winston日志记录器实现
+ * 
+ * 设计决策：Logger 不维护实例级上下文
+ * - 消除每次日志调用的 spread 开销
+ * - 上下文管理由调用方负责
+ * - 职责分离：Logger 负责输出和传输，上下文由业务逻辑提供
  */
 export class Logger implements ILogger {
   private transports: any[] = [];
   private config: LoggerConfig;
-  private context: LogContext;
 
-  constructor(config: LoggerConfig, context: LogContext = {}) {
+  constructor(config: LoggerConfig) {
     this.config = config;
-    this.context = context;
     this.initializeTransports();
   }
 
@@ -71,12 +74,12 @@ export class Logger implements ILogger {
       return;
     }
 
-    // 创建日志条目
+    // 创建日志条目（无需 spread 合并，直接使用传入的上下文）
     const entry: LogEntry = {
       level,
       message,
       timestamp: new Date(),
-      context: { ...this.context, ...context },
+      context,
       error,
       meta: this.config.meta,
     };
@@ -133,12 +136,5 @@ export class Logger implements ILogger {
    */
   getConfig(): LoggerConfig {
     return { ...this.config };
-  }
-
-  /**
-   * 获取当前上下文
-   */
-  getContext(): LogContext {
-    return { ...this.context };
   }
 }
