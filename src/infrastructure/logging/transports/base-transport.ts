@@ -1,9 +1,8 @@
 /**
- * 基础日志传输器
+ * 基础日志传输器 - 简化版本，移除重复的日志级别检查和不必要的getter
  */
 
 import { ILoggerTransport, LogEntry, LogOutputConfig } from '../interfaces';
-import { LogLevelUtils } from '../utils';
 import { LogLevel } from '../../../domain/common/types/logger-types';
 
 /**
@@ -18,49 +17,23 @@ export abstract class BaseTransport implements ILoggerTransport {
   }
 
   /**
+   * 记录日志（同步方法）
+   * 日志级别检查由Logger统一处理
+   */
+  abstract log(entry: LogEntry): void;
+
+  /**
+   * 关闭传输器
+   */
+  async close?(): Promise<void> {
+    // 默认实现为空，子类可以重写
+  }
+
+  /**
    * 检查是否应该记录指定级别的日志
+   * 保留此方法用于transport的可选过滤
    */
   shouldLog(level: LogLevel): boolean {
-    return LogLevelUtils.shouldLog(this.config.level, level);
-  }
-
-  /**
-   * 记录日志（抽象方法，子类必须实现）
-   */
-  abstract log(entry: LogEntry): Promise<void>;
-
-  /**
-   * 刷新缓冲区（可选实现）
-   */
-  async flush(): Promise<void> {
-    // 默认实现为空，子类可以重写
-  }
-
-  /**
-   * 关闭传输器（可选实现）
-   */
-  async close(): Promise<void> {
-    // 默认实现为空，子类可以重写
-  }
-
-  /**
-   * 检查传输器是否已启用
-   */
-  isEnabled(): boolean {
     return this.config.enabled !== false;
-  }
-
-  /**
-   * 获取传输器级别
-   */
-  getLevel(): string {
-    return this.config.level;
-  }
-
-  /**
-   * 获取传输器类型
-   */
-  getType(): string {
-    return this.config.type;
   }
 }

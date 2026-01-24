@@ -1,5 +1,5 @@
 /**
- * Winston日志记录器实现
+ * 日志记录器实现 - 简化为同步日志记录
  */
 
 import { ILogger, LogLevel, LogContext } from '../../domain/common/types/logger-types';
@@ -20,13 +20,6 @@ export class Logger implements ILogger {
     this.config = config;
     this.context = context;
     this.initializeTransports();
-  }
-
-  /**
-   * 记录TRACE级别日志
-   */
-  trace(message: string, context?: LogContext): void {
-    this.log(LogLevel.TRACE, message, undefined, context);
   }
 
   /**
@@ -65,24 +58,16 @@ export class Logger implements ILogger {
   }
 
   /**
-   * 创建子日志记录器
+   * 记录日志方法
    */
-  child(context: LogContext): ILogger {
-    const mergedContext = { ...this.context, ...context };
-    return new Logger(this.config, mergedContext);
-  }
-
-  /**
-   * 记录日志的核心方法
-   */
-  private async log(
+  private log(
     level: LogLevel,
     message: string,
     error?: Error,
     context?: LogContext
-  ): Promise<void> {
-    // 检查是否应该记录此级别的日志
-    if (!this.shouldLog(level)) {
+  ): void {
+    // 在Logger层检查日志级别，避免不必要的对象创建
+    if (!LogLevelUtils.shouldLog(this.config.level, level)) {
       return;
     }
 
@@ -96,37 +81,29 @@ export class Logger implements ILogger {
       meta: this.config.meta,
     };
 
-    // 异步写入所有传输器
-    const promises = this.transports
-      .filter(transport => transport.shouldLog(level))
-      .map(transport => transport.log(entry));
-
-    try {
-      await Promise.all(promises);
-    } catch (error) {
-      // 如果日志写入失败，输出到控制台
-      console.error('日志写入失败:', error);
+    // 同步分发到所有启用的传输器（Fire-and-Forget）
+    for (const transport of this.transports) {
+      if (transport.shouldLog?.(level) !== false) {
+        try {
+          transport.log(entry);
+        } catch (err) {
+          console.error(`Transport ${transport.name} 日志写入失败:`, err);
+        }
+      }
     }
-  }
-
-  /**
-   * 检查是否应该记录指定级别的日志
-   */
-  private shouldLog(level: LogLevel): boolean {
-    return LogLevelUtils.shouldLog(this.config.level, level);
   }
 
   /**
    * 初始化传输器
    */
   private initializeTransports(): void {
-    this.transports = this.config.outputs.map(outputConfig => {
-      return this.createTransport(outputConfig);
-    });
+    this.transports = this.config.outputs
+      .filter(outputConfig => outputConfig.enabled !== false)
+      .map(outputConfig => this.createTransport(outputConfig));
   }
 
   /**
-   * 创建传输器
+   * 创建传输器实例
    */
   private createTransport(config: any) {
     switch (config.type) {
@@ -140,18 +117,7 @@ export class Logger implements ILogger {
   }
 
   /**
-   * 刷新所有传输器
-   */
-  async flush(): Promise<void> {
-    const promises = this.transports
-      .filter(transport => transport.flush)
-      .map(transport => transport.flush());
-
-    await Promise.all(promises);
-  }
-
-  /**
-   * 关闭日志记录器
+   * 关闭日志记录器和所有传输器
    */
   async close(): Promise<void> {
     const promises = this.transports
@@ -160,22 +126,6 @@ export class Logger implements ILogger {
 
     await Promise.all(promises);
     this.transports = [];
-  }
-
-  /**
-   * 更新配置
-   */
-  updateConfig(config: Partial<LoggerConfig>): void {
-    this.config = { ...this.config, ...config };
-
-    // 重新初始化传输器
-    this.transports.forEach(transport => {
-      if (transport.close) {
-        transport.close();
-      }
-    });
-
-    this.initializeTransports();
   }
 
   /**
@@ -190,19 +140,5 @@ export class Logger implements ILogger {
    */
   getContext(): LogContext {
     return { ...this.context };
-  }
-
-  /**
-   * 检查是否有启用的传输器
-   */
-  hasEnabledTransports(): boolean {
-    return this.transports.some(transport => transport.isEnabled());
-  }
-
-  /**
-   * 获取传输器数量
-   */
-  getTransportCount(): number {
-    return this.transports.length;
   }
 }

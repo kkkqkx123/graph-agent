@@ -15,7 +15,6 @@ async function basicUsageExample(): Promise<void> {
   const logger = LoggerFactory.getInstance().createDefaultLogger();
 
   // 记录不同级别的日志
-  logger.trace('这是跟踪信息');
   logger.debug('这是调试信息', { userId: 123, action: 'login' });
   logger.info('这是一般信息');
   logger.warn('这是警告信息');
@@ -23,7 +22,7 @@ async function basicUsageExample(): Promise<void> {
   logger.fatal('这是致命错误', new Error('致命错误示例'));
 
   // 创建子日志记录器
-  const childLogger = logger.child({ module: 'UserService', requestId: 'req-123' });
+  const childLogger = LoggerFactory.getInstance().createChildLogger({ module: 'UserService', requestId: 'req-123' });
   childLogger.info('子日志记录器消息');
 
   await logger.flush?.();

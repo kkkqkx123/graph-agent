@@ -60,8 +60,9 @@ export class LoggerFactory {
   /**
    * 创建子日志记录器
    */
-  createChildLogger(parent: ILogger, context: LogContext): ILogger {
-    return parent.child(context);
+  createChildLogger(context: LogContext): ILogger {
+    const parentConfig = this.configManager.getConfig();
+    return new Logger(parentConfig, context);
   }
 
   /**

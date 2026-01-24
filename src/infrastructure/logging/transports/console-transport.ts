@@ -2,77 +2,33 @@
  * 控制台日志传输器
  */
 
-import { LogEntry, ConsoleLogOutputConfig, LogFormatType } from '../interfaces';
+import { LogEntry, ConsoleLogOutputConfig } from '../interfaces';
 import { BaseTransport } from './base-transport';
-import { JsonFormatter, JsonFormatterOptions } from '../formatters/json-formatter';
-import { TextFormatter, TextFormatterOptions } from '../formatters/text-formatter';
+import { FormatterFactory } from '../formatters/formatter-factory';
 
 /**
  * 控制台传输器
  */
 export class ConsoleTransport extends BaseTransport {
   readonly name = 'console';
+  private formatter: any;
 
   constructor(config: ConsoleLogOutputConfig) {
     super(config);
+    this.formatter = FormatterFactory.createConsoleFormatter(config);
   }
 
   /**
    * 记录日志到控制台
    */
-  async log(entry: LogEntry): Promise<void> {
-    if (!this.shouldLog(entry.level)) {
-      return;
-    }
-
-    const formattedMessage = this.formatMessage(entry);
+  log(entry: LogEntry): void {
+    // 移除日志级别检查，由Logger统一处理
+    const formattedMessage = this.formatter.format(entry);
     this.writeToConsole(entry.level, formattedMessage);
   }
 
   /**
-   * 格式化消息
-   */
-  private formatMessage(entry: LogEntry): string {
-    const formatter = this.createFormatter(this.config.format);
-    return formatter.format(entry);
-  }
-
-  /**
-   * 创建格式化器
-   */
-  private createFormatter(format: LogFormatType) {
-    switch (format) {
-      case LogFormatType.JSON:
-        const jsonOptions: JsonFormatterOptions = {
-          pretty: false,
-          includeTimestamp: true,
-          includeLevel: true,
-          includeContext: true,
-          includeStack: true,
-          sanitize: true,
-        };
-        return new JsonFormatter(jsonOptions);
-
-      case LogFormatType.TEXT:
-        const consoleConfig = this.config as ConsoleLogOutputConfig;
-        const textOptions: TextFormatterOptions = {
-          colorize: consoleConfig.colorize !== false, // 默认启用颜色
-          includeTimestamp: true,
-          timestampFormat: 'iso',
-          includeContext: true,
-          includeStack: true,
-          sanitize: true,
-          separator: ' | ',
-        };
-        return new TextFormatter(textOptions);
-
-      default:
-        throw new Error(`不支持的日志格式: ${format}`);
-    }
-  }
-
-  /**
-   * 写入控制台
+   * 写入控制台（按级别选择不同的console方法）
    */
   private writeToConsole(level: string, message: string): void {
     switch (level.toLowerCase()) {
@@ -94,12 +50,5 @@ export class ConsoleTransport extends BaseTransport {
         console.log(message);
         break;
     }
-  }
-
-  /**
-   * 获取控制台配置
-   */
-  getConsoleConfig(): ConsoleLogOutputConfig {
-    return this.config as ConsoleLogOutputConfig;
   }
 }

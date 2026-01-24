@@ -4,10 +4,9 @@
 
 import * as fs from 'fs';
 import * as path from 'path';
-import { LogEntry, FileLogOutputConfig, LogRotationStrategy, LogFormatType } from '../interfaces';
+import { LogEntry, FileLogOutputConfig, LogRotationStrategy } from '../interfaces';
 import { BaseTransport } from './base-transport';
-import { JsonFormatter, JsonFormatterOptions } from '../formatters/json-formatter';
-import { TextFormatter, TextFormatterOptions } from '../formatters/text-formatter';
+import { FormatterFactory } from '../formatters/formatter-factory';
 
 /**
  * 文件传输器
@@ -17,35 +16,21 @@ export class FileTransport extends BaseTransport {
   private fileStream: fs.WriteStream | null = null;
   private currentFileName: string = '';
   private rotationTimer: NodeJS.Timeout | null = null;
+  private formatter: any;
 
   constructor(config: FileLogOutputConfig) {
     super(config);
+    this.formatter = FormatterFactory.createFileFormatter(config);
     this.initializeFileStream();
   }
 
   /**
-   * 记录日志到文件
+   * 记录日志到文件（同步化）
    */
-  async log(entry: LogEntry): Promise<void> {
-    if (!this.shouldLog(entry.level)) {
-      return;
-    }
-
-    const formattedMessage = this.formatMessage(entry);
-    await this.writeToFile(formattedMessage);
-  }
-
-  /**
-   * 刷新缓冲区
-   */
-  override async flush(): Promise<void> {
-    if (this.fileStream) {
-      return new Promise((resolve, reject) => {
-        this.fileStream!.write('', () => {
-          resolve();
-        });
-      });
-    }
+  log(entry: LogEntry): void {
+    // 日志级别检查由Logger统一处理，transport不需要再检查
+    const formattedMessage = this.formatter.format(entry);
+    this.writeToFileSync(formattedMessage);
   }
 
   /**
@@ -58,7 +43,7 @@ export class FileTransport extends BaseTransport {
     }
 
     if (this.fileStream) {
-      return new Promise((resolve, reject) => {
+      return new Promise((resolve) => {
         this.fileStream!.end(() => {
           this.fileStream = null;
           resolve();
@@ -68,66 +53,23 @@ export class FileTransport extends BaseTransport {
   }
 
   /**
-   * 格式化消息
+   * 同步写入文件
    */
-  private formatMessage(entry: LogEntry): string {
-    const formatter = this.createFormatter(this.config.format);
-    return formatter.format(entry);
-  }
-
-  /**
-   * 创建格式化器
-   */
-  private createFormatter(format: LogFormatType) {
-    switch (format) {
-      case LogFormatType.JSON:
-        const jsonOptions: JsonFormatterOptions = {
-          pretty: false,
-          includeTimestamp: true,
-          includeLevel: true,
-          includeContext: true,
-          includeStack: true,
-          sanitize: true,
-        };
-        return new JsonFormatter(jsonOptions);
-
-      case LogFormatType.TEXT:
-        const textOptions: TextFormatterOptions = {
-          colorize: false, // 文件输出不需要颜色
-          includeTimestamp: true,
-          timestampFormat: 'iso',
-          includeContext: true,
-          includeStack: true,
-          sanitize: true,
-          separator: ' | ',
-        };
-        return new TextFormatter(textOptions);
-
-      default:
-        throw new Error(`不支持的日志格式: ${format}`);
-    }
-  }
-
-  /**
-   * 写入文件
-   */
-  private async writeToFile(message: string): Promise<void> {
+  private writeToFileSync(message: string): void {
     if (!this.fileStream) {
       this.initializeFileStream();
     }
 
     if (!this.fileStream) {
-      throw new Error('文件流未初始化');
+      console.error('文件流未初始化');
+      return;
     }
 
-    return new Promise((resolve, reject) => {
-      this.fileStream!.write(message + '\n', error => {
-        if (error) {
-          reject(error);
-        } else {
-          resolve();
-        }
-      });
+    // 使用write进行异步写入，不等待完成
+    this.fileStream.write(message + '\n', error => {
+      if (error) {
+        console.error('文件日志写入错误:', error);
+      }
     });
   }
 

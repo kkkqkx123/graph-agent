@@ -11,20 +11,7 @@ import {
   RedactorConfig,
   LoggerConfigBuilder,
 } from './interfaces';
-
-/**
- * 默认敏感信息模式
- */
-const DEFAULT_SENSITIVE_PATTERNS = [
-  'sk-[a-zA-Z0-9]{20,}',
-  'ms-[a-zA-Z0-9]{15,}',
-  '\\w+@\\w+\\.\\w+',
-  '1\\d{10}',
-  'password["\']?\\s*[:=]\\s*["\']?[^"\'\\s]+',
-  'token["\']?\\s*[:=]\\s*["\']?[^"\'\\s]+',
-  'key["\']?\\s*[:=]\\s*["\']?[^"\'\\s]+',
-  'secret["\']?\\s*[:=]\\s*["\']?[^"\'\\s]+',
-];
+import { RedactorUtils } from './utils';
 
 /**
  * 日志配置管理器
@@ -97,11 +84,7 @@ export class LoggerConfigManager {
         max_size: '10MB',
         max_files: 7,
       })
-      .setSensitiveData({
-        patterns: DEFAULT_SENSITIVE_PATTERNS,
-        replacement: '***',
-        enabled: true,
-      })
+      .setSensitiveData(RedactorUtils.createDefaultConfig())
       .setMeta({
         service: 'agent-framework',
         version: '1.0.0',

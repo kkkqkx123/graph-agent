@@ -11,10 +11,18 @@ import { RetryHandler } from './retry-handler';
 import { CircuitBreaker } from './circuit-breaker';
 import { RateLimiter } from './rate-limiter';
 import { APIPromise, APIResponseProps } from './api-promise';
-import { HTTPResponse, StreamResponse } from './http-response';
 import { RequestOptions, FinalRequestOptions, HTTPMethod } from './http-request-options';
 import { TYPES } from '../../../di/service-keys';
 import { getConfig } from '../../config/config';
+import {
+  HTTPError,
+  HTTPErrorFactory,
+  ConnectionError,
+  ConnectionTimeoutError,
+  UserAbortError,
+  CircuitBreakerOpenError,
+  RateLimiterError,
+} from './errors';
 
 export type Fetch = typeof fetch;
 
@@ -155,11 +163,15 @@ export class HttpClient {
    */
   private async executeRequest<T>(options: FinalRequestOptions): Promise<APIResponseProps<T>> {
     // 检查限流
-    await this.rateLimiter.checkLimit();
+    try {
+      await this.rateLimiter.checkLimit();
+    } catch (error) {
+      throw new RateLimiterError('Rate limit exceeded');
+    }
 
     // 检查熔断器
     if (this.circuitBreaker.isOpen()) {
-      throw new Error('Circuit breaker is OPEN. Request blocked.');
+      throw new CircuitBreakerOpenError('Circuit breaker is OPEN. Request blocked.');
     }
 
     try {
@@ -252,10 +264,32 @@ export class HttpClient {
       // 检查响应状态
       if (!response.ok) {
         const errorText = await response.text().catch(() => 'Unknown error');
-        const error = new Error(`HTTP ${response.status}: ${response.statusText}`);
-        (error as any).response = response;
-        (error as any).responseText = errorText;
-        throw error;
+        const responseRequestId = response.headers.get('x-request-id') || requestId;
+        
+        // 尝试解析错误响应
+        let errorMessage = `HTTP ${response.status}: ${response.statusText}`;
+        try {
+          const errorJson = JSON.parse(errorText);
+          if (errorJson.error && errorJson.error.message) {
+            errorMessage = errorJson.error.message;
+          } else if (errorJson.message) {
+            errorMessage = errorJson.message;
+          }
+        } catch {
+          // 如果不是JSON，使用原始错误文本
+          if (errorText && errorText !== 'Unknown error') {
+            errorMessage = errorText;
+          }
+        }
+
+        // 使用错误工厂创建对应的错误实例
+        const httpError = HTTPErrorFactory.fromStatusCode(
+          response.status,
+          errorMessage,
+          responseRequestId
+        );
+        
+        throw httpError;
       }
 
       // 解析响应
@@ -291,7 +325,31 @@ export class HttpClient {
         });
       }
 
-      throw error;
+      // 如果已经是HTTPError，直接抛出
+      if (error instanceof HTTPError) {
+        throw error;
+      }
+
+      // 检查是否是用户中止
+      if (options.signal?.aborted || (error instanceof Error && error.name === 'AbortError')) {
+        throw new UserAbortError('Request aborted by user');
+      }
+
+      // 检查是否是超时错误
+      if (error instanceof Error && (
+        error.name === 'AbortError' ||
+        /timed? ?out/i.test(error.message)
+      )) {
+        throw new ConnectionTimeoutError('Connection timeout');
+      }
+
+      // 其他连接错误
+      if (error instanceof Error) {
+        throw new ConnectionError('Connection failed', error);
+      }
+
+      // 未知错误
+      throw new ConnectionError('Unknown connection error');
     }
   }
 
@@ -339,29 +397,5 @@ export class HttpClient {
    */
   setDefaultTimeout(timeout: number): void {
     this.defaultTimeout = timeout;
-  }
-
-  /**
-   * 获取统计信息
-   */
-  getStats(): {
-    retry: ReturnType<RetryHandler['getStats']>;
-    circuitBreaker: ReturnType<CircuitBreaker['getStats']>;
-    rateLimiter: ReturnType<RateLimiter['getStats']>;
-  } {
-    return {
-      retry: this.retryHandler.getStats(),
-      circuitBreaker: this.circuitBreaker.getStats(),
-      rateLimiter: this.rateLimiter.getStats(),
-    };
-  }
-
-  /**
-   * 重置统计信息
-   */
-  resetStats(): void {
-    this.retryHandler.resetStats();
-    this.circuitBreaker.reset();
-    this.rateLimiter.reset();
   }
 }

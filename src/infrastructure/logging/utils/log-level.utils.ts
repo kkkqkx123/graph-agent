@@ -5,126 +5,57 @@
 import { LogLevel } from '../../../domain/common/types/logger-types';
 
 /**
- * 日志级别权重映射
+ * 日志级别权重映射（用于日志级别判断）
  */
 const LOG_LEVEL_WEIGHTS: Record<LogLevel, number> = {
-  [LogLevel.TRACE]: 0,
-  [LogLevel.DEBUG]: 1,
-  [LogLevel.INFO]: 2,
-  [LogLevel.WARN]: 3,
-  [LogLevel.ERROR]: 4,
-  [LogLevel.FATAL]: 5,
+  [LogLevel.DEBUG]: 0,
+  [LogLevel.INFO]: 1,
+  [LogLevel.WARN]: 2,
+  [LogLevel.ERROR]: 3,
+  [LogLevel.FATAL]: 4,
 };
 
 /**
- * 日志级别颜色映射
+ * 日志级别颜色映射（ANSI颜色代码）
  */
-const LOG_LEVEL_COLORS: Record<LogLevel, string> = {
-  [LogLevel.TRACE]: 'gray',
-  [LogLevel.DEBUG]: 'blue',
-  [LogLevel.INFO]: 'green',
-  [LogLevel.WARN]: 'yellow',
-  [LogLevel.ERROR]: 'red',
-  [LogLevel.FATAL]: 'magenta',
+const LOG_LEVEL_COLOR_CODES: Record<LogLevel, string> = {
+  [LogLevel.DEBUG]: '\x1b[90m', // 灰色
+  [LogLevel.INFO]: '\x1b[94m',  // 蓝色
+  [LogLevel.WARN]: '\x1b[93m',  // 黄色
+  [LogLevel.ERROR]: '\x1b[91m', // 红色
+  [LogLevel.FATAL]: '\x1b[95m', // 紫色
 };
 
 /**
- * 日志级别工具类
+ * 日志级别工具类 - 消除过度设计，只保留必要方法
  */
 export class LogLevelUtils {
   /**
-   * 比较两个日志级别
-   * @param level1 第一个日志级别
-   * @param level2 第二个日志级别
-   * @returns -1 如果 level1 < level2, 0 如果相等, 1 如果 level1 > level2
-   */
-  static compare(level1: LogLevel, level2: LogLevel): number {
-    const weight1 = LOG_LEVEL_WEIGHTS[level1];
-    const weight2 = LOG_LEVEL_WEIGHTS[level2];
-
-    if (weight1 < weight2) return -1;
-    if (weight1 > weight2) return 1;
-    return 0;
-  }
-
-  /**
    * 检查是否应该记录指定级别的日志
-   * @param currentLevel 当前日志级别
-   * @param targetLevel 目标日志级别
-   * @returns 如果应该记录返回 true
+   * 这是唯一核心方法，被Logger和BaseTransport使用
    */
   static shouldLog(currentLevel: LogLevel, targetLevel: LogLevel): boolean {
     return LOG_LEVEL_WEIGHTS[targetLevel] >= LOG_LEVEL_WEIGHTS[currentLevel];
   }
 
   /**
-   * 获取日志级别的权重
-   * @param level 日志级别
-   * @returns 权重值
+   * 获取日志级别的ANSI颜色代码
    */
-  static getWeight(level: LogLevel): number {
-    return LOG_LEVEL_WEIGHTS[level];
+  static getColorCode(level: LogLevel): string {
+    return LOG_LEVEL_COLOR_CODES[level] || '\x1b[0m';
   }
 
   /**
-   * 获取日志级别的颜色
-   * @param level 日志级别
-   * @returns 颜色名称
+   * 获取颜色重置代码
    */
-  static getColor(level: LogLevel): string {
-    return LOG_LEVEL_COLORS[level];
+  static getResetCode(): string {
+    return '\x1b[0m';
   }
 
   /**
-   * 解析字符串为日志级别
-   * @param levelStr 日志级别字符串
-   * @returns 日志级别
-   */
-  static parse(levelStr: string): LogLevel {
-    const upperLevel = levelStr.toUpperCase();
-
-    if (Object.values(LogLevel).includes(upperLevel as LogLevel)) {
-      return upperLevel as LogLevel;
-    }
-
-    throw new Error(`无效的日志级别: ${levelStr}`);
-  }
-
-  /**
-   * 获取所有日志级别
-   * @returns 日志级别数组
-   */
-  static getAllLevels(): LogLevel[] {
-    return Object.values(LogLevel);
-  }
-
-  /**
-   * 获取最低日志级别
-   * @returns 最低日志级别
-   */
-  static getLowestLevel(): LogLevel {
-    return LogLevel.TRACE;
-  }
-
-  /**
-   * 获取最高日志级别
-   * @returns 最高日志级别
-   */
-  static getHighestLevel(): LogLevel {
-    return LogLevel.FATAL;
-  }
-
-  /**
-   * 检查是否为有效的日志级别
-   * @param level 日志级别
-   * @returns 如果有效返回 true
+   * 验证日志级别字符串
    */
   static isValid(level: string): boolean {
-    try {
-      LogLevelUtils.parse(level);
-      return true;
-    } catch {
-      return false;
-    }
+    return Object.values(LogLevel).includes(level.toUpperCase() as LogLevel);
   }
 }

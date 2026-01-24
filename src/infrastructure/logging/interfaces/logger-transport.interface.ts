@@ -1,5 +1,5 @@
 /**
- * 日志传输器接口定义
+ * 日志传输器接口定义 - 简化版本
  */
 
 import { LogLevel, LogContext } from '../../../domain/common/types/logger-types';
@@ -32,24 +32,19 @@ export interface ILoggerTransport {
   readonly config: LogOutputConfig;
 
   /**
-   * 记录日志
+   * 记录日志（同步方法）
    */
-  log(entry: LogEntry): Promise<void>;
+  log(entry: LogEntry): void;
 
   /**
-   * 刷新缓冲区
-   */
-  flush?(): Promise<void>;
-
-  /**
-   * 关闭传输器
+   * 关闭传输器（可选）
    */
   close?(): Promise<void>;
 
   /**
-   * 检查是否应该记录指定级别的日志
+   * 检查是否应该处理此日志（可选）
    */
-  shouldLog(level: LogLevel): boolean;
+  shouldLog?(level: LogLevel): boolean;
 }
 
 /**
