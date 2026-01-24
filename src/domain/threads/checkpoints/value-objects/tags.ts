@@ -1,4 +1,5 @@
 import { ValueObject } from '../../../common/value-objects';
+import { ValidationError } from '../../../../common/exceptions';
 
 /**
  * 标签值对象接口
@@ -202,21 +203,21 @@ export class Tags extends ValueObject<TagsProps> {
    */
   public validate(): void {
     if (this.props.tags === null || this.props.tags === undefined) {
-      throw new Error('标签不能为空');
+      throw new ValidationError('标签不能为空');
     }
 
     if (!Array.isArray(this.props.tags)) {
-      throw new Error('标签必须是数组');
+      throw new ValidationError('标签必须是数组');
     }
 
     // 验证每个标签都是字符串
     for (const tag of this.props.tags) {
       if (typeof tag !== 'string') {
-        throw new Error('标签必须是字符串');
+        throw new ValidationError('标签必须是字符串');
       }
 
       if (tag.trim().length === 0) {
-        throw new Error('标签不能为空字符串');
+        throw new ValidationError('标签不能为空字符串');
       }
     }
   }

@@ -1,4 +1,5 @@
 import { ValueObject } from '../../../common/value-objects';
+import { ValidationError } from '../../../../common/exceptions';
 
 /**
  * 状态数据值对象接口
@@ -191,11 +192,11 @@ export class StateData extends ValueObject<StateDataProps> {
    */
   public validate(): void {
     if (this.props.data === null || this.props.data === undefined) {
-      throw new Error('状态数据不能为空');
+      throw new ValidationError('状态数据不能为空');
     }
 
     if (typeof this.props.data !== 'object') {
-      throw new Error('状态数据必须是对象');
+      throw new ValidationError('状态数据必须是对象');
     }
   }
 }

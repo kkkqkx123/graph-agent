@@ -2,6 +2,7 @@ import { ID, Timestamp, ValueObject } from '../../../../common/value-objects';
 import { NodeId } from '../../../../workflow/value-objects';
 import { PromptState } from '../../../../workflow/value-objects/context';
 import { NodeExecutionSnapshot } from '../../../../threads/value-objects/node-execution';
+import { ValidationError } from '../../../../../common/exceptions';
 
 /**
  * Fork选项值对象
@@ -103,11 +104,11 @@ export class ForkOptions extends ValueObject<{
     const validNodeStateHandling = ['copy', 'reset', 'inherit'];
 
     if (!validContextRetention.includes(this.props.contextRetention)) {
-      throw new Error('无效的上下文保留类型');
+      throw new ValidationError('无效的上下文保留类型');
     }
 
     if (!validNodeStateHandling.includes(this.props.nodeStateHandling)) {
-      throw new Error('无效的节点状态处理类型');
+      throw new ValidationError('无效的节点状态处理类型');
     }
   }
 }
@@ -223,13 +224,13 @@ export class ForkContext extends ValueObject<{
 
   public validate(): void {
     if (!this.props.parentThreadId) {
-      throw new Error('父线程ID不能为空');
+      throw new ValidationError('父线程ID不能为空');
     }
     if (!this.props.forkPoint) {
-      throw new Error('Fork点不能为空');
+      throw new ValidationError('Fork点不能为空');
     }
     if (!this.props.options) {
-      throw new Error('Fork选项不能为空');
+      throw new ValidationError('Fork选项不能为空');
     }
     // 验证options
     this.props.options.validate();

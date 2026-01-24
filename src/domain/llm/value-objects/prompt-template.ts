@@ -5,6 +5,7 @@
  */
 
 import { ValueObject } from '../../common/value-objects';
+import { ValidationError } from '../../../common/exceptions';
 
 /**
  * 提示词模板属性接口
@@ -73,7 +74,7 @@ export class PromptTemplate extends ValueObject<PromptTemplateProps> {
     // 检查是否有未替换的变量
     const unreplacedVariables = PromptTemplate.extractVariables(rendered);
     if (unreplacedVariables.length > 0) {
-      throw new Error(`未提供以下变量的值: ${unreplacedVariables.join(', ')}`);
+      throw new ValidationError(`未提供以下变量的值: ${unreplacedVariables.join(', ')}`);
     }
 
     return rendered;
@@ -174,10 +175,10 @@ export class PromptTemplate extends ValueObject<PromptTemplateProps> {
    */
   public override validate(): void {
     if (!this.props.template || this.props.template.trim() === '') {
-      throw new Error('模板内容不能为空');
+      throw new ValidationError('模板内容不能为空');
     }
     if (!Array.isArray(this.props.variables)) {
-      throw new Error('模板变量必须是数组');
+      throw new ValidationError('模板变量必须是数组');
     }
   }
 

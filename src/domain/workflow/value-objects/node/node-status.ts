@@ -1,4 +1,5 @@
 import { ValueObject } from '../../../common/value-objects';
+import { ValidationError } from '../../../../common/exceptions';
 
 /**
  * 节点状态枚举
@@ -28,10 +29,10 @@ export class NodeStatus extends ValueObject<NodeStatusProps> {
   private constructor(props: NodeStatusProps) {
     super(props);
     if (!props.value) {
-      throw new Error('节点状态不能为空');
+      throw new ValidationError('节点状态不能为空');
     }
     if (!Object.values(NodeStatusValue).includes(props.value)) {
-      throw new Error(`无效的节点状态: ${props.value}`);
+      throw new ValidationError(`无效的节点状态: ${props.value}`);
     }
   }
 
@@ -90,7 +91,7 @@ export class NodeStatus extends ValueObject<NodeStatusProps> {
    */
   public static fromString(status: string): NodeStatus {
     if (!Object.values(NodeStatusValue).includes(status as NodeStatusValue)) {
-      throw new Error(`无效的节点状态: ${status}`);
+      throw new ValidationError(`无效的节点状态: ${status}`);
     }
     return new NodeStatus({ value: status as NodeStatusValue });
   }

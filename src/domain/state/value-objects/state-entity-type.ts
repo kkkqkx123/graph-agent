@@ -1,4 +1,5 @@
 import { ValueObject } from '../../common/value-objects';
+import { ValidationError } from '../../../common/exceptions';
 
 /**
  * 状态实体类型枚举
@@ -57,7 +58,7 @@ export class StateEntityType extends ValueObject<StateEntityTypeProps> {
    */
   public static fromString(value: string): StateEntityType {
     if (!Object.values(StateEntityTypeValue).includes(value as StateEntityTypeValue)) {
-      throw new Error(`无效的实体类型: ${value}`);
+      throw new ValidationError(`无效的实体类型: ${value}`);
     }
     return new StateEntityType({ value: value as StateEntityTypeValue });
   }
@@ -116,10 +117,10 @@ export class StateEntityType extends ValueObject<StateEntityTypeProps> {
    */
   public override validate(): void {
     if (!this.props.value) {
-      throw new Error('实体类型不能为空');
+      throw new ValidationError('实体类型不能为空');
     }
     if (!Object.values(StateEntityTypeValue).includes(this.props.value)) {
-      throw new Error(`无效的实体类型: ${this.props.value}`);
+      throw new ValidationError(`无效的实体类型: ${this.props.value}`);
     }
   }
 }

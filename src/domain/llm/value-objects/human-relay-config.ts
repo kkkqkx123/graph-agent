@@ -6,6 +6,7 @@
 
 import { ValueObject } from '../../common/value-objects';
 import { HumanRelayMode } from './human-relay-mode';
+import { ValidationError } from '../../../common/exceptions';
 
 /**
  * 前端配置接口
@@ -582,10 +583,10 @@ export class HumanRelayConfig extends ValueObject<HumanRelayConfigProps> {
    */
   public override validate(): void {
     if (!this.props.provider || this.props.provider.trim() === '') {
-      throw new Error('配置提供者不能为空');
+      throw new ValidationError('配置提供者不能为空');
     }
     if (!this.props.frontendConfig) {
-      throw new Error('前端配置不能为空');
+      throw new ValidationError('前端配置不能为空');
     }
   }
 

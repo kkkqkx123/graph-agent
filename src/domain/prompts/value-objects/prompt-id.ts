@@ -3,6 +3,7 @@
  */
 
 import { ID } from '../../common/value-objects';
+import { ValidationError } from '../../../common/exceptions';
 
 export class PromptId extends ID {
   constructor(value: string) {
@@ -29,7 +30,7 @@ export class PromptId extends ID {
   parse(): { category: string; name: string } {
     const parts = this.value.split('.');
     if (parts.length < 2) {
-      throw new Error(`Invalid prompt ID format: ${this.value}`);
+      throw new ValidationError(`Invalid prompt ID format: ${this.value}`);
     }
     const category = parts[0]!;
     const name = parts.slice(1).join('.');

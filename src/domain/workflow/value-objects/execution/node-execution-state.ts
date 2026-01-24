@@ -1,5 +1,6 @@
 import { ValueObject } from '../../../common/value-objects';
 import { NodeStatusValue } from '../node/node-status';
+import { ValidationError } from '../../../../common/exceptions';
 
 /**
  * 节点执行状态属性接口
@@ -328,22 +329,22 @@ export class NodeExecutionState extends ValueObject<NodeExecutionStateProps> {
    */
   public validate(): void {
     if (!this.props.nodeId || typeof this.props.nodeId !== 'string') {
-      throw new Error('节点ID必须是非空字符串');
+      throw new ValidationError('节点ID必须是非空字符串');
     }
     if (!Object.values(NodeStatusValue).includes(this.props.status)) {
-      throw new Error(`无效的节点状态: ${this.props.status}`);
+      throw new ValidationError(`无效的节点状态: ${this.props.status}`);
     }
     if (this.props.startTime && !(this.props.startTime instanceof Date)) {
-      throw new Error('开始时间必须是Date对象');
+      throw new ValidationError('开始时间必须是Date对象');
     }
     if (this.props.endTime && !(this.props.endTime instanceof Date)) {
-      throw new Error('结束时间必须是Date对象');
+      throw new ValidationError('结束时间必须是Date对象');
     }
     if (this.props.executionTime !== undefined && (typeof this.props.executionTime !== 'number' || this.props.executionTime < 0)) {
-      throw new Error('执行耗时必须是非负数');
+      throw new ValidationError('执行耗时必须是非负数');
     }
     if (this.props.startTime && this.props.endTime && this.props.startTime > this.props.endTime) {
-      throw new Error('开始时间不能晚于结束时间');
+      throw new ValidationError('开始时间不能晚于结束时间');
     }
   }
 }

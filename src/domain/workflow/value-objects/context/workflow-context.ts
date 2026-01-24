@@ -5,6 +5,7 @@ import { NodeExecutionState } from '../execution/node-execution-state';
 import { PromptHistoryEntry } from './prompt-history-entry';
 import { WorkflowExecutionContext } from '../../entities/node';
 import { ExecutionContext } from '../../../../services/threads/execution/context/execution-context';
+import { ValidationError } from '../../../../common/exceptions';
 
 /**
  * 工作流上下文属性接口
@@ -346,7 +347,7 @@ export class WorkflowContext extends ValueObject<WorkflowContextProps> implement
   public getService<T>(serviceName: string): T {
     // WorkflowContext本身不提供服务，此方法仅用于兼容接口
     // 实际服务应该通过依赖注入容器获取
-    throw new Error(`WorkflowContext.getService() is not supported. Use dependency injection instead.`);
+    throw new ValidationError(`WorkflowContext.getService() is not supported. Use dependency injection instead.`);
   }
 
   /**
@@ -450,19 +451,19 @@ export class WorkflowContext extends ValueObject<WorkflowContextProps> implement
    */
   public validate(): void {
     if (!this.props.workflowId || typeof this.props.workflowId !== 'string') {
-      throw new Error('工作流ID必须是非空字符串');
+      throw new ValidationError('工作流ID必须是非空字符串');
     }
     if (!this.props.executionId || typeof this.props.executionId !== 'string') {
-      throw new Error('执行ID必须是非空字符串');
+      throw new ValidationError('执行ID必须是非空字符串');
     }
     if (!(this.props.createdAt instanceof Date)) {
-      throw new Error('创建时间必须是Date对象');
+      throw new ValidationError('创建时间必须是Date对象');
     }
     if (!(this.props.updatedAt instanceof Date)) {
-      throw new Error('更新时间必须是Date对象');
+      throw new ValidationError('更新时间必须是Date对象');
     }
     if (this.props.createdAt > this.props.updatedAt) {
-      throw new Error('创建时间不能晚于更新时间');
+      throw new ValidationError('创建时间不能晚于更新时间');
     }
   }
 

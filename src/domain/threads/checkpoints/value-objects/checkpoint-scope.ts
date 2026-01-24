@@ -1,4 +1,5 @@
 import { ValueObject } from '../../../common/value-objects/value-object';
+import { ValidationError } from '../../../../common/exceptions';
 
 /**
  * 检查点范围枚举
@@ -48,7 +49,7 @@ export class CheckpointScope extends ValueObject<CheckpointScopeProps> {
       (v) => v === value
     );
     if (!scopeValue) {
-      throw new Error(`无效的检查点范围: ${value}`);
+      throw new ValidationError(`无效的检查点范围: ${value}`);
     }
     return new CheckpointScope({ value: scopeValue });
   }
@@ -105,12 +106,12 @@ export class CheckpointScope extends ValueObject<CheckpointScopeProps> {
    */
   public override validate(): void {
     if (!this.props.value) {
-      throw new Error('检查点范围不能为空');
+      throw new ValidationError('检查点范围不能为空');
     }
 
     const validValues = Object.values(CheckpointScopeValue);
     if (!validValues.includes(this.props.value)) {
-      throw new Error(`无效的检查点范围: ${this.props.value}`);
+      throw new ValidationError(`无效的检查点范围: ${this.props.value}`);
     }
   }
 }

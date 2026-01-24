@@ -1,4 +1,5 @@
 import { ValueObject } from '../../common/value-objects/value-object';
+import { ValidationError } from '../../../common/exceptions';
 
 /**
  * 用户交互配置值对象
@@ -22,7 +23,7 @@ export class UserInteractionConfig extends ValueObject<UserInteractionConfigProp
 
   validate(): void {
     if (!this.props.prompt) {
-      throw new Error('UserInteractionConfig prompt is required');
+      throw new ValidationError('UserInteractionConfig prompt is required');
     }
   }
 }

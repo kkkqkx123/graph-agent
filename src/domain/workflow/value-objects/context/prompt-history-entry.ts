@@ -1,4 +1,5 @@
 import { ValueObject } from '../../../common/value-objects';
+import { ValidationError } from '../../../../common/exceptions';
 
 /**
  * 提示词历史条目角色枚举（合并了原来的 type 和 role）
@@ -222,21 +223,21 @@ export class PromptHistoryEntry extends ValueObject<PromptHistoryEntryProps> {
    */
   public validate(): void {
     if (this.props.index < 0) {
-      throw new Error('索引不能为负数');
+      throw new ValidationError('索引不能为负数');
     }
     if (!this.props.content || typeof this.props.content !== 'string') {
-      throw new Error('内容必须是非空字符串');
+      throw new ValidationError('内容必须是非空字符串');
     }
     if (!['system', 'user', 'assistant', 'tool', 'output'].includes(this.props.role)) {
-      throw new Error(`无效的角色: ${this.props.role}`);
+      throw new ValidationError(`无效的角色: ${this.props.role}`);
     }
     if (this.props.role === 'tool' && !this.props.toolCallId) {
-      throw new Error('工具角色必须包含工具调用ID');
+      throw new ValidationError('工具角色必须包含工具调用ID');
     }
     if (this.props.toolCalls) {
       for (const toolCall of this.props.toolCalls) {
         if (!toolCall.id || !toolCall.name || !toolCall.arguments) {
-          throw new Error('工具调用必须包含id、name和arguments');
+          throw new ValidationError('工具调用必须包含id、name和arguments');
         }
       }
     }

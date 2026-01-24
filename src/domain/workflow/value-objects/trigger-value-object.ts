@@ -1,4 +1,5 @@
 import { ValueObject } from '../../common/value-objects';
+import { ValidationError } from '../../../common/exceptions';
 
 /**
  * 触发器类型枚举
@@ -47,7 +48,7 @@ export class TriggerType extends ValueObject<{ value: TriggerTypeValue }> {
 
   public static fromString(type: string): TriggerType {
     if (!Object.values(TriggerTypeValue).includes(type as TriggerTypeValue)) {
-      throw new Error(`无效的触发器类型: ${type}`);
+      throw new ValidationError(`无效的触发器类型: ${type}`);
     }
     return new TriggerType({ value: type as TriggerTypeValue });
   }
@@ -70,7 +71,7 @@ export class TriggerType extends ValueObject<{ value: TriggerTypeValue }> {
 
   public override validate(): void {
     if (!this.props.value) {
-      throw new Error('触发器类型不能为空');
+      throw new ValidationError('触发器类型不能为空');
     }
   }
 
@@ -105,7 +106,7 @@ export class TriggerAction extends ValueObject<{ value: TriggerActionValue }> {
 
   public static fromString(action: string): TriggerAction {
     if (!Object.values(TriggerActionValue).includes(action as TriggerActionValue)) {
-      throw new Error(`无效的触发器动作: ${action}`);
+      throw new ValidationError(`无效的触发器动作: ${action}`);
     }
     return new TriggerAction({ value: action as TriggerActionValue });
   }
@@ -136,7 +137,7 @@ export class TriggerAction extends ValueObject<{ value: TriggerActionValue }> {
 
   public override validate(): void {
     if (!this.props.value) {
-      throw new Error('触发器动作不能为空');
+      throw new ValidationError('触发器动作不能为空');
     }
   }
 
@@ -163,7 +164,7 @@ export class TriggerStatus extends ValueObject<{ value: TriggerStatusValue }> {
 
   public static fromString(status: string): TriggerStatus {
     if (!Object.values(TriggerStatusValue).includes(status as TriggerStatusValue)) {
-      throw new Error(`无效的触发器状态: ${status}`);
+      throw new ValidationError(`无效的触发器状态: ${status}`);
     }
     return new TriggerStatus({ value: status as TriggerStatusValue });
   }
@@ -190,7 +191,7 @@ export class TriggerStatus extends ValueObject<{ value: TriggerStatusValue }> {
 
   public override validate(): void {
     if (!this.props.value) {
-      throw new Error('触发器状态不能为空');
+      throw new ValidationError('触发器状态不能为空');
     }
   }
 

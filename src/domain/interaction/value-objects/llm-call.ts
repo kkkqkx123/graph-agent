@@ -2,6 +2,7 @@ import { ValueObject } from '../../common/value-objects/value-object';
 import { Message } from './message';
 import { ToolCall } from './tool-call';
 import { InteractionTokenUsage } from './token-usage';
+import { ValidationError } from '../../../common/exceptions';
 
 /**
  * LLM 调用值对象
@@ -35,13 +36,13 @@ export class LLMCall extends ValueObject<LLMCallProps> {
 
   validate(): void {
     if (!this.props.id) {
-      throw new Error('LLMCall id is required');
+      throw new ValidationError('LLMCall id is required');
     }
     if (!this.props.provider) {
-      throw new Error('LLMCall provider is required');
+      throw new ValidationError('LLMCall provider is required');
     }
     if (!this.props.model) {
-      throw new Error('LLMCall model is required');
+      throw new ValidationError('LLMCall model is required');
     }
   }
 }

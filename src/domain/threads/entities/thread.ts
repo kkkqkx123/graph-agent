@@ -4,6 +4,7 @@ import { ThreadStatusValue } from '../value-objects/thread-status';
 import { State } from '../../state/entities/state';
 import { StateEntityType } from '../../state/value-objects/state-entity-type';
 import { ThreadExecutionContext, ExecutionConfig } from '../value-objects/execution-context';
+import { ValidationError } from '../../../common/exceptions';
 
 /**
  * Thread实体属性接口
@@ -497,7 +498,7 @@ export class Thread extends Entity {
    */
   public start(): Thread {
     if (this.status !== ThreadStatusValue.PENDING) {
-      throw new Error(`只能启动待执行状态的线程，当前状态: ${this.status}`);
+      throw new ValidationError(`只能启动待执行状态的线程，当前状态: ${this.status}`);
     }
 
     const now = Timestamp.now();
@@ -526,7 +527,7 @@ export class Thread extends Entity {
    */
   public complete(): Thread {
     if (!this.isActive()) {
-      throw new Error(`只能完成活跃状态的线程，当前状态: ${this.status}`);
+      throw new ValidationError(`只能完成活跃状态的线程，当前状态: ${this.status}`);
     }
 
     const now = Timestamp.now();
@@ -557,7 +558,7 @@ export class Thread extends Entity {
    */
   public fail(errorMessage: string): Thread {
     if (!this.isActive()) {
-      throw new Error(`只能标记活跃状态的线程为失败，当前状态: ${this.status}`);
+      throw new ValidationError(`只能标记活跃状态的线程为失败，当前状态: ${this.status}`);
     }
 
     const now = Timestamp.now();
@@ -586,7 +587,7 @@ export class Thread extends Entity {
    */
   public pause(): Thread {
     if (this.status !== ThreadStatusValue.RUNNING) {
-      throw new Error(`只能暂停运行中的线程，当前状态: ${this.status}`);
+      throw new ValidationError(`只能暂停运行中的线程，当前状态: ${this.status}`);
     }
 
     const now = Timestamp.now();
@@ -614,7 +615,7 @@ export class Thread extends Entity {
    */
   public resume(): Thread {
     if (this.status !== ThreadStatusValue.PAUSED && this.status !== ThreadStatusValue.FAILED) {
-      throw new Error(`只能恢复暂停或失败状态的线程，当前状态: ${this.status}`);
+      throw new ValidationError(`只能恢复暂停或失败状态的线程，当前状态: ${this.status}`);
     }
 
     const now = Timestamp.now();
@@ -644,7 +645,7 @@ export class Thread extends Entity {
    */
   public cancel(userId?: ID, reason?: string): Thread {
     if (this.isTerminal()) {
-      throw new Error(`无法取消已终止状态的线程，当前状态: ${this.status}`);
+      throw new ValidationError(`无法取消已终止状态的线程，当前状态: ${this.status}`);
     }
 
     const now = Timestamp.now();
@@ -675,11 +676,11 @@ export class Thread extends Entity {
    */
   public updateProgress(progress: number, currentStep?: string): Thread {
     if (!this.isActive()) {
-      throw new Error(`只能更新活跃状态的线程进度，当前状态: ${this.status}`);
+      throw new ValidationError(`只能更新活跃状态的线程进度，当前状态: ${this.status}`);
     }
 
     if (progress < 0 || progress > 100) {
-      throw new Error(`进度值必须在0-100之间，当前值: ${progress}`);
+      throw new ValidationError(`进度值必须在0-100之间，当前值: ${progress}`);
     }
 
     const now = Timestamp.now();

@@ -1,3 +1,5 @@
+import { ValidationError } from '../../../common/exceptions';
+
 /**
  * 工具类型值对象
  *
@@ -30,7 +32,7 @@ export class ToolType {
    */
   constructor(value: string) {
     if (!ToolType.isValid(value)) {
-      throw new Error(`Invalid tool type: ${value}`);
+      throw new ValidationError(`Invalid tool type: ${value}`);
     }
 
     this.value = value;

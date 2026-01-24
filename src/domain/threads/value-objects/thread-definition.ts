@@ -1,4 +1,5 @@
 import { ValueObject, ID, Timestamp } from '../../common/value-objects';
+import { ValidationError } from '../../../common/exceptions';
 
 /**
  * ThreadDefinition值对象属性接口
@@ -157,19 +158,19 @@ export class ThreadDefinition extends ValueObject<ThreadDefinitionProps> {
    */
   public validate(): void {
     if (!this.props.threadId) {
-      throw new Error('线程ID不能为空');
+      throw new ValidationError('线程ID不能为空');
     }
 
     if (!this.props.sessionId) {
-      throw new Error('会话ID不能为空');
+      throw new ValidationError('会话ID不能为空');
     }
 
     if (this.props.title && this.props.title.trim().length === 0) {
-      throw new Error('线程标题不能为空字符串');
+      throw new ValidationError('线程标题不能为空字符串');
     }
 
     if (this.props.description && this.props.description.trim().length === 0) {
-      throw new Error('线程描述不能为空字符串');
+      throw new ValidationError('线程描述不能为空字符串');
     }
   }
 }

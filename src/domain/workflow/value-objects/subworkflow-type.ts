@@ -1,4 +1,5 @@
 import { ValueObject } from '../../common/value-objects';
+import { ValidationError } from '../../../common/exceptions';
 
 /**
  * 子工作流类型枚举
@@ -56,7 +57,7 @@ export class SubWorkflowType extends ValueObject<{ value: SubWorkflowTypeValue }
     if (type === SubWorkflowTypeValue.FEATURE) {
       return SubWorkflowType.feature();
     }
-    throw new Error(`无效的子工作流类型: ${type}`);
+    throw new ValidationError(`无效的子工作流类型: ${type}`);
   }
 
   /**

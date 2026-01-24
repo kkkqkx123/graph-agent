@@ -1,6 +1,7 @@
 import { ValueObject } from '../../../common/value-objects';
 import { NodeExecutionState, NodeExecutionStateProps } from './node-execution-state';
 import { NodeStatusValue } from '../node/node-status';
+import { ValidationError } from '../../../../common/exceptions';
 
 /**
  * 执行统计信息接口
@@ -153,7 +154,7 @@ export class ExecutionState extends ValueObject<ExecutionStateProps> {
   public updateNodeExecution(nodeId: string, updates: Partial<Omit<NodeExecutionStateProps, 'nodeId'>>): ExecutionState {
     const currentState = this.props.nodeExecutions.get(nodeId);
     if (!currentState) {
-      throw new Error(`节点 ${nodeId} 不存在`);
+      throw new ValidationError(`节点 ${nodeId} 不存在`);
     }
 
     const newNodeExecutions = new Map(this.props.nodeExecutions);
@@ -214,7 +215,7 @@ export class ExecutionState extends ValueObject<ExecutionStateProps> {
   public markNodeCompleted(nodeId: string, result?: unknown): ExecutionState {
     const currentState = this.props.nodeExecutions.get(nodeId);
     if (!currentState) {
-      throw new Error(`节点 ${nodeId} 不存在`);
+      throw new ValidationError(`节点 ${nodeId} 不存在`);
     }
 
     return this.updateNodeExecution(nodeId, {
@@ -236,7 +237,7 @@ export class ExecutionState extends ValueObject<ExecutionStateProps> {
   public markNodeFailed(nodeId: string, error: string): ExecutionState {
     const currentState = this.props.nodeExecutions.get(nodeId);
     if (!currentState) {
-      throw new Error(`节点 ${nodeId} 不存在`);
+      throw new ValidationError(`节点 ${nodeId} 不存在`);
     }
 
     return this.updateNodeExecution(nodeId, {
@@ -257,7 +258,7 @@ export class ExecutionState extends ValueObject<ExecutionStateProps> {
   public markNodeSkipped(nodeId: string): ExecutionState {
     const currentState = this.props.nodeExecutions.get(nodeId);
     if (!currentState) {
-      throw new Error(`节点 ${nodeId} 不存在`);
+      throw new ValidationError(`节点 ${nodeId} 不存在`);
     }
 
     return this.updateNodeExecution(nodeId, {
@@ -277,7 +278,7 @@ export class ExecutionState extends ValueObject<ExecutionStateProps> {
   public markNodeCancelled(nodeId: string): ExecutionState {
     const currentState = this.props.nodeExecutions.get(nodeId);
     if (!currentState) {
-      throw new Error(`节点 ${nodeId} 不存在`);
+      throw new ValidationError(`节点 ${nodeId} 不存在`);
     }
 
     return this.updateNodeExecution(nodeId, {
@@ -413,16 +414,16 @@ export class ExecutionState extends ValueObject<ExecutionStateProps> {
    */
   public validate(): void {
     if (!(this.props.startTime instanceof Date)) {
-      throw new Error('开始时间必须是Date对象');
+      throw new ValidationError('开始时间必须是Date对象');
     }
     if (this.props.endTime && !(this.props.endTime instanceof Date)) {
-      throw new Error('结束时间必须是Date对象');
+      throw new ValidationError('结束时间必须是Date对象');
     }
     if (this.props.startTime > (this.props.endTime || new Date())) {
-      throw new Error('开始时间不能晚于结束时间');
+      throw new ValidationError('开始时间不能晚于结束时间');
     }
     if (this.props.currentNodeId && !this.props.nodeExecutions.has(this.props.currentNodeId)) {
-      throw new Error(`当前节点 ${this.props.currentNodeId} 不在节点执行状态中`);
+      throw new ValidationError(`当前节点 ${this.props.currentNodeId} 不在节点执行状态中`);
     }
   }
 }

@@ -1,4 +1,5 @@
 import { ValueObject } from '../../common/value-objects';
+import { ValidationError } from '../../../common/exceptions';
 /**
  * 线程状态枚举
  */
@@ -79,7 +80,7 @@ export class ThreadStatus extends ValueObject<ThreadStatusProps> {
    */
   public static fromString(status: string): ThreadStatus {
     if (!Object.values(ThreadStatusValue).includes(status as ThreadStatusValue)) {
-      throw new Error(`无效的线程状态: ${status}`);
+      throw new ValidationError(`无效的线程状态: ${status}`);
     }
     return new ThreadStatus({ value: status as ThreadStatusValue });
   }
@@ -189,11 +190,11 @@ export class ThreadStatus extends ValueObject<ThreadStatusProps> {
    */
   public validate(): void {
     if (!this.props.value) {
-      throw new Error('线程状态不能为空');
+      throw new ValidationError('线程状态不能为空');
     }
 
     if (!Object.values(ThreadStatusValue).includes(this.props.value)) {
-      throw new Error(`无效的线程状态: ${this.props.value}`);
+      throw new ValidationError(`无效的线程状态: ${this.props.value}`);
     }
   }
 

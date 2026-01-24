@@ -1,4 +1,5 @@
 import { ValueObject } from '../../common/value-objects/value-object';
+import { ValidationError } from '../../../common/exceptions';
 
 /**
  * Token 使用情况值对象
@@ -31,13 +32,13 @@ export class InteractionTokenUsage extends ValueObject<InteractionTokenUsageProp
 
   validate(): void {
     if (this.props.promptTokens < 0) {
-      throw new Error('promptTokens cannot be negative');
+      throw new ValidationError('promptTokens cannot be negative');
     }
     if (this.props.completionTokens < 0) {
-      throw new Error('completionTokens cannot be negative');
+      throw new ValidationError('completionTokens cannot be negative');
     }
     if (this.props.totalTokens < 0) {
-      throw new Error('totalTokens cannot be negative');
+      throw new ValidationError('totalTokens cannot be negative');
     }
   }
 }

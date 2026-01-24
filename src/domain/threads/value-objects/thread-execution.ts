@@ -5,6 +5,7 @@ import { ExecutionHistory } from '../../workflow/value-objects/execution';
 import { NodeExecution } from './node-execution';
 import { ThreadExecutionContext } from './execution-context';
 import { ThreadWorkflowState } from './thread-workflow-state';
+import { ValidationError } from '../../../common/exceptions';
 
 /**
  * 操作记录接口
@@ -242,7 +243,7 @@ export class ThreadExecution extends ValueObject<ThreadExecutionProps> {
    */
   public start(): ThreadExecution {
     if (!this.props.status.isPending()) {
-      throw new Error('只能启动待执行状态的线程');
+      throw new ValidationError('只能启动待执行状态的线程');
     }
 
     const operationRecord: OperationRecord = {
@@ -266,7 +267,7 @@ export class ThreadExecution extends ValueObject<ThreadExecutionProps> {
    */
   public pause(): ThreadExecution {
     if (!this.props.status.isRunning()) {
-      throw new Error('只能暂停运行中的线程');
+      throw new ValidationError('只能暂停运行中的线程');
     }
 
     const operationRecord: OperationRecord = {
@@ -289,7 +290,7 @@ export class ThreadExecution extends ValueObject<ThreadExecutionProps> {
    */
   public resume(): ThreadExecution {
     if (!this.props.status.isPaused()) {
-      throw new Error('只能恢复暂停状态的线程');
+      throw new ValidationError('只能恢复暂停状态的线程');
     }
 
     const operationRecord: OperationRecord = {
@@ -312,7 +313,7 @@ export class ThreadExecution extends ValueObject<ThreadExecutionProps> {
    */
   public complete(): ThreadExecution {
     if (!this.props.status.isActive()) {
-      throw new Error('只能完成活跃状态的线程');
+      throw new ValidationError('只能完成活跃状态的线程');
     }
 
     const operationRecord: OperationRecord = {
@@ -338,7 +339,7 @@ export class ThreadExecution extends ValueObject<ThreadExecutionProps> {
    */
   public fail(errorMessage: string): ThreadExecution {
     if (!this.props.status.isActive()) {
-      throw new Error('只能设置活跃状态的线程为失败状态');
+      throw new ValidationError('只能设置活跃状态的线程为失败状态');
     }
 
     const operationRecord: OperationRecord = {
@@ -364,7 +365,7 @@ export class ThreadExecution extends ValueObject<ThreadExecutionProps> {
    */
   public cancel(): ThreadExecution {
     if (this.props.status.isTerminal()) {
-      throw new Error('无法取消已终止状态的线程');
+      throw new ValidationError('无法取消已终止状态的线程');
     }
 
     const operationRecord: OperationRecord = {
@@ -390,11 +391,11 @@ export class ThreadExecution extends ValueObject<ThreadExecutionProps> {
    */
   public updateProgress(progress: number, currentStep?: string): ThreadExecution {
     if (progress < 0 || progress > 100) {
-      throw new Error('进度必须在0-100之间');
+      throw new ValidationError('进度必须在0-100之间');
     }
 
     if (!this.props.status.isActive()) {
-      throw new Error('只能更新活跃状态的线程进度');
+      throw new ValidationError('只能更新活跃状态的线程进度');
     }
 
     return new ThreadExecution({
@@ -451,7 +452,7 @@ export class ThreadExecution extends ValueObject<ThreadExecutionProps> {
    */
   public updateNodeExecution(nodeExecution: NodeExecution): ThreadExecution {
     if (!this.props.nodeExecutions.has(nodeExecution.nodeId.toString())) {
-      throw new Error(`节点执行状态不存在: ${nodeExecution.nodeId.toString()}`);
+      throw new ValidationError(`节点执行状态不存在: ${nodeExecution.nodeId.toString()}`);
     }
 
     const newNodeExecutions = new Map(this.props.nodeExecutions);
@@ -541,7 +542,7 @@ export class ThreadExecution extends ValueObject<ThreadExecutionProps> {
   public setWorkflowData(key: string, value: any): ThreadExecution {
     const currentState = this.props.workflowState;
     if (!currentState) {
-      throw new Error('工作流状态不存在');
+      throw new ValidationError('工作流状态不存在');
     }
 
     // 使用展开运算符更新状态
@@ -562,7 +563,7 @@ export class ThreadExecution extends ValueObject<ThreadExecutionProps> {
   public updateCurrentNode(nodeId: ID): ThreadExecution {
     const currentState = this.props.workflowState;
     if (!currentState) {
-      throw new Error('工作流状态不存在');
+      throw new ValidationError('工作流状态不存在');
     }
 
     // 使用展开运算符更新状态
@@ -583,7 +584,7 @@ export class ThreadExecution extends ValueObject<ThreadExecutionProps> {
   public addExecutionHistory(history: ExecutionHistory): ThreadExecution {
     const currentState = this.props.workflowState;
     if (!currentState) {
-      throw new Error('工作流状态不存在');
+      throw new ValidationError('工作流状态不存在');
     }
 
     // 使用展开运算符更新状态
@@ -609,39 +610,39 @@ export class ThreadExecution extends ValueObject<ThreadExecutionProps> {
    */
   public validate(): void {
     if (!this.props.threadId) {
-      throw new Error('线程ID不能为空');
+      throw new ValidationError('线程ID不能为空');
     }
 
     if (!this.props.status) {
-      throw new Error('线程状态不能为空');
+      throw new ValidationError('线程状态不能为空');
     }
 
     if (this.props.progress < 0 || this.props.progress > 100) {
-      throw new Error('进度必须在0-100之间');
+      throw new ValidationError('进度必须在0-100之间');
     }
 
     if (this.props.retryCount < 0) {
-      throw new Error('重试次数不能为负数');
+      throw new ValidationError('重试次数不能为负数');
     }
 
     // 验证时间逻辑
     if (this.props.startedAt && this.props.completedAt) {
       if (this.props.startedAt.isAfter(this.props.completedAt)) {
-        throw new Error('开始时间不能晚于完成时间');
+        throw new ValidationError('开始时间不能晚于完成时间');
       }
     }
 
     // 验证状态与时间的一致性
     if (this.props.status.isRunning() && !this.props.startedAt) {
-      throw new Error('运行中的线程必须有开始时间');
+      throw new ValidationError('运行中的线程必须有开始时间');
     }
 
     if (this.props.status.isTerminal() && !this.props.completedAt) {
-      throw new Error('已终止的线程必须有完成时间');
+      throw new ValidationError('已终止的线程必须有完成时间');
     }
 
     if (this.props.status.isTerminal() && this.props.progress < 100) {
-      throw new Error('已终止的线程进度必须为100');
+      throw new ValidationError('已终止的线程进度必须为100');
     }
   }
 }

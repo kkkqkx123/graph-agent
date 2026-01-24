@@ -5,6 +5,7 @@ import { Version } from '../../../common/value-objects/version';
 import { CheckpointType } from '../value-objects/checkpoint-type';
 import { CheckpointStatus } from '../value-objects/checkpoint-status';
 import { CheckpointScope } from '../value-objects/checkpoint-scope';
+import { ValidationError } from '../../../../common/exceptions';
 
 /**
  * Checkpoint 实体属性接口
@@ -269,7 +270,7 @@ export class Checkpoint extends Entity {
    */
   public markRestored(): void {
     if (!this.canRestore()) {
-      throw new Error('无法恢复无效的检查点');
+      throw new ValidationError('无法恢复无效的检查点');
     }
 
     const newProps = {
@@ -289,7 +290,7 @@ export class Checkpoint extends Entity {
    */
   public markExpired(): void {
     if (this.props.isDeleted) {
-      throw new Error('无法标记已删除的检查点为过期');
+      throw new ValidationError('无法标记已删除的检查点为过期');
     }
 
     const newProps = {
@@ -308,7 +309,7 @@ export class Checkpoint extends Entity {
    */
   public markCorrupted(): void {
     if (this.props.isDeleted) {
-      throw new Error('无法标记已删除的检查点为损坏');
+      throw new ValidationError('无法标记已删除的检查点为损坏');
     }
 
     const newProps = {
@@ -327,7 +328,7 @@ export class Checkpoint extends Entity {
    */
   public markArchived(): void {
     if (this.props.isDeleted) {
-      throw new Error('无法标记已删除的检查点为归档');
+      throw new ValidationError('无法标记已删除的检查点为归档');
     }
 
     const newProps = {
@@ -346,11 +347,11 @@ export class Checkpoint extends Entity {
    */
   public updateStateData(stateData: Record<string, unknown>): void {
     if (this.props.isDeleted) {
-      throw new Error('无法更新已删除检查点的状态数据');
+      throw new ValidationError('无法更新已删除检查点的状态数据');
     }
 
     if (!stateData || Object.keys(stateData).length === 0) {
-      throw new Error('状态数据不能为空');
+      throw new ValidationError('状态数据不能为空');
     }
 
     const sizeBytes = JSON.stringify(stateData).length;
@@ -372,11 +373,11 @@ export class Checkpoint extends Entity {
    */
   public setExpiration(hours: number): void {
     if (this.props.isDeleted) {
-      throw new Error('无法为已删除的检查点设置过期时间');
+      throw new ValidationError('无法为已删除的检查点设置过期时间');
     }
 
     if (hours <= 0) {
-      throw new Error('过期时间必须为正数');
+      throw new ValidationError('过期时间必须为正数');
     }
 
     const newProps = {
@@ -395,11 +396,11 @@ export class Checkpoint extends Entity {
    */
   public extendExpiration(hours: number): void {
     if (this.props.isDeleted) {
-      throw new Error('无法延长已删除检查点的过期时间');
+      throw new ValidationError('无法延长已删除检查点的过期时间');
     }
 
     if (hours <= 0) {
-      throw new Error('延长时间必须为正数');
+      throw new ValidationError('延长时间必须为正数');
     }
 
     const currentExpiresAt = this.props.expiresAt || Timestamp.now();
@@ -421,7 +422,7 @@ export class Checkpoint extends Entity {
    */
   public updateTitle(title: string): void {
     if (this.props.isDeleted) {
-      throw new Error('无法更新已删除的检查点标题');
+      throw new ValidationError('无法更新已删除的检查点标题');
     }
 
     const newProps = {
@@ -440,7 +441,7 @@ export class Checkpoint extends Entity {
    */
   public updateDescription(description: string): void {
     if (this.props.isDeleted) {
-      throw new Error('无法更新已删除的检查点描述');
+      throw new ValidationError('无法更新已删除的检查点描述');
     }
 
     const newProps = {
@@ -459,7 +460,7 @@ export class Checkpoint extends Entity {
    */
   public addTag(tag: string): void {
     if (this.props.isDeleted) {
-      throw new Error('无法为已删除的检查点添加标签');
+      throw new ValidationError('无法为已删除的检查点添加标签');
     }
 
     if (this.props.tags.includes(tag)) {
@@ -482,7 +483,7 @@ export class Checkpoint extends Entity {
    */
   public removeTag(tag: string): void {
     if (this.props.isDeleted) {
-      throw new Error('无法为已删除的检查点移除标签');
+      throw new ValidationError('无法为已删除的检查点移除标签');
     }
 
     const index = this.props.tags.indexOf(tag);
@@ -509,7 +510,7 @@ export class Checkpoint extends Entity {
    */
   public updateMetadata(metadata: Record<string, unknown>): void {
     if (this.props.isDeleted) {
-      throw new Error('无法更新已删除检查点的元数据');
+      throw new ValidationError('无法更新已删除检查点的元数据');
     }
 
     const newProps = {
@@ -561,47 +562,47 @@ export class Checkpoint extends Entity {
    */
   public validateInvariants(): void {
     if (!this.props.id) {
-      throw new Error('检查点ID不能为空');
+      throw new ValidationError('检查点ID不能为空');
     }
 
     if (!this.props.threadId) {
-      throw new Error('线程ID不能为空');
+      throw new ValidationError('线程ID不能为空');
     }
 
     if (!this.props.scope) {
-      throw new Error('检查点范围不能为空');
+      throw new ValidationError('检查点范围不能为空');
     }
 
     if (!this.props.type) {
-      throw new Error('检查点类型不能为空');
+      throw new ValidationError('检查点类型不能为空');
     }
 
     if (!this.props.status) {
-      throw new Error('检查点状态不能为空');
+      throw new ValidationError('检查点状态不能为空');
     }
 
     if (!this.props.stateData || Object.keys(this.props.stateData).length === 0) {
-      throw new Error('状态数据不能为空');
+      throw new ValidationError('状态数据不能为空');
     }
 
     // 验证错误检查点的约束
     if (this.props.type.isError() && !this.props.description) {
-      throw new Error('错误检查点必须有描述');
+      throw new ValidationError('错误检查点必须有描述');
     }
 
     // 验证里程碑检查点的约束
     if (this.props.type.isMilestone() && !this.props.title) {
-      throw new Error('里程碑检查点必须有标题');
+      throw new ValidationError('里程碑检查点必须有标题');
     }
 
     // 验证恢复次数不能为负数
     if (this.props.restoreCount < 0) {
-      throw new Error('恢复次数不能为负数');
+      throw new ValidationError('恢复次数不能为负数');
     }
 
     // 验证数据大小不能为负数
     if (this.props.sizeBytes < 0) {
-      throw new Error('数据大小不能为负数');
+      throw new ValidationError('数据大小不能为负数');
     }
   }
 

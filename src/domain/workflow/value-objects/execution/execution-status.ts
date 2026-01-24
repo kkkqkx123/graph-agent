@@ -1,4 +1,5 @@
 import { ValueObject } from '../../../common/value-objects';
+import { ValidationError } from '../../../../common/exceptions';
 
 /**
  * 执行状态枚举
@@ -28,10 +29,10 @@ export class ExecutionStatus extends ValueObject<ExecutionStatusProps> {
   private constructor(props: ExecutionStatusProps) {
     super(props);
     if (!props.value) {
-      throw new Error('执行状态不能为空');
+      throw new ValidationError('执行状态不能为空');
     }
     if (!Object.values(ExecutionStatusValue).includes(props.value)) {
-      throw new Error(`无效的执行状态: ${props.value}`);
+      throw new ValidationError(`无效的执行状态: ${props.value}`);
     }
   }
 
@@ -90,7 +91,7 @@ export class ExecutionStatus extends ValueObject<ExecutionStatusProps> {
    */
   public static fromString(status: string): ExecutionStatus {
     if (!Object.values(ExecutionStatusValue).includes(status as ExecutionStatusValue)) {
-      throw new Error(`无效的执行状态: ${status}`);
+      throw new ValidationError(`无效的执行状态: ${status}`);
     }
     return new ExecutionStatus({ value: status as ExecutionStatusValue });
   }

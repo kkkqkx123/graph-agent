@@ -3,6 +3,7 @@
  */
 
 import { ValueObject } from '../../common/value-objects';
+import { ValidationError } from '../../../common/exceptions';
 
 /**
  * LLM请求选项属性接口
@@ -417,33 +418,33 @@ export class LLMRequestOptions extends ValueObject<LLMRequestOptionsProps> {
       this.props.temperature !== undefined &&
       (this.props.temperature < 0 || this.props.temperature > 2)
     ) {
-      throw new Error('温度参数必须在0到2之间');
+      throw new ValidationError('温度参数必须在0到2之间');
     }
 
     if (this.props.maxTokens !== undefined && this.props.maxTokens <= 0) {
-      throw new Error('最大令牌数必须大于0');
+      throw new ValidationError('最大令牌数必须大于0');
     }
 
     if (this.props.topP !== undefined && (this.props.topP < 0 || this.props.topP > 1)) {
-      throw new Error('顶部概率采样必须在0到1之间');
+      throw new ValidationError('顶部概率采样必须在0到1之间');
     }
 
     if (
       this.props.frequencyPenalty !== undefined &&
       (this.props.frequencyPenalty < -2 || this.props.frequencyPenalty > 2)
     ) {
-      throw new Error('频率惩罚必须在-2到2之间');
+      throw new ValidationError('频率惩罚必须在-2到2之间');
     }
 
     if (
       this.props.presencePenalty !== undefined &&
       (this.props.presencePenalty < -2 || this.props.presencePenalty > 2)
     ) {
-      throw new Error('存在惩罚必须在-2到2之间');
+      throw new ValidationError('存在惩罚必须在-2到2之间');
     }
 
     if (this.props.timeout !== undefined && this.props.timeout <= 0) {
-      throw new Error('超时时间必须大于0');
+      throw new ValidationError('超时时间必须大于0');
     }
   }
 

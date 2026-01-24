@@ -1,4 +1,5 @@
 import { ValueObject } from './value-object';
+import { ValidationError } from '../../../common/exceptions';
 /**
  * 时间戳值对象接口
  */
@@ -37,7 +38,7 @@ export class Timestamp extends ValueObject<TimestampProps> {
   public static fromString(dateString: string): Timestamp {
     const date = new Date(dateString);
     if (isNaN(date.getTime())) {
-      throw new Error('无效的日期字符串');
+      throw new ValidationError('无效的日期字符串');
     }
     return new Timestamp({ value: date });
   }
@@ -50,7 +51,7 @@ export class Timestamp extends ValueObject<TimestampProps> {
   public static fromMilliseconds(milliseconds: number): Timestamp {
     const date = new Date(milliseconds);
     if (isNaN(date.getTime())) {
-      throw new Error('无效的时间戳毫秒数');
+      throw new ValidationError('无效的时间戳毫秒数');
     }
     return new Timestamp({ value: date });
   }
@@ -160,7 +161,7 @@ export class Timestamp extends ValueObject<TimestampProps> {
    */
   public validate(): void {
     if (!this.props.value || isNaN(this.props.value.getTime())) {
-      throw new Error('无效的时间戳');
+      throw new ValidationError('无效的时间戳');
     }
   }
 

@@ -1,4 +1,5 @@
 import { ValueObject, ID } from '../../common/value-objects';
+import { ValidationError } from '../../../common/exceptions';
 
 /**
  * ThreadId值对象属性接口
@@ -105,7 +106,7 @@ export class ThreadId extends ValueObject<ThreadIdProps> {
    */
   public validate(): void {
     if (!this.props.value) {
-      throw new Error('线程ID不能为空');
+      throw new ValidationError('线程ID不能为空');
     }
   }
 }

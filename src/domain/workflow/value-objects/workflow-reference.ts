@@ -1,5 +1,6 @@
 import { ID } from '../../common/value-objects';
 import { ValueObject } from '../../common/value-objects/value-object';
+import { ValidationError } from '../../../common/exceptions';
 
 /**
  * 子工作流引用属性接口
@@ -103,15 +104,15 @@ export class WorkflowReference extends ValueObject<WorkflowReferenceProps> {
    */
   public validate(): void {
     if (!this.props.referenceId || typeof this.props.referenceId !== 'string') {
-      throw new Error('referenceId 必须是有效的字符串');
+      throw new ValidationError('referenceId 必须是有效的字符串');
     }
 
     if (!this.props.workflowId) {
-      throw new Error('workflowId 是必需的');
+      throw new ValidationError('workflowId 是必需的');
     }
 
     if (this.props.version !== undefined && typeof this.props.version !== 'string') {
-      throw new Error('version 必须是字符串');
+      throw new ValidationError('version 必须是字符串');
     }
   }
 }

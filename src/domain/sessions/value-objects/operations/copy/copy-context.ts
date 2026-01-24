@@ -1,6 +1,7 @@
 import { ID, Timestamp, ValueObject } from '../../../../common';
 import { NodeId } from '../../../../workflow';
 import { NodeExecutionSnapshot } from '../../../../threads';
+import { ValidationError } from '../../../../../common/exceptions';
 
 /**
  * Copy选项值对象
@@ -100,7 +101,7 @@ export class CopyOptions extends ValueObject<{
   public validate(): void {
     const validCopyScope = ['full', 'partial'];
     if (!validCopyScope.includes(this.props.copyScope)) {
-      throw new Error('无效的复制范围类型');
+      throw new ValidationError('无效的复制范围类型');
     }
   }
 }
@@ -191,12 +192,12 @@ export class CopyScope extends ValueObject<{
 
   public validate(): void {
     if (!this.props.nodeIds) {
-      throw new Error('节点ID列表不能为空');
+      throw new ValidationError('节点ID列表不能为空');
     }
     // 验证nodeIds数组中的每个元素都是有效的NodeId
     for (const nodeId of this.props.nodeIds) {
       if (!nodeId || typeof nodeId.toString !== 'function') {
-        throw new Error('无效的节点ID');
+        throw new ValidationError('无效的节点ID');
       }
     }
   }
@@ -290,16 +291,16 @@ export class CopyContext extends ValueObject<{
 
   public validate(): void {
     if (!this.props.sourceThreadId) {
-      throw new Error('源线程ID不能为空');
+      throw new ValidationError('源线程ID不能为空');
     }
     if (!this.props.options) {
-      throw new Error('Copy选项不能为空');
+      throw new ValidationError('Copy选项不能为空');
     }
     if (!this.props.scope) {
-      throw new Error('Copy范围不能为空');
+      throw new ValidationError('Copy范围不能为空');
     }
     if (!this.props.relationshipMapping) {
-      throw new Error('关系映射不能为空');
+      throw new ValidationError('关系映射不能为空');
     }
 
     // 验证各个组件

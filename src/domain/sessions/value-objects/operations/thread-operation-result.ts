@@ -1,4 +1,5 @@
 import { ID, Timestamp, ValueObject } from '../../../common/value-objects';
+import { ValidationError } from '../../../../common/exceptions';
 
 /**
  * 线程操作错误值对象
@@ -48,10 +49,10 @@ export class ThreadOperationError extends ValueObject<{
 
   public validate(): void {
     if (!this.props.code || this.props.code.trim() === '') {
-      throw new Error('错误代码不能为空');
+      throw new ValidationError('错误代码不能为空');
     }
     if (!this.props.message || this.props.message.trim() === '') {
-      throw new Error('错误消息不能为空');
+      throw new ValidationError('错误消息不能为空');
     }
   }
 }
@@ -140,7 +141,7 @@ export class ThreadOperationMetadata extends ValueObject<{
 
   public validate(): void {
     if (!this.props.operationType || this.props.operationType.trim() === '') {
-      throw new Error('操作类型不能为空');
+      throw new ValidationError('操作类型不能为空');
     }
   }
 }
@@ -217,13 +218,13 @@ export class ThreadOperationResult<T> extends ValueObject<{
 
   public validate(): void {
     if (this.props.success && this.props.error) {
-      throw new Error('成功的操作结果不能包含错误信息');
+      throw new ValidationError('成功的操作结果不能包含错误信息');
     }
     if (!this.props.success && !this.props.error) {
-      throw new Error('失败的操作结果必须包含错误信息');
+      throw new ValidationError('失败的操作结果必须包含错误信息');
     }
     if (this.props.success && !this.props.result) {
-      throw new Error('成功的操作结果应该包含结果数据');
+      throw new ValidationError('成功的操作结果应该包含结果数据');
     }
   }
 }

@@ -1,4 +1,5 @@
 import { ValueObject } from '../../../common/value-objects';
+import { ValidationError } from '../../../../common/exceptions';
 
 /**
  * 资源使用统计属性接口
@@ -113,36 +114,36 @@ export class ResourceUsage extends ValueObject<ResourceUsageProps> {
    */
   public validate(): void {
     if (this.props.memoryUsage < 0) {
-      throw new Error('内存使用量不能为负数');
+      throw new ValidationError('内存使用量不能为负数');
     }
 
     if (this.props.cpuUsage < 0 || this.props.cpuUsage > 100) {
-      throw new Error('CPU使用率必须在0-100之间');
+      throw new ValidationError('CPU使用率必须在0-100之间');
     }
 
     if (this.props.diskUsage < 0) {
-      throw new Error('磁盘使用量不能为负数');
+      throw new ValidationError('磁盘使用量不能为负数');
     }
 
     if (this.props.networkUsage < 0) {
-      throw new Error('网络使用量不能为负数');
+      throw new ValidationError('网络使用量不能为负数');
     }
 
     if (this.props.peakMemoryUsage < 0) {
-      throw new Error('峰值内存使用量不能为负数');
+      throw new ValidationError('峰值内存使用量不能为负数');
     }
 
     if (this.props.peakCpuUsage < 0 || this.props.peakCpuUsage > 100) {
-      throw new Error('峰值CPU使用率必须在0-100之间');
+      throw new ValidationError('峰值CPU使用率必须在0-100之间');
     }
 
     // 峰值应该大于等于当前值
     if (this.props.peakMemoryUsage < this.props.memoryUsage) {
-      throw new Error('峰值内存使用量应该大于等于当前内存使用量');
+      throw new ValidationError('峰值内存使用量应该大于等于当前内存使用量');
     }
 
     if (this.props.peakCpuUsage < this.props.cpuUsage) {
-      throw new Error('峰值CPU使用率应该大于等于当前CPU使用率');
+      throw new ValidationError('峰值CPU使用率应该大于等于当前CPU使用率');
     }
   }
 }

@@ -1,4 +1,5 @@
 import { v4 as uuidv4 } from 'uuid';
+import { ValidationError } from '../../../common/exceptions';
 
 /**
  * ID值对象
@@ -18,7 +19,7 @@ export class ID {
    */
   constructor(value: string) {
     if (!ID.isValid(value)) {
-      throw new Error(`Invalid ID: ${value}`);
+      throw new ValidationError(`Invalid ID: ${value}`);
     }
 
     this.value = value;

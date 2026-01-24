@@ -1,4 +1,5 @@
 import { ValueObject } from '../../common/value-objects';
+import { ValidationError } from '../../../common/exceptions';
 /**
  * 会话配置接口
  */
@@ -130,23 +131,23 @@ export class SessionConfig extends ValueObject<SessionConfigProps> {
    */
   public validate(): void {
     if (this.props.maxDuration <= 0) {
-      throw new Error('最大持续时间必须大于0');
+      throw new ValidationError('最大持续时间必须大于0');
     }
 
     if (this.props.maxMessages <= 0) {
-      throw new Error('最大消息数量必须大于0');
+      throw new ValidationError('最大消息数量必须大于0');
     }
 
     if (this.props.maxThreads <= 0) {
-      throw new Error('最大线程数量必须大于0');
+      throw new ValidationError('最大线程数量必须大于0');
     }
 
     if (this.props.timeoutMinutes <= 0) {
-      throw new Error('超时时间必须大于0');
+      throw new ValidationError('超时时间必须大于0');
     }
 
     if (this.props.timeoutMinutes > this.props.maxDuration) {
-      throw new Error('超时时间不能大于最大持续时间');
+      throw new ValidationError('超时时间不能大于最大持续时间');
     }
   }
 

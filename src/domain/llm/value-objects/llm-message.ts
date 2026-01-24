@@ -3,6 +3,7 @@
  */
 
 import { ValueObject, Timestamp } from '../../common/value-objects';
+import { ValidationError } from '../../../common/exceptions';
 
 /**
  * LLM消息角色枚举
@@ -377,27 +378,27 @@ export class LLMMessage extends ValueObject<LLMMessageProps> {
       this.props.role !== LLMMessageRole.FUNCTION &&
       this.props.role !== LLMMessageRole.TOOL
     ) {
-      throw new Error('消息内容不能为空');
+      throw new ValidationError('消息内容不能为空');
     }
 
     if (this.props.role === LLMMessageRole.FUNCTION && !this.props.name) {
-      throw new Error('函数调用消息必须包含名称');
+      throw new ValidationError('函数调用消息必须包含名称');
     }
 
     if (
       this.props.functionCall &&
       (!this.props.functionCall.name || !this.props.functionCall.arguments)
     ) {
-      throw new Error('函数调用必须包含名称和参数');
+      throw new ValidationError('函数调用必须包含名称和参数');
     }
 
     if (this.props.toolCalls) {
       for (const toolCall of this.props.toolCalls) {
         if (!toolCall.id || !toolCall.type || !toolCall.function) {
-          throw new Error('工具调用必须包含id、type和function');
+          throw new ValidationError('工具调用必须包含id、type和function');
         }
         if (!toolCall.function.name || !toolCall.function.arguments) {
-          throw new Error('工具调用函数必须包含名称和参数');
+          throw new ValidationError('工具调用函数必须包含名称和参数');
         }
       }
     }

@@ -1,4 +1,5 @@
 import { ValueObject } from '../../../common/value-objects';
+import { ValidationError } from '../../../../common/exceptions';
 
 /**
  * 模型统计信息接口
@@ -178,23 +179,23 @@ export class LLMStatistics extends ValueObject<LLMStatisticsProps> {
    */
   public validate(): void {
     if (this.props.totalTokens < 0) {
-      throw new Error('总Token数不能为负数');
+      throw new ValidationError('总Token数不能为负数');
     }
 
     if (this.props.totalCost < 0) {
-      throw new Error('总成本不能为负数');
+      throw new ValidationError('总成本不能为负数');
     }
 
     // 验证模型统计
     for (const [modelName, modelStats] of this.props.byModel.entries()) {
       if (modelStats.totalTokens < 0) {
-        throw new Error(`模型 ${modelName} 的Token数不能为负数`);
+        throw new ValidationError(`模型 ${modelName} 的Token数不能为负数`);
       }
       if (modelStats.totalCost < 0) {
-        throw new Error(`模型 ${modelName} 的成本不能为负数`);
+        throw new ValidationError(`模型 ${modelName} 的成本不能为负数`);
       }
       if (modelStats.callCount < 0) {
-        throw new Error(`模型 ${modelName} 的调用次数不能为负数`);
+        throw new ValidationError(`模型 ${modelName} 的调用次数不能为负数`);
       }
     }
   }

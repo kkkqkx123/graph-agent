@@ -2,7 +2,7 @@ import { ValueObject, Timestamp } from '../../common/value-objects';
 import { LLMStatistics } from './statiscs/llm-statistics';
 import { PerformanceStatistics } from './statiscs/performance-statistics';
 import { ResourceUsage } from './statiscs/resource-usage';
-import { OperationStatistics } from './statiscs/operation-statistics';
+import { ValidationError } from '../../../common/exceptions';
 
 /**
  * 会话活动值对象属性接口
@@ -14,7 +14,6 @@ export interface SessionActivityProps {
   readonly llmStatistics: LLMStatistics;
   readonly performance: PerformanceStatistics;
   readonly resourceUsage: ResourceUsage;
-  readonly operationStatistics: OperationStatistics;
 }
 
 /**
@@ -43,7 +42,6 @@ export class SessionActivity extends ValueObject<SessionActivityProps> {
       llmStatistics: LLMStatistics.create(),
       performance: PerformanceStatistics.create(),
       resourceUsage: ResourceUsage.create(),
-      operationStatistics: OperationStatistics.create(),
     });
   }
 
@@ -94,15 +92,6 @@ export class SessionActivity extends ValueObject<SessionActivityProps> {
   public get resourceUsage(): ResourceUsage {
     return this.props.resourceUsage;
   }
-
-  /**
-   * 获取操作统计信息
-   * @returns 操作统计信息
-   */
-  public get operationStatistics(): OperationStatistics {
-    return this.props.operationStatistics;
-  }
-
   /**
    * 更新最后活动时间
    * @returns 新的会话活动实例
@@ -178,19 +167,6 @@ export class SessionActivity extends ValueObject<SessionActivityProps> {
   }
 
   /**
-   * 更新操作统计信息
-   * @param operationStatistics 新的操作统计信息
-   * @returns 新的会话活动实例
-   */
-  public updateOperationStatistics(operationStatistics: OperationStatistics): SessionActivity {
-    return new SessionActivity({
-      ...this.props,
-      operationStatistics,
-      lastActivityAt: Timestamp.now(),
-    });
-  }
-
-  /**
    * 比较两个会话活动是否相等
    * @param activity 另一个会话活动
    * @returns 是否相等
@@ -226,17 +202,16 @@ export class SessionActivity extends ValueObject<SessionActivityProps> {
    */
   public validate(): void {
     if (this.props.messageCount < 0) {
-      throw new Error('消息数量不能为负数');
+      throw new ValidationError('消息数量不能为负数');
     }
 
     if (this.props.threadCount < 0) {
-      throw new Error('线程数量不能为负数');
+      throw new ValidationError('线程数量不能为负数');
     }
 
     // 验证子统计信息
     this.props.llmStatistics.validate();
     this.props.performance.validate();
     this.props.resourceUsage.validate();
-    this.props.operationStatistics.validate();
   }
 }

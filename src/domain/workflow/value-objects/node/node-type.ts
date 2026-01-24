@@ -1,4 +1,5 @@
 import { ValueObject } from '../../../common/value-objects';
+import { ValidationError } from '../../../../common/exceptions';
 
 /**
  * 节点类型枚举
@@ -229,7 +230,7 @@ export class NodeType extends ValueObject<NodeTypeProps> {
     contextType: NodeContextTypeValue = NodeContextTypeValue.PASS_THROUGH
   ): NodeType {
     if (!Object.values(NodeTypeValue).includes(type as NodeTypeValue)) {
-      throw new Error(`无效的节点类型: ${type}`);
+      throw new ValidationError(`无效的节点类型: ${type}`);
     }
     return new NodeType({ value: type as NodeTypeValue, contextType });
   }
@@ -446,19 +447,19 @@ export class NodeType extends ValueObject<NodeTypeProps> {
    */
   public validate(): void {
     if (!this.props.value) {
-      throw new Error('节点类型不能为空');
+      throw new ValidationError('节点类型不能为空');
     }
 
     if (!Object.values(NodeTypeValue).includes(this.props.value)) {
-      throw new Error(`无效的节点类型: ${this.props.value}`);
+      throw new ValidationError(`无效的节点类型: ${this.props.value}`);
     }
 
     if (!this.props.contextType) {
-      throw new Error('节点上下文类型不能为空');
+      throw new ValidationError('节点上下文类型不能为空');
     }
 
     if (!Object.values(NodeContextTypeValue).includes(this.props.contextType)) {
-      throw new Error(`无效的节点上下文类型: ${this.props.contextType}`);
+      throw new ValidationError(`无效的节点上下文类型: ${this.props.contextType}`);
     }
   }
 

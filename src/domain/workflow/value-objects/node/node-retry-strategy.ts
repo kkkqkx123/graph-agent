@@ -1,4 +1,5 @@
 import { ValueObject } from '../../../common/value-objects';
+import { ValidationError } from '../../../../common/exceptions';
 
 /**
  * 节点重试策略属性接口
@@ -34,19 +35,19 @@ export class NodeRetryStrategy extends ValueObject<NodeRetryStrategyProps> {
    */
   public validate(): void {
     if (this.props.maxRetries < 0) {
-      throw new Error('最大重试次数不能为负数');
+      throw new ValidationError('最大重试次数不能为负数');
     }
 
     if (this.props.retryDelay < 0) {
-      throw new Error('重试延迟不能为负数');
+      throw new ValidationError('重试延迟不能为负数');
     }
 
     if (this.props.exponentialBase < 1) {
-      throw new Error('指数退避基数必须大于等于1');
+      throw new ValidationError('指数退避基数必须大于等于1');
     }
 
     if (this.props.maxRetryDelay < this.props.retryDelay) {
-      throw new Error('最大重试延迟不能小于重试延迟');
+      throw new ValidationError('最大重试延迟不能小于重试延迟');
     }
   }
 

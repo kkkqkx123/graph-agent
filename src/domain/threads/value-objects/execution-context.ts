@@ -1,5 +1,6 @@
 import { ValueObject, ID, Timestamp } from '../../common/value-objects';
 import { NodeId } from '../../workflow/value-objects';
+import { ValidationError } from '../../../common/exceptions';
 
 /**
  * 节点上下文接口
@@ -232,7 +233,7 @@ export class ThreadExecutionContext extends ValueObject<ThreadExecutionContextPr
     const existingContext = this.props.nodeContexts.get(nodeId.toString());
 
     if (!existingContext) {
-      throw new Error(`节点上下文不存在: ${nodeId.toString()}`);
+      throw new ValidationError(`节点上下文不存在: ${nodeId.toString()}`);
     }
 
     const newVariables = new Map(existingContext.localVariables);

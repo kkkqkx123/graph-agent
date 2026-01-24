@@ -1,5 +1,6 @@
 import { ValueObject, ID, Timestamp } from '../../common/value-objects';
 import { ExecutionHistory } from '../../workflow/value-objects/execution';
+import { ValidationError } from '../../../common/exceptions';
 
 /**
  * ThreadWorkflowState 值对象属性接口
@@ -171,44 +172,44 @@ export class ThreadWorkflowState extends ValueObject<ThreadWorkflowStateProps> {
    */
   public validate(): void {
     if (!this.props.workflowId) {
-      throw new Error('工作流ID不能为空');
+      throw new ValidationError('工作流ID不能为空');
     }
 
     if (!this.props.data) {
-      throw new Error('执行上下文数据不能为空');
+      throw new ValidationError('执行上下文数据不能为空');
     }
 
     if (!this.props.history) {
-      throw new Error('执行历史不能为空');
+      throw new ValidationError('执行历史不能为空');
     }
 
     if (!this.props.metadata) {
-      throw new Error('执行元数据不能为空');
+      throw new ValidationError('执行元数据不能为空');
     }
 
     if (!this.props.createdAt) {
-      throw new Error('创建时间不能为空');
+      throw new ValidationError('创建时间不能为空');
     }
 
     if (!this.props.updatedAt) {
-      throw new Error('更新时间不能为空');
+      throw new ValidationError('更新时间不能为空');
     }
 
     // 验证时间逻辑
     if (this.props.updatedAt.isBefore(this.props.createdAt)) {
-      throw new Error('更新时间不能早于创建时间');
+      throw new ValidationError('更新时间不能早于创建时间');
     }
 
     // 验证执行历史
     for (const history of this.props.history) {
       if (!history.nodeId) {
-        throw new Error('执行历史记录必须包含节点ID');
+        throw new ValidationError('执行历史记录必须包含节点ID');
       }
       if (!history.timestamp) {
-        throw new Error('执行历史记录必须包含时间戳');
+        throw new ValidationError('执行历史记录必须包含时间戳');
       }
       if (!history.status) {
-        throw new Error('执行历史记录必须包含状态');
+        throw new ValidationError('执行历史记录必须包含状态');
       }
     }
   }

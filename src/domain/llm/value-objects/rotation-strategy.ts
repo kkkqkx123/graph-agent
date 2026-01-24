@@ -1,4 +1,5 @@
 import { ValueObject } from '../../common/value-objects';
+import { ValidationError } from '../../../common/exceptions';
 
 // 轮询策略枚举
 export enum RotationStrategy {
@@ -121,7 +122,7 @@ export class RotationStrategyFactory {
     ) as RotationStrategy;
 
     if (!strategy) {
-      throw new Error(`不支持的轮询策略: ${strategyString}`);
+      throw new ValidationError(`不支持的轮询策略: ${strategyString}`);
     }
 
     return this.create(strategy, config);

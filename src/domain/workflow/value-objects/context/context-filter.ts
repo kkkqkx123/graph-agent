@@ -1,5 +1,6 @@
 import { ValueObject } from '../../../common/value-objects';
 import { PromptState } from './prompt-state';
+import { ValidationError } from '../../../../common/exceptions';
 
 /**
  * 上下文过滤规则
@@ -428,7 +429,7 @@ export class ContextFilter extends ValueObject<ContextFilterProps> {
   public override validate(): void {
     const result = this.validateRules();
     if (!result.isValid) {
-      throw new Error(result.message || '上下文过滤器验证失败');
+      throw new ValidationError(result.message || '上下文过滤器验证失败');
     }
   }
 }

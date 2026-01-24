@@ -1,4 +1,5 @@
 import { ValueObject } from '../../common/value-objects';
+import { ValidationError } from '../../../common/exceptions';
 
 /**
  * LLM实例配置值对象
@@ -50,19 +51,19 @@ export class InstanceConfig extends ValueObject<{
    */
   validate(): void {
     if (!this.instanceId || this.instanceId.trim().length === 0) {
-      throw new Error('实例ID不能为空');
+      throw new ValidationError('实例ID不能为空');
     }
     if (!this.modelName || this.modelName.trim().length === 0) {
-      throw new Error('模型名称不能为空');
+      throw new ValidationError('模型名称不能为空');
     }
     if (!this.groupName || this.groupName.trim().length === 0) {
-      throw new Error('组名称不能为空');
+      throw new ValidationError('组名称不能为空');
     }
     if (this.maxConcurrency <= 0) {
-      throw new Error('最大并发数必须大于0');
+      throw new ValidationError('最大并发数必须大于0');
     }
     if (this.weight <= 0) {
-      throw new Error('权重必须大于0');
+      throw new ValidationError('权重必须大于0');
     }
   }
 

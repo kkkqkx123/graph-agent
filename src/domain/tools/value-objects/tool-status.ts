@@ -1,3 +1,5 @@
+import { ValidationError } from '../../../common/exceptions';
+
 /**
  * 工具状态值对象
  *
@@ -36,7 +38,7 @@ export class ToolStatus {
    */
   constructor(value: string) {
     if (!ToolStatus.isValid(value)) {
-      throw new Error(`Invalid tool status: ${value}`);
+      throw new ValidationError(`Invalid tool status: ${value}`);
     }
 
     this.value = value;

@@ -1,5 +1,6 @@
 import { ValueObject } from '../../../common/value-objects';
 import { PromptHistoryEntry, PromptHistoryEntryRole, ToolCall } from './prompt-history-entry';
+import { ValidationError } from '../../../../common/exceptions';
 
 /**
  * 提示词状态属性接口
@@ -317,16 +318,16 @@ export class PromptState extends ValueObject<PromptStateProps> {
    */
   public validate(): void {
     if (this.props.nextIndex < 0) {
-      throw new Error('下一个索引不能为负数');
+      throw new ValidationError('下一个索引不能为负数');
     }
     if (this.props.history.length > this.props.nextIndex) {
-      throw new Error('历史记录数量不能超过下一个索引');
+      throw new ValidationError('历史记录数量不能超过下一个索引');
     }
     // 验证历史记录的索引是否连续
     for (let i = 0; i < this.props.history.length; i++) {
       const entry = this.props.history[i];
       if (entry && entry.index !== i) {
-        throw new Error(`历史记录索引不连续，期望 ${i}，实际 ${entry.index}`);
+        throw new ValidationError(`历史记录索引不连续，期望 ${i}，实际 ${entry.index}`);
       }
     }
   }

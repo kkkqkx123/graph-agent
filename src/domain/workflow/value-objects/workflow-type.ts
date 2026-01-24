@@ -1,3 +1,5 @@
+import { ValidationError } from '../../../common/exceptions';
+
 /**
  * 工作流类型枚举（简化版）
  *
@@ -32,7 +34,7 @@ export function isValidWorkflowType(type: string): type is WorkflowType {
  */
 export function parseWorkflowType(type: string): WorkflowType {
   if (!isValidWorkflowType(type)) {
-    throw new Error(`无效的工作流类型: ${type}，有效值为: ${Object.values(WorkflowType).join(', ')}`);
+    throw new ValidationError(`无效的工作流类型: ${type}，有效值为: ${Object.values(WorkflowType).join(', ')}`);
   }
   return type as WorkflowType;
 }

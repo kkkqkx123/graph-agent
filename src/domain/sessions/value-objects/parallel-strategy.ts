@@ -1,4 +1,5 @@
 import { ValueObject } from '../../common/value-objects';
+import { ValidationError } from '../../../common/exceptions';
 
 /**
  * 并行策略类型
@@ -21,15 +22,15 @@ export interface ParallelStrategyProps {
 export class ParallelStrategy extends ValueObject<ParallelStrategyProps> {
   public validate(): void {
     if (!this.props.value) {
-      throw new Error('并行策略类型不能为空');
+      throw new ValidationError('并行策略类型不能为空');
     }
 
     if (!['sequential', 'parallel', 'hybrid'].includes(this.props.value)) {
-      throw new Error(`无效的并行策略类型: ${this.props.value}`);
+      throw new ValidationError(`无效的并行策略类型: ${this.props.value}`);
     }
 
     if (this.props.maxConcurrentThreads !== undefined && this.props.maxConcurrentThreads <= 0) {
-      throw new Error('最大并发线程数必须大于0');
+      throw new ValidationError('最大并发线程数必须大于0');
     }
   }
   /**
@@ -50,7 +51,7 @@ export class ParallelStrategy extends ValueObject<ParallelStrategyProps> {
    */
   public static parallel(maxConcurrentThreads: number = 5): ParallelStrategy {
     if (maxConcurrentThreads <= 0) {
-      throw new Error('最大并发线程数必须大于0');
+      throw new ValidationError('最大并发线程数必须大于0');
     }
 
     return new ParallelStrategy({
@@ -66,7 +67,7 @@ export class ParallelStrategy extends ValueObject<ParallelStrategyProps> {
    */
   public static hybrid(maxConcurrentThreads: number = 3): ParallelStrategy {
     if (maxConcurrentThreads <= 0) {
-      throw new Error('最大并发线程数必须大于0');
+      throw new ValidationError('最大并发线程数必须大于0');
     }
 
     return new ParallelStrategy({

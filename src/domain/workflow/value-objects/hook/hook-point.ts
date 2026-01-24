@@ -1,4 +1,5 @@
 import { ValueObject } from '../../../common/value-objects';
+import { ValidationError } from '../../../../common/exceptions';
 
 /**
  * 钩子点枚举
@@ -303,11 +304,11 @@ export class HookPoint extends ValueObject<HookPointProps> {
    */
   public validate(): void {
     if (!this.props.value) {
-      throw new Error('钩子点不能为空');
+      throw new ValidationError('钩子点不能为空');
     }
 
     if (!Object.values(HookPointValue).includes(this.props.value)) {
-      throw new Error(`无效的钩子点: ${this.props.value}`);
+      throw new ValidationError(`无效的钩子点: ${this.props.value}`);
     }
   }
 

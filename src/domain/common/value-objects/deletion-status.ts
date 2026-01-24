@@ -1,4 +1,5 @@
 import { ValueObject } from '../value-objects';
+import { ValidationError } from '../../../common/exceptions';
 
 /**
  * 删除状态值对象接口
@@ -94,7 +95,7 @@ export class DeletionStatus extends ValueObject<DeletionStatusProps> {
    */
   public ensureActive(): void {
     if (this.props.isDeleted) {
-      throw new Error('无法操作已删除的实体');
+      throw new ValidationError('无法操作已删除的实体');
     }
   }
 
@@ -131,11 +132,11 @@ export class DeletionStatus extends ValueObject<DeletionStatusProps> {
    */
   public validate(): void {
     if (this.props.isDeleted === null || this.props.isDeleted === undefined) {
-      throw new Error('删除状态不能为空');
+      throw new ValidationError('删除状态不能为空');
     }
 
     if (typeof this.props.isDeleted !== 'boolean') {
-      throw new Error('删除状态必须是布尔值');
+      throw new ValidationError('删除状态必须是布尔值');
     }
   }
 }

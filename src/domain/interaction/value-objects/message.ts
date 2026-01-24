@@ -1,6 +1,7 @@
 import { ValueObject } from '../../common/value-objects/value-object';
 import { MessageRole } from './message-role';
 import { InteractionToolCall } from '../entities/interaction-tool-call';
+import { ValidationError } from '../../../common/exceptions';
 
 /**
  * 消息值对象
@@ -29,7 +30,7 @@ export class Message extends ValueObject<MessageProps> {
 
   validate(): void {
     if (!this.props.content) {
-      throw new Error('Message content is required');
+      throw new ValidationError('Message content is required');
     }
   }
 }

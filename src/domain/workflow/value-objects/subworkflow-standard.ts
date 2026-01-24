@@ -1,5 +1,6 @@
 import { ValueObject } from '../../common/value-objects';
 import { SubWorkflowType } from './subworkflow-type';
+import { ValidationError } from '../../../common/exceptions';
 
 /**
  * 子工作流标准接口
@@ -38,16 +39,16 @@ export class SubWorkflowStandard extends ValueObject<SubWorkflowStandardProps> {
    */
   public validate(): void {
     if (this.props.minInDegree < 0) {
-      throw new Error('最小入度不能为负数');
+      throw new ValidationError('最小入度不能为负数');
     }
     if (this.props.maxInDegree < this.props.minInDegree) {
-      throw new Error('最大入度不能小于最小入度');
+      throw new ValidationError('最大入度不能小于最小入度');
     }
     if (this.props.minOutDegree < 0) {
-      throw new Error('最小出度不能为负数');
+      throw new ValidationError('最小出度不能为负数');
     }
     if (this.props.maxOutDegree < this.props.minOutDegree) {
-      throw new Error('最大出度不能小于最小出度');
+      throw new ValidationError('最大出度不能小于最小出度');
     }
   }
 

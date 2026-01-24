@@ -1,5 +1,6 @@
 import { ValueObject } from '../../../common/value-objects';
 import { Checkpoint } from '../entities/checkpoint';
+import { ValidationError } from '../../../../common/exceptions';
 
 /**
  * 检查点元组接口
@@ -38,11 +39,11 @@ export class CheckpointTuple extends ValueObject<CheckpointTupleProps> {
     pendingWrites?: unknown[]
   ): CheckpointTuple {
     if (!config) {
-      throw new Error('配置不能为空');
+      throw new ValidationError('配置不能为空');
     }
 
     if (!checkpoint) {
-      throw new Error('检查点不能为空');
+      throw new ValidationError('检查点不能为空');
     }
 
     return new CheckpointTuple({
@@ -309,7 +310,7 @@ export class CheckpointTuple extends ValueObject<CheckpointTupleProps> {
 
     // 这里需要根据实际的LangWorkflow格式进行转换
     // 简化实现，实际需要更复杂的转换逻辑
-    throw new Error('从LangWorkflow格式创建检查点元组的功能尚未实现');
+    throw new ValidationError('从LangWorkflow格式创建检查点元组的功能尚未实现');
   }
 
   /**
@@ -317,17 +318,17 @@ export class CheckpointTuple extends ValueObject<CheckpointTupleProps> {
    */
   public validate(): void {
     if (!this.props.config) {
-      throw new Error('配置不能为空');
+      throw new ValidationError('配置不能为空');
     }
 
     if (!this.props.checkpoint) {
-      throw new Error('检查点不能为空');
+      throw new ValidationError('检查点不能为空');
     }
 
     // 验证配置中的线程ID与检查点线程ID的一致性
     const configThreadId = this.getThreadIdFromConfig();
     if (configThreadId && configThreadId !== this.props.checkpoint.threadId.toString()) {
-      throw new Error('配置中的线程ID与检查点线程ID不一致');
+      throw new ValidationError('配置中的线程ID与检查点线程ID不一致');
     }
 
     // 验证检查点ID的一致性
@@ -337,7 +338,7 @@ export class CheckpointTuple extends ValueObject<CheckpointTupleProps> {
       configCheckpointId &&
       configCheckpointId !== this.props.checkpoint.checkpointId.toString()
     ) {
-      throw new Error('配置中的检查点ID与检查点ID不一致');
+      throw new ValidationError('配置中的检查点ID与检查点ID不一致');
     }
   }
 

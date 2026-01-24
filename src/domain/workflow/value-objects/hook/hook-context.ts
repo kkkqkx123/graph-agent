@@ -1,6 +1,7 @@
 import { ValueObject } from '../../../common/value-objects';
 import { ID } from '../../../common/value-objects';
 import { HookPoint } from './hook-point';
+import { ValidationError } from '../../../../common/exceptions';
 
 /**
  * 钩子上下文值对象属性接口
@@ -36,7 +37,7 @@ export class HookContext extends ValueObject<HookContextProps> {
    */
   public validate(): void {
     if (!this.props.variables) {
-      throw new Error('变量映射不能为空');
+      throw new ValidationError('变量映射不能为空');
     }
   }
 

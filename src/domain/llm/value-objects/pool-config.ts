@@ -1,5 +1,6 @@
 import { ValueObject } from '../../common/value-objects';
 import { RotationStrategy } from './rotation-strategy';
+import { ValidationError } from '../../../common/exceptions';
 
 /**
  * 健康检查配置
@@ -56,13 +57,13 @@ export class PoolConfig extends ValueObject<{
    */
   validate(): void {
     if (!this.name || this.name.trim().length === 0) {
-      throw new Error('轮询池名称不能为空');
+      throw new ValidationError('轮询池名称不能为空');
     }
     if (this.healthCheck.interval <= 0) {
-      throw new Error('健康检查间隔必须大于0');
+      throw new ValidationError('健康检查间隔必须大于0');
     }
     if (this.taskGroups.length === 0) {
-      throw new Error('轮询池至少需要一个任务组');
+      throw new ValidationError('轮询池至少需要一个任务组');
     }
   }
 

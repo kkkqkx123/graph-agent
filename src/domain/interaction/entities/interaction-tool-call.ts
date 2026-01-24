@@ -1,4 +1,5 @@
 import { ValueObject } from '../../common/value-objects/value-object';
+import { ValidationError } from '../../../common/exceptions';
 
 /**
  * 交互工具调用实体
@@ -31,10 +32,10 @@ export class InteractionToolCall extends ValueObject<InteractionToolCallProps> {
 
   validate(): void {
     if (!this.props.id) {
-      throw new Error('InteractionToolCall id is required');
+      throw new ValidationError('InteractionToolCall id is required');
     }
     if (!this.props.name) {
-      throw new Error('InteractionToolCall name is required');
+      throw new ValidationError('InteractionToolCall name is required');
     }
   }
 }

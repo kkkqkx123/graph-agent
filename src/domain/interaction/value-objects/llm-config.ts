@@ -1,4 +1,5 @@
 import { ValueObject } from '../../common/value-objects/value-object';
+import { ValidationError } from '../../../common/exceptions';
 
 /**
  * LLM 配置值对象
@@ -36,13 +37,13 @@ export class LLMConfig extends ValueObject<LLMConfigProps> {
 
   validate(): void {
     if (!this.props.provider) {
-      throw new Error('LLMConfig provider is required');
+      throw new ValidationError('LLMConfig provider is required');
     }
     if (!this.props.model) {
-      throw new Error('LLMConfig model is required');
+      throw new ValidationError('LLMConfig model is required');
     }
     if (!this.props.prompt) {
-      throw new Error('LLMConfig prompt is required');
+      throw new ValidationError('LLMConfig prompt is required');
     }
   }
 }

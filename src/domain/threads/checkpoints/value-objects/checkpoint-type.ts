@@ -1,4 +1,5 @@
 import { ValueObject } from '../../../common/value-objects';
+import { ValidationError } from '../../../../common/exceptions';
 
 /**
  * 检查点类型枚举
@@ -71,7 +72,7 @@ export class CheckpointType extends ValueObject<CheckpointTypeProps> {
    */
   public static fromString(type: string): CheckpointType {
     if (!Object.values(CheckpointTypeValue).includes(type as CheckpointTypeValue)) {
-      throw new Error(`无效的检查点类型: ${type}`);
+      throw new ValidationError(`无效的检查点类型: ${type}`);
     }
     return new CheckpointType({ value: type as CheckpointTypeValue });
   }
@@ -149,11 +150,11 @@ export class CheckpointType extends ValueObject<CheckpointTypeProps> {
    */
   public validate(): void {
     if (!this.props.value) {
-      throw new Error('检查点类型不能为空');
+      throw new ValidationError('检查点类型不能为空');
     }
 
     if (!Object.values(CheckpointTypeValue).includes(this.props.value)) {
-      throw new Error(`无效的检查点类型: ${this.props.value}`);
+      throw new ValidationError(`无效的检查点类型: ${this.props.value}`);
     }
   }
 

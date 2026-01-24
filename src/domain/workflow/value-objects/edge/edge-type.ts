@@ -1,4 +1,5 @@
 import { ValueObject } from '../../../common/value-objects';
+import { ValidationError } from '../../../../common/exceptions';
 /**
  * 边类型枚举
  */
@@ -115,7 +116,7 @@ export class EdgeType extends ValueObject<EdgeTypeProps> {
    */
   public static fromString(type: string): EdgeType {
     if (!Object.values(EdgeTypeValue).includes(type as EdgeTypeValue)) {
-      throw new Error(`无效的边类型: ${type}`);
+      throw new ValidationError(`无效的边类型: ${type}`);
     }
     return new EdgeType({ value: type as EdgeTypeValue });
   }
@@ -257,11 +258,11 @@ export class EdgeType extends ValueObject<EdgeTypeProps> {
    */
   public validate(): void {
     if (!this.props.value) {
-      throw new Error('边类型不能为空');
+      throw new ValidationError('边类型不能为空');
     }
 
     if (!Object.values(EdgeTypeValue).includes(this.props.value)) {
-      throw new Error(`无效的边类型: ${this.props.value}`);
+      throw new ValidationError(`无效的边类型: ${this.props.value}`);
     }
   }
 

@@ -1,4 +1,5 @@
 import { ValueObject } from '../../../common/value-objects';
+import { ValidationError } from '../../../../common/exceptions';
 
 /**
  * 性能统计信息属性接口
@@ -129,35 +130,35 @@ export class PerformanceStatistics extends ValueObject<PerformanceStatisticsProp
    */
   public validate(): void {
     if (this.props.averageExecutionTime < 0) {
-      throw new Error('平均执行时间不能为负数');
+      throw new ValidationError('平均执行时间不能为负数');
     }
 
     if (this.props.maxExecutionTime < 0) {
-      throw new Error('最大执行时间不能为负数');
+      throw new ValidationError('最大执行时间不能为负数');
     }
 
     if (this.props.minExecutionTime < 0) {
-      throw new Error('最小执行时间不能为负数');
+      throw new ValidationError('最小执行时间不能为负数');
     }
 
     if (this.props.totalExecutionTime < 0) {
-      throw new Error('总执行时间不能为负数');
+      throw new ValidationError('总执行时间不能为负数');
     }
 
     if (this.props.executionCount < 0) {
-      throw new Error('执行次数不能为负数');
+      throw new ValidationError('执行次数不能为负数');
     }
 
     if (this.props.successRate < 0 || this.props.successRate > 1) {
-      throw new Error('成功率必须在0-1之间');
+      throw new ValidationError('成功率必须在0-1之间');
     }
 
     if (this.props.failureRate < 0 || this.props.failureRate > 1) {
-      throw new Error('失败率必须在0-1之间');
+      throw new ValidationError('失败率必须在0-1之间');
     }
 
     if (Math.abs(this.props.successRate + this.props.failureRate - 1) > 0.01) {
-      throw new Error('成功率和失败率之和应该为1');
+      throw new ValidationError('成功率和失败率之和应该为1');
     }
   }
 }

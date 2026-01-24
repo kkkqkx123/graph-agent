@@ -1,4 +1,5 @@
 import { ValueObject } from '../../common/value-objects';
+import { ValidationError } from '../../../common/exceptions';
 /**
  * 会话状态枚举
  */
@@ -26,10 +27,10 @@ export class SessionStatus extends ValueObject<SessionStatusProps> {
     super(props);
     // 在构造时验证一次，确保值对象始终有效
     if (!props.value) {
-      throw new Error('会话状态不能为空');
+      throw new ValidationError('会话状态不能为空');
     }
     if (!Object.values(SessionStatusValue).includes(props.value)) {
-      throw new Error(`无效的会话状态: ${props.value}`);
+      throw new ValidationError(`无效的会话状态: ${props.value}`);
     }
   }
 
@@ -72,7 +73,7 @@ export class SessionStatus extends ValueObject<SessionStatusProps> {
    */
   public static fromString(status: string): SessionStatus {
     if (!Object.values(SessionStatusValue).includes(status as SessionStatusValue)) {
-      throw new Error(`无效的会话状态: ${status}`);
+      throw new ValidationError(`无效的会话状态: ${status}`);
     }
     return new SessionStatus({ value: status as SessionStatusValue });
   }

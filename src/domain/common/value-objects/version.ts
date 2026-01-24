@@ -1,4 +1,5 @@
 import { ValueObject } from './value-object';
+import { ValidationError } from '../../../common/exceptions';
 /**
  * 版本值对象接口
  */
@@ -93,7 +94,7 @@ export class Version extends ValueObject<VersionProps> {
     const match = this.props.value.match(versionRegex);
 
     if (!match) {
-      throw new Error(`无效的版本格式: ${this.props.value}`);
+      throw new ValidationError(`无效的版本格式: ${this.props.value}`);
     }
 
     return {
@@ -129,13 +130,13 @@ export class Version extends ValueObject<VersionProps> {
    */
   public validate(): void {
     if (!this.props.value || this.props.value.trim().length === 0) {
-      throw new Error('版本不能为空');
+      throw new ValidationError('版本不能为空');
     }
 
     // 验证版本格式
     const versionRegex = /^\d+\.\d+\.\d+$/;
     if (!versionRegex.test(this.props.value)) {
-      throw new Error(`无效的版本格式: ${this.props.value}，应为 x.y.z 格式`);
+      throw new ValidationError(`无效的版本格式: ${this.props.value}，应为 x.y.z 格式`);
     }
   }
 

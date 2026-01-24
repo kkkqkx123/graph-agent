@@ -1,4 +1,5 @@
 import { ValueObject } from '../../../common/value-objects';
+import { ValidationError } from '../../../../common/exceptions';
 
 /**
  * 钩子执行结果值对象属性接口
@@ -29,13 +30,13 @@ export class HookExecutionResultValue extends ValueObject<HookExecutionResultPro
    */
   public validate(): void {
     if (!this.props.hookId || this.props.hookId.trim() === '') {
-      throw new Error('钩子ID不能为空');
+      throw new ValidationError('钩子ID不能为空');
     }
     if (this.props.executionTime < 0) {
-      throw new Error('执行时间不能为负数');
+      throw new ValidationError('执行时间不能为负数');
     }
     if (this.props.success && this.props.error) {
-      throw new Error('成功的执行结果不能包含错误信息');
+      throw new ValidationError('成功的执行结果不能包含错误信息');
     }
   }
 

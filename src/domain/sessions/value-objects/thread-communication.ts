@@ -1,4 +1,5 @@
 import { ID, Timestamp, ValueObject } from '../../common/value-objects';
+import { ValidationError } from '../../../common/exceptions';
 
 /**
  * 线程间消息类型
@@ -149,20 +150,20 @@ export class ThreadMessage extends ValueObject<ThreadMessageProps> {
    */
   public validate(): void {
     if (!this.props.fromThreadId) {
-      throw new Error('发送线程ID不能为空');
+      throw new ValidationError('发送线程ID不能为空');
     }
 
     if (!this.props.toThreadId) {
-      throw new Error('接收线程ID不能为空');
+      throw new ValidationError('接收线程ID不能为空');
     }
 
     if (this.props.fromThreadId.equals(this.props.toThreadId)) {
-      throw new Error('发送线程和接收线程不能相同');
+      throw new ValidationError('发送线程和接收线程不能相同');
     }
 
     const validTypes: ThreadMessageType[] = ['data', 'control', 'event', 'error'];
     if (!validTypes.includes(this.props.type)) {
-      throw new Error('无效的消息类型');
+      throw new ValidationError('无效的消息类型');
     }
   }
 }
@@ -300,7 +301,7 @@ export class ThreadCommunicationChannel extends ValueObject<ThreadCommunicationC
   public markMessageAsRead(messageId: string): ThreadCommunicationChannel {
     const message = this.props.messages.get(messageId);
     if (!message) {
-      throw new Error('消息不存在');
+      throw new ValidationError('消息不存在');
     }
 
     const newMessages = new Map(this.props.messages);
@@ -374,11 +375,11 @@ export class ThreadCommunicationChannel extends ValueObject<ThreadCommunicationC
    */
   public validate(): void {
     if (!this.props.sessionId) {
-      throw new Error('会话ID不能为空');
+      throw new ValidationError('会话ID不能为空');
     }
 
     if (this.props.maxMessages <= 0) {
-      throw new Error('最大消息数量必须大于0');
+      throw new ValidationError('最大消息数量必须大于0');
     }
   }
 }

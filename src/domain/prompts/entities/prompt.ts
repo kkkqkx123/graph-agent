@@ -11,6 +11,7 @@ import { PromptType } from '../value-objects/prompt-type';
 import { PromptStatus } from '../value-objects/prompt-status';
 import { Metadata } from '../../common/value-objects';
 import { DeletionStatus } from '../../common/value-objects';
+import { ValidationError } from '../../../common/exceptions';
 
 /**
  * 提示词变量
@@ -108,24 +109,24 @@ export class Prompt extends Entity {
   static create(props: CreatePromptProps): Prompt {
     // 验证必填字段
     if (!props.name || props.name.trim().length === 0) {
-      throw new Error('提示词名称不能为空');
+      throw new ValidationError('提示词名称不能为空');
     }
 
     if (!props.content || props.content.trim().length === 0) {
-      throw new Error('提示词内容不能为空');
+      throw new ValidationError('提示词内容不能为空');
     }
 
     if (!props.category || props.category.trim().length === 0) {
-      throw new Error('提示词分类不能为空');
+      throw new ValidationError('提示词分类不能为空');
     }
 
     // 验证内容长度
     if (props.validation?.maxLength && props.content.length > props.validation.maxLength) {
-      throw new Error(`提示词内容长度不能超过 ${props.validation.maxLength} 个字符`);
+      throw new ValidationError(`提示词内容长度不能超过 ${props.validation.maxLength} 个字符`);
     }
 
     if (props.validation?.minLength && props.content.length < props.validation.minLength) {
-      throw new Error(`提示词内容长度不能少于 ${props.validation.minLength} 个字符`);
+      throw new ValidationError(`提示词内容长度不能少于 ${props.validation.minLength} 个字符`);
     }
 
     // 验证禁止词汇
@@ -134,7 +135,7 @@ export class Prompt extends Entity {
         props.content.toLowerCase().includes(word.toLowerCase())
       );
       if (forbiddenWords.length > 0) {
-        throw new Error(`提示词内容包含禁止词汇: ${forbiddenWords.join(', ')}`);
+        throw new ValidationError(`提示词内容包含禁止词汇: ${forbiddenWords.join(', ')}`);
       }
     }
 
@@ -144,7 +145,7 @@ export class Prompt extends Entity {
         keyword => !props.content.toLowerCase().includes(keyword.toLowerCase())
       );
       if (missingKeywords.length > 0) {
-        throw new Error(`提示词内容缺少必需关键词: ${missingKeywords.join(', ')}`);
+        throw new ValidationError(`提示词内容缺少必需关键词: ${missingKeywords.join(', ')}`);
       }
     }
 
@@ -187,11 +188,11 @@ export class Prompt extends Entity {
    */
   activate(): Prompt {
     if (this.props.status === PromptStatus.ACTIVE) {
-      throw new Error('提示词已经是激活状态');
+      throw new ValidationError('提示词已经是激活状态');
     }
 
     if (this.props.status === PromptStatus.DEPRECATED) {
-      throw new Error('已弃用的提示词不能激活');
+      throw new ValidationError('已弃用的提示词不能激活');
     }
 
     const newProps: PromptProps = {
@@ -209,7 +210,7 @@ export class Prompt extends Entity {
    */
   deactivate(): Prompt {
     if (this.props.status === PromptStatus.INACTIVE) {
-      throw new Error('提示词已经是禁用状态');
+      throw new ValidationError('提示词已经是禁用状态');
     }
 
     const newProps: PromptProps = {
@@ -227,7 +228,7 @@ export class Prompt extends Entity {
    */
   deprecate(): Prompt {
     if (this.props.status === PromptStatus.DEPRECATED) {
-      throw new Error('提示词已经是弃用状态');
+      throw new ValidationError('提示词已经是弃用状态');
     }
 
     const newProps: PromptProps = {
@@ -245,7 +246,7 @@ export class Prompt extends Entity {
    */
   updateContent(newContent: string): Prompt {
     if (!newContent || newContent.trim().length === 0) {
-      throw new Error('提示词内容不能为空');
+      throw new ValidationError('提示词内容不能为空');
     }
 
     if (newContent === this.props.content) {
@@ -254,11 +255,11 @@ export class Prompt extends Entity {
 
     // 验证新内容
     if (this.props.validation?.maxLength && newContent.length > this.props.validation.maxLength) {
-      throw new Error(`提示词内容长度不能超过 ${this.props.validation.maxLength} 个字符`);
+      throw new ValidationError(`提示词内容长度不能超过 ${this.props.validation.maxLength} 个字符`);
     }
 
     if (this.props.validation?.minLength && newContent.length < this.props.validation.minLength) {
-      throw new Error(`提示词内容长度不能少于 ${this.props.validation.minLength} 个字符`);
+      throw new ValidationError(`提示词内容长度不能少于 ${this.props.validation.minLength} 个字符`);
     }
 
     // 验证禁止词汇
@@ -267,7 +268,7 @@ export class Prompt extends Entity {
         newContent.toLowerCase().includes(word.toLowerCase())
       );
       if (forbiddenWords.length > 0) {
-        throw new Error(`提示词内容包含禁止词汇: ${forbiddenWords.join(', ')}`);
+        throw new ValidationError(`提示词内容包含禁止词汇: ${forbiddenWords.join(', ')}`);
       }
     }
 
@@ -277,7 +278,7 @@ export class Prompt extends Entity {
         keyword => !newContent.toLowerCase().includes(keyword.toLowerCase())
       );
       if (missingKeywords.length > 0) {
-        throw new Error(`提示词内容缺少必需关键词: ${missingKeywords.join(', ')}`);
+        throw new ValidationError(`提示词内容缺少必需关键词: ${missingKeywords.join(', ')}`);
       }
     }
 

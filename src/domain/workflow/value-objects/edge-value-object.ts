@@ -1,6 +1,7 @@
 import { ValueObject } from '../../common/value-objects';
 import { EdgeId, EdgeType } from './edge';
 import { NodeId } from './node';
+import { ValidationError } from '../../../common/exceptions';
 
 /**
  * 边值对象属性接口
@@ -26,16 +27,16 @@ export class EdgeValueObject extends ValueObject<EdgeValueObjectProps> {
   public static create(props: EdgeValueObjectProps): EdgeValueObject {
     // 验证
     if (!props.id) {
-      throw new Error('边ID不能为空');
+      throw new ValidationError('边ID不能为空');
     }
     if (!props.type) {
-      throw new Error('边类型不能为空');
+      throw new ValidationError('边类型不能为空');
     }
     if (!props.fromNodeId) {
-      throw new Error('源节点ID不能为空');
+      throw new ValidationError('源节点ID不能为空');
     }
     if (!props.toNodeId) {
-      throw new Error('目标节点ID不能为空');
+      throw new ValidationError('目标节点ID不能为空');
     }
 
     return new EdgeValueObject(props);
@@ -165,16 +166,16 @@ export class EdgeValueObject extends ValueObject<EdgeValueObjectProps> {
    */
   public override validate(): void {
     if (!this.props.id) {
-      throw new Error('边ID不能为空');
+      throw new ValidationError('边ID不能为空');
     }
     if (!this.props.type) {
-      throw new Error('边类型不能为空');
+      throw new ValidationError('边类型不能为空');
     }
     if (!this.props.fromNodeId) {
-      throw new Error('源节点ID不能为空');
+      throw new ValidationError('源节点ID不能为空');
     }
     if (!this.props.toNodeId) {
-      throw new Error('目标节点ID不能为空');
+      throw new ValidationError('目标节点ID不能为空');
     }
     this.props.type.validate();
   }

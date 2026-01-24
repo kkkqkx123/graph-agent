@@ -1,4 +1,5 @@
 import { ValueObject } from '../../common/value-objects/value-object';
+import { ValidationError } from '../../../common/exceptions';
 
 /**
  * 工具调用值对象
@@ -29,10 +30,10 @@ export class ToolCall extends ValueObject<ToolCallProps> {
 
   validate(): void {
     if (!this.props.id) {
-      throw new Error('ToolCall id is required');
+      throw new ValidationError('ToolCall id is required');
     }
     if (!this.props.name) {
-      throw new Error('ToolCall name is required');
+      throw new ValidationError('ToolCall name is required');
     }
   }
 }

@@ -1,4 +1,5 @@
 import { ValueObject } from '../value-objects';
+import { ValidationError } from '../../../common/exceptions';
 
 /**
  * 元数据值对象接口
@@ -127,11 +128,11 @@ export class Metadata extends ValueObject<MetadataProps> {
    */
   public validate(): void {
     if (this.props.data === null || this.props.data === undefined) {
-      throw new Error('元数据不能为空');
+      throw new ValidationError('元数据不能为空');
     }
 
     if (typeof this.props.data !== 'object') {
-      throw new Error('元数据必须是对象');
+      throw new ValidationError('元数据必须是对象');
     }
   }
 }

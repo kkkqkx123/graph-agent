@@ -2,6 +2,7 @@ import { ValueObject } from '../../common/value-objects/value-object';
 import { InteractionMessage } from './interaction-message';
 import { InteractionToolCall } from './interaction-tool-call';
 import { InteractionTokenUsage } from '../value-objects/token-usage';
+import { ValidationError } from '../../../common/exceptions';
 
 /**
  * 交互LLM调用实体
@@ -37,13 +38,13 @@ export class InteractionLLMCall extends ValueObject<InteractionLLMCallProps> {
 
   validate(): void {
     if (!this.props.id) {
-      throw new Error('InteractionLLMCall id is required');
+      throw new ValidationError('InteractionLLMCall id is required');
     }
     if (!this.props.provider) {
-      throw new Error('InteractionLLMCall provider is required');
+      throw new ValidationError('InteractionLLMCall provider is required');
     }
     if (!this.props.model) {
-      throw new Error('InteractionLLMCall model is required');
+      throw new ValidationError('InteractionLLMCall model is required');
     }
   }
 }

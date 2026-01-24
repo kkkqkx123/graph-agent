@@ -1,4 +1,5 @@
 import { ValueObject } from '../../common/value-objects/value-object';
+import { ValidationError } from '../../../common/exceptions';
 
 /**
  * 工具配置值对象
@@ -20,7 +21,7 @@ export class ToolConfig extends ValueObject<ToolConfigProps> {
 
   validate(): void {
     if (!this.props.toolId) {
-      throw new Error('ToolConfig toolId is required');
+      throw new ValidationError('ToolConfig toolId is required');
     }
   }
 }

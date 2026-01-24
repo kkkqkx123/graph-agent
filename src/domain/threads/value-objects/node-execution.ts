@@ -1,5 +1,6 @@
 import { ValueObject, ID, Timestamp } from '../../common/value-objects';
 import { NodeId, NodeStatus } from '../../workflow/value-objects';
+import { ValidationError } from '../../../common/exceptions';
 
 /**
  * LLM调用记录接口
@@ -228,7 +229,7 @@ export class NodeExecution extends ValueObject<NodeExecutionProps> {
    */
   public start(): NodeExecution {
     if (!this.props.status.canStart()) {
-      throw new Error(`节点状态不允许开始执行: ${this.props.status.toString()}`);
+      throw new ValidationError(`节点状态不允许开始执行: ${this.props.status.toString()}`);
     }
 
     return new NodeExecution({
@@ -245,7 +246,7 @@ export class NodeExecution extends ValueObject<NodeExecutionProps> {
    */
   public complete(result?: unknown): NodeExecution {
     if (!this.props.status.isRunning()) {
-      throw new Error(`节点状态不允许完成: ${this.props.status.toString()}`);
+      throw new ValidationError(`节点状态不允许完成: ${this.props.status.toString()}`);
     }
 
     const now = Timestamp.now();
@@ -267,7 +268,7 @@ export class NodeExecution extends ValueObject<NodeExecutionProps> {
    */
   public fail(error: NodeExecutionError): NodeExecution {
     if (!this.props.status.isRunning()) {
-      throw new Error(`节点状态不允许标记失败: ${this.props.status.toString()}`);
+      throw new ValidationError(`节点状态不允许标记失败: ${this.props.status.toString()}`);
     }
 
     const now = Timestamp.now();
@@ -289,7 +290,7 @@ export class NodeExecution extends ValueObject<NodeExecutionProps> {
    */
   public skip(reason?: string): NodeExecution {
     if (!this.props.status.canStart()) {
-      throw new Error(`节点状态不允许跳过: ${this.props.status.toString()}`);
+      throw new ValidationError(`节点状态不允许跳过: ${this.props.status.toString()}`);
     }
 
     return new NodeExecution({
@@ -306,7 +307,7 @@ export class NodeExecution extends ValueObject<NodeExecutionProps> {
    */
   public cancel(): NodeExecution {
     if (!this.props.status.canCancel()) {
-      throw new Error(`节点状态不允许取消: ${this.props.status.toString()}`);
+      throw new ValidationError(`节点状态不允许取消: ${this.props.status.toString()}`);
     }
 
     const now = Timestamp.now();
@@ -326,11 +327,11 @@ export class NodeExecution extends ValueObject<NodeExecutionProps> {
    */
   public retry(): NodeExecution {
     if (!this.props.status.canRetry()) {
-      throw new Error(`节点状态不允许重试: ${this.props.status.toString()}`);
+      throw new ValidationError(`节点状态不允许重试: ${this.props.status.toString()}`);
     }
 
     if (this.props.retryInfo.currentRetry >= this.props.retryInfo.maxRetries) {
-      throw new Error('已达到最大重试次数');
+      throw new ValidationError('已达到最大重试次数');
     }
 
     return new NodeExecution({
@@ -424,27 +425,27 @@ export class NodeExecution extends ValueObject<NodeExecutionProps> {
   public validate(): void {
     // 基本数据验证
     if (!this.props.nodeId) {
-      throw new Error('节点ID不能为空');
+      throw new ValidationError('节点ID不能为空');
     }
 
     if (!this.props.status) {
-      throw new Error('节点状态不能为空');
+      throw new ValidationError('节点状态不能为空');
     }
 
     if (this.props.duration !== undefined && this.props.duration < 0) {
-      throw new Error('执行时长不能为负数');
+      throw new ValidationError('执行时长不能为负数');
     }
 
     if (this.props.retryInfo.currentRetry < 0) {
-      throw new Error('重试次数不能为负数');
+      throw new ValidationError('重试次数不能为负数');
     }
 
     if (this.props.retryInfo.maxRetries < 0) {
-      throw new Error('最大重试次数不能为负数');
+      throw new ValidationError('最大重试次数不能为负数');
     }
 
     if (this.props.retryInfo.currentRetry > this.props.retryInfo.maxRetries) {
-      throw new Error('当前重试次数不能超过最大重试次数');
+      throw new ValidationError('当前重试次数不能超过最大重试次数');
     }
 
     // 业务逻辑验证已移到应用层
