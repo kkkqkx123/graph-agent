@@ -56,6 +56,15 @@ import { GroupTransformFunction } from '../../services/workflow/functions/nodes/
 import { NodeExecutionHandler } from '../../services/workflow/execution/handlers/node-execution-handler';
 import { HookExecutionHandler } from '../../services/workflow/execution/handlers/hook-execution-handler';
 import { TriggerExecutionHandler } from '../../services/workflow/execution/handlers/trigger-execution-handler';
+import { InteractionEngine } from '../../services/interaction/interaction-engine-impl';
+import { LLMExecutor } from '../../services/interaction/executors/llm-executor';
+import { ToolExecutor } from '../../services/interaction/executors/tool-executor';
+import { UserInteractionHandler } from '../../services/interaction/executors/user-interaction-handler';
+import { NodeExecutionStrategyRegistry } from '../../services/workflow/execution/strategies/strategy-registry';
+import { LLMNodeStrategy } from '../../services/workflow/execution/strategies/llm-node-strategy';
+import { ToolNodeStrategy } from '../../services/workflow/execution/strategies/tool-node-strategy';
+import { UserInteractionStrategy } from '../../services/workflow/execution/strategies/user-interaction-strategy';
+import { NodeType } from '../../domain/workflow/value-objects/node/node-type';
 import { LLMWrapperManager } from '../../services/llm/managers/llm-wrapper-manager';
 import { PollingPoolManager } from '../../services/llm/managers/pool-manager';
 import { TaskGroupManager } from '../../services/llm/managers/task-group-manager';
@@ -159,4 +168,36 @@ export const servicesBindings = new ContainerModule((bind: any) => {
 
   bind(TYPES.NodeExecutor).to(NodeExecutionHandler).inSingletonScope();
   bind(TYPES.HookExecutor).to(HookExecutionHandler).inSingletonScope();
+
+  // ========== Interaction 模块绑定 ==========
+
+  // Interaction Engine
+  bind('InteractionEngine').to(InteractionEngine).inSingletonScope();
+
+  // Executors
+  bind('LLMExecutor').to(LLMExecutor).inSingletonScope();
+  bind('ToolExecutor').to(ToolExecutor).inSingletonScope();
+  bind('UserInteractionHandler').to(UserInteractionHandler).inSingletonScope();
+
+  // Strategy Registry
+  bind('NodeExecutionStrategyRegistry').to(NodeExecutionStrategyRegistry).inSingletonScope();
+
+  // Node Execution Strategies
+  bind('LLMNodeStrategy').to(LLMNodeStrategy).inSingletonScope();
+  bind('ToolNodeStrategy').to(ToolNodeStrategy).inSingletonScope();
+  bind('UserInteractionStrategy').to(UserInteractionStrategy).inSingletonScope();
+
+  // 注册策略到注册表
+  bind('NodeExecutionStrategyRegistryInitializer').toDynamicValue((context: any) => {
+    const strategyRegistry = context.container.get('NodeExecutionStrategyRegistry');
+    const llmStrategy = context.container.get('LLMNodeStrategy');
+    const toolStrategy = context.container.get('ToolNodeStrategy');
+    const userInteractionStrategy = context.container.get('UserInteractionStrategy');
+
+    strategyRegistry.register(NodeType.llm(), llmStrategy);
+    strategyRegistry.register(NodeType.tool(), toolStrategy);
+    strategyRegistry.register(NodeType.userInteraction(), userInteractionStrategy);
+
+    return strategyRegistry;
+  }).inSingletonScope();
 });
