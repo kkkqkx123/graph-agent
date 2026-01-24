@@ -11,7 +11,7 @@ import { Timestamp } from '../../../domain/common/value-objects/timestamp';
 import { Version } from '../../../domain/common/value-objects/version';
 import { LLMMessage } from '../../../domain/llm/value-objects/llm-message';
 import { DeletionStatus } from '../../../domain/common/value-objects';
-import { ExecutionError } from '../../../../common/exceptions';
+import { ExecutionError } from '../../../common/exceptions';
 
 export class LLMRequestMapper implements BaseMapper<LLMRequest, LLMRequestModel> {
   /**

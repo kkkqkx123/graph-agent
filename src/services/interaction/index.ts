@@ -13,6 +13,9 @@ export * from './interaction-engine';
 // 执行器
 export * from './executors';
 
+// 管理器
+export * from './managers';
+
 // 工具注册表
 export * from './tool-registry';
 

@@ -7,7 +7,7 @@ import {
   EnvironmentProcessorOptions,
   ILogger,
 } from '../../../domain/common/types';
-import { MissingConfigurationError } from '../../../../common/exceptions';
+import { MissingConfigurationError } from '../../../common/exceptions';
 
 /**
  * 环境变量处理器

@@ -21,7 +21,7 @@ import {
   IPromptRepository,
   PromptSearchCriteria,
 } from '../../../domain/prompts/repositories/prompt-repository';
-import { ExecutionError, EntityNotFoundError } from '../../../../common/exceptions';
+import { ExecutionError, EntityNotFoundError } from '../../../common/exceptions';
 
 /**
  * 提示词仓库实现

@@ -10,7 +10,7 @@ import { BaseRepository } from './base-repository';
 import { ConnectionManager } from '../connection-manager';
 import { TYPES } from '../../../di/service-keys';
 import { ToolMapper } from '../mappers/tool-mapper';
-import { EntityNotFoundError } from '../../../../common/exceptions';
+import { EntityNotFoundError } from '../../../common/exceptions';
 
 @injectable()
 export class ToolRepository

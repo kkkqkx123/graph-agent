@@ -3,7 +3,7 @@
  */
 
 import { LogLevel } from '../../domain/common/types/logger-types';
-import { ConfigurationError, InvalidConfigurationError, ValidationError } from '../../../common/exceptions';
+import { ConfigurationError, InvalidConfigurationError, ValidationError } from '../../common/exceptions';
 
 /**
  * 日志输出类型

@@ -56,15 +56,11 @@ export class ToolNodeStrategy implements INodeExecutionStrategy {
         timeout: node.timeout,
       });
 
-      // 获取 Interaction 上下文
-      let interactionContext = context.getMetadata('interactionContext') as IInteractionContext;
-      if (!interactionContext) {
-        interactionContext = this.interactionEngine.createContext();
-        context.setMetadata('interactionContext', interactionContext);
-      }
+      // 获取工具调用历史
+      const toolCalls = context.getVariable('toolCalls') || [];
 
       // 调用 InteractionEngine 执行工具
-      const result = await this.interactionEngine.executeTool(config, interactionContext);
+      const result = await this.interactionEngine.executeTool(config, toolCalls);
 
       const executionTime = Date.now() - startTime;
 

@@ -8,7 +8,7 @@ import { ID } from '../../../domain/common/value-objects/id';
 import { ConnectionManager } from '../connection-manager';
 import { DataSource, Repository, FindOptionsWhere, FindManyOptions, ObjectLiteral, EntityManager, QueryRunner } from 'typeorm';
 import { TYPES } from '../../../di/service-keys';
-import { EntityNotFoundError } from '../../../../common/exceptions';
+import { EntityNotFoundError } from '../../../common/exceptions';
 
 /**
  * 通用仓储基类（简化版）

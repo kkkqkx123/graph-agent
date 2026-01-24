@@ -9,7 +9,7 @@ import { parse as parseToml } from 'toml';
 import { WorkflowConfigSchema, WorkflowConfig } from './schemas/workflow-schema';
 import { ParameterReplacer } from './parameter-replacer';
 import { ILogger } from '../../../domain/common';
-import { EntityNotFoundError, ValidationError } from '../../../../common/exceptions';
+import { EntityNotFoundError, ValidationError } from '../../../common/exceptions';
 
 /**
  * 工作流配置加载选项

@@ -12,7 +12,7 @@ import { Version } from '../../../domain/common/value-objects/version';
 import { CheckpointStatus } from '../../../domain/threads/checkpoints/value-objects/checkpoint-status';
 import { CheckpointType } from '../../../domain/threads/checkpoints/value-objects/checkpoint-type';
 import { CheckpointScope } from '../../../domain/threads/checkpoints/value-objects/checkpoint-scope';
-import { ExecutionError } from '../../../../common/exceptions';
+import { ExecutionError } from '../../../common/exceptions';
 
 export class CheckpointMapper implements BaseMapper<Checkpoint, CheckpointModel> {
   /**

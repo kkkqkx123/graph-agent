@@ -57,15 +57,11 @@ export class UserInteractionStrategy implements INodeExecutionStrategy {
         timeout: node.timeout,
       });
 
-      // 获取 Interaction 上下文
-      let interactionContext = context.getMetadata('interactionContext') as IInteractionContext;
-      if (!interactionContext) {
-        interactionContext = this.interactionEngine.createContext();
-        context.setMetadata('interactionContext', interactionContext);
-      }
+      // 获取消息历史
+      const messages = context.getVariable('messages') || [];
 
       // 调用 InteractionEngine 处理用户交互
-      const result = await this.interactionEngine.handleUserInteraction(config, interactionContext);
+      const result = await this.interactionEngine.handleUserInteraction(config, messages);
 
       const executionTime = Date.now() - startTime;
 

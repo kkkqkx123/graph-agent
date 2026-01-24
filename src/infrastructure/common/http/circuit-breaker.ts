@@ -1,5 +1,5 @@
 import { getConfig } from '../../config/config';
-import { ExecutionError } from '../../../../common/exceptions';
+import { ExecutionError } from '../../../common/exceptions';
 
 enum CircuitState {
   CLOSED = 'CLOSED',

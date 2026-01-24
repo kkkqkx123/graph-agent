@@ -8,7 +8,7 @@ import { LogEntry } from '../../../domain/common/types/logger-types';
 import { FileLogOutputConfig, LogRotationStrategy } from '../logger-config';
 import { BaseTransport } from './base-transport';
 import { FormatterFactory } from '../formatters/formatter-factory';
-import { InvalidConfigurationError } from '../../../../common/exceptions';
+import { InvalidConfigurationError } from '../../../common/exceptions';
 
 /**
  * 文件传输器

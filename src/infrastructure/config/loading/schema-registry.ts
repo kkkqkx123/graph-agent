@@ -6,7 +6,7 @@
 import { z, ZodError } from 'zod';
 import { ILogger } from '../../../domain/common/types';
 import { ValidationError, ValidationResult, ValidationSeverity } from './types';
-import { ConfigurationError } from '../../../../common/exceptions';
+import { ConfigurationError } from '../../../common/exceptions';
 
 /**
  * 简化的Schema注册表

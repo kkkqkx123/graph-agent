@@ -1,6 +1,6 @@
 import { injectable } from 'inversify';
 import { BaseTokenCalculator, TokenUsage, TokenCalculationStats } from './base-token-calculator';
-import { ExecutionError } from '../../../../common/exceptions';
+import { ExecutionError } from '../../../common/exceptions';
 
 /**
  * Tiktoken Token本地计算器

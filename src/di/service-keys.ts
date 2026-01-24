@@ -84,6 +84,17 @@ import { TemplateProcessor } from '../services/prompts/template-processor';
 import { PromptReferenceParser } from '../services/prompts/prompt-reference-parser';
 import { PromptReferenceValidator } from '../services/prompts/prompt-reference-validator';
 
+// Interaction模块服务
+import { InteractionEngine } from '../services/interaction/interaction-engine';
+import { MessageManager } from '../services/interaction/managers/message-manager';
+import { ToolCallManager } from '../services/interaction/managers/tool-call-manager';
+import { LLMCallManager } from '../services/interaction/managers/llm-call-manager';
+import { TokenManager } from '../services/interaction/managers/token-manager';
+import { LLMExecutor } from '../services/interaction/executors/llm-executor';
+import { ToolExecutor } from '../services/interaction/executors/tool-executor';
+import { UserInteractionHandler } from '../services/interaction/executors/user-interaction-handler';
+import { ToolRegistry } from '../services/interaction/tool-registry';
+
 // Infrastructure层实现
 import { SessionRepository as SessionInfrastructureRepository } from '../infrastructure/persistence/repositories/session-repository';
 import { ThreadRepository as ThreadInfrastructureRepository } from '../infrastructure/persistence/repositories/thread-repository';
@@ -196,6 +207,17 @@ export interface ServiceTypes {
   TemplateProcessor: TemplateProcessor;
   PromptReferenceParser: PromptReferenceParser;
   PromptReferenceValidator: PromptReferenceValidator;
+
+  // Interaction模块服务
+  InteractionEngine: InteractionEngine;
+  MessageManager: MessageManager;
+  ToolCallManager: ToolCallManager;
+  LLMCallManager: LLMCallManager;
+  TokenManager: TokenManager;
+  LLMExecutor: LLMExecutor;
+  ToolExecutor: ToolExecutor;
+  UserInteractionHandler: UserInteractionHandler;
+  ToolRegistry: ToolRegistry;
 
   // 工作流节点服务
   FunctionRegistry: FunctionRegistry;
@@ -324,6 +346,17 @@ export const TYPES = {
   TemplateProcessor: Symbol.for('TemplateProcessor'),
   PromptReferenceParser: Symbol.for('PromptReferenceParser'),
   PromptReferenceValidator: Symbol.for('PromptReferenceValidator'),
+
+  // Interaction模块服务
+  InteractionEngine: Symbol.for('InteractionEngine'),
+  MessageManager: Symbol.for('MessageManager'),
+  ToolCallManager: Symbol.for('ToolCallManager'),
+  LLMCallManager: Symbol.for('LLMCallManager'),
+  TokenManager: Symbol.for('TokenManager'),
+  LLMExecutor: Symbol.for('LLMExecutor'),
+  ToolExecutor: Symbol.for('ToolExecutor'),
+  UserInteractionHandler: Symbol.for('UserInteractionHandler'),
+  ToolRegistry: Symbol.for('ToolRegistry'),
 
   // 工作流节点服务
   FunctionRegistry: Symbol.for('FunctionRegistry'),

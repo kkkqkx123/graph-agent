@@ -6,6 +6,7 @@ import { ILogger } from '../../domain/common/types/logger-types';
 import { LoggerConfig, LoggerConfigBuilder, LogOutputType, LogFormatType } from './logger-config';
 import { Logger } from './logger';
 import { LoggerConfigManager } from './logger-config';
+import { InvalidConfigurationError } from '../../common/exceptions';
 
 /**
  * 日志工厂类

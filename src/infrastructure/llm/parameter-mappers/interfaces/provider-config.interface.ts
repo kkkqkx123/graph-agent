@@ -1,7 +1,7 @@
 import { BaseEndpointStrategy } from '../../endpoint-strategies/base-endpoint-strategy';
 import { BaseParameterMapper } from '../base-parameter-mapper';
 import { FeatureSupport } from './feature-support.interface';
-import { ConfigurationError } from '../../../../../common/exceptions';
+import { ConfigurationError } from '../../../../common/exceptions';
 
 /**
  * API 类型枚举

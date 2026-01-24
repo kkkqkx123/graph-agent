@@ -15,7 +15,7 @@ import { Metadata } from '../../../domain/common/value-objects';
 import { Tags } from '../../../domain/threads/checkpoints/value-objects/tags';
 import { DeletionStatus } from '../../../domain/common/value-objects';
 import { StateData } from '../../../domain/threads/checkpoints/value-objects/state-data';
-import { ExecutionError } from '../../../../common/exceptions';
+import { ExecutionError } from '../../../common/exceptions';
 
 export class ToolMapper implements BaseMapper<Tool, ToolModel> {
   /**

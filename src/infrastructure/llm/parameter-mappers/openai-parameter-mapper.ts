@@ -9,7 +9,7 @@ import {
   BaseParameterSchema,
 } from './base-parameter-mapper';
 import { ProviderConfig } from './interfaces/provider-config.interface';
-import { ValidationError } from '../../../../common/exceptions';
+import { ValidationError } from '../../../common/exceptions';
 
 /**
  * OpenAI 参数 Schema

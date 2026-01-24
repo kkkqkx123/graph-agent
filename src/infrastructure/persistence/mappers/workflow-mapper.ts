@@ -13,7 +13,7 @@ import { WorkflowStatus } from '../../../domain/workflow/value-objects/workflow-
 import { parseWorkflowType } from '../../../domain/workflow/value-objects/workflow-type';
 import { Timestamp } from '../../../domain/common/value-objects/timestamp';
 import { Version } from '../../../domain/common/value-objects/version';
-import { ExecutionError } from '../../../../common/exceptions';
+import { ExecutionError } from '../../../common/exceptions';
 
 export class WorkflowMapper implements BaseMapper<Workflow, WorkflowModel> {
   /**

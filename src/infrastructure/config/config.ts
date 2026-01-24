@@ -10,7 +10,7 @@ import { ConfigLoadingModule } from './loading/config-loading-module';
 import { ILogger } from '../../domain/common/types';
 import { AppConfig, AppConfigSchema } from './types';
 import { PathOf, ValueAtPath, IConfigAccessor } from './path-types';
-import { InvalidConfigurationError, ConfigurationError } from '../../../common/exceptions';
+import { InvalidConfigurationError, ConfigurationError } from '../../common/exceptions';
 
 /**
  * 内部配置管理器实例

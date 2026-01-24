@@ -19,7 +19,7 @@ import {
   IHumanRelayService,
   HumanRelayConfig,
 } from '../../../services/llm/human-relay';
-import { MissingConfigurationError, ExecutionError } from '../../../../common/exceptions';
+import { MissingConfigurationError, ExecutionError } from '../../../common/exceptions';
 
 /**
  * HumanRelay客户端配置接口

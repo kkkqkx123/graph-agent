@@ -10,7 +10,7 @@ import { HumanRelayClient } from './human-relay-client';
 import { HumanRelayMode } from '../../../domain/llm/value-objects/human-relay-mode';
 import { TYPES } from '../../../di/service-keys';
 import { ConfigLoadingModule } from '../../../infrastructure/config/loading/config-loading-module';
-import { InvalidConfigurationError } from '../../../../common/exceptions';
+import { InvalidConfigurationError } from '../../../common/exceptions';
 
 /**
  * LLM客户端工厂

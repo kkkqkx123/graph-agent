@@ -13,7 +13,7 @@ import { HttpClient } from '../../../infrastructure/common/http/http-client';
 import { TokenBucketLimiter } from '../rate-limiters/token-bucket-limiter';
 import { TokenCalculator } from '../token-calculators/token-calculator';
 import { getConfig } from '../../config/config';
-import { MissingConfigurationError, InvalidConfigurationError } from '../../../../common/exceptions';
+import { MissingConfigurationError, InvalidConfigurationError } from '../../../common/exceptions';
 
 @injectable()
 export class GeminiClient extends BaseLLMClient {

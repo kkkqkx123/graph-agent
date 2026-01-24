@@ -1,5 +1,5 @@
 import { getConfig } from '../../config/config';
-import { ExecutionError } from '../../../../common/exceptions';
+import { ExecutionError } from '../../../common/exceptions';
 
 export class RateLimiter {
   private tokens: number;

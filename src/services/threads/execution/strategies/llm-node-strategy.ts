@@ -62,15 +62,11 @@ export class LLMNodeStrategy implements INodeExecutionStrategy {
         stopSequences: node.stopSequences,
       });
 
-      // 创建或获取 Interaction 上下文
-      let interactionContext = context.getMetadata('interactionContext') as IInteractionContext;
-      if (!interactionContext) {
-        interactionContext = this.interactionEngine.createContext();
-        context.setMetadata('interactionContext', interactionContext);
-      }
+      // 获取消息历史
+      const messages = context.getVariable('messages') || [];
 
       // 调用 InteractionEngine 执行 LLM
-      const result = await this.interactionEngine.executeLLM(config, interactionContext);
+      const result = await this.interactionEngine.executeLLM(config, messages);
 
       const executionTime = Date.now() - startTime;
 

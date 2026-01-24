@@ -154,7 +154,7 @@ export class AgentLoop {
         systemPrompt,
         prompt: '', // 使用上下文中的消息
       });
-      const llmResult = await this.engine.executeLLM(llmConfig, context);
+      const llmResult = await this.engine.executeLLM(llmConfig, context.getMessages());
 
       if (!llmResult.success) {
         this.logger.error('LLM 调用失败', undefined, {
@@ -202,7 +202,7 @@ export class AgentLoop {
           toolId: toolCall.name,
           parameters: toolCall.arguments,
         });
-        const toolResult = await this.engine.executeTool(toolConfig, context);
+        const toolResult = await this.engine.executeTool(toolConfig, context.getToolCalls());
 
         // 添加工具结果到上下文
         context.addMessage(new Message({
