@@ -16,9 +16,6 @@ export * from './executors';
 // 管理器
 export * from './managers';
 
-// 工具注册表
-export * from './tool-registry';
-
 // 消息摘要器
 export * from './message-summarizer';
 

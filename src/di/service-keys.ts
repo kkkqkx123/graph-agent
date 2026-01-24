@@ -93,7 +93,7 @@ import { TokenManager } from '../services/interaction/managers/token-manager';
 import { LLMExecutor } from '../services/interaction/executors/llm-executor';
 import { ToolExecutor } from '../services/interaction/executors/tool-executor';
 import { UserInteractionHandler } from '../services/interaction/executors/user-interaction-handler';
-import { ToolRegistry } from '../services/interaction/tool-registry';
+import { ToolService } from '../services/tools/tool-service';
 
 // Infrastructure层实现
 import { SessionRepository as SessionInfrastructureRepository } from '../infrastructure/persistence/repositories/session-repository';
@@ -217,7 +217,7 @@ export interface ServiceTypes {
   LLMExecutor: LLMExecutor;
   ToolExecutor: ToolExecutor;
   UserInteractionHandler: UserInteractionHandler;
-  ToolRegistry: ToolRegistry;
+  ToolService: ToolService;
 
   // 工作流节点服务
   FunctionRegistry: FunctionRegistry;
@@ -356,7 +356,7 @@ export const TYPES = {
   LLMExecutor: Symbol.for('LLMExecutor'),
   ToolExecutor: Symbol.for('ToolExecutor'),
   UserInteractionHandler: Symbol.for('UserInteractionHandler'),
-  ToolRegistry: Symbol.for('ToolRegistry'),
+  ToolService: Symbol.for('ToolService'),
 
   // 工作流节点服务
   FunctionRegistry: Symbol.for('FunctionRegistry'),

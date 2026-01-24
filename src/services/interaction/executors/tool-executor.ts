@@ -2,6 +2,7 @@
  * Tool Executor 接口和实现
  *
  * 负责执行工具调用
+ * 作为 interaction 层和 tools 层之间的适配器
  */
 
 import { injectable, inject } from 'inversify';
@@ -10,7 +11,8 @@ import { ToolExecutionResult } from '../interaction-engine';
 import { ToolConfig } from '../../../domain/interaction/value-objects/tool-config';
 import { ToolCall } from '../../../domain/interaction/value-objects/tool-call';
 import { ILogger } from '../../../domain/common/types/logger-types';
-import { ToolRegistry, ITool, ToolResult } from '../tool-registry';
+import { ToolService } from '../../tools/tool-service';
+import { ToolResult } from '../../../domain/tools/entities/tool-result';
 
 /**
  * Tool Executor 接口
@@ -32,19 +34,20 @@ export interface IToolExecutor {
    * @param toolIds 工具 ID 列表
    * @returns 工具 Schema 列表
    */
-  getToolSchemas(toolIds: string[]): any[];
+  getToolSchemas(toolIds: string[]): Promise<any[]>;
 }
 
 /**
  * Tool Executor 实现
  *
  * 使用工具注册表执行工具调用
+ * 作为 interaction 层和 tools 层之间的适配器
  */
 @injectable()
 export class ToolExecutor implements IToolExecutor {
   constructor(
     @inject('Logger') private readonly logger: ILogger,
-    @inject('ToolRegistry') private readonly toolRegistry: ToolRegistry
+    @inject('ToolService') private readonly toolService: ToolService
   ) {}
 
   async execute(
@@ -58,10 +61,10 @@ export class ToolExecutor implements IToolExecutor {
     });
 
     try {
-      // 1. 从工具注册表获取工具
-      const tool = this.toolRegistry.get(config.toolId);
-      if (!tool) {
-        const availableTools = this.toolRegistry.getToolNames();
+      // 1. 验证工具是否存在
+      const toolExists = this.toolService.has(config.toolId);
+      if (!toolExists) {
+        const availableTools = this.toolService.getToolNames();
         return {
           success: false,
           error: `Unknown tool: ${config.toolId}. Available tools: ${availableTools.join(', ')}`,
@@ -74,21 +77,30 @@ export class ToolExecutor implements IToolExecutor {
       }
 
       // 2. 验证参数
-      const validationResult = this.validateParameters(tool, config.parameters);
-      if (!validationResult.valid) {
+      const validationResult = await this.toolService.validateParameters(
+        config.toolId,
+        config.parameters
+      );
+      if (!validationResult.isValid) {
         return {
           success: false,
-          error: `Parameter validation failed: ${validationResult.error}`,
+          error: `Parameter validation failed: ${validationResult.errors.join('; ')}`,
           executionTime: Date.now() - startTime,
           metadata: {
             toolId: config.toolId,
             validationErrors: validationResult.errors,
+            validationWarnings: validationResult.warnings,
           },
         };
       }
 
       // 3. 执行工具
-      const result = await tool.execute(config.parameters);
+      const result = await this.toolService.execute(config.toolId, config.parameters, {
+        sessionId: context.getMetadata('sessionId'),
+        threadId: context.getMetadata('threadId'),
+        workflowId: context.getMetadata('workflowId'),
+        nodeId: context.getMetadata('nodeId'),
+      });
 
       // 4. 处理结果
       const executionTime = Date.now() - startTime;
@@ -99,12 +111,13 @@ export class ToolExecutor implements IToolExecutor {
 
       return {
         success: result.success,
-        output: result.content,
-        error: result.error,
+        output: result.success ? result.data : undefined,
+        error: result.success ? undefined : result.error,
         executionTime,
         metadata: {
           toolId: config.toolId,
           toolMetadata: result.metadata,
+          duration: result.duration,
         },
       };
     } catch (error) {
@@ -130,92 +143,8 @@ export class ToolExecutor implements IToolExecutor {
    * @param toolIds 工具 ID 列表
    * @returns 工具 Schema 列表
    */
-  getToolSchemas(toolIds: string[]): any[] {
-    return this.toolRegistry.getSchemas(toolIds);
-  }
-
-  /**
-   * 验证参数
-   * @param tool 工具实例
-   * @param parameters 参数
-   * @returns 验证结果
-   */
-  private validateParameters(
-    tool: ITool,
-    parameters: Record<string, any>
-  ): { valid: boolean; error?: string; errors?: string[] } {
-    const errors: string[] = [];
-
-    // 检查必需参数
-    const requiredParams = (tool.parameters as any)['required'] || [];
-    for (const param of requiredParams) {
-      if (!(param in parameters) || parameters[param] === undefined || parameters[param] === null) {
-        errors.push(`Required parameter '${param}' is missing`);
-      }
-    }
-
-    // 检查参数类型
-    const properties = (tool.parameters as any)['properties'] || {};
-    for (const [key, value] of Object.entries(parameters)) {
-      const paramSchema = properties[key];
-      if (paramSchema) {
-        const typeError = this.validateParameterType(key, value, paramSchema);
-        if (typeError) {
-          errors.push(typeError);
-        }
-      }
-    }
-
-    if (errors.length > 0) {
-      return {
-        valid: false,
-        error: errors.join('; '),
-        errors,
-      };
-    }
-
-    return { valid: true };
-  }
-
-  /**
-   * 验证参数类型
-   * @param key 参数名
-   * @param value 参数值
-   * @param schema 参数 schema
-   * @returns 错误信息或 undefined
-   */
-  private validateParameterType(
-    key: string,
-    value: any,
-    schema: any
-  ): string | undefined {
-    const type = schema.type;
-
-    if (type === 'string' && typeof value !== 'string') {
-      return `Parameter '${key}' must be a string`;
-    }
-
-    if (type === 'number' && typeof value !== 'number') {
-      return `Parameter '${key}' must be a number`;
-    }
-
-    if (type === 'integer' && (!Number.isInteger(value) || typeof value !== 'number')) {
-      return `Parameter '${key}' must be an integer`;
-    }
-
-    if (type === 'boolean' && typeof value !== 'boolean') {
-      return `Parameter '${key}' must be a boolean`;
-    }
-
-    if (type === 'array' && !Array.isArray(value)) {
-      return `Parameter '${key}' must be an array`;
-    }
-
-    if (type === 'object' && (typeof value !== 'object' || value === null || Array.isArray(value))) {
-      return `Parameter '${key}' must be an object`;
-    }
-
-    return undefined;
+  async getToolSchemas(toolIds: string[]): Promise<any[]> {
+    return this.toolService.getSchemas(toolIds);
   }
 
   /**
@@ -234,7 +163,7 @@ export class ToolExecutor implements IToolExecutor {
       id: `tool_${Date.now()}`,
       name: config.toolId,
       arguments: config.parameters,
-      result: result.success ? result.content : result.error,
+      result: result.success ? result.data : result.error,
       executionTime,
       timestamp: new Date().toISOString(),
     });

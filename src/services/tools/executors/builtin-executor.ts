@@ -1,4 +1,4 @@
-import { injectable, inject } from 'inversify';
+import { injectable } from 'inversify';
 import { Tool } from '../../../domain/tools/entities/tool';
 import { ToolExecution } from '../../../domain/tools/entities/tool-execution';
 import { ToolResult } from '../../../domain/tools/entities/tool-result';
@@ -89,7 +89,7 @@ export class BuiltinExecutor extends ToolExecutorBase {
     // 2. 验证参数类型和值
     for (const [paramName, paramValue] of Object.entries(parameters)) {
       const paramSchema = properties[paramName];
-      
+
       if (!paramSchema) {
         warnings.push(`未知参数: ${paramName}`);
         continue;

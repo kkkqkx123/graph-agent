@@ -374,6 +374,45 @@ export class ConfigLoadingModule {
   }
 
   /**
+   * 获取配置值（不克隆，直接返回引用）
+   *
+   * 用于频繁访问的场景，调用者不应修改返回的对象
+   *
+   * @template T - 返回值的类型
+   * @param key - 配置键，支持点号分隔的嵌套路径
+   * @returns 配置值或 undefined
+   *
+   * @example
+   * const toolsConfig = configManager.getRef('tools.tools');
+   * // 注意：不要修改返回的对象
+   */
+  getRef<T = any>(key: string): T | undefined {
+    if (!this.isInitialized) {
+      throw new ConfigurationError('配置加载模块尚未初始化');
+    }
+    return this.getNestedValue(this.configs, key);
+  }
+
+  /**
+   * 获取模块配置（不克隆，直接返回引用）
+   *
+   * 用于频繁访问的场景，调用者不应修改返回的对象
+   *
+   * @param moduleType - 模块类型
+   * @returns 模块配置或 undefined
+   *
+   * @example
+   * const toolsConfig = configManager.getModuleConfig('tools');
+   * // 注意：不要修改返回的对象
+   */
+  getModuleConfig(moduleType: string): Record<string, any> | undefined {
+    if (!this.isInitialized) {
+      throw new ConfigurationError('配置加载模块尚未初始化');
+    }
+    return this.configs[moduleType];
+  }
+
+  /**
    * 刷新配置
    *
    * 重新加载配置文件，清空缓存

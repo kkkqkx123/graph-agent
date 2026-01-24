@@ -9,6 +9,11 @@ import { TYPES } from '../service-keys';
 
 // Services层服务实现
 import { ThreadCopy } from '../../services/threads/thread-copy';
+import { BuiltinExecutor } from '../../services/tools/executors/builtin-executor';
+import { NativeExecutor } from '../../services/tools/executors/native-executor';
+import { RestExecutor } from '../../services/tools/executors/rest-executor';
+import { McpExecutor } from '../../services/tools/executors/mcp-executor';
+import { ToolService } from '../../services/tools/tool-service';
 import { ThreadExecution } from '../../services/threads/thread-execution';
 import { ThreadFork } from '../../services/threads/thread-fork';
 import { ThreadLifecycle } from '../../services/threads/thread-lifecycle';
@@ -168,6 +173,17 @@ export const servicesBindings = new ContainerModule((bind: any) => {
 
   bind(TYPES.NodeExecutor).to(NodeExecutionHandler).inSingletonScope();
   bind(TYPES.HookExecutor).to(HookExecutionHandler).inSingletonScope();
+
+  // ========== Tools 模块绑定 ==========
+
+  // Tool Executors
+  bind('BuiltinExecutor').to(BuiltinExecutor).inSingletonScope();
+  bind('NativeExecutor').to(NativeExecutor).inSingletonScope();
+  bind('RestExecutor').to(RestExecutor).inSingletonScope();
+  bind('McpExecutor').to(McpExecutor).inSingletonScope();
+
+  // Tool Service
+  bind('ToolService').to(ToolService).inSingletonScope();
 
   // ========== Interaction 模块绑定 ==========
 

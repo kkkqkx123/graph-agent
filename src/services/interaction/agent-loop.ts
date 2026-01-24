@@ -7,77 +7,12 @@
 import { injectable, inject } from 'inversify';
 import { InteractionEngine } from './interaction-engine';
 import { MessageSummarizer } from './message-summarizer';
-import { ToolRegistry } from './tool-registry';
+import { ToolService } from '../tools/tool-service';
 import { Message } from '../../domain/interaction/value-objects/message';
 import { MessageRole } from '../../domain/interaction/value-objects/message-role';
 import { ILogger } from '../../domain/common/types/logger-types';
 import { LLMConfig } from '../../domain/interaction/value-objects/llm-config';
 import { ToolConfig } from '../../domain/interaction/value-objects/tool-config';
-
-/**
- * Agent 执行循环配置
- */
-export interface AgentLoopConfig {
-  /**
-   * 最大步数
-   */
-  maxSteps?: number;
-
-  /**
-   * Token 限制
-   */
-  tokenLimit?: number;
-
-  /**
-   * 系统提示词
-   */
-  systemPrompt?: string;
-
-  /**
-   * LLM 提供商
-   */
-  provider?: string;
-
-  /**
-   * LLM 模型
-   */
-  model?: string;
-}
-
-/**
- * Agent 执行结果
- */
-export interface AgentLoopResult {
-  /**
-   * 是否成功
-   */
-  success: boolean;
-
-  /**
-   * 输出内容
-   */
-  output?: string;
-
-  /**
-   * 错误信息
-   */
-  error?: string;
-
-  /**
-   * 执行步数
-   */
-  steps: number;
-
-  /**
-   * 总执行时间（毫秒）
-   */
-  executionTime: number;
-
-  /**
-   * 元数据
-   */
-  metadata?: Record<string, any>;
-}
 
 /**
  * Agent 执行循环
@@ -87,7 +22,7 @@ export class AgentLoop {
   constructor(
     @inject('InteractionEngine') private readonly engine: InteractionEngine,
     @inject('MessageSummarizer') private readonly summarizer: MessageSummarizer,
-    @inject('ToolRegistry') private readonly toolRegistry: ToolRegistry,
+    @inject('ToolService') private readonly toolService: ToolService,
     @inject('Logger') private readonly logger: ILogger
   ) {}
 
@@ -99,8 +34,21 @@ export class AgentLoop {
    */
   async run(
     initialMessage: string,
-    config: AgentLoopConfig = {}
-  ): Promise<AgentLoopResult> {
+    config: {
+      maxSteps?: number;
+      tokenLimit?: number;
+      systemPrompt?: string;
+      provider?: string;
+      model?: string;
+    } = {}
+  ): Promise<{
+    success: boolean;
+    output?: string;
+    error?: string;
+    steps: number;
+    executionTime: number;
+    metadata?: Record<string, any>;
+  }> {
     const startTime = Date.now();
 
     // 默认配置
@@ -145,7 +93,7 @@ export class AgentLoop {
       }
 
       // 2. 获取工具 Schema
-      const toolSchemas = this.toolRegistry.getAllSchemas();
+      const toolSchemas = this.toolService.getAllSchemas();
 
       // 3. 调用 LLM
       const llmConfig = new LLMConfig({
@@ -243,7 +191,7 @@ export class AgentLoop {
    * @returns 工具名称列表
    */
   getAvailableTools(): string[] {
-    return this.toolRegistry.getToolNames();
+    return this.toolService.getToolNames();
   }
 
   /**
@@ -251,6 +199,6 @@ export class AgentLoop {
    * @returns 工具数量
    */
   getToolCount(): number {
-    return this.toolRegistry.size();
+    return this.toolService.size();
   }
 }
