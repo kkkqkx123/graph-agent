@@ -10,7 +10,7 @@ import { LoopEndNode } from '../../../../domain/workflow/entities/node/loop-end-
 import { NodeExecutionResult } from '../../../../domain/workflow/entities/node';
 import { ExecutionContext } from '../context/execution-context';
 import { INodeExecutionStrategy } from './node-execution-strategy';
-import { FunctionRegistry } from '../../../workflow/functions/function-registry';
+import { FunctionRegistry } from '../functions/function-registry';
 import { ILogger } from '../../../../domain/common/types/logger-types';
 
 /**
@@ -21,7 +21,7 @@ export class LoopEndNodeStrategy implements INodeExecutionStrategy {
   constructor(
     @inject('Logger') private readonly logger: ILogger,
     @inject('FunctionRegistry') private readonly functionRegistry: FunctionRegistry
-  ) {}
+  ) { }
 
   canExecute(node: Node): boolean {
     return node instanceof LoopEndNode;
@@ -51,7 +51,7 @@ export class LoopEndNodeStrategy implements INodeExecutionStrategy {
     try {
       // 1. 获取循环状态
       const loopState = context.getVariable('loopState');
-      
+
       if (!loopState) {
         this.logger.warn('循环状态不存在，可能缺少 LoopStart 节点', {
           nodeId: node.nodeId.toString(),
@@ -82,7 +82,7 @@ export class LoopEndNodeStrategy implements INodeExecutionStrategy {
       if (shouldContinueLoop) {
         // 4. 继续循环：重置执行位置到 LoopStart
         const loopStartNodeId = node.loopStartNodeId;
-        
+
         this.logger.debug('继续循环，重置执行位置', {
           loopStartNodeId,
           iteration: loopState.iteration,
@@ -195,7 +195,7 @@ export class LoopEndNodeStrategy implements INodeExecutionStrategy {
     try {
       // 获取中断条件函数
       const breakFunction = this.functionRegistry.getFunction(breakConditionFunctionId);
-      
+
       if (!breakFunction) {
         this.logger.warn('中断条件函数不存在，默认不中断', {
           breakConditionFunctionId,

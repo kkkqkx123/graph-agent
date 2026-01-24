@@ -1,8 +1,8 @@
 import { injectable, inject } from 'inversify';
 import { EdgeValueObject } from '../../domain/workflow/value-objects/edge/edge-value-object';
 import { ThreadWorkflowState } from '../../domain/threads/value-objects/thread-workflow-state';
-import { FunctionRegistry } from '../workflow/functions/function-registry';
-import { WorkflowExecutionContext } from '../workflow/functions/types';
+import { FunctionRegistry } from './execution/functions/function-registry';
+import { WorkflowExecutionContext } from './execution/functions/types';
 import { TYPES } from '../../di/service-keys';
 
 /**

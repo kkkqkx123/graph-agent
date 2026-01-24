@@ -7,7 +7,7 @@ import { ThreadHistoryManager } from './thread-history-manager';
 import { CheckpointManagement } from '../checkpoints/checkpoint-management';
 import { ThreadConditionalRouter } from './thread-conditional-router';
 import { INodeExecutionHandler } from './execution/handlers/node-execution-handler';
-import { FunctionRegistry } from '../workflow/functions/function-registry';
+import { FunctionRegistry } from './execution/functions/function-registry';
 import { ThreadFork } from './thread-fork';
 import { ThreadJoin } from './thread-join';
 import { IThreadRepository } from '../../domain/threads/repositories/thread-repository';

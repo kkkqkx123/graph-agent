@@ -12,7 +12,7 @@ import { IPromptRepository } from '../../domain/prompts/repositories/prompt-repo
 import { PromptId } from '../../domain/prompts/value-objects/prompt-id';
 import { TemplateProcessor, TemplateProcessResult } from './template-processor';
 import { PromptState } from '../../domain/workflow/value-objects/context';
-import { ContextProcessor } from '../workflow/functions/nodes/context-processors/base-context-processor';
+import { ContextProcessor } from '../threads/execution/functions/nodes/context-processors/base-context-processor';
 import { LLMMessage } from '../../domain/llm/value-objects/llm-message';
 import { ILogger } from '../../domain/common/types/logger-types';
 import { TYPES } from '../../di/service-keys';
@@ -127,7 +127,7 @@ export class PromptBuilder {
     // 应用上下文处理器
     let processedContext = context;
     let processedVariables = new Map(Object.entries(context));
-    
+
     if (source.type === 'template' && contextProcessorName && contextProcessors) {
       // 创建 PromptState（不包含variables）
       const promptState = PromptState.create();

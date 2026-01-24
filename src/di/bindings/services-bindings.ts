@@ -38,7 +38,7 @@ import { WorkflowLifecycle } from '../../services/workflow/workflow-lifecycle';
 import { WorkflowManagement } from '../../services/workflow/workflow-management';
 import { WorkflowValidator } from '../../services/workflow/workflow-validator';
 import { ExpressionEvaluator } from '../../services/workflow/expression-evaluator';
-import { FunctionExecutionEngine } from '../../services/workflow/function-execution-engine';
+import { FunctionExecutionEngine } from '../../services/threads/execution/function-execution-engine';
 import { MonitoringService } from '../../services/workflow/monitoring';
 import { NodeRouter } from '../../services/workflow/node-router';
 import { CheckpointAnalysis } from '../../services/checkpoints/checkpoint-analysis';
@@ -52,12 +52,12 @@ import { ThreadStateManager } from '../../services/threads/thread-state-manager'
 import { ThreadHistoryManager } from '../../services/threads/thread-history-manager';
 import { ThreadConditionalRouter } from '../../services/threads/thread-conditional-router';
 import { ThreadWorkflowExecutor } from '../../services/threads/thread-workflow-executor';
-import { FunctionRegistry } from '../../services/workflow/functions/function-registry';
-import { MapTransformFunction } from '../../services/workflow/functions/nodes/data-transformer/map-transform.function';
-import { FilterTransformFunction } from '../../services/workflow/functions/nodes/data-transformer/filter-transform.function';
-import { ReduceTransformFunction } from '../../services/workflow/functions/nodes/data-transformer/reduce-transform.function';
-import { SortTransformFunction } from '../../services/workflow/functions/nodes/data-transformer/sort-transform.function';
-import { GroupTransformFunction } from '../../services/workflow/functions/nodes/data-transformer/group-transform.function';
+import { FunctionRegistry } from '../../services/threads/execution/functions/function-registry';
+import { MapTransformer } from '../../services/threads/execution/functions/nodes/data-transformer/map-transformer';
+import { FilterTransformer } from '../../services/threads/execution/functions/nodes/data-transformer/filter-transformer';
+import { ReduceTransformer } from '../../services/threads/execution/functions/nodes/data-transformer/reduce-transformer';
+import { SortTransformer } from '../../services/threads/execution/functions/nodes/data-transformer/sort-transformer';
+import { GroupTransformer } from '../../services/threads/execution/functions/nodes/data-transformer/group-transformer';
 import { NodeExecutionHandler } from '../../services/threads/execution/handlers/node-execution-handler';
 import { HookExecutionHandler } from '../../services/threads/execution/handlers/hook-execution-handler';
 import { TriggerExecutionHandler } from '../../services/threads/execution/handlers/trigger-execution-handler';
@@ -159,11 +159,11 @@ export const servicesBindings = new ContainerModule((bind: any) => {
       const functionRegistry = new FunctionRegistry();
 
       // 注册内置的转换函数
-      functionRegistry.registerSingleton(new MapTransformFunction());
-      functionRegistry.registerSingleton(new FilterTransformFunction());
-      functionRegistry.registerSingleton(new ReduceTransformFunction());
-      functionRegistry.registerSingleton(new SortTransformFunction());
-      functionRegistry.registerSingleton(new GroupTransformFunction());
+      functionRegistry.registerSingleton(new MapTransformer());
+      functionRegistry.registerSingleton(new FilterTransformer());
+      functionRegistry.registerSingleton(new ReduceTransformer());
+      functionRegistry.registerSingleton(new SortTransformer());
+      functionRegistry.registerSingleton(new GroupTransformer());
 
       return functionRegistry;
     })

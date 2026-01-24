@@ -11,7 +11,6 @@ import { NodeExecutionResult } from '../../../../domain/workflow/entities/node';
 import { ExecutionContext } from '../context/execution-context';
 import { INodeExecutionStrategy } from './node-execution-strategy';
 import { InteractionEngine } from '../../../interaction/interaction-engine';
-import { IInteractionContext, InteractionContext } from '../../../interaction/interaction-context';
 import { LLMConfig } from '../../../../domain/interaction/value-objects/llm-config';
 import { ILogger } from '../../../../domain/common/types/logger-types';
 
@@ -23,7 +22,7 @@ export class LLMNodeStrategy implements INodeExecutionStrategy {
   constructor(
     @inject('Logger') private readonly logger: ILogger,
     @inject('InteractionEngine') private readonly interactionEngine: InteractionEngine
-  ) {}
+  ) { }
 
   canExecute(node: Node): boolean {
     return node instanceof LLMNode;

@@ -10,7 +10,7 @@ import { LoopStartNode } from '../../../../domain/workflow/entities/node/loop-st
 import { NodeExecutionResult } from '../../../../domain/workflow/entities/node';
 import { ExecutionContext } from '../context/execution-context';
 import { INodeExecutionStrategy } from './node-execution-strategy';
-import { FunctionRegistry } from '../../../workflow/functions/function-registry';
+import { FunctionRegistry } from '../functions/function-registry';
 import { ILogger } from '../../../../domain/common/types/logger-types';
 
 /**
@@ -21,7 +21,7 @@ export class LoopStartNodeStrategy implements INodeExecutionStrategy {
   constructor(
     @inject('Logger') private readonly logger: ILogger,
     @inject('FunctionRegistry') private readonly functionRegistry: FunctionRegistry
-  ) {}
+  ) { }
 
   canExecute(node: Node): boolean {
     return node instanceof LoopStartNode;
@@ -51,7 +51,7 @@ export class LoopStartNodeStrategy implements INodeExecutionStrategy {
     try {
       // 1. 获取或初始化循环状态
       let loopState = context.getVariable('loopState');
-      
+
       if (!loopState) {
         // 第一次进入循环，初始化循环状态
         loopState = {
@@ -62,7 +62,7 @@ export class LoopStartNodeStrategy implements INodeExecutionStrategy {
           loopConditionConfig: node.loopConditionConfig,
           loopVariables: {},
         };
-        
+
         this.logger.debug('初始化循环状态', {
           loopStartNodeId: node.nodeId.toString(),
           maxIterations: loopState.maxIterations,
@@ -165,7 +165,7 @@ export class LoopStartNodeStrategy implements INodeExecutionStrategy {
     try {
       // 获取条件函数
       const conditionFunction = this.functionRegistry.getFunction(conditionFunctionId);
-      
+
       if (!conditionFunction) {
         this.logger.warn('循环条件函数不存在，默认继续循环', {
           conditionFunctionId,

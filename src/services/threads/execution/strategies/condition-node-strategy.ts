@@ -10,7 +10,7 @@ import { ConditionNode } from '../../../../domain/workflow/entities/node/conditi
 import { NodeExecutionResult } from '../../../../domain/workflow/entities/node';
 import { ExecutionContext } from '../context/execution-context';
 import { INodeExecutionStrategy } from './node-execution-strategy';
-import { FunctionRegistry } from '../../../workflow/functions/function-registry';
+import { FunctionRegistry } from '../functions/function-registry';
 import { ILogger } from '../../../../domain/common/types/logger-types';
 
 /**
@@ -21,7 +21,7 @@ export class ConditionNodeStrategy implements INodeExecutionStrategy {
   constructor(
     @inject('Logger') private readonly logger: ILogger,
     @inject('FunctionRegistry') private readonly functionRegistry: FunctionRegistry
-  ) {}
+  ) { }
 
   canExecute(node: Node): boolean {
     return node instanceof ConditionNode;
@@ -50,7 +50,7 @@ export class ConditionNodeStrategy implements INodeExecutionStrategy {
     try {
       // 1. 获取条件函数
       const conditionFunction = this.functionRegistry.getFunction(node.conditionFunctionId);
-      
+
       if (!conditionFunction) {
         throw new Error(`条件函数不存在: ${node.conditionFunctionId}`);
       }
