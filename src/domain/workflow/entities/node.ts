@@ -131,17 +131,17 @@ export interface NodeProps {
 }
 
 /**
- * Node聚合根实体
+ * Node聚合根实体（简化版）
  *
  * 根据DDD原则，Node是工作流的核心组件，负责：
- * 1. 在工作流中执行特定任务
- * 2. 验证自身配置
- * 3. 管理自己的状态
- * 4. 提供元数据信息
+ * 1. 节点状态管理
+ * 2. 节点属性管理
+ * 3. 节点重试策略管理
  *
  * 不负责：
- * - Node的调度和执行顺序（由WorkflowExecutor负责）
- * - Node的持久化细节
+ * - 节点执行（由 Thread 层的 NodeExecutionHandler 负责）
+ * - 节点验证（由配置验证负责）
+ * - 节点元数据（由配置负责）
  */
 export abstract class Node extends Entity {
   protected readonly props: NodeProps;
@@ -267,46 +267,6 @@ export abstract class Node extends Entity {
    */
   public get retryStrategy(): NodeRetryStrategy {
     return this.props.retryStrategy;
-  }
-
-  /**
-   * 执行Node
-   * @param context Node上下文
-   * @returns 执行结果
-   */
-  public abstract execute(context: NodeContext): Promise<NodeExecutionResult>;
-
-  /**
-   * 验证Node配置
-   * @returns 验证结果
-   */
-  public abstract validate(): ValidationResult;
-
-  /**
-   * 获取Node元数据
-   * @returns Node元数据
-   */
-  public abstract getMetadata(): NodeMetadata;
-
-  /**
-   * 获取输入Schema
-   * @returns 输入Schema
-   */
-  public abstract getInputSchema(): Record<string, any>;
-
-  /**
-   * 获取输出Schema
-   * @returns 输出Schema
-   */
-  public abstract getOutputSchema(): Record<string, any>;
-
-  /**
-   * 检查Node是否可以执行
-   * @returns 是否可以执行
-   */
-  public canExecute(): boolean {
-    const validation = this.validate();
-    return validation.valid && this.props.status.isReady();
   }
 
   /**

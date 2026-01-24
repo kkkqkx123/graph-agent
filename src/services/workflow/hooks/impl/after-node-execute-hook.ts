@@ -255,4 +255,13 @@ export class AfterNodeExecuteHook extends Hook {
 
     return result;
   }
+
+  /**
+   * 从属性创建Hook实例
+   * @param props Hook属性
+   * @returns Hook实例
+   */
+  protected createHookFromProps(props: HookProps): Hook {
+    return AfterNodeExecuteHook.fromProps(props);
+  }
 }

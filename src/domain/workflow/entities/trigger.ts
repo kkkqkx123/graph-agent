@@ -43,16 +43,16 @@ export interface TriggerValidationResult {
 }
 
 /**
- * Trigger 实体
+ * Trigger 实体（简化版）
  *
  * 根据DDD原则，Trigger是领域实体，负责：
- * 1. 触发器生命周期管理（创建、启用、禁用、触发）
- * 2. 触发器状态管理（ENABLED/DISABLED/TRIGGERED）
+ * 1. 触发器配置管理
+ * 2. 触发器状态管理
  * 3. 触发器验证
- * 4. 触发器配置管理
  *
- * 注意：Trigger 采用函数式设计，实际的触发逻辑由 TriggerFunction 实现
- * TriggerExecutor 负责调用对应的 TriggerFunction
+ * 不负责：
+ * - 触发器执行（由 TriggerExecutionHandler 负责）
+ * - 触发器状态转换（由 TriggerExecutionHandler 负责）
  */
 export class Trigger extends Entity {
   protected readonly props: TriggerProps;
@@ -139,13 +139,6 @@ export class Trigger extends Entity {
   }
 
   /**
-   * 检查是否可以触发
-   */
-  public canTrigger(): boolean {
-    return this.props.status.canTrigger() && this.props.status.getValue() !== 'triggered';
-  }
-
-  /**
    * 检查是否为时间触发器
    */
   public isTimeTrigger(): boolean {
@@ -174,158 +167,45 @@ export class Trigger extends Entity {
   }
 
   /**
-   * 启用触发器
-   */
-  public enable(): void {
-    if (this.props.status.isEnabled()) {
-      return;
-    }
-
-    (this.props as any).status = TriggerStatus.enabled();
-    this.update();
-  }
-
-  /**
-   * 禁用触发器
-   */
-  public disable(): void {
-    if (this.props.status.isDisabled()) {
-      return;
-    }
-
-    (this.props as any).status = TriggerStatus.disabled();
-    this.update();
-  }
-
-  /**
-   * 标记为已触发
-   */
-  public markAsTriggered(): void {
-    if (!this.canTrigger()) {
-      throw new Error('触发器不能被触发');
-    }
-
-    (this.props as any).status = TriggerStatus.triggered();
-    (this.props as any).triggeredAt = Date.now();
-    this.update();
-  }
-
-  /**
-   * 重置触发器状态
-   */
-  public reset(): void {
-    (this.props as any).status = TriggerStatus.enabled();
-    (this.props as any).triggeredAt = undefined;
-    this.update();
-  }
-
-  /**
    * 更新触发器配置
    * @param config 新配置
    */
-  public updateConfig(config: TriggerConfig): void {
-    (this.props as any).config = { ...config };
-    this.update();
+  public updateConfig(config: TriggerConfig): Trigger {
+    const newProps: TriggerProps = {
+      ...this.props,
+      config: { ...config },
+      updatedAt: Timestamp.now(),
+      version: this.props.version.nextPatch(),
+    };
+    return Trigger.fromProps(newProps);
   }
 
   /**
    * 更新触发器名称
    * @param name 新名称
    */
-  public updateName(name: string): void {
-    (this.props as any).name = name;
-    this.update();
+  public updateName(name: string): Trigger {
+    const newProps: TriggerProps = {
+      ...this.props,
+      name,
+      updatedAt: Timestamp.now(),
+      version: this.props.version.nextPatch(),
+    };
+    return Trigger.fromProps(newProps);
   }
 
   /**
    * 更新触发器描述
    * @param description 新描述
    */
-  public updateDescription(description: string): void {
-    (this.props as any).description = description;
-    this.update();
-  }
-
-  /**
-   * 获取输入Schema
-   * 根据触发器类型返回不同的输入Schema
-   */
-  public getInputSchema(): Record<string, any> {
-    switch (this.props.type.getValue()) {
-      case 'time':
-        return {
-          type: 'object',
-          properties: {
-            triggerId: { type: 'string', description: '触发器ID' },
-            delay: { type: 'number', description: '延迟毫秒数' },
-            interval: { type: 'number', description: '间隔毫秒数' },
-            cron: { type: 'string', description: 'Cron表达式' },
-          },
-          required: ['triggerId'],
-        };
-
-      case 'event':
-        return {
-          type: 'object',
-          properties: {
-            triggerId: { type: 'string', description: '触发器ID' },
-            eventType: { type: 'string', description: '事件类型' },
-            eventDataPattern: { type: 'object', description: '事件数据模式' },
-          },
-          required: ['triggerId', 'eventType'],
-        };
-
-      case 'state':
-        return {
-          type: 'object',
-          properties: {
-            triggerId: { type: 'string', description: '触发器ID' },
-            statePath: { type: 'string', description: '状态路径' },
-            expectedValue: { type: 'any', description: '期望值' },
-          },
-          required: ['triggerId', 'statePath', 'expectedValue'],
-        };
-
-      default:
-        return {
-          type: 'object',
-          properties: {},
-          required: [],
-        };
-    }
-  }
-
-  /**
-   * 获取输出Schema
-   */
-  public getOutputSchema(): Record<string, any> {
-    return {
-      type: 'object',
-      properties: {
-        shouldTrigger: { type: 'boolean', description: '是否应该触发' },
-        reason: { type: 'string', description: '原因说明' },
-        metadata: { type: 'object', description: '元数据' },
-      },
-      required: ['shouldTrigger', 'reason'],
+  public updateDescription(description: string): Trigger {
+    const newProps: TriggerProps = {
+      ...this.props,
+      description,
+      updatedAt: Timestamp.now(),
+      version: this.props.version.nextPatch(),
     };
-  }
-
-  /**
-   * 获取触发器元数据
-   */
-  public getMetadata(): Record<string, unknown> {
-    return {
-      triggerId: this.props.id.toString(),
-      type: this.props.type.toString(),
-      name: this.props.name,
-      description: this.props.description,
-      action: this.props.action.toString(),
-      status: this.props.status.toString(),
-      targetNodeId: this.props.targetNodeId?.toString(),
-      createdAt: this.props.createdAt.toISOString(),
-      updatedAt: this.props.updatedAt.toISOString(),
-      version: this.props.version.toString(),
-    };
+    return Trigger.fromProps(newProps);
   }
 
   /**
@@ -380,12 +260,17 @@ export class Trigger extends Entity {
   }
 
   /**
-   * 更新实体
+   * 获取业务标识
    */
-  protected override update(): void {
-    (this.props as any).updatedAt = Timestamp.now();
-    (this.props as any).version = this.props.version.nextPatch();
-    super.update();
+  public getBusinessIdentifier(): string {
+    return `trigger:${this.props.id.toString()}`;
+  }
+
+  /**
+   * 获取触发器属性（用于持久化）
+   */
+  public toProps(): TriggerProps {
+    return this.props;
   }
 
   /**

@@ -305,4 +305,13 @@ export class AfterExecuteHook extends Hook {
 
     return cleaned;
   }
+
+  /**
+   * 从属性创建Hook实例
+   * @param props Hook属性
+   * @returns Hook实例
+   */
+  protected createHookFromProps(props: HookProps): Hook {
+    return AfterExecuteHook.fromProps(props);
+  }
 }

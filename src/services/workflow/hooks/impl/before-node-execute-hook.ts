@@ -266,4 +266,13 @@ export class BeforeNodeExecuteHook extends Hook {
       errors,
     };
   }
+
+  /**
+   * 从属性创建Hook实例
+   * @param props Hook属性
+   * @returns Hook实例
+   */
+  protected createHookFromProps(props: HookProps): Hook {
+    return BeforeNodeExecuteHook.fromProps(props);
+  }
 }

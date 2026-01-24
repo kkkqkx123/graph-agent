@@ -27,8 +27,15 @@ export interface EdgeValueObjectProps {
 }
 
 /**
- * 边值对象
- * 封装边数据，提供类型安全和验证
+ * 边值对象（简化版）
+ *
+ * 职责：
+ * 1. 存储边配置信息
+ * 2. 提供类型安全的配置访问
+ *
+ * 不负责：
+ * - 边执行（由 Thread 层的 EdgeExecutionHandler 负责）
+ * - 条件评估（由 Thread 层负责）
  */
 export class EdgeValueObject extends ValueObject<EdgeValueObjectProps> {
   /**
@@ -99,20 +106,6 @@ export class EdgeValueObject extends ValueObject<EdgeValueObjectProps> {
    */
   public get properties(): Record<string, unknown> {
     return this.props.properties;
-  }
-
-  /**
-   * 获取条件表达式
-   */
-  public getConditionExpression(): EdgeCondition | undefined {
-    return this.props.condition;
-  }
-
-  /**
-   * 检查是否需要条件评估
-   */
-  public requiresConditionEvaluation(): boolean {
-    return this.props.type.requiresConditionEvaluation();
   }
 
   /**

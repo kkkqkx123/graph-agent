@@ -63,18 +63,16 @@ export interface HookProps {
 }
 
 /**
- * Hook聚合根实体
+ * Hook聚合根实体（简化版）
  *
  * 根据DDD原则，Hook是工作流生命周期中的关键组件，负责：
- * 1. 在特定时机执行自定义逻辑
- * 2. 验证自身配置
- * 3. 控制执行流程（是否继续、是否快速失败）
- * 4. 提供元数据信息
+ * 1. Hook 配置管理
+ * 2. Hook 状态管理
+ * 3. Hook 验证
  *
  * 不负责：
- * - Hook的调度和执行顺序（由HookExecutor负责）
- * - Hook的注册和管理（由HookRegistry负责）
- * - Hook的持久化细节
+ * - Hook 执行（由 HookExecutionHandler 负责）
+ * - Hook 插件管理（由 HookExecutionHandler 负责）
  */
 export abstract class Hook extends Entity {
   protected readonly props: HookProps;
@@ -157,75 +155,6 @@ export abstract class Hook extends Entity {
    * @returns 是否快速失败
    */
   public get failFast(): boolean {
-    return this.props.failFast;
-  }
-
-  /**
-   * 执行Hook
-   * @param context Hook上下文
-   * @returns 执行结果
-   */
-  public abstract execute(context: HookContextValue): Promise<HookExecutionResultValue>;
-
-  /**
-   * 验证Hook配置
-   * @returns 验证结果
-   */
-  public abstract validate(): HookValidationResult;
-
-  /**
-   * 获取Hook元数据
-   * @returns Hook元数据
-   */
-  public abstract getMetadata(): HookMetadata;
-
-  /**
-   * 获取Hook插件配置
-   * @returns 插件配置列表
-   */
-  public getPlugins(): HookPluginConfig[] {
-    return [];
-  }
-
-  /**
-   * 添加插件配置
-   * @param pluginConfig 插件配置
-   */
-  public addPlugin(pluginConfig: HookPluginConfig): void {
-    // 由子类实现，如果需要支持插件
-    throw new Error('addPlugin() 必须由子类实现');
-  }
-
-  /**
-   * 移除插件配置
-   * @param pluginId 插件ID
-   */
-  public removePlugin(pluginId: string): void {
-    // 由子类实现，如果需要支持插件
-    throw new Error('removePlugin() 必须由子类实现');
-  }
-
-  /**
-   * 检查Hook是否应该执行
-   * @returns 是否应该执行
-   */
-  public shouldExecute(): boolean {
-    return this.props.enabled;
-  }
-
-  /**
-   * 检查错误时是否继续执行
-   * @returns 错误时是否继续执行
-   */
-  public shouldContinueOnError(): boolean {
-    return this.props.continueOnError;
-  }
-
-  /**
-   * 检查是否快速失败
-   * @returns 是否快速失败
-   */
-  public shouldFailFast(): boolean {
     return this.props.failFast;
   }
 
@@ -326,49 +255,31 @@ export abstract class Hook extends Entity {
   }
 
   /**
-   * 启用Hook
-   */
-  public enable(): void {
-    if (this.props.enabled) {
-      return;
-    }
-
-    (this.props as any).enabled = true;
-    this.update();
-  }
-
-  /**
-   * 禁用Hook
-   */
-  public disable(): void {
-    if (!this.props.enabled) {
-      return;
-    }
-
-    (this.props as any).enabled = false;
-    this.update();
-  }
-
-  /**
    * 更新Hook配置
    * @param config 新配置
    */
-  public updateConfig(config: Record<string, any>): void {
-    (this.props as any).config = { ...this.props.config, ...config };
-    this.update();
+  public updateConfig(config: Record<string, any>): Hook {
+    const newProps: HookProps = {
+      ...this.props,
+      config: { ...this.props.config, ...config },
+      updatedAt: Timestamp.now(),
+      version: this.props.version.nextPatch(),
+    };
+    return this.createHookFromProps(newProps);
   }
 
   /**
    * 更新优先级
    * @param priority 新优先级
    */
-  public updatePriority(priority: number): void {
-    if (this.props.priority === priority) {
-      return;
-    }
-
-    (this.props as any).priority = priority;
-    this.update();
+  public updatePriority(priority: number): Hook {
+    const newProps: HookProps = {
+      ...this.props,
+      priority,
+      updatedAt: Timestamp.now(),
+      version: this.props.version.nextPatch(),
+    };
+    return this.createHookFromProps(newProps);
   }
 
   /**
@@ -376,23 +287,40 @@ export abstract class Hook extends Entity {
    * @param continueOnError 错误时是否继续
    * @param failFast 是否快速失败
    */
-  public updateErrorHandling(continueOnError: boolean, failFast: boolean): void {
-    if (this.props.continueOnError === continueOnError && this.props.failFast === failFast) {
-      return;
-    }
-
-    (this.props as any).continueOnError = continueOnError;
-    (this.props as any).failFast = failFast;
-    this.update();
+  public updateErrorHandling(continueOnError: boolean, failFast: boolean): Hook {
+    const newProps: HookProps = {
+      ...this.props,
+      continueOnError,
+      failFast,
+      updatedAt: Timestamp.now(),
+      version: this.props.version.nextPatch(),
+    };
+    return this.createHookFromProps(newProps);
   }
 
   /**
-   * 更新实体
+   * 验证Hook配置
+   * @returns 验证结果
    */
-  protected override update(): void {
-    (this.props as any).updatedAt = Timestamp.now();
-    (this.props as any).version = this.props.version.nextPatch();
-    super.update();
+  public abstract validate(): HookValidationResult;
+
+  /**
+   * 抽象方法（由子类实现）
+   */
+  protected abstract createHookFromProps(props: HookProps): Hook;
+
+  /**
+   * 获取业务标识
+   */
+  public getBusinessIdentifier(): string {
+    return `hook:${this.props.id.toString()}`;
+  }
+
+  /**
+   * 获取Hook属性（用于持久化）
+   */
+  public toProps(): HookProps {
+    return this.props;
   }
 
   /**
