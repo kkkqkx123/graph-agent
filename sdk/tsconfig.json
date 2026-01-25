@@ -25,9 +25,8 @@
         "noUncheckedIndexedAccess": true,
         "resolveJsonModule": true,
         "moduleResolution": "bundler",
-        "verbatimModuleSyntax": true,
         "allowSyntheticDefaultImports": false,
-        "esModuleInterop": false,
+        "esModuleInterop": true,
         "baseUrl": ".",
         "paths": {
             "@types/*": [

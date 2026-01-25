@@ -58,7 +58,7 @@ export abstract class BaseLLMClient implements LLMClient {
       }
     }
 
-    // 理论上不会到达这里
+    // 满足方法要求。理论上不会到达这里
     throw new Error('Unknown error occurred');
   }
 
@@ -67,8 +67,8 @@ export abstract class BaseLLMClient implements LLMClient {
    */
   async *generateStream(request: LLMRequest): AsyncIterable<LLMResult> {
     const maxRetries = this.profile.maxRetries ?? 2;
-    const retryDelay = this.profile.retryDelay ?? 1000;
-    const timeout = this.profile.timeout ?? 30000;
+    const retryDelay = this.profile.retryDelay ?? 3000;
+    const timeout = this.profile.timeout ?? 60000;
 
     // 合并请求参数
     const mergedRequest = this.mergeParameters(request);
