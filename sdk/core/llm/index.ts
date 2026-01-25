@@ -9,6 +9,26 @@ export { LLMWrapper } from './wrapper';
 export { ClientFactory } from './client-factory';
 export { BaseLLMClient } from './base-client';
 
+// 工具类
+export { MessageStream } from './message-stream';
+export { ToolRunner } from './tool-runner';
+export type { ToolCallCallbacks } from './tool-runner';
+
+// 事件类型
+export {
+  MessageStreamEventType,
+  type MessageStreamEvent,
+  type MessageStreamConnectEvent,
+  type MessageStreamStreamEvent,
+  type MessageStreamTextEvent,
+  type MessageStreamToolCallEvent,
+  type MessageStreamMessageEvent,
+  type MessageStreamFinalMessageEvent,
+  type MessageStreamErrorEvent,
+  type MessageStreamAbortEvent,
+  type MessageStreamEndEvent
+} from './message-stream-events';
+
 // OpenAI客户端
 export { OpenAIChatClient } from './clients/openai-chat';
 export { OpenAIResponseClient } from './clients/openai-response';

@@ -241,4 +241,16 @@ export class ToolService {
   getRegistry(): ToolRegistry {
     return this.registry;
   }
+
+  /**
+   * 更新工具定义
+   * @param toolName 工具名称
+   * @param updates 更新内容
+   * @throws NotFoundError 如果工具不存在
+   */
+  updateTool(toolName: string, updates: Partial<Tool>): void {
+    const tool = this.getTool(toolName);
+    const updatedTool = { ...tool, ...updates };
+    this.registry.register(updatedTool);
+  }
 }

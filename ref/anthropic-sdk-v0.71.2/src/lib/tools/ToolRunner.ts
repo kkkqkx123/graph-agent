@@ -99,7 +99,7 @@ export class BetaToolRunner<Stream extends boolean> {
             this.#message = stream.finalMessage();
             // Make sure that this promise doesn't throw before we get the option to do something about it.
             // Error will be caught when we call await this.#message ultimately
-            this.#message.catch(() => {});
+            this.#message.catch(() => { });
             yield stream as any;
           } else {
             this.#message = this.client.beta.messages.create({ ...params, stream: false });
@@ -134,7 +134,7 @@ export class BetaToolRunner<Stream extends boolean> {
     } catch (error) {
       this.#consumed = false;
       // Silence unhandled promise errors
-      this.#completion.promise.catch(() => {});
+      this.#completion.promise.catch(() => { });
       this.#completion.reject(error);
       this.#completion = promiseWithResolvers();
       throw error;
@@ -312,13 +312,13 @@ async function generateToolResponse(
     return null;
   }
 
-  const toolUseBlocks = lastMessage.content.filter((content) => content.type === 'tool_use');
+  const toolUseBlocks = lastMessage.content.filter((content: { type: string; }) => content.type === 'tool_use');
   if (toolUseBlocks.length === 0) {
     return null;
   }
 
   const toolResults = await Promise.all(
-    toolUseBlocks.map(async (toolUse) => {
+    toolUseBlocks.map(async (toolUse: { name: string; id: any; input: any; }) => {
       const tool = params.tools.find((t) => ('name' in t ? t.name : t.mcp_server_name) === toolUse.name);
       if (!tool || !('run' in tool)) {
         return {
