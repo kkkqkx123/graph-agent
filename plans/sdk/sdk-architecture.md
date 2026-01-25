@@ -15,7 +15,7 @@ sdk/
 │   ├── thread.ts       # 线程类型（执行实例）
 │   ├── tool.ts         # 工具类型
 │   ├── llm.ts          # LLM类型
-│   ├── execution.ts    # 执行类型
+│   ├── execution.ts    # 执行选项和结果类型
 │   ├── events.ts       # 事件类型
 │   ├── errors.ts       # 错误类型
 │   ├── common.ts       # 通用类型
@@ -47,6 +47,7 @@ sdk/
 - 包含执行状态、变量、历史等动态信息
 - 支持Fork/Join操作
 - 可序列化，支持执行恢复
+- 是执行的核心对象，所有操作围绕Thread进行
 
 ### 3. Node（节点）
 - 15种节点类型
@@ -68,6 +69,12 @@ sdk/
 - 包含名称、描述、参数schema
 - 用于LLM调用时提供工具定义
 
+### 7. Execution Types
+- ExecutionOptions：执行选项（输入、超时、回调等）
+- ExecutionResult：执行结果（输出、错误、执行时间）
+- NodeExecutionResult：节点执行结果
+- 不包含Execution实例类型（已合并到Thread）
+
 ## 关键设计原则
 
 ### 1. 避免循环依赖
@@ -77,7 +84,8 @@ sdk/
 
 ### 2. 职责分离
 - Workflow：静态定义
-- Thread：执行实例
+- Thread：执行实例（核心对象）
+- Execution Types：执行选项和结果
 - Checkpoint：状态快照
 - 应用层：持久化、管理
 
@@ -105,10 +113,11 @@ sdk/
 - 初始化执行状态、变量等动态信息
 
 ### 2. 执行阶段
-- 使用ThreadOptions配置执行参数
+- 使用ExecutionOptions配置执行参数
 - 执行过程中更新Thread状态
 - 记录节点执行结果和执行历史
 - 触发相应事件
+- 返回ExecutionResult
 
 ### 3. 恢复阶段
 - 通过threadId恢复Thread
@@ -129,6 +138,7 @@ sdk/
 - 工具执行框架
 - 核心类型定义
 - 检查点创建和恢复
+- 执行选项和结果定义
 
 ### 应用层负责
 - 持久化（数据库、文件等）
@@ -163,3 +173,22 @@ core/
 
 api/
   └── sdk (依赖 core 和 types)
+
+## Execution层说明
+
+### Execution层包含的内容
+- **ExecutionOptions**：执行选项（input、maxSteps、timeout、enableCheckpoints、回调函数等）
+- **ExecutionResult**：执行结果（success、output、error、executionTime、nodeResults等）
+- **NodeExecutionResult**：节点执行结果（nodeId、success、output、error、executionTime、toolCalls等）
+
+### Execution层不包含的内容
+- ❌ Execution实例类型（已合并到Thread）
+- ❌ ExecutionStatus（使用ThreadStatus）
+- ❌ ExecutionVariable（使用ThreadVariable）
+- ❌ ExecutionMetadata（使用ThreadMetadata）
+
+### 设计理由
+- Thread是执行的核心对象，所有执行状态都在Thread中
+- Execution层只负责定义执行选项和结果的类型
+- 避免概念混淆，保持架构清晰
+- Fork/Join操作的对象明确是Thread
