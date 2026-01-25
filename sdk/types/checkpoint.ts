@@ -4,7 +4,8 @@
  */
 
 import { ThreadStatus } from './thread';
-import { NodeExecutionResult } from './thread';
+import type { NodeExecutionResult } from './thread';
+import type { ID, Timestamp, Metadata } from './common';
 
 /**
  * 线程状态快照类型
@@ -13,7 +14,7 @@ export interface ThreadStateSnapshot {
   /** 线程状态 */
   status: ThreadStatus;
   /** 当前节点ID */
-  currentNodeId: string;
+  currentNodeId: ID;
   /** 变量数组 */
   variables: any[];
   /** 输入数据 */
@@ -39,7 +40,7 @@ export interface CheckpointMetadata {
   /** 标签数组 */
   tags?: string[];
   /** 自定义字段对象 */
-  customFields?: Record<string, any>;
+  customFields?: Metadata;
 }
 
 /**
@@ -47,13 +48,13 @@ export interface CheckpointMetadata {
  */
 export interface Checkpoint {
   /** 检查点唯一标识符 */
-  id: string;
+  id: ID;
   /** 关联的线程ID */
-  threadId: string;
+  threadId: ID;
   /** 关联的工作流ID */
-  workflowId: string;
+  workflowId: ID;
   /** 创建时间戳 */
-  timestamp: number;
+  timestamp: Timestamp;
   /** 线程状态快照 */
   threadState: ThreadStateSnapshot;
   /** 检查点元数据 */

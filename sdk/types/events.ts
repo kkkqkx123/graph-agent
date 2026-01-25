@@ -3,6 +3,8 @@
  * 定义工作流执行过程中的事件类型
  */
 
+import type { ID, Timestamp, Metadata } from './common';
+
 /**
  * 事件类型枚举
  */
@@ -46,13 +48,13 @@ export interface BaseEvent {
   /** 事件类型 */
   type: EventType;
   /** 时间戳 */
-  timestamp: number;
+  timestamp: Timestamp;
   /** 工作流ID */
-  workflowId: string;
+  workflowId: ID;
   /** 线程ID */
-  threadId: string;
+  threadId: ID;
   /** 事件元数据 */
-  metadata?: Record<string, any>;
+  metadata?: Metadata;
 }
 
 /**
@@ -106,9 +108,9 @@ export interface ThreadResumedEvent extends BaseEvent {
 export interface ThreadForkedEvent extends BaseEvent {
   type: EventType.THREAD_FORKED;
   /** 父线程ID */
-  parentThreadId: string;
+  parentThreadId: ID;
   /** 子线程ID数组 */
-  childThreadIds: string[];
+  childThreadIds: ID[];
 }
 
 /**
@@ -117,9 +119,9 @@ export interface ThreadForkedEvent extends BaseEvent {
 export interface ThreadJoinedEvent extends BaseEvent {
   type: EventType.THREAD_JOINED;
   /** 父线程ID */
-  parentThreadId: string;
+  parentThreadId: ID;
   /** 子线程ID数组 */
-  childThreadIds: string[];
+  childThreadIds: ID[];
   /** 合并策略 */
   joinStrategy: string;
 }
@@ -130,7 +132,7 @@ export interface ThreadJoinedEvent extends BaseEvent {
 export interface NodeStartedEvent extends BaseEvent {
   type: EventType.NODE_STARTED;
   /** 节点ID */
-  nodeId: string;
+  nodeId: ID;
   /** 节点类型 */
   nodeType: string;
 }
@@ -141,11 +143,11 @@ export interface NodeStartedEvent extends BaseEvent {
 export interface NodeCompletedEvent extends BaseEvent {
   type: EventType.NODE_COMPLETED;
   /** 节点ID */
-  nodeId: string;
+  nodeId: ID;
   /** 输出数据 */
   output: any;
   /** 执行时间 */
-  executionTime: number;
+  executionTime: Timestamp;
 }
 
 /**
@@ -154,7 +156,7 @@ export interface NodeCompletedEvent extends BaseEvent {
 export interface NodeFailedEvent extends BaseEvent {
   type: EventType.NODE_FAILED;
   /** 节点ID */
-  nodeId: string;
+  nodeId: ID;
   /** 错误信息 */
   error: any;
 }
@@ -165,9 +167,9 @@ export interface NodeFailedEvent extends BaseEvent {
 export interface ToolCalledEvent extends BaseEvent {
   type: EventType.TOOL_CALLED;
   /** 节点ID */
-  nodeId: string;
+  nodeId: ID;
   /** 工具ID */
-  toolId: string;
+  toolId: ID;
   /** 工具参数 */
   parameters: Record<string, any>;
 }
@@ -178,13 +180,13 @@ export interface ToolCalledEvent extends BaseEvent {
 export interface ToolCompletedEvent extends BaseEvent {
   type: EventType.TOOL_COMPLETED;
   /** 节点ID */
-  nodeId: string;
+  nodeId: ID;
   /** 工具ID */
-  toolId: string;
+  toolId: ID;
   /** 输出数据 */
   output: any;
   /** 执行时间 */
-  executionTime: number;
+  executionTime: Timestamp;
 }
 
 /**
@@ -193,9 +195,9 @@ export interface ToolCompletedEvent extends BaseEvent {
 export interface ToolFailedEvent extends BaseEvent {
   type: EventType.TOOL_FAILED;
   /** 节点ID */
-  nodeId: string;
+  nodeId: ID;
   /** 工具ID */
-  toolId: string;
+  toolId: ID;
   /** 错误信息 */
   error: any;
 }
@@ -206,7 +208,7 @@ export interface ToolFailedEvent extends BaseEvent {
 export interface ErrorEvent extends BaseEvent {
   type: EventType.ERROR;
   /** 节点ID（可选） */
-  nodeId?: string;
+  nodeId?: ID;
   /** 错误信息 */
   error: any;
   /** 堆栈跟踪 */
@@ -219,7 +221,7 @@ export interface ErrorEvent extends BaseEvent {
 export interface CheckpointCreatedEvent extends BaseEvent {
   type: EventType.CHECKPOINT_CREATED;
   /** 检查点ID */
-  checkpointId: string;
+  checkpointId: ID;
   /** 检查点描述 */
   description?: string;
 }

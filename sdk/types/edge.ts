@@ -3,6 +3,8 @@
  * 定义工作流中节点之间的连接关系
  */
 
+import type { ID, Metadata } from './common';
+
 /**
  * 边类型枚举
  */
@@ -70,7 +72,7 @@ export interface EdgeMetadata {
   /** 标签数组 */
   tags?: string[];
   /** 自定义字段对象 */
-  customFields?: Record<string, any>;
+  customFields?: Metadata;
 }
 
 /**
@@ -78,11 +80,11 @@ export interface EdgeMetadata {
  */
 export interface Edge {
   /** 边唯一标识符 */
-  id: string;
+  id: ID;
   /** 源节点ID */
-  sourceNodeId: string;
+  sourceNodeId: ID;
   /** 目标节点ID */
-  targetNodeId: string;
+  targetNodeId: ID;
   /** 边类型 */
   type: EdgeType;
   /** 可选的条件表达式（仅 CONDITIONAL 类型需要） */

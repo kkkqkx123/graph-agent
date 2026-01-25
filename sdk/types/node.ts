@@ -3,6 +3,8 @@
  * 定义工作流节点的类型和结构
  */
 
+import type { ID, Metadata } from './common';
+
 /**
  * 节点类型枚举
  */
@@ -86,7 +88,7 @@ export interface VariableNodeConfig {
  */
 export interface ForkNodeConfig {
   /** 连接操作的id，与join节点完全一致 */
-  forkId: string;
+  forkId: ID;
   /** 分叉策略(串行、并行) */
   forkStrategy: 'serial' | 'parallel';
 }
@@ -96,7 +98,7 @@ export interface ForkNodeConfig {
  */
 export interface JoinNodeConfig {
   /** 连接操作的id，与fork节点完全一致 */
-  joinId: string;
+  joinId: ID;
   /** 连接策略(ALL_COMPLETED、ANY_COMPLETED、ALL_FAILED、ANY_FAILED、SUCCESS_COUNT_THRESHOLD) */
   joinStrategy: 'ALL_COMPLETED' | 'ANY_COMPLETED' | 'ALL_FAILED' | 'ANY_FAILED' | 'SUCCESS_COUNT_THRESHOLD';
   /** 成功数量阈值（当joinStrategy为SUCCESS_COUNT_THRESHOLD时使用） */
@@ -128,7 +130,7 @@ export interface CodeNodeConfig {
  */
 export interface LLMNodeConfig {
   /** 引用的LLM Profile ID */
-  profileId: string;
+  profileId: ID;
   /** 提示词（消息数组或变量引用） */
   prompt: any[];
   /** 可选的参数覆盖（覆盖Profile中的parameters） */
@@ -222,7 +224,7 @@ export interface LoopEndNodeConfig {
  */
 export interface SubgraphNodeConfig {
   /** 子工作流ID */
-  subgraphId: string;
+  subgraphId: ID;
   /** 输入参数映射（父工作流变量到子工作流输入的映射） */
   inputMapping: Record<string, string>;
   /** 输出参数映射（子工作流输出到父工作流变量的映射） */
@@ -299,7 +301,7 @@ export interface NodeProperty {
  */
 export interface Node {
   /** 节点唯一标识符 */
-  id: string;
+  id: ID;
   /** 节点类型(NodeType枚举类型) */
   type: NodeType;
   /** 节点名称 */
@@ -313,11 +315,11 @@ export interface Node {
   /** 输出定义 */
   outputs?: NodeOutput[];
   /** 可选的元数据 */
-  metadata?: Record<string, any>;
+  metadata?: Metadata;
   /** 出边ID数组，用于路由决策 */
-  outgoingEdgeIds: string[];
+  outgoingEdgeIds: ID[];
   /** 入边ID数组，用于反向追踪 */
-  incomingEdgeIds: string[];
+  incomingEdgeIds: ID[];
   /** 可选的动态属性对象 */
   properties?: NodeProperty[];
 }

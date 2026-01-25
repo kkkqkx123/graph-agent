@@ -3,8 +3,9 @@
  * 定义工作流执行相关的类型
  */
 
-import { Thread, ThreadOptions, ThreadResult } from './thread';
-import { WorkflowDefinition } from './workflow';
+import type { Thread, ThreadOptions, ThreadResult } from './thread';
+import type { WorkflowDefinition } from './workflow';
+import type { ID, Timestamp, Metadata } from './common';
 
 /**
  * 执行选项类型
@@ -19,7 +20,7 @@ export interface ExecutionOptions {
   /** 是否启用日志记录 */
   enableLogging?: boolean;
   /** 自定义执行上下文 */
-  context?: Record<string, any>;
+  context?: Metadata;
 }
 
 /**
@@ -39,15 +40,15 @@ export interface ExecutionResult {
  */
 export interface ExecutionMetadata {
   /** 执行ID */
-  executionId: string;
+  executionId: ID;
   /** 工作流ID */
-  workflowId: string;
+  workflowId: ID;
   /** 线程ID */
-  threadId: string;
+  threadId: ID;
   /** 开始时间 */
-  startTime: number;
+  startTime: Timestamp;
   /** 结束时间 */
-  endTime: number;
+  endTime: Timestamp;
   /** 执行时长（毫秒） */
   duration: number;
   /** 执行步数 */
@@ -61,7 +62,7 @@ export interface ExecutionMetadata {
   /** 检查点数量 */
   checkpointCount: number;
   /** 自定义字段 */
-  customFields?: Record<string, any>;
+  customFields?: Metadata;
 }
 
 /**
@@ -77,7 +78,7 @@ export interface ExecutionContext {
   /** 执行元数据 */
   metadata: ExecutionMetadata;
   /** 自定义上下文数据 */
-  contextData: Record<string, any>;
+  contextData: Metadata;
 }
 
 /**

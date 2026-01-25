@@ -3,7 +3,7 @@
  * 定义工作流执行线程的结构（执行实例）
  */
 
-import { Node } from './node';
+import type { ID, Timestamp, Version, Metadata } from './common';
 
 /**
  * 线程状态枚举
@@ -40,7 +40,7 @@ export interface ThreadVariable {
   /** 是否只读 */
   readonly: boolean;
   /** 变量元数据 */
-  metadata?: Record<string, any>;
+  metadata?: Metadata;
 }
 
 /**
@@ -52,11 +52,11 @@ export interface ThreadMetadata {
   /** 标签数组 */
   tags?: string[];
   /** 自定义字段对象 */
-  customFields?: Record<string, any>;
+  customFields?: Metadata;
   /** 父线程ID（用于fork场景） */
-  parentThreadId?: string;
+  parentThreadId?: ID;
   /** 子线程ID数组（用于fork场景） */
-  childThreadIds?: string[];
+  childThreadIds?: ID[];
 }
 
 /**
@@ -64,7 +64,7 @@ export interface ThreadMetadata {
  */
 export interface NodeExecutionResult {
   /** 节点ID */
-  nodeId: string;
+  nodeId: ID;
   /** 节点类型 */
   nodeType: string;
   /** 执行状态 */
@@ -74,11 +74,11 @@ export interface NodeExecutionResult {
   /** 错误信息 */
   error?: any;
   /** 执行时间（毫秒） */
-  executionTime?: number;
+  executionTime?: Timestamp;
   /** 开始时间 */
-  startTime?: number;
+  startTime?: Timestamp;
   /** 结束时间 */
-  endTime?: number;
+  endTime?: Timestamp;
 }
 
 /**
@@ -88,13 +88,13 @@ export interface ExecutionHistoryEntry {
   /** 步骤序号 */
   step: number;
   /** 节点ID */
-  nodeId: string;
+  nodeId: ID;
   /** 节点类型 */
   nodeType: string;
   /** 执行状态 */
   status: string;
   /** 时间戳 */
-  timestamp: number;
+  timestamp: Timestamp;
   /** 输入数据 */
   input?: any;
   /** 输出数据 */
@@ -108,15 +108,15 @@ export interface ExecutionHistoryEntry {
  */
 export interface Thread {
   /** 线程唯一标识符 */
-  id: string;
+  id: ID;
   /** 关联的工作流ID */
-  workflowId: string;
+  workflowId: ID;
   /** 工作流版本 */
-  workflowVersion: string;
+  workflowVersion: Version;
   /** 线程状态 */
   status: ThreadStatus;
   /** 当前执行节点ID */
-  currentNodeId: string;
+  currentNodeId: ID;
   /** 变量对象数组 */
   variables: ThreadVariable[];
   /** 输入数据 */
@@ -128,9 +128,9 @@ export interface Thread {
   /** 执行历史记录 */
   executionHistory: ExecutionHistoryEntry[];
   /** 开始时间 */
-  startTime: number;
+  startTime: Timestamp;
   /** 结束时间 */
-  endTime?: number;
+  endTime?: Timestamp;
   /** 错误信息数组 */
   errors: any[];
   /** 线程元数据 */
@@ -162,7 +162,7 @@ export interface ThreadOptions {
  */
 export interface ThreadResult {
   /** 线程ID */
-  threadId: string;
+  threadId: ID;
   /** 是否成功 */
   success: boolean;
   /** 输出数据 */
@@ -170,9 +170,9 @@ export interface ThreadResult {
   /** 错误信息（如果有） */
   error?: any;
   /** 执行时间（毫秒） */
-  executionTime: number;
+  executionTime: Timestamp;
   /** 节点执行结果数组 */
   nodeResults: NodeExecutionResult[];
   /** 执行元数据 */
-  metadata?: Record<string, any>;
+  metadata?: Metadata;
 }

@@ -3,34 +3,10 @@
  * 定义工作流的完整结构，包括节点和边
  */
 
-// 前向声明，避免循环依赖
-// Node和Edge的实际定义在node.ts和edge.ts中
-interface Node {
-  id: string;
-  type: string;
-  name: string;
-  description?: string;
-  config: any;
-  inputs?: any[];
-  outputs?: any[];
-  metadata?: any;
-  outgoingEdgeIds: string[];
-  incomingEdgeIds: string[];
-  properties?: any;
-}
-
-interface Edge {
-  id: string;
-  sourceNodeId: string;
-  targetNodeId: string;
-  type: string;
-  condition?: any;
-  label?: string;
-  description?: string;
-  weight?: number;
-  priority?: number;
-  metadata?: any;
-}
+// 导入类型定义
+import type { Node, NodeType } from './node';
+import type { Edge, EdgeType } from './edge';
+import type { ID, Timestamp, Version, Metadata } from './common';
 
 /**
  * 工作流状态枚举
@@ -61,7 +37,7 @@ export interface WorkflowConfig {
   errorHandling?: {
     stopOnError?: boolean;
     continueOnError?: boolean;
-    fallbackNodeId?: string;
+    fallbackNodeId?: ID;
   };
 }
 
@@ -77,7 +53,7 @@ export interface WorkflowMetadata {
   /** 分类 */
   category?: string;
   /** 自定义字段对象 */
-  customFields?: Record<string, any>;
+  customFields?: Metadata;
 }
 
 /**
@@ -86,7 +62,7 @@ export interface WorkflowMetadata {
  */
 export interface WorkflowDefinition {
   /** 工作流唯一标识符 */
-  id: string;
+  id: ID;
   /** 工作流名称 */
   name: string;
   /** 可选的工作流描述 */
@@ -100,9 +76,9 @@ export interface WorkflowDefinition {
   /** 可选的元数据信息 */
   metadata?: WorkflowMetadata;
   /** 工作流版本号 */
-  version: string;
+  version: Version;
   /** 创建时间 */
-  createdAt: number;
+  createdAt: Timestamp;
   /** 更新时间 */
-  updatedAt: number;
+  updatedAt: Timestamp;
 }

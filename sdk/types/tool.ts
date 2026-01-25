@@ -3,6 +3,8 @@
  * 定义工具的基本信息和参数schema
  */
 
+import type { ID, Timestamp, Metadata } from './common';
+
 /**
  * 工具类型枚举
  */
@@ -53,6 +55,8 @@ export interface ToolMetadata {
   tags?: string[];
   /** 文档URL（可选） */
   documentationUrl?: string;
+  /** 自定义字段 */
+  customFields?: Metadata;
 }
 
 /**
@@ -60,7 +64,7 @@ export interface ToolMetadata {
  */
 export interface Tool {
   /** 工具唯一标识符 */
-  id: string;
+  id: ID;
   /** 工具名称 */
   name: string;
   /** 工具类型 */
@@ -83,4 +87,24 @@ export interface ToolSchema {
   description: string;
   /** 参数schema */
   parameters: ToolParameters;
+}
+
+/**
+ * 工具调用记录类型
+ */
+export interface ToolCall {
+  /** 工具调用ID */
+  id: ID;
+  /** 工具名称 */
+  toolName: string;
+  /** 工具参数 */
+  parameters: Record<string, any>;
+  /** 调用结果 */
+  result?: any;
+  /** 错误信息 */
+  error?: any;
+  /** 调用时间 */
+  timestamp: Timestamp;
+  /** 执行时间（毫秒） */
+  executionTime?: Timestamp;
 }

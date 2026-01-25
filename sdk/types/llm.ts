@@ -3,7 +3,8 @@
  * 定义LLM配置文件（Profile），支持独立配置和复用
  */
 
-import { ToolSchema } from './tool';
+import type { ToolSchema } from './tool';
+import type { ID, Timestamp, Metadata } from './common';
 
 /**
  * LLM提供商枚举
@@ -26,7 +27,7 @@ export enum LLMProvider {
  */
 export interface LLMProfile {
   /** Profile唯一标识符 */
-  id: string;
+  id: ID;
   /** Profile名称 */
   name: string;
   /** LLM提供商 */
@@ -48,7 +49,7 @@ export interface LLMProfile {
   /** 重试延迟（毫秒） */
   retryDelay?: number;
   /** 可选的元数据 */
-  metadata?: Record<string, any>;
+  metadata?: Metadata;
 }
 
 /**
@@ -61,7 +62,7 @@ export type LLMMessageRole = 'system' | 'user' | 'assistant' | 'tool';
  */
 export interface LLMToolCall {
   /** 工具调用ID */
-  id: string;
+  id: ID;
   /** 类型（function） */
   type: 'function';
   /** 函数调用信息 */
@@ -92,7 +93,7 @@ export interface LLMMessage {
  */
 export interface LLMRequest {
   /** 引用的LLM Profile ID（可选，如果不提供则使用默认配置） */
-  profileId?: string;
+  profileId?: ID;
   /** 消息数组 */
   messages: LLMMessage[];
   /** 请求参数对象（覆盖Profile中的parameters） */
@@ -126,7 +127,7 @@ export interface LLMUsage {
  */
 export interface LLMResult {
   /** 响应ID */
-  id: string;
+  id: ID;
   /** 模型名称 */
   model: string;
   /** 响应内容文本 */
@@ -140,9 +141,9 @@ export interface LLMResult {
   /** 完成原因 */
   finishReason: string;
   /** 响应时间（毫秒） */
-  duration: number;
+  duration: Timestamp;
   /** 响应元数据 */
-  metadata?: Record<string, any>;
+  metadata?: Metadata;
 }
 
 /**
