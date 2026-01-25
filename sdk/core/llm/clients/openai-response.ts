@@ -1,12 +1,13 @@
 /**
  * OpenAI Response客户端实现
- * 
+ *
  * 实现OpenAI Response API调用，使用/responses端点
  * 支持reasoning_effort、previous_response_id等特殊参数
  * 支持流式和非流式调用
  */
 
 import { BaseLLMClient } from '../base-client';
+import { HttpClient } from '../../http';
 import type {
   LLMRequest,
   LLMResult,
@@ -19,49 +20,50 @@ import type {
  * OpenAI Response客户端
  */
 export class OpenAIResponseClient extends BaseLLMClient {
-  private readonly baseUrl: string;
+  private readonly httpClient: HttpClient;
 
   constructor(profile: LLMProfile) {
     super(profile);
-    this.baseUrl = profile.baseUrl || 'https://api.openai.com/v1';
+    this.httpClient = new HttpClient({
+      baseURL: profile.baseUrl || 'https://api.openai.com/v1',
+      timeout: profile.timeout || 30000,
+      maxRetries: profile.maxRetries || 3,
+      retryDelay: profile.retryDelay || 1000,
+      enableCircuitBreaker: true,
+      enableRateLimiter: true,
+    });
   }
 
   /**
    * 执行非流式生成
    */
   protected async doGenerate(request: LLMRequest): Promise<LLMResult> {
-    const url = `${this.baseUrl}/responses`;
-    const headers = this.buildHeaders();
-    const body = this.buildRequestBody(request);
+    const response = await this.httpClient.post(
+      '/responses',
+      this.buildRequestBody(request),
+      {
+        headers: this.buildHeaders(),
+      }
+    );
 
-    const response = await fetch(url, {
-      method: 'POST',
-      headers,
-      body: JSON.stringify(body)
-    });
-
-    if (!response.ok) {
-      const error = await response.text();
-      throw new Error(`OpenAI Response API error (${response.status}): ${error}`);
-    }
-
-    const data = await response.json();
-    return this.parseResponse(data, request);
+    return this.parseResponse(response.data, request);
   }
 
   /**
    * 执行流式生成
    */
   protected async *doGenerateStream(request: LLMRequest): AsyncIterable<LLMResult> {
-    const url = `${this.baseUrl}/responses`;
-    const headers = this.buildHeaders();
     const body = this.buildRequestBody(request, true);
+    const headers = this.buildHeaders();
 
-    const response = await fetch(url, {
-      method: 'POST',
-      headers,
-      body: JSON.stringify(body)
-    });
+    const response = await fetch(
+      `${this.profile.baseUrl || 'https://api.openai.com/v1'}/responses`,
+      {
+        method: 'POST',
+        headers,
+        body: JSON.stringify(body),
+      }
+    );
 
     if (!response.ok) {
       const error = await response.text();

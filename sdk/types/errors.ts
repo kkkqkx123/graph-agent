@@ -22,7 +22,11 @@ export enum ErrorCode {
   /** LLM调用错误 */
   LLM_ERROR = 'LLM_ERROR',
   /** 工具调用错误 */
-  TOOL_ERROR = 'TOOL_ERROR'
+  TOOL_ERROR = 'TOOL_ERROR',
+  /** 限流错误 */
+  RATE_LIMIT_ERROR = 'RATE_LIMIT_ERROR',
+  /** 熔断器打开错误 */
+  CIRCUIT_BREAKER_OPEN_ERROR = 'CIRCUIT_BREAKER_OPEN_ERROR'
 }
 
 /**
@@ -162,6 +166,34 @@ export class LLMError extends SDKError {
   ) {
     super(ErrorCode.LLM_ERROR, message, context, cause);
     this.name = 'LLMError';
+  }
+}
+
+/**
+ * 限流错误类型
+ */
+export class RateLimitError extends SDKError {
+  constructor(
+    message: string,
+    public readonly retryAfter?: number,
+    context?: Record<string, any>
+  ) {
+    super(ErrorCode.RATE_LIMIT_ERROR, message, context);
+    this.name = 'RateLimitError';
+  }
+}
+
+/**
+ * 熔断器打开错误类型
+ */
+export class CircuitBreakerOpenError extends SDKError {
+  constructor(
+    message: string,
+    public readonly state?: string,
+    context?: Record<string, any>
+  ) {
+    super(ErrorCode.CIRCUIT_BREAKER_OPEN_ERROR, message, context);
+    this.name = 'CircuitBreakerOpenError';
   }
 }
 

@@ -1,12 +1,13 @@
 /**
  * Gemini OpenAI兼容客户端实现
- * 
+ *
  * 实现Gemini OpenAI兼容API调用，使用Gemini的OpenAI兼容端点
  * 支持thinking_budget、cached_content等特殊参数
  * 支持流式和非流式调用
  */
 
 import { BaseLLMClient } from '../base-client';
+import { HttpClient } from '../../http';
 import type {
   LLMRequest,
   LLMResult,
@@ -19,49 +20,50 @@ import type {
  * Gemini OpenAI兼容客户端
  */
 export class GeminiOpenAIClient extends BaseLLMClient {
-  private readonly baseUrl: string;
+  private readonly httpClient: HttpClient;
 
   constructor(profile: LLMProfile) {
     super(profile);
-    this.baseUrl = profile.baseUrl || 'https://generativelanguage.googleapis.com/v1beta/openai';
+    this.httpClient = new HttpClient({
+      baseURL: profile.baseUrl || 'https://generativelanguage.googleapis.com/v1beta/openai',
+      timeout: profile.timeout || 30000,
+      maxRetries: profile.maxRetries || 3,
+      retryDelay: profile.retryDelay || 1000,
+      enableCircuitBreaker: true,
+      enableRateLimiter: true,
+    });
   }
 
   /**
    * 执行非流式生成
    */
   protected async doGenerate(request: LLMRequest): Promise<LLMResult> {
-    const url = `${this.baseUrl}/chat/completions`;
-    const headers = this.buildHeaders();
-    const body = this.buildRequestBody(request);
+    const response = await this.httpClient.post(
+      '/chat/completions',
+      this.buildRequestBody(request),
+      {
+        headers: this.buildHeaders(),
+      }
+    );
 
-    const response = await fetch(url, {
-      method: 'POST',
-      headers,
-      body: JSON.stringify(body)
-    });
-
-    if (!response.ok) {
-      const error = await response.text();
-      throw new Error(`Gemini OpenAI API error (${response.status}): ${error}`);
-    }
-
-    const data = await response.json();
-    return this.parseResponse(data, request);
+    return this.parseResponse(response.data, request);
   }
 
   /**
    * 执行流式生成
    */
   protected async *doGenerateStream(request: LLMRequest): AsyncIterable<LLMResult> {
-    const url = `${this.baseUrl}/chat/completions`;
-    const headers = this.buildHeaders();
     const body = this.buildRequestBody(request, true);
+    const headers = this.buildHeaders();
 
-    const response = await fetch(url, {
-      method: 'POST',
-      headers,
-      body: JSON.stringify(body)
-    });
+    const response = await fetch(
+      `${this.profile.baseUrl || 'https://generativelanguage.googleapis.com/v1beta/openai'}/chat/completions`,
+      {
+        method: 'POST',
+        headers,
+        body: JSON.stringify(body),
+      }
+    );
 
     if (!response.ok) {
       const error = await response.text();
