@@ -1,0 +1,181 @@
+/**
+ * LLM客户端工厂
+ *
+ * 负责创建不同provider的客户端实例
+ * 使用工厂模式创建客户端，缓存客户端实例以提高性能
+ */
+
+import type { LLMClient, LLMProfile } from '../../types/llm';
+import { LLMProvider } from '../../types/llm';
+import { BaseLLMClient } from './base-client';
+import { OpenAIChatClient } from './clients/openai-chat';
+import { OpenAIResponseClient } from './clients/openai-response';
+import { AnthropicClient } from './clients/anthropic';
+import { GeminiNativeClient } from './clients/gemini-native';
+import { GeminiOpenAIClient } from './clients/gemini-openai';
+import { MockClient } from './clients/mock';
+import { HumanRelayClient } from './clients/human-relay';
+import { SDKError, ErrorCode } from '../../types/errors';
+
+/**
+ * 客户端工厂类
+ */
+export class ClientFactory {
+  private clientCache: Map<string, LLMClient> = new Map();
+
+  /**
+   * 创建LLM客户端
+   * 
+   * @param profile LLM Profile配置
+   * @returns LLM客户端实例
+   */
+  createClient(profile: LLMProfile): LLMClient {
+    const cacheKey = this.getCacheKey(profile);
+
+    // 检查缓存
+    const cachedClient = this.clientCache.get(cacheKey);
+    if (cachedClient) {
+      return cachedClient;
+    }
+
+    // 创建新客户端
+    const client = this.createClientByProvider(profile);
+
+    // 缓存客户端
+    this.clientCache.set(cacheKey, client);
+
+    return client;
+  }
+
+  /**
+   * 根据provider创建对应的客户端
+   */
+  private createClientByProvider(profile: LLMProfile): LLMClient {
+    switch (profile.provider) {
+      case LLMProvider.OPENAI_CHAT:
+        return new OpenAIChatClient(profile);
+
+      case LLMProvider.OPENAI_RESPONSE:
+        return new OpenAIResponseClient(profile);
+
+      case LLMProvider.ANTHROPIC:
+        return new AnthropicClient(profile);
+
+      case LLMProvider.GEMINI_NATIVE:
+        return new GeminiNativeClient(profile);
+
+      case LLMProvider.GEMINI_OPENAI:
+        return new GeminiOpenAIClient(profile);
+
+      case LLMProvider.MOCK:
+        return new MockClient(profile);
+
+      case LLMProvider.HUMAN_RELAY:
+        return new HumanRelayClient(profile);
+
+      default:
+        throw new SDKError(
+          ErrorCode.CONFIGURATION_ERROR,
+          `不支持的LLM提供商: ${profile.provider}`,
+          {
+            provider: profile.provider,
+            model: profile.model
+          }
+        );
+    }
+  }
+
+  /**
+   * 获取缓存的客户端
+   * 
+   * @param profileId Profile ID
+   * @returns LLM客户端实例或undefined
+   */
+  getClient(profileId: string): LLMClient | undefined {
+    for (const [key, client] of this.clientCache.entries()) {
+      if (key.startsWith(profileId)) {
+        return client;
+      }
+    }
+    return undefined;
+  }
+
+  /**
+   * 清除客户端缓存
+   */
+  clearCache(): void {
+    this.clientCache.clear();
+  }
+
+  /**
+   * 清除指定Profile的客户端缓存
+   * 
+   * @param profileId Profile ID
+   */
+  clearClientCache(profileId: string): void {
+    for (const key of this.clientCache.keys()) {
+      if (key.startsWith(profileId)) {
+        this.clientCache.delete(key);
+      }
+    }
+  }
+
+  /**
+   * 获取缓存键
+   */
+  private getCacheKey(profile: LLMProfile): string {
+    return `${profile.id}:${profile.provider}:${profile.model}`;
+  }
+
+  /**
+   * 获取所有支持的提供商
+   *
+   * @returns 提供商列表
+   */
+  getSupportedProviders(): LLMProvider[] {
+    return [
+      LLMProvider.OPENAI_CHAT,
+      LLMProvider.OPENAI_RESPONSE,
+      LLMProvider.ANTHROPIC,
+      LLMProvider.GEMINI_NATIVE,
+      LLMProvider.GEMINI_OPENAI,
+      LLMProvider.MOCK,
+      LLMProvider.HUMAN_RELAY
+    ];
+  }
+
+  /**
+   * 检查提供商是否支持
+   * 
+   * @param provider 提供商
+   * @returns 是否支持
+   */
+  isProviderSupported(provider: LLMProvider): boolean {
+    return this.getSupportedProviders().includes(provider);
+  }
+
+  /**
+   * 获取缓存统计信息
+   *
+   * @returns 缓存统计
+   */
+  getCacheStats(): {
+    totalClients: number;
+    clientsByProvider: Record<string, number>;
+  } {
+    const clientsByProvider: Record<string, number> = {};
+
+    for (const [key] of this.clientCache.entries()) {
+      const parts = key.split(':');
+      if (parts.length >= 2 && parts[1]) {
+        const provider = parts[1];
+        clientsByProvider[provider] = (clientsByProvider[provider] || 0) + 1;
+      }
+    }
+
+    return {
+      totalClients: this.clientCache.size,
+      clientsByProvider
+    };
+  }
+}
