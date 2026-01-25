@@ -30,23 +30,22 @@ export abstract class BaseLLMClient implements LLMClient {
    * 非流式生成（带重试和超时处理）
    */
   async generate(request: LLMRequest): Promise<LLMResult> {
-    const maxRetries = this.profile.maxRetries || 3;
-    const retryDelay = this.profile.retryDelay || 1000;
-    const timeout = this.profile.timeout || 30000;
+    const maxRetries = this.profile.maxRetries ?? 2;
+    const retryDelay = this.profile.retryDelay ?? 1000;
+    const timeout = this.profile.timeout ?? 60000;
 
-    let lastError: Error | null = null;
+    // 合并请求参数
+    const mergedRequest = this.mergeParameters(request);
 
     for (let attempt = 0; attempt <= maxRetries; attempt++) {
       try {
         // 使用超时包装
         const result = await this.withTimeout(
-          this.doGenerate(request),
+          this.doGenerate(mergedRequest),
           timeout
         );
         return result;
       } catch (error) {
-        lastError = error as Error;
-
         // 检查是否应该重试
         if (attempt < maxRetries && this.shouldRetry(error, attempt)) {
           const delay = this.getRetryDelay(attempt, retryDelay);
@@ -60,27 +59,67 @@ export abstract class BaseLLMClient implements LLMClient {
     }
 
     // 理论上不会到达这里
-    throw lastError || new Error('Unknown error occurred');
+    throw new Error('Unknown error occurred');
   }
 
   /**
-   * 流式生成（带超时处理）
+   * 流式生成（带超时处理和连接失败重试）
    */
   async *generateStream(request: LLMRequest): AsyncIterable<LLMResult> {
-    const timeout = this.profile.timeout || 30000;
+    const maxRetries = this.profile.maxRetries ?? 2;
+    const retryDelay = this.profile.retryDelay ?? 1000;
+    const timeout = this.profile.timeout ?? 30000;
 
-    try {
-      const stream = this.withTimeoutStream(
-        this.doGenerateStream(request),
-        timeout
-      );
+    // 合并请求参数
+    const mergedRequest = this.mergeParameters(request);
 
-      for await (const chunk of stream) {
-        yield chunk;
+    for (let attempt = 0; attempt <= maxRetries; attempt++) {
+      try {
+        const stream = this.withTimeoutStream(
+          this.doGenerateStream(mergedRequest),
+          timeout
+        );
+
+        for await (const chunk of stream) {
+          yield chunk;
+        }
+        return;
+      } catch (error) {
+        // 流式生成仅对连接失败重试，不重试流式传输中的错误
+        if (attempt < maxRetries && this.shouldRetryConnection(error)) {
+          const delay = this.getRetryDelay(attempt, retryDelay);
+          await this.sleep(delay);
+          continue;
+        }
+
+        // 不重试或达到最大重试次数，抛出错误
+        throw this.handleError(error);
       }
-    } catch (error) {
-      throw this.handleError(error);
     }
+
+    // 理论上不会到达这里
+    throw new Error('Unknown error occurred');
+  }
+
+  /**
+   * 合并请求参数
+   *
+   * 将request.parameters合并到Profile.parameters中
+   * request.parameters会覆盖Profile.parameters中的同名参数
+   *
+   * @param request LLM请求
+   * @returns 合并后的请求
+   */
+  protected mergeParameters(request: LLMRequest): LLMRequest {
+    const mergedParameters = {
+      ...this.profile.parameters,
+      ...request.parameters
+    };
+
+    return {
+      ...request,
+      parameters: mergedParameters
+    };
   }
 
   /**
@@ -109,7 +148,7 @@ export abstract class BaseLLMClient implements LLMClient {
    * - 未找到错误（404）
    */
   protected shouldRetry(error: any, retries: number): boolean {
-    if (retries >= (this.profile.maxRetries || 3)) {
+    if (retries >= (this.profile.maxRetries ?? 2)) {
       return false;
     }
 
@@ -117,10 +156,10 @@ export abstract class BaseLLMClient implements LLMClient {
     const errorCode = error?.code || error?.status;
 
     // 网络错误
-    if (errorMessage.includes('network') || 
-        errorMessage.includes('econnrefused') ||
-        errorMessage.includes('enotfound') ||
-        errorMessage.includes('etimedout')) {
+    if (errorMessage.includes('network') ||
+      errorMessage.includes('econnrefused') ||
+      errorMessage.includes('enotfound') ||
+      errorMessage.includes('etimedout')) {
       return true;
     }
 
@@ -141,8 +180,48 @@ export abstract class BaseLLMClient implements LLMClient {
 
     // 模型临时不可用
     if (errorMessage.includes('model is not available') ||
-        errorMessage.includes('model is overloaded') ||
-        errorMessage.includes('model is temporarily unavailable')) {
+      errorMessage.includes('model is overloaded') ||
+      errorMessage.includes('model is temporarily unavailable')) {
+      return true;
+    }
+
+    return false;
+  }
+
+  /**
+   * 判断流式连接是否应该重试
+   *
+   * 流式生成仅对连接失败重试，不重试流式传输中的错误
+   * 可重试的错误：
+   * - 网络错误
+   * - 超时错误
+   * - 速率限制错误（429）
+   * - 服务器错误（5xx）
+   */
+  protected shouldRetryConnection(error: any): boolean {
+    const errorMessage = error?.message?.toLowerCase() || '';
+    const errorCode = error?.code || error?.status;
+
+    // 网络错误
+    if (errorMessage.includes('network') ||
+      errorMessage.includes('econnrefused') ||
+      errorMessage.includes('enotfound') ||
+      errorMessage.includes('etimedout')) {
+      return true;
+    }
+
+    // 超时错误
+    if (errorMessage.includes('timeout') || errorCode === 'ETIMEDOUT') {
+      return true;
+    }
+
+    // 速率限制错误（429）
+    if (errorCode === 429 || errorMessage.includes('rate limit')) {
+      return true;
+    }
+
+    // 服务器错误（5xx）
+    if (errorCode >= 500 && errorCode < 600) {
       return true;
     }
 
@@ -219,40 +298,34 @@ export abstract class BaseLLMClient implements LLMClient {
   }
 
   /**
-   * 超时包装器
+   * 超时包装器（使用 AbortController）
    */
   private async withTimeout<T>(promise: Promise<T>, timeout: number): Promise<T> {
-    return Promise.race([
-      promise,
-      new Promise<never>((_, reject) => {
-        setTimeout(() => {
-          reject(new Error(`Request timeout after ${timeout}ms`));
-        }, timeout);
-      })
-    ]);
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), timeout);
+
+    try {
+      return await promise;
+    } finally {
+      clearTimeout(timeoutId);
+    }
   }
 
   /**
-   * 流式超时包装器
+   * 流式超时包装器（使用 AbortController）
    */
   private async *withTimeoutStream<T>(
     stream: AsyncIterable<T>,
     timeout: number
   ): AsyncIterable<T> {
-    const timeoutPromise = new Promise<never>((_, reject) => {
-      setTimeout(() => {
-        reject(new Error(`Stream timeout after ${timeout}ms`));
-      }, timeout);
-    });
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), timeout);
 
     const iterator = stream[Symbol.asyncIterator]();
 
     try {
       while (true) {
-        const result = await Promise.race([
-          iterator.next(),
-          timeoutPromise
-        ]);
+        const result = await iterator.next();
 
         if (result.done) {
           break;
@@ -261,6 +334,7 @@ export abstract class BaseLLMClient implements LLMClient {
         yield result.value;
       }
     } finally {
+      clearTimeout(timeoutId);
       // 确保迭代器被正确关闭
       if (iterator.return) {
         await iterator.return();

@@ -7,7 +7,6 @@
 
 import type { LLMClient, LLMProfile } from '../../types/llm';
 import { LLMProvider } from '../../types/llm';
-import { BaseLLMClient } from './base-client';
 import { OpenAIChatClient } from './clients/openai-chat';
 import { OpenAIResponseClient } from './clients/openai-response';
 import { AnthropicClient } from './clients/anthropic';
@@ -122,36 +121,11 @@ export class ClientFactory {
 
   /**
    * 获取缓存键
+   *
+   * 使用Profile ID作为唯一缓存键，因为ID本身已保证唯一性
    */
   private getCacheKey(profile: LLMProfile): string {
-    return `${profile.id}:${profile.provider}:${profile.model}`;
-  }
-
-  /**
-   * 获取所有支持的提供商
-   *
-   * @returns 提供商列表
-   */
-  getSupportedProviders(): LLMProvider[] {
-    return [
-      LLMProvider.OPENAI_CHAT,
-      LLMProvider.OPENAI_RESPONSE,
-      LLMProvider.ANTHROPIC,
-      LLMProvider.GEMINI_NATIVE,
-      LLMProvider.GEMINI_OPENAI,
-      LLMProvider.MOCK,
-      LLMProvider.HUMAN_RELAY
-    ];
-  }
-
-  /**
-   * 检查提供商是否支持
-   * 
-   * @param provider 提供商
-   * @returns 是否支持
-   */
-  isProviderSupported(provider: LLMProvider): boolean {
-    return this.getSupportedProviders().includes(provider);
+    return profile.id;
   }
 
   /**
@@ -165,12 +139,10 @@ export class ClientFactory {
   } {
     const clientsByProvider: Record<string, number> = {};
 
-    for (const [key] of this.clientCache.entries()) {
-      const parts = key.split(':');
-      if (parts.length >= 2 && parts[1]) {
-        const provider = parts[1];
-        clientsByProvider[provider] = (clientsByProvider[provider] || 0) + 1;
-      }
+    for (const [key, client] of this.clientCache.entries()) {
+      // 从缓存的客户端实例中获取provider信息
+      const provider = (client as any).profile?.provider || 'unknown';
+      clientsByProvider[provider] = (clientsByProvider[provider] || 0) + 1;
     }
 
     return {
