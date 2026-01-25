@@ -5,13 +5,4 @@
 
 export { WorkflowValidator } from './workflow-validator';
 export { NodeValidator } from './node-validator';
-export type {
-  ValidationResult,
-  ValidationIssue
-} from './validation-result';
-export {
-  createValidationResult,
-  createValidationError,
-  createValidationWarning,
-  mergeValidationResults
-} from './validation-result';
+export type { ValidationResult } from '../../types/errors';
