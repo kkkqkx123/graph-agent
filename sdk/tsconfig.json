@@ -1,0 +1,59 @@
+{
+    "compilerOptions": {
+        "target": "ES2023",
+        "module": "ESNext",
+        "lib": [
+            "ES2023"
+        ],
+        "outDir": "./dist",
+        "rootDir": ".",
+        "strict": true,
+        "skipLibCheck": true,
+        "forceConsistentCasingInFileNames": true,
+        "declaration": true,
+        "declarationMap": true,
+        "sourceMap": true,
+        "removeComments": false,
+        "noImplicitAny": true,
+        "noImplicitReturns": true,
+        "noImplicitThis": true,
+        "noUnusedLocals": false,
+        "noUnusedParameters": false,
+        "exactOptionalPropertyTypes": false,
+        "noImplicitOverride": true,
+        "noPropertyAccessFromIndexSignature": true,
+        "noUncheckedIndexedAccess": true,
+        "resolveJsonModule": true,
+        "moduleResolution": "bundler",
+        "verbatimModuleSyntax": true,
+        "allowSyntheticDefaultImports": false,
+        "esModuleInterop": false,
+        "baseUrl": ".",
+        "paths": {
+            "@types/*": [
+                "types/*"
+            ],
+            "@core/*": [
+                "core/*"
+            ],
+            "@api/*": [
+                "api/*"
+            ],
+            "@utils/*": [
+                "utils/*"
+            ]
+        }
+    },
+    "include": [
+        "types/**/*",
+        "core/**/*",
+        "api/**/*",
+        "utils/**/*"
+    ],
+    "exclude": [
+        "node_modules",
+        "dist",
+        "**/*.test.ts",
+        "**/*.spec.ts"
+    ]
+}

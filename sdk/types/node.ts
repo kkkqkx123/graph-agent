@@ -1,0 +1,323 @@
+/**
+ * Node类型定义
+ * 定义工作流节点的类型和结构
+ */
+
+/**
+ * 节点类型枚举
+ */
+export enum NodeType {
+  /** 开始节点。作为工作流开始标志，必须唯一。入度必须为0。 */
+  START = 'START',
+  /** 结束节点。作为工作流结束标志，必须唯一。出度必须为0。 */
+  END = 'END',
+  /** 变量操作节点。用于调用ts本身的函数式操作来操作工作流中的变量。主要用途是更改工作流变量的值，为边条件评估提供数据。不要用于执行业务逻辑。 */
+  VARIABLE = 'VARIABLE',
+  /** 分叉节点。用于控制thread的fork操作。 */
+  FORK = 'FORK',
+  /** 连接节点。用于控制thread的join操作。 */
+  JOIN = 'JOIN',
+  /** 子图节点。用于链接到子工作流。在workflow处理阶段由merge自动把该节点替换为子工作流，以子工作流的start节点连接。 */
+  SUBGRAPH = 'SUBGRAPH',
+  /** 代码节点。用于执行脚本(脚本用于执行可执行文件或代码)。 */
+  CODE = 'CODE',
+  /** LLM节点。用于执行LLM api调用。 */
+  LLM = 'LLM',
+  /** 工具节点。用于获取LLM api响应并执行工具，返回调用结果。 */
+  TOOL = 'TOOL',
+  /** 用户交互节点。用于触发展示前端用户交互。仅提供输入、输出渠道，不关心前端实现细节。 */
+  USER_INTERACTION = 'USER_INTERACTION',
+  /** 路由节点。用于根据条件路由到下一个节点。 */
+  ROUTE = 'ROUTE',
+  /** 上下文处理器节点。用于对提示词上下文(消息数组)进行处理。 */
+  CONTEXT_PROCESSOR = 'CONTEXT_PROCESSOR',
+  /** 循环开始节点。标记循环开始，设置循环变量。循环变量可以被VARIABLE节点修改。不关心条件以外的退出条件 */
+  LOOP_START = 'LOOP_START',
+  /** 循环结束节点。标记循环结束。让循环次数变量自增，并根据循环次数是否达到 */
+  LOOP_END = 'LOOP_END'
+}
+
+/**
+ * 节点状态枚举（高级功能，用于审计，不承担工作流执行逻辑）
+ */
+export enum NodeStatus {
+  /** 等待执行 */
+  PENDING = 'PENDING',
+  /** 正在执行 */
+  RUNNING = 'RUNNING',
+  /** 执行完成 */
+  COMPLETED = 'COMPLETED',
+  /** 执行失败 */
+  FAILED = 'FAILED',
+  /** 已跳过（执行过程中由图算法标记，是可选的高级功能） */
+  SKIPPED = 'SKIPPED',
+  /** 已取消 */
+  CANCELLED = 'CANCELLED'
+}
+
+/**
+ * 开始节点配置
+ */
+export interface StartNodeConfig {
+  // 无配置，仅作为工作流开始标志
+}
+
+/**
+ * 结束节点配置
+ */
+export interface EndNodeConfig {
+  // 无配置，仅作为工作流结束标志
+}
+
+/**
+ * 变量操作节点配置
+ */
+export interface VariableNodeConfig {
+  /** 操作的变量名称 */
+  variableName: string;
+  /** 操作的变量类型【包含number、string、boolean、array、object】 */
+  variableType: 'number' | 'string' | 'boolean' | 'array' | 'object';
+  /** 操作的表达式【直接用表达式覆盖相应变量】 */
+  expression: string;
+}
+
+/**
+ * 分叉节点配置
+ */
+export interface ForkNodeConfig {
+  /** 连接操作的id，与join节点完全一致 */
+  forkId: string;
+  /** 分叉策略(串行、并行) */
+  forkStrategy: 'serial' | 'parallel';
+}
+
+/**
+ * 连接节点配置
+ */
+export interface JoinNodeConfig {
+  /** 连接操作的id，与fork节点完全一致 */
+  joinId: string;
+  /** 连接策略(ALL_COMPLETED、ANY_COMPLETED、ALL_FAILED、ANY_FAILED、SUCCESS_COUNT_THRESHOLD) */
+  joinStrategy: 'ALL_COMPLETED' | 'ANY_COMPLETED' | 'ALL_FAILED' | 'ANY_FAILED' | 'SUCCESS_COUNT_THRESHOLD';
+  /** 成功数量阈值（当joinStrategy为SUCCESS_COUNT_THRESHOLD时使用） */
+  threshold?: number;
+  /** 等待超时时间（秒）【从第一个前继路径完成开始计算】 */
+  timeout?: number;
+}
+
+/**
+ * 代码节点配置
+ */
+export interface CodeNodeConfig {
+  /** 脚本名称 */
+  scriptName: string;
+  /** 脚本语言(shell/cmd/powershell/python/javascript) */
+  scriptType: 'shell' | 'cmd' | 'powershell' | 'python' | 'javascript';
+  /** 风险等级(none/low/medium/high)【应用层中会实现不同的执行策略，例如none不检查，high在沙箱运行】 */
+  risk: 'none' | 'low' | 'medium' | 'high';
+  /** 超时时间（秒） */
+  timeout: number;
+  /** 重试次数 */
+  retries: number;
+  /** 重试延迟（秒） */
+  retryDelay: number;
+}
+
+/**
+ * LLM节点配置
+ */
+export interface LLMNodeConfig {
+  /** 引用的LLM Profile ID */
+  profileId: string;
+  /** 提示词（消息数组或变量引用） */
+  prompt: any[];
+  /** 可选的参数覆盖（覆盖Profile中的parameters） */
+  parameters?: Record<string, any>;
+}
+
+/**
+ * 工具节点配置
+ */
+export interface ToolNodeConfig {
+  /** 工具名称（会保证唯一） */
+  toolName: string;
+  /** 工具参数对象 */
+  parameters: Record<string, any>;
+  /** 超时时间（毫秒） */
+  timeout: number;
+  /** 重试次数 */
+  retries: number;
+}
+
+/**
+ * 用户交互节点配置
+ */
+export interface UserInteractionNodeConfig {
+  /** 用户交互类型(ask_for_approval, ask_for_input, ask_for_selection, show_message) */
+  userInteractionType: 'ask_for_approval' | 'ask_for_input' | 'ask_for_selection' | 'show_message';
+  /** 用户交互显示消息 */
+  showMessage?: string;
+  /** 用户输入 */
+  userInput?: any;
+}
+
+/**
+ * 路由节点配置
+ */
+export interface RouteNodeConfig {
+  /** 条件表达式数组 */
+  conditions: string[];
+  /** 下一个节点数组(与conditions一一对应)，顺序判断每个条件是否满足，如果满足则路由到对应的节点。只能路由到邻接节点，不能路由到非邻接节点 */
+  nextNodes: string[];
+}
+
+/**
+ * 上下文处理器类型
+ */
+export type ContextProcessorType = 'PASS_THROUGH' | 'FILTER_IN' | 'FILTER_OUT' | 'TRANSFORM' | 'ISOLATE' | 'MERGE';
+
+/**
+ * 上下文处理器节点配置
+ */
+export interface ContextProcessorNodeConfig {
+  /** 上下文处理器类型 */
+  contextProcessorType: ContextProcessorType;
+  /** 上下文处理器配置对象 */
+  contextProcessorConfig: {
+    /** 过滤条件表达式（用于FILTER_IN/FILTER_OUT） */
+    filterCondition?: string;
+    /** 转换表达式（用于TRANSFORM） */
+    transformExpression?: string;
+    /** 合并策略（用于MERGE） */
+    mergeStrategy?: string;
+  };
+}
+
+/**
+ * 循环开始节点配置
+ */
+export interface LoopStartNodeConfig {
+  /** 循环名 */
+  loopId: string;
+  /** 可迭代对象 */
+  iterable: any;
+  /** 最大迭代次数 */
+  maxIterations: number;
+}
+
+/**
+ * 循环结束节点配置
+ */
+export interface LoopEndNodeConfig {
+  /** 循环名，与loop start节点完全一致 */
+  loopId: string;
+  /** 可迭代对象，与loop start节点完全一致 */
+  iterable: any;
+  /** 中断条件表达式 */
+  breakCondition: string;
+}
+
+/**
+ * 子图节点配置
+ */
+export interface SubgraphNodeConfig {
+  /** 子工作流ID */
+  subgraphId: string;
+  /** 输入参数映射（父工作流变量到子工作流输入的映射） */
+  inputMapping: Record<string, string>;
+  /** 输出参数映射（子工作流输出到父工作流变量的映射） */
+  outputMapping: Record<string, string>;
+  /** 是否异步执行 */
+  async: boolean;
+}
+
+/**
+ * 节点配置联合类型
+ */
+export type NodeConfig =
+  | StartNodeConfig
+  | EndNodeConfig
+  | VariableNodeConfig
+  | ForkNodeConfig
+  | JoinNodeConfig
+  | CodeNodeConfig
+  | LLMNodeConfig
+  | ToolNodeConfig
+  | UserInteractionNodeConfig
+  | RouteNodeConfig
+  | ContextProcessorNodeConfig
+  | LoopStartNodeConfig
+  | LoopEndNodeConfig
+  | SubgraphNodeConfig;
+
+/**
+ * 节点输入定义类型
+ */
+export interface NodeInput {
+  /** 输入参数名称 */
+  name: string;
+  /** 输入类型 */
+  type: string;
+  /** 是否必需 */
+  required: boolean;
+  /** 默认值 */
+  defaultValue?: any;
+  /** 输入描述 */
+  description?: string;
+}
+
+/**
+ * 节点输出定义类型
+ */
+export interface NodeOutput {
+  /** 输出参数名称 */
+  name: string;
+  /** 输出类型 */
+  type: string;
+  /** 输出描述 */
+  description?: string;
+}
+
+/**
+ * 节点动态属性类型
+ */
+export interface NodeProperty {
+  /** 属性键 */
+  key: string;
+  /** 属性值 */
+  value: any;
+  /** 属性类型 */
+  type: string;
+  /** 是否必需 */
+  required: boolean;
+  /** 验证规则 */
+  validation?: any;
+}
+
+/**
+ * 节点定义类型
+ */
+export interface Node {
+  /** 节点唯一标识符 */
+  id: string;
+  /** 节点类型(NodeType枚举类型) */
+  type: NodeType;
+  /** 节点名称 */
+  name: string;
+  /** 可选的节点描述 */
+  description?: string;
+  /** 节点配置，根据节点类型不同而不同 */
+  config: NodeConfig;
+  /** 输入定义 */
+  inputs?: NodeInput[];
+  /** 输出定义 */
+  outputs?: NodeOutput[];
+  /** 可选的元数据 */
+  metadata?: Record<string, any>;
+  /** 出边ID数组，用于路由决策 */
+  outgoingEdgeIds: string[];
+  /** 入边ID数组，用于反向追踪 */
+  incomingEdgeIds: string[];
+  /** 可选的动态属性对象 */
+  properties?: NodeProperty[];
+}

@@ -3,7 +3,24 @@
   "version": "1.0.0",
   "description": "模块化智能体框架",
   "main": "dist/index.js",
+  "types": "dist/index.d.ts",
   "type": "module",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./sdk": {
+      "types": "./sdk/dist/index.d.ts",
+      "import": "./sdk/dist/index.js"
+    }
+  },
+  "files": [
+    "dist",
+    "sdk/dist",
+    "README.md",
+    "LICENSE"
+  ],
   "scripts": {
     "build": "tsc",
     "build:watch": "tsc --watch",
@@ -65,7 +82,7 @@
     "typescript": "^5.9.3"
   },
   "engines": {
-    "node": ">=18.0.0"
+    "node": ">=22.0.0"
   },
   "overrides": {
     "glob": "^10.5.0",
