@@ -2,9 +2,12 @@
   "compilerOptions": {
     "target": "ES2022",
     "module": "commonjs",
-    "lib": ["ES2022", "DOM"],
+    "lib": [
+      "ES2022",
+      "DOM"
+    ],
     "outDir": "./dist",
-    "rootDir": "./src",
+    "rootDir": "application",
     "strict": true,
     "esModuleInterop": true,
     "skipLibCheck": true,
@@ -27,18 +30,30 @@
     "resolveJsonModule": true,
     "moduleResolution": "node",
     "allowSyntheticDefaultImports": true,
-    "baseUrl": "./src",
+    "baseUrl": "application",
     "paths": {
-      "@/*": ["*"],
-      "@domain/*": ["domain/*"],
-      "@application/*": ["application/*"],
-      "@infrastructure/*": ["infrastructure/*"],
-      "@interfaces/*": ["interfaces/*"],
-      "@shared/*": ["shared/*"]
+      "@/*": [
+        "*"
+      ],
+      "@domain/*": [
+        "domain/*"
+      ],
+      "@application/*": [
+        "application/*"
+      ],
+      "@infrastructure/*": [
+        "infrastructure/*"
+      ],
+      "@interfaces/*": [
+        "interfaces/*"
+      ],
+      "@shared/*": [
+        "shared/*"
+      ]
     }
   },
   "include": [
-    "src/**/*"
+    "application/**/*"
   ],
   "exclude": [
     "node_modules",

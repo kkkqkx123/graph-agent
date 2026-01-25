@@ -10,7 +10,7 @@ import { OpenAIParameterMapper } from '../parameter-mappers/openai-parameter-map
 import { OpenAIResponsesEndpointStrategy } from '../endpoint-strategies/openai-responses-endpoint-strategy';
 import { BaseFeatureSupport } from '../parameter-mappers/interfaces/feature-support.interface';
 import { TYPES } from '../../../di/service-keys';
-import { HttpClient } from '../../../infrastructure/common/http/http-client';
+import { HttpClient } from '../../common/http/http-client';
 import { TokenBucketLimiter } from '../rate-limiters/token-bucket-limiter';
 import { TokenCalculator } from '../token-calculators/token-calculator';
 import { getConfig } from '../../config/config';
@@ -95,7 +95,7 @@ export class OpenAIResponseClient extends BaseLLMClient {
     }
 
     const configs: Record<string, any> = getConfig().get(
-        'llm_runtime.openai_response.models'
+      'llm_runtime.openai_response.models'
     );
     const config = configs[model];
 

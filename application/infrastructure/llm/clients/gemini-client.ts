@@ -6,17 +6,17 @@ import { LLMMessage } from '../../../domain/llm/value-objects/llm-message';
 import { BaseLLMClient } from './base-llm-client';
 import { ProviderConfig, ApiType, ProviderConfigBuilder } from '../parameter-mappers';
 import { GeminiParameterMapper } from '../parameter-mappers/gemini-parameter-mapper';
-import { OpenAICompatibleEndpointStrategy } from '../endpoint-strategies/openai-compatible-endpoint-strategy';
+import { GeminiNativeEndpointStrategy } from '../endpoint-strategies/gemini-native-endpoint-strategy';
 import { BaseFeatureSupport } from '../parameter-mappers/interfaces/feature-support.interface';
 import { TYPES } from '../../../di/service-keys';
-import { HttpClient } from '../../../infrastructure/common/http/http-client';
+import { HttpClient } from '../../common/http/http-client';
 import { TokenBucketLimiter } from '../rate-limiters/token-bucket-limiter';
 import { TokenCalculator } from '../token-calculators/token-calculator';
 import { getConfig } from '../../config/config';
 import { MissingConfigurationError, InvalidConfigurationError } from '../../../domain/common/exceptions';
 
 @injectable()
-export class GeminiOpenAIClient extends BaseLLMClient {
+export class GeminiClient extends BaseLLMClient {
   constructor(
     @inject(TYPES.HttpClient) httpClient: HttpClient,
     @inject(TYPES.TokenBucketLimiter) rateLimiter: TokenBucketLimiter,
@@ -27,9 +27,9 @@ export class GeminiOpenAIClient extends BaseLLMClient {
     featureSupport.supportsStreaming = true;
     featureSupport.supportsTools = true;
     featureSupport.supportsImages = true;
-    featureSupport.supportsAudio = true;
-    featureSupport.supportsVideo = true;
-    featureSupport.supportsSystemMessages = true;
+    featureSupport.supportsAudio = false;
+    featureSupport.supportsVideo = false;
+    featureSupport.supportsSystemMessages = false;
     featureSupport.supportsTemperature = true;
     featureSupport.supportsTopP = true;
     featureSupport.supportsTopK = true;
@@ -39,34 +39,28 @@ export class GeminiOpenAIClient extends BaseLLMClient {
     featureSupport.setProviderSpecificFeature('cached_content', true);
 
     // 从配置中读取必需的配置项
-    const apiKey = getConfig().get('llm_runtime.gemini_openai.api_key');
-    const defaultModel = getConfig().get('llm_runtime.gemini_openai.default_model');
-    const supportedModels = getConfig().get('llm_runtime.gemini_openai.supported_models');
+    const apiKey = getConfig().get('llm_runtime.gemini.api_key');
+    const defaultModel = getConfig().get('llm_runtime.gemini.default_model');
+    const supportedModels = getConfig().get('llm_runtime.gemini.supported_models');
 
     // 验证必需配置
     if (!apiKey) {
-      throw new MissingConfigurationError(
-        'llm.gemini-openai.apiKey'
-      );
+      throw new MissingConfigurationError('llm.gemini.apiKey');
     }
     if (!defaultModel) {
-      throw new MissingConfigurationError(
-        'llm.gemini-openai.defaultModel'
-      );
+      throw new MissingConfigurationError('llm.gemini.defaultModel');
     }
     if (!supportedModels || !Array.isArray(supportedModels) || supportedModels.length === 0) {
-      throw new MissingConfigurationError(
-        'llm.gemini-openai.supportedModels'
-      );
+      throw new MissingConfigurationError('llm.gemini.supportedModels');
     }
 
     // 创建提供商配置
     const providerConfig = new ProviderConfigBuilder()
-      .name('gemini-openai')
-      .apiType(ApiType.OPENAI_COMPATIBLE)
-      .baseURL('https://generativelanguage.googleapis.com/v1beta/openai')
+      .name('gemini')
+      .apiType(ApiType.NATIVE)
+      .baseURL('https://generativelanguage.googleapis.com')
       .apiKey(apiKey)
-      .endpointStrategy(new OpenAICompatibleEndpointStrategy())
+      .endpointStrategy(new GeminiNativeEndpointStrategy())
       .parameterMapper(new GeminiParameterMapper())
       .featureSupport(featureSupport)
       .defaultModel(defaultModel)
@@ -81,7 +75,7 @@ export class GeminiOpenAIClient extends BaseLLMClient {
 
   getSupportedModelsList(): string[] {
     if (!this.providerConfig.supportedModels) {
-      throw new MissingConfigurationError('llm.gemini-openai.supportedModels');
+      throw new MissingConfigurationError('llm.gemini.supportedModels');
     }
     return this.providerConfig.supportedModels;
   }
@@ -89,19 +83,14 @@ export class GeminiOpenAIClient extends BaseLLMClient {
   getModelConfig(): ModelConfig {
     const model = this.providerConfig.defaultModel;
     if (!model) {
-      throw new MissingConfigurationError('llm.gemini-openai.defaultModel');
+      throw new MissingConfigurationError('llm.gemini.defaultModel');
     }
 
-    const configs: Record<string, any> = getConfig().get(
-      'llm_runtime.gemini_openai.models'
-    );
+    const configs = getConfig().get('llm_runtime.gemini.models');
     const config = configs[model];
 
     if (!config) {
-      throw new InvalidConfigurationError(
-        model,
-        `Gemini OpenAI兼容模型配置未找到: ${model}。请在配置文件中提供该模型的完整配置。`
-      );
+      throw new InvalidConfigurationError(model, `Gemini模型配置未找到: ${model}。请在配置文件中提供该模型的完整配置。`);
     }
 
     // 验证必需的配置字段
@@ -115,7 +104,7 @@ export class GeminiOpenAIClient extends BaseLLMClient {
     ];
     for (const field of requiredFields) {
       if (config[field] === undefined || config[field] === null) {
-        throw new InvalidConfigurationError(field, `Gemini OpenAI兼容模型 ${model} 缺少必需配置字段: ${field}`);
+        throw new InvalidConfigurationError(field, `Gemini模型 ${model} 缺少必需配置字段: ${field}`);
       }
     }
 
@@ -135,13 +124,9 @@ export class GeminiOpenAIClient extends BaseLLMClient {
       supportsStreaming: config.supportsStreaming ?? true,
       supportsTools: config.supportsTools ?? true,
       supportsImages: config.supportsImages ?? true,
-      supportsAudio: config.supportsAudio ?? true,
-      supportsVideo: config.supportsVideo ?? true,
-      metadata: {
-        ...config.metadata,
-        topK: config.topK ?? 40,
-        supportsThinking: config.supportsThinking ?? true,
-      },
+      supportsAudio: config.supportsAudio ?? false,
+      supportsVideo: config.supportsVideo ?? false,
+      metadata: config.metadata ?? {},
     });
   }
 
@@ -152,51 +137,42 @@ export class GeminiOpenAIClient extends BaseLLMClient {
     const self = this;
 
     async function* streamGenerator() {
-      // Gemini OpenAI兼容端点使用与OpenAI相同的SSE格式
+      // Gemini原生API流式响应格式
       for await (const chunk of response.data) {
-        const lines = chunk
-          .toString()
-          .split('\n')
-          .filter((line: string) => line.trim() !== '');
+        try {
+          const data = JSON.parse(chunk.toString());
 
-        for (const line of lines) {
-          if (line.startsWith('data: ')) {
-            const dataStr = line.slice(6);
-
-            // 跳过结束标记
-            if (dataStr.trim() === '[DONE]') {
-              return;
-            }
-
-            try {
-              const data = JSON.parse(dataStr);
-              const choice = data.choices[0];
-
-              if (choice) {
-                yield LLMResponse.create(
-                  request.requestId,
-                  request.model,
-                  [
+          // Gemini原生格式: { candidates: [{ content: { parts: [{ text: "..." }] }] }]
+          if (data.candidates && data.candidates.length > 0) {
+            const candidate = data.candidates[0];
+            if (candidate.content && candidate.content.parts) {
+              for (const part of candidate.content.parts) {
+                if (part.text) {
+                  yield LLMResponse.create(
+                    request.requestId,
+                    request.model,
+                    [
+                      {
+                        index: 0,
+                        message: LLMMessage.createAssistant(part.text),
+                        finish_reason: candidate.finishReason || '',
+                      },
+                    ],
                     {
-                      index: choice.index || 0,
-                      message: LLMMessage.createAssistant(choice.delta?.content || ''),
-                      finish_reason: choice.finish_reason || '',
+                      promptTokens: data.usageMetadata?.promptTokenCount || 0,
+                      completionTokens: data.usageMetadata?.candidatesTokenCount || 0,
+                      totalTokens: data.usageMetadata?.totalTokenCount || 0,
                     },
-                  ],
-                  {
-                    promptTokens: data.usage?.prompt_tokens || 0,
-                    completionTokens: data.usage?.completion_tokens || 0,
-                    totalTokens: data.usage?.total_tokens || 0,
-                  },
-                  choice.finish_reason || '',
-                  0
-                );
+                    candidate.finishReason || '',
+                    0
+                  );
+                }
               }
-            } catch (e) {
-              // 跳过无效JSON
-              continue;
             }
           }
+        } catch (e) {
+          // 跳过无效JSON
+          continue;
         }
       }
 

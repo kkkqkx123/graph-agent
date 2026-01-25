@@ -3,7 +3,7 @@ import { LLMRequest } from '../../../domain/llm/entities/llm-request';
 import { LLMResponse } from '../../../domain/llm/entities/llm-response';
 import { ModelConfig } from '../../../domain/llm/value-objects/model-config';
 import { ID } from '../../../domain/common/value-objects/id';
-import { HttpClient } from '../../../infrastructure/common/http/http-client';
+import { HttpClient } from '../../common/http/http-client';
 import { TokenBucketLimiter } from '../rate-limiters/token-bucket-limiter';
 import { TokenCalculator } from '../token-calculators/token-calculator';
 import { ProviderConfig } from '../parameter-mappers/interfaces/provider-config.interface';
