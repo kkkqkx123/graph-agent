@@ -90,14 +90,16 @@
 #### ForkNodeConfig
 
 **属性**：
+- forkId：连接操作的id，与join节点完全一致
 - forkStrategy: 分叉策略(串行、并行)
 
 #### JoinNodeConfig
 
 **属性**：
+- joinId：连接操作的id，与fork节点完全一致
 - joinStrategy: 连接策略(ALL_COMPLETED、ANY_COMPLETED、ALL_FAILED、ANY_FAILED、SUCCESS_COUNT_THRESHOLD)
 - threshold: 成功数量阈值（当joinStrategy为SUCCESS_COUNT_THRESHOLD时使用）
-- timeout: 等待超时时间（秒）
+- timeout: 等待超时时间（秒）【从第一个前继路径完成开始计算】
 
 #### CodeNodeConfig
 
@@ -112,9 +114,15 @@
 #### LLMNodeConfig
 
 **属性**：
-- model: 模型名称
-- prompt: 提示词（传入对象引用）
-- parameters: api调用参数，包含temperature、maxTokens、topP、frequencyPenalty、presencePenalty、stopSequences等
+- profileId: 引用的LLM Profile ID
+- prompt: 提示词（消息数组或变量引用）
+- parameters: 可选的参数覆盖（覆盖Profile中的parameters）
+
+**设计说明**：
+- 通过profileId引用LLM Profile，避免重复配置
+- prompt支持变量引用，如{{variableName}}
+- parameters可以覆盖Profile中的参数
+- 简化了配置，提高了复用性
 
 #### ToolNodeConfig
 
