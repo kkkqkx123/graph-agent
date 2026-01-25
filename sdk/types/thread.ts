@@ -135,6 +135,8 @@ export interface Thread {
   errors: any[];
   /** 线程元数据 */
   metadata?: ThreadMetadata;
+  /** 上下文数据（用于存储 Conversation 等实例） */
+  contextData?: Record<string, any>;
 }
 
 /**
@@ -149,6 +151,8 @@ export interface ThreadOptions {
   timeout?: number;
   /** 是否启用检查点 */
   enableCheckpoints?: boolean;
+  /** Token 限制阈值 */
+  tokenLimit?: number;
   /** 节点执行完成回调 */
   onNodeExecuted?: (result: NodeExecutionResult) => void | Promise<void>;
   /** 工具调用回调 */

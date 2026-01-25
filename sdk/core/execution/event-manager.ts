@@ -1,0 +1,208 @@
+/**
+ * EventManager - 事件管理器
+ * 管理工作流执行过程中的事件，提供事件监听和分发机制
+ */
+
+import type { BaseEvent, EventType, EventListener } from '../../types/events';
+
+/**
+ * 监听器包装器
+ */
+interface ListenerWrapper<T extends BaseEvent> {
+  listener: EventListener<T>;
+  id: string;
+  timestamp: number;
+}
+
+/**
+ * EventManager - 事件管理器
+ */
+export class EventManager {
+  private listeners: Map<EventType, ListenerWrapper<any>[]> = new Map();
+  private wildcardListeners: ListenerWrapper<any>[] = [];
+
+  /**
+   * 注册事件监听器
+   * @param eventType 事件类型
+   * @param listener 事件监听器
+   * @returns 注销函数
+   */
+  on<T extends BaseEvent>(eventType: EventType, listener: EventListener<T>): () => void {
+    // 验证参数
+    if (!eventType) {
+      throw new Error('EventType is required');
+    }
+    if (typeof listener !== 'function') {
+      throw new Error('Listener must be a function');
+    }
+
+    // 创建监听器包装器
+    const wrapper: ListenerWrapper<T> = {
+      listener,
+      id: `listener-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+      timestamp: Date.now()
+    };
+
+    // 添加到监听器列表
+    if (!this.listeners.has(eventType)) {
+      this.listeners.set(eventType, []);
+    }
+    this.listeners.get(eventType)!.push(wrapper);
+
+    // 返回注销函数
+    return () => this.off(eventType, listener);
+  }
+
+  /**
+   * 注销事件监听器
+   * @param eventType 事件类型
+   * @param listener 事件监听器
+   * @returns 是否成功注销
+   */
+  off<T extends BaseEvent>(eventType: EventType, listener: EventListener<T>): boolean {
+    // 验证参数
+    if (!eventType) {
+      throw new Error('EventType is required');
+    }
+    if (typeof listener !== 'function') {
+      throw new Error('Listener must be a function');
+    }
+
+    // 获取监听器数组
+    const wrappers = this.listeners.get(eventType);
+    if (!wrappers) {
+      return false;
+    }
+
+    // 查找并移除监听器
+    const index = wrappers.findIndex(w => w.listener === listener);
+    if (index === -1) {
+      return false;
+    }
+
+    wrappers.splice(index, 1);
+
+    // 如果数组为空，删除映射
+    if (wrappers.length === 0) {
+      this.listeners.delete(eventType);
+    }
+
+    return true;
+  }
+
+  /**
+   * 触发事件
+   * @param event 事件对象
+   * @returns Promise，等待所有监听器完成
+   */
+  async emit<T extends BaseEvent>(event: T): Promise<void> {
+    // 验证事件
+    if (!event) {
+      throw new Error('Event is required');
+    }
+    if (!event.type) {
+      throw new Error('Event type is required');
+    }
+
+    // 获取监听器数组
+    const wrappers = this.listeners.get(event.type) || [];
+    const allWrappers = [...wrappers, ...this.wildcardListeners];
+
+    // 执行监听器
+    const promises = allWrappers.map(async (wrapper) => {
+      try {
+        await wrapper.listener(event);
+      } catch (error) {
+        // 记录错误，不影响其他监听器
+        console.error(`Error in event listener for ${event.type}:`, error);
+      }
+    });
+
+    // 等待所有监听器完成
+    await Promise.all(promises);
+  }
+
+  /**
+   * 注册一次性事件监听器
+   * @param eventType 事件类型
+   * @param listener 事件监听器
+   * @returns 注销函数
+   */
+  once<T extends BaseEvent>(eventType: EventType, listener: EventListener<T>): () => void {
+    // 验证参数
+    if (!eventType) {
+      throw new Error('EventType is required');
+    }
+    if (typeof listener !== 'function') {
+      throw new Error('Listener must be a function');
+    }
+
+    // 创建包装监听器
+    const wrapper: EventListener<T> = async (event: T) => {
+      await listener(event);
+      // 自动注销
+      this.off(eventType, wrapper);
+    };
+
+    // 注册包装监听器
+    return this.on(eventType, wrapper);
+  }
+
+  /**
+   * 清空事件监听器
+   * @param eventType 事件类型（可选），如果不提供则清空所有监听器
+   */
+  clear(eventType?: EventType): void {
+    if (eventType) {
+      this.listeners.delete(eventType);
+    } else {
+      this.listeners.clear();
+      this.wildcardListeners = [];
+    }
+  }
+
+  /**
+   * 等待特定事件触发
+   * @param eventType 事件类型
+   * @param timeout 超时时间（毫秒）
+   * @returns Promise，解析为事件对象
+   */
+  waitFor<T extends BaseEvent>(eventType: EventType, timeout?: number): Promise<T> {
+    return new Promise((resolve, reject) => {
+      let timeoutId: NodeJS.Timeout | undefined;
+
+      // 创建一次性监听器
+      const unregister = this.once(eventType, (event: T) => {
+        if (timeoutId) {
+          clearTimeout(timeoutId);
+        }
+        resolve(event);
+      });
+
+      // 设置超时
+      if (timeout) {
+        timeoutId = setTimeout(() => {
+          unregister();
+          reject(new Error(`Timeout waiting for event ${eventType}`));
+        }, timeout);
+      }
+    });
+  }
+
+  /**
+   * 获取监听器数量
+   * @param eventType 事件类型（可选）
+   * @returns 监听器数量
+   */
+  getListenerCount(eventType?: EventType): number {
+    if (eventType) {
+      return this.listeners.get(eventType)?.length || 0;
+    }
+    let count = 0;
+    for (const wrappers of this.listeners.values()) {
+      count += wrappers.length;
+    }
+    count += this.wildcardListeners.length;
+    return count;
+  }
+}

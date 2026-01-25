@@ -4,10 +4,10 @@
  */
 
 import type { Node } from '../../types/node';
+import type { Thread } from '../../types/thread';
 import type { NodeExecutionResult } from '../../types/thread';
-import type { ExecutionContext } from '../../types/execution';
 import { NodeStatus } from '../../types/node';
-import { ExecutionError, TimeoutError, ValidationError as SDKValidationError } from '../../types/errors';
+import { ValidationError } from '../../types/errors';
 
 /**
  * 节点执行器基类
@@ -15,26 +15,18 @@ import { ExecutionError, TimeoutError, ValidationError as SDKValidationError } f
 export abstract class NodeExecutor {
   /**
    * 执行节点
-   * @param context 执行上下文
+   * @param thread Thread 实例
+   * @param node 节点定义
    * @returns 节点执行结果
    */
-  async execute(context: ExecutionContext): Promise<NodeExecutionResult> {
-    const node = context.workflow.nodes.find(n => n.id === context.thread.currentNodeId);
-    if (!node) {
-      throw new ExecutionError(
-        `Node not found: ${context.thread.currentNodeId}`,
-        context.thread.currentNodeId,
-        context.workflow.id
-      );
-    }
-
-    // 步骤1：验证节点
+  async execute(thread: Thread, node: Node): Promise<NodeExecutionResult> {
+    // 步骤1：验证节点配置
     if (!this.validate(node)) {
-      throw new SDKValidationError(`Node validation failed: ${node.id}`, `node.${node.id}`);
+      throw new ValidationError(`Node validation failed: ${node.id}`, `node.${node.id}`);
     }
 
     // 步骤2：检查是否可以执行
-    if (!this.canExecute(node, context)) {
+    if (!this.canExecute(thread, node)) {
       return {
         nodeId: node.id,
         nodeType: node.type,
@@ -46,8 +38,8 @@ export abstract class NodeExecutor {
     const startTime = Date.now();
 
     try {
-      // 步骤3：执行节点
-      const output = await this.doExecute(context);
+      // 步骤3：执行节点逻辑
+      const output = await this.doExecute(thread, node);
 
       // 步骤4：返回成功结果
       return {
@@ -91,13 +83,13 @@ export abstract class NodeExecutor {
 
   /**
    * 检查节点是否可以执行
+   * @param thread Thread 实例
    * @param node 节点
-   * @param context 执行上下文
    * @returns 是否可以执行
    */
-  protected canExecute(node: Node, context: ExecutionContext): boolean {
+  protected canExecute(thread: Thread, node: Node): boolean {
     // 检查Thread状态
-    if (context.thread.status !== 'RUNNING') {
+    if (thread.status !== 'RUNNING') {
       return false;
     }
 
@@ -107,8 +99,9 @@ export abstract class NodeExecutor {
 
   /**
    * 执行节点的具体逻辑（抽象方法）
-   * @param context 执行上下文
+   * @param thread Thread 实例
+   * @param node 节点定义
    * @returns 执行输出
    */
-  protected abstract doExecute(context: ExecutionContext): Promise<any>;
+  protected abstract doExecute(thread: Thread, node: Node): Promise<any>;
 }

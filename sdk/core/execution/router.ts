@@ -7,7 +7,7 @@ import type { Edge, EdgeCondition } from '../../types/edge';
 import { EdgeType, ConditionType } from '../../types/edge';
 import type { Node } from '../../types/node';
 import { NodeType } from '../../types/node';
-import type { ExecutionContext } from '../../types/execution';
+import type { Thread } from '../../types/thread';
 
 /**
  * Router - 条件路由器
@@ -17,13 +17,13 @@ export class Router {
    * 选择下一个节点
    * @param currentNode 当前节点
    * @param edges 当前节点的所有出边
-   * @param context 执行上下文
+   * @param thread Thread 实例
    * @returns 下一个节点ID，如果没有可用的路由则返回null
    */
   selectNextNode(
     currentNode: Node,
     edges: Edge[],
-    context: ExecutionContext
+    thread: Thread
   ): string | null {
     // 检查当前节点类型
     if (currentNode.type === NodeType.ROUTE) {
@@ -37,7 +37,7 @@ export class Router {
     }
 
     // 过滤满足条件的边
-    const satisfiedEdges = this.filterEdges(edges, context);
+    const satisfiedEdges = this.filterEdges(edges, thread);
 
     // 如果没有满足条件的边，选择默认边
     if (satisfiedEdges.length === 0) {
@@ -56,10 +56,10 @@ export class Router {
   /**
    * 评估边的条件
    * @param edge 边
-   * @param context 执行上下文
+   * @param thread Thread 实例
    * @returns 条件是否满足
    */
-  evaluateEdgeCondition(edge: Edge, context: ExecutionContext): boolean {
+  evaluateEdgeCondition(edge: Edge, thread: Thread): boolean {
     // 默认边总是满足
     if (edge.type === EdgeType.DEFAULT) {
       return true;
@@ -70,18 +70,18 @@ export class Router {
       return false;
     }
 
-    return this.evaluateCondition(edge.condition, context);
+    return this.evaluateCondition(edge.condition, thread);
   }
 
   /**
    * 评估条件
    * @param condition 条件
-   * @param context 执行上下文
+   * @param thread Thread 实例
    * @returns 条件是否满足
    */
-  private evaluateCondition(condition: EdgeCondition, context: ExecutionContext): boolean {
+  private evaluateCondition(condition: EdgeCondition, thread: Thread): boolean {
     // 获取变量值
-    const variableValue = this.getVariableValue(condition.variablePath, context);
+    const variableValue = this.getVariableValue(condition.variablePath, thread);
 
     // 根据条件类型评估
     switch (condition.type) {
@@ -131,7 +131,7 @@ export class Router {
         if (!condition.customExpression) {
           return false;
         }
-        return this.evaluateCustomExpression(condition.customExpression, context);
+        return this.evaluateCustomExpression(condition.customExpression, thread);
 
       default:
         return false;
@@ -141,13 +141,13 @@ export class Router {
   /**
    * 获取变量值
    * @param path 变量路径，支持嵌套访问
-   * @param context 执行上下文
+   * @param thread Thread 实例
    * @returns 变量值
    */
-  private getVariableValue(path: string, context: ExecutionContext): any {
+  private getVariableValue(path: string, thread: Thread): any {
     // 支持嵌套路径访问，如 "output.data.items[0].name"
     const parts = path.split('.');
-    let value: any = context;
+    let value: any = thread;
 
     for (const part of parts) {
       if (value === null || value === undefined) {
@@ -162,10 +162,10 @@ export class Router {
   /**
    * 评估自定义表达式
    * @param expression 自定义表达式
-   * @param context 执行上下文
+   * @param thread Thread 实例
    * @returns 表达式评估结果
    */
-  private evaluateCustomExpression(expression: string, context: ExecutionContext): boolean {
+  private evaluateCustomExpression(expression: string, thread: Thread): boolean {
     // TODO: 实现安全的表达式评估器
     // 支持变量引用，如 {{output.score}} > 0.8
     // 返回布尔值
@@ -176,7 +176,7 @@ export class Router {
     // 替换变量引用 {{variableName}}
     const variablePattern = /\{\{(\w+)\}\}/g;
     evaluatedExpression = evaluatedExpression.replace(variablePattern, (match, varName) => {
-      const value = (context as any)[varName];
+      const value = (thread as any)[varName];
       return JSON.stringify(value);
     });
 
@@ -193,11 +193,11 @@ export class Router {
   /**
    * 过滤满足条件的边
    * @param edges 边数组
-   * @param context 执行上下文
+   * @param thread Thread 实例
    * @returns 满足条件的边数组
    */
-  private filterEdges(edges: Edge[], context: ExecutionContext): Edge[] {
-    return edges.filter(edge => this.evaluateEdgeCondition(edge, context));
+  private filterEdges(edges: Edge[], thread: Thread): Edge[] {
+    return edges.filter(edge => this.evaluateEdgeCondition(edge, thread));
   }
 
   /**

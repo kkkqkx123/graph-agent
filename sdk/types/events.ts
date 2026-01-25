@@ -35,6 +35,8 @@ export enum EventType {
   TOOL_COMPLETED = 'TOOL_COMPLETED',
   /** 工具失败 */
   TOOL_FAILED = 'TOOL_FAILED',
+  /** Token 超过限制 */
+  TOKEN_LIMIT_EXCEEDED = 'TOKEN_LIMIT_EXCEEDED',
   /** 错误事件 */
   ERROR = 'ERROR',
   /** 检查点创建 */
@@ -203,6 +205,17 @@ export interface ToolFailedEvent extends BaseEvent {
 }
 
 /**
+ * Token 超过限制事件类型
+ */
+export interface TokenLimitExceededEvent extends BaseEvent {
+  type: EventType.TOKEN_LIMIT_EXCEEDED;
+  /** 当前使用的 Token 数量 */
+  tokensUsed: number;
+  /** Token 限制阈值 */
+  tokenLimit: number;
+}
+
+/**
  * 错误事件类型
  */
 export interface ErrorEvent extends BaseEvent {
@@ -258,5 +271,6 @@ export type Event =
   | ToolCalledEvent
   | ToolCompletedEvent
   | ToolFailedEvent
+  | TokenLimitExceededEvent
   | ErrorEvent
   | CheckpointCreatedEvent;
