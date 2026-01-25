@@ -107,8 +107,8 @@ export class McpToolExecutor extends BaseToolExecutor {
             if (!response.ok) {
               throw new NetworkError(
                 `MCP server returned status ${response.status}`,
-                serverUrl,
-                response.status
+                response.status,
+                { url: serverUrl }
               );
             }
 
@@ -116,7 +116,9 @@ export class McpToolExecutor extends BaseToolExecutor {
           } catch (error) {
             throw new NetworkError(
               `Failed to call MCP server: ${error instanceof Error ? error.message : 'Unknown error'}`,
-              serverUrl
+              undefined,
+              { url: serverUrl },
+              error instanceof Error ? error : undefined
             );
           }
         }

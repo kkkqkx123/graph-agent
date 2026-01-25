@@ -260,9 +260,8 @@ export class HttpClient {
 
     return new NetworkError(
       `HTTP ${status}: ${message}`,
-      url,
       status,
-      { status }
+      { url, status }
     );
   }
 

@@ -67,8 +67,8 @@ export class RestToolExecutor extends BaseToolExecutor {
       if (!response.ok) {
         throw new NetworkError(
           `HTTP request failed with status ${response.status}: ${response.statusText}`,
-          fullUrl,
-          response.status
+          response.status,
+          { url: fullUrl }
         );
       }
 
@@ -104,9 +104,8 @@ export class RestToolExecutor extends BaseToolExecutor {
           error.message.includes('ENOTFOUND')) {
           throw new NetworkError(
             `Network error: ${error.message}`,
-            fullUrl,
             undefined,
-            undefined,
+            { url: fullUrl },
             error
           );
         }

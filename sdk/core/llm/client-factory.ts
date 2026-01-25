@@ -12,7 +12,6 @@ import { OpenAIResponseClient } from './clients/openai-response';
 import { AnthropicClient } from './clients/anthropic';
 import { GeminiNativeClient } from './clients/gemini-native';
 import { GeminiOpenAIClient } from './clients/gemini-openai';
-import { MockClient } from './clients/mock';
 import { HumanRelayClient } from './clients/human-relay';
 import { SDKError, ErrorCode } from '../../types/errors';
 
@@ -65,9 +64,6 @@ export class ClientFactory {
 
       case LLMProvider.GEMINI_OPENAI:
         return new GeminiOpenAIClient(profile);
-
-      case LLMProvider.MOCK:
-        return new MockClient(profile);
 
       case LLMProvider.HUMAN_RELAY:
         return new HumanRelayClient(profile);

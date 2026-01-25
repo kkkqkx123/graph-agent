@@ -143,7 +143,6 @@ export class NotFoundError extends SDKError {
 export class NetworkError extends SDKError {
   constructor(
     message: string,
-    public readonly url?: string,
     public readonly statusCode?: number,
     context?: Record<string, any>,
     cause?: Error
@@ -156,15 +155,16 @@ export class NetworkError extends SDKError {
 /**
  * LLM调用错误类型
  */
-export class LLMError extends SDKError {
+export class LLMError extends NetworkError {
   constructor(
     message: string,
-    public readonly provider?: string,
+    public readonly provider: string,
     public readonly model?: string,
+    statusCode?: number,
     context?: Record<string, any>,
     cause?: Error
   ) {
-    super(ErrorCode.LLM_ERROR, message, context, cause);
+    super(message, statusCode, context, cause);
     this.name = 'LLMError';
   }
 }
