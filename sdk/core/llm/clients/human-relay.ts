@@ -1,12 +1,15 @@
 /**
  * 人工中继客户端实现
- * 
+ *
  * 用于需要人工介入的场景
  * 触发人工交互事件，等待人工输入，返回人工响应
+ *
+ * 注意：此客户端不继承BaseLLMClient，因为它不是HTTP客户端
+ * 而是直接实现LLMClient接口
  */
 
-import { BaseLLMClient } from '../base-client';
 import type {
+  LLMClient,
   LLMRequest,
   LLMResult,
   LLMProfile,
@@ -40,7 +43,8 @@ interface HumanRelayConfig {
 /**
  * 人工中继客户端
  */
-export class HumanRelayClient extends BaseLLMClient {
+export class HumanRelayClient implements LLMClient {
+  private readonly profile: LLMProfile;
   private readonly config: HumanRelayConfig;
   private readonly history: LLMMessage[] = [];
   private pendingRequests: Map<string, {
@@ -50,7 +54,7 @@ export class HumanRelayClient extends BaseLLMClient {
   }> = new Map();
 
   constructor(profile: LLMProfile) {
-    super(profile);
+    this.profile = profile;
     this.config = profile.metadata?.['humanRelayConfig'] || {
       mode: HumanRelayMode.SINGLE,
       maxHistoryLength: 50,
@@ -59,9 +63,9 @@ export class HumanRelayClient extends BaseLLMClient {
   }
 
   /**
-   * 执行非流式生成
+   * 非流式生成
    */
-  protected async doGenerate(request: LLMRequest): Promise<LLMResult> {
+  async generate(request: LLMRequest): Promise<LLMResult> {
     const requestId = `human-relay-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
     const timeout = this.config.defaultTimeout || 300000;
 
@@ -89,12 +93,12 @@ export class HumanRelayClient extends BaseLLMClient {
   }
 
   /**
-   * 执行流式生成
-   * 
+   * 流式生成
+   *
    * 人工中继不支持真正的流式，返回单个块
    */
-  protected async *doGenerateStream(request: LLMRequest): AsyncIterable<LLMResult> {
-    const result = await this.doGenerate(request);
+  async *generateStream(request: LLMRequest): AsyncIterable<LLMResult> {
+    const result = await this.generate(request);
     yield result;
   }
 
@@ -234,5 +238,20 @@ export class HumanRelayClient extends BaseLLMClient {
    */
   getConfig(): HumanRelayConfig {
     return { ...this.config };
+  }
+
+  /**
+   * 获取客户端信息
+   */
+  public getClientInfo(): {
+    provider: string;
+    model: string;
+    version: string;
+  } {
+    return {
+      provider: this.profile.provider,
+      model: this.profile.model,
+      version: '1.0.0'
+    };
   }
 }

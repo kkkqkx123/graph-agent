@@ -21,5 +21,4 @@ export { GeminiNativeClient } from './clients/gemini-native';
 export { GeminiOpenAIClient } from './clients/gemini-openai';
 
 // 其他客户端
-export { MockClient } from './clients/mock';
 export { HumanRelayClient, HumanRelayMode } from './clients/human-relay';

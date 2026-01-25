@@ -6,7 +6,6 @@
  */
 
 import { BaseLLMClient } from '../base-client';
-import { HttpClient } from '../../http';
 import type {
   LLMRequest,
   LLMResult,
@@ -19,25 +18,15 @@ import type {
  * Gemini Native客户端
  */
 export class GeminiNativeClient extends BaseLLMClient {
-  private readonly httpClient: HttpClient;
-
   constructor(profile: LLMProfile) {
     super(profile);
-    this.httpClient = new HttpClient({
-      baseURL: profile.baseUrl || 'https://generativelanguage.googleapis.com/v1beta',
-      timeout: profile.timeout || 30000,
-      maxRetries: profile.maxRetries || 3,
-      retryDelay: profile.retryDelay || 1000,
-      enableCircuitBreaker: true,
-      enableRateLimiter: true,
-    });
   }
 
   /**
    * 执行非流式生成
    */
   protected async doGenerate(request: LLMRequest): Promise<LLMResult> {
-    const response = await this.httpClient.post(
+    return this.doHttpPost(
       `/models/${this.profile.model}:generateContent`,
       this.buildRequestBody(request),
       {
@@ -45,70 +34,20 @@ export class GeminiNativeClient extends BaseLLMClient {
         query: { key: this.profile.apiKey },
       }
     );
-
-    return this.parseResponse(response.data, request);
   }
 
   /**
    * 执行流式生成
    */
   protected async *doGenerateStream(request: LLMRequest): AsyncIterable<LLMResult> {
-    const body = this.buildRequestBody(request);
-    const headers = this.buildHeaders();
-    const baseUrl = this.profile.baseUrl || 'https://generativelanguage.googleapis.com/v1beta';
-
-    const response = await fetch(
-      `${baseUrl}/models/${this.profile.model}:streamGenerateContent?key=${this.profile.apiKey}`,
+    yield* this.doHttpStream(
+      `/models/${this.profile.model}:streamGenerateContent`,
+      this.buildRequestBody(request),
       {
-        method: 'POST',
-        headers,
-        body: JSON.stringify(body),
+        headers: this.buildHeaders(),
+        query: { key: this.profile.apiKey },
       }
     );
-
-    if (!response.ok) {
-      const error = await response.text();
-      throw new Error(`Gemini Native API error (${response.status}): ${error}`);
-    }
-
-    const reader = response.body?.getReader();
-    if (!reader) {
-      throw new Error('Response body is not readable');
-    }
-
-    const decoder = new TextDecoder();
-    let buffer = '';
-
-    try {
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-
-        buffer += decoder.decode(value, { stream: true });
-        const lines = buffer.split('\n');
-        buffer = lines.pop() || '';
-
-        for (const line of lines) {
-          const trimmedLine = line.trim();
-          if (!trimmedLine) {
-            continue;
-          }
-
-          try {
-            const data = JSON.parse(trimmedLine);
-            const chunk = this.parseStreamChunk(data, request);
-            if (chunk) {
-              yield chunk;
-            }
-          } catch (e) {
-            // 跳过无效JSON
-            continue;
-          }
-        }
-      }
-    } finally {
-      reader.releaseLock();
-    }
   }
 
   /**
@@ -220,7 +159,7 @@ export class GeminiNativeClient extends BaseLLMClient {
   /**
    * 解析响应
    */
-  private parseResponse(data: any, request: LLMRequest): LLMResult {
+  protected parseResponse(data: any): LLMResult {
     const candidate = data.candidates?.[0];
     if (!candidate) {
       throw new Error('No candidate in response');
@@ -254,9 +193,30 @@ export class GeminiNativeClient extends BaseLLMClient {
   }
 
   /**
+   * 解析流式响应行（重写）
+   *
+   * Gemini Native API 直接返回 JSON，没有 data: 前缀
+   */
+  protected override parseStreamLine(line: string): LLMResult | null {
+    // 跳过空行
+    if (!line) {
+      return null;
+    }
+
+    // Gemini Native API 直接返回 JSON，没有 data: 前缀
+    try {
+      const data = JSON.parse(line);
+      return this.parseStreamChunk(data);
+    } catch (e) {
+      // 跳过无效JSON
+      return null;
+    }
+  }
+
+  /**
    * 解析流式响应块
    */
-  private parseStreamChunk(data: any, request: LLMRequest): LLMResult | null {
+  protected parseStreamChunk(data: any): LLMResult | null {
     const candidate = data.candidates?.[0];
     if (!candidate) {
       return null;

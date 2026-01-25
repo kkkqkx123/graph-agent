@@ -7,7 +7,6 @@
  */
 
 import { BaseLLMClient } from '../base-client';
-import { HttpClient } from '../../http';
 import type {
   LLMRequest,
   LLMResult,
@@ -20,97 +19,34 @@ import type {
  * Gemini OpenAI兼容客户端
  */
 export class GeminiOpenAIClient extends BaseLLMClient {
-  private readonly httpClient: HttpClient;
-
   constructor(profile: LLMProfile) {
     super(profile);
-    this.httpClient = new HttpClient({
-      baseURL: profile.baseUrl || 'https://generativelanguage.googleapis.com/v1beta/openai',
-      timeout: profile.timeout || 30000,
-      maxRetries: profile.maxRetries || 3,
-      retryDelay: profile.retryDelay || 1000,
-      enableCircuitBreaker: true,
-      enableRateLimiter: true,
-    });
   }
 
   /**
    * 执行非流式生成
    */
   protected async doGenerate(request: LLMRequest): Promise<LLMResult> {
-    const response = await this.httpClient.post(
+    return this.doHttpPost(
       '/chat/completions',
       this.buildRequestBody(request),
       {
         headers: this.buildHeaders(),
       }
     );
-
-    return this.parseResponse(response.data, request);
   }
 
   /**
    * 执行流式生成
    */
   protected async *doGenerateStream(request: LLMRequest): AsyncIterable<LLMResult> {
-    const body = this.buildRequestBody(request, true);
-    const headers = this.buildHeaders();
-
-    const response = await fetch(
-      `${this.profile.baseUrl || 'https://generativelanguage.googleapis.com/v1beta/openai'}/chat/completions`,
+    yield* this.doHttpStream(
+      '/chat/completions',
+      this.buildRequestBody(request, true),
       {
-        method: 'POST',
-        headers,
-        body: JSON.stringify(body),
+        headers: this.buildHeaders(),
       }
     );
-
-    if (!response.ok) {
-      const error = await response.text();
-      throw new Error(`Gemini OpenAI API error (${response.status}): ${error}`);
-    }
-
-    const reader = response.body?.getReader();
-    if (!reader) {
-      throw new Error('Response body is not readable');
-    }
-
-    const decoder = new TextDecoder();
-    let buffer = '';
-
-    try {
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-
-        buffer += decoder.decode(value, { stream: true });
-        const lines = buffer.split('\n');
-        buffer = lines.pop() || '';
-
-        for (const line of lines) {
-          const trimmedLine = line.trim();
-          if (!trimmedLine || trimmedLine === 'data: [DONE]') {
-            continue;
-          }
-
-          if (trimmedLine.startsWith('data: ')) {
-            const dataStr = trimmedLine.slice(6);
-            try {
-              const data = JSON.parse(dataStr);
-              const chunk = this.parseStreamChunk(data, request);
-              if (chunk) {
-                yield chunk;
-              }
-            } catch (e) {
-              // 跳过无效JSON
-              continue;
-            }
-          }
-        }
-      }
-    } finally {
-      reader.releaseLock();
-    }
   }
 
   /**
@@ -225,7 +161,7 @@ export class GeminiOpenAIClient extends BaseLLMClient {
   /**
    * 解析响应
    */
-  private parseResponse(data: any, request: LLMRequest): LLMResult {
+  protected parseResponse(data: any): LLMResult {
     const candidate = data.candidates?.[0];
     if (!candidate) {
       throw new Error('No candidate in response');
@@ -261,7 +197,7 @@ export class GeminiOpenAIClient extends BaseLLMClient {
   /**
    * 解析流式响应块
    */
-  private parseStreamChunk(data: any, request: LLMRequest): LLMResult | null {
+  protected parseStreamChunk(data: any): LLMResult | null {
     const candidate = data.candidates?.[0];
     if (!candidate) {
       return null;
