@@ -9,7 +9,9 @@
 
 // ========== 导入服务类型 ==========
 
-// LLM模块服务
+// ========== LLM模块服务 ==========
+
+// Infrastructure层 - LLM基础设施组件
 import { HttpClient } from '../infrastructure/common/http/http-client';
 import { ConfigLoadingModule } from '../infrastructure/config/loading/config-loading-module';
 import { TokenBucketLimiter } from '../infrastructure/llm/rate-limiters/token-bucket-limiter';
@@ -22,19 +24,27 @@ import { GeminiOpenAIClient } from '../infrastructure/llm/clients/gemini-openai-
 import { MockClient } from '../infrastructure/llm/clients/mock-client';
 import { HumanRelayClient } from '../infrastructure/llm/clients/human-relay-client';
 import { LLMClientFactory } from '../infrastructure/llm/clients/llm-client-factory';
+
+// Services层 - LLM管理器
 import { PollingPoolManager } from '../services/llm/managers/pool-manager';
 import { TaskGroupManager } from '../services/llm/managers/task-group-manager';
 import { LLMWrapperManager } from '../services/llm/managers/llm-wrapper-manager';
 
-// Domain层接口（用于类型定义，不注册到容器）
+// ========== Domain层接口（用于类型定义，不注册到容器） ==========
+
+// 仓储接口
 import { ISessionRepository } from '../domain/sessions/repositories/session-repository';
 import { IThreadRepository } from '../domain/threads/repositories/thread-repository';
 import { IWorkflowRepository } from '../domain/workflow/repositories/workflow-repository';
 import { IPromptRepository as PromptDomainRepository } from '../domain/prompts/repositories/prompt-repository';
 import { ICheckpointRepository } from '../domain/threads/checkpoints/repositories/checkpoint-repository';
+
+// 业务服务接口
 import { IHumanRelayService } from '../services/llm/human-relay';
 
-// Services层实现
+// ========== Services层实现 ==========
+
+// 线程模块
 import { ThreadCopy } from '../services/threads/thread-copy';
 import { ThreadExecution } from '../services/threads/thread-execution';
 import { ThreadFork } from '../services/threads/thread-fork';
@@ -43,8 +53,21 @@ import { ThreadLifecycle } from '../services/threads/thread-lifecycle';
 import { ThreadMaintenance } from '../services/threads/thread-maintenance';
 import { ThreadManagement } from '../services/threads/thread-management';
 import { ThreadMonitoring } from '../services/threads/thread-monitoring';
+import { ThreadStateManager } from '../services/threads/thread-state-manager';
+import { ThreadHistoryManager } from '../services/threads/thread-history-manager';
+import { ThreadConditionalRouter } from '../services/threads/thread-conditional-router';
+import { ThreadWorkflowExecutor } from '../services/threads/thread-workflow-executor';
+import { FunctionExecutionEngine } from '../services/threads/execution/function-execution-engine';
+import { FunctionRegistry } from '../services/threads/execution/functions/function-registry';
+import { NodeExecutionHandler } from '../services/threads/execution/handlers/node-execution-handler';
+import { HookExecutionHandler } from '../services/threads/execution/handlers/hook-execution-handler';
+import { TriggerExecutionHandler } from '../services/threads/execution/handlers/trigger-execution-handler';
+
+// LLM模块
 import { HumanRelay } from '../services/llm/human-relay';
 import { Wrapper } from '../services/llm/wrapper';
+
+// 会话模块
 import { SessionLifecycle } from '../services/sessions/session-lifecycle';
 import { SessionMaintenance } from '../services/sessions/session-maintenance';
 import { SessionManagement } from '../services/sessions/session-management';
@@ -52,18 +75,21 @@ import { SessionMonitoring } from '../services/sessions/session-monitoring';
 import { SessionOrchestration } from '../services/sessions/session-orchestration';
 import { SessionResource } from '../services/sessions/session-resource';
 import { SessionCheckpointManagement } from '../services/sessions/session-checkpoint-management';
+
+// 状态模块
 import { StateHistory } from '../services/state/state-history';
 import { StateManagement } from '../services/state/state-management';
 import { StateRecovery } from '../services/state/state-recovery';
+
+// 工作流模块
 import { ContextManagement } from '../services/workflow/context-management';
 import { FunctionManagement } from '../services/workflow/function-management';
 import { WorkflowLifecycle } from '../services/workflow/workflow-lifecycle';
 import { WorkflowManagement } from '../services/workflow/workflow-management';
 import { WorkflowValidator } from '../services/workflow/workflow-validator';
-import { ExpressionEvaluator } from '../services/workflow/expression-evaluator';
-import { FunctionExecutionEngine } from '../services/threads/execution/function-execution-engine';
 import { MonitoringService } from '../services/workflow/monitoring';
-import { NodeRouter } from '../services/workflow/node-router';
+
+// 检查点模块
 import { CheckpointAnalysis } from '../services/checkpoints/checkpoint-analysis';
 import { CheckpointBackup } from '../services/checkpoints/checkpoint-backup';
 import { CheckpointCleanup } from '../services/checkpoints/checkpoint-cleanup';
@@ -71,20 +97,14 @@ import { CheckpointCreation } from '../services/checkpoints/checkpoint-creation'
 import { CheckpointManagement } from '../services/checkpoints/checkpoint-management';
 import { CheckpointQuery } from '../services/checkpoints/checkpoint-query';
 import { CheckpointRestore } from '../services/checkpoints/checkpoint-restore';
-import { ThreadStateManager } from '../services/threads/thread-state-manager';
-import { ThreadHistoryManager } from '../services/threads/thread-history-manager';
-import { ThreadConditionalRouter } from '../services/threads/thread-conditional-router';
-import { ThreadWorkflowExecutor } from '../services/threads/thread-workflow-executor';
-import { FunctionRegistry } from '../services/threads/execution/functions/function-registry';
-import { NodeExecutionHandler } from '../services/threads/execution/handlers/node-execution-handler';
-import { HookExecutionHandler } from '../services/threads/execution/handlers/hook-execution-handler';
-import { TriggerExecutionHandler } from '../services/threads/execution/handlers/trigger-execution-handler';
+
+// Prompt模块
 import { PromptBuilder } from '../services/prompts/prompt-builder';
 import { TemplateProcessor } from '../services/prompts/template-processor';
 import { PromptReferenceParser } from '../services/prompts/prompt-reference-parser';
 import { PromptReferenceValidator } from '../services/prompts/prompt-reference-validator';
 
-// Interaction模块服务
+// Interaction模块
 import { InteractionEngine } from '../services/interaction/interaction-engine';
 import { MessageManager } from '../services/interaction/managers/message-manager';
 import { ToolCallManager } from '../services/interaction/managers/tool-call-manager';
@@ -93,14 +113,20 @@ import { TokenManager } from '../services/interaction/managers/token-manager';
 import { LLMExecutor } from '../services/interaction/executors/llm-executor';
 import { ToolExecutor } from '../services/interaction/executors/tool-executor';
 import { UserInteractionHandler } from '../services/interaction/executors/user-interaction-handler';
+
+// Tools模块
 import { ToolService } from '../services/tools/tool-service';
 
-// Infrastructure层实现
+// ========== Infrastructure层实现 ==========
+
+// 仓储实现
 import { SessionRepository as SessionInfrastructureRepository } from '../infrastructure/persistence/repositories/session-repository';
 import { ThreadRepository as ThreadInfrastructureRepository } from '../infrastructure/persistence/repositories/thread-repository';
 import { WorkflowRepository as WorkflowInfrastructureRepository } from '../infrastructure/persistence/repositories/workflow-repository';
 import { PromptRepository as PromptInfrastructureRepository } from '../infrastructure/persistence/repositories/prompt-repository';
 import { CheckpointRepository as CheckpointInfrastructureRepository } from '../infrastructure/persistence/repositories/checkpoint-repository';
+
+// 基础设施组件
 import { ConnectionManager } from '../infrastructure/persistence/connection-manager';
 import { Logger } from '../infrastructure/logging/logger';
 
@@ -188,10 +214,8 @@ export interface ServiceTypes {
   WorkflowLifecycle: WorkflowLifecycle;
   WorkflowManagement: WorkflowManagement;
   WorkflowValidator: WorkflowValidator;
-  ExpressionEvaluator: ExpressionEvaluator;
   FunctionExecutionEngine: FunctionExecutionEngine;
   MonitoringService: MonitoringService;
-  NodeRouter: NodeRouter;
 
   // 检查点服务
   CheckpointAnalysis: CheckpointAnalysis;

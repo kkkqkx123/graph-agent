@@ -7,51 +7,21 @@
 import { ContainerModule } from 'inversify';
 import { TYPES } from '../service-keys';
 
-// Services层服务实现
+// ========== Services层服务实现 ==========
+
+// 线程模块
 import { ThreadCopy } from '../../services/threads/thread-copy';
-import { BuiltinExecutor } from '../../services/tools/executors/builtin-executor';
-import { NativeExecutor } from '../../services/tools/executors/native-executor';
-import { RestExecutor } from '../../services/tools/executors/rest-executor';
-import { McpExecutor } from '../../services/tools/executors/mcp-executor';
-import { ToolService } from '../../services/tools/tool-service';
 import { ThreadExecution } from '../../services/threads/thread-execution';
 import { ThreadFork } from '../../services/threads/thread-fork';
 import { ThreadLifecycle } from '../../services/threads/thread-lifecycle';
 import { ThreadMaintenance } from '../../services/threads/thread-maintenance';
 import { ThreadManagement } from '../../services/threads/thread-management';
 import { ThreadMonitoring } from '../../services/threads/thread-monitoring';
-import { HumanRelay } from '../../services/llm/human-relay';
-import { Wrapper } from '../../services/llm/wrapper';
-import { SessionLifecycle } from '../../services/sessions/session-lifecycle';
-import { SessionMaintenance } from '../../services/sessions/session-maintenance';
-import { SessionManagement } from '../../services/sessions/session-management';
-import { SessionMonitoring } from '../../services/sessions/session-monitoring';
-import { SessionOrchestration } from '../../services/sessions/session-orchestration';
-import { SessionResource } from '../../services/sessions/session-resource';
-import { SessionCheckpointManagement } from '../../services/sessions/session-checkpoint-management';
-import { StateHistory } from '../../services/state/state-history';
-import { StateManagement } from '../../services/state/state-management';
-import { StateRecovery } from '../../services/state/state-recovery';
-import { ContextManagement } from '../../services/workflow/context-management';
-import { FunctionManagement } from '../../services/workflow/function-management';
-import { WorkflowLifecycle } from '../../services/workflow/workflow-lifecycle';
-import { WorkflowManagement } from '../../services/workflow/workflow-management';
-import { WorkflowValidator } from '../../services/workflow/workflow-validator';
-import { ExpressionEvaluator } from '../../services/workflow/expression-evaluator';
-import { FunctionExecutionEngine } from '../../services/threads/execution/function-execution-engine';
-import { MonitoringService } from '../../services/workflow/monitoring';
-import { NodeRouter } from '../../services/workflow/node-router';
-import { CheckpointAnalysis } from '../../services/checkpoints/checkpoint-analysis';
-import { CheckpointBackup } from '../../services/checkpoints/checkpoint-backup';
-import { CheckpointCleanup } from '../../services/checkpoints/checkpoint-cleanup';
-import { CheckpointCreation } from '../../services/checkpoints/checkpoint-creation';
-import { CheckpointManagement } from '../../services/checkpoints/checkpoint-management';
-import { CheckpointQuery } from '../../services/checkpoints/checkpoint-query';
-import { CheckpointRestore } from '../../services/checkpoints/checkpoint-restore';
 import { ThreadStateManager } from '../../services/threads/thread-state-manager';
 import { ThreadHistoryManager } from '../../services/threads/thread-history-manager';
 import { ThreadConditionalRouter } from '../../services/threads/thread-conditional-router';
 import { ThreadWorkflowExecutor } from '../../services/threads/thread-workflow-executor';
+import { FunctionExecutionEngine } from '../../services/threads/execution/function-execution-engine';
 import { FunctionRegistry } from '../../services/threads/execution/functions/function-registry';
 import { MapTransformer } from '../../services/threads/execution/functions/nodes/data-transformer/map-transformer';
 import { FilterTransformer } from '../../services/threads/execution/functions/nodes/data-transformer/filter-transformer';
@@ -61,22 +31,70 @@ import { GroupTransformer } from '../../services/threads/execution/functions/nod
 import { NodeExecutionHandler } from '../../services/threads/execution/handlers/node-execution-handler';
 import { HookExecutionHandler } from '../../services/threads/execution/handlers/hook-execution-handler';
 import { TriggerExecutionHandler } from '../../services/threads/execution/handlers/trigger-execution-handler';
-import { InteractionEngine } from '../../services/interaction/interaction-engine';
-import { LLMExecutor } from '../../services/interaction/executors/llm-executor';
-import { ToolExecutor } from '../../services/interaction/executors/tool-executor';
-import { UserInteractionHandler } from '../../services/interaction/executors/user-interaction-handler';
 import { NodeExecutionStrategyRegistry } from '../../services/threads/execution/strategies/strategy-registry';
 import { LLMNodeStrategy } from '../../services/threads/execution/strategies/llm-node-strategy';
 import { ToolNodeStrategy } from '../../services/threads/execution/strategies/tool-node-strategy';
 import { UserInteractionStrategy } from '../../services/threads/execution/strategies/user-interaction-strategy';
-import { NodeType } from '../../domain/workflow/value-objects/node/node-type';
+
+// LLM模块
+import { HumanRelay } from '../../services/llm/human-relay';
+import { Wrapper } from '../../services/llm/wrapper';
 import { LLMWrapperManager } from '../../services/llm/managers/llm-wrapper-manager';
 import { PollingPoolManager } from '../../services/llm/managers/pool-manager';
 import { TaskGroupManager } from '../../services/llm/managers/task-group-manager';
+
+// 会话模块
+import { SessionLifecycle } from '../../services/sessions/session-lifecycle';
+import { SessionMaintenance } from '../../services/sessions/session-maintenance';
+import { SessionManagement } from '../../services/sessions/session-management';
+import { SessionMonitoring } from '../../services/sessions/session-monitoring';
+import { SessionOrchestration } from '../../services/sessions/session-orchestration';
+import { SessionResource } from '../../services/sessions/session-resource';
+import { SessionCheckpointManagement } from '../../services/sessions/session-checkpoint-management';
+
+// 状态模块
+import { StateHistory } from '../../services/state/state-history';
+import { StateManagement } from '../../services/state/state-management';
+import { StateRecovery } from '../../services/state/state-recovery';
+
+// 工作流模块
+import { ContextManagement } from '../../services/workflow/context-management';
+import { FunctionManagement } from '../../services/workflow/function-management';
+import { WorkflowLifecycle } from '../../services/workflow/workflow-lifecycle';
+import { WorkflowManagement } from '../../services/workflow/workflow-management';
+import { WorkflowValidator } from '../../services/workflow/workflow-validator';
+import { MonitoringService } from '../../services/workflow/monitoring';
+
+// 检查点模块
+import { CheckpointAnalysis } from '../../services/checkpoints/checkpoint-analysis';
+import { CheckpointBackup } from '../../services/checkpoints/checkpoint-backup';
+import { CheckpointCleanup } from '../../services/checkpoints/checkpoint-cleanup';
+import { CheckpointCreation } from '../../services/checkpoints/checkpoint-creation';
+import { CheckpointManagement } from '../../services/checkpoints/checkpoint-management';
+import { CheckpointQuery } from '../../services/checkpoints/checkpoint-query';
+import { CheckpointRestore } from '../../services/checkpoints/checkpoint-restore';
+
+// Prompt模块
 import { PromptBuilder } from '../../services/prompts/prompt-builder';
 import { TemplateProcessor } from '../../services/prompts/template-processor';
 import { PromptReferenceParser } from '../../services/prompts/prompt-reference-parser';
 import { PromptReferenceValidator } from '../../services/prompts/prompt-reference-validator';
+
+// Interaction模块
+import { InteractionEngine } from '../../services/interaction/interaction-engine';
+import { LLMExecutor } from '../../services/interaction/executors/llm-executor';
+import { ToolExecutor } from '../../services/interaction/executors/tool-executor';
+import { UserInteractionHandler } from '../../services/interaction/executors/user-interaction-handler';
+
+// Tools模块
+import { BuiltinExecutor } from '../../services/tools/executors/builtin-executor';
+import { NativeExecutor } from '../../services/tools/executors/native-executor';
+import { RestExecutor } from '../../services/tools/executors/rest-executor';
+import { McpExecutor } from '../../services/tools/executors/mcp-executor';
+import { ToolService } from '../../services/tools/tool-service';
+
+// Domain层类型
+import { NodeType } from '../../domain/workflow/value-objects/node/node-type';
 
 /**
  * Services层绑定模块
@@ -131,10 +149,8 @@ export const servicesBindings = new ContainerModule((bind: any) => {
   bind(TYPES.WorkflowLifecycle).to(WorkflowLifecycle).inSingletonScope();
   bind(TYPES.WorkflowManagement).to(WorkflowManagement).inSingletonScope();
   bind(TYPES.WorkflowValidator).to(WorkflowValidator).inSingletonScope();
-  bind(TYPES.ExpressionEvaluator).to(ExpressionEvaluator).inSingletonScope();
   bind(TYPES.FunctionExecutionEngine).to(FunctionExecutionEngine).inSingletonScope();
   bind(TYPES.MonitoringService).to(MonitoringService).inSingletonScope();
-  bind(TYPES.NodeRouter).to(NodeRouter).inSingletonScope();
 
   // 检查点服务
   bind(TYPES.CheckpointAnalysis).to(CheckpointAnalysis).inSingletonScope();

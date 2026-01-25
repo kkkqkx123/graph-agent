@@ -8,7 +8,9 @@
 import { ContainerModule } from 'inversify';
 import { TYPES } from '../service-keys';
 
-// Infrastructure层服务实现
+// ========== Infrastructure层服务实现 ==========
+
+// LLM模块基础设施组件
 import { HttpClient } from '../../infrastructure/common/http/http-client';
 import { ConfigLoadingModule } from '../../infrastructure/config/loading/config-loading-module';
 import { TokenBucketLimiter } from '../../infrastructure/llm/rate-limiters/token-bucket-limiter';
@@ -29,7 +31,7 @@ import { WorkflowRepository as WorkflowInfrastructureRepository } from '../../in
 import { PromptRepository as PromptInfrastructureRepository } from '../../infrastructure/persistence/repositories/prompt-repository';
 import { CheckpointRepository as CheckpointInfrastructureRepository } from '../../infrastructure/persistence/repositories/checkpoint-repository';
 
-// 基础设施服务
+// 基础设施组件
 import { ConnectionManager } from '../../infrastructure/persistence/connection-manager';
 import { Logger } from '../../infrastructure/logging/logger';
 
