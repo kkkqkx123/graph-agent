@@ -447,4 +447,31 @@ export class Conversation {
       console.warn(`Token limit exceeded: ${tokensUsed} > ${this.tokenLimit}`);
     }
   }
+
+  /**
+   * 克隆 Conversation 实例
+   * 创建一个包含相同消息历史和配置的新 Conversation 实例
+   * @returns 克隆的 Conversation 实例
+   */
+  clone(): Conversation {
+    // 创建新的 Conversation 实例
+    const clonedConversation = new Conversation(
+      this.llmWrapper,
+      this.toolService,
+      {
+        tokenLimit: this.tokenLimit,
+        eventCallbacks: this.eventCallbacks
+      }
+    );
+
+    // 复制所有消息历史
+    clonedConversation.messages = this.messages.map(msg => ({ ...msg }));
+
+    // 复制 token 使用统计
+    if (this.tokenUsage) {
+      clonedConversation.tokenUsage = { ...this.tokenUsage };
+    }
+
+    return clonedConversation;
+  }
 }

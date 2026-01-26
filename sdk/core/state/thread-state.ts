@@ -157,4 +157,12 @@ export class ThreadStateManager {
   clearAll(): void {
     this.threads.clear();
   }
+
+  /**
+   * 注册Thread
+   * @param thread Thread实例
+   */
+  registerThread(thread: Thread): void {
+    this.threads.set(thread.id, thread);
+  }
 }

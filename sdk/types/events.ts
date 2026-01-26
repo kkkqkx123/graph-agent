@@ -23,6 +23,8 @@ export enum EventType {
   THREAD_FORKED = 'THREAD_FORKED',
   /** 线程合并 */
   THREAD_JOINED = 'THREAD_JOINED',
+  /** 线程复制 */
+  THREAD_COPIED = 'THREAD_COPIED',
   /** 节点开始 */
   NODE_STARTED = 'NODE_STARTED',
   /** 节点完成 */
@@ -126,6 +128,17 @@ export interface ThreadJoinedEvent extends BaseEvent {
   childThreadIds: ID[];
   /** 合并策略 */
   joinStrategy: string;
+}
+
+/**
+ * 线程复制事件类型
+ */
+export interface ThreadCopiedEvent extends BaseEvent {
+  type: EventType.THREAD_COPIED;
+  /** 源线程ID */
+  sourceThreadId: ID;
+  /** 副本线程ID */
+  copiedThreadId: ID;
 }
 
 /**
@@ -265,6 +278,7 @@ export type Event =
   | ThreadResumedEvent
   | ThreadForkedEvent
   | ThreadJoinedEvent
+  | ThreadCopiedEvent
   | NodeStartedEvent
   | NodeCompletedEvent
   | NodeFailedEvent

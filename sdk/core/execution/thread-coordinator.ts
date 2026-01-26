@@ -9,7 +9,10 @@ import { ThreadExecutor } from './thread-executor';
 import { EventManager } from './event-manager';
 import { ExecutionError, TimeoutError, ValidationError as SDKValidationError } from '../../types/errors';
 import { EventType } from '../../types/events';
-import type { ThreadForkedEvent, ThreadJoinedEvent } from '../../types/events';
+import type { ThreadForkedEvent, ThreadJoinedEvent, ThreadCopiedEvent } from '../../types/events';
+import { ThreadStatus } from '../../types/thread';
+import { IDUtils } from '../../types/common';
+import { Conversation } from '../llm/conversation';
 
 /**
  * Join 策略
@@ -263,5 +266,80 @@ export class ThreadCoordinator {
     }
 
     return mergedOutput;
+  }
+
+  /**
+   * Copy 操作 - 创建 thread 的完全相同的副本
+   * @param sourceThreadId 源线程 ID
+   * @returns 副本线程 ID
+   */
+  async copy(sourceThreadId: string): Promise<string> {
+    // 步骤1：验证源 thread 存在
+    const sourceThread = this.stateManager.getThread(sourceThreadId);
+    if (!sourceThread) {
+      throw new ExecutionError(`Source thread not found: ${sourceThreadId}`, undefined, sourceThreadId);
+    }
+
+    // 步骤2：创建新的 thread ID
+    const copiedThreadId = IDUtils.generate();
+    const now = Date.now();
+
+    // 步骤3：复制基础信息
+    const copiedThread: Thread = {
+      id: copiedThreadId,
+      workflowId: sourceThread.workflowId,
+      workflowVersion: sourceThread.workflowVersion,
+      status: ThreadStatus.CREATED,
+      currentNodeId: sourceThread.currentNodeId,
+      variables: sourceThread.variables.map(v => ({ ...v })),
+      variableValues: { ...sourceThread.variableValues },
+      input: { ...sourceThread.input },
+      output: { ...sourceThread.output },
+      nodeResults: new Map(sourceThread.nodeResults),
+      executionHistory: sourceThread.executionHistory.map(h => ({ ...h })),
+      startTime: now,
+      endTime: undefined,
+      errors: [],
+      metadata: {
+        ...sourceThread.metadata,
+        parentThreadId: sourceThreadId
+      }
+    };
+
+    // 步骤4：复制 Conversation 实例
+    if (sourceThread.contextData?.['conversation']) {
+      const sourceConversation = sourceThread.contextData['conversation'] as Conversation;
+      const copiedConversation = sourceConversation.clone();
+      copiedThread.contextData = {
+        conversation: copiedConversation
+      };
+    }
+
+    // 步骤5：复制其他 contextData（如果有）
+    if (sourceThread.contextData) {
+      for (const [key, value] of Object.entries(sourceThread.contextData)) {
+        if (key !== 'conversation' && value !== undefined) {
+          copiedThread.contextData = copiedThread.contextData || {};
+          copiedThread.contextData[key] = value;
+        }
+      }
+    }
+
+    // 步骤6：将副本注册到状态管理器
+    this.stateManager.registerThread(copiedThread);
+
+    // 步骤7：触发 THREAD_COPIED 事件
+    const copiedEvent: ThreadCopiedEvent = {
+      type: EventType.THREAD_COPIED,
+      timestamp: now,
+      workflowId: sourceThread.workflowId,
+      threadId: sourceThreadId,
+      sourceThreadId,
+      copiedThreadId
+    };
+    await this.eventManager.emit(copiedEvent);
+
+    // 步骤8：返回副本 thread ID
+    return copiedThreadId;
   }
 }
