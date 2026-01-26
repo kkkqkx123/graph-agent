@@ -12,7 +12,7 @@ import { ThreadStateManager } from '../state/thread-state';
 import { WorkflowContext } from '../state/workflow-context';
 import { HistoryManager } from '../state/history-manager';
 import { Router } from './router';
-import { NodeExecutor } from './executors/node/base-node-executor';
+import { NodeExecutorFactory } from './executors/node-executor-factory';
 import { NodeType } from '../../types/node';
 import { EventManager } from './event-manager';
 import { ThreadCoordinator } from './thread-coordinator';
@@ -30,7 +30,6 @@ export class ThreadExecutor {
   private stateManager: ThreadStateManager;
   private historyManager: HistoryManager;
   private router: Router;
-  private nodeExecutors: Map<NodeType, NodeExecutor>;
   private eventManager: EventManager;
   private threadCoordinator: ThreadCoordinator;
   private workflowContexts: Map<string, WorkflowContext> = new Map();
@@ -41,20 +40,10 @@ export class ThreadExecutor {
     this.stateManager = new ThreadStateManager();
     this.historyManager = new HistoryManager();
     this.router = new Router();
-    this.nodeExecutors = new Map();
     this.eventManager = new EventManager();
     this.threadCoordinator = new ThreadCoordinator(this.stateManager, this, this.eventManager);
     this.llmWrapper = new LLMWrapper();
     this.toolService = new ToolService();
-  }
-
-  /**
-   * 注册节点执行器
-   * @param nodeType 节点类型
-   * @param executor 节点执行器
-   */
-  registerNodeExecutor(nodeType: NodeType, executor: NodeExecutor): void {
-    this.nodeExecutors.set(nodeType, executor);
   }
 
   /**
@@ -395,15 +384,7 @@ export class ThreadExecutor {
         result = await this.handleJoinNode(thread, node);
       } else {
         // 执行普通节点
-        const executor = this.nodeExecutors.get(node.type);
-        if (!executor) {
-          throw new ExecutionError(
-            `No executor found for node type: ${node.type}`,
-            node.id,
-            thread.workflowId
-          );
-        }
-
+        const executor = NodeExecutorFactory.createExecutor(node.type);
         result = await executor.execute(thread, node);
       }
 

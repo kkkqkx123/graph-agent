@@ -15,6 +15,7 @@ export * from './thread';
 export * from './execution';
 export * from './events';
 export * from './errors';
+export * from './trigger';
 
 // 集成类型
 export * from './tool';
