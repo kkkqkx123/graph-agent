@@ -76,8 +76,8 @@ export class StartNodeExecutor extends NodeExecutor {
     if (!thread.nodeResults) {
       thread.nodeResults = new Map();
     }
-    if (!thread.executionHistory) {
-      thread.executionHistory = [];
+    if (!thread.nodeResults) {
+      thread.nodeResults = [];
     }
     if (!thread.errors) {
       thread.errors = [];
@@ -89,8 +89,8 @@ export class StartNodeExecutor extends NodeExecutor {
     }
 
     // 步骤5：记录执行历史
-    thread.executionHistory.push({
-      step: thread.executionHistory.length + 1,
+    thread.nodeResults.push({
+      step: thread.nodeResults.length + 1,
       nodeId: node.id,
       nodeType: node.type,
       status: 'COMPLETED',

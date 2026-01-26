@@ -69,8 +69,8 @@ export class EndNodeExecutor extends NodeExecutor {
       output = thread.output;
     } else {
       // 优先级2：最后一个节点的output
-      if (thread.executionHistory && thread.executionHistory.length > 0) {
-        const lastHistory = thread.executionHistory[thread.executionHistory.length - 1];
+      if (thread.nodeResults && thread.nodeResults.length > 0) {
+        const lastHistory = thread.nodeResults[thread.nodeResults.length - 1];
         if (lastHistory) {
           const lastResult = thread.nodeResults.get(lastHistory.nodeId);
           if (lastResult && lastResult.output) {
@@ -87,8 +87,8 @@ export class EndNodeExecutor extends NodeExecutor {
     thread.output = output;
 
     // 步骤4：记录执行历史
-    thread.executionHistory.push({
-      step: thread.executionHistory.length + 1,
+    thread.nodeResults.push({
+      step: thread.nodeResults.length + 1,
       nodeId: node.id,
       nodeType: node.type,
       status: 'COMPLETED',

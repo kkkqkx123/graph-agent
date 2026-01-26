@@ -98,8 +98,8 @@ export class ContextProcessorNodeExecutor extends NodeExecutor {
     this.setContext(thread, outputContext);
 
     // 步骤4：记录执行历史
-    thread.executionHistory.push({
-      step: thread.executionHistory.length + 1,
+    thread.nodeResults.push({
+      step: thread.nodeResults.length + 1,
       nodeId: node.id,
       nodeType: node.type,
       status: 'COMPLETED',

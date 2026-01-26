@@ -11,7 +11,6 @@ import type {
   ExecutionHistoryEntry
 } from '../../types/thread';
 import { ThreadStatus } from '../../types/thread';
-import type { WorkflowDefinition } from '../../types/workflow';
 import { IDUtils } from '../../types/common';
 
 /**
@@ -38,7 +37,7 @@ export class ThreadStateManager {
       input: options.input || {},
       output: {},
       nodeResults: new Map(),
-      executionHistory: [],
+      nodeResults: [],
       startTime: now,
       errors: [],
       metadata: {
@@ -62,10 +61,10 @@ export class ThreadStateManager {
 
     thread.status = status;
 
-    if (status === ThreadStatus.COMPLETED || 
-        status === ThreadStatus.FAILED || 
-        status === ThreadStatus.CANCELLED ||
-        status === ThreadStatus.TIMEOUT) {
+    if (status === ThreadStatus.COMPLETED ||
+      status === ThreadStatus.FAILED ||
+      status === ThreadStatus.CANCELLED ||
+      status === ThreadStatus.TIMEOUT) {
       thread.endTime = Date.now();
     }
   }

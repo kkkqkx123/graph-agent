@@ -5,7 +5,7 @@
 
 import type { Thread } from '../../types/thread';
 import type { WorkflowDefinition } from '../../types/workflow';
-import { WorkflowContext } from '../state/workflow-context';
+import { WorkflowContext } from './workflow-context';
 import { ThreadStateManager } from '../state/thread-state';
 import { VariableManager } from '../state/variable-manager';
 

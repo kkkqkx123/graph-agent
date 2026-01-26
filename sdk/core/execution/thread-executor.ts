@@ -9,7 +9,7 @@ import type { Thread, ThreadOptions, ThreadResult, ThreadStatus } from '../../ty
 import type { Node } from '../../types/node';
 import type { NodeExecutionResult } from '../../types/thread';
 import { ThreadStateManager } from '../state/thread-state';
-import { WorkflowContext } from '../state/workflow-context';
+import { WorkflowContext } from './workflow-context';
 import { HistoryManager } from '../state/history-manager';
 import { Router } from './router';
 import { NodeExecutorFactory } from './executors/node-executor-factory';
@@ -46,7 +46,7 @@ export class ThreadExecutor {
     this.threadCoordinator = new ThreadCoordinator(this.stateManager, this, this.eventManager);
     this.llmWrapper = new LLMWrapper();
     this.toolService = new ToolService();
-    
+
     // 初始化 TriggerManager
     this.triggerManager = new TriggerManager(this.eventManager, this);
   }
@@ -639,9 +639,9 @@ export class ThreadExecutor {
       status: 'SKIPPED',
       executionTime: 0
     };
-    
+
     thread.nodeResults.set(nodeId, result);
-    
+
     // 触发 NODE_COMPLETED 事件（状态为 SKIPPED）
     const completedEvent: NodeCompletedEvent = {
       type: EventType.NODE_COMPLETED,
@@ -668,10 +668,10 @@ export class ThreadExecutor {
 
     // 更新线程变量值
     Object.assign(thread.variableValues, variables);
-    
+
     // 同时更新 variables 数组（用于持久化）
     for (const [name, value] of Object.entries(variables)) {
-      const existingVar = thread.variables.find(v => v.name === name);
+      const existingVar = thread.variables.find((v: { name: string; }) => v.name === name);
       if (existingVar) {
         existingVar.value = value;
       } else {

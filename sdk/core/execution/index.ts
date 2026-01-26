@@ -6,6 +6,15 @@
 // 主要执行引擎
 export { ThreadExecutor } from './thread-executor';
 
+// Thread构建器
+export { ThreadBuilder } from './thread-builder';
+
+// Thread生命周期管理器
+export { ThreadLifecycleManager } from './thread-lifecycle-manager';
+
+// Workflow上下文
+export { WorkflowContext } from './workflow-context';
+
 // 路由器
 export { Router } from './router';
 

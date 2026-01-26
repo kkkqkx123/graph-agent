@@ -37,7 +37,7 @@ export class ThreadCoordinator {
     private stateManager: ThreadStateManager,
     private threadExecutor: ThreadExecutor,
     private eventManager: EventManager
-  ) {}
+  ) { }
 
   /**
    * Fork 操作 - 创建子 thread
@@ -291,12 +291,12 @@ export class ThreadCoordinator {
       workflowVersion: sourceThread.workflowVersion,
       status: ThreadStatus.CREATED,
       currentNodeId: sourceThread.currentNodeId,
-      variables: sourceThread.variables.map(v => ({ ...v })),
+      variables: sourceThread.variables.map((v: any) => ({ ...v })),
       variableValues: { ...sourceThread.variableValues },
       input: { ...sourceThread.input },
       output: { ...sourceThread.output },
       nodeResults: new Map(sourceThread.nodeResults),
-      executionHistory: sourceThread.executionHistory.map(h => ({ ...h })),
+      nodeResults: sourceThread.nodeResults.map(h => ({ ...h })),
       startTime: now,
       endTime: undefined,
       errors: [],
