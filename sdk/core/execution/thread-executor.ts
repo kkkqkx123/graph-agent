@@ -8,9 +8,8 @@ import type { WorkflowDefinition } from '../../types/workflow';
 import type { Thread, ThreadOptions, ThreadResult, ThreadStatus } from '../../types/thread';
 import type { Node } from '../../types/node';
 import type { NodeExecutionResult } from '../../types/thread';
-import { ThreadStateManager } from '../state/thread-state';
+import { ThreadStateManager } from './thread-state-manager';
 import { WorkflowContext } from './workflow-context';
-import { HistoryManager } from '../state/history-manager';
 import { Router } from './router';
 import { NodeExecutorFactory } from './executors/node-executor-factory';
 import { NodeType } from '../../types/node';
@@ -29,7 +28,6 @@ import { TriggerManager } from './trigger-manager';
  */
 export class ThreadExecutor {
   private stateManager: ThreadStateManager;
-  private historyManager: HistoryManager;
   private router: Router;
   private eventManager: EventManager;
   private threadCoordinator: ThreadCoordinator;
@@ -40,7 +38,6 @@ export class ThreadExecutor {
 
   constructor() {
     this.stateManager = new ThreadStateManager();
-    this.historyManager = new HistoryManager();
     this.router = new Router();
     this.eventManager = new EventManager();
     this.threadCoordinator = new ThreadCoordinator(this.stateManager, this, this.eventManager);
@@ -340,14 +337,8 @@ export class ThreadExecutor {
       // 执行节点
       const result = await this.executeNode(thread, currentNode);
 
-      // 记录执行结果
+      // 记录执行结果到Thread.executionHistory
       thread.nodeResults.push(result);
-      this.historyManager.recordNodeExecution(
-        thread.id,
-        currentNodeId,
-        currentNode.type,
-        result
-      );
 
       // 调用回调
       if (options.onNodeExecuted) {
@@ -669,23 +660,9 @@ export class ThreadExecutor {
       throw new NotFoundError(`Thread not found: ${threadId}`, 'Thread', threadId);
     }
 
-    // 更新线程变量值
-    Object.assign(thread.variableValues, variables);
-
-    // 同时更新 variables 数组（用于持久化）
+    // 使用Thread的setVariable方法设置变量
     for (const [name, value] of Object.entries(variables)) {
-      const existingVar = thread.variables.find((v: { name: string; }) => v.name === name);
-      if (existingVar) {
-        existingVar.value = value;
-      } else {
-        thread.variables.push({
-          name,
-          value,
-          type: typeof value,
-          scope: 'local',
-          readonly: false
-        });
-      }
+      thread.setVariable(name, value, typeof value as any, 'local', false);
     }
   }
 }

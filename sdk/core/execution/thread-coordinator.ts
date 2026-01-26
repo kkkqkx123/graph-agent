@@ -4,15 +4,12 @@
  */
 
 import type { Thread, ThreadResult } from '../../types/thread';
-import { ThreadStateManager } from '../state/thread-state';
+import { ThreadStateManager } from './thread-state-manager';
 import { ThreadExecutor } from './thread-executor';
 import { EventManager } from './event-manager';
-import { ExecutionError, TimeoutError, ValidationError as SDKValidationError } from '../../types/errors';
+import { ExecutionError, TimeoutError, ValidationError } from '../../types/errors';
 import { EventType } from '../../types/events';
 import type { ThreadForkedEvent, ThreadJoinedEvent, ThreadCopiedEvent } from '../../types/events';
-import { ThreadStatus } from '../../types/thread';
-import { IDUtils } from '../../types/common';
-import { Conversation } from '../llm/conversation';
 
 /**
  * Join 策略
@@ -49,11 +46,11 @@ export class ThreadCoordinator {
   async fork(parentThreadId: string, forkId: string, forkStrategy: 'serial' | 'parallel' = 'serial'): Promise<string[]> {
     // 步骤1：验证 Fork 配置
     if (!forkId) {
-      throw new SDKValidationError('Fork config must have forkId', 'fork.forkId');
+      throw new ValidationError('Fork config must have forkId', 'fork.forkId');
     }
 
     if (forkStrategy !== 'serial' && forkStrategy !== 'parallel') {
-      throw new SDKValidationError(`Invalid forkStrategy: ${forkStrategy}`, 'fork.forkStrategy');
+      throw new ValidationError(`Invalid forkStrategy: ${forkStrategy}`, 'fork.forkStrategy');
     }
 
     // 步骤2：获取父 thread
@@ -99,7 +96,7 @@ export class ThreadCoordinator {
   ): Promise<JoinResult> {
     // 步骤1：验证 Join 配置
     if (!joinStrategy) {
-      throw new SDKValidationError('Join config must have joinStrategy', 'join.joinStrategy');
+      throw new ValidationError('Join config must have joinStrategy', 'join.joinStrategy');
     }
 
     if (joinStrategy === 'SUCCESS_COUNT_THRESHOLD') {
@@ -107,7 +104,7 @@ export class ThreadCoordinator {
     }
 
     if (!timeout || timeout <= 0) {
-      throw new SDKValidationError('Join config must have valid timeout', 'join.timeout');
+      throw new ValidationError('Join config must have valid timeout', 'join.timeout');
     }
 
     // 步骤2：等待子 thread 完成
@@ -280,57 +277,13 @@ export class ThreadCoordinator {
       throw new ExecutionError(`Source thread not found: ${sourceThreadId}`, undefined, sourceThreadId);
     }
 
-    // 步骤2：创建新的 thread ID
-    const copiedThreadId = IDUtils.generate();
-    const now = Date.now();
+    // 步骤2：调用 ThreadStateManager 复制 thread
+    const copiedThreadId = this.stateManager.copyThread(sourceThreadId);
 
-    // 步骤3：复制基础信息
-    const copiedThread: Thread = {
-      id: copiedThreadId,
-      workflowId: sourceThread.workflowId,
-      workflowVersion: sourceThread.workflowVersion,
-      status: ThreadStatus.CREATED,
-      currentNodeId: sourceThread.currentNodeId,
-      variables: sourceThread.variables.map((v: any) => ({ ...v })),
-      variableValues: { ...sourceThread.variableValues },
-      input: { ...sourceThread.input },
-      output: { ...sourceThread.output },
-      nodeResults: sourceThread.nodeResults.map(h => ({ ...h })),
-      startTime: now,
-      endTime: undefined,
-      errors: [],
-      metadata: {
-        ...sourceThread.metadata,
-        parentThreadId: sourceThreadId
-      }
-    };
-
-    // 步骤4：复制 Conversation 实例
-    if (sourceThread.contextData?.['conversation']) {
-      const sourceConversation = sourceThread.contextData['conversation'] as Conversation;
-      const copiedConversation = sourceConversation.clone();
-      copiedThread.contextData = {
-        conversation: copiedConversation
-      };
-    }
-
-    // 步骤5：复制其他 contextData（如果有）
-    if (sourceThread.contextData) {
-      for (const [key, value] of Object.entries(sourceThread.contextData)) {
-        if (key !== 'conversation' && value !== undefined) {
-          copiedThread.contextData = copiedThread.contextData || {};
-          copiedThread.contextData[key] = value;
-        }
-      }
-    }
-
-    // 步骤6：将副本注册到状态管理器
-    this.stateManager.registerThread(copiedThread);
-
-    // 步骤7：触发 THREAD_COPIED 事件
+    // 步骤3：触发 THREAD_COPIED 事件
     const copiedEvent: ThreadCopiedEvent = {
       type: EventType.THREAD_COPIED,
-      timestamp: now,
+      timestamp: Date.now(),
       workflowId: sourceThread.workflowId,
       threadId: sourceThreadId,
       sourceThreadId,
@@ -338,7 +291,7 @@ export class ThreadCoordinator {
     };
     await this.eventManager.emit(copiedEvent);
 
-    // 步骤8：返回副本 thread ID
+    // 步骤4：返回副本 thread ID
     return copiedThreadId;
   }
 }

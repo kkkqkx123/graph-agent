@@ -143,6 +143,48 @@ export interface Thread {
   metadata?: ThreadMetadata;
   /** 上下文数据（用于存储 Conversation 等实例） */
   contextData?: Record<string, any>;
+  
+  /**
+   * 获取变量值
+   * @param name 变量名称
+   * @returns 变量值
+   */
+  getVariable(name: string): any;
+  
+  /**
+   * 设置变量值
+   * @param name 变量名称
+   * @param value 变量值
+   * @param type 变量类型
+   * @param scope 变量作用域
+   * @param readonly 是否只读
+   */
+  setVariable(
+    name: string,
+    value: any,
+    type?: 'number' | 'string' | 'boolean' | 'array' | 'object',
+    scope?: 'local' | 'global',
+    readonly?: boolean
+  ): void;
+  
+  /**
+   * 检查变量是否存在
+   * @param name 变量名称
+   * @returns 是否存在
+   */
+  hasVariable(name: string): boolean;
+  
+  /**
+   * 删除变量
+   * @param name 变量名称
+   */
+  deleteVariable(name: string): void;
+  
+  /**
+   * 获取所有变量
+   * @returns 所有变量值
+   */
+  getAllVariables(): Record<string, any>;
 }
 
 /**

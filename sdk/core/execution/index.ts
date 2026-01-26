@@ -12,6 +12,9 @@ export { ThreadBuilder } from './thread-builder';
 // Thread生命周期管理器
 export { ThreadLifecycleManager } from './thread-lifecycle-manager';
 
+// Thread状态管理器
+export { ThreadStateManager } from './thread-state-manager';
+
 // Workflow上下文
 export { WorkflowContext } from './workflow-context';
 

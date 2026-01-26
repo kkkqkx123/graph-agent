@@ -6,8 +6,7 @@
 import type { Thread } from '../../types/thread';
 import type { WorkflowDefinition } from '../../types/workflow';
 import { WorkflowContext } from './workflow-context';
-import { ThreadStateManager } from '../state/thread-state';
-import { VariableManager } from '../state/variable-manager';
+import { ThreadStateManager } from './thread-state-manager';
 
 /**
  * 执行上下文
@@ -16,18 +15,15 @@ import { VariableManager } from '../state/variable-manager';
 export class ExecutionContext {
   public readonly workflowContext: WorkflowContext;
   public readonly threadStateManager: ThreadStateManager;
-  public readonly variableManager: VariableManager;
   public readonly threadId: string;
 
   constructor(
     workflow: WorkflowDefinition,
     threadId: string,
-    threadStateManager: ThreadStateManager,
-    variableManager: VariableManager
+    threadStateManager: ThreadStateManager
   ) {
     this.workflowContext = new WorkflowContext(workflow);
     this.threadStateManager = threadStateManager;
-    this.variableManager = variableManager;
     this.threadId = threadId;
   }
 
@@ -57,11 +53,9 @@ export class ExecutionContext {
     scope: 'local' | 'global' = 'local',
     readonly: boolean = false
   ): void {
-    this.variableManager.setVariable(this.threadId, name, value, type, scope, readonly);
-
-    // 同步到 Thread
+    // 直接使用Thread的setVariable方法
     const thread = this.getThread();
-    thread.variableValues[name] = value;
+    thread.setVariable(name, value, type, scope, readonly);
   }
 
   /**
@@ -71,7 +65,7 @@ export class ExecutionContext {
    */
   getVariable(name: string): any {
     const thread = this.getThread();
-    return thread.variableValues[name];
+    return thread.getVariable(name);
   }
 
   /**
@@ -113,7 +107,7 @@ export class ExecutionContext {
    */
   hasVariable(name: string): boolean {
     const thread = this.getThread();
-    return name in thread.variableValues;
+    return thread.hasVariable(name);
   }
 
   /**
@@ -121,11 +115,9 @@ export class ExecutionContext {
    * @param name 变量名称
    */
   deleteVariable(name: string): void {
-    this.variableManager.deleteVariable(this.threadId, name);
-
-    // 同步到 Thread
+    // 直接使用Thread的deleteVariable方法
     const thread = this.getThread();
-    delete thread.variableValues[name];
+    thread.deleteVariable(name);
   }
 
   /**
@@ -134,7 +126,7 @@ export class ExecutionContext {
    */
   getAllVariables(): Record<string, any> {
     const thread = this.getThread();
-    return { ...thread.variableValues };
+    return thread.getAllVariables();
   }
 
   /**
