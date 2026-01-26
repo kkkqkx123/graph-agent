@@ -95,6 +95,10 @@ export interface ExecutionHistoryEntry {
   status: string;
   /** 时间戳 */
   timestamp: Timestamp;
+  /** 执行动作 */
+  action?: string;
+  /** 详细信息 */
+  details?: any;
   /** 输入数据 */
   input?: any;
   /** 输出数据 */
@@ -117,13 +121,15 @@ export interface Thread {
   status: ThreadStatus;
   /** 当前执行节点ID */
   currentNodeId: ID;
-  /** 变量对象数组 */
+  /** 变量对象数组（用于持久化和元数据） */
   variables: ThreadVariable[];
-  /** 输入数据 */
+  /** 变量值对象（用于运行时访问，支持路径访问） */
+  variableValues: Record<string, any>;
+  /** 输入数据（作为特殊变量，可通过路径访问） */
   input: Record<string, any>;
-  /** 输出数据 */
+  /** 输出数据（作为特殊变量，可通过路径访问） */
   output: Record<string, any>;
-  /** 节点执行结果映射 */
+  /** 节点执行结果映射（作为特殊变量，可通过路径访问） */
   nodeResults: Map<string, NodeExecutionResult>;
   /** 执行历史记录 */
   executionHistory: ExecutionHistoryEntry[];

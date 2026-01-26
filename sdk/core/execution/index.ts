@@ -6,9 +6,6 @@
 // 主要执行引擎
 export { ThreadExecutor } from './thread-executor';
 
-// 节点执行器
-export { NodeExecutor } from './node-executor';
-
 // 路由器
 export { Router } from './router';
 
@@ -17,3 +14,6 @@ export { EventManager } from './event-manager';
 
 // Thread协调器
 export { ThreadCoordinator, JoinStrategy, JoinResult } from './thread-coordinator';
+
+// 执行上下文
+export { ExecutionContext } from './execution-context';

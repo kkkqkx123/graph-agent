@@ -153,7 +153,19 @@ export class Router {
       if (value === null || value === undefined) {
         return undefined;
       }
-      value = value[part];
+
+      // 处理数组索引访问，如 items[0]
+      const arrayMatch = part.match(/(\w+)\[(\d+)\]/);
+      if (arrayMatch && arrayMatch[1] && arrayMatch[2]) {
+        const arrayName = arrayMatch[1];
+        const index = parseInt(arrayMatch[2], 10);
+        value = value[arrayName];
+        if (Array.isArray(value)) {
+          value = value[index];
+        }
+      } else {
+        value = value[part];
+      }
     }
 
     return value;
@@ -166,23 +178,33 @@ export class Router {
    * @returns 表达式评估结果
    */
   private evaluateCustomExpression(expression: string, thread: Thread): boolean {
-    // TODO: 实现安全的表达式评估器
-    // 支持变量引用，如 {{output.score}} > 0.8
-    // 返回布尔值
-
-    // 临时实现：简单的变量替换和评估
-    let evaluatedExpression = expression;
+    // 构建变量上下文
+    const context: Record<string, any> = {
+      // 添加所有变量值
+      ...thread.variableValues,
+      // 添加输入数据
+      input: thread.input,
+      // 添加输出数据
+      output: thread.output,
+      // 添加节点执行结果
+      nodeResults: Object.fromEntries(thread.nodeResults)
+    };
 
     // 替换变量引用 {{variableName}}
-    const variablePattern = /\{\{(\w+)\}\}/g;
-    evaluatedExpression = evaluatedExpression.replace(variablePattern, (match, varName) => {
-      const value = (thread as any)[varName];
+    let evaluatedExpression = expression;
+    const variablePattern = /\{\{(\w+(?:\.\w+)*)\}\}/g;
+    evaluatedExpression = evaluatedExpression.replace(variablePattern, (match, varPath) => {
+      const value = this.getVariableValue(varPath, thread);
       return JSON.stringify(value);
     });
 
     // 使用 Function 构造函数评估表达式（注意：生产环境需要更安全的实现）
     try {
-      const result = new Function(`return ${evaluatedExpression}`)();
+      const result = new Function('context', `
+        with (context) {
+          return (${evaluatedExpression});
+        }
+      `)(context);
       return Boolean(result);
     } catch (error) {
       console.error(`Failed to evaluate custom expression: ${expression}`, error);

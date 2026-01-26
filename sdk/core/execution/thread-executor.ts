@@ -12,7 +12,7 @@ import { ThreadStateManager } from '../state/thread-state';
 import { WorkflowContext } from '../state/workflow-context';
 import { HistoryManager } from '../state/history-manager';
 import { Router } from './router';
-import { NodeExecutor } from './node-executor';
+import { NodeExecutor } from './executors/node/base-node-executor';
 import { NodeType } from '../../types/node';
 import { EventManager } from './event-manager';
 import { ThreadCoordinator } from './thread-coordinator';

@@ -34,6 +34,7 @@ export class ThreadStateManager {
       status: ThreadStatus.CREATED,
       currentNodeId: '',
       variables: [],
+      variableValues: {},
       input: options.input || {},
       output: {},
       nodeResults: new Map(),
@@ -112,7 +113,8 @@ export class ThreadStateManager {
     // 将Map转换为普通对象以便序列化
     const serializableThread = {
       ...thread,
-      nodeResults: Array.from(thread.nodeResults.entries())
+      nodeResults: Array.from(thread.nodeResults.entries()),
+      variableValues: thread.variableValues
     };
 
     return JSON.stringify(serializableThread);
@@ -127,7 +129,8 @@ export class ThreadStateManager {
     // 将普通对象转换回Map
     const thread: Thread = {
       ...serializableThread,
-      nodeResults: new Map(serializableThread.nodeResults)
+      nodeResults: new Map(serializableThread.nodeResults),
+      variableValues: serializableThread.variableValues || {}
     };
 
     this.threads.set(thread.id, thread);

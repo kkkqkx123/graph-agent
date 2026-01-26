@@ -3,11 +3,11 @@
  * 定义节点执行的标准接口和通用逻辑
  */
 
-import type { Node } from '../../types/node';
-import type { Thread } from '../../types/thread';
-import type { NodeExecutionResult } from '../../types/thread';
-import { NodeStatus } from '../../types/node';
-import { ValidationError } from '../../types/errors';
+import type { Node } from '../../../../types/node';
+import type { Thread } from '../../../../types/thread';
+import type { NodeExecutionResult } from '../../../../types/thread';
+import { NodeStatus } from '../../../../types/node';
+import { ValidationError } from '../../../../types/errors';
 
 /**
  * 节点执行器基类
