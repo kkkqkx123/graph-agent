@@ -17,3 +17,6 @@ export { ThreadCoordinator, JoinStrategy, JoinResult } from './thread-coordinato
 
 // 执行上下文
 export { ExecutionContext } from './execution-context';
+
+// 触发器管理器
+export { TriggerManager } from './trigger-manager';

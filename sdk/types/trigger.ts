@@ -37,7 +37,7 @@ export enum TriggerActionType {
   /** 启动工作流 */
   START_WORKFLOW = 'start_workflow',
   /** 停止工作流 */
-  STOP_WORKFLOW = 'stop_workflow',
+  STOP_THREAD = 'stop_workflow',
   /** 暂停线程 */
   PAUSE_THREAD = 'pause_thread',
   /** 恢复线程 */

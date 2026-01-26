@@ -5,15 +5,14 @@
 
 import type {
   Trigger,
-  TriggerCondition,
-  TriggerAction,
-  TriggerStatus,
-  TriggerExecutionResult
+  TriggerStatus
 } from '../../types/trigger';
-import type { BaseEvent, EventType } from '../../types/events';
-import type { ID, Timestamp } from '../../types/common';
-import { EventManager } from '../execution/event-manager';
-import { TriggerExecutor } from './trigger-executor';
+import type { BaseEvent } from '../../types/events';
+import type { ID } from '../../types/common';
+import { EventManager } from './event-manager';
+import { TriggerExecutorFactory } from './executors/trigger';
+import type { ThreadExecutor } from './thread-executor';
+import { ValidationError, ExecutionError } from '../../types/errors';
 
 /**
  * TriggerManager - 触发器管理器
@@ -24,7 +23,7 @@ export class TriggerManager {
 
   constructor(
     private eventManager: EventManager,
-    private triggerExecutor: TriggerExecutor
+    private threadExecutor: ThreadExecutor
   ) {}
 
   /**
@@ -34,21 +33,21 @@ export class TriggerManager {
   register(trigger: Trigger): void {
     // 验证触发器
     if (!trigger.id) {
-      throw new Error('触发器 ID 不能为空');
+      throw new ValidationError('触发器 ID 不能为空', 'trigger.id');
     }
     if (!trigger.name) {
-      throw new Error('触发器名称不能为空');
+      throw new ValidationError('触发器名称不能为空', 'trigger.name');
     }
     if (!trigger.condition || !trigger.condition.eventType) {
-      throw new Error('触发条件不能为空');
+      throw new ValidationError('触发条件不能为空', 'trigger.condition');
     }
     if (!trigger.action || !trigger.action.type) {
-      throw new Error('触发动作不能为空');
+      throw new ValidationError('触发动作不能为空', 'trigger.action');
     }
 
     // 检查是否已存在
     if (this.triggers.has(trigger.id)) {
-      throw new Error(`触发器 ${trigger.id} 已存在`);
+      throw new ValidationError(`触发器 ${trigger.id} 已存在`, 'trigger.id', trigger.id);
     }
 
     // 存储触发器
@@ -60,8 +59,6 @@ export class TriggerManager {
       this.handleEvent.bind(this)
     );
     this.eventListeners.set(trigger.id, unregister);
-
-    console.log(`[TriggerManager] 注册触发器: ${trigger.id} - ${trigger.name}`);
   }
 
   /**
@@ -71,7 +68,7 @@ export class TriggerManager {
   unregister(triggerId: ID): void {
     const trigger = this.triggers.get(triggerId);
     if (!trigger) {
-      throw new Error(`触发器 ${triggerId} 不存在`);
+      throw new ExecutionError(`触发器 ${triggerId} 不存在`, undefined, undefined, { triggerId });
     }
 
     // 注销事件监听器
@@ -83,8 +80,6 @@ export class TriggerManager {
 
     // 删除触发器
     this.triggers.delete(triggerId);
-
-    console.log(`[TriggerManager] 注销触发器: ${triggerId}`);
   }
 
   /**
@@ -94,19 +89,16 @@ export class TriggerManager {
   enable(triggerId: ID): void {
     const trigger = this.triggers.get(triggerId);
     if (!trigger) {
-      throw new Error(`触发器 ${triggerId} 不存在`);
+      throw new ExecutionError(`触发器 ${triggerId} 不存在`, undefined, undefined, { triggerId });
     }
 
     if (trigger.status !== 'disabled' as TriggerStatus) {
-      console.warn(`[TriggerManager] 触发器 ${triggerId} 当前状态不是 disabled`);
       return;
     }
 
     // 更新触发器状态
     trigger.status = 'enabled' as TriggerStatus;
     trigger.updatedAt = Date.now();
-
-    console.log(`[TriggerManager] 启用触发器: ${triggerId}`);
   }
 
   /**
@@ -116,19 +108,16 @@ export class TriggerManager {
   disable(triggerId: ID): void {
     const trigger = this.triggers.get(triggerId);
     if (!trigger) {
-      throw new Error(`触发器 ${triggerId} 不存在`);
+      throw new ExecutionError(`触发器 ${triggerId} 不存在`, undefined, undefined, { triggerId });
     }
 
     if (trigger.status !== 'enabled' as TriggerStatus) {
-      console.warn(`[TriggerManager] 触发器 ${triggerId} 当前状态不是 enabled`);
       return;
     }
 
     // 更新触发器状态
     trigger.status = 'disabled' as TriggerStatus;
     trigger.updatedAt = Date.now();
-
-    console.log(`[TriggerManager] 禁用触发器: ${triggerId}`);
   }
 
   /**
@@ -153,8 +142,6 @@ export class TriggerManager {
    * @param event 事件对象
    */
   private async handleEvent(event: BaseEvent): Promise<void> {
-    console.log(`[TriggerManager] 收到事件: ${event.type}`);
-
     // 获取所有监听该事件类型的触发器
     const triggers = Array.from(this.triggers.values()).filter(
       (trigger) =>
@@ -167,7 +154,6 @@ export class TriggerManager {
       try {
         // 检查触发次数限制
         if (trigger.maxTriggers && trigger.maxTriggers > 0 && trigger.triggerCount >= trigger.maxTriggers) {
-          console.log(`[TriggerManager] 触发器 ${trigger.id} 已达到最大触发次数`);
           continue;
         }
 
@@ -180,9 +166,9 @@ export class TriggerManager {
         }
 
         // 执行触发器
-        await this.executeTrigger(trigger, event);
+        await this.executeTrigger(trigger);
       } catch (error) {
-        console.error(`[TriggerManager] 执行触发器 ${trigger.id} 时出错:`, error);
+        // 静默处理错误，避免影响其他触发器
       }
     }
   }
@@ -190,23 +176,17 @@ export class TriggerManager {
   /**
    * 执行触发器
    * @param trigger 触发器
-   * @param event 事件对象
    */
-  private async executeTrigger(trigger: Trigger, event: BaseEvent): Promise<void> {
-    console.log(`[TriggerManager] 执行触发器: ${trigger.id} - ${trigger.name}`);
+  private async executeTrigger(trigger: Trigger): Promise<void> {
+    // 使用工厂创建执行器
+    const executor = TriggerExecutorFactory.createExecutor(trigger.action.type);
 
     // 执行触发动作
-    const result = await this.triggerExecutor.execute(trigger.action, trigger.id);
+    const result = await executor.execute(trigger.action, trigger.id, this.threadExecutor);
 
     // 更新触发器状态
     trigger.triggerCount++;
     trigger.updatedAt = Date.now();
-
-    if (result.success) {
-      console.log(`[TriggerManager] 触发器 ${trigger.id} 执行成功`);
-    } else {
-      console.error(`[TriggerManager] 触发器 ${trigger.id} 执行失败:`, result.error);
-    }
   }
 
   /**
@@ -221,7 +201,5 @@ export class TriggerManager {
 
     // 清空触发器
     this.triggers.clear();
-
-    console.log('[TriggerManager] 清空所有触发器');
   }
 }

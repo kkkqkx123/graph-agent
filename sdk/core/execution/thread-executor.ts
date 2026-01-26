@@ -22,6 +22,7 @@ import type { ThreadStartedEvent, ThreadCompletedEvent, ThreadFailedEvent, Threa
 import { LLMWrapper } from '../llm/wrapper';
 import { ToolService } from '../tools/tool-service';
 import { Conversation } from '../llm/conversation';
+import { TriggerManager } from './trigger-manager';
 
 /**
  * ThreadExecutor - Thread 执行器
@@ -35,6 +36,7 @@ export class ThreadExecutor {
   private workflowContexts: Map<string, WorkflowContext> = new Map();
   private llmWrapper: LLMWrapper;
   private toolService: ToolService;
+  private triggerManager: TriggerManager;
 
   constructor() {
     this.stateManager = new ThreadStateManager();
@@ -44,6 +46,9 @@ export class ThreadExecutor {
     this.threadCoordinator = new ThreadCoordinator(this.stateManager, this, this.eventManager);
     this.llmWrapper = new LLMWrapper();
     this.toolService = new ToolService();
+    
+    // 初始化 TriggerManager
+    this.triggerManager = new TriggerManager(this.eventManager, this);
   }
 
   /**
@@ -52,6 +57,14 @@ export class ThreadExecutor {
    */
   getEventManager(): EventManager {
     return this.eventManager;
+  }
+
+  /**
+   * 获取触发器管理器
+   * @returns 触发器管理器
+   */
+  getTriggerManager(): TriggerManager {
+    return this.triggerManager;
   }
 
   /**
@@ -606,5 +619,70 @@ export class ThreadExecutor {
    */
   getAllThreads(): Thread[] {
     return this.stateManager.getAllThreads();
+  }
+
+  /**
+   * 跳过节点
+   * @param threadId 线程ID
+   * @param nodeId 节点ID
+   */
+  async skipNode(threadId: string, nodeId: string): Promise<void> {
+    const thread = this.stateManager.getThread(threadId);
+    if (!thread) {
+      throw new NotFoundError(`Thread not found: ${threadId}`, 'Thread', threadId);
+    }
+
+    // 标记节点为跳过状态
+    const result: NodeExecutionResult = {
+      nodeId,
+      nodeType: 'UNKNOWN',
+      status: 'SKIPPED',
+      executionTime: 0
+    };
+    
+    thread.nodeResults.set(nodeId, result);
+    
+    // 触发 NODE_COMPLETED 事件（状态为 SKIPPED）
+    const completedEvent: NodeCompletedEvent = {
+      type: EventType.NODE_COMPLETED,
+      timestamp: Date.now(),
+      workflowId: thread.workflowId,
+      threadId: thread.id,
+      nodeId,
+      output: null,
+      executionTime: 0
+    };
+    await this.eventManager.emit(completedEvent);
+  }
+
+  /**
+   * 设置变量
+   * @param threadId 线程ID
+   * @param variables 变量对象
+   */
+  async setVariables(threadId: string, variables: Record<string, any>): Promise<void> {
+    const thread = this.stateManager.getThread(threadId);
+    if (!thread) {
+      throw new NotFoundError(`Thread not found: ${threadId}`, 'Thread', threadId);
+    }
+
+    // 更新线程变量值
+    Object.assign(thread.variableValues, variables);
+    
+    // 同时更新 variables 数组（用于持久化）
+    for (const [name, value] of Object.entries(variables)) {
+      const existingVar = thread.variables.find(v => v.name === name);
+      if (existingVar) {
+        existingVar.value = value;
+      } else {
+        thread.variables.push({
+          name,
+          value,
+          type: typeof value,
+          scope: 'local',
+          readonly: false
+        });
+      }
+    }
   }
 }
