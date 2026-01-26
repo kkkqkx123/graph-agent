@@ -1,6 +1,6 @@
 /**
  * ThreadBuilder - Thread构建器
- * 负责从WorkflowDefinition创建ThreadContext实例
+ * 负责从WorkflowRegistry获取WorkflowDefinition并创建ThreadContext实例
  * 提供Thread模板缓存和深拷贝支持
  */
 
@@ -14,6 +14,7 @@ import { NodeType } from '../../types/node';
 import { IDUtils } from '../../types/common';
 import { VariableManager } from './variable-manager';
 import { ValidationError } from '../../types/errors';
+import { WorkflowRegistry } from './workflow-registry';
 
 /**
  * ThreadBuilder - Thread构建器
@@ -22,18 +23,36 @@ export class ThreadBuilder {
   private workflowContexts: Map<string, WorkflowContext> = new Map();
   private threadTemplates: Map<string, ThreadContext> = new Map();
   private variableManager: VariableManager;
+  private workflowRegistry: WorkflowRegistry;
 
-  constructor() {
+  constructor(workflowRegistry: WorkflowRegistry) {
     this.variableManager = new VariableManager();
+    this.workflowRegistry = workflowRegistry;
   }
 
   /**
-   * 从Workflow构建ThreadContext
+   * 从WorkflowRegistry获取WorkflowDefinition并构建ThreadContext
+   * @param workflowId 工作流ID
+   * @param options 线程选项
+   * @returns ThreadContext实例
+   */
+  async build(workflowId: string, options: ThreadOptions = {}): Promise<ThreadContext> {
+    // 从 WorkflowRegistry 获取工作流定义
+    const workflow = this.workflowRegistry.get(workflowId);
+    if (!workflow) {
+      throw new ValidationError(`Workflow with ID '${workflowId}' not found in registry`, 'workflowId');
+    }
+
+    return this.buildFromDefinition(workflow, options);
+  }
+
+  /**
+   * 从WorkflowDefinition构建ThreadContext（内部方法）
    * @param workflow 工作流定义
    * @param options 线程选项
    * @returns ThreadContext实例
    */
-  async build(workflow: WorkflowDefinition, options: ThreadOptions = {}): Promise<ThreadContext> {
+  private async buildFromDefinition(workflow: WorkflowDefinition, options: ThreadOptions = {}): Promise<ThreadContext> {
     // 步骤1：验证 workflow 定义
     if (!workflow.nodes || workflow.nodes.length === 0) {
       throw new ValidationError('Workflow must have at least one node', 'workflow.nodes');
@@ -221,14 +240,18 @@ export class ThreadBuilder {
 
   /**
    * 获取或创建WorkflowContext
-   * @param workflow 工作流定义
+   * @param workflowId 工作流ID
    * @returns WorkflowContext实例
    */
-  getOrCreateWorkflowContext(workflow: WorkflowDefinition): WorkflowContext {
-    let context = this.workflowContexts.get(workflow.id);
+  getOrCreateWorkflowContext(workflowId: string): WorkflowContext {
+    let context = this.workflowContexts.get(workflowId);
     if (!context) {
+      const workflow = this.workflowRegistry.get(workflowId);
+      if (!workflow) {
+        throw new ValidationError(`Workflow with ID '${workflowId}' not found in registry`, 'workflowId');
+      }
       context = new WorkflowContext(workflow);
-      this.workflowContexts.set(workflow.id, context);
+      this.workflowContexts.set(workflowId, context);
     }
     return context;
   }

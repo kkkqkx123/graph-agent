@@ -43,8 +43,8 @@ export class StartWorkflowExecutor extends BaseTriggerExecutor {
         throw new ValidationError('workflow is required for START_WORKFLOW action', 'parameters.workflow');
       }
 
-      // 步骤1：使用 ThreadBuilder 构建 ThreadContext
-      const threadContext = await threadBuilder.build(workflow as WorkflowDefinition, options as ThreadOptions);
+      // 步骤1：使用 ThreadBuilder 构建 ThreadContext（从 WorkflowRegistry 获取）
+      const threadContext = await threadBuilder.build((workflow as WorkflowDefinition).id, options as ThreadOptions);
 
       // 步骤2：调用 ThreadExecutor 的 execute 方法启动工作流
       const result = await threadExecutor.execute(threadContext, options as ThreadOptions);

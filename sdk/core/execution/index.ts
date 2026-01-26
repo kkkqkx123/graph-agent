@@ -24,6 +24,10 @@ export { VariableManager } from './variable-manager';
 // Workflow上下文
 export { WorkflowContext } from './workflow-context';
 
+// Workflow注册器
+export { WorkflowRegistry } from './workflow-registry';
+export type { WorkflowSummary, WorkflowVersion, ValidationResult } from './workflow-registry';
+
 // 路由器
 export { Router } from './router';
 

@@ -19,6 +19,7 @@ import { ExecutionError, TimeoutError, NotFoundError } from '../../types/errors'
 import { EventType } from '../../types/events';
 import type { NodeStartedEvent, NodeCompletedEvent, NodeFailedEvent, ErrorEvent } from '../../types/events';
 import { TriggerManager } from './trigger-manager';
+import { WorkflowRegistry } from './workflow-registry';
 
 /**
  * ThreadExecutor - Thread 执行器
@@ -31,10 +32,12 @@ export class ThreadExecutor {
   private eventManager: EventManager;
   private threadCoordinator: ThreadCoordinator;
   private triggerManager: TriggerManager;
+  private workflowRegistry: WorkflowRegistry;
 
-  constructor() {
+  constructor(workflowRegistry?: WorkflowRegistry) {
+    this.workflowRegistry = workflowRegistry || new WorkflowRegistry();
     this.threadRegistry = new ThreadRegistry();
-    this.threadBuilder = new ThreadBuilder();
+    this.threadBuilder = new ThreadBuilder(this.workflowRegistry);
     this.router = new Router();
     this.eventManager = new EventManager();
     this.lifecycleManager = new ThreadLifecycleManager(this.eventManager);

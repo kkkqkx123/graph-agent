@@ -12,6 +12,7 @@ import { ThreadBuilder } from '../thread-builder';
 import { ThreadContext } from '../thread-context';
 import { VariableManager } from '../variable-manager';
 import { IDUtils } from '../../../types/common';
+import { WorkflowRegistry } from '../workflow-registry';
 
 /**
  * 检查点管理器
@@ -21,6 +22,7 @@ export class CheckpointManager {
   private threadRegistry: ThreadRegistry;
   private threadBuilder: ThreadBuilder;
   private variableManager: VariableManager;
+  private workflowRegistry: WorkflowRegistry;
   private periodicTimers: Map<string, NodeJS.Timeout> = new Map();
 
   /**
@@ -28,11 +30,18 @@ export class CheckpointManager {
    * @param storage 存储实现，默认使用 MemoryStorage
    * @param threadRegistry Thread注册表
    * @param threadBuilder Thread构建器
+   * @param workflowRegistry Workflow注册器
    */
-  constructor(storage?: CheckpointStorage, threadRegistry?: ThreadRegistry, threadBuilder?: ThreadBuilder) {
+  constructor(
+    storage?: CheckpointStorage,
+    threadRegistry?: ThreadRegistry,
+    threadBuilder?: ThreadBuilder,
+    workflowRegistry?: WorkflowRegistry
+  ) {
     this.storage = storage || new MemoryStorage();
     this.threadRegistry = threadRegistry || new ThreadRegistry();
-    this.threadBuilder = threadBuilder || new ThreadBuilder();
+    this.workflowRegistry = workflowRegistry || new WorkflowRegistry();
+    this.threadBuilder = threadBuilder || new ThreadBuilder(this.workflowRegistry);
     this.variableManager = new VariableManager();
   }
 
@@ -137,28 +146,20 @@ export class CheckpointManager {
     this.variableManager.attachVariableMethods(thread as Thread);
 
     // 步骤6：创建 ThreadContext
-    // 注意：这里需要重新创建完整的 ThreadContext
-    // 由于 ThreadBuilder 需要 WorkflowDefinition，我们暂时使用简化的方式
-    // 实际实现中需要从 Checkpoint 中保存 WorkflowDefinition 或从其他地方获取
-    
-    // 创建临时的 WorkflowContext（简化处理）
-    // TODO: 需要从 Checkpoint 中保存 WorkflowDefinition 或从 WorkflowRegistry 获取
-    // 这里暂时跳过，因为需要完整的 WorkflowDefinition
-    throw new Error('ThreadContext restore from checkpoint is not fully implemented yet. Need to save and restore WorkflowDefinition.');
-    
-    // 以下是完整的恢复逻辑（需要 WorkflowDefinition）：
-    /*
-    // 获取 WorkflowDefinition
-    const workflowDefinition = await this.getWorkflowDefinition(checkpoint.workflowId);
-    
+    // 从 WorkflowRegistry 获取 WorkflowDefinition
+    const workflowDefinition = this.workflowRegistry.get(checkpoint.workflowId);
+    if (!workflowDefinition) {
+      throw new Error(`Workflow with ID '${checkpoint.workflowId}' not found in registry`);
+    }
+
     // 使用 ThreadBuilder 创建 ThreadContext
-    const threadContext = await this.threadBuilder.build(workflowDefinition, {
+    const threadContext = await this.threadBuilder.build(checkpoint.workflowId, {
       input: checkpoint.threadState.input
     });
-    
+
     // 恢复 Thread 状态
     Object.assign(threadContext.thread, thread);
-    
+
     // 恢复对话历史
     if (checkpoint.threadState.conversationHistory) {
       const conversationManager = threadContext.getConversationManager();
@@ -167,12 +168,11 @@ export class CheckpointManager {
         conversationManager.addMessage(message);
       }
     }
-    
+
     // 注册到 ThreadRegistry
     this.threadRegistry.register(threadContext);
-    
+
     return threadContext;
-    */
   }
 
   /**
