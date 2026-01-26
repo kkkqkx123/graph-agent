@@ -1,6 +1,6 @@
 /**
  * LLM包装器
- * 
+ *
  * 提供统一的LLM调用接口，协调Profile管理和客户端创建
  * 处理请求执行和响应时间统计
  */
@@ -16,7 +16,7 @@ import { SDKError, ErrorCode } from '../../types/errors';
 
 /**
  * LLM包装器类
- * 
+ *
  * LLM调用的统一入口，提供简化的API接口
  * 负责协调Profile管理和客户端工厂，处理请求执行
  */
@@ -31,14 +31,21 @@ export class LLMWrapper {
 
   /**
    * 非流式生成
-   * 
+   *
    * @param request LLM请求
    * @returns LLM响应结果
    */
   async generate(request: LLMRequest): Promise<LLMResult> {
     const profile = this.getProfile(request.profileId);
-    const client = this.clientFactory.createClient(profile!);
-
+    if (!profile) {
+      throw new SDKError(
+        ErrorCode.CONFIGURATION_ERROR,
+        'LLM Profile not found',
+        { profileId: request.profileId || 'default' }
+      );
+    }
+    
+    const client = this.clientFactory.createClient(profile);
     const startTime = Date.now();
     const result = await client.generate(request);
     result.duration = Date.now() - startTime;
@@ -54,9 +61,17 @@ export class LLMWrapper {
    */
   async *generateStream(request: LLMRequest): AsyncIterable<LLMResult> {
     const profile = this.getProfile(request.profileId);
-    const client = this.clientFactory.createClient(profile!);
-
+    if (!profile) {
+      throw new SDKError(
+        ErrorCode.CONFIGURATION_ERROR,
+        'LLM Profile not found',
+        { profileId: request.profileId || 'default' }
+      );
+    }
+    
+    const client = this.clientFactory.createClient(profile);
     const startTime = Date.now();
+
     for await (const chunk of client.generateStream(request)) {
       chunk.duration = Date.now() - startTime;
       yield chunk;

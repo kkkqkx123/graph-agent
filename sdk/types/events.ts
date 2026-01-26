@@ -31,12 +31,6 @@ export enum EventType {
   NODE_COMPLETED = 'NODE_COMPLETED',
   /** 节点失败 */
   NODE_FAILED = 'NODE_FAILED',
-  /** 工具调用 */
-  TOOL_CALLED = 'TOOL_CALLED',
-  /** 工具完成 */
-  TOOL_COMPLETED = 'TOOL_COMPLETED',
-  /** 工具失败 */
-  TOOL_FAILED = 'TOOL_FAILED',
   /** Token 超过限制 */
   TOKEN_LIMIT_EXCEEDED = 'TOKEN_LIMIT_EXCEEDED',
   /** 错误事件 */
@@ -177,47 +171,6 @@ export interface NodeFailedEvent extends BaseEvent {
 }
 
 /**
- * 工具调用事件类型
- */
-export interface ToolCalledEvent extends BaseEvent {
-  type: EventType.TOOL_CALLED;
-  /** 节点ID */
-  nodeId: ID;
-  /** 工具ID */
-  toolId: ID;
-  /** 工具参数 */
-  parameters: Record<string, any>;
-}
-
-/**
- * 工具完成事件类型
- */
-export interface ToolCompletedEvent extends BaseEvent {
-  type: EventType.TOOL_COMPLETED;
-  /** 节点ID */
-  nodeId: ID;
-  /** 工具ID */
-  toolId: ID;
-  /** 输出数据 */
-  output: any;
-  /** 执行时间 */
-  executionTime: Timestamp;
-}
-
-/**
- * 工具失败事件类型
- */
-export interface ToolFailedEvent extends BaseEvent {
-  type: EventType.TOOL_FAILED;
-  /** 节点ID */
-  nodeId: ID;
-  /** 工具ID */
-  toolId: ID;
-  /** 错误信息 */
-  error: any;
-}
-
-/**
  * Token 超过限制事件类型
  */
 export interface TokenLimitExceededEvent extends BaseEvent {
@@ -282,9 +235,6 @@ export type Event =
   | NodeStartedEvent
   | NodeCompletedEvent
   | NodeFailedEvent
-  | ToolCalledEvent
-  | ToolCompletedEvent
-  | ToolFailedEvent
   | TokenLimitExceededEvent
   | ErrorEvent
   | CheckpointCreatedEvent;

@@ -198,7 +198,11 @@ export class ToolNodeExecutor extends NodeExecutor {
    * @param timeout 超时时间
    * @returns 执行结果
    */
-  private async executeTool(toolName: string, parameters: Record<string, any>, timeout: number): Promise<any> {
+  private async executeTool(
+    toolName: string,
+    parameters: Record<string, any>,
+    timeout: number
+  ): Promise<any> {
     // 注意：这里使用模拟的工具调用
     // 实际实现应该使用ToolService执行工具
 

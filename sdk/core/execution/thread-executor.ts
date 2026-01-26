@@ -18,7 +18,7 @@ import { EventManager } from './event-manager';
 import { ThreadCoordinator } from './thread-coordinator';
 import { ExecutionError, TimeoutError, NotFoundError, ValidationError as SDKValidationError } from '../../types/errors';
 import { EventType } from '../../types/events';
-import type { ThreadStartedEvent, ThreadCompletedEvent, ThreadFailedEvent, ThreadPausedEvent, ThreadResumedEvent, NodeStartedEvent, NodeCompletedEvent, NodeFailedEvent, TokenLimitExceededEvent } from '../../types/events';
+import type { ThreadStartedEvent, ThreadCompletedEvent, ThreadFailedEvent, ThreadPausedEvent, ThreadResumedEvent, NodeStartedEvent, NodeCompletedEvent, NodeFailedEvent, TokenLimitExceededEvent, ErrorEvent } from '../../types/events';
 import { LLMWrapper } from '../llm/wrapper';
 import { ToolService } from '../tools/tool-service';
 import { Conversation } from '../llm/conversation';
@@ -223,6 +223,17 @@ export class ThreadExecutor {
       this.stateManager.updateThreadStatus(thread.id, 'FAILED' as ThreadStatus);
       thread.errors.push(error instanceof Error ? error.message : String(error));
 
+      // 触发 ERROR 事件（全局错误事件）
+      const errorEvent: ErrorEvent = {
+        type: EventType.ERROR,
+        timestamp: Date.now(),
+        workflowId: thread.workflowId,
+        threadId: thread.id,
+        error: error instanceof Error ? error.message : String(error),
+        stackTrace: error instanceof Error ? error.stack : undefined
+      };
+      await this.eventManager.emit(errorEvent);
+
       // 触发 THREAD_FAILED 事件
       const failedEvent: ThreadFailedEvent = {
         type: EventType.THREAD_FAILED,
@@ -402,6 +413,18 @@ export class ThreadExecutor {
 
       return result;
     } catch (error) {
+      // 触发 ERROR 事件（全局错误事件）
+      const errorEvent: ErrorEvent = {
+        type: EventType.ERROR,
+        timestamp: Date.now(),
+        workflowId: thread.workflowId,
+        threadId: thread.id,
+        nodeId: node.id,
+        error: error instanceof Error ? error.message : String(error),
+        stackTrace: error instanceof Error ? error.stack : undefined
+      };
+      await this.eventManager.emit(errorEvent);
+
       // 触发 NODE_FAILED 事件
       const failedEvent: NodeFailedEvent = {
         type: EventType.NODE_FAILED,
