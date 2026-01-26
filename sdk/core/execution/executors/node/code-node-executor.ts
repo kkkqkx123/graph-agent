@@ -113,14 +113,7 @@ export class CodeNodeExecutor extends NodeExecutor {
           nodeType: node.type,
           status: 'COMPLETED',
           timestamp: Date.now(),
-          action: 'code',
-          details: {
-            scriptName: config.scriptName,
-            scriptType: config.scriptType,
-            risk: config.risk,
-            exitCode: result.exitCode,
-            attempt: attempt + 1
-          }
+          output: result
         });
 
         // 步骤4：返回执行结果

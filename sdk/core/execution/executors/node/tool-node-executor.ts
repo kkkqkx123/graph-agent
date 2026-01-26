@@ -105,13 +105,7 @@ export class ToolNodeExecutor extends NodeExecutor {
           nodeType: node.type,
           status: 'COMPLETED',
           timestamp: Date.now(),
-          action: 'tool',
-          details: {
-            toolName: config.toolName,
-            parameters: resolvedParameters,
-            result,
-            attempt: attempt + 1
-          }
+          output: result
         });
 
         // 步骤4：返回执行结果

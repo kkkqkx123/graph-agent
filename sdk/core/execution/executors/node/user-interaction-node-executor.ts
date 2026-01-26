@@ -126,8 +126,7 @@ export class UserInteractionNodeExecutor extends NodeExecutor {
       nodeType: node.type,
       status: 'COMPLETED',
       timestamp: Date.now(),
-      action: 'user-interaction',
-      details: {
+      output: {
         userInteractionType: config.userInteractionType,
         showMessage: resolvedMessage,
         userInput

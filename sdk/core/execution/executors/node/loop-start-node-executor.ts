@@ -139,13 +139,12 @@ export class LoopStartNodeExecutor extends NodeExecutor {
       nodeType: node.type,
       status: 'COMPLETED',
       timestamp: Date.now(),
-      action: 'loop-start',
-      details: {
+      output: {
         loopId: config.loopId,
         variableName,
-        currentIndex: loopState.currentIndex,
+        currentValue,
         iterationCount: loopState.iterationCount,
-        currentValue
+        shouldContinue: true
       }
     });
 

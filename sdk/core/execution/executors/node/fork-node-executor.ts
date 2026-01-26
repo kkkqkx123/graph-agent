@@ -108,12 +108,12 @@ export class ForkNodeExecutor extends NodeExecutor {
       nodeType: node.type,
       status: 'COMPLETED',
       timestamp: Date.now(),
-      action: 'fork',
-      details: {
+      output: {
         forkId: config.forkId,
         forkStrategy: config.forkStrategy,
         childThreadIds,
-        childNodeIds
+        childNodeIds,
+        results
       }
     });
 

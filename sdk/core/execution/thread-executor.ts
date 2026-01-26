@@ -341,7 +341,7 @@ export class ThreadExecutor {
       const result = await this.executeNode(thread, currentNode);
 
       // 记录执行结果
-      thread.nodeResults.set(currentNodeId, result);
+      thread.nodeResults.push(result);
       this.historyManager.recordNodeExecution(
         thread.id,
         currentNodeId,
@@ -481,6 +481,7 @@ export class ThreadExecutor {
       nodeId: node.id,
       nodeType: node.type,
       status: 'COMPLETED',
+      step: thread.nodeResults.length + 1,
       output: { childThreadIds },
       executionTime: Date.now() - startTime,
       startTime,
@@ -519,6 +520,7 @@ export class ThreadExecutor {
       nodeId: node.id,
       nodeType: node.type,
       status: 'COMPLETED',
+      step: thread.nodeResults.length + 1,
       output: joinResult.output,
       executionTime: Date.now() - startTime,
       startTime,
@@ -637,10 +639,11 @@ export class ThreadExecutor {
       nodeId,
       nodeType: 'UNKNOWN',
       status: 'SKIPPED',
+      step: thread.nodeResults.length + 1,
       executionTime: 0
     };
 
-    thread.nodeResults.set(nodeId, result);
+    thread.nodeResults.push(result);
 
     // 触发 NODE_COMPLETED 事件（状态为 SKIPPED）
     const completedEvent: NodeCompletedEvent = {

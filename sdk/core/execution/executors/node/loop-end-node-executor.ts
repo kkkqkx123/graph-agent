@@ -104,14 +104,13 @@ export class LoopEndNodeExecutor extends NodeExecutor {
       nodeType: node.type,
       status: 'COMPLETED',
       timestamp: Date.now(),
-      action: 'loop-end',
-      details: {
+      output: {
         loopId: config.loopId,
-        breakCondition: config.breakCondition,
+        shouldContinue,
         shouldBreak,
         loopConditionMet,
-        shouldContinue,
-        iterationCount: loopState.iterationCount
+        iterationCount: loopState.iterationCount,
+        nextNodeId: shouldContinue ? config.loopStartNodeId : undefined
       }
     });
 

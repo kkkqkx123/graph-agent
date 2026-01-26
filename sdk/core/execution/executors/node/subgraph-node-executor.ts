@@ -96,13 +96,12 @@ export class SubgraphNodeExecutor extends NodeExecutor {
       nodeType: node.type,
       status: 'COMPLETED',
       timestamp: Date.now(),
-      action: 'subgraph',
-      details: {
+      output: {
         subgraphId: config.subgraphId,
         subgraphVersion: config.subgraphVersion,
         input: subgraphInput,
         output: subgraphResult,
-        async: config.async
+        mappedOutput: output
       }
     });
 

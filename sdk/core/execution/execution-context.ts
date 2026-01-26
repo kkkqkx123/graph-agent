@@ -171,7 +171,7 @@ export class ExecutionContext {
    */
   getNodeResult(nodeId: string): any {
     const thread = this.getThread();
-    return thread.nodeResults.get(nodeId);
+    return thread.nodeResults.find(result => result.nodeId === nodeId);
   }
 
   /**

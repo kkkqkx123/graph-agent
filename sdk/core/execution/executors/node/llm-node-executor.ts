@@ -121,13 +121,12 @@ export class LLMNodeExecutor extends NodeExecutor {
       nodeType: node.type,
       status: 'COMPLETED',
       timestamp: Date.now(),
-      action: 'llm',
-      details: {
-        profileId: config.profileId,
-        prompt: resolvedPrompt,
-        response: llmResult.content,
+      output: {
+        content: llmResult.content,
         usage: llmResult.usage,
-        toolCalls: llmResult.toolCalls
+        finishReason: llmResult.finishReason,
+        toolCalls: llmResult.toolCalls,
+        toolResults
       }
     });
 

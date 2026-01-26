@@ -46,7 +46,7 @@ export class StartNodeExecutor extends NodeExecutor {
     }
 
     // 检查节点是否已执行
-    if (thread.nodeResults.has(node.id)) {
+    if (thread.nodeResults.some(result => result.nodeId === node.id)) {
       return false;
     }
 
@@ -74,9 +74,6 @@ export class StartNodeExecutor extends NodeExecutor {
       thread.variableValues = {};
     }
     if (!thread.nodeResults) {
-      thread.nodeResults = new Map();
-    }
-    if (!thread.nodeResults) {
       thread.nodeResults = [];
     }
     if (!thread.errors) {
@@ -94,8 +91,7 @@ export class StartNodeExecutor extends NodeExecutor {
       nodeId: node.id,
       nodeType: node.type,
       status: 'COMPLETED',
-      timestamp: Date.now(),
-      action: 'start'
+      timestamp: Date.now()
     });
 
     // 步骤6：返回执行结果

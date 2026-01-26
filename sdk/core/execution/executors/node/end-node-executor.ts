@@ -46,7 +46,7 @@ export class EndNodeExecutor extends NodeExecutor {
     }
 
     // 检查节点是否已执行
-    if (thread.nodeResults.has(node.id)) {
+    if (thread.nodeResults.some(result => result.nodeId === node.id)) {
       return false;
     }
 
@@ -70,12 +70,9 @@ export class EndNodeExecutor extends NodeExecutor {
     } else {
       // 优先级2：最后一个节点的output
       if (thread.nodeResults && thread.nodeResults.length > 0) {
-        const lastHistory = thread.nodeResults[thread.nodeResults.length - 1];
-        if (lastHistory) {
-          const lastResult = thread.nodeResults.get(lastHistory.nodeId);
-          if (lastResult && lastResult.output) {
-            output = lastResult.output;
-          }
+        const lastResult = thread.nodeResults[thread.nodeResults.length - 1];
+        if (lastResult && lastResult.output) {
+          output = lastResult.output;
         }
       }
       // 优先级3：空对象（已在上面初始化）
@@ -92,8 +89,7 @@ export class EndNodeExecutor extends NodeExecutor {
       nodeId: node.id,
       nodeType: node.type,
       status: 'COMPLETED',
-      timestamp: Date.now(),
-      action: 'end'
+      timestamp: Date.now()
     });
 
     // 步骤5：返回执行结果

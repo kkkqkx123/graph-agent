@@ -112,10 +112,7 @@ export class RouteNodeExecutor extends NodeExecutor {
       nodeType: node.type,
       status: 'COMPLETED',
       timestamp: Date.now(),
-      action: 'route',
-      details: {
-        conditions: config.conditions,
-        nextNodes: config.nextNodes,
+      output: {
         selectedNode,
         matchedConditionIndex: selectedNodeIndex
       }

@@ -36,7 +36,6 @@ export class ThreadStateManager {
       variableValues: {},
       input: options.input || {},
       output: {},
-      nodeResults: new Map(),
       nodeResults: [],
       startTime: now,
       errors: [],
@@ -109,10 +108,10 @@ export class ThreadStateManager {
       throw new Error(`Thread not found: ${threadId}`);
     }
 
-    // 将Map转换为普通对象以便序列化
+    // 将数组转换为可序列化格式
     const serializableThread = {
       ...thread,
-      nodeResults: Array.from(thread.nodeResults.entries()),
+      nodeResults: thread.nodeResults,
       variableValues: thread.variableValues
     };
 
@@ -125,10 +124,10 @@ export class ThreadStateManager {
   deserializeThread(data: string): Thread {
     const serializableThread = JSON.parse(data);
 
-    // 将普通对象转换回Map
+    // 将普通对象转换回Thread
     const thread: Thread = {
       ...serializableThread,
-      nodeResults: new Map(serializableThread.nodeResults),
+      nodeResults: serializableThread.nodeResults || [],
       variableValues: serializableThread.variableValues || {}
     };
 

@@ -106,14 +106,14 @@ export class JoinNodeExecutor extends NodeExecutor {
       nodeType: node.type,
       status: 'COMPLETED',
       timestamp: Date.now(),
-      action: 'join',
-      details: {
+      output: {
         joinId: config.joinId,
         joinStrategy: config.joinStrategy,
-        childThreadIds,
+        success: joinResult.success,
+        output: mergedOutput,
         completedThreads: joinResult.completedCount,
         failedThreads: joinResult.failedCount,
-        success: joinResult.success
+        results: joinResult.results
       }
     });
 

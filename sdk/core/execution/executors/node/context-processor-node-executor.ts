@@ -104,11 +104,9 @@ export class ContextProcessorNodeExecutor extends NodeExecutor {
       nodeType: node.type,
       status: 'COMPLETED',
       timestamp: Date.now(),
-      action: 'context-processor',
-      details: {
-        contextProcessorType: config.contextProcessorType,
-        inputContext,
-        outputContext
+      output: {
+        context: outputContext,
+        contextProcessorType: config.contextProcessorType
       }
     });
 

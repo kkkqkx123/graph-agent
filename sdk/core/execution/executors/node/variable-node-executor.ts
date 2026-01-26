@@ -126,12 +126,10 @@ export class VariableNodeExecutor extends NodeExecutor {
       nodeType: node.type,
       status: 'COMPLETED',
       timestamp: Date.now(),
-      action: 'variable',
-      details: {
+      output: {
         variableName: config.variableName,
-        variableType: config.variableType,
-        expression: config.expression,
-        result: typedResult
+        value: typedResult,
+        type: config.variableType
       }
     });
 

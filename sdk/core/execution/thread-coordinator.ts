@@ -295,7 +295,6 @@ export class ThreadCoordinator {
       variableValues: { ...sourceThread.variableValues },
       input: { ...sourceThread.input },
       output: { ...sourceThread.output },
-      nodeResults: new Map(sourceThread.nodeResults),
       nodeResults: sourceThread.nodeResults.map(h => ({ ...h })),
       startTime: now,
       endTime: undefined,

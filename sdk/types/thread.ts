@@ -83,6 +83,30 @@ export interface NodeExecutionResult {
   startTime?: Timestamp;
   /** 结束时间 */
   endTime?: Timestamp;
+  /** 时间戳 */
+  timestamp?: Timestamp;
+}
+
+/**
+ * 执行历史条目类型
+ */
+export interface ExecutionHistoryEntry {
+  /** 执行步骤序号 */
+  step: number;
+  /** 节点ID */
+  nodeId: ID;
+  /** 节点类型 */
+  nodeType: string;
+  /** 执行状态 */
+  status: 'PENDING' | 'RUNNING' | 'COMPLETED' | 'FAILED' | 'SKIPPED' | 'CANCELLED';
+  /** 时间戳 */
+  timestamp: Timestamp;
+  /** 输入数据 */
+  input?: any;
+  /** 输出数据 */
+  output?: any;
+  /** 错误信息 */
+  error?: any;
 }
 
 /**
@@ -99,8 +123,10 @@ export interface Thread {
   status: ThreadStatus;
   /** 当前执行节点ID */
   currentNodeId: ID;
-  /** 变量对象（用于持久化和元数据） */
-  variables: Record<string, ThreadVariable>;
+  /** 变量数组（用于持久化和元数据） */
+  variables: ThreadVariable[];
+  /** 变量值映射（用于快速访问） */
+  variableValues: Record<string, any>;
   /** 输入数据（作为特殊变量，可通过路径访问） */
   input: Record<string, any>;
   /** 输出数据（作为特殊变量，可通过路径访问） */

@@ -31,6 +31,7 @@ export abstract class NodeExecutor {
         nodeId: node.id,
         nodeType: node.type,
         status: NodeStatus.SKIPPED,
+        step: thread.nodeResults.length + 1,
         executionTime: 0
       };
     }
@@ -46,6 +47,7 @@ export abstract class NodeExecutor {
         nodeId: node.id,
         nodeType: node.type,
         status: NodeStatus.COMPLETED,
+        step: thread.nodeResults.length + 1,
         output,
         executionTime: Date.now() - startTime,
         startTime,
@@ -58,6 +60,7 @@ export abstract class NodeExecutor {
         nodeId: node.id,
         nodeType: node.type,
         status: NodeStatus.FAILED,
+        step: thread.nodeResults.length + 1,
         error: errorMessage,
         executionTime: Date.now() - startTime,
         startTime,

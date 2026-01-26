@@ -187,7 +187,10 @@ export class Router {
       // 添加输出数据
       output: thread.output,
       // 添加节点执行结果
-      nodeResults: Object.fromEntries(thread.nodeResults)
+      nodeResults: thread.nodeResults.reduce((acc, result) => {
+        acc[result.nodeId] = result;
+        return acc;
+      }, {} as Record<string, any>)
     };
 
     // 替换变量引用 {{variableName}}
