@@ -8,7 +8,9 @@ import type { WorkflowDefinition } from '../../types/workflow';
 import type { Thread, ThreadOptions, ThreadResult, ThreadStatus } from '../../types/thread';
 import type { Node } from '../../types/node';
 import type { NodeExecutionResult } from '../../types/thread';
-import { ThreadStateManager } from './thread-state-manager';
+import { ThreadRegistry } from './thread-registry';
+import { ThreadBuilder } from './thread-builder';
+import { ThreadLifecycleManager } from './thread-lifecycle-manager';
 import { WorkflowContext } from './workflow-context';
 import { Router } from './router';
 import { NodeExecutorFactory } from './executors/node-executor-factory';
@@ -17,7 +19,7 @@ import { EventManager } from './event-manager';
 import { ThreadCoordinator } from './thread-coordinator';
 import { ExecutionError, TimeoutError, NotFoundError, ValidationError as SDKValidationError } from '../../types/errors';
 import { EventType } from '../../types/events';
-import type { ThreadStartedEvent, ThreadCompletedEvent, ThreadFailedEvent, ThreadPausedEvent, ThreadResumedEvent, NodeStartedEvent, NodeCompletedEvent, NodeFailedEvent, TokenLimitExceededEvent, ErrorEvent } from '../../types/events';
+import type { NodeStartedEvent, NodeCompletedEvent, NodeFailedEvent, TokenLimitExceededEvent, ErrorEvent } from '../../types/events';
 import { LLMWrapper } from '../llm/wrapper';
 import { ToolService } from '../tools/tool-service';
 import { Conversation } from '../llm/conversation';
@@ -27,7 +29,9 @@ import { TriggerManager } from './trigger-manager';
  * ThreadExecutor - Thread 执行器
  */
 export class ThreadExecutor {
-  private stateManager: ThreadStateManager;
+  private threadRegistry: ThreadRegistry;
+  private threadBuilder: ThreadBuilder;
+  private lifecycleManager: ThreadLifecycleManager;
   private router: Router;
   private eventManager: EventManager;
   private threadCoordinator: ThreadCoordinator;
@@ -37,12 +41,14 @@ export class ThreadExecutor {
   private triggerManager: TriggerManager;
 
   constructor() {
-    this.stateManager = new ThreadStateManager();
-    this.router = new Router();
-    this.eventManager = new EventManager();
-    this.threadCoordinator = new ThreadCoordinator(this.stateManager, this, this.eventManager);
+    this.threadRegistry = new ThreadRegistry();
     this.llmWrapper = new LLMWrapper();
     this.toolService = new ToolService();
+    this.threadBuilder = new ThreadBuilder(this.llmWrapper, this.toolService);
+    this.router = new Router();
+    this.eventManager = new EventManager();
+    this.lifecycleManager = new ThreadLifecycleManager(this.eventManager);
+    this.threadCoordinator = new ThreadCoordinator(this.threadRegistry, this.threadBuilder, this, this.eventManager);
 
     // 初始化 TriggerManager
     this.triggerManager = new TriggerManager(this.eventManager, this);
@@ -88,11 +94,13 @@ export class ThreadExecutor {
     if ('nodes' in workflowOrThread) {
       // 是 workflow，创建 thread
       const workflow = workflowOrThread as WorkflowDefinition;
-      const thread = this.createThreadFromWorkflow(workflow, options);
+      const thread = await this.createThreadFromWorkflow(workflow, options);
       return this.executeThread(thread, options);
     } else {
       // 是 thread，直接执行
       const thread = workflowOrThread as Thread;
+      // 注册到 ThreadRegistry
+      this.threadRegistry.register(thread);
       return this.executeThread(thread, options);
     }
   }
@@ -103,7 +111,7 @@ export class ThreadExecutor {
    * @param options 线程选项
    * @returns Thread 实例
    */
-  private createThreadFromWorkflow(workflow: WorkflowDefinition, options: ThreadOptions = {}): Thread {
+  private async createThreadFromWorkflow(workflow: WorkflowDefinition, options: ThreadOptions = {}): Promise<Thread> {
     // 步骤1：验证 workflow 定义
     if (!workflow.nodes || workflow.nodes.length === 0) {
       throw new SDKValidationError('Workflow must have at least one node', 'workflow.nodes');
@@ -119,15 +127,11 @@ export class ThreadExecutor {
       throw new SDKValidationError('Workflow must have an END node', 'workflow.nodes');
     }
 
-    // 步骤2：创建 thread 实例
-    const thread = this.stateManager.createThread(
-      workflow.id,
-      workflow.version,
-      options
-    );
+    // 步骤2：使用 ThreadBuilder 创建 thread 实例
+    const thread = await this.threadBuilder.build(workflow, options);
 
-    // 步骤3：设置初始节点
-    this.stateManager.setCurrentNode(thread.id, startNode.id);
+    // 步骤3：注册到 ThreadRegistry
+    this.threadRegistry.register(thread);
 
     // 步骤4：复制 workflow 配置
     if (workflow.config) {
@@ -137,35 +141,7 @@ export class ThreadExecutor {
       };
     }
 
-    // 步骤5：创建 Conversation 实例
-    const conversation = new Conversation(
-      this.llmWrapper,
-      this.toolService,
-      {
-        tokenLimit: options.tokenLimit || 4000,
-        eventCallbacks: {
-          onTokenLimitExceeded: async (tokensUsed, tokenLimit) => {
-            // 触发事件
-            const event: TokenLimitExceededEvent = {
-              type: EventType.TOKEN_LIMIT_EXCEEDED,
-              timestamp: Date.now(),
-              workflowId: thread.workflowId,
-              threadId: thread.id,
-              tokensUsed,
-              tokenLimit
-            };
-            await this.eventManager.emit(event);
-          }
-        }
-      }
-    );
-
-    // 存储 Conversation 到 thread.contextData
-    thread.contextData = {
-      conversation
-    };
-
-    // 步骤6：缓存 workflow context
+    // 步骤5：缓存 workflow context
     this.workflowContexts.set(workflow.id, new WorkflowContext(workflow));
 
     return thread;
@@ -212,26 +188,15 @@ export class ThreadExecutor {
       throw new ExecutionError(`Thread is not in a valid state for execution: ${thread.status}`, undefined, thread.workflowId);
     }
 
-    // 步骤2：更新 thread 状态为 RUNNING
-    this.stateManager.updateThreadStatus(thread.id, 'RUNNING' as ThreadStatus);
+    // 步骤2：使用 ThreadLifecycleManager 启动 thread
+    await this.lifecycleManager.startThread(thread);
 
-    // 步骤3：触发 THREAD_STARTED 事件
-    const startedEvent: ThreadStartedEvent = {
-      type: EventType.THREAD_STARTED,
-      timestamp: Date.now(),
-      workflowId: thread.workflowId,
-      threadId: thread.id,
-      input: thread.input
-    };
-    await this.eventManager.emit(startedEvent);
-
-    // 步骤4：开始执行循环
+    // 步骤3：开始执行循环
     try {
       await this.executeLoop(thread, options);
     } catch (error) {
       // 处理执行错误
-      this.stateManager.updateThreadStatus(thread.id, 'FAILED' as ThreadStatus);
-      thread.errors.push(error instanceof Error ? error.message : String(error));
+      await this.lifecycleManager.failThread(thread, error instanceof Error ? error : new Error(String(error)));
 
       // 触发 ERROR 事件（全局错误事件）
       const errorEvent: ErrorEvent = {
@@ -244,16 +209,6 @@ export class ThreadExecutor {
       };
       await this.eventManager.emit(errorEvent);
 
-      // 触发 THREAD_FAILED 事件
-      const failedEvent: ThreadFailedEvent = {
-        type: EventType.THREAD_FAILED,
-        timestamp: Date.now(),
-        workflowId: thread.workflowId,
-        threadId: thread.id,
-        error: error instanceof Error ? error.message : String(error)
-      };
-      await this.eventManager.emit(failedEvent);
-
       return {
         threadId: thread.id,
         success: false,
@@ -265,22 +220,9 @@ export class ThreadExecutor {
       };
     }
 
-    // 步骤5：处理执行完成
-    this.stateManager.updateThreadStatus(thread.id, 'COMPLETED' as ThreadStatus);
+    // 步骤4：处理执行完成
     const executionTime = Date.now() - thread.startTime;
-
-    // 触发 THREAD_COMPLETED 事件
-    const completedEvent: ThreadCompletedEvent = {
-      type: EventType.THREAD_COMPLETED,
-      timestamp: Date.now(),
-      workflowId: thread.workflowId,
-      threadId: thread.id,
-      output: thread.output,
-      executionTime
-    };
-    await this.eventManager.emit(completedEvent);
-
-    return {
+    const result: ThreadResult = {
       threadId: thread.id,
       success: true,
       output: thread.output,
@@ -288,6 +230,10 @@ export class ThreadExecutor {
       nodeResults: Array.from(thread.nodeResults.values()),
       metadata: thread.metadata
     };
+
+    await this.lifecycleManager.completeThread(thread, result);
+
+    return result;
   }
 
   /**
@@ -319,7 +265,7 @@ export class ThreadExecutor {
       }
 
       // 获取当前节点
-      const currentNodeId = this.stateManager.getCurrentNode(thread.id);
+      const currentNodeId = thread.currentNodeId;
       if (!currentNodeId) {
         break;
       }
@@ -356,7 +302,7 @@ export class ThreadExecutor {
       }
 
       // 更新当前节点
-      this.stateManager.setCurrentNode(thread.id, nextNodeId);
+      thread.currentNodeId = nextNodeId;
 
       // 更新步数
       stepCount++;
@@ -524,7 +470,7 @@ export class ThreadExecutor {
    * @param threadId 线程ID
    */
   async pause(threadId: string): Promise<void> {
-    const thread = this.stateManager.getThread(threadId);
+    const thread = this.threadRegistry.get(threadId);
     if (!thread) {
       throw new NotFoundError(`Thread not found: ${threadId}`, 'Thread', threadId);
     }
@@ -533,16 +479,7 @@ export class ThreadExecutor {
       throw new ExecutionError(`Thread is not running: ${threadId}`, undefined, thread.workflowId);
     }
 
-    this.stateManager.updateThreadStatus(threadId, 'PAUSED' as ThreadStatus);
-
-    // 触发 THREAD_PAUSED 事件
-    const pausedEvent: ThreadPausedEvent = {
-      type: EventType.THREAD_PAUSED,
-      timestamp: Date.now(),
-      workflowId: thread.workflowId,
-      threadId: thread.id
-    };
-    await this.eventManager.emit(pausedEvent);
+    await this.lifecycleManager.pauseThread(thread);
   }
 
   /**
@@ -552,7 +489,7 @@ export class ThreadExecutor {
    * @returns 线程执行结果
    */
   async resume(threadId: string, options: ThreadOptions = {}): Promise<ThreadResult> {
-    const thread = this.stateManager.getThread(threadId);
+    const thread = this.threadRegistry.get(threadId);
     if (!thread) {
       throw new NotFoundError(`Thread not found: ${threadId}`, 'Thread', threadId);
     }
@@ -561,14 +498,7 @@ export class ThreadExecutor {
       throw new ExecutionError(`Thread is not paused: ${threadId}`, undefined, thread.workflowId);
     }
 
-    // 触发 THREAD_RESUMED 事件
-    const resumedEvent: ThreadResumedEvent = {
-      type: EventType.THREAD_RESUMED,
-      timestamp: Date.now(),
-      workflowId: thread.workflowId,
-      threadId: thread.id
-    };
-    await this.eventManager.emit(resumedEvent);
+    await this.lifecycleManager.resumeThread(thread);
 
     // 继续执行
     return this.executeThread(thread, options);
@@ -579,7 +509,7 @@ export class ThreadExecutor {
    * @param threadId 线程ID
    */
   async cancel(threadId: string): Promise<void> {
-    const thread = this.stateManager.getThread(threadId);
+    const thread = this.threadRegistry.get(threadId);
     if (!thread) {
       throw new NotFoundError(`Thread not found: ${threadId}`, 'Thread', threadId);
     }
@@ -588,7 +518,7 @@ export class ThreadExecutor {
       throw new ExecutionError(`Thread is not running or paused: ${threadId}`, undefined, thread.workflowId);
     }
 
-    this.stateManager.updateThreadStatus(threadId, 'CANCELLED' as ThreadStatus);
+    await this.lifecycleManager.cancelThread(thread);
 
     // 取消子 thread（如果有）
     const childThreadIds = thread.metadata?.childThreadIds as string[] || [];
@@ -603,7 +533,7 @@ export class ThreadExecutor {
    * @returns Thread 实例
    */
   getThread(threadId: string): Thread | null {
-    return this.stateManager.getThread(threadId);
+    return this.threadRegistry.get(threadId);
   }
 
   /**
@@ -611,7 +541,7 @@ export class ThreadExecutor {
    * @returns Thread 数组
    */
   getAllThreads(): Thread[] {
-    return this.stateManager.getAllThreads();
+    return this.threadRegistry.getAll();
   }
 
   /**
@@ -620,7 +550,7 @@ export class ThreadExecutor {
    * @param nodeId 节点ID
    */
   async skipNode(threadId: string, nodeId: string): Promise<void> {
-    const thread = this.stateManager.getThread(threadId);
+    const thread = this.threadRegistry.get(threadId);
     if (!thread) {
       throw new NotFoundError(`Thread not found: ${threadId}`, 'Thread', threadId);
     }
@@ -655,7 +585,7 @@ export class ThreadExecutor {
    * @param variables 变量对象
    */
   async setVariables(threadId: string, variables: Record<string, any>): Promise<void> {
-    const thread = this.stateManager.getThread(threadId);
+    const thread = this.threadRegistry.get(threadId);
     if (!thread) {
       throw new NotFoundError(`Thread not found: ${threadId}`, 'Thread', threadId);
     }

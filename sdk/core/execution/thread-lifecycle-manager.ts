@@ -3,11 +3,11 @@
  * 负责Thread状态转换管理，独立于执行逻辑
  */
 
-import type { Thread, ThreadStatus } from '../../types/thread';
-import type { ThreadResult } from '../../types/thread';
+import type { Thread, ThreadStatus, ThreadResult } from '../../types/thread';
 import type { EventManager } from './event-manager';
 import { EventType } from '../../types/events';
 import type { ThreadStartedEvent, ThreadCompletedEvent, ThreadFailedEvent, ThreadPausedEvent, ThreadResumedEvent } from '../../types/events';
+import { ValidationError } from '../../types/errors';
 
 /**
  * ThreadLifecycleManager - Thread生命周期管理器
@@ -20,10 +20,21 @@ export class ThreadLifecycleManager {
    * @param thread Thread实例
    */
   async startThread(thread: Thread): Promise<void> {
-    // TODO: 验证状态转换合法性
-    // TODO: 更新Thread状态为RUNNING
-    // TODO: 触发THREAD_STARTED事件
-    throw new Error('ThreadLifecycleManager.startThread() not implemented yet');
+    // 验证状态转换合法性
+    if (!this.validateStateTransition(thread.status, 'RUNNING' as ThreadStatus)) {
+      throw new ValidationError(
+        `Invalid state transition: ${thread.status} -> RUNNING`,
+        'thread.status',
+        thread.status,
+        { threadId: thread.id, currentStatus: thread.status, targetStatus: 'RUNNING' }
+      );
+    }
+
+    // 更新Thread状态为RUNNING
+    thread.status = 'RUNNING' as ThreadStatus;
+
+    // 触发THREAD_STARTED事件
+    await this.emitThreadStartedEvent(thread);
   }
 
   /**
@@ -31,10 +42,21 @@ export class ThreadLifecycleManager {
    * @param thread Thread实例
    */
   async pauseThread(thread: Thread): Promise<void> {
-    // TODO: 验证状态转换合法性
-    // TODO: 更新Thread状态为PAUSED
-    // TODO: 触发THREAD_PAUSED事件
-    throw new Error('ThreadLifecycleManager.pauseThread() not implemented yet');
+    // 验证状态转换合法性
+    if (!this.validateStateTransition(thread.status, 'PAUSED' as ThreadStatus)) {
+      throw new ValidationError(
+        `Invalid state transition: ${thread.status} -> PAUSED`,
+        'thread.status',
+        thread.status,
+        { threadId: thread.id, currentStatus: thread.status, targetStatus: 'PAUSED' }
+      );
+    }
+
+    // 更新Thread状态为PAUSED
+    thread.status = 'PAUSED' as ThreadStatus;
+
+    // 触发THREAD_PAUSED事件
+    await this.emitThreadPausedEvent(thread);
   }
 
   /**
@@ -42,10 +64,21 @@ export class ThreadLifecycleManager {
    * @param thread Thread实例
    */
   async resumeThread(thread: Thread): Promise<void> {
-    // TODO: 验证状态转换合法性
-    // TODO: 更新Thread状态为RUNNING
-    // TODO: 触发THREAD_RESUMED事件
-    throw new Error('ThreadLifecycleManager.resumeThread() not implemented yet');
+    // 验证状态转换合法性
+    if (!this.validateStateTransition(thread.status, 'RUNNING' as ThreadStatus)) {
+      throw new ValidationError(
+        `Invalid state transition: ${thread.status} -> RUNNING`,
+        'thread.status',
+        thread.status,
+        { threadId: thread.id, currentStatus: thread.status, targetStatus: 'RUNNING' }
+      );
+    }
+
+    // 更新Thread状态为RUNNING
+    thread.status = 'RUNNING' as ThreadStatus;
+
+    // 触发THREAD_RESUMED事件
+    await this.emitThreadResumedEvent(thread);
   }
 
   /**
@@ -54,11 +87,24 @@ export class ThreadLifecycleManager {
    * @param result 执行结果
    */
   async completeThread(thread: Thread, result: ThreadResult): Promise<void> {
-    // TODO: 验证状态转换合法性
-    // TODO: 更新Thread状态为COMPLETED
-    // TODO: 设置结束时间
-    // TODO: 触发THREAD_COMPLETED事件
-    throw new Error('ThreadLifecycleManager.completeThread() not implemented yet');
+    // 验证状态转换合法性
+    if (!this.validateStateTransition(thread.status, 'COMPLETED' as ThreadStatus)) {
+      throw new ValidationError(
+        `Invalid state transition: ${thread.status} -> COMPLETED`,
+        'thread.status',
+        thread.status,
+        { threadId: thread.id, currentStatus: thread.status, targetStatus: 'COMPLETED' }
+      );
+    }
+
+    // 更新Thread状态为COMPLETED
+    thread.status = 'COMPLETED' as ThreadStatus;
+
+    // 设置结束时间
+    thread.endTime = Date.now();
+
+    // 触发THREAD_COMPLETED事件
+    await this.emitThreadCompletedEvent(thread, result);
   }
 
   /**
@@ -67,12 +113,27 @@ export class ThreadLifecycleManager {
    * @param error 错误信息
    */
   async failThread(thread: Thread, error: Error): Promise<void> {
-    // TODO: 验证状态转换合法性
-    // TODO: 更新Thread状态为FAILED
-    // TODO: 设置结束时间
-    // TODO: 记录错误信息
-    // TODO: 触发THREAD_FAILED事件
-    throw new Error('ThreadLifecycleManager.failThread() not implemented yet');
+    // 验证状态转换合法性
+    if (!this.validateStateTransition(thread.status, 'FAILED' as ThreadStatus)) {
+      throw new ValidationError(
+        `Invalid state transition: ${thread.status} -> FAILED`,
+        'thread.status',
+        thread.status,
+        { threadId: thread.id, currentStatus: thread.status, targetStatus: 'FAILED' }
+      );
+    }
+
+    // 更新Thread状态为FAILED
+    thread.status = 'FAILED' as ThreadStatus;
+
+    // 设置结束时间
+    thread.endTime = Date.now();
+
+    // 记录错误信息
+    thread.errors.push(error.message);
+
+    // 触发THREAD_FAILED事件
+    await this.emitThreadFailedEvent(thread, error);
   }
 
   /**
@@ -80,11 +141,24 @@ export class ThreadLifecycleManager {
    * @param thread Thread实例
    */
   async cancelThread(thread: Thread): Promise<void> {
-    // TODO: 验证状态转换合法性
-    // TODO: 更新Thread状态为CANCELLED
-    // TODO: 设置结束时间
-    // TODO: 触发THREAD_CANCELLED事件
-    throw new Error('ThreadLifecycleManager.cancelThread() not implemented yet');
+    // 验证状态转换合法性
+    if (!this.validateStateTransition(thread.status, 'CANCELLED' as ThreadStatus)) {
+      throw new ValidationError(
+        `Invalid state transition: ${thread.status} -> CANCELLED`,
+        'thread.status',
+        thread.status,
+        { threadId: thread.id, currentStatus: thread.status, targetStatus: 'CANCELLED' }
+      );
+    }
+
+    // 更新Thread状态为CANCELLED
+    thread.status = 'CANCELLED' as ThreadStatus;
+
+    // 设置结束时间
+    thread.endTime = Date.now();
+
+    // 注意：THREAD_CANCELLED 事件类型不存在，暂时不触发事件
+    // 如果需要，可以在 events.ts 中添加该事件类型
   }
 
   /**
@@ -94,12 +168,24 @@ export class ThreadLifecycleManager {
    * @returns 是否允许转换
    */
   private validateStateTransition(currentStatus: ThreadStatus, targetStatus: ThreadStatus): boolean {
-    // TODO: 实现状态转换验证逻辑
+    // 状态转换规则：
     // CREATED → RUNNING
     // RUNNING → PAUSED | COMPLETED | FAILED | CANCELLED
     // PAUSED → RUNNING | CANCELLED
     // COMPLETED/FAILED/CANCELLED → 终止状态，不可转换
-    throw new Error('ThreadLifecycleManager.validateStateTransition() not implemented yet');
+
+    const transitions: Record<string, string[]> = {
+      'CREATED': ['RUNNING'],
+      'RUNNING': ['PAUSED', 'COMPLETED', 'FAILED', 'CANCELLED'],
+      'PAUSED': ['RUNNING', 'CANCELLED'],
+      'COMPLETED': [],
+      'FAILED': [],
+      'CANCELLED': [],
+      'TIMEOUT': []
+    };
+
+    const allowedTransitions = transitions[currentStatus] || [];
+    return allowedTransitions.includes(targetStatus);
   }
 
   /**
@@ -177,4 +263,5 @@ export class ThreadLifecycleManager {
     };
     await this.eventManager.emit(event);
   }
+
 }

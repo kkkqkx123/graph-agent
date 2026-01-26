@@ -4,7 +4,8 @@
  */
 
 import type { Thread, ThreadResult } from '../../types/thread';
-import { ThreadStateManager } from './thread-state-manager';
+import { ThreadRegistry } from './thread-registry';
+import { ThreadBuilder } from './thread-builder';
 import { ThreadExecutor } from './thread-executor';
 import { EventManager } from './event-manager';
 import { ExecutionError, TimeoutError, ValidationError } from '../../types/errors';
@@ -31,7 +32,8 @@ export interface JoinResult {
  */
 export class ThreadCoordinator {
   constructor(
-    private stateManager: ThreadStateManager,
+    private threadRegistry: ThreadRegistry,
+    private threadBuilder: ThreadBuilder,
     private threadExecutor: ThreadExecutor,
     private eventManager: EventManager
   ) { }
@@ -54,7 +56,7 @@ export class ThreadCoordinator {
     }
 
     // 步骤2：获取父 thread
-    const parentThread = this.stateManager.getThread(parentThreadId);
+    const parentThread = this.threadRegistry.get(parentThreadId);
     if (!parentThread) {
       throw new ExecutionError(`Parent thread not found: ${parentThreadId}`, undefined, parentThreadId);
     }
@@ -194,7 +196,7 @@ export class ThreadCoordinator {
 
       // 步骤4：检查子 thread 状态
       for (const threadId of Array.from(pendingThreads)) {
-        const thread = this.stateManager.getThread(threadId);
+        const thread = this.threadRegistry.get(threadId);
         if (!thread) {
           continue;
         }
@@ -272,13 +274,17 @@ export class ThreadCoordinator {
    */
   async copy(sourceThreadId: string): Promise<string> {
     // 步骤1：验证源 thread 存在
-    const sourceThread = this.stateManager.getThread(sourceThreadId);
+    const sourceThread = this.threadRegistry.get(sourceThreadId);
     if (!sourceThread) {
       throw new ExecutionError(`Source thread not found: ${sourceThreadId}`, undefined, sourceThreadId);
     }
 
-    // 步骤2：调用 ThreadStateManager 复制 thread
-    const copiedThreadId = this.stateManager.copyThread(sourceThreadId);
+    // 步骤2：调用 ThreadBuilder 复制 thread
+    const copiedThread = await this.threadBuilder.createCopy(sourceThread);
+    const copiedThreadId = copiedThread.id;
+
+    // 步骤3：注册到 ThreadRegistry
+    this.threadRegistry.register(copiedThread);
 
     // 步骤3：触发 THREAD_COPIED 事件
     const copiedEvent: ThreadCopiedEvent = {

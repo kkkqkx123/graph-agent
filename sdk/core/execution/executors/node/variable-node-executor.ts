@@ -91,33 +91,14 @@ export class VariableNodeExecutor extends NodeExecutor {
     // 步骤3：验证求值结果类型
     const typedResult = this.convertType(result, config.variableType);
 
-    // 步骤4：更新变量值
-    if (!thread.variableValues) {
-      thread.variableValues = {};
-    }
-    thread.variableValues[config.variableName] = typedResult;
-
-    // 更新variables数组
-    if (!thread.variables) {
-      thread.variables = [];
-    }
-    const existingIndex = thread.variables.findIndex(v => v.name === config.variableName);
-    const variableData = {
-      name: config.variableName,
-      value: typedResult,
-      type: config.variableType,
-      scope: config.scope || 'local',
-      readonly: config.readonly || false,
-      metadata: {
-        updatedAt: Date.now()
-      }
-    };
-
-    if (existingIndex >= 0) {
-      thread.variables[existingIndex] = variableData;
-    } else {
-      thread.variables.push(variableData);
-    }
+    // 步骤4：使用 Thread 的 setVariable 方法更新变量
+    thread.setVariable(
+      config.variableName,
+      typedResult,
+      config.variableType,
+      config.scope || 'local',
+      config.readonly || false
+    );
 
     // 步骤5：记录执行历史
     thread.nodeResults.push({
@@ -151,15 +132,16 @@ export class VariableNodeExecutor extends NodeExecutor {
     const variablePattern = /\{\{(\w+(?:\.\w+)*)\}\}/g;
 
     return expression.replace(variablePattern, (match, varPath) => {
-      // 从variableValues获取变量值
+      // 使用 Thread 的 getVariable 方法获取变量值
       const parts = varPath.split('.');
-      let value: any = thread.variableValues || {};
+      let value: any = thread.getVariable(parts[0]);
 
-      for (const part of parts) {
+      // 处理嵌套属性访问
+      for (let i = 1; i < parts.length; i++) {
         if (value === null || value === undefined) {
           return 'undefined';
         }
-        value = value[part];
+        value = value[parts[i]];
       }
 
       // 根据值的类型返回字符串表示

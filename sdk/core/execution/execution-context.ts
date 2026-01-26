@@ -6,7 +6,7 @@
 import type { Thread } from '../../types/thread';
 import type { WorkflowDefinition } from '../../types/workflow';
 import { WorkflowContext } from './workflow-context';
-import { ThreadStateManager } from './thread-state-manager';
+import { ThreadRegistry } from './thread-registry';
 
 /**
  * 执行上下文
@@ -14,16 +14,16 @@ import { ThreadStateManager } from './thread-state-manager';
  */
 export class ExecutionContext {
   public readonly workflowContext: WorkflowContext;
-  public readonly threadStateManager: ThreadStateManager;
+  public readonly threadRegistry: ThreadRegistry;
   public readonly threadId: string;
 
   constructor(
     workflow: WorkflowDefinition,
     threadId: string,
-    threadStateManager: ThreadStateManager
+    threadRegistry: ThreadRegistry
   ) {
     this.workflowContext = new WorkflowContext(workflow);
-    this.threadStateManager = threadStateManager;
+    this.threadRegistry = threadRegistry;
     this.threadId = threadId;
   }
 
@@ -31,7 +31,7 @@ export class ExecutionContext {
    * 获取 Thread
    */
   getThread(): Thread {
-    const thread = this.threadStateManager.getThread(this.threadId);
+    const thread = this.threadRegistry.get(this.threadId);
     if (!thread) {
       throw new Error(`Thread not found: ${this.threadId}`);
     }
