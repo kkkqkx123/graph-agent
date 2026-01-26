@@ -11,7 +11,7 @@ import type {
   LLMResult,
   LLMProfile
 } from '../../types/llm';
-import { SDKError, ErrorCode } from '../../types/errors';
+import { SDKError, ErrorCode, LLMError } from '../../types/errors';
 import { HttpClient } from '../http';
 
 /**
@@ -107,59 +107,19 @@ export abstract class BaseLLMClient implements LLMClient {
     const errorMessage = error?.message || String(error);
     const errorCode = error?.code || error?.status;
 
-    // 创建SDK错误
-    return new SDKError(
-      this.getErrorCode(error),
+    // 创建LLM错误
+    return new LLMError(
       `${this.profile.provider} API error: ${errorMessage}`,
+      this.profile.provider,
+      this.profile.model,
+      errorCode,
       {
-        provider: this.profile.provider,
-        model: this.profile.model,
         originalError: error
       },
       error instanceof Error ? error : undefined
     );
   }
 
-  /**
-   * 根据错误获取错误码
-   */
-  private getErrorCode(error: any): ErrorCode {
-    const errorCode = error?.code || error?.status;
-
-    if (errorCode === 401 || errorCode === 'authentication_error') {
-      return ErrorCode.CONFIGURATION_ERROR;
-    }
-
-    if (errorCode === 403 || errorCode === 'permission_error') {
-      return ErrorCode.CONFIGURATION_ERROR;
-    }
-
-    if (errorCode === 404 || errorCode === 'not_found_error') {
-      return ErrorCode.NOT_FOUND_ERROR;
-    }
-
-    if (errorCode === 429 || errorCode === 'rate_limit_error') {
-      return ErrorCode.LLM_ERROR;
-    }
-
-    if (errorCode >= 400 && errorCode < 500) {
-      return ErrorCode.VALIDATION_ERROR;
-    }
-
-    if (errorCode >= 500 && errorCode < 600) {
-      return ErrorCode.LLM_ERROR;
-    }
-
-    if (error?.message?.toLowerCase().includes('timeout')) {
-      return ErrorCode.TIMEOUT_ERROR;
-    }
-
-    if (error?.message?.toLowerCase().includes('network')) {
-      return ErrorCode.NETWORK_ERROR;
-    }
-
-    return ErrorCode.LLM_ERROR;
-  }
 
   /**
    * 执行HTTP POST请求（非流式）

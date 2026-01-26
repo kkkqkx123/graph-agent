@@ -20,8 +20,6 @@ export enum LLMProvider {
   GEMINI_NATIVE = 'GEMINI_NATIVE',
   /** Gemini OpenAI Compatible API */
   GEMINI_OPENAI = 'GEMINI_OPENAI',
-  /** Mock */
-  MOCK = 'MOCK',
   /** 人工中继 */
   HUMAN_RELAY = 'HUMAN_RELAY'
 }

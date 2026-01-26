@@ -11,8 +11,6 @@ export { BaseLLMClient } from './base-client';
 
 // 工具类
 export { MessageStream } from './message-stream';
-export { ToolRunner } from './tool-runner';
-export type { ToolCallCallbacks } from './tool-runner';
 
 // 事件类型
 export {
@@ -40,5 +38,5 @@ export { AnthropicClient } from './clients/anthropic';
 export { GeminiNativeClient } from './clients/gemini-native';
 export { GeminiOpenAIClient } from './clients/gemini-openai';
 
-// 其他客户端
+// 人工中继客户端
 export { HumanRelayClient, HumanRelayMode } from './clients/human-relay';

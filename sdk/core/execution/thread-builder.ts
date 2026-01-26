@@ -7,7 +7,8 @@
 import type { WorkflowDefinition } from '../../types/workflow';
 import type { Thread, ThreadOptions, ThreadStatus } from '../../types/thread';
 import { WorkflowContext } from './workflow-context';
-import { Conversation } from '../llm/conversation';
+import { ConversationManager } from './conversation-manager';
+import { LLMExecutor } from './llm-executor';
 import type { LLMWrapper } from '../llm/wrapper';
 import type { ToolService } from '../tools/tool-service';
 import { NodeType } from '../../types/node';
@@ -82,17 +83,19 @@ export class ThreadBuilder {
     // 步骤4：附加变量管理方法
     this.variableManager.attachVariableMethods(thread as Thread);
 
-    // 步骤5：创建 Conversation 实例
+    // 步骤5：创建 ConversationManager 和 LLMExecutor 实例
     if (this.llmWrapper && this.toolService) {
-      const conversation = new Conversation(
+      const conversationManager = new ConversationManager({
+        tokenLimit: options.tokenLimit || 4000
+      });
+      const llmExecutor = new LLMExecutor(
+        conversationManager,
         this.llmWrapper,
-        this.toolService,
-        {
-          tokenLimit: options.tokenLimit || 4000
-        }
+        this.toolService
       );
       thread.contextData = {
-        conversation
+        conversationManager,
+        llmExecutor
       };
     }
 
@@ -153,12 +156,21 @@ export class ThreadBuilder {
     // 附加变量管理方法
     this.variableManager.attachVariableMethods(copiedThread as Thread);
 
-    // 复制 Conversation 实例
-    if (sourceThread.contextData?.['conversation']) {
-      const sourceConversation = sourceThread.contextData['conversation'] as Conversation;
-      const copiedConversation = sourceConversation.clone();
+    // 复制 ConversationManager 和 LLMExecutor 实例
+    if (sourceThread.contextData?.['conversationManager'] && sourceThread.contextData?.['llmExecutor']) {
+      const sourceConversationManager = sourceThread.contextData['conversationManager'] as ConversationManager;
+      const sourceLLMExecutor = sourceThread.contextData['llmExecutor'] as LLMExecutor;
+      
+      const copiedConversationManager = sourceConversationManager.clone();
+      const copiedLLMExecutor = new LLMExecutor(
+        copiedConversationManager,
+        this.llmWrapper,
+        this.toolService
+      );
+      
       copiedThread.contextData = {
-        conversation: copiedConversation
+        conversationManager: copiedConversationManager,
+        llmExecutor: copiedLLMExecutor
       };
     }
 
@@ -215,12 +227,21 @@ export class ThreadBuilder {
     // 附加变量管理方法
     this.variableManager.attachVariableMethods(forkThread as Thread);
 
-    // 复制 Conversation 实例
-    if (parentThread.contextData?.['conversation']) {
-      const parentConversation = parentThread.contextData['conversation'] as Conversation;
-      const forkConversation = parentConversation.clone();
+    // 复制 ConversationManager 和 LLMExecutor 实例
+    if (parentThread.contextData?.['conversationManager'] && parentThread.contextData?.['llmExecutor']) {
+      const parentConversationManager = parentThread.contextData['conversationManager'] as ConversationManager;
+      const parentLLMExecutor = parentThread.contextData['llmExecutor'] as LLMExecutor;
+      
+      const forkConversationManager = parentConversationManager.clone();
+      const forkLLMExecutor = new LLMExecutor(
+        forkConversationManager,
+        this.llmWrapper,
+        this.toolService
+      );
+      
       forkThread.contextData = {
-        conversation: forkConversation
+        conversationManager: forkConversationManager,
+        llmExecutor: forkLLMExecutor
       };
     }
 
@@ -242,21 +263,23 @@ export class ThreadBuilder {
   }
 
   /**
-   * 创建Conversation实例
+   * 创建ConversationManager和LLMExecutor实例
    * @param options 线程选项
-   * @returns Conversation实例
+   * @returns ConversationManager和LLMExecutor实例
    */
-  private createConversation(options: ThreadOptions): Conversation {
+  private createConversationManager(options: ThreadOptions): { conversationManager: ConversationManager; llmExecutor: LLMExecutor } {
     if (!this.llmWrapper || !this.toolService) {
       throw new Error('LLMWrapper and ToolService must be initialized');
     }
-    return new Conversation(
+    const conversationManager = new ConversationManager({
+      tokenLimit: options.tokenLimit || 4000
+    });
+    const llmExecutor = new LLMExecutor(
+      conversationManager,
       this.llmWrapper,
-      this.toolService,
-      {
-        tokenLimit: options.tokenLimit || 4000
-      }
+      this.toolService
     );
+    return { conversationManager, llmExecutor };
   }
 
   /**

@@ -35,3 +35,9 @@ export { ExecutionContext } from './execution-context';
 
 // 触发器管理器
 export { TriggerManager } from './trigger-manager';
+
+// LLM执行相关
+export { ConversationManager } from './conversation-manager';
+export type { ConversationManagerOptions, ConversationManagerEventCallbacks } from './conversation-manager';
+export { LLMExecutor } from './llm-executor';
+export type { LLMExecutorOptions, LLMExecutorCallbacks } from './llm-executor';

@@ -22,7 +22,8 @@ import { EventType } from '../../types/events';
 import type { NodeStartedEvent, NodeCompletedEvent, NodeFailedEvent, TokenLimitExceededEvent, ErrorEvent } from '../../types/events';
 import { LLMWrapper } from '../llm/wrapper';
 import { ToolService } from '../tools/tool-service';
-import { Conversation } from '../llm/conversation';
+import { ConversationManager } from './conversation-manager';
+import { LLMExecutor } from './llm-executor';
 import { TriggerManager } from './trigger-manager';
 
 /**
@@ -164,16 +165,29 @@ export class ThreadExecutor {
   }
 
   /**
-   * 获取 thread 的 Conversation 实例
+   * 获取 thread 的 ConversationManager 实例
    * @param thread Thread 实例
-   * @returns Conversation 实例
+   * @returns ConversationManager 实例
    */
-  getConversation(thread: Thread): Conversation {
-    const conversation = thread.contextData?.['conversation'] as Conversation;
-    if (!conversation) {
-      throw new Error('Conversation not found in thread context data');
+  getConversationManager(thread: Thread): ConversationManager {
+    const conversationManager = thread.contextData?.['conversationManager'] as ConversationManager;
+    if (!conversationManager) {
+      throw new Error('ConversationManager not found in thread context data');
     }
-    return conversation;
+    return conversationManager;
+  }
+
+  /**
+   * 获取 thread 的 LLMExecutor 实例
+   * @param thread Thread 实例
+   * @returns LLMExecutor 实例
+   */
+  getLLMExecutor(thread: Thread): LLMExecutor {
+    const llmExecutor = thread.contextData?.['llmExecutor'] as LLMExecutor;
+    if (!llmExecutor) {
+      throw new Error('LLMExecutor not found in thread context data');
+    }
+    return llmExecutor;
   }
 
   /**
