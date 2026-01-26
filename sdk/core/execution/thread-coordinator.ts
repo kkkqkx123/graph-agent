@@ -3,10 +3,11 @@
  * 负责 Fork/Join 操作，协调子 thread 的执行和合并
  */
 
-import type { Thread, ThreadResult } from '../../types/thread';
+import type { Thread } from '../../types/thread';
 import { ThreadRegistry } from './thread-registry';
 import { ThreadBuilder } from './thread-builder';
 import { ThreadExecutor } from './thread-executor';
+import { ThreadContext } from './thread-context';
 import { EventManager } from './event-manager';
 import { ExecutionError, TimeoutError, ValidationError } from '../../types/errors';
 import { EventType } from '../../types/events';
@@ -40,12 +41,12 @@ export class ThreadCoordinator {
 
   /**
    * Fork 操作 - 创建子 thread
-   * @param parentThreadId 父线程 ID
+   * @param parentThreadContext 父线程上下文
    * @param forkId Fork 操作 ID
    * @param forkStrategy Fork 策略（serial 或 parallel）
    * @returns 子线程 ID 数组
    */
-  async fork(parentThreadId: string, forkId: string, forkStrategy: 'serial' | 'parallel' = 'serial'): Promise<string[]> {
+  async fork(parentThreadContext: ThreadContext, forkId: string, forkStrategy: 'serial' | 'parallel' = 'serial'): Promise<string[]> {
     // 步骤1：验证 Fork 配置
     if (!forkId) {
       throw new ValidationError('Fork config must have forkId', 'fork.forkId');
@@ -55,43 +56,39 @@ export class ThreadCoordinator {
       throw new ValidationError(`Invalid forkStrategy: ${forkStrategy}`, 'fork.forkStrategy');
     }
 
-    // 步骤2：获取父 thread
-    const parentThread = this.threadRegistry.get(parentThreadId);
-    if (!parentThread) {
-      throw new ExecutionError(`Parent thread not found: ${parentThreadId}`, undefined, parentThreadId);
-    }
+    const parentThreadId = parentThreadContext.getThreadId();
 
-    // 步骤3：获取 Fork 节点的出边
+    // 步骤2：获取 Fork 节点的出边
     // 注意：这里需要从 workflow context 获取，暂时简化处理
     // 实际实现中需要根据 forkId 找到对应的 Fork 节点，然后获取其出边
     // 这里暂时返回空数组，需要后续完善
     const childThreadIds: string[] = [];
 
-    // 步骤4：触发 THREAD_FORKED 事件
+    // 步骤3：触发 THREAD_FORKED 事件
     const forkedEvent: ThreadForkedEvent = {
       type: EventType.THREAD_FORKED,
       timestamp: Date.now(),
-      workflowId: parentThread.workflowId,
+      workflowId: parentThreadContext.getWorkflowId(),
       threadId: parentThreadId,
       parentThreadId,
       childThreadIds
     };
     await this.eventManager.emit(forkedEvent);
 
-    // 步骤5：返回子 thread ID 数组
+    // 步骤4：返回子 thread ID 数组
     return childThreadIds;
   }
 
   /**
    * Join 操作 - 合并子 thread 结果
-   * @param parentThreadId 父线程 ID
+   * @param parentThreadContext 父线程上下文
    * @param childThreadIds 子线程 ID 数组
    * @param joinStrategy Join 策略
    * @param timeout 超时时间（秒）
    * @returns Join 结果
    */
   async join(
-    parentThreadId: string,
+    parentThreadContext: ThreadContext,
     childThreadIds: string[],
     joinStrategy: JoinStrategy = 'ALL_COMPLETED',
     timeout: number = 60
@@ -108,6 +105,8 @@ export class ThreadCoordinator {
     if (!timeout || timeout <= 0) {
       throw new ValidationError('Join config must have valid timeout', 'join.timeout');
     }
+
+    const parentThreadId = parentThreadContext.getThreadId();
 
     // 步骤2：等待子 thread 完成
     const { completedThreads, failedThreads } = await this.waitForCompletion(
@@ -152,7 +151,7 @@ export class ThreadCoordinator {
     const joinedEvent: ThreadJoinedEvent = {
       type: EventType.THREAD_JOINED,
       timestamp: Date.now(),
-      workflowId: parentThreadId,
+      workflowId: parentThreadContext.getWorkflowId(),
       threadId: parentThreadId,
       parentThreadId,
       childThreadIds,
@@ -196,11 +195,12 @@ export class ThreadCoordinator {
 
       // 步骤4：检查子 thread 状态
       for (const threadId of Array.from(pendingThreads)) {
-        const thread = this.threadRegistry.get(threadId);
-        if (!thread) {
+        const threadContext = this.threadRegistry.get(threadId);
+        if (!threadContext) {
           continue;
         }
 
+        const thread = threadContext.thread;
         if (thread.status === 'COMPLETED') {
           completedThreads.push(thread);
           pendingThreads.delete(threadId);
@@ -274,30 +274,30 @@ export class ThreadCoordinator {
    */
   async copy(sourceThreadId: string): Promise<string> {
     // 步骤1：验证源 thread 存在
-    const sourceThread = this.threadRegistry.get(sourceThreadId);
-    if (!sourceThread) {
+    const sourceThreadContext = this.threadRegistry.get(sourceThreadId);
+    if (!sourceThreadContext) {
       throw new ExecutionError(`Source thread not found: ${sourceThreadId}`, undefined, sourceThreadId);
     }
 
     // 步骤2：调用 ThreadBuilder 复制 thread
-    const copiedThread = await this.threadBuilder.createCopy(sourceThread);
-    const copiedThreadId = copiedThread.id;
+    const copiedThreadContext = await this.threadBuilder.createCopy(sourceThreadContext);
+    const copiedThreadId = copiedThreadContext.getThreadId();
 
     // 步骤3：注册到 ThreadRegistry
-    this.threadRegistry.register(copiedThread);
+    this.threadRegistry.register(copiedThreadContext);
 
-    // 步骤3：触发 THREAD_COPIED 事件
+    // 步骤4：触发 THREAD_COPIED 事件
     const copiedEvent: ThreadCopiedEvent = {
       type: EventType.THREAD_COPIED,
       timestamp: Date.now(),
-      workflowId: sourceThread.workflowId,
+      workflowId: sourceThreadContext.getWorkflowId(),
       threadId: sourceThreadId,
       sourceThreadId,
       copiedThreadId
     };
     await this.eventManager.emit(copiedEvent);
 
-    // 步骤4：返回副本 thread ID
+    // 步骤5：返回副本 thread ID
     return copiedThreadId;
   }
 }

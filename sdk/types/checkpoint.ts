@@ -27,6 +27,8 @@ export interface ThreadStateSnapshot {
   executionHistory: any[];
   /** 错误信息数组 */
   errors: any[];
+  /** 对话历史记录（用于恢复 ConversationManager） */
+  conversationHistory?: any[];
 }
 
 /**

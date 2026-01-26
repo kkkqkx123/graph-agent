@@ -11,9 +11,9 @@
 
 import type { LLMMessage, LLMToolCall, LLMResult, LLMUsage } from '../../types/llm';
 import type { ToolExecutionResult } from '../tools/executor-base';
-import type { LLMWrapper } from '../llm/wrapper';
-import type { ToolService } from '../tools/tool-service';
 import { ConversationManager } from './conversation-manager';
+import { LLMWrapper } from '../llm/wrapper';
+import { ToolService } from '../tools/tool-service';
 import { ExecutionError } from '../../types/errors';
 
 /**
@@ -80,19 +80,15 @@ export class LLMExecutor implements AsyncIterable<LLMMessage> {
   /**
    * 构造函数
    * @param conversationManager 对话管理器
-   * @param llmWrapper LLM包装器
-   * @param toolService 工具服务
    * @param options 配置选项
    */
   constructor(
     conversationManager: ConversationManager,
-    llmWrapper: LLMWrapper,
-    toolService: ToolService,
     options: LLMExecutorOptions = {}
   ) {
     this.conversationManager = conversationManager;
-    this.llmWrapper = llmWrapper;
-    this.toolService = toolService;
+    this.llmWrapper = new LLMWrapper();
+    this.toolService = new ToolService();
     this.maxIterations = options.maxIterations || Infinity;
     this.callbacks = options.callbacks || {};
     
@@ -119,6 +115,14 @@ export class LLMExecutor implements AsyncIterable<LLMMessage> {
    */
   getMaxIterations(): number {
     return this.maxIterations;
+  }
+
+  /**
+   * 获取对话管理器
+   * @returns ConversationManager 实例
+   */
+  getConversationManager(): ConversationManager {
+    return this.conversationManager;
   }
 
   /**

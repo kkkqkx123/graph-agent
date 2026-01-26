@@ -1,6 +1,6 @@
 /**
  * ThreadBuilder - Thread构建器
- * 负责从WorkflowDefinition创建Thread实例
+ * 负责从WorkflowDefinition创建ThreadContext实例
  * 提供Thread模板缓存和深拷贝支持
  */
 
@@ -9,49 +9,44 @@ import type { Thread, ThreadOptions, ThreadStatus } from '../../types/thread';
 import { WorkflowContext } from './workflow-context';
 import { ConversationManager } from './conversation-manager';
 import { LLMExecutor } from './llm-executor';
-import type { LLMWrapper } from '../llm/wrapper';
-import type { ToolService } from '../tools/tool-service';
+import { ThreadContext } from './thread-context';
 import { NodeType } from '../../types/node';
 import { IDUtils } from '../../types/common';
 import { VariableManager } from './variable-manager';
-import { ValidationError as SDKValidationError } from '../../types/errors';
+import { ValidationError } from '../../types/errors';
 
 /**
  * ThreadBuilder - Thread构建器
  */
 export class ThreadBuilder {
   private workflowContexts: Map<string, WorkflowContext> = new Map();
-  private threadTemplates: Map<string, Thread> = new Map();
-  private llmWrapper: LLMWrapper;
-  private toolService: ToolService;
+  private threadTemplates: Map<string, ThreadContext> = new Map();
   private variableManager: VariableManager;
 
-  constructor(llmWrapper?: LLMWrapper, toolService?: ToolService) {
-    this.llmWrapper = llmWrapper as LLMWrapper;
-    this.toolService = toolService as ToolService;
+  constructor() {
     this.variableManager = new VariableManager();
   }
 
   /**
-   * 从Workflow构建Thread
+   * 从Workflow构建ThreadContext
    * @param workflow 工作流定义
    * @param options 线程选项
-   * @returns Thread实例
+   * @returns ThreadContext实例
    */
-  async build(workflow: WorkflowDefinition, options: ThreadOptions = {}): Promise<Thread> {
+  async build(workflow: WorkflowDefinition, options: ThreadOptions = {}): Promise<ThreadContext> {
     // 步骤1：验证 workflow 定义
     if (!workflow.nodes || workflow.nodes.length === 0) {
-      throw new SDKValidationError('Workflow must have at least one node', 'workflow.nodes');
+      throw new ValidationError('Workflow must have at least one node', 'workflow.nodes');
     }
 
     const startNode = workflow.nodes.find(n => n.type === NodeType.START);
     if (!startNode) {
-      throw new SDKValidationError('Workflow must have a START node', 'workflow.nodes');
+      throw new ValidationError('Workflow must have a START node', 'workflow.nodes');
     }
 
     const endNode = workflow.nodes.find(n => n.type === NodeType.END);
     if (!endNode) {
-      throw new SDKValidationError('Workflow must have an END node', 'workflow.nodes');
+      throw new ValidationError('Workflow must have an END node', 'workflow.nodes');
     }
 
     // 步骤2：创建 Thread 实例
@@ -84,37 +79,33 @@ export class ThreadBuilder {
     this.variableManager.attachVariableMethods(thread as Thread);
 
     // 步骤5：创建 ConversationManager 和 LLMExecutor 实例
-    if (this.llmWrapper && this.toolService) {
-      const conversationManager = new ConversationManager({
-        tokenLimit: options.tokenLimit || 4000
-      });
-      const llmExecutor = new LLMExecutor(
-        conversationManager,
-        this.llmWrapper,
-        this.toolService
-      );
-      thread.contextData = {
-        conversationManager,
-        llmExecutor
-      };
-    }
+    const conversationManager = new ConversationManager({
+      tokenLimit: options.tokenLimit || 4000
+    });
+    const llmExecutor = new LLMExecutor(conversationManager);
 
-    // 步骤6：缓存 workflow context
-    this.workflowContexts.set(workflow.id, new WorkflowContext(workflow));
+    // 步骤6：创建 WorkflowContext
+    const workflowContext = new WorkflowContext(workflow);
+    this.workflowContexts.set(workflow.id, workflowContext);
 
-    return thread as Thread;
+    // 步骤7：创建并返回 ThreadContext
+    return new ThreadContext(
+      thread as Thread,
+      workflowContext,
+      llmExecutor
+    );
   }
 
   /**
-   * 从缓存模板构建Thread
+   * 从缓存模板构建ThreadContext
    * @param templateId 模板ID
    * @param options 线程选项
-   * @returns Thread实例
+   * @returns ThreadContext实例
    */
-  async buildFromTemplate(templateId: string, options: ThreadOptions = {}): Promise<Thread> {
+  async buildFromTemplate(templateId: string, options: ThreadOptions = {}): Promise<ThreadContext> {
     const template = this.threadTemplates.get(templateId);
     if (!template) {
-      throw new SDKValidationError(`Thread template not found: ${templateId}`, 'templateId');
+      throw new ValidationError(`Thread template not found: ${templateId}`, 'templateId');
     }
 
     // 深拷贝模板
@@ -122,11 +113,12 @@ export class ThreadBuilder {
   }
 
   /**
-   * 创建Thread副本
-   * @param sourceThread 源Thread
-   * @returns Thread副本
+   * 创建ThreadContext副本
+   * @param sourceThreadContext 源ThreadContext
+   * @returns ThreadContext副本
    */
-  async createCopy(sourceThread: Thread): Promise<Thread> {
+  async createCopy(sourceThreadContext: ThreadContext): Promise<ThreadContext> {
+    const sourceThread = sourceThreadContext.thread;
     const copiedThreadId = IDUtils.generate();
     const now = Date.now();
 
@@ -157,43 +149,28 @@ export class ThreadBuilder {
     this.variableManager.attachVariableMethods(copiedThread as Thread);
 
     // 复制 ConversationManager 和 LLMExecutor 实例
-    if (sourceThread.contextData?.['conversationManager'] && sourceThread.contextData?.['llmExecutor']) {
-      const sourceConversationManager = sourceThread.contextData['conversationManager'] as ConversationManager;
-      const sourceLLMExecutor = sourceThread.contextData['llmExecutor'] as LLMExecutor;
-      
-      const copiedConversationManager = sourceConversationManager.clone();
-      const copiedLLMExecutor = new LLMExecutor(
-        copiedConversationManager,
-        this.llmWrapper,
-        this.toolService
-      );
-      
-      copiedThread.contextData = {
-        conversationManager: copiedConversationManager,
-        llmExecutor: copiedLLMExecutor
-      };
-    }
+    const copiedConversationManager = sourceThreadContext.getConversationManager().clone();
+    const copiedLLMExecutor = new LLMExecutor(copiedConversationManager);
 
-    // 复制其他 contextData
-    if (sourceThread.contextData) {
-      for (const [key, value] of Object.entries(sourceThread.contextData)) {
-        if (key !== 'conversation' && value !== undefined) {
-          copiedThread.contextData = copiedThread.contextData || {};
-          copiedThread.contextData[key] = value;
-        }
-      }
-    }
+    // 复制 WorkflowContext
+    const copiedWorkflowContext = sourceThreadContext.workflowContext;
 
-    return copiedThread as Thread;
+    // 创建并返回 ThreadContext
+    return new ThreadContext(
+      copiedThread as Thread,
+      copiedWorkflowContext,
+      copiedLLMExecutor
+    );
   }
 
   /**
-   * 创建Fork子Thread
-   * @param parentThread 父Thread
+   * 创建Fork子ThreadContext
+   * @param parentThreadContext 父ThreadContext
    * @param forkConfig Fork配置
-   * @returns Fork子Thread
+   * @returns Fork子ThreadContext
    */
-  async createFork(parentThread: Thread, forkConfig: any): Promise<Thread> {
+  async createFork(parentThreadContext: ThreadContext, forkConfig: any): Promise<ThreadContext> {
+    const parentThread = parentThreadContext.thread;
     const forkThreadId = IDUtils.generate();
     const now = Date.now();
 
@@ -228,24 +205,18 @@ export class ThreadBuilder {
     this.variableManager.attachVariableMethods(forkThread as Thread);
 
     // 复制 ConversationManager 和 LLMExecutor 实例
-    if (parentThread.contextData?.['conversationManager'] && parentThread.contextData?.['llmExecutor']) {
-      const parentConversationManager = parentThread.contextData['conversationManager'] as ConversationManager;
-      const parentLLMExecutor = parentThread.contextData['llmExecutor'] as LLMExecutor;
-      
-      const forkConversationManager = parentConversationManager.clone();
-      const forkLLMExecutor = new LLMExecutor(
-        forkConversationManager,
-        this.llmWrapper,
-        this.toolService
-      );
-      
-      forkThread.contextData = {
-        conversationManager: forkConversationManager,
-        llmExecutor: forkLLMExecutor
-      };
-    }
+    const forkConversationManager = parentThreadContext.getConversationManager().clone();
+    const forkLLMExecutor = new LLMExecutor(forkConversationManager);
 
-    return forkThread as Thread;
+    // 复制 WorkflowContext
+    const forkWorkflowContext = parentThreadContext.workflowContext;
+
+    // 创建并返回 ThreadContext
+    return new ThreadContext(
+      forkThread as Thread,
+      forkWorkflowContext,
+      forkLLMExecutor
+    );
   }
 
   /**
@@ -268,17 +239,10 @@ export class ThreadBuilder {
    * @returns ConversationManager和LLMExecutor实例
    */
   private createConversationManager(options: ThreadOptions): { conversationManager: ConversationManager; llmExecutor: LLMExecutor } {
-    if (!this.llmWrapper || !this.toolService) {
-      throw new Error('LLMWrapper and ToolService must be initialized');
-    }
     const conversationManager = new ConversationManager({
       tokenLimit: options.tokenLimit || 4000
     });
-    const llmExecutor = new LLMExecutor(
-      conversationManager,
-      this.llmWrapper,
-      this.toolService
-    );
+    const llmExecutor = new LLMExecutor(conversationManager);
     return { conversationManager, llmExecutor };
   }
 
@@ -298,7 +262,7 @@ export class ThreadBuilder {
     this.workflowContexts.delete(workflowId);
     // 失效相关的Thread模板
     for (const [templateId, template] of this.threadTemplates.entries()) {
-      if (template.workflowId === workflowId) {
+      if (template.getWorkflowId() === workflowId) {
         this.threadTemplates.delete(templateId);
       }
     }

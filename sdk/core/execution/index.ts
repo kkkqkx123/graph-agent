@@ -9,6 +9,9 @@ export { ThreadExecutor } from './thread-executor';
 // Thread构建器
 export { ThreadBuilder } from './thread-builder';
 
+// Thread上下文
+export { ThreadContext } from './thread-context';
+
 // Thread生命周期管理器
 export { ThreadLifecycleManager } from './thread-lifecycle-manager';
 
@@ -29,9 +32,6 @@ export { EventManager } from './event-manager';
 
 // Thread协调器
 export { ThreadCoordinator, JoinStrategy, JoinResult } from './thread-coordinator';
-
-// 执行上下文
-export { ExecutionContext } from './execution-context';
 
 // 触发器管理器
 export { TriggerManager } from './trigger-manager';

@@ -1,29 +1,23 @@
 /**
  * ThreadExecutor - Thread 执行器
- * 负责执行单个 thread 实例，管理 thread 的完整执行生命周期
- * 同时支持从 workflow 创建 thread
+ * 负责执行单个 ThreadContext 实例，管理 thread 的完整执行生命周期
  */
 
-import type { WorkflowDefinition } from '../../types/workflow';
-import type { Thread, ThreadOptions, ThreadResult, ThreadStatus } from '../../types/thread';
+import type { ThreadOptions, ThreadResult } from '../../types/thread';
 import type { Node } from '../../types/node';
 import type { NodeExecutionResult } from '../../types/thread';
 import { ThreadRegistry } from './thread-registry';
 import { ThreadBuilder } from './thread-builder';
 import { ThreadLifecycleManager } from './thread-lifecycle-manager';
-import { WorkflowContext } from './workflow-context';
+import { ThreadContext } from './thread-context';
 import { Router } from './router';
 import { NodeExecutorFactory } from './executors/node-executor-factory';
 import { NodeType } from '../../types/node';
 import { EventManager } from './event-manager';
 import { ThreadCoordinator } from './thread-coordinator';
-import { ExecutionError, TimeoutError, NotFoundError, ValidationError as SDKValidationError } from '../../types/errors';
+import { ExecutionError, TimeoutError, NotFoundError } from '../../types/errors';
 import { EventType } from '../../types/events';
-import type { NodeStartedEvent, NodeCompletedEvent, NodeFailedEvent, TokenLimitExceededEvent, ErrorEvent } from '../../types/events';
-import { LLMWrapper } from '../llm/wrapper';
-import { ToolService } from '../tools/tool-service';
-import { ConversationManager } from './conversation-manager';
-import { LLMExecutor } from './llm-executor';
+import type { NodeStartedEvent, NodeCompletedEvent, NodeFailedEvent, ErrorEvent } from '../../types/events';
 import { TriggerManager } from './trigger-manager';
 
 /**
@@ -36,23 +30,18 @@ export class ThreadExecutor {
   private router: Router;
   private eventManager: EventManager;
   private threadCoordinator: ThreadCoordinator;
-  private workflowContexts: Map<string, WorkflowContext> = new Map();
-  private llmWrapper: LLMWrapper;
-  private toolService: ToolService;
   private triggerManager: TriggerManager;
 
   constructor() {
     this.threadRegistry = new ThreadRegistry();
-    this.llmWrapper = new LLMWrapper();
-    this.toolService = new ToolService();
-    this.threadBuilder = new ThreadBuilder(this.llmWrapper, this.toolService);
+    this.threadBuilder = new ThreadBuilder();
     this.router = new Router();
     this.eventManager = new EventManager();
     this.lifecycleManager = new ThreadLifecycleManager(this.eventManager);
     this.threadCoordinator = new ThreadCoordinator(this.threadRegistry, this.threadBuilder, this, this.eventManager);
 
     // 初始化 TriggerManager
-    this.triggerManager = new TriggerManager(this.eventManager, this);
+    this.triggerManager = new TriggerManager(this.eventManager, this, this.threadBuilder);
   }
 
   /**
@@ -72,131 +61,26 @@ export class ThreadExecutor {
   }
 
   /**
-   * 执行工作流（从 workflow 创建 thread）
-   * @param workflow 工作流定义
+   * 执行 ThreadContext
+   * @param threadContext ThreadContext 实例
    * @param options 线程选项
    * @returns 线程执行结果
    */
-  async execute(workflow: WorkflowDefinition, options?: ThreadOptions): Promise<ThreadResult>;
+  async execute(threadContext: ThreadContext, options: ThreadOptions = {}): Promise<ThreadResult> {
+    // 注册到 ThreadRegistry
+    this.threadRegistry.register(threadContext);
+    return this.executeThread(threadContext, options);
+  }
 
   /**
-   * 执行 thread
-   * @param thread Thread 实例
+   * 执行 ThreadContext
+   * @param threadContext ThreadContext 实例
    * @param options 线程选项
    * @returns 线程执行结果
    */
-  async execute(thread: Thread, options?: ThreadOptions): Promise<ThreadResult>;
+  private async executeThread(threadContext: ThreadContext, options: ThreadOptions = {}): Promise<ThreadResult> {
+    const thread = threadContext.thread;
 
-  /**
-   * 执行 thread（重载实现）
-   */
-  async execute(workflowOrThread: WorkflowDefinition | Thread, options: ThreadOptions = {}): Promise<ThreadResult> {
-    // 判断是 workflow 还是 thread
-    if ('nodes' in workflowOrThread) {
-      // 是 workflow，创建 thread
-      const workflow = workflowOrThread as WorkflowDefinition;
-      const thread = await this.createThreadFromWorkflow(workflow, options);
-      return this.executeThread(thread, options);
-    } else {
-      // 是 thread，直接执行
-      const thread = workflowOrThread as Thread;
-      // 注册到 ThreadRegistry
-      this.threadRegistry.register(thread);
-      return this.executeThread(thread, options);
-    }
-  }
-
-  /**
-   * 从 workflow 创建 thread
-   * @param workflow 工作流定义
-   * @param options 线程选项
-   * @returns Thread 实例
-   */
-  private async createThreadFromWorkflow(workflow: WorkflowDefinition, options: ThreadOptions = {}): Promise<Thread> {
-    // 步骤1：验证 workflow 定义
-    if (!workflow.nodes || workflow.nodes.length === 0) {
-      throw new SDKValidationError('Workflow must have at least one node', 'workflow.nodes');
-    }
-
-    const startNode = workflow.nodes.find(n => n.type === NodeType.START);
-    if (!startNode) {
-      throw new SDKValidationError('Workflow must have a START node', 'workflow.nodes');
-    }
-
-    const endNode = workflow.nodes.find(n => n.type === NodeType.END);
-    if (!endNode) {
-      throw new SDKValidationError('Workflow must have an END node', 'workflow.nodes');
-    }
-
-    // 步骤2：使用 ThreadBuilder 创建 thread 实例
-    const thread = await this.threadBuilder.build(workflow, options);
-
-    // 步骤3：注册到 ThreadRegistry
-    this.threadRegistry.register(thread);
-
-    // 步骤4：复制 workflow 配置
-    if (workflow.config) {
-      thread.metadata = {
-        ...thread.metadata,
-        ...workflow.config
-      };
-    }
-
-    // 步骤5：缓存 workflow context
-    this.workflowContexts.set(workflow.id, new WorkflowContext(workflow));
-
-    return thread;
-  }
-
-  /**
-   * 获取 LLMWrapper
-   * @returns LLMWrapper 实例
-   */
-  getLLMWrapper(): LLMWrapper {
-    return this.llmWrapper;
-  }
-
-  /**
-   * 获取 ToolService
-   * @returns ToolService 实例
-   */
-  getToolService(): ToolService {
-    return this.toolService;
-  }
-
-  /**
-   * 获取 thread 的 ConversationManager 实例
-   * @param thread Thread 实例
-   * @returns ConversationManager 实例
-   */
-  getConversationManager(thread: Thread): ConversationManager {
-    const conversationManager = thread.contextData?.['conversationManager'] as ConversationManager;
-    if (!conversationManager) {
-      throw new Error('ConversationManager not found in thread context data');
-    }
-    return conversationManager;
-  }
-
-  /**
-   * 获取 thread 的 LLMExecutor 实例
-   * @param thread Thread 实例
-   * @returns LLMExecutor 实例
-   */
-  getLLMExecutor(thread: Thread): LLMExecutor {
-    const llmExecutor = thread.contextData?.['llmExecutor'] as LLMExecutor;
-    if (!llmExecutor) {
-      throw new Error('LLMExecutor not found in thread context data');
-    }
-    return llmExecutor;
-  }
-
-  /**
-   * 执行 thread
-   * @param thread Thread 实例
-   * @param options 线程选项
-   * @returns 线程执行结果
-   */
-  private async executeThread(thread: Thread, options: ThreadOptions = {}): Promise<ThreadResult> {
     // 步骤1：验证 thread 状态
     if (thread.status !== 'CREATED' && thread.status !== 'PAUSED') {
       throw new ExecutionError(`Thread is not in a valid state for execution: ${thread.status}`, undefined, thread.workflowId);
@@ -207,7 +91,7 @@ export class ThreadExecutor {
 
     // 步骤3：开始执行循环
     try {
-      await this.executeLoop(thread, options);
+      await this.executeLoop(threadContext, options);
     } catch (error) {
       // 处理执行错误
       await this.lifecycleManager.failThread(thread, error instanceof Error ? error : new Error(String(error)));
@@ -252,20 +136,17 @@ export class ThreadExecutor {
 
   /**
    * 执行循环
-   * @param thread Thread 实例
+   * @param threadContext ThreadContext 实例
    * @param options 线程选项
    */
-  private async executeLoop(thread: Thread, options: ThreadOptions = {}): Promise<void> {
+  private async executeLoop(threadContext: ThreadContext, options: ThreadOptions = {}): Promise<void> {
+    const thread = threadContext.thread;
+    const workflowContext = threadContext.workflowContext;
+
     const maxSteps = options.maxSteps || 1000;
     const timeout = options.timeout || 60000;
     const startTime = Date.now();
     let stepCount = 0;
-
-    // 获取 workflow context
-    const workflowContext = this.workflowContexts.get(thread.workflowId);
-    if (!workflowContext) {
-      throw new NotFoundError(`Workflow context not found: ${thread.workflowId}`, 'Workflow', thread.workflowId);
-    }
 
     while (stepCount < maxSteps) {
       // 检查超时
@@ -295,7 +176,7 @@ export class ThreadExecutor {
       }
 
       // 执行节点
-      const result = await this.executeNode(thread, currentNode);
+      const result = await this.executeNode(threadContext, currentNode);
 
       // 记录执行结果到Thread.executionHistory
       thread.nodeResults.push(result);
@@ -333,11 +214,13 @@ export class ThreadExecutor {
 
   /**
    * 执行节点
-   * @param thread Thread 实例
+   * @param threadContext ThreadContext 实例
    * @param node 节点定义
    * @returns 节点执行结果
    */
-  private async executeNode(thread: Thread, node: Node): Promise<NodeExecutionResult> {
+  private async executeNode(threadContext: ThreadContext, node: Node): Promise<NodeExecutionResult> {
+    const thread = threadContext.thread;
+
     // 触发 NODE_STARTED 事件
     const startedEvent: NodeStartedEvent = {
       type: EventType.NODE_STARTED,
@@ -354,9 +237,9 @@ export class ThreadExecutor {
     try {
       // 检查节点类型
       if (node.type === NodeType.FORK) {
-        result = await this.handleForkNode(thread, node);
+        result = await this.handleForkNode(threadContext, node);
       } else if (node.type === NodeType.JOIN) {
-        result = await this.handleJoinNode(thread, node);
+        result = await this.handleJoinNode(threadContext, node);
       } else {
         // 执行普通节点
         const executor = NodeExecutorFactory.createExecutor(node.type);
@@ -406,11 +289,12 @@ export class ThreadExecutor {
 
   /**
    * 处理 Fork 节点
-   * @param thread Thread 实例
+   * @param threadContext ThreadContext 实例
    * @param node Fork 节点定义
    * @returns 节点执行结果
    */
-  private async handleForkNode(thread: Thread, node: Node): Promise<NodeExecutionResult> {
+  private async handleForkNode(threadContext: ThreadContext, node: Node): Promise<NodeExecutionResult> {
+    const thread = threadContext.thread;
     const startTime = Date.now();
 
     // 获取 Fork 配置
@@ -420,7 +304,7 @@ export class ThreadExecutor {
     }
 
     // 调用 ThreadCoordinator.fork
-    const childThreadIds = await this.threadCoordinator.fork(thread.id, forkConfig.forkId, forkConfig.forkStrategy || 'serial');
+    const childThreadIds = await this.threadCoordinator.fork(threadContext, forkConfig.forkId, forkConfig.forkStrategy || 'serial');
 
     // 更新 thread 元数据
     if (!thread.metadata) {
@@ -442,11 +326,12 @@ export class ThreadExecutor {
 
   /**
    * 处理 Join 节点
-   * @param thread Thread 实例
+   * @param threadContext ThreadContext 实例
    * @param node Join 节点定义
    * @returns 节点执行结果
    */
-  private async handleJoinNode(thread: Thread, node: Node): Promise<NodeExecutionResult> {
+  private async handleJoinNode(threadContext: ThreadContext, node: Node): Promise<NodeExecutionResult> {
+    const thread = threadContext.thread;
     const startTime = Date.now();
 
     // 获取 Join 配置
@@ -462,7 +347,7 @@ export class ThreadExecutor {
     }
 
     // 调用 ThreadCoordinator.join
-    const joinResult = await this.threadCoordinator.join(thread.id, childThreadIds, joinConfig.joinStrategy, joinConfig.timeout);
+    const joinResult = await this.threadCoordinator.join(threadContext, childThreadIds, joinConfig.joinStrategy, joinConfig.timeout);
 
     // 更新 thread 输出
     thread.output = joinResult.output;
@@ -484,13 +369,14 @@ export class ThreadExecutor {
    * @param threadId 线程ID
    */
   async pause(threadId: string): Promise<void> {
-    const thread = this.threadRegistry.get(threadId);
-    if (!thread) {
-      throw new NotFoundError(`Thread not found: ${threadId}`, 'Thread', threadId);
+    const threadContext = this.threadRegistry.get(threadId);
+    if (!threadContext) {
+      throw new NotFoundError(`ThreadContext not found: ${threadId}`, 'ThreadContext', threadId);
     }
 
-    if (thread.status !== 'RUNNING') {
-      throw new ExecutionError(`Thread is not running: ${threadId}`, undefined, thread.workflowId);
+    const thread = threadContext.thread;
+    if (threadContext.getStatus() !== 'RUNNING') {
+      throw new ExecutionError(`Thread is not running: ${threadId}`, undefined, threadContext.getWorkflowId());
     }
 
     await this.lifecycleManager.pauseThread(thread);
@@ -503,19 +389,20 @@ export class ThreadExecutor {
    * @returns 线程执行结果
    */
   async resume(threadId: string, options: ThreadOptions = {}): Promise<ThreadResult> {
-    const thread = this.threadRegistry.get(threadId);
-    if (!thread) {
-      throw new NotFoundError(`Thread not found: ${threadId}`, 'Thread', threadId);
+    const threadContext = this.threadRegistry.get(threadId);
+    if (!threadContext) {
+      throw new NotFoundError(`ThreadContext not found: ${threadId}`, 'ThreadContext', threadId);
     }
 
-    if (thread.status !== 'PAUSED') {
-      throw new ExecutionError(`Thread is not paused: ${threadId}`, undefined, thread.workflowId);
+    const thread = threadContext.thread;
+    if (threadContext.getStatus() !== 'PAUSED') {
+      throw new ExecutionError(`Thread is not paused: ${threadId}`, undefined, threadContext.getWorkflowId());
     }
 
     await this.lifecycleManager.resumeThread(thread);
 
     // 继续执行
-    return this.executeThread(thread, options);
+    return this.executeThread(threadContext, options);
   }
 
   /**
@@ -523,38 +410,40 @@ export class ThreadExecutor {
    * @param threadId 线程ID
    */
   async cancel(threadId: string): Promise<void> {
-    const thread = this.threadRegistry.get(threadId);
-    if (!thread) {
-      throw new NotFoundError(`Thread not found: ${threadId}`, 'Thread', threadId);
+    const threadContext = this.threadRegistry.get(threadId);
+    if (!threadContext) {
+      throw new NotFoundError(`ThreadContext not found: ${threadId}`, 'ThreadContext', threadId);
     }
 
-    if (thread.status !== 'RUNNING' && thread.status !== 'PAUSED') {
-      throw new ExecutionError(`Thread is not running or paused: ${threadId}`, undefined, thread.workflowId);
+    const thread = threadContext.thread;
+    const status = threadContext.getStatus();
+    if (status !== 'RUNNING' && status !== 'PAUSED') {
+      throw new ExecutionError(`Thread is not running or paused: ${threadId}`, undefined, threadContext.getWorkflowId());
     }
 
     await this.lifecycleManager.cancelThread(thread);
 
     // 取消子 thread（如果有）
-    const childThreadIds = thread.metadata?.childThreadIds as string[] || [];
+    const childThreadIds = threadContext.getMetadata()?.childThreadIds as string[] || [];
     for (const childThreadId of childThreadIds) {
       await this.cancel(childThreadId);
     }
   }
 
   /**
-   * 获取 Thread
+   * 获取 ThreadContext
    * @param threadId 线程ID
-   * @returns Thread 实例
+   * @returns ThreadContext 实例
    */
-  getThread(threadId: string): Thread | null {
+  getThreadContext(threadId: string): ThreadContext | null {
     return this.threadRegistry.get(threadId);
   }
 
   /**
-   * 获取所有 Thread
-   * @returns Thread 数组
+   * 获取所有 ThreadContext
+   * @returns ThreadContext 数组
    */
-  getAllThreads(): Thread[] {
+  getAllThreadContexts(): ThreadContext[] {
     return this.threadRegistry.getAll();
   }
 
@@ -564,10 +453,12 @@ export class ThreadExecutor {
    * @param nodeId 节点ID
    */
   async skipNode(threadId: string, nodeId: string): Promise<void> {
-    const thread = this.threadRegistry.get(threadId);
-    if (!thread) {
-      throw new NotFoundError(`Thread not found: ${threadId}`, 'Thread', threadId);
+    const threadContext = this.threadRegistry.get(threadId);
+    if (!threadContext) {
+      throw new NotFoundError(`ThreadContext not found: ${threadId}`, 'ThreadContext', threadId);
     }
+
+    const thread = threadContext.thread;
 
     // 标记节点为跳过状态
     const result: NodeExecutionResult = {
@@ -584,8 +475,8 @@ export class ThreadExecutor {
     const completedEvent: NodeCompletedEvent = {
       type: EventType.NODE_COMPLETED,
       timestamp: Date.now(),
-      workflowId: thread.workflowId,
-      threadId: thread.id,
+      workflowId: threadContext.getWorkflowId(),
+      threadId: threadContext.getThreadId(),
       nodeId,
       output: null,
       executionTime: 0
@@ -599,14 +490,14 @@ export class ThreadExecutor {
    * @param variables 变量对象
    */
   async setVariables(threadId: string, variables: Record<string, any>): Promise<void> {
-    const thread = this.threadRegistry.get(threadId);
-    if (!thread) {
-      throw new NotFoundError(`Thread not found: ${threadId}`, 'Thread', threadId);
+    const threadContext = this.threadRegistry.get(threadId);
+    if (!threadContext) {
+      throw new NotFoundError(`ThreadContext not found: ${threadId}`, 'ThreadContext', threadId);
     }
 
-    // 使用Thread的setVariable方法设置变量
+    // 使用ThreadContext的setVariable方法设置变量
     for (const [name, value] of Object.entries(variables)) {
-      thread.setVariable(name, value, typeof value as any, 'local', false);
+      threadContext.setVariable(name, value, typeof value as any, 'local', false);
     }
   }
 }

@@ -5,6 +5,7 @@
 
 import type { TriggerAction, TriggerExecutionResult } from '../../../../types/trigger';
 import type { ThreadExecutor } from '../../thread-executor';
+import type { ThreadBuilder } from '../../thread-builder';
 import type { Timestamp } from '../../../../types/common';
 
 /**
@@ -16,12 +17,14 @@ export abstract class BaseTriggerExecutor {
    * @param action 触发动作
    * @param triggerId 触发器 ID
    * @param threadExecutor 线程执行器（用于执行线程相关操作）
+   * @param threadBuilder 线程构建器（用于构建线程上下文）
    * @returns 执行结果
    */
   abstract execute(
     action: TriggerAction,
     triggerId: string,
-    threadExecutor: ThreadExecutor
+    threadExecutor: ThreadExecutor,
+    threadBuilder: ThreadBuilder
   ): Promise<TriggerExecutionResult>;
 
   /**
