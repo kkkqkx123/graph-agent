@@ -155,31 +155,28 @@ export class CheckpointManager {
       metadata: checkpoint.metadata
     };
 
-    // 步骤5：初始化变量数据结构
-    this.variableManager.initializeVariables(thread as Thread);
-
-    // 步骤7：创建 ConversationManager 和 LLMExecutor
+    // 步骤5：创建 ConversationManager 和 LLMExecutor
     const conversationManager = new ConversationManager();
     const llmExecutor = new LLMExecutor(conversationManager);
 
-    // 步骤8：恢复对话历史
+    // 步骤6：恢复对话历史
     if (checkpoint.threadState.conversationHistory) {
       for (const message of checkpoint.threadState.conversationHistory) {
         conversationManager.addMessage(message);
       }
     }
 
-    // 步骤9：创建 WorkflowContext
+    // 步骤7：创建 WorkflowContext
     const workflowContext = new WorkflowContext(workflowDefinition);
 
-    // 步骤10：创建 ThreadContext
+    // 步骤7：创建 ThreadContext
     const threadContext = new ThreadContext(
       thread as Thread,
       workflowContext,
       llmExecutor
     );
 
-    // 步骤11：注册到 ThreadRegistry
+    // 步骤9：注册到 ThreadRegistry
     this.threadRegistry.register(threadContext);
 
     return threadContext;
@@ -345,12 +342,5 @@ export class CheckpointManager {
       tags: checkpoint.metadata?.tags,
       customFields: checkpoint.metadata?.customFields
     };
-  }
-
-  /**
-   * 获取 ThreadRegistry 实例（用于测试）
-   */
-  getThreadRegistry(): ThreadRegistry {
-    return this.threadRegistry;
   }
 }

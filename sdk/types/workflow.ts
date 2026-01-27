@@ -4,8 +4,8 @@
  */
 
 // 导入类型定义
-import type { Node, NodeType } from './node';
-import type { Edge, EdgeType } from './edge';
+import type { Node } from './node';
+import type { Edge } from './edge';
 import type { ID, Timestamp, Version, Metadata } from './common';
 
 /**

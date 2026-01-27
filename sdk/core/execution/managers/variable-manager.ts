@@ -45,20 +45,6 @@ export class VariableManager {
   }
 
   /**
-   * 初始化Thread的变量数据结构（向后兼容）
-   * @param thread Thread实例
-   * @deprecated 使用 initializeFromWorkflow 替代
-   */
-  initializeVariables(thread: Thread): void {
-    if (!thread.variables) {
-      thread.variables = [];
-    }
-    if (!thread.variableValues) {
-      thread.variableValues = {};
-    }
-  }
-
-  /**
    * 更新已定义变量的值
    * @param threadContext ThreadContext 实例
    * @param name 变量名称

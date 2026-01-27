@@ -199,3 +199,59 @@ export interface SDKOptions {
   /** 自定义ThreadRegistry */
   threadRegistry?: any;
 }
+
+/**
+ * 检查点过滤器
+ */
+export interface CheckpointFilter {
+  /** 线程ID */
+  threadId?: string;
+  /** 工作流ID */
+  workflowId?: string;
+  /** 开始时间戳 */
+  startTimeFrom?: number;
+  /** 结束时间戳 */
+  startTimeTo?: number;
+  /** 标签数组 */
+  tags?: string[];
+}
+
+/**
+ * 检查点摘要
+ */
+export interface CheckpointSummary {
+  /** 检查点ID */
+  checkpointId: string;
+  /** 线程ID */
+  threadId: string;
+  /** 工作流ID */
+  workflowId: string;
+  /** 时间戳 */
+  timestamp: number;
+  /** 元数据 */
+  metadata?: any;
+}
+
+/**
+ * 变量更新选项
+ */
+export interface VariableUpdateOptions {
+  /** 是否验证变量类型 */
+  validateType?: boolean;
+  /** 是否允许更新只读变量 */
+  allowReadonlyUpdate?: boolean;
+}
+
+/**
+ * 变量过滤器
+ */
+export interface VariableFilter {
+  /** 变量名称 */
+  name?: string;
+  /** 变量类型 */
+  type?: string;
+  /** 变量作用域 */
+  scope?: 'local' | 'global';
+  /** 是否只读 */
+  readonly?: boolean;
+}

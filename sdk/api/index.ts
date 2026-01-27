@@ -15,6 +15,8 @@ export { ToolServiceAPI } from './tool-service-api';
 export { LLMWrapperAPI } from './llm-wrapper-api';
 export { ProfileManagerAPI } from './profile-manager-api';
 export { EventManagerAPI } from './event-manager-api';
+export { CheckpointManagerAPI } from './checkpoint-manager-api';
+export { VariableManagerAPI } from './variable-manager-api';
 
 // 类型定义
 export type {
@@ -28,7 +30,11 @@ export type {
   ToolOptions,
   ToolExecutionResult,
   ToolTestResult,
-  EventFilter
+  EventFilter,
+  CheckpointFilter,
+  CheckpointSummary,
+  VariableUpdateOptions,
+  VariableFilter
 } from './types';
 
 // Profile模板类型

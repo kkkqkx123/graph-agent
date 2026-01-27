@@ -11,6 +11,8 @@ import { ToolServiceAPI } from './tool-service-api';
 import { LLMWrapperAPI } from './llm-wrapper-api';
 import { ProfileManagerAPI } from './profile-manager-api';
 import { EventManagerAPI } from './event-manager-api';
+import { CheckpointManagerAPI } from './checkpoint-manager-api';
+import { VariableManagerAPI } from './variable-manager-api';
 import { WorkflowRegistry } from '../core/execution/registrys/workflow-registry';
 import { ThreadRegistry } from '../core/execution/registrys/thread-registry';
 import type { SDKOptions } from './types';
@@ -43,6 +45,12 @@ export class SDK {
   /** 事件监听API */
   public readonly events: EventManagerAPI;
 
+  /** 检查点管理API */
+  public readonly checkpoints: CheckpointManagerAPI;
+
+  /** 变量管理API */
+  public readonly variables: VariableManagerAPI;
+
   /** 内部工作流注册表 */
   private readonly internalWorkflowRegistry: WorkflowRegistry;
 
@@ -69,6 +77,8 @@ export class SDK {
     this.llm = new LLMWrapperAPI();
     this.profiles = new ProfileManagerAPI();
     this.events = new EventManagerAPI();
+    this.checkpoints = new CheckpointManagerAPI();
+    this.variables = new VariableManagerAPI(this.internalThreadRegistry);
   }
 
   /**
@@ -92,6 +102,7 @@ export class SDK {
     await this.llm.clearAll();
     await this.profiles.clearProfiles();
     await this.events.clearHistory();
+    await this.checkpoints.clearAllCheckpoints();
   }
 
   /**
@@ -114,6 +125,7 @@ export class SDK {
     toolCount: number;
     profileCount: number;
     eventListenerCount: number;
+    checkpointCount: number;
   }> {
     const workflowCount = await this.workflows.getWorkflowCount();
     const threadCount = await this.threads.getThreadCount();
@@ -121,6 +133,7 @@ export class SDK {
     const toolCount = await this.tools.getToolCount();
     const profileCount = await this.profiles.getProfileCount();
     const eventListenerCount = this.events.getListenerCount();
+    const checkpointCount = await this.checkpoints.getCheckpointCount();
 
     return {
       version: this.getVersion(),
@@ -129,7 +142,8 @@ export class SDK {
       threadStatistics,
       toolCount,
       profileCount,
-      eventListenerCount
+      eventListenerCount,
+      checkpointCount
     };
   }
 

@@ -91,14 +91,20 @@ export class VariableNodeExecutor extends NodeExecutor {
     // 步骤3：验证求值结果类型
     const typedResult = this.convertType(result, config.variableType);
 
-    // 步骤4：使用 Thread 的 setVariable 方法更新变量
-    thread.setVariable(
-      config.variableName,
-      typedResult,
-      config.variableType,
-      config.scope || 'local',
-      config.readonly || false
-    );
+    // 步骤4：更新变量
+    const variable = thread.variables.find(v => v.name === config.variableName);
+    if (variable) {
+      variable.value = typedResult;
+    } else {
+      thread.variables.push({
+        name: config.variableName,
+        value: typedResult,
+        type: config.variableType,
+        scope: config.scope || 'local',
+        readonly: config.readonly || false
+      });
+    }
+    thread.variableValues[config.variableName] = typedResult;
 
     // 步骤5：记录执行历史
     thread.nodeResults.push({
@@ -132,9 +138,9 @@ export class VariableNodeExecutor extends NodeExecutor {
     const variablePattern = /\{\{(\w+(?:\.\w+)*)\}\}/g;
 
     return expression.replace(variablePattern, (match, varPath) => {
-      // 使用 Thread 的 getVariable 方法获取变量值
+      // 获取变量值
       const parts = varPath.split('.');
-      let value: any = thread.getVariable(parts[0]);
+      let value: any = thread.variableValues[parts[0]];
 
       // 处理嵌套属性访问
       for (let i = 1; i < parts.length; i++) {
