@@ -7,7 +7,9 @@ import { NodeExecutor } from './base-node-executor';
 import type { Node } from '../../../../types/node';
 import type { Thread } from '../../../../types/thread';
 import { NodeType } from '../../../../types/node';
-import { ValidationError } from '../../../../types/errors';
+import { ValidationError, ExecutionError, NotFoundError } from '../../../../types/errors';
+import { ConditionEvaluator } from '../../condition-evaluator';
+import { ExecutionSingletons } from '../../singletons';
 
 /**
  * LoopEnd节点配置
@@ -15,8 +17,8 @@ import { ValidationError } from '../../../../types/errors';
 interface LoopEndNodeConfig {
   /** 循环ID */
   loopId: string;
-  /** 中断条件表达式 */
-  breakCondition?: string;
+  /** 中断条件 */
+  breakCondition?: any;
   /** LOOP_START节点ID（用于跳转） */
   loopStartNodeId?: string;
 }
@@ -25,6 +27,12 @@ interface LoopEndNodeConfig {
  * LoopEnd节点执行器
  */
 export class LoopEndNodeExecutor extends NodeExecutor {
+  private conditionEvaluator: ConditionEvaluator;
+
+  constructor() {
+    super();
+    this.conditionEvaluator = ExecutionSingletons.getConditionEvaluator();
+  }
   /**
    * 验证节点配置
    */
@@ -74,7 +82,15 @@ export class LoopEndNodeExecutor extends NodeExecutor {
     const loopState = this.getLoopState(thread, config.loopId);
 
     if (!loopState) {
-      throw new ValidationError(`Loop state not found for loopId: ${config.loopId}`, `node.${node.id}`);
+      throw new NotFoundError(
+        `Loop state not found for loopId: ${config.loopId}`,
+        'loopState',
+        config.loopId,
+        {
+          nodeId: node.id,
+          loopId: config.loopId
+        }
+      );
     }
 
     // 步骤2：评估中断条件
@@ -148,52 +164,35 @@ export class LoopEndNodeExecutor extends NodeExecutor {
 
   /**
    * 评估中断条件
-   * @param breakCondition 中断条件表达式
+   * @param breakCondition 中断条件
    * @param thread Thread实例
    * @returns 是否应该中断
    */
-  private evaluateBreakCondition(breakCondition: string, thread: Thread): boolean {
+  private evaluateBreakCondition(breakCondition: any, thread: Thread): boolean {
     try {
-      // 解析变量引用
-      const resolvedCondition = this.resolveVariableReferences(breakCondition, thread);
+      // 构建评估上下文
+      const context = {
+        variables: thread.variableValues || {},
+        input: thread.input || {},
+        output: thread.output || {}
+      };
 
-      // 评估条件
-      const result = new Function(`return (${resolvedCondition})`)();
-      return Boolean(result);
+      // 使用ConditionEvaluator评估条件
+      return this.conditionEvaluator.evaluate(breakCondition, context);
     } catch (error) {
-      console.error(`Failed to evaluate break condition: ${breakCondition}`, error);
-      return false;
+      throw new ExecutionError(
+        `Failed to evaluate break condition: ${error instanceof Error ? error.message : String(error)}`,
+        thread.currentNodeId,
+        thread.workflowId,
+        {
+          breakCondition,
+          variables: thread.variableValues,
+          input: thread.input,
+          output: thread.output
+        },
+        error instanceof Error ? error : undefined
+      );
     }
-  }
-
-  /**
-   * 解析变量引用
-   * @param expression 表达式
-   * @param thread Thread实例
-   * @returns 解析后的表达式
-   */
-  private resolveVariableReferences(expression: string, thread: Thread): string {
-    const variablePattern = /\{\{(\w+(?:\.\w+)*)\}\}/g;
-
-    return expression.replace(variablePattern, (match, varPath) => {
-      const parts = varPath.split('.');
-      let value: any = thread.variableValues || {};
-
-      for (const part of parts) {
-        if (value === null || value === undefined) {
-          return 'undefined';
-        }
-        value = value[part];
-      }
-
-      if (typeof value === 'string') {
-        return `'${value}'`;
-      } else if (typeof value === 'object') {
-        return JSON.stringify(value);
-      } else {
-        return String(value);
-      }
-    });
   }
 
   /**

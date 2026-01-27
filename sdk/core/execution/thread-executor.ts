@@ -45,10 +45,11 @@ export class ThreadExecutor {
     this.workflowRegistry = workflowRegistry || ExecutionSingletons.getWorkflowRegistry();
     this.threadRegistry = ExecutionSingletons.getThreadRegistry();
     this.eventManager = ExecutionSingletons.getEventManager();
+    const conditionEvaluator = ExecutionSingletons.getConditionEvaluator();
 
     // 创建非单例组件
     this.threadBuilder = new ThreadBuilder(this.workflowRegistry);
-    this.router = new Router();
+    this.router = new Router(conditionEvaluator);
     this.lifecycleManager = new ThreadLifecycleManager(this.eventManager);
 
     // 初始化 TriggerManager（需要重构以移除对 ThreadExecutor 的依赖）

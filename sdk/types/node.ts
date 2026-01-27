@@ -4,6 +4,7 @@
  */
 
 import type { ID, Metadata } from './common';
+import type { Condition } from './condition';
 
 /**
  * 节点类型枚举
@@ -13,7 +14,7 @@ export enum NodeType {
   START = 'START',
   /** 结束节点。作为工作流结束标志，必须唯一。出度必须为0。 */
   END = 'END',
-  /** 变量操作节点。用于调用ts本身的函数式操作来操作工作流中的变量。主要用途是更改工作流变量的值，为边条件评估提供数据。不要用于执行业务逻辑。 */
+  /** 变量操作节点。主要用途是更改工作流变量的值，为边条件评估提供数据。 */
   VARIABLE = 'VARIABLE',
   /** 分叉节点。用于控制thread的fork操作。 */
   FORK = 'FORK',
@@ -215,8 +216,8 @@ export interface LoopEndNodeConfig {
   loopId: string;
   /** 可迭代对象，与loop start节点完全一致 */
   iterable: any;
-  /** 中断条件表达式 */
-  breakCondition: string;
+  /** 中断条件 */
+  breakCondition?: Condition;
 }
 
 /**

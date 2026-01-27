@@ -4,15 +4,19 @@
  */
 
 import type { Edge, EdgeCondition } from '../../types/edge';
-import { EdgeType, ConditionType } from '../../types/edge';
+import { EdgeType } from '../../types/edge';
 import type { Node } from '../../types/node';
 import { NodeType } from '../../types/node';
 import type { Thread } from '../../types/thread';
+import type { Condition, EvaluationContext } from '../../types/condition';
+import { ConditionEvaluator } from './condition-evaluator';
 
 /**
  * Router - 条件路由器
  */
 export class Router {
+  constructor(private conditionEvaluator: ConditionEvaluator) {}
+
   /**
    * 选择下一个节点
    * @param currentNode 当前节点
@@ -80,139 +84,15 @@ export class Router {
    * @returns 条件是否满足
    */
   private evaluateCondition(condition: EdgeCondition, thread: Thread): boolean {
-    // 获取变量值
-    const variableValue = this.getVariableValue(condition.variablePath, thread);
-
-    // 根据条件类型评估
-    switch (condition.type) {
-      case ConditionType.EQUALS:
-        return variableValue === condition.value;
-
-      case ConditionType.NOT_EQUALS:
-        return variableValue !== condition.value;
-
-      case ConditionType.GREATER_THAN:
-        return variableValue > condition.value;
-
-      case ConditionType.LESS_THAN:
-        return variableValue < condition.value;
-
-      case ConditionType.GREATER_EQUAL:
-        return variableValue >= condition.value;
-
-      case ConditionType.LESS_EQUAL:
-        return variableValue <= condition.value;
-
-      case ConditionType.CONTAINS:
-        return String(variableValue).includes(String(condition.value));
-
-      case ConditionType.NOT_CONTAINS:
-        return !String(variableValue).includes(String(condition.value));
-
-      case ConditionType.IN:
-        return Array.isArray(condition.value) && condition.value.includes(variableValue);
-
-      case ConditionType.NOT_IN:
-        return Array.isArray(condition.value) && !condition.value.includes(variableValue);
-
-      case ConditionType.IS_NULL:
-        return variableValue === null || variableValue === undefined;
-
-      case ConditionType.IS_NOT_NULL:
-        return variableValue !== null && variableValue !== undefined;
-
-      case ConditionType.IS_TRUE:
-        return variableValue === true;
-
-      case ConditionType.IS_FALSE:
-        return variableValue === false;
-
-      case ConditionType.CUSTOM:
-        if (!condition.customExpression) {
-          return false;
-        }
-        return this.evaluateCustomExpression(condition.customExpression, thread);
-
-      default:
-        return false;
-    }
-  }
-
-  /**
-   * 获取变量值
-   * @param path 变量路径，支持嵌套访问
-   * @param thread Thread 实例
-   * @returns 变量值
-   */
-  private getVariableValue(path: string, thread: Thread): any {
-    // 支持嵌套路径访问，如 "output.data.items[0].name"
-    const parts = path.split('.');
-    let value: any = thread;
-
-    for (const part of parts) {
-      if (value === null || value === undefined) {
-        return undefined;
-      }
-
-      // 处理数组索引访问，如 items[0]
-      const arrayMatch = part.match(/(\w+)\[(\d+)\]/);
-      if (arrayMatch && arrayMatch[1] && arrayMatch[2]) {
-        const arrayName = arrayMatch[1];
-        const index = parseInt(arrayMatch[2], 10);
-        value = value[arrayName];
-        if (Array.isArray(value)) {
-          value = value[index];
-        }
-      } else {
-        value = value[part];
-      }
-    }
-
-    return value;
-  }
-
-  /**
-   * 评估自定义表达式
-   * @param expression 自定义表达式
-   * @param thread Thread 实例
-   * @returns 表达式评估结果
-   */
-  private evaluateCustomExpression(expression: string, thread: Thread): boolean {
-    // 构建变量上下文
-    const context: Record<string, any> = {
-      // 添加所有变量值
-      ...thread.variableValues,
-      // 添加输入数据
+    // 构建评估上下文
+    const context: EvaluationContext = {
+      variables: thread.variableValues,
       input: thread.input,
-      // 添加输出数据
-      output: thread.output,
-      // 添加节点执行结果
-      nodeResults: thread.nodeResults.reduce((acc, result) => {
-        acc[result.nodeId] = result;
-        return acc;
-      }, {} as Record<string, any>)
+      output: thread.output
     };
 
-    // 替换变量引用 {{variableName}}
-    let evaluatedExpression = expression;
-    const variablePattern = /\{\{(\w+(?:\.\w+)*)\}\}/g;
-    evaluatedExpression = evaluatedExpression.replace(variablePattern, (match, varPath) => {
-      const value = this.getVariableValue(varPath, thread);
-      return JSON.stringify(value);
-    });
-
-    // 使用 Function 构造函数评估表达式（注意：生产环境需要更安全的实现）
-    try {
-      const result = new Function('context', `
-        with (context) {
-          return (${evaluatedExpression});
-        }
-      `)(context);
-      return Boolean(result);
-    } catch (error) {
-      console.error(`Failed to evaluate custom expression: ${expression}`, error);
-      return false;
-    }
+    // 使用ConditionEvaluator评估条件（EdgeCondition 现在就是 Condition 类型）
+    return this.conditionEvaluator.evaluate(condition, context);
   }
 
   /**
