@@ -1,6 +1,8 @@
 /**
  * ThreadExecutor - Thread 执行器
  * 负责执行单个 ThreadContext 实例，管理 thread 的完整执行生命周期
+ *
+ * 通过事件驱动机制与 ThreadCoordinator 解耦，避免循环依赖
  */
 
 import type { ThreadOptions, ThreadResult } from '../../types/thread';
@@ -14,15 +16,20 @@ import { Router } from './router';
 import { NodeExecutorFactory } from './executors/node-executor-factory';
 import { NodeType } from '../../types/node';
 import { EventManager } from './event-manager';
-import { ThreadCoordinator } from './thread-coordinator';
 import { ExecutionError, TimeoutError, NotFoundError } from '../../types/errors';
 import { EventType } from '../../types/events';
 import type { NodeStartedEvent, NodeCompletedEvent, NodeFailedEvent, ErrorEvent } from '../../types/events';
 import { TriggerManager } from './trigger-manager';
 import { WorkflowRegistry } from './workflow-registry';
+import { ExecutionSingletons } from './singletons';
+import { InternalEventType } from '../../types/internal-events';
+import type { ForkCompletedEvent, ForkFailedEvent, JoinCompletedEvent, JoinFailedEvent } from '../../types/internal-events';
 
 /**
  * ThreadExecutor - Thread 执行器
+ *
+ * 通过事件驱动机制与 ThreadCoordinator 解耦，避免循环依赖
+ * 使用 ExecutionSingletons 获取全局单例组件
  */
 export class ThreadExecutor {
   private threadRegistry: ThreadRegistry;
@@ -30,20 +37,21 @@ export class ThreadExecutor {
   private lifecycleManager: ThreadLifecycleManager;
   private router: Router;
   private eventManager: EventManager;
-  private threadCoordinator: ThreadCoordinator;
   private triggerManager: TriggerManager;
   private workflowRegistry: WorkflowRegistry;
 
   constructor(workflowRegistry?: WorkflowRegistry) {
-    this.workflowRegistry = workflowRegistry || new WorkflowRegistry();
-    this.threadRegistry = new ThreadRegistry();
+    // 使用 ExecutionSingletons 获取单例组件
+    this.workflowRegistry = workflowRegistry || ExecutionSingletons.getWorkflowRegistry();
+    this.threadRegistry = ExecutionSingletons.getThreadRegistry();
+    this.eventManager = ExecutionSingletons.getEventManager();
+    
+    // 创建非单例组件
     this.threadBuilder = new ThreadBuilder(this.workflowRegistry);
     this.router = new Router();
-    this.eventManager = new EventManager();
     this.lifecycleManager = new ThreadLifecycleManager(this.eventManager);
-    this.threadCoordinator = new ThreadCoordinator(this.threadRegistry, this.threadBuilder, this, this.eventManager);
-
-    // 初始化 TriggerManager
+    
+    // 初始化 TriggerManager（需要重构以移除对 ThreadExecutor 的依赖）
     this.triggerManager = new TriggerManager(this.eventManager, this, this.threadBuilder);
   }
 
@@ -292,6 +300,7 @@ export class ThreadExecutor {
 
   /**
    * 处理 Fork 节点
+   * 通过事件驱动机制调用 ThreadCoordinator，避免循环依赖
    * @param threadContext ThreadContext 实例
    * @param node Fork 节点定义
    * @returns 节点执行结果
@@ -306,8 +315,47 @@ export class ThreadExecutor {
       throw new ExecutionError('Fork node must have forkId config', node.id, thread.workflowId);
     }
 
-    // 调用 ThreadCoordinator.fork
-    const childThreadIds = await this.threadCoordinator.fork(threadContext, forkConfig.forkId, forkConfig.forkStrategy || 'serial');
+    // 发布 Fork 请求事件
+    const requestId = `fork-${thread.id}-${node.id}-${Date.now()}`;
+    
+    // 监听 Fork 完成事件
+    const completedPromise = new Promise<string[]>((resolve, reject) => {
+      const unregister = this.eventManager.onInternal(
+        InternalEventType.FORK_COMPLETED,
+        (event: ForkCompletedEvent) => {
+          if (event.threadId === thread.id) {
+            unregister();
+            resolve(event.childThreadIds);
+          }
+        }
+      );
+      
+      // 监听 Fork 失败事件
+      const unregisterFailed = this.eventManager.onInternal(
+        InternalEventType.FORK_FAILED,
+        (event: ForkFailedEvent) => {
+          if (event.threadId === thread.id) {
+            unregister();
+            unregisterFailed();
+            reject(new ExecutionError(event.error, node.id, thread.workflowId));
+          }
+        }
+      );
+    });
+
+    // 发布 Fork 请求事件
+    await this.eventManager.emitInternal({
+      type: InternalEventType.FORK_REQUEST,
+      timestamp: Date.now(),
+      workflowId: thread.workflowId,
+      threadId: thread.id,
+      parentThreadContext: threadContext,
+      forkId: forkConfig.forkId,
+      forkStrategy: forkConfig.forkStrategy || 'serial'
+    });
+
+    // 等待 Fork 完成
+    const childThreadIds = await completedPromise;
 
     // 更新 thread 元数据
     if (!thread.metadata) {
@@ -329,6 +377,7 @@ export class ThreadExecutor {
 
   /**
    * 处理 Join 节点
+   * 通过事件驱动机制调用 ThreadCoordinator，避免循环依赖
    * @param threadContext ThreadContext 实例
    * @param node Join 节点定义
    * @returns 节点执行结果
@@ -349,8 +398,45 @@ export class ThreadExecutor {
       throw new ExecutionError('No child threads to join', node.id, thread.workflowId);
     }
 
-    // 调用 ThreadCoordinator.join
-    const joinResult = await this.threadCoordinator.join(threadContext, childThreadIds, joinConfig.joinStrategy, joinConfig.timeout);
+    // 监听 Join 完成事件
+    const completedPromise = new Promise<any>((resolve, reject) => {
+      const unregister = this.eventManager.onInternal(
+        InternalEventType.JOIN_COMPLETED,
+        (event: JoinCompletedEvent) => {
+          if (event.threadId === thread.id) {
+            unregister();
+            resolve(event.result);
+          }
+        }
+      );
+      
+      // 监听 Join 失败事件
+      const unregisterFailed = this.eventManager.onInternal(
+        InternalEventType.JOIN_FAILED,
+        (event: JoinFailedEvent) => {
+          if (event.threadId === thread.id) {
+            unregister();
+            unregisterFailed();
+            reject(new ExecutionError(event.error, node.id, thread.workflowId));
+          }
+        }
+      );
+    });
+
+    // 发布 Join 请求事件
+    await this.eventManager.emitInternal({
+      type: InternalEventType.JOIN_REQUEST,
+      timestamp: Date.now(),
+      workflowId: thread.workflowId,
+      threadId: thread.id,
+      parentThreadContext: threadContext,
+      childThreadIds,
+      joinStrategy: joinConfig.joinStrategy,
+      timeout: joinConfig.timeout || 60
+    });
+
+    // 等待 Join 完成
+    const joinResult = await completedPromise;
 
     // 更新 thread 输出
     thread.output = joinResult.output;

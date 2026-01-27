@@ -1,6 +1,8 @@
 /**
  * CheckpointManager - 检查点管理器
  * 负责创建和管理检查点，支持从检查点恢复 ThreadContext 状态
+ *
+ * 使用 ExecutionSingletons 获取全局单例组件
  */
 
 import type { Thread } from '../../../types/thread';
@@ -8,11 +10,13 @@ import type { Checkpoint, CheckpointMetadata, ThreadStateSnapshot } from '../../
 import type { CheckpointStorage, CheckpointFilter } from './storage';
 import { MemoryStorage } from './storage';
 import { ThreadRegistry } from '../thread-registry';
-import { ThreadBuilder } from '../thread-builder';
 import { ThreadContext } from '../thread-context';
+import { WorkflowContext } from '../workflow-context';
 import { VariableManager } from '../variable-manager';
+import { ConversationManager } from '../conversation-manager';
+import { LLMExecutor } from '../llm-executor';
 import { IDUtils } from '../../../types/common';
-import { WorkflowRegistry } from '../workflow-registry';
+import { ExecutionSingletons } from '../singletons';
 
 /**
  * 检查点管理器
@@ -20,28 +24,24 @@ import { WorkflowRegistry } from '../workflow-registry';
 export class CheckpointManager {
   private storage: CheckpointStorage;
   private threadRegistry: ThreadRegistry;
-  private threadBuilder: ThreadBuilder;
   private variableManager: VariableManager;
-  private workflowRegistry: WorkflowRegistry;
+  private workflowRegistry: ReturnType<typeof ExecutionSingletons.getWorkflowRegistry>;
   private periodicTimers: Map<string, NodeJS.Timeout> = new Map();
 
   /**
    * 构造函数
    * @param storage 存储实现，默认使用 MemoryStorage
-   * @param threadRegistry Thread注册表
-   * @param threadBuilder Thread构建器
-   * @param workflowRegistry Workflow注册器
+   * @param threadRegistry Thread注册表（可选，默认使用单例）
+   * @param workflowRegistry Workflow注册器（可选，默认使用单例）
    */
   constructor(
     storage?: CheckpointStorage,
     threadRegistry?: ThreadRegistry,
-    threadBuilder?: ThreadBuilder,
-    workflowRegistry?: WorkflowRegistry
+    workflowRegistry?: ReturnType<typeof ExecutionSingletons.getWorkflowRegistry>
   ) {
     this.storage = storage || new MemoryStorage();
-    this.threadRegistry = threadRegistry || new ThreadRegistry();
-    this.workflowRegistry = workflowRegistry || new WorkflowRegistry();
-    this.threadBuilder = threadBuilder || new ThreadBuilder(this.workflowRegistry);
+    this.threadRegistry = threadRegistry || ExecutionSingletons.getThreadRegistry();
+    this.workflowRegistry = workflowRegistry || ExecutionSingletons.getWorkflowRegistry();
     this.variableManager = new VariableManager();
   }
 
@@ -119,7 +119,13 @@ export class CheckpointManager {
     // 步骤2：验证 checkpoint 完整性和兼容性
     this.validateCheckpoint(checkpoint);
 
-    // 步骤3：恢复 Thread 状态
+    // 步骤3：从 WorkflowRegistry 获取 WorkflowDefinition
+    const workflowDefinition = this.workflowRegistry.get(checkpoint.workflowId);
+    if (!workflowDefinition) {
+      throw new Error(`Workflow with ID '${checkpoint.workflowId}' not found in registry`);
+    }
+
+    // 步骤4：恢复 Thread 状态
     // 将 nodeResults Record 转换回数组格式
     const nodeResultsArray = Object.values(checkpoint.threadState.nodeResults || {});
 
@@ -139,37 +145,34 @@ export class CheckpointManager {
       metadata: checkpoint.metadata
     };
 
-    // 步骤4：初始化变量数据结构
+    // 步骤5：初始化变量数据结构
     this.variableManager.initializeVariables(thread as Thread);
 
-    // 步骤5：附加变量管理方法
+    // 步骤6：附加变量管理方法
     this.variableManager.attachVariableMethods(thread as Thread);
 
-    // 步骤6：创建 ThreadContext
-    // 从 WorkflowRegistry 获取 WorkflowDefinition
-    const workflowDefinition = this.workflowRegistry.get(checkpoint.workflowId);
-    if (!workflowDefinition) {
-      throw new Error(`Workflow with ID '${checkpoint.workflowId}' not found in registry`);
-    }
+    // 步骤7：创建 ConversationManager 和 LLMExecutor
+    const conversationManager = new ConversationManager();
+    const llmExecutor = new LLMExecutor(conversationManager);
 
-    // 使用 ThreadBuilder 创建 ThreadContext
-    const threadContext = await this.threadBuilder.build(checkpoint.workflowId, {
-      input: checkpoint.threadState.input
-    });
-
-    // 恢复 Thread 状态
-    Object.assign(threadContext.thread, thread);
-
-    // 恢复对话历史
+    // 步骤8：恢复对话历史
     if (checkpoint.threadState.conversationHistory) {
-      const conversationManager = threadContext.getConversationManager();
-      conversationManager.clearMessages();
       for (const message of checkpoint.threadState.conversationHistory) {
         conversationManager.addMessage(message);
       }
     }
 
-    // 注册到 ThreadRegistry
+    // 步骤9：创建 WorkflowContext
+    const workflowContext = new WorkflowContext(workflowDefinition);
+
+    // 步骤10：创建 ThreadContext
+    const threadContext = new ThreadContext(
+      thread as Thread,
+      workflowContext,
+      llmExecutor
+    );
+
+    // 步骤11：注册到 ThreadRegistry
     this.threadRegistry.register(threadContext);
 
     return threadContext;
@@ -307,12 +310,5 @@ export class CheckpointManager {
    */
   getThreadRegistry(): ThreadRegistry {
     return this.threadRegistry;
-  }
-
-  /**
-   * 获取 ThreadBuilder 实例（用于测试）
-   */
-  getThreadBuilder(): ThreadBuilder {
-    return this.threadBuilder;
   }
 }

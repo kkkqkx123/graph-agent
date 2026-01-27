@@ -3,6 +3,9 @@
  * 提供Thread执行引擎、节点执行器、路由器和事件管理器
  */
 
+// 单例管理器
+export { ExecutionSingletons } from './singletons';
+
 // 主要执行引擎
 export { ThreadExecutor } from './thread-executor';
 

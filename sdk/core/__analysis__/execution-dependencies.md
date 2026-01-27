@@ -336,10 +336,13 @@
 - `types/thread.ts` - Thread 类型
 - `types/checkpoint.ts` - Checkpoint 类型
 - `thread-registry.ts` - ThreadRegistry
-- `thread-builder.ts` - ThreadBuilder
 - `thread-context.ts` - ThreadContext
+- `workflow-context.ts` - WorkflowContext
 - `variable-manager.ts` - VariableManager
+- `conversation-manager.ts` - ConversationManager
+- `llm-executor.ts` - LLMExecutor
 - `storage.ts` - CheckpointStorage
+- `singletons.ts` - ExecutionSingletons（获取 WorkflowRegistry）
 
 **被依赖**：
 - API 层（如果有）
@@ -347,7 +350,9 @@
 **设计要点**：
 - 保存和恢复完整的 ThreadContext 状态
 - 包括对话历史的保存和恢复
-- 需要 WorkflowDefinition 才能完整恢复（TODO）
+- 直接创建 ConversationManager、LLMExecutor、WorkflowContext，不依赖 ThreadBuilder
+- 从 WorkflowRegistry 获取 WorkflowDefinition 进行恢复
+- 职责分离：CheckpointManager 负责状态恢复，ThreadBuilder 负责构建新实例
 
 ---
 
@@ -358,28 +363,41 @@
 │                        ThreadExecutor                        │
 │  (执行 ThreadContext，管理生命周期)                          │
 └─────────────────────────────────────────────────────────────┘
-                               │
-                               ├──→ ThreadRegistry (管理 ThreadContext)
-                               ├──→ ThreadBuilder (创建 ThreadContext)
-                               ├──→ ThreadLifecycleManager (状态管理)
-                               ├──→ Router (路由)
-                               ├──→ EventManager (事件)
-                               ├──→ ThreadCoordinator (Fork/Join)
-                               └──→ TriggerManager (触发器)
-                                       │
-                                       └──→ ThreadBuilder
-                                               │
-                                               ├──→ ThreadContext
-                                               │       │
-                                               │       ├──→ Thread
-                                               │       ├──→ WorkflowContext
-                                               │       └──→ LLMExecutor
-                                               │               │
-                                               │               ├──→ ConversationManager
-                                               │               ├──→ LLMWrapper (内部创建)
-                                               │               └──→ ToolService (内部创建)
-                                               │
-                                               └──→ VariableManager
+                                │
+                                ├──→ ThreadRegistry (管理 ThreadContext)
+                                ├──→ ThreadBuilder (创建 ThreadContext)
+                                ├──→ ThreadLifecycleManager (状态管理)
+                                ├──→ Router (路由)
+                                ├──→ EventManager (事件)
+                                ├──→ ThreadCoordinator (Fork/Join)
+                                └──→ TriggerManager (触发器)
+                                        │
+                                        └──→ ThreadBuilder
+                                                │
+                                                ├──→ ThreadContext
+                                                │       │
+                                                │       ├──→ Thread
+                                                │       ├──→ WorkflowContext
+                                                │       └──→ LLMExecutor
+                                                │               │
+                                                │               ├──→ ConversationManager
+                                                │               ├──→ LLMWrapper (内部创建)
+                                                │               └──→ ToolService (内部创建)
+                                                │
+                                                └──→ VariableManager
+
+┌─────────────────────────────────────────────────────────────┐
+│                      CheckpointManager                       │
+│  (保存和恢复 ThreadContext 状态)                              │
+└─────────────────────────────────────────────────────────────┘
+                                │
+                                ├──→ ThreadRegistry (注册恢复的 ThreadContext)
+                                ├──→ WorkflowRegistry (获取 WorkflowDefinition)
+                                ├──→ VariableManager (初始化变量)
+                                ├──→ ConversationManager (内部创建，恢复对话历史)
+                                ├──→ LLMExecutor (内部创建)
+                                ├──→ WorkflowContext (内部创建)
+                                └──→ ThreadContext (内部创建)
 ```
 
 ## 依赖层次
@@ -413,6 +431,9 @@
 ### 第六层：持久化
 - `checkpoint/checkpoint-manager.ts` - 检查点管理器
 
+### 第七层：单例管理
+- `singletons.ts` - ExecutionSingletons（管理全局单例组件）
+
 ## 设计模式
 
 ### 1. 依赖注入
@@ -420,6 +441,8 @@
 - `LLMExecutor` 内部创建 `LLMWrapper` 和 `ToolService`
 - `ThreadBuilder` 只创建 `ConversationManager` 并注入 `LLMExecutor`
 - `ThreadCoordinator` 通过构造函数注入 `ThreadRegistry`、`ThreadBuilder`、`ThreadExecutor`
+- `CheckpointManager` 通过构造函数注入 `ThreadRegistry`、`WorkflowRegistry`
+- `ExecutionSingletons` 管理全局单例组件的创建和访问
 
 ### 2. 工厂模式
 - `NodeExecutorFactory` 创建节点执行器
@@ -436,6 +459,12 @@
 ### 5. 建造者模式
 - `ThreadBuilder` 构建 `ThreadContext`
 
+### 6. 单例模式
+- `ExecutionSingletons` 管理全局单例组件
+- `WorkflowRegistry`、`ThreadRegistry`、`EventManager`、`CheckpointManager` 作为单例
+- 提供统一的初始化和访问接口
+- 支持测试时的重置功能
+
 ## 注意事项
 
 1. **避免循环依赖**：当前设计没有循环依赖
@@ -445,6 +474,55 @@
 
 ## 待完善项
 
-1. **CheckpointManager 恢复逻辑**：需要保存和恢复 WorkflowDefinition
-2. **WorkflowRegistry**：可能需要添加 Workflow 注册表来管理 WorkflowDefinition
+1. ~~**CheckpointManager 恢复逻辑**：需要保存和恢复 WorkflowDefinition~~ ✅ 已完成
+   - CheckpointManager 现在从 WorkflowRegistry 获取 WorkflowDefinition
+   - 直接创建所需的组件，不依赖 ThreadBuilder
+2. ~~**WorkflowRegistry**：可能需要添加 Workflow 注册表来管理 WorkflowDefinition~~ ✅ 已完成
+   - WorkflowRegistry 已作为单例组件实现
+   - CheckpointManager 通过 ExecutionSingletons 访问
 3. **持久化层**：ThreadContext 的持久化需要进一步设计
+   - 当前 CheckpointManager 支持内存存储和文件存储
+   - 可以考虑添加数据库存储支持
+
+## 单例管理说明
+
+### ExecutionSingletons 职责
+
+`ExecutionSingletons` 负责管理全局共享的执行组件实例：
+
+1. **WorkflowRegistry**：工作流注册器，全局共享工作流定义
+2. **ThreadRegistry**：线程注册表，全局跟踪所有线程
+3. **EventManager**：事件管理器，全局事件总线
+4. **CheckpointManager**：检查点管理器，默认单例
+
+### 初始化顺序
+
+单例组件按依赖顺序初始化：
+
+1. EventManager（无依赖）
+2. WorkflowRegistry（无依赖）
+3. ThreadRegistry（无依赖）
+4. CheckpointManager（依赖 ThreadRegistry 和 WorkflowRegistry）
+
+### 使用方式
+
+```typescript
+// 初始化（可选，首次访问时自动初始化）
+ExecutionSingletons.initialize();
+
+// 获取单例实例
+const workflowRegistry = ExecutionSingletons.getWorkflowRegistry();
+const threadRegistry = ExecutionSingletons.getThreadRegistry();
+const eventManager = ExecutionSingletons.getEventManager();
+const checkpointManager = ExecutionSingletons.getCheckpointManager();
+
+// 测试时重置
+ExecutionSingletons.reset();
+```
+
+### 设计原则
+
+1. **懒加载**：首次访问时自动初始化
+2. **线程安全**：Node.js 单线程环境，无需额外同步
+3. **测试友好**：提供 `reset()` 方法用于测试
+4. **依赖注入**：支持通过构造函数注入自定义实例

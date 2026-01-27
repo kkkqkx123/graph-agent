@@ -1,17 +1,35 @@
 /**
  * ThreadCoordinator - Thread 协调器
- * 负责 Fork/Join 操作，协调子 thread 的执行和合并
+ * 负责 Fork/Join/Copy 操作，协调子 thread 的执行和合并
+ *
+ * 通过内部事件驱动机制与 ThreadExecutor 解耦，避免循环依赖
+ * Copy 操作用于创建不需要 join 的并行线程
  */
 
 import type { Thread } from '../../types/thread';
 import { ThreadRegistry } from './thread-registry';
 import { ThreadBuilder } from './thread-builder';
-import { ThreadExecutor } from './thread-executor';
 import { ThreadContext } from './thread-context';
 import { EventManager } from './event-manager';
 import { ExecutionError, TimeoutError, ValidationError } from '../../types/errors';
 import { EventType } from '../../types/events';
-import type { ThreadForkedEvent, ThreadJoinedEvent, ThreadCopiedEvent } from '../../types/events';
+import type {
+  ThreadForkedEvent,
+  ThreadJoinedEvent,
+  ThreadCopiedEvent
+} from '../../types/events';
+import {
+  InternalEventType,
+  type ForkRequestEvent,
+  type ForkCompletedEvent,
+  type ForkFailedEvent,
+  type JoinRequestEvent,
+  type JoinCompletedEvent,
+  type JoinFailedEvent,
+  type CopyRequestEvent,
+  type CopyCompletedEvent,
+  type CopyFailedEvent
+} from '../../types/internal-events';
 
 /**
  * Join 策略
@@ -30,14 +48,127 @@ export interface JoinResult {
 
 /**
  * ThreadCoordinator - Thread 协调器
+ *
+ * 通过事件驱动机制与 ThreadExecutor 解耦，避免循环依赖
+ * ThreadCoordinator 监听 FORK_REQUEST 和 JOIN_REQUEST 事件
+ * ThreadExecutor 发布这些事件并等待结果
  */
 export class ThreadCoordinator {
   constructor(
     private threadRegistry: ThreadRegistry,
     private threadBuilder: ThreadBuilder,
-    private threadExecutor: ThreadExecutor,
     private eventManager: EventManager
-  ) { }
+  ) {
+    // 注册事件监听器
+    this.registerEventListeners();
+  }
+
+  /**
+   * 注册事件监听器
+   */
+  private registerEventListeners(): void {
+    // 监听 FORK_REQUEST 事件
+    this.eventManager.onInternal(InternalEventType.FORK_REQUEST, this.handleForkRequest.bind(this));
+    
+    // 监听 JOIN_REQUEST 事件
+    this.eventManager.onInternal(InternalEventType.JOIN_REQUEST, this.handleJoinRequest.bind(this));
+    
+    // 监听 COPY_REQUEST 事件
+    this.eventManager.onInternal(InternalEventType.COPY_REQUEST, this.handleCopyRequest.bind(this));
+  }
+
+  /**
+   * 处理 Fork 请求事件
+   */
+  private async handleForkRequest(event: ForkRequestEvent): Promise<void> {
+    const { parentThreadContext, forkId, forkStrategy } = event;
+    
+    try {
+      const childThreadIds = await this.fork(parentThreadContext, forkId, forkStrategy);
+      
+      // 发布 Fork 完成事件
+      const completedEvent: ForkCompletedEvent = {
+        type: InternalEventType.FORK_COMPLETED,
+        timestamp: Date.now(),
+        workflowId: parentThreadContext.getWorkflowId(),
+        threadId: parentThreadContext.getThreadId(),
+        childThreadIds
+      };
+      await this.eventManager.emitInternal(completedEvent);
+    } catch (error) {
+      // 发布 Fork 失败事件
+      const failedEvent: ForkFailedEvent = {
+        type: InternalEventType.FORK_FAILED,
+        timestamp: Date.now(),
+        workflowId: parentThreadContext.getWorkflowId(),
+        threadId: parentThreadContext.getThreadId(),
+        error: error instanceof Error ? error.message : String(error)
+      };
+      await this.eventManager.emitInternal(failedEvent);
+    }
+  }
+
+  /**
+   * 处理 Join 请求事件
+   */
+  private async handleJoinRequest(event: JoinRequestEvent): Promise<void> {
+    const { parentThreadContext, childThreadIds, joinStrategy, timeout } = event;
+    
+    try {
+      const result = await this.join(parentThreadContext, childThreadIds, joinStrategy as JoinStrategy, timeout);
+      
+      // 发布 Join 完成事件
+      const completedEvent: JoinCompletedEvent = {
+        type: InternalEventType.JOIN_COMPLETED,
+        timestamp: Date.now(),
+        workflowId: parentThreadContext.getWorkflowId(),
+        threadId: parentThreadContext.getThreadId(),
+        result
+      };
+      await this.eventManager.emitInternal(completedEvent);
+    } catch (error) {
+      // 发布 Join 失败事件
+      const failedEvent: JoinFailedEvent = {
+        type: InternalEventType.JOIN_FAILED,
+        timestamp: Date.now(),
+        workflowId: parentThreadContext.getWorkflowId(),
+        threadId: parentThreadContext.getThreadId(),
+        error: error instanceof Error ? error.message : String(error)
+      };
+      await this.eventManager.emitInternal(failedEvent);
+    }
+  }
+
+  /**
+   * 处理 Copy 请求事件
+   */
+  private async handleCopyRequest(event: CopyRequestEvent): Promise<void> {
+    const { sourceThreadId } = event;
+    
+    try {
+      const copiedThreadId = await this.copy(sourceThreadId);
+      
+      // 发布 Copy 完成事件
+      const completedEvent: CopyCompletedEvent = {
+        type: InternalEventType.COPY_COMPLETED,
+        timestamp: Date.now(),
+        workflowId: event.workflowId,
+        threadId: event.threadId,
+        copiedThreadId
+      };
+      await this.eventManager.emitInternal(completedEvent);
+    } catch (error) {
+      // 发布 Copy 失败事件
+      const failedEvent: CopyFailedEvent = {
+        type: InternalEventType.COPY_FAILED,
+        timestamp: Date.now(),
+        workflowId: event.workflowId,
+        threadId: event.threadId,
+        error: error instanceof Error ? error.message : String(error)
+      };
+      await this.eventManager.emitInternal(failedEvent);
+    }
+  }
 
   /**
    * Fork 操作 - 创建子 thread

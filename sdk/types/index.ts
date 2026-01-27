@@ -14,6 +14,7 @@ export * from './edge';
 export * from './thread';
 export * from './execution';
 export * from './events';
+export * from './internal-events';
 export * from './errors';
 export * from './trigger';
 
