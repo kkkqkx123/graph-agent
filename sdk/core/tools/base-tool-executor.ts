@@ -4,7 +4,7 @@
  */
 
 import type { Tool } from '../../types/tool';
-import { TimeoutError, ValidationError } from '../../types/errors';
+import { TimeoutError, ValidationError, NetworkError, RateLimitError, HttpError } from '../../types/errors';
 
 /**
  * 工具执行选项
@@ -193,26 +193,23 @@ export abstract class BaseToolExecutor {
    * @returns 是否应该重试
    */
   protected shouldRetry(error: Error, retries: number): boolean {
-    // 超时错误可以重试
+    // TimeoutError - 超时重试
     if (error instanceof TimeoutError) {
       return true;
     }
 
-    // 网络错误可以重试
-    if (error.message.includes('ECONNREFUSED') ||
-      error.message.includes('ETIMEDOUT') ||
-      error.message.includes('ENOTFOUND') ||
-      error.message.includes('EAI_AGAIN')) {
+    // HttpError - 精确判断状态码
+    if (error instanceof HttpError) {
+      return error.statusCode === 429 || (error.statusCode >= 500 && error.statusCode < 600);
+    }
+
+    // NetworkError - 其他网络错误重试
+    if (error instanceof NetworkError) {
       return true;
     }
 
-    // HTTP 5xx错误可以重试
-    if (error.message.includes('5')) {
-      return true;
-    }
-
-    // 速率限制错误（429）可以重试
-    if (error.message.includes('429') || error.message.includes('rate limit')) {
+    // RateLimitError - 限流重试
+    if (error instanceof RateLimitError) {
       return true;
     }
 

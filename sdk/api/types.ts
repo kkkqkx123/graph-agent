@@ -1,0 +1,120 @@
+/**
+ * API层类型定义
+ * 定义API层使用的类型和接口
+ */
+
+import type { ThreadStatus } from '../types/thread';
+
+/**
+ * 执行选项
+ */
+export interface ExecuteOptions {
+  /** 输入数据 */
+  input?: Record<string, any>;
+  /** 最大执行步数 */
+  maxSteps?: number;
+  /** 超时时间（毫秒） */
+  timeout?: number;
+  /** 是否启用检查点 */
+  enableCheckpoints?: boolean;
+  /** 节点执行回调 */
+  onNodeExecuted?: (result: any) => void | Promise<void>;
+  /** 错误回调 */
+  onError?: (error: any) => void | Promise<void>;
+}
+
+/**
+ * 工作流过滤器
+ */
+export interface WorkflowFilter {
+  /** 工作流ID */
+  id?: string;
+  /** 工作流名称 */
+  name?: string;
+  /** 标签数组 */
+  tags?: string[];
+  /** 分类 */
+  category?: string;
+  /** 作者 */
+  author?: string;
+  /** 版本 */
+  version?: string;
+}
+
+/**
+ * 线程过滤器
+ */
+export interface ThreadFilter {
+  /** 线程ID */
+  threadId?: string;
+  /** 工作流ID */
+  workflowId?: string;
+  /** 线程状态 */
+  status?: ThreadStatus;
+  /** 创建时间范围（开始时间戳） */
+  startTimeFrom?: number;
+  /** 创建时间范围（结束时间戳） */
+  startTimeTo?: number;
+  /** 标签数组 */
+  tags?: string[];
+  /** 创建者 */
+  creator?: string;
+}
+
+/**
+ * 工作流摘要
+ */
+export interface WorkflowSummary {
+  /** 工作流ID */
+  id: string;
+  /** 工作流名称 */
+  name: string;
+  /** 描述 */
+  description?: string;
+  /** 版本 */
+  version: string;
+  /** 创建时间 */
+  createdAt: number;
+  /** 更新时间 */
+  updatedAt: number;
+  /** 元数据 */
+  metadata?: any;
+}
+
+/**
+ * 线程摘要
+ */
+export interface ThreadSummary {
+  /** 线程ID */
+  threadId: string;
+  /** 工作流ID */
+  workflowId: string;
+  /** 工作流版本 */
+  workflowVersion: string;
+  /** 线程状态 */
+  status: ThreadStatus;
+  /** 当前节点ID */
+  currentNodeId?: string;
+  /** 开始时间 */
+  startTime: number;
+  /** 结束时间 */
+  endTime?: number;
+  /** 执行时间（毫秒） */
+  executionTime?: number;
+  /** 元数据 */
+  metadata?: any;
+}
+
+/**
+ * SDK配置选项
+ */
+export interface SDKOptions {
+  /** 是否启用版本管理 */
+  enableVersioning?: boolean;
+  /** 最大版本数 */
+  maxVersions?: number;
+  /** 自定义WorkflowRegistry */
+  workflowRegistry?: any;
+  /** 自定义ThreadRegistry */
+  threadRegistry?: any;
+}

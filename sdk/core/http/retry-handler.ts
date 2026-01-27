@@ -4,6 +4,8 @@
  * 提供指数退避重试策略，自动处理可重试的错误
  */
 
+import { TimeoutError, NetworkError, RateLimitError, HttpError } from '../../types/errors';
+
 /**
  * 重试处理器配置
  */
@@ -60,31 +62,23 @@ export class RetryHandler {
    * 判断错误是否可重试
    */
   private shouldRetry(error: any): boolean {
-    const errorMessage = error?.message?.toLowerCase() || '';
-    const errorCode = error?.code || error?.status;
-
-    // 网络错误
-    if (
-      errorMessage.includes('network') ||
-      errorMessage.includes('econnrefused') ||
-      errorMessage.includes('enotfound') ||
-      errorMessage.includes('etimedout')
-    ) {
+    // TimeoutError - 超时重试
+    if (error instanceof TimeoutError) {
       return true;
     }
 
-    // 超时错误
-    if (errorMessage.includes('timeout') || errorCode === 'ETIMEDOUT') {
+    // HttpError - 精确判断状态码
+    if (error instanceof HttpError) {
+      return error.statusCode === 429 || (error.statusCode >= 500 && error.statusCode < 600);
+    }
+
+    // NetworkError - 其他网络错误重试
+    if (error instanceof NetworkError) {
       return true;
     }
 
-    // 速率限制错误（429）
-    if (errorCode === 429 || errorMessage.includes('rate limit')) {
-      return true;
-    }
-
-    // 服务器错误（5xx）
-    if (errorCode >= 500 && errorCode < 600) {
+    // RateLimitError - 限流重试
+    if (error instanceof RateLimitError) {
       return true;
     }
 

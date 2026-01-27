@@ -224,3 +224,19 @@ export class ToolError extends SDKError {
     this.name = 'ToolError';
   }
 }
+
+/**
+ * HTTP错误类型
+ * 用于精确区分HTTP状态码
+ */
+export class HttpError extends NetworkError {
+  constructor(
+    message: string,
+    public override readonly statusCode: number,
+    context?: Record<string, any>,
+    cause?: Error
+  ) {
+    super(message, statusCode, context, cause);
+    this.name = 'HttpError';
+  }
+}

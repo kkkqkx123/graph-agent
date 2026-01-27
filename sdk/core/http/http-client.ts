@@ -14,6 +14,7 @@ import {
   TimeoutError,
   RateLimitError,
   CircuitBreakerOpenError,
+  HttpError,
 } from '../../types/errors';
 import { RetryHandler } from './retry-handler';
 import { CircuitBreaker } from './circuit-breaker';
@@ -258,7 +259,8 @@ export class HttpClient {
       );
     }
 
-    return new NetworkError(
+    // 使用HttpError精确区分HTTP状态码
+    return new HttpError(
       `HTTP ${status}: ${message}`,
       status,
       { url, status }
