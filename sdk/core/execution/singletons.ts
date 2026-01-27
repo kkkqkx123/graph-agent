@@ -18,8 +18,8 @@
 import { WorkflowRegistry } from './registrys/workflow-registry';
 import { ThreadRegistry } from './registrys/thread-registry';
 import { EventManager } from './managers/event-manager';
-import { ConditionEvaluator } from './condition-evaluator';
-import { CheckpointManager } from './checkpoint/checkpoint-manager';
+import { ConditionEvaluator } from './utils/condition-evaluator';
+import { CheckpointManager } from './managers/checkpoint-manager';
 import { MemoryStorage } from './checkpoint/storage';
 
 /**

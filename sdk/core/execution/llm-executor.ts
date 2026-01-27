@@ -11,7 +11,7 @@
 
 import type { LLMMessage, LLMToolCall, LLMResult, LLMUsage } from '../../types/llm';
 import type { ToolExecutionResult } from '../tools/base-tool-executor';
-import { ConversationManager } from './managers/conversation-manager';
+import { ConversationManager } from './conversation';
 import { LLMWrapper } from '../llm/wrapper';
 import { ToolService } from '../tools/tool-service';
 import { ExecutionError } from '../../types/errors';

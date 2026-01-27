@@ -8,7 +8,7 @@ import type { Node } from '../../../../types/node';
 import type { Thread } from '../../../../types/thread';
 import { NodeType } from '../../../../types/node';
 import { ValidationError, ExecutionError, NotFoundError } from '../../../../types/errors';
-import { ConditionEvaluator } from '../../condition-evaluator';
+import { ConditionEvaluator } from '../../utils/condition-evaluator';
 import { ExecutionSingletons } from '../../singletons';
 
 /**

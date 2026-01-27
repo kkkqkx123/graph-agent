@@ -41,7 +41,7 @@ export { ThreadCoordinator, JoinStrategy, JoinResult } from './thread-coordinato
 export { TriggerManager } from './managers/trigger-manager';
 
 // LLM执行相关
-export { ConversationManager } from './managers/conversation-manager';
-export type { ConversationManagerOptions, ConversationManagerEventCallbacks } from './managers/conversation-manager';
+export { ConversationManager } from './conversation';
+export type { ConversationManagerOptions, ConversationManagerEventCallbacks } from './conversation';
 export { LLMExecutor } from './llm-executor';
 export type { LLMExecutorOptions, LLMExecutorCallbacks } from './llm-executor';

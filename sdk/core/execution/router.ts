@@ -9,13 +9,13 @@ import type { Node } from '../../types/node';
 import { NodeType } from '../../types/node';
 import type { Thread } from '../../types/thread';
 import type { Condition, EvaluationContext } from '../../types/condition';
-import { ConditionEvaluator } from './condition-evaluator';
+import { ConditionEvaluator } from './utils/condition-evaluator';
 
 /**
  * Router - 条件路由器
  */
 export class Router {
-  constructor(private conditionEvaluator: ConditionEvaluator) {}
+  constructor(private conditionEvaluator: ConditionEvaluator) { }
 
   /**
    * 选择下一个节点

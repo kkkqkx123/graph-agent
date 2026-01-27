@@ -7,13 +7,13 @@
 
 import type { Thread } from '../../../types/thread';
 import type { Checkpoint, CheckpointMetadata, ThreadStateSnapshot } from '../../../types/checkpoint';
-import type { CheckpointStorage, CheckpointFilter } from './storage';
-import { MemoryStorage } from './storage';
+import type { CheckpointStorage, CheckpointFilter } from '../checkpoint/storage';
+import { MemoryStorage } from '../checkpoint/storage';
 import { ThreadRegistry } from '../registrys/thread-registry';
 import { ThreadContext } from '../context/thread-context';
 import { WorkflowContext } from '../context/workflow-context';
-import { VariableManager } from '../managers/variable-manager';
-import { ConversationManager } from '../managers/conversation-manager';
+import { VariableManager } from './variable-manager';
+import { ConversationManager } from '../conversation';
 import { LLMExecutor } from '../llm-executor';
 import { IDUtils } from '../../../types/common';
 import { ExecutionSingletons } from '../singletons';

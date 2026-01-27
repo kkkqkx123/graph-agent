@@ -9,7 +9,7 @@
 import type { WorkflowDefinition } from '../../types/workflow';
 import type { Thread, ThreadOptions, ThreadStatus } from '../../types/thread';
 import { WorkflowContext } from './context/workflow-context';
-import { ConversationManager } from './managers/conversation-manager';
+import { ConversationManager } from './conversation';
 import { LLMExecutor } from './llm-executor';
 import { ThreadContext } from './context/thread-context';
 import { NodeType } from '../../types/node';
