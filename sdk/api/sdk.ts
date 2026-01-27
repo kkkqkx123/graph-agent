@@ -7,6 +7,10 @@ import { ThreadExecutorAPI } from './thread-executor-api';
 import { WorkflowRegistryAPI } from './workflow-registry-api';
 import { ThreadRegistryAPI } from './thread-registry-api';
 import { WorkflowValidatorAPI } from './workflow-validator-api';
+import { ToolServiceAPI } from './tool-service-api';
+import { LLMWrapperAPI } from './llm-wrapper-api';
+import { ProfileManagerAPI } from './profile-manager-api';
+import { EventManagerAPI } from './event-manager-api';
 import { WorkflowRegistry } from '../core/execution/registrys/workflow-registry';
 import { ThreadRegistry } from '../core/execution/registrys/thread-registry';
 import type { SDKOptions } from './types';
@@ -26,6 +30,18 @@ export class SDK {
 
   /** 验证管理API */
   public readonly validator: WorkflowValidatorAPI;
+
+  /** 工具管理API */
+  public readonly tools: ToolServiceAPI;
+
+  /** LLM调用API */
+  public readonly llm: LLMWrapperAPI;
+
+  /** Profile管理API */
+  public readonly profiles: ProfileManagerAPI;
+
+  /** 事件监听API */
+  public readonly events: EventManagerAPI;
 
   /** 内部工作流注册表 */
   private readonly internalWorkflowRegistry: WorkflowRegistry;
@@ -49,6 +65,10 @@ export class SDK {
     this.threads = new ThreadRegistryAPI(this.internalThreadRegistry);
     this.validator = new WorkflowValidatorAPI();
     this.executor = new ThreadExecutorAPI(this.internalWorkflowRegistry);
+    this.tools = new ToolServiceAPI();
+    this.llm = new LLMWrapperAPI();
+    this.profiles = new ProfileManagerAPI();
+    this.events = new EventManagerAPI();
   }
 
   /**
@@ -68,6 +88,10 @@ export class SDK {
     // 清理资源
     await this.workflows.clearWorkflows();
     await this.threads.clearThreads();
+    await this.tools.clearTools();
+    await this.llm.clearAll();
+    await this.profiles.clearProfiles();
+    await this.events.clearHistory();
   }
 
   /**
@@ -87,16 +111,25 @@ export class SDK {
     workflowCount: number;
     threadCount: number;
     threadStatistics: any;
+    toolCount: number;
+    profileCount: number;
+    eventListenerCount: number;
   }> {
     const workflowCount = await this.workflows.getWorkflowCount();
     const threadCount = await this.threads.getThreadCount();
     const threadStatistics = await this.threads.getThreadStatistics();
+    const toolCount = await this.tools.getToolCount();
+    const profileCount = await this.profiles.getProfileCount();
+    const eventListenerCount = this.events.getListenerCount();
 
     return {
       version: this.getVersion(),
       workflowCount,
       threadCount,
-      threadStatistics
+      threadStatistics,
+      toolCount,
+      profileCount,
+      eventListenerCount
     };
   }
 

@@ -4,6 +4,9 @@
  */
 
 import type { ThreadStatus } from '../types/thread';
+import type { Tool, ToolType } from '../types/tool';
+import type { LLMProfile } from '../types/llm';
+import type { BaseEvent, EventType } from '../types/events';
 
 /**
  * 执行选项
@@ -103,6 +106,84 @@ export interface ThreadSummary {
   executionTime?: number;
   /** 元数据 */
   metadata?: any;
+}
+
+/**
+ * 工具过滤器
+ */
+export interface ToolFilter {
+  /** 工具名称 */
+  name?: string;
+  /** 工具类型 */
+  type?: ToolType;
+  /** 工具分类 */
+  category?: string;
+  /** 标签数组 */
+  tags?: string[];
+}
+
+/**
+ * 工具执行选项
+ */
+export interface ToolOptions {
+  /** 超时时间（毫秒） */
+  timeout?: number;
+  /** 最大重试次数 */
+  maxRetries?: number;
+  /** 重试延迟（毫秒） */
+  retryDelay?: number;
+  /** 是否启用日志 */
+  enableLogging?: boolean;
+}
+
+/**
+ * 工具执行结果
+ */
+export interface ToolExecutionResult {
+  /** 执行是否成功 */
+  success: boolean;
+  /** 执行结果数据 */
+  result?: any;
+  /** 错误信息 */
+  error?: string;
+  /** 执行时间（毫秒） */
+  executionTime: number;
+  /** 工具名称 */
+  toolName: string;
+}
+
+/**
+ * 工具测试结果
+ */
+export interface ToolTestResult {
+  /** 测试是否通过 */
+  passed: boolean;
+  /** 测试结果数据 */
+  result?: any;
+  /** 错误信息 */
+  error?: string;
+  /** 测试时间（毫秒） */
+  testTime: number;
+  /** 工具名称 */
+  toolName: string;
+}
+
+/**
+ * 事件过滤器
+ */
+export interface EventFilter {
+  /** 事件类型 */
+  eventType?: EventType;
+  /** 线程ID */
+  threadId?: string;
+  /** 工作流ID */
+  workflowId?: string;
+  /** 节点ID */
+  nodeId?: string;
+  /** 开始时间戳 */
+  startTimeFrom?: number;
+  /** 结束时间戳 */
+  startTimeTo?: number;
 }
 
 /**

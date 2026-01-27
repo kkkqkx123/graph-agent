@@ -11,6 +11,10 @@ export { ThreadExecutorAPI } from './thread-executor-api';
 export { WorkflowRegistryAPI } from './workflow-registry-api';
 export { ThreadRegistryAPI } from './thread-registry-api';
 export { WorkflowValidatorAPI } from './workflow-validator-api';
+export { ToolServiceAPI } from './tool-service-api';
+export { LLMWrapperAPI } from './llm-wrapper-api';
+export { ProfileManagerAPI } from './profile-manager-api';
+export { EventManagerAPI } from './event-manager-api';
 
 // 类型定义
 export type {
@@ -19,5 +23,13 @@ export type {
   ThreadFilter,
   WorkflowSummary,
   ThreadSummary,
-  SDKOptions
+  SDKOptions,
+  ToolFilter,
+  ToolOptions,
+  ToolExecutionResult,
+  ToolTestResult,
+  EventFilter
 } from './types';
+
+// Profile模板类型
+export type { ProfileTemplate } from './profile-manager-api';
