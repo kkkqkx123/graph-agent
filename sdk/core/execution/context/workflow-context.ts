@@ -6,8 +6,6 @@
 import type { WorkflowDefinition } from '../../../types/workflow';
 import type { Node } from '../../../types/node';
 import type { Edge } from '../../../types/edge';
-import { NodeType } from '../../../types/node';
-import { EdgeType } from '../../../types/edge';
 
 /**
  * 工作流上下文
@@ -166,23 +164,5 @@ export class WorkflowContext {
     }
 
     return true;
-  }
-
-  /**
-   * 获取START节点
-   */
-  getStartNode(): Node | undefined {
-    return Array.from(this.nodeMap.values()).find(
-      node => node.type === NodeType.START
-    );
-  }
-
-  /**
-   * 获取END节点
-   */
-  getEndNode(): Node | undefined {
-    return Array.from(this.nodeMap.values()).find(
-      node => node.type === NodeType.END
-    );
   }
 }
