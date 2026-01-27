@@ -1,5 +1,6 @@
 /**
  * 组件管理模块
+ * 全部采取单例模式
  */
 export { EventManager } from "./event-manager";
 export { TriggerManager } from "./trigger-manager";

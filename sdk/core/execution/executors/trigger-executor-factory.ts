@@ -11,7 +11,6 @@ import { ResumeThreadExecutor } from './trigger/resume-thread-executor';
 import { SkipNodeExecutor } from './trigger/skip-node-executor';
 import { SetVariableExecutor } from './trigger/set-variable-executor';
 import { SendNotificationExecutor } from './trigger/send-notification-executor';
-import { StartWorkflowExecutor } from './trigger/start-workflow-executor';
 import { CustomExecutor } from './trigger/custom-executor';
 
 /**
@@ -31,7 +30,6 @@ export class TriggerExecutorFactory {
     this.executorMap.set(TriggerActionType.SKIP_NODE, SkipNodeExecutor);
     this.executorMap.set(TriggerActionType.SET_VARIABLE, SetVariableExecutor);
     this.executorMap.set(TriggerActionType.SEND_NOTIFICATION, SendNotificationExecutor);
-    this.executorMap.set(TriggerActionType.START_WORKFLOW, StartWorkflowExecutor);
     this.executorMap.set(TriggerActionType.CUSTOM, CustomExecutor);
   }
 

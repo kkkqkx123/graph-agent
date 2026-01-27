@@ -1,4 +1,5 @@
 /**
  * 无状态工具类
-*/
-export { ConditionEvaluator } from "./condition-evaluator";
+ * 直接导出实例而非类
+ */
+export { conditionEvaluator } from "./condition-evaluator";

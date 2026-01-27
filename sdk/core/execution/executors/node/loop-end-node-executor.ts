@@ -8,8 +8,7 @@ import type { Node } from '../../../../types/node';
 import type { Thread } from '../../../../types/thread';
 import { NodeType } from '../../../../types/node';
 import { ValidationError, ExecutionError, NotFoundError } from '../../../../types/errors';
-import { ConditionEvaluator } from '../../utils/condition-evaluator';
-import { ExecutionSingletons } from '../../singletons';
+import { conditionEvaluator } from '../../utils/condition-evaluator';
 
 /**
  * LoopEnd节点配置
@@ -27,11 +26,8 @@ interface LoopEndNodeConfig {
  * LoopEnd节点执行器
  */
 export class LoopEndNodeExecutor extends NodeExecutor {
-  private conditionEvaluator: ConditionEvaluator;
-
   constructor() {
     super();
-    this.conditionEvaluator = ExecutionSingletons.getConditionEvaluator();
   }
   /**
    * 验证节点配置
@@ -178,7 +174,7 @@ export class LoopEndNodeExecutor extends NodeExecutor {
       };
 
       // 使用ConditionEvaluator评估条件
-      return this.conditionEvaluator.evaluate(breakCondition, context);
+      return conditionEvaluator.evaluate(breakCondition, context);
     } catch (error) {
       throw new ExecutionError(
         `Failed to evaluate break condition: ${error instanceof Error ? error.message : String(error)}`,

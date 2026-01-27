@@ -5,8 +5,8 @@
 
 import type { TriggerAction, TriggerExecutionResult } from '../../../../types/trigger';
 import { BaseTriggerExecutor } from './base-trigger-executor';
-import type { ThreadExecutor } from '../../thread-executor';
-import { ValidationError } from '../../../../types/errors';
+import { ValidationError, NotFoundError } from '../../../../types/errors';
+import { ExecutionSingletons } from '../../singletons';
 
 /**
  * 恢复线程执行器
@@ -16,13 +16,12 @@ export class ResumeThreadExecutor extends BaseTriggerExecutor {
    * 执行恢复线程动作
    * @param action 触发动作
    * @param triggerId 触发器 ID
-   * @param threadExecutor 线程执行器
+   * @param threadBuilder 线程构建器
    * @returns 执行结果
    */
   async execute(
     action: TriggerAction,
     triggerId: string,
-    threadExecutor: ThreadExecutor
   ): Promise<TriggerExecutionResult> {
     const executionTime = Date.now();
 
@@ -38,13 +37,29 @@ export class ResumeThreadExecutor extends BaseTriggerExecutor {
         throw new ValidationError('threadId is required for RESUME_THREAD action', 'parameters.threadId');
       }
 
-      // 调用 ThreadExecutor 的 resume 方法
-      const result = await threadExecutor.resume(threadId, options);
+      // 直接从 ThreadRegistry 获取 ThreadContext
+      const threadRegistry = ExecutionSingletons.getThreadRegistry();
+      const threadContext = threadRegistry.get(threadId);
 
+      if (!threadContext) {
+        throw new NotFoundError(`ThreadContext not found: ${threadId}`, 'ThreadContext', threadId);
+      }
+
+      const thread = threadContext.thread;
+
+      if (threadContext.getStatus() !== 'PAUSED') {
+        throw new ValidationError(`Thread is not paused: ${threadId}`, 'threadId', threadId);
+      }
+
+      // 直接调用 ThreadLifecycleManager
+      const lifecycleManager = ExecutionSingletons.getThreadLifecycleManager();
+      await lifecycleManager.resumeThread(thread);
+
+      // 继续执行（简化处理，只返回成功消息）
       return this.createSuccessResult(
         triggerId,
         action,
-        { message: `Thread ${threadId} resumed successfully`, result },
+        { message: `Thread ${threadId} resumed successfully` },
         executionTime
       );
     } catch (error) {

@@ -5,7 +5,6 @@
 
 import type { TriggerAction, TriggerExecutionResult } from '../../../../types/trigger';
 import { BaseTriggerExecutor } from './base-trigger-executor';
-import type { ThreadExecutor } from '../../thread-executor';
 import { ValidationError } from '../../../../types/errors';
 
 /**
@@ -16,13 +15,12 @@ export class CustomExecutor extends BaseTriggerExecutor {
    * 执行自定义动作
    * @param action 触发动作
    * @param triggerId 触发器 ID
-   * @param threadExecutor 线程执行器
+   * @param threadBuilder 线程构建器
    * @returns 执行结果
    */
   async execute(
     action: TriggerAction,
     triggerId: string,
-    threadExecutor: ThreadExecutor
   ): Promise<TriggerExecutionResult> {
     const executionTime = Date.now();
 
@@ -38,8 +36,8 @@ export class CustomExecutor extends BaseTriggerExecutor {
         throw new ValidationError('handler is required and must be a function for CUSTOM action', 'parameters.handler');
       }
 
-      // 执行自定义处理函数
-      const result = await handler(action.parameters, threadExecutor);
+      // 执行自定义处理函数（不再传递 threadExecutor）
+      const result = await handler(action.parameters);
 
       return this.createSuccessResult(
         triggerId,

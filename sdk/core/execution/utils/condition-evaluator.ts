@@ -38,3 +38,6 @@ export class ConditionEvaluator {
     }
   }
 }
+
+// 导出单例实例
+export const conditionEvaluator = new ConditionEvaluator();

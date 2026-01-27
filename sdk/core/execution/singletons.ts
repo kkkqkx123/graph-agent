@@ -11,15 +11,16 @@
  * - WorkflowRegistry: 工作流注册器，全局共享工作流定义
  * - ThreadRegistry: 线程注册表，全局跟踪所有线程
  * - EventManager: 事件管理器，全局事件总线
- * - ConditionEvaluator: 条件评估器，统一条件评估逻辑
  * - CheckpointManager: 检查点管理器，默认单例
+ *
+ * 注意：ConditionEvaluator 已改为模块级单例，直接从 utils/condition-evaluator 导入 conditionEvaluator 实例
  */
 
 import { WorkflowRegistry } from './registrys/workflow-registry';
 import { ThreadRegistry } from './registrys/thread-registry';
 import { EventManager } from './managers/event-manager';
-import { ConditionEvaluator } from './utils/condition-evaluator';
 import { CheckpointManager } from './managers/checkpoint-manager';
+import { ThreadLifecycleManager } from './thread-lifecycle-manager';
 import { MemoryStorage } from './checkpoint/storage';
 
 /**
@@ -29,8 +30,8 @@ export class ExecutionSingletons {
   private static workflowRegistry: WorkflowRegistry | null = null;
   private static threadRegistry: ThreadRegistry | null = null;
   private static eventManager: EventManager | null = null;
-  private static conditionEvaluator: ConditionEvaluator | null = null;
   private static checkpointManager: CheckpointManager | null = null;
+  private static lifecycleManager: ThreadLifecycleManager | null = null;
   private static initialized = false;
 
   /**
@@ -52,15 +53,15 @@ export class ExecutionSingletons {
     // 3. ThreadRegistry 无依赖
     this.threadRegistry = new ThreadRegistry();
 
-    // 4. ConditionEvaluator 无依赖
-    this.conditionEvaluator = new ConditionEvaluator();
-
-    // 5. CheckpointManager 依赖 ThreadRegistry 和 WorkflowRegistry
+    // 4. CheckpointManager 依赖 ThreadRegistry 和 WorkflowRegistry
     this.checkpointManager = new CheckpointManager(
       undefined, // storage，默认使用 MemoryStorage
       this.threadRegistry,
       this.workflowRegistry
     );
+
+    // 5. ThreadLifecycleManager 依赖 EventManager
+    this.lifecycleManager = new ThreadLifecycleManager(this.eventManager);
 
     this.initialized = true;
   }
@@ -93,21 +94,21 @@ export class ExecutionSingletons {
   }
 
   /**
-   * 获取 ConditionEvaluator 单例
-   * 如果未初始化，会自动初始化所有单例
-   */
-  static getConditionEvaluator(): ConditionEvaluator {
-    this.ensureInitialized();
-    return this.conditionEvaluator!;
-  }
-
-  /**
    * 获取 CheckpointManager 单例
    * 如果未初始化，会自动初始化所有单例
    */
   static getCheckpointManager(): CheckpointManager {
     this.ensureInitialized();
     return this.checkpointManager!;
+  }
+
+  /**
+   * 获取 ThreadLifecycleManager 单例
+   * 如果未初始化，会自动初始化所有单例
+   */
+  static getThreadLifecycleManager(): ThreadLifecycleManager {
+    this.ensureInitialized();
+    return this.lifecycleManager!;
   }
 
   /**
@@ -126,8 +127,8 @@ export class ExecutionSingletons {
     this.workflowRegistry = null;
     this.threadRegistry = null;
     this.eventManager = null;
-    this.conditionEvaluator = null;
     this.checkpointManager = null;
+    this.lifecycleManager = null;
     this.initialized = false;
   }
 

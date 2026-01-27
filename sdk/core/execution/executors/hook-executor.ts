@@ -22,7 +22,7 @@ import type { NodeExecutionResult } from '../../../types/thread';
 import type { NodeCustomEvent } from '../../../types/events';
 import { EventType } from '../../../types/events';
 import type { EvaluationContext } from '../../../types/condition';
-import { ConditionEvaluator } from '../utils/condition-evaluator';
+import { conditionEvaluator } from '../utils/condition-evaluator';
 
 /**
  * Hook执行上下文
@@ -60,10 +60,7 @@ interface HookEvaluationContext {
  * Hook执行器
  */
 export class HookExecutor {
-  private conditionEvaluator: ConditionEvaluator;
-
   constructor() {
-    this.conditionEvaluator = new ConditionEvaluator();
   }
 
   /**
@@ -137,7 +134,7 @@ export class HookExecutor {
       if (hook.condition) {
         let result: boolean;
         try {
-          result = this.conditionEvaluator.evaluate(
+          result = conditionEvaluator.evaluate(
             { expression: hook.condition },
             this.convertToEvaluationContext(evalContext)
           );

@@ -11,5 +11,4 @@ export { ResumeThreadExecutor } from './resume-thread-executor';
 export { SkipNodeExecutor } from './skip-node-executor';
 export { SetVariableExecutor } from './set-variable-executor';
 export { SendNotificationExecutor } from './send-notification-executor';
-export { StartWorkflowExecutor } from './start-workflow-executor';
 export { CustomExecutor } from './custom-executor';

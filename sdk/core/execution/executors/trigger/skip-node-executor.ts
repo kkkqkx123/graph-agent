@@ -5,8 +5,10 @@
 
 import type { TriggerAction, TriggerExecutionResult } from '../../../../types/trigger';
 import { BaseTriggerExecutor } from './base-trigger-executor';
-import type { ThreadExecutor } from '../../thread-executor';
-import { ValidationError } from '../../../../types/errors';
+import type { NodeExecutionResult } from '../../../../types/thread';
+import { ValidationError, NotFoundError } from '../../../../types/errors';
+import { EventType } from '../../../../types/events';
+import { ExecutionSingletons } from '../../singletons';
 
 /**
  * 跳过节点执行器
@@ -16,13 +18,12 @@ export class SkipNodeExecutor extends BaseTriggerExecutor {
    * 执行跳过节点动作
    * @param action 触发动作
    * @param triggerId 触发器 ID
-   * @param threadExecutor 线程执行器
+   * @param threadBuilder 线程构建器
    * @returns 执行结果
    */
   async execute(
     action: TriggerAction,
     triggerId: string,
-    threadExecutor: ThreadExecutor
   ): Promise<TriggerExecutionResult> {
     const executionTime = Date.now();
 
@@ -42,8 +43,39 @@ export class SkipNodeExecutor extends BaseTriggerExecutor {
         throw new ValidationError('nodeId is required for SKIP_NODE action', 'parameters.nodeId');
       }
 
-      // 调用 ThreadExecutor 的 skipNode 方法
-      await threadExecutor.skipNode(threadId, nodeId);
+      // 直接从 ThreadRegistry 获取 ThreadContext
+      const threadRegistry = ExecutionSingletons.getThreadRegistry();
+      const threadContext = threadRegistry.get(threadId);
+
+      if (!threadContext) {
+        throw new NotFoundError(`ThreadContext not found: ${threadId}`, 'ThreadContext', threadId);
+      }
+
+      const thread = threadContext.thread;
+
+      // 标记节点为跳过状态
+      const result: NodeExecutionResult = {
+        nodeId,
+        nodeType: 'UNKNOWN',
+        status: 'SKIPPED',
+        step: thread.nodeResults.length + 1,
+        executionTime: 0
+      };
+
+      thread.nodeResults.push(result);
+
+      // 触发 NODE_COMPLETED 事件（状态为 SKIPPED）
+      const eventManager = ExecutionSingletons.getEventManager();
+      const completedEvent = {
+        type: EventType.NODE_COMPLETED,
+        timestamp: Date.now(),
+        workflowId: threadContext.getWorkflowId(),
+        threadId: threadContext.getThreadId(),
+        nodeId,
+        output: null,
+        executionTime: 0
+      };
+      await eventManager.emit(completedEvent);
 
       return this.createSuccessResult(
         triggerId,

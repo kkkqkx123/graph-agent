@@ -5,7 +5,6 @@
 
 import type { TriggerAction, TriggerExecutionResult } from '../../../../types/trigger';
 import { BaseTriggerExecutor } from './base-trigger-executor';
-import type { ThreadExecutor } from '../../thread-executor';
 import { ValidationError } from '../../../../types/errors';
 
 /**
@@ -16,13 +15,12 @@ export class SendNotificationExecutor extends BaseTriggerExecutor {
    * 执行发送通知动作
    * @param action 触发动作
    * @param triggerId 触发器 ID
-   * @param threadExecutor 线程执行器
+   * @param threadBuilder 线程构建器
    * @returns 执行结果
    */
   async execute(
     action: TriggerAction,
     triggerId: string,
-    threadExecutor: ThreadExecutor
   ): Promise<TriggerExecutionResult> {
     const executionTime = Date.now();
 

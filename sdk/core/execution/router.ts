@@ -9,13 +9,13 @@ import type { Node } from '../../types/node';
 import { NodeType } from '../../types/node';
 import type { Thread } from '../../types/thread';
 import type { Condition, EvaluationContext } from '../../types/condition';
-import { ConditionEvaluator } from './utils/condition-evaluator';
+import { conditionEvaluator } from './utils/condition-evaluator';
 
 /**
  * Router - 条件路由器
  */
 export class Router {
-  constructor(private conditionEvaluator: ConditionEvaluator) { }
+  constructor() { }
 
   /**
    * 选择下一个节点
@@ -92,7 +92,7 @@ export class Router {
     };
 
     // 使用ConditionEvaluator评估条件（EdgeCondition 现在就是 Condition 类型）
-    return this.conditionEvaluator.evaluate(condition, context);
+    return conditionEvaluator.evaluate(condition, context);
   }
 
   /**

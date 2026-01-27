@@ -11,7 +11,6 @@ import type { BaseEvent, NodeCustomEvent } from '../../../types/events';
 import type { ID } from '../../../types/common';
 import { EventManager } from './event-manager';
 import { TriggerExecutorFactory } from '../executors';
-import type { ThreadExecutor } from '../thread-executor';
 import type { ThreadBuilder } from '../thread-builder';
 import { ValidationError, ExecutionError } from '../../../types/errors';
 import { EventType } from '../../../types/events';
@@ -25,7 +24,6 @@ export class TriggerManager {
 
   constructor(
     private eventManager: EventManager,
-    private threadExecutor: ThreadExecutor,
     private threadBuilder: ThreadBuilder
   ) { }
 
@@ -192,8 +190,8 @@ export class TriggerManager {
     // 使用工厂创建执行器
     const executor = TriggerExecutorFactory.createExecutor(trigger.action.type);
 
-    // 执行触发动作
-    const result = await executor.execute(trigger.action, trigger.id, this.threadExecutor, this.threadBuilder);
+    // 执行触发动作（不再传递 ThreadExecutor）
+    const result = await executor.execute(trigger.action, trigger.id);
 
     // 更新触发器状态
     trigger.triggerCount++;
