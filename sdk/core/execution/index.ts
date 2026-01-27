@@ -6,8 +6,16 @@
 // 执行上下文
 export { WorkflowContext, ThreadContext } from './context';
 
-// 单例管理器
-export { ExecutionSingletons } from './singletons';
+// 执行上下文（依赖注入容器）
+export {
+  ExecutionContext,
+  getWorkflowRegistry,
+  getThreadRegistry,
+  getEventManager,
+  getCheckpointManager,
+  getThreadLifecycleManager,
+  resetDefaultContext
+} from './context/execution-context';
 
 // 主要执行引擎
 export { ThreadExecutor } from './thread-executor';

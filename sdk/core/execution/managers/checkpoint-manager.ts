@@ -2,7 +2,7 @@
  * CheckpointManager - 检查点管理器
  * 负责创建和管理检查点，支持从检查点恢复 ThreadContext 状态
  *
- * 使用 ExecutionSingletons 获取全局单例组件
+ * 使用 ExecutionContext 获取全局组件
  */
 
 import type { Thread } from '../../../types/thread';
@@ -16,7 +16,8 @@ import { VariableManager } from './variable-manager';
 import { ConversationManager } from '../conversation';
 import { LLMExecutor } from '../llm-executor';
 import { IDUtils } from '../../../types/common';
-import { ExecutionSingletons } from '../singletons';
+import { WorkflowRegistry } from '../registrys/workflow-registry';
+import { getThreadRegistry, getWorkflowRegistry } from '../context/execution-context';
 
 /**
  * 检查点管理器
@@ -25,23 +26,23 @@ export class CheckpointManager {
   private storage: CheckpointStorage;
   private threadRegistry: ThreadRegistry;
   private variableManager: VariableManager;
-  private workflowRegistry: ReturnType<typeof ExecutionSingletons.getWorkflowRegistry>;
+  private workflowRegistry: WorkflowRegistry;
   private periodicTimers: Map<string, NodeJS.Timeout> = new Map();
 
   /**
    * 构造函数
    * @param storage 存储实现，默认使用 MemoryStorage
-   * @param threadRegistry Thread注册表（可选，默认使用单例）
-   * @param workflowRegistry Workflow注册器（可选，默认使用单例）
+   * @param threadRegistry Thread注册表（可选，默认使用默认上下文）
+   * @param workflowRegistry Workflow注册器（可选，默认使用默认上下文）
    */
   constructor(
     storage?: CheckpointStorage,
     threadRegistry?: ThreadRegistry,
-    workflowRegistry?: ReturnType<typeof ExecutionSingletons.getWorkflowRegistry>
+    workflowRegistry?: WorkflowRegistry
   ) {
     this.storage = storage || new MemoryStorage();
-    this.threadRegistry = threadRegistry || ExecutionSingletons.getThreadRegistry();
-    this.workflowRegistry = workflowRegistry || ExecutionSingletons.getWorkflowRegistry();
+    this.threadRegistry = threadRegistry || getThreadRegistry();
+    this.workflowRegistry = workflowRegistry || getWorkflowRegistry();
     this.variableManager = new VariableManager();
   }
 

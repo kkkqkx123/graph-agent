@@ -6,7 +6,7 @@
 import type { TriggerAction, TriggerExecutionResult } from '../../../../types/trigger';
 import { BaseTriggerExecutor } from './base-trigger-executor';
 import { ValidationError, NotFoundError } from '../../../../types/errors';
-import { ExecutionSingletons } from '../../singletons';
+import { getThreadRegistry } from '../../context/execution-context';
 
 /**
  * 设置变量执行器
@@ -42,7 +42,7 @@ export class SetVariableExecutor extends BaseTriggerExecutor {
       }
 
       // 直接从 ThreadRegistry 获取 ThreadContext
-      const threadRegistry = ExecutionSingletons.getThreadRegistry();
+      const threadRegistry = getThreadRegistry();
       const threadContext = threadRegistry.get(threadId);
 
       if (!threadContext) {

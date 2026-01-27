@@ -8,7 +8,7 @@ import { BaseTriggerExecutor } from './base-trigger-executor';
 import type { NodeExecutionResult } from '../../../../types/thread';
 import { ValidationError, NotFoundError } from '../../../../types/errors';
 import { EventType } from '../../../../types/events';
-import { ExecutionSingletons } from '../../singletons';
+import { getThreadRegistry, getEventManager } from '../../context/execution-context';
 
 /**
  * 跳过节点执行器
@@ -44,7 +44,7 @@ export class SkipNodeExecutor extends BaseTriggerExecutor {
       }
 
       // 直接从 ThreadRegistry 获取 ThreadContext
-      const threadRegistry = ExecutionSingletons.getThreadRegistry();
+      const threadRegistry = getThreadRegistry();
       const threadContext = threadRegistry.get(threadId);
 
       if (!threadContext) {
@@ -65,7 +65,7 @@ export class SkipNodeExecutor extends BaseTriggerExecutor {
       thread.nodeResults.push(result);
 
       // 触发 NODE_COMPLETED 事件（状态为 SKIPPED）
-      const eventManager = ExecutionSingletons.getEventManager();
+      const eventManager = getEventManager();
       const completedEvent = {
         type: EventType.NODE_COMPLETED,
         timestamp: Date.now(),

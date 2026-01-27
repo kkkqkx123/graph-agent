@@ -3,7 +3,7 @@
  * 负责从WorkflowRegistry获取WorkflowDefinition并创建ThreadContext实例
  * 提供Thread模板缓存和深拷贝支持
  *
- * 使用 ExecutionSingletons 获取 WorkflowRegistry 单例
+ * 使用 ExecutionContext 获取 WorkflowRegistry
  */
 
 import type { WorkflowDefinition } from '../../types/workflow';
@@ -16,7 +16,8 @@ import { NodeType } from '../../types/node';
 import { IDUtils } from '../../types/common';
 import { VariableManager } from './managers/variable-manager';
 import { ValidationError } from '../../types/errors';
-import { ExecutionSingletons } from './singletons';
+import { WorkflowRegistry } from './registrys/workflow-registry';
+import { getWorkflowRegistry } from './context/execution-context';
 
 /**
  * ThreadBuilder - Thread构建器
@@ -25,11 +26,11 @@ export class ThreadBuilder {
   private workflowContexts: Map<string, WorkflowContext> = new Map();
   private threadTemplates: Map<string, ThreadContext> = new Map();
   private variableManager: VariableManager;
-  private workflowRegistry: ReturnType<typeof ExecutionSingletons.getWorkflowRegistry>;
+  private workflowRegistry: WorkflowRegistry;
 
-  constructor(workflowRegistry?: ReturnType<typeof ExecutionSingletons.getWorkflowRegistry>) {
+  constructor(workflowRegistry?: WorkflowRegistry) {
     this.variableManager = new VariableManager();
-    this.workflowRegistry = workflowRegistry || ExecutionSingletons.getWorkflowRegistry();
+    this.workflowRegistry = workflowRegistry || getWorkflowRegistry();
   }
 
   /**

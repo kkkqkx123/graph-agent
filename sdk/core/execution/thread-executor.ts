@@ -21,7 +21,7 @@ import { EventType } from '../../types/events';
 import type { NodeStartedEvent, NodeCompletedEvent, NodeFailedEvent, ErrorEvent } from '../../types/events';
 import { TriggerManager } from './managers/trigger-manager';
 import { WorkflowRegistry } from './registrys/workflow-registry';
-import { ExecutionSingletons } from './singletons';
+import { getWorkflowRegistry, getThreadRegistry, getEventManager, getThreadLifecycleManager } from './context/execution-context';
 import { InternalEventType } from '../../types/internal-events';
 import type { ForkCompletedEvent, ForkFailedEvent, JoinCompletedEvent, JoinFailedEvent } from '../../types/internal-events';
 
@@ -29,7 +29,7 @@ import type { ForkCompletedEvent, ForkFailedEvent, JoinCompletedEvent, JoinFaile
  * ThreadExecutor - Thread 执行器
  *
  * 通过事件驱动机制与 ThreadCoordinator 解耦，避免循环依赖
- * 使用 ExecutionSingletons 获取全局单例组件
+ * 使用 ExecutionContext 获取全局组件
  */
 export class ThreadExecutor {
   private threadRegistry: ThreadRegistry;
@@ -41,17 +41,17 @@ export class ThreadExecutor {
   private workflowRegistry: WorkflowRegistry;
 
   constructor(workflowRegistry?: WorkflowRegistry) {
-    // 使用 ExecutionSingletons 获取单例组件
-    this.workflowRegistry = workflowRegistry || ExecutionSingletons.getWorkflowRegistry();
-    this.threadRegistry = ExecutionSingletons.getThreadRegistry();
-    this.eventManager = ExecutionSingletons.getEventManager();
+    // 使用模块级单例获取组件
+    this.workflowRegistry = workflowRegistry || getWorkflowRegistry();
+    this.threadRegistry = getThreadRegistry();
+    this.eventManager = getEventManager();
 
     // 创建非单例组件
     this.threadBuilder = new ThreadBuilder(this.workflowRegistry);
     this.router = new Router();
-    this.lifecycleManager = new ThreadLifecycleManager(this.eventManager);
+    this.lifecycleManager = getThreadLifecycleManager();
 
-    // 初始化 TriggerManager（已移除对 ThreadExecutor 的依赖）
+    // 初始化 TriggerManager
     this.triggerManager = new TriggerManager(this.eventManager, this.threadBuilder);
   }
 

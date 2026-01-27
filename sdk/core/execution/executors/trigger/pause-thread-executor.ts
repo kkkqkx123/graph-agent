@@ -6,7 +6,7 @@
 import type { TriggerAction, TriggerExecutionResult } from '../../../../types/trigger';
 import { BaseTriggerExecutor } from './base-trigger-executor';
 import { ValidationError, NotFoundError } from '../../../../types/errors';
-import { ExecutionSingletons } from '../../singletons';
+import { getThreadRegistry, getThreadLifecycleManager } from '../../context/execution-context';
 
 /**
  * 暂停线程执行器
@@ -38,7 +38,7 @@ export class PauseThreadExecutor extends BaseTriggerExecutor {
       }
 
       // 直接从 ThreadRegistry 获取 ThreadContext
-      const threadRegistry = ExecutionSingletons.getThreadRegistry();
+      const threadRegistry = getThreadRegistry();
       const threadContext = threadRegistry.get(threadId);
 
       if (!threadContext) {
@@ -52,7 +52,7 @@ export class PauseThreadExecutor extends BaseTriggerExecutor {
       }
 
       // 直接调用 ThreadLifecycleManager
-      const lifecycleManager = ExecutionSingletons.getThreadLifecycleManager();
+      const lifecycleManager = getThreadLifecycleManager();
       await lifecycleManager.pauseThread(thread);
 
       return this.createSuccessResult(
