@@ -6,8 +6,10 @@
 import type { Node } from '../../../../types/node';
 import type { Thread } from '../../../../types/thread';
 import type { NodeExecutionResult } from '../../../../types/thread';
+import type { NodeCustomEvent } from '../../../../types/events';
 import { NodeStatus } from '../../../../types/node';
 import { ValidationError } from '../../../../types/errors';
+import { HookExecutor } from '../../hook-executor';
 
 /**
  * 节点执行器基类
@@ -17,9 +19,14 @@ export abstract class NodeExecutor {
    * 执行节点
    * @param thread Thread 实例
    * @param node 节点定义
+   * @param emitEvent 可选的事件发射函数，用于Hook执行
    * @returns 节点执行结果
    */
-  async execute(thread: Thread, node: Node): Promise<NodeExecutionResult> {
+  async execute(
+    thread: Thread,
+    node: Node,
+    emitEvent?: (event: NodeCustomEvent) => Promise<void>
+  ): Promise<NodeExecutionResult> {
     // 步骤1：验证节点配置
     if (!this.validate(node)) {
       throw new ValidationError(`Node validation failed: ${node.id}`, `node.${node.id}`);
@@ -38,12 +45,18 @@ export abstract class NodeExecutor {
 
     const startTime = Date.now();
 
+    // 步骤3：执行BEFORE_EXECUTE类型的Hook
+    if (emitEvent && node.hooks && node.hooks.length > 0) {
+      const hookExecutor = new HookExecutor();
+      await hookExecutor.executeBeforeExecute({ thread, node }, emitEvent);
+    }
+
     try {
-      // 步骤3：执行节点逻辑
+      // 步骤4：执行节点逻辑
       const output = await this.doExecute(thread, node);
 
-      // 步骤4：返回成功结果
-      return {
+      // 步骤5：构建执行结果
+      const result: NodeExecutionResult = {
         nodeId: node.id,
         nodeType: node.type,
         status: NodeStatus.COMPLETED,
@@ -53,10 +66,19 @@ export abstract class NodeExecutor {
         startTime,
         endTime: Date.now()
       };
+
+      // 步骤6：执行AFTER_EXECUTE类型的Hook
+      if (emitEvent && node.hooks && node.hooks.length > 0) {
+        const hookExecutor = new HookExecutor();
+        await hookExecutor.executeAfterExecute({ thread, node, result }, emitEvent);
+      }
+
+      // 步骤7：返回成功结果
+      return result;
     } catch (error) {
-      // 步骤5：返回失败结果
+      // 步骤8：构建失败结果
       const errorMessage = error instanceof Error ? error.message : String(error);
-      return {
+      const result: NodeExecutionResult = {
         nodeId: node.id,
         nodeType: node.type,
         status: NodeStatus.FAILED,
@@ -66,6 +88,15 @@ export abstract class NodeExecutor {
         startTime,
         endTime: Date.now()
       };
+
+      // 步骤9：执行AFTER_EXECUTE类型的Hook（即使失败也执行）
+      if (emitEvent && node.hooks && node.hooks.length > 0) {
+        const hookExecutor = new HookExecutor();
+        await hookExecutor.executeAfterExecute({ thread, node, result }, emitEvent);
+      }
+
+      // 步骤10：返回失败结果
+      return result;
     }
   }
 

@@ -26,6 +26,8 @@ export enum TriggerType {
 export interface TriggerCondition {
   /** 事件类型 */
   eventType: EventType;
+  /** 自定义事件名称（仅用于 NODE_CUSTOM_EVENT 事件） */
+  eventName?: string;
   /** 条件元数据 */
   metadata?: Metadata;
 }

@@ -255,7 +255,8 @@ export class ThreadExecutor {
       } else {
         // 执行普通节点
         const executor = NodeExecutorFactory.createExecutor(node.type);
-        result = await executor.execute(thread, node);
+        // 传递事件发射函数给 NodeExecutor，用于 Hook 执行
+        result = await executor.execute(thread, node, (event) => this.eventManager.emit(event));
       }
 
       // 触发 NODE_COMPLETED 事件

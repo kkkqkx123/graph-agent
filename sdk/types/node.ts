@@ -59,6 +59,36 @@ export enum NodeStatus {
 }
 
 /**
+ * Hook类型枚举
+ */
+export enum HookType {
+  /** 节点执行前触发 */
+  BEFORE_EXECUTE = 'BEFORE_EXECUTE',
+  /** 节点执行后触发 */
+  AFTER_EXECUTE = 'AFTER_EXECUTE'
+}
+
+/**
+ * 节点Hook配置
+ */
+export interface NodeHook {
+  /** Hook名称，用于标识和调试 */
+  hookName: string;
+  /** Hook类型 */
+  hookType: HookType;
+  /** 触发条件表达式（可选） */
+  condition?: string;
+  /** 要触发的自定义事件名称 */
+  eventName: string;
+  /** 事件载荷生成逻辑（可选） */
+  eventPayload?: Record<string, any>;
+  /** 是否启用（默认true） */
+  enabled?: boolean;
+  /** 权重（数字越大优先级越高） */
+  weight?: number;
+}
+
+/**
  * 开始节点配置
  */
 export interface StartNodeConfig {
@@ -323,4 +353,6 @@ export interface Node {
   incomingEdgeIds: ID[];
   /** 可选的动态属性对象 */
   properties?: NodeProperty[];
+  /** 可选的Hook配置数组 */
+  hooks?: NodeHook[];
 }

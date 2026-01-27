@@ -31,6 +31,8 @@ export enum EventType {
   NODE_COMPLETED = 'NODE_COMPLETED',
   /** 节点失败 */
   NODE_FAILED = 'NODE_FAILED',
+  /** 节点自定义事件 */
+  NODE_CUSTOM_EVENT = 'NODE_CUSTOM_EVENT',
   /** Token 超过限制 */
   TOKEN_LIMIT_EXCEEDED = 'TOKEN_LIMIT_EXCEEDED',
   /** 错误事件 */
@@ -206,6 +208,21 @@ export interface CheckpointCreatedEvent extends BaseEvent {
 }
 
 /**
+ * 节点自定义事件类型
+ */
+export interface NodeCustomEvent extends BaseEvent {
+  type: EventType.NODE_CUSTOM_EVENT;
+  /** 节点ID */
+  nodeId: ID;
+  /** 节点类型 */
+  nodeType: string;
+  /** 自定义事件名称 */
+  eventName: string;
+  /** 事件数据 */
+  eventData: Record<string, any>;
+}
+
+/**
  * 事件监听器类型
  */
 export type EventListener<T extends BaseEvent> = (event: T) => void | Promise<void>;
@@ -235,6 +252,7 @@ export type Event =
   | NodeStartedEvent
   | NodeCompletedEvent
   | NodeFailedEvent
+  | NodeCustomEvent
   | TokenLimitExceededEvent
   | ErrorEvent
   | CheckpointCreatedEvent;

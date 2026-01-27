@@ -7,13 +7,14 @@ import type {
   Trigger,
   TriggerStatus
 } from '../../types/trigger';
-import type { BaseEvent } from '../../types/events';
+import type { BaseEvent, NodeCustomEvent } from '../../types/events';
 import type { ID } from '../../types/common';
 import { EventManager } from './event-manager';
 import { TriggerExecutorFactory } from './executors/trigger';
 import type { ThreadExecutor } from './thread-executor';
 import type { ThreadBuilder } from './thread-builder';
 import { ValidationError, ExecutionError } from '../../types/errors';
+import { EventType } from '../../types/events';
 
 /**
  * TriggerManager - 触发器管理器
@@ -165,6 +166,14 @@ export class TriggerManager {
         }
         if (trigger.threadId && event.threadId !== trigger.threadId) {
           continue;
+        }
+
+        // 对于 NODE_CUSTOM_EVENT 事件，需要额外匹配 eventName
+        if (event.type === EventType.NODE_CUSTOM_EVENT) {
+          const customEvent = event as NodeCustomEvent;
+          if (trigger.condition.eventName && trigger.condition.eventName !== customEvent.eventName) {
+            continue;
+          }
         }
 
         // 执行触发器
