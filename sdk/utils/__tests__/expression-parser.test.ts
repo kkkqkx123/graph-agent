@@ -1,10 +1,10 @@
-import { ExpressionEvaluator, ExpressionParser } from '../expression-parser';
+import { ExpressionEvaluator, parseExpression, parseValue, parseCompoundExpression } from '../expression-parser';
 import type { EvaluationContext } from '../../types/condition';
 
 describe('ExpressionParser', () => {
   describe('parse', () => {
     test('should parse equality expressions', () => {
-      const result = ExpressionParser.parse('name == "John"');
+      const result = parseExpression('name == "John"');
       expect(result).toEqual({
         variablePath: 'name',
         operator: '==',
@@ -13,25 +13,25 @@ describe('ExpressionParser', () => {
     });
 
     test('should parse comparison expressions', () => {
-      expect(ExpressionParser.parse('age > 18')).toEqual({
+      expect(parseExpression('age > 18')).toEqual({
         variablePath: 'age',
         operator: '>',
         value: 18
       });
 
-      expect(ExpressionParser.parse('score >= 60')).toEqual({
+      expect(parseExpression('score >= 60')).toEqual({
         variablePath: 'score',
         operator: '>=',
         value: 60
       });
 
-      expect(ExpressionParser.parse('count < 100')).toEqual({
+      expect(parseExpression('count < 100')).toEqual({
         variablePath: 'count',
         operator: '<',
         value: 100
       });
 
-      expect(ExpressionParser.parse('limit <= 50')).toEqual({
+      expect(parseExpression('limit <= 50')).toEqual({
         variablePath: 'limit',
         operator: '<=',
         value: 50
@@ -39,7 +39,7 @@ describe('ExpressionParser', () => {
     });
 
     test('should parse contains expressions', () => {
-      const result = ExpressionParser.parse('text contains "hello"');
+      const result = parseExpression('text contains "hello"');
       expect(result).toEqual({
         variablePath: 'text',
         operator: 'contains',
@@ -48,7 +48,7 @@ describe('ExpressionParser', () => {
     });
 
     test('should parse in expressions', () => {
-      const result = ExpressionParser.parse('status in ["active", "pending"]');
+      const result = parseExpression('status in ["active", "pending"]');
       expect(result).toEqual({
         variablePath: 'status',
         operator: 'in',
@@ -57,7 +57,7 @@ describe('ExpressionParser', () => {
     });
 
     test('should parse nested paths', () => {
-      const result = ExpressionParser.parse('user.profile.age > 18');
+      const result = parseExpression('user.profile.age > 18');
       expect(result).toEqual({
         variablePath: 'user.profile.age',
         operator: '>',
@@ -66,7 +66,7 @@ describe('ExpressionParser', () => {
     });
 
     test('should parse array access paths', () => {
-      const result = ExpressionParser.parse('items[0].name == "test"');
+      const result = parseExpression('items[0].name == "test"');
       expect(result).toEqual({
         variablePath: 'items[0].name',
         operator: '==',
@@ -75,57 +75,57 @@ describe('ExpressionParser', () => {
     });
 
     test('should throw ValidationError for invalid expressions', () => {
-      expect(() => ExpressionParser.parse('')).toThrow();
-      expect(() => ExpressionParser.parse('invalid expression')).not.toThrow(); // 不会抛错，但返回 null
-      expect(ExpressionParser.parse('invalid expression')).toBeNull();
+      expect(() => parseExpression('')).toThrow();
+      expect(() => parseExpression('invalid expression')).not.toThrow(); // 不会抛错，但返回 null
+      expect(parseExpression('invalid expression')).toBeNull();
     });
   });
 
   describe('parseValue', () => {
     test('should parse strings', () => {
-      expect(ExpressionParser.parseValue("'hello'")).toBe('hello');
-      expect(ExpressionParser.parseValue('"world"')).toBe('world');
+      expect(parseValue("'hello'")).toBe('hello');
+      expect(parseValue('"world"')).toBe('world');
     });
 
     test('should parse numbers', () => {
-      expect(ExpressionParser.parseValue('123')).toBe(123);
-      expect(ExpressionParser.parseValue('3.14')).toBe(3.14);
-      expect(ExpressionParser.parseValue('-42')).toBe(-42);
+      expect(parseValue('123')).toBe(123);
+      expect(parseValue('3.14')).toBe(3.14);
+      expect(parseValue('-42')).toBe(-42);
     });
 
     test('should parse booleans', () => {
-      expect(ExpressionParser.parseValue('true')).toBe(true);
-      expect(ExpressionParser.parseValue('false')).toBe(false);
+      expect(parseValue('true')).toBe(true);
+      expect(parseValue('false')).toBe(false);
     });
 
     test('should parse null', () => {
-      expect(ExpressionParser.parseValue('null')).toBeNull();
+      expect(parseValue('null')).toBeNull();
     });
 
     test('should parse arrays', () => {
-      expect(ExpressionParser.parseValue('[1, 2, 3]')).toEqual([1, 2, 3]);
-      expect(ExpressionParser.parseValue('["a", "b", "c"]')).toEqual(['a', 'b', 'c']);
-      expect(ExpressionParser.parseValue('[]')).toEqual([]);
+      expect(parseValue('[1, 2, 3]')).toEqual([1, 2, 3]);
+      expect(parseValue('["a", "b", "c"]')).toEqual(['a', 'b', 'c']);
+      expect(parseValue('[]')).toEqual([]);
     });
   });
 
   describe('parseCompoundExpression', () => {
     test('should parse AND expressions', () => {
-      const result = ExpressionParser.parseCompoundExpression('age >= 18 && age <= 65');
+      const result = parseCompoundExpression('age >= 18 && age <= 65');
       expect(result).toHaveLength(2);
       expect(result[0]).toEqual({ expression: 'age >= 18', operator: '&&' });
       expect(result[1]).toEqual({ expression: 'age <= 65', operator: '&&' });
     });
 
     test('should parse OR expressions', () => {
-      const result = ExpressionParser.parseCompoundExpression('status == "active" || status == "pending"');
+      const result = parseCompoundExpression('status == "active" || status == "pending"');
       expect(result).toHaveLength(2);
       expect(result[0]).toEqual({ expression: 'status == "active"', operator: '&&' });
       expect(result[1]).toEqual({ expression: 'status == "pending"', operator: '||' });
     });
 
     test('should parse mixed AND/OR expressions', () => {
-      const result = ExpressionParser.parseCompoundExpression('a > 0 && b > 0 || c > 0');
+      const result = parseCompoundExpression('a > 0 && b > 0 || c > 0');
       expect(result).toHaveLength(3);
       expect(result[0]).toEqual({ expression: 'a > 0', operator: '&&' });
       expect(result[1]).toEqual({ expression: 'b > 0', operator: '&&' });
@@ -133,7 +133,7 @@ describe('ExpressionParser', () => {
     });
 
     test('should handle parentheses', () => {
-      const result = ExpressionParser.parseCompoundExpression('(a > 0) && (b > 0)');
+      const result = parseCompoundExpression('(a > 0) && (b > 0)');
       expect(result).toHaveLength(2);
       expect(result[0]?.expression).toBe('(a > 0)');
       expect(result[1]?.expression).toBe('(b > 0)');
