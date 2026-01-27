@@ -2,11 +2,13 @@
  * ThreadContext - Thread 执行上下文
  * 封装 Thread 执行所需的所有运行时组件
  * 提供统一的访问接口，避免直接访问 thread.contextData
+ * 负责变量管理、节点执行结果管理等运行时逻辑
  */
 
 import type { Thread } from '../../../types/thread';
 import { WorkflowContext } from './workflow-context';
 import { LLMExecutor } from '../llm-executor';
+import { VariableManager } from '../managers/variable-manager';
 
 /**
  * ThreadContext - Thread 执行上下文
@@ -28,6 +30,11 @@ export class ThreadContext {
   public readonly llmExecutor: LLMExecutor;
 
   /**
+   * 变量管理器
+   */
+  private readonly variableManager: VariableManager;
+
+  /**
    * 构造函数
    * @param thread Thread 实例
    * @param workflowContext Workflow 上下文
@@ -41,6 +48,7 @@ export class ThreadContext {
     this.thread = thread;
     this.workflowContext = workflowContext;
     this.llmExecutor = llmExecutor;
+    this.variableManager = new VariableManager();
   }
 
   /**
@@ -153,25 +161,16 @@ export class ThreadContext {
    * @returns 变量值
    */
   getVariable(name: string): any {
-    return this.thread.getVariable(name);
+    return this.variableManager.getVariable(this, name);
   }
 
   /**
-   * 设置 Thread 变量值
+   * 更新已定义变量的值
    * @param name 变量名称
-   * @param value 变量值
-   * @param type 变量类型
-   * @param scope 变量作用域
-   * @param readonly 是否只读
+   * @param value 新的变量值
    */
-  setVariable(
-    name: string,
-    value: any,
-    type?: 'number' | 'string' | 'boolean' | 'array' | 'object',
-    scope?: 'local' | 'global',
-    readonly?: boolean
-  ): void {
-    this.thread.setVariable(name, value, type, scope, readonly);
+  updateVariable(name: string, value: any): void {
+    this.variableManager.updateVariable(this, name, value);
   }
 
   /**
@@ -180,15 +179,7 @@ export class ThreadContext {
    * @returns 是否存在
    */
   hasVariable(name: string): boolean {
-    return this.thread.hasVariable(name);
-  }
-
-  /**
-   * 删除变量
-   * @param name 变量名称
-   */
-  deleteVariable(name: string): void {
-    this.thread.deleteVariable(name);
+    return this.variableManager.hasVariable(this, name);
   }
 
   /**
@@ -196,7 +187,7 @@ export class ThreadContext {
    * @returns 所有变量值
    */
   getAllVariables(): Record<string, any> {
-    return this.thread.getAllVariables();
+    return this.variableManager.getAllVariables(this);
   }
 
   /**

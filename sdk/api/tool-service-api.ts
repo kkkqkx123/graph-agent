@@ -6,7 +6,7 @@
 import { ToolService } from '../core/tools/tool-service';
 import type { Tool } from '../types/tool';
 import type { ToolFilter, ToolOptions, ToolExecutionResult, ToolTestResult } from './types';
-import { NotFoundError, ToolError } from '../types/errors';
+import { NotFoundError } from '../types/errors';
 
 /**
  * ToolServiceAPI - 工具管理API

@@ -32,11 +32,7 @@ export class ThreadExecutorAPI {
    * @returns 线程执行结果
    */
   async executeWorkflow(workflowId: string, options?: ExecuteOptions): Promise<ThreadResult> {
-    // 构建ThreadContext（Core层会检查工作流是否存在）
-    const threadContext = await this.threadBuilder.build(workflowId, this.convertOptions(options));
-
-    // 执行Thread
-    return this.executor.execute(threadContext, this.convertOptions(options));
+    return this.executor.execute(workflowId, this.convertOptions(options));
   }
 
   /**
@@ -50,34 +46,9 @@ export class ThreadExecutorAPI {
     const tempRegistry = new WorkflowRegistry({ enableVersioning: false });
     tempRegistry.register(workflow);
 
-    // 构建ThreadContext
-    const threadBuilder = new ThreadBuilder(tempRegistry);
-    const threadContext = await threadBuilder.build(workflow.id, this.convertOptions(options));
-
-    // 执行Thread
+    // 执行工作流
     const executor = new ThreadExecutor(tempRegistry);
-    return executor.execute(threadContext, this.convertOptions(options));
-  }
-
-  /**
-   * 执行已存在的线程
-   * @param threadId 线程ID
-   * @param options 执行选项
-   * @returns 线程执行结果
-   */
-  async executeThread(threadId: string, options?: ExecuteOptions): Promise<ThreadResult> {
-    // 获取ThreadContext
-    const threadContext = this.executor.getThreadContext(threadId);
-    if (!threadContext) {
-      throw new NotFoundError(
-        `Thread with ID '${threadId}' not found`,
-        'Thread',
-        threadId
-      );
-    }
-
-    // 执行Thread
-    return this.executor.execute(threadContext, this.convertOptions(options));
+    return executor.execute(workflow.id, this.convertOptions(options));
   }
 
   /**
@@ -85,7 +56,7 @@ export class ThreadExecutorAPI {
    * @param threadId 线程ID
    */
   async pauseThread(threadId: string): Promise<void> {
-    await this.executor.pause(threadId);
+    await this.executor.pauseThread(threadId);
   }
 
   /**
@@ -95,7 +66,7 @@ export class ThreadExecutorAPI {
    * @returns 线程执行结果
    */
   async resumeThread(threadId: string, options?: ExecuteOptions): Promise<ThreadResult> {
-    return this.executor.resume(threadId, this.convertOptions(options));
+    return this.executor.resumeThread(threadId);
   }
 
   /**
@@ -103,33 +74,7 @@ export class ThreadExecutorAPI {
    * @param threadId 线程ID
    */
   async cancelThread(threadId: string): Promise<void> {
-    await this.executor.cancel(threadId);
-  }
-
-  /**
-   * 获取ThreadContext
-   * @param threadId 线程ID
-   * @returns ThreadContext实例
-   */
-  getThreadContext(threadId: string) {
-    return this.executor.getThreadContext(threadId);
-  }
-
-  /**
-   * 获取所有ThreadContext
-   * @returns ThreadContext数组
-   */
-  getAllThreadContexts() {
-    return this.executor.getAllThreadContexts();
-  }
-
-  /**
-   * 跳过节点
-   * @param threadId 线程ID
-   * @param nodeId 节点ID
-   */
-  async skipNode(threadId: string, nodeId: string): Promise<void> {
-    await this.executor.skipNode(threadId, nodeId);
+    await this.executor.stopThread(threadId);
   }
 
   /**
@@ -139,22 +84,6 @@ export class ThreadExecutorAPI {
    */
   async setVariables(threadId: string, variables: Record<string, any>): Promise<void> {
     await this.executor.setVariables(threadId, variables);
-  }
-
-  /**
-   * 获取事件管理器
-   * @returns 事件管理器
-   */
-  getEventManager() {
-    return this.executor.getEventManager();
-  }
-
-  /**
-   * 获取触发器管理器
-   * @returns 触发器管理器
-   */
-  getTriggerManager() {
-    return this.executor.getTriggerManager();
   }
 
   /**

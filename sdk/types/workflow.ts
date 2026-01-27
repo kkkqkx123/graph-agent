@@ -57,6 +57,27 @@ export interface WorkflowMetadata {
 }
 
 /**
+ * 工作流变量定义类型
+ * 用于在工作流定义阶段声明变量，提供类型安全和初始值
+ */
+export interface WorkflowVariable {
+  /** 变量名称 */
+  name: string;
+  /** 变量类型 */
+  type: 'number' | 'string' | 'boolean' | 'array' | 'object';
+  /** 变量初始值 */
+  defaultValue?: any;
+  /** 变量描述 */
+  description?: string;
+  /** 是否必需 */
+  required?: boolean;
+  /** 是否只读 */
+  readonly?: boolean;
+  /** 变量作用域 */
+  scope?: 'local' | 'global';
+}
+
+/**
  * 工作流定义类型
  * 包含工作流的基本信息和结构
  */
@@ -71,6 +92,8 @@ export interface WorkflowDefinition {
   nodes: Node[];
   /** 边数组，定义节点之间的连接关系 */
   edges: Edge[];
+  /** 工作流变量定义数组，用于声明工作流执行所需的变量 */
+  variables?: WorkflowVariable[];
   /** 可选的工作流配置 */
   config?: WorkflowConfig;
   /** 可选的元数据信息 */

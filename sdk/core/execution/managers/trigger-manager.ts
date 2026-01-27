@@ -11,7 +11,6 @@ import type { BaseEvent, NodeCustomEvent } from '../../../types/events';
 import type { ID } from '../../../types/common';
 import { EventManager } from './event-manager';
 import { TriggerExecutorFactory } from '../executors';
-import type { ThreadBuilder } from '../thread-builder';
 import { ValidationError, ExecutionError } from '../../../types/errors';
 import { EventType } from '../../../types/events';
 
@@ -24,7 +23,6 @@ export class TriggerManager {
 
   constructor(
     private eventManager: EventManager,
-    private threadBuilder: ThreadBuilder
   ) { }
 
   /**

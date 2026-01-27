@@ -94,23 +94,20 @@ export class ThreadBuilder {
       }
     };
 
-    // 步骤3：初始化变量数据结构
-    this.variableManager.initializeVariables(thread as Thread);
+    // 步骤3：从 WorkflowDefinition 初始化变量
+    this.variableManager.initializeFromWorkflow(thread as Thread, workflow);
 
-    // 步骤4：附加变量管理方法
-    this.variableManager.attachVariableMethods(thread as Thread);
-
-    // 步骤5：创建 ConversationManager 和 LLMExecutor 实例
+    // 步骤4：创建 ConversationManager 和 LLMExecutor 实例
     const conversationManager = new ConversationManager({
       tokenLimit: options.tokenLimit || 4000
     });
     const llmExecutor = new LLMExecutor(conversationManager);
 
-    // 步骤6：创建 WorkflowContext
+    // 步骤5：创建 WorkflowContext
     const workflowContext = new WorkflowContext(workflow);
     this.workflowContexts.set(workflow.id, workflowContext);
 
-    // 步骤7：创建并返回 ThreadContext
+    // 步骤6：创建并返回 ThreadContext
     return new ThreadContext(
       thread as Thread,
       workflowContext,
@@ -164,12 +161,6 @@ export class ThreadBuilder {
       }
     };
 
-    // 初始化变量数据结构
-    this.variableManager.initializeVariables(copiedThread as Thread);
-
-    // 附加变量管理方法
-    this.variableManager.attachVariableMethods(copiedThread as Thread);
-
     // 复制 ConversationManager 和 LLMExecutor 实例
     const copiedConversationManager = sourceThreadContext.getConversationManager().clone();
     const copiedLLMExecutor = new LLMExecutor(copiedConversationManager);
@@ -219,12 +210,6 @@ export class ThreadBuilder {
         }
       }
     };
-
-    // 初始化变量数据结构
-    this.variableManager.initializeVariables(forkThread as Thread);
-
-    // 附加变量管理方法
-    this.variableManager.attachVariableMethods(forkThread as Thread);
 
     // 复制 ConversationManager 和 LLMExecutor 实例
     const forkConversationManager = parentThreadContext.getConversationManager().clone();

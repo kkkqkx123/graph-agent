@@ -208,104 +208,10 @@ describe('ThreadExecutorAPI', () => {
       const result = await api.executeWorkflow('test-workflow-4');
 
       // 注意：由于工作流已经完成，暂停操作可能会失败
-      // 这里只是测试方法存在
+      // 建议改为其他方式测试
       expect(result.threadId).toBeDefined();
     });
   });
 
-  describe('getThreadContext', () => {
-    it('应该获取线程上下文', async () => {
-      const workflow: WorkflowDefinition = {
-        id: 'test-workflow-5',
-        name: 'Test Workflow 5',
-        version: '1.0.0',
-        createdAt: Date.now(),
-        updatedAt: Date.now(),
-        nodes: [
-          {
-            id: 'start',
-            name: 'Start',
-            type: NodeType.START,
-            config: {},
-            incomingEdgeIds: [],
-            outgoingEdgeIds: ['edge1']
-          },
-          {
-            id: 'end',
-            name: 'End',
-            type: NodeType.END,
-            config: {},
-            incomingEdgeIds: ['edge1'],
-            outgoingEdgeIds: []
-          }
-        ],
-        edges: [
-          {
-            id: 'edge1',
-            sourceNodeId: 'start',
-            targetNodeId: 'end',
-            type: EdgeType.DEFAULT,
-            condition: undefined
-          }
-        ]
-      };
 
-      workflowRegistry.register(workflow);
-      const result = await api.executeWorkflow('test-workflow-5');
-
-      const threadContext = api.getThreadContext(result.threadId);
-      expect(threadContext).toBeDefined();
-      expect(threadContext?.getThreadId()).toBe(result.threadId);
-    });
-
-    it('在线程不存在时返回null', () => {
-      const threadContext = api.getThreadContext('non-existent-thread');
-      expect(threadContext).toBeNull();
-    });
-  });
-
-  describe('getAllThreadContexts', () => {
-    it('应该获取所有线程上下文', async () => {
-      const workflow: WorkflowDefinition = {
-        id: 'test-workflow-6',
-        name: 'Test Workflow 6',
-        version: '1.0.0',
-        createdAt: Date.now(),
-        updatedAt: Date.now(),
-        nodes: [
-          {
-            id: 'start',
-            name: 'Start',
-            type: NodeType.START,
-            config: {},
-            incomingEdgeIds: [],
-            outgoingEdgeIds: ['edge1']
-          },
-          {
-            id: 'end',
-            name: 'End',
-            type: NodeType.END,
-            config: {},
-            incomingEdgeIds: ['edge1'],
-            outgoingEdgeIds: []
-          }
-        ],
-        edges: [
-          {
-            id: 'edge1',
-            sourceNodeId: 'start',
-            targetNodeId: 'end',
-            type: EdgeType.DEFAULT,
-            condition: undefined
-          }
-        ]
-      };
-
-      workflowRegistry.register(workflow);
-      await api.executeWorkflow('test-workflow-6');
-
-      const allContexts = api.getAllThreadContexts();
-      expect(allContexts.length).toBeGreaterThan(0);
-    });
-  });
 });

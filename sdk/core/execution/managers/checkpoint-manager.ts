@@ -7,8 +7,7 @@
 
 import type { Thread } from '../../../types/thread';
 import type { Checkpoint, CheckpointMetadata, ThreadStateSnapshot } from '../../../types/checkpoint';
-import type { CheckpointStorage, CheckpointFilter } from '../checkpoint/storage';
-import { MemoryStorage } from '../checkpoint/storage';
+import type { CheckpointStorage, CheckpointStorageMetadata } from '../../../types/checkpoint-storage';
 import { ThreadRegistry } from '../registrys/thread-registry';
 import { ThreadContext } from '../context/thread-context';
 import { WorkflowContext } from '../context/workflow-context';
@@ -18,6 +17,7 @@ import { LLMExecutor } from '../llm-executor';
 import { IDUtils } from '../../../types/common';
 import { WorkflowRegistry } from '../registrys/workflow-registry';
 import { getThreadRegistry, getWorkflowRegistry } from '../context/execution-context';
+import { MemoryCheckpointStorage } from '../../storage/memory-checkpoint-storage';
 
 /**
  * 检查点管理器
@@ -31,7 +31,7 @@ export class CheckpointManager {
 
   /**
    * 构造函数
-   * @param storage 存储实现，默认使用 MemoryStorage
+   * @param storage 存储实现，默认使用 MemoryCheckpointStorage
    * @param threadRegistry Thread注册表（可选，默认使用默认上下文）
    * @param workflowRegistry Workflow注册器（可选，默认使用默认上下文）
    */
@@ -40,7 +40,7 @@ export class CheckpointManager {
     threadRegistry?: ThreadRegistry,
     workflowRegistry?: WorkflowRegistry
   ) {
-    this.storage = storage || new MemoryStorage();
+    this.storage = storage || new MemoryCheckpointStorage();
     this.threadRegistry = threadRegistry || getThreadRegistry();
     this.workflowRegistry = workflowRegistry || getWorkflowRegistry();
     this.variableManager = new VariableManager();
@@ -98,10 +98,16 @@ export class CheckpointManager {
       metadata
     };
 
-    // 步骤5：调用 CheckpointStorage 保存
-    await this.storage.save(checkpoint);
+    // 步骤5：序列化为字节数组
+    const data = this.serializeCheckpoint(checkpoint);
 
-    // 步骤6：返回 checkpointId
+    // 步骤6：提取存储元数据
+    const storageMetadata = this.extractStorageMetadata(checkpoint);
+
+    // 步骤7：调用 CheckpointStorage 保存
+    await this.storage.save(checkpointId, data, storageMetadata);
+
+    // 步骤8：返回 checkpointId
     return checkpointId;
   }
 
@@ -111,13 +117,16 @@ export class CheckpointManager {
    * @returns 恢复的 ThreadContext 对象
    */
   async restoreFromCheckpoint(checkpointId: string): Promise<ThreadContext> {
-    // 步骤1：从 CheckpointStorage 加载 Checkpoint
-    const checkpoint = await this.storage.load(checkpointId);
-    if (!checkpoint) {
+    // 步骤1：从 CheckpointStorage 加载字节数据
+    const data = await this.storage.load(checkpointId);
+    if (!data) {
       throw new Error(`Checkpoint not found: ${checkpointId}`);
     }
 
-    // 步骤2：验证 checkpoint 完整性和兼容性
+    // 步骤2：反序列化为 Checkpoint 对象
+    const checkpoint = this.deserializeCheckpoint(data);
+
+    // 步骤3：验证 checkpoint 完整性和兼容性
     this.validateCheckpoint(checkpoint);
 
     // 步骤3：从 WorkflowRegistry 获取 WorkflowDefinition
@@ -148,9 +157,6 @@ export class CheckpointManager {
 
     // 步骤5：初始化变量数据结构
     this.variableManager.initializeVariables(thread as Thread);
-
-    // 步骤6：附加变量管理方法
-    this.variableManager.attachVariableMethods(thread as Thread);
 
     // 步骤7：创建 ConversationManager 和 LLMExecutor
     const conversationManager = new ConversationManager();
@@ -216,16 +222,20 @@ export class CheckpointManager {
    * @returns 检查点对象
    */
   async getCheckpoint(checkpointId: string): Promise<Checkpoint | null> {
-    return this.storage.load(checkpointId);
+    const data = await this.storage.load(checkpointId);
+    if (!data) {
+      return null;
+    }
+    return this.deserializeCheckpoint(data);
   }
 
   /**
-   * 列出检查点
-   * @param filter 过滤条件
-   * @returns 检查点数组
+   * 列出检查点ID
+   * @param options 查询选项
+   * @returns 检查点ID数组
    */
-  async listCheckpoints(filter?: CheckpointFilter): Promise<Checkpoint[]> {
-    return this.storage.list(filter);
+  async listCheckpoints(options?: import('../../../types/checkpoint-storage').CheckpointListOptions): Promise<string[]> {
+    return this.storage.list(options);
   }
 
   /**
@@ -296,7 +306,9 @@ export class CheckpointManager {
    * 清空所有检查点
    */
   async clearAll(): Promise<void> {
-    await this.storage.clear();
+    if (this.storage.clear) {
+      await this.storage.clear();
+    }
   }
 
   /**
@@ -304,6 +316,35 @@ export class CheckpointManager {
    */
   getStorage(): CheckpointStorage {
     return this.storage;
+  }
+
+  /**
+   * 序列化检查点为字节数组
+   */
+  private serializeCheckpoint(checkpoint: Checkpoint): Uint8Array {
+    const json = JSON.stringify(checkpoint, null, 2);
+    return new TextEncoder().encode(json);
+  }
+
+  /**
+   * 从字节数组反序列化检查点
+   */
+  private deserializeCheckpoint(data: Uint8Array): Checkpoint {
+    const json = new TextDecoder().decode(data);
+    return JSON.parse(json) as Checkpoint;
+  }
+
+  /**
+   * 从检查点提取存储元数据
+   */
+  private extractStorageMetadata(checkpoint: Checkpoint): CheckpointStorageMetadata {
+    return {
+      threadId: checkpoint.threadId,
+      workflowId: checkpoint.workflowId,
+      timestamp: checkpoint.timestamp,
+      tags: checkpoint.metadata?.tags,
+      customFields: checkpoint.metadata?.customFields
+    };
   }
 
   /**

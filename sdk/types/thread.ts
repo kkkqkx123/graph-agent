@@ -111,81 +111,44 @@ export interface ExecutionHistoryEntry {
 
 /**
  * 线程定义类型（执行实例）
+ * Thread 作为纯数据对象，不包含方法，方法由 ThreadContext 提供
  */
 export interface Thread {
-  /** 线程唯一标识符 */
-  id: ID;
-  /** 关联的工作流ID */
-  workflowId: ID;
-  /** 工作流版本 */
-  workflowVersion: Version;
-  /** 线程状态 */
-  status: ThreadStatus;
-  /** 当前执行节点ID */
-  currentNodeId: ID;
-  /** 变量数组（用于持久化和元数据） */
-  variables: ThreadVariable[];
-  /** 变量值映射（用于快速访问） */
-  variableValues: Record<string, any>;
-  /** 输入数据（作为特殊变量，可通过路径访问） */
-  input: Record<string, any>;
-  /** 输出数据（作为特殊变量，可通过路径访问） */
-  output: Record<string, any>;
-  /** 执行历史记录（按执行顺序存储） */
-  nodeResults: NodeExecutionResult[];
-  /** 开始时间 */
-  startTime: Timestamp;
-  /** 结束时间 */
-  endTime?: Timestamp;
-  /** 错误信息数组 */
-  errors: any[];
-  /** 线程元数据 */
-  metadata?: ThreadMetadata;
-  /** 上下文数据（用于存储 Conversation 等实例） */
-  contextData?: Record<string, any>;
-  
-  /**
-   * 获取变量值
-   * @param name 变量名称
-   * @returns 变量值
-   */
-  getVariable(name: string): any;
-  
-  /**
-   * 设置变量值
-   * @param name 变量名称
-   * @param value 变量值
-   * @param type 变量类型
-   * @param scope 变量作用域
-   * @param readonly 是否只读
-   */
-  setVariable(
-    name: string,
-    value: any,
-    type?: 'number' | 'string' | 'boolean' | 'array' | 'object',
-    scope?: 'local' | 'global',
-    readonly?: boolean
-  ): void;
-  
-  /**
-   * 检查变量是否存在
-   * @param name 变量名称
-   * @returns 是否存在
-   */
-  hasVariable(name: string): boolean;
-  
-  /**
-   * 删除变量
-   * @param name 变量名称
-   */
-  deleteVariable(name: string): void;
-  
-  /**
-   * 获取所有变量
-   * @returns 所有变量值
-   */
-  getAllVariables(): Record<string, any>;
-}
+   /** 线程唯一标识符 */
+   id: ID;
+   /** 关联的工作流ID */
+   workflowId: ID;
+   /** 工作流版本 */
+   workflowVersion: Version;
+   /** 线程状态 */
+   status: ThreadStatus;
+   /** 当前执行节点ID */
+   currentNodeId: ID;
+   /** 变量数组（用于持久化和元数据） */
+   variables: ThreadVariable[];
+   /** 变量值映射（用于快速访问） */
+   variableValues: Record<string, any>;
+   /** 输入数据（作为特殊变量，可通过路径访问） */
+   input: Record<string, any>;
+   /** 输出数据（作为特殊变量，可通过路径访问） */
+   output: Record<string, any>;
+   /** 执行历史记录（按执行顺序存储） */
+   nodeResults: NodeExecutionResult[];
+   /** 开始时间 */
+   startTime: Timestamp;
+   /** 结束时间 */
+   endTime?: Timestamp;
+   /** 错误信息数组 */
+   errors: any[];
+   /** 线程元数据 */
+   metadata?: ThreadMetadata;
+   /** 上下文数据（用于存储 Conversation 等实例） */
+   contextData?: Record<string, any>;
+   /** 暂停标志（运行时控制）*/
+   shouldPause?: boolean;
+   /** 停止标志（运行时控制）*/
+   shouldStop?: boolean;
+ }
 
 /**
  * 线程执行选项类型
