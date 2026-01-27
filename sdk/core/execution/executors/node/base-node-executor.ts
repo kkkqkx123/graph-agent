@@ -9,7 +9,7 @@ import type { NodeExecutionResult } from '../../../../types/thread';
 import type { NodeCustomEvent } from '../../../../types/events';
 import { NodeStatus } from '../../../../types/node';
 import { ValidationError } from '../../../../types/errors';
-import { HookExecutor } from '../../hook-executor';
+import { HookExecutor } from '../hook-executor';
 
 /**
  * 节点执行器基类

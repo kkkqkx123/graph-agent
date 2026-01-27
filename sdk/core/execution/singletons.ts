@@ -15,9 +15,9 @@
  * - CheckpointManager: 检查点管理器，默认单例
  */
 
-import { WorkflowRegistry } from './registry/workflow-registry';
-import { ThreadRegistry } from './registry/thread-registry';
-import { EventManager } from './event-manager';
+import { WorkflowRegistry } from './registrys/workflow-registry';
+import { ThreadRegistry } from './registrys/thread-registry';
+import { EventManager } from './managers/event-manager';
 import { ConditionEvaluator } from './condition-evaluator';
 import { CheckpointManager } from './checkpoint/checkpoint-manager';
 import { MemoryStorage } from './checkpoint/storage';

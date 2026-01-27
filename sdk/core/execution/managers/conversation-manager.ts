@@ -11,7 +11,7 @@
  * - 执行逻辑由LLMExecutor负责
  */
 
-import type { LLMMessage, LLMUsage } from '../../types/llm';
+import type { LLMMessage, LLMUsage } from '../../../types/llm';
 
 /**
  * ConversationManager事件回调

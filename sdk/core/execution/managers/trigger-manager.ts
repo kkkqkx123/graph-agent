@@ -6,15 +6,15 @@
 import type {
   Trigger,
   TriggerStatus
-} from '../../types/trigger';
-import type { BaseEvent, NodeCustomEvent } from '../../types/events';
-import type { ID } from '../../types/common';
+} from '../../../types/trigger';
+import type { BaseEvent, NodeCustomEvent } from '../../../types/events';
+import type { ID } from '../../../types/common';
 import { EventManager } from './event-manager';
-import { TriggerExecutorFactory } from './executors/trigger';
-import type { ThreadExecutor } from './thread-executor';
-import type { ThreadBuilder } from './thread-builder';
-import { ValidationError, ExecutionError } from '../../types/errors';
-import { EventType } from '../../types/events';
+import { TriggerExecutorFactory } from '../executors';
+import type { ThreadExecutor } from '../thread-executor';
+import type { ThreadBuilder } from '../thread-builder';
+import { ValidationError, ExecutionError } from '../../../types/errors';
+import { EventType } from '../../../types/events';
 
 /**
  * TriggerManager - 触发器管理器
@@ -27,7 +27,7 @@ export class TriggerManager {
     private eventManager: EventManager,
     private threadExecutor: ThreadExecutor,
     private threadBuilder: ThreadBuilder
-  ) {}
+  ) { }
 
   /**
    * 注册触发器

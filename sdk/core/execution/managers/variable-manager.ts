@@ -3,7 +3,7 @@
  * 负责Thread变量的管理，包括变量的创建、更新、删除、查询
  */
 
-import type { Thread, ThreadVariable } from '../../types/thread';
+import type { Thread, ThreadVariable } from '../../../types/thread';
 
 /**
  * VariableManager - 变量管理器
@@ -19,7 +19,7 @@ export class VariableManager {
      * @param name 变量名称
      * @returns 变量值
      */
-    thread.getVariable = function(name: string): any {
+    thread.getVariable = function (name: string): any {
       return this.variableValues[name];
     };
 
@@ -31,7 +31,7 @@ export class VariableManager {
      * @param scope 变量作用域
      * @param readonly 是否只读
      */
-    thread.setVariable = function(
+    thread.setVariable = function (
       name: string,
       value: any,
       type: 'number' | 'string' | 'boolean' | 'array' | 'object' = typeof value as any,
@@ -67,7 +67,7 @@ export class VariableManager {
      * @param name 变量名称
      * @returns 是否存在
      */
-    thread.hasVariable = function(name: string): boolean {
+    thread.hasVariable = function (name: string): boolean {
       return name in this.variableValues;
     };
 
@@ -75,7 +75,7 @@ export class VariableManager {
      * 删除变量
      * @param name 变量名称
      */
-    thread.deleteVariable = function(name: string): void {
+    thread.deleteVariable = function (name: string): void {
       const existingVar = this.variables.find(v => v.name === name);
       if (existingVar && existingVar.readonly) {
         throw new Error(`Variable ${name} is readonly and cannot be deleted`);
@@ -92,7 +92,7 @@ export class VariableManager {
      * 获取所有变量
      * @returns 所有变量的键值对
      */
-    thread.getAllVariables = function(): Record<string, any> {
+    thread.getAllVariables = function (): Record<string, any> {
       return { ...this.variableValues };
     };
   }

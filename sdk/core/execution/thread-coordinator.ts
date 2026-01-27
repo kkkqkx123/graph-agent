@@ -7,10 +7,10 @@
  */
 
 import type { Thread } from '../../types/thread';
-import { ThreadRegistry } from './registry/thread-registry';
+import { ThreadRegistry } from './registrys/thread-registry';
 import { ThreadBuilder } from './thread-builder';
 import { ThreadContext } from './context/thread-context';
-import { EventManager } from './event-manager';
+import { EventManager } from './managers/event-manager';
 import { ExecutionError, TimeoutError, ValidationError } from '../../types/errors';
 import { EventType } from '../../types/events';
 import type {

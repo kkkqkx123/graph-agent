@@ -9,12 +9,12 @@
 import type { WorkflowDefinition } from '../../types/workflow';
 import type { Thread, ThreadOptions, ThreadStatus } from '../../types/thread';
 import { WorkflowContext } from './context/workflow-context';
-import { ConversationManager } from './conversation-manager';
+import { ConversationManager } from './managers/conversation-manager';
 import { LLMExecutor } from './llm-executor';
 import { ThreadContext } from './context/thread-context';
 import { NodeType } from '../../types/node';
 import { IDUtils } from '../../types/common';
-import { VariableManager } from './variable-manager';
+import { VariableManager } from './managers/variable-manager';
 import { ValidationError } from '../../types/errors';
 import { ExecutionSingletons } from './singletons';
 

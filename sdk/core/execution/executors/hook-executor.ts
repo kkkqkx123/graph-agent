@@ -15,14 +15,14 @@
  * - 不持有 EventManager，通过参数传递
  */
 
-import type { Node, NodeHook } from '../../types/node';
-import { HookType } from '../../types/node';
-import type { Thread } from '../../types/thread';
-import type { NodeExecutionResult } from '../../types/thread';
-import type { NodeCustomEvent } from '../../types/events';
-import { EventType } from '../../types/events';
-import type { EvaluationContext } from '../../types/condition';
-import { ConditionEvaluator } from './condition-evaluator';
+import type { Node, NodeHook } from '../../../types/node';
+import { HookType } from '../../../types/node';
+import type { Thread } from '../../../types/thread';
+import type { NodeExecutionResult } from '../../../types/thread';
+import type { NodeCustomEvent } from '../../../types/events';
+import { EventType } from '../../../types/events';
+import type { EvaluationContext } from '../../../types/condition';
+import { ConditionEvaluator } from '../condition-evaluator';
 
 /**
  * Hook执行上下文

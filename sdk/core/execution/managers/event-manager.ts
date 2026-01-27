@@ -4,8 +4,8 @@
  * 支持全局事件和内部协调事件
  */
 
-import type { BaseEvent, EventType, EventListener } from '../../types/events';
-import type { BaseInternalEvent, InternalEventType } from '../../types/internal-events';
+import type { BaseEvent, EventType, EventListener } from '../../../types/events';
+import type { BaseInternalEvent, InternalEventType } from '../../../types/internal-events';
 
 /**
  * 监听器包装器
@@ -31,7 +31,7 @@ export class EventManager {
   // 全局事件监听器（对外暴露）
   private globalListeners: Map<string, ListenerWrapper<any>[]> = new Map();
   private globalWildcardListeners: ListenerWrapper<any>[] = [];
-  
+
   // 内部事件监听器（仅内部使用）
   private internalListeners: Map<string, ListenerWrapper<any>[]> = new Map();
 

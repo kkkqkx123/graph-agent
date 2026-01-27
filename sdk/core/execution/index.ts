@@ -19,29 +19,29 @@ export { ThreadBuilder } from './thread-builder';
 export { ThreadLifecycleManager } from './thread-lifecycle-manager';
 
 // Thread注册表
-export { ThreadRegistry } from './registry/thread-registry';
+export { ThreadRegistry } from './registrys/thread-registry';
 
 // 变量管理器
-export { VariableManager } from './variable-manager';
+export { VariableManager } from './managers/variable-manager';
 
 // Workflow注册器
-export { WorkflowRegistry } from './registry/workflow-registry';
-export type { WorkflowSummary, WorkflowVersion, ValidationResult } from './registry/workflow-registry';
+export { WorkflowRegistry } from './registrys/workflow-registry';
+export type { WorkflowSummary, WorkflowVersion, ValidationResult } from './registrys/workflow-registry';
 
 // 路由器
 export { Router } from './router';
 
 // 事件管理器
-export { EventManager } from './event-manager';
+export { EventManager } from './managers/event-manager';
 
 // Thread协调器
 export { ThreadCoordinator, JoinStrategy, JoinResult } from './thread-coordinator';
 
 // 触发器管理器
-export { TriggerManager } from './trigger-manager';
+export { TriggerManager } from './managers/trigger-manager';
 
 // LLM执行相关
-export { ConversationManager } from './conversation-manager';
-export type { ConversationManagerOptions, ConversationManagerEventCallbacks } from './conversation-manager';
+export { ConversationManager } from './managers/conversation-manager';
+export type { ConversationManagerOptions, ConversationManagerEventCallbacks } from './managers/conversation-manager';
 export { LLMExecutor } from './llm-executor';
 export type { LLMExecutorOptions, LLMExecutorCallbacks } from './llm-executor';
