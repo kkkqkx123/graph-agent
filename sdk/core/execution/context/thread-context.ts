@@ -4,9 +4,9 @@
  * 提供统一的访问接口，避免直接访问 thread.contextData
  */
 
-import type { Thread } from '../../types/thread';
+import type { Thread } from '../../../types/thread';
 import { WorkflowContext } from './workflow-context';
-import { LLMExecutor } from './llm-executor';
+import { LLMExecutor } from '../llm-executor';
 
 /**
  * ThreadContext - Thread 执行上下文

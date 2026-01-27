@@ -8,10 +8,10 @@
 
 import type { WorkflowDefinition } from '../../types/workflow';
 import type { Thread, ThreadOptions, ThreadStatus } from '../../types/thread';
-import { WorkflowContext } from './workflow-context';
+import { WorkflowContext } from './context/workflow-context';
 import { ConversationManager } from './conversation-manager';
 import { LLMExecutor } from './llm-executor';
-import { ThreadContext } from './thread-context';
+import { ThreadContext } from './context/thread-context';
 import { NodeType } from '../../types/node';
 import { IDUtils } from '../../types/common';
 import { VariableManager } from './variable-manager';
@@ -149,11 +149,11 @@ export class ThreadBuilder {
       workflowVersion: sourceThread.workflowVersion,
       status: 'CREATED' as ThreadStatus,
       currentNodeId: sourceThread.currentNodeId,
-      variables: sourceThread.variables.map(v => ({ ...v })),
+      variables: sourceThread.variables.map((v: any) => ({ ...v })),
       variableValues: { ...sourceThread.variableValues },
       input: { ...sourceThread.input },
       output: { ...sourceThread.output },
-      nodeResults: sourceThread.nodeResults.map(h => ({ ...h })),
+      nodeResults: sourceThread.nodeResults.map((h: any) => ({ ...h })),
       startTime: now,
       endTime: undefined,
       errors: [],
@@ -201,7 +201,7 @@ export class ThreadBuilder {
       workflowVersion: parentThread.workflowVersion,
       status: 'CREATED' as ThreadStatus,
       currentNodeId: forkConfig.startNodeId || parentThread.currentNodeId,
-      variables: parentThread.variables.map(v => ({ ...v })),
+      variables: parentThread.variables.map((v: any) => ({ ...v })),
       variableValues: { ...parentThread.variableValues },
       input: { ...parentThread.input },
       output: {},

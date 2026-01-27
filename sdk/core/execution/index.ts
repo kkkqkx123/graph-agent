@@ -3,6 +3,9 @@
  * 提供Thread执行引擎、节点执行器、路由器和事件管理器
  */
 
+// 执行上下文
+export { WorkflowContext, ThreadContext } from './context';
+
 // 单例管理器
 export { ExecutionSingletons } from './singletons';
 
@@ -12,24 +15,18 @@ export { ThreadExecutor } from './thread-executor';
 // Thread构建器
 export { ThreadBuilder } from './thread-builder';
 
-// Thread上下文
-export { ThreadContext } from './thread-context';
-
 // Thread生命周期管理器
 export { ThreadLifecycleManager } from './thread-lifecycle-manager';
 
 // Thread注册表
-export { ThreadRegistry } from './thread-registry';
+export { ThreadRegistry } from './registry/thread-registry';
 
 // 变量管理器
 export { VariableManager } from './variable-manager';
 
-// Workflow上下文
-export { WorkflowContext } from './workflow-context';
-
 // Workflow注册器
-export { WorkflowRegistry } from './workflow-registry';
-export type { WorkflowSummary, WorkflowVersion, ValidationResult } from './workflow-registry';
+export { WorkflowRegistry } from './registry/workflow-registry';
+export type { WorkflowSummary, WorkflowVersion, ValidationResult } from './registry/workflow-registry';
 
 // 路由器
 export { Router } from './router';

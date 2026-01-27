@@ -4,7 +4,7 @@
  */
 
 import type { Tool } from '../../types/tool';
-import { ToolError, TimeoutError, ValidationError } from '../../types/errors';
+import { TimeoutError, ValidationError } from '../../types/errors';
 
 /**
  * 工具执行选项
@@ -200,9 +200,9 @@ export abstract class BaseToolExecutor {
 
     // 网络错误可以重试
     if (error.message.includes('ECONNREFUSED') ||
-        error.message.includes('ETIMEDOUT') ||
-        error.message.includes('ENOTFOUND') ||
-        error.message.includes('EAI_AGAIN')) {
+      error.message.includes('ETIMEDOUT') ||
+      error.message.includes('ENOTFOUND') ||
+      error.message.includes('EAI_AGAIN')) {
       return true;
     }
 

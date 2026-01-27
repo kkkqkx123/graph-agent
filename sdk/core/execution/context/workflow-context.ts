@@ -3,11 +3,11 @@
  * 提供工作流执行时的共享上下文
  */
 
-import type { WorkflowDefinition } from '../../types/workflow';
-import type { Node } from '../../types/node';
-import type { Edge } from '../../types/edge';
-import { NodeType } from '../../types/node';
-import { EdgeType } from '../../types/edge';
+import type { WorkflowDefinition } from '../../../types/workflow';
+import type { Node } from '../../../types/node';
+import type { Edge } from '../../../types/edge';
+import { NodeType } from '../../../types/node';
+import { EdgeType } from '../../../types/edge';
 
 /**
  * 工作流上下文
@@ -160,7 +160,7 @@ export class WorkflowContext {
 
       // 检查边引用的节点是否存在
       if (!this.nodeMap.has(edge.sourceNodeId) ||
-          !this.nodeMap.has(edge.targetNodeId)) {
+        !this.nodeMap.has(edge.targetNodeId)) {
         return false;
       }
     }

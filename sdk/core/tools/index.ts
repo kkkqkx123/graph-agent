@@ -9,8 +9,8 @@ export { ToolService } from './tool-service';
 export { ToolRegistry } from './tool-registry';
 
 // 执行器基类
-export { BaseToolExecutor } from './executor-base';
-export type { ToolExecutionOptions, ToolExecutionResult } from './executor-base';
+export { BaseToolExecutor } from './base-tool-executor';
+export type { ToolExecutionOptions, ToolExecutionResult } from './base-tool-executor';
 
 // 执行器
 export { BuiltinToolExecutor } from './executors/builtin';

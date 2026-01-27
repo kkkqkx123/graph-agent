@@ -4,7 +4,7 @@
  * 不负责状态转换、持久化、序列化
  */
 
-import { ThreadContext } from './thread-context';
+import { ThreadContext } from '../context/thread-context';
 
 /**
  * ThreadRegistry - ThreadContext注册表

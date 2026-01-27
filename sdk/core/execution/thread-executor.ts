@@ -8,10 +8,10 @@
 import type { ThreadOptions, ThreadResult } from '../../types/thread';
 import type { Node } from '../../types/node';
 import type { NodeExecutionResult } from '../../types/thread';
-import { ThreadRegistry } from './thread-registry';
+import { ThreadRegistry } from './registry/thread-registry';
 import { ThreadBuilder } from './thread-builder';
 import { ThreadLifecycleManager } from './thread-lifecycle-manager';
-import { ThreadContext } from './thread-context';
+import { ThreadContext } from './context/thread-context';
 import { Router } from './router';
 import { NodeExecutorFactory } from './executors/node-executor-factory';
 import { NodeType } from '../../types/node';
@@ -20,7 +20,7 @@ import { ExecutionError, TimeoutError, NotFoundError } from '../../types/errors'
 import { EventType } from '../../types/events';
 import type { NodeStartedEvent, NodeCompletedEvent, NodeFailedEvent, ErrorEvent } from '../../types/events';
 import { TriggerManager } from './trigger-manager';
-import { WorkflowRegistry } from './workflow-registry';
+import { WorkflowRegistry } from './registry/workflow-registry';
 import { ExecutionSingletons } from './singletons';
 import { InternalEventType } from '../../types/internal-events';
 import type { ForkCompletedEvent, ForkFailedEvent, JoinCompletedEvent, JoinFailedEvent } from '../../types/internal-events';
@@ -45,12 +45,12 @@ export class ThreadExecutor {
     this.workflowRegistry = workflowRegistry || ExecutionSingletons.getWorkflowRegistry();
     this.threadRegistry = ExecutionSingletons.getThreadRegistry();
     this.eventManager = ExecutionSingletons.getEventManager();
-    
+
     // 创建非单例组件
     this.threadBuilder = new ThreadBuilder(this.workflowRegistry);
     this.router = new Router();
     this.lifecycleManager = new ThreadLifecycleManager(this.eventManager);
-    
+
     // 初始化 TriggerManager（需要重构以移除对 ThreadExecutor 的依赖）
     this.triggerManager = new TriggerManager(this.eventManager, this, this.threadBuilder);
   }
@@ -317,7 +317,7 @@ export class ThreadExecutor {
 
     // 发布 Fork 请求事件
     const requestId = `fork-${thread.id}-${node.id}-${Date.now()}`;
-    
+
     // 监听 Fork 完成事件
     const completedPromise = new Promise<string[]>((resolve, reject) => {
       const unregister = this.eventManager.onInternal(
@@ -329,7 +329,7 @@ export class ThreadExecutor {
           }
         }
       );
-      
+
       // 监听 Fork 失败事件
       const unregisterFailed = this.eventManager.onInternal(
         InternalEventType.FORK_FAILED,
@@ -409,7 +409,7 @@ export class ThreadExecutor {
           }
         }
       );
-      
+
       // 监听 Join 失败事件
       const unregisterFailed = this.eventManager.onInternal(
         InternalEventType.JOIN_FAILED,

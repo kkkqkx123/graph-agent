@@ -7,9 +7,9 @@
  */
 
 import type { Thread } from '../../types/thread';
-import { ThreadRegistry } from './thread-registry';
+import { ThreadRegistry } from './registry/thread-registry';
 import { ThreadBuilder } from './thread-builder';
-import { ThreadContext } from './thread-context';
+import { ThreadContext } from './context/thread-context';
 import { EventManager } from './event-manager';
 import { ExecutionError, TimeoutError, ValidationError } from '../../types/errors';
 import { EventType } from '../../types/events';
@@ -69,10 +69,10 @@ export class ThreadCoordinator {
   private registerEventListeners(): void {
     // 监听 FORK_REQUEST 事件
     this.eventManager.onInternal(InternalEventType.FORK_REQUEST, this.handleForkRequest.bind(this));
-    
+
     // 监听 JOIN_REQUEST 事件
     this.eventManager.onInternal(InternalEventType.JOIN_REQUEST, this.handleJoinRequest.bind(this));
-    
+
     // 监听 COPY_REQUEST 事件
     this.eventManager.onInternal(InternalEventType.COPY_REQUEST, this.handleCopyRequest.bind(this));
   }
@@ -82,10 +82,10 @@ export class ThreadCoordinator {
    */
   private async handleForkRequest(event: ForkRequestEvent): Promise<void> {
     const { parentThreadContext, forkId, forkStrategy } = event;
-    
+
     try {
       const childThreadIds = await this.fork(parentThreadContext, forkId, forkStrategy);
-      
+
       // 发布 Fork 完成事件
       const completedEvent: ForkCompletedEvent = {
         type: InternalEventType.FORK_COMPLETED,
@@ -113,10 +113,10 @@ export class ThreadCoordinator {
    */
   private async handleJoinRequest(event: JoinRequestEvent): Promise<void> {
     const { parentThreadContext, childThreadIds, joinStrategy, timeout } = event;
-    
+
     try {
       const result = await this.join(parentThreadContext, childThreadIds, joinStrategy as JoinStrategy, timeout);
-      
+
       // 发布 Join 完成事件
       const completedEvent: JoinCompletedEvent = {
         type: InternalEventType.JOIN_COMPLETED,
@@ -144,10 +144,10 @@ export class ThreadCoordinator {
    */
   private async handleCopyRequest(event: CopyRequestEvent): Promise<void> {
     const { sourceThreadId } = event;
-    
+
     try {
       const copiedThreadId = await this.copy(sourceThreadId);
-      
+
       // 发布 Copy 完成事件
       const completedEvent: CopyCompletedEvent = {
         type: InternalEventType.COPY_COMPLETED,

@@ -10,7 +10,7 @@
  */
 
 import type { LLMMessage, LLMToolCall, LLMResult, LLMUsage } from '../../types/llm';
-import type { ToolExecutionResult } from '../tools/executor-base';
+import type { ToolExecutionResult } from '../tools/base-tool-executor';
 import { ConversationManager } from './conversation-manager';
 import { LLMWrapper } from '../llm/wrapper';
 import { ToolService } from '../tools/tool-service';
@@ -65,7 +65,7 @@ export class LLMExecutor implements AsyncIterable<LLMMessage> {
   private maxIterations: number;
   private iterationCount: number;
   private callbacks: LLMExecutorCallbacks;
-  
+
   // 迭代器状态
   private consumed: boolean;
   private mutated: boolean;
@@ -91,7 +91,7 @@ export class LLMExecutor implements AsyncIterable<LLMMessage> {
     this.toolService = new ToolService();
     this.maxIterations = options.maxIterations || Infinity;
     this.callbacks = options.callbacks || {};
-    
+
     // 初始化迭代器状态
     this.consumed = false;
     this.mutated = false;
@@ -226,7 +226,7 @@ export class LLMExecutor implements AsyncIterable<LLMMessage> {
     try {
       // 解析参数
       const parameters = JSON.parse(toolCall.function.arguments);
-      
+
       // 调用工具服务执行工具
       const result = await this.toolService.execute(toolCall.function.name, parameters);
 
@@ -242,7 +242,7 @@ export class LLMExecutor implements AsyncIterable<LLMMessage> {
     } catch (error) {
       // 捕获异常，将错误信息作为工具结果返回
       const errorMessage = error instanceof Error ? error.message : String(error);
-      
+
       // 将错误信息转换为工具消息
       const toolMessage: LLMMessage = {
         role: 'tool',
@@ -283,7 +283,7 @@ export class LLMExecutor implements AsyncIterable<LLMMessage> {
     } catch (error) {
       // 捕获异常，将错误信息作为工具结果返回
       const errorMessage = error instanceof Error ? error.message : String(error);
-      
+
       // 将错误信息转换为工具消息
       const toolMessage: LLMMessage = {
         role: 'tool',

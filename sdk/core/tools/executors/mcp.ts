@@ -4,7 +4,7 @@
  */
 
 import type { Tool } from '../../../types/tool';
-import { BaseToolExecutor } from '../executor-base';
+import { BaseToolExecutor } from '../base-tool-executor';
 import { NetworkError } from '../../../types/errors';
 
 /**
