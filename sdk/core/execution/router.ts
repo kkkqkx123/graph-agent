@@ -8,7 +8,7 @@ import { EdgeType } from '../../types/edge';
 import type { Node } from '../../types/node';
 import { NodeType } from '../../types/node';
 import type { Thread } from '../../types/thread';
-import type { Condition, EvaluationContext } from '../../types/condition';
+import type { EvaluationContext } from '../../types/condition';
 import { conditionEvaluator } from './utils/condition-evaluator';
 
 /**
@@ -31,7 +31,14 @@ export class Router {
   ): string | null {
     // 检查当前节点类型
     if (currentNode.type === NodeType.ROUTE) {
-      // ROUTE节点使用自己的路由逻辑，跳过边评估
+      // ROUTE节点使用自己的路由决策，从执行结果中获取selectedNode
+      // 由于先执行节点再路由，顺序本身已经得到保证
+      const lastResult = thread.nodeResults[thread.nodeResults.length - 1];
+      if (lastResult && lastResult.nodeId === currentNode.id &&
+        lastResult.output && typeof lastResult.output === 'object' &&
+        'selectedNode' in lastResult.output) {
+        return lastResult.output.selectedNode as string;
+      }
       return null;
     }
 
