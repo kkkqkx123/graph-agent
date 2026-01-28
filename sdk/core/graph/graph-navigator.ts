@@ -10,7 +10,7 @@ import type {
   Edge,
 } from '../../types';
 import type { GraphData } from './graph-data';
-import { GraphAnalyzer } from './graph-analyzer';
+import { getReachableNodes } from './utils/graph-traversal';
 
 /**
  * 导航结果
@@ -43,12 +43,10 @@ export interface RoutingDecision {
  */
 export class GraphNavigator {
   private graph: GraphData;
-  private analyzer: GraphAnalyzer;
   private currentNodeId?: ID;
 
   constructor(graph: GraphData) {
     this.graph = graph;
-    this.analyzer = new GraphAnalyzer(graph);
   }
 
   /**
@@ -221,7 +219,7 @@ export class GraphNavigator {
       return false;
     }
 
-    const reachableNodes = this.analyzer.getReachableNodes(this.currentNodeId);
+    const reachableNodes = getReachableNodes(this.graph, this.currentNodeId);
     return reachableNodes.has(targetNodeId);
   }
 

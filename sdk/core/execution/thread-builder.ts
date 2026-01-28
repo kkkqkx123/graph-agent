@@ -45,7 +45,7 @@ export class ThreadBuilder {
   async build(workflowId: string, options: ThreadOptions = {}): Promise<ThreadContext> {
     // 优先从 WorkflowRegistry 获取处理后的工作流定义
     const processedWorkflow = this.workflowRegistry.getProcessed(workflowId);
-    
+
     if (processedWorkflow) {
       return this.buildFromProcessedDefinition(processedWorkflow, options);
     }

@@ -128,7 +128,7 @@ export class ThreadExecutor {
             navigator.setCurrentNode(currentNodeId);
             // 获取下一个节点
             const navigationResult = navigator.getNextNode();
-            
+
             if (navigationResult.isEnd) {
               // 到达结束节点，工作流完成
               await this.lifecycleManager.completeThread(threadContext.thread, this.createThreadResult(threadContext));
@@ -172,7 +172,7 @@ export class ThreadExecutor {
             navigator.setCurrentNode(currentNodeId);
             // 获取下一个节点
             const navigationResult = navigator.getNextNode();
-            
+
             if (navigationResult.isEnd) {
               // 到达结束节点，工作流完成
               await this.lifecycleManager.completeThread(threadContext.thread, this.createThreadResult(threadContext));

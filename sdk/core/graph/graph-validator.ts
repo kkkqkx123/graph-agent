@@ -2,25 +2,22 @@
  * 图验证器
  * 提供图的各种验证功能
  * 支持子工作流验证
- * 分析算法委托给GraphAnalyzer
+ * 使用图分析工具函数进行分析
  */
 
 import type {
   ID,
   NodeType,
-  EdgeType,
-  CycleDetectionResult,
-  ReachabilityResult,
-  TopologicalSortResult,
-  ForkJoinValidationResult,
   GraphValidationOptions,
   GraphAnalysisResult,
 } from '../../types';
 import { ValidationError } from '../../types';
 import type { ValidationResult } from '../../types';
 import type { GraphData } from './graph-data';
-import { GraphAnalyzer } from './graph-analyzer';
-import { GraphTraversal } from './graph-traversal';
+import { analyzeGraph } from './utils/graph-analyzer';
+import { detectCycles } from './utils/graph-cycle-detector';
+import { analyzeReachability } from './utils/graph-reachability-analyzer';
+import { getReachableNodes } from './utils/graph-traversal';
 
 /**
  * 图验证器类
@@ -59,10 +56,9 @@ export class GraphValidator {
       errorList.push(...isolatedErrors);
     }
 
-    // 检测环（使用GraphAnalyzer）
+    // 检测环
     if (opts.checkCycles) {
-      const analyzer = new GraphAnalyzer(graph);
-      const cycleResult = analyzer.detectCycles();
+      const cycleResult = detectCycles(graph);
       if (cycleResult.hasCycle) {
         errorList.push(
           new ValidationError('工作流中存在循环依赖', undefined, undefined, {
@@ -74,11 +70,10 @@ export class GraphValidator {
       }
     }
 
-    // 可达性分析（使用GraphAnalyzer）
+    // 可达性分析
     if (opts.checkReachability) {
-      const analyzer = new GraphAnalyzer(graph);
-      const reachabilityResult = analyzer.analyzeReachability();
-      
+      const reachabilityResult = analyzeReachability(graph);
+
       // 不可达节点
       for (const nodeId of reachabilityResult.unreachableNodes) {
         errorList.push(
@@ -284,9 +279,8 @@ export class GraphValidator {
     }
 
     // 检查FORK到JOIN的可达性
-    const traversal = new GraphTraversal(graph);
     for (const [forkNodeId, joinNodeId] of pairs) {
-      const reachableNodes = traversal.getReachableNodes(forkNodeId);
+      const reachableNodes = getReachableNodes(graph, forkNodeId);
       if (!reachableNodes.has(joinNodeId)) {
         errors.push(
           new ValidationError(
@@ -307,11 +301,10 @@ export class GraphValidator {
   }
 
   /**
-   * 完整的图分析（委托给GraphAnalyzer）
+   * 完整的图分析
    */
   static analyze(graph: GraphData): GraphAnalysisResult {
-    const analyzer = new GraphAnalyzer(graph);
-    return analyzer.analyze();
+    return analyzeGraph(graph);
   }
 
   /**
@@ -355,7 +348,7 @@ export class GraphValidator {
     for (const node of graph.nodes.values()) {
       if (node.type === 'SUBGRAPH' as NodeType) {
         const subgraphConfig = node.originalNode?.config as any;
-        
+
         // 检查输入映射
         if (subgraphConfig.inputMapping) {
           for (const [parentVar, subgraphInput] of Object.entries(subgraphConfig.inputMapping)) {
