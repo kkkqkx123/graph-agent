@@ -11,7 +11,7 @@ import type {
   NodeMap,
   EdgeMap,
   ID,
-  DirectedGraph,
+  DAG,
 } from '../../types';
 
 /**
@@ -19,7 +19,7 @@ import type {
  * 核心职责：存储和管理图的节点、边及邻接关系
  * 不包含复杂算法，仅提供基础的图操作
  */
-export class GraphData implements DirectedGraph {
+export class GraphData implements DAG {
   /** 节点集合 */
   public nodes: NodeMap;
   /** 边集合 */

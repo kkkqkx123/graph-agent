@@ -9,7 +9,7 @@
  * - 表达式长度限制
  */
 
-import { ValidationError } from '../types/errors';
+import { ValidationError } from '../../types/errors';
 
 /**
  * 安全配置

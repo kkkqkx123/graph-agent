@@ -1,5 +1,5 @@
 import { SECURITY_CONFIG, validateExpression, validatePath, validateArrayIndex, validateValueType } from '../security-validator';
-import { ValidationError } from '../../types/errors';
+import { ValidationError } from '../../../types/errors';
 
 describe('SecurityValidator', () => {
   describe('validateExpression', () => {
@@ -172,7 +172,7 @@ describe('SecurityValidator', () => {
     });
 
     test('should throw ValidationError for disallowed types', () => {
-      expect(() => validateValueType(() => {})).toThrow(ValidationError);
+      expect(() => validateValueType(() => { })).toThrow(ValidationError);
       expect(() => validateValueType(new Date())).toThrow(ValidationError);
       expect(() => validateValueType(/regex/)).toThrow(ValidationError);
       expect(() => validateValueType(new Map())).toThrow(ValidationError);
@@ -180,8 +180,8 @@ describe('SecurityValidator', () => {
     });
 
     test('should throw ValidationError with correct message', () => {
-      expect(() => validateValueType(() => {})).toThrow(ValidationError);
-      expect(() => validateValueType(() => {})).toThrow(
+      expect(() => validateValueType(() => { })).toThrow(ValidationError);
+      expect(() => validateValueType(() => { })).toThrow(
         'Value type function is not allowed'
       );
     });

@@ -19,7 +19,7 @@ import { VariableManager } from './managers/variable-manager';
 import { ValidationError } from '../../types/errors';
 import { WorkflowRegistry } from '../registry/workflow-registry';
 import { getWorkflowRegistry } from './context/execution-context';
-import { GraphNavigator } from '../graph/utils/graph-navigator';
+import { GraphNavigator } from '../graph/graph-navigator';
 import { GraphData } from '../graph/graph-data';
 
 /**

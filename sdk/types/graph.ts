@@ -79,7 +79,7 @@ export type EdgeMap = Map<ID, GraphEdge>;
  * 有向图类型
  * 用于工作流验证和分析的核心数据结构
  */
-export interface DirectedGraph {
+export interface DAG {
   /** 节点集合 */
   nodes: NodeMap;
   /** 边集合 */

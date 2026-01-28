@@ -1,5 +1,5 @@
 import { ExpressionEvaluator, parseExpression, parseValue, parseCompoundExpression } from '../expression-parser';
-import type { EvaluationContext } from '../../types/condition';
+import type { EvaluationContext } from '../../../types/condition';
 
 describe('ExpressionParser', () => {
   describe('parse', () => {
@@ -251,7 +251,7 @@ describe('ExpressionEvaluator', () => {
 
       // 简单变量名：仅从 variables 获取
       expect(evaluator.evaluate('varValue == "fromVariables"', context)).toBe(true);
-      
+
       // 显式前缀：从指定数据源获取
       expect(evaluator.evaluate('input.inputValue == "fromInput"', context)).toBe(true);
       expect(evaluator.evaluate('output.outputValue == "fromOutput"', context)).toBe(true);
@@ -294,10 +294,10 @@ describe('ExpressionEvaluator', () => {
       // 显式前缀：从指定数据源获取
       expect(evaluator.evaluate('variables.status == "fromVariables"', context)).toBe(true);
       expect(evaluator.evaluate('variables.user.name == "varUser"', context)).toBe(true);
-      
+
       expect(evaluator.evaluate('input.status == "fromInput"', context)).toBe(true);
       expect(evaluator.evaluate('input.user.name == "inputUser"', context)).toBe(true);
-      
+
       expect(evaluator.evaluate('output.status == "fromOutput"', context)).toBe(true);
       expect(evaluator.evaluate('output.user.name == "outputUser"', context)).toBe(true);
     });

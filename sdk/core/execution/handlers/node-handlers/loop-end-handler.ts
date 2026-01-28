@@ -7,7 +7,7 @@ import type { Node } from '../../../../types/node';
 import type { Thread } from '../../../../types/thread';
 import { NodeType } from '../../../../types/node';
 import { ValidationError, ExecutionError, NotFoundError } from '../../../../types/errors';
-import { conditionEvaluator } from '../../../../utils/condition-evaluator';
+import { conditionEvaluator } from '../../../../utils/evalutor/condition-evaluator';
 import { now } from '../../../../utils';
 
 /**

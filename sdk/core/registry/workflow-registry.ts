@@ -12,7 +12,7 @@ import type {
   SubgraphMergeLog,
   PreprocessValidationResult
 } from '../../types/workflow';
-import type { DirectedGraph, GraphAnalysisResult, GraphBuildOptions } from '../../types/graph';
+import type { DAG, GraphBuildOptions } from '../../types/graph';
 import type { ID } from '../../types/common';
 import { WorkflowValidator } from '../validation/workflow-validator';
 import { GraphBuilder } from '../graph/graph-builder';
@@ -57,7 +57,7 @@ export class WorkflowRegistry {
   private workflows: Map<string, WorkflowDefinition> = new Map();
   private versions: Map<string, WorkflowVersion[]> = new Map();
   private processedWorkflows: Map<string, ProcessedWorkflowDefinition> = new Map();
-  private graphCache: Map<string, DirectedGraph> = new Map();
+  private graphCache: Map<string, DAG> = new Map();
   private validator: WorkflowValidator;
   private enableVersioning: boolean;
   private maxVersions: number;
@@ -577,7 +577,7 @@ export class WorkflowRegistry {
    * @param workflowId 工作流ID
    * @returns 图结构，如果不存在则返回undefined
    */
-  getGraph(workflowId: string): DirectedGraph | undefined {
+  getGraph(workflowId: string): DAG | undefined {
     return this.graphCache.get(workflowId);
   }
 

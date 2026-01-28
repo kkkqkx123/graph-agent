@@ -113,11 +113,9 @@ export class ThreadExecutor {
           let nextNodeId: string | null = null;
 
           // 使用图导航器进行路由
-          const navigator = threadContext.getNavigator()!;
-          // 设置当前节点
-          navigator.setCurrentNode(currentNodeId);
+          const navigator = threadContext.getNavigator();
           // 获取下一个节点
-          const navigationResult = navigator.getNextNode();
+          const navigationResult = navigator.getNextNode(currentNodeId);
 
           if (navigationResult.isEnd) {
             // 到达结束节点，工作流完成
@@ -129,6 +127,7 @@ export class ThreadExecutor {
             // 多路径情况，使用GraphNavigator进行路由决策
             const lastResult = threadContext.getNodeResults()[threadContext.getNodeResults().length - 1];
             nextNodeId = navigator.selectNextNodeWithContext(
+              currentNodeId,
               threadContext.thread,
               currentNode.type,
               lastResult
@@ -155,11 +154,9 @@ export class ThreadExecutor {
           let nextNodeId: string | null = null;
 
           // 使用图导航器进行路由
-          const navigator = threadContext.getNavigator()!;
-          // 设置当前节点
-          navigator.setCurrentNode(currentNodeId);
+          const navigator = threadContext.getNavigator();
           // 获取下一个节点
-          const navigationResult = navigator.getNextNode();
+          const navigationResult = navigator.getNextNode(currentNodeId);
 
           if (navigationResult.isEnd) {
             // 到达结束节点，工作流完成
@@ -377,8 +374,10 @@ export class ThreadExecutor {
         } else {
           // 没有回退节点，尝试路由到下一个节点
           const navigator = threadContext.getNavigator();
+          const currentNodeId = node.id;
           const lastResult = threadContext.getNodeResults()[threadContext.getNodeResults().length - 1];
           const nextNodeId = navigator.selectNextNodeWithContext(
+            currentNodeId,
             threadContext.thread,
             node.type,
             lastResult

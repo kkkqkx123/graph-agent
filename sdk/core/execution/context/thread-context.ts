@@ -7,11 +7,11 @@
  */
 
 import type { Thread } from '../../../types/thread';
+import type { GraphData } from '../../graph/graph-data';
 import { WorkflowContext } from './workflow-context';
 import { ConversationManager } from '../conversation';
 import { VariableManager } from '../managers/variable-manager';
-import { GraphNavigator } from '../../graph/utils/graph-navigator';
-import { GraphData } from '../../graph/graph-data';
+import { GraphNavigator } from '../../graph/graph-navigator';
 
 /**
  * ThreadContext - Thread 执行上下文
@@ -248,34 +248,13 @@ export class ThreadContext {
 
   /**
    * 获取图导航器
-   * @returns 图导航器实例，从Thread中的graph创建
+   * @returns 图导航器实例
    */
   getNavigator(): GraphNavigator {
     if (!this.navigator) {
-      // 从Thread中的graph创建GraphNavigator
-      const graphData = new GraphData();
-      // 复制节点
-      for (const node of this.thread.graph.nodes.values()) {
-        graphData.addNode(node);
-      }
-      // 复制边
-      for (const edge of this.thread.graph.edges.values()) {
-        graphData.addEdge(edge);
-      }
-      // 设置起始和结束节点
-      graphData.startNodeId = this.thread.graph.startNodeId;
-      this.thread.graph.endNodeIds.forEach(id => graphData.endNodeIds.add(id));
-
-      this.navigator = new GraphNavigator(graphData);
+      // thread.graph 是 DAG 类型，GraphData 实现了 DAG 接口
+      this.navigator = new GraphNavigator(this.thread.graph as GraphData);
     }
     return this.navigator;
-  }
-
-  /**
-   * 检查是否有图导航器
-   * @returns 是否有图导航器（总是返回true，因为Thread总是包含graph）
-   */
-  hasNavigator(): boolean {
-    return true;
   }
 }

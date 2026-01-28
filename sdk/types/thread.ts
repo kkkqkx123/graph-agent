@@ -5,7 +5,7 @@
  */
 
 import type { ID, Timestamp, Version, Metadata } from './common';
-import type { DirectedGraph } from './graph';
+import type { DAG } from './graph';
 
 /**
  * 线程状态枚举
@@ -144,97 +144,97 @@ export interface ExecutionHistoryEntry {
  * Thread 作为纯数据对象，不包含方法，方法由 ThreadContext 提供
  */
 export interface Thread {
-   /** 线程唯一标识符 */
-   id: ID;
-   /** 关联的工作流ID */
-   workflowId: ID;
-   /** 工作流版本 */
-   workflowVersion: Version;
-   /** 线程状态 */
-   status: ThreadStatus;
-   /** 当前执行节点ID */
-   currentNodeId: ID;
-   /** 工作流图结构（包含节点、边、权重、条件等完整信息） */
-   graph: DirectedGraph;
-   /** 变量数组（用于持久化和元数据） */
-   variables: ThreadVariable[];
-   /** 变量值映射（用于快速访问） */
-   variableValues: Record<string, any>;
-   /**
-    * 输入数据（作为特殊变量，可通过路径访问）
-    *
-    * 说明：存储工作流的输入数据
-    * - 在 START 节点执行时初始化
-    * - 可通过表达式解析访问（使用 input. 路径）
-    * - 在整个工作流执行过程中保持不变
-    * - 用于传递外部输入到工作流
-    *
-    * 示例：
-    * ```typescript
-    * thread.input = {
-    *   userName: 'Alice',
-    *   userAge: 25,
-    *   config: { timeout: 5000 }
-    * }
-    *
-    * // 在表达式中访问
-    * {{input.userName}}  // 'Alice'
-    * {{input.config.timeout}}  // 5000
-    * ```
-    *
-    * 注意：此字段与 variables 的区别
-    * - Thread.input: 工作流的初始输入，只读
-    * - Thread.variableValues: 工作流执行过程中的变量，可变
-    */
-   input: Record<string, any>;
-   /**
-    * 输出数据（作为特殊变量，可通过路径访问）
-    *
-    * 说明：存储工作流的最终输出数据
-    * - 在 END 节点执行时设置
-    * - 可通过表达式解析访问（使用 output. 路径）
-    * - 默认为空对象，由 END 节点或最后一个节点填充
-    * - 用于返回工作流执行结果
-    *
-    * 示例：
-    * ```typescript
-    * thread.output = {
-    *   result: 'Task completed',
-    *   status: 'success',
-    *   data: { count: 10 }
-    * }
-    *
-    * // 在表达式中访问
-    * {{output.result}}  // 'Task completed'
-    * {{output.data.count}}  // 10
-    * ```
-    *
-    * 注意：此字段与 NodeExecutionResult.output 的区别
-    * - Thread.output: 整个工作流的最终输出
-    * - NodeExecutionResult.output: 单个节点的输出
-    *
-    * 注意：此字段与 variables 的区别
-    * - Thread.output: 工作流的最终输出，只读
-    * - Thread.variableValues: 工作流执行过程中的变量，可变
-    */
-   output: Record<string, any>;
-   /** 执行历史记录（按执行顺序存储） */
-   nodeResults: NodeExecutionResult[];
-   /** 开始时间 */
-   startTime: Timestamp;
-   /** 结束时间 */
-   endTime?: Timestamp;
-   /** 错误信息数组 */
-   errors: any[];
-   /** 线程元数据 */
-   metadata?: ThreadMetadata;
-   /** 上下文数据（用于存储 Conversation 等实例） */
-   contextData?: Record<string, any>;
-   /** 暂停标志（运行时控制）*/
-   shouldPause?: boolean;
-   /** 停止标志（运行时控制）*/
-   shouldStop?: boolean;
- }
+  /** 线程唯一标识符 */
+  id: ID;
+  /** 关联的工作流ID */
+  workflowId: ID;
+  /** 工作流版本 */
+  workflowVersion: Version;
+  /** 线程状态 */
+  status: ThreadStatus;
+  /** 当前执行节点ID */
+  currentNodeId: ID;
+  /** 工作流图结构（包含节点、边、权重、条件等完整信息） */
+  graph: DAG;
+  /** 变量数组（用于持久化和元数据） */
+  variables: ThreadVariable[];
+  /** 变量值映射（用于快速访问） */
+  variableValues: Record<string, any>;
+  /**
+   * 输入数据（作为特殊变量，可通过路径访问）
+   *
+   * 说明：存储工作流的输入数据
+   * - 在 START 节点执行时初始化
+   * - 可通过表达式解析访问（使用 input. 路径）
+   * - 在整个工作流执行过程中保持不变
+   * - 用于传递外部输入到工作流
+   *
+   * 示例：
+   * ```typescript
+   * thread.input = {
+   *   userName: 'Alice',
+   *   userAge: 25,
+   *   config: { timeout: 5000 }
+   * }
+   *
+   * // 在表达式中访问
+   * {{input.userName}}  // 'Alice'
+   * {{input.config.timeout}}  // 5000
+   * ```
+   *
+   * 注意：此字段与 variables 的区别
+   * - Thread.input: 工作流的初始输入，只读
+   * - Thread.variableValues: 工作流执行过程中的变量，可变
+   */
+  input: Record<string, any>;
+  /**
+   * 输出数据（作为特殊变量，可通过路径访问）
+   *
+   * 说明：存储工作流的最终输出数据
+   * - 在 END 节点执行时设置
+   * - 可通过表达式解析访问（使用 output. 路径）
+   * - 默认为空对象，由 END 节点或最后一个节点填充
+   * - 用于返回工作流执行结果
+   *
+   * 示例：
+   * ```typescript
+   * thread.output = {
+   *   result: 'Task completed',
+   *   status: 'success',
+   *   data: { count: 10 }
+   * }
+   *
+   * // 在表达式中访问
+   * {{output.result}}  // 'Task completed'
+   * {{output.data.count}}  // 10
+   * ```
+   *
+   * 注意：此字段与 NodeExecutionResult.output 的区别
+   * - Thread.output: 整个工作流的最终输出
+   * - NodeExecutionResult.output: 单个节点的输出
+   *
+   * 注意：此字段与 variables 的区别
+   * - Thread.output: 工作流的最终输出，只读
+   * - Thread.variableValues: 工作流执行过程中的变量，可变
+   */
+  output: Record<string, any>;
+  /** 执行历史记录（按执行顺序存储） */
+  nodeResults: NodeExecutionResult[];
+  /** 开始时间 */
+  startTime: Timestamp;
+  /** 结束时间 */
+  endTime?: Timestamp;
+  /** 错误信息数组 */
+  errors: any[];
+  /** 线程元数据 */
+  metadata?: ThreadMetadata;
+  /** 上下文数据（用于存储 Conversation 等实例） */
+  contextData?: Record<string, any>;
+  /** 暂停标志（运行时控制）*/
+  shouldPause?: boolean;
+  /** 停止标志（运行时控制）*/
+  shouldStop?: boolean;
+}
 
 /**
  * 线程执行选项类型

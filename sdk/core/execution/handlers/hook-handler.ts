@@ -22,7 +22,7 @@ import type { NodeExecutionResult } from '../../../types/thread';
 import type { NodeCustomEvent } from '../../../types/events';
 import { EventType } from '../../../types/events';
 import type { EvaluationContext } from '../../../types/condition';
-import { conditionEvaluator } from '../../../utils/condition-evaluator';
+import { conditionEvaluator } from '../../../utils/evalutor/condition-evaluator';
 
 /**
  * Hook执行上下文

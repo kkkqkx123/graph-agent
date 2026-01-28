@@ -7,7 +7,7 @@
 import type { Node } from './node';
 import type { Edge } from './edge';
 import type { ID, Timestamp, Version, Metadata } from './common';
-import type { DirectedGraph, GraphAnalysisResult } from './graph';
+import type { DAG, GraphAnalysisResult } from './graph';
 
 /**
  * 工作流状态枚举
@@ -165,7 +165,7 @@ export interface PreprocessValidationResult {
  */
 export interface ProcessedWorkflowDefinition extends WorkflowDefinition {
   /** 图结构 */
-  graph: DirectedGraph;
+  graph: DAG;
   /** 图分析结果 */
   graphAnalysis: GraphAnalysisResult;
   /** 预处理验证结果 */
