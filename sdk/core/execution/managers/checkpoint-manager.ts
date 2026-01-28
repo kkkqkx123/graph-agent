@@ -14,7 +14,7 @@ import { WorkflowContext } from '../context/workflow-context';
 import { VariableManager } from './variable-manager';
 import { ConversationManager } from '../conversation';
 import { LLMExecutor } from '../llm-executor';
-import { IDUtils } from '../../../utils';
+import { generateId, now as getCurrentTimestamp } from '../../../utils';
 import { WorkflowRegistry } from '../../registry/workflow-registry';
 import { getThreadRegistry, getWorkflowRegistry } from '../context/execution-context';
 import { MemoryCheckpointStorage } from '../../storage/memory-checkpoint-storage';
@@ -85,8 +85,8 @@ export class CheckpointManager {
     };
 
     // 步骤3：生成唯一 checkpointId 和 timestamp
-    const checkpointId = IDUtils.generate();
-    const timestamp = Date.now();
+    const checkpointId = generateId();
+    const timestamp = getCurrentTimestamp();
 
     // 步骤4：创建 Checkpoint 对象
     const checkpoint: Checkpoint = {
@@ -251,7 +251,7 @@ export class CheckpointManager {
    * @returns 定时器ID
    */
   createPeriodicCheckpoint(threadId: string, interval: number, metadata?: CheckpointMetadata): string {
-    const timerId = IDUtils.generate();
+    const timerId = generateId();
 
     const timer = setInterval(async () => {
       try {

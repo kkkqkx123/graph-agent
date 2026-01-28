@@ -3,7 +3,7 @@
  */
 
 import { ThreadExecutorAPI } from '../thread-executor-api';
-import { WorkflowRegistry } from '../../core/execution/registrys/workflow-registry';
+import { WorkflowRegistry } from '../../core/registry/workflow-registry';
 import type { WorkflowDefinition } from '../../types/workflow';
 import { NodeType } from '../../types/node';
 import { EdgeType } from '../../types/edge';

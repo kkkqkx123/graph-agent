@@ -3,7 +3,7 @@
  */
 
 import { VariableManagerAPI } from '../variable-manager-api';
-import { ThreadRegistry } from '../../core/execution/registrys/thread-registry';
+import { ThreadRegistry } from '../../core/registry/thread-registry';
 import type { ThreadVariable } from '../../types/thread';
 import { ThreadStatus } from '../../types/thread';
 import { NotFoundError, ValidationError } from '../../types/errors';
@@ -650,7 +650,7 @@ async function createTestThread(
   const { WorkflowContext } = await import('../../core/execution/context/workflow-context');
   const { ConversationManager } = await import('../../core/execution/conversation');
   const { LLMExecutor } = await import('../../core/execution/llm-executor');
-  const { IDUtils } = await import('../../utils');
+  const { generateId } = await import('../../utils');
 
   const workflow = {
     id: 'test-workflow',
@@ -672,7 +672,7 @@ async function createTestThread(
   }
 
   const thread = {
-    id: IDUtils.generate(),
+    id: generateId(),
     workflowId: workflow.id,
     workflowVersion: workflow.version,
     status: ThreadStatus.RUNNING,

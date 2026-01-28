@@ -6,20 +6,15 @@
 import type { ID } from '../types/common';
 
 /**
- * ID工具类
+ * 生成新ID（使用UUID v4）
  */
-export const IDUtils = {
-  /**
-   * 生成新ID（使用UUID v4）
-   */
-  generate(): ID {
-    return crypto.randomUUID();
-  },
+export function generateId(): ID {
+  return crypto.randomUUID();
+}
 
-  /**
-   * 验证ID是否有效
-   */
-  isValid(id: ID): boolean {
-    return typeof id === 'string' && id.length > 0;
-  }
-};
+/**
+ * 验证ID是否有效
+ */
+export function isValidId(id: ID): boolean {
+  return typeof id === 'string' && id.length > 0;
+}

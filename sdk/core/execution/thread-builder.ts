@@ -13,7 +13,7 @@ import { ConversationManager } from './conversation';
 import { LLMExecutor } from './llm-executor';
 import { ThreadContext } from './context/thread-context';
 import { NodeType } from '../../types/node';
-import { IDUtils } from '../../utils';
+import { generateId, now as getCurrentTimestamp } from '../../utils';
 import { VariableManager } from './managers/variable-manager';
 import { ValidationError } from '../../types/errors';
 import { WorkflowRegistry } from '../registry/workflow-registry';
@@ -72,8 +72,8 @@ export class ThreadBuilder {
     }
 
     // 步骤2：创建 Thread 实例
-    const threadId = IDUtils.generate();
-    const now = Date.now();
+    const threadId = generateId();
+    const now = getCurrentTimestamp();
 
     const thread: Partial<Thread> = {
       id: threadId,
@@ -138,8 +138,8 @@ export class ThreadBuilder {
    */
   async createCopy(sourceThreadContext: ThreadContext): Promise<ThreadContext> {
     const sourceThread = sourceThreadContext.thread;
-    const copiedThreadId = IDUtils.generate();
-    const now = Date.now();
+    const copiedThreadId = generateId();
+    const now = getCurrentTimestamp();
 
     const copiedThread: Partial<Thread> = {
       id: copiedThreadId,
@@ -184,8 +184,8 @@ export class ThreadBuilder {
    */
   async createFork(parentThreadContext: ThreadContext, forkConfig: any): Promise<ThreadContext> {
     const parentThread = parentThreadContext.thread;
-    const forkThreadId = IDUtils.generate();
-    const now = Date.now();
+    const forkThreadId = generateId();
+    const now = getCurrentTimestamp();
 
     const forkThread: Partial<Thread> = {
       id: forkThreadId,

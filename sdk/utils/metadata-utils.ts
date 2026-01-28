@@ -6,49 +6,44 @@
 import type { Metadata } from '../types/common';
 
 /**
- * 元数据工具类
+ * 创建空元数据
  */
-export const MetadataUtils = {
-  /**
-   * 创建空元数据
-   */
-  empty(): Metadata {
-    return {};
-  },
+export function emptyMetadata(): Metadata {
+  return {};
+}
 
-  /**
-   * 获取元数据值
-   */
-  get(metadata: Metadata, key: string): any {
-    return metadata[key];
-  },
+/**
+ * 获取元数据值
+ */
+export function getMetadata(metadata: Metadata, key: string): any {
+  return metadata[key];
+}
 
-  /**
-   * 设置元数据值（返回新对象，保持不可变性）
-   */
-  set(metadata: Metadata, key: string, value: any): Metadata {
-    return { ...metadata, [key]: value };
-  },
+/**
+ * 设置元数据值（返回新对象，保持不可变性）
+ */
+export function setMetadata(metadata: Metadata, key: string, value: any): Metadata {
+  return { ...metadata, [key]: value };
+}
 
-  /**
-   * 删除元数据值（返回新对象，保持不可变性）
-   */
-  delete(metadata: Metadata, key: string): Metadata {
-    const { [key]: _, ...rest } = metadata;
-    return rest;
-  },
+/**
+ * 删除元数据值（返回新对象，保持不可变性）
+ */
+export function deleteMetadata(metadata: Metadata, key: string): Metadata {
+  const { [key]: _, ...rest } = metadata;
+  return rest;
+}
 
-  /**
-   * 检查是否存在
-   */
-  has(metadata: Metadata, key: string): boolean {
-    return key in metadata;
-  },
+/**
+ * 检查是否存在
+ */
+export function hasMetadata(metadata: Metadata, key: string): boolean {
+  return key in metadata;
+}
 
-  /**
-   * 合并元数据
-   */
-  merge(...metadatas: Metadata[]): Metadata {
-    return Object.assign({}, ...metadatas);
-  }
-};
+/**
+ * 合并元数据
+ */
+export function mergeMetadata(...metadatas: Metadata[]): Metadata {
+  return Object.assign({}, ...metadatas);
+}
