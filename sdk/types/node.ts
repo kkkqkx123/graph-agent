@@ -24,9 +24,9 @@ export enum NodeType {
   SUBGRAPH = 'SUBGRAPH',
   /** 代码节点。用于执行脚本(脚本用于执行可执行文件或代码)。 */
   CODE = 'CODE',
-  /** LLM节点。用于执行LLM api调用。 */
+  /** LLM节点。用于执行LLM api调用。不添加提示词，提示词操作有上下文处理节点负责。 */
   LLM = 'LLM',
-  /** 工具节点。用于获取LLM api响应并执行工具，返回调用结果。 */
+  /** 工具节点。通过内部事件通知llm执行器。 */
   TOOL = 'TOOL',
   /** 用户交互节点。用于触发展示前端用户交互。仅提供输入、输出渠道，不关心前端实现细节。 */
   USER_INTERACTION = 'USER_INTERACTION',
@@ -162,8 +162,6 @@ export interface CodeNodeConfig {
 export interface LLMNodeConfig {
   /** 引用的LLM Profile ID */
   profileId: ID;
-  /** 提示词（消息数组或变量引用） */
-  prompt: any[];
   /** 可选的参数覆盖（覆盖Profile中的parameters） */
   parameters?: Record<string, any>;
 }

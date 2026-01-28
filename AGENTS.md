@@ -66,12 +66,11 @@ The SDK module uses a simplified two-layer architecture:
 sdk/
 ├── types/          # Type definitions
 ├── core/           # Core execution logic
-│   ├── state/      # State management
 │   ├── execution/  # Execution engine
 │   ├── llm/        # LLM integration
 │   ├── tools/      # Tool execution
 │   ├── validation/ # Validation
-│   └── checkpoint/ # Checkpoint management
+│   └── storage/    # Checkpoint storage
 ├── api/            # External API interfaces
 └── utils/          # Utility functions
 ```
