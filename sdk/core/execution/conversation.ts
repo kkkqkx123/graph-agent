@@ -1,17 +1,19 @@
 /**
  * 对话管理器
- * 管理消息历史、Token统计
- * 
+ * 管理消息历史
+ *
  * 核心职责：
  * 1. 消息历史管理
- * 2. Token统计和压缩事件触发
- * 
+ * 2. Token统计和压缩事件触发（委托给 TokenUsageTracker）
+ *
  * 重要说明：
  * - ConversationManager只管理状态，不负责执行逻辑
  * - 执行逻辑由LLMExecutor负责
+ * - Token统计委托给TokenUsageTracker
  */
 
 import type { LLMMessage, LLMUsage } from '../../types/llm';
+import { TokenUsageTracker, type TokenUsageStats } from './token-usage-tracker';
 
 /**
  * ConversationManager事件回调
@@ -32,26 +34,11 @@ export interface ConversationManagerOptions {
 }
 
 /**
- * Token使用统计
- */
-interface TokenUsageStats {
-  /** 提示Token数 */
-  promptTokens: number;
-  /** 完成Token数 */
-  completionTokens: number;
-  /** 总Token数 */
-  totalTokens: number;
-  /** 原始API响应的详细信息 */
-  rawUsage?: any;
-}
-
-/**
  * 对话管理器类
  */
 export class ConversationManager {
   private messages: LLMMessage[] = [];
-  private tokenLimit: number;
-  private tokenUsage: TokenUsageStats | null = null;
+  private tokenUsageTracker: TokenUsageTracker;
   private eventCallbacks?: ConversationManagerEventCallbacks;
 
   /**
@@ -59,7 +46,9 @@ export class ConversationManager {
    * @param options 配置选项
    */
   constructor(options: ConversationManagerOptions = {}) {
-    this.tokenLimit = options.tokenLimit || 4000;
+    this.tokenUsageTracker = new TokenUsageTracker({
+      tokenLimit: options.tokenLimit
+    });
     this.eventCallbacks = options.eventCallbacks;
   }
 
@@ -124,52 +113,12 @@ export class ConversationManager {
    * 检查Token使用情况，触发压缩事件
    */
   async checkTokenUsage(): Promise<void> {
-    const tokensUsed = this.estimateTokenUsage();
+    const tokensUsed = this.tokenUsageTracker.getTokenUsage(this.messages);
 
     // 如果超过限制，触发Token限制事件
-    if (tokensUsed > this.tokenLimit) {
+    if (this.tokenUsageTracker.isTokenLimitExceeded(this.messages)) {
       await this.triggerTokenLimitEvent(tokensUsed);
     }
-  }
-
-  /**
-   * 估算Token使用情况
-   * @returns Token数量
-   */
-  private estimateTokenUsage(): number {
-    // 优先使用API响应的Token统计
-    if (this.tokenUsage) {
-      return this.tokenUsage.totalTokens;
-    }
-
-    // 使用本地估算方法
-    return this.estimateTokensLocally();
-  }
-
-  /**
-   * 本地估算Token数量
-   * @returns Token数量
-   */
-  private estimateTokensLocally(): number {
-    let totalChars = 0;
-
-    for (const message of this.messages) {
-      if (typeof message.content === 'string') {
-        totalChars += message.content.length;
-      } else if (Array.isArray(message.content)) {
-        // 处理数组内容
-        for (const item of message.content) {
-          if (typeof item === 'string') {
-            totalChars += item.length;
-          } else if (typeof item === 'object' && item !== null) {
-            totalChars += JSON.stringify(item).length;
-          }
-        }
-      }
-    }
-
-    // 粗略估算：平均每个Token约2.5个字符
-    return Math.ceil(totalChars / 2.5);
   }
 
   /**
@@ -181,12 +130,22 @@ export class ConversationManager {
       return;
     }
 
-    this.tokenUsage = {
-      promptTokens: usage.promptTokens,
-      completionTokens: usage.completionTokens,
-      totalTokens: usage.totalTokens,
-      rawUsage: usage
-    };
+    this.tokenUsageTracker.updateApiUsage(usage);
+  }
+
+  /**
+   * 累积流式响应的Token使用统计
+   * @param usage Token使用数据（增量）
+   */
+  accumulateStreamUsage(usage: LLMUsage): void {
+    this.tokenUsageTracker.accumulateStreamUsage(usage);
+  }
+
+  /**
+   * 完成当前请求的Token统计
+   */
+  finalizeCurrentRequest(): void {
+    this.tokenUsageTracker.finalizeCurrentRequest();
   }
 
   /**
@@ -194,7 +153,15 @@ export class ConversationManager {
    * @returns Token使用统计
    */
   getTokenUsage(): TokenUsageStats | null {
-    return this.tokenUsage ? { ...this.tokenUsage } : null;
+    return this.tokenUsageTracker.getCumulativeUsage();
+  }
+
+  /**
+   * 获取当前请求的Token使用统计
+   * @returns Token使用统计
+   */
+  getCurrentRequestUsage(): TokenUsageStats | null {
+    return this.tokenUsageTracker.getCurrentRequestUsage();
   }
 
   /**
@@ -228,13 +195,13 @@ export class ConversationManager {
   private async triggerTokenLimitEvent(tokensUsed: number): Promise<void> {
     if (this.eventCallbacks?.onTokenLimitExceeded) {
       try {
-        await this.eventCallbacks.onTokenLimitExceeded(tokensUsed, this.tokenLimit);
+        await this.eventCallbacks.onTokenLimitExceeded(tokensUsed, this.tokenUsageTracker['tokenLimit']);
       } catch (error) {
         console.error('Error in onTokenLimitExceeded callback:', error);
       }
     } else {
       // 如果没有回调，记录警告
-      console.warn(`Token limit exceeded: ${tokensUsed} > ${this.tokenLimit}`);
+      console.warn(`Token limit exceeded: ${tokensUsed} > ${this.tokenUsageTracker['tokenLimit']}`);
     }
   }
 
@@ -246,7 +213,7 @@ export class ConversationManager {
   clone(): ConversationManager {
     // 创建新的 ConversationManager 实例
     const clonedManager = new ConversationManager({
-      tokenLimit: this.tokenLimit,
+      tokenLimit: this.tokenUsageTracker['tokenLimit'],
       eventCallbacks: this.eventCallbacks
     });
 
@@ -254,9 +221,7 @@ export class ConversationManager {
     clonedManager.messages = this.messages.map(msg => ({ ...msg }));
 
     // 复制 token 使用统计
-    if (this.tokenUsage) {
-      clonedManager.tokenUsage = { ...this.tokenUsage };
-    }
+    clonedManager.tokenUsageTracker = this.tokenUsageTracker.clone();
 
     return clonedManager;
   }

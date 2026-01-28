@@ -76,7 +76,9 @@ export class LLMExecutor {
       // 执行LLM调用
       if (llmRequest.stream) {
         // 流式调用
+        // Token 统计已在客户端层（BaseLLMClient）累积
         for await (const chunk of this.llmWrapper.generateStream(llmRequest)) {
+          // 保存最后一个有 finishReason 的 chunk 作为最终结果
           if (chunk.finishReason) {
             finalResult = chunk;
           }

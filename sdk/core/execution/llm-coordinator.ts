@@ -107,6 +107,9 @@ export class LLMCoordinator {
         if (llmResult.usage) {
           conversationManager.updateTokenUsage(llmResult.usage);
         }
+        
+        // 完成当前请求的Token统计
+        conversationManager.finalizeCurrentRequest();
 
         // 将LLM响应添加到对话历史
         conversationManager.addMessage({

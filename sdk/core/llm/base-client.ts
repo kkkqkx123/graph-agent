@@ -58,13 +58,38 @@ export abstract class BaseLLMClient implements LLMClient {
    * 流式生成
    *
    * 重试和超时由HttpClient处理
+   * 在客户端层累积 token 统计信息
    */
   async *generateStream(request: LLMRequest): AsyncIterable<LLMResult> {
     // 合并请求参数
     const mergedRequest = this.mergeParameters(request);
 
     try {
-      yield* this.doGenerateStream(mergedRequest);
+      // 参考 Anthropic SDK 的做法：在流式传输期间持续累积 token 统计
+      // message_start 事件提供初始 token 计数（输入 token）
+      // message_delta 事件提供输出 token 计数的持续更新
+      let accumulatedUsage: any = null;
+      
+      for await (const chunk of this.doGenerateStream(mergedRequest)) {
+        // 累积 token 统计
+        if (chunk.usage) {
+          if (!accumulatedUsage) {
+            // 第一次收到 usage，通常是 message_start 事件
+            accumulatedUsage = { ...chunk.usage };
+          } else {
+            // 后续的 usage，通常是 message_delta 事件，进行增量更新
+            // Anthropic SDK 的做法：直接更新为最新值
+            accumulatedUsage = { ...chunk.usage };
+          }
+        }
+        
+        // 如果是最后一个 chunk（有 finishReason），确保包含累积的 usage
+        if (chunk.finishReason && accumulatedUsage) {
+          chunk.usage = accumulatedUsage;
+        }
+        
+        yield chunk;
+      }
     } catch (error) {
       throw this.handleError(error);
     }

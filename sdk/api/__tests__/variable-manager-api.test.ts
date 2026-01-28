@@ -650,6 +650,7 @@ async function createTestThread(
   const { WorkflowContext } = await import('../../core/execution/context/workflow-context');
   const { ConversationManager } = await import('../../core/execution/conversation');
   const { generateId } = await import('../../utils');
+  const { GraphBuilder } = await import('../../core/graph/graph-builder');
 
   const workflow = {
     id: 'test-workflow',
@@ -663,6 +664,7 @@ async function createTestThread(
 
   const workflowContext = new WorkflowContext(workflow);
   const conversationManager = new ConversationManager();
+  const graph = GraphBuilder.build(workflow);
 
   const variableValues: Record<string, any> = {};
   for (const variable of variables) {
@@ -675,6 +677,7 @@ async function createTestThread(
     workflowVersion: workflow.version,
     status: ThreadStatus.RUNNING,
     currentNodeId: '',
+    graph,
     variables: variables,
     variableValues: variableValues,
     input: {},

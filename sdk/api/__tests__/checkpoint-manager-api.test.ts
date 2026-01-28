@@ -510,9 +510,11 @@ async function createTestThreadContext(
   const { WorkflowContext } = await import('../../core/execution/context/workflow-context');
   const { ConversationManager } = await import('../../core/execution/conversation');
   const { generateId } = await import('../../utils');
+  const { GraphBuilder } = await import('../../core/graph/graph-builder');
 
   const workflowContext = new WorkflowContext(workflow);
   const conversationManager = new ConversationManager();
+  const graph = GraphBuilder.build(workflow);
 
   const thread = {
     id: generateId(),
@@ -520,6 +522,7 @@ async function createTestThreadContext(
     workflowVersion: workflow.version,
     status: ThreadStatus.RUNNING,
     currentNodeId: 'start',
+    graph,
     variables: [],
     variableValues: {},
     input: {},
