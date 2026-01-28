@@ -50,7 +50,9 @@
     ],
     "author": "Modular Agent Framework Team",
     "license": "MIT",
-    "dependencies": {},
+    "dependencies": {
+        "zod": "^4.3.6"
+    },
     "devDependencies": {
         "@types/jest": "^30.0.0",
         "@types/node": "^25.0.1",

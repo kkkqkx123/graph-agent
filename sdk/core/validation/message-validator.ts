@@ -1,53 +1,129 @@
 /**
  * 消息验证器
  * 负责消息格式、内容类型、工具调用的验证
+ * 使用zod进行声明式验证
  */
 
+import { z } from 'zod';
 import type { LLMMessage, LLMMessageRole, LLMToolCall } from '../../types/llm';
 import { ValidationError, type ValidationResult } from '../../types/errors';
 
 /**
- * 消息验证器
+ * 文本内容项schema
+ */
+const textContentSchema = z.object({
+  type: z.literal('text'),
+  text: z.string().min(1, 'Text content cannot be empty')
+});
+
+/**
+ * 图片URL内容项schema
+ */
+const imageUrlContentSchema = z.object({
+  type: z.literal('image_url'),
+  image_url: z.object({
+    url: z.string().url('Image URL must be a valid URL')
+  })
+});
+
+/**
+ * 工具使用内容项schema
+ */
+const toolUseContentSchema = z.object({
+  type: z.literal('tool_use'),
+  id: z.string().min(1, 'Tool use ID cannot be empty'),
+  name: z.string().min(1, 'Tool use name cannot be empty'),
+  input: z.record(z.string(), z.any())
+});
+
+/**
+ * 工具结果内容项schema
+ */
+const toolResultContentSchema = z.object({
+  type: z.literal('tool_result'),
+  tool_use_id: z.string().min(1, 'Tool result tool_use_id cannot be empty'),
+  content: z.any()
+});
+
+/**
+ * 内容项schema（联合类型）
+ */
+const contentItemSchema = z.union([
+  textContentSchema,
+  imageUrlContentSchema,
+  toolUseContentSchema,
+  toolResultContentSchema
+]);
+
+/**
+ * 消息内容schema
+ */
+const messageContentSchema = z.union([
+  z.string().min(1, 'Message content cannot be empty').transform((val) => val.trim()).refine((val) => val.length > 0, 'Message content cannot be empty'),
+  z.array(contentItemSchema).min(1, 'Message content array cannot be empty')
+]);
+
+/**
+ * 工具调用函数schema
+ */
+const toolCallFunctionSchema = z.object({
+  name: z.string().min(1, 'Tool call function name cannot be empty'),
+  arguments: z.string().refine(
+    (val) => {
+      try {
+        JSON.parse(val);
+        return true;
+      } catch {
+        return false;
+      }
+    },
+    { message: 'Tool call function arguments must be valid JSON' }
+  )
+});
+
+/**
+ * 工具调用schema
+ */
+const toolCallSchema: z.ZodType<LLMToolCall> = z.object({
+  id: z.string().min(1, 'Tool call ID cannot be empty'),
+  type: z.literal('function'),
+  function: toolCallFunctionSchema
+});
+
+/**
+ * 消息schema
+ */
+const messageSchema: z.ZodType<LLMMessage> = z.object({
+  role: z.enum(['system', 'user', 'assistant', 'tool']),
+  content: messageContentSchema,
+  toolCalls: z.array(toolCallSchema).optional(),
+  toolCallId: z.string().min(1, 'Tool call ID cannot be empty').optional().refine((val) => val === undefined || val.trim().length > 0, 'Tool call ID cannot be empty')
+}).refine(
+  (data) => {
+    // tool角色必须有toolCallId
+    if (data.role === 'tool' && !data.toolCallId) {
+      return false;
+    }
+    return true;
+  },
+  { message: 'Tool message must have a toolCallId', path: ['toolCallId'] }
+);
+
+/**
+ * 消息验证器类
  */
 export class MessageValidator {
-  /**
-   * 有效的消息角色
-   */
-  private static readonly VALID_ROLES: LLMMessageRole[] = ['system', 'user', 'assistant', 'tool'];
-
   /**
    * 验证消息对象
    * @param message 消息对象
    * @returns 验证结果
    */
   validateMessage(message: LLMMessage): ValidationResult {
-    const errors: ValidationError[] = [];
-
-    // 验证消息角色
-    const roleResult = this.validateRole(message.role);
-    errors.push(...roleResult.errors);
-
-    // 验证消息内容
-    const contentResult = this.validateContent(message.content, message.role);
-    errors.push(...contentResult.errors);
-
-    // 验证工具调用（仅 assistant 角色）
-    if (message.role === 'assistant') {
-      const toolCallsResult = this.validateToolCalls(message.toolCalls);
-      errors.push(...toolCallsResult.errors);
+    const result = messageSchema.safeParse(message);
+    if (result.success) {
+      return { valid: true, errors: [], warnings: [] };
     }
-
-    // 验证工具调用 ID（仅 tool 角色）
-    if (message.role === 'tool') {
-      const toolCallIdResult = this.validateToolCallId(message.toolCallId);
-      errors.push(...toolCallIdResult.errors);
-    }
-
-    return {
-      valid: errors.length === 0,
-      errors,
-      warnings: []
-    };
+    return this.convertZodError(result.error);
   }
 
   /**
@@ -56,26 +132,21 @@ export class MessageValidator {
    * @returns 验证结果
    */
   validateRole(role: LLMMessageRole): ValidationResult {
-    const errors: ValidationError[] = [];
-
     if (!role) {
-      errors.push(new ValidationError(
-        'Message role is required',
-        'message.role'
-      ));
-      return { valid: false, errors, warnings: [] };
+      return {
+        valid: false,
+        errors: [new ValidationError('Message role is required', 'role')],
+        warnings: []
+      };
     }
-
-    if (!MessageValidator.VALID_ROLES.includes(role)) {
-      errors.push(new ValidationError(
-        `Invalid message role: ${role}. Must be one of: ${MessageValidator.VALID_ROLES.join(', ')}`,
-        'message.role'
-      ));
+    const roleSchema = z.enum(['system', 'user', 'assistant', 'tool']);
+    const result = roleSchema.safeParse(role);
+    if (result.success) {
+      return { valid: true, errors: [], warnings: [] };
     }
-
     return {
-      valid: errors.length === 0,
-      errors,
+      valid: false,
+      errors: [new ValidationError('Invalid message role', 'role')],
       warnings: []
     };
   }
@@ -87,162 +158,29 @@ export class MessageValidator {
    * @returns 验证结果
    */
   validateContent(content: string | any[], role: LLMMessageRole): ValidationResult {
-    const errors: ValidationError[] = [];
-
-    // 检查内容是否存在
-    if (content === undefined || content === null) {
-      errors.push(new ValidationError(
-        'Message content is required',
-        'message.content'
-      ));
-      return { valid: false, errors, warnings: [] };
-    }
-
-    // 检查内容类型
-    if (typeof content !== 'string' && !Array.isArray(content)) {
-      errors.push(new ValidationError(
-        `Invalid content type: ${typeof content}. Must be string or array`,
-        'message.content'
-      ));
-      return { valid: false, errors, warnings: [] };
-    }
-
-    // 如果是字符串，检查是否为空
-    if (typeof content === 'string' && content.trim() === '') {
-      errors.push(new ValidationError(
-        'Message content cannot be empty',
-        'message.content'
-      ));
-    }
-
-    // 如果是数组，验证数组元素
-    if (Array.isArray(content)) {
-      if (content.length === 0) {
-        errors.push(new ValidationError(
-          'Message content array cannot be empty',
-          'message.content'
-        ));
-      } else {
-        content.forEach((item, index) => {
-          const itemResult = this.validateContentItem(item, index);
-          errors.push(...itemResult.errors);
-        });
-      }
-    }
-
-    // tool 角色的内容可以是字符串或数组（包含 tool_result）
-    if (role === 'tool' && typeof content !== 'string' && !Array.isArray(content)) {
-      errors.push(new ValidationError(
-        'Tool message content must be a string or array',
-        'message.content'
-      ));
-    }
-    
-    // 如果 tool 角色使用数组内容，验证所有内容项都是 tool_result 类型
-    if (role === 'tool' && Array.isArray(content)) {
-      content.forEach((item, index) => {
-        if (item.type !== 'tool_result') {
-          errors.push(new ValidationError(
-            `Tool message content item at index ${index} must have type 'tool_result'`,
-            `message.content[${index}].type`
-          ));
+    const result = messageContentSchema.safeParse(content);
+    if (result.success) {
+      // 对于tool角色，如果内容是数组，验证所有内容项都是tool_result类型
+      if (role === 'tool' && Array.isArray(content)) {
+        for (let i = 0; i < content.length; i++) {
+          const item = content[i];
+          if (item.type !== 'tool_result') {
+            return {
+              valid: false,
+              errors: [
+                new ValidationError(
+                  `Tool message content item at index ${i} must have type 'tool_result'`,
+                  `content[${i}].type`
+                )
+              ],
+              warnings: []
+            };
+          }
         }
-      });
+      }
+      return { valid: true, errors: [], warnings: [] };
     }
-
-    return {
-      valid: errors.length === 0,
-      errors,
-      warnings: []
-    };
-  }
-
-  /**
-   * 验证内容数组中的元素
-   * @param item 内容元素
-   * @param index 元素索引
-   * @returns 验证结果
-   */
-  private validateContentItem(item: any, index: number): ValidationResult {
-    const errors: ValidationError[] = [];
-    const path = `message.content[${index}]`;
-
-    // 检查元素是否为对象
-    if (typeof item !== 'object' || item === null) {
-      errors.push(new ValidationError(
-        `Content item at index ${index} must be an object`,
-        path
-      ));
-      return { valid: false, errors, warnings: [] };
-    }
-
-    // 检查是否有 type 属性
-    if (!item.type) {
-      errors.push(new ValidationError(
-        `Content item at index ${index} must have a type property`,
-        `${path}.type`
-      ));
-    }
-
-    // 根据 type 验证内容
-    if (item.type === 'text') {
-      if (!item.text || typeof item.text !== 'string') {
-        errors.push(new ValidationError(
-          `Text content item at index ${index} must have a text property of type string`,
-          `${path}.text`
-        ));
-      }
-    } else if (item.type === 'image_url') {
-      if (!item.image_url || typeof item.image_url !== 'object') {
-        errors.push(new ValidationError(
-          `Image content item at index ${index} must have an image_url property`,
-          `${path}.image_url`
-        ));
-      } else if (!item.image_url.url || typeof item.image_url.url !== 'string') {
-        errors.push(new ValidationError(
-          `Image content item at index ${index} must have image_url.url property of type string`,
-          `${path}.image_url.url`
-        ));
-      }
-    } else if (item.type === 'tool_use') {
-      if (!item.id || typeof item.id !== 'string') {
-        errors.push(new ValidationError(
-          `Tool use content item at index ${index} must have an id property of type string`,
-          `${path}.id`
-        ));
-      }
-      if (!item.name || typeof item.name !== 'string') {
-        errors.push(new ValidationError(
-          `Tool use content item at index ${index} must have a name property of type string`,
-          `${path}.name`
-        ));
-      }
-      if (!item.input || typeof item.input !== 'object') {
-        errors.push(new ValidationError(
-          `Tool use content item at index ${index} must have an input property of type object`,
-          `${path}.input`
-        ));
-      }
-    } else if (item.type === 'tool_result') {
-      if (!item.tool_use_id || typeof item.tool_use_id !== 'string') {
-        errors.push(new ValidationError(
-          `Tool result content item at index ${index} must have a tool_use_id property of type string`,
-          `${path}.tool_use_id`
-        ));
-      }
-      if (item.content === undefined || item.content === null) {
-        errors.push(new ValidationError(
-          `Tool result content item at index ${index} must have a content property`,
-          `${path}.content`
-        ));
-      }
-    }
-
-    return {
-      valid: errors.length === 0,
-      errors,
-      warnings: []
-    };
+    return this.convertZodError(result.error);
   }
 
   /**
@@ -251,146 +189,34 @@ export class MessageValidator {
    * @returns 验证结果
    */
   validateToolCalls(toolCalls?: LLMToolCall[]): ValidationResult {
-    const errors: ValidationError[] = [];
-
-    // toolCalls 是可选的，如果不存在则跳过验证
     if (toolCalls === undefined || toolCalls === null) {
       return { valid: true, errors: [], warnings: [] };
     }
-
-    // 检查是否为数组
-    if (!Array.isArray(toolCalls)) {
-      errors.push(new ValidationError(
-        'toolCalls must be an array',
-        'message.toolCalls'
-      ));
-      return { valid: false, errors, warnings: [] };
+    const result = z.array(toolCallSchema).safeParse(toolCalls);
+    if (result.success) {
+      return { valid: true, errors: [], warnings: [] };
     }
-
-    // 验证每个工具调用
-    toolCalls.forEach((toolCall, index) => {
-      const toolCallResult = this.validateToolCall(toolCall, index);
-      errors.push(...toolCallResult.errors);
-    });
-
-    return {
-      valid: errors.length === 0,
-      errors,
-      warnings: []
-    };
+    return this.convertZodError(result.error);
   }
 
   /**
-   * 验证单个工具调用
-   * @param toolCall 工具调用对象
-   * @param index 工具调用索引
-   * @returns 验证结果
-   */
-  private validateToolCall(toolCall: LLMToolCall, index: number): ValidationResult {
-    const errors: ValidationError[] = [];
-    const path = `message.toolCalls[${index}]`;
-
-    // 检查 id
-    if (!toolCall.id || typeof toolCall.id !== 'string') {
-      errors.push(new ValidationError(
-        `Tool call at index ${index} must have an id property of type string`,
-        `${path}.id`
-      ));
-    }
-
-    // 检查 type
-    if (!toolCall.type || toolCall.type !== 'function') {
-      errors.push(new ValidationError(
-        `Tool call at index ${index} must have type property set to 'function'`,
-        `${path}.type`
-      ));
-    }
-
-    // 检查 function
-    if (!toolCall.function || typeof toolCall.function !== 'object') {
-      errors.push(new ValidationError(
-        `Tool call at index ${index} must have a function property`,
-        `${path}.function`
-      ));
-    } else {
-      // 检查 function.name
-      if (!toolCall.function.name || typeof toolCall.function.name !== 'string') {
-        errors.push(new ValidationError(
-          `Tool call at index ${index} must have function.name property of type string`,
-          `${path}.function.name`
-        ));
-      }
-
-      // 检查 function.arguments
-      if (toolCall.function.arguments === undefined || toolCall.function.arguments === null) {
-        errors.push(new ValidationError(
-          `Tool call at index ${index} must have function.arguments property`,
-          `${path}.function.arguments`
-        ));
-      } else if (typeof toolCall.function.arguments !== 'string') {
-        errors.push(new ValidationError(
-          `Tool call at index ${index} must have function.arguments property of type string`,
-          `${path}.function.arguments`
-        ));
-      } else {
-        // 尝试解析 JSON
-        try {
-          JSON.parse(toolCall.function.arguments);
-        } catch (e) {
-          errors.push(new ValidationError(
-            `Tool call at index ${index} has invalid JSON in function.arguments: ${(e as Error).message}`,
-            `${path}.function.arguments`
-          ));
-        }
-      }
-    }
-
-    return {
-      valid: errors.length === 0,
-      errors,
-      warnings: []
-    };
-  }
-
-  /**
-   * 验证工具调用 ID
-   * @param toolCallId 工具调用 ID
+   * 验证工具调用ID
+   * @param toolCallId 工具调用ID
    * @returns 验证结果
    */
   validateToolCallId(toolCallId?: string): ValidationResult {
-    const errors: ValidationError[] = [];
-
-    // toolCallId 是可选的，但 tool 角色通常需要
     if (toolCallId === undefined || toolCallId === null) {
-      errors.push(new ValidationError(
-        'Tool message must have a toolCallId',
-        'message.toolCallId'
-      ));
-      return { valid: false, errors, warnings: [] };
+      return {
+        valid: false,
+        errors: [new ValidationError('Tool message must have a toolCallId', 'toolCallId')],
+        warnings: []
+      };
     }
-
-    // 检查类型
-    if (typeof toolCallId !== 'string') {
-      errors.push(new ValidationError(
-        'toolCallId must be a string',
-        'message.toolCallId'
-      ));
-      return { valid: false, errors, warnings: [] };
+    const result = z.string().min(1, 'Tool call ID cannot be empty').transform((val) => val.trim()).refine((val) => val.length > 0, 'Tool call ID cannot be empty').safeParse(toolCallId);
+    if (result.success) {
+      return { valid: true, errors: [], warnings: [] };
     }
-
-    // 检查是否为空
-    if (toolCallId.trim() === '') {
-      errors.push(new ValidationError(
-        'toolCallId cannot be empty',
-        'message.toolCallId'
-      ));
-    }
-
-    return {
-      valid: errors.length === 0,
-      errors,
-      warnings: []
-    };
+    return this.convertZodError(result.error);
   }
 
   /**
@@ -399,29 +225,42 @@ export class MessageValidator {
    * @returns 验证结果
    */
   validateMessages(messages: LLMMessage[]): ValidationResult {
-    const errors: ValidationError[] = [];
-
     if (!Array.isArray(messages)) {
-      errors.push(new ValidationError(
-        'Messages must be an array',
-        'messages'
-      ));
-      return { valid: false, errors, warnings: [] };
+      return {
+        valid: false,
+        errors: [new ValidationError('Messages must be an array', 'messages')],
+        warnings: []
+      };
     }
 
+    const allErrors: ValidationError[] = [];
     messages.forEach((message, index) => {
       const result = this.validateMessage(message);
-      // 为每个错误添加路径前缀
-      result.errors.forEach(error => {
-        errors.push(new ValidationError(
-          error.message,
-          `messages[${index}].${error.field}`
-        ));
+      result.errors.forEach((error) => {
+        const field = error.field ? `messages[${index}].${error.field}` : `messages[${index}]`;
+        allErrors.push(new ValidationError(error.message, field, error.value));
       });
     });
 
     return {
-      valid: errors.length === 0,
+      valid: allErrors.length === 0,
+      errors: allErrors,
+      warnings: []
+    };
+  }
+
+  /**
+   * 将zod错误转换为ValidationResult
+   * @param error zod错误
+   * @returns ValidationResult
+   */
+  private convertZodError(error: z.ZodError): ValidationResult {
+    const errors: ValidationError[] = error.issues.map((issue) => {
+      const field = issue.path.length > 0 ? issue.path.join('.') : undefined;
+      return new ValidationError(issue.message, field);
+    });
+    return {
+      valid: false,
       errors,
       warnings: []
     };

@@ -9,6 +9,7 @@
  * - 表达式长度限制
  */
 
+import { z } from 'zod';
 import { ValidationError } from '../../types/errors';
 
 /**
@@ -26,19 +27,46 @@ export const SECURITY_CONFIG = {
 } as const;
 
 /**
+ * 表达式schema
+ */
+const expressionSchema = z.string()
+  .min(1, 'Expression must be a non-empty string')
+  .max(SECURITY_CONFIG.MAX_EXPRESSION_LENGTH, `Expression length exceeds maximum limit of ${SECURITY_CONFIG.MAX_EXPRESSION_LENGTH}`);
+
+/**
+ * 路径schema（基础格式验证）
+ */
+const pathSchema = z.string()
+  .min(1, 'Path must be a non-empty string')
+  .regex(SECURITY_CONFIG.VALID_PATH_PATTERN, 'Path contains invalid characters. Only alphanumeric, underscore, dot, and array brackets are allowed');
+
+/**
+ * 值类型schema
+ */
+const valueTypeSchema = z.union([
+  z.string(),
+  z.number(),
+  z.boolean(),
+  z.undefined(),
+  z.null(),
+  z.array(z.any()),
+  z.record(z.string(), z.any()).refine(
+    (val) => val.constructor === Object || val.constructor === undefined,
+    { message: 'Special objects (Date, RegExp, Map, Set, etc.) are not allowed' }
+  )
+]);
+
+/**
  * 验证表达式安全性
  * @param expression 表达式字符串
  * @throws ValidationError 如果表达式不安全
  */
 export function validateExpression(expression: string): void {
-  if (!expression || typeof expression !== 'string') {
-    throw new ValidationError('Expression must be a non-empty string', 'expression', expression);
-  }
-
-  // 检查表达式长度
-  if (expression.length > SECURITY_CONFIG.MAX_EXPRESSION_LENGTH) {
+  const result = expressionSchema.safeParse(expression);
+  if (!result.success) {
+    const message = result.error.issues[0]?.message || 'Expression validation failed';
     throw new ValidationError(
-      `Expression length exceeds maximum limit of ${SECURITY_CONFIG.MAX_EXPRESSION_LENGTH}`,
+      message,
       'expression',
       expression
     );
@@ -51,8 +79,13 @@ export function validateExpression(expression: string): void {
  * @throws ValidationError 如果路径不安全
  */
 export function validatePath(path: string): void {
+  // 检查是否为字符串
   if (!path || typeof path !== 'string') {
-    throw new ValidationError('Path must be a non-empty string', 'path', path);
+    throw new ValidationError(
+      'Path must be a non-empty string',
+      'path',
+      path
+    );
   }
 
   // 检查是否包含禁止的属性
@@ -66,10 +99,12 @@ export function validatePath(path: string): void {
     }
   }
 
-  // 检查路径格式
-  if (!SECURITY_CONFIG.VALID_PATH_PATTERN.test(path)) {
+  // 验证路径格式
+  const result = pathSchema.safeParse(path);
+  if (!result.success) {
+    const message = result.error.issues[0]?.message || 'Path validation failed';
     throw new ValidationError(
-      'Path contains invalid characters. Only alphanumeric, underscore, dot, and array brackets are allowed',
+      message,
       'path',
       path
     );
@@ -93,11 +128,19 @@ export function validatePath(path: string): void {
  * @throws ValidationError 如果索引越界
  */
 export function validateArrayIndex(array: any[], index: number): void {
-  if (!Array.isArray(array)) {
-    throw new ValidationError('Target is not an array', 'array', array);
+  const arraySchema = z.array(z.any());
+  const arrayResult = arraySchema.safeParse(array);
+  if (!arrayResult.success) {
+    throw new ValidationError(
+      'Target is not an array',
+      'array',
+      array
+    );
   }
 
-  if (index < 0 || index >= array.length) {
+  const indexSchema = z.number().int().nonnegative().max(array.length - 1);
+  const indexResult = indexSchema.safeParse(index);
+  if (!indexResult.success) {
     throw new ValidationError(
       `Array index ${index} out of bounds. Array length is ${array.length}`,
       'index',
@@ -112,32 +155,27 @@ export function validateArrayIndex(array: any[], index: number): void {
  * @throws ValidationError 如果值类型不允许
  */
 export function validateValueType(value: any): void {
-  const allowedTypes = ['string', 'number', 'boolean', 'undefined'];
+  const result = valueTypeSchema.safeParse(value);
+  if (!result.success) {
+    const issue = result.error.issues[0];
+    let message = 'Value type validation failed';
 
-  if (value === null) {
-    return; // null 是允许的
-  }
-
-  if (Array.isArray(value)) {
-    return; // 数组是允许的
-  }
-
-  // 检查是否为普通对象（非特殊对象）
-  if (typeof value === 'object') {
-    // 检查是否为特殊对象（Date, RegExp, Map, Set 等）
-    if (value.constructor && value.constructor !== Object) {
-      throw new ValidationError(
-        `Value type ${value.constructor.name} is not allowed`,
-        'value',
-        value
-      );
+    // 根据实际类型生成更具体的错误消息
+    if (value !== null && value !== undefined) {
+      const typeName = typeof value;
+      if (typeName === 'function') {
+        message = `Value type ${typeName} is not allowed`;
+      } else if (value.constructor && value.constructor !== Object) {
+        message = `Value type ${value.constructor.name} is not allowed`;
+      } else {
+        message = `Value type ${typeName} is not allowed`;
+      }
+    } else {
+      message = result.error.issues[0]?.message || 'Value type validation failed';
     }
-    return; // 普通对象是允许的
-  }
 
-  if (!allowedTypes.includes(typeof value)) {
     throw new ValidationError(
-      `Value type ${typeof value} is not allowed`,
+      message,
       'value',
       value
     );

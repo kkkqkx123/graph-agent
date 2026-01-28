@@ -3,6 +3,7 @@
  * 提供ID生成和验证功能
  */
 
+import { z } from 'zod';
 import type { ID } from '../types/common';
 
 /**
@@ -20,23 +21,31 @@ export function isValidId(id: ID): boolean {
 }
 
 /**
+ * ID格式schemas
+ */
+const idSchemas = {
+  workflow: z.string().regex(/^wflow_[a-f0-9]{8}-[a-f0-9]{4}-4[a-f0-9]{3}-[89ab][a-f0-9]{3}-[a-f0-9]{12}$/i, 'Invalid workflow ID format'),
+  thread: z.string().regex(/^thrd_[a-f0-9]{8}-[a-f0-9]{4}-4[a-f0-9]{3}-[89ab][a-f0-9]{3}-[a-f0-9]{12}$/i, 'Invalid thread ID format'),
+  node: z.string().regex(/^node_[a-z0-9_]+$/, 'Invalid node ID format'),
+  edge: z.string().regex(/^edge_[a-z0-9_]+$/, 'Invalid edge ID format'),
+  checkpoint: z.string().regex(/^ckpt_[a-f0-9]{8}-[a-f0-9]{4}-4[a-f0-9]{3}-[89ab][a-f0-9]{3}-[a-f0-9]{12}$/i, 'Invalid checkpoint ID format'),
+  toolCall: z.string().regex(/^call_\d+_[a-z0-9]+$/, 'Invalid tool call ID format'),
+  event: z.string().regex(/^evt_\d+_[a-z0-9]+$/, 'Invalid event ID format')
+} as const;
+
+/**
  * 验证ID格式是否符合规范
  * @param id 要验证的ID
  * @param entityType 实体类型：workflow, thread, node, edge, checkpoint, toolCall, event
  * @returns 是否符合格式规范
  */
 export function validateId(id: ID, entityType: string): boolean {
-  const patterns: Record<string, RegExp> = {
-    workflow: /^wflow_[a-f0-9]{8}-[a-f0-9]{4}-4[a-f0-9]{3}-[89ab][a-f0-9]{3}-[a-f0-9]{12}$/i,
-    thread: /^thrd_[a-f0-9]{8}-[a-f0-9]{4}-4[a-f0-9]{3}-[89ab][a-f0-9]{3}-[a-f0-9]{12}$/i,
-    node: /^node_[a-z0-9_]+$/,
-    edge: /^edge_[a-z0-9_]+$/,
-    checkpoint: /^ckpt_[a-f0-9]{8}-[a-f0-9]{4}-4[a-f0-9]{3}-[89ab][a-f0-9]{3}-[a-f0-9]{12}$/i,
-    toolCall: /^call_\d+_[a-z0-9]+$/,
-    event: /^evt_\d+_[a-z0-9]+$/
-  };
-  
-  return patterns[entityType]?.test(id) || false;
+  const schema = idSchemas[entityType as keyof typeof idSchemas];
+  if (!schema) {
+    return false;
+  }
+  const result = schema.safeParse(id);
+  return result.success;
 }
 
 /**

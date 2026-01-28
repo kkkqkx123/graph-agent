@@ -3,6 +3,7 @@
  * 定义执行器的通用接口和实现
  */
 
+import { z } from 'zod';
 import type { Tool } from '../../types/tool';
 import { TimeoutError, ValidationError, NetworkError, RateLimitError, HttpError } from '../../types/errors';
 import { now, diffTimestamp } from '../../utils';
@@ -138,52 +139,97 @@ export abstract class BaseToolExecutor {
     tool: Tool,
     parameters: Record<string, any>
   ): void {
-    // 验证必需参数
-    for (const requiredParam of tool.parameters.required) {
-      if (!(requiredParam in parameters) || parameters[requiredParam] === undefined) {
-        throw new ValidationError(
-          `Required parameter '${requiredParam}' is missing`,
-          requiredParam,
-          parameters
-        );
+    // 构建zod schema
+    const schema = this.buildParameterSchema(tool);
+    
+    // 验证参数
+    const result = schema.safeParse(parameters);
+    if (!result.success) {
+      const firstError = result.error.issues[0];
+      if (!firstError) {
+        throw new ValidationError('Parameter validation failed', 'parameters', parameters);
+      }
+      const field = firstError.path.join('.');
+      throw new ValidationError(
+        firstError.message,
+        field,
+        parameters
+      );
+    }
+  }
+
+  /**
+   * 构建参数验证schema
+   * @param tool 工具定义
+   * @returns zod schema
+   */
+  private buildParameterSchema(tool: Tool): z.ZodType<Record<string, any>> {
+    const shape: Record<string, z.ZodTypeAny> = {};
+
+    // 为每个参数构建schema
+    for (const [paramName, paramSchema] of Object.entries(tool.parameters.properties)) {
+      let zodSchema = this.buildTypeSchema(paramSchema.type);
+
+      // 添加枚举验证
+      if (paramSchema.enum && paramSchema.enum.length > 0) {
+        zodSchema = zodSchema.pipe(z.enum(paramSchema.enum as [string, ...string[]]));
+      }
+
+      // 添加格式验证
+      if (paramSchema.format && typeof paramSchema.format === 'string') {
+        zodSchema = zodSchema.pipe(this.buildFormatSchema(paramSchema.format));
+      }
+
+      // 设置是否必需
+      if (tool.parameters.required.includes(paramName)) {
+        shape[paramName] = zodSchema;
+      } else {
+        shape[paramName] = zodSchema.optional();
       }
     }
 
-    // 验证参数类型
-    for (const [paramName, paramValue] of Object.entries(parameters)) {
-      const paramSchema = tool.parameters.properties[paramName];
-      if (!paramSchema) {
-        continue; // 忽略未定义的参数
-      }
+    return z.object(shape);
+  }
 
-      // 验证类型
-      if (!this.validateType(paramValue, paramSchema.type)) {
-        throw new ValidationError(
-          `Parameter '${paramName}' must be of type '${paramSchema.type}'`,
-          paramName,
-          paramValue
-        );
-      }
+  /**
+   * 构建类型schema
+   * @param type 类型字符串
+   * @returns zod schema
+   */
+  private buildTypeSchema(type: string): z.ZodTypeAny {
+    switch (type) {
+      case 'string':
+        return z.string();
+      case 'number':
+        return z.number();
+      case 'boolean':
+        return z.boolean();
+      case 'array':
+        return z.array(z.any());
+      case 'object':
+        return z.record(z.string(), z.any());
+      default:
+        return z.any();
+    }
+  }
 
-      // 验证枚举值
-      if (paramSchema.enum && !paramSchema.enum.includes(paramValue)) {
-        throw new ValidationError(
-          `Parameter '${paramName}' must be one of: ${paramSchema.enum.join(', ')}`,
-          paramName,
-          paramValue
-        );
-      }
-
-      // 验证格式
-      if (paramSchema.format && typeof paramValue === 'string') {
-        if (!this.validateFormat(paramValue, paramSchema.format)) {
-          throw new ValidationError(
-            `Parameter '${paramName}' must match format '${paramSchema.format}'`,
-            paramName,
-            paramValue
-          );
-        }
-      }
+  /**
+   * 构建格式schema
+   * @param format 格式字符串
+   * @returns zod schema
+   */
+  private buildFormatSchema(format: string): z.ZodTypeAny {
+    switch (format) {
+      case 'uri':
+        return z.string().url();
+      case 'email':
+        return z.string().email();
+      case 'uuid':
+        return z.string().uuid();
+      case 'date-time':
+        return z.string().datetime();
+      default:
+        return z.any();
     }
   }
 
@@ -267,54 +313,4 @@ export abstract class BaseToolExecutor {
     return new Promise(resolve => setTimeout(resolve, ms));
   }
 
-  /**
-   * 验证参数类型
-   * @param value 参数值
-   * @param type 期望的类型
-   * @returns 是否匹配
-   */
-  private validateType(value: any, type: string): boolean {
-    switch (type) {
-      case 'string':
-        return typeof value === 'string';
-      case 'number':
-        return typeof value === 'number' && !isNaN(value);
-      case 'boolean':
-        return typeof value === 'boolean';
-      case 'array':
-        return Array.isArray(value);
-      case 'object':
-        return typeof value === 'object' && value !== null && !Array.isArray(value);
-      default:
-        return true;
-    }
-  }
-
-  /**
-   * 验证参数格式
-   * @param value 参数值
-   * @param format 格式类型
-   * @returns 是否匹配
-   */
-  private validateFormat(value: string, format: string): boolean {
-    switch (format) {
-      case 'uri':
-        try {
-          new URL(value);
-          return true;
-        } catch {
-          return false;
-        }
-      case 'email':
-        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-        return emailRegex.test(value);
-      case 'uuid':
-        const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-        return uuidRegex.test(value);
-      case 'date-time':
-        return !isNaN(Date.parse(value));
-      default:
-        return true;
-    }
-  }
 }

@@ -1,14 +1,177 @@
 /**
  * 节点验证器
  * 负责节点配置的验证
+ * 使用zod进行声明式验证
  */
 
+import { z } from 'zod';
 import type { Node } from '../../types/node';
 import { NodeType } from '../../types/node';
 import { ValidationError, type ValidationResult } from '../../types/errors';
 
 /**
- * 节点验证器
+ * 变量节点配置schema
+ */
+const variableNodeConfigSchema = z.object({
+  variableName: z.string().min(1, 'Variable name is required'),
+  variableType: z.enum(['number', 'string', 'boolean', 'array', 'object']),
+  expression: z.string().min(1, 'Expression is required')
+});
+
+/**
+ * 分叉节点配置schema
+ */
+const forkNodeConfigSchema = z.object({
+  forkId: z.string().min(1, 'Fork ID is required'),
+  forkStrategy: z.enum(['serial', 'parallel'])
+});
+
+/**
+ * 连接节点配置schema
+ */
+const joinNodeConfigSchema = z.object({
+  joinId: z.string().min(1, 'Join ID is required'),
+  joinStrategy: z.enum(['ALL_COMPLETED', 'ANY_COMPLETED', 'ALL_FAILED', 'ANY_FAILED', 'SUCCESS_COUNT_THRESHOLD']),
+  threshold: z.number().optional(),
+  timeout: z.number().optional()
+}).refine(
+  (data) => {
+    if (data.joinStrategy === 'SUCCESS_COUNT_THRESHOLD' && data.threshold === undefined) {
+      return false;
+    }
+    return true;
+  },
+  { message: 'JOIN node with SUCCESS_COUNT_THRESHOLD strategy must have threshold', path: ['threshold'] }
+);
+
+/**
+ * 代码节点配置schema
+ */
+const codeNodeConfigSchema = z.object({
+  scriptName: z.string().min(1, 'Script name is required'),
+  scriptType: z.enum(['shell', 'cmd', 'powershell', 'python', 'javascript']),
+  risk: z.enum(['none', 'low', 'medium', 'high']),
+  timeout: z.number().min(0, 'Timeout must be non-negative'),
+  retries: z.number().min(0, 'Retries must be non-negative'),
+  retryDelay: z.number().min(0, 'Retry delay must be non-negative')
+});
+
+/**
+ * LLM节点配置schema
+ */
+const llmNodeConfigSchema = z.object({
+  profileId: z.string().min(1, 'Profile ID is required'),
+  parameters: z.record(z.string(), z.any()).optional()
+});
+
+/**
+ * 工具节点配置schema
+ */
+const toolNodeConfigSchema = z.object({
+  toolName: z.string().min(1, 'Tool name is required'),
+  parameters: z.record(z.string(), z.any()),
+  timeout: z.number().min(0, 'Timeout must be non-negative'),
+  retries: z.number().min(0, 'Retries must be non-negative')
+});
+
+/**
+ * 用户交互节点配置schema
+ */
+const userInteractionNodeConfigSchema = z.object({
+  userInteractionType: z.enum(['ask_for_approval', 'ask_for_input', 'ask_for_selection', 'show_message']),
+  showMessage: z.string().optional(),
+  userInput: z.any().optional()
+});
+
+/**
+ * 路由节点配置schema
+ */
+const routeNodeConfigSchema = z.object({
+  conditions: z.array(z.string()).min(1, 'Conditions array cannot be empty'),
+  nextNodes: z.array(z.string()).min(1, 'Next nodes array cannot be empty')
+}).refine(
+  (data) => data.conditions.length === data.nextNodes.length,
+  { message: 'ROUTE node conditions and nextNodes must have the same length' }
+);
+
+/**
+ * 上下文处理器节点配置schema
+ */
+const contextProcessorNodeConfigSchema = z.object({
+  contextProcessorType: z.enum(['PASS_THROUGH', 'FILTER_IN', 'FILTER_OUT', 'TRANSFORM', 'ISOLATE', 'MERGE']),
+  contextProcessorConfig: z.object({
+    filterCondition: z.string().optional(),
+    transformExpression: z.string().optional(),
+    mergeStrategy: z.string().optional()
+  })
+});
+
+/**
+ * 循环开始节点配置schema
+ */
+const loopStartNodeConfigSchema = z.object({
+  loopId: z.string().min(1, 'Loop ID is required'),
+  iterable: z.any().refine((val) => val !== undefined, 'Iterable is required'),
+  maxIterations: z.number().min(0, 'Max iterations must be non-negative')
+});
+
+/**
+ * 循环结束节点配置schema
+ */
+const loopEndNodeConfigSchema = z.object({
+  loopId: z.string().min(1, 'Loop ID is required'),
+  iterable: z.any().refine((val) => val !== undefined, 'Iterable is required'),
+  breakCondition: z.any().optional()
+});
+
+/**
+ * 子图节点配置schema
+ */
+const subgraphNodeConfigSchema = z.object({
+  subgraphId: z.string().min(1, 'Subgraph ID is required'),
+  inputMapping: z.record(z.string(), z.string()),
+  outputMapping: z.record(z.string(), z.string()),
+  async: z.boolean()
+});
+
+/**
+ * 节点配置schema（基于节点类型的联合类型）
+ */
+const nodeConfigSchema = z.discriminatedUnion('type', [
+  z.object({ type: z.literal(NodeType.START), config: z.object({}) }),
+  z.object({ type: z.literal(NodeType.END), config: z.object({}) }),
+  z.object({ type: z.literal(NodeType.VARIABLE), config: variableNodeConfigSchema }),
+  z.object({ type: z.literal(NodeType.FORK), config: forkNodeConfigSchema }),
+  z.object({ type: z.literal(NodeType.JOIN), config: joinNodeConfigSchema }),
+  z.object({ type: z.literal(NodeType.CODE), config: codeNodeConfigSchema }),
+  z.object({ type: z.literal(NodeType.LLM), config: llmNodeConfigSchema }),
+  z.object({ type: z.literal(NodeType.TOOL), config: toolNodeConfigSchema }),
+  z.object({ type: z.literal(NodeType.USER_INTERACTION), config: userInteractionNodeConfigSchema }),
+  z.object({ type: z.literal(NodeType.ROUTE), config: routeNodeConfigSchema }),
+  z.object({ type: z.literal(NodeType.CONTEXT_PROCESSOR), config: contextProcessorNodeConfigSchema }),
+  z.object({ type: z.literal(NodeType.LOOP_START), config: loopStartNodeConfigSchema }),
+  z.object({ type: z.literal(NodeType.LOOP_END), config: loopEndNodeConfigSchema }),
+  z.object({ type: z.literal(NodeType.SUBGRAPH), config: subgraphNodeConfigSchema })
+]);
+
+/**
+ * 节点schema
+ */
+const nodeSchema: z.ZodType<Node> = z.object({
+  id: z.string().min(1, 'Node ID is required'),
+  type: z.nativeEnum(NodeType),
+  name: z.string().min(1, 'Node name is required'),
+  description: z.string().optional(),
+  config: z.any(), // config将在后续验证中根据type进行验证
+  metadata: z.record(z.string(), z.any()).optional(),
+  outgoingEdgeIds: z.array(z.string()).default([]),
+  incomingEdgeIds: z.array(z.string()).default([]),
+  properties: z.array(z.any()).optional(),
+  hooks: z.array(z.any()).optional()
+});
+
+/**
+ * 节点验证器类
  */
 export class NodeValidator {
   /**
@@ -17,297 +180,75 @@ export class NodeValidator {
    * @returns 验证结果
    */
   validateNode(node: Node): ValidationResult {
-    const errors: ValidationError[] = [];
-
-    // 验证基本信息
-    if (!node.id) {
-      errors.push(new ValidationError(
-        'Node ID is required',
-        'node.id'
-      ));
+    // 首先验证基本信息
+    const basicResult = nodeSchema.safeParse(node);
+    if (!basicResult.success) {
+      return this.convertZodError(basicResult.error, 'node');
     }
 
-    if (!node.name) {
-      errors.push(new ValidationError(
-        'Node name is required',
-        'node.name'
-      ));
-    }
-
-    if (!node.type) {
-      errors.push(new ValidationError(
-        'Node type is required',
-        'node.type'
-      ));
-    }
-
-    // 验证节点配置
+    // 然后验证节点配置
     const configResult = this.validateNodeConfig(node);
-    errors.push(...configResult.errors);
+    if (!configResult.valid) {
+      return configResult;
+    }
 
-    return {
-      valid: errors.length === 0,
-      errors,
-      warnings: []
-    };
+    return { valid: true, errors: [], warnings: [] };
   }
 
   /**
    * 验证节点配置
+   * @param node 节点
+   * @returns 验证结果
    */
   private validateNodeConfig(node: Node): ValidationResult {
-    const errors: ValidationError[] = [];
-    const config = node.config;
-    const path = `node.config`;
+    // 创建包含type的临时对象用于验证
+    const nodeWithType = {
+      type: node.type,
+      config: node.config
+    };
 
-    switch (node.type) {
-      case NodeType.START:
-        // START节点不需要配置
-        break;
-
-      case NodeType.END:
-        // END节点不需要配置
-        break;
-
-      case NodeType.VARIABLE:
-        if (!config || !(config as any).variableName) {
-          errors.push(new ValidationError(
-            'VARIABLE node must have variableName',
-            `${path}.variableName`
-          ));
-        }
-        if (!config || !(config as any).variableType) {
-          errors.push(new ValidationError(
-            'VARIABLE node must have variableType',
-            `${path}.variableType`
-          ));
-        }
-        if (!config || !(config as any).expression) {
-          errors.push(new ValidationError(
-            'VARIABLE node must have expression',
-            `${path}.expression`
-          ));
-        }
-        break;
-
-      case NodeType.FORK:
-        if (!config || !(config as any).forkId) {
-          errors.push(new ValidationError(
-            'FORK node must have forkId',
-            `${path}.forkId`
-          ));
-        }
-        if (!config || !(config as any).forkStrategy) {
-          errors.push(new ValidationError(
-            'FORK node must have forkStrategy',
-            `${path}.forkStrategy`
-          ));
-        }
-        break;
-
-      case NodeType.JOIN:
-        if (!config || !(config as any).joinId) {
-          errors.push(new ValidationError(
-            'JOIN node must have joinId',
-            `${path}.joinId`
-          ));
-        }
-        if (!config || !(config as any).joinStrategy) {
-          errors.push(new ValidationError(
-            'JOIN node must have joinStrategy',
-            `${path}.joinStrategy`
-          ));
-        }
-        if (config && (config as any).joinStrategy === 'SUCCESS_COUNT_THRESHOLD' && !(config as any).threshold) {
-          errors.push(new ValidationError(
-            'JOIN node with SUCCESS_COUNT_THRESHOLD strategy must have threshold',
-            `${path}.threshold`
-          ));
-        }
-        break;
-
-      case NodeType.CODE:
-        if (!config || !(config as any).scriptName) {
-          errors.push(new ValidationError(
-            'CODE node must have scriptName',
-            `${path}.scriptName`
-          ));
-        }
-        if (!config || !(config as any).scriptType) {
-          errors.push(new ValidationError(
-            'CODE node must have scriptType',
-            `${path}.scriptType`
-          ));
-        }
-        if (!config || !(config as any).risk) {
-          errors.push(new ValidationError(
-            'CODE node must have risk',
-            `${path}.risk`
-          ));
-        }
-        if (!config || !(config as any).timeout) {
-          errors.push(new ValidationError(
-            'CODE node must have timeout',
-            `${path}.timeout`
-          ));
-        }
-        if (!config || !(config as any).retries) {
-          errors.push(new ValidationError(
-            'CODE node must have retries',
-            `${path}.retries`
-          ));
-        }
-        break;
-
-      case NodeType.LLM:
-        if (!config || !(config as any).profileId) {
-          errors.push(new ValidationError(
-            'LLM node must have profileId',
-            `${path}.profileId`
-          ));
-        }
-        if (!config || !(config as any).prompt) {
-          errors.push(new ValidationError(
-            'LLM node must have prompt',
-            `${path}.prompt`
-          ));
-        }
-        break;
-
-      case NodeType.TOOL:
-        if (!config || !(config as any).toolName) {
-          errors.push(new ValidationError(
-            'TOOL node must have toolName',
-            `${path}.toolName`
-          ));
-        }
-        if (!config || !(config as any).parameters) {
-          errors.push(new ValidationError(
-            'TOOL node must have parameters',
-            `${path}.parameters`
-          ));
-        }
-        break;
-
-      case NodeType.USER_INTERACTION:
-        if (!config || !(config as any).userInteractionType) {
-          errors.push(new ValidationError(
-            'USER_INTERACTION node must have userInteractionType',
-            `${path}.userInteractionType`
-          ));
-        }
-        break;
-
-      case NodeType.ROUTE:
-        if (!config || !(config as any).conditions) {
-          errors.push(new ValidationError(
-            'ROUTE node must have conditions',
-            `${path}.conditions`
-          ));
-        }
-        if (!config || !(config as any).nextNodes) {
-          errors.push(new ValidationError(
-            'ROUTE node must have nextNodes',
-            `${path}.nextNodes`
-          ));
-        }
-        if (config && (config as any).conditions && (config as any).nextNodes) {
-          if ((config as any).conditions.length !== (config as any).nextNodes.length) {
-            errors.push(new ValidationError(
-              'ROUTE node conditions and nextNodes must have the same length',
-              `${path}`
-            ));
-          }
-        }
-        break;
-
-      case NodeType.CONTEXT_PROCESSOR:
-        if (!config || !(config as any).contextProcessorType) {
-          errors.push(new ValidationError(
-            'CONTEXT_PROCESSOR node must have contextProcessorType',
-            `${path}.contextProcessorType`
-          ));
-        }
-        if (!config || !(config as any).contextProcessorConfig) {
-          errors.push(new ValidationError(
-            'CONTEXT_PROCESSOR node must have contextProcessorConfig',
-            `${path}.contextProcessorConfig`
-          ));
-        }
-        break;
-
-      case NodeType.LOOP_START:
-        if (!config || !(config as any).loopId) {
-          errors.push(new ValidationError(
-            'LOOP_START node must have loopId',
-            `${path}.loopId`
-          ));
-        }
-        if (!config || !(config as any).iterable) {
-          errors.push(new ValidationError(
-            'LOOP_START node must have iterable',
-            `${path}.iterable`
-          ));
-        }
-        if (!config || !(config as any).maxIterations) {
-          errors.push(new ValidationError(
-            'LOOP_START node must have maxIterations',
-            `${path}.maxIterations`
-          ));
-        }
-        break;
-
-      case NodeType.LOOP_END:
-        if (!config || !(config as any).loopId) {
-          errors.push(new ValidationError(
-            'LOOP_END node must have loopId',
-            `${path}.loopId`
-          ));
-        }
-        if (!config || !(config as any).iterable) {
-          errors.push(new ValidationError(
-            'LOOP_END node must have iterable',
-            `${path}.iterable`
-          ));
-        }
-        if (!config || !(config as any).breakCondition) {
-          errors.push(new ValidationError(
-            'LOOP_END node must have breakCondition',
-            `${path}.breakCondition`
-          ));
-        }
-        break;
-
-      case NodeType.SUBGRAPH:
-        if (!config || !(config as any).subgraphId) {
-          errors.push(new ValidationError(
-            'SUBGRAPH node must have subgraphId',
-            `${path}.subgraphId`
-          ));
-        }
-        if (!config || !(config as any).inputMapping) {
-          errors.push(new ValidationError(
-            'SUBGRAPH node must have inputMapping',
-            `${path}.inputMapping`
-          ));
-        }
-        if (!config || !(config as any).outputMapping) {
-          errors.push(new ValidationError(
-            'SUBGRAPH node must have outputMapping',
-            `${path}.outputMapping`
-          ));
-        }
-        break;
-
-      default:
-        errors.push(new ValidationError(
-          `Unknown node type: ${node.type}`,
-          'node.type'
-        ));
+    const result = nodeConfigSchema.safeParse(nodeWithType);
+    if (result.success) {
+      return { valid: true, errors: [], warnings: [] };
     }
+    
+    // 检查是否是未知节点类型
+    const error = result.error.issues[0];
+    if (error && error.code === z.ZodIssueCode.invalid_union) {
+      return {
+        valid: false,
+        errors: [new ValidationError(`Unknown node type: ${node.type}`, 'node.type')],
+        warnings: []
+      };
+    }
+    
+    return this.convertZodError(result.error, 'node.config');
+  }
 
+  /**
+   * 批量验证节点
+   * @param nodes 节点数组
+   * @returns 验证结果数组
+   */
+  validateNodes(nodes: Node[]): ValidationResult[] {
+    return nodes.map((node) => this.validateNode(node));
+  }
+
+  /**
+   * 将zod错误转换为ValidationResult
+   * @param error zod错误
+   * @param prefix 字段路径前缀
+   * @returns ValidationResult
+   */
+  private convertZodError(error: z.ZodError, prefix?: string): ValidationResult {
+    const errors: ValidationError[] = error.issues.map((issue) => {
+      const field = issue.path.length > 0
+        ? (prefix ? `${prefix}.${issue.path.join('.')}` : issue.path.join('.'))
+        : prefix;
+      return new ValidationError(issue.message, field);
+    });
     return {
-      valid: errors.length === 0,
+      valid: false,
       errors,
       warnings: []
     };
