@@ -84,141 +84,238 @@ app = workflow.compile()
 
 ## 3. 改进方案
 
-### 3.1 高层抽象API设计
+### 3.1 简化工作流定义方法
 
-基于现有API层创建新的高层抽象：
+不需要创建高层抽象API，而是通过提供便捷的构造函数和默认值来简化工作流定义：
 
+#### 3.1.1 便捷的节点创建方法
 ```typescript
-// docs/sdk/plan/langgraph-comparison-and-enhancement-plan.md
-// 基于现有API构建的高层抽象
-class StateGraph<StateType> {
-  // 提供类似LangGraph的简洁API
-  add_node(name: string, fn: Function)
-  add_conditional_edges(source: string, condition: Function, mapping: Record<string, string>)
-  add_edge(from: string, to: string)
-  compile(sdk: SDK): CompiledWorkflow
+// 提供便捷的节点创建函数，带有合理的默认值
+function createSimpleNode(
+  id: string,
+  name: string,
+  func: Function,
+  nodeType: NodeType = NodeType.CODE,
+  outgoingEdgeIds: string[] = [],
+  incomingEdgeIds: string[] = []
+): Node {
+  return {
+    id,
+    type: nodeType,
+    name,
+    config: {
+      scriptName: func.toString(),
+      scriptType: 'javascript',
+      risk: 'none'
+    },
+    outgoingEdgeIds,
+    incomingEdgeIds
+  };
+}
+
+function createSimpleRouteNode(
+  id: string,
+  name: string,
+  routes: Array<{ condition: string; targetNodeId: string; priority?: number }>,
+  incomingEdgeIds: string[] = []
+): Node {
+  return {
+    id,
+    type: NodeType.ROUTE,
+    name,
+    config: { routes },
+    outgoingEdgeIds: routes.map(r => r.targetNodeId),
+    incomingEdgeIds
+  };
 }
 ```
 
-### 3.2 现有API分析
-
-当前SDK的API层已经提供了以下基础组件：
-- `SDK` - 主入口类，整合所有API模块
-- `ThreadExecutorAPI` - 工作流执行管理
-- `WorkflowRegistryAPI` - 工作流注册和管理
-- 以及其他各类管理API
-
-### 3.3 需要新增的封装功能
-
-#### 3.3.1 StateGraph抽象层
+#### 3.1.2 便捷的边创建方法
 ```typescript
-class StateGraph<StateType> {
-  private nodes: Map<string, Function> = new Map();
-  private edges: Map<string, string[]> = new Map();
-  private conditionalEdges: Map<string, {
-    conditionFunc: (state: StateType) => string | symbol,
-    mapping: Record<string, string | symbol>
-  }> = new Map();
-  private workflowDef: WorkflowDefinition;
-  private entryPoint: string = 'start';
-  private nodeIdCounter: number = 0;
-
-  constructor(private stateSchema?: any) { ... }
-
-  add_node(nodeName: string, nodeFunction: (state: StateType) => Partial<StateType>, nodeType: NodeType = NodeType.CODE) { ... }
-  add_conditional_edges(sourceNode: string, conditionFunc: (state: StateType) => string | symbol, mapping: Record<string, string | symbol>) { ... }
-  add_edge(fromNode: string, toNode: string) { ... }
-  set_entry_point(nodeName: string) { ... }
-  compile(sdk: SDK): CompiledWorkflow<StateType> { ... }
+function createSimpleEdge(
+  sourceNodeId: string,
+  targetNodeId: string,
+  type: EdgeType = EdgeType.DEFAULT,
+  condition?: Condition
+): Edge {
+  return {
+    id: `edge_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+    sourceNodeId,
+    targetNodeId,
+    type,
+    condition
+  };
 }
 ```
 
-#### 3.3.2 编译后的工作流
+#### 3.1.3 工作流构建辅助函数
 ```typescript
-class CompiledWorkflow<StateType = any> {
-  constructor(
-    private workflowDef: WorkflowDefinition,
-    private executor: ThreadExecutorAPI
-  ) {}
+class SimpleWorkflowBuilder {
+  static createBasicWorkflow(
+    name: string,
+    nodes: Node[],
+    edges: Edge[]
+  ): WorkflowDefinition {
+    return {
+      id: `workflow_${Date.now()}`,
+      name,
+      version: '1.0.0',
+      createdAt: Date.now(),
+      updatedAt: Date.now(),
+      nodes,
+      edges
+    };
+  }
+  
+  // 提供链式调用API来简化工作流构建
+  static buildWorkflow(name: string) {
+    return new WorkflowChainBuilder(name);
+  }
+}
 
-  async invoke(input: StateType): Promise<any> { ... }
-  async *stream(input: StateType): AsyncGenerator<any, void, unknown> { ... }
+class WorkflowChainBuilder {
+  private nodes: Node[] = [];
+  private edges: Edge[] = [];
+  
+  addNode(id: string, name: string, func: Function, nodeType: NodeType = NodeType.CODE) {
+    const node = createSimpleNode(id, name, func, nodeType);
+    this.nodes.push(node);
+    return this;
+  }
+  
+  addRouteNode(id: string, name: string, routes: Array<{ condition: string; targetNodeId: string }>) {
+    const node = createSimpleRouteNode(id, name, routes);
+    this.nodes.push(node);
+    return this;
+  }
+  
+  addEdge(sourceNodeId: string, targetNodeId: string, type: EdgeType = EdgeType.DEFAULT, condition?: Condition) {
+    const edge = createSimpleEdge(sourceNodeId, targetNodeId, type, condition);
+    this.edges.push(edge);
+    return this;
+  }
+  
+  build(): WorkflowDefinition {
+    return SimpleWorkflowBuilder.createBasicWorkflow('default', this.nodes, this.edges);
+  }
 }
 ```
 
-#### 3.3.3 工作流构建器
+### 3.2 直接支持StateGraph模式
+
+通过提供便捷的API直接支持类似LangGraph的StateGraph模式：
+
 ```typescript
-class WorkflowBuilder {
-  // 链式调用API
-  addStartNode(): this
-  addCodeNode(id: string, func: Function): this
-  addRouteNode(id: string, routes: Route[]): this
-  build(): WorkflowDefinition
+// 直接在现有API基础上提供便捷方法
+class StateGraphHelper {
+  // 直接创建包含状态管理的工作流定义
+  static createStatefulWorkflow<StateType>(
+    stateSchema: any,
+    nodes: [string, (state: StateType) => Partial<StateType>][],
+    edges: [string, string, EdgeType?, Condition?][],
+    conditionalEdges: [string, (state: StateType) => string, Record<string, string>][]
+  ): WorkflowDefinition {
+    const builder = SimpleWorkflowBuilder.buildWorkflow('stateful-workflow');
+    
+    // 添加所有节点
+    for (const [nodeName, nodeFunc] of nodes) {
+      builder.addNode(nodeName, nodeName, nodeFunc);
+    }
+    
+    // 添加普通边
+    for (const [from, to, type = EdgeType.DEFAULT, condition] of edges) {
+      builder.addEdge(from, to, type, condition);
+    }
+    
+    // 添加条件边（通过路由节点实现）
+    for (const [sourceNode, conditionFunc, mapping] of conditionalEdges) {
+      const routerNodeId = `${sourceNode}_router`;
+      
+      // 创建路由节点
+      const routes = Object.entries(mapping).map(([conditionVal, targetNode]) => ({
+        condition: `variables.${sourceNode}State === '${conditionVal}'`, // 简化的条件表达式
+        targetNodeId: targetNode,
+        priority: 1
+      }));
+      
+      builder.addRouteNode(routerNodeId, `${sourceNode} Router`, routes);
+      
+      // 连接源节点到路由节点
+      builder.addEdge(sourceNode, routerNodeId, EdgeType.DEFAULT);
+    }
+    
+    return builder.build();
+  }
 }
 ```
 
-#### 3.3.4 状态管理抽象
+### 3.3 执行层面的简化
+
+执行不需要"编译"步骤，DAG(GraphData)的构建就是编译过程，直接通过Thread执行：
+
 ```typescript
-class StateManager<StateType> {
-  static updateState<T>(currentState: T, updates: Partial<T>): T
-  static getStateField<T, K extends keyof T>(state: T, field: K): T[K]
+// 执行流程保持简单
+async function executeStatefulWorkflow<StateType>(
+  workflow: WorkflowDefinition,
+  initialState: StateType,
+  sdk: SDK
+): Promise<any> {
+  // 注册工作流
+  await sdk.workflows.registerWorkflow(workflow);
+  
+  // 直接执行
+  return await sdk.executor.executeWorkflow(workflow.id, {
+    input: initialState,
+    // 可能需要的状态管理选项
+  });
 }
 ```
 
 ## 4. 实施计划
 
-### 4.1 第一阶段：创建高层抽象API
-- [ ] 创建`StateGraph`类
-- [ ] 实现基本的节点添加功能
-- [ ] 实现普通边和条件边添加功能
-- [ ] 实现编译功能
+### 4.1 第一阶段：创建便捷构建函数
+- [ ] 实现便捷的节点创建函数
+- [ ] 实现便捷的边创建函数
+- [ ] 实现工作流构建辅助类
 
-### 4.2 第二阶段：完善状态管理
-- [ ] 创建状态管理工具类
-- [ ] 实现类型安全的状态更新
-- [ ] 添加状态验证功能
+### 4.2 第二阶段：状态图支持
+- [ ] 实现StateGraphHelper类
+- [ ] 提供类型安全的状态管理支持
 
-### 4.3 第三阶段：增强功能
-- [ ] 实现流式执行
-- [ ] 添加错误处理机制
-- [ ] 实现中间件支持
-
-### 4.4 第四阶段：文档和示例
-- [ ] 编写使用指南
-- [ ] 创建示例项目
-- [ ] 提供迁移指南
+### 4.3 第三阶段：简化执行
+- [ ] 提供简化的执行函数
+- [ ] 确保与现有执行机制兼容
 
 ## 5. 预期效果
 
 通过这些改进，预期达到以下效果：
 
 ### 5.1 代码量减少
-- 从原来的100+行减少到约40-50行
-- 提供类似LangGraph的简洁语法
+- 从原来的详细定义简化为便捷调用
+- 减少样板代码和重复定义
 
 ### 5.2 理解难度降低
-- 提供语义清晰的API
-- 降低新用户的学习曲线
+- 提供更直观的API
+- 减少需要记住的复杂结构
 
-### 5.3 保持可靠性
-- 基于经过验证的底层API
-- 保持类型安全特性
-- 继承原有的错误处理机制
+### 5.3 保持原有功能
+- 不破坏现有功能
+- 保持灵活性和控制力
 
-## 6. 风险与挑战
+## 6. 优势
 
-### 6.1 维护负担
-- 需要维护两套API（底层和高层）
-- 确保两套API的一致性
+### 6.1 简洁性
+- 避免了不必要的抽象层
+- 直接在现有架构上提供便利
 
-### 6.2 性能考虑
-- 高层抽象可能带来性能开销
-- 需要优化抽象层的性能
+### 6.2 一致性
+- 与现有API风格保持一致
+- 利用现有的执行机制
 
-### 6.3 兼容性
-- 确保与现有代码的兼容性
-- 提供平滑的升级路径
+### 6.3 灵活性
+- 保留底层控制能力
+- 可以根据需要选择使用级别
 
 ## 7. 结论
 
-当前项目具备实现类似LangGraph功能的技术基础。通过创建高层抽象API，可以在保持底层强大功能的同时，提供类似LangGraph的易用性。这种分层架构既保留了当前项目的控制力和类型安全优势，又提供了类似LangGraph的简洁语法。
+当前项目无需创建复杂的高层抽象API，而是可以通过提供便捷的构造函数和默认值来简化使用。通过便捷的节点、边创建函数和工作流构建辅助类，可以大大简化工作流定义过程，同时保持与现有架构的兼容性。DAG构建本身就是"编译"过程，执行直接通过Thread机制完成，这样既简化了使用又保持了系统的完整功能。

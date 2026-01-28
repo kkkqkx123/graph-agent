@@ -18,6 +18,9 @@ export { EventManagerAPI } from './event-manager-api';
 export { CheckpointManagerAPI } from './checkpoint-manager-api';
 export { VariableManagerAPI } from './variable-manager-api';
 
+// langgraph兼容API
+export { StateGraph, CompiledGraph, END } from './langgraph-compatible/stategraph-api';
+
 // 类型定义
 export type {
   ExecuteOptions,
