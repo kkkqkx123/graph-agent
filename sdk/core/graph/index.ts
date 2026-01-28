@@ -6,7 +6,7 @@
 export { GraphData } from './graph-data';
 export { GraphBuilder } from './graph-builder';
 export { GraphValidator } from './graph-validator';
-export { GraphNavigator } from './graph-navigator';
+export { GraphNavigator } from './utils/graph-navigator';
 
 // 图分析工具函数
 export { analyzeGraph, collectForkJoinPairs } from './utils/graph-analyzer';
@@ -15,4 +15,4 @@ export { analyzeGraph, collectForkJoinPairs } from './utils/graph-analyzer';
 export type {
   NavigationResult,
   RoutingDecision,
-} from './graph-navigator';
+} from './utils/graph-navigator';

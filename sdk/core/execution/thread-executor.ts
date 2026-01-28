@@ -13,16 +13,13 @@ import { ThreadRegistry } from '../registry/thread-registry';
 import { ThreadBuilder } from './thread-builder';
 import { ThreadLifecycleManager } from './thread-lifecycle-manager';
 import { ThreadContext } from './context/thread-context';
-import { Router } from './router';
 import { EventManager } from './managers/event-manager';
 import { NotFoundError } from '../../types/errors';
 import { EventType } from '../../types/events';
 import type { NodeStartedEvent, NodeCompletedEvent, NodeFailedEvent, ErrorEvent } from '../../types/events';
 import { TriggerManager } from './managers/trigger-manager';
-import { WorkflowRegistry } from '../registry/workflow-registry';
-import { getWorkflowRegistry, getThreadRegistry, getEventManager, getThreadLifecycleManager } from './context/execution-context';
+import { getThreadRegistry, getEventManager, getThreadLifecycleManager } from './context/execution-context';
 import { now, diffTimestamp } from '../../utils';
-import { GraphNavigator } from '../graph/graph-navigator';
 import { getNodeHandler } from './handlers/node-handlers';
 import { HookExecutor } from './handlers/hook-handler';
 import { NodeType } from '../../types/node';
@@ -37,20 +34,16 @@ export class ThreadExecutor {
   private threadRegistry: ThreadRegistry;
   private threadBuilder: ThreadBuilder;
   private lifecycleManager: ThreadLifecycleManager;
-  private router: Router;
   private eventManager: EventManager;
   private triggerManager: TriggerManager;
-  private workflowRegistry: WorkflowRegistry;
 
-  constructor(workflowRegistry?: WorkflowRegistry) {
+  constructor(workflowRegistry?: any) {
     // 使用模块级单例获取组件
     this.threadRegistry = getThreadRegistry();
     this.threadBuilder = new ThreadBuilder(workflowRegistry);
     this.lifecycleManager = getThreadLifecycleManager();
-    this.router = new Router();
     this.eventManager = new EventManager();
     this.triggerManager = new TriggerManager(this.eventManager);
-    this.workflowRegistry = workflowRegistry || getWorkflowRegistry();
   }
 
   /**
@@ -82,10 +75,7 @@ export class ThreadExecutor {
       // 步骤1：启动 Thread
       await this.lifecycleManager.startThread(threadContext.thread);
 
-      // 步骤2：检查是否有图导航器
-      const hasNavigator = threadContext.hasNavigator();
-
-      // 步骤3：执行主循环
+      // 步骤2：执行主循环
       while (true) {
         // 检查是否需要暂停
         if (threadContext.thread.shouldPause) {
@@ -101,15 +91,17 @@ export class ThreadExecutor {
 
         // 获取当前节点
         const currentNodeId = threadContext.getCurrentNodeId();
-        const workflow = this.workflowRegistry.get(threadContext.getWorkflowId());
-        if (!workflow) {
-          throw new NotFoundError(`Workflow not found: ${threadContext.getWorkflowId()}`, 'Workflow', threadContext.getWorkflowId());
+        const navigator = threadContext.getNavigator();
+        const graphNode = navigator.getGraph().getNode(currentNodeId);
+
+        if (!graphNode) {
+          throw new NotFoundError(`Node not found: ${currentNodeId}`, 'Node', currentNodeId);
         }
 
-        const currentNode = workflow.nodes.find(n => n.id === currentNodeId);
-
+        // 从GraphNode获取完整的Node对象
+        const currentNode = graphNode.originalNode;
         if (!currentNode) {
-          throw new NotFoundError(`Node not found: ${currentNodeId}`, 'Node', currentNodeId);
+          throw new NotFoundError(`Node originalNode not found: ${currentNodeId}`, 'Node', currentNodeId);
         }
 
         // 执行节点
@@ -120,32 +112,30 @@ export class ThreadExecutor {
           // 节点执行成功，路由到下一个节点
           let nextNodeId: string | null = null;
 
-          if (hasNavigator) {
-            // 使用图导航器进行路由
-            const navigator = threadContext.getNavigator()!;
-            // 设置当前节点
-            navigator.setCurrentNode(currentNodeId);
-            // 获取下一个节点
-            const navigationResult = navigator.getNextNode();
+          // 使用图导航器进行路由
+          const navigator = threadContext.getNavigator()!;
+          // 设置当前节点
+          navigator.setCurrentNode(currentNodeId);
+          // 获取下一个节点
+          const navigationResult = navigator.getNextNode();
 
-            if (navigationResult.isEnd) {
-              // 到达结束节点，工作流完成
-              await this.lifecycleManager.completeThread(threadContext.thread, this.createThreadResult(threadContext));
-              break;
-            }
+          if (navigationResult.isEnd) {
+            // 到达结束节点，工作流完成
+            await this.lifecycleManager.completeThread(threadContext.thread, this.createThreadResult(threadContext));
+            break;
+          }
 
-            if (navigationResult.hasMultiplePaths) {
-              // 多路径情况，使用Router进行决策
-              const outgoingEdges = workflow.edges.filter(e => e.sourceNodeId === currentNode.id);
-              nextNodeId = this.router.selectNextNode(currentNode, outgoingEdges, threadContext.thread);
-            } else {
-              // 单一路径，直接使用导航结果
-              nextNodeId = navigationResult.nextNodeId || null;
-            }
+          if (navigationResult.hasMultiplePaths) {
+            // 多路径情况，使用GraphNavigator进行路由决策
+            const lastResult = threadContext.getNodeResults()[threadContext.getNodeResults().length - 1];
+            nextNodeId = navigator.selectNextNodeWithContext(
+              threadContext.thread,
+              currentNode.type,
+              lastResult
+            );
           } else {
-            // 使用原有的路由逻辑
-            const outgoingEdges = workflow.edges.filter(e => e.sourceNodeId === currentNode.id);
-            nextNodeId = this.router.selectNextNode(currentNode, outgoingEdges, threadContext.thread);
+            // 单一路径，直接使用导航结果
+            nextNodeId = navigationResult.nextNodeId || null;
           }
 
           if (!nextNodeId) {
@@ -164,26 +154,20 @@ export class ThreadExecutor {
           // 节点被跳过，路由到下一个节点
           let nextNodeId: string | null = null;
 
-          if (hasNavigator) {
-            // 使用图导航器进行路由
-            const navigator = threadContext.getNavigator()!;
-            // 设置当前节点
-            navigator.setCurrentNode(currentNodeId);
-            // 获取下一个节点
-            const navigationResult = navigator.getNextNode();
+          // 使用图导航器进行路由
+          const navigator = threadContext.getNavigator()!;
+          // 设置当前节点
+          navigator.setCurrentNode(currentNodeId);
+          // 获取下一个节点
+          const navigationResult = navigator.getNextNode();
 
-            if (navigationResult.isEnd) {
-              // 到达结束节点，工作流完成
-              await this.lifecycleManager.completeThread(threadContext.thread, this.createThreadResult(threadContext));
-              break;
-            }
-
-            nextNodeId = navigationResult.nextNodeId || null;
-          } else {
-            // 使用原有的路由逻辑
-            const outgoingEdges = workflow.edges.filter(e => e.sourceNodeId === currentNode.id);
-            nextNodeId = this.router.selectNextNode(currentNode, outgoingEdges, threadContext.thread);
+          if (navigationResult.isEnd) {
+            // 到达结束节点，工作流完成
+            await this.lifecycleManager.completeThread(threadContext.thread, this.createThreadResult(threadContext));
+            break;
           }
+
+          nextNodeId = navigationResult.nextNodeId || null;
 
           if (!nextNodeId) {
             // 没有下一个节点，工作流完成
@@ -378,10 +362,10 @@ export class ThreadExecutor {
     });
 
     // 步骤3：根据错误处理策略决定后续操作
-    const workflow = this.workflowRegistry.get(threadContext.getWorkflowId());
-    if (workflow?.config?.errorHandling) {
-      const errorHandling = workflow.config.errorHandling;
-
+    // 注意：错误处理配置现在应该存储在Thread的metadata中
+    const errorHandling = threadContext.getMetadata()?.customFields?.errorHandling;
+    
+    if (errorHandling) {
       if (errorHandling.stopOnError) {
         // 停止执行
         await this.lifecycleManager.failThread(threadContext.thread, nodeResult.error);
@@ -392,8 +376,13 @@ export class ThreadExecutor {
           threadContext.setCurrentNodeId(fallbackNodeId);
         } else {
           // 没有回退节点，尝试路由到下一个节点
-          const outgoingEdges = workflow.edges.filter(e => e.sourceNodeId === node.id);
-          const nextNodeId = this.router.selectNextNode(node, outgoingEdges, threadContext.thread);
+          const navigator = threadContext.getNavigator();
+          const lastResult = threadContext.getNodeResults()[threadContext.getNodeResults().length - 1];
+          const nextNodeId = navigator.selectNextNodeWithContext(
+            threadContext.thread,
+            node.type,
+            lastResult
+          );
           if (nextNodeId) {
             threadContext.setCurrentNodeId(nextNodeId);
           } else {

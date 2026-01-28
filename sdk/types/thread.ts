@@ -1,9 +1,11 @@
 /**
  * Thread类型定义
  * 定义工作流执行线程的结构（执行实例）
+ * Thread包含完整的图结构信息，使其成为自包含的执行单元
  */
 
 import type { ID, Timestamp, Version, Metadata } from './common';
+import type { DirectedGraph } from './graph';
 
 /**
  * 线程状态枚举
@@ -152,6 +154,8 @@ export interface Thread {
    status: ThreadStatus;
    /** 当前执行节点ID */
    currentNodeId: ID;
+   /** 工作流图结构（包含节点、边、权重、条件等完整信息） */
+   graph: DirectedGraph;
    /** 变量数组（用于持久化和元数据） */
    variables: ThreadVariable[];
    /** 变量值映射（用于快速访问） */

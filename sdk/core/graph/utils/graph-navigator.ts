@@ -1,6 +1,7 @@
 /**
  * 图导航器
  * 用于在执行时导航图的节点，确定下一个要执行的节点
+ * 无状态设计，所有方法都通过参数传递所需数据
  */
 
 import type {
@@ -8,9 +9,9 @@ import type {
   NodeType,
   Condition,
   Edge,
-} from '../../types';
-import type { GraphData } from './graph-data';
-import { getReachableNodes } from './utils/graph-traversal';
+} from '../../../types';
+import type { GraphData } from '../graph-data';
+import { getReachableNodes } from './graph-traversal';
 
 /**
  * 导航结果
@@ -168,6 +169,115 @@ export class GraphNavigator {
 
     // 没有边满足条件
     return null;
+  }
+
+  /**
+   * 基于Thread上下文选择下一个节点
+   * @param thread Thread实例，提供变量、输入、输出等上下文信息
+   * @param currentNodeType 当前节点类型，用于处理ROUTE节点的特殊逻辑
+   * @param lastNodeResult 最后一个节点的执行结果，用于ROUTE节点的决策
+   * @returns 下一个节点ID，如果没有可用的路由则返回null
+   */
+  selectNextNodeWithContext(
+    thread: any,
+    currentNodeType: NodeType,
+    lastNodeResult?: any
+  ): string | null {
+    if (!this.currentNodeId) {
+      return null;
+    }
+
+    // 处理ROUTE节点的特殊逻辑
+    if (currentNodeType === 'ROUTE' as NodeType) {
+      // ROUTE节点使用自己的路由决策，从执行结果中获取selectedNode
+      if (lastNodeResult && lastNodeResult.nodeId === this.currentNodeId &&
+        lastNodeResult.output && typeof lastNodeResult.output === 'object' &&
+        'selectedNode' in lastNodeResult.output) {
+        return lastNodeResult.output.selectedNode as string;
+      }
+      return null;
+    }
+
+    const outgoingEdges = this.graph.getOutgoingEdges(this.currentNodeId);
+
+    if (outgoingEdges.length === 0) {
+      return null;
+    }
+
+    // 过滤满足条件的边
+    const satisfiedEdges = this.filterEdgesWithContext(outgoingEdges, thread);
+
+    // 如果没有满足条件的边，选择默认边
+    if (satisfiedEdges.length === 0) {
+      const defaultEdge = outgoingEdges.find(e => e.type === 'DEFAULT');
+      return defaultEdge ? defaultEdge.targetNodeId : null;
+    }
+
+    // 按权重排序边
+    const sortedEdges = this.sortEdges(satisfiedEdges);
+
+    // 选择第一个边
+    const nextEdge = sortedEdges[0];
+    return nextEdge ? nextEdge.targetNodeId : null;
+  }
+
+  /**
+   * 基于Thread上下文过滤满足条件的边
+   * @param edges 边数组
+   * @param thread Thread实例
+   * @returns 满足条件的边数组
+   */
+  private filterEdgesWithContext(edges: Edge[], thread: any): Edge[] {
+    return edges.filter(edge => this.evaluateEdgeConditionWithContext(edge, thread));
+  }
+
+  /**
+   * 基于Thread上下文评估边的条件
+   * @param edge 边
+   * @param thread Thread实例
+   * @returns 条件是否满足
+   */
+  private evaluateEdgeConditionWithContext(edge: Edge, thread: any): boolean {
+    // 默认边总是满足
+    if (edge.type === 'DEFAULT') {
+      return true;
+    }
+
+    // 条件边必须有条件
+    if (!edge.condition) {
+      return false;
+    }
+
+    // 构建评估上下文
+    const context = {
+      variables: thread.variableValues,
+      input: thread.input,
+      output: thread.output
+    };
+
+    // 动态导入conditionEvaluator以避免循环依赖
+    const { conditionEvaluator } = require('../../utils/condition-evaluator');
+    return conditionEvaluator.evaluate(edge.condition, context);
+  }
+
+  /**
+   * 排序边
+   * @param edges 边数组
+   * @returns 排序后的边数组
+   */
+  private sortEdges(edges: Edge[]): Edge[] {
+    return [...edges].sort((a, b) => {
+      // 按权重降序排序（权重高的优先）
+      const weightA = a.weight || 0;
+      const weightB = b.weight || 0;
+
+      if (weightA !== weightB) {
+        return weightB - weightA;
+      }
+
+      // 如果权重相同，按id升序排序（保证确定性）
+      return a.id.localeCompare(b.id);
+    });
   }
 
   /**

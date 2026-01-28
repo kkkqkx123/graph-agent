@@ -3,14 +3,15 @@
  * 封装 Thread 执行所需的所有运行时组件
  * 提供统一的访问接口，避免直接访问 thread.contextData
  * 负责变量管理、节点执行结果管理等运行时逻辑
- * 支持图导航器用于节点导航
+ * 直接使用Thread中的graph进行图操作
  */
 
 import type { Thread } from '../../../types/thread';
 import { WorkflowContext } from './workflow-context';
 import { ConversationManager } from '../conversation';
 import { VariableManager } from '../managers/variable-manager';
-import { GraphNavigator } from '../../graph/graph-navigator';
+import { GraphNavigator } from '../../graph/utils/graph-navigator';
+import { GraphData } from '../../graph/graph-data';
 
 /**
  * ThreadContext - Thread 执行上下文
@@ -37,7 +38,7 @@ export class ThreadContext {
   private readonly variableManager: VariableManager;
 
   /**
-   * 图导航器（可选）
+   * 图导航器（延迟创建）
    */
   private navigator?: GraphNavigator;
 
@@ -247,25 +248,34 @@ export class ThreadContext {
 
   /**
    * 获取图导航器
-   * @returns 图导航器实例，如果未设置则返回undefined
+   * @returns 图导航器实例，从Thread中的graph创建
    */
-  getNavigator(): GraphNavigator | undefined {
+  getNavigator(): GraphNavigator {
+    if (!this.navigator) {
+      // 从Thread中的graph创建GraphNavigator
+      const graphData = new GraphData();
+      // 复制节点
+      for (const node of this.thread.graph.nodes.values()) {
+        graphData.addNode(node);
+      }
+      // 复制边
+      for (const edge of this.thread.graph.edges.values()) {
+        graphData.addEdge(edge);
+      }
+      // 设置起始和结束节点
+      graphData.startNodeId = this.thread.graph.startNodeId;
+      this.thread.graph.endNodeIds.forEach(id => graphData.endNodeIds.add(id));
+
+      this.navigator = new GraphNavigator(graphData);
+    }
     return this.navigator;
   }
 
   /**
-   * 设置图导航器
-   * @param navigator 图导航器实例
-   */
-  setNavigator(navigator: GraphNavigator): void {
-    this.navigator = navigator;
-  }
-
-  /**
    * 检查是否有图导航器
-   * @returns 是否有图导航器
+   * @returns 是否有图导航器（总是返回true，因为Thread总是包含graph）
    */
   hasNavigator(): boolean {
-    return this.navigator !== undefined;
+    return true;
   }
 }

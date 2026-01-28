@@ -19,7 +19,7 @@ import { VariableManager } from './managers/variable-manager';
 import { ValidationError } from '../../types/errors';
 import { WorkflowRegistry } from '../registry/workflow-registry';
 import { getWorkflowRegistry } from './context/execution-context';
-import { GraphNavigator } from '../graph/graph-navigator';
+import { GraphNavigator } from '../graph/utils/graph-navigator';
 import { GraphData } from '../graph/graph-data';
 
 /**
@@ -82,7 +82,21 @@ export class ThreadBuilder {
       throw new ValidationError('Processed workflow must have an END node', 'workflow.nodes');
     }
 
-    // 步骤2：创建 Thread 实例
+    // 步骤2：创建 GraphData 实例并复制图数据
+    const threadGraphData = new GraphData();
+    // 复制节点
+    for (const node of processedWorkflow.graph.nodes.values()) {
+      threadGraphData.addNode(node);
+    }
+    // 复制边
+    for (const edge of processedWorkflow.graph.edges.values()) {
+      threadGraphData.addEdge(edge);
+    }
+    // 设置起始和结束节点
+    threadGraphData.startNodeId = processedWorkflow.graph.startNodeId;
+    processedWorkflow.graph.endNodeIds.forEach(id => threadGraphData.endNodeIds.add(id));
+
+    // 步骤3：创建 Thread 实例
     const threadId = generateId();
     const now = getCurrentTimestamp();
 
@@ -92,6 +106,7 @@ export class ThreadBuilder {
       workflowVersion: processedWorkflow.version,
       status: 'CREATED' as ThreadStatus,
       currentNodeId: startNode.id,
+      graph: threadGraphData,
       variables: [],
       variableValues: {},
       input: options.input || {},
@@ -122,34 +137,12 @@ export class ThreadBuilder {
     const workflowContext = new WorkflowContext(processedWorkflow);
     this.workflowContexts.set(processedWorkflow.id, workflowContext);
 
-    // 步骤6：创建 GraphData 实例并复制图数据
-    const graphData = new GraphData();
-    // 复制节点
-    for (const node of processedWorkflow.graph.nodes.values()) {
-      graphData.addNode(node);
-    }
-    // 复制边
-    for (const edge of processedWorkflow.graph.edges.values()) {
-      graphData.addEdge(edge);
-    }
-    // 设置起始和结束节点
-    graphData.startNodeId = processedWorkflow.graph.startNodeId;
-    processedWorkflow.graph.endNodeIds.forEach(id => graphData.endNodeIds.add(id));
-
-    // 步骤7：创建 GraphNavigator 实例
-    const graphNavigator = new GraphNavigator(graphData);
-
-    // 步骤8：创建并返回 ThreadContext
+    // 步骤6：创建 ThreadContext
     const threadContext = new ThreadContext(
       thread as Thread,
       workflowContext,
       conversationManager
     );
-
-    // 设置图导航器（如果ThreadContext支持）
-    if ('setNavigator' in threadContext) {
-      (threadContext as any).setNavigator(graphNavigator);
-    }
 
     return threadContext;
   }
@@ -176,7 +169,25 @@ export class ThreadBuilder {
       throw new ValidationError('Workflow must have an END node', 'workflow.nodes');
     }
 
-    // 步骤2：创建 Thread 实例
+    // 步骤2：创建 GraphData 实例
+    const threadGraphData = new GraphData();
+    // 复制节点
+    for (const node of workflow.nodes) {
+      threadGraphData.addNode(node);
+    }
+    // 复制边
+    for (const edge of workflow.edges || []) {
+      threadGraphData.addEdge(edge);
+    }
+    // 设置起始和结束节点
+    if (startNode) {
+      threadGraphData.startNodeId = startNode.id;
+    }
+    if (endNode) {
+      threadGraphData.endNodeIds.add(endNode.id);
+    }
+
+    // 步骤3：创建 Thread 实例
     const threadId = generateId();
     const now = getCurrentTimestamp();
 
@@ -186,6 +197,7 @@ export class ThreadBuilder {
       workflowVersion: workflow.version,
       status: 'CREATED' as ThreadStatus,
       currentNodeId: startNode.id,
+      graph: threadGraphData,
       variables: [],
       variableValues: {},
       input: options.input || {},
@@ -212,11 +224,13 @@ export class ThreadBuilder {
     this.workflowContexts.set(workflow.id, workflowContext);
 
     // 步骤6：创建并返回 ThreadContext
-    return new ThreadContext(
+    const threadContext = new ThreadContext(
       thread as Thread,
       workflowContext,
       conversationManager
     );
+
+    return threadContext;
   }
 
   /**
