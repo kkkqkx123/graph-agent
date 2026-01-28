@@ -7,7 +7,7 @@
 
 import type { Thread } from '../../../types/thread';
 import { WorkflowContext } from './workflow-context';
-import { LLMExecutor } from '../llm-executor';
+import { ConversationManager } from '../conversation';
 import { VariableManager } from '../managers/variable-manager';
 
 /**
@@ -25,9 +25,9 @@ export class ThreadContext {
   public readonly workflowContext: WorkflowContext;
 
   /**
-   * LLM 执行器
+   * 对话管理器
    */
-  public readonly llmExecutor: LLMExecutor;
+  public readonly conversationManager: ConversationManager;
 
   /**
    * 变量管理器
@@ -38,16 +38,16 @@ export class ThreadContext {
    * 构造函数
    * @param thread Thread 实例
    * @param workflowContext Workflow 上下文
-   * @param llmExecutor LLM 执行器
+   * @param conversationManager 对话管理器
    */
   constructor(
     thread: Thread,
     workflowContext: WorkflowContext,
-    llmExecutor: LLMExecutor
+    conversationManager: ConversationManager
   ) {
     this.thread = thread;
     this.workflowContext = workflowContext;
-    this.llmExecutor = llmExecutor;
+    this.conversationManager = conversationManager;
     this.variableManager = new VariableManager();
   }
 
@@ -119,16 +119,8 @@ export class ThreadContext {
    * 获取 ConversationManager
    * @returns ConversationManager 实例
    */
-  getConversationManager() {
-    return this.llmExecutor.getConversationManager();
-  }
-
-  /**
-   * 获取 LLMExecutor
-   * @returns LLMExecutor 实例
-   */
-  getLLMExecutor(): LLMExecutor {
-    return this.llmExecutor;
+  getConversationManager(): ConversationManager {
+    return this.conversationManager;
   }
 
   /**

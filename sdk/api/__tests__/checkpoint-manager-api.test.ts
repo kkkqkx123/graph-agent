@@ -509,12 +509,10 @@ async function createTestThreadContext(
   const { ThreadContext } = await import('../../core/execution/context/thread-context');
   const { WorkflowContext } = await import('../../core/execution/context/workflow-context');
   const { ConversationManager } = await import('../../core/execution/conversation');
-  const { LLMExecutor } = await import('../../core/execution/llm-executor');
   const { generateId } = await import('../../utils');
 
   const workflowContext = new WorkflowContext(workflow);
   const conversationManager = new ConversationManager();
-  const llmExecutor = new LLMExecutor(conversationManager);
 
   const thread = {
     id: generateId(),
@@ -531,7 +529,7 @@ async function createTestThreadContext(
     errors: []
   };
 
-  const threadContext = new ThreadContext(thread, workflowContext, llmExecutor);
+  const threadContext = new ThreadContext(thread, workflowContext, conversationManager);
   threadRegistry.register(threadContext);
 
   return threadContext;

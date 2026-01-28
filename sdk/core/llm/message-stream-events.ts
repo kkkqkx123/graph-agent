@@ -1,7 +1,7 @@
 /**
  * MessageStream 事件类型定义
  * 定义消息流相关的事件类型
- * 由于需要导入llm type，不适合集中在全局定义中
+ * 由于需要导入llm type且仅内部使用，不适合集中在全局定义中
  */
 
 import type { LLMMessage, LLMResult } from '../../types/llm';

@@ -155,9 +155,8 @@ export class CheckpointManager {
       metadata: checkpoint.metadata
     };
 
-    // 步骤5：创建 ConversationManager 和 LLMExecutor
+    // 步骤5：创建 ConversationManager
     const conversationManager = new ConversationManager();
-    const llmExecutor = new LLMExecutor(conversationManager);
 
     // 步骤6：恢复对话历史
     if (checkpoint.threadState.conversationHistory) {
@@ -169,11 +168,11 @@ export class CheckpointManager {
     // 步骤7：创建 WorkflowContext
     const workflowContext = new WorkflowContext(workflowDefinition);
 
-    // 步骤7：创建 ThreadContext
+    // 步骤8：创建 ThreadContext
     const threadContext = new ThreadContext(
       thread as Thread,
       workflowContext,
-      llmExecutor
+      conversationManager
     );
 
     // 步骤9：注册到 ThreadRegistry

@@ -52,4 +52,3 @@ export { TriggerManager } from './managers/trigger-manager';
 export { ConversationManager } from './conversation';
 export type { ConversationManagerOptions, ConversationManagerEventCallbacks } from './conversation';
 export { LLMExecutor } from './llm-executor';
-export type { LLMExecutorOptions, LLMExecutorCallbacks } from './llm-executor';

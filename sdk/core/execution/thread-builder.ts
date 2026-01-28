@@ -97,11 +97,10 @@ export class ThreadBuilder {
     // 步骤3：从 WorkflowDefinition 初始化变量
     this.variableManager.initializeFromWorkflow(thread as Thread, workflow);
 
-    // 步骤4：创建 ConversationManager 和 LLMExecutor 实例
+    // 步骤4：创建 ConversationManager 实例
     const conversationManager = new ConversationManager({
       tokenLimit: options.tokenLimit || 4000
     });
-    const llmExecutor = new LLMExecutor(conversationManager);
 
     // 步骤5：创建 WorkflowContext
     const workflowContext = new WorkflowContext(workflow);
@@ -111,7 +110,7 @@ export class ThreadBuilder {
     return new ThreadContext(
       thread as Thread,
       workflowContext,
-      llmExecutor
+      conversationManager
     );
   }
 
@@ -161,9 +160,8 @@ export class ThreadBuilder {
       }
     };
 
-    // 复制 ConversationManager 和 LLMExecutor 实例
+    // 复制 ConversationManager 实例
     const copiedConversationManager = sourceThreadContext.getConversationManager().clone();
-    const copiedLLMExecutor = new LLMExecutor(copiedConversationManager);
 
     // 复制 WorkflowContext
     const copiedWorkflowContext = sourceThreadContext.workflowContext;
@@ -172,7 +170,7 @@ export class ThreadBuilder {
     return new ThreadContext(
       copiedThread as Thread,
       copiedWorkflowContext,
-      copiedLLMExecutor
+      copiedConversationManager
     );
   }
 
@@ -211,9 +209,8 @@ export class ThreadBuilder {
       }
     };
 
-    // 复制 ConversationManager 和 LLMExecutor 实例
+    // 复制 ConversationManager 实例
     const forkConversationManager = parentThreadContext.getConversationManager().clone();
-    const forkLLMExecutor = new LLMExecutor(forkConversationManager);
 
     // 复制 WorkflowContext
     const forkWorkflowContext = parentThreadContext.workflowContext;
@@ -222,7 +219,7 @@ export class ThreadBuilder {
     return new ThreadContext(
       forkThread as Thread,
       forkWorkflowContext,
-      forkLLMExecutor
+      forkConversationManager
     );
   }
 
@@ -245,16 +242,14 @@ export class ThreadBuilder {
   }
 
   /**
-   * 创建ConversationManager和LLMExecutor实例
+   * 创建ConversationManager实例
    * @param options 线程选项
-   * @returns ConversationManager和LLMExecutor实例
+   * @returns ConversationManager实例
    */
-  private createConversationManager(options: ThreadOptions): { conversationManager: ConversationManager; llmExecutor: LLMExecutor } {
-    const conversationManager = new ConversationManager({
+  private createConversationManager(options: ThreadOptions): ConversationManager {
+    return new ConversationManager({
       tokenLimit: options.tokenLimit || 4000
     });
-    const llmExecutor = new LLMExecutor(conversationManager);
-    return { conversationManager, llmExecutor };
   }
 
   /**
