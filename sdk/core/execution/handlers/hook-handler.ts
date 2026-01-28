@@ -175,7 +175,7 @@ export class HookExecutor {
     const { thread, node, result } = context;
 
     return {
-      output: result?.output,
+      output: result?.data,
       status: result?.status || 'PENDING',
       executionTime: result?.executionTime || 0,
       error: result?.error,

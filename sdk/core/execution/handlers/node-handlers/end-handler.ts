@@ -73,11 +73,11 @@ export async function endHandler(thread: Thread, node: Node): Promise<any> {
   if (thread.output && Object.keys(thread.output).length > 0) {
     output = thread.output;
   } else {
-    // 优先级2：最后一个节点的output
+    // 优先级2：最后一个节点的data
     if (thread.nodeResults && thread.nodeResults.length > 0) {
       const lastResult = thread.nodeResults[thread.nodeResults.length - 1];
-      if (lastResult && lastResult.output) {
-        output = lastResult.output;
+      if (lastResult && lastResult.data) {
+        output = lastResult.data;
       }
     }
   }

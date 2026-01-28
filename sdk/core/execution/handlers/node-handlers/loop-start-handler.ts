@@ -274,7 +274,7 @@ export async function loopStartHandler(thread: Thread, node: Node): Promise<any>
     nodeType: node.type,
     status: 'COMPLETED',
     timestamp: now(),
-    output: {
+    data: {
       loopId: config.loopId,
       variableName,
       currentValue,

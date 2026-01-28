@@ -205,7 +205,7 @@ export class ThreadExecutor {
           nodeType,
           status: output.status || 'COMPLETED',
           step: threadContext.thread.nodeResults.length + 1,
-          output: output.status ? undefined : output,
+          data: output.status ? undefined : output,
           startTime,
           endTime,
           executionTime: diffTimestamp(startTime, endTime)
@@ -230,7 +230,7 @@ export class ThreadExecutor {
           threadId: threadContext.getThreadId(),
           workflowId: threadContext.getWorkflowId(),
           nodeId,
-          output: nodeResult.output,
+          output: nodeResult.data,
           executionTime: nodeResult.executionTime || 0,
           timestamp: now()
         });
@@ -301,7 +301,7 @@ export class ThreadExecutor {
       nodeType: node.type,
       status: 'COMPLETED',
       step: threadContext.thread.nodeResults.length + 1,
-      output: { message: 'LLM managed node executed' },
+      data: { message: 'LLM managed node executed' },
       startTime,
       endTime,
       executionTime: diffTimestamp(startTime, endTime)

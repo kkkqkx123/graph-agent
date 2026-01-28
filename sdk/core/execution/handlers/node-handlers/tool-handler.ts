@@ -195,7 +195,7 @@ export async function toolHandler(thread: Thread, node: Node): Promise<any> {
         nodeType: node.type,
         status: 'COMPLETED',
         timestamp: now(),
-        output: result
+        data: result
       });
 
       return result;

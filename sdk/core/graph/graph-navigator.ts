@@ -182,9 +182,9 @@ export class GraphNavigator {
     if (currentNodeType === 'ROUTE' as NodeType) {
       // ROUTE节点使用自己的路由决策，从执行结果中获取selectedNode
       if (lastNodeResult && lastNodeResult.nodeId === currentNodeId &&
-        lastNodeResult.output && typeof lastNodeResult.output === 'object' &&
-        'selectedNode' in lastNodeResult.output) {
-        return lastNodeResult.output.selectedNode as string;
+        lastNodeResult.data && typeof lastNodeResult.data === 'object' &&
+        'selectedNode' in lastNodeResult.data) {
+        return lastNodeResult.data.selectedNode as string;
       }
       return null;
     }

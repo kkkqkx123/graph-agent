@@ -203,7 +203,7 @@ export async function variableHandler(thread: Thread, node: Node): Promise<any> 
     nodeType: node.type,
     status: 'COMPLETED',
     timestamp: now(),
-    output: {
+    data: {
       variableName: config.variableName,
       value: typedResult,
       type: config.variableType

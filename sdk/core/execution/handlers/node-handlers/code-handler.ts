@@ -183,7 +183,7 @@ export async function codeHandler(thread: Thread, node: Node): Promise<any> {
         nodeType: node.type,
         status: 'COMPLETED',
         timestamp: now(),
-        output: result
+        data: result
       });
 
       // 返回执行结果

@@ -74,37 +74,25 @@ export interface NodeExecutionResult {
   /** 执行步骤序号 */
   step: number;
   /**
-   * 输入数据
+   * 执行数据（用于追踪和调试）
    *
-   * 说明：记录节点执行时的输入数据
+   * 说明：记录节点执行时的相关数据
    * - 用于执行追踪和调试
-   * - 支持表达式解析时访问（通过 input. 路径）
-   * - 可选字段，某些节点类型可能不需要输入
+   * - 不参与表达式解析
+   * - 可选字段，某些节点类型可能不需要
+   * - Hook 可以修改此字段（可选操作）
    *
    * 示例：
-   * - LLM 节点：包含提示词和参数
-   * - TOOL 节点：包含工具调用参数
-   * - SUBGRAPH 节点：包含传递给子工作流的输入
-   */
-  input?: any;
-  /**
-   * 输出数据
-   *
-   * 说明：记录节点执行后的输出数据
-   * - 用于执行追踪和调试
-   * - 支持表达式解析时访问（通过 output. 路径）
-   * - 可选字段，某些节点类型可能没有输出
-   *
-   * 示例：
-   * - LLM 节点：包含模型响应
-   * - TOOL 节点：包含工具执行结果
-   * - VARIABLE 节点：包含变量更新后的值
+   * - TOOL 节点：包含工具调用参数和结果
+   * - CODE 节点：包含脚本执行结果
+   * - LOOP 节点：包含循环状态信息
+   * - ROUTE 节点：包含路由决策信息
    *
    * 注意：此字段与 Thread.output 不同
-   * - NodeExecutionResult.output: 单个节点的输出
-   * - Thread.output: 整个工作流的最终输出
+   * - NodeExecutionResult.data: 单个节点的执行数据（用于追踪）
+   * - Thread.output: 整个工作流的最终输出（用于返回结果）
    */
-  output?: any;
+  data?: any;
   /** 错误信息 */
   error?: any;
   /** 执行时间（毫秒） */
@@ -131,10 +119,8 @@ export interface ExecutionHistoryEntry {
   status: 'PENDING' | 'RUNNING' | 'COMPLETED' | 'FAILED' | 'SKIPPED' | 'CANCELLED';
   /** 时间戳 */
   timestamp: Timestamp;
-  /** 输入数据 */
-  input?: any;
-  /** 输出数据 */
-  output?: any;
+  /** 执行数据（用于追踪和调试） */
+  data?: any;
   /** 错误信息 */
   error?: any;
 }
@@ -209,9 +195,9 @@ export interface Thread {
    * {{output.data.count}}  // 10
    * ```
    *
-   * 注意：此字段与 NodeExecutionResult.output 的区别
+   * 注意：此字段与 NodeExecutionResult.data 的区别
    * - Thread.output: 整个工作流的最终输出
-   * - NodeExecutionResult.output: 单个节点的输出
+   * - NodeExecutionResult.data: 单个节点的执行数据
    *
    * 注意：此字段与 variables 的区别
    * - Thread.output: 工作流的最终输出，只读
