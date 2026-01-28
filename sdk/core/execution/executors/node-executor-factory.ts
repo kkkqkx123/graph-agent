@@ -20,7 +20,6 @@ import { RouteNodeExecutor } from './node/route-node-executor';
 import { ContextProcessorNodeExecutor } from './node/context-processor-node-executor';
 import { LoopStartNodeExecutor } from './node/loop-start-node-executor';
 import { LoopEndNodeExecutor } from './node/loop-end-node-executor';
-import { SubgraphNodeExecutor } from './node/subgraph-node-executor';
 
 /**
  * 节点执行器工厂
@@ -46,7 +45,6 @@ export class NodeExecutorFactory {
     this.executorMap.set(NodeType.CONTEXT_PROCESSOR, ContextProcessorNodeExecutor);
     this.executorMap.set(NodeType.LOOP_START, LoopStartNodeExecutor);
     this.executorMap.set(NodeType.LOOP_END, LoopEndNodeExecutor);
-    this.executorMap.set(NodeType.SUBGRAPH, SubgraphNodeExecutor);
   }
 
   /**
