@@ -9,6 +9,8 @@ export * from './common';
 export * from './workflow';
 export * from './node';
 export * from './edge';
+export * from './graph';
+export * from './condition';
 
 // 执行相关类型
 export * from './thread';
