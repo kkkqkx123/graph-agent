@@ -155,6 +155,9 @@ export class OpenAIChatClient extends BaseLLMClient {
 
   /**
    * 解析流式响应块
+   *
+   * OpenAI API 在流式响应中，usage 信息通常只出现在最后一个 chunk 中
+   * 其他 chunk 包含内容增量，最后一个 chunk 包含完整的 usage 统计
    */
   protected parseStreamChunk(data: any): LLMResult | null {
     const choice = data.choices[0];
@@ -172,6 +175,7 @@ export class OpenAIChatClient extends BaseLLMClient {
         toolCalls: delta.tool_calls ? this.parseToolCalls(delta.tool_calls) : undefined
       },
       toolCalls: delta.tool_calls ? this.parseToolCalls(delta.tool_calls) : undefined,
+      // OpenAI API: usage 信息通常只在最后一个 chunk 中提供
       usage: data.usage ? {
         promptTokens: data.usage.prompt_tokens,
         completionTokens: data.usage.completion_tokens,
