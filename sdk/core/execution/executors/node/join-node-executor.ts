@@ -8,6 +8,7 @@ import type { Node } from '../../../../types/node';
 import type { Thread } from '../../../../types/thread';
 import { NodeType } from '../../../../types/node';
 import { ValidationError } from '../../../../types/errors';
+import { now } from '../../../../utils';
 
 /**
  * Join策略
@@ -105,7 +106,7 @@ export class JoinNodeExecutor extends NodeExecutor {
       nodeId: node.id,
       nodeType: node.type,
       status: 'COMPLETED',
-      timestamp: Date.now(),
+      timestamp: now(),
       output: {
         joinId: config.joinId,
         joinStrategy: config.joinStrategy,

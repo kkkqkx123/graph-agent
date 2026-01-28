@@ -9,6 +9,7 @@ import type { Thread } from '../../../../types/thread';
 import { NodeType } from '../../../../types/node';
 import { ValidationError, ExecutionError, NotFoundError } from '../../../../types/errors';
 import { conditionEvaluator } from '../../../../utils/condition-evaluator';
+import { now } from '../../../../utils';
 
 /**
  * LoopEnd节点配置
@@ -115,7 +116,7 @@ export class LoopEndNodeExecutor extends NodeExecutor {
       nodeId: node.id,
       nodeType: node.type,
       status: 'COMPLETED',
-      timestamp: Date.now(),
+      timestamp: now(),
       output: {
         loopId: config.loopId,
         shouldContinue,

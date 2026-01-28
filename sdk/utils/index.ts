@@ -6,7 +6,7 @@
 export { conditionEvaluator } from "./condition-evaluator";
 
 // 通用工具函数
-export { generateId, isValidId } from "./id-utils";
-export { now, timestampFromDate, timestampToDate, timestampToISOString } from "./timestamp-utils";
-export { initialVersion, parseVersion, nextMajorVersion, nextMinorVersion, nextPatchVersion, compareVersion } from "./version-utils";
+export { generateId, isValidId, validateId } from "./id-utils";
+export { now, timestampFromDate, timestampToDate, timestampToISOString, nowWithTimezone, diffTimestamp, formatDuration } from "./timestamp-utils";
+export { initialVersion, parseVersion, nextMajorVersion, nextMinorVersion, nextPatchVersion, compareVersion, autoIncrementVersion, parseFullVersion } from "./version-utils";
 export { emptyMetadata, getMetadata, setMetadata, deleteMetadata, hasMetadata, mergeMetadata } from "./metadata-utils";

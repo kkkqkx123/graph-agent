@@ -13,6 +13,7 @@ import type {
 } from '../../types/llm';
 import { SDKError, ErrorCode, LLMError } from '../../types/errors';
 import { HttpClient } from '../http';
+import { initialVersion } from '../../utils';
 
 /**
  * LLM客户端抽象基类
@@ -293,7 +294,7 @@ export abstract class BaseLLMClient implements LLMClient {
     return {
       provider: this.profile.provider,
       model: this.profile.model,
-      version: '1.0.0'
+      version: initialVersion()
     };
   }
 }

@@ -5,6 +5,7 @@
 
 import type { Tool } from '../../../types/tool';
 import { BaseToolExecutor } from '../base-tool-executor';
+import { now } from '../../../utils';
 
 /**
  * 内置工具执行器
@@ -81,14 +82,14 @@ export class BuiltinToolExecutor extends BaseToolExecutor {
   private async executeDatetime(parameters: Record<string, any>): Promise<any> {
     const { operation, date, format, offset } = parameters;
 
-    const now = date ? new Date(date) : new Date();
+    const currentDate = date ? new Date(date) : new Date();
 
     switch (operation) {
       case 'now':
         return {
-          timestamp: Date.now(),
-          iso: now.toISOString(),
-          locale: now.toLocaleString()
+          timestamp: now(),
+          iso: currentDate.toISOString(),
+          locale: currentDate.toLocaleString()
         };
 
       case 'format':
@@ -96,17 +97,17 @@ export class BuiltinToolExecutor extends BaseToolExecutor {
           throw new Error('Format is required for format operation');
         }
         return {
-          timestamp: now.getTime(),
-          formatted: this.formatDate(now, format)
+          timestamp: currentDate.getTime(),
+          formatted: this.formatDate(currentDate, format)
         };
 
       case 'add':
         if (!offset) {
           throw new Error('Offset is required for add operation');
         }
-        const addedDate = new Date(now.getTime() + offset);
+        const addedDate = new Date(currentDate.getTime() + offset);
         return {
-          original: now.toISOString(),
+          original: currentDate.toISOString(),
           added: addedDate.toISOString(),
           offset
         };
@@ -115,7 +116,7 @@ export class BuiltinToolExecutor extends BaseToolExecutor {
         if (!date) {
           throw new Error('Date is required for diff operation');
         }
-        const diff = now.getTime() - new Date(date).getTime();
+        const diff = currentDate.getTime() - new Date(date).getTime();
         return {
           difference: diff,
           seconds: Math.floor(diff / 1000),
@@ -454,28 +455,28 @@ export class BuiltinToolExecutor extends BaseToolExecutor {
   private async executeTimeTool(parameters: Record<string, any>): Promise<any> {
     const { operation, timezone } = parameters;
 
-    const now = new Date();
+    const currentDate = new Date();
 
     switch (operation) {
       case 'current':
         return {
-          timestamp: now.getTime(),
-          iso: now.toISOString(),
+          timestamp: currentDate.getTime(),
+          iso: currentDate.toISOString(),
           timezone: timezone || 'UTC',
-          locale: now.toLocaleString('en-US', {
+          locale: currentDate.toLocaleString('en-US', {
             timeZone: timezone || 'UTC'
           })
         };
 
       case 'unix':
         return {
-          timestamp: Math.floor(now.getTime() / 1000),
-          milliseconds: now.getTime()
+          timestamp: Math.floor(currentDate.getTime() / 1000),
+          milliseconds: currentDate.getTime()
         };
 
       case 'iso':
         return {
-          iso: now.toISOString()
+          iso: currentDate.toISOString()
         };
 
       default:

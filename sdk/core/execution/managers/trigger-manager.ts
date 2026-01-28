@@ -13,6 +13,7 @@ import { EventManager } from './event-manager';
 import { TriggerExecutorFactory } from '../executors';
 import { ValidationError, ExecutionError } from '../../../types/errors';
 import { EventType } from '../../../types/events';
+import { now } from '../../../utils';
 
 /**
  * TriggerManager - 触发器管理器
@@ -97,7 +98,7 @@ export class TriggerManager {
 
     // 更新触发器状态
     trigger.status = 'enabled' as TriggerStatus;
-    trigger.updatedAt = Date.now();
+    trigger.updatedAt = now();
   }
 
   /**
@@ -116,7 +117,7 @@ export class TriggerManager {
 
     // 更新触发器状态
     trigger.status = 'disabled' as TriggerStatus;
-    trigger.updatedAt = Date.now();
+    trigger.updatedAt = now();
   }
 
   /**
@@ -193,7 +194,7 @@ export class TriggerManager {
 
     // 更新触发器状态
     trigger.triggerCount++;
-    trigger.updatedAt = Date.now();
+    trigger.updatedAt = now();
   }
 
   /**

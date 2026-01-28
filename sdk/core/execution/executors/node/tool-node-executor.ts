@@ -8,6 +8,7 @@ import type { Node } from '../../../../types/node';
 import type { Thread } from '../../../../types/thread';
 import { NodeType } from '../../../../types/node';
 import { ValidationError } from '../../../../types/errors';
+import { now } from '../../../../utils';
 
 /**
  * Tool节点配置
@@ -104,7 +105,7 @@ export class ToolNodeExecutor extends NodeExecutor {
           nodeId: node.id,
           nodeType: node.type,
           status: 'COMPLETED',
-          timestamp: Date.now(),
+          timestamp: now(),
           output: result
         });
 

@@ -9,6 +9,7 @@ import type { Thread } from '../../../../types/thread';
 import { NodeType } from '../../../../types/node';
 import { ValidationError } from '../../../../types/errors';
 import { ThreadStatus } from '../../../../types/thread';
+import { now, diffTimestamp } from '../../../../utils';
 
 /**
  * End节点执行器
@@ -80,7 +81,7 @@ export class EndNodeExecutor extends NodeExecutor {
 
     // 步骤3：更新Thread状态
     thread.status = ThreadStatus.COMPLETED;
-    thread.endTime = Date.now();
+    thread.endTime = now();
     thread.output = output;
 
     // 步骤4：记录执行历史
@@ -89,14 +90,14 @@ export class EndNodeExecutor extends NodeExecutor {
       nodeId: node.id,
       nodeType: node.type,
       status: 'COMPLETED',
-      timestamp: Date.now()
+      timestamp: now()
     });
 
     // 步骤5：返回执行结果
     return {
       message: 'Workflow completed',
       output,
-      executionTime: thread.endTime - thread.startTime
+      executionTime: diffTimestamp(thread.startTime, thread.endTime)
     };
   }
 }

@@ -8,6 +8,7 @@ import type { EventManager } from './managers/event-manager';
 import { EventType } from '../../types/events';
 import type { ThreadStartedEvent, ThreadCompletedEvent, ThreadFailedEvent, ThreadPausedEvent, ThreadResumedEvent } from '../../types/events';
 import { ValidationError } from '../../types/errors';
+import { now } from '../../utils';
 
 /**
  * ThreadLifecycleManager - Thread生命周期管理器
@@ -101,7 +102,7 @@ export class ThreadLifecycleManager {
     thread.status = 'COMPLETED' as ThreadStatus;
 
     // 设置结束时间
-    thread.endTime = Date.now();
+    thread.endTime = now();
 
     // 触发THREAD_COMPLETED事件
     await this.emitThreadCompletedEvent(thread, result);
@@ -127,7 +128,7 @@ export class ThreadLifecycleManager {
     thread.status = 'FAILED' as ThreadStatus;
 
     // 设置结束时间
-    thread.endTime = Date.now();
+    thread.endTime = now();
 
     // 记录错误信息
     thread.errors.push(error.message);
@@ -155,7 +156,7 @@ export class ThreadLifecycleManager {
     thread.status = 'CANCELLED' as ThreadStatus;
 
     // 设置结束时间
-    thread.endTime = Date.now();
+    thread.endTime = now();
 
     // 注意：THREAD_CANCELLED 事件类型不存在，暂时不触发事件
     // 如果需要，可以在 events.ts 中添加该事件类型
@@ -195,7 +196,7 @@ export class ThreadLifecycleManager {
   private async emitThreadStartedEvent(thread: Thread): Promise<void> {
     const event: ThreadStartedEvent = {
       type: EventType.THREAD_STARTED,
-      timestamp: Date.now(),
+      timestamp: now(),
       workflowId: thread.workflowId,
       threadId: thread.id,
       input: thread.input
@@ -211,7 +212,7 @@ export class ThreadLifecycleManager {
   private async emitThreadCompletedEvent(thread: Thread, result: ThreadResult): Promise<void> {
     const event: ThreadCompletedEvent = {
       type: EventType.THREAD_COMPLETED,
-      timestamp: Date.now(),
+      timestamp: now(),
       workflowId: thread.workflowId,
       threadId: thread.id,
       output: result.output,
@@ -228,7 +229,7 @@ export class ThreadLifecycleManager {
   private async emitThreadFailedEvent(thread: Thread, error: Error): Promise<void> {
     const event: ThreadFailedEvent = {
       type: EventType.THREAD_FAILED,
-      timestamp: Date.now(),
+      timestamp: now(),
       workflowId: thread.workflowId,
       threadId: thread.id,
       error: error.message
@@ -243,7 +244,7 @@ export class ThreadLifecycleManager {
   private async emitThreadPausedEvent(thread: Thread): Promise<void> {
     const event: ThreadPausedEvent = {
       type: EventType.THREAD_PAUSED,
-      timestamp: Date.now(),
+      timestamp: now(),
       workflowId: thread.workflowId,
       threadId: thread.id
     };
@@ -257,7 +258,7 @@ export class ThreadLifecycleManager {
   private async emitThreadResumedEvent(thread: Thread): Promise<void> {
     const event: ThreadResumedEvent = {
       type: EventType.THREAD_RESUMED,
-      timestamp: Date.now(),
+      timestamp: now(),
       workflowId: thread.workflowId,
       threadId: thread.id
     };

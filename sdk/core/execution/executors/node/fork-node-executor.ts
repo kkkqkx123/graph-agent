@@ -8,6 +8,7 @@ import type { Node } from '../../../../types/node';
 import type { Thread } from '../../../../types/thread';
 import { NodeType } from '../../../../types/node';
 import { ValidationError } from '../../../../types/errors';
+import { now } from '../../../../utils';
 
 /**
  * Fork节点配置
@@ -73,7 +74,7 @@ export class ForkNodeExecutor extends NodeExecutor {
     }
 
     // 步骤2：创建子Thread信息
-    const childThreadIds = childNodeIds.map((_, index) => `${thread.id}_fork_${Date.now()}_${index}`);
+    const childThreadIds = childNodeIds.map((_, index) => `${thread.id}_fork_${now()}_${index}`);
 
     // 步骤3：根据策略执行子Thread
     const results: any[] = [];
@@ -107,7 +108,7 @@ export class ForkNodeExecutor extends NodeExecutor {
       nodeId: node.id,
       nodeType: node.type,
       status: 'COMPLETED',
-      timestamp: Date.now(),
+      timestamp: now(),
       output: {
         forkId: config.forkId,
         forkStrategy: config.forkStrategy,

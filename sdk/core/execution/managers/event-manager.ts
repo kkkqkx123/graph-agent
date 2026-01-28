@@ -6,6 +6,7 @@
 
 import type { BaseEvent, EventType, EventListener } from '../../../types/events';
 import type { BaseInternalEvent, InternalEventType } from '../../../types/internal-events';
+import { now, generateId } from '../../../utils';
 
 /**
  * 监听器包装器
@@ -73,8 +74,8 @@ export class EventManager {
     // 创建监听器包装器
     const wrapper: ListenerWrapper<T> = {
       listener,
-      id: `listener-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-      timestamp: Date.now()
+      id: generateId(),
+      timestamp: now()
     };
 
     // 添加到全局监听器列表
@@ -105,8 +106,8 @@ export class EventManager {
     // 创建监听器包装器
     const wrapper: ListenerWrapper<T> = {
       listener,
-      id: `internal-listener-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-      timestamp: Date.now()
+      id: generateId(),
+      timestamp: now()
     };
 
     // 添加到内部监听器列表

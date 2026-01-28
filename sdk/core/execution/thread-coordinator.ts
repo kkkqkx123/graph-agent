@@ -30,6 +30,7 @@ import {
   type CopyCompletedEvent,
   type CopyFailedEvent
 } from '../../types/internal-events';
+import { now, diffTimestamp } from '../../utils';
 
 /**
  * Join 策略
@@ -89,7 +90,7 @@ export class ThreadCoordinator {
       // 发布 Fork 完成事件
       const completedEvent: ForkCompletedEvent = {
         type: InternalEventType.FORK_COMPLETED,
-        timestamp: Date.now(),
+        timestamp: now(),
         workflowId: parentThreadContext.getWorkflowId(),
         threadId: parentThreadContext.getThreadId(),
         childThreadIds
@@ -99,7 +100,7 @@ export class ThreadCoordinator {
       // 发布 Fork 失败事件
       const failedEvent: ForkFailedEvent = {
         type: InternalEventType.FORK_FAILED,
-        timestamp: Date.now(),
+        timestamp: now(),
         workflowId: parentThreadContext.getWorkflowId(),
         threadId: parentThreadContext.getThreadId(),
         error: error instanceof Error ? error.message : String(error)
@@ -120,7 +121,7 @@ export class ThreadCoordinator {
       // 发布 Join 完成事件
       const completedEvent: JoinCompletedEvent = {
         type: InternalEventType.JOIN_COMPLETED,
-        timestamp: Date.now(),
+        timestamp: now(),
         workflowId: parentThreadContext.getWorkflowId(),
         threadId: parentThreadContext.getThreadId(),
         result
@@ -130,7 +131,7 @@ export class ThreadCoordinator {
       // 发布 Join 失败事件
       const failedEvent: JoinFailedEvent = {
         type: InternalEventType.JOIN_FAILED,
-        timestamp: Date.now(),
+        timestamp: now(),
         workflowId: parentThreadContext.getWorkflowId(),
         threadId: parentThreadContext.getThreadId(),
         error: error instanceof Error ? error.message : String(error)
@@ -151,7 +152,7 @@ export class ThreadCoordinator {
       // 发布 Copy 完成事件
       const completedEvent: CopyCompletedEvent = {
         type: InternalEventType.COPY_COMPLETED,
-        timestamp: Date.now(),
+        timestamp: now(),
         workflowId: event.workflowId,
         threadId: event.threadId,
         copiedThreadId
@@ -161,7 +162,7 @@ export class ThreadCoordinator {
       // 发布 Copy 失败事件
       const failedEvent: CopyFailedEvent = {
         type: InternalEventType.COPY_FAILED,
-        timestamp: Date.now(),
+        timestamp: now(),
         workflowId: event.workflowId,
         threadId: event.threadId,
         error: error instanceof Error ? error.message : String(error)
@@ -198,7 +199,7 @@ export class ThreadCoordinator {
     // 步骤3：触发 THREAD_FORKED 事件
     const forkedEvent: ThreadForkedEvent = {
       type: EventType.THREAD_FORKED,
-      timestamp: Date.now(),
+      timestamp: now(),
       workflowId: parentThreadContext.getWorkflowId(),
       threadId: parentThreadId,
       parentThreadId,
@@ -281,7 +282,7 @@ export class ThreadCoordinator {
     // 步骤5：触发 THREAD_JOINED 事件
     const joinedEvent: ThreadJoinedEvent = {
       type: EventType.THREAD_JOINED,
-      timestamp: Date.now(),
+      timestamp: now(),
       workflowId: parentThreadContext.getWorkflowId(),
       threadId: parentThreadId,
       parentThreadId,
@@ -314,12 +315,12 @@ export class ThreadCoordinator {
     const completedThreads: Thread[] = [];
     const failedThreads: Thread[] = [];
     const pendingThreads = new Set(childThreadIds);
-    const startTime = Date.now();
+    const startTime = now();
 
     // 步骤2：进入等待循环
     while (pendingThreads.size > 0) {
       // 步骤3：检查超时
-      const elapsedTime = Date.now() - startTime;
+      const elapsedTime = diffTimestamp(startTime, now());
       if (elapsedTime > timeout) {
         throw new TimeoutError('Join operation timeout', timeout);
       }
@@ -420,7 +421,7 @@ export class ThreadCoordinator {
     // 步骤4：触发 THREAD_COPIED 事件
     const copiedEvent: ThreadCopiedEvent = {
       type: EventType.THREAD_COPIED,
-      timestamp: Date.now(),
+      timestamp: now(),
       workflowId: sourceThreadContext.getWorkflowId(),
       threadId: sourceThreadId,
       sourceThreadId,

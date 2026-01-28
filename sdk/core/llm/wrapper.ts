@@ -13,6 +13,7 @@ import type {
 import { ProfileManager } from './profile-manager';
 import { ClientFactory } from './client-factory';
 import { SDKError, ErrorCode } from '../../types/errors';
+import { now, diffTimestamp } from '../../utils';
 
 /**
  * LLM包装器类
@@ -46,9 +47,9 @@ export class LLMWrapper {
     }
     
     const client = this.clientFactory.createClient(profile);
-    const startTime = Date.now();
+    const startTime = now();
     const result = await client.generate(request);
-    result.duration = Date.now() - startTime;
+    result.duration = diffTimestamp(startTime, now());
 
     return result;
   }
@@ -70,10 +71,10 @@ export class LLMWrapper {
     }
     
     const client = this.clientFactory.createClient(profile);
-    const startTime = Date.now();
+    const startTime = now();
 
     for await (const chunk of client.generateStream(request)) {
-      chunk.duration = Date.now() - startTime;
+      chunk.duration = diffTimestamp(startTime, now());
       yield chunk;
     }
   }

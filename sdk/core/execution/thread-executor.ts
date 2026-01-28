@@ -24,6 +24,7 @@ import { WorkflowRegistry } from '../registry/workflow-registry';
 import { getWorkflowRegistry, getThreadRegistry, getEventManager, getThreadLifecycleManager } from './context/execution-context';
 import { InternalEventType } from '../../types/internal-events';
 import type { ForkCompletedEvent, ForkFailedEvent, JoinCompletedEvent, JoinFailedEvent } from '../../types/internal-events';
+import { now, diffTimestamp } from '../../utils';
 
 /**
  * ThreadExecutor - Thread 执行器
@@ -171,23 +172,23 @@ export class ThreadExecutor {
         workflowId: threadContext.getWorkflowId(),
         nodeId,
         nodeType,
-        timestamp: Date.now()
+        timestamp: now()
       });
 
       // 步骤2：创建节点执行器
       const nodeExecutor = NodeExecutorFactory.createExecutor(nodeType);
 
       // 步骤3：执行节点
-      const startTime = Date.now();
+      const startTime = now();
       const nodeResult = await nodeExecutor.execute(threadContext.thread, node);
-      const endTime = Date.now();
+      const endTime = now();
 
       // 步骤4：补充执行结果信息
       nodeResult.nodeId = nodeId;
       nodeResult.nodeType = nodeType;
       nodeResult.startTime = startTime;
       nodeResult.endTime = endTime;
-      nodeResult.executionTime = endTime - startTime;
+      nodeResult.executionTime = diffTimestamp(startTime, endTime);
 
       // 步骤5：记录节点执行结果
       threadContext.addNodeResult(nodeResult);
@@ -201,7 +202,7 @@ export class ThreadExecutor {
           nodeId,
           output: nodeResult.output,
           executionTime: nodeResult.executionTime,
-          timestamp: Date.now()
+          timestamp: now()
         });
       } else if (nodeResult.status === 'FAILED') {
         await this.eventManager.emit<NodeFailedEvent>({
@@ -210,7 +211,7 @@ export class ThreadExecutor {
           workflowId: threadContext.getWorkflowId(),
           nodeId,
           error: nodeResult.error,
-          timestamp: Date.now()
+          timestamp: now()
         });
       }
 
@@ -223,8 +224,8 @@ export class ThreadExecutor {
         status: 'FAILED',
         step: threadContext.getNodeResults().length + 1,
         error,
-        startTime: Date.now(),
-        endTime: Date.now(),
+        startTime: now(),
+        endTime: now(),
         executionTime: 0
       };
 
@@ -236,7 +237,7 @@ export class ThreadExecutor {
         workflowId: threadContext.getWorkflowId(),
         nodeId,
         error,
-        timestamp: Date.now()
+        timestamp: now()
       });
 
       return errorResult;
@@ -259,7 +260,7 @@ export class ThreadExecutor {
       threadId: threadContext.getThreadId(),
       workflowId: threadContext.getWorkflowId(),
       error: nodeResult.error,
-      timestamp: Date.now()
+      timestamp: now()
     });
 
     // 步骤3：根据错误处理策略决定后续操作
@@ -307,7 +308,7 @@ export class ThreadExecutor {
       threadId: threadContext.getThreadId(),
       workflowId: threadContext.getWorkflowId(),
       error,
-      timestamp: Date.now()
+      timestamp: now()
     });
 
     // 标记线程为失败状态
@@ -321,9 +322,9 @@ export class ThreadExecutor {
    * @returns Thread 执行结果
    */
   private createThreadResult(threadContext: ThreadContext, error?: any): ThreadResult {
-    const endTime = Date.now();
+    const endTime = now();
     const startTime = threadContext.getStartTime();
-    const executionTime = endTime - startTime;
+    const executionTime = diffTimestamp(startTime, endTime);
 
     return {
       threadId: threadContext.getThreadId(),

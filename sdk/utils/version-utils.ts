@@ -62,3 +62,47 @@ export function compareVersion(v1: Version, v2: Version): number {
   if (p1.patch !== p2.patch) return p1.patch < p2.patch ? -1 : 1;
   return 0;
 }
+
+/**
+ * 根据变更类型自动递增版本
+ * @param currentVersion 当前版本号
+ * @param changeType 变更类型：major（主版本）、minor（次版本）、patch（补丁版本）
+ * @returns 递增后的版本号
+ */
+export function autoIncrementVersion(currentVersion: Version, changeType: 'major' | 'minor' | 'patch'): Version {
+  switch (changeType) {
+    case 'major':
+      return nextMajorVersion(currentVersion);
+    case 'minor':
+      return nextMinorVersion(currentVersion);
+    case 'patch':
+      return nextPatchVersion(currentVersion);
+    default:
+      return nextPatchVersion(currentVersion);
+  }
+}
+
+/**
+ * 解析版本号的预发布和构建元数据
+ * @param version 完整版本号，如 "1.2.3-alpha.1+build.123"
+ * @returns 解析后的版本信息对象
+ */
+export function parseFullVersion(version: Version): {
+  major: number;
+  minor: number;
+  patch: number;
+  prerelease?: string;
+  build?: string;
+} {
+  const [base, ...rest] = version.split('+');
+  const [versionCore, prerelease] = (base || '').split('-');
+  const [major, minor, patch] = (versionCore || '').split('.').map(Number);
+  
+  return {
+    major: major || 0,
+    minor: minor || 0,
+    patch: patch || 0,
+    prerelease,
+    build: rest.join('+')
+  };
+}

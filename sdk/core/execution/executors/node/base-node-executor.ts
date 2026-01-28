@@ -10,6 +10,7 @@ import type { NodeCustomEvent } from '../../../../types/events';
 import { NodeStatus } from '../../../../types/node';
 import { ValidationError } from '../../../../types/errors';
 import { HookExecutor } from '../hook-executor';
+import { now, diffTimestamp } from '../../../../utils';
 
 /**
  * 节点执行器基类
@@ -43,7 +44,7 @@ export abstract class NodeExecutor {
       };
     }
 
-    const startTime = Date.now();
+    const startTime = now();
 
     // 步骤3：执行BEFORE_EXECUTE类型的Hook
     if (emitEvent && node.hooks && node.hooks.length > 0) {
@@ -56,15 +57,16 @@ export abstract class NodeExecutor {
       const output = await this.doExecute(thread, node);
 
       // 步骤5：构建执行结果
+      const endTime = now();
       const result: NodeExecutionResult = {
         nodeId: node.id,
         nodeType: node.type,
         status: NodeStatus.COMPLETED,
         step: thread.nodeResults.length + 1,
         output,
-        executionTime: Date.now() - startTime,
+        executionTime: diffTimestamp(startTime, endTime),
         startTime,
-        endTime: Date.now()
+        endTime
       };
 
       // 步骤6：执行AFTER_EXECUTE类型的Hook
@@ -78,15 +80,16 @@ export abstract class NodeExecutor {
     } catch (error) {
       // 步骤8：构建失败结果
       const errorMessage = error instanceof Error ? error.message : String(error);
+      const endTime = now();
       const result: NodeExecutionResult = {
         nodeId: node.id,
         nodeType: node.type,
         status: NodeStatus.FAILED,
         step: thread.nodeResults.length + 1,
         error: errorMessage,
-        executionTime: Date.now() - startTime,
+        executionTime: diffTimestamp(startTime, endTime),
         startTime,
-        endTime: Date.now()
+        endTime
       };
 
       // 步骤9：执行AFTER_EXECUTE类型的Hook（即使失败也执行）

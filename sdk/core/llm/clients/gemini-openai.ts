@@ -14,6 +14,7 @@ import type {
   LLMMessage,
   LLMToolCall
 } from '../../../types/llm';
+import { generateId } from '../../../utils';
 
 /**
  * Gemini OpenAI兼容客户端
@@ -254,7 +255,7 @@ export class GeminiOpenAIClient extends BaseLLMClient {
     return parts
       .filter(part => part.functionCall)
       .map(part => ({
-        id: `call_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+        id: generateId(),
         type: 'function',
         function: {
           name: part.functionCall.name,

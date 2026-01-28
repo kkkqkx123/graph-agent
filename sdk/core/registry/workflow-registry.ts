@@ -6,6 +6,7 @@
 import type { WorkflowDefinition, WorkflowMetadata, WorkflowConfig } from '../../types/workflow';
 import { WorkflowValidator } from '../validation/workflow-validator';
 import { ValidationError } from '../../types/errors';
+import { now } from '../../utils';
 
 /**
  * 工作流摘要信息
@@ -282,7 +283,7 @@ export class WorkflowRegistry {
       ...workflow.metadata,
       ...metadata
     };
-    workflow.updatedAt = Date.now();
+    workflow.updatedAt = now();
   }
 
   /**
@@ -307,7 +308,7 @@ export class WorkflowRegistry {
 
     // 更新配置
     workflow.config = config;
-    workflow.updatedAt = Date.now();
+    workflow.updatedAt = now();
   }
 
   /**

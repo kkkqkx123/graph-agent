@@ -15,6 +15,7 @@ import type {
   LLMProfile,
   LLMMessage
 } from '../../../types/llm';
+import { now, generateId, initialVersion } from '../../../utils';
 
 /**
  * 人工中继模式
@@ -66,7 +67,7 @@ export class HumanRelayClient implements LLMClient {
    * 非流式生成
    */
   async generate(request: LLMRequest): Promise<LLMResult> {
-    const requestId = `human-relay-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+    const requestId = generateId();
     const timeout = this.config.defaultTimeout || 300000;
 
     // 创建Promise
@@ -149,7 +150,7 @@ export class HumanRelayClient implements LLMClient {
       duration: 0,
       metadata: {
         humanRelay: true,
-        timestamp: Date.now()
+        timestamp: now()
       }
     };
 
@@ -251,7 +252,7 @@ export class HumanRelayClient implements LLMClient {
     return {
       provider: this.profile.provider,
       model: this.profile.model,
-      version: '1.0.0'
+      version: initialVersion()
     };
   }
 }

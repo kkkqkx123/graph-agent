@@ -8,6 +8,7 @@ import type { Node } from '../../../../types/node';
 import type { Thread } from '../../../../types/thread';
 import { NodeType } from '../../../../types/node';
 import { ValidationError } from '../../../../types/errors';
+import { now } from '../../../../utils';
 
 /**
  * LLM节点配置
@@ -120,7 +121,7 @@ export class LLMNodeExecutor extends NodeExecutor {
       nodeId: node.id,
       nodeType: node.type,
       status: 'COMPLETED',
-      timestamp: Date.now(),
+      timestamp: now(),
       output: {
         content: llmResult.content,
         usage: llmResult.usage,

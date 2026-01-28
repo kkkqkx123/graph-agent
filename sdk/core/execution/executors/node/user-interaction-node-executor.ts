@@ -8,6 +8,7 @@ import type { Node } from '../../../../types/node';
 import type { Thread } from '../../../../types/thread';
 import { NodeType } from '../../../../types/node';
 import { ValidationError } from '../../../../types/errors';
+import { now } from '../../../../utils';
 
 /**
  * 用户交互类型
@@ -125,7 +126,7 @@ export class UserInteractionNodeExecutor extends NodeExecutor {
       nodeId: node.id,
       nodeType: node.type,
       status: 'COMPLETED',
-      timestamp: Date.now(),
+      timestamp: now(),
       output: {
         userInteractionType: config.userInteractionType,
         showMessage: resolvedMessage,

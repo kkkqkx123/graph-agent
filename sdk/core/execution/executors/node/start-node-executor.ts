@@ -9,6 +9,7 @@ import type { Thread } from '../../../../types/thread';
 import { NodeType } from '../../../../types/node';
 import { ValidationError } from '../../../../types/errors';
 import { ThreadStatus } from '../../../../types/thread';
+import { now } from '../../../../utils';
 
 /**
  * Start节点执行器
@@ -64,7 +65,7 @@ export class StartNodeExecutor extends NodeExecutor {
     // 步骤2：初始化Thread状态
     thread.status = ThreadStatus.RUNNING;
     thread.currentNodeId = node.id;
-    thread.startTime = Date.now();
+    thread.startTime = now();
 
     // 步骤3：初始化Thread的变量和结果
     if (!thread.variables) {
@@ -91,7 +92,7 @@ export class StartNodeExecutor extends NodeExecutor {
       nodeId: node.id,
       nodeType: node.type,
       status: 'COMPLETED',
-      timestamp: Date.now()
+      timestamp: now()
     });
 
     // 步骤6：返回执行结果

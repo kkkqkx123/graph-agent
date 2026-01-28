@@ -5,6 +5,7 @@
 
 import type { Tool } from '../../types/tool';
 import { TimeoutError, ValidationError, NetworkError, RateLimitError, HttpError } from '../../types/errors';
+import { now, diffTimestamp } from '../../utils';
 
 /**
  * 工具执行选项
@@ -52,7 +53,7 @@ export abstract class BaseToolExecutor {
     parameters: Record<string, any>,
     options: ToolExecutionOptions = {}
   ): Promise<ToolExecutionResult> {
-    const startTime = Date.now();
+    const startTime = now();
     const {
       timeout = 30000,
       retries = 0,
@@ -75,7 +76,7 @@ export abstract class BaseToolExecutor {
           timeout
         );
 
-        const executionTime = Date.now() - startTime;
+        const executionTime = diffTimestamp(startTime, now());
 
         return {
           success: true,
@@ -105,7 +106,7 @@ export abstract class BaseToolExecutor {
     }
 
     // 执行失败
-    const executionTime = Date.now() - startTime;
+    const executionTime = diffTimestamp(startTime, now());
     const errorMessage = lastError?.message || 'Unknown error';
 
     return {
