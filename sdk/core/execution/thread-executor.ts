@@ -3,64 +3,40 @@
  * 负责执行单个 ThreadContext 实例，管理 thread 的完整执行生命周期
  * 支持图导航器进行节点导航
  *
- * 通过事件驱动机制与 ThreadCoordinator 解耦，避免循环依赖
+ * 职责：
+ * - 执行单个 ThreadContext
+ * - 节点导航和执行
+ * - 错误处理
+ *
+ * 不负责：
+ * - Thread 的创建和注册（由 ThreadCoordinator 负责）
+ * - Thread 的暂停、恢复、停止等生命周期管理（由 ThreadCoordinator 负责）
+ * - 变量设置等管理操作（由 ThreadCoordinator 负责）
  */
 
-import type { ThreadOptions, ThreadResult } from '../../types/thread';
+import type { ThreadResult } from '../../types/thread';
 import type { Node } from '../../types/node';
 import type { NodeExecutionResult } from '../../types/thread';
-import { ThreadRegistry } from '../registry/thread-registry';
-import { ThreadBuilder } from './thread-builder';
-import { ThreadLifecycleManager } from './thread-lifecycle-manager';
 import { ThreadContext } from './context/thread-context';
 import { EventManager } from './managers/event-manager';
 import { NotFoundError } from '../../types/errors';
 import { EventType } from '../../types/events';
 import type { NodeStartedEvent, NodeCompletedEvent, NodeFailedEvent, ErrorEvent } from '../../types/events';
-import { TriggerManager } from './managers/trigger-manager';
-import { getThreadRegistry, getEventManager, getThreadLifecycleManager } from './context/execution-context';
-import { now, diffTimestamp } from '../../utils';
-import { getNodeHandler } from './handlers/node-handlers';
 import { HookExecutor } from './handlers/hook-handler';
 import { NodeType } from '../../types/node';
+import { now, diffTimestamp } from '../../utils';
+import { getNodeHandler } from './handlers/node-handlers';
 
 /**
  * ThreadExecutor - Thread 执行器
  *
- * 通过事件驱动机制与 ThreadCoordinator 解耦，避免循环依赖
- * 使用 ExecutionContext 获取全局组件
+ * 专注于执行单个 ThreadContext，不负责线程的创建、注册和管理
  */
 export class ThreadExecutor {
-  private threadRegistry: ThreadRegistry;
-  private threadBuilder: ThreadBuilder;
-  private lifecycleManager: ThreadLifecycleManager;
   private eventManager: EventManager;
-  private triggerManager: TriggerManager;
 
-  constructor(workflowRegistry?: any) {
-    // 使用模块级单例获取组件
-    this.threadRegistry = getThreadRegistry();
-    this.threadBuilder = new ThreadBuilder(workflowRegistry);
-    this.lifecycleManager = getThreadLifecycleManager();
-    this.eventManager = new EventManager();
-    this.triggerManager = new TriggerManager(this.eventManager);
-  }
-
-  /**
-   * 从工作流ID执行工作流
-   * @param workflowId 工作流ID
-   * @param options 执行选项
-   * @returns 执行结果
-   */
-  async execute(workflowId: string, options: ThreadOptions = {}): Promise<ThreadResult> {
-    // 步骤1：构建 ThreadContext
-    const threadContext = await this.threadBuilder.build(workflowId, options);
-
-    // 步骤2：注册 ThreadContext
-    this.threadRegistry.register(threadContext);
-
-    // 步骤3：执行 ThreadContext
-    return await this.executeThread(threadContext);
+  constructor(eventManager?: EventManager) {
+    this.eventManager = eventManager || new EventManager();
   }
 
   /**
@@ -72,20 +48,17 @@ export class ThreadExecutor {
     const threadId = threadContext.getThreadId();
 
     try {
-      // 步骤1：启动 Thread
-      await this.lifecycleManager.startThread(threadContext.thread);
-
-      // 步骤2：执行主循环
+      // 步骤1：执行主循环
       while (true) {
         // 检查是否需要暂停
         if (threadContext.thread.shouldPause) {
-          await this.lifecycleManager.pauseThread(threadContext.thread);
+          // 暂停状态由外部管理，直接返回
           break;
         }
 
         // 检查是否需要停止
         if (threadContext.thread.shouldStop) {
-          await this.lifecycleManager.cancelThread(threadContext.thread);
+          // 停止状态由外部管理，直接返回
           break;
         }
 
@@ -119,7 +92,6 @@ export class ThreadExecutor {
 
           if (navigationResult.isEnd) {
             // 到达结束节点，工作流完成
-            await this.lifecycleManager.completeThread(threadContext.thread, this.createThreadResult(threadContext));
             break;
           }
 
@@ -139,7 +111,6 @@ export class ThreadExecutor {
 
           if (!nextNodeId) {
             // 没有下一个节点，工作流完成
-            await this.lifecycleManager.completeThread(threadContext.thread, this.createThreadResult(threadContext));
             break;
           }
 
@@ -160,7 +131,6 @@ export class ThreadExecutor {
 
           if (navigationResult.isEnd) {
             // 到达结束节点，工作流完成
-            await this.lifecycleManager.completeThread(threadContext.thread, this.createThreadResult(threadContext));
             break;
           }
 
@@ -168,7 +138,6 @@ export class ThreadExecutor {
 
           if (!nextNodeId) {
             // 没有下一个节点，工作流完成
-            await this.lifecycleManager.completeThread(threadContext.thread, this.createThreadResult(threadContext));
             break;
           }
 
@@ -177,7 +146,7 @@ export class ThreadExecutor {
         }
       }
 
-      // 步骤4：返回执行结果
+      // 步骤2：返回执行结果
       return this.createThreadResult(threadContext);
     } catch (error) {
       // 处理执行错误
@@ -364,8 +333,8 @@ export class ThreadExecutor {
     
     if (errorHandling) {
       if (errorHandling.stopOnError) {
-        // 停止执行
-        await this.lifecycleManager.failThread(threadContext.thread, nodeResult.error);
+        // 停止执行，状态由外部管理
+        return;
       } else if (errorHandling.continueOnError) {
         // 继续执行
         const fallbackNodeId = errorHandling.fallbackNodeId;
@@ -384,15 +353,11 @@ export class ThreadExecutor {
           );
           if (nextNodeId) {
             threadContext.setCurrentNodeId(nextNodeId);
-          } else {
-            await this.lifecycleManager.completeThread(threadContext.thread, this.createThreadResult(threadContext));
           }
         }
       }
-    } else {
-      // 默认行为：停止执行
-      await this.lifecycleManager.failThread(threadContext.thread, nodeResult.error);
     }
+    // 默认行为：停止执行，状态由外部管理
   }
 
   /**
@@ -413,8 +378,7 @@ export class ThreadExecutor {
       timestamp: now()
     });
 
-    // 标记线程为失败状态
-    await this.lifecycleManager.failThread(threadContext.thread, error);
+    // 状态由外部管理
   }
 
   /**
@@ -446,62 +410,9 @@ export class ThreadExecutor {
   }
 
   /**
-   * 暂停 Thread 执行
-   * @param threadId Thread ID
+   * 获取事件管理器
    */
-  async pauseThread(threadId: string): Promise<void> {
-    const threadContext = this.threadRegistry.get(threadId);
-    if (!threadContext) {
-      throw new NotFoundError(`ThreadContext not found: ${threadId}`, 'ThreadContext', threadId);
-    }
-
-    await this.lifecycleManager.pauseThread(threadContext.thread);
-  }
-
-  /**
-   * 恢复 Thread 执行
-   * @param threadId Thread ID
-   */
-  async resumeThread(threadId: string): Promise<ThreadResult> {
-    const threadContext = this.threadRegistry.get(threadId);
-    if (!threadContext) {
-      throw new NotFoundError(`ThreadContext not found: ${threadId}`, 'ThreadContext', threadId);
-    }
-
-    // 恢复线程状态
-    await this.lifecycleManager.resumeThread(threadContext.thread);
-
-    // 继续执行
-    return await this.executeThread(threadContext);
-  }
-
-  /**
-   * 停止 Thread 执行
-   * @param threadId Thread ID
-   */
-  async stopThread(threadId: string): Promise<void> {
-    const threadContext = this.threadRegistry.get(threadId);
-    if (!threadContext) {
-      throw new NotFoundError(`ThreadContext not found: ${threadId}`, 'ThreadContext', threadId);
-    }
-
-    await this.lifecycleManager.cancelThread(threadContext.thread);
-  }
-
-  /**
-   * 设置 Thread 变量
-   * @param threadId Thread ID
-   * @param variables 变量对象
-   */
-  async setVariables(threadId: string, variables: Record<string, any>): Promise<void> {
-    const threadContext = this.threadRegistry.get(threadId);
-    if (!threadContext) {
-      throw new NotFoundError(`ThreadContext not found: ${threadId}`, 'ThreadContext', threadId);
-    }
-
-    // 使用ThreadContext的updateVariable方法更新已定义的变量
-    for (const [name, value] of Object.entries(variables)) {
-      threadContext.updateVariable(name, value);
-    }
+  getEventManager(): EventManager {
+    return this.eventManager;
   }
 }

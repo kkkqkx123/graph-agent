@@ -1,10 +1,9 @@
 /**
  * ThreadExecutorAPI - 主执行入口API
- * 封装ThreadExecutor，提供简洁的执行接口
+ * 封装ThreadCoordinator，提供简洁的执行接口
  */
 
-import { ThreadExecutor } from '../core/execution/thread-executor';
-import { ThreadBuilder } from '../core/execution/thread-builder';
+import { ThreadCoordinator } from '../core/execution/thread-coordinator';
 import { WorkflowRegistry } from '../core/registry/workflow-registry';
 import type { WorkflowDefinition } from '../types/workflow';
 import type { ThreadResult, ThreadOptions } from '../types/thread';
@@ -15,14 +14,12 @@ import { NotFoundError, ValidationError } from '../types/errors';
  * ThreadExecutorAPI - 主执行入口API
  */
 export class ThreadExecutorAPI {
-  private executor: ThreadExecutor;
-  private threadBuilder: ThreadBuilder;
+  private coordinator: ThreadCoordinator;
   private workflowRegistry: WorkflowRegistry;
 
   constructor(workflowRegistry?: WorkflowRegistry) {
     this.workflowRegistry = workflowRegistry || new WorkflowRegistry();
-    this.executor = new ThreadExecutor(this.workflowRegistry);
-    this.threadBuilder = new ThreadBuilder(this.workflowRegistry);
+    this.coordinator = new ThreadCoordinator(this.workflowRegistry);
   }
 
   /**
@@ -32,7 +29,7 @@ export class ThreadExecutorAPI {
    * @returns 线程执行结果
    */
   async executeWorkflow(workflowId: string, options?: ExecuteOptions): Promise<ThreadResult> {
-    return this.executor.execute(workflowId, this.convertOptions(options));
+    return this.coordinator.execute(workflowId, this.convertOptions(options));
   }
 
   /**
@@ -47,8 +44,8 @@ export class ThreadExecutorAPI {
     tempRegistry.register(workflow);
 
     // 执行工作流
-    const executor = new ThreadExecutor(tempRegistry);
-    return executor.execute(workflow.id, this.convertOptions(options));
+    const coordinator = new ThreadCoordinator(tempRegistry);
+    return coordinator.execute(workflow.id, this.convertOptions(options));
   }
 
   /**
@@ -56,7 +53,7 @@ export class ThreadExecutorAPI {
    * @param threadId 线程ID
    */
   async pauseThread(threadId: string): Promise<void> {
-    await this.executor.pauseThread(threadId);
+    await this.coordinator.pauseThread(threadId);
   }
 
   /**
@@ -66,7 +63,7 @@ export class ThreadExecutorAPI {
    * @returns 线程执行结果
    */
   async resumeThread(threadId: string, options?: ExecuteOptions): Promise<ThreadResult> {
-    return this.executor.resumeThread(threadId);
+    return this.coordinator.resumeThread(threadId);
   }
 
   /**
@@ -74,7 +71,7 @@ export class ThreadExecutorAPI {
    * @param threadId 线程ID
    */
   async cancelThread(threadId: string): Promise<void> {
-    await this.executor.stopThread(threadId);
+    await this.coordinator.stopThread(threadId);
   }
 
   /**
@@ -83,7 +80,93 @@ export class ThreadExecutorAPI {
    * @param variables 变量对象
    */
   async setVariables(threadId: string, variables: Record<string, any>): Promise<void> {
-    await this.executor.setVariables(threadId, variables);
+    await this.coordinator.setVariables(threadId, variables);
+  }
+
+  /**
+   * Fork 操作 - 创建子线程
+   * @param parentThreadId 父线程ID
+   * @param forkConfig Fork配置
+   * @returns 子线程ID数组
+   */
+  async forkThread(parentThreadId: string, forkConfig: { forkId: string; forkStrategy?: 'serial' | 'parallel'; startNodeId?: string }): Promise<string[]> {
+    return this.coordinator.fork(parentThreadId, forkConfig);
+  }
+
+  /**
+   * Join 操作 - 合并子线程结果
+   * @param parentThreadId 父线程ID
+   * @param childThreadIds 子线程ID数组
+   * @param joinStrategy Join策略
+   * @param timeout 超时时间（秒）
+   * @returns Join结果
+   */
+  async joinThread(
+    parentThreadId: string,
+    childThreadIds: string[],
+    joinStrategy: 'ALL_COMPLETED' | 'ANY_COMPLETED' | 'ALL_FAILED' | 'ANY_FAILED' | 'SUCCESS_COUNT_THRESHOLD' = 'ALL_COMPLETED',
+    timeout: number = 60
+  ): Promise<{ success: boolean; output: any; completedThreads: any[]; failedThreads: any[] }> {
+    return this.coordinator.join(parentThreadId, childThreadIds, joinStrategy, timeout);
+  }
+
+  /**
+   * Copy 操作 - 创建线程副本
+   * @param sourceThreadId 源线程ID
+   * @returns 副本线程ID
+   */
+  async copyThread(sourceThreadId: string): Promise<string> {
+    return this.coordinator.copy(sourceThreadId);
+  }
+
+  /**
+   * 获取线程
+   * @param threadId 线程ID
+   * @returns 线程实例
+   */
+  getThread(threadId: string) {
+    return this.coordinator.getThread(threadId);
+  }
+
+  /**
+   * 获取线程上下文
+   * @param threadId 线程ID
+   * @returns 线程上下文实例
+   */
+  getThreadContext(threadId: string) {
+    return this.coordinator.getThreadContext(threadId);
+  }
+
+  /**
+   * 获取事件管理器
+   * @returns 事件管理器实例
+   */
+  getEventManager() {
+    return this.coordinator.getEventManager();
+  }
+
+  /**
+   * 获取线程注册表
+   * @returns 线程注册表实例
+   */
+  getThreadRegistry() {
+    return this.coordinator.getThreadRegistry();
+  }
+
+  /**
+   * 获取工作流注册表
+   * @returns 工作流注册表实例
+   */
+  getWorkflowRegistry(): WorkflowRegistry {
+    return this.workflowRegistry;
+  }
+
+  /**
+   * 获取协调器
+   * @returns 协调器实例
+   */
+  getCoordinator(): ThreadCoordinator {
+    return this.coordinator;
   }
 
   /**

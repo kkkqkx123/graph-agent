@@ -1,7 +1,7 @@
 /**
  * 内部协调事件类型定义
  * 用于模块内部协调的事件，不对外暴露
- * 主要用于解耦 ThreadExecutor 和 ThreadCoordinator
+ * 主要用于 LLM 和工具执行的内部协调
  */
 
 import type { ID, Timestamp } from './common';
@@ -10,12 +10,6 @@ import type { ID, Timestamp } from './common';
  * 内部事件类型枚举
  */
 export enum InternalEventType {
-  /** Copy 请求 */
-  COPY_REQUEST = 'INTERNAL_COPY_REQUEST',
-  /** Copy 完成 */
-  COPY_COMPLETED = 'INTERNAL_COPY_COMPLETED',
-  /** Copy 失败 */
-  COPY_FAILED = 'INTERNAL_COPY_FAILED',
   /** LLM执行请求 */
   LLM_EXECUTION_REQUEST = 'INTERNAL_LLM_EXECUTION_REQUEST',
   /** LLM执行完成 */
@@ -42,33 +36,6 @@ export interface BaseInternalEvent {
   workflowId: ID;
   /** 线程ID */
   threadId: ID;
-}
-
-/**
- * Copy 请求事件
- */
-export interface CopyRequestEvent extends BaseInternalEvent {
-  type: InternalEventType.COPY_REQUEST;
-  /** 源线程ID */
-  sourceThreadId: string;
-}
-
-/**
- * Copy 完成事件
- */
-export interface CopyCompletedEvent extends BaseInternalEvent {
-  type: InternalEventType.COPY_COMPLETED;
-  /** 副本线程ID */
-  copiedThreadId: string;
-}
-
-/**
- * Copy 失败事件
- */
-export interface CopyFailedEvent extends BaseInternalEvent {
-  type: InternalEventType.COPY_FAILED;
-  /** 错误信息 */
-  error: string;
 }
 
 /**
@@ -245,9 +212,6 @@ export interface ToolExecutionFailedEvent extends BaseInternalEvent {
  * 所有内部事件类型的联合类型
  */
 export type InternalEvent =
-  | CopyRequestEvent
-  | CopyCompletedEvent
-  | CopyFailedEvent
   | LLMExecutionRequestEvent
   | LLMExecutionCompletedEvent
   | LLMExecutionFailedEvent

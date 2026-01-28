@@ -36,14 +36,21 @@ export { VariableManager } from './managers/variable-manager';
 export { WorkflowRegistry } from '../registry/workflow-registry';
 export type { WorkflowSummary, WorkflowVersion, ValidationResult } from '../registry/workflow-registry';
 
-// 路由器
-export { Router } from './router';
-
 // 事件管理器
 export { EventManager } from './managers/event-manager';
 
 // Thread协调器
-export { ThreadCoordinator, JoinStrategy, JoinResult } from './thread-coordinator';
+export { ThreadCoordinator } from './thread-coordinator';
+
+// Thread操作工具函数
+export {
+  fork,
+  join,
+  copy,
+  type ForkConfig,
+  type JoinStrategy,
+  type JoinResult
+} from './utils/thread-operations';
 
 // 触发器管理器
 export { TriggerManager } from './managers/trigger-manager';
