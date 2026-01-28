@@ -229,7 +229,7 @@ Updated Thread
 
 #### 1. 核心类设计
 
-**DirectedGraph**
+**DirectedGraph**(已拆分为GraphData、GraphAnalyzer)
 - 构建方法：fromWorkflowDefinition()
 - 验证方法：validate()
 - 分析方法：detectCycles(), computeTopologicalOrder()
@@ -244,10 +244,6 @@ Updated Thread
 - 基于DirectedGraph执行验证
 - 复用现有的WorkflowValidator逻辑
 - 添加图特定的验证规则
-
-**ThreadFactory**
-- 从DirectedGraph创建Thread实例
-- 处理执行时特定的初始化逻辑
 
 #### 2. 集成策略
 

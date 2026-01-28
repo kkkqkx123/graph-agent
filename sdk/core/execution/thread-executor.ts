@@ -1,6 +1,7 @@
 /**
  * ThreadExecutor - Thread 执行器
  * 负责执行单个 ThreadContext 实例，管理 thread 的完整执行生命周期
+ * 支持图导航器进行节点导航
  *
  * 通过事件驱动机制与 ThreadCoordinator 解耦，避免循环依赖
  */
@@ -25,6 +26,7 @@ import { getWorkflowRegistry, getThreadRegistry, getEventManager, getThreadLifec
 import { InternalEventType } from '../../types/internal-events';
 import type { ForkCompletedEvent, ForkFailedEvent, JoinCompletedEvent, JoinFailedEvent } from '../../types/internal-events';
 import { now, diffTimestamp } from '../../utils';
+import { GraphNavigator } from '../graph/graph-navigator';
 
 /**
  * ThreadExecutor - Thread 执行器
@@ -81,7 +83,10 @@ export class ThreadExecutor {
       // 步骤1：启动 Thread
       await this.lifecycleManager.startThread(threadContext.thread);
 
-      // 步骤2：执行主循环
+      // 步骤2：检查是否有图导航器
+      const hasNavigator = threadContext.hasNavigator();
+
+      // 步骤3：执行主循环
       while (true) {
         // 检查是否需要暂停
         if (threadContext.thread.shouldPause) {
@@ -114,8 +119,35 @@ export class ThreadExecutor {
         // 处理节点执行结果
         if (nodeResult.status === 'COMPLETED') {
           // 节点执行成功，路由到下一个节点
-          const outgoingEdges = workflow.edges.filter(e => e.sourceNodeId === currentNode.id);
-          const nextNodeId = this.router.selectNextNode(currentNode, outgoingEdges, threadContext.thread);
+          let nextNodeId: string | null = null;
+
+          if (hasNavigator) {
+            // 使用图导航器进行路由
+            const navigator = threadContext.getNavigator()!;
+            // 设置当前节点
+            navigator.setCurrentNode(currentNodeId);
+            // 获取下一个节点
+            const navigationResult = navigator.getNextNode();
+            
+            if (navigationResult.isEnd) {
+              // 到达结束节点，工作流完成
+              await this.lifecycleManager.completeThread(threadContext.thread, this.createThreadResult(threadContext));
+              break;
+            }
+
+            if (navigationResult.hasMultiplePaths) {
+              // 多路径情况，使用Router进行决策
+              const outgoingEdges = workflow.edges.filter(e => e.sourceNodeId === currentNode.id);
+              nextNodeId = this.router.selectNextNode(currentNode, outgoingEdges, threadContext.thread);
+            } else {
+              // 单一路径，直接使用导航结果
+              nextNodeId = navigationResult.nextNodeId || null;
+            }
+          } else {
+            // 使用原有的路由逻辑
+            const outgoingEdges = workflow.edges.filter(e => e.sourceNodeId === currentNode.id);
+            nextNodeId = this.router.selectNextNode(currentNode, outgoingEdges, threadContext.thread);
+          }
 
           if (!nextNodeId) {
             // 没有下一个节点，工作流完成
@@ -131,8 +163,28 @@ export class ThreadExecutor {
           break;
         } else if (nodeResult.status === 'SKIPPED') {
           // 节点被跳过，路由到下一个节点
-          const outgoingEdges = workflow.edges.filter(e => e.sourceNodeId === currentNode.id);
-          const nextNodeId = this.router.selectNextNode(currentNode, outgoingEdges, threadContext.thread);
+          let nextNodeId: string | null = null;
+
+          if (hasNavigator) {
+            // 使用图导航器进行路由
+            const navigator = threadContext.getNavigator()!;
+            // 设置当前节点
+            navigator.setCurrentNode(currentNodeId);
+            // 获取下一个节点
+            const navigationResult = navigator.getNextNode();
+            
+            if (navigationResult.isEnd) {
+              // 到达结束节点，工作流完成
+              await this.lifecycleManager.completeThread(threadContext.thread, this.createThreadResult(threadContext));
+              break;
+            }
+
+            nextNodeId = navigationResult.nextNodeId || null;
+          } else {
+            // 使用原有的路由逻辑
+            const outgoingEdges = workflow.edges.filter(e => e.sourceNodeId === currentNode.id);
+            nextNodeId = this.router.selectNextNode(currentNode, outgoingEdges, threadContext.thread);
+          }
 
           if (!nextNodeId) {
             // 没有下一个节点，工作流完成
@@ -145,7 +197,7 @@ export class ThreadExecutor {
         }
       }
 
-      // 步骤3：返回执行结果
+      // 步骤4：返回执行结果
       return this.createThreadResult(threadContext);
     } catch (error) {
       // 处理执行错误

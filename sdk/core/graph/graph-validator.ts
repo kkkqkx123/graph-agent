@@ -1,6 +1,8 @@
 /**
  * 图验证器
- * 提供图的各种验证算法，包括环检测、可达性分析、拓扑排序等
+ * 提供图的各种验证功能
+ * 支持子工作流验证
+ * 分析算法委托给GraphAnalyzer
  */
 
 import type {
@@ -18,6 +20,7 @@ import { ValidationError } from '../../types';
 import type { ValidationResult } from '../../types';
 import type { GraphData } from './graph-data';
 import { GraphAnalyzer } from './graph-analyzer';
+import { GraphTraversal } from './graph-traversal';
 
 /**
  * 图验证器类
@@ -39,6 +42,8 @@ export class GraphValidator {
       checkForkJoin: true,
       checkStartEnd: true,
       checkIsolatedNodes: true,
+      checkSubgraphExistence: false,
+      checkSubgraphCompatibility: false,
       ...options,
     };
 
@@ -54,9 +59,10 @@ export class GraphValidator {
       errorList.push(...isolatedErrors);
     }
 
-    // 检测环
+    // 检测环（使用GraphAnalyzer）
     if (opts.checkCycles) {
-      const cycleResult = this.detectCycles(graph);
+      const analyzer = new GraphAnalyzer(graph);
+      const cycleResult = analyzer.detectCycles();
       if (cycleResult.hasCycle) {
         errorList.push(
           new ValidationError('工作流中存在循环依赖', undefined, undefined, {
@@ -68,9 +74,10 @@ export class GraphValidator {
       }
     }
 
-    // 可达性分析
+    // 可达性分析（使用GraphAnalyzer）
     if (opts.checkReachability) {
-      const reachabilityResult = this.analyzeReachability(graph);
+      const analyzer = new GraphAnalyzer(graph);
+      const reachabilityResult = analyzer.analyzeReachability();
       
       // 不可达节点
       for (const nodeId of reachabilityResult.unreachableNodes) {
@@ -95,25 +102,20 @@ export class GraphValidator {
 
     // FORK/JOIN配对验证
     if (opts.checkForkJoin) {
-      const forkJoinResult = this.validateForkJoinPairs(graph);
-      if (!forkJoinResult.isValid) {
-        for (const forkId of forkJoinResult.unpairedForks) {
-          errorList.push(
-            new ValidationError(`FORK节点(${forkId})没有配对的JOIN节点`, undefined, undefined, {
-              code: 'UNPAIRED_FORK',
-              nodeId: forkId,
-            })
-          );
-        }
-        for (const joinId of forkJoinResult.unpairedJoins) {
-          errorList.push(
-            new ValidationError(`JOIN节点(${joinId})没有配对的FORK节点`, undefined, undefined, {
-              code: 'UNPAIRED_JOIN',
-              nodeId: joinId,
-            })
-          );
-        }
-      }
+      const forkJoinErrors = this.validateForkJoinPairs(graph);
+      errorList.push(...forkJoinErrors);
+    }
+
+    // 检查子工作流存在性
+    if (opts.checkSubgraphExistence) {
+      const subgraphErrors = this.validateSubgraphExistence(graph);
+      errorList.push(...subgraphErrors);
+    }
+
+    // 检查子工作流接口兼容性
+    if (opts.checkSubgraphCompatibility) {
+      const compatibilityErrors = this.validateSubgraphCompatibility(graph);
+      errorList.push(...compatibilityErrors);
     }
 
     return {
@@ -218,186 +220,12 @@ export class GraphValidator {
   }
 
   /**
-   * 环检测（使用DFS）
-   */
-  static detectCycles(graph: GraphData): CycleDetectionResult {
-    const visited = new Set<ID>();
-    const recursionStack = new Set<ID>();
-    const cycleNodes: ID[] = [];
-    const cycleEdges: ID[] = [];
-    let hasCycle = false;
-
-    const dfs = (nodeId: ID, path: ID[]): boolean => {
-      visited.add(nodeId);
-      recursionStack.add(nodeId);
-      path.push(nodeId);
-
-      const neighbors = graph.getOutgoingNeighbors(nodeId);
-      for (const neighborId of neighbors) {
-        if (!visited.has(neighborId)) {
-          if (dfs(neighborId, path)) {
-            return true;
-          }
-        } else if (recursionStack.has(neighborId)) {
-          // 发现环
-           hasCycle = true;
-           const cycleStartIndex = path.indexOf(neighborId);
-           cycleNodes.push(...path.slice(cycleStartIndex));
-           
-           // 找到环中的边
-           for (let i = 0; i < cycleNodes.length - 1; i++) {
-             const node1 = cycleNodes[i];
-             const node2 = cycleNodes[i + 1];
-             if (node1 && node2) {
-               const edge = graph.getEdgeBetween(node1, node2);
-               if (edge) {
-                 cycleEdges.push(edge.id);
-               }
-             }
-           }
-           // 添加最后一条边（从最后一个节点回到第一个节点）
-           const lastNode = cycleNodes[cycleNodes.length - 1];
-           const firstNode = cycleNodes[0];
-           if (lastNode && firstNode) {
-             const lastEdge = graph.getEdgeBetween(lastNode, firstNode);
-             if (lastEdge) {
-               cycleEdges.push(lastEdge.id);
-             }
-           }
-           
-           return true;
-        }
-      }
-
-      recursionStack.delete(nodeId);
-      path.pop();
-      return false;
-    };
-
-    // 从每个未访问的节点开始DFS
-    for (const nodeId of graph.getAllNodeIds()) {
-      if (!visited.has(nodeId)) {
-        if (dfs(nodeId, [])) {
-          break;
-        }
-      }
-    }
-
-    return {
-      hasCycle,
-      cycleNodes: hasCycle ? cycleNodes : undefined,
-      cycleEdges: hasCycle ? cycleEdges : undefined,
-    };
-  }
-
-  /**
-   * 可达性分析
-   */
-  static analyzeReachability(graph: GraphData): ReachabilityResult {
-    if (!graph.startNodeId) {
-      return {
-        reachableFromStart: new Set(),
-        reachableToEnd: new Set(),
-        unreachableNodes: new Set(),
-        deadEndNodes: new Set(),
-      };
-    }
-
-    // 从START节点正向遍历
-    const analyzer = new GraphAnalyzer(graph);
-    const reachableFromStart = analyzer.getReachableNodes(graph.startNodeId);
-
-    // 从END节点反向遍历
-    const reachableToEnd = new Set<ID>();
-    for (const endNodeId of graph.endNodeIds) {
-      const reachingNodes = analyzer.getNodesReachingTo(endNodeId);
-      for (const nodeId of reachingNodes) {
-        reachableToEnd.add(nodeId);
-      }
-    }
-
-    // 找出不可达节点
-    const unreachableNodes = new Set<ID>();
-    for (const nodeId of graph.getAllNodeIds()) {
-      if (!reachableFromStart.has(nodeId)) {
-        unreachableNodes.add(nodeId);
-      }
-    }
-
-    // 找出死节点
-    const deadEndNodes = new Set<ID>();
-    for (const nodeId of graph.getAllNodeIds()) {
-      if (!reachableToEnd.has(nodeId)) {
-        deadEndNodes.add(nodeId);
-      }
-    }
-
-    return {
-      reachableFromStart,
-      reachableToEnd,
-      unreachableNodes,
-      deadEndNodes,
-    };
-  }
-
-  /**
-   * 拓扑排序（Kahn算法）
-   */
-  static topologicalSort(graph: GraphData): TopologicalSortResult {
-    const sortedNodes: ID[] = [];
-    const inDegree = new Map<ID, number>();
-    const queue: ID[] = [];
-
-    // 计算每个节点的入度
-    for (const nodeId of graph.getAllNodeIds()) {
-      inDegree.set(nodeId, graph.getIncomingEdges(nodeId).length);
-    }
-
-    // 将入度为0的节点加入队列
-    for (const [nodeId, degree] of inDegree) {
-      if (degree === 0) {
-        queue.push(nodeId);
-      }
-    }
-
-    // 处理队列
-    while (queue.length > 0) {
-      const nodeId = queue.shift()!;
-      sortedNodes.push(nodeId);
-
-      // 减少邻居节点的入度
-      const neighbors = graph.getOutgoingNeighbors(nodeId);
-      for (const neighborId of neighbors) {
-        const newDegree = inDegree.get(neighborId)! - 1;
-        inDegree.set(neighborId, newDegree);
-        if (newDegree === 0) {
-          queue.push(neighborId);
-        }
-      }
-    }
-
-    // 检查是否所有节点都已排序
-    const hasCycle = sortedNodes.length !== graph.getNodeCount();
-
-    return {
-      success: !hasCycle,
-      sortedNodes,
-      cycleNodes: hasCycle ? this.findCycleNodes(graph) : undefined,
-    };
-  }
-
-  /**
-   * 找出环中的节点（用于拓扑排序失败时）
-   */
-  private static findCycleNodes(graph: GraphData): ID[] {
-    const cycleResult = this.detectCycles(graph);
-    return cycleResult.cycleNodes || [];
-  }
-
-  /**
    * FORK/JOIN配对验证
+   * @param graph 图数据
+   * @returns 验证错误列表
    */
-  static validateForkJoinPairs(graph: GraphData): ForkJoinValidationResult {
+  private static validateForkJoinPairs(graph: GraphData): ValidationError[] {
+    const errors: ValidationError[] = [];
     const forkNodes = new Map<ID, ID>(); // forkId -> nodeId
     const joinNodes = new Map<ID, ID>(); // joinId -> nodeId
     const pairs = new Map<ID, ID>();
@@ -435,57 +263,139 @@ export class GraphValidator {
       }
     }
 
-    return {
-      isValid: unpairedForks.length === 0 && unpairedJoins.length === 0,
-      unpairedForks,
-      unpairedJoins,
-      pairs,
-    };
+    // 报告未配对的FORK节点
+    for (const forkNodeId of unpairedForks) {
+      errors.push(
+        new ValidationError(`FORK节点(${forkNodeId})没有配对的JOIN节点`, undefined, undefined, {
+          code: 'UNPAIRED_FORK',
+          nodeId: forkNodeId,
+        })
+      );
+    }
+
+    // 报告未配对的JOIN节点
+    for (const joinNodeId of unpairedJoins) {
+      errors.push(
+        new ValidationError(`JOIN节点(${joinNodeId})没有配对的FORK节点`, undefined, undefined, {
+          code: 'UNPAIRED_JOIN',
+          nodeId: joinNodeId,
+        })
+      );
+    }
+
+    // 检查FORK到JOIN的可达性
+    const traversal = new GraphTraversal(graph);
+    for (const [forkNodeId, joinNodeId] of pairs) {
+      const reachableNodes = traversal.getReachableNodes(forkNodeId);
+      if (!reachableNodes.has(joinNodeId)) {
+        errors.push(
+          new ValidationError(
+            `FORK节点(${forkNodeId})无法到达配对的JOIN节点(${joinNodeId})`,
+            undefined,
+            undefined,
+            {
+              code: 'FORK_JOIN_NOT_REACHABLE',
+              nodeId: forkNodeId,
+              relatedNodeId: joinNodeId,
+            }
+          )
+        );
+      }
+    }
+
+    return errors;
   }
 
   /**
-   * 完整的图分析
+   * 完整的图分析（委托给GraphAnalyzer）
    */
   static analyze(graph: GraphData): GraphAnalysisResult {
-    // 环检测
-    const cycleDetection = this.detectCycles(graph);
+    const analyzer = new GraphAnalyzer(graph);
+    return analyzer.analyze();
+  }
 
-    // 可达性分析
-    const reachability = this.analyzeReachability(graph);
+  /**
+   * 验证子工作流存在性
+   * @param graph 图数据
+   * @returns 验证错误列表
+   */
+  private static validateSubgraphExistence(graph: GraphData): ValidationError[] {
+    const errors: ValidationError[] = [];
 
-    // 拓扑排序
-    const topologicalSort = this.topologicalSort(graph);
-
-    // FORK/JOIN配对验证
-    const forkJoinValidation = this.validateForkJoinPairs(graph);
-
-    // 节点统计
-    const nodeStats = {
-      total: graph.getNodeCount(),
-      byType: new Map<NodeType, number>(),
-    };
     for (const node of graph.nodes.values()) {
-      const count = nodeStats.byType.get(node.type) || 0;
-      nodeStats.byType.set(node.type, count + 1);
+      if (node.type === 'SUBGRAPH' as NodeType) {
+        const subgraphConfig = node.originalNode?.config as any;
+        if (!subgraphConfig || !subgraphConfig.subgraphId) {
+          errors.push(
+            new ValidationError(
+              `SUBGRAPH节点(${node.id})缺少subgraphId配置`,
+              undefined,
+              undefined,
+              {
+                code: 'MISSING_SUBGRAPH_ID',
+                nodeId: node.id,
+              }
+            )
+          );
+        }
+      }
     }
 
-    // 边统计
-    const edgeStats = {
-      total: graph.getEdgeCount(),
-      byType: new Map<EdgeType, number>(),
-    };
-    for (const edge of graph.edges.values()) {
-      const count = edgeStats.byType.get(edge.type) || 0;
-      edgeStats.byType.set(edge.type, count + 1);
+    return errors;
+  }
+
+  /**
+   * 验证子工作流接口兼容性
+   * @param graph 图数据
+   * @returns 验证错误列表
+   */
+  private static validateSubgraphCompatibility(graph: GraphData): ValidationError[] {
+    const errors: ValidationError[] = [];
+
+    for (const node of graph.nodes.values()) {
+      if (node.type === 'SUBGRAPH' as NodeType) {
+        const subgraphConfig = node.originalNode?.config as any;
+        
+        // 检查输入映射
+        if (subgraphConfig.inputMapping) {
+          for (const [parentVar, subgraphInput] of Object.entries(subgraphConfig.inputMapping)) {
+            if (!parentVar || !subgraphInput) {
+              errors.push(
+                new ValidationError(
+                  `SUBGRAPH节点(${node.id})的输入映射无效: ${parentVar} -> ${subgraphInput}`,
+                  undefined,
+                  undefined,
+                  {
+                    code: 'INVALID_INPUT_MAPPING',
+                    nodeId: node.id,
+                  }
+                )
+              );
+            }
+          }
+        }
+
+        // 检查输出映射
+        if (subgraphConfig.outputMapping) {
+          for (const [subgraphOutput, parentVar] of Object.entries(subgraphConfig.outputMapping)) {
+            if (!subgraphOutput || !parentVar) {
+              errors.push(
+                new ValidationError(
+                  `SUBGRAPH节点(${node.id})的输出映射无效: ${subgraphOutput} -> ${parentVar}`,
+                  undefined,
+                  undefined,
+                  {
+                    code: 'INVALID_OUTPUT_MAPPING',
+                    nodeId: node.id,
+                  }
+                )
+              );
+            }
+          }
+        }
+      }
     }
 
-    return {
-      cycleDetection,
-      reachability,
-      topologicalSort,
-      forkJoinValidation,
-      nodeStats,
-      edgeStats,
-    };
+    return errors;
   }
 }

@@ -1,10 +1,22 @@
 /**
  * WorkflowRegistry - 工作流注册器
  * 负责工作流定义的注册、查询、更新、移除和缓存管理
+ * 集成图构建和预处理功能
  */
 
-import type { WorkflowDefinition, WorkflowMetadata, WorkflowConfig } from '../../types/workflow';
+import type {
+  WorkflowDefinition,
+  WorkflowMetadata,
+  WorkflowConfig,
+  ProcessedWorkflowDefinition,
+  SubgraphMergeLog,
+  PreprocessValidationResult
+} from '../../types/workflow';
+import type { DirectedGraph, GraphAnalysisResult, GraphBuildOptions } from '../../types/graph';
+import type { ID } from '../../types/common';
 import { WorkflowValidator } from '../validation/workflow-validator';
+import { GraphBuilder } from '../graph/graph-builder';
+import { GraphValidator } from '../graph/graph-validator';
 import { ValidationError } from '../../types/errors';
 import { now } from '../../utils';
 
@@ -44,17 +56,25 @@ export interface ValidationResult {
 export class WorkflowRegistry {
   private workflows: Map<string, WorkflowDefinition> = new Map();
   private versions: Map<string, WorkflowVersion[]> = new Map();
+  private processedWorkflows: Map<string, ProcessedWorkflowDefinition> = new Map();
+  private graphCache: Map<string, DirectedGraph> = new Map();
   private validator: WorkflowValidator;
   private enableVersioning: boolean;
   private maxVersions: number;
+  private enablePreprocessing: boolean;
+  private maxRecursionDepth: number;
 
   constructor(options: {
     enableVersioning?: boolean;
     maxVersions?: number;
+    enablePreprocessing?: boolean;
+    maxRecursionDepth?: number;
   } = {}) {
     this.validator = new WorkflowValidator();
     this.enableVersioning = options.enableVersioning ?? true;
     this.maxVersions = options.maxVersions ?? 10;
+    this.enablePreprocessing = options.enablePreprocessing ?? true;
+    this.maxRecursionDepth = options.maxRecursionDepth ?? 10;
   }
 
   /**
@@ -82,6 +102,11 @@ export class WorkflowRegistry {
 
     // 保存工作流定义
     this.workflows.set(workflow.id, workflow);
+
+    // 如果启用预处理，进行图构建和验证
+    if (this.enablePreprocessing) {
+      this.preprocessWorkflow(workflow);
+    }
 
     // 如果启用版本管理，保存初始版本
     if (this.enableVersioning) {
@@ -256,6 +281,13 @@ export class WorkflowRegistry {
 
     // 更新工作流定义
     this.workflows.set(workflow.id, workflow);
+
+    // 清除预处理缓存
+    if (this.enablePreprocessing) {
+      this.clearPreprocessCache(workflow.id);
+      // 重新预处理
+      this.preprocessWorkflow(workflow);
+    }
   }
 
   /**
@@ -318,6 +350,7 @@ export class WorkflowRegistry {
   unregister(workflowId: string): void {
     this.workflows.delete(workflowId);
     this.versions.delete(workflowId);
+    this.clearPreprocessCache(workflowId);
   }
 
   /**
@@ -336,6 +369,8 @@ export class WorkflowRegistry {
   clear(): void {
     this.workflows.clear();
     this.versions.clear();
+    this.processedWorkflows.clear();
+    this.graphCache.clear();
   }
 
   /**
@@ -526,5 +561,146 @@ export class WorkflowRegistry {
         'json'
       );
     }
+  }
+
+  /**
+   * 获取处理后的工作流定义
+   * @param workflowId 工作流ID
+   * @returns 处理后的工作流定义，如果不存在则返回undefined
+   */
+  getProcessed(workflowId: string): ProcessedWorkflowDefinition | undefined {
+    return this.processedWorkflows.get(workflowId);
+  }
+
+  /**
+   * 获取工作流的图结构
+   * @param workflowId 工作流ID
+   * @returns 图结构，如果不存在则返回undefined
+   */
+  getGraph(workflowId: string): DirectedGraph | undefined {
+    return this.graphCache.get(workflowId);
+  }
+
+  /**
+   * 预处理工作流
+   * 构建图结构、验证图、分析图
+   * @param workflow 工作流定义
+   * @throws ValidationError 如果预处理失败
+   */
+  private preprocessWorkflow(workflow: WorkflowDefinition): void {
+    // 构建图
+    const buildOptions: GraphBuildOptions = {
+      validate: true,
+      computeTopologicalOrder: true,
+      detectCycles: true,
+      analyzeReachability: true,
+      maxRecursionDepth: this.maxRecursionDepth,
+      workflowRegistry: this,
+    };
+
+    const buildResult = GraphBuilder.buildAndValidate(workflow, buildOptions);
+    if (!buildResult.isValid) {
+      throw new ValidationError(
+        `Graph build failed: ${buildResult.errors.join(', ')}`,
+        'workflow.graph'
+      );
+    }
+
+    // 处理子工作流
+    const subgraphMergeLogs: SubgraphMergeLog[] = [];
+    let hasSubgraphs = false;
+    const subworkflowIds = new Set<ID>();
+
+    const subgraphResult = GraphBuilder.processSubgraphs(
+      buildResult.graph,
+      this,
+      this.maxRecursionDepth
+    );
+
+    if (!subgraphResult.success) {
+      throw new ValidationError(
+        `Subgraph processing failed: ${subgraphResult.errors.join(', ')}`,
+        'workflow.subgraphs'
+      );
+    }
+
+    // 记录子工作流信息
+    if (subgraphResult.subworkflowIds.length > 0) {
+      hasSubgraphs = true;
+      subgraphResult.subworkflowIds.forEach(id => subworkflowIds.add(id));
+
+      // 为每个子工作流创建合并日志
+      for (const subworkflowId of subgraphResult.subworkflowIds) {
+        const subworkflow = this.get(subworkflowId);
+        if (subworkflow) {
+          // 查找对应的SUBGRAPH节点
+          const subgraphNode = workflow.nodes.find(
+            node => node.type === 'SUBGRAPH' &&
+              (node.config as any)?.subgraphId === subworkflowId
+          );
+
+          if (subgraphNode) {
+            const mergeLog: SubgraphMergeLog = {
+              subworkflowId,
+              subworkflowName: subworkflow.name,
+              subgraphNodeId: subgraphNode.id,
+              nodeIdMapping: subgraphResult.nodeIdMapping,
+              edgeIdMapping: subgraphResult.edgeIdMapping,
+              inputMapping: new Map(Object.entries((subgraphNode.config as any)?.inputMapping || {})),
+              outputMapping: new Map(Object.entries((subgraphNode.config as any)?.outputMapping || {})),
+              mergedAt: now(),
+            };
+            subgraphMergeLogs.push(mergeLog);
+          }
+        }
+      }
+    }
+
+    // 验证图
+    const validationResult = GraphValidator.validate(buildResult.graph);
+    if (!validationResult.valid) {
+      const errors = validationResult.errors.map(e => e.message).join(', ');
+      throw new ValidationError(
+        `Graph validation failed: ${errors}`,
+        'workflow.graph'
+      );
+    }
+
+    // 分析图
+    const graphAnalysis = GraphValidator.analyze(buildResult.graph);
+
+    // 创建预处理验证结果
+    const preprocessValidation: PreprocessValidationResult = {
+      isValid: true,
+      errors: [],
+      warnings: [],
+      validatedAt: now(),
+    };
+
+    // 创建处理后的工作流定义
+    const processedWorkflow: ProcessedWorkflowDefinition = {
+      ...workflow,
+      graph: buildResult.graph,
+      graphAnalysis,
+      validationResult: preprocessValidation,
+      subgraphMergeLogs,
+      processedAt: now(),
+      hasSubgraphs,
+      subworkflowIds,
+      topologicalOrder: graphAnalysis.topologicalSort.sortedNodes,
+    };
+
+    // 缓存处理后的工作流和图
+    this.processedWorkflows.set(workflow.id, processedWorkflow);
+    this.graphCache.set(workflow.id, buildResult.graph);
+  }
+
+  /**
+   * 清除工作流的预处理缓存
+   * @param workflowId 工作流ID
+   */
+  private clearPreprocessCache(workflowId: string): void {
+    this.processedWorkflows.delete(workflowId);
+    this.graphCache.delete(workflowId);
   }
 }

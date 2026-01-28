@@ -7,6 +7,7 @@
 import type { Node } from './node';
 import type { Edge } from './edge';
 import type { ID, Timestamp, Version, Metadata } from './common';
+import type { DirectedGraph, GraphAnalysisResult } from './graph';
 
 /**
  * 工作流状态枚举
@@ -59,6 +60,34 @@ export interface WorkflowMetadata {
 /**
  * 工作流变量定义类型
  * 用于在工作流定义阶段声明变量，提供类型安全和初始值
+ *
+ * 说明：
+ * - 在工作流定义时声明变量，提供类型信息和默认值
+ * - 执行时转换为 ThreadVariable，存储在 Thread.variableValues 中
+ * - 通过 VARIABLE 节点修改，通过表达式访问（{{variableName}}）
+ *
+ * 与 inputMapping/outputMapping 的关系：
+ * - WorkflowVariable: 定义工作流内部的变量存储
+ * - inputMapping/outputMapping: 定义跨工作流的数据传递规则
+ * - 两者互补，不重复
+ *
+ * 示例：
+ * ```typescript
+ * workflow.variables = [
+ *   { name: 'userName', type: 'string', defaultValue: 'Alice' },
+ *   { name: 'userAge', type: 'number', defaultValue: 25 }
+ * ]
+ *
+ * // 执行时
+ * thread.variableValues = {
+ *   userName: 'Alice',
+ *   userAge: 25
+ * }
+ *
+ * // 在表达式中访问
+ * {{userName}}  // 'Alice'
+ * {{userAge}}  // 25
+ * ```
  */
 export interface WorkflowVariable {
   /** 变量名称 */
@@ -75,6 +104,82 @@ export interface WorkflowVariable {
   readonly?: boolean;
   /** 变量作用域 */
   scope?: 'local' | 'global';
+}
+
+/**
+ * 子工作流合并日志类型
+ * 记录SUBGRAPH节点合并过程
+ */
+export interface SubgraphMergeLog {
+  /** 子工作流ID */
+  subworkflowId: ID;
+  /** 子工作流名称 */
+  subworkflowName: string;
+  /** SUBGRAPH节点ID */
+  subgraphNodeId: ID;
+  /** 合并的节点ID映射（原始ID -> 新ID） */
+  nodeIdMapping: Map<ID, ID>;
+  /** 合并的边ID映射（原始ID -> 新ID） */
+  edgeIdMapping: Map<ID, ID>;
+  /**
+   * 输入映射关系
+   *
+   * 说明：记录子工作流合并时的输入变量映射
+   * - 键：变量名
+   * - 值：对应的节点ID
+   *
+   * 用途：运行时审计和调试，追踪子工作流的数据来源
+   */
+  inputMapping: Map<string, ID>;
+  /**
+   * 输出映射关系
+   *
+   * 说明：记录子工作流合并时的输出变量映射
+   * - 键：变量名
+   * - 值：对应的节点ID
+   *
+   * 用途：运行时审计和调试，追踪子工作流的数据去向
+   */
+  outputMapping: Map<string, ID>;
+  /** 合并时间戳 */
+  mergedAt: Timestamp;
+}
+
+/**
+ * 预处理验证结果类型
+ */
+export interface PreprocessValidationResult {
+  /** 是否验证通过 */
+  isValid: boolean;
+  /** 验证错误列表 */
+  errors: string[];
+  /** 验证警告列表 */
+  warnings: string[];
+  /** 验证时间戳 */
+  validatedAt: Timestamp;
+}
+
+/**
+ * 处理后的工作流定义类型
+ * 扩展WorkflowDefinition，添加预处理相关的元数据
+ */
+export interface ProcessedWorkflowDefinition extends WorkflowDefinition {
+  /** 图结构 */
+  graph: DirectedGraph;
+  /** 图分析结果 */
+  graphAnalysis: GraphAnalysisResult;
+  /** 预处理验证结果 */
+  validationResult: PreprocessValidationResult;
+  /** 子工作流合并日志 */
+  subgraphMergeLogs: SubgraphMergeLog[];
+  /** 预处理时间戳 */
+  processedAt: Timestamp;
+  /** 是否包含子工作流 */
+  hasSubgraphs: boolean;
+  /** 子工作流ID集合 */
+  subworkflowIds: Set<ID>;
+  /** 拓扑排序后的节点ID列表 */
+  topologicalOrder: ID[];
 }
 
 /**

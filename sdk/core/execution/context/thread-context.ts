@@ -3,12 +3,14 @@
  * 封装 Thread 执行所需的所有运行时组件
  * 提供统一的访问接口，避免直接访问 thread.contextData
  * 负责变量管理、节点执行结果管理等运行时逻辑
+ * 支持图导航器用于节点导航
  */
 
 import type { Thread } from '../../../types/thread';
 import { WorkflowContext } from './workflow-context';
 import { ConversationManager } from '../conversation';
 import { VariableManager } from '../managers/variable-manager';
+import { GraphNavigator } from '../../graph/graph-navigator';
 
 /**
  * ThreadContext - Thread 执行上下文
@@ -33,6 +35,11 @@ export class ThreadContext {
    * 变量管理器
    */
   private readonly variableManager: VariableManager;
+
+  /**
+   * 图导航器（可选）
+   */
+  private navigator?: GraphNavigator;
 
   /**
    * 构造函数
@@ -236,5 +243,29 @@ export class ThreadContext {
    */
   setEndTime(endTime: number): void {
     this.thread.endTime = endTime;
+  }
+
+  /**
+   * 获取图导航器
+   * @returns 图导航器实例，如果未设置则返回undefined
+   */
+  getNavigator(): GraphNavigator | undefined {
+    return this.navigator;
+  }
+
+  /**
+   * 设置图导航器
+   * @param navigator 图导航器实例
+   */
+  setNavigator(navigator: GraphNavigator): void {
+    this.navigator = navigator;
+  }
+
+  /**
+   * 检查是否有图导航器
+   * @returns 是否有图导航器
+   */
+  hasNavigator(): boolean {
+    return this.navigator !== undefined;
   }
 }

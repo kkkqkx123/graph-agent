@@ -43,8 +43,11 @@ export class ExecutionContext {
     const eventManager = new EventManager();
     this.register('eventManager', eventManager);
 
-    // 2. WorkflowRegistry 无依赖
-    const workflowRegistry = new WorkflowRegistry();
+    // 2. WorkflowRegistry 无依赖，启用预处理功能
+    const workflowRegistry = new WorkflowRegistry({
+      enablePreprocessing: true,
+      maxRecursionDepth: 10,
+    });
     this.register('workflowRegistry', workflowRegistry);
 
     // 3. ThreadRegistry 无依赖

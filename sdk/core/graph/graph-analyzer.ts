@@ -1,22 +1,83 @@
 /**
- * 图分析工具
- * 提供图的遍历、分析和查询算法
+ * 图分析器
+ * 提供图的完整分析功能，整合所有分析算法
  */
 
-import type { ID } from '../../types';
+import type { ID, NodeType, EdgeType, GraphAnalysisResult, ForkJoinValidationResult } from '../../types';
 import type { GraphData } from './graph-data';
+import { GraphTraversal } from './graph-traversal';
+import { GraphCycleDetector } from './graph-cycle-detector';
+import { GraphReachabilityAnalyzer } from './graph-reachability-analyzer';
+import { GraphTopologicalSorter } from './graph-topological-sorter';
 
 /**
- * 图分析器
- * 核心职责：提供图的遍历和分析算法
- * 通过依赖注入 GraphData 实例来操作图
+ * 图分析器类
+ * 核心职责：提供图的完整分析功能
+ * 整合遍历、环检测、可达性分析、拓扑排序等功能
  */
 export class GraphAnalyzer {
+  private traversal: GraphTraversal;
+  private cycleDetector: GraphCycleDetector;
+  private reachabilityAnalyzer: GraphReachabilityAnalyzer;
+  private topologicalSorter: GraphTopologicalSorter;
+
   /**
    * 构造函数
    * @param graph - 要分析的图数据
    */
-  constructor(private graph: GraphData) {}
+  constructor(graph: GraphData) {
+    this.traversal = new GraphTraversal(graph);
+    this.cycleDetector = new GraphCycleDetector(graph);
+    this.reachabilityAnalyzer = new GraphReachabilityAnalyzer(graph);
+    this.topologicalSorter = new GraphTopologicalSorter(graph);
+  }
+
+  /**
+   * 完整的图分析
+   * @returns 图分析结果
+   */
+  analyze(): GraphAnalysisResult {
+    // 环检测
+    const cycleDetection = this.cycleDetector.detect();
+
+    // 可达性分析
+    const reachability = this.reachabilityAnalyzer.analyze();
+
+    // 拓扑排序
+    const topologicalSort = this.topologicalSorter.sort();
+
+    // FORK/JOIN配对验证（仅收集配对信息，不进行验证）
+    const forkJoinValidation = this.collectForkJoinPairs();
+
+    // 节点统计
+    const nodeStats = {
+      total: this.traversal.getGraph().getNodeCount(),
+      byType: new Map<NodeType, number>(),
+    };
+    for (const node of this.traversal.getGraph().nodes.values()) {
+      const count = nodeStats.byType.get(node.type) || 0;
+      nodeStats.byType.set(node.type, count + 1);
+    }
+
+    // 边统计
+    const edgeStats = {
+      total: this.traversal.getGraph().getEdgeCount(),
+      byType: new Map<EdgeType, number>(),
+    };
+    for (const edge of this.traversal.getGraph().edges.values()) {
+      const count = edgeStats.byType.get(edge.type) || 0;
+      edgeStats.byType.set(edge.type, count + 1);
+    }
+
+    return {
+      cycleDetection,
+      reachability,
+      topologicalSort,
+      forkJoinValidation,
+      nodeStats,
+      edgeStats,
+    };
+  }
 
   /**
    * 深度优先遍历
@@ -24,26 +85,7 @@ export class GraphAnalyzer {
    * @param visitor - 访问函数，在访问每个节点时调用
    */
   dfs(startNodeId: ID, visitor: (nodeId: ID) => void): void {
-    const visited = new Set<ID>();
-    const stack = [startNodeId];
-
-    while (stack.length > 0) {
-      const nodeId = stack.pop()!;
-      if (visited.has(nodeId)) {
-        continue;
-      }
-
-      visited.add(nodeId);
-      visitor(nodeId);
-
-      // 将未访问的邻居节点加入栈
-      const neighbors = this.graph.getOutgoingNeighbors(nodeId);
-      for (const neighborId of neighbors) {
-        if (!visited.has(neighborId)) {
-          stack.push(neighborId);
-        }
-      }
-    }
+    this.traversal.dfs(startNodeId, visitor);
   }
 
   /**
@@ -52,23 +94,7 @@ export class GraphAnalyzer {
    * @param visitor - 访问函数，在访问每个节点时调用
    */
   bfs(startNodeId: ID, visitor: (nodeId: ID) => void): void {
-    const visited = new Set<ID>();
-    const queue: ID[] = [startNodeId];
-    visited.add(startNodeId);
-
-    while (queue.length > 0) {
-      const nodeId = queue.shift()!;
-      visitor(nodeId);
-
-      // 将未访问的邻居节点加入队列
-      const neighbors = this.graph.getOutgoingNeighbors(nodeId);
-      for (const neighborId of neighbors) {
-        if (!visited.has(neighborId)) {
-          visited.add(neighborId);
-          queue.push(neighborId);
-        }
-      }
-    }
+    this.traversal.bfs(startNodeId, visitor);
   }
 
   /**
@@ -77,11 +103,7 @@ export class GraphAnalyzer {
    * @returns 可达节点的ID集合
    */
   getReachableNodes(startNodeId: ID): Set<ID> {
-    const reachable = new Set<ID>();
-    this.dfs(startNodeId, (nodeId) => {
-      reachable.add(nodeId);
-    });
-    return reachable;
+    return this.traversal.getReachableNodes(startNodeId);
   }
 
   /**
@@ -90,29 +112,81 @@ export class GraphAnalyzer {
    * @returns 能到达目标节点的节点ID集合
    */
   getNodesReachingTo(targetNodeId: ID): Set<ID> {
-    const reaching = new Set<ID>();
-    const visited = new Set<ID>();
-    const stack = [targetNodeId];
+    return this.traversal.getNodesReachingTo(targetNodeId);
+  }
 
-    while (stack.length > 0) {
-      const nodeId = stack.pop()!;
-      if (visited.has(nodeId)) {
-        continue;
-      }
+  /**
+   * 检测图中的环
+   * @returns 环检测结果
+   */
+  detectCycles() {
+    return this.cycleDetector.detect();
+  }
 
-      visited.add(nodeId);
-      reaching.add(nodeId);
+  /**
+   * 分析图的可达性
+   * @returns 可达性分析结果
+   */
+  analyzeReachability() {
+    return this.reachabilityAnalyzer.analyze();
+  }
 
-      // 在反向邻接表上遍历
-      const neighbors = this.graph.getIncomingNeighbors(nodeId);
-      for (const neighborId of neighbors) {
-        if (!visited.has(neighborId)) {
-          stack.push(neighborId);
+  /**
+   * 拓扑排序
+   * @returns 拓扑排序结果
+   */
+  topologicalSort() {
+    return this.topologicalSorter.sort();
+  }
+
+  /**
+   * 收集FORK/JOIN配对信息（仅收集，不验证）
+   * @returns FORK/JOIN配对信息
+   */
+  private collectForkJoinPairs(): ForkJoinValidationResult {
+    const forkNodes = new Map<ID, ID>(); // forkId -> nodeId
+    const joinNodes = new Map<ID, ID>(); // joinId -> nodeId
+    const pairs = new Map<ID, ID>();
+
+    // 收集所有FORK和JOIN节点
+    for (const node of this.traversal.getGraph().nodes.values()) {
+      if (node.type === 'FORK' as NodeType) {
+        const forkId = (node.originalNode?.config as any)?.forkId;
+        if (forkId) {
+          forkNodes.set(forkId, node.id);
+        }
+      } else if (node.type === 'JOIN' as NodeType) {
+        const joinId = (node.originalNode?.config as any)?.joinId;
+        if (joinId) {
+          joinNodes.set(joinId, node.id);
         }
       }
     }
 
-    return reaching;
+    // 检查配对
+    const unpairedForks: ID[] = [];
+    const unpairedJoins: ID[] = [];
+
+    for (const [forkId, forkNodeId] of forkNodes) {
+      if (joinNodes.has(forkId)) {
+        pairs.set(forkNodeId, joinNodes.get(forkId)!);
+      } else {
+        unpairedForks.push(forkNodeId);
+      }
+    }
+
+    for (const [joinId, joinNodeId] of joinNodes) {
+      if (!forkNodes.has(joinId)) {
+        unpairedJoins.push(joinNodeId);
+      }
+    }
+
+    return {
+      isValid: unpairedForks.length === 0 && unpairedJoins.length === 0,
+      unpairedForks,
+      unpairedJoins,
+      pairs,
+    };
   }
 
   /**
@@ -120,6 +194,6 @@ export class GraphAnalyzer {
    * @returns 图数据实例
    */
   getGraph(): GraphData {
-    return this.graph;
+    return this.traversal.getGraph();
   }
 }

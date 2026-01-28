@@ -2,11 +2,12 @@
  * ThreadBuilder - Thread构建器
  * 负责从WorkflowRegistry获取WorkflowDefinition并创建ThreadContext实例
  * 提供Thread模板缓存和深拷贝支持
+ * 支持使用预处理后的工作流定义和图导航
  *
  * 使用 ExecutionContext 获取 WorkflowRegistry
  */
 
-import type { WorkflowDefinition } from '../../types/workflow';
+import type { WorkflowDefinition, ProcessedWorkflowDefinition } from '../../types/workflow';
 import type { Thread, ThreadOptions, ThreadStatus } from '../../types/thread';
 import { WorkflowContext } from './context/workflow-context';
 import { ConversationManager } from './conversation';
@@ -18,6 +19,8 @@ import { VariableManager } from './managers/variable-manager';
 import { ValidationError } from '../../types/errors';
 import { WorkflowRegistry } from '../registry/workflow-registry';
 import { getWorkflowRegistry } from './context/execution-context';
+import { GraphNavigator } from '../graph/graph-navigator';
+import { GraphData } from '../graph/graph-data';
 
 /**
  * ThreadBuilder - Thread构建器
@@ -40,13 +43,115 @@ export class ThreadBuilder {
    * @returns ThreadContext实例
    */
   async build(workflowId: string, options: ThreadOptions = {}): Promise<ThreadContext> {
-    // 从 WorkflowRegistry 获取工作流定义
+    // 优先从 WorkflowRegistry 获取处理后的工作流定义
+    const processedWorkflow = this.workflowRegistry.getProcessed(workflowId);
+    
+    if (processedWorkflow) {
+      return this.buildFromProcessedDefinition(processedWorkflow, options);
+    }
+
+    // 如果没有处理后的工作流，使用原始工作流定义
     const workflow = this.workflowRegistry.get(workflowId);
     if (!workflow) {
       throw new ValidationError(`Workflow with ID '${workflowId}' not found in registry`, 'workflowId');
     }
 
     return this.buildFromDefinition(workflow, options);
+  }
+
+  /**
+   * 从ProcessedWorkflowDefinition构建ThreadContext（内部方法）
+   * 使用预处理后的工作流定义和图导航
+   * @param processedWorkflow 处理后的工作流定义
+   * @param options 线程选项
+   * @returns ThreadContext实例
+   */
+  private async buildFromProcessedDefinition(processedWorkflow: ProcessedWorkflowDefinition, options: ThreadOptions = {}): Promise<ThreadContext> {
+    // 步骤1：验证处理后的工作流定义
+    if (!processedWorkflow.nodes || processedWorkflow.nodes.length === 0) {
+      throw new ValidationError('Processed workflow must have at least one node', 'workflow.nodes');
+    }
+
+    const startNode = processedWorkflow.nodes.find(n => n.type === NodeType.START);
+    if (!startNode) {
+      throw new ValidationError('Processed workflow must have a START node', 'workflow.nodes');
+    }
+
+    const endNode = processedWorkflow.nodes.find(n => n.type === NodeType.END);
+    if (!endNode) {
+      throw new ValidationError('Processed workflow must have an END node', 'workflow.nodes');
+    }
+
+    // 步骤2：创建 Thread 实例
+    const threadId = generateId();
+    const now = getCurrentTimestamp();
+
+    const thread: Partial<Thread> = {
+      id: threadId,
+      workflowId: processedWorkflow.id,
+      workflowVersion: processedWorkflow.version,
+      status: 'CREATED' as ThreadStatus,
+      currentNodeId: startNode.id,
+      variables: [],
+      variableValues: {},
+      input: options.input || {},
+      output: {},
+      nodeResults: [],
+      startTime: now,
+      errors: [],
+      metadata: {
+        creator: options.input?.['creator'],
+        tags: options.input?.['tags'],
+        customFields: {
+          isPreprocessed: true,
+          processedAt: processedWorkflow.processedAt,
+          hasSubgraphs: processedWorkflow.hasSubgraphs,
+        }
+      }
+    };
+
+    // 步骤3：从 WorkflowDefinition 初始化变量
+    this.variableManager.initializeFromWorkflow(thread as Thread, processedWorkflow);
+
+    // 步骤4：创建 ConversationManager 实例
+    const conversationManager = new ConversationManager({
+      tokenLimit: options.tokenLimit || 4000
+    });
+
+    // 步骤5：创建 WorkflowContext
+    const workflowContext = new WorkflowContext(processedWorkflow);
+    this.workflowContexts.set(processedWorkflow.id, workflowContext);
+
+    // 步骤6：创建 GraphData 实例并复制图数据
+    const graphData = new GraphData();
+    // 复制节点
+    for (const node of processedWorkflow.graph.nodes.values()) {
+      graphData.addNode(node);
+    }
+    // 复制边
+    for (const edge of processedWorkflow.graph.edges.values()) {
+      graphData.addEdge(edge);
+    }
+    // 设置起始和结束节点
+    graphData.startNodeId = processedWorkflow.graph.startNodeId;
+    processedWorkflow.graph.endNodeIds.forEach(id => graphData.endNodeIds.add(id));
+
+    // 步骤7：创建 GraphNavigator 实例
+    const graphNavigator = new GraphNavigator(graphData);
+
+    // 步骤8：创建并返回 ThreadContext
+    const threadContext = new ThreadContext(
+      thread as Thread,
+      workflowContext,
+      conversationManager
+    );
+
+    // 设置图导航器（如果ThreadContext支持）
+    if ('setNavigator' in threadContext) {
+      (threadContext as any).setNavigator(graphNavigator);
+    }
+
+    return threadContext;
   }
 
   /**

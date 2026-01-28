@@ -1,6 +1,7 @@
 /**
  * 图构建器
  * 负责从WorkflowDefinition构建DirectedGraph
+ * 支持子工作流递归处理
  */
 
 import type {
@@ -12,8 +13,12 @@ import type {
   GraphNode,
   GraphEdge,
   GraphBuildOptions,
+  SubgraphMergeOptions,
+  SubgraphMergeResult,
 } from '../../types';
 import { GraphData } from './graph-data';
+import { GraphValidator } from './graph-validator';
+import { generateSubgraphNamespace, generateNamespacedNodeId, generateNamespacedEdgeId } from '../../utils/id-utils';
 
 /**
  * 图构建器类
@@ -68,171 +73,6 @@ export class GraphBuilder {
   }
 
   /**
-   * 验证图的基本结构
-   */
-  static validateBasicStructure(graph: GraphData): {
-    isValid: boolean;
-    errors: string[];
-  } {
-    const errors: string[] = [];
-
-    // 检查是否有START节点
-    if (!graph.startNodeId) {
-      errors.push('工作流必须包含一个START节点');
-    }
-
-    // 检查是否有END节点
-    if (graph.endNodeIds.size === 0) {
-      errors.push('工作流必须包含至少一个END节点');
-    }
-
-    // 检查START节点是否唯一
-    let startNodeCount = 0;
-    for (const node of graph.nodes.values()) {
-      if (node.type === 'START' as NodeType) {
-        startNodeCount++;
-      }
-    }
-    if (startNodeCount > 1) {
-      errors.push('工作流只能包含一个START节点');
-    }
-
-    // 检查START节点的入度
-    if (graph.startNodeId) {
-      const incomingEdges = graph.getIncomingEdges(graph.startNodeId);
-      if (incomingEdges.length > 0) {
-        errors.push('START节点不能有入边');
-      }
-    }
-
-    // 检查END节点的出度
-    for (const endNodeId of graph.endNodeIds) {
-      const outgoingEdges = graph.getOutgoingEdges(endNodeId);
-      if (outgoingEdges.length > 0) {
-        errors.push(`END节点(${endNodeId})不能有出边`);
-      }
-    }
-
-    // 检查孤立节点
-    const isolatedNodes = this.findIsolatedNodes(graph);
-    if (isolatedNodes.length > 0) {
-      errors.push(
-        `发现孤立节点: ${isolatedNodes.map(n => n.id).join(', ')}`
-      );
-    }
-
-    return {
-      isValid: errors.length === 0,
-      errors,
-    };
-  }
-
-  /**
-   * 查找孤立节点（既没有入边也没有出边的节点）
-   */
-  private static findIsolatedNodes(graph: GraphData): GraphNode[] {
-    const isolated: GraphNode[] = [];
-
-    for (const node of graph.nodes.values()) {
-      const incomingEdges = graph.getIncomingEdges(node.id);
-      const outgoingEdges = graph.getOutgoingEdges(node.id);
-
-      // START和END节点不算孤立节点
-      if (node.type === 'START' as NodeType || node.type === 'END' as NodeType) {
-        continue;
-      }
-
-      if (incomingEdges.length === 0 && outgoingEdges.length === 0) {
-        isolated.push(node);
-      }
-    }
-
-    return isolated;
-  }
-
-  /**
-   * 检查边的引用是否有效
-   */
-  static validateEdgeReferences(graph: GraphData): {
-    isValid: boolean;
-    errors: string[];
-  } {
-    const errors: string[] = [];
-
-    for (const edge of graph.edges.values()) {
-      // 检查源节点是否存在
-      if (!graph.hasNode(edge.sourceNodeId)) {
-        errors.push(
-          `边(${edge.id})引用的源节点(${edge.sourceNodeId})不存在`
-        );
-      }
-
-      // 检查目标节点是否存在
-      if (!graph.hasNode(edge.targetNodeId)) {
-        errors.push(
-          `边(${edge.id})引用的目标节点(${edge.targetNodeId})不存在`
-        );
-      }
-
-      // 检查自环（除了特殊情况，一般不允许自环）
-      if (edge.sourceNodeId === edge.targetNodeId) {
-        errors.push(`边(${edge.id})形成自环`);
-      }
-    }
-
-    return {
-      isValid: errors.length === 0,
-      errors,
-    };
-  }
-
-  /**
-   * 检查节点ID是否唯一
-   */
-  static validateNodeIds(workflow: WorkflowDefinition): {
-    isValid: boolean;
-    errors: string[];
-  } {
-    const errors: string[] = [];
-    const nodeIds = new Set<ID>();
-
-    for (const node of workflow.nodes) {
-      if (nodeIds.has(node.id)) {
-        errors.push(`节点ID重复: ${node.id}`);
-      }
-      nodeIds.add(node.id);
-    }
-
-    return {
-      isValid: errors.length === 0,
-      errors,
-    };
-  }
-
-  /**
-   * 检查边ID是否唯一
-   */
-  static validateEdgeIds(workflow: WorkflowDefinition): {
-    isValid: boolean;
-    errors: string[];
-  } {
-    const errors: string[] = [];
-    const edgeIds = new Set<ID>();
-
-    for (const edge of workflow.edges) {
-      if (edgeIds.has(edge.id)) {
-        errors.push(`边ID重复: ${edge.id}`);
-      }
-      edgeIds.add(edge.id);
-    }
-
-    return {
-      isValid: errors.length === 0,
-      errors,
-    };
-  }
-
-  /**
    * 完整的构建和验证流程
    */
   static buildAndValidate(
@@ -243,39 +83,262 @@ export class GraphBuilder {
     isValid: boolean;
     errors: string[];
   } {
-    const allErrors: string[] = [];
-
-    // 验证节点ID唯一性
-    const nodeIdValidation = this.validateNodeIds(workflow);
-    if (!nodeIdValidation.isValid) {
-      allErrors.push(...nodeIdValidation.errors);
-    }
-
-    // 验证边ID唯一性
-    const edgeIdValidation = this.validateEdgeIds(workflow);
-    if (!edgeIdValidation.isValid) {
-      allErrors.push(...edgeIdValidation.errors);
-    }
-
     // 构建图
     const graph = this.build(workflow, options);
 
-    // 验证边引用
-    const edgeRefValidation = this.validateEdgeReferences(graph);
-    if (!edgeRefValidation.isValid) {
-      allErrors.push(...edgeRefValidation.errors);
-    }
-
-    // 验证基本结构
-    const structureValidation = this.validateBasicStructure(graph);
-    if (!structureValidation.isValid) {
-      allErrors.push(...structureValidation.errors);
-    }
+    // 使用GraphValidator进行验证
+    const validationResult = GraphValidator.validate(graph, {
+      checkCycles: options.detectCycles,
+      checkReachability: options.analyzeReachability,
+      checkForkJoin: true,
+      checkStartEnd: true,
+      checkIsolatedNodes: true,
+    });
 
     return {
       graph,
-      isValid: allErrors.length === 0,
-      errors: allErrors,
+      isValid: validationResult.valid,
+      errors: validationResult.errors.map(e => e.message),
+    };
+  }
+
+  /**
+   * 处理子工作流节点
+   * 递归合并子工作流图到主图
+   * @param graph 主图
+   * @param workflowRegistry 工作流注册器
+   * @param maxRecursionDepth 最大递归深度
+   * @param currentDepth 当前递归深度
+   * @returns 合并结果
+   */
+  static processSubgraphs(
+    graph: GraphData,
+    workflowRegistry: any,
+    maxRecursionDepth: number = 10,
+    currentDepth: number = 0
+  ): SubgraphMergeResult {
+    const nodeIdMapping = new Map<ID, ID>();
+    const edgeIdMapping = new Map<ID, ID>();
+    const addedNodeIds: ID[] = [];
+    const addedEdgeIds: ID[] = [];
+    const removedNodeIds: ID[] = [];
+    const removedEdgeIds: ID[] = [];
+    const errors: string[] = [];
+    const subworkflowIds: ID[] = [];
+
+    // 检查递归深度
+    if (currentDepth >= maxRecursionDepth) {
+      errors.push(`Maximum recursion depth (${maxRecursionDepth}) exceeded`);
+      return {
+        success: false,
+        nodeIdMapping,
+        edgeIdMapping,
+        addedNodeIds,
+        addedEdgeIds,
+        removedNodeIds,
+        removedEdgeIds,
+        errors,
+        subworkflowIds,
+      };
+    }
+
+    // 查找所有SUBGRAPH节点
+    const subgraphNodes: GraphNode[] = [];
+    for (const node of graph.nodes.values()) {
+      if (node.type === 'SUBGRAPH' as NodeType) {
+        subgraphNodes.push(node);
+      }
+    }
+
+    // 处理每个SUBGRAPH节点
+    for (const subgraphNode of subgraphNodes) {
+      const subgraphConfig = subgraphNode.originalNode?.config as any;
+      if (!subgraphConfig || !subgraphConfig.subgraphId) {
+        errors.push(`SUBGRAPH node (${subgraphNode.id}) missing subgraphId`);
+        continue;
+      }
+
+      const subworkflowId = subgraphConfig.subgraphId;
+      const subworkflow = workflowRegistry.get(subworkflowId);
+
+      if (!subworkflow) {
+        errors.push(`Subworkflow (${subworkflowId}) not found for SUBGRAPH node (${subgraphNode.id})`);
+        continue;
+      }
+
+      // 记录子工作流ID
+      subworkflowIds.push(subworkflowId);
+
+      // 生成命名空间
+      const namespace = generateSubgraphNamespace(subworkflowId, subgraphNode.id);
+
+      // 构建子工作流图
+      const subgraphBuildOptions: GraphBuildOptions = {
+        validate: true,
+        computeTopologicalOrder: true,
+        detectCycles: true,
+        analyzeReachability: true,
+        maxRecursionDepth,
+        currentDepth: currentDepth + 1,
+        workflowRegistry,
+      };
+
+      const subgraphBuildResult = this.buildAndValidate(subworkflow, subgraphBuildOptions);
+      if (!subgraphBuildResult.isValid) {
+        errors.push(`Failed to build subworkflow (${subworkflowId}): ${subgraphBuildResult.errors.join(', ')}`);
+        continue;
+      }
+
+      // 合并子工作流图
+      const mergeOptions: SubgraphMergeOptions = {
+        nodeIdPrefix: namespace,
+        edgeIdPrefix: namespace,
+        preserveIdMapping: true,
+        inputMapping: new Map(Object.entries(subgraphConfig.inputMapping || {})),
+        outputMapping: new Map(Object.entries(subgraphConfig.outputMapping || {})),
+      };
+
+      const mergeResult = this.mergeGraph(
+        graph,
+        subgraphBuildResult.graph,
+        subgraphNode.id,
+        mergeOptions
+      );
+
+      if (!mergeResult.success) {
+        errors.push(`Failed to merge subworkflow (${subworkflowId}): ${mergeResult.errors.join(', ')}`);
+        continue;
+      }
+
+      // 更新映射
+      mergeResult.nodeIdMapping.forEach((newId, oldId) => nodeIdMapping.set(oldId, newId));
+      mergeResult.edgeIdMapping.forEach((newId, oldId) => edgeIdMapping.set(oldId, newId));
+      addedNodeIds.push(...mergeResult.addedNodeIds);
+      addedEdgeIds.push(...mergeResult.addedEdgeIds);
+      removedNodeIds.push(...mergeResult.removedNodeIds);
+      removedEdgeIds.push(...mergeResult.removedEdgeIds);
+    }
+
+    return {
+      success: errors.length === 0,
+      nodeIdMapping,
+      edgeIdMapping,
+      addedNodeIds,
+      addedEdgeIds,
+      removedNodeIds,
+      removedEdgeIds,
+      errors,
+      subworkflowIds,
+    };
+  }
+
+  /**
+   * 合并子工作流图到主图
+   * @param mainGraph 主图
+   * @param subgraph 子工作流图
+   * @param subgraphNodeId SUBGRAPH节点ID
+   * @param options 合并选项
+   * @returns 合并结果
+   */
+  private static mergeGraph(
+    mainGraph: GraphData,
+    subgraph: GraphData,
+    subgraphNodeId: ID,
+    options: SubgraphMergeOptions
+  ): SubgraphMergeResult {
+    const nodeIdMapping = new Map<ID, ID>();
+    const edgeIdMapping = new Map<ID, ID>();
+    const addedNodeIds: ID[] = [];
+    const addedEdgeIds: ID[] = [];
+    const removedNodeIds: ID[] = [];
+    const removedEdgeIds: ID[] = [];
+    const errors: string[] = [];
+
+    // 获取SUBGRAPH节点的入边和出边
+    const incomingEdges = mainGraph.getIncomingEdges(subgraphNodeId);
+    const outgoingEdges = mainGraph.getOutgoingEdges(subgraphNodeId);
+
+    // 添加子工作流的节点（重命名ID）
+    for (const node of subgraph.nodes.values()) {
+      const newId = generateNamespacedNodeId(options.nodeIdPrefix || '', node.id);
+      const newNode: GraphNode = {
+        ...node,
+        id: newId,
+        originalNode: node.originalNode,
+      };
+      mainGraph.addNode(newNode);
+      nodeIdMapping.set(node.id, newId);
+      addedNodeIds.push(newId);
+    }
+
+    // 添加子工作流的边（重命名ID）
+    for (const edge of subgraph.edges.values()) {
+      const newId = generateNamespacedEdgeId(options.edgeIdPrefix || '', edge.id);
+      const newSourceId = nodeIdMapping.get(edge.sourceNodeId) || edge.sourceNodeId;
+      const newTargetId = nodeIdMapping.get(edge.targetNodeId) || edge.targetNodeId;
+      const newEdge: GraphEdge = {
+        ...edge,
+        id: newId,
+        sourceNodeId: newSourceId,
+        targetNodeId: newTargetId,
+        originalEdge: edge.originalEdge,
+      };
+      mainGraph.addEdge(newEdge);
+      edgeIdMapping.set(edge.id, newId);
+      addedEdgeIds.push(newId);
+    }
+
+    // 处理输入映射：将SUBGRAPH节点的入边连接到子工作流的START节点
+    if (subgraph.startNodeId) {
+      const newStartNodeId = nodeIdMapping.get(subgraph.startNodeId);
+      if (newStartNodeId) {
+        for (const incomingEdge of incomingEdges) {
+          const newEdge: GraphEdge = {
+            ...incomingEdge,
+            id: `${incomingEdge.id}_merged`,
+            targetNodeId: newStartNodeId,
+          };
+          mainGraph.addEdge(newEdge);
+          addedEdgeIds.push(newEdge.id);
+          removedEdgeIds.push(incomingEdge.id);
+        }
+      }
+    }
+
+    // 处理输出映射：将子工作流的END节点连接到SUBGRAPH节点的出边
+    for (const endNodeId of subgraph.endNodeIds) {
+      const newEndNodeId = nodeIdMapping.get(endNodeId);
+      if (newEndNodeId) {
+        for (const outgoingEdge of outgoingEdges) {
+          const newEdge: GraphEdge = {
+            ...outgoingEdge,
+            id: `${outgoingEdge.id}_merged`,
+            sourceNodeId: newEndNodeId,
+          };
+          mainGraph.addEdge(newEdge);
+          addedEdgeIds.push(newEdge.id);
+          removedEdgeIds.push(outgoingEdge.id);
+        }
+      }
+    }
+
+    // 移除SUBGRAPH节点及其相关边
+    mainGraph.nodes.delete(subgraphNodeId);
+    removedNodeIds.push(subgraphNodeId);
+    for (const edgeId of removedEdgeIds) {
+      mainGraph.edges.delete(edgeId);
+    }
+
+    return {
+      success: errors.length === 0,
+      nodeIdMapping,
+      edgeIdMapping,
+      addedNodeIds,
+      addedEdgeIds,
+      removedNodeIds,
+      removedEdgeIds,
+      errors,
+      subworkflowIds: [],
     };
   }
 }

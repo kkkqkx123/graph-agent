@@ -71,9 +71,37 @@ export interface NodeExecutionResult {
   status: 'PENDING' | 'RUNNING' | 'COMPLETED' | 'FAILED' | 'SKIPPED' | 'CANCELLED';
   /** 执行步骤序号 */
   step: number;
-  /** 输入数据 */
+  /**
+   * 输入数据
+   *
+   * 说明：记录节点执行时的输入数据
+   * - 用于执行追踪和调试
+   * - 支持表达式解析时访问（通过 input. 路径）
+   * - 可选字段，某些节点类型可能不需要输入
+   *
+   * 示例：
+   * - LLM 节点：包含提示词和参数
+   * - TOOL 节点：包含工具调用参数
+   * - SUBGRAPH 节点：包含传递给子工作流的输入
+   */
   input?: any;
-  /** 输出数据 */
+  /**
+   * 输出数据
+   *
+   * 说明：记录节点执行后的输出数据
+   * - 用于执行追踪和调试
+   * - 支持表达式解析时访问（通过 output. 路径）
+   * - 可选字段，某些节点类型可能没有输出
+   *
+   * 示例：
+   * - LLM 节点：包含模型响应
+   * - TOOL 节点：包含工具执行结果
+   * - VARIABLE 节点：包含变量更新后的值
+   *
+   * 注意：此字段与 Thread.output 不同
+   * - NodeExecutionResult.output: 单个节点的输出
+   * - Thread.output: 整个工作流的最终输出
+   */
   output?: any;
   /** 错误信息 */
   error?: any;
@@ -128,9 +156,63 @@ export interface Thread {
    variables: ThreadVariable[];
    /** 变量值映射（用于快速访问） */
    variableValues: Record<string, any>;
-   /** 输入数据（作为特殊变量，可通过路径访问） */
+   /**
+    * 输入数据（作为特殊变量，可通过路径访问）
+    *
+    * 说明：存储工作流的输入数据
+    * - 在 START 节点执行时初始化
+    * - 可通过表达式解析访问（使用 input. 路径）
+    * - 在整个工作流执行过程中保持不变
+    * - 用于传递外部输入到工作流
+    *
+    * 示例：
+    * ```typescript
+    * thread.input = {
+    *   userName: 'Alice',
+    *   userAge: 25,
+    *   config: { timeout: 5000 }
+    * }
+    *
+    * // 在表达式中访问
+    * {{input.userName}}  // 'Alice'
+    * {{input.config.timeout}}  // 5000
+    * ```
+    *
+    * 注意：此字段与 variables 的区别
+    * - Thread.input: 工作流的初始输入，只读
+    * - Thread.variableValues: 工作流执行过程中的变量，可变
+    */
    input: Record<string, any>;
-   /** 输出数据（作为特殊变量，可通过路径访问） */
+   /**
+    * 输出数据（作为特殊变量，可通过路径访问）
+    *
+    * 说明：存储工作流的最终输出数据
+    * - 在 END 节点执行时设置
+    * - 可通过表达式解析访问（使用 output. 路径）
+    * - 默认为空对象，由 END 节点或最后一个节点填充
+    * - 用于返回工作流执行结果
+    *
+    * 示例：
+    * ```typescript
+    * thread.output = {
+    *   result: 'Task completed',
+    *   status: 'success',
+    *   data: { count: 10 }
+    * }
+    *
+    * // 在表达式中访问
+    * {{output.result}}  // 'Task completed'
+    * {{output.data.count}}  // 10
+    * ```
+    *
+    * 注意：此字段与 NodeExecutionResult.output 的区别
+    * - Thread.output: 整个工作流的最终输出
+    * - NodeExecutionResult.output: 单个节点的输出
+    *
+    * 注意：此字段与 variables 的区别
+    * - Thread.output: 工作流的最终输出，只读
+    * - Thread.variableValues: 工作流执行过程中的变量，可变
+    */
    output: Record<string, any>;
    /** 执行历史记录（按执行顺序存储） */
    nodeResults: NodeExecutionResult[];
