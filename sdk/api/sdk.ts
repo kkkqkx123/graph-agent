@@ -13,8 +13,8 @@ import { ProfileManagerAPI } from './profile-manager-api';
 import { EventManagerAPI } from './event-manager-api';
 import { CheckpointManagerAPI } from './checkpoint-manager-api';
 import { VariableManagerAPI } from './variable-manager-api';
-import { WorkflowRegistry } from '../core/execution/registrys/workflow-registry';
-import { ThreadRegistry } from '../core/execution/registrys/thread-registry';
+import { WorkflowRegistry } from '../core/registry/workflow-registry';
+import { ThreadRegistry } from '../core/registry/thread-registry';
 import type { SDKOptions } from './types';
 
 /**

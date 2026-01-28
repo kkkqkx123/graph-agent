@@ -5,7 +5,7 @@
 
 import { ThreadExecutor } from '../core/execution/thread-executor';
 import { ThreadBuilder } from '../core/execution/thread-builder';
-import { WorkflowRegistry } from '../core/execution/registrys/workflow-registry';
+import { WorkflowRegistry } from '../core/registry/workflow-registry';
 import type { WorkflowDefinition } from '../types/workflow';
 import type { ThreadResult, ThreadOptions } from '../types/thread';
 import type { ExecuteOptions } from './types';

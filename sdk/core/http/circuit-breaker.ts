@@ -32,7 +32,6 @@ export class CircuitBreaker {
   private state: CircuitState = CircuitState.CLOSED;
   private failureCount: number = 0;
   private successCount: number = 0;
-  private lastFailureTime: number = 0;
   private nextAttempt: number = 0;
 
   private readonly failureThreshold: number;
@@ -93,7 +92,6 @@ export class CircuitBreaker {
     this.state = CircuitState.CLOSED;
     this.failureCount = 0;
     this.successCount = 0;
-    this.lastFailureTime = 0;
     this.nextAttempt = 0;
   }
 
@@ -116,7 +114,6 @@ export class CircuitBreaker {
    */
   private recordFailure(): void {
     this.failureCount++;
-    this.lastFailureTime = Date.now();
 
     if (this.failureCount >= this.failureThreshold) {
       this.state = CircuitState.OPEN;

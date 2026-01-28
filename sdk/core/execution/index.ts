@@ -27,14 +27,14 @@ export { ThreadBuilder } from './thread-builder';
 export { ThreadLifecycleManager } from './thread-lifecycle-manager';
 
 // Thread注册表
-export { ThreadRegistry } from './registrys/thread-registry';
+export { ThreadRegistry } from '../registry/thread-registry';
 
 // 变量管理器
 export { VariableManager } from './managers/variable-manager';
 
 // Workflow注册器
-export { WorkflowRegistry } from './registrys/workflow-registry';
-export type { WorkflowSummary, WorkflowVersion, ValidationResult } from './registrys/workflow-registry';
+export { WorkflowRegistry } from '../registry/workflow-registry';
+export type { WorkflowSummary, WorkflowVersion, ValidationResult } from '../registry/workflow-registry';
 
 // 路由器
 export { Router } from './router';

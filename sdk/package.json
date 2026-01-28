@@ -1,0 +1,65 @@
+{
+    "name": "@modular-agent/sdk",
+    "version": "1.0.0",
+    "description": "Modular Agent Framework SDK - Workflow execution engine",
+    "main": "dist/index.js",
+    "types": "dist/index.d.ts",
+    "type": "module",
+    "exports": {
+        ".": {
+            "types": "./dist/index.d.ts",
+            "import": "./dist/index.js"
+        },
+        "./types": {
+            "types": "./dist/types/index.d.ts",
+            "import": "./dist/types/index.js"
+        },
+        "./core": {
+            "types": "./dist/core/index.d.ts",
+            "import": "./dist/core/index.js"
+        },
+        "./api": {
+            "types": "./dist/api/index.d.ts",
+            "import": "./dist/api/index.js"
+        },
+        "./utils": {
+            "types": "./dist/utils/index.d.ts",
+            "import": "./dist/utils/index.js"
+        }
+    },
+    "files": [
+        "dist",
+        "README.md"
+    ],
+    "scripts": {
+        "build": "tsc",
+        "build:watch": "tsc --watch",
+        "test": "jest --config=jest.config.mjs",
+        "test:watch": "jest --config=jest.config.mjs --watch",
+        "test:coverage": "jest --config=jest.config.mjs --coverage",
+        "typecheck": "tsc --noEmit",
+        "clean": "rimraf dist",
+        "prebuild": "npm run clean"
+    },
+    "keywords": [
+        "agent",
+        "workflow",
+        "llm",
+        "sdk",
+        "typescript"
+    ],
+    "author": "Modular Agent Framework Team",
+    "license": "MIT",
+    "dependencies": {},
+    "devDependencies": {
+        "@types/jest": "^30.0.0",
+        "@types/node": "^25.0.1",
+        "jest": "^30.2.0",
+        "rimraf": "^6.0.1",
+        "ts-jest": "^29.4.6",
+        "typescript": "^5.9.3"
+    },
+    "engines": {
+        "node": ">=22.0.0"
+    }
+}

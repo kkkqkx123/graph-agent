@@ -9,7 +9,7 @@ import type { Node } from '../../types/node';
 import { NodeType } from '../../types/node';
 import type { Thread } from '../../types/thread';
 import type { EvaluationContext } from '../../types/condition';
-import { conditionEvaluator } from './utils/condition-evaluator';
+import { conditionEvaluator } from '../../utils/condition-evaluator';
 
 /**
  * Router - 条件路由器

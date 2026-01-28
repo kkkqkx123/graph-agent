@@ -650,7 +650,7 @@ async function createTestThread(
   const { WorkflowContext } = await import('../../core/execution/context/workflow-context');
   const { ConversationManager } = await import('../../core/execution/conversation');
   const { LLMExecutor } = await import('../../core/execution/llm-executor');
-  const { IDUtils } = await import('../../types/common');
+  const { IDUtils } = await import('../../utils');
 
   const workflow = {
     id: 'test-workflow',

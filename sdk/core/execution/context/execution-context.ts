@@ -16,8 +16,8 @@
  * - ThreadLifecycleManager: 生命周期管理器
  */
 
-import { WorkflowRegistry } from '../registrys/workflow-registry';
-import { ThreadRegistry } from '../registrys/thread-registry';
+import { WorkflowRegistry } from '../../registry/workflow-registry';
+import { ThreadRegistry } from '../../registry/thread-registry';
 import { EventManager } from '../managers/event-manager';
 import { CheckpointManager } from '../managers/checkpoint-manager';
 import { ThreadLifecycleManager } from '../thread-lifecycle-manager';

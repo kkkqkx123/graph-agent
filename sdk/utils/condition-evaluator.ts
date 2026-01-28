@@ -3,8 +3,8 @@
  * 提供统一的条件评估功能，支持表达式字符串
  */
 
-import type { Condition, EvaluationContext } from '../../../types/condition';
-import { ExpressionEvaluator } from '../../../utils/expression-parser';
+import type { Condition, EvaluationContext } from '../types/condition';
+import { ExpressionEvaluator } from './expression-parser';
 
 /**
  * 条件评估器实现

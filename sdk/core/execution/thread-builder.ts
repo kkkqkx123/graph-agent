@@ -13,10 +13,10 @@ import { ConversationManager } from './conversation';
 import { LLMExecutor } from './llm-executor';
 import { ThreadContext } from './context/thread-context';
 import { NodeType } from '../../types/node';
-import { IDUtils } from '../../types/common';
+import { IDUtils } from '../../utils';
 import { VariableManager } from './managers/variable-manager';
 import { ValidationError } from '../../types/errors';
-import { WorkflowRegistry } from './registrys/workflow-registry';
+import { WorkflowRegistry } from '../registry/workflow-registry';
 import { getWorkflowRegistry } from './context/execution-context';
 
 /**

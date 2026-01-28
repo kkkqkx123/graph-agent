@@ -4,8 +4,8 @@
 
 import { CheckpointManagerAPI } from '../checkpoint-manager-api';
 import { CheckpointManager } from '../../core/execution/managers/checkpoint-manager';
-import { ThreadRegistry } from '../../core/execution/registrys/thread-registry';
-import { WorkflowRegistry } from '../../core/execution/registrys/workflow-registry';
+import { ThreadRegistry } from '../../core/registry/thread-registry';
+import { WorkflowRegistry } from '../../core/registry/workflow-registry';
 import type { WorkflowDefinition } from '../../types/workflow';
 import { NodeType } from '../../types/node';
 import { EdgeType } from '../../types/edge';
@@ -510,7 +510,7 @@ async function createTestThreadContext(
   const { WorkflowContext } = await import('../../core/execution/context/workflow-context');
   const { ConversationManager } = await import('../../core/execution/conversation');
   const { LLMExecutor } = await import('../../core/execution/llm-executor');
-  const { IDUtils } = await import('../../types/common');
+  const { IDUtils } = await import('../../utils');
 
   const workflowContext = new WorkflowContext(workflow);
   const conversationManager = new ConversationManager();

@@ -7,7 +7,7 @@
  */
 
 import type { Thread } from '../../types/thread';
-import { ThreadRegistry } from './registrys/thread-registry';
+import { ThreadRegistry } from '../registry/thread-registry';
 import { ThreadBuilder } from './thread-builder';
 import { ThreadContext } from './context/thread-context';
 import { EventManager } from './managers/event-manager';

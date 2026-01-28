@@ -4,7 +4,7 @@
  * 注意：变量全部由workflow的静态定义提供，API不提供创建新变量的功能
  */
 
-import { ThreadRegistry } from '../core/execution/registrys/thread-registry';
+import { ThreadRegistry } from '../core/registry/thread-registry';
 import type { Thread, ThreadVariable } from '../types/thread';
 import { NotFoundError, ValidationError } from '../types/errors';
 
@@ -51,11 +51,11 @@ export class VariableManagerAPI {
    */
   async getVariable(threadId: string, name: string): Promise<any> {
     const thread = await this.getThread(threadId);
-    
+
     if (!thread.variableValues || !(name in thread.variableValues)) {
       throw new NotFoundError(`Variable not found: ${name}`, 'variable', name);
     }
-    
+
     return thread.variableValues[name];
   }
 
@@ -68,12 +68,12 @@ export class VariableManagerAPI {
    */
   async getVariableDefinition(threadId: string, name: string): Promise<ThreadVariable> {
     const thread = await this.getThread(threadId);
-    
+
     const variable = thread.variables.find(v => v.name === name);
     if (!variable) {
       throw new NotFoundError(`Variable not found: ${name}`, 'variable', name);
     }
-    
+
     return variable;
   }
 
@@ -95,14 +95,14 @@ export class VariableManagerAPI {
    */
   async getVariableDefinitions(threadId: string, filter?: VariableFilter): Promise<ThreadVariable[]> {
     const thread = await this.getThread(threadId);
-    
+
     let variables = [...thread.variables];
-    
+
     // 应用过滤条件
     if (filter) {
       variables = variables.filter(v => this.applyFilter(v, filter));
     }
-    
+
     return variables;
   }
 
@@ -122,26 +122,26 @@ export class VariableManagerAPI {
     options?: VariableUpdateOptions
   ): Promise<void> {
     const thread = await this.getThread(threadId);
-    
+
     const variable = thread.variables.find(v => v.name === name);
     if (!variable) {
       throw new NotFoundError(`Variable not found: ${name}`, 'variable', name);
     }
-    
+
     // 检查是否为只读变量
     if (variable.readonly && !options?.allowReadonlyUpdate) {
       throw new ValidationError(`Variable ${name} is readonly and cannot be modified`);
     }
-    
+
     // 验证变量类型
     if (options?.validateType !== false) {
       this.validateVariableType(variable, value);
     }
-    
+
     // 更新变量值
     thread.variableValues[name] = value;
     variable.value = value;
-    }
+  }
 
   /**
    * 批量更新变量值
@@ -157,25 +157,25 @@ export class VariableManagerAPI {
     options?: VariableUpdateOptions
   ): Promise<void> {
     const thread = await this.getThread(threadId);
-    
+
     // 验证所有变量存在且可更新
     for (const name in updates) {
       const variable = thread.variables.find(v => v.name === name);
       if (!variable) {
         throw new NotFoundError(`Variable not found: ${name}`, 'variable', name);
       }
-      
+
       // 检查是否为只读变量
       if (variable.readonly && !options?.allowReadonlyUpdate) {
         throw new ValidationError(`Variable ${name} is readonly and cannot be modified`);
       }
-      
+
       // 验证变量类型
       if (options?.validateType !== false) {
         this.validateVariableType(variable, updates[name]);
       }
     }
-    
+
     // 更新所有变量值
     for (const name in updates) {
       const variable = thread.variables.find(v => v.name === name)!;
@@ -255,7 +255,7 @@ export class VariableManagerAPI {
   ): Promise<Record<string, any>> {
     const variables = await this.getVariableDefinitions(threadId, filter);
     const exportData: Record<string, any> = {};
-    
+
     for (const variable of variables) {
       exportData[variable.name] = {
         value: variable.value,
@@ -265,7 +265,7 @@ export class VariableManagerAPI {
         metadata: variable.metadata
       };
     }
-    
+
     return exportData;
   }
 
@@ -300,7 +300,7 @@ export class VariableManagerAPI {
   private validateVariableType(variable: ThreadVariable, value: any): void {
     const expectedType = variable.type;
     const actualType = typeof value;
-    
+
     // 特殊处理数组和对象类型
     if (expectedType === 'array') {
       if (!Array.isArray(value)) {

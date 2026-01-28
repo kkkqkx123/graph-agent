@@ -8,7 +8,7 @@
 import type { ThreadOptions, ThreadResult } from '../../types/thread';
 import type { Node } from '../../types/node';
 import type { NodeExecutionResult } from '../../types/thread';
-import { ThreadRegistry } from './registrys/thread-registry';
+import { ThreadRegistry } from '../registry/thread-registry';
 import { ThreadBuilder } from './thread-builder';
 import { ThreadLifecycleManager } from './thread-lifecycle-manager';
 import { ThreadContext } from './context/thread-context';
@@ -20,7 +20,7 @@ import { ExecutionError, TimeoutError, NotFoundError } from '../../types/errors'
 import { EventType } from '../../types/events';
 import type { NodeStartedEvent, NodeCompletedEvent, NodeFailedEvent, ErrorEvent } from '../../types/events';
 import { TriggerManager } from './managers/trigger-manager';
-import { WorkflowRegistry } from './registrys/workflow-registry';
+import { WorkflowRegistry } from '../registry/workflow-registry';
 import { getWorkflowRegistry, getThreadRegistry, getEventManager, getThreadLifecycleManager } from './context/execution-context';
 import { InternalEventType } from '../../types/internal-events';
 import type { ForkCompletedEvent, ForkFailedEvent, JoinCompletedEvent, JoinFailedEvent } from '../../types/internal-events';

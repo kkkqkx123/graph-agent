@@ -130,12 +130,24 @@ export class MessageValidator {
       }
     }
 
-    // tool 角色的内容必须是字符串
-    if (role === 'tool' && typeof content !== 'string') {
+    // tool 角色的内容可以是字符串或数组（包含 tool_result）
+    if (role === 'tool' && typeof content !== 'string' && !Array.isArray(content)) {
       errors.push(new ValidationError(
-        'Tool message content must be a string',
+        'Tool message content must be a string or array',
         'message.content'
       ));
+    }
+    
+    // 如果 tool 角色使用数组内容，验证所有内容项都是 tool_result 类型
+    if (role === 'tool' && Array.isArray(content)) {
+      content.forEach((item, index) => {
+        if (item.type !== 'tool_result') {
+          errors.push(new ValidationError(
+            `Tool message content item at index ${index} must have type 'tool_result'`,
+            `message.content[${index}].type`
+          ));
+        }
+      });
     }
 
     return {

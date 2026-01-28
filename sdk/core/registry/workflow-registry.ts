@@ -3,9 +3,9 @@
  * 负责工作流定义的注册、查询、更新、移除和缓存管理
  */
 
-import type { WorkflowDefinition, WorkflowMetadata, WorkflowConfig } from '../../../types/workflow';
-import { WorkflowValidator } from '../../validation/workflow-validator';
-import { ValidationError } from '../../../types/errors';
+import type { WorkflowDefinition, WorkflowMetadata, WorkflowConfig } from '../../types/workflow';
+import { WorkflowValidator } from '../validation/workflow-validator';
+import { ValidationError } from '../../types/errors';
 
 /**
  * 工作流摘要信息
