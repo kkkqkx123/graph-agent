@@ -10,7 +10,7 @@ import type {
 import type { BaseEvent, NodeCustomEvent } from '../../../types/events';
 import type { ID } from '../../../types/common';
 import { EventManager } from './event-manager';
-import { TriggerExecutorFactory } from '../executors';
+import { getTriggerHandler } from '../handlers/trigger-handlers';
 import { ValidationError, ExecutionError } from '../../../types/errors';
 import { EventType } from '../../../types/events';
 import { now } from '../../../utils';
@@ -186,11 +186,9 @@ export class TriggerManager {
    * @param trigger 触发器
    */
   private async executeTrigger(trigger: Trigger): Promise<void> {
-    // 使用工厂创建执行器
-    const executor = TriggerExecutorFactory.createExecutor(trigger.action.type);
-
-    // 执行触发动作（不再传递 ThreadExecutor）
-    const result = await executor.execute(trigger.action, trigger.id);
+    // 使用trigger handler函数执行触发动作
+    const handler = getTriggerHandler(trigger.action.type);
+    const result = await handler(trigger.action, trigger.id);
 
     // 更新触发器状态
     trigger.triggerCount++;

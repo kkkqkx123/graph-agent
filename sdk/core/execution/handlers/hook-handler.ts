@@ -1,10 +1,11 @@
 /**
- * HookExecutor - Hook执行器
- * 负责管理节点的Hook配置，在适当的时机执行Hook，评估触发条件，生成并触发自定义事件
+ * Hook处理器
  *
  * 职责：
  * - 管理节点的Hook配置
  * - 在适当的时机执行Hook（BEFORE_EXECUTE、AFTER_EXECUTE）
+ * - EXECUTE是对于节点而言，用于嵌入特定节点(不是全局的，全局的由trigger处理)
+ * - 但不是由有节点执行，而是由执行实例执行，以免不必要的调用链
  * - 评估Hook触发条件
  * - 生成并触发自定义事件
  *
@@ -12,7 +13,6 @@
  * - Hook执行失败不应影响节点正常执行
  * - 条件评估失败默认不触发事件
  * - 事件触发异步化，不阻塞节点执行
- * - 不持有 EventManager，通过参数传递
  */
 
 import type { Node, NodeHook } from '../../../types/node';

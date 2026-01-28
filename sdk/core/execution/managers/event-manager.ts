@@ -22,7 +22,7 @@ interface ListenerWrapper<T> {
  *
  * 职责：
  * - 全局事件：对外暴露，用户可监听（如 THREAD_STARTED、NODE_COMPLETED）
- * - 内部事件：模块内部协调，不对外暴露（如 FORK_REQUEST、JOIN_COMPLETED）
+ * - 内部事件：模块内部协调，不对外暴露（如 COPY_REQUEST、COPY_COMPLETED）
  *
  * 设计原则：
  * - 内部事件监听器与全局事件完全分离，提高安全性

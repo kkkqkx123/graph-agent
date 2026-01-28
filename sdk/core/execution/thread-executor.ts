@@ -14,7 +14,6 @@ import { ThreadBuilder } from './thread-builder';
 import { ThreadLifecycleManager } from './thread-lifecycle-manager';
 import { ThreadContext } from './context/thread-context';
 import { Router } from './router';
-import { NodeExecutorFactory } from './executors/node-executor-factory';
 import { EventManager } from './managers/event-manager';
 import { NotFoundError } from '../../types/errors';
 import { EventType } from '../../types/events';
@@ -22,9 +21,11 @@ import type { NodeStartedEvent, NodeCompletedEvent, NodeFailedEvent, ErrorEvent 
 import { TriggerManager } from './managers/trigger-manager';
 import { WorkflowRegistry } from '../registry/workflow-registry';
 import { getWorkflowRegistry, getThreadRegistry, getEventManager, getThreadLifecycleManager } from './context/execution-context';
-import type { ForkCompletedEvent, ForkFailedEvent, JoinCompletedEvent, JoinFailedEvent } from '../../types/internal-events';
 import { now, diffTimestamp } from '../../utils';
 import { GraphNavigator } from '../graph/graph-navigator';
+import { getNodeHandler } from './handlers/node-handlers';
+import { HookExecutor } from './handlers/hook-handler';
+import { NodeType } from '../../types/node';
 
 /**
  * ThreadExecutor - Thread 执行器
@@ -225,23 +226,52 @@ export class ThreadExecutor {
         timestamp: now()
       });
 
-      // 步骤2：创建节点执行器
-      const nodeExecutor = NodeExecutorFactory.createExecutor(nodeType);
+      // 步骤2：执行BEFORE_EXECUTE类型的Hook
+      const hookExecutor = new HookExecutor();
+      if (node.hooks && node.hooks.length > 0) {
+        await hookExecutor.executeBeforeExecute(
+          { thread: threadContext.thread, node },
+          (event) => this.eventManager.emit(event)
+        );
+      }
 
-      // 步骤3：执行节点
+      // 步骤3：执行节点逻辑
       const startTime = now();
-      const nodeResult = await nodeExecutor.execute(threadContext.thread, node);
-      const endTime = now();
+      let nodeResult: NodeExecutionResult;
 
-      // 步骤4：补充执行结果信息
-      nodeResult.nodeId = nodeId;
-      nodeResult.nodeType = nodeType;
-      nodeResult.startTime = startTime;
-      nodeResult.endTime = endTime;
-      nodeResult.executionTime = diffTimestamp(startTime, endTime);
+      // 检查是否为需要LLM执行器托管的节点
+      if (this.isLLMManagedNode(nodeType)) {
+        // 由ThreadExecutor直接托管给LLM执行器处理
+        nodeResult = await this.executeLLMManagedNode(threadContext, node);
+      } else {
+        // 使用Node Handler函数执行
+        const handler = getNodeHandler(nodeType);
+        const output = await handler(threadContext.thread, node);
 
-      // 步骤5：记录节点执行结果
+        // 构建执行结果
+        const endTime = now();
+        nodeResult = {
+          nodeId,
+          nodeType,
+          status: output.status || 'COMPLETED',
+          step: threadContext.thread.nodeResults.length + 1,
+          output: output.status ? undefined : output,
+          startTime,
+          endTime,
+          executionTime: diffTimestamp(startTime, endTime)
+        };
+      }
+
+      // 步骤4：记录节点执行结果
       threadContext.addNodeResult(nodeResult);
+
+      // 步骤5：执行AFTER_EXECUTE类型的Hook
+      if (node.hooks && node.hooks.length > 0) {
+        await hookExecutor.executeAfterExecute(
+          { thread: threadContext.thread, node, result: nodeResult },
+          (event) => this.eventManager.emit(event)
+        );
+      }
 
       // 步骤6：触发节点完成事件
       if (nodeResult.status === 'COMPLETED') {
@@ -251,7 +281,7 @@ export class ThreadExecutor {
           workflowId: threadContext.getWorkflowId(),
           nodeId,
           output: nodeResult.output,
-          executionTime: nodeResult.executionTime,
+          executionTime: nodeResult.executionTime || 0,
           timestamp: now()
         });
       } else if (nodeResult.status === 'FAILED') {
@@ -292,6 +322,40 @@ export class ThreadExecutor {
 
       return errorResult;
     }
+  }
+
+  /**
+   * 检查是否为需要LLM执行器托管的节点
+   */
+  private isLLMManagedNode(nodeType: NodeType): boolean {
+    return [
+      NodeType.LLM,
+      NodeType.TOOL,
+      NodeType.CONTEXT_PROCESSOR,
+      NodeType.USER_INTERACTION
+    ].includes(nodeType);
+  }
+
+  /**
+   * 执行由LLM执行器托管的节点
+   */
+  private async executeLLMManagedNode(threadContext: ThreadContext, node: Node): Promise<NodeExecutionResult> {
+    const startTime = now();
+
+    // TODO: 实现实际的LLM执行器调用
+    // 这里暂时返回模拟结果
+    const endTime = now();
+
+    return {
+      nodeId: node.id,
+      nodeType: node.type,
+      status: 'COMPLETED',
+      step: threadContext.thread.nodeResults.length + 1,
+      output: { message: 'LLM managed node executed' },
+      startTime,
+      endTime,
+      executionTime: diffTimestamp(startTime, endTime)
+    };
   }
 
   /**

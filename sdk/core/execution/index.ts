@@ -1,6 +1,6 @@
 /**
  * Execution模块导出
- * 提供Thread执行引擎、节点执行器、路由器和事件管理器
+ * 提供Thread执行引擎、节点处理函数、路由器和事件管理器
  */
 
 // 执行上下文
@@ -52,3 +52,13 @@ export { TriggerManager } from './managers/trigger-manager';
 export { ConversationManager } from './conversation';
 export type { ConversationManagerOptions, ConversationManagerEventCallbacks } from './conversation';
 export { LLMExecutor } from './llm-executor';
+
+// Hook执行器
+export { HookExecutor } from './handlers/hook-handler';
+export type { HookExecutionContext } from './handlers/hook-handler';
+
+// 节点处理函数
+export * from './handlers/node-handlers';
+
+// 触发器处理函数
+export * from './handlers/trigger-handlers';
