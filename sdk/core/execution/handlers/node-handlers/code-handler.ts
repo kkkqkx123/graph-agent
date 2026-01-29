@@ -5,44 +5,8 @@
 
 import type { Node, CodeNodeConfig } from '../../../../types/node';
 import type { Thread } from '../../../../types/thread';
-import { NodeType } from '../../../../types/node';
 import { ValidationError } from '../../../../types/errors';
 import { now } from '../../../../utils';
-
-/**
- * 验证Code节点配置
- */
-function validate(node: Node): void {
-  if (node.type !== NodeType.CODE) {
-    throw new ValidationError(`Invalid node type for code handler: ${node.type}`, `node.${node.id}`);
-  }
-
-  const config = node.config as CodeNodeConfig;
-
-  if (!config.scriptName || typeof config.scriptName !== 'string') {
-    throw new ValidationError('Code node must have a valid scriptName', `node.${node.id}`);
-  }
-
-  if (!config.scriptType || !['shell', 'cmd', 'powershell', 'python', 'javascript'].includes(config.scriptType)) {
-    throw new ValidationError('Code node must have a valid scriptType (shell, cmd, powershell, python, or javascript)', `node.${node.id}`);
-  }
-
-  if (!config.risk || !['none', 'low', 'medium', 'high'].includes(config.risk)) {
-    throw new ValidationError('Code node must have a valid risk level (none, low, medium, or high)', `node.${node.id}`);
-  }
-
-  if (config.timeout !== undefined && (typeof config.timeout !== 'number' || config.timeout <= 0)) {
-    throw new ValidationError('Code node timeout must be a positive number', `node.${node.id}`);
-  }
-
-  if (config.retries !== undefined && (typeof config.retries !== 'number' || config.retries < 0)) {
-    throw new ValidationError('Code node retries must be a non-negative number', `node.${node.id}`);
-  }
-
-  if (config.retryDelay !== undefined && (typeof config.retryDelay !== 'number' || config.retryDelay < 0)) {
-    throw new ValidationError('Code node retryDelay must be a non-negative number', `node.${node.id}`);
-  }
-}
 
 /**
  * 检查节点是否可以执行
@@ -126,9 +90,6 @@ function sleep(ms: number): Promise<void> {
  * @returns 执行结果
  */
 export async function codeHandler(thread: Thread, node: Node): Promise<any> {
-  // 验证节点配置
-  validate(node);
-
   // 检查是否可以执行
   if (!canExecute(thread, node)) {
     return {

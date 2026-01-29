@@ -5,32 +5,6 @@
 
 import type { Node, RouteNodeConfig } from '../../../../types/node';
 import type { Thread } from '../../../../types/thread';
-import { NodeType } from '../../../../types/node';
-import { ValidationError } from '../../../../types/errors';
-
-/**
- * 验证Route节点配置
- */
-function validate(node: Node): void {
-  if (node.type !== NodeType.ROUTE) {
-    throw new ValidationError(`Invalid node type for route handler: ${node.type}`, `node.${node.id}`);
-  }
-
-  const config = node.config as RouteNodeConfig;
-
-  if (!config.routes || !Array.isArray(config.routes) || config.routes.length === 0) {
-    throw new ValidationError('Route node must have at least one route', `node.${node.id}`);
-  }
-
-  for (const route of config.routes) {
-    if (!route.condition || typeof route.condition !== 'string') {
-      throw new ValidationError('Route must have a valid condition', `node.${node.id}`);
-    }
-    if (!route.targetNodeId || typeof route.targetNodeId !== 'string') {
-      throw new ValidationError('Route must have a valid targetNodeId', `node.${node.id}`);
-    }
-  }
-}
 
 /**
  * 检查节点是否可以执行
@@ -63,9 +37,6 @@ function evaluateRouteCondition(condition: string, thread: Thread): boolean {
  * @returns 执行结果
  */
 export async function routeHandler(thread: Thread, node: Node): Promise<any> {
-  // 验证节点配置
-  validate(node);
-
   // 检查是否可以执行
   if (!canExecute(thread, node)) {
     return {

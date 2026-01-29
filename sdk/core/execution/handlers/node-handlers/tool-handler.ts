@@ -5,40 +5,7 @@
 
 import type { Node, ToolNodeConfig } from '../../../../types/node';
 import type { Thread } from '../../../../types/thread';
-import { NodeType } from '../../../../types/node';
-import { ValidationError } from '../../../../types/errors';
 import { now } from '../../../../utils';
-
-/**
- * 验证Tool节点配置
- */
-function validate(node: Node): void {
-  if (node.type !== NodeType.TOOL) {
-    throw new ValidationError(`Invalid node type for tool handler: ${node.type}`, `node.${node.id}`);
-  }
-
-  const config = node.config as ToolNodeConfig;
-
-  if (!config.toolName || typeof config.toolName !== 'string') {
-    throw new ValidationError('Tool node must have a valid toolName', `node.${node.id}`);
-  }
-
-  if (!config.parameters || typeof config.parameters !== 'object') {
-    throw new ValidationError('Tool node must have parameters object', `node.${node.id}`);
-  }
-
-  if (config.timeout !== undefined && (typeof config.timeout !== 'number' || config.timeout <= 0)) {
-    throw new ValidationError('Tool node timeout must be a positive number', `node.${node.id}`);
-  }
-
-  if (config.retries !== undefined && (typeof config.retries !== 'number' || config.retries < 0)) {
-    throw new ValidationError('Tool node retries must be a non-negative number', `node.${node.id}`);
-  }
-
-  if (config.retryDelay !== undefined && (typeof config.retryDelay !== 'number' || config.retryDelay < 0)) {
-    throw new ValidationError('Tool node retryDelay must be a non-negative number', `node.${node.id}`);
-  }
-}
 
 /**
  * 检查节点是否可以执行
@@ -148,9 +115,6 @@ function sleep(ms: number): Promise<void> {
  * @returns 执行结果
  */
 export async function toolHandler(thread: Thread, node: Node): Promise<any> {
-  // 验证节点配置
-  validate(node);
-
   // 检查是否可以执行
   if (!canExecute(thread, node)) {
     return {

@@ -5,8 +5,6 @@
 
 import type { Node, LoopStartNodeConfig } from '../../../../types/node';
 import type { Thread } from '../../../../types/thread';
-import { NodeType } from '../../../../types/node';
-import { ValidationError } from '../../../../types/errors';
 import { now } from '../../../../utils';
 
 /**
@@ -19,33 +17,6 @@ interface LoopState {
   maxIterations: number;
   iterationCount: number;
   variableName: string;
-}
-
-/**
- * 验证LoopStart节点配置
- */
-function validate(node: Node): void {
-  if (node.type !== NodeType.LOOP_START) {
-    throw new ValidationError(`Invalid node type for loop start handler: ${node.type}`, `node.${node.id}`);
-  }
-
-  const config = node.config as LoopStartNodeConfig;
-
-  if (!config.loopId || typeof config.loopId !== 'string') {
-    throw new ValidationError('Loop start node must have a valid loopId', `node.${node.id}`);
-  }
-
-  if (config.iterable === undefined || config.iterable === null) {
-    throw new ValidationError('Loop start node must have iterable', `node.${node.id}`);
-  }
-
-  if (typeof config.maxIterations !== 'number' || config.maxIterations <= 0) {
-    throw new ValidationError('Loop start node must have a valid maxIterations (positive number)', `node.${node.id}`);
-  }
-
-  if (!isValidIterable(config.iterable)) {
-    throw new ValidationError('Iterable must be an array, object, number, or string', `node.${node.id}`);
-  }
 }
 
 /**
@@ -203,9 +174,6 @@ function updateLoopState(loopState: LoopState): void {
  * @returns 执行结果
  */
 export async function loopStartHandler(thread: Thread, node: Node): Promise<any> {
-  // 验证节点配置
-  validate(node);
-
   // 检查是否可以执行
   if (!canExecute(thread, node)) {
     return {

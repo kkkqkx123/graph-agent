@@ -5,36 +5,6 @@
 
 import type { Node, JoinNodeConfig } from '../../../../types/node';
 import type { Thread } from '../../../../types/thread';
-import { NodeType } from '../../../../types/node';
-import { ValidationError } from '../../../../types/errors';
-
-/**
- * 验证Join节点配置
- */
-function validate(node: Node): void {
-  if (node.type !== NodeType.JOIN) {
-    throw new ValidationError(`Invalid node type for join handler: ${node.type}`, `node.${node.id}`);
-  }
-
-  const config = node.config as JoinNodeConfig;
-
-  if (!config.joinId || typeof config.joinId !== 'string') {
-    throw new ValidationError('Join node must have a valid joinId', `node.${node.id}`);
-  }
-
-  const validStrategies = ['ALL_COMPLETED', 'ANY_COMPLETED', 'ALL_FAILED', 'ANY_FAILED', 'SUCCESS_COUNT_THRESHOLD'];
-  if (!config.joinStrategy || !validStrategies.includes(config.joinStrategy)) {
-    throw new ValidationError(`Join node must have a valid joinStrategy (${validStrategies.join(', ')})`, `node.${node.id}`);
-  }
-
-  if (config.joinStrategy === 'SUCCESS_COUNT_THRESHOLD' && (config.threshold === undefined || config.threshold <= 0)) {
-    throw new ValidationError('Join node must have a valid threshold when using SUCCESS_COUNT_THRESHOLD strategy', `node.${node.id}`);
-  }
-
-  if (config.timeout !== undefined && (typeof config.timeout !== 'number' || config.timeout <= 0)) {
-    throw new ValidationError('Join node timeout must be a positive number', `node.${node.id}`);
-  }
-}
 
 /**
  * 检查节点是否可以执行
@@ -54,9 +24,6 @@ function canExecute(thread: Thread, node: Node): boolean {
  * @returns 执行结果
  */
 export async function joinHandler(thread: Thread, node: Node): Promise<any> {
-  // 验证节点配置
-  validate(node);
-
   // 检查是否可以执行
   if (!canExecute(thread, node)) {
     return {

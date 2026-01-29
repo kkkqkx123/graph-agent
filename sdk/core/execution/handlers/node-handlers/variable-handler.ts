@@ -5,32 +5,8 @@
 
 import type { Node, VariableNodeConfig } from '../../../../types/node';
 import type { Thread } from '../../../../types/thread';
-import { NodeType } from '../../../../types/node';
 import { ValidationError } from '../../../../types/errors';
 import { now } from '../../../../utils';
-
-/**
- * 验证Variable节点配置
- */
-function validate(node: Node): void {
-  if (node.type !== NodeType.VARIABLE) {
-    throw new ValidationError(`Invalid node type for variable handler: ${node.type}`, `node.${node.id}`);
-  }
-
-  const config = node.config as VariableNodeConfig;
-
-  if (!config.variableName || typeof config.variableName !== 'string') {
-    throw new ValidationError('Variable node must have a valid variableName', `node.${node.id}`);
-  }
-
-  if (!config.variableType || !['number', 'string', 'boolean', 'array', 'object'].includes(config.variableType)) {
-    throw new ValidationError('Variable node must have a valid variableType (number, string, boolean, array, or object)', `node.${node.id}`);
-  }
-
-  if (!config.expression || typeof config.expression !== 'string') {
-    throw new ValidationError('Variable node must have a valid expression', `node.${node.id}`);
-  }
-}
 
 /**
  * 检查节点是否可以执行
@@ -146,9 +122,6 @@ function convertType(value: any, targetType: string): any {
  * @returns 执行结果
  */
 export async function variableHandler(thread: Thread, node: Node): Promise<any> {
-  // 验证节点配置
-  validate(node);
-
   // 检查是否可以执行
   if (!canExecute(thread, node)) {
     return {

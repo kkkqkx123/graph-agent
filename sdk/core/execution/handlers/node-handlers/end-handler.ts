@@ -3,25 +3,10 @@
  * 负责执行END节点，标记工作流的结束，收集执行结果
  */
 
-import type { Node, EndNodeConfig } from '../../../../types/node';
+import type { Node } from '../../../../types/node';
 import type { Thread } from '../../../../types/thread';
-import { NodeType } from '../../../../types/node';
-import { ValidationError } from '../../../../types/errors';
 import { ThreadStatus } from '../../../../types/thread';
 import { now, diffTimestamp } from '../../../../utils';
-
-/**
- * 验证End节点配置
- */
-function validate(node: Node): void {
-  if (node.type !== NodeType.END) {
-    throw new ValidationError(`Invalid node type for end handler: ${node.type}`, `node.${node.id}`);
-  }
-
-  if (node.config && Object.keys(node.config).length > 0) {
-    throw new ValidationError('END node must have no configuration', `node.${node.id}`);
-  }
-}
 
 /**
  * 检查节点是否可以执行
@@ -45,9 +30,6 @@ function canExecute(thread: Thread, node: Node): boolean {
  * @returns 执行结果
  */
 export async function endHandler(thread: Thread, node: Node): Promise<any> {
-  // 验证节点配置
-  validate(node);
-
   // 检查是否可以执行
   if (!canExecute(thread, node)) {
     return {

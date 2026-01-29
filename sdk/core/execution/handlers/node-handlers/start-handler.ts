@@ -3,25 +3,10 @@
  * 负责执行START节点，标记工作流的开始，初始化Thread状态
  */
 
-import type { Node, StartNodeConfig } from '../../../../types/node';
+import type { Node } from '../../../../types/node';
 import type { Thread } from '../../../../types/thread';
-import { NodeType } from '../../../../types/node';
-import { ValidationError } from '../../../../types/errors';
 import { ThreadStatus } from '../../../../types/thread';
 import { now } from '../../../../utils';
-
-/**
- * 验证Start节点配置
- */
-function validate(node: Node): void {
-  if (node.type !== NodeType.START) {
-    throw new ValidationError(`Invalid node type for start handler: ${node.type}`, `node.${node.id}`);
-  }
-
-  if (node.config && Object.keys(node.config).length > 0) {
-    throw new ValidationError('START node must have no configuration', `node.${node.id}`);
-  }
-}
 
 /**
  * 检查节点是否可以执行
@@ -46,9 +31,6 @@ function canExecute(thread: Thread, node: Node): boolean {
  * @returns 执行结果
  */
 export async function startHandler(thread: Thread, node: Node): Promise<any> {
-  // 验证节点配置
-  validate(node);
-
   // 检查是否可以执行
   if (!canExecute(thread, node)) {
     return {

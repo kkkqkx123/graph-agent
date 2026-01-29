@@ -5,8 +5,7 @@
 
 import type { Node, LoopEndNodeConfig } from '../../../../types/node';
 import type { Thread } from '../../../../types/thread';
-import { NodeType } from '../../../../types/node';
-import { ValidationError, ExecutionError, NotFoundError } from '../../../../types/errors';
+import { ExecutionError, NotFoundError } from '../../../../types/errors';
 import { conditionEvaluator } from '../../../../utils/evalutor/condition-evaluator';
 import { now } from '../../../../utils';
 
@@ -20,21 +19,6 @@ interface LoopState {
   maxIterations: number;
   iterationCount: number;
   variableName: string;
-}
-
-/**
- * 验证LoopEnd节点配置
- */
-function validate(node: Node): void {
-  if (node.type !== NodeType.LOOP_END) {
-    throw new ValidationError(`Invalid node type for loop end handler: ${node.type}`, `node.${node.id}`);
-  }
-
-  const config = node.config as LoopEndNodeConfig;
-
-  if (!config.loopId || typeof config.loopId !== 'string') {
-    throw new ValidationError('Loop end node must have a valid loopId', `node.${node.id}`);
-  }
 }
 
 /**
@@ -151,9 +135,6 @@ function updateLoopState(loopState: LoopState): void {
  * @returns 执行结果
  */
 export async function loopEndHandler(thread: Thread, node: Node): Promise<any> {
-  // 验证节点配置
-  validate(node);
-
   // 检查是否可以执行
   if (!canExecute(thread, node)) {
     return {

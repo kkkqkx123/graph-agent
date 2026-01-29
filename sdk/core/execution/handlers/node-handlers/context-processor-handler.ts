@@ -5,27 +5,6 @@
 
 import type { Node, ContextProcessorNodeConfig } from '../../../../types/node';
 import type { Thread } from '../../../../types/thread';
-import { NodeType } from '../../../../types/node';
-import { ValidationError } from '../../../../types/errors';
-
-/**
- * 验证ContextProcessor节点配置
- */
-function validate(node: Node): void {
-  if (node.type !== NodeType.CONTEXT_PROCESSOR) {
-    throw new ValidationError(`Invalid node type for context processor handler: ${node.type}`, `node.${node.id}`);
-  }
-
-  const config = node.config as ContextProcessorNodeConfig;
-
-  if (!config.processorType || !['transform', 'filter', 'merge', 'split'].includes(config.processorType)) {
-    throw new ValidationError('ContextProcessor node must have a valid processorType (transform, filter, merge, or split)', `node.${node.id}`);
-  }
-
-  if (!config.rules || !Array.isArray(config.rules) || config.rules.length === 0) {
-    throw new ValidationError('ContextProcessor node must have at least one rule', `node.${node.id}`);
-  }
-}
 
 /**
  * 检查节点是否可以执行
@@ -82,9 +61,6 @@ function setNestedValue(obj: any, path: string, value: any): void {
  * @returns 执行结果
  */
 export async function contextProcessorHandler(thread: Thread, node: Node): Promise<any> {
-  // 验证节点配置
-  validate(node);
-
   // 检查是否可以执行
   if (!canExecute(thread, node)) {
     return {

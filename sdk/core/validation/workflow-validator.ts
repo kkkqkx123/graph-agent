@@ -10,6 +10,8 @@ import type { Node } from '../../types/node';
 import type { Edge } from '../../types/edge';
 import { NodeType } from '../../types/node';
 import { ValidationError, type ValidationResult } from '../../types/errors';
+import { validateNodeByType } from './node-validation';
+import { validateHooks } from './hook-validation';
 
 /**
  * 工作流变量schema
@@ -169,6 +171,38 @@ export class WorkflowValidator {
       }
       if (node.id) {
         nodeIds.add(node.id);
+      }
+
+      // 验证节点配置（使用节点验证函数）
+      if (node.id && node.type) {
+        try {
+          validateNodeByType(node);
+        } catch (error) {
+          if (error instanceof ValidationError) {
+            errors.push(error);
+          } else {
+            errors.push(new ValidationError(
+              error instanceof Error ? error.message : String(error),
+              `${path}.config`
+            ));
+          }
+        }
+      }
+
+      // 验证节点Hooks
+      if (node.id && node.hooks && node.hooks.length > 0) {
+        try {
+          validateHooks(node.hooks, node.id);
+        } catch (error) {
+          if (error instanceof ValidationError) {
+            errors.push(error);
+          } else {
+            errors.push(new ValidationError(
+              error instanceof Error ? error.message : String(error),
+              `${path}.hooks`
+            ));
+          }
+        }
       }
 
       // 统计START和END节点

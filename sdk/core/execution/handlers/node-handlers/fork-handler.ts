@@ -5,27 +5,6 @@
 
 import type { Node, ForkNodeConfig } from '../../../../types/node';
 import type { Thread } from '../../../../types/thread';
-import { NodeType } from '../../../../types/node';
-import { ValidationError } from '../../../../types/errors';
-
-/**
- * 验证Fork节点配置
- */
-function validate(node: Node): void {
-  if (node.type !== NodeType.FORK) {
-    throw new ValidationError(`Invalid node type for fork handler: ${node.type}`, `node.${node.id}`);
-  }
-
-  const config = node.config as ForkNodeConfig;
-
-  if (!config.forkId || typeof config.forkId !== 'string') {
-    throw new ValidationError('Fork node must have a valid forkId', `node.${node.id}`);
-  }
-
-  if (!config.forkStrategy || !['SERIAL', 'PARALLEL'].includes(config.forkStrategy)) {
-    throw new ValidationError('Fork node must have a valid forkStrategy (SERIAL or PARALLEL)', `node.${node.id}`);
-  }
-}
 
 /**
  * 检查节点是否可以执行
@@ -45,9 +24,6 @@ function canExecute(thread: Thread, node: Node): boolean {
  * @returns 执行结果
  */
 export async function forkHandler(thread: Thread, node: Node): Promise<any> {
-  // 验证节点配置
-  validate(node);
-
   // 检查是否可以执行
   if (!canExecute(thread, node)) {
     return {
