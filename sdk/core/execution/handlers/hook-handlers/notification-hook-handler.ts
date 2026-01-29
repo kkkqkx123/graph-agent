@@ -4,7 +4,7 @@
  */
 
 import type { NodeHook } from '../../../../types/node';
-import type { HookExecutionContext } from './hook-handler';
+import type { HookExecutionContext } from './index';
 import type { NodeCustomEvent } from '../../../../types/events';
 
 /**

@@ -13,7 +13,6 @@ import { ThreadContext } from '../context/thread-context';
 import { WorkflowContext } from '../context/workflow-context';
 import { VariableManager } from './variable-manager';
 import { ConversationManager } from '../conversation';
-import { LLMExecutor } from '../llm-executor';
 import { generateId, now as getCurrentTimestamp } from '../../../utils';
 import { WorkflowRegistry } from '../../registry/workflow-registry';
 import { getThreadRegistry, getWorkflowRegistry } from '../context/execution-context';

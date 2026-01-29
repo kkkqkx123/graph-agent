@@ -10,6 +10,7 @@
  */
 
 import type { LLMMessage, MessageMarkMap } from '../../types/llm';
+import { ExecutionError } from '../../types/errors';
 
 /**
  * 消息索引管理器类
@@ -58,9 +59,13 @@ export class MessageIndexManager {
   getCurrentBatchIndices(): number[] {
     const currentBoundaryIndex = this.markMap.boundaryToBatch.indexOf(this.markMap.currentBatch);
     if (currentBoundaryIndex === -1) {
-      throw new Error(`Current batch ${this.markMap.currentBatch} not found in boundaryToBatch`);
+      throw new ExecutionError(`Current batch ${this.markMap.currentBatch} not found in boundaryToBatch`);
     }
     const boundary = this.markMap.batchBoundaries[currentBoundaryIndex];
+    
+    if (boundary === undefined) {
+      throw new ExecutionError(`Boundary at index ${currentBoundaryIndex} is undefined`);
+    }
     
     return this.markMap.originalIndices.filter(index => index >= boundary);
   }
@@ -81,9 +86,12 @@ export class MessageIndexManager {
   isModified(originalIndex: number): boolean {
     const currentBoundaryIndex = this.markMap.boundaryToBatch.indexOf(this.markMap.currentBatch);
     if (currentBoundaryIndex === -1) {
-      throw new Error(`Current batch ${this.markMap.currentBatch} not found in boundaryToBatch`);
+      throw new ExecutionError(`Current batch ${this.markMap.currentBatch} not found in boundaryToBatch`);
     }
     const boundary = this.markMap.batchBoundaries[currentBoundaryIndex];
+    if (boundary === undefined) {
+      throw new ExecutionError(`Boundary at index ${currentBoundaryIndex} is undefined`);
+    }
     return originalIndex < boundary;
   }
 
@@ -95,9 +103,12 @@ export class MessageIndexManager {
   getBatchIndex(originalIndex: number): number {
     const currentBoundaryIndex = this.markMap.boundaryToBatch.indexOf(this.markMap.currentBatch);
     if (currentBoundaryIndex === -1) {
-      throw new Error(`Current batch ${this.markMap.currentBatch} not found in boundaryToBatch`);
+      throw new ExecutionError(`Current batch ${this.markMap.currentBatch} not found in boundaryToBatch`);
     }
     const boundary = this.markMap.batchBoundaries[currentBoundaryIndex];
+    if (boundary === undefined) {
+      throw new ExecutionError(`Boundary at index ${currentBoundaryIndex} is undefined`);
+    }
     return originalIndex - boundary;
   }
 
@@ -108,7 +119,7 @@ export class MessageIndexManager {
    * @returns 过滤后的消息数组
    */
   filterMessages(messages: LLMMessage[], indices: number[]): LLMMessage[] {
-    return indices.map(index => messages[index]);
+    return indices.map(index => messages[index]).filter((msg): msg is LLMMessage => msg !== undefined);
   }
 
   /**
@@ -118,7 +129,7 @@ export class MessageIndexManager {
   startNewBatch(boundaryIndex: number): void {
     // 验证边界索引
     if (boundaryIndex < 0 || boundaryIndex > this.markMap.originalIndices.length) {
-      throw new Error(`Invalid boundary index: ${boundaryIndex}`);
+      throw new ExecutionError(`Invalid boundary index: ${boundaryIndex}`);
     }
 
     // 添加新边界
@@ -137,7 +148,7 @@ export class MessageIndexManager {
   rollbackToBatch(targetBatch: number): void {
     // 验证目标批次
     if (!this.markMap.boundaryToBatch.includes(targetBatch)) {
-      throw new Error(`Target batch ${targetBatch} not found`);
+      throw new ExecutionError(`Target batch ${targetBatch} not found`);
     }
 
     // 找到目标批次的边界索引
@@ -159,9 +170,13 @@ export class MessageIndexManager {
     // 找到当前批次对应的边界
     const currentBoundaryIndex = this.markMap.boundaryToBatch.indexOf(this.markMap.currentBatch);
     if (currentBoundaryIndex === -1) {
-      throw new Error(`Current batch ${this.markMap.currentBatch} not found in boundaryToBatch`);
+      throw new ExecutionError(`Current batch ${this.markMap.currentBatch} not found in boundaryToBatch`);
     }
     const boundary = this.markMap.batchBoundaries[currentBoundaryIndex];
+    
+    if (boundary === undefined) {
+      throw new ExecutionError(`Boundary at index ${currentBoundaryIndex} is undefined`);
+    }
     
     // 标记索引小于边界的消息为已修改
     for (const index of indices) {
@@ -206,7 +221,9 @@ export class MessageIndexManager {
     
     // 检查边界索引顺序
     for (let i = 1; i < this.markMap.batchBoundaries.length; i++) {
-      if (this.markMap.batchBoundaries[i] <= this.markMap.batchBoundaries[i - 1]) {
+      const current = this.markMap.batchBoundaries[i];
+      const previous = this.markMap.batchBoundaries[i - 1];
+      if (current === undefined || previous === undefined || current <= previous) {
         return false;
       }
     }

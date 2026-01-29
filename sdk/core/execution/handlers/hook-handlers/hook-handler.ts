@@ -10,18 +10,7 @@ import type { Thread } from '../../../../types/thread';
 import type { NodeExecutionResult } from '../../../../types/thread';
 import type { NodeCustomEvent } from '../../../../types/events';
 import { getHookHandler } from './index';
-
-/**
- * Hook执行上下文
- */
-export interface HookExecutionContext {
-  /** Thread实例 */
-  thread: Thread;
-  /** 节点定义 */
-  node: Node;
-  /** 节点执行结果（AFTER_EXECUTE时可用） */
-  result?: NodeExecutionResult;
-}
+import type { HookExecutionContext } from './index';
 
 /**
  * 执行指定类型的Hook

@@ -3,16 +3,35 @@
  * 提供Hook执行的统一接口
  */
 
-import type { NodeHook } from '../../../../types/node';
+import type { Node, NodeHook } from '../../../../types/node';
 import { HookName } from '../../../../types/node';
-import type { HookExecutionContext } from './hook-handler';
+import type { Thread } from '../../../../types/thread';
+import type { NodeExecutionResult } from '../../../../types/thread';
 import type { NodeCustomEvent } from '../../../../types/events';
 
-// 导入接口定义
-import type { HookHandler } from './interfaces';
+/**
+ * Hook执行上下文接口
+ */
+export interface HookExecutionContext {
+  /** Thread实例 */
+  thread: Thread;
+  /** 节点定义 */
+  node: Node;
+  /** 节点执行结果（AFTER_EXECUTE时可用） */
+  result?: NodeExecutionResult;
+}
 
-// 导出接口定义
-export type { HookHandler } from './interfaces';
+/**
+ * Hook处理器类型
+ * @param context Hook执行上下文
+ * @param hook Hook配置
+ * @param emitEvent 事件发射函数
+ */
+export type HookHandler = (
+  context: HookExecutionContext,
+  hook: NodeHook,
+  emitEvent: (event: NodeCustomEvent) => Promise<void>
+) => Promise<void>;
 
 // 导入各个Hook处理器
 import { customHookHandler } from './custom-hook-handler';
@@ -102,7 +121,6 @@ async function defaultHookHandler(
 
 // 导出主执行函数
 export { executeHook } from './hook-handler';
-export type { HookExecutionContext } from './hook-handler';
 
 // 导出各个Hook处理器
 export { customHookHandler } from './custom-hook-handler';

@@ -3,7 +3,7 @@
  * 负责构建Hook执行所需的评估上下文
  */
 
-import type { HookExecutionContext } from '../hook-handler';
+import type { HookExecutionContext } from '../index';
 import type { EvaluationContext } from '../../../../../types/condition';
 
 /**

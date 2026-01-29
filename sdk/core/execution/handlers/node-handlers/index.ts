@@ -6,12 +6,16 @@
  */
 
 import { NodeType } from '../../../../types/node';
+import type { Node } from '../../../../types/node';
+import type { Thread } from '../../../../types/thread';
 
-// 导入接口定义
-import type { NodeHandler } from './interfaces';
-
-// 导出接口定义
-export type { NodeHandler } from './interfaces';
+/**
+ * 节点处理函数类型
+ * @param thread Thread实例
+ * @param node 节点定义
+ * @returns 执行结果
+ */
+export type NodeHandler = (thread: Thread, node: Node) => Promise<any>;
 
 // 导入各个节点处理函数
 import { startHandler } from './start-handler';

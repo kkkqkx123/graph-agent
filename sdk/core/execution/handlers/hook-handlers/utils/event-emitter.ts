@@ -3,7 +3,7 @@
  * 负责触发Hook相关的自定义事件
  */
 
-import type { HookExecutionContext } from '../hook-handler';
+import type { HookExecutionContext } from '../index';
 import type { NodeCustomEvent } from '../../../../../types/events';
 import { EventType } from '../../../../../types/events';
 
