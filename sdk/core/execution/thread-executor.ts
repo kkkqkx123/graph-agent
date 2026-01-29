@@ -23,7 +23,8 @@ import { EventManager } from './managers/event-manager';
 import { NotFoundError } from '../../types/errors';
 import { EventType } from '../../types/events';
 import type { NodeStartedEvent, NodeCompletedEvent, NodeFailedEvent, ErrorEvent, SubgraphStartedEvent, SubgraphCompletedEvent } from '../../types/events';
-import { HookExecutor } from './handlers/hook-handler';
+import { executeHook } from './handlers/hook-handlers';
+import { HookType } from '../../types/node';
 import { NodeType } from '../../types/node';
 import { ThreadStatus } from '../../types/thread';
 import { now, diffTimestamp } from '../../utils';
@@ -238,10 +239,10 @@ export class ThreadExecutor {
       });
 
       // 步骤2：执行BEFORE_EXECUTE类型的Hook
-      const hookExecutor = new HookExecutor();
       if (node.hooks && node.hooks.length > 0) {
-        await hookExecutor.executeBeforeExecute(
+        await executeHook(
           { thread: threadContext.thread, node },
+          HookType.BEFORE_EXECUTE,
           (event) => this.eventManager.emit(event)
         );
       }
@@ -278,8 +279,9 @@ export class ThreadExecutor {
 
       // 步骤5：执行AFTER_EXECUTE类型的Hook
       if (node.hooks && node.hooks.length > 0) {
-        await hookExecutor.executeAfterExecute(
+        await executeHook(
           { thread: threadContext.thread, node, result: nodeResult },
+          HookType.AFTER_EXECUTE,
           (event) => this.eventManager.emit(event)
         );
       }
