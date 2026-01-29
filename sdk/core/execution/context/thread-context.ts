@@ -6,13 +6,12 @@
  * 直接使用Thread中的graph进行图操作
  */
 
-import type { Thread, Graph } from '../../../types';
+import type { Thread } from '../../../types';
 import type { ID } from '../../../types/common';
 import { WorkflowContext } from './workflow-context';
 import { ConversationManager } from '../conversation';
 import { VariableManager } from '../managers/variable-manager';
 import { GraphNavigator } from '../../graph/graph-navigator';
-import { GraphData } from '../../entities/graph-data';
 
 /**
  * 子图执行上下文
