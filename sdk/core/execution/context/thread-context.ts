@@ -274,8 +274,7 @@ export class ThreadContext {
    */
   getNavigator(): GraphNavigator {
     if (!this.navigator) {
-      // thread.graph 是 DAG 类型，GraphData 实现了 DAG 接口
-      this.navigator = new GraphNavigator(this.thread.graph as GraphData);
+      this.navigator = new GraphNavigator(this.thread.graph);
     }
     return this.navigator;
   }

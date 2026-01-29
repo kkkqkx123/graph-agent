@@ -15,12 +15,33 @@
  */
 
 import type { LLMMessage, LLMResult } from '../../types/llm';
-import type {
-  LLMExecutionRequestData,
-  LLMExecutionResult as InternalLLMExecutionResult
-} from '../../types/internal-events';
 import { LLMWrapper } from '../llm/wrapper';
 import { ExecutionError } from '../../types/errors';
+
+/**
+ * LLM执行请求数据
+ */
+export interface LLMExecutionRequestData {
+  prompt: string;
+  profileId: string;
+  parameters: Record<string, any>;
+  tools?: any[];
+  stream?: boolean;
+}
+
+/**
+ * LLM执行结果
+ */
+export interface LLMExecutionResult {
+  content: string;
+  usage?: any;
+  finishReason?: string;
+  toolCalls?: Array<{
+    id: string;
+    name: string;
+    arguments: string;
+  }>;
+}
 
 /**
  * LLM执行器类（无状态单例）
@@ -60,7 +81,7 @@ export class LLMExecutor {
   async executeLLMCall(
     messages: LLMMessage[],
     requestData: LLMExecutionRequestData
-  ): Promise<InternalLLMExecutionResult> {
+  ): Promise<LLMExecutionResult> {
     // 构建LLM请求
     const llmRequest = {
       profileId: requestData.profileId,

@@ -1,11 +1,12 @@
 /**
  * EventManager - 事件管理器
  * 管理工作流执行过程中的事件，提供事件监听和分发机制
- * 支持全局事件和内部协调事件
+ * 仅支持全局事件，用于对外暴露工作流执行状态
+ *
+ * 注意：内部事件机制已移除，改用直接方法调用
  */
 
 import type { BaseEvent, EventType, EventListener } from '../../../types/events';
-import type { BaseInternalEvent, InternalEventType } from '../../../types/internal-events';
 import { now, generateId } from '../../../utils';
 
 /**
@@ -22,19 +23,16 @@ interface ListenerWrapper<T> {
  *
  * 职责：
  * - 全局事件：对外暴露，用户可监听（如 THREAD_STARTED、NODE_COMPLETED）
- * - 内部事件：模块内部协调，不对外暴露（如 COPY_REQUEST、COPY_COMPLETED）
+ * - 提供事件注册、注销、触发等核心功能
  *
  * 设计原则：
- * - 内部事件监听器与全局事件完全分离，提高安全性
- * - 内部事件只能通过 onInternal/emitInternal 访问
+ * - 仅支持全局事件，用于工作流状态通知
+ * - 内部协调改用直接方法调用
  */
 export class EventManager {
   // 全局事件监听器（对外暴露）
   private globalListeners: Map<string, ListenerWrapper<any>[]> = new Map();
   private globalWildcardListeners: ListenerWrapper<any>[] = [];
-
-  // 内部事件监听器（仅内部使用）
-  private internalListeners: Map<string, ListenerWrapper<any>[]> = new Map();
 
   /**
    * 注册事件监听器（全局事件）
@@ -44,16 +42,6 @@ export class EventManager {
    */
   on<T extends BaseEvent>(eventType: EventType, listener: EventListener<T>): () => void {
     return this.registerGlobalListener(eventType, listener);
-  }
-
-  /**
-   * 注册事件监听器（内部协调事件）
-   * @param eventType 事件类型
-   * @param listener 事件监听器
-   * @returns 注销函数
-   */
-  onInternal<T extends BaseInternalEvent>(eventType: InternalEventType, listener: (event: T) => void | Promise<void>): () => void {
-    return this.registerInternalListener(eventType, listener);
   }
 
   /**
@@ -89,38 +77,6 @@ export class EventManager {
   }
 
   /**
-   * 注册内部事件监听器
-   * @param eventType 事件类型
-   * @param listener 事件监听器
-   * @returns 注销函数
-   */
-  private registerInternalListener<T>(eventType: string, listener: (event: T) => void | Promise<void>): () => void {
-    // 验证参数
-    if (!eventType) {
-      throw new Error('EventType is required');
-    }
-    if (typeof listener !== 'function') {
-      throw new Error('Listener must be a function');
-    }
-
-    // 创建监听器包装器
-    const wrapper: ListenerWrapper<T> = {
-      listener,
-      id: generateId(),
-      timestamp: now()
-    };
-
-    // 添加到内部监听器列表
-    if (!this.internalListeners.has(eventType)) {
-      this.internalListeners.set(eventType, []);
-    }
-    this.internalListeners.get(eventType)!.push(wrapper);
-
-    // 返回注销函数
-    return () => this.unregisterInternalListener(eventType, listener);
-  }
-
-  /**
    * 注销事件监听器（全局事件）
    * @param eventType 事件类型
    * @param listener 事件监听器
@@ -128,16 +84,6 @@ export class EventManager {
    */
   off<T extends BaseEvent>(eventType: EventType, listener: EventListener<T>): boolean {
     return this.unregisterGlobalListener(eventType, listener);
-  }
-
-  /**
-   * 注销事件监听器（内部协调事件）
-   * @param eventType 事件类型
-   * @param listener 事件监听器
-   * @returns 是否成功注销
-   */
-  offInternal<T extends BaseInternalEvent>(eventType: InternalEventType, listener: (event: T) => void | Promise<void>): boolean {
-    return this.unregisterInternalListener(eventType, listener);
   }
 
   /**
@@ -178,67 +124,11 @@ export class EventManager {
   }
 
   /**
-   * 注销内部事件监听器
-   * @param eventType 事件类型
-   * @param listener 事件监听器
-   * @returns 是否成功注销
-   */
-  private unregisterInternalListener<T>(eventType: string, listener: (event: T) => void | Promise<void>): boolean {
-    // 验证参数
-    if (!eventType) {
-      throw new Error('EventType is required');
-    }
-    if (typeof listener !== 'function') {
-      throw new Error('Listener must be a function');
-    }
-
-    // 获取监听器数组
-    const wrappers = this.internalListeners.get(eventType);
-    if (!wrappers) {
-      return false;
-    }
-
-    // 查找并移除监听器
-    const index = wrappers.findIndex(w => w.listener === listener);
-    if (index === -1) {
-      return false;
-    }
-
-    wrappers.splice(index, 1);
-
-    // 如果数组为空，删除映射
-    if (wrappers.length === 0) {
-      this.internalListeners.delete(eventType);
-    }
-
-    return true;
-  }
-
-  /**
-   * 触发事件（全局事件）
+   * 触发事件
    * @param event 事件对象
    * @returns Promise，等待所有监听器完成
    */
   async emit<T extends BaseEvent>(event: T): Promise<void> {
-    return this.dispatchEvent(event, true);
-  }
-
-  /**
-   * 触发事件（内部协调事件）
-   * @param event 事件对象
-   * @returns Promise，等待所有监听器完成
-   */
-  async emitInternal<T extends BaseInternalEvent>(event: T): Promise<void> {
-    return this.dispatchEvent(event, false);
-  }
-
-  /**
-   * 内部触发事件
-   * @param event 事件对象
-   * @param isGlobal 是否为全局事件
-   * @returns Promise，等待所有监听器完成
-   */
-  private async dispatchEvent<T extends { type: string }>(event: T, isGlobal: boolean): Promise<void> {
     // 验证事件
     if (!event) {
       throw new Error('Event is required');
@@ -247,10 +137,9 @@ export class EventManager {
       throw new Error('Event type is required');
     }
 
-    // 根据事件类型选择监听器列表
-    const listeners = isGlobal ? this.globalListeners : this.internalListeners;
-    const wrappers = listeners.get(event.type) || [];
-    const allWrappers = isGlobal ? [...wrappers, ...this.globalWildcardListeners] : wrappers;
+    // 获取监听器
+    const wrappers = this.globalListeners.get(event.type) || [];
+    const allWrappers = [...wrappers, ...this.globalWildcardListeners];
 
     // 执行监听器
     const promises = allWrappers.map(async (wrapper) => {
@@ -350,19 +239,4 @@ export class EventManager {
     return count;
   }
 
-  /**
-   * 获取内部监听器数量（仅用于调试）
-   * @param eventType 事件类型（可选）
-   * @returns 监听器数量
-   */
-  getInternalListenerCount(eventType?: InternalEventType): number {
-    if (eventType) {
-      return this.internalListeners.get(eventType)?.length || 0;
-    }
-    let count = 0;
-    for (const wrappers of this.internalListeners.values()) {
-      count += wrappers.length;
-    }
-    return count;
-  }
 }

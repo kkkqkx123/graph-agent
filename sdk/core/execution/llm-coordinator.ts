@@ -15,11 +15,7 @@
  * - 通过直接方法调用而非事件机制与调用方交互
  */
 
-import type {
-  LLMExecutionRequestData,
-  LLMExecutionResult,
-  ContextSnapshot
-} from '../../types/internal-events';
+import type { LLMMessage } from '../../types/llm';
 import { ConversationManager } from './conversation';
 import { LLMExecutor } from './llm-executor';
 import { ToolService } from '../tools/tool-service';
@@ -32,10 +28,14 @@ export interface LLMExecutionParams {
   threadId: string;
   /** 节点ID */
   nodeId: string;
-  /** LLM请求数据 */
-  requestData: LLMExecutionRequestData;
-  /** 上下文快照（可选） */
-  contextSnapshot?: ContextSnapshot;
+  /** 提示词 */
+  prompt: string;
+  /** LLM配置ID */
+  profileId?: string;
+  /** LLM参数 */
+  parameters?: Record<string, any>;
+  /** 工具列表 */
+  tools?: any[];
 }
 
 /**
@@ -44,12 +44,12 @@ export interface LLMExecutionParams {
 export interface LLMExecutionResponse {
   /** 是否成功 */
   success: boolean;
-  /** LLM执行结果 */
-  result?: LLMExecutionResult;
+  /** LLM响应内容 */
+  content?: string;
   /** 错误信息 */
   error?: Error;
-  /** 更新后的上下文 */
-  updatedContext?: ContextSnapshot;
+  /** 消息历史 */
+  messages?: LLMMessage[];
 }
 
 /**
@@ -87,13 +87,11 @@ export class LLMCoordinator {
    */
   async executeLLM(params: LLMExecutionParams): Promise<LLMExecutionResponse> {
     try {
-      const result = await this.handleLLMExecution(params);
+      const content = await this.handleLLMExecution(params);
       return {
         success: true,
-        result,
-        updatedContext: {
-          conversationHistory: this.getConversationManager(params.threadId)?.getMessages()
-        }
+        content,
+        messages: this.getConversationManager(params.threadId)?.getMessages()
       };
     } catch (error) {
       return {
@@ -111,30 +109,27 @@ export class LLMCoordinator {
    * 2. 执行LLM调用
    * 3. 如果有工具调用，执行工具并添加结果到对话历史
    * 4. 重复步骤2-3，直到没有工具调用
-   * 5. 返回最终结果
+   * 5. 返回最终内容
    *
    * @param params 执行参数
-   * @returns LLM执行结果
+   * @returns LLM响应内容
    */
-  private async handleLLMExecution(params: LLMExecutionParams): Promise<LLMExecutionResult> {
-    const { threadId, requestData, contextSnapshot } = params;
+  private async handleLLMExecution(params: LLMExecutionParams): Promise<string> {
+    const { threadId, prompt, profileId, parameters, tools } = params;
 
     // 步骤1：获取或创建 ConversationManager
-    const conversationManager = this.getOrCreateConversationManager(
-      threadId,
-      contextSnapshot
-    );
+    const conversationManager = this.getOrCreateConversationManager(threadId);
 
     // 步骤2：添加用户消息
     conversationManager.addMessage({
       role: 'user',
-      content: requestData.prompt
+      content: prompt
     });
 
     // 步骤3：执行LLM调用循环
-    const maxIterations = Infinity;
+    const maxIterations = 10;
     let iterationCount = 0;
-    let finalResult: LLMExecutionResult | null = null;
+    let finalContent = '';
 
     while (iterationCount < maxIterations) {
       iterationCount++;
@@ -145,7 +140,12 @@ export class LLMCoordinator {
       // 执行LLM调用
       const llmResult = await this.llmExecutor.executeLLMCall(
         conversationManager.getMessages(),
-        requestData
+        {
+          prompt,
+          profileId: profileId || 'default',
+          parameters: parameters || {},
+          tools
+        }
       );
 
       // 更新Token使用统计
@@ -160,7 +160,7 @@ export class LLMCoordinator {
       conversationManager.addMessage({
         role: 'assistant',
         content: llmResult.content,
-        toolCalls: llmResult.toolCalls?.map(tc => ({
+        toolCalls: llmResult.toolCalls?.map((tc: any) => ({
           id: tc.id,
           type: 'function' as const,
           function: {
@@ -169,6 +169,8 @@ export class LLMCoordinator {
           }
         }))
       });
+
+      finalContent = llmResult.content;
 
       // 检查是否有工具调用
       if (llmResult.toolCalls && llmResult.toolCalls.length > 0) {
@@ -181,14 +183,13 @@ export class LLMCoordinator {
         // 继续循环让LLM处理工具结果
         continue;
       } else {
-        // 没有工具调用，保存最终结果并退出循环
-        finalResult = llmResult;
+        // 没有工具调用，退出循环
         break;
       }
     }
 
-    // 返回最终结果
-    return finalResult!;
+    // 返回最终内容
+    return finalContent;
   }
 
   /**
@@ -241,13 +242,9 @@ export class LLMCoordinator {
   /**
    * 获取或创建 ConversationManager
    * @param threadId 线程ID
-   * @param contextSnapshot 上下文快照（可选）
    * @returns ConversationManager 实例
    */
-  private getOrCreateConversationManager(
-    threadId: string,
-    contextSnapshot?: ContextSnapshot
-  ): ConversationManager {
+  private getOrCreateConversationManager(threadId: string): ConversationManager {
     // 如果已存在，直接返回
     if (this.conversationManagers.has(threadId)) {
       return this.conversationManagers.get(threadId)!;
@@ -255,13 +252,6 @@ export class LLMCoordinator {
 
     // 创建新的 ConversationManager
     const conversationManager = new ConversationManager();
-
-    // 恢复对话历史
-    if (contextSnapshot?.conversationHistory) {
-      for (const message of contextSnapshot.conversationHistory) {
-        conversationManager.addMessage(message);
-      }
-    }
 
     // 缓存 ConversationManager
     this.conversationManagers.set(threadId, conversationManager);

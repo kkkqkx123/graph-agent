@@ -80,8 +80,17 @@ export type NodeMap = Map<ID, GraphNode>;
 export type EdgeMap = Map<ID, GraphEdge>;
 
 /**
- * 有向图类型
- * 用于工作流验证和分析的核心数据结构
+ * 有向图接口（DAG - Directed Acyclic Graph）
+ *
+ * 设计说明：
+ * - DAG 是图的数据接口，定义了图应该包含的数据结构
+ * - 当前项目中，GraphData 是 DAG 的唯一实现
+ * - DAG 接口保留是为了未来可能的多种图实现（如优化版本、持久化版本等）
+ * - 新代码应优先使用 GraphData 类型，避免不必要的类型转换
+ *
+ * 使用场景：
+ * - 类型定义中需要表示图结构时使用 DAG 接口
+ * - 实际使用时，所有图实例都是 GraphData 类型
  */
 export interface DAG {
   /** 节点集合 */

@@ -14,11 +14,12 @@ import type {
   WorkflowRelationship,
   WorkflowHierarchy
 } from '../../types/workflow';
-import type { DAG, GraphBuildOptions } from '../../types/graph';
+import type { GraphBuildOptions } from '../../types/graph';
 import type { ID } from '../../types/common';
 import { WorkflowValidator } from '../validation/workflow-validator';
 import { GraphBuilder } from '../graph/graph-builder';
 import { GraphValidator } from '../validation/graph-validator';
+import { GraphData } from '../graph/graph-data';
 import { ValidationError } from '../../types/errors';
 import { now } from '../../utils';
 
@@ -59,7 +60,7 @@ export class WorkflowRegistry {
   private workflows: Map<string, WorkflowDefinition> = new Map();
   private versions: Map<string, WorkflowVersion[]> = new Map();
   private processedWorkflows: Map<string, ProcessedWorkflowDefinition> = new Map();
-  private graphCache: Map<string, DAG> = new Map();
+  private graphCache: Map<string, GraphData> = new Map();
   private workflowRelationships: Map<string, WorkflowRelationship> = new Map();
   private validator: WorkflowValidator;
   private enableVersioning: boolean;
@@ -579,9 +580,9 @@ export class WorkflowRegistry {
   /**
    * 获取工作流的图结构
    * @param workflowId 工作流ID
-   * @returns 图结构，如果不存在则返回undefined
+   * @returns 图结构（GraphData类型），如果不存在则返回undefined
    */
-  getGraph(workflowId: string): DAG | undefined {
+  getGraph(workflowId: string): GraphData | undefined {
     return this.graphCache.get(workflowId);
   }
 
@@ -732,7 +733,7 @@ export class WorkflowRegistry {
         depth: 0
       });
     }
-    
+
     // 2. 更新子工作流关系
     const childRelationship = this.workflowRelationships.get(childWorkflowId);
     if (!childRelationship) {
@@ -754,7 +755,7 @@ export class WorkflowRegistry {
   getWorkflowHierarchy(workflowId: string): WorkflowHierarchy {
     const ancestors: string[] = [];
     const descendants: string[] = [];
-    
+
     // 构建祖先链
     let currentId = workflowId;
     while (currentId) {
@@ -766,10 +767,10 @@ export class WorkflowRegistry {
         break;
       }
     }
-    
+
     // 构建后代链（递归）
     this.collectDescendants(workflowId, descendants);
-    
+
     const relationship = this.workflowRelationships.get(workflowId);
     return {
       ancestors,
@@ -805,7 +806,7 @@ export class WorkflowRegistry {
   private collectDescendants(workflowId: string, result: string[]): void {
     const relationship = this.workflowRelationships.get(workflowId);
     if (!relationship) return;
-    
+
     for (const childId of relationship.childWorkflowIds) {
       if (!result.includes(childId)) {
         result.push(childId);

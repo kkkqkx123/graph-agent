@@ -5,7 +5,7 @@
  */
 
 import type { ID, Timestamp, Version, Metadata } from './common';
-import type { DAG } from './graph';
+import type { GraphData } from '../core/graph/graph-data';
 
 /**
  * 线程状态枚举
@@ -140,8 +140,8 @@ export interface Thread {
   status: ThreadStatus;
   /** 当前执行节点ID */
   currentNodeId: ID;
-  /** 工作流图结构（包含节点、边、权重、条件等完整信息） */
-  graph: DAG;
+  /** 工作流图结构（使用 GraphData 类型，避免类型转换） */
+  graph: GraphData;
   /** 变量数组（用于持久化和元数据） */
   variables: ThreadVariable[];
   /** 变量值映射（用于快速访问） */

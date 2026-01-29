@@ -29,7 +29,7 @@ import { now, diffTimestamp } from '../../utils';
 import { getNodeHandler } from './handlers/node-handlers';
 import { SUBGRAPH_METADATA_KEYS, SubgraphBoundaryType } from '../../types/subgraph';
 import { LLMCoordinator, type LLMExecutionParams } from './llm-coordinator';
-import type { LLMExecutionRequestData } from '../../types/internal-events';
+import type { LLMExecutionRequestData } from './llm-executor';
 
 /**
  * ThreadExecutor - Thread 执行器
@@ -356,12 +356,10 @@ export class ThreadExecutor {
       const result = await this.llmCoordinator.executeLLM({
         threadId: threadContext.getThreadId(),
         nodeId: node.id,
-        requestData,
-        contextSnapshot: {
-          conversationHistory: threadContext.conversationManager.getMessages(),
-          variableValues: threadContext.getAllVariables(),
-          nodeResults: threadContext.getNodeResults()
-        }
+        prompt: requestData.prompt,
+        profileId: requestData.profileId,
+        parameters: requestData.parameters,
+        tools: requestData.tools
       });
 
       const endTime = now();
@@ -372,7 +370,7 @@ export class ThreadExecutor {
           nodeType: node.type,
           status: 'COMPLETED',
           step: threadContext.thread.nodeResults.length + 1,
-          data: result.result,
+          data: { content: result.content },
           startTime,
           endTime,
           executionTime: diffTimestamp(startTime, endTime)
