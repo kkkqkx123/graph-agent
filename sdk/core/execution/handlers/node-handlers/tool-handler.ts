@@ -3,27 +3,11 @@
  * 负责执行TOOL节点，调用工具服务，处理工具响应
  */
 
-import type { Node } from '../../../../types/node';
+import type { Node, ToolNodeConfig } from '../../../../types/node';
 import type { Thread } from '../../../../types/thread';
 import { NodeType } from '../../../../types/node';
 import { ValidationError } from '../../../../types/errors';
 import { now } from '../../../../utils';
-
-/**
- * Tool节点配置
- */
-interface ToolNodeConfig {
-  /** 工具名称 */
-  toolName: string;
-  /** 工具参数 */
-  parameters: Record<string, any>;
-  /** 超时时间（毫秒） */
-  timeout?: number;
-  /** 重试次数 */
-  retries?: number;
-  /** 重试延迟（毫秒） */
-  retryDelay?: number;
-}
 
 /**
  * 验证Tool节点配置
@@ -93,7 +77,13 @@ function resolveStringVariables(str: string, thread: Thread): string {
 
   return str.replace(variablePattern, (match, varPath) => {
     const parts = varPath.split('.');
+    // 首先尝试从 local 变量中获取
     let value: any = thread.variableValues || {};
+    
+    // 如果第一部分在 local 变量中不存在，尝试从 global 变量中获取
+    if (parts.length > 0 && !(parts[0] in value) && thread.globalVariableValues) {
+      value = thread.globalVariableValues;
+    }
 
     for (const part of parts) {
       if (value === null || value === undefined) {

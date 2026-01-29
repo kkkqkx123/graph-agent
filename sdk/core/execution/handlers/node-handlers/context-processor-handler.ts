@@ -3,27 +3,10 @@
  * 负责执行CONTEXT_PROCESSOR节点，处理和转换上下文数据
  */
 
-import type { Node } from '../../../../types/node';
+import type { Node, ContextProcessorNodeConfig } from '../../../../types/node';
 import type { Thread } from '../../../../types/thread';
 import { NodeType } from '../../../../types/node';
 import { ValidationError } from '../../../../types/errors';
-
-/**
- * ContextProcessor节点配置
- */
-interface ContextProcessorNodeConfig {
-  /** 处理类型 */
-  processorType: 'transform' | 'filter' | 'merge' | 'split';
-  /** 处理规则 */
-  rules: Array<{
-    /** 源路径 */
-    sourcePath: string;
-    /** 目标路径 */
-    targetPath: string;
-    /** 转换函数 */
-    transform?: string;
-  }>;
-}
 
 /**
  * 验证ContextProcessor节点配置

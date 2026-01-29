@@ -3,27 +3,10 @@
  * 负责执行ROUTE节点，根据条件选择下一个节点
  */
 
-import type { Node } from '../../../../types/node';
+import type { Node, RouteNodeConfig } from '../../../../types/node';
 import type { Thread } from '../../../../types/thread';
 import { NodeType } from '../../../../types/node';
 import { ValidationError } from '../../../../types/errors';
-
-/**
- * Route节点配置
- */
-interface RouteNodeConfig {
-  /** 路由规则 */
-  routes: Array<{
-    /** 条件表达式 */
-    condition: string;
-    /** 目标节点ID */
-    targetNodeId: string;
-    /** 优先级 */
-    priority?: number;
-  }>;
-  /** 默认目标节点ID */
-  defaultTargetNodeId?: string;
-}
 
 /**
  * 验证Route节点配置

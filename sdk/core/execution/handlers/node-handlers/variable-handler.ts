@@ -3,27 +3,11 @@
  * 负责执行VARIABLE节点，执行变量表达式，更新变量值
  */
 
-import type { Node } from '../../../../types/node';
+import type { Node, VariableNodeConfig } from '../../../../types/node';
 import type { Thread } from '../../../../types/thread';
 import { NodeType } from '../../../../types/node';
 import { ValidationError } from '../../../../types/errors';
 import { now } from '../../../../utils';
-
-/**
- * Variable节点配置
- */
-interface VariableNodeConfig {
-  /** 变量名称 */
-  variableName: string;
-  /** 变量类型 */
-  variableType: 'number' | 'string' | 'boolean' | 'array' | 'object';
-  /** 变量表达式 */
-  expression: string;
-  /** 变量作用域 */
-  scope?: 'local' | 'global';
-  /** 是否只读 */
-  readonly?: boolean;
-}
 
 /**
  * 验证Variable节点配置
@@ -75,7 +59,13 @@ function resolveVariableReferences(expression: string, thread: Thread): string {
 
   return expression.replace(variablePattern, (match, varPath) => {
     const parts = varPath.split('.');
-    let value: any = thread.variableValues[parts[0]];
+    // 首先尝试从 local 变量中获取
+    let value: any = thread.variableValues?.[parts[0]];
+    
+    // 如果第一部分在 local 变量中不存在，尝试从 global 变量中获取
+    if (value === undefined && thread.globalVariableValues) {
+      value = thread.globalVariableValues[parts[0]];
+    }
 
     for (let i = 1; i < parts.length; i++) {
       if (value === null || value === undefined) {

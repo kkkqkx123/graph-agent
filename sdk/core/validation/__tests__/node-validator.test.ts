@@ -379,8 +379,8 @@ describe('NodeValidator', () => {
         outgoingEdgeIds: []
       };
       const result = validator.validateNode(node);
-      expect(result.valid).toBe(false);
-      expect(result.errors.some(e => e.field?.includes('timeout'))).toBe(true);
+      // timeout is now optional, so this should be valid
+      expect(result.valid).toBe(true);
     });
 
     it('should return error for CODE node without retries', () => {
@@ -399,8 +399,8 @@ describe('NodeValidator', () => {
         outgoingEdgeIds: []
       };
       const result = validator.validateNode(node);
-      expect(result.valid).toBe(false);
-      expect(result.errors.some(e => e.field?.includes('retries'))).toBe(true);
+      // retries is now optional, so this should be valid
+      expect(result.valid).toBe(true);
     });
   });
 
@@ -532,8 +532,10 @@ describe('NodeValidator', () => {
         name: 'Route',
         type: NodeType.ROUTE,
         config: {
-          conditions: ['input.value > 10', 'input.value <= 10'],
-          nextNodes: ['node-2', 'node-3']
+          routes: [
+            { condition: 'input.value > 10', targetNodeId: 'node-2' },
+            { condition: 'input.value <= 10', targetNodeId: 'node-3' }
+          ]
         },
         incomingEdgeIds: [],
         outgoingEdgeIds: []
@@ -543,53 +545,52 @@ describe('NodeValidator', () => {
       expect(result.errors).toHaveLength(0);
     });
 
-    it('should return error for ROUTE node without conditions', () => {
+    it('should return error for ROUTE node without routes', () => {
       const node: Node = {
         id: 'node-1',
         name: 'Route',
         type: NodeType.ROUTE,
         config: {
-          nextNodes: ['node-2']
+          routes: []
         } as any,
         incomingEdgeIds: [],
         outgoingEdgeIds: []
       };
       const result = validator.validateNode(node);
       expect(result.valid).toBe(false);
-      expect(result.errors.some(e => e.field?.includes('conditions'))).toBe(true);
+      expect(result.errors.some(e => e.field?.includes('routes'))).toBe(true);
     });
 
-    it('should return error for ROUTE node without nextNodes', () => {
+    it('should return error for ROUTE node without route condition', () => {
       const node: Node = {
         id: 'node-1',
         name: 'Route',
         type: NodeType.ROUTE,
         config: {
-          conditions: ['input.value > 10']
-        } as any,
-        incomingEdgeIds: [],
-        outgoingEdgeIds: []
-      };
-      const result = validator.validateNode(node);
-      expect(result.valid).toBe(false);
-      expect(result.errors.some(e => e.field?.includes('nextNodes'))).toBe(true);
-    });
-
-    it('should return error for ROUTE node with mismatched conditions and nextNodes length', () => {
-      const node: Node = {
-        id: 'node-1',
-        name: 'Route',
-        type: NodeType.ROUTE,
-        config: {
-          conditions: ['input.value > 10', 'input.value <= 10'],
-          nextNodes: ['node-2']
+          routes: [{ targetNodeId: 'node-2' } as any]
         },
         incomingEdgeIds: [],
         outgoingEdgeIds: []
       };
       const result = validator.validateNode(node);
       expect(result.valid).toBe(false);
-      expect(result.errors.some(e => e.message.includes('same length'))).toBe(true);
+      expect(result.errors.some(e => e.field?.includes('condition'))).toBe(true);
+    });
+
+    it('should return error for ROUTE node without route targetNodeId', () => {
+      const node: Node = {
+        id: 'node-1',
+        name: 'Route',
+        type: NodeType.ROUTE,
+        config: {
+          routes: [{ condition: 'input.value > 10' } as any]
+        },
+        incomingEdgeIds: [],
+        outgoingEdgeIds: []
+      };
+      const result = validator.validateNode(node);
+      expect(result.valid).toBe(false);
+      expect(result.errors.some(e => e.field?.includes('targetNodeId'))).toBe(true);
     });
   });
 
@@ -600,8 +601,10 @@ describe('NodeValidator', () => {
         name: 'ContextProcessor',
         type: NodeType.CONTEXT_PROCESSOR,
         config: {
-          contextProcessorType: 'FILTER_IN',
-          contextProcessorConfig: { filterCondition: 'important' }
+          processorType: 'transform',
+          rules: [
+            { sourcePath: 'input.value', targetPath: 'output.value' }
+          ]
         },
         incomingEdgeIds: [],
         outgoingEdgeIds: []
@@ -611,36 +614,37 @@ describe('NodeValidator', () => {
       expect(result.errors).toHaveLength(0);
     });
 
-    it('should return error for CONTEXT_PROCESSOR node without contextProcessorType', () => {
+    it('should return error for CONTEXT_PROCESSOR node without processorType', () => {
       const node: Node = {
         id: 'node-1',
         name: 'ContextProcessor',
         type: NodeType.CONTEXT_PROCESSOR,
         config: {
-          contextProcessorConfig: {}
+          rules: []
         } as any,
         incomingEdgeIds: [],
         outgoingEdgeIds: []
       };
       const result = validator.validateNode(node);
       expect(result.valid).toBe(false);
-      expect(result.errors.some(e => e.field?.includes('contextProcessorType'))).toBe(true);
+      expect(result.errors.some(e => e.field?.includes('processorType'))).toBe(true);
     });
 
-    it('should return error for CONTEXT_PROCESSOR node without contextProcessorConfig', () => {
+    it('should return error for CONTEXT_PROCESSOR node without rules', () => {
       const node: Node = {
         id: 'node-1',
         name: 'ContextProcessor',
         type: NodeType.CONTEXT_PROCESSOR,
         config: {
-          contextProcessorType: 'FILTER_IN'
+          processorType: 'transform',
+          rules: []
         } as any,
         incomingEdgeIds: [],
         outgoingEdgeIds: []
       };
       const result = validator.validateNode(node);
       expect(result.valid).toBe(false);
-      expect(result.errors.some(e => e.field?.includes('contextProcessorConfig'))).toBe(true);
+      expect(result.errors.some(e => e.field?.includes('rules'))).toBe(true);
     });
   });
 

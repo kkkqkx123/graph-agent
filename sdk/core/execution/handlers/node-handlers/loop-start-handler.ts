@@ -3,25 +3,11 @@
  * 负责执行LOOP_START节点，初始化循环变量，设置循环条件
  */
 
-import type { Node } from '../../../../types/node';
+import type { Node, LoopStartNodeConfig } from '../../../../types/node';
 import type { Thread } from '../../../../types/thread';
 import { NodeType } from '../../../../types/node';
 import { ValidationError } from '../../../../types/errors';
 import { now } from '../../../../utils';
-
-/**
- * LoopStart节点配置
- */
-interface LoopStartNodeConfig {
-  /** 循环ID */
-  loopId: string;
-  /** 可迭代对象（数组、对象、数字或字符串） */
-  iterable: any;
-  /** 最大迭代次数 */
-  maxIterations: number;
-  /** 循环变量名（可选，默认为loopId） */
-  variableName?: string;
-}
 
 /**
  * 循环状态

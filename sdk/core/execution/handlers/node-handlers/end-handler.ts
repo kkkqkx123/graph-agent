@@ -3,19 +3,12 @@
  * 负责执行END节点，标记工作流的结束，收集执行结果
  */
 
-import type { Node } from '../../../../types/node';
+import type { Node, EndNodeConfig } from '../../../../types/node';
 import type { Thread } from '../../../../types/thread';
 import { NodeType } from '../../../../types/node';
 import { ValidationError } from '../../../../types/errors';
 import { ThreadStatus } from '../../../../types/thread';
 import { now, diffTimestamp } from '../../../../utils';
-
-/**
- * End节点配置
- */
-interface EndNodeConfig {
-  // END节点不需要配置
-}
 
 /**
  * 验证End节点配置

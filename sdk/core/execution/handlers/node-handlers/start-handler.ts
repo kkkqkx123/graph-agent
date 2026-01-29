@@ -3,19 +3,12 @@
  * 负责执行START节点，标记工作流的开始，初始化Thread状态
  */
 
-import type { Node } from '../../../../types/node';
+import type { Node, StartNodeConfig } from '../../../../types/node';
 import type { Thread } from '../../../../types/thread';
 import { NodeType } from '../../../../types/node';
 import { ValidationError } from '../../../../types/errors';
 import { ThreadStatus } from '../../../../types/thread';
 import { now } from '../../../../utils';
-
-/**
- * Start节点配置
- */
-interface StartNodeConfig {
-  // START节点不需要配置
-}
 
 /**
  * 验证Start节点配置

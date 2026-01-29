@@ -112,6 +112,10 @@ export interface VariableNodeConfig {
   variableType: 'number' | 'string' | 'boolean' | 'array' | 'object';
   /** 操作的表达式【直接用表达式覆盖相应变量】 */
   expression: string;
+  /** 变量作用域 */
+  scope?: 'local' | 'global';
+  /** 是否只读 */
+  readonly?: boolean;
 }
 
 /**
@@ -122,6 +126,8 @@ export interface ForkNodeConfig {
   forkId: ID;
   /** 分叉策略(串行、并行) */
   forkStrategy: 'serial' | 'parallel';
+  /** 子节点ID列表 */
+  childNodeIds?: string[];
 }
 
 /**
@@ -136,6 +142,8 @@ export interface JoinNodeConfig {
   threshold?: number;
   /** 等待超时时间（秒）【从第一个前继路径完成开始计算】 */
   timeout?: number;
+  /** 子Thread ID列表 */
+  childThreadIds?: string[];
 }
 
 /**
@@ -149,11 +157,13 @@ export interface CodeNodeConfig {
   /** 风险等级(none/low/medium/high)【应用层中会实现不同的执行策略，例如none不检查，high在沙箱运行】 */
   risk: 'none' | 'low' | 'medium' | 'high';
   /** 超时时间（秒） */
-  timeout: number;
+  timeout?: number;
   /** 重试次数 */
-  retries: number;
+  retries?: number;
   /** 重试延迟（秒） */
-  retryDelay: number;
+  retryDelay?: number;
+  /** 是否为内联代码 */
+  inline?: boolean;
 }
 
 /**
@@ -175,9 +185,11 @@ export interface ToolNodeConfig {
   /** 工具参数对象 */
   parameters: Record<string, any>;
   /** 超时时间（毫秒） */
-  timeout: number;
+  timeout?: number;
   /** 重试次数 */
-  retries: number;
+  retries?: number;
+  /** 重试延迟（毫秒） */
+  retryDelay?: number;
 }
 
 /**
@@ -196,32 +208,35 @@ export interface UserInteractionNodeConfig {
  * 路由节点配置
  */
 export interface RouteNodeConfig {
-  /** 条件表达式数组 */
-  conditions: string[];
-  /** 下一个节点数组(与conditions一一对应)，顺序判断每个条件是否满足，如果满足则路由到对应的节点。只能路由到邻接节点，不能路由到非邻接节点 */
-  nextNodes: string[];
+  /** 路由规则数组 */
+  routes: Array<{
+    /** 条件表达式 */
+    condition: string;
+    /** 目标节点ID */
+    targetNodeId: string;
+    /** 优先级 */
+    priority?: number;
+  }>;
+  /** 默认目标节点ID */
+  defaultTargetNodeId?: string;
 }
 
-/**
- * 上下文处理器类型
- */
-export type ContextProcessorType = 'PASS_THROUGH' | 'FILTER_IN' | 'FILTER_OUT' | 'TRANSFORM' | 'ISOLATE' | 'MERGE';
 
 /**
  * 上下文处理器节点配置
  */
 export interface ContextProcessorNodeConfig {
-  /** 上下文处理器类型 */
-  contextProcessorType: ContextProcessorType;
-  /** 上下文处理器配置对象 */
-  contextProcessorConfig: {
-    /** 过滤条件表达式（用于FILTER_IN/FILTER_OUT） */
-    filterCondition?: string;
-    /** 转换表达式（用于TRANSFORM） */
-    transformExpression?: string;
-    /** 合并策略（用于MERGE） */
-    mergeStrategy?: string;
-  };
+  /** 处理类型 */
+  processorType: 'transform' | 'filter' | 'merge' | 'split';
+  /** 处理规则 */
+  rules: Array<{
+    /** 源路径 */
+    sourcePath: string;
+    /** 目标路径 */
+    targetPath: string;
+    /** 转换函数 */
+    transform?: string;
+  }>;
 }
 
 /**
@@ -234,6 +249,8 @@ export interface LoopStartNodeConfig {
   iterable: any;
   /** 最大迭代次数 */
   maxIterations: number;
+  /** 循环变量名（可选，默认为loopId） */
+  variableName?: string;
 }
 
 /**
@@ -245,7 +262,9 @@ export interface LoopEndNodeConfig {
   /** 可迭代对象，与loop start节点完全一致 */
   iterable: any;
   /** 中断条件 */
-  breakCondition?: Condition;
+  breakCondition?: any;
+  /** LOOP_START节点ID（用于跳转） */
+  loopStartNodeId?: string;
 }
 
 /**

@@ -3,31 +3,11 @@
  * 负责执行CODE节点，执行脚本代码，支持多种脚本语言
  */
 
-import type { Node } from '../../../../types/node';
+import type { Node, CodeNodeConfig } from '../../../../types/node';
 import type { Thread } from '../../../../types/thread';
 import { NodeType } from '../../../../types/node';
 import { ValidationError } from '../../../../types/errors';
 import { now } from '../../../../utils';
-
-/**
- * Code节点配置
- */
-interface CodeNodeConfig {
-  /** 脚本名称或代码内容 */
-  scriptName: string;
-  /** 脚本类型 */
-  scriptType: 'shell' | 'cmd' | 'powershell' | 'python' | 'javascript';
-  /** 风险等级 */
-  risk: 'none' | 'low' | 'medium' | 'high';
-  /** 超时时间（毫秒） */
-  timeout?: number;
-  /** 重试次数 */
-  retries?: number;
-  /** 重试延迟（毫秒） */
-  retryDelay?: number;
-  /** 是否为内联代码 */
-  inline?: boolean;
-}
 
 /**
  * 验证Code节点配置

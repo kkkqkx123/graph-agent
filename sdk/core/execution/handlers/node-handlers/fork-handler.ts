@@ -3,22 +3,10 @@
  * Fork节点作为占位符，实际的Fork操作由ThreadExecutor调用ThreadCoordinator处理
  */
 
-import type { Node } from '../../../../types/node';
+import type { Node, ForkNodeConfig } from '../../../../types/node';
 import type { Thread } from '../../../../types/thread';
 import { NodeType } from '../../../../types/node';
 import { ValidationError } from '../../../../types/errors';
-
-/**
- * Fork节点配置
- */
-interface ForkNodeConfig {
-  /** Fork ID */
-  forkId: string;
-  /** Fork策略 */
-  forkStrategy: 'SERIAL' | 'PARALLEL';
-  /** 子节点ID列表 */
-  childNodeIds?: string[];
-}
 
 /**
  * 验证Fork节点配置

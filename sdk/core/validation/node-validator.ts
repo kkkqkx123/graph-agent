@@ -15,7 +15,9 @@ import { ValidationError, type ValidationResult } from '../../types/errors';
 const variableNodeConfigSchema = z.object({
   variableName: z.string().min(1, 'Variable name is required'),
   variableType: z.enum(['number', 'string', 'boolean', 'array', 'object']),
-  expression: z.string().min(1, 'Expression is required')
+  expression: z.string().min(1, 'Expression is required'),
+  scope: z.enum(['local', 'global']).optional(),
+  readonly: z.boolean().optional()
 });
 
 /**
@@ -23,7 +25,8 @@ const variableNodeConfigSchema = z.object({
  */
 const forkNodeConfigSchema = z.object({
   forkId: z.string().min(1, 'Fork ID is required'),
-  forkStrategy: z.enum(['serial', 'parallel'])
+  forkStrategy: z.enum(['serial', 'parallel']),
+  childNodeIds: z.array(z.string()).optional()
 });
 
 /**
@@ -33,7 +36,8 @@ const joinNodeConfigSchema = z.object({
   joinId: z.string().min(1, 'Join ID is required'),
   joinStrategy: z.enum(['ALL_COMPLETED', 'ANY_COMPLETED', 'ALL_FAILED', 'ANY_FAILED', 'SUCCESS_COUNT_THRESHOLD']),
   threshold: z.number().optional(),
-  timeout: z.number().optional()
+  timeout: z.number().optional(),
+  childThreadIds: z.array(z.string()).optional()
 }).refine(
   (data) => {
     if (data.joinStrategy === 'SUCCESS_COUNT_THRESHOLD' && data.threshold === undefined) {
@@ -51,9 +55,10 @@ const codeNodeConfigSchema = z.object({
   scriptName: z.string().min(1, 'Script name is required'),
   scriptType: z.enum(['shell', 'cmd', 'powershell', 'python', 'javascript']),
   risk: z.enum(['none', 'low', 'medium', 'high']),
-  timeout: z.number().min(0, 'Timeout must be non-negative'),
-  retries: z.number().min(0, 'Retries must be non-negative'),
-  retryDelay: z.number().min(0, 'Retry delay must be non-negative')
+  timeout: z.number().min(0, 'Timeout must be non-negative').optional(),
+  retries: z.number().min(0, 'Retries must be non-negative').optional(),
+  retryDelay: z.number().min(0, 'Retry delay must be non-negative').optional(),
+  inline: z.boolean().optional()
 });
 
 /**
@@ -70,8 +75,9 @@ const llmNodeConfigSchema = z.object({
 const toolNodeConfigSchema = z.object({
   toolName: z.string().min(1, 'Tool name is required'),
   parameters: z.record(z.string(), z.any()),
-  timeout: z.number().min(0, 'Timeout must be non-negative'),
-  retries: z.number().min(0, 'Retries must be non-negative')
+  timeout: z.number().min(0, 'Timeout must be non-negative').optional(),
+  retries: z.number().min(0, 'Retries must be non-negative').optional(),
+  retryDelay: z.number().min(0, 'Retry delay must be non-negative').optional()
 });
 
 /**
@@ -87,23 +93,24 @@ const userInteractionNodeConfigSchema = z.object({
  * 路由节点配置schema
  */
 const routeNodeConfigSchema = z.object({
-  conditions: z.array(z.string()).min(1, 'Conditions array cannot be empty'),
-  nextNodes: z.array(z.string()).min(1, 'Next nodes array cannot be empty')
-}).refine(
-  (data) => data.conditions.length === data.nextNodes.length,
-  { message: 'ROUTE node conditions and nextNodes must have the same length' }
-);
+  routes: z.array(z.object({
+    condition: z.string().min(1, 'Route condition is required'),
+    targetNodeId: z.string().min(1, 'Target node ID is required'),
+    priority: z.number().optional()
+  })).min(1, 'Routes array cannot be empty'),
+  defaultTargetNodeId: z.string().optional()
+});
 
 /**
  * 上下文处理器节点配置schema
  */
 const contextProcessorNodeConfigSchema = z.object({
-  contextProcessorType: z.enum(['PASS_THROUGH', 'FILTER_IN', 'FILTER_OUT', 'TRANSFORM', 'ISOLATE', 'MERGE']),
-  contextProcessorConfig: z.object({
-    filterCondition: z.string().optional(),
-    transformExpression: z.string().optional(),
-    mergeStrategy: z.string().optional()
-  })
+  processorType: z.enum(['transform', 'filter', 'merge', 'split']),
+  rules: z.array(z.object({
+    sourcePath: z.string().min(1, 'Source path is required'),
+    targetPath: z.string().min(1, 'Target path is required'),
+    transform: z.string().optional()
+  })).min(1, 'Rules array cannot be empty')
 });
 
 /**
@@ -112,7 +119,8 @@ const contextProcessorNodeConfigSchema = z.object({
 const loopStartNodeConfigSchema = z.object({
   loopId: z.string().min(1, 'Loop ID is required'),
   iterable: z.any().refine((val) => val !== undefined, 'Iterable is required'),
-  maxIterations: z.number().min(0, 'Max iterations must be non-negative')
+  maxIterations: z.number().min(0, 'Max iterations must be non-negative'),
+  variableName: z.string().optional()
 });
 
 /**
@@ -121,7 +129,8 @@ const loopStartNodeConfigSchema = z.object({
 const loopEndNodeConfigSchema = z.object({
   loopId: z.string().min(1, 'Loop ID is required'),
   iterable: z.any().refine((val) => val !== undefined, 'Iterable is required'),
-  breakCondition: z.any().optional()
+  breakCondition: z.any().optional(),
+  loopStartNodeId: z.string().optional()
 });
 
 /**

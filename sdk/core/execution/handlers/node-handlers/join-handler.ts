@@ -3,31 +3,10 @@
  * Join节点作为占位符，实际的Join操作由ThreadExecutor调用ThreadCoordinator处理
  */
 
-import type { Node } from '../../../../types/node';
+import type { Node, JoinNodeConfig } from '../../../../types/node';
 import type { Thread } from '../../../../types/thread';
 import { NodeType } from '../../../../types/node';
 import { ValidationError } from '../../../../types/errors';
-
-/**
- * Join策略
- */
-type JoinStrategy = 'ALL_COMPLETED' | 'ANY_COMPLETED' | 'ALL_FAILED' | 'ANY_FAILED' | 'SUCCESS_COUNT_THRESHOLD';
-
-/**
- * Join节点配置
- */
-interface JoinNodeConfig {
-  /** Join ID */
-  joinId: string;
-  /** Join策略 */
-  joinStrategy: JoinStrategy;
-  /** 成功阈值（用于SUCCESS_COUNT_THRESHOLD策略） */
-  threshold?: number;
-  /** 超时时间（毫秒） */
-  timeout?: number;
-  /** 子Thread ID列表 */
-  childThreadIds?: string[];
-}
 
 /**
  * 验证Join节点配置

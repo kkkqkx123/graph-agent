@@ -144,8 +144,10 @@ export interface Thread {
   graph: GraphData;
   /** 变量数组（用于持久化和元数据） */
   variables: ThreadVariable[];
-  /** 变量值映射（用于快速访问） */
+  /** 变量值映射（用于快速访问，仅包含 local 变量） */
   variableValues: Record<string, any>;
+  /** 全局变量值映射（用于快速访问，指向父线程或工作流级别的全局变量） */
+  globalVariableValues?: Record<string, any>;
   /**
    * 输入数据（作为特殊变量，可通过路径访问）
    *

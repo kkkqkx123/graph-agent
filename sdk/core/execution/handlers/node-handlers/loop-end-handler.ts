@@ -3,24 +3,12 @@
  * 负责执行LOOP_END节点，更新循环变量，检查中断条件
  */
 
-import type { Node } from '../../../../types/node';
+import type { Node, LoopEndNodeConfig } from '../../../../types/node';
 import type { Thread } from '../../../../types/thread';
 import { NodeType } from '../../../../types/node';
 import { ValidationError, ExecutionError, NotFoundError } from '../../../../types/errors';
 import { conditionEvaluator } from '../../../../utils/evalutor/condition-evaluator';
 import { now } from '../../../../utils';
-
-/**
- * LoopEnd节点配置
- */
-interface LoopEndNodeConfig {
-  /** 循环ID */
-  loopId: string;
-  /** 中断条件 */
-  breakCondition?: any;
-  /** LOOP_START节点ID（用于跳转） */
-  loopStartNodeId?: string;
-}
 
 /**
  * 循环状态

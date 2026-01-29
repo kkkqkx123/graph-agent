@@ -21,6 +21,7 @@ export class VariableManager {
     if (!workflow.variables || workflow.variables.length === 0) {
       thread.variables = [];
       thread.variableValues = {};
+      thread.globalVariableValues = {};
       return;
     }
 
@@ -37,10 +38,17 @@ export class VariableManager {
       }
     }));
 
-    // 初始化 variableValues 映射
+    // 初始化 variableValues 映射（仅包含 local 变量）
     thread.variableValues = {};
+    thread.globalVariableValues = {};
+    
     for (const variable of thread.variables) {
-      thread.variableValues[variable.name] = variable.value;
+      if (variable.scope === 'local') {
+        thread.variableValues[variable.name] = variable.value;
+      } else {
+        // global 变量存储在 globalVariableValues 中
+        thread.globalVariableValues[variable.name] = variable.value;
+      }
     }
   }
 
@@ -69,8 +77,17 @@ export class VariableManager {
       throw new Error(`Type mismatch for variable '${name}'. Expected ${variableDef.type}, got ${typeof value}`);
     }
 
-    // 更新变量值
-    thread.variableValues[name] = value;
+    // 根据 scope 更新变量值
+    if (variableDef.scope === 'local') {
+      thread.variableValues[name] = value;
+    } else {
+      // global 变量更新到 globalVariableValues
+      if (!thread.globalVariableValues) {
+        thread.globalVariableValues = {};
+      }
+      thread.globalVariableValues[name] = value;
+    }
+    
     variableDef.value = value;
   }
 
@@ -81,7 +98,19 @@ export class VariableManager {
    * @returns 变量值
    */
   getVariable(threadContext: ThreadContext, name: string): any {
-    return threadContext.thread.variableValues[name];
+    const thread = threadContext.thread;
+    
+    // 首先在 local 变量中查找
+    if (name in thread.variableValues) {
+      return thread.variableValues[name];
+    }
+    
+    // 然后在 global 变量中查找
+    if (thread.globalVariableValues && name in thread.globalVariableValues) {
+      return thread.globalVariableValues[name];
+    }
+    
+    return undefined;
   }
 
   /**
@@ -91,7 +120,10 @@ export class VariableManager {
    * @returns 是否存在
    */
   hasVariable(threadContext: ThreadContext, name: string): boolean {
-    return name in threadContext.thread.variableValues;
+    const thread = threadContext.thread;
+    const inLocal = name in thread.variableValues;
+    const inGlobal = thread.globalVariableValues ? name in thread.globalVariableValues : false;
+    return inLocal || inGlobal;
   }
 
   /**
@@ -100,7 +132,15 @@ export class VariableManager {
    * @returns 所有变量的键值对
    */
   getAllVariables(threadContext: ThreadContext): Record<string, any> {
-    return { ...threadContext.thread.variableValues };
+    const thread = threadContext.thread;
+    const allVariables = { ...thread.variableValues };
+    
+    // 合并 global 变量
+    if (thread.globalVariableValues) {
+      Object.assign(allVariables, thread.globalVariableValues);
+    }
+    
+    return allVariables;
   }
 
   /**
@@ -135,7 +175,14 @@ export class VariableManager {
    */
   copyVariables(sourceThread: Thread, targetThread: Thread): void {
     targetThread.variables = sourceThread.variables.map((v: ThreadVariable) => ({ ...v }));
+    
+    // 仅复制 local 变量
     targetThread.variableValues = { ...sourceThread.variableValues };
+    
+    // global 变量使用引用（共享）
+    if (sourceThread.globalVariableValues) {
+      targetThread.globalVariableValues = sourceThread.globalVariableValues;
+    }
   }
 
   /**
@@ -145,5 +192,36 @@ export class VariableManager {
   clearVariables(thread: Thread): void {
     thread.variables = [];
     thread.variableValues = {};
+    // 不清除 global 变量，因为它们可能被其他线程共享
+  }
+  
+  /**
+   * 获取指定作用域的变量
+   * @param threadContext ThreadContext 实例
+   * @param scope 变量作用域
+   * @returns 指定作用域的变量键值对
+   */
+  getVariablesByScope(threadContext: ThreadContext, scope: 'local' | 'global'): Record<string, any> {
+    const thread = threadContext.thread;
+    
+    if (scope === 'local') {
+      return { ...thread.variableValues };
+    } else {
+      return thread.globalVariableValues ? { ...thread.globalVariableValues } : {};
+    }
+  }
+  
+  /**
+   * 初始化全局变量（用于 fork 时共享父线程的全局变量）
+   * @param thread Thread 实例
+   * @param parentGlobalVariables 父线程的全局变量
+   */
+  initializeGlobalVariables(thread: Thread, parentGlobalVariables: Record<string, any>): void {
+    if (!thread.globalVariableValues) {
+      thread.globalVariableValues = {};
+    }
+    
+    // 合并父线程的全局变量
+    Object.assign(thread.globalVariableValues, parentGlobalVariables);
   }
 }
