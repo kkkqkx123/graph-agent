@@ -7,6 +7,7 @@
  * - 执行单个 ThreadContext
  * - 节点导航和执行
  * - 错误处理
+ * - 统一协调 Trigger 执行
  *
  * 不负责：
  * - Thread 的创建和注册（由 ThreadCoordinator 负责）
@@ -20,10 +21,11 @@ import type { NodeExecutionResult } from '../../types/thread';
 import type { SubgraphNodeConfig } from '../../types/node';
 import { ThreadContext } from './context/thread-context';
 import { EventManager } from './managers/event-manager';
+import { TriggerManager } from './managers/trigger-manager';
 import { NotFoundError } from '../../types/errors';
 import { EventType } from '../../types/events';
 import type { NodeStartedEvent, NodeCompletedEvent, NodeFailedEvent, ErrorEvent, SubgraphStartedEvent, SubgraphCompletedEvent } from '../../types/events';
-import { executeHook } from './handlers/hook-handlers';
+import { executeHook } from './handlers/hook-handlers/hook-handler';
 import { HookType } from '../../types/node';
 import { NodeType } from '../../types/node';
 import { ThreadStatus } from '../../types/thread';
@@ -37,14 +39,17 @@ import type { LLMExecutionRequestData } from './llm-executor';
  * ThreadExecutor - Thread 执行器
  *
  * 专注于执行单个 ThreadContext，不负责线程的创建、注册和管理
+ * 作为统一协调器，直接调用 TriggerManager 处理触发器
  */
 export class ThreadExecutor {
   private eventManager: EventManager;
   private llmCoordinator: LLMCoordinator;
+  private triggerManager: TriggerManager;
 
-  constructor(eventManager?: EventManager) {
+  constructor(eventManager?: EventManager, triggerManager?: TriggerManager) {
     this.eventManager = eventManager || new EventManager();
     this.llmCoordinator = LLMCoordinator.getInstance();
+    this.triggerManager = triggerManager || new TriggerManager();
   }
 
   /**
@@ -98,7 +103,7 @@ export class ThreadExecutor {
             // 工作流完成
             break;
           }
-          
+
           // 节点执行成功，路由到下一个节点
           let nextNodeId: string | null = null;
 
@@ -288,7 +293,7 @@ export class ThreadExecutor {
 
       // 步骤6：触发节点完成事件
       if (nodeResult.status === 'COMPLETED') {
-        await this.eventManager.emit<NodeCompletedEvent>({
+        const completedEvent: NodeCompletedEvent = {
           type: EventType.NODE_COMPLETED,
           threadId: threadContext.getThreadId(),
           workflowId: threadContext.getWorkflowId(),
@@ -296,16 +301,28 @@ export class ThreadExecutor {
           output: nodeResult.data,
           executionTime: nodeResult.executionTime || 0,
           timestamp: now()
-        });
+        };
+        
+        // 先触发对外事件
+        await this.eventManager.emit(completedEvent);
+        
+        // 再协调 Trigger 执行
+        await this.triggerManager.handleEvent(completedEvent);
       } else if (nodeResult.status === 'FAILED') {
-        await this.eventManager.emit<NodeFailedEvent>({
+        const failedEvent: NodeFailedEvent = {
           type: EventType.NODE_FAILED,
           threadId: threadContext.getThreadId(),
           workflowId: threadContext.getWorkflowId(),
           nodeId,
           error: nodeResult.error,
           timestamp: now()
-        });
+        };
+        
+        // 先触发对外事件
+        await this.eventManager.emit(failedEvent);
+        
+        // 再协调 Trigger 执行
+        await this.triggerManager.handleEvent(failedEvent);
       }
 
       return nodeResult;
@@ -324,14 +341,20 @@ export class ThreadExecutor {
 
       threadContext.addNodeResult(errorResult);
 
-      await this.eventManager.emit<NodeFailedEvent>({
+      const failedEvent: NodeFailedEvent = {
         type: EventType.NODE_FAILED,
         threadId: threadContext.getThreadId(),
         workflowId: threadContext.getWorkflowId(),
         nodeId,
         error,
         timestamp: now()
-      });
+      };
+      
+      // 先触发对外事件
+      await this.eventManager.emit(failedEvent);
+      
+      // 再协调 Trigger 执行
+      await this.triggerManager.handleEvent(failedEvent);
 
       return errorResult;
     }
@@ -358,7 +381,7 @@ export class ThreadExecutor {
     try {
       // 提取LLM请求数据
       const requestData = this.extractLLMRequestData(node, threadContext);
-      
+
       // 直接调用 LLMCoordinator
       const result = await this.llmCoordinator.executeLLM({
         threadId: threadContext.getThreadId(),
@@ -418,7 +441,7 @@ export class ThreadExecutor {
    */
   private extractLLMRequestData(node: Node, threadContext: ThreadContext): LLMExecutionRequestData {
     const config = node.config;
-    
+
     // 基础请求数据
     const requestData: LLMExecutionRequestData = {
       prompt: '',
@@ -443,7 +466,7 @@ export class ThreadExecutor {
         }
         break;
       }
-      
+
       case NodeType.TOOL: {
         const toolConfig = config as any;
         requestData.prompt = `Execute tool: ${toolConfig.toolName}`;
@@ -455,21 +478,21 @@ export class ThreadExecutor {
         }];
         break;
       }
-      
+
       case NodeType.CONTEXT_PROCESSOR: {
         const cpConfig = config as any;
         requestData.prompt = `Process context with type: ${cpConfig.contextProcessorType}`;
         requestData.profileId = 'default';
         break;
       }
-      
+
       case NodeType.USER_INTERACTION: {
         const uiConfig = config as any;
         requestData.prompt = uiConfig.showMessage || 'User interaction';
         requestData.profileId = 'default';
         break;
       }
-      
+
       default:
         requestData.prompt = 'Unknown node type';
         break;
@@ -489,18 +512,24 @@ export class ThreadExecutor {
     threadContext.addError(nodeResult.error);
 
     // 步骤2：触发错误事件
-    await this.eventManager.emit<ErrorEvent>({
+    const errorEvent: ErrorEvent = {
       type: EventType.ERROR,
       threadId: threadContext.getThreadId(),
       workflowId: threadContext.getWorkflowId(),
       error: nodeResult.error,
       timestamp: now()
-    });
+    };
+    
+    // 先触发对外事件
+    await this.eventManager.emit(errorEvent);
+    
+    // 再协调 Trigger 执行
+    await this.triggerManager.handleEvent(errorEvent);
 
     // 步骤3：根据错误处理策略决定后续操作
     // 注意：错误处理配置现在应该存储在Thread的metadata中
     const errorHandling = threadContext.getMetadata()?.customFields?.errorHandling;
-    
+
     if (errorHandling) {
       if (errorHandling.stopOnError) {
         // 停止执行，状态由外部管理
@@ -540,13 +569,19 @@ export class ThreadExecutor {
     threadContext.addError(error);
 
     // 触发错误事件
-    await this.eventManager.emit<ErrorEvent>({
+    const errorEvent: ErrorEvent = {
       type: EventType.ERROR,
       threadId: threadContext.getThreadId(),
       workflowId: threadContext.getWorkflowId(),
       error,
       timestamp: now()
-    });
+    };
+    
+    // 先触发对外事件
+    await this.eventManager.emit(errorEvent);
+    
+    // 再协调 Trigger 执行
+    await this.triggerManager.handleEvent(errorEvent);
 
     // 状态由外部管理
   }
@@ -561,7 +596,7 @@ export class ThreadExecutor {
     const endTime = now();
     const startTime = threadContext.getStartTime();
     const executionTime = diffTimestamp(startTime, endTime);
-    
+
     // 获取Thread状态
     const status = threadContext.getStatus();
     const isSuccess = !error && status === 'COMPLETED';
@@ -588,6 +623,13 @@ export class ThreadExecutor {
    */
   getEventManager(): EventManager {
     return this.eventManager;
+  }
+
+  /**
+   * 获取触发器管理器
+   */
+  getTriggerManager(): TriggerManager {
+    return this.triggerManager;
   }
 
   /**

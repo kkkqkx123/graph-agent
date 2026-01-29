@@ -10,12 +10,14 @@
  * - Fork/Join/Copy 操作的协调
  * - 变量管理
  * - 事件发布
+ * - 触发器管理
  *
  * 设计原则：
  * - 作为执行模块的主类，协调各个组件
  * - 使用 ThreadOperations 进行无状态操作
  * - 使用 ThreadExecutor 执行 Thread
  * - 使用 ThreadLifecycleManager 管理生命周期
+ * - 使用 TriggerManager 管理触发器
  */
 
 import type { ThreadOptions, ThreadResult } from '../../types/thread';
@@ -25,6 +27,7 @@ import { ThreadBuilder } from './thread-builder';
 import { ThreadExecutor } from './thread-executor';
 import { ThreadLifecycleManager } from './thread-lifecycle-manager';
 import { EventManager } from './managers/event-manager';
+import { TriggerManager } from './managers/trigger-manager';
 import { NotFoundError, ValidationError } from '../../types/errors';
 import { EventType } from '../../types/events';
 import type {
@@ -46,13 +49,15 @@ export class ThreadCoordinator {
   private threadExecutor: ThreadExecutor;
   private lifecycleManager: ThreadLifecycleManager;
   private eventManager: EventManager;
+  private triggerManager: TriggerManager;
 
   constructor(workflowRegistry?: any) {
     this.threadRegistry = new ThreadRegistry();
     this.threadBuilder = new ThreadBuilder(workflowRegistry);
     this.eventManager = new EventManager();
+    this.triggerManager = new TriggerManager();
     this.lifecycleManager = new ThreadLifecycleManager(this.eventManager);
-    this.threadExecutor = new ThreadExecutor(this.eventManager);
+    this.threadExecutor = new ThreadExecutor(this.eventManager, this.triggerManager);
   }
 
   /**
@@ -334,5 +339,13 @@ export class ThreadCoordinator {
    */
   getThreadExecutor(): ThreadExecutor {
     return this.threadExecutor;
+  }
+
+  /**
+   * 获取 TriggerManager
+   * @returns TriggerManager 实例
+   */
+  getTriggerManager(): TriggerManager {
+    return this.triggerManager;
   }
 }

@@ -63,8 +63,8 @@ export { TokenUsageTracker } from './token-usage-tracker';
 export type { TokenUsageStats, TokenUsageTrackerOptions } from './token-usage-tracker';
 
 // Hook处理函数
-export * from './handlers/hook-handlers';
-export * from './handlers/hook-utils';
+export * from './handlers/hook-handlers/hook-handler';
+export * from './handlers/hook-handlers/utils';
 
 // 节点处理函数
 export * from './handlers/node-handlers';

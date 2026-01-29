@@ -3,7 +3,7 @@
  * 负责生成Hook触发时的事件载荷数据
  */
 
-import type { NodeHook } from '../../../../types/node';
+import type { NodeHook } from '../../../../../types/node';
 import type { HookEvaluationContext } from './context-builder';
 
 /**

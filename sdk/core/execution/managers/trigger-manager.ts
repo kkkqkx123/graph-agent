@@ -1,6 +1,8 @@
 /**
  * TriggerManager - 触发器管理器
- * 负责触发器的注册、注销、监听事件和执行触发动作
+ * 负责触发器的注册、注销和执行触发动作
+ *
+ * 注意：不再通过 EventManager 监听事件，改为由 ThreadExecutor 直接调用 handleEvent()
  */
 
 import type {
@@ -9,7 +11,6 @@ import type {
 } from '../../../types/trigger';
 import type { BaseEvent, NodeCustomEvent } from '../../../types/events';
 import type { ID } from '../../../types/common';
-import { EventManager } from './event-manager';
 import { getTriggerHandler } from '../handlers/trigger-handlers';
 import { ValidationError, ExecutionError } from '../../../types/errors';
 import { EventType } from '../../../types/events';
@@ -17,14 +18,20 @@ import { now } from '../../../utils';
 
 /**
  * TriggerManager - 触发器管理器
+ *
+ * 职责：
+ * - 触发器的注册、注销、启用、禁用
+ * - 处理事件并执行匹配的触发器
+ *
+ * 设计原则：
+ * - 不再通过 EventManager 监听事件
+ * - 由 ThreadExecutor 直接调用 handleEvent() 方法
+ * - 保持触发器的完整生命周期管理
  */
 export class TriggerManager {
   private triggers: Map<ID, Trigger> = new Map();
-  private eventListeners: Map<ID, () => void> = new Map();
 
-  constructor(
-    private eventManager: EventManager,
-  ) { }
+  constructor() { }
 
   /**
    * 注册触发器
@@ -52,13 +59,6 @@ export class TriggerManager {
 
     // 存储触发器
     this.triggers.set(trigger.id, trigger);
-
-    // 注册事件监听器
-    const unregister = this.eventManager.on(
-      trigger.condition.eventType,
-      this.handleEvent.bind(this)
-    );
-    this.eventListeners.set(trigger.id, unregister);
   }
 
   /**
@@ -69,13 +69,6 @@ export class TriggerManager {
     const trigger = this.triggers.get(triggerId);
     if (!trigger) {
       throw new ExecutionError(`触发器 ${triggerId} 不存在`, undefined, undefined, { triggerId });
-    }
-
-    // 注销事件监听器
-    const unregister = this.eventListeners.get(triggerId);
-    if (unregister) {
-      unregister();
-      this.eventListeners.delete(triggerId);
     }
 
     // 删除触发器
@@ -138,10 +131,10 @@ export class TriggerManager {
   }
 
   /**
-   * 处理事件
+   * 处理事件（由 ThreadExecutor 直接调用）
    * @param event 事件对象
    */
-  private async handleEvent(event: BaseEvent): Promise<void> {
+  async handleEvent(event: BaseEvent): Promise<void> {
     // 获取所有监听该事件类型的触发器
     const triggers = Array.from(this.triggers.values()).filter(
       (trigger) =>
@@ -199,12 +192,6 @@ export class TriggerManager {
    * 清空所有触发器
    */
   clear(): void {
-    // 注销所有事件监听器
-    for (const unregister of this.eventListeners.values()) {
-      unregister();
-    }
-    this.eventListeners.clear();
-
     // 清空触发器
     this.triggers.clear();
   }

@@ -170,6 +170,14 @@ export class ThreadExecutorAPI {
   }
 
   /**
+   * 获取触发器管理器
+   * @returns 触发器管理器实例
+   */
+  getTriggerManager() {
+    return this.coordinator.getTriggerManager();
+  }
+
+  /**
    * 转换执行选项
    * @param options API执行选项
    * @returns Core层执行选项

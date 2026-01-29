@@ -15,7 +15,7 @@ import {
   convertToEvaluationContext,
   generateHookEventData,
   emitHookEvent
-} from '../hook-utils';
+} from './utils';
 
 /**
  * Hook执行上下文
