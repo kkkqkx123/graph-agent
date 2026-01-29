@@ -62,6 +62,9 @@ export { LLMExecutor } from './llm-executor';
 export { TokenUsageTracker } from './token-usage-tracker';
 export type { TokenUsageStats, TokenUsageTrackerOptions } from './token-usage-tracker';
 
+// 消息索引管理
+export { MessageIndexManager } from './message-index-manager';
+
 // Hook处理函数
 export * from './handlers/hook-handlers';
 

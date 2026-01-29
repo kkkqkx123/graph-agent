@@ -180,3 +180,76 @@ export interface LLMClientConfig {
   /** 重试延迟 */
   retryDelay?: number;
 }
+
+/**
+ * 消息标记映射
+ * 维护消息索引的映射关系，支持多次压缩和回退
+ */
+export interface MessageMarkMap {
+  /** 消息原始索引列表 */
+  originalIndices: number[];
+  /** 修改边界索引数组（记录被压缩/修改的消息的原始索引。第0个索引默认填上） */
+  batchBoundaries: number[];
+  /** 边界对应批次数组（记录每个边界是哪个batch的开始，允许重新使用旧的batch） */
+  boundaryToBatch: number[];
+  /** 当前批次 */
+  currentBatch: number;
+}
+
+/**
+ * 上下文压缩配置
+ */
+export interface ContextCompressionConfig {
+  /** 是否启用压缩 */
+  enabled: boolean;
+  /** 压缩阈值（token 数量） */
+  threshold: number;
+  /** 压缩后的目标 token 数量 */
+  targetTokens: number;
+}
+
+/**
+ * 上下文压缩策略接口
+ */
+export interface CompressionStrategy {
+  /**
+   * 压缩消息
+   * @param messages 消息数组
+   * @param markMap 标记映射
+   * @param config 压缩配置
+   * @returns 压缩后的消息数组和新的标记映射
+   */
+  compress(
+    messages: LLMMessage[],
+    markMap: MessageMarkMap,
+    config: ContextCompressionConfig
+  ): Promise<{
+    messages: LLMMessage[];
+    markMap: MessageMarkMap;
+  }>;
+}
+
+/**
+ * 上下文修改操作类型
+ */
+export type ContextModificationOperation =
+  | 'insert'      // 插入消息
+  | 'delete'      // 删除消息
+  | 'replace'     // 替换消息
+  | 'compress'    // 压缩消息
+  | 'batch_start' // 开始新批次
+  | 'batch_end';  // 结束批次
+
+/**
+ * 上下文修改配置
+ */
+export interface ContextModificationConfig {
+  /** 操作类型 */
+  operation: ContextModificationOperation;
+  /** 消息索引数组 */
+  indices: number[];
+  /** 操作数据（用于 insert 和 replace） */
+  data?: LLMMessage | LLMMessage[];
+  /** 批次号（用于 batch_start 和 batch_end） */
+  batch?: number;
+}

@@ -17,7 +17,7 @@ import { generateId, now as getCurrentTimestamp } from '../../utils';
 import { VariableManager } from './managers/variable-manager';
 import { ValidationError } from '../../types/errors';
 import { WorkflowRegistry } from '../registry/workflow-registry';
-import { getWorkflowRegistry } from './context/execution-context';
+import { getWorkflowRegistry, getEventManager } from './context/execution-context';
 
 /**
  * ThreadBuilder - Thread构建器
@@ -142,8 +142,14 @@ export class ThreadBuilder {
     this.variableManager.initializeFromWorkflow(thread as Thread, processedWorkflow);
 
     // 步骤4：创建 ConversationManager 实例
+    // 从 ExecutionContext 获取 EventManager
+    const eventManager = getEventManager();
+    
     const conversationManager = new ConversationManager({
-      tokenLimit: options.tokenLimit || 4000
+      tokenLimit: options.tokenLimit || 4000,
+      eventManager: eventManager,
+      workflowId: processedWorkflow.id,
+      threadId: threadId
     });
 
     // 步骤5：创建 WorkflowContext

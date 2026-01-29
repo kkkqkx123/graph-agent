@@ -1,19 +1,26 @@
 /**
  * 对话管理器
- * 管理消息历史
+ * 管理消息历史和消息索引
  *
  * 核心职责：
  * 1. 消息历史管理
- * 2. Token统计和压缩事件触发（委托给 TokenUsageTracker）
+ * 2. Token统计和事件触发（委托给 TokenUsageTracker）
+ * 3. 消息索引管理（委托给 MessageIndexManager）
  *
  * 重要说明：
  * - ConversationManager只管理状态，不负责执行逻辑
  * - 执行逻辑由LLMExecutor负责
  * - Token统计委托给TokenUsageTracker
+ * - 消息索引管理委托给MessageIndexManager
+ * - 上下文压缩通过触发器+子工作流实现，不在此模块
  */
 
-import type { LLMMessage, LLMUsage } from '../../types/llm';
+import type { LLMMessage, LLMUsage, MessageMarkMap } from '../../types/llm';
 import { TokenUsageTracker, type TokenUsageStats } from './token-usage-tracker';
+import { MessageIndexManager } from './message-index-manager';
+import type { EventManager } from './managers/event-manager';
+import type { TokenLimitExceededEvent } from '../../types/events';
+import { EventType } from '../../types/events';
 
 /**
  * ConversationManager事件回调
@@ -31,6 +38,12 @@ export interface ConversationManagerOptions {
   tokenLimit?: number;
   /** 事件回调 */
   eventCallbacks?: ConversationManagerEventCallbacks;
+  /** 事件管理器 */
+  eventManager?: EventManager;
+  /** 工作流ID（用于事件） */
+  workflowId?: string;
+  /** 线程ID（用于事件） */
+  threadId?: string;
 }
 
 /**
@@ -40,6 +53,10 @@ export class ConversationManager {
   private messages: LLMMessage[] = [];
   private tokenUsageTracker: TokenUsageTracker;
   private eventCallbacks?: ConversationManagerEventCallbacks;
+  private indexManager: MessageIndexManager;
+  private eventManager?: EventManager;
+  private workflowId?: string;
+  private threadId?: string;
 
   /**
    * 构造函数
@@ -50,6 +67,10 @@ export class ConversationManager {
       tokenLimit: options.tokenLimit
     });
     this.eventCallbacks = options.eventCallbacks;
+    this.indexManager = new MessageIndexManager();
+    this.eventManager = options.eventManager;
+    this.workflowId = options.workflowId;
+    this.threadId = options.threadId;
   }
 
   /**
@@ -65,6 +86,9 @@ export class ConversationManager {
 
     // 将消息追加到数组末尾
     this.messages.push({ ...message });
+
+    // 同步更新索引
+    this.indexManager.addIndex(this.messages.length - 1);
 
     return this.messages.length;
   }
@@ -82,11 +106,32 @@ export class ConversationManager {
   }
 
   /**
-   * 获取当前消息历史
+   * 获取当前消息历史（未压缩的消息）
    * @returns 消息数组的副本
    */
   getMessages(): LLMMessage[] {
+    const uncompressedIndices = this.indexManager.getUncompressedIndices();
+    return this.indexManager.filterMessages(this.messages, uncompressedIndices);
+  }
+
+  /**
+   * 获取所有消息（包括压缩的）
+   * @returns 消息数组的副本
+   */
+  getAllMessages(): LLMMessage[] {
     return [...this.messages];
+  }
+
+  /**
+   * 根据索引范围获取消息
+   * @param start 起始索引
+   * @param end 结束索引
+   * @returns 消息数组
+   */
+  getMessagesByRange(start: number, end: number): LLMMessage[] {
+    const uncompressedIndices = this.indexManager.getUncompressedIndices();
+    const filteredIndices = uncompressedIndices.filter(idx => idx >= start && idx < end);
+    return this.indexManager.filterMessages(this.messages, filteredIndices);
   }
 
   /**
@@ -107,6 +152,9 @@ export class ConversationManager {
       // 清空所有消息
       this.messages = [];
     }
+
+    // 重置索引管理器
+    this.indexManager.reset();
   }
 
   /**
@@ -193,6 +241,20 @@ export class ConversationManager {
    * @param tokensUsed 当前使用的Token数量
    */
   private async triggerTokenLimitEvent(tokensUsed: number): Promise<void> {
+    // 1. 通过 EventManager 发送事件
+    if (this.eventManager && this.workflowId && this.threadId) {
+      const event: TokenLimitExceededEvent = {
+        type: EventType.TOKEN_LIMIT_EXCEEDED,
+        timestamp: Date.now(),
+        workflowId: this.workflowId,
+        threadId: this.threadId,
+        tokensUsed,
+        tokenLimit: this.tokenUsageTracker['tokenLimit']
+      };
+      await this.eventManager.emit(event);
+    }
+
+    // 2. 兼容旧的回调机制
     if (this.eventCallbacks?.onTokenLimitExceeded) {
       try {
         await this.eventCallbacks.onTokenLimitExceeded(tokensUsed, this.tokenUsageTracker['tokenLimit']);
@@ -206,6 +268,22 @@ export class ConversationManager {
   }
 
   /**
+   * 回退到指定批次
+   * @param targetBatch 目标批次号
+   */
+  rollbackToBatch(targetBatch: number): void {
+    this.indexManager.rollbackToBatch(targetBatch);
+  }
+
+  /**
+   * 获取标记映射
+   * @returns 标记映射
+   */
+  getMarkMap(): MessageMarkMap {
+    return this.indexManager.getMarkMap();
+  }
+
+  /**
    * 克隆 ConversationManager 实例
    * 创建一个包含相同消息历史和配置的新 ConversationManager 实例
    * @returns 克隆的 ConversationManager 实例
@@ -214,7 +292,10 @@ export class ConversationManager {
     // 创建新的 ConversationManager 实例
     const clonedManager = new ConversationManager({
       tokenLimit: this.tokenUsageTracker['tokenLimit'],
-      eventCallbacks: this.eventCallbacks
+      eventCallbacks: this.eventCallbacks,
+      eventManager: this.eventManager,
+      workflowId: this.workflowId,
+      threadId: this.threadId
     });
 
     // 复制所有消息历史
@@ -222,6 +303,9 @@ export class ConversationManager {
 
     // 复制 token 使用统计
     clonedManager.tokenUsageTracker = this.tokenUsageTracker.clone();
+
+    // 复制索引管理器
+    clonedManager.indexManager = this.indexManager.clone();
 
     return clonedManager;
   }
