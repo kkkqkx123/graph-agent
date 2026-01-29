@@ -131,3 +131,53 @@ export interface TriggerExecutionResult {
   /** 执行元数据 */
   metadata?: Metadata;
 }
+
+/**
+ * Workflow触发器定义
+ * 在workflow定义阶段声明，用于静态检查和类型安全
+ */
+export interface WorkflowTrigger {
+  /** 触发器唯一标识符 */
+  id: ID;
+  /** 触发器名称 */
+  name: string;
+  /** 触发器描述 */
+  description?: string;
+  /** 触发条件 */
+  condition: TriggerCondition;
+  /** 触发动作 */
+  action: TriggerAction;
+  /** 是否启用（默认true） */
+  enabled?: boolean;
+  /** 触发次数限制（0表示无限制） */
+  maxTriggers?: number;
+  /** 触发器元数据 */
+  metadata?: Metadata;
+}
+
+/**
+ * 将WorkflowTrigger转换为Trigger
+ * @param workflowTrigger workflow触发器定义
+ * @param workflowId 工作流ID
+ * @returns 运行时触发器实例
+ */
+export function convertToTrigger(
+  workflowTrigger: WorkflowTrigger,
+  workflowId: ID
+): Trigger {
+  return {
+    id: workflowTrigger.id,
+    name: workflowTrigger.name,
+    description: workflowTrigger.description,
+    type: TriggerType.EVENT,
+    condition: workflowTrigger.condition,
+    action: workflowTrigger.action,
+    status: workflowTrigger.enabled !== false ? TriggerStatus.ENABLED : TriggerStatus.DISABLED,
+    workflowId: workflowId,
+    maxTriggers: workflowTrigger.maxTriggers,
+    triggerCount: 0,
+    createdAt: Date.now(),
+    updatedAt: Date.now(),
+    metadata: workflowTrigger.metadata
+  };
+}

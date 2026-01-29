@@ -25,7 +25,7 @@ import { TriggerManager } from './managers/trigger-manager';
 import { NotFoundError } from '../../types/errors';
 import { EventType } from '../../types/events';
 import type { NodeStartedEvent, NodeCompletedEvent, NodeFailedEvent, ErrorEvent, SubgraphStartedEvent, SubgraphCompletedEvent } from '../../types/events';
-import { executeHook } from './handlers/hook-handlers/hook-handler';
+import { executeHook } from './handlers/hook-handlers';
 import { HookType } from '../../types/node';
 import { NodeType } from '../../types/node';
 import { ThreadStatus } from '../../types/thread';

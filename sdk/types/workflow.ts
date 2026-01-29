@@ -8,6 +8,7 @@ import type { Node } from './node';
 import type { Edge } from './edge';
 import type { ID, Timestamp, Version, Metadata } from './common';
 import type { GraphAnalysisResult, Graph } from './graph';
+import type { WorkflowTrigger } from './trigger';
 
 /**
  * 工作流状态枚举
@@ -199,6 +200,8 @@ export interface WorkflowDefinition {
   edges: Edge[];
   /** 工作流变量定义数组，用于声明工作流执行所需的变量 */
   variables?: WorkflowVariable[];
+  /** 工作流触发器定义数组，用于声明工作流级别的触发器 */
+  triggers?: WorkflowTrigger[];
   /** 可选的工作流配置 */
   config?: WorkflowConfig;
   /** 可选的元数据信息 */

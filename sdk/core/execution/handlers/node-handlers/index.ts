@@ -9,33 +9,21 @@ import type { Node } from '../../../../types/node';
 import type { Thread } from '../../../../types/thread';
 import { NodeType } from '../../../../types/node';
 
-/**
- * 节点处理函数类型
- */
-export type NodeHandler = (thread: Thread, node: Node) => Promise<any>;
+// 导入接口定义
+import type {
+  NodeHandler,
+  NodeHandlerSpec,
+  NodeExecutionResultSpec,
+  NodeHandlerMap
+} from './interfaces';
 
-/**
- * 节点处理函数映射
- */
-export const nodeHandlers: Record<NodeType, NodeHandler> = {} as Record<NodeType, NodeHandler>;
-
-/**
- * 注册节点处理函数
- */
-export function registerNodeHandler(nodeType: NodeType, handler: NodeHandler): void {
-  nodeHandlers[nodeType] = handler;
-}
-
-/**
- * 获取节点处理函数
- */
-export function getNodeHandler(nodeType: NodeType): NodeHandler {
-  const handler = nodeHandlers[nodeType];
-  if (!handler) {
-    throw new Error(`No handler found for node type: ${nodeType}`);
-  }
-  return handler;
-}
+// 导出接口定义
+export type {
+  NodeHandler,
+  NodeHandlerSpec,
+  NodeExecutionResultSpec,
+  NodeHandlerMap
+} from './interfaces';
 
 // 导入各个节点处理函数
 import { startHandler } from './start-handler';
@@ -48,16 +36,34 @@ import { routeHandler } from './route-handler';
 import { loopStartHandler } from './loop-start-handler';
 import { loopEndHandler } from './loop-end-handler';
 
-// 注册各个节点处理函数
-registerNodeHandler(NodeType.START, startHandler);
-registerNodeHandler(NodeType.END, endHandler);
-registerNodeHandler(NodeType.VARIABLE, variableHandler);
-registerNodeHandler(NodeType.CODE, codeHandler);
-registerNodeHandler(NodeType.FORK, forkHandler);
-registerNodeHandler(NodeType.JOIN, joinHandler);
-registerNodeHandler(NodeType.ROUTE, routeHandler);
-registerNodeHandler(NodeType.LOOP_START, loopStartHandler);
-registerNodeHandler(NodeType.LOOP_END, loopEndHandler);
+/**
+ * 节点处理函数映射
+ *
+ * 注意：节点类型是固定的（NodeType枚举），不需要注册机制
+ * 处理器在模块加载时静态映射，不支持运行时扩展
+ */
+export const nodeHandlers: Record<NodeType, NodeHandler> = {
+  [NodeType.START]: startHandler,
+  [NodeType.END]: endHandler,
+  [NodeType.VARIABLE]: variableHandler,
+  [NodeType.CODE]: codeHandler,
+  [NodeType.FORK]: forkHandler,
+  [NodeType.JOIN]: joinHandler,
+  [NodeType.ROUTE]: routeHandler,
+  [NodeType.LOOP_START]: loopStartHandler,
+  [NodeType.LOOP_END]: loopEndHandler
+} as Record<NodeType, NodeHandler>;
+
+/**
+ * 获取节点处理函数
+ */
+export function getNodeHandler(nodeType: NodeType): NodeHandler {
+  const handler = nodeHandlers[nodeType];
+  if (!handler) {
+    throw new Error(`No handler found for node type: ${nodeType}`);
+  }
+  return handler;
+}
 
 // 导出各个节点处理函数（用于外部使用）
 export { startHandler } from './start-handler';

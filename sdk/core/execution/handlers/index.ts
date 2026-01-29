@@ -5,5 +5,4 @@
 
 export * from './node-handlers';
 export * from './trigger-handlers';
-export * from './hook-handlers/hook-handler';
-export * from './hook-handlers/utils';
+export * from './hook-handlers';

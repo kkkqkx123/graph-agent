@@ -6,13 +6,21 @@
 import type { TriggerAction, TriggerExecutionResult } from '../../../../types/trigger';
 import { TriggerActionType } from '../../../../types/trigger';
 
-/**
- * 触发器处理函数类型
- */
-export type TriggerHandler = (
-  action: TriggerAction,
-  triggerId: string
-) => Promise<TriggerExecutionResult>;
+// 导入接口定义
+import type {
+  TriggerHandler,
+  TriggerHandlerSpec,
+  TriggerExecutionResultSpec,
+  TriggerHandlerRegistry
+} from './interfaces';
+
+// 导出接口定义
+export type {
+  TriggerHandler,
+  TriggerHandlerSpec,
+  TriggerExecutionResultSpec,
+  TriggerHandlerRegistry
+} from './interfaces';
 
 /**
  * 触发器处理函数映射

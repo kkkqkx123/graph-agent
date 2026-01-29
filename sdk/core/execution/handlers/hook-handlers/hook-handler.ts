@@ -9,13 +9,7 @@ import { HookType } from '../../../../types/node';
 import type { Thread } from '../../../../types/thread';
 import type { NodeExecutionResult } from '../../../../types/thread';
 import type { NodeCustomEvent } from '../../../../types/events';
-import { conditionEvaluator } from '../../../../utils/evalutor/condition-evaluator';
-import {
-  buildHookEvaluationContext,
-  convertToEvaluationContext,
-  generateHookEventData,
-  emitHookEvent
-} from './utils';
+import { getHookHandler } from './index';
 
 /**
  * Hook执行上下文
@@ -28,14 +22,6 @@ export interface HookExecutionContext {
   /** 节点执行结果（AFTER_EXECUTE时可用） */
   result?: NodeExecutionResult;
 }
-
-/**
- * Hook处理器类型
- */
-export type HookHandler = (
-  context: HookExecutionContext,
-  emitEvent: (event: NodeCustomEvent) => Promise<void>
-) => Promise<void>;
 
 /**
  * 执行指定类型的Hook
@@ -77,36 +63,11 @@ async function executeSingleHook(
   emitEvent: (event: NodeCustomEvent) => Promise<void>
 ): Promise<void> {
   try {
-    // 构建评估上下文
-    const evalContext = buildHookEvaluationContext(context);
-
-    // 评估触发条件（如果有）
-    if (hook.condition) {
-      let result: boolean;
-      try {
-        result = conditionEvaluator.evaluate(
-          { expression: hook.condition },
-          convertToEvaluationContext(evalContext)
-        );
-      } catch (error) {
-        console.warn(
-          `Hook condition evaluation failed for hook "${hook.hookName}" on node "${context.node.id}":`,
-          error
-        );
-        return;
-      }
-
-      if (!result) {
-        // 条件不满足，不触发事件
-        return;
-      }
-    }
-
-    // 生成事件载荷
-    const eventData = generateHookEventData(hook, evalContext);
-
-    // 触发自定义事件
-    await emitHookEvent(context, hook.eventName, eventData, emitEvent);
+    // 获取对应的Hook处理器
+    const handler = getHookHandler(hook.hookName);
+    
+    // 执行Hook处理器
+    await handler(context, hook, emitEvent);
   } catch (error) {
     // Hook执行失败不应影响节点正常执行，记录错误日志
     console.error(
