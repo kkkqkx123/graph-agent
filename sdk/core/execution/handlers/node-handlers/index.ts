@@ -2,7 +2,7 @@
  * 节点处理函数模块
  * 提供各种节点类型的处理函数
  * subgraph-node不需要处理器，因为已经通过graph合并了，运行时不存在此类节点
- * llm-node、user-interaction-node、context-processor-node、tool-node都通过内部事件托管给llm执行器
+ * llm-node、user-interaction-node、context-processor-node、tool-node都托管给llm执行器
  */
 
 import { NodeType } from '../../../../types/node';

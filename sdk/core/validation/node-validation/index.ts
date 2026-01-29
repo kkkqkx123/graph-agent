@@ -18,6 +18,9 @@ export { validateContextProcessorNode } from './context-processor-validator';
 export { validateRouteNode } from './route-validator';
 export { validateToolNode } from './tool-validator';
 export { validateVariableNode } from './variable-validator';
+export { validateLLMNode } from './llm-validator';
+export { validateUserInteractionNode } from './user-interaction-validator';
+export { validateSubgraphNode } from './subgraph-validator';
 
 /**
  * 根据节点类型验证节点配置
@@ -71,9 +74,16 @@ export function validateNodeByType(node: Node): void {
       validateVariableNode(node);
       break;
     case NodeType.LLM:
+      const { validateLLMNode } = require('./llm-validator');
+      validateLLMNode(node);
+      break;
     case NodeType.USER_INTERACTION:
+      const { validateUserInteractionNode } = require('./user-interaction-validator');
+      validateUserInteractionNode(node);
+      break;
     case NodeType.SUBGRAPH:
-      // 这些节点类型的验证在node-validator.ts中处理
+      const { validateSubgraphNode } = require('./subgraph-validator');
+      validateSubgraphNode(node);
       break;
     default:
       throw new ValidationError(`Unknown node type: ${node.type}`, `node.${node.id}`);
