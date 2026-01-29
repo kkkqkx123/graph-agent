@@ -6,7 +6,6 @@
 import type { NodeHook } from '../../../../types/node';
 import type { HookExecutionContext } from './hook-handler';
 import type { NodeCustomEvent } from '../../../../types/events';
-import { registerHookHandler } from './index';
 
 /**
  * 验证Hook处理器
@@ -92,8 +91,5 @@ async function validationHookHandler(
     );
   }
 }
-
-// 注册验证Hook处理器
-registerHookHandler('validation', validationHookHandler);
 
 export { validationHookHandler };

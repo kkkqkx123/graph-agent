@@ -43,23 +43,11 @@ export const nodeHandlers: Record<NodeType, NodeHandler> = {
 - **需要注册机制**，因为Hook名称是用户定义的
 
 **设计决策**：
-- ✅ 需要注册机制
-- ✅ 支持运行时扩展
+- ❌ 不需要注册机制
+- ✅ 使用静态Map映射
 - ✅ Hook与节点一起定义在workflow中
 - ✅ 提供静态检查支持
 
-**实现**：
-```typescript
-export const hookHandlers: Record<string, HookHandler> = {};
-
-export function registerHookHandler(hookName: string, handler: HookHandler): void {
-  hookHandlers[hookName] = handler;
-}
-
-export function getHookHandler(hookName: string): HookHandler {
-  return hookHandlers[hookName] || defaultHookHandler;
-}
-```
 
 **使用场景**：
 ```typescript

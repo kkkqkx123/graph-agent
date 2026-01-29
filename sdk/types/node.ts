@@ -69,11 +69,23 @@ export enum HookType {
 }
 
 /**
+ * Hook名称枚举
+ */
+export enum HookName {
+  /** 自定义Hook */
+  CUSTOM = 'custom',
+  /** 通知Hook */
+  NOTIFICATION = 'notification',
+  /** 验证Hook */
+  VALIDATION = 'validation'
+}
+
+/**
  * 节点Hook配置
  */
 export interface NodeHook {
   /** Hook名称，用于标识和调试 */
-  hookName: string;
+  hookName: HookName;
   /** Hook类型 */
   hookType: HookType;
   /** 触发条件表达式（可选） */

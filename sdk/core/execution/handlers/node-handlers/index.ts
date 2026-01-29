@@ -5,8 +5,6 @@
  * llm-node、user-interaction-node、context-processor-node、tool-node都通过内部事件托管给llm执行器
  */
 
-import type { Node } from '../../../../types/node';
-import type { Thread } from '../../../../types/thread';
 import { NodeType } from '../../../../types/node';
 
 // 导入接口定义

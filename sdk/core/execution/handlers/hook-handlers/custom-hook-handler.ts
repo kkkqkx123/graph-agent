@@ -6,7 +6,6 @@
 import type { NodeHook } from '../../../../types/node';
 import type { HookExecutionContext } from './hook-handler';
 import type { NodeCustomEvent } from '../../../../types/events';
-import { registerHookHandler } from './index';
 
 /**
  * 自定义Hook处理器
@@ -69,8 +68,5 @@ async function customHookHandler(
     );
   }
 }
-
-// 注册自定义Hook处理器
-registerHookHandler('custom', customHookHandler);
 
 export { customHookHandler };

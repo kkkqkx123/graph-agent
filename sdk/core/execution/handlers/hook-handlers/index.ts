@@ -1,9 +1,10 @@
 /**
  * Hook处理器模块
- * 提供Hook执行的统一接口和注册机制
+ * 提供Hook执行的统一接口
  */
 
 import type { NodeHook } from '../../../../types/node';
+import { HookName } from '../../../../types/node';
 import type { HookExecutionContext } from './hook-handler';
 import type { NodeCustomEvent } from '../../../../types/events';
 
@@ -23,30 +24,31 @@ export type {
   HookHandlerRegistry
 } from './interfaces';
 
-/**
- * Hook处理器映射
- */
-export const hookHandlers: Record<string, HookHandler> = {} as Record<string, HookHandler>;
+// 导入各个Hook处理器
+import { customHookHandler } from './custom-hook-handler';
+import { notificationHookHandler } from './notification-hook-handler';
+import { validationHookHandler } from './validation-hook-handler';
 
 /**
- * 注册Hook处理器
- * @param hookName Hook名称
- * @param handler Hook处理器函数
+ * Hook处理器静态映射
+ * 类似于节点处理器的静态映射，提供类型安全的处理器访问
  */
-export function registerHookHandler(hookName: string, handler: HookHandler): void {
-  hookHandlers[hookName] = handler;
-}
+export const hookHandlers: Record<HookName, HookHandler> = {
+  [HookName.CUSTOM]: customHookHandler,
+  [HookName.NOTIFICATION]: notificationHookHandler,
+  [HookName.VALIDATION]: validationHookHandler
+} as Record<HookName, HookHandler>;
 
 /**
  * 获取Hook处理器
  * @param hookName Hook名称
- * @returns Hook处理器函数，如果未注册则返回默认处理器
+ * @returns Hook处理器函数
+ * @throws 如果找不到对应的处理器则抛出错误
  */
-export function getHookHandler(hookName: string): HookHandler {
+export function getHookHandler(hookName: HookName): HookHandler {
   const handler = hookHandlers[hookName];
   if (!handler) {
-    // 返回默认处理器
-    return defaultHookHandler;
+    throw new Error(`No handler found for hook name: ${hookName}`);
   }
   return handler;
 }
