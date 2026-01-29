@@ -88,6 +88,17 @@ export class ThreadLifecycleManager {
    * @param result 执行结果
    */
   async completeThread(thread: Thread, result: ThreadResult): Promise<void> {
+    // 如果已经是COMPLETED状态，只触发事件
+    if (thread.status === 'COMPLETED' as ThreadStatus) {
+      // 确保结束时间已设置
+      if (!thread.endTime) {
+        thread.endTime = now();
+      }
+      // 触发THREAD_COMPLETED事件
+      await this.emitThreadCompletedEvent(thread, result);
+      return;
+    }
+
     // 验证状态转换合法性
     if (!this.validateStateTransition(thread.status, 'COMPLETED' as ThreadStatus)) {
       throw new ValidationError(

@@ -80,19 +80,15 @@ export type NodeMap = Map<ID, GraphNode>;
 export type EdgeMap = Map<ID, GraphEdge>;
 
 /**
- * 有向图接口（DAG - Directed Acyclic Graph）
+ * 图数据接口（Graph）
  *
  * 设计说明：
- * - DAG 是图的数据接口，定义了图应该包含的数据结构
- * - 当前项目中，GraphData 是 DAG 的唯一实现
- * - DAG 接口保留是为了未来可能的多种图实现（如优化版本、持久化版本等）
- * - 新代码应优先使用 GraphData 类型，避免不必要的类型转换
- *
- * 使用场景：
- * - 类型定义中需要表示图结构时使用 DAG 接口
- * - 实际使用时，所有图实例都是 GraphData 类型
+ * - 定义图数据结构的接口规范
+ * - GraphData类在core层实现此接口
+ * - Thread等类型使用此接口引用图数据
+ * - 提供图的基本操作和查询功能
  */
-export interface DAG {
+export interface Graph {
   /** 节点集合 */
   nodes: NodeMap;
   /** 边集合 */
@@ -105,9 +101,42 @@ export interface DAG {
   startNodeId?: ID;
   /** 结束节点ID集合（可能有多个END节点） */
   endNodeIds: Set<ID>;
+  
+  /** 获取节点 */
+  getNode(nodeId: ID): GraphNode | undefined;
+  /** 获取边 */
+  getEdge(edgeId: ID): GraphEdge | undefined;
+  /** 获取节点的出边邻居 */
+  getOutgoingNeighbors(nodeId: ID): Set<ID>;
+  /** 获取节点的入边邻居 */
+  getIncomingNeighbors(nodeId: ID): Set<ID>;
+  /** 获取节点的出边 */
+  getOutgoingEdges(nodeId: ID): GraphEdge[];
+  /** 获取节点的入边 */
+  getIncomingEdges(nodeId: ID): GraphEdge[];
+  /** 获取两个节点之间的边 */
+  getEdgeBetween(sourceNodeId: ID, targetNodeId: ID): GraphEdge | undefined;
+  /** 检查节点是否存在 */
+  hasNode(nodeId: ID): boolean;
+  /** 检查边是否存在 */
+  hasEdge(edgeId: ID): boolean;
+  /** 检查两个节点之间是否有边 */
+  hasEdgeBetween(sourceNodeId: ID, targetNodeId: ID): boolean;
+  /** 获取所有节点ID */
+  getAllNodeIds(): ID[];
+  /** 获取所有边ID */
+  getAllEdgeIds(): ID[];
+  /** 获取节点数量 */
+  getNodeCount(): number;
+  /** 获取边数量 */
+  getEdgeCount(): number;
+  /** 获取入度为0的节点 */
+  getSourceNodes(): GraphNode[];
+  /** 获取出度为0的节点 */
+  getSinkNodes(): GraphNode[];
+  /** 克隆图 */
+  clone(): Graph;
 }
-
-
 
 /**
  * 环检测结果

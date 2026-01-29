@@ -3,7 +3,7 @@
  */
 
 import { GraphValidator } from '../graph-validator';
-import { GraphData } from '../../graph/graph-data';
+import { GraphData } from '../../entities/graph-data';
 import { NodeType } from '../../../types/node';
 import { EdgeType } from '../../../types/edge';
 import type { GraphNode, GraphEdge } from '../../../types/graph';
@@ -29,6 +29,7 @@ describe('GraphValidator', () => {
       id,
       type,
       name,
+      workflowId: 'test-workflow',
     };
     
     if (config) {

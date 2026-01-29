@@ -3,8 +3,7 @@
  * 提供图的完整分析功能，整合所有分析算法
  */
 
-import type { ID, NodeType, EdgeType, GraphAnalysisResult, ForkJoinValidationResult } from '../../../types';
-import type { GraphData } from '../graph-data';
+import type { ID, NodeType, EdgeType, GraphAnalysisResult, ForkJoinValidationResult, Graph } from '../../../types';
 import { detectCycles } from './graph-cycle-detector';
 import { analyzeReachability } from './graph-reachability-analyzer';
 import { topologicalSort } from './graph-topological-sorter';
@@ -14,7 +13,7 @@ import { topologicalSort } from './graph-topological-sorter';
  * @param graph - 要分析的图数据
  * @returns 图分析结果
  */
-export function analyzeGraph(graph: GraphData): GraphAnalysisResult {
+export function analyzeGraph(graph: Graph): GraphAnalysisResult {
   // 环检测
   const cycleDetection = detectCycles(graph);
 
@@ -62,7 +61,7 @@ export function analyzeGraph(graph: GraphData): GraphAnalysisResult {
  * @param graph - 图数据
  * @returns FORK/JOIN配对信息
  */
-export function collectForkJoinPairs(graph: GraphData): ForkJoinValidationResult {
+export function collectForkJoinPairs(graph: Graph): ForkJoinValidationResult {
   const forkNodes = new Map<ID, ID>(); // forkId -> nodeId
   const joinNodes = new Map<ID, ID>(); // joinId -> nodeId
   const pairs = new Map<ID, ID>();

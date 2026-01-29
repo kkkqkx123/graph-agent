@@ -27,7 +27,8 @@ function validate(node: Node): void {
  * 检查节点是否可以执行
  */
 function canExecute(thread: Thread, node: Node): boolean {
-  if (thread.status !== ThreadStatus.CREATED) {
+  // START节点可以在CREATED或RUNNING状态下执行（如果还没有执行过）
+  if (thread.status !== ThreadStatus.CREATED && thread.status !== ThreadStatus.RUNNING) {
     return false;
   }
 

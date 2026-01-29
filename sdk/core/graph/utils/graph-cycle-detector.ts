@@ -3,15 +3,14 @@
  * 提供图的环检测算法
  */
 
-import type { ID, CycleDetectionResult } from '../../../types';
-import type { GraphData } from '../graph-data';
+import type { ID, CycleDetectionResult, Graph } from '../../../types';
 
 /**
  * 检测图中的环（使用DFS）
  * @param graph - 要检测的图数据
  * @returns 环检测结果
  */
-export function detectCycles(graph: GraphData): CycleDetectionResult {
+export function detectCycles(graph: Graph): CycleDetectionResult {
   const visited = new Set<ID>();
   const recursionStack = new Set<ID>();
   const cycleNodes: ID[] = [];

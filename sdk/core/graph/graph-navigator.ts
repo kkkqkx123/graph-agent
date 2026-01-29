@@ -15,9 +15,10 @@ import type {
   NodeType,
   Condition,
   Edge,
+  Graph,
 } from '../../types';
-import type { GraphData } from './graph-data';
 import { getReachableNodes } from './utils/graph-traversal';
+import { GraphData } from '../entities/graph-data';
 
 /**
  * 导航结果
@@ -49,9 +50,9 @@ export interface RoutingDecision {
  * 图导航器类
  */
 export class GraphNavigator {
-  private graph: GraphData;
+  private graph: Graph;
 
-  constructor(graph: GraphData) {
+  constructor(graph: Graph) {
     this.graph = graph;
   }
 
@@ -433,7 +434,7 @@ export class GraphNavigator {
   /**
    * 获取图的引用
    */
-  getGraph(): GraphData {
+  getGraph(): Graph {
     return this.graph;
   }
 }

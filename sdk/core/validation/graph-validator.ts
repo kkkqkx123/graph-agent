@@ -13,7 +13,7 @@ import type {
 } from '../../types';
 import { ValidationError } from '../../types';
 import type { ValidationResult } from '../../types';
-import type { GraphData } from '../graph/graph-data';
+import { GraphData } from '../entities/graph-data';
 import { analyzeGraph } from '../graph/utils/graph-analyzer';
 import { detectCycles } from '../graph/utils/graph-cycle-detector';
 import { analyzeReachability } from '../graph/utils/graph-reachability-analyzer';

@@ -8,15 +8,14 @@ import type {
   WorkflowDefinition,
   NodeType,
   ID,
-} from '../../types';
-import type {
   GraphNode,
   GraphEdge,
   GraphBuildOptions,
   SubgraphMergeOptions,
   SubgraphMergeResult,
+  Graph,
 } from '../../types';
-import { GraphData } from './graph-data';
+import { GraphData } from '../entities/graph-data';
 import { GraphValidator } from '../validation/graph-validator';
 import { generateSubgraphNamespace, generateNamespacedNodeId, generateNamespacedEdgeId } from '../../utils/id-utils';
 import { SUBGRAPH_METADATA_KEYS } from '../../types/subgraph';

@@ -2,10 +2,9 @@
  * 图数据结构（GraphData）
  *
  * 设计说明：
- * - GraphData 是 DAG 接口的唯一实现，提供图的基本数据存储和操作功能
- * - 当前项目中所有图实例都使用 GraphData 类型
- * - DAG 接口保留是为了未来可能的多种图实现
- * - 新代码应直接使用 GraphData 类型，避免类型转换
+ * - GraphData 是Graph接口的实现类
+ * - 提供图的基本数据存储和操作功能
+ * - 作为核心实体，放在core/entities目录
  *
  * 核心职责：
  * - 存储和管理图的节点、边及邻接关系
@@ -25,16 +24,16 @@ import type {
   ReverseAdjacencyList,
   NodeMap,
   EdgeMap,
-  ID,
-  DAG,
+  Graph,
 } from '../../types';
+import type { ID } from '../../types';
 
 /**
  * 图数据结构类
  * 核心职责：存储和管理图的节点、边及邻接关系
  * 不包含复杂算法，仅提供基础的图操作
  */
-export class GraphData implements DAG {
+export class GraphData implements Graph {
   /** 节点集合 */
   public nodes: NodeMap;
   /** 边集合 */
@@ -253,7 +252,7 @@ export class GraphData implements DAG {
   /**
    * 克隆图
    */
-  clone(): GraphData {
+  clone(): Graph {
     const cloned = new GraphData();
 
     // 克隆节点

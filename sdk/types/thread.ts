@@ -5,7 +5,10 @@
  */
 
 import type { ID, Timestamp, Version, Metadata } from './common';
-import type { GraphData } from '../core/graph/graph-data';
+import type { Graph } from './graph';
+import type { WorkflowConfig, WorkflowMetadata } from './workflow';
+import type { GraphAnalysisResult } from './graph';
+import type { PreprocessValidationResult, SubgraphMergeLog } from './workflow';
 
 /**
  * 线程状态枚举
@@ -59,6 +62,21 @@ export interface ThreadMetadata {
   parentThreadId?: ID;
   /** 子线程ID数组（用于fork场景） */
   childThreadIds?: ID[];
+  
+  /** 工作流配置快照 */
+  workflowConfig?: WorkflowConfig;
+  /** 工作流元数据快照 */
+  workflowMetadata?: WorkflowMetadata;
+  /** 图分析结果（仅预处理路径） */
+  graphAnalysis?: GraphAnalysisResult;
+  /** 预处理验证结果（仅预处理路径） */
+  preprocessValidation?: PreprocessValidationResult;
+  /** 子图合并日志（仅预处理路径） */
+  subgraphMergeLogs?: SubgraphMergeLog[];
+  /** 拓扑排序结果（仅预处理路径） */
+  topologicalOrder?: ID[];
+  /** 构建路径标识 */
+  buildPath?: 'processed' | 'definition';
 }
 
 /**
@@ -140,8 +158,8 @@ export interface Thread {
   status: ThreadStatus;
   /** 当前执行节点ID */
   currentNodeId: ID;
-  /** 工作流图结构（使用 GraphData 类型，避免类型转换） */
-  graph: GraphData;
+  /** 工作流图结构（使用 Graph 接口） */
+  graph: Graph;
   /** 变量数组（用于持久化和元数据） */
   variables: ThreadVariable[];
   /** 变量值映射（用于快速访问，仅包含 local 变量） */

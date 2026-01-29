@@ -25,6 +25,7 @@ import { EventType } from '../../types/events';
 import type { NodeStartedEvent, NodeCompletedEvent, NodeFailedEvent, ErrorEvent, SubgraphStartedEvent, SubgraphCompletedEvent } from '../../types/events';
 import { HookExecutor } from './handlers/hook-handler';
 import { NodeType } from '../../types/node';
+import { ThreadStatus } from '../../types/thread';
 import { now, diffTimestamp } from '../../utils';
 import { getNodeHandler } from './handlers/node-handlers';
 import { SUBGRAPH_METADATA_KEYS, SubgraphBoundaryType } from '../../types/subgraph';
@@ -88,6 +89,15 @@ export class ThreadExecutor {
 
         // 处理节点执行结果
         if (nodeResult.status === 'COMPLETED') {
+          // 检查是否是END节点
+          if (currentNode.type === 'END') {
+            // END节点执行完成，设置Thread状态为COMPLETED
+            threadContext.thread.status = ThreadStatus.COMPLETED;
+            threadContext.thread.endTime = now();
+            // 工作流完成
+            break;
+          }
+          
           // 节点执行成功，路由到下一个节点
           let nextNodeId: string | null = null;
 
@@ -95,11 +105,6 @@ export class ThreadExecutor {
           const navigator = threadContext.getNavigator();
           // 获取下一个节点
           const navigationResult = navigator.getNextNode(currentNodeId);
-
-          if (navigationResult.isEnd) {
-            // 到达结束节点，工作流完成
-            break;
-          }
 
           if (navigationResult.hasMultiplePaths) {
             // 多路径情况，使用GraphNavigator进行路由决策
@@ -554,10 +559,14 @@ export class ThreadExecutor {
     const endTime = now();
     const startTime = threadContext.getStartTime();
     const executionTime = diffTimestamp(startTime, endTime);
+    
+    // 获取Thread状态
+    const status = threadContext.getStatus();
+    const isSuccess = !error && status === 'COMPLETED';
 
     return {
       threadId: threadContext.getThreadId(),
-      success: !error && threadContext.getStatus() === 'COMPLETED',
+      success: isSuccess,
       output: threadContext.getOutput(),
       error,
       executionTime,

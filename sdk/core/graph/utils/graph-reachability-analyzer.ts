@@ -3,8 +3,7 @@
  * 提供图的可达性分析算法
  */
 
-import type { ID, ReachabilityResult } from '../../../types';
-import type { GraphData } from '../graph-data';
+import type { ID, ReachabilityResult, Graph } from '../../../types';
 import { getReachableNodes, getNodesReachingTo } from './graph-traversal';
 
 /**
@@ -12,7 +11,7 @@ import { getReachableNodes, getNodesReachingTo } from './graph-traversal';
  * @param graph - 要分析的图数据
  * @returns 可达性分析结果
  */
-export function analyzeReachability(graph: GraphData): ReachabilityResult {
+export function analyzeReachability(graph: Graph): ReachabilityResult {
   if (!graph.startNodeId) {
     return {
       reachableFromStart: new Set(),

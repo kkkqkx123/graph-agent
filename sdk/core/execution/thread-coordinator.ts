@@ -75,7 +75,10 @@ export class ThreadCoordinator {
     const result = await this.threadExecutor.executeThread(threadContext);
 
     // 步骤5：根据执行结果更新 Thread 状态
-    if (result.success) {
+    // 判断执行是否成功：没有错误且Thread状态为COMPLETED
+    const isSuccess = !result.error && threadContext.getStatus() === 'COMPLETED';
+    
+    if (isSuccess) {
       await this.lifecycleManager.completeThread(threadContext.thread, result);
     } else {
       await this.lifecycleManager.failThread(threadContext.thread, result.error || new Error('Execution failed'));

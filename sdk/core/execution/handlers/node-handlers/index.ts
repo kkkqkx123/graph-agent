@@ -37,7 +37,29 @@ export function getNodeHandler(nodeType: NodeType): NodeHandler {
   return handler;
 }
 
-// 导出各个节点处理函数
+// 导入各个节点处理函数
+import { startHandler } from './start-handler';
+import { endHandler } from './end-handler';
+import { variableHandler } from './variable-handler';
+import { codeHandler } from './code-handler';
+import { forkHandler } from './fork-handler';
+import { joinHandler } from './join-handler';
+import { routeHandler } from './route-handler';
+import { loopStartHandler } from './loop-start-handler';
+import { loopEndHandler } from './loop-end-handler';
+
+// 注册各个节点处理函数
+registerNodeHandler(NodeType.START, startHandler);
+registerNodeHandler(NodeType.END, endHandler);
+registerNodeHandler(NodeType.VARIABLE, variableHandler);
+registerNodeHandler(NodeType.CODE, codeHandler);
+registerNodeHandler(NodeType.FORK, forkHandler);
+registerNodeHandler(NodeType.JOIN, joinHandler);
+registerNodeHandler(NodeType.ROUTE, routeHandler);
+registerNodeHandler(NodeType.LOOP_START, loopStartHandler);
+registerNodeHandler(NodeType.LOOP_END, loopEndHandler);
+
+// 导出各个节点处理函数（用于外部使用）
 export { startHandler } from './start-handler';
 export { endHandler } from './end-handler';
 export { variableHandler } from './variable-handler';

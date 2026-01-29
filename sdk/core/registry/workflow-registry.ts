@@ -14,12 +14,12 @@ import type {
   WorkflowRelationship,
   WorkflowHierarchy
 } from '../../types/workflow';
-import type { GraphBuildOptions } from '../../types/graph';
+import type { GraphBuildOptions } from '../../types';
 import type { ID } from '../../types/common';
 import { WorkflowValidator } from '../validation/workflow-validator';
 import { GraphBuilder } from '../graph/graph-builder';
 import { GraphValidator } from '../validation/graph-validator';
-import { GraphData } from '../graph/graph-data';
+import { GraphData } from '../entities/graph-data';
 import { ValidationError } from '../../types/errors';
 import { now } from '../../utils';
 
@@ -575,6 +575,34 @@ export class WorkflowRegistry {
    */
   getProcessed(workflowId: string): ProcessedWorkflowDefinition | undefined {
     return this.processedWorkflows.get(workflowId);
+  }
+
+  /**
+   * 预处理工作流并存储
+   * @param workflow 原始工作流定义
+   * @returns 处理后的工作流定义
+   * @throws ValidationError 如果预处理失败
+   */
+  async preprocessAndStore(workflow: WorkflowDefinition): Promise<ProcessedWorkflowDefinition> {
+    // 检查是否已经预处理过
+    const existing = this.processedWorkflows.get(workflow.id);
+    if (existing) {
+      return existing;
+    }
+
+    // 调用私有预处理方法
+    this.preprocessWorkflow(workflow);
+
+    // 返回预处理结果
+    const processed = this.processedWorkflows.get(workflow.id);
+    if (!processed) {
+      throw new ValidationError(
+        `Failed to preprocess workflow with ID '${workflow.id}'`,
+        'workflow.id'
+      );
+    }
+
+    return processed;
   }
 
   /**

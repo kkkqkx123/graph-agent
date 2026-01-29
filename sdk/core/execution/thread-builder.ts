@@ -7,11 +7,10 @@
  * 使用 ExecutionContext 获取 WorkflowRegistry
  */
 
-import type { WorkflowDefinition, ProcessedWorkflowDefinition } from '../../types/workflow';
+import type { ProcessedWorkflowDefinition } from '../../types/workflow';
 import type { Thread, ThreadOptions, ThreadStatus } from '../../types/thread';
 import { WorkflowContext } from './context/workflow-context';
 import { ConversationManager } from './conversation';
-import { LLMExecutor } from './llm-executor';
 import { ThreadContext } from './context/thread-context';
 import { NodeType } from '../../types/node';
 import { generateId, now as getCurrentTimestamp } from '../../utils';
@@ -19,8 +18,6 @@ import { VariableManager } from './managers/variable-manager';
 import { ValidationError } from '../../types/errors';
 import { WorkflowRegistry } from '../registry/workflow-registry';
 import { getWorkflowRegistry } from './context/execution-context';
-import { GraphNavigator } from '../graph/graph-navigator';
-import { GraphData } from '../graph/graph-data';
 
 /**
  * ThreadBuilder - Thread构建器
@@ -37,26 +34,40 @@ export class ThreadBuilder {
   }
 
   /**
-   * 从WorkflowRegistry获取WorkflowDefinition并构建ThreadContext
+   * 从WorkflowRegistry获取工作流并构建ThreadContext
+   * 统一使用ProcessedWorkflowDefinition路径
    * @param workflowId 工作流ID
    * @param options 线程选项
    * @returns ThreadContext实例
    */
   async build(workflowId: string, options: ThreadOptions = {}): Promise<ThreadContext> {
-    // 优先从 WorkflowRegistry 获取处理后的工作流定义
-    const processedWorkflow = this.workflowRegistry.getProcessed(workflowId);
+    // 步骤1：确保获取ProcessedWorkflowDefinition
+    let processedWorkflow = this.workflowRegistry.getProcessed(workflowId);
 
-    if (processedWorkflow) {
-      return this.buildFromProcessedDefinition(processedWorkflow, options);
+    if (!processedWorkflow) {
+      // 尝试获取原始工作流并预处理
+      const workflow = this.workflowRegistry.get(workflowId);
+      if (!workflow) {
+        throw new ValidationError(
+          `Workflow with ID '${workflowId}' not found in registry`,
+          'workflowId'
+        );
+      }
+
+      // 预处理并存储
+      processedWorkflow = await this.workflowRegistry.preprocessAndStore(workflow);
+
+      // 再次检查，确保预处理成功
+      if (!processedWorkflow) {
+        throw new ValidationError(
+          `Failed to preprocess workflow with ID '${workflowId}'`,
+          'workflowId'
+        );
+      }
     }
 
-    // 如果没有处理后的工作流，使用原始工作流定义
-    const workflow = this.workflowRegistry.get(workflowId);
-    if (!workflow) {
-      throw new ValidationError(`Workflow with ID '${workflowId}' not found in registry`, 'workflowId');
-    }
-
-    return this.buildFromDefinition(workflow, options);
+    // 步骤2：从ProcessedWorkflowDefinition构建
+    return this.buildFromProcessedDefinition(processedWorkflow, options);
   }
 
   /**
@@ -111,7 +122,19 @@ export class ThreadBuilder {
           isPreprocessed: true,
           processedAt: processedWorkflow.processedAt,
           hasSubgraphs: processedWorkflow.hasSubgraphs,
-        }
+          // 合并用户提供的customFields
+          ...options.input?.['customFields']
+        },
+        // 完整传递工作流配置和元数据
+        workflowConfig: processedWorkflow.config,
+        workflowMetadata: processedWorkflow.metadata,
+        // 传递预处理信息
+        graphAnalysis: processedWorkflow.graphAnalysis,
+        preprocessValidation: processedWorkflow.validationResult,
+        subgraphMergeLogs: processedWorkflow.subgraphMergeLogs,
+        topologicalOrder: processedWorkflow.topologicalOrder,
+        // 构建路径标识
+        buildPath: 'processed'
       }
     };
 
@@ -137,97 +160,6 @@ export class ThreadBuilder {
     return threadContext;
   }
 
-  /**
-   * 从WorkflowDefinition构建ThreadContext（内部方法）
-   * @param workflow 工作流定义
-   * @param options 线程选项
-   * @returns ThreadContext实例
-   */
-  private async buildFromDefinition(workflow: WorkflowDefinition, options: ThreadOptions = {}): Promise<ThreadContext> {
-    // 步骤1：验证 workflow 定义
-    if (!workflow.nodes || workflow.nodes.length === 0) {
-      throw new ValidationError('Workflow must have at least one node', 'workflow.nodes');
-    }
-
-    const startNode = workflow.nodes.find(n => n.type === NodeType.START);
-    if (!startNode) {
-      throw new ValidationError('Workflow must have a START node', 'workflow.nodes');
-    }
-
-    const endNode = workflow.nodes.find(n => n.type === NodeType.END);
-    if (!endNode) {
-      throw new ValidationError('Workflow must have an END node', 'workflow.nodes');
-    }
-
-    // 步骤2：创建 GraphData 实例
-    const threadGraphData = new GraphData();
-    // 复制节点
-    for (const node of workflow.nodes) {
-      // 转换 Node 为 GraphNode
-      threadGraphData.addNode({
-        ...node,
-        workflowId: workflow.id,
-        originalNode: node
-      } as any);
-    }
-    // 复制边
-    for (const edge of workflow.edges || []) {
-      threadGraphData.addEdge(edge);
-    }
-    // 设置起始和结束节点
-    if (startNode) {
-      threadGraphData.startNodeId = startNode.id;
-    }
-    if (endNode) {
-      threadGraphData.endNodeIds.add(endNode.id);
-    }
-
-    // 步骤3：创建 Thread 实例
-    const threadId = generateId();
-    const now = getCurrentTimestamp();
-
-    const thread: Partial<Thread> = {
-      id: threadId,
-      workflowId: workflow.id,
-      workflowVersion: workflow.version,
-      status: 'CREATED' as ThreadStatus,
-      currentNodeId: startNode.id,
-      graph: threadGraphData,
-      variables: [],
-      variableValues: {},
-      globalVariableValues: {},
-      input: options.input || {},
-      output: {},
-      nodeResults: [],
-      startTime: now,
-      errors: [],
-      metadata: {
-        creator: options.input?.['creator'],
-        tags: options.input?.['tags']
-      }
-    };
-
-    // 步骤3：从 WorkflowDefinition 初始化变量
-    this.variableManager.initializeFromWorkflow(thread as Thread, workflow);
-
-    // 步骤4：创建 ConversationManager 实例
-    const conversationManager = new ConversationManager({
-      tokenLimit: options.tokenLimit || 4000
-    });
-
-    // 步骤5：创建 WorkflowContext
-    const workflowContext = new WorkflowContext(workflow);
-    this.workflowContexts.set(workflow.id, workflowContext);
-
-    // 步骤6：创建并返回 ThreadContext
-    const threadContext = new ThreadContext(
-      thread as Thread,
-      workflowContext,
-      conversationManager
-    );
-
-    return threadContext;
-  }
 
   /**
    * 从缓存模板构建ThreadContext
@@ -273,7 +205,9 @@ export class ThreadBuilder {
       errors: [],
       metadata: {
         ...sourceThread.metadata,
-        parentThreadId: sourceThread.id
+        parentThreadId: sourceThread.id,
+        // 清除构建路径标识，因为是新线程
+        buildPath: undefined
       }
     };
 
@@ -305,7 +239,7 @@ export class ThreadBuilder {
     // 分离 local 和 global 变量
     const localVariables: any[] = [];
     const localVariableValues: Record<string, any> = {};
-    
+
     for (const variable of parentThread.variables) {
       if (variable.scope === 'local') {
         localVariables.push({ ...variable });
@@ -336,7 +270,9 @@ export class ThreadBuilder {
         customFields: {
           ...(parentThread.metadata?.customFields || {}),
           forkId: forkConfig.forkId
-        }
+        },
+        // 清除构建路径标识，因为是新线程
+        buildPath: undefined
       }
     };
 

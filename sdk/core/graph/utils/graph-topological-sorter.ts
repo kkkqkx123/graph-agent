@@ -3,8 +3,7 @@
  * 提供图的拓扑排序算法（Kahn算法）
  */
 
-import type { ID, TopologicalSortResult } from '../../../types';
-import type { GraphData } from '../graph-data';
+import type { ID, TopologicalSortResult, Graph } from '../../../types';
 import { detectCycles } from './graph-cycle-detector';
 
 /**
@@ -12,7 +11,7 @@ import { detectCycles } from './graph-cycle-detector';
  * @param graph - 要排序的图数据
  * @returns 拓扑排序结果
  */
-export function topologicalSort(graph: GraphData): TopologicalSortResult {
+export function topologicalSort(graph: Graph): TopologicalSortResult {
   const sortedNodes: ID[] = [];
   const inDegree = new Map<ID, number>();
   const queue: ID[] = [];
@@ -60,7 +59,7 @@ export function topologicalSort(graph: GraphData): TopologicalSortResult {
  * @param graph - 图数据
  * @returns 环中的节点ID列表
  */
-function findCycleNodes(graph: GraphData): ID[] {
+function findCycleNodes(graph: Graph): ID[] {
   const cycleResult = detectCycles(graph);
   return cycleResult.cycleNodes || [];
 }

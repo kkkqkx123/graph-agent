@@ -75,9 +75,7 @@ export async function endHandler(thread: Thread, node: Node): Promise<any> {
     }
   }
 
-  // 更新Thread状态
-  thread.status = ThreadStatus.COMPLETED;
-  thread.endTime = now();
+  // 设置Thread输出（不修改状态，状态由ThreadLifecycleManager管理）
   thread.output = output;
 
   // 记录执行历史
@@ -93,6 +91,6 @@ export async function endHandler(thread: Thread, node: Node): Promise<any> {
   return {
     message: 'Workflow completed',
     output,
-    executionTime: diffTimestamp(thread.startTime, thread.endTime)
+    executionTime: diffTimestamp(thread.startTime, now())
   };
 }

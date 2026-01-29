@@ -7,8 +7,7 @@
 import type { Node } from './node';
 import type { Edge } from './edge';
 import type { ID, Timestamp, Version, Metadata } from './common';
-import type { GraphAnalysisResult } from './graph';
-import type { GraphData } from '../core/graph/graph-data';
+import type { GraphAnalysisResult, Graph } from './graph';
 
 /**
  * 工作流状态枚举
@@ -165,8 +164,8 @@ export interface PreprocessValidationResult {
  * 扩展WorkflowDefinition，添加预处理相关的元数据
  */
 export interface ProcessedWorkflowDefinition extends WorkflowDefinition {
-  /** 图结构（使用 GraphData 类型，避免类型转换） */
-  graph: GraphData;
+  /** 图结构（使用 Graph 接口） */
+  graph: Graph;
   /** 图分析结果 */
   graphAnalysis: GraphAnalysisResult;
   /** 预处理验证结果 */

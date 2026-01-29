@@ -3,8 +3,7 @@
  * 提供图的深度优先和广度优先遍历算法
  */
 
-import type { ID } from '../../../types';
-import type { GraphData } from '../graph-data';
+import type { ID, Graph } from '../../../types';
 
 /**
  * 深度优先遍历
@@ -12,7 +11,7 @@ import type { GraphData } from '../graph-data';
  * @param startNodeId - 起始节点ID
  * @param visitor - 访问函数，在访问每个节点时调用
  */
-export function dfs(graph: GraphData, startNodeId: ID, visitor: (nodeId: ID) => void): void {
+export function dfs(graph: Graph, startNodeId: ID, visitor: (nodeId: ID) => void): void {
   const visited = new Set<ID>();
   const stack = [startNodeId];
 
@@ -41,7 +40,7 @@ export function dfs(graph: GraphData, startNodeId: ID, visitor: (nodeId: ID) => 
  * @param startNodeId - 起始节点ID
  * @param visitor - 访问函数，在访问每个节点时调用
  */
-export function bfs(graph: GraphData, startNodeId: ID, visitor: (nodeId: ID) => void): void {
+export function bfs(graph: Graph, startNodeId: ID, visitor: (nodeId: ID) => void): void {
   const visited = new Set<ID>();
   const queue: ID[] = [startNodeId];
   visited.add(startNodeId);
@@ -67,7 +66,7 @@ export function bfs(graph: GraphData, startNodeId: ID, visitor: (nodeId: ID) => 
  * @param startNodeId - 起始节点ID
  * @returns 可达节点的ID集合
  */
-export function getReachableNodes(graph: GraphData, startNodeId: ID): Set<ID> {
+export function getReachableNodes(graph: Graph, startNodeId: ID): Set<ID> {
   const reachable = new Set<ID>();
   dfs(graph, startNodeId, (nodeId) => {
     reachable.add(nodeId);
@@ -81,7 +80,7 @@ export function getReachableNodes(graph: GraphData, startNodeId: ID): Set<ID> {
  * @param targetNodeId - 目标节点ID
  * @returns 能到达目标节点的节点ID集合
  */
-export function getNodesReachingTo(graph: GraphData, targetNodeId: ID): Set<ID> {
+export function getNodesReachingTo(graph: Graph, targetNodeId: ID): Set<ID> {
   const reaching = new Set<ID>();
   const visited = new Set<ID>();
   const stack = [targetNodeId];
