@@ -17,7 +17,7 @@ import type {
   SubgraphMergeResult,
 } from '../../types';
 import { GraphData } from './graph-data';
-import { GraphValidator } from './graph-validator';
+import { GraphValidator } from '../validation/graph-validator';
 import { generateSubgraphNamespace, generateNamespacedNodeId, generateNamespacedEdgeId } from '../../utils/id-utils';
 
 /**

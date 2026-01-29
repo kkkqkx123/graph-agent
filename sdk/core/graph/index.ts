@@ -5,7 +5,6 @@
 // 核心类
 export { GraphData } from './graph-data';
 export { GraphBuilder } from './graph-builder';
-export { GraphValidator } from './graph-validator';
 export { GraphNavigator } from './graph-navigator';
 
 // 图分析工具函数

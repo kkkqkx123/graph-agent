@@ -6,4 +6,4 @@
 export { WorkflowValidator } from './workflow-validator';
 export { NodeValidator } from './node-validator';
 export { MessageValidator } from './message-validator';
-export type { ValidationResult } from '../../types/errors';
+export { GraphValidator } from './graph-validator';

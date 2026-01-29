@@ -16,7 +16,7 @@ import type { DAG, GraphBuildOptions } from '../../types/graph';
 import type { ID } from '../../types/common';
 import { WorkflowValidator } from '../validation/workflow-validator';
 import { GraphBuilder } from '../graph/graph-builder';
-import { GraphValidator } from '../graph/graph-validator';
+import { GraphValidator } from '../validation/graph-validator';
 import { ValidationError } from '../../types/errors';
 import { now } from '../../utils';
 

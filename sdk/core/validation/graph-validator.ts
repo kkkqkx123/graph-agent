@@ -13,11 +13,11 @@ import type {
 } from '../../types';
 import { ValidationError } from '../../types';
 import type { ValidationResult } from '../../types';
-import type { GraphData } from './graph-data';
-import { analyzeGraph } from './utils/graph-analyzer';
-import { detectCycles } from './utils/graph-cycle-detector';
-import { analyzeReachability } from './utils/graph-reachability-analyzer';
-import { getReachableNodes } from './utils/graph-traversal';
+import type { GraphData } from '../graph/graph-data';
+import { analyzeGraph } from '../graph/utils/graph-analyzer';
+import { detectCycles } from '../graph/utils/graph-cycle-detector';
+import { analyzeReachability } from '../graph/utils/graph-reachability-analyzer';
+import { getReachableNodes } from '../graph/utils/graph-traversal';
 
 /**
  * 图验证器类
