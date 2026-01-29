@@ -38,16 +38,24 @@ export const nodeHandlers: Record<NodeType, NodeHandler> = {
 ### 2. Hook Handlers（Hook处理器）
 
 **特点**：
-- Hook名称是**可扩展的**，用户可以定义自定义Hook
-- 处理器是**可扩展的**，支持运行时注册新的Hook处理器
-- **需要注册机制**，因为Hook名称是用户定义的
+- Hook名称是**固定的**，由[`HookName`](../../types/node.ts)枚举定义
+- 处理器是**静态的**，每个Hook名称对应一个固定的处理器
+- **不需要运行时注册**，因为Hook名称是编译时确定的
 
 **设计决策**：
 - ❌ 不需要注册机制
 - ✅ 使用静态Map映射
-- ✅ Hook与节点一起定义在workflow中
-- ✅ 提供静态检查支持
+- ✅ 在模块加载时完成映射
+- ❌ 不支持运行时扩展新的Hook类型
 
+**实现**：
+```typescript
+export const hookHandlers: Record<HookName, HookHandler> = {
+  [HookName.CUSTOM]: customHookHandler,
+  [HookName.NOTIFICATION]: notificationHookHandler,
+  [HookName.VALIDATION]: validationHookHandler
+} as Record<HookName, HookHandler>;
+```
 
 **使用场景**：
 ```typescript
@@ -57,7 +65,7 @@ const node: Node = {
   type: NodeType.LLM,
   hooks: [
     {
-      hookName: 'notification',  // 可扩展的Hook名称
+      hookName: HookName.NOTIFICATION,  // 固定的Hook名称
       hookType: HookType.AFTER_EXECUTE,
       eventName: 'node.completed'
     }
@@ -66,9 +74,9 @@ const node: Node = {
 ```
 
 **原因**：
-- Hook是用户自定义的扩展点
-- 需要支持用户定义自己的Hook处理器
-- Hook与节点紧密关联，应该在workflow中定义
+- Hook类型是SDK核心概念，不应该由用户扩展
+- 添加新Hook类型需要修改SDK代码，属于SDK升级
+- 静态映射更简单、更高效、类型更安全
 
 ---
 
@@ -170,37 +178,53 @@ const workflow: WorkflowDefinition = {
 
 ## 接口定义差异
 
-### NodeHandlerMap（无注册）
+### NodeHandler（无注册）
 
 ```typescript
-export interface NodeHandlerMap {
-  get(nodeType: string): NodeHandler;
-  has(nodeType: string): boolean;
-  getAll(): Record<string, NodeHandler>;
-  // 没有 register 方法
-}
+export type NodeHandler = (thread: Thread, node: Node) => Promise<any>;
+
+// 使用静态映射
+export const nodeHandlers: Record<NodeType, NodeHandler> = {
+  [NodeType.START]: startHandler,
+  [NodeType.END]: endHandler,
+  // ... 其他节点类型
+};
 ```
 
-### HookHandlerRegistry（有注册）
+### HookHandler（无注册）
 
 ```typescript
-export interface HookHandlerRegistry {
-  register(hookName: string, handler: HookHandler): void;  // 有注册方法
-  get(hookName: string): HookHandler;
-  has(hookName: string): boolean;
-  getAll(): Record<string, HookHandler>;
-}
+export type HookHandler = (
+  context: HookExecutionContext,
+  hook: NodeHook,
+  emitEvent: (event: NodeCustomEvent) => Promise<void>
+) => Promise<void>;
+
+// 使用静态映射
+export const hookHandlers: Record<HookName, HookHandler> = {
+  [HookName.CUSTOM]: customHookHandler,
+  [HookName.NOTIFICATION]: notificationHookHandler,
+  [HookName.VALIDATION]: validationHookHandler
+};
 ```
 
 ### TriggerHandlerRegistry（有注册）
 
 ```typescript
+export type TriggerHandler = (
+  action: TriggerAction,
+  triggerId: string
+) => Promise<TriggerExecutionResult>;
+
 export interface TriggerHandlerRegistry {
-  register(actionType: string, handler: TriggerHandler): void;  // 有注册方法
+  register(actionType: string, handler: TriggerHandler): void;
   get(actionType: string): TriggerHandler;
   has(actionType: string): boolean;
   getAll(): Record<string, TriggerHandler>;
 }
+
+// 使用注册器实现
+export const triggerHandlerRegistry: TriggerHandlerRegistry = new TriggerHandlerRegistryImpl();
 ```
 
 ---
@@ -255,15 +279,20 @@ interface WorkflowDefinition {
 
 | 特性 | Node Handlers | Hook Handlers | Trigger Handlers |
 |------|--------------|---------------|------------------|
-| 类型定义 | SDK固定（NodeType枚举） | 用户可扩展 | 用户可扩展 |
-| 注册机制 | ❌ 不需要 | ✅ 需要 | ✅ 需要 |
-| 运行时扩展 | ❌ 不支持 | ✅ 支持 | ✅ 支持 |
+| 类型定义 | SDK固定（NodeType枚举） | SDK固定（HookName枚举） | 用户可扩展 |
+| 注册机制 | ❌ 不需要 | ❌ 不需要 | ✅ 需要 |
+| 运行时扩展 | ❌ 不支持 | ❌ 不支持 | ✅ 支持 |
 | 与Workflow集成 | ✅ 已集成 | ✅ 已集成 | ⚠️ 建议集成 |
 | 静态检查 | ✅ 完整 | ✅ 完整 | ⚠️ 需要改进 |
-| 接口类型 | NodeHandlerMap | HookHandlerRegistry | TriggerHandlerRegistry |
+| 接口类型 | NodeHandler | HookHandler | TriggerHandlerRegistry |
 
 **设计原则**：
-1. **固定类型使用静态映射**：如Node类型
-2. **可扩展类型使用注册机制**：如Hook、Trigger
+1. **固定类型使用静态映射**：如Node类型、Hook类型
+2. **可扩展类型使用注册机制**：如Trigger
 3. **与workflow紧密集成的组件应该在workflow中定义**：如Node、Hook、Trigger
 4. **提供完整的静态检查**：确保类型安全和可维护性
+
+**重要变更**：
+- Hook Handlers 从"可扩展"改为"固定"，使用静态映射而非注册机制
+- Hook名称由SDK定义，用户不能扩展新的Hook类型
+- 只有Trigger Handlers支持运行时扩展和注册机制

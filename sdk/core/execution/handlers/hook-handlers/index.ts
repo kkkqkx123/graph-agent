@@ -9,20 +9,10 @@ import type { HookExecutionContext } from './hook-handler';
 import type { NodeCustomEvent } from '../../../../types/events';
 
 // 导入接口定义
-import type {
-  HookHandler,
-  HookHandlerSpec,
-  HookEvaluationContext,
-  HookHandlerRegistry
-} from './interfaces';
+import type { HookHandler } from './interfaces';
 
 // 导出接口定义
-export type {
-  HookHandler,
-  HookHandlerSpec,
-  HookEvaluationContext,
-  HookHandlerRegistry
-} from './interfaces';
+export type { HookHandler } from './interfaces';
 
 // 导入各个Hook处理器
 import { customHookHandler } from './custom-hook-handler';

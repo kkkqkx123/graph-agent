@@ -18,45 +18,6 @@ export type TriggerHandler = (
 ) => Promise<TriggerExecutionResult>;
 
 /**
- * 触发器处理器接口规范
- * 所有触发器处理器应遵循以下规范：
- * 1. 验证参数
- * 2. 执行动作逻辑
- * 3. 返回标准化的执行结果
- * 4. 统一的错误处理
- */
-export interface TriggerHandlerSpec {
-  /** 处理器名称 */
-  name: string;
-  /** 支持的动作类型 */
-  actionType: string;
-  /** 处理器函数 */
-  handler: TriggerHandler;
-  /** 描述 */
-  description?: string;
-  /** 是否需要ThreadContext */
-  requiresThreadContext?: boolean;
-}
-
-/**
- * 触发器执行结果接口
- */
-export interface TriggerExecutionResultSpec {
-  /** 触发器ID */
-  triggerId: string;
-  /** 是否成功 */
-  success: boolean;
-  /** 触发动作 */
-  action: TriggerAction;
-  /** 执行时间（毫秒） */
-  executionTime: number;
-  /** 执行结果（成功时） */
-  result?: any;
-  /** 错误信息（失败时） */
-  error?: string;
-}
-
-/**
  * 触发器处理器注册器接口
  *
  * 注意：这是静态注册机制，用于注册无状态的处理函数

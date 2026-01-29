@@ -8,20 +8,10 @@
 import { NodeType } from '../../../../types/node';
 
 // 导入接口定义
-import type {
-  NodeHandler,
-  NodeHandlerSpec,
-  NodeExecutionResultSpec,
-  NodeHandlerMap
-} from './interfaces';
+import type { NodeHandler } from './interfaces';
 
 // 导出接口定义
-export type {
-  NodeHandler,
-  NodeHandlerSpec,
-  NodeExecutionResultSpec,
-  NodeHandlerMap
-} from './interfaces';
+export type { NodeHandler } from './interfaces';
 
 // 导入各个节点处理函数
 import { startHandler } from './start-handler';
