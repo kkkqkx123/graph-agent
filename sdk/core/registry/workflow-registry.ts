@@ -10,7 +10,9 @@ import type {
   WorkflowConfig,
   ProcessedWorkflowDefinition,
   SubgraphMergeLog,
-  PreprocessValidationResult
+  PreprocessValidationResult,
+  WorkflowRelationship,
+  WorkflowHierarchy
 } from '../../types/workflow';
 import type { DAG, GraphBuildOptions } from '../../types/graph';
 import type { ID } from '../../types/common';
@@ -58,6 +60,7 @@ export class WorkflowRegistry {
   private versions: Map<string, WorkflowVersion[]> = new Map();
   private processedWorkflows: Map<string, ProcessedWorkflowDefinition> = new Map();
   private graphCache: Map<string, DAG> = new Map();
+  private workflowRelationships: Map<string, WorkflowRelationship> = new Map();
   private validator: WorkflowValidator;
   private enableVersioning: boolean;
   private maxVersions: number;
@@ -371,6 +374,7 @@ export class WorkflowRegistry {
     this.versions.clear();
     this.processedWorkflows.clear();
     this.graphCache.clear();
+    this.workflowRelationships.clear();
   }
 
   /**
@@ -702,5 +706,119 @@ export class WorkflowRegistry {
   private clearPreprocessCache(workflowId: string): void {
     this.processedWorkflows.delete(workflowId);
     this.graphCache.delete(workflowId);
+  }
+
+  /**
+   * 注册子图关系
+   * @param parentWorkflowId 父工作流ID
+   * @param subgraphNodeId SUBGRAPH节点ID
+   * @param childWorkflowId 子工作流ID
+   */
+  registerSubgraphRelationship(
+    parentWorkflowId: string,
+    subgraphNodeId: string,
+    childWorkflowId: string
+  ): void {
+    // 1. 更新父工作流关系
+    const parentRelationship = this.workflowRelationships.get(parentWorkflowId);
+    if (parentRelationship) {
+      parentRelationship.childWorkflowIds.add(childWorkflowId);
+      parentRelationship.referencedBy.set(subgraphNodeId, childWorkflowId);
+    } else {
+      this.workflowRelationships.set(parentWorkflowId, {
+        workflowId: parentWorkflowId,
+        childWorkflowIds: new Set([childWorkflowId]),
+        referencedBy: new Map([[subgraphNodeId, childWorkflowId]]),
+        depth: 0
+      });
+    }
+    
+    // 2. 更新子工作流关系
+    const childRelationship = this.workflowRelationships.get(childWorkflowId);
+    if (!childRelationship) {
+      this.workflowRelationships.set(childWorkflowId, {
+        workflowId: childWorkflowId,
+        parentWorkflowId,
+        childWorkflowIds: new Set(),
+        referencedBy: new Map(),
+        depth: this.calculateDepth(parentWorkflowId) + 1
+      });
+    }
+  }
+
+  /**
+   * 获取工作流层次结构
+   * @param workflowId 工作流ID
+   * @returns 层次结构信息
+   */
+  getWorkflowHierarchy(workflowId: string): WorkflowHierarchy {
+    const ancestors: string[] = [];
+    const descendants: string[] = [];
+    
+    // 构建祖先链
+    let currentId = workflowId;
+    while (currentId) {
+      const relationship = this.workflowRelationships.get(currentId);
+      if (relationship?.parentWorkflowId) {
+        ancestors.unshift(relationship.parentWorkflowId);
+        currentId = relationship.parentWorkflowId;
+      } else {
+        break;
+      }
+    }
+    
+    // 构建后代链（递归）
+    this.collectDescendants(workflowId, descendants);
+    
+    const relationship = this.workflowRelationships.get(workflowId);
+    return {
+      ancestors,
+      descendants,
+      depth: relationship?.depth || 0,
+      rootWorkflowId: ancestors[0] || workflowId
+    };
+  }
+
+  /**
+   * 获取父工作流
+   * @param workflowId 工作流ID
+   * @returns 父工作流ID或null
+   */
+  getParentWorkflow(workflowId: string): string | null {
+    const relationship = this.workflowRelationships.get(workflowId);
+    return relationship?.parentWorkflowId || null;
+  }
+
+  /**
+   * 获取子工作流
+   * @param workflowId 工作流ID
+   * @returns 子工作流ID数组
+   */
+  getChildWorkflows(workflowId: string): string[] {
+    const relationship = this.workflowRelationships.get(workflowId);
+    return relationship ? Array.from(relationship.childWorkflowIds) : [];
+  }
+
+  /**
+   * 收集所有后代工作流
+   */
+  private collectDescendants(workflowId: string, result: string[]): void {
+    const relationship = this.workflowRelationships.get(workflowId);
+    if (!relationship) return;
+    
+    for (const childId of relationship.childWorkflowIds) {
+      if (!result.includes(childId)) {
+        result.push(childId);
+        this.collectDescendants(childId, result);
+      }
+    }
+  }
+
+  /**
+   * 计算工作流深度
+   */
+  private calculateDepth(workflowId: string): number {
+    const relationship = this.workflowRelationships.get(workflowId);
+    return relationship?.depth || 0;
   }
 }

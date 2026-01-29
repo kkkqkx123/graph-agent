@@ -8,10 +8,27 @@
 
 import type { Thread } from '../../../types/thread';
 import type { GraphData } from '../../graph/graph-data';
+import type { ID } from '../../../types/common';
 import { WorkflowContext } from './workflow-context';
 import { ConversationManager } from '../conversation';
 import { VariableManager } from '../managers/variable-manager';
 import { GraphNavigator } from '../../graph/graph-navigator';
+
+/**
+ * 子图执行上下文
+ */
+interface SubgraphContext {
+  /** 子工作流ID */
+  workflowId: ID;
+  /** 父工作流ID */
+  parentWorkflowId: ID;
+  /** 开始时间 */
+  startTime: number;
+  /** 输入数据 */
+  input: any;
+  /** 当前深度 */
+  depth: number;
+}
 
 /**
  * ThreadContext - Thread 执行上下文
@@ -41,6 +58,11 @@ export class ThreadContext {
    * 图导航器（延迟创建）
    */
   private navigator?: GraphNavigator;
+
+  /**
+   * 子图执行堆栈
+   */
+  private subgraphStack: SubgraphContext[] = [];
 
   /**
    * 构造函数
@@ -256,5 +278,59 @@ export class ThreadContext {
       this.navigator = new GraphNavigator(this.thread.graph as GraphData);
     }
     return this.navigator;
+  }
+
+  /**
+   * 进入子图
+   * @param workflowId 子工作流ID
+   * @param parentWorkflowId 父工作流ID
+   * @param input 输入数据
+   */
+  enterSubgraph(workflowId: ID, parentWorkflowId: ID, input: any): void {
+    this.subgraphStack.push({
+      workflowId,
+      parentWorkflowId,
+      startTime: Date.now(),
+      input,
+      depth: this.subgraphStack.length
+    });
+  }
+
+  /**
+   * 退出子图
+   */
+  exitSubgraph(): void {
+    this.subgraphStack.pop();
+  }
+
+  /**
+   * 获取当前子图上下文
+   */
+  getCurrentSubgraphContext(): SubgraphContext | null {
+    return this.subgraphStack.length > 0
+      ? this.subgraphStack[this.subgraphStack.length - 1] || null
+      : null;
+  }
+
+  /**
+   * 获取子图执行堆栈
+   */
+  getSubgraphStack(): SubgraphContext[] {
+    return [...this.subgraphStack];
+  }
+
+  /**
+   * 检查是否在子图中执行
+   */
+  isInSubgraph(): boolean {
+    return this.subgraphStack.length > 0;
+  }
+
+  /**
+   * 获取当前工作流ID（考虑子图上下文）
+   */
+  getCurrentWorkflowId(): ID {
+    const context = this.getCurrentSubgraphContext();
+    return context ? context.workflowId : this.getWorkflowId();
   }
 }

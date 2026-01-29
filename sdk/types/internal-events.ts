@@ -1,7 +1,9 @@
 /**
  * 内部协调事件类型定义
  * 用于模块内部协调的事件，不对外暴露
- * 主要用于 LLM 和工具执行的内部协调
+ * 主要用于工具执行的内部协调
+ *
+ * 注意：LLM执行已改为直接方法调用，不再使用事件机制
  */
 
 import type { ID, Timestamp } from './common';
@@ -10,12 +12,6 @@ import type { ID, Timestamp } from './common';
  * 内部事件类型枚举
  */
 export enum InternalEventType {
-  /** LLM执行请求 */
-  LLM_EXECUTION_REQUEST = 'INTERNAL_LLM_EXECUTION_REQUEST',
-  /** LLM执行完成 */
-  LLM_EXECUTION_COMPLETED = 'INTERNAL_LLM_EXECUTION_COMPLETED',
-  /** LLM执行失败 */
-  LLM_EXECUTION_FAILED = 'INTERNAL_LLM_EXECUTION_FAILED',
   /** 工具执行请求 */
   TOOL_EXECUTION_REQUEST = 'INTERNAL_TOOL_EXECUTION_REQUEST',
   /** 工具执行完成 */
@@ -71,22 +67,9 @@ export interface ContextSnapshot {
 }
 
 /**
- * LLM执行请求事件
- */
-export interface LLMExecutionRequestEvent extends BaseInternalEvent {
-  type: InternalEventType.LLM_EXECUTION_REQUEST;
-  /** 请求执行的节点ID */
-  nodeId: string;
-  /** 节点类型（llm、tool、context_processor、user_interaction） */
-  nodeType: string;
-  /** LLM请求数据 */
-  requestData: LLMExecutionRequestData;
-  /** 当前上下文快照 */
-  contextSnapshot: ContextSnapshot;
-}
-
-/**
  * LLM执行结果
+ *
+ * 注意：LLM执行已改为直接方法调用，此类型用于 LLMCoordinator 的返回值
  */
 export interface LLMExecutionResult {
   /** 响应内容 */
@@ -105,32 +88,6 @@ export interface LLMExecutionResult {
     name: string;
     arguments: string;
   }>;
-}
-
-/**
- * LLM执行完成事件
- */
-export interface LLMExecutionCompletedEvent extends BaseInternalEvent {
-  type: InternalEventType.LLM_EXECUTION_COMPLETED;
-  /** 原始请求节点ID */
-  nodeId: string;
-  /** LLM执行结果 */
-  result: LLMExecutionResult;
-  /** 更新后的上下文数据（LLMExecutor可能修改了对话历史） */
-  updatedContext?: ContextSnapshot;
-}
-
-/**
- * LLM执行失败事件
- */
-export interface LLMExecutionFailedEvent extends BaseInternalEvent {
-  type: InternalEventType.LLM_EXECUTION_FAILED;
-  /** 原始请求节点ID */
-  nodeId: string;
-  /** 错误信息 */
-  error: string;
-  /** 错误详情（可选） */
-  errorDetails?: any;
 }
 
 /**
@@ -212,9 +169,6 @@ export interface ToolExecutionFailedEvent extends BaseInternalEvent {
  * 所有内部事件类型的联合类型
  */
 export type InternalEvent =
-  | LLMExecutionRequestEvent
-  | LLMExecutionCompletedEvent
-  | LLMExecutionFailedEvent
   | ToolExecutionRequestEvent
   | ToolExecutionCompletedEvent
   | ToolExecutionFailedEvent;

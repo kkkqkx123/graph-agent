@@ -24,6 +24,10 @@ export interface GraphNode {
   metadata?: Metadata;
   /** 原始节点引用（用于访问完整节点配置） */
   originalNode?: Node;
+  /** 节点所属的原始工作流ID */
+  workflowId: ID;
+  /** 父工作流ID（如果是子图展开的节点） */
+  parentWorkflowId?: ID;
 }
 
 /**

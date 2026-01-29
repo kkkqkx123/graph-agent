@@ -19,6 +19,7 @@ import type {
 import { GraphData } from './graph-data';
 import { GraphValidator } from '../validation/graph-validator';
 import { generateSubgraphNamespace, generateNamespacedNodeId, generateNamespacedEdgeId } from '../../utils/id-utils';
+import { SUBGRAPH_METADATA_KEYS } from '../../types/subgraph';
 
 /**
  * 图构建器类
@@ -42,6 +43,7 @@ export class GraphBuilder {
         description: node.description,
         metadata: node.metadata,
         originalNode: node,
+        workflowId: workflow.id,
       };
       graph.addNode(graphNode);
 
@@ -190,12 +192,21 @@ export class GraphBuilder {
       }
 
       // 合并子工作流图
-      const mergeOptions: SubgraphMergeOptions = {
+      const mergeOptions: SubgraphMergeOptions & {
+        subworkflowId: ID;
+        parentWorkflowId: ID;
+        depth: number;
+        workflowRegistry?: any;
+      } = {
         nodeIdPrefix: namespace,
         edgeIdPrefix: namespace,
         preserveIdMapping: true,
         inputMapping: new Map(Object.entries(subgraphConfig.inputMapping || {})),
         outputMapping: new Map(Object.entries(subgraphConfig.outputMapping || {})),
+        subworkflowId: subworkflowId,
+        parentWorkflowId: subgraphNode.workflowId,
+        depth: currentDepth + 1,
+        workflowRegistry,
       };
 
       const mergeResult = this.mergeGraph(
@@ -244,7 +255,12 @@ export class GraphBuilder {
     mainGraph: GraphData,
     subgraph: GraphData,
     subgraphNodeId: ID,
-    options: SubgraphMergeOptions
+    options: SubgraphMergeOptions & {
+      subworkflowId: ID;
+      parentWorkflowId: ID;
+      depth: number;
+      workflowRegistry?: any;
+    }
   ): SubgraphMergeResult {
     const nodeIdMapping = new Map<ID, ID>();
     const edgeIdMapping = new Map<ID, ID>();
@@ -265,7 +281,29 @@ export class GraphBuilder {
         ...node,
         id: newId,
         originalNode: node.originalNode,
+        workflowId: options.subworkflowId,
+        parentWorkflowId: options.parentWorkflowId,
       };
+      
+      // 为边界节点添加metadata标记
+      if (node.type === 'START' as NodeType) {
+        newNode.metadata = {
+          ...newNode.metadata,
+          [SUBGRAPH_METADATA_KEYS.BOUNDARY_TYPE]: 'entry',
+          [SUBGRAPH_METADATA_KEYS.ORIGINAL_NODE_ID]: subgraphNodeId,
+          [SUBGRAPH_METADATA_KEYS.NAMESPACE]: options.nodeIdPrefix,
+          [SUBGRAPH_METADATA_KEYS.DEPTH]: options.depth
+        };
+      } else if (node.type === 'END' as NodeType) {
+        newNode.metadata = {
+          ...newNode.metadata,
+          [SUBGRAPH_METADATA_KEYS.BOUNDARY_TYPE]: 'exit',
+          [SUBGRAPH_METADATA_KEYS.ORIGINAL_NODE_ID]: subgraphNodeId,
+          [SUBGRAPH_METADATA_KEYS.NAMESPACE]: options.nodeIdPrefix,
+          [SUBGRAPH_METADATA_KEYS.DEPTH]: options.depth
+        };
+      }
+      
       mainGraph.addNode(newNode);
       nodeIdMapping.set(node.id, newId);
       addedNodeIds.push(newId);
@@ -327,6 +365,15 @@ export class GraphBuilder {
     removedNodeIds.push(subgraphNodeId);
     for (const edgeId of removedEdgeIds) {
       mainGraph.edges.delete(edgeId);
+    }
+
+    // 注册工作流关系
+    if (options.workflowRegistry) {
+      options.workflowRegistry.registerSubgraphRelationship(
+        options.parentWorkflowId,
+        subgraphNodeId,
+        options.subworkflowId
+      );
     }
 
     return {

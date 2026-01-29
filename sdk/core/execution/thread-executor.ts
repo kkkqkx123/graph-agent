@@ -17,15 +17,19 @@
 import type { ThreadResult } from '../../types/thread';
 import type { Node } from '../../types/node';
 import type { NodeExecutionResult } from '../../types/thread';
+import type { SubgraphNodeConfig } from '../../types/node';
 import { ThreadContext } from './context/thread-context';
 import { EventManager } from './managers/event-manager';
 import { NotFoundError } from '../../types/errors';
 import { EventType } from '../../types/events';
-import type { NodeStartedEvent, NodeCompletedEvent, NodeFailedEvent, ErrorEvent } from '../../types/events';
+import type { NodeStartedEvent, NodeCompletedEvent, NodeFailedEvent, ErrorEvent, SubgraphStartedEvent, SubgraphCompletedEvent } from '../../types/events';
 import { HookExecutor } from './handlers/hook-handler';
 import { NodeType } from '../../types/node';
 import { now, diffTimestamp } from '../../utils';
 import { getNodeHandler } from './handlers/node-handlers';
+import { SUBGRAPH_METADATA_KEYS, SubgraphBoundaryType } from '../../types/subgraph';
+import { LLMCoordinator, type LLMExecutionParams } from './llm-coordinator';
+import type { LLMExecutionRequestData } from '../../types/internal-events';
 
 /**
  * ThreadExecutor - Thread 执行器
@@ -34,9 +38,11 @@ import { getNodeHandler } from './handlers/node-handlers';
  */
 export class ThreadExecutor {
   private eventManager: EventManager;
+  private llmCoordinator: LLMCoordinator;
 
   constructor(eventManager?: EventManager) {
     this.eventManager = eventManager || new EventManager();
+    this.llmCoordinator = LLMCoordinator.getInstance();
   }
 
   /**
@@ -165,6 +171,56 @@ export class ThreadExecutor {
     const nodeId = node.id;
     const nodeType = node.type;
 
+    // 获取GraphNode以检查边界信息
+    const navigator = threadContext.getNavigator();
+    const graphNode = navigator.getGraph().getNode(nodeId);
+
+    // 检查是否是子图边界节点
+    if (graphNode?.metadata?.[SUBGRAPH_METADATA_KEYS.BOUNDARY_TYPE]) {
+      const boundaryType = graphNode.metadata[SUBGRAPH_METADATA_KEYS.BOUNDARY_TYPE] as SubgraphBoundaryType;
+      const originalNodeId = graphNode.metadata[SUBGRAPH_METADATA_KEYS.ORIGINAL_NODE_ID];
+
+      if (boundaryType === 'entry') {
+        // 进入子图
+        const input = this.getSubgraphInput(threadContext, originalNodeId);
+        threadContext.enterSubgraph(
+          graphNode.workflowId,
+          graphNode.parentWorkflowId!,
+          input
+        );
+
+        // 触发子图开始事件
+        await this.eventManager.emit<SubgraphStartedEvent>({
+          type: EventType.SUBGRAPH_STARTED,
+          threadId: threadContext.getThreadId(),
+          workflowId: threadContext.getWorkflowId(),
+          subgraphId: graphNode.workflowId,
+          parentWorkflowId: graphNode.parentWorkflowId!,
+          input,
+          timestamp: now()
+        });
+      } else if (boundaryType === 'exit') {
+        // 退出子图
+        const subgraphContext = threadContext.getCurrentSubgraphContext();
+        if (subgraphContext) {
+          const output = this.getSubgraphOutput(threadContext, originalNodeId);
+
+          // 触发子图完成事件
+          await this.eventManager.emit<SubgraphCompletedEvent>({
+            type: EventType.SUBGRAPH_COMPLETED,
+            threadId: threadContext.getThreadId(),
+            workflowId: threadContext.getWorkflowId(),
+            subgraphId: subgraphContext.workflowId,
+            output,
+            executionTime: Date.now() - subgraphContext.startTime,
+            timestamp: now()
+          });
+
+          threadContext.exitSubgraph();
+        }
+      }
+    }
+
     try {
       // 步骤1：触发节点开始事件
       await this.eventManager.emit<NodeStartedEvent>({
@@ -292,20 +348,129 @@ export class ThreadExecutor {
   private async executeLLMManagedNode(threadContext: ThreadContext, node: Node): Promise<NodeExecutionResult> {
     const startTime = now();
 
-    // TODO: 实现实际的LLM执行器调用
-    // 这里暂时返回模拟结果
-    const endTime = now();
+    try {
+      // 提取LLM请求数据
+      const requestData = this.extractLLMRequestData(node, threadContext);
+      
+      // 直接调用 LLMCoordinator
+      const result = await this.llmCoordinator.executeLLM({
+        threadId: threadContext.getThreadId(),
+        nodeId: node.id,
+        requestData,
+        contextSnapshot: {
+          conversationHistory: threadContext.conversationManager.getMessages(),
+          variableValues: threadContext.getAllVariables(),
+          nodeResults: threadContext.getNodeResults()
+        }
+      });
 
-    return {
-      nodeId: node.id,
-      nodeType: node.type,
-      status: 'COMPLETED',
-      step: threadContext.thread.nodeResults.length + 1,
-      data: { message: 'LLM managed node executed' },
-      startTime,
-      endTime,
-      executionTime: diffTimestamp(startTime, endTime)
+      const endTime = now();
+
+      if (result.success) {
+        return {
+          nodeId: node.id,
+          nodeType: node.type,
+          status: 'COMPLETED',
+          step: threadContext.thread.nodeResults.length + 1,
+          data: result.result,
+          startTime,
+          endTime,
+          executionTime: diffTimestamp(startTime, endTime)
+        };
+      } else {
+        return {
+          nodeId: node.id,
+          nodeType: node.type,
+          status: 'FAILED',
+          step: threadContext.thread.nodeResults.length + 1,
+          error: result.error,
+          startTime,
+          endTime,
+          executionTime: diffTimestamp(startTime, endTime)
+        };
+      }
+    } catch (error) {
+      const endTime = now();
+      return {
+        nodeId: node.id,
+        nodeType: node.type,
+        status: 'FAILED',
+        step: threadContext.thread.nodeResults.length + 1,
+        error: error instanceof Error ? error : new Error(String(error)),
+        startTime,
+        endTime,
+        executionTime: diffTimestamp(startTime, endTime)
+      };
+    }
+  }
+
+  /**
+   * 从节点配置中提取LLM请求数据
+   *
+   * @param node 节点定义
+   * @param threadContext 线程上下文
+   * @returns LLM请求数据
+   */
+  private extractLLMRequestData(node: Node, threadContext: ThreadContext): LLMExecutionRequestData {
+    const config = node.config;
+    
+    // 基础请求数据
+    const requestData: LLMExecutionRequestData = {
+      prompt: '',
+      profileId: 'default',
+      parameters: {}
     };
+
+    // 根据节点类型提取特定配置
+    switch (node.type) {
+      case NodeType.LLM: {
+        const llmConfig = config as any;
+        requestData.prompt = llmConfig.prompt || '';
+        requestData.profileId = llmConfig.profileId || 'default';
+        requestData.parameters = {
+          temperature: llmConfig.temperature,
+          maxTokens: llmConfig.maxTokens,
+          ...llmConfig.parameters
+        };
+        // LLM节点可能包含工具列表
+        if (llmConfig.tools && Array.isArray(llmConfig.tools)) {
+          requestData.tools = llmConfig.tools;
+        }
+        break;
+      }
+      
+      case NodeType.TOOL: {
+        const toolConfig = config as any;
+        requestData.prompt = `Execute tool: ${toolConfig.toolName}`;
+        requestData.profileId = 'default';
+        requestData.tools = [{
+          name: toolConfig.toolName,
+          description: `Tool: ${toolConfig.toolName}`,
+          parameters: toolConfig.parameters || {}
+        }];
+        break;
+      }
+      
+      case NodeType.CONTEXT_PROCESSOR: {
+        const cpConfig = config as any;
+        requestData.prompt = `Process context with type: ${cpConfig.contextProcessorType}`;
+        requestData.profileId = 'default';
+        break;
+      }
+      
+      case NodeType.USER_INTERACTION: {
+        const uiConfig = config as any;
+        requestData.prompt = uiConfig.showMessage || 'User interaction';
+        requestData.profileId = 'default';
+        break;
+      }
+      
+      default:
+        requestData.prompt = 'Unknown node type';
+        break;
+    }
+
+    return requestData;
   }
 
   /**
@@ -414,5 +579,77 @@ export class ThreadExecutor {
    */
   getEventManager(): EventManager {
     return this.eventManager;
+  }
+
+  /**
+   * 获取子图输入
+   */
+  private getSubgraphInput(threadContext: ThreadContext, originalSubgraphNodeId: string): any {
+    // 从SUBGRAPH节点配置中获取输入映射
+    const navigator = threadContext.getNavigator();
+    const graphNode = navigator.getGraph().getNode(originalSubgraphNodeId);
+    const node = graphNode?.originalNode;
+
+    if (node?.type === 'SUBGRAPH' as NodeType) {
+      const config = node.config as SubgraphNodeConfig;
+      const input: Record<string, any> = {};
+
+      // 应用输入映射
+      for (const [childVar, parentPath] of Object.entries(config.inputMapping)) {
+        input[childVar] = this.resolveVariablePath(threadContext, parentPath);
+      }
+
+      return input;
+    }
+
+    return {};
+  }
+
+  /**
+   * 获取子图输出
+   */
+  private getSubgraphOutput(threadContext: ThreadContext, originalSubgraphNodeId: string): any {
+    // 从子图执行结果中提取输出
+    const subgraphContext = threadContext.getCurrentSubgraphContext();
+    if (!subgraphContext) return {};
+
+    // 获取子图的END节点输出
+    const navigator = threadContext.getNavigator();
+    const endNodes = navigator.getGraph().endNodeIds;
+
+    for (const endNodeId of endNodes) {
+      const graphNode = navigator.getGraph().getNode(endNodeId);
+      if (graphNode?.workflowId === subgraphContext.workflowId) {
+        // 找到子图的END节点，获取其输出
+        const nodeResult = threadContext.getNodeResults()
+          .find(r => r.nodeId === endNodeId);
+        return nodeResult?.data || {};
+      }
+    }
+
+    return {};
+  }
+
+  /**
+   * 解析变量路径
+   */
+  private resolveVariablePath(threadContext: ThreadContext, path: string): any {
+    // 支持嵌套路径，如 'variables.user.name' 或 'input.data'
+    const parts = path.split('.');
+    let current: any = {
+      variables: threadContext.getAllVariables(),
+      input: threadContext.getInput(),
+      output: threadContext.getOutput()
+    };
+
+    for (const part of parts) {
+      if (current && typeof current === 'object' && part in current) {
+        current = current[part];
+      } else {
+        return undefined;
+      }
+    }
+
+    return current;
   }
 }

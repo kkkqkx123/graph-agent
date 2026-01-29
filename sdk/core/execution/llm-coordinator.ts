@@ -4,173 +4,191 @@
  *
  * 核心职责：
  * 1. 管理每个线程的 ConversationManager
- * 2. 监听 LLM_EXECUTION_REQUEST 事件并处理
- * 3. 管理LLM调用和工具调用的循环
- * 4. 发送完成/失败事件
+ * 2. 执行LLM调用和工具调用的循环
+ * 3. 返回执行结果
  *
  * 设计原则：
- * - 类似 ThreadCoordinator，作为长期存在的服务
- * - 通过 EventManager 与其他组件解耦
+ * - 作为单例服务存在
  * - 管理有状态资源（ConversationManager）
  * - 调用无状态的 LLMExecutor 和 ToolService
  * - 负责协调LLM调用和工具调用的完整流程
+ * - 通过直接方法调用而非事件机制与调用方交互
  */
 
-import type { EventManager } from './managers/event-manager';
-import {
-  InternalEventType,
-  type LLMExecutionRequestEvent,
-  type LLMExecutionCompletedEvent,
-  type LLMExecutionFailedEvent,
-  type ContextSnapshot
+import type {
+  LLMExecutionRequestData,
+  LLMExecutionResult,
+  ContextSnapshot
 } from '../../types/internal-events';
 import { ConversationManager } from './conversation';
 import { LLMExecutor } from './llm-executor';
 import { ToolService } from '../tools/tool-service';
-import { now } from '../../utils';
+
+/**
+ * LLM执行参数
+ */
+export interface LLMExecutionParams {
+  /** 线程ID */
+  threadId: string;
+  /** 节点ID */
+  nodeId: string;
+  /** LLM请求数据 */
+  requestData: LLMExecutionRequestData;
+  /** 上下文快照（可选） */
+  contextSnapshot?: ContextSnapshot;
+}
+
+/**
+ * LLM执行返回结果
+ */
+export interface LLMExecutionResponse {
+  /** 是否成功 */
+  success: boolean;
+  /** LLM执行结果 */
+  result?: LLMExecutionResult;
+  /** 错误信息 */
+  error?: Error;
+  /** 更新后的上下文 */
+  updatedContext?: ContextSnapshot;
+}
 
 /**
  * LLM协调器类
- * 
- * 通过事件驱动机制与节点执行器解耦
- * LLMCoordinator 监听 LLM_EXECUTION_REQUEST 事件
- * 节点执行器发布这些事件并等待结果
+ *
+ * 通过直接方法调用与节点执行器交互
+ * 提供完整的LLM执行和工具调用协调功能
  */
 export class LLMCoordinator {
+  private static instance: LLMCoordinator;
   private conversationManagers: Map<string, ConversationManager> = new Map();
   private llmExecutor: LLMExecutor;
   private toolService: ToolService;
 
-  constructor(
-    private eventManager: EventManager
-  ) {
+  private constructor() {
     this.llmExecutor = LLMExecutor.getInstance();
     this.toolService = new ToolService();
-    this.registerEventListeners();
   }
 
   /**
-   * 注册事件监听器
+   * 获取单例实例
    */
-  private registerEventListeners(): void {
-    // 监听 LLM_EXECUTION_REQUEST 事件
-    this.eventManager.onInternal(
-      InternalEventType.LLM_EXECUTION_REQUEST,
-      this.handleLLMExecutionRequest.bind(this)
-    );
+  static getInstance(): LLMCoordinator {
+    if (!LLMCoordinator.instance) {
+      LLMCoordinator.instance = new LLMCoordinator();
+    }
+    return LLMCoordinator.instance;
   }
 
   /**
-   * 处理 LLM 执行请求事件
-   * 
+   * 执行LLM调用
+   *
+   * @param params 执行参数
+   * @returns 执行结果
+   */
+  async executeLLM(params: LLMExecutionParams): Promise<LLMExecutionResponse> {
+    try {
+      const result = await this.handleLLMExecution(params);
+      return {
+        success: true,
+        result,
+        updatedContext: {
+          conversationHistory: this.getConversationManager(params.threadId)?.getMessages()
+        }
+      };
+    } catch (error) {
+      return {
+        success: false,
+        error: error instanceof Error ? error : new Error(String(error))
+      };
+    }
+  }
+
+  /**
+   * 处理 LLM 执行请求
+   *
    * 此方法管理完整的LLM调用和工具调用循环：
    * 1. 添加用户消息到对话历史
    * 2. 执行LLM调用
    * 3. 如果有工具调用，执行工具并添加结果到对话历史
    * 4. 重复步骤2-3，直到没有工具调用
    * 5. 返回最终结果
+   *
+   * @param params 执行参数
+   * @returns LLM执行结果
    */
-  private async handleLLMExecutionRequest(event: LLMExecutionRequestEvent): Promise<void> {
-    const { threadId, nodeId, requestData, contextSnapshot } = event;
+  private async handleLLMExecution(params: LLMExecutionParams): Promise<LLMExecutionResult> {
+    const { threadId, requestData, contextSnapshot } = params;
 
-    try {
-      // 步骤1：获取或创建 ConversationManager
-      const conversationManager = this.getOrCreateConversationManager(
-        threadId,
-        contextSnapshot
+    // 步骤1：获取或创建 ConversationManager
+    const conversationManager = this.getOrCreateConversationManager(
+      threadId,
+      contextSnapshot
+    );
+
+    // 步骤2：添加用户消息
+    conversationManager.addMessage({
+      role: 'user',
+      content: requestData.prompt
+    });
+
+    // 步骤3：执行LLM调用循环
+    const maxIterations = Infinity;
+    let iterationCount = 0;
+    let finalResult: LLMExecutionResult | null = null;
+
+    while (iterationCount < maxIterations) {
+      iterationCount++;
+
+      // 检查Token使用情况
+      await conversationManager.checkTokenUsage();
+
+      // 执行LLM调用
+      const llmResult = await this.llmExecutor.executeLLMCall(
+        conversationManager.getMessages(),
+        requestData
       );
 
-      // 步骤2：添加用户消息
+      // 更新Token使用统计
+      if (llmResult.usage) {
+        conversationManager.updateTokenUsage(llmResult.usage);
+      }
+      
+      // 完成当前请求的Token统计
+      conversationManager.finalizeCurrentRequest();
+
+      // 将LLM响应添加到对话历史
       conversationManager.addMessage({
-        role: 'user',
-        content: requestData.prompt
+        role: 'assistant',
+        content: llmResult.content,
+        toolCalls: llmResult.toolCalls?.map(tc => ({
+          id: tc.id,
+          type: 'function' as const,
+          function: {
+            name: tc.name,
+            arguments: tc.arguments
+          }
+        }))
       });
 
-      // 步骤3：执行LLM调用循环
-      const maxIterations = Infinity;
-      let iterationCount = 0;
-      let finalResult: any = null;
-
-      while (iterationCount < maxIterations) {
-        iterationCount++;
-
-        // 检查Token使用情况
-        await conversationManager.checkTokenUsage();
-
-        // 执行LLM调用
-        const llmResult = await this.llmExecutor.executeLLMCall(
-          conversationManager.getMessages(),
-          requestData
+      // 检查是否有工具调用
+      if (llmResult.toolCalls && llmResult.toolCalls.length > 0) {
+        // 执行工具调用
+        await this.executeToolCalls(
+          llmResult.toolCalls,
+          conversationManager
         );
 
-        // 更新Token使用统计
-        if (llmResult.usage) {
-          conversationManager.updateTokenUsage(llmResult.usage);
-        }
-        
-        // 完成当前请求的Token统计
-        conversationManager.finalizeCurrentRequest();
-
-        // 将LLM响应添加到对话历史
-        conversationManager.addMessage({
-          role: 'assistant',
-          content: llmResult.content,
-          toolCalls: llmResult.toolCalls?.map(tc => ({
-            id: tc.id,
-            type: 'function' as const,
-            function: {
-              name: tc.name,
-              arguments: tc.arguments
-            }
-          }))
-        });
-
-        // 检查是否有工具调用
-        if (llmResult.toolCalls && llmResult.toolCalls.length > 0) {
-          // 执行工具调用
-          await this.executeToolCalls(
-            llmResult.toolCalls,
-            conversationManager
-          );
-
-          // 继续循环让LLM处理工具结果
-          continue;
-        } else {
-          // 没有工具调用，保存最终结果并退出循环
-          finalResult = llmResult;
-          break;
-        }
+        // 继续循环让LLM处理工具结果
+        continue;
+      } else {
+        // 没有工具调用，保存最终结果并退出循环
+        finalResult = llmResult;
+        break;
       }
-
-      // 步骤4：构建上下文快照
-      const updatedContext: ContextSnapshot = {
-        conversationHistory: conversationManager.getMessages()
-      };
-
-      // 步骤5：发送 LLM_EXECUTION_COMPLETED 事件
-      const completedEvent: LLMExecutionCompletedEvent = {
-        type: InternalEventType.LLM_EXECUTION_COMPLETED,
-        timestamp: now(),
-        workflowId: event.workflowId,
-        threadId,
-        nodeId,
-        result: finalResult,
-        updatedContext
-      };
-      await this.eventManager.emitInternal(completedEvent);
-    } catch (error) {
-      // 发送 LLM_EXECUTION_FAILED 事件
-      const failedEvent: LLMExecutionFailedEvent = {
-        type: InternalEventType.LLM_EXECUTION_FAILED,
-        timestamp: now(),
-        workflowId: event.workflowId,
-        threadId,
-        nodeId,
-        error: error instanceof Error ? error.message : String(error),
-        errorDetails: error
-      };
-      await this.eventManager.emitInternal(failedEvent);
     }
+
+    // 返回最终结果
+    return finalResult!;
   }
 
   /**

@@ -38,7 +38,11 @@ export enum EventType {
   /** 错误事件 */
   ERROR = 'ERROR',
   /** 检查点创建 */
-  CHECKPOINT_CREATED = 'CHECKPOINT_CREATED'
+  CHECKPOINT_CREATED = 'CHECKPOINT_CREATED',
+  /** 子图开始 */
+  SUBGRAPH_STARTED = 'SUBGRAPH_STARTED',
+  /** 子图完成 */
+  SUBGRAPH_COMPLETED = 'SUBGRAPH_COMPLETED'
 }
 
 /**
@@ -208,6 +212,32 @@ export interface CheckpointCreatedEvent extends BaseEvent {
 }
 
 /**
+ * 子图开始事件类型
+ */
+export interface SubgraphStartedEvent extends BaseEvent {
+  type: EventType.SUBGRAPH_STARTED;
+  /** 子工作流ID */
+  subgraphId: ID;
+  /** 父工作流ID */
+  parentWorkflowId: ID;
+  /** 输入数据 */
+  input: Record<string, any>;
+}
+
+/**
+ * 子图完成事件类型
+ */
+export interface SubgraphCompletedEvent extends BaseEvent {
+  type: EventType.SUBGRAPH_COMPLETED;
+  /** 子工作流ID */
+  subgraphId: ID;
+  /** 输出数据 */
+  output: Record<string, any>;
+  /** 执行时间 */
+  executionTime: number;
+}
+
+/**
  * 节点自定义事件类型
  */
 export interface NodeCustomEvent extends BaseEvent {
@@ -255,4 +285,6 @@ export type Event =
   | NodeCustomEvent
   | TokenLimitExceededEvent
   | ErrorEvent
-  | CheckpointCreatedEvent;
+  | CheckpointCreatedEvent
+  | SubgraphStartedEvent
+  | SubgraphCompletedEvent;
