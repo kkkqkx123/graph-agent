@@ -3,7 +3,7 @@
  * 封装WorkflowRegistry，提供CRUD操作
  */
 
-import { WorkflowRegistry } from '../core/registry/workflow-registry';
+import { workflowRegistry, type WorkflowRegistry } from '../core/services/workflow-registry';
 import type { WorkflowDefinition } from '../types/workflow';
 import type { WorkflowFilter, WorkflowSummary } from './types';
 
@@ -18,7 +18,7 @@ export class WorkflowRegistryAPI {
     enableVersioning?: boolean;
     maxVersions?: number;
   }) {
-    this.registry = new WorkflowRegistry(options);
+    this.registry = workflowRegistry;
   }
 
   /**

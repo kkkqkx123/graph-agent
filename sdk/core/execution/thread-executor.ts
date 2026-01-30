@@ -23,7 +23,8 @@ import type { ThreadResult } from '../../types/thread';
 import type { Node } from '../../types/node';
 import type { NodeExecutionResult } from '../../types/thread';
 import { ThreadContext } from './context/thread-context';
-import { EventManager } from './managers/event-manager';
+import { eventManager } from '../services/event-manager';
+import type { EventManager } from '../services/event-manager';
 import { TriggerManager } from './managers/trigger-manager';
 import { NotFoundError } from '../../types/errors';
 import { ThreadStatus } from '../../types/thread';
@@ -46,12 +47,12 @@ export class ThreadExecutor {
   private eventCoordinator: EventCoordinator;
 
   constructor(
-    eventManager?: EventManager,
+    eventManagerParam?: EventManager,
     triggerManager?: TriggerManager
   ) {
     // 创建事件协调器
     this.eventCoordinator = new EventCoordinator(
-      eventManager || new EventManager(),
+      eventManagerParam || eventManager,
       triggerManager || new TriggerManager()
     );
 

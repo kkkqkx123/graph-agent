@@ -18,7 +18,7 @@
 import type { LLMMessage, LLMUsage, MessageMarkMap } from '../../types/llm';
 import { TokenUsageTracker, type TokenUsageStats } from './token-usage-tracker';
 import { MessageIndexManager } from './message-index-manager';
-import type { EventManager } from './managers/event-manager';
+import type { EventManager } from '../services/event-manager';
 import type { TokenLimitExceededEvent } from '../../types/events';
 import { EventType } from '../../types/events';
 

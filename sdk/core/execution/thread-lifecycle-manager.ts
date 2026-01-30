@@ -4,8 +4,9 @@
  */
 
 import type { Thread, ThreadStatus, ThreadResult } from '../../types/thread';
-import type { EventManager } from './managers/event-manager';
+import type { EventManager } from '../services/event-manager';
 import { EventType } from '../../types/events';
+import { eventManager } from '../services/event-manager';
 import type { ThreadStartedEvent, ThreadCompletedEvent, ThreadFailedEvent, ThreadPausedEvent, ThreadResumedEvent } from '../../types/events';
 import { ValidationError } from '../../types/errors';
 import { now } from '../../utils';
@@ -14,7 +15,11 @@ import { now } from '../../utils';
  * ThreadLifecycleManager - Thread生命周期管理器
  */
 export class ThreadLifecycleManager {
-  constructor(private eventManager: EventManager) { }
+  constructor(private eventManagerParam: EventManager = eventManager) {
+    this.eventManager = eventManagerParam;
+  }
+  
+  private eventManager: EventManager;
 
   /**
    * 启动Thread

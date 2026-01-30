@@ -2,6 +2,8 @@
  * WorkflowRegistry - 工作流注册器
  * 负责工作流定义的注册、查询、更新、移除和缓存管理
  * 集成图构建和预处理功能
+ *
+ * 本模块导出全局单例实例，不导出类定义
  */
 
 import type {
@@ -56,7 +58,7 @@ export interface ValidationResult {
 /**
  * WorkflowRegistry - 工作流注册器
  */
-export class WorkflowRegistry {
+class WorkflowRegistry {
   private workflows: Map<string, WorkflowDefinition> = new Map();
   private versions: Map<string, WorkflowVersion[]> = new Map();
   private processedWorkflows: Map<string, ProcessedWorkflowDefinition> = new Map();
@@ -851,3 +853,16 @@ export class WorkflowRegistry {
     return relationship?.depth || 0;
   }
 }
+
+/**
+ * 全局工作流注册器单例实例
+ */
+export const workflowRegistry = new WorkflowRegistry({
+  enablePreprocessing: true,
+  maxRecursionDepth: 10
+});
+
+/**
+ * 导出WorkflowRegistry类型供类型注解使用
+ */
+export type { WorkflowRegistry };

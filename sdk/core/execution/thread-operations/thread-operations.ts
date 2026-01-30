@@ -7,7 +7,7 @@
 import type { Thread } from '../../../types/thread';
 import type { ThreadContext } from '../context/thread-context';
 import type { ThreadBuilder } from '../thread-builder';
-import type { ThreadRegistry } from '../../registry/thread-registry';
+import type { ThreadRegistry } from '../thread-registry';
 import { ExecutionError, TimeoutError, ValidationError } from '../../../types/errors';
 import { now, diffTimestamp } from '../../../utils';
 

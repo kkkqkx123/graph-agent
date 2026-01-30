@@ -3,5 +3,5 @@
  * 用于注册已创建的实体
  */
 
-export { WorkflowRegistry } from './workflow-registry';
-export { ThreadRegistry } from './thread-registry';
+
+

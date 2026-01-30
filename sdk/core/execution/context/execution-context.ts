@@ -25,9 +25,9 @@
  * - 清晰的依赖注入
  */
 
-import { WorkflowRegistry } from '../../registry/workflow-registry';
-import { ThreadRegistry } from '../../registry/thread-registry';
-import { EventManager } from '../managers/event-manager';
+import { workflowRegistry, type WorkflowRegistry } from '../../services/workflow-registry';
+import { ThreadRegistry } from '../thread-registry';
+import { eventManager, type EventManager } from '../../services/event-manager';
 import { CheckpointManager } from '../managers/checkpoint-manager';
 import { ThreadLifecycleManager } from '../thread-lifecycle-manager';
 
@@ -48,18 +48,13 @@ export class ExecutionContext {
     }
 
     // 按依赖顺序初始化
-    // 1. EventManager 无依赖，最先初始化
-    const eventManager = new EventManager();
+    // 1. EventManager 使用全局单例
     this.register('eventManager', eventManager);
 
-    // 2. WorkflowRegistry 无依赖，启用预处理功能
-    const workflowRegistry = new WorkflowRegistry({
-      enablePreprocessing: true,
-      maxRecursionDepth: 10,
-    });
+    // 2. WorkflowRegistry 使用全局单例
     this.register('workflowRegistry', workflowRegistry);
 
-    // 3. ThreadRegistry 无依赖
+    // 3. ThreadRegistry 无依赖，创建新实例
     const threadRegistry = new ThreadRegistry();
     this.register('threadRegistry', threadRegistry);
 

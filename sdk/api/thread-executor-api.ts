@@ -4,7 +4,7 @@
  */
 
 import { ThreadCoordinator } from '../core/execution/thread-coordinator';
-import { WorkflowRegistry } from '../core/registry/workflow-registry';
+import { workflowRegistry, type WorkflowRegistry } from '../core/services/workflow-registry';
 import type { WorkflowDefinition } from '../types/workflow';
 import type { ThreadResult, ThreadOptions } from '../types/thread';
 import type { ExecuteOptions } from './types';
@@ -17,8 +17,8 @@ export class ThreadExecutorAPI {
   private coordinator: ThreadCoordinator;
   private workflowRegistry: WorkflowRegistry;
 
-  constructor(workflowRegistry?: WorkflowRegistry) {
-    this.workflowRegistry = workflowRegistry || new WorkflowRegistry();
+  constructor(workflowRegistryParam?: WorkflowRegistry) {
+    this.workflowRegistry = workflowRegistryParam || workflowRegistry;
     this.coordinator = new ThreadCoordinator(this.workflowRegistry);
   }
 
@@ -39,13 +39,11 @@ export class ThreadExecutorAPI {
    * @returns 线程执行结果
    */
   async executeWorkflowFromDefinition(workflow: WorkflowDefinition, options?: ExecuteOptions): Promise<ThreadResult> {
-    // 注册工作流（临时注册，不启用版本管理）
-    const tempRegistry = new WorkflowRegistry({ enableVersioning: false });
-    tempRegistry.register(workflow);
+    // 注册工作流到全局注册表
+    workflowRegistry.register(workflow);
 
     // 执行工作流
-    const coordinator = new ThreadCoordinator(tempRegistry);
-    return coordinator.execute(workflow.id, this.convertOptions(options));
+    return this.coordinator.execute(workflow.id, this.convertOptions(options));
   }
 
   /**

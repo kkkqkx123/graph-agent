@@ -10,12 +10,12 @@ import type { Checkpoint, CheckpointMetadata, ThreadStateSnapshot } from '../../
 import type { CheckpointStorage, CheckpointStorageMetadata } from '../../../types/checkpoint-storage';
 import type { CheckpointCreatedEvent } from '../../../types/events';
 import { EventType } from '../../../types/events';
-import { ThreadRegistry } from '../../registry/thread-registry';
+import { ThreadRegistry } from '../thread-registry';
 import { ThreadContext } from '../context/thread-context';
 import { VariableManager } from './variable-manager';
 import { ConversationManager } from '../conversation';
 import { generateId, now as getCurrentTimestamp } from '../../../utils';
-import { WorkflowRegistry } from '../../registry/workflow-registry';
+import { type WorkflowRegistry } from '../../services/workflow-registry';
 import { ExecutionContext } from '../context/execution-context';
 import { MemoryCheckpointStorage } from '../../storage/memory-checkpoint-storage';
 

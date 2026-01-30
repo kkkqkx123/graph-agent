@@ -12,7 +12,7 @@
  * - 提供统一的事件触发接口
  */
 
-import { EventManager } from '../managers/event-manager';
+import type { EventManager } from '../../services/event-manager';
 import { TriggerManager } from '../managers/trigger-manager';
 import type { NodeStartedEvent, NodeCompletedEvent, NodeFailedEvent, ErrorEvent, SubgraphStartedEvent, SubgraphCompletedEvent } from '../../../types/events';
 
@@ -23,7 +23,7 @@ export class EventCoordinator {
   constructor(
     private eventManager: EventManager,
     private triggerManager: TriggerManager
-  ) {}
+  ) { }
 
   /**
    * 触发节点开始事件

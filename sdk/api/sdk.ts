@@ -13,8 +13,8 @@ import { ProfileManagerAPI } from './profile-manager-api';
 import { EventManagerAPI } from './event-manager-api';
 import { CheckpointManagerAPI } from './checkpoint-manager-api';
 import { VariableManagerAPI } from './variable-manager-api';
-import { WorkflowRegistry } from '../core/registry/workflow-registry';
-import { ThreadRegistry } from '../core/registry/thread-registry';
+import { workflowRegistry, type WorkflowRegistry } from '../core/services/workflow-registry';
+import { ThreadRegistry } from '../core/execution/thread-registry';
 import type { SDKOptions } from './types';
 
 /**
@@ -59,10 +59,7 @@ export class SDK {
 
   constructor(options?: SDKOptions) {
     // 创建内部注册表
-    this.internalWorkflowRegistry = options?.workflowRegistry || new WorkflowRegistry({
-      enableVersioning: options?.enableVersioning ?? true,
-      maxVersions: options?.maxVersions ?? 10
-    });
+    this.internalWorkflowRegistry = workflowRegistry;
     this.internalThreadRegistry = options?.threadRegistry || new ThreadRegistry();
 
     // 初始化API模块

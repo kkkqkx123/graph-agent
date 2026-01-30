@@ -4,10 +4,12 @@
  * 仅支持全局事件，用于对外暴露工作流执行状态
  *
  * 注意：内部事件机制已移除，改用直接方法调用
+ *
+ * 本模块导出全局单例实例，不导出类定义
  */
 
-import type { BaseEvent, EventType, EventListener } from '../../../types/events';
-import { now, generateId } from '../../../utils';
+import type { BaseEvent, EventType, EventListener } from '../../types/events';
+import { now, generateId } from '../../utils';
 
 /**
  * 监听器包装器
@@ -29,7 +31,7 @@ interface ListenerWrapper<T> {
  * - 仅支持全局事件，用于工作流状态通知
  * - 内部协调改用直接方法调用
  */
-export class EventManager {
+class EventManager {
   // 全局事件监听器（对外暴露）
   private globalListeners: Map<string, ListenerWrapper<any>[]> = new Map();
   private globalWildcardListeners: ListenerWrapper<any>[] = [];
@@ -240,3 +242,13 @@ export class EventManager {
   }
 
 }
+
+/**
+ * 全局事件管理器单例实例
+ */
+export const eventManager = new EventManager();
+
+/**
+ * 导出EventManager类型供类型注解使用
+ */
+export type { EventManager };

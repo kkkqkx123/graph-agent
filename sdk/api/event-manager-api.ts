@@ -3,7 +3,7 @@
  * 封装EventManager，仅暴露全局事件，提供便捷的事件订阅方法
  */
 
-import { EventManager } from '../core/execution/managers/event-manager';
+import { eventManager, type EventManager } from '../core/services/event-manager';
 import type {
   BaseEvent,
   EventType,
@@ -39,7 +39,7 @@ export class EventManagerAPI {
     /** 是否启用历史记录 */
     enableHistory?: boolean;
   }) {
-    this.eventManager = new EventManager();
+    this.eventManager = eventManager;
     this.maxHistorySize = options?.maxHistorySize ?? 1000;
     this.historyEnabled = options?.enableHistory ?? true;
 

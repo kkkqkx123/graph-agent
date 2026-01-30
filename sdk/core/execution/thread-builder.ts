@@ -15,7 +15,7 @@ import { NodeType } from '../../types/node';
 import { generateId, now as getCurrentTimestamp } from '../../utils';
 import { VariableManager } from './managers/variable-manager';
 import { ValidationError } from '../../types/errors';
-import { WorkflowRegistry } from '../registry/workflow-registry';
+import { workflowRegistry, type WorkflowRegistry } from '../services/workflow-registry';
 import { ExecutionContext } from './context/execution-context';
 import { convertToTrigger } from '../../types/trigger';
 
@@ -28,10 +28,10 @@ export class ThreadBuilder {
   private workflowRegistry: WorkflowRegistry;
   private executionContext: ExecutionContext;
 
-  constructor(workflowRegistry?: WorkflowRegistry, executionContext?: ExecutionContext) {
+  constructor(workflowRegistryParam?: WorkflowRegistry, executionContext?: ExecutionContext) {
     this.variableManager = new VariableManager();
     this.executionContext = executionContext || ExecutionContext.createDefault();
-    this.workflowRegistry = workflowRegistry || this.executionContext.getWorkflowRegistry();
+    this.workflowRegistry = workflowRegistryParam || this.executionContext.getWorkflowRegistry();
   }
 
   /**
@@ -145,7 +145,7 @@ export class ThreadBuilder {
     // 步骤4：创建 ConversationManager 实例
     // 从 ExecutionContext 获取 EventManager
     const eventManager = this.executionContext.getEventManager();
-    
+
     const conversationManager = new ConversationManager({
       tokenLimit: options.tokenLimit || 4000,
       eventManager: eventManager,
@@ -178,7 +178,7 @@ export class ThreadBuilder {
 
     // 使用 ThreadContext 的 TriggerManager（每个 Thread 独立）
     const triggerManager = threadContext.triggerManager;
-    
+
     // 注册所有触发器
     for (const workflowTrigger of workflow.triggers) {
       try {
