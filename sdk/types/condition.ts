@@ -35,6 +35,26 @@ export interface EvaluationContext {
 }
 
 /**
+ * 统一的变量访问接口
+ * 提供统一的变量访问方法，支持嵌套路径解析
+ */
+export interface VariableAccessor {
+  /**
+   * 获取变量值
+   * @param path 变量路径，支持嵌套和命名空间
+   * @returns 变量值，如果不存在则返回 undefined
+   */
+  get(path: string): any;
+
+  /**
+   * 检查变量是否存在
+   * @param path 变量路径
+   * @returns 是否存在
+   */
+  has(path: string): boolean;
+}
+
+/**
  * 条件评估器接口
  */
 export interface ConditionEvaluator {

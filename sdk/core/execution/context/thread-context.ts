@@ -235,19 +235,66 @@ export class ThreadContext {
   }
 
   /**
+   * 子工作流执行历史记录（用于触发器触发的孤立子工作流）
+   */
+  private subgraphExecutionHistory: any[] = [];
+
+  /**
+   * 是否正在执行触发子工作流
+   */
+  private isExecutingTriggeredSubgraph: boolean = false;
+
+  /**
    * 添加节点执行结果
    * @param result 节点执行结果
    */
   addNodeResult(result: any): void {
-    this.thread.nodeResults.push(result);
+    if (this.isExecutingTriggeredSubgraph) {
+      // 如果正在执行触发子工作流，添加到子工作流历史记录
+      this.subgraphExecutionHistory.push(result);
+    } else {
+      // 否则添加到主工作流历史记录
+      this.thread.nodeResults.push(result);
+    }
   }
 
   /**
-   * 获取节点执行结果
+   * 获取节点执行结果（主工作流）
    * @returns 节点执行结果数组
    */
   getNodeResults(): any[] {
     return this.thread.nodeResults;
+  }
+
+  /**
+   * 获取子工作流执行历史
+   * @returns 子工作流执行结果数组
+   */
+  getSubgraphExecutionHistory(): any[] {
+    return this.subgraphExecutionHistory;
+  }
+
+  /**
+   * 开始执行触发子工作流
+   */
+  startTriggeredSubgraphExecution(): void {
+    this.isExecutingTriggeredSubgraph = true;
+    this.subgraphExecutionHistory = [];
+  }
+
+  /**
+   * 结束执行触发子工作流
+   */
+  endTriggeredSubgraphExecution(): void {
+    this.isExecutingTriggeredSubgraph = false;
+  }
+
+  /**
+   * 检查是否正在执行触发子工作流
+   * @returns 是否正在执行
+   */
+  isExecutingSubgraph(): boolean {
+    return this.isExecutingTriggeredSubgraph;
   }
 
   /**

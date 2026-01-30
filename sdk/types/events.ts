@@ -42,7 +42,11 @@ export enum EventType {
   /** 子图开始 */
   SUBGRAPH_STARTED = 'SUBGRAPH_STARTED',
   /** 子图完成 */
-  SUBGRAPH_COMPLETED = 'SUBGRAPH_COMPLETED'
+  SUBGRAPH_COMPLETED = 'SUBGRAPH_COMPLETED',
+  /** 触发子工作流开始 */
+  TRIGGERED_SUBGRAPH_STARTED = 'TRIGGERED_SUBGRAPH_STARTED',
+  /** 触发子工作流完成 */
+  TRIGGERED_SUBGRAPH_COMPLETED = 'TRIGGERED_SUBGRAPH_COMPLETED'
 }
 
 /**
@@ -238,6 +242,30 @@ export interface SubgraphCompletedEvent extends BaseEvent {
 }
 
 /**
+ * 触发子工作流开始事件类型
+ */
+export interface TriggeredSubgraphStartedEvent extends BaseEvent {
+  type: EventType.TRIGGERED_SUBGRAPH_STARTED;
+  /** 子工作流ID */
+  subgraphId: ID;
+  /** 触发器ID */
+  triggerId: ID;
+  /** 输入数据 */
+  input: Record<string, any>;
+}
+
+/**
+ * 触发子工作流完成事件类型
+ */
+export interface TriggeredSubgraphCompletedEvent extends BaseEvent {
+  type: EventType.TRIGGERED_SUBGRAPH_COMPLETED;
+  /** 子工作流ID */
+  subgraphId: ID;
+  /** 触发器ID */
+  triggerId: ID;
+}
+
+/**
  * 节点自定义事件类型
  */
 export interface NodeCustomEvent extends BaseEvent {
@@ -287,4 +315,6 @@ export type Event =
   | ErrorEvent
   | CheckpointCreatedEvent
   | SubgraphStartedEvent
-  | SubgraphCompletedEvent;
+  | SubgraphCompletedEvent
+  | TriggeredSubgraphStartedEvent
+  | TriggeredSubgraphCompletedEvent;

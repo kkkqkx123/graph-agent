@@ -7,6 +7,7 @@ import type { Node, VariableNodeConfig } from '../../../../types/node';
 import type { Thread } from '../../../../types/thread';
 import { ValidationError } from '../../../../types/errors';
 import { now } from '../../../../utils';
+import { resolvePath } from '../../../../utils/evalutor/path-resolver';
 
 /**
  * 检查节点是否可以执行
@@ -29,27 +30,36 @@ function canExecute(thread: Thread, node: Node): boolean {
 
 /**
  * 解析表达式中的变量引用
+ * 使用统一的路径解析逻辑
  */
 function resolveVariableReferences(expression: string, thread: Thread): string {
   const variablePattern = /\{\{(\w+(?:\.\w+)*)\}\}/g;
 
   return expression.replace(variablePattern, (match, varPath) => {
-    const parts = varPath.split('.');
+    // 提取根变量名
+    const rootVarName = varPath.split('.')[0];
+    
     // 首先尝试从 local 变量中获取
-    let value: any = thread.variableValues?.[parts[0]];
+    let value: any = thread.variableValues?.[rootVarName];
     
     // 如果第一部分在 local 变量中不存在，尝试从 global 变量中获取
     if (value === undefined && thread.globalVariableValues) {
-      value = thread.globalVariableValues[parts[0]];
+      value = thread.globalVariableValues[rootVarName];
     }
 
-    for (let i = 1; i < parts.length; i++) {
-      if (value === null || value === undefined) {
-        return 'undefined';
-      }
-      value = value[parts[i]];
+    // 如果根变量不存在，返回 undefined
+    if (value === undefined) {
+      return 'undefined';
     }
 
+    // 如果路径包含嵌套，使用 resolvePath 解析剩余路径
+    const pathParts = varPath.split('.');
+    if (pathParts.length > 1) {
+      const remainingPath = pathParts.slice(1).join('.');
+      value = resolvePath(remainingPath, value);
+    }
+
+    // 格式化值
     if (typeof value === 'string') {
       return `'${value}'`;
     } else if (typeof value === 'object') {

@@ -7,6 +7,7 @@
 import type { Thread, ThreadVariable } from '../../../types/thread';
 import type { WorkflowDefinition, WorkflowVariable } from '../../../types/workflow';
 import type { ThreadContext } from '../context/thread-context';
+import { VariableAccessor } from './variable-accessor';
 
 /**
  * VariableManager - 变量管理器
@@ -223,5 +224,38 @@ export class VariableManager {
     
     // 合并父线程的全局变量
     Object.assign(thread.globalVariableValues, parentGlobalVariables);
+  }
+
+  /**
+   * 创建变量访问器
+   * 提供统一的变量访问接口，支持嵌套路径解析
+   * @param threadContext Thread 上下文
+   * @returns VariableAccessor 实例
+   */
+  createAccessor(threadContext: ThreadContext): VariableAccessor {
+    return new VariableAccessor(threadContext);
+  }
+
+  /**
+   * 通过路径获取变量值
+   * 支持嵌套路径和命名空间
+   * @param threadContext Thread 上下文
+   * @param path 变量路径
+   * @returns 变量值
+   *
+   * @example
+   * // 简单变量
+   * getVariableByPath(context, 'userName')
+   *
+   * // 嵌套路径
+   * getVariableByPath(context, 'user.profile.name')
+   *
+   * // 命名空间
+   * getVariableByPath(context, 'input.userName')
+   * getVariableByPath(context, 'output.result')
+   */
+  getVariableByPath(threadContext: ThreadContext, path: string): any {
+    const accessor = this.createAccessor(threadContext);
+    return accessor.get(path);
   }
 }

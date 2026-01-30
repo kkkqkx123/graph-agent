@@ -16,15 +16,18 @@
  * - 事件处理（由 EventCoordinator 负责）
  * - 错误处理（由 ErrorHandler 负责）
  * - 子图处理（由 SubgraphHandler 负责）
+ * - 触发子工作流处理（由触发子工作流函数负责）
  * - 触发器管理（由 ThreadBuilder 在创建 ThreadContext 时处理）
  */
 
 import type { ThreadResult } from '../../types/thread';
 import type { Node } from '../../types/node';
 import type { NodeExecutionResult } from '../../types/thread';
+import type { ID } from '../../types/common';
 import { ThreadContext } from './context/thread-context';
 import { eventManager } from '../services/event-manager';
 import type { EventManager } from '../services/event-manager';
+import type { WorkflowRegistry } from '../services/workflow-registry';
 import { NotFoundError } from '../../types/errors';
 import { ThreadStatus } from '../../types/thread';
 import { now, diffTimestamp } from '../../utils';
@@ -32,26 +35,56 @@ import { EventCoordinator } from './coordinators/event-coordinator';
 import { NodeExecutionCoordinator } from './coordinators/node-execution-coordinator';
 import { ErrorHandler } from './handlers/error-handler';
 import { SubgraphHandler } from './handlers/subgraph-handler';
+import {
+  executeSingleTriggeredSubgraph,
+  type TriggeredSubgraphTask,
+  type SubgraphContextFactory
+} from './handlers/triggered-subgraph-handler';
 import { LLMCoordinator } from './llm-coordinator';
+import { ThreadBuilder } from './thread-builder';
+import { threadRegistry } from '../services/thread-registry';
+import { workflowRegistry } from '../services/workflow-registry';
+import { EventType } from '../../types/events';
 
 /**
  * ThreadExecutor - Thread 执行器
  *
  * 专注于执行单个 ThreadContext，不负责线程的创建、注册和管理
  * 通过协调器模式委托具体职责给专门的组件
+ *
+ * 实现SubgraphContextFactory接口，为触发子工作流函数提供子工作流上下文创建能力
  */
-export class ThreadExecutor {
+export class ThreadExecutor implements SubgraphContextFactory {
   private nodeExecutionCoordinator: NodeExecutionCoordinator;
   private errorHandler: ErrorHandler;
   private eventCoordinator: EventCoordinator;
+  private threadBuilder: ThreadBuilder;
+  private workflowRegistry: WorkflowRegistry;
+
+  /**
+   * 触发子工作流任务队列
+   */
+  private triggeredSubgraphQueue: TriggeredSubgraphTask[] = [];
+
+  /**
+   * 是否正在执行触发子工作流
+   */
+  private isExecutingTriggeredSubgraph: boolean = false;
 
   constructor(
-    eventManagerParam?: EventManager
+    eventManagerParam?: EventManager,
+    workflowRegistryParam?: WorkflowRegistry
   ) {
     // 创建事件协调器
     this.eventCoordinator = new EventCoordinator(
       eventManagerParam || eventManager
     );
+
+    // 设置工作流注册表
+    this.workflowRegistry = workflowRegistryParam || workflowRegistry;
+
+    // 创建线程构建器（使用默认ExecutionContext）
+    this.threadBuilder = new ThreadBuilder(this.workflowRegistry);
 
     // 创建子图处理器
     const subgraphHandler = new SubgraphHandler();
@@ -215,5 +248,109 @@ export class ThreadExecutor {
    */
   getEventManager(): EventManager {
     return this.eventCoordinator.getEventManager();
+  }
+
+  /**
+   * 执行触发子工作流
+   * @param task 触发子工作流任务
+   */
+  public async executeTriggeredSubgraph(task: TriggeredSubgraphTask): Promise<void> {
+    this.triggeredSubgraphQueue.push(task);
+
+    // 如果配置为等待完成，立即执行
+    if (task.config?.waitForCompletion) {
+      await this.processTriggeredSubgraphs(task.mainThreadContext);
+    }
+  }
+
+  /**
+   * 处理触发子工作流队列
+   * @param mainThreadContext 主工作流线程上下文
+   * @returns 是否处理了任务
+   */
+  public async processTriggeredSubgraphs(
+    mainThreadContext: ThreadContext
+  ): Promise<boolean> {
+    if (this.triggeredSubgraphQueue.length === 0 || this.isExecutingTriggeredSubgraph) {
+      return false;
+    }
+
+    const task = this.triggeredSubgraphQueue.shift()!;
+    await this.executeSingleTriggeredSubgraph(mainThreadContext, task);
+    return true;
+  }
+
+  /**
+   * 执行单个触发子工作流
+   * @param mainThreadContext 主工作流线程上下文
+   * @param task 触发子工作流任务
+   */
+  private async executeSingleTriggeredSubgraph(
+    mainThreadContext: ThreadContext,
+    task: TriggeredSubgraphTask
+  ): Promise<void> {
+    this.isExecutingTriggeredSubgraph = true;
+
+    try {
+      await executeSingleTriggeredSubgraph(
+        task,
+        this,
+        this,
+        this.eventCoordinator
+      );
+    } finally {
+      this.isExecutingTriggeredSubgraph = false;
+    }
+  }
+
+  /**
+   * 检查是否有待处理的触发子工作流任务
+   * @returns 是否有待处理的任务
+   */
+  public hasPendingTriggeredSubgraphs(): boolean {
+    return this.triggeredSubgraphQueue.length > 0;
+  }
+
+  /**
+   * 获取待处理触发子工作流任务数量
+   * @returns 待处理任务数量
+   */
+  public getPendingTriggeredSubgraphCount(): number {
+    return this.triggeredSubgraphQueue.length;
+  }
+
+  /**
+   * 检查是否正在执行触发子工作流
+   * @returns 是否正在执行
+   */
+  public isExecutingTriggeredSubgraphNow(): boolean {
+    return this.isExecutingTriggeredSubgraph;
+  }
+
+  /**
+   * 实现SubgraphContextFactory接口
+   * 构建子工作流上下文
+   * @param subgraphId 子工作流ID
+   * @param input 输入数据
+   * @param metadata 元数据
+   * @returns 子工作流上下文
+   */
+  async buildSubgraphContext(
+    subgraphId: ID,
+    input: Record<string, any>,
+    metadata: any
+  ): Promise<ThreadContext> {
+    // 使用ThreadBuilder构建子工作流上下文
+    const subgraphContext = await this.threadBuilder.build(subgraphId, {
+      input
+    });
+
+    // 设置元数据
+    subgraphContext.setMetadata({
+      ...subgraphContext.getMetadata(),
+      ...metadata
+    });
+
+    return subgraphContext;
   }
 }

@@ -5,8 +5,13 @@
 
 import type { TriggerAction, TriggerExecutionResult } from '../../../../types/trigger';
 import type { ExecuteTriggeredSubgraphActionConfig, TriggeredSubgraphConfig } from '../../../../types/trigger';
-import { NotFoundError, ExecutionError } from '../../../../types/errors';
+import { NotFoundError } from '../../../../types/errors';
 import { ExecutionContext } from '../../context/execution-context';
+import { executeSingleTriggeredSubgraph, type TriggeredSubgraphTask } from '../triggered-subgraph-handler';
+import { EventCoordinator } from '../../coordinators/event-coordinator';
+import { eventManager } from '../../../services/event-manager';
+import { ThreadExecutor } from '../../thread-executor';
+import { VariableAccessor } from '../../managers/variable-accessor';
 
 /**
  * 创建成功结果
@@ -57,14 +62,17 @@ function createSubgraphInput(
 ): Record<string, any> {
   if (!inputMapping || Object.keys(inputMapping).length === 0) {
     // 如果没有输入映射，传递所有变量
-    return mainThreadContext.getVariables();
+    return mainThreadContext.getAllVariables();
   }
 
   const input: Record<string, any> = {};
+  const accessor = new VariableAccessor(mainThreadContext);
+
   for (const [subgraphVar, mainVarPath] of Object.entries(inputMapping)) {
-    // 从主工作流上下文中提取变量值
-    // 这里简化处理，实际实现需要支持嵌套路径解析
-    const value = mainThreadContext.getVariable(mainVarPath);
+    // 使用统一的变量访问器提取变量值
+    // 支持嵌套路径解析，如 "user.profile.name"、"items[0].name"
+    // 支持命名空间，如 "input.userName"、"output.result"
+    const value = accessor.get(mainVarPath);
     input[subgraphVar] = value;
   }
   return input;
@@ -96,7 +104,7 @@ export async function executeTriggeredSubgraphHandler(
     // 获取主工作流线程上下文
     const threadRegistry = context.getThreadRegistry();
     const threadId = context.getCurrentThreadId();
-    
+
     if (!threadId) {
       throw new NotFoundError('Current thread ID not found in execution context', 'ThreadContext', 'current');
     }
@@ -125,10 +133,31 @@ export async function executeTriggeredSubgraphHandler(
       recordHistory: true,
     };
 
-    // TODO: 实际执行子工作流
-    // 这里需要调用线程执行器来执行子工作流
-    // 由于这是第一阶段设计，我们暂时只返回成功结果
-    // 实际实现将在第二阶段完成
+    // 创建事件协调器
+    const eventCoordinator = new EventCoordinator(context.getEventManager() || eventManager);
+
+    // 创建 ThreadExecutor 实例（作为 SubgraphContextFactory 和 SubgraphExecutor）
+    const threadExecutor = new ThreadExecutor(
+      context.getEventManager(),
+      workflowRegistry
+    );
+
+    // 创建触发子工作流任务
+    const task: TriggeredSubgraphTask = {
+      subgraphId,
+      input,
+      triggerId,
+      mainThreadContext,
+      config: options
+    };
+
+    // 直接调用执行函数
+    await executeSingleTriggeredSubgraph(
+      task,
+      threadExecutor, // 作为 SubgraphContextFactory
+      threadExecutor, // 作为 SubgraphExecutor
+      eventCoordinator
+    );
 
     const executionTime = Date.now() - startTime;
 
@@ -140,9 +169,8 @@ export async function executeTriggeredSubgraphHandler(
         subgraphId,
         input,
         options,
-        // 注意：实际执行将在第二阶段实现
         executed: true,
-        completed: false,
+        completed: options.waitForCompletion || false,
       },
       executionTime
     );

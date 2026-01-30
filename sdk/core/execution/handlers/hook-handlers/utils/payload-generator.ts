@@ -5,6 +5,7 @@
 
 import type { NodeHook } from '../../../../../types/node';
 import type { HookEvaluationContext } from './context-builder';
+import { resolvePath } from '../../../../../utils/evalutor/path-resolver';
 
 /**
  * 生成事件载荷
@@ -90,20 +91,11 @@ export function resolveTemplateVariable(template: string, evalContext: HookEvalu
 
 /**
  * 获取变量值
+ * 使用统一的路径解析逻辑
  * @param path 变量路径
  * @param evalContext 评估上下文
  * @returns 变量值
  */
 export function getVariableValue(path: string, evalContext: HookEvaluationContext): any {
-  const parts = path.split('.');
-  let value: any = evalContext;
-
-  for (const part of parts) {
-    if (value === null || value === undefined) {
-      return undefined;
-    }
-    value = value[part];
-  }
-
-  return value;
+  return resolvePath(path, evalContext);
 }
