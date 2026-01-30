@@ -14,7 +14,7 @@ import { EventManagerAPI } from './event-manager-api';
 import { CheckpointManagerAPI } from './checkpoint-manager-api';
 import { VariableManagerAPI } from './variable-manager-api';
 import { workflowRegistry, type WorkflowRegistry } from '../core/services/workflow-registry';
-import { ThreadRegistry } from '../core/services/thread-registry';
+import { threadRegistry, type ThreadRegistry } from '../core/services/thread-registry';
 import type { SDKOptions } from './types';
 
 /**
@@ -58,9 +58,10 @@ export class SDK {
   private readonly internalThreadRegistry: ThreadRegistry;
 
   constructor(options?: SDKOptions) {
-    // 创建内部注册表
+    // 使用全局单例注册表
     this.internalWorkflowRegistry = workflowRegistry;
-    this.internalThreadRegistry = options?.threadRegistry || new ThreadRegistry();
+    // 优先使用传入的实例（用于测试），默认使用全局单例
+    this.internalThreadRegistry = options?.threadRegistry || threadRegistry;
 
     // 初始化API模块
     this.workflows = new WorkflowRegistryAPI({

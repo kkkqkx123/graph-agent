@@ -168,12 +168,14 @@ export class ThreadExecutorAPI {
   }
 
   /**
-   * 获取触发器管理器
-   * @returns 触发器管理器实例
-   */
-  getTriggerManager() {
-    return this.coordinator.getTriggerManager();
-  }
+    * 获取触发器管理器
+    * @param threadId 线程ID
+    * @returns 触发器管理器实例
+    */
+   getTriggerManager(threadId: string) {
+     const threadContext = this.coordinator.getThreadContext(threadId);
+     return threadContext?.triggerManager;
+   }
 
   /**
    * 转换执行选项

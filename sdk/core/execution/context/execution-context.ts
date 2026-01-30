@@ -26,7 +26,7 @@
  */
 
 import { workflowRegistry, type WorkflowRegistry } from '../../services/workflow-registry';
-import { ThreadRegistry } from '../../services/thread-registry';
+import { threadRegistry, type ThreadRegistry } from '../../services/thread-registry';
 import { eventManager, type EventManager } from '../../services/event-manager';
 import { CheckpointManager } from '../managers/checkpoint-manager';
 import { ThreadLifecycleManager } from '../thread-lifecycle-manager';
@@ -37,6 +37,7 @@ import { ThreadLifecycleManager } from '../thread-lifecycle-manager';
 export class ExecutionContext {
   private components: Map<string, any> = new Map();
   private initialized = false;
+  private currentThreadId: string | null = null;
 
   /**
    * 初始化上下文
@@ -54,8 +55,7 @@ export class ExecutionContext {
     // 2. WorkflowRegistry 使用全局单例
     this.register('workflowRegistry', workflowRegistry);
 
-    // 3. ThreadRegistry 无依赖，创建新实例
-    const threadRegistry = new ThreadRegistry();
+    // 3. ThreadRegistry 使用全局单例
     this.register('threadRegistry', threadRegistry);
 
     // 4. CheckpointManager 依赖 ThreadRegistry 和 WorkflowRegistry
@@ -165,12 +165,28 @@ export class ExecutionContext {
   }
 
   /**
-   * 创建默认执行上下文
-   * @returns ExecutionContext 实例
-   */
-  static createDefault(): ExecutionContext {
-    const context = new ExecutionContext();
-    context.initialize();
-    return context;
+    * 设置当前线程ID
+    * @param threadId 线程ID
+    */
+   setCurrentThreadId(threadId: string): void {
+     this.currentThreadId = threadId;
+   }
+
+  /**
+    * 获取当前线程ID
+    * @returns 当前线程ID，如果未设置则返回null
+    */
+   getCurrentThreadId(): string | null {
+     return this.currentThreadId;
+   }
+
+  /**
+    * 创建默认执行上下文
+    * @returns ExecutionContext 实例
+    */
+   static createDefault(): ExecutionContext {
+     const context = new ExecutionContext();
+     context.initialize();
+     return context;
+   }
   }
-}

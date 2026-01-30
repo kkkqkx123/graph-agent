@@ -95,10 +95,16 @@ export async function executeTriggeredSubgraphHandler(
 
     // 获取主工作流线程上下文
     const threadRegistry = context.getThreadRegistry();
-    const mainThreadContext = threadRegistry.getCurrentThread();
+    const threadId = context.getCurrentThreadId();
+    
+    if (!threadId) {
+      throw new NotFoundError('Current thread ID not found in execution context', 'ThreadContext', 'current');
+    }
+
+    const mainThreadContext = threadRegistry.get(threadId);
 
     if (!mainThreadContext) {
-      throw new NotFoundError('Main thread context not found', 'ThreadContext', 'current');
+      throw new NotFoundError(`Main thread context not found: ${threadId}`, 'ThreadContext', threadId);
     }
 
     // 创建子工作流输入

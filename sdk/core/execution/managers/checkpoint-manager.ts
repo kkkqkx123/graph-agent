@@ -10,7 +10,7 @@ import type { Checkpoint, CheckpointMetadata, ThreadStateSnapshot } from '../../
 import type { CheckpointStorage, CheckpointStorageMetadata } from '../../../types/checkpoint-storage';
 import type { CheckpointCreatedEvent } from '../../../types/events';
 import { EventType } from '../../../types/events';
-import { ThreadRegistry } from '../../services/thread-registry';
+import type { ThreadRegistry } from '../../services/thread-registry';
 import { ThreadContext } from '../context/thread-context';
 import { VariableManager } from './variable-manager';
 import { ConversationManager } from '../conversation';
@@ -185,7 +185,8 @@ export class CheckpointManager {
     const threadContext = new ThreadContext(
       thread as Thread,
       conversationManager,
-      this.threadRegistry
+      this.threadRegistry,
+      this.workflowRegistry
     );
 
     // 步骤8：注册到 ThreadRegistry

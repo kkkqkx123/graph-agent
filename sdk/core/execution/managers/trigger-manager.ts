@@ -16,6 +16,7 @@ import { ValidationError, ExecutionError } from '../../../types/errors';
 import { EventType } from '../../../types/events';
 import { now } from '../../../utils';
 import type { ThreadRegistry } from '../../services/thread-registry';
+import type { WorkflowRegistry } from '../../services/workflow-registry';
 
 /**
  * TriggerManager - 触发器管理器
@@ -32,9 +33,11 @@ import type { ThreadRegistry } from '../../services/thread-registry';
 export class TriggerManager {
   private triggers: Map<ID, Trigger> = new Map();
   private threadRegistry: ThreadRegistry;
+  private workflowRegistry?: WorkflowRegistry;
 
-  constructor(threadRegistry: ThreadRegistry) {
+  constructor(threadRegistry: ThreadRegistry, workflowRegistry?: WorkflowRegistry) {
     this.threadRegistry = threadRegistry;
+    this.workflowRegistry = workflowRegistry;
   }
 
   /**
@@ -179,24 +182,26 @@ export class TriggerManager {
   }
 
   /**
-   * 执行触发器
-   * @param trigger 触发器
-   */
-  private async executeTrigger(trigger: Trigger): Promise<void> {
-    // 使用trigger handler函数执行触发动作
-    const handler = getTriggerHandler(trigger.action.type);
+    * 执行触发器
+    * @param trigger 触发器
+    */
+   private async executeTrigger(trigger: Trigger): Promise<void> {
+     // 使用trigger handler函数执行触发动作
+     const handler = getTriggerHandler(trigger.action.type);
 
-    // 创建一个临时的 ExecutionContext，包含 ThreadRegistry
-    const executionContext = {
-      getThreadRegistry: () => this.threadRegistry,
-    };
+     // 创建一个临时的 ExecutionContext，包含 ThreadRegistry 和 WorkflowRegistry
+     const executionContext = {
+       getThreadRegistry: () => this.threadRegistry,
+       getWorkflowRegistry: () => this.workflowRegistry,
+       getCurrentThreadId: () => trigger.threadId || null,
+     };
 
-    const result = await handler(trigger.action, trigger.id, executionContext);
+     const result = await handler(trigger.action, trigger.id, executionContext);
 
-    // 更新触发器状态
-    trigger.triggerCount++;
-    trigger.updatedAt = now();
-  }
+     // 更新触发器状态
+     trigger.triggerCount++;
+     trigger.updatedAt = now();
+   }
 
   /**
    * 清空所有触发器

@@ -2,6 +2,13 @@
  * ThreadRegistry - ThreadContext注册表
  * 负责ThreadContext的内存存储和基本查询
  * 不负责状态转换、持久化、序列化
+ *
+ * 本模块导出全局单例实例，不导出类定义
+ * 
+ * 如果需要测试隔离，使用以下模式：
+ * - 创建 Mock 类实现该接口
+ * - 使用 type { ThreadRegistry } 获取类型
+ * - 通过依赖注入传入 Mock
  */
 
 import { ThreadContext } from '../execution/context/thread-context';
@@ -9,7 +16,7 @@ import { ThreadContext } from '../execution/context/thread-context';
 /**
  * ThreadRegistry - ThreadContext注册表
  */
-export class ThreadRegistry {
+class ThreadRegistry {
   private threadContexts: Map<string, ThreadContext> = new Map();
 
   /**
@@ -61,3 +68,15 @@ export class ThreadRegistry {
     return this.threadContexts.has(threadId);
   }
 }
+
+/**
+ * 全局线程注册表单例
+ * 用于管理所有ThreadContext实例的生命周期
+ */
+export const threadRegistry = new ThreadRegistry();
+
+/**
+ * 导出ThreadRegistry类型供类型注解使用
+ * 用于 instanceof 检查、类型定义和 Mock 实现
+ */
+export type { ThreadRegistry };

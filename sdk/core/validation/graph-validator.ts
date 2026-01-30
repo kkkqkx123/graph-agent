@@ -46,7 +46,7 @@ export class GraphValidator {
 
     // 检查是否为触发子工作流
     const isTriggeredSubgraph = this.isTriggeredSubgraph(graph);
-    
+
     // 检查START/END节点
     if (opts.checkStartEnd) {
       const startEndErrors = isTriggeredSubgraph
@@ -454,7 +454,7 @@ export class GraphValidator {
       );
     } else {
       // 检查START_FROM_TRIGGER节点的入度
-      const startNodeId = startFromTriggerNodes[0];
+      const startNodeId = startFromTriggerNodes[0]!;
       const incomingEdges = graph.getIncomingEdges(startNodeId);
       if (incomingEdges.length > 0) {
         errors.push(
@@ -488,7 +488,7 @@ export class GraphValidator {
       );
     } else {
       // 检查CONTINUE_FROM_TRIGGER节点的出度
-      const endNodeId = continueFromTriggerNodes[0];
+      const endNodeId = continueFromTriggerNodes[0]!;
       const outgoingEdges = graph.getOutgoingEdges(endNodeId);
       if (outgoingEdges.length > 0) {
         errors.push(

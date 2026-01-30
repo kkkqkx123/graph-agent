@@ -4,7 +4,7 @@
  * 注意：变量全部由workflow的静态定义提供，API不提供创建新变量的功能
  */
 
-import { ThreadRegistry } from '../core/services/thread-registry';
+import { threadRegistry as globalThreadRegistry, type ThreadRegistry } from '../core/services/thread-registry';
 import type { Thread, ThreadVariable } from '../types/thread';
 import { NotFoundError, ValidationError } from '../types/errors';
 
@@ -34,12 +34,18 @@ export interface VariableFilter {
 
 /**
  * VariableManagerAPI - 变量管理API
+ * 默认使用全局线程注册表单例
  */
 export class VariableManagerAPI {
   private threadRegistry: ThreadRegistry;
 
+  /**
+   * 创建 VariableManagerAPI 实例
+   * @param threadRegistry 线程注册表（可选，默认使用全局单例）
+   */
   constructor(threadRegistry?: ThreadRegistry) {
-    this.threadRegistry = threadRegistry || new ThreadRegistry();
+    // 默认使用全局单例，支持依赖注入用于测试
+    this.threadRegistry = threadRegistry || globalThreadRegistry;
   }
 
   /**

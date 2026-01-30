@@ -3,19 +3,25 @@
  * 封装ThreadRegistry，提供线程查询和管理
  */
 
-import { ThreadRegistry } from '../core/services/thread-registry';
+import { threadRegistry as globalThreadRegistry, type ThreadRegistry } from '../core/services/thread-registry';
 import type { Thread, ThreadResult, ThreadStatus } from '../types/thread';
 import type { ThreadFilter, ThreadSummary } from './types';
 import { NotFoundError } from '../types/errors';
 
 /**
  * ThreadRegistryAPI - 线程管理API
+ * 默认使用全局线程注册表单例
  */
 export class ThreadRegistryAPI {
   private registry: ThreadRegistry;
 
+  /**
+   * 创建 ThreadRegistryAPI 实例
+   * @param threadRegistry 线程注册表（可选，默认使用全局单例）
+   */
   constructor(threadRegistry?: ThreadRegistry) {
-    this.registry = threadRegistry || new ThreadRegistry();
+    // 默认使用全局单例，支持依赖注入用于测试
+    this.registry = threadRegistry || globalThreadRegistry;
   }
 
   /**

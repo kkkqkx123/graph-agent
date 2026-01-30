@@ -23,6 +23,7 @@ import { TriggerManager } from '../managers/trigger-manager';
 import { GraphNavigator } from '../../graph/graph-navigator';
 import { ExecutionState } from './execution-state';
 import type { ThreadRegistry } from '../../services/thread-registry';
+import type { WorkflowRegistry } from '../../services/workflow-registry';
 
 /**
  * ThreadContext - Thread 执行上下文
@@ -78,17 +79,19 @@ export class ThreadContext {
    * @param thread Thread 实例
    * @param conversationManager 对话管理器
    * @param threadRegistry Thread 注册表
+   * @param workflowRegistry Workflow 注册表（可选）
    */
   constructor(
     thread: Thread,
     conversationManager: ConversationManager,
-    threadRegistry: ThreadRegistry
+    threadRegistry: ThreadRegistry,
+    workflowRegistry?: WorkflowRegistry
   ) {
     this.thread = thread;
     this.conversationManager = conversationManager;
     this.threadRegistry = threadRegistry;
     this.variableManager = new VariableManager();
-    this.triggerManager = new TriggerManager(threadRegistry);
+    this.triggerManager = new TriggerManager(threadRegistry, workflowRegistry);
     this.executionState = new ExecutionState();
   }
 

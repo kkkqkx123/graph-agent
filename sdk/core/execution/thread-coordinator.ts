@@ -22,7 +22,7 @@
 
 import type { ThreadOptions, ThreadResult } from '../../types/thread';
 import type { ForkConfig, JoinResult } from './thread-operations/thread-operations';
-import { ThreadRegistry } from '../services/thread-registry';
+import { threadRegistry, type ThreadRegistry } from '../services/thread-registry';
 import { ThreadBuilder } from './thread-builder';
 import { ThreadExecutor } from './thread-executor';
 import { ThreadLifecycleManager } from './thread-lifecycle-manager';
@@ -50,8 +50,14 @@ export class ThreadCoordinator {
   private lifecycleManager: ThreadLifecycleManager;
   private eventManager: EventManager;
 
-  constructor(workflowRegistry?: any) {
-    this.threadRegistry = new ThreadRegistry();
+  /**
+   * 创建 ThreadCoordinator 实例
+   * @param workflowRegistry 工作流注册表（可选）
+   * @param threadReg 线程注册表（可选，默认使用全局单例）
+   */
+  constructor(workflowRegistry?: any, threadReg?: ThreadRegistry) {
+    // 使用全局单例或注入的实例（支持测试隔离）
+    this.threadRegistry = threadReg || threadRegistry;
     this.threadBuilder = new ThreadBuilder(workflowRegistry);
     this.eventManager = eventManager;
     this.lifecycleManager = new ThreadLifecycleManager(this.eventManager);
