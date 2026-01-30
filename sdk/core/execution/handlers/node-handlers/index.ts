@@ -1,8 +1,12 @@
 /**
  * 节点处理函数模块
  * 提供各种节点类型的处理函数
- * subgraph-node不需要处理器，因为已经通过graph合并了，运行时不存在此类节点
- * llm-node、user-interaction-node、context-processor-node、tool-node都托管给llm执行器
+ *
+ * 注意：
+ * - subgraph-node不需要处理器，因为已经通过graph合并了，运行时不存在此类节点
+ * - llm-node、user-interaction-node、context-processor-node、tool-node由ThreadExecutor直接处理
+ * - 这些节点需要访问高层模块（LLMCoordinator、ToolService等）
+ * - 配置验证和转换逻辑在config-utils.ts中
  */
 
 import { NodeType } from '../../../../types/node';
@@ -68,8 +72,11 @@ export { routeHandler } from './route-handler';
 export { loopStartHandler } from './loop-start-handler';
 export { loopEndHandler } from './loop-end-handler';
 
-// 以下节点由ThreadExecutor直接托管给LLM执行器处理，不在此处实现
+// 以下节点由ThreadExecutor直接处理，不在此处实现
 // - LLM_NODE
 // - TOOL_NODE
 // - CONTEXT_PROCESSOR_NODE
 // - USER_INTERACTION_NODE
+
+// 导出配置工具函数
+export * from './config-utils';

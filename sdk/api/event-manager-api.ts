@@ -10,8 +10,16 @@ import type {
   EventListener,
   ThreadStartedEvent,
   ThreadCompletedEvent,
+  ThreadForkedEvent,
+  ThreadJoinedEvent,
+  ThreadCopiedEvent,
   NodeStartedEvent,
-  NodeCompletedEvent
+  NodeCompletedEvent,
+  NodeCustomEvent,
+  TokenLimitExceededEvent,
+  CheckpointCreatedEvent,
+  SubgraphStartedEvent,
+  SubgraphCompletedEvent
 } from '../types/events';
 import type { EventFilter } from './types';
 import { EventType as EventTypeEnum } from '../types/events';
@@ -188,6 +196,78 @@ export class EventManagerAPI {
   }
 
   /**
+   * 监听线程分叉事件
+   * @param listener 事件监听器
+   * @returns 注销函数
+   */
+  onThreadForked(listener: (event: ThreadForkedEvent) => void | Promise<void>): () => void {
+    return this.eventManager.on(EventTypeEnum.THREAD_FORKED, listener as EventListener<BaseEvent>);
+  }
+
+  /**
+   * 监听线程合并事件
+   * @param listener 事件监听器
+   * @returns 注销函数
+   */
+  onThreadJoined(listener: (event: ThreadJoinedEvent) => void | Promise<void>): () => void {
+    return this.eventManager.on(EventTypeEnum.THREAD_JOINED, listener as EventListener<BaseEvent>);
+  }
+
+  /**
+   * 监听线程复制事件
+   * @param listener 事件监听器
+   * @returns 注销函数
+   */
+  onThreadCopied(listener: (event: ThreadCopiedEvent) => void | Promise<void>): () => void {
+    return this.eventManager.on(EventTypeEnum.THREAD_COPIED, listener as EventListener<BaseEvent>);
+  }
+
+  /**
+   * 监听节点自定义事件
+   * @param listener 事件监听器
+   * @returns 注销函数
+   */
+  onNodeCustomEvent(listener: (event: NodeCustomEvent) => void | Promise<void>): () => void {
+    return this.eventManager.on(EventTypeEnum.NODE_CUSTOM_EVENT, listener as EventListener<BaseEvent>);
+  }
+
+  /**
+   * 监听Token超过限制事件
+   * @param listener 事件监听器
+   * @returns 注销函数
+   */
+  onTokenLimitExceeded(listener: (event: TokenLimitExceededEvent) => void | Promise<void>): () => void {
+    return this.eventManager.on(EventTypeEnum.TOKEN_LIMIT_EXCEEDED, listener as EventListener<BaseEvent>);
+  }
+
+  /**
+   * 监听检查点创建事件
+   * @param listener 事件监听器
+   * @returns 注销函数
+   */
+  onCheckpointCreated(listener: (event: CheckpointCreatedEvent) => void | Promise<void>): () => void {
+    return this.eventManager.on(EventTypeEnum.CHECKPOINT_CREATED, listener as EventListener<BaseEvent>);
+  }
+
+  /**
+   * 监听子图开始事件
+   * @param listener 事件监听器
+   * @returns 注销函数
+   */
+  onSubgraphStarted(listener: (event: SubgraphStartedEvent) => void | Promise<void>): () => void {
+    return this.eventManager.on(EventTypeEnum.SUBGRAPH_STARTED, listener as EventListener<BaseEvent>);
+  }
+
+  /**
+   * 监听子图完成事件
+   * @param listener 事件监听器
+   * @returns 注销函数
+   */
+  onSubgraphCompleted(listener: (event: SubgraphCompletedEvent) => void | Promise<void>): () => void {
+    return this.eventManager.on(EventTypeEnum.SUBGRAPH_COMPLETED, listener as EventListener<BaseEvent>);
+  }
+
+  /**
    * 获取事件历史
    * @param filter 过滤条件
    * @returns 事件数组
@@ -351,7 +431,9 @@ export class EventManagerAPI {
       EventTypeEnum.NODE_CUSTOM_EVENT,
       EventTypeEnum.TOKEN_LIMIT_EXCEEDED,
       EventTypeEnum.ERROR,
-      EventTypeEnum.CHECKPOINT_CREATED
+      EventTypeEnum.CHECKPOINT_CREATED,
+      EventTypeEnum.SUBGRAPH_STARTED,
+      EventTypeEnum.SUBGRAPH_COMPLETED
     ];
 
     for (const eventType of eventTypes) {

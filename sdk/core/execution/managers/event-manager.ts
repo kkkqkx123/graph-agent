@@ -22,7 +22,7 @@ interface ListenerWrapper<T> {
  * EventManager - 事件管理器
  *
  * 职责：
- * - 全局事件：对外暴露，用户可监听（如 THREAD_STARTED、NODE_COMPLETED）
+ * - 全局事件：对外暴露，用户可监听（如 NODE_COMPLETED）
  * - 提供事件注册、注销、触发等核心功能
  *
  * 设计原则：

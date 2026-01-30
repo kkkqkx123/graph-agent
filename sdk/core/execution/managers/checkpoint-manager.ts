@@ -8,6 +8,8 @@
 import type { Thread } from '../../../types/thread';
 import type { Checkpoint, CheckpointMetadata, ThreadStateSnapshot } from '../../../types/checkpoint';
 import type { CheckpointStorage, CheckpointStorageMetadata } from '../../../types/checkpoint-storage';
+import type { CheckpointCreatedEvent } from '../../../types/events';
+import { EventType } from '../../../types/events';
 import { ThreadRegistry } from '../../registry/thread-registry';
 import { ThreadContext } from '../context/thread-context';
 import { WorkflowContext } from '../context/workflow-context';
@@ -15,7 +17,7 @@ import { VariableManager } from './variable-manager';
 import { ConversationManager } from '../conversation';
 import { generateId, now as getCurrentTimestamp } from '../../../utils';
 import { WorkflowRegistry } from '../../registry/workflow-registry';
-import { getThreadRegistry, getWorkflowRegistry } from '../context/execution-context';
+import { getThreadRegistry, getWorkflowRegistry, getEventManager } from '../context/execution-context';
 import { MemoryCheckpointStorage } from '../../storage/memory-checkpoint-storage';
 
 /**
@@ -106,7 +108,19 @@ export class CheckpointManager {
     // 步骤7：调用 CheckpointStorage 保存
     await this.storage.save(checkpointId, data, storageMetadata);
 
-    // 步骤8：返回 checkpointId
+    // 步骤8：触发 CHECKPOINT_CREATED 事件
+    const eventManager = getEventManager();
+    const checkpointEvent: CheckpointCreatedEvent = {
+      type: EventType.CHECKPOINT_CREATED,
+      timestamp: getCurrentTimestamp(),
+      workflowId: threadContext.getWorkflowId(),
+      threadId: threadContext.getThreadId(),
+      checkpointId,
+      description: metadata?.description
+    };
+    await eventManager.emit(checkpointEvent);
+
+    // 步骤9：返回 checkpointId
     return checkpointId;
   }
 

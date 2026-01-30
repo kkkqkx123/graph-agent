@@ -184,6 +184,8 @@ export interface CodeNodeConfig {
 export interface LLMNodeConfig {
   /** 引用的LLM Profile ID */
   profileId: ID;
+  /** 提示词 */
+  prompt?: string;
   /** 可选的参数覆盖（覆盖Profile中的parameters） */
   parameters?: Record<string, any>;
 }

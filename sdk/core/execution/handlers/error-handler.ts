@@ -1,0 +1,110 @@
+/**
+ * ErrorHandler - 错误处理器
+ * 负责处理节点执行失败和全局执行错误
+ * 
+ * 职责：
+ * - 处理节点执行失败
+ * - 处理全局执行错误
+ * - 根据错误处理策略决定后续操作
+ * - 触发错误事件
+ * 
+ * 设计原则：
+ * - 集中管理错误处理逻辑
+ * - 支持灵活的错误处理策略
+ * - 提供清晰的错误处理接口
+ */
+
+import { ThreadContext } from '../context/thread-context';
+import type { Node } from '../../../types/node';
+import type { NodeExecutionResult } from '../../../types/thread';
+import { EventCoordinator } from '../coordinators/event-coordinator';
+import { EventType } from '../../../types/events';
+import type { ErrorEvent } from '../../../types/events';
+import { now } from '../../../utils';
+
+/**
+ * 错误处理器
+ */
+export class ErrorHandler {
+  constructor(private eventCoordinator: EventCoordinator) {}
+
+  /**
+   * 处理节点执行失败
+   * @param threadContext 线程上下文
+   * @param node 节点定义
+   * @param nodeResult 节点执行结果
+   */
+  async handleNodeFailure(
+    threadContext: ThreadContext,
+    node: Node,
+    nodeResult: NodeExecutionResult
+  ): Promise<void> {
+    // 步骤1：记录错误信息
+    threadContext.addError(nodeResult.error);
+
+    // 步骤2：触发错误事件
+    const errorEvent: ErrorEvent = {
+      type: EventType.ERROR,
+      threadId: threadContext.getThreadId(),
+      workflowId: threadContext.getWorkflowId(),
+      error: nodeResult.error,
+      timestamp: now()
+    };
+
+    await this.eventCoordinator.emitErrorEvent(errorEvent);
+
+    // 步骤3：根据错误处理策略决定后续操作
+    const errorHandling = threadContext.getMetadata()?.customFields?.errorHandling;
+
+    if (errorHandling) {
+      if (errorHandling.stopOnError) {
+        // 停止执行，状态由外部管理
+        return;
+      } else if (errorHandling.continueOnError) {
+        // 继续执行
+        const fallbackNodeId = errorHandling.fallbackNodeId;
+        if (fallbackNodeId) {
+          threadContext.setCurrentNodeId(fallbackNodeId);
+        } else {
+          // 没有回退节点，尝试路由到下一个节点
+          const navigator = threadContext.getNavigator();
+          const currentNodeId = node.id;
+          const lastResult = threadContext.getNodeResults()[threadContext.getNodeResults().length - 1];
+          const nextNodeId = navigator.selectNextNodeWithContext(
+            currentNodeId,
+            threadContext.thread,
+            node.type,
+            lastResult
+          );
+          if (nextNodeId) {
+            threadContext.setCurrentNodeId(nextNodeId);
+          }
+        }
+      }
+    }
+    // 默认行为：停止执行，状态由外部管理
+  }
+
+  /**
+   * 处理执行错误
+   * @param threadContext 线程上下文
+   * @param error 错误信息
+   */
+  async handleExecutionError(threadContext: ThreadContext, error: any): Promise<void> {
+    // 记录错误信息
+    threadContext.addError(error);
+
+    // 触发错误事件
+    const errorEvent: ErrorEvent = {
+      type: EventType.ERROR,
+      threadId: threadContext.getThreadId(),
+      workflowId: threadContext.getWorkflowId(),
+      error,
+      timestamp: now()
+    };
+
+    await this.eventCoordinator.emitErrorEvent(errorEvent);
+
+    // 状态由外部管理
+  }
+}
