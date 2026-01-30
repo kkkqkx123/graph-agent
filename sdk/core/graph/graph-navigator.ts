@@ -18,7 +18,6 @@ import type {
   Graph,
 } from '../../types';
 import { getReachableNodes } from './utils/graph-traversal';
-import { GraphData } from '../entities/graph-data';
 
 /**
  * 导航结果

@@ -25,19 +25,9 @@ import { EventType } from '../../types/events';
 /**
  * ConversationManager事件回调
  */
-export interface ConversationManagerEventCallbacks {
-  /** Token超过限制时的回调 */
-  onTokenLimitExceeded?: (tokensUsed: number, tokenLimit: number) => void | Promise<void>;
-}
-
-/**
- * ConversationManager配置选项
- */
 export interface ConversationManagerOptions {
   /** Token限制阈值，超过此值触发压缩事件 */
   tokenLimit?: number;
-  /** 事件回调 */
-  eventCallbacks?: ConversationManagerEventCallbacks;
   /** 事件管理器 */
   eventManager?: EventManager;
   /** 工作流ID（用于事件） */
@@ -52,7 +42,6 @@ export interface ConversationManagerOptions {
 export class ConversationManager {
   private messages: LLMMessage[] = [];
   private tokenUsageTracker: TokenUsageTracker;
-  private eventCallbacks?: ConversationManagerEventCallbacks;
   private indexManager: MessageIndexManager;
   private eventManager?: EventManager;
   private workflowId?: string;
@@ -66,7 +55,6 @@ export class ConversationManager {
     this.tokenUsageTracker = new TokenUsageTracker({
       tokenLimit: options.tokenLimit
     });
-    this.eventCallbacks = options.eventCallbacks;
     this.indexManager = new MessageIndexManager();
     this.eventManager = options.eventManager;
     this.workflowId = options.workflowId;
@@ -254,17 +242,8 @@ export class ConversationManager {
       await this.eventManager.emit(event);
     }
 
-    // 2. 兼容旧的回调机制
-    if (this.eventCallbacks?.onTokenLimitExceeded) {
-      try {
-        await this.eventCallbacks.onTokenLimitExceeded(tokensUsed, this.tokenUsageTracker['tokenLimit']);
-      } catch (error) {
-        console.error('Error in onTokenLimitExceeded callback:', error);
-      }
-    } else {
-      // 如果没有回调，记录警告
-      console.warn(`Token limit exceeded: ${tokensUsed} > ${this.tokenUsageTracker['tokenLimit']}`);
-    }
+    // 2. 记录警告日志作为兜底机制
+    console.warn(`Token limit exceeded: ${tokensUsed} > ${this.tokenUsageTracker['tokenLimit']}`);
   }
 
   /**
@@ -308,7 +287,6 @@ export class ConversationManager {
     // 创建新的 ConversationManager 实例
     const clonedManager = new ConversationManager({
       tokenLimit: this.tokenUsageTracker['tokenLimit'],
-      eventCallbacks: this.eventCallbacks,
       eventManager: this.eventManager,
       workflowId: this.workflowId,
       threadId: this.threadId

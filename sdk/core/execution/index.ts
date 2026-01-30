@@ -42,7 +42,7 @@ export { TriggerManager } from './managers/trigger-manager';
 
 // LLM执行相关
 export { ConversationManager } from './conversation';
-export type { ConversationManagerOptions, ConversationManagerEventCallbacks } from './conversation';
+export type { ConversationManagerOptions } from './conversation';
 export { LLMExecutor } from './llm-executor';
 export { TokenUsageTracker } from './token-usage-tracker';
 export type { TokenUsageStats, TokenUsageTrackerOptions } from './token-usage-tracker';
