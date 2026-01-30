@@ -70,20 +70,12 @@ export class MessageIndexManager {
       throw new ExecutionError(`Current batch ${this.markMap.currentBatch} not found in boundaryToBatch`);
     }
     const boundary = this.markMap.batchBoundaries[currentBoundaryIndex];
-    
+
     if (boundary === undefined) {
       throw new ExecutionError(`Boundary at index ${currentBoundaryIndex} is undefined`);
     }
-    
-    return this.markMap.originalIndices.filter(index => index >= boundary);
-  }
 
-  /**
-   * 获取未压缩的消息索引
-   * @returns 未压缩的消息索引数组
-   */
-  getUncompressedIndices(): number[] {
-    return this.getCurrentBatchIndices();
+    return this.markMap.originalIndices.filter(index => index >= boundary);
   }
 
   /**
@@ -142,7 +134,7 @@ export class MessageIndexManager {
 
     // 添加新边界
     this.markMap.batchBoundaries.push(boundaryIndex);
-    
+
     // 分配新批次号
     const newBatch = this.markMap.currentBatch + 1;
     this.markMap.boundaryToBatch.push(newBatch);
@@ -161,11 +153,11 @@ export class MessageIndexManager {
 
     // 找到目标批次的边界索引
     const targetBoundaryIndex = this.markMap.boundaryToBatch.indexOf(targetBatch);
-    
+
     // 移除目标批次之后的边界
     this.markMap.batchBoundaries = this.markMap.batchBoundaries.slice(0, targetBoundaryIndex + 1);
     this.markMap.boundaryToBatch = this.markMap.boundaryToBatch.slice(0, targetBoundaryIndex + 1);
-    
+
     // 设置当前批次
     this.markMap.currentBatch = targetBatch;
   }
@@ -181,11 +173,11 @@ export class MessageIndexManager {
       throw new ExecutionError(`Current batch ${this.markMap.currentBatch} not found in boundaryToBatch`);
     }
     const boundary = this.markMap.batchBoundaries[currentBoundaryIndex];
-    
+
     if (boundary === undefined) {
       throw new ExecutionError(`Boundary at index ${currentBoundaryIndex} is undefined`);
     }
-    
+
     // 标记索引小于边界的消息为已修改
     for (const index of indices) {
       if (index < boundary) {
@@ -226,7 +218,7 @@ export class MessageIndexManager {
     if (this.markMap.batchBoundaries.length !== this.markMap.boundaryToBatch.length) {
       return false;
     }
-    
+
     // 检查边界索引顺序
     for (let i = 1; i < this.markMap.batchBoundaries.length; i++) {
       const current = this.markMap.batchBoundaries[i];
@@ -235,12 +227,12 @@ export class MessageIndexManager {
         return false;
       }
     }
-    
+
     // 检查当前批次
     if (!this.markMap.boundaryToBatch.includes(this.markMap.currentBatch)) {
       return false;
     }
-    
+
     return true;
   }
 }
