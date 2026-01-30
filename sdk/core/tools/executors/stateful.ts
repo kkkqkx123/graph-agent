@@ -6,6 +6,7 @@
 import type { Tool } from '../../../types/tool';
 import type { StatefulToolConfig } from '../../../types/tool';
 import type { ThreadContext } from '../../execution/context/thread-context';
+import { ToolError } from '../../../types/errors';
 import { BaseToolExecutor } from '../base-tool-executor';
 
 /**
@@ -25,17 +26,32 @@ export class StatefulToolExecutor extends BaseToolExecutor {
     threadContext?: ThreadContext
   ): Promise<any> {
     if (!threadContext) {
-      throw new Error(`ThreadContext is required for stateful tool '${tool.name}'`);
+      throw new ToolError(
+        `ThreadContext is required for stateful tool '${tool.name}'`,
+        tool.name,
+        'STATEFUL',
+        { threadContextRequired: true }
+      );
     }
 
     // 获取工厂函数
     const config = tool.config as StatefulToolConfig;
     if (!config || !config.factory) {
-      throw new Error(`Tool '${tool.name}' does not have a factory function`);
+      throw new ToolError(
+        `Tool '${tool.name}' does not have a factory function`,
+        tool.name,
+        'STATEFUL',
+        { hasConfig: !!config, hasFactory: !!config?.factory }
+      );
     }
 
     if (typeof config.factory.create !== 'function') {
-      throw new Error(`Factory for tool '${tool.name}' is not a function`);
+      throw new ToolError(
+        `Factory for tool '${tool.name}' is not a function`,
+        tool.name,
+        'STATEFUL',
+        { factoryCreateType: typeof config.factory.create }
+      );
     }
 
     try {
@@ -47,14 +63,26 @@ export class StatefulToolExecutor extends BaseToolExecutor {
 
       // 调用实例的execute方法
       if (typeof instance.execute !== 'function') {
-        throw new Error(`Tool instance for '${tool.name}' does not have an execute method`);
+        throw new ToolError(
+          `Tool instance for '${tool.name}' does not have an execute method`,
+          tool.name,
+          'STATEFUL',
+          { instanceType: typeof instance, hasMethods: Object.keys(instance) }
+        );
       }
 
       const result = await instance.execute(parameters);
       return result;
     } catch (error) {
-      throw new Error(
-        `Stateful tool execution failed: ${error instanceof Error ? error.message : 'Unknown error'}`
+      if (error instanceof ToolError) {
+        throw error;
+      }
+      throw new ToolError(
+        `Stateful tool execution failed: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        tool.name,
+        'STATEFUL',
+        { parameters },
+        error instanceof Error ? error : undefined
       );
     }
   }

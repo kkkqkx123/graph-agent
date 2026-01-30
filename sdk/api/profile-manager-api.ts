@@ -5,7 +5,7 @@
 
 import { ProfileManager } from '../core/llm/profile-manager';
 import type { LLMProfile } from '../types/llm';
-import { SDKError, ErrorCode } from '../types/errors';
+import { ValidationError, NotFoundError, SDKError, ErrorCode } from '../types/errors';
 
 /**
  * Profile模板类型
@@ -103,10 +103,11 @@ export class ProfileManagerAPI {
   async updateProfile(profileId: string, updates: Partial<LLMProfile>): Promise<void> {
     const profile = this.profileManager.get(profileId);
     if (!profile) {
-      throw new SDKError(
-        ErrorCode.NOT_FOUND_ERROR,
+      throw new NotFoundError(
         `Profile not found: ${profileId}`,
-        { profileId }
+        'PROFILE',
+        profileId,
+        { availableProfiles: this.profileManager.list().map(p => p.id) }
       );
     }
 
@@ -208,10 +209,11 @@ export class ProfileManagerAPI {
   async exportProfile(profileId: string): Promise<string> {
     const profile = this.profileManager.get(profileId);
     if (!profile) {
-      throw new SDKError(
-        ErrorCode.NOT_FOUND_ERROR,
+      throw new NotFoundError(
         `Profile not found: ${profileId}`,
-        { profileId }
+        'PROFILE',
+        profileId,
+        { availableProfiles: this.profileManager.list().map(p => p.id) }
       );
     }
 
@@ -236,32 +238,35 @@ export class ProfileManagerAPI {
       // 验证Profile
       const validation = await this.validateProfile(profile);
       if (!validation.valid) {
-        throw new SDKError(
-          ErrorCode.VALIDATION_ERROR,
+        throw new ValidationError(
           `Invalid profile: ${validation.errors.join(', ')}`,
-          { errors: validation.errors }
+          'profile',
+          profile,
+          { validationErrors: validation.errors }
         );
       }
 
       // 检查API Key是否被隐藏
       if (profile.apiKey === '***HIDDEN***') {
-        throw new SDKError(
-          ErrorCode.VALIDATION_ERROR,
+        throw new ValidationError(
           'Cannot import profile with hidden API key',
-          { profileId: profile.id }
+          'apiKey',
+          '***HIDDEN***',
+          { profileId: profile.id, reason: 'security' }
         );
       }
 
       this.profileManager.register(profile);
       return profile.id;
     } catch (error) {
-      if (error instanceof SDKError) {
+      if (error instanceof ValidationError) {
         throw error;
       }
-      throw new SDKError(
-        ErrorCode.VALIDATION_ERROR,
+      throw new ValidationError(
         `Failed to import profile: ${error instanceof Error ? error.message : 'Unknown error'}`,
-        { error }
+        'json',
+        json,
+        { parseError: error instanceof Error ? error.message : 'Unknown error' }
       );
     }
   }
@@ -275,10 +280,11 @@ export class ProfileManagerAPI {
     try {
       const profiles = JSON.parse(json) as LLMProfile[];
       if (!Array.isArray(profiles)) {
-        throw new SDKError(
-          ErrorCode.VALIDATION_ERROR,
+        throw new ValidationError(
           'Invalid format: expected array of profiles',
-          {}
+          'profiles',
+          profiles,
+          { expectedType: 'array', receivedType: typeof profiles }
         );
       }
 
@@ -290,13 +296,16 @@ export class ProfileManagerAPI {
 
       return profileIds;
     } catch (error) {
-      if (error instanceof SDKError) {
+      if (error instanceof ValidationError) {
         throw error;
       }
-      throw new SDKError(
-        ErrorCode.VALIDATION_ERROR,
+      throw new ValidationError(
         `Failed to import profiles: ${error instanceof Error ? error.message : 'Unknown error'}`,
-        { error }
+        'profiles',
+        undefined,
+        { 
+          parseError: error instanceof Error ? error.message : 'Unknown error'
+        }
       );
     }
   }

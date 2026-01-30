@@ -6,7 +6,7 @@
  */
 
 import type { LLMProfile } from '../../types/llm';
-import { SDKError, ErrorCode } from '../../types/errors';
+import { ValidationError, NotFoundError } from '../../types/errors';
 
 /**
  * Profile管理器类
@@ -61,16 +61,17 @@ export class ProfileManager {
   }
 
   /**
-   * 设置默认Profile
-   *
-   * @param profileId Profile ID
-   */
+    * 设置默认Profile
+    *
+    * @param profileId Profile ID
+    */
   setDefault(profileId: string): void {
     if (!this.profiles.has(profileId)) {
-      throw new SDKError(
-        ErrorCode.NOT_FOUND_ERROR,
+      throw new NotFoundError(
         `Profile not found: ${profileId}`,
-        { profileId }
+        'PROFILE',
+        profileId,
+        { availableProfiles: Array.from(this.profiles.keys()) }
       );
     }
     this.defaultProfileId = profileId;
@@ -128,48 +129,53 @@ export class ProfileManager {
   }
 
   /**
-   * 验证Profile
-   *
-   * @param profile LLM Profile配置
-   */
+    * 验证Profile
+    *
+    * @param profile LLM Profile配置
+    */
   private validateProfile(profile: LLMProfile): void {
     if (!profile.id) {
-      throw new SDKError(
-        ErrorCode.VALIDATION_ERROR,
+      throw new ValidationError(
         'Profile ID is required',
+        'profile.id',
+        profile?.id,
         { profile }
       );
     }
 
     if (!profile.name) {
-      throw new SDKError(
-        ErrorCode.VALIDATION_ERROR,
+      throw new ValidationError(
         'Profile name is required',
+        'profile.name',
+        profile?.name,
         { profile }
       );
     }
 
     if (!profile.provider) {
-      throw new SDKError(
-        ErrorCode.VALIDATION_ERROR,
+      throw new ValidationError(
         'Profile provider is required',
+        'profile.provider',
+        profile?.provider,
         { profile }
       );
     }
 
     if (!profile.model) {
-      throw new SDKError(
-        ErrorCode.VALIDATION_ERROR,
+      throw new ValidationError(
         'Profile model is required',
+        'profile.model',
+        profile?.model,
         { profile }
       );
     }
 
     if (!profile.apiKey) {
-      throw new SDKError(
-        ErrorCode.VALIDATION_ERROR,
+      throw new ValidationError(
         'Profile apiKey is required',
-        { profile }
+        'profile.apiKey',
+        profile?.apiKey,
+        { profile, note: 'API key must not be empty' }
       );
     }
   }

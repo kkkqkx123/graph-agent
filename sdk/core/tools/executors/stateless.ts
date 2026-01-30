@@ -6,6 +6,7 @@
 import type { Tool } from '../../../types/tool';
 import type { StatelessToolConfig } from '../../../types/tool';
 import type { ThreadContext } from '../../execution/context/thread-context';
+import { ToolError } from '../../../types/errors';
 import { BaseToolExecutor } from '../base-tool-executor';
 
 /**
@@ -27,11 +28,21 @@ export class StatelessToolExecutor extends BaseToolExecutor {
     // 获取执行函数
     const config = tool.config as StatelessToolConfig;
     if (!config || !config.execute) {
-      throw new Error(`Tool '${tool.name}' does not have an execute function`);
+      throw new ToolError(
+        `Tool '${tool.name}' does not have an execute function`,
+        tool.name,
+        'STATELESS',
+        { hasConfig: !!config, hasExecute: !!config?.execute }
+      );
     }
 
     if (typeof config.execute !== 'function') {
-      throw new Error(`Execute for tool '${tool.name}' is not a function`);
+      throw new ToolError(
+        `Execute for tool '${tool.name}' is not a function`,
+        tool.name,
+        'STATELESS',
+        { executeType: typeof config.execute }
+      );
     }
 
     try {
@@ -39,8 +50,12 @@ export class StatelessToolExecutor extends BaseToolExecutor {
       const result = await config.execute(parameters);
       return result;
     } catch (error) {
-      throw new Error(
-        `Stateless tool execution failed: ${error instanceof Error ? error.message : 'Unknown error'}`
+      throw new ToolError(
+        `Stateless tool execution failed: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        tool.name,
+        'STATELESS',
+        { parameters },
+        error instanceof Error ? error : undefined
       );
     }
   }

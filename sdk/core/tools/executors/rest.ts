@@ -7,7 +7,8 @@ import type { Tool } from '../../../types/tool';
 import type { RestToolConfig } from '../../../types/tool';
 import type { ThreadContext } from '../../execution/context/thread-context';
 import { BaseToolExecutor } from '../base-tool-executor';
-import { NetworkError, RateLimitError } from '../../../types/errors';
+import { NetworkError, RateLimitError, ToolError, ValidationError, TimeoutError, CircuitBreakerOpenError } from '../../../types/errors';
+import { HttpClient } from '../../http/http-client';
 
 /**
  * REST工具执行器
@@ -27,105 +28,111 @@ export class RestToolExecutor extends BaseToolExecutor {
   ): Promise<any> {
     // 从config中获取REST配置
     const config = tool.config as RestToolConfig;
-    const baseUrl = config?.baseUrl || '';
-    const defaultHeaders = config?.headers || {};
 
     // 从parameters中获取请求参数
     const url = parameters['url'] || parameters['endpoint'];
     const method = (parameters['method'] || 'GET').toUpperCase();
     const body = parameters['body'];
-    const headers = { ...defaultHeaders, ...parameters['headers'] };
+    const headers = parameters['headers'];
     const queryParams = parameters['query'] || parameters['params'];
 
     if (!url) {
-      throw new Error('URL is required for REST tool');
+      throw new ValidationError(
+        'URL is required for REST tool',
+        'url',
+        url,
+        { toolName: tool.name, parameters }
+      );
     }
 
-    // 构建完整URL
-    const fullUrl = this.buildUrl(baseUrl, url, queryParams);
+    // 创建HttpClient实例
+    const httpClient = new HttpClient({
+      baseURL: config?.baseUrl,
+      defaultHeaders: config?.headers,
+      timeout: config?.timeout,
+      maxRetries: config?.maxRetries,
+      retryDelay: config?.retryDelay,
+    });
 
     try {
-      // 构建请求选项
-      const options: RequestInit = {
-        method,
-        headers: this.buildHeaders(headers)
+      // 根据HTTP方法调用对应的HttpClient方法
+      let response;
+      const options = {
+        headers,
+        query: queryParams,
       };
 
-      // 添加请求体（仅对非GET/HEAD请求）
-      if (body && method !== 'GET' && method !== 'HEAD') {
-        options.body = typeof body === 'string' ? body : JSON.stringify(body);
+      switch (method) {
+        case 'GET':
+          response = await httpClient.get(url, options);
+          break;
+        case 'POST':
+          response = await httpClient.post(url, body, options);
+          break;
+        case 'PUT':
+          response = await httpClient.put(url, body, options);
+          break;
+        case 'DELETE':
+          response = await httpClient.delete(url, options);
+          break;
+        default:
+          throw new ToolError(
+            `Unsupported HTTP method: ${method}`,
+            tool.name,
+            'REST',
+            { url, method }
+          );
       }
 
-      // 发送HTTP请求
-      const response = await fetch(fullUrl, options);
-
-      // 处理速率限制
-      if (response.status === 429) {
-        const retryAfter = response.headers.get('Retry-After');
-        throw new RateLimitError(
-          'Rate limit exceeded',
-          retryAfter ? parseInt(retryAfter) * 1000 : undefined
-        );
-      }
-
-      // 处理HTTP错误
-      if (!response.ok) {
-        throw new NetworkError(
-          `HTTP request failed with status ${response.status}: ${response.statusText}`,
-          response.status,
-          { url: fullUrl }
-        );
-      }
-
-      // 解析响应
-      const contentType = response.headers.get('content-type');
-      let result: any;
-
-      if (contentType?.includes('application/json')) {
-        result = await response.json();
-      } else if (contentType?.includes('text/')) {
-        result = await response.text();
-      } else {
-        result = await response.blob();
-      }
-
+      // 转换响应格式以匹配RestToolExecutor的原始格式
       return {
-        url: fullUrl,
+        url: this.buildFullUrl(config?.baseUrl || '', url, queryParams),
         method,
         status: response.status,
-        statusText: response.statusText,
-        headers: this.parseHeaders(response.headers),
-        data: result
+        statusText: this.getStatusText(response.status),
+        headers: response.headers,
+        data: response.data
       };
     } catch (error) {
-      if (error instanceof NetworkError || error instanceof RateLimitError) {
+      // 转换错误类型
+      if (error instanceof NetworkError || error instanceof RateLimitError || error instanceof ValidationError) {
         throw error;
       }
 
-      // 处理网络错误
-      if (error instanceof Error) {
-        if (error.message.includes('ECONNREFUSED') ||
-          error.message.includes('ETIMEDOUT') ||
-          error.message.includes('ENOTFOUND')) {
-          throw new NetworkError(
-            `Network error: ${error.message}`,
-            undefined,
-            { url: fullUrl },
-            error
-          );
-        }
+      if (error instanceof TimeoutError) {
+        throw new ToolError(
+          `REST tool execution timeout: ${error.message}`,
+          tool.name,
+          'REST',
+          { url, method },
+          error
+        );
       }
 
-      throw new Error(
-        `REST tool execution failed: ${error instanceof Error ? error.message : 'Unknown error'}`
+      if (error instanceof CircuitBreakerOpenError) {
+        throw new ToolError(
+          `REST tool circuit breaker is open: ${error.message}`,
+          tool.name,
+          'REST',
+          { url, method },
+          error
+        );
+      }
+
+      throw new ToolError(
+        `REST tool execution failed: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        tool.name,
+        'REST',
+        { url, method },
+        error instanceof Error ? error : undefined
       );
     }
   }
 
   /**
-   * 构建完整URL
+   * 构建完整URL（用于响应中的url字段）
    */
-  private buildUrl(baseUrl: string, url: string, queryParams?: Record<string, any>): string {
+  private buildFullUrl(baseUrl: string, url: string, queryParams?: Record<string, any>): string {
     // 合并base URL和endpoint
     let fullUrl = url;
 
@@ -151,35 +158,22 @@ export class RestToolExecutor extends BaseToolExecutor {
   }
 
   /**
-   * 构建请求头
+   * 根据状态码获取状态文本
    */
-  private buildHeaders(headers: Record<string, any>): Record<string, string> {
-    const result: Record<string, string> = {};
-
-    for (const [key, value] of Object.entries(headers)) {
-      if (value !== undefined && value !== null) {
-        result[key] = String(value);
-      }
-    }
-
-    // 默认添加Content-Type（如果没有设置）
-    if (!result['Content-Type'] && !result['content-type']) {
-      result['Content-Type'] = 'application/json';
-    }
-
-    return result;
-  }
-
-  /**
-   * 解析响应头
-   */
-  private parseHeaders(headers: Headers): Record<string, string> {
-    const result: Record<string, string> = {};
-
-    headers.forEach((value, key) => {
-      result[key] = value;
-    });
-
-    return result;
+  private getStatusText(status: number): string {
+    const statusTexts: Record<number, string> = {
+      200: 'OK',
+      201: 'Created',
+      204: 'No Content',
+      400: 'Bad Request',
+      401: 'Unauthorized',
+      403: 'Forbidden',
+      404: 'Not Found',
+      429: 'Too Many Requests',
+      500: 'Internal Server Error',
+      502: 'Bad Gateway',
+      503: 'Service Unavailable',
+    };
+    return statusTexts[status] || '';
   }
 }

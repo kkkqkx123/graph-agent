@@ -122,6 +122,10 @@ export interface RestToolConfig {
   headers?: Record<string, string>;
   /** 超时时间（毫秒） */
   timeout?: number;
+  /** 最大重试次数 */
+  maxRetries?: number;
+  /** 重试延迟（毫秒） */
+  retryDelay?: number;
 }
 
 /**

@@ -3,7 +3,7 @@
  * 负责工具定义的管理
  */
 
-import type { Tool } from '../../types/tool';
+import type { Tool, StatelessToolConfig, StatefulToolConfig, McpToolConfig } from '../../types/tool';
 import { ToolType } from '../../types/tool';
 import { ValidationError, NotFoundError } from '../../types/errors';
 
@@ -193,8 +193,9 @@ export class ToolRegistry {
     // 验证config字段（根据工具类型）
     if (tool.config) {
       switch (tool.type) {
-        case ToolType.STATELESS:
-          if (!tool.config.execute || typeof tool.config.execute !== 'function') {
+        case ToolType.STATELESS: {
+          const config = tool.config as StatelessToolConfig;
+          if (!config.execute || typeof config.execute !== 'function') {
             throw new ValidationError(
               'STATELESS tool must have an execute function in config',
               'config.execute',
@@ -202,9 +203,11 @@ export class ToolRegistry {
             );
           }
           break;
+        }
 
-        case ToolType.STATEFUL:
-          if (!tool.config.factory || typeof tool.config.factory.create !== 'function') {
+        case ToolType.STATEFUL: {
+          const config = tool.config as StatefulToolConfig;
+          if (!config.factory || typeof config.factory.create !== 'function') {
             throw new ValidationError(
               'STATEFUL tool must have a factory with create function in config',
               'config.factory',
@@ -212,13 +215,15 @@ export class ToolRegistry {
             );
           }
           break;
+        }
 
         case ToolType.REST:
           // REST工具的config是可选的，不需要强制验证
           break;
 
-        case ToolType.MCP:
-          if (!tool.config.serverName || typeof tool.config.serverName !== 'string') {
+        case ToolType.MCP: {
+          const config = tool.config as McpToolConfig;
+          if (!config.serverName || typeof config.serverName !== 'string') {
             throw new ValidationError(
               'MCP tool must have a serverName in config',
               'config.serverName',
@@ -226,6 +231,7 @@ export class ToolRegistry {
             );
           }
           break;
+        }
 
         default:
           throw new ValidationError(

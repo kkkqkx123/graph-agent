@@ -12,7 +12,7 @@ import type {
 } from '../../types/llm';
 import { ProfileManager } from './profile-manager';
 import { ClientFactory } from './client-factory';
-import { SDKError, ErrorCode } from '../../types/errors';
+import { ConfigurationError } from '../../types/errors';
 import { now, diffTimestamp } from '../../utils';
 
 /**
@@ -39,10 +39,10 @@ export class LLMWrapper {
   async generate(request: LLMRequest): Promise<LLMResult> {
     const profile = this.getProfile(request.profileId);
     if (!profile) {
-      throw new SDKError(
-        ErrorCode.CONFIGURATION_ERROR,
+      throw new ConfigurationError(
         'LLM Profile not found',
-        { profileId: request.profileId || 'default' }
+        request.profileId || 'default',
+        { availableProfiles: this.profileManager.list().map(p => p.id) }
       );
     }
     
@@ -63,10 +63,10 @@ export class LLMWrapper {
   async *generateStream(request: LLMRequest): AsyncIterable<LLMResult> {
     const profile = this.getProfile(request.profileId);
     if (!profile) {
-      throw new SDKError(
-        ErrorCode.CONFIGURATION_ERROR,
+      throw new ConfigurationError(
         'LLM Profile not found',
-        { profileId: request.profileId || 'default' }
+        request.profileId || 'default',
+        { availableProfiles: this.profileManager.list().map(p => p.id) }
       );
     }
     
@@ -89,20 +89,18 @@ export class LLMWrapper {
   }
 
   /**
-   * 获取LLM Profile
-   * 
-   * @param profileId Profile ID
-   * @returns LLM Profile或undefined
-   */
+    * 获取LLM Profile
+    * 
+    * @param profileId Profile ID
+    * @returns LLM Profile或undefined
+    */
   getProfile(profileId?: string): ReturnType<ProfileManager['get']> {
     const profile = this.profileManager.get(profileId);
     if (!profile) {
-      throw new SDKError(
-        ErrorCode.CONFIGURATION_ERROR,
+      throw new ConfigurationError(
         'LLM Profile not found',
-        {
-          profileId: profileId || 'default'
-        }
+        profileId || 'default',
+        { availableProfiles: this.profileManager.list().map(p => p.id) }
       );
     }
     return profile;

@@ -7,7 +7,7 @@ import type { Tool } from '../../../types/tool';
 import type { McpToolConfig } from '../../../types/tool';
 import type { ThreadContext } from '../../execution/context/thread-context';
 import { BaseToolExecutor } from '../base-tool-executor';
-import { NetworkError } from '../../../types/errors';
+import { NetworkError, ToolError, ConfigurationError } from '../../../types/errors';
 
 /**
  * MCP客户端接口
@@ -42,7 +42,11 @@ export class McpToolExecutor extends BaseToolExecutor {
     const serverUrl = config?.serverUrl;
 
     if (!serverName) {
-      throw new Error(`Tool '${tool.name}' does not have a serverName in config`);
+      throw new ConfigurationError(
+        `Tool '${tool.name}' does not have a serverName in config`,
+        'serverName',
+        { toolName: tool.name, config }
+      );
     }
 
     try {
@@ -58,12 +62,16 @@ export class McpToolExecutor extends BaseToolExecutor {
         result
       };
     } catch (error) {
-      if (error instanceof NetworkError) {
+      if (error instanceof NetworkError || error instanceof ConfigurationError) {
         throw error;
       }
 
-      throw new Error(
-        `MCP tool execution failed: ${error instanceof Error ? error.message : 'Unknown error'}`
+      throw new ToolError(
+        `MCP tool execution failed: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        tool.name,
+        'MCP',
+        { serverName, mcpToolName },
+        error instanceof Error ? error : undefined
       );
     }
   }

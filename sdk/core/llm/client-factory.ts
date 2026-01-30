@@ -13,7 +13,7 @@ import { AnthropicClient } from './clients/anthropic';
 import { GeminiNativeClient } from './clients/gemini-native';
 import { GeminiOpenAIClient } from './clients/gemini-openai';
 import { HumanRelayClient } from './clients/human-relay';
-import { SDKError, ErrorCode } from '../../types/errors';
+import { ConfigurationError } from '../../types/errors';
 
 /**
  * 客户端工厂类
@@ -69,12 +69,13 @@ export class ClientFactory {
         return new HumanRelayClient(profile);
 
       default:
-        throw new SDKError(
-          ErrorCode.CONFIGURATION_ERROR,
+        throw new ConfigurationError(
           `不支持的LLM提供商: ${profile.provider}`,
-          {
+          'provider',
+          { 
             provider: profile.provider,
-            model: profile.model
+            model: profile.model,
+            supportedProviders: Object.values(LLMProvider)
           }
         );
     }
