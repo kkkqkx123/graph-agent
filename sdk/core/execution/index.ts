@@ -4,18 +4,10 @@
  */
 
 // 执行上下文
-export { WorkflowContext, ThreadContext } from './context';
+export { ThreadContext, ExecutionState } from './context';
 
 // 执行上下文（依赖注入容器）
-export {
-  ExecutionContext,
-  getWorkflowRegistry,
-  getThreadRegistry,
-  getEventManager,
-  getCheckpointManager,
-  getThreadLifecycleManager,
-  resetDefaultContext
-} from './context/execution-context';
+export { ExecutionContext } from './context/execution-context';
 
 // 主要执行引擎
 export { ThreadExecutor } from './thread-executor';

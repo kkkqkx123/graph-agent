@@ -14,6 +14,11 @@
  * - EventManager: 事件管理器
  * - CheckpointManager: 检查点管理器
  * - ThreadLifecycleManager: 生命周期管理器
+ *
+ * 设计原则：
+ * - 支持多实例创建
+ * - 提供工厂方法
+ * - 清晰的依赖注入
  */
 
 import { WorkflowRegistry } from '../../registry/workflow-registry';
@@ -159,59 +164,14 @@ export class ExecutionContext {
       this.initialize();
     }
   }
-}
 
-/**
- * 模块级单例实例
- */
-const defaultContext = new ExecutionContext();
-defaultContext.initialize();
-
-/**
- * 获取 WorkflowRegistry 单例
- * @returns WorkflowRegistry 实例
- */
-export function getWorkflowRegistry(): WorkflowRegistry {
-  return defaultContext.getWorkflowRegistry();
-}
-
-/**
- * 获取 ThreadRegistry 单例
- * @returns ThreadRegistry 实例
- */
-export function getThreadRegistry(): ThreadRegistry {
-  return defaultContext.getThreadRegistry();
-}
-
-/**
- * 获取 EventManager 单例
- * @returns EventManager 实例
- */
-export function getEventManager(): EventManager {
-  return defaultContext.getEventManager();
-}
-
-/**
- * 获取 CheckpointManager 单例
- * @returns CheckpointManager 实例
- */
-export function getCheckpointManager(): CheckpointManager {
-  return defaultContext.getCheckpointManager();
-}
-
-/**
- * 获取 ThreadLifecycleManager 单例
- * @returns ThreadLifecycleManager 实例
- */
-export function getThreadLifecycleManager(): ThreadLifecycleManager {
-  return defaultContext.getThreadLifecycleManager();
-}
-
-/**
- * 重置默认执行上下文
- * 主要用于测试环境
- */
-export function resetDefaultContext(): void {
-  defaultContext.destroy();
-  defaultContext.initialize();
+  /**
+   * 创建默认执行上下文
+   * @returns ExecutionContext 实例
+   */
+  static createDefault(): ExecutionContext {
+    const context = new ExecutionContext();
+    context.initialize();
+    return context;
+  }
 }

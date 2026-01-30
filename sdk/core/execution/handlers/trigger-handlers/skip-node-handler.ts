@@ -7,7 +7,7 @@ import type { TriggerAction, TriggerExecutionResult } from '../../../../types/tr
 import type { NodeExecutionResult } from '../../../../types/thread';
 import { ValidationError, NotFoundError } from '../../../../types/errors';
 import { EventType } from '../../../../types/events';
-import { getThreadRegistry, getEventManager } from '../../context/execution-context';
+import { ExecutionContext } from '../../context/execution-context';
 
 /**
  * 创建成功结果
@@ -50,13 +50,16 @@ function createFailureResult(
  * 跳过节点处理函数
  * @param action 触发动作
  * @param triggerId 触发器ID
+ * @param executionContext 执行上下文
  * @returns 执行结果
  */
 export async function skipNodeHandler(
   action: TriggerAction,
-  triggerId: string
+  triggerId: string,
+  executionContext?: ExecutionContext
 ): Promise<TriggerExecutionResult> {
   const executionTime = Date.now();
+  const context = executionContext || ExecutionContext.createDefault();
 
   try {
     const { threadId, nodeId } = action.parameters;
@@ -70,7 +73,7 @@ export async function skipNodeHandler(
     }
 
     // 从ThreadRegistry获取ThreadContext
-    const threadRegistry = getThreadRegistry();
+    const threadRegistry = context.getThreadRegistry();
     const threadContext = threadRegistry.get(threadId);
 
     if (!threadContext) {
@@ -91,7 +94,7 @@ export async function skipNodeHandler(
     thread.nodeResults.push(result);
 
     // 触发NODE_COMPLETED事件（状态为SKIPPED）
-    const eventManager = getEventManager();
+    const eventManager = context.getEventManager();
     const completedEvent = {
       type: EventType.NODE_COMPLETED,
       timestamp: Date.now(),

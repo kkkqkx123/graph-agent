@@ -5,7 +5,7 @@
 
 import type { TriggerAction, TriggerExecutionResult } from '../../../../types/trigger';
 import { NotFoundError } from '../../../../types/errors';
-import { getThreadRegistry } from '../../context/execution-context';
+import { ExecutionContext } from '../../context/execution-context';
 
 /**
  * 创建成功结果
@@ -48,13 +48,16 @@ function createFailureResult(
  * 设置变量处理函数
  * @param action 触发动作
  * @param triggerId 触发器ID
+ * @param executionContext 执行上下文
  * @returns 执行结果
  */
 export async function setVariableHandler(
   action: TriggerAction,
-  triggerId: string
+  triggerId: string,
+  executionContext?: ExecutionContext
 ): Promise<TriggerExecutionResult> {
   const startTime = Date.now();
+  const context = executionContext || ExecutionContext.createDefault();
 
   try {
     const { threadId, variables } = action.parameters;
@@ -64,7 +67,7 @@ export async function setVariableHandler(
     }
 
     // 获取ThreadContext
-    const threadRegistry = getThreadRegistry();
+    const threadRegistry = context.getThreadRegistry();
     const threadContext = threadRegistry.get(threadId);
 
     if (!threadContext) {

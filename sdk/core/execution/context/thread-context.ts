@@ -1,33 +1,25 @@
 /**
  * ThreadContext - Thread 执行上下文
- * 封装 Thread 执行所需的所有运行时组件
- * 提供统一的访问接口，避免直接访问 thread.contextData
- * 负责变量管理、节点执行结果管理等运行时逻辑
- * 直接使用Thread中的graph进行图操作
+ * 封装 Thread 实例的数据访问操作
+ * 提供统一的访问接口，避免直接访问 thread 对象
+ *
+ * 核心职责：
+ * - 提供 Thread 数据的统一访问接口
+ * - 封装 Thread 内部状态的变更操作
+ * - 提供 Thread 元数据的访问
+ *
+ * 设计原则：
+ * - 纯数据访问层，不包含执行逻辑
+ * - 不管理执行状态（由 ExecutionState 负责）
+ * - 直接依赖具体实现，不使用接口抽象
  */
 
 import type { Thread } from '../../../types';
 import type { ID } from '../../../types/common';
-import { WorkflowContext } from './workflow-context';
 import { ConversationManager } from '../conversation';
 import { VariableManager } from '../managers/variable-manager';
 import { GraphNavigator } from '../../graph/graph-navigator';
-
-/**
- * 子图执行上下文
- */
-interface SubgraphContext {
-  /** 子工作流ID */
-  workflowId: ID;
-  /** 父工作流ID */
-  parentWorkflowId: ID;
-  /** 开始时间 */
-  startTime: number;
-  /** 输入数据 */
-  input: any;
-  /** 当前深度 */
-  depth: number;
-}
+import { ExecutionState } from './execution-state';
 
 /**
  * ThreadContext - Thread 执行上下文
@@ -37,11 +29,6 @@ export class ThreadContext {
    * Thread 实例
    */
   public readonly thread: Thread;
-
-  /**
-   * Workflow 上下文
-   */
-  public readonly workflowContext: WorkflowContext;
 
   /**
    * 对话管理器
@@ -59,25 +46,23 @@ export class ThreadContext {
   private navigator?: GraphNavigator;
 
   /**
-   * 子图执行堆栈
+   * 执行状态管理器
    */
-  private subgraphStack: SubgraphContext[] = [];
+  public readonly executionState: ExecutionState;
 
   /**
    * 构造函数
    * @param thread Thread 实例
-   * @param workflowContext Workflow 上下文
    * @param conversationManager 对话管理器
    */
   constructor(
     thread: Thread,
-    workflowContext: WorkflowContext,
     conversationManager: ConversationManager
   ) {
     this.thread = thread;
-    this.workflowContext = workflowContext;
     this.conversationManager = conversationManager;
     this.variableManager = new VariableManager();
+    this.executionState = new ExecutionState();
   }
 
   /**
@@ -94,6 +79,14 @@ export class ThreadContext {
    */
   getWorkflowId(): string {
     return this.thread.workflowId;
+  }
+
+  /**
+   * 获取当前工作流ID（考虑子图上下文）
+   * @returns 当前工作流ID
+   */
+  getCurrentWorkflowId(): ID {
+    return this.executionState.getCurrentWorkflowId(this.getWorkflowId());
   }
 
   /**
@@ -150,14 +143,6 @@ export class ThreadContext {
    */
   getConversationManager(): ConversationManager {
     return this.conversationManager;
-  }
-
-  /**
-   * 获取 WorkflowContext
-   * @returns WorkflowContext 实例
-   */
-  getWorkflowContext(): WorkflowContext {
-    return this.workflowContext;
   }
 
   /**
@@ -285,50 +270,37 @@ export class ThreadContext {
    * @param input 输入数据
    */
   enterSubgraph(workflowId: ID, parentWorkflowId: ID, input: any): void {
-    this.subgraphStack.push({
-      workflowId,
-      parentWorkflowId,
-      startTime: Date.now(),
-      input,
-      depth: this.subgraphStack.length
-    });
+    this.executionState.enterSubgraph(workflowId, parentWorkflowId, input);
   }
 
   /**
    * 退出子图
    */
   exitSubgraph(): void {
-    this.subgraphStack.pop();
+    this.executionState.exitSubgraph();
   }
 
   /**
    * 获取当前子图上下文
+   * @returns 当前子图上下文
    */
-  getCurrentSubgraphContext(): SubgraphContext | null {
-    return this.subgraphStack.length > 0
-      ? this.subgraphStack[this.subgraphStack.length - 1] || null
-      : null;
+  getCurrentSubgraphContext(): any {
+    return this.executionState.getCurrentSubgraphContext();
   }
 
   /**
    * 获取子图执行堆栈
+   * @returns 子图执行堆栈
    */
-  getSubgraphStack(): SubgraphContext[] {
-    return [...this.subgraphStack];
+  getSubgraphStack(): any[] {
+    return this.executionState.getSubgraphStack();
   }
 
   /**
    * 检查是否在子图中执行
+   * @returns 是否在子图中
    */
   isInSubgraph(): boolean {
-    return this.subgraphStack.length > 0;
-  }
-
-  /**
-   * 获取当前工作流ID（考虑子图上下文）
-   */
-  getCurrentWorkflowId(): ID {
-    const context = this.getCurrentSubgraphContext();
-    return context ? context.workflowId : this.getWorkflowId();
+    return this.executionState.isInSubgraph();
   }
 }

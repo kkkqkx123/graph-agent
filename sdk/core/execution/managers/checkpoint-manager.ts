@@ -12,12 +12,11 @@ import type { CheckpointCreatedEvent } from '../../../types/events';
 import { EventType } from '../../../types/events';
 import { ThreadRegistry } from '../../registry/thread-registry';
 import { ThreadContext } from '../context/thread-context';
-import { WorkflowContext } from '../context/workflow-context';
 import { VariableManager } from './variable-manager';
 import { ConversationManager } from '../conversation';
 import { generateId, now as getCurrentTimestamp } from '../../../utils';
 import { WorkflowRegistry } from '../../registry/workflow-registry';
-import { getThreadRegistry, getWorkflowRegistry, getEventManager } from '../context/execution-context';
+import { ExecutionContext } from '../context/execution-context';
 import { MemoryCheckpointStorage } from '../../storage/memory-checkpoint-storage';
 
 /**
@@ -28,6 +27,7 @@ export class CheckpointManager {
   private threadRegistry: ThreadRegistry;
   private variableManager: VariableManager;
   private workflowRegistry: WorkflowRegistry;
+  private executionContext: ExecutionContext;
   private periodicTimers: Map<string, NodeJS.Timeout> = new Map();
 
   /**
@@ -35,15 +35,18 @@ export class CheckpointManager {
    * @param storage 存储实现，默认使用 MemoryCheckpointStorage
    * @param threadRegistry Thread注册表（可选，默认使用默认上下文）
    * @param workflowRegistry Workflow注册器（可选，默认使用默认上下文）
+   * @param executionContext 执行上下文（可选）
    */
   constructor(
     storage?: CheckpointStorage,
     threadRegistry?: ThreadRegistry,
-    workflowRegistry?: WorkflowRegistry
+    workflowRegistry?: WorkflowRegistry,
+    executionContext?: ExecutionContext
   ) {
     this.storage = storage || new MemoryCheckpointStorage();
-    this.threadRegistry = threadRegistry || getThreadRegistry();
-    this.workflowRegistry = workflowRegistry || getWorkflowRegistry();
+    this.executionContext = executionContext || ExecutionContext.createDefault();
+    this.threadRegistry = threadRegistry || this.executionContext.getThreadRegistry();
+    this.workflowRegistry = workflowRegistry || this.executionContext.getWorkflowRegistry();
     this.variableManager = new VariableManager();
   }
 
@@ -109,7 +112,7 @@ export class CheckpointManager {
     await this.storage.save(checkpointId, data, storageMetadata);
 
     // 步骤8：触发 CHECKPOINT_CREATED 事件
-    const eventManager = getEventManager();
+    const eventManager = this.executionContext.getEventManager();
     const checkpointEvent: CheckpointCreatedEvent = {
       type: EventType.CHECKPOINT_CREATED,
       timestamp: getCurrentTimestamp(),
@@ -178,17 +181,13 @@ export class CheckpointManager {
       }
     }
 
-    // 步骤7：创建 WorkflowContext
-    const workflowContext = new WorkflowContext(workflowDefinition);
-
-    // 步骤8：创建 ThreadContext
+    // 步骤7：创建 ThreadContext
     const threadContext = new ThreadContext(
       thread as Thread,
-      workflowContext,
       conversationManager
     );
 
-    // 步骤9：注册到 ThreadRegistry
+    // 步骤8：注册到 ThreadRegistry
     this.threadRegistry.register(threadContext);
 
     return threadContext;

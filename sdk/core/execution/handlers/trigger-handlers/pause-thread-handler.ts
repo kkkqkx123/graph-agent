@@ -5,7 +5,7 @@
 
 import type { TriggerAction, TriggerExecutionResult } from '../../../../types/trigger';
 import { ValidationError, NotFoundError } from '../../../../types/errors';
-import { getThreadRegistry, getThreadLifecycleManager } from '../../context/execution-context';
+import { ExecutionContext } from '../../context/execution-context';
 
 /**
  * 创建成功结果
@@ -48,13 +48,16 @@ function createFailureResult(
  * 暂停线程处理函数
  * @param action 触发动作
  * @param triggerId 触发器ID
+ * @param executionContext 执行上下文
  * @returns 执行结果
  */
 export async function pauseThreadHandler(
   action: TriggerAction,
-  triggerId: string
+  triggerId: string,
+  executionContext?: ExecutionContext
 ): Promise<TriggerExecutionResult> {
   const executionTime = Date.now();
+  const context = executionContext || ExecutionContext.createDefault();
 
   try {
     const { threadId } = action.parameters;
@@ -64,7 +67,7 @@ export async function pauseThreadHandler(
     }
 
     // 从ThreadRegistry获取ThreadContext
-    const threadRegistry = getThreadRegistry();
+    const threadRegistry = context.getThreadRegistry();
     const threadContext = threadRegistry.get(threadId);
 
     if (!threadContext) {
@@ -78,7 +81,7 @@ export async function pauseThreadHandler(
     }
 
     // 调用ThreadLifecycleManager
-    const lifecycleManager = getThreadLifecycleManager();
+    const lifecycleManager = context.getThreadLifecycleManager();
     await lifecycleManager.pauseThread(thread);
 
     return createSuccessResult(

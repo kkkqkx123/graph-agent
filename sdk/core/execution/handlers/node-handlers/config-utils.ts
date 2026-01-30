@@ -50,12 +50,7 @@ export function transformLLMNodeConfig(config: LLMNodeConfig): LLMExecutionReque
   return {
     prompt: config.prompt || '',
     profileId: config.profileId,
-    parameters: {
-      temperature: config.parameters?.temperature,
-      maxTokens: config.parameters?.maxTokens,
-      ...config.parameters
-    },
-    tools: config.tools
+    parameters: config.parameters || {}
   };
 }
 
@@ -99,6 +94,7 @@ export function transformToolNodeConfig(config: ToolNodeConfig): LLMExecutionReq
   return {
     prompt: `Execute tool: ${config.toolName}`,
     profileId: 'default',
+    parameters: {},
     tools: [{
       name: config.toolName,
       description: `Tool: ${config.toolName}`,
@@ -148,7 +144,8 @@ export function transformContextProcessorNodeConfig(config: ContextProcessorNode
 
   return {
     prompt: `Process context with type: ${config.processorType}\nRules:\n${rulesDescription}`,
-    profileId: 'default'
+    profileId: 'default',
+    parameters: {}
   };
 }
 
@@ -194,6 +191,7 @@ export function transformUserInteractionNodeConfig(config: UserInteractionNodeCo
   
   return {
     prompt,
-    profileId: 'default'
+    profileId: 'default',
+    parameters: {}
   };
 }

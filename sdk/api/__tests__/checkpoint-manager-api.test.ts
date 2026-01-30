@@ -507,12 +507,10 @@ async function createTestThreadContext(
   workflow: WorkflowDefinition
 ) {
   const { ThreadContext } = await import('../../core/execution/context/thread-context');
-  const { WorkflowContext } = await import('../../core/execution/context/workflow-context');
   const { ConversationManager } = await import('../../core/execution/conversation');
   const { generateId } = await import('../../utils');
   const { GraphBuilder } = await import('../../core/graph/graph-builder');
 
-  const workflowContext = new WorkflowContext(workflow);
   const conversationManager = new ConversationManager();
   const graph = GraphBuilder.build(workflow);
 
@@ -532,7 +530,7 @@ async function createTestThreadContext(
     errors: []
   };
 
-  const threadContext = new ThreadContext(thread, workflowContext, conversationManager);
+  const threadContext = new ThreadContext(thread, conversationManager);
   threadRegistry.register(threadContext);
 
   return threadContext;

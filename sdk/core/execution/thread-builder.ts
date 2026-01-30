@@ -9,7 +9,6 @@
 
 import type { ProcessedWorkflowDefinition } from '../../types/workflow';
 import type { Thread, ThreadOptions, ThreadStatus } from '../../types/thread';
-import { WorkflowContext } from './context/workflow-context';
 import { ConversationManager } from './conversation';
 import { ThreadContext } from './context/thread-context';
 import { NodeType } from '../../types/node';
@@ -17,20 +16,21 @@ import { generateId, now as getCurrentTimestamp } from '../../utils';
 import { VariableManager } from './managers/variable-manager';
 import { ValidationError } from '../../types/errors';
 import { WorkflowRegistry } from '../registry/workflow-registry';
-import { getWorkflowRegistry, getEventManager } from './context/execution-context';
+import { ExecutionContext } from './context/execution-context';
 
 /**
  * ThreadBuilder - Thread构建器
  */
 export class ThreadBuilder {
-  private workflowContexts: Map<string, WorkflowContext> = new Map();
   private threadTemplates: Map<string, ThreadContext> = new Map();
   private variableManager: VariableManager;
   private workflowRegistry: WorkflowRegistry;
+  private executionContext: ExecutionContext;
 
-  constructor(workflowRegistry?: WorkflowRegistry) {
+  constructor(workflowRegistry?: WorkflowRegistry, executionContext?: ExecutionContext) {
     this.variableManager = new VariableManager();
-    this.workflowRegistry = workflowRegistry || getWorkflowRegistry();
+    this.executionContext = executionContext || ExecutionContext.createDefault();
+    this.workflowRegistry = workflowRegistry || this.executionContext.getWorkflowRegistry();
   }
 
   /**
@@ -143,7 +143,7 @@ export class ThreadBuilder {
 
     // 步骤4：创建 ConversationManager 实例
     // 从 ExecutionContext 获取 EventManager
-    const eventManager = getEventManager();
+    const eventManager = this.executionContext.getEventManager();
     
     const conversationManager = new ConversationManager({
       tokenLimit: options.tokenLimit || 4000,
@@ -152,14 +152,9 @@ export class ThreadBuilder {
       threadId: threadId
     });
 
-    // 步骤5：创建 WorkflowContext
-    const workflowContext = new WorkflowContext(processedWorkflow);
-    this.workflowContexts.set(processedWorkflow.id, workflowContext);
-
-    // 步骤6：创建 ThreadContext
+    // 步骤5：创建 ThreadContext
     const threadContext = new ThreadContext(
       thread as Thread,
-      workflowContext,
       conversationManager
     );
 
@@ -220,13 +215,9 @@ export class ThreadBuilder {
     // 复制 ConversationManager 实例
     const copiedConversationManager = sourceThreadContext.getConversationManager().clone();
 
-    // 复制 WorkflowContext
-    const copiedWorkflowContext = sourceThreadContext.workflowContext;
-
     // 创建并返回 ThreadContext
     return new ThreadContext(
       copiedThread as Thread,
-      copiedWorkflowContext,
       copiedConversationManager
     );
   }
@@ -285,51 +276,17 @@ export class ThreadBuilder {
     // 复制 ConversationManager 实例
     const forkConversationManager = parentThreadContext.getConversationManager().clone();
 
-    // 复制 WorkflowContext
-    const forkWorkflowContext = parentThreadContext.workflowContext;
-
     // 创建并返回 ThreadContext
     return new ThreadContext(
       forkThread as Thread,
-      forkWorkflowContext,
       forkConversationManager
     );
-  }
-
-  /**
-   * 获取或创建WorkflowContext
-   * @param workflowId 工作流ID
-   * @returns WorkflowContext实例
-   */
-  getOrCreateWorkflowContext(workflowId: string): WorkflowContext {
-    let context = this.workflowContexts.get(workflowId);
-    if (!context) {
-      const workflow = this.workflowRegistry.get(workflowId);
-      if (!workflow) {
-        throw new ValidationError(`Workflow with ID '${workflowId}' not found in registry`, 'workflowId');
-      }
-      context = new WorkflowContext(workflow);
-      this.workflowContexts.set(workflowId, context);
-    }
-    return context;
-  }
-
-  /**
-   * 创建ConversationManager实例
-   * @param options 线程选项
-   * @returns ConversationManager实例
-   */
-  private createConversationManager(options: ThreadOptions): ConversationManager {
-    return new ConversationManager({
-      tokenLimit: options.tokenLimit || 4000
-    });
   }
 
   /**
    * 清理缓存
    */
   clearCache(): void {
-    this.workflowContexts.clear();
     this.threadTemplates.clear();
   }
 
@@ -338,7 +295,6 @@ export class ThreadBuilder {
    * @param workflowId 工作流ID
    */
   invalidateWorkflow(workflowId: string): void {
-    this.workflowContexts.delete(workflowId);
     // 失效相关的Thread模板
     for (const [templateId, template] of this.threadTemplates.entries()) {
       if (template.getWorkflowId() === workflowId) {
