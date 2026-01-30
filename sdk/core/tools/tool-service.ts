@@ -4,13 +4,14 @@
  */
 
 import type { Tool } from '../../types/tool';
+import type { ThreadContext } from '../execution/context/thread-context';
 import { ToolType } from '../../types/tool';
 import { NotFoundError, ToolError } from '../../types/errors';
 import { ToolRegistry } from './tool-registry';
 import { BaseToolExecutor } from './base-tool-executor';
 import type { ToolExecutionOptions, ToolExecutionResult } from './base-tool-executor';
-import { BuiltinToolExecutor } from './executors/builtin';
-import { NativeToolExecutor } from './executors/native';
+import { StatelessToolExecutor } from './executors/stateless';
+import { StatefulToolExecutor } from './executors/stateful';
 import { RestToolExecutor } from './executors/rest';
 import { McpToolExecutor } from './executors/mcp';
 
@@ -30,8 +31,8 @@ export class ToolService {
    * 初始化执行器
    */
   private initializeExecutors(): void {
-    this.executors.set(ToolType.BUILTIN, new BuiltinToolExecutor());
-    this.executors.set(ToolType.NATIVE, new NativeToolExecutor());
+    this.executors.set(ToolType.STATELESS, new StatelessToolExecutor());
+    this.executors.set(ToolType.STATEFUL, new StatefulToolExecutor());
     this.executors.set(ToolType.REST, new RestToolExecutor());
     this.executors.set(ToolType.MCP, new McpToolExecutor());
   }
@@ -127,6 +128,7 @@ export class ToolService {
    * @param toolName 工具名称
    * @param parameters 工具参数
    * @param options 执行选项
+   * @param threadContext 线程上下文（可选，用于有状态工具）
    * @returns 执行结果
    * @throws NotFoundError 如果工具不存在
    * @throws ToolError 如果执行失败
@@ -134,7 +136,8 @@ export class ToolService {
   async execute(
     toolName: string,
     parameters: Record<string, any>,
-    options: ToolExecutionOptions = {}
+    options: ToolExecutionOptions = {},
+    threadContext?: ThreadContext
   ): Promise<ToolExecutionResult> {
     // 获取工具定义
     const tool = this.getTool(toolName);
@@ -151,7 +154,7 @@ export class ToolService {
 
     // 执行工具
     try {
-      return await executor.execute(tool, parameters, options);
+      return await executor.execute(tool, parameters, options, threadContext);
     } catch (error) {
       if (error instanceof Error) {
         throw new ToolError(
@@ -169,6 +172,7 @@ export class ToolService {
   /**
    * 批量执行工具
    * @param executions 执行任务数组
+   * @param threadContext 线程上下文（可选）
    * @returns 执行结果数组
    */
   async executeBatch(
@@ -176,12 +180,13 @@ export class ToolService {
       toolName: string;
       parameters: Record<string, any>;
       options?: ToolExecutionOptions;
-    }>
+    }>,
+    threadContext?: ThreadContext
   ): Promise<ToolExecutionResult[]> {
     // 并行执行所有工具
     return Promise.all(
       executions.map(exec =>
-        this.execute(exec.toolName, exec.parameters, exec.options)
+        this.execute(exec.toolName, exec.parameters, exec.options, threadContext)
       )
     );
   }

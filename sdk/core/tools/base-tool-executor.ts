@@ -5,6 +5,7 @@
 
 import { z } from 'zod';
 import type { Tool } from '../../types/tool';
+import type { ThreadContext } from '../execution/context/thread-context';
 import { TimeoutError, ValidationError, NetworkError, RateLimitError, HttpError } from '../../types/errors';
 import { now, diffTimestamp } from '../../utils';
 
@@ -47,12 +48,14 @@ export abstract class BaseToolExecutor {
    * @param tool 工具定义
    * @param parameters 工具参数
    * @param options 执行选项
+   * @param threadContext 线程上下文（可选，用于有状态工具）
    * @returns 执行结果
    */
   async execute(
     tool: Tool,
     parameters: Record<string, any>,
-    options: ToolExecutionOptions = {}
+    options: ToolExecutionOptions = {},
+    threadContext?: ThreadContext
   ): Promise<ToolExecutionResult> {
     const startTime = now();
     const {
@@ -73,7 +76,7 @@ export abstract class BaseToolExecutor {
       try {
         // 执行工具（带超时）
         const result = await this.executeWithTimeout(
-          () => this.doExecute(tool, parameters),
+          () => this.doExecute(tool, parameters, threadContext),
           timeout
         );
 
@@ -122,11 +125,13 @@ export abstract class BaseToolExecutor {
    * 执行工具的具体实现（由子类实现）
    * @param tool 工具定义
    * @param parameters 工具参数
+   * @param threadContext 线程上下文（可选）
    * @returns 执行结果
    */
   protected abstract doExecute(
     tool: Tool,
-    parameters: Record<string, any>
+    parameters: Record<string, any>,
+    threadContext?: ThreadContext
   ): Promise<any>;
 
   /**

@@ -16,6 +16,7 @@
 
 import type { Thread } from '../../../types';
 import type { ID } from '../../../types/common';
+import type { StatefulToolFactory } from '../../../types/tool';
 import { ConversationManager } from '../conversation';
 import { VariableManager } from '../managers/variable-manager';
 import { TriggerManager } from '../managers/trigger-manager';
@@ -55,6 +56,16 @@ export class ThreadContext {
    * 执行状态管理器
    */
   public readonly executionState: ExecutionState;
+
+  /**
+   * 有状态工具实例映射（线程隔离）
+   */
+  private statefulTools: Map<string, any> = new Map();
+
+  /**
+   * 有状态工具工厂映射
+   */
+  private factories: Map<string, StatefulToolFactory> = new Map();
 
   /**
    * 构造函数
@@ -309,5 +320,62 @@ export class ThreadContext {
    */
   isInSubgraph(): boolean {
     return this.executionState.isInSubgraph();
+  }
+
+  /**
+   * 注册有状态工具工厂
+   * @param toolName 工具名称
+   * @param factory 工厂函数
+   */
+  registerStatefulTool(toolName: string, factory: StatefulToolFactory): void {
+    this.factories.set(toolName, factory);
+  }
+
+  /**
+   * 获取有状态工具实例（懒加载）
+   * @param toolName 工具名称
+   * @returns 工具实例
+   */
+  getStatefulTool(toolName: string): any {
+    // 如果已存在实例，直接返回
+    if (this.statefulTools.has(toolName)) {
+      return this.statefulTools.get(toolName);
+    }
+
+    // 获取工厂函数
+    const factory = this.factories.get(toolName);
+    if (!factory) {
+      throw new Error(`No factory registered for tool: ${toolName}`);
+    }
+
+    // 创建新实例
+    const instance = factory.create();
+    this.statefulTools.set(toolName, instance);
+
+    return instance;
+  }
+
+  /**
+   * 清理有状态工具实例
+   * @param toolName 工具名称
+   */
+  cleanupStatefulTool(toolName: string): void {
+    const instance = this.statefulTools.get(toolName);
+    if (instance && typeof instance.cleanup === 'function') {
+      instance.cleanup();
+    }
+    this.statefulTools.delete(toolName);
+  }
+
+  /**
+   * 清理所有有状态工具实例
+   */
+  cleanupAllStatefulTools(): void {
+    for (const [toolName, instance] of this.statefulTools.entries()) {
+      if (typeof instance.cleanup === 'function') {
+        instance.cleanup();
+      }
+    }
+    this.statefulTools.clear();
   }
 }

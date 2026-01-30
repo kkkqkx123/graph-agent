@@ -9,10 +9,10 @@ import type { ID, Timestamp, Metadata } from './common';
  * 工具类型枚举
  */
 export enum ToolType {
-  /** 内置工具 */
-  BUILTIN = 'BUILTIN',
-  /** 本地工具 */
-  NATIVE = 'NATIVE',
+  /** 无状态工具（应用层提供的纯函数） */
+  STATELESS = 'STATELESS',
+  /** 有状态工具（应用层提供的类/对象，通过ThreadContext隔离） */
+  STATEFUL = 'STATEFUL',
   /** REST API工具 */
   REST = 'REST',
   /** MCP协议工具 */
@@ -75,6 +75,65 @@ export interface Tool {
   parameters: ToolParameters;
   /** 工具元数据 */
   metadata?: ToolMetadata;
+  /** 工具配置（类型特定） */
+  config?: ToolConfig;
+}
+
+/**
+ * 工具配置类型（类型特定）
+ */
+export type ToolConfig =
+  | StatelessToolConfig
+  | StatefulToolConfig
+  | RestToolConfig
+  | McpToolConfig;
+
+/**
+ * 无状态工具配置
+ */
+export interface StatelessToolConfig {
+  /** 执行函数 */
+  execute: (parameters: Record<string, any>) => Promise<any>;
+}
+
+/**
+ * 有状态工具工厂
+ */
+export interface StatefulToolFactory {
+  /** 创建工具实例 */
+  create(): any;
+}
+
+/**
+ * 有状态工具配置
+ */
+export interface StatefulToolConfig {
+  /** 工厂函数 */
+  factory: StatefulToolFactory;
+}
+
+/**
+ * REST工具配置
+ */
+export interface RestToolConfig {
+  /** 基础URL */
+  baseUrl?: string;
+  /** 请求头 */
+  headers?: Record<string, string>;
+  /** 超时时间（毫秒） */
+  timeout?: number;
+}
+
+/**
+ * MCP工具配置
+ */
+export interface McpToolConfig {
+  /** 服务器名称 */
+  serverName: string;
+  /** 服务器URL */
+  serverUrl?: string;
+  /** 超时时间（毫秒） */
+  timeout?: number;
 }
 
 /**

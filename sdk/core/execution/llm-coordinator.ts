@@ -10,12 +10,13 @@
  * 设计原则：
  * - 作为单例服务存在
  * - 管理有状态资源（ConversationManager）
- * - 调用无状态的 LLMExecutor 和 ToolService
+ * - 调用LLMExecutor 和 ToolService
  * - 负责协调LLM调用和工具调用的完整流程
  * - 通过直接方法调用而非事件机制与调用方交互
  */
 
 import type { LLMMessage } from '../../types/llm';
+import type { ThreadContext } from './context/thread-context';
 import { ConversationManager } from './conversation';
 import { LLMExecutor } from './llm-executor';
 import { ToolService } from '../tools/tool-service';
@@ -36,6 +37,8 @@ export interface LLMExecutionParams {
   parameters?: Record<string, any>;
   /** 工具列表 */
   tools?: any[];
+  /** 线程上下文（可选，用于有状态工具） */
+  threadContext?: ThreadContext;
 }
 
 /**
@@ -60,7 +63,6 @@ export interface LLMExecutionResponse {
  */
 export class LLMCoordinator {
   private static instance: LLMCoordinator;
-  private conversationManagers: Map<string, ConversationManager> = new Map();
   private llmExecutor: LLMExecutor;
   private toolService: ToolService;
 
@@ -86,12 +88,16 @@ export class LLMCoordinator {
    * @returns 执行结果
    */
   async executeLLM(params: LLMExecutionParams): Promise<LLMExecutionResponse> {
+    if (!params.threadContext) {
+      throw new Error('ThreadContext is required for LLM execution');
+    }
+
     try {
       const content = await this.handleLLMExecution(params);
       return {
         success: true,
         content,
-        messages: this.getConversationManager(params.threadId)?.getMessages()
+        messages: params.threadContext.getConversationManager().getMessages()
       };
     } catch (error) {
       return {
@@ -115,10 +121,10 @@ export class LLMCoordinator {
    * @returns LLM响应内容
    */
   private async handleLLMExecution(params: LLMExecutionParams): Promise<string> {
-    const { threadId, prompt, profileId, parameters, tools } = params;
+    const { prompt, profileId, parameters, tools, threadContext } = params;
 
-    // 步骤1：获取或创建 ConversationManager
-    const conversationManager = this.getOrCreateConversationManager(threadId);
+    // 步骤1：从ThreadContext获取ConversationManager
+    const conversationManager = threadContext!.getConversationManager();
 
     // 步骤2：添加用户消息
     conversationManager.addMessage({
@@ -152,7 +158,7 @@ export class LLMCoordinator {
       if (llmResult.usage) {
         conversationManager.updateTokenUsage(llmResult.usage);
       }
-      
+
       // 完成当前请求的Token统计
       conversationManager.finalizeCurrentRequest();
 
@@ -174,10 +180,11 @@ export class LLMCoordinator {
 
       // 检查是否有工具调用
       if (llmResult.toolCalls && llmResult.toolCalls.length > 0) {
-        // 执行工具调用
+        // 执行工具调用，传递ThreadContext
         await this.executeToolCalls(
           llmResult.toolCalls,
-          conversationManager
+          conversationManager,
+          threadContext
         );
 
         // 继续循环让LLM处理工具结果
@@ -194,19 +201,21 @@ export class LLMCoordinator {
 
   /**
    * 执行工具调用
-   * 
+   *
    * 直接调用 ToolService 执行工具，无需事件机制
-   * 
+   *
    * @param toolCalls 工具调用数组
    * @param conversationManager 对话管理器
+   * @param threadContext 线程上下文（可选，用于有状态工具）
    */
   private async executeToolCalls(
     toolCalls: Array<{ id: string; name: string; arguments: string }>,
-    conversationManager: ConversationManager
+    conversationManager: ConversationManager,
+    threadContext?: ThreadContext
   ): Promise<void> {
     for (const toolCall of toolCalls) {
       try {
-        // 直接调用 ToolService 执行工具
+        // 直接调用 ToolService 执行工具，传递ThreadContext
         const result = await this.toolService.execute(
           toolCall.name,
           JSON.parse(toolCall.arguments),
@@ -214,7 +223,8 @@ export class LLMCoordinator {
             timeout: 30000,
             retries: 0,
             retryDelay: 1000
-          }
+          },
+          threadContext
         );
 
         // 将工具结果添加到对话历史
@@ -240,46 +250,11 @@ export class LLMCoordinator {
   }
 
   /**
-   * 获取或创建 ConversationManager
-   * @param threadId 线程ID
+   * 获取线程的 ConversationManager
+   * @param threadContext 线程上下文
    * @returns ConversationManager 实例
    */
-  private getOrCreateConversationManager(threadId: string): ConversationManager {
-    // 如果已存在，直接返回
-    if (this.conversationManagers.has(threadId)) {
-      return this.conversationManagers.get(threadId)!;
-    }
-
-    // 创建新的 ConversationManager
-    const conversationManager = new ConversationManager();
-
-    // 缓存 ConversationManager
-    this.conversationManagers.set(threadId, conversationManager);
-
-    return conversationManager;
-  }
-
-  /**
-   * 获取线程的 ConversationManager
-   * @param threadId 线程ID
-   * @returns ConversationManager 实例，如果不存在则返回 undefined
-   */
-  getConversationManager(threadId: string): ConversationManager | undefined {
-    return this.conversationManagers.get(threadId);
-  }
-
-  /**
-   * 清理线程的 ConversationManager
-   * @param threadId 线程ID
-   */
-  cleanupConversationManager(threadId: string): void {
-    this.conversationManagers.delete(threadId);
-  }
-
-  /**
-   * 清理所有 ConversationManager
-   */
-  cleanupAll(): void {
-    this.conversationManagers.clear();
+  getConversationManager(threadContext: ThreadContext): ConversationManager {
+    return threadContext.getConversationManager();
   }
 }

@@ -79,6 +79,14 @@ export class MessageIndexManager {
   }
 
   /**
+   * 获取未压缩的消息索引
+   * @returns 未压缩的消息索引数组
+   */
+  getUncompressedIndices(): number[] {
+    return this.getCurrentBatchIndices();
+  }
+
+  /**
    * 判断消息是否被修改（压缩）
    * @param originalIndex 原始索引
    * @returns 是否被修改

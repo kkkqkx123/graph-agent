@@ -4,6 +4,8 @@
  */
 
 import type { Tool } from '../../../types/tool';
+import type { McpToolConfig } from '../../../types/tool';
+import type { ThreadContext } from '../../execution/context/thread-context';
 import { BaseToolExecutor } from '../base-tool-executor';
 import { NetworkError } from '../../../types/errors';
 
@@ -25,19 +27,22 @@ export class McpToolExecutor extends BaseToolExecutor {
    * 执行MCP工具
    * @param tool 工具定义
    * @param parameters 工具参数
+   * @param threadContext 线程上下文（可选，MCP工具不使用）
    * @returns 执行结果
    */
   protected async doExecute(
     tool: Tool,
-    parameters: Record<string, any>
+    parameters: Record<string, any>,
+    threadContext?: ThreadContext
   ): Promise<any> {
-    // 从metadata中获取MCP配置
-    const serverName = tool.metadata?.customFields?.['serverName'];
-    const mcpToolName = tool.metadata?.customFields?.['toolName'] || tool.name;
-    const serverUrl = tool.metadata?.customFields?.['serverUrl'];
+    // 从config中获取MCP配置
+    const config = tool.config as McpToolConfig;
+    const serverName = config?.serverName;
+    const mcpToolName = tool.name;
+    const serverUrl = config?.serverUrl;
 
     if (!serverName) {
-      throw new Error(`Tool '${tool.name}' does not have a serverName in metadata`);
+      throw new Error(`Tool '${tool.name}' does not have a serverName in config`);
     }
 
     try {

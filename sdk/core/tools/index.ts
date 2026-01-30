@@ -13,7 +13,7 @@ export { BaseToolExecutor } from './base-tool-executor';
 export type { ToolExecutionOptions, ToolExecutionResult } from './base-tool-executor';
 
 // 执行器
-export { BuiltinToolExecutor } from './executors/builtin';
-export { NativeToolExecutor } from './executors/native';
+export { StatelessToolExecutor } from './executors/stateless';
+export { StatefulToolExecutor } from './executors/stateful';
 export { RestToolExecutor } from './executors/rest';
 export { McpToolExecutor } from './executors/mcp';

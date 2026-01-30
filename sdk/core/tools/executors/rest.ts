@@ -4,6 +4,8 @@
  */
 
 import type { Tool } from '../../../types/tool';
+import type { RestToolConfig } from '../../../types/tool';
+import type { ThreadContext } from '../../execution/context/thread-context';
 import { BaseToolExecutor } from '../base-tool-executor';
 import { NetworkError, RateLimitError } from '../../../types/errors';
 
@@ -15,15 +17,18 @@ export class RestToolExecutor extends BaseToolExecutor {
    * 执行REST工具
    * @param tool 工具定义
    * @param parameters 工具参数
+   * @param threadContext 线程上下文（可选，REST工具不使用）
    * @returns 执行结果
    */
   protected async doExecute(
     tool: Tool,
-    parameters: Record<string, any>
+    parameters: Record<string, any>,
+    threadContext?: ThreadContext
   ): Promise<any> {
-    // 从metadata中获取REST配置
-    const baseUrl = tool.metadata?.customFields?.['baseUrl'] || '';
-    const defaultHeaders = tool.metadata?.customFields?.['headers'] || {};
+    // 从config中获取REST配置
+    const config = tool.config as RestToolConfig;
+    const baseUrl = config?.baseUrl || '';
+    const defaultHeaders = config?.headers || {};
 
     // 从parameters中获取请求参数
     const url = parameters['url'] || parameters['endpoint'];
