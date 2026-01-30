@@ -51,7 +51,9 @@ export enum TriggerActionType {
   /** 发送通知 */
   SEND_NOTIFICATION = 'send_notification',
   /** 自定义动作 */
-  CUSTOM = 'custom'
+  CUSTOM = 'custom',
+  /** 执行触发子工作流 */
+  EXECUTE_TRIGGERED_SUBGRAPH = 'execute_triggered_subgraph'
 }
 
 /**
@@ -180,4 +182,47 @@ export function convertToTrigger(
     updatedAt: Date.now(),
     metadata: workflowTrigger.metadata
   };
+}
+
+/**
+ * 执行触发子工作流动作配置
+ * 用于触发器启动孤立的子工作流执行
+ */
+export interface ExecuteTriggeredSubgraphActionConfig {
+  /** 子工作流ID */
+  subgraphId: ID;
+  /**
+   * 输入映射（可选）
+   * 定义主工作流的变量如何传递给子工作流
+   * - 键：子工作流的输入变量名
+   * - 值：主工作流的变量路径（支持嵌套路径）
+   *
+   * 示例：
+   * ```typescript
+   * inputMapping: {
+   *   'messages': 'conversation.messages',
+   *   'markMap': 'conversation.markMap',
+   *   'tokensUsed': 'event.tokensUsed'
+   * }
+   * ```
+   */
+  inputMapping?: Record<string, string>;
+  /**
+   * 配置选项（可选）
+   */
+  config?: TriggeredSubgraphConfig;
+}
+
+/**
+ * 触发子工作流配置选项
+ */
+export interface TriggeredSubgraphConfig {
+  /** 是否等待子工作流完成（默认false，异步执行） */
+  waitForCompletion?: boolean;
+  /** 超时时间（毫秒） */
+  timeout?: number;
+  /** 是否记录子工作流执行历史（默认true） */
+  recordHistory?: boolean;
+  /** 自定义元数据 */
+  metadata?: Metadata;
 }

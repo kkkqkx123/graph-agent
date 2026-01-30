@@ -25,7 +25,6 @@ import type { NodeExecutionResult } from '../../types/thread';
 import { ThreadContext } from './context/thread-context';
 import { eventManager } from '../services/event-manager';
 import type { EventManager } from '../services/event-manager';
-import { TriggerManager } from './managers/trigger-manager';
 import { NotFoundError } from '../../types/errors';
 import { ThreadStatus } from '../../types/thread';
 import { now, diffTimestamp } from '../../utils';
@@ -47,13 +46,11 @@ export class ThreadExecutor {
   private eventCoordinator: EventCoordinator;
 
   constructor(
-    eventManagerParam?: EventManager,
-    triggerManager?: TriggerManager
+    eventManagerParam?: EventManager
   ) {
     // 创建事件协调器
     this.eventCoordinator = new EventCoordinator(
-      eventManagerParam || eventManager,
-      triggerManager || new TriggerManager()
+      eventManagerParam || eventManager
     );
 
     // 创建子图处理器
@@ -218,12 +215,5 @@ export class ThreadExecutor {
    */
   getEventManager(): EventManager {
     return this.eventCoordinator.getEventManager();
-  }
-
-  /**
-   * 获取触发器管理器
-   */
-  getTriggerManager(): TriggerManager {
-    return this.eventCoordinator.getTriggerManager();
   }
 }

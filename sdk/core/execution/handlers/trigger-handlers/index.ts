@@ -10,11 +10,13 @@ import { TriggerActionType } from '../../../../types/trigger';
  * 触发器处理器类型
  * @param action 触发动作
  * @param triggerId 触发器ID
+ * @param executionContext 执行上下文（可选）
  * @returns 执行结果
  */
 export type TriggerHandler = (
   action: TriggerAction,
-  triggerId: string
+  triggerId: string,
+  executionContext?: any
 ) => Promise<TriggerExecutionResult>;
 
 /**
@@ -104,3 +106,24 @@ export { skipNodeHandler } from './skip-node-handler';
 export { setVariableHandler } from './set-variable-handler';
 export { sendNotificationHandler } from './send-notification-handler';
 export { customHandler } from './custom-handler';
+export { executeTriggeredSubgraphHandler } from './execute-triggered-subgraph-handler';
+
+// 自动注册所有触发器处理器
+import { stopThreadHandler } from './stop-thread-handler';
+import { pauseThreadHandler } from './pause-thread-handler';
+import { resumeThreadHandler } from './resume-thread-handler';
+import { skipNodeHandler } from './skip-node-handler';
+import { setVariableHandler } from './set-variable-handler';
+import { sendNotificationHandler } from './send-notification-handler';
+import { customHandler } from './custom-handler';
+import { executeTriggeredSubgraphHandler } from './execute-triggered-subgraph-handler';
+
+// 自动注册所有触发器处理器
+triggerHandlerRegistry.register(TriggerActionType.STOP_THREAD, stopThreadHandler);
+triggerHandlerRegistry.register(TriggerActionType.PAUSE_THREAD, pauseThreadHandler);
+triggerHandlerRegistry.register(TriggerActionType.RESUME_THREAD, resumeThreadHandler);
+triggerHandlerRegistry.register(TriggerActionType.SKIP_NODE, skipNodeHandler);
+triggerHandlerRegistry.register(TriggerActionType.SET_VARIABLE, setVariableHandler);
+triggerHandlerRegistry.register(TriggerActionType.SEND_NOTIFICATION, sendNotificationHandler);
+triggerHandlerRegistry.register(TriggerActionType.CUSTOM, customHandler);
+triggerHandlerRegistry.register(TriggerActionType.EXECUTE_TRIGGERED_SUBGRAPH, executeTriggeredSubgraphHandler);

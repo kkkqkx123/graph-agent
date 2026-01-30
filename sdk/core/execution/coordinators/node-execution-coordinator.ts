@@ -117,7 +117,7 @@ export class NodeExecutionCoordinator {
           output: nodeResult.data,
           executionTime: nodeResult.executionTime || 0,
           timestamp: now()
-        });
+        }, threadContext);
       } else if (nodeResult.status === 'FAILED') {
         await this.eventCoordinator.emitNodeFailedEvent({
           type: EventType.NODE_FAILED,
@@ -126,7 +126,7 @@ export class NodeExecutionCoordinator {
           nodeId,
           error: nodeResult.error,
           timestamp: now()
-        });
+        }, threadContext);
       }
 
       return nodeResult;
@@ -152,7 +152,7 @@ export class NodeExecutionCoordinator {
         nodeId,
         error,
         timestamp: now()
-      });
+      }, threadContext);
 
       return errorResult;
     }

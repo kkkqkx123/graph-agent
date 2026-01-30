@@ -19,7 +19,7 @@ export { ThreadBuilder } from './thread-builder';
 export { ThreadLifecycleManager } from './thread-lifecycle-manager';
 
 // Thread注册表
-export { ThreadRegistry } from './thread-registry';
+export { ThreadRegistry } from '../services/thread-registry';
 
 // 变量管理器
 export { VariableManager } from './managers/variable-manager';

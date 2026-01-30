@@ -15,6 +15,7 @@ import { getTriggerHandler } from '../handlers/trigger-handlers';
 import { ValidationError, ExecutionError } from '../../../types/errors';
 import { EventType } from '../../../types/events';
 import { now } from '../../../utils';
+import type { ThreadRegistry } from '../../services/thread-registry';
 
 /**
  * TriggerManager - 触发器管理器
@@ -30,8 +31,11 @@ import { now } from '../../../utils';
  */
 export class TriggerManager {
   private triggers: Map<ID, Trigger> = new Map();
+  private threadRegistry: ThreadRegistry;
 
-  constructor() { }
+  constructor(threadRegistry: ThreadRegistry) {
+    this.threadRegistry = threadRegistry;
+  }
 
   /**
    * 注册触发器
@@ -181,7 +185,13 @@ export class TriggerManager {
   private async executeTrigger(trigger: Trigger): Promise<void> {
     // 使用trigger handler函数执行触发动作
     const handler = getTriggerHandler(trigger.action.type);
-    const result = await handler(trigger.action, trigger.id);
+
+    // 创建一个临时的 ExecutionContext，包含 ThreadRegistry
+    const executionContext = {
+      getThreadRegistry: () => this.threadRegistry,
+    };
+
+    const result = await handler(trigger.action, trigger.id, executionContext);
 
     // 更新触发器状态
     trigger.triggerCount++;

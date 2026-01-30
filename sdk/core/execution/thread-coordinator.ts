@@ -22,13 +22,12 @@
 
 import type { ThreadOptions, ThreadResult } from '../../types/thread';
 import type { ForkConfig, JoinResult } from './thread-operations/thread-operations';
-import { ThreadRegistry } from './thread-registry';
+import { ThreadRegistry } from '../services/thread-registry';
 import { ThreadBuilder } from './thread-builder';
 import { ThreadExecutor } from './thread-executor';
 import { ThreadLifecycleManager } from './thread-lifecycle-manager';
 import type { EventManager } from '../services/event-manager';
 import { eventManager } from '../services/event-manager';
-import { TriggerManager } from './managers/trigger-manager';
 import { NotFoundError, ValidationError } from '../../types/errors';
 import { EventType } from '../../types/events';
 import type {
@@ -50,16 +49,14 @@ export class ThreadCoordinator {
   private threadExecutor: ThreadExecutor;
   private lifecycleManager: ThreadLifecycleManager;
   private eventManager: EventManager;
-  private triggerManager: TriggerManager;
 
   constructor(workflowRegistry?: any) {
     this.threadRegistry = new ThreadRegistry();
     this.threadBuilder = new ThreadBuilder(workflowRegistry);
     this.eventManager = eventManager;
-    this.triggerManager = new TriggerManager();
     this.lifecycleManager = new ThreadLifecycleManager(this.eventManager);
-    // ✅ 不再传递 workflowRegistry 给 ThreadExecutor，触发器由 ThreadBuilder 在创建 ThreadContext 时注册
-    this.threadExecutor = new ThreadExecutor(this.eventManager, this.triggerManager);
+    // ✅ 不再传递 triggerManager 给 ThreadExecutor，触发器由 ThreadBuilder 在创建 ThreadContext 时注册
+    this.threadExecutor = new ThreadExecutor(this.eventManager);
   }
 
   /**
@@ -343,11 +340,4 @@ export class ThreadCoordinator {
     return this.threadExecutor;
   }
 
-  /**
-   * 获取 TriggerManager
-   * @returns TriggerManager 实例
-   */
-  getTriggerManager(): TriggerManager {
-    return this.triggerManager;
-  }
 }

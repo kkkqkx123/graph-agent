@@ -26,7 +26,7 @@
  */
 
 import { workflowRegistry, type WorkflowRegistry } from '../../services/workflow-registry';
-import { ThreadRegistry } from '../thread-registry';
+import { ThreadRegistry } from '../../services/thread-registry';
 import { eventManager, type EventManager } from '../../services/event-manager';
 import { CheckpointManager } from '../managers/checkpoint-manager';
 import { ThreadLifecycleManager } from '../thread-lifecycle-manager';

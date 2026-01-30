@@ -38,7 +38,11 @@ export enum NodeType {
   /** 循环开始节点。标记循环开始，设置循环变量。循环变量可以被VARIABLE节点修改。不关心条件以外的退出条件 */
   LOOP_START = 'LOOP_START',
   /** 循环结束节点。标记循环结束。让循环次数变量自增，并根据循环次数是否达到 */
-  LOOP_END = 'LOOP_END'
+  LOOP_END = 'LOOP_END',
+  /** 从触发器开始的节点。标识由触发器启动的孤立子工作流的起始点。无特殊配置，与START节点类似。 */
+  START_FROM_TRIGGER = 'START_FROM_TRIGGER',
+  /** 从触发器继续的节点。用于在子工作流执行完成后恢复到主工作流的执行位置。无特殊配置，类似END节点。 */
+  CONTINUE_FROM_TRIGGER = 'CONTINUE_FROM_TRIGGER'
 }
 
 /**
@@ -377,6 +381,71 @@ export interface SubgraphNodeConfig {
 }
 
 /**
+ * 从触发器开始的节点配置
+ * 专门用于标识由触发器启动的孤立子工作流的起始点
+ * 与 SubgraphNodeConfig 保持一致，用于定义子工作流的输入输出映射
+ */
+export interface StartFromTriggerNodeConfig {
+  /** 子工作流ID */
+  subgraphId: ID;
+  /**
+   * 输入参数映射（父工作流变量到子工作流输入的映射）
+   *
+   * 说明：定义父工作流的变量如何传递给子工作流
+   * - 键：子工作流的输入变量名
+   * - 值：父工作流的变量路径（支持嵌套路径，如 'parent.user.name'）
+   * - 如果为空对象，则传递所有父工作流变量
+   *
+   * 示例：
+   * ```typescript
+   * inputMapping: {
+   *   'childInput': 'parentVar1',      // 父工作流的 parentVar1 → 子工作流的 childInput
+   *   'childConfig': 'parent.user.config'  // 支持嵌套路径
+   * }
+   * ```
+   *
+   * 注意：此映射规则与 variables 机制配合使用
+   * - variables: 存储工作流内部的变量数据
+   * - inputMapping: 定义跨工作流的数据传递规则
+   * 两者互补，不重复
+   */
+  inputMapping: Record<string, string>;
+  /**
+   * 输出参数映射（子工作流输出到父工作流变量的映射）
+   *
+   * 说明：定义子工作流的输出如何映射回父工作流的变量
+   * - 键：父工作流的变量名（将更新此变量）
+   * - 值：子工作流输出的路径（支持嵌套路径）
+   * - 如果为空对象，则直接返回子工作流输出，不更新父工作流变量
+   *
+   * 示例：
+   * ```typescript
+   * outputMapping: {
+   *   'parentResult': 'childOutput',   // 子工作流的 childOutput → 父工作流的 parentResult
+   *   'parentStatus': 'result.status'  // 支持嵌套路径
+   * }
+   * ```
+   *
+   * 注意：此映射规则与 variables 机制配合使用
+   * - variables: 存储工作流内部的变量数据
+   * - outputMapping: 定义跨工作流的数据传递规则
+   * 两者互补，不重复
+   */
+  outputMapping: Record<string, string>;
+  /** 是否异步执行 */
+  async: boolean;
+}
+
+/**
+ * 从触发器继续的节点配置
+ * 用于在子工作流执行完成后恢复到主工作流的执行位置
+ * 无特殊配置，类似 END 节点
+ */
+export interface ContinueFromTriggerNodeConfig {
+  // 无配置，仅作为子工作流结束标志
+}
+
+/**
  * 节点配置联合类型
  */
 export type NodeConfig =
@@ -393,7 +462,9 @@ export type NodeConfig =
   | ContextProcessorNodeConfig
   | LoopStartNodeConfig
   | LoopEndNodeConfig
-  | SubgraphNodeConfig;
+  | SubgraphNodeConfig
+  | StartFromTriggerNodeConfig
+  | ContinueFromTriggerNodeConfig;
 
 /**
  * 节点输入定义类型

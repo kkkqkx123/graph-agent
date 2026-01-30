@@ -44,9 +44,14 @@ export class GraphValidator {
       ...options,
     };
 
+    // 检查是否为触发子工作流
+    const isTriggeredSubgraph = this.isTriggeredSubgraph(graph);
+    
     // 检查START/END节点
     if (opts.checkStartEnd) {
-      const startEndErrors = this.validateStartEndNodes(graph);
+      const startEndErrors = isTriggeredSubgraph
+        ? this.validateTriggeredSubgraphNodes(graph)
+        : this.validateStartEndNodes(graph);
       errorList.push(...startEndErrors);
     }
 
@@ -72,26 +77,33 @@ export class GraphValidator {
 
     // 可达性分析
     if (opts.checkReachability) {
-      const reachabilityResult = analyzeReachability(graph);
+      if (isTriggeredSubgraph) {
+        // 触发子工作流只验证内部连通性
+        const connectivityErrors = this.validateTriggeredSubgraphConnectivity(graph);
+        errorList.push(...connectivityErrors);
+      } else {
+        // 普通工作流验证从START到END的可达性
+        const reachabilityResult = analyzeReachability(graph);
 
-      // 不可达节点
-      for (const nodeId of reachabilityResult.unreachableNodes) {
-        errorList.push(
-          new ValidationError(`节点(${nodeId})从START节点不可达`, undefined, undefined, {
-            code: 'UNREACHABLE_NODE',
-            nodeId,
-          })
-        );
-      }
+        // 不可达节点
+        for (const nodeId of reachabilityResult.unreachableNodes) {
+          errorList.push(
+            new ValidationError(`节点(${nodeId})从START节点不可达`, undefined, undefined, {
+              code: 'UNREACHABLE_NODE',
+              nodeId,
+            })
+          );
+        }
 
-      // 死节点
-      for (const nodeId of reachabilityResult.deadEndNodes) {
-        errorList.push(
-          new ValidationError(`节点(${nodeId})无法到达END节点`, undefined, undefined, {
-            code: 'DEAD_END_NODE',
-            nodeId,
-          })
-        );
+        // 死节点
+        for (const nodeId of reachabilityResult.deadEndNodes) {
+          errorList.push(
+            new ValidationError(`节点(${nodeId})无法到达END节点`, undefined, undefined, {
+              code: 'DEAD_END_NODE',
+              nodeId,
+            })
+          );
+        }
       }
     }
 
@@ -196,8 +208,13 @@ export class GraphValidator {
       const incomingEdges = graph.getIncomingEdges(node.id);
       const outgoingEdges = graph.getOutgoingEdges(node.id);
 
-      // START和END节点不算孤立节点
-      if (node.type === 'START' as NodeType || node.type === 'END' as NodeType) {
+      // START、END、START_FROM_TRIGGER和CONTINUE_FROM_TRIGGER节点不算孤立节点
+      if (
+        node.type === 'START' as NodeType ||
+        node.type === 'END' as NodeType ||
+        node.type === 'START_FROM_TRIGGER' as NodeType ||
+        node.type === 'CONTINUE_FROM_TRIGGER' as NodeType
+      ) {
         continue;
       }
 
@@ -386,6 +403,191 @@ export class GraphValidator {
             }
           }
         }
+      }
+    }
+
+    return errors;
+  }
+
+  /**
+   * 检查是否为触发子工作流
+   * @param graph 图数据
+   * @returns 是否为触发子工作流
+   */
+  private static isTriggeredSubgraph(graph: GraphData): boolean {
+    for (const node of graph.nodes.values()) {
+      if (node.type === 'START_FROM_TRIGGER' as NodeType) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  /**
+   * 验证触发子工作流的节点
+   * 触发子工作流必须以 START_FROM_TRIGGER 节点开始，以 CONTINUE_FROM_TRIGGER 节点结束
+   * @param graph 图数据
+   * @returns 验证错误列表
+   */
+  private static validateTriggeredSubgraphNodes(graph: GraphData): ValidationError[] {
+    const errors: ValidationError[] = [];
+
+    // 检查START_FROM_TRIGGER节点
+    const startFromTriggerNodes: ID[] = [];
+    for (const node of graph.nodes.values()) {
+      if (node.type === 'START_FROM_TRIGGER' as NodeType) {
+        startFromTriggerNodes.push(node.id);
+      }
+    }
+
+    if (startFromTriggerNodes.length === 0) {
+      errors.push(
+        new ValidationError('触发子工作流必须包含一个START_FROM_TRIGGER节点', undefined, undefined, {
+          code: 'MISSING_START_FROM_TRIGGER_NODE',
+        })
+      );
+    } else if (startFromTriggerNodes.length > 1) {
+      errors.push(
+        new ValidationError('触发子工作流只能包含一个START_FROM_TRIGGER节点', undefined, undefined, {
+          code: 'MULTIPLE_START_FROM_TRIGGER_NODES',
+        })
+      );
+    } else {
+      // 检查START_FROM_TRIGGER节点的入度
+      const startNodeId = startFromTriggerNodes[0];
+      const incomingEdges = graph.getIncomingEdges(startNodeId);
+      if (incomingEdges.length > 0) {
+        errors.push(
+          new ValidationError('START_FROM_TRIGGER节点不能有入边', undefined, undefined, {
+            code: 'START_FROM_TRIGGER_NODE_HAS_INCOMING_EDGES',
+            nodeId: startNodeId,
+          })
+        );
+      }
+    }
+
+    // 检查CONTINUE_FROM_TRIGGER节点
+    const continueFromTriggerNodes: ID[] = [];
+    for (const node of graph.nodes.values()) {
+      if (node.type === 'CONTINUE_FROM_TRIGGER' as NodeType) {
+        continueFromTriggerNodes.push(node.id);
+      }
+    }
+
+    if (continueFromTriggerNodes.length === 0) {
+      errors.push(
+        new ValidationError('触发子工作流必须包含一个CONTINUE_FROM_TRIGGER节点', undefined, undefined, {
+          code: 'MISSING_CONTINUE_FROM_TRIGGER_NODE',
+        })
+      );
+    } else if (continueFromTriggerNodes.length > 1) {
+      errors.push(
+        new ValidationError('触发子工作流只能包含一个CONTINUE_FROM_TRIGGER节点', undefined, undefined, {
+          code: 'MULTIPLE_CONTINUE_FROM_TRIGGER_NODES',
+        })
+      );
+    } else {
+      // 检查CONTINUE_FROM_TRIGGER节点的出度
+      const endNodeId = continueFromTriggerNodes[0];
+      const outgoingEdges = graph.getOutgoingEdges(endNodeId);
+      if (outgoingEdges.length > 0) {
+        errors.push(
+          new ValidationError('CONTINUE_FROM_TRIGGER节点不能有出边', undefined, undefined, {
+            code: 'CONTINUE_FROM_TRIGGER_NODE_HAS_OUTGOING_EDGES',
+            nodeId: endNodeId,
+          })
+        );
+      }
+    }
+
+    // 检查是否包含普通START或END节点
+    for (const node of graph.nodes.values()) {
+      if (node.type === 'START' as NodeType) {
+        errors.push(
+          new ValidationError('触发子工作流不能包含START节点', undefined, undefined, {
+            code: 'TRIGGERED_SUBGRAPH_CONTAINS_START_NODE',
+            nodeId: node.id,
+          })
+        );
+      }
+      if (node.type === 'END' as NodeType) {
+        errors.push(
+          new ValidationError('触发子工作流不能包含END节点', undefined, undefined, {
+            code: 'TRIGGERED_SUBGRAPH_CONTAINS_END_NODE',
+            nodeId: node.id,
+          })
+        );
+      }
+    }
+
+    return errors;
+  }
+
+  /**
+   * 验证触发子工作流的内部连通性
+   * 确保所有节点都能从START_FROM_TRIGGER到达，并且能到达CONTINUE_FROM_TRIGGER
+   * @param graph 图数据
+   * @returns 验证错误列表
+   */
+  private static validateTriggeredSubgraphConnectivity(graph: GraphData): ValidationError[] {
+    const errors: ValidationError[] = [];
+
+    // 查找START_FROM_TRIGGER和CONTINUE_FROM_TRIGGER节点
+    let startNodeId: ID | null = null;
+    let endNodeId: ID | null = null;
+
+    for (const node of graph.nodes.values()) {
+      if (node.type === 'START_FROM_TRIGGER' as NodeType) {
+        startNodeId = node.id;
+      } else if (node.type === 'CONTINUE_FROM_TRIGGER' as NodeType) {
+        endNodeId = node.id;
+      }
+    }
+
+    if (!startNodeId || !endNodeId) {
+      // 如果缺少必需节点，错误已经在validateTriggeredSubgraphNodes中报告
+      return errors;
+    }
+
+    // 检查从START_FROM_TRIGGER到所有节点的可达性
+    const reachableFromStart = getReachableNodes(graph, startNodeId);
+    for (const node of graph.nodes.values()) {
+      if (node.type === 'START_FROM_TRIGGER' as NodeType) {
+        continue; // 跳过起始节点
+      }
+      if (!reachableFromStart.has(node.id)) {
+        errors.push(
+          new ValidationError(
+            `节点(${node.id})从START_FROM_TRIGGER节点不可达`,
+            undefined,
+            undefined,
+            {
+              code: 'UNREACHABLE_FROM_START_FROM_TRIGGER',
+              nodeId: node.id,
+            }
+          )
+        );
+      }
+    }
+
+    // 检查从所有节点到CONTINUE_FROM_TRIGGER的可达性
+    for (const node of graph.nodes.values()) {
+      if (node.type === 'CONTINUE_FROM_TRIGGER' as NodeType) {
+        continue; // 跳过结束节点
+      }
+      const reachableFromNode = getReachableNodes(graph, node.id);
+      if (!reachableFromNode.has(endNodeId)) {
+        errors.push(
+          new ValidationError(
+            `节点(${node.id})无法到达CONTINUE_FROM_TRIGGER节点`,
+            undefined,
+            undefined,
+            {
+              code: 'CANNOT_REACH_CONTINUE_FROM_TRIGGER',
+              nodeId: node.id,
+            }
+          )
+        );
       }
     }
 

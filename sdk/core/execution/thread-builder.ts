@@ -18,6 +18,7 @@ import { ValidationError } from '../../types/errors';
 import { workflowRegistry, type WorkflowRegistry } from '../services/workflow-registry';
 import { ExecutionContext } from './context/execution-context';
 import { convertToTrigger } from '../../types/trigger';
+import type { ThreadRegistry } from '../services/thread-registry';
 
 /**
  * ThreadBuilder - Thread构建器
@@ -154,9 +155,12 @@ export class ThreadBuilder {
     });
 
     // 步骤5：创建 ThreadContext
+    // 从 ExecutionContext 获取 ThreadRegistry
+    const threadRegistry = this.executionContext.getThreadRegistry();
     const threadContext = new ThreadContext(
       thread as Thread,
-      conversationManager
+      conversationManager,
+      threadRegistry
     );
 
     // 步骤6：注册工作流触发器到 ThreadContext 的 TriggerManager
@@ -246,10 +250,14 @@ export class ThreadBuilder {
     // 复制 ConversationManager 实例
     const copiedConversationManager = sourceThreadContext.getConversationManager().clone();
 
+    // 获取 ThreadRegistry
+    const threadRegistry = this.executionContext.getThreadRegistry();
+
     // 创建并返回 ThreadContext
     return new ThreadContext(
       copiedThread as Thread,
-      copiedConversationManager
+      copiedConversationManager,
+      threadRegistry
     );
   }
 
@@ -307,10 +315,14 @@ export class ThreadBuilder {
     // 复制 ConversationManager 实例
     const forkConversationManager = parentThreadContext.getConversationManager().clone();
 
+    // 获取 ThreadRegistry
+    const threadRegistry = this.executionContext.getThreadRegistry();
+
     // 创建并返回 ThreadContext
     return new ThreadContext(
       forkThread as Thread,
-      forkConversationManager
+      forkConversationManager,
+      threadRegistry
     );
   }
 

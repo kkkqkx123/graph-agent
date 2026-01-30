@@ -51,7 +51,7 @@ export class ErrorHandler {
       timestamp: now()
     };
 
-    await this.eventCoordinator.emitErrorEvent(errorEvent);
+    await this.eventCoordinator.emitErrorEvent(errorEvent, threadContext);
 
     // 步骤3：根据错误处理策略决定后续操作
     const errorHandling = threadContext.getMetadata()?.customFields?.errorHandling;
@@ -103,7 +103,7 @@ export class ErrorHandler {
       timestamp: now()
     };
 
-    await this.eventCoordinator.emitErrorEvent(errorEvent);
+    await this.eventCoordinator.emitErrorEvent(errorEvent, threadContext);
 
     // 状态由外部管理
   }

@@ -3,7 +3,7 @@
  * 封装ThreadRegistry，提供线程查询和管理
  */
 
-import { ThreadRegistry } from '../core/execution/thread-registry';
+import { ThreadRegistry } from '../core/services/thread-registry';
 import type { Thread, ThreadResult, ThreadStatus } from '../types/thread';
 import type { ThreadFilter, ThreadSummary } from './types';
 import { NotFoundError } from '../types/errors';

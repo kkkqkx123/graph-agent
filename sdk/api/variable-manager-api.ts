@@ -4,7 +4,7 @@
  * 注意：变量全部由workflow的静态定义提供，API不提供创建新变量的功能
  */
 
-import { ThreadRegistry } from '../core/execution/thread-registry';
+import { ThreadRegistry } from '../core/services/thread-registry';
 import type { Thread, ThreadVariable } from '../types/thread';
 import { NotFoundError, ValidationError } from '../types/errors';
 

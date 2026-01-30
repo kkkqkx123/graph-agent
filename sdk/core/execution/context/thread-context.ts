@@ -22,6 +22,7 @@ import { VariableManager } from '../managers/variable-manager';
 import { TriggerManager } from '../managers/trigger-manager';
 import { GraphNavigator } from '../../graph/graph-navigator';
 import { ExecutionState } from './execution-state';
+import type { ThreadRegistry } from '../../services/thread-registry';
 
 /**
  * ThreadContext - Thread 执行上下文
@@ -68,19 +69,35 @@ export class ThreadContext {
   private factories: Map<string, StatefulToolFactory> = new Map();
 
   /**
+   * Thread 注册表
+   */
+  private readonly threadRegistry: ThreadRegistry;
+
+  /**
    * 构造函数
    * @param thread Thread 实例
    * @param conversationManager 对话管理器
+   * @param threadRegistry Thread 注册表
    */
   constructor(
     thread: Thread,
-    conversationManager: ConversationManager
+    conversationManager: ConversationManager,
+    threadRegistry: ThreadRegistry
   ) {
     this.thread = thread;
     this.conversationManager = conversationManager;
+    this.threadRegistry = threadRegistry;
     this.variableManager = new VariableManager();
-    this.triggerManager = new TriggerManager();
+    this.triggerManager = new TriggerManager(threadRegistry);
     this.executionState = new ExecutionState();
+  }
+
+  /**
+   * 获取 Thread 注册表
+   * @returns ThreadRegistry 实例
+   */
+  getThreadRegistry(): ThreadRegistry {
+    return this.threadRegistry;
   }
 
   /**

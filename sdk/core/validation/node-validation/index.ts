@@ -21,6 +21,8 @@ export { validateVariableNode } from './variable-validator';
 export { validateLLMNode } from './llm-validator';
 export { validateUserInteractionNode } from './user-interaction-validator';
 export { validateSubgraphNode } from './subgraph-validator';
+export { validateStartFromTriggerNode } from './start-from-trigger-validator';
+export { validateContinueFromTriggerNode } from './continue-from-trigger-validator';
 
 /**
  * 根据节点类型验证节点配置
@@ -84,6 +86,14 @@ export function validateNodeByType(node: Node): void {
     case NodeType.SUBGRAPH:
       const { validateSubgraphNode } = require('./subgraph-validator');
       validateSubgraphNode(node);
+      break;
+    case NodeType.START_FROM_TRIGGER:
+      const { validateStartFromTriggerNode } = require('./start-from-trigger-validator');
+      validateStartFromTriggerNode(node);
+      break;
+    case NodeType.CONTINUE_FROM_TRIGGER:
+      const { validateContinueFromTriggerNode } = require('./continue-from-trigger-validator');
+      validateContinueFromTriggerNode(node);
       break;
     default:
       throw new ValidationError(`Unknown node type: ${node.type}`, `node.${node.id}`);
