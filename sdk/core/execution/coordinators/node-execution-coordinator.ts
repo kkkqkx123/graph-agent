@@ -29,17 +29,19 @@ import { NodeType } from '../../../types/node';
 import { now, diffTimestamp } from '../../../utils';
 import { getNodeHandler } from '../handlers/node-handlers';
 import {
-  validateLLMNodeConfig,
-  transformLLMNodeConfig,
-  validateToolNodeConfig,
-  transformToolNodeConfig,
-  validateContextProcessorNodeConfig,
   transformContextProcessorNodeConfig,
-  validateUserInteractionNodeConfig,
-  transformUserInteractionNodeConfig
+  type ContextProcessorExecutionData
 } from '../handlers/node-handlers/config-utils';
 import { SUBGRAPH_METADATA_KEYS, SubgraphBoundaryType } from '../../../types/subgraph';
-import type { LLMExecutionRequestData } from '../llm-executor';
+import type { ContextProcessorNodeConfig } from '../../../types/node';
+import { isLLMManagedNode, extractLLMRequestData } from './node-operations/llm-request-operations';
+import {
+  handleTruncateOperation,
+  handleInsertOperation,
+  handleReplaceOperation,
+  handleClearOperation,
+  handleFilterOperation
+} from './node-operations/context-processor-operations';
 
 /**
  * 节点执行协调器
@@ -49,7 +51,7 @@ export class NodeExecutionCoordinator {
     private eventCoordinator: EventCoordinator,
     private llmCoordinator: LLMCoordinator,
     private subgraphHandler: SubgraphHandler
-  ) {}
+  ) { }
 
   /**
    * 执行节点
@@ -217,8 +219,11 @@ export class NodeExecutionCoordinator {
     const startTime = now();
 
     // 检查是否为需要LLM执行器托管的节点
-    if (this.isLLMManagedNode(node.type)) {
+    if (isLLMManagedNode(node.type)) {
       return await this.executeLLMManagedNode(threadContext, node, startTime);
+    } else if (node.type === NodeType.CONTEXT_PROCESSOR) {
+      // 上下文处理器节点需要特殊处理，直接操作ConversationManager
+      return await this.executeContextProcessorNode(threadContext, node, startTime);
     } else {
       // 使用Node Handler函数执行
       const handler = getNodeHandler(node.type);
@@ -240,18 +245,6 @@ export class NodeExecutionCoordinator {
   }
 
   /**
-   * 检查是否为需要LLM执行器托管的节点
-   */
-  private isLLMManagedNode(nodeType: NodeType): boolean {
-    return [
-      NodeType.LLM,
-      NodeType.TOOL,
-      NodeType.CONTEXT_PROCESSOR,
-      NodeType.USER_INTERACTION
-    ].includes(nodeType);
-  }
-
-  /**
    * 执行由LLM执行器托管的节点
    */
   private async executeLLMManagedNode(
@@ -261,7 +254,7 @@ export class NodeExecutionCoordinator {
   ): Promise<NodeExecutionResult> {
     try {
       // 提取LLM请求数据
-      const requestData = this.extractLLMRequestData(node, threadContext);
+      const requestData = extractLLMRequestData(node, threadContext);
 
       // 直接调用 LLMCoordinator
       const result = await this.llmCoordinator.executeLLM({
@@ -314,58 +307,70 @@ export class NodeExecutionCoordinator {
   }
 
   /**
-   * 从节点配置中提取LLM请求数据
-   * @param node 节点定义
-   * @param threadContext 线程上下文
-   * @returns LLM请求数据
+   * 执行上下文处理器节点
    */
-  private extractLLMRequestData(node: Node, threadContext: ThreadContext): LLMExecutionRequestData {
-    const config = node.config;
+  private async executeContextProcessorNode(
+    threadContext: ThreadContext,
+    node: Node,
+    startTime: number
+  ): Promise<NodeExecutionResult> {
+    try {
+      const config = node.config as ContextProcessorNodeConfig;
 
-    // 根据节点类型提取特定配置
-    switch (node.type) {
-      case NodeType.LLM: {
-        // 验证配置
-        if (!validateLLMNodeConfig(config)) {
-          throw new Error('Invalid LLM node configuration');
-        }
-        
-        // 转换配置（类型已通过验证）
-        return transformLLMNodeConfig(config);
+      // 转换配置为执行数据（配置已在工作流注册时通过静态验证）
+      const executionData = transformContextProcessorNodeConfig(config);
+
+      // 获取ConversationManager
+      const conversationManager = threadContext.getConversationManager();
+
+      // 根据操作类型执行相应的操作
+      switch (executionData.operation) {
+        case 'truncate':
+          handleTruncateOperation(conversationManager, executionData.truncate!);
+          break;
+        case 'insert':
+          handleInsertOperation(conversationManager, executionData.insert!);
+          break;
+        case 'replace':
+          handleReplaceOperation(conversationManager, executionData.replace!);
+          break;
+        case 'clear':
+          handleClearOperation(conversationManager, executionData.clear!);
+          break;
+        case 'filter':
+          handleFilterOperation(conversationManager, executionData.filter!);
+          break;
+        default:
+          throw new Error(`Unsupported operation: ${executionData.operation}`);
       }
 
-      case NodeType.TOOL: {
-        // 验证配置
-        if (!validateToolNodeConfig(config)) {
-          throw new Error('Invalid tool node configuration');
-        }
-        
-        // 转换配置（类型已通过验证）
-        return transformToolNodeConfig(config);
-      }
-
-      case NodeType.CONTEXT_PROCESSOR: {
-        // 验证配置
-        if (!validateContextProcessorNodeConfig(config)) {
-          throw new Error('Invalid context processor node configuration');
-        }
-        
-        // 转换配置（类型已通过验证）
-        return transformContextProcessorNodeConfig(config);
-      }
-
-      case NodeType.USER_INTERACTION: {
-        // 验证配置
-        if (!validateUserInteractionNodeConfig(config)) {
-          throw new Error('Invalid user interaction node configuration');
-        }
-        
-        // 转换配置（类型已通过验证）
-        return transformUserInteractionNodeConfig(config);
-      }
-
-      default:
-        throw new Error(`Unknown node type: ${node.type}`);
+      const endTime = now();
+      return {
+        nodeId: node.id,
+        nodeType: node.type,
+        status: 'COMPLETED',
+        step: threadContext.thread.nodeResults.length + 1,
+        data: {
+          operation: executionData.operation,
+          messageCount: conversationManager.getMessages().length
+        },
+        startTime,
+        endTime,
+        executionTime: diffTimestamp(startTime, endTime)
+      };
+    } catch (error) {
+      const endTime = now();
+      return {
+        nodeId: node.id,
+        nodeType: node.type,
+        status: 'FAILED',
+        step: threadContext.thread.nodeResults.length + 1,
+        error: error instanceof Error ? error : new Error(String(error)),
+        startTime,
+        endTime,
+        executionTime: diffTimestamp(startTime, endTime)
+      };
     }
   }
+
 }

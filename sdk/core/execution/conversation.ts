@@ -284,6 +284,22 @@ export class ConversationManager {
   }
 
   /**
+   * 获取索引管理器实例（用于内部操作）
+   * @returns MessageIndexManager 实例
+   */
+  getIndexManager(): MessageIndexManager {
+    return this.indexManager;
+  }
+
+  /**
+   * 设置原始索引数组
+   * @param indices 索引数组
+   */
+  setOriginalIndices(indices: number[]): void {
+    this.indexManager.setOriginalIndices(indices);
+  }
+
+  /**
    * 克隆 ConversationManager 实例
    * 创建一个包含相同消息历史和配置的新 ConversationManager 实例
    * @returns 克隆的 ConversationManager 实例

@@ -5,6 +5,7 @@
 
 import type { ID, Metadata } from './common';
 import type { Condition } from './condition';
+import type { LLMMessage } from './llm';
 
 /**
  * 节点类型枚举
@@ -238,19 +239,59 @@ export interface RouteNodeConfig {
 
 /**
  * 上下文处理器节点配置
+ * 用于直接操作提示词消息数组，支持截断、插入、替换、过滤、清空等操作
  */
 export interface ContextProcessorNodeConfig {
-  /** 处理类型 */
-  processorType: 'transform' | 'filter' | 'merge' | 'split';
-  /** 处理规则 */
-  rules: Array<{
-    /** 源路径 */
-    sourcePath: string;
-    /** 目标路径 */
-    targetPath: string;
-    /** 转换函数 */
-    transform?: string;
-  }>;
+  /** 配置版本（可选，默认为2） */
+  version?: number;
+  /** 操作类型 */
+  operation: 'truncate' | 'insert' | 'replace' | 'clear' | 'filter';
+  
+  /** 截断操作配置 */
+  truncate?: {
+    /** 保留前N条消息 */
+    keepFirst?: number;
+    /** 保留后N条消息 */
+    keepLast?: number;
+    /** 删除前N条消息 */
+    removeFirst?: number;
+    /** 删除后N条消息 */
+    removeLast?: number;
+    /** 保留索引范围 [start, end) */
+    range?: { start: number; end: number };
+  };
+  
+  /** 插入操作配置 */
+  insert?: {
+    /** 插入位置（-1表示末尾，0表示开头） */
+    position: number;
+    /** 要插入的消息 */
+    messages: LLMMessage[];
+  };
+  
+  /** 替换操作配置 */
+  replace?: {
+    /** 要替换的消息索引 */
+    index: number;
+    /** 新的消息内容 */
+    message: LLMMessage;
+  };
+  
+  /** 过滤操作配置 */
+  filter?: {
+    /** 按角色过滤 */
+    roles?: ('system' | 'user' | 'assistant' | 'tool')[];
+    /** 按内容关键词过滤（包含指定关键词的消息） */
+    contentContains?: string[];
+    /** 按内容关键词排除（不包含指定关键词的消息） */
+    contentExcludes?: string[];
+  };
+  
+  /** 清空操作配置 */
+  clear?: {
+    /** 是否保留系统消息 */
+    keepSystemMessage?: boolean;
+  };
 }
 
 /**

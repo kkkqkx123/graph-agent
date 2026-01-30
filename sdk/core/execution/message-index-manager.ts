@@ -53,6 +53,14 @@ export class MessageIndexManager {
   }
 
   /**
+   * 设置原始索引数组
+   * @param indices 索引数组
+   */
+  setOriginalIndices(indices: number[]): void {
+    this.markMap.originalIndices = [...indices];
+  }
+
+  /**
    * 获取当前批次的消息索引
    * @returns 当前批次的消息索引数组
    */
