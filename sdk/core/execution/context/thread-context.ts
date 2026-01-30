@@ -18,6 +18,7 @@ import type { Thread } from '../../../types';
 import type { ID } from '../../../types/common';
 import { ConversationManager } from '../conversation';
 import { VariableManager } from '../managers/variable-manager';
+import { TriggerManager } from '../managers/trigger-manager';
 import { GraphNavigator } from '../../graph/graph-navigator';
 import { ExecutionState } from './execution-state';
 
@@ -41,6 +42,11 @@ export class ThreadContext {
   private readonly variableManager: VariableManager;
 
   /**
+   * 触发器管理器（每个 Thread 独立）
+   */
+  public readonly triggerManager: TriggerManager;
+
+  /**
    * 图导航器（延迟创建）
    */
   private navigator?: GraphNavigator;
@@ -62,6 +68,7 @@ export class ThreadContext {
     this.thread = thread;
     this.conversationManager = conversationManager;
     this.variableManager = new VariableManager();
+    this.triggerManager = new TriggerManager();
     this.executionState = new ExecutionState();
   }
 

@@ -17,6 +17,7 @@ import { VariableManager } from './managers/variable-manager';
 import { ValidationError } from '../../types/errors';
 import { WorkflowRegistry } from '../registry/workflow-registry';
 import { ExecutionContext } from './context/execution-context';
+import { convertToTrigger } from '../../types/trigger';
 
 /**
  * ThreadBuilder - Thread构建器
@@ -158,9 +159,39 @@ export class ThreadBuilder {
       conversationManager
     );
 
+    // 步骤6：注册工作流触发器到 ThreadContext 的 TriggerManager
+    this.registerWorkflowTriggers(threadContext, processedWorkflow);
+
     return threadContext;
   }
 
+  /**
+   * 注册工作流触发器到 ThreadContext 的 TriggerManager
+   * @param threadContext ThreadContext 实例
+   * @param workflow 工作流定义
+   */
+  private registerWorkflowTriggers(threadContext: ThreadContext, workflow: ProcessedWorkflowDefinition): void {
+    // 检查工作流是否有触发器定义
+    if (!workflow.triggers || workflow.triggers.length === 0) {
+      return;
+    }
+
+    // 使用 ThreadContext 的 TriggerManager（每个 Thread 独立）
+    const triggerManager = threadContext.triggerManager;
+    
+    // 注册所有触发器
+    for (const workflowTrigger of workflow.triggers) {
+      try {
+        const trigger = convertToTrigger(workflowTrigger, workflow.id);
+        // 设置 threadId 以确保触发器只影响当前 Thread
+        trigger.threadId = threadContext.getThreadId();
+        triggerManager.register(trigger);
+      } catch (error) {
+        // 静默处理错误，避免影响其他触发器的注册
+        console.error(`Failed to register trigger ${workflowTrigger.id}:`, error);
+      }
+    }
+  }
 
   /**
    * 从缓存模板构建ThreadContext

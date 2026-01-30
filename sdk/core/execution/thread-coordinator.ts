@@ -21,7 +21,7 @@
  */
 
 import type { ThreadOptions, ThreadResult } from '../../types/thread';
-import type { ForkConfig, JoinResult } from './utils/thread-operations';
+import type { ForkConfig, JoinResult } from './thread-operations/thread-operations';
 import { ThreadRegistry } from '../registry/thread-registry';
 import { ThreadBuilder } from './thread-builder';
 import { ThreadExecutor } from './thread-executor';
@@ -35,7 +35,7 @@ import type {
   ThreadJoinedEvent,
   ThreadCopiedEvent
 } from '../../types/events';
-import { fork, join, copy } from './utils/thread-operations';
+import { fork, join, copy } from './thread-operations/thread-operations';
 import { now } from '../../utils';
 
 /**
@@ -57,6 +57,7 @@ export class ThreadCoordinator {
     this.eventManager = new EventManager();
     this.triggerManager = new TriggerManager();
     this.lifecycleManager = new ThreadLifecycleManager(this.eventManager);
+    // ✅ 不再传递 workflowRegistry 给 ThreadExecutor，触发器由 ThreadBuilder 在创建 ThreadContext 时注册
     this.threadExecutor = new ThreadExecutor(this.eventManager, this.triggerManager);
   }
 
@@ -82,7 +83,7 @@ export class ThreadCoordinator {
     // 步骤5：根据执行结果更新 Thread 状态
     // 判断执行是否成功：没有错误且Thread状态为COMPLETED
     const isSuccess = !result.error && threadContext.getStatus() === 'COMPLETED';
-    
+
     if (isSuccess) {
       await this.lifecycleManager.completeThread(threadContext.thread, result);
     } else {

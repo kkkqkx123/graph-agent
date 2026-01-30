@@ -16,15 +16,12 @@ import type {
 } from '../../types/workflow';
 import type { GraphBuildOptions } from '../../types';
 import type { ID } from '../../types/common';
-import type { WorkflowTrigger } from '../../types/trigger';
 import { WorkflowValidator } from '../validation/workflow-validator';
 import { GraphBuilder } from '../graph/graph-builder';
 import { GraphValidator } from '../validation/graph-validator';
 import { GraphData } from '../entities/graph-data';
 import { ValidationError } from '../../types/errors';
 import { now } from '../../utils';
-import { TriggerManager } from '../execution/managers/trigger-manager';
-import { convertToTrigger } from '../../types/trigger';
 
 /**
  * 工作流摘要信息
@@ -65,27 +62,23 @@ export class WorkflowRegistry {
   private processedWorkflows: Map<string, ProcessedWorkflowDefinition> = new Map();
   private graphCache: Map<string, GraphData> = new Map();
   private workflowRelationships: Map<string, WorkflowRelationship> = new Map();
-  private workflowTriggers: Map<string, WorkflowTrigger[]> = new Map();
   private validator: WorkflowValidator;
   private enableVersioning: boolean;
   private maxVersions: number;
   private enablePreprocessing: boolean;
   private maxRecursionDepth: number;
-  private triggerManager?: TriggerManager;
 
   constructor(options: {
     enableVersioning?: boolean;
     maxVersions?: number;
     enablePreprocessing?: boolean;
     maxRecursionDepth?: number;
-    triggerManager?: TriggerManager;
   } = {}) {
     this.validator = new WorkflowValidator();
     this.enableVersioning = options.enableVersioning ?? true;
     this.maxVersions = options.maxVersions ?? 10;
     this.enablePreprocessing = options.enablePreprocessing ?? true;
     this.maxRecursionDepth = options.maxRecursionDepth ?? 10;
-    this.triggerManager = options.triggerManager;
   }
 
   /**
@@ -113,15 +106,6 @@ export class WorkflowRegistry {
 
     // 保存工作流定义
     this.workflows.set(workflow.id, workflow);
-
-    // 注册workflow中的triggers
-    if (workflow.triggers && workflow.triggers.length > 0 && this.triggerManager) {
-      this.workflowTriggers.set(workflow.id, workflow.triggers);
-      for (const workflowTrigger of workflow.triggers) {
-        const trigger = convertToTrigger(workflowTrigger, workflow.id);
-        this.triggerManager.register(trigger);
-      }
-    }
 
     // 如果启用预处理，进行图构建和验证
     if (this.enablePreprocessing) {
@@ -302,32 +286,6 @@ export class WorkflowRegistry {
     // 更新工作流定义
     this.workflows.set(workflow.id, workflow);
 
-    // 更新triggers
-    if (this.triggerManager) {
-      // 先注销旧的triggers
-      const oldTriggers = this.workflowTriggers.get(workflow.id);
-      if (oldTriggers && oldTriggers.length > 0) {
-        for (const oldTrigger of oldTriggers) {
-          try {
-            this.triggerManager.unregister(oldTrigger.id);
-          } catch (error) {
-            // 静默处理错误
-          }
-        }
-      }
-
-      // 注册新的triggers
-      if (workflow.triggers && workflow.triggers.length > 0) {
-        this.workflowTriggers.set(workflow.id, workflow.triggers);
-        for (const workflowTrigger of workflow.triggers) {
-          const trigger = convertToTrigger(workflowTrigger, workflow.id);
-          this.triggerManager.register(trigger);
-        }
-      } else {
-        this.workflowTriggers.delete(workflow.id);
-      }
-    }
-
     // 清除预处理缓存
     if (this.enablePreprocessing) {
       this.clearPreprocessCache(workflow.id);
@@ -394,19 +352,6 @@ export class WorkflowRegistry {
    * @param workflowId 工作流ID
    */
   unregister(workflowId: string): void {
-    // 注销workflow中的triggers
-    const workflowTriggers = this.workflowTriggers.get(workflowId);
-    if (workflowTriggers && workflowTriggers.length > 0 && this.triggerManager) {
-      for (const workflowTrigger of workflowTriggers) {
-        try {
-          this.triggerManager.unregister(workflowTrigger.id);
-        } catch (error) {
-          // 静默处理错误，避免影响其他trigger的注销
-        }
-      }
-      this.workflowTriggers.delete(workflowId);
-    }
-
     this.workflows.delete(workflowId);
     this.versions.delete(workflowId);
     this.clearPreprocessCache(workflowId);
@@ -426,20 +371,6 @@ export class WorkflowRegistry {
    * 清空所有工作流定义
    */
   clear(): void {
-    // 清理所有triggers
-    if (this.triggerManager) {
-      for (const triggers of this.workflowTriggers.values()) {
-        for (const workflowTrigger of triggers) {
-          try {
-            this.triggerManager.unregister(workflowTrigger.id);
-          } catch (error) {
-            // 静默处理错误
-          }
-        }
-      }
-      this.workflowTriggers.clear();
-    }
-
     this.workflows.clear();
     this.versions.clear();
     this.processedWorkflows.clear();
@@ -561,25 +492,6 @@ export class WorkflowRegistry {
    */
   size(): number {
     return this.workflows.size;
-  }
-
-  /**
-   * 获取工作流的触发器定义
-   * @param workflowId 工作流ID
-   * @returns 触发器定义数组，如果不存在则返回空数组
-   */
-  getWorkflowTriggers(workflowId: string): WorkflowTrigger[] {
-    return this.workflowTriggers.get(workflowId) || [];
-  }
-
-  /**
-   * 检查工作流是否有触发器
-   * @param workflowId 工作流ID
-   * @returns 是否有触发器
-   */
-  hasWorkflowTriggers(workflowId: string): boolean {
-    const triggers = this.workflowTriggers.get(workflowId);
-    return triggers !== undefined && triggers.length > 0;
   }
 
   /**

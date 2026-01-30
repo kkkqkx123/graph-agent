@@ -16,6 +16,7 @@
  * - 事件处理（由 EventCoordinator 负责）
  * - 错误处理（由 ErrorHandler 负责）
  * - 子图处理（由 SubgraphHandler 负责）
+ * - 触发器管理（由 ThreadBuilder 在创建 ThreadContext 时处理）
  */
 
 import type { ThreadResult } from '../../types/thread';
@@ -44,7 +45,10 @@ export class ThreadExecutor {
   private errorHandler: ErrorHandler;
   private eventCoordinator: EventCoordinator;
 
-  constructor(eventManager?: EventManager, triggerManager?: TriggerManager) {
+  constructor(
+    eventManager?: EventManager,
+    triggerManager?: TriggerManager
+  ) {
     // 创建事件协调器
     this.eventCoordinator = new EventCoordinator(
       eventManager || new EventManager(),

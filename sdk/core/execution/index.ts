@@ -42,7 +42,7 @@ export {
   type ForkConfig,
   type JoinStrategy,
   type JoinResult
-} from './utils/thread-operations';
+} from './thread-operations/thread-operations';
 
 // 触发器管理器
 export { TriggerManager } from './managers/trigger-manager';
