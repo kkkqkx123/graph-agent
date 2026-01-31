@@ -18,7 +18,7 @@ import type { Checkpoint, CheckpointMetadata, ThreadStateSnapshot } from '../../
 import type { CheckpointStorage, CheckpointStorageMetadata } from '../../../types/checkpoint-storage';
 import type { ThreadRegistry } from '../../services/thread-registry';
 import { ThreadContext } from '../context/thread-context';
-import { VariableManager } from '../coordinators/variable-coordinator';
+import { VariableManager } from './variable-manager';
 import { ConversationManager } from '../conversation';
 import { generateId, now as getCurrentTimestamp } from '../../../utils';
 import { type WorkflowRegistry } from '../../services/workflow-registry';

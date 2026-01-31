@@ -1,17 +1,33 @@
 /**
- * 变量协调器
+ * 变量管理器
  * 负责Thread变量的管理，包括变量的初始化、更新、查询
  * 支持四级作用域：global、thread、subgraph、loop
  * 只允许修改已有变量
+ * 
+ * 设计原则：
+ * - 有状态设计：维护运行时状态
+ * - 状态管理：提供状态的增删改查操作
+ * - 线程隔离：每个线程有独立的状态实例
  */
 
 import type { Thread, ThreadVariable, VariableScope } from '../../../types/thread';
 import type { WorkflowDefinition, WorkflowVariable } from '../../../types/workflow';
 import type { ThreadContext } from '../context/thread-context';
-import { VariableAccessor } from './utils/variable-accessor';
+import { VariableAccessor } from '../utils/variable-accessor';
 
 /**
  * VariableManager - 变量管理器
+ * 
+ * 职责：
+ * - 从 WorkflowDefinition 初始化 Thread 变量
+ * - 管理变量的查询、更新、作用域切换
+ * - 支持四级作用域：global、thread、subgraph、loop
+ * - 提供变量快照和恢复功能
+ * 
+ * 设计原则：
+ * - 有状态设计：维护 Thread 的变量状态
+ * - 状态管理：提供状态的增删改查操作
+ * - 线程隔离：每个线程有独立的状态实例
  */
 export class VariableManager {
   /**

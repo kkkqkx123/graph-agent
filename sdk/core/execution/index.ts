@@ -22,7 +22,7 @@ export { ThreadLifecycleManager } from './thread-lifecycle-manager';
 export { ThreadRegistry } from '../services/thread-registry';
 
 // 变量管理器
-export { VariableManager } from './coordinators/variable-coordinator';
+export { VariableManager } from './managers/variable-manager';
 
 // Thread协调器
 export { ThreadCoordinator } from './thread-coordinator';

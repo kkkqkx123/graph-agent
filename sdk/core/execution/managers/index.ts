@@ -7,13 +7,13 @@
  * - 有状态设计：维护运行时状态
  * - 状态管理：提供状态的增删改查操作
  * - 线程隔离：每个线程有独立的状态实例
- * 
+ *
+ * 包含的管理器：
+ * - CheckpointManager: 检查点管理器
+ * - TriggerStateManager: 触发器状态管理器
+ * - VariableManager: 变量管理器
  */
 
-export { EventManager } from "../../services/event-manager";
+export { CheckpointManager } from "./checkpoint-manager";
 export { TriggerStateManager, type TriggerRuntimeState } from "./trigger-state-manager";
-export { VariableManager } from "../coordinators/variable-coordinator";
-export { VariableAccessor, VariableNamespace } from "../coordinators/utils/variable-accessor";
-
-// 向后兼容：导出 TriggerManager 别名
-export { TriggerCoordinator as TriggerManager } from "../coordinators/trigger-coordinator";
+export { VariableManager } from "./variable-manager";

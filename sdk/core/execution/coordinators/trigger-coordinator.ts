@@ -1,10 +1,22 @@
 /**
- * TriggerManager - 触发器管理器
+ * TriggerCoordinator - 触发器协调器
  * 负责触发器的注册、注销和执行触发动作
  *
- * 改造后：无状态协调器，从 WorkflowRegistry 查询定义，从 TriggerStateManager 获取状态
+ * 设计原则：
+ * - 无状态设计：不维护可变状态
+ * - 协调逻辑：封装触发器定义和运行时状态的协调逻辑
+ * - 依赖注入：通过构造函数接收依赖的管理器
  *
- * 注意：不再通过 EventManager 监听事件，改为由 ThreadExecutor 直接调用 handleEvent()
+ * 职责：
+ * - 触发器的注册、注销、启用、禁用
+ * - 处理事件并执行匹配的触发器
+ * - 从 WorkflowRegistry 查询触发器定义
+ * - 从 TriggerStateManager 获取运行时状态
+ *
+ * 注意：
+ * - 不再通过 EventManager 监听事件，改为由 ThreadExecutor 直接调用 handleEvent()
+ * - 不维护 threadId，所有线程ID从 TriggerStateManager 获取
+ * - WorkflowRegistry 作为触发器定义的单一信息源
  */
 
 import type {
@@ -24,7 +36,7 @@ import { TriggerStateManager, type TriggerRuntimeState } from '../managers/trigg
 import { convertToTrigger } from '../../../types/trigger';
 
 /**
- * TriggerManager - 触发器管理器
+ * TriggerCoordinator - 触发器协调器
  *
  * 职责：
  * - 触发器的注册、注销、启用、禁用
@@ -33,17 +45,15 @@ import { convertToTrigger } from '../../../types/trigger';
  * - 从 TriggerStateManager 获取运行时状态
  *
  * 设计原则：
- * - 不再通过 EventManager 监听事件
- * - 由 ThreadExecutor 直接调用 handleEvent() 方法
- * - 协调器，定义与状态分离
+ * - 无状态设计：不维护可变状态
+ * - 协调逻辑：封装触发器定义和运行时状态的协调逻辑
+ * - 依赖注入：通过构造函数接收依赖的管理器
  * - WorkflowRegistry 作为触发器定义的单一信息源
  */
 export class TriggerCoordinator {
   private threadRegistry: ThreadRegistry;
   private workflowRegistry: WorkflowRegistry;
   private stateManager: TriggerStateManager;
-  private threadId: ID;
-  private workflowId: ID | null = null;
 
   constructor(
     threadRegistry: ThreadRegistry,
@@ -53,22 +63,14 @@ export class TriggerCoordinator {
     this.threadRegistry = threadRegistry;
     this.workflowRegistry = workflowRegistry;
     this.stateManager = stateManager;
-    this.threadId = stateManager.getThreadId();
-  }
-
-  /**
-   * 设置工作流 ID
-   * @param workflowId 工作流 ID
-   */
-  setWorkflowId(workflowId: ID): void {
-    this.workflowId = workflowId;
   }
 
   /**
    * 注册触发器（初始化运行时状态）
    * @param workflowTrigger 工作流触发器定义
+   * @param workflowId 工作流 ID
    */
-  register(workflowTrigger: WorkflowTrigger): void {
+  register(workflowTrigger: WorkflowTrigger, workflowId: ID): void {
     // 验证触发器
     if (!workflowTrigger.id) {
       throw new ValidationError('触发器 ID 不能为空', 'trigger.id');
@@ -91,7 +93,8 @@ export class TriggerCoordinator {
     // 创建运行时状态
     const state: TriggerRuntimeState = {
       triggerId: workflowTrigger.id,
-      threadId: this.threadId,
+      threadId: this.stateManager.getThreadId(),
+      workflowId: workflowId,
       status: workflowTrigger.enabled !== false ? 'enabled' as TriggerStatus : 'disabled' as TriggerStatus,
       triggerCount: 0,
       updatedAt: now()
@@ -275,15 +278,18 @@ export class TriggerCoordinator {
   /**
    * 获取工作流触发器定义
    * @param triggerId 触发器 ID
+   * @param workflowId 工作流 ID（可选，如果不提供则从状态管理器获取）
    * @returns 工作流触发器定义，如果不存在则返回 undefined
    */
-  private getWorkflowTrigger(triggerId: ID): WorkflowTrigger | undefined {
-    if (!this.workflowId) {
+  private getWorkflowTrigger(triggerId: ID, workflowId?: ID): WorkflowTrigger | undefined {
+    // 如果没有提供 workflowId，从状态管理器获取
+    const targetWorkflowId = workflowId || this.stateManager.getWorkflowId();
+    if (!targetWorkflowId) {
       return undefined;
     }
 
     // 获取处理后的工作流定义
-    const processedWorkflow = this.workflowRegistry.getProcessed(this.workflowId);
+    const processedWorkflow = this.workflowRegistry.getProcessed(targetWorkflowId);
     if (!processedWorkflow || !processedWorkflow.triggers) {
       return undefined;
     }
@@ -300,7 +306,8 @@ export class TriggerCoordinator {
    */
   private mergeTrigger(workflowTrigger: WorkflowTrigger, state: TriggerRuntimeState): Trigger {
     // 使用 convertToTrigger 转换为 Trigger
-    const trigger = convertToTrigger(workflowTrigger, this.workflowId!);
+    const workflowId = this.stateManager.getWorkflowId();
+    const trigger = convertToTrigger(workflowTrigger, workflowId!);
 
     // 合并运行时状态
     trigger.status = state.status;

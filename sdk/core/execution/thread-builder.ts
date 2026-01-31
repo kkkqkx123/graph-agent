@@ -13,7 +13,7 @@ import { ConversationManager } from './conversation';
 import { ThreadContext } from './context/thread-context';
 import { NodeType } from '../../types/node';
 import { generateId, now as getCurrentTimestamp } from '../../utils';
-import { VariableManager } from './coordinators/variable-coordinator';
+import { VariableManager } from './managers/variable-manager';
 import { ValidationError } from '../../types/errors';
 import { workflowRegistry, type WorkflowRegistry } from '../services/workflow-registry';
 import { ExecutionContext } from './context/execution-context';
@@ -189,10 +189,9 @@ export class ThreadBuilder {
 
     // 使用 ThreadContext 的 TriggerStateManager（每个 Thread 独立）
     const triggerStateManager = threadContext.triggerStateManager;
-    const triggerManager = threadContext.triggerManager;
 
     // 确保工作流 ID 已设置
-    triggerManager.setWorkflowId(workflow.id);
+    triggerStateManager.setWorkflowId(workflow.id);
 
     // 初始化所有触发器的运行时状态
     for (const workflowTrigger of workflow.triggers) {
@@ -201,6 +200,7 @@ export class ThreadBuilder {
         const state = {
           triggerId: workflowTrigger.id,
           threadId: threadContext.getThreadId(),
+          workflowId: workflow.id,
           status: workflowTrigger.enabled !== false ? TriggerStatus.ENABLED : TriggerStatus.DISABLED,
           triggerCount: 0,
           updatedAt: getCurrentTimestamp()

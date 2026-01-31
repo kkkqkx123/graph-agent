@@ -18,7 +18,7 @@ import type { Thread, VariableScope } from '../../../types';
 import type { ID } from '../../../types/common';
 import type { StatefulToolFactory } from '../../../types/tool';
 import { ConversationManager } from '../conversation';
-import { VariableManager } from '../coordinators/variable-coordinator';
+import { VariableManager } from '../managers/variable-manager';
 import { TriggerCoordinator } from '../coordinators/trigger-coordinator';
 import { TriggerStateManager, type TriggerRuntimeState } from '../managers/trigger-state-manager';
 import { GraphNavigator } from '../../graph/graph-navigator';
@@ -110,7 +110,7 @@ export class ThreadContext {
 
     // 设置工作流 ID
     if (workflowRegistry) {
-      this.triggerManager.setWorkflowId(thread.workflowId);
+      this.triggerStateManager.setWorkflowId(thread.workflowId);
     }
 
     this.executionState = new ExecutionState();

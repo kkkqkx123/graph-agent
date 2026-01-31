@@ -28,6 +28,8 @@ export interface TriggerRuntimeState {
   triggerId: ID;
   /** 线程 ID */
   threadId: ID;
+  /** 工作流 ID */
+  workflowId: ID;
   /** 触发器状态 */
   status: TriggerStatus;
   /** 触发次数 */
@@ -48,9 +50,34 @@ export interface TriggerRuntimeState {
 export class TriggerStateManager {
   private states: Map<ID, TriggerRuntimeState> = new Map();
   private threadId: ID;
+  private workflowId: ID | null = null;
 
   constructor(threadId: ID) {
     this.threadId = threadId;
+  }
+
+  /**
+   * 设置工作流 ID
+   * @param workflowId 工作流 ID
+   */
+  setWorkflowId(workflowId: ID): void {
+    this.workflowId = workflowId;
+  }
+
+  /**
+   * 获取工作流 ID
+   * @returns 工作流 ID
+   */
+  getWorkflowId(): ID | null {
+    return this.workflowId;
+  }
+
+  /**
+   * 获取线程 ID
+   * @returns 线程 ID
+   */
+  getThreadId(): ID {
+    return this.threadId;
   }
 
   /**
@@ -64,8 +91,14 @@ export class TriggerStateManager {
     if (!state.threadId) {
       throw new Error('线程 ID 不能为空');
     }
+    if (!state.workflowId) {
+      throw new Error('工作流 ID 不能为空');
+    }
     if (state.threadId !== this.threadId) {
       throw new Error(`线程 ID 不匹配：期望 ${this.threadId}，实际 ${state.threadId}`);
+    }
+    if (this.workflowId && state.workflowId !== this.workflowId) {
+      throw new Error(`工作流 ID 不匹配：期望 ${this.workflowId}，实际 ${state.workflowId}`);
     }
 
     // 检查是否已存在
@@ -128,6 +161,7 @@ export class TriggerStateManager {
       snapshot.set(triggerId, {
         triggerId: state.triggerId,
         threadId: state.threadId,
+        workflowId: state.workflowId,
         status: state.status,
         triggerCount: state.triggerCount,
         updatedAt: state.updatedAt
@@ -155,6 +189,7 @@ export class TriggerStateManager {
       this.states.set(triggerId, {
         triggerId: state.triggerId,
         threadId: state.threadId,
+        workflowId: state.workflowId,
         status: state.status,
         triggerCount: state.triggerCount,
         updatedAt: state.updatedAt
@@ -200,14 +235,6 @@ export class TriggerStateManager {
    */
   clear(): void {
     this.states.clear();
-  }
-
-  /**
-   * 获取线程 ID
-   * @returns 线程 ID
-   */
-  getThreadId(): ID {
-    return this.threadId;
   }
 
   /**
