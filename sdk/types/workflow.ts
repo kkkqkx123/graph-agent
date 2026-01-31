@@ -9,6 +9,7 @@ import type { Edge } from './edge';
 import type { ID, Timestamp, Version, Metadata } from './common';
 import type { GraphAnalysisResult, Graph } from './graph';
 import type { WorkflowTrigger } from './trigger';
+import type { VariableScope } from './thread';
 
 /**
  * 工作流状态枚举
@@ -104,7 +105,7 @@ export interface WorkflowVariable {
   /** 是否只读 */
   readonly?: boolean;
   /** 变量作用域 */
-  scope?: 'local' | 'global';
+  scope?: VariableScope;
 }
 
 /**

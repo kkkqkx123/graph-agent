@@ -23,7 +23,7 @@ const workflowVariableSchema = z.object({
   description: z.string().optional(),
   required: z.boolean().optional(),
   readonly: z.boolean().optional(),
-  scope: z.enum(['local', 'global']).optional()
+  scope: z.enum(['global', 'thread', 'subgraph', 'loop']).optional()
 });
 
 /**

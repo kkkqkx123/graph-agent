@@ -54,6 +54,11 @@ function clearLoopState(thread: Thread, loopId: string): void {
   if (thread.variableValues) {
     delete thread.variableValues[`__loop_${loopId}`];
   }
+  
+  // 退出循环作用域
+  if (thread.variableScopes && thread.variableScopes.loop.length > 0) {
+    thread.variableScopes.loop.pop();
+  }
 }
 
 /**
@@ -179,7 +184,7 @@ export async function loopEndHandler(thread: Thread, node: Node): Promise<any> {
   if (shouldContinue) {
     updateLoopState(loopState);
   } else {
-    // 循环结束，清理循环状态
+    // 循环结束，清理循环状态和作用域
     clearLoopState(thread, config.loopId);
   }
 

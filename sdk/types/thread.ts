@@ -31,6 +31,11 @@ export enum ThreadStatus {
 }
 
 /**
+ * 变量作用域类型
+ */
+export type VariableScope = 'global' | 'thread' | 'subgraph' | 'loop';
+
+/**
  * 线程变量类型
  */
 export interface ThreadVariable {
@@ -40,8 +45,8 @@ export interface ThreadVariable {
   value: any;
   /** 变量类型 */
   type: string;
-  /** 变量作用域（local、global） */
-  scope: 'local' | 'global';
+  /** 变量作用域 */
+  scope: VariableScope;
   /** 是否只读 */
   readonly: boolean;
   /** 变量元数据 */
@@ -162,10 +167,19 @@ export interface Thread {
   graph: Graph;
   /** 变量数组（用于持久化和元数据） */
   variables: ThreadVariable[];
-  /** 变量值映射（用于快速访问，仅包含 local 变量） */
+  /** 变量值映射（用于快速访问，仅包含 thread 作用域变量） */
   variableValues: Record<string, any>;
-  /** 全局变量值映射（用于快速访问，指向父线程或工作流级别的全局变量） */
-  globalVariableValues?: Record<string, any>;
+  /** 四级作用域变量存储 */
+  variableScopes: {
+    /** 全局作用域 - 多线程共享 */
+    global: Record<string, any>;
+    /** 线程作用域 - 单线程内部 */
+    thread: Record<string, any>;
+    /** 子图作用域栈 - 支持嵌套子图 */
+    subgraph: Record<string, any>[];
+    /** 循环作用域栈 - 支持嵌套循环 */
+    loop: Record<string, any>[];
+  };
   /**
    * 输入数据（作为特殊变量，可通过路径访问）
    *

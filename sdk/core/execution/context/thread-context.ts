@@ -14,7 +14,7 @@
  * - 直接依赖具体实现，不使用接口抽象
  */
 
-import type { Thread } from '../../../types';
+import type { Thread, VariableScope } from '../../../types';
 import type { ID } from '../../../types/common';
 import type { StatefulToolFactory } from '../../../types/tool';
 import { ConversationManager } from '../conversation';
@@ -212,9 +212,10 @@ export class ThreadContext {
    * 更新已定义变量的值
    * @param name 变量名称
    * @param value 新的变量值
+   * @param scope 显式指定作用域（可选）
    */
-  updateVariable(name: string, value: any): void {
-    this.variableManager.updateVariable(this, name, value);
+  updateVariable(name: string, value: any, scope?: VariableScope): void {
+    this.variableManager.updateVariable(this, name, value, scope);
   }
 
   /**
@@ -355,6 +356,9 @@ export class ThreadContext {
    * @param input 输入数据
    */
   enterSubgraph(workflowId: ID, parentWorkflowId: ID, input: any): void {
+    // 先创建新的子图作用域
+    this.variableManager.enterSubgraphScope(this);
+    // 再调用原有的执行状态管理
     this.executionState.enterSubgraph(workflowId, parentWorkflowId, input);
   }
 
@@ -362,7 +366,24 @@ export class ThreadContext {
    * 退出子图
    */
   exitSubgraph(): void {
+    // 先调用原有的执行状态管理
     this.executionState.exitSubgraph();
+    // 再退出子图作用域
+    this.variableManager.exitSubgraphScope(this);
+  }
+
+  /**
+   * 进入循环作用域
+   */
+  enterLoop(): void {
+    this.variableManager.enterLoopScope(this);
+  }
+
+  /**
+   * 退出循环作用域
+   */
+  exitLoop(): void {
+    this.variableManager.exitLoopScope(this);
   }
 
   /**

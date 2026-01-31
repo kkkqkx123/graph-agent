@@ -116,7 +116,7 @@ export interface VariableNodeConfig {
   /** 操作的表达式【直接用表达式覆盖相应变量】 */
   expression: string;
   /** 变量作用域 */
-  scope?: 'local' | 'global';
+  scope?: 'global' | 'thread' | 'subgraph' | 'loop';
   /** 是否只读 */
   readonly?: boolean;
 }

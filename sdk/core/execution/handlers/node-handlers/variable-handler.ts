@@ -39,12 +39,12 @@ function resolveVariableReferences(expression: string, thread: Thread): string {
     // 提取根变量名
     const rootVarName = varPath.split('.')[0];
     
-    // 首先尝试从 local 变量中获取
+    // 首先尝试从 thread 变量中获取
     let value: any = thread.variableValues?.[rootVarName];
     
-    // 如果第一部分在 local 变量中不存在，尝试从 global 变量中获取
-    if (value === undefined && thread.globalVariableValues) {
-      value = thread.globalVariableValues[rootVarName];
+    // 如果第一部分在 thread 变量中不存在，尝试从 global 变量中获取
+    if (value === undefined && thread.variableScopes) {
+      value = thread.variableScopes.global[rootVarName];
     }
 
     // 如果根变量不存在，返回 undefined
@@ -163,7 +163,7 @@ export async function variableHandler(thread: Thread, node: Node): Promise<any> 
       name: config.variableName,
       value: typedResult,
       type: config.variableType,
-      scope: config.scope || 'local',
+      scope: config.scope || 'thread',
       readonly: config.readonly || false
     });
   }

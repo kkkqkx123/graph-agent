@@ -15,7 +15,7 @@ const variableNodeConfigSchema = z.object({
   variableName: z.string().min(1, 'Variable name is required'),
   variableType: z.enum(['number', 'string', 'boolean', 'array', 'object']),
   expression: z.string().min(1, 'Expression is required'),
-  scope: z.enum(['local', 'global']).optional(),
+  scope: z.enum(['global', 'thread', 'subgraph', 'loop']).optional(),
   readonly: z.boolean().optional()
 });
 

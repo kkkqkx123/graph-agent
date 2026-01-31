@@ -111,7 +111,12 @@ export class ThreadBuilder {
       graph: threadGraphData,
       variables: [],
       variableValues: {},
-      globalVariableValues: {},
+      variableScopes: {
+        global: {},
+        thread: {},
+        subgraph: [],
+        loop: []
+      },
       input: options.input || {},
       output: {},
       nodeResults: [],
@@ -232,8 +237,13 @@ export class ThreadBuilder {
       currentNodeId: sourceThread.currentNodeId,
       variables: sourceThread.variables.map((v: any) => ({ ...v })),
       variableValues: { ...sourceThread.variableValues },
-      // global 变量也复制（深拷贝）
-      globalVariableValues: sourceThread.globalVariableValues ? { ...sourceThread.globalVariableValues } : undefined,
+      // 四级作用域：global 通过引用共享，thread 深拷贝，subgraph 和 loop 清空
+      variableScopes: {
+        global: sourceThread.variableScopes.global,
+        thread: { ...sourceThread.variableScopes.thread },
+        subgraph: [],
+        loop: []
+      },
       input: { ...sourceThread.input },
       output: { ...sourceThread.output },
       nodeResults: sourceThread.nodeResults.map((h: any) => ({ ...h })),
@@ -274,14 +284,14 @@ export class ThreadBuilder {
     const forkThreadId = generateId();
     const now = getCurrentTimestamp();
 
-    // 分离 local 和 global 变量
-    const localVariables: any[] = [];
-    const localVariableValues: Record<string, any> = {};
+    // 分离 thread 和 global 变量
+    const threadVariables: any[] = [];
+    const threadVariableValues: Record<string, any> = {};
 
     for (const variable of parentThread.variables) {
-      if (variable.scope === 'local') {
-        localVariables.push({ ...variable });
-        localVariableValues[variable.name] = variable.value;
+      if (variable.scope === 'thread') {
+        threadVariables.push({ ...variable });
+        threadVariableValues[variable.name] = variable.value;
       }
       // global 变量不复制到子线程，而是通过引用共享
     }
@@ -292,10 +302,15 @@ export class ThreadBuilder {
       workflowVersion: parentThread.workflowVersion,
       status: 'CREATED' as ThreadStatus,
       currentNodeId: forkConfig.startNodeId || parentThread.currentNodeId,
-      variables: localVariables,
-      variableValues: localVariableValues,
-      // global 变量使用引用（共享父线程的全局变量）
-      globalVariableValues: parentThread.globalVariableValues,
+      variables: threadVariables,
+      variableValues: threadVariableValues,
+      // 四级作用域：global 通过引用共享，thread 深拷贝，subgraph 和 loop 清空
+      variableScopes: {
+        global: parentThread.variableScopes.global,
+        thread: { ...parentThread.variableScopes.thread },
+        subgraph: [],
+        loop: []
+      },
       input: { ...parentThread.input },
       output: {},
       nodeResults: [],

@@ -150,13 +150,14 @@ function getCurrentValue(loopState: LoopState): any {
 }
 
 /**
- * 设置循环变量
+ * 设置循环变量到循环作用域
  */
 function setLoopVariable(thread: Thread, variableName: string, value: any): void {
-  if (!thread.variableValues) {
-    thread.variableValues = {};
+  // 循环作用域应该在 loopStartHandler 中通过 enterLoopScope() 创建
+  const currentLoopScope = thread.variableScopes.loop[thread.variableScopes.loop.length - 1];
+  if (currentLoopScope) {
+    currentLoopScope[variableName] = value;
   }
-  thread.variableValues[variableName] = value;
 }
 
 /**
@@ -195,6 +196,17 @@ export async function loopStartHandler(thread: Thread, node: Node): Promise<any>
     // 第一次执行，初始化循环状态
     loopState = initializeLoopState(config, variableName);
     setLoopState(thread, loopState);
+    
+    // 进入新的循环作用域
+    if (!thread.variableScopes) {
+      thread.variableScopes = {
+        global: {},
+        thread: {},
+        subgraph: [],
+        loop: []
+      };
+    }
+    thread.variableScopes.loop.push({});
   }
 
   // 检查循环条件
@@ -203,6 +215,11 @@ export async function loopStartHandler(thread: Thread, node: Node): Promise<any>
   if (!shouldContinue) {
     // 循环结束，清理循环状态
     clearLoopState(thread, config.loopId);
+    
+    // 退出循环作用域
+    if (thread.variableScopes && thread.variableScopes.loop.length > 0) {
+      thread.variableScopes.loop.pop();
+    }
 
     return {
       loopId: config.loopId,
@@ -215,7 +232,7 @@ export async function loopStartHandler(thread: Thread, node: Node): Promise<any>
   // 获取当前迭代值
   const currentValue = getCurrentValue(loopState);
 
-  // 设置循环变量
+  // 设置循环变量到循环作用域
   setLoopVariable(thread, variableName, currentValue);
 
   // 更新循环状态
