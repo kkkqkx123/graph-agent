@@ -12,7 +12,7 @@ import type {
   LLMProfile
 } from '../../types/llm';
 import { SDKError, ErrorCode, LLMError } from '../../types/errors';
-import { HttpClient } from '../http';
+import { HttpClient, SseTransport } from '../http';
 import { initialVersion } from '../../utils';
 
 /**
@@ -187,51 +187,26 @@ export abstract class BaseLLMClient implements LLMClient {
       query?: Record<string, string | number | boolean>;
     }
   ): AsyncIterable<LLMResult> {
-    const fullUrl = this.buildFullUrl(url, options?.query);
-    const headers = { ...options?.headers };
+    // 创建SseTransport实例
+    const transport = new SseTransport(
+      this.profile.baseUrl,
+      options?.headers
+    );
 
-    const response = await fetch(fullUrl, {
+    // 使用SseTransport执行流式请求
+    const stream = transport.executeStream(url, {
+      query: options?.query,
       method: 'POST',
-      headers,
-      body: JSON.stringify(body),
+      body: body
     });
 
-    if (!response.ok) {
-      const error = await response.text();
-      throw new Error(`HTTP ${response.status}: ${error}`);
-    }
-
-    const reader = response.body?.getReader();
-    if (!reader) {
-      throw new Error('Response body is not readable');
-    }
-
-    const decoder = new TextDecoder();
-    let buffer = '';
-
-    try {
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-
-        buffer += decoder.decode(value, { stream: true });
-        const lines = buffer.split('\n');
-        buffer = lines.pop() || '';
-
-        for (const line of lines) {
-          const trimmedLine = line.trim();
-          if (!trimmedLine) {
-            continue;
-          }
-
-          const chunk = this.parseStreamLine(trimmedLine);
-          if (chunk) {
-            yield chunk;
-          }
-        }
+    // 处理流式响应
+    for await (const chunk of stream) {
+      // 使用子类实现的parseStreamLine进行自定义解析
+      const result = this.parseStreamLine(chunk);
+      if (result) {
+        yield result;
       }
-    } finally {
-      reader.releaseLock();
     }
   }
 

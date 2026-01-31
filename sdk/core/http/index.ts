@@ -9,7 +9,6 @@ export { HttpClient } from './http-client';
 export {
   HttpTransport,
   SseTransport,
-  StdioTransport,
   Transport,
   TransportResponse,
   TransportOptions
