@@ -1,5 +1,5 @@
 /**
- * Hook处理器模块
+ * Hook处理器模块（简化版）
  * 提供通用的Hook执行函数
  * 执行时机由上层有状态模块（如ThreadExecutor）管理
  */
@@ -9,8 +9,18 @@ import { HookType } from '../../../../types/node';
 import type { Thread } from '../../../../types/thread';
 import type { NodeExecutionResult } from '../../../../types/thread';
 import type { NodeCustomEvent } from '../../../../types/events';
-import { getHookHandler } from './index';
-import type { HookExecutionContext } from './index';
+
+/**
+ * Hook执行上下文接口
+ */
+export interface HookExecutionContext {
+  /** Thread实例 */
+  thread: Thread;
+  /** 节点定义 */
+  node: Node;
+  /** 节点执行结果（AFTER_EXECUTE时可用） */
+  result?: NodeExecutionResult;
+}
 
 /**
  * 执行指定类型的Hook
@@ -52,16 +62,68 @@ async function executeSingleHook(
   emitEvent: (event: NodeCustomEvent) => Promise<void>
 ): Promise<void> {
   try {
-    // 获取对应的Hook处理器
-    const handler = getHookHandler(hook.hookName);
-    
-    // 执行Hook处理器
-    await handler(context, hook, emitEvent);
+    const { conditionEvaluator } = await import('../../../../utils/evalutor/condition-evaluator');
+    const {
+      buildHookEvaluationContext,
+      convertToEvaluationContext,
+      generateHookEventData,
+      emitHookEvent
+    } = await import('./utils');
+
+    // 构建评估上下文
+    const evalContext = buildHookEvaluationContext(context);
+
+    // 评估触发条件（如果有）
+    if (hook.condition) {
+      let result: boolean;
+      try {
+        result = conditionEvaluator.evaluate(
+          { expression: hook.condition },
+          convertToEvaluationContext(evalContext)
+        );
+      } catch (error) {
+        console.warn(
+          `Hook condition evaluation failed for event "${hook.eventName}" on node "${context.node.id}":`,
+          error
+        );
+        return;
+      }
+
+      if (!result) {
+        return;
+      }
+    }
+
+    // 生成事件载荷
+    const eventData = generateHookEventData(hook, evalContext);
+
+    // 如果eventPayload中有handler，执行自定义处理函数
+    const customHandler = hook.eventPayload?.['handler'];
+    if (customHandler && typeof customHandler === 'function') {
+      try {
+        await customHandler(context, hook, eventData);
+      } catch (error) {
+        console.error(
+          `Custom handler execution failed for event "${hook.eventName}" on node "${context.node.id}":`,
+          error
+        );
+      }
+    }
+
+    // 触发自定义事件
+    await emitHookEvent(context, hook.eventName, eventData, emitEvent);
+
+    console.log(
+      `Hook triggered for event "${hook.eventName}" on node "${context.node.id}"`
+    );
   } catch (error) {
     // Hook执行失败不应影响节点正常执行，记录错误日志
     console.error(
-      `Hook execution failed for hook "${hook.hookName}" on node "${context.node.id}":`,
+      `Hook execution failed for event "${hook.eventName}" on node "${context.node.id}":`,
       error
     );
   }
 }
+
+// 导出工具函数
+export * from './utils';

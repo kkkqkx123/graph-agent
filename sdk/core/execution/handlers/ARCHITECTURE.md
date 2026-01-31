@@ -38,23 +38,29 @@ export const nodeHandlers: Record<NodeType, NodeHandler> = {
 ### 2. Hook Handlers（Hook处理器）
 
 **特点**：
-- Hook名称是**固定的**，由[`HookName`](../../types/node.ts)枚举定义
-- 处理器是**静态的**，每个Hook名称对应一个固定的处理器
-- **不需要运行时注册**，因为Hook名称是编译时确定的
+- 使用**统一的处理器**，所有Hook共享同一个执行逻辑
+- 通过`eventPayload`传递配置和自定义逻辑
+- **不需要运行时注册**，使用简化的架构
 
 **设计决策**：
-- ❌ 不需要注册机制
-- ✅ 使用静态Map映射
-- ✅ 在模块加载时完成映射
-- ❌ 不支持运行时扩展新的Hook类型
+- ❌ 不需要Hook类型分类
+- ✅ 使用统一处理器
+- ✅ 通过eventPayload实现灵活性
+- ✅ 支持自定义处理函数
 
 **实现**：
 ```typescript
-export const hookHandlers: Record<HookName, HookHandler> = {
-  [HookName.CUSTOM]: customHookHandler,
-  [HookName.NOTIFICATION]: notificationHookHandler,
-  [HookName.VALIDATION]: validationHookHandler
-} as Record<HookName, HookHandler>;
+// 统一的Hook处理器
+async function executeSingleHook(
+  context: HookExecutionContext,
+  hook: NodeHook,
+  emitEvent: (event: NodeCustomEvent) => Promise<void>
+): Promise<void> {
+  // 1. 评估触发条件
+  // 2. 生成事件载荷
+  // 3. 执行自定义处理函数（如果有）
+  // 4. 触发事件
+}
 ```
 
 **使用场景**：
@@ -65,9 +71,11 @@ const node: Node = {
   type: NodeType.LLM,
   hooks: [
     {
-      hookName: HookName.NOTIFICATION,  // 固定的Hook名称
       hookType: HookType.AFTER_EXECUTE,
-      eventName: 'node.completed'
+      eventName: 'node.completed',
+      eventPayload: {
+        message: '节点执行完成'
+      }
     }
   ]
 };
@@ -194,18 +202,14 @@ export const nodeHandlers: Record<NodeType, NodeHandler> = {
 ### HookHandler（无注册）
 
 ```typescript
-export type HookHandler = (
+// Hook处理器（简化版）
+export async function executeHook(
   context: HookExecutionContext,
-  hook: NodeHook,
+  hookType: HookType,
   emitEvent: (event: NodeCustomEvent) => Promise<void>
-) => Promise<void>;
-
-// 使用静态映射
-export const hookHandlers: Record<HookName, HookHandler> = {
-  [HookName.CUSTOM]: customHookHandler,
-  [HookName.NOTIFICATION]: notificationHookHandler,
-  [HookName.VALIDATION]: validationHookHandler
-};
+): Promise<void> {
+  // 筛选并执行所有符合条件的Hook
+}
 ```
 
 ### TriggerHandlerRegistry（有注册）
@@ -279,15 +283,15 @@ interface WorkflowDefinition {
 
 | 特性 | Node Handlers | Hook Handlers | Trigger Handlers |
 |------|--------------|---------------|------------------|
-| 类型定义 | SDK固定（NodeType枚举） | SDK固定（HookName枚举） | 用户可扩展 |
+| 类型定义 | SDK固定（NodeType枚举） | 简化（无HookName枚举） | 用户可扩展 |
 | 注册机制 | ❌ 不需要 | ❌ 不需要 | ✅ 需要 |
-| 运行时扩展 | ❌ 不支持 | ❌ 不支持 | ✅ 支持 |
+| 运行时扩展 | ❌ 不支持 | ✅ 通过eventPayload支持 | ✅ 支持 |
 | 与Workflow集成 | ✅ 已集成 | ✅ 已集成 | ⚠️ 建议集成 |
 | 静态检查 | ✅ 完整 | ✅ 完整 | ⚠️ 需要改进 |
-| 接口类型 | NodeHandler | HookHandler | TriggerHandlerRegistry |
+| 接口类型 | NodeHandler | 统一处理器 | TriggerHandlerRegistry |
 
 **设计原则**：
-1. **固定类型使用静态映射**：如Node类型、Hook类型
+1. **固定类型使用静态映射**：如Node类型
 2. **可扩展类型使用注册机制**：如Trigger
 3. **与workflow紧密集成的组件应该在workflow中定义**：如Node、Hook、Trigger
 4. **提供完整的静态检查**：确保类型安全和可维护性

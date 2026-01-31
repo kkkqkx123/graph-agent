@@ -12,7 +12,6 @@ import { ValidationError } from '../../../types/errors';
  * Hook配置schema
  */
 const hookSchema = z.object({
-  hookName: z.string().min(1, 'Hook name is required'),
   hookType: z.nativeEnum(HookType),
   enabled: z.boolean().optional(),
   weight: z.number().optional(),

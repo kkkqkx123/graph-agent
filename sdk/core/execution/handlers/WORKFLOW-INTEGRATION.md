@@ -133,11 +133,10 @@ const node: Node = {
   type: NodeType.LLM,
   hooks: [
     {
-      hookName: 'notification',  // TypeScript会检查hookName是否有效
       hookType: HookType.AFTER_EXECUTE,
       eventName: 'node.completed',
       eventPayload: {
-        notificationType: 'email'  // TypeScript会检查payload结构
+        notificationType: 'email'
       }
     }
   ]
@@ -252,7 +251,6 @@ const workflow: WorkflowDefinition = {
       name: 'Validate Order',
       hooks: [
         {
-          hookName: 'validation',
           hookType: HookType.BEFORE_EXECUTE,
           eventName: 'order.validate',
           eventPayload: {
@@ -265,7 +263,6 @@ const workflow: WorkflowDefinition = {
           }
         },
         {
-          hookName: 'notification',
           hookType: HookType.AFTER_EXECUTE,
           eventName: 'order.validated',
           condition: 'output.valid === true',

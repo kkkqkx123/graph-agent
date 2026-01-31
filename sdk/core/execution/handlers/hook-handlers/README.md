@@ -1,8 +1,8 @@
-# Hook处理器模块
+# Hook处理器模块（简化版）
 
 ## 概述
 
-Hook处理器模块提供统一的Hook执行接口和注册机制，支持在节点执行前后触发自定义逻辑。模块采用插件化架构，通过注册机制支持扩展不同类型的Hook处理器。
+Hook处理器模块提供统一的Hook执行接口，支持在节点执行前后触发自定义逻辑。模块采用简化架构，所有Hook使用统一的处理器，复杂操作通过eventPayload传递。
 
 ## 架构设计
 
@@ -10,11 +10,8 @@ Hook处理器模块提供统一的Hook执行接口和注册机制，支持在节
 
 ```
 hook-handlers/
-├── index.ts                    # 统一导出和注册管理
-├── hook-handler.ts             # 主执行逻辑
-├── custom-hook-handler.ts      # 自定义Hook处理器
-├── notification-hook-handler.ts # 通知类Hook处理器
-├── validation-hook-handler.ts  # 验证类Hook处理器
+├── index.ts                    # 统一导出
+├── hook-handler.ts             # 主执行逻辑（统一处理器）
 └── utils/                      # 工具函数
     ├── context-builder.ts      # 上下文构建
     ├── event-emitter.ts        # 事件发射
@@ -24,27 +21,20 @@ hook-handlers/
 
 ### 核心组件
 
-#### 1. Hook处理器接口
+#### 1. Hook执行上下文
 
 ```typescript
-export type HookHandler = (
-  context: HookExecutionContext,
-  hook: NodeHook,
-  emitEvent: (event: NodeCustomEvent) => Promise<void>
-) => Promise<void>;
+export interface HookExecutionContext {
+  /** Thread实例 */
+  thread: Thread;
+  /** 节点定义 */
+  node: Node;
+  /** 节点执行结果（AFTER_EXECUTE时可用） */
+  result?: NodeExecutionResult;
+}
 ```
 
-#### 2. 注册机制
-
-```typescript
-// 注册Hook处理器
-registerHookHandler(hookName: string, handler: HookHandler): void
-
-// 获取Hook处理器
-getHookHandler(hookName: string): HookHandler
-```
-
-#### 3. 主执行函数
+#### 2. 主执行函数
 
 ```typescript
 executeHook(
@@ -54,65 +44,24 @@ executeHook(
 ): Promise<void>
 ```
 
-## 内置Hook处理器
+## Hook配置
 
-### 1. 默认处理器 (default)
-
-执行标准的Hook逻辑：
-- 条件评估
-- 事件载荷生成
-- 事件触发
-
-### 2. 自定义处理器 (custom)
-
-支持通过`eventPayload.handler`参数传入自定义处理函数：
+### NodeHook接口
 
 ```typescript
-{
-  hookName: 'custom',
-  hookType: HookType.AFTER_EXECUTE,
-  eventName: 'custom.event',
-  eventPayload: {
-    handler: async (context, hook) => {
-      // 自定义逻辑
-    }
-  }
-}
-```
-
-### 3. 通知处理器 (notification)
-
-专门用于处理通知相关的Hook，支持通知类型和优先级：
-
-```typescript
-{
-  hookName: 'notification',
-  hookType: HookType.AFTER_EXECUTE,
-  eventName: 'notification.send',
-  eventPayload: {
-    notificationType: 'email',
-    priority: 'high'
-  }
-}
-```
-
-### 4. 验证处理器 (validation)
-
-支持数据验证和权限检查：
-
-```typescript
-{
-  hookName: 'validation',
-  hookType: HookType.BEFORE_EXECUTE,
-  eventName: 'validation.check',
-  eventPayload: {
-    validationRules: [
-      {
-        expression: 'output.result > 0',
-        message: '结果必须大于0'
-      }
-    ]
-  }
+export interface NodeHook {
+  /** Hook类型 */
+  hookType: HookType;
+  /** 触发条件表达式（可选） */
+  condition?: string;
+  /** 要触发的自定义事件名称 */
+  eventName: string;
+  /** 事件载荷生成逻辑（可选） */
+  eventPayload?: Record<string, any>;
+  /** 是否启用（默认true） */
+  enabled?: boolean;
+  /** 权重（数字越大优先级越高） */
+  weight?: number;
 }
 ```
 
@@ -145,27 +94,6 @@ await executeHook(
 );
 ```
 
-### 注册自定义Hook处理器
-
-```typescript
-import { registerHookHandler } from './handlers/hook-handlers';
-
-async function myCustomHandler(
-  context: HookExecutionContext,
-  hook: NodeHook,
-  emitEvent: (event: NodeCustomEvent) => Promise<void>
-): Promise<void> {
-  // 自定义逻辑
-  console.log(`Executing custom hook: ${hook.hookName}`);
-  
-  // 触发事件
-  await emitHookEvent(context, hook.eventName, { customData: 'value' }, emitEvent);
-}
-
-// 注册处理器
-registerHookHandler('myCustom', myCustomHandler);
-```
-
 ### 在节点配置中使用Hook
 
 ```typescript
@@ -176,21 +104,19 @@ const node: Node = {
   config: { /* ... */ },
   hooks: [
     {
-      hookName: 'notification',
       hookType: HookType.AFTER_EXECUTE,
       eventName: 'node.completed',
       condition: 'output.status === "COMPLETED"',
       eventPayload: {
-        notificationType: 'email',
-        priority: 'normal'
+        message: '节点执行完成',
+        timestamp: '{{executionTime}}'
       },
       weight: 10,
       enabled: true
     },
     {
-      hookName: 'validation',
       hookType: HookType.BEFORE_EXECUTE,
-      eventName: 'node.validate',
+      eventName: 'validation.check',
       eventPayload: {
         validationRules: [
           {
@@ -204,6 +130,73 @@ const node: Node = {
     }
   ]
 };
+```
+
+### 通知Hook示例
+
+```typescript
+{
+  hookType: HookType.AFTER_EXECUTE,
+  eventName: 'notification.send',
+  condition: 'status === "COMPLETED"',
+  eventPayload: {
+    notificationType: 'email',
+    priority: 'high',
+    recipients: ['user@example.com'],
+    message: '节点执行完成，状态: {{status}}'
+  },
+  weight: 10,
+  enabled: true
+}
+```
+
+### 验证Hook示例
+
+```typescript
+{
+  hookType: HookType.BEFORE_EXECUTE,
+  eventName: 'validation.check',
+  eventPayload: {
+    validationRules: [
+      {
+        expression: 'variables.userId != null',
+        message: '用户ID不能为空'
+      },
+      {
+        expression: 'variables.amount > 0',
+        message: '金额必须大于0'
+      }
+    ],
+    blockOnFailure: true
+  },
+  weight: 20,
+  enabled: true
+}
+```
+
+### 自定义Hook示例
+
+```typescript
+{
+  hookType: HookType.AFTER_EXECUTE,
+  eventName: 'custom.analytics',
+  eventPayload: {
+    handler: async (context, hook, eventData) => {
+      // 自定义逻辑：发送到分析系统
+      await sendToAnalytics({
+        nodeId: context.node.id,
+        status: eventData.status,
+        executionTime: eventData.executionTime
+      });
+    },
+    metrics: {
+      trackPerformance: true,
+      trackErrors: true
+    }
+  },
+  weight: 5,
+  enabled: true
+}
 ```
 
 ## 工具函数
@@ -243,42 +236,65 @@ await emitHookEvent(context, eventName, eventData, emitEvent);
 1. **筛选Hook**: 根据Hook类型和enabled状态筛选符合条件的Hook
 2. **排序**: 按权重排序（权重高的先执行）
 3. **并行执行**: 异步执行所有Hook，不阻塞节点执行
-4. **获取处理器**: 根据hookName获取对应的处理器
-5. **执行处理器**: 调用处理器执行Hook逻辑
-6. **错误隔离**: Hook执行失败不影响节点正常执行
+4. **条件评估**: 评估Hook的触发条件（如果有）
+5. **载荷生成**: 生成事件载荷数据
+6. **自定义处理**: 执行eventPayload中的handler函数（如果有）
+7. **事件触发**: 触发自定义事件
+8. **错误隔离**: Hook执行失败不影响节点正常执行
 
-## 扩展指南
+## eventPayload详解
 
-### 创建新的Hook处理器
+### 1. 事件数据模板
 
-1. 创建新的处理器文件（如`logging-hook-handler.ts`）
-2. 实现HookHandler接口
-3. 使用`registerHookHandler`注册处理器
-4. 在`index.ts`中导出
-
-示例：
+eventPayload可以用作事件数据模板，支持模板变量替换：
 
 ```typescript
-// logging-hook-handler.ts
-import type { NodeHook } from '../../../../types/node';
-import type { HookExecutionContext } from './hook-handler';
-import type { NodeCustomEvent } from '../../../../types/events';
-import { registerHookHandler } from './index';
-
-async function loggingHookHandler(
-  context: HookExecutionContext,
-  hook: NodeHook,
-  emitEvent: (event: NodeCustomEvent) => Promise<void>
-): Promise<void> {
-  // 日志记录逻辑
-  console.log(`[Hook] ${hook.hookName} executed at ${new Date().toISOString()}`);
-  
-  // 触发事件
-  await emitHookEvent(context, hook.eventName, { timestamp: Date.now() }, emitEvent);
+{
+  hookType: HookType.AFTER_EXECUTE,
+  eventName: 'node.completed',
+  eventPayload: {
+    message: '节点 {{node.id}} 执行完成',
+    status: '{{status}}',
+    executionTime: '{{executionTime}}ms',
+    result: '{{output.result}}'
+  }
 }
+```
 
-registerHookHandler('logging', loggingHookHandler);
-export { loggingHookHandler };
+### 2. 自定义处理函数
+
+eventPayload可以包含自定义处理函数：
+
+```typescript
+{
+  hookType: HookType.AFTER_EXECUTE,
+  eventName: 'custom.process',
+  eventPayload: {
+    handler: async (context, hook, eventData) => {
+      // 自定义逻辑
+      console.log('Processing hook:', hook.eventName);
+      console.log('Event data:', eventData);
+    }
+  }
+}
+```
+
+### 3. 混合使用
+
+可以同时使用模板和自定义处理函数：
+
+```typescript
+{
+  hookType: HookType.AFTER_EXECUTE,
+  eventName: 'custom.complex',
+  eventPayload: {
+    message: '状态: {{status}}',
+    handler: async (context, hook, eventData) => {
+      // 使用生成的事件数据
+      await sendToExternalService(eventData);
+    }
+  }
+}
 ```
 
 ## 注意事项
@@ -288,6 +304,7 @@ export { loggingHookHandler };
 3. **条件评估**: Hook支持条件表达式，只有条件满足时才会触发
 4. **权重排序**: 支持通过weight参数控制Hook执行顺序
 5. **事件载荷**: 支持自定义事件载荷，可以使用模板变量
+6. **自定义处理**: 支持通过eventPayload.handler传入自定义处理函数
 
 ## 与Trigger处理器的对比
 
@@ -296,19 +313,33 @@ export { loggingHookHandler };
 | 触发时机 | 节点执行前后 | 触发器条件满足时 |
 | 执行方式 | 异步并行 | 同步执行 |
 | 错误处理 | 隔离，不影响主流程 | 返回执行结果 |
-| 注册机制 | 按hookName注册 | 按actionType注册 |
-| 文件组织 | 按Hook类型拆分 | 按动作类型拆分 |
+| 文件组织 | 统一处理器 | 按动作类型拆分 |
+| 灵活性 | 高（通过eventPayload） | 中（通过actionType） |
 
 ## 迁移指南
 
-如果你之前直接从`hook-handler.ts`导入，现在需要从`index.ts`导入：
+如果你之前使用了hookName属性，现在需要删除它：
 
 ```typescript
 // 旧方式
-import { executeHook } from './handlers/hook-handlers/hook-handler';
+{
+  hookName: 'notification',
+  hookType: HookType.AFTER_EXECUTE,
+  eventName: 'notification.send',
+  eventPayload: { /* ... */ }
+}
 
 // 新方式
-import { executeHook } from './handlers/hook-handlers';
+{
+  hookType: HookType.AFTER_EXECUTE,
+  eventName: 'notification.send',
+  eventPayload: { /* ... */ }
+}
 ```
 
-所有导出的API保持不变，确保向后兼容。
+## 设计原则
+
+1. **简化架构**: 删除不必要的Hook类型分类，统一使用一个处理器
+2. **灵活性优先**: 通过eventPayload传递所有复杂配置
+3. **向后兼容**: 保留所有核心功能，只是简化了实现
+4. **易于扩展**: 用户可以通过eventPayload.handler实现任意自定义逻辑

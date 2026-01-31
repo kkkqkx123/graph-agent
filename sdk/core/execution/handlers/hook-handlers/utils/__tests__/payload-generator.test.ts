@@ -9,7 +9,7 @@ import {
   getVariableValue
 } from '../payload-generator';
 import type { NodeHook } from '../../../../../../types/node';
-import { HookName, HookType } from '../../../../../../types/node';
+import { HookType } from '../../../../../../types/node';
 import type { HookEvaluationContext } from '../context-builder';
 
 describe('payload-generator', () => {
@@ -29,7 +29,6 @@ describe('payload-generator', () => {
 
     it('应该使用默认事件数据当没有配置eventPayload', () => {
       const hook: NodeHook = {
-        hookName: HookName.CUSTOM,
         hookType: HookType.AFTER_EXECUTE,
         eventName: 'test-event',
         enabled: true,
@@ -56,7 +55,6 @@ describe('payload-generator', () => {
       };
 
       const hook: NodeHook = {
-        hookName: HookName.CUSTOM,
         hookType: HookType.AFTER_EXECUTE,
         eventName: 'test-event',
         enabled: true,
@@ -71,7 +69,6 @@ describe('payload-generator', () => {
 
     it('应该解析eventPayload中的模板变量', () => {
       const hook: NodeHook = {
-        hookName: HookName.CUSTOM,
         hookType: HookType.AFTER_EXECUTE,
         eventName: 'test-event',
         enabled: true,
@@ -104,7 +101,6 @@ describe('payload-generator', () => {
       };
 
       const hook: NodeHook = {
-        hookName: HookName.CUSTOM,
         hookType: HookType.AFTER_EXECUTE,
         eventName: 'test-event',
         enabled: true,
