@@ -6,6 +6,7 @@
 import { ThreadStatus } from './thread';
 import type { NodeExecutionResult } from './thread';
 import type { ID, Timestamp, Metadata } from './common';
+import type { TriggerRuntimeState } from '../core/execution/managers/trigger-state-manager';
 
 /**
  * 线程状态快照类型
@@ -17,6 +18,17 @@ export interface ThreadStateSnapshot {
   currentNodeId: ID;
   /** 变量数组 */
   variables: any[];
+  /** 变量作用域快照（用于恢复运行时状态） */
+  variableScopes: {
+    /** 全局作用域变量值 */
+    global: Record<string, any>;
+    /** 线程作用域变量值 */
+    thread: Record<string, any>;
+    /** 子图作用域变量值栈 */
+    subgraph: Record<string, any>[];
+    /** 循环作用域变量值栈 */
+    loop: Record<string, any>[];
+  };
   /** 输入数据 */
   input: Record<string, any>;
   /** 输出数据 */
@@ -29,6 +41,8 @@ export interface ThreadStateSnapshot {
   errors: any[];
   /** 对话历史记录（用于恢复 ConversationManager） */
   conversationHistory?: any[];
+  /** 触发器状态快照（用于恢复 TriggerStateManager） */
+  triggerStates?: Map<ID, TriggerRuntimeState>;
 }
 
 /**

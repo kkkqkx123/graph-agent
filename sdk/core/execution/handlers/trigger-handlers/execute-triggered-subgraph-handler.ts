@@ -11,7 +11,7 @@ import { executeSingleTriggeredSubgraph, type TriggeredSubgraphTask } from '../t
 import { EventCoordinator } from '../../coordinators/event-coordinator';
 import { eventManager } from '../../../services/event-manager';
 import { ThreadExecutor } from '../../thread-executor';
-import { VariableAccessor } from '../../managers/variable-accessor';
+import { VariableAccessor } from '../../coordinators/utils/variable-accessor';
 
 /**
  * 创建成功结果

@@ -22,7 +22,7 @@ export { ThreadLifecycleManager } from './thread-lifecycle-manager';
 export { ThreadRegistry } from '../services/thread-registry';
 
 // 变量管理器
-export { VariableManager } from './managers/variable-manager';
+export { VariableManager } from './coordinators/variable-coordinator';
 
 // Thread协调器
 export { ThreadCoordinator } from './thread-coordinator';
@@ -38,7 +38,7 @@ export {
 } from './thread-operations/thread-operations';
 
 // 触发器管理器
-export { TriggerManager } from './managers/trigger-manager';
+export { TriggerCoordinator as TriggerManager } from './coordinators/trigger-coordinator';
 
 // LLM执行相关
 export { ConversationManager } from './conversation';

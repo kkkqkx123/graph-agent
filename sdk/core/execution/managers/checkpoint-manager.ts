@@ -1,22 +1,27 @@
 /**
  * CheckpointManager - 检查点管理器
  * 负责创建和管理检查点，支持从检查点恢复 ThreadContext 状态
- *
- * 使用 ExecutionContext 获取全局组件
+ * 
+ * 职责：
+ * - 创建检查点（快照线程状态）
+ * - 恢复检查点（从快照恢复线程状态）
+ * - 管理检查点存储（CRUD 操作）
+ * 
+ * 设计原则：
+ * - 无状态设计：不维护定时器等可变状态
+ * - 定时触发由上层应用层负责
+ * - 支持多种触发方式（手动、事件驱动、定时等）
  */
 
 import type { Thread } from '../../../types/thread';
 import type { Checkpoint, CheckpointMetadata, ThreadStateSnapshot } from '../../../types/checkpoint';
 import type { CheckpointStorage, CheckpointStorageMetadata } from '../../../types/checkpoint-storage';
-import type { CheckpointCreatedEvent } from '../../../types/events';
-import { EventType } from '../../../types/events';
 import type { ThreadRegistry } from '../../services/thread-registry';
 import { ThreadContext } from '../context/thread-context';
-import { VariableManager } from './variable-manager';
+import { VariableManager } from '../coordinators/variable-coordinator';
 import { ConversationManager } from '../conversation';
 import { generateId, now as getCurrentTimestamp } from '../../../utils';
 import { type WorkflowRegistry } from '../../services/workflow-registry';
-import { ExecutionContext } from '../context/execution-context';
 import { MemoryCheckpointStorage } from '../../storage/memory-checkpoint-storage';
 
 /**
@@ -27,26 +32,25 @@ export class CheckpointManager {
   private threadRegistry: ThreadRegistry;
   private variableManager: VariableManager;
   private workflowRegistry: WorkflowRegistry;
-  private executionContext: ExecutionContext;
-  private periodicTimers: Map<string, NodeJS.Timeout> = new Map();
 
   /**
    * 构造函数
    * @param storage 存储实现，默认使用 MemoryCheckpointStorage
-   * @param threadRegistry Thread注册表（可选，默认使用默认上下文）
-   * @param workflowRegistry Workflow注册器（可选，默认使用默认上下文）
-   * @param executionContext 执行上下文（可选）
+   * @param threadRegistry Thread注册表
+   * @param workflowRegistry Workflow注册器
    */
   constructor(
     storage?: CheckpointStorage,
     threadRegistry?: ThreadRegistry,
-    workflowRegistry?: WorkflowRegistry,
-    executionContext?: ExecutionContext
+    workflowRegistry?: WorkflowRegistry
   ) {
+    if (!threadRegistry || !workflowRegistry) {
+      throw new Error('CheckpointManager requires threadRegistry and workflowRegistry');
+    }
+
     this.storage = storage || new MemoryCheckpointStorage();
-    this.executionContext = executionContext || ExecutionContext.createDefault();
-    this.threadRegistry = threadRegistry || this.executionContext.getThreadRegistry();
-    this.workflowRegistry = workflowRegistry || this.executionContext.getWorkflowRegistry();
+    this.threadRegistry = threadRegistry;
+    this.workflowRegistry = workflowRegistry;
     this.variableManager = new VariableManager();
   }
 
@@ -66,6 +70,9 @@ export class CheckpointManager {
     const thread = threadContext.thread;
 
     // 步骤2：提取 ThreadStateSnapshot
+    // 使用 VariableManager 创建变量快照
+    const variableSnapshot = this.variableManager.createVariableSnapshot(thread);
+
     // 将 nodeResults 数组转换为 Record 格式
     const nodeResultsRecord: Record<string, any> = {};
     for (const result of thread.nodeResults) {
@@ -76,16 +83,21 @@ export class CheckpointManager {
     const conversationManager = threadContext.getConversationManager();
     const conversationHistory = conversationManager.getMessages();
 
+    // 获取触发器状态快照
+    const triggerStateSnapshot = threadContext.getTriggerStateSnapshot();
+
     const threadState: ThreadStateSnapshot = {
       status: thread.status,
       currentNodeId: thread.currentNodeId,
-      variables: thread.variables,
+      variables: variableSnapshot.variables,
+      variableScopes: variableSnapshot.variableScopes,
       input: thread.input,
       output: thread.output,
       nodeResults: nodeResultsRecord,
       executionHistory: [], // TODO: 从 Thread 中提取执行历史
       errors: thread.errors,
-      conversationHistory: conversationHistory.length > 0 ? conversationHistory : undefined // 保存对话历史
+      conversationHistory: conversationHistory.length > 0 ? conversationHistory : undefined, // 保存对话历史
+      triggerStates: triggerStateSnapshot.size > 0 ? triggerStateSnapshot : undefined // 保存触发器状态
     };
 
     // 步骤3：生成唯一 checkpointId 和 timestamp
@@ -111,19 +123,11 @@ export class CheckpointManager {
     // 步骤7：调用 CheckpointStorage 保存
     await this.storage.save(checkpointId, data, storageMetadata);
 
-    // 步骤8：触发 CHECKPOINT_CREATED 事件
-    const eventManager = this.executionContext.getEventManager();
-    const checkpointEvent: CheckpointCreatedEvent = {
-      type: EventType.CHECKPOINT_CREATED,
-      timestamp: getCurrentTimestamp(),
-      workflowId: threadContext.getWorkflowId(),
-      threadId: threadContext.getThreadId(),
-      checkpointId,
-      description: metadata?.description
-    };
-    await eventManager.emit(checkpointEvent);
+    // 触发 CHECKPOINT_CREATED 事件（由上层应用层负责）
+    // 事件触发已移至 CheckpointManagerAPI 或应用层
+    // CheckpointManager 保持无状态，不维护对 EventManager 的引用
 
-    // 步骤9：返回 checkpointId
+    // 步骤8：返回 checkpointId
     return checkpointId;
   }
 
@@ -161,8 +165,6 @@ export class CheckpointManager {
       workflowVersion: '1.0.0', // TODO: 从 checkpoint 元数据中获取版本
       status: checkpoint.threadState.status,
       currentNodeId: checkpoint.threadState.currentNodeId,
-      variables: checkpoint.threadState.variables,
-      variableValues: this.extractVariableValues(checkpoint.threadState.variables),
       input: checkpoint.threadState.input,
       output: checkpoint.threadState.output,
       nodeResults: nodeResultsArray,
@@ -171,17 +173,23 @@ export class CheckpointManager {
       metadata: checkpoint.metadata
     };
 
-    // 步骤5：创建 ConversationManager
+    // 步骤5：使用 VariableManager 恢复变量快照
+    this.variableManager.restoreVariableSnapshot(thread as Thread, {
+      variables: checkpoint.threadState.variables,
+      variableScopes: checkpoint.threadState.variableScopes
+    });
+
+    // 步骤6：创建 ConversationManager
     const conversationManager = new ConversationManager();
 
-    // 步骤6：恢复对话历史
+    // 步骤7：恢复对话历史
     if (checkpoint.threadState.conversationHistory) {
       for (const message of checkpoint.threadState.conversationHistory) {
         conversationManager.addMessage(message);
       }
     }
 
-    // 步骤7：创建 ThreadContext
+    // 步骤8：创建 ThreadContext
     const threadContext = new ThreadContext(
       thread as Thread,
       conversationManager,
@@ -189,21 +197,15 @@ export class CheckpointManager {
       this.workflowRegistry
     );
 
-    // 步骤8：注册到 ThreadRegistry
+    // 步骤9：恢复触发器状态
+    if (checkpoint.threadState.triggerStates) {
+      threadContext.restoreTriggerState(checkpoint.threadState.triggerStates);
+    }
+
+    // 步骤10：注册到 ThreadRegistry
     this.threadRegistry.register(threadContext);
 
     return threadContext;
-  }
-
-  /**
-   * 从变量数组提取变量值映射
-   */
-  private extractVariableValues(variables: any[]): Record<string, any> {
-    const variableValues: Record<string, any> = {};
-    for (const variable of variables) {
-      variableValues[variable.name] = variable.value;
-    }
-    return variableValues;
   }
 
   /**
@@ -256,43 +258,7 @@ export class CheckpointManager {
     await this.storage.delete(checkpointId);
   }
 
-  /**
-   * 创建定期检查点
-   * @param threadId 线程ID
-   * @param interval 间隔时间（毫秒）
-   * @param metadata 检查点元数据
-   * @returns 定时器ID
-   */
-  createPeriodicCheckpoint(threadId: string, interval: number, metadata?: CheckpointMetadata): string {
-    const timerId = generateId();
 
-    const timer = setInterval(async () => {
-      try {
-        await this.createCheckpoint(threadId, {
-          ...metadata,
-          description: `Periodic checkpoint at ${new Date().toISOString()}`
-        });
-      } catch (error) {
-        console.error(`Failed to create periodic checkpoint for thread ${threadId}:`, error);
-      }
-    }, interval);
-
-    this.periodicTimers.set(timerId, timer);
-
-    return timerId;
-  }
-
-  /**
-   * 取消定期检查点
-   * @param timerId 定时器ID
-   */
-  cancelPeriodicCheckpoint(timerId: string): void {
-    const timer = this.periodicTimers.get(timerId);
-    if (timer) {
-      clearInterval(timer);
-      this.periodicTimers.delete(timerId);
-    }
-  }
 
   /**
    * 创建节点级别检查点

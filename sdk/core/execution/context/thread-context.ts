@@ -18,8 +18,9 @@ import type { Thread, VariableScope } from '../../../types';
 import type { ID } from '../../../types/common';
 import type { StatefulToolFactory } from '../../../types/tool';
 import { ConversationManager } from '../conversation';
-import { VariableManager } from '../managers/variable-manager';
-import { TriggerManager } from '../managers/trigger-manager';
+import { VariableManager } from '../coordinators/variable-coordinator';
+import { TriggerCoordinator } from '../coordinators/trigger-coordinator';
+import { TriggerStateManager, type TriggerRuntimeState } from '../managers/trigger-state-manager';
 import { GraphNavigator } from '../../graph/graph-navigator';
 import { ExecutionState } from './execution-state';
 import type { ThreadRegistry } from '../../services/thread-registry';
@@ -45,9 +46,14 @@ export class ThreadContext {
   private readonly variableManager: VariableManager;
 
   /**
+   * 触发器状态管理器（每个 Thread 独立）
+   */
+  public readonly triggerStateManager: TriggerStateManager;
+
+  /**
    * 触发器管理器（每个 Thread 独立）
    */
-  public readonly triggerManager: TriggerManager;
+  public readonly triggerManager: TriggerCoordinator;
 
   /**
    * 图导航器（延迟创建）
@@ -91,7 +97,22 @@ export class ThreadContext {
     this.conversationManager = conversationManager;
     this.threadRegistry = threadRegistry;
     this.variableManager = new VariableManager();
-    this.triggerManager = new TriggerManager(threadRegistry, workflowRegistry);
+
+    // 初始化触发器状态管理器
+    this.triggerStateManager = new TriggerStateManager(thread.id);
+
+    // 初始化触发器管理器（传入状态管理器）
+    this.triggerManager = new TriggerCoordinator(
+      threadRegistry,
+      workflowRegistry!,
+      this.triggerStateManager
+    );
+
+    // 设置工作流 ID
+    if (workflowRegistry) {
+      this.triggerManager.setWorkflowId(thread.workflowId);
+    }
+
     this.executionState = new ExecutionState();
   }
 
@@ -465,5 +486,21 @@ export class ThreadContext {
       }
     }
     this.statefulTools.clear();
+  }
+
+  /**
+   * 获取触发器状态快照
+   * @returns 触发器状态快照
+   */
+  getTriggerStateSnapshot(): Map<ID, TriggerRuntimeState> {
+    return this.triggerStateManager.createSnapshot();
+  }
+
+  /**
+   * 恢复触发器状态
+   * @param snapshot 触发器状态快照
+   */
+  restoreTriggerState(snapshot: Map<ID, TriggerRuntimeState>): void {
+    this.triggerStateManager.restoreFromSnapshot(snapshot);
   }
 }

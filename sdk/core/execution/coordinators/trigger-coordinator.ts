@@ -1,0 +1,321 @@
+/**
+ * TriggerManager - 触发器管理器
+ * 负责触发器的注册、注销和执行触发动作
+ *
+ * 改造后：无状态协调器，从 WorkflowRegistry 查询定义，从 TriggerStateManager 获取状态
+ *
+ * 注意：不再通过 EventManager 监听事件，改为由 ThreadExecutor 直接调用 handleEvent()
+ */
+
+import type {
+  Trigger,
+  TriggerStatus,
+  WorkflowTrigger
+} from '../../../types/trigger';
+import type { BaseEvent, NodeCustomEvent } from '../../../types/events';
+import type { ID } from '../../../types/common';
+import { getTriggerHandler } from '../handlers/trigger-handlers';
+import { ValidationError, ExecutionError } from '../../../types/errors';
+import { EventType } from '../../../types/events';
+import { now } from '../../../utils';
+import type { ThreadRegistry } from '../../services/thread-registry';
+import type { WorkflowRegistry } from '../../services/workflow-registry';
+import { TriggerStateManager, type TriggerRuntimeState } from '../managers/trigger-state-manager';
+import { convertToTrigger } from '../../../types/trigger';
+
+/**
+ * TriggerManager - 触发器管理器
+ *
+ * 职责：
+ * - 触发器的注册、注销、启用、禁用
+ * - 处理事件并执行匹配的触发器
+ * - 从 WorkflowRegistry 查询触发器定义
+ * - 从 TriggerStateManager 获取运行时状态
+ *
+ * 设计原则：
+ * - 不再通过 EventManager 监听事件
+ * - 由 ThreadExecutor 直接调用 handleEvent() 方法
+ * - 协调器，定义与状态分离
+ * - WorkflowRegistry 作为触发器定义的单一信息源
+ */
+export class TriggerCoordinator {
+  private threadRegistry: ThreadRegistry;
+  private workflowRegistry: WorkflowRegistry;
+  private stateManager: TriggerStateManager;
+  private threadId: ID;
+  private workflowId: ID | null = null;
+
+  constructor(
+    threadRegistry: ThreadRegistry,
+    workflowRegistry: WorkflowRegistry,
+    stateManager: TriggerStateManager
+  ) {
+    this.threadRegistry = threadRegistry;
+    this.workflowRegistry = workflowRegistry;
+    this.stateManager = stateManager;
+    this.threadId = stateManager.getThreadId();
+  }
+
+  /**
+   * 设置工作流 ID
+   * @param workflowId 工作流 ID
+   */
+  setWorkflowId(workflowId: ID): void {
+    this.workflowId = workflowId;
+  }
+
+  /**
+   * 注册触发器（初始化运行时状态）
+   * @param workflowTrigger 工作流触发器定义
+   */
+  register(workflowTrigger: WorkflowTrigger): void {
+    // 验证触发器
+    if (!workflowTrigger.id) {
+      throw new ValidationError('触发器 ID 不能为空', 'trigger.id');
+    }
+    if (!workflowTrigger.name) {
+      throw new ValidationError('触发器名称不能为空', 'trigger.name');
+    }
+    if (!workflowTrigger.condition || !workflowTrigger.condition.eventType) {
+      throw new ValidationError('触发条件不能为空', 'trigger.condition');
+    }
+    if (!workflowTrigger.action || !workflowTrigger.action.type) {
+      throw new ValidationError('触发动作不能为空', 'trigger.action');
+    }
+
+    // 检查是否已存在
+    if (this.stateManager.hasState(workflowTrigger.id)) {
+      throw new ValidationError(`触发器状态 ${workflowTrigger.id} 已存在`, 'trigger.id', workflowTrigger.id);
+    }
+
+    // 创建运行时状态
+    const state: TriggerRuntimeState = {
+      triggerId: workflowTrigger.id,
+      threadId: this.threadId,
+      status: workflowTrigger.enabled !== false ? 'enabled' as TriggerStatus : 'disabled' as TriggerStatus,
+      triggerCount: 0,
+      updatedAt: now()
+    };
+
+    // 注册状态
+    this.stateManager.register(state);
+  }
+
+  /**
+   * 注销触发器（删除运行时状态）
+   * @param triggerId 触发器 ID
+   */
+  unregister(triggerId: ID): void {
+    if (!this.stateManager.hasState(triggerId)) {
+      throw new ExecutionError(`触发器状态 ${triggerId} 不存在`, undefined, undefined, { triggerId });
+    }
+
+    // 删除状态
+    this.stateManager.deleteState(triggerId);
+  }
+
+  /**
+   * 启用触发器
+   * @param triggerId 触发器 ID
+   */
+  enable(triggerId: ID): void {
+    if (!this.stateManager.hasState(triggerId)) {
+      throw new ExecutionError(`触发器状态 ${triggerId} 不存在`, undefined, undefined, { triggerId });
+    }
+
+    const state = this.stateManager.getState(triggerId);
+    if (state && state.status !== 'disabled' as TriggerStatus) {
+      return;
+    }
+
+    // 更新状态
+    this.stateManager.updateStatus(triggerId, 'enabled' as TriggerStatus);
+  }
+
+  /**
+   * 禁用触发器
+   * @param triggerId 触发器 ID
+   */
+  disable(triggerId: ID): void {
+    if (!this.stateManager.hasState(triggerId)) {
+      throw new ExecutionError(`触发器状态 ${triggerId} 不存在`, undefined, undefined, { triggerId });
+    }
+
+    const state = this.stateManager.getState(triggerId);
+    if (state && state.status !== 'enabled' as TriggerStatus) {
+      return;
+    }
+
+    // 更新状态
+    this.stateManager.updateStatus(triggerId, 'disabled' as TriggerStatus);
+  }
+
+  /**
+   * 获取触发器（定义 + 状态）
+   * @param triggerId 触发器 ID
+   * @returns 触发器，如果不存在则返回 undefined
+   */
+  get(triggerId: ID): Trigger | undefined {
+    // 获取状态
+    const state = this.stateManager.getState(triggerId);
+    if (!state) {
+      return undefined;
+    }
+
+    // 获取定义
+    const workflowTrigger = this.getWorkflowTrigger(triggerId);
+    if (!workflowTrigger) {
+      return undefined;
+    }
+
+    // 合并定义和状态
+    return this.mergeTrigger(workflowTrigger, state);
+  }
+
+  /**
+   * 获取所有触发器（定义 + 状态）
+   * @returns 触发器数组
+   */
+  getAll(): Trigger[] {
+    // 获取所有状态
+    const allStates = this.stateManager.getAllStates();
+    const triggers: Trigger[] = [];
+
+    // 为每个状态获取定义并合并
+    for (const [triggerId, state] of allStates.entries()) {
+      const workflowTrigger = this.getWorkflowTrigger(triggerId);
+      if (workflowTrigger) {
+        triggers.push(this.mergeTrigger(workflowTrigger, state));
+      }
+    }
+
+    return triggers;
+  }
+
+  /**
+   * 处理事件（由 ThreadExecutor 直接调用）
+   * @param event 事件对象
+   */
+  async handleEvent(event: BaseEvent): Promise<void> {
+    // 获取所有触发器
+    const triggers = this.getAll();
+
+    // 过滤出监听该事件类型且已启用的触发器
+    const enabledTriggers = triggers.filter(
+      (trigger) =>
+        trigger.condition.eventType === event.type &&
+        trigger.status === 'enabled' as TriggerStatus
+    );
+
+    // 评估并执行触发器
+    for (const trigger of enabledTriggers) {
+      try {
+        // 检查触发次数限制
+        if (trigger.maxTriggers && trigger.maxTriggers > 0 && trigger.triggerCount >= trigger.maxTriggers) {
+          continue;
+        }
+
+        // 检查关联关系
+        if (trigger.workflowId && event.workflowId !== trigger.workflowId) {
+          continue;
+        }
+        if (trigger.threadId && event.threadId !== trigger.threadId) {
+          continue;
+        }
+
+        // 对于 NODE_CUSTOM_EVENT 事件，需要额外匹配 eventName
+        if (event.type === EventType.NODE_CUSTOM_EVENT) {
+          const customEvent = event as NodeCustomEvent;
+          if (trigger.condition.eventName && trigger.condition.eventName !== customEvent.eventName) {
+            continue;
+          }
+        }
+
+        // 执行触发器
+        await this.executeTrigger(trigger);
+      } catch (error) {
+        // 静默处理错误，避免影响其他触发器
+      }
+    }
+  }
+
+  /**
+   * 执行触发器
+   * @param trigger 触发器
+   */
+  private async executeTrigger(trigger: Trigger): Promise<void> {
+    // 使用 trigger handler 函数执行触发动作
+    const handler = getTriggerHandler(trigger.action.type);
+
+    // 创建一个临时的 ExecutionContext，包含 ThreadRegistry 和 WorkflowRegistry
+    const executionContext = {
+      getThreadRegistry: () => this.threadRegistry,
+      getWorkflowRegistry: () => this.workflowRegistry,
+      getCurrentThreadId: () => trigger.threadId || null,
+    };
+
+    const result = await handler(trigger.action, trigger.id, executionContext);
+
+    // 更新触发器状态
+    this.stateManager.incrementTriggerCount(trigger.id);
+
+    // 如果是一次性触发器，禁用它
+    if (trigger.maxTriggers === 1) {
+      this.stateManager.updateStatus(trigger.id, 'disabled' as TriggerStatus);
+    }
+  }
+
+  /**
+   * 清空所有触发器状态
+   */
+  clear(): void {
+    this.stateManager.clear();
+  }
+
+  /**
+   * 获取工作流触发器定义
+   * @param triggerId 触发器 ID
+   * @returns 工作流触发器定义，如果不存在则返回 undefined
+   */
+  private getWorkflowTrigger(triggerId: ID): WorkflowTrigger | undefined {
+    if (!this.workflowId) {
+      return undefined;
+    }
+
+    // 获取处理后的工作流定义
+    const processedWorkflow = this.workflowRegistry.getProcessed(this.workflowId);
+    if (!processedWorkflow || !processedWorkflow.triggers) {
+      return undefined;
+    }
+
+    // 查找触发器定义
+    return processedWorkflow.triggers.find(t => t.id === triggerId);
+  }
+
+  /**
+   * 合并触发器定义和状态
+   * @param workflowTrigger 工作流触发器定义
+   * @param state 运行时状态
+   * @returns 完整的触发器
+   */
+  private mergeTrigger(workflowTrigger: WorkflowTrigger, state: TriggerRuntimeState): Trigger {
+    // 使用 convertToTrigger 转换为 Trigger
+    const trigger = convertToTrigger(workflowTrigger, this.workflowId!);
+
+    // 合并运行时状态
+    trigger.status = state.status;
+    trigger.triggerCount = state.triggerCount;
+    trigger.threadId = state.threadId;
+    trigger.updatedAt = state.updatedAt;
+
+    return trigger;
+  }
+
+  /**
+   * 获取状态管理器
+   * @returns TriggerStateManager 实例
+   */
+  getStateManager(): TriggerStateManager {
+    return this.stateManager;
+  }
+}

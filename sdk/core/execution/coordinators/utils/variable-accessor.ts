@@ -26,9 +26,9 @@
  * - accessor.get('loop.item') - 获取循环变量
  */
 
-import type { ThreadContext } from '../context/thread-context';
-import type { VariableScope } from '../../../types/thread';
-import { resolvePath } from '../../../utils/evalutor/path-resolver';
+import type { ThreadContext } from '../../context/thread-context';
+import type { VariableScope } from '../../../../types/thread';
+import { resolvePath } from '../../../../utils/evalutor/path-resolver';
 
 /**
  * 变量命名空间
@@ -56,7 +56,7 @@ export class VariableAccessor {
    * 构造函数
    * @param threadContext Thread 上下文
    */
-  constructor(private readonly threadContext: ThreadContext) {}
+  constructor(private readonly threadContext: ThreadContext) { }
 
   /**
    * 获取变量值
@@ -95,22 +95,22 @@ export class VariableAccessor {
     switch (namespace) {
       case VariableNamespace.INPUT:
         return this.getFromInput(remainingPath);
-      
+
       case VariableNamespace.OUTPUT:
         return this.getFromOutput(remainingPath);
-      
+
       case VariableNamespace.GLOBAL:
         return this.getFromScope(remainingPath || path, 'global');
-      
+
       case VariableNamespace.THREAD:
         return this.getFromScope(remainingPath || path, 'thread');
-      
+
       case VariableNamespace.SUBGRAPH:
         return this.getFromScope(remainingPath || path, 'subgraph');
-      
+
       case VariableNamespace.LOOP:
         return this.getFromScope(remainingPath || path, 'loop');
-      
+
       default:
         // 没有命名空间前缀，按作用域优先级查找
         return this.getFromScopedVariables(path);
@@ -161,9 +161,9 @@ export class VariableAccessor {
   private getFromScope(path: string, scope: VariableScope): any {
     const thread = this.threadContext.thread;
     const scopes = thread.variableScopes;
-    
+
     let scopeData: Record<string, any> | undefined;
-    
+
     switch (scope) {
       case 'global':
         scopeData = scopes.global;
@@ -182,19 +182,19 @@ export class VariableAccessor {
         }
         break;
     }
-    
+
     if (!scopeData) {
       return undefined;
     }
-    
+
     // 提取根变量名
     const pathParts = path.split('.');
     const rootVarName = pathParts[0];
-    
+
     if (!rootVarName) {
       return undefined;
     }
-    
+
     const rootValue = scopeData[rootVarName];
 
     if (rootValue === undefined) {
@@ -220,11 +220,11 @@ export class VariableAccessor {
     // 提取根变量名
     const pathParts = path.split('.');
     const rootVarName = pathParts[0];
-    
+
     if (!rootVarName) {
       return undefined;
     }
-    
+
     const rootValue = this.threadContext.getVariable(rootVarName);
 
     if (rootValue === undefined) {

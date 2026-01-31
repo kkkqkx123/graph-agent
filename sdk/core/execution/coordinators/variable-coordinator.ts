@@ -1,14 +1,14 @@
 /**
- * VariableManager - 变量管理器
+ * 变量协调器
  * 负责Thread变量的管理，包括变量的初始化、更新、查询
  * 支持四级作用域：global、thread、subgraph、loop
- * 变量定义来源于 WorkflowDefinition，运行时只能更新已定义的变量值
+ * 只允许修改已有变量
  */
 
 import type { Thread, ThreadVariable, VariableScope } from '../../../types/thread';
 import type { WorkflowDefinition, WorkflowVariable } from '../../../types/workflow';
 import type { ThreadContext } from '../context/thread-context';
-import { VariableAccessor } from './variable-accessor';
+import { VariableAccessor } from './utils/variable-accessor';
 
 /**
  * VariableManager - 变量管理器
@@ -81,7 +81,7 @@ export class VariableManager {
    */
   getVariable(threadContext: ThreadContext, name: string): any {
     const scopes = threadContext.thread.variableScopes;
-    
+
     // 1. 循环作用域（最高优先级）
     if (scopes.loop.length > 0) {
       const currentLoopScope = scopes.loop[scopes.loop.length - 1];
@@ -89,7 +89,7 @@ export class VariableManager {
         return currentLoopScope[name];
       }
     }
-    
+
     // 2. 子图作用域
     if (scopes.subgraph.length > 0) {
       const currentSubgraphScope = scopes.subgraph[scopes.subgraph.length - 1];
@@ -97,17 +97,17 @@ export class VariableManager {
         return currentSubgraphScope[name];
       }
     }
-    
+
     // 3. 线程作用域
     if (name in scopes.thread) {
       return scopes.thread[name];
     }
-    
+
     // 4. 全局作用域（最低优先级）
     if (name in scopes.global) {
       return scopes.global[name];
     }
-    
+
     return undefined;
   }
 
@@ -121,22 +121,22 @@ export class VariableManager {
   updateVariable(threadContext: ThreadContext, name: string, value: any, explicitScope?: VariableScope): void {
     const thread = threadContext.thread;
     const variableDef = thread.variables.find(v => v.name === name);
-    
+
     if (!variableDef) {
       throw new Error(`Variable '${name}' is not defined in workflow. Variables must be defined in WorkflowDefinition.`);
     }
-    
+
     if (variableDef.readonly) {
       throw new Error(`Variable '${name}' is readonly and cannot be modified`);
     }
-    
+
     if (!this.validateType(value, variableDef.type)) {
       throw new Error(`Type mismatch for variable '${name}'. Expected ${variableDef.type}, got ${typeof value}`);
     }
-    
+
     // 如果指定了显式作用域，使用该作用域
     const targetScope = explicitScope || variableDef.scope;
-    
+
     switch (targetScope) {
       case 'global':
         thread.variableScopes.global[name] = value;
@@ -164,7 +164,7 @@ export class VariableManager {
         }
         break;
     }
-    
+
     variableDef.value = value;
   }
 
@@ -186,26 +186,26 @@ export class VariableManager {
   getAllVariables(threadContext: ThreadContext): Record<string, any> {
     const thread = threadContext.thread;
     const allVariables: Record<string, any> = {};
-    
+
     // 按作用域优先级从低到高合并（global -> thread -> subgraph -> loop）
     // 高优先级作用域会覆盖低优先级的同名变量
-    
+
     // 1. 全局作用域（最低优先级）
     Object.assign(allVariables, thread.variableScopes.global);
-    
+
     // 2. 线程作用域
     Object.assign(allVariables, thread.variableScopes.thread);
-    
+
     // 3. 子图作用域（从外到内，内层覆盖外层）
     for (const subgraphScope of thread.variableScopes.subgraph) {
       Object.assign(allVariables, subgraphScope);
     }
-    
+
     // 4. 循环作用域（从外到内，内层覆盖外层，最高优先级）
     for (const loopScope of thread.variableScopes.loop) {
       Object.assign(allVariables, loopScope);
     }
-    
+
     return allVariables;
   }
 
@@ -217,7 +217,7 @@ export class VariableManager {
    */
   getVariablesByScope(threadContext: ThreadContext, scope: VariableScope): Record<string, any> {
     const thread = threadContext.thread;
-    
+
     switch (scope) {
       case 'global':
         return { ...thread.variableScopes.global };
@@ -306,7 +306,7 @@ export class VariableManager {
    */
   copyVariables(sourceThread: Thread, targetThread: Thread): void {
     targetThread.variables = sourceThread.variables.map((v: ThreadVariable) => ({ ...v }));
-    
+
     // global 作用域通过引用共享
     targetThread.variableScopes = {
       global: sourceThread.variableScopes.global,
@@ -314,7 +314,7 @@ export class VariableManager {
       subgraph: [],
       loop: []
     };
-    
+
     // 向后兼容的 variableValues
     targetThread.variableValues = { ...sourceThread.variableValues };
   }
@@ -369,5 +369,74 @@ export class VariableManager {
   getVariableByPath(threadContext: ThreadContext, path: string): any {
     const accessor = this.createAccessor(threadContext);
     return accessor.get(path);
+  }
+
+  /**
+   * 创建变量快照
+   * 用于保存变量的完整状态，包括变量定义和作用域结构
+   * @param thread Thread 实例
+   * @returns 变量快照
+   */
+  createVariableSnapshot(thread: Thread): {
+    variables: ThreadVariable[];
+    variableScopes: {
+      global: Record<string, any>;
+      thread: Record<string, any>;
+      subgraph: Record<string, any>[];
+      loop: Record<string, any>[];
+    };
+  } {
+    return {
+      variables: thread.variables.map(v => ({ ...v })),
+      variableScopes: {
+        global: { ...thread.variableScopes.global },
+        thread: { ...thread.variableScopes.thread },
+        subgraph: thread.variableScopes.subgraph.map(scope => ({ ...scope })),
+        loop: thread.variableScopes.loop.map(scope => ({ ...scope }))
+      }
+    };
+  }
+
+  /**
+   * 恢复变量快照
+   * 从快照中恢复变量的完整状态
+   * @param thread Thread 实例
+   * @param snapshot 变量快照
+   */
+  restoreVariableSnapshot(
+    thread: Thread,
+    snapshot: {
+      variables: ThreadVariable[];
+      variableScopes: {
+        global: Record<string, any>;
+        thread: Record<string, any>;
+        subgraph: Record<string, any>[];
+        loop: Record<string, any>[];
+      };
+    }
+  ): void {
+    thread.variables = snapshot.variables.map(v => ({ ...v }));
+    thread.variableValues = this.extractVariableValues(snapshot.variables);
+    thread.variableScopes = {
+      global: { ...snapshot.variableScopes.global },
+      thread: { ...snapshot.variableScopes.thread },
+      subgraph: snapshot.variableScopes.subgraph.map(scope => ({ ...scope })),
+      loop: snapshot.variableScopes.loop.map(scope => ({ ...scope }))
+    };
+  }
+
+  /**
+   * 从变量数组提取变量值映射（仅 thread 作用域）
+   * @param variables 变量数组
+   * @returns 变量值映射
+   */
+  private extractVariableValues(variables: ThreadVariable[]): Record<string, any> {
+    const variableValues: Record<string, any> = {};
+    for (const variable of variables) {
+      if (variable.scope === 'thread') {
+        variableValues[variable.name] = variable.value;
+      }
+    }
+    return variableValues;
   }
 }

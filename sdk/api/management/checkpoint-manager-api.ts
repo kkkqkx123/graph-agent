@@ -129,29 +129,6 @@ export class CheckpointManagerAPI {
   }
 
   /**
-   * 启用定期检查点
-   * @param threadId 线程ID
-   * @param interval 间隔时间（毫秒）
-   * @param metadata 检查点元数据
-   * @returns 定时器ID
-   */
-  async enablePeriodicCheckpoints(
-    threadId: string,
-    interval: number,
-    metadata?: CheckpointMetadata
-  ): Promise<string> {
-    return this.manager.createPeriodicCheckpoint(threadId, interval, metadata);
-  }
-
-  /**
-   * 禁用定期检查点
-   * @param timerId 定时器ID
-   */
-  async disablePeriodicCheckpoints(timerId: string): Promise<void> {
-    this.manager.cancelPeriodicCheckpoint(timerId);
-  }
-
-  /**
    * 创建节点级别检查点
    * @param threadId 线程ID
    * @param nodeId 节点ID

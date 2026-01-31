@@ -13,11 +13,11 @@ import { ConversationManager } from './conversation';
 import { ThreadContext } from './context/thread-context';
 import { NodeType } from '../../types/node';
 import { generateId, now as getCurrentTimestamp } from '../../utils';
-import { VariableManager } from './managers/variable-manager';
+import { VariableManager } from './coordinators/variable-coordinator';
 import { ValidationError } from '../../types/errors';
 import { workflowRegistry, type WorkflowRegistry } from '../services/workflow-registry';
 import { ExecutionContext } from './context/execution-context';
-import { convertToTrigger } from '../../types/trigger';
+import { TriggerStatus } from '../../types/trigger';
 import type { ThreadRegistry } from '../services/thread-registry';
 
 /**
@@ -176,7 +176,8 @@ export class ThreadBuilder {
   }
 
   /**
-   * 注册工作流触发器到 ThreadContext 的 TriggerManager
+   * 注册工作流触发器到 ThreadContext 的 TriggerStateManager
+   * 初始化触发器的运行时状态，而不是存储触发器定义副本
    * @param threadContext ThreadContext 实例
    * @param workflow 工作流定义
    */
@@ -186,19 +187,30 @@ export class ThreadBuilder {
       return;
     }
 
-    // 使用 ThreadContext 的 TriggerManager（每个 Thread 独立）
+    // 使用 ThreadContext 的 TriggerStateManager（每个 Thread 独立）
+    const triggerStateManager = threadContext.triggerStateManager;
     const triggerManager = threadContext.triggerManager;
 
-    // 注册所有触发器
+    // 确保工作流 ID 已设置
+    triggerManager.setWorkflowId(workflow.id);
+
+    // 初始化所有触发器的运行时状态
     for (const workflowTrigger of workflow.triggers) {
       try {
-        const trigger = convertToTrigger(workflowTrigger, workflow.id);
-        // 设置 threadId 以确保触发器只影响当前 Thread
-        trigger.threadId = threadContext.getThreadId();
-        triggerManager.register(trigger);
+        // 创建运行时状态
+        const state = {
+          triggerId: workflowTrigger.id,
+          threadId: threadContext.getThreadId(),
+          status: workflowTrigger.enabled !== false ? TriggerStatus.ENABLED : TriggerStatus.DISABLED,
+          triggerCount: 0,
+          updatedAt: getCurrentTimestamp()
+        };
+
+        // 注册状态到 TriggerStateManager
+        triggerStateManager.register(state);
       } catch (error) {
         // 静默处理错误，避免影响其他触发器的注册
-        console.error(`Failed to register trigger ${workflowTrigger.id}:`, error);
+        console.error(`Failed to register trigger state ${workflowTrigger.id}:`, error);
       }
     }
   }
