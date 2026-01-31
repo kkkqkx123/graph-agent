@@ -30,6 +30,14 @@ export interface TokenUsageStats {
 }
 
 /**
+ * 完整的 Token 使用统计（包含生命周期统计）
+ */
+export interface FullTokenUsageStats extends TokenUsageStats {
+  /** 生命周期总 Token 数（无视回退，反映真实的总token消耗） */
+  totalLifetimeTokens: number;
+}
+
+/**
  * Token 使用追踪器配置选项
  */
 export interface TokenUsageTrackerOptions {
@@ -43,6 +51,7 @@ export interface TokenUsageTrackerOptions {
 export class TokenUsageTracker {
   private cumulativeUsage: TokenUsageStats | null = null;
   private currentRequestUsage: TokenUsageStats | null = null;
+  private totalLifetimeUsage: TokenUsageStats | null = null; // 无视回退的真实总token
   private tokenLimit: number;
 
   constructor(options: TokenUsageTrackerOptions = {}) {
@@ -122,16 +131,52 @@ export class TokenUsageTracker {
         this.cumulativeUsage.completionTokens += this.currentRequestUsage.completionTokens;
         this.cumulativeUsage.totalTokens += this.currentRequestUsage.totalTokens;
       }
+
+      // 同时累加到生命周期总使用量（无视回退）
+      if (!this.totalLifetimeUsage) {
+        this.totalLifetimeUsage = { ...this.currentRequestUsage };
+      } else {
+        this.totalLifetimeUsage.promptTokens += this.currentRequestUsage.promptTokens;
+        this.totalLifetimeUsage.completionTokens += this.currentRequestUsage.completionTokens;
+        this.totalLifetimeUsage.totalTokens += this.currentRequestUsage.totalTokens;
+      }
+
       this.currentRequestUsage = null;
     }
   }
 
   /**
-   * 获取累计的 Token 使用统计
+   * 获取累计的 Token 使用统计（会随回退恢复）
    * @returns Token 使用统计
    */
   getCumulativeUsage(): TokenUsageStats | null {
     return this.cumulativeUsage ? { ...this.cumulativeUsage } : null;
+  }
+
+  /**
+   * 获取生命周期总 Token 使用统计（无视回退，反映真实的总token消耗）
+   * @returns Token 使用统计
+   */
+  getTotalLifetimeUsage(): TokenUsageStats | null {
+    return this.totalLifetimeUsage ? { ...this.totalLifetimeUsage } : null;
+  }
+
+  /**
+   * 获取完整的 Token 使用统计（包含生命周期统计）
+   * @returns 完整的 Token 使用统计
+   */
+  getFullUsageStats(): FullTokenUsageStats | null {
+    if (!this.cumulativeUsage && !this.totalLifetimeUsage) {
+      return null;
+    }
+
+    return {
+      promptTokens: this.cumulativeUsage?.promptTokens || 0,
+      completionTokens: this.cumulativeUsage?.completionTokens || 0,
+      totalTokens: this.cumulativeUsage?.totalTokens || 0,
+      rawUsage: this.cumulativeUsage?.rawUsage,
+      totalLifetimeTokens: this.totalLifetimeUsage?.totalTokens || 0
+    };
   }
 
   /**
@@ -201,10 +246,22 @@ export class TokenUsageTracker {
 
   /**
    * 重置 Token 使用统计
+   * 注意：此方法不会重置 totalLifetimeUsage，因为它是生命周期统计
    */
   reset(): void {
     this.cumulativeUsage = null;
     this.currentRequestUsage = null;
+    // 不重置 totalLifetimeUsage，保持生命周期统计
+  }
+
+  /**
+   * 完全重置 Token 使用统计（包括生命周期统计）
+   * 仅在需要完全重置时使用（如线程销毁）
+   */
+  fullReset(): void {
+    this.cumulativeUsage = null;
+    this.currentRequestUsage = null;
+    this.totalLifetimeUsage = null;
   }
 
   /**
@@ -224,6 +281,74 @@ export class TokenUsageTracker {
       clonedTracker.currentRequestUsage = { ...this.currentRequestUsage };
     }
 
+    if (this.totalLifetimeUsage) {
+      clonedTracker.totalLifetimeUsage = { ...this.totalLifetimeUsage };
+    }
+
     return clonedTracker;
+  }
+
+  /**
+   * 设置 Token 使用统计状态
+   * 用于从检查点恢复状态
+   * 注意：此方法不会恢复 totalLifetimeUsage，因为它是生命周期统计
+   * @param cumulativeUsage 累计 Token 使用统计
+   * @param currentRequestUsage 当前请求 Token 使用统计（可选）
+   */
+  setState(
+    cumulativeUsage: TokenUsageStats | null,
+    currentRequestUsage?: TokenUsageStats | null
+  ): void {
+    if (cumulativeUsage) {
+      this.cumulativeUsage = { ...cumulativeUsage };
+    } else {
+      this.cumulativeUsage = null;
+    }
+
+    if (currentRequestUsage !== undefined) {
+      if (currentRequestUsage) {
+        this.currentRequestUsage = { ...currentRequestUsage };
+      } else {
+        this.currentRequestUsage = null;
+      }
+    }
+    // 不恢复 totalLifetimeUsage，保持生命周期统计
+  }
+
+  /**
+   * 获取 Token 使用统计状态
+   * 用于保存到检查点
+   * @returns Token 使用统计状态
+   */
+  getState(): {
+    cumulativeUsage: TokenUsageStats | null;
+    currentRequestUsage: TokenUsageStats | null;
+  } {
+    return {
+      cumulativeUsage: this.cumulativeUsage ? { ...this.cumulativeUsage } : null,
+      currentRequestUsage: this.currentRequestUsage ? { ...this.currentRequestUsage } : null
+    };
+  }
+
+  /**
+   * 设置生命周期总 Token 使用统计
+   * 用于从持久化存储恢复生命周期统计
+   * @param totalLifetimeUsage 生命周期总 Token 使用统计
+   */
+  setTotalLifetimeUsage(totalLifetimeUsage: TokenUsageStats | null): void {
+    if (totalLifetimeUsage) {
+      this.totalLifetimeUsage = { ...totalLifetimeUsage };
+    } else {
+      this.totalLifetimeUsage = null;
+    }
+  }
+
+  /**
+   * 获取生命周期总 Token 使用统计状态
+   * 用于保存到持久化存储
+   * @returns 生命周期总 Token 使用统计
+   */
+  getTotalLifetimeUsageState(): TokenUsageStats | null {
+    return this.totalLifetimeUsage ? { ...this.totalLifetimeUsage } : null;
   }
 }

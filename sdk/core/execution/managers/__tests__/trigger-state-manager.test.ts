@@ -10,9 +10,11 @@ import { ID } from '../../../../types/common';
 describe('TriggerStateManager', () => {
   let stateManager: TriggerStateManager;
   const threadId = 'thread-1';
+  const workflowId = 'workflow-1';
 
   beforeEach(() => {
     stateManager = new TriggerStateManager(threadId);
+    stateManager.setWorkflowId(workflowId);
   });
 
   describe('register', () => {
@@ -20,6 +22,7 @@ describe('TriggerStateManager', () => {
       const state: TriggerRuntimeState = {
         triggerId: 'trigger-1',
         threadId: threadId,
+        workflowId: workflowId,
         status: TriggerStatus.ENABLED,
         triggerCount: 0,
         updatedAt: Date.now()
@@ -36,6 +39,7 @@ describe('TriggerStateManager', () => {
       const state: TriggerRuntimeState = {
         triggerId: '',
         threadId: threadId,
+        workflowId: workflowId,
         status: TriggerStatus.ENABLED,
         triggerCount: 0,
         updatedAt: Date.now()
@@ -48,6 +52,7 @@ describe('TriggerStateManager', () => {
       const state: TriggerRuntimeState = {
         triggerId: 'trigger-1',
         threadId: '',
+        workflowId: workflowId,
         status: TriggerStatus.ENABLED,
         triggerCount: 0,
         updatedAt: Date.now()
@@ -60,6 +65,7 @@ describe('TriggerStateManager', () => {
       const state: TriggerRuntimeState = {
         triggerId: 'trigger-1',
         threadId: 'thread-2',
+        workflowId: workflowId,
         status: TriggerStatus.ENABLED,
         triggerCount: 0,
         updatedAt: Date.now()
@@ -72,6 +78,7 @@ describe('TriggerStateManager', () => {
       const state: TriggerRuntimeState = {
         triggerId: 'trigger-1',
         threadId: threadId,
+        workflowId: workflowId,
         status: TriggerStatus.ENABLED,
         triggerCount: 0,
         updatedAt: Date.now()
@@ -88,6 +95,7 @@ describe('TriggerStateManager', () => {
       const state: TriggerRuntimeState = {
         triggerId: 'trigger-1',
         threadId: threadId,
+        workflowId: workflowId,
         status: TriggerStatus.ENABLED,
         triggerCount: 0,
         updatedAt: Date.now()
@@ -110,6 +118,7 @@ describe('TriggerStateManager', () => {
       const state: TriggerRuntimeState = {
         triggerId: 'trigger-1',
         threadId: threadId,
+        workflowId: workflowId,
         status: TriggerStatus.ENABLED,
         triggerCount: 0,
         updatedAt: Date.now()
@@ -134,6 +143,7 @@ describe('TriggerStateManager', () => {
       const state: TriggerRuntimeState = {
         triggerId: 'trigger-1',
         threadId: threadId,
+        workflowId: workflowId,
         status: TriggerStatus.ENABLED,
         triggerCount: 0,
         updatedAt: Date.now()
@@ -151,6 +161,7 @@ describe('TriggerStateManager', () => {
       const state: TriggerRuntimeState = {
         triggerId: 'trigger-1',
         threadId: threadId,
+        workflowId: workflowId,
         status: TriggerStatus.ENABLED,
         triggerCount: 0,
         updatedAt: Date.now()
@@ -176,6 +187,7 @@ describe('TriggerStateManager', () => {
       const state1: TriggerRuntimeState = {
         triggerId: 'trigger-1',
         threadId: threadId,
+        workflowId: workflowId,
         status: TriggerStatus.ENABLED,
         triggerCount: 0,
         updatedAt: Date.now()
@@ -184,6 +196,7 @@ describe('TriggerStateManager', () => {
       const state2: TriggerRuntimeState = {
         triggerId: 'trigger-2',
         threadId: threadId,
+        workflowId: workflowId,
         status: TriggerStatus.DISABLED,
         triggerCount: 5,
         updatedAt: Date.now()
@@ -203,6 +216,7 @@ describe('TriggerStateManager', () => {
       const state: TriggerRuntimeState = {
         triggerId: 'trigger-1',
         threadId: threadId,
+        workflowId: workflowId,
         status: TriggerStatus.ENABLED,
         triggerCount: 0,
         updatedAt: Date.now()
@@ -226,6 +240,7 @@ describe('TriggerStateManager', () => {
       snapshot.set('trigger-1', {
         triggerId: 'trigger-1',
         threadId: threadId,
+        workflowId: workflowId,
         status: TriggerStatus.ENABLED,
         triggerCount: 0,
         updatedAt: Date.now()
@@ -233,6 +248,7 @@ describe('TriggerStateManager', () => {
       snapshot.set('trigger-2', {
         triggerId: 'trigger-2',
         threadId: threadId,
+        workflowId: workflowId,
         status: TriggerStatus.DISABLED,
         triggerCount: 5,
         updatedAt: Date.now()
@@ -249,6 +265,7 @@ describe('TriggerStateManager', () => {
       const state: TriggerRuntimeState = {
         triggerId: 'trigger-1',
         threadId: threadId,
+        workflowId: workflowId,
         status: TriggerStatus.ENABLED,
         triggerCount: 0,
         updatedAt: Date.now()
@@ -267,6 +284,7 @@ describe('TriggerStateManager', () => {
       snapshot.set('trigger-1', {
         triggerId: 'trigger-1',
         threadId: 'thread-2',
+        workflowId: workflowId,
         status: TriggerStatus.ENABLED,
         triggerCount: 0,
         updatedAt: Date.now()
@@ -281,6 +299,7 @@ describe('TriggerStateManager', () => {
       const state1: TriggerRuntimeState = {
         triggerId: 'trigger-1',
         threadId: threadId,
+        workflowId: workflowId,
         status: TriggerStatus.ENABLED,
         triggerCount: 0,
         updatedAt: Date.now()
@@ -289,6 +308,7 @@ describe('TriggerStateManager', () => {
       const state2: TriggerRuntimeState = {
         triggerId: 'trigger-2',
         threadId: threadId,
+        workflowId: workflowId,
         status: TriggerStatus.DISABLED,
         triggerCount: 5,
         updatedAt: Date.now()
@@ -308,6 +328,7 @@ describe('TriggerStateManager', () => {
       const state: TriggerRuntimeState = {
         triggerId: 'trigger-1',
         threadId: threadId,
+        workflowId: workflowId,
         status: TriggerStatus.ENABLED,
         triggerCount: 0,
         updatedAt: Date.now()
@@ -333,6 +354,7 @@ describe('TriggerStateManager', () => {
       const state: TriggerRuntimeState = {
         triggerId: 'trigger-1',
         threadId: threadId,
+        workflowId: workflowId,
         status: TriggerStatus.ENABLED,
         triggerCount: 0,
         updatedAt: Date.now()
@@ -353,6 +375,7 @@ describe('TriggerStateManager', () => {
       const state: TriggerRuntimeState = {
         triggerId: 'trigger-1',
         threadId: threadId,
+        workflowId: workflowId,
         status: TriggerStatus.ENABLED,
         triggerCount: 0,
         updatedAt: Date.now()
@@ -375,6 +398,7 @@ describe('TriggerStateManager', () => {
       const state1: TriggerRuntimeState = {
         triggerId: 'trigger-1',
         threadId: threadId,
+        workflowId: workflowId,
         status: TriggerStatus.ENABLED,
         triggerCount: 0,
         updatedAt: Date.now()
@@ -383,6 +407,7 @@ describe('TriggerStateManager', () => {
       const state2: TriggerRuntimeState = {
         triggerId: 'trigger-2',
         threadId: threadId,
+        workflowId: workflowId,
         status: TriggerStatus.DISABLED,
         triggerCount: 5,
         updatedAt: Date.now()
@@ -410,6 +435,7 @@ describe('TriggerStateManager', () => {
       const state1: TriggerRuntimeState = {
         triggerId: 'trigger-1',
         threadId: threadId,
+        workflowId: workflowId,
         status: TriggerStatus.ENABLED,
         triggerCount: 0,
         updatedAt: Date.now()
@@ -421,6 +447,7 @@ describe('TriggerStateManager', () => {
       const state2: TriggerRuntimeState = {
         triggerId: 'trigger-2',
         threadId: threadId,
+        workflowId: workflowId,
         status: TriggerStatus.DISABLED,
         triggerCount: 5,
         updatedAt: Date.now()
@@ -435,10 +462,13 @@ describe('TriggerStateManager', () => {
     it('应该保证线程隔离', () => {
       const stateManager1 = new TriggerStateManager('thread-1');
       const stateManager2 = new TriggerStateManager('thread-2');
+      stateManager1.setWorkflowId(workflowId);
+      stateManager2.setWorkflowId(workflowId);
 
       const state1: TriggerRuntimeState = {
         triggerId: 'trigger-1',
         threadId: 'thread-1',
+        workflowId: workflowId,
         status: TriggerStatus.ENABLED,
         triggerCount: 0,
         updatedAt: Date.now()
@@ -447,6 +477,7 @@ describe('TriggerStateManager', () => {
       const state2: TriggerRuntimeState = {
         triggerId: 'trigger-1',
         threadId: 'thread-2',
+        workflowId: workflowId,
         status: TriggerStatus.DISABLED,
         triggerCount: 5,
         updatedAt: Date.now()

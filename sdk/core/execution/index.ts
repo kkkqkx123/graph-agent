@@ -45,10 +45,13 @@ export { ConversationManager } from './conversation';
 export type { ConversationManagerOptions } from './conversation';
 export { LLMExecutor } from './llm-executor';
 export { TokenUsageTracker } from './token-usage-tracker';
-export type { TokenUsageStats, TokenUsageTrackerOptions } from './token-usage-tracker';
+export type { TokenUsageStats, TokenUsageTrackerOptions, FullTokenUsageStats } from './token-usage-tracker';
 
 // 消息索引管理
 export { MessageIndexManager } from './message-index-manager';
+
+// 全局消息存储
+export { GlobalMessageStorage } from './global-message-storage';
 
 // Hook处理函数
 export * from './handlers/hook-handlers';

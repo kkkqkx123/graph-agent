@@ -271,6 +271,14 @@ export class ConversationManager {
   }
 
   /**
+   * 获取Token使用追踪器实例（用于内部操作）
+   * @returns TokenUsageTracker 实例
+   */
+  getTokenUsageTracker(): TokenUsageTracker {
+    return this.tokenUsageTracker;
+  }
+
+  /**
    * 设置原始索引数组
    * @param indices 索引数组
    */

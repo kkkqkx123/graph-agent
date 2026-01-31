@@ -17,6 +17,8 @@ import { ExecutionError } from '../../types/errors';
  */
 export class MessageIndexManager {
   private markMap: MessageMarkMap;
+  // 直接映射：批次号 -> 边界索引（O(1)查询）
+  private batchBoundaryMap: Map<number, number> = new Map();
 
   constructor() {
     // 初始化标记映射
@@ -26,6 +28,8 @@ export class MessageIndexManager {
       boundaryToBatch: [0],
       currentBatch: 0
     };
+    // 初始化批次映射
+    this.batchBoundaryMap.set(0, 0);
   }
 
   /**
@@ -50,6 +54,22 @@ export class MessageIndexManager {
    */
   setMarkMap(markMap: MessageMarkMap): void {
     this.markMap = { ...markMap };
+    // 重建批次映射
+    this.rebuildBatchBoundaryMap();
+  }
+
+  /**
+   * 重建批次映射（内部方法）
+   */
+  private rebuildBatchBoundaryMap(): void {
+    this.batchBoundaryMap.clear();
+    for (let i = 0; i < this.markMap.boundaryToBatch.length; i++) {
+      const batch = this.markMap.boundaryToBatch[i];
+      const boundary = this.markMap.batchBoundaries[i];
+      if (batch !== undefined && boundary !== undefined) {
+        this.batchBoundaryMap.set(batch, boundary);
+      }
+    }
   }
 
   /**
@@ -61,20 +81,23 @@ export class MessageIndexManager {
   }
 
   /**
+   * 获取当前批次的边界（私有方法，避免重复计算）
+   * @returns 当前批次的边界索引
+   */
+  private getCurrentBoundary(): number {
+    const boundary = this.batchBoundaryMap.get(this.markMap.currentBatch);
+    if (boundary === undefined) {
+      throw new ExecutionError(`Current batch ${this.markMap.currentBatch} not found in batch boundary map`);
+    }
+    return boundary;
+  }
+
+  /**
    * 获取当前批次的消息索引
    * @returns 当前批次的消息索引数组
    */
   getCurrentBatchIndices(): number[] {
-    const currentBoundaryIndex = this.markMap.boundaryToBatch.indexOf(this.markMap.currentBatch);
-    if (currentBoundaryIndex === -1) {
-      throw new ExecutionError(`Current batch ${this.markMap.currentBatch} not found in boundaryToBatch`);
-    }
-    const boundary = this.markMap.batchBoundaries[currentBoundaryIndex];
-
-    if (boundary === undefined) {
-      throw new ExecutionError(`Boundary at index ${currentBoundaryIndex} is undefined`);
-    }
-
+    const boundary = this.getCurrentBoundary();
     return this.markMap.originalIndices.filter(index => index >= boundary);
   }
 
@@ -92,14 +115,7 @@ export class MessageIndexManager {
    * @returns 是否被修改
    */
   isModified(originalIndex: number): boolean {
-    const currentBoundaryIndex = this.markMap.boundaryToBatch.indexOf(this.markMap.currentBatch);
-    if (currentBoundaryIndex === -1) {
-      throw new ExecutionError(`Current batch ${this.markMap.currentBatch} not found in boundaryToBatch`);
-    }
-    const boundary = this.markMap.batchBoundaries[currentBoundaryIndex];
-    if (boundary === undefined) {
-      throw new ExecutionError(`Boundary at index ${currentBoundaryIndex} is undefined`);
-    }
+    const boundary = this.getCurrentBoundary();
     return originalIndex < boundary;
   }
 
@@ -109,14 +125,7 @@ export class MessageIndexManager {
    * @returns 批次中的索引
    */
   getBatchIndex(originalIndex: number): number {
-    const currentBoundaryIndex = this.markMap.boundaryToBatch.indexOf(this.markMap.currentBatch);
-    if (currentBoundaryIndex === -1) {
-      throw new ExecutionError(`Current batch ${this.markMap.currentBatch} not found in boundaryToBatch`);
-    }
-    const boundary = this.markMap.batchBoundaries[currentBoundaryIndex];
-    if (boundary === undefined) {
-      throw new ExecutionError(`Boundary at index ${currentBoundaryIndex} is undefined`);
-    }
+    const boundary = this.getCurrentBoundary();
     return originalIndex - boundary;
   }
 
@@ -146,6 +155,10 @@ export class MessageIndexManager {
     // 分配新批次号
     const newBatch = this.markMap.currentBatch + 1;
     this.markMap.boundaryToBatch.push(newBatch);
+    
+    // 更新批次映射
+    this.batchBoundaryMap.set(newBatch, boundaryIndex);
+    
     this.markMap.currentBatch = newBatch;
   }
 
@@ -165,6 +178,15 @@ export class MessageIndexManager {
     // 移除目标批次之后的边界
     this.markMap.batchBoundaries = this.markMap.batchBoundaries.slice(0, targetBoundaryIndex + 1);
     this.markMap.boundaryToBatch = this.markMap.boundaryToBatch.slice(0, targetBoundaryIndex + 1);
+
+    // 清理批次映射中目标批次之后的项
+    const batchesToRemove: number[] = [];
+    for (const [batch] of this.batchBoundaryMap) {
+      if (batch > targetBatch) {
+        batchesToRemove.push(batch);
+      }
+    }
+    batchesToRemove.forEach(batch => this.batchBoundaryMap.delete(batch));
 
     // 设置当前批次
     this.markMap.currentBatch = targetBatch;
@@ -201,7 +223,7 @@ export class MessageIndexManager {
    */
   clone(): MessageIndexManager {
     const cloned = new MessageIndexManager();
-    cloned.setMarkMap(this.getMarkMap());
+    cloned.setMarkMap(this.getMarkMap()); // setMarkMap 会自动重建批次映射
     return cloned;
   }
 
@@ -215,6 +237,8 @@ export class MessageIndexManager {
       boundaryToBatch: [0],
       currentBatch: 0
     };
+    // 重建批次映射
+    this.rebuildBatchBoundaryMap();
   }
 
   /**
@@ -239,6 +263,22 @@ export class MessageIndexManager {
     // 检查当前批次
     if (!this.markMap.boundaryToBatch.includes(this.markMap.currentBatch)) {
       return false;
+    }
+
+    // 检查批次映射一致性
+    if (this.batchBoundaryMap.size !== this.markMap.boundaryToBatch.length) {
+      return false;
+    }
+
+    for (let i = 0; i < this.markMap.boundaryToBatch.length; i++) {
+      const batch = this.markMap.boundaryToBatch[i];
+      const boundary = this.markMap.batchBoundaries[i];
+      if (batch === undefined || boundary === undefined) {
+        return false;
+      }
+      if (this.batchBoundaryMap.get(batch) !== boundary) {
+        return false;
+      }
     }
 
     return true;

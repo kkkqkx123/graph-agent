@@ -23,6 +23,7 @@ import { ConversationManager } from '../conversation';
 import { generateId, now as getCurrentTimestamp } from '../../../utils';
 import { type WorkflowRegistry } from '../../services/workflow-registry';
 import { MemoryCheckpointStorage } from '../../storage/memory-checkpoint-storage';
+import { GlobalMessageStorage } from '../global-message-storage';
 
 /**
  * 检查点管理器
@@ -79,9 +80,24 @@ export class CheckpointManager {
       nodeResultsRecord[result.nodeId] = result;
     }
 
-    // 获取对话历史
+    // 获取对话管理器
     const conversationManager = threadContext.getConversationManager();
-    const conversationHistory = conversationManager.getMessages();
+    
+    // 存储完整消息历史到全局存储
+    GlobalMessageStorage.getInstance().storeMessages(
+      threadId,
+      conversationManager.getAllMessages()
+    );
+    
+    // 增加引用计数，防止消息被过早删除
+    GlobalMessageStorage.getInstance().addReference(threadId);
+    
+    // 只保存索引状态和Token统计
+    const conversationState = {
+      markMap: conversationManager.getMarkMap(),
+      tokenUsage: conversationManager.getTokenUsage(),
+      currentRequestUsage: conversationManager.getCurrentRequestUsage()
+    };
 
     // 获取触发器状态快照
     const triggerStateSnapshot = threadContext.getTriggerStateSnapshot();
@@ -96,7 +112,7 @@ export class CheckpointManager {
       nodeResults: nodeResultsRecord,
       executionHistory: [], // TODO: 从 Thread 中提取执行历史
       errors: thread.errors,
-      conversationHistory: conversationHistory.length > 0 ? conversationHistory : undefined, // 保存对话历史
+      conversationState, // 使用新的索引状态
       triggerStates: triggerStateSnapshot.size > 0 ? triggerStateSnapshot : undefined // 保存触发器状态
     };
 
@@ -179,17 +195,30 @@ export class CheckpointManager {
       variableScopes: checkpoint.threadState.variableScopes
     });
 
-    // 步骤6：创建 ConversationManager
-    const conversationManager = new ConversationManager();
-
-    // 步骤7：恢复对话历史
-    if (checkpoint.threadState.conversationHistory) {
-      for (const message of checkpoint.threadState.conversationHistory) {
-        conversationManager.addMessage(message);
-      }
+    // 步骤6：从全局存储获取完整消息历史
+    const messageHistory = GlobalMessageStorage.getInstance().getMessages(checkpoint.threadId);
+    if (!messageHistory) {
+      throw new Error(`Message history not found for thread: ${checkpoint.threadId}`);
     }
 
-    // 步骤8：创建 ThreadContext
+    // 步骤7：创建 ConversationManager
+    const conversationManager = new ConversationManager();
+
+    // 批量添加所有消息（包括已压缩的）
+    conversationManager.addMessages(...messageHistory);
+
+    // 步骤8：恢复索引状态
+    if (checkpoint.threadState.conversationState) {
+      conversationManager.getIndexManager().setMarkMap(checkpoint.threadState.conversationState.markMap);
+      
+      // 恢复Token统计
+      conversationManager.getTokenUsageTracker().setState(
+        checkpoint.threadState.conversationState.tokenUsage,
+        checkpoint.threadState.conversationState.currentRequestUsage
+      );
+    }
+
+    // 步骤9：创建 ThreadContext
     const threadContext = new ThreadContext(
       thread as Thread,
       conversationManager,
@@ -197,12 +226,12 @@ export class CheckpointManager {
       this.workflowRegistry
     );
 
-    // 步骤9：恢复触发器状态
+    // 步骤10：恢复触发器状态
     if (checkpoint.threadState.triggerStates) {
       threadContext.restoreTriggerState(checkpoint.threadState.triggerStates);
     }
 
-    // 步骤10：注册到 ThreadRegistry
+    // 步骤11：注册到 ThreadRegistry
     this.threadRegistry.register(threadContext);
 
     return threadContext;
