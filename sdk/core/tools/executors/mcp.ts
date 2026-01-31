@@ -8,20 +8,13 @@ import type { McpToolConfig } from '../../../types/tool';
 import type { ThreadContext } from '../../execution/context/thread-context';
 import { BaseToolExecutor } from '../base-tool-executor';
 import { NetworkError, ToolError, ConfigurationError } from '../../../types/errors';
-
-/**
- * MCP客户端接口
- */
-interface MCPClient {
-  callTool(serverName: string, toolName: string, parameters: Record<string, any>): Promise<any>;
-  close(): Promise<void>;
-}
+import { StdioTransport } from '../../http/transport';
 
 /**
  * MCP工具执行器
  */
 export class McpToolExecutor extends BaseToolExecutor {
-  private clients: Map<string, MCPClient> = new Map();
+  private transports: Map<string, StdioTransport> = new Map();
 
   /**
    * 执行MCP工具
@@ -39,7 +32,6 @@ export class McpToolExecutor extends BaseToolExecutor {
     const config = tool.config as McpToolConfig;
     const serverName = config?.serverName;
     const mcpToolName = tool.name;
-    const serverUrl = config?.serverUrl;
 
     if (!serverName) {
       throw new ConfigurationError(
@@ -50,11 +42,11 @@ export class McpToolExecutor extends BaseToolExecutor {
     }
 
     try {
-      // 获取或创建MCP客户端
-      const client = await this.getOrCreateClient(serverName, serverUrl);
+      // 获取或创建StdioTransport
+      const transport = await this.getOrCreateTransport(serverName, config);
 
       // 调用MCP工具
-      const result = await client.callTool(serverName, mcpToolName, parameters);
+      const result = await transport.execute(mcpToolName, { query: parameters });
 
       return {
         serverName,
@@ -77,100 +69,69 @@ export class McpToolExecutor extends BaseToolExecutor {
   }
 
   /**
-   * 获取或创建MCP客户端
+   * 获取或创建StdioTransport
    */
-  private async getOrCreateClient(serverName: string, serverUrl?: string): Promise<MCPClient> {
-    // 如果客户端已存在，直接返回
-    if (this.clients.has(serverName)) {
-      return this.clients.get(serverName)!;
+  private async getOrCreateTransport(serverName: string, config: McpToolConfig): Promise<StdioTransport> {
+    // 如果transport已存在，直接返回
+    if (this.transports.has(serverName)) {
+      return this.transports.get(serverName)!;
     }
 
-    // 创建新的MCP客户端
-    const client = await this.createMCPClient(serverName, serverUrl);
+    // Extract server configuration from tool config
+    // The config could contain command, args, and env for the MCP server
+    let serverConfig: { command: string; args: string[]; env?: Record<string, string> };
 
-    // 缓存客户端
-    this.clients.set(serverName, client);
+    // If serverUrl is provided, treat it as a command
+    if (config.serverUrl) {
+      // Parse serverUrl to extract command and args if it's in a specific format
+      // For example, if serverUrl is "npx -y @modelcontextprotocol/server-filesystem"
+      const [command, ...args] = config.serverUrl.split(' ');
+      serverConfig = {
+        command: command || 'npx',
+        args,
+        env: Object.fromEntries(
+          Object.entries(process.env).filter(([, v]) => v !== undefined)
+        ) as Record<string, string>
+      };
+    } else {
+      // Default to a common MCP server setup
+      serverConfig = {
+        command: 'npx',
+        args: ['-y', '@modelcontextprotocol/server-filesystem'],
+        env: Object.fromEntries(
+          Object.entries(process.env).filter(([, v]) => v !== undefined)
+        ) as Record<string, string>
+      };
+    }
 
-    return client;
+    // Create new StdioTransport
+    const transport = new StdioTransport(serverConfig);
+
+    // Cache the transport
+    this.transports.set(serverName, transport);
+
+    return transport;
   }
 
   /**
-   * 创建MCP客户端
-   */
-  private async createMCPClient(serverName: string, serverUrl?: string): Promise<MCPClient> {
-    // 注意：这里需要根据实际的MCP客户端实现进行调整
-    // 目前提供一个模拟实现
-
-    const client: MCPClient = {
-      callTool: async (server: string, toolName: string, parameters: Record<string, any>) => {
-        // 模拟MCP调用
-        // 实际实现应该连接到MCP服务器并调用工具
-
-        if (serverUrl) {
-          try {
-            // 尝试通过HTTP调用MCP服务器
-            const response = await fetch(`${serverUrl}/tools/${toolName}`, {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json'
-              },
-              body: JSON.stringify(parameters)
-            });
-
-            if (!response.ok) {
-              throw new NetworkError(
-                `MCP server returned status ${response.status}`,
-                response.status,
-                { url: serverUrl }
-              );
-            }
-
-            return await response.json();
-          } catch (error) {
-            throw new NetworkError(
-              `Failed to call MCP server: ${error instanceof Error ? error.message : 'Unknown error'}`,
-              undefined,
-              { url: serverUrl },
-              error instanceof Error ? error : undefined
-            );
-          }
-        }
-
-        // 如果没有serverUrl，返回模拟结果
-        return {
-          server,
-          toolName,
-          parameters,
-          message: 'MCP client not fully implemented. Please provide serverUrl in tool metadata.'
-        };
-      },
-
-      close: async () => {
-        // 清理客户端资源
-        this.clients.delete(serverName);
-      }
-    };
-
-    return client;
-  }
-
-  /**
-   * 关闭所有MCP客户端
+   * 关闭所有MCP transports
    */
   async closeAll(): Promise<void> {
-    const closePromises = Array.from(this.clients.values()).map(client => client.close());
-    await Promise.all(closePromises);
-    this.clients.clear();
+    const disconnectPromises = Array.from(this.transports.values()).map(transport =>
+      transport.disconnect ? transport.disconnect() : Promise.resolve()
+    );
+    await Promise.all(disconnectPromises);
+    this.transports.clear();
   }
 
   /**
-   * 关闭指定服务器的MCP客户端
+   * 关闭指定服务器的MCP transport
    */
-  async closeClient(serverName: string): Promise<void> {
-    const client = this.clients.get(serverName);
-    if (client) {
-      await client.close();
-      this.clients.delete(serverName);
+  async closeTransport(serverName: string): Promise<void> {
+    const transport = this.transports.get(serverName);
+    if (transport && transport.disconnect) {
+      await transport.disconnect();
     }
+    this.transports.delete(serverName);
   }
 }

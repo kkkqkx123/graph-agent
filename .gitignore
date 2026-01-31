@@ -1,6 +1,4 @@
 **/*.repomix-output.xml
-logs
-target
 
 # 依赖
 node_modules/
@@ -12,6 +10,7 @@ yarn-error.log*
 dist/
 build/
 *.tsbuildinfo
+target
 
 # 环境变量
 .env

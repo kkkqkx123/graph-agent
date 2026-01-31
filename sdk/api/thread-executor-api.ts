@@ -8,7 +8,6 @@ import { workflowRegistry, type WorkflowRegistry } from '../core/services/workfl
 import type { WorkflowDefinition } from '../types/workflow';
 import type { ThreadResult, ThreadOptions } from '../types/thread';
 import type { ExecuteOptions } from './types';
-import { NotFoundError, ValidationError } from '../types/errors';
 
 /**
  * ThreadExecutorAPI - 主执行入口API
@@ -172,10 +171,10 @@ export class ThreadExecutorAPI {
     * @param threadId 线程ID
     * @returns 触发器管理器实例
     */
-   getTriggerManager(threadId: string) {
-     const threadContext = this.coordinator.getThreadContext(threadId);
-     return threadContext?.triggerManager;
-   }
+  getTriggerManager(threadId: string) {
+    const threadContext = this.coordinator.getThreadContext(threadId);
+    return threadContext?.triggerManager;
+  }
 
   /**
    * 转换执行选项

@@ -148,7 +148,7 @@ export class HttpClient {
           // 忽略熔断器的错误
         }
       }
-      
+
       throw error;
     }
   }
@@ -192,6 +192,16 @@ export class HttpClient {
       if (!response.ok) {
         const errorText = await response.text();
         throw this.createHttpError(response.status, errorText, options.url);
+      }
+
+      // 如果请求指定了流式响应，返回流而不是解析数据
+      if (options.stream) {
+        return {
+          data: response.body as T, // 返回响应流
+          status: response.status,
+          headers: this.headersToObject(response.headers),
+          requestId: response.headers.get('x-request-id') || undefined,
+        };
       }
 
       // 解析响应

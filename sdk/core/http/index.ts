@@ -5,6 +5,16 @@
 // 导出HTTP客户端
 export { HttpClient } from './http-client';
 
+// 导出传输协议
+export {
+  HttpTransport,
+  SseTransport,
+  StdioTransport,
+  Transport,
+  TransportResponse,
+  TransportOptions
+} from './transport';
+
 // 导出重试处理器
 export { RetryHandler } from './retry-handler';
 export type { RetryHandlerConfig } from './retry-handler';

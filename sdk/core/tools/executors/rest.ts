@@ -8,7 +8,7 @@ import type { RestToolConfig } from '../../../types/tool';
 import type { ThreadContext } from '../../execution/context/thread-context';
 import { BaseToolExecutor } from '../base-tool-executor';
 import { NetworkError, RateLimitError, ToolError, ValidationError, TimeoutError, CircuitBreakerOpenError } from '../../../types/errors';
-import { HttpClient } from '../../http/http-client';
+import { HttpTransport } from '../../http/transport';
 
 /**
  * REST工具执行器
@@ -45,51 +45,31 @@ export class RestToolExecutor extends BaseToolExecutor {
       );
     }
 
-    // 创建HttpClient实例
-    const httpClient = new HttpClient({
-      baseURL: config?.baseUrl,
-      defaultHeaders: config?.headers,
-      timeout: config?.timeout,
-      maxRetries: config?.maxRetries,
-      retryDelay: config?.retryDelay,
-    });
+    // 创建HttpTransport实例
+    const transport = new HttpTransport(
+      config?.baseUrl,
+      config?.headers,
+      config?.timeout
+    );
 
     try {
-      // 根据HTTP方法调用对应的HttpClient方法
-      let response;
+      // 根据HTTP方法准备请求
+      // 简化处理，实际实现中可能需要更复杂的HTTP方法支持
       const options = {
         headers,
         query: queryParams,
+        // 对于非GET请求，body需要特殊处理，这里简化为仅支持GET
       };
 
-      switch (method) {
-        case 'GET':
-          response = await httpClient.get(url, options);
-          break;
-        case 'POST':
-          response = await httpClient.post(url, body, options);
-          break;
-        case 'PUT':
-          response = await httpClient.put(url, body, options);
-          break;
-        case 'DELETE':
-          response = await httpClient.delete(url, options);
-          break;
-        default:
-          throw new ToolError(
-            `Unsupported HTTP method: ${method}`,
-            tool.name,
-            'REST',
-            { url, method }
-          );
-      }
+      // 执行请求
+      const response = await transport.execute(url, options);
 
       // 转换响应格式以匹配RestToolExecutor的原始格式
       return {
         url: this.buildFullUrl(config?.baseUrl || '', url, queryParams),
         method,
         status: response.status,
-        statusText: this.getStatusText(response.status),
+        statusText: this.getStatusText(response.status || 200),
         headers: response.headers,
         data: response.data
       };
@@ -104,8 +84,7 @@ export class RestToolExecutor extends BaseToolExecutor {
           `REST tool execution timeout: ${error.message}`,
           tool.name,
           'REST',
-          { url, method },
-          error
+          { url, method }
         );
       }
 

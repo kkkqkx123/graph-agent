@@ -4,9 +4,8 @@
  */
 
 import type { ThreadStatus } from '../types/thread';
-import type { Tool, ToolType } from '../types/tool';
-import type { LLMProfile } from '../types/llm';
-import type { BaseEvent, EventType } from '../types/events';
+import type { ToolType } from '../types/tool';
+import type { EventType } from '../types/events';
 import type {
   TriggerTemplateFilter,
   TriggerTemplateSummary
@@ -304,6 +303,22 @@ export interface ValidationResult {
   errors: string[];
   /** 警告信息数组 */
   warnings?: string[];
+}
+
+/**
+ * 触发器过滤器
+ */
+export interface TriggerFilter {
+  /** 触发器ID */
+  triggerId?: string;
+  /** 触发器名称 */
+  name?: string;
+  /** 触发器状态 */
+  status?: string;
+  /** 关联的工作流ID */
+  workflowId?: string;
+  /** 关联的线程ID */
+  threadId?: string;
 }
 
 // 重新导出触发器模板类型

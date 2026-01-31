@@ -14,6 +14,8 @@ import { EventManagerAPI } from './event-manager-api';
 import { CheckpointManagerAPI } from './checkpoint-manager-api';
 import { VariableManagerAPI } from './variable-manager-api';
 import { NodeRegistryAPI } from './registry/node-registry-api';
+import { TriggerTemplateRegistryAPI } from './trigger-template-registry-api';
+import { TriggerManagerAPI } from './trigger-manager-api';
 import { workflowRegistry, type WorkflowRegistry } from '../core/services/workflow-registry';
 import { threadRegistry, type ThreadRegistry } from '../core/services/thread-registry';
 import type { SDKOptions } from './types';
@@ -55,6 +57,12 @@ export class SDK {
   /** 节点模板管理API */
   public readonly nodeTemplates: NodeRegistryAPI;
 
+  /** 触发器模板管理API */
+  public readonly triggerTemplates: TriggerTemplateRegistryAPI;
+
+  /** 触发器管理API */
+  public readonly triggers: TriggerManagerAPI;
+
   /** 内部工作流注册表 */
   private readonly internalWorkflowRegistry: WorkflowRegistry;
 
@@ -82,6 +90,8 @@ export class SDK {
     this.checkpoints = new CheckpointManagerAPI();
     this.variables = new VariableManagerAPI(this.internalThreadRegistry);
     this.nodeTemplates = new NodeRegistryAPI();
+    this.triggerTemplates = new TriggerTemplateRegistryAPI();
+    this.triggers = new TriggerManagerAPI(this.internalThreadRegistry);
   }
 
   /**
@@ -107,6 +117,7 @@ export class SDK {
     await this.events.clearHistory();
     await this.checkpoints.clearAllCheckpoints();
     await this.nodeTemplates.clearTemplates();
+    await this.triggerTemplates.clearTemplates();
   }
 
   /**
@@ -131,6 +142,7 @@ export class SDK {
     eventListenerCount: number;
     checkpointCount: number;
     nodeTemplateCount: number;
+    triggerTemplateCount: number;
   }> {
     const workflowCount = await this.workflows.getWorkflowCount();
     const threadCount = await this.threads.getThreadCount();
@@ -140,6 +152,7 @@ export class SDK {
     const eventListenerCount = this.events.getListenerCount();
     const checkpointCount = await this.checkpoints.getCheckpointCount();
     const nodeTemplateCount = await this.nodeTemplates.getTemplateCount();
+    const triggerTemplateCount = await this.triggerTemplates.getTemplateCount();
 
     return {
       version: this.getVersion(),
@@ -150,7 +163,8 @@ export class SDK {
       profileCount,
       eventListenerCount,
       checkpointCount,
-      nodeTemplateCount
+      nodeTemplateCount,
+      triggerTemplateCount
     };
   }
 
