@@ -3,10 +3,10 @@
  * 封装ToolService和ToolRegistry，提供工具注册、查询和执行功能
  */
 
-import { ToolService } from '../core/tools/tool-service';
-import type { Tool } from '../types/tool';
-import type { ToolFilter, ToolOptions, ToolExecutionResult, ToolTestResult } from './types';
-import { NotFoundError } from '../types/errors';
+import { ToolService } from '../../core/tools/tool-service';
+import type { Tool } from '../../types/tool';
+import type { ToolFilter, ToolOptions, ToolExecutionResult, ToolTestResult } from '../types/tools-types';
+import { NotFoundError } from '../../types/errors';
 
 /**
  * ToolServiceAPI - 工具管理API

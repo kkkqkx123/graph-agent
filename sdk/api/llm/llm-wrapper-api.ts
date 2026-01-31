@@ -3,9 +3,9 @@
  * 封装LLMWrapper，提供统一的LLM调用接口
  */
 
-import { LLMWrapper } from '../core/llm/wrapper';
-import type { LLMRequest, LLMResult, LLMProfile } from '../types/llm';
-import { SDKError, ErrorCode } from '../types/errors';
+import { LLMWrapper } from '../../core/llm/wrapper';
+import type { LLMRequest, LLMResult, LLMProfile } from '../../types/llm';
+import { SDKError, ErrorCode } from '../../types/errors';
 
 /**
  * LLM调用统计信息

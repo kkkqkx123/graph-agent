@@ -5,7 +5,9 @@
 
 import { nodeTemplateRegistry, type NodeTemplateRegistry } from '../../core/services/node-template-registry';
 import type { NodeTemplate } from '../../types/node-template';
-import type { NodeTemplateFilter, NodeTemplateSummary, ValidationResult } from '../types';
+import type { NodeTemplateFilter, NodeTemplateSummary } from '../types/registry-types';
+import type { ValidationResult } from '../../types/errors';
+import { ValidationError } from '../../types/errors';
 
 /**
  * NodeRegistryAPI - 节点模板管理API
@@ -205,18 +207,21 @@ export class NodeRegistryAPI {
       this.registry.unregister(template.name);
       return {
         valid: true,
-        errors: []
+        errors: [],
+        warnings: []
       };
     } catch (error) {
       if (error instanceof Error) {
         return {
           valid: false,
-          errors: [error.message]
+          errors: [new ValidationError(error.message, 'template')],
+          warnings: []
         };
       }
       return {
         valid: false,
-        errors: ['Unknown validation error']
+        errors: [new ValidationError('Unknown validation error', 'template')],
+        warnings: []
       };
     }
   }

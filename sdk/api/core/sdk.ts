@@ -4,21 +4,21 @@
  */
 
 import { ThreadExecutorAPI } from './thread-executor-api';
-import { WorkflowRegistryAPI } from './registry/workflow-registry-api';
-import { ThreadRegistryAPI } from './registry/thread-registry-api';
-import { WorkflowValidatorAPI } from './workflow-validator-api';
-import { ToolServiceAPI } from './tool-service-api';
-import { LLMWrapperAPI } from './llm-wrapper-api';
-import { ProfileManagerAPI } from './profile-manager-api';
-import { EventManagerAPI } from './event-manager-api';
-import { CheckpointManagerAPI } from './checkpoint-manager-api';
-import { VariableManagerAPI } from './variable-manager-api';
-import { NodeRegistryAPI } from './registry/node-registry-api';
-import { TriggerTemplateRegistryAPI } from './trigger-template-registry-api';
-import { TriggerManagerAPI } from './trigger-manager-api';
-import { workflowRegistry, type WorkflowRegistry } from '../core/services/workflow-registry';
-import { threadRegistry, type ThreadRegistry } from '../core/services/thread-registry';
-import type { SDKOptions } from './types';
+import { WorkflowRegistryAPI } from '../registry/workflow-registry-api';
+import { ThreadRegistryAPI } from '../registry/thread-registry-api';
+import { WorkflowValidatorAPI } from '../validation/workflow-validator-api';
+import { ToolServiceAPI } from '../tools/tool-service-api';
+import { LLMWrapperAPI } from '../llm/llm-wrapper-api';
+import { ProfileManagerAPI } from '../llm/profile-manager-api';
+import { EventManagerAPI } from '../management/event-manager-api';
+import { CheckpointManagerAPI } from '../management/checkpoint-manager-api';
+import { VariableManagerAPI } from '../management/variable-manager-api';
+import { NodeRegistryAPI } from '../registry/node-registry-api';
+import { TriggerTemplateRegistryAPI } from '../registry/trigger-template-registry-api';
+import { TriggerManagerAPI } from '../management/trigger-manager-api';
+import { workflowRegistry, type WorkflowRegistry } from '../../core/services/workflow-registry';
+import { threadRegistry, type ThreadRegistry } from '../../core/services/thread-registry';
+import type { SDKOptions } from '../types/core-types';
 
 /**
  * SDK - 主SDK类

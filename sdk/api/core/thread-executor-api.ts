@@ -3,11 +3,11 @@
  * 封装ThreadCoordinator，提供简洁的执行接口
  */
 
-import { ThreadCoordinator } from '../core/execution/thread-coordinator';
-import { workflowRegistry, type WorkflowRegistry } from '../core/services/workflow-registry';
-import type { WorkflowDefinition } from '../types/workflow';
-import type { ThreadResult, ThreadOptions } from '../types/thread';
-import type { ExecuteOptions } from './types';
+import { ThreadCoordinator } from '../../core/execution/thread-coordinator';
+import { workflowRegistry, type WorkflowRegistry } from '../../core/services/workflow-registry';
+import type { WorkflowDefinition } from '../../types/workflow';
+import type { ThreadResult, ThreadOptions } from '../../types/thread';
+import type { ExecuteOptions } from '../types/core-types';
 
 /**
  * ThreadExecutorAPI - 主执行入口API

@@ -3,11 +3,11 @@
  * 与现有API并行，不修改现有功能
  */
 
-import { SDK } from '../sdk';
+import { SDK } from '../core/sdk';
 import { WorkflowDefinition, Node, Edge, EdgeType, NodeType, Condition } from '../../types';
-import { ThreadExecutorAPI } from '../thread-executor-api';
+import { ThreadExecutorAPI } from '../core/thread-executor-api';
 import { WorkflowRegistryAPI } from '../registry/workflow-registry-api';
-import { VariableManagerAPI } from '../variable-manager-api';
+import { VariableManagerAPI } from '../management/variable-manager-api';
 
 // 定义END符号，表示结束节点
 export const END = Symbol('END');

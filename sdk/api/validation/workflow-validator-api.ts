@@ -3,12 +3,12 @@
  * 封装WorkflowValidator和NodeValidator，提供工作流和节点验证接口
  */
 
-import { WorkflowValidator } from '../core/validation/workflow-validator';
-import { NodeValidator } from '../core/validation/node-validator';
-import type { WorkflowDefinition } from '../types/workflow';
-import type { Node } from '../types/node';
-import type { ValidationResult } from '../types/errors';
-import { ValidationError } from '../types/errors';
+import { WorkflowValidator } from '../../core/validation/workflow-validator';
+import { NodeValidator } from '../../core/validation/node-validator';
+import type { WorkflowDefinition } from '../../types/workflow';
+import type { Node } from '../../types/node';
+import type { ValidationResult } from '../../types/errors';
+import { ValidationError } from '../../types/errors';
 
 /**
  * WorkflowValidatorAPI - 验证管理API

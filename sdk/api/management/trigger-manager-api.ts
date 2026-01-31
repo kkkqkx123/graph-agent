@@ -4,25 +4,10 @@
  * 注意：触发器由workflow的静态定义提供，API提供运行时管理功能
  */
 
-import { threadRegistry as globalThreadRegistry, type ThreadRegistry } from '../core/services/thread-registry';
-import type { Trigger, TriggerStatus } from '../types/trigger';
-import { NotFoundError, ValidationError } from '../types/errors';
-
-/**
- * 触发器过滤器
- */
-export interface TriggerFilter {
-  /** 触发器ID */
-  triggerId?: string;
-  /** 触发器名称 */
-  name?: string;
-  /** 触发器状态 */
-  status?: TriggerStatus;
-  /** 关联的工作流ID */
-  workflowId?: string;
-  /** 关联的线程ID */
-  threadId?: string;
-}
+import { threadRegistry as globalThreadRegistry, type ThreadRegistry } from '../../core/services/thread-registry';
+import type { Trigger, TriggerStatus } from '../../types/trigger';
+import { NotFoundError, ValidationError } from '../../types/errors';
+import type { TriggerFilter } from '../types/management-types';
 
 /**
  * TriggerManagerAPI - 触发器管理API

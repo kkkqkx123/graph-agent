@@ -3,42 +3,11 @@
  * 封装CheckpointManager，提供状态快照和恢复功能
  */
 
-import { CheckpointManager } from '../core/execution/managers/checkpoint-manager';
-import type { Checkpoint, CheckpointMetadata } from '../types/checkpoint';
-import type { Thread } from '../types/thread';
-import { NotFoundError } from '../types/errors';
-
-/**
- * 检查点过滤器
- */
-export interface CheckpointFilter {
-  /** 线程ID */
-  threadId?: string;
-  /** 工作流ID */
-  workflowId?: string;
-  /** 开始时间戳 */
-  startTimeFrom?: number;
-  /** 结束时间戳 */
-  startTimeTo?: number;
-  /** 标签数组 */
-  tags?: string[];
-}
-
-/**
- * 检查点摘要
- */
-export interface CheckpointSummary {
-  /** 检查点ID */
-  checkpointId: string;
-  /** 线程ID */
-  threadId: string;
-  /** 工作流ID */
-  workflowId: string;
-  /** 时间戳 */
-  timestamp: number;
-  /** 元数据 */
-  metadata?: CheckpointMetadata;
-}
+import { CheckpointManager } from '../../core/execution/managers/checkpoint-manager';
+import type { Checkpoint, CheckpointMetadata } from '../../types/checkpoint';
+import type { Thread } from '../../types/thread';
+import { NotFoundError } from '../../types/errors';
+import type { CheckpointFilter, CheckpointSummary } from '../types/management-types';
 
 /**
  * CheckpointManagerAPI - 检查点管理API

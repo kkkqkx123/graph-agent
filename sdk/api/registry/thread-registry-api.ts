@@ -5,7 +5,7 @@
 
 import { threadRegistry as globalThreadRegistry, type ThreadRegistry } from '../../core/services/thread-registry';
 import type { Thread, ThreadResult, ThreadStatus } from '../../types/thread';
-import type { ThreadFilter, ThreadSummary } from '../types';
+import type { ThreadFilter, ThreadSummary } from '../types/registry-types';
 import { NotFoundError } from '../../types/errors';
 
 /**

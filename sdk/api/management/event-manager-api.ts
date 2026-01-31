@@ -3,7 +3,7 @@
  * 封装EventManager，仅暴露全局事件，提供便捷的事件订阅方法
  */
 
-import { eventManager, type EventManager } from '../core/services/event-manager';
+import { eventManager, type EventManager } from '../../core/services/event-manager';
 import type {
   BaseEvent,
   EventType,
@@ -20,9 +20,9 @@ import type {
   CheckpointCreatedEvent,
   SubgraphStartedEvent,
   SubgraphCompletedEvent
-} from '../types/events';
-import type { EventFilter } from './types';
-import { EventType as EventTypeEnum } from '../types/events';
+} from '../../types/events';
+import type { EventFilter } from '../types/management-types';
+import { EventType as EventTypeEnum } from '../../types/events';
 
 /**
  * EventManagerAPI - 事件监听API

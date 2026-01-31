@@ -3,9 +3,9 @@
  * 封装ProfileManager，提供LLM Profile管理功能
  */
 
-import { ProfileManager } from '../core/llm/profile-manager';
-import type { LLMProfile } from '../types/llm';
-import { ValidationError, NotFoundError, SDKError, ErrorCode } from '../types/errors';
+import { ProfileManager } from '../../core/llm/profile-manager';
+import type { LLMProfile } from '../../types/llm';
+import { ValidationError, NotFoundError, SDKError, ErrorCode } from '../../types/errors';
 
 /**
  * Profile模板类型
