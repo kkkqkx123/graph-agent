@@ -25,7 +25,10 @@ import { GraphValidator } from '../validation/graph-validator';
 import { GraphData } from '../entities/graph-data';
 import { ValidationError } from '../../types/errors';
 import { now } from '../../utils';
-import { nodeRegistry } from './node-registry';
+import { nodeTemplateRegistry } from './node-template-registry';
+import { triggerTemplateRegistry } from './trigger-template-registry';
+import type { TriggerReference } from '../../types/trigger-template';
+import type { WorkflowTrigger } from '../../types/trigger';
 
 /**
  * 工作流摘要信息
@@ -628,10 +631,14 @@ class WorkflowRegistry {
     // 展开节点引用
     const expandedNodes = this.expandNodeReferences(workflow.nodes);
 
+    // 展开触发器引用
+    const expandedTriggers = this.expandTriggerReferences(workflow.triggers || []);
+
     // 创建展开后的工作流定义
     const expandedWorkflow: WorkflowDefinition = {
       ...workflow,
-      nodes: expandedNodes
+      nodes: expandedNodes,
+      triggers: expandedTriggers
     };
 
     // 构建图
@@ -725,7 +732,8 @@ class WorkflowRegistry {
 
     // 创建处理后的工作流定义
     const processedWorkflow: ProcessedWorkflowDefinition = {
-      ...workflow,
+      ...expandedWorkflow,
+      triggers: expandedTriggers, // 显式使用已展开的触发器
       graph: buildResult.graph,
       graphAnalysis,
       validationResult: preprocessValidation,
@@ -761,7 +769,7 @@ class WorkflowRegistry {
         const configOverride = config.configOverride;
 
         // 获取节点模板
-        const template = nodeRegistry.get(templateName);
+        const template = nodeTemplateRegistry.get(templateName);
         if (!template) {
           throw new ValidationError(
             `Node template not found: ${templateName}`,
@@ -805,6 +813,50 @@ class WorkflowRegistry {
     // 通过检查config中是否包含templateName字段来判断
     const config = node.config as any;
     return config && typeof config === 'object' && 'templateName' in config;
+  }
+
+  /**
+   * 展开触发器引用
+   * 将工作流中的触发器引用展开为完整的触发器定义
+   * @param triggers 触发器数组（可能包含触发器引用）
+   * @returns 展开后的触发器数组
+   * @throws ValidationError 如果触发器模板不存在
+   */
+  private expandTriggerReferences(triggers: (WorkflowTrigger | TriggerReference)[]): WorkflowTrigger[] {
+    const expandedTriggers: WorkflowTrigger[] = [];
+
+    for (const trigger of triggers) {
+      // 检查是否为触发器引用
+      if (this.isTriggerReference(trigger)) {
+        const reference = trigger as TriggerReference;
+
+        // 使用 TriggerTemplateRegistry 的转换方法
+        const workflowTrigger = triggerTemplateRegistry.convertToWorkflowTrigger(
+          reference.templateName,
+          reference.triggerId,
+          reference.triggerName,
+          reference.configOverride
+        );
+
+        expandedTriggers.push(workflowTrigger);
+      } else {
+        // 普通触发器，直接添加
+        expandedTriggers.push(trigger as WorkflowTrigger);
+      }
+    }
+
+    return expandedTriggers;
+  }
+
+  /**
+   * 检查触发器是否为触发器引用
+   * @param trigger 触发器定义
+   * @returns 是否为触发器引用
+   */
+  private isTriggerReference(trigger: WorkflowTrigger | TriggerReference): boolean {
+    // 通过检查是否包含 templateName 字段来判断
+    const triggerObj = trigger as any;
+    return triggerObj && typeof triggerObj === 'object' && 'templateName' in triggerObj;
   }
 
   /**

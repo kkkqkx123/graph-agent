@@ -14,7 +14,7 @@ import { validateNodeByType } from '../validation/node-validation';
 /**
  * 节点注册表类
  */
-class NodeRegistry {
+class NodeTemplateRegistry {
   private templates: Map<string, NodeTemplate> = new Map();
 
   /**
@@ -145,14 +145,14 @@ class NodeRegistry {
         createdAt: template.createdAt,
         updatedAt: template.updatedAt
       };
-      
+
       if (template.metadata?.['category']) {
         summary.category = template.metadata['category'];
       }
       if (template.metadata?.['tags']) {
         summary.tags = template.metadata['tags'];
       }
-      
+
       return summary;
     });
   }
@@ -316,9 +316,9 @@ class NodeRegistry {
 /**
  * 全局节点注册表单例实例
  */
-export const nodeRegistry = new NodeRegistry();
+export const nodeTemplateRegistry = new NodeTemplateRegistry();
 
 /**
  * 导出NodeRegistry类型供类型注解使用
  */
-export type { NodeRegistry };
+export type { NodeTemplateRegistry };

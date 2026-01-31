@@ -19,6 +19,7 @@ export * from './execution';
 export * from './events';
 export * from './errors';
 export * from './trigger';
+export * from './trigger-template';
 
 // 集成类型
 export * from './tool';

@@ -3,20 +3,19 @@
  * 封装NodeRegistry，提供节点模板的CRUD操作
  */
 
-import { nodeRegistry, type NodeRegistry } from '../../core/services/node-registry';
+import { nodeTemplateRegistry, type NodeTemplateRegistry } from '../../core/services/node-template-registry';
 import type { NodeTemplate } from '../../types/node-template';
 import type { NodeTemplateFilter, NodeTemplateSummary, ValidationResult } from '../types';
-import { NotFoundError } from '../../types/errors';
 
 /**
  * NodeRegistryAPI - 节点模板管理API
  */
 export class NodeRegistryAPI {
-  private registry: NodeRegistry;
+  private registry: NodeTemplateRegistry;
   private cache: Map<string, NodeTemplate> = new Map();
 
   constructor() {
-    this.registry = nodeRegistry;
+    this.registry = nodeTemplateRegistry;
   }
 
   /**
@@ -249,7 +248,7 @@ export class NodeRegistryAPI {
    * 获取底层NodeRegistry实例
    * @returns NodeRegistry实例
    */
-  getRegistry(): NodeRegistry {
+  getRegistry(): NodeTemplateRegistry {
     return this.registry;
   }
 

@@ -9,6 +9,7 @@ import type { Edge } from './edge';
 import type { ID, Timestamp, Version, Metadata } from './common';
 import type { GraphAnalysisResult, Graph } from './graph';
 import type { WorkflowTrigger } from './trigger';
+import type { TriggerReference } from './trigger-template';
 import type { VariableScope } from './thread';
 
 /**
@@ -165,9 +166,11 @@ export interface PreprocessValidationResult {
  * 处理后的工作流定义类型
  * 扩展WorkflowDefinition，添加预处理相关的元数据
  */
-export interface ProcessedWorkflowDefinition extends WorkflowDefinition {
+export interface ProcessedWorkflowDefinition extends Omit<WorkflowDefinition, 'triggers'> {
   /** 图结构（使用 Graph 接口） */
   graph: Graph;
+  /** 触发器（已展开，不包含引用） */
+  triggers?: WorkflowTrigger[];
   /** 图分析结果 */
   graphAnalysis: GraphAnalysisResult;
   /** 预处理验证结果 */
@@ -202,7 +205,7 @@ export interface WorkflowDefinition {
   /** 工作流变量定义数组，用于声明工作流执行所需的变量 */
   variables?: WorkflowVariable[];
   /** 工作流触发器定义数组，用于声明工作流级别的触发器 */
-  triggers?: WorkflowTrigger[];
+  triggers?: (WorkflowTrigger | TriggerReference)[];
   /** 可选的工作流配置 */
   config?: WorkflowConfig;
   /** 可选的元数据信息 */

@@ -7,6 +7,10 @@ import type { ThreadStatus } from '../types/thread';
 import type { Tool, ToolType } from '../types/tool';
 import type { LLMProfile } from '../types/llm';
 import type { BaseEvent, EventType } from '../types/events';
+import type {
+  TriggerTemplateFilter,
+  TriggerTemplateSummary
+} from '../types/trigger-template';
 
 /**
  * 执行选项
@@ -301,3 +305,6 @@ export interface ValidationResult {
   /** 警告信息数组 */
   warnings?: string[];
 }
+
+// 重新导出触发器模板类型
+export type { TriggerTemplateFilter, TriggerTemplateSummary };

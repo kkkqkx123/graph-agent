@@ -18,6 +18,7 @@ export { EventManagerAPI } from './event-manager-api';
 export { CheckpointManagerAPI } from './checkpoint-manager-api';
 export { VariableManagerAPI } from './variable-manager-api';
 export { NodeRegistryAPI } from './registry/node-registry-api';
+export { TriggerTemplateRegistryAPI } from './trigger-template-registry-api';
 
 // langgraph兼容API
 export { StateGraph, CompiledGraph, END } from './langgraph-compatible/stategraph-api';
@@ -41,6 +42,8 @@ export type {
   VariableFilter,
   NodeTemplateFilter,
   NodeTemplateSummary,
+  TriggerTemplateFilter,
+  TriggerTemplateSummary,
   ValidationResult
 } from './types';
 
