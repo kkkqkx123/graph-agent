@@ -6,7 +6,7 @@
 import { SDK } from '../sdk';
 import { WorkflowDefinition, Node, Edge, EdgeType, NodeType, Condition } from '../../types';
 import { ThreadExecutorAPI } from '../thread-executor-api';
-import { WorkflowRegistryAPI } from '../workflow-registry-api';
+import { WorkflowRegistryAPI } from '../registry/workflow-registry-api';
 import { VariableManagerAPI } from '../variable-manager-api';
 
 // 定义END符号，表示结束节点

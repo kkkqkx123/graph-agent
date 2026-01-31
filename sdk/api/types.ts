@@ -255,3 +255,49 @@ export interface VariableFilter {
   /** 是否只读 */
   readonly?: boolean;
 }
+
+/**
+ * 节点模板过滤器
+ */
+export interface NodeTemplateFilter {
+  /** 节点模板名称 */
+  name?: string;
+  /** 节点类型 */
+  type?: string;
+  /** 分类 */
+  category?: string;
+  /** 标签数组 */
+  tags?: string[];
+}
+
+/**
+ * 节点模板摘要
+ */
+export interface NodeTemplateSummary {
+  /** 节点模板名称 */
+  name: string;
+  /** 节点类型 */
+  type: string;
+  /** 节点描述 */
+  description?: string;
+  /** 分类 */
+  category?: string;
+  /** 标签数组 */
+  tags?: string[];
+  /** 创建时间 */
+  createdAt: number;
+  /** 更新时间 */
+  updatedAt: number;
+}
+
+/**
+ * 验证结果
+ */
+export interface ValidationResult {
+  /** 是否验证通过 */
+  valid: boolean;
+  /** 错误信息数组 */
+  errors: string[];
+  /** 警告信息数组 */
+  warnings?: string[];
+}

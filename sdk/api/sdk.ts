@@ -4,8 +4,8 @@
  */
 
 import { ThreadExecutorAPI } from './thread-executor-api';
-import { WorkflowRegistryAPI } from './workflow-registry-api';
-import { ThreadRegistryAPI } from './thread-registry-api';
+import { WorkflowRegistryAPI } from './registry/workflow-registry-api';
+import { ThreadRegistryAPI } from './registry/thread-registry-api';
 import { WorkflowValidatorAPI } from './workflow-validator-api';
 import { ToolServiceAPI } from './tool-service-api';
 import { LLMWrapperAPI } from './llm-wrapper-api';
@@ -13,6 +13,7 @@ import { ProfileManagerAPI } from './profile-manager-api';
 import { EventManagerAPI } from './event-manager-api';
 import { CheckpointManagerAPI } from './checkpoint-manager-api';
 import { VariableManagerAPI } from './variable-manager-api';
+import { NodeRegistryAPI } from './registry/node-registry-api';
 import { workflowRegistry, type WorkflowRegistry } from '../core/services/workflow-registry';
 import { threadRegistry, type ThreadRegistry } from '../core/services/thread-registry';
 import type { SDKOptions } from './types';
@@ -51,6 +52,9 @@ export class SDK {
   /** 变量管理API */
   public readonly variables: VariableManagerAPI;
 
+  /** 节点模板管理API */
+  public readonly nodeTemplates: NodeRegistryAPI;
+
   /** 内部工作流注册表 */
   private readonly internalWorkflowRegistry: WorkflowRegistry;
 
@@ -77,6 +81,7 @@ export class SDK {
     this.events = new EventManagerAPI();
     this.checkpoints = new CheckpointManagerAPI();
     this.variables = new VariableManagerAPI(this.internalThreadRegistry);
+    this.nodeTemplates = new NodeRegistryAPI();
   }
 
   /**
@@ -101,6 +106,7 @@ export class SDK {
     await this.profiles.clearProfiles();
     await this.events.clearHistory();
     await this.checkpoints.clearAllCheckpoints();
+    await this.nodeTemplates.clearTemplates();
   }
 
   /**
@@ -124,6 +130,7 @@ export class SDK {
     profileCount: number;
     eventListenerCount: number;
     checkpointCount: number;
+    nodeTemplateCount: number;
   }> {
     const workflowCount = await this.workflows.getWorkflowCount();
     const threadCount = await this.threads.getThreadCount();
@@ -132,6 +139,7 @@ export class SDK {
     const profileCount = await this.profiles.getProfileCount();
     const eventListenerCount = this.events.getListenerCount();
     const checkpointCount = await this.checkpoints.getCheckpointCount();
+    const nodeTemplateCount = await this.nodeTemplates.getTemplateCount();
 
     return {
       version: this.getVersion(),
@@ -141,7 +149,8 @@ export class SDK {
       toolCount,
       profileCount,
       eventListenerCount,
-      checkpointCount
+      checkpointCount,
+      nodeTemplateCount
     };
   }
 

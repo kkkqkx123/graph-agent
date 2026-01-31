@@ -3,10 +3,10 @@
  * 封装ThreadRegistry，提供线程查询和管理
  */
 
-import { threadRegistry as globalThreadRegistry, type ThreadRegistry } from '../core/services/thread-registry';
-import type { Thread, ThreadResult, ThreadStatus } from '../types/thread';
-import type { ThreadFilter, ThreadSummary } from './types';
-import { NotFoundError } from '../types/errors';
+import { threadRegistry as globalThreadRegistry, type ThreadRegistry } from '../../core/services/thread-registry';
+import type { Thread, ThreadResult, ThreadStatus } from '../../types/thread';
+import type { ThreadFilter, ThreadSummary } from '../types';
+import { NotFoundError } from '../../types/errors';
 
 /**
  * ThreadRegistryAPI - 线程管理API

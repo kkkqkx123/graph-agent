@@ -18,12 +18,14 @@ import type {
 } from '../../types/workflow';
 import type { GraphBuildOptions } from '../../types';
 import type { ID } from '../../types/common';
+import type { Node } from '../../types/node';
 import { WorkflowValidator } from '../validation/workflow-validator';
 import { GraphBuilder } from '../graph/graph-builder';
 import { GraphValidator } from '../validation/graph-validator';
 import { GraphData } from '../entities/graph-data';
 import { ValidationError } from '../../types/errors';
 import { now } from '../../utils';
+import { nodeRegistry } from './node-registry';
 
 /**
  * 工作流摘要信息
@@ -623,6 +625,15 @@ class WorkflowRegistry {
    * @throws ValidationError 如果预处理失败
    */
   private preprocessWorkflow(workflow: WorkflowDefinition): void {
+    // 展开节点引用
+    const expandedNodes = this.expandNodeReferences(workflow.nodes);
+
+    // 创建展开后的工作流定义
+    const expandedWorkflow: WorkflowDefinition = {
+      ...workflow,
+      nodes: expandedNodes
+    };
+
     // 构建图
     const buildOptions: GraphBuildOptions = {
       validate: true,
@@ -633,7 +644,7 @@ class WorkflowRegistry {
       workflowRegistry: this,
     };
 
-    const buildResult = GraphBuilder.buildAndValidate(workflow, buildOptions);
+    const buildResult = GraphBuilder.buildAndValidate(expandedWorkflow, buildOptions);
     if (!buildResult.isValid) {
       throw new ValidationError(
         `Graph build failed: ${buildResult.errors.join(', ')}`,
@@ -728,6 +739,72 @@ class WorkflowRegistry {
     // 缓存处理后的工作流和图
     this.processedWorkflows.set(workflow.id, processedWorkflow);
     this.graphCache.set(workflow.id, buildResult.graph);
+  }
+
+  /**
+   * 展开节点引用
+   * 将工作流中的节点引用展开为完整的节点定义
+   * @param nodes 节点数组（可能包含节点引用）
+   * @returns 展开后的节点数组
+   * @throws ValidationError 如果节点模板不存在
+   */
+  private expandNodeReferences(nodes: Node[]): Node[] {
+    const expandedNodes: Node[] = [];
+
+    for (const node of nodes) {
+      // 检查是否为节点引用
+      if (this.isNodeReference(node)) {
+        const config = node.config as any;
+        const templateName = config.templateName;
+        const nodeId = config.nodeId;
+        const nodeName = config.nodeName;
+        const configOverride = config.configOverride;
+
+        // 获取节点模板
+        const template = nodeRegistry.get(templateName);
+        if (!template) {
+          throw new ValidationError(
+            `Node template not found: ${templateName}`,
+            `node.${node.id}.config.templateName`
+          );
+        }
+
+        // 合并配置覆盖
+        const mergedConfig = configOverride
+          ? { ...template.config, ...configOverride }
+          : template.config;
+
+        // 创建展开后的节点
+        const expandedNode: Node = {
+          id: nodeId,
+          type: template.type,
+          name: nodeName || template.name,
+          config: mergedConfig,
+          description: template.description,
+          metadata: template.metadata,
+          outgoingEdgeIds: node.outgoingEdgeIds,
+          incomingEdgeIds: node.incomingEdgeIds
+        };
+
+        expandedNodes.push(expandedNode);
+      } else {
+        // 普通节点，直接添加
+        expandedNodes.push(node);
+      }
+    }
+
+    return expandedNodes;
+  }
+
+  /**
+   * 检查节点是否为节点引用
+   * @param node 节点定义
+   * @returns 是否为节点引用
+   */
+  private isNodeReference(node: Node): boolean {
+    // 通过检查config中是否包含templateName字段来判断
+    const config = node.config as any;
+    return config && typeof config === 'object' && 'templateName' in config;
   }
 
   /**

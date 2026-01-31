@@ -8,6 +8,7 @@ export * from './common';
 // 核心实体类型
 export * from './workflow';
 export * from './node';
+export * from './node-template';
 export * from './edge';
 export * from './graph';
 export * from './condition';
