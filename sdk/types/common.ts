@@ -32,3 +32,9 @@ export type Version = string;
  * 支持任意键值对
  */
 export type Metadata = Record<string, any>;
+
+/**
+ * 变量作用域类型
+ * 定义工作流中变量的作用域级别
+ */
+export type VariableScope = 'global' | 'thread' | 'subgraph' | 'loop';

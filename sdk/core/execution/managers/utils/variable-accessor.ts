@@ -27,7 +27,7 @@
  */
 
 import type { ThreadContext } from '../../context/thread-context';
-import type { VariableScope } from '../../../../types/thread';
+import type { VariableScope } from '../../../../types/common';
 import { resolvePath } from '../../../../utils/evalutor/path-resolver';
 
 /**

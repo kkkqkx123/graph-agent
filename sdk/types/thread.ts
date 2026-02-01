@@ -4,7 +4,7 @@
  * Thread包含完整的图结构信息，使其成为自包含的执行单元
  */
 
-import type { ID, Timestamp, Version, Metadata } from './common';
+import type { ID, Timestamp, Version, Metadata, VariableScope } from './common';
 import type { Graph } from './graph';
 import type { WorkflowConfig, WorkflowMetadata } from './workflow';
 import type { GraphAnalysisResult } from './graph';
@@ -29,11 +29,6 @@ export enum ThreadStatus {
   /** 超时 */
   TIMEOUT = 'TIMEOUT'
 }
-
-/**
- * 变量作用域类型
- */
-export type VariableScope = 'global' | 'thread' | 'subgraph' | 'loop';
 
 /**
  * 线程变量类型

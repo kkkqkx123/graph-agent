@@ -6,11 +6,10 @@
 // 导入类型定义
 import type { Node } from './node';
 import type { Edge } from './edge';
-import type { ID, Timestamp, Version, Metadata } from './common';
+import type { ID, Timestamp, Version, Metadata, VariableScope } from './common';
 import type { GraphAnalysisResult, Graph } from './graph';
 import type { WorkflowTrigger } from './trigger';
 import type { TriggerReference } from './trigger-template';
-import type { VariableScope } from './thread';
 
 /**
  * 工作流状态枚举

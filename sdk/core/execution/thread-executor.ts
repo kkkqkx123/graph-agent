@@ -285,6 +285,8 @@ export class ThreadExecutor implements SubgraphContextFactory {
     this.isExecutingTriggeredSubgraph = true;
 
     try {
+      // 注意：executeSingleTriggeredSubgraph 现在返回执行结果
+      // 这里我们只关心异步执行的完成，结果由事件系统通知
       await executeSingleTriggeredSubgraph(
         task,
         this,

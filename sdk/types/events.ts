@@ -69,6 +69,8 @@ export enum EventType {
   TRIGGERED_SUBGRAPH_STARTED = 'TRIGGERED_SUBGRAPH_STARTED',
   /** 触发子工作流完成 */
   TRIGGERED_SUBGRAPH_COMPLETED = 'TRIGGERED_SUBGRAPH_COMPLETED',
+  /** 触发子工作流失败 */
+  TRIGGERED_SUBGRAPH_FAILED = 'TRIGGERED_SUBGRAPH_FAILED',
   /** 变量变更 */
   VARIABLE_CHANGED = 'VARIABLE_CHANGED'
 }
@@ -429,6 +431,25 @@ export interface TriggeredSubgraphCompletedEvent extends BaseEvent {
   subgraphId: ID;
   /** 触发器ID */
   triggerId: ID;
+  /** 输出数据 */
+  output?: Record<string, any>;
+  /** 执行时间（毫秒） */
+  executionTime?: number;
+}
+
+/**
+ * 触发子工作流失败事件类型
+ */
+export interface TriggeredSubgraphFailedEvent extends BaseEvent {
+  type: EventType.TRIGGERED_SUBGRAPH_FAILED;
+  /** 子工作流ID */
+  subgraphId: ID;
+  /** 触发器ID */
+  triggerId: ID;
+  /** 错误信息 */
+  error: string;
+  /** 执行时间（毫秒） */
+  executionTime?: number;
 }
 
 /**
@@ -508,4 +529,5 @@ export type Event =
   | SubgraphCompletedEvent
   | TriggeredSubgraphStartedEvent
   | TriggeredSubgraphCompletedEvent
+  | TriggeredSubgraphFailedEvent
   | VariableChangedEvent;

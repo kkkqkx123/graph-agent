@@ -37,8 +37,6 @@ export interface ThreadStateSnapshot {
   output: Record<string, any>;
   /** 节点执行结果映射 */
   nodeResults: Record<string, NodeExecutionResult>;
-  /** 执行历史记录 */
-  executionHistory: any[];
   /** 错误信息数组 */
   errors: any[];
   /** 对话状态（仅存储索引信息，用于恢复 ConversationManager） */

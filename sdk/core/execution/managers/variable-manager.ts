@@ -11,7 +11,8 @@
  * - 事件驱动：变量变更时触发事件通知
  */
 
-import type { Thread, ThreadVariable, VariableScope } from '../../../types/thread';
+import type { Thread, ThreadVariable } from '../../../types/thread';
+import type { VariableScope } from '../../../types/common';
 import type { WorkflowDefinition, WorkflowVariable } from '../../../types/workflow';
 import type { ThreadContext } from '../context/thread-context';
 import { VariableAccessor } from './utils/variable-accessor';

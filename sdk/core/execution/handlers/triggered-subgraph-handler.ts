@@ -19,6 +19,7 @@ import type { ID } from '../../../types/common';
 import { ThreadContext } from '../context/thread-context';
 import type { EventManager } from '../../services/event-manager';
 import { EventType } from '../../../types/events';
+import type { ThreadResult } from '../../../types/thread';
 import { now } from '../../../utils';
 
 /**
@@ -50,6 +51,16 @@ export interface TriggeredSubgraphTask {
   mainThreadContext: ThreadContext;
   /** 配置选项 */
   config?: {
+    /**
+     * 是否等待子工作流完成
+     *
+     * 行为差异:
+     * - true: 同步执行，调用者会阻塞直到子工作流完成
+     *        返回的 TriggerExecutionResult 包含子工作流的实际执行结果
+     * - false: 异步执行，调用者立即返回，子工作流在后台执行
+     *         返回的 TriggerExecutionResult 只表示任务已提交
+     *         实际执行结果通过 TRIGGERED_SUBGRAPH_COMPLETED 或 TRIGGERED_SUBGRAPH_FAILED 事件通知
+     */
     waitForCompletion?: boolean;
     timeout?: number;
     recordHistory?: boolean;
@@ -111,11 +122,15 @@ export async function emitSubgraphStartedEvent(
  * 触发子工作流完成事件
  * @param mainThreadContext 主工作流线程上下文
  * @param task 触发子工作流任务
+ * @param subgraphContext 子工作流线程上下文
+ * @param executionTime 执行时间（毫秒）
  * @param eventManager 事件管理器
  */
 export async function emitSubgraphCompletedEvent(
   mainThreadContext: ThreadContext,
   task: TriggeredSubgraphTask,
+  subgraphContext: ThreadContext,
+  executionTime: number,
   eventManager: EventManager
 ): Promise<void> {
   await eventManager.emit({
@@ -124,8 +139,49 @@ export async function emitSubgraphCompletedEvent(
     workflowId: mainThreadContext.getWorkflowId(),
     subgraphId: task.subgraphId,
     triggerId: task.triggerId,
+    output: subgraphContext.getOutput(),
+    executionTime,
     timestamp: now()
   });
+}
+
+/**
+ * 触发子工作流失败事件
+ * @param mainThreadContext 主工作流线程上下文
+ * @param task 触发子工作流任务
+ * @param error 错误信息
+ * @param executionTime 执行时间（毫秒）
+ * @param eventManager 事件管理器
+ */
+export async function emitSubgraphFailedEvent(
+  mainThreadContext: ThreadContext,
+  task: TriggeredSubgraphTask,
+  error: Error | string,
+  executionTime: number,
+  eventManager: EventManager
+): Promise<void> {
+  await eventManager.emit({
+    type: EventType.TRIGGERED_SUBGRAPH_FAILED,
+    threadId: mainThreadContext.getThreadId(),
+    workflowId: mainThreadContext.getWorkflowId(),
+    subgraphId: task.subgraphId,
+    triggerId: task.triggerId,
+    error: error instanceof Error ? error.message : error,
+    executionTime,
+    timestamp: now()
+  });
+}
+
+/**
+ * 执行单个触发子工作流的返回结果
+ */
+export interface ExecutedSubgraphResult {
+  /** 子工作流上下文 */
+  subgraphContext: ThreadContext;
+  /** 执行结果 */
+  threadResult: ThreadResult;
+  /** 执行时间（毫秒） */
+  executionTime: number;
 }
 
 /**
@@ -134,13 +190,16 @@ export async function emitSubgraphCompletedEvent(
  * @param contextFactory 子工作流上下文工厂
  * @param subgraphExecutor 子工作流执行器
  * @param eventManager 事件管理器
+ * @returns 执行结果，包含子工作流上下文、执行结果和执行时间
  */
 export async function executeSingleTriggeredSubgraph(
   task: TriggeredSubgraphTask,
   contextFactory: SubgraphContextFactory,
   subgraphExecutor: SubgraphExecutor,
   eventManager: EventManager
-): Promise<void> {
+): Promise<ExecutedSubgraphResult> {
+  const startTime = Date.now();
+  
   // 标记开始执行触发子工作流
   task.mainThreadContext.startTriggeredSubgraphExecution();
   
@@ -152,10 +211,38 @@ export async function executeSingleTriggeredSubgraph(
     await emitSubgraphStartedEvent(task.mainThreadContext, task, eventManager);
     
     // 执行子工作流
-    await subgraphExecutor.executeThread(subgraphContext);
+    const threadResult = await subgraphExecutor.executeThread(subgraphContext);
+    
+    const executionTime = Date.now() - startTime;
     
     // 触发子工作流完成事件
-    await emitSubgraphCompletedEvent(task.mainThreadContext, task, eventManager);
+    await emitSubgraphCompletedEvent(
+      task.mainThreadContext,
+      task,
+      subgraphContext,
+      executionTime,
+      eventManager
+    );
+    
+    return {
+      subgraphContext,
+      threadResult,
+      executionTime
+    };
+  } catch (error) {
+    const executionTime = Date.now() - startTime;
+    
+    // 触发子工作流失败事件
+    await emitSubgraphFailedEvent(
+      task.mainThreadContext,
+      task,
+      error instanceof Error ? error : new Error(String(error)),
+      executionTime,
+      eventManager
+    );
+    
+    // 重新抛出错误，让调用者处理
+    throw error;
   } finally {
     // 结束触发子工作流执行标记
     task.mainThreadContext.endTriggeredSubgraphExecution();

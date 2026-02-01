@@ -111,7 +111,6 @@ export class CheckpointManager {
       input: thread.input,
       output: thread.output,
       nodeResults: nodeResultsRecord,
-      executionHistory: [], // TODO: 从 Thread 中提取执行历史
       errors: thread.errors,
       conversationState, // 使用新的索引状态
       triggerStates: triggerStateSnapshot.size > 0 ? triggerStateSnapshot : undefined // 保存触发器状态

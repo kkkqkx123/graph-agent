@@ -7,7 +7,11 @@ import type { TriggerAction, TriggerExecutionResult } from '../../../../types/tr
 import type { ExecuteTriggeredSubgraphActionConfig } from '../../../../types/trigger';
 import { NotFoundError, ValidationError } from '../../../../types/errors';
 import { ExecutionContext } from '../../context/execution-context';
-import { executeSingleTriggeredSubgraph, type TriggeredSubgraphTask } from '../triggered-subgraph-handler';
+import {
+  executeSingleTriggeredSubgraph,
+  type TriggeredSubgraphTask,
+  type ExecutedSubgraphResult
+} from '../triggered-subgraph-handler';
 import type { EventManager } from '../../../services/event-manager';
 import { eventManager } from '../../../services/event-manager';
 import { ThreadExecutor } from '../../thread-executor';
@@ -123,7 +127,7 @@ export async function executeTriggeredSubgraphHandler(
     };
 
     // 执行触发子工作流
-    await executeSingleTriggeredSubgraph(
+    const result = await executeSingleTriggeredSubgraph(
       task,
       threadExecutor, // 作为 SubgraphContextFactory
       threadExecutor, // 作为 SubgraphExecutor
@@ -136,12 +140,14 @@ export async function executeTriggeredSubgraphHandler(
       triggerId,
       action,
       {
-        message: `Triggered subgraph execution initiated: ${triggeredWorkflowId}`,
+        message: `Triggered subgraph execution completed: ${triggeredWorkflowId}`,
         triggeredWorkflowId,
         input,
+        output: result.subgraphContext.getOutput(),
         waitForCompletion,
         executed: true,
-        completed: waitForCompletion,
+        completed: true,
+        executionTime: result.executionTime,
       },
       executionTime
     );

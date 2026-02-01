@@ -8,4 +8,4 @@ export { generateId, isValidId, validateId } from "./id-utils";
 export { now, timestampFromDate, timestampToDate, timestampToISOString, nowWithTimezone, diffTimestamp, formatDuration } from "./timestamp-utils";
 export { initialVersion, parseVersion, nextMajorVersion, nextMinorVersion, nextPatchVersion, compareVersion, autoIncrementVersion, parseFullVersion } from "./version-utils";
 export { emptyMetadata, getMetadata, setMetadata, deleteMetadata, hasMetadata, mergeMetadata } from "./metadata-utils";
-export { getTokenEncoder, encodeText, encodeObject, estimateTokensFallback, resetEncoder } from "./token-encoder";
+export { encodeText, encodeObject, estimateTokensFallback, resetEncoder } from "./token-encoder";
