@@ -15,7 +15,7 @@
  * - 上下文压缩通过触发器+子工作流实现，不在此模块
  */
 
-import type { LLMMessage, LLMUsage, MessageMarkMap } from '../../types/llm';
+import type { LLMMessage, LLMUsage, MessageMarkMap, TokenUsageHistory } from '../../types/llm';
 import { ValidationError } from '../../types/errors';
 import { TokenUsageTracker, type TokenUsageStats } from './token-usage-tracker';
 import { MessageIndexManager } from './message-index-manager';
@@ -199,6 +199,14 @@ export class ConversationManager {
    */
   getCurrentRequestUsage(): TokenUsageStats | null {
     return this.tokenUsageTracker.getCurrentRequestUsage();
+  }
+
+  /**
+   * 获取Token使用历史记录
+   * @returns Token使用历史记录
+   */
+  getUsageHistory(): TokenUsageHistory[] {
+    return this.tokenUsageTracker.getUsageHistory();
   }
 
   /**

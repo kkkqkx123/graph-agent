@@ -13,7 +13,8 @@
  * - ThreadRegistry: 线程注册表
  * - EventManager: 事件管理器
  * - CheckpointManager: 检查点管理器
- * - ThreadLifecycleManager: 生命周期管理器
+ * - ThreadLifecycleManager: 生命周期管理器（原子操作）
+ * - ThreadLifecycleCoordinator: 生命周期协调器（流程编排）
  *
  * 职责：
  * - 管理执行组件的创建和访问
@@ -30,6 +31,7 @@ import { threadRegistry, type ThreadRegistry } from '../../services/thread-regis
 import { eventManager, type EventManager } from '../../services/event-manager';
 import { CheckpointManager } from '../managers/checkpoint-manager';
 import { ThreadLifecycleManager } from '../thread-lifecycle-manager';
+import { ThreadLifecycleCoordinator } from '../coordinators/thread-lifecycle-coordinator';
 
 /**
  * 执行上下文 - 轻量级依赖注入容器
@@ -69,6 +71,14 @@ export class ExecutionContext {
     // 5. ThreadLifecycleManager 依赖 EventManager
     const lifecycleManager = new ThreadLifecycleManager(eventManager);
     this.register('lifecycleManager', lifecycleManager);
+
+    // 6. ThreadLifecycleCoordinator 依赖 ThreadRegistry, WorkflowRegistry, EventManager
+    const lifecycleCoordinator = new ThreadLifecycleCoordinator(
+      threadRegistry,
+      workflowRegistry,
+      eventManager
+    );
+    this.register('lifecycleCoordinator', lifecycleCoordinator);
 
     this.initialized = true;
   }
@@ -121,10 +131,20 @@ export class ExecutionContext {
   /**
    * 获取 ThreadLifecycleManager
    * @returns ThreadLifecycleManager 实例
+   * @deprecated 应该使用 getLifecycleCoordinator() 进行外部调用，Manager仅供内部使用
    */
   getThreadLifecycleManager(): ThreadLifecycleManager {
     this.ensureInitialized();
     return this.components.get('lifecycleManager') as ThreadLifecycleManager;
+  }
+
+  /**
+   * 获取 ThreadLifecycleCoordinator
+   * @returns ThreadLifecycleCoordinator 实例
+   */
+  getLifecycleCoordinator(): ThreadLifecycleCoordinator {
+    this.ensureInitialized();
+    return this.components.get('lifecycleCoordinator') as ThreadLifecycleCoordinator;
   }
 
   /**

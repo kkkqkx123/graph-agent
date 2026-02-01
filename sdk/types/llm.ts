@@ -125,6 +125,50 @@ export interface LLMUsage {
 }
 
 /**
+ * Token使用历史记录
+ * 记录每次API调用的详细token使用情况
+ */
+export interface TokenUsageHistory {
+  /** 请求ID */
+  requestId: string;
+  /** 时间戳 */
+  timestamp: number;
+  /** 提示token数 */
+  promptTokens: number;
+  /** 完成token数 */
+  completionTokens: number;
+  /** 总token数 */
+  totalTokens: number;
+  /** 成本（可选） */
+  cost?: number;
+  /** 模型名称（可选） */
+  model?: string;
+  /** 原始usage数据 */
+  rawUsage?: LLMUsage;
+}
+
+/**
+ * Token使用统计信息
+ * 提供历史记录的统计分析
+ */
+export interface TokenUsageStatistics {
+  /** 总请求数 */
+  totalRequests: number;
+  /** 平均token数 */
+  averageTokens: number;
+  /** 最大token数 */
+  maxTokens: number;
+  /** 最小token数 */
+  minTokens: number;
+  /** 总成本 */
+  totalCost: number;
+  /** 总提示token数 */
+  totalPromptTokens: number;
+  /** 总完成token数 */
+  totalCompletionTokens: number;
+}
+
+/**
  * LLM响应结果类型（整合choices和finishReason）
  */
 export interface LLMResult {

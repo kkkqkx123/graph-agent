@@ -17,7 +17,7 @@ export { ProfileManagerAPI } from './llm/profile-manager-api';
 export { EventManagerAPI } from './management/event-manager-api';
 export { CheckpointManagerAPI } from './management/checkpoint-manager-api';
 export { VariableManagerAPI } from './management/variable-manager-api';
-export { MessageManagerAPI } from './messege/message-manager-api';
+export { MessageManagerAPI } from './conversation/message-manager-api';
 export { NodeRegistryAPI } from './template-registry/node-template-registry-api';
 export { TriggerTemplateRegistryAPI } from './template-registry/trigger-template-registry-api';
 export { TriggerManagerAPI, triggerManagerAPI } from './management/trigger-manager-api';
@@ -55,7 +55,7 @@ export type {
   MessageFilter,
   MessageStats,
   TokenUsageStats
-} from './messege/message-manager-api';
+} from './conversation/message-manager-api';
 
 // Profile模板类型
 export type { ProfileTemplate } from './llm/profile-manager-api';

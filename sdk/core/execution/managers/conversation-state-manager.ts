@@ -14,7 +14,7 @@
  * - 委托模式：内部委托给 ConversationManager 进行实际管理
  */
 
-import type { LLMMessage, LLMUsage } from '../../../types/llm';
+import type { LLMMessage, LLMUsage, TokenUsageHistory, TokenUsageStatistics } from '../../../types/llm';
 import { ConversationManager } from '../conversation';
 import type { TokenUsageStats } from '../token-usage-tracker';
 
@@ -28,6 +28,8 @@ export interface ConversationState {
   tokenUsage: TokenUsageStats | null;
   /** 当前请求的 Token 使用统计 */
   currentRequestUsage: TokenUsageStats | null;
+  /** Token 使用历史记录 */
+  usageHistory?: TokenUsageHistory[];
 }
 
 /**
@@ -85,7 +87,8 @@ export class ConversationStateManager {
     return {
       messages: this.conversationManager.getMessages(),
       tokenUsage: this.conversationManager.getTokenUsage(),
-      currentRequestUsage: this.conversationManager.getCurrentRequestUsage()
+      currentRequestUsage: this.conversationManager.getCurrentRequestUsage(),
+      usageHistory: this.conversationManager.getUsageHistory()
     };
   }
 
@@ -168,6 +171,55 @@ export class ConversationStateManager {
   }
 
   /**
+   * 获取Token使用历史记录
+   * @returns Token使用历史记录
+   */
+  getUsageHistory(): TokenUsageHistory[] {
+    return this.conversationManager.getUsageHistory();
+  }
+
+  /**
+   * 获取最近N条Token使用历史记录
+   * @param n 记录数量
+   * @returns 最近N条历史记录
+   */
+  getRecentUsageHistory(n: number): TokenUsageHistory[] {
+    return this.conversationManager.getTokenUsageTracker().getRecentHistory(n);
+  }
+
+  /**
+   * 获取Token使用统计信息
+   * @returns 统计信息
+   */
+  getTokenUsageStatistics(): TokenUsageStatistics {
+    return this.conversationManager.getTokenUsageTracker().getStatistics();
+  }
+
+  /**
+   * 回退到指定请求之前
+   * @param requestIndex 请求索引
+   */
+  rollbackToRequest(requestIndex: number): void {
+    this.conversationManager.getTokenUsageTracker().rollbackToRequest(requestIndex);
+  }
+
+  /**
+   * 回退到指定请求ID之前
+   * @param requestId 请求ID
+   */
+  rollbackToRequestId(requestId: string): void {
+    this.conversationManager.getTokenUsageTracker().rollbackToRequestId(requestId);
+  }
+
+  /**
+   * 回退到指定时间戳之前
+   * @param timestamp 时间戳
+   */
+  rollbackToTimestamp(timestamp: number): void {
+    this.conversationManager.getTokenUsageTracker().rollbackToTimestamp(timestamp);
+  }
+
+  /**
    * 清空消息历史
    * @param keepSystemMessage 是否保留系统消息
    */
@@ -201,7 +253,8 @@ export class ConversationStateManager {
     return {
       messages: this.conversationManager.getAllMessages().map(msg => ({ ...msg })),
       tokenUsage: this.conversationManager.getTokenUsage(),
-      currentRequestUsage: this.conversationManager.getCurrentRequestUsage()
+      currentRequestUsage: this.conversationManager.getCurrentRequestUsage(),
+      usageHistory: this.conversationManager.getUsageHistory()
     };
   }
 

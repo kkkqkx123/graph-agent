@@ -1,19 +1,22 @@
 /**
  * Token 使用统计追踪器
- * 
+ *
  * 核心职责：
  * 1. 累计多轮对话的 Token 使用量
  * 2. 支持流式响应的 Token 累积
  * 3. 提供本地估算方法作为 fallback
  * 4. 支持成本计算等扩展功能
- * 
+ * 5. 记录每次API调用的历史，支持精确回退和历史分析
+ *
  * 设计原则：
  * - 独立的 Token 统计模块，与消息管理解耦
  * - 支持多轮对话的累计统计
  * - 参考 Anthropic SDK 的流式 Token 累积机制
+ * - 支持历史记录和精确回退
  */
 
-import type { LLMMessage, LLMUsage } from '../../types/llm';
+import type { LLMMessage, LLMUsage, TokenUsageHistory, TokenUsageStatistics } from '../../types/llm';
+import { generateId } from '../../utils/id-utils';
 
 /**
  * Token 使用统计
@@ -43,6 +46,10 @@ export interface FullTokenUsageStats extends TokenUsageStats {
 export interface TokenUsageTrackerOptions {
   /** Token 限制阈值，超过此值触发警告 */
   tokenLimit?: number;
+  /** 是否启用历史记录 */
+  enableHistory?: boolean;
+  /** 最大历史记录数量 */
+  maxHistorySize?: number;
 }
 
 /**
@@ -52,10 +59,15 @@ export class TokenUsageTracker {
   private cumulativeUsage: TokenUsageStats | null = null;
   private currentRequestUsage: TokenUsageStats | null = null;
   private totalLifetimeUsage: TokenUsageStats | null = null; // 无视回退的真实总token
+  private usageHistory: TokenUsageHistory[] = []; // 历史记录数组
   private tokenLimit: number;
+  private enableHistory: boolean;
+  private maxHistorySize: number;
 
   constructor(options: TokenUsageTrackerOptions = {}) {
     this.tokenLimit = options.tokenLimit || 4000;
+    this.enableHistory = options.enableHistory ?? true;
+    this.maxHistorySize = options.maxHistorySize || 1000;
   }
 
   /**
@@ -78,11 +90,16 @@ export class TokenUsageTracker {
 
   /**
    * 累积流式响应的 Token 使用统计
-   * 
+   *
    * 参考 Anthropic SDK 的 #accumulateMessage() 方法：
    * - 在流式传输期间持续更新 token 统计
    * - message_delta 事件提供增量更新
-   * 
+   *
+   * 修复说明：
+   * - 不再在流式传输期间更新 cumulativeUsage
+   * - 只更新 currentRequestUsage，避免统计错误
+   * - 在 finalizeCurrentRequest() 中统一累加到 cumulativeUsage
+   *
    * @param usage Token 使用数据（增量）
    */
   accumulateStreamUsage(usage: LLMUsage): void {
@@ -101,18 +118,10 @@ export class TokenUsageTracker {
       this.currentRequestUsage.totalTokens = usage.totalTokens;
       this.currentRequestUsage.rawUsage = usage;
     }
-
-    // 同步更新累计使用量
-    if (!this.cumulativeUsage) {
-      this.cumulativeUsage = { ...this.currentRequestUsage };
-    } else {
-      // 重新计算累计值：累计值 = 之前所有请求的总和 + 当前请求的最新值
-      // 这里简化处理，直接使用当前请求的值
-      // 更精确的做法是保存历史记录，但会增加复杂度
-      this.cumulativeUsage.promptTokens = this.currentRequestUsage.promptTokens;
-      this.cumulativeUsage.completionTokens = this.currentRequestUsage.completionTokens;
-      this.cumulativeUsage.totalTokens = this.currentRequestUsage.totalTokens;
-    }
+    
+    // 注意：不再在流式传输期间更新 cumulativeUsage
+    // 避免覆盖之前的累积统计
+    // 累积操作将在 finalizeCurrentRequest() 中统一处理
   }
 
   /**
@@ -141,7 +150,36 @@ export class TokenUsageTracker {
         this.totalLifetimeUsage.totalTokens += this.currentRequestUsage.totalTokens;
       }
 
+      // 添加到历史记录
+      if (this.enableHistory) {
+        this.addToHistory(this.currentRequestUsage);
+      }
+
       this.currentRequestUsage = null;
+    }
+  }
+
+  /**
+   * 添加到历史记录
+   * @param usage Token使用统计
+   */
+  private addToHistory(usage: TokenUsageStats): void {
+    const historyItem: TokenUsageHistory = {
+      requestId: generateId(),
+      timestamp: Date.now(),
+      promptTokens: usage.promptTokens,
+      completionTokens: usage.completionTokens,
+      totalTokens: usage.totalTokens,
+      cost: usage.rawUsage?.totalCost,
+      model: usage.rawUsage?.model,
+      rawUsage: usage.rawUsage
+    };
+
+    this.usageHistory.push(historyItem);
+
+    // 限制历史记录数量
+    if (this.usageHistory.length > this.maxHistorySize) {
+      this.usageHistory.shift();
     }
   }
 
@@ -251,6 +289,7 @@ export class TokenUsageTracker {
   reset(): void {
     this.cumulativeUsage = null;
     this.currentRequestUsage = null;
+    this.usageHistory = [];
     // 不重置 totalLifetimeUsage，保持生命周期统计
   }
 
@@ -262,15 +301,18 @@ export class TokenUsageTracker {
     this.cumulativeUsage = null;
     this.currentRequestUsage = null;
     this.totalLifetimeUsage = null;
+    this.usageHistory = [];
   }
 
   /**
-   * 克隆 TokenUsageTracker 实例
+   * 克隆 TokenUsageTracker 实例（包含历史记录）
    * @returns 克隆的 TokenUsageTracker 实例
    */
   clone(): TokenUsageTracker {
     const clonedTracker = new TokenUsageTracker({
-      tokenLimit: this.tokenLimit
+      tokenLimit: this.tokenLimit,
+      enableHistory: this.enableHistory,
+      maxHistorySize: this.maxHistorySize
     });
 
     if (this.cumulativeUsage) {
@@ -284,6 +326,9 @@ export class TokenUsageTracker {
     if (this.totalLifetimeUsage) {
       clonedTracker.totalLifetimeUsage = { ...this.totalLifetimeUsage };
     }
+
+    // 克隆历史记录
+    clonedTracker.usageHistory = [...this.usageHistory];
 
     return clonedTracker;
   }
@@ -350,5 +395,118 @@ export class TokenUsageTracker {
    */
   getTotalLifetimeUsageState(): TokenUsageStats | null {
     return this.totalLifetimeUsage ? { ...this.totalLifetimeUsage } : null;
+  }
+
+  /**
+   * 获取历史记录
+   * @returns 历史记录数组的副本
+   */
+  getUsageHistory(): TokenUsageHistory[] {
+    return [...this.usageHistory];
+  }
+
+  /**
+   * 获取最近N条历史记录
+   * @param n 记录数量
+   * @returns 最近N条历史记录
+   */
+  getRecentHistory(n: number): TokenUsageHistory[] {
+    return this.usageHistory.slice(-n);
+  }
+
+  /**
+   * 获取统计信息
+   * @returns 统计信息
+   */
+  getStatistics(): TokenUsageStatistics {
+    if (this.usageHistory.length === 0) {
+      return {
+        totalRequests: 0,
+        averageTokens: 0,
+        maxTokens: 0,
+        minTokens: 0,
+        totalCost: 0,
+        totalPromptTokens: 0,
+        totalCompletionTokens: 0
+      };
+    }
+
+    const totalTokens = this.usageHistory.reduce((sum, h) => sum + h.totalTokens, 0);
+    const totalPromptTokens = this.usageHistory.reduce((sum, h) => sum + h.promptTokens, 0);
+    const totalCompletionTokens = this.usageHistory.reduce((sum, h) => sum + h.completionTokens, 0);
+    const maxTokens = Math.max(...this.usageHistory.map(h => h.totalTokens));
+    const minTokens = Math.min(...this.usageHistory.map(h => h.totalTokens));
+    const totalCost = this.usageHistory.reduce((sum, h) => sum + (h.cost || 0), 0);
+
+    return {
+      totalRequests: this.usageHistory.length,
+      averageTokens: totalTokens / this.usageHistory.length,
+      maxTokens,
+      minTokens,
+      totalCost,
+      totalPromptTokens,
+      totalCompletionTokens
+    };
+  }
+
+  /**
+   * 回退到指定请求之前
+   * @param requestIndex 请求索引（从0开始）
+   */
+  rollbackToRequest(requestIndex: number): void {
+    if (requestIndex < 0 || requestIndex > this.usageHistory.length) {
+      throw new Error(`Invalid request index: ${requestIndex}. Valid range: 0-${this.usageHistory.length}`);
+    }
+
+    // 重新计算cumulativeUsage
+    this.cumulativeUsage = {
+      promptTokens: 0,
+      completionTokens: 0,
+      totalTokens: 0
+    };
+
+    for (let i = 0; i < requestIndex; i++) {
+      const item = this.usageHistory[i];
+      if (item) {
+        this.cumulativeUsage.promptTokens += item.promptTokens;
+        this.cumulativeUsage.completionTokens += item.completionTokens;
+        this.cumulativeUsage.totalTokens += item.totalTokens;
+      }
+    }
+
+    // 删除回退后的历史记录
+    this.usageHistory = this.usageHistory.slice(0, requestIndex);
+  }
+
+  /**
+   * 回退到指定请求ID之前
+   * @param requestId 请求ID
+   */
+  rollbackToRequestId(requestId: string): void {
+    const index = this.usageHistory.findIndex(h => h.requestId === requestId);
+    if (index === -1) {
+      throw new Error(`Request ID not found: ${requestId}`);
+    }
+    this.rollbackToRequest(index);
+  }
+
+  /**
+   * 回退到指定时间戳之前
+   * @param timestamp 时间戳
+   */
+  rollbackToTimestamp(timestamp: number): void {
+    const index = this.usageHistory.findIndex(h => h.timestamp >= timestamp);
+    if (index === -1) {
+      // 所有记录都在时间戳之前，不回退
+      return;
+    }
+    this.rollbackToRequest(index);
+  }
+
+  /**
+   * 清空历史记录
+   */
+  clearHistory(): void {
+    this.usageHistory = [];
   }
 }

@@ -1,10 +1,12 @@
 /**
  * 暂停线程处理函数
+ * 
  * 负责执行暂停线程的触发动作
+ * 通过ThreadLifecycleCoordinator协调暂停流程
  */
 
 import type { TriggerAction, TriggerExecutionResult } from '../../../../types/trigger';
-import { ValidationError, NotFoundError } from '../../../../types/errors';
+import { ValidationError } from '../../../../types/errors';
 import { ExecutionContext } from '../../context/execution-context';
 
 /**
@@ -46,7 +48,8 @@ function createFailureResult(
 
 /**
  * 暂停线程处理函数
- * @param action 触发动作
+ * 
+ * @param action 触发动作，包含 threadId 参数
  * @param triggerId 触发器ID
  * @param executionContext 执行上下文
  * @returns 执行结果
@@ -66,23 +69,13 @@ export async function pauseThreadHandler(
       throw new ValidationError('threadId is required for PAUSE_THREAD action', 'parameters.threadId');
     }
 
-    // 从ThreadRegistry获取ThreadContext
-    const threadRegistry = context.getThreadRegistry();
-    const threadContext = threadRegistry.get(threadId);
-
-    if (!threadContext) {
-      throw new NotFoundError(`ThreadContext not found: ${threadId}`, 'ThreadContext', threadId);
-    }
-
-    const thread = threadContext.thread;
-
-    if (threadContext.getStatus() !== 'RUNNING') {
-      throw new ValidationError(`Thread is not running: ${threadId}`, 'threadId', threadId);
-    }
-
-    // 调用ThreadLifecycleManager
-    const lifecycleManager = context.getThreadLifecycleManager();
-    await lifecycleManager.pauseThread(thread);
+    // 通过Coordinator进行暂停流程协调
+    // Coordinator负责：
+    // 1. 设置暂停标志
+    // 2. 等待执行器响应
+    // 3. 更新线程状态
+    const lifecycleCoordinator = context.getLifecycleCoordinator();
+    await lifecycleCoordinator.pauseThread(threadId);
 
     return createSuccessResult(
       triggerId,

@@ -14,7 +14,7 @@
  * - 专门处理 Thread 结构变更操作
  */
 
-import type { ForkConfig, JoinResult } from '../thread-operations/thread-operations';
+import type { ForkConfig, JoinResult } from '../utils/thread-operations';
 import { type ThreadRegistry } from '../../services/thread-registry';
 import { ThreadBuilder } from '../thread-builder';
 import type { EventManager } from '../../services/event-manager';
@@ -26,7 +26,7 @@ import type {
   ThreadJoinConditionMetEvent,
   ThreadCopyCompletedEvent
 } from '../../../types/events';
-import { fork, join, copy } from '../thread-operations/thread-operations';
+import { fork, join, copy } from '../utils/thread-operations';
 import { now } from '../../../utils';
 
 /**

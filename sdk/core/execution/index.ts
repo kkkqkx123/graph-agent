@@ -18,6 +18,18 @@ export { ThreadBuilder } from './thread-builder';
 // Thread生命周期管理器
 export { ThreadLifecycleManager } from './thread-lifecycle-manager';
 
+// Thread状态验证工具函数
+export {
+  validateTransition,
+  isValidTransition,
+  getAllowedTransitions,
+  isTerminalStatus,
+  isActiveStatus
+} from './utils/thread-state-validator';
+
+// Thread生命周期协调器
+export { ThreadLifecycleCoordinator } from './coordinators/thread-lifecycle-coordinator';
+
 // Thread注册表
 export { ThreadRegistry } from '../services/thread-registry';
 
@@ -35,7 +47,7 @@ export {
   type ForkConfig,
   type JoinStrategy,
   type JoinResult
-} from './thread-operations/thread-operations';
+} from './utils/thread-operations';
 
 // 触发器管理器
 export { TriggerCoordinator as TriggerManager } from './coordinators/trigger-coordinator';

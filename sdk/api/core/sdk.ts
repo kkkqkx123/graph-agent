@@ -16,7 +16,7 @@ import { VariableManagerAPI } from '../management/variable-manager-api';
 import { NodeRegistryAPI } from '../template-registry/node-template-registry-api';
 import { TriggerTemplateRegistryAPI } from '../template-registry/trigger-template-registry-api';
 import { TriggerManagerAPI } from '../management/trigger-manager-api';
-import { MessageManagerAPI } from '../messege/message-manager-api';
+import { MessageManagerAPI } from '../conversation/message-manager-api';
 import { workflowRegistry, type WorkflowRegistry } from '../../core/services/workflow-registry';
 import { threadRegistry, type ThreadRegistry } from '../../core/services/thread-registry';
 import type { SDKOptions } from '../types/core-types';

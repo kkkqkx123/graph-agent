@@ -14,13 +14,13 @@ import { ConversationManager } from '../../conversation';
 import type { Graph, GraphNode, GraphEdge } from '../../../../types/graph';
 
 // Mock types for testing
-interface MockThreadContext extends ThreadContext {
+type MockThreadContext = Partial<ThreadContext> & {
   thread: Thread;
 }
 
 describe('ThreadOperations', () => {
-  let mockParentThreadContext: MockThreadContext;
-  let mockChildThreadContext: MockThreadContext;
+  let mockParentThreadContext: any;
+  let mockChildThreadContext: any;
   let mockThreadBuilder: ThreadBuilder;
   let mockThreadRegistry: ThreadRegistry;
   let mockForkConfig: ForkConfig;
@@ -62,8 +62,7 @@ describe('ThreadOperations', () => {
       threadRegistry: {} as any,
       subgraphExecutionHistory: [],
       isExecutingTriggeredSubgraph: false,
-      subgraphExecutionHistory: [],
-      isExecutingTriggeredSubgraph: false,
+      conversationStateManager: {} as any,
       thread: {
         id: 'parent-thread-id',
         workflowId: 'test-workflow',
@@ -133,14 +132,13 @@ describe('ThreadOperations', () => {
       triggerManager: {} as any,
       statefulTools: new Map(),
       factories: new Map()
-    };
+    } as any;
 
     mockChildThreadContext = {
       threadRegistry: {} as any,
       subgraphExecutionHistory: [],
       isExecutingTriggeredSubgraph: false,
-      subgraphExecutionHistory: [],
-      isExecutingTriggeredSubgraph: false,
+      conversationStateManager: {} as any,
       thread: {
         id: 'child-thread-id',
         workflowId: 'test-workflow',
@@ -210,7 +208,7 @@ describe('ThreadOperations', () => {
       triggerManager: {} as any,
       statefulTools: new Map(),
       factories: new Map()
-    };
+    } as any;
 
     mockThreadBuilder = {
       createFork: jest.fn().mockResolvedValue(mockChildThreadContext),
@@ -477,8 +475,7 @@ describe('ThreadOperations', () => {
         threadRegistry: {} as any,
         subgraphExecutionHistory: [],
         isExecutingTriggeredSubgraph: false,
-        subgraphExecutionHistory: [],
-        isExecutingTriggeredSubgraph: false,
+        conversationStateManager: {} as any,
         thread,
         conversationManager: {} as ConversationManager,
         executionState: new ExecutionState(),

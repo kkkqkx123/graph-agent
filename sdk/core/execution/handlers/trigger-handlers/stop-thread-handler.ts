@@ -1,10 +1,12 @@
 /**
  * 停止线程处理函数
+ * 
  * 负责执行停止线程的触发动作
+ * 通过ThreadLifecycleCoordinator协调停止流程，包括级联取消子线程
  */
 
 import type { TriggerAction, TriggerExecutionResult } from '../../../../types/trigger';
-import { ValidationError, NotFoundError } from '../../../../types/errors';
+import { ValidationError } from '../../../../types/errors';
 import { ExecutionContext } from '../../context/execution-context';
 
 /**
@@ -45,7 +47,8 @@ function createFailureResult(
 
 /**
  * 停止线程处理函数
- * @param action 触发动作
+ * 
+ * @param action 触发动作，包含 threadId 参数
  * @param triggerId 触发器ID
  * @param executionContext 执行上下文
  * @returns 执行结果
@@ -65,37 +68,14 @@ export async function stopThreadHandler(
       throw new ValidationError('threadId is required for STOP_THREAD action', 'parameters.threadId');
     }
 
-    // 从ThreadRegistry获取ThreadContext
-    const threadRegistry = context.getThreadRegistry();
-    const threadContext = threadRegistry.get(threadId);
-
-    if (!threadContext) {
-      throw new NotFoundError(`ThreadContext not found: ${threadId}`, 'ThreadContext', threadId);
-    }
-
-    const thread = threadContext.thread;
-    const status = threadContext.getStatus();
-
-    if (status !== 'RUNNING' && status !== 'PAUSED') {
-      throw new ValidationError(`Thread is not running or paused: ${threadId}`, 'threadId', threadId);
-    }
-
-    // 调用ThreadLifecycleManager
-    const lifecycleManager = context.getThreadLifecycleManager();
-    await lifecycleManager.cancelThread(thread);
-
-    // 取消子thread（如果有）
-    const childThreadIds = threadContext.getMetadata()?.childThreadIds as string[] || [];
-    for (const childThreadId of childThreadIds) {
-      const childContext = threadRegistry.get(childThreadId);
-      if (childContext) {
-        const childThread = childContext.thread;
-        const childStatus = childContext.getStatus();
-        if (childStatus === 'RUNNING' || childStatus === 'PAUSED') {
-          await lifecycleManager.cancelThread(childThread);
-        }
-      }
-    }
+    // 通过Coordinator进行停止流程协调
+    // Coordinator负责：
+    // 1. 设置停止标志
+    // 2. 等待执行器响应
+    // 3. 更新线程状态
+    // 4. 级联取消子线程
+    const lifecycleCoordinator = context.getLifecycleCoordinator();
+    await lifecycleCoordinator.stopThread(threadId);
 
     return createSuccessResult(
       triggerId,
