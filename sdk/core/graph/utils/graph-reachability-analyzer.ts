@@ -12,17 +12,10 @@ import { getReachableNodes, getNodesReachingTo } from './graph-traversal';
  * @returns 可达性分析结果
  */
 export function analyzeReachability(graph: Graph): ReachabilityResult {
-  if (!graph.startNodeId) {
-    return {
-      reachableFromStart: new Set(),
-      reachableToEnd: new Set(),
-      unreachableNodes: new Set(),
-      deadEndNodes: new Set(),
-    };
-  }
-
-  // 从START节点正向遍历
-  const reachableFromStart = getReachableNodes(graph, graph.startNodeId);
+  // 从START节点正向遍历（如果存在）
+  const reachableFromStart = graph.startNodeId
+    ? getReachableNodes(graph, graph.startNodeId)
+    : new Set<ID>();
 
   // 从END节点反向遍历
   const reachableToEnd = new Set<ID>();
@@ -33,7 +26,7 @@ export function analyzeReachability(graph: Graph): ReachabilityResult {
     }
   }
 
-  // 找出不可达节点
+  // 找出不可达节点（从START无法到达的节点）
   const unreachableNodes = new Set<ID>();
   for (const nodeId of graph.getAllNodeIds()) {
     if (!reachableFromStart.has(nodeId)) {
@@ -41,10 +34,10 @@ export function analyzeReachability(graph: Graph): ReachabilityResult {
     }
   }
 
-  // 找出死节点
+  // 找出死节点（从START可达但无法到达END的节点）
   const deadEndNodes = new Set<ID>();
   for (const nodeId of graph.getAllNodeIds()) {
-    if (!reachableToEnd.has(nodeId)) {
+    if (reachableFromStart.has(nodeId) && !reachableToEnd.has(nodeId)) {
       deadEndNodes.add(nodeId);
     }
   }

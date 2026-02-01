@@ -134,14 +134,24 @@ const loopEndNodeConfigSchema = z.object({
 });
 
 /**
- * 子图节点配置schema
+ * 子图节点配置schema（用于 SUBGRAPH 和 START_FROM_TRIGGER 节点）
  */
 const subgraphNodeConfigSchema = z.object({
   subgraphId: z.string().min(1, 'Subgraph ID is required'),
-  inputMapping: z.record(z.string(), z.string()),
-  outputMapping: z.record(z.string(), z.string()),
+  inputMapping: z.record(z.string().min(1), z.string().min(1)),
+  outputMapping: z.record(z.string().min(1), z.string().min(1)),
   async: z.boolean()
 });
+
+/**
+ * StartFromTrigger节点配置schema（与子图节点配置相同）
+ */
+const startFromTriggerNodeConfigSchema = subgraphNodeConfigSchema;
+
+/**
+ * ContinueFromTrigger节点配置schema（必须为空对象或undefined）
+ */
+const continueFromTriggerNodeConfigSchema = z.object({}).strict();
 
 /**
  * 节点配置schema（基于节点类型的联合类型）
@@ -160,7 +170,9 @@ const nodeConfigSchema = z.discriminatedUnion('type', [
   z.object({ type: z.literal(NodeType.CONTEXT_PROCESSOR), config: contextProcessorNodeConfigSchema }),
   z.object({ type: z.literal(NodeType.LOOP_START), config: loopStartNodeConfigSchema }),
   z.object({ type: z.literal(NodeType.LOOP_END), config: loopEndNodeConfigSchema }),
-  z.object({ type: z.literal(NodeType.SUBGRAPH), config: subgraphNodeConfigSchema })
+  z.object({ type: z.literal(NodeType.SUBGRAPH), config: subgraphNodeConfigSchema }),
+  z.object({ type: z.literal(NodeType.START_FROM_TRIGGER), config: startFromTriggerNodeConfigSchema }),
+  z.object({ type: z.literal(NodeType.CONTINUE_FROM_TRIGGER), config: continueFromTriggerNodeConfigSchema })
 ]);
 
 /**

@@ -750,7 +750,7 @@ describe('WorkflowValidator', () => {
             config: {
               scriptName: 'process',
               scriptType: 'javascript',
-              risk: 'LOW',
+              risk: 'low',
               timeout: 5000,
               retries: 3
             },

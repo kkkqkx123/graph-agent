@@ -115,6 +115,13 @@ export class CircuitBreaker {
   private recordFailure(): void {
     this.failureCount++;
 
+    // 在HALF_OPEN状态下失败，立即重新打开熔断器
+    if (this.state === CircuitState.HALF_OPEN) {
+      this.state = CircuitState.OPEN;
+      this.nextAttempt = Date.now() + this.resetTimeout;
+      return;
+    }
+
     if (this.failureCount >= this.failureThreshold) {
       this.state = CircuitState.OPEN;
       this.nextAttempt = Date.now() + this.resetTimeout;

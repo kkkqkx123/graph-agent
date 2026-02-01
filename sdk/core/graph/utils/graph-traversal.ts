@@ -12,6 +12,11 @@ import type { ID, Graph } from '../../../types';
  * @param visitor - 访问函数，在访问每个节点时调用
  */
 export function dfs(graph: Graph, startNodeId: ID, visitor: (nodeId: ID) => void): void {
+  // 检查起始节点是否存在
+  if (!graph.hasNode(startNodeId)) {
+    return;
+  }
+
   const visited = new Set<ID>();
   const stack = [startNodeId];
 
@@ -41,6 +46,11 @@ export function dfs(graph: Graph, startNodeId: ID, visitor: (nodeId: ID) => void
  * @param visitor - 访问函数，在访问每个节点时调用
  */
 export function bfs(graph: Graph, startNodeId: ID, visitor: (nodeId: ID) => void): void {
+  // 检查起始节点是否存在
+  if (!graph.hasNode(startNodeId)) {
+    return;
+  }
+
   const visited = new Set<ID>();
   const queue: ID[] = [startNodeId];
   visited.add(startNodeId);
@@ -81,6 +91,11 @@ export function getReachableNodes(graph: Graph, startNodeId: ID): Set<ID> {
  * @returns 能到达目标节点的节点ID集合
  */
 export function getNodesReachingTo(graph: Graph, targetNodeId: ID): Set<ID> {
+  // 检查目标节点是否存在
+  if (!graph.hasNode(targetNodeId)) {
+    return new Set<ID>();
+  }
+
   const reaching = new Set<ID>();
   const visited = new Set<ID>();
   const stack = [targetNodeId];

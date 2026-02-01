@@ -12,6 +12,7 @@ import { NodeType } from '../../types/node';
 import { ValidationError, type ValidationResult } from '../../types/errors';
 import { validateNodeByType } from './node-validation';
 import { validateHooks } from './hook-validation';
+import { SelfReferenceValidationStrategy } from './strategies/self-reference-validation-strategy';
 
 /**
  * 工作流变量schema
@@ -109,6 +110,10 @@ export class WorkflowValidator {
     const configResult = this.validateConfig(workflow);
     errors.push(...configResult.errors);
 
+    // 验证自引用
+    const selfReferenceResult = this.validateSelfReferences(workflow);
+    errors.push(...selfReferenceResult.errors);
+
     return {
       valid: errors.length === 0,
       errors,
@@ -205,7 +210,7 @@ export class WorkflowValidator {
         }
       }
 
-      // 统计START和END节点
+      // 统计START、END、START_FROM_TRIGGER和CONTINUE_FROM_TRIGGER节点
       if (node.type === NodeType.START) {
         startNodes.push(node);
       } else if (node.type === NodeType.END) {
@@ -213,18 +218,37 @@ export class WorkflowValidator {
       }
     }
 
-    // 检查START节点
-    if (startNodes.length === 0) {
-      errors.push(new ValidationError('Workflow must have exactly one START node', 'workflow.nodes'));
-    } else if (startNodes.length > 1) {
-      errors.push(new ValidationError('Workflow must have exactly one START node', 'workflow.nodes'));
-    }
+    // 检查是否为触发子工作流
+    const hasStartFromTrigger = workflow.nodes.some(n => n.type === NodeType.START_FROM_TRIGGER);
+    const hasContinueFromTrigger = workflow.nodes.some(n => n.type === NodeType.CONTINUE_FROM_TRIGGER);
 
-    // 检查END节点
-    if (endNodes.length === 0) {
-      errors.push(new ValidationError('Workflow must have exactly one END node', 'workflow.nodes'));
-    } else if (endNodes.length > 1) {
-      errors.push(new ValidationError('Workflow must have exactly one END node', 'workflow.nodes'));
+    if (hasStartFromTrigger || hasContinueFromTrigger) {
+      // 触发子工作流：必须包含START_FROM_TRIGGER和CONTINUE_FROM_TRIGGER，不能包含START和END
+      if (!hasStartFromTrigger) {
+        errors.push(new ValidationError('Triggered subgraph must have exactly one START_FROM_TRIGGER node', 'workflow.nodes'));
+      }
+      if (!hasContinueFromTrigger) {
+        errors.push(new ValidationError('Triggered subgraph must have exactly one CONTINUE_FROM_TRIGGER node', 'workflow.nodes'));
+      }
+      if (startNodes.length > 0) {
+        errors.push(new ValidationError('Triggered subgraph cannot contain START node', 'workflow.nodes'));
+      }
+      if (endNodes.length > 0) {
+        errors.push(new ValidationError('Triggered subgraph cannot contain END node', 'workflow.nodes'));
+      }
+    } else {
+      // 普通工作流：必须包含START和END节点
+      if (startNodes.length === 0) {
+        errors.push(new ValidationError('Workflow must have exactly one START node', 'workflow.nodes'));
+      } else if (startNodes.length > 1) {
+        errors.push(new ValidationError('Workflow must have exactly one START node', 'workflow.nodes'));
+      }
+
+      if (endNodes.length === 0) {
+        errors.push(new ValidationError('Workflow must have exactly one END node', 'workflow.nodes'));
+      } else if (endNodes.length > 1) {
+        errors.push(new ValidationError('Workflow must have exactly one END node', 'workflow.nodes'));
+      }
     }
 
     return {
@@ -350,11 +374,11 @@ export class WorkflowValidator {
   }
 
   /**
-   * 将zod错误转换为ValidationResult
-   * @param error zod错误
-   * @param prefix 字段路径前缀
-   * @returns ValidationResult
-   */
+    * 将zod错误转换为ValidationResult
+    * @param error zod错误
+    * @param prefix 字段路径前缀
+    * @returns ValidationResult
+    */
   private convertZodError(error: z.ZodError, prefix?: string): ValidationResult {
     const errors: ValidationError[] = error.issues.map((issue) => {
       const field = issue.path.length > 0
@@ -364,6 +388,25 @@ export class WorkflowValidator {
     });
     return {
       valid: false,
+      errors,
+      warnings: []
+    };
+  }
+
+  /**
+   * 验证自引用
+   * 使用策略模式检测 SUBGRAPH 和 START_FROM_TRIGGER 节点的自引用
+   * @param workflow 工作流定义
+   * @returns 验证结果
+   */
+  private validateSelfReferences(workflow: WorkflowDefinition): ValidationResult {
+    const errors = SelfReferenceValidationStrategy.validateNodes(
+      workflow.nodes,
+      workflow.id
+    );
+
+    return {
+      valid: errors.length === 0,
       errors,
       warnings: []
     };
