@@ -50,9 +50,6 @@ export type { TokenUsageStats, TokenUsageTrackerOptions, FullTokenUsageStats } f
 // 消息索引管理
 export { MessageIndexManager } from './message-index-manager';
 
-// 全局消息存储
-export { GlobalMessageStorage } from './global-message-storage';
-
 // Hook处理函数
 export * from './handlers/hook-handlers';
 

@@ -10,7 +10,7 @@ import { eventManager } from '../services/event-manager';
 import type { ThreadStartedEvent, ThreadCompletedEvent, ThreadFailedEvent, ThreadPausedEvent, ThreadResumedEvent } from '../../types/events';
 import { ValidationError } from '../../types/errors';
 import { now } from '../../utils';
-import { GlobalMessageStorage } from './global-message-storage';
+import { globalMessageStorage } from '../services/global-message-storage';
 
 /**
  * ThreadLifecycleManager - Thread生命周期管理器
@@ -19,7 +19,7 @@ export class ThreadLifecycleManager {
   constructor(private eventManagerParam: EventManager = eventManager) {
     this.eventManager = eventManagerParam;
   }
-  
+
   private eventManager: EventManager;
 
   /**
@@ -101,7 +101,7 @@ export class ThreadLifecycleManager {
         thread.endTime = now();
       }
       // 清理全局消息存储中的消息历史
-      GlobalMessageStorage.getInstance().removeReference(thread.id);
+      globalMessageStorage.removeReference(thread.id);
       // 触发THREAD_COMPLETED事件
       await this.emitThreadCompletedEvent(thread, result);
       return;
@@ -124,7 +124,7 @@ export class ThreadLifecycleManager {
     thread.endTime = now();
 
     // 清理全局消息存储中的消息历史
-    GlobalMessageStorage.getInstance().removeReference(thread.id);
+    globalMessageStorage.removeReference(thread.id);
 
     // 触发THREAD_COMPLETED事件
     await this.emitThreadCompletedEvent(thread, result);
@@ -156,7 +156,7 @@ export class ThreadLifecycleManager {
     thread.errors.push(error.message);
 
     // 清理全局消息存储中的消息历史
-    GlobalMessageStorage.getInstance().removeReference(thread.id);
+    globalMessageStorage.removeReference(thread.id);
 
     // 触发THREAD_FAILED事件
     await this.emitThreadFailedEvent(thread, error);
@@ -184,7 +184,7 @@ export class ThreadLifecycleManager {
     thread.endTime = now();
 
     // 清理全局消息存储中的消息历史
-    GlobalMessageStorage.getInstance().removeReference(thread.id);
+    globalMessageStorage.removeReference(thread.id);
 
     // 注意：THREAD_CANCELLED 事件类型不存在，暂时不触发事件
     // 如果需要，可以在 events.ts 中添加该事件类型

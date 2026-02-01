@@ -18,7 +18,6 @@ import { ValidationError } from '../../types/errors';
 import { type WorkflowRegistry } from '../services/workflow-registry';
 import { ExecutionContext } from './context/execution-context';
 import { TriggerStatus } from '../../types/trigger';
-import type { ThreadRegistry } from '../services/thread-registry';
 import { graphRegistry } from '../services/graph-registry';
 
 /**

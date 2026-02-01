@@ -20,10 +20,10 @@ import type { ThreadRegistry } from '../../services/thread-registry';
 import { ThreadContext } from '../context/thread-context';
 import { VariableManager } from './variable-manager';
 import { ConversationManager } from '../conversation';
-import { generateId, now as getCurrentTimestamp } from '../../../utils';
+import { generateId, now } from '../../../utils';
 import { type WorkflowRegistry } from '../../services/workflow-registry';
 import { MemoryCheckpointStorage } from '../../storage/memory-checkpoint-storage';
-import { GlobalMessageStorage } from '../global-message-storage';
+import { globalMessageStorage } from '../../services/global-message-storage';
 
 /**
  * 检查点管理器
@@ -82,16 +82,16 @@ export class CheckpointManager {
 
     // 获取对话管理器
     const conversationManager = threadContext.getConversationManager();
-    
+
     // 存储完整消息历史到全局存储
-    GlobalMessageStorage.getInstance().storeMessages(
+    globalMessageStorage.storeMessages(
       threadId,
       conversationManager.getAllMessages()
     );
-    
+
     // 增加引用计数，防止消息被过早删除
-    GlobalMessageStorage.getInstance().addReference(threadId);
-    
+    globalMessageStorage.addReference(threadId);
+
     // 只保存索引状态和Token统计
     const conversationState = {
       markMap: conversationManager.getMarkMap(),
@@ -118,7 +118,7 @@ export class CheckpointManager {
 
     // 步骤3：生成唯一 checkpointId 和 timestamp
     const checkpointId = generateId();
-    const timestamp = getCurrentTimestamp();
+    const timestamp = now();
 
     // 步骤4：创建 Checkpoint 对象
     const checkpoint: Checkpoint = {
@@ -196,7 +196,7 @@ export class CheckpointManager {
     });
 
     // 步骤6：从全局存储获取完整消息历史
-    const messageHistory = GlobalMessageStorage.getInstance().getMessages(checkpoint.threadId);
+    const messageHistory = globalMessageStorage.getMessages(checkpoint.threadId);
     if (!messageHistory) {
       throw new Error(`Message history not found for thread: ${checkpoint.threadId}`);
     }
@@ -210,7 +210,7 @@ export class CheckpointManager {
     // 步骤8：恢复索引状态
     if (checkpoint.threadState.conversationState) {
       conversationManager.getIndexManager().setMarkMap(checkpoint.threadState.conversationState.markMap);
-      
+
       // 恢复Token统计
       conversationManager.getTokenUsageTracker().setState(
         checkpoint.threadState.conversationState.tokenUsage,

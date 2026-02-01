@@ -29,27 +29,11 @@ interface BatchSnapshot {
 /**
  * 全局消息存储类
  */
-export class GlobalMessageStorage {
-  private static instance: GlobalMessageStorage;
+class GlobalMessageStorage {
   private messageHistories: Map<string, LLMMessage[]> = new Map();
   private referenceCounts: Map<string, number> = new Map();
   // 批次快照：threadId -> Map<batchId, snapshot>
   private batchSnapshots: Map<string, Map<number, BatchSnapshot>> = new Map();
-
-  private constructor() {
-    // 私有构造函数，确保单例
-  }
-
-  /**
-   * 获取单例实例
-   * @returns GlobalMessageStorage 实例
-   */
-  static getInstance(): GlobalMessageStorage {
-    if (!GlobalMessageStorage.instance) {
-      GlobalMessageStorage.instance = new GlobalMessageStorage();
-    }
-    return GlobalMessageStorage.instance;
-  }
 
   /**
    * 存储消息历史
@@ -205,3 +189,13 @@ export class GlobalMessageStorage {
     };
   }
 }
+
+/**
+ * 全局消息存储单例实例
+ */
+export const globalMessageStorage = new GlobalMessageStorage();
+
+/**
+ * 导出GlobalMessageStorage类供测试使用
+ */
+export { GlobalMessageStorage };

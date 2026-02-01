@@ -19,3 +19,6 @@ export { nodeTemplateRegistry as nodeRegistry, type NodeTemplateRegistry as Node
 
 // 触发器模板注册表单例
 export { triggerTemplateRegistry, type TriggerTemplateRegistry } from './trigger-template-registry';
+
+// 全局消息存储单例
+export { globalMessageStorage, type GlobalMessageStorage } from './global-message-storage';
