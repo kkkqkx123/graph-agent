@@ -15,12 +15,10 @@
  */
 
 import type { ForkConfig, JoinResult } from '../thread-operations/thread-operations';
-import { threadRegistry, type ThreadRegistry } from '../../services/thread-registry';
+import { type ThreadRegistry } from '../../services/thread-registry';
 import { ThreadBuilder } from '../thread-builder';
 import type { EventManager } from '../../services/event-manager';
-import { eventManager } from '../../services/event-manager';
 import type { WorkflowRegistry } from '../../services/workflow-registry';
-import { workflowRegistry } from '../../services/workflow-registry';
 import { NotFoundError } from '../../../types/errors';
 import { EventType } from '../../../types/events';
 import type {
@@ -49,7 +47,7 @@ export class ThreadOperationCoordinator {
     private threadRegistry: ThreadRegistry = threadRegistry,
     private workflowRegistry: WorkflowRegistry = workflowRegistry,
     private eventManager: EventManager = eventManager
-  ) {}
+  ) { }
 
   /**
    * Fork 操作 - 创建子 Thread

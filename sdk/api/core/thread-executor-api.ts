@@ -5,7 +5,7 @@
 
 import { ThreadLifecycleCoordinator } from '../../core/execution/coordinators/thread-lifecycle-coordinator';
 import { ThreadOperationCoordinator } from '../../core/execution/coordinators/thread-operation-coordinator';
-import { ThreadVariableCoordinator } from '../../core/execution/coordinators/thread-variable-coordinator';
+import { VariableManager } from '../../core/execution/managers/variable-manager';
 import { threadRegistry } from '../../core/services/thread-registry';
 import { workflowRegistry, type WorkflowRegistry } from '../../core/services/workflow-registry';
 import type { WorkflowDefinition } from '../../types/workflow';
@@ -18,7 +18,7 @@ import type { ExecuteOptions } from '../types/core-types';
 export class ThreadExecutorAPI {
   private lifecycleCoordinator: ThreadLifecycleCoordinator;
   private operationCoordinator: ThreadOperationCoordinator;
-  private variableCoordinator: ThreadVariableCoordinator;
+  private variableManager: VariableManager;
   private workflowRegistry: WorkflowRegistry;
 
   constructor(workflowRegistryParam?: WorkflowRegistry) {
@@ -31,7 +31,7 @@ export class ThreadExecutorAPI {
       threadRegistry,
       this.workflowRegistry
     );
-    this.variableCoordinator = new ThreadVariableCoordinator();
+    this.variableManager = new VariableManager();
   }
 
   /**
@@ -92,7 +92,9 @@ export class ThreadExecutorAPI {
   async setVariables(threadId: string, variables: Record<string, any>): Promise<void> {
     const threadContext = this.lifecycleCoordinator.getThreadRegistry().get(threadId);
     if (threadContext) {
-      await this.variableCoordinator.setVariables(threadContext, variables);
+      for (const [name, value] of Object.entries(variables)) {
+        await this.variableManager.updateVariable(threadContext, name, value);
+      }
     }
   }
 
@@ -192,11 +194,11 @@ export class ThreadExecutorAPI {
   }
 
   /**
-   * 获取变量协调器
-   * @returns 变量协调器实例
+   * 获取变量管理器
+   * @returns 变量管理器实例
    */
-  getVariableCoordinator(): ThreadVariableCoordinator {
-    return this.variableCoordinator;
+  getVariableManager(): VariableManager {
+    return this.variableManager;
   }
 
   /**

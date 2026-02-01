@@ -13,7 +13,6 @@
  * - Thread 的暂停、恢复、停止等生命周期管理（由 ThreadCoordinator 负责）
  * - 变量设置等管理操作（由 ThreadCoordinator 负责）
  * - 节点执行细节（由 NodeExecutionCoordinator 负责）
- * - 事件处理（由 EventCoordinator 负责）
  * - 错误处理（由 ErrorHandler 负责）
  * - 子图处理（由 SubgraphHandler 负责）
  * - 触发子工作流处理（由触发子工作流函数负责）
@@ -31,7 +30,6 @@ import type { WorkflowRegistry } from '../services/workflow-registry';
 import { NotFoundError } from '../../types/errors';
 import { ThreadStatus } from '../../types/thread';
 import { now, diffTimestamp } from '../../utils';
-import { EventCoordinator } from './coordinators/event-coordinator';
 import { NodeExecutionCoordinator } from './coordinators/node-execution-coordinator';
 import { handleNodeFailure, handleExecutionError } from './handlers/error-handler';
 import { enterSubgraph, exitSubgraph, getSubgraphInput, getSubgraphOutput } from './handlers/subgraph-handler';
@@ -58,7 +56,7 @@ import { EventType } from '../../types/events';
  */
 export class ThreadExecutor implements SubgraphContextFactory {
   private nodeExecutionCoordinator: NodeExecutionCoordinator;
-  private eventCoordinator: EventCoordinator;
+  private eventManager: EventManager;
   private threadBuilder: ThreadBuilder;
   private workflowRegistry: WorkflowRegistry;
 
@@ -76,10 +74,8 @@ export class ThreadExecutor implements SubgraphContextFactory {
     eventManagerParam?: EventManager,
     workflowRegistryParam?: WorkflowRegistry
   ) {
-    // 创建事件协调器
-    this.eventCoordinator = new EventCoordinator(
-      eventManagerParam || eventManager
-    );
+    // 设置事件管理器
+    this.eventManager = eventManagerParam || eventManager;
 
     // 设置工作流注册表
     this.workflowRegistry = workflowRegistryParam || workflowRegistry;
@@ -95,7 +91,7 @@ export class ThreadExecutor implements SubgraphContextFactory {
 
     // 创建节点执行协调器
     this.nodeExecutionCoordinator = new NodeExecutionCoordinator(
-      this.eventCoordinator,
+      this.eventManager,
       llmExecutionCoordinator
     );
   }
@@ -131,7 +127,7 @@ export class ThreadExecutor implements SubgraphContextFactory {
           }
           this.routeToNextNode(threadContext, currentNode, nodeResult);
         } else if (nodeResult.status === 'FAILED') {
-          await handleNodeFailure(threadContext, currentNode, nodeResult, this.eventCoordinator);
+          await handleNodeFailure(threadContext, currentNode, nodeResult, this.eventManager);
           break;
         } else if (nodeResult.status === 'SKIPPED') {
           this.routeToNextNode(threadContext, currentNode, nodeResult);
@@ -140,7 +136,7 @@ export class ThreadExecutor implements SubgraphContextFactory {
 
       return this.createThreadResult(threadContext);
     } catch (error) {
-      await handleExecutionError(threadContext, error, this.eventCoordinator);
+      await handleExecutionError(threadContext, error, this.eventManager);
       return this.createThreadResult(threadContext, error);
     }
   }
@@ -244,7 +240,7 @@ export class ThreadExecutor implements SubgraphContextFactory {
    * 获取事件管理器
    */
   getEventManager(): EventManager {
-    return this.eventCoordinator.getEventManager();
+    return this.eventManager;
   }
 
   /**
@@ -293,7 +289,7 @@ export class ThreadExecutor implements SubgraphContextFactory {
         task,
         this,
         this,
-        this.eventCoordinator
+        this.eventManager
       );
     } finally {
       this.isExecutingTriggeredSubgraph = false;

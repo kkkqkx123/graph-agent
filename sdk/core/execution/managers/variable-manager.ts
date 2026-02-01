@@ -3,33 +3,49 @@
  * 负责Thread变量的管理，包括变量的初始化、更新、查询
  * 支持四级作用域：global、thread、subgraph、loop
  * 只允许修改已有变量
- * 
+ *
  * 设计原则：
  * - 有状态设计：维护运行时状态
  * - 状态管理：提供状态的增删改查操作
  * - 线程隔离：每个线程有独立的状态实例
+ * - 事件驱动：变量变更时触发事件通知
  */
 
 import type { Thread, ThreadVariable, VariableScope } from '../../../types/thread';
 import type { WorkflowDefinition, WorkflowVariable } from '../../../types/workflow';
 import type { ThreadContext } from '../context/thread-context';
 import { VariableAccessor } from './utils/variable-accessor';
+import type { EventManager } from '../../services/event-manager';
+import { EventType } from '../../../types/events';
+import { now } from '../../../utils';
+import { ValidationError, ExecutionError } from '../../../types/errors';
 
 /**
  * VariableManager - 变量管理器
- * 
+ *
  * 职责：
  * - 从 WorkflowDefinition 初始化 Thread 变量
  * - 管理变量的查询、更新、作用域切换
  * - 支持四级作用域：global、thread、subgraph、loop
  * - 提供变量快照和恢复功能
- * 
+ * - 触发变量变更事件
+ *
  * 设计原则：
  * - 有状态设计：维护 Thread 的变量状态
  * - 状态管理：提供状态的增删改查操作
  * - 线程隔离：每个线程有独立的状态实例
+ * - 事件驱动：变量变更时触发事件通知
  */
 export class VariableManager {
+  private eventManager?: EventManager;
+  private threadId?: string;
+  private workflowId?: string;
+
+  constructor(eventManager?: EventManager, threadId?: string, workflowId?: string) {
+    this.eventManager = eventManager;
+    this.threadId = threadId;
+    this.workflowId = workflowId;
+  }
   /**
    * 从 WorkflowDefinition 初始化 Thread 变量
    * @param thread Thread 实例
@@ -134,20 +150,41 @@ export class VariableManager {
    * @param value 新的变量值
    * @param explicitScope 显式指定作用域（可选）
    */
-  updateVariable(threadContext: ThreadContext, name: string, value: any, explicitScope?: VariableScope): void {
+  async updateVariable(threadContext: ThreadContext, name: string, value: any, explicitScope?: VariableScope): Promise<void> {
     const thread = threadContext.thread;
     const variableDef = thread.variables.find(v => v.name === name);
 
     if (!variableDef) {
-      throw new Error(`Variable '${name}' is not defined in workflow. Variables must be defined in WorkflowDefinition.`);
+      throw new ValidationError(
+        `Variable '${name}' is not defined in workflow. Variables must be defined in WorkflowDefinition.`,
+        'variableName',
+        name,
+        { threadId: thread.id, workflowId: this.workflowId }
+      );
     }
 
     if (variableDef.readonly) {
-      throw new Error(`Variable '${name}' is readonly and cannot be modified`);
+      throw new ValidationError(
+        `Variable '${name}' is readonly and cannot be modified`,
+        'variableName',
+        name,
+        { threadId: thread.id, workflowId: this.workflowId }
+      );
     }
 
     if (!this.validateType(value, variableDef.type)) {
-      throw new Error(`Type mismatch for variable '${name}'. Expected ${variableDef.type}, got ${typeof value}`);
+      throw new ValidationError(
+        `Type mismatch for variable '${name}'. Expected ${variableDef.type}, got ${typeof value}`,
+        'variableValue',
+        value,
+        {
+          threadId: thread.id,
+          workflowId: this.workflowId,
+          variableName: name,
+          expectedType: variableDef.type,
+          actualType: typeof value
+        }
+      );
     }
 
     // 如果指定了显式作用域，使用该作用域
@@ -163,7 +200,12 @@ export class VariableManager {
         break;
       case 'subgraph':
         if (thread.variableScopes.subgraph.length === 0) {
-          throw new Error('Cannot set subgraph variable outside of subgraph context');
+          throw new ExecutionError(
+            'Cannot set subgraph variable outside of subgraph context',
+            undefined,
+            this.workflowId || thread.workflowId,
+            { threadId: thread.id, variableName: name }
+          );
         }
         const subgraphScope = thread.variableScopes.subgraph[thread.variableScopes.subgraph.length - 1];
         if (subgraphScope) {
@@ -172,7 +214,12 @@ export class VariableManager {
         break;
       case 'loop':
         if (thread.variableScopes.loop.length === 0) {
-          throw new Error('Cannot set loop variable outside of loop context');
+          throw new ExecutionError(
+            'Cannot set loop variable outside of loop context',
+            undefined,
+            this.workflowId || thread.workflowId,
+            { threadId: thread.id, variableName: name }
+          );
         }
         const loopScope = thread.variableScopes.loop[thread.variableScopes.loop.length - 1];
         if (loopScope) {
@@ -182,6 +229,43 @@ export class VariableManager {
     }
 
     variableDef.value = value;
+
+    // 触发变量变更事件
+    await this.emitVariableChangedEvent(threadContext, name, value, targetScope);
+  }
+
+  /**
+   * 触发变量变更事件
+   * @param threadContext ThreadContext 实例
+   * @param name 变量名称
+   * @param value 新值
+   * @param scope 作用域
+   */
+  private async emitVariableChangedEvent(
+    threadContext: ThreadContext,
+    name: string,
+    value: any,
+    scope: VariableScope
+  ): Promise<void> {
+    if (!this.eventManager) {
+      return;
+    }
+
+    try {
+      const event = {
+        type: EventType.VARIABLE_CHANGED,
+        timestamp: now(),
+        workflowId: this.workflowId || threadContext.getWorkflowId(),
+        threadId: this.threadId || threadContext.getThreadId(),
+        variableName: name,
+        variableValue: value,
+        variableScope: scope
+      };
+      await this.eventManager.emit(event);
+    } catch (error) {
+      // 静默处理事件触发错误，避免影响主流程
+      console.error('Failed to emit variable changed event:', error);
+    }
   }
 
   /**
@@ -266,7 +350,12 @@ export class VariableManager {
    */
   exitSubgraphScope(threadContext: ThreadContext): void {
     if (threadContext.thread.variableScopes.subgraph.length === 0) {
-      throw new Error('No subgraph scope to exit');
+      throw new ExecutionError(
+        'No subgraph scope to exit',
+        undefined,
+        this.workflowId || threadContext.thread.workflowId,
+        { threadId: threadContext.thread.id }
+      );
     }
     threadContext.thread.variableScopes.subgraph.pop();
   }
@@ -285,7 +374,12 @@ export class VariableManager {
    */
   exitLoopScope(threadContext: ThreadContext): void {
     if (threadContext.thread.variableScopes.loop.length === 0) {
-      throw new Error('No loop scope to exit');
+      throw new ExecutionError(
+        'No loop scope to exit',
+        undefined,
+        this.workflowId || threadContext.thread.workflowId,
+        { threadId: threadContext.thread.id }
+      );
     }
     threadContext.thread.variableScopes.loop.pop();
   }

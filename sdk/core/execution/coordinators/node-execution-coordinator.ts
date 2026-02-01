@@ -1,14 +1,14 @@
 /**
  * NodeExecutionCoordinator - 节点执行协调器
  * 负责协调节点的执行流程，包括事件触发、Hook执行、子图处理等
- * 
+ *
  * 职责：
  * - 协调节点执行的核心逻辑
  * - 处理子图边界（进入/退出）
  * - 执行节点（包括LLM托管节点和普通节点）
  * - 触发节点事件
  * - 执行节点Hooks
- * 
+ *
  * 设计原则：
  * - 协调各个组件完成节点执行
  * - 不直接实现具体的执行逻辑
@@ -18,7 +18,7 @@
 import { ThreadContext } from '../context/thread-context';
 import type { Node } from '../../../types/node';
 import type { NodeExecutionResult } from '../../../types/thread';
-import { EventCoordinator } from './event-coordinator';
+import type { EventManager } from '../../services/event-manager';
 import { LLMExecutionCoordinator, type LLMExecutionParams } from './llm-execution-coordinator';
 import { enterSubgraph, exitSubgraph, getSubgraphInput, getSubgraphOutput } from '../handlers/subgraph-handler';
 import { EventType } from '../../../types/events';
@@ -47,7 +47,7 @@ import {
  */
 export class NodeExecutionCoordinator {
   constructor(
-    private eventCoordinator: EventCoordinator,
+    private eventManager: EventManager,
     private llmCoordinator: LLMExecutionCoordinator
   ) { }
 
@@ -72,21 +72,22 @@ export class NodeExecutionCoordinator {
 
     try {
       // 步骤1：触发节点开始事件
-      await this.eventCoordinator.emitNodeStartedEvent({
+      const nodeStartedEvent: NodeStartedEvent = {
         type: EventType.NODE_STARTED,
         threadId: threadContext.getThreadId(),
         workflowId: threadContext.getWorkflowId(),
         nodeId,
         nodeType,
         timestamp: now()
-      });
+      };
+      await this.eventManager.emit(nodeStartedEvent);
 
       // 步骤2：执行BEFORE_EXECUTE类型的Hook
       if (node.hooks && node.hooks.length > 0) {
         await executeHook(
           { thread: threadContext.thread, node },
           HookType.BEFORE_EXECUTE,
-          (event) => this.eventCoordinator.getEventManager().emit(event)
+          (event) => this.eventManager.emit(event)
         );
       }
 
@@ -101,13 +102,13 @@ export class NodeExecutionCoordinator {
         await executeHook(
           { thread: threadContext.thread, node, result: nodeResult },
           HookType.AFTER_EXECUTE,
-          (event) => this.eventCoordinator.getEventManager().emit(event)
+          (event) => this.eventManager.emit(event)
         );
       }
 
       // 步骤6：触发节点完成事件
       if (nodeResult.status === 'COMPLETED') {
-        await this.eventCoordinator.emitNodeCompletedEvent({
+        const nodeCompletedEvent: NodeCompletedEvent = {
           type: EventType.NODE_COMPLETED,
           threadId: threadContext.getThreadId(),
           workflowId: threadContext.getWorkflowId(),
@@ -115,16 +116,18 @@ export class NodeExecutionCoordinator {
           output: nodeResult.data,
           executionTime: nodeResult.executionTime || 0,
           timestamp: now()
-        }, threadContext);
+        };
+        await this.eventManager.emit(nodeCompletedEvent);
       } else if (nodeResult.status === 'FAILED') {
-        await this.eventCoordinator.emitNodeFailedEvent({
+        const nodeFailedEvent: NodeFailedEvent = {
           type: EventType.NODE_FAILED,
           threadId: threadContext.getThreadId(),
           workflowId: threadContext.getWorkflowId(),
           nodeId,
           error: nodeResult.error,
           timestamp: now()
-        }, threadContext);
+        };
+        await this.eventManager.emit(nodeFailedEvent);
       }
 
       return nodeResult;
@@ -143,14 +146,15 @@ export class NodeExecutionCoordinator {
 
       threadContext.addNodeResult(errorResult);
 
-      await this.eventCoordinator.emitNodeFailedEvent({
+      const nodeFailedEvent: NodeFailedEvent = {
         type: EventType.NODE_FAILED,
         threadId: threadContext.getThreadId(),
         workflowId: threadContext.getWorkflowId(),
         nodeId,
         error,
         timestamp: now()
-      }, threadContext);
+      };
+      await this.eventManager.emit(nodeFailedEvent);
 
       return errorResult;
     }
@@ -176,7 +180,7 @@ export class NodeExecutionCoordinator {
       );
 
       // 触发子图开始事件
-      await this.eventCoordinator.emitSubgraphStartedEvent({
+      const subgraphStartedEvent: SubgraphStartedEvent = {
         type: EventType.SUBGRAPH_STARTED,
         threadId: threadContext.getThreadId(),
         workflowId: threadContext.getWorkflowId(),
@@ -184,7 +188,8 @@ export class NodeExecutionCoordinator {
         parentWorkflowId: graphNode.parentWorkflowId!,
         input,
         timestamp: now()
-      });
+      };
+      await this.eventManager.emit(subgraphStartedEvent);
     } else if (boundaryType === 'exit') {
       // 退出子图
       const subgraphContext = threadContext.getCurrentSubgraphContext();
@@ -192,7 +197,7 @@ export class NodeExecutionCoordinator {
         const output = getSubgraphOutput(threadContext, originalNodeId);
 
         // 触发子图完成事件
-        await this.eventCoordinator.emitSubgraphCompletedEvent({
+        const subgraphCompletedEvent: SubgraphCompletedEvent = {
           type: EventType.SUBGRAPH_COMPLETED,
           threadId: threadContext.getThreadId(),
           workflowId: threadContext.getWorkflowId(),
@@ -200,7 +205,8 @@ export class NodeExecutionCoordinator {
           output,
           executionTime: Date.now() - subgraphContext.startTime,
           timestamp: now()
-        });
+        };
+        await this.eventManager.emit(subgraphCompletedEvent);
 
         exitSubgraph(threadContext);
       }

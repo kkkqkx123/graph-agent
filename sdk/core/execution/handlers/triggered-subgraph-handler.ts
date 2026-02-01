@@ -17,7 +17,7 @@
 
 import type { ID } from '../../../types/common';
 import { ThreadContext } from '../context/thread-context';
-import { EventCoordinator } from '../coordinators/event-coordinator';
+import type { EventManager } from '../../services/event-manager';
 import { EventType } from '../../../types/events';
 import { now } from '../../../utils';
 
@@ -89,14 +89,13 @@ export async function createSubgraphContext(
  * 触发子工作流开始事件
  * @param mainThreadContext 主工作流线程上下文
  * @param task 触发子工作流任务
- * @param eventCoordinator 事件协调器
+ * @param eventManager 事件管理器
  */
 export async function emitSubgraphStartedEvent(
   mainThreadContext: ThreadContext,
   task: TriggeredSubgraphTask,
-  eventCoordinator: EventCoordinator
+  eventManager: EventManager
 ): Promise<void> {
-  const eventManager = eventCoordinator.getEventManager();
   await eventManager.emit({
     type: EventType.TRIGGERED_SUBGRAPH_STARTED,
     threadId: mainThreadContext.getThreadId(),
@@ -112,14 +111,13 @@ export async function emitSubgraphStartedEvent(
  * 触发子工作流完成事件
  * @param mainThreadContext 主工作流线程上下文
  * @param task 触发子工作流任务
- * @param eventCoordinator 事件协调器
+ * @param eventManager 事件管理器
  */
 export async function emitSubgraphCompletedEvent(
   mainThreadContext: ThreadContext,
   task: TriggeredSubgraphTask,
-  eventCoordinator: EventCoordinator
+  eventManager: EventManager
 ): Promise<void> {
-  const eventManager = eventCoordinator.getEventManager();
   await eventManager.emit({
     type: EventType.TRIGGERED_SUBGRAPH_COMPLETED,
     threadId: mainThreadContext.getThreadId(),
@@ -135,13 +133,13 @@ export async function emitSubgraphCompletedEvent(
  * @param task 触发子工作流任务
  * @param contextFactory 子工作流上下文工厂
  * @param subgraphExecutor 子工作流执行器
- * @param eventCoordinator 事件协调器
+ * @param eventManager 事件管理器
  */
 export async function executeSingleTriggeredSubgraph(
   task: TriggeredSubgraphTask,
   contextFactory: SubgraphContextFactory,
   subgraphExecutor: SubgraphExecutor,
-  eventCoordinator: EventCoordinator
+  eventManager: EventManager
 ): Promise<void> {
   // 标记开始执行触发子工作流
   task.mainThreadContext.startTriggeredSubgraphExecution();
@@ -151,13 +149,13 @@ export async function executeSingleTriggeredSubgraph(
     const subgraphContext = await createSubgraphContext(task, contextFactory);
     
     // 触发子工作流开始事件
-    await emitSubgraphStartedEvent(task.mainThreadContext, task, eventCoordinator);
+    await emitSubgraphStartedEvent(task.mainThreadContext, task, eventManager);
     
     // 执行子工作流
     await subgraphExecutor.executeThread(subgraphContext);
     
     // 触发子工作流完成事件
-    await emitSubgraphCompletedEvent(task.mainThreadContext, task, eventCoordinator);
+    await emitSubgraphCompletedEvent(task.mainThreadContext, task, eventManager);
   } finally {
     // 结束触发子工作流执行标记
     task.mainThreadContext.endTriggeredSubgraphExecution();

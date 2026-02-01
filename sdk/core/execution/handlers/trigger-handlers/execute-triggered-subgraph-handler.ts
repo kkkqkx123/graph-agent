@@ -8,7 +8,7 @@ import type { ExecuteTriggeredSubgraphActionConfig } from '../../../../types/tri
 import { NotFoundError } from '../../../../types/errors';
 import { ExecutionContext } from '../../context/execution-context';
 import { executeSingleTriggeredSubgraph, type TriggeredSubgraphTask } from '../triggered-subgraph-handler';
-import { EventCoordinator } from '../../coordinators/event-coordinator';
+import type { EventManager } from '../../../services/event-manager';
 import { eventManager } from '../../../services/event-manager';
 import { ThreadExecutor } from '../../thread-executor';
 
@@ -100,12 +100,12 @@ export async function executeTriggeredSubgraphHandler(
       input: mainThreadContext.getInput()
     };
 
-    // 创建事件协调器
-    const eventCoordinator = new EventCoordinator(context.getEventManager() || eventManager);
+    // 获取事件管理器
+    const eventManagerInstance = context.getEventManager() || eventManager;
 
     // 创建 ThreadExecutor 实例（作为 SubgraphContextFactory 和 SubgraphExecutor）
     const threadExecutor = new ThreadExecutor(
-      context.getEventManager(),
+      eventManagerInstance,
       workflowRegistry
     );
 
@@ -127,7 +127,7 @@ export async function executeTriggeredSubgraphHandler(
       task,
       threadExecutor, // 作为 SubgraphContextFactory
       threadExecutor, // 作为 SubgraphExecutor
-      eventCoordinator
+      eventManagerInstance
     );
 
     const executionTime = Date.now() - startTime;

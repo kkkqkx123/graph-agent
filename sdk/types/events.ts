@@ -46,7 +46,9 @@ export enum EventType {
   /** 触发子工作流开始 */
   TRIGGERED_SUBGRAPH_STARTED = 'TRIGGERED_SUBGRAPH_STARTED',
   /** 触发子工作流完成 */
-  TRIGGERED_SUBGRAPH_COMPLETED = 'TRIGGERED_SUBGRAPH_COMPLETED'
+  TRIGGERED_SUBGRAPH_COMPLETED = 'TRIGGERED_SUBGRAPH_COMPLETED',
+  /** 变量变更 */
+  VARIABLE_CHANGED = 'VARIABLE_CHANGED'
 }
 
 /**
@@ -281,6 +283,19 @@ export interface NodeCustomEvent extends BaseEvent {
 }
 
 /**
+ * 变量变更事件类型
+ */
+export interface VariableChangedEvent extends BaseEvent {
+  type: EventType.VARIABLE_CHANGED;
+  /** 变量名称 */
+  variableName: string;
+  /** 变量值 */
+  variableValue: any;
+  /** 变量作用域 */
+  variableScope: string;
+}
+
+/**
  * 事件监听器类型
  */
 export type EventListener<T extends BaseEvent> = (event: T) => void | Promise<void>;
@@ -317,4 +332,5 @@ export type Event =
   | SubgraphStartedEvent
   | SubgraphCompletedEvent
   | TriggeredSubgraphStartedEvent
-  | TriggeredSubgraphCompletedEvent;
+  | TriggeredSubgraphCompletedEvent
+  | VariableChangedEvent;

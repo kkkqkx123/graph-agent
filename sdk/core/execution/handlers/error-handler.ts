@@ -18,7 +18,7 @@
 import { ThreadContext } from '../context/thread-context';
 import type { Node } from '../../../types/node';
 import type { NodeExecutionResult } from '../../../types/thread';
-import { EventCoordinator } from '../coordinators/event-coordinator';
+import type { EventManager } from '../../services/event-manager';
 import { EventType } from '../../../types/events';
 import type { ErrorEvent } from '../../../types/events';
 import { now } from '../../../utils';
@@ -28,13 +28,13 @@ import { now } from '../../../utils';
  * @param threadContext 线程上下文
  * @param node 节点定义
  * @param nodeResult 节点执行结果
- * @param eventCoordinator 事件协调器
+ * @param eventManager 事件管理器
  */
 export async function handleNodeFailure(
   threadContext: ThreadContext,
   node: Node,
   nodeResult: NodeExecutionResult,
-  eventCoordinator: EventCoordinator
+  eventManager: EventManager
 ): Promise<void> {
     // 步骤1：记录错误信息
     threadContext.addError(nodeResult.error);
@@ -48,7 +48,7 @@ export async function handleNodeFailure(
       timestamp: now()
     };
 
-    await eventCoordinator.emitErrorEvent(errorEvent, threadContext);
+    await eventManager.emit(errorEvent);
 
     // 步骤3：根据错误处理策略决定后续操作
     const errorHandling = threadContext.getMetadata()?.customFields?.errorHandling;
@@ -86,12 +86,12 @@ export async function handleNodeFailure(
  * 处理执行错误
  * @param threadContext 线程上下文
  * @param error 错误信息
- * @param eventCoordinator 事件协调器
+ * @param eventManager 事件管理器
  */
 export async function handleExecutionError(
   threadContext: ThreadContext,
   error: any,
-  eventCoordinator: EventCoordinator
+  eventManager: EventManager
 ): Promise<void> {
     // 记录错误信息
     threadContext.addError(error);
@@ -105,7 +105,7 @@ export async function handleExecutionError(
       timestamp: now()
     };
 
-    await eventCoordinator.emitErrorEvent(errorEvent, threadContext);
+    await eventManager.emit(errorEvent);
 
     // 状态由外部管理
   }
