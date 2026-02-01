@@ -19,6 +19,7 @@ import { workflowRegistry, type WorkflowRegistry } from '../services/workflow-re
 import { ExecutionContext } from './context/execution-context';
 import { TriggerStatus } from '../../types/trigger';
 import type { ThreadRegistry } from '../services/thread-registry';
+import { graphRegistry } from '../services/graph-registry';
 
 /**
  * ThreadBuilder - Thread构建器
@@ -95,8 +96,14 @@ export class ThreadBuilder {
       throw new ValidationError('Processed workflow must have an END node', 'workflow.nodes');
     }
 
-    // 步骤2：克隆 GraphData 实例
-    const threadGraphData = processedWorkflow.graph.clone();
+    // 步骤2：从 GraphRegistry 获取图实例
+    const threadGraphData = graphRegistry.get(processedWorkflow.id);
+    if (!threadGraphData) {
+      throw new ValidationError(
+        `Graph not found for workflow: ${processedWorkflow.id}`,
+        'workflow.id'
+      );
+    }
 
     // 步骤3：创建 Thread 实例
     const threadId = generateId();

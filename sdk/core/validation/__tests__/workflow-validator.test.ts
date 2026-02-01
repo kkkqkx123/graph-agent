@@ -210,7 +210,7 @@ describe('WorkflowValidator', () => {
       const result = validator.validate(workflow);
       expect(result.valid).toBe(false);
       expect(result.errors.some(e => e.field?.includes('type') && e.message.includes('required'))).toBe(true);
-      });
+    });
 
     it('should return error for workflow without START node', () => {
       const workflow: WorkflowDefinition = {
@@ -293,21 +293,102 @@ describe('WorkflowValidator', () => {
       expect(result.errors.some(e => e.message.includes('END node'))).toBe(true);
     });
 
-    it('should return error for workflow with multiple END nodes', () => {
+    it('should return error for triggered subgraph without START_FROM_TRIGGER node', () => {
       const workflow: WorkflowDefinition = {
         ...createValidWorkflow(),
         nodes: [
           {
             id: 'node-1',
-            name: 'End 1',
-            type: NodeType.END,
+            name: 'Continue',
+            type: NodeType.CONTINUE_FROM_TRIGGER,
+            config: {},
+            incomingEdgeIds: [],
+            outgoingEdgeIds: []
+          }
+        ]
+      };
+      const result = validator.validate(workflow);
+      expect(result.valid).toBe(false);
+      expect(result.errors.some(e => e.message.includes('START_FROM_TRIGGER'))).toBe(true);
+    });
+
+    it('should return error for triggered subgraph without CONTINUE_FROM_TRIGGER node', () => {
+      const workflow: WorkflowDefinition = {
+        ...createValidWorkflow(),
+        nodes: [
+          {
+            id: 'node-1',
+            name: 'Start',
+            type: NodeType.START_FROM_TRIGGER,
+            config: {},
+            incomingEdgeIds: [],
+            outgoingEdgeIds: []
+          }
+        ]
+      };
+      const result = validator.validate(workflow);
+      expect(result.valid).toBe(false);
+      expect(result.errors.some(e => e.message.includes('CONTINUE_FROM_TRIGGER'))).toBe(true);
+    });
+
+    it('should return error for triggered subgraph with START node', () => {
+      const workflow: WorkflowDefinition = {
+        ...createValidWorkflow(),
+        nodes: [
+          {
+            id: 'node-1',
+            name: 'StartFromTrigger',
+            type: NodeType.START_FROM_TRIGGER,
             config: {},
             incomingEdgeIds: [],
             outgoingEdgeIds: []
           },
           {
             id: 'node-2',
-            name: 'End 2',
+            name: 'ContinueFromTrigger',
+            type: NodeType.CONTINUE_FROM_TRIGGER,
+            config: {},
+            incomingEdgeIds: [],
+            outgoingEdgeIds: []
+          },
+          {
+            id: 'node-3',
+            name: 'Start',
+            type: NodeType.START,
+            config: {},
+            incomingEdgeIds: [],
+            outgoingEdgeIds: []
+          }
+        ]
+      };
+      const result = validator.validate(workflow);
+      expect(result.valid).toBe(false);
+      expect(result.errors.some(e => e.message.includes('cannot contain START node'))).toBe(true);
+    });
+
+    it('should return error for triggered subgraph with END node', () => {
+      const workflow: WorkflowDefinition = {
+        ...createValidWorkflow(),
+        nodes: [
+          {
+            id: 'node-1',
+            name: 'StartFromTrigger',
+            type: NodeType.START_FROM_TRIGGER,
+            config: {},
+            incomingEdgeIds: [],
+            outgoingEdgeIds: []
+          },
+          {
+            id: 'node-2',
+            name: 'ContinueFromTrigger',
+            type: NodeType.CONTINUE_FROM_TRIGGER,
+            config: {},
+            incomingEdgeIds: [],
+            outgoingEdgeIds: []
+          },
+          {
+            id: 'node-3',
+            name: 'End',
             type: NodeType.END,
             config: {},
             incomingEdgeIds: [],
@@ -317,8 +398,9 @@ describe('WorkflowValidator', () => {
       };
       const result = validator.validate(workflow);
       expect(result.valid).toBe(false);
-      expect(result.errors.some(e => e.message.includes('exactly one END node'))).toBe(true);
+      expect(result.errors.some(e => e.message.includes('cannot contain END node'))).toBe(true);
     });
+
   });
 
   describe('validateEdges', () => {
@@ -454,151 +536,20 @@ describe('WorkflowValidator', () => {
     });
   });
 
-  describe('validateStructure', () => {
-    it('should validate workflow with correct structure', () => {
+  describe('validateReferences', () => {
+    it('should validate workflow with correct references', () => {
       const workflow = createValidWorkflow();
       const result = validator.validate(workflow);
-      expect(result.errors.filter(e => e.message.includes('START node') ||
-        e.message.includes('END node') ||
-        e.message.includes('not in'))).toHaveLength(0);
+      expect(result.errors.filter(e => e.message.includes('not found'))).toHaveLength(0);
     });
 
-    it('should return error for START node with incoming edges', () => {
+    it('should return error for edge with non-existent source node', () => {
       const workflow: WorkflowDefinition = {
         ...createValidWorkflow(),
-        nodes: [
-          {
-            id: 'node-start',
-            name: 'Start',
-            type: NodeType.START,
-            config: {},
-            incomingEdgeIds: ['edge-1'],
-            outgoingEdgeIds: []
-          },
-          {
-            id: 'node-end',
-            name: 'End',
-            type: NodeType.END,
-            config: {},
-            incomingEdgeIds: [],
-            outgoingEdgeIds: ['edge-1']
-          }
-        ],
         edges: [
           {
             id: 'edge-1',
-            sourceNodeId: 'node-end',
-            targetNodeId: 'node-start',
-            type: EdgeType.DEFAULT
-          }
-        ]
-      };
-      const result = validator.validate(workflow);
-      expect(result.valid).toBe(false);
-      expect(result.errors.some(e => e.message.includes('START node must have no incoming edges'))).toBe(true);
-    });
-
-    it('should return error for END node with outgoing edges', () => {
-      const workflow: WorkflowDefinition = {
-        ...createValidWorkflow(),
-        nodes: [
-          {
-            id: 'node-start',
-            name: 'Start',
-            type: NodeType.START,
-            config: {},
-            incomingEdgeIds: [],
-            outgoingEdgeIds: ['edge-1']
-          },
-          {
-            id: 'node-end',
-            name: 'End',
-            type: NodeType.END,
-            config: {},
-            incomingEdgeIds: ['edge-1'],
-            outgoingEdgeIds: ['edge-2']
-          }
-        ],
-        edges: [
-          {
-            id: 'edge-1',
-            sourceNodeId: 'node-start',
-            targetNodeId: 'node-end',
-            type: EdgeType.DEFAULT
-          },
-          {
-            id: 'edge-2',
-            sourceNodeId: 'node-end',
-            targetNodeId: 'node-start',
-            type: EdgeType.DEFAULT
-          }
-        ]
-      };
-      const result = validator.validate(workflow);
-      expect(result.valid).toBe(false);
-      expect(result.errors.some(e => e.message.includes('END node must have no outgoing edges'))).toBe(true);
-    });
-
-    it('should return error for edge not in source node outgoing edges', () => {
-      const workflow: WorkflowDefinition = {
-        ...createValidWorkflow(),
-        nodes: [
-          {
-            id: 'node-start',
-            name: 'Start',
-            type: NodeType.START,
-            config: {},
-            incomingEdgeIds: [],
-            outgoingEdgeIds: []
-          },
-          {
-            id: 'node-end',
-            name: 'End',
-            type: NodeType.END,
-            config: {},
-            incomingEdgeIds: ['edge-1'],
-            outgoingEdgeIds: []
-          }
-        ],
-        edges: [
-          {
-            id: 'edge-1',
-            sourceNodeId: 'node-start',
-            targetNodeId: 'node-end',
-            type: EdgeType.DEFAULT
-          }
-        ]
-        };
-        const result = validator.validate(workflow);
-        expect(result.valid).toBe(false);
-        expect(result.errors.some(e => e.message.includes('not in source node') && e.message.includes('outgoing edges'))).toBe(true);
-        });
-
-        it('should return error for edge not in target node incoming edges', () => {
-        const workflow: WorkflowDefinition = {
-        ...createValidWorkflow(),
-        nodes: [
-          {
-            id: 'node-start',
-            name: 'Start',
-            type: NodeType.START,
-            config: {},
-            incomingEdgeIds: [],
-            outgoingEdgeIds: ['edge-1']
-          },
-          {
-            id: 'node-end',
-            name: 'End',
-            type: NodeType.END,
-            config: {},
-            incomingEdgeIds: [],
-            outgoingEdgeIds: []
-          }
-        ],
-        edges: [
-          {
-            id: 'edge-1',
-            sourceNodeId: 'node-start',
+            sourceNodeId: 'non-existent',
             targetNodeId: 'node-end',
             type: EdgeType.DEFAULT
           }
@@ -606,7 +557,24 @@ describe('WorkflowValidator', () => {
       };
       const result = validator.validate(workflow);
       expect(result.valid).toBe(false);
-      expect(result.errors.some(e => e.message.includes('not in target node') && e.message.includes('incoming edges'))).toBe(true);
+      expect(result.errors.some(e => e.message.includes('source node not found'))).toBe(true);
+    });
+
+    it('should return error for edge with non-existent target node', () => {
+      const workflow: WorkflowDefinition = {
+        ...createValidWorkflow(),
+        edges: [
+          {
+            id: 'edge-1',
+            sourceNodeId: 'node-start',
+            targetNodeId: 'non-existent',
+            type: EdgeType.DEFAULT
+          }
+        ]
+      };
+      const result = validator.validate(workflow);
+      expect(result.valid).toBe(false);
+      expect(result.errors.some(e => e.message.includes('target node not found'))).toBe(true);
     });
   });
 

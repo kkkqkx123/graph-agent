@@ -46,6 +46,8 @@ export class GraphData implements Graph {
   public startNodeId?: ID;
   /** 结束节点ID集合 */
   public endNodeIds: Set<ID>;
+  /** 只读标记 */
+  private _isReadOnly: boolean = false;
 
   constructor() {
     this.nodes = new Map();
@@ -56,9 +58,28 @@ export class GraphData implements Graph {
   }
 
   /**
+   * 标记图为只读状态
+   * 调用后禁止任何修改操作
+   */
+  markAsReadOnly(): void {
+    this._isReadOnly = true;
+  }
+
+  /**
+   * 检查是否为只读状态
+   * @returns 是否只读
+   */
+  isReadOnly(): boolean {
+    return this._isReadOnly;
+  }
+
+  /**
    * 添加节点
    */
   addNode(node: GraphNode): void {
+    if (this._isReadOnly) {
+      throw new Error('Cannot modify read-only graph');
+    }
     this.nodes.set(node.id, node);
     // 初始化邻接表
     if (!this.adjacencyList.has(node.id)) {
@@ -73,6 +94,9 @@ export class GraphData implements Graph {
    * 添加边
    */
   addEdge(edge: GraphEdge): void {
+    if (this._isReadOnly) {
+      throw new Error('Cannot modify read-only graph');
+    }
     this.edges.set(edge.id, edge);
     // 更新正向邻接表
     if (!this.adjacencyList.has(edge.sourceNodeId)) {
@@ -249,26 +273,4 @@ export class GraphData implements Graph {
     this.startNodeId = undefined;
   }
 
-  /**
-   * 克隆图
-   */
-  clone(): Graph {
-    const cloned = new GraphData();
-
-    // 克隆节点
-    for (const node of this.nodes.values()) {
-      cloned.addNode({ ...node });
-    }
-
-    // 克隆边
-    for (const edge of this.edges.values()) {
-      cloned.addEdge({ ...edge });
-    }
-
-    // 克隆其他属性
-    cloned.startNodeId = this.startNodeId;
-    cloned.endNodeIds = new Set(this.endNodeIds);
-
-    return cloned;
-  }
 }

@@ -29,6 +29,7 @@ import { nodeTemplateRegistry } from './node-template-registry';
 import { triggerTemplateRegistry } from './trigger-template-registry';
 import type { TriggerReference } from '../../types/trigger-template';
 import type { WorkflowTrigger } from '../../types/trigger';
+import { graphRegistry } from './graph-registry';
 
 /**
  * 工作流摘要信息
@@ -743,6 +744,9 @@ class WorkflowRegistry {
       subworkflowIds,
       topologicalOrder: graphAnalysis.topologicalSort.sortedNodes,
     };
+
+    // 注册到全局 GraphRegistry
+    graphRegistry.register(workflow.id, buildResult.graph);
 
     // 缓存处理后的工作流和图
     this.processedWorkflows.set(workflow.id, processedWorkflow);

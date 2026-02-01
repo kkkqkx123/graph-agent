@@ -1,8 +1,34 @@
 /**
- * 图验证器
- * 提供图的各种验证功能
- * 支持子工作流验证
- * 使用图分析工具函数进行分析
+ * 图结构验证器
+ *
+ * 职责范围：
+ * - 验证图的拓扑结构和逻辑正确性
+ * - 验证START/END节点的存在性、唯一性和入出度约束
+ * - 检测循环依赖（环检测）
+ * - 分析节点可达性（从START到END的路径）
+ * - 验证FORK/JOIN节点的配对关系
+ * - 支持触发子工作流的特殊验证
+ * - 支持子工作流存在性和接口兼容性验证
+ *
+ * 与 WorkflowValidator 的区别：
+ * - GraphValidator 在图构建阶段验证，输入是 GraphData
+ * - WorkflowValidator 在工作流定义阶段验证，输入是 WorkflowDefinition
+ * - GraphValidator 专注于图拓扑结构验证（动态验证）
+ * - WorkflowValidator 专注于数据完整性验证（静态验证）
+ *
+ * 验证时机：
+ * - 在 GraphBuilder 构建图之后调用
+ * - 在子工作流递归处理时调用
+ * - 在工作流预处理流程中调用
+ *
+ * 前置条件：
+ * - 输入的图数据已经通过 WorkflowValidator 的基本验证
+ * - 节点和边的基本数据完整性已得到保证
+ *
+ * 不包含：
+ * - 基本数据完整性验证（由WorkflowValidator处理）
+ * - 节点配置验证（由WorkflowValidator处理）
+ * - ID唯一性验证（由WorkflowValidator处理）
  */
 
 import type {

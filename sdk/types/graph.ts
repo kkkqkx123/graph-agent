@@ -134,8 +134,6 @@ export interface Graph {
   getSourceNodes(): GraphNode[];
   /** 获取出度为0的节点 */
   getSinkNodes(): GraphNode[];
-  /** 克隆图 */
-  clone(): Graph;
 }
 
 /**

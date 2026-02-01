@@ -1,7 +1,26 @@
 /**
- * 工作流验证器
- * 负责工作流定义的完整验证
- * 使用zod进行声明式验证
+ * 工作流定义验证器
+ *
+ * 职责范围：
+ * - 验证工作流定义的数据完整性和基本约束
+ * - 验证节点和边的基本字段、ID唯一性、引用完整性
+ * - 验证节点配置、Hooks、工作流配置等
+ * - 检测自引用问题
+ *
+ * 与 GraphValidator 的区别：
+ * - WorkflowValidator 在工作流定义阶段验证，输入是 WorkflowDefinition
+ * - GraphValidator 在图构建阶段验证，输入是 GraphData
+ * - WorkflowValidator 专注于数据完整性验证（静态验证）
+ * - GraphValidator 专注于图拓扑结构验证（动态验证）
+ *
+ * 验证时机：
+ * - 在 GraphBuilder 构建图之前调用
+ * - 在工作流注册、保存等场景中使用
+ *
+ * 不包含：
+ * - 图拓扑结构验证（环检测、可达性分析等）
+ * - FORK/JOIN配对验证
+ * - START/END节点数量验证（由GraphValidator处理）
  */
 
 import { z } from 'zod';
@@ -102,9 +121,9 @@ export class WorkflowValidator {
     const edgesResult = this.validateEdges(workflow);
     errors.push(...edgesResult.errors);
 
-    // 验证结构
-    const structureResult = this.validateStructure(workflow);
-    errors.push(...structureResult.errors);
+    // 验证引用完整性
+    const referenceResult = this.validateReferences(workflow);
+    errors.push(...referenceResult.errors);
 
     // 验证配置
     const configResult = this.validateConfig(workflow);
@@ -152,6 +171,8 @@ export class WorkflowValidator {
     const nodeIds = new Set<string>();
     const startNodes: Node[] = [];
     const endNodes: Node[] = [];
+    const startFromTriggerNodes: Node[] = [];
+    const continueFromTriggerNodes: Node[] = [];
 
     for (let i = 0; i < workflow.nodes.length; i++) {
       const node = workflow.nodes[i];
@@ -210,29 +231,40 @@ export class WorkflowValidator {
         }
       }
 
-      // 统计START、END、START_FROM_TRIGGER和CONTINUE_FROM_TRIGGER节点
+      // 统计特殊节点类型
       if (node.type === NodeType.START) {
         startNodes.push(node);
       } else if (node.type === NodeType.END) {
         endNodes.push(node);
+      } else if (node.type === NodeType.START_FROM_TRIGGER) {
+        startFromTriggerNodes.push(node);
+      } else if (node.type === NodeType.CONTINUE_FROM_TRIGGER) {
+        continueFromTriggerNodes.push(node);
       }
     }
 
-    // 检查是否为触发子工作流
-    const hasStartFromTrigger = workflow.nodes.some(n => n.type === NodeType.START_FROM_TRIGGER);
-    const hasContinueFromTrigger = workflow.nodes.some(n => n.type === NodeType.CONTINUE_FROM_TRIGGER);
+    // 验证节点类型的业务规则
+    const hasStartFromTrigger = startFromTriggerNodes.length > 0;
+    const hasContinueFromTrigger = continueFromTriggerNodes.length > 0;
 
     if (hasStartFromTrigger || hasContinueFromTrigger) {
       // 触发子工作流：必须包含START_FROM_TRIGGER和CONTINUE_FROM_TRIGGER，不能包含START和END
       if (!hasStartFromTrigger) {
         errors.push(new ValidationError('Triggered subgraph must have exactly one START_FROM_TRIGGER node', 'workflow.nodes'));
+      } else if (startFromTriggerNodes.length > 1) {
+        errors.push(new ValidationError('Triggered subgraph must have exactly one START_FROM_TRIGGER node', 'workflow.nodes'));
       }
+
       if (!hasContinueFromTrigger) {
         errors.push(new ValidationError('Triggered subgraph must have exactly one CONTINUE_FROM_TRIGGER node', 'workflow.nodes'));
+      } else if (continueFromTriggerNodes.length > 1) {
+        errors.push(new ValidationError('Triggered subgraph must have exactly one CONTINUE_FROM_TRIGGER node', 'workflow.nodes'));
       }
+
       if (startNodes.length > 0) {
         errors.push(new ValidationError('Triggered subgraph cannot contain START node', 'workflow.nodes'));
       }
+
       if (endNodes.length > 0) {
         errors.push(new ValidationError('Triggered subgraph cannot contain END node', 'workflow.nodes'));
       }
@@ -245,9 +277,7 @@ export class WorkflowValidator {
       }
 
       if (endNodes.length === 0) {
-        errors.push(new ValidationError('Workflow must have exactly one END node', 'workflow.nodes'));
-      } else if (endNodes.length > 1) {
-        errors.push(new ValidationError('Workflow must have exactly one END node', 'workflow.nodes'));
+        errors.push(new ValidationError('Workflow must have at least one END node', 'workflow.nodes'));
       }
     }
 
@@ -266,7 +296,6 @@ export class WorkflowValidator {
   private validateEdges(workflow: WorkflowDefinition): ValidationResult {
     const errors: ValidationError[] = [];
     const edgeIds = new Set<string>();
-    const nodeIds = new Set(workflow.nodes.map(n => n.id));
 
     for (let i = 0; i < workflow.edges.length; i++) {
       const edge = workflow.edges[i];
@@ -287,14 +316,10 @@ export class WorkflowValidator {
 
       if (!edge.sourceNodeId) {
         errors.push(new ValidationError('Edge source node ID is required', `${path}.sourceNodeId`));
-      } else if (!nodeIds.has(edge.sourceNodeId)) {
-        errors.push(new ValidationError(`Edge source node not found: ${edge.sourceNodeId}`, `${path}.sourceNodeId`));
       }
 
       if (!edge.targetNodeId) {
         errors.push(new ValidationError('Edge target node ID is required', `${path}.targetNodeId`));
-      } else if (!nodeIds.has(edge.targetNodeId)) {
-        errors.push(new ValidationError(`Edge target node not found: ${edge.targetNodeId}`, `${path}.targetNodeId`));
       }
 
       if (!edge.type) {
@@ -310,42 +335,28 @@ export class WorkflowValidator {
   }
 
   /**
-   * 验证结构
+   * 验证引用完整性
+   * 检查边引用的节点是否存在
    * @param workflow 工作流定义
    * @returns 验证结果
    */
-  private validateStructure(workflow: WorkflowDefinition): ValidationResult {
+  private validateReferences(workflow: WorkflowDefinition): ValidationResult {
     const errors: ValidationError[] = [];
-    const nodeMap = new Map<string, Node>();
+    const nodeIds = new Set(workflow.nodes.map(n => n.id));
 
-    // 构建映射
-    for (const node of workflow.nodes) {
-      nodeMap.set(node.id, node);
-    }
-
-    // 检查START节点入度
-    const startNode = Array.from(nodeMap.values()).find(n => n.type === NodeType.START);
-    if (startNode && startNode.incomingEdgeIds.length > 0) {
-      errors.push(new ValidationError('START node must have no incoming edges', `workflow.nodes[${startNode.id}].incomingEdgeIds`));
-    }
-
-    // 检查END节点出度
-    const endNode = Array.from(nodeMap.values()).find(n => n.type === NodeType.END);
-    if (endNode && endNode.outgoingEdgeIds.length > 0) {
-      errors.push(new ValidationError('END node must have no outgoing edges', `workflow.nodes[${endNode.id}].outgoingEdgeIds`));
-    }
-
-    // 检查边的连接一致性
+    // 检查边的节点引用
     for (const edge of workflow.edges) {
-      const sourceNode = nodeMap.get(edge.sourceNodeId);
-      const targetNode = nodeMap.get(edge.targetNodeId);
-
-      if (sourceNode && !sourceNode.outgoingEdgeIds.includes(edge.id)) {
-        errors.push(new ValidationError(`Edge ${edge.id} not in source node's outgoing edges`, `workflow.edges[${edge.id}]`));
+      if (!nodeIds.has(edge.sourceNodeId)) {
+        errors.push(new ValidationError(
+          `Edge source node not found: ${edge.sourceNodeId}`,
+          `workflow.edges[${edge.id}].sourceNodeId`
+        ));
       }
-
-      if (targetNode && !targetNode.incomingEdgeIds.includes(edge.id)) {
-        errors.push(new ValidationError(`Edge ${edge.id} not in target node's incoming edges`, `workflow.edges[${edge.id}]`));
+      if (!nodeIds.has(edge.targetNodeId)) {
+        errors.push(new ValidationError(
+          `Edge target node not found: ${edge.targetNodeId}`,
+          `workflow.edges[${edge.id}].targetNodeId`
+        ));
       }
     }
 
