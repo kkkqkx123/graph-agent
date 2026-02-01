@@ -2,7 +2,7 @@
  * 工具服务单元测试
  */
 
-import { ToolService } from '../tool-service';
+import { ToolService } from '../../services/tool-service';
 import type { Tool } from '../../../types/tool';
 import { ToolType } from '../../../types/tool';
 import { NotFoundError, ToolError } from '../../../types/errors';
@@ -16,13 +16,19 @@ describe('ToolService', () => {
     mockTool = {
       id: 'test-tool-1',
       name: 'test-tool',
-      type: ToolType.BUILTIN,
+      type: ToolType.STATELESS,
       description: 'Test tool',
       parameters: {
         properties: {
           input: { type: 'string' as const, description: 'Input parameter' }
         },
         required: ['input']
+      },
+      config: {
+        execute: async (params: Record<string, any>) => ({
+          input: params.input,
+          processed: true
+        })
       }
     };
   });
@@ -84,10 +90,10 @@ describe('ToolService', () => {
         ...mockTool,
         id: 'test-tool-2',
         name: 'test-tool-2',
-        type: ToolType.NATIVE
+        type: ToolType.REST
       });
-      const builtinTools = service.listToolsByType(ToolType.BUILTIN);
-      expect(builtinTools).toHaveLength(1);
+      const statelessTools = service.listToolsByType(ToolType.STATELESS);
+      expect(statelessTools).toHaveLength(1);
     });
   });
 
@@ -122,32 +128,35 @@ describe('ToolService', () => {
   });
 
   describe('execute', () => {
-    it('should execute builtin calculator tool', async () => {
-      const calculatorTool: Tool = {
-        id: 'calculator',
-        name: 'calculator',
-        type: ToolType.BUILTIN,
-        description: 'Calculator tool',
+    it('should execute stateless tool', async () => {
+      const statelessTool: Tool = {
+        id: 'test-stateless',
+        name: 'test-stateless',
+        type: ToolType.STATELESS,
+        description: 'Stateless tool',
         parameters: {
           properties: {
-            expression: { type: 'string' as const, description: 'Math expression' },
-            precision: { type: 'number' as const, description: 'Precision' }
+            input: { type: 'string' as const, description: 'Input' }
           },
-          required: ['expression']
+          required: ['input']
+        },
+        config: {
+          execute: async (params: Record<string, any>) => ({
+            input: params.input,
+            result: `processed: ${params.input}`
+          })
         }
       };
 
-      service.registerTool(calculatorTool);
-      const result = await service.execute('calculator', {
-        expression: '2 + 3',
-        precision: 2
+      service.registerTool(statelessTool);
+      const result = await service.execute('test-stateless', {
+        input: 'test'
       });
 
       expect(result.success).toBe(true);
       expect(result.result).toEqual({
-        expression: '2 + 3',
-        result: 5,
-        precision: 2
+        input: 'test',
+        result: 'processed: test'
       });
     });
 
@@ -157,55 +166,65 @@ describe('ToolService', () => {
       ).rejects.toThrow(NotFoundError);
     });
 
-    it('should handle execution errors', async () => {
-      const calculatorTool: Tool = {
-        id: 'calculator',
-        name: 'calculator',
-        type: ToolType.BUILTIN,
-        description: 'Calculator tool',
+    it('should handle execution errors for stateless tool', async () => {
+      const statelessTool: Tool = {
+        id: 'error-tool',
+        name: 'error-tool',
+        type: ToolType.STATELESS,
+        description: 'Tool that throws error',
         parameters: {
           properties: {
-            expression: { type: 'string', description: 'Math expression' }
+            input: { type: 'string', description: 'Input' }
           },
-          required: ['expression']
+          required: ['input']
+        },
+        config: {
+          execute: async () => {
+            throw new Error('Execution failed');
+          }
         }
       };
 
-      service.registerTool(calculatorTool);
-      const result = await service.execute('calculator', {
-        expression: 'invalid expression'
-      });
-
-      expect(result.success).toBe(false);
-      expect(result.error).toBeDefined();
+      service.registerTool(statelessTool);
+      await expect(
+        service.execute('error-tool', { input: 'test' })
+      ).rejects.toThrow();
     });
   });
 
   describe('executeBatch', () => {
     it('should execute multiple tools in parallel', async () => {
-      const calculatorTool: Tool = {
-        id: 'calculator',
-        name: 'calculator',
-        type: ToolType.BUILTIN,
-        description: 'Calculator tool',
+      const statelessTool: Tool = {
+        id: 'test-batch',
+        name: 'test-batch',
+        type: ToolType.STATELESS,
+        description: 'Stateless tool for batch testing',
         parameters: {
           properties: {
-            expression: { type: 'string', description: 'Math expression' }
+            value: { type: 'number', description: 'Value to process' }
           },
-          required: ['expression']
+          required: ['value']
+        },
+        config: {
+          execute: async (params: Record<string, any>) => ({
+            input: params.value,
+            result: params.value * 2
+          })
         }
       };
 
-      service.registerTool(calculatorTool);
+      service.registerTool(statelessTool);
 
       const results = await service.executeBatch([
-        { toolName: 'calculator', parameters: { expression: '2 + 3' } },
-        { toolName: 'calculator', parameters: { expression: '5 * 6' } }
+        { toolName: 'test-batch', parameters: { value: 5 } },
+        { toolName: 'test-batch', parameters: { value: 10 } }
       ]);
 
       expect(results).toHaveLength(2);
       expect(results[0]?.success).toBe(true);
       expect(results[1]?.success).toBe(true);
+      expect(results[0]?.result?.result).toBe(10);
+      expect(results[1]?.result?.result).toBe(20);
     });
   });
 

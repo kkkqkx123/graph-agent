@@ -1,6 +1,7 @@
 /**
  * 工具注册表
  * 负责工具定义的管理
+ * 由于仅被tool-service使用，不需要特意改造为单例模式
  */
 
 import type { Tool, StatelessToolConfig, StatefulToolConfig, McpToolConfig } from '../../types/tool';

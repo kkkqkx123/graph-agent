@@ -1,24 +1,31 @@
 /**
  * 工具服务
  * 提供统一的工具执行接口
+ *
+ * 本模块导出全局单例实例，不导出类定义
+ *
+ * 如果需要测试隔离，使用以下模式：
+ * - 创建 Mock 类实现该接口
+ * - 使用 type { ToolService } 获取类型
+ * - 通过依赖注入传入 Mock
  */
 
 import type { Tool } from '../../types/tool';
 import type { ThreadContext } from '../execution/context/thread-context';
 import { ToolType } from '../../types/tool';
 import { NotFoundError, ToolError } from '../../types/errors';
-import { ToolRegistry } from './tool-registry';
-import { BaseToolExecutor } from './base-tool-executor';
-import type { ToolExecutionOptions, ToolExecutionResult } from './base-tool-executor';
-import { StatelessToolExecutor } from './executors/stateless';
-import { StatefulToolExecutor } from './executors/stateful';
-import { RestToolExecutor } from './executors/rest';
-import { McpToolExecutor } from './executors/mcp';
+import { ToolRegistry } from '../tools/tool-registry';
+import { BaseToolExecutor } from '../tools/base-tool-executor';
+import type { ToolExecutionOptions, ToolExecutionResult } from '../tools/base-tool-executor';
+import { StatelessToolExecutor } from '../tools/executors/stateless';
+import { StatefulToolExecutor } from '../tools/executors/stateful';
+import { RestToolExecutor } from '../tools/executors/rest';
+import { McpToolExecutor } from '../tools/executors/mcp';
 
 /**
  * 工具服务类
  */
-export class ToolService {
+class ToolService {
   private registry: ToolRegistry;
   private executors: Map<string, BaseToolExecutor> = new Map();
 
@@ -259,3 +266,15 @@ export class ToolService {
     this.registry.register(updatedTool);
   }
 }
+
+/**
+ * 全局工具服务单例
+ * 用于管理所有工具的注册、查询和执行
+ */
+export const toolService = new ToolService();
+
+/**
+ * 导出ToolService类供测试使用
+ * 注意：生产代码应使用单例 toolService，此类仅供测试使用
+ */
+export { ToolService };

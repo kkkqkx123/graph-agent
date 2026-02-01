@@ -15,10 +15,13 @@ export { workflowRegistry, type WorkflowRegistry } from './workflow-registry';
 export { eventManager, type EventManager } from './event-manager';
 
 // 节点注册表单例
-export { nodeTemplateRegistry as nodeRegistry, type NodeTemplateRegistry as NodeRegistry } from './node-template-registry';
+export { nodeTemplateRegistry, type NodeTemplateRegistry } from './node-template-registry';
 
 // 触发器模板注册表单例
 export { triggerTemplateRegistry, type TriggerTemplateRegistry } from './trigger-template-registry';
 
 // 全局消息存储单例
 export { globalMessageStorage, type GlobalMessageStorage } from './global-message-storage';
+
+// 工具服务
+export { toolService } from '../services/tool-service';

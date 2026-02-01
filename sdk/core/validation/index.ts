@@ -12,4 +12,4 @@ export { GraphValidator } from './graph-validator';
 export * from './node-validation';
 
 // 导出Hook验证函数
-export * from './hook-validation';
+export * from './hook-validator';

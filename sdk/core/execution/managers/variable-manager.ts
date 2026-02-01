@@ -13,7 +13,7 @@
 import type { Thread, ThreadVariable, VariableScope } from '../../../types/thread';
 import type { WorkflowDefinition, WorkflowVariable } from '../../../types/workflow';
 import type { ThreadContext } from '../context/thread-context';
-import { VariableAccessor } from '../utils/variable-accessor';
+import { VariableAccessor } from './utils/variable-accessor';
 
 /**
  * VariableManager - 变量管理器

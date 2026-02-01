@@ -19,7 +19,7 @@ import type { LLMMessage } from '../../types/llm';
 import type { ThreadContext } from './context/thread-context';
 import { ConversationManager } from './conversation';
 import { LLMExecutor } from './llm-executor';
-import { ToolService } from '../tools/tool-service';
+import { toolService } from '../services/tool-service';
 
 /**
  * LLM执行参数
@@ -64,11 +64,10 @@ export interface LLMExecutionResponse {
 export class LLMCoordinator {
   private static instance: LLMCoordinator;
   private llmExecutor: LLMExecutor;
-  private toolService: ToolService;
+  private toolService = toolService;
 
   private constructor() {
     this.llmExecutor = LLMExecutor.getInstance();
-    this.toolService = new ToolService();
   }
 
   /**

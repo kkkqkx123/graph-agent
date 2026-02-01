@@ -17,4 +17,4 @@
 export { EventCoordinator } from './event-coordinator';
 export { NodeExecutionCoordinator } from './node-execution-coordinator';
 export { TriggerCoordinator } from './trigger-coordinator';
-export { VariableAccessor, VariableNamespace } from '../utils/variable-accessor';
+export { VariableAccessor, VariableNamespace } from '../managers/utils/variable-accessor';

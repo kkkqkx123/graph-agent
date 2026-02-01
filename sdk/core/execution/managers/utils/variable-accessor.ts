@@ -26,9 +26,9 @@
  * - accessor.get('loop.item') - 获取循环变量
  */
 
-import type { ThreadContext } from '../context/thread-context';
-import type { VariableScope } from '../../../types/thread';
-import { resolvePath } from '../../../utils/evalutor/path-resolver';
+import type { ThreadContext } from '../../context/thread-context';
+import type { VariableScope } from '../../../../types/thread';
+import { resolvePath } from '../../../../utils/evalutor/path-resolver';
 
 /**
  * 变量命名空间

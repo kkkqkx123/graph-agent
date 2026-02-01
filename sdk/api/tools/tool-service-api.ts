@@ -3,7 +3,7 @@
  * 封装ToolService和ToolRegistry，提供工具注册、查询和执行功能
  */
 
-import { ToolService } from '../../core/tools/tool-service';
+import { toolService } from '../../core/services/tool-service';
 import type { Tool } from '../../types/tool';
 import type { ToolFilter, ToolOptions, ToolExecutionResult, ToolTestResult } from '../types/tools-types';
 import { NotFoundError } from '../../types/errors';
@@ -12,17 +12,13 @@ import { NotFoundError } from '../../types/errors';
  * ToolServiceAPI - 工具管理API
  */
 export class ToolServiceAPI {
-  private toolService: ToolService;
+  private toolService = toolService;
   private executionLog: Array<{
     toolName: string;
     parameters: any;
     result: ToolExecutionResult;
     timestamp: number;
   }> = [];
-
-  constructor() {
-    this.toolService = new ToolService();
-  }
 
   /**
    * 注册工具
@@ -351,7 +347,7 @@ export class ToolServiceAPI {
    * 获取底层ToolService实例
    * @returns ToolService实例
    */
-  getService(): ToolService {
+  getService() {
     return this.toolService;
   }
 

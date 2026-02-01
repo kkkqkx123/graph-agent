@@ -4,9 +4,9 @@
  */
 
 import { z } from 'zod';
-import type { NodeHook } from '../../../types/node';
-import { HookType } from '../../../types/node';
-import { ValidationError } from '../../../types/errors';
+import type { NodeHook } from '../../types/node';
+import { HookType } from '../../types/node';
+import { ValidationError } from '../../types/errors';
 
 /**
  * Hook配置schema

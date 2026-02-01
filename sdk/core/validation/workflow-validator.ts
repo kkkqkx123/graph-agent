@@ -30,7 +30,7 @@ import type { Edge } from '../../types/edge';
 import { NodeType } from '../../types/node';
 import { ValidationError, type ValidationResult } from '../../types/errors';
 import { validateNodeByType } from './node-validation';
-import { validateHooks } from './hook-validation';
+import { validateHooks } from './hook-validator';
 import { SelfReferenceValidationStrategy } from './strategies/self-reference-validation-strategy';
 
 /**
