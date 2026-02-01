@@ -130,17 +130,12 @@ describe('NodeValidator - Subgraph Node Validation', () => {
   });
 
   describe('START_FROM_TRIGGER节点验证', () => {
-    it('应该验证有效的START_FROM_TRIGGER节点', () => {
+    it('应该验证有效的START_FROM_TRIGGER节点（空配置）', () => {
       const node: Node = {
         id: 'node-1',
         name: 'Start From Trigger',
         type: NodeType.START_FROM_TRIGGER,
-        config: {
-          subgraphId: 'parent-workflow',
-          inputMapping: { input: 'workflowInput' },
-          outputMapping: { output: 'workflowOutput' },
-          async: false
-        },
+        config: {}, // 空配置
         incomingEdgeIds: [],
         outgoingEdgeIds: []
       };
@@ -149,98 +144,83 @@ describe('NodeValidator - Subgraph Node Validation', () => {
       expect(result.errors).toHaveLength(0);
     });
 
-    it('应该拒绝缺少subgraphId的START_FROM_TRIGGER节点', () => {
+    it('应该接受空config的START_FROM_TRIGGER节点', () => {
       const node: Node = {
         id: 'node-1',
         name: 'Start From Trigger',
         type: NodeType.START_FROM_TRIGGER,
-        config: {
-          inputMapping: {},
-          outputMapping: {},
-          async: false
-        } as any,
+        config: {},
         incomingEdgeIds: [],
         outgoingEdgeIds: []
       };
       const result = validator.validateNode(node);
-      expect(result.valid).toBe(false);
-      expect(result.errors.some(e => e.field?.includes('subgraphId'))).toBe(true);
+      expect(result.valid).toBe(true);
+      expect(result.errors).toHaveLength(0);
     });
 
-    it('应该拒绝空键的inputMapping的START_FROM_TRIGGER节点', () => {
+    it('应该拒绝包含额外配置的START_FROM_TRIGGER节点', () => {
       const node: Node = {
         id: 'node-1',
         name: 'Start From Trigger',
         type: NodeType.START_FROM_TRIGGER,
         config: {
-          subgraphId: 'parent-workflow',
-          inputMapping: { '': 'workflowInput' }, // 空键
-          outputMapping: {},
-          async: false
+          subgraphId: 'parent-workflow', // 不应该有此配置
+          inputMapping: { input: 'workflowInput' }, // 不应该有此配置
+          outputMapping: { output: 'workflowOutput' }, // 不应该有此配置
+          async: false // 不应该有此配置
         } as any,
         incomingEdgeIds: [],
         outgoingEdgeIds: []
       };
       const result = validator.validateNode(node);
       expect(result.valid).toBe(false);
-      expect(result.errors.some(e => e.field?.includes('inputMapping'))).toBe(true);
+      expect(result.errors.length).toBeGreaterThan(0);
+    });
+  });
+
+  describe('CONTINUE_FROM_TRIGGER节点验证', () => {
+    it('应该验证有效的CONTINUE_FROM_TRIGGER节点（空配置）', () => {
+      const node: Node = {
+        id: 'node-1',
+        name: 'Continue From Trigger',
+        type: NodeType.CONTINUE_FROM_TRIGGER,
+        config: {}, // 空配置
+        incomingEdgeIds: [],
+        outgoingEdgeIds: []
+      };
+      const result = validator.validateNode(node);
+      expect(result.valid).toBe(true);
+      expect(result.errors).toHaveLength(0);
     });
 
-    it('应该拒绝空值的inputMapping的START_FROM_TRIGGER节点', () => {
+    it('应该接受空config的CONTINUE_FROM_TRIGGER节点', () => {
       const node: Node = {
         id: 'node-1',
-        name: 'Start From Trigger',
-        type: NodeType.START_FROM_TRIGGER,
-        config: {
-          subgraphId: 'parent-workflow',
-          inputMapping: { 'input': '' }, // 空值
-          outputMapping: {},
-          async: false
-        } as any,
+        name: 'Continue From Trigger',
+        type: NodeType.CONTINUE_FROM_TRIGGER,
+        config: {},
         incomingEdgeIds: [],
         outgoingEdgeIds: []
       };
       const result = validator.validateNode(node);
-      expect(result.valid).toBe(false);
-      expect(result.errors.some(e => e.field?.includes('inputMapping'))).toBe(true);
+      expect(result.valid).toBe(true);
+      expect(result.errors).toHaveLength(0);
     });
 
-    it('应该拒绝空键的outputMapping的START_FROM_TRIGGER节点', () => {
+    it('应该拒绝包含额外配置的CONTINUE_FROM_TRIGGER节点', () => {
       const node: Node = {
         id: 'node-1',
-        name: 'Start From Trigger',
-        type: NodeType.START_FROM_TRIGGER,
+        name: 'Continue From Trigger',
+        type: NodeType.CONTINUE_FROM_TRIGGER,
         config: {
-          subgraphId: 'parent-workflow',
-          inputMapping: {},
-          outputMapping: { '': 'workflowOutput' }, // 空键
-          async: false
+          someConfig: 'value' // 不应该有此配置
         } as any,
         incomingEdgeIds: [],
         outgoingEdgeIds: []
       };
       const result = validator.validateNode(node);
       expect(result.valid).toBe(false);
-      expect(result.errors.some(e => e.field?.includes('outputMapping'))).toBe(true);
-    });
-
-    it('应该拒绝空值的outputMapping的START_FROM_TRIGGER节点', () => {
-      const node: Node = {
-        id: 'node-1',
-        name: 'Start From Trigger',
-        type: NodeType.START_FROM_TRIGGER,
-        config: {
-          subgraphId: 'parent-workflow',
-          inputMapping: {},
-          outputMapping: { 'output': '' }, // 空值
-          async: false
-        } as any,
-        incomingEdgeIds: [],
-        outgoingEdgeIds: []
-      };
-      const result = validator.validateNode(node);
-      expect(result.valid).toBe(false);
-      expect(result.errors.some(e => e.field?.includes('outputMapping'))).toBe(true);
+      expect(result.errors.length).toBeGreaterThan(0);
     });
   });
 

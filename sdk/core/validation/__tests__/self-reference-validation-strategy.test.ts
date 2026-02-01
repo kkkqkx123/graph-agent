@@ -21,16 +21,16 @@ describe('SelfReferenceValidationStrategy', () => {
       expect(SelfReferenceValidationStrategy.isSubgraphNode(node)).toBe(true);
     });
 
-    it('应该识别START_FROM_TRIGGER节点', () => {
+    it('不应该识别START_FROM_TRIGGER节点（现在是空配置）', () => {
       const node: Node = {
         id: 'node-1',
         name: 'Start From Trigger',
         type: NodeType.START_FROM_TRIGGER,
-        config: { subgraphId: 'parent-workflow' },
+        config: {}, // 空配置
         incomingEdgeIds: [],
         outgoingEdgeIds: []
       };
-      expect(SelfReferenceValidationStrategy.isSubgraphNode(node)).toBe(true);
+      expect(SelfReferenceValidationStrategy.isSubgraphNode(node)).toBe(false);
     });
 
     it('不应该识别其他节点类型', () => {
@@ -68,32 +68,12 @@ describe('SelfReferenceValidationStrategy', () => {
       expect(errors[0]!.context?.['subgraphId']).toBe('workflow-1');
     });
 
-    it('应该检测START_FROM_TRIGGER节点的自引用', () => {
+    it('应该跳过START_FROM_TRIGGER节点（现在是空配置）', () => {
       const node: Node = {
         id: 'node-1',
         name: 'Start From Trigger',
         type: NodeType.START_FROM_TRIGGER,
-        config: { subgraphId: 'workflow-1' },
-        incomingEdgeIds: [],
-        outgoingEdgeIds: []
-      };
-
-      const errors = SelfReferenceValidationStrategy.validate(
-        node,
-        'workflow-1',
-        'workflow.nodes[0]'
-      );
-
-      expect(errors).toHaveLength(1);
-      expect(errors[0]!.context?.['code']).toBe('SELF_REFERENCE');
-    });
-
-    it('应该接受有效的SUBGRAPH节点引用', () => {
-      const node: Node = {
-        id: 'node-1',
-        name: 'Subgraph',
-        type: NodeType.SUBGRAPH,
-        config: { subgraphId: 'child-workflow' },
+        config: {}, // 空配置
         incomingEdgeIds: [],
         outgoingEdgeIds: []
       };
@@ -107,12 +87,12 @@ describe('SelfReferenceValidationStrategy', () => {
       expect(errors).toHaveLength(0);
     });
 
-    it('应该接受有效的START_FROM_TRIGGER节点引用', () => {
+    it('应该接受有效的SUBGRAPH节点引用', () => {
       const node: Node = {
         id: 'node-1',
-        name: 'Start From Trigger',
-        type: NodeType.START_FROM_TRIGGER,
-        config: { subgraphId: 'parent-workflow' },
+        name: 'Subgraph',
+        type: NodeType.SUBGRAPH,
+        config: { subgraphId: 'child-workflow' },
         incomingEdgeIds: [],
         outgoingEdgeIds: []
       };
@@ -169,7 +149,7 @@ describe('SelfReferenceValidationStrategy', () => {
           id: 'node-3',
           name: 'Start From Trigger',
           type: NodeType.START_FROM_TRIGGER,
-          config: { subgraphId: 'workflow-1' },
+          config: {}, // 空配置，不再验证自引用
           incomingEdgeIds: [],
           outgoingEdgeIds: []
         }
@@ -180,9 +160,8 @@ describe('SelfReferenceValidationStrategy', () => {
         'workflow-1'
       );
 
-      expect(errors).toHaveLength(2);
+      expect(errors).toHaveLength(1); // 只有 SUBGRAPH 节点会报错
       expect(errors[0]!.context?.['nodeId']).toBe('node-1');
-      expect(errors[1]!.context?.['nodeId']).toBe('node-3');
     });
 
     it('应该接受所有有效的节点引用', () => {
@@ -199,7 +178,7 @@ describe('SelfReferenceValidationStrategy', () => {
           id: 'node-2',
           name: 'Start From Trigger',
           type: NodeType.START_FROM_TRIGGER,
-          config: { subgraphId: 'parent-workflow' },
+          config: {}, // 空配置
           incomingEdgeIds: [],
           outgoingEdgeIds: []
         }

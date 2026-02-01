@@ -12,7 +12,7 @@ import { ValidationError } from '../../../types/errors';
  * START_FROM_TRIGGER 节点配置 schema
  * 空配置，仅作为标识
  */
-const startFromTriggerNodeConfigSchema = z.object({});
+const startFromTriggerNodeConfigSchema = z.strictObject({});
 
 /**
  * 验证 START_FROM_TRIGGER 节点

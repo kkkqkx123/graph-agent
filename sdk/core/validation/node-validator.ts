@@ -134,7 +134,7 @@ const loopEndNodeConfigSchema = z.object({
 });
 
 /**
- * 子图节点配置schema（用于 SUBGRAPH 和 START_FROM_TRIGGER 节点）
+ * 子图节点配置schema（用于 SUBGRAPH 节点）
  */
 const subgraphNodeConfigSchema = z.object({
   subgraphId: z.string().min(1, 'Subgraph ID is required'),
@@ -144,9 +144,9 @@ const subgraphNodeConfigSchema = z.object({
 });
 
 /**
- * StartFromTrigger节点配置schema（与子图节点配置相同）
+ * StartFromTrigger节点配置schema（空配置，仅作为标识）
  */
-const startFromTriggerNodeConfigSchema = subgraphNodeConfigSchema;
+const startFromTriggerNodeConfigSchema = z.object({}).strict();
 
 /**
  * ContinueFromTrigger节点配置schema（必须为空对象或undefined）

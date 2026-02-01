@@ -15,7 +15,7 @@ import { NodeType } from '../../types/node';
 import { generateId, now as getCurrentTimestamp } from '../../utils';
 import { VariableManager } from './managers/variable-manager';
 import { ValidationError } from '../../types/errors';
-import { workflowRegistry, type WorkflowRegistry } from '../services/workflow-registry';
+import { type WorkflowRegistry } from '../services/workflow-registry';
 import { ExecutionContext } from './context/execution-context';
 import { TriggerStatus } from '../../types/trigger';
 import type { ThreadRegistry } from '../services/thread-registry';

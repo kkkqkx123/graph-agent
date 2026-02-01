@@ -1,7 +1,10 @@
 /**
  * 自引用验证策略
  * 提供工作流级别的自引用检测逻辑
- * 用于验证 SUBGRAPH 和 START_FROM_TRIGGER 节点不能引用自身工作流
+ * 用于验证 SUBGRAPH 节点不能引用自身工作流
+ *
+ * 注意：START_FROM_TRIGGER 节点现在是空配置，不再包含 subgraphId
+ * 触发子工作流是通过触发器的 ExecuteTriggeredSubgraphActionConfig 中的 triggeredWorkflowId 指定的
  */
 
 import type { Node } from '../../../types/node';
@@ -26,7 +29,8 @@ export class SelfReferenceValidationStrategy {
    * @returns 是否为子工作流节点
    */
   static isSubgraphNode(node: Node): boolean {
-    return node.type === 'SUBGRAPH' || node.type === 'START_FROM_TRIGGER';
+    // START_FROM_TRIGGER 节点现在是空配置，不再引用其他工作流
+    return node.type === 'SUBGRAPH';
   }
 
   /**
@@ -43,8 +47,8 @@ export class SelfReferenceValidationStrategy {
   ): ValidationError[] {
     const errors: ValidationError[] = [];
 
-    // 只验证子工作流节点
-    if (!this.isSubgraphNode(node)) {
+    // 只验证 SUBGRAPH 节点
+    if (node.type !== 'SUBGRAPH') {
       return errors;
     }
 
