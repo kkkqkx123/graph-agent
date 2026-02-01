@@ -316,7 +316,15 @@ export async function loopStartHandler(thread: Thread, node: Node): Promise<any>
         loop: []
       };
     }
-    thread.variableScopes.loop.push({});
+    
+    // 创建新的循环作用域并初始化该作用域的变量
+    const newLoopScope: Record<string, any> = {};
+    for (const variable of thread.variables) {
+      if (variable.scope === 'loop') {
+        newLoopScope[variable.name] = variable.value;
+      }
+    }
+    thread.variableScopes.loop.push(newLoopScope);
   }
 
   // 检查循环条件

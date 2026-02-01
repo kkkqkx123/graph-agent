@@ -86,17 +86,18 @@ export class VariableManager {
     };
 
     // 按作用域分配变量值
+    // 只有 global 作用域的变量在初始化时直接赋值
+    // thread、subgraph、loop 作用域的变量按需初始化
     for (const variable of thread.variables) {
       switch (variable.scope) {
         case 'global':
+          // global 作用域变量立即初始化
           thread.variableScopes.global[variable.name] = variable.value;
           break;
         case 'thread':
-          thread.variableScopes.thread[variable.name] = variable.value;
-          break;
         case 'subgraph':
         case 'loop':
-          // subgraph 和 loop 作用域的变量在运行时动态创建
+          // thread、subgraph、loop 作用域的变量按需初始化
           // 这里只做声明，不初始化值
           break;
       }
@@ -106,18 +107,27 @@ export class VariableManager {
   /**
    * 获取变量值（按作用域优先级查找）
    * 优先级：loop > subgraph > thread > global
+   * 支持按需初始化：thread、subgraph、loop作用域的变量在首次访问时初始化
    * @param threadContext ThreadContext 实例
    * @param name 变量名称
    * @returns 变量值
    */
   getVariable(threadContext: ThreadContext, name: string): any {
-    const scopes = threadContext.thread.variableScopes;
+    const thread = threadContext.thread;
+    const scopes = thread.variableScopes;
 
     // 1. 循环作用域（最高优先级）
     if (scopes.loop.length > 0) {
       const currentLoopScope = scopes.loop[scopes.loop.length - 1];
       if (currentLoopScope && name in currentLoopScope) {
         return currentLoopScope[name];
+      }
+      // 如果变量未初始化，尝试按需初始化
+      if (currentLoopScope && !(name in currentLoopScope)) {
+        const initialized = this.initializeVariableOnDemand(thread, name, 'loop', currentLoopScope);
+        if (initialized !== undefined) {
+          return initialized;
+        }
       }
     }
 
@@ -127,11 +137,25 @@ export class VariableManager {
       if (currentSubgraphScope && name in currentSubgraphScope) {
         return currentSubgraphScope[name];
       }
+      // 如果变量未初始化，尝试按需初始化
+      if (currentSubgraphScope && !(name in currentSubgraphScope)) {
+        const initialized = this.initializeVariableOnDemand(thread, name, 'subgraph', currentSubgraphScope);
+        if (initialized !== undefined) {
+          return initialized;
+        }
+      }
     }
 
     // 3. 线程作用域
     if (name in scopes.thread) {
       return scopes.thread[name];
+    }
+    // 如果变量未初始化，尝试按需初始化
+    if (!(name in scopes.thread)) {
+      const initialized = this.initializeVariableOnDemand(thread, name, 'thread', scopes.thread);
+      if (initialized !== undefined) {
+        return initialized.thread[name];
+      }
     }
 
     // 4. 全局作用域（最低优先级）
@@ -140,6 +164,33 @@ export class VariableManager {
     }
 
     return undefined;
+  }
+
+  /**
+   * 按需初始化变量
+   * @param thread Thread 实例
+   * @param name 变量名称
+   * @param scope 作用域
+   * @param scopeObject 作用域对象
+   * @returns 初始化的值，如果变量不存在则返回undefined
+   */
+  private initializeVariableOnDemand(
+    thread: Thread,
+    name: string,
+    scope: VariableScope,
+    scopeObject: Record<string, any>
+  ): any {
+    const variableDef = thread.variables.find(v => v.name === name && v.scope === scope);
+    
+    if (!variableDef) {
+      return undefined;
+    }
+
+    // 使用默认值初始化
+    const initialValue = variableDef.value;
+    scopeObject[name] = initialValue;
+    
+    return initialValue;
   }
 
   /**
@@ -336,10 +387,21 @@ export class VariableManager {
 
   /**
    * 进入子图作用域
+   * 自动初始化该作用域的变量
    * @param threadContext ThreadContext 实例
    */
   enterSubgraphScope(threadContext: ThreadContext): void {
-    threadContext.thread.variableScopes.subgraph.push({});
+    const thread = threadContext.thread;
+    const newScope: Record<string, any> = {};
+    
+    // 初始化该作用域的所有subgraph变量
+    for (const variable of thread.variables) {
+      if (variable.scope === 'subgraph') {
+        newScope[variable.name] = variable.value;
+      }
+    }
+    
+    thread.variableScopes.subgraph.push(newScope);
   }
 
   /**
@@ -360,10 +422,21 @@ export class VariableManager {
 
   /**
    * 进入循环作用域
+   * 自动初始化该作用域的变量
    * @param threadContext ThreadContext 实例
    */
   enterLoopScope(threadContext: ThreadContext): void {
-    threadContext.thread.variableScopes.loop.push({});
+    const thread = threadContext.thread;
+    const newScope: Record<string, any> = {};
+    
+    // 初始化该作用域的所有loop变量
+    for (const variable of thread.variables) {
+      if (variable.scope === 'loop') {
+        newScope[variable.name] = variable.value;
+      }
+    }
+    
+    thread.variableScopes.loop.push(newScope);
   }
 
   /**
