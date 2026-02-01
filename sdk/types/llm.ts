@@ -84,6 +84,8 @@ export interface LLMMessage {
   role: LLMMessageRole;
   /** 消息内容（字符串或对象） */
   content: string | any[];
+  /** 思考内容（Extended Thinking，仅用于assistant角色） */
+  thinking?: string;
   /** 工具调用数组（assistant角色） */
   toolCalls?: LLMToolCall[];
   /** 工具调用ID（tool角色） */

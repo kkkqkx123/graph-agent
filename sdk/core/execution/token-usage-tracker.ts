@@ -17,6 +17,7 @@
 
 import type { LLMMessage, LLMUsage, TokenUsageHistory, TokenUsageStatistics } from '../../types/llm';
 import { generateId } from '../../utils/id-utils';
+import { estimateTokens as estimateTokensUtil, getTokenUsage as getTokenUsageUtil, isTokenLimitExceeded as isTokenLimitExceededUtil } from './utils/token-utils';
 
 /**
  * Token 使用统计
@@ -33,11 +34,13 @@ export interface TokenUsageStats {
 }
 
 /**
- * 完整的 Token 使用统计（包含生命周期统计）
+ * 完整的 Token 使用统计（包含当前累计和生命周期统计）
  */
-export interface FullTokenUsageStats extends TokenUsageStats {
-  /** 生命周期总 Token 数（无视回退，反映真实的总token消耗） */
-  totalLifetimeTokens: number;
+export interface FullTokenUsageStats {
+  /** 当前累计统计（可回退） */
+  current: TokenUsageStats;
+  /** 生命周期统计（不可回退，反映真实的总token消耗） */
+  lifetime: TokenUsageStats;
 }
 
 /**
@@ -200,7 +203,7 @@ export class TokenUsageTracker {
   }
 
   /**
-   * 获取完整的 Token 使用统计（包含生命周期统计）
+   * 获取完整的 Token 使用统计（包含当前累计和生命周期统计）
    * @returns 完整的 Token 使用统计
    */
   getFullUsageStats(): FullTokenUsageStats | null {
@@ -209,11 +212,18 @@ export class TokenUsageTracker {
     }
 
     return {
-      promptTokens: this.cumulativeUsage?.promptTokens || 0,
-      completionTokens: this.cumulativeUsage?.completionTokens || 0,
-      totalTokens: this.cumulativeUsage?.totalTokens || 0,
-      rawUsage: this.cumulativeUsage?.rawUsage,
-      totalLifetimeTokens: this.totalLifetimeUsage?.totalTokens || 0
+      current: {
+        promptTokens: this.cumulativeUsage?.promptTokens || 0,
+        completionTokens: this.cumulativeUsage?.completionTokens || 0,
+        totalTokens: this.cumulativeUsage?.totalTokens || 0,
+        rawUsage: this.cumulativeUsage?.rawUsage
+      },
+      lifetime: {
+        promptTokens: this.totalLifetimeUsage?.promptTokens || 0,
+        completionTokens: this.totalLifetimeUsage?.completionTokens || 0,
+        totalTokens: this.totalLifetimeUsage?.totalTokens || 0,
+        rawUsage: this.totalLifetimeUsage?.rawUsage
+      }
     };
   }
 
@@ -227,37 +237,19 @@ export class TokenUsageTracker {
 
   /**
    * 估算消息的 Token 使用量（本地估算方法）
-   * 
+   *
    * 当 API 没有返回 usage 时使用此方法作为 fallback
-   * 
+   *
    * @param messages 消息数组
    * @returns Token 数量
    */
   estimateTokens(messages: LLMMessage[]): number {
-    let totalChars = 0;
-
-    for (const message of messages) {
-      if (typeof message.content === 'string') {
-        totalChars += message.content.length;
-      } else if (Array.isArray(message.content)) {
-        // 处理数组内容
-        for (const item of message.content) {
-          if (typeof item === 'string') {
-            totalChars += item.length;
-          } else if (typeof item === 'object' && item !== null) {
-            totalChars += JSON.stringify(item).length;
-          }
-        }
-      }
-    }
-
-    // 粗略估算：平均每个 Token 约 2.5 个字符
-    return Math.ceil(totalChars / 2.5);
+    return estimateTokensUtil(messages);
   }
 
   /**
    * 获取 Token 使用情况（优先使用 API 统计，否则使用本地估算）
-   * 
+   *
    * @param messages 消息数组（用于本地估算）
    * @returns Token 数量
    */
@@ -268,18 +260,18 @@ export class TokenUsageTracker {
     }
 
     // 使用本地估算方法
-    return this.estimateTokens(messages);
+    return getTokenUsageUtil(null, messages);
   }
 
   /**
    * 检查 Token 使用是否超过限制
-   * 
+   *
    * @param messages 消息数组（用于本地估算）
    * @returns 是否超过限制
    */
   isTokenLimitExceeded(messages: LLMMessage[]): boolean {
     const tokensUsed = this.getTokenUsage(messages);
-    return tokensUsed > this.tokenLimit;
+    return isTokenLimitExceededUtil(tokensUsed, this.tokenLimit);
   }
 
   /**

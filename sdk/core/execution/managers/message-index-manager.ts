@@ -9,8 +9,8 @@
  * 4. 支持批次回退操作
  */
 
-import type { LLMMessage, MessageMarkMap } from '../../types/llm';
-import { ExecutionError } from '../../types/errors';
+import type { LLMMessage, MessageMarkMap } from '../../../types/llm';
+import { ExecutionError } from '../../../types/errors';
 
 /**
  * 消息索引管理器类
@@ -155,10 +155,10 @@ export class MessageIndexManager {
     // 分配新批次号
     const newBatch = this.markMap.currentBatch + 1;
     this.markMap.boundaryToBatch.push(newBatch);
-    
+
     // 更新批次映射
     this.batchBoundaryMap.set(newBatch, boundaryIndex);
-    
+
     this.markMap.currentBatch = newBatch;
   }
 

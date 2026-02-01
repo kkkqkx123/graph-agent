@@ -39,19 +39,6 @@ export { VariableManager } from './managers/variable-manager';
 // 对话状态管理器
 export { ConversationStateManager, type ConversationState } from './managers/conversation-state-manager';
 
-// Thread操作工具函数
-export {
-  fork,
-  join,
-  copy,
-  type ForkConfig,
-  type JoinStrategy,
-  type JoinResult
-} from './utils/thread-operations';
-
-// 触发器管理器
-export { TriggerCoordinator as TriggerManager } from './coordinators/trigger-coordinator';
-
 // LLM执行相关
 export { ConversationManager } from './conversation';
 export type { ConversationManagerOptions } from './conversation';
@@ -60,7 +47,7 @@ export { TokenUsageTracker } from './token-usage-tracker';
 export type { TokenUsageStats, TokenUsageTrackerOptions, FullTokenUsageStats } from './token-usage-tracker';
 
 // 消息索引管理
-export { MessageIndexManager } from './message-index-manager';
+export { MessageIndexManager } from './managers/message-index-manager';
 
 // Hook处理函数
 export * from './handlers/hook-handlers';
