@@ -4,14 +4,13 @@
  */
 
 import type { TriggerAction, TriggerExecutionResult } from '../../../../types/trigger';
-import type { ExecuteTriggeredSubgraphActionConfig, TriggeredSubgraphConfig } from '../../../../types/trigger';
+import type { ExecuteTriggeredSubgraphActionConfig } from '../../../../types/trigger';
 import { NotFoundError } from '../../../../types/errors';
 import { ExecutionContext } from '../../context/execution-context';
 import { executeSingleTriggeredSubgraph, type TriggeredSubgraphTask } from '../triggered-subgraph-handler';
 import { EventCoordinator } from '../../coordinators/event-coordinator';
 import { eventManager } from '../../../services/event-manager';
 import { ThreadExecutor } from '../../thread-executor';
-import { VariableAccessor } from '../../coordinators';
 
 /**
  * 创建成功结果
@@ -50,35 +49,6 @@ function createFailureResult(
 }
 
 /**
- * 创建子工作流输入
- * 根据输入映射从主工作流上下文中提取数据
- * @param mainThreadContext 主工作流线程上下文
- * @param inputMapping 输入映射
- * @returns 子工作流输入
- */
-function createSubgraphInput(
-  mainThreadContext: any,
-  inputMapping?: Record<string, string>
-): Record<string, any> {
-  if (!inputMapping || Object.keys(inputMapping).length === 0) {
-    // 如果没有输入映射，传递所有变量
-    return mainThreadContext.getAllVariables();
-  }
-
-  const input: Record<string, any> = {};
-  const accessor = new VariableAccessor(mainThreadContext);
-
-  for (const [subgraphVar, mainVarPath] of Object.entries(inputMapping)) {
-    // 使用统一的变量访问器提取变量值
-    // 支持嵌套路径解析，如 "user.profile.name"、"items[0].name"
-    // 支持命名空间，如 "input.userName"、"output.result"
-    const value = accessor.get(mainVarPath);
-    input[subgraphVar] = value;
-  }
-  return input;
-}
-
-/**
  * 执行触发子工作流处理函数
  * @param action 触发动作
  * @param triggerId 触发器ID
@@ -95,10 +65,10 @@ export async function executeTriggeredSubgraphHandler(
 
   try {
     const parameters = action.parameters as ExecuteTriggeredSubgraphActionConfig;
-    const { subgraphId, inputMapping, config } = parameters;
+    const { triggeredWorkflowId, waitForCompletion = false } = parameters;
 
-    if (!subgraphId) {
-      throw new Error('Missing required parameter: subgraphId');
+    if (!triggeredWorkflowId) {
+      throw new Error('Missing required parameter: triggeredWorkflowId');
     }
 
     // 获取主工作流线程上下文
@@ -115,22 +85,19 @@ export async function executeTriggeredSubgraphHandler(
       throw new NotFoundError(`Main thread context not found: ${threadId}`, 'ThreadContext', threadId);
     }
 
-    // 创建子工作流输入
-    const input = createSubgraphInput(mainThreadContext, inputMapping);
-
     // 获取工作流注册表
     const workflowRegistry = context.getWorkflowRegistry();
-    const subgraphWorkflow = workflowRegistry.get(subgraphId);
+    const triggeredWorkflow = workflowRegistry.get(triggeredWorkflowId);
 
-    if (!subgraphWorkflow) {
-      throw new NotFoundError(`Subgraph workflow not found: ${subgraphId}`, 'Workflow', subgraphId);
+    if (!triggeredWorkflow) {
+      throw new NotFoundError(`Triggered workflow not found: ${triggeredWorkflowId}`, 'Workflow', triggeredWorkflowId);
     }
 
-    // 获取配置选项
-    const options: TriggeredSubgraphConfig = config || {
-      waitForCompletion: false,
-      timeout: 30000,
-      recordHistory: true,
+    // 从主线程上下文获取所有执行上下文
+    const input = {
+      variables: mainThreadContext.getAllVariables(),
+      output: mainThreadContext.getOutput(),
+      input: mainThreadContext.getInput()
     };
 
     // 创建事件协调器
@@ -144,14 +111,18 @@ export async function executeTriggeredSubgraphHandler(
 
     // 创建触发子工作流任务
     const task: TriggeredSubgraphTask = {
-      subgraphId,
+      subgraphId: triggeredWorkflowId,
       input,
       triggerId,
       mainThreadContext,
-      config: options
+      config: {
+        waitForCompletion,
+        timeout: 30000,
+        recordHistory: true,
+      }
     };
 
-    // 直接调用执行函数
+    // 执行触发子工作流
     await executeSingleTriggeredSubgraph(
       task,
       threadExecutor, // 作为 SubgraphContextFactory
@@ -165,12 +136,12 @@ export async function executeTriggeredSubgraphHandler(
       triggerId,
       action,
       {
-        message: `Triggered subgraph execution initiated: ${subgraphId}`,
-        subgraphId,
+        message: `Triggered subgraph execution initiated: ${triggeredWorkflowId}`,
+        triggeredWorkflowId,
         input,
-        options,
+        waitForCompletion,
         executed: true,
-        completed: options.waitForCompletion || false,
+        completed: waitForCompletion,
       },
       executionTime
     );

@@ -19,8 +19,8 @@ import { ThreadContext } from '../context/thread-context';
 import type { Node } from '../../../types/node';
 import type { NodeExecutionResult } from '../../../types/thread';
 import { EventCoordinator } from './event-coordinator';
-import { SubgraphHandler } from '../handlers/subgraph-handler';
 import { LLMCoordinator, type LLMExecutionParams } from '../llm-coordinator';
+import { enterSubgraph, exitSubgraph, getSubgraphInput, getSubgraphOutput } from '../handlers/subgraph-handler';
 import { EventType } from '../../../types/events';
 import type { NodeStartedEvent, NodeCompletedEvent, NodeFailedEvent, SubgraphStartedEvent, SubgraphCompletedEvent } from '../../../types/events';
 import { executeHook } from '../handlers/hook-handlers';
@@ -49,8 +49,7 @@ import {
 export class NodeExecutionCoordinator {
   constructor(
     private eventCoordinator: EventCoordinator,
-    private llmCoordinator: LLMCoordinator,
-    private subgraphHandler: SubgraphHandler
+    private llmCoordinator: LLMCoordinator
   ) { }
 
   /**
@@ -169,8 +168,8 @@ export class NodeExecutionCoordinator {
 
     if (boundaryType === 'entry') {
       // 进入子图
-      const input = this.subgraphHandler.getSubgraphInput(threadContext, originalNodeId);
-      this.subgraphHandler.enterSubgraph(
+      const input = getSubgraphInput(threadContext, originalNodeId);
+      enterSubgraph(
         threadContext,
         graphNode.workflowId,
         graphNode.parentWorkflowId!,
@@ -191,7 +190,7 @@ export class NodeExecutionCoordinator {
       // 退出子图
       const subgraphContext = threadContext.getCurrentSubgraphContext();
       if (subgraphContext) {
-        const output = this.subgraphHandler.getSubgraphOutput(threadContext, originalNodeId);
+        const output = getSubgraphOutput(threadContext, originalNodeId);
 
         // 触发子图完成事件
         await this.eventCoordinator.emitSubgraphCompletedEvent({
@@ -204,7 +203,7 @@ export class NodeExecutionCoordinator {
           timestamp: now()
         });
 
-        this.subgraphHandler.exitSubgraph(threadContext);
+        exitSubgraph(threadContext);
       }
     }
   }

@@ -1,17 +1,18 @@
 /**
- * ErrorHandler - 错误处理器
+ * 错误处理函数
  * 负责处理节点执行失败和全局执行错误
- * 
+ *
  * 职责：
  * - 处理节点执行失败
  * - 处理全局执行错误
  * - 根据错误处理策略决定后续操作
  * - 触发错误事件
- * 
+ *
  * 设计原则：
  * - 集中管理错误处理逻辑
  * - 支持灵活的错误处理策略
  * - 提供清晰的错误处理接口
+ * - 使用纯函数，无内部状态
  */
 
 import { ThreadContext } from '../context/thread-context';
@@ -23,22 +24,18 @@ import type { ErrorEvent } from '../../../types/events';
 import { now } from '../../../utils';
 
 /**
- * 错误处理器
+ * 处理节点执行失败
+ * @param threadContext 线程上下文
+ * @param node 节点定义
+ * @param nodeResult 节点执行结果
+ * @param eventCoordinator 事件协调器
  */
-export class ErrorHandler {
-  constructor(private eventCoordinator: EventCoordinator) {}
-
-  /**
-   * 处理节点执行失败
-   * @param threadContext 线程上下文
-   * @param node 节点定义
-   * @param nodeResult 节点执行结果
-   */
-  async handleNodeFailure(
-    threadContext: ThreadContext,
-    node: Node,
-    nodeResult: NodeExecutionResult
-  ): Promise<void> {
+export async function handleNodeFailure(
+  threadContext: ThreadContext,
+  node: Node,
+  nodeResult: NodeExecutionResult,
+  eventCoordinator: EventCoordinator
+): Promise<void> {
     // 步骤1：记录错误信息
     threadContext.addError(nodeResult.error);
 
@@ -51,7 +48,7 @@ export class ErrorHandler {
       timestamp: now()
     };
 
-    await this.eventCoordinator.emitErrorEvent(errorEvent, threadContext);
+    await eventCoordinator.emitErrorEvent(errorEvent, threadContext);
 
     // 步骤3：根据错误处理策略决定后续操作
     const errorHandling = threadContext.getMetadata()?.customFields?.errorHandling;
@@ -85,12 +82,17 @@ export class ErrorHandler {
     // 默认行为：停止执行，状态由外部管理
   }
 
-  /**
-   * 处理执行错误
-   * @param threadContext 线程上下文
-   * @param error 错误信息
-   */
-  async handleExecutionError(threadContext: ThreadContext, error: any): Promise<void> {
+/**
+ * 处理执行错误
+ * @param threadContext 线程上下文
+ * @param error 错误信息
+ * @param eventCoordinator 事件协调器
+ */
+export async function handleExecutionError(
+  threadContext: ThreadContext,
+  error: any,
+  eventCoordinator: EventCoordinator
+): Promise<void> {
     // 记录错误信息
     threadContext.addError(error);
 
@@ -103,8 +105,7 @@ export class ErrorHandler {
       timestamp: now()
     };
 
-    await this.eventCoordinator.emitErrorEvent(errorEvent, threadContext);
+    await eventCoordinator.emitErrorEvent(errorEvent, threadContext);
 
     // 状态由外部管理
   }
-}

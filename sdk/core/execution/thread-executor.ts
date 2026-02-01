@@ -33,8 +33,8 @@ import { ThreadStatus } from '../../types/thread';
 import { now, diffTimestamp } from '../../utils';
 import { EventCoordinator } from './coordinators/event-coordinator';
 import { NodeExecutionCoordinator } from './coordinators/node-execution-coordinator';
-import { ErrorHandler } from './handlers/error-handler';
-import { SubgraphHandler } from './handlers/subgraph-handler';
+import { handleNodeFailure, handleExecutionError } from './handlers/error-handler';
+import { enterSubgraph, exitSubgraph, getSubgraphInput, getSubgraphOutput } from './handlers/subgraph-handler';
 import {
   executeSingleTriggeredSubgraph,
   type TriggeredSubgraphTask,
@@ -56,7 +56,6 @@ import { EventType } from '../../types/events';
  */
 export class ThreadExecutor implements SubgraphContextFactory {
   private nodeExecutionCoordinator: NodeExecutionCoordinator;
-  private errorHandler: ErrorHandler;
   private eventCoordinator: EventCoordinator;
   private threadBuilder: ThreadBuilder;
   private workflowRegistry: WorkflowRegistry;
@@ -86,21 +85,14 @@ export class ThreadExecutor implements SubgraphContextFactory {
     // 创建线程构建器（使用默认ExecutionContext）
     this.threadBuilder = new ThreadBuilder(this.workflowRegistry);
 
-    // 创建子图处理器
-    const subgraphHandler = new SubgraphHandler();
-
     // 获取 LLM 协调器单例
     const llmCoordinator = LLMCoordinator.getInstance();
 
     // 创建节点执行协调器
     this.nodeExecutionCoordinator = new NodeExecutionCoordinator(
       this.eventCoordinator,
-      llmCoordinator,
-      subgraphHandler
+      llmCoordinator
     );
-
-    // 创建错误处理器
-    this.errorHandler = new ErrorHandler(this.eventCoordinator);
   }
 
   /**
@@ -134,7 +126,7 @@ export class ThreadExecutor implements SubgraphContextFactory {
           }
           this.routeToNextNode(threadContext, currentNode, nodeResult);
         } else if (nodeResult.status === 'FAILED') {
-          await this.errorHandler.handleNodeFailure(threadContext, currentNode, nodeResult);
+          await handleNodeFailure(threadContext, currentNode, nodeResult, this.eventCoordinator);
           break;
         } else if (nodeResult.status === 'SKIPPED') {
           this.routeToNextNode(threadContext, currentNode, nodeResult);
@@ -143,7 +135,7 @@ export class ThreadExecutor implements SubgraphContextFactory {
 
       return this.createThreadResult(threadContext);
     } catch (error) {
-      await this.errorHandler.handleExecutionError(threadContext, error);
+      await handleExecutionError(threadContext, error, this.eventCoordinator);
       return this.createThreadResult(threadContext, error);
     }
   }

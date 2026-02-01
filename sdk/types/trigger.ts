@@ -189,40 +189,8 @@ export function convertToTrigger(
  * 用于触发器启动孤立的子工作流执行
  */
 export interface ExecuteTriggeredSubgraphActionConfig {
-  /** 子工作流ID */
-  subgraphId: ID;
-  /**
-   * 输入映射（可选）
-   * 定义主工作流的变量如何传递给子工作流
-   * - 键：子工作流的输入变量名
-   * - 值：主工作流的变量路径（支持嵌套路径）
-   *
-   * 示例：
-   * ```typescript
-   * inputMapping: {
-   *   'messages': 'conversation.messages',
-   *   'markMap': 'conversation.markMap',
-   *   'tokensUsed': 'event.tokensUsed'
-   * }
-   * ```
-   */
-  inputMapping?: Record<string, string>;
-  /**
-   * 配置选项（可选）
-   */
-  config?: TriggeredSubgraphConfig;
-}
-
-/**
- * 触发子工作流配置选项
- */
-export interface TriggeredSubgraphConfig {
-  /** 是否等待子工作流完成（默认false，异步执行） */
+  /** 触发子工作流ID（包含 START_FROM_TRIGGER 节点的工作流） */
+  triggeredWorkflowId: ID;
+  /** 是否等待完成（默认false，异步执行） */
   waitForCompletion?: boolean;
-  /** 超时时间（毫秒） */
-  timeout?: number;
-  /** 是否记录子工作流执行历史（默认true） */
-  recordHistory?: boolean;
-  /** 自定义元数据 */
-  metadata?: Metadata;
 }

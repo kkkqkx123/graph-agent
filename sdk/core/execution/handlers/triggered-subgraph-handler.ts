@@ -3,15 +3,16 @@
  * 提供无状态的触发子工作流执行功能
  *
  * 职责：
- * - 保存和恢复主工作流状态
  * - 创建子工作流上下文
  * - 触发子工作流开始和完成事件
  * - 执行子工作流
+ * - 管理触发子工作流执行标记
  *
  * 设计原则：
  * - 无状态函数式设计
  * - 职责单一，每个函数只做一件事
  * - 与其他触发器处理函数保持一致
+ * - 触发子工作流异步执行，不阻塞主工作流
  */
 
 import type { ID } from '../../../types/common';
@@ -54,42 +55,6 @@ export interface TriggeredSubgraphTask {
     recordHistory?: boolean;
     metadata?: any;
   };
-}
-
-/**
- * 主工作流保存的状态
- */
-export interface SavedMainThreadState {
-  currentNodeId: string;
-  output: Record<string, any>;
-  metadata: any;
-}
-
-/**
- * 保存主工作流状态
- * @param mainThreadContext 主工作流线程上下文
- * @returns 保存的状态
- */
-export function saveMainThreadState(mainThreadContext: ThreadContext): SavedMainThreadState {
-  return {
-    currentNodeId: mainThreadContext.getCurrentNodeId(),
-    output: { ...mainThreadContext.getOutput() },
-    metadata: { ...mainThreadContext.getMetadata() }
-  };
-}
-
-/**
- * 恢复主工作流状态
- * @param mainThreadContext 主工作流线程上下文
- * @param savedState 保存的状态
- */
-export function restoreMainThreadState(
-  mainThreadContext: ThreadContext,
-  savedState: SavedMainThreadState
-): void {
-  mainThreadContext.setCurrentNodeId(savedState.currentNodeId);
-  mainThreadContext.setOutput(savedState.output);
-  mainThreadContext.setMetadata(savedState.metadata);
 }
 
 /**
@@ -178,27 +143,23 @@ export async function executeSingleTriggeredSubgraph(
   subgraphExecutor: SubgraphExecutor,
   eventCoordinator: EventCoordinator
 ): Promise<void> {
-  // 1. 保存主工作流状态
-  const savedState = saveMainThreadState(task.mainThreadContext);
-  
-  // 2. 标记开始执行触发子工作流
+  // 标记开始执行触发子工作流
   task.mainThreadContext.startTriggeredSubgraphExecution();
   
   try {
-    // 3. 创建子工作流上下文
+    // 创建子工作流上下文
     const subgraphContext = await createSubgraphContext(task, contextFactory);
     
-    // 4. 触发子工作流开始事件
+    // 触发子工作流开始事件
     await emitSubgraphStartedEvent(task.mainThreadContext, task, eventCoordinator);
     
-    // 5. 执行子工作流
+    // 执行子工作流
     await subgraphExecutor.executeThread(subgraphContext);
     
-    // 6. 触发子工作流完成事件
+    // 触发子工作流完成事件
     await emitSubgraphCompletedEvent(task.mainThreadContext, task, eventCoordinator);
   } finally {
-    // 7. 恢复主工作流状态
+    // 结束触发子工作流执行标记
     task.mainThreadContext.endTriggeredSubgraphExecution();
-    restoreMainThreadState(task.mainThreadContext, savedState);
   }
 }
