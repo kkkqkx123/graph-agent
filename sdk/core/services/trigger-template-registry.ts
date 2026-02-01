@@ -354,6 +354,7 @@ class TriggerTemplateRegistry {
 export const triggerTemplateRegistry = new TriggerTemplateRegistry();
 
 /**
- * 导出TriggerTemplateRegistry类型供类型注解使用
+ * 导出TriggerTemplateRegistry类供测试使用
+ * 注意：生产代码应使用单例 triggerTemplateRegistry，此类仅供测试使用
  */
-export type { TriggerTemplateRegistry };
+export { TriggerTemplateRegistry };

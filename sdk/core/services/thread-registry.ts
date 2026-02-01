@@ -76,7 +76,7 @@ class ThreadRegistry {
 export const threadRegistry = new ThreadRegistry();
 
 /**
- * 导出ThreadRegistry类型供类型注解使用
- * 用于 instanceof 检查、类型定义和 Mock 实现
+ * 导出ThreadRegistry类供测试使用
+ * 注意：生产代码应使用单例 threadRegistry，此类仅供测试使用
  */
-export type { ThreadRegistry };
+export { ThreadRegistry };

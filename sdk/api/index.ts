@@ -17,6 +17,7 @@ export { ProfileManagerAPI } from './llm/profile-manager-api';
 export { EventManagerAPI } from './management/event-manager-api';
 export { CheckpointManagerAPI } from './management/checkpoint-manager-api';
 export { VariableManagerAPI } from './management/variable-manager-api';
+export { MessageManagerAPI } from './management/message-manager-api';
 export { NodeRegistryAPI } from './registry/node-registry-api';
 export { TriggerTemplateRegistryAPI } from './registry/trigger-template-registry-api';
 export { TriggerManagerAPI, triggerManagerAPI } from './management/trigger-manager-api';
@@ -47,6 +48,14 @@ export type {
   TriggerTemplateSummary,
   TriggerFilter
 } from './types';
+
+// MessageManagerAPI类型
+export type {
+  MessageQueryOptions,
+  MessageFilter,
+  MessageStats,
+  TokenUsageStats
+} from './management/message-manager-api';
 
 // Profile模板类型
 export type { ProfileTemplate } from './llm/profile-manager-api';

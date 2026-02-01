@@ -992,6 +992,7 @@ export const workflowRegistry = new WorkflowRegistry({
 });
 
 /**
- * 导出WorkflowRegistry类型供类型注解使用
+ * 导出WorkflowRegistry类供测试使用
+ * 注意：生产代码应使用单例 workflowRegistry，此类仅供测试使用
  */
-export type { WorkflowRegistry };
+export { WorkflowRegistry };

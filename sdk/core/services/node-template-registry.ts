@@ -319,6 +319,6 @@ class NodeTemplateRegistry {
 export const nodeTemplateRegistry = new NodeTemplateRegistry();
 
 /**
- * 导出NodeRegistry类型供类型注解使用
+ * 导出NodeTemplateRegistry类供测试使用
  */
-export type { NodeTemplateRegistry };
+export { NodeTemplateRegistry };

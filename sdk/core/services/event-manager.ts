@@ -249,6 +249,6 @@ class EventManager {
 export const eventManager = new EventManager();
 
 /**
- * 导出EventManager类型供类型注解使用
+ * 导出EventManager类供测试使用
  */
-export type { EventManager };
+export { EventManager };

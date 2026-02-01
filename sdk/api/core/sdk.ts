@@ -16,6 +16,7 @@ import { VariableManagerAPI } from '../management/variable-manager-api';
 import { NodeRegistryAPI } from '../registry/node-registry-api';
 import { TriggerTemplateRegistryAPI } from '../registry/trigger-template-registry-api';
 import { TriggerManagerAPI } from '../management/trigger-manager-api';
+import { MessageManagerAPI } from '../management/message-manager-api';
 import { workflowRegistry, type WorkflowRegistry } from '../../core/services/workflow-registry';
 import { threadRegistry, type ThreadRegistry } from '../../core/services/thread-registry';
 import type { SDKOptions } from '../types/core-types';
@@ -63,6 +64,9 @@ export class SDK {
   /** 触发器管理API */
   public readonly triggers: TriggerManagerAPI;
 
+  /** 消息管理API */
+  public readonly messages: MessageManagerAPI;
+
   /** 内部工作流注册表 */
   private readonly internalWorkflowRegistry: WorkflowRegistry;
 
@@ -92,6 +96,7 @@ export class SDK {
     this.nodeTemplates = new NodeRegistryAPI();
     this.triggerTemplates = new TriggerTemplateRegistryAPI();
     this.triggers = new TriggerManagerAPI(this.internalThreadRegistry);
+    this.messages = new MessageManagerAPI(this.internalThreadRegistry);
   }
 
   /**
@@ -118,6 +123,7 @@ export class SDK {
     await this.checkpoints.clearAllCheckpoints();
     await this.nodeTemplates.clearTemplates();
     await this.triggerTemplates.clearTemplates();
+    // 注意：MessageManagerAPI不需要清理，因为消息是线程的一部分
   }
 
   /**
