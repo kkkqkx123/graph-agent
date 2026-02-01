@@ -5,7 +5,7 @@
 
 import type { TriggerAction, TriggerExecutionResult } from '../../../../types/trigger';
 import type { ExecuteTriggeredSubgraphActionConfig } from '../../../../types/trigger';
-import { NotFoundError } from '../../../../types/errors';
+import { NotFoundError, ValidationError } from '../../../../types/errors';
 import { ExecutionContext } from '../../context/execution-context';
 import { executeSingleTriggeredSubgraph, type TriggeredSubgraphTask } from '../triggered-subgraph-handler';
 import type { EventManager } from '../../../services/event-manager';
@@ -68,7 +68,7 @@ export async function executeTriggeredSubgraphHandler(
     const { triggeredWorkflowId, waitForCompletion = false } = parameters;
 
     if (!triggeredWorkflowId) {
-      throw new Error('Missing required parameter: triggeredWorkflowId');
+      throw new ValidationError('Missing required parameter: triggeredWorkflowId', 'triggeredWorkflowId');
     }
 
     // 获取主工作流线程上下文

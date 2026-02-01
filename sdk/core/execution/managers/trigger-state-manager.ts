@@ -17,6 +17,7 @@
 
 import type { ID } from '../../../types/common';
 import type { TriggerStatus } from '../../../types/trigger';
+import { ValidationError, ExecutionError, NotFoundError } from '../../../types/errors';
 import { now } from '../../../utils';
 
 /**
@@ -86,24 +87,24 @@ export class TriggerStateManager {
    */
   register(state: TriggerRuntimeState): void {
     if (!state.triggerId) {
-      throw new Error('触发器 ID 不能为空');
+      throw new ValidationError('触发器 ID 不能为空', 'triggerId');
     }
     if (!state.threadId) {
-      throw new Error('线程 ID 不能为空');
+      throw new ValidationError('线程 ID 不能为空', 'threadId');
     }
     if (!state.workflowId) {
-      throw new Error('工作流 ID 不能为空');
+      throw new ValidationError('工作流 ID 不能为空', 'workflowId');
     }
     if (state.threadId !== this.threadId) {
-      throw new Error(`线程 ID 不匹配：期望 ${this.threadId}，实际 ${state.threadId}`);
+      throw new ValidationError(`线程 ID 不匹配：期望 ${this.threadId}，实际 ${state.threadId}`, 'threadId', state.threadId);
     }
     if (this.workflowId && state.workflowId !== this.workflowId) {
-      throw new Error(`工作流 ID 不匹配：期望 ${this.workflowId}，实际 ${state.workflowId}`);
+      throw new ValidationError(`工作流 ID 不匹配：期望 ${this.workflowId}，实际 ${state.workflowId}`, 'workflowId', state.workflowId);
     }
 
     // 检查是否已存在
     if (this.states.has(state.triggerId)) {
-      throw new Error(`触发器状态 ${state.triggerId} 已存在`);
+      throw new ExecutionError(`触发器状态 ${state.triggerId} 已存在`);
     }
 
     // 存储状态
@@ -127,7 +128,7 @@ export class TriggerStateManager {
   updateStatus(triggerId: ID, status: TriggerStatus): void {
     const state = this.states.get(triggerId);
     if (!state) {
-      throw new Error(`触发器状态 ${triggerId} 不存在`);
+      throw new NotFoundError(`触发器状态 ${triggerId} 不存在`, 'TriggerState', triggerId);
     }
 
     // 更新状态
@@ -142,7 +143,7 @@ export class TriggerStateManager {
   incrementTriggerCount(triggerId: ID): void {
     const state = this.states.get(triggerId);
     if (!state) {
-      throw new Error(`触发器状态 ${triggerId} 不存在`);
+      throw new NotFoundError(`触发器状态 ${triggerId} 不存在`, 'TriggerState', triggerId);
     }
 
     // 增加触发次数
@@ -182,7 +183,7 @@ export class TriggerStateManager {
     for (const [triggerId, state] of snapshot.entries()) {
       // 验证线程 ID
       if (state.threadId !== this.threadId) {
-        throw new Error(`线程 ID 不匹配：期望 ${this.threadId}，实际 ${state.threadId}`);
+        throw new ValidationError(`线程 ID 不匹配：期望 ${this.threadId}，实际 ${state.threadId}`, 'threadId', state.threadId);
       }
 
       // 恢复状态
@@ -225,7 +226,7 @@ export class TriggerStateManager {
    */
   deleteState(triggerId: ID): void {
     if (!this.states.has(triggerId)) {
-      throw new Error(`触发器状态 ${triggerId} 不存在`);
+      throw new NotFoundError(`触发器状态 ${triggerId} 不存在`, 'TriggerState', triggerId);
     }
     this.states.delete(triggerId);
   }

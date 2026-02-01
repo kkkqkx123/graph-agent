@@ -17,6 +17,7 @@
  * - 图验证和分析
  */
 
+import { ConfigurationError } from '../../types/errors';
 import type {
   GraphNode,
   GraphEdge,
@@ -78,7 +79,7 @@ export class GraphData implements Graph {
    */
   addNode(node: GraphNode): void {
     if (this._isReadOnly) {
-      throw new Error('Cannot modify read-only graph');
+      throw new ConfigurationError('Cannot modify read-only graph', 'readonly');
     }
     this.nodes.set(node.id, node);
     // 初始化邻接表
@@ -95,7 +96,7 @@ export class GraphData implements Graph {
    */
   addEdge(edge: GraphEdge): void {
     if (this._isReadOnly) {
-      throw new Error('Cannot modify read-only graph');
+      throw new ConfigurationError('Cannot modify read-only graph', 'readonly');
     }
     this.edges.set(edge.id, edge);
     // 更新正向邻接表

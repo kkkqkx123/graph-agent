@@ -17,6 +17,9 @@ import type { LLMMessage } from '../../../types/llm';
 import { ConversationStateManager } from '../managers/conversation-state-manager';
 import { LLMExecutor } from '../llm-executor';
 import { type ToolService } from '../../services/tool-service';
+import type { EventManager } from '../../services/event-manager';
+import { EventType } from '../../../types/events';
+import { now } from '../../../utils';
 
 /**
  * LLM 执行参数
@@ -66,7 +69,8 @@ export interface LLMExecutionResponse {
 export class LLMExecutionCoordinator {
   constructor(
     private llmExecutor: LLMExecutor,
-    private toolService: ToolService = toolService
+    private toolService: ToolService = toolService,
+    private eventManager?: EventManager
   ) { }
 
   /**
@@ -113,13 +117,27 @@ export class LLMExecutionCoordinator {
     params: LLMExecutionParams,
     conversationState: ConversationStateManager
   ): Promise<string> {
-    const { prompt, profileId, parameters, tools } = params;
+    const { prompt, profileId, parameters, tools, threadId, nodeId } = params;
 
     // 步骤 1：添加用户消息
-    conversationState.addMessage({
-      role: 'user',
+    const userMessage = {
+      role: 'user' as const,
       content: prompt
-    });
+    };
+    conversationState.addMessage(userMessage);
+    
+    // 触发MESSAGE_ADDED事件
+    if (this.eventManager) {
+      await this.eventManager.emit({
+        type: EventType.MESSAGE_ADDED,
+        timestamp: now(),
+        workflowId: '', // 需要从context获取
+        threadId: threadId || '',
+        nodeId,
+        role: 'user',
+        content: prompt
+      });
+    }
 
     // 步骤 2：执行 LLM 调用循环
     const maxIterations = 10;
@@ -131,6 +149,26 @@ export class LLMExecutionCoordinator {
 
       // 检查 Token 使用情况
       await conversationState.checkTokenUsage();
+      
+      // 检查Token使用警告
+      const tokenUsage = conversationState.getTokenUsage();
+      if (tokenUsage && this.eventManager) {
+        const tokenLimit = (conversationState as any).tokenLimit || 100000;
+        const usagePercentage = (tokenUsage.totalTokens / tokenLimit) * 100;
+        
+        // 当使用量超过80%时触发警告
+        if (usagePercentage > 80) {
+          await this.eventManager.emit({
+            type: EventType.TOKEN_USAGE_WARNING,
+            timestamp: now(),
+            workflowId: '',
+            threadId: threadId || '',
+            tokensUsed: tokenUsage.totalTokens,
+            tokenLimit,
+            usagePercentage
+          });
+        }
+      }
 
       // 执行 LLM 调用
       const llmResult = await this.llmExecutor.executeLLMCall(
@@ -152,8 +190,8 @@ export class LLMExecutionCoordinator {
       conversationState.finalizeCurrentRequest();
 
       // 将 LLM 响应添加到对话历史
-      conversationState.addMessage({
-        role: 'assistant',
+      const assistantMessage = {
+        role: 'assistant' as const,
         content: llmResult.content,
         toolCalls: llmResult.toolCalls?.map((tc: any) => ({
           id: tc.id,
@@ -163,7 +201,22 @@ export class LLMExecutionCoordinator {
             arguments: tc.arguments
           }
         }))
-      });
+      };
+      conversationState.addMessage(assistantMessage);
+      
+      // 触发MESSAGE_ADDED事件
+      if (this.eventManager) {
+        await this.eventManager.emit({
+          type: EventType.MESSAGE_ADDED,
+          timestamp: now(),
+          workflowId: '',
+          threadId: threadId || '',
+          nodeId,
+          role: 'assistant',
+          content: llmResult.content,
+          toolCalls: assistantMessage.toolCalls
+        });
+      }
 
       finalContent = llmResult.content;
 
@@ -172,7 +225,9 @@ export class LLMExecutionCoordinator {
         // 执行工具调用
         await this.executeToolCalls(
           llmResult.toolCalls,
-          conversationState
+          conversationState,
+          threadId,
+          nodeId
         );
 
         // 继续循环让 LLM 处理工具结果
@@ -181,6 +236,20 @@ export class LLMExecutionCoordinator {
         // 没有工具调用，退出循环
         break;
       }
+    }
+    
+    // 触发CONVERSATION_STATE_CHANGED事件
+    if (this.eventManager) {
+      const finalTokenUsage = conversationState.getTokenUsage();
+      await this.eventManager.emit({
+        type: EventType.CONVERSATION_STATE_CHANGED,
+        timestamp: now(),
+        workflowId: '',
+        threadId: threadId || '',
+        nodeId,
+        messageCount: conversationState.getMessages().length,
+        tokenUsage: finalTokenUsage?.totalTokens || 0
+      });
     }
 
     // 返回最终内容
@@ -195,9 +264,26 @@ export class LLMExecutionCoordinator {
    */
   private async executeToolCalls(
     toolCalls: Array<{ id: string; name: string; arguments: string }>,
-    conversationState: ConversationStateManager
+    conversationState: ConversationStateManager,
+    threadId?: string,
+    nodeId?: string
   ): Promise<void> {
     for (const toolCall of toolCalls) {
+      const startTime = now();
+      
+      // 触发TOOL_CALL_STARTED事件
+      if (this.eventManager) {
+        await this.eventManager.emit({
+          type: EventType.TOOL_CALL_STARTED,
+          timestamp: startTime,
+          workflowId: '',
+          threadId: threadId || '',
+          nodeId: nodeId || '',
+          toolName: toolCall.name,
+          toolArguments: toolCall.arguments
+        });
+      }
+      
       try {
         // 调用 ToolService 执行工具
         const result = await this.toolService.execute(
@@ -219,6 +305,33 @@ export class LLMExecutionCoordinator {
           toolCallId: toolCall.id
         };
         conversationState.addMessage(toolMessage);
+        
+        // 触发MESSAGE_ADDED事件
+        if (this.eventManager) {
+          await this.eventManager.emit({
+            type: EventType.MESSAGE_ADDED,
+            timestamp: now(),
+            workflowId: '',
+            threadId: threadId || '',
+            nodeId,
+            role: 'tool',
+            content: toolMessage.content
+          });
+        }
+        
+        // 触发TOOL_CALL_COMPLETED事件
+        if (this.eventManager) {
+          await this.eventManager.emit({
+            type: EventType.TOOL_CALL_COMPLETED,
+            timestamp: now(),
+            workflowId: '',
+            threadId: threadId || '',
+            nodeId: nodeId || '',
+            toolName: toolCall.name,
+            toolResult: result.result,
+            executionTime: now() - startTime
+          });
+        }
       } catch (error) {
         // 将错误信息作为工具结果添加到对话历史
         const errorMessage = error instanceof Error ? error.message : String(error);
@@ -228,6 +341,32 @@ export class LLMExecutionCoordinator {
           toolCallId: toolCall.id
         };
         conversationState.addMessage(toolMessage);
+        
+        // 触发MESSAGE_ADDED事件
+        if (this.eventManager) {
+          await this.eventManager.emit({
+            type: EventType.MESSAGE_ADDED,
+            timestamp: now(),
+            workflowId: '',
+            threadId: threadId || '',
+            nodeId,
+            role: 'tool',
+            content: toolMessage.content
+          });
+        }
+        
+        // 触发TOOL_CALL_FAILED事件
+        if (this.eventManager) {
+          await this.eventManager.emit({
+            type: EventType.TOOL_CALL_FAILED,
+            timestamp: now(),
+            workflowId: '',
+            threadId: threadId || '',
+            nodeId: nodeId || '',
+            toolName: toolCall.name,
+            error: errorMessage
+          });
+        }
       }
     }
   }

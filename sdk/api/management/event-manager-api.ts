@@ -10,9 +10,9 @@ import type {
   EventListener,
   ThreadStartedEvent,
   ThreadCompletedEvent,
-  ThreadForkedEvent,
-  ThreadJoinedEvent,
-  ThreadCopiedEvent,
+  ThreadForkCompletedEvent,
+  ThreadJoinConditionMetEvent,
+  ThreadCopyCompletedEvent,
   NodeStartedEvent,
   NodeCompletedEvent,
   NodeCustomEvent,
@@ -196,30 +196,30 @@ export class EventManagerAPI {
   }
 
   /**
-   * 监听线程分叉事件
+   * 监听线程分叉完成事件
    * @param listener 事件监听器
    * @returns 注销函数
    */
-  onThreadForked(listener: (event: ThreadForkedEvent) => void | Promise<void>): () => void {
-    return this.eventManager.on(EventTypeEnum.THREAD_FORKED, listener as EventListener<BaseEvent>);
+  onThreadForkCompleted(listener: (event: ThreadForkCompletedEvent) => void | Promise<void>): () => void {
+    return this.eventManager.on(EventTypeEnum.THREAD_FORK_COMPLETED, listener as EventListener<BaseEvent>);
   }
 
   /**
-   * 监听线程合并事件
+   * 监听线程合并条件满足事件
    * @param listener 事件监听器
    * @returns 注销函数
    */
-  onThreadJoined(listener: (event: ThreadJoinedEvent) => void | Promise<void>): () => void {
-    return this.eventManager.on(EventTypeEnum.THREAD_JOINED, listener as EventListener<BaseEvent>);
+  onThreadJoinConditionMet(listener: (event: ThreadJoinConditionMetEvent) => void | Promise<void>): () => void {
+    return this.eventManager.on(EventTypeEnum.THREAD_JOIN_CONDITION_MET, listener as EventListener<BaseEvent>);
   }
 
   /**
-   * 监听线程复制事件
+   * 监听线程复制完成事件
    * @param listener 事件监听器
    * @returns 注销函数
    */
-  onThreadCopied(listener: (event: ThreadCopiedEvent) => void | Promise<void>): () => void {
-    return this.eventManager.on(EventTypeEnum.THREAD_COPIED, listener as EventListener<BaseEvent>);
+  onThreadCopyCompleted(listener: (event: ThreadCopyCompletedEvent) => void | Promise<void>): () => void {
+    return this.eventManager.on(EventTypeEnum.THREAD_COPY_COMPLETED, listener as EventListener<BaseEvent>);
   }
 
   /**
@@ -422,14 +422,25 @@ export class EventManagerAPI {
       EventTypeEnum.THREAD_FAILED,
       EventTypeEnum.THREAD_PAUSED,
       EventTypeEnum.THREAD_RESUMED,
-      EventTypeEnum.THREAD_FORKED,
-      EventTypeEnum.THREAD_JOINED,
-      EventTypeEnum.THREAD_COPIED,
+      EventTypeEnum.THREAD_CANCELLED,
+      EventTypeEnum.THREAD_STATE_CHANGED,
+      EventTypeEnum.THREAD_FORK_STARTED,
+      EventTypeEnum.THREAD_FORK_COMPLETED,
+      EventTypeEnum.THREAD_JOIN_STARTED,
+      EventTypeEnum.THREAD_JOIN_CONDITION_MET,
+      EventTypeEnum.THREAD_COPY_STARTED,
+      EventTypeEnum.THREAD_COPY_COMPLETED,
       EventTypeEnum.NODE_STARTED,
       EventTypeEnum.NODE_COMPLETED,
       EventTypeEnum.NODE_FAILED,
       EventTypeEnum.NODE_CUSTOM_EVENT,
       EventTypeEnum.TOKEN_LIMIT_EXCEEDED,
+      EventTypeEnum.TOKEN_USAGE_WARNING,
+      EventTypeEnum.MESSAGE_ADDED,
+      EventTypeEnum.TOOL_CALL_STARTED,
+      EventTypeEnum.TOOL_CALL_COMPLETED,
+      EventTypeEnum.TOOL_CALL_FAILED,
+      EventTypeEnum.CONVERSATION_STATE_CHANGED,
       EventTypeEnum.ERROR,
       EventTypeEnum.CHECKPOINT_CREATED,
       EventTypeEnum.SUBGRAPH_STARTED,

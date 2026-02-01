@@ -7,7 +7,7 @@ import type { Thread, ThreadStatus, ThreadResult } from '../../types/thread';
 import type { EventManager } from '../services/event-manager';
 import { EventType } from '../../types/events';
 import { eventManager } from '../services/event-manager';
-import type { ThreadStartedEvent, ThreadCompletedEvent, ThreadFailedEvent, ThreadPausedEvent, ThreadResumedEvent } from '../../types/events';
+import type { ThreadStartedEvent, ThreadCompletedEvent, ThreadFailedEvent, ThreadPausedEvent, ThreadResumedEvent, ThreadCancelledEvent, ThreadStateChangedEvent } from '../../types/events';
 import { ValidationError } from '../../types/errors';
 import { now } from '../../utils';
 import { globalMessageStorage } from '../services/global-message-storage';
@@ -27,6 +27,8 @@ export class ThreadLifecycleManager {
    * @param thread Thread实例
    */
   async startThread(thread: Thread): Promise<void> {
+    const previousStatus = thread.status;
+    
     // 验证状态转换合法性
     if (!this.validateStateTransition(thread.status, 'RUNNING' as ThreadStatus)) {
       throw new ValidationError(
@@ -42,6 +44,9 @@ export class ThreadLifecycleManager {
 
     // 触发THREAD_STARTED事件
     await this.emitThreadStartedEvent(thread);
+    
+    // 触发THREAD_STATE_CHANGED事件
+    await this.emitThreadStateChangedEvent(thread, previousStatus, 'RUNNING');
   }
 
   /**
@@ -49,6 +54,8 @@ export class ThreadLifecycleManager {
    * @param thread Thread实例
    */
   async pauseThread(thread: Thread): Promise<void> {
+    const previousStatus = thread.status;
+    
     // 验证状态转换合法性
     if (!this.validateStateTransition(thread.status, 'PAUSED' as ThreadStatus)) {
       throw new ValidationError(
@@ -64,6 +71,9 @@ export class ThreadLifecycleManager {
 
     // 触发THREAD_PAUSED事件
     await this.emitThreadPausedEvent(thread);
+    
+    // 触发THREAD_STATE_CHANGED事件
+    await this.emitThreadStateChangedEvent(thread, previousStatus, 'PAUSED');
   }
 
   /**
@@ -71,6 +81,8 @@ export class ThreadLifecycleManager {
    * @param thread Thread实例
    */
   async resumeThread(thread: Thread): Promise<void> {
+    const previousStatus = thread.status;
+    
     // 验证状态转换合法性
     if (!this.validateStateTransition(thread.status, 'RUNNING' as ThreadStatus)) {
       throw new ValidationError(
@@ -86,6 +98,9 @@ export class ThreadLifecycleManager {
 
     // 触发THREAD_RESUMED事件
     await this.emitThreadResumedEvent(thread);
+    
+    // 触发THREAD_STATE_CHANGED事件
+    await this.emitThreadStateChangedEvent(thread, previousStatus, 'RUNNING');
   }
 
   /**
@@ -94,6 +109,8 @@ export class ThreadLifecycleManager {
    * @param result 执行结果
    */
   async completeThread(thread: Thread, result: ThreadResult): Promise<void> {
+    const previousStatus = thread.status;
+    
     // 如果已经是COMPLETED状态，只触发事件
     if (thread.status === 'COMPLETED' as ThreadStatus) {
       // 确保结束时间已设置
@@ -128,6 +145,9 @@ export class ThreadLifecycleManager {
 
     // 触发THREAD_COMPLETED事件
     await this.emitThreadCompletedEvent(thread, result);
+    
+    // 触发THREAD_STATE_CHANGED事件
+    await this.emitThreadStateChangedEvent(thread, previousStatus, 'COMPLETED');
   }
 
   /**
@@ -136,6 +156,8 @@ export class ThreadLifecycleManager {
    * @param error 错误信息
    */
   async failThread(thread: Thread, error: Error): Promise<void> {
+    const previousStatus = thread.status;
+    
     // 验证状态转换合法性
     if (!this.validateStateTransition(thread.status, 'FAILED' as ThreadStatus)) {
       throw new ValidationError(
@@ -160,13 +182,18 @@ export class ThreadLifecycleManager {
 
     // 触发THREAD_FAILED事件
     await this.emitThreadFailedEvent(thread, error);
+    
+    // 触发THREAD_STATE_CHANGED事件
+    await this.emitThreadStateChangedEvent(thread, previousStatus, 'FAILED');
   }
 
   /**
    * 取消Thread
    * @param thread Thread实例
    */
-  async cancelThread(thread: Thread): Promise<void> {
+  async cancelThread(thread: Thread, reason?: string): Promise<void> {
+    const previousStatus = thread.status;
+    
     // 验证状态转换合法性
     if (!this.validateStateTransition(thread.status, 'CANCELLED' as ThreadStatus)) {
       throw new ValidationError(
@@ -186,8 +213,11 @@ export class ThreadLifecycleManager {
     // 清理全局消息存储中的消息历史
     globalMessageStorage.removeReference(thread.id);
 
-    // 注意：THREAD_CANCELLED 事件类型不存在，暂时不触发事件
-    // 如果需要，可以在 events.ts 中添加该事件类型
+    // 触发THREAD_CANCELLED事件
+    await this.emitThreadCancelledEvent(thread, reason);
+    
+    // 触发THREAD_STATE_CHANGED事件
+    await this.emitThreadStateChangedEvent(thread, previousStatus, 'CANCELLED');
   }
 
   /**
@@ -289,6 +319,40 @@ export class ThreadLifecycleManager {
       timestamp: now(),
       workflowId: thread.workflowId,
       threadId: thread.id
+    };
+    await this.eventManager.emit(event);
+  }
+
+  /**
+   * 触发THREAD_CANCELLED事件
+   * @param thread Thread实例
+   * @param reason 取消原因
+   */
+  private async emitThreadCancelledEvent(thread: Thread, reason?: string): Promise<void> {
+    const event: ThreadCancelledEvent = {
+      type: EventType.THREAD_CANCELLED,
+      timestamp: now(),
+      workflowId: thread.workflowId,
+      threadId: thread.id,
+      reason
+    };
+    await this.eventManager.emit(event);
+  }
+
+  /**
+   * 触发THREAD_STATE_CHANGED事件
+   * @param thread Thread实例
+   * @param previousStatus 变更前状态
+   * @param newStatus 变更后状态
+   */
+  private async emitThreadStateChangedEvent(thread: Thread, previousStatus: string, newStatus: string): Promise<void> {
+    const event: ThreadStateChangedEvent = {
+      type: EventType.THREAD_STATE_CHANGED,
+      timestamp: now(),
+      workflowId: thread.workflowId,
+      threadId: thread.id,
+      previousStatus,
+      newStatus
     };
     await this.eventManager.emit(event);
   }

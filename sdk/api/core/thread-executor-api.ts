@@ -7,6 +7,7 @@ import { ThreadLifecycleCoordinator } from '../../core/execution/coordinators/th
 import { ThreadOperationCoordinator } from '../../core/execution/coordinators/thread-operation-coordinator';
 import { VariableManager } from '../../core/execution/managers/variable-manager';
 import { threadRegistry } from '../../core/services/thread-registry';
+import { eventManager } from '../../core/services/event-manager';
 import { workflowRegistry, type WorkflowRegistry } from '../../core/services/workflow-registry';
 import type { WorkflowDefinition } from '../../types/workflow';
 import type { ThreadResult, ThreadOptions } from '../../types/thread';
@@ -90,7 +91,7 @@ export class ThreadExecutorAPI {
    * @param variables 变量对象
    */
   async setVariables(threadId: string, variables: Record<string, any>): Promise<void> {
-    const threadContext = this.lifecycleCoordinator.getThreadRegistry().get(threadId);
+    const threadContext = threadRegistry.get(threadId);
     if (threadContext) {
       for (const [name, value] of Object.entries(variables)) {
         await this.variableManager.updateVariable(threadContext, name, value);
@@ -140,7 +141,7 @@ export class ThreadExecutorAPI {
    * @returns 线程实例
    */
   getThread(threadId: string) {
-    const threadContext = this.lifecycleCoordinator.getThreadRegistry().get(threadId);
+    const threadContext = threadRegistry.get(threadId);
     return threadContext?.thread;
   }
 
@@ -150,7 +151,7 @@ export class ThreadExecutorAPI {
    * @returns 线程上下文实例
    */
   getThreadContext(threadId: string) {
-    return this.lifecycleCoordinator.getThreadRegistry().get(threadId);
+    return threadRegistry.get(threadId);
   }
 
   /**
@@ -158,7 +159,7 @@ export class ThreadExecutorAPI {
    * @returns 事件管理器实例
    */
   getEventManager() {
-    return this.lifecycleCoordinator.getEventManager();
+    return eventManager;
   }
 
   /**
@@ -166,7 +167,7 @@ export class ThreadExecutorAPI {
    * @returns 线程注册表实例
    */
   getThreadRegistry() {
-    return this.lifecycleCoordinator.getThreadRegistry();
+    return threadRegistry;
   }
 
   /**
@@ -207,7 +208,7 @@ export class ThreadExecutorAPI {
      * @returns 触发器管理器实例
      */
   getTriggerManager(threadId: string) {
-    const threadContext = this.lifecycleCoordinator.getThreadRegistry().get(threadId);
+    const threadContext = threadRegistry.get(threadId);
     return threadContext?.triggerManager;
   }
 

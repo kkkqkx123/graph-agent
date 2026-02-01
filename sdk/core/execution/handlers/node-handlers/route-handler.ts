@@ -3,6 +3,7 @@
  * 负责执行ROUTE节点，根据条件选择下一个节点
  */
 
+import { ExecutionError } from '../../../../types/errors';
 import type { Node, RouteNodeConfig } from '../../../../types/node';
 import type { Thread } from '../../../../types/thread';
 
@@ -72,5 +73,5 @@ export async function routeHandler(thread: Thread, node: Node): Promise<any> {
     };
   }
 
-  throw new Error('No route matched and no default target specified');
+  throw new ExecutionError('No route matched and no default target specified', node.id);
 }

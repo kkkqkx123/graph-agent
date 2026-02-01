@@ -16,6 +16,7 @@
  */
 
 import type { LLMMessage, LLMUsage, MessageMarkMap } from '../../types/llm';
+import { ValidationError } from '../../types/errors';
 import { TokenUsageTracker, type TokenUsageStats } from './token-usage-tracker';
 import { MessageIndexManager } from './message-index-manager';
 import type { EventManager } from '../services/event-manager';
@@ -69,7 +70,7 @@ export class ConversationManager {
   addMessage(message: LLMMessage): number {
     // 验证消息格式
     if (!message.role || !message.content) {
-      throw new Error('Invalid message format: role and content are required');
+      throw new ValidationError('Invalid message format: role and content are required', 'message');
     }
 
     // 将消息追加到数组末尾

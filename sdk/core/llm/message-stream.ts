@@ -3,6 +3,7 @@
  * 提供事件驱动的流式响应处理
  */
 
+import { ExecutionError } from '../../types/errors';
 import type { LLMMessage, LLMResult } from '../../types/llm';
 import {
   MessageStreamEvent,
@@ -160,12 +161,12 @@ export class MessageStream implements AsyncIterable<InternalStreamEvent> {
     await this.done();
 
     if (this.receivedMessages.length === 0) {
-      throw new Error('No messages received');
+      throw new ExecutionError('No messages received');
     }
 
     const lastMessage = this.receivedMessages[this.receivedMessages.length - 1];
     if (!lastMessage) {
-      throw new Error('No final message available');
+      throw new ExecutionError('No final message available');
     }
 
     return lastMessage;
@@ -200,7 +201,7 @@ export class MessageStream implements AsyncIterable<InternalStreamEvent> {
     await this.done();
 
     if (!this.finalResultValue) {
-      throw new Error('No final result available');
+      throw new ExecutionError('No final result available');
     }
 
     return this.finalResultValue;
@@ -309,7 +310,7 @@ export class MessageStream implements AsyncIterable<InternalStreamEvent> {
       if (!this.catchingPromiseCreated && eventListeners.length === 0) {
         // 触发未处理的 Promise 错误
         setTimeout(() => {
-          throw new Error('Stream aborted without error handler');
+          throw new ExecutionError('Stream aborted without error handler');
         }, 0);
       }
       this.endPromiseReject(new Error('Stream aborted'));
@@ -340,7 +341,7 @@ export class MessageStream implements AsyncIterable<InternalStreamEvent> {
     switch (event.type) {
       case 'message_start':
         if (this.currentMessageSnapshot) {
-          throw new Error('Message already started');
+          throw new ExecutionError('Message already started');
         }
         this.currentMessageSnapshot = {
           role: 'assistant',
@@ -352,7 +353,7 @@ export class MessageStream implements AsyncIterable<InternalStreamEvent> {
 
       case 'message_delta':
         if (!this.currentMessageSnapshot) {
-          throw new Error('No message in progress');
+          throw new ExecutionError('No message in progress');
         }
         if (event.data.delta.stop_reason) {
           (this.currentMessageSnapshot as any).stop_reason = event.data.delta.stop_reason;
@@ -367,7 +368,7 @@ export class MessageStream implements AsyncIterable<InternalStreamEvent> {
 
       case 'content_block_start':
         if (!this.currentMessageSnapshot) {
-          throw new Error('No message in progress');
+          throw new ExecutionError('No message in progress');
         }
         if (!Array.isArray(this.currentMessageSnapshot.content)) {
           this.currentMessageSnapshot.content = [];
@@ -380,7 +381,7 @@ export class MessageStream implements AsyncIterable<InternalStreamEvent> {
 
       case 'content_block_delta':
         if (!this.currentMessageSnapshot) {
-          throw new Error('No message in progress');
+          throw new ExecutionError('No message in progress');
         }
         if (!Array.isArray(this.currentMessageSnapshot.content)) {
           break;

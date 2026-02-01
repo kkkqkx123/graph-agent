@@ -8,6 +8,7 @@
  * - 提供可复用的数据转换函数
  */
 
+import { ExecutionError } from '../../../../types/errors';
 import type { Node } from '../../../../types/node';
 import { NodeType } from '../../../../types/node';
 import type { LLMExecutionRequestData } from '../../llm-executor';
@@ -55,6 +56,6 @@ export function extractLLMRequestData(node: Node, threadContext: any): LLMExecut
     }
 
     default:
-      throw new Error(`Unknown node type: ${node.type}`);
+      throw new ExecutionError(`Unknown node type: ${node.type}`, node.id);
   }
 }

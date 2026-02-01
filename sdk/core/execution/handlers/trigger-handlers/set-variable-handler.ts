@@ -4,7 +4,7 @@
  */
 
 import type { TriggerAction, TriggerExecutionResult } from '../../../../types/trigger';
-import { NotFoundError } from '../../../../types/errors';
+import { NotFoundError, ValidationError } from '../../../../types/errors';
 import { ExecutionContext } from '../../context/execution-context';
 
 /**
@@ -63,7 +63,7 @@ export async function setVariableHandler(
     const { threadId, variables } = action.parameters;
 
     if (!threadId || !variables) {
-      throw new Error('Missing required parameters: threadId and variables');
+      throw new ValidationError('Missing required parameters: threadId and variables');
     }
 
     // 获取ThreadContext

@@ -317,12 +317,4 @@ export class TriggerCoordinator {
 
     return trigger;
   }
-
-  /**
-   * 获取状态管理器
-   * @returns TriggerStateManager 实例
-   */
-  getStateManager(): TriggerStateManager {
-    return this.stateManager;
-  }
 }

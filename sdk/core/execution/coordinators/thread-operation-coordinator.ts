@@ -22,9 +22,9 @@ import type { WorkflowRegistry } from '../../services/workflow-registry';
 import { NotFoundError } from '../../../types/errors';
 import { EventType } from '../../../types/events';
 import type {
-  ThreadForkedEvent,
-  ThreadJoinedEvent,
-  ThreadCopiedEvent
+  ThreadForkCompletedEvent,
+  ThreadJoinConditionMetEvent,
+  ThreadCopyCompletedEvent
 } from '../../../types/events';
 import { fork, join, copy } from '../thread-operations/thread-operations';
 import { now } from '../../../utils';
@@ -63,25 +63,14 @@ export class ThreadOperationCoordinator {
       throw new NotFoundError(`Parent thread not found: ${parentThreadId}`, 'Thread', parentThreadId);
     }
 
-    // 步骤 2：使用 ThreadOperations 创建子线程
+    // 步骤 2：使用 ThreadOperations 创建子线程（事件触发在内部处理）
     const threadBuilder = new ThreadBuilder(this.workflowRegistry);
-    const childThreadContext = await fork(parentThreadContext, forkConfig, threadBuilder);
+    const childThreadContext = await fork(parentThreadContext, forkConfig, threadBuilder, this.eventManager);
 
     // 步骤 3：注册子线程
     this.threadRegistry.register(childThreadContext);
 
-    // 步骤 4：触发 THREAD_FORKED 事件
-    const forkedEvent: ThreadForkedEvent = {
-      type: EventType.THREAD_FORKED,
-      timestamp: now(),
-      workflowId: parentThreadContext.getWorkflowId(),
-      threadId: parentThreadId,
-      parentThreadId,
-      childThreadIds: [childThreadContext.getThreadId()]
-    };
-    await this.eventManager.emit(forkedEvent);
-
-    // 步骤 5：返回子线程 ID 数组
+    // 步骤 4：返回子线程 ID 数组
     return [childThreadContext.getThreadId()];
   }
 
@@ -106,27 +95,17 @@ export class ThreadOperationCoordinator {
       throw new NotFoundError(`Parent thread not found: ${parentThreadId}`, 'Thread', parentThreadId);
     }
 
-    // 步骤 2：使用 ThreadOperations 执行 Join
+    // 步骤 2：使用 ThreadOperations 执行 Join（事件触发在内部处理）
     const joinResult = await join(
       childThreadIds,
       joinStrategy,
       this.threadRegistry,
-      timeout * 1000
+      timeout * 1000,
+      parentThreadId,
+      this.eventManager
     );
 
-    // 步骤 3：触发 THREAD_JOINED 事件
-    const joinedEvent: ThreadJoinedEvent = {
-      type: EventType.THREAD_JOINED,
-      timestamp: now(),
-      workflowId: parentThreadContext.getWorkflowId(),
-      threadId: parentThreadId,
-      parentThreadId,
-      childThreadIds,
-      joinStrategy
-    };
-    await this.eventManager.emit(joinedEvent);
-
-    // 步骤 4：返回 Join 结果
+    // 步骤 3：返回 Join 结果
     return joinResult;
   }
 
@@ -143,43 +122,14 @@ export class ThreadOperationCoordinator {
       throw new NotFoundError(`Source thread not found: ${sourceThreadId}`, 'Thread', sourceThreadId);
     }
 
-    // 步骤 2：使用 ThreadOperations 创建副本
+    // 步骤 2：使用 ThreadOperations 创建副本（事件触发在内部处理）
     const threadBuilder = new ThreadBuilder(this.workflowRegistry);
-    const copiedThreadContext = await copy(sourceThreadContext, threadBuilder);
+    const copiedThreadContext = await copy(sourceThreadContext, threadBuilder, this.eventManager);
 
     // 步骤 3：注册副本线程
     this.threadRegistry.register(copiedThreadContext);
 
-    // 步骤 4：触发 THREAD_COPIED 事件
-    const copiedEvent: ThreadCopiedEvent = {
-      type: EventType.THREAD_COPIED,
-      timestamp: now(),
-      workflowId: sourceThreadContext.getWorkflowId(),
-      threadId: sourceThreadId,
-      sourceThreadId,
-      copiedThreadId: copiedThreadContext.getThreadId()
-    };
-    await this.eventManager.emit(copiedEvent);
-
-    // 步骤 5：返回副本线程 ID
+    // 步骤 4：返回副本线程 ID
     return copiedThreadContext.getThreadId();
-  }
-
-  /**
-   * 获取 ThreadRegistry
-   *
-   * @returns ThreadRegistry 实例
-   */
-  getThreadRegistry(): ThreadRegistry {
-    return this.threadRegistry;
-  }
-
-  /**
-   * 获取 EventManager
-   *
-   * @returns EventManager 实例
-   */
-  getEventManager(): EventManager {
-    return this.eventManager;
   }
 }

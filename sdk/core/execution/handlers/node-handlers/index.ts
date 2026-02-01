@@ -9,6 +9,7 @@
  * - 配置验证和转换逻辑在config-utils.ts中
  */
 
+import { ExecutionError } from '../../../../types/errors';
 import { NodeType } from '../../../../types/node';
 import type { Node } from '../../../../types/node';
 import type { Thread } from '../../../../types/thread';
@@ -56,7 +57,7 @@ export const nodeHandlers: Record<NodeType, NodeHandler> = {
 export function getNodeHandler(nodeType: NodeType): NodeHandler {
   const handler = nodeHandlers[nodeType];
   if (!handler) {
-    throw new Error(`No handler found for node type: ${nodeType}`);
+    throw new ExecutionError(`No handler found for node type: ${nodeType}`);
   }
   return handler;
 }

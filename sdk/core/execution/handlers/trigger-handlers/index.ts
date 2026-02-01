@@ -8,6 +8,7 @@
  * - 与 NodeHandler 保持一致的架构设计
  */
 
+import { ExecutionError } from '../../../../types/errors';
 import type { TriggerAction, TriggerExecutionResult } from '../../../../types/trigger';
 import { TriggerActionType } from '../../../../types/trigger';
 
@@ -59,7 +60,7 @@ export const triggerHandlers: Record<TriggerActionType, TriggerHandler> = {
 export function getTriggerHandler(actionType: TriggerActionType): TriggerHandler {
   const handler = triggerHandlers[actionType];
   if (!handler) {
-    throw new Error(`No handler found for trigger action type: ${actionType}`);
+    throw new ExecutionError(`No handler found for trigger action type: ${actionType}`);
   }
   return handler;
 }

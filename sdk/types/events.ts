@@ -19,12 +19,22 @@ export enum EventType {
   THREAD_PAUSED = 'THREAD_PAUSED',
   /** 线程恢复 */
   THREAD_RESUMED = 'THREAD_RESUMED',
-  /** 线程分叉 */
-  THREAD_FORKED = 'THREAD_FORKED',
-  /** 线程合并 */
-  THREAD_JOINED = 'THREAD_JOINED',
-  /** 线程复制 */
-  THREAD_COPIED = 'THREAD_COPIED',
+  /** 线程取消 */
+  THREAD_CANCELLED = 'THREAD_CANCELLED',
+  /** 线程状态变更 */
+  THREAD_STATE_CHANGED = 'THREAD_STATE_CHANGED',
+  /** 线程分叉开始 */
+  THREAD_FORK_STARTED = 'THREAD_FORK_STARTED',
+  /** 线程分叉完成 */
+  THREAD_FORK_COMPLETED = 'THREAD_FORK_COMPLETED',
+  /** 线程合并开始 */
+  THREAD_JOIN_STARTED = 'THREAD_JOIN_STARTED',
+  /** 线程合并条件满足 */
+  THREAD_JOIN_CONDITION_MET = 'THREAD_JOIN_CONDITION_MET',
+  /** 线程复制开始 */
+  THREAD_COPY_STARTED = 'THREAD_COPY_STARTED',
+  /** 线程复制完成 */
+  THREAD_COPY_COMPLETED = 'THREAD_COPY_COMPLETED',
   /** 节点开始 */
   NODE_STARTED = 'NODE_STARTED',
   /** 节点完成 */
@@ -35,6 +45,18 @@ export enum EventType {
   NODE_CUSTOM_EVENT = 'NODE_CUSTOM_EVENT',
   /** Token 超过限制 */
   TOKEN_LIMIT_EXCEEDED = 'TOKEN_LIMIT_EXCEEDED',
+  /** Token 使用警告 */
+  TOKEN_USAGE_WARNING = 'TOKEN_USAGE_WARNING',
+  /** 消息添加 */
+  MESSAGE_ADDED = 'MESSAGE_ADDED',
+  /** 工具调用开始 */
+  TOOL_CALL_STARTED = 'TOOL_CALL_STARTED',
+  /** 工具调用完成 */
+  TOOL_CALL_COMPLETED = 'TOOL_CALL_COMPLETED',
+  /** 工具调用失败 */
+  TOOL_CALL_FAILED = 'TOOL_CALL_FAILED',
+  /** 对话状态变更 */
+  CONVERSATION_STATE_CHANGED = 'CONVERSATION_STATE_CHANGED',
   /** 错误事件 */
   ERROR = 'ERROR',
   /** 检查点创建 */
@@ -113,10 +135,41 @@ export interface ThreadResumedEvent extends BaseEvent {
 }
 
 /**
- * 线程分叉事件类型
+ * 线程取消事件类型
  */
-export interface ThreadForkedEvent extends BaseEvent {
-  type: EventType.THREAD_FORKED;
+export interface ThreadCancelledEvent extends BaseEvent {
+  type: EventType.THREAD_CANCELLED;
+  /** 取消原因 */
+  reason?: string;
+}
+
+/**
+ * 线程状态变更事件类型
+ */
+export interface ThreadStateChangedEvent extends BaseEvent {
+  type: EventType.THREAD_STATE_CHANGED;
+  /** 变更前状态 */
+  previousStatus: string;
+  /** 变更后状态 */
+  newStatus: string;
+}
+
+/**
+ * 线程分叉开始事件类型
+ */
+export interface ThreadForkStartedEvent extends BaseEvent {
+  type: EventType.THREAD_FORK_STARTED;
+  /** 父线程ID */
+  parentThreadId: ID;
+  /** Fork配置 */
+  forkConfig: Record<string, any>;
+}
+
+/**
+ * 线程分叉完成事件类型
+ */
+export interface ThreadForkCompletedEvent extends BaseEvent {
+  type: EventType.THREAD_FORK_COMPLETED;
   /** 父线程ID */
   parentThreadId: ID;
   /** 子线程ID数组 */
@@ -124,10 +177,10 @@ export interface ThreadForkedEvent extends BaseEvent {
 }
 
 /**
- * 线程合并事件类型
+ * 线程合并开始事件类型
  */
-export interface ThreadJoinedEvent extends BaseEvent {
-  type: EventType.THREAD_JOINED;
+export interface ThreadJoinStartedEvent extends BaseEvent {
+  type: EventType.THREAD_JOIN_STARTED;
   /** 父线程ID */
   parentThreadId: ID;
   /** 子线程ID数组 */
@@ -137,10 +190,32 @@ export interface ThreadJoinedEvent extends BaseEvent {
 }
 
 /**
- * 线程复制事件类型
+ * 线程合并条件满足事件类型
  */
-export interface ThreadCopiedEvent extends BaseEvent {
-  type: EventType.THREAD_COPIED;
+export interface ThreadJoinConditionMetEvent extends BaseEvent {
+  type: EventType.THREAD_JOIN_CONDITION_MET;
+  /** 父线程ID */
+  parentThreadId: ID;
+  /** 子线程ID数组 */
+  childThreadIds: ID[];
+  /** 满足的条件 */
+  condition: string;
+}
+
+/**
+ * 线程复制开始事件类型
+ */
+export interface ThreadCopyStartedEvent extends BaseEvent {
+  type: EventType.THREAD_COPY_STARTED;
+  /** 源线程ID */
+  sourceThreadId: ID;
+}
+
+/**
+ * 线程复制完成事件类型
+ */
+export interface ThreadCopyCompletedEvent extends BaseEvent {
+  type: EventType.THREAD_COPY_COMPLETED;
   /** 源线程ID */
   sourceThreadId: ID;
   /** 副本线程ID */
@@ -191,6 +266,95 @@ export interface TokenLimitExceededEvent extends BaseEvent {
   tokensUsed: number;
   /** Token 限制阈值 */
   tokenLimit: number;
+}
+
+/**
+ * Token 使用警告事件类型
+ */
+export interface TokenUsageWarningEvent extends BaseEvent {
+  type: EventType.TOKEN_USAGE_WARNING;
+  /** 当前使用的 Token 数量 */
+  tokensUsed: number;
+  /** Token 限制阈值 */
+  tokenLimit: number;
+  /** 使用百分比 */
+  usagePercentage: number;
+}
+
+/**
+ * 消息添加事件类型
+ */
+export interface MessageAddedEvent extends BaseEvent {
+  type: EventType.MESSAGE_ADDED;
+  /** 节点ID */
+  nodeId?: ID;
+  /** 消息角色 */
+  role: string;
+  /** 消息内容 */
+  content: string;
+  /** 工具调用（如果有） */
+  toolCalls?: Array<{
+    id: string;
+    type: string;
+    function: {
+      name: string;
+      arguments: string;
+    };
+  }>;
+}
+
+/**
+ * 工具调用开始事件类型
+ */
+export interface ToolCallStartedEvent extends BaseEvent {
+  type: EventType.TOOL_CALL_STARTED;
+  /** 节点ID */
+  nodeId: ID;
+  /** 工具名称 */
+  toolName: string;
+  /** 工具参数 */
+  toolArguments: string;
+}
+
+/**
+ * 工具调用完成事件类型
+ */
+export interface ToolCallCompletedEvent extends BaseEvent {
+  type: EventType.TOOL_CALL_COMPLETED;
+  /** 节点ID */
+  nodeId: ID;
+  /** 工具名称 */
+  toolName: string;
+  /** 工具结果 */
+  toolResult: any;
+  /** 执行时间 */
+  executionTime: number;
+}
+
+/**
+ * 工具调用失败事件类型
+ */
+export interface ToolCallFailedEvent extends BaseEvent {
+  type: EventType.TOOL_CALL_FAILED;
+  /** 节点ID */
+  nodeId: ID;
+  /** 工具名称 */
+  toolName: string;
+  /** 错误信息 */
+  error: string;
+}
+
+/**
+ * 对话状态变更事件类型
+ */
+export interface ConversationStateChangedEvent extends BaseEvent {
+  type: EventType.CONVERSATION_STATE_CHANGED;
+  /** 节点ID */
+  nodeId?: ID;
+  /** 消息数量 */
+  messageCount: number;
+  /** Token使用量 */
+  tokenUsage: number;
 }
 
 /**
@@ -319,14 +483,25 @@ export type Event =
   | ThreadFailedEvent
   | ThreadPausedEvent
   | ThreadResumedEvent
-  | ThreadForkedEvent
-  | ThreadJoinedEvent
-  | ThreadCopiedEvent
+  | ThreadCancelledEvent
+  | ThreadStateChangedEvent
+  | ThreadForkStartedEvent
+  | ThreadForkCompletedEvent
+  | ThreadJoinStartedEvent
+  | ThreadJoinConditionMetEvent
+  | ThreadCopyStartedEvent
+  | ThreadCopyCompletedEvent
   | NodeStartedEvent
   | NodeCompletedEvent
   | NodeFailedEvent
   | NodeCustomEvent
   | TokenLimitExceededEvent
+  | TokenUsageWarningEvent
+  | MessageAddedEvent
+  | ToolCallStartedEvent
+  | ToolCallCompletedEvent
+  | ToolCallFailedEvent
+  | ConversationStateChangedEvent
   | ErrorEvent
   | CheckpointCreatedEvent
   | SubgraphStartedEvent

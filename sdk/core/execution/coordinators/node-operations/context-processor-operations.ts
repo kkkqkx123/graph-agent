@@ -8,6 +8,7 @@
  * - 支持截断、插入、替换、清空、过滤等操作
  */
 
+import { ValidationError, ExecutionError } from '../../../../types/errors';
 import type { ContextProcessorExecutionData } from '../../handlers/node-handlers/config-utils';
 
 /**
@@ -20,7 +21,7 @@ export function handleTruncateOperation(
   config: ContextProcessorExecutionData['truncate']
 ): void {
   if (!config) {
-    throw new Error('Truncate configuration is required');
+    throw new ValidationError('Truncate configuration is required', 'config');
   }
 
   // 获取当前可见消息的索引
@@ -78,7 +79,7 @@ export function handleInsertOperation(
   config: ContextProcessorExecutionData['insert']
 ): void {
   if (!config) {
-    throw new Error('Insert configuration is required');
+    throw new ValidationError('Insert configuration is required', 'config');
   }
 
   const currentIndices = conversationManager.getMarkMap().originalIndices;
@@ -118,7 +119,7 @@ export function handleReplaceOperation(
   config: ContextProcessorExecutionData['replace']
 ): void {
   if (!config) {
-    throw new Error('Replace configuration is required');
+    throw new ValidationError('Replace configuration is required', 'config');
   }
 
   const allMessages = conversationManager.getAllMessages();
@@ -126,7 +127,7 @@ export function handleReplaceOperation(
 
   // 验证索引有效性
   if (config.index >= currentIndices.length) {
-    throw new Error(`Index ${config.index} is out of bounds`);
+    throw new ExecutionError(`Index ${config.index} is out of bounds`);
   }
 
   // 获取实际的消息索引
@@ -173,7 +174,7 @@ export function handleFilterOperation(
   config: ContextProcessorExecutionData['filter']
 ): void {
   if (!config) {
-    throw new Error('Filter configuration is required');
+    throw new ValidationError('Filter configuration is required', 'config');
   }
 
   const allMessages = conversationManager.getAllMessages();

@@ -13,6 +13,7 @@
  * - 支持多种触发方式（手动、事件驱动、定时等）
  */
 
+import { ConfigurationError, NotFoundError } from '../../../types/errors';
 import type { Thread } from '../../../types/thread';
 import type { Checkpoint, CheckpointMetadata, ThreadStateSnapshot } from '../../../types/checkpoint';
 import type { CheckpointStorage, CheckpointStorageMetadata } from '../../../types/checkpoint-storage';
@@ -46,7 +47,7 @@ export class CheckpointManager {
     workflowRegistry?: WorkflowRegistry
   ) {
     if (!threadRegistry || !workflowRegistry) {
-      throw new Error('CheckpointManager requires threadRegistry and workflowRegistry');
+      throw new ConfigurationError('CheckpointManager requires threadRegistry and workflowRegistry', 'registry');
     }
 
     this.storage = storage || new MemoryCheckpointStorage();
@@ -65,7 +66,7 @@ export class CheckpointManager {
     // 步骤1：从 ThreadRegistry 获取 ThreadContext 对象
     const threadContext = this.threadRegistry.get(threadId);
     if (!threadContext) {
-      throw new Error(`ThreadContext not found: ${threadId}`);
+      throw new NotFoundError(`ThreadContext not found`, 'ThreadContext', threadId);
     }
 
     const thread = threadContext.thread;
@@ -156,7 +157,7 @@ export class CheckpointManager {
     // 步骤1：从 CheckpointStorage 加载字节数据
     const data = await this.storage.load(checkpointId);
     if (!data) {
-      throw new Error(`Checkpoint not found: ${checkpointId}`);
+      throw new NotFoundError(`Checkpoint not found`, 'Checkpoint', checkpointId);
     }
 
     // 步骤2：反序列化为 Checkpoint 对象
@@ -168,7 +169,7 @@ export class CheckpointManager {
     // 步骤3：从 WorkflowRegistry 获取 WorkflowDefinition
     const workflowDefinition = this.workflowRegistry.get(checkpoint.workflowId);
     if (!workflowDefinition) {
-      throw new Error(`Workflow with ID '${checkpoint.workflowId}' not found in registry`);
+      throw new NotFoundError(`Workflow not found`, 'Workflow', checkpoint.workflowId);
     }
 
     // 步骤4：恢复 Thread 状态
@@ -198,7 +199,7 @@ export class CheckpointManager {
     // 步骤6：从全局存储获取完整消息历史
     const messageHistory = globalMessageStorage.getMessages(checkpoint.threadId);
     if (!messageHistory) {
-      throw new Error(`Message history not found for thread: ${checkpoint.threadId}`);
+      throw new NotFoundError(`Message history not found`, 'MessageHistory', checkpoint.threadId);
     }
 
     // 步骤7：创建 ConversationManager

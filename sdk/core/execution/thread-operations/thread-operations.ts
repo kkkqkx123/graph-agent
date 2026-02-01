@@ -8,8 +8,10 @@ import type { Thread } from '../../../types/thread';
 import type { ThreadContext } from '../context/thread-context';
 import type { ThreadBuilder } from '../thread-builder';
 import type { ThreadRegistry } from '../../services/thread-registry';
+import type { EventManager } from '../../services/event-manager';
 import { ExecutionError, TimeoutError, ValidationError } from '../../../types/errors';
 import { now, diffTimestamp } from '../../../utils';
+import { EventType } from '../../../types/events';
 
 /**
  * Fork 配置
@@ -48,7 +50,8 @@ export interface JoinResult {
 export async function fork(
   parentThreadContext: ThreadContext,
   forkConfig: ForkConfig,
-  threadBuilder: ThreadBuilder
+  threadBuilder: ThreadBuilder,
+  eventManager?: EventManager
 ): Promise<ThreadContext> {
   // 步骤1：验证 Fork 配置
   if (!forkConfig.forkId) {
@@ -59,8 +62,32 @@ export async function fork(
     throw new ValidationError(`Invalid forkStrategy: ${forkConfig.forkStrategy}`, 'fork.forkStrategy');
   }
 
+  // 触发THREAD_FORK_STARTED事件
+  if (eventManager) {
+    await eventManager.emit({
+      type: EventType.THREAD_FORK_STARTED,
+      timestamp: now(),
+      workflowId: parentThreadContext.getWorkflowId(),
+      threadId: parentThreadContext.getThreadId(),
+      parentThreadId: parentThreadContext.getThreadId(),
+      forkConfig
+    });
+  }
+
   // 步骤2：创建子线程
   const childThreadContext = await threadBuilder.createFork(parentThreadContext, forkConfig);
+
+  // 触发THREAD_FORK_COMPLETED事件
+  if (eventManager) {
+    await eventManager.emit({
+      type: EventType.THREAD_FORK_COMPLETED,
+      timestamp: now(),
+      workflowId: parentThreadContext.getWorkflowId(),
+      threadId: parentThreadContext.getThreadId(),
+      parentThreadId: parentThreadContext.getThreadId(),
+      childThreadIds: [childThreadContext.getThreadId()]
+    });
+  }
 
   return childThreadContext;
 }
@@ -77,7 +104,9 @@ export async function join(
   childThreadIds: string[],
   joinStrategy: JoinStrategy,
   threadRegistry: ThreadRegistry,
-  timeout: number
+  timeout: number,
+  parentThreadId?: string,
+  eventManager?: EventManager
 ): Promise<JoinResult> {
   // 步骤1：验证 Join 配置
   if (!joinStrategy) {
@@ -88,12 +117,30 @@ export async function join(
     throw new ValidationError('Join config must have valid timeout', 'join.timeout');
   }
 
+  // 触发THREAD_JOIN_STARTED事件
+  if (eventManager && parentThreadId) {
+    const parentThreadContext = threadRegistry.get(parentThreadId);
+    if (parentThreadContext) {
+      await eventManager.emit({
+        type: EventType.THREAD_JOIN_STARTED,
+        timestamp: now(),
+        workflowId: parentThreadContext.getWorkflowId(),
+        threadId: parentThreadId,
+        parentThreadId,
+        childThreadIds,
+        joinStrategy
+      });
+    }
+  }
+
   // 步骤2：等待子 thread 完成
   const { completedThreads, failedThreads } = await waitForCompletion(
     childThreadIds,
     joinStrategy,
     threadRegistry,
-    timeout
+    timeout,
+    parentThreadId,
+    eventManager
   );
 
   // 步骤3：根据策略判断是否继续
@@ -125,15 +172,39 @@ export async function join(
  */
 export async function copy(
   sourceThreadContext: ThreadContext,
-  threadBuilder: ThreadBuilder
+  threadBuilder: ThreadBuilder,
+  eventManager?: EventManager
 ): Promise<ThreadContext> {
   // 步骤1：验证源 thread 存在
   if (!sourceThreadContext) {
     throw new ExecutionError(`Source thread context is null or undefined`, undefined, '');
   }
 
+  // 触发THREAD_COPY_STARTED事件
+  if (eventManager) {
+    await eventManager.emit({
+      type: EventType.THREAD_COPY_STARTED,
+      timestamp: now(),
+      workflowId: sourceThreadContext.getWorkflowId(),
+      threadId: sourceThreadContext.getThreadId(),
+      sourceThreadId: sourceThreadContext.getThreadId()
+    });
+  }
+
   // 步骤2：调用 ThreadBuilder 复制 thread
   const copiedThreadContext = await threadBuilder.createCopy(sourceThreadContext);
+
+  // 触发THREAD_COPY_COMPLETED事件
+  if (eventManager) {
+    await eventManager.emit({
+      type: EventType.THREAD_COPY_COMPLETED,
+      timestamp: now(),
+      workflowId: sourceThreadContext.getWorkflowId(),
+      threadId: sourceThreadContext.getThreadId(),
+      sourceThreadId: sourceThreadContext.getThreadId(),
+      copiedThreadId: copiedThreadContext.getThreadId()
+    });
+  }
 
   return copiedThreadContext;
 }
@@ -150,12 +221,15 @@ async function waitForCompletion(
   childThreadIds: string[],
   joinStrategy: JoinStrategy,
   threadRegistry: ThreadRegistry,
-  timeout: number
+  timeout: number,
+  parentThreadId?: string,
+  eventManager?: EventManager
 ): Promise<{ completedThreads: Thread[]; failedThreads: Thread[] }> {
   const completedThreads: Thread[] = [];
   const failedThreads: Thread[] = [];
   const pendingThreads = new Set(childThreadIds);
   const startTime = now();
+  let conditionMet = false;
 
   // 步骤2：进入等待循环
   while (pendingThreads.size > 0) {
@@ -184,11 +258,28 @@ async function waitForCompletion(
 
     // 步骤5：根据策略判断是否退出
     if (shouldExitWait(completedThreads, failedThreads, childThreadIds, joinStrategy, pendingThreads.size)) {
+      conditionMet = true;
       break;
     }
 
     // 步骤6：等待一段时间
     await new Promise(resolve => setTimeout(resolve, 100));
+  }
+
+  // 触发THREAD_JOIN_CONDITION_MET事件
+  if (eventManager && parentThreadId && conditionMet) {
+    const parentThreadContext = threadRegistry.get(parentThreadId);
+    if (parentThreadContext) {
+      await eventManager.emit({
+        type: EventType.THREAD_JOIN_CONDITION_MET,
+        timestamp: now(),
+        workflowId: parentThreadContext.getWorkflowId(),
+        threadId: parentThreadId,
+        parentThreadId,
+        childThreadIds,
+        condition: joinStrategy
+      });
+    }
   }
 
   // 步骤7：返回完成的 thread 数组

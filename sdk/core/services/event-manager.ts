@@ -9,6 +9,7 @@
  */
 
 import type { BaseEvent, EventType, EventListener } from '../../types/events';
+import { ValidationError } from '../../types/errors';
 import { now, generateId } from '../../utils';
 
 /**
@@ -18,6 +19,9 @@ interface ListenerWrapper<T> {
   listener: (event: T) => void | Promise<void>;
   id: string;
   timestamp: number;
+  priority: number;
+  filter?: (event: T) => boolean;
+  timeout?: number;
 }
 
 /**
@@ -40,32 +44,53 @@ class EventManager {
    * 注册事件监听器（全局事件）
    * @param eventType 事件类型
    * @param listener 事件监听器
+   * @param options 选项（优先级、过滤器、超时等）
    * @returns 注销函数
    */
-  on<T extends BaseEvent>(eventType: EventType, listener: EventListener<T>): () => void {
-    return this.registerGlobalListener(eventType, listener);
+  on<T extends BaseEvent>(
+    eventType: EventType,
+    listener: EventListener<T>,
+    options?: {
+      priority?: number;
+      filter?: (event: T) => boolean;
+      timeout?: number;
+    }
+  ): () => void {
+    return this.registerGlobalListener(eventType, listener, options);
   }
 
   /**
    * 注册全局事件监听器
    * @param eventType 事件类型
    * @param listener 事件监听器
+   * @param options 选项
    * @returns 注销函数
    */
-  private registerGlobalListener<T>(eventType: string, listener: (event: T) => void | Promise<void>): () => void {
+  private registerGlobalListener<T>(
+    eventType: string,
+    listener: (event: T) => void | Promise<void>,
+    options?: {
+      priority?: number;
+      filter?: (event: T) => boolean;
+      timeout?: number;
+    }
+  ): () => void {
     // 验证参数
     if (!eventType) {
-      throw new Error('EventType is required');
+      throw new ValidationError('EventType is required', 'eventType');
     }
     if (typeof listener !== 'function') {
-      throw new Error('Listener must be a function');
+      throw new ValidationError('Listener must be a function', 'listener');
     }
 
     // 创建监听器包装器
     const wrapper: ListenerWrapper<T> = {
       listener,
       id: generateId(),
-      timestamp: now()
+      timestamp: now(),
+      priority: options?.priority || 0,
+      filter: options?.filter,
+      timeout: options?.timeout
     };
 
     // 添加到全局监听器列表
@@ -73,6 +98,9 @@ class EventManager {
       this.globalListeners.set(eventType, []);
     }
     this.globalListeners.get(eventType)!.push(wrapper);
+
+    // 按优先级排序（优先级高的在前）
+    this.globalListeners.get(eventType)!.sort((a, b) => b.priority - a.priority);
 
     // 返回注销函数
     return () => this.unregisterGlobalListener(eventType, listener);
@@ -89,6 +117,36 @@ class EventManager {
   }
 
   /**
+   * 注销事件监听器（通过ID）
+   * @param eventType 事件类型
+   * @param listenerId 监听器ID
+   * @returns 是否成功注销
+   */
+  offById(eventType: EventType, listenerId: string): boolean {
+    if (!eventType) {
+      throw new ValidationError('EventType is required', 'eventType');
+    }
+
+    const wrappers = this.globalListeners.get(eventType);
+    if (!wrappers) {
+      return false;
+    }
+
+    const index = wrappers.findIndex(w => w.id === listenerId);
+    if (index === -1) {
+      return false;
+    }
+
+    wrappers.splice(index, 1);
+
+    if (wrappers.length === 0) {
+      this.globalListeners.delete(eventType);
+    }
+
+    return true;
+  }
+
+  /**
    * 注销全局事件监听器
    * @param eventType 事件类型
    * @param listener 事件监听器
@@ -97,10 +155,10 @@ class EventManager {
   private unregisterGlobalListener<T>(eventType: string, listener: (event: T) => void | Promise<void>): boolean {
     // 验证参数
     if (!eventType) {
-      throw new Error('EventType is required');
+      throw new ValidationError('EventType is required', 'eventType');
     }
     if (typeof listener !== 'function') {
-      throw new Error('Listener must be a function');
+      throw new ValidationError('Listener must be a function', 'listener');
     }
 
     // 获取监听器数组
@@ -133,43 +191,89 @@ class EventManager {
   async emit<T extends BaseEvent>(event: T): Promise<void> {
     // 验证事件
     if (!event) {
-      throw new Error('Event is required');
+      throw new ValidationError('Event is required', 'event');
     }
     if (!event.type) {
-      throw new Error('Event type is required');
+      throw new ValidationError('Event type is required', 'event.type');
     }
+
+    // 添加传播控制标志
+    (event as any)._propagationStopped = false;
 
     // 获取监听器
     const wrappers = this.globalListeners.get(event.type) || [];
     const allWrappers = [...wrappers, ...this.globalWildcardListeners];
 
     // 执行监听器
-    const promises = allWrappers.map(async (wrapper) => {
+    for (const wrapper of allWrappers) {
+      // 检查传播是否被停止
+      if ((event as any)._propagationStopped) {
+        break;
+      }
+
+      // 检查过滤器
+      if (wrapper.filter && !wrapper.filter(event)) {
+        continue;
+      }
+
       try {
-        await wrapper.listener(event);
+        // 执行监听器（带超时控制）
+        if (wrapper.timeout) {
+          await Promise.race([
+            wrapper.listener(event),
+            new Promise((_, reject) =>
+              setTimeout(() => reject(new Error(`Listener timeout after ${wrapper.timeout}ms`)), wrapper.timeout)
+            )
+          ]);
+        } else {
+          await wrapper.listener(event);
+        }
       } catch (error) {
         // 记录错误，不影响其他监听器
         console.error(`Error in event listener for ${event.type}:`, error);
       }
-    });
+    }
+  }
 
-    // 等待所有监听器完成
-    await Promise.all(promises);
+  /**
+   * 停止事件传播
+   * @param event 事件对象
+   */
+  stopPropagation<T extends BaseEvent>(event: T): void {
+    (event as any)._propagationStopped = true;
+  }
+
+  /**
+   * 检查事件传播是否已停止
+   * @param event 事件对象
+   * @returns 是否已停止
+   */
+  isPropagationStopped<T extends BaseEvent>(event: T): boolean {
+    return (event as any)._propagationStopped === true;
   }
 
   /**
    * 注册一次性事件监听器
    * @param eventType 事件类型
    * @param listener 事件监听器
+   * @param options 选项
    * @returns 注销函数
    */
-  once<T extends BaseEvent>(eventType: EventType, listener: EventListener<T>): () => void {
+  once<T extends BaseEvent>(
+    eventType: EventType,
+    listener: EventListener<T>,
+    options?: {
+      priority?: number;
+      filter?: (event: T) => boolean;
+      timeout?: number;
+    }
+  ): () => void {
     // 验证参数
     if (!eventType) {
-      throw new Error('EventType is required');
+      throw new ValidationError('EventType is required', 'eventType');
     }
     if (typeof listener !== 'function') {
-      throw new Error('Listener must be a function');
+      throw new ValidationError('Listener must be a function', 'listener');
     }
 
     // 创建包装监听器
@@ -180,7 +284,7 @@ class EventManager {
     };
 
     // 注册包装监听器
-    return this.on(eventType, wrapper);
+    return this.on(eventType, wrapper, options);
   }
 
   /**

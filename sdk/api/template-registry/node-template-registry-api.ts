@@ -1,6 +1,6 @@
 /**
- * NodeRegistryAPI - 节点模板管理API
- * 封装NodeRegistry，提供节点模板的CRUD操作
+ * NodeTemplateRegistryAPI - 节点模板管理API
+ * 封装NodeTemplateRegistry，提供节点模板的CRUD操作
  */
 
 import { nodeTemplateRegistry, type NodeTemplateRegistry } from '../../core/services/node-template-registry';
@@ -10,7 +10,7 @@ import type { ValidationResult } from '../../types/errors';
 import { ValidationError } from '../../types/errors';
 
 /**
- * NodeRegistryAPI - 节点模板管理API
+ * NodeTemplateRegistryAPI - 节点模板管理API
  */
 export class NodeRegistryAPI {
   private registry: NodeTemplateRegistry;

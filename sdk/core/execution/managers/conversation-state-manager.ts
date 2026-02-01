@@ -239,12 +239,4 @@ export class ConversationStateManager {
 
     return cloned;
   }
-
-  /**
-   * 获取 ConversationManager 实例（用于内部操作）
-   * @returns ConversationManager 实例
-   */
-  getConversationManager(): ConversationManager {
-    return this.conversationManager;
-  }
 }
