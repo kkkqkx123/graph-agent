@@ -1,9 +1,12 @@
 /**
  * ThreadExecutorAPI - 主执行入口API
- * 封装ThreadCoordinator，提供简洁的执行接口
+ * 封装ThreadLifecycleCoordinator，提供简洁的执行接口
  */
 
-import { ThreadCoordinator } from '../../core/execution/thread-coordinator';
+import { ThreadLifecycleCoordinator } from '../../core/execution/coordinators/thread-lifecycle-coordinator';
+import { ThreadOperationCoordinator } from '../../core/execution/coordinators/thread-operation-coordinator';
+import { ThreadVariableCoordinator } from '../../core/execution/coordinators/thread-variable-coordinator';
+import { threadRegistry } from '../../core/services/thread-registry';
 import { workflowRegistry, type WorkflowRegistry } from '../../core/services/workflow-registry';
 import type { WorkflowDefinition } from '../../types/workflow';
 import type { ThreadResult, ThreadOptions } from '../../types/thread';
@@ -13,12 +16,22 @@ import type { ExecuteOptions } from '../types/core-types';
  * ThreadExecutorAPI - 主执行入口API
  */
 export class ThreadExecutorAPI {
-  private coordinator: ThreadCoordinator;
+  private lifecycleCoordinator: ThreadLifecycleCoordinator;
+  private operationCoordinator: ThreadOperationCoordinator;
+  private variableCoordinator: ThreadVariableCoordinator;
   private workflowRegistry: WorkflowRegistry;
 
   constructor(workflowRegistryParam?: WorkflowRegistry) {
     this.workflowRegistry = workflowRegistryParam || workflowRegistry;
-    this.coordinator = new ThreadCoordinator(this.workflowRegistry);
+    this.lifecycleCoordinator = new ThreadLifecycleCoordinator(
+      threadRegistry,
+      this.workflowRegistry
+    );
+    this.operationCoordinator = new ThreadOperationCoordinator(
+      threadRegistry,
+      this.workflowRegistry
+    );
+    this.variableCoordinator = new ThreadVariableCoordinator();
   }
 
   /**
@@ -28,7 +41,7 @@ export class ThreadExecutorAPI {
    * @returns 线程执行结果
    */
   async executeWorkflow(workflowId: string, options?: ExecuteOptions): Promise<ThreadResult> {
-    return this.coordinator.execute(workflowId, this.convertOptions(options));
+    return this.lifecycleCoordinator.execute(workflowId, this.convertOptions(options));
   }
 
   /**
@@ -42,7 +55,7 @@ export class ThreadExecutorAPI {
     workflowRegistry.register(workflow);
 
     // 执行工作流
-    return this.coordinator.execute(workflow.id, this.convertOptions(options));
+    return this.lifecycleCoordinator.execute(workflow.id, this.convertOptions(options));
   }
 
   /**
@@ -50,7 +63,7 @@ export class ThreadExecutorAPI {
    * @param threadId 线程ID
    */
   async pauseThread(threadId: string): Promise<void> {
-    await this.coordinator.pauseThread(threadId);
+    await this.lifecycleCoordinator.pauseThread(threadId);
   }
 
   /**
@@ -60,7 +73,7 @@ export class ThreadExecutorAPI {
    * @returns 线程执行结果
    */
   async resumeThread(threadId: string, options?: ExecuteOptions): Promise<ThreadResult> {
-    return this.coordinator.resumeThread(threadId);
+    return this.lifecycleCoordinator.resumeThread(threadId);
   }
 
   /**
@@ -68,7 +81,7 @@ export class ThreadExecutorAPI {
    * @param threadId 线程ID
    */
   async cancelThread(threadId: string): Promise<void> {
-    await this.coordinator.stopThread(threadId);
+    await this.lifecycleCoordinator.stopThread(threadId);
   }
 
   /**
@@ -77,7 +90,10 @@ export class ThreadExecutorAPI {
    * @param variables 变量对象
    */
   async setVariables(threadId: string, variables: Record<string, any>): Promise<void> {
-    await this.coordinator.setVariables(threadId, variables);
+    const threadContext = this.lifecycleCoordinator.getThreadRegistry().get(threadId);
+    if (threadContext) {
+      await this.variableCoordinator.setVariables(threadContext, variables);
+    }
   }
 
   /**
@@ -87,7 +103,7 @@ export class ThreadExecutorAPI {
    * @returns 子线程ID数组
    */
   async forkThread(parentThreadId: string, forkConfig: { forkId: string; forkStrategy?: 'serial' | 'parallel'; startNodeId?: string }): Promise<string[]> {
-    return this.coordinator.fork(parentThreadId, forkConfig);
+    return this.operationCoordinator.fork(parentThreadId, forkConfig);
   }
 
   /**
@@ -104,7 +120,7 @@ export class ThreadExecutorAPI {
     joinStrategy: 'ALL_COMPLETED' | 'ANY_COMPLETED' | 'ALL_FAILED' | 'ANY_FAILED' | 'SUCCESS_COUNT_THRESHOLD' = 'ALL_COMPLETED',
     timeout: number = 60
   ): Promise<{ success: boolean; output: any; completedThreads: any[]; failedThreads: any[] }> {
-    return this.coordinator.join(parentThreadId, childThreadIds, joinStrategy, timeout);
+    return this.operationCoordinator.join(parentThreadId, childThreadIds, joinStrategy, timeout);
   }
 
   /**
@@ -113,7 +129,7 @@ export class ThreadExecutorAPI {
    * @returns 副本线程ID
    */
   async copyThread(sourceThreadId: string): Promise<string> {
-    return this.coordinator.copy(sourceThreadId);
+    return this.operationCoordinator.copy(sourceThreadId);
   }
 
   /**
@@ -122,7 +138,8 @@ export class ThreadExecutorAPI {
    * @returns 线程实例
    */
   getThread(threadId: string) {
-    return this.coordinator.getThread(threadId);
+    const threadContext = this.lifecycleCoordinator.getThreadRegistry().get(threadId);
+    return threadContext?.thread;
   }
 
   /**
@@ -131,7 +148,7 @@ export class ThreadExecutorAPI {
    * @returns 线程上下文实例
    */
   getThreadContext(threadId: string) {
-    return this.coordinator.getThreadContext(threadId);
+    return this.lifecycleCoordinator.getThreadRegistry().get(threadId);
   }
 
   /**
@@ -139,7 +156,7 @@ export class ThreadExecutorAPI {
    * @returns 事件管理器实例
    */
   getEventManager() {
-    return this.coordinator.getEventManager();
+    return this.lifecycleCoordinator.getEventManager();
   }
 
   /**
@@ -147,7 +164,7 @@ export class ThreadExecutorAPI {
    * @returns 线程注册表实例
    */
   getThreadRegistry() {
-    return this.coordinator.getThreadRegistry();
+    return this.lifecycleCoordinator.getThreadRegistry();
   }
 
   /**
@@ -159,20 +176,36 @@ export class ThreadExecutorAPI {
   }
 
   /**
-   * 获取协调器
-   * @returns 协调器实例
+   * 获取生命周期协调器
+   * @returns 生命周期协调器实例
    */
-  getCoordinator(): ThreadCoordinator {
-    return this.coordinator;
+  getLifecycleCoordinator(): ThreadLifecycleCoordinator {
+    return this.lifecycleCoordinator;
   }
 
   /**
-    * 获取触发器管理器
-    * @param threadId 线程ID
-    * @returns 触发器管理器实例
-    */
+   * 获取操作协调器
+   * @returns 操作协调器实例
+   */
+  getOperationCoordinator(): ThreadOperationCoordinator {
+    return this.operationCoordinator;
+  }
+
+  /**
+   * 获取变量协调器
+   * @returns 变量协调器实例
+   */
+  getVariableCoordinator(): ThreadVariableCoordinator {
+    return this.variableCoordinator;
+  }
+
+  /**
+     * 获取触发器管理器
+     * @param threadId 线程ID
+     * @returns 触发器管理器实例
+     */
   getTriggerManager(threadId: string) {
-    const threadContext = this.coordinator.getThreadContext(threadId);
+    const threadContext = this.lifecycleCoordinator.getThreadRegistry().get(threadId);
     return threadContext?.triggerManager;
   }
 

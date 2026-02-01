@@ -19,6 +19,7 @@ import type { ID } from '../../../types/common';
 import type { StatefulToolFactory } from '../../../types/tool';
 import { ConversationManager } from '../conversation';
 import { VariableManager } from '../managers/variable-manager';
+import { ConversationStateManager } from '../managers/conversation-state-manager';
 import { TriggerCoordinator } from '../coordinators/trigger-coordinator';
 import { TriggerStateManager, type TriggerRuntimeState } from '../managers/trigger-state-manager';
 import { GraphNavigator } from '../../graph/graph-navigator';
@@ -36,9 +37,14 @@ export class ThreadContext {
   public readonly thread: Thread;
 
   /**
-   * 对话管理器
+   * 对话管理器（保留用于向后兼容）
    */
   public readonly conversationManager: ConversationManager;
+
+  /**
+   * 对话状态管理器
+   */
+  public readonly conversationStateManager: ConversationStateManager;
 
   /**
    * 变量管理器
@@ -97,6 +103,16 @@ export class ThreadContext {
     this.conversationManager = conversationManager;
     this.threadRegistry = threadRegistry;
     this.variableManager = new VariableManager();
+
+    // 初始化对话状态管理器
+    this.conversationStateManager = new ConversationStateManager(
+      thread.id,
+      {
+        tokenLimit: (conversationManager as any).tokenUsageTracker?.tokenLimit,
+        eventManager: (conversationManager as any).eventManager,
+        workflowId: thread.workflowId
+      }
+    );
 
     // 初始化触发器状态管理器
     this.triggerStateManager = new TriggerStateManager(thread.id);

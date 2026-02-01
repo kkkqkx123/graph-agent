@@ -35,12 +35,14 @@ import { EventCoordinator } from './coordinators/event-coordinator';
 import { NodeExecutionCoordinator } from './coordinators/node-execution-coordinator';
 import { handleNodeFailure, handleExecutionError } from './handlers/error-handler';
 import { enterSubgraph, exitSubgraph, getSubgraphInput, getSubgraphOutput } from './handlers/subgraph-handler';
+import { LLMExecutor } from './llm-executor';
+import { toolService } from '../services/tool-service';
 import {
   executeSingleTriggeredSubgraph,
   type TriggeredSubgraphTask,
   type SubgraphContextFactory
 } from './handlers/triggered-subgraph-handler';
-import { LLMCoordinator } from './llm-coordinator';
+import { LLMExecutionCoordinator } from './coordinators/llm-execution-coordinator';
 import { ThreadBuilder } from './thread-builder';
 import { threadRegistry } from '../services/thread-registry';
 import { workflowRegistry } from '../services/workflow-registry';
@@ -85,13 +87,16 @@ export class ThreadExecutor implements SubgraphContextFactory {
     // 创建线程构建器（使用默认ExecutionContext）
     this.threadBuilder = new ThreadBuilder(this.workflowRegistry);
 
-    // 获取 LLM 协调器单例
-    const llmCoordinator = LLMCoordinator.getInstance();
+    // 创建 LLM 执行协调器
+    const llmExecutionCoordinator = new LLMExecutionCoordinator(
+      LLMExecutor.getInstance(),
+      toolService
+    );
 
     // 创建节点执行协调器
     this.nodeExecutionCoordinator = new NodeExecutionCoordinator(
       this.eventCoordinator,
-      llmCoordinator
+      llmExecutionCoordinator
     );
   }
 

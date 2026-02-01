@@ -19,7 +19,7 @@ import { ThreadContext } from '../context/thread-context';
 import type { Node } from '../../../types/node';
 import type { NodeExecutionResult } from '../../../types/thread';
 import { EventCoordinator } from './event-coordinator';
-import { LLMCoordinator, type LLMExecutionParams } from '../llm-coordinator';
+import { LLMExecutionCoordinator, type LLMExecutionParams } from './llm-execution-coordinator';
 import { enterSubgraph, exitSubgraph, getSubgraphInput, getSubgraphOutput } from '../handlers/subgraph-handler';
 import { EventType } from '../../../types/events';
 import type { NodeStartedEvent, NodeCompletedEvent, NodeFailedEvent, SubgraphStartedEvent, SubgraphCompletedEvent } from '../../../types/events';
@@ -30,7 +30,6 @@ import { now, diffTimestamp } from '../../../utils';
 import { getNodeHandler } from '../handlers/node-handlers';
 import {
   transformContextProcessorNodeConfig,
-  type ContextProcessorExecutionData
 } from '../handlers/node-handlers/config-utils';
 import { SUBGRAPH_METADATA_KEYS, SubgraphBoundaryType } from '../../../types/subgraph';
 import type { ContextProcessorNodeConfig } from '../../../types/node';
@@ -49,7 +48,7 @@ import {
 export class NodeExecutionCoordinator {
   constructor(
     private eventCoordinator: EventCoordinator,
-    private llmCoordinator: LLMCoordinator
+    private llmCoordinator: LLMExecutionCoordinator
   ) { }
 
   /**
@@ -255,15 +254,18 @@ export class NodeExecutionCoordinator {
       // 提取LLM请求数据
       const requestData = extractLLMRequestData(node, threadContext);
 
-      // 直接调用 LLMCoordinator
-      const result = await this.llmCoordinator.executeLLM({
-        threadId: threadContext.getThreadId(),
-        nodeId: node.id,
-        prompt: requestData.prompt,
-        profileId: requestData.profileId,
-        parameters: requestData.parameters,
-        tools: requestData.tools
-      });
+      // 调用 LLMExecutionCoordinator，传入 conversationState
+      const result = await this.llmCoordinator.executeLLM(
+        {
+          threadId: threadContext.getThreadId(),
+          nodeId: node.id,
+          prompt: requestData.prompt,
+          profileId: requestData.profileId,
+          parameters: requestData.parameters,
+          tools: requestData.tools
+        },
+        threadContext.conversationStateManager
+      );
 
       const endTime = now();
 

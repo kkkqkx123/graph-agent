@@ -12,9 +12,17 @@
  * - EventCoordinator: 事件协调器
  * - NodeExecutionCoordinator: 节点执行协调器
  * - TriggerCoordinator: 触发器协调器
+ * - LLMExecutionCoordinator: LLM 执行协调器
+ * - ThreadLifecycleCoordinator: Thread 生命周期协调器
+ * - ThreadOperationCoordinator: Thread 操作协调器
+ * - ThreadVariableCoordinator: Thread 变量协调器
  */
 
 export { EventCoordinator } from './event-coordinator';
 export { NodeExecutionCoordinator } from './node-execution-coordinator';
 export { TriggerCoordinator } from './trigger-coordinator';
+export { LLMExecutionCoordinator } from './llm-execution-coordinator';
+export { ThreadLifecycleCoordinator } from './thread-lifecycle-coordinator';
+export { ThreadOperationCoordinator } from './thread-operation-coordinator';
+export { ThreadVariableCoordinator } from './thread-variable-coordinator';
 export { VariableAccessor, VariableNamespace } from '../managers/utils/variable-accessor';

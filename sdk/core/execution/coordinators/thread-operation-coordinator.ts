@@ -1,0 +1,187 @@
+/**
+ * Thread 操作协调器
+ * 负责协调 Thread 的结构操作（Fork/Join/Copy）
+ *
+ * 核心职责：
+ * 1. 协调 Fork 操作 - 创建子 Thread
+ * 2. 协调 Join 操作 - 合并子 Thread 结果
+ * 3. 协调 Copy 操作 - 创建 Thread 副本
+ * 4. 触发相关事件
+ *
+ * 设计原则：
+ * - 无状态设计：不持有任何实例变量
+ * - 依赖注入：通过构造函数接收依赖
+ * - 专门处理 Thread 结构变更操作
+ */
+
+import type { ForkConfig, JoinResult } from '../thread-operations/thread-operations';
+import { threadRegistry, type ThreadRegistry } from '../../services/thread-registry';
+import { ThreadBuilder } from '../thread-builder';
+import type { EventManager } from '../../services/event-manager';
+import { eventManager } from '../../services/event-manager';
+import type { WorkflowRegistry } from '../../services/workflow-registry';
+import { workflowRegistry } from '../../services/workflow-registry';
+import { NotFoundError } from '../../../types/errors';
+import { EventType } from '../../../types/events';
+import type {
+  ThreadForkedEvent,
+  ThreadJoinedEvent,
+  ThreadCopiedEvent
+} from '../../../types/events';
+import { fork, join, copy } from '../thread-operations/thread-operations';
+import { now } from '../../../utils';
+
+/**
+ * Thread 操作协调器类
+ *
+ * 职责：
+ * - 协调 Thread 的结构操作（Fork/Join/Copy）
+ * - 处理 Thread 之间的关系管理
+ * - 触发相关事件
+ *
+ * 设计原则：
+ * - 无状态设计：不持有任何实例变量
+ * - 依赖注入：通过构造函数接收依赖
+ * - 专门处理 Thread 结构变更操作
+ */
+export class ThreadOperationCoordinator {
+  constructor(
+    private threadRegistry: ThreadRegistry = threadRegistry,
+    private workflowRegistry: WorkflowRegistry = workflowRegistry,
+    private eventManager: EventManager = eventManager
+  ) {}
+
+  /**
+   * Fork 操作 - 创建子 Thread
+   *
+   * @param parentThreadId 父线程 ID
+   * @param forkConfig Fork 配置
+   * @returns 子线程 ID 数组
+   */
+  async fork(parentThreadId: string, forkConfig: ForkConfig): Promise<string[]> {
+    // 步骤 1：获取父线程上下文
+    const parentThreadContext = this.threadRegistry.get(parentThreadId);
+    if (!parentThreadContext) {
+      throw new NotFoundError(`Parent thread not found: ${parentThreadId}`, 'Thread', parentThreadId);
+    }
+
+    // 步骤 2：使用 ThreadOperations 创建子线程
+    const threadBuilder = new ThreadBuilder(this.workflowRegistry);
+    const childThreadContext = await fork(parentThreadContext, forkConfig, threadBuilder);
+
+    // 步骤 3：注册子线程
+    this.threadRegistry.register(childThreadContext);
+
+    // 步骤 4：触发 THREAD_FORKED 事件
+    const forkedEvent: ThreadForkedEvent = {
+      type: EventType.THREAD_FORKED,
+      timestamp: now(),
+      workflowId: parentThreadContext.getWorkflowId(),
+      threadId: parentThreadId,
+      parentThreadId,
+      childThreadIds: [childThreadContext.getThreadId()]
+    };
+    await this.eventManager.emit(forkedEvent);
+
+    // 步骤 5：返回子线程 ID 数组
+    return [childThreadContext.getThreadId()];
+  }
+
+  /**
+   * Join 操作 - 合并子 Thread 结果
+   *
+   * @param parentThreadId 父线程 ID
+   * @param childThreadIds 子线程 ID 数组
+   * @param joinStrategy Join 策略
+   * @param timeout 超时时间（秒）
+   * @returns Join 结果
+   */
+  async join(
+    parentThreadId: string,
+    childThreadIds: string[],
+    joinStrategy: 'ALL_COMPLETED' | 'ANY_COMPLETED' | 'ALL_FAILED' | 'ANY_FAILED' | 'SUCCESS_COUNT_THRESHOLD' = 'ALL_COMPLETED',
+    timeout: number = 60
+  ): Promise<JoinResult> {
+    // 步骤 1：获取父线程上下文
+    const parentThreadContext = this.threadRegistry.get(parentThreadId);
+    if (!parentThreadContext) {
+      throw new NotFoundError(`Parent thread not found: ${parentThreadId}`, 'Thread', parentThreadId);
+    }
+
+    // 步骤 2：使用 ThreadOperations 执行 Join
+    const joinResult = await join(
+      childThreadIds,
+      joinStrategy,
+      this.threadRegistry,
+      timeout * 1000
+    );
+
+    // 步骤 3：触发 THREAD_JOINED 事件
+    const joinedEvent: ThreadJoinedEvent = {
+      type: EventType.THREAD_JOINED,
+      timestamp: now(),
+      workflowId: parentThreadContext.getWorkflowId(),
+      threadId: parentThreadId,
+      parentThreadId,
+      childThreadIds,
+      joinStrategy
+    };
+    await this.eventManager.emit(joinedEvent);
+
+    // 步骤 4：返回 Join 结果
+    return joinResult;
+  }
+
+  /**
+   * Copy 操作 - 创建 Thread 副本
+   *
+   * @param sourceThreadId 源线程 ID
+   * @returns 副本线程 ID
+   */
+  async copy(sourceThreadId: string): Promise<string> {
+    // 步骤 1：获取源线程上下文
+    const sourceThreadContext = this.threadRegistry.get(sourceThreadId);
+    if (!sourceThreadContext) {
+      throw new NotFoundError(`Source thread not found: ${sourceThreadId}`, 'Thread', sourceThreadId);
+    }
+
+    // 步骤 2：使用 ThreadOperations 创建副本
+    const threadBuilder = new ThreadBuilder(this.workflowRegistry);
+    const copiedThreadContext = await copy(sourceThreadContext, threadBuilder);
+
+    // 步骤 3：注册副本线程
+    this.threadRegistry.register(copiedThreadContext);
+
+    // 步骤 4：触发 THREAD_COPIED 事件
+    const copiedEvent: ThreadCopiedEvent = {
+      type: EventType.THREAD_COPIED,
+      timestamp: now(),
+      workflowId: sourceThreadContext.getWorkflowId(),
+      threadId: sourceThreadId,
+      sourceThreadId,
+      copiedThreadId: copiedThreadContext.getThreadId()
+    };
+    await this.eventManager.emit(copiedEvent);
+
+    // 步骤 5：返回副本线程 ID
+    return copiedThreadContext.getThreadId();
+  }
+
+  /**
+   * 获取 ThreadRegistry
+   *
+   * @returns ThreadRegistry 实例
+   */
+  getThreadRegistry(): ThreadRegistry {
+    return this.threadRegistry;
+  }
+
+  /**
+   * 获取 EventManager
+   *
+   * @returns EventManager 实例
+   */
+  getEventManager(): EventManager {
+    return this.eventManager;
+  }
+}

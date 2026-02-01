@@ -24,8 +24,8 @@ export { ThreadRegistry } from '../services/thread-registry';
 // 变量管理器
 export { VariableManager } from './managers/variable-manager';
 
-// Thread协调器
-export { ThreadCoordinator } from './thread-coordinator';
+// 对话状态管理器
+export { ConversationStateManager, type ConversationState } from './managers/conversation-state-manager';
 
 // Thread操作工具函数
 export {
