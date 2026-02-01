@@ -286,29 +286,42 @@ export interface ContextProcessorNodeConfig {
 
 /**
  * 循环开始节点配置
+ * 
+ * 说明：初始化循环迭代，将当前迭代值存储到循环变量
+ * - iterable 和 variableName 的关系：iterable 是被迭代的数据源，variableName 是每次迭代时当前值的存储位置
+ * - variableName 存储在 loop 级作用域中，支持自定义命名（默认为 loopId）
+ * - 循环状态（迭代计数、索引等）存储在 loop 级作用域，自动随作用域生命周期管理
+ * - iterable 支持两种形式：直接值（数组、对象、数字、字符串）或变量表达式（如 {{input.list}}, {{thread.data}}）
  */
 export interface LoopStartNodeConfig {
-  /** 循环名 */
+  /** 循环ID（唯一标识此循环） */
   loopId: string;
-  /** 可迭代对象 */
+  /** 可迭代对象或变量表达式
+   * - 直接值：数组、对象、数字、字符串
+   * - 变量表达式：支持 {{variable.path}} 语法，在运行时从 thread 和 input 中解析
+   * 例：[1,2,3] 或 "{{input.list}}" 或 "{{thread.items}}"
+   */
   iterable: any;
-  /** 最大迭代次数 */
+  /** 最大迭代次数（安全保护） */
   maxIterations: number;
-  /** 循环变量名（可选，默认为loopId） */
+  /** 循环变量名，存储当前迭代值（可选，默认为loopId） */
   variableName?: string;
 }
 
 /**
  * 循环结束节点配置
+ * 
+ * 说明：检查循环条件和中断条件，决定是否继续迭代
+ * - loopId 唯一标识循环，用于检索 LOOP_START 中初始化的循环状态
+ * - 循环状态（iterable、iterationCount 等）已在 LOOP_START 中初始化并存储，无需重复定义
+ * - 所有循环数据和状态都在 loop 级作用域中，与其他作用域隔离
  */
 export interface LoopEndNodeConfig {
-  /** 循环名，与loop start节点完全一致 */
+  /** 循环ID（与LOOP_START节点完全一致，用于标识和检索循环状态） */
   loopId: string;
-  /** 可迭代对象，与loop start节点完全一致 */
-  iterable: any;
-  /** 中断条件 */
+  /** 中断条件表达式（可选，满足时立即退出循环） */
   breakCondition?: any;
-  /** LOOP_START节点ID（用于跳转） */
+  /** LOOP_START节点ID（用于跳转到下一迭代） */
   loopStartNodeId?: string;
 }
 

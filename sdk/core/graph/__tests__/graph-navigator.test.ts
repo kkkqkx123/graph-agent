@@ -328,7 +328,12 @@ describe('GraphNavigator', () => {
       const navigator = new GraphNavigator(graph);
 
       const mockThread = {
-        variableValues: {},
+        variableScopes: {
+          global: {},
+          thread: {},
+          subgraph: [],
+          loop: []
+        },
         input: {},
         output: {},
       };
@@ -353,7 +358,12 @@ describe('GraphNavigator', () => {
       const navigator = new GraphNavigator(graph);
 
       const mockThread = {
-        variableValues: {},
+        variableScopes: {
+          global: {},
+          thread: {},
+          subgraph: [],
+          loop: []
+        },
         input: {},
         output: {},
       };
@@ -373,7 +383,12 @@ describe('GraphNavigator', () => {
       const navigator = new GraphNavigator(graph);
 
       const mockThread = {
-        variableValues: {},
+        variableScopes: {
+          global: {},
+          thread: {},
+          subgraph: [],
+          loop: []
+        },
         input: {},
         output: {},
       };
@@ -392,7 +407,12 @@ describe('GraphNavigator', () => {
       const navigator = new GraphNavigator(graph);
 
       const mockThread = {
-        variableValues: {},
+        variableScopes: {
+          global: {},
+          thread: {},
+          subgraph: [],
+          loop: []
+        },
         input: {},
         output: {},
       };

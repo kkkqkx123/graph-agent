@@ -55,7 +55,6 @@ export class VariableManager {
   initializeFromWorkflow(thread: Thread, workflow: WorkflowDefinition): void {
     if (!workflow.variables || workflow.variables.length === 0) {
       thread.variables = [];
-      thread.variableValues = {};
       thread.variableScopes = {
         global: {},
         thread: {},
@@ -94,7 +93,6 @@ export class VariableManager {
           break;
         case 'thread':
           thread.variableScopes.thread[variable.name] = variable.value;
-          thread.variableValues[variable.name] = variable.value;
           break;
         case 'subgraph':
         case 'loop':
@@ -197,7 +195,6 @@ export class VariableManager {
         break;
       case 'thread':
         thread.variableScopes.thread[name] = value;
-        thread.variableValues[name] = value;
         break;
       case 'subgraph':
         if (thread.variableScopes.subgraph.length === 0) {
@@ -426,8 +423,6 @@ export class VariableManager {
       loop: []
     };
 
-    // 向后兼容的 variableValues
-    targetThread.variableValues = { ...sourceThread.variableValues };
   }
 
   /**
@@ -436,7 +431,6 @@ export class VariableManager {
    */
   clearVariables(thread: Thread): void {
     thread.variables = [];
-    thread.variableValues = {};
     thread.variableScopes = {
       global: {},
       thread: {},
@@ -527,27 +521,11 @@ export class VariableManager {
     }
   ): void {
     thread.variables = snapshot.variables.map(v => ({ ...v }));
-    thread.variableValues = this.extractVariableValues(snapshot.variables);
     thread.variableScopes = {
       global: { ...snapshot.variableScopes.global },
       thread: { ...snapshot.variableScopes.thread },
       subgraph: snapshot.variableScopes.subgraph.map(scope => ({ ...scope })),
       loop: snapshot.variableScopes.loop.map(scope => ({ ...scope }))
     };
-  }
-
-  /**
-   * 从变量数组提取变量值映射（仅 thread 作用域）
-   * @param variables 变量数组
-   * @returns 变量值映射
-   */
-  private extractVariableValues(variables: ThreadVariable[]): Record<string, any> {
-    const variableValues: Record<string, any> = {};
-    for (const variable of variables) {
-      if (variable.scope === 'thread') {
-        variableValues[variable.name] = variable.value;
-      }
-    }
-    return variableValues;
   }
 }

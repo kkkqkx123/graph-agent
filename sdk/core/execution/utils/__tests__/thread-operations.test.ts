@@ -71,7 +71,6 @@ describe('ThreadOperations', () => {
         currentNodeId: 'node1',
         graph: mockGraph,
         variables: [],
-        variableValues: {},
         variableScopes: {
           global: {},
           thread: {},
@@ -147,7 +146,6 @@ describe('ThreadOperations', () => {
         currentNodeId: 'node2',
         graph: mockGraph,
         variables: [],
-        variableValues: {},
         variableScopes: {
           global: {},
           thread: {},
@@ -244,7 +242,7 @@ describe('ThreadOperations', () => {
 
     it('应该在没有提供 forkId 时抛出 ValidationError', async () => {
       const invalidConfig = { ...mockForkConfig, forkId: '' };
-      
+
       await expect(fork(mockParentThreadContext, invalidConfig, mockThreadBuilder))
         .rejects
         .toThrow(ValidationError);
@@ -252,7 +250,7 @@ describe('ThreadOperations', () => {
 
     it('应该在提供无效 forkStrategy 时抛出 ValidationError', async () => {
       const invalidConfig = { ...mockForkConfig, forkStrategy: 'invalid' as any };
-      
+
       await expect(fork(mockParentThreadContext, invalidConfig, mockThreadBuilder))
         .rejects
         .toThrow(ValidationError);
@@ -297,7 +295,6 @@ describe('ThreadOperations', () => {
         currentNodeId: 'node1',
         graph: mockGraph,
         variables: [],
-        variableValues: {},
         variableScopes: {
           global: {},
           thread: {},
@@ -397,7 +394,7 @@ describe('ThreadOperations', () => {
         ...mockChildThreadContext.thread,
         status: ThreadStatus.RUNNING
       };
-      
+
       const mockRunningContext = {
         ...mockChildThreadContext,
         subgraphExecutionHistory: [],
@@ -545,23 +542,23 @@ describe('ThreadOperations', () => {
     });
 
     it('应该根据 ANY_COMPLETED 策略进行合并', async () => {
-      const completedThread: Thread = { 
-        ...mockChildThreadContext.thread, 
-        id: 'child1', 
-        status: ThreadStatus.COMPLETED, 
-        output: { data: 'result1' } 
+      const completedThread: Thread = {
+        ...mockChildThreadContext.thread,
+        id: 'child1',
+        status: ThreadStatus.COMPLETED,
+        output: { data: 'result1' }
       };
-      const runningThread: Thread = { 
-        ...mockChildThreadContext.thread, 
-        id: 'child2', 
-        status: ThreadStatus.RUNNING, 
-        output: {} 
+      const runningThread: Thread = {
+        ...mockChildThreadContext.thread,
+        id: 'child2',
+        status: ThreadStatus.RUNNING,
+        output: {}
       };
-      const failedThread: Thread = { 
-        ...mockChildThreadContext.thread, 
-        id: 'child3', 
-        status: ThreadStatus.FAILED, 
-        output: {} 
+      const failedThread: Thread = {
+        ...mockChildThreadContext.thread,
+        id: 'child3',
+        status: ThreadStatus.FAILED,
+        output: {}
       };
 
       const mockContexts = [
@@ -587,17 +584,17 @@ describe('ThreadOperations', () => {
     });
 
     it('应该根据 ANY_FAILED 策略进行合并', async () => {
-      const runningThread: Thread = { 
-        ...mockChildThreadContext.thread, 
-        id: 'child1', 
-        status: ThreadStatus.RUNNING, 
-        output: {} 
+      const runningThread: Thread = {
+        ...mockChildThreadContext.thread,
+        id: 'child1',
+        status: ThreadStatus.RUNNING,
+        output: {}
       };
-      const failedThread: Thread = { 
-        ...mockChildThreadContext.thread, 
-        id: 'child2', 
-        status: ThreadStatus.FAILED, 
-        output: { error: 'some error' } 
+      const failedThread: Thread = {
+        ...mockChildThreadContext.thread,
+        id: 'child2',
+        status: ThreadStatus.FAILED,
+        output: { error: 'some error' }
       };
 
       const mockContexts = [
@@ -626,7 +623,7 @@ describe('ThreadOperations', () => {
     it('validateJoinStrategy 应该正确验证 ALL_COMPLETED 策略', () => {
       // 使用反射或私有方法访问来测试内部函数
       // 由于 TypeScript 限制，我们直接测试外部行为
-      const completedThreads: Thread[] = [{ 
+      const completedThreads: Thread[] = [{
         id: 'thread1',
         workflowId: 'test-workflow',
         workflowVersion: '1.0.0',
@@ -634,7 +631,6 @@ describe('ThreadOperations', () => {
         currentNodeId: 'node1',
         graph: mockGraph,
         variables: [],
-        variableValues: {},
         variableScopes: {
           global: {},
           thread: {},
@@ -673,7 +669,7 @@ describe('ThreadOperations', () => {
     });
 
     it('validateJoinStrategy 应该正确验证 ANY_COMPLETED 策略', () => {
-      const completedThreads: Thread[] = [{ 
+      const completedThreads: Thread[] = [{
         id: 'thread1',
         workflowId: 'test-workflow',
         workflowVersion: '1.0.0',
@@ -681,7 +677,6 @@ describe('ThreadOperations', () => {
         currentNodeId: 'node1',
         graph: mockGraph,
         variables: [],
-        variableValues: {},
         variableScopes: {
           global: {},
           thread: {},
@@ -694,7 +689,7 @@ describe('ThreadOperations', () => {
         startTime: Date.now(),
         errors: []
       }];
-      const failedThreads: Thread[] = [{ 
+      const failedThreads: Thread[] = [{
         id: 'thread2',
         workflowId: 'test-workflow',
         workflowVersion: '1.0.0',
@@ -702,7 +697,6 @@ describe('ThreadOperations', () => {
         currentNodeId: 'node1',
         graph: mockGraph,
         variables: [],
-        variableValues: {},
         variableScopes: {
           global: {},
           thread: {},
@@ -747,7 +741,6 @@ describe('ThreadOperations', () => {
         currentNodeId: 'node1',
         graph: mockGraph,
         variables: [],
-        variableValues: {},
         variableScopes: {
           global: {},
           thread: {},
@@ -784,7 +777,7 @@ describe('ThreadOperations', () => {
 
     it('mergeResults 应该正确合并多个线程的结果', () => {
       const completedThreads: Thread[] = [
-        { 
+        {
           id: 'thread1',
           workflowId: 'test-workflow',
           workflowVersion: '1.0.0',
@@ -792,7 +785,6 @@ describe('ThreadOperations', () => {
           currentNodeId: 'node1',
           graph: mockGraph,
           variables: [],
-          variableValues: {},
           variableScopes: {
             global: {},
             thread: {},
@@ -805,7 +797,7 @@ describe('ThreadOperations', () => {
           startTime: Date.now(),
           errors: []
         },
-        { 
+        {
           id: 'thread2',
           workflowId: 'test-workflow',
           workflowVersion: '1.0.0',
@@ -813,7 +805,6 @@ describe('ThreadOperations', () => {
           currentNodeId: 'node1',
           graph: mockGraph,
           variables: [],
-          variableValues: {},
           variableScopes: {
             global: {},
             thread: {},

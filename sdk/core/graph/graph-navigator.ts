@@ -241,7 +241,7 @@ export class GraphNavigator {
 
     // 构建评估上下文
     const context = {
-      variables: thread.variableValues,
+      variables: thread.variableScopes.thread,
       input: thread.input,
       output: thread.output
     };

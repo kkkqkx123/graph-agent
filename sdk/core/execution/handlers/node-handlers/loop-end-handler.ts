@@ -44,17 +44,23 @@ function canExecute(thread: Thread, node: Node): boolean {
  * 获取循环状态
  */
 function getLoopState(thread: Thread, loopId: string): LoopState | undefined {
-  return thread.variableValues?.[`__loop_${loopId}`];
+  const currentLoopScope = thread.variableScopes.loop[thread.variableScopes.loop.length - 1];
+  if (currentLoopScope) {
+    return currentLoopScope[`__loop_state`];
+  }
+  return undefined;
 }
 
 /**
- * 清除循环状态
+ * 清除循环状态及作用域
  */
 function clearLoopState(thread: Thread, loopId: string): void {
-  if (thread.variableValues) {
-    delete thread.variableValues[`__loop_${loopId}`];
+  // 清除循环状态对象
+  const currentLoopScope = thread.variableScopes.loop[thread.variableScopes.loop.length - 1];
+  if (currentLoopScope) {
+    delete currentLoopScope[`__loop_state`];
   }
-  
+
   // 退出循环作用域
   if (thread.variableScopes && thread.variableScopes.loop.length > 0) {
     thread.variableScopes.loop.pop();
@@ -68,7 +74,7 @@ function evaluateBreakCondition(breakCondition: any, thread: Thread): boolean {
   try {
     // 构建评估上下文
     const context = {
-      variables: thread.variableValues || {},
+      variables: thread.variableScopes.thread,
       input: thread.input || {},
       output: thread.output || {}
     };
@@ -82,7 +88,7 @@ function evaluateBreakCondition(breakCondition: any, thread: Thread): boolean {
       thread.workflowId,
       {
         breakCondition,
-        variables: thread.variableValues,
+        variables: thread.variableScopes.thread,
         input: thread.input,
         output: thread.output
       },

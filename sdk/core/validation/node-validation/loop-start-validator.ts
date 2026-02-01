@@ -10,25 +10,22 @@ import { ValidationError } from '../../../types/errors';
 
 /**
  * LoopStart节点配置schema
+ * 
+ * iterable 支持两种形式：
+ * 1. 直接值：数组、对象、数字、字符串
+ * 2. 变量表达式字符串：{{variable.path}} 形式
+ * 
+ * 注意：变量表达式的实际解析和验证在运行时由 loopStartHandler 负责
  */
 const loopStartNodeConfigSchema = z.object({
   loopId: z.string().min(1, 'Loop ID is required'),
-  iterable: z.any().refine((val) => val !== undefined && val !== null, 'Iterable is required'),
+  iterable: z.any().refine(
+    (val) => val !== undefined && val !== null,
+    'Iterable is required'
+  ),
   maxIterations: z.number().positive('Max iterations must be positive'),
   variableName: z.string().optional()
-}).refine(
-  (data) => {
-    // 验证iterable是否为有效类型
-    const isValidIterable = (
-      Array.isArray(data.iterable) ||
-      (typeof data.iterable === 'object' && data.iterable !== null) ||
-      typeof data.iterable === 'number' ||
-      typeof data.iterable === 'string'
-    );
-    return isValidIterable;
-  },
-  { message: 'Iterable must be an array, object, number, or string', path: ['iterable'] }
-);
+});
 
 /**
  * 验证LoopStart节点配置

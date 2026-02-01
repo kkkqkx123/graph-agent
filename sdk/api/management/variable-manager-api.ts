@@ -35,11 +35,11 @@ export class VariableManagerAPI {
   async getVariable(threadId: string, name: string): Promise<any> {
     const thread = await this.getThread(threadId);
 
-    if (!thread.variableValues || !(name in thread.variableValues)) {
+    if (!(name in thread.variableScopes.thread)) {
       throw new NotFoundError(`Variable not found: ${name}`, 'variable', name);
     }
 
-    return thread.variableValues[name];
+    return thread.variableScopes.thread[name];
   }
 
   /**
@@ -67,7 +67,7 @@ export class VariableManagerAPI {
    */
   async getVariables(threadId: string): Promise<Record<string, any>> {
     const thread = await this.getThread(threadId);
-    return { ...thread.variableValues };
+    return { ...thread.variableScopes.thread };
   }
 
   /**
@@ -122,7 +122,7 @@ export class VariableManagerAPI {
     }
 
     // 更新变量值
-    thread.variableValues[name] = value;
+    thread.variableScopes.thread[name] = value;
     variable.value = value;
   }
 
@@ -162,7 +162,7 @@ export class VariableManagerAPI {
     // 更新所有变量值
     for (const name in updates) {
       const variable = thread.variables.find(v => v.name === name)!;
-      thread.variableValues[name] = updates[name];
+      thread.variableScopes.thread[name] = updates[name];
       variable.value = updates[name];
     }
   }
@@ -175,7 +175,7 @@ export class VariableManagerAPI {
    */
   async hasVariable(threadId: string, name: string): Promise<boolean> {
     const thread = await this.getThread(threadId);
-    return name in thread.variableValues;
+    return name in thread.variableScopes.thread;
   }
 
   /**

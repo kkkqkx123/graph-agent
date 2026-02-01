@@ -5,6 +5,7 @@
 
 import type { Node, LoopStartNodeConfig } from '../../../../types/node';
 import type { Thread } from '../../../../types/thread';
+import { ExecutionError, ValidationError } from '../../../../types/errors';
 import { now } from '../../../../utils';
 
 /**
@@ -52,28 +53,128 @@ function isValidIterable(iterable: any): boolean {
 }
 
 /**
+ * 解析iterable：支持直接值或变量表达式
+ * 
+ * 支持的格式：
+ * - 直接值：[1,2,3], {a:1}, 5, "hello"
+ * - 变量表达式：{{input.list}}, {{thread.items}}, {{global.data}}
+ */
+function resolveIterable(iterableConfig: any, thread: Thread): any {
+  // 如果是字符串，检查是否为变量表达式
+  if (typeof iterableConfig === 'string') {
+    const varExprPattern = /^\{\{([\w.]+)\}\}$/;
+    const match = iterableConfig.match(varExprPattern);
+    
+    if (match && match[1]) {
+      // 这是一个变量表达式，需要从thread中解析
+      const varPath = match[1];
+      const parts = varPath.split('.');
+      const scope = parts[0];
+      
+      try {
+        let value: any;
+        
+        // 根据作用域获取变量
+        switch (scope) {
+          case 'input':
+            value = thread.input;
+            // 解析嵌套路径
+            for (let i = 1; i < parts.length; i++) {
+              value = value?.[parts[i]!];
+            }
+            break;
+            
+          case 'output':
+            value = thread.output;
+            for (let i = 1; i < parts.length; i++) {
+              value = value?.[parts[i]!];
+            }
+            break;
+            
+          case 'global':
+            value = thread.variableScopes.global;
+            for (let i = 1; i < parts.length; i++) {
+              value = value?.[parts[i]!];
+            }
+            break;
+            
+          case 'thread':
+            value = thread.variableScopes.thread;
+            for (let i = 1; i < parts.length; i++) {
+              value = value?.[parts[i]!];
+            }
+            break;
+            
+          default:
+            throw new ValidationError(
+              `Invalid variable scope '${scope}'. Supported scopes: input, output, global, thread`,
+              'iterable.scope'
+            );
+        }
+        
+        if (value === undefined) {
+          throw new ExecutionError(
+            `Variable '${varPath}' not found in thread context`,
+            thread.currentNodeId,
+            thread.workflowId,
+            { varPath, iterableConfig }
+          );
+        }
+        
+        return value;
+      } catch (error) {
+        if (error instanceof ExecutionError || error instanceof ValidationError) {
+          throw error;
+        }
+        throw new ExecutionError(
+          `Failed to resolve iterable expression '${iterableConfig}': ${error instanceof Error ? error.message : String(error)}`,
+          thread.currentNodeId,
+          thread.workflowId,
+          { iterableConfig }
+        );
+      }
+    }
+  }
+  
+  // 直接值，验证类型
+  if (!isValidIterable(iterableConfig)) {
+    throw new ValidationError(
+      `Iterable must be an array, object, number, string, or variable expression like {{input.list}}. Got: ${typeof iterableConfig}`,
+      'iterable'
+    );
+  }
+  
+  return iterableConfig;
+}
+
+/**
  * 获取循环状态
  */
 function getLoopState(thread: Thread, loopId: string): LoopState | undefined {
-  return thread.variableValues?.[`__loop_${loopId}`];
+  const currentLoopScope = thread.variableScopes.loop[thread.variableScopes.loop.length - 1];
+  if (currentLoopScope) {
+    return currentLoopScope[`__loop_state`];
+  }
+  return undefined;
 }
 
 /**
- * 设置循环状态
+ * 设置循环状态到循环作用域
  */
 function setLoopState(thread: Thread, loopState: LoopState): void {
-  if (!thread.variableValues) {
-    thread.variableValues = {};
+  const currentLoopScope = thread.variableScopes.loop[thread.variableScopes.loop.length - 1];
+  if (currentLoopScope) {
+    currentLoopScope[`__loop_state`] = loopState;
   }
-  thread.variableValues[`__loop_${loopState.loopId}`] = loopState;
 }
 
 /**
- * 清除循环状态
+ * 清除循环状态（仅删除状态对象，作用域由退出时删除）
  */
 function clearLoopState(thread: Thread, loopId: string): void {
-  if (thread.variableValues) {
-    delete thread.variableValues[`__loop_${loopId}`];
+  const currentLoopScope = thread.variableScopes.loop[thread.variableScopes.loop.length - 1];
+  if (currentLoopScope) {
+    delete currentLoopScope[`__loop_state`];
   }
 }
 
@@ -193,8 +294,17 @@ export async function loopStartHandler(thread: Thread, node: Node): Promise<any>
   let loopState = getLoopState(thread, config.loopId);
 
   if (!loopState) {
-    // 第一次执行，初始化循环状态
-    loopState = initializeLoopState(config, variableName);
+    // 第一次执行，解析并初始化循环状态
+    // 解析 iterable（支持直接值或变量表达式）
+    const resolvedIterable = resolveIterable(config.iterable, thread);
+    
+    // 创建包含已解析 iterable 的配置
+    const resolvedConfig: LoopStartNodeConfig = {
+      ...config,
+      iterable: resolvedIterable
+    };
+    
+    loopState = initializeLoopState(resolvedConfig, variableName);
     setLoopState(thread, loopState);
     
     // 进入新的循环作用域

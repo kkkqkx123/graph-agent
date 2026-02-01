@@ -51,9 +51,6 @@ export async function startHandler(thread: Thread, node: Node): Promise<any> {
   if (!thread.variables) {
     thread.variables = [];
   }
-  if (!thread.variableValues) {
-    thread.variableValues = {};
-  }
   if (!thread.nodeResults) {
     thread.nodeResults = [];
   }

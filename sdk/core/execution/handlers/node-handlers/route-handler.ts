@@ -24,7 +24,7 @@ function evaluateRouteCondition(condition: string, thread: Thread): boolean {
   try {
     // 简单的条件评估，实际应该使用条件评估器
     const func = new Function('variables', `return ${condition}`);
-    return func(thread.variableValues);
+    return func(thread.variableScopes.thread);
   } catch (error) {
     console.error(`Failed to evaluate route condition: ${condition}`, error);
     return false;

@@ -39,7 +39,7 @@ export function buildHookEvaluationContext(context: HookExecutionContext): HookE
     status: result?.status || 'PENDING',
     executionTime: result?.executionTime || 0,
     error: result?.error,
-    variables: thread.variableValues,
+    variables: thread.variableScopes.thread,
     config: node.config,
     metadata: node.metadata
   };

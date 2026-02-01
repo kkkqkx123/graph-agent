@@ -40,7 +40,7 @@ function resolveVariableReferences(expression: string, thread: Thread): string {
     const rootVarName = varPath.split('.')[0];
     
     // 首先尝试从 thread 变量中获取
-    let value: any = thread.variableValues?.[rootVarName];
+    let value: any = thread.variableScopes.thread?.[rootVarName];
     
     // 如果第一部分在 thread 变量中不存在，尝试从 global 变量中获取
     if (value === undefined && thread.variableScopes) {
@@ -156,6 +156,8 @@ export async function variableHandler(thread: Thread, node: Node): Promise<any> 
 
   // 更新变量
   const variable = thread.variables.find(v => v.name === config.variableName);
+  const variableScope = config.scope || 'thread';
+  
   if (variable) {
     variable.value = typedResult;
   } else {
@@ -163,11 +165,30 @@ export async function variableHandler(thread: Thread, node: Node): Promise<any> 
       name: config.variableName,
       value: typedResult,
       type: config.variableType,
-      scope: config.scope || 'thread',
+      scope: variableScope,
       readonly: config.readonly || false
     });
   }
-  thread.variableValues[config.variableName] = typedResult;
+  
+  // 根据作用域更新变量值
+  switch (variableScope) {
+    case 'global':
+      thread.variableScopes.global[config.variableName] = typedResult;
+      break;
+    case 'thread':
+      thread.variableScopes.thread[config.variableName] = typedResult;
+      break;
+    case 'subgraph':
+      if (thread.variableScopes.subgraph.length > 0) {
+        thread.variableScopes.subgraph[thread.variableScopes.subgraph.length - 1]![config.variableName] = typedResult;
+      }
+      break;
+    case 'loop':
+      if (thread.variableScopes.loop.length > 0) {
+        thread.variableScopes.loop[thread.variableScopes.loop.length - 1]![config.variableName] = typedResult;
+      }
+      break;
+  }
 
   // 记录执行历史
   thread.nodeResults.push({

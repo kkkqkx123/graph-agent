@@ -116,7 +116,6 @@ export class ThreadBuilder {
       currentNodeId: startNode.id,
       graph: threadGraphData,
       variables: [],
-      variableValues: {},
       variableScopes: {
         global: {},
         thread: {},
@@ -254,7 +253,6 @@ export class ThreadBuilder {
       status: 'CREATED' as ThreadStatus,
       currentNodeId: sourceThread.currentNodeId,
       variables: sourceThread.variables.map((v: any) => ({ ...v })),
-      variableValues: { ...sourceThread.variableValues },
       // 四级作用域：global 通过引用共享，thread 深拷贝，subgraph 和 loop 清空
       variableScopes: {
         global: sourceThread.variableScopes.global,
@@ -304,12 +302,10 @@ export class ThreadBuilder {
 
     // 分离 thread 和 global 变量
     const threadVariables: any[] = [];
-    const threadVariableValues: Record<string, any> = {};
 
     for (const variable of parentThread.variables) {
       if (variable.scope === 'thread') {
         threadVariables.push({ ...variable });
-        threadVariableValues[variable.name] = variable.value;
       }
       // global 变量不复制到子线程，而是通过引用共享
     }
@@ -321,7 +317,6 @@ export class ThreadBuilder {
       status: 'CREATED' as ThreadStatus,
       currentNodeId: forkConfig.startNodeId || parentThread.currentNodeId,
       variables: threadVariables,
-      variableValues: threadVariableValues,
       // 四级作用域：global 通过引用共享，thread 深拷贝，subgraph 和 loop 清空
       variableScopes: {
         global: parentThread.variableScopes.global,

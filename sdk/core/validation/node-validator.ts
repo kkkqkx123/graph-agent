@@ -128,7 +128,6 @@ const loopStartNodeConfigSchema = z.object({
  */
 const loopEndNodeConfigSchema = z.object({
   loopId: z.string().min(1, 'Loop ID is required'),
-  iterable: z.any().refine((val) => val !== undefined, 'Iterable is required'),
   breakCondition: z.any().optional(),
   loopStartNodeId: z.string().optional()
 });

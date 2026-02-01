@@ -65,7 +65,7 @@ export interface WorkflowMetadata {
  *
  * 说明：
  * - 在工作流定义时声明变量，提供类型信息和默认值
- * - 执行时转换为 ThreadVariable，存储在 Thread.variableValues 中
+ * - 执行时转换为 ThreadVariable，存储在 Thread.variableScopes.thread 中
  * - 通过 VARIABLE 节点修改，通过表达式访问（{{variableName}}）
  *
  * 与 inputMapping/outputMapping 的关系：
@@ -81,7 +81,7 @@ export interface WorkflowMetadata {
  * ]
  *
  * // 执行时
- * thread.variableValues = {
+ * thread.variableScopes.thread = {
  *   userName: 'Alice',
  *   userAge: 25
  * }

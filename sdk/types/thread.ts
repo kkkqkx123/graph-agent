@@ -162,8 +162,6 @@ export interface Thread {
   graph: Graph;
   /** 变量数组（用于持久化和元数据） */
   variables: ThreadVariable[];
-  /** 变量值映射（用于快速访问，仅包含 thread 作用域变量） */
-  variableValues: Record<string, any>;
   /** 四级作用域变量存储 */
   variableScopes: {
     /** 全局作用域 - 多线程共享 */
@@ -199,7 +197,7 @@ export interface Thread {
    *
    * 注意：此字段与 variables 的区别
    * - Thread.input: 工作流的初始输入，只读
-   * - Thread.variableValues: 工作流执行过程中的变量，可变
+   * - Thread.variableScopes.thread: 工作流执行过程中的变量，可变
    */
   input: Record<string, any>;
   /**
@@ -230,7 +228,7 @@ export interface Thread {
    *
    * 注意：此字段与 variables 的区别
    * - Thread.output: 工作流的最终输出，只读
-   * - Thread.variableValues: 工作流执行过程中的变量，可变
+   * - Thread.variableScopes.thread: 工作流执行过程中的变量，可变
    */
   output: Record<string, any>;
   /** 执行历史记录（按执行顺序存储） */
