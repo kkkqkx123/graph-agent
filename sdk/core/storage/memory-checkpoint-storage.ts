@@ -65,7 +65,7 @@ export class MemoryCheckpointStorage implements CheckpointStorage {
 
     // 应用分页
     const offset = options?.offset || 0;
-    const limit = options?.limit || entries.length;
+    const limit = options?.limit !== undefined ? options.limit : entries.length;
     entries = entries.slice(offset, offset + limit);
 
     return entries.map(([id]) => id);

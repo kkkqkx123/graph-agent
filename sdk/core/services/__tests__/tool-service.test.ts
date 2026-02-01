@@ -2,7 +2,7 @@
  * 工具服务单元测试
  */
 
-import { ToolService } from '../../services/tool-service';
+import { ToolService } from '../tool-service';
 import type { Tool } from '../../../types/tool';
 import { ToolType } from '../../../types/tool';
 import { NotFoundError, ToolError } from '../../../types/errors';

@@ -343,3 +343,37 @@ eventPayload可以包含自定义处理函数：
 2. **灵活性优先**: 通过eventPayload传递所有复杂配置
 3. **向后兼容**: 保留所有核心功能，只是简化了实现
 4. **易于扩展**: 用户可以通过eventPayload.handler实现任意自定义逻辑
+
+## 单元测试
+
+### 测试文件位置
+`__tests__/hook-handler.test.ts`
+
+### 测试覆盖范围
+- **基本功能**: 16个测试用例
+  - Hook执行和过滤
+  - 权重排序
+  - 禁用状态处理
+  - 并行执行（Promise.allSettled）
+  
+- **条件评估**: 3个测试用例
+  - 条件评估成功/失败
+  - 异常处理
+
+- **自定义handler**: 3个测试用例
+  - Handler函数执行
+  - 非函数类型处理
+  - 异常捕获
+
+- **错误处理**: 2个测试用例
+  - Hook失败隔离
+  - 模块导入失败
+
+### 运行测试
+```bash
+cd sdk
+npm test __tests__/hook-handler.test.ts
+```
+
+### 测试摘要
+查看 `__tests__/TEST_SUMMARY.md` 了解详细的测试报告。
