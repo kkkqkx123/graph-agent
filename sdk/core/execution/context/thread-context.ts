@@ -545,4 +545,48 @@ export class ThreadContext {
   restoreTriggerState(snapshot: Map<ID, TriggerRuntimeState>): void {
     this.triggerStateManager.restoreFromSnapshot(snapshot);
   }
+
+  /**
+   * 清理所有资源
+   *
+   * 集中管理ThreadContext中所有资源的释放，包括：
+   * - 清理有状态工具实例
+   * - 清理变量状态
+   * - 清理触发器状态
+   * - 清理对话状态
+   *
+   * 此方法应该在Thread执行完成或被取消后调用
+   */
+  cleanup(): void {
+    // 1. 清理所有有状态工具实例
+    this.cleanupAllStatefulTools();
+
+    // 2. 清理变量状态
+    this.variableStateManager.cleanup();
+
+    // 3. 清理触发器状态
+    this.triggerStateManager.cleanup();
+
+    // 4. 清理对话状态
+    this.conversationStateManager.cleanup();
+
+    // 5. 清空子工作流执行历史
+    this.subgraphExecutionHistory = [];
+    this.isExecutingTriggeredSubgraph = false;
+  }
+
+  /**
+   * 获取所有生命周期管理器
+   *
+   * 返回ThreadContext中所有实现了LifecycleCapable接口的组件
+   *
+   * @returns 生命周期管理器数组
+   */
+  getLifecycleManagers(): Array<{ name: string; manager: any }> {
+    return [
+      { name: 'VariableStateManager', manager: this.variableStateManager },
+      { name: 'TriggerStateManager', manager: this.triggerStateManager },
+      { name: 'ConversationStateManager', manager: this.conversationStateManager }
+    ];
+  }
 }

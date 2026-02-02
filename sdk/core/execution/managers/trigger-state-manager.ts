@@ -19,6 +19,7 @@ import type { ID } from '../../../types/common';
 import type { TriggerStatus } from '../../../types/trigger';
 import { ValidationError, ExecutionError, NotFoundError } from '../../../types/errors';
 import { now } from '../../../utils';
+import type { LifecycleCapable } from './lifecycle-capable';
 
 /**
  * 触发器运行时状态接口
@@ -48,7 +49,7 @@ export interface TriggerRuntimeState {
  * - 支持状态快照和恢复
  * - 保证并发安全
  */
-export class TriggerStateManager {
+export class TriggerStateManager implements LifecycleCapable<Map<ID, TriggerRuntimeState>> {
   private states: Map<ID, TriggerRuntimeState> = new Map();
   private threadId: ID;
   private workflowId: ID | null = null;
@@ -233,6 +234,7 @@ export class TriggerStateManager {
 
   /**
    * 清空所有状态
+   * @deprecated 使用 cleanup() 方法代替
    */
   clear(): void {
     this.states.clear();
@@ -244,5 +246,29 @@ export class TriggerStateManager {
    */
   size(): number {
     return this.states.size;
+  }
+
+  /**
+   * 初始化管理器
+   * TriggerStateManager在构造时已初始化，此方法为空实现
+   */
+  initialize(): void {
+    // TriggerStateManager在构造时已初始化，无需额外操作
+  }
+
+  /**
+   * 清理资源
+   * 清空所有触发器状态
+   */
+  cleanup(): void {
+    this.clear();
+  }
+
+  /**
+   * 检查是否已初始化
+   * @returns 始终返回true，因为TriggerStateManager在构造时已初始化
+   */
+  isInitialized(): boolean {
+    return true;
   }
 }

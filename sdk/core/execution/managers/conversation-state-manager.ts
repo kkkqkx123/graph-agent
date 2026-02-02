@@ -17,6 +17,7 @@
 import type { LLMMessage, LLMUsage, TokenUsageHistory, TokenUsageStatistics } from '../../../types/llm';
 import { ConversationManager } from '../conversation';
 import type { TokenUsageStats } from '../token-usage-tracker';
+import type { LifecycleCapable } from './lifecycle-capable';
 
 /**
  * 对话状态接口
@@ -45,7 +46,7 @@ export interface ConversationState {
  * - 线程隔离：每个 Thread 独立实例
  * - 委托模式：内部使用 ConversationManager
  */
-export class ConversationStateManager {
+export class ConversationStateManager implements LifecycleCapable<ConversationState> {
   private threadId: string;
   private conversationManager: ConversationManager;
 
@@ -291,5 +292,29 @@ export class ConversationStateManager {
     cloned.conversationManager = this.conversationManager.clone();
 
     return cloned;
+  }
+
+  /**
+   * 初始化管理器
+   * ConversationStateManager在构造时已初始化，此方法为空实现
+   */
+  initialize(): void {
+    // ConversationStateManager在构造时已初始化，无需额外操作
+  }
+
+  /**
+   * 清理资源
+   * 清空消息历史和Token统计
+   */
+  cleanup(): void {
+    this.conversationManager.clearMessages(false);
+  }
+
+  /**
+   * 检查是否已初始化
+   * @returns 始终返回true，因为ConversationStateManager在构造时已初始化
+   */
+  isInitialized(): boolean {
+    return true;
   }
 }

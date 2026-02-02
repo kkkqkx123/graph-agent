@@ -1,6 +1,6 @@
 /**
- * Checkpoint存储接口类型定义
- * 定义应用层易于实现的存储接口
+ * 检查点存储接口类型定义
+ * 定义应用层易于实现的存储接口及清理策略
  */
 
 import type { ID, Timestamp } from './common';
@@ -93,4 +93,93 @@ export interface CheckpointStorage {
    * 主要用于测试和开发环境
    */
   clear?(): Promise<void>;
+}
+
+/**
+ * 检查点信息（包含ID和元数据）
+ * 用于清理策略决策
+ */
+export interface CheckpointInfo {
+  /** 检查点ID */
+  checkpointId: string;
+  /** 检查点元数据 */
+  metadata: CheckpointStorageMetadata;
+}
+
+/**
+ * 清理策略类型
+ */
+export type CleanupStrategyType = 'time' | 'count' | 'size';
+
+/**
+ * 基于时间的清理策略配置
+ */
+export interface TimeBasedCleanupPolicy {
+  /** 策略类型 */
+  type: 'time';
+  /** 保留天数 */
+  retentionDays: number;
+  /** 最少保留数量（防止删除所有检查点） */
+  minRetention?: number;
+}
+
+/**
+ * 基于数量的清理策略配置
+ */
+export interface CountBasedCleanupPolicy {
+  /** 策略类型 */
+  type: 'count';
+  /** 最大保留数量 */
+  maxCount: number;
+  /** 最少保留数量（防止删除所有检查点） */
+  minRetention?: number;
+}
+
+/**
+ * 基于存储空间的清理策略配置
+ */
+export interface SizeBasedCleanupPolicy {
+  /** 策略类型 */
+  type: 'size';
+  /** 最大存储空间（字节） */
+  maxSizeBytes: number;
+  /** 最少保留数量（防止删除所有检查点） */
+  minRetention?: number;
+}
+
+/**
+ * 清理策略配置（联合类型）
+ */
+export type CleanupPolicy = 
+  | TimeBasedCleanupPolicy 
+  | CountBasedCleanupPolicy 
+  | SizeBasedCleanupPolicy;
+
+/**
+ * 清理结果
+ */
+export interface CleanupResult {
+  /** 删除的检查点ID列表 */
+  deletedCheckpointIds: string[];
+  /** 删除的检查点数量 */
+  deletedCount: number;
+  /** 释放的存储空间（字节） */
+  freedSpaceBytes: number;
+  /** 剩余检查点数量 */
+  remainingCount: number;
+}
+
+/**
+ * 检查点清理策略接口
+ *
+ * 提供统一的清理策略执行接口
+ */
+export interface CheckpointCleanupStrategy {
+  /**
+   * 执行清理策略
+   *
+   * @param checkpoints 所有检查点的信息列表（包含ID和元数据）
+   * @returns 需要删除的检查点ID列表
+   */
+  execute(checkpoints: CheckpointInfo[]): string[];
 }

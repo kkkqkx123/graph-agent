@@ -19,6 +19,7 @@ import type { ThreadVariable } from '../../../types/thread';
 import type { VariableScope } from '../../../types/common';
 import type { WorkflowVariable } from '../../../types/workflow';
 import { ValidationError } from '../../../types/errors';
+import type { LifecycleCapable } from './lifecycle-capable';
 
 /**
  * 变量作用域结构
@@ -49,7 +50,10 @@ export interface VariableScopes {
  * - 线程隔离：每个线程有独立的状态实例
  * - 原子操作：保证状态一致性
  */
-export class VariableStateManager {
+export class VariableStateManager implements LifecycleCapable<{
+  variables: ThreadVariable[];
+  variableScopes: VariableScopes;
+}> {
   private variables: ThreadVariable[] = [];
   private variableScopes: VariableScopes = {
     global: {},
@@ -408,6 +412,7 @@ export class VariableStateManager {
 
   /**
    * 清空变量状态
+   * @deprecated 使用 cleanup() 方法代替
    */
   clear(): void {
     this.variables = [];
@@ -430,5 +435,29 @@ export class VariableStateManager {
       subgraph: this.variableScopes.subgraph.map(scope => ({ ...scope })),
       loop: this.variableScopes.loop.map(scope => ({ ...scope }))
     };
+  }
+
+  /**
+   * 初始化管理器
+   * VariableStateManager在构造时已初始化，此方法为空实现
+   */
+  initialize(): void {
+    // VariableStateManager在构造时已初始化，无需额外操作
+  }
+
+  /**
+   * 清理资源
+   * 清空所有变量状态和作用域
+   */
+  cleanup(): void {
+    this.clear();
+  }
+
+  /**
+   * 检查是否已初始化
+   * @returns 始终返回true，因为VariableStateManager在构造时已初始化
+   */
+  isInitialized(): boolean {
+    return true;
   }
 }

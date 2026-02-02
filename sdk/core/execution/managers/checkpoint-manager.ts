@@ -25,15 +25,24 @@ import { generateId, now } from '../../../utils';
 import { type WorkflowRegistry } from '../../services/workflow-registry';
 import { MemoryCheckpointStorage } from '../../storage/memory-checkpoint-storage';
 import { globalMessageStorage } from '../../services/global-message-storage';
+import type { LifecycleCapable } from './lifecycle-capable';
+import type { CleanupResult } from '../../../types/checkpoint-storage';
+import type {
+  CleanupPolicy,
+  CheckpointCleanupStrategy
+} from './checkpoint-cleanup-policy';
+import { createCleanupStrategy } from './checkpoint-cleanup-policy';
 
 /**
  * 检查点管理器
  */
-export class CheckpointManager {
+export class CheckpointManager implements LifecycleCapable<void> {
   private storage: CheckpointStorage;
   private threadRegistry: ThreadRegistry;
   private variableStateManager: VariableStateManager;
   private workflowRegistry: WorkflowRegistry;
+  private cleanupPolicy?: CleanupPolicy;
+  private checkpointSizes: Map<string, number> = new Map(); // checkpointId -> size in bytes
 
   /**
    * 构造函数
@@ -54,6 +63,99 @@ export class CheckpointManager {
     this.threadRegistry = threadRegistry;
     this.workflowRegistry = workflowRegistry;
     this.variableStateManager = new VariableStateManager();
+  }
+
+  /**
+   * 设置清理策略
+   *
+   * @param policy 清理策略配置
+   */
+  setCleanupPolicy(policy: CleanupPolicy): void {
+    this.cleanupPolicy = policy;
+  }
+
+  /**
+   * 获取清理策略
+   *
+   * @returns 清理策略配置
+   */
+  getCleanupPolicy(): CleanupPolicy | undefined {
+    return this.cleanupPolicy;
+  }
+
+  /**
+   * 执行清理策略
+   *
+   * 根据配置的清理策略自动清理过期的检查点
+   *
+   * @returns 清理结果
+   */
+  async executeCleanup(): Promise<CleanupResult> {
+    if (!this.cleanupPolicy) {
+      return {
+        deletedCheckpointIds: [],
+        deletedCount: 0,
+        freedSpaceBytes: 0,
+        remainingCount: 0
+      };
+    }
+
+    // 获取所有检查点ID
+    const checkpointIds = await this.storage.list();
+
+    // 获取所有检查点的元数据和大小
+    const checkpointInfoArray: Array<{ checkpointId: string; metadata: CheckpointStorageMetadata }> = [];
+    for (const checkpointId of checkpointIds) {
+      const data = await this.storage.load(checkpointId);
+      if (data) {
+        const checkpoint = this.deserializeCheckpoint(data);
+        const metadata = this.extractStorageMetadata(checkpoint);
+        checkpointInfoArray.push({ checkpointId, metadata });
+        this.checkpointSizes.set(checkpointId, data.length);
+      }
+    }
+
+    // 创建清理策略实例
+    const strategy = createCleanupStrategy(
+      this.cleanupPolicy,
+      this.checkpointSizes
+    );
+
+    // 执行清理策略
+    const toDeleteIds = strategy.execute(checkpointInfoArray);
+
+    // 删除检查点
+    let freedSpaceBytes = 0;
+    for (const checkpointId of toDeleteIds) {
+      const size = this.checkpointSizes.get(checkpointId) || 0;
+      await this.storage.delete(checkpointId);
+      freedSpaceBytes += size;
+      this.checkpointSizes.delete(checkpointId);
+    }
+
+    return {
+      deletedCheckpointIds: toDeleteIds,
+      deletedCount: toDeleteIds.length,
+      freedSpaceBytes,
+      remainingCount: checkpointIds.length - toDeleteIds.length
+    };
+  }
+
+  /**
+   * 清理指定线程的所有检查点
+   *
+   * @param threadId 线程ID
+   * @returns 删除的检查点数量
+   */
+  async cleanupThreadCheckpoints(threadId: string): Promise<number> {
+    const checkpointIds = await this.storage.list({ threadId });
+
+    for (const checkpointId of checkpointIds) {
+      await this.storage.delete(checkpointId);
+      this.checkpointSizes.delete(checkpointId);
+    }
+
+    return checkpointIds.length;
   }
 
   /**
@@ -139,11 +241,20 @@ export class CheckpointManager {
     // 步骤7：调用 CheckpointStorage 保存
     await this.storage.save(checkpointId, data, storageMetadata);
 
-    // 触发 CHECKPOINT_CREATED 事件（由上层应用层负责）
-    // 事件触发已移至 CheckpointManagerAPI 或应用层
-    // CheckpointManager 保持无状态，不维护对 EventManager 的引用
+    // 记录检查点大小（用于基于空间的清理策略）
+    this.checkpointSizes.set(checkpointId, data.length);
 
-    // 步骤8：返回 checkpointId
+    // 步骤8：执行清理策略（如果配置了）
+    if (this.cleanupPolicy) {
+      try {
+        await this.executeCleanup();
+      } catch (error) {
+        console.error('Error executing cleanup policy:', error);
+        // 清理失败不应影响检查点创建
+      }
+    }
+
+    // 步骤9：返回 checkpointId
     return checkpointId;
   }
 
@@ -285,6 +396,7 @@ export class CheckpointManager {
    */
   async deleteCheckpoint(checkpointId: string): Promise<void> {
     await this.storage.delete(checkpointId);
+    this.checkpointSizes.delete(checkpointId);
   }
 
 
@@ -350,5 +462,45 @@ export class CheckpointManager {
       tags: checkpoint.metadata?.tags,
       customFields: checkpoint.metadata?.customFields
     };
+  }
+
+  /**
+   * 初始化管理器
+   * CheckpointManager在构造时已初始化，此方法为空实现
+   */
+  initialize(): void {
+    // CheckpointManager在构造时已初始化，无需额外操作
+  }
+
+  /**
+   * 清理资源
+   * 清空所有检查点
+   */
+  async cleanup(): Promise<void> {
+    await this.clearAll();
+  }
+
+  /**
+   * 创建状态快照
+   * CheckpointManager本身不维护状态，此方法为空实现
+   */
+  createSnapshot(): void {
+    // CheckpointManager本身不维护状态，无需快照
+  }
+
+  /**
+   * 从快照恢复状态
+   * CheckpointManager本身不维护状态，此方法为空实现
+   */
+  restoreFromSnapshot(): void {
+    // CheckpointManager本身不维护状态，无需恢复
+  }
+
+  /**
+   * 检查是否已初始化
+   * @returns 始终返回true，因为CheckpointManager在构造时已初始化
+   */
+  isInitialized(): boolean {
+    return true;
   }
 }

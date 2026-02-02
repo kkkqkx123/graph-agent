@@ -32,6 +32,7 @@ import { eventManager, type EventManager } from '../../services/event-manager';
 import { CheckpointManager } from '../managers/checkpoint-manager';
 import { ThreadLifecycleManager } from '../managers/thread-lifecycle-manager';
 import { ThreadLifecycleCoordinator } from '../coordinators/thread-lifecycle-coordinator';
+import type { LifecycleCapable } from '../managers/lifecycle-capable';
 
 /**
  * 执行上下文 - 轻量级依赖注入容器
@@ -167,11 +168,93 @@ export class ExecutionContext {
 
   /**
    * 销毁上下文
-   * 清理所有组件，主要用于测试环境
+   * 清理所有由ExecutionContext创建的组件，主要用于测试环境
+   *
+   * 此方法会：
+   * 1. 按照依赖关系的逆序清理组件
+   * 2. 只清理由ExecutionContext创建的组件，不清理全局单例
+   * 3. 清空组件注册表
+   * 4. 重置初始化状态
+   *
+   * 注意：全局单例（eventManager、workflowRegistry、threadRegistry）不会被清理
    */
-  destroy(): void {
+  async destroy(): Promise<void> {
+    if (!this.initialized) {
+      return;
+    }
+
+    // 定义需要清理的组件及其清理顺序（按依赖关系的逆序）
+    // 注意：不包含全局单例（eventManager、workflowRegistry、threadRegistry）
+    const cleanupOrder: string[] = [
+      'lifecycleCoordinator',  // 依赖其他所有组件
+      'lifecycleManager',      // 依赖eventManager
+      'checkpointManager'      // 依赖threadRegistry和workflowRegistry
+    ];
+
+    // 按顺序清理组件
+    for (const key of cleanupOrder) {
+      const component = this.components.get(key);
+      if (!component) {
+        continue;
+      }
+
+      // 检查组件是否实现了LifecycleCapable接口
+      if (this.isLifecycleManager(component)) {
+        try {
+          const cleanupResult = component.cleanup();
+          // 支持同步和异步的cleanup方法
+          if (cleanupResult instanceof Promise) {
+            await cleanupResult;
+          }
+        } catch (error) {
+          console.error(`Error cleaning up component ${key}:`, error);
+          // 继续清理其他组件，不中断整个销毁流程
+        }
+      }
+    }
+
+    // 清空组件注册表（包括全局单例的引用）
     this.components.clear();
+
+    // 重置初始化状态
     this.initialized = false;
+    this.currentThreadId = null;
+  }
+
+  /**
+   * 检查组件是否实现了LifecycleCapable接口
+   *
+   * @param component 组件实例
+   * @returns 是否实现了LifecycleCapable接口
+   */
+  private isLifecycleManager(component: any): component is LifecycleCapable {
+    return (
+      component &&
+      typeof component.cleanup === 'function' &&
+      typeof component.createSnapshot === 'function' &&
+      typeof component.restoreFromSnapshot === 'function'
+    );
+  }
+
+  /**
+   * 获取所有实现了LifecycleCapable接口的组件
+   *
+   * @returns 生命周期管理器数组
+   */
+  getLifecycleManagers(): Array<{ name: string; manager: LifecycleCapable }> {
+    const managers: Array<{ name: string; manager: LifecycleCapable }> = [];
+    
+    // 只返回由ExecutionContext创建的组件，不包括全局单例
+    const managedComponents = ['checkpointManager', 'lifecycleManager', 'lifecycleCoordinator'];
+    
+    for (const key of managedComponents) {
+      const component = this.components.get(key);
+      if (component && this.isLifecycleManager(component)) {
+        managers.push({ name: key, manager: component });
+      }
+    }
+    
+    return managers;
   }
 
   /**
