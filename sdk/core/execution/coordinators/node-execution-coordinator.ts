@@ -19,9 +19,9 @@ import { ThreadContext } from '../context/thread-context';
 import type { Node } from '../../../types/node';
 import type { NodeExecutionResult } from '../../../types/thread';
 import type { EventManager } from '../../services/event-manager';
+import type { UserInteractionHandler } from '../../../api/core/user-interaction-api';
 import { LLMExecutionCoordinator } from './llm-execution-coordinator';
 import { executeUserInteraction } from '../handlers/user-interaction-handler';
-import { userInteractionHandlerRegistry } from '../../../api/core/user-interaction-api';
 import { enterSubgraph, exitSubgraph, getSubgraphInput, getSubgraphOutput } from '../handlers/subgraph-handler';
 import { EventType } from '../../../types/events';
 import type { NodeStartedEvent, NodeCompletedEvent, NodeFailedEvent, SubgraphStartedEvent, SubgraphCompletedEvent } from '../../../types/events';
@@ -50,7 +50,8 @@ import {
 export class NodeExecutionCoordinator {
   constructor(
     private eventManager: EventManager,
-    private llmCoordinator: LLMExecutionCoordinator
+    private llmCoordinator: LLMExecutionCoordinator,
+    private userInteractionHandler?: UserInteractionHandler
   ) { }
 
   /**
@@ -263,10 +264,8 @@ export class NodeExecutionCoordinator {
     node: Node,
     startTime: number
   ): Promise<NodeExecutionResult> {
-    const userInteractionHandler = userInteractionHandlerRegistry.get();
-    
-    if (!userInteractionHandler) {
-      throw new Error('UserInteractionHandler is not registered. Please register a handler before executing user interaction.');
+    if (!this.userInteractionHandler) {
+      throw new Error('UserInteractionHandler is not provided. Please provide a handler when creating NodeExecutionCoordinator.');
     }
 
     try {
@@ -275,7 +274,7 @@ export class NodeExecutionCoordinator {
         node,
         threadContext,
         this.eventManager,
-        userInteractionHandler
+        this.userInteractionHandler
       );
 
       const endTime = now();

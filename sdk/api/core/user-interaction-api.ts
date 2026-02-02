@@ -1,12 +1,11 @@
 /**
  * 用户交互 API
- * 提供用户交互相关的接口定义和注册机制
+ * 提供用户交互相关的接口定义
  */
 
 import type { ID, VariableScope } from '../../types/common';
 import type {
-  UserInteractionRequest,
-  UserInteractionResponse
+  UserInteractionRequest
 } from '../../types/interaction';
 
 /**
@@ -48,38 +47,3 @@ export interface UserInteractionHandler {
    */
   handle(request: UserInteractionRequest, context: UserInteractionContext): Promise<any>;
 }
-
-/**
- * 用户交互处理器注册表
- */
-class UserInteractionHandlerRegistry {
-  private handler: UserInteractionHandler | null = null;
-
-  /**
-   * 注册用户交互处理器
-   * @param handler 用户交互处理器
-   */
-  register(handler: UserInteractionHandler): void {
-    this.handler = handler;
-  }
-
-  /**
-   * 获取用户交互处理器
-   * @returns 用户交互处理器
-   */
-  get(): UserInteractionHandler | null {
-    return this.handler;
-  }
-
-  /**
-   * 清除用户交互处理器
-   */
-  clear(): void {
-    this.handler = null;
-  }
-}
-
-/**
- * 全局用户交互处理器注册表实例
- */
-export const userInteractionHandlerRegistry = new UserInteractionHandlerRegistry();

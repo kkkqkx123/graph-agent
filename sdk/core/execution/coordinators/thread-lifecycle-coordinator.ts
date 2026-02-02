@@ -60,7 +60,11 @@ export class ThreadLifecycleCoordinator {
   async execute(workflowId: string, options: ThreadOptions = {}): Promise<ThreadResult> {
     // 创建必要的组件
     const threadBuilder = new ThreadBuilder(this.workflowRegistry);
-    const threadExecutor = new ThreadExecutor(this.eventManager, this.workflowRegistry);
+    const threadExecutor = new ThreadExecutor(
+      this.eventManager,
+      this.workflowRegistry,
+      options.userInteractionHandler
+    );
 
     // 步骤 1：构建 ThreadContext
     const threadContext = await threadBuilder.build(workflowId, options);
@@ -144,7 +148,10 @@ export class ThreadLifecycleCoordinator {
     thread.shouldPause = false;
 
     // 3. 创建执行器并继续执行
-    const threadExecutor = new ThreadExecutor(this.eventManager, this.workflowRegistry);
+    const threadExecutor = new ThreadExecutor(
+      this.eventManager,
+      this.workflowRegistry,
+    );
     return await threadExecutor.executeThread(threadContext);
   }
 

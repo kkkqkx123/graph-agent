@@ -3,6 +3,8 @@
  * 定义核心执行相关的类型
  */
 
+import type { UserInteractionHandler } from '../core/user-interaction-api';
+
 /**
  * 执行选项
  * 注意：此类型与ThreadOptions功能重叠，建议未来直接使用ThreadOptions
@@ -20,6 +22,8 @@ export interface ExecuteOptions {
   onNodeExecuted?: (result: any) => void | Promise<void>;
   /** 错误回调 */
   onError?: (error: any) => void | Promise<void>;
+  /** 用户交互处理器 */
+  userInteractionHandler?: UserInteractionHandler;
 }
 
 /**
