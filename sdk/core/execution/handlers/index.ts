@@ -6,3 +6,7 @@
 export * from './node-handlers';
 export * from './trigger-handlers';
 export * from './hook-handlers';
+export * from './user-interaction-handler';
+export * from './human-relay-handler';
+export * from './subgraph-handler';
+export * from './triggered-subgraph-handler';

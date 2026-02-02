@@ -15,13 +15,14 @@
  * - 上下文压缩通过触发器+子工作流实现，不在此模块
  */
 
-import type { LLMMessage, LLMUsage, MessageMarkMap, TokenUsageHistory } from '../../types/llm';
-import { ValidationError } from '../../types/errors';
-import { TokenUsageTracker, type TokenUsageStats } from './token-usage-tracker';
-import { MessageIndexManager } from './managers/message-index-manager';
-import type { EventManager } from '../services/event-manager';
-import type { TokenLimitExceededEvent } from '../../types/events';
-import { EventType } from '../../types/events';
+import type { LLMMessage, LLMUsage, MessageMarkMap, TokenUsageHistory } from '../../../types/llm';
+import { ValidationError } from '../../../types/errors';
+import { TokenUsageTracker, type TokenUsageStats } from '../token-usage-tracker';
+import { MessageIndexManager } from './message-index-manager';
+import type { EventManager } from '../../services/event-manager';
+import type { TokenLimitExceededEvent } from '../../../types/events';
+import { EventType } from '../../../types/events';
+import type { LifecycleCapable } from './lifecycle-capable';
 
 /**
  * ConversationManager事件回调
@@ -38,9 +39,23 @@ export interface ConversationManagerOptions {
 }
 
 /**
+ * 对话状态接口
+ */
+export interface ConversationState {
+  /** 消息历史 */
+  messages: LLMMessage[];
+  /** 累积的 Token 使用统计 */
+  tokenUsage: TokenUsageStats | null;
+  /** 当前请求的 Token 使用统计 */
+  currentRequestUsage: TokenUsageStats | null;
+  /** Token 使用历史记录 */
+  usageHistory?: TokenUsageHistory[];
+}
+
+/**
  * 对话管理器类
  */
-export class ConversationManager {
+export class ConversationManager implements LifecycleCapable<ConversationState> {
   private messages: LLMMessage[] = [];
   private tokenUsageTracker: TokenUsageTracker;
   private indexManager: MessageIndexManager;
@@ -319,5 +334,57 @@ export class ConversationManager {
     clonedManager.indexManager = this.indexManager.clone();
 
     return clonedManager;
+  }
+
+  /**
+   * 创建状态快照
+   * @returns 对话状态快照
+   */
+  createSnapshot(): ConversationState {
+    return {
+      messages: this.getAllMessages().map(msg => ({ ...msg })),
+      tokenUsage: this.getTokenUsage(),
+      currentRequestUsage: this.getCurrentRequestUsage(),
+      usageHistory: this.getUsageHistory()
+    };
+  }
+
+  /**
+   * 从快照恢复状态
+   * @param snapshot 对话状态快照
+   */
+  restoreFromSnapshot(snapshot: ConversationState): void {
+    // 清空当前消息
+    this.clearMessages(false);
+
+    // 恢复消息历史
+    this.addMessages(...snapshot.messages);
+
+    // Token 使用统计无法直接恢复，需要重新累积
+    // 这里只恢复消息历史，Token 统计会在后续执行中重新累积
+  }
+
+  /**
+   * 初始化管理器
+   * ConversationManager在构造时已初始化，此方法为空实现
+   */
+  initialize(): void {
+    // ConversationManager在构造时已初始化，无需额外操作
+  }
+
+  /**
+   * 清理资源
+   * 清空消息历史和Token统计
+   */
+  cleanup(): void {
+    this.clearMessages(false);
+  }
+
+  /**
+   * 检查是否已初始化
+   * @returns 始终返回true，因为ConversationManager在构造时已初始化
+   */
+  isInitialized(): boolean {
+    return true;
   }
 }

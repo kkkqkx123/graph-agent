@@ -26,3 +26,5 @@ export * from './tool';
 export * from './llm';
 export * from './checkpoint';
 export * from './checkpoint-storage';
+export * from './interaction';
+export * from './human-relay';

@@ -13,7 +13,6 @@
  * - CheckpointManager: 检查点管理器
  * - TriggerStateManager: 触发器状态管理器
  * - VariableStateManager: 变量状态管理器
- * - ConversationStateManager: 对话状态管理器
  * - LifecycleCapable: 统一的生命周期管理能力接口
  * - CheckpointCleanupPolicy: 检查点清理策略
  */
@@ -21,7 +20,6 @@
 export { CheckpointManager } from "./checkpoint-manager";
 export { TriggerStateManager, type TriggerRuntimeState } from "./trigger-state-manager";
 export { VariableStateManager } from "./variable-state-manager";
-export { ConversationStateManager, type ConversationState } from "./conversation-state-manager";
 export { type LifecycleCapable } from "./lifecycle-capable";
 export {
   TimeBasedCleanupStrategy,
@@ -37,5 +35,8 @@ export {
   type CheckpointInfo
 } from "./checkpoint-cleanup-policy";
 
-// 从types层重新导出清理结果类型
-export type { CleanupResult } from "../../../types/checkpoint-storage";
+export {
+  ConversationManager,
+  ConversationManagerOptions,
+  ConversationState
+} from "./conversation-manager";

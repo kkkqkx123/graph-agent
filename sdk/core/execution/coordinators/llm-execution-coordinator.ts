@@ -14,7 +14,7 @@
  */
 
 import type { LLMMessage } from '../../../types/llm';
-import { ConversationStateManager } from '../managers/conversation-state-manager';
+import { ConversationManager } from '../managers/conversation-manager';
 import { LLMExecutor } from '../llm-executor';
 import { type ToolService } from '../../services/tool-service';
 import type { EventManager } from '../../services/event-manager';
@@ -84,12 +84,12 @@ export class LLMExecutionCoordinator {
    * 5. 返回最终内容
    *
    * @param params 执行参数
-   * @param conversationState 对话状态管理器
+   * @param conversationState 对话管理器
    * @returns 执行结果
    */
   async executeLLM(
     params: LLMExecutionParams,
-    conversationState: ConversationStateManager
+    conversationState: ConversationManager
   ): Promise<LLMExecutionResponse> {
     try {
       const content = await this.handleLLMExecution(params, conversationState);
@@ -110,12 +110,12 @@ export class LLMExecutionCoordinator {
    * 处理 LLM 执行请求
    *
    * @param params 执行参数
-   * @param conversationState 对话状态管理器
+   * @param conversationState 对话管理器
    * @returns LLM 响应内容
    */
   private async handleLLMExecution(
     params: LLMExecutionParams,
-    conversationState: ConversationStateManager
+    conversationState: ConversationManager
   ): Promise<string> {
     const { prompt, profileId, parameters, tools, threadId, nodeId } = params;
 
@@ -125,7 +125,7 @@ export class LLMExecutionCoordinator {
       content: prompt
     };
     conversationState.addMessage(userMessage);
-    
+
     // 触发MESSAGE_ADDED事件
     if (this.eventManager) {
       await this.eventManager.emit({
@@ -149,13 +149,13 @@ export class LLMExecutionCoordinator {
 
       // 检查 Token 使用情况
       await conversationState.checkTokenUsage();
-      
+
       // 检查Token使用警告
       const tokenUsage = conversationState.getTokenUsage();
       if (tokenUsage && this.eventManager) {
         const tokenLimit = (conversationState as any).tokenLimit || 100000;
         const usagePercentage = (tokenUsage.totalTokens / tokenLimit) * 100;
-        
+
         // 当使用量超过80%时触发警告
         if (usagePercentage > 80) {
           await this.eventManager.emit({
@@ -203,7 +203,7 @@ export class LLMExecutionCoordinator {
         }))
       };
       conversationState.addMessage(assistantMessage);
-      
+
       // 触发MESSAGE_ADDED事件
       if (this.eventManager) {
         await this.eventManager.emit({
@@ -237,7 +237,7 @@ export class LLMExecutionCoordinator {
         break;
       }
     }
-    
+
     // 触发CONVERSATION_STATE_CHANGED事件
     if (this.eventManager) {
       const finalTokenUsage = conversationState.getTokenUsage();
@@ -260,17 +260,17 @@ export class LLMExecutionCoordinator {
    * 执行工具调用
    *
    * @param toolCalls 工具调用数组
-   * @param conversationState 对话状态管理器
+   * @param conversationState 对话管理器
    */
   private async executeToolCalls(
     toolCalls: Array<{ id: string; name: string; arguments: string }>,
-    conversationState: ConversationStateManager,
+    conversationState: ConversationManager,
     threadId?: string,
     nodeId?: string
   ): Promise<void> {
     for (const toolCall of toolCalls) {
       const startTime = now();
-      
+
       // 触发TOOL_CALL_STARTED事件
       if (this.eventManager) {
         await this.eventManager.emit({
@@ -283,7 +283,7 @@ export class LLMExecutionCoordinator {
           toolArguments: toolCall.arguments
         });
       }
-      
+
       try {
         // 调用 ToolService 执行工具
         const result = await this.toolService.execute(
@@ -305,7 +305,7 @@ export class LLMExecutionCoordinator {
           toolCallId: toolCall.id
         };
         conversationState.addMessage(toolMessage);
-        
+
         // 触发MESSAGE_ADDED事件
         if (this.eventManager) {
           await this.eventManager.emit({
@@ -318,7 +318,7 @@ export class LLMExecutionCoordinator {
             content: toolMessage.content
           });
         }
-        
+
         // 触发TOOL_CALL_COMPLETED事件
         if (this.eventManager) {
           await this.eventManager.emit({
@@ -341,7 +341,7 @@ export class LLMExecutionCoordinator {
           toolCallId: toolCall.id
         };
         conversationState.addMessage(toolMessage);
-        
+
         // 触发MESSAGE_ADDED事件
         if (this.eventManager) {
           await this.eventManager.emit({
@@ -354,7 +354,7 @@ export class LLMExecutionCoordinator {
             content: toolMessage.content
           });
         }
-        
+
         // 触发TOOL_CALL_FAILED事件
         if (this.eventManager) {
           await this.eventManager.emit({

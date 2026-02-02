@@ -19,10 +19,9 @@
 import type { Thread, VariableScope } from '../../../types';
 import type { ID } from '../../../types/common';
 import type { StatefulToolFactory } from '../../../types/tool';
-import { ConversationManager } from '../conversation';
+import { ConversationManager } from '../managers/conversation-manager';
 import { VariableCoordinator } from '../coordinators/variable-coordinator';
 import { VariableStateManager } from '../managers/variable-state-manager';
-import { ConversationStateManager } from '../managers/conversation-state-manager';
 import { TriggerCoordinator } from '../coordinators/trigger-coordinator';
 import { TriggerStateManager, type TriggerRuntimeState } from '../managers/trigger-state-manager';
 import { GraphNavigator } from '../../graph/graph-navigator';
@@ -40,14 +39,9 @@ export class ThreadContext {
   public readonly thread: Thread;
 
   /**
-   * 对话管理器（保留用于向后兼容）
+   * 对话管理器
    */
   public readonly conversationManager: ConversationManager;
-
-  /**
-   * 对话状态管理器
-   */
-  public readonly conversationStateManager: ConversationStateManager;
 
   /**
    * 变量协调器
@@ -120,16 +114,6 @@ export class ThreadContext {
       (conversationManager as any).eventManager,
       thread.id,
       thread.workflowId
-    );
-
-    // 初始化对话状态管理器
-    this.conversationStateManager = new ConversationStateManager(
-      thread.id,
-      {
-        tokenLimit: (conversationManager as any).tokenUsageTracker?.tokenLimit,
-        eventManager: (conversationManager as any).eventManager,
-        workflowId: thread.workflowId
-      }
     );
 
     // 初始化触发器状态管理器
@@ -307,7 +291,7 @@ export class ThreadContext {
   addNodeResult(result: any): void {
     // 委托给执行状态管理器处理子工作流结果
     this.executionState.addSubgraphExecutionResult(result);
-    
+
     // 如果不在子工作流中，添加到主工作流历史记录
     if (!this.executionState.isExecutingSubgraph()) {
       this.thread.nodeResults.push(result);
@@ -561,7 +545,7 @@ export class ThreadContext {
     this.triggerStateManager.cleanup();
 
     // 4. 清理对话状态
-    this.conversationStateManager.cleanup();
+    this.conversationManager.cleanup();
 
     // 5. 清理执行状态
     this.executionState.clear();
@@ -578,7 +562,7 @@ export class ThreadContext {
     return [
       { name: 'VariableStateManager', manager: this.variableStateManager },
       { name: 'TriggerStateManager', manager: this.triggerStateManager },
-      { name: 'ConversationStateManager', manager: this.conversationStateManager }
+      { name: 'ConversationManager', manager: this.conversationManager }
     ];
   }
 }

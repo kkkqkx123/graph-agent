@@ -31,12 +31,9 @@ export { ThreadRegistry } from '../services/thread-registry';
 export { VariableCoordinator } from './coordinators/variable-coordinator';
 export { VariableStateManager } from './managers/variable-state-manager';
 
-// 对话状态管理器
-export { ConversationStateManager, type ConversationState } from './managers/conversation-state-manager';
-
 // LLM执行相关
-export { ConversationManager } from './conversation';
-export type { ConversationManagerOptions } from './conversation';
+export { ConversationManager, type ConversationState } from './managers/conversation-manager';
+export type { ConversationManagerOptions } from './managers/conversation-manager';
 export { LLMExecutor } from './llm-executor';
 export { TokenUsageTracker } from './token-usage-tracker';
 export type { TokenUsageStats, TokenUsageTrackerOptions, FullTokenUsageStats } from './token-usage-tracker';

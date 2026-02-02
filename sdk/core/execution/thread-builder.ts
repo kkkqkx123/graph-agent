@@ -9,7 +9,7 @@
 
 import type { ProcessedWorkflowDefinition } from '../../types/workflow';
 import type { Thread, ThreadOptions, ThreadStatus } from '../../types/thread';
-import { ConversationManager } from './conversation';
+import { ConversationManager } from './managers/conversation-manager';
 import { ThreadContext } from './context/thread-context';
 import { NodeType } from '../../types/node';
 import { generateId, now as getCurrentTimestamp } from '../../utils';
@@ -34,10 +34,10 @@ export class ThreadBuilder {
   constructor(workflowRegistryParam?: WorkflowRegistry, executionContext?: ExecutionContext) {
     this.executionContext = executionContext || ExecutionContext.createDefault();
     this.workflowRegistry = workflowRegistryParam || this.executionContext.getWorkflowRegistry();
-    
+
     // 初始化变量状态管理器
     this.variableStateManager = new VariableStateManager();
-    
+
     // 初始化变量协调器
     this.variableCoordinator = new VariableCoordinator(
       this.variableStateManager,

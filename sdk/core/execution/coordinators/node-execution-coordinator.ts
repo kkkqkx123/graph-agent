@@ -5,7 +5,7 @@
  * 职责：
  * - 协调节点执行的核心逻辑
  * - 处理子图边界（进入/退出）
- * - 执行节点（包括LLM托管节点和普通节点）
+ * - 执行节点（包括LLM托管节点[tool与llm]、用户交互节点和普通节点）
  * - 触发节点事件
  * - 执行节点Hooks
  *
@@ -20,8 +20,11 @@ import type { Node } from '../../../types/node';
 import type { NodeExecutionResult } from '../../../types/thread';
 import type { EventManager } from '../../services/event-manager';
 import type { UserInteractionHandler } from '../../../api/core/user-interaction-api';
+import type { HumanRelayHandler } from '../../../api/llm/human-relay-api';
 import { LLMExecutionCoordinator } from './llm-execution-coordinator';
 import { executeUserInteraction } from '../handlers/user-interaction-handler';
+import { executeHumanRelay } from '../handlers/human-relay-handler';
+import { LLMWrapper } from '../../llm/wrapper';
 import { enterSubgraph, exitSubgraph, getSubgraphInput, getSubgraphOutput } from '../handlers/subgraph-handler';
 import { EventType } from '../../../types/events';
 import type { NodeStartedEvent, NodeCompletedEvent, NodeFailedEvent, SubgraphStartedEvent, SubgraphCompletedEvent } from '../../../types/events';
@@ -48,11 +51,16 @@ import {
  * 节点执行协调器
  */
 export class NodeExecutionCoordinator {
+  private llmWrapper: LLMWrapper;
+
   constructor(
     private eventManager: EventManager,
     private llmCoordinator: LLMExecutionCoordinator,
-    private userInteractionHandler?: UserInteractionHandler
-  ) { }
+    private userInteractionHandler?: UserInteractionHandler,
+    private humanRelayHandler?: HumanRelayHandler
+  ) {
+    this.llmWrapper = new LLMWrapper();
+  }
 
   /**
    * 执行节点
@@ -229,7 +237,7 @@ export class NodeExecutionCoordinator {
     if (node.type === NodeType.USER_INTERACTION) {
       return await this.executeUserInteractionNode(threadContext, node, startTime);
     }
-    
+
     // 检查是否为需要LLM执行器托管的节点
     if (isLLMManagedNode(node.type)) {
       return await this.executeLLMManagedNode(threadContext, node, startTime);
@@ -316,6 +324,12 @@ export class NodeExecutionCoordinator {
       // 提取LLM请求数据
       const requestData = extractLLMRequestData(node, threadContext);
 
+      // 检查是否为 HumanRelay provider
+      const profile = this.llmWrapper.getProfile(requestData.profileId || 'default');
+      if (profile?.provider === 'HUMAN_RELAY') {
+        return await this.executeHumanRelayNode(threadContext, node, requestData, startTime);
+      }
+
       // 调用 LLMExecutionCoordinator，传入 conversationState
       const result = await this.llmCoordinator.executeLLM(
         {
@@ -326,7 +340,7 @@ export class NodeExecutionCoordinator {
           parameters: requestData.parameters,
           tools: requestData.tools
         },
-        threadContext.conversationStateManager
+        threadContext.conversationManager
       );
 
       const endTime = now();
@@ -354,6 +368,63 @@ export class NodeExecutionCoordinator {
           executionTime: diffTimestamp(startTime, endTime)
         };
       }
+    } catch (error) {
+      const endTime = now();
+      return {
+        nodeId: node.id,
+        nodeType: node.type,
+        status: 'FAILED',
+        step: threadContext.thread.nodeResults.length + 1,
+        error: error instanceof Error ? error : new Error(String(error)),
+        startTime,
+        endTime,
+        executionTime: diffTimestamp(startTime, endTime)
+      };
+    }
+  }
+
+  /**
+   * 执行 HumanRelay 节点
+   */
+  private async executeHumanRelayNode(
+    threadContext: ThreadContext,
+    node: Node,
+    requestData: any,
+    startTime: number
+  ): Promise<NodeExecutionResult> {
+    if (!this.humanRelayHandler) {
+      throw new Error('HumanRelayHandler is not provided. Please provide a handler when creating NodeExecutionCoordinator.');
+    }
+
+    try {
+      // 获取当前对话消息
+      const messages = threadContext.conversationManager.getMessages();
+
+      // 调用 executeHumanRelay 函数
+      const result = await executeHumanRelay(
+        messages,
+        requestData.prompt || 'Please provide your input:',
+        requestData.parameters?.timeout || 300000,
+        threadContext,
+        this.eventManager,
+        this.humanRelayHandler,
+        node.id
+      );
+
+      // 将人工输入的消息添加到对话历史
+      threadContext.conversationManager.addMessage(result.message);
+
+      const endTime = now();
+      return {
+        nodeId: node.id,
+        nodeType: node.type,
+        status: 'COMPLETED',
+        step: threadContext.thread.nodeResults.length + 1,
+        data: { content: result.message.content },
+        startTime,
+        endTime,
+        executionTime: diffTimestamp(startTime, endTime)
+      };
     } catch (error) {
       const endTime = now();
       return {

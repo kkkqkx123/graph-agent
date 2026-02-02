@@ -10,7 +10,7 @@ import type { ThreadRegistry } from '../../../services/thread-registry';
 import { ExecutionError, TimeoutError, ValidationError } from '../../../../types/errors';
 import { ThreadStatus } from '../../../../types/thread';
 import { ExecutionState } from '../../context/execution-state';
-import { ConversationManager } from '../../conversation';
+import { ConversationManager } from '../../managers/conversation-manager';
 import type { Graph, GraphNode, GraphEdge } from '../../../../types/graph';
 
 // Mock types for testing

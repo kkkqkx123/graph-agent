@@ -20,7 +20,7 @@ import type { CheckpointStorage, CheckpointStorageMetadata } from '../../../type
 import type { ThreadRegistry } from '../../services/thread-registry';
 import { ThreadContext } from '../context/thread-context';
 import { VariableStateManager } from './variable-state-manager';
-import { ConversationManager } from '../conversation';
+import { ConversationManager } from './conversation-manager';
 import { generateId, now } from '../../../utils';
 import { type WorkflowRegistry } from '../../services/workflow-registry';
 import { MemoryCheckpointStorage } from '../../storage/memory-checkpoint-storage';

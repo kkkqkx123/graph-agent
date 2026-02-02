@@ -80,7 +80,15 @@ export enum EventType {
   /** 用户交互处理完成 */
   USER_INTERACTION_PROCESSED = 'USER_INTERACTION_PROCESSED',
   /** 用户交互失败 */
-  USER_INTERACTION_FAILED = 'USER_INTERACTION_FAILED'
+  USER_INTERACTION_FAILED = 'USER_INTERACTION_FAILED',
+  /** HumanRelay 请求 */
+  HUMAN_RELAY_REQUESTED = 'HUMAN_RELAY_REQUESTED',
+  /** HumanRelay 响应 */
+  HUMAN_RELAY_RESPONDED = 'HUMAN_RELAY_RESPONDED',
+  /** HumanRelay 处理完成 */
+  HUMAN_RELAY_PROCESSED = 'HUMAN_RELAY_PROCESSED',
+  /** HumanRelay 失败 */
+  HUMAN_RELAY_FAILED = 'HUMAN_RELAY_FAILED'
 }
 
 /**
@@ -541,6 +549,61 @@ export interface UserInteractionFailedEvent extends BaseEvent {
 }
 
 /**
+ * HumanRelay 请求事件类型
+ */
+export interface HumanRelayRequestedEvent extends BaseEvent {
+  type: EventType.HUMAN_RELAY_REQUESTED;
+  /** 节点ID */
+  nodeId: ID;
+  /** 请求ID */
+  requestId: ID;
+  /** 提示信息 */
+  prompt: string;
+  /** 消息数量 */
+  messageCount: number;
+  /** 超时时间 */
+  timeout: number;
+}
+
+/**
+ * HumanRelay 响应事件类型
+ */
+export interface HumanRelayRespondedEvent extends BaseEvent {
+  type: EventType.HUMAN_RELAY_RESPONDED;
+  /** 请求ID */
+  requestId: ID;
+  /** 人工输入内容 */
+  content: string;
+}
+
+/**
+ * HumanRelay 处理完成事件类型
+ */
+export interface HumanRelayProcessedEvent extends BaseEvent {
+  type: EventType.HUMAN_RELAY_PROCESSED;
+  /** 请求ID */
+  requestId: ID;
+  /** 处理结果 */
+  message: {
+    role: string;
+    content: string;
+  };
+  /** 执行时间（毫秒） */
+  executionTime: number;
+}
+
+/**
+ * HumanRelay 失败事件类型
+ */
+export interface HumanRelayFailedEvent extends BaseEvent {
+  type: EventType.HUMAN_RELAY_FAILED;
+  /** 请求ID */
+  requestId: ID;
+  /** 失败原因 */
+  reason: string;
+}
+
+/**
  * 事件监听器类型
  */
 export type EventListener<T extends BaseEvent> = (event: T) => void | Promise<void>;
@@ -594,4 +657,8 @@ export type Event =
   | UserInteractionRequestedEvent
   | UserInteractionRespondedEvent
   | UserInteractionProcessedEvent
-  | UserInteractionFailedEvent;
+  | UserInteractionFailedEvent
+  | HumanRelayRequestedEvent
+  | HumanRelayRespondedEvent
+  | HumanRelayProcessedEvent
+  | HumanRelayFailedEvent;
