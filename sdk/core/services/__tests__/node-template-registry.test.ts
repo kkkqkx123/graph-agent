@@ -129,10 +129,11 @@ describe('NodeTemplateRegistry', () => {
         },
         {
           name: 'template-3',
-          type: NodeType.TOOL,
+          type: NodeType.VARIABLE,
           config: {
-            toolName: 'test-tool',
-            parameters: {}
+            variableName: 'test-var',
+            variableType: 'string',
+            expression: 'test'
           },
           createdAt: Date.now(),
           updatedAt: Date.now()
@@ -165,10 +166,11 @@ describe('NodeTemplateRegistry', () => {
         },
         {
           name: 'template-3',
-          type: NodeType.TOOL,
+          type: NodeType.VARIABLE,
           config: {
-            toolName: 'test-tool',
-            parameters: {}
+            variableName: 'test-var',
+            variableType: 'string',
+            expression: 'test'
           },
           createdAt: Date.now(),
           updatedAt: Date.now()
@@ -353,10 +355,11 @@ describe('NodeTemplateRegistry', () => {
         },
         {
           name: 'template-3',
-          type: NodeType.TOOL,
+          type: NodeType.VARIABLE,
           config: {
-            toolName: 'test-tool',
-            parameters: {}
+            variableName: 'test-var',
+            variableType: 'string',
+            expression: 'test'
           },
           createdAt: Date.now(),
           updatedAt: Date.now()
@@ -570,10 +573,11 @@ describe('NodeTemplateRegistry', () => {
         },
         {
           name: 'template-3',
-          type: NodeType.TOOL,
+          type: NodeType.VARIABLE,
           config: {
-            toolName: 'test-tool',
-            parameters: {}
+            variableName: 'test-var',
+            variableType: 'string',
+            expression: 'test'
           },
           metadata: { category: 'utility' },
           createdAt: Date.now(),
@@ -622,12 +626,13 @@ describe('NodeTemplateRegistry', () => {
         },
         {
           name: 'template-3',
-          type: NodeType.TOOL,
+          type: NodeType.VARIABLE,
           config: {
-            toolName: 'test-tool',
-            parameters: {}
+            variableName: 'test-var',
+            variableType: 'string',
+            expression: 'test'
           },
-          metadata: { tags: ['tool'] },
+          metadata: { tags: ['variable'] },
           createdAt: Date.now(),
           updatedAt: Date.now()
         }
@@ -921,10 +926,11 @@ describe('NodeTemplateRegistry', () => {
         },
         {
           name: 'template-3',
-          type: NodeType.TOOL,
+          type: NodeType.VARIABLE,
           config: {
-            toolName: 'test-tool',
-            parameters: {}
+            variableName: 'test-var',
+            variableType: 'string',
+            expression: 'test'
           },
           createdAt: Date.now(),
           updatedAt: Date.now()

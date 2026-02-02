@@ -16,7 +16,6 @@ export { validateEndNode } from './end-validator';
 export { validateCodeNode } from './code-validator';
 export { validateContextProcessorNode } from './context-processor-validator';
 export { validateRouteNode } from './route-validator';
-export { validateToolNode } from './tool-validator';
 export { validateVariableNode } from './variable-validator';
 export { validateLLMNode } from './llm-validator';
 export { validateUserInteractionNode } from './user-interaction-validator';
@@ -66,10 +65,6 @@ export function validateNodeByType(node: Node): void {
     case NodeType.ROUTE:
       const { validateRouteNode } = require('./route-validator');
       validateRouteNode(node);
-      break;
-    case NodeType.TOOL:
-      const { validateToolNode } = require('./tool-validator');
-      validateToolNode(node);
       break;
     case NodeType.VARIABLE:
       const { validateVariableNode } = require('./variable-validator');

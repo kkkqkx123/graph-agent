@@ -698,18 +698,7 @@ describe('WorkflowValidator', () => {
               prompt: 'Hello'
             },
             incomingEdgeIds: ['edge-1'],
-            outgoingEdgeIds: ['edge-2', 'edge-3']
-          },
-          {
-            id: 'node-tool',
-            name: 'Tool',
-            type: NodeType.TOOL,
-            config: {
-              toolName: 'get_weather',
-              parameters: { location: 'Beijing' }
-            },
-            incomingEdgeIds: ['edge-2'],
-            outgoingEdgeIds: ['edge-4']
+            outgoingEdgeIds: ['edge-2']
           },
           {
             id: 'node-code',
@@ -722,15 +711,15 @@ describe('WorkflowValidator', () => {
               timeout: 5000,
               retries: 3
             },
-            incomingEdgeIds: ['edge-3'],
-            outgoingEdgeIds: ['edge-5']
+            incomingEdgeIds: ['edge-2'],
+            outgoingEdgeIds: ['edge-3']
           },
           {
             id: 'node-end',
             name: 'End',
             type: NodeType.END,
             config: {},
-            incomingEdgeIds: ['edge-4', 'edge-5'],
+            incomingEdgeIds: ['edge-3'],
             outgoingEdgeIds: []
           }
         ],
@@ -744,23 +733,11 @@ describe('WorkflowValidator', () => {
           {
             id: 'edge-2',
             sourceNodeId: 'node-llm',
-            targetNodeId: 'node-tool',
-            type: EdgeType.DEFAULT
-          },
-          {
-            id: 'edge-3',
-            sourceNodeId: 'node-llm',
             targetNodeId: 'node-code',
             type: EdgeType.DEFAULT
           },
           {
-            id: 'edge-4',
-            sourceNodeId: 'node-tool',
-            targetNodeId: 'node-end',
-            type: EdgeType.DEFAULT
-          },
-          {
-            id: 'edge-5',
+            id: 'edge-3',
             sourceNodeId: 'node-code',
             targetNodeId: 'node-end',
             type: EdgeType.DEFAULT

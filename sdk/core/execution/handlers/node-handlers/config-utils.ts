@@ -3,7 +3,7 @@
  * 提供LLM相关节点的配置验证和转换功能
  */
 
-import type { LLMNodeConfig, ToolNodeConfig, ContextProcessorNodeConfig, UserInteractionNodeConfig } from '../../../../types/node';
+import type { LLMNodeConfig, ContextProcessorNodeConfig, UserInteractionNodeConfig } from '../../../../types/node';
 import type { LLMExecutionRequestData } from '../../llm-executor';
 import type { LLMMessage } from '../../../../types/llm';
 
@@ -87,56 +87,9 @@ export function transformLLMNodeConfig(config: LLMNodeConfig): LLMExecutionReque
   return {
     prompt: config.prompt || '',
     profileId: config.profileId,
-    parameters: config.parameters || {}
-  };
-}
-
-/**
- * 验证工具节点配置
- */
-export function validateToolNodeConfig(config: any): config is ToolNodeConfig {
-  if (!config || typeof config !== 'object') {
-    return false;
-  }
-  
-  if (!config.toolName || typeof config.toolName !== 'string') {
-    return false;
-  }
-  
-  if (!config.parameters || typeof config.parameters !== 'object') {
-    return false;
-  }
-  
-  // 验证超时配置
-  if (config.timeout !== undefined && config.timeout <= 0) {
-    return false;
-  }
-  
-  // 验证重试配置
-  if (config.retries !== undefined && config.retries < 0) {
-    return false;
-  }
-  
-  if (config.retryDelay !== undefined && config.retryDelay < 0) {
-    return false;
-  }
-  
-  return true;
-}
-
-/**
- * 转换工具节点配置为LLM请求数据
- */
-export function transformToolNodeConfig(config: ToolNodeConfig): LLMExecutionRequestData {
-  return {
-    prompt: `Execute tool: ${config.toolName}`,
-    profileId: 'default',
-    parameters: {},
-    tools: [{
-      name: config.toolName,
-      description: `Tool: ${config.toolName}`,
-      parameters: config.parameters
-    }]
+    parameters: config.parameters || {},
+    // maxToolCalls由LLM模块内部使用，不传递给LLM执行器
+    stream: false
   };
 }
 

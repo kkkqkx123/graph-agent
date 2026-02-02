@@ -179,22 +179,8 @@ export interface LLMNodeConfig {
   prompt?: string;
   /** 可选的参数覆盖（覆盖Profile中的parameters） */
   parameters?: Record<string, any>;
-}
-
-/**
- * 工具节点配置
- */
-export interface ToolNodeConfig {
-  /** 工具名称（会保证唯一） */
-  toolName: string;
-  /** 工具参数对象 */
-  parameters: Record<string, any>;
-  /** 超时时间（毫秒） */
-  timeout?: number;
-  /** 重试次数 */
-  retries?: number;
-  /** 重试延迟（毫秒） */
-  retryDelay?: number;
+  /** 最大工具调用次数（默认10，由LLM模块控制） */
+  maxToolCalls?: number;
 }
 
 /**
@@ -452,7 +438,6 @@ export type NodeConfig =
   | JoinNodeConfig
   | CodeNodeConfig
   | LLMNodeConfig
-  | ToolNodeConfig
   | UserInteractionNodeConfig
   | RouteNodeConfig
   | ContextProcessorNodeConfig

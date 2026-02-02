@@ -13,7 +13,9 @@ import { ValidationError } from '../../../types/errors';
  */
 const llmNodeConfigSchema = z.object({
   profileId: z.string().min(1, 'Profile ID is required'),
-  parameters: z.record(z.string(), z.any()).optional()
+  prompt: z.string().optional(),
+  parameters: z.record(z.string(), z.any()).optional(),
+  maxToolCalls: z.number().min(0, 'Max tool calls must be non-negative').optional()
 });
 
 /**

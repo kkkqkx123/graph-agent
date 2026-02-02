@@ -1,7 +1,7 @@
 /**
  * LLM请求相关操作
- * 提供LLM节点类型判断和请求数据提取功能。处理对象包括LLM、TOOL、User_INTERACTION节点
- * 
+ * 提供LLM节点类型判断和请求数据提取功能
+ *
  * 职责：
  * - 判断节点是否需要LLM执行器托管
  * - 从节点配置中提取LLM请求数据
@@ -13,8 +13,7 @@ import type { Node } from '../../../../types/node';
 import { NodeType } from '../../../../types/node';
 import type { LLMExecutionRequestData } from '../../llm-executor';
 import {
-  transformLLMNodeConfig,
-  transformToolNodeConfig
+  transformLLMNodeConfig
 } from '../../handlers/node-handlers/config-utils';
 
 /**
@@ -23,10 +22,7 @@ import {
  * @returns 是否为LLM托管节点
  */
 export function isLLMManagedNode(nodeType: NodeType): boolean {
-  return [
-    NodeType.LLM,
-    NodeType.TOOL
-  ].includes(nodeType);
+  return nodeType === NodeType.LLM;
 }
 
 /**
@@ -43,10 +39,6 @@ export function extractLLMRequestData(node: Node, threadContext: any): LLMExecut
   switch (node.type) {
     case NodeType.LLM: {
       return transformLLMNodeConfig(config as any);
-    }
-
-    case NodeType.TOOL: {
-      return transformToolNodeConfig(config as any);
     }
 
     default:

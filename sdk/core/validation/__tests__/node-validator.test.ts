@@ -152,7 +152,7 @@ describe('NodeValidator', () => {
         type: NodeType.FORK,
         config: {
           forkId: 'fork-1',
-          forkStrategy: 'serial'
+          forkStrategy: 'SERIAL'
         },
         incomingEdgeIds: [],
         outgoingEdgeIds: []
@@ -436,63 +436,6 @@ describe('NodeValidator', () => {
     });
   });
 
-  describe('validateNodeConfig - TOOL node', () => {
-    it('should validate a valid TOOL node', () => {
-      const node: Node = {
-        id: 'node-1',
-        name: 'Tool',
-        type: NodeType.TOOL,
-        config: {
-          toolName: 'get_weather',
-          parameters: { location: 'Beijing' },
-          timeout: 5000,
-          retries: 3
-        },
-        incomingEdgeIds: [],
-        outgoingEdgeIds: []
-      };
-      const result = validator.validateNode(node);
-      expect(result.valid).toBe(true);
-      expect(result.errors).toHaveLength(0);
-    });
-
-    it('should return error for TOOL node without toolName', () => {
-      const node: Node = {
-        id: 'node-1',
-        name: 'Tool',
-        type: NodeType.TOOL,
-        config: {
-          parameters: { location: 'Beijing' },
-          timeout: 5000,
-          retries: 3
-        },
-        incomingEdgeIds: [],
-        outgoingEdgeIds: []
-      };
-      const result = validator.validateNode(node);
-      expect(result.valid).toBe(false);
-      expect(result.errors.some(e => e.field?.includes('toolName'))).toBe(true);
-    });
-
-    it('should return error for TOOL node without parameters', () => {
-      const node: Node = {
-        id: 'node-1',
-        name: 'Tool',
-        type: NodeType.TOOL,
-        config: {
-          toolName: 'get_weather',
-          timeout: 5000,
-          retries: 3
-        },
-        incomingEdgeIds: [],
-        outgoingEdgeIds: []
-      };
-      const result = validator.validateNode(node);
-      expect(result.valid).toBe(false);
-      expect(result.errors.some(e => e.field?.includes('parameters'))).toBe(true);
-    });
-  });
-
   describe('validateNodeConfig - USER_INTERACTION node', () => {
     it('should validate a valid USER_INTERACTION node with UPDATE_VARIABLES operation', () => {
       const node: Node = {
@@ -677,16 +620,16 @@ describe('NodeValidator', () => {
   });
 
   describe('validateNodeConfig - CONTEXT_PROCESSOR node', () => {
-    it('should validate a valid CONTEXT_PROCESSOR node', () => {
+    it('should validate a valid CONTEXT_PROCESSOR node with truncate operation', () => {
       const node: Node = {
         id: 'node-1',
         name: 'ContextProcessor',
         type: NodeType.CONTEXT_PROCESSOR,
         config: {
-          processorType: 'transform',
-          rules: [
-            { sourcePath: 'input.value', targetPath: 'output.value' }
-          ]
+          operation: 'truncate',
+          truncate: {
+            keepFirst: 10
+          }
         },
         incomingEdgeIds: [],
         outgoingEdgeIds: []
@@ -696,37 +639,55 @@ describe('NodeValidator', () => {
       expect(result.errors).toHaveLength(0);
     });
 
-    it('should return error for CONTEXT_PROCESSOR node without processorType', () => {
+    it('should validate a valid CONTEXT_PROCESSOR node with insert operation', () => {
       const node: Node = {
         id: 'node-1',
         name: 'ContextProcessor',
         type: NodeType.CONTEXT_PROCESSOR,
         config: {
-          rules: []
-        } as any,
+          operation: 'insert',
+          insert: {
+            position: 0,
+            messages: [
+              { role: 'user', content: 'Hello' }
+            ]
+          }
+        },
         incomingEdgeIds: [],
         outgoingEdgeIds: []
       };
       const result = validator.validateNode(node);
-      expect(result.valid).toBe(false);
-      expect(result.errors.some(e => e.field?.includes('processorType'))).toBe(true);
+      expect(result.valid).toBe(true);
+      expect(result.errors).toHaveLength(0);
     });
 
-    it('should return error for CONTEXT_PROCESSOR node without rules', () => {
+    it('should return error for CONTEXT_PROCESSOR node without operation', () => {
+      const node: Node = {
+        id: 'node-1',
+        name: 'ContextProcessor',
+        type: NodeType.CONTEXT_PROCESSOR,
+        config: {} as any,
+        incomingEdgeIds: [],
+        outgoingEdgeIds: []
+      };
+      const result = validator.validateNode(node);
+      expect(result.valid).toBe(false);
+      expect(result.errors.some(e => e.field?.includes('operation'))).toBe(true);
+    });
+
+    it('should return error for CONTEXT_PROCESSOR node with missing operation-specific config', () => {
       const node: Node = {
         id: 'node-1',
         name: 'ContextProcessor',
         type: NodeType.CONTEXT_PROCESSOR,
         config: {
-          processorType: 'transform',
-          rules: []
+          operation: 'truncate'
         } as any,
         incomingEdgeIds: [],
         outgoingEdgeIds: []
       };
       const result = validator.validateNode(node);
       expect(result.valid).toBe(false);
-      expect(result.errors.some(e => e.field?.includes('rules'))).toBe(true);
     });
   });
 

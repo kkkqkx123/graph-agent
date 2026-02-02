@@ -1,181 +1,17 @@
 /**
  * 节点验证器
  * 负责节点配置的验证
- * 使用zod进行声明式验证
+ * 使用 node-validation 目录中的验证函数进行验证
  */
 
 import { z } from 'zod';
 import type { Node } from '../../types/node';
 import { NodeType } from '../../types/node';
 import { ValidationError, type ValidationResult } from '../../types/errors';
+import { validateNodeByType } from './node-validation';
 
 /**
- * 变量节点配置schema
- */
-const variableNodeConfigSchema = z.object({
-  variableName: z.string().min(1, 'Variable name is required'),
-  variableType: z.enum(['number', 'string', 'boolean', 'array', 'object']),
-  expression: z.string().min(1, 'Expression is required'),
-  scope: z.enum(['local', 'global']).optional(),
-  readonly: z.boolean().optional()
-});
-
-/**
- * 分叉节点配置schema
- */
-const forkNodeConfigSchema = z.object({
-  forkId: z.string().min(1, 'Fork ID is required'),
-  forkStrategy: z.enum(['serial', 'parallel']),
-  childNodeIds: z.array(z.string()).optional()
-});
-
-/**
- * 连接节点配置schema
- */
-const joinNodeConfigSchema = z.object({
-  joinId: z.string().min(1, 'Join ID is required'),
-  joinStrategy: z.enum(['ALL_COMPLETED', 'ANY_COMPLETED', 'ALL_FAILED', 'ANY_FAILED', 'SUCCESS_COUNT_THRESHOLD']),
-  threshold: z.number().optional(),
-  timeout: z.number().optional(),
-  childThreadIds: z.array(z.string()).optional()
-}).refine(
-  (data) => {
-    if (data.joinStrategy === 'SUCCESS_COUNT_THRESHOLD' && data.threshold === undefined) {
-      return false;
-    }
-    return true;
-  },
-  { message: 'JOIN node with SUCCESS_COUNT_THRESHOLD strategy must have threshold', path: ['threshold'] }
-);
-
-/**
- * 代码节点配置schema
- */
-const codeNodeConfigSchema = z.object({
-  scriptName: z.string().min(1, 'Script name is required'),
-  scriptType: z.enum(['shell', 'cmd', 'powershell', 'python', 'javascript']),
-  risk: z.enum(['none', 'low', 'medium', 'high']),
-  timeout: z.number().min(0, 'Timeout must be non-negative').optional(),
-  retries: z.number().min(0, 'Retries must be non-negative').optional(),
-  retryDelay: z.number().min(0, 'Retry delay must be non-negative').optional(),
-  inline: z.boolean().optional()
-});
-
-/**
- * LLM节点配置schema
- */
-const llmNodeConfigSchema = z.object({
-  profileId: z.string().min(1, 'Profile ID is required'),
-  parameters: z.record(z.string(), z.any()).optional()
-});
-
-/**
- * 工具节点配置schema
- */
-const toolNodeConfigSchema = z.object({
-  toolName: z.string().min(1, 'Tool name is required'),
-  parameters: z.record(z.string(), z.any()),
-  timeout: z.number().min(0, 'Timeout must be non-negative').optional(),
-  retries: z.number().min(0, 'Retries must be non-negative').optional(),
-  retryDelay: z.number().min(0, 'Retry delay must be non-negative').optional()
-});
-
-/**
- * 用户交互节点配置schema
- */
-const userInteractionNodeConfigSchema = z.object({
-  userInteractionType: z.enum(['ask_for_approval', 'ask_for_input', 'ask_for_selection', 'show_message']),
-  showMessage: z.string().optional(),
-  userInput: z.any().optional()
-});
-
-/**
- * 路由节点配置schema
- */
-const routeNodeConfigSchema = z.object({
-  routes: z.array(z.object({
-    condition: z.string().min(1, 'Route condition is required'),
-    targetNodeId: z.string().min(1, 'Target node ID is required'),
-    priority: z.number().optional()
-  })).min(1, 'Routes array cannot be empty'),
-  defaultTargetNodeId: z.string().optional()
-});
-
-/**
- * 上下文处理器节点配置schema
- */
-const contextProcessorNodeConfigSchema = z.object({
-  processorType: z.enum(['transform', 'filter', 'merge', 'split']),
-  rules: z.array(z.object({
-    sourcePath: z.string().min(1, 'Source path is required'),
-    targetPath: z.string().min(1, 'Target path is required'),
-    transform: z.string().optional()
-  })).min(1, 'Rules array cannot be empty')
-});
-
-/**
- * 循环开始节点配置schema
- */
-const loopStartNodeConfigSchema = z.object({
-  loopId: z.string().min(1, 'Loop ID is required'),
-  iterable: z.any().refine((val) => val !== undefined, 'Iterable is required'),
-  maxIterations: z.number().min(0, 'Max iterations must be non-negative'),
-  variableName: z.string().optional()
-});
-
-/**
- * 循环结束节点配置schema
- */
-const loopEndNodeConfigSchema = z.object({
-  loopId: z.string().min(1, 'Loop ID is required'),
-  breakCondition: z.any().optional(),
-  loopStartNodeId: z.string().optional()
-});
-
-/**
- * 子图节点配置schema（用于 SUBGRAPH 节点）
- */
-const subgraphNodeConfigSchema = z.object({
-  subgraphId: z.string().min(1, 'Subgraph ID is required'),
-  inputMapping: z.record(z.string().min(1), z.string().min(1)),
-  outputMapping: z.record(z.string().min(1), z.string().min(1)),
-  async: z.boolean()
-});
-
-/**
- * StartFromTrigger节点配置schema（空配置，仅作为标识）
- */
-const startFromTriggerNodeConfigSchema = z.object({}).strict();
-
-/**
- * ContinueFromTrigger节点配置schema（必须为空对象或undefined）
- */
-const continueFromTriggerNodeConfigSchema = z.object({}).strict();
-
-/**
- * 节点配置schema（基于节点类型的联合类型）
- */
-const nodeConfigSchema = z.discriminatedUnion('type', [
-  z.object({ type: z.literal(NodeType.START), config: z.object({}) }),
-  z.object({ type: z.literal(NodeType.END), config: z.object({}) }),
-  z.object({ type: z.literal(NodeType.VARIABLE), config: variableNodeConfigSchema }),
-  z.object({ type: z.literal(NodeType.FORK), config: forkNodeConfigSchema }),
-  z.object({ type: z.literal(NodeType.JOIN), config: joinNodeConfigSchema }),
-  z.object({ type: z.literal(NodeType.CODE), config: codeNodeConfigSchema }),
-  z.object({ type: z.literal(NodeType.LLM), config: llmNodeConfigSchema }),
-  z.object({ type: z.literal(NodeType.TOOL), config: toolNodeConfigSchema }),
-  z.object({ type: z.literal(NodeType.USER_INTERACTION), config: userInteractionNodeConfigSchema }),
-  z.object({ type: z.literal(NodeType.ROUTE), config: routeNodeConfigSchema }),
-  z.object({ type: z.literal(NodeType.CONTEXT_PROCESSOR), config: contextProcessorNodeConfigSchema }),
-  z.object({ type: z.literal(NodeType.LOOP_START), config: loopStartNodeConfigSchema }),
-  z.object({ type: z.literal(NodeType.LOOP_END), config: loopEndNodeConfigSchema }),
-  z.object({ type: z.literal(NodeType.SUBGRAPH), config: subgraphNodeConfigSchema }),
-  z.object({ type: z.literal(NodeType.START_FROM_TRIGGER), config: startFromTriggerNodeConfigSchema }),
-  z.object({ type: z.literal(NodeType.CONTINUE_FROM_TRIGGER), config: continueFromTriggerNodeConfigSchema })
-]);
-
-/**
- * 节点schema
+ * 节点schema（基本信息验证）
  */
 const nodeSchema: z.ZodType<Node> = z.object({
   id: z.string().min(1, 'Node ID is required'),
@@ -221,28 +57,29 @@ export class NodeValidator {
    * @returns 验证结果
    */
   private validateNodeConfig(node: Node): ValidationResult {
-    // 创建包含type的临时对象用于验证
-    const nodeWithType = {
-      type: node.type,
-      config: node.config
-    };
-
-    const result = nodeConfigSchema.safeParse(nodeWithType);
-    if (result.success) {
+    try {
+      // 调用 node-validation 目录中的验证函数
+      validateNodeByType(node);
       return { valid: true, errors: [], warnings: [] };
-    }
-    
-    // 检查是否是未知节点类型
-    const error = result.error.issues[0];
-    if (error && error.code === z.ZodIssueCode.invalid_union) {
+    } catch (error) {
+      // 将 ValidationError 转换为 ValidationResult
+      if (error instanceof ValidationError) {
+        return {
+          valid: false,
+          errors: [error],
+          warnings: []
+        };
+      }
+      // 处理其他类型的错误
       return {
         valid: false,
-        errors: [new ValidationError(`Unknown node type: ${node.type}`, 'node.type')],
+        errors: [new ValidationError(
+          error instanceof Error ? error.message : 'Unknown validation error',
+          `node.${node.id}.config`
+        )],
         warnings: []
       };
     }
-    
-    return this.convertZodError(result.error, 'node.config');
   }
 
   /**
