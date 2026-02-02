@@ -1,0 +1,196 @@
+/**
+ * ThreadCascadeManager - Thread级联管理器
+ * 
+ * 职责：
+ * - 处理Thread的级联操作（如级联取消）
+ * - 管理父子线程之间的关系
+ * - 提供线程树的遍历和操作能力
+ * 
+ * 设计原则：
+ * - 有状态设计：维护线程关系信息
+ * - 依赖注入：通过构造函数接收依赖
+ * - 错误隔离：单个子线程操作失败不影响其他子线程
+ */
+
+import type { ThreadRegistry } from '../../services/thread-registry';
+import { ThreadLifecycleManager } from './thread-lifecycle-manager';
+import type { Thread } from '../../../types/thread';
+
+/**
+ * ThreadCascadeManager - Thread级联管理器
+ */
+export class ThreadCascadeManager {
+  constructor(
+    private threadRegistry: ThreadRegistry,
+    private lifecycleManager: ThreadLifecycleManager
+  ) { }
+
+  /**
+   * 级联取消所有子线程
+   * 
+   * @param parentThreadId 父线程ID
+   * @returns 取消的子线程数量
+   */
+  async cascadeCancel(parentThreadId: string): Promise<number> {
+    const parentContext = this.threadRegistry.get(parentThreadId);
+    if (!parentContext) {
+      return 0;
+    }
+
+    const childThreadIds = parentContext.getMetadata()?.childThreadIds as string[] || [];
+    if (childThreadIds.length === 0) {
+      return 0;
+    }
+
+    let cancelledCount = 0;
+
+    // 遍历所有子线程并取消
+    for (const childThreadId of childThreadIds) {
+      try {
+        const success = await this.cancelChildThread(childThreadId);
+        if (success) {
+          cancelledCount++;
+        }
+      } catch (error) {
+        // 继续取消其他子线程，不中断
+        console.error(`Failed to cancel child thread ${childThreadId}:`, error);
+      }
+    }
+
+    return cancelledCount;
+  }
+
+  /**
+   * 取消单个子线程
+   * 
+   * @param childThreadId 子线程ID
+   * @returns 是否成功取消
+   * @private
+   */
+  private async cancelChildThread(childThreadId: string): Promise<boolean> {
+    const childContext = this.threadRegistry.get(childThreadId);
+    if (!childContext) {
+      return false;
+    }
+
+    const childThread = childContext.thread;
+    const childStatus = childContext.getStatus();
+
+    // 只取消运行中或暂停的子线程
+    if (childStatus === 'RUNNING' || childStatus === 'PAUSED') {
+      await this.lifecycleManager.cancelThread(childThread, 'parent_cancelled');
+      return true;
+    }
+
+    return false;
+  }
+
+  /**
+   * 获取所有子线程的状态
+   * 
+   * @param parentThreadId 父线程ID
+   * @returns 子线程状态映射
+   */
+  getChildThreadsStatus(parentThreadId: string): Map<string, string> {
+    const parentContext = this.threadRegistry.get(parentThreadId);
+    if (!parentContext) {
+      return new Map();
+    }
+
+    const childThreadIds = parentContext.getMetadata()?.childThreadIds as string[] || [];
+    const statusMap = new Map<string, string>();
+
+    for (const childThreadId of childThreadIds) {
+      const childContext = this.threadRegistry.get(childThreadId);
+      if (childContext) {
+        statusMap.set(childThreadId, childContext.getStatus());
+      }
+    }
+
+    return statusMap;
+  }
+
+  /**
+   * 检查是否有活跃的子线程
+   * 
+   * @param parentThreadId 父线程ID
+   * @returns 是否有活跃的子线程
+   */
+  hasActiveChildThreads(parentThreadId: string): boolean {
+    const statusMap = this.getChildThreadsStatus(parentThreadId);
+
+    for (const status of statusMap.values()) {
+      if (status === 'RUNNING' || status === 'PAUSED') {
+        return true;
+      }
+    }
+
+    return false;
+  }
+
+  /**
+   * 等待所有子线程完成
+   * 
+   * @param parentThreadId 父线程ID
+   * @param timeout 超时时间（毫秒）
+   * @returns 是否所有子线程都已完成
+   */
+  async waitForAllChildrenCompleted(parentThreadId: string, timeout: number = 30000): Promise<boolean> {
+    const startTime = Date.now();
+
+    while (Date.now() - startTime < timeout) {
+      if (!this.hasActiveChildThreads(parentThreadId)) {
+        return true;
+      }
+
+      // 等待100ms后再次检查
+      await new Promise(resolve => setTimeout(resolve, 100));
+    }
+
+    return false;
+  }
+
+  /**
+   * 获取线程树深度
+   * 
+   * @param threadId 线程ID
+   * @returns 线程树深度
+   */
+  getThreadTreeDepth(threadId: string): number {
+    const context = this.threadRegistry.get(threadId);
+    if (!context) {
+      return 0;
+    }
+
+    const parentThreadId = context.getMetadata()?.parentThreadId;
+    if (!parentThreadId) {
+      return 1;
+    }
+
+    return 1 + this.getThreadTreeDepth(parentThreadId);
+  }
+
+  /**
+   * 获取所有后代线程ID
+   * 
+   * @param threadId 线程ID
+   * @returns 所有后代线程ID数组
+   */
+  getAllDescendantThreadIds(threadId: string): string[] {
+    const context = this.threadRegistry.get(threadId);
+    if (!context) {
+      return [];
+    }
+
+    const childThreadIds = context.getMetadata()?.childThreadIds as string[] || [];
+    const allDescendants: string[] = [...childThreadIds];
+
+    // 递归获取所有子线程的后代
+    for (const childThreadId of childThreadIds) {
+      const childDescendants = this.getAllDescendantThreadIds(childThreadId);
+      allDescendants.push(...childDescendants);
+    }
+
+    return allDescendants;
+  }
+}

@@ -18,14 +18,14 @@
  * - 触发器处理函数（通过Coordinator）
  */
 
-import type { Thread, ThreadStatus, ThreadResult } from '../../types/thread';
-import type { EventManager } from '../services/event-manager';
-import { EventType } from '../../types/events';
-import { eventManager } from '../services/event-manager';
-import type { ThreadStartedEvent, ThreadCompletedEvent, ThreadFailedEvent, ThreadPausedEvent, ThreadResumedEvent, ThreadCancelledEvent, ThreadStateChangedEvent } from '../../types/events';
-import { now } from '../../utils';
-import { globalMessageStorage } from '../services/global-message-storage';
-import { validateTransition } from './utils/thread-state-validator';
+import type { Thread, ThreadStatus, ThreadResult } from '../../../types/thread';
+import type { EventManager } from '../../services/event-manager';
+import { EventType } from '../../../types/events';
+import { eventManager } from '../../services/event-manager';
+import type { ThreadStartedEvent, ThreadCompletedEvent, ThreadFailedEvent, ThreadPausedEvent, ThreadResumedEvent, ThreadCancelledEvent, ThreadStateChangedEvent } from '../../../types/events';
+import { now } from '../../../utils';
+import { globalMessageStorage } from '../../services/global-message-storage';
+import { validateTransition } from '../utils/thread-state-validator';
 
 /**
  * ThreadLifecycleManager - Thread生命周期管理器
@@ -63,11 +63,16 @@ export class ThreadLifecycleManager {
 
   /**
    * 暂停Thread
-   * 
+   *
    * @param thread Thread实例
    * @throws ValidationError 状态转换不合法
    */
   async pauseThread(thread: Thread): Promise<void> {
+    // 幂等性检查：如果已经是PAUSED状态，直接返回
+    if (thread.status === 'PAUSED') {
+      return;
+    }
+
     const previousStatus = thread.status;
 
     // 验证状态转换合法性
@@ -85,11 +90,16 @@ export class ThreadLifecycleManager {
 
   /**
    * 恢复Thread
-   * 
+   *
    * @param thread Thread实例
    * @throws ValidationError 状态转换不合法
    */
   async resumeThread(thread: Thread): Promise<void> {
+    // 幂等性检查：如果已经是RUNNING状态，直接返回
+    if (thread.status === 'RUNNING') {
+      return;
+    }
+
     const previousStatus = thread.status;
 
     // 验证状态转换合法性
@@ -181,12 +191,17 @@ export class ThreadLifecycleManager {
 
   /**
    * 取消Thread
-   * 
+   *
    * @param thread Thread实例
    * @param reason 取消原因
    * @throws ValidationError 状态转换不合法
    */
   async cancelThread(thread: Thread, reason?: string): Promise<void> {
+    // 幂等性检查：如果已经是CANCELLED状态，直接返回
+    if (thread.status === 'CANCELLED') {
+      return;
+    }
+
     const previousStatus = thread.status;
 
     // 验证状态转换合法性

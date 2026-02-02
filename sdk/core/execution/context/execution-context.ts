@@ -30,7 +30,7 @@ import { workflowRegistry, type WorkflowRegistry } from '../../services/workflow
 import { threadRegistry, type ThreadRegistry } from '../../services/thread-registry';
 import { eventManager, type EventManager } from '../../services/event-manager';
 import { CheckpointManager } from '../managers/checkpoint-manager';
-import { ThreadLifecycleManager } from '../thread-lifecycle-manager';
+import { ThreadLifecycleManager } from '../managers/thread-lifecycle-manager';
 import { ThreadLifecycleCoordinator } from '../coordinators/thread-lifecycle-coordinator';
 
 /**
@@ -188,25 +188,25 @@ export class ExecutionContext {
     * 设置当前线程ID
     * @param threadId 线程ID
     */
-   setCurrentThreadId(threadId: string): void {
-     this.currentThreadId = threadId;
-   }
+  setCurrentThreadId(threadId: string): void {
+    this.currentThreadId = threadId;
+  }
 
   /**
     * 获取当前线程ID
     * @returns 当前线程ID，如果未设置则返回null
     */
-   getCurrentThreadId(): string | null {
-     return this.currentThreadId;
-   }
+  getCurrentThreadId(): string | null {
+    return this.currentThreadId;
+  }
 
   /**
     * 创建默认执行上下文
     * @returns ExecutionContext 实例
     */
-   static createDefault(): ExecutionContext {
-     const context = new ExecutionContext();
-     context.initialize();
-     return context;
-   }
+  static createDefault(): ExecutionContext {
+    const context = new ExecutionContext();
+    context.initialize();
+    return context;
   }
+}

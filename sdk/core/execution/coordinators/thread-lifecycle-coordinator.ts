@@ -23,13 +23,13 @@ import type { ThreadOptions, ThreadResult, Thread, ThreadStatus } from '../../..
 import { type ThreadRegistry } from '../../services/thread-registry';
 import { ThreadBuilder } from '../thread-builder';
 import { ThreadExecutor } from '../thread-executor';
-import { ThreadLifecycleManager } from '../thread-lifecycle-manager';
+import { ThreadLifecycleManager } from '../managers/thread-lifecycle-manager';
 import type { EventManager } from '../../services/event-manager';
 import type { WorkflowRegistry } from '../../services/workflow-registry';
 import { EventType } from '../../../types/events';
-import { validateTransition } from '../utils/thread-state-validator';
+import { EventWaiter } from '../utils/event-waiter';
+import { ThreadCascadeManager } from '../managers/thread-cascade-manager';
 import { now } from '../../../utils';
-import { globalMessageStorage } from '../../services/global-message-storage';
 
 /**
  * Thread 生命周期协调器
@@ -38,6 +38,8 @@ import { globalMessageStorage } from '../../services/global-message-storage';
  */
 export class ThreadLifecycleCoordinator {
   private lifecycleManager: ThreadLifecycleManager;
+  private eventWaiter: EventWaiter;
+  private cascadeManager: ThreadCascadeManager;
 
   constructor(
     private threadRegistry: ThreadRegistry = threadRegistry,
@@ -45,6 +47,8 @@ export class ThreadLifecycleCoordinator {
     private eventManager: EventManager = eventManager
   ) {
     this.lifecycleManager = new ThreadLifecycleManager(this.eventManager);
+    this.eventWaiter = new EventWaiter(this.eventManager);
+    this.cascadeManager = new ThreadCascadeManager(this.threadRegistry, this.lifecycleManager);
   }
 
   /**
@@ -107,24 +111,10 @@ export class ThreadLifecycleCoordinator {
     thread.shouldPause = true;
 
     // 2. 等待执行器在安全点处暂停并触发THREAD_PAUSED事件
-    await this.eventManager.waitFor(
-      EventType.THREAD_PAUSED,
-      5000 // 5秒超时
-    );
+    await this.eventWaiter.waitForThreadPaused(threadId, 5000);
 
-    // 3. 验证状态转换并调用Manager进行原子操作（状态转换+事件触发）
-    validateTransition(thread.id, thread.status, 'PAUSED' as ThreadStatus);
-    thread.status = 'PAUSED' as ThreadStatus;
-
-    // 触发THREAD_STATE_CHANGED事件
-    await this.eventManager.emit({
-      type: EventType.THREAD_STATE_CHANGED,
-      timestamp: now(),
-      workflowId: thread.workflowId,
-      threadId: thread.id,
-      previousStatus: 'RUNNING',
-      newStatus: 'PAUSED'
-    });
+    // 3. 完全委托给Manager进行状态转换和事件触发
+    await this.lifecycleManager.pauseThread(thread);
   }
 
   /**
@@ -148,28 +138,8 @@ export class ThreadLifecycleCoordinator {
 
     const thread = threadContext.thread;
 
-    // 1. 验证状态转换并更新状态
-    validateTransition(thread.id, thread.status, 'RUNNING' as ThreadStatus);
-    const previousStatus = thread.status;
-    thread.status = 'RUNNING' as ThreadStatus;
-
-    // 触发THREAD_RESUMED事件
-    await this.eventManager.emit({
-      type: EventType.THREAD_RESUMED,
-      timestamp: now(),
-      workflowId: thread.workflowId,
-      threadId: thread.id
-    });
-
-    // 触发THREAD_STATE_CHANGED事件
-    await this.eventManager.emit({
-      type: EventType.THREAD_STATE_CHANGED,
-      timestamp: now(),
-      workflowId: thread.workflowId,
-      threadId: thread.id,
-      previousStatus,
-      newStatus: 'RUNNING'
-    });
+    // 1. 完全委托给Manager进行状态转换和事件触发
+    await this.lifecycleManager.resumeThread(thread);
 
     // 2. 清除暂停标志
     thread.shouldPause = false;
@@ -204,90 +174,13 @@ export class ThreadLifecycleCoordinator {
     thread.shouldStop = true;
 
     // 2. 等待执行器在安全点处停止并触发THREAD_CANCELLED事件
-    await this.eventManager.waitFor(
-      EventType.THREAD_CANCELLED,
-      5000 // 5秒超时
-    );
+    await this.eventWaiter.waitForThreadCancelled(threadId, 5000);
 
-    // 3. 验证状态转换并更新Thread状态
-    validateTransition(thread.id, thread.status, 'CANCELLED' as ThreadStatus);
-    const previousStatus = thread.status;
-    thread.status = 'CANCELLED' as ThreadStatus;
-    thread.endTime = now();
-
-    // 清理全局消息存储
-    globalMessageStorage.removeReference(thread.id);
-
-    // 触发THREAD_CANCELLED事件
-    await this.eventManager.emit({
-      type: EventType.THREAD_CANCELLED,
-      timestamp: now(),
-      workflowId: thread.workflowId,
-      threadId: thread.id,
-      reason: 'user_requested'
-    });
-
-    // 触发THREAD_STATE_CHANGED事件
-    await this.eventManager.emit({
-      type: EventType.THREAD_STATE_CHANGED,
-      timestamp: now(),
-      workflowId: thread.workflowId,
-      threadId: thread.id,
-      previousStatus,
-      newStatus: 'CANCELLED'
-    });
+    // 3. 完全委托给Manager进行状态转换和事件触发
+    await this.lifecycleManager.cancelThread(thread, 'user_requested');
 
     // 4. 级联取消子Threads
-    const childThreadIds = threadContext.getMetadata()?.childThreadIds as string[] || [];
-    for (const childThreadId of childThreadIds) {
-      const childContext = this.threadRegistry.get(childThreadId);
-      if (childContext) {
-        const childThread = childContext.thread;
-        const childStatus = childContext.getStatus();
-
-        // 只取消运行中或暂停的子线程
-        if (childStatus === 'RUNNING' || childStatus === 'PAUSED') {
-          try {
-            await this.cancelThreadInternal(childThread);
-          } catch (error) {
-            // 继续取消其他子线程，不中断
-            console.error(`Failed to cancel child thread ${childThreadId}:`, error);
-          }
-        }
-      }
-    }
-  }
-
-  /**
-   * 内部方法：取消单个Thread（不级联）
-   * 
-   * @param thread Thread实例
-   * @private
-   */
-  private async cancelThreadInternal(thread: Thread): Promise<void> {
-    validateTransition(thread.id, thread.status, 'CANCELLED' as ThreadStatus);
-    const previousStatus = thread.status;
-    thread.status = 'CANCELLED' as ThreadStatus;
-    thread.endTime = now();
-
-    globalMessageStorage.removeReference(thread.id);
-
-    await this.eventManager.emit({
-      type: EventType.THREAD_CANCELLED,
-      timestamp: now(),
-      workflowId: thread.workflowId,
-      threadId: thread.id,
-      reason: 'parent_cancelled'
-    });
-
-    await this.eventManager.emit({
-      type: EventType.THREAD_STATE_CHANGED,
-      timestamp: now(),
-      workflowId: thread.workflowId,
-      threadId: thread.id,
-      previousStatus,
-      newStatus: 'CANCELLED'
-    });
+    await this.cascadeManager.cascadeCancel(threadId);
   }
 
 }

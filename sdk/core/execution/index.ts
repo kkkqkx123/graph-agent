@@ -15,9 +15,6 @@ export { ThreadExecutor } from './thread-executor';
 // Thread构建器
 export { ThreadBuilder } from './thread-builder';
 
-// Thread生命周期管理器
-export { ThreadLifecycleManager } from './thread-lifecycle-manager';
-
 // Thread状态验证工具函数
 export {
   validateTransition,
@@ -26,9 +23,6 @@ export {
   isTerminalStatus,
   isActiveStatus
 } from './utils/thread-state-validator';
-
-// Thread生命周期协调器
-export { ThreadLifecycleCoordinator } from './coordinators/thread-lifecycle-coordinator';
 
 // Thread注册表
 export { ThreadRegistry } from '../services/thread-registry';
