@@ -20,6 +20,8 @@ import type { Node } from '../../../types/node';
 import type { NodeExecutionResult } from '../../../types/thread';
 import type { EventManager } from '../../services/event-manager';
 import { LLMExecutionCoordinator } from './llm-execution-coordinator';
+import { executeUserInteraction } from '../handlers/user-interaction-handler';
+import { userInteractionHandlerRegistry } from '../../../api/core/user-interaction-api';
 import { enterSubgraph, exitSubgraph, getSubgraphInput, getSubgraphOutput } from '../handlers/subgraph-handler';
 import { EventType } from '../../../types/events';
 import type { NodeStartedEvent, NodeCompletedEvent, NodeFailedEvent, SubgraphStartedEvent, SubgraphCompletedEvent } from '../../../types/events';
@@ -222,6 +224,11 @@ export class NodeExecutionCoordinator {
   private async executeNodeLogic(threadContext: ThreadContext, node: Node): Promise<NodeExecutionResult> {
     const startTime = now();
 
+    // 检查是否为用户交互节点
+    if (node.type === NodeType.USER_INTERACTION) {
+      return await this.executeUserInteractionNode(threadContext, node, startTime);
+    }
+    
     // 检查是否为需要LLM执行器托管的节点
     if (isLLMManagedNode(node.type)) {
       return await this.executeLLMManagedNode(threadContext, node, startTime);
@@ -244,6 +251,56 @@ export class NodeExecutionCoordinator {
         startTime,
         endTime,
         executionTime: diffTimestamp(startTime, endTime)
+      };
+    }
+  }
+
+  /**
+   * 执行用户交互节点
+   */
+  private async executeUserInteractionNode(
+    threadContext: ThreadContext,
+    node: Node,
+    startTime: number
+  ): Promise<NodeExecutionResult> {
+    const userInteractionHandler = userInteractionHandlerRegistry.get();
+    
+    if (!userInteractionHandler) {
+      throw new Error('UserInteractionHandler is not registered. Please register a handler before executing user interaction.');
+    }
+
+    try {
+      // 调用 executeUserInteraction 函数执行用户交互
+      const result = await executeUserInteraction(
+        node,
+        threadContext,
+        this.eventManager,
+        userInteractionHandler
+      );
+
+      const endTime = now();
+      return {
+        nodeId: node.id,
+        nodeType: node.type,
+        status: 'COMPLETED',
+        step: threadContext.thread.nodeResults.length + 1,
+        data: result,
+        startTime,
+        endTime,
+        executionTime: diffTimestamp(startTime, endTime)
+      };
+    } catch (error) {
+      const endTime = now();
+      return {
+        nodeId: node.id,
+        nodeType: node.type,
+        status: 'FAILED',
+        step: threadContext.thread.nodeResults.length + 1,
+        data: undefined,
+        startTime,
+        endTime,
+        executionTime: diffTimestamp(startTime, endTime),
+        error: error instanceof Error ? error.message : String(error)
       };
     }
   }

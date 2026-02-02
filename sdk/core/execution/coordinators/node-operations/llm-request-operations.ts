@@ -14,8 +14,7 @@ import { NodeType } from '../../../../types/node';
 import type { LLMExecutionRequestData } from '../../llm-executor';
 import {
   transformLLMNodeConfig,
-  transformToolNodeConfig,
-  transformUserInteractionNodeConfig
+  transformToolNodeConfig
 } from '../../handlers/node-handlers/config-utils';
 
 /**
@@ -26,8 +25,7 @@ import {
 export function isLLMManagedNode(nodeType: NodeType): boolean {
   return [
     NodeType.LLM,
-    NodeType.TOOL,
-    NodeType.USER_INTERACTION
+    NodeType.TOOL
   ].includes(nodeType);
 }
 
@@ -49,10 +47,6 @@ export function extractLLMRequestData(node: Node, threadContext: any): LLMExecut
 
     case NodeType.TOOL: {
       return transformToolNodeConfig(config as any);
-    }
-
-    case NodeType.USER_INTERACTION: {
-      return transformUserInteractionNodeConfig(config as any);
     }
 
     default:

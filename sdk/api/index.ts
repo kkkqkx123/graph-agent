@@ -8,6 +8,8 @@ export { SDK } from './core/sdk';
 
 // API模块
 export { ThreadExecutorAPI } from './core/thread-executor-api';
+export { userInteractionHandlerRegistry } from './core/user-interaction-api';
+export type { UserInteractionHandler, UserInteractionContext } from './core/user-interaction-api';
 export { WorkflowRegistryAPI } from './registry/workflow-registry-api';
 export { ThreadRegistryAPI } from './registry/thread-registry-api';
 export { WorkflowValidatorAPI } from './validation/workflow-validator-api';

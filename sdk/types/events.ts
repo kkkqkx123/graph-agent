@@ -72,7 +72,15 @@ export enum EventType {
   /** 触发子工作流失败 */
   TRIGGERED_SUBGRAPH_FAILED = 'TRIGGERED_SUBGRAPH_FAILED',
   /** 变量变更 */
-  VARIABLE_CHANGED = 'VARIABLE_CHANGED'
+  VARIABLE_CHANGED = 'VARIABLE_CHANGED',
+  /** 用户交互请求 */
+  USER_INTERACTION_REQUESTED = 'USER_INTERACTION_REQUESTED',
+  /** 用户交互响应 */
+  USER_INTERACTION_RESPONDED = 'USER_INTERACTION_RESPONDED',
+  /** 用户交互处理完成 */
+  USER_INTERACTION_PROCESSED = 'USER_INTERACTION_PROCESSED',
+  /** 用户交互失败 */
+  USER_INTERACTION_FAILED = 'USER_INTERACTION_FAILED'
 }
 
 /**
@@ -481,6 +489,58 @@ export interface VariableChangedEvent extends BaseEvent {
 }
 
 /**
+ * 用户交互请求事件类型
+ */
+export interface UserInteractionRequestedEvent extends BaseEvent {
+  type: EventType.USER_INTERACTION_REQUESTED;
+  /** 节点ID */
+  nodeId: ID;
+  /** 交互ID */
+  interactionId: ID;
+  /** 操作类型 */
+  operationType: string;
+  /** 提示信息 */
+  prompt: string;
+  /** 超时时间 */
+  timeout: number;
+}
+
+/**
+ * 用户交互响应事件类型
+ */
+export interface UserInteractionRespondedEvent extends BaseEvent {
+  type: EventType.USER_INTERACTION_RESPONDED;
+  /** 交互ID */
+  interactionId: ID;
+  /** 用户输入数据 */
+  inputData: any;
+}
+
+/**
+ * 用户交互处理完成事件类型
+ */
+export interface UserInteractionProcessedEvent extends BaseEvent {
+  type: EventType.USER_INTERACTION_PROCESSED;
+  /** 交互ID */
+  interactionId: ID;
+  /** 操作类型 */
+  operationType: string;
+  /** 处理结果 */
+  results: any;
+}
+
+/**
+ * 用户交互失败事件类型
+ */
+export interface UserInteractionFailedEvent extends BaseEvent {
+  type: EventType.USER_INTERACTION_FAILED;
+  /** 交互ID */
+  interactionId: ID;
+  /** 失败原因 */
+  reason: string;
+}
+
+/**
  * 事件监听器类型
  */
 export type EventListener<T extends BaseEvent> = (event: T) => void | Promise<void>;
@@ -530,4 +590,8 @@ export type Event =
   | TriggeredSubgraphStartedEvent
   | TriggeredSubgraphCompletedEvent
   | TriggeredSubgraphFailedEvent
-  | VariableChangedEvent;
+  | VariableChangedEvent
+  | UserInteractionRequestedEvent
+  | UserInteractionRespondedEvent
+  | UserInteractionProcessedEvent
+  | UserInteractionFailedEvent;

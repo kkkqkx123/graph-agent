@@ -376,43 +376,35 @@ export function validateUserInteractionNodeConfig(config: any): config is UserIn
     return false;
   }
   
-  const validTypes = ['ask_for_approval', 'ask_for_input', 'ask_for_selection', 'show_message'];
-  
-  if (!config.userInteractionType || !validTypes.includes(config.userInteractionType)) {
+  // 验证 operationType
+  const validOperationTypes = ['UPDATE_VARIABLES', 'ADD_MESSAGE'];
+  if (!config.operationType || !validOperationTypes.includes(config.operationType)) {
     return false;
   }
   
-  return true;
-}
-
-/**
- * 转换用户交互节点配置为LLM请求数据
- */
-export function transformUserInteractionNodeConfig(config: UserInteractionNodeConfig): LLMExecutionRequestData {
-  let prompt: string;
-  
-  switch (config.userInteractionType) {
-    case 'ask_for_approval':
-      prompt = `Ask for approval: ${config.showMessage || 'Please approve this action'}`;
-      break;
-    case 'ask_for_input':
-      prompt = `Ask for input: ${config.showMessage || 'Please provide input'}`;
-      break;
-    case 'ask_for_selection':
-      prompt = `Ask for selection: ${config.showMessage || 'Please make a selection'}`;
-      break;
-    case 'show_message':
-      prompt = config.showMessage || 'Show message';
-      break;
-    default:
-      prompt = 'User interaction';
+  // 验证 prompt
+  if (!config.prompt || typeof config.prompt !== 'string') {
+    return false;
   }
   
-  return {
-    prompt,
-    profileId: 'default',
-    parameters: {}
-  };
+  // 根据 operationType 验证相应的配置
+  if (config.operationType === 'UPDATE_VARIABLES') {
+    if (!config.variables || !Array.isArray(config.variables) || config.variables.length === 0) {
+      return false;
+    }
+    // 验证每个变量配置
+    for (const variable of config.variables) {
+      if (!variable.variableName || !variable.expression || !variable.scope) {
+        return false;
+      }
+    }
+  } else if (config.operationType === 'ADD_MESSAGE') {
+    if (!config.message || !config.message.role || !config.message.contentTemplate) {
+      return false;
+    }
+  }
+  
+  return true;
 }
 
 /**

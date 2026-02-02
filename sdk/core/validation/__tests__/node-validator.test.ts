@@ -494,13 +494,20 @@ describe('NodeValidator', () => {
   });
 
   describe('validateNodeConfig - USER_INTERACTION node', () => {
-    it('should validate a valid USER_INTERACTION node', () => {
+    it('should validate a valid USER_INTERACTION node with UPDATE_VARIABLES operation', () => {
       const node: Node = {
         id: 'node-1',
         name: 'UserInteraction',
         type: NodeType.USER_INTERACTION,
         config: {
-          userInteractionType: 'ask_for_input'
+          operationType: 'UPDATE_VARIABLES',
+          variables: [{
+            variableName: 'approved',
+            expression: '{{input}}',
+            scope: 'thread'
+          }],
+          prompt: '是否批准？',
+          timeout: 5000
         },
         incomingEdgeIds: [],
         outgoingEdgeIds: []
@@ -510,7 +517,29 @@ describe('NodeValidator', () => {
       expect(result.errors).toHaveLength(0);
     });
 
-    it('should return error for USER_INTERACTION node without userInteractionType', () => {
+    it('should validate a valid USER_INTERACTION node with ADD_MESSAGE operation', () => {
+      const node: Node = {
+        id: 'node-2',
+        name: 'UserInteraction',
+        type: NodeType.USER_INTERACTION,
+        config: {
+          operationType: 'ADD_MESSAGE',
+          message: {
+            role: 'user',
+            contentTemplate: '{{input}}'
+          },
+          prompt: '请输入您的问题：',
+          timeout: 30000
+        },
+        incomingEdgeIds: [],
+        outgoingEdgeIds: []
+      };
+      const result = validator.validateNode(node);
+      expect(result.valid).toBe(true);
+      expect(result.errors).toHaveLength(0);
+    });
+
+    it('should return error for USER_INTERACTION node without operationType', () => {
       const node: Node = {
         id: 'node-1',
         name: 'UserInteraction',
@@ -521,7 +550,60 @@ describe('NodeValidator', () => {
       };
       const result = validator.validateNode(node);
       expect(result.valid).toBe(false);
-      expect(result.errors.some(e => e.field?.includes('userInteractionType'))).toBe(true);
+      expect(result.errors.some(e => e.field?.includes('operationType'))).toBe(true);
+    });
+
+    it('should return error for USER_INTERACTION node with UPDATE_VARIABLES but no variables', () => {
+      const node: Node = {
+        id: 'node-1',
+        name: 'UserInteraction',
+        type: NodeType.USER_INTERACTION,
+        config: {
+          operationType: 'UPDATE_VARIABLES',
+          prompt: '是否批准？'
+        } as any,
+        incomingEdgeIds: [],
+        outgoingEdgeIds: []
+      };
+      const result = validator.validateNode(node);
+      expect(result.valid).toBe(false);
+    });
+
+    it('should return error for USER_INTERACTION node with ADD_MESSAGE but no message', () => {
+      const node: Node = {
+        id: 'node-1',
+        name: 'UserInteraction',
+        type: NodeType.USER_INTERACTION,
+        config: {
+          operationType: 'ADD_MESSAGE',
+          prompt: '请输入您的问题：'
+        } as any,
+        incomingEdgeIds: [],
+        outgoingEdgeIds: []
+      };
+      const result = validator.validateNode(node);
+      expect(result.valid).toBe(false);
+    });
+
+    it('should return error for USER_INTERACTION node without prompt', () => {
+      const node: Node = {
+        id: 'node-1',
+        name: 'UserInteraction',
+        type: NodeType.USER_INTERACTION,
+        config: {
+          operationType: 'UPDATE_VARIABLES',
+          variables: [{
+            variableName: 'approved',
+            expression: '{{input}}',
+            scope: 'thread'
+          }]
+        } as any,
+        incomingEdgeIds: [],
+        outgoingEdgeIds: []
+      };
+      const result = validator.validateNode(node);
+      expect(result.valid).toBe(false);
+      expect(result.errors.some(e => e.field?.includes('prompt'))).toBe(true);
     });
   });
 
