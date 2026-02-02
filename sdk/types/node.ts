@@ -236,7 +236,7 @@ export interface ContextProcessorNodeConfig {
   version?: number;
   /** 操作类型 */
   operation: 'truncate' | 'insert' | 'replace' | 'clear' | 'filter';
-  
+
   /** 截断操作配置 */
   truncate?: {
     /** 保留前N条消息 */
@@ -250,7 +250,7 @@ export interface ContextProcessorNodeConfig {
     /** 保留索引范围 [start, end) */
     range?: { start: number; end: number };
   };
-  
+
   /** 插入操作配置 */
   insert?: {
     /** 插入位置（-1表示末尾，0表示开头） */
@@ -258,7 +258,7 @@ export interface ContextProcessorNodeConfig {
     /** 要插入的消息 */
     messages: LLMMessage[];
   };
-  
+
   /** 替换操作配置 */
   replace?: {
     /** 要替换的消息索引 */
@@ -266,7 +266,7 @@ export interface ContextProcessorNodeConfig {
     /** 新的消息内容 */
     message: LLMMessage;
   };
-  
+
   /** 过滤操作配置 */
   filter?: {
     /** 按角色过滤 */
@@ -276,7 +276,7 @@ export interface ContextProcessorNodeConfig {
     /** 按内容关键词排除（不包含指定关键词的消息） */
     contentExcludes?: string[];
   };
-  
+
   /** 清空操作配置 */
   clear?: {
     /** 是否保留系统消息 */
@@ -285,27 +285,52 @@ export interface ContextProcessorNodeConfig {
 }
 
 /**
- * 循环开始节点配置
+ * 循环数据源配置
  * 
- * 说明：初始化循环迭代，将当前迭代值存储到循环变量
- * - iterable 和 variableName 的关系：iterable 是被迭代的数据源，variableName 是每次迭代时当前值的存储位置
- * - variableName 存储在 loop 级作用域中，支持自定义命名（默认为 loopId）
- * - 循环状态（迭代计数、索引等）存储在 loop 级作用域，自动随作用域生命周期管理
- * - iterable 支持两种形式：直接值（数组、对象、数字、字符串）或变量表达式（如 {{input.list}}, {{thread.data}}）
+ * 说明：定义循环迭代的数据源和循环变量
+ * - iterable：被迭代的数据源（数组、对象、数字、字符串或变量表达式）
+ * - variableName：循环变量名，存储当前迭代值
+ * - 两个属性必须同时存在或同时不存在（成对使用）
  */
-export interface LoopStartNodeConfig {
-  /** 循环ID（唯一标识此循环） */
-  loopId: string;
+export interface DataSource {
   /** 可迭代对象或变量表达式
    * - 直接值：数组、对象、数字、字符串
    * - 变量表达式：支持 {{variable.path}} 语法，在运行时从 thread 和 input 中解析
    * 例：[1,2,3] 或 "{{input.list}}" 或 "{{thread.items}}"
    */
   iterable: any;
-  /** 最大迭代次数（安全保护） */
+  /** 循环变量名，存储当前迭代值（在 loop 级作用域中） */
+  variableName: string;
+}
+
+/**
+ * 循环开始节点配置
+ * 
+ * 说明：初始化循环迭代，支持两种循环模式
+ * 
+ * 模式1：数据驱动循环（提供 dataSource）
+ * - 遍历指定的数据集合（数组、对象等）
+ * - 每次迭代自动提取当前值到循环变量
+ * - 例：遍历 [1,2,3]，每次 item = 当前值
+ * 
+ * 模式2：计数循环（不提供 dataSource）
+ * - 仅基于 maxIterations 循环固定次数
+ * - 无循环变量，循环体可以自行维护状态
+ * - 例：检查 10 次
+ * 
+ * - 循环状态（迭代计数、索引等）存储在 loop 级作用域，自动随作用域生命周期管理
+ */
+export interface LoopStartNodeConfig {
+  /** 循环ID（唯一标识此循环） */
+  loopId: string;
+  /** 数据源配置（可选）
+   * - 提供时：进行数据驱动循环，遍历 dataSource.iterable
+   * - 不提供时：进行计数循环，仅基于 maxIterations
+   * - 若提供则 iterable 和 variableName 必须同时存在
+   */
+  dataSource?: DataSource;
+  /** 最大迭代次数（安全保护，必需） */
   maxIterations: number;
-  /** 循环变量名，存储当前迭代值（可选，默认为loopId） */
-  variableName?: string;
 }
 
 /**

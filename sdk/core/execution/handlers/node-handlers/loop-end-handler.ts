@@ -14,11 +14,11 @@ import { now } from '../../../../utils';
  */
 interface LoopState {
   loopId: string;
-  iterable: any;
+  iterable: any | null;  // 可以为 null（计数循环时）
   currentIndex: number;
   maxIterations: number;
   iterationCount: number;
-  variableName: string;
+  variableName: string | null;  // 可以为 null（计数循环时）
 }
 
 /**
@@ -101,15 +101,22 @@ function evaluateBreakCondition(breakCondition: any, thread: Thread): boolean {
  * 检查循环条件
  */
 function checkLoopCondition(loopState: LoopState): boolean {
+  // 检查maxIterations是否有效（必须为正数）
+  if (loopState.maxIterations <= 0) {
+    return false;
+  }
+
   // 检查迭代次数
   if (loopState.iterationCount >= loopState.maxIterations) {
     return false;
   }
 
-  // 检查当前索引
-  const iterableLength = getIterableLength(loopState.iterable);
-  if (loopState.currentIndex >= iterableLength) {
-    return false;
+  // 如果提供了 iterable，还需要检查当前索引是否超出范围
+  if (loopState.iterable !== null && loopState.iterable !== undefined) {
+    const iterableLength = getIterableLength(loopState.iterable);
+    if (loopState.currentIndex >= iterableLength) {
+      return false;
+    }
   }
 
   return true;

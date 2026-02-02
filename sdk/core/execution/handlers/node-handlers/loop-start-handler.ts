@@ -13,11 +13,11 @@ import { now } from '../../../../utils';
  */
 interface LoopState {
   loopId: string;
-  iterable: any;
+  iterable: any | null;  // 可以为 null（计数循环时）
   currentIndex: number;
   maxIterations: number;
   iterationCount: number;
-  variableName: string;
+  variableName: string | null;  // 可以为 null（计数循环时）
 }
 
 /**
@@ -36,8 +36,9 @@ function canExecute(thread: Thread, node: Node): boolean {
     return true;
   }
 
-  // 检查循环条件
-  return checkLoopCondition(loopState);
+  // 如果循环状态存在，总是允许执行
+  // 循环是否继续在handler内部判断
+  return true;
 }
 
 /**
@@ -60,6 +61,11 @@ function isValidIterable(iterable: any): boolean {
  * - 变量表达式：{{input.list}}, {{thread.items}}, {{global.data}}
  */
 function resolveIterable(iterableConfig: any, thread: Thread): any {
+  // 如果没有提供 iterable 配置，返回 null（计数循环模式）
+  if (iterableConfig === undefined || iterableConfig === null) {
+    return null;
+  }
+
   // 如果是字符串，检查是否为变量表达式
   if (typeof iterableConfig === 'string') {
     const varExprPattern = /^\{\{([\w.]+)\}\}$/;
@@ -178,33 +184,28 @@ function clearLoopState(thread: Thread, loopId: string): void {
   }
 }
 
-/**
- * 初始化循环状态
- */
-function initializeLoopState(config: LoopStartNodeConfig, variableName: string): LoopState {
-  return {
-    loopId: config.loopId,
-    iterable: config.iterable,
-    currentIndex: 0,
-    maxIterations: config.maxIterations,
-    iterationCount: 0,
-    variableName
-  };
-}
+
 
 /**
  * 检查循环条件
  */
 function checkLoopCondition(loopState: LoopState): boolean {
+  // 检查maxIterations是否有效（必须为正数）
+  if (loopState.maxIterations <= 0) {
+    return false;
+  }
+
   // 检查迭代次数
   if (loopState.iterationCount >= loopState.maxIterations) {
     return false;
   }
 
-  // 检查当前索引
-  const iterableLength = getIterableLength(loopState.iterable);
-  if (loopState.currentIndex >= iterableLength) {
-    return false;
+  // 如果提供了 iterable，还需要检查当前索引是否超出范围
+  if (loopState.iterable !== null && loopState.iterable !== undefined) {
+    const iterableLength = getIterableLength(loopState.iterable);
+    if (loopState.currentIndex >= iterableLength) {
+      return false;
+    }
   }
 
   return true;
@@ -231,6 +232,11 @@ function getIterableLength(iterable: any): number {
  */
 function getCurrentValue(loopState: LoopState): any {
   const { iterable, currentIndex } = loopState;
+
+  // 如果没有 iterable（计数循环），返回当前索引
+  if (iterable === null || iterable === undefined) {
+    return currentIndex;
+  }
 
   if (Array.isArray(iterable)) {
     return iterable[currentIndex];
@@ -288,23 +294,32 @@ export async function loopStartHandler(thread: Thread, node: Node): Promise<any>
   }
 
   const config = node.config as LoopStartNodeConfig;
-  const variableName = config.variableName || config.loopId;
-
+  
   // 获取或初始化循环状态
   let loopState = getLoopState(thread, config.loopId);
 
   if (!loopState) {
     // 第一次执行，解析并初始化循环状态
-    // 解析 iterable（支持直接值或变量表达式）
-    const resolvedIterable = resolveIterable(config.iterable, thread);
-    
-    // 创建包含已解析 iterable 的配置
-    const resolvedConfig: LoopStartNodeConfig = {
-      ...config,
-      iterable: resolvedIterable
+    let resolvedIterable: any = null;
+    let variableName: string | null = null;
+
+    // 如果提供了 dataSource，则解析 iterable 和 variableName
+    if (config.dataSource) {
+      // 解析 iterable（支持直接值或变量表达式）
+      resolvedIterable = resolveIterable(config.dataSource.iterable, thread);
+      variableName = config.dataSource.variableName;
+    }
+
+    // 创建包含已解析 iterable 的循环状态
+    loopState = {
+      loopId: config.loopId,
+      iterable: resolvedIterable,
+      currentIndex: 0,
+      maxIterations: config.maxIterations,
+      iterationCount: 0,
+      variableName: variableName
     };
     
-    loopState = initializeLoopState(resolvedConfig, variableName);
     setLoopState(thread, loopState);
     
     // 进入新的循环作用域
@@ -350,11 +365,16 @@ export async function loopStartHandler(thread: Thread, node: Node): Promise<any>
   // 获取当前迭代值
   const currentValue = getCurrentValue(loopState);
 
-  // 设置循环变量到循环作用域
-  setLoopVariable(thread, variableName, currentValue);
+  // 设置循环变量到循环作用域（仅在数据驱动循环时）
+  if (loopState.variableName !== null) {
+    setLoopVariable(thread, loopState.variableName, currentValue);
+  }
 
   // 更新循环状态
   updateLoopState(loopState);
+  
+  // 保存更新后的循环状态到作用域
+  setLoopState(thread, loopState);
 
   // 记录执行历史
   thread.nodeResults.push({
@@ -365,7 +385,7 @@ export async function loopStartHandler(thread: Thread, node: Node): Promise<any>
     timestamp: now(),
     data: {
       loopId: config.loopId,
-      variableName,
+      variableName: loopState.variableName,
       currentValue,
       iterationCount: loopState.iterationCount,
       shouldContinue: true
@@ -375,7 +395,7 @@ export async function loopStartHandler(thread: Thread, node: Node): Promise<any>
   // 返回执行结果
   return {
     loopId: config.loopId,
-    variableName,
+    variableName: loopState.variableName,
     currentValue,
     iterationCount: loopState.iterationCount,
     shouldContinue: true

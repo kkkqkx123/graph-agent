@@ -9,22 +9,33 @@ import { NodeType } from '../../../types/node';
 import { ValidationError } from '../../../types/errors';
 
 /**
- * LoopStart节点配置schema
+ * 循环数据源schema
  * 
- * iterable 支持两种形式：
+ * DataSource 支持两种形式：
  * 1. 直接值：数组、对象、数字、字符串
  * 2. 变量表达式字符串：{{variable.path}} 形式
  * 
  * 注意：变量表达式的实际解析和验证在运行时由 loopStartHandler 负责
  */
-const loopStartNodeConfigSchema = z.object({
-  loopId: z.string().min(1, 'Loop ID is required'),
+const dataSourceSchema = z.object({
   iterable: z.any().refine(
     (val) => val !== undefined && val !== null,
     'Iterable is required'
   ),
-  maxIterations: z.number().positive('Max iterations must be positive'),
-  variableName: z.string().optional()
+  variableName: z.string().min(1, 'Variable name is required')
+});
+
+/**
+ * LoopStart节点配置schema
+ * 
+ * 支持两种模式：
+ * 1. 数据驱动循环：提供 dataSource（包含 iterable 和 variableName）
+ * 2. 计数循环：不提供 dataSource，仅使用 maxIterations
+ */
+const loopStartNodeConfigSchema = z.object({
+  loopId: z.string().min(1, 'Loop ID is required'),
+  dataSource: dataSourceSchema.optional(),
+  maxIterations: z.number().positive('Max iterations must be positive')
 });
 
 /**

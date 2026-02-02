@@ -649,14 +649,34 @@ describe('NodeValidator', () => {
   });
 
   describe('validateNodeConfig - LOOP_START node', () => {
-    it('should validate a valid LOOP_START node', () => {
+    it('should validate a valid LOOP_START node with dataSource (data-driven loop)', () => {
       const node: Node = {
         id: 'node-1',
         name: 'LoopStart',
         type: NodeType.LOOP_START,
         config: {
           loopId: 'loop-1',
-          iterable: 'items',
+          dataSource: {
+            iterable: 'items',
+            variableName: 'item'
+          },
+          maxIterations: 10
+        },
+        incomingEdgeIds: [],
+        outgoingEdgeIds: []
+      };
+      const result = validator.validateNode(node);
+      expect(result.valid).toBe(true);
+      expect(result.errors).toHaveLength(0);
+    });
+
+    it('should validate a valid LOOP_START node without dataSource (counting loop)', () => {
+      const node: Node = {
+        id: 'node-1',
+        name: 'LoopStart',
+        type: NodeType.LOOP_START,
+        config: {
+          loopId: 'loop-1',
           maxIterations: 10
         },
         incomingEdgeIds: [],
@@ -673,7 +693,10 @@ describe('NodeValidator', () => {
         name: 'LoopStart',
         type: NodeType.LOOP_START,
         config: {
-          iterable: 'items',
+          dataSource: {
+            iterable: 'items',
+            variableName: 'item'
+          },
           maxIterations: 10
         },
         incomingEdgeIds: [],
@@ -684,23 +707,6 @@ describe('NodeValidator', () => {
       expect(result.errors.some(e => e.field?.includes('loopId'))).toBe(true);
     });
 
-    it('should return error for LOOP_START node without iterable', () => {
-      const node: Node = {
-        id: 'node-1',
-        name: 'LoopStart',
-        type: NodeType.LOOP_START,
-        config: {
-          loopId: 'loop-1',
-          maxIterations: 10
-        },
-        incomingEdgeIds: [],
-        outgoingEdgeIds: []
-      };
-      const result = validator.validateNode(node);
-      expect(result.valid).toBe(false);
-      expect(result.errors.some(e => e.field?.includes('iterable'))).toBe(true);
-    });
-
     it('should return error for LOOP_START node without maxIterations', () => {
       const node: Node = {
         id: 'node-1',
@@ -708,7 +714,10 @@ describe('NodeValidator', () => {
         type: NodeType.LOOP_START,
         config: {
           loopId: 'loop-1',
-          iterable: 'items'
+          dataSource: {
+            iterable: 'items',
+            variableName: 'item'
+          }
         },
         incomingEdgeIds: [],
         outgoingEdgeIds: []
@@ -717,18 +726,56 @@ describe('NodeValidator', () => {
       expect(result.valid).toBe(false);
       expect(result.errors.some(e => e.field?.includes('maxIterations'))).toBe(true);
     });
+
+    it('should return error for LOOP_START node with dataSource missing variableName', () => {
+      const node: Node = {
+        id: 'node-1',
+        name: 'LoopStart',
+        type: NodeType.LOOP_START,
+        config: {
+          loopId: 'loop-1',
+          dataSource: {
+            iterable: 'items'
+            // variableName missing
+          } as any,
+          maxIterations: 10
+        },
+        incomingEdgeIds: [],
+        outgoingEdgeIds: []
+      };
+      const result = validator.validateNode(node);
+      expect(result.valid).toBe(false);
+      expect(result.errors.some(e => e.field?.includes('variableName'))).toBe(true);
+    });
   });
 
   describe('validateNodeConfig - LOOP_END node', () => {
-    it('should validate a valid LOOP_END node', () => {
+    it('should validate a valid LOOP_END node with breakCondition', () => {
       const node: Node = {
-        id: 'node-1',
+        id: 'node-2',
         name: 'LoopEnd',
         type: NodeType.LOOP_END,
         config: {
           loopId: 'loop-1',
-          iterable: 'items',
-          breakCondition: { type: 'condition', expression: 'item.done' }
+          breakCondition: { type: 'condition', expression: 'item.done' },
+          loopStartNodeId: 'node-1'
+        },
+        incomingEdgeIds: [],
+        outgoingEdgeIds: []
+      };
+      const result = validator.validateNode(node);
+      expect(result.valid).toBe(true);
+      expect(result.errors).toHaveLength(0);
+    });
+
+    it('should validate a valid LOOP_END node without breakCondition', () => {
+      const node: Node = {
+        id: 'node-2',
+        name: 'LoopEnd',
+        type: NodeType.LOOP_END,
+        config: {
+          loopId: 'loop-1',
+          loopStartNodeId: 'node-1'
         },
         incomingEdgeIds: [],
         outgoingEdgeIds: []
@@ -740,12 +787,12 @@ describe('NodeValidator', () => {
 
     it('should return error for LOOP_END node without loopId', () => {
       const node: Node = {
-        id: 'node-1',
+        id: 'node-2',
         name: 'LoopEnd',
         type: NodeType.LOOP_END,
         config: {
-          iterable: 'items',
-          breakCondition: { type: 'condition', expression: 'item.done' }
+          breakCondition: { type: 'condition', expression: 'item.done' },
+          loopStartNodeId: 'node-1'
         } as any,
         incomingEdgeIds: [],
         outgoingEdgeIds: []
@@ -753,23 +800,6 @@ describe('NodeValidator', () => {
       const result = validator.validateNode(node);
       expect(result.valid).toBe(false);
       expect(result.errors.some(e => e.field?.includes('loopId'))).toBe(true);
-    });
-
-    it('should return error for LOOP_END node without iterable', () => {
-      const node: Node = {
-        id: 'node-1',
-        name: 'LoopEnd',
-        type: NodeType.LOOP_END,
-        config: {
-          loopId: 'loop-1',
-          breakCondition: { type: 'condition', expression: 'item.done' }
-        } as any,
-        incomingEdgeIds: [],
-        outgoingEdgeIds: []
-      };
-      const result = validator.validateNode(node);
-      expect(result.valid).toBe(false);
-      expect(result.errors.some(e => e.field?.includes('iterable'))).toBe(true);
     });
   });
 
