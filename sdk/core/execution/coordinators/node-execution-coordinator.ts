@@ -19,7 +19,7 @@ import { ThreadContext } from '../context/thread-context';
 import type { Node } from '../../../types/node';
 import type { NodeExecutionResult } from '../../../types/thread';
 import type { EventManager } from '../../services/event-manager';
-import { LLMExecutionCoordinator, type LLMExecutionParams } from './llm-execution-coordinator';
+import { LLMExecutionCoordinator } from './llm-execution-coordinator';
 import { enterSubgraph, exitSubgraph, getSubgraphInput, getSubgraphOutput } from '../handlers/subgraph-handler';
 import { EventType } from '../../../types/events';
 import type { NodeStartedEvent, NodeCompletedEvent, NodeFailedEvent, SubgraphStartedEvent, SubgraphCompletedEvent } from '../../../types/events';
