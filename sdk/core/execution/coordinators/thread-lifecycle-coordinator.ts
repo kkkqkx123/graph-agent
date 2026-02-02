@@ -19,17 +19,18 @@
  */
 
 import { NotFoundError } from '../../../types/errors';
-import type { ThreadOptions, ThreadResult, Thread, ThreadStatus } from '../../../types/thread';
+import type { ThreadOptions, ThreadResult } from '../../../types/thread';
 import { type ThreadRegistry } from '../../services/thread-registry';
 import { ThreadBuilder } from '../thread-builder';
 import { ThreadExecutor } from '../thread-executor';
 import { ThreadLifecycleManager } from '../managers/thread-lifecycle-manager';
 import type { EventManager } from '../../services/event-manager';
 import type { WorkflowRegistry } from '../../services/workflow-registry';
-import { EventType } from '../../../types/events';
-import { EventWaiter } from '../utils/event-waiter';
+import {
+  waitForThreadPaused,
+  waitForThreadCancelled
+} from '../utils/event-waiter';
 import { ThreadCascadeManager } from '../managers/thread-cascade-manager';
-import { now } from '../../../utils';
 
 /**
  * Thread 生命周期协调器
@@ -38,7 +39,6 @@ import { now } from '../../../utils';
  */
 export class ThreadLifecycleCoordinator {
   private lifecycleManager: ThreadLifecycleManager;
-  private eventWaiter: EventWaiter;
   private cascadeManager: ThreadCascadeManager;
 
   constructor(
@@ -47,7 +47,6 @@ export class ThreadLifecycleCoordinator {
     private eventManager: EventManager = eventManager
   ) {
     this.lifecycleManager = new ThreadLifecycleManager(this.eventManager);
-    this.eventWaiter = new EventWaiter(this.eventManager);
     this.cascadeManager = new ThreadCascadeManager(this.threadRegistry, this.lifecycleManager);
   }
 
@@ -111,7 +110,7 @@ export class ThreadLifecycleCoordinator {
     thread.shouldPause = true;
 
     // 2. 等待执行器在安全点处暂停并触发THREAD_PAUSED事件
-    await this.eventWaiter.waitForThreadPaused(threadId, 5000);
+    await waitForThreadPaused(this.eventManager, threadId, 5000);
 
     // 3. 完全委托给Manager进行状态转换和事件触发
     await this.lifecycleManager.pauseThread(thread);
@@ -174,7 +173,7 @@ export class ThreadLifecycleCoordinator {
     thread.shouldStop = true;
 
     // 2. 等待执行器在安全点处停止并触发THREAD_CANCELLED事件
-    await this.eventWaiter.waitForThreadCancelled(threadId, 5000);
+    await waitForThreadCancelled(this.eventManager, threadId, 5000);
 
     // 3. 完全委托给Manager进行状态转换和事件触发
     await this.lifecycleManager.cancelThread(thread, 'user_requested');

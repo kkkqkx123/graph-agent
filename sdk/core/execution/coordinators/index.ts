@@ -14,6 +14,7 @@
  * - LLMExecutionCoordinator: LLM 执行协调器
  * - ThreadLifecycleCoordinator: Thread 生命周期协调器
  * - ThreadOperationCoordinator: Thread 操作协调器
+ * - VariableCoordinator: 变量协调器
  */
 
 export { NodeExecutionCoordinator } from './node-execution-coordinator';
@@ -21,4 +22,5 @@ export { TriggerCoordinator } from './trigger-coordinator';
 export { LLMExecutionCoordinator } from './llm-execution-coordinator';
 export { ThreadLifecycleCoordinator } from './thread-lifecycle-coordinator';
 export { ThreadOperationCoordinator } from './thread-operation-coordinator';
+export { VariableCoordinator } from './variable-coordinator';
 export { VariableAccessor, VariableNamespace } from '../managers/utils/variable-accessor';

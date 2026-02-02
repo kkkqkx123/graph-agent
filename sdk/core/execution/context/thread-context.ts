@@ -18,7 +18,8 @@ import type { Thread, VariableScope } from '../../../types';
 import type { ID } from '../../../types/common';
 import type { StatefulToolFactory } from '../../../types/tool';
 import { ConversationManager } from '../conversation';
-import { VariableManager } from '../managers/variable-manager';
+import { VariableCoordinator } from '../coordinators/variable-coordinator';
+import { VariableStateManager } from '../managers/variable-state-manager';
 import { ConversationStateManager } from '../managers/conversation-state-manager';
 import { TriggerCoordinator } from '../coordinators/trigger-coordinator';
 import { TriggerStateManager, type TriggerRuntimeState } from '../managers/trigger-state-manager';
@@ -47,9 +48,14 @@ export class ThreadContext {
   public readonly conversationStateManager: ConversationStateManager;
 
   /**
-   * 变量管理器
+   * 变量协调器
    */
-  private readonly variableManager: VariableManager;
+  private readonly variableCoordinator: VariableCoordinator;
+
+  /**
+   * 变量状态管理器
+   */
+  private readonly variableStateManager: VariableStateManager;
 
   /**
    * 触发器状态管理器（每个 Thread 独立）
@@ -102,7 +108,17 @@ export class ThreadContext {
     this.thread = thread;
     this.conversationManager = conversationManager;
     this.threadRegistry = threadRegistry;
-    this.variableManager = new VariableManager();
+
+    // 初始化变量状态管理器
+    this.variableStateManager = new VariableStateManager();
+
+    // 初始化变量协调器
+    this.variableCoordinator = new VariableCoordinator(
+      this.variableStateManager,
+      (conversationManager as any).eventManager,
+      thread.id,
+      thread.workflowId
+    );
 
     // 初始化对话状态管理器
     this.conversationStateManager = new ConversationStateManager(
@@ -130,6 +146,16 @@ export class ThreadContext {
     }
 
     this.executionState = new ExecutionState();
+  }
+
+  /**
+   * 初始化变量（从Thread的变量定义）
+   * 这个方法应该在Thread构建后调用
+   */
+  initializeVariables(): void {
+    if (this.thread.variables && this.thread.variables.length > 0) {
+      this.variableStateManager.initializeFromThreadVariables(this.thread.variables);
+    }
   }
 
   /**
@@ -242,7 +268,7 @@ export class ThreadContext {
    * @returns 变量值
    */
   getVariable(name: string): any {
-    return this.variableManager.getVariable(this, name);
+    return this.variableCoordinator.getVariable(this, name);
   }
 
   /**
@@ -251,8 +277,8 @@ export class ThreadContext {
    * @param value 新的变量值
    * @param scope 显式指定作用域（可选）
    */
-  updateVariable(name: string, value: any, scope?: VariableScope): void {
-    this.variableManager.updateVariable(this, name, value, scope);
+  async updateVariable(name: string, value: any, scope?: VariableScope): Promise<void> {
+    await this.variableCoordinator.updateVariable(this, name, value, scope);
   }
 
   /**
@@ -261,7 +287,7 @@ export class ThreadContext {
    * @returns 是否存在
    */
   hasVariable(name: string): boolean {
-    return this.variableManager.hasVariable(this, name);
+    return this.variableCoordinator.hasVariable(this, name);
   }
 
   /**
@@ -269,7 +295,7 @@ export class ThreadContext {
    * @returns 所有变量值
    */
   getAllVariables(): Record<string, any> {
-    return this.variableManager.getAllVariables(this);
+    return this.variableCoordinator.getAllVariables(this);
   }
 
   /**
@@ -394,7 +420,7 @@ export class ThreadContext {
    */
   enterSubgraph(workflowId: ID, parentWorkflowId: ID, input: any): void {
     // 先创建新的子图作用域
-    this.variableManager.enterSubgraphScope(this);
+    this.variableCoordinator.enterSubgraphScope(this);
     // 再调用原有的执行状态管理
     this.executionState.enterSubgraph(workflowId, parentWorkflowId, input);
   }
@@ -406,21 +432,21 @@ export class ThreadContext {
     // 先调用原有的执行状态管理
     this.executionState.exitSubgraph();
     // 再退出子图作用域
-    this.variableManager.exitSubgraphScope(this);
+    this.variableCoordinator.exitSubgraphScope(this);
   }
 
   /**
    * 进入循环作用域
    */
   enterLoop(): void {
-    this.variableManager.enterLoopScope(this);
+    this.variableCoordinator.enterLoopScope(this);
   }
 
   /**
    * 退出循环作用域
    */
   exitLoop(): void {
-    this.variableManager.exitLoopScope(this);
+    this.variableCoordinator.exitLoopScope(this);
   }
 
   /**

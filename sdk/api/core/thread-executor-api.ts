@@ -5,7 +5,8 @@
 
 import { ThreadLifecycleCoordinator } from '../../core/execution/coordinators/thread-lifecycle-coordinator';
 import { ThreadOperationCoordinator } from '../../core/execution/coordinators/thread-operation-coordinator';
-import { VariableManager } from '../../core/execution/managers/variable-manager';
+import { VariableCoordinator } from '../../core/execution/coordinators/variable-coordinator';
+import { VariableStateManager } from '../../core/execution/managers/variable-state-manager';
 import { threadRegistry } from '../../core/services/thread-registry';
 import { eventManager } from '../../core/services/event-manager';
 import { workflowRegistry, type WorkflowRegistry } from '../../core/services/workflow-registry';
@@ -19,7 +20,7 @@ import type { ExecuteOptions } from '../types/core-types';
 export class ThreadExecutorAPI {
   private lifecycleCoordinator: ThreadLifecycleCoordinator;
   private operationCoordinator: ThreadOperationCoordinator;
-  private variableManager: VariableManager;
+  private variableCoordinator: VariableCoordinator;
   private workflowRegistry: WorkflowRegistry;
 
   constructor(workflowRegistryParam?: WorkflowRegistry) {
@@ -32,7 +33,7 @@ export class ThreadExecutorAPI {
       threadRegistry,
       this.workflowRegistry
     );
-    this.variableManager = new VariableManager();
+    this.variableCoordinator = new VariableCoordinator(new VariableStateManager());
   }
 
   /**
@@ -94,7 +95,7 @@ export class ThreadExecutorAPI {
     const threadContext = threadRegistry.get(threadId);
     if (threadContext) {
       for (const [name, value] of Object.entries(variables)) {
-        await this.variableManager.updateVariable(threadContext, name, value);
+        await this.variableCoordinator.updateVariable(threadContext, name, value);
       }
     }
   }
@@ -195,11 +196,11 @@ export class ThreadExecutorAPI {
   }
 
   /**
-   * 获取变量管理器
-   * @returns 变量管理器实例
+   * 获取变量协调器
+   * @returns 变量协调器实例
    */
-  getVariableManager(): VariableManager {
-    return this.variableManager;
+  getVariableCoordinator(): VariableCoordinator {
+    return this.variableCoordinator;
   }
 
   /**

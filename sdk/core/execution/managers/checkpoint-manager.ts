@@ -19,7 +19,7 @@ import type { Checkpoint, CheckpointMetadata, ThreadStateSnapshot } from '../../
 import type { CheckpointStorage, CheckpointStorageMetadata } from '../../../types/checkpoint-storage';
 import type { ThreadRegistry } from '../../services/thread-registry';
 import { ThreadContext } from '../context/thread-context';
-import { VariableManager } from './variable-manager';
+import { VariableStateManager } from './variable-state-manager';
 import { ConversationManager } from '../conversation';
 import { generateId, now } from '../../../utils';
 import { type WorkflowRegistry } from '../../services/workflow-registry';
@@ -32,7 +32,7 @@ import { globalMessageStorage } from '../../services/global-message-storage';
 export class CheckpointManager {
   private storage: CheckpointStorage;
   private threadRegistry: ThreadRegistry;
-  private variableManager: VariableManager;
+  private variableStateManager: VariableStateManager;
   private workflowRegistry: WorkflowRegistry;
 
   /**
@@ -53,7 +53,7 @@ export class CheckpointManager {
     this.storage = storage || new MemoryCheckpointStorage();
     this.threadRegistry = threadRegistry;
     this.workflowRegistry = workflowRegistry;
-    this.variableManager = new VariableManager();
+    this.variableStateManager = new VariableStateManager();
   }
 
   /**
@@ -72,8 +72,8 @@ export class CheckpointManager {
     const thread = threadContext.thread;
 
     // 步骤2：提取 ThreadStateSnapshot
-    // 使用 VariableManager 创建变量快照
-    const variableSnapshot = this.variableManager.createVariableSnapshot(thread);
+    // 使用 VariableStateManager 创建变量快照
+    const variableSnapshot = this.variableStateManager.createSnapshot();
 
     // 将 nodeResults 数组转换为 Record 格式
     const nodeResultsRecord: Record<string, any> = {};
@@ -189,8 +189,8 @@ export class CheckpointManager {
       metadata: checkpoint.metadata
     };
 
-    // 步骤5：使用 VariableManager 恢复变量快照
-    this.variableManager.restoreVariableSnapshot(thread as Thread, {
+    // 步骤5：使用 VariableStateManager 恢复变量快照
+    this.variableStateManager.restoreFromSnapshot({
       variables: checkpoint.threadState.variables,
       variableScopes: checkpoint.threadState.variableScopes
     });

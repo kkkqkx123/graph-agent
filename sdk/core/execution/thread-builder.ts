@@ -13,7 +13,8 @@ import { ConversationManager } from './conversation';
 import { ThreadContext } from './context/thread-context';
 import { NodeType } from '../../types/node';
 import { generateId, now as getCurrentTimestamp } from '../../utils';
-import { VariableManager } from './managers/variable-manager';
+import { VariableCoordinator } from './coordinators/variable-coordinator';
+import { VariableStateManager } from './managers/variable-state-manager';
 import { ValidationError } from '../../types/errors';
 import { type WorkflowRegistry } from '../services/workflow-registry';
 import { ExecutionContext } from './context/execution-context';
@@ -25,14 +26,23 @@ import { graphRegistry } from '../services/graph-registry';
  */
 export class ThreadBuilder {
   private threadTemplates: Map<string, ThreadContext> = new Map();
-  private variableManager: VariableManager;
+  private variableCoordinator: VariableCoordinator;
+  private variableStateManager: VariableStateManager;
   private workflowRegistry: WorkflowRegistry;
   private executionContext: ExecutionContext;
 
   constructor(workflowRegistryParam?: WorkflowRegistry, executionContext?: ExecutionContext) {
-    this.variableManager = new VariableManager();
     this.executionContext = executionContext || ExecutionContext.createDefault();
     this.workflowRegistry = workflowRegistryParam || this.executionContext.getWorkflowRegistry();
+    
+    // 初始化变量状态管理器
+    this.variableStateManager = new VariableStateManager();
+    
+    // 初始化变量协调器
+    this.variableCoordinator = new VariableCoordinator(
+      this.variableStateManager,
+      this.executionContext.getEventManager()
+    );
   }
 
   /**
@@ -151,7 +161,7 @@ export class ThreadBuilder {
     };
 
     // 步骤3：从 WorkflowDefinition 初始化变量
-    this.variableManager.initializeFromWorkflow(thread as Thread, processedWorkflow);
+    this.variableCoordinator.initializeFromWorkflow(thread as Thread, processedWorkflow.variables || []);
 
     // 步骤4：创建 ConversationManager 实例
     // 从 ExecutionContext 获取 EventManager
@@ -174,7 +184,10 @@ export class ThreadBuilder {
       this.workflowRegistry
     );
 
-    // 步骤6：注册工作流触发器到 ThreadContext 的 TriggerManager
+    // 步骤6：初始化变量
+    threadContext.initializeVariables();
+
+    // 步骤7：注册工作流触发器到 ThreadContext 的 TriggerManager
     this.registerWorkflowTriggers(threadContext, processedWorkflow);
 
     return threadContext;
@@ -281,12 +294,17 @@ export class ThreadBuilder {
     const threadRegistry = this.executionContext.getThreadRegistry();
 
     // 创建并返回 ThreadContext
-    return new ThreadContext(
+    const copiedThreadContext = new ThreadContext(
       copiedThread as Thread,
       copiedConversationManager,
       threadRegistry,
       this.workflowRegistry
     );
+
+    // 初始化变量
+    copiedThreadContext.initializeVariables();
+
+    return copiedThreadContext;
   }
 
   /**
@@ -349,12 +367,17 @@ export class ThreadBuilder {
     const threadRegistry = this.executionContext.getThreadRegistry();
 
     // 创建并返回 ThreadContext
-    return new ThreadContext(
+    const forkThreadContext = new ThreadContext(
       forkThread as Thread,
       forkConversationManager,
       threadRegistry,
       this.workflowRegistry
     );
+
+    // 初始化变量
+    forkThreadContext.initializeVariables();
+
+    return forkThreadContext;
   }
 
   /**

@@ -11,11 +11,11 @@
  * 包含的管理器：
  * - CheckpointManager: 检查点管理器
  * - TriggerStateManager: 触发器状态管理器
- * - VariableManager: 变量管理器
+ * - VariableStateManager: 变量状态管理器
  * - ConversationStateManager: 对话状态管理器
  */
 
 export { CheckpointManager } from "./checkpoint-manager";
 export { TriggerStateManager, type TriggerRuntimeState } from "./trigger-state-manager";
-export { VariableManager } from "./variable-manager";
+export { VariableStateManager } from "./variable-state-manager";
 export { ConversationStateManager, type ConversationState } from "./conversation-state-manager";

@@ -1,18 +1,18 @@
 /**
  * ThreadLifecycleManager - Thread生命周期管理器
- * 
+ *
  * 职责：
  * - Thread状态转换（原子操作）
  * - 状态转换验证
  * - 生命周期事件触发
  * - 生命周期钩子执行（如清理消息存储）
- * 
+ *
  * 设计原则：
  * - 原子操作：每个方法代表一个完整的状态转换单元
  * - 无业务逻辑：不涉及执行、暂停等实现细节
  * - 无流程协调：不决定何时调用这些方法
  * - 纯函数性：同一输入产生同一输出
- * 
+ *
  * 调用者：
  * - ThreadLifecycleCoordinator - 高层流程协调
  * - 触发器处理函数（通过Coordinator）
@@ -20,12 +20,22 @@
 
 import type { Thread, ThreadStatus, ThreadResult } from '../../../types/thread';
 import type { EventManager } from '../../services/event-manager';
-import { EventType } from '../../../types/events';
 import { eventManager } from '../../services/event-manager';
-import type { ThreadStartedEvent, ThreadCompletedEvent, ThreadFailedEvent, ThreadPausedEvent, ThreadResumedEvent, ThreadCancelledEvent, ThreadStateChangedEvent } from '../../../types/events';
-import { now } from '../../../utils';
 import { globalMessageStorage } from '../../services/global-message-storage';
 import { validateTransition } from '../utils/thread-state-validator';
+import {
+  buildThreadStartedEvent,
+  buildThreadStateChangedEvent,
+  buildThreadPausedEvent,
+  buildThreadResumedEvent,
+  buildThreadCompletedEvent,
+  buildThreadFailedEvent,
+  buildThreadCancelledEvent
+} from '../utils/event-builder';
+import {
+  emit
+} from '../utils/event-emitter';
+import { now } from '../../../utils';
 
 /**
  * ThreadLifecycleManager - Thread生命周期管理器
@@ -55,10 +65,12 @@ export class ThreadLifecycleManager {
     thread.status = 'RUNNING' as ThreadStatus;
 
     // 触发THREAD_STARTED事件
-    await this.emitThreadStartedEvent(thread);
+    const startedEvent = buildThreadStartedEvent(thread);
+    await emit(this.eventManager, startedEvent);
 
     // 触发THREAD_STATE_CHANGED事件
-    await this.emitThreadStateChangedEvent(thread, previousStatus, 'RUNNING');
+    const stateChangedEvent = buildThreadStateChangedEvent(thread, previousStatus, 'RUNNING');
+    await emit(this.eventManager, stateChangedEvent);
   }
 
   /**
@@ -82,10 +94,12 @@ export class ThreadLifecycleManager {
     thread.status = 'PAUSED' as ThreadStatus;
 
     // 触发THREAD_PAUSED事件
-    await this.emitThreadPausedEvent(thread);
+    const pausedEvent = buildThreadPausedEvent(thread);
+    await emit(this.eventManager, pausedEvent);
 
     // 触发THREAD_STATE_CHANGED事件
-    await this.emitThreadStateChangedEvent(thread, previousStatus, 'PAUSED');
+    const stateChangedEvent = buildThreadStateChangedEvent(thread, previousStatus, 'PAUSED');
+    await emit(this.eventManager, stateChangedEvent);
   }
 
   /**
@@ -109,10 +123,12 @@ export class ThreadLifecycleManager {
     thread.status = 'RUNNING' as ThreadStatus;
 
     // 触发THREAD_RESUMED事件
-    await this.emitThreadResumedEvent(thread);
+    const resumedEvent = buildThreadResumedEvent(thread);
+    await emit(this.eventManager, resumedEvent);
 
     // 触发THREAD_STATE_CHANGED事件
-    await this.emitThreadStateChangedEvent(thread, previousStatus, 'RUNNING');
+    const stateChangedEvent = buildThreadStateChangedEvent(thread, previousStatus, 'RUNNING');
+    await emit(this.eventManager, stateChangedEvent);
   }
 
   /**
@@ -134,7 +150,8 @@ export class ThreadLifecycleManager {
       // 清理全局消息存储中的消息历史
       globalMessageStorage.removeReference(thread.id);
       // 触发THREAD_COMPLETED事件
-      await this.emitThreadCompletedEvent(thread, result);
+      const completedEvent = buildThreadCompletedEvent(thread, result);
+      await emit(this.eventManager, completedEvent);
       return;
     }
 
@@ -151,10 +168,12 @@ export class ThreadLifecycleManager {
     globalMessageStorage.removeReference(thread.id);
 
     // 触发THREAD_COMPLETED事件
-    await this.emitThreadCompletedEvent(thread, result);
+    const completedEvent = buildThreadCompletedEvent(thread, result);
+    await emit(this.eventManager, completedEvent);
 
     // 触发THREAD_STATE_CHANGED事件
-    await this.emitThreadStateChangedEvent(thread, previousStatus, 'COMPLETED');
+    const stateChangedEvent = buildThreadStateChangedEvent(thread, previousStatus, 'COMPLETED');
+    await emit(this.eventManager, stateChangedEvent);
   }
 
   /**
@@ -183,10 +202,12 @@ export class ThreadLifecycleManager {
     globalMessageStorage.removeReference(thread.id);
 
     // 触发THREAD_FAILED事件
-    await this.emitThreadFailedEvent(thread, error);
+    const failedEvent = buildThreadFailedEvent(thread, error);
+    await emit(this.eventManager, failedEvent);
 
     // 触发THREAD_STATE_CHANGED事件
-    await this.emitThreadStateChangedEvent(thread, previousStatus, 'FAILED');
+    const stateChangedEvent = buildThreadStateChangedEvent(thread, previousStatus, 'FAILED');
+    await emit(this.eventManager, stateChangedEvent);
   }
 
   /**
@@ -217,122 +238,11 @@ export class ThreadLifecycleManager {
     globalMessageStorage.removeReference(thread.id);
 
     // 触发THREAD_CANCELLED事件
-    await this.emitThreadCancelledEvent(thread, reason);
+    const cancelledEvent = buildThreadCancelledEvent(thread, reason);
+    await emit(this.eventManager, cancelledEvent);
 
     // 触发THREAD_STATE_CHANGED事件
-    await this.emitThreadStateChangedEvent(thread, previousStatus, 'CANCELLED');
+    const stateChangedEvent = buildThreadStateChangedEvent(thread, previousStatus, 'CANCELLED');
+    await emit(this.eventManager, stateChangedEvent);
   }
-
-
-
-  /**
-   * 触发THREAD_STARTED事件
-   * @param thread Thread实例
-   */
-  private async emitThreadStartedEvent(thread: Thread): Promise<void> {
-    const event: ThreadStartedEvent = {
-      type: EventType.THREAD_STARTED,
-      timestamp: now(),
-      workflowId: thread.workflowId,
-      threadId: thread.id,
-      input: thread.input
-    };
-    await this.eventManager.emit(event);
-  }
-
-  /**
-   * 触发THREAD_COMPLETED事件
-   * @param thread Thread实例
-   * @param result 执行结果
-   */
-  private async emitThreadCompletedEvent(thread: Thread, result: ThreadResult): Promise<void> {
-    const event: ThreadCompletedEvent = {
-      type: EventType.THREAD_COMPLETED,
-      timestamp: now(),
-      workflowId: thread.workflowId,
-      threadId: thread.id,
-      output: result.output,
-      executionTime: result.executionTime
-    };
-    await this.eventManager.emit(event);
-  }
-
-  /**
-   * 触发THREAD_FAILED事件
-   * @param thread Thread实例
-   * @param error 错误信息
-   */
-  private async emitThreadFailedEvent(thread: Thread, error: Error): Promise<void> {
-    const event: ThreadFailedEvent = {
-      type: EventType.THREAD_FAILED,
-      timestamp: now(),
-      workflowId: thread.workflowId,
-      threadId: thread.id,
-      error: error.message
-    };
-    await this.eventManager.emit(event);
-  }
-
-  /**
-   * 触发THREAD_PAUSED事件
-   * @param thread Thread实例
-   */
-  private async emitThreadPausedEvent(thread: Thread): Promise<void> {
-    const event: ThreadPausedEvent = {
-      type: EventType.THREAD_PAUSED,
-      timestamp: now(),
-      workflowId: thread.workflowId,
-      threadId: thread.id
-    };
-    await this.eventManager.emit(event);
-  }
-
-  /**
-   * 触发THREAD_RESUMED事件
-   * @param thread Thread实例
-   */
-  private async emitThreadResumedEvent(thread: Thread): Promise<void> {
-    const event: ThreadResumedEvent = {
-      type: EventType.THREAD_RESUMED,
-      timestamp: now(),
-      workflowId: thread.workflowId,
-      threadId: thread.id
-    };
-    await this.eventManager.emit(event);
-  }
-
-  /**
-   * 触发THREAD_CANCELLED事件
-   * @param thread Thread实例
-   * @param reason 取消原因
-   */
-  private async emitThreadCancelledEvent(thread: Thread, reason?: string): Promise<void> {
-    const event: ThreadCancelledEvent = {
-      type: EventType.THREAD_CANCELLED,
-      timestamp: now(),
-      workflowId: thread.workflowId,
-      threadId: thread.id,
-      reason
-    };
-    await this.eventManager.emit(event);
-  }
-
-  /**
-   * 触发THREAD_STATE_CHANGED事件
-   * @param thread Thread实例
-   * @param previousStatus 变更前状态
-   * @param newStatus 变更后状态
-   */
-  private async emitThreadStateChangedEvent(thread: Thread, previousStatus: string, newStatus: string): Promise<void> {
-    const event: ThreadStateChangedEvent = {
-      type: EventType.THREAD_STATE_CHANGED,
-      timestamp: now(),
-      workflowId: thread.workflowId,
-      threadId: thread.id,
-      previousStatus,
-      newStatus
-    };
-    await this.eventManager.emit(event);
-  }
-
 }

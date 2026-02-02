@@ -3,17 +3,18 @@
  * EventWaiter的单元测试
  */
 
-import { EventWaiter } from '../event-waiter';
+import {
+  waitForThreadPaused,
+  waitForThreadCancelled,
+  waitForThreadCompleted,
+  waitForThreadFailed,
+  waitForThreadResumed,
+  waitForAnyLifecycleEvent
+} from '../event-waiter';
 import { eventManager } from '../../../services/event-manager';
 import { EventType } from '../../../../types/events';
 
 describe('EventWaiter', () => {
-  let eventWaiter: EventWaiter;
-
-  beforeEach(() => {
-    eventWaiter = new EventWaiter(eventManager);
-  });
-
   afterEach(() => {
     // 清理所有事件监听器
     eventManager.clear();
@@ -24,7 +25,7 @@ describe('EventWaiter', () => {
       const threadId = 'test-thread-id';
 
       // 创建等待Promise
-      const waitPromise = eventWaiter.waitForThreadPaused(threadId, 5000);
+      const waitPromise = waitForThreadPaused(eventManager, threadId, 5000);
 
       // 触发事件
       setTimeout(() => {
@@ -44,7 +45,7 @@ describe('EventWaiter', () => {
       const threadId = 'test-thread-id';
 
       // 创建等待Promise，设置短超时
-      const waitPromise = eventWaiter.waitForThreadPaused(threadId, 100);
+      const waitPromise = waitForThreadPaused(eventManager, threadId, 100);
 
       // 不触发事件，等待超时
       await expect(waitPromise).rejects.toThrow();
@@ -55,7 +56,7 @@ describe('EventWaiter', () => {
     it('应该在THREAD_CANCELLED事件触发时解析', async () => {
       const threadId = 'test-thread-id';
 
-      const waitPromise = eventWaiter.waitForThreadCancelled(threadId, 5000);
+      const waitPromise = waitForThreadCancelled(eventManager, threadId, 5000);
 
       setTimeout(() => {
         eventManager.emit({
@@ -75,7 +76,7 @@ describe('EventWaiter', () => {
     it('应该在THREAD_COMPLETED事件触发时解析', async () => {
       const threadId = 'test-thread-id';
 
-      const waitPromise = eventWaiter.waitForThreadCompleted(threadId, 5000);
+      const waitPromise = waitForThreadCompleted(eventManager, threadId, 5000);
 
       setTimeout(() => {
         eventManager.emit({
@@ -96,7 +97,7 @@ describe('EventWaiter', () => {
     it('应该在THREAD_FAILED事件触发时解析', async () => {
       const threadId = 'test-thread-id';
 
-      const waitPromise = eventWaiter.waitForThreadFailed(threadId, 5000);
+      const waitPromise = waitForThreadFailed(eventManager, threadId, 5000);
 
       setTimeout(() => {
         eventManager.emit({
@@ -116,7 +117,7 @@ describe('EventWaiter', () => {
     it('应该在THREAD_RESUMED事件触发时解析', async () => {
       const threadId = 'test-thread-id';
 
-      const waitPromise = eventWaiter.waitForThreadResumed(threadId, 5000);
+      const waitPromise = waitForThreadResumed(eventManager, threadId, 5000);
 
       setTimeout(() => {
         eventManager.emit({
@@ -135,7 +136,7 @@ describe('EventWaiter', () => {
     it('应该在任意生命周期事件触发时解析', async () => {
       const threadId = 'test-thread-id';
 
-      const waitPromise = eventWaiter.waitForAnyLifecycleEvent(threadId, 5000);
+      const waitPromise = waitForAnyLifecycleEvent(eventManager, threadId, 5000);
 
       // 触发THREAD_PAUSED事件
       setTimeout(() => {
@@ -153,7 +154,7 @@ describe('EventWaiter', () => {
     it('应该在THREAD_CANCELLED事件触发时解析', async () => {
       const threadId = 'test-thread-id';
 
-      const waitPromise = eventWaiter.waitForAnyLifecycleEvent(threadId, 5000);
+      const waitPromise = waitForAnyLifecycleEvent(eventManager, threadId, 5000);
 
       // 触发THREAD_CANCELLED事件
       setTimeout(() => {

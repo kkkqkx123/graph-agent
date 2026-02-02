@@ -12,6 +12,22 @@ import type { EventManager } from '../../services/event-manager';
 import { ExecutionError, TimeoutError, ValidationError } from '../../../types/errors';
 import { now, diffTimestamp } from '../../../utils';
 import { EventType } from '../../../types/events';
+import {
+  buildThreadForkStartedEvent,
+  buildThreadForkCompletedEvent,
+  buildThreadJoinStartedEvent,
+  buildThreadJoinConditionMetEvent,
+  buildThreadCopyStartedEvent,
+  buildThreadCopyCompletedEvent
+} from './event-builder';
+import {
+  safeEmit
+} from './event-emitter';
+import {
+  waitForMultipleThreadsCompleted,
+  waitForAnyThreadCompleted,
+  waitForAnyThreadCompletion
+} from './event-waiter';
 
 /**
  * Fork 配置
@@ -63,31 +79,15 @@ export async function fork(
   }
 
   // 触发THREAD_FORK_STARTED事件
-  if (eventManager) {
-    await eventManager.emit({
-      type: EventType.THREAD_FORK_STARTED,
-      timestamp: now(),
-      workflowId: parentThreadContext.getWorkflowId(),
-      threadId: parentThreadContext.getThreadId(),
-      parentThreadId: parentThreadContext.getThreadId(),
-      forkConfig
-    });
-  }
+  const forkStartedEvent = buildThreadForkStartedEvent(parentThreadContext, forkConfig);
+  await safeEmit(eventManager, forkStartedEvent);
 
   // 步骤2：创建子线程
   const childThreadContext = await threadBuilder.createFork(parentThreadContext, forkConfig);
 
   // 触发THREAD_FORK_COMPLETED事件
-  if (eventManager) {
-    await eventManager.emit({
-      type: EventType.THREAD_FORK_COMPLETED,
-      timestamp: now(),
-      workflowId: parentThreadContext.getWorkflowId(),
-      threadId: parentThreadContext.getThreadId(),
-      parentThreadId: parentThreadContext.getThreadId(),
-      childThreadIds: [childThreadContext.getThreadId()]
-    });
-  }
+  const forkCompletedEvent = buildThreadForkCompletedEvent(parentThreadContext, [childThreadContext.getThreadId()]);
+  await safeEmit(eventManager, forkCompletedEvent);
 
   return childThreadContext;
 }
@@ -121,15 +121,8 @@ export async function join(
   if (eventManager && parentThreadId) {
     const parentThreadContext = threadRegistry.get(parentThreadId);
     if (parentThreadContext) {
-      await eventManager.emit({
-        type: EventType.THREAD_JOIN_STARTED,
-        timestamp: now(),
-        workflowId: parentThreadContext.getWorkflowId(),
-        threadId: parentThreadId,
-        parentThreadId,
-        childThreadIds,
-        joinStrategy
-      });
+      const joinStartedEvent = buildThreadJoinStartedEvent(parentThreadContext, childThreadIds, joinStrategy);
+      await safeEmit(eventManager, joinStartedEvent);
     }
   }
 
@@ -181,30 +174,15 @@ export async function copy(
   }
 
   // 触发THREAD_COPY_STARTED事件
-  if (eventManager) {
-    await eventManager.emit({
-      type: EventType.THREAD_COPY_STARTED,
-      timestamp: now(),
-      workflowId: sourceThreadContext.getWorkflowId(),
-      threadId: sourceThreadContext.getThreadId(),
-      sourceThreadId: sourceThreadContext.getThreadId()
-    });
-  }
+  const copyStartedEvent = buildThreadCopyStartedEvent(sourceThreadContext);
+  await safeEmit(eventManager, copyStartedEvent);
 
   // 步骤2：调用 ThreadBuilder 复制 thread
   const copiedThreadContext = await threadBuilder.createCopy(sourceThreadContext);
 
   // 触发THREAD_COPY_COMPLETED事件
-  if (eventManager) {
-    await eventManager.emit({
-      type: EventType.THREAD_COPY_COMPLETED,
-      timestamp: now(),
-      workflowId: sourceThreadContext.getWorkflowId(),
-      threadId: sourceThreadContext.getThreadId(),
-      sourceThreadId: sourceThreadContext.getThreadId(),
-      copiedThreadId: copiedThreadContext.getThreadId()
-    });
-  }
+  const copyCompletedEvent = buildThreadCopyCompletedEvent(sourceThreadContext, copiedThreadContext.getThreadId());
+  await safeEmit(eventManager, copyCompletedEvent);
 
   return copiedThreadContext;
 }
@@ -218,6 +196,147 @@ export async function copy(
  * @returns 完成的和失败的线程数组
  */
 async function waitForCompletion(
+  childThreadIds: string[],
+  joinStrategy: JoinStrategy,
+  threadRegistry: ThreadRegistry,
+  timeout: number,
+  parentThreadId?: string,
+  eventManager?: EventManager
+): Promise<{ completedThreads: Thread[]; failedThreads: Thread[] }> {
+  const completedThreads: Thread[] = [];
+  const failedThreads: Thread[] = [];
+  const pendingThreads = new Set(childThreadIds);
+  let conditionMet = false;
+
+  // 如果没有事件管理器，使用轮询方式
+  if (!eventManager) {
+    return await waitForCompletionByPolling(
+      childThreadIds,
+      joinStrategy,
+      threadRegistry,
+      timeout,
+      parentThreadId,
+      eventManager
+    );
+  }
+
+  // 使用事件驱动方式等待
+  // 根据策略选择等待方式
+  switch (joinStrategy) {
+    case 'ALL_COMPLETED':
+      // 等待所有线程完成
+      await waitForMultipleThreadsCompleted(eventManager, childThreadIds, timeout);
+      // 收集所有完成的线程
+      for (const threadId of childThreadIds) {
+        const threadContext = threadRegistry.get(threadId);
+        if (threadContext) {
+          const thread = threadContext.thread;
+          if (thread.status === 'COMPLETED') {
+            completedThreads.push(thread);
+          } else if (thread.status === 'FAILED' || thread.status === 'CANCELLED') {
+            failedThreads.push(thread);
+          }
+        }
+      }
+      conditionMet = failedThreads.length === 0;
+      break;
+
+    case 'ANY_COMPLETED':
+      // 等待任意线程完成
+      const completedThreadId = await waitForAnyThreadCompleted(eventManager, childThreadIds, timeout);
+      // 收集完成的线程
+      for (const threadId of childThreadIds) {
+        const threadContext = threadRegistry.get(threadId);
+        if (threadContext) {
+          const thread = threadContext.thread;
+          if (thread.status === 'COMPLETED') {
+            completedThreads.push(thread);
+          } else if (thread.status === 'FAILED' || thread.status === 'CANCELLED') {
+            failedThreads.push(thread);
+          }
+        }
+      }
+      conditionMet = completedThreads.length > 0;
+      break;
+
+    case 'ALL_FAILED':
+      // 等待所有线程失败
+      await waitForMultipleThreadsCompleted(eventManager, childThreadIds, timeout);
+      // 收集所有失败的线程
+      for (const threadId of childThreadIds) {
+        const threadContext = threadRegistry.get(threadId);
+        if (threadContext) {
+          const thread = threadContext.thread;
+          if (thread.status === 'FAILED' || thread.status === 'CANCELLED') {
+            failedThreads.push(thread);
+          } else if (thread.status === 'COMPLETED') {
+            completedThreads.push(thread);
+          }
+        }
+      }
+      conditionMet = failedThreads.length === childThreadIds.length;
+      break;
+
+    case 'ANY_FAILED':
+      // 等待任意线程失败
+      const result = await waitForAnyThreadCompletion(eventManager, childThreadIds, timeout);
+      // 收集所有线程状态
+      for (const threadId of childThreadIds) {
+        const threadContext = threadRegistry.get(threadId);
+        if (threadContext) {
+          const thread = threadContext.thread;
+          if (thread.status === 'COMPLETED') {
+            completedThreads.push(thread);
+          } else if (thread.status === 'FAILED' || thread.status === 'CANCELLED') {
+            failedThreads.push(thread);
+          }
+        }
+      }
+      conditionMet = failedThreads.length > 0;
+      break;
+
+    case 'SUCCESS_COUNT_THRESHOLD':
+      // 等待任意线程完成（简化处理）
+      await waitForAnyThreadCompleted(eventManager, childThreadIds, timeout);
+      // 收集所有线程状态
+      for (const threadId of childThreadIds) {
+        const threadContext = threadRegistry.get(threadId);
+        if (threadContext) {
+          const thread = threadContext.thread;
+          if (thread.status === 'COMPLETED') {
+            completedThreads.push(thread);
+          } else if (thread.status === 'FAILED' || thread.status === 'CANCELLED') {
+            failedThreads.push(thread);
+          }
+        }
+      }
+      conditionMet = completedThreads.length > 0;
+      break;
+
+    default:
+      throw new ValidationError(`Invalid join strategy: ${joinStrategy}`, 'joinStrategy');
+  }
+
+  // 触发THREAD_JOIN_CONDITION_MET事件
+  if (eventManager && parentThreadId && conditionMet) {
+    const parentThreadContext = threadRegistry.get(parentThreadId);
+    if (parentThreadContext) {
+      const joinConditionMetEvent = buildThreadJoinConditionMetEvent(
+        parentThreadContext,
+        childThreadIds,
+        joinStrategy
+      );
+      await safeEmit(eventManager, joinConditionMetEvent);
+    }
+  }
+
+  return { completedThreads, failedThreads };
+}
+
+/**
+ * 使用轮询方式等待线程完成（备用方案）
+ */
+async function waitForCompletionByPolling(
   childThreadIds: string[],
   joinStrategy: JoinStrategy,
   threadRegistry: ThreadRegistry,
@@ -270,15 +389,12 @@ async function waitForCompletion(
   if (eventManager && parentThreadId && conditionMet) {
     const parentThreadContext = threadRegistry.get(parentThreadId);
     if (parentThreadContext) {
-      await eventManager.emit({
-        type: EventType.THREAD_JOIN_CONDITION_MET,
-        timestamp: now(),
-        workflowId: parentThreadContext.getWorkflowId(),
-        threadId: parentThreadId,
-        parentThreadId,
+      const joinConditionMetEvent = buildThreadJoinConditionMetEvent(
+        parentThreadContext,
         childThreadIds,
-        condition: joinStrategy
-      });
+        joinStrategy
+      );
+      await safeEmit(eventManager, joinConditionMetEvent);
     }
   }
 
