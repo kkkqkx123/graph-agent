@@ -4,7 +4,7 @@
  */
 
 import { VariableAccessor, VariableNamespace } from '../variable-accessor';
-import type { ThreadContext } from '../../../context/thread-context';
+import type { ThreadContext } from '../../context/thread-context';
 
 // Mock ThreadContext
 const createMockThreadContext = (

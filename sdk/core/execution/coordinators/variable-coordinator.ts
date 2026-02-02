@@ -23,7 +23,7 @@ import { EventType } from '../../../types/events';
 import { now } from '../../../utils';
 import { ValidationError, ExecutionError } from '../../../types/errors';
 import { VariableStateManager } from '../managers/variable-state-manager';
-import { VariableAccessor } from '../managers/utils/variable-accessor';
+import { VariableAccessor } from '../utils/variable-accessor';
 
 /**
  * VariableCoordinator - 变量协调器
@@ -46,7 +46,7 @@ export class VariableCoordinator {
     private eventManager?: EventManager,
     private threadId?: string,
     private workflowId?: string
-  ) {}
+  ) { }
 
   /**
    * 从 WorkflowDefinition 初始化变量
@@ -131,7 +131,7 @@ export class VariableCoordinator {
     scopeObject: Record<string, any>
   ): any {
     const variableDef = this.stateManager.getVariableDefinition(name);
-    
+
     if (!variableDef) {
       return undefined;
     }
@@ -139,7 +139,7 @@ export class VariableCoordinator {
     // 使用默认值初始化
     const initialValue = variableDef.value;
     this.stateManager.setVariableValue(name, initialValue, scope);
-    
+
     return initialValue;
   }
 

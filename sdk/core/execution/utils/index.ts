@@ -83,3 +83,8 @@ export {
   isTerminalStatus,
   isActiveStatus
 } from './thread-state-validator';
+
+export {
+  VariableAccessor,
+  VariableNamespace
+} from './variable-accessor';
