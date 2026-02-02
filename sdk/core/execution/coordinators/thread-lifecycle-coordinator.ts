@@ -29,7 +29,7 @@ import type { WorkflowRegistry } from '../../services/workflow-registry';
 import {
   waitForThreadPaused,
   waitForThreadCancelled
-} from '../utils/event-waiter';
+} from '../utils/event/event-waiter';
 import { ThreadCascadeManager } from '../managers/thread-cascade-manager';
 
 /**

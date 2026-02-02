@@ -27,6 +27,7 @@ interface SubgraphContext {
  *
  * 核心职责：
  * - 管理子图执行栈
+ * - 管理子工作流执行历史（用于触发器触发的孤立子工作流）
  * - 提供当前工作流ID（考虑子图上下文）
  * - 管理执行时的临时状态
  *
@@ -40,6 +41,16 @@ export class ExecutionState {
    * 子图执行堆栈
    */
   private subgraphStack: SubgraphContext[] = [];
+
+  /**
+   * 子工作流执行历史记录（用于触发器触发的孤立子工作流）
+   */
+  private subgraphExecutionHistory: any[] = [];
+
+  /**
+   * 是否正在执行触发子工作流
+   */
+  private isExecutingTriggeredSubgraph: boolean = false;
 
   /**
    * 构造函数
@@ -116,10 +127,54 @@ export class ExecutionState {
   }
 
   /**
+   * 添加子工作流执行结果
+   * @param result 节点执行结果
+   */
+  addSubgraphExecutionResult(result: any): void {
+    if (this.isExecutingTriggeredSubgraph) {
+      this.subgraphExecutionHistory.push(result);
+    }
+  }
+
+  /**
+   * 获取子工作流执行历史
+   * @returns 子工作流执行结果数组
+   */
+  getSubgraphExecutionHistory(): any[] {
+    return this.subgraphExecutionHistory;
+  }
+
+  /**
+   * 开始执行触发子工作流
+   * @param workflowId 子工作流ID
+   */
+  startTriggeredSubgraphExecution(workflowId: string): void {
+    this.isExecutingTriggeredSubgraph = true;
+    this.subgraphExecutionHistory = [];
+  }
+
+  /**
+   * 结束执行触发子工作流
+   */
+  endTriggeredSubgraphExecution(): void {
+    this.isExecutingTriggeredSubgraph = false;
+  }
+
+  /**
+   * 检查是否正在执行触发子工作流
+   * @returns 是否正在执行
+   */
+  isExecutingSubgraph(): boolean {
+    return this.isExecutingTriggeredSubgraph;
+  }
+
+  /**
    * 清空所有执行状态
    */
   clear(): void {
     this.subgraphStack = [];
+    this.subgraphExecutionHistory = [];
+    this.isExecutingTriggeredSubgraph = false;
   }
 
   /**
@@ -129,6 +184,8 @@ export class ExecutionState {
   clone(): ExecutionState {
     const cloned = new ExecutionState();
     cloned.subgraphStack = this.subgraphStack.map(context => ({ ...context }));
+    cloned.subgraphExecutionHistory = [...this.subgraphExecutionHistory];
+    cloned.isExecutingTriggeredSubgraph = this.isExecutingTriggeredSubgraph;
     return cloned;
   }
 }

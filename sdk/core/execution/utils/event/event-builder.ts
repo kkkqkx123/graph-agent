@@ -8,8 +8,8 @@
  * - 统一格式：确保所有事件对象格式一致
  */
 
-import { now } from '../../../utils';
-import type { Thread, ThreadResult, NodeExecutionResult } from '../../../types/thread';
+import { now } from '../../../../utils';
+import type { Thread, ThreadResult, NodeExecutionResult } from '../../../../types/thread';
 import type {
   ThreadStartedEvent,
   ThreadCompletedEvent,
@@ -39,8 +39,8 @@ import type {
   TriggeredSubgraphStartedEvent,
   TriggeredSubgraphCompletedEvent,
   TriggeredSubgraphFailedEvent
-} from '../../../types/events';
-import { EventType } from '../../../types/events';
+} from '../../../../types/events';
+import { EventType } from '../../../../types/events';
 
 /**
  * 构建线程开始事件

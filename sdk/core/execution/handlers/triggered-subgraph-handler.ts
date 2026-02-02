@@ -201,7 +201,7 @@ export async function executeSingleTriggeredSubgraph(
   const startTime = Date.now();
   
   // 标记开始执行触发子工作流
-  task.mainThreadContext.startTriggeredSubgraphExecution();
+  task.mainThreadContext.startTriggeredSubgraphExecution(task.subgraphId);
   
   try {
     // 创建子工作流上下文

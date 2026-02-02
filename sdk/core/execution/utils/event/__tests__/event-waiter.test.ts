@@ -11,8 +11,8 @@ import {
   waitForThreadResumed,
   waitForAnyLifecycleEvent
 } from '../event-waiter';
-import { eventManager } from '../../../services/event-manager';
-import { EventType } from '../../../../types/events';
+import { eventManager } from '../../../../services/event-manager';
+import { EventType } from '../../../../../types/events';
 
 describe('EventWaiter', () => {
   afterEach(() => {

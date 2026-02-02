@@ -19,15 +19,15 @@ import {
   buildThreadJoinConditionMetEvent,
   buildThreadCopyStartedEvent,
   buildThreadCopyCompletedEvent
-} from './event-builder';
+} from './event/event-builder';
 import {
   safeEmit
-} from './event-emitter';
+} from './event/event-emitter';
 import {
   waitForMultipleThreadsCompleted,
   waitForAnyThreadCompleted,
   waitForAnyThreadCompletion
-} from './event-waiter';
+} from './event/event-waiter';
 
 /**
  * Fork 配置

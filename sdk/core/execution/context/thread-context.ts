@@ -7,10 +7,12 @@
  * - 提供 Thread 数据的统一访问接口
  * - 封装 Thread 内部状态的变更操作
  * - 提供 Thread 元数据的访问
+ * - 协调各个状态管理器（变量、触发器、对话等）
  *
  * 设计原则：
  * - 纯数据访问层，不包含执行逻辑
  * - 不管理执行状态（由 ExecutionState 负责）
+ * - 不管理子工作流执行历史（由 SubgraphExecutionManager 负责）
  * - 直接依赖具体实现，不使用接口抽象
  */
 
@@ -299,25 +301,15 @@ export class ThreadContext {
   }
 
   /**
-   * 子工作流执行历史记录（用于触发器触发的孤立子工作流）
-   */
-  private subgraphExecutionHistory: any[] = [];
-
-  /**
-   * 是否正在执行触发子工作流
-   */
-  private isExecutingTriggeredSubgraph: boolean = false;
-
-  /**
    * 添加节点执行结果
    * @param result 节点执行结果
    */
   addNodeResult(result: any): void {
-    if (this.isExecutingTriggeredSubgraph) {
-      // 如果正在执行触发子工作流，添加到子工作流历史记录
-      this.subgraphExecutionHistory.push(result);
-    } else {
-      // 否则添加到主工作流历史记录
+    // 委托给执行状态管理器处理子工作流结果
+    this.executionState.addSubgraphExecutionResult(result);
+    
+    // 如果不在子工作流中，添加到主工作流历史记录
+    if (!this.executionState.isExecutingSubgraph()) {
       this.thread.nodeResults.push(result);
     }
   }
@@ -335,22 +327,22 @@ export class ThreadContext {
    * @returns 子工作流执行结果数组
    */
   getSubgraphExecutionHistory(): any[] {
-    return this.subgraphExecutionHistory;
+    return this.executionState.getSubgraphExecutionHistory();
   }
 
   /**
    * 开始执行触发子工作流
+   * @param workflowId 子工作流ID
    */
-  startTriggeredSubgraphExecution(): void {
-    this.isExecutingTriggeredSubgraph = true;
-    this.subgraphExecutionHistory = [];
+  startTriggeredSubgraphExecution(workflowId: string): void {
+    this.executionState.startTriggeredSubgraphExecution(workflowId);
   }
 
   /**
    * 结束执行触发子工作流
    */
   endTriggeredSubgraphExecution(): void {
-    this.isExecutingTriggeredSubgraph = false;
+    this.executionState.endTriggeredSubgraphExecution();
   }
 
   /**
@@ -358,7 +350,7 @@ export class ThreadContext {
    * @returns 是否正在执行
    */
   isExecutingSubgraph(): boolean {
-    return this.isExecutingTriggeredSubgraph;
+    return this.executionState.isExecutingSubgraph();
   }
 
   /**
@@ -554,6 +546,7 @@ export class ThreadContext {
    * - 清理变量状态
    * - 清理触发器状态
    * - 清理对话状态
+   * - 清理执行状态
    *
    * 此方法应该在Thread执行完成或被取消后调用
    */
@@ -570,9 +563,8 @@ export class ThreadContext {
     // 4. 清理对话状态
     this.conversationStateManager.cleanup();
 
-    // 5. 清空子工作流执行历史
-    this.subgraphExecutionHistory = [];
-    this.isExecutingTriggeredSubgraph = false;
+    // 5. 清理执行状态
+    this.executionState.clear();
   }
 
   /**

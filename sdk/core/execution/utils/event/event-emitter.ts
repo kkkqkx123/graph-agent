@@ -8,8 +8,8 @@
  * - 简化调用：简化事件触发的调用方式
  */
 
-import type { EventManager } from '../../services/event-manager';
-import type { Event, EventType } from '../../../types/events';
+import type { EventManager } from '../../../services/event-manager';
+import type { Event, EventType } from '../../../../types/events';
 
 /**
  * 安全触发事件

@@ -31,10 +31,10 @@ import {
   buildThreadCompletedEvent,
   buildThreadFailedEvent,
   buildThreadCancelledEvent
-} from '../utils/event-builder';
+} from '../utils/event/event-builder';
 import {
   emit
-} from '../utils/event-emitter';
+} from '../utils/event/event-emitter';
 import { now } from '../../../utils';
 
 /**

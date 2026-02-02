@@ -15,8 +15,8 @@
  * - 事件驱动，避免轮询
  */
 
-import type { EventManager } from '../../services/event-manager';
-import { EventType } from '../../../types/events';
+import type { EventManager } from '../../../services/event-manager';
+import { EventType } from '../../../../types/events';
 
 /**
  * 等待Thread暂停事件
