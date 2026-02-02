@@ -15,8 +15,9 @@ export {
 } from './transport';
 
 // 导出重试处理器
-export { RetryHandler } from './retry-handler';
-export type { RetryHandlerConfig } from './retry-handler';
+export { executeWithRetry } from './retry-handler';
+export { NonRetryableStatusCode } from './retry-handler';
+export type { RetryConfig } from './retry-handler';
 
 // 导出熔断器
 export { CircuitBreaker } from './circuit-breaker';

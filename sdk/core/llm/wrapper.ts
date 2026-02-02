@@ -12,7 +12,7 @@ import type {
 } from '../../types/llm';
 import { ProfileManager } from './profile-manager';
 import { ClientFactory } from './client-factory';
-import { ConfigurationError } from '../../types/errors';
+import { ConfigurationError, LLMError } from '../../types/errors';
 import { now, diffTimestamp } from '../../utils';
 
 /**
@@ -48,10 +48,14 @@ export class LLMWrapper {
     
     const client = this.clientFactory.createClient(profile);
     const startTime = now();
-    const result = await client.generate(request);
-    result.duration = diffTimestamp(startTime, now());
-
-    return result;
+    
+    try {
+      const result = await client.generate(request);
+      result.duration = diffTimestamp(startTime, now());
+      return result;
+    } catch (error) {
+      throw this.handleError(error, profile);
+    }
   }
 
   /**
@@ -73,9 +77,13 @@ export class LLMWrapper {
     const client = this.clientFactory.createClient(profile);
     const startTime = now();
 
-    for await (const chunk of client.generateStream(request)) {
-      chunk.duration = diffTimestamp(startTime, now());
-      yield chunk;
+    try {
+      for await (const chunk of client.generateStream(request)) {
+        chunk.duration = diffTimestamp(startTime, now());
+        yield chunk;
+      }
+    } catch (error) {
+      throw this.handleError(error, profile);
     }
   }
 
@@ -144,10 +152,37 @@ export class LLMWrapper {
 
   /**
    * 获取默认Profile ID
-   * 
+   *
    * @returns 默认Profile ID或null
    */
   getDefaultProfileId(): string | null {
     return this.profileManager.getDefault()?.id || null;
   }
-}
+
+  /**
+   * 处理错误，转换为LLMError
+   *
+   * 统一处理来自HTTP客户端和LLM客户端的各种错误，
+   * 包装成LLMError，附加provider、model等profile信息
+   *
+   * @param error 原始错误
+   * @param profile LLM Profile
+   * @returns LLMError
+   */
+  private handleError(error: any, profile: LLMProfile): LLMError {
+    const errorMessage = error?.message || String(error);
+    const errorCode = error?.code || error?.status;
+
+    return new LLMError(
+      `${profile.provider} API error: ${errorMessage}`,
+      profile.provider,
+      profile.model,
+      errorCode,
+      {
+        profileId: profile.id,
+        originalError: error
+      },
+      error instanceof Error ? error : undefined
+    );
+  }
+  }

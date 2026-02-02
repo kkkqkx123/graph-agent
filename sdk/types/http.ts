@@ -9,6 +9,16 @@
 export type HTTPMethod = 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';
 
 /**
+ * HTTP 日志接口
+ */
+export interface HttpLogger {
+  debug?(msg: string, context?: any): void;
+  info?(msg: string, context?: any): void;
+  warn?(msg: string, context?: any): void;
+  error?(msg: string, context?: any): void;
+}
+
+/**
  * HTTP请求选项
  */
 export interface HttpRequestOptions {
@@ -66,4 +76,6 @@ export interface HttpClientConfig {
   rateLimiterCapacity?: number;
   /** 限流器填充速率（每秒） */
   rateLimiterRefillRate?: number;
+  /** 可选的日志记录器 */
+  logger?: HttpLogger;
 }

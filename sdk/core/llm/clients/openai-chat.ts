@@ -13,6 +13,8 @@ import type {
   LLMMessage,
   LLMToolCall
 } from '../../../types/llm';
+import { buildAuthHeaders, mergeAuthHeaders } from '../../../utils/http/auth-builder';
+import { convertToolsToOpenAIFormat } from '../../../utils/llm/tool-converter';
 
 /**
  * OpenAI Chat客户端
@@ -52,17 +54,15 @@ export class OpenAIChatClient extends BaseLLMClient {
    * 构建请求头
    */
   private buildHeaders(): Record<string, string> {
-    const headers: Record<string, string> = {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${this.profile.apiKey}`
-    };
+    const authHeaders = buildAuthHeaders(this.profile.provider, this.profile.apiKey);
 
-    // 添加自定义headers（用于第三方API渠道）
-    if (this.profile.headers) {
-      Object.assign(headers, this.profile.headers);
-    }
-
-    return headers;
+    return mergeAuthHeaders(
+      {
+        'Content-Type': 'application/json',
+        ...authHeaders
+      },
+      this.profile.headers
+    );
   }
 
   /**
@@ -82,14 +82,7 @@ export class OpenAIChatClient extends BaseLLMClient {
 
     // 添加工具
     if (request.tools && request.tools.length > 0) {
-      body.tools = request.tools.map(tool => ({
-        type: 'function',
-        function: {
-          name: tool.name,
-          description: tool.description,
-          parameters: tool.parameters
-        }
-      }));
+      body.tools = convertToolsToOpenAIFormat(request.tools);
     }
 
     return body;

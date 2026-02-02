@@ -23,7 +23,7 @@ export enum ErrorCode {
   LLM_ERROR = 'LLM_ERROR',
   /** 工具调用错误 */
   TOOL_ERROR = 'TOOL_ERROR',
-  /** 限流错误 */
+  /** 限流错误（HTTP专用） */
   RATE_LIMIT_ERROR = 'RATE_LIMIT_ERROR',
   /** 熔断器打开错误 */
   CIRCUIT_BREAKER_OPEN_ERROR = 'CIRCUIT_BREAKER_OPEN_ERROR'
@@ -166,6 +166,19 @@ export class NetworkError extends SDKError {
 
 /**
  * LLM调用错误类型
+ *
+ * 说明：
+ * 1. 继承自 NetworkError，表示 LLM API 调用相关的网络错误
+ * 2. BaseLLMClient 在 generate/generateStream 方法中通过 try-catch 捕获所有上游错误
+ *    （包括 HTTP 客户端抛出的 HttpError、BadRequestError、TimeoutError 等）
+ * 3. handleError() 方法将这些异构错误统一转换为 LLMError，附加 provider 和 model 信息
+ * 4. 原始错误保存在 context.originalError 中，不丢失错误细节
+ * 5. 错误链通过 cause 属性保留，便于追踪根本原因
+ *
+ * 示例：
+ * - HTTP 401 (BadRequestError) → LLMError (statusCode: 401)
+ * - 请求超时 (TimeoutError) → LLMError (statusCode: undefined)
+ * - JSON 解析错误 (Error) → LLMError (statusCode: undefined)
  */
 export class LLMError extends NetworkError {
   constructor(
@@ -178,20 +191,6 @@ export class LLMError extends NetworkError {
   ) {
     super(message, statusCode, context, cause);
     this.name = 'LLMError';
-  }
-}
-
-/**
- * 限流错误类型
- */
-export class RateLimitError extends SDKError {
-  constructor(
-    message: string,
-    public readonly retryAfter?: number,
-    context?: Record<string, any>
-  ) {
-    super(ErrorCode.RATE_LIMIT_ERROR, message, context);
-    this.name = 'RateLimitError';
   }
 }
 
@@ -228,6 +227,8 @@ export class ToolError extends SDKError {
 /**
  * HTTP错误类型
  * 用于精确区分HTTP状态码
+ * 注意：具体的HTTP状态码错误类型定义在 sdk/core/http/errors.ts 中
+ * 此类作为未定义状态码的回退逻辑
  */
 export class HttpError extends NetworkError {
   constructor(

@@ -26,7 +26,6 @@ export function handleTruncateOperation(
 
   // 获取当前可见消息的索引
   const currentIndices = conversationManager.getMarkMap().originalIndices;
-  const allMessages = conversationManager.getAllMessages();
 
   // 计算新的索引数组（基于当前可见消息）
   let newIndices = [...currentIndices];
@@ -59,7 +58,7 @@ export function handleTruncateOperation(
   // 更新索引管理器
   conversationManager.setOriginalIndices(newIndices);
 
-  // 开始新批次，记录压缩边界
+  // 开始新批次，记录边界
   if (newIndices.length > 0) {
     const boundaryIndex = Math.min(...newIndices);
     conversationManager.getIndexManager().startNewBatch(boundaryIndex);
@@ -99,12 +98,12 @@ export function handleInsertOperation(
     const newIndex = conversationManager.addMessage(msg) - 1;
     insertedIndices.push(newIndex);
   }
-  
+
   // 重新计算索引顺序
   const newIndices = [...currentIndices];
   // 在指定位置插入新消息的索引
   newIndices.splice(position, 0, ...insertedIndices);
-  
+
   // 更新索引管理器
   conversationManager.setOriginalIndices(newIndices);
 }
@@ -147,7 +146,7 @@ export function handleClearOperation(
   config: ContextProcessorExecutionData['clear']
 ): void {
   const keepSystemMessage = config?.keepSystemMessage ?? true;
-  
+
   if (keepSystemMessage) {
     const allMessages = conversationManager.getAllMessages();
     if (allMessages.length > 0 && allMessages[0].role === 'system') {
@@ -183,7 +182,7 @@ export function handleFilterOperation(
   // 基于当前可见消息进行过滤
   const filteredIndices = currentIndices.filter((originalIndex: number) => {
     const msg = allMessages[originalIndex];
-    
+
     // 按角色过滤
     if (config.roles && config.roles.length > 0) {
       if (!config.roles.includes(msg.role as any)) {

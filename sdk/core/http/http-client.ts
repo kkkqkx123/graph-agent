@@ -12,20 +12,32 @@ import type {
 import {
   NetworkError,
   TimeoutError,
-  RateLimitError,
   CircuitBreakerOpenError,
   HttpError,
 } from '../../types/errors';
-import { RetryHandler } from './retry-handler';
+import {
+  BadRequestError,
+  UnauthorizedError,
+  ForbiddenError,
+  NotFoundHttpError,
+  ConflictError,
+  UnprocessableEntityError,
+  InternalServerError,
+  ServiceUnavailableError,
+  RateLimitError,
+} from './errors';
+import { executeWithRetry, type RetryConfig } from './retry-handler';
 import { CircuitBreaker } from './circuit-breaker';
 import { RateLimiter } from './rate-limiter';
+import { mergeHeaders } from '../../utils/http/header-builder';
+import { getPlatformHeaders } from '../../utils/http/platform-info';
 
 /**
  * HTTP客户端
  */
 export class HttpClient {
-  private readonly config: Required<HttpClientConfig>;
-  private readonly retryHandler: RetryHandler;
+  private readonly config: HttpClientConfig;
+  private readonly retryConfig: RetryConfig;
   private readonly circuitBreaker?: CircuitBreaker;
   private readonly rateLimiter?: RateLimiter;
 
@@ -43,23 +55,24 @@ export class HttpClient {
       circuitBreakerFailureThreshold: config.circuitBreakerFailureThreshold || 5,
       rateLimiterCapacity: config.rateLimiterCapacity || 60,
       rateLimiterRefillRate: config.rateLimiterRefillRate || 10,
+      logger: config.logger,
     };
 
-    this.retryHandler = new RetryHandler({
-      maxRetries: this.config.maxRetries,
-      baseDelay: this.config.retryDelay,
-    });
+    this.retryConfig = {
+      maxRetries: this.config.maxRetries || 3,
+      baseDelay: this.config.retryDelay || 1000,
+    };
 
     if (this.config.enableCircuitBreaker) {
       this.circuitBreaker = new CircuitBreaker({
-        failureThreshold: this.config.circuitBreakerFailureThreshold,
+        failureThreshold: this.config.circuitBreakerFailureThreshold || 5,
       });
     }
 
     if (this.config.enableRateLimiter) {
       this.rateLimiter = new RateLimiter({
-        capacity: this.config.rateLimiterCapacity,
-        refillRate: this.config.rateLimiterRefillRate,
+        capacity: this.config.rateLimiterCapacity || 60,
+        refillRate: this.config.rateLimiterRefillRate || 10,
       });
     }
   }
@@ -127,8 +140,9 @@ export class HttpClient {
 
     // 执行请求（带重试）
     try {
-      const result = await this.retryHandler.executeWithRetry(() =>
-        this.executeRequest<T>(options)
+      const result = await executeWithRetry(
+        () => this.executeRequest<T>(options),
+        this.retryConfig
       );
 
       // 记录成功
@@ -154,6 +168,14 @@ export class HttpClient {
   }
 
   /**
+   * 日志记录辅助方法
+   */
+  private log(level: keyof import('../../types/http').HttpLogger, msg: string, context?: any) {
+    if (!this.config.logger?.[level]) return;
+    this.config.logger[level]!(msg, context);
+  }
+
+  /**
    * 执行实际的HTTP请求
    */
   private async executeRequest<T = any>(
@@ -162,7 +184,16 @@ export class HttpClient {
     const url = this.buildURL(options.url || '', options.query);
     const method = options.method || 'GET';
     const timeout = options.timeout || this.config.timeout;
-    const headers = { ...this.config.defaultHeaders, ...options.headers };
+    const startTime = Date.now();
+
+    this.log('info', `[HTTP] ${method} ${url} starting`);
+
+    // 使用新的 mergeHeaders 工具，添加平台诊断头
+    const headers = mergeHeaders(
+      this.config.defaultHeaders || {},
+      getPlatformHeaders(),
+      options.headers || {}
+    );
 
     // 构建请求体
     let body: string | undefined;
@@ -187,12 +218,22 @@ export class HttpClient {
       });
 
       clearTimeout(timeoutId);
+      const duration = Date.now() - startTime;
 
       // 检查响应状态
       if (!response.ok) {
         const errorText = await response.text();
+        this.log('warn',
+          `[HTTP] ${method} ${url} failed with ${response.status} in ${duration}ms`,
+          { status: response.status, error: errorText }
+        );
         throw this.createHttpError(response.status, errorText, options.url);
       }
+
+      this.log('debug',
+        `[HTTP] ${method} ${url} succeeded in ${duration}ms`,
+        { status: response.status }
+      );
 
       // 如果请求指定了流式响应，返回流而不是解析数据
       if (options.stream) {
@@ -221,15 +262,24 @@ export class HttpClient {
       };
     } catch (error) {
       clearTimeout(timeoutId);
+      const duration = Date.now() - startTime;
 
       if (error instanceof Error && error.name === 'AbortError') {
+        this.log('error',
+          `[HTTP] ${method} ${url} timeout after ${duration}ms`,
+          { timeout }
+        );
         throw new TimeoutError(
           `Request timeout after ${timeout}ms`,
-          timeout,
+          timeout || 30000,
           { url: options.url }
         );
       }
 
+      this.log('error',
+        `[HTTP] ${method} ${url} error after ${duration}ms`,
+        { error: String(error) }
+      );
       throw error;
     }
   }
@@ -261,20 +311,47 @@ export class HttpClient {
    * 创建HTTP错误
    */
   private createHttpError(status: number, message: string, url?: string): Error {
-    if (status === 429) {
-      return new RateLimitError(
-        `Rate limit exceeded: ${message}`,
-        undefined,
-        { url, status }
-      );
-    }
+    const context = { url, status };
 
-    // 使用HttpError精确区分HTTP状态码
-    return new HttpError(
-      `HTTP ${status}: ${message}`,
-      status,
-      { url, status }
-    );
+    switch (status) {
+      case 400:
+        return new BadRequestError(`Bad request: ${message}`, context);
+
+      case 401:
+        return new UnauthorizedError(`Unauthorized: ${message}`, context);
+
+      case 403:
+        return new ForbiddenError(`Forbidden: ${message}`, context);
+
+      case 404:
+        return new NotFoundHttpError(`Not found: ${message}`, url || '', context);
+
+      case 409:
+        return new ConflictError(`Conflict: ${message}`, context);
+
+      case 422:
+        return new UnprocessableEntityError(`Unprocessable entity: ${message}`, context);
+
+      case 429:
+        return new RateLimitError(
+          `Rate limit exceeded: ${message}`,
+          undefined,
+          context
+        );
+
+      case 500:
+        return new InternalServerError(`Internal server error: ${message}`, context);
+
+      case 503:
+        return new ServiceUnavailableError(`Service unavailable: ${message}`, context);
+
+      default:
+        return new HttpError(
+          `HTTP ${status}: ${message}`,
+          status,
+          context
+        );
+    }
   }
 
   /**

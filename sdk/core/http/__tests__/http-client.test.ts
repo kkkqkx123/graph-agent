@@ -3,7 +3,8 @@
  */
 
 import { HttpClient } from '../http-client';
-import { TimeoutError, NetworkError, RateLimitError, CircuitBreakerOpenError, HttpError } from '../../../types/errors';
+import { TimeoutError, NetworkError, CircuitBreakerOpenError, HttpError } from '../../../types/errors';
+import { RateLimitError } from '../errors';
 
 // Mock fetch
 global.fetch = jest.fn();

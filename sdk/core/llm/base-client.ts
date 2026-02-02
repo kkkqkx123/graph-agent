@@ -11,7 +11,6 @@ import type {
   LLMResult,
   LLMProfile
 } from '../../types/llm';
-import { SDKError, ErrorCode, LLMError } from '../../types/errors';
 import { HttpClient, SseTransport } from '../http';
 import { initialVersion } from '../../utils';
 
@@ -42,16 +41,12 @@ export abstract class BaseLLMClient implements LLMClient {
    * 非流式生成
    *
    * 重试和超时由HttpClient处理
+   * 错误处理由上层LLMWrapper负责
    */
   async generate(request: LLMRequest): Promise<LLMResult> {
     // 合并请求参数
     const mergedRequest = this.mergeParameters(request);
-
-    try {
-      return await this.doGenerate(mergedRequest);
-    } catch (error) {
-      throw this.handleError(error);
-    }
+    return this.doGenerate(mergedRequest);
   }
 
   /**
@@ -59,39 +54,36 @@ export abstract class BaseLLMClient implements LLMClient {
    *
    * 重试和超时由HttpClient处理
    * 在客户端层累积 token 统计信息
+   * 错误处理由上层LLMWrapper负责
    */
   async *generateStream(request: LLMRequest): AsyncIterable<LLMResult> {
     // 合并请求参数
     const mergedRequest = this.mergeParameters(request);
 
-    try {
-      // 参考 Anthropic SDK 的做法：在流式传输期间持续累积 token 统计
-      // message_start 事件提供初始 token 计数（输入 token）
-      // message_delta 事件提供输出 token 计数的持续更新
-      let accumulatedUsage: any = null;
-      
-      for await (const chunk of this.doGenerateStream(mergedRequest)) {
-        // 累积 token 统计
-        if (chunk.usage) {
-          if (!accumulatedUsage) {
-            // 第一次收到 usage，通常是 message_start 事件
-            accumulatedUsage = { ...chunk.usage };
-          } else {
-            // 后续的 usage，通常是 message_delta 事件，进行增量更新
-            // Anthropic SDK 的做法：直接更新为最新值
-            accumulatedUsage = { ...chunk.usage };
-          }
+    // 参考 Anthropic SDK 的做法：在流式传输期间持续累积 token 统计
+    // message_start 事件提供初始 token 计数（输入 token）
+    // message_delta 事件提供输出 token 计数的持续更新
+    let accumulatedUsage: any = null;
+
+    for await (const chunk of this.doGenerateStream(mergedRequest)) {
+      // 累积 token 统计
+      if (chunk.usage) {
+        if (!accumulatedUsage) {
+          // 第一次收到 usage，通常是 message_start 事件
+          accumulatedUsage = { ...chunk.usage };
+        } else {
+          // 后续的 usage，通常是 message_delta 事件，进行增量更新
+          // Anthropic SDK 的做法：直接更新为最新值
+          accumulatedUsage = { ...chunk.usage };
         }
-        
-        // 如果是最后一个 chunk（有 finishReason），确保包含累积的 usage
-        if (chunk.finishReason && accumulatedUsage) {
-          chunk.usage = accumulatedUsage;
-        }
-        
-        yield chunk;
       }
-    } catch (error) {
-      throw this.handleError(error);
+
+      // 如果是最后一个 chunk（有 finishReason），确保包含累积的 usage
+      if (chunk.finishReason && accumulatedUsage) {
+        chunk.usage = accumulatedUsage;
+      }
+
+      yield chunk;
     }
   }
 
@@ -126,25 +118,7 @@ export abstract class BaseLLMClient implements LLMClient {
    */
   protected abstract doGenerateStream(request: LLMRequest): AsyncIterable<LLMResult>;
 
-  /**
-   * 处理错误，转换为SDK统一错误格式
-   */
-  protected handleError(error: any): SDKError {
-    const errorMessage = error?.message || String(error);
-    const errorCode = error?.code || error?.status;
 
-    // 创建LLM错误
-    return new LLMError(
-      `${this.profile.provider} API error: ${errorMessage}`,
-      this.profile.provider,
-      this.profile.model,
-      errorCode,
-      {
-        originalError: error
-      },
-      error instanceof Error ? error : undefined
-    );
-  }
 
 
   /**

@@ -15,6 +15,10 @@ import type {
   LLMToolCall
 } from '../../../types/llm';
 import { generateId } from '../../../utils';
+import { buildAuthHeaders, mergeAuthHeaders } from '../../../utils/http/auth-builder';
+import { extractParameters } from '../../../utils/http/parameter-builder';
+import { convertToolsToOpenAIFormat } from '../../../utils/llm/tool-converter';
+import { filterSystemMessages } from '../../../utils/llm/message-helper';
 
 /**
  * Gemini OpenAI兼容客户端
@@ -54,16 +58,15 @@ export class GeminiOpenAIClient extends BaseLLMClient {
    * 构建请求头
    */
   private buildHeaders(): Record<string, string> {
-    const headers: Record<string, string> = {
-      'Content-Type': 'application/json'
-    };
+    const authHeaders = buildAuthHeaders(this.profile.provider, this.profile.apiKey);
 
-    // 添加自定义headers（用于第三方API渠道）
-    if (this.profile.headers) {
-      Object.assign(headers, this.profile.headers);
-    }
-
-    return headers;
+    return mergeAuthHeaders(
+      {
+        'Content-Type': 'application/json',
+        ...authHeaders
+      },
+      this.profile.headers
+    );
   }
 
   /**
@@ -73,37 +76,20 @@ export class GeminiOpenAIClient extends BaseLLMClient {
   private buildRequestBody(request: LLMRequest, stream: boolean = false): any {
     const body: any = {
       model: this.profile.model,
-      messages: this.convertMessages(request.messages),
+      messages: this.convertMessages(filterSystemMessages(request.messages)),
       stream
     };
 
-    // 合并参数
+    // 合并参数（提取特殊参数到顶层，其他参数直接合并）
     if (request.parameters) {
-      // thinking_budget: 思考预算（Gemini特有）
-      if (request.parameters['thinking_budget']) {
-        body.thinking_budget = request.parameters['thinking_budget'];
-      }
-
-      // cached_content: 缓存内容（Gemini特有）
-      if (request.parameters['cached_content']) {
-        body.cached_content = request.parameters['cached_content'];
-      }
-
-      // 其他通用参数
-      const { thinking_budget, cached_content, ...otherParams } = request.parameters;
-      Object.assign(body, otherParams);
+      const { extracted, remaining } = extractParameters(request.parameters, []);
+      // thinking_budget 和 cached_content 已经在 extracted 中，直接合并所有参数
+      Object.assign(body, request.parameters);
     }
 
     // 添加工具
     if (request.tools && request.tools.length > 0) {
-      body.tools = request.tools.map(tool => ({
-        type: 'function',
-        function: {
-          name: tool.name,
-          description: tool.description,
-          parameters: tool.parameters
-        }
-      }));
+      body.tools = convertToolsToOpenAIFormat(request.tools);
     }
 
     return body;
@@ -137,8 +123,8 @@ export class GeminiOpenAIClient extends BaseLLMClient {
             functionResponse: {
               name: msg.toolCallId,
               response: {
-                result: typeof msg.content === 'string' 
-                  ? msg.content 
+                result: typeof msg.content === 'string'
+                  ? msg.content
                   : JSON.parse(JSON.stringify(msg.content))
               }
             }

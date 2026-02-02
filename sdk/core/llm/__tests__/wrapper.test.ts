@@ -4,7 +4,8 @@
 
 import { LLMWrapper } from '../wrapper';
 import type { LLMProfile, LLMRequest, LLMResult } from '../../../types/llm';
-import { ConfigurationError } from '../../../types/errors';
+import { ConfigurationError, LLMError } from '../../../types/errors';
+import { BaseLLMClient } from '../base-client';
 
 describe('LLMWrapper', () => {
   let wrapper: LLMWrapper;
@@ -192,6 +193,73 @@ describe('LLMWrapper', () => {
           }
         })()
       ).rejects.toThrow(ConfigurationError);
+    });
+  });
+
+  describe('错误处理', () => {
+    class ErrorClient extends BaseLLMClient {
+      protected override async doGenerate(request: LLMRequest): Promise<LLMResult> {
+        throw new Error('API error');
+      }
+
+      protected override async *doGenerateStream(request: LLMRequest): AsyncIterable<LLMResult> {
+        throw new Error('Stream error');
+      }
+
+      protected override parseResponse(data: any): LLMResult {
+        return data;
+      }
+
+      protected override parseStreamChunk(data: any): LLMResult | null {
+        return data;
+      }
+    }
+
+    it('应该将generate错误转换为LLMError', async () => {
+      wrapper.registerProfile(testProfile);
+
+      // 模拟客户端工厂返回错误客户端
+      const originalCreateClient = wrapper['clientFactory'].createClient;
+      wrapper['clientFactory'].createClient = jest.fn(() => new ErrorClient(testProfile));
+
+      const request: LLMRequest = {
+        messages: [{ role: 'user', content: 'Hello' }],
+        profileId: 'test-profile'
+      };
+
+      await expect(wrapper.generate(request)).rejects.toThrow(LLMError);
+      await expect(wrapper.generate(request)).rejects.toMatchObject({
+        provider: 'openai',
+        model: 'gpt-4',
+        profileId: 'test-profile'
+      });
+
+      // 恢复原方法
+      wrapper['clientFactory'].createClient = originalCreateClient;
+    });
+
+    it('应该将generateStream错误转换为LLMError', async () => {
+      wrapper.registerProfile(testProfile);
+
+      // 模拟客户端工厂返回错误客户端
+      const originalCreateClient = wrapper['clientFactory'].createClient;
+      wrapper['clientFactory'].createClient = jest.fn(() => new ErrorClient(testProfile));
+
+      const request: LLMRequest = {
+        messages: [{ role: 'user', content: 'Hello' }],
+        profileId: 'test-profile'
+      };
+
+      await expect(
+        (async () => {
+          for await (const _ of wrapper.generateStream(request)) {
+            // 消费流
+          }
+        })()
+      ).rejects.toThrow(LLMError);
+
+      // 恢复原方法
+      wrapper['clientFactory'].createClient = originalCreateClient;
     });
   });
 

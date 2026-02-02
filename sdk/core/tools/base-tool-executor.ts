@@ -6,7 +6,8 @@
 import { z } from 'zod';
 import type { Tool } from '../../types/tool';
 import type { ThreadContext } from '../execution/context/thread-context';
-import { TimeoutError, ValidationError, NetworkError, RateLimitError, HttpError } from '../../types/errors';
+import { TimeoutError, ValidationError, NetworkError, HttpError } from '../../types/errors';
+import { RateLimitError } from '../http/errors';
 import { now, diffTimestamp } from '../../utils';
 
 /**

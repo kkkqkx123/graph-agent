@@ -14,6 +14,9 @@ import type {
   LLMMessage,
   LLMToolCall
 } from '../../../types/llm';
+import { buildAuthHeaders, mergeAuthHeaders } from '../../../utils/http/auth-builder';
+import { extractParameters } from '../../../utils/http/parameter-builder';
+import { convertToolsToOpenAIFormat } from '../../../utils/llm/tool-converter';
 
 /**
  * OpenAI Response客户端
@@ -53,17 +56,15 @@ export class OpenAIResponseClient extends BaseLLMClient {
    * 构建请求头
    */
   private buildHeaders(): Record<string, string> {
-    const headers: Record<string, string> = {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${this.profile.apiKey}`
-    };
+    const authHeaders = buildAuthHeaders(this.profile.provider, this.profile.apiKey);
 
-    // 添加自定义headers（用于第三方API渠道）
-    if (this.profile.headers) {
-      Object.assign(headers, this.profile.headers);
-    }
-
-    return headers;
+    return mergeAuthHeaders(
+      {
+        'Content-Type': 'application/json',
+        ...authHeaders
+      },
+      this.profile.headers
+    );
   }
 
   /**
@@ -77,38 +78,14 @@ export class OpenAIResponseClient extends BaseLLMClient {
       stream
     };
 
-    // Response API特有的参数
+    // 合并参数（特殊参数和通用参数都直接合并）
     if (request.parameters) {
-      // reasoning_effort: 推理努力程度
-      if (request.parameters['reasoning_effort']) {
-        body.reasoning_effort = request.parameters['reasoning_effort'];
-      }
-
-      // previous_response_id: 前一个响应ID，用于连续对话
-      if (request.parameters['previous_response_id']) {
-        body.previous_response_id = request.parameters['previous_response_id'];
-      }
-
-      // verbosity: 详细程度
-      if (request.parameters['verbosity']) {
-        body.verbosity = request.parameters['verbosity'];
-      }
-
-      // 其他通用参数
-      const { reasoning_effort, previous_response_id, verbosity, ...otherParams } = request.parameters;
-      Object.assign(body, otherParams);
+      Object.assign(body, request.parameters);
     }
 
     // 添加工具
     if (request.tools && request.tools.length > 0) {
-      body.tools = request.tools.map(tool => ({
-        type: 'function',
-        function: {
-          name: tool.name,
-          description: tool.description,
-          parameters: tool.parameters
-        }
-      }));
+      body.tools = convertToolsToOpenAIFormat(request.tools);
     }
 
     return body;
@@ -153,7 +130,7 @@ export class OpenAIResponseClient extends BaseLLMClient {
   protected parseResponse(data: any): LLMResult {
     const output = data.output || [];
     const lastOutput = output[output.length - 1] || {};
-    
+
     return {
       id: data.id,
       model: data.model,

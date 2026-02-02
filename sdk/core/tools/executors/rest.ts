@@ -7,7 +7,18 @@ import type { Tool } from '../../../types/tool';
 import type { RestToolConfig } from '../../../types/tool';
 import type { ThreadContext } from '../../execution/context/thread-context';
 import { BaseToolExecutor } from '../base-tool-executor';
-import { NetworkError, RateLimitError, ToolError, ValidationError, TimeoutError, CircuitBreakerOpenError } from '../../../types/errors';
+import { NetworkError, ToolError, ValidationError, TimeoutError, CircuitBreakerOpenError } from '../../../types/errors';
+import {
+  BadRequestError,
+  UnauthorizedError,
+  ForbiddenError,
+  NotFoundHttpError,
+  ConflictError,
+  UnprocessableEntityError,
+  RateLimitError,
+  InternalServerError,
+  ServiceUnavailableError
+} from '../../http/errors';
 import { HttpTransport } from '../../http/transport';
 
 /**
@@ -75,7 +86,20 @@ export class RestToolExecutor extends BaseToolExecutor {
       };
     } catch (error) {
       // 转换错误类型
-      if (error instanceof NetworkError || error instanceof RateLimitError || error instanceof ValidationError) {
+      if (error instanceof NetworkError || error instanceof ValidationError) {
+        throw error;
+      }
+
+      // HTTP 错误类型处理
+      if (error instanceof BadRequestError ||
+          error instanceof UnauthorizedError ||
+          error instanceof ForbiddenError ||
+          error instanceof NotFoundHttpError ||
+          error instanceof ConflictError ||
+          error instanceof UnprocessableEntityError ||
+          error instanceof RateLimitError ||
+          error instanceof InternalServerError ||
+          error instanceof ServiceUnavailableError) {
         throw error;
       }
 

@@ -13,6 +13,10 @@ import type {
   LLMMessage,
   LLMToolCall
 } from '../../../types/llm';
+import { buildAuthHeaders, mergeAuthHeaders } from '../../../utils/http/auth-builder';
+import { extractParameters } from '../../../utils/http/parameter-builder';
+import { convertToolsToAnthropicFormat } from '../../../utils/llm/tool-converter';
+import { extractAndFilterSystemMessages } from '../../../utils/llm/message-helper';
 
 /**
  * Anthropic客户端
@@ -55,19 +59,17 @@ export class AnthropicClient extends BaseLLMClient {
    * 构建请求头
    */
   private buildHeaders(): Record<string, string> {
-    const headers: Record<string, string> = {
-      'Content-Type': 'application/json',
-      'x-api-key': this.profile.apiKey,
-      'anthropic-version': this.apiVersion,
-      'anthropic-dangerous-direct-browser-access': 'false'
-    };
+    const authHeaders = buildAuthHeaders(this.profile.provider, this.profile.apiKey);
 
-    // 添加自定义headers（用于第三方API渠道）
-    if (this.profile.headers) {
-      Object.assign(headers, this.profile.headers);
-    }
-
-    return headers;
+    return mergeAuthHeaders(
+      {
+        'Content-Type': 'application/json',
+        'anthropic-version': this.apiVersion,
+        'anthropic-dangerous-direct-browser-access': 'false',
+        ...authHeaders
+      },
+      this.profile.headers
+    );
   }
 
   /**
@@ -76,32 +78,26 @@ export class AnthropicClient extends BaseLLMClient {
   private buildRequestBody(request: LLMRequest, stream: boolean = false): any {
     const body: any = {
       model: this.profile.model,
-      messages: this.convertMessages(request.messages),
       max_tokens: request.parameters?.['max_tokens'] || 4096,
       stream
     };
 
-    // 合并其他参数
-    if (request.parameters) {
-      const { max_tokens, ...otherParams } = request.parameters;
-      Object.assign(body, otherParams);
-    }
-
-    // 添加系统消息（如果有）
-    const systemMessage = request.messages.find(msg => msg.role === 'system');
+    // 处理系统消息
+    const { systemMessage, filteredMessages } = extractAndFilterSystemMessages(request.messages);
     if (systemMessage) {
       body.system = systemMessage.content;
-      // 从messages中移除system消息
-      body.messages = body.messages.filter((msg: any) => msg.role !== 'system');
+    }
+    body.messages = this.convertMessages(filteredMessages);
+
+    // 合并其他参数（排除 max_tokens）
+    if (request.parameters) {
+      const { extracted, remaining } = extractParameters(request.parameters, ['max_tokens']);
+      Object.assign(body, remaining);
     }
 
     // 添加工具
     if (request.tools && request.tools.length > 0) {
-      body.tools = request.tools.map(tool => ({
-        name: tool.name,
-        description: tool.description,
-        input_schema: tool.parameters
-      }));
+      body.tools = convertToolsToAnthropicFormat(request.tools);
     }
 
     return body;

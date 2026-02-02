@@ -4,7 +4,6 @@
 
 import { BaseLLMClient } from '../base-client';
 import type { LLMProfile, LLMRequest, LLMResult } from '../../../types/llm';
-import { LLMError } from '../../../types/errors';
 
 // 创建测试用的具体实现
 class TestLLMClient extends BaseLLMClient {
@@ -136,7 +135,7 @@ describe('BaseLLMClient', () => {
       expect(result).toBeDefined();
     });
 
-    it('应该正确处理错误', async () => {
+    it('应该直接抛出错误', async () => {
       class ErrorClient extends TestLLMClient {
         protected override async doGenerate(request: LLMRequest): Promise<LLMResult> {
           throw new Error('API error');
@@ -148,7 +147,8 @@ describe('BaseLLMClient', () => {
         messages: [{ role: 'user', content: 'Hello' }]
       };
 
-      await expect(errorClient.generate(request)).rejects.toThrow(LLMError);
+      // BaseLLMClient 不再处理错误，直接透传
+      await expect(errorClient.generate(request)).rejects.toThrow(Error);
     });
   });
 
@@ -188,7 +188,7 @@ describe('BaseLLMClient', () => {
       expect(lastChunk?.usage?.totalTokens).toBe(30);
     });
 
-    it('应该正确处理流式错误', async () => {
+    it('应该直接抛出流式错误', async () => {
       class ErrorStreamClient extends TestLLMClient {
         protected override async *doGenerateStream(request: LLMRequest): AsyncIterable<LLMResult> {
           throw new Error('Stream error');
@@ -200,13 +200,14 @@ describe('BaseLLMClient', () => {
         messages: [{ role: 'user', content: 'Hello' }]
       };
 
+      // BaseLLMClient 不再处理错误，直接透传
       await expect(
         (async () => {
           for await (const _ of errorClient.generateStream(request)) {
             // 消费流
           }
         })()
-      ).rejects.toThrow(LLMError);
+      ).rejects.toThrow(Error);
     });
   });
 
@@ -243,33 +244,7 @@ describe('BaseLLMClient', () => {
     });
   });
 
-  describe('handleError', () => {
-    it('应该正确处理普通错误', () => {
-      const error = new Error('Test error');
-      const handled = (client as any).handleError(error);
 
-      expect(handled).toBeInstanceOf(LLMError);
-      expect(handled.message).toContain('openai API error');
-    });
-
-    it('应该正确处理带code的错误', () => {
-      const error = new Error('Test error') as any;
-      error.code = 401;
-      const handled = (client as any).handleError(error);
-
-      expect(handled).toBeInstanceOf(LLMError);
-      expect(handled.statusCode).toBe(401);
-    });
-
-    it('应该正确处理带status的错误', () => {
-      const error = new Error('Test error') as any;
-      error.status = 500;
-      const handled = (client as any).handleError(error);
-
-      expect(handled).toBeInstanceOf(LLMError);
-      expect(handled.statusCode).toBe(500);
-    });
-  });
 
   describe('parseStreamLine', () => {
     it('应该跳过空行', () => {

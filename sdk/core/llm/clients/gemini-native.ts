@@ -14,6 +14,9 @@ import type {
   LLMToolCall
 } from '../../../types/llm';
 import { generateId } from '../../../utils';
+import { buildAuthHeaders, mergeAuthHeaders } from '../../../utils/http/auth-builder';
+import { convertToolsToGeminiFormat } from '../../../utils/llm/tool-converter';
+import { extractAndFilterSystemMessages } from '../../../utils/llm/message-helper';
 
 /**
  * Gemini Native客户端
@@ -53,18 +56,18 @@ export class GeminiNativeClient extends BaseLLMClient {
 
   /**
    * 构建请求头
+   * 注意：Gemini Native API 使用 query 参数传递 API key，不在 headers 中
    */
   private buildHeaders(): Record<string, string> {
-    const headers: Record<string, string> = {
-      'Content-Type': 'application/json'
-    };
+    const authHeaders = buildAuthHeaders(this.profile.provider, this.profile.apiKey);
 
-    // 添加自定义headers（用于第三方API渠道）
-    if (this.profile.headers) {
-      Object.assign(headers, this.profile.headers);
-    }
-
-    return headers;
+    return mergeAuthHeaders(
+      {
+        'Content-Type': 'application/json',
+        ...authHeaders
+      },
+      this.profile.headers
+    );
   }
 
   /**
@@ -81,27 +84,22 @@ export class GeminiNativeClient extends BaseLLMClient {
       }
     };
 
-    // 添加系统指令（如果有）
-    const systemMessage = request.messages.find(msg => msg.role === 'system');
+    // 处理系统指令
+    const { systemMessage, filteredMessages } = extractAndFilterSystemMessages(request.messages);
     if (systemMessage) {
       body.systemInstruction = {
         parts: [{
-          text: typeof systemMessage.content === 'string' 
-            ? systemMessage.content 
+          text: typeof systemMessage.content === 'string'
+            ? systemMessage.content
             : JSON.stringify(systemMessage.content)
         }]
       };
     }
+    body.contents = this.convertMessages(filteredMessages);
 
     // 添加工具
     if (request.tools && request.tools.length > 0) {
-      body.tools = request.tools.map(tool => ({
-        functionDeclarations: [{
-          name: tool.name,
-          description: tool.description,
-          parameters: tool.parameters
-        }]
-      }));
+      body.tools = convertToolsToGeminiFormat(request.tools);
     }
 
     return body;
@@ -135,8 +133,8 @@ export class GeminiNativeClient extends BaseLLMClient {
             functionResponse: {
               name: msg.toolCallId,
               response: {
-                result: typeof msg.content === 'string' 
-                  ? msg.content 
+                result: typeof msg.content === 'string'
+                  ? msg.content
                   : JSON.parse(JSON.stringify(msg.content))
               }
             }
