@@ -21,6 +21,7 @@ import type { EventManager } from '../../services/event-manager';
 import { EventType } from '../../../types/events';
 import type { ThreadResult } from '../../../types/thread';
 import { now } from '../../../utils';
+import { createSubgraphMetadata } from './subgraph-handler';
 
 /**
  * 子工作流执行器接口
@@ -78,14 +79,7 @@ export async function createSubgraphContext(
   task: TriggeredSubgraphTask,
   contextFactory: SubgraphContextFactory
 ): Promise<ThreadContext> {
-  const metadata = {
-    triggeredBy: {
-      triggerId: task.triggerId,
-      mainThreadId: task.mainThreadContext.getThreadId(),
-      timestamp: now()
-    },
-    isTriggeredSubgraph: true
-  };
+  const metadata = createSubgraphMetadata(task.triggerId, task.mainThreadContext.getThreadId());
 
   const subgraphContext = await contextFactory.buildSubgraphContext(
     task.subgraphId,

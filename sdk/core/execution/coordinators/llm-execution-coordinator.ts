@@ -70,22 +70,11 @@ export interface LLMExecutionResponse {
  * - 依赖注入
  */
 export class LLMExecutionCoordinator {
-  private toolCallExecutor: ToolCallExecutor;
-  private tokenTracker: TokenUsageTracker;
-
   constructor(
     private llmExecutor: LLMExecutor,
     private toolService: ToolService = toolService,
-    private eventManager?: EventManager,
-    tokenTracker?: TokenUsageTracker
-  ) {
-
-    // 创建工具调用执行器
-    this.toolCallExecutor = new ToolCallExecutor(toolService, eventManager);
-
-    // 创建 Token 使用追踪器
-    this.tokenTracker = tokenTracker || new TokenUsageTracker();
-  }
+    private eventManager?: EventManager
+  ) { }
 
   /**
    * 执行 LLM 调用
@@ -176,7 +165,7 @@ export class LLMExecutionCoordinator {
       // 检查 Token 使用警告
       const tokenUsage = conversationState.getTokenUsage();
       if (tokenUsage && this.eventManager) {
-        const tokenLimit = this.tokenTracker['tokenLimit'] || 100000;
+        const tokenLimit = 100000; // 使用固定限制或从配置获取
         const usagePercentage = (tokenUsage.totalTokens / tokenLimit) * 100;
 
         // 当使用量超过 80% 时触发警告
@@ -245,8 +234,9 @@ export class LLMExecutionCoordinator {
 
       // 检查是否有工具调用
       if (llmResult.toolCalls && llmResult.toolCalls.length > 0) {
-        // 执行工具调用
-        await this.toolCallExecutor.executeToolCalls(
+        // 创建工具调用执行器并执行工具调用
+        const toolCallExecutor = new ToolCallExecutor(this.toolService, this.eventManager);
+        await toolCallExecutor.executeToolCalls(
           llmResult.toolCalls,
           conversationState,
           threadId,

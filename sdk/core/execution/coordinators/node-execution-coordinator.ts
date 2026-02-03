@@ -51,16 +51,12 @@ import {
  * 节点执行协调器
  */
 export class NodeExecutionCoordinator {
-  private llmWrapper: LLMWrapper;
-
   constructor(
     private eventManager: EventManager,
     private llmCoordinator: LLMExecutionCoordinator,
     private userInteractionHandler?: UserInteractionHandler,
     private humanRelayHandler?: HumanRelayHandler
-  ) {
-    this.llmWrapper = new LLMWrapper();
-  }
+  ) { }
 
   /**
    * 执行节点
@@ -325,7 +321,8 @@ export class NodeExecutionCoordinator {
       const requestData = extractLLMRequestData(node, threadContext);
 
       // 检查是否为 HumanRelay provider
-      const profile = this.llmWrapper.getProfile(requestData.profileId || 'default');
+      const llmWrapper = new LLMWrapper();
+      const profile = llmWrapper.getProfile(requestData.profileId || 'default');
       if (profile?.provider === 'HUMAN_RELAY') {
         return await this.executeHumanRelayNode(threadContext, node, requestData, startTime);
       }

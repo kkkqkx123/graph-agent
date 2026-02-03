@@ -4,7 +4,6 @@
  * 协调器是无状态的组件，负责协调各个管理器之间的交互
  *
  * 设计原则：
- * - 无状态设计：不维护可变状态
  * - 协调逻辑：封装复杂的协调逻辑
  * - 依赖注入：通过构造函数接收依赖的管理器
  *
@@ -15,6 +14,7 @@
  * - ThreadLifecycleCoordinator: Thread 生命周期协调器
  * - ThreadOperationCoordinator: Thread 操作协调器
  * - VariableCoordinator: 变量协调器
+ * 其中NodeExecutionCoordinator、ThreadLifecycleCoordinator是有状态模块，其余是无状态模块
  */
 
 export { NodeExecutionCoordinator } from './node-execution-coordinator';

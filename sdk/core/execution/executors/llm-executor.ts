@@ -140,12 +140,4 @@ export class LLMExecutor {
       );
     }
   }
-
-  /**
-   * 获取LLM包装器（用于测试和高级用法）
-   * @returns LLMWrapper 实例
-   */
-  getLLMWrapper(): LLMWrapper {
-    return this.llmWrapper;
-  }
 }
