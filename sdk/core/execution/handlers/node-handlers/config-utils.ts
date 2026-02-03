@@ -88,8 +88,8 @@ export function transformLLMNodeConfig(config: LLMNodeConfig): LLMExecutionReque
     prompt: config.prompt || '',
     profileId: config.profileId,
     parameters: config.parameters || {},
-    // maxToolCalls由LLM模块内部使用，不传递给LLM执行器
     dynamicTools: config.dynamicTools,
+    maxToolCallsPerRequest: config.maxToolCallsPerRequest,
     stream: false
   };
 }

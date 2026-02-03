@@ -179,8 +179,8 @@ export interface LLMNodeConfig {
   prompt?: string;
   /** 可选的参数覆盖（覆盖Profile中的parameters） */
   parameters?: Record<string, any>;
-  /** 最大工具调用次数（默认10，由LLM模块控制） */
-  maxToolCalls?: number;
+  /** 单次LLM调用最多返回的工具调用数（默认3，超出时抛出错误） */
+  maxToolCallsPerRequest?: number;
   /** 动态工具配置 */
   dynamicTools?: {
     /** 要动态添加的工具ID或名称 */

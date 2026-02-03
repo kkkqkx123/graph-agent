@@ -33,6 +33,8 @@ export interface LLMExecutionRequestData {
     /** 工具描述模板（可选） */
     descriptionTemplate?: string;
   };
+  /** 单次LLM调用最多返回的工具调用数（默认3） */
+  maxToolCallsPerRequest?: number;
   stream?: boolean;
 }
 

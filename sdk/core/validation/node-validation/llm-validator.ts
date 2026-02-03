@@ -15,7 +15,11 @@ const llmNodeConfigSchema = z.object({
   profileId: z.string().min(1, 'Profile ID is required'),
   prompt: z.string().optional(),
   parameters: z.record(z.string(), z.any()).optional(),
-  maxToolCalls: z.number().min(0, 'Max tool calls must be non-negative').optional()
+  maxToolCallsPerRequest: z.number().min(1, 'Max tool calls per request must be at least 1').optional(),
+  dynamicTools: z.object({
+    toolIds: z.array(z.string().min(1, 'Tool ID must not be empty')).min(1, 'At least one tool ID is required'),
+    descriptionTemplate: z.string().optional()
+  }).optional()
 });
 
 /**

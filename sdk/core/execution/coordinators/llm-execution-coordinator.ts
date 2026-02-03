@@ -23,6 +23,7 @@ import { EventType } from '../../../types/events';
 import { now } from '../../../utils';
 import { ToolCallExecutor } from '../executors/tool-call-executor';
 import { TokenUsageTracker } from '../token-usage-tracker';
+import { ExecutionError } from '../../../types/errors';
 
 /**
  * LLM 执行参数
@@ -47,6 +48,8 @@ export interface LLMExecutionParams {
     /** 工具描述模板（可选） */
     descriptionTemplate?: string;
   };
+  /** 单次LLM调用最多返回的工具调用数（默认3） */
+  maxToolCallsPerRequest?: number;
 }
 
 /**
@@ -135,7 +138,11 @@ export class LLMExecutionCoordinator {
     params: LLMExecutionParams,
     conversationState: ConversationManager
   ): Promise<string> {
-    const { prompt, profileId, parameters, tools, dynamicTools, threadId, nodeId } = params;
+    const {
+      prompt, profileId, parameters, tools, dynamicTools,
+      maxToolCallsPerRequest,
+      threadId, nodeId
+    } = params;
 
     // 步骤1：添加用户消息
     const userMessage = {
@@ -158,111 +165,105 @@ export class LLMExecutionCoordinator {
       });
     }
 
-    // 步骤2：执行 LLM 调用循环
-    const maxIterations = 10;
-    let iterationCount = 0;
-    let finalContent = '';
+    // 检查 Token 使用情况
+    await conversationState.checkTokenUsage();
 
-    while (iterationCount < maxIterations) {
-      iterationCount++;
+    // 检查 Token 使用警告
+    const tokenUsage = conversationState.getTokenUsage();
+    if (tokenUsage && this.eventManager) {
+      const tokenLimit = 100000; // 使用固定限制或从配置获取
+      const usagePercentage = (tokenUsage.totalTokens / tokenLimit) * 100;
 
-      // 检查 Token 使用情况
-      await conversationState.checkTokenUsage();
-
-      // 检查 Token 使用警告
-      const tokenUsage = conversationState.getTokenUsage();
-      if (tokenUsage && this.eventManager) {
-        const tokenLimit = 100000; // 使用固定限制或从配置获取
-        const usagePercentage = (tokenUsage.totalTokens / tokenLimit) * 100;
-
-        // 当使用量超过 80% 时触发警告
-        if (usagePercentage > 80) {
-          await safeEmit(this.eventManager, {
-            type: EventType.TOKEN_USAGE_WARNING,
-            timestamp: now(),
-            workflowId: '',
-            threadId: threadId || '',
-            tokensUsed: tokenUsage.totalTokens,
-            tokenLimit,
-            usagePercentage
-          });
-        }
-      }
-
-      // 如果存在动态工具，合并静态和动态工具
-      let availableTools = tools;
-      if (dynamicTools?.toolIds) {
-        const workflowTools = tools ? new Set(tools.map((t: any) => t.name || t.id)) : new Set();
-        availableTools = this.getAvailableTools(workflowTools, dynamicTools);
-      }
-
-      // 执行 LLM 调用
-      const llmResult = await this.llmExecutor.executeLLMCall(
-        conversationState.getMessages(),
-        {
-          prompt,
-          profileId: profileId || 'default',
-          parameters: parameters || {},
-          tools: availableTools
-        }
-      );
-
-      // 更新 Token 使用统计
-      if (llmResult.usage) {
-        conversationState.updateTokenUsage(llmResult.usage);
-      }
-
-      // 完成当前请求的 Token 统计
-      conversationState.finalizeCurrentRequest();
-
-      // 将 LLM 响应添加到对话历史
-      const assistantMessage = {
-        role: 'assistant' as const,
-        content: llmResult.content,
-        toolCalls: llmResult.toolCalls?.map((tc: any) => ({
-          id: tc.id,
-          type: 'function' as const,
-          function: {
-            name: tc.name,
-            arguments: tc.arguments
-          }
-        }))
-      };
-      conversationState.addMessage(assistantMessage);
-
-      // 触发消息添加事件
-      if (this.eventManager) {
+      // 当使用量超过 80% 时触发警告
+      if (usagePercentage > 80) {
         await safeEmit(this.eventManager, {
-          type: EventType.MESSAGE_ADDED,
+          type: EventType.TOKEN_USAGE_WARNING,
           timestamp: now(),
           workflowId: '',
           threadId: threadId || '',
-          nodeId,
-          role: assistantMessage.role,
-          content: assistantMessage.content,
-          toolCalls: assistantMessage.toolCalls
+          tokensUsed: tokenUsage.totalTokens,
+          tokenLimit,
+          usagePercentage
         });
       }
+    }
 
-      finalContent = llmResult.content;
+    // 如果存在动态工具，合并静态和动态工具
+    let availableTools = tools;
+    if (dynamicTools?.toolIds) {
+      const workflowTools = tools ? new Set(tools.map((t: any) => t.name || t.id)) : new Set();
+      availableTools = this.getAvailableTools(workflowTools, dynamicTools);
+    }
 
-      // 检查是否有工具调用
-      if (llmResult.toolCalls && llmResult.toolCalls.length > 0) {
-        // 创建工具调用执行器并执行工具调用
-        const toolCallExecutor = new ToolCallExecutor(this.toolService, this.eventManager);
-        await toolCallExecutor.executeToolCalls(
-          llmResult.toolCalls,
-          conversationState,
-          threadId,
+    // 执行 LLM 调用
+    const llmResult = await this.llmExecutor.executeLLMCall(
+      conversationState.getMessages(),
+      {
+        prompt,
+        profileId: profileId || 'default',
+        parameters: parameters || {},
+        tools: availableTools
+      }
+    );
+
+    // 更新 Token 使用统计
+    if (llmResult.usage) {
+      conversationState.updateTokenUsage(llmResult.usage);
+    }
+
+    // 完成当前请求的 Token 统计
+    conversationState.finalizeCurrentRequest();
+
+    // 将 LLM 响应添加到对话历史
+    const assistantMessage = {
+      role: 'assistant' as const,
+      content: llmResult.content,
+      toolCalls: llmResult.toolCalls?.map((tc: any) => ({
+        id: tc.id,
+        type: 'function' as const,
+        function: {
+          name: tc.name,
+          arguments: tc.arguments
+        }
+      }))
+    };
+    conversationState.addMessage(assistantMessage);
+
+    // 触发消息添加事件
+    if (this.eventManager) {
+      await safeEmit(this.eventManager, {
+        type: EventType.MESSAGE_ADDED,
+        timestamp: now(),
+        workflowId: '',
+        threadId: threadId || '',
+        nodeId,
+        role: assistantMessage.role,
+        content: assistantMessage.content,
+        toolCalls: assistantMessage.toolCalls
+      });
+    }
+
+    // 检查是否有工具调用
+    if (llmResult.toolCalls && llmResult.toolCalls.length > 0) {
+      // 验证单次返回的工具调用数量
+      const maxToolsPerResponse = maxToolCallsPerRequest ?? 3;
+      if (llmResult.toolCalls.length > maxToolsPerResponse) {
+        throw new ExecutionError(
+          `LLM returned ${llmResult.toolCalls.length} tool calls, ` +
+          `exceeds limit of ${maxToolsPerResponse}. ` +
+          `Configure maxToolCallsPerRequest to adjust this limit.`,
           nodeId
         );
-
-        // 继续循环让 LLM 处理工具结果
-        continue;
-      } else {
-        // 没有工具调用，退出循环
-        break;
       }
+
+      // 创建工具调用执行器并执行工具调用
+      const toolCallExecutor = new ToolCallExecutor(this.toolService, this.eventManager);
+      await toolCallExecutor.executeToolCalls(
+        llmResult.toolCalls,
+        conversationState,
+        threadId,
+        nodeId
+      );
     }
 
     // 触发对话状态变化事件
@@ -280,7 +281,7 @@ export class LLMExecutionCoordinator {
     }
 
     // 返回最终内容
-    return finalContent;
+    return llmResult.content;
   }
 
   /**
@@ -288,12 +289,12 @@ export class LLMExecutionCoordinator {
    */
   private getAvailableTools(workflowTools: Set<string>, dynamicTools?: any): any[] {
     const allToolIds = new Set(workflowTools);
-    
+
     // 添加动态工具
     if (dynamicTools?.toolIds) {
       dynamicTools.toolIds.forEach((id: string) => allToolIds.add(id));
     }
-    
+
     return Array.from(allToolIds)
       .map(id => this.toolService.getTool(id))
       .filter(Boolean)
