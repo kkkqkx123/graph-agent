@@ -26,6 +26,7 @@ import { type WorkflowRegistry } from '../../services/workflow-registry';
 import { MemoryCheckpointStorage } from '../../storage/memory-checkpoint-storage';
 import { globalMessageStorage } from '../../services/global-message-storage';
 import type { LifecycleCapable } from './lifecycle-capable';
+import { ExecutionContext } from '../context/execution-context';
 import type { CleanupResult } from '../../../types/checkpoint-storage';
 import type {
   CleanupPolicy,
@@ -330,11 +331,15 @@ export class CheckpointManager implements LifecycleCapable<void> {
     }
 
     // 步骤9：创建 ThreadContext
+    const executionContext = ExecutionContext.createDefault();
     const threadContext = new ThreadContext(
       thread as Thread,
       conversationManager,
       this.threadRegistry,
-      this.workflowRegistry
+      this.workflowRegistry,
+      executionContext.getEventManager(),
+      executionContext.getToolService(),
+      executionContext.getLlmExecutor()
     );
 
     // 步骤10：恢复触发器状态

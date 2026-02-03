@@ -11,6 +11,7 @@ import { NodeType } from '../../types/node';
 import { EdgeType } from '../../types/edge';
 import { ThreadStatus } from '../../types/thread';
 import { NotFoundError } from '../../types/errors';
+import { ExecutionContext } from '../../core/execution/context/execution-context';
 
 describe('CheckpointManagerAPI', () => {
   let api: CheckpointManagerAPI;
@@ -507,7 +508,7 @@ async function createTestThreadContext(
   workflow: WorkflowDefinition
 ) {
   const { ThreadContext } = await import('../../core/execution/context/thread-context');
-  const { ConversationManager } = await import('../../core/execution/conversation');
+  const { ConversationManager } = await import('../../core/execution/managers/conversation-manager');
   const { generateId } = await import('../../utils');
   const { GraphBuilder } = await import('../../core/graph/graph-builder');
 
@@ -530,7 +531,16 @@ async function createTestThreadContext(
     errors: []
   };
 
-  const threadContext = new ThreadContext(thread, conversationManager);
+  const executionContext = ExecutionContext.createDefault();
+  const threadContext = new ThreadContext(
+    thread,
+    conversationManager,
+    executionContext.getThreadRegistry(),
+    executionContext.getWorkflowRegistry(),
+    executionContext.getEventManager(),
+    executionContext.get('toolService'),
+    executionContext.get('llmExecutor')
+  );
   threadRegistry.register(threadContext);
 
   return threadContext;

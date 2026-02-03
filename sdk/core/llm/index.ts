@@ -37,6 +37,3 @@ export { AnthropicClient } from './clients/anthropic';
 // Gemini客户端
 export { GeminiNativeClient } from './clients/gemini-native';
 export { GeminiOpenAIClient } from './clients/gemini-openai';
-
-// 人工中继客户端
-export { HumanRelayClient, HumanRelayMode } from './clients/human-relay';

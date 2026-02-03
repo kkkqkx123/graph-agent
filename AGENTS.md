@@ -161,22 +161,8 @@ Types ← Utils ← Core ← API
 1. **Type Safety**: Leverage TypeScript type system fully
 2. **Avoid Circular Dependencies**: Use ID references, not object references
 3. **Separation of Concerns**: SDK focuses on execution, application layer handles persistence
-4. **Configuration Reuse**: Use Profile concept to avoid duplicate configuration
-5. **Event-Driven**: Provide extension points through events
-6. **Complete Documentation**: Each module must have clear documentation
-7. **Test Coverage**: Ensure core functions have complete tests
 
 ## Language Guidelines
 
-- Code comments and documentation in Chinese
+- comments and documentation in Chinese
 - LLM-related configurations and code in English (mainly prompts)
-- Variable and function names in English
-- Comments in Chinese
-
-## Reference Documentation
-
-- SDK Architecture: `plans/sdk/sdk-architecture.md`
-- SDK Implementation Plan: `plans/sdk/sdk-implementation-plan.md`
-- Types Layer Design: `plans/sdk/types/`
-- Core Layer Design: `plans/sdk/core/`
-- Execution Logic Details: `plans/sdk/core/execution/`

@@ -83,7 +83,7 @@ export function getLastMessage(messages: LLMMessage[]): LLMMessage | null {
     return null;
   }
 
-  return messages[messages.length - 1];
+  return messages[messages.length - 1] ?? null;
 }
 
 /**
@@ -95,8 +95,9 @@ export function getLastUserMessage(messages: LLMMessage[]): LLMMessage | null {
   }
 
   for (let i = messages.length - 1; i >= 0; i--) {
-    if (messages[i].role === 'user') {
-      return messages[i];
+    const msg = messages[i];
+    if (msg && msg.role === 'user') {
+      return msg;
     }
   }
 
@@ -112,8 +113,9 @@ export function getLastAssistantMessage(messages: LLMMessage[]): LLMMessage | nu
   }
 
   for (let i = messages.length - 1; i >= 0; i--) {
-    if (messages[i].role === 'assistant') {
-      return messages[i];
+    const msg = messages[i];
+    if (msg && msg.role === 'assistant') {
+      return msg;
     }
   }
 
@@ -136,7 +138,7 @@ export function countMessagesByRole(messages: LLMMessage[]): Record<string, numb
   }
 
   for (const msg of messages) {
-    if (counts[msg.role] !== undefined) {
+    if (msg?.role && counts[msg.role] !== undefined) {
       counts[msg.role]++;
     }
   }

@@ -7,6 +7,7 @@ import { ThreadRegistry } from '../../core/registry/thread-registry';
 import type { ThreadVariable } from '../../types/thread';
 import { ThreadStatus } from '../../types/thread';
 import { NotFoundError, ValidationError } from '../../types/errors';
+import { ExecutionContext } from '../../core/execution/context/execution-context';
 
 describe('VariableManagerAPI', () => {
   let api: VariableManagerAPI;
@@ -647,7 +648,7 @@ async function createTestThread(
   variables: ThreadVariable[]
 ): Promise<string> {
   const { ThreadContext } = await import('../../core/execution/context/thread-context');
-  const { ConversationManager } = await import('../../core/execution/conversation');
+  const { ConversationManager } = await import('../../core/execution/managers/conversation-manager');
   const { generateId } = await import('../../utils');
   const { GraphBuilder } = await import('../../core/graph/graph-builder');
 
@@ -685,7 +686,16 @@ async function createTestThread(
     errors: []
   };
 
-  const threadContext = new ThreadContext(thread, conversationManager);
+  const executionContext = ExecutionContext.createDefault();
+  const threadContext = new ThreadContext(
+    thread,
+    conversationManager,
+    executionContext.getThreadRegistry(),
+    executionContext.getWorkflowRegistry(),
+    executionContext.getEventManager(),
+    executionContext.get('toolService'),
+    executionContext.get('llmExecutor')
+  );
   threadRegistry.register(threadContext);
 
   return thread.id;

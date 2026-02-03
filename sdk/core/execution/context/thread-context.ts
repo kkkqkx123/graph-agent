@@ -19,20 +19,25 @@
 import type { Thread, VariableScope } from '../../../types';
 import type { ID } from '../../../types/common';
 import type { StatefulToolFactory } from '../../../types/tool';
+import type { LLMMessage } from '../../../types/llm';
 import { ConversationManager } from '../managers/conversation-manager';
 import { VariableCoordinator } from '../coordinators/variable-coordinator';
 import { VariableStateManager } from '../managers/variable-state-manager';
 import { TriggerCoordinator } from '../coordinators/trigger-coordinator';
 import { TriggerStateManager, type TriggerRuntimeState } from '../managers/trigger-state-manager';
-import { GraphNavigator } from '../../graph/graph-navigator';
+import { GraphNavigator, type NavigationResult } from '../../graph/graph-navigator';
 import { ExecutionState } from './execution-state';
 import type { ThreadRegistry } from '../../services/thread-registry';
 import type { WorkflowRegistry } from '../../services/workflow-registry';
+import type { EventManager } from '../../services/event-manager';
+import type { ToolService } from '../../services/tool-service';
+import { LLMExecutor } from '../llm-executor';
+import type { LifecycleCapable } from '../managers/lifecycle-capable';
 
 /**
  * ThreadContext - Thread 执行上下文
  */
-export class ThreadContext {
+export class ThreadContext implements LifecycleCapable {
   /**
    * Thread 实例
    */
@@ -71,7 +76,7 @@ export class ThreadContext {
   /**
    * 执行状态管理器
    */
-  public readonly executionState: ExecutionState;
+  private readonly executionState: ExecutionState;
 
   /**
    * 有状态工具实例映射（线程隔离）
@@ -89,6 +94,26 @@ export class ThreadContext {
   private readonly threadRegistry: ThreadRegistry;
 
   /**
+   * 工作流注册表
+   */
+  private readonly workflowRegistry: WorkflowRegistry;
+
+  /**
+   * 事件管理器
+   */
+  private readonly eventManager: EventManager;
+
+  /**
+   * 工具服务
+   */
+  private readonly toolService: ToolService;
+
+  /**
+   * LLM 执行器
+   */
+  private readonly llmExecutor: LLMExecutor;
+
+  /**
    * 构造函数
    * @param thread Thread 实例
    * @param conversationManager 对话管理器
@@ -99,11 +124,18 @@ export class ThreadContext {
     thread: Thread,
     conversationManager: ConversationManager,
     threadRegistry: ThreadRegistry,
-    workflowRegistry?: WorkflowRegistry
+    workflowRegistry: WorkflowRegistry,
+    eventManager: EventManager,
+    toolService: ToolService,
+    llmExecutor: LLMExecutor
   ) {
     this.thread = thread;
     this.conversationManager = conversationManager;
     this.threadRegistry = threadRegistry;
+    this.workflowRegistry = workflowRegistry;
+    this.eventManager = eventManager;
+    this.toolService = toolService;
+    this.llmExecutor = llmExecutor;
 
     // 初始化变量状态管理器
     this.variableStateManager = new VariableStateManager();
@@ -111,7 +143,7 @@ export class ThreadContext {
     // 初始化变量协调器
     this.variableCoordinator = new VariableCoordinator(
       this.variableStateManager,
-      (conversationManager as any).eventManager,
+      this.eventManager,
       thread.id,
       thread.workflowId
     );
@@ -122,14 +154,12 @@ export class ThreadContext {
     // 初始化触发器管理器（传入状态管理器）
     this.triggerManager = new TriggerCoordinator(
       threadRegistry,
-      workflowRegistry!,
+      workflowRegistry,
       this.triggerStateManager
     );
 
     // 设置工作流 ID
-    if (workflowRegistry) {
-      this.triggerStateManager.setWorkflowId(thread.workflowId);
-    }
+    this.triggerStateManager.setWorkflowId(thread.workflowId);
 
     this.executionState = new ExecutionState();
   }
@@ -144,13 +174,6 @@ export class ThreadContext {
     }
   }
 
-  /**
-   * 获取 Thread 注册表
-   * @returns ThreadRegistry 实例
-   */
-  getThreadRegistry(): ThreadRegistry {
-    return this.threadRegistry;
-  }
 
   /**
    * 获取 Thread ID
@@ -224,13 +247,6 @@ export class ThreadContext {
     this.thread.output = output;
   }
 
-  /**
-   * 获取 ConversationManager
-   * @returns ConversationManager 实例
-   */
-  getConversationManager(): ConversationManager {
-    return this.conversationManager;
-  }
 
   /**
    * 获取 Thread 元数据
@@ -306,36 +322,6 @@ export class ThreadContext {
     return this.thread.nodeResults;
   }
 
-  /**
-   * 获取子工作流执行历史
-   * @returns 子工作流执行结果数组
-   */
-  getSubgraphExecutionHistory(): any[] {
-    return this.executionState.getSubgraphExecutionHistory();
-  }
-
-  /**
-   * 开始执行触发子工作流
-   * @param workflowId 子工作流ID
-   */
-  startTriggeredSubgraphExecution(workflowId: string): void {
-    this.executionState.startTriggeredSubgraphExecution(workflowId);
-  }
-
-  /**
-   * 结束执行触发子工作流
-   */
-  endTriggeredSubgraphExecution(): void {
-    this.executionState.endTriggeredSubgraphExecution();
-  }
-
-  /**
-   * 检查是否正在执行触发子工作流
-   * @returns 是否正在执行
-   */
-  isExecutingSubgraph(): boolean {
-    return this.executionState.isExecutingSubgraph();
-  }
 
   /**
    * 添加错误信息
@@ -389,6 +375,31 @@ export class ThreadContext {
   }
 
   /**
+   * 获取下一个可执行节点信息
+   * @returns 导航结果
+   */
+  getNextNode(): NavigationResult {
+    const navigator = this.getNavigator();
+    return navigator.getNextNode(this.getCurrentNodeId());
+  }
+
+  /**
+   * 向对话历史添加消息
+   * @param message 消息内容
+   */
+  addMessageToConversation(message: LLMMessage): void {
+    this.conversationManager.addMessage(message);
+  }
+
+  /**
+   * 获取对话历史（未压缩的消息）
+   * @returns 对话历史数组
+   */
+  getConversationHistory(): LLMMessage[] {
+    return this.conversationManager.getMessages();
+  }
+
+  /**
    * 进入子图
    * @param workflowId 子工作流ID
    * @param parentWorkflowId 父工作流ID
@@ -423,30 +434,6 @@ export class ThreadContext {
    */
   exitLoop(): void {
     this.variableCoordinator.exitLoopScope(this);
-  }
-
-  /**
-   * 获取当前子图上下文
-   * @returns 当前子图上下文
-   */
-  getCurrentSubgraphContext(): any {
-    return this.executionState.getCurrentSubgraphContext();
-  }
-
-  /**
-   * 获取子图执行堆栈
-   * @returns 子图执行堆栈
-   */
-  getSubgraphStack(): any[] {
-    return this.executionState.getSubgraphStack();
-  }
-
-  /**
-   * 检查是否在子图中执行
-   * @returns 是否在子图中
-   */
-  isInSubgraph(): boolean {
-    return this.executionState.isInSubgraph();
   }
 
   /**
@@ -523,16 +510,14 @@ export class ThreadContext {
   }
 
   /**
-   * 清理所有资源
-   *
-   * 集中管理ThreadContext中所有资源的释放，包括：
-   * - 清理有状态工具实例
-   * - 清理变量状态
-   * - 清理触发器状态
-   * - 清理对话状态
-   * - 清理执行状态
-   *
-   * 此方法应该在Thread执行完成或被取消后调用
+   * 初始化管理器
+   */
+  initialize(): void {
+    // ThreadContext 在构造时已经初始化，此方法为空实现
+  }
+
+  /**
+   * 清理资源
    */
   cleanup(): void {
     // 1. 清理所有有状态工具实例
@@ -552,17 +537,93 @@ export class ThreadContext {
   }
 
   /**
-   * 获取所有生命周期管理器
-   *
-   * 返回ThreadContext中所有实现了LifecycleCapable接口的组件
-   *
-   * @returns 生命周期管理器数组
+   * 创建状态快照
    */
-  getLifecycleManagers(): Array<{ name: string; manager: any }> {
-    return [
-      { name: 'VariableStateManager', manager: this.variableStateManager },
-      { name: 'TriggerStateManager', manager: this.triggerStateManager },
-      { name: 'ConversationManager', manager: this.conversationManager }
-    ];
+  createSnapshot(): any {
+    return {
+      variableState: this.variableStateManager.createSnapshot(),
+      triggerState: this.triggerStateManager.createSnapshot(),
+      conversationState: this.conversationManager.createSnapshot()
+      // 注意：executionState 不包含在快照中，因为它表示临时执行状态，
+      // 在检查点恢复时应该重新开始执行
+    };
+  }
+
+  /**
+   * 从快照恢复状态
+   */
+  restoreFromSnapshot(snapshot: any): void {
+    if (snapshot.variableState) {
+      this.variableStateManager.restoreFromSnapshot(snapshot.variableState);
+    }
+    if (snapshot.triggerState) {
+      this.triggerStateManager.restoreFromSnapshot(snapshot.triggerState);
+    }
+    if (snapshot.conversationState) {
+      this.conversationManager.restoreFromSnapshot(snapshot.conversationState);
+    }
+    // executionState 不从快照恢复，保持当前状态或重新初始化
+  }
+
+  /**
+   * 检查是否已初始化
+   */
+  isInitialized(): boolean {
+    return true; // ThreadContext 在构造时总是初始化的
+  }
+
+  /**
+   * 获取 ConversationManager
+   * @returns ConversationManager 实例
+   */
+  getConversationManager(): ConversationManager {
+    return this.conversationManager;
+  }
+
+  /**
+   * 开始执行触发子工作流
+   * @param workflowId 子工作流ID
+   */
+  startTriggeredSubgraphExecution(workflowId: string): void {
+    this.executionState.startTriggeredSubgraphExecution(workflowId);
+  }
+
+  /**
+   * 结束执行触发子工作流
+   */
+  endTriggeredSubgraphExecution(): void {
+    this.executionState.endTriggeredSubgraphExecution();
+  }
+
+  /**
+   * 检查是否正在执行触发子工作流
+   * @returns 是否正在执行
+   */
+  isExecutingSubgraph(): boolean {
+    return this.executionState.isExecutingSubgraph();
+  }
+
+  /**
+   * 获取当前子图上下文
+   * @returns 当前子图上下文
+   */
+  getCurrentSubgraphContext(): any {
+    return this.executionState.getCurrentSubgraphContext();
+  }
+
+  /**
+   * 获取子图执行堆栈
+   * @returns 子图执行堆栈
+   */
+  getSubgraphStack(): any[] {
+    return this.executionState.getSubgraphStack();
+  }
+
+  /**
+   * 检查是否在子图中执行
+   * @returns 是否在子图中
+   */
+  isInSubgraph(): boolean {
+    return this.executionState.isInSubgraph();
   }
 }

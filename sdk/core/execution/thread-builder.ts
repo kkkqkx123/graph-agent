@@ -20,6 +20,8 @@ import { type WorkflowRegistry } from '../services/workflow-registry';
 import { ExecutionContext } from './context/execution-context';
 import { TriggerStatus } from '../../types/trigger';
 import { graphRegistry } from '../services/graph-registry';
+import { toolService } from '../services/tool-service';
+import { LLMExecutor } from './llm-executor';
 
 /**
  * ThreadBuilder - Thread构建器
@@ -164,24 +166,22 @@ export class ThreadBuilder {
     this.variableCoordinator.initializeFromWorkflow(thread as Thread, processedWorkflow.variables || []);
 
     // 步骤4：创建 ConversationManager 实例
-    // 从 ExecutionContext 获取 EventManager
-    const eventManager = this.executionContext.getEventManager();
-
     const conversationManager = new ConversationManager({
       tokenLimit: options.tokenLimit || 4000,
-      eventManager: eventManager,
+      eventManager: this.executionContext.getEventManager(),
       workflowId: processedWorkflow.id,
       threadId: threadId
     });
 
     // 步骤5：创建 ThreadContext
-    // 从 ExecutionContext 获取 ThreadRegistry 和 WorkflowRegistry
-    const threadRegistry = this.executionContext.getThreadRegistry();
     const threadContext = new ThreadContext(
       thread as Thread,
       conversationManager,
-      threadRegistry,
-      this.workflowRegistry
+      this.executionContext.getThreadRegistry(),
+      this.workflowRegistry,
+      this.executionContext.getEventManager(),
+      this.executionContext.get('toolService'),
+      this.executionContext.get('llmExecutor')
     );
 
     // 步骤6：初始化变量
@@ -288,7 +288,7 @@ export class ThreadBuilder {
     };
 
     // 复制 ConversationManager 实例
-    const copiedConversationManager = sourceThreadContext.getConversationManager().clone();
+    const copiedConversationManager = sourceThreadContext.conversationManager.clone();
 
     // 获取 ThreadRegistry 和 WorkflowRegistry
     const threadRegistry = this.executionContext.getThreadRegistry();
@@ -298,7 +298,10 @@ export class ThreadBuilder {
       copiedThread as Thread,
       copiedConversationManager,
       threadRegistry,
-      this.workflowRegistry
+      this.workflowRegistry,
+      this.executionContext.getEventManager(),
+      this.executionContext.get('toolService'),
+      this.executionContext.get('llmExecutor')
     );
 
     // 初始化变量
@@ -361,7 +364,7 @@ export class ThreadBuilder {
     };
 
     // 复制 ConversationManager 实例
-    const forkConversationManager = parentThreadContext.getConversationManager().clone();
+    const forkConversationManager = parentThreadContext.conversationManager.clone();
 
     // 获取 ThreadRegistry 和 WorkflowRegistry
     const threadRegistry = this.executionContext.getThreadRegistry();
@@ -371,7 +374,10 @@ export class ThreadBuilder {
       forkThread as Thread,
       forkConversationManager,
       threadRegistry,
-      this.workflowRegistry
+      this.workflowRegistry,
+      this.executionContext.getEventManager(),
+      this.executionContext.get('toolService'),
+      this.executionContext.get('llmExecutor')
     );
 
     // 初始化变量

@@ -5,11 +5,12 @@
 import { MessageManagerAPI } from '../management/message-manager-api';
 import { threadRegistry } from '../../core/services/thread-registry';
 import { ThreadContext } from '../../core/execution/context/thread-context';
-import { ConversationManager } from '../../core/execution/conversation';
+import { ConversationManager } from '../../core/execution/managers/conversation-manager';
 import type { Thread } from '../../types/thread';
 import { ThreadStatus } from '../../types/thread';
 import { NotFoundError } from '../../types/errors';
 import type { LLMMessage } from '../../types/llm';
+import { ExecutionContext } from '../../core/execution/context/execution-context';
 
 describe('MessageManagerAPI', () => {
   let api: MessageManagerAPI;
@@ -102,7 +103,16 @@ describe('MessageManagerAPI', () => {
       errors: []
     };
 
-    const threadContext = new ThreadContext(thread, conversationManager, threadRegistry);
+    const executionContext = ExecutionContext.createDefault();
+    const threadContext = new ThreadContext(
+      thread,
+      conversationManager,
+      threadRegistry,
+      executionContext.getWorkflowRegistry(),
+      executionContext.getEventManager(),
+      executionContext.get('toolService'),
+      executionContext.get('llmExecutor')
+    );
     threadRegistry.register(threadContext);
 
     return threadId;

@@ -33,6 +33,8 @@ import { CheckpointManager } from '../managers/checkpoint-manager';
 import { ThreadLifecycleManager } from '../managers/thread-lifecycle-manager';
 import { ThreadLifecycleCoordinator } from '../coordinators/thread-lifecycle-coordinator';
 import type { LifecycleCapable } from '../managers/lifecycle-capable';
+import { toolService } from '../../services/tool-service';
+import { LLMExecutor } from '../llm-executor';
 
 /**
  * 执行上下文 - 轻量级依赖注入容器
@@ -61,7 +63,13 @@ export class ExecutionContext {
     // 3. ThreadRegistry 使用全局单例
     this.register('threadRegistry', threadRegistry);
 
-    // 4. CheckpointManager 依赖 ThreadRegistry 和 WorkflowRegistry
+    // 4. ToolService 使用全局单例
+    this.register('toolService', toolService);
+
+    // 5. LLMExecutor 使用单例
+    this.register('llmExecutor', LLMExecutor.getInstance());
+
+    // 6. CheckpointManager 依赖 ThreadRegistry 和 WorkflowRegistry
     const checkpointManager = new CheckpointManager(
       undefined, // storage，默认使用 MemoryStorage
       threadRegistry,
@@ -140,6 +148,24 @@ export class ExecutionContext {
   }
 
   /**
+   * 获取 ToolService
+   * @returns ToolService 实例
+   */
+  getToolService(): any {
+    this.ensureInitialized();
+    return this.components.get('toolService');
+  }
+
+  /**
+   * 获取 LLMExecutor
+   * @returns LLMExecutor 实例
+   */
+  getLlmExecutor(): any {
+    this.ensureInitialized();
+    return this.components.get('llmExecutor');
+  }
+
+  /**
    * 获取 ThreadLifecycleCoordinator
    * @returns ThreadLifecycleCoordinator 实例
    */
@@ -184,7 +210,7 @@ export class ExecutionContext {
     }
 
     // 定义需要清理的组件及其清理顺序（按依赖关系的逆序）
-    // 注意：不包含全局单例（eventManager、workflowRegistry、threadRegistry）
+    // 注意：不包含全局单例（eventManager、workflowRegistry、threadRegistry、toolService、llmExecutor）
     const cleanupOrder: string[] = [
       'lifecycleCoordinator',  // 依赖其他所有组件
       'lifecycleManager',      // 依赖eventManager
