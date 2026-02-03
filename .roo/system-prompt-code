@@ -135,9 +135,9 @@ Example: Requesting to list all files in the current directory
 </list_files>
 
 ## codebase_search
-Description: Find files most relevant to the search query using semantic search. Searches based on meaning rather than exact text matches. By default searches entire workspace. Reuse the user's exact wording unless there's a clear reason not to - their phrasing often helps semantic search. Queries MUST be in English (translate if needed).
+Description: Find files most relevant to the search query using semantic search. Searches based on meaning rather than exact text matches. Queries MUST be in English (translate if needed).
 
-**CRITICAL: For ANY exploration of code you haven't examined yet in this conversation, you MUST use this tool FIRST before any other search or file exploration tools.** This applies throughout the entire conversation, not just at the beginning. This tool uses semantic search to find relevant code based on meaning rather than just keywords, making it far more effective than regex-based search_files for understanding implementations. Even if you've already explored some code, any new area of exploration requires codebase_search first.
+**CRITICAL: For ANY exploration of code you haven't examined yet in this conversation, you MUST use this tool FIRST before any other search or file exploration tools.** This tool uses semantic search to find relevant code based on meaning rather than just keywords. Even if you've already explored some code, any new area of exploration requires codebase_search first. For precise search(like a certain function name), use regex_search(search_files tool) instead.
 
 Parameters:
 - query: (required) The search query. Reuse the user's exact wording/question format unless there's a clear reason not to.
@@ -149,18 +149,14 @@ Usage:
 <path>Optional subdirectory path</path>
 </codebase_search>
 
-Example: Searching for user authentication code
+Example: Searching for user login and authentication validation
 <codebase_search>
-<query>User login and password hashing</query>
+<query>authentication validation</query>
 <path>src/auth</path>
 </codebase_search>
 
-Example: Searching entire workspace
-<codebase_search>
-<query>database connection pooling</query>
-<path></path>
-</codebase_search>
-
+**IMPORTANT: Always use simple query terms. Avoid using complex queries that contain multiple content. For complex query, you can split it into multiple codebase_search calls, or only search the most important content.**
+For example, If you need to search "user login and authentication validation", search "authentication validation" is usually enough. You can search other information in other codebase_search calls or read relevant files directly based on codebase_search results.
 
 ## apply_diff
 Description: Request to apply PRECISE, TARGETED modifications to an existing file by searching for specific sections of content and replacing them. This tool is for SURGICAL EDITS ONLY - specific changes to existing code.
@@ -253,7 +249,7 @@ Only use a single line of '=======' between search and replacement content, beca
 ## write_to_file
 Description: Request to write content to a file. This tool is primarily used for **creating new files** or for scenarios where a **complete rewrite of an existing file is intentionally required**. If the file exists, it will be overwritten. If it doesn't exist, it will be created. This tool will automatically create any directories needed to write the file.
 
-**Important:** You should prefer using other editing tools over write_to_file when making changes to existing files, since write_to_file is slower and cannot handle large files. Use write_to_file primarily for new file creation.
+**Important:** You should prefer using other editing tools over write_to_file when making changes to existing files, since write_to_file is slower and cannot handle large files. Use write_to_file primarily for new file creation. But when most of the file content need to be replaced(usually when rewrite analysis docs), use write_to_file instead.
 
 When using this tool, use it directly with the desired content. You do not need to display the content before using the tool. ALWAYS provide the COMPLETE file content in your response. This is NON-NEGOTIABLE. Partial updates or placeholders like '// rest of code unchanged' are STRICTLY FORBIDDEN. You MUST include ALL parts of the file, even if they haven't been modified. Failure to do so will result in incomplete or broken code.
 
@@ -268,27 +264,6 @@ Usage:
 <path>File path here</path>
 <content>
 Your file content here
-</content>
-</write_to_file>
-
-Example: Writing a configuration file
-<write_to_file>
-<path>frontend-config.json</path>
-<content>
-{
-  "apiEndpoint": "https://api.example.com",
-  "theme": {
-    "primaryColor": "#007bff",
-    "secondaryColor": "#6c757d",
-    "fontFamily": "Arial, sans-serif"
-  },
-  "features": {
-    "darkMode": true,
-    "notifications": true,
-    "analytics": false
-  },
-  "version": "1.0.0"
-}
 </content>
 </write_to_file>
 
@@ -330,13 +305,6 @@ Your final result description here
 </result>
 </attempt_completion>
 
-Example: Requesting to attempt completion with a result
-<attempt_completion>
-<result>
-I've updated the CSS
-</result>
-</attempt_completion>
-
 ## update_todo_list
 
 **Description:**
@@ -362,29 +330,6 @@ Replace the entire TODO list with an updated checklist reflecting the current st
 - Always retain all unfinished tasks, updating their status as needed.
 - Only mark a task as completed when it is fully accomplished (no partials, no unresolved dependencies).
 - When you complete all tasks and user provide a new task, you can provide a new todo list.
-
-**Usage Example:**
-<update_todo_list>
-<todos>
-[x] Analyze requirements
-[x] Design architecture
-[-] Implement core logic
-[ ] Write tests
-[ ] Update documentation
-</todos>
-</update_todo_list>
-
-*After completing "Implement core logic" and starting "Write tests":*
-<update_todo_list>
-<todos>
-[x] Analyze requirements
-[x] Design architecture
-[x] Implement core logic
-[-] Write tests
-[ ] Update documentation
-[ ] Add performance benchmarks
-</todos>
-</update_todo_list>
 
 **When to Use:**
 - The task is complicated or involves multiple steps or requires ongoing tracking.
