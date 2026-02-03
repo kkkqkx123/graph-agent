@@ -4,7 +4,7 @@
  */
 
 import type { LLMNodeConfig, ContextProcessorNodeConfig, UserInteractionNodeConfig } from '../../../../types/node';
-import type { LLMExecutionRequestData } from '../../llm-executor';
+import type { LLMExecutionRequestData } from '../../executors/llm-executor';
 import type { LLMMessage } from '../../../../types/llm';
 
 /**
@@ -50,33 +50,33 @@ export function validateLLMNodeConfig(config: any): config is LLMNodeConfig {
   if (!config || typeof config !== 'object') {
     return false;
   }
-  
+
   if (!config.profileId || typeof config.profileId !== 'string') {
     return false;
   }
-  
+
   // 验证参数
   if (config.parameters) {
     if (typeof config.parameters !== 'object') {
       return false;
     }
-    
+
     if (config.parameters.temperature !== undefined) {
-      if (typeof config.parameters.temperature !== 'number' || 
-          config.parameters.temperature < 0 || 
-          config.parameters.temperature > 2) {
+      if (typeof config.parameters.temperature !== 'number' ||
+        config.parameters.temperature < 0 ||
+        config.parameters.temperature > 2) {
         return false;
       }
     }
-    
+
     if (config.parameters.maxTokens !== undefined) {
-      if (typeof config.parameters.maxTokens !== 'number' || 
-          config.parameters.maxTokens <= 0) {
+      if (typeof config.parameters.maxTokens !== 'number' ||
+        config.parameters.maxTokens <= 0) {
         return false;
       }
     }
   }
-  
+
   return true;
 }
 
@@ -100,12 +100,12 @@ export function validateContextProcessorNodeConfig(config: any): config is Conte
   if (!config || typeof config !== 'object') {
     return false;
   }
-  
+
   const validOperations = ['truncate', 'insert', 'replace', 'clear', 'filter'];
   if (!config.operation || !validOperations.includes(config.operation)) {
     return false;
   }
-  
+
   // 验证必需的配置字段
   const requiredFieldMap: Record<string, string> = {
     'truncate': 'truncate',
@@ -114,12 +114,12 @@ export function validateContextProcessorNodeConfig(config: any): config is Conte
     'clear': 'clear',
     'filter': 'filter'
   };
-  
+
   const requiredField = requiredFieldMap[config.operation];
   if (!requiredField || !config[requiredField]) {
     return false;
   }
-  
+
   // 验证具体配置
   switch (config.operation) {
     case 'truncate':
@@ -144,18 +144,18 @@ function validateTruncateConfig(config: any): boolean {
   if (!config || typeof config !== 'object') {
     return false;
   }
-  
+
   // 至少需要指定一种截断方式
   const hasKeepFirst = config.keepFirst !== undefined;
   const hasKeepLast = config.keepLast !== undefined;
   const hasRemoveFirst = config.removeFirst !== undefined;
   const hasRemoveLast = config.removeLast !== undefined;
   const hasRange = config.range !== undefined;
-  
+
   if (!hasKeepFirst && !hasKeepLast && !hasRemoveFirst && !hasRemoveLast && !hasRange) {
     return false;
   }
-  
+
   // 验证数值参数
   if (hasKeepFirst && (typeof config.keepFirst !== 'number' || config.keepFirst < 0)) {
     return false;
@@ -169,7 +169,7 @@ function validateTruncateConfig(config: any): boolean {
   if (hasRemoveLast && (typeof config.removeLast !== 'number' || config.removeLast < 0)) {
     return false;
   }
-  
+
   // 验证range参数
   if (hasRange) {
     if (!config.range || typeof config.range !== 'object') {
@@ -185,7 +185,7 @@ function validateTruncateConfig(config: any): boolean {
       return false;
     }
   }
-  
+
   return true;
 }
 
@@ -196,15 +196,15 @@ function validateInsertConfig(config: any): boolean {
   if (!config || typeof config !== 'object') {
     return false;
   }
-  
+
   if (typeof config.position !== 'number' || config.position < -1) {
     return false;
   }
-  
+
   if (!config.messages || !Array.isArray(config.messages) || config.messages.length === 0) {
     return false;
   }
-  
+
   // 验证每条消息
   for (const msg of config.messages) {
     if (!msg || typeof msg !== 'object') {
@@ -217,7 +217,7 @@ function validateInsertConfig(config: any): boolean {
       return false;
     }
   }
-  
+
   return true;
 }
 
@@ -228,23 +228,23 @@ function validateReplaceConfig(config: any): boolean {
   if (!config || typeof config !== 'object') {
     return false;
   }
-  
+
   if (typeof config.index !== 'number' || config.index < 0) {
     return false;
   }
-  
+
   if (!config.message || typeof config.message !== 'object') {
     return false;
   }
-  
+
   if (!config.message.role || typeof config.message.role !== 'string') {
     return false;
   }
-  
+
   if (config.message.content === undefined) {
     return false;
   }
-  
+
   return true;
 }
 
@@ -255,12 +255,12 @@ function validateClearConfig(config: any): boolean {
   if (!config || typeof config !== 'object') {
     return false;
   }
-  
+
   // keepSystemMessage是可选的，默认为true
   if (config.keepSystemMessage !== undefined && typeof config.keepSystemMessage !== 'boolean') {
     return false;
   }
-  
+
   return true;
 }
 
@@ -271,16 +271,16 @@ function validateFilterConfig(config: any): boolean {
   if (!config || typeof config !== 'object') {
     return false;
   }
-  
+
   // 至少需要指定一种过滤条件
   const hasRoles = config.roles !== undefined;
   const hasContentContains = config.contentContains !== undefined;
   const hasContentExcludes = config.contentExcludes !== undefined;
-  
+
   if (!hasRoles && !hasContentContains && !hasContentExcludes) {
     return false;
   }
-  
+
   // 验证roles参数
   if (hasRoles) {
     if (!Array.isArray(config.roles) || config.roles.length === 0) {
@@ -293,7 +293,7 @@ function validateFilterConfig(config: any): boolean {
       }
     }
   }
-  
+
   // 验证contentContains参数
   if (hasContentContains) {
     if (!Array.isArray(config.contentContains) || config.contentContains.length === 0) {
@@ -305,7 +305,7 @@ function validateFilterConfig(config: any): boolean {
       }
     }
   }
-  
+
   // 验证contentExcludes参数
   if (hasContentExcludes) {
     if (!Array.isArray(config.contentExcludes) || config.contentExcludes.length === 0) {
@@ -317,7 +317,7 @@ function validateFilterConfig(config: any): boolean {
       }
     }
   }
-  
+
   return true;
 }
 
@@ -328,18 +328,18 @@ export function validateUserInteractionNodeConfig(config: any): config is UserIn
   if (!config || typeof config !== 'object') {
     return false;
   }
-  
+
   // 验证 operationType
   const validOperationTypes = ['UPDATE_VARIABLES', 'ADD_MESSAGE'];
   if (!config.operationType || !validOperationTypes.includes(config.operationType)) {
     return false;
   }
-  
+
   // 验证 prompt
   if (!config.prompt || typeof config.prompt !== 'string') {
     return false;
   }
-  
+
   // 根据 operationType 验证相应的配置
   if (config.operationType === 'UPDATE_VARIABLES') {
     if (!config.variables || !Array.isArray(config.variables) || config.variables.length === 0) {
@@ -356,7 +356,7 @@ export function validateUserInteractionNodeConfig(config: any): config is UserIn
       return false;
     }
   }
-  
+
   return true;
 }
 

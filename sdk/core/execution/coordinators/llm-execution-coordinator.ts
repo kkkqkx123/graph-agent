@@ -3,23 +3,26 @@
  * 负责协调 LLM 调用和工具调用的完整流程
  *
  * 核心职责：
- * 1. 协调 LLM 调用和工具调用的循环
- * 2. 处理多轮对话（LLM → 工具 → LLM）
+ * 1. 作为高层协调入口
+ * 2. 委托给专门的组件处理具体逻辑
  * 3. 返回最终执行结果
  *
  * 设计原则：
- * - 无状态设计：不持有任何实例变量
+ * - 简化的协调逻辑
  * - 依赖注入：通过构造函数接收依赖
- * - 状态通过参数传入：所有状态通过 conversationState 参数传入
+ * - 职责分离：将具体执行逻辑委托给专门组件
  */
 
 import type { LLMMessage } from '../../../types/llm';
 import { ConversationManager } from '../managers/conversation-manager';
-import { LLMExecutor } from '../llm-executor';
+import { LLMExecutor } from '../executors/llm-executor';
 import { type ToolService } from '../../services/tool-service';
 import type { EventManager } from '../../services/event-manager';
+import { safeEmit } from '../utils/event/event-emitter';
 import { EventType } from '../../../types/events';
 import { now } from '../../../utils';
+import { ToolCallExecutor } from '../executors/tool-call-executor';
+import { TokenUsageTracker } from '../token-usage-tracker';
 
 /**
  * LLM 执行参数
@@ -57,31 +60,42 @@ export interface LLMExecutionResponse {
  * LLM 执行协调器类
  *
  * 职责：
- * - 协调 LLM 调用和工具调用的完整流程
- * - 处理多轮对话循环
+ * - 作为高层协调入口
+ * - 直接协调 LLM 调用、工具调用和对话状态管理
  * - 返回最终执行结果
  *
  * 设计原则：
- * - 无状态设计：不持有任何实例变量
- * - 依赖注入：通过构造函数接收依赖
- * - 状态通过参数传入
+ * - 简化的协调逻辑
+ * - 职责分离：每个组件只负责自己的职责
+ * - 依赖注入
  */
 export class LLMExecutionCoordinator {
+  private toolCallExecutor: ToolCallExecutor;
+  private tokenTracker: TokenUsageTracker;
+
   constructor(
     private llmExecutor: LLMExecutor,
     private toolService: ToolService = toolService,
-    private eventManager?: EventManager
-  ) { }
+    private eventManager?: EventManager,
+    tokenTracker?: TokenUsageTracker
+  ) {
+
+    // 创建工具调用执行器
+    this.toolCallExecutor = new ToolCallExecutor(toolService, eventManager);
+
+    // 创建 Token 使用追踪器
+    this.tokenTracker = tokenTracker || new TokenUsageTracker();
+  }
 
   /**
    * 执行 LLM 调用
    *
-   * 此方法管理完整的 LLM 调用和工具调用循环：
-   * 1. 添加用户消息到对话历史
-   * 2. 执行 LLM 调用
-   * 3. 如果有工具调用，执行工具并添加结果到对话历史
-   * 4. 重复步骤 2-3，直到没有工具调用
-   * 5. 返回最终内容
+   * 此方法作为高层协调入口，直接协调各个组件处理完整流程：
+   * 1. 管理对话状态（通过 ConversationManager）
+   * 2. 执行 LLM 调用（通过 LLMExecutor）
+   * 3. 执行工具调用（通过 ToolCallExecutor）
+   * 4. 触发相关事件（通过事件工具函数）
+   * 5. 返回最终执行结果
    *
    * @param params 执行参数
    * @param conversationState 对话管理器
@@ -92,7 +106,9 @@ export class LLMExecutionCoordinator {
     conversationState: ConversationManager
   ): Promise<LLMExecutionResponse> {
     try {
-      const content = await this.handleLLMExecution(params, conversationState);
+      // 执行完整的 LLM-工具调用循环
+      const content = await this.executeLLMLoop(params, conversationState);
+
       return {
         success: true,
         content,
@@ -107,39 +123,46 @@ export class LLMExecutionCoordinator {
   }
 
   /**
-   * 处理 LLM 执行请求
+   * 执行完整的 LLM-工具调用循环
+   *
+   * 核心职责：
+   * 1. 执行完整的 LLM-工具调用循环
+   * 2. 控制循环迭代次数
+   * 3. 管理 Token 使用监控
+   * 4. 处理对话状态
    *
    * @param params 执行参数
    * @param conversationState 对话管理器
    * @returns LLM 响应内容
    */
-  private async handleLLMExecution(
+  private async executeLLMLoop(
     params: LLMExecutionParams,
     conversationState: ConversationManager
   ): Promise<string> {
     const { prompt, profileId, parameters, tools, threadId, nodeId } = params;
 
-    // 步骤 1：添加用户消息
+    // 步骤1：添加用户消息
     const userMessage = {
       role: 'user' as const,
       content: prompt
     };
     conversationState.addMessage(userMessage);
 
-    // 触发MESSAGE_ADDED事件
+    // 触发消息添加事件
     if (this.eventManager) {
-      await this.eventManager.emit({
+      await safeEmit(this.eventManager, {
         type: EventType.MESSAGE_ADDED,
         timestamp: now(),
-        workflowId: '', // 需要从context获取
+        workflowId: '',
         threadId: threadId || '',
         nodeId,
-        role: 'user',
-        content: prompt
+        role: userMessage.role,
+        content: userMessage.content,
+        toolCalls: undefined
       });
     }
 
-    // 步骤 2：执行 LLM 调用循环
+    // 步骤2：执行 LLM 调用循环
     const maxIterations = 10;
     let iterationCount = 0;
     let finalContent = '';
@@ -150,15 +173,15 @@ export class LLMExecutionCoordinator {
       // 检查 Token 使用情况
       await conversationState.checkTokenUsage();
 
-      // 检查Token使用警告
+      // 检查 Token 使用警告
       const tokenUsage = conversationState.getTokenUsage();
       if (tokenUsage && this.eventManager) {
-        const tokenLimit = (conversationState as any).tokenLimit || 100000;
+        const tokenLimit = this.tokenTracker['tokenLimit'] || 100000;
         const usagePercentage = (tokenUsage.totalTokens / tokenLimit) * 100;
 
-        // 当使用量超过80%时触发警告
+        // 当使用量超过 80% 时触发警告
         if (usagePercentage > 80) {
-          await this.eventManager.emit({
+          await safeEmit(this.eventManager, {
             type: EventType.TOKEN_USAGE_WARNING,
             timestamp: now(),
             workflowId: '',
@@ -204,16 +227,16 @@ export class LLMExecutionCoordinator {
       };
       conversationState.addMessage(assistantMessage);
 
-      // 触发MESSAGE_ADDED事件
+      // 触发消息添加事件
       if (this.eventManager) {
-        await this.eventManager.emit({
+        await safeEmit(this.eventManager, {
           type: EventType.MESSAGE_ADDED,
           timestamp: now(),
           workflowId: '',
           threadId: threadId || '',
           nodeId,
-          role: 'assistant',
-          content: llmResult.content,
+          role: assistantMessage.role,
+          content: assistantMessage.content,
           toolCalls: assistantMessage.toolCalls
         });
       }
@@ -223,7 +246,7 @@ export class LLMExecutionCoordinator {
       // 检查是否有工具调用
       if (llmResult.toolCalls && llmResult.toolCalls.length > 0) {
         // 执行工具调用
-        await this.executeToolCalls(
+        await this.toolCallExecutor.executeToolCalls(
           llmResult.toolCalls,
           conversationState,
           threadId,
@@ -238,10 +261,10 @@ export class LLMExecutionCoordinator {
       }
     }
 
-    // 触发CONVERSATION_STATE_CHANGED事件
+    // 触发对话状态变化事件
     if (this.eventManager) {
       const finalTokenUsage = conversationState.getTokenUsage();
-      await this.eventManager.emit({
+      await safeEmit(this.eventManager, {
         type: EventType.CONVERSATION_STATE_CHANGED,
         timestamp: now(),
         workflowId: '',
@@ -254,120 +277,5 @@ export class LLMExecutionCoordinator {
 
     // 返回最终内容
     return finalContent;
-  }
-
-  /**
-   * 执行工具调用
-   *
-   * @param toolCalls 工具调用数组
-   * @param conversationState 对话管理器
-   */
-  private async executeToolCalls(
-    toolCalls: Array<{ id: string; name: string; arguments: string }>,
-    conversationState: ConversationManager,
-    threadId?: string,
-    nodeId?: string
-  ): Promise<void> {
-    for (const toolCall of toolCalls) {
-      const startTime = now();
-
-      // 触发TOOL_CALL_STARTED事件
-      if (this.eventManager) {
-        await this.eventManager.emit({
-          type: EventType.TOOL_CALL_STARTED,
-          timestamp: startTime,
-          workflowId: '',
-          threadId: threadId || '',
-          nodeId: nodeId || '',
-          toolName: toolCall.name,
-          toolArguments: toolCall.arguments
-        });
-      }
-
-      try {
-        // 调用 ToolService 执行工具
-        const result = await this.toolService.execute(
-          toolCall.name,
-          JSON.parse(toolCall.arguments),
-          {
-            timeout: 30000,
-            retries: 0,
-            retryDelay: 1000
-          }
-        );
-
-        // 将工具结果添加到对话历史
-        const toolMessage = {
-          role: 'tool' as const,
-          content: result.success && result.result !== undefined
-            ? JSON.stringify(result.result)
-            : JSON.stringify({ error: result.error }),
-          toolCallId: toolCall.id
-        };
-        conversationState.addMessage(toolMessage);
-
-        // 触发MESSAGE_ADDED事件
-        if (this.eventManager) {
-          await this.eventManager.emit({
-            type: EventType.MESSAGE_ADDED,
-            timestamp: now(),
-            workflowId: '',
-            threadId: threadId || '',
-            nodeId,
-            role: 'tool',
-            content: toolMessage.content
-          });
-        }
-
-        // 触发TOOL_CALL_COMPLETED事件
-        if (this.eventManager) {
-          await this.eventManager.emit({
-            type: EventType.TOOL_CALL_COMPLETED,
-            timestamp: now(),
-            workflowId: '',
-            threadId: threadId || '',
-            nodeId: nodeId || '',
-            toolName: toolCall.name,
-            toolResult: result.result,
-            executionTime: now() - startTime
-          });
-        }
-      } catch (error) {
-        // 将错误信息作为工具结果添加到对话历史
-        const errorMessage = error instanceof Error ? error.message : String(error);
-        const toolMessage = {
-          role: 'tool' as const,
-          content: JSON.stringify({ error: errorMessage }),
-          toolCallId: toolCall.id
-        };
-        conversationState.addMessage(toolMessage);
-
-        // 触发MESSAGE_ADDED事件
-        if (this.eventManager) {
-          await this.eventManager.emit({
-            type: EventType.MESSAGE_ADDED,
-            timestamp: now(),
-            workflowId: '',
-            threadId: threadId || '',
-            nodeId,
-            role: 'tool',
-            content: toolMessage.content
-          });
-        }
-
-        // 触发TOOL_CALL_FAILED事件
-        if (this.eventManager) {
-          await this.eventManager.emit({
-            type: EventType.TOOL_CALL_FAILED,
-            timestamp: now(),
-            workflowId: '',
-            threadId: threadId || '',
-            nodeId: nodeId || '',
-            toolName: toolCall.name,
-            error: errorMessage
-          });
-        }
-      }
-    }
   }
 }

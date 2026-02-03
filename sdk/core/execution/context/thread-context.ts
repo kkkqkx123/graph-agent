@@ -31,7 +31,7 @@ import type { ThreadRegistry } from '../../services/thread-registry';
 import type { WorkflowRegistry } from '../../services/workflow-registry';
 import type { EventManager } from '../../services/event-manager';
 import type { ToolService } from '../../services/tool-service';
-import { LLMExecutor } from '../llm-executor';
+import { LLMExecutor } from '../executors/llm-executor';
 import type { LifecycleCapable } from '../managers/lifecycle-capable';
 
 /**

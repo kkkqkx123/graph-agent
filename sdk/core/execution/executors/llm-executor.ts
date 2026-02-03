@@ -14,9 +14,9 @@
  * - 不处理工具调用，工具调用由 LLMCoordinator 协调
  */
 
-import type { LLMMessage, LLMResult } from '../../types/llm';
-import { LLMWrapper } from '../llm/wrapper';
-import { ExecutionError } from '../../types/errors';
+import type { LLMMessage, LLMResult } from '../../../types/llm';
+import { LLMWrapper } from '../../llm/wrapper';
+import { ExecutionError } from '../../../types/errors';
 
 /**
  * LLM执行请求数据

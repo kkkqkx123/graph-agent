@@ -12,7 +12,7 @@ import { OpenAIResponseClient } from './clients/openai-response';
 import { AnthropicClient } from './clients/anthropic';
 import { GeminiNativeClient } from './clients/gemini-native';
 import { GeminiOpenAIClient } from './clients/gemini-openai';
-import { HumanRelayClient } from './clients/human-relay';
+// import { HumanRelayClient } from './clients/human-relay'; // TODO: 实现HumanRelayClient
 import { ConfigurationError } from '../../types/errors';
 
 /**
@@ -66,7 +66,12 @@ export class ClientFactory {
         return new GeminiOpenAIClient(profile);
 
       case LLMProvider.HUMAN_RELAY:
-        return new HumanRelayClient(profile);
+        // TODO: 实现HumanRelayClient
+        throw new ConfigurationError(
+          `HumanRelayClient 尚未实现`,
+          'provider',
+          { provider: profile.provider }
+        );
 
       default:
         throw new ConfigurationError(

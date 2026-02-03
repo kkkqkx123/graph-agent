@@ -11,7 +11,7 @@
 import { ExecutionError } from '../../../../types/errors';
 import type { Node } from '../../../../types/node';
 import { NodeType } from '../../../../types/node';
-import type { LLMExecutionRequestData } from '../../llm-executor';
+import type { LLMExecutionRequestData } from '../../executors/llm-executor';
 import {
   transformLLMNodeConfig
 } from '../../handlers/node-handlers/config-utils';
