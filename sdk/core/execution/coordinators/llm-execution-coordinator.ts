@@ -135,7 +135,7 @@ export class LLMExecutionCoordinator {
     params: LLMExecutionParams,
     conversationState: ConversationManager
   ): Promise<string> {
-    const { prompt, profileId, parameters, tools, threadId, nodeId } = params;
+    const { prompt, profileId, parameters, tools, dynamicTools, threadId, nodeId } = params;
 
     // 步骤1：添加用户消息
     const userMessage = {
@@ -189,6 +189,13 @@ export class LLMExecutionCoordinator {
         }
       }
 
+      // 如果存在动态工具，合并静态和动态工具
+      let availableTools = tools;
+      if (dynamicTools?.toolIds) {
+        const workflowTools = tools ? new Set(tools.map((t: any) => t.name || t.id)) : new Set();
+        availableTools = this.getAvailableTools(workflowTools, dynamicTools);
+      }
+
       // 执行 LLM 调用
       const llmResult = await this.llmExecutor.executeLLMCall(
         conversationState.getMessages(),
@@ -196,7 +203,7 @@ export class LLMExecutionCoordinator {
           prompt,
           profileId: profileId || 'default',
           parameters: parameters || {},
-          tools
+          tools: availableTools
         }
       );
 

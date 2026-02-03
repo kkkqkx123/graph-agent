@@ -91,9 +91,6 @@ export class ConversationManager implements LifecycleCapable<ConversationState> 
     this.threadId = options.threadId;
     this.toolService = options.toolService;
     this.availableTools = options.availableTools;
-
-    // 在初始化时添加工具描述
-    this.initializeToolDescriptions();
   }
 
   /**
@@ -389,44 +386,68 @@ export class ConversationManager implements LifecycleCapable<ConversationState> 
   }
 
   /**
-   * 初始化工具描述
-   * 在ConversationManager初始化时添加工具描述到消息数组
+   * 检查是否已经存在工具描述消息
+   * @returns 是否存在工具描述消息
    */
-  private initializeToolDescriptions(): void {
-    if (!this.availableTools || !this.toolService) {
-      return;
-    }
+  private hasToolDescriptionMessage(): boolean {
+    const allMessages = this.getAllMessages();
+    return allMessages.some(msg =>
+      msg.role === 'system' &&
+      typeof msg.content === 'string' &&
+      msg.content.startsWith('可用工具:')
+    );
+  }
 
-    // 构建所有可用工具ID集合
-    const allToolIds = new Set(this.availableTools.initial);
-    if (this.availableTools.dynamicTools?.toolIds) {
-      this.availableTools.dynamicTools.toolIds.forEach(id => allToolIds.add(id));
+  /**
+   * 获取初始可用工具的描述消息（不包含 dynamicTools）
+   * @returns 工具描述消息，如果没有初始工具则返回 null
+   */
+  getInitialToolDescriptionMessage(): LLMMessage | null {
+    if (!this.availableTools || !this.toolService) {
+      return null;
+    }
+    
+    // 只使用 initial 工具集合
+    const initialToolIds = Array.from(this.availableTools.initial);
+    if (initialToolIds.length === 0) {
+      return null;
     }
 
     // 构建工具描述
-    const toolDescriptions = Array.from(allToolIds)
+    const toolDescriptions = initialToolIds
       .map(id => {
         const tool = this.toolService.getTool(id);
         if (!tool) return null;
-
-        const description = this.availableTools?.dynamicTools?.descriptionTemplate
-          ? this.availableTools.dynamicTools.descriptionTemplate
-            .replace('{toolName}', tool.name)
-            .replace('{toolDescription}', tool.description)
-          : `- ${tool.name}: ${tool.description}`;
-
-        return description;
+        return `- ${tool.name}: ${tool.description}`;
       })
       .filter(Boolean)
       .join('\n');
 
-    // 如果有工具描述，添加到消息数组
     if (toolDescriptions.length > 0) {
-      const toolDescriptionMessage = {
+      return {
         role: 'system' as const,
         content: `可用工具:\n${toolDescriptions}`
       };
-      this.addMessage(toolDescriptionMessage);
+    }
+    
+    return null;
+  }
+
+  /**
+   * 在新批次开始时添加初始工具描述（如果不存在）
+   * @param boundaryIndex 批次边界索引
+   */
+  startNewBatchWithInitialTools(boundaryIndex: number): void {
+    // 开始新批次
+    this.indexManager.startNewBatch(boundaryIndex);
+    
+    // 检查是否已存在工具描述消息
+    if (!this.hasToolDescriptionMessage()) {
+      // 添加初始工具描述消息
+      const toolDescMessage = this.getInitialToolDescriptionMessage();
+      if (toolDescMessage) {
+        this.addMessage(toolDescMessage);
+      }
     }
   }
 }

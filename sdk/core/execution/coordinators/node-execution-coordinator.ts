@@ -335,7 +335,8 @@ export class NodeExecutionCoordinator {
           prompt: requestData.prompt,
           profileId: requestData.profileId,
           parameters: requestData.parameters,
-          tools: requestData.tools
+          tools: requestData.tools,
+          dynamicTools: requestData.dynamicTools
         },
         threadContext.conversationManager
       );

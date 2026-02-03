@@ -146,20 +146,28 @@ export function handleClearOperation(
   config: ContextProcessorExecutionData['clear']
 ): void {
   const keepSystemMessage = config?.keepSystemMessage ?? true;
+  const allMessages = conversationManager.getAllMessages();
 
   if (keepSystemMessage) {
-    const allMessages = conversationManager.getAllMessages();
-    if (allMessages.length > 0 && allMessages[0].role === 'system') {
-      // 只保留系统消息
-      conversationManager.setOriginalIndices([0]);
-      conversationManager.getIndexManager().startNewBatch(0);
+    // 找到所有的系统消息（包括工具描述）
+    const systemMessageIndices = allMessages
+      .map((msg: any, index: number) => msg.role === 'system' ? index : -1)
+      .filter((index: number) => index !== -1);
+    
+    if (systemMessageIndices.length > 0) {
+      // 保留所有系统消息
+      conversationManager.setOriginalIndices(systemMessageIndices);
+      // 开始新批次（工具描述如果存在就保留，不存在就添加）
+      conversationManager.startNewBatchWithInitialTools(Math.min(...systemMessageIndices));
     } else {
-      // 清空所有消息
+      // 清空所有消息，重新添加初始工具描述
       conversationManager.getIndexManager().reset();
+      conversationManager.startNewBatchWithInitialTools(0);
     }
   } else {
-    // 清空所有消息
+    // 清空所有消息，重新添加初始工具描述
     conversationManager.getIndexManager().reset();
+    conversationManager.startNewBatchWithInitialTools(0);
   }
 }
 

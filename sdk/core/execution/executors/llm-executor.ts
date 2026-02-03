@@ -26,6 +26,13 @@ export interface LLMExecutionRequestData {
   profileId: string;
   parameters: Record<string, any>;
   tools?: any[];
+  /** 动态工具配置 */
+  dynamicTools?: {
+    /** 要动态添加的工具ID或名称 */
+    toolIds: string[];
+    /** 工具描述模板（可选） */
+    descriptionTemplate?: string;
+  };
   stream?: boolean;
 }
 
