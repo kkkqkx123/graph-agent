@@ -34,6 +34,59 @@ describe('NodeValidator - Subgraph Node Validation', () => {
       expect(result.errors).toHaveLength(0);
     });
 
+    it('应该验证有效的SUBGRAPH节点（无inputMapping）', () => {
+      const node: Node = {
+        id: 'node-1',
+        name: 'Subgraph',
+        type: NodeType.SUBGRAPH,
+        config: {
+          subgraphId: 'subgraph-1',
+          outputMapping: { output: 'workflowOutput' },
+          async: false
+        },
+        incomingEdgeIds: [],
+        outgoingEdgeIds: []
+      };
+      const result = validator.validateNode(node);
+      expect(result.valid).toBe(true);
+      expect(result.errors).toHaveLength(0);
+    });
+
+    it('应该验证有效的SUBGRAPH节点（无outputMapping）', () => {
+      const node: Node = {
+        id: 'node-1',
+        name: 'Subgraph',
+        type: NodeType.SUBGRAPH,
+        config: {
+          subgraphId: 'subgraph-1',
+          inputMapping: { input: 'workflowInput' },
+          async: false
+        },
+        incomingEdgeIds: [],
+        outgoingEdgeIds: []
+      };
+      const result = validator.validateNode(node);
+      expect(result.valid).toBe(true);
+      expect(result.errors).toHaveLength(0);
+    });
+
+    it('应该验证有效的SUBGRAPH节点（无inputMapping和outputMapping）', () => {
+      const node: Node = {
+        id: 'node-1',
+        name: 'Subgraph',
+        type: NodeType.SUBGRAPH,
+        config: {
+          subgraphId: 'subgraph-1',
+          async: false
+        },
+        incomingEdgeIds: [],
+        outgoingEdgeIds: []
+      };
+      const result = validator.validateNode(node);
+      expect(result.valid).toBe(true);
+      expect(result.errors).toHaveLength(0);
+    });
+
     it('应该拒绝缺少subgraphId的SUBGRAPH节点', () => {
       const node: Node = {
         id: 'node-1',

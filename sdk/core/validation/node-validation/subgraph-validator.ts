@@ -13,8 +13,14 @@ import { ValidationError } from '../../../types/errors';
  */
 const subgraphNodeConfigSchema = z.object({
   subgraphId: z.string().min(1, 'Subgraph ID is required'),
-  inputMapping: z.record(z.string(), z.string()),
-  outputMapping: z.record(z.string(), z.string()),
+  inputMapping: z.record(
+    z.string().min(1, 'Input mapping key cannot be empty'),
+    z.string().min(1, 'Input mapping value cannot be empty')
+  ).optional().default({}),
+  outputMapping: z.record(
+    z.string().min(1, 'Output mapping key cannot be empty'),
+    z.string().min(1, 'Output mapping value cannot be empty')
+  ).optional().default({}),
   async: z.boolean()
 });
 

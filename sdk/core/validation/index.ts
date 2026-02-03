@@ -13,3 +13,7 @@ export * from './node-validation';
 
 // 导出Hook验证函数
 export * from './hook-validator';
+
+// 导出配置验证器
+export { CodeConfigValidator } from './code-config-validator';
+export { ToolConfigValidator } from './tool-config-validator';
