@@ -23,6 +23,8 @@ export enum ErrorCode {
   LLM_ERROR = 'LLM_ERROR',
   /** 工具调用错误 */
   TOOL_ERROR = 'TOOL_ERROR',
+  /** 脚本执行错误 */
+  CODE_EXECUTION_ERROR = 'CODE_EXECUTION_ERROR',
   /** 限流错误（HTTP专用） */
   RATE_LIMIT_ERROR = 'RATE_LIMIT_ERROR',
   /** 熔断器打开错误 */
@@ -239,5 +241,21 @@ export class HttpError extends NetworkError {
   ) {
     super(message, statusCode, context, cause);
     this.name = 'HttpError';
+  }
+}
+
+/**
+ * 脚本执行错误类型
+ */
+export class CodeExecutionError extends SDKError {
+  constructor(
+    message: string,
+    public readonly scriptName?: string,
+    public readonly scriptType?: string,
+    context?: Record<string, any>,
+    cause?: Error
+  ) {
+    super(ErrorCode.CODE_EXECUTION_ERROR, message, context, cause);
+    this.name = 'CodeExecutionError';
   }
 }

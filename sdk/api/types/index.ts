@@ -34,6 +34,17 @@ export type {
   ToolTestResult
 } from './tools-types';
 
+// 脚本类型
+export type {
+  ScriptFilter,
+  ScriptOptions,
+  ScriptTestResult,
+  ScriptExecutionLog,
+  ScriptStatistics,
+  ScriptRegistrationConfig,
+  ScriptBatchExecutionConfig
+} from './code-types';
+
 // 重新导出触发器模板类型（来自types层）
 export type {
   TriggerTemplateFilter,

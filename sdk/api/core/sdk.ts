@@ -8,6 +8,7 @@ import { WorkflowRegistryAPI } from '../registry/workflow-registry-api';
 import { ThreadRegistryAPI } from '../registry/thread-registry-api';
 import { WorkflowValidatorAPI } from '../validation/workflow-validator-api';
 import { ToolServiceAPI } from '../tools/tool-service-api';
+import { CodeServiceAPI } from '../code/code-service-api';
 import { LLMWrapperAPI } from '../llm/llm-wrapper-api';
 import { ProfileManagerAPI } from '../llm/profile-manager-api';
 import { EventManagerAPI } from '../management/event-manager-api';
@@ -39,6 +40,9 @@ export class SDK {
 
   /** 工具管理API */
   public readonly tools: ToolServiceAPI;
+
+  /** 脚本管理API */
+  public readonly scripts: CodeServiceAPI;
 
   /** LLM调用API */
   public readonly llm: LLMWrapperAPI;
@@ -88,6 +92,7 @@ export class SDK {
     this.validator = new WorkflowValidatorAPI();
     this.executor = new ThreadExecutorAPI(this.internalWorkflowRegistry);
     this.tools = new ToolServiceAPI();
+    this.scripts = new CodeServiceAPI();
     this.llm = new LLMWrapperAPI();
     this.profiles = new ProfileManagerAPI();
     this.events = new EventManagerAPI();
@@ -117,6 +122,7 @@ export class SDK {
     await this.workflows.clearWorkflows();
     await this.threads.clearThreads();
     await this.tools.clearTools();
+    await this.scripts.clearScripts();
     await this.llm.clearAll();
     await this.profiles.clearProfiles();
     await this.events.clearHistory();
@@ -144,6 +150,7 @@ export class SDK {
     threadCount: number;
     threadStatistics: any;
     toolCount: number;
+    scriptCount: number;
     profileCount: number;
     eventListenerCount: number;
     checkpointCount: number;
@@ -154,6 +161,7 @@ export class SDK {
     const threadCount = await this.threads.getThreadCount();
     const threadStatistics = await this.threads.getThreadStatistics();
     const toolCount = await this.tools.getToolCount();
+    const scriptCount = await this.scripts.getScriptCount();
     const profileCount = await this.profiles.getProfileCount();
     const eventListenerCount = this.events.getListenerCount();
     const checkpointCount = await this.checkpoints.getCheckpointCount();
@@ -166,6 +174,7 @@ export class SDK {
       threadCount,
       threadStatistics,
       toolCount,
+      scriptCount,
       profileCount,
       eventListenerCount,
       checkpointCount,

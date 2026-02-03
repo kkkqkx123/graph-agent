@@ -7,6 +7,7 @@ import type { Node, CodeNodeConfig } from '../../../../types/node';
 import type { Thread } from '../../../../types/thread';
 import { ValidationError } from '../../../../types/errors';
 import { now } from '../../../../utils';
+import { codeService } from '../../../../core/services/code-service';
 
 /**
  * 检查节点是否可以执行
@@ -43,45 +44,7 @@ function validateRiskLevel(risk: string, scriptName: string): void {
   }
 }
 
-/**
- * 执行脚本代码
- */
-async function executeScript(config: CodeNodeConfig, timeout: number): Promise<any> {
-  // 注意：这里使用模拟的脚本执行
-  // 实际实现应该使用相应的脚本执行器
 
-  return new Promise((resolve, reject) => {
-    const timer = setTimeout(() => {
-      reject(new Error(`Script execution timeout after ${timeout}ms`));
-    }, timeout);
-
-    try {
-      // 模拟脚本执行延迟
-      setTimeout(() => {
-        clearTimeout(timer);
-
-        // 模拟脚本执行结果
-        resolve({
-          success: true,
-          scriptName: config.scriptName,
-          scriptType: config.scriptType,
-          output: `Mock output for ${config.scriptName}`,
-          executionTime: 100
-        });
-      }, 100);
-    } catch (error) {
-      clearTimeout(timer);
-      reject(error);
-    }
-  });
-}
-
-/**
- * 睡眠指定时间
- */
-function sleep(ms: number): Promise<void> {
-  return new Promise(resolve => setTimeout(resolve, ms));
-}
 
 /**
  * Code节点处理函数
@@ -103,44 +66,37 @@ export async function codeHandler(thread: Thread, node: Node, context?: any): Pr
   }
 
   const config = node.config as CodeNodeConfig;
-  const timeout = config.timeout || 30000;
-  const retries = config.retries || 0;
-  const retryDelay = config.retryDelay || 1000;
 
   // 根据风险等级选择执行策略
   validateRiskLevel(config.risk, config.scriptName);
 
-  // 执行脚本代码（带重试）
-  let lastError: Error | null = null;
-  let attempt = 0;
+  try {
+    // 使用脚本服务执行脚本
+    const result = await codeService.execute(config.scriptName);
 
-  while (attempt <= retries) {
-    try {
-      const result = await executeScript(config, timeout);
+    // 记录执行历史
+    thread.nodeResults.push({
+      step: thread.nodeResults.length + 1,
+      nodeId: node.id,
+      nodeType: node.type,
+      status: 'COMPLETED',
+      timestamp: now(),
+      data: result
+    });
 
-      // 记录执行历史
-      thread.nodeResults.push({
-        step: thread.nodeResults.length + 1,
-        nodeId: node.id,
-        nodeType: node.type,
-        status: 'COMPLETED',
-        timestamp: now(),
-        data: result
-      });
+    // 返回执行结果
+    return result;
+  } catch (error) {
+    // 记录执行失败历史
+    thread.nodeResults.push({
+      step: thread.nodeResults.length + 1,
+      nodeId: node.id,
+      nodeType: node.type,
+      status: 'FAILED',
+      timestamp: now(),
+      error: error instanceof Error ? error.message : String(error)
+    });
 
-      // 返回执行结果
-      return result;
-    } catch (error) {
-      lastError = error instanceof Error ? error : new Error(String(error));
-
-      if (attempt < retries) {
-        await sleep(retryDelay);
-        attempt++;
-      } else {
-        throw lastError;
-      }
-    }
+    throw error;
   }
-
-  throw lastError || new Error('Script execution failed');
 }

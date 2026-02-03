@@ -159,12 +159,6 @@ export interface CodeNodeConfig {
   scriptType: 'shell' | 'cmd' | 'powershell' | 'python' | 'javascript';
   /** 风险等级(none/low/medium/high)【应用层中会实现不同的执行策略，例如none不检查，high在沙箱运行】 */
   risk: 'none' | 'low' | 'medium' | 'high';
-  /** 超时时间（秒） */
-  timeout?: number;
-  /** 重试次数 */
-  retries?: number;
-  /** 重试延迟（秒） */
-  retryDelay?: number;
   /** 是否为内联代码 */
   inline?: boolean;
 }

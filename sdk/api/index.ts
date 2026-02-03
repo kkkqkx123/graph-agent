@@ -14,6 +14,7 @@ export { WorkflowRegistryAPI } from './registry/workflow-registry-api';
 export { ThreadRegistryAPI } from './registry/thread-registry-api';
 export { WorkflowValidatorAPI } from './validation/workflow-validator-api';
 export { ToolServiceAPI } from './tools/tool-service-api';
+export { CodeServiceAPI } from './code/code-service-api';
 export { LLMWrapperAPI } from './llm/llm-wrapper-api';
 export { ProfileManagerAPI } from './llm/profile-manager-api';
 export { EventManagerAPI } from './management/event-manager-api';
@@ -39,6 +40,13 @@ export type {
   ToolOptions,
   ToolExecutionResult,
   ToolTestResult,
+  ScriptFilter,
+  ScriptOptions,
+  ScriptTestResult,
+  ScriptExecutionLog,
+  ScriptStatistics,
+  ScriptRegistrationConfig,
+  ScriptBatchExecutionConfig,
   EventFilter,
   CheckpointFilter,
   CheckpointSummary,
