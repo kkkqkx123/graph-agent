@@ -181,6 +181,13 @@ export interface LLMNodeConfig {
   parameters?: Record<string, any>;
   /** 最大工具调用次数（默认10，由LLM模块控制） */
   maxToolCalls?: number;
+  /** 动态工具配置 */
+  dynamicTools?: {
+    /** 要动态添加的工具ID或名称 */
+    toolIds: string[];
+    /** 工具描述模板（可选） */
+    descriptionTemplate?: string;
+  };
 }
 
 /**

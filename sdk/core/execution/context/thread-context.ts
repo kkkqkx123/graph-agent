@@ -20,6 +20,7 @@ import type { Thread, VariableScope } from '../../../types';
 import type { ID } from '../../../types/common';
 import type { StatefulToolFactory } from '../../../types/tool';
 import type { LLMMessage } from '../../../types/llm';
+import type { WorkflowDefinition } from '../../../types/workflow';
 import { ConversationManager } from '../managers/conversation-manager';
 import { VariableCoordinator } from '../coordinators/variable-coordinator';
 import { VariableStateManager } from '../managers/variable-state-manager';
@@ -112,6 +113,11 @@ export class ThreadContext implements LifecycleCapable {
    * LLM 执行器
    */
   private readonly llmExecutor: LLMExecutor;
+
+  /**
+   * 可用工具集合（从workflow配置）
+   */
+  private availableTools: Set<string> = new Set();
 
   /**
    * 构造函数
@@ -625,5 +631,40 @@ export class ThreadContext implements LifecycleCapable {
    */
   isInSubgraph(): boolean {
     return this.executionState.isInSubgraph();
+  }
+
+  /**
+   * 初始化可用工具（从workflow配置）
+   * @param workflow 工作流定义
+   */
+  initializeAvailableTools(workflow: WorkflowDefinition): void {
+    if (workflow.availableTools?.initial) {
+      this.availableTools = new Set(workflow.availableTools.initial);
+    }
+  }
+
+  /**
+   * 获取可用工具列表
+   * @returns 可用工具ID列表
+   */
+  getAvailableTools(): string[] {
+    return Array.from(this.availableTools);
+  }
+
+  /**
+   * 检查工具是否可用
+   * @param toolId 工具ID
+   * @returns 是否可用
+   */
+  isToolAvailable(toolId: string): boolean {
+    return this.availableTools.has(toolId);
+  }
+
+  /**
+   * 添加动态工具到可用集合
+   * @param toolIds 工具ID列表
+   */
+  addDynamicTools(toolIds: string[]): void {
+    toolIds.forEach(id => this.availableTools.add(id));
   }
 }

@@ -434,13 +434,6 @@ export class CheckpointManager implements LifecycleCapable<void> {
   }
 
   /**
-   * 获取存储实例（用于测试）
-   */
-  getStorage(): CheckpointStorage {
-    return this.storage;
-  }
-
-  /**
    * 序列化检查点为字节数组
    */
   private serializeCheckpoint(checkpoint: Checkpoint): Uint8Array {

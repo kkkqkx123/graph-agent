@@ -133,6 +133,10 @@ export class WorkflowValidator {
     const selfReferenceResult = this.validateSelfReferences(workflow);
     errors.push(...selfReferenceResult.errors);
 
+    // 验证工具配置
+    const toolsResult = this.validateTools(workflow);
+    errors.push(...toolsResult.errors);
+
     return {
       valid: errors.length === 0,
       errors,
@@ -415,6 +419,56 @@ export class WorkflowValidator {
       workflow.nodes,
       workflow.id
     );
+
+    return {
+      valid: errors.length === 0,
+      errors,
+      warnings: []
+    };
+  }
+
+  /**
+   * 验证工具配置
+   * @param workflow 工作流定义
+   * @returns 验证结果
+   */
+  private validateTools(workflow: WorkflowDefinition): ValidationResult {
+    const errors: ValidationError[] = [];
+
+    // 验证availableTools配置
+    if (workflow.availableTools) {
+      if (!workflow.availableTools.initial || !(workflow.availableTools.initial instanceof Set)) {
+        errors.push(new ValidationError(
+          'availableTools.initial must be a Set of tool IDs',
+          'workflow.availableTools.initial'
+        ));
+      }
+    }
+
+    // 验证LLM节点的dynamicTools配置
+    for (let i = 0; i < workflow.nodes.length; i++) {
+      const node = workflow.nodes[i];
+      if (node && node.type === NodeType.LLM && node.config) {
+        const llmConfig = node.config as any;
+        if (llmConfig.dynamicTools) {
+          const path = `workflow.nodes[${i}].config.dynamicTools`;
+          
+          if (!llmConfig.dynamicTools.toolIds || !Array.isArray(llmConfig.dynamicTools.toolIds)) {
+            errors.push(new ValidationError(
+              'dynamicTools.toolIds must be an array of tool IDs',
+              `${path}.toolIds`
+            ));
+          }
+          
+          if (llmConfig.dynamicTools.descriptionTemplate && typeof llmConfig.dynamicTools.descriptionTemplate !== 'string') {
+            errors.push(new ValidationError(
+              'dynamicTools.descriptionTemplate must be a string',
+              `${path}.descriptionTemplate`
+            ));
+          }
+        }
+      }
+    }
 
     return {
       valid: errors.length === 0,

@@ -215,6 +215,11 @@ export interface WorkflowDefinition {
   createdAt: Timestamp;
   /** 更新时间 */
   updatedAt: Timestamp;
+  /** 可用工具配置 */
+  availableTools?: {
+    /** 初始可用工具集合（工具ID或名称） */
+    initial: Set<string>;
+  };
 }
 
 /**

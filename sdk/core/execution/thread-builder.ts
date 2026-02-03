@@ -168,7 +168,9 @@ export class ThreadBuilder {
       tokenLimit: options.tokenLimit || 4000,
       eventManager: this.executionContext.getEventManager(),
       workflowId: processedWorkflow.id,
-      threadId: threadId
+      threadId: threadId,
+      toolService: this.executionContext.getToolService(),
+      availableTools: processedWorkflow.availableTools
     });
 
     // 步骤5：创建 ThreadContext

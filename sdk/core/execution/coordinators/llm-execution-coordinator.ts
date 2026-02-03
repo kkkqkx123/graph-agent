@@ -40,6 +40,13 @@ export interface LLMExecutionParams {
   parameters?: Record<string, any>;
   /** 工具列表 */
   tools?: any[];
+  /** 动态工具配置 */
+  dynamicTools?: {
+    /** 要动态添加的工具ID或名称 */
+    toolIds: string[];
+    /** 工具描述模板（可选） */
+    descriptionTemplate?: string;
+  };
 }
 
 /**
@@ -267,5 +274,26 @@ export class LLMExecutionCoordinator {
 
     // 返回最终内容
     return finalContent;
+  }
+
+  /**
+   * 获取可用工具schema（包含静态和动态工具）
+   */
+  private getAvailableTools(workflowTools: Set<string>, dynamicTools?: any): any[] {
+    const allToolIds = new Set(workflowTools);
+    
+    // 添加动态工具
+    if (dynamicTools?.toolIds) {
+      dynamicTools.toolIds.forEach((id: string) => allToolIds.add(id));
+    }
+    
+    return Array.from(allToolIds)
+      .map(id => this.toolService.getTool(id))
+      .filter(Boolean)
+      .map(tool => ({
+        name: tool.name,
+        description: tool.description,
+        parameters: tool.parameters
+      }));
   }
 }

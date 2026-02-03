@@ -36,6 +36,18 @@ export interface ConversationManagerOptions {
   workflowId?: string;
   /** 线程ID（用于事件） */
   threadId?: string;
+  /** 工具服务（用于工具描述初始化） */
+  toolService?: any;
+  /** 可用工具配置 */
+  availableTools?: {
+    /** 初始可用工具集合 */
+    initial: Set<string>;
+    /** 动态工具配置 */
+    dynamicTools?: {
+      toolIds: string[];
+      descriptionTemplate?: string;
+    };
+  };
 }
 
 /**
@@ -62,6 +74,8 @@ export class ConversationManager implements LifecycleCapable<ConversationState> 
   private eventManager?: EventManager;
   private workflowId?: string;
   private threadId?: string;
+  private toolService?: any;
+  private availableTools?: ConversationManagerOptions['availableTools'];
 
   /**
    * 构造函数
@@ -75,6 +89,11 @@ export class ConversationManager implements LifecycleCapable<ConversationState> 
     this.eventManager = options.eventManager;
     this.workflowId = options.workflowId;
     this.threadId = options.threadId;
+    this.toolService = options.toolService;
+    this.availableTools = options.availableTools;
+
+    // 在初始化时添加工具描述
+    this.initializeToolDescriptions();
   }
 
   /**
@@ -359,17 +378,6 @@ export class ConversationManager implements LifecycleCapable<ConversationState> 
 
     // 恢复消息历史
     this.addMessages(...snapshot.messages);
-
-    // Token 使用统计无法直接恢复，需要重新累积
-    // 这里只恢复消息历史，Token 统计会在后续执行中重新累积
-  }
-
-  /**
-   * 初始化管理器
-   * ConversationManager在构造时已初始化，此方法为空实现
-   */
-  initialize(): void {
-    // ConversationManager在构造时已初始化，无需额外操作
   }
 
   /**
@@ -381,10 +389,44 @@ export class ConversationManager implements LifecycleCapable<ConversationState> 
   }
 
   /**
-   * 检查是否已初始化
-   * @returns 始终返回true，因为ConversationManager在构造时已初始化
+   * 初始化工具描述
+   * 在ConversationManager初始化时添加工具描述到消息数组
    */
-  isInitialized(): boolean {
-    return true;
+  private initializeToolDescriptions(): void {
+    if (!this.availableTools || !this.toolService) {
+      return;
+    }
+
+    // 构建所有可用工具ID集合
+    const allToolIds = new Set(this.availableTools.initial);
+    if (this.availableTools.dynamicTools?.toolIds) {
+      this.availableTools.dynamicTools.toolIds.forEach(id => allToolIds.add(id));
+    }
+
+    // 构建工具描述
+    const toolDescriptions = Array.from(allToolIds)
+      .map(id => {
+        const tool = this.toolService.getTool(id);
+        if (!tool) return null;
+
+        const description = this.availableTools?.dynamicTools?.descriptionTemplate
+          ? this.availableTools.dynamicTools.descriptionTemplate
+            .replace('{toolName}', tool.name)
+            .replace('{toolDescription}', tool.description)
+          : `- ${tool.name}: ${tool.description}`;
+
+        return description;
+      })
+      .filter(Boolean)
+      .join('\n');
+
+    // 如果有工具描述，添加到消息数组
+    if (toolDescriptions.length > 0) {
+      const toolDescriptionMessage = {
+        role: 'system' as const,
+        content: `可用工具:\n${toolDescriptions}`
+      };
+      this.addMessage(toolDescriptionMessage);
+    }
   }
 }
