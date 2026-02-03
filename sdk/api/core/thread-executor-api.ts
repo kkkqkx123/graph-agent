@@ -7,8 +7,7 @@ import { ThreadLifecycleCoordinator } from '../../core/execution/coordinators/th
 import { ThreadOperationCoordinator } from '../../core/execution/coordinators/thread-operation-coordinator';
 import { VariableCoordinator } from '../../core/execution/coordinators/variable-coordinator';
 import { VariableStateManager } from '../../core/execution/managers/variable-state-manager';
-import { threadRegistry } from '../../core/services/thread-registry';
-import { eventManager } from '../../core/services/event-manager';
+import { ExecutionContext } from '../../core/execution/context/execution-context';
 import { workflowRegistry, type WorkflowRegistry } from '../../core/services/workflow-registry';
 import type { WorkflowDefinition } from '../../types/workflow';
 import type { ThreadResult, ThreadOptions } from '../../types/thread';
@@ -22,18 +21,17 @@ export class ThreadExecutorAPI {
   private operationCoordinator: ThreadOperationCoordinator;
   private variableCoordinator: VariableCoordinator;
   private workflowRegistry: WorkflowRegistry;
+  private executionContext: ExecutionContext;
 
   constructor(workflowRegistryParam?: WorkflowRegistry) {
     this.workflowRegistry = workflowRegistryParam || workflowRegistry;
-    this.lifecycleCoordinator = new ThreadLifecycleCoordinator(
-      threadRegistry,
-      this.workflowRegistry
+    this.executionContext = ExecutionContext.createDefault();
+    this.lifecycleCoordinator = new ThreadLifecycleCoordinator(this.executionContext);
+    this.operationCoordinator = new ThreadOperationCoordinator(this.executionContext);
+    this.variableCoordinator = new VariableCoordinator(
+      new VariableStateManager(),
+      this.executionContext.getEventManager()
     );
-    this.operationCoordinator = new ThreadOperationCoordinator(
-      threadRegistry,
-      this.workflowRegistry
-    );
-    this.variableCoordinator = new VariableCoordinator(new VariableStateManager());
   }
 
   /**
@@ -92,7 +90,7 @@ export class ThreadExecutorAPI {
    * @param variables 变量对象
    */
   async setVariables(threadId: string, variables: Record<string, any>): Promise<void> {
-    const threadContext = threadRegistry.get(threadId);
+    const threadContext = this.executionContext.getThreadRegistry().get(threadId);
     if (threadContext) {
       for (const [name, value] of Object.entries(variables)) {
         await this.variableCoordinator.updateVariable(threadContext, name, value);
@@ -142,7 +140,7 @@ export class ThreadExecutorAPI {
    * @returns 线程实例
    */
   getThread(threadId: string) {
-    const threadContext = threadRegistry.get(threadId);
+    const threadContext = this.executionContext.getThreadRegistry().get(threadId);
     return threadContext?.thread;
   }
 
@@ -152,7 +150,7 @@ export class ThreadExecutorAPI {
    * @returns 线程上下文实例
    */
   getThreadContext(threadId: string) {
-    return threadRegistry.get(threadId);
+    return this.executionContext.getThreadRegistry().get(threadId);
   }
 
   /**
@@ -160,7 +158,7 @@ export class ThreadExecutorAPI {
    * @returns 事件管理器实例
    */
   getEventManager() {
-    return eventManager;
+    return this.executionContext.getEventManager();
   }
 
   /**
@@ -168,7 +166,7 @@ export class ThreadExecutorAPI {
    * @returns 线程注册表实例
    */
   getThreadRegistry() {
-    return threadRegistry;
+    return this.executionContext.getThreadRegistry();
   }
 
   /**
@@ -209,7 +207,7 @@ export class ThreadExecutorAPI {
      * @returns 触发器管理器实例
      */
   getTriggerManager(threadId: string) {
-    const threadContext = threadRegistry.get(threadId);
+    const threadContext = this.executionContext.getThreadRegistry().get(threadId);
     return threadContext?.triggerManager;
   }
 

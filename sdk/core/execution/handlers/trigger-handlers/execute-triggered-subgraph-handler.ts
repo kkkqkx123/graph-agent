@@ -12,8 +12,6 @@ import {
   type TriggeredSubgraphTask,
   type ExecutedSubgraphResult
 } from '../triggered-subgraph-handler';
-import type { EventManager } from '../../../services/event-manager';
-import { eventManager } from '../../../services/event-manager';
 import { ThreadExecutor } from '../../thread-executor';
 
 /**
@@ -104,14 +102,8 @@ export async function executeTriggeredSubgraphHandler(
       input: mainThreadContext.getInput()
     };
 
-    // 获取事件管理器
-    const eventManagerInstance = context.getEventManager() || eventManager;
-
     // 创建 ThreadExecutor 实例（作为 SubgraphContextFactory 和 SubgraphExecutor）
-    const threadExecutor = new ThreadExecutor(
-      eventManagerInstance,
-      workflowRegistry
-    );
+    const threadExecutor = new ThreadExecutor(context);
 
     // 创建触发子工作流任务
     const task: TriggeredSubgraphTask = {
@@ -131,7 +123,7 @@ export async function executeTriggeredSubgraphHandler(
       task,
       threadExecutor, // 作为 SubgraphContextFactory
       threadExecutor, // 作为 SubgraphExecutor
-      eventManagerInstance
+      context.getEventManager()
     );
 
     const executionTime = Date.now() - startTime;

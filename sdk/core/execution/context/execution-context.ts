@@ -26,15 +26,14 @@
  * - 清晰的依赖注入
  */
 
-import { workflowRegistry, type WorkflowRegistry } from '../../services/workflow-registry';
-import { threadRegistry, type ThreadRegistry } from '../../services/thread-registry';
-import { eventManager, type EventManager } from '../../services/event-manager';
+import { SingletonRegistry } from './singleton-registry';
+import type { WorkflowRegistry } from '../../services/workflow-registry';
+import type { ThreadRegistry } from '../../services/thread-registry';
+import type { EventManager } from '../../services/event-manager';
 import { CheckpointManager } from '../managers/checkpoint-manager';
 import { ThreadLifecycleManager } from '../managers/thread-lifecycle-manager';
 import { ThreadLifecycleCoordinator } from '../coordinators/thread-lifecycle-coordinator';
 import type { LifecycleCapable } from '../managers/lifecycle-capable';
-import { toolService } from '../../services/tool-service';
-import { LLMExecutor } from '../llm-executor';
 
 /**
  * 执行上下文 - 轻量级依赖注入容器
@@ -53,23 +52,27 @@ export class ExecutionContext {
       return;
     }
 
+    // 确保SingletonRegistry已初始化
+    SingletonRegistry.initialize();
+
     // 按依赖顺序初始化
-    // 1. EventManager 使用全局单例
+    // 1. 从SingletonRegistry获取全局单例服务
+    const eventManager = SingletonRegistry.get<EventManager>('eventManager');
+    const workflowRegistry = SingletonRegistry.get<WorkflowRegistry>('workflowRegistry');
+    const threadRegistry = SingletonRegistry.get<ThreadRegistry>('threadRegistry');
+    const toolService = SingletonRegistry.get<any>('toolService');
+    const llmExecutor = SingletonRegistry.get<any>('llmExecutor');
+    const graphRegistry = SingletonRegistry.get<any>('graphRegistry');
+
+    // 注册全局单例服务到ExecutionContext
     this.register('eventManager', eventManager);
-
-    // 2. WorkflowRegistry 使用全局单例
     this.register('workflowRegistry', workflowRegistry);
-
-    // 3. ThreadRegistry 使用全局单例
     this.register('threadRegistry', threadRegistry);
-
-    // 4. ToolService 使用全局单例
     this.register('toolService', toolService);
+    this.register('llmExecutor', llmExecutor);
+    this.register('graphRegistry', graphRegistry);
 
-    // 5. LLMExecutor 使用单例
-    this.register('llmExecutor', LLMExecutor.getInstance());
-
-    // 6. CheckpointManager 依赖 ThreadRegistry 和 WorkflowRegistry
+    // 2. CheckpointManager 依赖 ThreadRegistry 和 WorkflowRegistry
     const checkpointManager = new CheckpointManager(
       undefined, // storage，默认使用 MemoryStorage
       threadRegistry,
@@ -77,16 +80,12 @@ export class ExecutionContext {
     );
     this.register('checkpointManager', checkpointManager);
 
-    // 5. ThreadLifecycleManager 依赖 EventManager
+    // 3. ThreadLifecycleManager 依赖 EventManager
     const lifecycleManager = new ThreadLifecycleManager(eventManager);
     this.register('lifecycleManager', lifecycleManager);
 
-    // 6. ThreadLifecycleCoordinator 依赖 ThreadRegistry, WorkflowRegistry, EventManager
-    const lifecycleCoordinator = new ThreadLifecycleCoordinator(
-      threadRegistry,
-      workflowRegistry,
-      eventManager
-    );
+    // 4. ThreadLifecycleCoordinator 依赖 ExecutionContext
+    const lifecycleCoordinator = new ThreadLifecycleCoordinator(this);
     this.register('lifecycleCoordinator', lifecycleCoordinator);
 
     this.initialized = true;
@@ -172,6 +171,15 @@ export class ExecutionContext {
   getLifecycleCoordinator(): ThreadLifecycleCoordinator {
     this.ensureInitialized();
     return this.components.get('lifecycleCoordinator') as ThreadLifecycleCoordinator;
+  }
+
+  /**
+   * 获取 GraphRegistry
+   * @returns GraphRegistry 实例
+   */
+  getGraphRegistry(): any {
+    this.ensureInitialized();
+    return this.components.get('graphRegistry');
   }
 
   /**
@@ -310,12 +318,39 @@ export class ExecutionContext {
   }
 
   /**
-    * 创建默认执行上下文
-    * @returns ExecutionContext 实例
-    */
+   * 创建默认执行上下文
+   * @returns ExecutionContext 实例
+   */
   static createDefault(): ExecutionContext {
     const context = new ExecutionContext();
     context.initialize();
     return context;
+  }
+
+  /**
+   * 创建测试专用执行上下文
+   * 允许替换全局单例服务以进行测试隔离
+   * @param customSingletons 自定义单例服务映射
+   * @returns ExecutionContext 实例
+   */
+  static createForTesting(customSingletons?: Map<string, any>): ExecutionContext {
+    // 如果提供了自定义单例，临时注册到SingletonRegistry
+    if (customSingletons && customSingletons.size > 0) {
+      for (const [key, instance] of customSingletons.entries()) {
+        SingletonRegistry.register(key, instance);
+      }
+    }
+
+    const context = new ExecutionContext();
+    context.initialize();
+    return context;
+  }
+
+  /**
+   * 重置测试环境
+   * 清理SingletonRegistry中的自定义单例
+   */
+  static resetTestingEnvironment(): void {
+    SingletonRegistry.reset();
   }
 }

@@ -19,9 +19,6 @@ import { ValidationError } from '../../types/errors';
 import { type WorkflowRegistry } from '../services/workflow-registry';
 import { ExecutionContext } from './context/execution-context';
 import { TriggerStatus } from '../../types/trigger';
-import { graphRegistry } from '../services/graph-registry';
-import { toolService } from '../services/tool-service';
-import { LLMExecutor } from './llm-executor';
 
 /**
  * ThreadBuilder - Thread构建器
@@ -108,6 +105,7 @@ export class ThreadBuilder {
     }
 
     // 步骤2：从 GraphRegistry 获取图实例
+    const graphRegistry = this.executionContext.getGraphRegistry();
     const threadGraphData = graphRegistry.get(processedWorkflow.id);
     if (!threadGraphData) {
       throw new ValidationError(

@@ -24,7 +24,6 @@ import type { Node } from '../../types/node';
 import type { NodeExecutionResult } from '../../types/thread';
 import type { ID } from '../../types/common';
 import { ThreadContext } from './context/thread-context';
-import { eventManager } from '../services/event-manager';
 import type { EventManager } from '../services/event-manager';
 import type { WorkflowRegistry } from '../services/workflow-registry';
 import type { UserInteractionHandler } from '../../api/core/user-interaction-api';
@@ -33,8 +32,6 @@ import { ThreadStatus } from '../../types/thread';
 import { now, diffTimestamp } from '../../utils';
 import { NodeExecutionCoordinator } from './coordinators/node-execution-coordinator';
 import { handleNodeFailure, handleExecutionError } from './handlers/error-handler';
-import { LLMExecutor } from './llm-executor';
-import { toolService } from '../services/tool-service';
 import {
   executeSingleTriggeredSubgraph,
   type TriggeredSubgraphTask,
@@ -42,8 +39,7 @@ import {
 } from './handlers/triggered-subgraph-handler';
 import { LLMExecutionCoordinator } from './coordinators/llm-execution-coordinator';
 import { ThreadBuilder } from './thread-builder';
-import { threadRegistry } from '../services/thread-registry';
-import { workflowRegistry } from '../services/workflow-registry';
+import { ExecutionContext } from './context/execution-context';
 import { EventType } from '../../types/events';
 
 /**
@@ -59,6 +55,7 @@ export class ThreadExecutor implements SubgraphContextFactory {
   private eventManager: EventManager;
   private threadBuilder: ThreadBuilder;
   private workflowRegistry: WorkflowRegistry;
+  private executionContext: ExecutionContext;
 
   /**
    * 触发子工作流任务队列
@@ -71,23 +68,24 @@ export class ThreadExecutor implements SubgraphContextFactory {
   private isExecutingTriggeredSubgraph: boolean = false;
 
   constructor(
-    eventManagerParam?: EventManager,
-    workflowRegistryParam?: WorkflowRegistry,
+    executionContext?: ExecutionContext,
     userInteractionHandler?: UserInteractionHandler
   ) {
-    // 设置事件管理器
-    this.eventManager = eventManagerParam || eventManager;
+    // 设置执行上下文
+    this.executionContext = executionContext || ExecutionContext.createDefault();
 
-    // 设置工作流注册表
-    this.workflowRegistry = workflowRegistryParam || workflowRegistry;
+    // 从ExecutionContext获取全局单例服务
+    this.eventManager = this.executionContext.getEventManager();
+    this.workflowRegistry = this.executionContext.getWorkflowRegistry();
 
-    // 创建线程构建器（使用默认ExecutionContext）
-    this.threadBuilder = new ThreadBuilder(this.workflowRegistry);
+    // 创建线程构建器（使用相同的ExecutionContext）
+    this.threadBuilder = new ThreadBuilder(this.workflowRegistry, this.executionContext);
 
     // 创建 LLM 执行协调器
     const llmExecutionCoordinator = new LLMExecutionCoordinator(
-      LLMExecutor.getInstance(),
-      toolService
+      this.executionContext.getLlmExecutor(),
+      this.executionContext.getToolService(),
+      this.eventManager
     );
 
     // 创建节点执行协调器

@@ -31,6 +31,7 @@ import {
   waitForThreadCancelled
 } from '../utils/event/event-waiter';
 import { ThreadCascadeManager } from '../managers/thread-cascade-manager';
+import { ExecutionContext } from '../context/execution-context';
 
 /**
  * Thread 生命周期协调器
@@ -40,12 +41,18 @@ import { ThreadCascadeManager } from '../managers/thread-cascade-manager';
 export class ThreadLifecycleCoordinator {
   private lifecycleManager: ThreadLifecycleManager;
   private cascadeManager: ThreadCascadeManager;
+  private executionContext: ExecutionContext;
+  private threadRegistry: ThreadRegistry;
+  private workflowRegistry: WorkflowRegistry;
+  private eventManager: EventManager;
 
   constructor(
-    private threadRegistry: ThreadRegistry = threadRegistry,
-    private workflowRegistry: WorkflowRegistry = workflowRegistry,
-    private eventManager: EventManager = eventManager
+    executionContext?: ExecutionContext
   ) {
+    this.executionContext = executionContext || ExecutionContext.createDefault();
+    this.threadRegistry = this.executionContext.getThreadRegistry();
+    this.workflowRegistry = this.executionContext.getWorkflowRegistry();
+    this.eventManager = this.executionContext.getEventManager();
     this.lifecycleManager = new ThreadLifecycleManager(this.eventManager);
     this.cascadeManager = new ThreadCascadeManager(this.threadRegistry, this.lifecycleManager);
   }
@@ -59,10 +66,9 @@ export class ThreadLifecycleCoordinator {
    */
   async execute(workflowId: string, options: ThreadOptions = {}): Promise<ThreadResult> {
     // 创建必要的组件
-    const threadBuilder = new ThreadBuilder(this.workflowRegistry);
+    const threadBuilder = new ThreadBuilder(this.workflowRegistry, this.executionContext);
     const threadExecutor = new ThreadExecutor(
-      this.eventManager,
-      this.workflowRegistry,
+      this.executionContext,
       options.userInteractionHandler
     );
 
@@ -148,10 +154,7 @@ export class ThreadLifecycleCoordinator {
     thread.shouldPause = false;
 
     // 3. 创建执行器并继续执行
-    const threadExecutor = new ThreadExecutor(
-      this.eventManager,
-      this.workflowRegistry,
-    );
+    const threadExecutor = new ThreadExecutor(this.executionContext);
     return await threadExecutor.executeThread(threadContext);
   }
 

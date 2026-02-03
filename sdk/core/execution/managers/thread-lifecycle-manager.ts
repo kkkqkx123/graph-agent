@@ -20,7 +20,6 @@
 
 import type { Thread, ThreadStatus, ThreadResult } from '../../../types/thread';
 import type { EventManager } from '../../services/event-manager';
-import { eventManager } from '../../services/event-manager';
 import { globalMessageStorage } from '../../services/global-message-storage';
 import { validateTransition } from '../utils/thread-state-validator';
 import {
@@ -43,11 +42,9 @@ import { now } from '../../../utils';
  * 提供原子化的状态转换操作
  */
 export class ThreadLifecycleManager {
-  constructor(private eventManagerParam: EventManager = eventManager) {
-    this.eventManager = eventManagerParam;
+  constructor(private eventManager: EventManager) {
+    // eventManager 必须通过构造函数传入，不再使用默认值
   }
-
-  private eventManager: EventManager;
 
   /**
    * 启动Thread

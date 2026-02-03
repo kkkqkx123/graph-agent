@@ -20,14 +20,8 @@ import { ThreadBuilder } from '../thread-builder';
 import type { EventManager } from '../../services/event-manager';
 import type { WorkflowRegistry } from '../../services/workflow-registry';
 import { NotFoundError } from '../../../types/errors';
-import { EventType } from '../../../types/events';
-import type {
-  ThreadForkCompletedEvent,
-  ThreadJoinConditionMetEvent,
-  ThreadCopyCompletedEvent
-} from '../../../types/events';
 import { fork, join, copy } from '../utils/thread-operations';
-import { now } from '../../../utils';
+import { ExecutionContext } from '../context/execution-context';
 
 /**
  * Thread 操作协调器类
@@ -43,11 +37,17 @@ import { now } from '../../../utils';
  * - 专门处理 Thread 结构变更操作
  */
 export class ThreadOperationCoordinator {
-  constructor(
-    private threadRegistry: ThreadRegistry = threadRegistry,
-    private workflowRegistry: WorkflowRegistry = workflowRegistry,
-    private eventManager: EventManager = eventManager
-  ) { }
+  private threadRegistry: ThreadRegistry;
+  private workflowRegistry: WorkflowRegistry;
+  private eventManager: EventManager;
+  private executionContext: ExecutionContext;
+
+  constructor(executionContext?: ExecutionContext) {
+    this.executionContext = executionContext || ExecutionContext.createDefault();
+    this.threadRegistry = this.executionContext.getThreadRegistry();
+    this.workflowRegistry = this.executionContext.getWorkflowRegistry();
+    this.eventManager = this.executionContext.getEventManager();
+  }
 
   /**
    * Fork 操作 - 创建子 Thread
