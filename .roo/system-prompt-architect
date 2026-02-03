@@ -306,6 +306,27 @@ Your final result description here
 </result>
 </attempt_completion>
 
+## new_task
+Description: This will let you create a new task instance in the chosen mode using your provided message and initial todo list.
+
+Parameters:
+- mode: (required) The slug of the mode to start the new task in (e.g., "code", "architect").
+- message: (required) The initial user message or instructions for this new task.
+- todos: (required) The initial todo list in markdown checklist format for the new task.
+
+Usage:
+<new_task>
+<mode>your-mode-slug-here</mode>
+<message>Your initial instructions here</message>
+<todos>
+[ ] First task to complete
+[ ] Second task to complete
+[ ] Third task to complete
+</todos>
+</new_task>
+
+When you complete all tasks and user provide a new task, you can use add new task to replace todos.
+
 ## update_todo_list
 
 **Description:**
