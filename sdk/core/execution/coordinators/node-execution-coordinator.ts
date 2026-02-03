@@ -22,30 +22,17 @@ import type { EventManager } from '../../services/event-manager';
 import type { UserInteractionHandler } from '../../../api/core/user-interaction-api';
 import type { HumanRelayHandler } from '../../../api/llm/human-relay-api';
 import { LLMExecutionCoordinator } from './llm-execution-coordinator';
-import { executeUserInteraction } from '../handlers/user-interaction-handler';
-import { executeHumanRelay } from '../handlers/human-relay-handler';
 import { LLMWrapper } from '../../llm/wrapper';
 import { enterSubgraph, exitSubgraph, getSubgraphInput, getSubgraphOutput } from '../handlers/subgraph-handler';
 import { EventType } from '../../../types/events';
 import type { NodeStartedEvent, NodeCompletedEvent, NodeFailedEvent, SubgraphStartedEvent, SubgraphCompletedEvent } from '../../../types/events';
+import { ExecutionError } from '../../../types/errors';
 import { executeHook } from '../handlers/hook-handlers';
 import { HookType } from '../../../types/node';
 import { NodeType } from '../../../types/node';
 import { now, diffTimestamp } from '../../../utils';
 import { getNodeHandler } from '../handlers/node-handlers';
-import {
-  transformContextProcessorNodeConfig,
-} from '../handlers/node-handlers/config-utils';
 import { SUBGRAPH_METADATA_KEYS, SubgraphBoundaryType } from '../../../types/subgraph';
-import type { ContextProcessorNodeConfig } from '../../../types/node';
-import { isLLMManagedNode, extractLLMRequestData } from './node-operations/llm-request-operations';
-import {
-  handleTruncateOperation,
-  handleInsertOperation,
-  handleReplaceOperation,
-  handleClearOperation,
-  handleFilterOperation
-} from './node-operations/context-processor-operations';
 
 /**
  * 节点执行协调器
@@ -229,281 +216,52 @@ export class NodeExecutionCoordinator {
   private async executeNodeLogic(threadContext: ThreadContext, node: Node): Promise<NodeExecutionResult> {
     const startTime = now();
 
-    // 检查是否为用户交互节点
+    // 1. 使用Node Handler函数执行（配置已在工作流注册时通过静态验证）
+    const handler = getNodeHandler(node.type);
+    
+    // 准备处理器上下文
+    let handlerContext = {};
     if (node.type === NodeType.USER_INTERACTION) {
-      return await this.executeUserInteractionNode(threadContext, node, startTime);
-    }
-
-    // 检查是否为需要LLM执行器托管的节点
-    if (isLLMManagedNode(node.type)) {
-      return await this.executeLLMManagedNode(threadContext, node, startTime);
+      if (!this.userInteractionHandler) {
+        throw new ExecutionError(
+          'UserInteractionHandler is not provided',
+          node.id,
+          threadContext.getWorkflowId()
+        );
+      }
+      handlerContext = {
+        userInteractionHandler: this.userInteractionHandler,
+        conversationManager: threadContext.getConversationManager()
+      };
     } else if (node.type === NodeType.CONTEXT_PROCESSOR) {
-      // 上下文处理器节点需要特殊处理，直接操作ConversationManager
-      return await this.executeContextProcessorNode(threadContext, node, startTime);
-    } else {
-      // 使用Node Handler函数执行
-      const handler = getNodeHandler(node.type);
-      const output = await handler(threadContext.thread, node);
-
-      // 构建执行结果
-      const endTime = now();
-      return {
-        nodeId: node.id,
-        nodeType: node.type,
-        status: output.status || 'COMPLETED',
-        step: threadContext.thread.nodeResults.length + 1,
-        data: output.status ? undefined : output,
-        startTime,
-        endTime,
-        executionTime: diffTimestamp(startTime, endTime)
+      handlerContext = {
+        conversationManager: threadContext.getConversationManager()
+      };
+    } else if (node.type === NodeType.LLM) {
+      handlerContext = {
+        llmCoordinator: this.llmCoordinator,
+        eventManager: this.eventManager,
+        conversationManager: threadContext.getConversationManager(),
+        humanRelayHandler: this.humanRelayHandler
       };
     }
+
+    const output = await handler(threadContext.thread, node, handlerContext);
+
+    // 2. 构建执行结果
+    const endTime = now();
+    return {
+      nodeId: node.id,
+      nodeType: node.type,
+      status: output.status || 'COMPLETED',
+      step: threadContext.thread.nodeResults.length + 1,
+      data: output.status ? undefined : output,
+      startTime,
+      endTime,
+      executionTime: diffTimestamp(startTime, endTime)
+    };
   }
 
-  /**
-   * 执行用户交互节点
-   */
-  private async executeUserInteractionNode(
-    threadContext: ThreadContext,
-    node: Node,
-    startTime: number
-  ): Promise<NodeExecutionResult> {
-    if (!this.userInteractionHandler) {
-      throw new Error('UserInteractionHandler is not provided. Please provide a handler when creating NodeExecutionCoordinator.');
-    }
 
-    try {
-      // 调用 executeUserInteraction 函数执行用户交互
-      const result = await executeUserInteraction(
-        node,
-        threadContext,
-        this.eventManager,
-        this.userInteractionHandler
-      );
-
-      const endTime = now();
-      return {
-        nodeId: node.id,
-        nodeType: node.type,
-        status: 'COMPLETED',
-        step: threadContext.thread.nodeResults.length + 1,
-        data: result,
-        startTime,
-        endTime,
-        executionTime: diffTimestamp(startTime, endTime)
-      };
-    } catch (error) {
-      const endTime = now();
-      return {
-        nodeId: node.id,
-        nodeType: node.type,
-        status: 'FAILED',
-        step: threadContext.thread.nodeResults.length + 1,
-        data: undefined,
-        startTime,
-        endTime,
-        executionTime: diffTimestamp(startTime, endTime),
-        error: error instanceof Error ? error.message : String(error)
-      };
-    }
-  }
-
-  /**
-   * 执行由LLM执行器托管的节点
-   */
-  private async executeLLMManagedNode(
-    threadContext: ThreadContext,
-    node: Node,
-    startTime: number
-  ): Promise<NodeExecutionResult> {
-    try {
-      // 提取LLM请求数据
-      const requestData = extractLLMRequestData(node, threadContext);
-
-      // 检查是否为 HumanRelay provider
-      const llmWrapper = new LLMWrapper();
-      const profile = llmWrapper.getProfile(requestData.profileId || 'default');
-      if (profile?.provider === 'HUMAN_RELAY') {
-        return await this.executeHumanRelayNode(threadContext, node, requestData, startTime);
-      }
-
-      // 调用 LLMExecutionCoordinator，传入 conversationState
-      const result = await this.llmCoordinator.executeLLM(
-        {
-          threadId: threadContext.getThreadId(),
-          nodeId: node.id,
-          prompt: requestData.prompt,
-          profileId: requestData.profileId,
-          parameters: requestData.parameters,
-          tools: requestData.tools,
-          dynamicTools: requestData.dynamicTools,
-          maxToolCallsPerRequest: requestData.maxToolCallsPerRequest
-        },
-        threadContext.conversationManager
-      );
-
-      const endTime = now();
-
-      if (result.success) {
-        return {
-          nodeId: node.id,
-          nodeType: node.type,
-          status: 'COMPLETED',
-          step: threadContext.thread.nodeResults.length + 1,
-          data: { content: result.content },
-          startTime,
-          endTime,
-          executionTime: diffTimestamp(startTime, endTime)
-        };
-      } else {
-        return {
-          nodeId: node.id,
-          nodeType: node.type,
-          status: 'FAILED',
-          step: threadContext.thread.nodeResults.length + 1,
-          error: result.error,
-          startTime,
-          endTime,
-          executionTime: diffTimestamp(startTime, endTime)
-        };
-      }
-    } catch (error) {
-      const endTime = now();
-      return {
-        nodeId: node.id,
-        nodeType: node.type,
-        status: 'FAILED',
-        step: threadContext.thread.nodeResults.length + 1,
-        error: error instanceof Error ? error : new Error(String(error)),
-        startTime,
-        endTime,
-        executionTime: diffTimestamp(startTime, endTime)
-      };
-    }
-  }
-
-  /**
-   * 执行 HumanRelay 节点
-   */
-  private async executeHumanRelayNode(
-    threadContext: ThreadContext,
-    node: Node,
-    requestData: any,
-    startTime: number
-  ): Promise<NodeExecutionResult> {
-    if (!this.humanRelayHandler) {
-      throw new Error('HumanRelayHandler is not provided. Please provide a handler when creating NodeExecutionCoordinator.');
-    }
-
-    try {
-      // 获取当前对话消息
-      const messages = threadContext.conversationManager.getMessages();
-
-      // 调用 executeHumanRelay 函数
-      const result = await executeHumanRelay(
-        messages,
-        requestData.prompt || 'Please provide your input:',
-        requestData.parameters?.timeout || 300000,
-        threadContext,
-        this.eventManager,
-        this.humanRelayHandler,
-        node.id
-      );
-
-      // 将人工输入的消息添加到对话历史
-      threadContext.conversationManager.addMessage(result.message);
-
-      const endTime = now();
-      return {
-        nodeId: node.id,
-        nodeType: node.type,
-        status: 'COMPLETED',
-        step: threadContext.thread.nodeResults.length + 1,
-        data: { content: result.message.content },
-        startTime,
-        endTime,
-        executionTime: diffTimestamp(startTime, endTime)
-      };
-    } catch (error) {
-      const endTime = now();
-      return {
-        nodeId: node.id,
-        nodeType: node.type,
-        status: 'FAILED',
-        step: threadContext.thread.nodeResults.length + 1,
-        error: error instanceof Error ? error : new Error(String(error)),
-        startTime,
-        endTime,
-        executionTime: diffTimestamp(startTime, endTime)
-      };
-    }
-  }
-
-  /**
-   * 执行上下文处理器节点
-   */
-  private async executeContextProcessorNode(
-    threadContext: ThreadContext,
-    node: Node,
-    startTime: number
-  ): Promise<NodeExecutionResult> {
-    try {
-      const config = node.config as ContextProcessorNodeConfig;
-
-      // 转换配置为执行数据（配置已在工作流注册时通过静态验证）
-      const executionData = transformContextProcessorNodeConfig(config);
-
-      // 获取ConversationManager
-      const conversationManager = threadContext.getConversationManager();
-
-      // 根据操作类型执行相应的操作
-      switch (executionData.operation) {
-        case 'truncate':
-          handleTruncateOperation(conversationManager, executionData.truncate!);
-          break;
-        case 'insert':
-          handleInsertOperation(conversationManager, executionData.insert!);
-          break;
-        case 'replace':
-          handleReplaceOperation(conversationManager, executionData.replace!);
-          break;
-        case 'clear':
-          handleClearOperation(conversationManager, executionData.clear!);
-          break;
-        case 'filter':
-          handleFilterOperation(conversationManager, executionData.filter!);
-          break;
-        default:
-          throw new Error(`Unsupported operation: ${executionData.operation}`);
-      }
-
-      const endTime = now();
-      return {
-        nodeId: node.id,
-        nodeType: node.type,
-        status: 'COMPLETED',
-        step: threadContext.thread.nodeResults.length + 1,
-        data: {
-          operation: executionData.operation,
-          messageCount: conversationManager.getMessages().length
-        },
-        startTime,
-        endTime,
-        executionTime: diffTimestamp(startTime, endTime)
-      };
-    } catch (error) {
-      const endTime = now();
-      return {
-        nodeId: node.id,
-        nodeType: node.type,
-        status: 'FAILED',
-        step: threadContext.thread.nodeResults.length + 1,
-        error: error instanceof Error ? error : new Error(String(error)),
-        startTime,
-        endTime,
-        executionTime: diffTimestamp(startTime, endTime)
-      };
-    }
-  }
 
 }

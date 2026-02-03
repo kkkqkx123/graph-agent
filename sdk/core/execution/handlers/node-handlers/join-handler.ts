@@ -23,7 +23,7 @@ function canExecute(thread: Thread, node: Node): boolean {
  * @param node 节点定义
  * @returns 执行结果
  */
-export async function joinHandler(thread: Thread, node: Node): Promise<any> {
+export async function joinHandler(thread: Thread, node: Node, context?: any): Promise<any> {
   // 检查是否可以执行
   if (!canExecute(thread, node)) {
     return {

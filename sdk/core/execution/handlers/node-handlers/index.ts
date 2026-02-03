@@ -4,8 +4,7 @@
  *
  * 注意：
  * - subgraph-node不需要处理器，因为已经通过graph合并了，运行时不存在此类节点
- * - llm-node、user-interaction-node、tool-node由ThreadExecutor直接处理（LLM托管节点）
- * - context-processor-node由NodeExecutionCoordinator直接处理，需要访问ConversationManager
+ * - tool-node由ThreadExecutor直接处理（LLM托管节点）
  * - 配置验证和转换逻辑在config-utils.ts中
  */
 
@@ -18,9 +17,10 @@ import type { Thread } from '../../../../types/thread';
  * 节点处理函数类型
  * @param thread Thread实例
  * @param node 节点定义
+ * @param context 处理器上下文（可选）
  * @returns 执行结果
  */
-export type NodeHandler = (thread: Thread, node: Node) => Promise<any>;
+export type NodeHandler = (thread: Thread, node: Node, context?: any) => Promise<any>;
 
 // 导入各个节点处理函数
 import { startHandler } from './start-handler';
@@ -32,6 +32,9 @@ import { joinHandler } from './join-handler';
 import { routeHandler } from './route-handler';
 import { loopStartHandler } from './loop-start-handler';
 import { loopEndHandler } from './loop-end-handler';
+import { userInteractionHandler } from './user-interaction-handler';
+import { contextProcessorHandler } from './context-processor-handler';
+import { llmHandler } from './llm-handler';
 
 /**
  * 节点处理函数映射
@@ -48,7 +51,10 @@ export const nodeHandlers: Record<NodeType, NodeHandler> = {
   [NodeType.JOIN]: joinHandler,
   [NodeType.ROUTE]: routeHandler,
   [NodeType.LOOP_START]: loopStartHandler,
-  [NodeType.LOOP_END]: loopEndHandler
+  [NodeType.LOOP_END]: loopEndHandler,
+  [NodeType.USER_INTERACTION]: userInteractionHandler,
+  [NodeType.CONTEXT_PROCESSOR]: contextProcessorHandler,
+  [NodeType.LLM]: llmHandler
 } as Record<NodeType, NodeHandler>;
 
 /**
@@ -72,6 +78,9 @@ export { joinHandler } from './join-handler';
 export { routeHandler } from './route-handler';
 export { loopStartHandler } from './loop-start-handler';
 export { loopEndHandler } from './loop-end-handler';
+export { userInteractionHandler } from './user-interaction-handler';
+export { contextProcessorHandler } from './context-processor-handler';
+export { llmHandler } from './llm-handler';
 
 // 以下节点由NodeExecutionCoordinator直接处理，需要访问高层模块
 // - LLM_NODE（LLM托管节点）

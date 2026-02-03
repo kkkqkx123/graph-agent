@@ -150,9 +150,10 @@ function updateLoopState(loopState: LoopState): void {
  * LoopEnd节点处理函数
  * @param thread Thread实例
  * @param node 节点定义
+ * @param context 处理器上下文（可选）
  * @returns 执行结果
  */
-export async function loopEndHandler(thread: Thread, node: Node): Promise<any> {
+export async function loopEndHandler(thread: Thread, node: Node, context?: any): Promise<any> {
   // 检查是否可以执行
   if (!canExecute(thread, node)) {
     return {

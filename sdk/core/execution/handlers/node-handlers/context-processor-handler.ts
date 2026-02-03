@@ -1,24 +1,49 @@
 /**
- * 上下文处理器操作
- * 提供对 ConversationManager 的各种操作函数
- * 
- * 职责：
- * - 提供可复用的上下文处理操作
- * - 不依赖协调器状态，只依赖传入参数
- * - 支持截断、插入、替换、清空、过滤等操作
+ * 上下文处理器节点处理器
+ * 负责执行CONTEXT_PROCESSOR节点，处理对话消息的截断、插入、替换、清空、过滤操作
+ *
+ * 设计原则：
+ * - 只包含核心执行逻辑
+ * - 集成所有操作函数，不依赖外部operations
+ * - 返回执行结果
  */
 
+import type { Node, ContextProcessorNodeConfig } from '../../../../types/node';
+import type { Thread } from '../../../../types/thread';
 import { ValidationError, ExecutionError } from '../../../../types/errors';
-import type { ContextProcessorExecutionData } from '../../handlers/node-handlers/config-utils';
+import { now } from '../../../../utils';
+import {
+  transformContextProcessorNodeConfig
+} from './config-utils';
+
+/**
+ * 上下文处理器执行结果
+ */
+export interface ContextProcessorExecutionResult {
+  /** 操作类型 */
+  operation: string;
+  /** 处理后的消息数量 */
+  messageCount: number;
+  /** 执行时间（毫秒） */
+  executionTime: number;
+}
+
+/**
+ * 上下文处理器执行上下文
+ */
+export interface ContextProcessorHandlerContext {
+  /** 对话管理器 */
+  conversationManager: any; // 简化类型，实际应该使用具体的ConversationManager类型
+}
 
 /**
  * 处理截断操作
  * @param conversationManager 会话管理器
  * @param config 截断配置
  */
-export function handleTruncateOperation(
+function handleTruncateOperation(
   conversationManager: any,
-  config: ContextProcessorExecutionData['truncate']
+  config: any
 ): void {
   if (!config) {
     throw new ValidationError('Truncate configuration is required', 'config');
@@ -73,9 +98,9 @@ export function handleTruncateOperation(
  * @param conversationManager 会话管理器
  * @param config 插入配置
  */
-export function handleInsertOperation(
+function handleInsertOperation(
   conversationManager: any,
-  config: ContextProcessorExecutionData['insert']
+  config: any
 ): void {
   if (!config) {
     throw new ValidationError('Insert configuration is required', 'config');
@@ -113,9 +138,9 @@ export function handleInsertOperation(
  * @param conversationManager 会话管理器
  * @param config 替换配置
  */
-export function handleReplaceOperation(
+function handleReplaceOperation(
   conversationManager: any,
-  config: ContextProcessorExecutionData['replace']
+  config: any
 ): void {
   if (!config) {
     throw new ValidationError('Replace configuration is required', 'config');
@@ -141,9 +166,9 @@ export function handleReplaceOperation(
  * @param conversationManager 会话管理器
  * @param config 清空配置
  */
-export function handleClearOperation(
+function handleClearOperation(
   conversationManager: any,
-  config: ContextProcessorExecutionData['clear']
+  config: any
 ): void {
   const keepSystemMessage = config?.keepSystemMessage ?? true;
   const allMessages = conversationManager.getAllMessages();
@@ -176,9 +201,9 @@ export function handleClearOperation(
  * @param conversationManager 会话管理器
  * @param config 过滤配置
  */
-export function handleFilterOperation(
+function handleFilterOperation(
   conversationManager: any,
-  config: ContextProcessorExecutionData['filter']
+  config: any
 ): void {
   if (!config) {
     throw new ValidationError('Filter configuration is required', 'config');
@@ -201,7 +226,7 @@ export function handleFilterOperation(
     // 按内容关键词过滤（包含）
     if (config.contentContains && config.contentContains.length > 0) {
       const content = typeof msg.content === 'string' ? msg.content : JSON.stringify(msg.content);
-      if (!config.contentContains.some(keyword => content.includes(keyword))) {
+      if (!config.contentContains.some((keyword: string) => content.includes(keyword))) {
         return false;
       }
     }
@@ -209,7 +234,7 @@ export function handleFilterOperation(
     // 按内容关键词过滤（排除）
     if (config.contentExcludes && config.contentExcludes.length > 0) {
       const content = typeof msg.content === 'string' ? msg.content : JSON.stringify(msg.content);
-      if (config.contentExcludes.some(keyword => content.includes(keyword))) {
+      if (config.contentExcludes.some((keyword: string) => content.includes(keyword))) {
         return false;
       }
     }
@@ -227,5 +252,63 @@ export function handleFilterOperation(
   } else {
     // 如果没有消息了，重置索引管理器
     conversationManager.getIndexManager().reset();
+  }
+}
+
+/**
+ * 上下文处理器节点处理器
+ * @param thread Thread实例
+ * @param node 节点定义
+ * @param context 处理器上下文
+ * @returns 执行结果
+ */
+export async function contextProcessorHandler(
+  thread: Thread,
+  node: Node,
+  context: ContextProcessorHandlerContext
+): Promise<ContextProcessorExecutionResult> {
+  const config = node.config as ContextProcessorNodeConfig;
+  const startTime = now();
+
+  try {
+    // 1. 转换配置为执行数据（配置已在工作流注册时通过静态验证）
+    const executionData = transformContextProcessorNodeConfig(config);
+
+    // 2. 获取ConversationManager
+    const conversationManager = context.conversationManager;
+
+    // 3. 根据操作类型执行相应的操作
+    switch (executionData.operation) {
+      case 'truncate':
+        handleTruncateOperation(conversationManager, executionData.truncate!);
+        break;
+      case 'insert':
+        handleInsertOperation(conversationManager, executionData.insert!);
+        break;
+      case 'replace':
+        handleReplaceOperation(conversationManager, executionData.replace!);
+        break;
+      case 'clear':
+        handleClearOperation(conversationManager, executionData.clear!);
+        break;
+      case 'filter':
+        handleFilterOperation(conversationManager, executionData.filter!);
+        break;
+      default:
+        throw new ExecutionError(`Unsupported operation: ${executionData.operation}`, node.id);
+    }
+
+    // 4. 获取处理后的消息数量
+    const messageCount = conversationManager.getMessages().length;
+
+    const executionTime = now() - startTime;
+
+    return {
+      operation: executionData.operation,
+      messageCount,
+      executionTime
+    };
+  } catch (error) {
+    throw error;
   }
 }
