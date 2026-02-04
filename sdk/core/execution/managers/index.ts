@@ -21,19 +21,6 @@ export { CheckpointManager } from "./checkpoint-manager";
 export { TriggerStateManager, type TriggerRuntimeState } from "./trigger-state-manager";
 export { VariableStateManager } from "./variable-state-manager";
 export { type LifecycleCapable } from "./lifecycle-capable";
-export {
-  TimeBasedCleanupStrategy,
-  CountBasedCleanupStrategy,
-  SizeBasedCleanupStrategy,
-  createCleanupStrategy,
-  type CleanupPolicy,
-  type CleanupStrategyType,
-  type TimeBasedCleanupPolicy,
-  type CountBasedCleanupPolicy,
-  type SizeBasedCleanupPolicy,
-  type CheckpointCleanupStrategy,
-  type CheckpointInfo
-} from "./checkpoint-cleanup-policy";
 
 export {
   ConversationManager,

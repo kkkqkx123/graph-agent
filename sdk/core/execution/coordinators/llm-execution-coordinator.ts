@@ -82,8 +82,8 @@ export interface LLMExecutionResponse {
 export class LLMExecutionCoordinator {
   constructor(
     private llmExecutor: LLMExecutor,
-    private toolService: ToolService = toolService,
-    private eventManager?: EventManager
+    private toolService: ToolService,
+    private eventManager: EventManager
   ) { }
 
   /**
@@ -152,25 +152,23 @@ export class LLMExecutionCoordinator {
     conversationState.addMessage(userMessage);
 
     // 触发消息添加事件
-    if (this.eventManager) {
-      await safeEmit(this.eventManager, {
-        type: EventType.MESSAGE_ADDED,
-        timestamp: now(),
-        workflowId: '',
-        threadId: threadId || '',
-        nodeId,
-        role: userMessage.role,
-        content: userMessage.content,
-        toolCalls: undefined
-      });
-    }
+    await safeEmit(this.eventManager, {
+      type: EventType.MESSAGE_ADDED,
+      timestamp: now(),
+      workflowId: '',
+      threadId: threadId || '',
+      nodeId,
+      role: userMessage.role,
+      content: userMessage.content,
+      toolCalls: undefined
+    });
 
     // 检查 Token 使用情况
     await conversationState.checkTokenUsage();
 
     // 检查 Token 使用警告
     const tokenUsage = conversationState.getTokenUsage();
-    if (tokenUsage && this.eventManager) {
+    if (tokenUsage) {
       const tokenLimit = 100000; // 使用固定限制或从配置获取
       const usagePercentage = (tokenUsage.totalTokens / tokenLimit) * 100;
 
@@ -230,18 +228,16 @@ export class LLMExecutionCoordinator {
     conversationState.addMessage(assistantMessage);
 
     // 触发消息添加事件
-    if (this.eventManager) {
-      await safeEmit(this.eventManager, {
-        type: EventType.MESSAGE_ADDED,
-        timestamp: now(),
-        workflowId: '',
-        threadId: threadId || '',
-        nodeId,
-        role: assistantMessage.role,
-        content: assistantMessage.content,
-        toolCalls: assistantMessage.toolCalls
-      });
-    }
+    await safeEmit(this.eventManager, {
+      type: EventType.MESSAGE_ADDED,
+      timestamp: now(),
+      workflowId: '',
+      threadId: threadId || '',
+      nodeId,
+      role: assistantMessage.role,
+      content: assistantMessage.content,
+      toolCalls: assistantMessage.toolCalls
+    });
 
     // 检查是否有工具调用
     if (llmResult.toolCalls && llmResult.toolCalls.length > 0) {
@@ -267,18 +263,16 @@ export class LLMExecutionCoordinator {
     }
 
     // 触发对话状态变化事件
-    if (this.eventManager) {
-      const finalTokenUsage = conversationState.getTokenUsage();
-      await safeEmit(this.eventManager, {
-        type: EventType.CONVERSATION_STATE_CHANGED,
-        timestamp: now(),
-        workflowId: '',
-        threadId: threadId || '',
-        nodeId,
-        messageCount: conversationState.getMessages().length,
-        tokenUsage: finalTokenUsage?.totalTokens || 0
-      });
-    }
+    const finalTokenUsage = conversationState.getTokenUsage();
+    await safeEmit(this.eventManager, {
+      type: EventType.CONVERSATION_STATE_CHANGED,
+      timestamp: now(),
+      workflowId: '',
+      threadId: threadId || '',
+      nodeId,
+      messageCount: conversationState.getMessages().length,
+      tokenUsage: finalTokenUsage?.totalTokens || 0
+    });
 
     // 返回最终内容
     return llmResult.content;
@@ -298,6 +292,7 @@ export class LLMExecutionCoordinator {
     return Array.from(allToolIds)
       .map(id => this.toolService.getTool(id))
       .filter(Boolean)
+      .filter((tool): tool is NonNullable<typeof tool> => tool != null)
       .map(tool => ({
         name: tool.name,
         description: tool.description,

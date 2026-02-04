@@ -3,6 +3,7 @@
  */
 
 import { MessageIndexManager } from '../message-index-manager';
+import type { LLMMessage } from '../../../../types/llm';
 
 describe('MessageIndexManager', () => {
   let indexManager: MessageIndexManager;
@@ -95,7 +96,7 @@ describe('MessageIndexManager', () => {
 
   describe('过滤消息', () => {
     it('应该正确过滤消息', () => {
-      const messages = [
+      const messages: LLMMessage[] = [
         { role: 'user', content: 'msg0' },
         { role: 'assistant', content: 'msg1' },
         { role: 'user', content: 'msg2' },

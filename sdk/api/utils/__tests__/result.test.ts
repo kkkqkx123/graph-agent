@@ -238,7 +238,7 @@ describe('Result类型', () => {
       const result = ok(10)
         .map(x => x * 2)
         .andThen(x => err(new Error('failed')))
-        .map(x => x + 5);
+        .map(() => { throw new Error('This should not be executed'); });
 
       expect(result.isErr()).toBe(true);
     });

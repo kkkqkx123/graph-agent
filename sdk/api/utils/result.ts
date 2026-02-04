@@ -31,18 +31,18 @@ export interface Ok<T, E = Error> {
 /**
  * 失败结果
  */
-export interface Err<E, T = never> {
+export interface Err<E> {
   readonly _tag: 'Err';
   readonly error: E;
-  isOk(): this is Ok<T, E>;
-  isErr(): this is Err<E, T>;
+  isOk(): this is Ok<never, E>;
+  isErr(): this is Err<E>;
   unwrap(): never;
-  unwrapOr(defaultValue: never): never;
-  unwrapOrElse(fn: (error: E) => never): never;
-  map<U>(fn: (value: never) => U): Result<U, E>;
+  unwrapOr<T>(defaultValue: T): T;
+  unwrapOrElse<T>(fn: (error: E) => T): T;
+  map<U>(fn: (value: never) => U): Result<never, E>;
   mapErr<F>(fn: (error: E) => F): Result<never, F>;
-  andThen<U>(fn: (value: never) => Result<U, E>): Result<never, E>;
-  orElse<F>(fn: (error: E) => Result<never, F>): Result<never, F>;
+  andThen<U>(fn: (value: never) => Result<U, E>): Result<U, E>;
+  orElse<T, F>(fn: (error: E) => Result<T, F>): Result<T, F>;
   match<U>(matcher: { ok: (value: never) => U; err: (error: E) => U }): U;
 }
 
@@ -93,14 +93,14 @@ export function ok<T, E = Error>(value: T): Ok<T, E> {
  * @param error 错误信息
  * @returns Err实例
  */
-export function err<E, T = never>(error: E): Err<E, T> {
+export function err<E>(error: E): Err<E> {
   return {
     _tag: 'Err',
     error,
-    isOk(): this is Ok<T, E> {
+    isOk(): this is Ok<never, E> {
       return false;
     },
-    isErr(): this is Err<E, T> {
+    isErr(): this is Err<E> {
       return true;
     },
     unwrap() {
@@ -179,6 +179,10 @@ export function all<T, E>(results: Result<T, E>[]): Result<T[], E> {
  * @returns 第一个成功的Result
  */
 export function any<T, E>(results: Result<T, E>[]): Result<T, E> {
+  if (results.length === 0) {
+    return err(new Error('No results provided')) as any;
+  }
+  
   for (const result of results) {
     if (result.isOk()) {
       return result;

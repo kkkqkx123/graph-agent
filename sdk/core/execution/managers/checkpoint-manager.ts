@@ -16,7 +16,7 @@
 import { ConfigurationError, NotFoundError } from '../../../types/errors';
 import type { Thread } from '../../../types/thread';
 import type { Checkpoint, CheckpointMetadata, ThreadStateSnapshot } from '../../../types/checkpoint';
-import type { CheckpointStorage, CheckpointStorageMetadata } from '../../../types/checkpoint-storage';
+import type { CheckpointStorage, CheckpointStorageMetadata, CleanupPolicy } from '../../../types/checkpoint-storage';
 import type { ThreadRegistry } from '../../services/thread-registry';
 import { ThreadContext } from '../context/thread-context';
 import { VariableStateManager } from './variable-state-manager';
@@ -28,11 +28,7 @@ import { globalMessageStorage } from '../../services/global-message-storage';
 import type { LifecycleCapable } from './lifecycle-capable';
 import { ExecutionContext } from '../context/execution-context';
 import type { CleanupResult } from '../../../types/checkpoint-storage';
-import type {
-  CleanupPolicy,
-  CheckpointCleanupStrategy
-} from './checkpoint-cleanup-policy';
-import { createCleanupStrategy } from './checkpoint-cleanup-policy';
+import { createCleanupStrategy } from '../utils/checkpoint-cleanup-policy';
 
 /**
  * 检查点管理器

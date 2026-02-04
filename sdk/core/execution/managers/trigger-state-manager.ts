@@ -108,8 +108,15 @@ export class TriggerStateManager implements LifecycleCapable<Map<ID, TriggerRunt
       throw new ExecutionError(`触发器状态 ${state.triggerId} 已存在`);
     }
 
-    // 存储状态
-    this.states.set(state.triggerId, state);
+    // 存储状态（深拷贝以避免外部引用影响）
+    this.states.set(state.triggerId, {
+      triggerId: state.triggerId,
+      threadId: state.threadId,
+      workflowId: state.workflowId,
+      status: state.status,
+      triggerCount: state.triggerCount,
+      updatedAt: state.updatedAt
+    });
   }
 
   /**

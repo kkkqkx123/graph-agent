@@ -28,7 +28,7 @@ import type {
  * 基于时间的清理策略实现
  */
 export class TimeBasedCleanupStrategy implements CheckpointCleanupStrategy {
-  constructor(private policy: TimeBasedCleanupPolicy) {}
+  constructor(private policy: TimeBasedCleanupPolicy) { }
 
   execute(checkpoints: CheckpointInfo[]): string[] {
     const now = Date.now();
@@ -43,7 +43,7 @@ export class TimeBasedCleanupStrategy implements CheckpointCleanupStrategy {
     for (let i = 0; i < sorted.length; i++) {
       const checkpoint = sorted[i];
       if (!checkpoint) continue;
-      
+
       const age = now - checkpoint.metadata.timestamp;
 
       // 保留最近的minRetention个检查点
@@ -65,7 +65,7 @@ export class TimeBasedCleanupStrategy implements CheckpointCleanupStrategy {
  * 基于数量的清理策略实现
  */
 export class CountBasedCleanupStrategy implements CheckpointCleanupStrategy {
-  constructor(private policy: CountBasedCleanupPolicy) {}
+  constructor(private policy: CountBasedCleanupPolicy) { }
 
   execute(checkpoints: CheckpointInfo[]): string[] {
     const maxCount = this.policy.maxCount;
@@ -99,7 +99,7 @@ export class SizeBasedCleanupStrategy implements CheckpointCleanupStrategy {
   constructor(
     private policy: SizeBasedCleanupPolicy,
     private checkpointSizes: Map<string, number> // checkpointId -> size in bytes
-  ) {}
+  ) { }
 
   execute(checkpoints: CheckpointInfo[]): string[] {
     const maxSize = this.policy.maxSizeBytes;
@@ -127,7 +127,7 @@ export class SizeBasedCleanupStrategy implements CheckpointCleanupStrategy {
     for (let i = sorted.length - 1; i >= 0; i--) {
       const checkpoint = sorted[i];
       if (!checkpoint) continue;
-      
+
       const checkpointId = checkpoint.checkpointId;
       const size = this.checkpointSizes.get(checkpointId) || 0;
 
@@ -175,14 +175,3 @@ export function createCleanupStrategy(
       throw new Error(`Unknown cleanup policy type: ${(policy as any).type}`);
   }
 }
-
-// 重新导出类型（为了向后兼容）
-export type {
-  CheckpointInfo,
-  CleanupPolicy,
-  CleanupStrategyType,
-  TimeBasedCleanupPolicy,
-  CountBasedCleanupPolicy,
-  SizeBasedCleanupPolicy,
-  CheckpointCleanupStrategy
-} from '../../../types/checkpoint-storage';

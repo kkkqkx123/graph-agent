@@ -45,7 +45,12 @@ export class MessageIndexManager {
    * @returns 标记映射
    */
   getMarkMap(): MessageMarkMap {
-    return { ...this.markMap };
+    return {
+      ...this.markMap,
+      originalIndices: [...this.markMap.originalIndices],
+      batchBoundaries: [...this.markMap.batchBoundaries],
+      boundaryToBatch: [...this.markMap.boundaryToBatch]
+    };
   }
 
   /**
@@ -53,7 +58,12 @@ export class MessageIndexManager {
    * @param markMap 标记映射
    */
   setMarkMap(markMap: MessageMarkMap): void {
-    this.markMap = { ...markMap };
+    this.markMap = {
+      ...markMap,
+      originalIndices: [...markMap.originalIndices],
+      batchBoundaries: [...markMap.batchBoundaries],
+      boundaryToBatch: [...markMap.boundaryToBatch]
+    };
     // 重建批次映射
     this.rebuildBatchBoundaryMap();
   }

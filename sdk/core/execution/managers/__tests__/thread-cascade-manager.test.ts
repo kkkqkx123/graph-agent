@@ -7,12 +7,15 @@ import { ThreadCascadeManager } from '../thread-cascade-manager';
 import { ThreadLifecycleManager } from '../thread-lifecycle-manager';
 import { threadRegistry } from '../../../services/thread-registry';
 import { eventManager } from '../../../services/event-manager';
+import { workflowRegistry } from '../../../services/workflow-registry';
+import { toolService } from '../../../services/tool-service';
 import { ThreadStatus } from '../../../../types/thread';
 import { generateId, now } from '../../../../utils';
 import type { Thread } from '../../../../types/thread';
 import type { Graph } from '../../../../types/graph';
 import { ThreadContext } from '../../context/thread-context';
 import { ConversationManager } from '../conversation-manager';
+import { LLMExecutor } from '../../executors/llm-executor';
 
 describe('ThreadCascadeManager', () => {
   let cascadeManager: ThreadCascadeManager;
@@ -247,9 +250,16 @@ function createMockThreadContext(thread: Thread): ThreadContext {
     threadId: thread.id
   });
 
+  // 获取LLMExecutor实例
+  const llmExecutor = LLMExecutor.getInstance();
+
   return new ThreadContext(
     thread,
     conversationManager,
-    threadRegistry
+    threadRegistry,
+    workflowRegistry,
+    eventManager,
+    toolService,
+    llmExecutor
   );
 }

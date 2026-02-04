@@ -114,7 +114,7 @@ describe('TriggerStateManager', () => {
   });
 
   describe('updateStatus', () => {
-    it('应该成功更新状态', () => {
+    it('应该成功更新状态', async () => {
       const state: TriggerRuntimeState = {
         triggerId: 'trigger-1',
         threadId: threadId,
@@ -125,6 +125,10 @@ describe('TriggerStateManager', () => {
       };
 
       stateManager.register(state);
+      
+      // 添加小延迟确保时间戳不同
+      await new Promise(resolve => setTimeout(resolve, 1));
+      
       stateManager.updateStatus('trigger-1', TriggerStatus.DISABLED);
 
       const updatedState = stateManager.getState('trigger-1');
@@ -139,7 +143,7 @@ describe('TriggerStateManager', () => {
   });
 
   describe('incrementTriggerCount', () => {
-    it('应该成功增加触发次数', () => {
+    it('应该成功增加触发次数', async () => {
       const state: TriggerRuntimeState = {
         triggerId: 'trigger-1',
         threadId: threadId,
@@ -150,6 +154,10 @@ describe('TriggerStateManager', () => {
       };
 
       stateManager.register(state);
+      
+      // 添加小延迟确保时间戳不同
+      await new Promise(resolve => setTimeout(resolve, 1));
+      
       stateManager.incrementTriggerCount('trigger-1');
 
       const updatedState = stateManager.getState('trigger-1');
