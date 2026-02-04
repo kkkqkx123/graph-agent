@@ -81,12 +81,3 @@ export { loopEndHandler } from './loop-end-handler';
 export { userInteractionHandler } from './user-interaction-handler';
 export { contextProcessorHandler } from './context-processor-handler';
 export { llmHandler } from './llm-handler';
-
-// 以下节点由NodeExecutionCoordinator直接处理，需要访问高层模块
-// - LLM_NODE（LLM托管节点）
-// - TOOL_NODE（LLM托管节点）
-// - USER_INTERACTION_NODE（LLM托管节点）
-// - CONTEXT_PROCESSOR_NODE（需要访问ConversationManager）
-
-// 导出配置工具函数
-export * from './config-utils';

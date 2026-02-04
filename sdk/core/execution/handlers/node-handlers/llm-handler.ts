@@ -16,7 +16,6 @@ import { LLMExecutionCoordinator } from '../../coordinators/llm-execution-coordi
 import { LLMWrapper } from '../../../llm/wrapper';
 import { executeHumanRelay } from '../human-relay-handler';
 import type { EventManager } from '../../../services/event-manager';
-import { transformLLMNodeConfig } from './config-utils';
 
 /**
  * LLM节点执行结果
@@ -63,7 +62,14 @@ export async function llmHandler(
 
   try {
     // 1. 转换配置为执行数据（配置已在工作流注册时通过静态验证）
-    const executionData = transformLLMNodeConfig(config);
+    const executionData = {
+      prompt: config.prompt || '',
+      profileId: config.profileId,
+      parameters: config.parameters || {},
+      dynamicTools: config.dynamicTools,
+      maxToolCallsPerRequest: config.maxToolCallsPerRequest,
+      stream: false
+    };
 
     // 2. 检查是否为 HumanRelay provider
     const llmWrapper = new LLMWrapper();

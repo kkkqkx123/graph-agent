@@ -12,9 +12,43 @@ import type { Node, ContextProcessorNodeConfig } from '../../../../types/node';
 import type { Thread } from '../../../../types/thread';
 import { ValidationError, ExecutionError } from '../../../../types/errors';
 import { now } from '../../../../utils';
-import {
-  transformContextProcessorNodeConfig
-} from './config-utils';
+import type { LLMMessage } from '../../../../types/llm';
+
+/**
+ * 上下文处理器执行数据
+ */
+export interface ContextProcessorExecutionData {
+  /** 操作类型 */
+  operation: 'truncate' | 'insert' | 'replace' | 'clear' | 'filter';
+  /** 截断操作配置 */
+  truncate?: {
+    keepFirst?: number;
+    keepLast?: number;
+    removeFirst?: number;
+    removeLast?: number;
+    range?: { start: number; end: number };
+  };
+  /** 插入操作配置 */
+  insert?: {
+    position: number;
+    messages: LLMMessage[];
+  };
+  /** 替换操作配置 */
+  replace?: {
+    index: number;
+    message: LLMMessage;
+  };
+  /** 过滤操作配置 */
+  filter?: {
+    roles?: ('system' | 'user' | 'assistant' | 'tool')[];
+    contentContains?: string[];
+    contentExcludes?: string[];
+  };
+  /** 清空操作配置 */
+  clear?: {
+    keepSystemMessage?: boolean;
+  };
+}
 
 /**
  * 上下文处理器执行结果
@@ -272,7 +306,14 @@ export async function contextProcessorHandler(
 
   try {
     // 1. 转换配置为执行数据（配置已在工作流注册时通过静态验证）
-    const executionData = transformContextProcessorNodeConfig(config);
+    const executionData = {
+      operation: config.operation,
+      truncate: config.truncate,
+      insert: config.insert,
+      replace: config.replace,
+      filter: config.filter,
+      clear: config.clear
+    };
 
     // 2. 获取ConversationManager
     const conversationManager = context.conversationManager;
