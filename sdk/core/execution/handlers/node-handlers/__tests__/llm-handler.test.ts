@@ -30,7 +30,7 @@ jest.mock('../../human-relay-handler', () => ({
 
 // Mock utils
 jest.mock('../../../../../utils', () => ({
-  now: jest.fn(() => 1000),
+  now: jest.fn(() => Date.now()),
   diffTimestamp: jest.fn((start, end) => end - start)
 }));
 
@@ -79,6 +79,7 @@ describe('llm-handler', () => {
     
     mockContext = {
       llmCoordinator: mockLLMCoordinator,
+      llmWrapper: mockLLMWrapper,
       eventManager: {
         emit: jest.fn()
       },

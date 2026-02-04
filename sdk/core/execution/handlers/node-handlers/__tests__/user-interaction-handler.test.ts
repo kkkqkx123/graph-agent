@@ -101,8 +101,8 @@ describe('user-interaction-handler', () => {
       });
 
       // 验证变量已更新
-      expect(mockThread.variableScopes.thread?.userName).toBe('user input value');
-      expect(mockThread.variableScopes.thread?.greeting).toBe('Hello, user input value');
+      expect(mockThread.variableScopes.thread?.['userName']).toBe('user input value');
+      expect(mockThread.variableScopes.thread?.['greeting']).toBe('Hello, user input value');
 
       // 验证调用了用户交互处理器
       expect(mockUserInteractionHandler.handle).toHaveBeenCalledWith(
@@ -166,7 +166,7 @@ describe('user-interaction-handler', () => {
       const result = await userInteractionHandler(mockThread, mockNode, mockContext);
 
       expect(result.results.constant).toBe('fixed value');
-      expect(mockThread.variableScopes.thread?.constant).toBe('fixed value');
+      expect(mockThread.variableScopes.thread?.['constant']).toBe('fixed value');
     });
   });
 
@@ -425,7 +425,7 @@ describe('user-interaction-handler', () => {
 
   describe('交互上下文测试', () => {
     it('应该正确创建交互上下文', async () => {
-      mockUserInteractionHandler.handle.mockImplementation((request, context) => {
+      mockUserInteractionHandler.handle.mockImplementation((request: any, context: any) => {
         // 验证上下文属性
         expect(context.threadId).toBe('thread-1');
         expect(context.workflowId).toBe('workflow-1');
@@ -463,7 +463,7 @@ describe('user-interaction-handler', () => {
     it('应该支持通过上下文获取和设置变量', async () => {
       mockThread.variableScopes.thread = { existingVar: 'existing value' };
 
-      mockUserInteractionHandler.handle.mockImplementation(async (request, context) => {
+      mockUserInteractionHandler.handle.mockImplementation(async (request: any, context: any) => {
         // 获取变量
         const existingValue = context.getVariable('existingVar');
         expect(existingValue).toBe('existing value');
@@ -496,7 +496,7 @@ describe('user-interaction-handler', () => {
       await userInteractionHandler(mockThread, mockNode, mockContext);
 
       // 验证变量已设置
-      expect(mockThread.variableScopes.thread?.newVar).toBe('new value');
+      expect(mockThread.variableScopes.thread?.['newVar']).toBe('new value');
     });
   });
 

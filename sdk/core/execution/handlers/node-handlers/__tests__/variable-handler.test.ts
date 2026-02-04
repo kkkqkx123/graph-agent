@@ -63,7 +63,7 @@ describe('variable-handler', () => {
       });
 
       // 验证变量已更新到thread作用域
-      expect(mockThread.variableScopes.thread?.result).toBe(30);
+      expect(mockThread.variableScopes.thread?.['result']).toBe(30);
 
       // 验证变量已添加到variables数组
       expect(mockThread.variables).toHaveLength(1);
@@ -121,7 +121,7 @@ describe('variable-handler', () => {
       const result = await variableHandler(mockThread, mockNode);
 
       expect(result.value).toBe(6);
-      expect(mockThread.variableScopes.thread?.counter).toBe(6);
+      expect(mockThread.variableScopes.thread?.['counter']).toBe(6);
       expect(mockThread.variables).toHaveLength(1); // 不应该添加新变量
     });
   });
@@ -419,8 +419,8 @@ describe('variable-handler', () => {
 
       await variableHandler(mockThread, mockNode);
 
-      expect(mockThread.variableScopes.global?.globalVar).toBe(100);
-      expect(mockThread.variableScopes.thread?.globalVar).toBeUndefined();
+      expect(mockThread.variableScopes.global?.['globalVar']).toBe(100);
+      expect(mockThread.variableScopes.thread?.['globalVar']).toBeUndefined();
     });
 
     it('应该正确更新thread作用域的变量', async () => {
@@ -440,8 +440,8 @@ describe('variable-handler', () => {
 
       await variableHandler(mockThread, mockNode);
 
-      expect(mockThread.variableScopes.thread?.threadVar).toBe(200);
-      expect(mockThread.variableScopes.global?.threadVar).toBeUndefined();
+      expect(mockThread.variableScopes.thread?.['threadVar']).toBe(200);
+      expect(mockThread.variableScopes.global?.['threadVar']).toBeUndefined();
     });
 
     it('应该正确更新subgraph作用域的变量', async () => {
@@ -463,7 +463,7 @@ describe('variable-handler', () => {
 
       await variableHandler(mockThread, mockNode);
 
-      expect(mockThread.variableScopes.subgraph[0]?.subgraphVar).toBe(300);
+      expect(mockThread.variableScopes.subgraph[0]?.['subgraphVar']).toBe(300);
     });
 
     it('应该正确更新loop作用域的变量', async () => {
@@ -485,7 +485,7 @@ describe('variable-handler', () => {
 
       await variableHandler(mockThread, mockNode);
 
-      expect(mockThread.variableScopes.loop[0]?.loopVar).toBe(400);
+      expect(mockThread.variableScopes.loop[0]?.['loopVar']).toBe(400);
     });
   });
 
@@ -529,7 +529,7 @@ describe('variable-handler', () => {
         });
 
         // 验证变量没有被更新
-        expect(mockThread.variableScopes.thread?.result).toBeUndefined();
+        expect(mockThread.variableScopes.thread?.['result']).toBeUndefined();
         expect(mockThread.nodeResults).toHaveLength(0);
       }
     });

@@ -37,6 +37,8 @@ export interface LLMExecutionResult {
 export interface LLMHandlerContext {
   /** LLM执行协调器 */
   llmCoordinator: LLMExecutionCoordinator;
+  /** LLM包装器 */
+  llmWrapper: LLMWrapper;
   /** 事件管理器 */
   eventManager: EventManager;
   /** 对话管理器 */
@@ -72,8 +74,7 @@ export async function llmHandler(
     };
 
     // 2. 检查是否为 HumanRelay provider
-    const llmWrapper = new LLMWrapper();
-    const profile = llmWrapper.getProfile(executionData.profileId || 'default');
+    const profile = context.llmWrapper.getProfile(executionData.profileId || 'default');
     if (profile?.provider === 'HUMAN_RELAY') {
       return await executeHumanRelayLLMNode(thread, node, executionData, context, startTime);
     }

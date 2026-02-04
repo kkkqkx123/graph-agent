@@ -73,9 +73,23 @@ function resolveVariableReferences(expression: string, thread: Thread): string {
 /**
  * 执行表达式求值
  */
-function evaluateExpression(expression: string, variableType: string): any {
+function evaluateExpression(expression: string, variableType: string, thread: Thread): any {
   try {
-    const result = new Function(`return (${expression})`)();
+    // 处理空字符串表达式
+    if (!expression.trim()) {
+      return '';
+    }
+    
+    // 创建函数作用域，包含thread作用域的变量
+    const threadScope = thread.variableScopes.thread || {};
+    const globalScope = thread.variableScopes.global || {};
+    
+    const func = new Function(
+      ...Object.keys({ ...threadScope, ...globalScope }),
+      `return (${expression})`
+    );
+    
+    const result = func(...Object.values({ ...threadScope, ...globalScope }));
     return result;
   } catch (error) {
     throw new ValidationError(`Failed to evaluate expression: ${expression}`, 'variable.expression');
@@ -89,7 +103,8 @@ function convertType(value: any, targetType: string): any {
   switch (targetType) {
     case 'number':
       const num = Number(value);
-      if (isNaN(num)) {
+      // 对于字符串"not a number"这样的无效转换，应该抛出错误
+      if (typeof value === 'string' && value.trim() && isNaN(num)) {
         throw new ValidationError(`Failed to convert value to number: ${value}`, 'variable.type');
       }
       return num;
@@ -113,6 +128,9 @@ function convertType(value: any, targetType: string): any {
     case 'object':
       if (typeof value === 'object' && value !== null && !Array.isArray(value)) {
         return value;
+      }
+      if (value === null) {
+        return null;
       }
       try {
         return Object(value);
@@ -150,7 +168,7 @@ export async function variableHandler(thread: Thread, node: Node, context?: any)
   const evaluatedExpression = resolveVariableReferences(config.expression, thread);
 
   // 执行表达式求值
-  const result = evaluateExpression(evaluatedExpression, config.variableType);
+  const result = evaluateExpression(evaluatedExpression, config.variableType, thread);
 
   // 验证求值结果类型
   const typedResult = convertType(result, config.variableType);
