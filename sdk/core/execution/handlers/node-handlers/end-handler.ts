@@ -16,7 +16,7 @@ function canExecute(thread: Thread, node: Node): boolean {
     return false;
   }
 
-  if (thread.nodeResults.some(result => result.nodeId === node.id)) {
+  if (thread.nodeResults && thread.nodeResults.some(result => result.nodeId === node.id)) {
     return false;
   }
 
@@ -44,8 +44,8 @@ export async function endHandler(thread: Thread, node: Node, context?: any): Pro
   // 收集Thread输出
   let output: any = {};
 
-  // 优先级1：Thread的output
-  if (thread.output && Object.keys(thread.output).length > 0) {
+  // 优先级1：Thread的output（即使为空对象）
+  if (thread.output !== undefined && thread.output !== null) {
     output = thread.output;
   } else {
     // 优先级2：最后一个节点的data

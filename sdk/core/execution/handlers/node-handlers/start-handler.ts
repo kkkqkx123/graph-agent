@@ -17,7 +17,7 @@ function canExecute(thread: Thread, node: Node): boolean {
     return false;
   }
 
-  if (thread.nodeResults.some(result => result.nodeId === node.id)) {
+  if (thread.nodeResults && thread.nodeResults.some(result => result.nodeId === node.id)) {
     return false;
   }
 
