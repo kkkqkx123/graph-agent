@@ -1,6 +1,6 @@
 /**
- * SDK - 主SDK类
- * 整合所有API模块，提供统一的访问接口
+ * SDK V2 - 改进的SDK类
+ * 提供流畅的链式API和更好的易用性
  */
 
 import { ThreadExecutorAPI } from './thread-executor-api';
@@ -21,9 +21,12 @@ import { MessageManagerAPI } from '../conversation/message-manager-api';
 import { workflowRegistry, type WorkflowRegistry } from '../../core/services/workflow-registry';
 import { threadRegistry, type ThreadRegistry } from '../../core/services/thread-registry';
 import type { SDKOptions } from '../types/core-types';
+import { WorkflowBuilder } from '../builders/workflow-builder';
+import { ExecutionBuilder } from '../builders/execution-builder';
+import type { WorkflowDefinition } from '../../types/workflow';
 
 /**
- * SDK - 主SDK类
+ * SDK - SDK类
  */
 export class SDK {
   /** 执行API */
@@ -105,6 +108,17 @@ export class SDK {
   }
 
   /**
+   * 创建SDK实例
+   * @param options SDK配置选项
+   * @returns Promise<SDKV2>
+   */
+  static async create(options?: SDKOptions): Promise<SDK> {
+    const sdk = new SDK(options);
+    await sdk.initialize();
+    return sdk;
+  }
+
+  /**
    * 初始化SDK
    * @returns Promise<void>
    */
@@ -137,7 +151,7 @@ export class SDK {
    * @returns 版本信息
    */
   getVersion(): string {
-    return '1.0.0';
+    return '2.0.0';
   }
 
   /**
@@ -163,7 +177,7 @@ export class SDK {
     const toolCount = await this.tools.getToolCount();
     const scriptCount = await this.scripts.getScriptCount();
     const profileCount = await this.profiles.getProfileCount();
-    const eventListenerCount = this.events.getListenerCount();
+    const eventListenerCount = await this.events.getListenerCount();
     const checkpointCount = await this.checkpoints.getCheckpointCount();
     const nodeTemplateCount = await this.nodeTemplates.getTemplateCount();
     const triggerTemplateCount = await this.triggerTemplates.getTemplateCount();
@@ -180,6 +194,40 @@ export class SDK {
       checkpointCount,
       nodeTemplateCount,
       triggerTemplateCount
+    };
+  }
+
+  /**
+   * 工作流构建器 - 流畅API
+   * @param workflowId 工作流ID
+   * @returns WorkflowBuilder实例
+   */
+  workflow(workflowId: string): WorkflowBuilder {
+    return WorkflowBuilder.create(workflowId);
+  }
+
+  /**
+   * 执行构建器 - 流畅API
+   * @param workflowId 工作流ID
+   * @returns ExecutionBuilder实例
+   */
+  execute(workflowId: string): ExecutionBuilder {
+    return new ExecutionBuilder(this.executor).withWorkflow(workflowId);
+  }
+
+  /**
+   * 工具构建器 - 流畅API
+   * @param toolName 工具名称
+   * @returns 工具执行构建器
+   */
+  tool(toolName: string) {
+    return {
+      execute: async (parameters: Record<string, any>) => {
+        return this.tools.executeTool(toolName, parameters);
+      },
+      test: async (parameters: Record<string, any>) => {
+        return this.tools.testTool(toolName, parameters);
+      }
     };
   }
 

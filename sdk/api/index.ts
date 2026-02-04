@@ -25,8 +25,12 @@ export { NodeRegistryAPI } from './template-registry/node-template-registry-api'
 export { TriggerTemplateRegistryAPI } from './template-registry/trigger-template-registry-api';
 export { TriggerManagerAPI, triggerManagerAPI } from './management/trigger-manager-api';
 
-// langgraph兼容API
-export { StateGraph, CompiledGraph, END } from './langgraph-compatible/stategraph-api';
+// 构建器
+export { WorkflowBuilder, ExecutionBuilder } from './builders';
+
+// 工具函数
+export { ok, err, tryCatch, tryCatchAsync, all, any } from './utils/result';
+export type { Result, Ok, Err } from './utils/result';
 
 // 类型定义
 export type {
