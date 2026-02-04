@@ -295,7 +295,8 @@ export class ToolServiceAPI {
    * @returns 工具数量
    */
   async getToolCount(): Promise<number> {
-    return this.toolService.getToolCount();
+    const tools = await this.getTools();
+    return tools.length;
   }
 
   /**
@@ -343,13 +344,6 @@ export class ToolServiceAPI {
     this.executionLog = [];
   }
 
-  /**
-   * 获取底层ToolService实例
-   * @returns ToolService实例
-   */
-  getService() {
-    return this.toolService;
-  }
 
   /**
    * 应用过滤条件

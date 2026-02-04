@@ -1,11 +1,10 @@
 /**
  * ExecutionBuilder - 流畅的执行构建器
  * 提供链式API来配置和执行工作流
- * 支持Promise和Observable双接口
+ * 支持Result、Promise和Observable三种接口
  */
 
 import type { ThreadResult, ThreadOptions } from '../../types/thread';
-import type { ExecuteOptions } from '../types/core-types';
 import { ThreadExecutorAPI } from '../core/thread-executor-api';
 import { ok, err, Result } from '../utils/result';
 import { Observable, Observer, create, fromPromise } from '../utils/observable';
@@ -16,7 +15,7 @@ import { Observable, Observer, create, fromPromise } from '../utils/observable';
 export class ExecutionBuilder {
   private executor: ThreadExecutorAPI;
   private workflowId?: string;
-  private options: ExecuteOptions = {};
+  private options: ThreadOptions = {};
   private onProgressCallbacks: Array<(progress: any) => void> = [];
   private onErrorCallbacks: Array<(error: any) => void> = [];
   private abortController?: AbortController;
@@ -117,12 +116,12 @@ export class ExecutionBuilder {
   }
 
   /**
-   * 执行工作流（返回Promise）
-   * @returns Promise<ThreadResult>
+   * 执行工作流（返回Result类型）
+   * @returns Promise<Result<ThreadResult, Error>>
    */
-  async execute(): Promise<ThreadResult> {
+  async execute(): Promise<Result<ThreadResult, Error>> {
     if (!this.workflowId) {
-      throw new Error('工作流ID未设置，请先调用withWorkflow()');
+      return err(new Error('工作流ID未设置，请先调用withWorkflow()'));
     }
 
     try {
@@ -140,7 +139,7 @@ export class ExecutionBuilder {
         }
       });
 
-      return result;
+      return ok(result);
     } catch (error) {
       // 触发错误回调
       this.onErrorCallbacks.forEach(callback => {
@@ -151,52 +150,55 @@ export class ExecutionBuilder {
         }
       });
 
-      throw error;
-    }
-  }
-
-  /**
-   * 执行工作流（返回Result类型）
-   * @returns Promise<Result<ThreadResult, Error>>
-   */
-  async executeSafe(): Promise<Result<ThreadResult, Error>> {
-    try {
-      const result = await this.execute();
-      return ok(result);
-    } catch (error) {
       return err(error instanceof Error ? error : new Error(String(error)));
     }
   }
 
   /**
-   * 执行工作流（返回Promise，支持then/catch）
+   * 执行工作流（返回Promise，兼容性方法）
    * @returns Promise<ThreadResult>
+   * @deprecated 推荐使用execute()方法返回Result类型
+   */
+  async executePromise(): Promise<ThreadResult> {
+    const result = await this.execute();
+    if (result.isErr()) {
+      throw result.error;
+    }
+    return result.value;
+  }
+
+  /**
+   * 执行工作流（返回Promise，支持then/catch，兼容性方法）
+   * @returns Promise<ThreadResult>
+   * @deprecated 推荐使用execute()方法返回Result类型
    */
   then<TResult = ThreadResult>(
     onfulfilled?: ((value: ThreadResult) => TResult | PromiseLike<TResult>) | null,
     onrejected?: ((reason: any) => TResult | PromiseLike<TResult>) | null
   ): Promise<TResult> {
-    return this.execute().then(onfulfilled, onrejected);
+    return this.executePromise().then(onfulfilled, onrejected);
   }
 
   /**
-   * 执行工作流（支持catch）
+   * 执行工作流（支持catch，兼容性方法）
    * @param onrejected 错误处理函数
    * @returns Promise<ThreadResult>
+   * @deprecated 推荐使用execute()方法返回Result类型
    */
   catch<TResult = never>(
     onrejected?: ((reason: any) => TResult | PromiseLike<TResult>) | null
   ): Promise<ThreadResult | TResult> {
-    return this.execute().catch(onrejected);
+    return this.executePromise().catch(onrejected);
   }
 
   /**
-   * 执行工作流（支持finally）
+   * 执行工作流（支持finally，兼容性方法）
    * @param onfinally 最终执行函数
    * @returns Promise<ThreadResult>
+   * @deprecated 推荐使用execute()方法返回Result类型
    */
   finally(onfinally?: (() => void) | null): Promise<ThreadResult> {
-    return this.execute().finally(onfinally);
+    return this.executePromise().finally(onfinally);
   }
 
   /**
@@ -213,6 +215,7 @@ export class ExecutionBuilder {
     }
 
     const workflowId = this.workflowId; // workflowId在这里已经确定存在
+    let threadId: string | undefined;
 
     return create((observer) => {
       // 创建AbortController用于取消执行
@@ -232,34 +235,44 @@ export class ExecutionBuilder {
       // 监听执行结果
       executePromise
         .then((result) => {
-          // 发送完成事件
-          observer.next({
-            type: 'complete',
-            timestamp: Date.now(),
-            workflowId,
-            result
-          });
-          observer.complete();
-        })
-        .catch((error) => {
-          if (signal.aborted) {
-            // 发送取消事件
+          if (result.isOk()) {
+            threadId = result.value.threadId;
+            // 发送完成事件
             observer.next({
-              type: 'cancelled',
+              type: 'complete',
               timestamp: Date.now(),
               workflowId,
-              reason: 'Execution was cancelled'
+              threadId: result.value.threadId,
+              result: result.value,
+              executionStats: {
+                duration: result.value.executionTime,
+                steps: result.value.nodeResults.length,
+                nodesExecuted: result.value.nodeResults.length
+              }
             });
             observer.complete();
           } else {
-            // 发送错误事件
-            observer.next({
-              type: 'error',
-              timestamp: Date.now(),
-              workflowId,
-              error
-            });
-            observer.error(error);
+            if (signal.aborted) {
+              // 发送取消事件
+              observer.next({
+                type: 'cancelled',
+                timestamp: Date.now(),
+                workflowId,
+                threadId: threadId || 'unknown',
+                reason: result.error.message
+              });
+              observer.complete();
+            } else {
+              // 发送错误事件
+              observer.next({
+                type: 'error',
+                timestamp: Date.now(),
+                workflowId,
+                threadId: threadId || 'unknown',
+                error: result.error
+              });
+              observer.error(result.error);
+            }
           }
         });
 
@@ -280,12 +293,12 @@ export class ExecutionBuilder {
   /**
    * 使用AbortSignal执行工作流
    * @param signal AbortSignal
-   * @returns Promise<ThreadResult>
+   * @returns Promise<Result<ThreadResult, Error>>
    */
-  private async executeWithSignal(signal: AbortSignal): Promise<ThreadResult> {
+  private async executeWithSignal(signal: AbortSignal): Promise<Result<ThreadResult, Error>> {
     // 检查是否已取消
     if (signal.aborted) {
-      throw new Error('Execution was cancelled');
+      return err(new Error('Execution was cancelled'));
     }
 
     // 包装执行逻辑以支持取消
@@ -294,14 +307,14 @@ export class ExecutionBuilder {
     // 创建一个可以取消的Promise
     return new Promise((resolve, reject) => {
       const abortHandler = () => {
-        reject(new Error('Execution was cancelled'));
+        resolve(err(new Error('Execution was cancelled')));
       };
 
       signal.addEventListener('abort', abortHandler);
 
       executionPromise
-        .then(resolve)
-        .catch(reject)
+        .then(result => resolve(ok(result)))
+        .catch(error => resolve(err(error instanceof Error ? error : new Error(String(error)))))
         .finally(() => {
           signal.removeEventListener('abort', abortHandler);
         });
@@ -329,7 +342,14 @@ export class ExecutionBuilder {
           type: 'progress',
           timestamp: Date.now(),
           workflowId: this.workflowId!,
-          progress
+          threadId: progress.threadId || 'unknown',
+          progress: {
+            status: progress.status || 'running',
+            currentStep: progress.currentStep || 0,
+            totalSteps: progress.totalSteps,
+            currentNodeId: progress.currentNodeId || 'unknown',
+            currentNodeType: progress.currentNodeType || 'unknown'
+          }
         });
       };
 
@@ -364,7 +384,11 @@ export class ExecutionBuilder {
           type: 'nodeExecuted',
           timestamp: Date.now(),
           workflowId: this.workflowId!,
-          nodeResult: result
+          threadId: result.threadId || 'unknown',
+          nodeId: result.nodeId || 'unknown',
+          nodeType: result.nodeType || 'unknown',
+          nodeResult: result,
+          executionTime: result.executionTime || 0
         });
       };
 
@@ -398,7 +422,8 @@ export class ExecutionBuilder {
           type: 'error',
           timestamp: Date.now(),
           workflowId: this.workflowId!,
-          error
+          threadId: error.threadId || 'unknown',
+          error: error instanceof Error ? error : new Error(String(error))
         });
       };
 
@@ -496,7 +521,13 @@ export interface CompleteEvent {
   type: 'complete';
   timestamp: number;
   workflowId: string;
+  threadId: string;
   result: ThreadResult;
+  executionStats: {
+    duration: number;
+    steps: number;
+    nodesExecuted: number;
+  };
 }
 
 /**
@@ -506,7 +537,8 @@ export interface ErrorEvent {
   type: 'error';
   timestamp: number;
   workflowId: string;
-  error: any;
+  threadId: string;
+  error: Error;
 }
 
 /**
@@ -516,6 +548,7 @@ export interface CancelledEvent {
   type: 'cancelled';
   timestamp: number;
   workflowId: string;
+  threadId: string;
   reason: string;
 }
 
@@ -526,7 +559,14 @@ export interface ProgressEvent {
   type: 'progress';
   timestamp: number;
   workflowId: string;
-  progress: any;
+  threadId: string;
+  progress: {
+    status: 'running' | 'paused' | 'completed' | 'failed' | 'cancelled';
+    currentStep: number;
+    totalSteps?: number;
+    currentNodeId: string;
+    currentNodeType: string;
+  };
 }
 
 /**
@@ -536,5 +576,9 @@ export interface NodeExecutedEvent {
   type: 'nodeExecuted';
   timestamp: number;
   workflowId: string;
+  threadId: string;
+  nodeId: string;
+  nodeType: string;
   nodeResult: any;
+  executionTime: number;
 }

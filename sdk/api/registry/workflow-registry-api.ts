@@ -261,12 +261,78 @@ export class WorkflowRegistryAPI {
   }
 
   /**
-   * 获取底层WorkflowRegistry实例
-   * @returns WorkflowRegistry实例
+   * 获取处理后的工作流定义
+   * @param workflowId 工作流ID
+   * @returns 处理后的工作流定义，如果不存在则返回null
    */
-  getRegistry(): WorkflowRegistry {
-    return this.registry;
+  async getProcessedWorkflow(workflowId: string): Promise<any | null> {
+    const processed = this.registry.getProcessed(workflowId);
+    return processed || null;
   }
+
+  /**
+   * 预处理并存储工作流
+   * @param workflow 工作流定义
+   * @returns 处理后的工作流定义
+   */
+  async preprocessAndStoreWorkflow(workflow: any): Promise<any> {
+    const processed = await this.registry.preprocessAndStore(workflow);
+    // 更新缓存
+    this.cache.set(workflow.id, workflow);
+    return processed;
+  }
+
+  /**
+   * 获取工作流图结构
+   * @param workflowId 工作流ID
+   * @returns 图结构，如果不存在则返回null
+   */
+  async getWorkflowGraph(workflowId: string): Promise<any | null> {
+    const graph = this.registry.getGraph(workflowId);
+    return graph || null;
+  }
+
+  /**
+   * 注册子图关系
+   * @param parentWorkflowId 父工作流ID
+   * @param subgraphNodeId SUBGRAPH节点ID
+   * @param childWorkflowId 子工作流ID
+   */
+  async registerSubgraphRelationship(
+    parentWorkflowId: string,
+    subgraphNodeId: string,
+    childWorkflowId: string
+  ): Promise<void> {
+    this.registry.registerSubgraphRelationship(parentWorkflowId, subgraphNodeId, childWorkflowId);
+  }
+
+  /**
+   * 获取工作流层次结构
+   * @param workflowId 工作流ID
+   * @returns 层次结构信息
+   */
+  async getWorkflowHierarchy(workflowId: string): Promise<any> {
+    return this.registry.getWorkflowHierarchy(workflowId);
+  }
+
+  /**
+   * 获取父工作流
+   * @param workflowId 工作流ID
+   * @returns 父工作流ID或null
+   */
+  async getParentWorkflow(workflowId: string): Promise<string | null> {
+    return this.registry.getParentWorkflow(workflowId);
+  }
+
+  /**
+   * 获取子工作流
+   * @param workflowId 工作流ID
+   * @returns 子工作流ID数组
+   */
+  async getChildWorkflows(workflowId: string): Promise<string[]> {
+    return this.registry.getChildWorkflows(workflowId);
+  }
+
 
   /**
    * 应用过滤条件

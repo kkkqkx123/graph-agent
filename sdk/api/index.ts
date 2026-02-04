@@ -86,12 +86,13 @@ export type { OperatorFunction } from './utils/observable';
 
 // 类型定义
 export type {
-  ExecuteOptions,
+  ThreadOptions,
+  SDKOptions,
+  SDKDependencies,
   WorkflowFilter,
   ThreadFilter,
   WorkflowSummary,
   ThreadSummary,
-  SDKOptions,
   ToolFilter,
   ToolOptions,
   ToolExecutionResult,

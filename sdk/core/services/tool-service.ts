@@ -232,26 +232,10 @@ class ToolService {
   }
 
   /**
-   * 获取工具数量
-   * @returns 工具数量
-   */
-  getToolCount(): number {
-    return this.registry.size();
-  }
-
-  /**
    * 清空所有工具
    */
   clear(): void {
     this.registry.clear();
-  }
-
-  /**
-   * 获取工具注册表（用于高级操作）
-   * @returns 工具注册表
-   */
-  getRegistry(): ToolRegistry {
-    return this.registry;
   }
 
   /**

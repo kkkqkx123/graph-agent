@@ -270,14 +270,6 @@ class CodeService {
   }
 
   /**
-   * 获取脚本数量
-   * @returns 脚本数量
-   */
-  getScriptCount(): number {
-    return this.registry.size();
-  }
-
-  /**
    * 清空所有脚本
    */
   clearScripts(): void {
@@ -289,22 +281,6 @@ class CodeService {
    */
   clearExecutors(): void {
     this.executorRegistry.clear();
-  }
-
-  /**
-   * 获取脚本注册表（用于高级操作）
-   * @returns 脚本注册表
-   */
-  getRegistry(): CodeRegistry {
-    return this.registry;
-  }
-
-  /**
-   * 获取执行器注册表（用于高级操作）
-   * @returns 执行器注册表
-   */
-  getExecutorRegistry(): ScriptExecutorRegistry {
-    return this.executorRegistry;
   }
 
   /**

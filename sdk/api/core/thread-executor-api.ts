@@ -11,7 +11,6 @@ import { ExecutionContext } from '../../core/execution/context/execution-context
 import { workflowRegistry, type WorkflowRegistry } from '../../core/services/workflow-registry';
 import type { WorkflowDefinition } from '../../types/workflow';
 import type { ThreadResult, ThreadOptions } from '../../types/thread';
-import type { ExecuteOptions } from '../types/core-types';
 
 /**
  * ThreadExecutorAPI - 主执行入口API
@@ -23,9 +22,12 @@ export class ThreadExecutorAPI {
   private workflowRegistry: WorkflowRegistry;
   private executionContext: ExecutionContext;
 
-  constructor(workflowRegistryParam?: WorkflowRegistry) {
+  constructor(workflowRegistryParam?: WorkflowRegistry, executionContextParam?: ExecutionContext) {
     this.workflowRegistry = workflowRegistryParam || workflowRegistry;
-    this.executionContext = ExecutionContext.createDefault();
+    
+    // 使用传入的ExecutionContext或创建默认的
+    this.executionContext = executionContextParam || ExecutionContext.createDefault();
+    
     this.lifecycleCoordinator = new ThreadLifecycleCoordinator(this.executionContext);
     this.operationCoordinator = new ThreadOperationCoordinator(this.executionContext);
     this.variableCoordinator = new VariableCoordinator(
@@ -40,8 +42,8 @@ export class ThreadExecutorAPI {
    * @param options 执行选项
    * @returns 线程执行结果
    */
-  async executeWorkflow(workflowId: string, options?: ExecuteOptions): Promise<ThreadResult> {
-    return this.lifecycleCoordinator.execute(workflowId, this.convertOptions(options));
+  async executeWorkflow(workflowId: string, options?: ThreadOptions): Promise<ThreadResult> {
+    return this.lifecycleCoordinator.execute(workflowId, options || {});
   }
 
   /**
@@ -50,12 +52,12 @@ export class ThreadExecutorAPI {
    * @param options 执行选项
    * @returns 线程执行结果
    */
-  async executeWorkflowFromDefinition(workflow: WorkflowDefinition, options?: ExecuteOptions): Promise<ThreadResult> {
+  async executeWorkflowFromDefinition(workflow: WorkflowDefinition, options?: ThreadOptions): Promise<ThreadResult> {
     // 注册工作流到全局注册表
     workflowRegistry.register(workflow);
 
     // 执行工作流
-    return this.lifecycleCoordinator.execute(workflow.id, this.convertOptions(options));
+    return this.lifecycleCoordinator.execute(workflow.id, options || {});
   }
 
   /**
@@ -72,7 +74,7 @@ export class ThreadExecutorAPI {
    * @param options 执行选项
    * @returns 线程执行结果
    */
-  async resumeThread(threadId: string, options?: ExecuteOptions): Promise<ThreadResult> {
+  async resumeThread(threadId: string, options?: ThreadOptions): Promise<ThreadResult> {
     return this.lifecycleCoordinator.resumeThread(threadId);
   }
 
@@ -211,23 +213,4 @@ export class ThreadExecutorAPI {
     return threadContext?.triggerManager;
   }
 
-  /**
-   * 转换执行选项
-   * @param options API执行选项
-   * @returns Core层执行选项
-   */
-  private convertOptions(options?: ExecuteOptions): ThreadOptions {
-    if (!options) {
-      return {};
-    }
-
-    return {
-      input: options.input,
-      maxSteps: options.maxSteps,
-      timeout: options.timeout,
-      enableCheckpoints: options.enableCheckpoints,
-      onNodeExecuted: options.onNodeExecuted,
-      onError: options.onError
-    };
-  }
 }

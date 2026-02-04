@@ -4,7 +4,7 @@
  */
 
 // 核心类型
-export type { ExecuteOptions, SDKOptions } from './core-types';
+export type { ThreadOptions, SDKOptions, SDKDependencies } from './core-types';
 
 // 注册表类型
 export type {

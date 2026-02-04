@@ -20,7 +20,7 @@ import { TriggerManagerAPI } from '../management/trigger-manager-api';
 import { MessageManagerAPI } from '../conversation/message-manager-api';
 import { workflowRegistry, type WorkflowRegistry } from '../../core/services/workflow-registry';
 import { threadRegistry, type ThreadRegistry } from '../../core/services/thread-registry';
-import type { SDKOptions } from '../types/core-types';
+import type { SDKOptions, SDKDependencies } from '../types/core-types';
 import { WorkflowBuilder } from '../builders/workflow-builder';
 import { ExecutionBuilder } from '../builders/execution-builder';
 import type { WorkflowDefinition } from '../../types/workflow';
@@ -80,11 +80,10 @@ export class SDK {
   /** 内部线程注册表 */
   private readonly internalThreadRegistry: ThreadRegistry;
 
-  constructor(options?: SDKOptions) {
-    // 使用全局单例注册表
-    this.internalWorkflowRegistry = workflowRegistry;
-    // 优先使用传入的实例（用于测试），默认使用全局单例
-    this.internalThreadRegistry = options?.threadRegistry || threadRegistry;
+  constructor(options?: SDKOptions, dependencies?: SDKDependencies) {
+    // 使用传入的依赖或全局单例
+    this.internalWorkflowRegistry = dependencies?.workflowRegistry || workflowRegistry;
+    this.internalThreadRegistry = dependencies?.threadRegistry || options?.threadRegistry || threadRegistry;
 
     // 初始化API模块
     this.workflows = new WorkflowRegistryAPI({
@@ -93,7 +92,10 @@ export class SDK {
     });
     this.threads = new ThreadRegistryAPI(this.internalThreadRegistry);
     this.validator = new WorkflowValidatorAPI();
-    this.executor = new ThreadExecutorAPI(this.internalWorkflowRegistry);
+    this.executor = new ThreadExecutorAPI(
+      this.internalWorkflowRegistry,
+      dependencies?.executionContext
+    );
     this.tools = new ToolServiceAPI();
     this.scripts = new CodeServiceAPI();
     this.llm = new LLMWrapperAPI();

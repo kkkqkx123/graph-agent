@@ -4,27 +4,8 @@
  */
 
 import type { UserInteractionHandler } from '../core/user-interaction-api';
-
-/**
- * 执行选项
- * 注意：此类型与ThreadOptions功能重叠，建议未来直接使用ThreadOptions
- */
-export interface ExecuteOptions {
-  /** 输入数据 */
-  input?: Record<string, any>;
-  /** 最大执行步数 */
-  maxSteps?: number;
-  /** 超时时间（毫秒） */
-  timeout?: number;
-  /** 是否启用检查点 */
-  enableCheckpoints?: boolean;
-  /** 节点执行回调 */
-  onNodeExecuted?: (result: any) => void | Promise<void>;
-  /** 错误回调 */
-  onError?: (error: any) => void | Promise<void>;
-  /** 用户交互处理器 */
-  userInteractionHandler?: UserInteractionHandler;
-}
+import type { ThreadOptions } from '../../types/thread';
+import type { ExecutionContext } from '../../core/execution/context/execution-context';
 
 /**
  * SDK配置选项
@@ -39,3 +20,19 @@ export interface SDKOptions {
   /** 自定义ThreadRegistry */
   threadRegistry?: any;
 }
+
+/**
+ * SDK依赖注入配置
+ * 用于测试和自定义配置
+ */
+export interface SDKDependencies {
+  /** 自定义WorkflowRegistry */
+  workflowRegistry?: any;
+  /** 自定义ThreadRegistry */
+  threadRegistry?: any;
+  /** 自定义ExecutionContext */
+  executionContext?: ExecutionContext;
+}
+
+// 重新导出ThreadOptions供API层使用
+export type { ThreadOptions };

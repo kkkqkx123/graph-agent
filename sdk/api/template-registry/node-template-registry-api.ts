@@ -249,13 +249,6 @@ export class NodeRegistryAPI {
     return name;
   }
 
-  /**
-   * 获取底层NodeRegistry实例
-   * @returns NodeRegistry实例
-   */
-  getRegistry(): NodeTemplateRegistry {
-    return this.registry;
-  }
 
   /**
    * 应用过滤条件

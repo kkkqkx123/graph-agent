@@ -390,7 +390,8 @@ export class CodeServiceAPI {
    * @returns 脚本数量
    */
   async getScriptCount(): Promise<number> {
-    return this.codeService.getScriptCount();
+    const scripts = await this.getScripts();
+    return scripts.length;
   }
 
   /**
@@ -473,13 +474,6 @@ export class CodeServiceAPI {
     };
   }
 
-  /**
-   * 获取底层CodeService实例
-   * @returns CodeService实例
-   */
-  getService() {
-    return this.codeService;
-  }
 
   /**
    * 应用过滤条件
