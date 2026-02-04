@@ -35,25 +35,26 @@ export class TimeBasedCleanupStrategy implements CheckpointCleanupStrategy {
     const retentionMs = this.policy.retentionDays * 24 * 60 * 60 * 1000;
     const minRetention = this.policy.minRetention || 0;
 
-    // 按时间戳降序排序
-    const sorted = [...checkpoints].sort((a, b) => b.metadata.timestamp - a.metadata.timestamp);
+    // 按时间戳升序排序（最旧的在前）
+    const sorted = [...checkpoints].sort((a, b) => a.metadata.timestamp - b.metadata.timestamp);
 
     // 找出需要删除的检查点
     const toDelete: string[] = [];
+    
+    // 从最旧的检查点开始检查
     for (let i = 0; i < sorted.length; i++) {
       const checkpoint = sorted[i];
       if (!checkpoint) continue;
 
       const age = now - checkpoint.metadata.timestamp;
 
-      // 保留最近的minRetention个检查点
-      if (i < minRetention) {
-        continue;
-      }
-
-      // 删除超过保留时间的检查点
-      if (age > retentionMs) {
-        toDelete.push(checkpoint.checkpointId);
+      // 确保至少保留minRetention个检查点
+      // 保留最新的minRetention个检查点（数组末尾的minRetention个）
+      if (i < sorted.length - minRetention) {
+        // 删除超过保留时间的检查点
+        if (age > retentionMs) {
+          toDelete.push(checkpoint.checkpointId);
+        }
       }
     }
 
@@ -105,8 +106,8 @@ export class SizeBasedCleanupStrategy implements CheckpointCleanupStrategy {
     const maxSize = this.policy.maxSizeBytes;
     const minRetention = this.policy.minRetention || 0;
 
-    // 按时间戳降序排序
-    const sorted = [...checkpoints].sort((a, b) => b.metadata.timestamp - a.metadata.timestamp);
+    // 按时间戳升序排序（最旧的在前）
+    const sorted = [...checkpoints].sort((a, b) => a.metadata.timestamp - b.metadata.timestamp);
 
     // 计算总存储空间
     let totalSize = 0;
@@ -124,7 +125,8 @@ export class SizeBasedCleanupStrategy implements CheckpointCleanupStrategy {
     const toDelete: string[] = [];
     let currentSize = totalSize;
 
-    for (let i = sorted.length - 1; i >= 0; i--) {
+    // 从最旧的检查点开始删除
+    for (let i = 0; i < sorted.length; i++) {
       const checkpoint = sorted[i];
       if (!checkpoint) continue;
 
@@ -132,16 +134,18 @@ export class SizeBasedCleanupStrategy implements CheckpointCleanupStrategy {
       const size = this.checkpointSizes.get(checkpointId) || 0;
 
       // 确保至少保留minRetention个检查点
-      if (i < minRetention) {
-        break;
-      }
+      // 保留最新的minRetention个检查点（数组末尾的minRetention个）
+      if (i < sorted.length - minRetention) {
+        // 删除检查点
+        toDelete.push(checkpointId);
+        currentSize -= size;
 
-      // 删除检查点
-      toDelete.push(checkpointId);
-      currentSize -= size;
-
-      // 如果已经满足空间要求，停止删除
-      if (currentSize <= maxSize) {
+        // 如果已经满足空间要求，停止删除
+        if (currentSize <= maxSize) {
+          break;
+        }
+      } else {
+        // 如果当前检查点属于要保留的minRetention个检查点，停止删除
         break;
       }
     }
