@@ -26,11 +26,63 @@ export { TriggerTemplateRegistryAPI } from './template-registry/trigger-template
 export { TriggerManagerAPI, triggerManagerAPI } from './management/trigger-manager-api';
 
 // 构建器
-export { WorkflowBuilder, ExecutionBuilder } from './builders';
+export { WorkflowBuilder, ExecutionBuilder, WorkflowComposer, sequential, parallel } from './builders';
+export { merge as mergeWorkflows } from './builders';
+export type {
+  ExecutionEvent,
+  StartEvent,
+  CompleteEvent,
+  ErrorEvent,
+  CancelledEvent,
+  ProgressEvent,
+  NodeExecutedEvent
+} from './builders/execution-builder';
+export type {
+  WorkflowCompositionConfig,
+  WorkflowCompositionItem,
+  WorkflowCompositionResult,
+  CompositionEvent,
+  CompositionStartEvent,
+  CompositionCompleteEvent,
+  CompositionErrorEvent
+} from './builders/workflow-composer';
 
 // 工具函数
 export { ok, err, tryCatch, tryCatchAsync, all, any } from './utils/result';
 export type { Result, Ok, Err } from './utils/result';
+
+// Observable响应式编程
+export {
+  Observable,
+  Observer,
+  Subscription,
+  ObservableImpl,
+  of,
+  fromPromise,
+  fromArray,
+  create,
+  map,
+  filter,
+  flatMap,
+  distinctUntilChanged,
+  throttleTime,
+  debounceTime,
+  catchError,
+  retry,
+  delay,
+  interval,
+  timer,
+  merge,
+  concat,
+  combineLatest,
+  take,
+  skip,
+  scan,
+  reduce,
+  last,
+  first
+} from './utils/observable';
+export type { OperatorFunction } from './utils/observable';
 
 // 类型定义
 export type {

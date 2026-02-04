@@ -1,12 +1,14 @@
 /**
  * ExecutionBuilder - 流畅的执行构建器
  * 提供链式API来配置和执行工作流
+ * 支持Promise和Observable双接口
  */
 
 import type { ThreadResult, ThreadOptions } from '../../types/thread';
 import type { ExecuteOptions } from '../types/core-types';
 import { ThreadExecutorAPI } from '../core/thread-executor-api';
 import { ok, err, Result } from '../utils/result';
+import { Observable, Observer, create, fromPromise } from '../utils/observable';
 
 /**
  * ExecutionBuilder - 流畅的执行构建器
@@ -17,6 +19,7 @@ export class ExecutionBuilder {
   private options: ExecuteOptions = {};
   private onProgressCallbacks: Array<(progress: any) => void> = [];
   private onErrorCallbacks: Array<(error: any) => void> = [];
+  private abortController?: AbortController;
 
   constructor(executor: ThreadExecutorAPI) {
     this.executor = executor;
@@ -195,4 +198,343 @@ export class ExecutionBuilder {
   finally(onfinally?: (() => void) | null): Promise<ThreadResult> {
     return this.execute().finally(onfinally);
   }
+
+  /**
+   * 异步执行工作流（返回Observable）
+   * 提供响应式接口，支持进度监控和取消
+   * @returns Observable<ExecutionEvent>
+   */
+  executeAsync(): Observable<ExecutionEvent> {
+    if (!this.workflowId) {
+      return create((observer) => {
+        observer.error(new Error('工作流ID未设置，请先调用withWorkflow()'));
+        return () => {};
+      });
+    }
+
+    const workflowId = this.workflowId; // workflowId在这里已经确定存在
+
+    return create((observer) => {
+      // 创建AbortController用于取消执行
+      this.abortController = new AbortController();
+      const signal = this.abortController.signal;
+
+      // 发送开始事件
+      observer.next({
+        type: 'start',
+        timestamp: Date.now(),
+        workflowId
+      });
+
+      // 执行工作流
+      const executePromise = this.executeWithSignal(signal);
+
+      // 监听执行结果
+      executePromise
+        .then((result) => {
+          // 发送完成事件
+          observer.next({
+            type: 'complete',
+            timestamp: Date.now(),
+            workflowId,
+            result
+          });
+          observer.complete();
+        })
+        .catch((error) => {
+          if (signal.aborted) {
+            // 发送取消事件
+            observer.next({
+              type: 'cancelled',
+              timestamp: Date.now(),
+              workflowId,
+              reason: 'Execution was cancelled'
+            });
+            observer.complete();
+          } else {
+            // 发送错误事件
+            observer.next({
+              type: 'error',
+              timestamp: Date.now(),
+              workflowId,
+              error
+            });
+            observer.error(error);
+          }
+        });
+
+      // 返回取消订阅函数
+      return {
+        unsubscribe: () => {
+          if (this.abortController && !signal.aborted) {
+            this.abortController.abort();
+          }
+        },
+        get closed() {
+          return signal.aborted;
+        }
+      };
+    });
+  }
+
+  /**
+   * 使用AbortSignal执行工作流
+   * @param signal AbortSignal
+   * @returns Promise<ThreadResult>
+   */
+  private async executeWithSignal(signal: AbortSignal): Promise<ThreadResult> {
+    // 检查是否已取消
+    if (signal.aborted) {
+      throw new Error('Execution was cancelled');
+    }
+
+    // 包装执行逻辑以支持取消
+    const executionPromise = this.executor.executeWorkflow(this.workflowId!, this.options);
+
+    // 创建一个可以取消的Promise
+    return new Promise((resolve, reject) => {
+      const abortHandler = () => {
+        reject(new Error('Execution was cancelled'));
+      };
+
+      signal.addEventListener('abort', abortHandler);
+
+      executionPromise
+        .then(resolve)
+        .catch(reject)
+        .finally(() => {
+          signal.removeEventListener('abort', abortHandler);
+        });
+    });
+  }
+
+  /**
+   * 取消执行
+   * @returns void
+   */
+  cancel(): void {
+    if (this.abortController) {
+      this.abortController.abort();
+    }
+  }
+
+  /**
+   * 获取执行进度Observable
+   * @returns Observable<ProgressEvent>
+   */
+  observeProgress(): Observable<ProgressEvent> {
+    return create((observer) => {
+      const callback = (progress: any) => {
+        observer.next({
+          type: 'progress',
+          timestamp: Date.now(),
+          workflowId: this.workflowId!,
+          progress
+        });
+      };
+
+      this.onProgressCallbacks.push(callback);
+
+      let unsubscribed = false;
+      return {
+        unsubscribe: () => {
+          if (!unsubscribed) {
+            unsubscribed = true;
+            const index = this.onProgressCallbacks.indexOf(callback);
+            if (index > -1) {
+              this.onProgressCallbacks.splice(index, 1);
+            }
+          }
+        },
+        get closed() {
+          return unsubscribed;
+        }
+      };
+    });
+  }
+
+  /**
+   * 获取节点执行事件Observable
+   * @returns Observable<NodeExecutedEvent>
+   */
+  observeNodeExecuted(): Observable<NodeExecutedEvent> {
+    return create((observer) => {
+      const callback = (result: any) => {
+        observer.next({
+          type: 'nodeExecuted',
+          timestamp: Date.now(),
+          workflowId: this.workflowId!,
+          nodeResult: result
+        });
+      };
+
+      this.options.onNodeExecuted = callback;
+
+      let unsubscribed = false;
+      return {
+        unsubscribe: () => {
+          if (!unsubscribed) {
+            unsubscribed = true;
+            if (this.options.onNodeExecuted === callback) {
+              delete this.options.onNodeExecuted;
+            }
+          }
+        },
+        get closed() {
+          return unsubscribed;
+        }
+      };
+    });
+  }
+
+  /**
+   * 获取错误事件Observable
+   * @returns Observable<ErrorEvent>
+   */
+  observeError(): Observable<ErrorEvent> {
+    return create((observer) => {
+      const callback = (error: any) => {
+        observer.next({
+          type: 'error',
+          timestamp: Date.now(),
+          workflowId: this.workflowId!,
+          error
+        });
+      };
+
+      this.onErrorCallbacks.push(callback);
+
+      let unsubscribed = false;
+      return {
+        unsubscribe: () => {
+          if (!unsubscribed) {
+            unsubscribed = true;
+            const index = this.onErrorCallbacks.indexOf(callback);
+            if (index > -1) {
+              this.onErrorCallbacks.splice(index, 1);
+            }
+          }
+        },
+        get closed() {
+          return unsubscribed;
+        }
+      };
+    });
+  }
+
+  /**
+   * 获取所有执行事件Observable
+   * @returns Observable<ExecutionEvent>
+   */
+  observeAll(): Observable<ExecutionEvent> {
+    return create((observer) => {
+      const subscriptions: Array<{ unsubscribe: () => void; closed: boolean }> = [];
+
+      // 订阅进度事件
+      subscriptions.push(
+        this.observeProgress().subscribe(
+          (event) => observer.next(event),
+          (err) => observer.error(err),
+          () => {}
+        )
+      );
+
+      // 订阅节点执行事件
+      subscriptions.push(
+        this.observeNodeExecuted().subscribe(
+          (event) => observer.next(event),
+          (err) => observer.error(err),
+          () => {}
+        )
+      );
+
+      // 订阅错误事件
+      subscriptions.push(
+        this.observeError().subscribe(
+          (event) => observer.next(event),
+          (err) => observer.error(err),
+          () => {}
+        )
+      );
+
+      return {
+        unsubscribe: () => {
+          subscriptions.forEach((sub) => sub.unsubscribe());
+        },
+        get closed() {
+          return subscriptions.every((sub) => sub.closed);
+        }
+      };
+    });
+  }
+}
+
+/**
+ * 执行事件类型
+ */
+export type ExecutionEvent =
+  | StartEvent
+  | CompleteEvent
+  | ErrorEvent
+  | CancelledEvent
+  | ProgressEvent
+  | NodeExecutedEvent;
+
+/**
+ * 开始事件
+ */
+export interface StartEvent {
+  type: 'start';
+  timestamp: number;
+  workflowId: string;
+}
+
+/**
+ * 完成事件
+ */
+export interface CompleteEvent {
+  type: 'complete';
+  timestamp: number;
+  workflowId: string;
+  result: ThreadResult;
+}
+
+/**
+ * 错误事件
+ */
+export interface ErrorEvent {
+  type: 'error';
+  timestamp: number;
+  workflowId: string;
+  error: any;
+}
+
+/**
+ * 取消事件
+ */
+export interface CancelledEvent {
+  type: 'cancelled';
+  timestamp: number;
+  workflowId: string;
+  reason: string;
+}
+
+/**
+ * 进度事件
+ */
+export interface ProgressEvent {
+  type: 'progress';
+  timestamp: number;
+  workflowId: string;
+  progress: any;
+}
+
+/**
+ * 节点执行事件
+ */
+export interface NodeExecutedEvent {
+  type: 'nodeExecuted';
+  timestamp: number;
+  workflowId: string;
+  nodeResult: any;
 }
