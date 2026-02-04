@@ -23,6 +23,7 @@ import { threadRegistry, type ThreadRegistry } from '../../core/services/thread-
 import type { SDKOptions, SDKDependencies } from '../types/core-types';
 import { WorkflowBuilder } from '../builders/workflow-builder';
 import { ExecutionBuilder } from '../builders/execution-builder';
+import { ExecutionContext } from '../../core/execution/context/execution-context';
 import type { WorkflowDefinition } from '../../types/workflow';
 
 /**
@@ -101,7 +102,9 @@ export class SDK {
     this.llm = new LLMWrapperAPI();
     this.profiles = new ProfileManagerAPI();
     this.events = new EventManagerAPI();
-    this.checkpoints = new CheckpointManagerAPI();
+    // 使用ExecutionContext中的CheckpointCoordinator创建CheckpointManagerAPI
+    const executionContextForCheckpoints = dependencies?.executionContext || ExecutionContext.createDefault();
+    this.checkpoints = new CheckpointManagerAPI(executionContextForCheckpoints.getCheckpointCoordinator());
     this.variables = new VariableManagerAPI(this.internalThreadRegistry);
     this.nodeTemplates = new NodeRegistryAPI();
     this.triggerTemplates = new TriggerTemplateRegistryAPI();

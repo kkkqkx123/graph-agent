@@ -1,0 +1,238 @@
+/**
+ * 检查点协调器
+ * 无状态服务，协调完整的检查点流程
+ */
+
+import { NotFoundError } from '../../../types/errors';
+import type { Thread } from '../../../types/thread';
+import type { Checkpoint, CheckpointMetadata, ThreadStateSnapshot } from '../../../types/checkpoint';
+import type { ThreadRegistry } from '../../services/thread-registry';
+import type { WorkflowRegistry } from '../../services/workflow-registry';
+import type { GlobalMessageStorage } from '../../services/global-message-storage';
+import { CheckpointStateManager } from '../managers/checkpoint-state-manager';
+import { ConversationManager } from '../managers/conversation-manager';
+import { VariableStateManager } from '../managers/variable-state-manager';
+import { ThreadContext } from '../context/thread-context';
+import { ExecutionContext } from '../context/execution-context';
+import { generateId, now } from '../../../utils';
+
+/**
+ * 检查点协调器
+ */
+export class CheckpointCoordinator {
+  constructor(
+    private checkpointStateManager: CheckpointStateManager,
+    private threadRegistry: ThreadRegistry,
+    private workflowRegistry: WorkflowRegistry,
+    private globalMessageStorage: GlobalMessageStorage
+  ) { }
+
+  /**
+   * 创建检查点
+   * @param threadId 线程ID
+   * @param metadata 检查点元数据
+   * @returns 检查点ID
+   */
+  async createCheckpoint(threadId: string, metadata?: CheckpointMetadata): Promise<string> {
+    // 步骤1：从 ThreadRegistry 获取 ThreadContext 对象
+    const threadContext = this.threadRegistry.get(threadId);
+    if (!threadContext) {
+      throw new NotFoundError(`ThreadContext not found`, 'ThreadContext', threadId);
+    }
+
+    const thread = threadContext.thread;
+
+    // 步骤2：提取 ThreadStateSnapshot
+    // 使用 VariableStateManager 创建变量快照
+    const variableStateManager = new VariableStateManager();
+    const variableSnapshot = variableStateManager.createSnapshot();
+
+    // 将 nodeResults 数组转换为 Record 格式
+    const nodeResultsRecord: Record<string, any> = {};
+    for (const result of thread.nodeResults) {
+      nodeResultsRecord[result.nodeId] = result;
+    }
+
+    // 获取对话管理器
+    const conversationManager = threadContext.getConversationManager();
+
+    // 存储完整消息历史到全局存储
+    this.globalMessageStorage.storeMessages(
+      threadId,
+      conversationManager.getAllMessages()
+    );
+
+    // 增加引用计数，防止消息被过早删除
+    this.globalMessageStorage.addReference(threadId);
+
+    // 只保存索引状态和Token统计
+    const conversationState = {
+      markMap: conversationManager.getMarkMap(),
+      tokenUsage: conversationManager.getTokenUsage(),
+      currentRequestUsage: conversationManager.getCurrentRequestUsage()
+    };
+
+    // 获取触发器状态快照
+    const triggerStateSnapshot = threadContext.getTriggerStateSnapshot();
+
+    const threadState: ThreadStateSnapshot = {
+      status: thread.status,
+      currentNodeId: thread.currentNodeId,
+      variables: variableSnapshot.variables,
+      variableScopes: variableSnapshot.variableScopes,
+      input: thread.input,
+      output: thread.output,
+      nodeResults: nodeResultsRecord,
+      errors: thread.errors,
+      conversationState, // 使用新的索引状态
+      triggerStates: triggerStateSnapshot.size > 0 ? triggerStateSnapshot : undefined // 保存触发器状态
+    };
+
+    // 步骤3：生成唯一 checkpointId 和 timestamp
+    const checkpointId = generateId();
+    const timestamp = now();
+
+    // 步骤4：创建 Checkpoint 对象
+    const checkpoint: Checkpoint = {
+      id: checkpointId,
+      threadId: threadContext.getThreadId(),
+      workflowId: threadContext.getWorkflowId(),
+      timestamp,
+      threadState,
+      metadata
+    };
+
+    // 步骤5：调用 CheckpointStateManager 创建检查点
+    return await this.checkpointStateManager.create(checkpoint);
+  }
+
+  /**
+   * 从检查点恢复 ThreadContext 状态
+   * @param checkpointId 检查点ID
+   * @returns 恢复的 ThreadContext 对象
+   */
+  async restoreFromCheckpoint(checkpointId: string): Promise<ThreadContext> {
+    // 步骤1：从 CheckpointStateManager 加载检查点
+    const checkpoint = await this.checkpointStateManager.get(checkpointId);
+    if (!checkpoint) {
+      throw new NotFoundError(`Checkpoint not found`, 'Checkpoint', checkpointId);
+    }
+
+    // 步骤2：验证 checkpoint 完整性和兼容性
+    this.validateCheckpoint(checkpoint);
+
+    // 步骤3：从 WorkflowRegistry 获取 WorkflowDefinition
+    const workflowDefinition = this.workflowRegistry.get(checkpoint.workflowId);
+    if (!workflowDefinition) {
+      throw new NotFoundError(`Workflow not found`, 'Workflow', checkpoint.workflowId);
+    }
+
+    // 步骤4：恢复 Thread 状态
+    // 将 nodeResults Record 转换回数组格式
+    const nodeResultsArray = Object.values(checkpoint.threadState.nodeResults || {});
+
+    const thread: Partial<Thread> = {
+      id: checkpoint.threadId,
+      workflowId: checkpoint.workflowId,
+      workflowVersion: '1.0.0', // TODO: 从 checkpoint 元数据中获取版本
+      status: checkpoint.threadState.status,
+      currentNodeId: checkpoint.threadState.currentNodeId,
+      input: checkpoint.threadState.input,
+      output: checkpoint.threadState.output,
+      nodeResults: nodeResultsArray,
+      startTime: checkpoint.timestamp,
+      errors: checkpoint.threadState.errors,
+      metadata: checkpoint.metadata
+    };
+
+    // 步骤5：使用 VariableStateManager 恢复变量快照
+    const variableStateManager = new VariableStateManager();
+    variableStateManager.restoreFromSnapshot({
+      variables: checkpoint.threadState.variables,
+      variableScopes: checkpoint.threadState.variableScopes
+    });
+
+    // 步骤6：从全局存储获取完整消息历史
+    const messageHistory = this.globalMessageStorage.getMessages(checkpoint.threadId);
+    if (!messageHistory) {
+      throw new NotFoundError(`Message history not found`, 'MessageHistory', checkpoint.threadId);
+    }
+
+    // 步骤7：创建 ConversationManager
+    const conversationManager = new ConversationManager();
+
+    // 批量添加所有消息（包括已压缩的）
+    conversationManager.addMessages(...messageHistory);
+
+    // 步骤8：恢复索引状态
+    if (checkpoint.threadState.conversationState) {
+      conversationManager.getIndexManager().setMarkMap(checkpoint.threadState.conversationState.markMap);
+
+      // 恢复Token统计
+      conversationManager.getTokenUsageTracker().setState(
+        checkpoint.threadState.conversationState.tokenUsage,
+        checkpoint.threadState.conversationState.currentRequestUsage
+      );
+    }
+
+    // 步骤9：创建 ThreadContext
+    const executionContext = ExecutionContext.createDefault();
+    const threadContext = new ThreadContext(
+      thread as Thread,
+      conversationManager,
+      this.threadRegistry,
+      this.workflowRegistry,
+      executionContext.getEventManager(),
+      executionContext.getToolService(),
+      executionContext.getLlmExecutor()
+    );
+
+    // 步骤10：恢复触发器状态
+    if (checkpoint.threadState.triggerStates) {
+      threadContext.restoreTriggerState(checkpoint.threadState.triggerStates);
+    }
+
+    // 步骤11：注册到 ThreadRegistry
+    this.threadRegistry.register(threadContext);
+
+    return threadContext;
+  }
+
+  /**
+   * 验证检查点完整性和兼容性
+   */
+  private validateCheckpoint(checkpoint: Checkpoint): void {
+    // 验证必需字段
+    if (!checkpoint.id || !checkpoint.threadId || !checkpoint.workflowId) {
+      throw new Error('Invalid checkpoint: missing required fields');
+    }
+
+    if (!checkpoint.threadState) {
+      throw new Error('Invalid checkpoint: missing thread state');
+    }
+
+    // 验证 threadState 结构
+    const { threadState } = checkpoint;
+    if (!threadState.status || !threadState.currentNodeId) {
+      throw new Error('Invalid checkpoint: incomplete thread state');
+    }
+  }
+
+  /**
+   * 创建节点级别检查点
+   * @param threadId 线程ID
+   * @param nodeId 节点ID
+   * @param metadata 检查点元数据
+   * @returns 检查点ID
+   */
+  async createNodeCheckpoint(threadId: string, nodeId: string, metadata?: CheckpointMetadata): Promise<string> {
+    return this.createCheckpoint(threadId, {
+      ...metadata,
+      description: `Node checkpoint for node ${nodeId}`,
+      customFields: {
+        ...metadata?.customFields,
+        nodeId
+      }
+    });
+  }
+}

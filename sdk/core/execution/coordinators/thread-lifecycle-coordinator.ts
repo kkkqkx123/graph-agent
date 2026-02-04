@@ -39,22 +39,26 @@ import { ExecutionContext } from '../context/execution-context';
  * 负责高层的流程编排和协调，组织多个组件完成复杂的Thread生命周期操作
  */
 export class ThreadLifecycleCoordinator {
-  private lifecycleManager: ThreadLifecycleManager;
-  private cascadeManager: ThreadCascadeManager;
+  private lifecycleManager?: ThreadLifecycleManager;
+  private cascadeManager?: ThreadCascadeManager;
   private executionContext: ExecutionContext;
-  private threadRegistry: ThreadRegistry;
-  private workflowRegistry: WorkflowRegistry;
-  private eventManager: EventManager;
 
   constructor(
     executionContext?: ExecutionContext
   ) {
     this.executionContext = executionContext || ExecutionContext.createDefault();
-    this.threadRegistry = this.executionContext.getThreadRegistry();
-    this.workflowRegistry = this.executionContext.getWorkflowRegistry();
-    this.eventManager = this.executionContext.getEventManager();
-    this.lifecycleManager = new ThreadLifecycleManager(this.eventManager);
-    this.cascadeManager = new ThreadCascadeManager(this.threadRegistry, this.lifecycleManager);
+    // 延迟初始化 lifecycleManager，避免循环依赖
+  }
+
+  /**
+   * 获取 LifecycleManager
+   * @returns ThreadLifecycleManager 实例
+   */
+  private getLifecycleManager(): ThreadLifecycleManager {
+    if (!this.lifecycleManager) {
+      this.lifecycleManager = new ThreadLifecycleManager(this.executionContext.getEventManager());
+    }
+    return this.lifecycleManager;
   }
 
   /**
@@ -66,7 +70,7 @@ export class ThreadLifecycleCoordinator {
    */
   async execute(workflowId: string, options: ThreadOptions = {}): Promise<ThreadResult> {
     // 创建必要的组件
-    const threadBuilder = new ThreadBuilder(this.workflowRegistry, this.executionContext);
+    const threadBuilder = new ThreadBuilder(this.executionContext.getWorkflowRegistry(), this.executionContext);
     const threadExecutor = new ThreadExecutor(
       this.executionContext,
       options.userInteractionHandler
@@ -76,10 +80,10 @@ export class ThreadLifecycleCoordinator {
     const threadContext = await threadBuilder.build(workflowId, options);
 
     // 步骤 2：注册 ThreadContext
-    this.threadRegistry.register(threadContext);
+    this.executionContext.getThreadRegistry().register(threadContext);
 
     // 步骤 3：启动 Thread
-    await this.lifecycleManager.startThread(threadContext.thread);
+    await this.getLifecycleManager().startThread(threadContext.thread);
 
     // 步骤 4：执行 Thread
     const result = await threadExecutor.executeThread(threadContext);
@@ -88,9 +92,9 @@ export class ThreadLifecycleCoordinator {
     const isSuccess = !result.error && threadContext.getStatus() === 'COMPLETED';
 
     if (isSuccess) {
-      await this.lifecycleManager.completeThread(threadContext.thread, result);
+      await this.getLifecycleManager().completeThread(threadContext.thread, result);
     } else {
-      await this.lifecycleManager.failThread(threadContext.thread, result.error || new Error('Execution failed'));
+      await this.getLifecycleManager().failThread(threadContext.thread, result.error || new Error('Execution failed'));
     }
 
     return result;
@@ -109,7 +113,7 @@ export class ThreadLifecycleCoordinator {
    * @throws NotFoundError ThreadContext不存在
    */
   async pauseThread(threadId: string): Promise<void> {
-    const threadContext = this.threadRegistry.get(threadId);
+    const threadContext = this.executionContext.getThreadRegistry().get(threadId);
     if (!threadContext) {
       throw new NotFoundError(`ThreadContext not found`, 'ThreadContext', threadId);
     }
@@ -120,10 +124,10 @@ export class ThreadLifecycleCoordinator {
     thread.shouldPause = true;
 
     // 2. 等待执行器在安全点处暂停并触发THREAD_PAUSED事件
-    await waitForThreadPaused(this.eventManager, threadId, 5000);
+    await waitForThreadPaused(this.executionContext.getEventManager(), threadId, 5000);
 
     // 3. 完全委托给Manager进行状态转换和事件触发
-    await this.lifecycleManager.pauseThread(thread);
+    await this.getLifecycleManager().pauseThread(thread);
   }
 
   /**
@@ -140,7 +144,7 @@ export class ThreadLifecycleCoordinator {
    * @throws NotFoundError ThreadContext不存在
    */
   async resumeThread(threadId: string): Promise<ThreadResult> {
-    const threadContext = this.threadRegistry.get(threadId);
+    const threadContext = this.executionContext.getThreadRegistry().get(threadId);
     if (!threadContext) {
       throw new NotFoundError(`ThreadContext not found`, 'ThreadContext', threadId);
     }
@@ -148,7 +152,7 @@ export class ThreadLifecycleCoordinator {
     const thread = threadContext.thread;
 
     // 1. 完全委托给Manager进行状态转换和事件触发
-    await this.lifecycleManager.resumeThread(thread);
+    await this.getLifecycleManager().resumeThread(thread);
 
     // 2. 清除暂停标志
     thread.shouldPause = false;
@@ -172,7 +176,7 @@ export class ThreadLifecycleCoordinator {
    * @throws NotFoundError ThreadContext不存在
    */
   async stopThread(threadId: string): Promise<void> {
-    const threadContext = this.threadRegistry.get(threadId);
+    const threadContext = this.executionContext.getThreadRegistry().get(threadId);
     if (!threadContext) {
       throw new NotFoundError(`ThreadContext not found`, 'ThreadContext', threadId);
     }
@@ -183,13 +187,26 @@ export class ThreadLifecycleCoordinator {
     thread.shouldStop = true;
 
     // 2. 等待执行器在安全点处停止并触发THREAD_CANCELLED事件
-    await waitForThreadCancelled(this.eventManager, threadId, 5000);
+    await waitForThreadCancelled(this.executionContext.getEventManager(), threadId, 5000);
 
     // 3. 完全委托给Manager进行状态转换和事件触发
-    await this.lifecycleManager.cancelThread(thread, 'user_requested');
+    await this.getLifecycleManager().cancelThread(thread, 'user_requested');
 
     // 4. 级联取消子Threads
-    await this.cascadeManager.cascadeCancel(threadId);
+    await this.getCascadeManager().cascadeCancel(threadId);
   }
 
+  /**
+   * 获取 CascadeManager
+   * @returns ThreadCascadeManager 实例
+   */
+  private getCascadeManager(): ThreadCascadeManager {
+    if (!this.cascadeManager) {
+      this.cascadeManager = new ThreadCascadeManager(
+        this.executionContext.getThreadRegistry(),
+        this.getLifecycleManager()
+      );
+    }
+    return this.cascadeManager;
+  }
 }

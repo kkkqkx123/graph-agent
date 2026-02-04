@@ -10,14 +10,12 @@
  * - 生命周期管理：实现LifecycleCapable接口，提供统一的初始化和清理机制
  *
  * 包含的管理器：
- * - CheckpointManager: 检查点管理器
  * - TriggerStateManager: 触发器状态管理器
  * - VariableStateManager: 变量状态管理器
  * - LifecycleCapable: 统一的生命周期管理能力接口
  * - CheckpointCleanupPolicy: 检查点清理策略
  */
 
-export { CheckpointManager } from "./checkpoint-manager";
 export { TriggerStateManager, type TriggerRuntimeState } from "./trigger-state-manager";
 export { VariableStateManager } from "./variable-state-manager";
 export { type LifecycleCapable } from "./lifecycle-capable";

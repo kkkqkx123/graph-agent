@@ -36,7 +36,7 @@ export class SingletonRegistry {
     const { workflowRegistry } = require('../../services/workflow-registry');
     const { threadRegistry } = require('../../services/thread-registry');
     const { toolService } = require('../../services/tool-service');
-    const { LLMExecutor } = require('../llm-executor');
+    const { LLMExecutor } = require('../executors/llm-executor');
     const { graphRegistry } = require('../../services/graph-registry');
 
     // 注册全局单例服务

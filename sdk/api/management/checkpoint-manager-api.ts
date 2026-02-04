@@ -1,22 +1,46 @@
 /**
  * CheckpointManagerAPI - 检查点管理API
- * 封装CheckpointManager，提供状态快照和恢复功能
+ * 封装CheckpointCoordinator和CheckpointStateManager，提供状态快照和恢复功能
  */
 
-import { CheckpointManager } from '../../core/execution/managers/checkpoint-manager';
+import { CheckpointCoordinator } from '../../core/execution/coordinators/checkpoint-coordinator';
+import { CheckpointStateManager } from '../../core/execution/managers/checkpoint-state-manager';
 import type { Checkpoint, CheckpointMetadata } from '../../types/checkpoint';
 import type { Thread } from '../../types/thread';
 import { NotFoundError } from '../../types/errors';
 import type { CheckpointFilter, CheckpointSummary } from '../types/management-types';
+import { MemoryCheckpointStorage } from '../../core/storage/memory-checkpoint-storage';
+import { globalMessageStorage } from '../../core/services/global-message-storage';
+import { SingletonRegistry } from '../../core/execution/context/singleton-registry';
 
 /**
  * CheckpointManagerAPI - 检查点管理API
  */
 export class CheckpointManagerAPI {
-  private manager: CheckpointManager;
+  private coordinator: CheckpointCoordinator;
+  private stateManager: CheckpointStateManager;
 
-  constructor(checkpointManager?: CheckpointManager) {
-    this.manager = checkpointManager || new CheckpointManager();
+  constructor(coordinator?: CheckpointCoordinator, stateManager?: CheckpointStateManager) {
+    if (coordinator && stateManager) {
+      this.coordinator = coordinator;
+      this.stateManager = stateManager;
+    } else {
+      // 创建默认的检查点管理组件
+      const storage = new MemoryCheckpointStorage();
+      this.stateManager = new CheckpointStateManager(storage);
+      
+      // 从SingletonRegistry获取全局服务
+      SingletonRegistry.initialize();
+      const threadRegistry = SingletonRegistry.get<any>('threadRegistry');
+      const workflowRegistry = SingletonRegistry.get<any>('workflowRegistry');
+      
+      this.coordinator = new CheckpointCoordinator(
+        this.stateManager,
+        threadRegistry,
+        workflowRegistry,
+        globalMessageStorage
+      );
+    }
   }
 
   /**
@@ -26,8 +50,8 @@ export class CheckpointManagerAPI {
    * @returns 检查点对象
    */
   async createCheckpoint(threadId: string, metadata?: CheckpointMetadata): Promise<Checkpoint> {
-    const checkpointId = await this.manager.createCheckpoint(threadId, metadata);
-    const checkpoint = await this.manager.getCheckpoint(checkpointId);
+    const checkpointId = await this.coordinator.createCheckpoint(threadId, metadata);
+    const checkpoint = await this.stateManager.get(checkpointId);
     
     if (!checkpoint) {
       throw new Error(`Failed to retrieve created checkpoint: ${checkpointId}`);
@@ -43,7 +67,7 @@ export class CheckpointManagerAPI {
    */
   async restoreFromCheckpoint(checkpointId: string): Promise<Thread> {
     try {
-      const threadContext = await this.manager.restoreFromCheckpoint(checkpointId);
+      const threadContext = await this.coordinator.restoreFromCheckpoint(checkpointId);
       return threadContext.thread;
     } catch (error) {
       if (error instanceof Error && error.message.includes('not found')) {
@@ -59,7 +83,7 @@ export class CheckpointManagerAPI {
    * @returns 检查点对象，如果不存在则返回null
    */
   async getCheckpoint(checkpointId: string): Promise<Checkpoint | null> {
-    return this.manager.getCheckpoint(checkpointId);
+    return this.stateManager.get(checkpointId);
   }
 
   /**
@@ -69,12 +93,12 @@ export class CheckpointManagerAPI {
    */
   async getCheckpoints(filter?: CheckpointFilter): Promise<Checkpoint[]> {
     // 获取所有检查点ID
-    const checkpointIds = await this.manager.listCheckpoints();
+    const checkpointIds = await this.stateManager.list();
     
     // 加载所有检查点
     const checkpoints: Checkpoint[] = [];
     for (const checkpointId of checkpointIds) {
-      const checkpoint = await this.manager.getCheckpoint(checkpointId);
+      const checkpoint = await this.stateManager.get(checkpointId);
       if (checkpoint) {
         checkpoints.push(checkpoint);
       }
@@ -110,12 +134,12 @@ export class CheckpointManagerAPI {
    * @param checkpointId 检查点ID
    */
   async deleteCheckpoint(checkpointId: string): Promise<void> {
-    const checkpoint = await this.manager.getCheckpoint(checkpointId);
+    const checkpoint = await this.stateManager.get(checkpointId);
     if (!checkpoint) {
       throw new NotFoundError(`Checkpoint not found: ${checkpointId}`, 'checkpoint', checkpointId);
     }
     
-    await this.manager.deleteCheckpoint(checkpointId);
+    await this.stateManager.delete(checkpointId);
   }
 
   /**
@@ -124,7 +148,7 @@ export class CheckpointManagerAPI {
    */
   async deleteCheckpoints(checkpointIds: string[]): Promise<void> {
     for (const checkpointId of checkpointIds) {
-      await this.manager.deleteCheckpoint(checkpointId);
+      await this.stateManager.delete(checkpointId);
     }
   }
 
@@ -140,8 +164,8 @@ export class CheckpointManagerAPI {
     nodeId: string,
     metadata?: CheckpointMetadata
   ): Promise<Checkpoint> {
-    const checkpointId = await this.manager.createNodeCheckpoint(threadId, nodeId, metadata);
-    const checkpoint = await this.manager.getCheckpoint(checkpointId);
+    const checkpointId = await this.coordinator.createNodeCheckpoint(threadId, nodeId, metadata);
+    const checkpoint = await this.stateManager.get(checkpointId);
     
     if (!checkpoint) {
       throw new Error(`Failed to retrieve created node checkpoint: ${checkpointId}`);
@@ -184,7 +208,7 @@ export class CheckpointManagerAPI {
    * @returns 是否存在
    */
   async hasCheckpoint(checkpointId: string): Promise<boolean> {
-    const checkpoint = await this.manager.getCheckpoint(checkpointId);
+    const checkpoint = await this.stateManager.get(checkpointId);
     return checkpoint !== null;
   }
 
@@ -193,7 +217,7 @@ export class CheckpointManagerAPI {
    * @returns 检查点数量
    */
   async getCheckpointCount(): Promise<number> {
-    const checkpointIds = await this.manager.listCheckpoints();
+    const checkpointIds = await this.stateManager.list();
     return checkpointIds.length;
   }
 
@@ -211,15 +235,23 @@ export class CheckpointManagerAPI {
    * 清空所有检查点
    */
   async clearAllCheckpoints(): Promise<void> {
-    await this.manager.clearAll();
+    await this.stateManager.clearAll();
   }
 
   /**
-   * 获取底层CheckpointManager实例
-   * @returns CheckpointManager实例
+   * 获取底层CheckpointCoordinator实例
+   * @returns CheckpointCoordinator实例
    */
-  getManager(): CheckpointManager {
-    return this.manager;
+  getCoordinator(): CheckpointCoordinator {
+    return this.coordinator;
+  }
+
+  /**
+   * 获取底层CheckpointStateManager实例
+   * @returns CheckpointStateManager实例
+   */
+  getStateManager(): CheckpointStateManager {
+    return this.stateManager;
   }
 
   /**
