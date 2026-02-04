@@ -38,11 +38,26 @@ export function mergeParameters(
   options?: MergeParametersOptions
 ): Record<string, any> {
   if (!source) {
+    // 如果没有源对象，只应用排除规则
+    if (options?.excludeKeys?.length) {
+      const result = { ...target };
+      for (const key of options.excludeKeys) {
+        delete result[key];
+      }
+      return result;
+    }
     return { ...target };
   }
 
-  const result = { ...target };
   const excludeKeys = new Set(options?.excludeKeys || []);
+  
+  // 先复制目标对象，并移除要排除的键
+  const result: Record<string, any> = {};
+  for (const [key, value] of Object.entries(target)) {
+    if (!excludeKeys.has(key)) {
+      result[key] = value;
+    }
+  }
 
   for (const [key, value] of Object.entries(source)) {
     // 跳过排除的键
@@ -55,15 +70,23 @@ export function mergeParameters(
       const transformed = options.transform(key, value);
       if (transformed) {
         result[transformed.key] = transformed.value;
+      } else {
+        // 如果转换函数返回 null，按原样处理键值对
+        // 深度合并或直接覆盖
+        if (options?.deep && typeof value === 'object' && value !== null && !Array.isArray(value)) {
+          result[key] = mergeParameters(result[key] || {}, value, options);
+        } else {
+          result[key] = value;
+        }
       }
-      continue;
-    }
-
-    // 深度合并或直接覆盖
-    if (options?.deep && typeof value === 'object' && value !== null && !Array.isArray(value)) {
-      result[key] = mergeParameters(result[key] || {}, value, options);
     } else {
-      result[key] = value;
+      // 没有转换函数，直接处理
+      // 深度合并或直接覆盖
+      if (options?.deep && typeof value === 'object' && value !== null && !Array.isArray(value)) {
+        result[key] = mergeParameters(result[key] || {}, value, options);
+      } else {
+        result[key] = value;
+      }
     }
   }
 

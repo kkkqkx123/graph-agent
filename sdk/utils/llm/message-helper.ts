@@ -139,7 +139,7 @@ export function countMessagesByRole(messages: LLMMessage[]): Record<string, numb
 
   for (const msg of messages) {
     if (msg && msg.role && counts[msg.role] !== undefined) {
-      counts[msg.role]!++;
+      counts[msg.role] = (counts[msg.role] ?? 0) + 1;
     }
   }
 

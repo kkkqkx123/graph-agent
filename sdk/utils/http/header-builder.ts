@@ -22,7 +22,7 @@ export function mergeHeaders(
   ...headersList: (Record<string, string | undefined> | undefined)[]
 ): Record<string, string> {
   const result: Record<string, string> = {};
-  const seen = new Set<string>();
+  const keyMap: Record<string, string> = {}; // 存储小写键到实际键的映射
 
   for (const headers of headersList) {
     if (!headers) continue;
@@ -30,26 +30,17 @@ export function mergeHeaders(
     for (const [key, value] of Object.entries(headers)) {
       const lowerKey = key.toLowerCase();
 
-      // 第一次出现的头需要清除前面的
-      if (!seen.has(lowerKey)) {
-        // 删除任何大小写变体
-        for (const existingKey of Object.keys(result)) {
-          if (existingKey.toLowerCase() === lowerKey) {
-            delete result[existingKey];
-          }
-        }
-        seen.add(lowerKey);
+      // 如果存在相同小写的键，则先删除旧的
+      if (keyMap[lowerKey]) {
+        delete result[keyMap[lowerKey]];
       }
 
       if (value === undefined) {
-        // 显式删除头
-        for (const existingKey of Object.keys(result)) {
-          if (existingKey.toLowerCase() === lowerKey) {
-            delete result[existingKey];
-          }
-        }
+        // 显式删除头，如果存在的话
+        delete keyMap[lowerKey];
       } else {
-        // 添加或覆盖头
+        // 更新键映射并设置值
+        keyMap[lowerKey] = key;
         result[key] = value;
       }
     }
