@@ -26,7 +26,6 @@ import type { ID } from '../../types/common';
 import { ThreadContext } from './context/thread-context';
 import type { EventManager } from '../services/event-manager';
 import type { WorkflowRegistry } from '../services/workflow-registry';
-import type { UserInteractionHandler } from '../../api/core/user-interaction-api';
 import { NotFoundError } from '../../types/errors';
 import { ThreadStatus } from '../../types/thread';
 import { now, diffTimestamp } from '../../utils';
@@ -67,10 +66,7 @@ export class ThreadExecutor implements SubgraphContextFactory {
    */
   private isExecutingTriggeredSubgraph: boolean = false;
 
-  constructor(
-    executionContext?: ExecutionContext,
-    userInteractionHandler?: UserInteractionHandler
-  ) {
+  constructor(executionContext?: ExecutionContext) {
     // 设置执行上下文
     this.executionContext = executionContext || ExecutionContext.createDefault();
 
@@ -88,11 +84,12 @@ export class ThreadExecutor implements SubgraphContextFactory {
       this.eventManager
     );
 
-    // 创建节点执行协调器
+    // 创建节点执行协调器（从ExecutionContext获取Handler）
     this.nodeExecutionCoordinator = new NodeExecutionCoordinator(
       this.eventManager,
       llmExecutionCoordinator,
-      userInteractionHandler
+      this.executionContext.getUserInteractionHandler(),
+      this.executionContext.getHumanRelayHandler()
     );
   }
 

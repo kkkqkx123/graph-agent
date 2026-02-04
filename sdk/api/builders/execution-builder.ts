@@ -106,16 +106,6 @@ export class ExecutionBuilder {
   }
 
   /**
-   * 设置用户交互处理器
-   * @param handler 用户交互处理器
-   * @returns this
-   */
-  withUserInteraction(handler: any): this {
-    this.options.userInteractionHandler = handler;
-    return this;
-  }
-
-  /**
    * 执行工作流（返回Result类型）
    * @returns Promise<Result<ThreadResult, Error>>
    */

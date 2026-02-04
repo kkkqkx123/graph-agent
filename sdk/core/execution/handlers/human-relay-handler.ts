@@ -17,8 +17,7 @@
  */
 
 import type { LLMMessage } from '../../../types/llm';
-import type { HumanRelayRequest, HumanRelayResponse, HumanRelayExecutionResult } from '../../../types/human-relay';
-import type { HumanRelayHandler, HumanRelayContext } from '../../../api/llm/human-relay-api';
+import type { HumanRelayRequest, HumanRelayResponse, HumanRelayExecutionResult, HumanRelayHandler, HumanRelayContext } from '../../../types/human-relay';
 import type { EventManager } from '../../services/event-manager';
 import type { ThreadContext } from '../context/thread-context';
 import { EventType } from '../../../types/events';

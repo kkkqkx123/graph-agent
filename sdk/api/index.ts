@@ -8,8 +8,8 @@ export { SDK } from './core/sdk';
 
 // API模块
 export { ThreadExecutorAPI } from './core/thread-executor-api';
-export type { UserInteractionHandler, UserInteractionContext } from './core/user-interaction-api';
-export type { HumanRelayHandler, HumanRelayContext } from './llm/human-relay-api';
+export type { UserInteractionHandler, UserInteractionContext } from '../types/interaction';
+export type { HumanRelayHandler, HumanRelayContext } from '../types/human-relay';
 export { WorkflowRegistryAPI } from './registry/workflow-registry-api';
 export { ThreadRegistryAPI } from './registry/thread-registry-api';
 export { WorkflowValidatorAPI } from './validation/workflow-validator-api';

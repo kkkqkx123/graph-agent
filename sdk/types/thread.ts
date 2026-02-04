@@ -269,8 +269,6 @@ export interface ThreadOptions {
   onToolCalled?: (toolName: string, parameters: any) => void | Promise<void>;
   /** 错误回调 */
   onError?: (error: any) => void | Promise<void>;
-  /** 用户交互处理器 */
-  userInteractionHandler?: any;
 }
 
 /**

@@ -3,7 +3,7 @@
  * 定义核心执行相关的类型
  */
 
-import type { UserInteractionHandler } from '../core/user-interaction-api';
+import type { UserInteractionHandler } from '../../types/interaction';
 import type { ThreadOptions } from '../../types/thread';
 import type { ExecutionContext } from '../../core/execution/context/execution-context';
 

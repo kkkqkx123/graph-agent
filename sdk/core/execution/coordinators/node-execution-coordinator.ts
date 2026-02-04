@@ -19,10 +19,9 @@ import { ThreadContext } from '../context/thread-context';
 import type { Node } from '../../../types/node';
 import type { NodeExecutionResult } from '../../../types/thread';
 import type { EventManager } from '../../services/event-manager';
-import type { UserInteractionHandler } from '../../../api/core/user-interaction-api';
-import type { HumanRelayHandler } from '../../../api/llm/human-relay-api';
+import type { UserInteractionHandler } from '../../../types/interaction';
+import type { HumanRelayHandler } from '../../../types/human-relay';
 import { LLMExecutionCoordinator } from './llm-execution-coordinator';
-import { LLMWrapper } from '../../llm/wrapper';
 import { enterSubgraph, exitSubgraph, getSubgraphInput, getSubgraphOutput } from '../handlers/subgraph-handler';
 import { EventType } from '../../../types/events';
 import type { NodeStartedEvent, NodeCompletedEvent, NodeFailedEvent, SubgraphStartedEvent, SubgraphCompletedEvent } from '../../../types/events';
@@ -218,7 +217,7 @@ export class NodeExecutionCoordinator {
 
     // 1. 使用Node Handler函数执行（配置已在工作流注册时通过静态验证）
     const handler = getNodeHandler(node.type);
-    
+
     // 准备处理器上下文
     let handlerContext = {};
     if (node.type === NodeType.USER_INTERACTION) {

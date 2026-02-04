@@ -10,8 +10,7 @@
 
 import type { Node, UserInteractionNodeConfig } from '../../../../types/node';
 import type { Thread } from '../../../../types/thread';
-import type { UserInteractionHandler as AppUserInteractionHandler } from '../../../../api/core/user-interaction-api';
-import type { UserInteractionRequest } from '../../../../types/interaction';
+import type { UserInteractionHandler as AppUserInteractionHandler, UserInteractionRequest } from '../../../../types/interaction';
 import type { VariableScope } from '../../../../types/common';
 import { ExecutionError } from '../../../../types/errors';
 import { generateId, now } from '../../../../utils';

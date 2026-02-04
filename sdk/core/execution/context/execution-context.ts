@@ -203,6 +203,38 @@ export class ExecutionContext {
   }
 
   /**
+   * 设置 HumanRelayHandler
+   * @param handler HumanRelayHandler 实例
+   */
+  setHumanRelayHandler(handler: any): void {
+    this.register('humanRelayHandler', handler);
+  }
+
+  /**
+   * 获取 HumanRelayHandler
+   * @returns HumanRelayHandler 实例，如果未设置则返回 undefined
+   */
+  getHumanRelayHandler(): any {
+    return this.components.get('humanRelayHandler');
+  }
+
+  /**
+   * 设置 UserInteractionHandler
+   * @param handler UserInteractionHandler 实例
+   */
+  setUserInteractionHandler(handler: any): void {
+    this.register('userInteractionHandler', handler);
+  }
+
+  /**
+   * 获取 UserInteractionHandler
+   * @returns UserInteractionHandler 实例，如果未设置则返回 undefined
+   */
+  getUserInteractionHandler(): any {
+    return this.components.get('userInteractionHandler');
+  }
+
+  /**
    * 通用获取方法
    * @param key 组件键名
    * @returns 组件实例

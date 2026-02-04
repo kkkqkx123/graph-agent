@@ -11,6 +11,18 @@ import { ExecutionContext } from '../../core/execution/context/execution-context
 import { workflowRegistry, type WorkflowRegistry } from '../../core/services/workflow-registry';
 import type { WorkflowDefinition } from '../../types/workflow';
 import type { ThreadResult, ThreadOptions } from '../../types/thread';
+import type { HumanRelayHandler } from '../../types/human-relay';
+import type { UserInteractionHandler } from '../../types/interaction';
+
+/**
+ * ThreadExecutorAPI 选项接口
+ */
+export interface ThreadExecutorOptions {
+  /** HumanRelay 处理器 */
+  humanRelayHandler?: HumanRelayHandler;
+  /** 用户交互处理器 */
+  userInteractionHandler?: UserInteractionHandler;
+}
 
 /**
  * ThreadExecutorAPI - 主执行入口API
@@ -22,11 +34,23 @@ export class ThreadExecutorAPI {
   private workflowRegistry: WorkflowRegistry;
   private executionContext: ExecutionContext;
 
-  constructor(workflowRegistryParam?: WorkflowRegistry, executionContextParam?: ExecutionContext) {
+  constructor(
+    workflowRegistryParam?: WorkflowRegistry,
+    executionContextParam?: ExecutionContext,
+    options?: ThreadExecutorOptions
+  ) {
     this.workflowRegistry = workflowRegistryParam || workflowRegistry;
     
     // 使用传入的ExecutionContext或创建默认的
     this.executionContext = executionContextParam || ExecutionContext.createDefault();
+    
+    // 注入外部 Handler
+    if (options?.humanRelayHandler) {
+      this.executionContext.setHumanRelayHandler(options.humanRelayHandler);
+    }
+    if (options?.userInteractionHandler) {
+      this.executionContext.setUserInteractionHandler(options.userInteractionHandler);
+    }
     
     this.lifecycleCoordinator = new ThreadLifecycleCoordinator(this.executionContext);
     this.operationCoordinator = new ThreadOperationCoordinator(this.executionContext);
