@@ -32,16 +32,15 @@ describe('GraphValidator', () => {
       workflowId: 'test-workflow',
     };
     
-    if (config) {
-      node.originalNode = {
-        id,
-        type,
-        name,
-        config,
-        incomingEdgeIds: [],
-        outgoingEdgeIds: [],
-      } as Node;
-    }
+    // 始终创建 originalNode，即使没有 config
+    node.originalNode = {
+      id,
+      type,
+      name,
+      config: config || {},
+      incomingEdgeIds: [],
+      outgoingEdgeIds: [],
+    } as Node;
     
     return node;
   }
@@ -63,6 +62,33 @@ describe('GraphValidator', () => {
     };
   }
 
+  /**
+   * 更新图中节点的边引用
+   */
+  function updateNodeEdgeReferences(graph: GraphData): void {
+    // 重置所有节点的边引用
+    for (const node of graph.nodes.values()) {
+      if (node.originalNode) {
+        node.originalNode.incomingEdgeIds = [];
+        node.originalNode.outgoingEdgeIds = [];
+      }
+    }
+    
+    // 更新边引用
+    for (const edge of graph.edges.values()) {
+      const sourceNode = graph.getNode(edge.sourceNodeId);
+      const targetNode = graph.getNode(edge.targetNodeId);
+      
+      if (sourceNode?.originalNode) {
+        sourceNode.originalNode.outgoingEdgeIds.push(edge.id);
+      }
+      
+      if (targetNode?.originalNode) {
+        targetNode.originalNode.incomingEdgeIds.push(edge.id);
+      }
+    }
+  }
+
   describe('validate - 基本验证', () => {
     it('应该验证一个有效的简单图', () => {
       const startNode = createNode('start', 'START' as NodeType, 'Start');
@@ -74,6 +100,9 @@ describe('GraphValidator', () => {
       graph.addEdge(edge);
       graph.startNodeId = 'start';
       graph.endNodeIds.add('end');
+      
+      // 更新节点的边引用
+      updateNodeEdgeReferences(graph);
 
       const result = GraphValidator.validate(graph);
       expect(result.valid).toBe(true);
@@ -91,6 +120,9 @@ describe('GraphValidator', () => {
       graph.addEdge(edge);
       graph.startNodeId = 'start';
       graph.endNodeIds.add('end');
+      
+      // 更新节点的边引用
+      updateNodeEdgeReferences(graph);
 
       const result = GraphValidator.validate(graph, {
         checkCycles: false,
@@ -105,6 +137,9 @@ describe('GraphValidator', () => {
       const endNode = createNode('end', 'END' as NodeType, 'End');
       graph.addNode(endNode);
       graph.endNodeIds.add('end');
+      
+      // 更新节点的边引用
+      updateNodeEdgeReferences(graph);
 
       const result = GraphValidator.validate(graph);
       expect(result.valid).toBe(false);
@@ -115,6 +150,9 @@ describe('GraphValidator', () => {
       const startNode = createNode('start', 'START' as NodeType, 'Start');
       graph.addNode(startNode);
       graph.startNodeId = 'start';
+      
+      // 更新节点的边引用
+      updateNodeEdgeReferences(graph);
 
       const result = GraphValidator.validate(graph);
       expect(result.valid).toBe(false);
@@ -131,6 +169,9 @@ describe('GraphValidator', () => {
       graph.addEdge(edge);
       graph.startNodeId = 'start';
       graph.endNodeIds.add('end');
+      
+      // 更新节点的边引用
+      updateNodeEdgeReferences(graph);
 
       const result = GraphValidator.validate(graph);
       expect(result.valid).toBe(false);
@@ -147,6 +188,9 @@ describe('GraphValidator', () => {
       graph.addEdge(edge);
       graph.startNodeId = 'start';
       graph.endNodeIds.add('end');
+      
+      // 更新节点的边引用
+      updateNodeEdgeReferences(graph);
 
       const result = GraphValidator.validate(graph);
       expect(result.valid).toBe(false);
@@ -163,6 +207,9 @@ describe('GraphValidator', () => {
       graph.addNode(endNode);
       graph.startNodeId = 'start-1';
       graph.endNodeIds.add('end');
+      
+      // 更新节点的边引用
+      updateNodeEdgeReferences(graph);
 
       const result = GraphValidator.validate(graph);
       expect(result.valid).toBe(false);
@@ -184,6 +231,9 @@ describe('GraphValidator', () => {
       graph.startNodeId = 'start';
       graph.endNodeIds.add('end-1');
       graph.endNodeIds.add('end-2');
+      
+      // 更新节点的边引用
+      updateNodeEdgeReferences(graph);
 
       const result = GraphValidator.validate(graph);
       expect(result.valid).toBe(true);
@@ -203,6 +253,9 @@ describe('GraphValidator', () => {
       graph.addEdge(edge);
       graph.startNodeId = 'start';
       graph.endNodeIds.add('end');
+      
+      // 更新节点的边引用
+      updateNodeEdgeReferences(graph);
 
       const result = GraphValidator.validate(graph);
       expect(result.valid).toBe(false);
@@ -219,6 +272,9 @@ describe('GraphValidator', () => {
       graph.addEdge(edge);
       graph.startNodeId = 'start';
       graph.endNodeIds.add('end');
+      
+      // 更新节点的边引用
+      updateNodeEdgeReferences(graph);
 
       const result = GraphValidator.validate(graph);
       expect(result.valid).toBe(true);
@@ -234,6 +290,9 @@ describe('GraphValidator', () => {
       graph.addEdge(edge);
       graph.startNodeId = 'start';
       graph.endNodeIds.add('end');
+      
+      // 更新节点的边引用
+      updateNodeEdgeReferences(graph);
 
       const result = GraphValidator.validate(graph);
       expect(result.valid).toBe(true);
@@ -257,6 +316,9 @@ describe('GraphValidator', () => {
       graph.addEdge(edge3);
       graph.startNodeId = 'node-1';
       graph.endNodeIds.add('node-3');
+      
+      // 更新节点的边引用
+      updateNodeEdgeReferences(graph);
 
       const result = GraphValidator.validate(graph);
       expect(result.valid).toBe(false);
@@ -281,6 +343,9 @@ describe('GraphValidator', () => {
       graph.addEdge(edge3);
       graph.startNodeId = 'start';
       graph.endNodeIds.add('end');
+      
+      // 更新节点的边引用
+      updateNodeEdgeReferences(graph);
 
       const result = GraphValidator.validate(graph);
       expect(result.valid).toBe(true);
@@ -300,6 +365,9 @@ describe('GraphValidator', () => {
       graph.addEdge(edge);
       graph.startNodeId = 'start';
       graph.endNodeIds.add('end');
+      
+      // 更新节点的边引用
+      updateNodeEdgeReferences(graph);
 
       const result = GraphValidator.validate(graph);
       expect(result.valid).toBe(false);
@@ -320,6 +388,9 @@ describe('GraphValidator', () => {
       graph.addEdge(edge2);
       graph.startNodeId = 'start';
       graph.endNodeIds.add('end');
+      
+      // 更新节点的边引用
+      updateNodeEdgeReferences(graph);
 
       const result = GraphValidator.validate(graph);
       expect(result.valid).toBe(false);
@@ -342,6 +413,9 @@ describe('GraphValidator', () => {
       graph.addEdge(edge2);
       graph.startNodeId = 'start';
       graph.endNodeIds.add('end');
+      
+      // 更新节点的边引用
+      updateNodeEdgeReferences(graph);
 
       const result = GraphValidator.validate(graph);
       expect(result.valid).toBe(false);
@@ -362,6 +436,9 @@ describe('GraphValidator', () => {
       graph.addEdge(edge2);
       graph.startNodeId = 'start';
       graph.endNodeIds.add('end');
+      
+      // 更新节点的边引用
+      updateNodeEdgeReferences(graph);
 
       const result = GraphValidator.validate(graph);
       expect(result.valid).toBe(false);
@@ -384,6 +461,9 @@ describe('GraphValidator', () => {
       graph.addEdge(edge2);
       graph.startNodeId = 'start';
       graph.endNodeIds.add('end');
+      
+      // 更新节点的边引用
+      updateNodeEdgeReferences(graph);
 
       const result = GraphValidator.validate(graph);
       expect(result.valid).toBe(false);
@@ -408,6 +488,9 @@ describe('GraphValidator', () => {
       graph.addEdge(edge3);
       graph.startNodeId = 'start';
       graph.endNodeIds.add('end');
+      
+      // 更新节点的边引用
+      updateNodeEdgeReferences(graph);
 
       const result = GraphValidator.validate(graph);
       expect(result.valid).toBe(true);
@@ -439,6 +522,9 @@ describe('GraphValidator', () => {
       graph.addEdge(edge5);
       graph.startNodeId = 'start';
       graph.endNodeIds.add('end');
+      
+      // 更新节点的边引用
+      updateNodeEdgeReferences(graph);
 
       const result = GraphValidator.validate(graph);
       expect(result.valid).toBe(true);
@@ -460,6 +546,9 @@ describe('GraphValidator', () => {
       graph.addEdge(edge2);
       graph.startNodeId = 'start';
       graph.endNodeIds.add('end');
+      
+      // 更新节点的边引用
+      updateNodeEdgeReferences(graph);
 
       const result = GraphValidator.validate(graph, {
         checkSubgraphExistence: true,
@@ -484,6 +573,9 @@ describe('GraphValidator', () => {
       graph.addEdge(edge2);
       graph.startNodeId = 'start';
       graph.endNodeIds.add('end');
+      
+      // 更新节点的边引用
+      updateNodeEdgeReferences(graph);
 
       const result = GraphValidator.validate(graph, {
         checkSubgraphExistence: true,
@@ -510,6 +602,9 @@ describe('GraphValidator', () => {
       graph.addEdge(edge2);
       graph.startNodeId = 'start';
       graph.endNodeIds.add('end');
+      
+      // 更新节点的边引用
+      updateNodeEdgeReferences(graph);
 
       const result = GraphValidator.validate(graph, {
         checkSubgraphCompatibility: true,
@@ -535,6 +630,9 @@ describe('GraphValidator', () => {
       graph.addEdge(edge2);
       graph.startNodeId = 'start';
       graph.endNodeIds.add('end');
+      
+      // 更新节点的边引用
+      updateNodeEdgeReferences(graph);
 
       const result = GraphValidator.validate(graph, {
         checkSubgraphCompatibility: true,
@@ -561,6 +659,9 @@ describe('GraphValidator', () => {
       graph.addEdge(edge2);
       graph.startNodeId = 'start';
       graph.endNodeIds.add('end');
+      
+      // 更新节点的边引用
+      updateNodeEdgeReferences(graph);
 
       const result = GraphValidator.validate(graph, {
         checkSubgraphCompatibility: true,
@@ -584,6 +685,9 @@ describe('GraphValidator', () => {
       graph.addEdge(edge2);
       graph.startNodeId = 'start';
       graph.endNodeIds.add('end');
+      
+      // 更新节点的边引用
+      updateNodeEdgeReferences(graph);
 
       const result = GraphValidator.analyze(graph);
       expect(result).toBeDefined();
@@ -613,6 +717,9 @@ describe('GraphValidator', () => {
       graph.addEdge(edge2);
       graph.startNodeId = 'start';
       graph.endNodeIds.add('end');
+      
+      // 更新节点的边引用
+      updateNodeEdgeReferences(graph);
 
       const result = GraphValidator.validate(graph);
       expect(result.valid).toBe(false);
@@ -649,6 +756,9 @@ describe('GraphValidator', () => {
       graph.addEdge(edge6);
       graph.startNodeId = 'start';
       graph.endNodeIds.add('end');
+      
+      // 更新节点的边引用
+      updateNodeEdgeReferences(graph);
 
       const result = GraphValidator.validate(graph);
       expect(result.valid).toBe(true);

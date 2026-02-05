@@ -5,7 +5,7 @@
  */
 
 import type { ThreadResult, ThreadOptions } from '../../types/thread';
-import { ThreadExecutorAPI } from '../core/thread-executor-api';
+import { ThreadExecutorAPI } from '../operations/execution/thread-executor-api';
 import { ok, err, Result } from '../utils/result';
 import { Observable, Observer, create, fromPromise } from '../utils/observable';
 
@@ -116,7 +116,7 @@ export class ExecutionBuilder {
 
     try {
       const result = await this.executor.executeWorkflow(this.workflowId, this.options);
-      
+
       // 触发进度回调
       this.onProgressCallbacks.forEach(callback => {
         try {
@@ -200,7 +200,7 @@ export class ExecutionBuilder {
     if (!this.workflowId) {
       return create((observer) => {
         observer.error(new Error('工作流ID未设置，请先调用withWorkflow()'));
-        return () => {};
+        return () => { };
       });
     }
 
@@ -450,7 +450,7 @@ export class ExecutionBuilder {
         this.observeProgress().subscribe(
           (event) => observer.next(event),
           (err) => observer.error(err),
-          () => {}
+          () => { }
         )
       );
 
@@ -459,7 +459,7 @@ export class ExecutionBuilder {
         this.observeNodeExecuted().subscribe(
           (event) => observer.next(event),
           (err) => observer.error(err),
-          () => {}
+          () => { }
         )
       );
 
@@ -468,7 +468,7 @@ export class ExecutionBuilder {
         this.observeError().subscribe(
           (event) => observer.next(event),
           (err) => observer.error(err),
-          () => {}
+          () => { }
         )
       );
 

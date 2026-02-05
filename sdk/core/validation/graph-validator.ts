@@ -152,6 +152,10 @@ export class GraphValidator {
       errorList.push(...compatibilityErrors);
     }
 
+    // 检查节点边列表与边源/目标节点的一致性（必须检查）
+    const consistencyErrors = this.validateNodeEdgeConsistency(graph);
+    errorList.push(...consistencyErrors);
+
     return {
       valid: errorList.length === 0,
       errors: errorList,
@@ -623,6 +627,110 @@ export class GraphValidator {
       }
     }
 
+    return errors;
+  }
+
+  /**
+   * 验证节点边列表与边源/目标节点的一致性
+   * 检查以下一致性：
+   * 1. 边引用的源节点和目标节点是否存在
+   * 2. 节点边列表引用的边是否存在
+   * 3. 边与节点边列表的双向引用是否一致
+   * @param graph 图数据
+   * @returns 验证错误列表
+   */
+  private static validateNodeEdgeConsistency(graph: GraphData): ValidationError[] {
+    const errors: ValidationError[] = [];
+    
+    // 检查边引用存在的节点
+    for (const edge of graph.edges.values()) {
+      if (!graph.hasNode(edge.sourceNodeId)) {
+        errors.push(new ValidationError(
+          `边(${edge.id})引用了不存在的源节点(${edge.sourceNodeId})`,
+          undefined, undefined, {
+            code: 'EDGE_REFERENCES_MISSING_SOURCE_NODE',
+            edgeId: edge.id,
+            nodeId: edge.sourceNodeId
+          }
+        ));
+      }
+      
+      if (!graph.hasNode(edge.targetNodeId)) {
+        errors.push(new ValidationError(
+          `边(${edge.id})引用了不存在的目标节点(${edge.targetNodeId})`,
+          undefined, undefined, {
+            code: 'EDGE_REFERENCES_MISSING_TARGET_NODE',
+            edgeId: edge.id,
+            nodeId: edge.targetNodeId
+          }
+        ));
+      }
+    }
+    
+    // 检查节点边列表引用存在的边
+    for (const node of graph.nodes.values()) {
+      const originalNode = node.originalNode;
+      if (!originalNode) continue;
+      
+      // 检查出边
+      for (const edgeId of originalNode.outgoingEdgeIds) {
+        if (!graph.hasEdge(edgeId)) {
+          errors.push(new ValidationError(
+            `节点(${node.id})的出边列表引用了不存在的边(${edgeId})`,
+            undefined, undefined, {
+              code: 'NODE_REFERENCES_MISSING_OUTGOING_EDGE',
+              nodeId: node.id,
+              edgeId: edgeId
+            }
+          ));
+        }
+      }
+      
+      // 检查入边
+      for (const edgeId of originalNode.incomingEdgeIds) {
+        if (!graph.hasEdge(edgeId)) {
+          errors.push(new ValidationError(
+            `节点(${node.id})的入边列表引用了不存在的边(${edgeId})`,
+            undefined, undefined, {
+              code: 'NODE_REFERENCES_MISSING_INCOMING_EDGE',
+              nodeId: node.id,
+              edgeId: edgeId
+            }
+          ));
+        }
+      }
+    }
+    
+    // 检查边与节点边列表的一致性
+    for (const edge of graph.edges.values()) {
+      const sourceNode = graph.getNode(edge.sourceNodeId);
+      const targetNode = graph.getNode(edge.targetNodeId);
+      
+      if (sourceNode?.originalNode &&
+          !sourceNode.originalNode.outgoingEdgeIds.includes(edge.id)) {
+        errors.push(new ValidationError(
+          `边(${edge.id})的源节点(${edge.sourceNodeId})没有在出边列表中引用该边`,
+          undefined, undefined, {
+            code: 'SOURCE_NODE_MISSING_EDGE_REFERENCE',
+            edgeId: edge.id,
+            nodeId: edge.sourceNodeId
+          }
+        ));
+      }
+      
+      if (targetNode?.originalNode &&
+          !targetNode.originalNode.incomingEdgeIds.includes(edge.id)) {
+        errors.push(new ValidationError(
+          `边(${edge.id})的目标节点(${edge.targetNodeId})没有在入边列表中引用该边`,
+          undefined, undefined, {
+            code: 'TARGET_NODE_MISSING_EDGE_REFERENCE',
+            edgeId: edge.id,
+            nodeId: edge.targetNodeId
+          }
+        ));
+      }
+    }
+    
     return errors;
   }
 }

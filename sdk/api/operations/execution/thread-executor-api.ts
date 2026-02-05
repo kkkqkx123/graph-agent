@@ -78,8 +78,8 @@ export class ThreadExecutorAPI {
    * @returns 线程执行结果
    */
   async executeWorkflowFromDefinition(workflow: WorkflowDefinition, options?: ThreadOptions): Promise<ThreadResult> {
-    // 注册工作流到全局注册表
-    workflowRegistry.register(workflow);
+    // 注册工作流到实例注册表
+    this.workflowRegistry.register(workflow);
 
     // 执行工作流
     return this.lifecycleCoordinator.execute(workflow.id, options || {});
