@@ -39,6 +39,14 @@ export class GraphRegistry {
   }
   
   /**
+   * 删除指定工作流的图结构
+   * @param workflowId 工作流ID
+   */
+  delete(workflowId: string): void {
+    this.graphs.delete(workflowId);
+  }
+
+  /**
    * 清空所有图缓存
    */
   clear(): void {

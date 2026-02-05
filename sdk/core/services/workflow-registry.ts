@@ -363,6 +363,9 @@ class WorkflowRegistry {
     this.workflows.delete(workflowId);
     this.versions.delete(workflowId);
     this.clearPreprocessCache(workflowId);
+    
+    // 从全局GraphRegistry中移除对应的图
+    graphRegistry.delete(workflowId);
   }
 
   /**
