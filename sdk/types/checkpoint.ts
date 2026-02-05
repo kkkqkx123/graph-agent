@@ -48,6 +48,22 @@ export interface ThreadStateSnapshot {
     /** 当前请求Token使用 */
     currentRequestUsage: TokenUsageStats | null;
   };
+  /** 工具审批状态（用于恢复等待审批的工具调用） */
+  toolApprovalState?: {
+    /** 当前等待审批的工具调用 */
+    pendingToolCall?: {
+      /** 工具调用ID */
+      id: string;
+      /** 工具名称 */
+      name: string;
+      /** 工具参数 */
+      arguments: string;
+    };
+    /** 交互ID */
+    interactionId: string;
+    /** 审批超时时间 */
+    timeout: number;
+  };
   /** 触发器状态快照（用于恢复 TriggerStateManager） */
   triggerStates?: Map<ID, TriggerRuntimeState>;
 }

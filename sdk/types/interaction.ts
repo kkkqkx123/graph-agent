@@ -12,7 +12,9 @@ export enum UserInteractionOperationType {
   /** 更新工作流变量 */
   UPDATE_VARIABLES = 'UPDATE_VARIABLES',
   /** 添加用户消息到 LLM 对话 */
-  ADD_MESSAGE = 'ADD_MESSAGE'
+  ADD_MESSAGE = 'ADD_MESSAGE',
+  /** 工具调用审批 */
+  TOOL_APPROVAL = 'TOOL_APPROVAL'
 }
 
 /**
@@ -107,6 +109,25 @@ export interface UserInteractionContext {
     cancelled: boolean;
     cancel(): void;
   };
+}
+
+/**
+ * 工具审批数据结构
+ * 用于工具审批请求和响应
+ */
+export interface ToolApprovalData {
+  /** 工具名称 */
+  toolName: string;
+  /** 工具描述 */
+  toolDescription: string;
+  /** 工具参数 */
+  toolParameters: Record<string, any>;
+  /** 是否批准 */
+  approved: boolean;
+  /** 编辑后的参数（可选） */
+  editedParameters?: Record<string, any>;
+  /** 用户指令（可选） */
+  userInstruction?: string;
 }
 
 /**

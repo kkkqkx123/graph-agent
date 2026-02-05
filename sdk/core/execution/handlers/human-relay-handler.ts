@@ -14,6 +14,9 @@
  * - 职责单一，每个函数只做一件事
  * - 通过参数传递依赖
  * - 与其他 handler 保持一致
+ * 
+ * 注意：
+ * human relay是llm client的替代品，目的在于以人的输入代替llm api调用，与人工审核无关
  */
 
 import type { LLMMessage } from '../../../types/llm';

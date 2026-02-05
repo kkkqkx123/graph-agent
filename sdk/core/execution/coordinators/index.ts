@@ -14,7 +14,6 @@
  * - ThreadLifecycleCoordinator: Thread 生命周期协调器
  * - ThreadOperationCoordinator: Thread 操作协调器
  * - VariableCoordinator: 变量协调器
- * 其中NodeExecutionCoordinator、ThreadLifecycleCoordinator是有状态模块，其余是无状态模块
  */
 
 export { NodeExecutionCoordinator } from './node-execution-coordinator';

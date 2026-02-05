@@ -10,6 +10,8 @@ import { EventManager } from '../../../services/event-manager';
 import { EventType } from '../../../../types/events';
 import { ExecutionError } from '../../../../types/errors';
 import { now } from '../../../../utils';
+import { UserInteractionOperationType } from '../../../../types/interaction';
+import type { ToolApprovalData } from '../../../../types/interaction';
 
 // Mock 依赖
 jest.mock('../../managers/conversation-manager');
@@ -452,5 +454,369 @@ describe('LLMExecutionCoordinator', () => {
         ])
       );
     });
+  });
+
+  describe('工具审批机制', () => {
+    const mockParamsWithApproval = {
+      threadId: 'thread-1',
+      nodeId: 'node-1',
+      prompt: 'Execute sensitive operation',
+      profileId: 'profile-1',
+      parameters: { temperature: 0.7 },
+      tools: [{ name: 'sensitive_tool', description: 'Sensitive tool' }],
+      maxToolCallsPerRequest: 3,
+      workflowConfig: {
+        toolApproval: {
+          autoApprovedTools: ['safe_tool']
+        }
+      }
+    };
+
+    beforeEach(() => {
+      // 设置事件管理器的 on 和 off 方法
+      mockEventManager.on = jest.fn();
+      mockEventManager.off = jest.fn();
+    });
+
+    it('应该检查工具是否需要审批', () => {
+      const workflowConfig = {
+        toolApproval: {
+          autoApprovedTools: ['safe_tool', 'another_safe_tool'],
+          approvalTimeout: 30000
+        }
+      };
+
+      // 测试需要审批的工具
+      expect((coordinator as any).requiresHumanApproval('sensitive_tool', workflowConfig)).toBe(true);
+      expect((coordinator as any).requiresHumanApproval('dangerous_tool', workflowConfig)).toBe(true);
+
+      // 测试不需要审批的工具（白名单）
+      expect((coordinator as any).requiresHumanApproval('safe_tool', workflowConfig)).toBe(false);
+      expect((coordinator as any).requiresHumanApproval('another_safe_tool', workflowConfig)).toBe(false);
+
+      // 测试没有配置审批的情况
+      expect((coordinator as any).requiresHumanApproval('any_tool', undefined)).toBe(false);
+      expect((coordinator as any).requiresHumanApproval('any_tool', {})).toBe(false);
+    });
+
+    it('应该为需要审批的工具触发审批流程', async () => {
+      mockLLMExecutor.executeLLMCall.mockResolvedValue({
+        content: 'I need to execute a sensitive operation',
+        usage: { promptTokens: 10, completionTokens: 5, totalTokens: 15 },
+        toolCalls: [
+          {
+            id: 'call-1',
+            name: 'sensitive_tool',
+            arguments: '{"param": "value"}'
+          }
+        ]
+      });
+
+      mockToolService.getTool.mockReturnValue({
+        name: 'sensitive_tool',
+        description: 'A sensitive tool that requires approval',
+        parameters: {}
+      });
+
+      mockConversationManager.getMessages.mockReturnValue([
+        { role: 'user', content: 'Execute sensitive operation' },
+        { role: 'assistant', content: 'I need to execute a sensitive operation' }
+      ]);
+
+      // Mock 事件监听器 - 使用Map存储handler
+      const eventHandlers = new Map<string, any>();
+      mockEventManager.on.mockImplementation((eventType: string, handler: any) => {
+        eventHandlers.set(eventType, handler);
+        return () => {}; // 返回取消订阅函数
+      });
+
+      // 执行测试
+      const executePromise = coordinator.executeLLM(mockParamsWithApproval, mockConversationManager);
+
+      // 等待审批请求事件被触发
+      await new Promise(resolve => setTimeout(resolve, 10));
+
+      // 验证审批请求事件
+      expect(mockEventManager.emit).toHaveBeenCalledWith(
+        expect.objectContaining({
+          type: EventType.USER_INTERACTION_REQUESTED,
+          operationType: UserInteractionOperationType.TOOL_APPROVAL,
+          prompt: '是否批准调用工具 "sensitive_tool"?'
+        })
+      );
+
+      // 模拟用户批准
+      const approvalResponse: ToolApprovalData = {
+        toolName: 'sensitive_tool',
+        toolDescription: 'A sensitive tool that requires approval',
+        toolParameters: { param: 'value' },
+        approved: true
+      };
+
+      // 触发用户响应事件
+      const respondedHandler = eventHandlers.get(EventType.USER_INTERACTION_RESPONDED);
+      if (respondedHandler) {
+        respondedHandler({
+          interactionId: 'test-interaction-id',
+          inputData: approvalResponse
+        });
+      }
+
+      // 等待执行完成
+      await executePromise;
+
+      // 验证工具被执行
+      expect(mockToolCallExecutor.executeToolCalls).toHaveBeenCalled();
+    }, 10000); // 增加超时时间
+
+    it('应该跳过被用户拒绝的工具调用', async () => {
+      mockLLMExecutor.executeLLMCall.mockResolvedValue({
+        content: 'I need to execute a sensitive operation',
+        usage: { promptTokens: 10, completionTokens: 5, totalTokens: 15 },
+        toolCalls: [
+          {
+            id: 'call-1',
+            name: 'sensitive_tool',
+            arguments: '{"param": "value"}'
+          }
+        ]
+      });
+
+      mockToolService.getTool.mockReturnValue({
+        name: 'sensitive_tool',
+        description: 'A sensitive tool that requires approval',
+        parameters: {}
+      });
+
+      mockConversationManager.getMessages.mockReturnValue([
+        { role: 'user', content: 'Execute sensitive operation' },
+        { role: 'assistant', content: 'I need to execute a sensitive operation' }
+      ]);
+
+      // Mock 事件监听器 - 使用Map存储handler
+      const eventHandlers = new Map<string, any>();
+      mockEventManager.on.mockImplementation((eventType: string, handler: any) => {
+        eventHandlers.set(eventType, handler);
+        return () => {}; // 返回取消订阅函数
+      });
+
+      // 执行测试
+      const executePromise = coordinator.executeLLM(mockParamsWithApproval, mockConversationManager);
+
+      // 等待审批请求事件被触发
+      await new Promise(resolve => setTimeout(resolve, 10));
+
+      // 模拟用户拒绝
+      const approvalResponse: ToolApprovalData = {
+        toolName: 'sensitive_tool',
+        toolDescription: 'A sensitive tool that requires approval',
+        toolParameters: { param: 'value' },
+        approved: false
+      };
+
+      // 触发用户响应事件
+      const respondedHandler = eventHandlers.get(EventType.USER_INTERACTION_RESPONDED);
+      if (respondedHandler) {
+        respondedHandler({
+          interactionId: 'test-interaction-id',
+          inputData: approvalResponse
+        });
+      }
+
+      // 等待执行完成
+      await executePromise;
+
+      // 验证工具未被执行
+      expect(mockToolCallExecutor.executeToolCalls).not.toHaveBeenCalled();
+
+      // 验证拒绝消息被添加到对话
+      expect(mockConversationManager.addMessage).toHaveBeenCalledWith(
+        expect.objectContaining({
+          role: 'tool',
+          content: expect.stringContaining('rejected by user approval')
+        })
+      );
+    }, 10000); // 增加超时时间
+
+    it('应该使用用户编辑后的参数执行工具', async () => {
+      mockLLMExecutor.executeLLMCall.mockResolvedValue({
+        content: 'I need to execute a sensitive operation',
+        usage: { promptTokens: 10, completionTokens: 5, totalTokens: 15 },
+        toolCalls: [
+          {
+            id: 'call-1',
+            name: 'sensitive_tool',
+            arguments: '{"param": "original_value"}'
+          }
+        ]
+      });
+
+      mockToolService.getTool.mockReturnValue({
+        name: 'sensitive_tool',
+        description: 'A sensitive tool that requires approval',
+        parameters: {}
+      });
+
+      mockConversationManager.getMessages.mockReturnValue([
+        { role: 'user', content: 'Execute sensitive operation' },
+        { role: 'assistant', content: 'I need to execute a sensitive operation' }
+      ]);
+
+      // Mock 事件监听器 - 使用Map存储handler
+      const eventHandlers = new Map<string, any>();
+      mockEventManager.on.mockImplementation((eventType: string, handler: any) => {
+        eventHandlers.set(eventType, handler);
+        return () => {}; // 返回取消订阅函数
+      });
+
+      // 执行测试
+      const executePromise = coordinator.executeLLM(mockParamsWithApproval, mockConversationManager);
+
+      // 等待审批请求事件被触发
+      await new Promise(resolve => setTimeout(resolve, 10));
+
+      // 模拟用户批准并编辑参数
+      const approvalResponse: ToolApprovalData = {
+        toolName: 'sensitive_tool',
+        toolDescription: 'A sensitive tool that requires approval',
+        toolParameters: { param: 'original_value' },
+        approved: true,
+        editedParameters: { param: 'edited_value' }
+      };
+
+      // 触发用户响应事件
+      const respondedHandler = eventHandlers.get(EventType.USER_INTERACTION_RESPONDED);
+      if (respondedHandler) {
+        respondedHandler({
+          interactionId: 'test-interaction-id',
+          inputData: approvalResponse
+        });
+      }
+
+      // 等待执行完成
+      await executePromise;
+
+      // 验证工具使用编辑后的参数被执行
+      expect(mockToolCallExecutor.executeToolCalls).toHaveBeenCalledWith(
+        [
+          expect.objectContaining({
+            arguments: JSON.stringify({ param: 'edited_value' })
+          })
+        ],
+        mockConversationManager,
+        'thread-1',
+        'node-1'
+      );
+    }, 10000); // 增加超时时间
+
+    it('应该将用户指令添加到对话历史', async () => {
+      mockLLMExecutor.executeLLMCall.mockResolvedValue({
+        content: 'I need to execute a sensitive operation',
+        usage: { promptTokens: 10, completionTokens: 5, totalTokens: 15 },
+        toolCalls: [
+          {
+            id: 'call-1',
+            name: 'sensitive_tool',
+            arguments: '{"param": "value"}'
+          }
+        ]
+      });
+
+      mockToolService.getTool.mockReturnValue({
+        name: 'sensitive_tool',
+        description: 'A sensitive tool that requires approval',
+        parameters: {}
+      });
+
+      mockConversationManager.getMessages.mockReturnValue([
+        { role: 'user', content: 'Execute sensitive operation' },
+        { role: 'assistant', content: 'I need to execute a sensitive operation' }
+      ]);
+
+      // Mock 事件监听器 - 使用Map存储handler
+      const eventHandlers = new Map<string, any>();
+      mockEventManager.on.mockImplementation((eventType: string, handler: any) => {
+        eventHandlers.set(eventType, handler);
+        return () => {}; // 返回取消订阅函数
+      });
+
+      // 执行测试
+      const executePromise = coordinator.executeLLM(mockParamsWithApproval, mockConversationManager);
+
+      // 等待审批请求事件被触发
+      await new Promise(resolve => setTimeout(resolve, 10));
+
+      // 模拟用户批准并提供额外指令
+      const approvalResponse: ToolApprovalData = {
+        toolName: 'sensitive_tool',
+        toolDescription: 'A sensitive tool that requires approval',
+        toolParameters: { param: 'value' },
+        approved: true,
+        userInstruction: 'Please also log the operation'
+      };
+
+      // 触发用户响应事件
+      const respondedHandler = eventHandlers.get(EventType.USER_INTERACTION_RESPONDED);
+      if (respondedHandler) {
+        respondedHandler({
+          interactionId: 'test-interaction-id',
+          inputData: approvalResponse
+        });
+      }
+
+      // 等待执行完成
+      await executePromise;
+
+      // 验证用户指令被添加到对话
+      expect(mockConversationManager.addMessage).toHaveBeenCalledWith(
+        expect.objectContaining({
+          role: 'user',
+          content: 'Please also log the operation'
+        })
+      );
+    }, 10000); // 增加超时时间
+
+    it('应该跳过白名单中的工具审批', async () => {
+      const paramsWithWhitelist = {
+        ...mockParamsWithApproval,
+        tools: [{ name: 'safe_tool', description: 'Safe tool' }]
+      };
+
+      mockLLMExecutor.executeLLMCall.mockResolvedValue({
+        content: 'I need to execute a safe operation',
+        usage: { promptTokens: 10, completionTokens: 5, totalTokens: 15 },
+        toolCalls: [
+          {
+            id: 'call-1',
+            name: 'safe_tool',
+            arguments: '{"param": "value"}'
+          }
+        ]
+      });
+
+      mockToolService.getTool.mockReturnValue({
+        name: 'safe_tool',
+        description: 'A safe tool',
+        parameters: {}
+      });
+
+      mockConversationManager.getMessages.mockReturnValue([
+        { role: 'user', content: 'Execute safe operation' },
+        { role: 'assistant', content: 'I need to execute a safe operation' }
+      ]);
+
+      // 执行测试
+      await coordinator.executeLLM(paramsWithWhitelist, mockConversationManager);
+
+      // 验证工具直接执行，没有触发审批流程
+      expect(mockToolCallExecutor.executeToolCalls).toHaveBeenCalled();
+      expect(mockEventManager.emit).not.toHaveBeenCalledWith(
+        expect.objectContaining({
+          type: EventType.USER_INTERACTION_REQUESTED,
+          operationType: UserInteractionOperationType.TOOL_APPROVAL
+        })
+      );
+    });
+
   });
 });

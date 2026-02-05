@@ -20,6 +20,18 @@ export enum WorkflowStatus {
 }
 
 /**
+ * 工具审批配置
+ * 定义工作流中工具调用的审批策略
+ */
+export interface ToolApprovalConfig {
+  /**
+   * 自动批准的工具列表（白名单）
+   * 工具ID或名称数组，这些工具调用无需人工审批
+   */
+  autoApprovedTools: string[];
+}
+
+/**
  * 工作流配置类型
  * 定义工作流执行时的行为选项
  */
@@ -42,6 +54,8 @@ export interface WorkflowConfig {
     continueOnError?: boolean;
     fallbackNodeId?: ID;
   };
+  /** 工具审批配置 */
+  toolApproval?: ToolApprovalConfig;
 }
 
 /**

@@ -14,16 +14,21 @@
  */
 
 import type { LLMMessage } from '../../../types/llm';
+import type { WorkflowConfig } from '../../../types/workflow';
 import { ConversationManager } from '../managers/conversation-manager';
 import { LLMExecutor } from '../executors/llm-executor';
 import { type ToolService } from '../../services/tool-service';
 import type { EventManager } from '../../services/event-manager';
 import { safeEmit } from '../utils/event/event-emitter';
 import { EventType } from '../../../types/events';
+import { UserInteractionOperationType } from '../../../types/interaction';
+import type { ToolApprovalData } from '../../../types/interaction';
 import { now } from '../../../utils';
 import { ToolCallExecutor } from '../executors/tool-call-executor';
 import { TokenUsageTracker } from '../token-usage-tracker';
 import { ExecutionError } from '../../../types/errors';
+import { generateId } from '../../../utils/id-utils';
+import type { CheckpointCoordinator } from './checkpoint-coordinator';
 
 /**
  * LLM 执行参数
@@ -50,6 +55,8 @@ export interface LLMExecutionParams {
   };
   /** 单次LLM调用最多返回的工具调用数（默认3） */
   maxToolCallsPerRequest?: number;
+  /** 工作流配置（用于工具审批） */
+  workflowConfig?: WorkflowConfig;
 }
 
 /**
@@ -83,7 +90,8 @@ export class LLMExecutionCoordinator {
   constructor(
     private llmExecutor: LLMExecutor,
     private toolService: ToolService,
-    private eventManager: EventManager
+    private eventManager: EventManager,
+    private checkpointCoordinator?: CheckpointCoordinator
   ) { }
 
   /**
@@ -254,11 +262,13 @@ export class LLMExecutionCoordinator {
 
       // 创建工具调用执行器并执行工具调用
       const toolCallExecutor = new ToolCallExecutor(this.toolService, this.eventManager);
-      await toolCallExecutor.executeToolCalls(
+      await this.executeToolCallsWithApproval(
         llmResult.toolCalls,
         conversationState,
         threadId,
-        nodeId
+        nodeId,
+        params.workflowConfig,
+        toolCallExecutor
       );
     }
 
@@ -276,6 +286,209 @@ export class LLMExecutionCoordinator {
 
     // 返回最终内容
     return llmResult.content;
+  }
+
+  /**
+   * 执行工具调用（带审批支持）
+   *
+   * @param toolCalls 工具调用数组
+   * @param conversationState 对话管理器
+   * @param threadId 线程ID
+   * @param nodeId 节点ID
+   * @param workflowConfig 工作流配置
+   * @param toolCallExecutor 工具调用执行器
+   */
+  private async executeToolCallsWithApproval(
+    toolCalls: Array<{ id: string; name: string; arguments: string }>,
+    conversationState: ConversationManager,
+    threadId: string,
+    nodeId: string,
+    workflowConfig: WorkflowConfig | undefined,
+    toolCallExecutor: ToolCallExecutor
+  ): Promise<void> {
+    for (const toolCall of toolCalls) {
+      // 检查是否需要人工审批
+      if (this.requiresHumanApproval(toolCall.name, workflowConfig)) {
+        const approvalResult = await this.requestToolApproval(
+          toolCall,
+          workflowConfig?.toolApproval,
+          threadId,
+          nodeId,
+          conversationState
+        );
+
+        if (!approvalResult.approved) {
+          // 用户拒绝，跳过此工具调用
+          const toolMessage = {
+            role: 'tool' as const,
+            content: JSON.stringify({
+              error: 'Tool call was rejected by user approval',
+              rejected: true
+            }),
+            toolCallId: toolCall.id
+          };
+          conversationState.addMessage(toolMessage);
+          continue;
+        }
+
+        // 如果用户提供了编辑后的参数
+        if (approvalResult.editedParameters) {
+          toolCall.arguments = JSON.stringify(approvalResult.editedParameters);
+        }
+
+        // 如果用户提供了额外指令，添加到对话历史
+        if (approvalResult.userInstruction) {
+          conversationState.addMessage({
+            role: 'user',
+            content: approvalResult.userInstruction
+          });
+        }
+      }
+
+      // 执行工具调用
+      await toolCallExecutor.executeToolCalls(
+        [toolCall],
+        conversationState,
+        threadId,
+        nodeId
+      );
+    }
+  }
+
+  /**
+   * 检查工具是否需要人工审批
+   *
+   * @param toolName 工具名称
+   * @param workflowConfig 工作流配置
+   * @returns 是否需要审批
+   */
+  private requiresHumanApproval(
+    toolName: string,
+    workflowConfig: WorkflowConfig | undefined
+  ): boolean {
+    // 如果没有配置审批，则不需要审批
+    if (!workflowConfig?.toolApproval) {
+      return false;
+    }
+
+    const autoApproved = workflowConfig.toolApproval.autoApprovedTools || [];
+    return !autoApproved.includes(toolName);
+  }
+
+  /**
+   * 请求工具审批
+   *
+   * @param toolCall 工具调用
+   * @param approvalConfig 审批配置
+   * @param threadId 线程ID
+   * @param nodeId 节点ID
+   * @param conversationState 对话管理器
+   * @returns 审批结果
+   */
+  private async requestToolApproval(
+    toolCall: { id: string; name: string; arguments: string },
+    approvalConfig: any,
+    threadId: string,
+    nodeId: string,
+    conversationState: ConversationManager
+  ): Promise<ToolApprovalData> {
+    const interactionId = generateId();
+    const tool = this.toolService.getTool(toolCall.name);
+
+    // 创建工具审批请求
+    const toolApprovalData: ToolApprovalData = {
+      toolName: toolCall.name,
+      toolDescription: tool?.description || '',
+      toolParameters: JSON.parse(toolCall.arguments),
+      approved: false
+    };
+
+    // 如果有检查点协调器，创建检查点以支持长时间审批
+    let checkpointId: string | undefined;
+    if (this.checkpointCoordinator) {
+      try {
+        checkpointId = await this.checkpointCoordinator.createCheckpoint(threadId, {
+          description: 'Waiting for tool approval',
+          customFields: {
+            toolApprovalState: {
+              pendingToolCall: toolCall,
+              interactionId
+            }
+          }
+        });
+      } catch (error) {
+        // 检查点创建失败不影响审批流程
+        console.warn('Failed to create checkpoint for tool approval:', error);
+      }
+    }
+
+    try {
+      // 触发USER_INTERACTION_REQUESTED事件
+      await safeEmit(this.eventManager, {
+        type: EventType.USER_INTERACTION_REQUESTED,
+        timestamp: now(),
+        workflowId: '',
+        threadId,
+        nodeId,
+        interactionId,
+        operationType: UserInteractionOperationType.TOOL_APPROVAL,
+        prompt: `是否批准调用工具 "${toolCall.name}"?`,
+        timeout: 0, // 0 表示无超时，一直等待
+        metadata: {
+          toolApproval: toolApprovalData
+        }
+      });
+
+      // 等待USER_INTERACTION_RESPONDED事件
+      const response = await this.waitForUserInteractionResponse(interactionId);
+
+      // 解析审批结果
+      const approvalResult = response.inputData as ToolApprovalData;
+
+      // 触发USER_INTERACTION_PROCESSED事件
+      await safeEmit(this.eventManager, {
+        type: EventType.USER_INTERACTION_PROCESSED,
+        timestamp: now(),
+        workflowId: '',
+        threadId,
+        interactionId,
+        operationType: UserInteractionOperationType.TOOL_APPROVAL,
+        results: approvalResult
+      });
+
+      return approvalResult;
+    } finally {
+      // 清理检查点（如果存在）
+      if (checkpointId && this.checkpointCoordinator) {
+        try {
+          // 注意：这里需要实现删除检查点的方法
+          // 暂时跳过，因为 CheckpointCoordinator 可能没有删除方法
+        } catch (error) {
+          console.warn('Failed to cleanup checkpoint:', error);
+        }
+      }
+    }
+  }
+
+  /**
+   * 等待用户交互响应
+   *
+   * @param interactionId 交互ID
+   * @returns 用户响应事件
+   */
+  private waitForUserInteractionResponse(
+    interactionId: string
+  ): Promise<any> {
+    return new Promise((resolve) => {
+      const handler = (event: any) => {
+        if (event.interactionId === interactionId) {
+          this.eventManager.off(EventType.USER_INTERACTION_RESPONDED, handler);
+          resolve(event);
+        }
+      };
+
+      this.eventManager.on(EventType.USER_INTERACTION_RESPONDED, handler);
+    });
   }
 
   /**
