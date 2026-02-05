@@ -361,6 +361,17 @@ Replace the entire TODO list with an updated checklist reflecting the current st
 - [x] = completed (fully finished, no unresolved issues)
 - [-] = in_progress (currently being worked on)
 
+**Usage Example:**
+<update_todo_list>
+<todos>
+[x] Analyze requirements
+[x] Design architecture
+[-] Implement core logic
+[ ] Write tests
+[ ] Update documentation
+</todos>
+</update_todo_list>
+
 **Core Principles:**
 - You may update multiple statuses in a single update (e.g., mark the previous as completed and the next as in progress).
 - When a new actionable item is discovered during a long or complex task, add it to the todo list immediately.
