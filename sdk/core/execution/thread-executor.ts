@@ -103,7 +103,7 @@ export class ThreadExecutor implements SubgraphContextFactory {
       // 执行主循环
       while (true) {
         // 检查是否需要暂停或停止
-        if (threadContext.thread.shouldPause || threadContext.thread.shouldStop) {
+        if (threadContext.getShouldPause() || threadContext.getShouldStop()) {
           break;
         }
 
@@ -169,7 +169,7 @@ export class ThreadExecutor implements SubgraphContextFactory {
    * 完成线程执行
    */
   private completeThread(threadContext: ThreadContext): void {
-    threadContext.thread.status = ThreadStatus.COMPLETED;
+    threadContext.setStatus(ThreadStatus.COMPLETED);
     threadContext.thread.endTime = now();
   }
 
@@ -214,7 +214,7 @@ export class ThreadExecutor implements SubgraphContextFactory {
 
     // 获取Thread状态
     const status = threadContext.getStatus();
-    const isSuccess = !error && status === 'COMPLETED';
+    const isSuccess = !error && status === ThreadStatus.COMPLETED;
 
     return {
       threadId: threadContext.getThreadId(),

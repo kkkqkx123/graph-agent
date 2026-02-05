@@ -39,13 +39,25 @@ export class SingletonRegistry {
     const { LLMExecutor } = require('../executors/llm-executor');
     const { graphRegistry } = require('../../services/graph-registry');
 
-    // 注册全局单例服务
-    this.register('eventManager', eventManager);
-    this.register('workflowRegistry', workflowRegistry);
-    this.register('threadRegistry', threadRegistry);
-    this.register('toolService', toolService);
-    this.register('llmExecutor', LLMExecutor.getInstance());
-    this.register('graphRegistry', graphRegistry);
+    // 只有在未注册的情况下才注册默认单例服务
+    if (!this.has('eventManager')) {
+      this.register('eventManager', eventManager);
+    }
+    if (!this.has('workflowRegistry')) {
+      this.register('workflowRegistry', workflowRegistry);
+    }
+    if (!this.has('threadRegistry')) {
+      this.register('threadRegistry', threadRegistry);
+    }
+    if (!this.has('toolService')) {
+      this.register('toolService', toolService);
+    }
+    if (!this.has('llmExecutor')) {
+      this.register('llmExecutor', LLMExecutor.getInstance());
+    }
+    if (!this.has('graphRegistry')) {
+      this.register('graphRegistry', graphRegistry);
+    }
 
     this.initialized = true;
   }

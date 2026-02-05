@@ -214,6 +214,14 @@ export class ThreadContext implements LifecycleCapable {
   }
 
   /**
+   * 设置 Thread 状态
+   * @param status 新的线程状态
+   */
+  setStatus(status: string): void {
+    this.thread.status = status as any;
+  }
+
+  /**
    * 获取当前节点 ID
    * @returns 当前节点 ID
    */
@@ -227,6 +235,38 @@ export class ThreadContext implements LifecycleCapable {
    */
   setCurrentNodeId(nodeId: string): void {
     this.thread.currentNodeId = nodeId;
+  }
+
+  /**
+   * 设置暂停标志
+   * @param shouldPause 是否应该暂停
+   */
+  setShouldPause(shouldPause: boolean): void {
+    this.thread.shouldPause = shouldPause;
+  }
+
+  /**
+   * 获取暂停标志
+   * @returns 是否应该暂停
+   */
+  getShouldPause(): boolean | undefined {
+    return this.thread.shouldPause;
+  }
+
+  /**
+   * 设置停止标志
+   * @param shouldStop 是否应该停止
+   */
+  setShouldStop(shouldStop: boolean): void {
+    this.thread.shouldStop = shouldStop;
+  }
+
+  /**
+   * 获取停止标志
+   * @returns 是否应该停止
+   */
+  getShouldStop(): boolean | undefined {
+    return this.thread.shouldStop;
   }
 
   /**

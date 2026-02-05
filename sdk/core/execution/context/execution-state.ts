@@ -141,7 +141,7 @@ export class ExecutionState {
    * @returns 子工作流执行结果数组
    */
   getSubgraphExecutionHistory(): any[] {
-    return this.subgraphExecutionHistory;
+    return [...this.subgraphExecutionHistory];
   }
 
   /**

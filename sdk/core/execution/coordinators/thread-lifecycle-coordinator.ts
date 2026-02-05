@@ -20,6 +20,7 @@
 
 import { NotFoundError } from '../../../types/errors';
 import type { ThreadOptions, ThreadResult } from '../../../types/thread';
+import { ThreadStatus } from '../../../types/thread';
 import { type ThreadRegistry } from '../../services/thread-registry';
 import { ThreadBuilder } from '../thread-builder';
 import { ThreadExecutor } from '../thread-executor';
@@ -32,6 +33,14 @@ import {
 } from '../utils/event/event-waiter';
 import { ThreadCascadeManager } from '../managers/thread-cascade-manager';
 import { ExecutionContext } from '../context/execution-context';
+import { now } from '../../../utils';
+import { globalMessageStorage } from '../../services/global-message-storage';
+import {
+  buildThreadCompletedEvent,
+  buildThreadFailedEvent,
+  buildThreadCancelledEvent
+} from '../utils/event/event-builder';
+import { emit } from '../utils/event/event-emitter';
 
 /**
  * Thread 生命周期协调器
@@ -118,7 +127,7 @@ export class ThreadLifecycleCoordinator {
     const thread = threadContext.thread;
 
     // 1. 设置暂停标志，通知执行器应该暂停
-    thread.shouldPause = true;
+    threadContext.setShouldPause(true);
 
     // 2. 等待执行器在安全点处暂停并触发THREAD_PAUSED事件
     await waitForThreadPaused(this.executionContext.getEventManager(), threadId, 5000);
@@ -152,7 +161,7 @@ export class ThreadLifecycleCoordinator {
     await this.getLifecycleManager().resumeThread(thread);
 
     // 2. 清除暂停标志
-    thread.shouldPause = false;
+    threadContext.setShouldPause(false);
 
     // 3. 创建执行器并继续执行
     const threadExecutor = new ThreadExecutor(this.executionContext);
@@ -181,7 +190,7 @@ export class ThreadLifecycleCoordinator {
     const thread = threadContext.thread;
 
     // 1. 设置停止标志，通知执行器应该停止
-    thread.shouldStop = true;
+    threadContext.setShouldStop(true);
 
     // 2. 等待执行器在安全点处停止并触发THREAD_CANCELLED事件
     await waitForThreadCancelled(this.executionContext.getEventManager(), threadId, 5000);
@@ -205,5 +214,81 @@ export class ThreadLifecycleCoordinator {
       );
     }
     return this.cascadeManager;
+  }
+
+  /**
+   * 强制设置线程状态（不依赖执行器）
+   * @param threadId 线程ID
+   * @param status 新的状态
+   */
+  async forceSetThreadStatus(threadId: string, status: ThreadStatus): Promise<void> {
+    const threadContext = this.executionContext.getThreadRegistry().get(threadId);
+    if (!threadContext) {
+      throw new Error(`ThreadContext not found for threadId: ${threadId}`);
+    }
+    
+    // 验证状态转换合法性
+    const { validateTransition } = await import('../utils/thread-state-validator');
+    validateTransition(threadId, threadContext.getStatus() as ThreadStatus, status);
+    
+    // 直接设置状态
+    threadContext.setStatus(status);
+    
+    // 如果是终止状态，设置结束时间并清理
+    if ([ThreadStatus.COMPLETED, ThreadStatus.FAILED, ThreadStatus.CANCELLED, ThreadStatus.TIMEOUT].includes(status)) {
+      threadContext.setEndTime(now());
+      globalMessageStorage.removeReference(threadId);
+      
+      // 触发相应的终止事件
+      let event;
+      switch (status) {
+        case ThreadStatus.COMPLETED:
+          event = buildThreadCompletedEvent(threadContext.thread, { success: true, output: threadContext.getOutput() } as any);
+          break;
+        case ThreadStatus.FAILED:
+          event = buildThreadFailedEvent(threadContext.thread, new Error('Thread failed'));
+          break;
+        case ThreadStatus.CANCELLED:
+          event = buildThreadCancelledEvent(threadContext.thread, 'forced_cancel');
+          break;
+      }
+      
+      if (event) {
+        await emit(this.executionContext.getEventManager(), event);
+      }
+    }
+  }
+
+  /**
+   * 强制暂停线程（不依赖执行器）
+   * @param threadId 线程ID
+   */
+  async forcePauseThread(threadId: string): Promise<void> {
+    await this.forceSetThreadStatus(threadId, ThreadStatus.PAUSED);
+  }
+
+  /**
+   * 强制取消线程（不依赖执行器）
+   * @param threadId 线程ID
+   * @param reason 取消原因
+   */
+  async forceCancelThread(threadId: string, reason?: string): Promise<void> {
+    const threadContext = this.executionContext.getThreadRegistry().get(threadId);
+    if (!threadContext) {
+      throw new Error(`ThreadContext not found for threadId: ${threadId}`);
+    }
+    
+    // 设置状态
+    threadContext.setStatus(ThreadStatus.CANCELLED);
+    
+    // 设置结束时间
+    threadContext.setEndTime(now());
+    
+    // 清理全局消息存储
+    globalMessageStorage.removeReference(threadId);
+    
+    // 触发取消事件
+    const cancelledEvent = buildThreadCancelledEvent(threadContext.thread, reason || 'forced_cancel');
+    await emit(this.executionContext.getEventManager(), cancelledEvent);
   }
 }

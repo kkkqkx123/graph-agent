@@ -11,6 +11,7 @@ import { ExecutionContext } from '../../core/execution/context/execution-context
 import { workflowRegistry, type WorkflowRegistry } from '../../core/services/workflow-registry';
 import type { WorkflowDefinition } from '../../types/workflow';
 import type { ThreadResult, ThreadOptions } from '../../types/thread';
+import { ThreadStatus } from '../../types/thread';
 import type { HumanRelayHandler } from '../../types/human-relay';
 import type { UserInteractionHandler } from '../../types/interaction';
 
@@ -108,6 +109,72 @@ export class ThreadExecutorAPI {
    */
   async cancelThread(threadId: string): Promise<void> {
     await this.lifecycleCoordinator.stopThread(threadId);
+  }
+
+  /**
+   * 强制设置线程状态（不依赖执行器）
+   * @param threadId 线程ID
+   * @param status 新的状态
+   */
+  async setThreadStatus(threadId: string, status: ThreadStatus): Promise<void> {
+    await this.lifecycleCoordinator.forceSetThreadStatus(threadId, status);
+  }
+
+  /**
+   * 强制暂停线程（不依赖执行器）
+   * @param threadId 线程ID
+   */
+  async forcePauseThread(threadId: string): Promise<void> {
+    await this.lifecycleCoordinator.forcePauseThread(threadId);
+  }
+
+  /**
+   * 强制取消线程（不依赖执行器）
+   * @param threadId 线程ID
+   * @param reason 取消原因
+   */
+  async forceCancelThread(threadId: string, reason?: string): Promise<void> {
+    await this.lifecycleCoordinator.forceCancelThread(threadId, reason);
+  }
+
+  /**
+   * 获取线程状态
+   * @param threadId 线程ID
+   * @returns 线程状态
+   */
+  getThreadStatus(threadId: string): string | undefined {
+    const threadContext = this.executionContext.getThreadRegistry().get(threadId);
+    return threadContext?.getStatus();
+  }
+
+  /**
+   * 检查线程是否可以暂停
+   * @param threadId 线程ID
+   * @returns 是否可以暂停
+   */
+  canPauseThread(threadId: string): boolean {
+    const status = this.getThreadStatus(threadId);
+    return status === 'RUNNING';
+  }
+
+  /**
+   * 检查线程是否可以恢复
+   * @param threadId 线程ID
+   * @returns 是否可以恢复
+   */
+  canResumeThread(threadId: string): boolean {
+    const status = this.getThreadStatus(threadId);
+    return status === 'PAUSED';
+  }
+
+  /**
+   * 检查线程是否可以取消
+   * @param threadId 线程ID
+   * @returns 是否可以取消
+   */
+  canCancelThread(threadId: string): boolean {
+    const status = this.getThreadStatus(threadId);
+    return status === 'RUNNING' || status === 'PAUSED';
   }
 
   /**

@@ -29,6 +29,8 @@
  */
 
 import { SingletonRegistry } from './singleton-registry';
+import { ComponentRegistry } from './component-registry';
+import { LifecycleManager } from './lifecycle-manager';
 import type { WorkflowRegistry } from '../../services/workflow-registry';
 import type { ThreadRegistry } from '../../services/thread-registry';
 import type { EventManager } from '../../services/event-manager';
@@ -44,9 +46,15 @@ import { globalMessageStorage } from '../../services/global-message-storage';
  * 执行上下文 - 轻量级依赖注入容器
  */
 export class ExecutionContext {
-  private components: Map<string, any> = new Map();
+  private componentRegistry: ComponentRegistry;
+  private lifecycleManager: LifecycleManager;
   private initialized = false;
   private currentThreadId: string | null = null;
+
+  constructor() {
+    this.componentRegistry = new ComponentRegistry();
+    this.lifecycleManager = new LifecycleManager();
+  }
 
   /**
    * 初始化上下文
@@ -69,18 +77,18 @@ export class ExecutionContext {
     const llmExecutor = SingletonRegistry.get<any>('llmExecutor');
     const graphRegistry = SingletonRegistry.get<any>('graphRegistry');
 
-    // 注册全局单例服务到ExecutionContext
-    this.register('eventManager', eventManager);
-    this.register('workflowRegistry', workflowRegistry);
-    this.register('threadRegistry', threadRegistry);
-    this.register('toolService', toolService);
-    this.register('llmExecutor', llmExecutor);
-    this.register('graphRegistry', graphRegistry);
+    // 注册全局单例服务到ComponentRegistry
+    this.componentRegistry.register('eventManager', eventManager);
+    this.componentRegistry.register('workflowRegistry', workflowRegistry);
+    this.componentRegistry.register('threadRegistry', threadRegistry);
+    this.componentRegistry.register('toolService', toolService);
+    this.componentRegistry.register('llmExecutor', llmExecutor);
+    this.componentRegistry.register('graphRegistry', graphRegistry);
 
     // 2. CheckpointStateManager 依赖 CheckpointStorage
     const checkpointStorage = new MemoryCheckpointStorage();
     const checkpointStateManager = new CheckpointStateManager(checkpointStorage);
-    this.register('checkpointStateManager', checkpointStateManager);
+    this.componentRegistry.register('checkpointStateManager', checkpointStateManager);
     
     // 3. CheckpointCoordinator 依赖 CheckpointStateManager、ThreadRegistry、WorkflowRegistry、GlobalMessageStorage
     const checkpointCoordinator = new CheckpointCoordinator(
@@ -89,16 +97,17 @@ export class ExecutionContext {
       workflowRegistry,
       globalMessageStorage
     );
-    this.register('checkpointCoordinator', checkpointCoordinator);
+    this.componentRegistry.register('checkpointCoordinator', checkpointCoordinator);
     
     // 4. ThreadLifecycleManager 依赖 EventManager
     const lifecycleManager = new ThreadLifecycleManager(eventManager);
-    this.register('lifecycleManager', lifecycleManager);
+    this.componentRegistry.register('lifecycleManager', lifecycleManager);
 
     // 5. ThreadLifecycleCoordinator 依赖 ExecutionContext
     const lifecycleCoordinator = new ThreadLifecycleCoordinator(this);
-    this.register('lifecycleCoordinator', lifecycleCoordinator);
+    this.componentRegistry.register('lifecycleCoordinator', lifecycleCoordinator);
 
+    this.componentRegistry.markAsInitialized();
     this.initialized = true;
   }
 
@@ -108,7 +117,7 @@ export class ExecutionContext {
    * @param instance 组件实例
    */
   register<T>(key: string, instance: T): void {
-    this.components.set(key, instance);
+    this.componentRegistry.register(key, instance);
   }
 
   /**
@@ -117,7 +126,7 @@ export class ExecutionContext {
    */
   getWorkflowRegistry(): WorkflowRegistry {
     this.ensureInitialized();
-    return this.components.get('workflowRegistry') as WorkflowRegistry;
+    return this.componentRegistry.get('workflowRegistry');
   }
 
   /**
@@ -126,7 +135,7 @@ export class ExecutionContext {
    */
   getThreadRegistry(): ThreadRegistry {
     this.ensureInitialized();
-    return this.components.get('threadRegistry') as ThreadRegistry;
+    return this.componentRegistry.get('threadRegistry');
   }
 
   /**
@@ -135,7 +144,7 @@ export class ExecutionContext {
    */
   getEventManager(): EventManager {
     this.ensureInitialized();
-    return this.components.get('eventManager') as EventManager;
+    return this.componentRegistry.get('eventManager');
   }
 
   /**
@@ -144,7 +153,7 @@ export class ExecutionContext {
    */
   getCheckpointStateManager(): CheckpointStateManager {
     this.ensureInitialized();
-    return this.components.get('checkpointStateManager') as CheckpointStateManager;
+    return this.componentRegistry.get('checkpointStateManager');
   }
   
   /**
@@ -153,7 +162,7 @@ export class ExecutionContext {
    */
   getCheckpointCoordinator(): CheckpointCoordinator {
     this.ensureInitialized();
-    return this.components.get('checkpointCoordinator') as CheckpointCoordinator;
+    return this.componentRegistry.get('checkpointCoordinator');
   }
 
   /**
@@ -163,7 +172,7 @@ export class ExecutionContext {
    */
   getThreadLifecycleManager(): ThreadLifecycleManager {
     this.ensureInitialized();
-    return this.components.get('lifecycleManager') as ThreadLifecycleManager;
+    return this.componentRegistry.get('lifecycleManager');
   }
 
   /**
@@ -172,7 +181,7 @@ export class ExecutionContext {
    */
   getToolService(): any {
     this.ensureInitialized();
-    return this.components.get('toolService');
+    return this.componentRegistry.getAny('toolService');
   }
 
   /**
@@ -181,7 +190,7 @@ export class ExecutionContext {
    */
   getLlmExecutor(): any {
     this.ensureInitialized();
-    return this.components.get('llmExecutor');
+    return this.componentRegistry.getAny('llmExecutor');
   }
 
   /**
@@ -190,7 +199,7 @@ export class ExecutionContext {
    */
   getLifecycleCoordinator(): ThreadLifecycleCoordinator {
     this.ensureInitialized();
-    return this.components.get('lifecycleCoordinator') as ThreadLifecycleCoordinator;
+    return this.componentRegistry.get('lifecycleCoordinator');
   }
 
   /**
@@ -199,7 +208,7 @@ export class ExecutionContext {
    */
   getGraphRegistry(): any {
     this.ensureInitialized();
-    return this.components.get('graphRegistry');
+    return this.componentRegistry.getAny('graphRegistry');
   }
 
   /**
@@ -215,7 +224,10 @@ export class ExecutionContext {
    * @returns HumanRelayHandler 实例，如果未设置则返回 undefined
    */
   getHumanRelayHandler(): any {
-    return this.components.get('humanRelayHandler');
+    this.ensureInitialized();
+    return this.componentRegistry.has('humanRelayHandler')
+      ? this.componentRegistry.getAny('humanRelayHandler')
+      : undefined;
   }
 
   /**
@@ -231,7 +243,10 @@ export class ExecutionContext {
    * @returns UserInteractionHandler 实例，如果未设置则返回 undefined
    */
   getUserInteractionHandler(): any {
-    return this.components.get('userInteractionHandler');
+    this.ensureInitialized();
+    return this.componentRegistry.has('userInteractionHandler')
+      ? this.componentRegistry.getAny('userInteractionHandler')
+      : undefined;
   }
 
   /**
@@ -241,7 +256,7 @@ export class ExecutionContext {
    */
   get<T>(key: string): T {
     this.ensureInitialized();
-    return this.components.get(key) as T;
+    return this.componentRegistry.getAny(key);
   }
 
   /**
@@ -249,7 +264,7 @@ export class ExecutionContext {
    * @returns 是否已初始化
    */
   isInitialized(): boolean {
-    return this.initialized;
+    return this.initialized && this.componentRegistry.isInitialized();
   }
 
   /**
@@ -278,30 +293,14 @@ export class ExecutionContext {
       'checkpointStateManager'    // 依赖checkpointStorage
     ];
 
-    // 按顺序清理组件
-    for (const key of cleanupOrder) {
-      const component = this.components.get(key);
-      if (!component) {
-        continue;
-      }
+    // 获取组件映射用于清理
+    const componentsForCleanup = this.componentRegistry.getAllComponents();
 
-      // 检查组件是否实现了LifecycleCapable接口
-      if (this.isLifecycleManager(component)) {
-        try {
-          const cleanupResult = component.cleanup();
-          // 支持同步和异步的cleanup方法
-          if (cleanupResult instanceof Promise) {
-            await cleanupResult;
-          }
-        } catch (error) {
-          console.error(`Error cleaning up component ${key}:`, error);
-          // 继续清理其他组件，不中断整个销毁流程
-        }
-      }
-    }
+    // 按顺序清理组件
+    await this.lifecycleManager.cleanupComponents(componentsForCleanup, cleanupOrder);
 
     // 清空组件注册表（包括全局单例的引用）
-    this.components.clear();
+    this.componentRegistry.clear();
 
     // 重置初始化状态
     this.initialized = false;
@@ -314,14 +313,6 @@ export class ExecutionContext {
    * @param component 组件实例
    * @returns 是否实现了LifecycleCapable接口
    */
-  private isLifecycleManager(component: any): component is LifecycleCapable {
-    return (
-      component &&
-      typeof component.cleanup === 'function' &&
-      typeof component.createSnapshot === 'function' &&
-      typeof component.restoreFromSnapshot === 'function'
-    );
-  }
 
   /**
    * 获取所有实现了LifecycleCapable接口的组件
@@ -329,19 +320,12 @@ export class ExecutionContext {
    * @returns 生命周期管理器数组
    */
   getLifecycleManagers(): Array<{ name: string; manager: LifecycleCapable }> {
-    const managers: Array<{ name: string; manager: LifecycleCapable }> = [];
-    
     // 只返回由ExecutionContext创建的组件，不包括全局单例
     const managedComponents = ['checkpointStateManager', 'checkpointCoordinator', 'lifecycleManager', 'lifecycleCoordinator'];
     
-    for (const key of managedComponents) {
-      const component = this.components.get(key);
-      if (component && this.isLifecycleManager(component)) {
-        managers.push({ name: key, manager: component });
-      }
-    }
+    const componentsMap = this.componentRegistry.getAllComponents();
     
-    return managers;
+    return this.lifecycleManager.getLifecycleCapableComponents(componentsMap, managedComponents);
   }
 
   /**
@@ -387,6 +371,9 @@ export class ExecutionContext {
    * @returns ExecutionContext 实例
    */
   static createForTesting(customSingletons?: Map<string, any>): ExecutionContext {
+    // 重置 SingletonRegistry 以确保干净状态
+    SingletonRegistry.reset();
+    
     // 如果提供了自定义单例，临时注册到SingletonRegistry
     if (customSingletons && customSingletons.size > 0) {
       for (const [key, instance] of customSingletons.entries()) {

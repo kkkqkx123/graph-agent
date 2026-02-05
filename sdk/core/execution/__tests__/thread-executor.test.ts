@@ -478,7 +478,7 @@ describe('ThreadExecutor', () => {
 });
 
 // 辅助函数：创建模拟的 ThreadContext
-function createMockThreadContext(): ThreadContext {
+export function createMockThreadContext(): ThreadContext {
   const mockThread = {
     id: 'test-thread',
     workflowId: 'test-workflow',
@@ -530,6 +530,7 @@ function createMockThreadContext(): ThreadContext {
     getThreadId: () => mockThread.id,
     getWorkflowId: () => mockThread.workflowId,
     getStatus: () => mockThread.status,
+    setStatus: jest.fn((status: any) => { mockThread.status = status; }),
     getCurrentNodeId: () => mockThread.currentNodeId,
     setCurrentNodeId: jest.fn((nodeId: string) => { mockThread.currentNodeId = nodeId; }),
     getStartTime: () => mockThread.startTime,
@@ -537,6 +538,8 @@ function createMockThreadContext(): ThreadContext {
     getNodeResults: () => mockThread.nodeResults,
     getErrors: () => mockThread.errors,
     addError: jest.fn((error: any) => { (mockThread.errors as any[]).push(error); }),
-    initializeVariables: jest.fn()
+    initializeVariables: jest.fn(),
+    getShouldPause: () => mockThread.shouldPause,
+    getShouldStop: () => mockThread.shouldStop
   } as any;
 }
