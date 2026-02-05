@@ -23,6 +23,8 @@ export { VariableManagerAPI } from './management/variable-manager-api';
 export { MessageManagerAPI } from './conversation/message-manager-api';
 export { NodeRegistryAPI } from './template-registry/node-template-registry-api';
 export { TriggerTemplateRegistryAPI } from './template-registry/trigger-template-registry-api';
+export { NodeTemplateBuilder } from './builders/node-template-builder';
+export { TriggerTemplateBuilder } from './builders/trigger-template-builder';
 export { TriggerManagerAPI, triggerManagerAPI } from './management/trigger-manager-api';
 
 // 构建器

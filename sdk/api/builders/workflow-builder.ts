@@ -1,16 +1,20 @@
 /**
  * WorkflowBuilder - 声明式工作流构建器
- * 提供流畅的链式API来构建工作流定义
+ * 提供流畅的链式API来构建工作流定义，支持从模板添加节点和触发器
  */
 
 import type { WorkflowDefinition, WorkflowVariable, WorkflowConfig, WorkflowMetadata } from '../../types/workflow';
 import type { Node, NodeConfig } from '../../types/node';
 import type { Edge } from '../../types/edge';
 import type { Condition } from '../../types/condition';
+import type { WorkflowTrigger } from '../../types/trigger';
+import type { TriggerReference } from '../../types/trigger-template';
 import { NodeType } from '../../types/node';
 import { EdgeType } from '../../types/edge';
 import { generateId } from '../../utils/id-utils';
 import { now } from '../../utils/timestamp-utils';
+import { nodeTemplateRegistry } from '../../core/services/node-template-registry';
+import { triggerTemplateRegistry } from '../../core/services/trigger-template-registry';
 
 /**
  * WorkflowBuilder - 声明式工作流构建器
@@ -20,6 +24,7 @@ export class WorkflowBuilder {
   private nodes: Map<string, Node> = new Map();
   private edges: Edge[] = [];
   private variables: WorkflowVariable[] = [];
+  private triggers: (WorkflowTrigger | TriggerReference)[] = [];
 
   private constructor(id: string) {
     this.workflow = {
@@ -111,6 +116,38 @@ export class WorkflowBuilder {
     };
     this.nodes.set(id, node);
     return this;
+  }
+
+  /**
+   * 从节点模板添加节点
+   * @param nodeId 节点ID（工作流中唯一）
+   * @param templateName 节点模板名称
+   * @param configOverride 配置覆盖（可选）
+   * @param nodeName 节点名称（可选）
+   * @returns this
+   */
+  addNodeFromTemplate(
+    nodeId: string,
+    templateName: string,
+    configOverride?: Partial<NodeConfig>,
+    nodeName?: string
+  ): this {
+    const template = nodeTemplateRegistry.get(templateName);
+    if (!template) {
+      throw new Error(`节点模板 '${templateName}' 不存在`);
+    }
+
+    // 合并配置
+    const mergedConfig = configOverride
+      ? { ...template.config, ...configOverride }
+      : template.config;
+
+    return this.addNode(
+      nodeId,
+      template.type,
+      mergedConfig,
+      nodeName || template.name
+    );
   }
 
   /**
@@ -269,6 +306,45 @@ export class WorkflowBuilder {
   }
 
   /**
+   * 添加触发器
+   * @param trigger 触发器定义
+   * @returns this
+   */
+  addTrigger(trigger: WorkflowTrigger): this {
+    this.triggers.push(trigger);
+    return this;
+  }
+
+  /**
+   * 从触发器模板添加触发器
+   * @param triggerId 触发器ID（工作流中唯一）
+   * @param templateName 触发器模板名称
+   * @param configOverride 配置覆盖（可选）
+   * @param triggerName 触发器名称（可选）
+   * @returns this
+   */
+  addTriggerFromTemplate(
+    triggerId: string,
+    templateName: string,
+    configOverride?: {
+      condition?: any;
+      action?: any;
+      enabled?: boolean;
+      maxTriggers?: number;
+    },
+    triggerName?: string
+  ): this {
+    const reference: TriggerReference = {
+      templateName,
+      triggerId,
+      triggerName,
+      configOverride
+    };
+    this.triggers.push(reference);
+    return this;
+  }
+
+  /**
    * 构建工作流定义
    * @returns 工作流定义
    */
@@ -285,6 +361,7 @@ export class WorkflowBuilder {
       nodes: Array.from(this.nodes.values()),
       edges: this.edges,
       variables: this.variables.length > 0 ? this.variables : undefined,
+      triggers: this.triggers.length > 0 ? this.triggers : undefined,
       updatedAt: now()
     } as WorkflowDefinition;
 
@@ -349,6 +426,16 @@ export class WorkflowBuilder {
       }
       if (!this.nodes.has(edge.targetNodeId)) {
         errors.push(`边的目标节点不存在: ${edge.targetNodeId}`);
+      }
+    }
+
+    // 验证触发器引用
+    for (const trigger of this.triggers) {
+      if ('templateName' in trigger) {
+        const reference = trigger as TriggerReference;
+        if (!triggerTemplateRegistry.has(reference.templateName)) {
+          errors.push(`触发器模板 '${reference.templateName}' 不存在`);
+        }
       }
     }
 
