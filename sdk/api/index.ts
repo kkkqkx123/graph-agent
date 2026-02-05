@@ -3,6 +3,31 @@
  * 导出所有API模块和类型
  */
 
+// Command模式核心
+export {
+  Command,
+  BaseCommand,
+  SyncCommand,
+  BaseSyncCommand,
+  CommandMetadata,
+  CommandValidationResult,
+  validationSuccess,
+  validationFailure
+} from './core/command';
+
+export { CommandExecutor } from './core/command-executor';
+
+export {
+  CommandMiddleware,
+  LoggingMiddleware,
+  ValidationMiddleware,
+  CacheMiddleware,
+  MetricsMiddleware,
+  RetryMiddleware,
+  Logger,
+  CommandMetrics
+} from './core/command-middleware';
+
 // 主SDK类
 export { SDK } from './core/sdk';
 

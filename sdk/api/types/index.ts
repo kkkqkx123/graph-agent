@@ -3,6 +3,24 @@
  * 导出所有API层使用的类型和接口
  */
 
+// Command模式相关类型
+export type {
+  ExecutionResult,
+  ExecutionSuccess,
+  ExecutionFailure
+} from './execution-result';
+export {
+  success,
+  failure,
+  isSuccess,
+  isFailure,
+  getData,
+  getError
+} from './execution-result';
+
+export type { ExecutionOptions } from './execution-options';
+export { DEFAULT_EXECUTION_OPTIONS, mergeExecutionOptions } from './execution-options';
+
 // 核心类型
 export type { ThreadOptions, SDKOptions, SDKDependencies } from './core-types';
 
