@@ -26,11 +26,11 @@
 import { z } from 'zod';
 import type { WorkflowDefinition } from '../../types/workflow';
 import type { Node } from '../../types/node';
-import type { Edge } from '../../types/edge';
 import { NodeType } from '../../types/node';
 import { ValidationError, type ValidationResult } from '../../types/errors';
 import { validateNodeByType } from './node-validation';
 import { validateHooks } from './hook-validator';
+import { validateTriggers } from './trigger-validator';
 import { SelfReferenceValidationStrategy } from './strategies/self-reference-validation-strategy';
 
 /**
@@ -128,6 +128,10 @@ export class WorkflowValidator {
     // 验证配置
     const configResult = this.validateConfig(workflow);
     errors.push(...configResult.errors);
+
+    // 验证触发器
+    const triggersResult = this.validateTriggers(workflow);
+    errors.push(...triggersResult.errors);
 
     // 验证自引用
     const selfReferenceResult = this.validateSelfReferences(workflow);
@@ -409,6 +413,40 @@ export class WorkflowValidator {
   }
 
   /**
+   * 验证触发器
+   * @param workflow 工作流定义
+   * @returns 验证结果
+   */
+  private validateTriggers(workflow: WorkflowDefinition): ValidationResult {
+    const errors: ValidationError[] = [];
+
+    // 如果没有触发器，直接返回成功
+    if (!workflow.triggers || workflow.triggers.length === 0) {
+      return { valid: true, errors: [], warnings: [] };
+    }
+
+    // 验证触发器配置
+    try {
+      validateTriggers(workflow.triggers, 'workflow.triggers');
+    } catch (error) {
+      if (error instanceof ValidationError) {
+        errors.push(error);
+      } else {
+        errors.push(new ValidationError(
+          error instanceof Error ? error.message : String(error),
+          'workflow.triggers'
+        ));
+      }
+    }
+
+    return {
+      valid: errors.length === 0,
+      errors,
+      warnings: []
+    };
+  }
+
+  /**
    * 验证自引用
    * 使用策略模式检测 SUBGRAPH 和 START_FROM_TRIGGER 节点的自引用
    * @param workflow 工作流定义
@@ -452,14 +490,14 @@ export class WorkflowValidator {
         const llmConfig = node.config as any;
         if (llmConfig.dynamicTools) {
           const path = `workflow.nodes[${i}].config.dynamicTools`;
-          
+
           if (!llmConfig.dynamicTools.toolIds || !Array.isArray(llmConfig.dynamicTools.toolIds)) {
             errors.push(new ValidationError(
               'dynamicTools.toolIds must be an array of tool IDs',
               `${path}.toolIds`
             ));
           }
-          
+
           if (llmConfig.dynamicTools.descriptionTemplate && typeof llmConfig.dynamicTools.descriptionTemplate !== 'string') {
             errors.push(new ValidationError(
               'dynamicTools.descriptionTemplate must be a string',

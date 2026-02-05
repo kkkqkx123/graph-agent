@@ -8,6 +8,7 @@ import type { NodeTemplate } from '../../../types/node-template';
 import type { NodeTemplateFilter, NodeTemplateSummary } from '../../types/registry-types';
 import type { ValidationResult } from '../../../types/errors';
 import { ValidationError } from '../../../types/errors';
+import { NodeType } from '../../../types/node';
 
 /**
  * NodeTemplateRegistryAPI - 节点模板管理API
@@ -197,30 +198,77 @@ export class NodeRegistryAPI {
   }
 
   /**
-   * 验证节点模板
+   * 验证节点模板（无副作用）
    * @param template 节点模板
    * @returns 验证结果
    */
   async validateTemplate(template: NodeTemplate): Promise<ValidationResult> {
+    const errors: ValidationError[] = [];
+
+    // 验证必需字段
+    if (!template.name || typeof template.name !== 'string') {
+      errors.push(new ValidationError(
+        'Node template name is required and must be a string',
+        'template.name'
+      ));
+    }
+
+    if (!template.type || !Object.values(NodeType).includes(template.type)) {
+      errors.push(new ValidationError(
+        `Invalid node type: ${template.type}`,
+        'template.type'
+      ));
+    }
+
+    if (!template.config) {
+      errors.push(new ValidationError(
+        'Node template config is required',
+        'template.config'
+      ));
+    }
+
+    // 如果有错误，直接返回
+    if (errors.length > 0) {
+      return {
+        valid: false,
+        errors,
+        warnings: []
+      };
+    }
+
+    // 使用现有的验证函数验证节点配置
+    const { validateNodeByType } = require('../../../core/validation/node-validation');
+    const mockNode = {
+      id: 'validation',
+      type: template.type,
+      name: template.name,
+      config: template.config,
+      outgoingEdgeIds: [],
+      incomingEdgeIds: []
+    };
+
     try {
-      this.registry.register(template);
-      this.registry.unregister(template.name);
+      validateNodeByType(mockNode);
       return {
         valid: true,
         errors: [],
         warnings: []
       };
     } catch (error) {
-      if (error instanceof Error) {
-        return {
-          valid: false,
-          errors: [new ValidationError(error.message, 'template')],
-          warnings: []
-        };
+      if (error instanceof ValidationError) {
+        errors.push(new ValidationError(
+          `Invalid node configuration for template '${template.name}': ${error.message}`,
+          'template.config'
+        ));
+      } else {
+        errors.push(new ValidationError(
+          error instanceof Error ? error.message : 'Unknown validation error',
+          'template.config'
+        ));
       }
       return {
         valid: false,
-        errors: [new ValidationError('Unknown validation error', 'template')],
+        errors,
         warnings: []
       };
     }

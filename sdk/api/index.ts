@@ -28,6 +28,10 @@ export { ScriptExecutionAPI } from './operations/code/script-execution-api';
 
 // 验证API
 export { WorkflowValidatorAPI } from './validation/workflow-validator-api';
+export { CodeConfigValidatorAPI } from './validation/code-config-validator-api';
+export { ToolConfigValidatorAPI } from './validation/tool-config-validator-api';
+export { HookValidatorAPI } from './validation/hook-validator-api';
+export { TriggerValidatorAPI } from './validation/trigger-validator-api';
 
 // 构建器
 export { WorkflowBuilder, ExecutionBuilder, WorkflowComposer, sequential, parallel } from './builders';
