@@ -40,6 +40,7 @@ import type {
 import { ValidationError } from '../../types';
 import type { ValidationResult } from '../../types';
 import { GraphData } from '../entities/graph-data';
+import { SUBGRAPH_METADATA_KEYS } from '../../types/subgraph';
 import { analyzeGraph } from '../graph/utils/graph-analyzer';
 import { detectCycles } from '../graph/utils/graph-cycle-detector';
 import { analyzeReachability } from '../graph/utils/graph-reachability-analyzer';
@@ -207,10 +208,15 @@ export class GraphValidator {
     }
 
     // 检查START节点是否唯一
+    // 排除子工作流边界节点（标记为entry的START节点）
     let startNodeCount = 0;
     for (const node of graph.nodes.values()) {
       if (node.type === 'START' as NodeType) {
-        startNodeCount++;
+        // 检查是否是子工作流边界节点
+        const isSubgraphBoundary = node.internalMetadata?.[SUBGRAPH_METADATA_KEYS.BOUNDARY_TYPE] === 'entry';
+        if (!isSubgraphBoundary) {
+          startNodeCount++;
+        }
       }
     }
     if (startNodeCount > 1) {

@@ -59,7 +59,7 @@ export class NodeExecutionCoordinator {
     const graphNode = navigator.getGraph().getNode(nodeId);
 
     // 检查是否是子图边界节点
-    if (graphNode?.metadata?.[SUBGRAPH_METADATA_KEYS.BOUNDARY_TYPE]) {
+    if (graphNode?.internalMetadata?.[SUBGRAPH_METADATA_KEYS.BOUNDARY_TYPE]) {
       await this.handleSubgraphBoundary(threadContext, graphNode);
     }
 
@@ -159,8 +159,8 @@ export class NodeExecutionCoordinator {
    * @param graphNode 图节点
    */
   private async handleSubgraphBoundary(threadContext: ThreadContext, graphNode: any): Promise<void> {
-    const boundaryType = graphNode.metadata[SUBGRAPH_METADATA_KEYS.BOUNDARY_TYPE] as SubgraphBoundaryType;
-    const originalNodeId = graphNode.metadata[SUBGRAPH_METADATA_KEYS.ORIGINAL_NODE_ID];
+    const boundaryType = graphNode.internalMetadata[SUBGRAPH_METADATA_KEYS.BOUNDARY_TYPE] as SubgraphBoundaryType;
+    const originalNodeId = graphNode.internalMetadata[SUBGRAPH_METADATA_KEYS.ORIGINAL_NODE_ID];
 
     if (boundaryType === 'entry') {
       // 进入子图

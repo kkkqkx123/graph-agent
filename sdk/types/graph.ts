@@ -20,8 +20,10 @@ export interface GraphNode {
   name: string;
   /** 可选的节点描述 */
   description?: string;
-  /** 可选的元数据 */
+  /** 可选的元数据（用户可设置） */
   metadata?: Metadata;
+  /** 内部元数据（系统内部使用，用户不可设置，避免数据注入漏洞）【在node定义中不存在，仅在graph阶段才存在】 */
+  internalMetadata?: Metadata;
   /** 原始节点引用（用于访问完整节点配置） */
   originalNode?: Node;
   /** 节点所属的原始工作流ID */
@@ -101,7 +103,7 @@ export interface Graph {
   startNodeId?: ID;
   /** 结束节点ID集合（可能有多个END节点） */
   endNodeIds: Set<ID>;
-  
+
   /** 获取节点 */
   getNode(nodeId: ID): GraphNode | undefined;
   /** 获取边 */

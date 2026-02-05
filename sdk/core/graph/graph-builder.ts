@@ -284,18 +284,18 @@ export class GraphBuilder {
         parentWorkflowId: options.parentWorkflowId,
       };
       
-      // 为边界节点添加metadata标记
+      // 为边界节点添加internalMetadata标记
       if (node.type === 'START' as NodeType) {
-        newNode.metadata = {
-          ...newNode.metadata,
+        newNode.internalMetadata = {
+          ...newNode.internalMetadata,
           [SUBGRAPH_METADATA_KEYS.BOUNDARY_TYPE]: 'entry',
           [SUBGRAPH_METADATA_KEYS.ORIGINAL_NODE_ID]: subgraphNodeId,
           [SUBGRAPH_METADATA_KEYS.NAMESPACE]: options.nodeIdPrefix,
           [SUBGRAPH_METADATA_KEYS.DEPTH]: options.depth
         };
       } else if (node.type === 'END' as NodeType) {
-        newNode.metadata = {
-          ...newNode.metadata,
+        newNode.internalMetadata = {
+          ...newNode.internalMetadata,
           [SUBGRAPH_METADATA_KEYS.BOUNDARY_TYPE]: 'exit',
           [SUBGRAPH_METADATA_KEYS.ORIGINAL_NODE_ID]: subgraphNodeId,
           [SUBGRAPH_METADATA_KEYS.NAMESPACE]: options.nodeIdPrefix,
