@@ -65,6 +65,13 @@ const errorHandlingSchema = z.object({
 });
 
 /**
+ * 工具审批配置schema
+ */
+const toolApprovalConfigSchema = z.object({
+  autoApprovedTools: z.array(z.string())
+});
+
+/**
  * 工作流配置schema
  */
 const workflowConfigSchema = z.object({
@@ -72,7 +79,8 @@ const workflowConfigSchema = z.object({
   maxSteps: z.number().min(0, 'Max steps must be non-negative').optional(),
   enableCheckpoints: z.boolean().optional(),
   retryPolicy: retryPolicySchema.optional(),
-  errorHandling: errorHandlingSchema.optional()
+  errorHandling: errorHandlingSchema.optional(),
+  toolApproval: toolApprovalConfigSchema.optional()
 });
 
 /**
