@@ -6,30 +6,34 @@
 // 主SDK类
 export { SDK } from './core/sdk';
 
-// API模块
-export { ThreadExecutorAPI } from './core/thread-executor-api';
-export type { UserInteractionHandler, UserInteractionContext } from '../types/interaction';
-export type { HumanRelayHandler, HumanRelayContext } from '../types/human-relay';
-export { WorkflowRegistryAPI } from './registry/workflow-registry-api';
-export { ThreadRegistryAPI } from './registry/thread-registry-api';
+// 资源管理API (CRUD Operations)
+export { WorkflowRegistryAPI } from './resources/workflows/workflow-registry-api';
+export { ThreadRegistryAPI } from './resources/threads/thread-registry-api';
+export { NodeRegistryAPI } from './resources/templates/node-template-registry-api';
+export { TriggerTemplateRegistryAPI } from './resources/templates/trigger-template-registry-api';
+export { ToolRegistryAPI } from './resources/tools/tool-registry-api';
+export { ScriptRegistryAPI } from './resources/scripts/script-registry-api';
+export { ProfileRegistryAPI } from './resources/profiles/profile-registry-api';
+
+// 业务操作API (Business Operations)
+export { ThreadExecutorAPI } from './operations/execution/thread-executor-api';
+export { MessageManagerAPI } from './operations/conversation/message-manager-api';
+export { VariableManagerAPI } from './operations/state/variable-manager-api';
+export { CheckpointManagerAPI } from './operations/state/checkpoint-manager-api';
+export { TriggerManagerAPI } from './operations/state/trigger-manager-api';
+export { EventManagerAPI } from './operations/events/event-manager-api';
+export { LLMWrapperAPI } from './operations/llm/llm-wrapper-api';
+export { ToolExecutionAPI } from './operations/tools/tool-execution-api';
+export { ScriptExecutionAPI } from './operations/code/script-execution-api';
+
+// 验证API
 export { WorkflowValidatorAPI } from './validation/workflow-validator-api';
-export { ToolServiceAPI } from './tools/tool-service-api';
-export { CodeServiceAPI } from './code/code-service-api';
-export { LLMWrapperAPI } from './llm/llm-wrapper-api';
-export { ProfileManagerAPI } from './llm/profile-manager-api';
-export { EventManagerAPI } from './management/event-manager-api';
-export { CheckpointManagerAPI } from './management/checkpoint-manager-api';
-export { VariableManagerAPI } from './management/variable-manager-api';
-export { MessageManagerAPI } from './conversation/message-manager-api';
-export { NodeRegistryAPI } from './template-registry/node-template-registry-api';
-export { TriggerTemplateRegistryAPI } from './template-registry/trigger-template-registry-api';
-export { NodeTemplateBuilder } from './builders/node-template-builder';
-export { TriggerTemplateBuilder } from './builders/trigger-template-builder';
-export { TriggerManagerAPI, triggerManagerAPI } from './management/trigger-manager-api';
 
 // 构建器
 export { WorkflowBuilder, ExecutionBuilder, WorkflowComposer, sequential, parallel } from './builders';
 export { merge as mergeWorkflows } from './builders';
+export { NodeTemplateBuilder } from './builders/node-template-builder';
+export { TriggerTemplateBuilder } from './builders/trigger-template-builder';
 export type {
   ExecutionEvent,
   StartEvent,
@@ -124,10 +128,10 @@ export type {
   MessageFilter,
   MessageStats,
   TokenUsageStats
-} from './conversation/message-manager-api';
+} from './operations/conversation/message-manager-api';
 
 // Profile模板类型
-export type { ProfileTemplate } from './llm/profile-manager-api';
+export type { ProfileTemplate } from './resources/profiles/profile-registry-api';
 
 // ValidationResult 从 types/errors.ts 导入
 export type { ValidationResult } from '../types/errors';

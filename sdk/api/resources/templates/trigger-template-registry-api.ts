@@ -7,8 +7,8 @@ import type {
   TriggerTemplate,
   TriggerTemplateSummary,
   TriggerTemplateFilter
-} from '../../types/trigger-template';
-import { triggerTemplateRegistry, type TriggerTemplateRegistry } from '../../core/services/trigger-template-registry';
+} from '../../../types/trigger-template';
+import { triggerTemplateRegistry, type TriggerTemplateRegistry } from '../../../core/services/trigger-template-registry';
 
 /**
  * 触发器模板注册表 API 类

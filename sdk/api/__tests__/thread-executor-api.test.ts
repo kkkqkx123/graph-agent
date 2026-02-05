@@ -2,7 +2,7 @@
  * ThreadExecutorAPI 单元测试
  */
 
-import { ThreadExecutorAPI } from '../thread-executor-api';
+import { ThreadExecutorAPI } from '../operations/execution/thread-executor-api';
 import { WorkflowRegistry } from '../../core/registry/workflow-registry';
 import type { WorkflowDefinition } from '../../types/workflow';
 import { NodeType } from '../../types/node';

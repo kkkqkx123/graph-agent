@@ -3,9 +3,9 @@
  * 封装ConversationManager，提供消息查询、搜索、过滤和导出功能
  */
 
-import { threadRegistry, type ThreadRegistry } from '../../core/services/thread-registry';
-import type { LLMMessage, LLMMessageRole } from '../../types/llm';
-import { NotFoundError } from '../../types/errors';
+import { threadRegistry, type ThreadRegistry } from '../../../core/services/thread-registry';
+import type { LLMMessage, LLMMessageRole } from '../../../types/llm';
+import { NotFoundError } from '../../../types/errors';
 
 /**
  * 消息查询选项

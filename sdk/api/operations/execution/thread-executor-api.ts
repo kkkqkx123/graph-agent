@@ -3,17 +3,17 @@
  * 封装ThreadLifecycleCoordinator，提供简洁的执行接口
  */
 
-import { ThreadLifecycleCoordinator } from '../../core/execution/coordinators/thread-lifecycle-coordinator';
-import { ThreadOperationCoordinator } from '../../core/execution/coordinators/thread-operation-coordinator';
-import { VariableCoordinator } from '../../core/execution/coordinators/variable-coordinator';
-import { VariableStateManager } from '../../core/execution/managers/variable-state-manager';
-import { ExecutionContext } from '../../core/execution/context/execution-context';
-import { workflowRegistry, type WorkflowRegistry } from '../../core/services/workflow-registry';
-import type { WorkflowDefinition } from '../../types/workflow';
-import type { ThreadResult, ThreadOptions } from '../../types/thread';
-import { ThreadStatus } from '../../types/thread';
-import type { HumanRelayHandler } from '../../types/human-relay';
-import type { UserInteractionHandler } from '../../types/interaction';
+import { ThreadLifecycleCoordinator } from '../../../core/execution/coordinators/thread-lifecycle-coordinator';
+import { ThreadOperationCoordinator } from '../../../core/execution/coordinators/thread-operation-coordinator';
+import { VariableCoordinator } from '../../../core/execution/coordinators/variable-coordinator';
+import { VariableStateManager } from '../../../core/execution/managers/variable-state-manager';
+import { ExecutionContext } from '../../../core/execution/context/execution-context';
+import { workflowRegistry, type WorkflowRegistry } from '../../../core/services/workflow-registry';
+import type { WorkflowDefinition } from '../../../types/workflow';
+import type { ThreadResult, ThreadOptions } from '../../../types/thread';
+import { ThreadStatus } from '../../../types/thread';
+import type { HumanRelayHandler } from '../../../types/human-relay';
+import type { UserInteractionHandler } from '../../../types/interaction';
 
 /**
  * ThreadExecutorAPI 选项接口
@@ -295,10 +295,10 @@ export class ThreadExecutorAPI {
   }
 
   /**
-     * 获取触发器管理器
-     * @param threadId 线程ID
-     * @returns 触发器管理器实例
-     */
+      * 获取触发器管理器
+      * @param threadId 线程ID
+      * @returns 触发器管理器实例
+      */
   getTriggerManager(threadId: string) {
     const threadContext = this.executionContext.getThreadRegistry().get(threadId);
     return threadContext?.triggerManager;

@@ -4,10 +4,10 @@
  * 注意：变量全部由workflow的静态定义提供，API不提供创建新变量的功能
  */
 
-import { threadRegistry as globalThreadRegistry, type ThreadRegistry } from '../../core/services/thread-registry';
-import type { Thread, ThreadVariable } from '../../types/thread';
-import { NotFoundError, ValidationError } from '../../types/errors';
-import type { VariableUpdateOptions, VariableFilter } from '../types/management-types';
+import { threadRegistry as globalThreadRegistry, type ThreadRegistry } from '../../../core/services/thread-registry';
+import type { Thread, ThreadVariable } from '../../../types/thread';
+import { NotFoundError, ValidationError } from '../../../types/errors';
+import type { VariableUpdateOptions, VariableFilter } from '../../types/management-types';
 
 /**
  * VariableManagerAPI - 变量管理API

@@ -3,15 +3,15 @@
  * 封装CheckpointCoordinator和CheckpointStateManager，提供状态快照和恢复功能
  */
 
-import { CheckpointCoordinator } from '../../core/execution/coordinators/checkpoint-coordinator';
-import { CheckpointStateManager } from '../../core/execution/managers/checkpoint-state-manager';
-import type { Checkpoint, CheckpointMetadata } from '../../types/checkpoint';
-import type { Thread } from '../../types/thread';
-import { NotFoundError } from '../../types/errors';
-import type { CheckpointFilter, CheckpointSummary } from '../types/management-types';
-import { MemoryCheckpointStorage } from '../../core/storage/memory-checkpoint-storage';
-import { globalMessageStorage } from '../../core/services/global-message-storage';
-import { SingletonRegistry } from '../../core/execution/context/singleton-registry';
+import { CheckpointCoordinator } from '../../../core/execution/coordinators/checkpoint-coordinator';
+import { CheckpointStateManager } from '../../../core/execution/managers/checkpoint-state-manager';
+import type { Checkpoint, CheckpointMetadata } from '../../../types/checkpoint';
+import type { Thread } from '../../../types/thread';
+import { NotFoundError } from '../../../types/errors';
+import type { CheckpointFilter, CheckpointSummary } from '../../types/management-types';
+import { MemoryCheckpointStorage } from '../../../core/storage/memory-checkpoint-storage';
+import { globalMessageStorage } from '../../../core/services/global-message-storage';
+import { SingletonRegistry } from '../../../core/execution/context/singleton-registry';
 
 /**
  * CheckpointManagerAPI - 检查点管理API

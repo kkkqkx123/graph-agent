@@ -2,7 +2,7 @@
  * CheckpointManagerAPI 单元测试
  */
 
-import { CheckpointManagerAPI } from '../management/checkpoint-manager-api';
+import { CheckpointManagerAPI } from '../operations/state/checkpoint-manager-api';
 import { ThreadRegistry } from '../../core/services/thread-registry';
 import { WorkflowRegistry } from '../../core/services/workflow-registry';
 import type { WorkflowDefinition } from '../../types/workflow';

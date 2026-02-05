@@ -3,9 +3,9 @@
  * 封装WorkflowRegistry，提供CRUD操作
  */
 
-import { workflowRegistry, type WorkflowRegistry } from '../../core/services/workflow-registry';
-import type { WorkflowDefinition } from '../../types/workflow';
-import type { WorkflowFilter, WorkflowSummary } from '../types/registry-types';
+import { workflowRegistry, type WorkflowRegistry } from '../../../core/services/workflow-registry';
+import type { WorkflowDefinition } from '../../../types/workflow';
+import type { WorkflowFilter, WorkflowSummary } from '../../types/registry-types';
 
 /**
  * WorkflowRegistryAPI - 工作流管理API

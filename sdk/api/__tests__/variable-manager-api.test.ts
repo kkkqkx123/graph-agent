@@ -2,7 +2,7 @@
  * VariableManagerAPI 单元测试
  */
 
-import { VariableManagerAPI } from '../variable-manager-api';
+import { VariableManagerAPI } from '../operations/state/variable-manager-api';
 import { ThreadRegistry } from '../../core/registry/thread-registry';
 import type { ThreadVariable } from '../../types/thread';
 import { ThreadStatus } from '../../types/thread';

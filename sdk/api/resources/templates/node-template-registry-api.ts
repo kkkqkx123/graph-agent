@@ -3,11 +3,11 @@
  * 封装NodeTemplateRegistry，提供节点模板的CRUD操作
  */
 
-import { nodeTemplateRegistry, type NodeTemplateRegistry } from '../../core/services/node-template-registry';
-import type { NodeTemplate } from '../../types/node-template';
-import type { NodeTemplateFilter, NodeTemplateSummary } from '../types/registry-types';
-import type { ValidationResult } from '../../types/errors';
-import { ValidationError } from '../../types/errors';
+import { nodeTemplateRegistry, type NodeTemplateRegistry } from '../../../core/services/node-template-registry';
+import type { NodeTemplate } from '../../../types/node-template';
+import type { NodeTemplateFilter, NodeTemplateSummary } from '../../types/registry-types';
+import type { ValidationResult } from '../../../types/errors';
+import { ValidationError } from '../../../types/errors';
 
 /**
  * NodeTemplateRegistryAPI - 节点模板管理API

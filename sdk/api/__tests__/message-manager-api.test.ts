@@ -2,7 +2,7 @@
  * MessageManagerAPI 单元测试
  */
 
-import { MessageManagerAPI } from '../management/message-manager-api';
+import { MessageManagerAPI } from '../operations/conversation/message-manager-api';
 import { threadRegistry } from '../../core/services/thread-registry';
 import { ThreadContext } from '../../core/execution/context/thread-context';
 import { ConversationManager } from '../../core/execution/managers/conversation-manager';

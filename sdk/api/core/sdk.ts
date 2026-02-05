@@ -1,254 +1,190 @@
 /**
- * SDK V2 - 改进的SDK类
- * 提供流畅的链式API和更好的易用性
+ * SDK主类
+ * 提供统一的API入口，整合所有功能模块
  */
 
-import { ThreadExecutorAPI } from './thread-executor-api';
-import { WorkflowRegistryAPI } from '../registry/workflow-registry-api';
-import { ThreadRegistryAPI } from '../registry/thread-registry-api';
+import { WorkflowRegistryAPI } from '../resources/workflows/workflow-registry-api';
+import { ThreadRegistryAPI } from '../resources/threads/thread-registry-api';
+import { NodeRegistryAPI } from '../resources/templates/node-template-registry-api';
+import { TriggerTemplateRegistryAPI } from '../resources/templates/trigger-template-registry-api';
+import { ToolRegistryAPI } from '../resources/tools/tool-registry-api';
+import { ScriptRegistryAPI } from '../resources/scripts/script-registry-api';
+import { ProfileRegistryAPI } from '../resources/profiles/profile-registry-api';
+
+import { ThreadExecutorAPI } from '../operations/execution/thread-executor-api';
+import { MessageManagerAPI } from '../operations/conversation/message-manager-api';
+import { VariableManagerAPI } from '../operations/state/variable-manager-api';
+import { CheckpointManagerAPI } from '../operations/state/checkpoint-manager-api';
+import { TriggerManagerAPI } from '../operations/state/trigger-manager-api';
+import { EventManagerAPI } from '../operations/events/event-manager-api';
+import { LLMWrapperAPI } from '../operations/llm/llm-wrapper-api';
+import { ToolExecutionAPI } from '../operations/tools/tool-execution-api';
+import { ScriptExecutionAPI } from '../operations/code/script-execution-api';
+
 import { WorkflowValidatorAPI } from '../validation/workflow-validator-api';
-import { ToolServiceAPI } from '../tools/tool-service-api';
-import { CodeServiceAPI } from '../code/code-service-api';
-import { LLMWrapperAPI } from '../llm/llm-wrapper-api';
-import { ProfileManagerAPI } from '../llm/profile-manager-api';
-import { EventManagerAPI } from '../management/event-manager-api';
-import { CheckpointManagerAPI } from '../management/checkpoint-manager-api';
-import { VariableManagerAPI } from '../management/variable-manager-api';
-import { NodeRegistryAPI } from '../template-registry/node-template-registry-api';
-import { TriggerTemplateRegistryAPI } from '../template-registry/trigger-template-registry-api';
-import { TriggerManagerAPI } from '../management/trigger-manager-api';
-import { MessageManagerAPI } from '../conversation/message-manager-api';
-import { workflowRegistry, type WorkflowRegistry } from '../../core/services/workflow-registry';
-import { threadRegistry, type ThreadRegistry } from '../../core/services/thread-registry';
-import type { SDKOptions, SDKDependencies } from '../types/core-types';
-import { WorkflowBuilder } from '../builders/workflow-builder';
-import { ExecutionBuilder } from '../builders/execution-builder';
-import { ExecutionContext } from '../../core/execution/context/execution-context';
-import type { WorkflowDefinition } from '../../types/workflow';
+
+import type { SDKOptions, SDKDependencies } from '../types';
 
 /**
- * SDK - SDK类
+ * SDK主类 - 统一API入口
  */
 export class SDK {
-  /** 执行API */
-  public readonly executor: ThreadExecutorAPI;
-
-  /** 工作流管理API */
+  // 资源管理API实例
   public readonly workflows: WorkflowRegistryAPI;
-
-  /** 线程管理API */
   public readonly threads: ThreadRegistryAPI;
-
-  /** 验证管理API */
-  public readonly validator: WorkflowValidatorAPI;
-
-  /** 工具管理API */
-  public readonly tools: ToolServiceAPI;
-
-  /** 脚本管理API */
-  public readonly scripts: CodeServiceAPI;
-
-  /** LLM调用API */
-  public readonly llm: LLMWrapperAPI;
-
-  /** Profile管理API */
-  public readonly profiles: ProfileManagerAPI;
-
-  /** 事件监听API */
-  public readonly events: EventManagerAPI;
-
-  /** 检查点管理API */
-  public readonly checkpoints: CheckpointManagerAPI;
-
-  /** 变量管理API */
-  public readonly variables: VariableManagerAPI;
-
-  /** 节点模板管理API */
   public readonly nodeTemplates: NodeRegistryAPI;
-
-  /** 触发器模板管理API */
   public readonly triggerTemplates: TriggerTemplateRegistryAPI;
+  public readonly tools: ToolRegistryAPI;
+  public readonly scripts: ScriptRegistryAPI;
+  public readonly profiles: ProfileRegistryAPI;
 
-  /** 触发器管理API */
-  public readonly triggers: TriggerManagerAPI;
-
-  /** 消息管理API */
+  // 业务操作API实例
+  public readonly execution: ThreadExecutorAPI;
   public readonly messages: MessageManagerAPI;
+  public readonly variables: VariableManagerAPI;
+  public readonly checkpoints: CheckpointManagerAPI;
+  public readonly triggers: TriggerManagerAPI;
+  public readonly events: EventManagerAPI;
+  public readonly llm: LLMWrapperAPI;
+  public readonly toolExecution: ToolExecutionAPI;
+  public readonly scriptExecution: ScriptExecutionAPI;
 
-  /** 内部工作流注册表 */
-  private readonly internalWorkflowRegistry: WorkflowRegistry;
-
-  /** 内部线程注册表 */
-  private readonly internalThreadRegistry: ThreadRegistry;
-
-  constructor(options?: SDKOptions, dependencies?: SDKDependencies) {
-    // 使用传入的依赖或全局单例
-    this.internalWorkflowRegistry = dependencies?.workflowRegistry || workflowRegistry;
-    this.internalThreadRegistry = dependencies?.threadRegistry || options?.threadRegistry || threadRegistry;
-
-    // 初始化API模块
-    this.workflows = new WorkflowRegistryAPI({
-      enableVersioning: options?.enableVersioning ?? true,
-      maxVersions: options?.maxVersions ?? 10
-    });
-    this.threads = new ThreadRegistryAPI(this.internalThreadRegistry);
-    this.validator = new WorkflowValidatorAPI();
-    this.executor = new ThreadExecutorAPI(
-      this.internalWorkflowRegistry,
-      dependencies?.executionContext
-    );
-    this.tools = new ToolServiceAPI();
-    this.scripts = new CodeServiceAPI();
-    this.llm = new LLMWrapperAPI();
-    this.profiles = new ProfileManagerAPI();
-    this.events = new EventManagerAPI();
-    // 使用ExecutionContext中的CheckpointCoordinator创建CheckpointManagerAPI
-    const executionContextForCheckpoints = dependencies?.executionContext || ExecutionContext.createDefault();
-    this.checkpoints = new CheckpointManagerAPI(executionContextForCheckpoints.getCheckpointCoordinator());
-    this.variables = new VariableManagerAPI(this.internalThreadRegistry);
-    this.nodeTemplates = new NodeRegistryAPI();
-    this.triggerTemplates = new TriggerTemplateRegistryAPI();
-    this.triggers = new TriggerManagerAPI(this.internalThreadRegistry);
-    this.messages = new MessageManagerAPI(this.internalThreadRegistry);
-  }
+  // 验证API实例
+  public readonly validation: WorkflowValidatorAPI;
 
   /**
    * 创建SDK实例
    * @param options SDK配置选项
-   * @returns Promise<SDKV2>
+   * @param dependencies SDK依赖项
    */
-  static async create(options?: SDKOptions): Promise<SDK> {
-    const sdk = new SDK(options);
-    await sdk.initialize();
-    return sdk;
-  }
+  constructor(options?: SDKOptions, dependencies?: SDKDependencies) {
+    // 初始化资源管理API
+    this.workflows = new WorkflowRegistryAPI();
+    this.threads = new ThreadRegistryAPI();
+    this.nodeTemplates = new NodeRegistryAPI();
+    this.triggerTemplates = new TriggerTemplateRegistryAPI();
+    this.tools = new ToolRegistryAPI();
+    this.scripts = new ScriptRegistryAPI();
+    this.profiles = new ProfileRegistryAPI();
 
-  /**
-   * 初始化SDK
-   * @returns Promise<void>
-   */
-  async initialize(): Promise<void> {
-    // SDK初始化逻辑（如果需要）
-    // 目前不需要特殊初始化
-  }
+    // 初始化业务操作API
+    this.execution = new ThreadExecutorAPI();
+    this.messages = new MessageManagerAPI();
+    this.variables = new VariableManagerAPI();
+    this.checkpoints = new CheckpointManagerAPI();
+    this.triggers = new TriggerManagerAPI();
+    this.events = new EventManagerAPI();
+    this.llm = new LLMWrapperAPI();
+    this.toolExecution = new ToolExecutionAPI();
+    this.scriptExecution = new ScriptExecutionAPI();
 
-  /**
-   * 关闭SDK
-   * @returns Promise<void>
-   */
-  async shutdown(): Promise<void> {
-    // 清理资源
-    await this.workflows.clearWorkflows();
-    await this.threads.clearThreads();
-    await this.tools.clearTools();
-    await this.scripts.clearScripts();
-    await this.llm.clearAll();
-    await this.profiles.clearProfiles();
-    await this.events.clearHistory();
-    await this.checkpoints.clearAllCheckpoints();
-    await this.nodeTemplates.clearTemplates();
-    await this.triggerTemplates.clearTemplates();
-    // 注意：MessageManagerAPI不需要清理，因为消息是线程的一部分
+    // 初始化验证API
+    this.validation = new WorkflowValidatorAPI();
   }
 
   /**
    * 获取SDK版本信息
-   * @returns 版本信息
    */
   getVersion(): string {
-    return '2.0.0';
+    return '2.0.0'; // 根据实际版本更新
   }
 
   /**
-   * 获取SDK状态信息
-   * @returns 状态信息
+   * 获取SDK功能模块列表
    */
-  async getStatus(): Promise<{
-    version: string;
-    workflowCount: number;
-    threadCount: number;
-    threadStatistics: any;
-    toolCount: number;
-    scriptCount: number;
-    profileCount: number;
-    eventListenerCount: number;
-    checkpointCount: number;
-    nodeTemplateCount: number;
-    triggerTemplateCount: number;
-  }> {
-    const workflowCount = await this.workflows.getWorkflowCount();
-    const threadCount = await this.threads.getThreadCount();
-    const threadStatistics = await this.threads.getThreadStatistics();
-    const toolCount = await this.tools.getToolCount();
-    const scriptCount = await this.scripts.getScriptCount();
-    const profileCount = await this.profiles.getProfileCount();
-    const eventListenerCount = await this.events.getListenerCount();
-    const checkpointCount = await this.checkpoints.getCheckpointCount();
-    const nodeTemplateCount = await this.nodeTemplates.getTemplateCount();
-    const triggerTemplateCount = await this.triggerTemplates.getTemplateCount();
-
-    return {
-      version: this.getVersion(),
-      workflowCount,
-      threadCount,
-      threadStatistics,
-      toolCount,
-      scriptCount,
-      profileCount,
-      eventListenerCount,
-      checkpointCount,
-      nodeTemplateCount,
-      triggerTemplateCount
-    };
+  getModules(): string[] {
+    return [
+      'workflows', 'threads', 'nodeTemplates', 'triggerTemplates', 'tools', 'scripts', 'profiles',
+      'execution', 'messages', 'variables', 'checkpoints', 'triggers', 'events', 'llm', 
+      'toolExecution', 'scriptExecution', 'validation'
+    ];
   }
 
   /**
-   * 工作流构建器 - 流畅API
-   * @param workflowId 工作流ID
-   * @returns WorkflowBuilder实例
+   * 检查SDK健康状态
    */
-  workflow(workflowId: string): WorkflowBuilder {
-    return WorkflowBuilder.create(workflowId);
+  async healthCheck(): Promise<{ status: 'healthy' | 'degraded' | 'unhealthy'; details: Record<string, string> }> {
+    const details: Record<string, string> = {};
+    let overallStatus: 'healthy' | 'degraded' | 'unhealthy' = 'healthy';
+
+    // 检查各个模块的健康状态
+    try {
+      await this.workflows.getWorkflowCount();
+      details['workflows'] = 'healthy';
+    } catch (error) {
+      details['workflows'] = 'unhealthy';
+      overallStatus = 'degraded';
+    }
+
+    try {
+      await this.threads.getThreadCount();
+      details['threads'] = 'healthy';
+    } catch (error) {
+      details['threads'] = 'unhealthy';
+      overallStatus = 'degraded';
+    }
+
+    try {
+      await this.tools.getToolCount();
+      details['tools'] = 'healthy';
+    } catch (error) {
+      details['tools'] = 'unhealthy';
+      overallStatus = 'degraded';
+    }
+
+    try {
+      await this.scripts.getScriptCount();
+      details['scripts'] = 'healthy';
+    } catch (error) {
+      details['scripts'] = 'unhealthy';
+      overallStatus = 'degraded';
+    }
+
+    return { status: overallStatus, details };
   }
 
   /**
-   * 执行构建器 - 流畅API
-   * @param workflowId 工作流ID
-   * @returns ExecutionBuilder实例
+   * 销毁SDK实例，清理资源
    */
-  execute(workflowId: string): ExecutionBuilder {
-    return new ExecutionBuilder(this.executor).withWorkflow(workflowId);
+  async destroy(): Promise<void> {
+    // 清理各个模块的资源
+    // 这里可以根据需要添加清理逻辑
+    console.log('SDK实例已销毁');
   }
+}
 
-  /**
-   * 工具构建器 - 流畅API
-   * @param toolName 工具名称
-   * @returns 工具执行构建器
-   */
-  tool(toolName: string) {
-    return {
-      execute: async (parameters: Record<string, any>) => {
-        return this.tools.executeTool(toolName, parameters);
-      },
-      test: async (parameters: Record<string, any>) => {
-        return this.tools.testTool(toolName, parameters);
-      }
-    };
-  }
+/**
+ * 创建SDK实例的便捷函数
+ */
+export function createSDK(options?: SDKOptions, dependencies?: SDKDependencies): SDK {
+  return new SDK(options, dependencies);
+}
 
-  /**
-   * 获取内部工作流注册表
-   * @returns WorkflowRegistry实例
-   */
-  getInternalWorkflowRegistry(): WorkflowRegistry {
-    return this.internalWorkflowRegistry;
-  }
+/**
+ * 全局SDK实例（单例模式）
+ */
+let globalSDKInstance: SDK | null = null;
 
-  /**
-   * 获取内部线程注册表
-   * @returns ThreadRegistry实例
-   */
-  getInternalThreadRegistry(): ThreadRegistry {
-    return this.internalThreadRegistry;
+/**
+ * 获取全局SDK实例
+ */
+export function getGlobalSDK(options?: SDKOptions, dependencies?: SDKDependencies): SDK {
+  if (!globalSDKInstance) {
+    globalSDKInstance = new SDK(options, dependencies);
   }
+  return globalSDKInstance;
+}
+
+/**
+ * 设置全局SDK实例
+ */
+export function setGlobalSDK(sdk: SDK): void {
+  globalSDKInstance = sdk;
+}
+
+/**
+ * 清除全局SDK实例
+ */
+export function clearGlobalSDK(): void {
+  globalSDKInstance = null;
 }
