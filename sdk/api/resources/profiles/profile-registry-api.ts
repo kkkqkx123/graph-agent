@@ -64,9 +64,6 @@ export class LLMProfileRegistryAPI extends GenericResourceAPI<LLMProfile, string
 
   constructor(options?: LLMProfileRegistryAPIOptions) {
     const apiOptions: Required<ResourceAPIOptions> = {
-      enableCache: options?.enableCache ?? true,
-      cacheTTL: options?.cacheTTL ?? 5000,
-      enableLogging: options?.enableLogging ?? false,
       enableValidation: options?.enableValidation ?? true
     };
     super(apiOptions);

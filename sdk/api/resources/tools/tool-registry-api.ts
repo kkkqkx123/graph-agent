@@ -25,10 +25,7 @@ export class ToolRegistryAPI extends GenericResourceAPI<Tool, string, ToolFilter
 
   constructor(options?: Partial<ResourceAPIOptions>) {
     super({
-      enableCache: true,
-      cacheTTL: 300000, // 5分钟
       enableValidation: true,
-      enableLogging: true,
       ...options
     });
   }

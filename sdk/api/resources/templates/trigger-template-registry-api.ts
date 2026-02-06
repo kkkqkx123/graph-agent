@@ -40,9 +40,6 @@ export class TriggerTemplateRegistryAPI extends GenericResourceAPI<TriggerTempla
 
   constructor(registry?: TriggerTemplateRegistry, options?: TriggerTemplateRegistryAPIOptions) {
     const apiOptions: Required<ResourceAPIOptions> = {
-      enableCache: options?.enableCache ?? true,
-      cacheTTL: options?.cacheTTL ?? 5000,
-      enableLogging: options?.enableLogging ?? false,
       enableValidation: options?.enableValidation ?? true
     };
     super(apiOptions);

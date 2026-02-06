@@ -14,14 +14,8 @@ import { success, failure } from '../types/execution-result';
  * 资源API配置选项
  */
 export interface ResourceAPIOptions {
-  /** 是否启用缓存 */
-  enableCache?: boolean;
-  /** 缓存过期时间（毫秒），默认5分钟 */
-  cacheTTL?: number;
   /** 是否启用验证 */
   enableValidation?: boolean;
-  /** 是否启用日志 */
-  enableLogging?: boolean;
 }
 
 /**
@@ -34,12 +28,6 @@ export interface ResourceAPIOptions {
 export abstract class GenericResourceAPI<T, ID extends string | number, Filter = any> {
   /** 配置选项 */
   protected readonly options: Required<ResourceAPIOptions>;
-  
-  /** 资源缓存 */
-  protected readonly cache: Map<ID, T> = new Map();
-  
-  /** 缓存时间戳 */
-  protected readonly cacheTimestamps: Map<ID, number> = new Map();
 
   /**
    * 构造函数
@@ -47,10 +35,7 @@ export abstract class GenericResourceAPI<T, ID extends string | number, Filter =
    */
   constructor(options?: ResourceAPIOptions) {
     this.options = {
-      enableCache: options?.enableCache ?? true,
-      cacheTTL: options?.cacheTTL ?? 300000, // 默认5分钟
-      enableValidation: options?.enableValidation ?? true,
-      enableLogging: options?.enableLogging ?? false
+      enableValidation: options?.enableValidation ?? true
     };
   }
 
@@ -111,22 +96,7 @@ export abstract class GenericResourceAPI<T, ID extends string | number, Filter =
     const startTime = Date.now();
     
     try {
-      // 缓存检查
-      if (this.options.enableCache && this.isCacheValid(id)) {
-        const cached = this.cache.get(id) || null;
-        this.log('GET', `Cache hit for ${id}`);
-        return success(cached, Date.now() - startTime);
-      }
-
-      // 从注册表获取
       const resource = await this.getResource(id);
-      
-      // 更新缓存
-      if (resource && this.options.enableCache) {
-        this.updateCache(id, resource);
-      }
-
-      this.log('GET', `Retrieved ${id}`);
       return success(resource, Date.now() - startTime);
     } catch (error) {
       return this.handleError(error, 'GET', startTime);
@@ -149,7 +119,6 @@ export abstract class GenericResourceAPI<T, ID extends string | number, Filter =
         resources = this.applyFilter(resources, filter);
       }
 
-      this.log('GET_ALL', `Retrieved ${resources.length} resources`);
       return success(resources, Date.now() - startTime);
     } catch (error) {
       return this.handleError(error, 'GET_ALL', startTime);
@@ -177,11 +146,6 @@ export abstract class GenericResourceAPI<T, ID extends string | number, Filter =
       }
 
       await this.createResource(resource);
-      
-      // 清理相关缓存
-      this.clearRelatedCache();
-      
-      this.log('CREATE', `Created resource`);
       return success(undefined, Date.now() - startTime);
     } catch (error) {
       return this.handleError(error, 'CREATE', startTime);
@@ -210,14 +174,6 @@ export abstract class GenericResourceAPI<T, ID extends string | number, Filter =
       }
 
       await this.updateResource(id, updates);
-      
-      // 更新或清除缓存
-      if (this.options.enableCache) {
-        this.cache.delete(id);
-        this.cacheTimestamps.delete(id);
-      }
-      
-      this.log('UPDATE', `Updated ${id}`);
       return success(undefined, Date.now() - startTime);
     } catch (error) {
       return this.handleError(error, 'UPDATE', startTime);
@@ -234,35 +190,12 @@ export abstract class GenericResourceAPI<T, ID extends string | number, Filter =
     
     try {
       await this.deleteResource(id);
-      
-      // 清除缓存
-      if (this.options.enableCache) {
-        this.cache.delete(id);
-        this.cacheTimestamps.delete(id);
-      }
-      
-      this.log('DELETE', `Deleted ${id}`);
       return success(undefined, Date.now() - startTime);
     } catch (error) {
       return this.handleError(error, 'DELETE', startTime);
     }
   }
 
-  /**
-   * 检查资源是否存在
-   * @param id 资源ID
-   * @returns 执行结果
-   */
-  async has(id: ID): Promise<ExecutionResult<boolean>> {
-    const startTime = Date.now();
-    
-    try {
-      const resource = await this.getResource(id);
-      return success(resource !== null, Date.now() - startTime);
-    } catch (error) {
-      return this.handleError(error, 'HAS', startTime);
-    }
-  }
 
   /**
    * 获取资源数量
@@ -289,12 +222,6 @@ export abstract class GenericResourceAPI<T, ID extends string | number, Filter =
     try {
       // 子类可以重写此方法来清理注册表
       await this.clearResources();
-      
-      // 清空缓存
-      this.cache.clear();
-      this.cacheTimestamps.clear();
-      
-      this.log('CLEAR', 'Cleared all resources');
       return success(undefined, Date.now() - startTime);
     } catch (error) {
       return this.handleError(error, 'CLEAR', startTime);
@@ -304,40 +231,6 @@ export abstract class GenericResourceAPI<T, ID extends string | number, Filter =
   // ============================================================================
   // 受保护的辅助方法
   // ============================================================================
-
-  /**
-   * 检查缓存是否有效
-   * @param id 资源ID
-   * @returns 是否有效
-   */
-  protected isCacheValid(id: ID): boolean {
-    if (!this.cache.has(id)) return false;
-    
-    const timestamp = this.cacheTimestamps.get(id);
-    if (!timestamp) return false;
-    
-    return Date.now() - timestamp < this.options.cacheTTL;
-  }
-
-  /**
-   * 更新缓存
-   * @param id 资源ID
-   * @param resource 资源对象
-   */
-  protected updateCache(id: ID, resource: T): void {
-    this.cache.set(id, resource);
-    this.cacheTimestamps.set(id, Date.now());
-  }
-
-  /**
-   * 清理相关缓存
-   * 子类可以重写此方法来清理特定的缓存
-   */
-  protected clearRelatedCache(): void {
-    // 默认清空所有缓存
-    this.cache.clear();
-    this.cacheTimestamps.clear();
-  }
 
   /**
    * 清空资源（子类实现）
@@ -376,52 +269,7 @@ export abstract class GenericResourceAPI<T, ID extends string | number, Filter =
    */
   protected handleError(error: unknown, operation: string, startTime: number): ExecutionResult<any> {
     const errorMessage = error instanceof Error ? error.message : String(error);
-    
-    if (this.options.enableLogging) {
-      console.error(`[${this.constructor.name}] ${operation} failed:`, errorMessage);
-    }
-    
     return failure(errorMessage, Date.now() - startTime);
   }
 
-  /**
-   * 记录日志
-   * @param operation 操作名称
-   * @param message 日志消息
-   */
-  protected log(operation: string, message: string): void {
-    if (this.options.enableLogging) {
-      console.log(`[${this.constructor.name}] ${operation}: ${message}`);
-    }
-  }
-
-  /**
-   * 获取缓存统计信息
-   * @returns 缓存统计
-   */
-  getCacheStats(): {
-    size: number;
-    hitRate: number;
-    oldestEntry: number | null;
-    newestEntry: number | null;
-  } {
-    const timestamps = Array.from(this.cacheTimestamps.values());
-    const oldestEntry = timestamps.length > 0 ? Math.min(...timestamps) : null;
-    const newestEntry = timestamps.length > 0 ? Math.max(...timestamps) : null;
-
-    return {
-      size: this.cache.size,
-      hitRate: 0, // 子类可以重写此方法来计算命中率
-      oldestEntry,
-      newestEntry
-    };
-  }
-
-  /**
-   * 清空缓存
-   */
-  clearCache(): void {
-    this.cache.clear();
-    this.cacheTimestamps.clear();
-  }
 }

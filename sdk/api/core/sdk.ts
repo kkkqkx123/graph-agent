@@ -34,46 +34,25 @@ class SDK {
     // 配置工厂
     const config: SDKAPIConfig = {
       workflow: {
-        enableCache: options?.enableCache ?? true,
-        cacheTTL: options?.cacheTTL ?? 300000,
-        enableValidation: options?.enableValidation ?? true,
-        enableLogging: options?.enableLogging ?? false
+        enableValidation: options?.enableValidation ?? true
       },
       tool: {
-        enableCache: true,
-        cacheTTL: 300000,
-        enableValidation: true,
-        enableLogging: false
+        enableValidation: true
       },
       thread: {
-        enableCache: true,
-        cacheTTL: 5000,
-        enableValidation: true,
-        enableLogging: false
+        enableValidation: true
       },
       script: {
-        enableCache: true,
-        cacheTTL: 300000,
-        enableValidation: true,
-        enableLogging: false
+        enableValidation: true
       },
       profile: {
-        enableCache: true,
-        cacheTTL: 5000,
-        enableValidation: true,
-        enableLogging: false
+        enableValidation: true
       },
       nodeTemplate: {
-        enableCache: true,
-        cacheTTL: 5000,
-        enableValidation: true,
-        enableLogging: false
+        enableValidation: true
       },
       triggerTemplate: {
-        enableCache: true,
-        cacheTTL: 5000,
-        enableValidation: true,
-        enableLogging: false
+        enableValidation: true
       }
     };
 

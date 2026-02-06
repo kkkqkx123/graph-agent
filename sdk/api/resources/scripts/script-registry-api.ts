@@ -25,10 +25,7 @@ export class ScriptRegistryAPI extends GenericResourceAPI<Script, string, Script
 
   constructor(options?: Partial<ResourceAPIOptions>) {
     super({
-      enableCache: true,
-      cacheTTL: 300000, // 5分钟
       enableValidation: true,
-      enableLogging: true,
       ...options
     });
   }
@@ -189,8 +186,6 @@ export class ScriptRegistryAPI extends GenericResourceAPI<Script, string, Script
    */
   async enableScript(scriptName: string): Promise<void> {
     this.codeService.enableScript(scriptName);
-    // 清除缓存
-    this.clearCache();
   }
 
   /**
@@ -199,8 +194,6 @@ export class ScriptRegistryAPI extends GenericResourceAPI<Script, string, Script
    */
   async disableScript(scriptName: string): Promise<void> {
     this.codeService.disableScript(scriptName);
-    // 清除缓存
-    this.clearCache();
   }
 
   /**
