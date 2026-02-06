@@ -135,6 +135,9 @@ export interface ForkNodeConfig {
 
 /**
  * 连接节点配置
+ * 
+ * 说明：子线程ID由运行时动态确定，在FORK节点执行时生成并存储在执行上下文中，
+ * JOIN节点执行时从执行上下文读取，不在节点配置中定义。
  */
 export interface JoinNodeConfig {
   /** 连接操作的id，与fork节点完全一致 */
@@ -145,8 +148,6 @@ export interface JoinNodeConfig {
   threshold?: number;
   /** 等待超时时间（秒）【从第一个前继路径完成开始计算】 */
   timeout?: number;
-  /** 子Thread ID列表 */
-  childThreadIds?: string[];
 }
 
 /**

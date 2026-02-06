@@ -19,6 +19,8 @@ function canExecute(thread: Thread, node: Node): boolean {
 /**
  * Join节点处理函数
  * Join节点作为占位符，实际的Join操作由ThreadExecutor调用ThreadCoordinator处理
+ * 
+ * 说明：子线程ID从执行上下文中动态获取，不从节点配置中读取
  * @param thread Thread实例
  * @param node 节点定义
  * @returns 执行结果
@@ -43,7 +45,6 @@ export async function joinHandler(thread: Thread, node: Node, context?: any): Pr
     joinStrategy: config.joinStrategy,
     threshold: config.threshold,
     timeout: config.timeout,
-    childThreadIds: config.childThreadIds || [],
     message: 'Join node is a placeholder. Actual join operation is handled by ThreadExecutor and ThreadCoordinator.'
   };
 }
