@@ -118,55 +118,6 @@ export class NodeRegistryAPI extends GenericResourceAPI<NodeTemplate, string, No
     });
   }
 
-  // ==================== 向后兼容的API方法 ====================
-
-  /**
-   * 注册节点模板（向后兼容）
-   * @param template 节点模板
-   */
-  async registerTemplate(template: NodeTemplate): Promise<void> {
-    const result = await this.create(template);
-    if (!result.success) {
-      throw new Error(result.error || 'Failed to register template');
-    }
-  }
-
-  /**
-   * 批量注册节点模板
-   * @param templates 节点模板数组
-   */
-  async registerTemplates(templates: NodeTemplate[]): Promise<void> {
-    for (const template of templates) {
-      await this.create(template);
-    }
-  }
-
-  /**
-   * 获取节点模板（向后兼容）
-   * @param name 节点模板名称
-   * @returns 节点模板，如果不存在则返回null
-   */
-  async getTemplate(name: string): Promise<NodeTemplate | null> {
-    const result = await this.get(name);
-    if (!result.success) {
-      throw new Error(result.error || 'Failed to get template');
-    }
-    return result.data;
-  }
-
-  /**
-   * 获取节点模板列表（向后兼容）
-   * @param filter 过滤条件
-   * @returns 节点模板数组
-   */
-  async getTemplates(filter?: NodeTemplateFilter): Promise<NodeTemplate[]> {
-    const result = await this.getAll(filter);
-    if (!result.success) {
-      throw new Error(result.error || 'Failed to get templates');
-    }
-    return result.data;
-  }
-
   /**
    * 获取节点模板摘要列表
    * @param filter 过滤条件
@@ -199,19 +150,6 @@ export class NodeRegistryAPI extends GenericResourceAPI<NodeTemplate, string, No
   }
 
   /**
-   * 按名称获取节点模板（向后兼容）
-   * @param name 节点模板名称
-   * @returns 节点模板，如果不存在则返回null
-   */
-  async getTemplateByName(name: string): Promise<NodeTemplate | null> {
-    const result = await this.get(name);
-    if (!result.success) {
-      throw new Error(result.error || 'Failed to get template by name');
-    }
-    return result.data;
-  }
-
-  /**
    * 按类型获取节点模板列表
    * @param type 节点类型
    * @returns 节点模板数组
@@ -236,64 +174,6 @@ export class NodeRegistryAPI extends GenericResourceAPI<NodeTemplate, string, No
    */
   async getTemplatesByCategory(category: string): Promise<NodeTemplate[]> {
     return this.registry.listByCategory(category);
-  }
-
-  /**
-   * 更新节点模板（向后兼容）
-   * @param name 节点模板名称
-   * @param updates 更新内容
-   */
-  async updateTemplate(name: string, updates: Partial<NodeTemplate>): Promise<void> {
-    const result = await this.update(name, updates);
-    if (!result.success) {
-      throw new Error(result.error || 'Failed to update template');
-    }
-  }
-
-  /**
-   * 删除节点模板（向后兼容）
-   * @param name 节点模板名称
-   */
-  async deleteTemplate(name: string): Promise<void> {
-    const result = await this.delete(name);
-    if (!result.success) {
-      throw new Error(result.error || 'Failed to delete template');
-    }
-  }
-
-  /**
-   * 检查节点模板是否存在（向后兼容）
-   * @param name 节点模板名称
-   * @returns 是否存在
-   */
-  async hasTemplate(name: string): Promise<boolean> {
-    const result = await this.has(name);
-    if (!result.success) {
-      throw new Error(result.error || 'Failed to check template existence');
-    }
-    return result.data;
-  }
-
-  /**
-   * 获取节点模板数量（向后兼容）
-   * @returns 节点模板数量
-   */
-  async getTemplateCount(): Promise<number> {
-    const result = await this.count();
-    if (!result.success) {
-      throw new Error(result.error || 'Failed to get template count');
-    }
-    return result.data;
-  }
-
-  /**
-   * 清空所有节点模板（向后兼容）
-   */
-  async clearTemplates(): Promise<void> {
-    const result = await this.clear();
-    if (!result.success) {
-      throw new Error(result.error || 'Failed to clear templates');
-    }
   }
 
   /**

@@ -123,101 +123,18 @@ export class TriggerTemplateRegistryAPI extends GenericResourceAPI<TriggerTempla
     return templates;
   }
 
-  // ==================== 向后兼容的API方法 ====================
-
-  /**
-   * 注册触发器模板（向后兼容）
-   * @param template 触发器模板
-   * @throws ValidationError 如果触发器配置无效或名称已存在
-   */
-  registerTemplate(template: TriggerTemplate): void {
-    this.registry.register(template);
-  }
-
-  /**
-   * 批量注册触发器模板
-   * @param templates 触发器模板数组
-   */
-  registerTemplates(templates: TriggerTemplate[]): void {
-    this.registry.registerBatch(templates);
-  }
-
-  /**
-   * 获取触发器模板（向后兼容）
-   * @param name 触发器模板名称
-   * @returns 触发器模板，如果不存在则返回undefined
-   */
-  getTemplate(name: string): TriggerTemplate | undefined {
-    return this.registry.get(name);
-  }
-
-  /**
-   * 更新触发器模板（向后兼容）
-   * @param name 触发器模板名称
-   * @param updates 更新内容
-   * @throws NotFoundError 如果触发器模板不存在
-   * @throws ValidationError 如果更新后的配置无效
-   */
-  updateTemplate(name: string, updates: Partial<TriggerTemplate>): void {
-    this.registry.update(name, updates);
-  }
-
-  /**
-   * 删除触发器模板（向后兼容）
-   * @param name 触发器模板名称
-   * @throws NotFoundError 如果触发器模板不存在
-   */
-  deleteTemplate(name: string): void {
-    this.registry.unregister(name);
-  }
-
-  /**
-   * 批量删除触发器模板
-   * @param names 触发器模板名称数组
-   */
-  deleteTemplates(names: string[]): void {
-    this.registry.unregisterBatch(names);
-  }
-
-  /**
-   * 获取触发器模板列表（向后兼容）
-   * @param filter 过滤条件（可选）
-   * @returns 触发器模板数组
-   */
-  getTemplates(filter?: TriggerTemplateFilter): TriggerTemplate[] {
-    let templates = this.registry.list();
-
-    if (filter?.keyword) {
-      templates = this.registry.search(filter.keyword);
-    }
-
-    if (filter?.category) {
-      templates = templates.filter(t => t.metadata?.['category'] === filter.category);
-    }
-
-    if (filter?.tags && filter.tags.length > 0) {
-      templates = templates.filter(t => {
-        const templateTags = t.metadata?.['tags'] || [];
-        return filter.tags!.every(tag => templateTags.includes(tag));
-      });
-    }
-
-    if (filter?.name) {
-      templates = templates.filter(t => t.name === filter.name);
-    }
-
-    return templates;
-  }
-
   /**
    * 获取触发器模板摘要列表
    * @param filter 过滤条件（可选）
    * @returns 触发器模板摘要数组
    */
-  getTemplateSummaries(filter?: TriggerTemplateFilter): TriggerTemplateSummary[] {
-    const templates = this.getTemplates(filter);
+  async getTemplateSummaries(filter?: TriggerTemplateFilter): Promise<TriggerTemplateSummary[]> {
+    const result = await this.getAll(filter);
+    if (!result.success) {
+      return [];
+    }
 
-    return templates.map(template => {
+    return result.data.map(template => {
       const summary: TriggerTemplateSummary = {
         name: template.name,
         description: template.description,
@@ -234,30 +151,6 @@ export class TriggerTemplateRegistryAPI extends GenericResourceAPI<TriggerTempla
 
       return summary;
     });
-  }
-
-  /**
-   * 检查触发器模板是否存在（向后兼容）
-   * @param name 触发器模板名称
-   * @returns 是否存在
-   */
-  hasTemplate(name: string): boolean {
-    return this.registry.has(name);
-  }
-
-  /**
-   * 获取触发器模板数量（向后兼容）
-   * @returns 触发器模板数量
-   */
-  getTemplateCount(): number {
-    return this.registry.size();
-  }
-
-  /**
-   * 清空所有触发器模板（向后兼容）
-   */
-  clearTemplates(): void {
-    this.registry.clear();
   }
 
   /**

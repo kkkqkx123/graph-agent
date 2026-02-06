@@ -158,78 +158,6 @@ export class ToolRegistryAPI extends GenericResourceAPI<Tool, string, ToolFilter
     };
   }
 
-  // ==================== 向后兼容的公共方法 ====================
-
-  /**
-   * 注册工具
-   * @param tool 工具定义
-   */
-  async registerTool(tool: Tool): Promise<void> {
-    const result = await this.create(tool);
-    if (!result.success) {
-      throw new Error(result.error || '注册工具失败');
-    }
-  }
-
-  /**
-   * 批量注册工具
-   * @param tools 工具定义数组
-   */
-  async registerTools(tools: Tool[]): Promise<void> {
-    for (const tool of tools) {
-      await this.registerTool(tool);
-    }
-  }
-
-  /**
-   * 注销工具
-   * @param toolName 工具名称
-   */
-  async unregisterTool(toolName: string): Promise<void> {
-    const result = await this.delete(toolName);
-    if (!result.success) {
-      throw new Error(result.error || '注销工具失败');
-    }
-  }
-
-  /**
-   * 获取工具定义
-   * @param toolName 工具名称
-   * @returns 工具定义，如果不存在则返回null
-   */
-  async getTool(toolName: string): Promise<Tool | null> {
-    const result = await this.get(toolName);
-    return result.success ? result.data : null;
-  }
-
-  /**
-   * 获取工具列表
-   * @param filter 过滤条件
-   * @returns 工具定义数组
-   */
-  async getTools(filter?: ToolFilter): Promise<Tool[]> {
-    const result = await this.getAll(filter);
-    return result.success ? result.data : [];
-  }
-
-  /**
-   * 按类型获取工具列表
-   * @param type 工具类型
-   * @returns 工具定义数组
-   */
-  async getToolsByType(type: string): Promise<Tool[]> {
-    return this.getTools({ type: type as any });
-  }
-
-  /**
-   * 按分类获取工具列表
-   * @param category 工具分类
-   * @returns 工具定义数组
-   */
-  async getToolsByCategory(category: string): Promise<Tool[]> {
-    return this.getTools({ category });
-  }
-
   /**
    * 搜索工具
    * @param query 搜索关键词
@@ -237,16 +165,6 @@ export class ToolRegistryAPI extends GenericResourceAPI<Tool, string, ToolFilter
    */
   async searchTools(query: string): Promise<Tool[]> {
     return this.toolService.searchTools(query);
-  }
-
-  /**
-   * 检查工具是否存在
-   * @param toolName 工具名称
-   * @returns 是否存在
-   */
-  async hasTool(toolName: string): Promise<boolean> {
-    const result = await this.has(toolName);
-    return result.success ? result.data : false;
   }
 
   /**
@@ -260,37 +178,6 @@ export class ToolRegistryAPI extends GenericResourceAPI<Tool, string, ToolFilter
     parameters: Record<string, any>
   ): Promise<{ valid: boolean; errors: string[] }> {
     return this.toolService.validateParameters(toolName, parameters);
-  }
-
-  /**
-   * 更新工具定义
-   * @param toolName 工具名称
-   * @param updates 更新内容
-   */
-  async updateTool(toolName: string, updates: Partial<Tool>): Promise<void> {
-    const result = await this.update(toolName, updates);
-    if (!result.success) {
-      throw new Error(result.error || '更新工具失败');
-    }
-  }
-
-  /**
-   * 获取工具数量
-   * @returns 工具数量
-   */
-  async getToolCount(): Promise<number> {
-    const result = await this.count();
-    return result.success ? result.data : 0;
-  }
-
-  /**
-   * 清空所有工具
-   */
-  async clearTools(): Promise<void> {
-    const result = await this.clear();
-    if (!result.success) {
-      throw new Error(result.error || '清空工具失败');
-    }
   }
 
   /**

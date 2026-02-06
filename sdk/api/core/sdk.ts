@@ -161,12 +161,12 @@ class SDK {
     const details: Record<string, any> = {};
     const modules = [
       { name: 'workflows', check: async () => getData(await this.workflows.count()) },
-      { name: 'threads', check: () => this.threads.getThreadCount() },
-      { name: 'tools', check: () => this.tools.getToolCount() },
-      { name: 'scripts', check: () => this.scripts.getScriptCount() },
-      { name: 'nodeTemplates', check: () => this.nodeTemplates.getTemplateCount() },
-      { name: 'triggerTemplates', check: () => Promise.resolve(this.triggerTemplates.getTemplateCount()) },
-      { name: 'profiles', check: () => this.profiles.getProfileCount() },
+      { name: 'threads', check: async () => getData(await this.threads.count()) },
+      { name: 'tools', check: async () => getData(await this.tools.count()) },
+      { name: 'scripts', check: async () => getData(await this.scripts.count()) },
+      { name: 'nodeTemplates', check: async () => getData(await this.nodeTemplates.count()) },
+      { name: 'triggerTemplates', check: async () => getData(await this.triggerTemplates.count()) },
+      { name: 'profiles', check: async () => getData(await this.profiles.count()) },
       { name: 'validation', check: () => Promise.resolve(true) }
     ];
     
@@ -200,37 +200,37 @@ class SDK {
     }
 
     try {
-      await this.threads.clearThreads();
+      await this.threads.clear();
     } catch (error) {
       console.error('清理threads资源失败:', error);
     }
 
     try {
-      await this.tools.clearTools();
+      await this.tools.clear();
     } catch (error) {
       console.error('清理tools资源失败:', error);
     }
 
     try {
-      await this.scripts.clearScripts();
+      await this.scripts.clear();
     } catch (error) {
       console.error('清理scripts资源失败:', error);
     }
 
     try {
-      await this.nodeTemplates.clearTemplates();
+      await this.nodeTemplates.clear();
     } catch (error) {
       console.error('清理nodeTemplates资源失败:', error);
     }
 
     try {
-      await this.triggerTemplates.clearTemplates();
+      await this.triggerTemplates.clear();
     } catch (error) {
       console.error('清理triggerTemplates资源失败:', error);
     }
 
     try {
-      await this.profiles.clearProfiles();
+      await this.profiles.clear();
     } catch (error) {
       console.error('清理profiles资源失败:', error);
     }
