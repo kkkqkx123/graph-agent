@@ -8,7 +8,7 @@ import type { WorkflowTrigger, TriggerCondition, TriggerAction, ExecuteTriggered
 import type { TriggerReference } from '../../types/trigger-template';
 import { TriggerActionType } from '../../types/trigger';
 import { EventType } from '../../types/events';
-import { ValidationError } from '../../types/errors';
+import { ValidationError, type ValidationResult } from '../../types/errors';
 
 /**
  * 触发条件schema
@@ -96,15 +96,28 @@ const triggerReferenceSchema = z.object({
  * @param path 字段路径（用于错误路径）
  * @throws ValidationError 当配置无效时抛出
  */
-export function validateTriggerCondition(condition: TriggerCondition, path: string = 'condition'): void {
+export function validateTriggerCondition(condition: TriggerCondition, path: string = 'condition'): ValidationResult {
   const result = triggerConditionSchema.safeParse(condition);
   if (!result.success) {
     const error = result.error.issues[0];
     if (!error) {
-      throw new ValidationError('Invalid trigger condition', path);
+      return {
+        valid: false,
+        errors: [new ValidationError('Invalid trigger condition', path)],
+        warnings: []
+      };
     }
-    throw new ValidationError(error.message, `${path}.${error.path.join('.')}`);
+    return {
+      valid: false,
+      errors: [new ValidationError(error.message, `${path}.${error.path.join('.')}`)],
+      warnings: []
+    };
   }
+  return {
+    valid: true,
+    errors: [],
+    warnings: []
+  };
 }
 
 /**
@@ -116,15 +129,28 @@ export function validateTriggerCondition(condition: TriggerCondition, path: stri
 export function validateExecuteTriggeredSubgraphActionConfig(
   config: ExecuteTriggeredSubgraphActionConfig,
   path: string = 'action.parameters'
-): void {
+): ValidationResult {
   const result = executeTriggeredSubgraphActionConfigSchema.safeParse(config);
   if (!result.success) {
     const error = result.error.issues[0];
     if (!error) {
-      throw new ValidationError('Invalid execute triggered subgraph action config', path);
+      return {
+        valid: false,
+        errors: [new ValidationError('Invalid execute triggered subgraph action config', path)],
+        warnings: []
+      };
     }
-    throw new ValidationError(error.message, `${path}.${error.path.join('.')}`);
+    return {
+      valid: false,
+      errors: [new ValidationError(error.message, `${path}.${error.path.join('.')}`)],
+      warnings: []
+    };
   }
+  return {
+    valid: true,
+    errors: [],
+    warnings: []
+  };
 }
 
 /**
@@ -133,33 +159,40 @@ export function validateExecuteTriggeredSubgraphActionConfig(
  * @param path 字段路径（用于错误路径）
  * @throws ValidationError 当配置无效时抛出
  */
-export function validateTriggerAction(action: TriggerAction, path: string = 'action'): void {
+export function validateTriggerAction(action: TriggerAction, path: string = 'action'): ValidationResult {
   const result = triggerActionSchema.safeParse(action);
   if (!result.success) {
     const error = result.error.issues[0];
     if (!error) {
-      throw new ValidationError('Invalid trigger action', path);
+      return {
+        valid: false,
+        errors: [new ValidationError('Invalid trigger action', path)],
+        warnings: []
+      };
     }
-    throw new ValidationError(error.message, `${path}.${error.path.join('.')}`);
+    return {
+      valid: false,
+      errors: [new ValidationError(error.message, `${path}.${error.path.join('.')}`)],
+      warnings: []
+    };
   }
 
   // 特殊处理：当 action.type 为 EXECUTE_TRIGGERED_SUBGRAPH 时，验证 parameters
   if (action.type === TriggerActionType.EXECUTE_TRIGGERED_SUBGRAPH) {
-    try {
-      validateExecuteTriggeredSubgraphActionConfig(
-        action.parameters as ExecuteTriggeredSubgraphActionConfig,
-        `${path}.parameters`
-      );
-    } catch (error) {
-      if (error instanceof ValidationError) {
-        throw error;
-      }
-      throw new ValidationError(
-        error instanceof Error ? error.message : String(error),
-        `${path}.parameters`
-      );
+    const paramResult = validateExecuteTriggeredSubgraphActionConfig(
+      action.parameters as ExecuteTriggeredSubgraphActionConfig,
+      `${path}.parameters`
+    );
+    if (!paramResult.valid) {
+      return paramResult;
     }
   }
+  
+  return {
+    valid: true,
+    errors: [],
+    warnings: []
+  };
 }
 
 /**
@@ -168,15 +201,28 @@ export function validateTriggerAction(action: TriggerAction, path: string = 'act
  * @param path 字段路径（用于错误路径）
  * @throws ValidationError 当配置无效时抛出
  */
-export function validateWorkflowTrigger(trigger: WorkflowTrigger, path: string = 'triggers'): void {
+export function validateWorkflowTrigger(trigger: WorkflowTrigger, path: string = 'triggers'): ValidationResult {
   const result = workflowTriggerSchema.safeParse(trigger);
   if (!result.success) {
     const error = result.error.issues[0];
     if (!error) {
-      throw new ValidationError('Invalid workflow trigger', path);
+      return {
+        valid: false,
+        errors: [new ValidationError('Invalid workflow trigger', path)],
+        warnings: []
+      };
     }
-    throw new ValidationError(error.message, `${path}.${error.path.join('.')}`);
+    return {
+      valid: false,
+      errors: [new ValidationError(error.message, `${path}.${error.path.join('.')}`)],
+      warnings: []
+    };
   }
+  return {
+    valid: true,
+    errors: [],
+    warnings: []
+  };
 }
 
 /**
@@ -185,15 +231,28 @@ export function validateWorkflowTrigger(trigger: WorkflowTrigger, path: string =
  * @param path 字段路径（用于错误路径）
  * @throws ValidationError 当配置无效时抛出
  */
-export function validateTriggerReference(reference: TriggerReference, path: string = 'triggers'): void {
+export function validateTriggerReference(reference: TriggerReference, path: string = 'triggers'): ValidationResult {
   const result = triggerReferenceSchema.safeParse(reference);
   if (!result.success) {
     const error = result.error.issues[0];
     if (!error) {
-      throw new ValidationError('Invalid trigger reference', path);
+      return {
+        valid: false,
+        errors: [new ValidationError('Invalid trigger reference', path)],
+        warnings: []
+      };
     }
-    throw new ValidationError(error.message, `${path}.${error.path.join('.')}`);
+    return {
+      valid: false,
+      errors: [new ValidationError(error.message, `${path}.${error.path.join('.')}`)],
+      warnings: []
+    };
   }
+  return {
+    valid: true,
+    errors: [],
+    warnings: []
+  };
 }
 
 /**
@@ -205,13 +264,18 @@ export function validateTriggerReference(reference: TriggerReference, path: stri
 export function validateTriggers(
   triggers: (WorkflowTrigger | TriggerReference)[],
   path: string = 'triggers'
-): void {
+): ValidationResult {
   if (!triggers || !Array.isArray(triggers)) {
-    throw new ValidationError('Triggers must be an array', path);
+    return {
+      valid: false,
+      errors: [new ValidationError('Triggers must be an array', path)],
+      warnings: []
+    };
   }
 
   // 检查触发器ID唯一性
   const triggerIds = new Set<string>();
+  const errors: ValidationError[] = [];
   for (let i = 0; i < triggers.length; i++) {
     const trigger = triggers[i];
     if (!trigger) continue;
@@ -221,17 +285,29 @@ export function validateTriggers(
     // 检查ID唯一性
     const triggerId = 'id' in trigger ? trigger.id : trigger.triggerId;
     if (triggerIds.has(triggerId)) {
-      throw new ValidationError(`Trigger ID must be unique: ${triggerId}`, `${itemPath}.id`);
+      errors.push(new ValidationError(`Trigger ID must be unique: ${triggerId}`, `${itemPath}.id`));
+      continue;
     }
     triggerIds.add(triggerId);
 
     // 根据类型验证
+    let result: ValidationResult;
     if ('templateName' in trigger) {
       // TriggerReference
-      validateTriggerReference(trigger, itemPath);
+      result = validateTriggerReference(trigger, itemPath);
     } else {
       // WorkflowTrigger
-      validateWorkflowTrigger(trigger, itemPath);
+      result = validateWorkflowTrigger(trigger, itemPath);
+    }
+    
+    if (!result.valid) {
+      errors.push(...result.errors);
     }
   }
+  
+  return {
+    valid: errors.length === 0,
+    errors,
+    warnings: []
+  };
 }

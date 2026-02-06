@@ -28,7 +28,8 @@ describe('CodeConfigValidator', () => {
         },
       };
 
-      expect(() => validator.validateScript(validScript)).not.toThrow();
+      const result = validator.validateScript(validScript);
+      expect(result.valid).toBe(true);
     });
 
     it('应该验证有效的脚本定义（使用文件路径）', () => {
@@ -43,10 +44,11 @@ describe('CodeConfigValidator', () => {
         },
       };
 
-      expect(() => validator.validateScript(validScript)).not.toThrow();
+      const result = validator.validateScript(validScript);
+      expect(result.valid).toBe(true);
     });
 
-    it('应该抛出ValidationError当脚本缺少必需字段', () => {
+    it('应该返回无效结果当脚本缺少必需字段', () => {
       const invalidScript = {
         id: 'script-1',
         // 缺少name字段
@@ -58,10 +60,12 @@ describe('CodeConfigValidator', () => {
         },
       } as any;
 
-      expect(() => validator.validateScript(invalidScript)).toThrow(ValidationError);
+      const result = validator.validateScript(invalidScript);
+      expect(result.valid).toBe(false);
+      expect(result.errors.length).toBeGreaterThan(0);
     });
 
-    it('应该抛出ValidationError当脚本缺少内容和文件路径', () => {
+    it('应该返回无效结果当脚本缺少内容和文件路径', () => {
       const invalidScript = {
         id: 'script-1',
         name: 'test-script',
@@ -73,10 +77,12 @@ describe('CodeConfigValidator', () => {
         },
       };
 
-      expect(() => validator.validateScript(invalidScript)).toThrow(ValidationError);
+      const result = validator.validateScript(invalidScript);
+      expect(result.valid).toBe(false);
+      expect(result.errors.length).toBeGreaterThan(0);
     });
 
-    it('应该抛出ValidationError当执行选项无效', () => {
+    it('应该返回无效结果当执行选项无效', () => {
       const invalidScript = {
         id: 'script-1',
         name: 'test-script',
@@ -88,7 +94,9 @@ describe('CodeConfigValidator', () => {
         },
       };
 
-      expect(() => validator.validateScript(invalidScript)).toThrow(ValidationError);
+      const result = validator.validateScript(invalidScript);
+      expect(result.valid).toBe(false);
+      expect(result.errors.length).toBeGreaterThan(0);
     });
   });
 
@@ -103,16 +111,19 @@ describe('CodeConfigValidator', () => {
         sandbox: true,
       };
 
-      expect(() => validator.validateExecutionOptions(validOptions)).not.toThrow();
+      const result = validator.validateExecutionOptions(validOptions);
+      expect(result.valid).toBe(true);
     });
 
-    it('应该抛出ValidationError当执行选项无效', () => {
+    it('应该返回无效结果当执行选项无效', () => {
       const invalidOptions = {
         timeout: -100, // 无效的超时时间
         retries: -1, // 无效的重试次数
       };
 
-      expect(() => validator.validateExecutionOptions(invalidOptions)).toThrow(ValidationError);
+      const result = validator.validateExecutionOptions(invalidOptions);
+      expect(result.valid).toBe(false);
+      expect(result.errors.length).toBeGreaterThan(0);
     });
   });
 
@@ -136,10 +147,11 @@ describe('CodeConfigValidator', () => {
         },
       };
 
-      expect(() => validator.validateSandboxConfig(validConfig)).not.toThrow();
+      const result = validator.validateSandboxConfig(validConfig);
+      expect(result.valid).toBe(true);
     });
 
-    it('应该抛出ValidationError当沙箱配置无效', () => {
+    it('应该返回无效结果当沙箱配置无效', () => {
       const invalidConfig = {
         type: 'invalid-type' as any, // 无效的类型
         resourceLimits: {
@@ -147,38 +159,36 @@ describe('CodeConfigValidator', () => {
         },
       };
 
-      expect(() => validator.validateSandboxConfig(invalidConfig)).toThrow(ValidationError);
+      const result = validator.validateSandboxConfig(invalidConfig);
+      expect(result.valid).toBe(false);
+      expect(result.errors.length).toBeGreaterThan(0);
     });
   });
 
   describe('validateScriptTypeCompatibility', () => {
     it('应该验证脚本类型与文件扩展名的兼容性', () => {
-      expect(() =>
-        validator.validateScriptTypeCompatibility(ScriptType.PYTHON, undefined, 'script.py')
-      ).not.toThrow();
+      const result1 = validator.validateScriptTypeCompatibility(ScriptType.PYTHON, undefined, 'script.py');
+      expect(result1.valid).toBe(true);
 
-      expect(() =>
-        validator.validateScriptTypeCompatibility(ScriptType.JAVASCRIPT, undefined, 'script.js')
-      ).not.toThrow();
+      const result2 = validator.validateScriptTypeCompatibility(ScriptType.JAVASCRIPT, undefined, 'script.js');
+      expect(result2.valid).toBe(true);
     });
 
-    it('应该抛出ValidationError当文件扩展名与脚本类型不兼容', () => {
-      expect(() =>
-        validator.validateScriptTypeCompatibility(ScriptType.PYTHON, undefined, 'script.js')
-      ).toThrow(ValidationError);
+    it('应该返回无效结果当文件扩展名与脚本类型不兼容', () => {
+      const result = validator.validateScriptTypeCompatibility(ScriptType.PYTHON, undefined, 'script.js');
+      expect(result.valid).toBe(false);
+      expect(result.errors.length).toBeGreaterThan(0);
     });
 
     it('应该验证脚本类型与内容的兼容性', () => {
       const pythonContent = 'def main():\n    print("Hello World")';
       const jsContent = 'function main() {\n    console.log("Hello World");\n}';
 
-      expect(() =>
-        validator.validateScriptTypeCompatibility(ScriptType.PYTHON, pythonContent)
-      ).not.toThrow();
+      const result1 = validator.validateScriptTypeCompatibility(ScriptType.PYTHON, pythonContent);
+      expect(result1.valid).toBe(true);
 
-      expect(() =>
-        validator.validateScriptTypeCompatibility(ScriptType.JAVASCRIPT, jsContent)
-      ).not.toThrow();
+      const result2 = validator.validateScriptTypeCompatibility(ScriptType.JAVASCRIPT, jsContent);
+      expect(result2.valid).toBe(true);
     });
   });
 
@@ -201,7 +211,8 @@ describe('CodeConfigValidator', () => {
         powershellAvailable: true,
       };
 
-      expect(() => validator.validateExecutionEnvironment(script, environment)).not.toThrow();
+      const result = validator.validateExecutionEnvironment(script, environment);
+      expect(result.valid).toBe(true);
     });
 
     it('应该抛出ValidationError当环境变量不是字符串', () => {
@@ -225,7 +236,7 @@ describe('CodeConfigValidator', () => {
       expect(() => validator.validateExecutionEnvironment(script, environment)).not.toThrow();
     });
 
-    it('应该抛出ValidationError当执行环境不满足要求', () => {
+    it('应该返回无效结果当执行环境不满足要求', () => {
       const script = {
         id: 'script-1',
         name: 'test-script',
@@ -241,7 +252,9 @@ describe('CodeConfigValidator', () => {
         powershellAvailable: true,
       };
 
-      expect(() => validator.validateExecutionEnvironment(script, environment)).toThrow(ValidationError);
+      const result = validator.validateExecutionEnvironment(script, environment);
+      expect(result.valid).toBe(false);
+      expect(result.errors.length).toBeGreaterThan(0);
     });
   });
 });

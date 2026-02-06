@@ -233,17 +233,9 @@ export class WorkflowValidator {
 
       // 验证节点Hooks
       if (node.id && node.hooks && node.hooks.length > 0) {
-        try {
-          validateHooks(node.hooks, node.id);
-        } catch (error) {
-          if (error instanceof ValidationError) {
-            errors.push(error);
-          } else {
-            errors.push(new ValidationError(
-              error instanceof Error ? error.message : String(error),
-              `${path}.hooks`
-            ));
-          }
+        const hooksResult = validateHooks(node.hooks, node.id);
+        if (!hooksResult.valid) {
+          errors.push(...hooksResult.errors);
         }
       }
 
@@ -434,18 +426,8 @@ export class WorkflowValidator {
     }
 
     // 验证触发器配置
-    try {
-      validateTriggers(workflow.triggers, 'workflow.triggers');
-    } catch (error) {
-      if (error instanceof ValidationError) {
-        errors.push(error);
-      } else {
-        errors.push(new ValidationError(
-          error instanceof Error ? error.message : String(error),
-          'workflow.triggers'
-        ));
-      }
-    }
+    const triggersResult = validateTriggers(workflow.triggers, 'workflow.triggers');
+    errors.push(...triggersResult.errors);
 
     return {
       valid: errors.length === 0,

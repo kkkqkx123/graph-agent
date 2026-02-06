@@ -22,7 +22,8 @@ describe('validateTriggerCondition', () => {
       metadata: { key: 'value' }
     };
 
-    expect(() => validateTriggerCondition(validCondition)).not.toThrow();
+    const result = validateTriggerCondition(validCondition);
+    expect(result.valid).toBe(true);
   });
 
   it('应该验证只有必填字段的触发条件', () => {
@@ -30,7 +31,8 @@ describe('validateTriggerCondition', () => {
       eventType: EventType.THREAD_COMPLETED
     };
 
-    expect(() => validateTriggerCondition(minimalCondition)).not.toThrow();
+    const result = validateTriggerCondition(minimalCondition);
+    expect(result.valid).toBe(true);
   });
 
   it('应该拒绝无效的eventType', () => {
@@ -38,7 +40,9 @@ describe('validateTriggerCondition', () => {
       eventType: 'INVALID_EVENT' as any
     };
 
-    expect(() => validateTriggerCondition(invalidCondition)).toThrow(ValidationError);
+    const result = validateTriggerCondition(invalidCondition);
+    expect(result.valid).toBe(false);
+    expect(result.errors.length).toBeGreaterThan(0);
   });
 
   it('应该拒绝NODE_CUSTOM_EVENT缺少eventName', () => {
@@ -46,8 +50,10 @@ describe('validateTriggerCondition', () => {
       eventType: EventType.NODE_CUSTOM_EVENT
     };
 
-    expect(() => validateTriggerCondition(invalidCondition)).toThrow(ValidationError);
-    expect(() => validateTriggerCondition(invalidCondition)).toThrow('eventName is required when eventType is NODE_CUSTOM_EVENT');
+    const result = validateTriggerCondition(invalidCondition);
+    expect(result.valid).toBe(false);
+    expect(result.errors.length).toBeGreaterThan(0);
+    expect(result.errors[0].message).toContain('eventName is required when eventType is NODE_CUSTOM_EVENT');
   });
 
   it('应该接受NODE_CUSTOM_EVENT包含eventName', () => {

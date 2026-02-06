@@ -20,7 +20,8 @@ describe('validateHook', () => {
       eventPayload: { key: 'value' }
     };
 
-    expect(() => validateHook(validHook, nodeId)).not.toThrow();
+    const result = validateHook(validHook, nodeId);
+    expect(result.valid).toBe(true);
   });
 
   it('应该验证只有必填字段的Hook配置', () => {
@@ -29,7 +30,8 @@ describe('validateHook', () => {
       eventName: 'test-event'
     };
 
-    expect(() => validateHook(minimalHook, nodeId)).not.toThrow();
+    const result = validateHook(minimalHook, nodeId);
+    expect(result.valid).toBe(true);
   });
 
   it('应该拒绝缺少eventName的Hook', () => {
@@ -38,8 +40,10 @@ describe('validateHook', () => {
       eventName: ''
     };
 
-    expect(() => validateHook(invalidHook, nodeId)).toThrow(ValidationError);
-    expect(() => validateHook(invalidHook, nodeId)).toThrow('Event name is required');
+    const result = validateHook(invalidHook, nodeId);
+    expect(result.valid).toBe(false);
+    expect(result.errors.length).toBeGreaterThan(0);
+    expect(result.errors[0].message).toContain('Event name is required');
   });
 
   it('应该拒绝无效的hookType', () => {
@@ -48,7 +52,9 @@ describe('validateHook', () => {
       eventName: 'test-event'
     };
 
-    expect(() => validateHook(invalidHook, nodeId)).toThrow(ValidationError);
+    const result = validateHook(invalidHook, nodeId);
+    expect(result.valid).toBe(false);
+    expect(result.errors.length).toBeGreaterThan(0);
   });
 
   it('应该接受BEFORE_EXECUTE类型的Hook', () => {
@@ -57,7 +63,8 @@ describe('validateHook', () => {
       eventName: 'before-event'
     };
 
-    expect(() => validateHook(hook, nodeId)).not.toThrow();
+    const result = validateHook(hook, nodeId);
+    expect(result.valid).toBe(true);
   });
 
   it('应该接受AFTER_EXECUTE类型的Hook', () => {
@@ -66,7 +73,8 @@ describe('validateHook', () => {
       eventName: 'after-event'
     };
 
-    expect(() => validateHook(hook, nodeId)).not.toThrow();
+    const result = validateHook(hook, nodeId);
+    expect(result.valid).toBe(true);
   });
 
   it('应该接受enabled为false的Hook', () => {
@@ -76,7 +84,8 @@ describe('validateHook', () => {
       enabled: false
     };
 
-    expect(() => validateHook(hook, nodeId)).not.toThrow();
+    const result = validateHook(hook, nodeId);
+    expect(result.valid).toBe(true);
   });
 
   it('应该接受负数weight', () => {
@@ -86,7 +95,8 @@ describe('validateHook', () => {
       weight: -5
     };
 
-    expect(() => validateHook(hook, nodeId)).not.toThrow();
+    const result = validateHook(hook, nodeId);
+    expect(result.valid).toBe(true);
   });
 
   it('应该接受零weight', () => {
@@ -96,7 +106,8 @@ describe('validateHook', () => {
       weight: 0
     };
 
-    expect(() => validateHook(hook, nodeId)).not.toThrow();
+    const result = validateHook(hook, nodeId);
+    expect(result.valid).toBe(true);
   });
 
   it('应该接受空字符串condition', () => {
@@ -106,7 +117,8 @@ describe('validateHook', () => {
       condition: ''
     };
 
-    expect(() => validateHook(hook, nodeId)).not.toThrow();
+    const result = validateHook(hook, nodeId);
+    expect(result.valid).toBe(true);
   });
 
   it('应该接受空对象eventPayload', () => {
@@ -116,7 +128,8 @@ describe('validateHook', () => {
       eventPayload: {}
     };
 
-    expect(() => validateHook(hook, nodeId)).not.toThrow();
+    const result = validateHook(hook, nodeId);
+    expect(result.valid).toBe(true);
   });
 
   it('应该接受复杂eventPayload', () => {
@@ -133,7 +146,8 @@ describe('validateHook', () => {
       }
     };
 
-    expect(() => validateHook(hook, nodeId)).not.toThrow();
+    const result = validateHook(hook, nodeId);
+    expect(result.valid).toBe(true);
   });
 
   it('应该在错误消息中包含正确的字段路径', () => {
@@ -142,13 +156,10 @@ describe('validateHook', () => {
       eventName: ''
     };
 
-    try {
-      validateHook(invalidHook, nodeId);
-      fail('应该抛出ValidationError');
-    } catch (error) {
-      expect(error).toBeInstanceOf(ValidationError);
-      expect((error as ValidationError).field).toBe(`node.${nodeId}.hooks.eventName`);
-    }
+    const result = validateHook(invalidHook, nodeId);
+    expect(result.valid).toBe(false);
+    expect(result.errors.length).toBeGreaterThan(0);
+    expect(result.errors[0].field).toBe(`node.${nodeId}.hooks.eventName`);
   });
 });
 
@@ -169,31 +180,41 @@ describe('validateHooks', () => {
       }
     ];
 
-    expect(() => validateHooks(validHooks, nodeId)).not.toThrow();
+    const result = validateHooks(validHooks, nodeId);
+    expect(result.valid).toBe(true);
   });
 
   it('应该验证空Hook数组', () => {
-    expect(() => validateHooks([], nodeId)).not.toThrow();
+    const result = validateHooks([], nodeId);
+    expect(result.valid).toBe(true);
   });
 
   it('应该拒绝非数组的hooks', () => {
-    expect(() => validateHooks(null as any, nodeId)).toThrow(ValidationError);
-    expect(() => validateHooks(null as any, nodeId)).toThrow('Hooks must be an array');
+    const result = validateHooks(null as any, nodeId);
+    expect(result.valid).toBe(false);
+    expect(result.errors.length).toBeGreaterThan(0);
+    expect(result.errors[0].message).toContain('Hooks must be an array');
   });
 
   it('应该拒绝undefined的hooks', () => {
-    expect(() => validateHooks(undefined as any, nodeId)).toThrow(ValidationError);
-    expect(() => validateHooks(undefined as any, nodeId)).toThrow('Hooks must be an array');
+    const result = validateHooks(undefined as any, nodeId);
+    expect(result.valid).toBe(false);
+    expect(result.errors.length).toBeGreaterThan(0);
+    expect(result.errors[0].message).toContain('Hooks must be an array');
   });
 
   it('应该拒绝对象类型的hooks', () => {
-    expect(() => validateHooks({} as any, nodeId)).toThrow(ValidationError);
-    expect(() => validateHooks({} as any, nodeId)).toThrow('Hooks must be an array');
+    const result = validateHooks({} as any, nodeId);
+    expect(result.valid).toBe(false);
+    expect(result.errors.length).toBeGreaterThan(0);
+    expect(result.errors[0].message).toContain('Hooks must be an array');
   });
 
   it('应该拒绝字符串类型的hooks', () => {
-    expect(() => validateHooks('invalid' as any, nodeId)).toThrow(ValidationError);
-    expect(() => validateHooks('invalid' as any, nodeId)).toThrow('Hooks must be an array');
+    const result = validateHooks('invalid' as any, nodeId);
+    expect(result.valid).toBe(false);
+    expect(result.errors.length).toBeGreaterThan(0);
+    expect(result.errors[0].message).toContain('Hooks must be an array');
   });
 
   it('应该跳过数组中的null元素', () => {
@@ -209,7 +230,8 @@ describe('validateHooks', () => {
       }
     ];
 
-    expect(() => validateHooks(hooksWithNull, nodeId)).not.toThrow();
+    const result = validateHooks(hooksWithNull, nodeId);
+    expect(result.valid).toBe(true);
   });
 
   it('应该跳过数组中的undefined元素', () => {
@@ -225,7 +247,8 @@ describe('validateHooks', () => {
       }
     ];
 
-    expect(() => validateHooks(hooksWithUndefined, nodeId)).not.toThrow();
+    const result = validateHooks(hooksWithUndefined, nodeId);
+    expect(result.valid).toBe(true);
   });
 
   it('应该拒绝数组中包含无效的Hook', () => {
@@ -240,7 +263,9 @@ describe('validateHooks', () => {
       }
     ];
 
-    expect(() => validateHooks(invalidHooks, nodeId)).toThrow(ValidationError);
+    const result = validateHooks(invalidHooks, nodeId);
+    expect(result.valid).toBe(false);
+    expect(result.errors.length).toBeGreaterThan(0);
   });
 
   it('应该验证包含多个Hook的数组', () => {
@@ -262,7 +287,8 @@ describe('validateHooks', () => {
       }
     ];
 
-    expect(() => validateHooks(multipleHooks, nodeId)).not.toThrow();
+    const result = validateHooks(multipleHooks, nodeId);
+    expect(result.valid).toBe(true);
   });
 
   it('应该在错误消息中包含正确的字段路径', () => {
@@ -277,13 +303,10 @@ describe('validateHooks', () => {
       }
     ];
 
-    try {
-      validateHooks(invalidHooks, nodeId);
-      fail('应该抛出ValidationError');
-    } catch (error) {
-      expect(error).toBeInstanceOf(ValidationError);
-      expect((error as ValidationError).field).toBe(`node.${nodeId}.hooks.eventName`);
-    }
+    const result = validateHooks(invalidHooks, nodeId);
+    expect(result.valid).toBe(false);
+    expect(result.errors.length).toBeGreaterThan(0);
+    expect(result.errors[0].field).toBe(`node.${nodeId}.hooks.eventName`);
   });
 
   it('应该接受包含所有可选字段的Hook数组', () => {
@@ -306,6 +329,7 @@ describe('validateHooks', () => {
       }
     ];
 
-    expect(() => validateHooks(completeHooks, nodeId)).not.toThrow();
+    const result = validateHooks(completeHooks, nodeId);
+    expect(result.valid).toBe(true);
   });
 });

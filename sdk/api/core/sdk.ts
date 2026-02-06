@@ -9,7 +9,6 @@
  */
 
 import { APIFactory, type SDKAPIConfig } from './api-factory';
-import { WorkflowValidatorAPI } from '../validation/workflow-validator-api';
 import { getData } from '../types/execution-result';
 import type { SDKOptions, SDKDependencies } from '../types';
 
@@ -19,8 +18,6 @@ import type { SDKOptions, SDKDependencies } from '../types';
 class SDK {
   private factory: APIFactory;
 
-  // 验证API实例
-  public readonly validation: WorkflowValidatorAPI;
 
   /**
    * 创建SDK实例
@@ -58,8 +55,6 @@ class SDK {
 
     this.factory.configure(config);
 
-    // 初始化验证API
-    this.validation = new WorkflowValidatorAPI();
   }
 
   /**
@@ -146,7 +141,6 @@ class SDK {
       { name: 'nodeTemplates', check: async () => getData(await this.nodeTemplates.count()) },
       { name: 'triggerTemplates', check: async () => getData(await this.triggerTemplates.count()) },
       { name: 'profiles', check: async () => getData(await this.profiles.count()) },
-      { name: 'validation', check: () => Promise.resolve(true) }
     ];
 
     let overallStatus: 'healthy' | 'degraded' | 'unhealthy' = 'healthy';

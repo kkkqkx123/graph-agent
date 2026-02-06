@@ -6,7 +6,7 @@
 import { z } from 'zod';
 import type { Script, ScriptExecutionOptions, SandboxConfig } from '../../types/code';
 import { ScriptType } from '../../types/code';
-import { ValidationError } from '../../types/errors';
+import { ValidationError, type ValidationResult } from '../../types/errors';
 
 /**
  * 沙箱配置schema
@@ -83,15 +83,28 @@ export class CodeConfigValidator {
    * @param script 脚本定义
    * @throws ValidationError 当脚本定义无效时抛出
    */
-  validateScript(script: Script): void {
+  validateScript(script: Script): ValidationResult {
     const result = scriptSchema.safeParse(script);
     if (!result.success) {
       const error = result.error.issues[0];
       if (!error) {
-        throw new ValidationError('Invalid script configuration', 'script');
+        return {
+          valid: false,
+          errors: [new ValidationError('Invalid script configuration', 'script')],
+          warnings: []
+        };
       }
-      throw new ValidationError(error.message, `script.${error.path.join('.')}`);
+      return {
+        valid: false,
+        errors: [new ValidationError(error.message, `script.${error.path.join('.')}`)],
+        warnings: []
+      };
     }
+    return {
+      valid: true,
+      errors: [],
+      warnings: []
+    };
   }
 
   /**
@@ -99,15 +112,28 @@ export class CodeConfigValidator {
    * @param options 脚本执行选项
    * @throws ValidationError 当执行选项无效时抛出
    */
-  validateExecutionOptions(options: ScriptExecutionOptions): void {
+  validateExecutionOptions(options: ScriptExecutionOptions): ValidationResult {
     const result = scriptExecutionOptionsSchema.safeParse(options);
     if (!result.success) {
       const error = result.error.issues[0];
       if (!error) {
-        throw new ValidationError('Invalid execution options', 'options');
+        return {
+          valid: false,
+          errors: [new ValidationError('Invalid execution options', 'options')],
+          warnings: []
+        };
       }
-      throw new ValidationError(error.message, `options.${error.path.join('.')}`);
+      return {
+        valid: false,
+        errors: [new ValidationError(error.message, `options.${error.path.join('.')}`)],
+        warnings: []
+      };
     }
+    return {
+      valid: true,
+      errors: [],
+      warnings: []
+    };
   }
 
   /**
@@ -115,15 +141,28 @@ export class CodeConfigValidator {
    * @param config 沙箱配置
    * @throws ValidationError 当沙箱配置无效时抛出
    */
-  validateSandboxConfig(config: SandboxConfig): void {
+  validateSandboxConfig(config: SandboxConfig): ValidationResult {
     const result = sandboxConfigSchema.safeParse(config);
     if (!result.success) {
       const error = result.error.issues[0];
       if (!error) {
-        throw new ValidationError('Invalid sandbox configuration', 'sandbox');
+        return {
+          valid: false,
+          errors: [new ValidationError('Invalid sandbox configuration', 'sandbox')],
+          warnings: []
+        };
       }
-      throw new ValidationError(error.message, `sandbox.${error.path.join('.')}`);
+      return {
+        valid: false,
+        errors: [new ValidationError(error.message, `sandbox.${error.path.join('.')}`)],
+        warnings: []
+      };
     }
+    return {
+      valid: true,
+      errors: [],
+      warnings: []
+    };
   }
 
   /**
@@ -137,24 +176,54 @@ export class CodeConfigValidator {
     scriptType: ScriptType,
     content?: string,
     filePath?: string
-  ): void {
+  ): ValidationResult {
     // 验证文件扩展名与脚本类型的兼容性
     if (filePath) {
       const extension = filePath.toLowerCase().split('.').pop();
       const expectedExtensions = this.getExpectedExtensions(scriptType);
       
       if (extension && !expectedExtensions.includes(extension)) {
-        throw new ValidationError(
-          `File extension '${extension}' is not compatible with script type '${scriptType}'. Expected: ${expectedExtensions.join(', ')}`,
-          'filePath'
-        );
+        return {
+          valid: false,
+          errors: [
+            new ValidationError(
+              `File extension '${extension}' is not compatible with script type '${scriptType}'. Expected: ${expectedExtensions.join(', ')}`,
+              'filePath'
+            )
+          ],
+          warnings: []
+        };
       }
     }
 
     // 验证内容与脚本类型的兼容性
     if (content) {
-      this.validateContentCompatibility(scriptType, content);
+      try {
+        this.validateContentCompatibility(scriptType, content);
+      } catch (error) {
+        if (error instanceof ValidationError) {
+          return {
+            valid: false,
+            errors: [error],
+            warnings: []
+          };
+        }
+        return {
+          valid: false,
+          errors: [new ValidationError(
+            error instanceof Error ? error.message : String(error),
+            'content'
+          )],
+          warnings: []
+        };
+      }
     }
+    
+    return {
+      valid: true,
+      errors: [],
+      warnings: []
+    };
   }
 
   /**
@@ -217,17 +286,18 @@ export class CodeConfigValidator {
    * @param environment 执行环境信息
    * @throws ValidationError 当环境不满足要求时抛出
    */
-  validateExecutionEnvironment(script: Script, environment: Record<string, any>): void {
+  validateExecutionEnvironment(script: Script, environment: Record<string, any>): ValidationResult {
     const { type, options } = script;
+    const errors: ValidationError[] = [];
 
     // 验证必要的环境变量
     if (options.environment) {
       for (const [key, value] of Object.entries(options.environment)) {
         if (typeof value !== 'string') {
-          throw new ValidationError(
+          errors.push(new ValidationError(
             `Environment variable '${key}' must be a string`,
             'options.environment'
-          );
+          ));
         }
       }
     }
@@ -236,28 +306,34 @@ export class CodeConfigValidator {
     switch (type) {
       case ScriptType.PYTHON:
         if (!environment['pythonAvailable']) {
-          throw new ValidationError(
+          errors.push(new ValidationError(
             'Python interpreter is not available in the execution environment',
             'environment'
-          );
+          ));
         }
         break;
       case ScriptType.JAVASCRIPT:
         if (!environment['nodeAvailable']) {
-          throw new ValidationError(
+          errors.push(new ValidationError(
             'Node.js runtime is not available in the execution environment',
             'environment'
-          );
+          ));
         }
         break;
       case ScriptType.POWERSHELL:
         if (!environment['powershellAvailable']) {
-          throw new ValidationError(
+          errors.push(new ValidationError(
             'PowerShell is not available in the execution environment',
             'environment'
-          );
+          ));
         }
         break;
     }
+    
+    return {
+      valid: errors.length === 0,
+      errors,
+      warnings: []
+    };
   }
 }

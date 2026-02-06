@@ -6,7 +6,7 @@
 import { z } from 'zod';
 import type { NodeHook } from '../../types/node';
 import { HookType } from '../../types/node';
-import { ValidationError } from '../../types/errors';
+import { ValidationError, type ValidationResult } from '../../types/errors';
 
 /**
  * Hook配置schema
@@ -26,15 +26,28 @@ const hookSchema = z.object({
  * @param nodeId 节点ID（用于错误路径）
  * @throws ValidationError 当配置无效时抛出
  */
-export function validateHook(hook: NodeHook, nodeId: string): void {
+export function validateHook(hook: NodeHook, nodeId: string): ValidationResult {
   const result = hookSchema.safeParse(hook);
   if (!result.success) {
     const error = result.error.issues[0];
     if (!error) {
-      throw new ValidationError('Invalid hook configuration', `node.${nodeId}.hooks`);
+      return {
+        valid: false,
+        errors: [new ValidationError('Invalid hook configuration', `node.${nodeId}.hooks`)],
+        warnings: []
+      };
     }
-    throw new ValidationError(error.message, `node.${nodeId}.hooks.${error.path.join('.')}`);
+    return {
+      valid: false,
+      errors: [new ValidationError(error.message, `node.${nodeId}.hooks.${error.path.join('.')}`)],
+      warnings: []
+    };
   }
+  return {
+    valid: true,
+    errors: [],
+    warnings: []
+  };
 }
 
 /**
@@ -43,16 +56,30 @@ export function validateHook(hook: NodeHook, nodeId: string): void {
  * @param nodeId 节点ID（用于错误路径）
  * @throws ValidationError 当配置无效时抛出
  */
-export function validateHooks(hooks: NodeHook[], nodeId: string): void {
+export function validateHooks(hooks: NodeHook[], nodeId: string): ValidationResult {
   if (!hooks || !Array.isArray(hooks)) {
-    throw new ValidationError('Hooks must be an array', `node.${nodeId}.hooks`);
+    return {
+      valid: false,
+      errors: [new ValidationError('Hooks must be an array', `node.${nodeId}.hooks`)],
+      warnings: []
+    };
   }
 
+  const errors: ValidationError[] = [];
   for (let i = 0; i < hooks.length; i++) {
     const hook = hooks[i];
     if (!hook) continue;
 
     // 验证Hook配置
-    validateHook(hook, nodeId);
+    const result = validateHook(hook, nodeId);
+    if (!result.valid) {
+      errors.push(...result.errors);
+    }
   }
+  
+  return {
+    valid: errors.length === 0,
+    errors,
+    warnings: []
+  };
 }

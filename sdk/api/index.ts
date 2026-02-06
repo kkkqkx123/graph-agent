@@ -222,11 +222,18 @@ export type { OffEventParams } from './operations/subscriptions/events/off-event
 // ============================================================================
 // 验证API
 // ============================================================================
-export { WorkflowValidatorAPI } from './validation/workflow-validator-api';
-export { CodeConfigValidatorAPI } from './validation/code-config-validator-api';
-export { ToolConfigValidatorAPI } from './validation/tool-config-validator-api';
-export { HookValidatorAPI } from './validation/hook-validator-api';
-export { TriggerValidatorAPI } from './validation/trigger-validator-api';
+export { WorkflowValidator as WorkflowValidatorAPI } from '../core/validation';
+export { CodeConfigValidator as CodeConfigValidatorAPI } from '../core/validation';
+export { ToolConfigValidator as ToolConfigValidatorAPI } from '../core/validation';
+export { validateHook as validateHookAPI, validateHooks as validateHooksAPI } from '../core/validation';
+export {
+  validateTriggerCondition as validateTriggerConditionAPI,
+  validateExecuteTriggeredSubgraphActionConfig as validateExecuteTriggeredSubgraphActionConfigAPI,
+  validateTriggerAction as validateTriggerActionAPI,
+  validateWorkflowTrigger as validateWorkflowTriggerAPI,
+  validateTriggerReference as validateTriggerReferenceAPI,
+  validateTriggers as validateTriggersAPI
+} from '../core/validation';
 
 // ============================================================================
 // 构建器

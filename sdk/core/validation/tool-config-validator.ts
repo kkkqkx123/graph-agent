@@ -14,7 +14,7 @@ import type {
   McpToolConfig 
 } from '../../types/tool';
 import { ToolType } from '../../types/tool';
-import { ValidationError } from '../../types/errors';
+import { ValidationError, type ValidationResult } from '../../types/errors';
 
 /**
  * 工具参数属性schema
@@ -143,15 +143,28 @@ export class ToolConfigValidator {
    * @param tool 工具定义
    * @throws ValidationError 当工具定义无效时抛出
    */
-  validateTool(tool: Tool): void {
+  validateTool(tool: Tool): ValidationResult {
     const result = toolSchema.safeParse(tool);
     if (!result.success) {
       const error = result.error.issues[0];
       if (!error) {
-        throw new ValidationError('Invalid tool configuration', 'tool');
+        return {
+          valid: false,
+          errors: [new ValidationError('Invalid tool configuration', 'tool')],
+          warnings: []
+        };
       }
-      throw new ValidationError(error.message, `tool.${error.path.join('.')}`);
+      return {
+        valid: false,
+        errors: [new ValidationError(error.message, `tool.${error.path.join('.')}`)],
+        warnings: []
+      };
     }
+    return {
+      valid: true,
+      errors: [],
+      warnings: []
+    };
   }
 
   /**
@@ -159,15 +172,28 @@ export class ToolConfigValidator {
    * @param parameters 工具参数schema
    * @throws ValidationError 当参数schema无效时抛出
    */
-  validateParameters(parameters: ToolParameters): void {
+  validateParameters(parameters: ToolParameters): ValidationResult {
     const result = toolParametersSchema.safeParse(parameters);
     if (!result.success) {
       const error = result.error.issues[0];
       if (!error) {
-        throw new ValidationError('Invalid tool parameters schema', 'parameters');
+        return {
+          valid: false,
+          errors: [new ValidationError('Invalid tool parameters schema', 'parameters')],
+          warnings: []
+        };
       }
-      throw new ValidationError(error.message, `parameters.${error.path.join('.')}`);
+      return {
+        valid: false,
+        errors: [new ValidationError(error.message, `parameters.${error.path.join('.')}`)],
+        warnings: []
+      };
     }
+    return {
+      valid: true,
+      errors: [],
+      warnings: []
+    };
   }
 
   /**
@@ -176,7 +202,7 @@ export class ToolConfigValidator {
    * @param config 工具配置
    * @throws ValidationError 当配置无效时抛出
    */
-  validateToolConfig(toolType: ToolType, config: any): void {
+  validateToolConfig(toolType: ToolType, config: any): ValidationResult {
     let result;
 
     switch (toolType) {
@@ -193,16 +219,33 @@ export class ToolConfigValidator {
         result = mcpToolConfigSchema.safeParse(config);
         break;
       default:
-        throw new ValidationError(`Unknown tool type: ${toolType}`, 'type');
+        return {
+          valid: false,
+          errors: [new ValidationError(`Unknown tool type: ${toolType}`, 'type')],
+          warnings: []
+        };
     }
 
     if (!result.success) {
       const error = result.error.issues[0];
       if (!error) {
-        throw new ValidationError(`Invalid ${toolType} tool configuration`, 'config');
+        return {
+          valid: false,
+          errors: [new ValidationError(`Invalid ${toolType} tool configuration`, 'config')],
+          warnings: []
+        };
       }
-      throw new ValidationError(error.message, `config.${error.path.join('.')}`);
+      return {
+        valid: false,
+        errors: [new ValidationError(error.message, `config.${error.path.join('.')}`)],
+        warnings: []
+      };
     }
+    return {
+      valid: true,
+      errors: [],
+      warnings: []
+    };
   }
 
   /**
@@ -211,16 +254,17 @@ export class ToolConfigValidator {
    * @param parameters 调用参数
    * @throws ValidationError 当调用参数无效时抛出
    */
-  validateToolCallParameters(tool: Tool, parameters: Record<string, any>): void {
+  validateToolCallParameters(tool: Tool, parameters: Record<string, any>): ValidationResult {
     const { properties, required } = tool.parameters;
+    const errors: ValidationError[] = [];
 
     // 验证必需参数
     for (const paramName of required) {
       if (!(paramName in parameters)) {
-        throw new ValidationError(
+        errors.push(new ValidationError(
           `Required parameter '${paramName}' is missing`,
           `parameters.${paramName}`
-        );
+        ));
       }
     }
 
@@ -228,14 +272,32 @@ export class ToolConfigValidator {
     for (const [paramName, paramValue] of Object.entries(parameters)) {
       const property = properties[paramName];
       if (!property) {
-        throw new ValidationError(
+        errors.push(new ValidationError(
           `Unknown parameter '${paramName}'`,
           `parameters.${paramName}`
-        );
+        ));
+        continue;
       }
 
-      this.validateParameterValue(paramName, paramValue, property);
+      try {
+        this.validateParameterValue(paramName, paramValue, property);
+      } catch (error) {
+        if (error instanceof ValidationError) {
+          errors.push(error);
+        } else {
+          errors.push(new ValidationError(
+            error instanceof Error ? error.message : String(error),
+            `parameters.${paramName}`
+          ));
+        }
+      }
     }
+    
+    return {
+      valid: errors.length === 0,
+      errors,
+      warnings: []
+    };
   }
 
   /**
@@ -360,29 +422,36 @@ export class ToolConfigValidator {
    * @param environment 执行环境信息
    * @throws ValidationError 当工具与环境不兼容时抛出
    */
-  validateToolCompatibility(tool: Tool, environment: Record<string, any>): void {
+  validateToolCompatibility(tool: Tool, environment: Record<string, any>): ValidationResult {
     const { type, config } = tool;
+    const errors: ValidationError[] = [];
 
     switch (type) {
       case ToolType.REST:
         if (config && (config as RestToolConfig).baseUrl) {
           // 验证REST工具的网络连接
           if (!environment['networkAvailable']) {
-            throw new ValidationError(
+            errors.push(new ValidationError(
               'Network connectivity is required for REST tools',
               'environment'
-            );
+            ));
           }
         }
         break;
       case ToolType.MCP:
         if (!environment['mcpAvailable']) {
-          throw new ValidationError(
+          errors.push(new ValidationError(
             'MCP protocol support is not available in the execution environment',
             'environment'
-          );
+          ));
         }
         break;
     }
+    
+    return {
+      valid: errors.length === 0,
+      errors,
+      warnings: []
+    };
   }
 }
