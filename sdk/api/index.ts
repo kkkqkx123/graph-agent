@@ -13,9 +13,9 @@ export {
   CommandValidationResult,
   validationSuccess,
   validationFailure
-} from './core/command';
+} from './types/command';
 
-export { CommandExecutor } from './core/command-executor';
+export { CommandExecutor } from './common/command-executor';
 
 export {
   CommandMiddleware,
@@ -26,7 +26,7 @@ export {
   RetryMiddleware,
   Logger,
   CommandMetrics
-} from './core/command-middleware';
+} from './types/command-middleware';
 
 // Query模式核心
 export {
@@ -38,14 +38,14 @@ export {
   queryFailure,
   isQuerySuccess,
   isQueryFailure
-} from './core/query';
+} from './types/query';
 
 // Subscription模式核心
 export {
   Subscription,
   BaseSubscription,
   SubscriptionMetadata
-} from './core/subscription';
+} from './types/subscription';
 
 // 统一类型
 export { ExecutionResult, success, failure, isSuccess, isFailure, getData, getError } from './types/execution-result';
@@ -80,7 +80,7 @@ export {
   type LoggingDecoratorOptions,
   type PerformanceDecoratorOptions,
   type RetryDecoratorOptions
-} from './decorators/api-decorators';
+} from './common/api-decorators';
 
 // 统一错误处理
 export {
@@ -93,16 +93,20 @@ export {
   ErrorHandlerRegistry
 } from './types/api-error';
 
-// 事件系统
+// 事件系统类型
 export {
-  APIEventBus,
   APIEventType,
-  APIEventBuilder,
-  apiEventBus,
   type APIEventData,
   type APIEventListener,
   type EventListenerConfig
-} from './events/api-event-system';
+} from './types/event-types';
+
+// 事件系统实现
+export {
+  APIEventBus,
+  APIEventBuilder,
+  apiEventBus
+} from './common/api-event-system';
 
 // 审计日志
 export {

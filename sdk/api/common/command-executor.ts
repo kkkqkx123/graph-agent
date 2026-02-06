@@ -3,9 +3,9 @@
  * 负责执行命令并管理中间件链
  */
 
-import type { Command, CommandValidationResult } from './command';
+import type { Command, CommandValidationResult } from '../types/command';
 import type { ExecutionResult } from '../types/execution-result';
-import type { CommandMiddleware } from './command-middleware';
+import type { CommandMiddleware } from '../types/command-middleware';
 import { failure } from '../types/execution-result';
 
 /**

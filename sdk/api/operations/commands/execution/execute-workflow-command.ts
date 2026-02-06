@@ -2,7 +2,7 @@
  * ExecuteWorkflowCommand - 执行工作流命令
  */
 
-import { BaseCommand, CommandMetadata, CommandValidationResult, validationSuccess, validationFailure } from '../../../core/command';
+import { BaseCommand, CommandMetadata, CommandValidationResult, validationSuccess, validationFailure } from '../../../types/command';
 import { success, failure, ExecutionResult } from '../../../types/execution-result';
 import type { ThreadResult, ThreadOptions } from '../../../../types/thread';
 import type { WorkflowDefinition } from '../../../../types/workflow';

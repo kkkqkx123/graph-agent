@@ -2,7 +2,7 @@
  * GetTriggersQuery - 获取所有触发器
  */
 
-import { BaseQuery, QueryMetadata, querySuccess, queryFailure } from '../../../core/query';
+import { BaseQuery, QueryMetadata, querySuccess, queryFailure } from '../../../types/query';
 import { threadRegistry, type ThreadRegistry } from '../../../../core/services/thread-registry';
 import type { Trigger } from '../../../../types/trigger';
 import { NotFoundError } from '../../../../types/errors';

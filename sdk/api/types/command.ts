@@ -3,7 +3,7 @@
  * 定义统一的命令执行接口
  */
 
-import type { ExecutionResult } from '../types/execution-result';
+import type { ExecutionResult } from './execution-result';
 
 /**
  * 命令元数据
@@ -55,19 +55,19 @@ export interface Command<T> {
    * @returns 执行结果
    */
   execute(): Promise<ExecutionResult<T>>;
-  
+
   /**
    * 撤销命令（可选）
    * @returns 撤销结果
    */
   undo?(): Promise<ExecutionResult<void>>;
-  
+
   /**
    * 验证命令参数
    * @returns 验证结果
    */
   validate(): CommandValidationResult;
-  
+
   /**
    * 获取命令元数据
    * @returns 命令元数据
@@ -81,29 +81,29 @@ export interface Command<T> {
  */
 export abstract class BaseCommand<T> implements Command<T> {
   protected readonly startTime: number = Date.now();
-  
+
   /**
    * 执行命令
    */
   abstract execute(): Promise<ExecutionResult<T>>;
-  
+
   /**
    * 撤销命令（默认不支持）
    */
   async undo(): Promise<ExecutionResult<void>> {
     throw new Error(`Command ${this.getMetadata().name} does not support undo`);
   }
-  
+
   /**
    * 验证命令参数
    */
   abstract validate(): CommandValidationResult;
-  
+
   /**
    * 获取命令元数据
    */
   abstract getMetadata(): CommandMetadata;
-  
+
   /**
    * 获取执行时间
    */
@@ -127,6 +127,6 @@ export abstract class BaseSyncCommand<T> extends BaseCommand<T> implements SyncC
   async execute(): Promise<ExecutionResult<T>> {
     return this.executeSync();
   }
-  
+
   abstract executeSync(): ExecutionResult<T>;
 }

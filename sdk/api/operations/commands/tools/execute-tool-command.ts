@@ -2,7 +2,7 @@
  * ExecuteToolCommand - 执行工具命令
  */
 
-import { BaseCommand, CommandMetadata, CommandValidationResult, validationSuccess, validationFailure } from '../../../core/command';
+import { BaseCommand, CommandMetadata, CommandValidationResult, validationSuccess, validationFailure } from '../../../types/command';
 import { success, failure, ExecutionResult } from '../../../types/execution-result';
 import type { ToolOptions, ToolExecutionResult } from '../../../types/tools-types';
 import { toolService } from '../../../../core/services/tool-service';

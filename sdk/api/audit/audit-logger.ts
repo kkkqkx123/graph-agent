@@ -7,7 +7,7 @@
  * - Strategy模式：支持不同的日志存储策略
  */
 
-import { APIEventBus, APIEventType, type APIEventData } from '../events/api-event-system';
+import { APIEventBus, APIEventType, type APIEventData } from '../common/api-event-system';
 
 /**
  * 审计日志级别
@@ -64,14 +64,14 @@ export interface AuditLogStorage {
    * @param entry 日志条目
    */
   write(entry: AuditLogEntry): Promise<void>;
-  
+
   /**
    * 查询日志
    * @param filter 过滤条件
    * @returns 日志条目数组
    */
   query(filter: AuditLogFilter): Promise<AuditLogEntry[]>;
-  
+
   /**
    * 清除日志
    * @param beforeTime 清除指定时间之前的日志
@@ -124,7 +124,7 @@ export class InMemoryAuditLogStorage implements AuditLogStorage {
 
   async write(entry: AuditLogEntry): Promise<void> {
     this.logs.push(entry);
-    
+
     // 限制日志数量
     if (this.logs.length > this.maxSize) {
       this.logs.shift();

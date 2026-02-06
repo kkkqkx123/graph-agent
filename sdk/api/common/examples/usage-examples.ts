@@ -3,8 +3,8 @@
  * 展示如何使用CommandExecutor和中间件
  */
 
-import { CommandExecutor } from '../command-executor';
-import { LoggingMiddleware, ValidationMiddleware, CacheMiddleware, MetricsMiddleware, RetryMiddleware } from '../command-middleware';
+import { CommandExecutor } from '../../common/command-executor';
+import { LoggingMiddleware, ValidationMiddleware, CacheMiddleware, MetricsMiddleware, RetryMiddleware } from '../../types/command-middleware';
 import {
   GreetingCommand,
   CalculateCommand,
@@ -267,10 +267,10 @@ export async function combinedMiddlewareExample() {
   }
 
   // 获取指标
-  const metricsMiddleware = executor.getMiddlewareCount() > 0 
+  const metricsMiddleware = executor.getMiddlewareCount() > 0
     ? executor['middleware'].find((m: any) => m instanceof MetricsMiddleware)
     : null;
-  
+
   if (metricsMiddleware) {
     const metrics = metricsMiddleware.getMetrics();
     console.log('指标:', metrics);

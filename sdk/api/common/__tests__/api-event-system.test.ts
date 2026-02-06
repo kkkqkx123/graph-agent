@@ -106,9 +106,9 @@ describe('APIEventBus', () => {
 
     it('应该支持优先级', async () => {
       const calls: number[] = [];
-      const listener1 = jest.fn(() => calls.push(1));
-      const listener2 = jest.fn(() => calls.push(2));
-      const listener3 = jest.fn(() => calls.push(3));
+      const listener1 = jest.fn(() => { calls.push(1); });
+      const listener2 = jest.fn(() => { calls.push(2); });
+      const listener3 = jest.fn(() => { calls.push(3); });
 
       eventBus.on(APIEventType.RESOURCE_CREATED, listener1, { priority: 1 });
       eventBus.on(APIEventType.RESOURCE_CREATED, listener2, { priority: 3 });

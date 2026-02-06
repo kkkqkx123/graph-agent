@@ -2,7 +2,7 @@
  * GetEventStatsQuery - 获取事件统计
  */
 
-import { BaseQuery, QueryMetadata, querySuccess, queryFailure } from '../../../core/query';
+import { BaseQuery, QueryMetadata, querySuccess, queryFailure } from '../../../types/query';
 import type { BaseEvent } from '../../../../types/events';
 import type { EventFilter } from '../../../types/management-types';
 

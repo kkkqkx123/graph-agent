@@ -2,8 +2,8 @@
  * CreateCheckpointCommand - 创建检查点
  */
 
-import { BaseCommand } from '../../../core/command';
-import { CommandValidationResult } from '../../../core/command';
+import { BaseCommand } from '../../../types/command';
+import { CommandValidationResult } from '../../../types/command';
 import { CheckpointCoordinator } from '../../../../core/execution/coordinators/checkpoint-coordinator';
 import { CheckpointStateManager } from '../../../../core/execution/managers/checkpoint-state-manager';
 import type { Checkpoint, CheckpointMetadata } from '../../../../types/checkpoint';
@@ -44,12 +44,12 @@ export class CreateCheckpointCommand extends BaseCommand<Checkpoint> {
       // 创建默认的检查点管理组件
       const storage = new MemoryCheckpointStorage();
       this.stateManager = new CheckpointStateManager(storage);
-      
+
       // 从SingletonRegistry获取全局服务
       SingletonRegistry.initialize();
       const threadRegistry = SingletonRegistry.get<any>('threadRegistry');
       const workflowRegistry = SingletonRegistry.get<any>('workflowRegistry');
-      
+
       this.coordinator = new CheckpointCoordinator(
         this.stateManager,
         threadRegistry,
@@ -102,11 +102,11 @@ export class CreateCheckpointCommand extends BaseCommand<Checkpoint> {
 
       const checkpointId = await this.coordinator.createCheckpoint(this.params.threadId, this.params.metadata);
       const checkpoint = await this.stateManager.get(checkpointId);
-      
+
       if (!checkpoint) {
         return failure(`Failed to retrieve created checkpoint: ${checkpointId}`, Date.now() - startTime);
       }
-      
+
       return success(checkpoint, Date.now() - startTime);
     } catch (error) {
       return failure(

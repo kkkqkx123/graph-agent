@@ -2,7 +2,7 @@
  * GenerateBatchCommand - LLM批量生成命令
  */
 
-import { BaseCommand, CommandMetadata, CommandValidationResult, validationSuccess, validationFailure } from '../../../core/command';
+import { BaseCommand, CommandMetadata, CommandValidationResult, validationSuccess, validationFailure } from '../../../types/command';
 import { success, failure, ExecutionResult } from '../../../types/execution-result';
 import type { LLMRequest, LLMResult } from '../../../../types/llm';
 import { LLMWrapper } from '../../../../core/llm/wrapper';

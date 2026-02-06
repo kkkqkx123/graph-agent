@@ -4,7 +4,7 @@
  */
 
 import type { Command } from './command';
-import type { ExecutionResult } from '../types/execution-result';
+import type { ExecutionResult } from './execution-result';
 
 /**
  * Command中间件接口
@@ -15,14 +15,14 @@ export interface CommandMiddleware {
    * @param command 命令
    */
   beforeExecute<T>(command: Command<T>): Promise<void>;
-  
+
   /**
    * 命令执行后调用
    * @param command 命令
    * @param result 执行结果
    */
   afterExecute<T>(command: Command<T>, result: ExecutionResult<T>): Promise<void>;
-  
+
   /**
    * 命令执行出错时调用
    * @param command 命令
@@ -37,11 +37,11 @@ export interface CommandMiddleware {
  */
 export class LoggingMiddleware implements CommandMiddleware {
   private readonly logger: Logger;
-  
+
   constructor(logger?: Logger) {
     this.logger = logger || createDefaultLogger();
   }
-  
+
   async beforeExecute<T>(command: Command<T>): Promise<void> {
     const metadata = command.getMetadata();
     this.logger.info(`Executing command: ${metadata.name}`, {
@@ -49,7 +49,7 @@ export class LoggingMiddleware implements CommandMiddleware {
       version: metadata.version
     });
   }
-  
+
   async afterExecute<T>(command: Command<T>, result: ExecutionResult<T>): Promise<void> {
     const metadata = command.getMetadata();
     if (result.success) {
@@ -63,7 +63,7 @@ export class LoggingMiddleware implements CommandMiddleware {
       });
     }
   }
-  
+
   async onError<T>(command: Command<T>, error: Error): Promise<void> {
     const metadata = command.getMetadata();
     this.logger.error(`Command error: ${metadata.name}`, {
@@ -84,11 +84,11 @@ export class ValidationMiddleware implements CommandMiddleware {
       throw new Error(`Validation failed: ${validation.errors.join(', ')}`);
     }
   }
-  
+
   async afterExecute<T>(command: Command<T>, result: ExecutionResult<T>): Promise<void> {
     // 不需要后置处理
   }
-  
+
   async onError<T>(command: Command<T>, error: Error): Promise<void> {
     // 不需要错误处理
   }
@@ -101,38 +101,38 @@ export class ValidationMiddleware implements CommandMiddleware {
 export class CacheMiddleware implements CommandMiddleware {
   private readonly cache: Map<string, { result: ExecutionResult<any>; timestamp: number }>;
   private readonly ttl: number;
-  
+
   constructor(ttl: number = 300000) { // 默认5分钟
     this.cache = new Map();
     this.ttl = ttl;
   }
-  
+
   async beforeExecute<T>(command: Command<T>): Promise<void> {
     const cacheKey = this.getCacheKey(command);
     const cached = this.cache.get(cacheKey);
-    
+
     if (cached && Date.now() - cached.timestamp < this.ttl) {
       // 将缓存结果附加到命令上，供后续使用
       (command as any)._cachedResult = cached.result;
     }
   }
-  
+
   async afterExecute<T>(command: Command<T>, result: ExecutionResult<T>): Promise<void> {
     const cacheKey = this.getCacheKey(command);
     this.cache.set(cacheKey, { result, timestamp: Date.now() });
   }
-  
+
   async onError<T>(command: Command<T>, error: Error): Promise<void> {
     // 不需要错误处理
   }
-  
+
   /**
    * 清空缓存
    */
   clearCache(): void {
     this.cache.clear();
   }
-  
+
   /**
    * 生成缓存键
    */
@@ -148,16 +148,16 @@ export class CacheMiddleware implements CommandMiddleware {
  */
 export class MetricsMiddleware implements CommandMiddleware {
   private readonly metrics: Map<string, CommandMetrics> = new Map();
-  
+
   async beforeExecute<T>(command: Command<T>): Promise<void> {
     // 记录开始时间
     (command as any)._startTime = Date.now();
   }
-  
+
   async afterExecute<T>(command: Command<T>, result: ExecutionResult<T>): Promise<void> {
     const metadata = command.getMetadata();
     const key = `${metadata.category}:${metadata.name}`;
-    
+
     let metrics = this.metrics.get(key);
     if (!metrics) {
       metrics = {
@@ -169,22 +169,22 @@ export class MetricsMiddleware implements CommandMiddleware {
       };
       this.metrics.set(key, metrics);
     }
-    
+
     metrics.totalExecutions++;
     metrics.totalExecutionTime += result.executionTime;
     metrics.averageExecutionTime = metrics.totalExecutionTime / metrics.totalExecutions;
-    
+
     if (result.success) {
       metrics.successfulExecutions++;
     } else {
       metrics.failedExecutions++;
     }
   }
-  
+
   async onError<T>(command: Command<T>, error: Error): Promise<void> {
     const metadata = command.getMetadata();
     const key = `${metadata.category}:${metadata.name}`;
-    
+
     let metrics = this.metrics.get(key);
     if (!metrics) {
       metrics = {
@@ -196,18 +196,18 @@ export class MetricsMiddleware implements CommandMiddleware {
       };
       this.metrics.set(key, metrics);
     }
-    
+
     metrics.totalExecutions++;
     metrics.failedExecutions++;
   }
-  
+
   /**
    * 获取指标
    */
   getMetrics(): Map<string, CommandMetrics> {
     return new Map(this.metrics);
   }
-  
+
   /**
    * 清空指标
    */
@@ -223,30 +223,30 @@ export class MetricsMiddleware implements CommandMiddleware {
 export class RetryMiddleware implements CommandMiddleware {
   private readonly maxRetries: number;
   private readonly retryDelay: number;
-  
+
   constructor(maxRetries: number = 3, retryDelay: number = 1000) {
     this.maxRetries = maxRetries;
     this.retryDelay = retryDelay;
   }
-  
+
   async beforeExecute<T>(command: Command<T>): Promise<void> {
     // 不需要前置处理
   }
-  
+
   async afterExecute<T>(command: Command<T>, result: ExecutionResult<T>): Promise<void> {
     // 不需要后置处理
   }
-  
+
   async onError<T>(command: Command<T>, error: Error): Promise<void> {
     const retryCount = (command as any)._retryCount || 0;
-    
+
     if (retryCount < this.maxRetries) {
       (command as any)._retryCount = retryCount + 1;
       await this.delay(this.retryDelay * Math.pow(2, retryCount)); // 指数退避
       throw error; // 重新抛出错误，让执行器重试
     }
   }
-  
+
   private delay(ms: number): Promise<void> {
     return new Promise(resolve => setTimeout(resolve, ms));
   }

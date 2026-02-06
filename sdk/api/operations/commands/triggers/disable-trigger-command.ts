@@ -2,8 +2,8 @@
  * DisableTriggerCommand - 禁用触发器
  */
 
-import { BaseCommand } from '../../../core/command';
-import { CommandValidationResult } from '../../../core/command';
+import { BaseCommand } from '../../../types/command';
+import { CommandValidationResult } from '../../../types/command';
 import { threadRegistry, type ThreadRegistry } from '../../../../core/services/thread-registry';
 import { NotFoundError } from '../../../../types/errors';
 import type { ExecutionResult } from '../../../types/execution-result';

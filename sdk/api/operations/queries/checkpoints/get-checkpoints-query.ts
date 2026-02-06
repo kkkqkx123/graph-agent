@@ -2,7 +2,7 @@
  * GetCheckpointsQuery - 获取检查点列表
  */
 
-import { BaseQuery, QueryMetadata, querySuccess, queryFailure } from '../../../core/query';
+import { BaseQuery, QueryMetadata, querySuccess, queryFailure } from '../../../types/query';
 import { CheckpointStateManager } from '../../../../core/execution/managers/checkpoint-state-manager';
 import type { Checkpoint } from '../../../../types/checkpoint';
 import type { CheckpointFilter } from '../../../types/management-types';
@@ -57,7 +57,7 @@ export class GetCheckpointsQuery extends BaseQuery<Checkpoint[]> {
     try {
       // 获取所有检查点ID
       const checkpointIds = await this.stateManager.list();
-      
+
       // 加载所有检查点
       const checkpoints: Checkpoint[] = [];
       for (const checkpointId of checkpointIds) {
@@ -66,12 +66,12 @@ export class GetCheckpointsQuery extends BaseQuery<Checkpoint[]> {
           checkpoints.push(checkpoint);
         }
       }
-      
+
       // 应用过滤条件
       if (!this.params.filter) {
         return querySuccess(checkpoints, this.getExecutionTime());
       }
-      
+
       const filteredCheckpoints = checkpoints.filter(cp => this.applyFilter(cp, this.params.filter!));
       return querySuccess(filteredCheckpoints, this.getExecutionTime());
     } catch (error) {

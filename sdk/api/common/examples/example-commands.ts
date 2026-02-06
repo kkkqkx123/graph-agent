@@ -3,7 +3,7 @@
  * 展示如何创建和使用自定义Command
  */
 
-import { BaseCommand, CommandMetadata, CommandValidationResult, validationSuccess, validationFailure } from '../command';
+import { BaseCommand, CommandMetadata, CommandValidationResult, validationSuccess, validationFailure } from '../../types/command';
 import { success, failure, ExecutionResult } from '../../types/execution-result';
 
 /**
@@ -51,7 +51,7 @@ export class CalculateCommand extends BaseCommand<number> {
 
   async execute(): Promise<ExecutionResult<number>> {
     let result: number;
-    
+
     switch (this.operation) {
       case 'add':
         result = this.a + this.b;
@@ -208,7 +208,7 @@ export class CounterCommand extends BaseCommand<number> {
 /**
  * 示例5: 同步命令
  */
-import { BaseSyncCommand } from '../command';
+import { BaseSyncCommand } from '../../types/command';
 
 export class SyncAddCommand extends BaseSyncCommand<number> {
   constructor(

@@ -2,7 +2,7 @@
  * OffEventSubscription - 取消事件监听器
  */
 
-import { BaseSubscription, SubscriptionMetadata } from '../../../core/subscription';
+import { BaseSubscription, SubscriptionMetadata } from '../../../types/subscription';
 import { eventManager, type EventManager } from '../../../../core/services/event-manager';
 import type { EventType, EventListener, BaseEvent } from '../../../../types/events';
 
@@ -32,7 +32,7 @@ export class OffEventSubscription extends BaseSubscription {
    */
   subscribe(): () => void {
     this.eventManager.off(this.params.eventType, this.params.listener);
-    return () => {}; // 已经取消，返回空函数
+    return () => { }; // 已经取消，返回空函数
   }
 
   /**

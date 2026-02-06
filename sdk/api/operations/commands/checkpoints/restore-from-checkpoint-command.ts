@@ -2,8 +2,8 @@
  * RestoreFromCheckpointCommand - 从检查点恢复线程
  */
 
-import { BaseCommand } from '../../../core/command';
-import { CommandValidationResult } from '../../../core/command';
+import { BaseCommand } from '../../../types/command';
+import { CommandValidationResult } from '../../../types/command';
 import { CheckpointCoordinator } from '../../../../core/execution/coordinators/checkpoint-coordinator';
 import { CheckpointStateManager } from '../../../../core/execution/managers/checkpoint-state-manager';
 import type { Thread } from '../../../../types/thread';
@@ -43,12 +43,12 @@ export class RestoreFromCheckpointCommand extends BaseCommand<Thread> {
       // 创建默认的检查点管理组件
       const storage = new MemoryCheckpointStorage();
       this.stateManager = new CheckpointStateManager(storage);
-      
+
       // 从SingletonRegistry获取全局服务
       SingletonRegistry.initialize();
       const threadRegistry = SingletonRegistry.get<any>('threadRegistry');
       const workflowRegistry = SingletonRegistry.get<any>('workflowRegistry');
-      
+
       this.coordinator = new CheckpointCoordinator(
         this.stateManager,
         threadRegistry,
