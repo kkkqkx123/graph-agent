@@ -1,33 +1,24 @@
 /**
  * SDK主类
  * 提供统一的API入口，整合所有功能模块
+ *
+ * 重构说明：
+ * - 使用APIFactory统一管理API实例创建
+ * - 支持全局配置和依赖注入
+ * - 保持向后兼容性
  */
 
-import { WorkflowRegistryAPI } from '../resources/workflows/workflow-registry-api';
-import { ThreadRegistryAPI } from '../resources/threads/thread-registry-api';
-import { NodeRegistryAPI } from '../resources/templates/node-template-registry-api';
-import { TriggerTemplateRegistryAPI } from '../resources/templates/trigger-template-registry-api';
-import { ToolRegistryAPI } from '../resources/tools/tool-registry-api';
-import { ScriptRegistryAPI } from '../resources/scripts/script-registry-api';
-import { ProfileRegistryAPI } from '../resources/profiles/profile-registry-api';
-
+import { APIFactory, type SDKAPIConfig } from '../factory/api-factory';
 import { WorkflowValidatorAPI } from '../validation/workflow-validator-api';
-
+import { getData } from '../types/execution-result';
 import type { SDKOptions, SDKDependencies } from '../types';
 
 /**
  * SDK主类 - 统一API入口（内部类，不导出）
  */
 class SDK {
-  // 资源管理API实例
-  public readonly workflows: WorkflowRegistryAPI;
-  public readonly threads: ThreadRegistryAPI;
-  public readonly nodeTemplates: NodeRegistryAPI;
-  public readonly triggerTemplates: TriggerTemplateRegistryAPI;
-  public readonly tools: ToolRegistryAPI;
-  public readonly scripts: ScriptRegistryAPI;
-  public readonly profiles: ProfileRegistryAPI;
-
+  private factory: APIFactory;
+  
   // 验证API实例
   public readonly validation: WorkflowValidatorAPI;
 
@@ -37,17 +28,130 @@ class SDK {
    * @param dependencies SDK依赖项
    */
   constructor(options?: SDKOptions, dependencies?: SDKDependencies) {
-    // 初始化资源管理API，支持依赖注入
-    this.workflows = new WorkflowRegistryAPI(options);
-    this.threads = new ThreadRegistryAPI(dependencies?.threadRegistry);
-    this.nodeTemplates = new NodeRegistryAPI();
-    this.triggerTemplates = new TriggerTemplateRegistryAPI();
-    this.tools = new ToolRegistryAPI();
-    this.scripts = new ScriptRegistryAPI();
-    this.profiles = new ProfileRegistryAPI();
+    // 初始化API工厂
+    this.factory = APIFactory.getInstance();
+    
+    // 配置工厂
+    const config: SDKAPIConfig = {
+      workflow: {
+        enableCache: options?.enableCache ?? true,
+        cacheTTL: options?.cacheTTL ?? 300000,
+        enableValidation: options?.enableValidation ?? true,
+        enableLogging: options?.enableLogging ?? false
+      },
+      tool: {
+        enableCache: true,
+        cacheTTL: 300000,
+        enableValidation: true,
+        enableLogging: false
+      },
+      thread: {
+        enableCache: true,
+        cacheTTL: 5000,
+        enableValidation: true,
+        enableLogging: false
+      },
+      script: {
+        enableCache: true,
+        cacheTTL: 300000,
+        enableValidation: true,
+        enableLogging: false
+      },
+      profile: {
+        enableCache: true,
+        cacheTTL: 5000,
+        enableValidation: true,
+        enableLogging: false
+      },
+      nodeTemplate: {
+        enableCache: true,
+        cacheTTL: 5000,
+        enableValidation: true,
+        enableLogging: false
+      },
+      triggerTemplate: {
+        enableCache: true,
+        cacheTTL: 5000,
+        enableValidation: true,
+        enableLogging: false
+      }
+    };
+    
+    this.factory.configure(config);
 
     // 初始化验证API
     this.validation = new WorkflowValidatorAPI();
+  }
+
+  /**
+   * 获取工作流API
+   */
+  get workflows() {
+    return this.factory.createWorkflowAPI();
+  }
+
+  /**
+   * 获取线程API
+   */
+  get threads() {
+    return this.factory.createThreadAPI();
+  }
+
+  /**
+   * 获取节点模板API
+   */
+  get nodeTemplates() {
+    return this.factory.createNodeTemplateAPI();
+  }
+
+  /**
+   * 获取触发器模板API
+   */
+  get triggerTemplates() {
+    return this.factory.createTriggerTemplateAPI();
+  }
+
+  /**
+   * 获取工具API
+   */
+  get tools() {
+    return this.factory.createToolAPI();
+  }
+
+  /**
+   * 获取脚本API
+   */
+  get scripts() {
+    return this.factory.createScriptAPI();
+  }
+
+  /**
+   * 获取Profile API
+   */
+  get profiles() {
+    return this.factory.createProfileAPI();
+  }
+
+  /**
+   * 获取API工厂实例
+   */
+  getFactory(): APIFactory {
+    return this.factory;
+  }
+
+  /**
+   * 配置SDK
+   * @param config SDK API配置
+   */
+  configure(config: SDKAPIConfig): void {
+    this.factory.configure(config);
+  }
+
+  /**
+   * 重置SDK配置
+   */
+  reset(): void {
+    this.factory.reset();
   }
 
   /**
@@ -56,7 +160,7 @@ class SDK {
   async healthCheck(): Promise<{ status: 'healthy' | 'degraded' | 'unhealthy'; details: Record<string, any> }> {
     const details: Record<string, any> = {};
     const modules = [
-      { name: 'workflows', check: () => this.workflows.getWorkflowCount() },
+      { name: 'workflows', check: async () => getData(await this.workflows.count()) },
       { name: 'threads', check: () => this.threads.getThreadCount() },
       { name: 'tools', check: () => this.tools.getToolCount() },
       { name: 'scripts', check: () => this.scripts.getScriptCount() },
@@ -90,7 +194,7 @@ class SDK {
   async destroy(): Promise<void> {
     // 清理各个模块的资源
     try {
-      await this.workflows.clearWorkflows();
+      await this.workflows.clear();
     } catch (error) {
       console.error('清理workflows资源失败:', error);
     }

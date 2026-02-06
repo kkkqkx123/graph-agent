@@ -63,6 +63,59 @@ export { ToolRegistryAPI } from './resources/tools/tool-registry-api';
 export { ScriptRegistryAPI } from './resources/scripts/script-registry-api';
 export { ProfileRegistryAPI } from './resources/profiles/profile-registry-api';
 
+// 通用资源API基类
+export { GenericResourceAPI, type ResourceAPIOptions } from './resources/generic-resource-api';
+
+// API工厂
+export { APIFactory, apiFactory, type SDKAPIConfig, type AllAPIs } from './factory/api-factory';
+
+// API装饰器
+export {
+  withCache,
+  withLogging,
+  withPerformance,
+  withRetry,
+  decorate,
+  type CacheDecoratorOptions,
+  type LoggingDecoratorOptions,
+  type PerformanceDecoratorOptions,
+  type RetryDecoratorOptions
+} from './decorators/api-decorators';
+
+// 统一错误处理
+export {
+  APIError,
+  APIErrorCode,
+  type APIErrorDetails,
+  type ErrorHandler,
+  type ErrorContext,
+  DefaultErrorHandler,
+  ErrorHandlerRegistry
+} from './types/api-error';
+
+// 事件系统
+export {
+  APIEventBus,
+  APIEventType,
+  APIEventBuilder,
+  apiEventBus,
+  type APIEventData,
+  type APIEventListener,
+  type EventListenerConfig
+} from './events/api-event-system';
+
+// 审计日志
+export {
+  AuditLogger,
+  AuditLogLevel,
+  InMemoryAuditLogStorage,
+  auditLogger,
+  type AuditLogEntry,
+  type AuditLogStorage,
+  type AuditLogFilter,
+  type AuditLoggerConfig
+} from './audit/audit-logger';
+
 // ============================================================================
 // Command类 - 核心API (Core APIs) - 有副作用操作
 // ============================================================================

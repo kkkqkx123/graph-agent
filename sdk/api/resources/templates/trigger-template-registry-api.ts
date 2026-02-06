@@ -1,6 +1,7 @@
 /**
  * 触发器模板注册表 API
  * 提供用户友好的 API 接口用于管理触发器模板
+ * 重构版本：继承GenericResourceAPI，提高代码复用性和一致性
  */
 
 import type {
@@ -9,19 +10,123 @@ import type {
   TriggerTemplateFilter
 } from '../../../types/trigger-template';
 import { triggerTemplateRegistry, type TriggerTemplateRegistry } from '../../../core/services/trigger-template-registry';
+import { GenericResourceAPI, type ResourceAPIOptions } from '../generic-resource-api';
+
+/**
+ * TriggerTemplateRegistryAPI配置选项
+ */
+export interface TriggerTemplateRegistryAPIOptions extends ResourceAPIOptions {
+  /** 是否启用缓存（默认true） */
+  enableCache?: boolean;
+  /** 缓存TTL（毫秒，默认5000） */
+  cacheTTL?: number;
+  /** 是否启用日志（默认false） */
+  enableLogging?: boolean;
+  /** 是否启用验证（默认true） */
+  enableValidation?: boolean;
+}
 
 /**
  * 触发器模板注册表 API 类
+ * 
+ * 重构说明：
+ * - 继承GenericResourceAPI，复用通用CRUD操作
+ * - 实现所有抽象方法以适配TriggerTemplateRegistry
+ * - 保留所有原有API方法以保持向后兼容
+ * - 新增缓存、日志、验证等增强功能
  */
-export class TriggerTemplateRegistryAPI {
+export class TriggerTemplateRegistryAPI extends GenericResourceAPI<TriggerTemplate, string, TriggerTemplateFilter> {
   private registry: TriggerTemplateRegistry;
 
-  constructor(registry?: TriggerTemplateRegistry) {
+  constructor(registry?: TriggerTemplateRegistry, options?: TriggerTemplateRegistryAPIOptions) {
+    const apiOptions: Required<ResourceAPIOptions> = {
+      enableCache: options?.enableCache ?? true,
+      cacheTTL: options?.cacheTTL ?? 5000,
+      enableLogging: options?.enableLogging ?? false,
+      enableValidation: options?.enableValidation ?? true
+    };
+    super(apiOptions);
     this.registry = registry || triggerTemplateRegistry;
   }
 
   /**
-   * 注册触发器模板
+   * 获取单个触发器模板
+   * @param id 触发器模板名称
+   * @returns 触发器模板，如果不存在则返回null
+   */
+  protected async getResource(id: string): Promise<TriggerTemplate | null> {
+    const template = this.registry.get(id);
+    return template || null;
+  }
+
+  /**
+   * 获取所有触发器模板
+   * @returns 触发器模板数组
+   */
+  protected async getAllResources(): Promise<TriggerTemplate[]> {
+    return this.registry.list();
+  }
+
+  /**
+   * 创建触发器模板
+   * @param resource 触发器模板
+   */
+  protected async createResource(resource: TriggerTemplate): Promise<void> {
+    this.registry.register(resource);
+  }
+
+  /**
+   * 更新触发器模板
+   * @param id 触发器模板名称
+   * @param updates 更新内容
+   */
+  protected async updateResource(id: string, updates: Partial<TriggerTemplate>): Promise<void> {
+    this.registry.update(id, updates);
+  }
+
+  /**
+   * 删除触发器模板
+   * @param id 触发器模板名称
+   */
+  protected async deleteResource(id: string): Promise<void> {
+    this.registry.unregister(id);
+  }
+
+  /**
+   * 应用过滤条件
+   * @param resources 触发器模板数组
+   * @param filter 过滤条件
+   * @returns 过滤后的触发器模板数组
+   */
+  protected applyFilter(resources: TriggerTemplate[], filter: TriggerTemplateFilter): TriggerTemplate[] {
+    let templates = resources;
+
+    if (filter.keyword) {
+      templates = this.registry.search(filter.keyword);
+    }
+
+    if (filter.category) {
+      templates = templates.filter(t => t.metadata?.['category'] === filter.category);
+    }
+
+    if (filter.tags && filter.tags.length > 0) {
+      templates = templates.filter(t => {
+        const templateTags = t.metadata?.['tags'] || [];
+        return filter.tags!.every(tag => templateTags.includes(tag));
+      });
+    }
+
+    if (filter.name) {
+      templates = templates.filter(t => t.name === filter.name);
+    }
+
+    return templates;
+  }
+
+  // ==================== 向后兼容的API方法 ====================
+
+  /**
+   * 注册触发器模板（向后兼容）
    * @param template 触发器模板
    * @throws ValidationError 如果触发器配置无效或名称已存在
    */
@@ -38,7 +143,7 @@ export class TriggerTemplateRegistryAPI {
   }
 
   /**
-   * 获取触发器模板
+   * 获取触发器模板（向后兼容）
    * @param name 触发器模板名称
    * @returns 触发器模板，如果不存在则返回undefined
    */
@@ -47,7 +152,7 @@ export class TriggerTemplateRegistryAPI {
   }
 
   /**
-   * 更新触发器模板
+   * 更新触发器模板（向后兼容）
    * @param name 触发器模板名称
    * @param updates 更新内容
    * @throws NotFoundError 如果触发器模板不存在
@@ -58,7 +163,7 @@ export class TriggerTemplateRegistryAPI {
   }
 
   /**
-   * 删除触发器模板
+   * 删除触发器模板（向后兼容）
    * @param name 触发器模板名称
    * @throws NotFoundError 如果触发器模板不存在
    */
@@ -75,7 +180,7 @@ export class TriggerTemplateRegistryAPI {
   }
 
   /**
-   * 获取触发器模板列表
+   * 获取触发器模板列表（向后兼容）
    * @param filter 过滤条件（可选）
    * @returns 触发器模板数组
    */
@@ -132,7 +237,7 @@ export class TriggerTemplateRegistryAPI {
   }
 
   /**
-   * 检查触发器模板是否存在
+   * 检查触发器模板是否存在（向后兼容）
    * @param name 触发器模板名称
    * @returns 是否存在
    */
@@ -141,7 +246,7 @@ export class TriggerTemplateRegistryAPI {
   }
 
   /**
-   * 获取触发器模板数量
+   * 获取触发器模板数量（向后兼容）
    * @returns 触发器模板数量
    */
   getTemplateCount(): number {
@@ -149,7 +254,7 @@ export class TriggerTemplateRegistryAPI {
   }
 
   /**
-   * 清空所有触发器模板
+   * 清空所有触发器模板（向后兼容）
    */
   clearTemplates(): void {
     this.registry.clear();

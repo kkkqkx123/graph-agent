@@ -19,6 +19,16 @@ export interface SDKOptions {
   workflowRegistry?: any;
   /** 自定义ThreadRegistry */
   threadRegistry?: any;
+  
+  // API配置选项
+  /** 是否启用缓存 */
+  enableCache?: boolean;
+  /** 缓存过期时间（毫秒） */
+  cacheTTL?: number;
+  /** 是否启用验证 */
+  enableValidation?: boolean;
+  /** 是否启用日志 */
+  enableLogging?: boolean;
 }
 
 /**

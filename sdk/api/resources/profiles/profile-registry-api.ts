@@ -1,11 +1,13 @@
 /**
  * ProfileRegistryAPI - Profile资源管理API
  * 封装ProfileManager，提供LLM Profile管理功能
+ * 重构版本：继承GenericResourceAPI，提高代码复用性和一致性
  */
 
 import { ProfileManager } from '../../../core/llm/profile-manager';
-import type { LLMProfile } from '../../../types/llm';
+import type { LLMProfile, LLMProvider } from '../../../types/llm';
 import { ValidationError, NotFoundError, SDKError, ErrorCode } from '../../../types/errors';
+import { GenericResourceAPI, type ResourceAPIOptions } from '../generic-resource-api';
 
 /**
  * Profile模板类型
@@ -20,23 +22,149 @@ export interface ProfileTemplate {
 }
 
 /**
- * ProfileRegistryAPI - Profile资源管理API
+ * Profile过滤器
  */
-export class ProfileRegistryAPI {
+export interface ProfileFilter {
+  /** Profile ID */
+  id?: string;
+  /** Profile名称 */
+  name?: string;
+  /** LLM提供商 */
+  provider?: LLMProvider;
+  /** 模型名称 */
+  model?: string;
+}
+
+/**
+ * ProfileRegistryAPI配置选项
+ */
+export interface ProfileRegistryAPIOptions extends ResourceAPIOptions {
+  /** 是否启用缓存（默认true） */
+  enableCache?: boolean;
+  /** 缓存TTL（毫秒，默认5000） */
+  cacheTTL?: number;
+  /** 是否启用日志（默认false） */
+  enableLogging?: boolean;
+  /** 是否启用验证（默认true） */
+  enableValidation?: boolean;
+}
+
+/**
+ * ProfileRegistryAPI - Profile资源管理API
+ * 
+ * 重构说明：
+ * - 继承GenericResourceAPI，复用通用CRUD操作
+ * - 实现所有抽象方法以适配ProfileManager
+ * - 保留所有原有API方法以保持向后兼容
+ * - 新增缓存、日志、验证等增强功能
+ */
+export class ProfileRegistryAPI extends GenericResourceAPI<LLMProfile, string, ProfileFilter> {
   private profileManager: ProfileManager;
   private templates: Map<string, ProfileTemplate> = new Map();
 
-  constructor() {
+  constructor(options?: ProfileRegistryAPIOptions) {
+    const apiOptions: Required<ResourceAPIOptions> = {
+      enableCache: options?.enableCache ?? true,
+      cacheTTL: options?.cacheTTL ?? 5000,
+      enableLogging: options?.enableLogging ?? false,
+      enableValidation: options?.enableValidation ?? true
+    };
+    super(apiOptions);
     this.profileManager = new ProfileManager();
     this.initializeTemplates();
   }
 
   /**
-   * 注册Profile
+   * 获取单个Profile
+   * @param id Profile ID
+   * @returns LLM Profile，如果不存在则返回null
+   */
+  protected async getResource(id: string): Promise<LLMProfile | null> {
+    const profile = this.profileManager.get(id);
+    return profile || null;
+  }
+
+  /**
+   * 获取所有Profile
+   * @returns Profile列表
+   */
+  protected async getAllResources(): Promise<LLMProfile[]> {
+    return this.profileManager.list();
+  }
+
+  /**
+   * 创建Profile
+   * @param resource LLM Profile配置
+   */
+  protected async createResource(resource: LLMProfile): Promise<void> {
+    this.profileManager.register(resource);
+  }
+
+  /**
+   * 更新Profile
+   * @param id Profile ID
+   * @param updates 更新内容
+   */
+  protected async updateResource(id: string, updates: Partial<LLMProfile>): Promise<void> {
+    const profile = this.profileManager.get(id);
+    if (!profile) {
+      throw new NotFoundError(
+        `Profile not found: ${id}`,
+        'PROFILE',
+        id,
+        { availableProfiles: this.profileManager.list().map(p => p.id) }
+      );
+    }
+
+    // 合并更新
+    const updatedProfile = { ...profile, ...updates };
+    this.profileManager.remove(id);
+    this.profileManager.register(updatedProfile);
+  }
+
+  /**
+   * 删除Profile
+   * @param id Profile ID
+   */
+  protected async deleteResource(id: string): Promise<void> {
+    this.profileManager.remove(id);
+  }
+
+  /**
+   * 应用过滤条件
+   * @param resources Profile数组
+   * @param filter 过滤条件
+   * @returns 过滤后的Profile数组
+   */
+  protected applyFilter(resources: LLMProfile[], filter: ProfileFilter): LLMProfile[] {
+    return resources.filter(profile => {
+      if (filter.id && !profile.id.includes(filter.id)) {
+        return false;
+      }
+      if (filter.name && !profile.name.includes(filter.name)) {
+        return false;
+      }
+      if (filter.provider && profile.provider !== filter.provider) {
+        return false;
+      }
+      if (filter.model && !profile.model.includes(filter.model)) {
+        return false;
+      }
+      return true;
+    });
+  }
+
+  // ==================== 向后兼容的API方法 ====================
+
+  /**
+   * 注册Profile（向后兼容）
    * @param profile LLM Profile配置
    */
   async registerProfile(profile: LLMProfile): Promise<void> {
-    this.profileManager.register(profile);
+    const result = await this.create(profile);
+    if (!result.success) {
+      throw new Error(result.error || 'Failed to register profile');
+    }
   }
 
   /**
@@ -45,26 +173,33 @@ export class ProfileRegistryAPI {
    */
   async registerProfiles(profiles: LLMProfile[]): Promise<void> {
     for (const profile of profiles) {
-      this.profileManager.register(profile);
+      await this.create(profile);
     }
   }
 
   /**
-   * 获取Profile
+   * 获取Profile（向后兼容）
    * @param profileId Profile ID
    * @returns LLM Profile，如果不存在则返回null
    */
   async getProfile(profileId: string): Promise<LLMProfile | null> {
-    const profile = this.profileManager.get(profileId);
-    return profile || null;
+    const result = await this.get(profileId);
+    if (!result.success) {
+      throw new Error(result.error || 'Failed to get profile');
+    }
+    return result.data;
   }
 
   /**
-   * 获取所有Profile
+   * 获取所有Profile（向后兼容）
    * @returns Profile列表
    */
   async getProfiles(): Promise<LLMProfile[]> {
-    return this.profileManager.list();
+    const result = await this.getAll();
+    if (!result.success) {
+      throw new Error(result.error || 'Failed to get profiles');
+    }
+    return result.data;
   }
 
   /**
@@ -72,9 +207,12 @@ export class ProfileRegistryAPI {
    * @param provider 提供商
    * @returns Profile列表
    */
-  async getProfilesByProvider(provider: string): Promise<LLMProfile[]> {
-    const profiles = this.profileManager.list();
-    return profiles.filter(profile => profile.provider === provider);
+  async getProfilesByProvider(provider: LLMProvider): Promise<LLMProfile[]> {
+    const result = await this.getAll({ provider });
+    if (!result.success) {
+      throw new Error(result.error || 'Failed to get profiles by provider');
+    }
+    return result.data;
   }
 
   /**
@@ -83,38 +221,34 @@ export class ProfileRegistryAPI {
    * @returns Profile列表
    */
   async getProfilesByModel(model: string): Promise<LLMProfile[]> {
-    const profiles = this.profileManager.list();
-    return profiles.filter(profile => profile.model === model);
+    const result = await this.getAll({ model });
+    if (!result.success) {
+      throw new Error(result.error || 'Failed to get profiles by model');
+    }
+    return result.data;
   }
 
   /**
-   * 删除Profile
+   * 删除Profile（向后兼容）
    * @param profileId Profile ID
    */
   async removeProfile(profileId: string): Promise<void> {
-    this.profileManager.remove(profileId);
+    const result = await this.delete(profileId);
+    if (!result.success) {
+      throw new Error(result.error || 'Failed to remove profile');
+    }
   }
 
   /**
-   * 更新Profile
+   * 更新Profile（向后兼容）
    * @param profileId Profile ID
    * @param updates 更新内容
    */
   async updateProfile(profileId: string, updates: Partial<LLMProfile>): Promise<void> {
-    const profile = this.profileManager.get(profileId);
-    if (!profile) {
-      throw new NotFoundError(
-        `Profile not found: ${profileId}`,
-        'PROFILE',
-        profileId,
-        { availableProfiles: this.profileManager.list().map(p => p.id) }
-      );
+    const result = await this.update(profileId, updates);
+    if (!result.success) {
+      throw new Error(result.error || 'Failed to update profile');
     }
-
-    // 合并更新
-    const updatedProfile = { ...profile, ...updates };
-    this.profileManager.remove(profileId);
-    this.profileManager.register(updatedProfile);
   }
 
   /**
@@ -144,27 +278,38 @@ export class ProfileRegistryAPI {
   }
 
   /**
-   * 检查Profile是否存在
+   * 检查Profile是否存在（向后兼容）
    * @param profileId Profile ID
    * @returns 是否存在
    */
   async hasProfile(profileId: string): Promise<boolean> {
-    return this.profileManager.has(profileId);
+    const result = await this.has(profileId);
+    if (!result.success) {
+      throw new Error(result.error || 'Failed to check profile existence');
+    }
+    return result.data;
   }
 
   /**
-   * 获取Profile数量
+   * 获取Profile数量（向后兼容）
    * @returns Profile数量
    */
   async getProfileCount(): Promise<number> {
-    return this.profileManager.size();
+    const result = await this.count();
+    if (!result.success) {
+      throw new Error(result.error || 'Failed to get profile count');
+    }
+    return result.data;
   }
 
   /**
-   * 清空所有Profile
+   * 清空所有Profile（向后兼容）
    */
   async clearProfiles(): Promise<void> {
-    this.profileManager.clear();
+    const result = await this.clear();
+    if (!result.success) {
+      throw new Error(result.error || 'Failed to clear profiles');
+    }
   }
 
   /**
@@ -207,7 +352,7 @@ export class ProfileRegistryAPI {
    * @returns JSON字符串
    */
   async exportProfile(profileId: string): Promise<string> {
-    const profile = this.profileManager.get(profileId);
+    const profile = await this.get(profileId);
     if (!profile) {
       throw new NotFoundError(
         `Profile not found: ${profileId}`,
@@ -256,7 +401,16 @@ export class ProfileRegistryAPI {
         );
       }
 
-      this.profileManager.register(profile);
+      const result = await this.create(profile);
+      if (!result.success) {
+        throw new ValidationError(
+          `Failed to import profile: ${result.error}`,
+          'profile',
+          profile,
+          { importError: result.error }
+        );
+      }
+
       return profile.id;
     } catch (error) {
       if (error instanceof ValidationError) {
@@ -315,8 +469,11 @@ export class ProfileRegistryAPI {
    * @returns JSON字符串
    */
   async exportAllProfiles(): Promise<string> {
-    const profiles = this.profileManager.list();
-    const exportData = profiles.map(profile => ({
+    const result = await this.getAll();
+    if (!result.success) {
+      throw new Error(result.error || 'Failed to get profiles for export');
+    }
+    const exportData = result.data.map(profile => ({
       ...profile,
       apiKey: '***HIDDEN***'
     }));
@@ -356,7 +513,16 @@ export class ProfileRegistryAPI {
       metadata: overrides.metadata || template.profile.metadata
     };
 
-    this.profileManager.register(profile);
+    const result = await this.create(profile);
+    if (!result.success) {
+      throw new ValidationError(
+        `Failed to create profile from template: ${result.error}`,
+        'profile',
+        profile,
+        { templateName, createError: result.error }
+      );
+    }
+
     return profile.id;
   }
 
