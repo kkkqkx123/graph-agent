@@ -28,6 +28,25 @@ export {
   CommandMetrics
 } from './core/command-middleware';
 
+// Query模式核心
+export {
+  Query,
+  BaseQuery,
+  QueryMetadata,
+  QueryResult,
+  querySuccess,
+  queryFailure,
+  isQuerySuccess,
+  isQueryFailure
+} from './core/query';
+
+// Subscription模式核心
+export {
+  Subscription,
+  BaseSubscription,
+  SubscriptionMetadata
+} from './core/subscription';
+
 // 统一类型
 export { ExecutionResult, success, failure, isSuccess, isFailure, getData, getError } from './types/execution-result';
 export { ExecutionOptions, DEFAULT_EXECUTION_OPTIONS, mergeExecutionOptions } from './types/execution-options';
@@ -44,78 +63,169 @@ export { ToolRegistryAPI } from './resources/tools/tool-registry-api';
 export { ScriptRegistryAPI } from './resources/scripts/script-registry-api';
 export { ProfileRegistryAPI } from './resources/profiles/profile-registry-api';
 
-// Command类 - 核心API (Core APIs)
+// ============================================================================
+// Command类 - 核心API (Core APIs) - 有副作用操作
+// ============================================================================
+
+// Execution Commands
 export {
-  ExecuteWorkflowCommand,
-  PauseThreadCommand,
-  ResumeThreadCommand,
+  ExecuteWorkflowCommand
+} from './operations/commands/execution/execute-workflow-command';
+export type { ExecuteWorkflowParams } from './operations/commands/execution/execute-workflow-command';
+
+export {
+  PauseThreadCommand
+} from './operations/commands/execution/pause-thread-command';
+
+export {
+  ResumeThreadCommand
+} from './operations/commands/execution/resume-thread-command';
+
+export {
   CancelThreadCommand
-} from './operations/core/execution/commands';
+} from './operations/commands/execution/cancel-thread-command';
+
+// LLM Commands
+export {
+  GenerateCommand
+} from './operations/commands/llm/generate-command';
 
 export {
-  GenerateCommand,
   GenerateBatchCommand
-} from './operations/core/llm/commands';
+} from './operations/commands/llm/generate-batch-command';
+
+// Script Commands
+export {
+  ExecuteScriptCommand
+} from './operations/commands/scripts/execute-script-command';
+
+// Tool Commands
+export {
+  ExecuteToolCommand
+} from './operations/commands/tools/execute-tool-command';
+
+// Checkpoint Commands
+export {
+  CreateCheckpointCommand
+} from './operations/commands/checkpoints/create-checkpoint-command';
+export type { CreateCheckpointParams } from './operations/commands/checkpoints/create-checkpoint-command';
 
 export {
-  ExecuteToolCommand,
-  ExecuteBatchCommand as ExecuteToolBatchCommand,
-  TestToolCommand
-} from './operations/core/tools/commands';
+  RestoreFromCheckpointCommand
+} from './operations/commands/checkpoints/restore-from-checkpoint-command';
+export type { RestoreFromCheckpointParams } from './operations/commands/checkpoints/restore-from-checkpoint-command';
+
+// Trigger Commands
+export {
+  EnableTriggerCommand
+} from './operations/commands/triggers/enable-trigger-command';
+export type { EnableTriggerParams } from './operations/commands/triggers/enable-trigger-command';
 
 export {
-  ExecuteScriptCommand,
-  ExecuteBatchCommand as ExecuteScriptBatchCommand,
-  TestScriptCommand
-} from './operations/core/scripts/commands';
-
-// Command类 - 监控API (Monitoring APIs)
-export {
-  GetMessagesCommand,
-  GetRecentMessagesCommand,
-  SearchMessagesCommand,
-  GetMessageStatsCommand,
-  ExportMessagesCommand
-} from './operations/monitoring/messages/commands';
-
-export {
-  OnEventCommand,
-  OnceEventCommand,
-  OffEventCommand,
-  WaitForEventCommand,
-  GetEventsCommand,
-  GetEventStatsCommand
-} from './operations/monitoring/events/commands';
-
-export {
-  GetVariablesCommand,
-  GetVariableCommand,
-  HasVariableCommand,
-  GetVariableDefinitionsCommand
-} from './operations/monitoring/state/commands';
-
-// Command类 - 管理API (Management APIs)
-export {
-  CreateCheckpointCommand,
-  RestoreFromCheckpointCommand,
-  GetCheckpointsCommand,
-  DeleteCheckpointCommand
-} from './operations/management/checkpoints/commands';
-
-export {
-  GetTriggersCommand,
-  EnableTriggerCommand,
   DisableTriggerCommand
-} from './operations/management/triggers/commands';
+} from './operations/commands/triggers/disable-trigger-command';
+export type { DisableTriggerParams } from './operations/commands/triggers/disable-trigger-command';
 
+// ============================================================================
+// Query类 - 监控API (Monitoring APIs) - 纯查询操作
+// ============================================================================
+
+// Messages Queries
+export {
+  GetMessagesQuery
+} from './operations/queries/messages/get-messages-query';
+export type { GetMessagesParams } from './operations/queries/messages/get-messages-query';
+
+export {
+  GetRecentMessagesQuery
+} from './operations/queries/messages/get-recent-messages-query';
+export type { GetRecentMessagesParams } from './operations/queries/messages/get-recent-messages-query';
+
+export {
+  SearchMessagesQuery
+} from './operations/queries/messages/search-messages-query';
+export type { SearchMessagesParams } from './operations/queries/messages/search-messages-query';
+
+export {
+  GetMessageStatsQuery
+} from './operations/queries/messages/get-message-stats-query';
+export type { GetMessageStatsParams, MessageStats } from './operations/queries/messages/get-message-stats-query';
+
+// Events Queries
+export {
+  GetEventsQuery
+} from './operations/queries/events/get-events-query';
+export type { GetEventsParams } from './operations/queries/events/get-events-query';
+
+export {
+  GetEventStatsQuery
+} from './operations/queries/events/get-event-stats-query';
+export type { GetEventStatsParams, EventStats } from './operations/queries/events/get-event-stats-query';
+
+// State Queries
+export {
+  GetVariablesQuery
+} from './operations/queries/state/get-variables-query';
+export type { GetVariablesParams } from './operations/queries/state/get-variables-query';
+
+export {
+  GetVariableQuery
+} from './operations/queries/state/get-variable-query';
+export type { GetVariableParams } from './operations/queries/state/get-variable-query';
+
+export {
+  HasVariableQuery
+} from './operations/queries/state/has-variable-query';
+export type { HasVariableParams } from './operations/queries/state/has-variable-query';
+
+export {
+  GetVariableDefinitionsQuery
+} from './operations/queries/state/get-variable-definitions-query';
+export type { GetVariableDefinitionsParams } from './operations/queries/state/get-variable-definitions-query';
+
+// Checkpoints Queries
+export {
+  GetCheckpointsQuery
+} from './operations/queries/checkpoints/get-checkpoints-query';
+export type { GetCheckpointsParams } from './operations/queries/checkpoints/get-checkpoints-query';
+
+// Triggers Queries
+export {
+  GetTriggersQuery
+} from './operations/queries/triggers/get-triggers-query';
+export type { GetTriggersParams } from './operations/queries/triggers/get-triggers-query';
+
+// ============================================================================
+// Subscription类 - 事件订阅API (Event Subscription APIs)
+// ============================================================================
+
+export {
+  OnEventSubscription
+} from './operations/subscriptions/events/on-event-subscription';
+export type { OnEventParams } from './operations/subscriptions/events/on-event-subscription';
+
+export {
+  OnceEventSubscription
+} from './operations/subscriptions/events/once-event-subscription';
+export type { OnceEventParams } from './operations/subscriptions/events/once-event-subscription';
+
+export {
+  OffEventSubscription
+} from './operations/subscriptions/events/off-event-subscription';
+export type { OffEventParams } from './operations/subscriptions/events/off-event-subscription';
+
+// ============================================================================
 // 验证API
+// ============================================================================
 export { WorkflowValidatorAPI } from './validation/workflow-validator-api';
 export { CodeConfigValidatorAPI } from './validation/code-config-validator-api';
 export { ToolConfigValidatorAPI } from './validation/tool-config-validator-api';
 export { HookValidatorAPI } from './validation/hook-validator-api';
 export { TriggerValidatorAPI } from './validation/trigger-validator-api';
 
+// ============================================================================
 // 构建器
+// ============================================================================
 export { WorkflowBuilder, ExecutionBuilder, WorkflowComposer, sequential, parallel } from './builders';
 export { merge as mergeWorkflows } from './builders';
 export { NodeTemplateBuilder } from './builders/node-template-builder';
@@ -139,15 +249,19 @@ export type {
   CompositionErrorEvent
 } from './builders/workflow-composer';
 
+// ============================================================================
 // 工具函数
+// ============================================================================
 export { ok, err, tryCatch, tryCatchAsync, all, any } from './utils/result';
 export type { Result, Ok, Err } from './utils/result';
 
+// ============================================================================
 // Observable响应式编程
+// ============================================================================
 export {
   Observable,
   Observer,
-  Subscription,
+  Subscription as ObservableSubscription,
   ObservableImpl,
   of,
   fromPromise,
@@ -176,7 +290,9 @@ export {
 } from './utils/observable';
 export type { OperatorFunction } from './utils/observable';
 
+// ============================================================================
 // 类型定义
+// ============================================================================
 export type {
   ThreadOptions,
   SDKOptions,
@@ -208,12 +324,12 @@ export type {
   TriggerFilter
 } from './types';
 
-// MessageManagerAPI类型
-export type { MessageStats } from './operations/monitoring/messages/commands/get-message-stats-command';
-export type { EventStats } from './operations/monitoring/events/commands/get-event-stats-command';
-
+// ============================================================================
 // Profile模板类型
+// ============================================================================
 export type { ProfileTemplate } from './resources/profiles/profile-registry-api';
 
+// ============================================================================
 // ValidationResult 从 types/errors.ts 导入
+// ============================================================================
 export type { ValidationResult } from '../types/errors';
