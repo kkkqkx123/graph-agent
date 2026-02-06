@@ -63,8 +63,26 @@ export { ToolRegistryAPI } from './resources/tools/tool-registry-api';
 export { ScriptRegistryAPI } from './resources/scripts/script-registry-api';
 export { LLMProfileRegistryAPI as ProfileRegistryAPI } from './resources/profiles/profile-registry-api';
 
-// 通用资源API基类
+// 新增资源管理API
+export { CheckpointResourceAPI } from './resources/checkpoints/checkpoint-resource-api';
+export {
+  MessageResourceAPI
+} from './resources/messages/message-resource-api';
+export {
+  VariableResourceAPI,
+  type VariableDefinition
+} from './resources/variables/variable-resource-api';
+export { TriggerResourceAPI } from './resources/triggers/trigger-resource-api';
+export {
+  EventResourceAPI
+} from './resources/events/event-resource-api';
+
+// 通用资源API基类和工具
 export { GenericResourceAPI, type ResourceAPIOptions } from './resources/generic-resource-api';
+export {
+  createResourceAPIs,
+  type ResourceAPIs
+} from './resources';
 
 // API工厂
 export { APIFactory, apiFactory, type SDKAPIConfig, type AllAPIs } from './core/api-factory';
@@ -149,16 +167,8 @@ export {
   ExecuteToolCommand
 } from './operations/commands/tools/execute-tool-command';
 
-// Checkpoint Commands
-export {
-  CreateCheckpointCommand
-} from './operations/commands/checkpoints/create-checkpoint-command';
-export type { CreateCheckpointParams } from './operations/commands/checkpoints/create-checkpoint-command';
-
-export {
-  RestoreFromCheckpointCommand
-} from './operations/commands/checkpoints/restore-from-checkpoint-command';
-export type { RestoreFromCheckpointParams } from './operations/commands/checkpoints/restore-from-checkpoint-command';
+// Checkpoint Commands (已迁移到CheckpointResourceAPI)
+// 使用CheckpointResourceAPI.createThreadCheckpoint()和.restoreFromCheckpoint()
 
 // Trigger Commands
 export {
@@ -175,70 +185,20 @@ export type { DisableTriggerParams } from './operations/commands/triggers/disabl
 // Query类 - 监控API (Monitoring APIs) - 纯查询操作
 // ============================================================================
 
-// Messages Queries
-export {
-  GetMessagesQuery
-} from './operations/queries/messages/get-messages-query';
-export type { GetMessagesParams } from './operations/queries/messages/get-messages-query';
+// Messages Queries (已迁移到MessageResourceAPI)
+// 使用MessageResourceAPI.getThreadMessages(), .getRecentMessages(), .searchMessages(), .getMessageStats()
 
-export {
-  GetRecentMessagesQuery
-} from './operations/queries/messages/get-recent-messages-query';
-export type { GetRecentMessagesParams } from './operations/queries/messages/get-recent-messages-query';
+// Events Queries (已迁移到EventResourceAPI)
+// 使用EventResourceAPI.getEvents(), .getEventStats()
 
-export {
-  SearchMessagesQuery
-} from './operations/queries/messages/search-messages-query';
-export type { SearchMessagesParams } from './operations/queries/messages/search-messages-query';
+// State Queries (已迁移到VariableResourceAPI)
+// 使用VariableResourceAPI.getThreadVariables(), .getThreadVariable(), .hasThreadVariable(), .getThreadVariableDefinitions()
 
-export {
-  GetMessageStatsQuery
-} from './operations/queries/messages/get-message-stats-query';
-export type { GetMessageStatsParams, MessageStats } from './operations/queries/messages/get-message-stats-query';
+// Checkpoints Queries (已迁移到CheckpointResourceAPI)
+// 使用CheckpointResourceAPI.getAll(), .getThreadCheckpoints()
 
-// Events Queries
-export {
-  GetEventsQuery
-} from './operations/queries/events/get-events-query';
-export type { GetEventsParams } from './operations/queries/events/get-events-query';
-
-export {
-  GetEventStatsQuery
-} from './operations/queries/events/get-event-stats-query';
-export type { GetEventStatsParams, EventStats } from './operations/queries/events/get-event-stats-query';
-
-// State Queries
-export {
-  GetVariablesQuery
-} from './operations/queries/state/get-variables-query';
-export type { GetVariablesParams } from './operations/queries/state/get-variables-query';
-
-export {
-  GetVariableQuery
-} from './operations/queries/state/get-variable-query';
-export type { GetVariableParams } from './operations/queries/state/get-variable-query';
-
-export {
-  HasVariableQuery
-} from './operations/queries/state/has-variable-query';
-export type { HasVariableParams } from './operations/queries/state/has-variable-query';
-
-export {
-  GetVariableDefinitionsQuery
-} from './operations/queries/state/get-variable-definitions-query';
-export type { GetVariableDefinitionsParams } from './operations/queries/state/get-variable-definitions-query';
-
-// Checkpoints Queries
-export {
-  GetCheckpointsQuery
-} from './operations/queries/checkpoints/get-checkpoints-query';
-export type { GetCheckpointsParams } from './operations/queries/checkpoints/get-checkpoints-query';
-
-// Triggers Queries
-export {
-  GetTriggersQuery
-} from './operations/queries/triggers/get-triggers-query';
-export type { GetTriggersParams } from './operations/queries/triggers/get-triggers-query';
+// Triggers Queries (已迁移到TriggerResourceAPI)
+// 使用TriggerResourceAPI.getThreadTriggers(), .getThreadTrigger()
 
 // ============================================================================
 // Subscription类 - 事件订阅API (Event Subscription APIs)

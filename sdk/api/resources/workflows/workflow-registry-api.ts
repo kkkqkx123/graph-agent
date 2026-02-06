@@ -185,7 +185,7 @@ export class WorkflowRegistryAPI extends GenericResourceAPI<WorkflowDefinition, 
   async getWorkflowByName(name: string): Promise<WorkflowDefinition | null> {
     const workflow = this.registry.getByName(name);
     if (workflow) {
-      this.updateCache(workflow.id, workflow);
+      // 缓存更新逻辑（如果需要缓存，可以在这里实现）
     }
     return workflow || null;
   }
@@ -245,7 +245,7 @@ export class WorkflowRegistryAPI extends GenericResourceAPI<WorkflowDefinition, 
     // 更新缓存
     const workflow = this.registry.get(workflowId);
     if (workflow) {
-      this.updateCache(workflowId, workflow);
+      // 缓存更新逻辑（如果需要缓存，可以在这里实现）
     }
     return workflowId;
   }
@@ -269,7 +269,7 @@ export class WorkflowRegistryAPI extends GenericResourceAPI<WorkflowDefinition, 
     // 更新缓存
     const workflow = this.registry.get(workflowId);
     if (workflow) {
-      this.updateCache(workflowId, workflow);
+      // 缓存更新逻辑（如果需要缓存，可以在这里实现）
     }
   }
 
@@ -291,7 +291,7 @@ export class WorkflowRegistryAPI extends GenericResourceAPI<WorkflowDefinition, 
   async preprocessAndStoreWorkflow(workflow: any): Promise<any> {
     const processed = await this.registry.preprocessAndStore(workflow);
     // 更新缓存
-    this.updateCache(workflow.id, workflow);
+    // 缓存更新逻辑（如果需要缓存，可以在这里实现）
     return processed;
   }
 
