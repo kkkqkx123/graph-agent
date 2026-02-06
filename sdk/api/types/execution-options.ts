@@ -38,7 +38,7 @@ export const DEFAULT_EXECUTION_OPTIONS: Required<ExecutionOptions> = {
  */
 export function mergeExecutionOptions(
   options?: ExecutionOptions,
-  defaults: ExecutionOptions = DEFAULT_EXECUTION_OPTIONS
+  defaults: Required<ExecutionOptions> = DEFAULT_EXECUTION_OPTIONS
 ): Required<ExecutionOptions> {
   return {
     timeout: options?.timeout ?? defaults.timeout,

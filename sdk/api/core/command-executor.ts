@@ -6,7 +6,6 @@
 import type { Command, CommandValidationResult } from './command';
 import type { ExecutionResult } from '../types/execution-result';
 import type { CommandMiddleware } from './command-middleware';
-import { validationFailure } from './command';
 import { failure } from '../types/execution-result';
 
 /**
@@ -27,7 +26,7 @@ export interface CommandExecutorOptions {
 export class CommandExecutor {
   private readonly middleware: CommandMiddleware[] = [];
   private readonly options: Required<CommandExecutorOptions>;
-  
+
   constructor(options: CommandExecutorOptions = {}) {
     this.options = {
       enableLogging: options.enableLogging ?? true,
@@ -35,7 +34,7 @@ export class CommandExecutor {
       enableMetrics: options.enableMetrics ?? false
     };
   }
-  
+
   /**
    * 添加中间件
    * @param middleware 中间件
@@ -43,7 +42,7 @@ export class CommandExecutor {
   addMiddleware(middleware: CommandMiddleware): void {
     this.middleware.push(middleware);
   }
-  
+
   /**
    * 移除中间件
    * @param middleware 中间件
@@ -54,7 +53,7 @@ export class CommandExecutor {
       this.middleware.splice(index, 1);
     }
   }
-  
+
   /**
    * 执行命令
    * @param command 命令
@@ -62,7 +61,7 @@ export class CommandExecutor {
    */
   async execute<T>(command: Command<T>): Promise<ExecutionResult<T>> {
     const metadata = command.getMetadata();
-    
+
     // 验证命令
     if (this.options.enableValidation) {
       const validation: CommandValidationResult = command.validate();
@@ -73,7 +72,7 @@ export class CommandExecutor {
         );
       }
     }
-    
+
     // 执行前置中间件
     for (const middleware of this.middleware) {
       try {
@@ -85,7 +84,7 @@ export class CommandExecutor {
         );
       }
     }
-    
+
     // 执行命令
     let result: ExecutionResult<T>;
     try {
@@ -99,13 +98,13 @@ export class CommandExecutor {
           // 忽略中间件错误，继续执行其他中间件
         }
       }
-      
+
       return failure<T>(
         error instanceof Error ? error.message : String(error),
         0
       );
     }
-    
+
     // 执行后置中间件
     for (const middleware of this.middleware.reverse()) {
       try {
@@ -114,10 +113,10 @@ export class CommandExecutor {
         // 忽略中间件错误，不影响执行结果
       }
     }
-    
+
     return result;
   }
-  
+
   /**
    * 批量执行命令
    * @param commands 命令数组
@@ -138,7 +137,7 @@ export class CommandExecutor {
       return results;
     }
   }
-  
+
   /**
    * 获取中间件数量
    * @returns 中间件数量
@@ -146,7 +145,7 @@ export class CommandExecutor {
   getMiddlewareCount(): number {
     return this.middleware.length;
   }
-  
+
   /**
    * 清空所有中间件
    */
