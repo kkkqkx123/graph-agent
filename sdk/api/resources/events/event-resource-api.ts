@@ -3,7 +3,7 @@
  * 继承GenericResourceAPI，提供统一的CRUD操作
  */
 
-import { GenericResourceAPI, type ResourceAPIOptions } from '../generic-resource-api';
+import { GenericResourceAPI } from '../generic-resource-api';
 import type { BaseEvent } from '../../../types/events';
 import type { EventFilter } from '../../types/management-types';
 
@@ -27,8 +27,8 @@ export interface EventStats {
 export class EventResourceAPI extends GenericResourceAPI<BaseEvent, string, EventFilter> {
   private eventHistory: BaseEvent[] = [];
 
-  constructor(options?: ResourceAPIOptions) {
-    super(options);
+  constructor() {
+    super();
   }
 
   // ============================================================================

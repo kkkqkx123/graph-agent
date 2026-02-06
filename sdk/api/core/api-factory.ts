@@ -8,7 +8,6 @@
  * - Builder模式：支持链式配置
  */
 
-import { ResourceAPIOptions } from '../resources/generic-resource-api';
 import { WorkflowRegistryAPI } from '../resources/workflows/workflow-registry-api';
 import { ToolRegistryAPI } from '../resources/tools/tool-registry-api';
 import { ThreadRegistryAPI } from '../resources/threads/thread-registry-api';
@@ -21,20 +20,7 @@ import { TriggerTemplateRegistryAPI } from '../resources/templates/trigger-templ
  * SDK API配置接口
  */
 export interface SDKAPIConfig {
-  /** 工作流API配置 */
-  workflow?: ResourceAPIOptions;
-  /** 工具API配置 */
-  tool?: ResourceAPIOptions;
-  /** 线程API配置 */
-  thread?: ResourceAPIOptions;
-  /** 脚本API配置 */
-  script?: ResourceAPIOptions;
-  /** Profile API配置 */
-  profile?: ResourceAPIOptions;
-  /** 节点模板API配置 */
-  nodeTemplate?: ResourceAPIOptions;
-  /** 触发器模板API配置 */
-  triggerTemplate?: ResourceAPIOptions;
+  // 配置选项已移除，不再支持配置
 }
 
 /**
@@ -126,10 +112,9 @@ export class APIFactory {
    * @param options 可选配置（覆盖全局配置）
    * @returns WorkflowRegistryAPI实例
    */
-  public createWorkflowAPI(options?: ResourceAPIOptions): WorkflowRegistryAPI {
-    if (!this.apiInstances.workflows || options) {
-      const mergedOptions = this.mergeOptions(this.config.workflow, options);
-      this.apiInstances.workflows = new WorkflowRegistryAPI(mergedOptions);
+  public createWorkflowAPI(): WorkflowRegistryAPI {
+    if (!this.apiInstances.workflows) {
+      this.apiInstances.workflows = new WorkflowRegistryAPI();
     }
     return this.apiInstances.workflows;
   }
@@ -139,10 +124,9 @@ export class APIFactory {
    * @param options 可选配置（覆盖全局配置）
    * @returns ToolRegistryAPI实例
    */
-  public createToolAPI(options?: ResourceAPIOptions): ToolRegistryAPI {
-    if (!this.apiInstances.tools || options) {
-      const mergedOptions = this.mergeOptions(this.config.tool, options);
-      this.apiInstances.tools = new ToolRegistryAPI(mergedOptions);
+  public createToolAPI(): ToolRegistryAPI {
+    if (!this.apiInstances.tools) {
+      this.apiInstances.tools = new ToolRegistryAPI();
     }
     return this.apiInstances.tools;
   }
@@ -152,10 +136,9 @@ export class APIFactory {
    * @param options 可选配置（覆盖全局配置）
    * @returns ThreadRegistryAPI实例
    */
-  public createThreadAPI(options?: ResourceAPIOptions): ThreadRegistryAPI {
-    if (!this.apiInstances.threads || options) {
-      const mergedOptions = this.mergeOptions(this.config.thread, options);
-      this.apiInstances.threads = new ThreadRegistryAPI(undefined, mergedOptions);
+  public createThreadAPI(): ThreadRegistryAPI {
+    if (!this.apiInstances.threads) {
+      this.apiInstances.threads = new ThreadRegistryAPI();
     }
     return this.apiInstances.threads;
   }
@@ -165,10 +148,9 @@ export class APIFactory {
    * @param options 可选配置（覆盖全局配置）
    * @returns ScriptRegistryAPI实例
    */
-  public createScriptAPI(options?: ResourceAPIOptions): ScriptRegistryAPI {
-    if (!this.apiInstances.scripts || options) {
-      const mergedOptions = this.mergeOptions(this.config.script, options);
-      this.apiInstances.scripts = new ScriptRegistryAPI(mergedOptions);
+  public createScriptAPI(): ScriptRegistryAPI {
+    if (!this.apiInstances.scripts) {
+      this.apiInstances.scripts = new ScriptRegistryAPI();
     }
     return this.apiInstances.scripts;
   }
@@ -178,10 +160,9 @@ export class APIFactory {
    * @param options 可选配置（覆盖全局配置）
    * @returns ProfileRegistryAPI实例
    */
-  public createProfileAPI(options?: ResourceAPIOptions): LLMProfileRegistryAPI {
-    if (!this.apiInstances.profiles || options) {
-      const mergedOptions = this.mergeOptions(this.config.profile, options);
-      this.apiInstances.profiles = new LLMProfileRegistryAPI(mergedOptions);
+  public createProfileAPI(): LLMProfileRegistryAPI {
+    if (!this.apiInstances.profiles) {
+      this.apiInstances.profiles = new LLMProfileRegistryAPI();
     }
     return this.apiInstances.profiles;
   }
@@ -191,10 +172,9 @@ export class APIFactory {
    * @param options 可选配置（覆盖全局配置）
    * @returns NodeRegistryAPI实例
    */
-  public createNodeTemplateAPI(options?: ResourceAPIOptions): NodeRegistryAPI {
-    if (!this.apiInstances.nodeTemplates || options) {
-      const mergedOptions = this.mergeOptions(this.config.nodeTemplate, options);
-      this.apiInstances.nodeTemplates = new NodeRegistryAPI(mergedOptions);
+  public createNodeTemplateAPI(): NodeRegistryAPI {
+    if (!this.apiInstances.nodeTemplates) {
+      this.apiInstances.nodeTemplates = new NodeRegistryAPI();
     }
     return this.apiInstances.nodeTemplates;
   }
@@ -204,10 +184,9 @@ export class APIFactory {
    * @param options 可选配置（覆盖全局配置）
    * @returns TriggerTemplateRegistryAPI实例
    */
-  public createTriggerTemplateAPI(options?: ResourceAPIOptions): TriggerTemplateRegistryAPI {
-    if (!this.apiInstances.triggerTemplates || options) {
-      const mergedOptions = this.mergeOptions(this.config.triggerTemplate, options);
-      this.apiInstances.triggerTemplates = new TriggerTemplateRegistryAPI(undefined, mergedOptions);
+  public createTriggerTemplateAPI(): TriggerTemplateRegistryAPI {
+    if (!this.apiInstances.triggerTemplates) {
+      this.apiInstances.triggerTemplates = new TriggerTemplateRegistryAPI();
     }
     return this.apiInstances.triggerTemplates;
   }
@@ -217,15 +196,15 @@ export class APIFactory {
    * @param options 可选配置（覆盖全局配置）
    * @returns 所有API实例
    */
-  public createAllAPIs(options?: ResourceAPIOptions): AllAPIs {
+  public createAllAPIs(): AllAPIs {
     return {
-      workflows: this.createWorkflowAPI(options),
-      tools: this.createToolAPI(options),
-      threads: this.createThreadAPI(options),
-      scripts: this.createScriptAPI(options),
-      profiles: this.createProfileAPI(options),
-      nodeTemplates: this.createNodeTemplateAPI(options),
-      triggerTemplates: this.createTriggerTemplateAPI(options)
+      workflows: this.createWorkflowAPI(),
+      tools: this.createToolAPI(),
+      threads: this.createThreadAPI(),
+      scripts: this.createScriptAPI(),
+      profiles: this.createProfileAPI(),
+      nodeTemplates: this.createNodeTemplateAPI(),
+      triggerTemplates: this.createTriggerTemplateAPI()
     };
   }
 
@@ -242,24 +221,6 @@ export class APIFactory {
    * @param localConfig 局部配置
    * @returns 合并后的配置
    */
-  private mergeOptions(
-    globalConfig?: ResourceAPIOptions,
-    localConfig?: ResourceAPIOptions
-  ): ResourceAPIOptions | undefined {
-    if (!globalConfig && !localConfig) {
-      return undefined;
-    }
-    if (!globalConfig) {
-      return localConfig;
-    }
-    if (!localConfig) {
-      return globalConfig;
-    }
-    return {
-      ...globalConfig,
-      ...localConfig
-    };
-  }
 }
 
 /**

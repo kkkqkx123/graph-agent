@@ -213,7 +213,11 @@ describe('Observable', () => {
         observer.next(1);
         observer.complete();
         return () => {};
-      }).subscribe();
+      }).subscribe({
+        next: () => {},
+        error: () => {},
+        complete: () => {}
+      });
       
       expect(subscription.closed).toBe(true);
       done();
@@ -225,7 +229,11 @@ describe('Observable', () => {
           observer.next(1);
         }, 10);
         return () => clearInterval(intervalId);
-      }).subscribe();
+      }).subscribe({
+        next: () => {},
+        error: () => {},
+        complete: () => {}
+      });
       
       expect(subscription.closed).toBe(false);
       subscription.unsubscribe();
@@ -243,7 +251,11 @@ describe('Observable', () => {
           teardownCalled = true;
           clearInterval(intervalId);
         };
-      }).subscribe();
+      }).subscribe({
+        next: () => {},
+        error: () => {},
+        complete: () => {}
+      });
       
       expect(teardownCalled).toBe(false);
       subscription.unsubscribe();
@@ -258,7 +270,11 @@ describe('Observable', () => {
         return () => {
           throw new Error('Teardown error');
         };
-      }).subscribe();
+      }).subscribe({
+        next: () => {},
+        error: () => {},
+        complete: () => {}
+      });
       // 等待错误被捕获
       setTimeout(done, 50);
     });
@@ -318,7 +334,11 @@ describe('Observable', () => {
         obs.next(1);
         obs.complete();
         return () => {};
-      }).subscribe(observer as Observer<number>);
+      }).subscribe({
+        next: observer.next!,
+        error: () => {},
+        complete: () => {}
+      });
       
       done();
     });

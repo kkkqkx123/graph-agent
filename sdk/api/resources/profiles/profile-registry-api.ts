@@ -7,7 +7,7 @@
 import { ProfileManager } from '../../../core/llm/profile-manager';
 import type { LLMProfile, LLMProvider } from '../../../types/llm';
 import { ValidationError, NotFoundError, SDKError, ErrorCode } from '../../../types/errors';
-import { GenericResourceAPI, type ResourceAPIOptions } from '../generic-resource-api';
+import { GenericResourceAPI } from '../generic-resource-api';
 
 /**
  * Profile模板类型
@@ -35,19 +35,6 @@ export interface LLMProfileFilter {
   model?: string;
 }
 
-/**
- * ProfileRegistryAPI配置选项
- */
-export interface LLMProfileRegistryAPIOptions extends ResourceAPIOptions {
-  /** 是否启用缓存（默认true） */
-  enableCache?: boolean;
-  /** 缓存TTL（毫秒，默认5000） */
-  cacheTTL?: number;
-  /** 是否启用日志（默认false） */
-  enableLogging?: boolean;
-  /** 是否启用验证（默认true） */
-  enableValidation?: boolean;
-}
 
 /**
  * ProfileRegistryAPI - Profile资源管理API
@@ -62,11 +49,8 @@ export class LLMProfileRegistryAPI extends GenericResourceAPI<LLMProfile, string
   private profileManager: ProfileManager;
   private templates: Map<string, LLMProfileTemplate> = new Map();
 
-  constructor(options?: LLMProfileRegistryAPIOptions) {
-    const apiOptions: Required<ResourceAPIOptions> = {
-      enableValidation: options?.enableValidation ?? true
-    };
-    super(apiOptions);
+  constructor() {
+    super();
     this.profileManager = new ProfileManager();
     this.initializeTemplates();
   }

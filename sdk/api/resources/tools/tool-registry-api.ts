@@ -7,8 +7,7 @@ import { toolService } from '../../../core/services/tool-service';
 import type { Tool } from '../../../types/tool';
 import type { ToolFilter } from '../../types/tools-types';
 import { NotFoundError } from '../../../types/errors';
-import { GenericResourceAPI, type ResourceAPIOptions } from '../generic-resource-api';
-import type { ExecutionResult } from '../../types/execution-result';
+import { GenericResourceAPI } from '../generic-resource-api';
 
 /**
  * ToolRegistryAPI - 工具资源管理API
@@ -23,11 +22,8 @@ import type { ExecutionResult } from '../../types/execution-result';
 export class ToolRegistryAPI extends GenericResourceAPI<Tool, string, ToolFilter> {
   private toolService = toolService;
 
-  constructor(options?: Partial<ResourceAPIOptions>) {
-    super({
-      enableValidation: true,
-      ...options
-    });
+  constructor() {
+    super();
   }
 
   /**
@@ -73,13 +69,13 @@ export class ToolRegistryAPI extends GenericResourceAPI<Tool, string, ToolFilter
     if (!existingTool) {
       throw new Error(`Tool '${id}' not found`);
     }
-    
+
     // 合并更新
     const updatedTool = { ...existingTool, ...updates };
-    
+
     // 先删除旧工具
     await this.deleteResource(id);
-    
+
     // 再注册新工具
     await this.createResource(updatedTool);
   }

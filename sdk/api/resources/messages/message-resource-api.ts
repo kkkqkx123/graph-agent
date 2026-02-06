@@ -3,7 +3,7 @@
  * 继承GenericResourceAPI，提供统一的CRUD操作
  */
 
-import { GenericResourceAPI, type ResourceAPIOptions } from '../generic-resource-api';
+import { GenericResourceAPI } from '../generic-resource-api';
 import { threadRegistry, type ThreadRegistry } from '../../../core/services/thread-registry';
 import type { LLMMessage } from '../../../types/llm';
 import { NotFoundError } from '../../../types/errors';
@@ -42,8 +42,8 @@ export interface MessageStats {
 export class MessageResourceAPI extends GenericResourceAPI<LLMMessage, string, MessageFilter> {
   private registry: ThreadRegistry;
 
-  constructor(options?: ResourceAPIOptions) {
-    super(options);
+  constructor() {
+    super();
     this.registry = threadRegistry;
   }
 

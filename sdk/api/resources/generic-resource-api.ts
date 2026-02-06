@@ -11,14 +11,6 @@ import type { ExecutionResult } from '../types/execution-result';
 import { success, failure } from '../types/execution-result';
 
 /**
- * 资源API配置选项
- */
-export interface ResourceAPIOptions {
-  /** 是否启用验证 */
-  enableValidation?: boolean;
-}
-
-/**
  * 通用资源API基类
  * 
  * @template T - 资源类型
@@ -26,17 +18,11 @@ export interface ResourceAPIOptions {
  * @template Filter - 过滤器类型
  */
 export abstract class GenericResourceAPI<T, ID extends string | number, Filter = any> {
-  /** 配置选项 */
-  protected readonly options: Required<ResourceAPIOptions>;
-
   /**
    * 构造函数
-   * @param options 配置选项
    */
-  constructor(options?: ResourceAPIOptions) {
-    this.options = {
-      enableValidation: options?.enableValidation ?? true
-    };
+  constructor() {
+    // 无配置选项
   }
 
   // ============================================================================
@@ -134,15 +120,13 @@ export abstract class GenericResourceAPI<T, ID extends string | number, Filter =
     const startTime = Date.now();
     
     try {
-      // 验证资源
-      if (this.options.enableValidation) {
-        const validation = this.validateResource(resource);
-        if (!validation.valid) {
-          return failure(
-            `Validation failed: ${validation.errors.join(', ')}`,
-            Date.now() - startTime
-          );
-        }
+      // 验证资源（始终启用）
+      const validation = this.validateResource(resource);
+      if (!validation.valid) {
+        return failure(
+          `Validation failed: ${validation.errors.join(', ')}`,
+          Date.now() - startTime
+        );
       }
 
       await this.createResource(resource);
@@ -162,15 +146,13 @@ export abstract class GenericResourceAPI<T, ID extends string | number, Filter =
     const startTime = Date.now();
     
     try {
-      // 验证更新内容
-      if (this.options.enableValidation) {
-        const validation = this.validateUpdate(updates);
-        if (!validation.valid) {
-          return failure(
-            `Validation failed: ${validation.errors.join(', ')}`,
-            Date.now() - startTime
-          );
-        }
+      // 验证更新内容（始终启用）
+      const validation = this.validateUpdate(updates);
+      if (!validation.valid) {
+        return failure(
+          `Validation failed: ${validation.errors.join(', ')}`,
+          Date.now() - startTime
+        );
       }
 
       await this.updateResource(id, updates);

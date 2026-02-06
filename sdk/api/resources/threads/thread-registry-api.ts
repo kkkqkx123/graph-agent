@@ -7,21 +7,8 @@
 import { threadRegistry as globalThreadRegistry, type ThreadRegistry } from '../../../core/services/thread-registry';
 import type { Thread, ThreadResult, ThreadStatus } from '../../../types/thread';
 import type { ThreadFilter, ThreadSummary } from '../../types/registry-types';
-import { GenericResourceAPI, type ResourceAPIOptions } from '../generic-resource-api';
+import { GenericResourceAPI } from '../generic-resource-api';
 
-/**
- * ThreadRegistryAPI配置选项
- */
-export interface ThreadRegistryAPIOptions extends ResourceAPIOptions {
-  /** 是否启用缓存（默认true） */
-  enableCache?: boolean;
-  /** 缓存TTL（毫秒，默认5000） */
-  cacheTTL?: number;
-  /** 是否启用日志（默认false） */
-  enableLogging?: boolean;
-  /** 是否启用验证（默认true） */
-  enableValidation?: boolean;
-}
 
 /**
  * ThreadRegistryAPI - 线程管理API
@@ -41,11 +28,8 @@ export class ThreadRegistryAPI extends GenericResourceAPI<Thread, string, Thread
    * @param threadRegistry 线程注册表（可选，默认使用全局单例）
    * @param options 配置选项（可选）
    */
-  constructor(threadRegistry?: ThreadRegistry, options?: ThreadRegistryAPIOptions) {
-    const apiOptions: Required<ResourceAPIOptions> = {
-      enableValidation: options?.enableValidation ?? true
-    };
-    super(apiOptions);
+  constructor(threadRegistry?: ThreadRegistry) {
+    super();
     this.registry = threadRegistry || globalThreadRegistry;
   }
 

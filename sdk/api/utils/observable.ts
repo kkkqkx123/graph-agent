@@ -86,7 +86,9 @@ export class ObservableImpl<T> implements Observable<T> {
       next: (value: T) => {
         if (!unsubscribed) {
           try {
-            observer.next(value);
+            if (observer.next) {
+              observer.next(value);
+            }
           } catch (err) {
             safeObserver.error(err);
           }
@@ -96,7 +98,11 @@ export class ObservableImpl<T> implements Observable<T> {
         if (!unsubscribed) {
           unsubscribed = true;
           try {
-            observer.error(err);
+            if (observer.error) {
+              observer.error(err);
+            } else {
+              console.error('Observable error:', err);
+            }
           } catch (err) {
             console.error('Error in error handler:', err);
           }
@@ -107,7 +113,9 @@ export class ObservableImpl<T> implements Observable<T> {
         if (!unsubscribed) {
           unsubscribed = true;
           try {
-            observer.complete();
+            if (observer.complete) {
+              observer.complete();
+            }
           } catch (err) {
             console.error('Error in complete handler:', err);
           }

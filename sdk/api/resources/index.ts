@@ -4,7 +4,7 @@
  */
 
 // 通用资源API基类
-import { GenericResourceAPI, type ResourceAPIOptions } from './generic-resource-api';
+import { GenericResourceAPI } from './generic-resource-api';
 
 // 检查点资源管理
 import { CheckpointResourceAPI } from './checkpoints/checkpoint-resource-api';
@@ -54,7 +54,7 @@ import { TriggerTemplateRegistryAPI } from './templates/trigger-template-registr
 import { LLMProfileRegistryAPI } from './profiles/profile-registry-api';
 
 // 重新导出所有资源管理API
-export { GenericResourceAPI, type ResourceAPIOptions };
+export { GenericResourceAPI };
 export { CheckpointResourceAPI };
 export { MessageResourceAPI, type MessageFilter, type MessageStats };
 export { VariableResourceAPI, type VariableFilter, type VariableDefinition };
@@ -71,20 +71,20 @@ export { LLMProfileRegistryAPI };
 /**
  * 创建所有资源管理API实例的工厂函数
  */
-export function createResourceAPIs(options?: ResourceAPIOptions) {
+export function createResourceAPIs() {
   return {
-    checkpoints: new CheckpointResourceAPI(options),
-    messages: new MessageResourceAPI(options),
-    variables: new VariableResourceAPI(options),
-    triggers: new TriggerResourceAPI(options),
-    events: new EventResourceAPI(options),
-    workflows: new WorkflowRegistryAPI(options),
-    threads: new ThreadRegistryAPI(undefined, options),
-    tools: new ToolRegistryAPI(options),
-    scripts: new ScriptRegistryAPI(options),
-    nodeTemplates: new NodeRegistryAPI(options),
-    triggerTemplates: new TriggerTemplateRegistryAPI(undefined, options),
-    profiles: new LLMProfileRegistryAPI(options)
+    checkpoints: new CheckpointResourceAPI(),
+    messages: new MessageResourceAPI(),
+    variables: new VariableResourceAPI(),
+    triggers: new TriggerResourceAPI(),
+    events: new EventResourceAPI(),
+    workflows: new WorkflowRegistryAPI(),
+    threads: new ThreadRegistryAPI(),
+    tools: new ToolRegistryAPI(),
+    scripts: new ScriptRegistryAPI(),
+    nodeTemplates: new NodeRegistryAPI(),
+    triggerTemplates: new TriggerTemplateRegistryAPI(),
+    profiles: new LLMProfileRegistryAPI()
   };
 }
 

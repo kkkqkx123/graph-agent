@@ -8,7 +8,7 @@ import type { Script } from '../../../types/code';
 import { ScriptType } from '../../../types/code';
 import type { ScriptFilter, ScriptRegistrationConfig } from '../../types/code-types';
 import { NotFoundError } from '../../../types/errors';
-import { GenericResourceAPI, type ResourceAPIOptions } from '../generic-resource-api';
+import { GenericResourceAPI } from '../generic-resource-api';
 
 /**
  * ScriptRegistryAPI - 脚本资源管理API
@@ -23,11 +23,8 @@ import { GenericResourceAPI, type ResourceAPIOptions } from '../generic-resource
 export class ScriptRegistryAPI extends GenericResourceAPI<Script, string, ScriptFilter> {
   private codeService = codeService;
 
-  constructor(options?: Partial<ResourceAPIOptions>) {
-    super({
-      enableValidation: true,
-      ...options
-    });
+  constructor() {
+    super();
   }
 
   /**

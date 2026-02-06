@@ -3,7 +3,7 @@
  * 继承GenericResourceAPI，提供统一的CRUD操作
  */
 
-import { GenericResourceAPI, type ResourceAPIOptions } from '../generic-resource-api';
+import { GenericResourceAPI } from '../generic-resource-api';
 import { threadRegistry, type ThreadRegistry } from '../../../core/services/thread-registry';
 import type { Thread } from '../../../types/thread';
 import { NotFoundError } from '../../../types/errors';
@@ -42,8 +42,8 @@ export interface VariableDefinition {
 export class VariableResourceAPI extends GenericResourceAPI<any, string, VariableFilter> {
   private registry: ThreadRegistry;
 
-  constructor(options?: ResourceAPIOptions) {
-    super(options);
+  constructor() {
+    super();
     this.registry = threadRegistry;
   }
 

@@ -10,21 +10,8 @@ import type { NodeTemplateFilter, NodeTemplateSummary } from '../../types/regist
 import type { ValidationResult } from '../../../types/errors';
 import { ValidationError } from '../../../types/errors';
 import { NodeType } from '../../../types/node';
-import { GenericResourceAPI, type ResourceAPIOptions } from '../generic-resource-api';
+import { GenericResourceAPI } from '../generic-resource-api';
 
-/**
- * NodeTemplateRegistryAPI配置选项
- */
-export interface NodeTemplateRegistryAPIOptions extends ResourceAPIOptions {
-  /** 是否启用缓存（默认true） */
-  enableCache?: boolean;
-  /** 缓存TTL（毫秒，默认5000） */
-  cacheTTL?: number;
-  /** 是否启用日志（默认false） */
-  enableLogging?: boolean;
-  /** 是否启用验证（默认true） */
-  enableValidation?: boolean;
-}
 
 /**
  * NodeTemplateRegistryAPI - 节点模板管理API
@@ -38,11 +25,8 @@ export interface NodeTemplateRegistryAPIOptions extends ResourceAPIOptions {
 export class NodeRegistryAPI extends GenericResourceAPI<NodeTemplate, string, NodeTemplateFilter> {
   private registry: NodeTemplateRegistry;
 
-  constructor(options?: NodeTemplateRegistryAPIOptions) {
-    const apiOptions: Required<ResourceAPIOptions> = {
-      enableValidation: options?.enableValidation ?? true
-    };
-    super(apiOptions);
+  constructor() {
+    super();
     this.registry = nodeTemplateRegistry;
   }
 

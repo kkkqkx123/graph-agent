@@ -78,7 +78,7 @@ export {
 } from './resources/events/event-resource-api';
 
 // 通用资源API基类和工具
-export { GenericResourceAPI, type ResourceAPIOptions } from './resources/generic-resource-api';
+export { GenericResourceAPI } from './resources/generic-resource-api';
 export {
   createResourceAPIs,
   type ResourceAPIs

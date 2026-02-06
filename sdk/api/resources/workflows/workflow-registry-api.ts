@@ -3,7 +3,7 @@
  * 继承GenericResourceAPI，提供统一的CRUD操作
  */
 
-import { GenericResourceAPI, type ResourceAPIOptions } from '../generic-resource-api';
+import { GenericResourceAPI } from '../generic-resource-api';
 import { workflowRegistry, type WorkflowRegistry } from '../../../core/services/workflow-registry';
 import type { WorkflowDefinition } from '../../../types/workflow';
 import type { WorkflowFilter, WorkflowSummary } from '../../types/registry-types';
@@ -14,8 +14,8 @@ import type { WorkflowFilter, WorkflowSummary } from '../../types/registry-types
 export class WorkflowRegistryAPI extends GenericResourceAPI<WorkflowDefinition, string, WorkflowFilter> {
   private registry: WorkflowRegistry;
 
-  constructor(options?: ResourceAPIOptions) {
-    super(options);
+  constructor() {
+    super();
     this.registry = workflowRegistry;
   }
 

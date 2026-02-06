@@ -10,21 +10,8 @@ import type {
   TriggerTemplateFilter
 } from '../../../types/trigger-template';
 import { triggerTemplateRegistry, type TriggerTemplateRegistry } from '../../../core/services/trigger-template-registry';
-import { GenericResourceAPI, type ResourceAPIOptions } from '../generic-resource-api';
+import { GenericResourceAPI } from '../generic-resource-api';
 
-/**
- * TriggerTemplateRegistryAPI配置选项
- */
-export interface TriggerTemplateRegistryAPIOptions extends ResourceAPIOptions {
-  /** 是否启用缓存（默认true） */
-  enableCache?: boolean;
-  /** 缓存TTL（毫秒，默认5000） */
-  cacheTTL?: number;
-  /** 是否启用日志（默认false） */
-  enableLogging?: boolean;
-  /** 是否启用验证（默认true） */
-  enableValidation?: boolean;
-}
 
 /**
  * 触发器模板注册表 API 类
@@ -38,11 +25,8 @@ export interface TriggerTemplateRegistryAPIOptions extends ResourceAPIOptions {
 export class TriggerTemplateRegistryAPI extends GenericResourceAPI<TriggerTemplate, string, TriggerTemplateFilter> {
   private registry: TriggerTemplateRegistry;
 
-  constructor(registry?: TriggerTemplateRegistry, options?: TriggerTemplateRegistryAPIOptions) {
-    const apiOptions: Required<ResourceAPIOptions> = {
-      enableValidation: options?.enableValidation ?? true
-    };
-    super(apiOptions);
+  constructor(registry?: TriggerTemplateRegistry) {
+    super();
     this.registry = registry || triggerTemplateRegistry;
   }
 

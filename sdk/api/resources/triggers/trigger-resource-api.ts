@@ -3,7 +3,7 @@
  * 继承GenericResourceAPI，提供统一的CRUD操作
  */
 
-import { GenericResourceAPI, type ResourceAPIOptions } from '../generic-resource-api';
+import { GenericResourceAPI } from '../generic-resource-api';
 import { threadRegistry, type ThreadRegistry } from '../../../core/services/thread-registry';
 import { TriggerStatus } from '../../../types/trigger';
 import type { Trigger } from '../../../types/trigger';
@@ -16,8 +16,8 @@ import type { TriggerFilter } from '../../types/management-types';
 export class TriggerResourceAPI extends GenericResourceAPI<Trigger, string, TriggerFilter> {
   private registry: ThreadRegistry;
 
-  constructor(options?: ResourceAPIOptions) {
-    super(options);
+  constructor() {
+    super();
     this.registry = threadRegistry;
   }
 

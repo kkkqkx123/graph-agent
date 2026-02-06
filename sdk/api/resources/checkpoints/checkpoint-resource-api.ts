@@ -3,7 +3,7 @@
  * 继承GenericResourceAPI，提供统一的CRUD操作
  */
 
-import { GenericResourceAPI, type ResourceAPIOptions } from '../generic-resource-api';
+import { GenericResourceAPI } from '../generic-resource-api';
 import { CheckpointStateManager } from '../../../core/execution/managers/checkpoint-state-manager';
 import type { Checkpoint, CheckpointMetadata } from '../../../types/checkpoint';
 import type { CheckpointFilter } from '../../types/management-types';
@@ -19,8 +19,8 @@ export class CheckpointResourceAPI extends GenericResourceAPI<Checkpoint, string
   private stateManager: CheckpointStateManager;
   private coordinator: CheckpointCoordinator;
 
-  constructor(options?: ResourceAPIOptions) {
-    super(options);
+  constructor() {
+    super();
     
     // 创建默认的检查点管理组件
     const storage = new MemoryCheckpointStorage();
