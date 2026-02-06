@@ -118,6 +118,8 @@ export interface Script {
   options: ScriptExecutionOptions;
   /** 脚本元数据 */
   metadata?: ScriptMetadata;
+  /** 是否启用（默认为 true） */
+  enabled?: boolean;
 }
 
 /**

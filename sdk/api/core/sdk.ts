@@ -8,7 +8,7 @@
  * - 保持向后兼容性
  */
 
-import { APIFactory, type SDKAPIConfig } from '../factory/api-factory';
+import { APIFactory, type SDKAPIConfig } from './api-factory';
 import { WorkflowValidatorAPI } from '../validation/workflow-validator-api';
 import { getData } from '../types/execution-result';
 import type { SDKOptions, SDKDependencies } from '../types';
@@ -18,7 +18,7 @@ import type { SDKOptions, SDKDependencies } from '../types';
  */
 class SDK {
   private factory: APIFactory;
-  
+
   // 验证API实例
   public readonly validation: WorkflowValidatorAPI;
 
@@ -30,7 +30,7 @@ class SDK {
   constructor(options?: SDKOptions, dependencies?: SDKDependencies) {
     // 初始化API工厂
     this.factory = APIFactory.getInstance();
-    
+
     // 配置工厂
     const config: SDKAPIConfig = {
       workflow: {
@@ -76,7 +76,7 @@ class SDK {
         enableLogging: false
       }
     };
-    
+
     this.factory.configure(config);
 
     // 初始化验证API
@@ -169,9 +169,9 @@ class SDK {
       { name: 'profiles', check: async () => getData(await this.profiles.count()) },
       { name: 'validation', check: () => Promise.resolve(true) }
     ];
-    
+
     let overallStatus: 'healthy' | 'degraded' | 'unhealthy' = 'healthy';
-    
+
     for (const module of modules) {
       try {
         await module.check();
@@ -184,7 +184,7 @@ class SDK {
         overallStatus = 'degraded';
       }
     }
-    
+
     return { status: overallStatus, details };
   }
 

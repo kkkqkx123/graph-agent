@@ -112,9 +112,11 @@ export class ScriptRegistryAPI extends GenericResourceAPI<Script, string, Script
         }
       }
       if (filter.enabled !== undefined) {
-        // 注意：Script接口目前没有enabled字段，这里假设所有脚本都是启用的
-        // 如果需要支持禁用脚本，需要在Script接口中添加enabled字段
-        return true;
+        // 使用 enabled 字段进行过滤，默认值为 true
+        const scriptEnabled = script.enabled ?? true;
+        if (scriptEnabled !== filter.enabled) {
+          return false;
+        }
       }
       return true;
     });
@@ -142,6 +144,11 @@ export class ScriptRegistryAPI extends GenericResourceAPI<Script, string, Script
 
     if (!script.description || script.description.trim() === '') {
       errors.push('脚本描述不能为空');
+    }
+
+    // 验证 enabled 字段（如果提供）
+    if (script.enabled !== undefined && typeof script.enabled !== 'boolean') {
+      errors.push('enabled 字段必须是布尔值');
     }
 
     return {
@@ -174,5 +181,34 @@ export class ScriptRegistryAPI extends GenericResourceAPI<Script, string, Script
    */
   getService() {
     return this.codeService;
+  }
+
+  /**
+   * 启用脚本
+   * @param scriptName 脚本名称
+   */
+  async enableScript(scriptName: string): Promise<void> {
+    this.codeService.enableScript(scriptName);
+    // 清除缓存
+    this.clearCache();
+  }
+
+  /**
+   * 禁用脚本
+   * @param scriptName 脚本名称
+   */
+  async disableScript(scriptName: string): Promise<void> {
+    this.codeService.disableScript(scriptName);
+    // 清除缓存
+    this.clearCache();
+  }
+
+  /**
+   * 检查脚本是否启用
+   * @param scriptName 脚本名称
+   * @returns 是否启用
+   */
+  async isScriptEnabled(scriptName: string): Promise<boolean> {
+    return this.codeService.isScriptEnabled(scriptName);
   }
 }

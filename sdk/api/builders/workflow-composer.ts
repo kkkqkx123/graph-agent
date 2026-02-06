@@ -5,7 +5,7 @@
 
 import type { WorkflowDefinition } from '../../types/workflow';
 import type { ThreadResult } from '../../types/thread';
-import { Observable, create, merge as mergeObs, concat, combineLatest } from '../utils/observable';
+import { Observable, create } from '../utils/observable';
 import { ok, err, Result } from '../utils/result';
 
 /**

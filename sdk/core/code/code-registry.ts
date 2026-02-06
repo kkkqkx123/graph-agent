@@ -21,6 +21,12 @@ export class CodeRegistry {
     // 验证脚本定义
     this.validate(script);
 
+    // 设置默认值
+    const scriptWithDefaults: Script = {
+      ...script,
+      enabled: script.enabled !== undefined ? script.enabled : true
+    };
+
     // 检查脚本名称是否已存在
     if (this.scripts.has(script.name)) {
       throw new ValidationError(
@@ -31,7 +37,7 @@ export class CodeRegistry {
     }
 
     // 注册脚本
-    this.scripts.set(script.name, script);
+    this.scripts.set(script.name, scriptWithDefaults);
   }
 
   /**
@@ -198,6 +204,15 @@ export class CodeRegistry {
       );
     }
 
+    // 验证 enabled 字段（如果提供）
+    if (script.enabled !== undefined && typeof script.enabled !== 'boolean') {
+      throw new ValidationError(
+        'Script enabled must be a boolean',
+        'enabled',
+        script.enabled
+      );
+    }
+
     return true;
   }
 
@@ -234,7 +249,13 @@ export class CodeRegistry {
       );
     }
     
-    const updatedScript = { ...script, ...updates };
+    const updatedScript = {
+      ...script,
+      ...updates,
+      // 确保 enabled 字段有默认值
+      enabled: updates.enabled !== undefined ? updates.enabled : (script.enabled ?? true)
+    };
+    
     this.validate(updatedScript);
     this.scripts.set(scriptName, updatedScript);
   }

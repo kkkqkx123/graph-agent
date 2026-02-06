@@ -12,7 +12,7 @@ import { GenericResourceAPI, type ResourceAPIOptions } from '../generic-resource
 /**
  * Profile模板类型
  */
-export interface ProfileTemplate {
+export interface LLMProfileTemplate {
   /** 模板名称 */
   name: string;
   /** 模板描述 */
@@ -24,7 +24,7 @@ export interface ProfileTemplate {
 /**
  * Profile过滤器
  */
-export interface ProfileFilter {
+export interface LLMProfileFilter {
   /** Profile ID */
   id?: string;
   /** Profile名称 */
@@ -38,7 +38,7 @@ export interface ProfileFilter {
 /**
  * ProfileRegistryAPI配置选项
  */
-export interface ProfileRegistryAPIOptions extends ResourceAPIOptions {
+export interface LLMProfileRegistryAPIOptions extends ResourceAPIOptions {
   /** 是否启用缓存（默认true） */
   enableCache?: boolean;
   /** 缓存TTL（毫秒，默认5000） */
@@ -58,11 +58,11 @@ export interface ProfileRegistryAPIOptions extends ResourceAPIOptions {
  * - 保留所有原有API方法以保持向后兼容
  * - 新增缓存、日志、验证等增强功能
  */
-export class ProfileRegistryAPI extends GenericResourceAPI<LLMProfile, string, ProfileFilter> {
+export class LLMProfileRegistryAPI extends GenericResourceAPI<LLMProfile, string, LLMProfileFilter> {
   private profileManager: ProfileManager;
-  private templates: Map<string, ProfileTemplate> = new Map();
+  private templates: Map<string, LLMProfileTemplate> = new Map();
 
-  constructor(options?: ProfileRegistryAPIOptions) {
+  constructor(options?: LLMProfileRegistryAPIOptions) {
     const apiOptions: Required<ResourceAPIOptions> = {
       enableCache: options?.enableCache ?? true,
       cacheTTL: options?.cacheTTL ?? 5000,
@@ -136,7 +136,7 @@ export class ProfileRegistryAPI extends GenericResourceAPI<LLMProfile, string, P
    * @param filter 过滤条件
    * @returns 过滤后的Profile数组
    */
-  protected applyFilter(resources: LLMProfile[], filter: ProfileFilter): LLMProfile[] {
+  protected applyFilter(resources: LLMProfile[], filter: LLMProfileFilter): LLMProfile[] {
     return resources.filter(profile => {
       if (filter.id && !profile.id.includes(filter.id)) {
         return false;
@@ -325,7 +325,7 @@ export class ProfileRegistryAPI extends GenericResourceAPI<LLMProfile, string, P
         `Failed to import profiles: ${error instanceof Error ? error.message : 'Unknown error'}`,
         'profiles',
         undefined,
-        { 
+        {
           parseError: error instanceof Error ? error.message : 'Unknown error'
         }
       );
@@ -398,7 +398,7 @@ export class ProfileRegistryAPI extends GenericResourceAPI<LLMProfile, string, P
    * 获取所有模板
    * @returns 模板列表
    */
-  async getTemplates(): Promise<ProfileTemplate[]> {
+  async getTemplates(): Promise<LLMProfileTemplate[]> {
     return Array.from(this.templates.values());
   }
 
@@ -407,7 +407,7 @@ export class ProfileRegistryAPI extends GenericResourceAPI<LLMProfile, string, P
    * @param templateName 模板名称
    * @returns 模板，如果不存在则返回null
    */
-  async getTemplate(templateName: string): Promise<ProfileTemplate | null> {
+  async getTemplate(templateName: string): Promise<LLMProfileTemplate | null> {
     return this.templates.get(templateName) || null;
   }
 
@@ -415,7 +415,7 @@ export class ProfileRegistryAPI extends GenericResourceAPI<LLMProfile, string, P
    * 添加自定义模板
    * @param template 模板
    */
-  async addTemplate(template: ProfileTemplate): Promise<void> {
+  async addTemplate(template: LLMProfileTemplate): Promise<void> {
     this.templates.set(template.name, template);
   }
 

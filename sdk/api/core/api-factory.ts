@@ -13,7 +13,7 @@ import { WorkflowRegistryAPI } from '../resources/workflows/workflow-registry-ap
 import { ToolRegistryAPI } from '../resources/tools/tool-registry-api';
 import { ThreadRegistryAPI } from '../resources/threads/thread-registry-api';
 import { ScriptRegistryAPI } from '../resources/scripts/script-registry-api';
-import { ProfileRegistryAPI } from '../resources/profiles/profile-registry-api';
+import { LLMProfileRegistryAPI } from '../resources/profiles/profile-registry-api';
 import { NodeRegistryAPI } from '../resources/templates/node-template-registry-api';
 import { TriggerTemplateRegistryAPI } from '../resources/templates/trigger-template-registry-api';
 
@@ -50,7 +50,7 @@ export interface AllAPIs {
   /** 脚本API */
   scripts: ScriptRegistryAPI;
   /** Profile API */
-  profiles: ProfileRegistryAPI;
+  profiles: LLMProfileRegistryAPI;
   /** 节点模板API */
   nodeTemplates: NodeRegistryAPI;
   /** 触发器模板API */
@@ -83,7 +83,7 @@ export class APIFactory {
   private config: SDKAPIConfig = {};
   private apiInstances: Partial<AllAPIs> = {};
 
-  private constructor() {}
+  private constructor() { }
 
   /**
    * 获取工厂单例实例
@@ -178,10 +178,10 @@ export class APIFactory {
    * @param options 可选配置（覆盖全局配置）
    * @returns ProfileRegistryAPI实例
    */
-  public createProfileAPI(options?: ResourceAPIOptions): ProfileRegistryAPI {
+  public createProfileAPI(options?: ResourceAPIOptions): LLMProfileRegistryAPI {
     if (!this.apiInstances.profiles || options) {
       const mergedOptions = this.mergeOptions(this.config.profile, options);
-      this.apiInstances.profiles = new ProfileRegistryAPI(mergedOptions);
+      this.apiInstances.profiles = new LLMProfileRegistryAPI(mergedOptions);
     }
     return this.apiInstances.profiles;
   }

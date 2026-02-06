@@ -6,7 +6,7 @@
 
 import type { ThreadResult, ThreadOptions } from '../../types/thread';
 import { ok, err, Result } from '../utils/result';
-import { Observable, Observer, create, fromPromise } from '../utils/observable';
+import { Observable, Observer, create } from '../utils/observable';
 
 /**
  * ExecutionBuilder - 流畅的执行构建器

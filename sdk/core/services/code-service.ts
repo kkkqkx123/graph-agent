@@ -292,6 +292,35 @@ class CodeService {
   updateScript(scriptName: string, updates: Partial<Script>): void {
     this.registry.update(scriptName, updates);
   }
+
+  /**
+   * 启用脚本
+   * @param scriptName 脚本名称
+   * @throws NotFoundError 如果脚本不存在
+   */
+  enableScript(scriptName: string): void {
+    this.updateScript(scriptName, { enabled: true });
+  }
+
+  /**
+   * 禁用脚本
+   * @param scriptName 脚本名称
+   * @throws NotFoundError 如果脚本不存在
+   */
+  disableScript(scriptName: string): void {
+    this.updateScript(scriptName, { enabled: false });
+  }
+
+  /**
+   * 检查脚本是否启用
+   * @param scriptName 脚本名称
+   * @returns 是否启用
+   * @throws NotFoundError 如果脚本不存在
+   */
+  isScriptEnabled(scriptName: string): boolean {
+    const script = this.getScript(scriptName);
+    return script.enabled ?? true;
+  }
 }
 
 /**

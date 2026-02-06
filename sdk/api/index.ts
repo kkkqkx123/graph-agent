@@ -61,13 +61,13 @@ export { NodeRegistryAPI } from './resources/templates/node-template-registry-ap
 export { TriggerTemplateRegistryAPI } from './resources/templates/trigger-template-registry-api';
 export { ToolRegistryAPI } from './resources/tools/tool-registry-api';
 export { ScriptRegistryAPI } from './resources/scripts/script-registry-api';
-export { ProfileRegistryAPI } from './resources/profiles/profile-registry-api';
+export { LLMProfileRegistryAPI as ProfileRegistryAPI } from './resources/profiles/profile-registry-api';
 
 // 通用资源API基类
 export { GenericResourceAPI, type ResourceAPIOptions } from './resources/generic-resource-api';
 
 // API工厂
-export { APIFactory, apiFactory, type SDKAPIConfig, type AllAPIs } from './factory/api-factory';
+export { APIFactory, apiFactory, type SDKAPIConfig, type AllAPIs } from './core/api-factory';
 
 // API装饰器
 export {
@@ -107,18 +107,6 @@ export {
   APIEventBuilder,
   apiEventBus
 } from './common/api-event-system';
-
-// 审计日志
-export {
-  AuditLogger,
-  AuditLogLevel,
-  InMemoryAuditLogStorage,
-  auditLogger,
-  type AuditLogEntry,
-  type AuditLogStorage,
-  type AuditLogFilter,
-  type AuditLoggerConfig
-} from './audit/audit-logger';
 
 // ============================================================================
 // Command类 - 核心API (Core APIs) - 有副作用操作
@@ -320,30 +308,7 @@ export {
   Observer,
   Subscription as ObservableSubscription,
   ObservableImpl,
-  of,
-  fromPromise,
-  fromArray,
-  create,
-  map,
-  filter,
-  flatMap,
-  distinctUntilChanged,
-  throttleTime,
-  debounceTime,
-  catchError,
-  retry,
-  delay,
-  interval,
-  timer,
-  merge,
-  concat,
-  combineLatest,
-  take,
-  skip,
-  scan,
-  reduce,
-  last,
-  first
+  create
 } from './utils/observable';
 export type { OperatorFunction } from './utils/observable';
 
@@ -384,7 +349,7 @@ export type {
 // ============================================================================
 // Profile模板类型
 // ============================================================================
-export type { ProfileTemplate } from './resources/profiles/profile-registry-api';
+export type { LLMProfileTemplate as ProfileTemplate } from './resources/profiles/profile-registry-api';
 
 // ============================================================================
 // ValidationResult 从 types/errors.ts 导入
