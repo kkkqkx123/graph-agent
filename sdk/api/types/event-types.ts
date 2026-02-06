@@ -58,15 +58,3 @@ export interface APIEventData {
  * 事件监听器类型
  */
 export type APIEventListener = (event: APIEventData) => void | Promise<void>;
-
-/**
- * 事件监听器配置
- */
-export interface EventListenerConfig {
-  /** 是否只触发一次 */
-  once?: boolean;
-  /** 优先级（数字越大优先级越高） */
-  priority?: number;
-  /** 过滤条件 */
-  filter?: (event: APIEventData) => boolean;
-}

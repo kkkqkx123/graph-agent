@@ -17,16 +17,6 @@ export {
 
 export { CommandExecutor } from './common/command-executor';
 
-export {
-  CommandMiddleware,
-  LoggingMiddleware,
-  ValidationMiddleware,
-  CacheMiddleware,
-  MetricsMiddleware,
-  RetryMiddleware,
-  Logger,
-  CommandMetrics
-} from './types/command-middleware';
 
 // Query模式核心
 export {
@@ -87,18 +77,6 @@ export {
 // API工厂
 export { APIFactory, apiFactory, type SDKAPIConfig, type AllAPIs } from './core/api-factory';
 
-// API装饰器
-export {
-  withCache,
-  withLogging,
-  withPerformance,
-  withRetry,
-  decorate,
-  type CacheDecoratorOptions,
-  type LoggingDecoratorOptions,
-  type PerformanceDecoratorOptions,
-  type RetryDecoratorOptions
-} from './common/api-decorators';
 
 // 统一错误处理
 export {
@@ -115,15 +93,14 @@ export {
 export {
   APIEventType,
   type APIEventData,
-  type APIEventListener,
-  type EventListenerConfig
+  type APIEventListener
 } from './types/event-types';
 
 // 事件系统实现
 export {
   APIEventBus,
   APIEventBuilder,
-  apiEventBus
+  createEventBus
 } from './common/api-event-system';
 
 // ============================================================================
