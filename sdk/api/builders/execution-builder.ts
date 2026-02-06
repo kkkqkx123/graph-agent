@@ -5,7 +5,6 @@
  */
 
 import type { ThreadResult, ThreadOptions } from '../../types/thread';
-import { ThreadExecutorAPI } from '../operations/execution/thread-executor-api';
 import { ok, err, Result } from '../utils/result';
 import { Observable, Observer, create, fromPromise } from '../utils/observable';
 
@@ -13,15 +12,14 @@ import { Observable, Observer, create, fromPromise } from '../utils/observable';
  * ExecutionBuilder - 流畅的执行构建器
  */
 export class ExecutionBuilder {
-  private executor: ThreadExecutorAPI;
   private workflowId?: string;
   private options: ThreadOptions = {};
   private onProgressCallbacks: Array<(progress: any) => void> = [];
   private onErrorCallbacks: Array<(error: any) => void> = [];
   private abortController?: AbortController;
 
-  constructor(executor: ThreadExecutorAPI) {
-    this.executor = executor;
+  constructor() {
+    // 不再依赖ThreadExecutorAPI，改为使用Command模式
   }
 
   /**
@@ -115,21 +113,12 @@ export class ExecutionBuilder {
     }
 
     try {
-      const result = await this.executor.executeWorkflow(this.workflowId, this.options);
-
-      // 触发进度回调
-      this.onProgressCallbacks.forEach(callback => {
-        try {
-          callback({
-            status: 'completed',
-            result
-          });
-        } catch (error) {
-          console.error('进度回调执行失败:', error);
-        }
-      });
-
-      return ok(result);
+      // TODO: 使用Command模式执行工作流
+      // const command = new ExecuteWorkflowCommand({ workflowId: this.workflowId, options: this.options });
+      // const result = await commandExecutor.execute(command);
+      
+      // 临时返回错误，等待Command模式集成
+      return err(new Error('ExecutionBuilder需要使用Command模式，请使用CommandExecutor直接执行'));
     } catch (error) {
       // 触发错误回调
       this.onErrorCallbacks.forEach(callback => {
@@ -291,24 +280,12 @@ export class ExecutionBuilder {
       return err(new Error('Execution was cancelled'));
     }
 
-    // 包装执行逻辑以支持取消
-    const executionPromise = this.executor.executeWorkflow(this.workflowId!, this.options);
-
-    // 创建一个可以取消的Promise
-    return new Promise((resolve, reject) => {
-      const abortHandler = () => {
-        resolve(err(new Error('Execution was cancelled')));
-      };
-
-      signal.addEventListener('abort', abortHandler);
-
-      executionPromise
-        .then(result => resolve(ok(result)))
-        .catch(error => resolve(err(error instanceof Error ? error : new Error(String(error)))))
-        .finally(() => {
-          signal.removeEventListener('abort', abortHandler);
-        });
-    });
+    // TODO: 使用Command模式执行工作流
+    // const command = new ExecuteWorkflowCommand({ workflowId: this.workflowId!, options: this.options });
+    // const result = await commandExecutor.execute(command);
+    
+    // 临时返回错误，等待Command模式集成
+    return err(new Error('ExecutionBuilder需要使用Command模式，请使用CommandExecutor直接执行'));
   }
 
   /**

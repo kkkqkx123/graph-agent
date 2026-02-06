@@ -28,8 +28,12 @@ export {
   CommandMetrics
 } from './core/command-middleware';
 
-// 主SDK类
-export { SDK } from './core/sdk';
+// 统一类型
+export { ExecutionResult, success, failure, isSuccess, isFailure, getData, getError } from './types/execution-result';
+export { ExecutionOptions, DEFAULT_EXECUTION_OPTIONS, mergeExecutionOptions } from './types/execution-options';
+
+// 全局SDK实例
+export { sdk } from './core/sdk';
 
 // 资源管理API (CRUD Operations)
 export { WorkflowRegistryAPI } from './resources/workflows/workflow-registry-api';
@@ -40,16 +44,69 @@ export { ToolRegistryAPI } from './resources/tools/tool-registry-api';
 export { ScriptRegistryAPI } from './resources/scripts/script-registry-api';
 export { ProfileRegistryAPI } from './resources/profiles/profile-registry-api';
 
-// 业务操作API (Business Operations)
-export { ThreadExecutorAPI } from './operations/execution/thread-executor-api';
-export { MessageManagerAPI } from './operations/conversation/message-manager-api';
-export { VariableManagerAPI } from './operations/state/variable-manager-api';
-export { CheckpointManagerAPI } from './operations/state/checkpoint-manager-api';
-export { TriggerManagerAPI } from './operations/state/trigger-manager-api';
-export { EventManagerAPI } from './operations/events/event-manager-api';
-export { LLMWrapperAPI } from './operations/llm/llm-wrapper-api';
-export { ToolExecutionAPI } from './operations/tools/tool-execution-api';
-export { ScriptExecutionAPI } from './operations/code/script-execution-api';
+// Command类 - 核心API (Core APIs)
+export {
+  ExecuteWorkflowCommand,
+  PauseThreadCommand,
+  ResumeThreadCommand,
+  CancelThreadCommand
+} from './operations/core/execution/commands';
+
+export {
+  GenerateCommand,
+  GenerateBatchCommand
+} from './operations/core/llm/commands';
+
+export {
+  ExecuteToolCommand,
+  ExecuteBatchCommand as ExecuteToolBatchCommand,
+  TestToolCommand
+} from './operations/core/tools/commands';
+
+export {
+  ExecuteScriptCommand,
+  ExecuteBatchCommand as ExecuteScriptBatchCommand,
+  TestScriptCommand
+} from './operations/core/scripts/commands';
+
+// Command类 - 监控API (Monitoring APIs)
+export {
+  GetMessagesCommand,
+  GetRecentMessagesCommand,
+  SearchMessagesCommand,
+  GetMessageStatsCommand,
+  ExportMessagesCommand
+} from './operations/monitoring/messages/commands';
+
+export {
+  OnEventCommand,
+  OnceEventCommand,
+  OffEventCommand,
+  WaitForEventCommand,
+  GetEventsCommand,
+  GetEventStatsCommand
+} from './operations/monitoring/events/commands';
+
+export {
+  GetVariablesCommand,
+  GetVariableCommand,
+  HasVariableCommand,
+  GetVariableDefinitionsCommand
+} from './operations/monitoring/state/commands';
+
+// Command类 - 管理API (Management APIs)
+export {
+  CreateCheckpointCommand,
+  RestoreFromCheckpointCommand,
+  GetCheckpointsCommand,
+  DeleteCheckpointCommand
+} from './operations/management/checkpoints/commands';
+
+export {
+  GetTriggersCommand,
+  EnableTriggerCommand,
+  DisableTriggerCommand
+} from './operations/management/triggers/commands';
 
 // 验证API
 export { WorkflowValidatorAPI } from './validation/workflow-validator-api';
@@ -152,12 +209,8 @@ export type {
 } from './types';
 
 // MessageManagerAPI类型
-export type {
-  MessageQueryOptions,
-  MessageFilter,
-  MessageStats,
-  TokenUsageStats
-} from './operations/conversation/message-manager-api';
+export type { MessageStats } from './operations/monitoring/messages/commands/get-message-stats-command';
+export type { EventStats } from './operations/monitoring/events/commands/get-event-stats-command';
 
 // Profile模板类型
 export type { ProfileTemplate } from './resources/profiles/profile-registry-api';
