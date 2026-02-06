@@ -136,8 +136,12 @@ export interface ForkNodeConfig {
 /**
  * 连接节点配置
  * 
- * 说明：子线程ID由运行时动态确定，在FORK节点执行时生成并存储在执行上下文中，
- * JOIN节点执行时从执行上下文读取，不在节点配置中定义。
+ * 说明：
+ * - 子线程ID由运行时动态确定，在FORK节点执行时生成并存储在执行上下文中，
+ *   JOIN节点执行时从执行上下文读取，不在节点配置中定义。
+ * - timeout 表示等待子线程完成的最长时间（秒）。
+ *   当 timeout = 0 时表示不设置超时，一直等待直到条件满足；
+ *   当 timeout > 0 时表示最多等待该秒数，超时则抛出 TimeoutError。
  */
 export interface JoinNodeConfig {
   /** 连接操作的id，与fork节点完全一致 */
@@ -146,7 +150,7 @@ export interface JoinNodeConfig {
   joinStrategy: 'ALL_COMPLETED' | 'ANY_COMPLETED' | 'ALL_FAILED' | 'ANY_FAILED' | 'SUCCESS_COUNT_THRESHOLD';
   /** 成功数量阈值（当joinStrategy为SUCCESS_COUNT_THRESHOLD时使用） */
   threshold?: number;
-  /** 等待超时时间（秒）【从第一个前继路径完成开始计算】 */
+  /** 等待超时时间（秒）。0表示不超时，始终等待；>0表示最多等待的秒数。默认0（无超时） */
   timeout?: number;
 }
 

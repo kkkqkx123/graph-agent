@@ -80,17 +80,22 @@ export class JoinNodeStrategy implements INodeExecutionStrategy {
         };
       }
 
-      // 3. 调用 ThreadJoin 服务等待子线程完成
+      // 3. 从节点配置中获取超时时间（秒，默认 0 表示无超时）
+      const timeout = node.timeout ?? 0;
+
+      // 4. 调用 ThreadJoin 服务等待子线程完成
       this.logger.debug('调用 ThreadJoin 等待子线程完成', {
         parentThreadId: context.threadId,
         childThreadCount: childThreadIds.length,
         mergeStrategy: node.mergeStrategy,
+        timeout: timeout > 0 ? `${timeout}s` : '无超时',
       });
 
       const joinResult = await this.threadJoin.executeJoin({
         parentThread,
         joinPoint: node.nodeId,
-        childThreadIds: childThreadIds.map((id: string) => ID.fromString(id))
+        childThreadIds: childThreadIds.map((id: string) => ID.fromString(id)),
+        timeout
       });
 
       if (!joinResult.success) {

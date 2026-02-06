@@ -10,8 +10,6 @@ import type { ThreadBuilder } from '../thread-builder';
 import type { ThreadRegistry } from '../../services/thread-registry';
 import type { EventManager } from '../../services/event-manager';
 import { ExecutionError, TimeoutError, ValidationError } from '../../../types/errors';
-import { now, diffTimestamp } from '../../../utils';
-import { EventType } from '../../../types/events';
 import {
   buildThreadForkStartedEvent,
   buildThreadForkCompletedEvent,
@@ -94,17 +92,23 @@ export async function fork(
 
 /**
  * Join 操作 - 合并子 thread 结果
+ * 
+ * 说明：
+ * - timeout 单位为秒，0 表示不超时
+ * - 内部转换为毫秒进行处理
+ * - 使用 Promise.race() 实现超时控制
+ * 
  * @param childThreadIds 子线程 ID 数组
  * @param joinStrategy Join 策略
  * @param threadRegistry Thread 注册表
- * @param timeout 超时时间（毫秒）
+ * @param timeout 超时时间（秒），0 表示不超时，>0 表示超时的秒数
  * @returns Join 结果
  */
 export async function join(
   childThreadIds: string[],
   joinStrategy: JoinStrategy,
   threadRegistry: ThreadRegistry,
-  timeout: number,
+  timeout: number = 0,
   parentThreadId?: string,
   eventManager?: EventManager
 ): Promise<JoinResult> {
@@ -113,8 +117,8 @@ export async function join(
     throw new ValidationError('Join config must have joinStrategy', 'join.joinStrategy');
   }
 
-  if (!timeout || timeout <= 0) {
-    throw new ValidationError('Join config must have valid timeout', 'join.timeout');
+  if (timeout < 0) {
+    throw new ValidationError('Join timeout must be non-negative', 'join.timeout');
   }
 
   // 触发THREAD_JOIN_STARTED事件
@@ -127,14 +131,51 @@ export async function join(
   }
 
   // 步骤2：等待子 thread 完成
-  const { completedThreads, failedThreads } = await waitForCompletion(
-    childThreadIds,
-    joinStrategy,
-    threadRegistry,
-    timeout,
-    parentThreadId,
-    eventManager
-  );
+  // 如果 timeout 为 0，表示不超时，使用一个很大的值代替
+  const timeoutMs = timeout > 0 ? timeout * 1000 : Number.MAX_SAFE_INTEGER;
+
+  let completedThreads: Thread[];
+  let failedThreads: Thread[];
+
+  if (timeout > 0) {
+    // 使用 Promise.race 实现超时控制
+    try {
+      const result = await Promise.race([
+        waitForCompletion(
+          childThreadIds,
+          joinStrategy,
+          threadRegistry,
+          timeoutMs,
+          parentThreadId,
+          eventManager
+        ),
+        new Promise<never>((_, reject) => {
+          setTimeout(() => {
+            reject(new TimeoutError('Join operation timeout', timeout));
+          }, timeoutMs);
+        })
+      ]);
+      completedThreads = result.completedThreads;
+      failedThreads = result.failedThreads;
+    } catch (error) {
+      if (error instanceof TimeoutError) {
+        throw error;
+      }
+      throw error;
+    }
+  } else {
+    // 不超时，直接等待
+    const result = await waitForCompletion(
+      childThreadIds,
+      joinStrategy,
+      threadRegistry,
+      timeoutMs,
+      parentThreadId,
+      eventManager
+    );
+    completedThreads = result.completedThreads;
+    failedThreads = result.failedThreads;
+  }
 
   // 步骤3：根据策略判断是否继续
   if (!validateJoinStrategy(completedThreads, failedThreads, childThreadIds, joinStrategy)) {
@@ -335,6 +376,11 @@ async function waitForCompletion(
 
 /**
  * 使用轮询方式等待线程完成（备用方案）
+ * 
+ * 说明：
+ * - timeout 是 Promise.race 传入的超时值（毫秒）
+ * - 轮询时不再检查超时，由外层的 Promise.race 统一管理
+ * - 轮询周期为 100ms
  */
 async function waitForCompletionByPolling(
   childThreadIds: string[],
@@ -347,18 +393,11 @@ async function waitForCompletionByPolling(
   const completedThreads: Thread[] = [];
   const failedThreads: Thread[] = [];
   const pendingThreads = new Set(childThreadIds);
-  const startTime = now();
   let conditionMet = false;
 
-  // 步骤2：进入等待循环
+  // 进入等待循环
   while (pendingThreads.size > 0) {
-    // 步骤3：检查超时
-    const elapsedTime = diffTimestamp(startTime, now());
-    if (elapsedTime > timeout) {
-      throw new TimeoutError('Join operation timeout', timeout);
-    }
-
-    // 步骤4：检查子 thread 状态
+    // 检查子 thread 状态
     for (const threadId of Array.from(pendingThreads)) {
       const threadContext = threadRegistry.get(threadId);
       if (!threadContext) {
@@ -375,13 +414,13 @@ async function waitForCompletionByPolling(
       }
     }
 
-    // 步骤5：根据策略判断是否退出
+    // 根据策略判断是否退出
     if (shouldExitWait(completedThreads, failedThreads, childThreadIds, joinStrategy, pendingThreads.size)) {
       conditionMet = true;
       break;
     }
 
-    // 步骤6：等待一段时间
+    // 等待一段时间后重新检查
     await new Promise(resolve => setTimeout(resolve, 100));
   }
 

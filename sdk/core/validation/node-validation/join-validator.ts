@@ -11,14 +11,16 @@ import { ValidationError } from '../../../types/errors';
 /**
  * Join节点配置schema
  * 
- * 说明：childThreadIds不在schema中定义，因为子线程ID是运行时动态值，
- * 在FORK节点执行时存储到执行上下文中，JOIN节点执行时从执行上下文读取。
+ * 说明：
+ * - childThreadIds不在schema中定义，因为子线程ID是运行时动态值，
+ *   在FORK节点执行时存储到执行上下文中，JOIN节点执行时从执行上下文读取。
+ * - timeout 允许为 0（无超时）或正数。当为 0 时表示始终等待，不设置超时。
  */
 const joinNodeConfigSchema = z.object({
   joinId: z.string().min(1, 'Join ID is required'),
   joinStrategy: z.enum(['ALL_COMPLETED', 'ANY_COMPLETED', 'ALL_FAILED', 'ANY_FAILED', 'SUCCESS_COUNT_THRESHOLD']),
   threshold: z.number().positive('Threshold must be positive').optional(),
-  timeout: z.number().positive('Timeout must be positive').optional()
+  timeout: z.number().nonnegative('Timeout must be non-negative').optional()
 }).refine(
   (data) => {
     if (data.joinStrategy === 'SUCCESS_COUNT_THRESHOLD' && data.threshold === undefined) {

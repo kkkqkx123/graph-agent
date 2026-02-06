@@ -26,6 +26,8 @@ export interface JoinInput {
   readonly parentThread: Thread;
   readonly joinPoint: NodeId;
   readonly childThreadIds: ID[];
+  /** 等待超时时间（秒）。0 表示不超时，>0 表示最多等待的秒数。默认 0 */
+  readonly timeout?: number;
 }
 
 /**

@@ -15,6 +15,8 @@ export interface JoinNodeProps {
   readonly properties: {
     readonly branchCount: number;
     readonly mergeStrategy?: 'all' | 'any' | 'first';
+    /** 等待超时时间（秒）。0表示不超时，>0表示超时秒数。默认0 */
+    readonly timeout?: number;
   };
   readonly status: NodeStatus;
   readonly retryStrategy: NodeRetryStrategy;
@@ -44,6 +46,7 @@ export class JoinNode extends Node<JoinNodeProps> {
    * @param id 节点ID
    * @param branchCount 分支数量
    * @param mergeStrategy 合并策略
+   * @param timeout 超时时间（秒），0表示不超时
    * @param name 节点名称
    * @param description 节点描述
    * @returns JoinNode 实例
@@ -52,6 +55,7 @@ export class JoinNode extends Node<JoinNodeProps> {
     id: NodeId,
     branchCount: number,
     mergeStrategy: 'all' | 'any' | 'first' = 'all',
+    timeout: number = 0,
     name?: string,
     description?: string
   ): JoinNode {
@@ -63,6 +67,7 @@ export class JoinNode extends Node<JoinNodeProps> {
       properties: {
         branchCount,
         mergeStrategy,
+        timeout,
       },
       status: NodeStatus.pending(),
       retryStrategy: NodeRetryStrategy.disabled(),
@@ -93,6 +98,14 @@ export class JoinNode extends Node<JoinNodeProps> {
    */
   public get mergeStrategy(): 'all' | 'any' | 'first' {
     return this.getPropertyOrDefault('mergeStrategy', 'all');
+  }
+
+  /**
+   * 获取超时时间
+   * @returns 超时时间（秒），0表示不超时
+   */
+  public get timeout(): number {
+    return this.getPropertyOrDefault('timeout', 0);
   }
 
   /**

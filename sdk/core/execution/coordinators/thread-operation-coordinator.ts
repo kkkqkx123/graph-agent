@@ -100,7 +100,7 @@ export class ThreadOperationCoordinator {
       childThreadIds,
       joinStrategy,
       this.threadRegistry,
-      timeout * 1000,
+      timeout, // 注意：thread-operations.ts中的timeout已经是秒为单位
       parentThreadId,
       this.eventManager
     );
