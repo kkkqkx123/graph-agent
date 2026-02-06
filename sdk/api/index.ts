@@ -297,5 +297,3 @@ export type { LLMProfileTemplate as ProfileTemplate } from './resources/profiles
 
 // ============================================================================
 // ValidationResult 从 types/errors.ts 导入
-// ============================================================================
-export type { ValidationResult } from '../types/errors';

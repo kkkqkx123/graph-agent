@@ -14,7 +14,9 @@ import type {
   McpToolConfig 
 } from '../../types/tool';
 import { ToolType } from '../../types/tool';
-import { ValidationError, type ValidationResult } from '../../types/errors';
+import { ValidationError } from '../../types/errors';
+import type { Result } from '../../types/result';
+import { ok, err } from '../../utils/result-utils';
 
 /**
  * 工具参数属性schema
@@ -143,28 +145,16 @@ export class ToolConfigValidator {
    * @param tool 工具定义
    * @throws ValidationError 当工具定义无效时抛出
    */
-  validateTool(tool: Tool): ValidationResult {
+  validateTool(tool: Tool): Result<Tool, ValidationError[]> {
     const result = toolSchema.safeParse(tool);
     if (!result.success) {
       const error = result.error.issues[0];
       if (!error) {
-        return {
-          valid: false,
-          errors: [new ValidationError('Invalid tool configuration', 'tool')],
-          warnings: []
-        };
+        return err([new ValidationError('Invalid tool configuration', 'tool')]);
       }
-      return {
-        valid: false,
-        errors: [new ValidationError(error.message, `tool.${error.path.join('.')}`)],
-        warnings: []
-      };
+      return err([new ValidationError(error.message, `tool.${error.path.join('.')}`)]);
     }
-    return {
-      valid: true,
-      errors: [],
-      warnings: []
-    };
+    return ok(tool);
   }
 
   /**
@@ -172,28 +162,16 @@ export class ToolConfigValidator {
    * @param parameters 工具参数schema
    * @throws ValidationError 当参数schema无效时抛出
    */
-  validateParameters(parameters: ToolParameters): ValidationResult {
+  validateParameters(parameters: ToolParameters): Result<ToolParameters, ValidationError[]> {
     const result = toolParametersSchema.safeParse(parameters);
     if (!result.success) {
       const error = result.error.issues[0];
       if (!error) {
-        return {
-          valid: false,
-          errors: [new ValidationError('Invalid tool parameters schema', 'parameters')],
-          warnings: []
-        };
+        return err([new ValidationError('Invalid tool parameters schema', 'parameters')]);
       }
-      return {
-        valid: false,
-        errors: [new ValidationError(error.message, `parameters.${error.path.join('.')}`)],
-        warnings: []
-      };
+      return err([new ValidationError(error.message, `parameters.${error.path.join('.')}`)]);
     }
-    return {
-      valid: true,
-      errors: [],
-      warnings: []
-    };
+    return ok(parameters);
   }
 
   /**
@@ -202,7 +180,7 @@ export class ToolConfigValidator {
    * @param config 工具配置
    * @throws ValidationError 当配置无效时抛出
    */
-  validateToolConfig(toolType: ToolType, config: any): ValidationResult {
+  validateToolConfig(toolType: ToolType, config: any): Result<any, ValidationError[]> {
     let result;
 
     switch (toolType) {
@@ -219,33 +197,17 @@ export class ToolConfigValidator {
         result = mcpToolConfigSchema.safeParse(config);
         break;
       default:
-        return {
-          valid: false,
-          errors: [new ValidationError(`Unknown tool type: ${toolType}`, 'type')],
-          warnings: []
-        };
+        return err([new ValidationError(`Unknown tool type: ${toolType}`, 'type')]);
     }
 
     if (!result.success) {
       const error = result.error.issues[0];
       if (!error) {
-        return {
-          valid: false,
-          errors: [new ValidationError(`Invalid ${toolType} tool configuration`, 'config')],
-          warnings: []
-        };
+        return err([new ValidationError(`Invalid ${toolType} tool configuration`, 'config')]);
       }
-      return {
-        valid: false,
-        errors: [new ValidationError(error.message, `config.${error.path.join('.')}`)],
-        warnings: []
-      };
+      return err([new ValidationError(error.message, `config.${error.path.join('.')}`)]);
     }
-    return {
-      valid: true,
-      errors: [],
-      warnings: []
-    };
+    return ok(config);
   }
 
   /**
@@ -254,7 +216,7 @@ export class ToolConfigValidator {
    * @param parameters 调用参数
    * @throws ValidationError 当调用参数无效时抛出
    */
-  validateToolCallParameters(tool: Tool, parameters: Record<string, any>): ValidationResult {
+  validateToolCallParameters(tool: Tool, parameters: Record<string, any>): Result<Record<string, any>, ValidationError[]> {
     const { properties, required } = tool.parameters;
     const errors: ValidationError[] = [];
 
@@ -293,11 +255,10 @@ export class ToolConfigValidator {
       }
     }
     
-    return {
-      valid: errors.length === 0,
-      errors,
-      warnings: []
-    };
+    if (errors.length === 0) {
+      return ok(parameters);
+    }
+    return err(errors);
   }
 
   /**
@@ -422,7 +383,7 @@ export class ToolConfigValidator {
    * @param environment 执行环境信息
    * @throws ValidationError 当工具与环境不兼容时抛出
    */
-  validateToolCompatibility(tool: Tool, environment: Record<string, any>): ValidationResult {
+  validateToolCompatibility(tool: Tool, environment: Record<string, any>): Result<Tool, ValidationError[]> {
     const { type, config } = tool;
     const errors: ValidationError[] = [];
 
@@ -448,10 +409,9 @@ export class ToolConfigValidator {
         break;
     }
     
-    return {
-      valid: errors.length === 0,
-      errors,
-      warnings: []
-    };
+    if (errors.length === 0) {
+      return ok(tool);
+    }
+    return err(errors);
   }
 }

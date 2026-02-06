@@ -7,8 +7,9 @@
 import { nodeTemplateRegistry, type NodeTemplateRegistry } from '../../../core/services/node-template-registry';
 import type { NodeTemplate } from '../../../types/node-template';
 import type { NodeTemplateFilter, NodeTemplateSummary } from '../../types/registry-types';
-import type { ValidationResult } from '../../../types/errors';
 import { ValidationError } from '../../../types/errors';
+import type { Result } from '../../../types/result';
+import { ok, err } from '../../../utils/result-utils';
 import { NodeType } from '../../../types/node';
 import { GenericResourceAPI } from '../generic-resource-api';
 
@@ -171,7 +172,7 @@ export class NodeRegistryAPI extends GenericResourceAPI<NodeTemplate, string, No
    * @param template 节点模板
    * @returns 验证结果
    */
-  async validateTemplate(template: NodeTemplate): Promise<ValidationResult> {
+  async validateTemplate(template: NodeTemplate): Promise<Result<NodeTemplate, ValidationError[]>> {
     const errors: ValidationError[] = [];
 
     // 验证必需字段
@@ -198,11 +199,7 @@ export class NodeRegistryAPI extends GenericResourceAPI<NodeTemplate, string, No
 
     // 如果有错误，直接返回
     if (errors.length > 0) {
-      return {
-        valid: false,
-        errors,
-        warnings: []
-      };
+      return err(errors);
     }
 
     // 使用现有的验证函数验证节点配置
@@ -218,11 +215,7 @@ export class NodeRegistryAPI extends GenericResourceAPI<NodeTemplate, string, No
 
     try {
       validateNodeByType(mockNode);
-      return {
-        valid: true,
-        errors: [],
-        warnings: []
-      };
+      return ok(template);
     } catch (error) {
       if (error instanceof ValidationError) {
         errors.push(new ValidationError(
@@ -235,11 +228,7 @@ export class NodeRegistryAPI extends GenericResourceAPI<NodeTemplate, string, No
           'template.config'
         ));
       }
-      return {
-        valid: false,
-        errors,
-        warnings: []
-      };
+      return err(errors);
     }
   }
 

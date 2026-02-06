@@ -27,7 +27,9 @@ import { z } from 'zod';
 import type { WorkflowDefinition } from '../../types/workflow';
 import type { Node } from '../../types/node';
 import { NodeType } from '../../types/node';
-import { ValidationError, type ValidationResult } from '../../types/errors';
+import { ValidationError } from '../../types/errors';
+import type { Result } from '../../types/result';
+import { ok, err } from '../../utils/result-utils';
 import { validateNodeByType } from './node-validation';
 import { validateHooks } from './hook-validator';
 import { validateTriggers } from './trigger-validator';
@@ -114,46 +116,37 @@ export class WorkflowValidator {
    * @param workflow 工作流定义
    * @returns 验证结果
    */
-  validate(workflow: WorkflowDefinition): ValidationResult {
+  validate(workflow: WorkflowDefinition): Result<WorkflowDefinition, ValidationError[]> {
     const errors: ValidationError[] = [];
 
     // 验证基本信息
-    const basicResult = this.validateBasicInfo(workflow);
-    errors.push(...basicResult.errors);
+    errors.push(...this.validateBasicInfo(workflow));
 
     // 验证节点
-    const nodesResult = this.validateNodes(workflow);
-    errors.push(...nodesResult.errors);
+    errors.push(...this.validateNodes(workflow));
 
     // 验证边
-    const edgesResult = this.validateEdges(workflow);
-    errors.push(...edgesResult.errors);
+    errors.push(...this.validateEdges(workflow));
 
     // 验证引用完整性
-    const referenceResult = this.validateReferences(workflow);
-    errors.push(...referenceResult.errors);
+    errors.push(...this.validateReferences(workflow));
 
     // 验证配置
-    const configResult = this.validateConfig(workflow);
-    errors.push(...configResult.errors);
+    errors.push(...this.validateConfig(workflow));
 
     // 验证触发器
-    const triggersResult = this.validateTriggers(workflow);
-    errors.push(...triggersResult.errors);
+    errors.push(...this.validateTriggers(workflow));
 
     // 验证自引用
-    const selfReferenceResult = this.validateSelfReferences(workflow);
-    errors.push(...selfReferenceResult.errors);
+    errors.push(...this.validateSelfReferences(workflow));
 
     // 验证工具配置
-    const toolsResult = this.validateTools(workflow);
-    errors.push(...toolsResult.errors);
+    errors.push(...this.validateTools(workflow));
 
-    return {
-      valid: errors.length === 0,
-      errors,
-      warnings: []
-    };
+    if (errors.length > 0) {
+      return err(errors);
+    }
+    return ok(workflow);
   }
 
   /**
@@ -161,12 +154,13 @@ export class WorkflowValidator {
    * @param workflow 工作流定义
    * @returns 验证结果
    */
-  private validateBasicInfo(workflow: WorkflowDefinition): ValidationResult {
+  private validateBasicInfo(workflow: WorkflowDefinition): ValidationError[] {
     const result = workflowBasicSchema.safeParse(workflow);
     if (result.success) {
-      return { valid: true, errors: [], warnings: [] };
+      return [];
     }
-    return this.convertZodError(result.error, 'workflow');
+    const validationErrors = this.convertZodError(result.error, 'workflow');
+    return validationErrors;
   }
 
   /**
@@ -174,13 +168,13 @@ export class WorkflowValidator {
    * @param workflow 工作流定义
    * @returns 验证结果
    */
-  private validateNodes(workflow: WorkflowDefinition): ValidationResult {
+  private validateNodes(workflow: WorkflowDefinition): ValidationError[] {
     const errors: ValidationError[] = [];
 
     // 验证节点数组不为空
     if (!workflow.nodes || workflow.nodes.length === 0) {
       errors.push(new ValidationError('Workflow must have at least one node', 'workflow.nodes'));
-      return { valid: false, errors, warnings: [] };
+      return errors;
     }
 
     // 验证节点ID唯一性
@@ -234,8 +228,8 @@ export class WorkflowValidator {
       // 验证节点Hooks
       if (node.id && node.hooks && node.hooks.length > 0) {
         const hooksResult = validateHooks(node.hooks, node.id);
-        if (!hooksResult.valid) {
-          errors.push(...hooksResult.errors);
+        if (hooksResult.isErr()) {
+          errors.push(...hooksResult.error);
         }
       }
 
@@ -289,11 +283,7 @@ export class WorkflowValidator {
       }
     }
 
-    return {
-      valid: errors.length === 0,
-      errors,
-      warnings: []
-    };
+    return errors;
   }
 
   /**
@@ -301,7 +291,7 @@ export class WorkflowValidator {
    * @param workflow 工作流定义
    * @returns 验证结果
    */
-  private validateEdges(workflow: WorkflowDefinition): ValidationResult {
+  private validateEdges(workflow: WorkflowDefinition): ValidationError[] {
     const errors: ValidationError[] = [];
     const edgeIds = new Set<string>();
 
@@ -335,11 +325,7 @@ export class WorkflowValidator {
       }
     }
 
-    return {
-      valid: errors.length === 0,
-      errors,
-      warnings: []
-    };
+    return errors;
   }
 
   /**
@@ -348,7 +334,7 @@ export class WorkflowValidator {
    * @param workflow 工作流定义
    * @returns 验证结果
    */
-  private validateReferences(workflow: WorkflowDefinition): ValidationResult {
+  private validateReferences(workflow: WorkflowDefinition): ValidationError[] {
     const errors: ValidationError[] = [];
     const nodeIds = new Set(workflow.nodes.map(n => n.id));
 
@@ -368,11 +354,7 @@ export class WorkflowValidator {
       }
     }
 
-    return {
-      valid: errors.length === 0,
-      errors,
-      warnings: []
-    };
+    return errors;
   }
 
   /**
@@ -380,36 +362,32 @@ export class WorkflowValidator {
    * @param workflow 工作流定义
    * @returns 验证结果
    */
-  private validateConfig(workflow: WorkflowDefinition): ValidationResult {
+  private validateConfig(workflow: WorkflowDefinition): ValidationError[] {
     if (!workflow.config) {
-      return { valid: true, errors: [], warnings: [] };
+      return [];
     }
 
     const result = workflowConfigSchema.safeParse(workflow.config);
     if (result.success) {
-      return { valid: true, errors: [], warnings: [] };
+      return [];
     }
     return this.convertZodError(result.error, 'workflow.config');
   }
 
   /**
-    * 将zod错误转换为ValidationResult
+    * 将zod错误转换为ValidationError数组
     * @param error zod错误
     * @param prefix 字段路径前缀
-    * @returns ValidationResult
+    * @returns ValidationError[]
     */
-  private convertZodError(error: z.ZodError, prefix?: string): ValidationResult {
+  private convertZodError(error: z.ZodError, prefix?: string): ValidationError[] {
     const errors: ValidationError[] = error.issues.map((issue) => {
       const field = issue.path.length > 0
         ? (prefix ? `${prefix}.${issue.path.join('.')}` : issue.path.join('.'))
         : prefix;
       return new ValidationError(issue.message, field);
     });
-    return {
-      valid: false,
-      errors,
-      warnings: []
-    };
+    return errors;
   }
 
   /**
@@ -417,23 +395,21 @@ export class WorkflowValidator {
    * @param workflow 工作流定义
    * @returns 验证结果
    */
-  private validateTriggers(workflow: WorkflowDefinition): ValidationResult {
+  private validateTriggers(workflow: WorkflowDefinition): ValidationError[] {
     const errors: ValidationError[] = [];
 
     // 如果没有触发器，直接返回成功
     if (!workflow.triggers || workflow.triggers.length === 0) {
-      return { valid: true, errors: [], warnings: [] };
+      return [];
     }
 
     // 验证触发器配置
     const triggersResult = validateTriggers(workflow.triggers, 'workflow.triggers');
-    errors.push(...triggersResult.errors);
+    if (triggersResult.isErr()) {
+      errors.push(...triggersResult.error);
+    }
 
-    return {
-      valid: errors.length === 0,
-      errors,
-      warnings: []
-    };
+    return errors;
   }
 
   /**
@@ -442,17 +418,13 @@ export class WorkflowValidator {
    * @param workflow 工作流定义
    * @returns 验证结果
    */
-  private validateSelfReferences(workflow: WorkflowDefinition): ValidationResult {
+  private validateSelfReferences(workflow: WorkflowDefinition): ValidationError[] {
     const errors = SelfReferenceValidationStrategy.validateNodes(
       workflow.nodes,
       workflow.id
     );
 
-    return {
-      valid: errors.length === 0,
-      errors,
-      warnings: []
-    };
+    return errors;
   }
 
   /**
@@ -460,7 +432,7 @@ export class WorkflowValidator {
    * @param workflow 工作流定义
    * @returns 验证结果
    */
-  private validateTools(workflow: WorkflowDefinition): ValidationResult {
+  private validateTools(workflow: WorkflowDefinition): ValidationError[] {
     const errors: ValidationError[] = [];
 
     // 验证availableTools配置
@@ -498,10 +470,6 @@ export class WorkflowValidator {
       }
     }
 
-    return {
-      valid: errors.length === 0,
-      errors,
-      warnings: []
-    };
+    return errors;
   }
 }

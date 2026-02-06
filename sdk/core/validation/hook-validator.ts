@@ -6,7 +6,9 @@
 import { z } from 'zod';
 import type { NodeHook } from '../../types/node';
 import { HookType } from '../../types/node';
-import { ValidationError, type ValidationResult } from '../../types/errors';
+import { ValidationError } from '../../types/errors';
+import { ok, err } from '../../utils/result-utils';
+import type { Result } from '../../types/result';
 
 /**
  * Hook配置schema
@@ -26,28 +28,16 @@ const hookSchema = z.object({
  * @param nodeId 节点ID（用于错误路径）
  * @throws ValidationError 当配置无效时抛出
  */
-export function validateHook(hook: NodeHook, nodeId: string): ValidationResult {
+export function validateHook(hook: NodeHook, nodeId: string): Result<NodeHook, ValidationError[]> {
   const result = hookSchema.safeParse(hook);
   if (!result.success) {
     const error = result.error.issues[0];
     if (!error) {
-      return {
-        valid: false,
-        errors: [new ValidationError('Invalid hook configuration', `node.${nodeId}.hooks`)],
-        warnings: []
-      };
+      return err([new ValidationError('Invalid hook configuration', `node.${nodeId}.hooks`)]);
     }
-    return {
-      valid: false,
-      errors: [new ValidationError(error.message, `node.${nodeId}.hooks.${error.path.join('.')}`)],
-      warnings: []
-    };
+    return err([new ValidationError(error.message, `node.${nodeId}.hooks.${error.path.join('.')}`)]);
   }
-  return {
-    valid: true,
-    errors: [],
-    warnings: []
-  };
+  return ok(hook);
 }
 
 /**
@@ -56,13 +46,9 @@ export function validateHook(hook: NodeHook, nodeId: string): ValidationResult {
  * @param nodeId 节点ID（用于错误路径）
  * @throws ValidationError 当配置无效时抛出
  */
-export function validateHooks(hooks: NodeHook[], nodeId: string): ValidationResult {
+export function validateHooks(hooks: NodeHook[], nodeId: string): Result<NodeHook[], ValidationError[]> {
   if (!hooks || !Array.isArray(hooks)) {
-    return {
-      valid: false,
-      errors: [new ValidationError('Hooks must be an array', `node.${nodeId}.hooks`)],
-      warnings: []
-    };
+    return err([new ValidationError('Hooks must be an array', `node.${nodeId}.hooks`)]);
   }
 
   const errors: ValidationError[] = [];
@@ -72,14 +58,13 @@ export function validateHooks(hooks: NodeHook[], nodeId: string): ValidationResu
 
     // 验证Hook配置
     const result = validateHook(hook, nodeId);
-    if (!result.valid) {
-      errors.push(...result.errors);
+    if (result.isErr()) {
+      errors.push(...result.error);
     }
   }
   
-  return {
-    valid: errors.length === 0,
-    errors,
-    warnings: []
-  };
+  if (errors.length === 0) {
+    return ok(hooks);
+  }
+  return err(errors);
 }

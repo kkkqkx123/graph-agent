@@ -6,7 +6,9 @@
 import { z } from 'zod';
 import type { Script, ScriptExecutionOptions, SandboxConfig } from '../../types/code';
 import { ScriptType } from '../../types/code';
-import { ValidationError, type ValidationResult } from '../../types/errors';
+import { ValidationError } from '../../types/errors';
+import { ok, err } from '../../utils/result-utils';
+import type { Result } from '../../types/result';
 
 /**
  * 沙箱配置schema
@@ -83,28 +85,16 @@ export class CodeConfigValidator {
    * @param script 脚本定义
    * @throws ValidationError 当脚本定义无效时抛出
    */
-  validateScript(script: Script): ValidationResult {
+  validateScript(script: Script): Result<Script, ValidationError[]> {
     const result = scriptSchema.safeParse(script);
     if (!result.success) {
       const error = result.error.issues[0];
       if (!error) {
-        return {
-          valid: false,
-          errors: [new ValidationError('Invalid script configuration', 'script')],
-          warnings: []
-        };
+        return err([new ValidationError('Invalid script configuration', 'script')]);
       }
-      return {
-        valid: false,
-        errors: [new ValidationError(error.message, `script.${error.path.join('.')}`)],
-        warnings: []
-      };
+      return err([new ValidationError(error.message, `script.${error.path.join('.')}`)]);
     }
-    return {
-      valid: true,
-      errors: [],
-      warnings: []
-    };
+    return ok(script);
   }
 
   /**
@@ -112,28 +102,16 @@ export class CodeConfigValidator {
    * @param options 脚本执行选项
    * @throws ValidationError 当执行选项无效时抛出
    */
-  validateExecutionOptions(options: ScriptExecutionOptions): ValidationResult {
+  validateExecutionOptions(options: ScriptExecutionOptions): Result<ScriptExecutionOptions, ValidationError[]> {
     const result = scriptExecutionOptionsSchema.safeParse(options);
     if (!result.success) {
       const error = result.error.issues[0];
       if (!error) {
-        return {
-          valid: false,
-          errors: [new ValidationError('Invalid execution options', 'options')],
-          warnings: []
-        };
+        return err([new ValidationError('Invalid execution options', 'options')]);
       }
-      return {
-        valid: false,
-        errors: [new ValidationError(error.message, `options.${error.path.join('.')}`)],
-        warnings: []
-      };
+      return err([new ValidationError(error.message, `options.${error.path.join('.')}`)]);
     }
-    return {
-      valid: true,
-      errors: [],
-      warnings: []
-    };
+    return ok(options);
   }
 
   /**
@@ -141,28 +119,16 @@ export class CodeConfigValidator {
    * @param config 沙箱配置
    * @throws ValidationError 当沙箱配置无效时抛出
    */
-  validateSandboxConfig(config: SandboxConfig): ValidationResult {
+  validateSandboxConfig(config: SandboxConfig): Result<SandboxConfig, ValidationError[]> {
     const result = sandboxConfigSchema.safeParse(config);
     if (!result.success) {
       const error = result.error.issues[0];
       if (!error) {
-        return {
-          valid: false,
-          errors: [new ValidationError('Invalid sandbox configuration', 'sandbox')],
-          warnings: []
-        };
+        return err([new ValidationError('Invalid sandbox configuration', 'sandbox')]);
       }
-      return {
-        valid: false,
-        errors: [new ValidationError(error.message, `sandbox.${error.path.join('.')}`)],
-        warnings: []
-      };
+      return err([new ValidationError(error.message, `sandbox.${error.path.join('.')}`)]);
     }
-    return {
-      valid: true,
-      errors: [],
-      warnings: []
-    };
+    return ok(config);
   }
 
   /**
@@ -176,23 +142,19 @@ export class CodeConfigValidator {
     scriptType: ScriptType,
     content?: string,
     filePath?: string
-  ): ValidationResult {
+  ): Result<void, ValidationError[]> {
     // 验证文件扩展名与脚本类型的兼容性
     if (filePath) {
       const extension = filePath.toLowerCase().split('.').pop();
       const expectedExtensions = this.getExpectedExtensions(scriptType);
       
       if (extension && !expectedExtensions.includes(extension)) {
-        return {
-          valid: false,
-          errors: [
-            new ValidationError(
-              `File extension '${extension}' is not compatible with script type '${scriptType}'. Expected: ${expectedExtensions.join(', ')}`,
-              'filePath'
-            )
-          ],
-          warnings: []
-        };
+        return err([
+          new ValidationError(
+            `File extension '${extension}' is not compatible with script type '${scriptType}'. Expected: ${expectedExtensions.join(', ')}`,
+            'filePath'
+          )
+        ]);
       }
     }
 
@@ -202,28 +164,16 @@ export class CodeConfigValidator {
         this.validateContentCompatibility(scriptType, content);
       } catch (error) {
         if (error instanceof ValidationError) {
-          return {
-            valid: false,
-            errors: [error],
-            warnings: []
-          };
+          return err([error]);
         }
-        return {
-          valid: false,
-          errors: [new ValidationError(
-            error instanceof Error ? error.message : String(error),
-            'content'
-          )],
-          warnings: []
-        };
+        return err([new ValidationError(
+          error instanceof Error ? error.message : String(error),
+          'content'
+        )]);
       }
     }
     
-    return {
-      valid: true,
-      errors: [],
-      warnings: []
-    };
+    return ok(undefined);
   }
 
   /**
@@ -286,7 +236,7 @@ export class CodeConfigValidator {
    * @param environment 执行环境信息
    * @throws ValidationError 当环境不满足要求时抛出
    */
-  validateExecutionEnvironment(script: Script, environment: Record<string, any>): ValidationResult {
+  validateExecutionEnvironment(script: Script, environment: Record<string, any>): Result<void, ValidationError[]> {
     const { type, options } = script;
     const errors: ValidationError[] = [];
 
@@ -330,10 +280,9 @@ export class CodeConfigValidator {
         break;
     }
     
-    return {
-      valid: errors.length === 0,
-      errors,
-      warnings: []
-    };
+    if (errors.length === 0) {
+      return ok(undefined);
+    }
+    return err(errors);
   }
 }

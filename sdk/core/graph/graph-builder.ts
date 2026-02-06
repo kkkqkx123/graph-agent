@@ -98,8 +98,8 @@ export class GraphBuilder {
 
     return {
       graph,
-      isValid: validationResult.valid,
-      errors: validationResult.errors.map(e => e.message),
+      isValid: validationResult.isOk(),
+      errors: validationResult.isErr() ? validationResult.error.map((e: { message: any; }) => e.message) : [],
     };
   }
 
@@ -283,7 +283,7 @@ export class GraphBuilder {
         workflowId: options.subworkflowId,
         parentWorkflowId: options.parentWorkflowId,
       };
-      
+
       // 为边界节点添加internalMetadata标记
       if (node.type === 'START' as NodeType) {
         newNode.internalMetadata = {
@@ -302,7 +302,7 @@ export class GraphBuilder {
           [SUBGRAPH_METADATA_KEYS.DEPTH]: options.depth
         };
       }
-      
+
       mainGraph.addNode(newNode);
       nodeIdMapping.set(node.id, newId);
       addedNodeIds.push(newId);

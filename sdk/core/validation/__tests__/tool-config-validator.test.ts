@@ -35,7 +35,7 @@ describe('ToolConfigValidator', () => {
       };
 
       const result = validator.validateTool(validTool);
-      expect(result.valid).toBe(true);
+      expect(result.isOk()).toBe(true);
     });
 
     it('应该验证有效的有状态工具定义', () => {
@@ -63,7 +63,7 @@ describe('ToolConfigValidator', () => {
       };
 
       const result = validator.validateTool(validTool);
-      expect(result.valid).toBe(true);
+      expect(result.isOk()).toBe(true);
     });
 
     it('应该验证有效的REST工具定义', () => {
@@ -88,7 +88,7 @@ describe('ToolConfigValidator', () => {
       };
 
       const result = validator.validateTool(validTool);
-      expect(result.valid).toBe(true);
+      expect(result.isOk()).toBe(true);
     });
 
     it('应该验证有效的MCP工具定义', () => {
@@ -113,7 +113,7 @@ describe('ToolConfigValidator', () => {
       };
 
       const result = validator.validateTool(validTool);
-      expect(result.valid).toBe(true);
+      expect(result.isOk()).toBe(true);
     });
 
     it('应该抛出ValidationError当工具缺少必需字段', () => {
@@ -132,8 +132,10 @@ describe('ToolConfigValidator', () => {
       } as any;
 
       const result = validator.validateTool(invalidTool);
-      expect(result.valid).toBe(false);
-      expect(result.errors.length).toBeGreaterThan(0);
+      expect(result.isErr()).toBe(true);
+      if (result.isErr()) {
+        expect(result.error.length).toBeGreaterThan(0);
+      }
     });
 
     it('应该抛出ValidationError当参数schema无效', () => {
@@ -152,8 +154,10 @@ describe('ToolConfigValidator', () => {
       };
 
       const result = validator.validateTool(invalidTool);
-      expect(result.valid).toBe(false);
-      expect(result.errors.length).toBeGreaterThan(0);
+      expect(result.isErr()).toBe(true);
+      if (result.isErr()) {
+        expect(result.error.length).toBeGreaterThan(0);
+      }
     });
 
     it('应该抛出ValidationError当工具配置与类型不匹配', () => {
@@ -178,8 +182,10 @@ describe('ToolConfigValidator', () => {
       };
 
       const result = validator.validateTool(invalidTool);
-      expect(result.valid).toBe(false);
-      expect(result.errors.length).toBeGreaterThan(0);
+      expect(result.isErr()).toBe(true);
+      if (result.isErr()) {
+        expect(result.error.length).toBeGreaterThan(0);
+      }
     });
   });
 
@@ -200,7 +206,7 @@ describe('ToolConfigValidator', () => {
       };
 
       const result = validator.validateParameters(validParameters);
-      expect(result.valid).toBe(true);
+      expect(result.isOk()).toBe(true);
     });
 
     it('应该抛出ValidationError当参数schema无效', () => {
@@ -214,8 +220,10 @@ describe('ToolConfigValidator', () => {
       };
 
       const result = validator.validateParameters(invalidParameters);
-      expect(result.valid).toBe(false);
-      expect(result.errors.length).toBeGreaterThan(0);
+      expect(result.isErr()).toBe(true);
+      if (result.isErr()) {
+        expect(result.error.length).toBeGreaterThan(0);
+      }
     });
   });
 
@@ -226,7 +234,7 @@ describe('ToolConfigValidator', () => {
       };
 
       const result = validator.validateToolConfig(ToolType.STATELESS, validConfig);
-      expect(result.valid).toBe(true);
+      expect(result.isOk()).toBe(true);
     });
 
     it('应该验证有效的有状态工具配置', () => {
@@ -237,7 +245,7 @@ describe('ToolConfigValidator', () => {
       };
 
       const result = validator.validateToolConfig(ToolType.STATEFUL, validConfig);
-      expect(result.valid).toBe(true);
+      expect(result.isOk()).toBe(true);
     });
 
     it('应该验证有效的REST工具配置', () => {
@@ -247,7 +255,7 @@ describe('ToolConfigValidator', () => {
       };
 
       const result = validator.validateToolConfig(ToolType.REST, validConfig);
-      expect(result.valid).toBe(true);
+      expect(result.isOk()).toBe(true);
     });
 
     it('应该验证有效的MCP工具配置', () => {
@@ -257,7 +265,7 @@ describe('ToolConfigValidator', () => {
       };
 
       const result = validator.validateToolConfig(ToolType.MCP, validConfig);
-      expect(result.valid).toBe(true);
+      expect(result.isOk()).toBe(true);
     });
 
     it('应该抛出ValidationError当配置无效', () => {
@@ -267,8 +275,10 @@ describe('ToolConfigValidator', () => {
       };
 
       const result = validator.validateToolConfig(ToolType.MCP, invalidConfig);
-      expect(result.valid).toBe(false);
-      expect(result.errors.length).toBeGreaterThan(0);
+      expect(result.isErr()).toBe(true);
+      if (result.isErr()) {
+        expect(result.error.length).toBeGreaterThan(0);
+      }
     });
   });
 
@@ -303,7 +313,7 @@ describe('ToolConfigValidator', () => {
       };
 
       const result = validator.validateToolCallParameters(tool, validParameters);
-      expect(result.valid).toBe(true);
+      expect(result.isOk()).toBe(true);
     });
 
     it('应该抛出ValidationError当缺少必需参数', () => {
@@ -332,8 +342,10 @@ describe('ToolConfigValidator', () => {
       };
 
       const result = validator.validateToolCallParameters(tool, invalidParameters);
-      expect(result.valid).toBe(false);
-      expect(result.errors.length).toBeGreaterThan(0);
+      expect(result.isErr()).toBe(true);
+      if (result.isErr()) {
+        expect(result.error.length).toBeGreaterThan(0);
+      }
     });
 
     it('应该抛出ValidationError当参数类型不匹配', () => {
@@ -361,8 +373,10 @@ describe('ToolConfigValidator', () => {
       };
 
       const result = validator.validateToolCallParameters(tool, invalidParameters);
-      expect(result.valid).toBe(false);
-      expect(result.errors.length).toBeGreaterThan(0);
+      expect(result.isErr()).toBe(true);
+      if (result.isErr()) {
+        expect(result.error.length).toBeGreaterThan(0);
+      }
     });
 
     it('应该验证枚举参数', () => {
@@ -391,15 +405,17 @@ describe('ToolConfigValidator', () => {
       };
 
       const result = validator.validateToolCallParameters(tool, validParameters);
-      expect(result.valid).toBe(true);
+      expect(result.isOk()).toBe(true);
 
       const invalidParameters = {
         status: 'invalid', // 不在枚举中
       };
 
       const resultInvalid = validator.validateToolCallParameters(tool, invalidParameters);
-      expect(resultInvalid.valid).toBe(false);
-      expect(resultInvalid.errors.length).toBeGreaterThan(0);
+      expect(resultInvalid.isErr()).toBe(true);
+      if (resultInvalid.isErr()) {
+        expect(resultInvalid.error.length).toBeGreaterThan(0);
+      }
     });
 
     it('应该验证格式约束', () => {
@@ -434,7 +450,7 @@ describe('ToolConfigValidator', () => {
       };
 
       const result = validator.validateToolCallParameters(tool, validParameters);
-      expect(result.valid).toBe(true);
+      expect(result.isOk()).toBe(true);
 
       const invalidParameters = {
         email: 'invalid-email',
@@ -442,8 +458,10 @@ describe('ToolConfigValidator', () => {
       };
 
       const resultInvalidFormat = validator.validateToolCallParameters(tool, invalidParameters);
-      expect(resultInvalidFormat.valid).toBe(false);
-      expect(resultInvalidFormat.errors.length).toBeGreaterThan(0);
+      expect(resultInvalidFormat.isErr()).toBe(true);
+      if (resultInvalidFormat.isErr()) {
+        expect(resultInvalidFormat.error.length).toBeGreaterThan(0);
+      }
     });
   });
 
@@ -474,7 +492,7 @@ describe('ToolConfigValidator', () => {
       };
 
       const result = validator.validateToolCompatibility(tool, compatibleEnvironment);
-      expect(result.valid).toBe(true);
+      expect(result.isOk()).toBe(true);
     });
 
     it('应该抛出ValidationError当环境不满足要求', () => {
@@ -502,8 +520,10 @@ describe('ToolConfigValidator', () => {
       };
 
       const result = validator.validateToolCompatibility(tool, incompatibleEnvironment);
-      expect(result.valid).toBe(false);
-      expect(result.errors.length).toBeGreaterThan(0);
+      expect(result.isErr()).toBe(true);
+      if (result.isErr()) {
+        expect(result.error.length).toBeGreaterThan(0);
+      }
     });
   });
 });

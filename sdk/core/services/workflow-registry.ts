@@ -54,14 +54,6 @@ export interface WorkflowVersion {
 }
 
 /**
- * 验证结果
- */
-export interface ValidationResult {
-  valid: boolean;
-  errors: string[];
-}
-
-/**
  * WorkflowRegistry - 工作流注册器
  */
 class WorkflowRegistry {
@@ -363,7 +355,7 @@ class WorkflowRegistry {
     this.workflows.delete(workflowId);
     this.versions.delete(workflowId);
     this.clearPreprocessCache(workflowId);
-    
+
     // 从全局GraphRegistry中移除对应的图
     graphRegistry.delete(workflowId);
   }
@@ -447,7 +439,7 @@ class WorkflowRegistry {
    * @param workflow 工作流定义
    * @returns 验证结果
    */
-  validate(workflow: WorkflowDefinition): ValidationResult {
+  validate(workflow: WorkflowDefinition): { valid: boolean; errors: string[] } {
     const errors: string[] = [];
 
     // 基本验证
@@ -469,8 +461,8 @@ class WorkflowRegistry {
 
     // 使用 WorkflowValidator 进行详细验证
     const validatorResult = this.validator.validate(workflow);
-    if (!validatorResult.valid) {
-      errors.push(...validatorResult.errors.map(e => e.message));
+    if (validatorResult.isErr()) {
+      errors.push(...validatorResult.error.map(e => e.message));
     }
 
     return {
@@ -484,7 +476,7 @@ class WorkflowRegistry {
    * @param workflows 工作流定义数组
    * @returns 验证结果数组
    */
-  validateBatch(workflows: WorkflowDefinition[]): ValidationResult[] {
+  validateBatch(workflows: WorkflowDefinition[]): { valid: boolean; errors: string[] }[] {
     return workflows.map(workflow => this.validate(workflow));
   }
 
@@ -715,8 +707,8 @@ class WorkflowRegistry {
 
     // 验证图
     const validationResult = GraphValidator.validate(buildResult.graph);
-    if (!validationResult.valid) {
-      const errors = validationResult.errors.map(e => e.message).join(', ');
+    if (validationResult.isErr()) {
+      const errors = validationResult.error.map(e => e.message).join(', ');
       throw new ValidationError(
         `Graph validation failed: ${errors}`,
         'workflow.graph'

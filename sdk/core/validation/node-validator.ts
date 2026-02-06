@@ -7,7 +7,9 @@
 import { z } from 'zod';
 import type { Node } from '../../types/node';
 import { NodeType } from '../../types/node';
-import { ValidationError, type ValidationResult } from '../../types/errors';
+import { ValidationError } from '../../types/errors';
+import type { Result } from '../../types/result';
+import { ok, err } from '../../utils/result-utils';
 import { validateNodeByType } from './node-validation';
 
 /**
@@ -35,20 +37,20 @@ export class NodeValidator {
    * @param node 节点
    * @returns 验证结果
    */
-  validateNode(node: Node): ValidationResult {
+  validateNode(node: Node): Result<Node, ValidationError[]> {
     // 首先验证基本信息
     const basicResult = nodeSchema.safeParse(node);
     if (!basicResult.success) {
-      return this.convertZodError(basicResult.error, 'node');
+      return err(this.convertZodError(basicResult.error, 'node'));
     }
 
     // 然后验证节点配置
     const configResult = this.validateNodeConfig(node);
-    if (!configResult.valid) {
+    if (configResult.isErr()) {
       return configResult;
     }
 
-    return { valid: true, errors: [], warnings: [] };
+    return ok(node);
   }
 
   /**
@@ -56,29 +58,21 @@ export class NodeValidator {
    * @param node 节点
    * @returns 验证结果
    */
-  private validateNodeConfig(node: Node): ValidationResult {
+  private validateNodeConfig(node: Node): Result<Node, ValidationError[]> {
     try {
       // 调用 node-validation 目录中的验证函数
       validateNodeByType(node);
-      return { valid: true, errors: [], warnings: [] };
+      return ok(node);
     } catch (error) {
-      // 将 ValidationError 转换为 ValidationResult
+      // 将 ValidationError 转换为 Result
       if (error instanceof ValidationError) {
-        return {
-          valid: false,
-          errors: [error],
-          warnings: []
-        };
+        return err([error]);
       }
       // 处理其他类型的错误
-      return {
-        valid: false,
-        errors: [new ValidationError(
-          error instanceof Error ? error.message : 'Unknown validation error',
-          `node.${node.id}.config`
-        )],
-        warnings: []
-      };
+      return err([new ValidationError(
+        error instanceof Error ? error.message : 'Unknown validation error',
+        `node.${node.id}.config`
+      )]);
     }
   }
 
@@ -87,7 +81,7 @@ export class NodeValidator {
    * @param nodes 节点数组
    * @returns 验证结果数组
    */
-  validateNodes(nodes: Node[]): ValidationResult[] {
+  validateNodes(nodes: Node[]): Result<Node, ValidationError[]>[] {
     return nodes.map((node) => this.validateNode(node));
   }
 
@@ -97,17 +91,13 @@ export class NodeValidator {
    * @param prefix 字段路径前缀
    * @returns ValidationResult
    */
-  private convertZodError(error: z.ZodError, prefix?: string): ValidationResult {
+  private convertZodError(error: z.ZodError, prefix?: string): ValidationError[] {
     const errors: ValidationError[] = error.issues.map((issue) => {
       const field = issue.path.length > 0
         ? (prefix ? `${prefix}.${issue.path.join('.')}` : issue.path.join('.'))
         : prefix;
       return new ValidationError(issue.message, field);
     });
-    return {
-      valid: false,
-      errors,
-      warnings: []
-    };
+    return errors;
   }
 }

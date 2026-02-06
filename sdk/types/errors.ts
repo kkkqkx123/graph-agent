@@ -80,17 +80,6 @@ export class ValidationError extends SDKError {
   }
 }
 
-/**
- * 验证结果类型
- */
-export interface ValidationResult {
-  /** 是否验证通过 */
-  valid: boolean;
-  /** 错误数组 */
-  errors: ValidationError[];
-  /** 警告数组 */
-  warnings: ValidationError[];
-}
 
 /**
  * 执行错误类型

@@ -29,7 +29,7 @@ describe('CodeConfigValidator', () => {
       };
 
       const result = validator.validateScript(validScript);
-      expect(result.valid).toBe(true);
+      expect(result.isOk()).toBe(true);
     });
 
     it('应该验证有效的脚本定义（使用文件路径）', () => {
@@ -45,7 +45,7 @@ describe('CodeConfigValidator', () => {
       };
 
       const result = validator.validateScript(validScript);
-      expect(result.valid).toBe(true);
+      expect(result.isOk()).toBe(true);
     });
 
     it('应该返回无效结果当脚本缺少必需字段', () => {
@@ -61,8 +61,10 @@ describe('CodeConfigValidator', () => {
       } as any;
 
       const result = validator.validateScript(invalidScript);
-      expect(result.valid).toBe(false);
-      expect(result.errors.length).toBeGreaterThan(0);
+      expect(result.isErr()).toBe(true);
+      if (result.isErr()) {
+        expect(result.error.length).toBeGreaterThan(0);
+      }
     });
 
     it('应该返回无效结果当脚本缺少内容和文件路径', () => {
@@ -78,8 +80,10 @@ describe('CodeConfigValidator', () => {
       };
 
       const result = validator.validateScript(invalidScript);
-      expect(result.valid).toBe(false);
-      expect(result.errors.length).toBeGreaterThan(0);
+      expect(result.isErr()).toBe(true);
+      if (result.isErr()) {
+        expect(result.error.length).toBeGreaterThan(0);
+      }
     });
 
     it('应该返回无效结果当执行选项无效', () => {
@@ -95,8 +99,10 @@ describe('CodeConfigValidator', () => {
       };
 
       const result = validator.validateScript(invalidScript);
-      expect(result.valid).toBe(false);
-      expect(result.errors.length).toBeGreaterThan(0);
+      expect(result.isErr()).toBe(true);
+      if (result.isErr()) {
+        expect(result.error.length).toBeGreaterThan(0);
+      }
     });
   });
 
@@ -112,7 +118,7 @@ describe('CodeConfigValidator', () => {
       };
 
       const result = validator.validateExecutionOptions(validOptions);
-      expect(result.valid).toBe(true);
+      expect(result.isOk()).toBe(true);
     });
 
     it('应该返回无效结果当执行选项无效', () => {
@@ -122,8 +128,10 @@ describe('CodeConfigValidator', () => {
       };
 
       const result = validator.validateExecutionOptions(invalidOptions);
-      expect(result.valid).toBe(false);
-      expect(result.errors.length).toBeGreaterThan(0);
+      expect(result.isErr()).toBe(true);
+      if (result.isErr()) {
+        expect(result.error.length).toBeGreaterThan(0);
+      }
     });
   });
 
@@ -148,7 +156,7 @@ describe('CodeConfigValidator', () => {
       };
 
       const result = validator.validateSandboxConfig(validConfig);
-      expect(result.valid).toBe(true);
+      expect(result.isOk()).toBe(true);
     });
 
     it('应该返回无效结果当沙箱配置无效', () => {
@@ -160,24 +168,28 @@ describe('CodeConfigValidator', () => {
       };
 
       const result = validator.validateSandboxConfig(invalidConfig);
-      expect(result.valid).toBe(false);
-      expect(result.errors.length).toBeGreaterThan(0);
+      expect(result.isErr()).toBe(true);
+      if (result.isErr()) {
+        expect(result.error.length).toBeGreaterThan(0);
+      }
     });
   });
 
   describe('validateScriptTypeCompatibility', () => {
     it('应该验证脚本类型与文件扩展名的兼容性', () => {
       const result1 = validator.validateScriptTypeCompatibility(ScriptType.PYTHON, undefined, 'script.py');
-      expect(result1.valid).toBe(true);
+      expect(result1.isOk()).toBe(true);
 
       const result2 = validator.validateScriptTypeCompatibility(ScriptType.JAVASCRIPT, undefined, 'script.js');
-      expect(result2.valid).toBe(true);
+      expect(result2.isOk()).toBe(true);
     });
 
     it('应该返回无效结果当文件扩展名与脚本类型不兼容', () => {
       const result = validator.validateScriptTypeCompatibility(ScriptType.PYTHON, undefined, 'script.js');
-      expect(result.valid).toBe(false);
-      expect(result.errors.length).toBeGreaterThan(0);
+      expect(result.isErr()).toBe(true);
+      if (result.isErr()) {
+        expect(result.error.length).toBeGreaterThan(0);
+      }
     });
 
     it('应该验证脚本类型与内容的兼容性', () => {
@@ -185,10 +197,10 @@ describe('CodeConfigValidator', () => {
       const jsContent = 'function main() {\n    console.log("Hello World");\n}';
 
       const result1 = validator.validateScriptTypeCompatibility(ScriptType.PYTHON, pythonContent);
-      expect(result1.valid).toBe(true);
+      expect(result1.isOk()).toBe(true);
 
       const result2 = validator.validateScriptTypeCompatibility(ScriptType.JAVASCRIPT, jsContent);
-      expect(result2.valid).toBe(true);
+      expect(result2.isOk()).toBe(true);
     });
   });
 
@@ -212,7 +224,7 @@ describe('CodeConfigValidator', () => {
       };
 
       const result = validator.validateExecutionEnvironment(script, environment);
-      expect(result.valid).toBe(true);
+      expect(result.isOk()).toBe(true);
     });
 
     it('应该抛出ValidationError当环境变量不是字符串', () => {
@@ -253,8 +265,10 @@ describe('CodeConfigValidator', () => {
       };
 
       const result = validator.validateExecutionEnvironment(script, environment);
-      expect(result.valid).toBe(false);
-      expect(result.errors.length).toBeGreaterThan(0);
+      expect(result.isErr()).toBe(true);
+      if (result.isErr()) {
+        expect(result.error.length).toBeGreaterThan(0);
+      }
     });
   });
 });

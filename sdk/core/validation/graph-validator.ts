@@ -38,7 +38,8 @@ import type {
   GraphAnalysisResult,
 } from '../../types';
 import { ValidationError } from '../../types';
-import type { ValidationResult } from '../../types';
+import type { Result } from '../../types/result';
+import { ok, err } from '../../utils/result-utils';
 import { GraphData } from '../entities/graph-data';
 import { SUBGRAPH_METADATA_KEYS } from '../../types/subgraph';
 import { analyzeGraph } from '../graph/utils/graph-analyzer';
@@ -56,7 +57,7 @@ export class GraphValidator {
   static validate(
     graph: GraphData,
     options: GraphValidationOptions = {}
-  ): ValidationResult {
+  ): Result<GraphData, ValidationError[]> {
     const errorList: ValidationError[] = [];
     const warningList: ValidationError[] = [];
 
@@ -156,11 +157,10 @@ export class GraphValidator {
     const consistencyErrors = this.validateNodeEdgeConsistency(graph);
     errorList.push(...consistencyErrors);
 
-    return {
-      valid: errorList.length === 0,
-      errors: errorList,
-      warnings: warningList,
-    };
+    if (errorList.length === 0) {
+      return ok(graph);
+    }
+    return err(errorList);
   }
 
   /**

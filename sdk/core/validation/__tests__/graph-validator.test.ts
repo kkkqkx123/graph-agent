@@ -105,9 +105,8 @@ describe('GraphValidator', () => {
       updateNodeEdgeReferences(graph);
 
       const result = GraphValidator.validate(graph);
-      expect(result.valid).toBe(true);
-      expect(result.errors).toHaveLength(0);
-      expect(result.warnings).toHaveLength(0);
+      expect(result.isOk()).toBe(true);
+      expect(result.isErr()).toBe(false);
     });
 
     it('应该支持禁用某些验证选项', () => {
@@ -128,7 +127,7 @@ describe('GraphValidator', () => {
         checkCycles: false,
         checkReachability: false,
       });
-      expect(result.valid).toBe(true);
+      expect(result.isOk()).toBe(true);
     });
   });
 
@@ -142,8 +141,10 @@ describe('GraphValidator', () => {
       updateNodeEdgeReferences(graph);
 
       const result = GraphValidator.validate(graph);
-      expect(result.valid).toBe(false);
-      expect(result.errors.some(e => e.context?.['code'] === 'MISSING_START_NODE')).toBe(true);
+      expect(result.isErr()).toBe(true);
+      if (result.isErr()) {
+        expect(result.error.some(e => e.context?.['code'] === 'MISSING_START_NODE')).toBe(true);
+      }
     });
 
     it('应该检测缺少END节点', () => {
@@ -155,8 +156,10 @@ describe('GraphValidator', () => {
       updateNodeEdgeReferences(graph);
 
       const result = GraphValidator.validate(graph);
-      expect(result.valid).toBe(false);
-      expect(result.errors.some(e => e.context?.['code'] === 'MISSING_END_NODE')).toBe(true);
+      expect(result.isErr()).toBe(true);
+      if (result.isErr()) {
+        expect(result.error.some(e => e.context?.['code'] === 'MISSING_END_NODE')).toBe(true);
+      }
     });
 
     it('应该检测START节点有入边', () => {
@@ -174,8 +177,10 @@ describe('GraphValidator', () => {
       updateNodeEdgeReferences(graph);
 
       const result = GraphValidator.validate(graph);
-      expect(result.valid).toBe(false);
-      expect(result.errors.some(e => e.context?.['code'] === 'START_NODE_HAS_INCOMING_EDGES')).toBe(true);
+      expect(result.isErr()).toBe(true);
+      if (result.isErr()) {
+        expect(result.error.some(e => e.context?.['code'] === 'START_NODE_HAS_INCOMING_EDGES')).toBe(true);
+      }
     });
 
     it('应该检测END节点有出边', () => {
@@ -193,8 +198,10 @@ describe('GraphValidator', () => {
       updateNodeEdgeReferences(graph);
 
       const result = GraphValidator.validate(graph);
-      expect(result.valid).toBe(false);
-      expect(result.errors.some(e => e.context?.['code'] === 'END_NODE_HAS_OUTGOING_EDGES')).toBe(true);
+      expect(result.isErr()).toBe(true);
+      if (result.isErr()) {
+        expect(result.error.some(e => e.context?.['code'] === 'END_NODE_HAS_OUTGOING_EDGES')).toBe(true);
+      }
     });
 
     it('应该检测多个START节点', () => {
@@ -212,8 +219,10 @@ describe('GraphValidator', () => {
       updateNodeEdgeReferences(graph);
 
       const result = GraphValidator.validate(graph);
-      expect(result.valid).toBe(false);
-      expect(result.errors.some(e => e.context?.['code'] === 'MULTIPLE_START_NODES')).toBe(true);
+      expect(result.isErr()).toBe(true);
+      if (result.isErr()) {
+        expect(result.error.some(e => e.context?.['code'] === 'MULTIPLE_START_NODES')).toBe(true);
+      }
     });
 
     it('应该接受多个END节点', () => {
@@ -236,11 +245,11 @@ describe('GraphValidator', () => {
       updateNodeEdgeReferences(graph);
 
       const result = GraphValidator.validate(graph);
-      expect(result.valid).toBe(true);
-    });
-  });
+      expect(result.isOk()).toBe(true);
+      });
+      });
 
-  describe('validateIsolatedNodes', () => {
+      describe('validateIsolatedNodes', () => {
     it('应该检测孤立节点', () => {
       const startNode = createNode('start', 'START' as NodeType, 'Start');
       const endNode = createNode('end', 'END' as NodeType, 'End');
@@ -258,8 +267,10 @@ describe('GraphValidator', () => {
       updateNodeEdgeReferences(graph);
 
       const result = GraphValidator.validate(graph);
-      expect(result.valid).toBe(false);
-      expect(result.errors.some(e => e.context?.['code'] === 'ISOLATED_NODE')).toBe(true);
+      expect(result.isErr()).toBe(true);
+      if (result.isErr()) {
+        expect(result.error.some(e => e.context?.['code'] === 'ISOLATED_NODE')).toBe(true);
+      }
     });
 
     it('不应该将START节点视为孤立节点', () => {
@@ -277,10 +288,10 @@ describe('GraphValidator', () => {
       updateNodeEdgeReferences(graph);
 
       const result = GraphValidator.validate(graph);
-      expect(result.valid).toBe(true);
-    });
+      expect(result.isOk()).toBe(true);
+      });
 
-    it('不应该将END节点视为孤立节点', () => {
+      it('不应该将END节点视为孤立节点', () => {
       const startNode = createNode('start', 'START' as NodeType, 'Start');
       const endNode = createNode('end', 'END' as NodeType, 'End');
       const edge = createEdge('edge-1', 'start', 'end');
@@ -295,7 +306,7 @@ describe('GraphValidator', () => {
       updateNodeEdgeReferences(graph);
 
       const result = GraphValidator.validate(graph);
-      expect(result.valid).toBe(true);
+      expect(result.isOk()).toBe(true);
     });
   });
 
@@ -321,8 +332,10 @@ describe('GraphValidator', () => {
       updateNodeEdgeReferences(graph);
 
       const result = GraphValidator.validate(graph);
-      expect(result.valid).toBe(false);
-      expect(result.errors.some(e => e.context?.['code'] === 'CYCLE_DETECTED')).toBe(true);
+      expect(result.isErr()).toBe(true);
+      if (result.isErr()) {
+        expect(result.error.some(e => e.context?.['code'] === 'CYCLE_DETECTED')).toBe(true);
+      }
     });
 
     it('应该接受无环图', () => {
@@ -348,7 +361,7 @@ describe('GraphValidator', () => {
       updateNodeEdgeReferences(graph);
 
       const result = GraphValidator.validate(graph);
-      expect(result.valid).toBe(true);
+      expect(result.isOk()).toBe(true);
     });
   });
 
@@ -370,8 +383,10 @@ describe('GraphValidator', () => {
       updateNodeEdgeReferences(graph);
 
       const result = GraphValidator.validate(graph);
-      expect(result.valid).toBe(false);
-      expect(result.errors.some(e => e.context?.['code'] === 'UNREACHABLE_NODE')).toBe(true);
+      expect(result.isErr()).toBe(true);
+      if (result.isErr()) {
+        expect(result.error.some(e => e.context?.['code'] === 'UNREACHABLE_NODE')).toBe(true);
+      }
     });
 
     it('应该检测无法到达END的节点', () => {
@@ -393,8 +408,10 @@ describe('GraphValidator', () => {
       updateNodeEdgeReferences(graph);
 
       const result = GraphValidator.validate(graph);
-      expect(result.valid).toBe(false);
-      expect(result.errors.some(e => e.context?.['code'] === 'DEAD_END_NODE')).toBe(true);
+      expect(result.isErr()).toBe(true);
+      if (result.isErr()) {
+        expect(result.error.some(e => e.context?.['code'] === 'DEAD_END_NODE')).toBe(true);
+      }
     });
   });
 
@@ -418,8 +435,10 @@ describe('GraphValidator', () => {
       updateNodeEdgeReferences(graph);
 
       const result = GraphValidator.validate(graph);
-      expect(result.valid).toBe(false);
-      expect(result.errors.some(e => e.context?.['code'] === 'UNPAIRED_FORK')).toBe(true);
+      expect(result.isErr()).toBe(true);
+      if (result.isErr()) {
+        expect(result.error.some(e => e.context?.['code'] === 'UNPAIRED_FORK')).toBe(true);
+      }
     });
 
     it('应该检测未配对的JOIN节点', () => {
@@ -441,8 +460,10 @@ describe('GraphValidator', () => {
       updateNodeEdgeReferences(graph);
 
       const result = GraphValidator.validate(graph);
-      expect(result.valid).toBe(false);
-      expect(result.errors.some(e => e.context?.['code'] === 'UNPAIRED_JOIN')).toBe(true);
+      expect(result.isErr()).toBe(true);
+      if (result.isErr()) {
+        expect(result.error.some(e => e.context?.['code'] === 'UNPAIRED_JOIN')).toBe(true);
+      }
     });
 
     it('应该检测FORK无法到达配对的JOIN', () => {
@@ -466,8 +487,10 @@ describe('GraphValidator', () => {
       updateNodeEdgeReferences(graph);
 
       const result = GraphValidator.validate(graph);
-      expect(result.valid).toBe(false);
-      expect(result.errors.some(e => e.context?.['code'] === 'FORK_JOIN_NOT_REACHABLE')).toBe(true);
+      expect(result.isErr()).toBe(true);
+      if (result.isErr()) {
+        expect(result.error.some(e => e.context?.['code'] === 'FORK_JOIN_NOT_REACHABLE')).toBe(true);
+      }
     });
 
     it('应该接受有效的FORK/JOIN配对', () => {
@@ -493,7 +516,7 @@ describe('GraphValidator', () => {
       updateNodeEdgeReferences(graph);
 
       const result = GraphValidator.validate(graph);
-      expect(result.valid).toBe(true);
+      expect(result.isOk()).toBe(true);
     });
 
     it('应该接受多个FORK/JOIN配对', () => {
@@ -527,7 +550,7 @@ describe('GraphValidator', () => {
       updateNodeEdgeReferences(graph);
 
       const result = GraphValidator.validate(graph);
-      expect(result.valid).toBe(true);
+      expect(result.isOk()).toBe(true);
     });
   });
 
@@ -553,8 +576,10 @@ describe('GraphValidator', () => {
       const result = GraphValidator.validate(graph, {
         checkSubgraphExistence: true,
       });
-      expect(result.valid).toBe(false);
-      expect(result.errors.some(e => e.context?.['code'] === 'MISSING_SUBGRAPH_ID')).toBe(true);
+      expect(result.isErr()).toBe(true);
+      if (result.isErr()) {
+        expect(result.error.some(e => e.context?.['code'] === 'MISSING_SUBGRAPH_ID')).toBe(true);
+      }
     });
 
     it('应该接受有subgraphId的SUBGRAPH节点', () => {
@@ -580,7 +605,7 @@ describe('GraphValidator', () => {
       const result = GraphValidator.validate(graph, {
         checkSubgraphExistence: true,
       });
-      expect(result.valid).toBe(true);
+      expect(result.isOk()).toBe(true);
     });
   });
 
@@ -609,8 +634,10 @@ describe('GraphValidator', () => {
       const result = GraphValidator.validate(graph, {
         checkSubgraphCompatibility: true,
       });
-      expect(result.valid).toBe(false);
-      expect(result.errors.some(e => e.context?.['code'] === 'INVALID_INPUT_MAPPING')).toBe(true);
+      expect(result.isErr()).toBe(true);
+      if (result.isErr()) {
+        expect(result.error.some(e => e.context?.['code'] === 'INVALID_INPUT_MAPPING')).toBe(true);
+      }
     });
 
     it('应该检测无效的输出映射', () => {
@@ -637,8 +664,10 @@ describe('GraphValidator', () => {
       const result = GraphValidator.validate(graph, {
         checkSubgraphCompatibility: true,
       });
-      expect(result.valid).toBe(false);
-      expect(result.errors.some(e => e.context?.['code'] === 'INVALID_OUTPUT_MAPPING')).toBe(true);
+      expect(result.isErr()).toBe(true);
+      if (result.isErr()) {
+        expect(result.error.some(e => e.context?.['code'] === 'INVALID_OUTPUT_MAPPING')).toBe(true);
+      }
     });
 
     it('应该接受有效的输入和输出映射', () => {
@@ -666,7 +695,7 @@ describe('GraphValidator', () => {
       const result = GraphValidator.validate(graph, {
         checkSubgraphCompatibility: true,
       });
-      expect(result.valid).toBe(true);
+      expect(result.isOk()).toBe(true);
     });
   });
 
@@ -722,10 +751,12 @@ describe('GraphValidator', () => {
       updateNodeEdgeReferences(graph);
 
       const result = GraphValidator.validate(graph);
-      expect(result.valid).toBe(false);
-      expect(result.errors.length).toBeGreaterThan(1);
-      expect(result.errors.some(e => e.context?.['code'] === 'UNPAIRED_FORK')).toBe(true);
-      expect(result.errors.some(e => e.context?.['code'] === 'ISOLATED_NODE')).toBe(true);
+      expect(result.isErr()).toBe(true);
+      if (result.isErr()) {
+        expect(result.error.length).toBeGreaterThan(1);
+        expect(result.error.some(e => e.context?.['code'] === 'UNPAIRED_FORK')).toBe(true);
+        expect(result.error.some(e => e.context?.['code'] === 'ISOLATED_NODE')).toBe(true);
+      }
     });
 
     it('应该接受一个复杂但有效的图', () => {
@@ -761,8 +792,7 @@ describe('GraphValidator', () => {
       updateNodeEdgeReferences(graph);
 
       const result = GraphValidator.validate(graph);
-      expect(result.valid).toBe(true);
-      expect(result.errors).toHaveLength(0);
+      expect(result.isOk()).toBe(true);
     });
   });
 });
