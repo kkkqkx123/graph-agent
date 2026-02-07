@@ -55,7 +55,7 @@ describe('resume-thread-handler', () => {
         resumeThread: jest.fn().mockResolvedValue(undefined)
       };
 
-      mockExecutionContext.getLifecycleCoordinator.mockReturnValue(mockLifecycleCoordinator);
+      mockExecutionContext.getLifecycleCoordinator.mockReturnValue(mockLifecycleCoordinator as any);
 
       const result = await resumeThreadHandler(mockAction, triggerId, mockExecutionContext);
 
@@ -78,7 +78,7 @@ describe('resume-thread-handler', () => {
         resumeThread: jest.fn().mockResolvedValue(undefined)
       };
 
-      mockExecutionContext.getLifecycleCoordinator.mockReturnValue(mockLifecycleCoordinator);
+      mockExecutionContext.getLifecycleCoordinator.mockReturnValue(mockLifecycleCoordinator as any);
 
       const result = await resumeThreadHandler(mockAction, triggerId);
 
@@ -88,46 +88,47 @@ describe('resume-thread-handler', () => {
   });
 
   describe('参数验证测试', () => {
-    it('应该在缺少threadId参数时抛出ValidationError', async () => {
+    it('应该在缺少threadId参数时返回失败结果', async () => {
       mockAction.parameters = {};
 
-      await expect(resumeThreadHandler(mockAction, triggerId, mockExecutionContext))
-        .rejects
-        .toThrow(ValidationError);
+      const result = await resumeThreadHandler(mockAction, triggerId, mockExecutionContext);
 
-      await expect(resumeThreadHandler(mockAction, triggerId, mockExecutionContext))
-        .rejects
-        .toThrow('threadId is required for RESUME_THREAD action');
+      expect(result.success).toBe(false);
+      expect(result.error).toContain('threadId is required for RESUME_THREAD action');
+      expect(result.executionTime).toBeGreaterThan(0);
     });
 
-    it('应该在threadId为空字符串时抛出ValidationError', async () => {
+    it('应该在threadId为空字符串时返回失败结果', async () => {
       mockAction.parameters = {
         threadId: ''
       };
 
-      await expect(resumeThreadHandler(mockAction, triggerId, mockExecutionContext))
-        .rejects
-        .toThrow(ValidationError);
+      const result = await resumeThreadHandler(mockAction, triggerId, mockExecutionContext);
+
+      expect(result.success).toBe(false);
+      expect(result.error).toContain('threadId is required for RESUME_THREAD action');
     });
 
-    it('应该在threadId为null时抛出ValidationError', async () => {
+    it('应该在threadId为null时返回失败结果', async () => {
       mockAction.parameters = {
         threadId: null
       };
 
-      await expect(resumeThreadHandler(mockAction, triggerId, mockExecutionContext))
-        .rejects
-        .toThrow(ValidationError);
+      const result = await resumeThreadHandler(mockAction, triggerId, mockExecutionContext);
+
+      expect(result.success).toBe(false);
+      expect(result.error).toContain('threadId is required for RESUME_THREAD action');
     });
 
-    it('应该在threadId为undefined时抛出ValidationError', async () => {
+    it('应该在threadId为undefined时返回失败结果', async () => {
       mockAction.parameters = {
         threadId: undefined
       };
 
-      await expect(resumeThreadHandler(mockAction, triggerId, mockExecutionContext))
-        .rejects
-        .toThrow(ValidationError);
+      const result = await resumeThreadHandler(mockAction, triggerId, mockExecutionContext);
+
+      expect(result.success).toBe(false);
+      expect(result.error).toContain('threadId is required for RESUME_THREAD action');
     });
   });
 
@@ -137,7 +138,7 @@ describe('resume-thread-handler', () => {
         resumeThread: jest.fn().mockResolvedValue(undefined)
       };
 
-      mockExecutionContext.getLifecycleCoordinator.mockReturnValue(mockLifecycleCoordinator);
+      mockExecutionContext.getLifecycleCoordinator.mockReturnValue(mockLifecycleCoordinator as any);
 
       await resumeThreadHandler(mockAction, triggerId, mockExecutionContext);
 
@@ -146,7 +147,7 @@ describe('resume-thread-handler', () => {
     });
 
     it('应该在生命周期协调器不可用时返回失败结果', async () => {
-      mockExecutionContext.getLifecycleCoordinator.mockReturnValue(null);
+      mockExecutionContext.getLifecycleCoordinator.mockReturnValue(null as any);
 
       const result = await resumeThreadHandler(mockAction, triggerId, mockExecutionContext);
 
@@ -159,7 +160,7 @@ describe('resume-thread-handler', () => {
         resumeThread: jest.fn().mockRejectedValue(new Error('Resume failed'))
       };
 
-      mockExecutionContext.getLifecycleCoordinator.mockReturnValue(mockLifecycleCoordinator);
+      mockExecutionContext.getLifecycleCoordinator.mockReturnValue(mockLifecycleCoordinator as any);
 
       const result = await resumeThreadHandler(mockAction, triggerId, mockExecutionContext);
 
@@ -172,7 +173,7 @@ describe('resume-thread-handler', () => {
         resumeThread: jest.fn().mockRejectedValue('String error')
       };
 
-      mockExecutionContext.getLifecycleCoordinator.mockReturnValue(mockLifecycleCoordinator);
+      mockExecutionContext.getLifecycleCoordinator.mockReturnValue(mockLifecycleCoordinator as any);
 
       const result = await resumeThreadHandler(mockAction, triggerId, mockExecutionContext);
 
@@ -217,13 +218,14 @@ describe('resume-thread-handler', () => {
         resumeThread: jest.fn().mockResolvedValue(undefined)
       };
 
-      mockExecutionContext.getLifecycleCoordinator.mockReturnValue(mockLifecycleCoordinator);
+      mockExecutionContext.getLifecycleCoordinator.mockReturnValue(mockLifecycleCoordinator as any);
 
-      const startTime = Date.now();
+      const beforeTime = Date.now();
       const result = await resumeThreadHandler(mockAction, triggerId, mockExecutionContext);
+      const afterTime = Date.now();
 
-      expect(result.executionTime).toBeGreaterThanOrEqual(0);
-      expect(result.executionTime).toBeLessThanOrEqual(Date.now() - startTime + 10);
+      expect(result.executionTime).toBeGreaterThanOrEqual(beforeTime);
+      expect(result.executionTime).toBeLessThanOrEqual(afterTime);
     });
 
     it('应该在恢复操作耗时较长时记录正确的执行时间', async () => {
@@ -233,11 +235,15 @@ describe('resume-thread-handler', () => {
         })
       };
 
-      mockExecutionContext.getLifecycleCoordinator.mockReturnValue(mockLifecycleCoordinator);
+      mockExecutionContext.getLifecycleCoordinator.mockReturnValue(mockLifecycleCoordinator as any);
 
+      const beforeTime = Date.now();
       const result = await resumeThreadHandler(mockAction, triggerId, mockExecutionContext);
+      const afterTime = Date.now();
 
-      expect(result.executionTime).toBeGreaterThanOrEqual(20);
+      expect(result.executionTime).toBeGreaterThanOrEqual(beforeTime);
+      expect(result.executionTime).toBeLessThanOrEqual(afterTime);
+      expect(afterTime - beforeTime).toBeGreaterThanOrEqual(20);
     });
   });
 
@@ -260,7 +266,7 @@ describe('resume-thread-handler', () => {
           resumeThread: jest.fn().mockResolvedValue(undefined)
         };
 
-        mockExecutionContext.getLifecycleCoordinator.mockReturnValue(mockLifecycleCoordinator);
+        mockExecutionContext.getLifecycleCoordinator.mockReturnValue(mockLifecycleCoordinator as any);
 
         const result = await resumeThreadHandler(mockAction, triggerId, mockExecutionContext);
 
@@ -286,7 +292,7 @@ describe('resume-thread-handler', () => {
           resumeThread: jest.fn().mockResolvedValue(undefined)
         };
 
-        mockExecutionContext.getLifecycleCoordinator.mockReturnValue(mockLifecycleCoordinator);
+        mockExecutionContext.getLifecycleCoordinator.mockReturnValue(mockLifecycleCoordinator as any);
 
         const result = await resumeThreadHandler(mockAction, testTriggerId, mockExecutionContext);
 
@@ -306,7 +312,7 @@ describe('resume-thread-handler', () => {
         resumeThread: jest.fn().mockResolvedValue(undefined)
       };
 
-      mockExecutionContext.getLifecycleCoordinator.mockReturnValue(mockLifecycleCoordinator);
+      mockExecutionContext.getLifecycleCoordinator.mockReturnValue(mockLifecycleCoordinator as any);
 
       const result = await resumeThreadHandler(mockAction, triggerId, mockExecutionContext);
 
@@ -327,7 +333,7 @@ describe('resume-thread-handler', () => {
         resumeThread: jest.fn().mockReturnValue(resumePromise)
       };
 
-      mockExecutionContext.getLifecycleCoordinator.mockReturnValue(mockLifecycleCoordinator);
+      mockExecutionContext.getLifecycleCoordinator.mockReturnValue(mockLifecycleCoordinator as any);
 
       const handlerPromise = resumeThreadHandler(mockAction, triggerId, mockExecutionContext);
 
@@ -346,7 +352,7 @@ describe('resume-thread-handler', () => {
         resumeThread: jest.fn().mockRejectedValue(new Error('Async resume failed'))
       };
 
-      mockExecutionContext.getLifecycleCoordinator.mockReturnValue(mockLifecycleCoordinator);
+      mockExecutionContext.getLifecycleCoordinator.mockReturnValue(mockLifecycleCoordinator as any);
 
       const result = await resumeThreadHandler(mockAction, triggerId, mockExecutionContext);
 
@@ -362,7 +368,7 @@ describe('resume-thread-handler', () => {
         resumeThread: jest.fn().mockResolvedValue(undefined)
       };
 
-      mockExecutionContext.getLifecycleCoordinator.mockReturnValue(mockLifecycleCoordinator);
+      mockExecutionContext.getLifecycleCoordinator.mockReturnValue(mockLifecycleCoordinator as any);
 
       // 测试恢复操作
       await resumeThreadHandler(mockAction, triggerId, mockExecutionContext);

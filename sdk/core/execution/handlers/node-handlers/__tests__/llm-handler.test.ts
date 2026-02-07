@@ -435,7 +435,10 @@ describe('llm-handler', () => {
         content: 'Response'
       };
 
-      (mockLLMCoordinator.executeLLM as jest.Mock).mockResolvedValue(mockLLMResult);
+      // 模拟异步执行，确保执行时间大于0
+      (mockLLMCoordinator.executeLLM as jest.Mock).mockImplementation(
+        () => new Promise(resolve => setTimeout(() => resolve(mockLLMResult), 10))
+      );
       (mockLLMWrapper.getProfile as jest.Mock).mockReturnValue({
         provider: 'OPENAI',
         model: 'gpt-4'

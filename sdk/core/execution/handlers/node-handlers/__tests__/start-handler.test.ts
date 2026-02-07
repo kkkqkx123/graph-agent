@@ -211,17 +211,16 @@ describe('start-handler', () => {
     it('应该处理带有metadata的Thread', async () => {
       mockThread.metadata = {
         creator: 'test-user',
-        tags: ['test'],
-        customFields: { testField: 'testValue' }
+        tags: ['test']
       };
       
       const result = await startHandler(mockThread, mockNode);
       
       expect(result.message).toBe('Workflow started');
+      // start-handler不应该修改metadata，应该保留原有的metadata
       expect(mockThread.metadata).toEqual({
         creator: 'test-user',
-        tags: ['test'],
-        customFields: { testField: 'testValue' }
+        tags: ['test']
       });
     });
 

@@ -367,6 +367,7 @@ export async function loopStartHandler(thread: Thread, node: Node, context?: any
   const currentValue = getCurrentValue(loopState);
 
   // 设置循环变量到循环作用域（仅在数据驱动循环时）
+  // 注意：如果提供了dataSource，variableName是必须的
   if (loopState.variableName !== null) {
     setLoopVariable(thread, loopState.variableName, currentValue);
   }

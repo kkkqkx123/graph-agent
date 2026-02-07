@@ -41,8 +41,10 @@ describe('loop-start-handler', () => {
       type: 'LOOP_START',
       config: {
         loopId: 'loop-1',
-        variableName: 'item',
-        iterable: [1, 2, 3],
+        dataSource: {
+          iterable: [1, 2, 3],
+          variableName: 'item'
+        },
         maxIterations: 10
       } as LoopStartNodeConfig,
       incomingEdgeIds: [],
@@ -78,7 +80,10 @@ describe('loop-start-handler', () => {
     it('应该支持数组迭代', async () => {
       const config = {
         ...mockNode.config,
-        iterable: ['a', 'b', 'c']
+        dataSource: {
+          iterable: ['a', 'b', 'c'],
+          variableName: 'item'
+        }
       } as LoopStartNodeConfig;
 
       const node = { ...mockNode, config };
@@ -92,7 +97,10 @@ describe('loop-start-handler', () => {
     it('应该支持对象迭代', async () => {
       const config = {
         ...mockNode.config,
-        iterable: { x: 1, y: 2, z: 3 }
+        dataSource: {
+          iterable: { x: 1, y: 2, z: 3 },
+          variableName: 'item'
+        }
       } as LoopStartNodeConfig;
 
       const node = { ...mockNode, config };
@@ -106,7 +114,10 @@ describe('loop-start-handler', () => {
     it('应该支持数字迭代', async () => {
       const config = {
         ...mockNode.config,
-        iterable: 5
+        dataSource: {
+          iterable: 5,
+          variableName: 'item'
+        }
       } as LoopStartNodeConfig;
 
       const node = { ...mockNode, config };
@@ -120,7 +131,10 @@ describe('loop-start-handler', () => {
     it('应该支持字符串迭代', async () => {
       const config = {
         ...mockNode.config,
-        iterable: 'hello'
+        dataSource: {
+          iterable: 'hello',
+          variableName: 'item'
+        }
       } as LoopStartNodeConfig;
 
       const node = { ...mockNode, config };
@@ -136,7 +150,10 @@ describe('loop-start-handler', () => {
     it('应该解析input作用域的变量表达式', async () => {
       const config = {
         ...mockNode.config,
-        iterable: '{{input.items}}'
+        dataSource: {
+          iterable: '{{input.items}}',
+          variableName: 'item'
+        }
       } as LoopStartNodeConfig;
 
       const node = { ...mockNode, config };
@@ -154,7 +171,10 @@ describe('loop-start-handler', () => {
 
       const config = {
         ...mockNode.config,
-        iterable: '{{output.results}}'
+        dataSource: {
+          iterable: '{{output.results}}',
+          variableName: 'item'
+        }
       } as LoopStartNodeConfig;
 
       const node = { ...mockNode, config };
@@ -172,7 +192,10 @@ describe('loop-start-handler', () => {
 
       const config = {
         ...mockNode.config,
-        iterable: '{{global.globalItems}}'
+        dataSource: {
+          iterable: '{{global.globalItems}}',
+          variableName: 'item'
+        }
       } as LoopStartNodeConfig;
 
       const node = { ...mockNode, config };
@@ -190,7 +213,10 @@ describe('loop-start-handler', () => {
 
       const config = {
         ...mockNode.config,
-        iterable: '{{thread.threadItems}}'
+        dataSource: {
+          iterable: '{{thread.threadItems}}',
+          variableName: 'item'
+        }
       } as LoopStartNodeConfig;
 
       const node = { ...mockNode, config };
@@ -212,7 +238,10 @@ describe('loop-start-handler', () => {
 
       const config = {
         ...mockNode.config,
-        iterable: '{{input.nested.deep.items}}'
+        dataSource: {
+          iterable: '{{input.nested.deep.items}}',
+          variableName: 'item'
+        }
       } as LoopStartNodeConfig;
 
       const node = { ...mockNode, config };
@@ -225,7 +254,10 @@ describe('loop-start-handler', () => {
     it('应该在变量不存在时抛出ExecutionError', async () => {
       const config = {
         ...mockNode.config,
-        iterable: '{{input.nonexistent}}'
+        dataSource: {
+          iterable: '{{input.nonexistent}}',
+          variableName: 'item'
+        }
       } as LoopStartNodeConfig;
 
       const node = { ...mockNode, config };
@@ -237,7 +269,10 @@ describe('loop-start-handler', () => {
     it('应该在作用域无效时抛出ValidationError', async () => {
       const config = {
         ...mockNode.config,
-        iterable: '{{invalid.items}}'
+        dataSource: {
+          iterable: '{{invalid.items}}',
+          variableName: 'item'
+        }
       } as LoopStartNodeConfig;
 
       const node = { ...mockNode, config };
@@ -251,7 +286,10 @@ describe('loop-start-handler', () => {
     it('应该在达到最大迭代次数时结束循环', async () => {
       const config = {
         ...mockNode.config,
-        iterable: [1, 2, 3, 4, 5],
+        dataSource: {
+          iterable: [1, 2, 3, 4, 5],
+          variableName: 'item'
+        },
         maxIterations: 3
       } as LoopStartNodeConfig;
 
@@ -284,7 +322,10 @@ describe('loop-start-handler', () => {
     it('应该在迭代完所有元素后结束循环', async () => {
       const config = {
         ...mockNode.config,
-        iterable: [1, 2],
+        dataSource: {
+          iterable: [1, 2],
+          variableName: 'item'
+        },
         maxIterations: 10
       } as LoopStartNodeConfig;
 
@@ -309,7 +350,10 @@ describe('loop-start-handler', () => {
     it('应该在空数组时立即结束循环', async () => {
       const config = {
         ...mockNode.config,
-        iterable: [],
+        dataSource: {
+          iterable: [],
+          variableName: 'item'
+        },
         maxIterations: 10
       } as LoopStartNodeConfig;
 
@@ -324,7 +368,10 @@ describe('loop-start-handler', () => {
     it('应该在空对象时立即结束循环', async () => {
       const config = {
         ...mockNode.config,
-        iterable: {},
+        dataSource: {
+          iterable: {},
+          variableName: 'item'
+        },
         maxIterations: 10
       } as LoopStartNodeConfig;
 
@@ -339,7 +386,10 @@ describe('loop-start-handler', () => {
     it('应该在数字为0时立即结束循环', async () => {
       const config = {
         ...mockNode.config,
-        iterable: 0,
+        dataSource: {
+          iterable: 0,
+          variableName: 'item'
+        },
         maxIterations: 10
       } as LoopStartNodeConfig;
 
@@ -354,7 +404,10 @@ describe('loop-start-handler', () => {
     it('应该在空字符串时立即结束循环', async () => {
       const config = {
         ...mockNode.config,
-        iterable: '',
+        dataSource: {
+          iterable: '',
+          variableName: 'item'
+        },
         maxIterations: 10
       } as LoopStartNodeConfig;
 
@@ -371,7 +424,10 @@ describe('loop-start-handler', () => {
     it('应该在iterable无效时抛出ValidationError', async () => {
       const config = {
         ...mockNode.config,
-        iterable: null
+        dataSource: {
+          iterable: true, // 布尔值是无效的iterable
+          variableName: 'item'
+        }
       } as LoopStartNodeConfig;
 
       const node = { ...mockNode, config };
@@ -380,21 +436,31 @@ describe('loop-start-handler', () => {
       await expect(loopStartHandler(mockThread, node)).rejects.toThrow('Iterable must be');
     });
 
-    it('应该在iterable为undefined时抛出ValidationError', async () => {
+    it('应该在iterable为undefined时使用计数循环模式', async () => {
       const config = {
         ...mockNode.config,
-        iterable: undefined
+        dataSource: {
+          iterable: undefined,
+          variableName: 'item'
+        }
       } as LoopStartNodeConfig;
 
       const node = { ...mockNode, config };
 
-      await expect(loopStartHandler(mockThread, node)).rejects.toThrow(ValidationError);
+      const result = await loopStartHandler(mockThread, node);
+      
+      // 应该成功执行，使用计数循环模式
+      expect(result.shouldContinue).toBe(true);
+      expect(result.currentValue).toBe(0);
     });
 
     it('应该在iterable为布尔值时抛出ValidationError', async () => {
       const config = {
         ...mockNode.config,
-        iterable: true
+        dataSource: {
+          iterable: true,
+          variableName: 'item'
+        }
       } as LoopStartNodeConfig;
 
       const node = { ...mockNode, config };
@@ -405,7 +471,10 @@ describe('loop-start-handler', () => {
     it('应该在iterable为函数时抛出ValidationError', async () => {
       const config = {
         ...mockNode.config,
-        iterable: () => {}
+        dataSource: {
+          iterable: () => {},
+          variableName: 'item'
+        }
       } as LoopStartNodeConfig;
 
       const node = { ...mockNode, config };
@@ -448,19 +517,6 @@ describe('loop-start-handler', () => {
   });
 
   describe('循环作用域测试', () => {
-    it('应该使用loopId作为默认变量名', async () => {
-      const config = {
-        ...mockNode.config,
-        variableName: undefined
-      } as LoopStartNodeConfig;
-
-      const node = { ...mockNode, config };
-
-      await loopStartHandler(mockThread, node);
-
-      expect(mockThread.variableScopes.loop[0]?.['loop-1']).toBe(1);
-    });
-
     it('应该初始化循环作用域中的变量', async () => {
       mockThread.variables = [
         { name: 'loopVar1', scope: 'loop', value: 'initial1' },
@@ -478,7 +534,10 @@ describe('loop-start-handler', () => {
     it('应该在循环结束时清理循环作用域', async () => {
       const config = {
         ...mockNode.config,
-        iterable: [1],
+        dataSource: {
+          iterable: [1],
+          variableName: 'item'
+        },
         maxIterations: 1
       } as LoopStartNodeConfig;
 
@@ -501,7 +560,10 @@ describe('loop-start-handler', () => {
     it('应该正确处理多次迭代', async () => {
       const config = {
         ...mockNode.config,
-        iterable: [10, 20, 30, 40, 50],
+        dataSource: {
+          iterable: [10, 20, 30, 40, 50],
+          variableName: 'item'
+        },
         maxIterations: 5
       } as LoopStartNodeConfig;
 
@@ -525,7 +587,10 @@ describe('loop-start-handler', () => {
     it('应该在对象迭代时正确处理多次迭代', async () => {
       const config = {
         ...mockNode.config,
-        iterable: { a: 1, b: 2, c: 3 },
+        dataSource: {
+          iterable: { a: 1, b: 2, c: 3 },
+          variableName: 'item'
+        },
         maxIterations: 3
       } as LoopStartNodeConfig;
 
@@ -543,7 +608,10 @@ describe('loop-start-handler', () => {
     it('应该处理包含null值的数组', async () => {
       const config = {
         ...mockNode.config,
-        iterable: [1, null, 3]
+        dataSource: {
+          iterable: [1, null, 3],
+          variableName: 'item'
+        }
       } as LoopStartNodeConfig;
 
       const node = { ...mockNode, config };
@@ -556,7 +624,10 @@ describe('loop-start-handler', () => {
     it('应该处理包含undefined值的数组', async () => {
       const config = {
         ...mockNode.config,
-        iterable: [1, undefined, 3]
+        dataSource: {
+          iterable: [1, undefined, 3],
+          variableName: 'item'
+        }
       } as LoopStartNodeConfig;
 
       const node = { ...mockNode, config };
@@ -569,7 +640,10 @@ describe('loop-start-handler', () => {
     it('应该处理包含对象的数组', async () => {
       const config = {
         ...mockNode.config,
-        iterable: [{ id: 1 }, { id: 2 }, { id: 3 }]
+        dataSource: {
+          iterable: [{ id: 1 }, { id: 2 }, { id: 3 }],
+          variableName: 'item'
+        }
       } as LoopStartNodeConfig;
 
       const node = { ...mockNode, config };
@@ -582,7 +656,10 @@ describe('loop-start-handler', () => {
     it('应该处理maxIterations为0的情况', async () => {
       const config = {
         ...mockNode.config,
-        iterable: [1, 2, 3],
+        dataSource: {
+          iterable: [1, 2, 3],
+          variableName: 'item'
+        },
         maxIterations: 0
       } as LoopStartNodeConfig;
 
@@ -597,7 +674,10 @@ describe('loop-start-handler', () => {
     it('应该处理maxIterations为负数的情况', async () => {
       const config = {
         ...mockNode.config,
-        iterable: [1, 2, 3],
+        dataSource: {
+          iterable: [1, 2, 3],
+          variableName: 'item'
+        },
         maxIterations: -1
       } as LoopStartNodeConfig;
 

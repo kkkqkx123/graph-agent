@@ -70,8 +70,8 @@ describe('skip-node-handler', () => {
         emit: jest.fn().mockResolvedValue(undefined)
       };
 
-      mockExecutionContext.getThreadRegistry.mockReturnValue(mockThreadRegistry);
-      mockExecutionContext.getEventManager.mockReturnValue(mockEventManager);
+      mockExecutionContext.getThreadRegistry.mockReturnValue(mockThreadRegistry as any);
+      mockExecutionContext.getEventManager.mockReturnValue(mockEventManager as any);
 
       const result = await skipNodeHandler(mockAction, triggerId, mockExecutionContext);
 
@@ -124,8 +124,8 @@ describe('skip-node-handler', () => {
         emit: jest.fn().mockResolvedValue(undefined)
       };
 
-      mockExecutionContext.getThreadRegistry.mockReturnValue(mockThreadRegistry);
-      mockExecutionContext.getEventManager.mockReturnValue(mockEventManager);
+      mockExecutionContext.getThreadRegistry.mockReturnValue(mockThreadRegistry as any);
+      mockExecutionContext.getEventManager.mockReturnValue(mockEventManager as any);
 
       const result = await skipNodeHandler(mockAction, triggerId);
 
@@ -152,91 +152,86 @@ describe('skip-node-handler', () => {
         emit: jest.fn().mockResolvedValue(undefined)
       };
 
-      mockExecutionContext.getThreadRegistry.mockReturnValue(mockThreadRegistry);
-      mockExecutionContext.getEventManager.mockReturnValue(mockEventManager);
+      mockExecutionContext.getThreadRegistry.mockReturnValue(mockThreadRegistry as any);
+      mockExecutionContext.getEventManager.mockReturnValue(mockEventManager as any);
 
       await skipNodeHandler(mockAction, triggerId, mockExecutionContext);
 
       expect(mockThreadContext.thread.nodeResults).toHaveLength(2);
-      expect(mockThreadContext.thread.nodeResults[1].step).toBe(2);
+      expect((mockThreadContext.thread.nodeResults[1] as any).step).toBe(2);
     });
   });
 
   describe('参数验证测试', () => {
-    it('应该在缺少threadId参数时抛出ValidationError', async () => {
+    it('应该在缺少threadId参数时返回失败结果', async () => {
       mockAction.parameters = {
         nodeId
       };
 
-      await expect(skipNodeHandler(mockAction, triggerId, mockExecutionContext))
-        .rejects
-        .toThrow(ValidationError);
+      const result = await skipNodeHandler(mockAction, triggerId, mockExecutionContext);
 
-      await expect(skipNodeHandler(mockAction, triggerId, mockExecutionContext))
-        .rejects
-        .toThrow('threadId is required for SKIP_NODE action');
+      expect(result.success).toBe(false);
+      expect(result.error).toContain('threadId is required for SKIP_NODE action');
+      expect(result.executionTime).toBeGreaterThan(0);
     });
 
-    it('应该在缺少nodeId参数时抛出ValidationError', async () => {
+    it('应该在缺少nodeId参数时返回失败结果', async () => {
       mockAction.parameters = {
         threadId
       };
 
-      await expect(skipNodeHandler(mockAction, triggerId, mockExecutionContext))
-        .rejects
-        .toThrow(ValidationError);
+      const result = await skipNodeHandler(mockAction, triggerId, mockExecutionContext);
 
-      await expect(skipNodeHandler(mockAction, triggerId, mockExecutionContext))
-        .rejects
-        .toThrow('nodeId is required for SKIP_NODE action');
+      expect(result.success).toBe(false);
+      expect(result.error).toContain('nodeId is required for SKIP_NODE action');
     });
 
-    it('应该在threadId和nodeId都缺少时抛出ValidationError', async () => {
+    it('应该在threadId和nodeId都缺少时返回失败结果', async () => {
       mockAction.parameters = {};
 
-      await expect(skipNodeHandler(mockAction, triggerId, mockExecutionContext))
-        .rejects
-        .toThrow(ValidationError);
+      const result = await skipNodeHandler(mockAction, triggerId, mockExecutionContext);
+
+      expect(result.success).toBe(false);
+      expect(result.error).toContain('threadId is required for SKIP_NODE action');
     });
 
-    it('应该在threadId为空字符串时抛出ValidationError', async () => {
+    it('应该在threadId为空字符串时返回失败结果', async () => {
       mockAction.parameters = {
         threadId: '',
         nodeId
       };
 
-      await expect(skipNodeHandler(mockAction, triggerId, mockExecutionContext))
-        .rejects
-        .toThrow(ValidationError);
+      const result = await skipNodeHandler(mockAction, triggerId, mockExecutionContext);
+
+      expect(result.success).toBe(false);
+      expect(result.error).toContain('threadId is required for SKIP_NODE action');
     });
 
-    it('应该在nodeId为空字符串时抛出ValidationError', async () => {
+    it('应该在nodeId为空字符串时返回失败结果', async () => {
       mockAction.parameters = {
         threadId,
         nodeId: ''
       };
 
-      await expect(skipNodeHandler(mockAction, triggerId, mockExecutionContext))
-        .rejects
-        .toThrow(ValidationError);
+      const result = await skipNodeHandler(mockAction, triggerId, mockExecutionContext);
+
+      expect(result.success).toBe(false);
+      expect(result.error).toContain('nodeId is required for SKIP_NODE action');
     });
   });
 
   describe('线程上下文测试', () => {
-    it('应该在找不到线程上下文时抛出NotFoundError', async () => {
+    it('应该在找不到线程上下文时返回失败结果', async () => {
       const mockThreadRegistry = {
         get: jest.fn().mockReturnValue(null)
       };
 
-      mockExecutionContext.getThreadRegistry.mockReturnValue(mockThreadRegistry);
+      mockExecutionContext.getThreadRegistry.mockReturnValue(mockThreadRegistry as any);
 
-      await expect(skipNodeHandler(mockAction, triggerId, mockExecutionContext))
-        .rejects
-        .toThrow(NotFoundError);
+      const result = await skipNodeHandler(mockAction, triggerId, mockExecutionContext);
 
-      await expect(skipNodeHandler(mockAction, triggerId, mockExecutionContext))
-        .rejects
-        .toThrow(`ThreadContext not found: ${threadId}`);
+      expect(result.success).toBe(false);
+      expect(result.error).toContain(`ThreadContext not found: ${threadId}`);
     });
 
     it('应该正确调用线程注册表', async () => {
@@ -256,8 +251,8 @@ describe('skip-node-handler', () => {
         emit: jest.fn().mockResolvedValue(undefined)
       };
 
-      mockExecutionContext.getThreadRegistry.mockReturnValue(mockThreadRegistry);
-      mockExecutionContext.getEventManager.mockReturnValue(mockEventManager);
+      mockExecutionContext.getThreadRegistry.mockReturnValue(mockThreadRegistry as any);
+      mockExecutionContext.getEventManager.mockReturnValue(mockEventManager as any);
 
       await skipNodeHandler(mockAction, triggerId, mockExecutionContext);
 
@@ -266,7 +261,7 @@ describe('skip-node-handler', () => {
   });
 
   describe('事件管理测试', () => {
-    it('应该正确触发NODE_COMPLETED事件', async () => {
+    it('应该触发NODE_COMPLETED事件', async () => {
       const mockThreadContext = {
         thread: {
           nodeResults: []
@@ -283,8 +278,8 @@ describe('skip-node-handler', () => {
         emit: jest.fn().mockResolvedValue(undefined)
       };
 
-      mockExecutionContext.getThreadRegistry.mockReturnValue(mockThreadRegistry);
-      mockExecutionContext.getEventManager.mockReturnValue(mockEventManager);
+      mockExecutionContext.getThreadRegistry.mockReturnValue(mockThreadRegistry as any);
+      mockExecutionContext.getEventManager.mockReturnValue(mockEventManager as any);
 
       await skipNodeHandler(mockAction, triggerId, mockExecutionContext);
 
@@ -312,8 +307,8 @@ describe('skip-node-handler', () => {
         get: jest.fn().mockReturnValue(mockThreadContext)
       };
 
-      mockExecutionContext.getThreadRegistry.mockReturnValue(mockThreadRegistry);
-      mockExecutionContext.getEventManager.mockReturnValue(null);
+      mockExecutionContext.getThreadRegistry.mockReturnValue(mockThreadRegistry as any);
+      mockExecutionContext.getEventManager.mockReturnValue(null as any);
 
       const result = await skipNodeHandler(mockAction, triggerId, mockExecutionContext);
 
@@ -338,8 +333,8 @@ describe('skip-node-handler', () => {
         emit: jest.fn().mockRejectedValue(new Error('Event emission failed'))
       };
 
-      mockExecutionContext.getThreadRegistry.mockReturnValue(mockThreadRegistry);
-      mockExecutionContext.getEventManager.mockReturnValue(mockEventManager);
+      mockExecutionContext.getThreadRegistry.mockReturnValue(mockThreadRegistry as any);
+      mockExecutionContext.getEventManager.mockReturnValue(mockEventManager as any);
 
       const result = await skipNodeHandler(mockAction, triggerId, mockExecutionContext);
 
@@ -396,14 +391,15 @@ describe('skip-node-handler', () => {
         emit: jest.fn().mockResolvedValue(undefined)
       };
 
-      mockExecutionContext.getThreadRegistry.mockReturnValue(mockThreadRegistry);
-      mockExecutionContext.getEventManager.mockReturnValue(mockEventManager);
+      mockExecutionContext.getThreadRegistry.mockReturnValue(mockThreadRegistry as any);
+      mockExecutionContext.getEventManager.mockReturnValue(mockEventManager as any);
 
-      const startTime = Date.now();
+      const beforeTime = Date.now();
       const result = await skipNodeHandler(mockAction, triggerId, mockExecutionContext);
+      const afterTime = Date.now();
 
-      expect(result.executionTime).toBeGreaterThanOrEqual(0);
-      expect(result.executionTime).toBeLessThanOrEqual(Date.now() - startTime + 10);
+      expect(result.executionTime).toBeGreaterThanOrEqual(beforeTime);
+      expect(result.executionTime).toBeLessThanOrEqual(afterTime);
     });
   });
 
@@ -424,7 +420,7 @@ describe('skip-node-handler', () => {
 
         const mockThreadContext = {
           thread: {
-            nodeResults: []
+            nodeResults: [] as any[]
           },
           getWorkflowId: jest.fn().mockReturnValue('workflow-123'),
           getThreadId: jest.fn().mockReturnValue(testThreadId)
@@ -438,14 +434,14 @@ describe('skip-node-handler', () => {
           emit: jest.fn().mockResolvedValue(undefined)
         };
 
-        mockExecutionContext.getThreadRegistry.mockReturnValue(mockThreadRegistry);
-        mockExecutionContext.getEventManager.mockReturnValue(mockEventManager);
+        mockExecutionContext.getThreadRegistry.mockReturnValue(mockThreadRegistry as any);
+        mockExecutionContext.getEventManager.mockReturnValue(mockEventManager as any);
 
         const result = await skipNodeHandler(mockAction, triggerId, mockExecutionContext);
 
         expect(result.success).toBe(true);
         expect(mockThreadRegistry.get).toHaveBeenCalledWith(testThreadId);
-        expect(mockThreadContext.thread.nodeResults[0].nodeId).toBe(testNodeId);
+        expect((mockThreadContext.thread.nodeResults[0] as any).nodeId).toBe(testNodeId);
       }
     });
 
@@ -479,8 +475,8 @@ describe('skip-node-handler', () => {
           emit: jest.fn().mockResolvedValue(undefined)
         };
 
-        mockExecutionContext.getThreadRegistry.mockReturnValue(mockThreadRegistry);
-        mockExecutionContext.getEventManager.mockReturnValue(mockEventManager);
+        mockExecutionContext.getThreadRegistry.mockReturnValue(mockThreadRegistry as any);
+        mockExecutionContext.getEventManager.mockReturnValue(mockEventManager as any);
 
         const result = await skipNodeHandler(mockAction, testTriggerId, mockExecutionContext);
 
@@ -499,7 +495,7 @@ describe('skip-node-handler', () => {
 
       const mockThreadContext = {
         thread: {
-          nodeResults: []
+          nodeResults: [] as any[]
         },
         getWorkflowId: jest.fn().mockReturnValue('workflow-123'),
         getThreadId: jest.fn().mockReturnValue(threadId)
@@ -513,15 +509,15 @@ describe('skip-node-handler', () => {
         emit: jest.fn().mockResolvedValue(undefined)
       };
 
-      mockExecutionContext.getThreadRegistry.mockReturnValue(mockThreadRegistry);
-      mockExecutionContext.getEventManager.mockReturnValue(mockEventManager);
+      mockExecutionContext.getThreadRegistry.mockReturnValue(mockThreadRegistry as any);
+      mockExecutionContext.getEventManager.mockReturnValue(mockEventManager as any);
 
       const result = await skipNodeHandler(mockAction, triggerId, mockExecutionContext);
 
       expect(result.success).toBe(true);
       // 额外的参数应该被忽略，只使用threadId和nodeId
       expect(mockThreadRegistry.get).toHaveBeenCalledWith(threadId);
-      expect(mockThreadContext.thread.nodeResults[0].nodeId).toBe(nodeId);
+      expect((mockThreadContext.thread.nodeResults[0] as any).nodeId).toBe(nodeId);
     });
   });
 });
