@@ -15,6 +15,7 @@ import { generateId } from '../../utils/id-utils';
 import { now } from '../../utils/timestamp-utils';
 import { nodeTemplateRegistry } from '../../core/services/node-template-registry';
 import { triggerTemplateRegistry } from '../../core/services/trigger-template-registry';
+import { ConfigParser, ConfigFormat } from '../config';
 
 /**
  * WorkflowBuilder - 声明式工作流构建器
@@ -443,5 +444,63 @@ export class WorkflowBuilder {
     if (errors.length > 0) {
       throw new Error(`工作流验证失败:\n${errors.join('\n')}`);
     }
+  }
+
+  /**
+   * 从配置文件内容创建工作流
+   * @param configFile 配置文件内容
+   * @param format 配置格式 ('toml' | 'json')
+   * @param parameters 运行时参数
+   * @returns WorkflowBuilder实例
+   */
+  static fromConfig(
+    configFile: string,
+    format: ConfigFormat = ConfigFormat.TOML,
+    parameters?: Record<string, any>
+  ): WorkflowBuilder {
+    const parser = new ConfigParser();
+    const workflowDef = parser.parseAndTransform(configFile, format, parameters);
+    
+    const builder = new WorkflowBuilder(workflowDef.id);
+    // 填充builder的内部状态
+    Object.assign(builder.workflow, workflowDef);
+    
+    // 重建节点和边的映射
+    for (const node of workflowDef.nodes) {
+      builder.nodes.set(node.id, node);
+    }
+    builder.edges = workflowDef.edges;
+    builder.variables = workflowDef.variables || [];
+    builder.triggers = workflowDef.triggers || [];
+    
+    return builder;
+  }
+
+  /**
+   * 从配置文件路径创建工作流
+   * @param filePath 配置文件路径
+   * @param parameters 运行时参数
+   * @returns WorkflowBuilder实例
+   */
+  static async fromConfigFile(
+    filePath: string,
+    parameters?: Record<string, any>
+  ): Promise<WorkflowBuilder> {
+    const parser = new ConfigParser();
+    const workflowDef = await parser.loadAndTransform(filePath, parameters);
+    
+    const builder = new WorkflowBuilder(workflowDef.id);
+    // 填充builder的内部状态
+    Object.assign(builder.workflow, workflowDef);
+    
+    // 重建节点和边的映射
+    for (const node of workflowDef.nodes) {
+      builder.nodes.set(node.id, node);
+    }
+    builder.edges = workflowDef.edges;
+    builder.variables = workflowDef.variables || [];
+    builder.triggers = workflowDef.triggers || [];
+    
+    return builder;
   }
 }

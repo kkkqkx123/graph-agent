@@ -66,6 +66,7 @@ export { TriggerResourceAPI } from './resources/triggers/trigger-resource-api';
 export {
   EventResourceAPI
 } from './resources/events/event-resource-api';
+export { ConfigurationAPI } from './resources/configuration/configuration-api';
 
 // 通用资源API基类和工具
 export { GenericResourceAPI } from './resources/generic-resource-api';
@@ -289,6 +290,26 @@ export type {
   TriggerTemplateSummary,
   TriggerFilter
 } from './types';
+
+// ============================================================================
+// 配置解析模块
+// ============================================================================
+export {
+  ConfigParser,
+  TomlParser,
+  JsonParser,
+  ConfigValidator,
+  ConfigTransformer,
+  ConfigFormat,
+  type ParsedConfig,
+  type ValidationResult,
+  type WorkflowConfigFile,
+  type ParameterDefinition,
+  type NodeConfigFile,
+  type EdgeConfigFile,
+  type IConfigParser,
+  type IConfigTransformer
+} from './config';
 
 // ============================================================================
 // Profile模板类型

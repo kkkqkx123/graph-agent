@@ -1,0 +1,89 @@
+{
+  "workflow": {
+    "id": "example-chat",
+    "name": "示例聊天工作流",
+    "description": "一个简单的聊天工作流示例",
+    "version": "1.0.0",
+    "type": "business",
+    "parameters": {
+      "model": {
+        "type": "string",
+        "default": "gpt-4o-mini",
+        "description": "使用的LLM模型"
+      },
+      "maxTokens": {
+        "type": "number",
+        "default": 1000,
+        "description": "最大生成token数"
+      }
+    },
+    "nodes": [
+      {
+        "id": "start",
+        "type": "START",
+        "name": "开始",
+        "config": {}
+      },
+      {
+        "id": "chat_llm",
+        "type": "LLM",
+        "name": "聊天LLM",
+        "config": {
+          "profileId": "{{parameters.model}}",
+          "prompt": "请回答用户的问题：{{input.message}}",
+          "parameters": {
+            "max_tokens": "{{parameters.maxTokens}}"
+          }
+        }
+      },
+      {
+        "id": "end",
+        "type": "END",
+        "name": "结束",
+        "config": {}
+      }
+    ],
+    "edges": [
+      {
+        "from": "start",
+        "to": "chat_llm"
+      },
+      {
+        "from": "chat_llm",
+        "to": "end"
+      }
+    ],
+    "variables": [
+      {
+        "name": "userName",
+        "type": "string",
+        "defaultValue": "Guest",
+        "description": "用户名称"
+      },
+      {
+        "name": "messageCount",
+        "type": "number",
+        "defaultValue": 0,
+        "description": "消息计数"
+      }
+    ],
+    "config": {
+      "timeout": 30000,
+      "maxSteps": 10,
+      "enableCheckpoints": true,
+      "retryPolicy": {
+        "maxRetries": 3,
+        "retryDelay": 1000,
+        "backoffMultiplier": 2
+      },
+      "errorHandling": {
+        "stopOnError": true
+      }
+    },
+    "metadata": {
+      "author": "SDK Team",
+      "tags": ["chat", "example", "llm"],
+      "category": "demo"
+    }
+  }
+}

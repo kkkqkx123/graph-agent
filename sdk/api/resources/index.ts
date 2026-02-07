@@ -53,6 +53,9 @@ import { TriggerTemplateRegistryAPI } from './templates/trigger-template-registr
 // Profile资源管理
 import { LLMProfileRegistryAPI } from './profiles/profile-registry-api';
 
+// 配置资源管理
+import { ConfigurationAPI } from './configuration/configuration-api';
+
 // 重新导出所有资源管理API
 export { GenericResourceAPI };
 export { CheckpointResourceAPI };
@@ -67,6 +70,7 @@ export { ScriptRegistryAPI };
 export { NodeRegistryAPI };
 export { TriggerTemplateRegistryAPI };
 export { LLMProfileRegistryAPI };
+export { ConfigurationAPI };
 
 /**
  * 创建所有资源管理API实例的工厂函数
@@ -84,7 +88,8 @@ export function createResourceAPIs() {
     scripts: new ScriptRegistryAPI(),
     nodeTemplates: new NodeRegistryAPI(),
     triggerTemplates: new TriggerTemplateRegistryAPI(),
-    profiles: new LLMProfileRegistryAPI()
+    profiles: new LLMProfileRegistryAPI(),
+    configuration: new ConfigurationAPI()
   };
 }
 
