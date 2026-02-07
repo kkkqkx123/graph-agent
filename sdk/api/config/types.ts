@@ -1,12 +1,22 @@
 /**
  * 配置模块类型定义
  * 定义配置文件解析和转换相关的类型
+ * 
+ * 设计原则：
+ * - 完全复用 sdk/types 中的核心类型定义
+ * - 配置文件格式与 WorkflowDefinition 保持完全一致
+ * - 所有字段都是静态定义，无需移除任何字段
+ * - 避免重复定义，确保类型安全
+ * 
+ * 说明：
+ * - WorkflowDefinition 是配置文件解析后的静态定义
+ * - 配置文件直接映射到 WorkflowDefinition，类型完全一致
+ * - 不需要任何类型转换或字段移除
  */
 
-import type { NodeType } from '../../types/node';
-import type { WorkflowVariable, WorkflowConfig, WorkflowMetadata } from '../../types/workflow';
-import type { WorkflowTrigger } from '../../types/trigger';
-import type { TriggerReference } from '../../types/trigger-template';
+import type { Node } from '../../types/node';
+import type { Edge } from '../../types/edge';
+import type { WorkflowDefinition } from '../../types/workflow';
 
 /**
  * 配置格式枚举
@@ -17,77 +27,25 @@ export enum ConfigFormat {
 }
 
 /**
- * 参数定义类型
- */
-export interface ParameterDefinition {
-  /** 参数类型 */
-  type: 'string' | 'number' | 'boolean' | 'array' | 'object';
-  /** 默认值 */
-  default?: any;
-  /** 是否必需 */
-  required?: boolean;
-  /** 参数描述 */
-  description?: string;
-}
-
-/**
  * 节点配置文件格式
+ * 
+ * 说明：直接复用 Node 类型，完全一致
  */
-export interface NodeConfigFile {
-  /** 节点ID */
-  id: string;
-  /** 节点类型 */
-  type: NodeType;
-  /** 节点名称 */
-  name: string;
-  /** 节点配置 */
-  config: Record<string, any>;
-}
+export type NodeConfigFile = Node;
 
 /**
  * 边配置文件格式
+ * 
+ * 说明：直接复用 Edge 类型，完全一致
  */
-export interface EdgeConfigFile {
-  /** 源节点ID */
-  from: string;
-  /** 目标节点ID */
-  to: string;
-  /** 条件表达式（可选） */
-  condition?: string;
-}
+export type EdgeConfigFile = Edge;
 
 /**
  * 工作流配置文件格式
+ * 
+ * 说明：直接复用 WorkflowDefinition 类型，完全一致
  */
-export interface WorkflowConfigFile {
-  /** 工作流配置 */
-  workflow: {
-    /** 工作流ID */
-    id: string;
-    /** 工作流名称 */
-    name: string;
-    /** 工作流描述 */
-    description?: string;
-    /** 工作流版本 */
-    version: string;
-    /** 工作流类型 */
-    type?: 'base' | 'feature' | 'business';
-    /** 参数定义 */
-    parameters?: Record<string, ParameterDefinition>;
-    /** 节点数组 */
-    nodes: NodeConfigFile[];
-    /** 边数组 */
-    edges: EdgeConfigFile[];
-    /** 工作流变量 */
-    variables?: WorkflowVariable[];
-    /** 触发器 */
-    triggers?: (WorkflowTrigger | TriggerReference)[];
-    /** 工作流配置 */
-    config?: WorkflowConfig;
-    /** 工作流元数据 */
-    metadata?: WorkflowMetadata;
-  };
-}
+export type WorkflowConfigFile = WorkflowDefinition;
 
 /**
  * 解析后的配置对象
@@ -99,18 +57,6 @@ export interface ParsedConfig {
   workflowConfig: WorkflowConfigFile;
   /** 原始内容 */
   rawContent: string;
-}
-
-/**
- * 验证结果
- */
-export interface ValidationResult {
-  /** 是否验证通过 */
-  valid: boolean;
-  /** 错误信息列表 */
-  errors: string[];
-  /** 警告信息列表 */
-  warnings: string[];
 }
 
 /**
@@ -131,13 +77,6 @@ export interface IConfigParser {
    * @returns 解析后的配置对象
    */
   loadFromFile(filePath: string): Promise<ParsedConfig>;
-
-  /**
-   * 验证配置的有效性
-   * @param config 解析后的配置
-   * @returns 验证结果
-   */
-  validate(config: ParsedConfig): ValidationResult;
 }
 
 /**
@@ -153,5 +92,5 @@ export interface IConfigTransformer {
   transformToWorkflow(
     configFile: WorkflowConfigFile,
     parameters?: Record<string, any>
-  ): any;
+  ): WorkflowDefinition;
 }

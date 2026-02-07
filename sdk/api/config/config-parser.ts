@@ -1,31 +1,32 @@
 /**
  * 配置解析器主类
  * 整合TOML/JSON解析、验证和转换功能
+ *
+ * 设计原则：
+ * - 配置验证直接使用 sdk/core/validation 中的 WorkflowValidator
+ * - api/config 层只负责配置文件的解析和转换，不实现新的验证逻辑
  */
 
-import type { ParsedConfig, IConfigParser, ValidationResult } from './types';
+import type { ParsedConfig, IConfigParser } from './types';
 import { ConfigFormat } from './types';
 import type { WorkflowDefinition } from '../../types/workflow';
-import { TomlParser } from './toml-parser';
-import { JsonParser } from './json-parser';
-import { ConfigValidator } from './config-validator';
+import { parseToml } from './toml-parser';
+import { parseJson, stringifyJson } from './json-parser';
 import { ConfigTransformer } from './config-transformer';
+import { ConfigurationError } from '../../types/errors';
+import { WorkflowValidator } from '../../core/validation/workflow-validator';
 import * as path from 'path';
 
 /**
  * 配置解析器类
  */
 export class ConfigParser implements IConfigParser {
-  private tomlParser: TomlParser;
-  private jsonParser: JsonParser;
-  private validator: ConfigValidator;
   private transformer: ConfigTransformer;
+  private workflowValidator: WorkflowValidator;
 
   constructor() {
-    this.tomlParser = new TomlParser();
-    this.jsonParser = new JsonParser();
-    this.validator = new ConfigValidator();
     this.transformer = new ConfigTransformer();
+    this.workflowValidator = new WorkflowValidator();
   }
 
   /**
@@ -40,13 +41,16 @@ export class ConfigParser implements IConfigParser {
     // 根据格式选择解析器
     switch (format) {
       case ConfigFormat.TOML:
-        workflowConfig = this.tomlParser.parse(content);
+        workflowConfig = parseToml(content);
         break;
       case ConfigFormat.JSON:
-        workflowConfig = this.jsonParser.parse(content);
+        workflowConfig = parseJson(content);
         break;
       default:
-        throw new Error(`不支持的配置格式: ${format}`);
+        throw new ConfigurationError(
+          `不支持的配置格式: ${format}`,
+          format
+        );
     }
 
     return {
@@ -74,20 +78,28 @@ export class ConfigParser implements IConfigParser {
       // 解析配置
       return this.parse(content, format);
     } catch (error) {
-      if (error instanceof Error) {
-        throw new Error(`加载配置文件失败: ${error.message}`);
+      if (error instanceof ConfigurationError) {
+        throw error;
       }
-      throw new Error('加载配置文件失败: 未知错误');
+      if (error instanceof Error) {
+        throw new ConfigurationError(
+          `加载配置文件失败: ${error.message}`,
+          filePath,
+          { originalError: error.message }
+        );
+      }
+      throw new ConfigurationError('加载配置文件失败: 未知错误');
     }
   }
 
   /**
    * 验证配置的有效性
+   * 使用 WorkflowValidator 进行验证
    * @param config 解析后的配置
    * @returns 验证结果
    */
-  validate(config: ParsedConfig): ValidationResult {
-    return this.validator.validate(config);
+  validate(config: ParsedConfig) {
+    return this.workflowValidator.validate(config.workflowConfig);
   }
 
   /**
@@ -107,16 +119,13 @@ export class ConfigParser implements IConfigParser {
 
     // 验证配置
     const validationResult = this.validate(parsedConfig);
-    if (!validationResult.valid) {
-      throw new Error(`配置验证失败:\n${validationResult.errors.join('\n')}`);
-    }
-
-    // 输出警告信息
-    if (validationResult.warnings.length > 0) {
-      console.warn('配置警告:');
-      validationResult.warnings.forEach(warning => {
-        console.warn(`  - ${warning}`);
-      });
+    if (validationResult.isErr()) {
+      const errorMessages = validationResult.error.map(err => err.message).join('\n');
+      throw new ConfigurationError(
+        `配置验证失败:\n${errorMessages}`,
+        undefined,
+        { errors: validationResult.error }
+      );
     }
 
     // 转换为WorkflowDefinition
@@ -138,16 +147,13 @@ export class ConfigParser implements IConfigParser {
 
     // 验证配置
     const validationResult = this.validate(parsedConfig);
-    if (!validationResult.valid) {
-      throw new Error(`配置验证失败:\n${validationResult.errors.join('\n')}`);
-    }
-
-    // 输出警告信息
-    if (validationResult.warnings.length > 0) {
-      console.warn('配置警告:');
-      validationResult.warnings.forEach(warning => {
-        console.warn(`  - ${warning}`);
-      });
+    if (validationResult.isErr()) {
+      const errorMessages = validationResult.error.map(err => err.message).join('\n');
+      throw new ConfigurationError(
+        `配置验证失败:\n${errorMessages}`,
+        undefined,
+        { errors: validationResult.error }
+      );
     }
 
     // 转换为WorkflowDefinition
@@ -167,11 +173,18 @@ export class ConfigParser implements IConfigParser {
     // 根据格式序列化
     switch (format) {
       case ConfigFormat.JSON:
-        return this.jsonParser.stringify(configFile, true);
+        return stringifyJson(configFile, true);
       case ConfigFormat.TOML:
-        return this.tomlParser.stringify(configFile);
+        throw new ConfigurationError(
+          'TOML格式不支持导出，请使用JSON格式',
+          format,
+          { suggestion: '使用 ConfigFormat.JSON 代替' }
+        );
       default:
-        throw new Error(`不支持的配置格式: ${format}`);
+        throw new ConfigurationError(
+          `不支持的配置格式: ${format}`,
+          format
+        );
     }
   }
 
@@ -193,10 +206,17 @@ export class ConfigParser implements IConfigParser {
       // 保存文件
       await fs.writeFile(filePath, content, 'utf-8');
     } catch (error) {
-      if (error instanceof Error) {
-        throw new Error(`保存配置文件失败: ${error.message}`);
+      if (error instanceof ConfigurationError) {
+        throw error;
       }
-      throw new Error('保存配置文件失败: 未知错误');
+      if (error instanceof Error) {
+        throw new ConfigurationError(
+          `保存配置文件失败: ${error.message}`,
+          filePath,
+          { originalError: error.message }
+        );
+      }
+      throw new ConfigurationError('保存配置文件失败: 未知错误');
     }
   }
 
@@ -214,32 +234,11 @@ export class ConfigParser implements IConfigParser {
       case '.json':
         return ConfigFormat.JSON;
       default:
-        throw new Error(`无法识别的配置文件扩展名: ${ext}`);
+        throw new ConfigurationError(
+          `无法识别的配置文件扩展名: ${ext}`,
+          ext
+        );
     }
-  }
-
-  /**
-   * 获取TOML解析器实例
-   * @returns TOML解析器
-   */
-  getTomlParser(): TomlParser {
-    return this.tomlParser;
-  }
-
-  /**
-   * 获取JSON解析器实例
-   * @returns JSON解析器
-   */
-  getJsonParser(): JsonParser {
-    return this.jsonParser;
-  }
-
-  /**
-   * 获取验证器实例
-   * @returns 配置验证器
-   */
-  getValidator(): ConfigValidator {
-    return this.validator;
   }
 
   /**

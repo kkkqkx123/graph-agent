@@ -29,36 +29,11 @@ export class ConfigTransformer implements IConfigTransformer {
     // 1. 处理参数替换（{{parameters.xxx}} → 实际值）
     const processedConfig = this.processParameters(configFile, parameters);
 
-    // 2. 转换节点配置
-    const nodes = processedConfig.workflow.nodes.map(node =>
-      this.transformNode(node)
-    );
+    // 2. 更新节点的边引用
+    this.updateNodeEdgeReferences(processedConfig.nodes, processedConfig.edges);
 
-    // 3. 转换边配置
-    const edges = processedConfig.workflow.edges.map(edge =>
-      this.transformEdge(edge)
-    );
-
-    // 4. 更新节点的边引用
-    this.updateNodeEdgeReferences(nodes, edges);
-
-    // 5. 构建完整的WorkflowDefinition
-    const workflowDef: WorkflowDefinition = {
-      id: processedConfig.workflow.id,
-      name: processedConfig.workflow.name,
-      description: processedConfig.workflow.description,
-      version: processedConfig.workflow.version,
-      nodes,
-      edges,
-      variables: processedConfig.workflow.variables,
-      triggers: processedConfig.workflow.triggers,
-      config: processedConfig.workflow.config,
-      metadata: processedConfig.workflow.metadata,
-      createdAt: now(),
-      updatedAt: now()
-    };
-
-    return workflowDef;
+    // 3. 返回处理后的 WorkflowDefinition
+    return processedConfig;
   }
 
   /**
@@ -120,17 +95,8 @@ export class ConfigTransformer implements IConfigTransformer {
    * @param nodeConfig 节点配置
    * @returns Node对象
    */
-  private transformNode(nodeConfig: WorkflowConfigFile['workflow']['nodes'][0]): Node {
-    const node: Node = {
-      id: nodeConfig.id,
-      type: nodeConfig.type,
-      name: nodeConfig.name,
-      config: nodeConfig.config,
-      outgoingEdgeIds: [],
-      incomingEdgeIds: []
-    };
-
-    return node;
+  private transformNode(nodeConfig: Node): Node {
+    return nodeConfig;
   }
 
   /**
@@ -138,22 +104,8 @@ export class ConfigTransformer implements IConfigTransformer {
    * @param edgeConfig 边配置
    * @returns Edge对象
    */
-  private transformEdge(edgeConfig: WorkflowConfigFile['workflow']['edges'][0]): EdgeType {
-    const edge: EdgeType = {
-      id: generateId(),
-      sourceNodeId: edgeConfig.from,
-      targetNodeId: edgeConfig.to,
-      type: edgeConfig.condition ? EdgeTypeEnum.CONDITIONAL : EdgeTypeEnum.DEFAULT
-    };
-
-    // 如果有条件，添加条件配置
-    if (edgeConfig.condition) {
-      edge.condition = {
-        expression: edgeConfig.condition
-      };
-    }
-
-    return edge;
+  private transformEdge(edgeConfig: EdgeType): EdgeType {
+    return edgeConfig;
   }
 
   /**
@@ -189,30 +141,6 @@ export class ConfigTransformer implements IConfigTransformer {
    * @returns 配置文件格式
    */
   transformFromWorkflow(workflowDef: WorkflowDefinition): WorkflowConfigFile {
-    const configFile: WorkflowConfigFile = {
-      workflow: {
-        id: workflowDef.id,
-        name: workflowDef.name,
-        description: workflowDef.description,
-        version: workflowDef.version,
-        nodes: workflowDef.nodes.map(node => ({
-          id: node.id,
-          type: node.type,
-          name: node.name,
-          config: node.config
-        })),
-        edges: workflowDef.edges.map(edge => ({
-          from: edge.sourceNodeId,
-          to: edge.targetNodeId,
-          condition: edge.condition?.expression
-        })),
-        variables: workflowDef.variables,
-        triggers: workflowDef.triggers,
-        config: workflowDef.config,
-        metadata: workflowDef.metadata
-      }
-    };
-
-    return configFile;
+    return workflowDef;
   }
 }

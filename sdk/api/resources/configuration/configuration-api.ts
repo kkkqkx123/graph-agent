@@ -1,11 +1,16 @@
 /**
  * ConfigurationAPI - 配置管理API
  * 提供配置文件的加载、解析、验证和注册功能
+ *
+ * 设计原则：
+ * - 配置验证使用 sdk/core/validation 中的 WorkflowValidator
+ * - 验证结果使用 Result<WorkflowDefinition, ValidationError[]> 类型
  */
 
 import { ConfigParser, ConfigFormat } from '../../config';
 import type { WorkflowDefinition } from '../../../types/workflow';
-import type { ValidationResult } from '../../config';
+import type { Result } from '../../../types/result';
+import type { ValidationError } from '../../../types/errors';
 
 /**
  * ConfigurationAPI - 配置管理API
@@ -62,7 +67,7 @@ export class ConfigurationAPI {
    * @param filePath 配置文件路径
    * @returns 验证结果
    */
-  async validateConfigFile(filePath: string): Promise<ValidationResult> {
+  async validateConfigFile(filePath: string): Promise<Result<WorkflowDefinition, ValidationError[]>> {
     const parsedConfig = await this.parser.loadFromFile(filePath);
     return this.parser.validate(parsedConfig);
   }
@@ -73,7 +78,7 @@ export class ConfigurationAPI {
    * @param format 配置格式
    * @returns 验证结果
    */
-  validateConfigContent(content: string, format: ConfigFormat): ValidationResult {
+  validateConfigContent(content: string, format: ConfigFormat): Result<WorkflowDefinition, ValidationError[]> {
     const parsedConfig = this.parser.parse(content, format);
     return this.parser.validate(parsedConfig);
   }

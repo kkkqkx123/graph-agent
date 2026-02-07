@@ -296,25 +296,32 @@ export type {
 // ============================================================================
 export {
   ConfigParser,
-  TomlParser,
-  JsonParser,
-  ConfigValidator,
   ConfigTransformer,
   ConfigFormat,
   type ParsedConfig,
-  type ValidationResult,
   type WorkflowConfigFile,
-  type ParameterDefinition,
   type NodeConfigFile,
   type EdgeConfigFile,
   type IConfigParser,
   type IConfigTransformer
 } from './config';
 
+// JSON解析函数
+export {
+  parseJson,
+  stringifyJson,
+  validateJsonSyntax,
+  loadJsonFromFile,
+  saveJsonToFile
+} from './config';
+
+// TOML解析函数
+export {
+  parseToml,
+  validateTomlSyntax
+} from './config';
+
 // ============================================================================
 // Profile模板类型
 // ============================================================================
 export type { LLMProfileTemplate as ProfileTemplate } from './resources/profiles/profile-registry-api';
-
-// ============================================================================
-// ValidationResult 从 types/errors.ts 导入
