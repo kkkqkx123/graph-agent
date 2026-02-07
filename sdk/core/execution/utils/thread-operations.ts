@@ -114,10 +114,10 @@ export async function join(
   childThreadIds: string[],
   joinStrategy: JoinStrategy,
   threadRegistry: ThreadRegistry,
+  mainPathId: string,
   timeout: number = 0,
   parentThreadId?: string,
-  eventManager?: EventManager,
-  mainPathId?: string
+  eventManager?: EventManager
 ): Promise<JoinResult> {
   // 步骤1：验证 Join 配置
   if (!joinStrategy) {

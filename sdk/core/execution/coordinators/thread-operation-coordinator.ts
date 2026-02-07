@@ -89,7 +89,7 @@ export class ThreadOperationCoordinator {
     childThreadIds: string[],
     joinStrategy: 'ALL_COMPLETED' | 'ANY_COMPLETED' | 'ALL_FAILED' | 'ANY_FAILED' | 'SUCCESS_COUNT_THRESHOLD' = 'ALL_COMPLETED',
     timeout: number = 60,
-    mainPathId?: string
+    mainPathId: string
   ): Promise<JoinResult> {
     // 步骤 1：获取父线程上下文
     const parentThreadContext = this.threadRegistry.get(parentThreadId);
@@ -102,10 +102,10 @@ export class ThreadOperationCoordinator {
       childThreadIds,
       joinStrategy,
       this.threadRegistry,
+      mainPathId,
       timeout, // 注意：thread-operations.ts中的timeout已经是秒为单位
       parentThreadId,
-      this.eventManager,
-      mainPathId
+      this.eventManager
     );
 
     // 步骤 3：返回 Join 结果

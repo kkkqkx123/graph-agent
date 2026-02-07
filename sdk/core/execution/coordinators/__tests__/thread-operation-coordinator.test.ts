@@ -104,7 +104,8 @@ class TestableThreadOperationCoordinator {
     parentThreadId: string,
     childThreadIds: string[],
     joinStrategy: 'ALL_COMPLETED' | 'ANY_COMPLETED' | 'ALL_FAILED' | 'ANY_FAILED' | 'SUCCESS_COUNT_THRESHOLD' = 'ALL_COMPLETED',
-    timeout: number = 60
+    timeout: number = 60,
+    mainPathId: string
   ): Promise<JoinResult> {
     const parentThreadContext = this.threadRegistry.get(parentThreadId);
     if (!parentThreadContext) {
@@ -265,7 +266,7 @@ describe('ThreadOperationCoordinator', () => {
       const mockThreadContext = new MockThreadContext(parentThreadId, mockThread, ThreadStatus.RUNNING);
       mockThreadRegistry.register(mockThreadContext);
 
-      const result = await coordinator.join(parentThreadId, childThreadIds, 'ALL_COMPLETED', 60);
+      const result = await coordinator.join(parentThreadId, childThreadIds, 'ALL_COMPLETED', 60, 'main-path-1');
       expect(result).toBeDefined();
       expect(typeof result.success).toBe('boolean');
     });
@@ -274,8 +275,8 @@ describe('ThreadOperationCoordinator', () => {
       const nonExistentThreadId = 'non-existent-thread';
       const childThreadIds = [generateId()];
 
-      await expect(coordinator.join(nonExistentThreadId, childThreadIds, 'ALL_COMPLETED')).rejects.toThrow(NotFoundError);
-      await expect(coordinator.join(nonExistentThreadId, childThreadIds, 'ALL_COMPLETED')).rejects.toThrow('Parent thread not found');
+      await expect(coordinator.join(nonExistentThreadId, childThreadIds, 'ALL_COMPLETED', 60, 'main-path-1')).rejects.toThrow(NotFoundError);
+      await expect(coordinator.join(nonExistentThreadId, childThreadIds, 'ALL_COMPLETED', 60, 'main-path-1')).rejects.toThrow('Parent thread not found');
     });
 
     it('应该处理不同的 join 策略', async () => {
@@ -317,7 +318,7 @@ describe('ThreadOperationCoordinator', () => {
       ];
 
       for (const strategy of strategies) {
-        await expect(coordinator.join(parentThreadId, childThreadIds, strategy)).resolves.toBeDefined();
+        await expect(coordinator.join(parentThreadId, childThreadIds, strategy, 60, 'main-path-1')).resolves.toBeDefined();
       }
     });
 
@@ -350,7 +351,7 @@ describe('ThreadOperationCoordinator', () => {
       const mockThreadContext = new MockThreadContext(parentThreadId, mockThread, ThreadStatus.RUNNING);
       mockThreadRegistry.register(mockThreadContext);
 
-      const result = await coordinator.join(parentThreadId, [], 'ALL_COMPLETED');
+      const result = await coordinator.join(parentThreadId, [], 'ALL_COMPLETED', 60, 'main-path-1');
       expect(result).toBeDefined();
     });
   });

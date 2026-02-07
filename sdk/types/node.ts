@@ -160,8 +160,8 @@ export interface JoinNodeConfig {
   threshold?: number;
   /** 等待超时时间（秒）。0表示不超时，始终等待；>0表示最多等待的秒数。默认0（无超时） */
   timeout?: number;
-  /** 主线程路径ID，必须是forkPathIds中的一个值。如果未指定，默认使用forkPathIds[0] */
-  mainPathId?: ID;
+  /** 主线程路径ID，必须是forkPathIds中的一个值（必填） */
+  mainPathId: ID;
 }
 
 /**

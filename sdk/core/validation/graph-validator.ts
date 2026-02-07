@@ -274,9 +274,11 @@ export class GraphValidator {
    */
   private static validateForkJoinPairs(graph: GraphData): ValidationError[] {
     const errors: ValidationError[] = [];
-    const forkNodes = new Map<ID, { nodeId: ID; forkPathIds: ID[] }>(); // forkPathId -> {nodeId, forkPathIds}
-    const joinNodes = new Map<ID, { nodeId: ID; forkPathIds: ID[]; mainPathId?: ID }>(); // forkPathId -> {nodeId, forkPathIds, mainPathId}
+    // 使用forkPathIds数组的第一个元素作为配对标识符
+    const forkNodes = new Map<ID, { nodeId: ID; forkPathIds: ID[] }>(); // forkPathIds[0] -> {nodeId, forkPathIds}
+    const joinNodes = new Map<ID, { nodeId: ID; forkPathIds: ID[]; mainPathId?: ID }>(); // forkPathIds[0] -> {nodeId, forkPathIds, mainPathId}
     const pairs = new Map<ID, ID>();
+    const allForkPathIds = new Set<ID>(); // 用于检查forkPathId的全局唯一性
 
     // 收集所有FORK和JOIN节点
     for (const node of graph.nodes.values()) {
@@ -284,7 +286,7 @@ export class GraphValidator {
         const config = node.originalNode?.config as any;
         const forkPathIds = config?.forkPathIds;
         const childNodeIds = config?.childNodeIds;
-        
+
         // 验证Fork节点配置
         if (!forkPathIds || !Array.isArray(forkPathIds) || forkPathIds.length === 0) {
           errors.push(
@@ -295,7 +297,7 @@ export class GraphValidator {
           );
           continue;
         }
-        
+
         if (!childNodeIds || !Array.isArray(childNodeIds) || childNodeIds.length === 0) {
           errors.push(
             new ValidationError(`FORK节点(${node.id})的childNodeIds必须是非空数组`, undefined, undefined, {
@@ -305,7 +307,7 @@ export class GraphValidator {
           );
           continue;
         }
-        
+
         if (forkPathIds.length !== childNodeIds.length) {
           errors.push(
             new ValidationError(`FORK节点(${node.id})的forkPathIds长度必须等于childNodeIds长度`, undefined, undefined, {
@@ -315,10 +317,10 @@ export class GraphValidator {
           );
           continue;
         }
-        
+
         // 检查forkPathIds在工作流定义内部是否唯一
         for (const forkPathId of forkPathIds) {
-          if (forkNodes.has(forkPathId)) {
+          if (allForkPathIds.has(forkPathId)) {
             errors.push(
               new ValidationError(`FORK节点(${node.id})的forkPathId(${forkPathId})在工作流定义内部不唯一`, undefined, undefined, {
                 code: 'DUPLICATE_FORK_PATH_ID',
@@ -327,14 +329,28 @@ export class GraphValidator {
               })
             );
           } else {
-            forkNodes.set(forkPathId, { nodeId: node.id, forkPathIds });
+            allForkPathIds.add(forkPathId);
           }
+        }
+
+        // 使用forkPathIds的第一个元素作为配对标识符(因为配置中要求id顺序确定)
+        const pairId = forkPathIds[0];
+        if (forkNodes.has(pairId)) {
+          errors.push(
+            new ValidationError(`FORK节点(${node.id})的forkPathIds第一个元素(${pairId})已被其他FORK节点使用`, undefined, undefined, {
+              code: 'DUPLICATE_FORK_PAIR_ID',
+              nodeId: node.id,
+              pairId,
+            })
+          );
+        } else {
+          forkNodes.set(pairId, { nodeId: node.id, forkPathIds });
         }
       } else if (node.type === 'JOIN' as NodeType) {
         const config = node.originalNode?.config as any;
         const forkPathIds = config?.forkPathIds;
         const mainPathId = config?.mainPathId;
-        
+
         // 验证Join节点配置
         if (!forkPathIds || !Array.isArray(forkPathIds) || forkPathIds.length === 0) {
           errors.push(
@@ -345,7 +361,7 @@ export class GraphValidator {
           );
           continue;
         }
-        
+
         // 验证mainPathId
         if (mainPathId && !forkPathIds.includes(mainPathId)) {
           errors.push(
@@ -357,20 +373,19 @@ export class GraphValidator {
           );
           continue;
         }
-        
-        // 检查forkPathIds是否与Fork节点匹配
-        for (const forkPathId of forkPathIds) {
-          if (joinNodes.has(forkPathId)) {
-            errors.push(
-              new ValidationError(`JOIN节点(${node.id})的forkPathId(${forkPathId})已被其他JOIN节点使用`, undefined, undefined, {
-                code: 'DUPLICATE_JOIN_PATH_ID',
-                nodeId: node.id,
-                forkPathId,
-              })
-            );
-          } else {
-            joinNodes.set(forkPathId, { nodeId: node.id, forkPathIds, mainPathId });
-          }
+
+        // 使用forkPathIds的第一个元素作为配对标识符
+        const pairId = forkPathIds[0];
+        if (joinNodes.has(pairId)) {
+          errors.push(
+            new ValidationError(`JOIN节点(${node.id})的forkPathIds第一个元素(${pairId})已被其他JOIN节点使用`, undefined, undefined, {
+              code: 'DUPLICATE_JOIN_PAIR_ID',
+              nodeId: node.id,
+              pairId,
+            })
+          );
+        } else {
+          joinNodes.set(pairId, { nodeId: node.id, forkPathIds, mainPathId });
         }
       }
     }
@@ -379,10 +394,10 @@ export class GraphValidator {
     const unpairedForks: ID[] = [];
     const unpairedJoins: ID[] = [];
 
-    for (const [forkPathId, forkInfo] of forkNodes) {
-      if (joinNodes.has(forkPathId)) {
-        const joinInfo = joinNodes.get(forkPathId)!;
-        // 验证Fork和Join的forkPathIds数组完全一致
+    for (const [pairId, forkInfo] of forkNodes) {
+      if (joinNodes.has(pairId)) {
+        const joinInfo = joinNodes.get(pairId)!;
+        // 验证Fork和Join的forkPathIds数组完全一致（包括顺序）
         if (JSON.stringify(forkInfo.forkPathIds) !== JSON.stringify(joinInfo.forkPathIds)) {
           errors.push(
             new ValidationError(`FORK节点(${forkInfo.nodeId})和JOIN节点(${joinInfo.nodeId})的forkPathIds不一致`, undefined, undefined, {
@@ -399,8 +414,8 @@ export class GraphValidator {
       }
     }
 
-    for (const [forkPathId, joinInfo] of joinNodes) {
-      if (!forkNodes.has(forkPathId)) {
+    for (const [pairId, joinInfo] of joinNodes) {
+      if (!forkNodes.has(pairId)) {
         unpairedJoins.push(joinInfo.nodeId);
       }
     }
@@ -735,96 +750,96 @@ export class GraphValidator {
    */
   private static validateNodeEdgeConsistency(graph: GraphData): ValidationError[] {
     const errors: ValidationError[] = [];
-    
+
     // 检查边引用存在的节点
     for (const edge of graph.edges.values()) {
       if (!graph.hasNode(edge.sourceNodeId)) {
         errors.push(new ValidationError(
           `边(${edge.id})引用了不存在的源节点(${edge.sourceNodeId})`,
           undefined, undefined, {
-            code: 'EDGE_REFERENCES_MISSING_SOURCE_NODE',
-            edgeId: edge.id,
-            nodeId: edge.sourceNodeId
-          }
+          code: 'EDGE_REFERENCES_MISSING_SOURCE_NODE',
+          edgeId: edge.id,
+          nodeId: edge.sourceNodeId
+        }
         ));
       }
-      
+
       if (!graph.hasNode(edge.targetNodeId)) {
         errors.push(new ValidationError(
           `边(${edge.id})引用了不存在的目标节点(${edge.targetNodeId})`,
           undefined, undefined, {
-            code: 'EDGE_REFERENCES_MISSING_TARGET_NODE',
-            edgeId: edge.id,
-            nodeId: edge.targetNodeId
-          }
+          code: 'EDGE_REFERENCES_MISSING_TARGET_NODE',
+          edgeId: edge.id,
+          nodeId: edge.targetNodeId
+        }
         ));
       }
     }
-    
+
     // 检查节点边列表引用存在的边
     for (const node of graph.nodes.values()) {
       const originalNode = node.originalNode;
       if (!originalNode) continue;
-      
+
       // 检查出边
       for (const edgeId of originalNode.outgoingEdgeIds) {
         if (!graph.hasEdge(edgeId)) {
           errors.push(new ValidationError(
             `节点(${node.id})的出边列表引用了不存在的边(${edgeId})`,
             undefined, undefined, {
-              code: 'NODE_REFERENCES_MISSING_OUTGOING_EDGE',
-              nodeId: node.id,
-              edgeId: edgeId
-            }
+            code: 'NODE_REFERENCES_MISSING_OUTGOING_EDGE',
+            nodeId: node.id,
+            edgeId: edgeId
+          }
           ));
         }
       }
-      
+
       // 检查入边
       for (const edgeId of originalNode.incomingEdgeIds) {
         if (!graph.hasEdge(edgeId)) {
           errors.push(new ValidationError(
             `节点(${node.id})的入边列表引用了不存在的边(${edgeId})`,
             undefined, undefined, {
-              code: 'NODE_REFERENCES_MISSING_INCOMING_EDGE',
-              nodeId: node.id,
-              edgeId: edgeId
-            }
+            code: 'NODE_REFERENCES_MISSING_INCOMING_EDGE',
+            nodeId: node.id,
+            edgeId: edgeId
+          }
           ));
         }
       }
     }
-    
+
     // 检查边与节点边列表的一致性
     for (const edge of graph.edges.values()) {
       const sourceNode = graph.getNode(edge.sourceNodeId);
       const targetNode = graph.getNode(edge.targetNodeId);
-      
+
       if (sourceNode?.originalNode &&
-          !sourceNode.originalNode.outgoingEdgeIds.includes(edge.id)) {
+        !sourceNode.originalNode.outgoingEdgeIds.includes(edge.id)) {
         errors.push(new ValidationError(
           `边(${edge.id})的源节点(${edge.sourceNodeId})没有在出边列表中引用该边`,
           undefined, undefined, {
-            code: 'SOURCE_NODE_MISSING_EDGE_REFERENCE',
-            edgeId: edge.id,
-            nodeId: edge.sourceNodeId
-          }
+          code: 'SOURCE_NODE_MISSING_EDGE_REFERENCE',
+          edgeId: edge.id,
+          nodeId: edge.sourceNodeId
+        }
         ));
       }
-      
+
       if (targetNode?.originalNode &&
-          !targetNode.originalNode.incomingEdgeIds.includes(edge.id)) {
+        !targetNode.originalNode.incomingEdgeIds.includes(edge.id)) {
         errors.push(new ValidationError(
           `边(${edge.id})的目标节点(${edge.targetNodeId})没有在入边列表中引用该边`,
           undefined, undefined, {
-            code: 'TARGET_NODE_MISSING_EDGE_REFERENCE',
-            edgeId: edge.id,
-            nodeId: edge.targetNodeId
-          }
+          code: 'TARGET_NODE_MISSING_EDGE_REFERENCE',
+          edgeId: edge.id,
+          nodeId: edge.targetNodeId
+        }
         ));
       }
     }
-    
+
     return errors;
   }
 }

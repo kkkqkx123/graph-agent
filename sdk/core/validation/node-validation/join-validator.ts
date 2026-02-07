@@ -10,17 +10,20 @@ import { ValidationError } from '../../../types/errors';
 
 /**
  * Join节点配置schema
- * 
+ *
  * 说明：
  * - childThreadIds不在schema中定义，因为子线程ID是运行时动态值，
  *   在FORK节点执行时存储到执行上下文中，JOIN节点执行时从执行上下文读取。
  * - timeout 允许为 0（无超时）或正数。当为 0 时表示始终等待，不设置超时。
+ * - forkPathIds 必须与配对的FORK节点完全一致（包括顺序）
+ * - mainPathId 指定主线程路径，必须是forkPathIds中的一个值
  */
 const joinNodeConfigSchema = z.object({
-  joinId: z.string().min(1, 'Join ID is required'),
+  forkPathIds: z.array(z.string()).min(1, 'Fork path IDs must be a non-empty array'),
   joinStrategy: z.enum(['ALL_COMPLETED', 'ANY_COMPLETED', 'ALL_FAILED', 'ANY_FAILED', 'SUCCESS_COUNT_THRESHOLD']),
   threshold: z.number().positive('Threshold must be positive').optional(),
-  timeout: z.number().nonnegative('Timeout must be non-negative').optional()
+  timeout: z.number().nonnegative('Timeout must be non-negative').optional(),
+  mainPathId: z.string().min(1, 'Main path ID is required')
 }).refine(
   (data) => {
     if (data.joinStrategy === 'SUCCESS_COUNT_THRESHOLD' && data.threshold === undefined) {
@@ -29,6 +32,11 @@ const joinNodeConfigSchema = z.object({
     return true;
   },
   { message: 'Join node must have a valid threshold when using SUCCESS_COUNT_THRESHOLD strategy', path: ['threshold'] }
+).refine(
+  (data) => {
+    return data.forkPathIds.includes(data.mainPathId);
+  },
+  { message: 'mainPathId must be one of the forkPathIds', path: ['mainPathId'] }
 );
 
 /**

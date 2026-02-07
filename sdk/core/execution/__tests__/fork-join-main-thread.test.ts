@@ -11,7 +11,6 @@ import { ThreadOperationCoordinator } from '../coordinators/thread-operation-coo
 import { ConversationManager } from '../managers/conversation-manager';
 import type { Thread } from '../../../types/thread';
 import { ThreadStatus } from '../../../types/thread';
-import { ExecutionError } from '../../../types/errors';
 
 describe('Fork/Join 主线程上下文处理', () => {
   let executionContext: ExecutionContext;
@@ -21,7 +20,7 @@ describe('Fork/Join 主线程上下文处理', () => {
   beforeEach(() => {
     // 使用模拟定时器以加快测试执行和避免真实超时
     jest.useFakeTimers();
-    
+
     // 创建执行上下文
     executionContext = new ExecutionContext();
 
@@ -114,14 +113,15 @@ describe('Fork/Join 主线程上下文处理', () => {
         ['child-1', 'child-2'],
         'ALL_COMPLETED',
         executionContext.getThreadRegistry(),
+        'path-1',
         5, // 5秒超时
         'parent-thread',
-        undefined, // 不传递eventManager，使用轮询方式
-        'path-1'
+        undefined // 不传递eventManager，使用轮询方式
       );
 
       // 推进模拟定时器以让轮询运行
-      jest.runAllTimers();
+      // 轮询周期为100ms，需要推进足够的时间让轮询完成
+      jest.advanceTimersByTime(1000);
       const result = await joinPromise;
 
       // 验证主线程的对话历史已合并到父线程
@@ -130,7 +130,7 @@ describe('Fork/Join 主线程上下文处理', () => {
       expect(parentMessages[0]?.content).toBe('Main thread message');
     });
 
-    it('当未指定mainPathId时，应该使用第一个子线程', async () => {
+    it('应该将第一个子线程的对话历史合并到父线程', async () => {
       // 创建父线程
       const parentThreadContext = createMockThreadContext('parent-thread', executionContext);
       executionContext.getThreadRegistry().register(parentThreadContext);
@@ -153,18 +153,20 @@ describe('Fork/Join 主线程上下文处理', () => {
         content: 'First child message'
       });
 
-      // 执行Join，不指定mainPathId（使用轮询方式，不依赖事件）
+      // 执行Join，指定path-1为主线程（使用轮询方式，不依赖事件）
       const joinPromise = join(
         ['child-1', 'child-2'],
         'ALL_COMPLETED',
         executionContext.getThreadRegistry(),
+        'path-1',
         5, // 5秒超时
         'parent-thread',
         undefined // 不传递eventManager，使用轮询方式
       );
 
       // 推进模拟定时器以让轮询运行
-      jest.runAllTimers();
+      // 轮询周期为100ms，需要推进足够的时间让轮询完成
+      jest.advanceTimersByTime(1000);
       const result = await joinPromise;
 
       // 验证第一个子线程的对话历史已合并到父线程
@@ -190,15 +192,16 @@ describe('Fork/Join 主线程上下文处理', () => {
         ['child-1'],
         'ALL_COMPLETED',
         executionContext.getThreadRegistry(),
+        'path-nonexistent',
         5, // 5秒超时
         'parent-thread',
-        undefined, // 不传递eventManager，使用轮询方式
-        'path-nonexistent'
+        undefined // 不传递eventManager，使用轮询方式
       );
 
       // 推进模拟定时器以让轮询运行
-      jest.runAllTimers();
-      
+      // 轮询周期为100ms，需要推进足够的时间让轮询完成
+      jest.advanceTimersByTime(1000);
+
       await expect(joinPromise).rejects.toThrow('Main thread not found for mainPathId');
     });
   });

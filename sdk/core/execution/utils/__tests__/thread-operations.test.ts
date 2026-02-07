@@ -369,6 +369,7 @@ describe('ThreadOperations', () => {
         childThreadIds,
         'ANY_COMPLETED',
         mockThreadRegistry,
+        'main-path-1',
         5000 // 5秒超时
       );
 
@@ -377,13 +378,13 @@ describe('ThreadOperations', () => {
     });
 
     it('应该在没有提供 joinStrategy 时抛出 ValidationError', async () => {
-      await expect(join(childThreadIds, undefined as any, mockThreadRegistry, 5000))
+      await expect(join(childThreadIds, undefined as any, mockThreadRegistry, 'main-path-1', 5000))
         .rejects
         .toThrow(ValidationError);
     });
 
     it('应该在超时时间无效时抛出 ValidationError', async () => {
-      await expect(join(childThreadIds, 'ANY_COMPLETED', mockThreadRegistry, 0))
+      await expect(join(childThreadIds, 'ANY_COMPLETED', mockThreadRegistry, 'main-path-1', 0))
         .rejects
         .toThrow(ValidationError);
     });
@@ -456,6 +457,7 @@ describe('ThreadOperations', () => {
         childThreadIds,
         'ALL_COMPLETED',
         mockThreadRegistry,
+        'main-path-1',
         100 // 100ms 超时
       )).rejects.toThrow(TimeoutError);
     });
@@ -533,6 +535,7 @@ describe('ThreadOperations', () => {
         childThreadIds,
         'ALL_COMPLETED',
         mockThreadRegistry,
+        'main-path-1',
         5000
       );
 
@@ -576,6 +579,7 @@ describe('ThreadOperations', () => {
         childThreadIds,
         'ANY_COMPLETED',
         mockThreadRegistry,
+        'main-path-1',
         5000
       );
 
@@ -610,6 +614,7 @@ describe('ThreadOperations', () => {
         ['child1', 'child2'],
         'ANY_FAILED',
         mockThreadRegistry,
+        'main-path-1',
         5000
       );
 

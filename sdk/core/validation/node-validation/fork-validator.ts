@@ -12,10 +12,15 @@ import { ValidationError } from '../../../types/errors';
  * Fork节点配置schema
  */
 const forkNodeConfigSchema = z.object({
-  forkId: z.string().min(1, 'Fork ID is required'),
-  forkStrategy: z.enum(['SERIAL', 'PARALLEL']),
-  childNodeIds: z.array(z.string()).optional()
-});
+  forkPathIds: z.array(z.string()).min(1, 'Fork path IDs must be a non-empty array'),
+  forkStrategy: z.enum(['serial', 'parallel']),
+  childNodeIds: z.array(z.string()).min(1, 'Child node IDs must be a non-empty array')
+}).refine(
+  (data) => {
+    return data.forkPathIds.length === data.childNodeIds.length;
+  },
+  { message: 'forkPathIds length must equal childNodeIds length', path: ['forkPathIds'] }
+);
 
 /**
  * 验证Fork节点配置
