@@ -25,7 +25,7 @@
         "noUncheckedIndexedAccess": true,
         "resolveJsonModule": true,
         "moduleResolution": "bundler",
-        "allowSyntheticDefaultImports": false,
+        "allowSyntheticDefaultImports": true,
         "esModuleInterop": true,
         "baseUrl": ".",
         "paths": {
@@ -44,6 +44,7 @@
         }
     },
     "include": [
+        "index.ts",
         "types/**/*",
         "core/**/*",
         "api/**/*",
