@@ -569,11 +569,7 @@ describe('Thread构建到执行实例创建集成测试', () => {
         input: {
           testInput: 'custom value',
           creator: 'test-creator',
-          tags: ['tag1', 'tag2'],
-          customFields: {
-            priority: 'high',
-            environment: 'test'
-          }
+          tags: ['tag1', 'tag2']
         },
         tokenLimit: 8000
       };
@@ -586,9 +582,7 @@ describe('Thread构建到执行实例创建集成测试', () => {
       // 验证元数据正确设置
       expect(threadContext.thread.metadata?.creator).toBe('test-creator');
       expect(threadContext.thread.metadata?.tags).toEqual(['tag1', 'tag2']);
-      expect(threadContext.thread.metadata?.customFields?.['priority']).toBe('high');
-      expect(threadContext.thread.metadata?.customFields?.['environment']).toBe('test');
-      expect(threadContext.thread.metadata?.customFields?.['isPreprocessed']).toBe(true);
+      expect(threadContext.thread.metadata?.isPreprocessed).toBe(true);
 
       // 验证ConversationManager配置
       const conversationManager = threadContext.conversationManager;
@@ -608,7 +602,7 @@ describe('Thread构建到执行实例创建集成测试', () => {
       expect(threadContext.thread.input).toEqual({});
       expect(threadContext.thread.metadata?.creator).toBeUndefined();
       expect(threadContext.thread.metadata?.tags).toBeUndefined();
-      expect(threadContext.thread.metadata?.customFields?.['isPreprocessed']).toBe(true);
+      expect(threadContext.thread.metadata?.isPreprocessed).toBe(true);
     });
   });
 

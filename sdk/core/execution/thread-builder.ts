@@ -140,13 +140,10 @@ export class ThreadBuilder {
       metadata: {
         creator: options.input?.['creator'],
         tags: options.input?.['tags'],
-        customFields: {
-          isPreprocessed: true,
-          processedAt: processedWorkflow.processedAt,
-          hasSubgraphs: processedWorkflow.hasSubgraphs,
-          // 合并用户提供的customFields
-          ...options.input?.['customFields']
-        },
+        // 预处理信息
+        isPreprocessed: true,
+        processedAt: processedWorkflow.processedAt,
+        hasSubgraphs: processedWorkflow.hasSubgraphs,
         // 完整传递工作流配置和元数据
         workflowConfig: processedWorkflow.config,
         workflowMetadata: processedWorkflow.metadata,
@@ -354,10 +351,9 @@ export class ThreadBuilder {
       metadata: {
         ...parentThread.metadata,
         parentThreadId: parentThread.id,
-        customFields: {
-          ...(parentThread.metadata?.customFields || {}),
-          forkId: forkConfig.forkId
-        },
+        forkId: forkConfig.forkId,
+        // Fork路径ID，用于Join时识别主线程
+        forkPathId: forkConfig.forkPathId,
         // 清除构建路径标识，因为是新线程
         buildPath: undefined
       }

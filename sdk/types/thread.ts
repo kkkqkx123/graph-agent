@@ -49,20 +49,46 @@ export interface ThreadVariable {
 }
 
 /**
+ * 错误处理配置
+ */
+export interface ErrorHandlingConfig {
+  /** 遇到错误时停止执行 */
+  stopOnError?: boolean;
+  /** 遇到错误时继续执行 */
+  continueOnError?: boolean;
+  /** 回退节点ID */
+  fallbackNodeId?: ID;
+}
+
+/**
  * 线程元数据类型
  */
 export interface ThreadMetadata {
+  // ========== 用户元数据 ==========
   /** 创建者 */
   creator?: string;
   /** 标签数组 */
   tags?: string[];
-  /** 自定义字段对象 */
-  customFields?: Metadata;
+  
+  // ========== Fork/Join 关系 ==========
   /** 父线程ID（用于fork场景） */
   parentThreadId?: ID;
   /** 子线程ID数组（用于fork场景） */
   childThreadIds?: ID[];
+  /** Fork路径ID（用于Join时识别主线程） */
+  forkPathId?: string;
+  /** Fork操作ID */
+  forkId?: string;
   
+  // ========== 预处理信息 ==========
+  /** 是否为预处理构建 */
+  isPreprocessed?: boolean;
+  /** 预处理时间戳 */
+  processedAt?: Timestamp;
+  /** 是否包含子图 */
+  hasSubgraphs?: boolean;
+  
+  // ========== 工作流快照 ==========
   /** 工作流配置快照 */
   workflowConfig?: WorkflowConfig;
   /** 工作流元数据快照 */
@@ -77,6 +103,10 @@ export interface ThreadMetadata {
   topologicalOrder?: ID[];
   /** 构建路径标识 */
   buildPath?: 'processed' | 'definition';
+  
+  // ========== 运行时配置 ==========
+  /** 错误处理配置 */
+  errorHandling?: ErrorHandlingConfig;
 }
 
 /**

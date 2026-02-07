@@ -81,13 +81,15 @@ export class ThreadOperationCoordinator {
    * @param childThreadIds 子线程 ID 数组
    * @param joinStrategy Join 策略
    * @param timeout 超时时间（秒）
+   * @param mainPathId 主线程路径 ID（可选）
    * @returns Join 结果
    */
   async join(
     parentThreadId: string,
     childThreadIds: string[],
     joinStrategy: 'ALL_COMPLETED' | 'ANY_COMPLETED' | 'ALL_FAILED' | 'ANY_FAILED' | 'SUCCESS_COUNT_THRESHOLD' = 'ALL_COMPLETED',
-    timeout: number = 60
+    timeout: number = 60,
+    mainPathId?: string
   ): Promise<JoinResult> {
     // 步骤 1：获取父线程上下文
     const parentThreadContext = this.threadRegistry.get(parentThreadId);
@@ -102,7 +104,8 @@ export class ThreadOperationCoordinator {
       this.threadRegistry,
       timeout, // 注意：thread-operations.ts中的timeout已经是秒为单位
       parentThreadId,
-      this.eventManager
+      this.eventManager,
+      mainPathId
     );
 
     // 步骤 3：返回 Join 结果

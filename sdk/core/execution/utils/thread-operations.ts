@@ -37,6 +37,8 @@ export interface ForkConfig {
   forkStrategy?: 'serial' | 'parallel';
   /** 起始节点 ID（可选，默认使用父线程的当前节点） */
   startNodeId?: string;
+  /** Fork 路径 ID（用于标识子线程路径） */
+  forkPathId?: string;
 }
 
 /**
@@ -92,16 +94,20 @@ export async function fork(
 
 /**
  * Join 操作 - 合并子 thread 结果
- * 
+ *
  * 说明：
  * - timeout 单位为秒，0 表示不超时
  * - 内部转换为毫秒进行处理
  * - 使用 Promise.race() 实现超时控制
- * 
+ * - mainPathId 指定主线程路径，会将主线程的对话历史合并到父线程
+ *
  * @param childThreadIds 子线程 ID 数组
  * @param joinStrategy Join 策略
  * @param threadRegistry Thread 注册表
  * @param timeout 超时时间（秒），0 表示不超时，>0 表示超时的秒数
+ * @param parentThreadId 父线程 ID（可选）
+ * @param eventManager 事件管理器（可选）
+ * @param mainPathId 主线程路径 ID（可选，默认使用第一个子线程）
  * @returns Join 结果
  */
 export async function join(
@@ -110,7 +116,8 @@ export async function join(
   threadRegistry: ThreadRegistry,
   timeout: number = 0,
   parentThreadId?: string,
-  eventManager?: EventManager
+  eventManager?: EventManager,
+  mainPathId?: string
 ): Promise<JoinResult> {
   // 步骤1：验证 Join 配置
   if (!joinStrategy) {
@@ -189,7 +196,52 @@ export async function join(
   // 步骤4：合并子 thread 结果
   const output = mergeResults(completedThreads, joinStrategy);
 
-  // 步骤5：返回合并结果
+  // 步骤5：合并主线程对话历史到父线程
+  if (parentThreadId && mainPathId) {
+    const parentThreadContext = threadRegistry.get(parentThreadId);
+    if (parentThreadContext) {
+      // 找到对应mainPathId的子线程
+      const mainThread = completedThreads.find(thread =>
+        thread.metadata?.forkPathId === mainPathId
+      );
+      
+      if (!mainThread) {
+        throw new ExecutionError(
+          `Main thread not found for mainPathId: ${mainPathId}`,
+          undefined,
+          parentThreadId,
+          { mainPathId, completedThreadIds: completedThreads.map(t => t.id) }
+        );
+      }
+      
+      const mainThreadContext = threadRegistry.get(mainThread.id);
+      if (!mainThreadContext) {
+        throw new ExecutionError(
+          `Main thread context not found for threadId: ${mainThread.id}`,
+          undefined,
+          parentThreadId,
+          { mainPathId, mainThreadId: mainThread.id }
+        );
+      }
+      
+      try {
+        // 将主线程的ConversationManager内容复制到父线程
+        parentThreadContext.conversationManager.restoreFromSnapshot(
+          mainThreadContext.conversationManager.createSnapshot()
+        );
+      } catch (error) {
+        throw new ExecutionError(
+          `Failed to merge conversation history from main thread`,
+          undefined,
+          parentThreadId,
+          { mainPathId, mainThreadId: mainThread.id, error: error instanceof Error ? error.message : String(error) },
+          error instanceof Error ? error : undefined
+        );
+      }
+    }
+  }
+
+  // 步骤6：返回合并结果
   return {
     success: true,
     output,

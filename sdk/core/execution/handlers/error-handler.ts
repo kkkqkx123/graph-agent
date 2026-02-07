@@ -51,7 +51,7 @@ export async function handleNodeFailure(
     await eventManager.emit(errorEvent);
 
     // 步骤3：根据错误处理策略决定后续操作
-    const errorHandling = threadContext.getMetadata()?.customFields?.errorHandling;
+    const errorHandling = threadContext.getMetadata()?.errorHandling;
 
     if (errorHandling) {
       if (errorHandling.stopOnError) {

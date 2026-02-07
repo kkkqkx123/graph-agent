@@ -18,6 +18,7 @@ import type {
 import { GraphData } from '../entities/graph-data';
 import { GraphValidator } from '../validation/graph-validator';
 import { generateSubgraphNamespace, generateNamespacedNodeId, generateNamespacedEdgeId } from '../../utils/id-utils';
+import { generateId } from '../../utils';
 import { SUBGRAPH_METADATA_KEYS } from '../../types/subgraph';
 
 /**
@@ -87,6 +88,9 @@ export class GraphBuilder {
     // 构建图
     const graph = this.build(workflow, options);
 
+    // 处理Fork/Join Path ID全局唯一化
+    this.processForkJoinPathIds(graph);
+
     // 使用GraphValidator进行验证
     const validationResult = GraphValidator.validate(graph, {
       checkCycles: options.detectCycles,
@@ -101,6 +105,56 @@ export class GraphBuilder {
       isValid: validationResult.isOk(),
       errors: validationResult.isErr() ? validationResult.error.map((e: { message: any; }) => e.message) : [],
     };
+  }
+
+  /**
+   * 处理Fork/Join Path ID全局唯一化
+   * 为每个forkPathIds中的ID生成全局唯一ID，确保Fork和Join节点使用相同的Path ID
+   * @param graph 图数据
+   */
+  private static processForkJoinPathIds(graph: GraphData): void {
+    const pathIdMapping = new Map<ID, ID>(); // 原始Path ID -> 全局唯一Path ID
+
+    // 收集所有Fork节点并生成全局唯一Path ID
+    for (const node of graph.nodes.values()) {
+      if (node.type === 'FORK' as NodeType) {
+        const config = node.originalNode?.config as any;
+        if (config?.forkPathIds && Array.isArray(config.forkPathIds)) {
+          const globalPathIds: ID[] = [];
+          for (const originalPathId of config.forkPathIds) {
+            // 如果还没有生成全局ID，则生成一个新的
+            if (!pathIdMapping.has(originalPathId)) {
+              pathIdMapping.set(originalPathId, `path-${generateId()}`);
+            }
+            globalPathIds.push(pathIdMapping.get(originalPathId)!);
+          }
+          // 更新Fork节点配置
+          config.forkPathIds = globalPathIds;
+        }
+      }
+    }
+
+    // 更新所有Join节点的Path ID
+    for (const node of graph.nodes.values()) {
+      if (node.type === 'JOIN' as NodeType) {
+        const config = node.originalNode?.config as any;
+        if (config?.forkPathIds && Array.isArray(config.forkPathIds)) {
+          const globalPathIds: ID[] = [];
+          for (const originalPathId of config.forkPathIds) {
+            // 使用之前生成的全局ID
+            if (pathIdMapping.has(originalPathId)) {
+              globalPathIds.push(pathIdMapping.get(originalPathId)!);
+            } else {
+              // 如果Fork节点没有这个Path ID，生成一个新的
+              pathIdMapping.set(originalPathId, `path-${generateId()}`);
+              globalPathIds.push(pathIdMapping.get(originalPathId)!);
+            }
+          }
+          // 更新Join节点配置
+          config.forkPathIds = globalPathIds;
+        }
+      }
+    }
   }
 
   /**

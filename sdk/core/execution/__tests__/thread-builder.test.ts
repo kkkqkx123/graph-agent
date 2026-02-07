@@ -620,7 +620,7 @@ describe('ThreadBuilder', () => {
 
       // 验证元数据
       expect(forkThread.metadata?.parentThreadId).toBe('parent-thread');
-      expect(forkThread.metadata?.customFields?.['forkId']).toBe('test-fork');
+      expect(forkThread.metadata?.forkId).toBe('test-fork');
     });
   });
 

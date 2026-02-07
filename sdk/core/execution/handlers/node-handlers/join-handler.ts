@@ -44,10 +44,11 @@ export async function joinHandler(thread: Thread, node: Node, context?: any): Pr
 
   // Join节点作为占位符，仅返回配置信息
   return {
-    joinId: config.joinId,
+    forkPathIds: config.forkPathIds,
     joinStrategy: config.joinStrategy,
     threshold: config.threshold,
     timeout: config.timeout ?? 0,  // 默认 0 表示无超时
+    mainPathId: config.mainPathId,
     message: 'Join node is a placeholder. Actual join operation is handled by ThreadExecutor and ThreadCoordinator.'
   };
 }

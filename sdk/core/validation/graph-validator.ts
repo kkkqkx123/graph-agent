@@ -274,21 +274,103 @@ export class GraphValidator {
    */
   private static validateForkJoinPairs(graph: GraphData): ValidationError[] {
     const errors: ValidationError[] = [];
-    const forkNodes = new Map<ID, ID>(); // forkId -> nodeId
-    const joinNodes = new Map<ID, ID>(); // joinId -> nodeId
+    const forkNodes = new Map<ID, { nodeId: ID; forkPathIds: ID[] }>(); // forkPathId -> {nodeId, forkPathIds}
+    const joinNodes = new Map<ID, { nodeId: ID; forkPathIds: ID[]; mainPathId?: ID }>(); // forkPathId -> {nodeId, forkPathIds, mainPathId}
     const pairs = new Map<ID, ID>();
 
     // 收集所有FORK和JOIN节点
     for (const node of graph.nodes.values()) {
       if (node.type === 'FORK' as NodeType) {
-        const forkId = (node.originalNode?.config as any)?.forkId;
-        if (forkId) {
-          forkNodes.set(forkId, node.id);
+        const config = node.originalNode?.config as any;
+        const forkPathIds = config?.forkPathIds;
+        const childNodeIds = config?.childNodeIds;
+        
+        // 验证Fork节点配置
+        if (!forkPathIds || !Array.isArray(forkPathIds) || forkPathIds.length === 0) {
+          errors.push(
+            new ValidationError(`FORK节点(${node.id})的forkPathIds必须是非空数组`, undefined, undefined, {
+              code: 'INVALID_FORK_PATH_IDS',
+              nodeId: node.id,
+            })
+          );
+          continue;
+        }
+        
+        if (!childNodeIds || !Array.isArray(childNodeIds) || childNodeIds.length === 0) {
+          errors.push(
+            new ValidationError(`FORK节点(${node.id})的childNodeIds必须是非空数组`, undefined, undefined, {
+              code: 'INVALID_CHILD_NODE_IDS',
+              nodeId: node.id,
+            })
+          );
+          continue;
+        }
+        
+        if (forkPathIds.length !== childNodeIds.length) {
+          errors.push(
+            new ValidationError(`FORK节点(${node.id})的forkPathIds长度必须等于childNodeIds长度`, undefined, undefined, {
+              code: 'FORK_PATH_IDS_LENGTH_MISMATCH',
+              nodeId: node.id,
+            })
+          );
+          continue;
+        }
+        
+        // 检查forkPathIds在工作流定义内部是否唯一
+        for (const forkPathId of forkPathIds) {
+          if (forkNodes.has(forkPathId)) {
+            errors.push(
+              new ValidationError(`FORK节点(${node.id})的forkPathId(${forkPathId})在工作流定义内部不唯一`, undefined, undefined, {
+                code: 'DUPLICATE_FORK_PATH_ID',
+                nodeId: node.id,
+                forkPathId,
+              })
+            );
+          } else {
+            forkNodes.set(forkPathId, { nodeId: node.id, forkPathIds });
+          }
         }
       } else if (node.type === 'JOIN' as NodeType) {
-        const joinId = (node.originalNode?.config as any)?.joinId;
-        if (joinId) {
-          joinNodes.set(joinId, node.id);
+        const config = node.originalNode?.config as any;
+        const forkPathIds = config?.forkPathIds;
+        const mainPathId = config?.mainPathId;
+        
+        // 验证Join节点配置
+        if (!forkPathIds || !Array.isArray(forkPathIds) || forkPathIds.length === 0) {
+          errors.push(
+            new ValidationError(`JOIN节点(${node.id})的forkPathIds必须是非空数组`, undefined, undefined, {
+              code: 'INVALID_FORK_PATH_IDS',
+              nodeId: node.id,
+            })
+          );
+          continue;
+        }
+        
+        // 验证mainPathId
+        if (mainPathId && !forkPathIds.includes(mainPathId)) {
+          errors.push(
+            new ValidationError(`JOIN节点(${node.id})的mainPathId(${mainPathId})必须在forkPathIds中`, undefined, undefined, {
+              code: 'MAIN_PATH_ID_NOT_FOUND',
+              nodeId: node.id,
+              mainPathId,
+            })
+          );
+          continue;
+        }
+        
+        // 检查forkPathIds是否与Fork节点匹配
+        for (const forkPathId of forkPathIds) {
+          if (joinNodes.has(forkPathId)) {
+            errors.push(
+              new ValidationError(`JOIN节点(${node.id})的forkPathId(${forkPathId})已被其他JOIN节点使用`, undefined, undefined, {
+                code: 'DUPLICATE_JOIN_PATH_ID',
+                nodeId: node.id,
+                forkPathId,
+              })
+            );
+          } else {
+            joinNodes.set(forkPathId, { nodeId: node.id, forkPathIds, mainPathId });
+          }
         }
       }
     }
@@ -297,17 +379,29 @@ export class GraphValidator {
     const unpairedForks: ID[] = [];
     const unpairedJoins: ID[] = [];
 
-    for (const [forkId, forkNodeId] of forkNodes) {
-      if (joinNodes.has(forkId)) {
-        pairs.set(forkNodeId, joinNodes.get(forkId)!);
+    for (const [forkPathId, forkInfo] of forkNodes) {
+      if (joinNodes.has(forkPathId)) {
+        const joinInfo = joinNodes.get(forkPathId)!;
+        // 验证Fork和Join的forkPathIds数组完全一致
+        if (JSON.stringify(forkInfo.forkPathIds) !== JSON.stringify(joinInfo.forkPathIds)) {
+          errors.push(
+            new ValidationError(`FORK节点(${forkInfo.nodeId})和JOIN节点(${joinInfo.nodeId})的forkPathIds不一致`, undefined, undefined, {
+              code: 'FORK_JOIN_MISMATCH',
+              forkNodeId: forkInfo.nodeId,
+              joinNodeId: joinInfo.nodeId,
+            })
+          );
+        } else {
+          pairs.set(forkInfo.nodeId, joinInfo.nodeId);
+        }
       } else {
-        unpairedForks.push(forkNodeId);
+        unpairedForks.push(forkInfo.nodeId);
       }
     }
 
-    for (const [joinId, joinNodeId] of joinNodes) {
-      if (!forkNodes.has(joinId)) {
-        unpairedJoins.push(joinNodeId);
+    for (const [forkPathId, joinInfo] of joinNodes) {
+      if (!forkNodes.has(forkPathId)) {
+        unpairedJoins.push(joinInfo.nodeId);
       }
     }
 

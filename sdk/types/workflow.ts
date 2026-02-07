@@ -69,8 +69,6 @@ export interface WorkflowMetadata {
   tags?: string[];
   /** 分类 */
   category?: string;
-  /** 自定义字段对象 */
-  customFields?: Metadata;
 }
 
 /**
