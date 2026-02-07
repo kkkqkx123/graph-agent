@@ -25,6 +25,17 @@ describe('ThreadOperations', () => {
   let mockThreadRegistry: ThreadRegistry;
   let mockForkConfig: ForkConfig;
   let mockGraph: Graph;
+  let mockStartTime: number;
+
+  // 启用 Jest 计时器模拟
+  beforeEach(() => {
+    jest.useFakeTimers();
+    mockStartTime = 1700000000000; // 固定的模拟时间戳
+  });
+
+  afterEach(() => {
+    jest.useRealTimers();
+  });
 
   beforeEach(() => {
     // 初始化模拟图
@@ -80,7 +91,7 @@ describe('ThreadOperations', () => {
         input: {},
         output: {},
         nodeResults: [],
-        startTime: Date.now(),
+        startTime: mockStartTime,
         errors: []
       },
       conversationManager: {} as ConversationManager,
@@ -106,7 +117,7 @@ describe('ThreadOperations', () => {
       isExecutingSubgraph: jest.fn().mockReturnValue(false),
       addError: jest.fn(),
       getErrors: jest.fn().mockReturnValue([]),
-      getStartTime: jest.fn().mockReturnValue(Date.now()),
+      getStartTime: jest.fn().mockReturnValue(mockStartTime),
       getEndTime: jest.fn().mockReturnValue(undefined),
       setEndTime: jest.fn(),
       getNavigator: jest.fn(),
@@ -155,7 +166,7 @@ describe('ThreadOperations', () => {
         input: {},
         output: {},
         nodeResults: [],
-        startTime: Date.now(),
+        startTime: mockStartTime,
         errors: []
       },
       conversationManager: {} as ConversationManager,
@@ -181,7 +192,7 @@ describe('ThreadOperations', () => {
       isExecutingSubgraph: jest.fn().mockReturnValue(false),
       addError: jest.fn(),
       getErrors: jest.fn().mockReturnValue([]),
-      getStartTime: jest.fn().mockReturnValue(Date.now()),
+      getStartTime: jest.fn().mockReturnValue(mockStartTime),
       getEndTime: jest.fn().mockReturnValue(undefined),
       setEndTime: jest.fn(),
       getNavigator: jest.fn(),
@@ -304,7 +315,7 @@ describe('ThreadOperations', () => {
         input: {},
         output: { result: 'success' },
         nodeResults: [],
-        startTime: Date.now(),
+        startTime: mockStartTime,
         errors: []
       };
 
@@ -336,7 +347,7 @@ describe('ThreadOperations', () => {
         isExecutingSubgraph: jest.fn().mockReturnValue(false),
         addError: jest.fn(),
         getErrors: jest.fn().mockReturnValue([]),
-        getStartTime: jest.fn().mockReturnValue(Date.now()),
+        getStartTime: jest.fn().mockReturnValue(mockStartTime),
         getEndTime: jest.fn().mockReturnValue(undefined),
         setEndTime: jest.fn(),
         getNavigator: jest.fn(),
@@ -384,7 +395,8 @@ describe('ThreadOperations', () => {
     });
 
     it('应该在超时时间无效时抛出 ValidationError', async () => {
-      await expect(join(childThreadIds, 'ANY_COMPLETED', mockThreadRegistry, 'main-path-1', 0))
+      // 这个测试不涉及计时器，直接测试验证逻辑
+      await expect(join(childThreadIds, 'ANY_COMPLETED', mockThreadRegistry, 'main-path-1', -1))
         .rejects
         .toThrow(ValidationError);
     });
@@ -424,7 +436,7 @@ describe('ThreadOperations', () => {
         isExecutingSubgraph: jest.fn().mockReturnValue(false),
         addError: jest.fn(),
         getErrors: jest.fn().mockReturnValue([]),
-        getStartTime: jest.fn().mockReturnValue(Date.now()),
+        getStartTime: jest.fn().mockReturnValue(mockStartTime),
         getEndTime: jest.fn().mockReturnValue(undefined),
         setEndTime: jest.fn(),
         getNavigator: jest.fn(),
@@ -453,13 +465,19 @@ describe('ThreadOperations', () => {
 
       (mockThreadRegistry.get as jest.Mock).mockReturnValue(mockRunningContext);
 
-      await expect(join(
+      // 使用 Jest 计时器模拟来测试超时
+      const joinPromise = join(
         childThreadIds,
         'ALL_COMPLETED',
         mockThreadRegistry,
         'main-path-1',
-        100 // 100ms 超时
-      )).rejects.toThrow(TimeoutError);
+        0.1 // 0.1秒超时（100ms）
+      );
+
+      // 推进计时器以触发超时
+      jest.advanceTimersByTime(100);
+
+      await expect(joinPromise).rejects.toThrow(TimeoutError);
     });
 
     it('应该根据 ALL_COMPLETED 策略进行合并', async () => {
@@ -499,7 +517,7 @@ describe('ThreadOperations', () => {
         isExecutingSubgraph: jest.fn().mockReturnValue(false),
         addError: jest.fn(),
         getErrors: jest.fn().mockReturnValue([]),
-        getStartTime: jest.fn().mockReturnValue(Date.now()),
+        getStartTime: jest.fn().mockReturnValue(mockStartTime),
         getEndTime: jest.fn().mockReturnValue(undefined),
         setEndTime: jest.fn(),
         getNavigator: jest.fn(),
@@ -536,7 +554,7 @@ describe('ThreadOperations', () => {
         'ALL_COMPLETED',
         mockThreadRegistry,
         'main-path-1',
-        5000
+        0 // 不超时
       );
 
       expect(result.success).toBe(true);
@@ -580,7 +598,7 @@ describe('ThreadOperations', () => {
         'ANY_COMPLETED',
         mockThreadRegistry,
         'main-path-1',
-        5000
+        0 // 不超时
       );
 
       expect(result.success).toBe(true);
@@ -615,7 +633,7 @@ describe('ThreadOperations', () => {
         'ANY_FAILED',
         mockThreadRegistry,
         'main-path-1',
-        5000
+        0 // 不超时
       );
 
       expect(result.success).toBe(true);
@@ -645,7 +663,7 @@ describe('ThreadOperations', () => {
         input: {},
         output: {},
         nodeResults: [],
-        startTime: Date.now(),
+        startTime: mockStartTime,
         errors: []
       }];
       const failedThreads: Thread[] = [];
@@ -691,7 +709,7 @@ describe('ThreadOperations', () => {
         input: {},
         output: {},
         nodeResults: [],
-        startTime: Date.now(),
+        startTime: mockStartTime,
         errors: []
       }];
       const failedThreads: Thread[] = [{
@@ -711,7 +729,7 @@ describe('ThreadOperations', () => {
         input: {},
         output: {},
         nodeResults: [],
-        startTime: Date.now(),
+        startTime: mockStartTime,
         errors: []
       }];
       const childThreadIds = ['thread1', 'thread2'];
@@ -755,7 +773,7 @@ describe('ThreadOperations', () => {
         input: {},
         output: { data: 'result1' },
         nodeResults: [],
-        startTime: Date.now(),
+        startTime: mockStartTime,
         errors: []
       }];
 
@@ -799,7 +817,7 @@ describe('ThreadOperations', () => {
           input: {},
           output: { data: 'result1' },
           nodeResults: [],
-          startTime: Date.now(),
+          startTime: mockStartTime,
           errors: []
         },
         {
@@ -819,7 +837,7 @@ describe('ThreadOperations', () => {
           input: {},
           output: { data: 'result2' },
           nodeResults: [],
-          startTime: Date.now(),
+          startTime: mockStartTime,
           errors: []
         }
       ];

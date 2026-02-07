@@ -31,11 +31,13 @@ const hookSchema = z.object({
 export function validateHook(hook: NodeHook, nodeId: string): Result<NodeHook, ValidationError[]> {
   const result = hookSchema.safeParse(hook);
   if (!result.success) {
-    const error = result.error.issues[0];
-    if (!error) {
+    const errors = result.error.issues;
+    if (errors.length === 0) {
       return err([new ValidationError('Invalid hook configuration', `node.${nodeId}.hooks`)]);
     }
-    return err([new ValidationError(error.message, `node.${nodeId}.hooks.${error.path.join('.')}`)]);
+    return err(errors.map(error =>
+      new ValidationError(error.message, `node.${nodeId}.hooks.${error.path.join('.')}`)
+    ));
   }
   return ok(hook);
 }

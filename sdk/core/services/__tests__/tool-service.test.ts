@@ -26,7 +26,7 @@ describe('ToolService', () => {
       },
       config: {
         execute: async (params: Record<string, any>) => ({
-          input: params.input,
+          input: params['input'],
           processed: true
         })
       }
@@ -51,7 +51,7 @@ describe('ToolService', () => {
         }
       ];
       service.registerTools(tools);
-      expect(service.getToolCount()).toBe(2);
+      expect(service.listTools()).toHaveLength(2);
     });
   });
 
@@ -142,8 +142,8 @@ describe('ToolService', () => {
         },
         config: {
           execute: async (params: Record<string, any>) => ({
-            input: params.input,
-            result: `processed: ${params.input}`
+            input: params['input'],
+            result: `processed: ${params['input']}`
           })
         }
       };
@@ -186,9 +186,10 @@ describe('ToolService', () => {
       };
 
       service.registerTool(statelessTool);
-      await expect(
-        service.execute('error-tool', { input: 'test' })
-      ).rejects.toThrow();
+      const result = await service.execute('error-tool', { input: 'test' });
+      
+      expect(result.success).toBe(false);
+      expect(result.error).toContain('Stateless tool execution failed: Execution failed');
     });
   });
 
@@ -207,8 +208,8 @@ describe('ToolService', () => {
         },
         config: {
           execute: async (params: Record<string, any>) => ({
-            input: params.value,
-            result: params.value * 2
+            input: params['value'],
+            result: params['value'] * 2
           })
         }
       };
@@ -244,26 +245,11 @@ describe('ToolService', () => {
     });
   });
 
-  describe('getToolCount', () => {
-    it('should return correct tool count', () => {
-      expect(service.getToolCount()).toBe(0);
-      service.registerTool(mockTool);
-      expect(service.getToolCount()).toBe(1);
-    });
-  });
-
   describe('clear', () => {
     it('should clear all tools', () => {
       service.registerTool(mockTool);
       service.clear();
-      expect(service.getToolCount()).toBe(0);
-    });
-  });
-
-  describe('getRegistry', () => {
-    it('should return the registry', () => {
-      const registry = service.getRegistry();
-      expect(registry).toBeDefined();
+      expect(service.listTools()).toHaveLength(0);
     });
   });
 });

@@ -481,52 +481,6 @@ describe('GraphBuilder', () => {
       expect(joinNode?.type).toBe(NodeType.JOIN);
     });
 
-    it('should handle workflow with metadata', () => {
-      const workflow: WorkflowDefinition = {
-        id: 'wf1',
-        name: 'Workflow with Metadata',
-        description: 'Test',
-        version: '1.0.0',
-        createdAt: Date.now(),
-        updatedAt: Date.now(),
-        nodes: [
-          {
-            id: 'start',
-            type: NodeType.START,
-            name: 'Start',
-            config: {} as any,
-            outgoingEdgeIds: ['e1'],
-            incomingEdgeIds: [],
-            metadata: {
-              customKey: 'customValue',
-            },
-          },
-          {
-            id: 'end',
-            type: NodeType.END,
-            name: 'End',
-            config: {} as any,
-            outgoingEdgeIds: [],
-            incomingEdgeIds: ['e1'],
-          },
-        ],
-        edges: [
-          {
-            id: 'e1',
-            sourceNodeId: 'start',
-            targetNodeId: 'end',
-            type: EdgeType.DEFAULT,
-          },
-        ],
-      };
-
-      const graph = GraphBuilder.build(workflow);
-
-      const startNode = graph.getNode('start');
-      expect(startNode?.metadata).toBeDefined();
-      expect(startNode?.metadata?.['customKey']).toBe('customValue');
-    });
-
     it('should handle empty workflow', () => {
       const workflow: WorkflowDefinition = {
         id: 'wf1',
@@ -895,8 +849,8 @@ describe('GraphBuilder', () => {
 
       const subStartNode = graph.getNode(subStartId!);
       expect(subStartNode).toBeDefined();
-      expect(subStartNode?.metadata).toBeDefined();
-      expect(subStartNode?.metadata?.['subgraphBoundaryType']).toBe('entry');
+      expect(subStartNode?.internalMetadata).toBeDefined();
+      expect(subStartNode?.internalMetadata?.['subgraphBoundaryType']).toBe('entry');
 
       // Find the namespaced end node
       const subEndId = result.nodeIdMapping.get('subEnd');
@@ -904,8 +858,8 @@ describe('GraphBuilder', () => {
 
       const subEndNode = graph.getNode(subEndId!);
       expect(subEndNode).toBeDefined();
-      expect(subEndNode?.metadata).toBeDefined();
-      expect(subEndNode?.metadata?.['subgraphBoundaryType']).toBe('exit');
+      expect(subEndNode?.internalMetadata).toBeDefined();
+      expect(subEndNode?.internalMetadata?.['subgraphBoundaryType']).toBe('exit');
     });
 
     it('should connect incoming edges to subgraph start node', () => {

@@ -28,7 +28,8 @@ describe('CodeService', () => {
         type: ScriptType.SHELL,
         description: '测试脚本',
         content: 'echo "Hello World"',
-        options: {}
+        options: {},
+        enabled: true
       };
 
       codeService.registerScript(script);
@@ -45,7 +46,8 @@ describe('CodeService', () => {
           type: ScriptType.SHELL,
           description: '脚本1',
           content: 'echo "1"',
-          options: {}
+          options: {},
+          enabled: true
         },
         {
           id: 'script-2',
@@ -53,7 +55,8 @@ describe('CodeService', () => {
           type: ScriptType.POWERSHELL,
           description: '脚本2',
           content: 'Write-Host "2"',
-          options: {}
+          options: {},
+          enabled: true
         }
       ];
 
@@ -71,7 +74,8 @@ describe('CodeService', () => {
         type: ScriptType.SHELL,
         description: '原始脚本',
         content: 'echo "original"',
-        options: {}
+        options: {},
+        enabled: true
       };
 
       const script2 = {
@@ -80,7 +84,8 @@ describe('CodeService', () => {
         type: ScriptType.POWERSHELL,
         description: '更新脚本',
         content: 'Write-Host "updated"',
-        options: {}
+        options: {},
+        enabled: true
       };
 
       codeService.registerScript(script1);
@@ -98,7 +103,8 @@ describe('CodeService', () => {
         type: ScriptType.SHELL,
         description: '测试脚本',
         content: 'echo "Hello"',
-        options: {}
+        options: {},
+        enabled: true
       };
 
       codeService.registerScript(script);
@@ -123,7 +129,8 @@ describe('CodeService', () => {
         type: ScriptType.SHELL,
         description: '测试脚本',
         content: 'echo "Hello"',
-        options: {}
+        options: {},
+        enabled: true
       };
 
       codeService.registerScript(script);
@@ -148,7 +155,8 @@ describe('CodeService', () => {
           type: ScriptType.SHELL,
           description: '脚本1',
           content: 'echo "1"',
-          options: {}
+          options: {},
+          enabled: true
         },
         {
           id: 'script-2',
@@ -156,7 +164,8 @@ describe('CodeService', () => {
           type: ScriptType.POWERSHELL,
           description: '脚本2',
           content: 'Write-Host "2"',
-          options: {}
+          options: {},
+          enabled: true
         }
       ];
 
@@ -181,7 +190,8 @@ describe('CodeService', () => {
           type: ScriptType.SHELL,
           description: 'Shell脚本',
           content: 'echo "shell"',
-          options: {}
+          options: {},
+          enabled: true
         },
         {
           id: 'script-2',
@@ -189,7 +199,8 @@ describe('CodeService', () => {
           type: ScriptType.POWERSHELL,
           description: 'PowerShell脚本',
           content: 'Write-Host "ps"',
-          options: {}
+          options: {},
+          enabled: true
         },
         {
           id: 'script-3',
@@ -197,7 +208,8 @@ describe('CodeService', () => {
           type: ScriptType.SHELL,
           description: '另一个Shell脚本',
           content: 'echo "another"',
-          options: {}
+          options: {},
+          enabled: true
         }
       ];
 
@@ -223,7 +235,8 @@ describe('CodeService', () => {
           description: '脚本1',
           content: 'echo "1"',
           options: {},
-          metadata: { category: 'utils' }
+          metadata: { category: 'utils' },
+          enabled: true
         },
         {
           id: 'script-2',
@@ -232,7 +245,8 @@ describe('CodeService', () => {
           description: '脚本2',
           content: 'Write-Host "2"',
           options: {},
-          metadata: { category: 'deploy' }
+          metadata: { category: 'deploy' },
+          enabled: true
         },
         {
           id: 'script-3',
@@ -241,7 +255,8 @@ describe('CodeService', () => {
           description: '脚本3',
           content: 'echo "3"',
           options: {},
-          metadata: { category: 'utils' }
+          metadata: { category: 'utils' },
+          enabled: true
         }
       ];
 
@@ -266,7 +281,8 @@ describe('CodeService', () => {
           type: ScriptType.SHELL,
           description: '打印Hello World',
           content: 'echo "Hello World"',
-          options: {}
+          options: {},
+          enabled: true
         },
         {
           id: 'script-2',
@@ -274,7 +290,8 @@ describe('CodeService', () => {
           type: ScriptType.POWERSHELL,
           description: '打印Goodbye World',
           content: 'Write-Host "Goodbye World"',
-          options: {}
+          options: {},
+          enabled: true
         },
         {
           id: 'script-3',
@@ -282,7 +299,8 @@ describe('CodeService', () => {
           type: ScriptType.SHELL,
           description: '测试脚本',
           content: 'echo "test"',
-          options: {}
+          options: {},
+          enabled: true
         }
       ];
 
@@ -307,7 +325,8 @@ describe('CodeService', () => {
         type: ScriptType.SHELL,
         description: '测试脚本',
         content: 'echo "Hello"',
-        options: {}
+        options: {},
+        enabled: true
       };
 
       codeService.registerScript(script);
@@ -336,7 +355,8 @@ describe('CodeService', () => {
         type: ScriptType.SHELL,
         description: '测试脚本',
         content: 'echo "Hello"',
-        options: {}
+        options: {},
+        enabled: true
       };
 
       codeService.registerScript(script);
@@ -366,7 +386,8 @@ describe('CodeService', () => {
         type: ScriptType.SHELL,
         description: '测试脚本',
         content: 'echo "Hello World"',
-        options: { timeout: 5000 }
+        options: { timeout: 5000 },
+        enabled: true
       };
 
       codeService.registerExecutor(ScriptType.SHELL, mockExecutor);
@@ -392,7 +413,8 @@ describe('CodeService', () => {
         type: ScriptType.SHELL,
         description: '测试脚本',
         content: 'echo "Hello"',
-        options: {}
+        options: {},
+        enabled: true
       };
 
       codeService.registerScript(script);
@@ -413,7 +435,8 @@ describe('CodeService', () => {
         type: ScriptType.SHELL,
         description: '测试脚本',
         content: 'echo "Hello"',
-        options: {}
+        options: {},
+        enabled: true
       };
 
       codeService.registerExecutor(ScriptType.SHELL, mockExecutor);
@@ -452,7 +475,8 @@ describe('CodeService', () => {
           type: ScriptType.SHELL,
           description: '脚本1',
           content: 'echo "1"',
-          options: {}
+          options: {},
+          enabled: true
         },
         {
           id: 'script-2',
@@ -460,7 +484,8 @@ describe('CodeService', () => {
           type: ScriptType.SHELL,
           description: '脚本2',
           content: 'echo "2"',
-          options: {}
+          options: {},
+          enabled: true
         }
       ];
 
@@ -502,7 +527,8 @@ describe('CodeService', () => {
           type: ScriptType.SHELL,
           description: '脚本1',
           content: 'echo "1"',
-          options: {}
+          options: {},
+          enabled: true
         },
         {
           id: 'script-2',
@@ -510,7 +536,8 @@ describe('CodeService', () => {
           type: ScriptType.SHELL,
           description: '脚本2',
           content: 'echo "2"',
-          options: {}
+          options: {},
+          enabled: true
         }
       ];
 
@@ -540,7 +567,8 @@ describe('CodeService', () => {
         type: ScriptType.SHELL,
         description: '测试脚本',
         content: 'echo "Hello"',
-        options: {}
+        options: {},
+        enabled: true
       };
 
       codeService.registerExecutor(ScriptType.SHELL, mockExecutor);
@@ -560,7 +588,8 @@ describe('CodeService', () => {
         type: ScriptType.SHELL,
         description: '测试脚本',
         content: 'echo "Hello"',
-        options: {}
+        options: {},
+        enabled: true
       };
 
       codeService.registerScript(script);
@@ -588,7 +617,8 @@ describe('CodeService', () => {
           type: ScriptType.SHELL,
           description: '脚本1',
           content: 'echo "1"',
-          options: {}
+          options: {},
+          enabled: true
         },
         {
           id: 'script-2',
@@ -596,7 +626,8 @@ describe('CodeService', () => {
           type: ScriptType.POWERSHELL,
           description: '脚本2',
           content: 'Write-Host "2"',
-          options: {}
+          options: {},
+          enabled: true
         }
       ];
 
@@ -625,7 +656,8 @@ describe('CodeService', () => {
         type: ScriptType.SHELL,
         description: '测试脚本',
         content: 'echo "Hello"',
-        options: {}
+        options: {},
+        enabled: true
       };
 
       codeService.registerScript(script);
@@ -646,7 +678,8 @@ describe('CodeService', () => {
         type: ScriptType.SHELL,
         description: '原始描述',
         content: 'echo "original"',
-        options: { timeout: 1000 }
+        options: { timeout: 1000 },
+        enabled: true
       };
 
       codeService.registerScript(originalScript);

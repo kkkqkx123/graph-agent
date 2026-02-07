@@ -2,10 +2,8 @@
  * Hook验证器单元测试
  */
 
-import { describe, it, expect } from '@jest/globals';
 import { validateHook, validateHooks } from '../hook-validator';
 import { HookType } from '../../../types/node';
-import { ValidationError } from '../../../types/errors';
 
 describe('validateHook', () => {
   const nodeId = 'test-node-1';
@@ -44,7 +42,7 @@ describe('validateHook', () => {
     expect(result.isErr()).toBe(true);
     if (result.isErr()) {
       expect(result.error.length).toBeGreaterThan(0);
-      expect(result.error[0].message).toContain('Event name is required');
+      expect(result.error[0]?.message).toContain('Event name is required');
     }
   });
 
@@ -164,7 +162,7 @@ describe('validateHook', () => {
     expect(result.isErr()).toBe(true);
     if (result.isErr()) {
       expect(result.error.length).toBeGreaterThan(0);
-      expect(result.error[0].field).toBe(`node.${nodeId}.hooks.eventName`);
+      expect(result.error[0]?.field).toBe(`node.${nodeId}.hooks.eventName`);
     }
   });
 });
@@ -200,7 +198,7 @@ describe('validateHooks', () => {
     expect(result.isErr()).toBe(true);
     if (result.isErr()) {
       expect(result.error.length).toBeGreaterThan(0);
-      expect(result.error[0].message).toContain('Hooks must be an array');
+      expect(result.error[0]?.message).toContain('Hooks must be an array');
     }
   });
 
@@ -209,7 +207,7 @@ describe('validateHooks', () => {
     expect(result.isErr()).toBe(true);
     if (result.isErr()) {
       expect(result.error.length).toBeGreaterThan(0);
-      expect(result.error[0].message).toContain('Hooks must be an array');
+      expect(result.error[0]?.message).toContain('Hooks must be an array');
     }
   });
 
@@ -218,7 +216,7 @@ describe('validateHooks', () => {
     expect(result.isErr()).toBe(true);
     if (result.isErr()) {
       expect(result.error.length).toBeGreaterThan(0);
-      expect(result.error[0].message).toContain('Hooks must be an array');
+      expect(result.error[0]?.message).toContain('Hooks must be an array');
     }
   });
 
@@ -227,7 +225,7 @@ describe('validateHooks', () => {
     expect(result.isErr()).toBe(true);
     if (result.isErr()) {
       expect(result.error.length).toBeGreaterThan(0);
-      expect(result.error[0].message).toContain('Hooks must be an array');
+      expect(result.error[0]?.message).toContain('Hooks must be an array');
     }
   });
 
@@ -323,7 +321,7 @@ describe('validateHooks', () => {
     expect(result.isErr()).toBe(true);
     if (result.isErr()) {
       expect(result.error.length).toBeGreaterThan(0);
-      expect(result.error[0].field).toBe(`node.${nodeId}.hooks.eventName`);
+      expect(result.error[0]?.field).toBe(`node.${nodeId}.hooks.eventName`);
     }
   });
 

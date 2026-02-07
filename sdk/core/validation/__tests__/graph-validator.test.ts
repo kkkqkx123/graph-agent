@@ -418,7 +418,10 @@ describe('GraphValidator', () => {
   describe('validateForkJoinPairs', () => {
     it('应该检测未配对的FORK节点', () => {
       const startNode = createNode('start', 'START' as NodeType, 'Start');
-      const forkNode = createNode('fork', 'FORK' as NodeType, 'Fork', { forkId: 'fork-1' });
+      const forkNode = createNode('fork', 'FORK' as NodeType, 'Fork', {
+        forkPathIds: ['fork-1'],
+        childNodeIds: ['child-1']
+      });
       const endNode = createNode('end', 'END' as NodeType, 'End');
       const edge1 = createEdge('edge-1', 'start', 'fork');
       const edge2 = createEdge('edge-2', 'fork', 'end');
@@ -443,7 +446,9 @@ describe('GraphValidator', () => {
 
     it('应该检测未配对的JOIN节点', () => {
       const startNode = createNode('start', 'START' as NodeType, 'Start');
-      const joinNode = createNode('join', 'JOIN' as NodeType, 'Join', { joinId: 'join-1' });
+      const joinNode = createNode('join', 'JOIN' as NodeType, 'Join', {
+        forkPathIds: ['join-1']
+      });
       const endNode = createNode('end', 'END' as NodeType, 'End');
       const edge1 = createEdge('edge-1', 'start', 'join');
       const edge2 = createEdge('edge-2', 'join', 'end');
@@ -468,8 +473,13 @@ describe('GraphValidator', () => {
 
     it('应该检测FORK无法到达配对的JOIN', () => {
       const startNode = createNode('start', 'START' as NodeType, 'Start');
-      const forkNode = createNode('fork', 'FORK' as NodeType, 'Fork', { forkId: 'fork-1' });
-      const joinNode = createNode('join', 'JOIN' as NodeType, 'Join', { joinId: 'fork-1' });
+      const forkNode = createNode('fork', 'FORK' as NodeType, 'Fork', {
+        forkPathIds: ['fork-1'],
+        childNodeIds: ['child-1']
+      });
+      const joinNode = createNode('join', 'JOIN' as NodeType, 'Join', {
+        forkPathIds: ['fork-1']
+      });
       const endNode = createNode('end', 'END' as NodeType, 'End');
       const edge1 = createEdge('edge-1', 'start', 'fork');
       const edge2 = createEdge('edge-2', 'start', 'end');
@@ -495,8 +505,13 @@ describe('GraphValidator', () => {
 
     it('应该接受有效的FORK/JOIN配对', () => {
       const startNode = createNode('start', 'START' as NodeType, 'Start');
-      const forkNode = createNode('fork', 'FORK' as NodeType, 'Fork', { forkId: 'fork-1' });
-      const joinNode = createNode('join', 'JOIN' as NodeType, 'Join', { joinId: 'fork-1' });
+      const forkNode = createNode('fork', 'FORK' as NodeType, 'Fork', {
+        forkPathIds: ['fork-1'],
+        childNodeIds: ['child-1']
+      });
+      const joinNode = createNode('join', 'JOIN' as NodeType, 'Join', {
+        forkPathIds: ['fork-1']
+      });
       const endNode = createNode('end', 'END' as NodeType, 'End');
       const edge1 = createEdge('edge-1', 'start', 'fork');
       const edge2 = createEdge('edge-2', 'fork', 'join');
@@ -521,10 +536,20 @@ describe('GraphValidator', () => {
 
     it('应该接受多个FORK/JOIN配对', () => {
       const startNode = createNode('start', 'START' as NodeType, 'Start');
-      const forkNode1 = createNode('fork-1', 'FORK' as NodeType, 'Fork 1', { forkId: 'fork-1' });
-      const joinNode1 = createNode('join-1', 'JOIN' as NodeType, 'Join 1', { joinId: 'fork-1' });
-      const forkNode2 = createNode('fork-2', 'FORK' as NodeType, 'Fork 2', { forkId: 'fork-2' });
-      const joinNode2 = createNode('join-2', 'JOIN' as NodeType, 'Join 2', { joinId: 'fork-2' });
+      const forkNode1 = createNode('fork-1', 'FORK' as NodeType, 'Fork 1', {
+        forkPathIds: ['fork-1'],
+        childNodeIds: ['child-1']
+      });
+      const joinNode1 = createNode('join-1', 'JOIN' as NodeType, 'Join 1', {
+        forkPathIds: ['fork-1']
+      });
+      const forkNode2 = createNode('fork-2', 'FORK' as NodeType, 'Fork 2', {
+        forkPathIds: ['fork-2'],
+        childNodeIds: ['child-2']
+      });
+      const joinNode2 = createNode('join-2', 'JOIN' as NodeType, 'Join 2', {
+        forkPathIds: ['fork-2']
+      });
       const endNode = createNode('end', 'END' as NodeType, 'End');
       const edge1 = createEdge('edge-1', 'start', 'fork-1');
       const edge2 = createEdge('edge-2', 'fork-1', 'join-1');
@@ -732,7 +757,10 @@ describe('GraphValidator', () => {
   describe('综合测试', () => {
     it('应该检测多个验证错误', () => {
       const startNode = createNode('start', 'START' as NodeType, 'Start');
-      const forkNode = createNode('fork', 'FORK' as NodeType, 'Fork', { forkId: 'fork-1' });
+      const forkNode = createNode('fork', 'FORK' as NodeType, 'Fork', {
+        forkPathIds: ['fork-1'],
+        childNodeIds: ['child-1']
+      });
       const isolatedNode = createNode('isolated', 'CODE' as NodeType, 'Isolated');
       const endNode = createNode('end', 'END' as NodeType, 'End');
       const edge1 = createEdge('edge-1', 'start', 'fork');
@@ -761,10 +789,15 @@ describe('GraphValidator', () => {
 
     it('应该接受一个复杂但有效的图', () => {
       const startNode = createNode('start', 'START' as NodeType, 'Start');
-      const forkNode = createNode('fork', 'FORK' as NodeType, 'Fork', { forkId: 'fork-1' });
+      const forkNode = createNode('fork', 'FORK' as NodeType, 'Fork', {
+        forkPathIds: ['fork-1', 'fork-2'],
+        childNodeIds: ['node-1', 'node-2']
+      });
       const node1 = createNode('node-1', 'CODE' as NodeType, 'Node 1');
       const node2 = createNode('node-2', 'CODE' as NodeType, 'Node 2');
-      const joinNode = createNode('join', 'JOIN' as NodeType, 'Join', { joinId: 'fork-1' });
+      const joinNode = createNode('join', 'JOIN' as NodeType, 'Join', {
+        forkPathIds: ['fork-1', 'fork-2']
+      });
       const endNode = createNode('end', 'END' as NodeType, 'End');
       const edge1 = createEdge('edge-1', 'start', 'fork');
       const edge2 = createEdge('edge-2', 'fork', 'node-1');

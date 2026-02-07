@@ -23,6 +23,7 @@ import { SUBGRAPH_METADATA_KEYS } from '../../types/subgraph';
 
 /**
  * 图构建器类
+ * 不从node、edge拷贝metadata
  */
 export class GraphBuilder {
   /**
@@ -41,7 +42,6 @@ export class GraphBuilder {
         type: node.type,
         name: node.name,
         description: node.description,
-        metadata: node.metadata,
         originalNode: node,
         workflowId: workflow.id,
       };
@@ -65,7 +65,6 @@ export class GraphBuilder {
         label: edge.label,
         description: edge.description,
         weight: edge.weight,
-        metadata: edge.metadata,
         originalEdge: edge,
       };
       graph.addEdge(graphEdge);

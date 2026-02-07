@@ -38,11 +38,11 @@ jest.mock('../clients/gemini-openai', () => ({
   }))
 }));
 
-jest.mock('../clients/human-relay', () => ({
-  HumanRelayClient: jest.fn().mockImplementation((profile: any) => ({
-    profile: { ...profile, provider: 'human_relay' }
-  }))
-}));
+// jest.mock('../clients/human-relay', () => ({
+//   HumanRelayClient: jest.fn().mockImplementation((profile: any) => ({
+//     profile: { ...profile, provider: 'human_relay' }
+//   }))
+// }));
 
 describe('ClientFactory', () => {
   let factory: ClientFactory;
@@ -140,16 +140,14 @@ describe('ClientFactory', () => {
       expect((client as any).profile?.provider).toBe('gemini_openai');
     });
 
-    it('应该创建Human Relay客户端', () => {
+    it('应该抛出错误当尝试创建Human Relay客户端时', () => {
       const profile: LLMProfile = {
         ...testProfile,
         provider: LLMProvider.HUMAN_RELAY
       };
 
-      const client = factory.createClient(profile);
-
-      expect(client).toBeDefined();
-      expect((client as any).profile?.provider).toBe('human_relay');
+      expect(() => factory.createClient(profile)).toThrow(ConfigurationError);
+      expect(() => factory.createClient(profile)).toThrow('HumanRelayClient 尚未实现');
     });
 
     it('应该抛出错误当provider不支持时', () => {
@@ -371,8 +369,8 @@ describe('ClientFactory', () => {
         LLMProvider.OPENAI_RESPONSE,
         LLMProvider.ANTHROPIC,
         LLMProvider.GEMINI_NATIVE,
-        LLMProvider.GEMINI_OPENAI,
-        LLMProvider.HUMAN_RELAY
+        LLMProvider.GEMINI_OPENAI
+        // LLMProvider.HUMAN_RELAY 暂时不支持
       ];
 
       providers.forEach((provider, index) => {

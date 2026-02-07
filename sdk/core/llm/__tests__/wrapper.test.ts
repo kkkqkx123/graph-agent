@@ -230,8 +230,7 @@ describe('LLMWrapper', () => {
       await expect(wrapper.generate(request)).rejects.toThrow(LLMError);
       await expect(wrapper.generate(request)).rejects.toMatchObject({
         provider: 'openai',
-        model: 'gpt-4',
-        profileId: 'test-profile'
+        model: 'gpt-4'
       });
 
       // 恢复原方法

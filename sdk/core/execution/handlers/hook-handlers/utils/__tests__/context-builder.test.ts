@@ -17,9 +17,11 @@ describe('context-builder', () => {
       const mockThread = {
         id: 'thread-1',
         workflowId: 'workflow-1',
-        variableValues: {
-          var1: 'value1',
-          var2: 42
+        variableScopes: {
+          thread: {
+            var1: 'value1',
+            var2: 42
+          }
         }
       } as any;
 
@@ -62,7 +64,7 @@ describe('context-builder', () => {
         status: mockResult.status,
         executionTime: mockResult.executionTime,
         error: mockResult.error,
-        variables: mockThread.variableValues,
+        variables: mockThread.variableScopes.thread,
         config: mockNode.config,
         metadata: mockNode.metadata
       });
@@ -72,7 +74,9 @@ describe('context-builder', () => {
       const mockThread = {
         id: 'thread-1',
         workflowId: 'workflow-1',
-        variableValues: {}
+        variableScopes: {
+          thread: {}
+        }
       } as any;
 
       const mockNode = {
@@ -104,7 +108,9 @@ describe('context-builder', () => {
       const mockThread = {
         id: 'thread-1',
         workflowId: 'workflow-1',
-        variableValues: {}
+        variableScopes: {
+          thread: {}
+        }
       } as any;
 
       const mockNode = {
@@ -148,7 +154,9 @@ describe('context-builder', () => {
       const mockThread = {
         id: 'thread-1',
         workflowId: 'workflow-1',
-        variableValues: {}
+        variableScopes: {
+          thread: {}
+        }
       } as any;
 
       const mockNode = {
