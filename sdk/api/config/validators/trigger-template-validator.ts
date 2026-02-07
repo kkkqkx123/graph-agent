@@ -1,6 +1,7 @@
 /**
  * 触发器模板配置验证器
  * 负责验证触发器模板配置的有效性
+ * 注意：实际验证逻辑完全委托给 trigger-validator 函数，这里仅作为适配器
  */
 
 import type { TriggerTemplate } from '../../../types/trigger-template';
@@ -9,8 +10,7 @@ import { ConfigType } from '../types';
 import { BaseConfigValidator } from './base-validator';
 import { ok, err, type Result } from '../../utils/result';
 import { ValidationError } from '../../../types/errors';
-import { EventType } from '../../../types/events';
-import { TriggerActionType } from '../../../types/trigger';
+import { validateWorkflowTrigger } from '../../../core/validation/trigger-validator';
 
 /**
  * 触发器模板配置验证器
@@ -36,62 +36,6 @@ export class TriggerTemplateConfigValidator extends BaseConfigValidator<ConfigTy
       'TriggerTemplate'
     ));
 
-    // 验证名称
-    if (template.name) {
-      errors.push(...this.validateStringField(template.name, 'TriggerTemplate.name', {
-        minLength: 1,
-        maxLength: 100
-      }));
-    }
-
-    // 验证描述
-    if (template.description !== undefined) {
-      errors.push(...this.validateStringField(template.description, 'TriggerTemplate.description', {
-        maxLength: 500
-      }));
-    }
-
-    // 验证条件对象
-    if (template.condition) {
-      errors.push(...this.validateObjectField(template.condition, 'TriggerTemplate.condition'));
-      
-      // 验证事件类型
-      if (template.condition.eventType) {
-        errors.push(...this.validateEnumField(
-          template.condition.eventType,
-          'TriggerTemplate.condition.eventType',
-          Object.values(EventType)
-        ));
-      }
-    }
-
-    // 验证动作对象
-    if (template.action) {
-      errors.push(...this.validateObjectField(template.action, 'TriggerTemplate.action'));
-      
-      // 验证动作类型
-      if (template.action.type) {
-        errors.push(...this.validateEnumField(
-          template.action.type,
-          'TriggerTemplate.action.type',
-          Object.values(TriggerActionType)
-        ));
-      }
-    }
-
-    // 验证启用状态
-    if (template.enabled !== undefined) {
-      errors.push(...this.validateBooleanField(template.enabled, 'TriggerTemplate.enabled'));
-    }
-
-    // 验证触发次数限制
-    if (template.maxTriggers !== undefined) {
-      errors.push(...this.validateNumberField(template.maxTriggers, 'TriggerTemplate.maxTriggers', {
-        integer: true,
-        min: 0
-      }));
-    }
-
     // 验证时间戳
     if (template.createdAt !== undefined) {
       errors.push(...this.validateNumberField(template.createdAt, 'TriggerTemplate.createdAt', {
@@ -107,9 +51,22 @@ export class TriggerTemplateConfigValidator extends BaseConfigValidator<ConfigTy
       }));
     }
 
-    // 验证元数据
-    if (template.metadata !== undefined) {
-      errors.push(...this.validateObjectField(template.metadata, 'TriggerTemplate.metadata'));
+    // 完全委托给核心验证器进行触发器配置验证
+    // 创建临时 WorkflowTrigger 对象用于验证
+    const tempTrigger = {
+      id: 'temp-trigger-id',
+      name: template.name,
+      description: template.description,
+      condition: template.condition,
+      action: template.action,
+      enabled: template.enabled,
+      maxTriggers: template.maxTriggers,
+      metadata: template.metadata
+    };
+
+    const triggerResult = validateWorkflowTrigger(tempTrigger, 'TriggerTemplate');
+    if (triggerResult.isErr()) {
+      errors.push(...triggerResult.error);
     }
 
     if (errors.length > 0) {

@@ -3,7 +3,6 @@
  * 使用Result类型进行错误处理
  */
 
-import { describe, it, expect } from '@jest/globals';
 import {
   validateTriggerCondition,
   validateExecuteTriggeredSubgraphActionConfig,
@@ -15,7 +14,6 @@ import {
 import { EventType } from '../../../types/events';
 import { TriggerActionType } from '../../../types/trigger';
 import { ValidationError } from '../../../types/errors';
-import type { Result } from '../../../types/result';
 
 describe('validateTriggerCondition', () => {
   it('应该验证有效的触发条件', () => {

@@ -1,6 +1,7 @@
 /**
  * 节点模板配置验证器
  * 负责验证节点模板配置的有效性
+ * 注意：实际验证逻辑委托给 NodeValidator，这里仅作为适配器
  */
 
 import type { NodeTemplate } from '../../../types/node-template';
@@ -9,14 +10,18 @@ import { ConfigType } from '../types';
 import { BaseConfigValidator } from './base-validator';
 import { ok, err, type Result } from '../../utils/result';
 import { ValidationError } from '../../../types/errors';
+import { NodeValidator } from '../../../core/validation/node-validator';
 import { NodeType } from '../../../types/node';
 
 /**
  * 节点模板配置验证器
  */
 export class NodeTemplateConfigValidator extends BaseConfigValidator<ConfigType.NODE_TEMPLATE> {
+  private nodeValidator: NodeValidator;
+
   constructor() {
     super(ConfigType.NODE_TEMPLATE);
+    this.nodeValidator = new NodeValidator();
   }
 
   /**
@@ -59,11 +64,6 @@ export class NodeTemplateConfigValidator extends BaseConfigValidator<ConfigType.
       }));
     }
 
-    // 验证配置对象
-    if (template.config) {
-      errors.push(...this.validateObjectField(template.config, 'NodeTemplate.config'));
-    }
-
     // 验证时间戳
     if (template.createdAt !== undefined) {
       errors.push(...this.validateNumberField(template.createdAt, 'NodeTemplate.createdAt', {
@@ -82,6 +82,26 @@ export class NodeTemplateConfigValidator extends BaseConfigValidator<ConfigType.
     // 验证元数据
     if (template.metadata !== undefined) {
       errors.push(...this.validateObjectField(template.metadata, 'NodeTemplate.metadata'));
+    }
+
+    // 验证节点配置 - 委托给 NodeValidator
+    if (template.config) {
+      // 创建临时节点对象用于验证配置
+      const tempNode = {
+        id: 'temp-node-id',
+        type: template.type,
+        name: template.name,
+        description: template.description,
+        config: template.config,
+        metadata: template.metadata,
+        outgoingEdgeIds: [],
+        incomingEdgeIds: []
+      };
+      
+      const configResult = this.nodeValidator.validateNode(tempNode);
+      if (configResult.isErr()) {
+        errors.push(...configResult.error);
+      }
     }
 
     if (errors.length > 0) {

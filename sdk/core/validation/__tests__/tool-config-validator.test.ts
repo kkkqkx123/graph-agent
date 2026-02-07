@@ -3,7 +3,6 @@
  */
 
 import { ToolConfigValidator } from '../tool-config-validator';
-import { ValidationError } from '../../../types/errors';
 import { ToolType } from '../../../types/tool';
 
 describe('ToolConfigValidator', () => {
@@ -127,7 +126,7 @@ describe('ToolConfigValidator', () => {
           required: [],
         },
         config: {
-          execute: async () => {},
+          execute: async () => { },
         },
       } as any;
 
@@ -149,7 +148,7 @@ describe('ToolConfigValidator', () => {
           required: ['missing-param'], // 必需的参数未在properties中定义
         },
         config: {
-          execute: async () => {},
+          execute: async () => { },
         },
       };
 
@@ -303,7 +302,7 @@ describe('ToolConfigValidator', () => {
           required: ['name'],
         },
         config: {
-          execute: async () => {},
+          execute: async () => { },
         },
       };
 
@@ -332,7 +331,7 @@ describe('ToolConfigValidator', () => {
           required: ['name'],
         },
         config: {
-          execute: async () => {},
+          execute: async () => { },
         },
       };
 
@@ -364,7 +363,7 @@ describe('ToolConfigValidator', () => {
           required: ['age'],
         },
         config: {
-          execute: async () => {},
+          execute: async () => { },
         },
       };
 
@@ -396,7 +395,7 @@ describe('ToolConfigValidator', () => {
           required: ['status'],
         },
         config: {
-          execute: async () => {},
+          execute: async () => { },
         },
       };
 
@@ -440,7 +439,7 @@ describe('ToolConfigValidator', () => {
           required: ['email', 'url'],
         },
         config: {
-          execute: async () => {},
+          execute: async () => { },
         },
       };
 
