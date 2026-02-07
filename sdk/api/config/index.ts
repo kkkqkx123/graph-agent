@@ -5,15 +5,22 @@
  * 设计原则：
  * - 配置验证使用 sdk/core/validation 中的 WorkflowValidator
  * - 本模块只负责配置文件的解析和转换
+ * - 支持多种配置类型：工作流、节点模板、触发器模板、脚本
  */
 
 // 类型定义
 export {
   ConfigFormat,
+  ConfigType,
   NodeConfigFile,
   EdgeConfigFile,
   WorkflowConfigFile,
+  NodeTemplateConfigFile,
+  TriggerTemplateConfigFile,
+  ScriptConfigFile,
+  ConfigFile,
   ParsedConfig,
+  ParsedConfigEx,
   IConfigParser,
   IConfigTransformer
 } from './types';
@@ -38,3 +45,21 @@ export {
 
 // 转换器
 export { ConfigTransformer } from './config-transformer';
+
+// 配置管理器
+export { ConfigManager, configManager } from './config-manager';
+export type { LoadFromDirectoryOptions, LoadFromDirectoryResult } from './config-manager';
+
+// 加载器
+export { BaseConfigLoader } from './loaders/base-loader';
+export { WorkflowLoader } from './loaders/workflow-loader';
+export { NodeTemplateLoader } from './loaders/node-template-loader';
+export { TriggerTemplateLoader } from './loaders/trigger-template-loader';
+export { ScriptLoader } from './loaders/script-loader';
+
+// 验证器
+export { BaseConfigValidator } from './validators/base-validator';
+export { WorkflowConfigValidator } from './validators/workflow-validator';
+export { NodeTemplateConfigValidator } from './validators/node-template-validator';
+export { TriggerTemplateConfigValidator } from './validators/trigger-template-validator';
+export { ScriptConfigValidator } from './validators/script-validator';

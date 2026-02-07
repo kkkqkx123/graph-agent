@@ -1,22 +1,26 @@
 /**
  * 配置模块类型定义
  * 定义配置文件解析和转换相关的类型
- * 
+ *
  * 设计原则：
  * - 完全复用 sdk/types 中的核心类型定义
- * - 配置文件格式与 WorkflowDefinition 保持完全一致
+ * - 配置文件格式与对应的类型定义保持完全一致
  * - 所有字段都是静态定义，无需移除任何字段
  * - 避免重复定义，确保类型安全
- * 
+ *
  * 说明：
  * - WorkflowDefinition 是配置文件解析后的静态定义
- * - 配置文件直接映射到 WorkflowDefinition，类型完全一致
+ * - 配置文件直接映射到对应的类型，类型完全一致
  * - 不需要任何类型转换或字段移除
+ * - 支持多种配置类型：工作流、节点模板、触发器模板、脚本
  */
 
 import type { Node } from '../../types/node';
 import type { Edge } from '../../types/edge';
 import type { WorkflowDefinition } from '../../types/workflow';
+import type { NodeTemplate } from '../../types/node-template';
+import type { TriggerTemplate } from '../../types/trigger-template';
+import type { Script } from '../../types/code';
 
 /**
  * 配置格式枚举
@@ -42,19 +46,77 @@ export type EdgeConfigFile = Edge;
 
 /**
  * 工作流配置文件格式
- * 
+ *
  * 说明：直接复用 WorkflowDefinition 类型，完全一致
  */
 export type WorkflowConfigFile = WorkflowDefinition;
 
 /**
- * 解析后的配置对象
+ * 节点模板配置文件格式
+ *
+ * 说明：直接复用 NodeTemplate 类型，完全一致
+ */
+export type NodeTemplateConfigFile = NodeTemplate;
+
+/**
+ * 触发器模板配置文件格式
+ *
+ * 说明：直接复用 TriggerTemplate 类型，完全一致
+ */
+export type TriggerTemplateConfigFile = TriggerTemplate;
+
+/**
+ * 脚本配置文件格式
+ *
+ * 说明：直接复用 Script 类型，完全一致
+ */
+export type ScriptConfigFile = Script;
+
+/**
+ * 配置类型枚举
+ */
+export enum ConfigType {
+  WORKFLOW = 'workflow',
+  NODE_TEMPLATE = 'node_template',
+  TRIGGER_TEMPLATE = 'trigger_template',
+  SCRIPT = 'script'
+}
+
+/**
+ * 通用配置文件类型
+ */
+export type ConfigFile =
+  | WorkflowConfigFile
+  | NodeTemplateConfigFile
+  | TriggerTemplateConfigFile
+  | ScriptConfigFile;
+
+/**
+ * 解析后的配置对象（向后兼容，仅用于工作流）
  */
 export interface ParsedConfig {
   /** 配置格式 */
   format: ConfigFormat;
   /** 工作流配置文件 */
   workflowConfig: WorkflowConfigFile;
+  /** 原始内容 */
+  rawContent: string;
+}
+
+/**
+ * 通用解析后的配置对象（支持多种配置类型）
+ */
+export interface ParsedConfigEx<T extends ConfigType = ConfigType> {
+  /** 配置类型 */
+  configType: T;
+  /** 配置格式 */
+  format: ConfigFormat;
+  /** 配置文件内容 */
+  config: T extends ConfigType.WORKFLOW ? WorkflowConfigFile :
+           T extends ConfigType.NODE_TEMPLATE ? NodeTemplateConfigFile :
+           T extends ConfigType.TRIGGER_TEMPLATE ? TriggerTemplateConfigFile :
+           T extends ConfigType.SCRIPT ? ScriptConfigFile :
+           ConfigFile;
   /** 原始内容 */
   rawContent: string;
 }

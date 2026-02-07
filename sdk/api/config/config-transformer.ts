@@ -7,10 +7,6 @@ import type { WorkflowConfigFile, IConfigTransformer } from './types';
 import type { WorkflowDefinition } from '../../types/workflow';
 import type { Node } from '../../types/node';
 import type { Edge as EdgeType } from '../../types/edge';
-import { NodeType } from '../../types/node';
-import { EdgeType as EdgeTypeEnum } from '../../types/edge';
-import { generateId } from '../../utils/id-utils';
-import { now } from '../../utils/timestamp-utils';
 
 /**
  * 配置转换器类

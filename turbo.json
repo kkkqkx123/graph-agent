@@ -37,9 +37,7 @@
       "dependsOn": [
         "build"
       ],
-      "outputs": [
-        "tsconfig.tsbuildinfo"
-      ]
+      "outputs": []
     },
     "prebuild": {
       "cache": false
