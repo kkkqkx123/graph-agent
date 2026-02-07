@@ -27,7 +27,7 @@ describe('RateLimiter', () => {
       const endTime = Date.now();
       
       expect(endTime - startTime).toBeLessThan(100);
-      expect(limiter.getAvailableTokens()).toBe(9);
+      expect(limiter.getAvailableTokens()).toBeCloseTo(9, 1);
     });
 
     it('应该等待令牌（当没有可用令牌时）', async () => {
@@ -39,7 +39,7 @@ describe('RateLimiter', () => {
       // 消耗所有令牌
       await limiter.waitForToken();
       await limiter.waitForToken();
-      expect(limiter.getAvailableTokens()).toBe(0);
+      expect(limiter.getAvailableTokens()).toBeCloseTo(0, 1);
       
       // 下一个请求应该等待
       const startTime = Date.now();

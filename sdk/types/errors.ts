@@ -224,7 +224,7 @@ export class ToolError extends SDKError {
 export class HttpError extends NetworkError {
   constructor(
     message: string,
-    public override readonly statusCode: number,
+    public override readonly statusCode?: number,
     context?: Record<string, any>,
     cause?: Error
   ) {

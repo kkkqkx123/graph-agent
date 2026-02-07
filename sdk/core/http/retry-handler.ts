@@ -112,27 +112,27 @@ function shouldRetry(error: any): boolean {
     return true;
   }
 
-  // NetworkError - 网络错误重试
-  if (error instanceof NetworkError) {
-    return true;
-  }
-
   // RateLimitError - 限流重试
   if (error instanceof RateLimitError) {
     return true;
   }
 
-  // HttpError - 检查状态码
+  // HttpError - 检查状态码（必须在NetworkError之前检查）
   if (error instanceof HttpError) {
     const statusCode = error.statusCode;
 
     // 检查是否在黑名单中
-    if (NON_RETRYABLE_STATUS_CODES.has(statusCode)) {
+    if (statusCode && NON_RETRYABLE_STATUS_CODES.has(statusCode)) {
       return false;
     }
 
     // 其他所有 HTTP 错误都重试
     // 包括：429（限流）、5xx（服务器错误）、以及其他4xx（如426等）
+    return true;
+  }
+
+  // NetworkError - 网络错误重试（必须在HttpError之后检查）
+  if (error instanceof NetworkError) {
     return true;
   }
 

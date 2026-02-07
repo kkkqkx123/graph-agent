@@ -6,18 +6,19 @@
 import {
   SDKError,
   ErrorCode,
+  HttpError,
 } from '../../types/errors';
 
 /**
  * HTTP 400 - 请求格式错误
  */
-export class BadRequestError extends SDKError {
+export class BadRequestError extends HttpError {
   constructor(
     message: string,
     context?: Record<string, any>,
     cause?: Error
   ) {
-    super(ErrorCode.VALIDATION_ERROR, message, context, cause);
+    super(message, 400, context, cause);
     this.name = 'BadRequestError';
   }
 }
@@ -25,13 +26,13 @@ export class BadRequestError extends SDKError {
 /**
  * HTTP 401 - 认证失败
  */
-export class UnauthorizedError extends SDKError {
+export class UnauthorizedError extends HttpError {
   constructor(
     message: string,
     context?: Record<string, any>,
     cause?: Error
   ) {
-    super(ErrorCode.VALIDATION_ERROR, message, context, cause);
+    super(message, 401, context, cause);
     this.name = 'UnauthorizedError';
   }
 }
@@ -39,13 +40,13 @@ export class UnauthorizedError extends SDKError {
 /**
  * HTTP 403 - 权限不足
  */
-export class ForbiddenError extends SDKError {
+export class ForbiddenError extends HttpError {
   constructor(
     message: string,
     context?: Record<string, any>,
     cause?: Error
   ) {
-    super(ErrorCode.EXECUTION_ERROR, message, context, cause);
+    super(message, 403, context, cause);
     this.name = 'ForbiddenError';
   }
 }
@@ -53,14 +54,14 @@ export class ForbiddenError extends SDKError {
 /**
  * HTTP 404 - 资源不存在
  */
-export class NotFoundHttpError extends SDKError {
+export class NotFoundHttpError extends HttpError {
   constructor(
     message: string,
     public readonly url: string,
     context?: Record<string, any>,
     cause?: Error
   ) {
-    super(ErrorCode.NOT_FOUND_ERROR, message, { ...context, url }, cause);
+    super(message, 404, { ...context, url }, cause);
     this.name = 'NotFoundHttpError';
   }
 }
@@ -68,13 +69,13 @@ export class NotFoundHttpError extends SDKError {
 /**
  * HTTP 409 - 冲突
  */
-export class ConflictError extends SDKError {
+export class ConflictError extends HttpError {
   constructor(
     message: string,
     context?: Record<string, any>,
     cause?: Error
   ) {
-    super(ErrorCode.EXECUTION_ERROR, message, context, cause);
+    super(message, 409, context, cause);
     this.name = 'ConflictError';
   }
 }
@@ -82,13 +83,13 @@ export class ConflictError extends SDKError {
 /**
  * HTTP 422 - 无法处理的实体
  */
-export class UnprocessableEntityError extends SDKError {
+export class UnprocessableEntityError extends HttpError {
   constructor(
     message: string,
     context?: Record<string, any>,
     cause?: Error
   ) {
-    super(ErrorCode.VALIDATION_ERROR, message, context, cause);
+    super(message, 422, context, cause);
     this.name = 'UnprocessableEntityError';
   }
 }
@@ -96,13 +97,13 @@ export class UnprocessableEntityError extends SDKError {
 /**
  * HTTP 429 - 限流错误
  */
-export class RateLimitError extends SDKError {
+export class RateLimitError extends HttpError {
   constructor(
     message: string,
     public readonly retryAfter?: number,
     context?: Record<string, any>
   ) {
-    super(ErrorCode.RATE_LIMIT_ERROR, message, context);
+    super(message, 429, context);
     this.name = 'RateLimitError';
   }
 }
@@ -110,13 +111,13 @@ export class RateLimitError extends SDKError {
 /**
  * HTTP 500 - 服务器错误
  */
-export class InternalServerError extends SDKError {
+export class InternalServerError extends HttpError {
   constructor(
     message: string,
     context?: Record<string, any>,
     cause?: Error
   ) {
-    super(ErrorCode.EXECUTION_ERROR, message, context, cause);
+    super(message, 500, context, cause);
     this.name = 'InternalServerError';
   }
 }
@@ -124,13 +125,13 @@ export class InternalServerError extends SDKError {
 /**
  * HTTP 503 - 服务不可用
  */
-export class ServiceUnavailableError extends SDKError {
+export class ServiceUnavailableError extends HttpError {
   constructor(
     message: string,
     context?: Record<string, any>,
     cause?: Error
   ) {
-    super(ErrorCode.EXECUTION_ERROR, message, context, cause);
+    super(message, 503, context, cause);
     this.name = 'ServiceUnavailableError';
   }
 }
