@@ -58,8 +58,19 @@ export { TriggerTemplateLoader } from './loaders/trigger-template-loader';
 export { ScriptLoader } from './loaders/script-loader';
 
 // 验证器
-export { BaseConfigValidator } from './validators/base-validator';
-export { WorkflowConfigValidator } from './validators/workflow-validator';
-export { NodeTemplateConfigValidator } from './validators/node-template-validator';
-export { TriggerTemplateConfigValidator } from './validators/trigger-template-validator';
-export { ScriptConfigValidator } from './validators/script-validator';
+// 验证工具函数导出
+export {
+  validateRequiredFields,
+  validateStringField,
+  validateNumberField,
+  validateBooleanField,
+  validateArrayField,
+  validateObjectField,
+  validateEnumField
+} from './validators/base-validator';
+
+// 配置验证函数导出
+export { validateWorkflowConfig } from './validators/workflow-validator';
+export { validateNodeTemplateConfig } from './validators/node-template-validator';
+export { validateTriggerTemplateConfig } from './validators/trigger-template-validator';
+export { validateScriptConfig } from './validators/script-validator';
