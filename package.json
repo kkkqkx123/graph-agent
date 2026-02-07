@@ -1,91 +1,47 @@
 {
-  "name": "modular-agent-framework",
+  "name": "modular-agent-monorepo",
   "version": "1.0.0",
-  "description": "模块化智能体框架",
-  "main": "dist/index.js",
-  "types": "dist/index.d.ts",
-  "type": "module",
-  "exports": {
-    ".": {
-      "types": "./dist/index.d.ts",
-      "import": "./dist/index.js"
-    },
-    "./sdk": {
-      "types": "./sdk/dist/index.d.ts",
-      "import": "./sdk/dist/index.js"
-    }
-  },
-  "files": [
-    "dist",
-    "sdk/dist",
-    "README.md",
-    "LICENSE"
+  "description": "模块化智能体框架 - Monorepo",
+  "private": true,
+  "workspaces": [
+    "apps/*",
+    "packages/*",
+    "sdk/*"
   ],
   "scripts": {
-    "build": "tsc",
-    "build:watch": "tsc --watch",
-    "start": "node dist/index.js",
-    "dev": "ts-node-dev --respawn --transpile-only src/index.ts",
-    "test": "jest --config=jest.config.cjs",
-    "test:watch": "jest --watch",
-    "test:coverage": "jest --coverage",
-    "lint": "eslint src/**/*.ts",
-    "lint:fix": "eslint src/**/*.ts --fix",
-    "format": "prettier --write src/**/*.ts",
-    "typecheck": "tsc --noEmit",
-    "clean": "rimraf dist",
-    "prebuild": "npm run clean",
-    "postbuild": "cp -r src/configs dist/ || true"
+    "build": "turbo run build",
+    "dev": "turbo run dev --parallel",
+    "test": "turbo run test",
+    "lint": "turbo run lint",
+    "format": "turbo run format",
+    "clean": "turbo run clean && rimraf node_modules",
+    "typecheck": "turbo run typecheck",
+    "postinstall": "pnpm typecheck"
   },
   "keywords": [
     "agent",
     "workflow",
     "llm",
     "modular",
-    "typescript"
+    "typescript",
+    "monorepo"
   ],
   "author": "Modular Agent Framework Team",
   "license": "MIT",
-  "dependencies": {
-    "@pawel-up/jexl": "^4.4.2",
-    "@types/pg": "^8.16.0",
-    "chokidar": "^5.0.0",
-    "cron": "^4.4.0",
-    "dotenv": "^17.2.3",
-    "eventemitter3": "^5.0.1",
-    "express": "^5.2.1",
-    "fast-xml-parser": "^5.3.3",
-    "inversify": "^7.10.6",
-    "ioredis": "^5.8.2",
-    "lodash": "^4.17.21",
-    "node-config": "^0.0.2",
-    "pg": "^8.16.3",
-    "reflect-metadata": "^0.2.2",
-    "tiktoken": "^1.0.22",
-    "toml": "^3.0.0",
-    "typeorm": "^0.3.28",
-    "uuid": "^13.0.0",
-    "winston": "^3.19.0",
-    "xmlbuilder2": "^4.0.3",
-    "yaml": "^2.8.2",
-    "zod": "^4.2.1"
-  },
   "devDependencies": {
-    "@types/express": "^5.0.6",
-    "@types/jest": "^30.0.0",
-    "@types/node": "^25.0.1",
+    "turbo": "^2.8.3",
+    "typescript": "^5.9.3",
     "jest": "^30.2.0",
-    "prettier": "^3.0.2",
-    "rimraf": "^6.0.1",
+    "@types/jest": "^30.0.0",
+    "@types/node": "^25.2.1",
     "ts-jest": "^29.4.6",
-    "ts-node-dev": "^2.0.0",
-    "typescript": "^5.9.3"
+    "rimraf": "^6.1.2",
+    "eslint": "^10.0.0",
+    "prettier": "^3.0.2"
   },
   "engines": {
-    "node": ">=22.0.0"
+    "node": ">=22.0.0",
+    "pnpm": ">=9.0.0"
   },
-  "overrides": {
-    "glob": "^10.5.0",
-    "rimraf": "^6.0.1"
-  }
+  "packageManager": "pnpm@10.28.2"
 }

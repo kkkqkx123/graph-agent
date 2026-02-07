@@ -1,0 +1,27 @@
+{
+  "name": "@modular-agent/common-utils",
+  "version": "1.0.0",
+  "description": "Common utilities for Modular Agent Framework",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "test": "jest",
+    "lint": "eslint src/**/*.ts",
+    "format": "prettier --write src/**/*.ts",
+    "clean": "rimraf dist",
+    "prebuild": "npm run clean",
+    "typecheck": "tsc --noEmit"
+  },
+  "keywords": [
+    "utilities",
+    "typescript",
+    "modular-agent"
+  ],
+  "author": "Modular Agent Framework Team",
+  "license": "MIT",
+  "devDependencies": {
+    "rimraf": "^6.0.1"
+  }
+}

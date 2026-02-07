@@ -1,166 +1,144 @@
-# SDK Module Developer Guide
+# Modular Agent Framework Developer Guide
 
-This document provides essential information for AI agents working with the SDK module.
+This document provides essential information for AI agents working with the Modular Agent Framework.
 
 ## Project Overview
 
-The SDK module is a TypeScript workflow execution engine featuring:
-- Workflow execution engine with 15 node types
-- Multi-model LLM integration (OpenAI, Anthropic, Gemini, Mock)
-- Flexible tool system (built-in, native, REST, MCP)
-- Fork/Join support for parallel execution
-- Checkpoint mechanism for state snapshots and resumption
-- Event-driven architecture for extensibility
+The Modular Agent Framework is a monorepo containing:
+- **SDK Module**: TypeScript workflow execution engine with 15 node types
+- **Multi-model LLM integration**: OpenAI, Anthropic, Gemini, Mock
+- **Flexible tool system**: Built-in, native, REST, MCP
+- **Fork/Join support**: Parallel execution capabilities
+- **Checkpoint mechanism**: State snapshots and resumption
+- **Event-driven architecture**: Extensibility features
+- **Shared packages**: Reusable utilities and components
+- **Application modules**: Ready-to-deploy applications
 
 ## Development Environment Setup
 
 ### Prerequisites
 
-Node.js v22.14.0
+Node.js v22.0.0+, pnpm v10.28.2, Turbo v2.8.3
+
+### Install Dependencies
+```bash
+pnpm install
+```
 
 ### Type Check
 ```bash
-cd sdk
-tsc --noEmit 2>&1 | Select-Object -First 100
+pnpm typecheck
+```
+
+### Build
+```bash
+pnpm build
 ```
 
 ### Testing
 ```bash
-cd sdk
-# Run specific test file
-npm test <test_file_path>
+pnpm test
+# Run specific package test
+pnpm --filter <package-name> test
 ```
-**DO NOT RUN FULL TEST SUITE**
 
 ## Code Architecture
 
-### Module Structure
+### Monorepo Structure
 
-The SDK module uses a simplified two-layer architecture:
+**Apps Layer** (`apps/`)
+- Contains application modules
+- Uses packages and SDK as dependencies
+- Deployable applications
 
-**Types Layer** (`sdk/types/`)
-- Defines all types and interfaces
-- Contains workflow, node, edge, thread, tool, LLM types
-- Provides type definitions and validation rules
-- No implementation logic
+**Packages Layer** (`packages/`)
+- Shared utility packages
+- Reusable components and libraries
+- Cross-project functionality
 
-**Core Layer** (`sdk/core/`)
-- Implements core execution logic
-- Contains state management, execution engine, LLM integration, tool execution
-- Depends on Types layer
-- Provides complete execution functionality
-
-**API Layer** (`sdk/api/`)
-- Provides external API interfaces
-- Depends on Core layer and Types layer
-- Offers simple and easy-to-use APIs
-
-**Utils Layer** (`sdk/utils/`)
-- Provides utility functions
-- Depends on Types layer
-- Offers ID generation, error handling, etc.
+**SDK Layer** (`sdk/`)
+- Core workflow execution engine
+- LLM integrations and tool systems
+- Detailed architecture in SDK documentation
 
 ### Directory Structure
 
 ```
-sdk/
-├── types/          # Type definitions
-├── core/           # Core execution logic
-│   ├── execution/  # Execution engine
-│   ├── llm/        # LLM integration
-│   ├── tools/      # Tool execution
-│   ├── validation/ # Validation
-│   └── storage/    # Checkpoint storage
-├── api/            # External API interfaces
-└── utils/          # Utility functions
+modular-agent-framework/
+├── apps/                       # Application modules
+│   ├── web-app/               # Web application
+│   └── ...
+├── packages/                   # Shared packages
+│   ├── common-utils/          # Common utilities
+│   └── ...
+├── sdk/                        # Core SDK module
+│   ├── types/                 # Type definitions
+│   ├── core/                  # Core execution logic
+│   ├── api/                   # External API interfaces
+│   └── utils/                 # Utility functions
+├── package.json               # Root workspace config
+├── pnpm-workspace.yaml        # Workspace definitions
+└── turbo.json                 # Build orchestration
 ```
 
-## Dependency Rules
+## Dependency Management
 
-### Strict Dependency Constraints
+### Centralized Dependencies
 
-**Types Layer**
-- No dependencies on other layers
-- Provides all type definitions
-- Used by all other layers
+- Common devDependencies defined in root `package.json`
+- Shared TypeScript, Jest, ESLint configurations
+- Consistent versions across all packages
 
-**Utils Layer**
-- Depends only on Types layer
-- Provides utility functions
-- Used by Core and API layers
+### Workspace Protocol
 
-**Core Layer**
-- Depends only on Types and Utils layers
-- Implements core execution logic
-- Used by API layer
-
-**API Layer**
-- Depends only on Core and Types layers
-- Provides external API interfaces
-- Not used by other layers
-
-### Dependency Flow
-
-Types ← Utils ← Core ← API
+- Use `workspace:*` for internal package references
+- Automatic linking between packages
+- Version consistency guaranteed
 
 ## Development Process
 
-### 1. Feature Development
-- Follow dependency rules strictly
-- Define types in Types layer first
-- Implement logic in Core layer
-- Provide interfaces in API layer
-- Use utility functions from Utils layer
+### 1. Package Development
+- Create new packages in `packages/` directory
+- Add to workspace in parent `package.json`
+- Use `workspace:*` for internal dependencies
 
-### 2. Testing Strategy
-- **Unit tests**: Create `__tests__` folder in the same directory as the code
-- **Integration tests**: Place in global tests folder
-- **End-to-end tests**: Place in `e2e` subfolder of global tests folder
+### 2. App Development
+- Create new apps in `apps/` directory
+- Reference packages and SDK using `workspace:*`
+- Follow consistent build and test patterns
 
-### 3. Code Quality Standards
-- Follow TypeScript strict type checking
-- Use dependency injection pattern
-- Implement appropriate abstraction layers
-- Provide clear error messages
+### 3. Testing Strategy
+- **Unit tests**: In `__tests__` folders per package
+- **Integration tests**: Across package boundaries
+- **End-to-end tests**: In `apps/` for complete workflows
 
-### 4. Documentation Requirements
-- Each module must have clear documentation
-- Use natural language for descriptions
-- Keep documentation concise and clear
+### 4. Build Orchestration
+- Use Turbo for efficient task execution
+- Leverage caching and incremental builds
+- Dependency-aware task ordering
 
 ## Design Principles
 
-### 1. Separation of Concerns
-- Types layer: type definitions only
-- Core layer: execution logic only
-- API layer: external interfaces only
-- Utils layer: utility functions only
+### 1. Modularity
+- Clear separation between apps, packages, and SDK
+- Independent deployability of components
+- Loose coupling with explicit contracts
 
-### 2. Avoid Circular Dependencies
-- Use ID references, not object references
-- Associate through intermediate objects
-- Keep dependency direction unidirectional
+### 2. Consistency
+- Uniform tooling across all packages
+- Shared linting and formatting rules
+- Standardized project templates
 
-### 3. Configuration Reuse
-- Use Profile concept to avoid duplicate configuration
-- Use Registry pattern for resource management
-- Support configuration registration and query
-
-### 4. Event-Driven
-- Provide extension points through events
-- Support asynchronous event handling
-- All events associated with threadId
-
-### 5. Error Handling
-- Provide clear error messages
-- Support error chains
-- Unified error types
+### 3. Scalability
+- Efficient dependency management
+- Fast builds with caching
+- Parallel task execution
 
 ## Important Notes
 
-1. **Type Safety**: Leverage TypeScript type system fully
-2. **Avoid Circular Dependencies**: Use ID references, not object references
-3. **Separation of Concerns**: SDK focuses on execution, application layer handles persistence
+1. **Version Management**: Use root `package.json` for common dependencies
+2. **Workspace Protocol**: Always use `workspace:*` for internal references
+3. **Build Efficiency**: Leverage Turbo for optimal build performance
 
 ## Language Guidelines
 

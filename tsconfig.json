@@ -1,13 +1,13 @@
 {
   "compilerOptions": {
     "target": "ES2022",
-    "module": "commonjs",
+    "module": "ESNext",
     "lib": [
       "ES2022",
       "DOM"
     ],
     "outDir": "./dist",
-    "rootDir": "application",
+    "rootDir": ".",
     "strict": true,
     "esModuleInterop": true,
     "skipLibCheck": true,
@@ -28,32 +28,19 @@
     "experimentalDecorators": true,
     "emitDecoratorMetadata": true,
     "resolveJsonModule": true,
-    "moduleResolution": "node",
+    "moduleResolution": "bundler",
     "allowSyntheticDefaultImports": true,
-    "baseUrl": "application",
+    "baseUrl": ".",
     "paths": {
       "@/*": [
         "*"
-      ],
-      "@domain/*": [
-        "domain/*"
-      ],
-      "@application/*": [
-        "application/*"
-      ],
-      "@infrastructure/*": [
-        "infrastructure/*"
-      ],
-      "@interfaces/*": [
-        "interfaces/*"
-      ],
-      "@shared/*": [
-        "shared/*"
       ]
     }
   },
   "include": [
-    "application/**/*"
+    "apps/**/*",
+    "packages/**/*",
+    "sdk/**/*"
   ],
   "exclude": [
     "node_modules",
