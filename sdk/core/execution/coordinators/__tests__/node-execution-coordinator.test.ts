@@ -208,7 +208,7 @@ describe('NodeExecutionCoordinator', () => {
     it('应该处理子图边界节点', async () => {
       // Mock 图节点包含子图边界信息
       const mockGraphNode = {
-        metadata: {
+        internalMetadata: {
           'subgraphBoundaryType': 'entry',
           'originalSubgraphNodeId': 'original-node-1'
         },
@@ -342,7 +342,7 @@ describe('NodeExecutionCoordinator', () => {
   describe('handleSubgraphBoundary', () => {
     it('应该处理子图入口边界', async () => {
       const mockGraphNode = {
-        metadata: {
+        internalMetadata: {
           'subgraphBoundaryType': 'entry',
           'originalSubgraphNodeId': 'original-node-1'
         },
@@ -379,7 +379,7 @@ describe('NodeExecutionCoordinator', () => {
 
     it('应该处理子图出口边界', async () => {
       const mockGraphNode = {
-        metadata: {
+        internalMetadata: {
           'subgraphBoundaryType': 'exit',
           'originalSubgraphNodeId': 'original-node-2'
         }
@@ -416,7 +416,7 @@ describe('NodeExecutionCoordinator', () => {
 
     it('应该忽略未知的边界类型', async () => {
       const mockGraphNode = {
-        metadata: {
+        internalMetadata: {
           'subgraphBoundaryType': 'unknown',
           'originalSubgraphNodeId': 'original-node-3'
         }

@@ -3,8 +3,8 @@
  * 定义所有配置加载器的通用接口
  */
 
-import { ConfigFormat } from '../types';
-import type { ConfigType, ParsedConfigEx, ConfigFile } from '../types';
+import { ConfigFormat, ConfigType } from '../types';
+import type { ParsedConfig, ConfigFile } from '../types';
 import { ConfigParser } from '../config-parser';
 import { ConfigurationError } from '../../../types/errors';
 import * as path from 'path';
@@ -26,7 +26,7 @@ export abstract class BaseConfigLoader<T extends ConfigType> {
    * @param filePath 文件路径
    * @returns 解析后的配置对象
    */
-  async loadFromFile(filePath: string): Promise<ParsedConfigEx<T>> {
+  async loadFromFile(filePath: string): Promise<ParsedConfig<T>> {
     const fs = await import('fs/promises');
 
     try {
@@ -37,14 +37,7 @@ export abstract class BaseConfigLoader<T extends ConfigType> {
       const format = this.detectFormat(filePath);
 
       // 解析配置
-      const parsed = this.parser.parse(content, format);
-
-      return {
-        configType: this.configType,
-        format,
-        config: parsed.workflowConfig as any,
-        rawContent: content
-      };
+      return this.parser.parse(content, format, this.configType);
     } catch (error) {
       if (error instanceof ConfigurationError) {
         throw error;
@@ -66,14 +59,8 @@ export abstract class BaseConfigLoader<T extends ConfigType> {
    * @param format 配置格式
    * @returns 解析后的配置对象
    */
-  loadFromContent(content: string, format: ConfigFormat): ParsedConfigEx<T> {
-    const parsed = this.parser.parse(content, format);
-    return {
-      configType: this.configType,
-      format,
-      config: parsed.workflowConfig as any,
-      rawContent: content
-    };
+  loadFromContent(content: string, format: ConfigFormat): ParsedConfig<T> {
+    return this.parser.parse(content, format, this.configType);
   }
 
   /**
@@ -81,7 +68,7 @@ export abstract class BaseConfigLoader<T extends ConfigType> {
    * @param filePaths 文件路径数组
    * @returns 解析后的配置对象数组
    */
-  async loadBatch(filePaths: string[]): Promise<ParsedConfigEx<T>[]> {
+  async loadBatch(filePaths: string[]): Promise<ParsedConfig<T>[]> {
     return Promise.all(filePaths.map(filePath => this.loadFromFile(filePath)));
   }
 

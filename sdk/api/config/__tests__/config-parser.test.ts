@@ -61,10 +61,10 @@ describe('ConfigParser', () => {
       const result = parser.parse(validJsonConfig, ConfigFormat.JSON);
       
       expect(result.format).toBe(ConfigFormat.JSON);
-      expect(result.workflowConfig.id).toBe('test-workflow');
-      expect(result.workflowConfig.name).toBe('测试工作流');
-      expect(result.workflowConfig.nodes).toHaveLength(2);
-      expect(result.workflowConfig.edges).toHaveLength(1);
+      expect(result.config.id).toBe('test-workflow');
+      expect(result.config.name).toBe('测试工作流');
+      expect(result.config.nodes).toHaveLength(2);
+      expect(result.config.edges).toHaveLength(1);
     });
 
     test('应该验证配置的有效性', () => {
@@ -101,8 +101,8 @@ describe('ConfigParser', () => {
       expect(workflowDef.name).toBe('测试工作流');
       expect(workflowDef.nodes).toHaveLength(2);
       expect(workflowDef.edges).toHaveLength(1);
-      expect(workflowDef.nodes[0].type).toBe('START');
-      expect(workflowDef.nodes[1].type).toBe('END');
+      expect(workflowDef.nodes[0]!.type).toBe('START');
+      expect(workflowDef.nodes[1]!.type).toBe('END');
     });
 
     test('应该支持参数替换', () => {
@@ -162,7 +162,7 @@ describe('ConfigParser', () => {
         { model: 'gpt-4-turbo' }
       );
       
-      const llmNode = workflowDef.nodes[1];
+      const llmNode = workflowDef.nodes[1]!;
       expect(llmNode.type).toBe(NodeType.LLM);
       expect((llmNode.config as any).profileId).toBe('gpt-4-turbo');
     });
@@ -232,10 +232,10 @@ describe('ConfigTransformer', () => {
 
     const workflowDef = transformer.transformToWorkflow(configFile);
     
-    expect(workflowDef.nodes[0].id).toBe('start');
-    expect(workflowDef.nodes[0].type).toBe('START');
-    expect(workflowDef.nodes[0].outgoingEdgeIds).toEqual([]);
-    expect(workflowDef.nodes[0].incomingEdgeIds).toEqual([]);
+    expect(workflowDef.nodes[0]!.id).toBe('start');
+    expect(workflowDef.nodes[0]!.type).toBe('START');
+    expect(workflowDef.nodes[0]!.outgoingEdgeIds).toEqual([]);
+    expect(workflowDef.nodes[0]!.incomingEdgeIds).toEqual([]);
   });
 
   test('应该转换边配置', () => {
@@ -256,9 +256,9 @@ describe('ConfigTransformer', () => {
 
     const workflowDef = transformer.transformToWorkflow(configFile);
     
-    expect(workflowDef.edges[0].sourceNodeId).toBe('start');
-    expect(workflowDef.edges[0].targetNodeId).toBe('end');
-    expect(workflowDef.edges[0].type).toBe('DEFAULT');
+    expect(workflowDef.edges[0]!.sourceNodeId).toBe('start');
+    expect(workflowDef.edges[0]!.targetNodeId).toBe('end');
+    expect(workflowDef.edges[0]!.type).toBe('DEFAULT');
   });
 
   test('应该更新节点的边引用', () => {
@@ -279,8 +279,8 @@ describe('ConfigTransformer', () => {
 
     const workflowDef = transformer.transformToWorkflow(configFile);
     
-    expect(workflowDef.nodes[0].outgoingEdgeIds).toHaveLength(1);
-    expect(workflowDef.nodes[1].incomingEdgeIds).toHaveLength(1);
+    expect(workflowDef.nodes[0]!.outgoingEdgeIds).toHaveLength(1);
+    expect(workflowDef.nodes[1]!.incomingEdgeIds).toHaveLength(1);
   });
 });
 

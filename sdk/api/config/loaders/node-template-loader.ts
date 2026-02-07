@@ -25,7 +25,7 @@ export class NodeTemplateLoader extends BaseConfigLoader<ConfigType.NODE_TEMPLAT
    */
   async loadAndRegister(filePath: string): Promise<NodeTemplate> {
     const config = await this.loadFromFile(filePath);
-    const template = config.config as NodeTemplate;
+    const template = config.config;
 
     try {
       nodeTemplateRegistry.register(template);

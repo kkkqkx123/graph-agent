@@ -25,7 +25,7 @@ export class TriggerTemplateLoader extends BaseConfigLoader<ConfigType.TRIGGER_T
    */
   async loadAndRegister(filePath: string): Promise<TriggerTemplate> {
     const config = await this.loadFromFile(filePath);
-    const template = config.config as TriggerTemplate;
+    const template = config.config;
 
     try {
       triggerTemplateRegistry.register(template);

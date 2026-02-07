@@ -74,12 +74,6 @@ export class WorkflowLoader extends BaseConfigLoader<ConfigType.WORKFLOW> {
    */
   async validate(filePath: string) {
     const parsed = await this.loadFromFile(filePath);
-    // 将 ParsedConfigEx 转换为 ParsedConfig
-    const parsedConfig = {
-      format: parsed.format,
-      workflowConfig: parsed.config as WorkflowDefinition,
-      rawContent: parsed.rawContent
-    };
-    return this.workflowParser.validate(parsedConfig);
+    return this.workflowParser.validate(parsed);
   }
 }

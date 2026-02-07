@@ -20,7 +20,10 @@ export {
   ScriptConfigFile,
   ConfigFile,
   ParsedConfig,
-  ParsedConfigEx,
+  ParsedWorkflowConfig,
+  ParsedNodeTemplateConfig,
+  ParsedTriggerTemplateConfig,
+  ParsedScriptConfig,
   IConfigParser,
   IConfigTransformer
 } from './types';

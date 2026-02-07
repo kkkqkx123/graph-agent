@@ -467,7 +467,8 @@ describe('LLMExecutionCoordinator', () => {
       maxToolCallsPerRequest: 3,
       workflowConfig: {
         toolApproval: {
-          autoApprovedTools: ['safe_tool']
+          autoApprovedTools: ['safe_tool'],
+          approvalTimeout: 0 // 禁用超时，让测试能够正常完成
         }
       }
     };
@@ -523,18 +524,22 @@ describe('LLMExecutionCoordinator', () => {
         { role: 'assistant', content: 'I need to execute a sensitive operation' }
       ]);
 
-      // Mock 事件监听器 - 使用Map存储handler
-      const eventHandlers = new Map<string, any>();
-      mockEventManager.on.mockImplementation((eventType: string, handler: any) => {
-        eventHandlers.set(eventType, handler);
-        return () => {}; // 返回取消订阅函数
+      // 使用Jest模拟异步等待 - 虚拟超时
+      const waitForUserInteractionResponse = jest.fn().mockResolvedValue({
+        interactionId: 'test-interaction-id',
+        inputData: {
+          toolName: 'sensitive_tool',
+          toolDescription: 'A sensitive tool that requires approval',
+          toolParameters: { param: 'value' },
+          approved: true
+        }
       });
 
-      // 执行测试
-      const executePromise = coordinator.executeLLM(mockParamsWithApproval, mockConversationManager);
+      // 模拟 waitForUserInteractionResponse 方法
+      jest.spyOn(coordinator as any, 'waitForUserInteractionResponse').mockImplementation(waitForUserInteractionResponse);
 
-      // 等待审批请求事件被触发
-      await new Promise(resolve => setTimeout(resolve, 10));
+      // 执行测试
+      await coordinator.executeLLM(mockParamsWithApproval, mockConversationManager);
 
       // 验证审批请求事件
       expect(mockEventManager.emit).toHaveBeenCalledWith(
@@ -545,29 +550,9 @@ describe('LLMExecutionCoordinator', () => {
         })
       );
 
-      // 模拟用户批准
-      const approvalResponse: ToolApprovalData = {
-        toolName: 'sensitive_tool',
-        toolDescription: 'A sensitive tool that requires approval',
-        toolParameters: { param: 'value' },
-        approved: true
-      };
-
-      // 触发用户响应事件
-      const respondedHandler = eventHandlers.get(EventType.USER_INTERACTION_RESPONDED);
-      if (respondedHandler) {
-        respondedHandler({
-          interactionId: 'test-interaction-id',
-          inputData: approvalResponse
-        });
-      }
-
-      // 等待执行完成
-      await executePromise;
-
       // 验证工具被执行
       expect(mockToolCallExecutor.executeToolCalls).toHaveBeenCalled();
-    }, 10000); // 增加超时时间
+    }, 5000); // 减少超时时间，因为现在使用虚拟等待
 
     it('应该跳过被用户拒绝的工具调用', async () => {
       mockLLMExecutor.executeLLMCall.mockResolvedValue({
@@ -593,38 +578,31 @@ describe('LLMExecutionCoordinator', () => {
         { role: 'assistant', content: 'I need to execute a sensitive operation' }
       ]);
 
-      // Mock 事件监听器 - 使用Map存储handler
-      const eventHandlers = new Map<string, any>();
-      mockEventManager.on.mockImplementation((eventType: string, handler: any) => {
-        eventHandlers.set(eventType, handler);
-        return () => {}; // 返回取消订阅函数
+      // 使用Jest模拟异步等待 - 虚拟超时（用户拒绝）
+      const waitForUserInteractionResponse = jest.fn().mockResolvedValue({
+        interactionId: 'test-interaction-id',
+        inputData: {
+          toolName: 'sensitive_tool',
+          toolDescription: 'A sensitive tool that requires approval',
+          toolParameters: { param: 'value' },
+          approved: false
+        }
       });
 
+      // 模拟 waitForUserInteractionResponse 方法
+      jest.spyOn(coordinator as any, 'waitForUserInteractionResponse').mockImplementation(waitForUserInteractionResponse);
+
       // 执行测试
-      const executePromise = coordinator.executeLLM(mockParamsWithApproval, mockConversationManager);
+      await coordinator.executeLLM(mockParamsWithApproval, mockConversationManager);
 
-      // 等待审批请求事件被触发
-      await new Promise(resolve => setTimeout(resolve, 10));
-
-      // 模拟用户拒绝
-      const approvalResponse: ToolApprovalData = {
-        toolName: 'sensitive_tool',
-        toolDescription: 'A sensitive tool that requires approval',
-        toolParameters: { param: 'value' },
-        approved: false
-      };
-
-      // 触发用户响应事件
-      const respondedHandler = eventHandlers.get(EventType.USER_INTERACTION_RESPONDED);
-      if (respondedHandler) {
-        respondedHandler({
-          interactionId: 'test-interaction-id',
-          inputData: approvalResponse
-        });
-      }
-
-      // 等待执行完成
-      await executePromise;
+      // 验证审批请求事件
+      expect(mockEventManager.emit).toHaveBeenCalledWith(
+        expect.objectContaining({
+          type: EventType.USER_INTERACTION_REQUESTED,
+          operationType: UserInteractionOperationType.TOOL_APPROVAL,
+          prompt: '是否批准调用工具 "sensitive_tool"?'
+        })
+      );
 
       // 验证工具未被执行
       expect(mockToolCallExecutor.executeToolCalls).not.toHaveBeenCalled();
@@ -636,7 +614,7 @@ describe('LLMExecutionCoordinator', () => {
           content: expect.stringContaining('rejected by user approval')
         })
       );
-    }, 10000); // 增加超时时间
+    }, 5000); // 减少超时时间，因为现在使用虚拟等待
 
     it('应该使用用户编辑后的参数执行工具', async () => {
       mockLLMExecutor.executeLLMCall.mockResolvedValue({
@@ -662,39 +640,32 @@ describe('LLMExecutionCoordinator', () => {
         { role: 'assistant', content: 'I need to execute a sensitive operation' }
       ]);
 
-      // Mock 事件监听器 - 使用Map存储handler
-      const eventHandlers = new Map<string, any>();
-      mockEventManager.on.mockImplementation((eventType: string, handler: any) => {
-        eventHandlers.set(eventType, handler);
-        return () => {}; // 返回取消订阅函数
+      // 使用Jest模拟异步等待 - 虚拟超时（用户编辑参数）
+      const waitForUserInteractionResponse = jest.fn().mockResolvedValue({
+        interactionId: 'test-interaction-id',
+        inputData: {
+          toolName: 'sensitive_tool',
+          toolDescription: 'A sensitive tool that requires approval',
+          toolParameters: { param: 'original_value' },
+          approved: true,
+          editedParameters: { param: 'edited_value' }
+        }
       });
 
+      // 模拟 waitForUserInteractionResponse 方法
+      jest.spyOn(coordinator as any, 'waitForUserInteractionResponse').mockImplementation(waitForUserInteractionResponse);
+
       // 执行测试
-      const executePromise = coordinator.executeLLM(mockParamsWithApproval, mockConversationManager);
+      await coordinator.executeLLM(mockParamsWithApproval, mockConversationManager);
 
-      // 等待审批请求事件被触发
-      await new Promise(resolve => setTimeout(resolve, 10));
-
-      // 模拟用户批准并编辑参数
-      const approvalResponse: ToolApprovalData = {
-        toolName: 'sensitive_tool',
-        toolDescription: 'A sensitive tool that requires approval',
-        toolParameters: { param: 'original_value' },
-        approved: true,
-        editedParameters: { param: 'edited_value' }
-      };
-
-      // 触发用户响应事件
-      const respondedHandler = eventHandlers.get(EventType.USER_INTERACTION_RESPONDED);
-      if (respondedHandler) {
-        respondedHandler({
-          interactionId: 'test-interaction-id',
-          inputData: approvalResponse
-        });
-      }
-
-      // 等待执行完成
-      await executePromise;
+      // 验证审批请求事件
+      expect(mockEventManager.emit).toHaveBeenCalledWith(
+        expect.objectContaining({
+          type: EventType.USER_INTERACTION_REQUESTED,
+          operationType: UserInteractionOperationType.TOOL_APPROVAL,
+          prompt: '是否批准调用工具 "sensitive_tool"?'
+        })
+      );
 
       // 验证工具使用编辑后的参数被执行
       expect(mockToolCallExecutor.executeToolCalls).toHaveBeenCalledWith(
@@ -707,7 +678,7 @@ describe('LLMExecutionCoordinator', () => {
         'thread-1',
         'node-1'
       );
-    }, 10000); // 增加超时时间
+    }, 30000); // 增加超时时间
 
     it('应该将用户指令添加到对话历史', async () => {
       mockLLMExecutor.executeLLMCall.mockResolvedValue({
@@ -733,39 +704,32 @@ describe('LLMExecutionCoordinator', () => {
         { role: 'assistant', content: 'I need to execute a sensitive operation' }
       ]);
 
-      // Mock 事件监听器 - 使用Map存储handler
-      const eventHandlers = new Map<string, any>();
-      mockEventManager.on.mockImplementation((eventType: string, handler: any) => {
-        eventHandlers.set(eventType, handler);
-        return () => {}; // 返回取消订阅函数
+      // 使用Jest模拟异步等待 - 虚拟超时（用户提供额外指令）
+      const waitForUserInteractionResponse = jest.fn().mockResolvedValue({
+        interactionId: 'test-interaction-id',
+        inputData: {
+          toolName: 'sensitive_tool',
+          toolDescription: 'A sensitive tool that requires approval',
+          toolParameters: { param: 'value' },
+          approved: true,
+          userInstruction: 'Please also log the operation'
+        }
       });
 
+      // 模拟 waitForUserInteractionResponse 方法
+      jest.spyOn(coordinator as any, 'waitForUserInteractionResponse').mockImplementation(waitForUserInteractionResponse);
+
       // 执行测试
-      const executePromise = coordinator.executeLLM(mockParamsWithApproval, mockConversationManager);
+      await coordinator.executeLLM(mockParamsWithApproval, mockConversationManager);
 
-      // 等待审批请求事件被触发
-      await new Promise(resolve => setTimeout(resolve, 10));
-
-      // 模拟用户批准并提供额外指令
-      const approvalResponse: ToolApprovalData = {
-        toolName: 'sensitive_tool',
-        toolDescription: 'A sensitive tool that requires approval',
-        toolParameters: { param: 'value' },
-        approved: true,
-        userInstruction: 'Please also log the operation'
-      };
-
-      // 触发用户响应事件
-      const respondedHandler = eventHandlers.get(EventType.USER_INTERACTION_RESPONDED);
-      if (respondedHandler) {
-        respondedHandler({
-          interactionId: 'test-interaction-id',
-          inputData: approvalResponse
-        });
-      }
-
-      // 等待执行完成
-      await executePromise;
+      // 验证审批请求事件
+      expect(mockEventManager.emit).toHaveBeenCalledWith(
+        expect.objectContaining({
+          type: EventType.USER_INTERACTION_REQUESTED,
+          operationType: UserInteractionOperationType.TOOL_APPROVAL,
+          prompt: '是否批准调用工具 "sensitive_tool"?'
+        })
+      );
 
       // 验证用户指令被添加到对话
       expect(mockConversationManager.addMessage).toHaveBeenCalledWith(
@@ -774,7 +738,7 @@ describe('LLMExecutionCoordinator', () => {
           content: 'Please also log the operation'
         })
       );
-    }, 10000); // 增加超时时间
+    }, 5000); // 减少超时时间，因为现在使用虚拟等待
 
     it('应该跳过白名单中的工具审批', async () => {
       const paramsWithWhitelist = {

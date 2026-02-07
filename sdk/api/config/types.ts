@@ -92,21 +92,9 @@ export type ConfigFile =
   | ScriptConfigFile;
 
 /**
- * 解析后的配置对象（向后兼容，仅用于工作流）
+ * 解析后的配置对象（通用版本）
  */
-export interface ParsedConfig {
-  /** 配置格式 */
-  format: ConfigFormat;
-  /** 工作流配置文件 */
-  workflowConfig: WorkflowConfigFile;
-  /** 原始内容 */
-  rawContent: string;
-}
-
-/**
- * 通用解析后的配置对象（支持多种配置类型）
- */
-export interface ParsedConfigEx<T extends ConfigType = ConfigType> {
+export interface ParsedConfig<T extends ConfigType = ConfigType> {
   /** 配置类型 */
   configType: T;
   /** 配置格式 */
@@ -121,6 +109,12 @@ export interface ParsedConfigEx<T extends ConfigType = ConfigType> {
   rawContent: string;
 }
 
+// 向后兼容的类型别名
+export type ParsedWorkflowConfig = ParsedConfig<ConfigType.WORKFLOW>;
+export type ParsedNodeTemplateConfig = ParsedConfig<ConfigType.NODE_TEMPLATE>;
+export type ParsedTriggerTemplateConfig = ParsedConfig<ConfigType.TRIGGER_TEMPLATE>;
+export type ParsedScriptConfig = ParsedConfig<ConfigType.SCRIPT>;
+
 /**
  * 配置解析器接口
  */
@@ -129,16 +123,25 @@ export interface IConfigParser {
    * 解析配置文件内容
    * @param content 配置文件内容
    * @param format 配置格式
+   * @param configType 配置类型（可选，默认为WORKFLOW）
    * @returns 解析后的配置对象
    */
-  parse(content: string, format: ConfigFormat): ParsedConfig;
+  parse<T extends ConfigType = ConfigType.WORKFLOW>(
+    content: string,
+    format: ConfigFormat,
+    configType?: T
+  ): ParsedConfig<T>;
 
   /**
    * 从文件路径加载并解析配置
    * @param filePath 文件路径
+   * @param configType 配置类型（可选，默认为WORKFLOW）
    * @returns 解析后的配置对象
    */
-  loadFromFile(filePath: string): Promise<ParsedConfig>;
+  loadFromFile<T extends ConfigType = ConfigType.WORKFLOW>(
+    filePath: string,
+    configType?: T
+  ): Promise<ParsedConfig<T>>;
 }
 
 /**

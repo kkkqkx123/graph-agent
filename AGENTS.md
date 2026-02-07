@@ -111,7 +111,7 @@ modular-agent-framework/
 - **Unit tests**: In `__tests__` folders per package
 - **Integration tests**: Across package boundaries
 - **End-to-end tests**: In `apps/` for complete workflows
-- **Run Tests**: `cd <module>; pnpm test <relevant-path of test file>`. Never run all tests at once.
+- **Run Tests**: `cd <module[like sdk]>; pnpm test <relevant-path of test file/folder>`. **Never run all tests at once. pnpm test without files path is not allowed**
 
 ### 4. Build Orchestration
 - Use Turbo for efficient task execution

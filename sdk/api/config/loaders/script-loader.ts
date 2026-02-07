@@ -25,7 +25,7 @@ export class ScriptLoader extends BaseConfigLoader<ConfigType.SCRIPT> {
    */
   async loadAndRegister(filePath: string): Promise<Script> {
     const config = await this.loadFromFile(filePath);
-    const script = config.config as Script;
+    const script = config.config;
 
     try {
       codeService.registerScript(script);

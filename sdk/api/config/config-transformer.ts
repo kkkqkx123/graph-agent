@@ -61,29 +61,46 @@ export class ConfigTransformer implements IConfigTransformer {
    * @param parameters 参数对象
    */
   private replaceParametersInObject(obj: any, parameters: Record<string, any>): void {
-    if (typeof obj === 'string') {
-      // 替换字符串中的参数占位符
-      const regex = /\{\{parameters\.(\w+)\}\}/g;
-      obj = obj.replace(regex, (match, paramName) => {
-        if (parameters[paramName] !== undefined) {
-          return parameters[paramName];
-        }
-        // 如果参数不存在，保留原始占位符
-        return match;
-      });
-    } else if (Array.isArray(obj)) {
+    if (Array.isArray(obj)) {
       // 处理数组
       for (let i = 0; i < obj.length; i++) {
-        this.replaceParametersInObject(obj[i], parameters);
+        if (typeof obj[i] === 'string') {
+          // 直接替换数组中的字符串
+          obj[i] = this.replaceParameterInString(obj[i], parameters);
+        } else {
+          this.replaceParametersInObject(obj[i], parameters);
+        }
       }
     } else if (obj && typeof obj === 'object') {
       // 处理对象
       for (const key in obj) {
         if (obj.hasOwnProperty(key)) {
-          this.replaceParametersInObject(obj[key], parameters);
+          if (typeof obj[key] === 'string') {
+            // 直接替换对象属性中的字符串
+            obj[key] = this.replaceParameterInString(obj[key], parameters);
+          } else {
+            this.replaceParametersInObject(obj[key], parameters);
+          }
         }
       }
     }
+  }
+
+  /**
+   * 替换字符串中的参数占位符
+   * @param str 要处理的字符串
+   * @param parameters 参数对象
+   * @returns 替换后的字符串
+   */
+  private replaceParameterInString(str: string, parameters: Record<string, any>): string {
+    const regex = /\{\{parameters\.(\w+)\}\}/g;
+    return str.replace(regex, (match, paramName) => {
+      if (parameters[paramName] !== undefined) {
+        return parameters[paramName];
+      }
+      // 如果参数不存在，保留原始占位符
+      return match;
+    });
   }
 
   /**

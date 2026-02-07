@@ -8,7 +8,7 @@
  */
 
 import type { ParsedConfig, IConfigParser } from './types';
-import { ConfigFormat } from './types';
+import { ConfigFormat, ConfigType } from './types';
 import type { WorkflowDefinition } from '../../types/workflow';
 import { parseToml } from './toml-parser';
 import { parseJson, stringifyJson } from './json-parser';
@@ -35,16 +35,20 @@ export class ConfigParser implements IConfigParser {
    * @param format 配置格式
    * @returns 解析后的配置对象
    */
-  parse(content: string, format: ConfigFormat): ParsedConfig {
-    let workflowConfig;
+  parse<T extends ConfigType = ConfigType.WORKFLOW>(
+    content: string,
+    format: ConfigFormat,
+    configType?: T
+  ): ParsedConfig<T> {
+    let config;
 
     // 根据格式选择解析器
     switch (format) {
       case ConfigFormat.TOML:
-        workflowConfig = parseToml(content);
+        config = parseToml(content);
         break;
       case ConfigFormat.JSON:
-        workflowConfig = parseJson(content);
+        config = parseJson(content);
         break;
       default:
         throw new ConfigurationError(
@@ -54,8 +58,9 @@ export class ConfigParser implements IConfigParser {
     }
 
     return {
+      configType: (configType || ConfigType.WORKFLOW) as T,
       format,
-      workflowConfig,
+      config: config as any,
       rawContent: content
     };
   }
@@ -65,7 +70,10 @@ export class ConfigParser implements IConfigParser {
    * @param filePath 文件路径
    * @returns 解析后的配置对象
    */
-  async loadFromFile(filePath: string): Promise<ParsedConfig> {
+  async loadFromFile<T extends ConfigType = ConfigType.WORKFLOW>(
+    filePath: string,
+    configType?: T
+  ): Promise<ParsedConfig<T>> {
     const fs = await import('fs/promises');
 
     try {
@@ -76,7 +84,7 @@ export class ConfigParser implements IConfigParser {
       const format = this.detectFormat(filePath);
 
       // 解析配置
-      return this.parse(content, format);
+      return this.parse(content, format, configType);
     } catch (error) {
       if (error instanceof ConfigurationError) {
         throw error;
@@ -98,8 +106,8 @@ export class ConfigParser implements IConfigParser {
    * @param config 解析后的配置
    * @returns 验证结果
    */
-  validate(config: ParsedConfig) {
-    return this.workflowValidator.validate(config.workflowConfig);
+  validate(config: ParsedConfig<ConfigType.WORKFLOW>) {
+    return this.workflowValidator.validate(config.config);
   }
 
   /**
@@ -129,7 +137,7 @@ export class ConfigParser implements IConfigParser {
     }
 
     // 转换为WorkflowDefinition
-    return this.transformer.transformToWorkflow(parsedConfig.workflowConfig, parameters);
+    return this.transformer.transformToWorkflow(parsedConfig.config, parameters);
   }
 
   /**
@@ -157,7 +165,7 @@ export class ConfigParser implements IConfigParser {
     }
 
     // 转换为WorkflowDefinition
-    return this.transformer.transformToWorkflow(parsedConfig.workflowConfig, parameters);
+    return this.transformer.transformToWorkflow(parsedConfig.config, parameters);
   }
 
   /**

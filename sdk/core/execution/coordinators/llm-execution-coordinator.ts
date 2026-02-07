@@ -433,14 +433,17 @@ export class LLMExecutionCoordinator {
         interactionId,
         operationType: UserInteractionOperationType.TOOL_APPROVAL,
         prompt: `是否批准调用工具 "${toolCall.name}"?`,
-        timeout: 0, // 0 表示无超时，一直等待
+        timeout: approvalConfig?.approvalTimeout || 0, // 使用配置的超时时间，默认无限等待
         metadata: {
           toolApproval: toolApprovalData
         }
       });
 
       // 等待USER_INTERACTION_RESPONDED事件
-      const response = await this.waitForUserInteractionResponse(interactionId);
+      const response = await this.waitForUserInteractionResponse(
+        interactionId,
+        approvalConfig?.approvalTimeout || 0
+      );
 
       // 解析审批结果
       const approvalResult = response.inputData as ToolApprovalData;
@@ -474,18 +477,33 @@ export class LLMExecutionCoordinator {
    * 等待用户交互响应
    *
    * @param interactionId 交互ID
+   * @param timeoutMs 超时时间（毫秒），0 表示无限等待
    * @returns 用户响应事件
    */
   private waitForUserInteractionResponse(
-    interactionId: string
+    interactionId: string,
+    timeoutMs: number = 0
   ): Promise<any> {
-    return new Promise((resolve) => {
+    return new Promise((resolve, reject) => {
+      let timeoutId: NodeJS.Timeout | null = null;
+      
       const handler = (event: any) => {
         if (event.interactionId === interactionId) {
+          if (timeoutId) {
+            clearTimeout(timeoutId);
+          }
           this.eventManager.off(EventType.USER_INTERACTION_RESPONDED, handler);
           resolve(event);
         }
       };
+
+      // 只有当 timeoutMs > 0 时才设置超时
+      if (timeoutMs > 0) {
+        timeoutId = setTimeout(() => {
+          this.eventManager.off(EventType.USER_INTERACTION_RESPONDED, handler);
+          reject(new Error(`User interaction timeout after ${timeoutMs}ms`));
+        }, timeoutMs);
+      }
 
       this.eventManager.on(EventType.USER_INTERACTION_RESPONDED, handler);
     });

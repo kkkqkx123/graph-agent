@@ -80,13 +80,13 @@ export function stringifyJson(config: WorkflowConfigFile, pretty: boolean = true
 }
 
 /**
- * 验证JSON内容的基本格式
+ * 验证JSON内容的基本格式（仅检查JSON语法，不验证必需字段）
  * @param content JSON内容字符串
  * @returns 是否有效
  */
 export function validateJsonSyntax(content: string): boolean {
   try {
-    parseJson(content);
+    JSON.parse(content);
     return true;
   } catch (error) {
     return false;
