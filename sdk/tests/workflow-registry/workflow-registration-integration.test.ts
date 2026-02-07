@@ -108,8 +108,10 @@ describe('Workflow加载与注册集成测试', () => {
 
       // 1. 验证工作流定义
       const validationResult = validator.validate(workflow);
-      expect(validationResult.valid).toBe(true);
-      expect(validationResult.errors).toHaveLength(0);
+      expect(validationResult.isOk()).toBe(true);
+      if (validationResult.isErr()) {
+        expect(validationResult.error).toHaveLength(0);
+      }
 
       // 2. 注册工作流
       expect(() => registry.register(workflow)).not.toThrow();
@@ -985,8 +987,10 @@ describe('Workflow加载与注册集成测试', () => {
 
       // 验证应该失败
       const validationResult = validator.validate(invalidWorkflow);
-      expect(validationResult.valid).toBe(false);
-      expect(validationResult.errors.length).toBeGreaterThan(0);
+      expect(validationResult.isErr()).toBe(true);
+      if (validationResult.isErr()) {
+        expect(validationResult.error.length).toBeGreaterThan(0);
+      }
 
       // 注册应该失败
       expect(() => registry.register(invalidWorkflow)).toThrow(ValidationError);

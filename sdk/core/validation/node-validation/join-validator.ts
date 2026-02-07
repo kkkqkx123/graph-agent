@@ -7,6 +7,8 @@ import { z } from 'zod';
 import type { Node } from '../../../types/node';
 import { NodeType } from '../../../types/node';
 import { ValidationError } from '../../../types/errors';
+import type { Result } from '../../../types/result';
+import { ok, err } from '../../../utils/result-utils';
 
 /**
  * Join节点配置schema
@@ -42,19 +44,20 @@ const joinNodeConfigSchema = z.object({
 /**
  * 验证Join节点配置
  * @param node 节点定义
- * @throws ValidationError 当配置无效时抛出
+ * @returns 验证结果
  */
-export function validateJoinNode(node: Node): void {
+export function validateJoinNode(node: Node): Result<Node, ValidationError[]> {
   if (node.type !== NodeType.JOIN) {
-    throw new ValidationError(`Invalid node type for join validator: ${node.type}`, `node.${node.id}`);
+    return err([new ValidationError(`Invalid node type for join validator: ${node.type}`, `node.${node.id}`)]);
   }
 
   const result = joinNodeConfigSchema.safeParse(node.config);
   if (!result.success) {
     const error = result.error.issues[0];
     if (!error) {
-      throw new ValidationError('Invalid join node configuration', `node.${node.id}.config`);
+      return err([new ValidationError('Invalid join node configuration', `node.${node.id}.config`)]);
     }
-    throw new ValidationError(error.message, `node.${node.id}.config.${error.path.join('.')}`);
+    return err([new ValidationError(error.message, `node.${node.id}.config.${error.path.join('.')}`)]);
   }
+  return ok(node);
 }

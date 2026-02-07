@@ -59,7 +59,6 @@ export class GraphValidator {
     options: GraphValidationOptions = {}
   ): Result<GraphData, ValidationError[]> {
     const errorList: ValidationError[] = [];
-    const warningList: ValidationError[] = [];
 
     const opts = {
       checkCycles: true,

@@ -7,6 +7,8 @@ import { z } from 'zod';
 import type { Node } from '../../../types/node';
 import { NodeType } from '../../../types/node';
 import { ValidationError } from '../../../types/errors';
+import type { Result } from '../../../types/result';
+import { ok, err } from '../../../utils/result-utils';
 
 /**
  * Variable节点配置schema
@@ -22,19 +24,20 @@ const variableNodeConfigSchema = z.object({
 /**
  * 验证Variable节点配置
  * @param node 节点定义
- * @throws ValidationError 当配置无效时抛出
+ * @returns 验证结果
  */
-export function validateVariableNode(node: Node): void {
+export function validateVariableNode(node: Node): Result<Node, ValidationError[]> {
   if (node.type !== NodeType.VARIABLE) {
-    throw new ValidationError(`Invalid node type for variable validator: ${node.type}`, `node.${node.id}`);
+    return err([new ValidationError(`Invalid node type for variable validator: ${node.type}`, `node.${node.id}`)]);
   }
 
   const result = variableNodeConfigSchema.safeParse(node.config);
   if (!result.success) {
     const error = result.error.issues[0];
     if (!error) {
-      throw new ValidationError('Invalid variable node configuration', `node.${node.id}.config`);
+      return err([new ValidationError('Invalid variable node configuration', `node.${node.id}.config`)]);
     }
-    throw new ValidationError(error.message, `node.${node.id}.config.${error.path.join('.')}`);
+    return err([new ValidationError(error.message, `node.${node.id}.config.${error.path.join('.')}`)]);
   }
+  return ok(node);
 }

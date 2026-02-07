@@ -1,11 +1,14 @@
 /**
  * 工作流验证器单元测试
+ * 使用Result类型进行错误处理
  */
 
 import { WorkflowValidator } from '../workflow-validator';
 import { NodeType } from '../../../types/node';
 import { EdgeType } from '../../../types/edge';
 import type { WorkflowDefinition } from '../../../types/workflow';
+import type { Result } from '../../../types/result';
+import { ValidationError } from '../../../types/errors';
 
 describe('WorkflowValidator', () => {
   let validator: WorkflowValidator;
@@ -53,36 +56,44 @@ describe('WorkflowValidator', () => {
     it('should validate a valid workflow', () => {
       const workflow = createValidWorkflow();
       const result = validator.validate(workflow);
-      expect(result.valid).toBe(true);
-      expect(result.errors).toHaveLength(0);
+      expect(result.isOk()).toBe(true);
+      expect(result.unwrap()).toEqual(workflow);
     });
 
     it('should return errors for workflow without id', () => {
       const workflow = { ...createValidWorkflow(), id: '' };
       const result = validator.validate(workflow);
-      expect(result.valid).toBe(false);
-      expect(result.errors.some(e => e.field === 'workflow.id')).toBe(true);
+      expect(result.isErr()).toBe(true);
+      if (result.isErr()) {
+        expect(result.error.some(e => e.field === 'workflow.id')).toBe(true);
+      }
     });
 
     it('should return errors for workflow without name', () => {
       const workflow = { ...createValidWorkflow(), name: '' };
       const result = validator.validate(workflow);
-      expect(result.valid).toBe(false);
-      expect(result.errors.some(e => e.field === 'workflow.name')).toBe(true);
+      expect(result.isErr()).toBe(true);
+      if (result.isErr()) {
+        expect(result.error.some(e => e.field === 'workflow.name')).toBe(true);
+      }
     });
 
     it('should return errors for workflow without version', () => {
       const workflow = { ...createValidWorkflow(), version: '' };
       const result = validator.validate(workflow);
-      expect(result.valid).toBe(false);
-      expect(result.errors.some(e => e.field === 'workflow.version')).toBe(true);
+      expect(result.isErr()).toBe(true);
+      if (result.isErr()) {
+        expect(result.error.some(e => e.field === 'workflow.version')).toBe(true);
+      }
     });
 
     it('should return errors for workflow without nodes', () => {
       const workflow = { ...createValidWorkflow(), nodes: [] };
       const result = validator.validate(workflow);
-      expect(result.valid).toBe(false);
-      expect(result.errors.some(e => e.field === 'workflow.nodes')).toBe(true);
+      expect(result.isErr()).toBe(true);
+      if (result.isErr()) {
+        expect(result.error.some(e => e.field === 'workflow.nodes')).toBe(true);
+      }
     });
   });
 
@@ -90,34 +101,43 @@ describe('WorkflowValidator', () => {
     it('should validate workflow with all required basic info', () => {
       const workflow = createValidWorkflow();
       const result = validator.validate(workflow);
-      expect(result.errors.filter(e => e.field?.startsWith('workflow.id') ||
-        e.field?.startsWith('workflow.name') ||
-        e.field?.startsWith('workflow.version') ||
-        e.field?.startsWith('workflow.nodes'))).toHaveLength(0);
+      expect(result.isOk()).toBe(true);
     });
 
     it('should return error for missing id', () => {
       const workflow = { ...createValidWorkflow(), id: '' };
       const result = validator.validate(workflow);
-      expect(result.errors.some(e => e.field === 'workflow.id' && e.message.includes('required'))).toBe(true);
+      expect(result.isErr()).toBe(true);
+      if (result.isErr()) {
+        expect(result.error.some(e => e.field === 'workflow.id' && e.message.includes('required'))).toBe(true);
+      }
     });
 
     it('should return error for missing name', () => {
       const workflow = { ...createValidWorkflow(), name: '' };
       const result = validator.validate(workflow);
-      expect(result.errors.some(e => e.field === 'workflow.name' && e.message.includes('required'))).toBe(true);
+      expect(result.isErr()).toBe(true);
+      if (result.isErr()) {
+        expect(result.error.some(e => e.field === 'workflow.name' && e.message.includes('required'))).toBe(true);
+      }
     });
 
     it('should return error for missing version', () => {
       const workflow = { ...createValidWorkflow(), version: '' };
       const result = validator.validate(workflow);
-      expect(result.errors.some(e => e.field === 'workflow.version' && e.message.includes('required'))).toBe(true);
+      expect(result.isErr()).toBe(true);
+      if (result.isErr()) {
+        expect(result.error.some(e => e.field === 'workflow.version' && e.message.includes('required'))).toBe(true);
+      }
     });
 
     it('should return error for empty nodes array', () => {
       const workflow = { ...createValidWorkflow(), nodes: [] };
       const result = validator.validate(workflow);
-      expect(result.errors.some(e => e.field === 'workflow.nodes' && e.message.includes('at least one'))).toBe(true);
+      expect(result.isErr()).toBe(true);
+      if (result.isErr()) {
+        expect(result.error.some(e => e.field === 'workflow.nodes' && e.message.includes('at least one'))).toBe(true);
+      }
     });
   });
 
@@ -125,7 +145,7 @@ describe('WorkflowValidator', () => {
     it('should validate nodes with unique IDs', () => {
       const workflow = createValidWorkflow();
       const result = validator.validate(workflow);
-      expect(result.errors.filter(e => e.message.includes('unique'))).toHaveLength(0);
+      expect(result.isOk()).toBe(true);
     });
 
     it('should return error for duplicate node IDs', () => {
@@ -151,8 +171,10 @@ describe('WorkflowValidator', () => {
         ]
       };
       const result = validator.validate(workflow);
-      expect(result.valid).toBe(false);
-      expect(result.errors.some(e => e.message.includes('unique'))).toBe(true);
+      expect(result.isErr()).toBe(true);
+      if (result.isErr()) {
+        expect(result.error.some(e => e.message.includes('unique'))).toBe(true);
+      }
     });
 
     it('should return error for node without id', () => {
@@ -170,9 +192,11 @@ describe('WorkflowValidator', () => {
         ]
       };
       const result = validator.validate(workflow);
-      expect(result.valid).toBe(false);
-      expect(result.errors.some(e => e.field?.includes('id') && e.message.includes('required'))).toBe(true);
-      });
+      expect(result.isErr()).toBe(true);
+      if (result.isErr()) {
+        expect(result.error.some(e => e.field?.includes('id') && e.message.includes('required'))).toBe(true);
+      }
+    });
 
     it('should return error for node without name', () => {
       const workflow: WorkflowDefinition = {
@@ -189,11 +213,13 @@ describe('WorkflowValidator', () => {
         ]
       };
       const result = validator.validate(workflow);
-      expect(result.valid).toBe(false);
-      expect(result.errors.some(e => e.field?.includes('name') && e.message.includes('required'))).toBe(true);
-      });
+      expect(result.isErr()).toBe(true);
+      if (result.isErr()) {
+        expect(result.error.some(e => e.field?.includes('name') && e.message.includes('required'))).toBe(true);
+      }
+    });
 
-      it('should return error for node without type', () => {
+    it('should return error for node without type', () => {
       const workflow: WorkflowDefinition = {
         ...createValidWorkflow(),
         nodes: [
@@ -208,8 +234,10 @@ describe('WorkflowValidator', () => {
         ]
       };
       const result = validator.validate(workflow);
-      expect(result.valid).toBe(false);
-      expect(result.errors.some(e => e.field?.includes('type') && e.message.includes('required'))).toBe(true);
+      expect(result.isErr()).toBe(true);
+      if (result.isErr()) {
+        expect(result.error.some(e => e.field?.includes('type') && e.message.includes('required'))).toBe(true);
+      }
     });
 
     it('should return error for workflow without START node', () => {
@@ -235,8 +263,10 @@ describe('WorkflowValidator', () => {
         ]
       };
       const result = validator.validate(workflow);
-      expect(result.valid).toBe(false);
-      expect(result.errors.some(e => e.message.includes('START node'))).toBe(true);
+      expect(result.isErr()).toBe(true);
+      if (result.isErr()) {
+        expect(result.error.some(e => e.message.includes('START node'))).toBe(true);
+      }
     });
 
     it('should return error for workflow with multiple START nodes', () => {
@@ -262,8 +292,10 @@ describe('WorkflowValidator', () => {
         ]
       };
       const result = validator.validate(workflow);
-      expect(result.valid).toBe(false);
-      expect(result.errors.some(e => e.message.includes('exactly one START node'))).toBe(true);
+      expect(result.isErr()).toBe(true);
+      if (result.isErr()) {
+        expect(result.error.some(e => e.message.includes('exactly one START node'))).toBe(true);
+      }
     });
 
     it('should return error for workflow without END node', () => {
@@ -289,8 +321,10 @@ describe('WorkflowValidator', () => {
         ]
       };
       const result = validator.validate(workflow);
-      expect(result.valid).toBe(false);
-      expect(result.errors.some(e => e.message.includes('END node'))).toBe(true);
+      expect(result.isErr()).toBe(true);
+      if (result.isErr()) {
+        expect(result.error.some(e => e.message.includes('END node'))).toBe(true);
+      }
     });
 
     it('should return error for triggered subgraph without START_FROM_TRIGGER node', () => {
@@ -308,8 +342,10 @@ describe('WorkflowValidator', () => {
         ]
       };
       const result = validator.validate(workflow);
-      expect(result.valid).toBe(false);
-      expect(result.errors.some(e => e.message.includes('START_FROM_TRIGGER'))).toBe(true);
+      expect(result.isErr()).toBe(true);
+      if (result.isErr()) {
+        expect(result.error.some(e => e.message.includes('START_FROM_TRIGGER'))).toBe(true);
+      }
     });
 
     it('should return error for triggered subgraph without CONTINUE_FROM_TRIGGER node', () => {
@@ -327,8 +363,10 @@ describe('WorkflowValidator', () => {
         ]
       };
       const result = validator.validate(workflow);
-      expect(result.valid).toBe(false);
-      expect(result.errors.some(e => e.message.includes('CONTINUE_FROM_TRIGGER'))).toBe(true);
+      expect(result.isErr()).toBe(true);
+      if (result.isErr()) {
+        expect(result.error.some(e => e.message.includes('CONTINUE_FROM_TRIGGER'))).toBe(true);
+      }
     });
 
     it('should return error for triggered subgraph with START node', () => {
@@ -362,8 +400,10 @@ describe('WorkflowValidator', () => {
         ]
       };
       const result = validator.validate(workflow);
-      expect(result.valid).toBe(false);
-      expect(result.errors.some(e => e.message.includes('cannot contain START node'))).toBe(true);
+      expect(result.isErr()).toBe(true);
+      if (result.isErr()) {
+        expect(result.error.some(e => e.message.includes('cannot contain START node'))).toBe(true);
+      }
     });
 
     it('should return error for triggered subgraph with END node', () => {
@@ -397,17 +437,18 @@ describe('WorkflowValidator', () => {
         ]
       };
       const result = validator.validate(workflow);
-      expect(result.valid).toBe(false);
-      expect(result.errors.some(e => e.message.includes('cannot contain END node'))).toBe(true);
+      expect(result.isErr()).toBe(true);
+      if (result.isErr()) {
+        expect(result.error.some(e => e.message.includes('cannot contain END node'))).toBe(true);
+      }
     });
-
   });
 
   describe('validateEdges', () => {
     it('should validate edges with unique IDs', () => {
       const workflow = createValidWorkflow();
       const result = validator.validate(workflow);
-      expect(result.errors.filter(e => e.message.includes('unique'))).toHaveLength(0);
+      expect(result.isOk()).toBe(true);
     });
 
     it('should return error for duplicate edge IDs', () => {
@@ -429,8 +470,10 @@ describe('WorkflowValidator', () => {
         ]
       };
       const result = validator.validate(workflow);
-      expect(result.valid).toBe(false);
-      expect(result.errors.some(e => e.message.includes('unique'))).toBe(true);
+      expect(result.isErr()).toBe(true);
+      if (result.isErr()) {
+        expect(result.error.some(e => e.message.includes('unique'))).toBe(true);
+      }
     });
 
     it('should return error for edge without id', () => {
@@ -446,8 +489,10 @@ describe('WorkflowValidator', () => {
         ]
       };
       const result = validator.validate(workflow);
-      expect(result.valid).toBe(false);
-      expect(result.errors.some(e => e.field?.includes('id') && e.message.includes('required'))).toBe(true);
+      expect(result.isErr()).toBe(true);
+      if (result.isErr()) {
+        expect(result.error.some(e => e.field?.includes('id') && e.message.includes('required'))).toBe(true);
+      }
     });
 
     it('should return error for edge without sourceNodeId', () => {
@@ -463,8 +508,10 @@ describe('WorkflowValidator', () => {
         ]
       };
       const result = validator.validate(workflow);
-      expect(result.valid).toBe(false);
-      expect(result.errors.some(e => e.field?.includes('sourceNodeId') && e.message.includes('required'))).toBe(true);
+      expect(result.isErr()).toBe(true);
+      if (result.isErr()) {
+        expect(result.error.some(e => e.field?.includes('sourceNodeId') && e.message.includes('required'))).toBe(true);
+      }
     });
 
     it('should return error for edge without targetNodeId', () => {
@@ -480,8 +527,10 @@ describe('WorkflowValidator', () => {
         ]
       };
       const result = validator.validate(workflow);
-      expect(result.valid).toBe(false);
-      expect(result.errors.some(e => e.field?.includes('targetNodeId') && e.message.includes('required'))).toBe(true);
+      expect(result.isErr()).toBe(true);
+      if (result.isErr()) {
+        expect(result.error.some(e => e.field?.includes('targetNodeId') && e.message.includes('required'))).toBe(true);
+      }
     });
 
     it('should return error for edge without type', () => {
@@ -497,8 +546,10 @@ describe('WorkflowValidator', () => {
         ]
       };
       const result = validator.validate(workflow);
-      expect(result.valid).toBe(false);
-      expect(result.errors.some(e => e.field?.includes('type') && e.message.includes('required'))).toBe(true);
+      expect(result.isErr()).toBe(true);
+      if (result.isErr()) {
+        expect(result.error.some(e => e.field?.includes('type') && e.message.includes('required'))).toBe(true);
+      }
     });
 
     it('should return error for edge with non-existent source node', () => {
@@ -514,8 +565,10 @@ describe('WorkflowValidator', () => {
         ]
       };
       const result = validator.validate(workflow);
-      expect(result.valid).toBe(false);
-      expect(result.errors.some(e => e.message.includes('source node not found'))).toBe(true);
+      expect(result.isErr()).toBe(true);
+      if (result.isErr()) {
+        expect(result.error.some(e => e.message.includes('source node not found'))).toBe(true);
+      }
     });
 
     it('should return error for edge with non-existent target node', () => {
@@ -531,8 +584,10 @@ describe('WorkflowValidator', () => {
         ]
       };
       const result = validator.validate(workflow);
-      expect(result.valid).toBe(false);
-      expect(result.errors.some(e => e.message.includes('target node not found'))).toBe(true);
+      expect(result.isErr()).toBe(true);
+      if (result.isErr()) {
+        expect(result.error.some(e => e.message.includes('target node not found'))).toBe(true);
+      }
     });
   });
 
@@ -540,7 +595,7 @@ describe('WorkflowValidator', () => {
     it('should validate workflow with correct references', () => {
       const workflow = createValidWorkflow();
       const result = validator.validate(workflow);
-      expect(result.errors.filter(e => e.message.includes('not found'))).toHaveLength(0);
+      expect(result.isOk()).toBe(true);
     });
 
     it('should return error for edge with non-existent source node', () => {
@@ -556,8 +611,10 @@ describe('WorkflowValidator', () => {
         ]
       };
       const result = validator.validate(workflow);
-      expect(result.valid).toBe(false);
-      expect(result.errors.some(e => e.message.includes('source node not found'))).toBe(true);
+      expect(result.isErr()).toBe(true);
+      if (result.isErr()) {
+        expect(result.error.some(e => e.message.includes('source node not found'))).toBe(true);
+      }
     });
 
     it('should return error for edge with non-existent target node', () => {
@@ -573,8 +630,10 @@ describe('WorkflowValidator', () => {
         ]
       };
       const result = validator.validate(workflow);
-      expect(result.valid).toBe(false);
-      expect(result.errors.some(e => e.message.includes('target node not found'))).toBe(true);
+      expect(result.isErr()).toBe(true);
+      if (result.isErr()) {
+        expect(result.error.some(e => e.message.includes('target node not found'))).toBe(true);
+      }
     });
   });
 
@@ -594,7 +653,7 @@ describe('WorkflowValidator', () => {
         }
       };
       const result = validator.validate(workflow);
-      expect(result.errors.filter(e => e.field?.includes('config'))).toHaveLength(0);
+      expect(result.isOk()).toBe(true);
     });
 
     it('should return error for negative timeout', () => {
@@ -605,8 +664,10 @@ describe('WorkflowValidator', () => {
         }
       };
       const result = validator.validate(workflow);
-      expect(result.valid).toBe(false);
-      expect(result.errors.some(e => e.field?.includes('timeout') && e.message.includes('non-negative'))).toBe(true);
+      expect(result.isErr()).toBe(true);
+      if (result.isErr()) {
+        expect(result.error.some(e => e.field?.includes('timeout') && e.message.includes('non-negative'))).toBe(true);
+      }
     });
 
     it('should return error for negative maxSteps', () => {
@@ -617,8 +678,10 @@ describe('WorkflowValidator', () => {
         }
       };
       const result = validator.validate(workflow);
-      expect(result.valid).toBe(false);
-      expect(result.errors.some(e => e.field?.includes('maxSteps') && e.message.includes('non-negative'))).toBe(true);
+      expect(result.isErr()).toBe(true);
+      if (result.isErr()) {
+        expect(result.error.some(e => e.field?.includes('maxSteps') && e.message.includes('non-negative'))).toBe(true);
+      }
     });
 
     it('should return error for negative maxRetries', () => {
@@ -631,8 +694,10 @@ describe('WorkflowValidator', () => {
         }
       };
       const result = validator.validate(workflow);
-      expect(result.valid).toBe(false);
-      expect(result.errors.some(e => e.field?.includes('maxRetries') && e.message.includes('non-negative'))).toBe(true);
+      expect(result.isErr()).toBe(true);
+      if (result.isErr()) {
+        expect(result.error.some(e => e.field?.includes('maxRetries') && e.message.includes('non-negative'))).toBe(true);
+      }
     });
 
     it('should return error for negative retryDelay', () => {
@@ -645,8 +710,10 @@ describe('WorkflowValidator', () => {
         }
       };
       const result = validator.validate(workflow);
-      expect(result.valid).toBe(false);
-      expect(result.errors.some(e => e.field?.includes('retryDelay') && e.message.includes('non-negative'))).toBe(true);
+      expect(result.isErr()).toBe(true);
+      if (result.isErr()) {
+        expect(result.error.some(e => e.field?.includes('retryDelay') && e.message.includes('non-negative'))).toBe(true);
+      }
     });
 
     it('should validate workflow with zero timeout', () => {
@@ -657,7 +724,7 @@ describe('WorkflowValidator', () => {
         }
       };
       const result = validator.validate(workflow);
-      expect(result.errors.filter(e => e.field?.includes('timeout'))).toHaveLength(0);
+      expect(result.isOk()).toBe(true);
     });
 
     it('should validate workflow with zero maxSteps', () => {
@@ -668,7 +735,7 @@ describe('WorkflowValidator', () => {
         }
       };
       const result = validator.validate(workflow);
-      expect(result.errors.filter(e => e.field?.includes('maxSteps'))).toHaveLength(0);
+      expect(result.isOk()).toBe(true);
     });
   });
 
@@ -750,8 +817,8 @@ describe('WorkflowValidator', () => {
         }
       };
       const result = validator.validate(workflow);
-      expect(result.valid).toBe(true);
-      expect(result.errors).toHaveLength(0);
+      expect(result.isOk()).toBe(true);
+      expect(result.unwrap()).toEqual(workflow);
     });
   });
 });

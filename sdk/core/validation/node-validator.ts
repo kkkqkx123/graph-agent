@@ -59,21 +59,8 @@ export class NodeValidator {
    * @returns 验证结果
    */
   private validateNodeConfig(node: Node): Result<Node, ValidationError[]> {
-    try {
-      // 调用 node-validation 目录中的验证函数
-      validateNodeByType(node);
-      return ok(node);
-    } catch (error) {
-      // 将 ValidationError 转换为 Result
-      if (error instanceof ValidationError) {
-        return err([error]);
-      }
-      // 处理其他类型的错误
-      return err([new ValidationError(
-        error instanceof Error ? error.message : 'Unknown validation error',
-        `node.${node.id}.config`
-      )]);
-    }
+    // 调用 node-validation 目录中的验证函数
+    return validateNodeByType(node);
   }
 
   /**

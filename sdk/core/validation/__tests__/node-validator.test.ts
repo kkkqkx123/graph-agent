@@ -1,5 +1,6 @@
 /**
  * 节点验证器单元测试
+ * 使用Result类型进行错误处理
  */
 
 import { NodeValidator } from '../node-validator';
@@ -24,8 +25,8 @@ describe('NodeValidator', () => {
         outgoingEdgeIds: []
       };
       const result = validator.validateNode(node);
-      expect(result.valid).toBe(true);
-      expect(result.errors).toHaveLength(0);
+      expect(result.isOk()).toBe(true);
+      expect(result.unwrap()).toEqual(node);
     });
 
     it('should validate a valid END node', () => {
@@ -38,8 +39,8 @@ describe('NodeValidator', () => {
         outgoingEdgeIds: []
       };
       const result = validator.validateNode(node);
-      expect(result.valid).toBe(true);
-      expect(result.errors).toHaveLength(0);
+      expect(result.isOk()).toBe(true);
+      expect(result.unwrap()).toEqual(node);
     });
 
     it('should return error for node without id', () => {
@@ -48,8 +49,10 @@ describe('NodeValidator', () => {
         type: NodeType.START
       } as Node;
       const result = validator.validateNode(node);
-      expect(result.valid).toBe(false);
-      expect(result.errors.some(e => e.field === 'node.id')).toBe(true);
+      expect(result.isErr()).toBe(true);
+      if (result.isErr()) {
+        expect(result.error.some(e => e.field === 'node.id')).toBe(true);
+      }
     });
 
     it('should return error for node without name', () => {
@@ -58,8 +61,10 @@ describe('NodeValidator', () => {
         type: NodeType.START
       } as Node;
       const result = validator.validateNode(node);
-      expect(result.valid).toBe(false);
-      expect(result.errors.some(e => e.field === 'node.name')).toBe(true);
+      expect(result.isErr()).toBe(true);
+      if (result.isErr()) {
+        expect(result.error.some(e => e.field === 'node.name')).toBe(true);
+      }
     });
 
     it('should return error for node without type', () => {
@@ -68,8 +73,10 @@ describe('NodeValidator', () => {
         name: 'Test'
       } as Node;
       const result = validator.validateNode(node);
-      expect(result.valid).toBe(false);
-      expect(result.errors.some(e => e.field === 'node.type')).toBe(true);
+      expect(result.isErr()).toBe(true);
+      if (result.isErr()) {
+        expect(result.error.some(e => e.field === 'node.type')).toBe(true);
+      }
     });
   });
 
@@ -88,8 +95,8 @@ describe('NodeValidator', () => {
         outgoingEdgeIds: []
       };
       const result = validator.validateNode(node);
-      expect(result.valid).toBe(true);
-      expect(result.errors).toHaveLength(0);
+      expect(result.isOk()).toBe(true);
+      expect(result.unwrap()).toEqual(node);
     });
 
     it('should return error for VARIABLE node without variableName', () => {
@@ -105,8 +112,10 @@ describe('NodeValidator', () => {
         outgoingEdgeIds: []
       };
       const result = validator.validateNode(node);
-      expect(result.valid).toBe(false);
-      expect(result.errors.some(e => e.field?.includes('variableName'))).toBe(true);
+      expect(result.isErr()).toBe(true);
+      if (result.isErr()) {
+        expect(result.error.some(e => e.field?.includes('variableName'))).toBe(true);
+      }
     });
 
     it('should return error for VARIABLE node without variableType', () => {
@@ -122,8 +131,10 @@ describe('NodeValidator', () => {
         outgoingEdgeIds: []
       };
       const result = validator.validateNode(node);
-      expect(result.valid).toBe(false);
-      expect(result.errors.some(e => e.field?.includes('variableType'))).toBe(true);
+      expect(result.isErr()).toBe(true);
+      if (result.isErr()) {
+        expect(result.error.some(e => e.field?.includes('variableType'))).toBe(true);
+      }
     });
 
     it('should return error for VARIABLE node without expression', () => {
@@ -139,8 +150,10 @@ describe('NodeValidator', () => {
         outgoingEdgeIds: []
       };
       const result = validator.validateNode(node);
-      expect(result.valid).toBe(false);
-      expect(result.errors.some(e => e.field?.includes('expression'))).toBe(true);
+      expect(result.isErr()).toBe(true);
+      if (result.isErr()) {
+        expect(result.error.some(e => e.field?.includes('expression'))).toBe(true);
+      }
     });
   });
 
@@ -151,31 +164,35 @@ describe('NodeValidator', () => {
         name: 'Fork',
         type: NodeType.FORK,
         config: {
-          forkId: 'fork-1',
-          forkStrategy: 'SERIAL'
+          forkPathIds: ['path-1', 'path-2'],
+          forkStrategy: 'serial',
+          childNodeIds: ['child-1', 'child-2']
         },
         incomingEdgeIds: [],
         outgoingEdgeIds: []
       };
       const result = validator.validateNode(node);
-      expect(result.valid).toBe(true);
-      expect(result.errors).toHaveLength(0);
+      expect(result.isOk()).toBe(true);
+      expect(result.unwrap()).toEqual(node);
     });
 
-    it('should return error for FORK node without forkId', () => {
+    it('should return error for FORK node without forkPathIds', () => {
       const node: Node = {
         id: 'node-1',
         name: 'Fork',
         type: NodeType.FORK,
         config: {
-          forkStrategy: 'serial'
+          forkStrategy: 'serial',
+          childNodeIds: ['child-1']
         },
         incomingEdgeIds: [],
         outgoingEdgeIds: []
       };
       const result = validator.validateNode(node);
-      expect(result.valid).toBe(false);
-      expect(result.errors.some(e => e.field?.includes('forkId'))).toBe(true);
+      expect(result.isErr()).toBe(true);
+      if (result.isErr()) {
+        expect(result.error.some(e => e.field?.includes('forkPathIds'))).toBe(true);
+      }
     });
 
     it('should return error for FORK node without forkStrategy', () => {
@@ -184,14 +201,17 @@ describe('NodeValidator', () => {
         name: 'Fork',
         type: NodeType.FORK,
         config: {
-          forkId: 'fork-1'
+          forkPathIds: ['path-1'],
+          childNodeIds: ['child-1']
         },
         incomingEdgeIds: [],
         outgoingEdgeIds: []
       };
       const result = validator.validateNode(node);
-      expect(result.valid).toBe(false);
-      expect(result.errors.some(e => e.field?.includes('forkStrategy'))).toBe(true);
+      expect(result.isErr()).toBe(true);
+      if (result.isErr()) {
+        expect(result.error.some(e => e.field?.includes('forkStrategy'))).toBe(true);
+      }
     });
   });
 
@@ -202,15 +222,16 @@ describe('NodeValidator', () => {
         name: 'Join',
         type: NodeType.JOIN,
         config: {
-          joinId: 'join-1',
-          joinStrategy: 'ALL_COMPLETED'
+          forkPathIds: ['path-1', 'path-2'],
+          joinStrategy: 'ALL_COMPLETED',
+          mainPathId: 'path-1'
         },
         incomingEdgeIds: [],
         outgoingEdgeIds: []
       };
       const result = validator.validateNode(node);
-      expect(result.valid).toBe(true);
-      expect(result.errors).toHaveLength(0);
+      expect(result.isOk()).toBe(true);
+      expect(result.unwrap()).toEqual(node);
     });
 
     it('should validate a valid JOIN node with SUCCESS_COUNT_THRESHOLD', () => {
@@ -219,32 +240,36 @@ describe('NodeValidator', () => {
         name: 'Join',
         type: NodeType.JOIN,
         config: {
-          joinId: 'join-1',
+          forkPathIds: ['path-1', 'path-2'],
           joinStrategy: 'SUCCESS_COUNT_THRESHOLD',
-          threshold: 2
+          threshold: 2,
+          mainPathId: 'path-1'
         },
         incomingEdgeIds: [],
         outgoingEdgeIds: []
       };
       const result = validator.validateNode(node);
-      expect(result.valid).toBe(true);
-      expect(result.errors).toHaveLength(0);
+      expect(result.isOk()).toBe(true);
+      expect(result.unwrap()).toEqual(node);
     });
 
-    it('should return error for JOIN node without joinId', () => {
+    it('should return error for JOIN node without forkPathIds', () => {
       const node: Node = {
         id: 'node-1',
         name: 'Join',
         type: NodeType.JOIN,
         config: {
-          joinStrategy: 'ALL_COMPLETED'
+          joinStrategy: 'ALL_COMPLETED',
+          mainPathId: 'path-1'
         },
         incomingEdgeIds: [],
         outgoingEdgeIds: []
       };
       const result = validator.validateNode(node);
-      expect(result.valid).toBe(false);
-      expect(result.errors.some(e => e.field?.includes('joinId'))).toBe(true);
+      expect(result.isErr()).toBe(true);
+      if (result.isErr()) {
+        expect(result.error.some(e => e.field?.includes('forkPathIds'))).toBe(true);
+      }
     });
 
     it('should return error for JOIN node without joinStrategy', () => {
@@ -253,14 +278,17 @@ describe('NodeValidator', () => {
         name: 'Join',
         type: NodeType.JOIN,
         config: {
-          joinId: 'join-1'
+          forkPathIds: ['path-1'],
+          mainPathId: 'path-1'
         },
         incomingEdgeIds: [],
         outgoingEdgeIds: []
       };
       const result = validator.validateNode(node);
-      expect(result.valid).toBe(false);
-      expect(result.errors.some(e => e.field?.includes('joinStrategy'))).toBe(true);
+      expect(result.isErr()).toBe(true);
+      if (result.isErr()) {
+        expect(result.error.some(e => e.field?.includes('joinStrategy'))).toBe(true);
+      }
     });
 
     it('should return error for JOIN node with SUCCESS_COUNT_THRESHOLD but no threshold', () => {
@@ -269,15 +297,18 @@ describe('NodeValidator', () => {
         name: 'Join',
         type: NodeType.JOIN,
         config: {
-          joinId: 'join-1',
-          joinStrategy: 'SUCCESS_COUNT_THRESHOLD'
+          forkPathIds: ['path-1'],
+          joinStrategy: 'SUCCESS_COUNT_THRESHOLD',
+          mainPathId: 'path-1'
         },
         incomingEdgeIds: [],
         outgoingEdgeIds: []
       };
       const result = validator.validateNode(node);
-      expect(result.valid).toBe(false);
-      expect(result.errors.some(e => e.field?.includes('threshold'))).toBe(true);
+      expect(result.isErr()).toBe(true);
+      if (result.isErr()) {
+        expect(result.error.some(e => e.field?.includes('threshold'))).toBe(true);
+      }
     });
   });
 
@@ -299,8 +330,8 @@ describe('NodeValidator', () => {
         outgoingEdgeIds: []
       };
       const result = validator.validateNode(node);
-      expect(result.valid).toBe(true);
-      expect(result.errors).toHaveLength(0);
+      expect(result.isOk()).toBe(true);
+      expect(result.unwrap()).toEqual(node);
     });
 
     it('should return error for CODE node without scriptName', () => {
@@ -319,8 +350,10 @@ describe('NodeValidator', () => {
         outgoingEdgeIds: []
       };
       const result = validator.validateNode(node);
-      expect(result.valid).toBe(false);
-      expect(result.errors.some(e => e.field?.includes('scriptName'))).toBe(true);
+      expect(result.isErr()).toBe(true);
+      if (result.isErr()) {
+        expect(result.error.some(e => e.field?.includes('scriptName'))).toBe(true);
+      }
     });
 
     it('should return error for CODE node without scriptType', () => {
@@ -339,8 +372,10 @@ describe('NodeValidator', () => {
         outgoingEdgeIds: []
       };
       const result = validator.validateNode(node);
-      expect(result.valid).toBe(false);
-      expect(result.errors.some(e => e.field?.includes('scriptType'))).toBe(true);
+      expect(result.isErr()).toBe(true);
+      if (result.isErr()) {
+        expect(result.error.some(e => e.field?.includes('scriptType'))).toBe(true);
+      }
     });
 
     it('should return error for CODE node without risk', () => {
@@ -359,11 +394,13 @@ describe('NodeValidator', () => {
         outgoingEdgeIds: []
       };
       const result = validator.validateNode(node);
-      expect(result.valid).toBe(false);
-      expect(result.errors.some(e => e.field?.includes('risk'))).toBe(true);
+      expect(result.isErr()).toBe(true);
+      if (result.isErr()) {
+        expect(result.error.some(e => e.field?.includes('risk'))).toBe(true);
+      }
     });
 
-    it('should return error for CODE node without timeout', () => {
+    it('should validate CODE node without timeout', () => {
       const node: Node = {
         id: 'node-1',
         name: 'Code',
@@ -380,10 +417,10 @@ describe('NodeValidator', () => {
       };
       const result = validator.validateNode(node);
       // timeout is now optional, so this should be valid
-      expect(result.valid).toBe(true);
+      expect(result.isOk()).toBe(true);
     });
 
-    it('should return error for CODE node without retries', () => {
+    it('should validate CODE node without retries', () => {
       const node: Node = {
         id: 'node-1',
         name: 'Code',
@@ -400,7 +437,7 @@ describe('NodeValidator', () => {
       };
       const result = validator.validateNode(node);
       // retries is now optional, so this should be valid
-      expect(result.valid).toBe(true);
+      expect(result.isOk()).toBe(true);
     });
   });
 
@@ -417,8 +454,8 @@ describe('NodeValidator', () => {
         outgoingEdgeIds: []
       };
       const result = validator.validateNode(node);
-      expect(result.valid).toBe(true);
-      expect(result.errors).toHaveLength(0);
+      expect(result.isOk()).toBe(true);
+      expect(result.unwrap()).toEqual(node);
     });
 
     it('should return error for LLM node without profileId', () => {
@@ -431,8 +468,10 @@ describe('NodeValidator', () => {
         outgoingEdgeIds: []
       };
       const result = validator.validateNode(node);
-      expect(result.valid).toBe(false);
-      expect(result.errors.some(e => e.field?.includes('profileId'))).toBe(true);
+      expect(result.isErr()).toBe(true);
+      if (result.isErr()) {
+        expect(result.error.some(e => e.field?.includes('profileId'))).toBe(true);
+      }
     });
   });
 
@@ -456,8 +495,8 @@ describe('NodeValidator', () => {
         outgoingEdgeIds: []
       };
       const result = validator.validateNode(node);
-      expect(result.valid).toBe(true);
-      expect(result.errors).toHaveLength(0);
+      expect(result.isOk()).toBe(true);
+      expect(result.unwrap()).toEqual(node);
     });
 
     it('should validate a valid USER_INTERACTION node with ADD_MESSAGE operation', () => {
@@ -478,8 +517,8 @@ describe('NodeValidator', () => {
         outgoingEdgeIds: []
       };
       const result = validator.validateNode(node);
-      expect(result.valid).toBe(true);
-      expect(result.errors).toHaveLength(0);
+      expect(result.isOk()).toBe(true);
+      expect(result.unwrap()).toEqual(node);
     });
 
     it('should return error for USER_INTERACTION node without operationType', () => {
@@ -492,8 +531,10 @@ describe('NodeValidator', () => {
         outgoingEdgeIds: []
       };
       const result = validator.validateNode(node);
-      expect(result.valid).toBe(false);
-      expect(result.errors.some(e => e.field?.includes('operationType'))).toBe(true);
+      expect(result.isErr()).toBe(true);
+      if (result.isErr()) {
+        expect(result.error.some(e => e.field?.includes('operationType'))).toBe(true);
+      }
     });
 
     it('should return error for USER_INTERACTION node with UPDATE_VARIABLES but no variables', () => {
@@ -509,7 +550,7 @@ describe('NodeValidator', () => {
         outgoingEdgeIds: []
       };
       const result = validator.validateNode(node);
-      expect(result.valid).toBe(false);
+      expect(result.isErr()).toBe(true);
     });
 
     it('should return error for USER_INTERACTION node with ADD_MESSAGE but no message', () => {
@@ -525,7 +566,7 @@ describe('NodeValidator', () => {
         outgoingEdgeIds: []
       };
       const result = validator.validateNode(node);
-      expect(result.valid).toBe(false);
+      expect(result.isErr()).toBe(true);
     });
 
     it('should return error for USER_INTERACTION node without prompt', () => {
@@ -545,8 +586,10 @@ describe('NodeValidator', () => {
         outgoingEdgeIds: []
       };
       const result = validator.validateNode(node);
-      expect(result.valid).toBe(false);
-      expect(result.errors.some(e => e.field?.includes('prompt'))).toBe(true);
+      expect(result.isErr()).toBe(true);
+      if (result.isErr()) {
+        expect(result.error.some(e => e.field?.includes('prompt'))).toBe(true);
+      }
     });
   });
 
@@ -566,8 +609,8 @@ describe('NodeValidator', () => {
         outgoingEdgeIds: []
       };
       const result = validator.validateNode(node);
-      expect(result.valid).toBe(true);
-      expect(result.errors).toHaveLength(0);
+      expect(result.isOk()).toBe(true);
+      expect(result.unwrap()).toEqual(node);
     });
 
     it('should return error for ROUTE node without routes', () => {
@@ -582,8 +625,10 @@ describe('NodeValidator', () => {
         outgoingEdgeIds: []
       };
       const result = validator.validateNode(node);
-      expect(result.valid).toBe(false);
-      expect(result.errors.some(e => e.field?.includes('routes'))).toBe(true);
+      expect(result.isErr()).toBe(true);
+      if (result.isErr()) {
+        expect(result.error.some(e => e.field?.includes('routes'))).toBe(true);
+      }
     });
 
     it('should return error for ROUTE node without route condition', () => {
@@ -598,8 +643,10 @@ describe('NodeValidator', () => {
         outgoingEdgeIds: []
       };
       const result = validator.validateNode(node);
-      expect(result.valid).toBe(false);
-      expect(result.errors.some(e => e.field?.includes('condition'))).toBe(true);
+      expect(result.isErr()).toBe(true);
+      if (result.isErr()) {
+        expect(result.error.some(e => e.field?.includes('condition'))).toBe(true);
+      }
     });
 
     it('should return error for ROUTE node without route targetNodeId', () => {
@@ -614,8 +661,10 @@ describe('NodeValidator', () => {
         outgoingEdgeIds: []
       };
       const result = validator.validateNode(node);
-      expect(result.valid).toBe(false);
-      expect(result.errors.some(e => e.field?.includes('targetNodeId'))).toBe(true);
+      expect(result.isErr()).toBe(true);
+      if (result.isErr()) {
+        expect(result.error.some(e => e.field?.includes('targetNodeId'))).toBe(true);
+      }
     });
   });
 
@@ -635,8 +684,8 @@ describe('NodeValidator', () => {
         outgoingEdgeIds: []
       };
       const result = validator.validateNode(node);
-      expect(result.valid).toBe(true);
-      expect(result.errors).toHaveLength(0);
+      expect(result.isOk()).toBe(true);
+      expect(result.unwrap()).toEqual(node);
     });
 
     it('should validate a valid CONTEXT_PROCESSOR node with insert operation', () => {
@@ -657,8 +706,8 @@ describe('NodeValidator', () => {
         outgoingEdgeIds: []
       };
       const result = validator.validateNode(node);
-      expect(result.valid).toBe(true);
-      expect(result.errors).toHaveLength(0);
+      expect(result.isOk()).toBe(true);
+      expect(result.unwrap()).toEqual(node);
     });
 
     it('should return error for CONTEXT_PROCESSOR node without operation', () => {
@@ -671,8 +720,10 @@ describe('NodeValidator', () => {
         outgoingEdgeIds: []
       };
       const result = validator.validateNode(node);
-      expect(result.valid).toBe(false);
-      expect(result.errors.some(e => e.field?.includes('operation'))).toBe(true);
+      expect(result.isErr()).toBe(true);
+      if (result.isErr()) {
+        expect(result.error.some(e => e.field?.includes('operation'))).toBe(true);
+      }
     });
 
     it('should return error for CONTEXT_PROCESSOR node with missing operation-specific config', () => {
@@ -687,7 +738,7 @@ describe('NodeValidator', () => {
         outgoingEdgeIds: []
       };
       const result = validator.validateNode(node);
-      expect(result.valid).toBe(false);
+      expect(result.isErr()).toBe(true);
     });
   });
 
@@ -709,8 +760,8 @@ describe('NodeValidator', () => {
         outgoingEdgeIds: []
       };
       const result = validator.validateNode(node);
-      expect(result.valid).toBe(true);
-      expect(result.errors).toHaveLength(0);
+      expect(result.isOk()).toBe(true);
+      expect(result.unwrap()).toEqual(node);
     });
 
     it('should validate a valid LOOP_START node without dataSource (counting loop)', () => {
@@ -726,8 +777,8 @@ describe('NodeValidator', () => {
         outgoingEdgeIds: []
       };
       const result = validator.validateNode(node);
-      expect(result.valid).toBe(true);
-      expect(result.errors).toHaveLength(0);
+      expect(result.isOk()).toBe(true);
+      expect(result.unwrap()).toEqual(node);
     });
 
     it('should return error for LOOP_START node without loopId', () => {
@@ -746,8 +797,10 @@ describe('NodeValidator', () => {
         outgoingEdgeIds: []
       };
       const result = validator.validateNode(node);
-      expect(result.valid).toBe(false);
-      expect(result.errors.some(e => e.field?.includes('loopId'))).toBe(true);
+      expect(result.isErr()).toBe(true);
+      if (result.isErr()) {
+        expect(result.error.some(e => e.field?.includes('loopId'))).toBe(true);
+      }
     });
 
     it('should return error for LOOP_START node without maxIterations', () => {
@@ -766,8 +819,10 @@ describe('NodeValidator', () => {
         outgoingEdgeIds: []
       };
       const result = validator.validateNode(node);
-      expect(result.valid).toBe(false);
-      expect(result.errors.some(e => e.field?.includes('maxIterations'))).toBe(true);
+      expect(result.isErr()).toBe(true);
+      if (result.isErr()) {
+        expect(result.error.some(e => e.field?.includes('maxIterations'))).toBe(true);
+      }
     });
 
     it('should return error for LOOP_START node with dataSource missing variableName', () => {
@@ -787,8 +842,10 @@ describe('NodeValidator', () => {
         outgoingEdgeIds: []
       };
       const result = validator.validateNode(node);
-      expect(result.valid).toBe(false);
-      expect(result.errors.some(e => e.field?.includes('variableName'))).toBe(true);
+      expect(result.isErr()).toBe(true);
+      if (result.isErr()) {
+        expect(result.error.some(e => e.field?.includes('variableName'))).toBe(true);
+      }
     });
   });
 
@@ -807,8 +864,8 @@ describe('NodeValidator', () => {
         outgoingEdgeIds: []
       };
       const result = validator.validateNode(node);
-      expect(result.valid).toBe(true);
-      expect(result.errors).toHaveLength(0);
+      expect(result.isOk()).toBe(true);
+      expect(result.unwrap()).toEqual(node);
     });
 
     it('should validate a valid LOOP_END node without breakCondition', () => {
@@ -824,8 +881,8 @@ describe('NodeValidator', () => {
         outgoingEdgeIds: []
       };
       const result = validator.validateNode(node);
-      expect(result.valid).toBe(true);
-      expect(result.errors).toHaveLength(0);
+      expect(result.isOk()).toBe(true);
+      expect(result.unwrap()).toEqual(node);
     });
 
     it('should return error for LOOP_END node without loopId', () => {
@@ -841,8 +898,10 @@ describe('NodeValidator', () => {
         outgoingEdgeIds: []
       };
       const result = validator.validateNode(node);
-      expect(result.valid).toBe(false);
-      expect(result.errors.some(e => e.field?.includes('loopId'))).toBe(true);
+      expect(result.isErr()).toBe(true);
+      if (result.isErr()) {
+        expect(result.error.some(e => e.field?.includes('loopId'))).toBe(true);
+      }
     });
   });
 
@@ -862,8 +921,8 @@ describe('NodeValidator', () => {
         outgoingEdgeIds: []
       };
       const result = validator.validateNode(node);
-      expect(result.valid).toBe(true);
-      expect(result.errors).toHaveLength(0);
+      expect(result.isOk()).toBe(true);
+      expect(result.unwrap()).toEqual(node);
     });
 
     it('should return error for SUBGRAPH node without subgraphId', () => {
@@ -880,11 +939,13 @@ describe('NodeValidator', () => {
         outgoingEdgeIds: []
       };
       const result = validator.validateNode(node);
-      expect(result.valid).toBe(false);
-      expect(result.errors.some(e => e.field?.includes('subgraphId'))).toBe(true);
+      expect(result.isErr()).toBe(true);
+      if (result.isErr()) {
+        expect(result.error.some(e => e.field?.includes('subgraphId'))).toBe(true);
+      }
     });
 
-    it('should return error for SUBGRAPH node without inputMapping', () => {
+    it('should validate SUBGRAPH node without inputMapping', () => {
       const node: Node = {
         id: 'node-1',
         name: 'Subgraph',
@@ -898,11 +959,11 @@ describe('NodeValidator', () => {
         outgoingEdgeIds: []
       };
       const result = validator.validateNode(node);
-      expect(result.valid).toBe(false);
-      expect(result.errors.some(e => e.field?.includes('inputMapping'))).toBe(true);
+      expect(result.isOk()).toBe(true);
+      expect(result.unwrap()).toEqual(node);
     });
 
-    it('should return error for SUBGRAPH node without outputMapping', () => {
+    it('should validate SUBGRAPH node without outputMapping', () => {
       const node: Node = {
         id: 'node-1',
         name: 'Subgraph',
@@ -916,8 +977,8 @@ describe('NodeValidator', () => {
         outgoingEdgeIds: []
       };
       const result = validator.validateNode(node);
-      expect(result.valid).toBe(false);
-      expect(result.errors.some(e => e.field?.includes('outputMapping'))).toBe(true);
+      expect(result.isOk()).toBe(true);
+      expect(result.unwrap()).toEqual(node);
     });
   });
 
@@ -932,8 +993,10 @@ describe('NodeValidator', () => {
         outgoingEdgeIds: []
       };
       const result = validator.validateNode(node);
-      expect(result.valid).toBe(false);
-      expect(result.errors.length).toBeGreaterThan(0);
+      expect(result.isErr()).toBe(true);
+      if (result.isErr()) {
+        expect(result.error.length).toBeGreaterThan(0);
+      }
     });
   });
 });

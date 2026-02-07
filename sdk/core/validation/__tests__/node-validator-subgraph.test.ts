@@ -1,11 +1,14 @@
 /**
  * 节点验证器 - 子工作流节点验证测试
  * 测试 NodeValidator 中 SUBGRAPH 和 START_FROM_TRIGGER 节点的验证逻辑
+ * 使用Result类型进行错误处理
  */
 
 import { NodeValidator } from '../node-validator';
 import { NodeType } from '../../../types/node';
 import type { Node } from '../../../types/node';
+import type { Result } from '../../../types/result';
+import { ValidationError } from '../../../types/errors';
 
 describe('NodeValidator - Subgraph Node Validation', () => {
   let validator: NodeValidator;
@@ -30,8 +33,8 @@ describe('NodeValidator - Subgraph Node Validation', () => {
         outgoingEdgeIds: []
       };
       const result = validator.validateNode(node);
-      expect(result.valid).toBe(true);
-      expect(result.errors).toHaveLength(0);
+      expect(result.isOk()).toBe(true);
+      expect(result.unwrap()).toEqual(node);
     });
 
     it('应该验证有效的SUBGRAPH节点（无inputMapping）', () => {
@@ -48,8 +51,8 @@ describe('NodeValidator - Subgraph Node Validation', () => {
         outgoingEdgeIds: []
       };
       const result = validator.validateNode(node);
-      expect(result.valid).toBe(true);
-      expect(result.errors).toHaveLength(0);
+      expect(result.isOk()).toBe(true);
+      expect(result.unwrap()).toEqual(node);
     });
 
     it('应该验证有效的SUBGRAPH节点（无outputMapping）', () => {
@@ -66,8 +69,8 @@ describe('NodeValidator - Subgraph Node Validation', () => {
         outgoingEdgeIds: []
       };
       const result = validator.validateNode(node);
-      expect(result.valid).toBe(true);
-      expect(result.errors).toHaveLength(0);
+      expect(result.isOk()).toBe(true);
+      expect(result.unwrap()).toEqual(node);
     });
 
     it('应该验证有效的SUBGRAPH节点（无inputMapping和outputMapping）', () => {
@@ -83,8 +86,8 @@ describe('NodeValidator - Subgraph Node Validation', () => {
         outgoingEdgeIds: []
       };
       const result = validator.validateNode(node);
-      expect(result.valid).toBe(true);
-      expect(result.errors).toHaveLength(0);
+      expect(result.isOk()).toBe(true);
+      expect(result.unwrap()).toEqual(node);
     });
 
     it('应该拒绝缺少subgraphId的SUBGRAPH节点', () => {
@@ -101,8 +104,10 @@ describe('NodeValidator - Subgraph Node Validation', () => {
         outgoingEdgeIds: []
       };
       const result = validator.validateNode(node);
-      expect(result.valid).toBe(false);
-      expect(result.errors.some(e => e.field?.includes('subgraphId'))).toBe(true);
+      expect(result.isErr()).toBe(true);
+      if (result.isErr()) {
+        expect(result.error.some(e => e.field?.includes('subgraphId'))).toBe(true);
+      }
     });
 
     it('应该拒绝空键的inputMapping的SUBGRAPH节点', () => {
@@ -120,8 +125,10 @@ describe('NodeValidator - Subgraph Node Validation', () => {
         outgoingEdgeIds: []
       };
       const result = validator.validateNode(node);
-      expect(result.valid).toBe(false);
-      expect(result.errors.some(e => e.field?.includes('inputMapping'))).toBe(true);
+      expect(result.isErr()).toBe(true);
+      if (result.isErr()) {
+        expect(result.error.some(e => e.field?.includes('inputMapping'))).toBe(true);
+      }
     });
 
     it('应该拒绝空值的inputMapping的SUBGRAPH节点', () => {
@@ -139,8 +146,10 @@ describe('NodeValidator - Subgraph Node Validation', () => {
         outgoingEdgeIds: []
       };
       const result = validator.validateNode(node);
-      expect(result.valid).toBe(false);
-      expect(result.errors.some(e => e.field?.includes('inputMapping'))).toBe(true);
+      expect(result.isErr()).toBe(true);
+      if (result.isErr()) {
+        expect(result.error.some(e => e.field?.includes('inputMapping'))).toBe(true);
+      }
     });
 
     it('应该拒绝空键的outputMapping的SUBGRAPH节点', () => {
@@ -158,8 +167,10 @@ describe('NodeValidator - Subgraph Node Validation', () => {
         outgoingEdgeIds: []
       };
       const result = validator.validateNode(node);
-      expect(result.valid).toBe(false);
-      expect(result.errors.some(e => e.field?.includes('outputMapping'))).toBe(true);
+      expect(result.isErr()).toBe(true);
+      if (result.isErr()) {
+        expect(result.error.some(e => e.field?.includes('outputMapping'))).toBe(true);
+      }
     });
 
     it('应该拒绝空值的outputMapping的SUBGRAPH节点', () => {
@@ -177,8 +188,10 @@ describe('NodeValidator - Subgraph Node Validation', () => {
         outgoingEdgeIds: []
       };
       const result = validator.validateNode(node);
-      expect(result.valid).toBe(false);
-      expect(result.errors.some(e => e.field?.includes('outputMapping'))).toBe(true);
+      expect(result.isErr()).toBe(true);
+      if (result.isErr()) {
+        expect(result.error.some(e => e.field?.includes('outputMapping'))).toBe(true);
+      }
     });
   });
 
@@ -193,8 +206,8 @@ describe('NodeValidator - Subgraph Node Validation', () => {
         outgoingEdgeIds: []
       };
       const result = validator.validateNode(node);
-      expect(result.valid).toBe(true);
-      expect(result.errors).toHaveLength(0);
+      expect(result.isOk()).toBe(true);
+      expect(result.unwrap()).toEqual(node);
     });
 
     it('应该接受空config的START_FROM_TRIGGER节点', () => {
@@ -207,8 +220,8 @@ describe('NodeValidator - Subgraph Node Validation', () => {
         outgoingEdgeIds: []
       };
       const result = validator.validateNode(node);
-      expect(result.valid).toBe(true);
-      expect(result.errors).toHaveLength(0);
+      expect(result.isOk()).toBe(true);
+      expect(result.unwrap()).toEqual(node);
     });
 
     it('应该拒绝包含额外配置的START_FROM_TRIGGER节点', () => {
@@ -226,8 +239,10 @@ describe('NodeValidator - Subgraph Node Validation', () => {
         outgoingEdgeIds: []
       };
       const result = validator.validateNode(node);
-      expect(result.valid).toBe(false);
-      expect(result.errors.length).toBeGreaterThan(0);
+      expect(result.isErr()).toBe(true);
+      if (result.isErr()) {
+        expect(result.error.length).toBeGreaterThan(0);
+      }
     });
   });
 
@@ -242,8 +257,8 @@ describe('NodeValidator - Subgraph Node Validation', () => {
         outgoingEdgeIds: []
       };
       const result = validator.validateNode(node);
-      expect(result.valid).toBe(true);
-      expect(result.errors).toHaveLength(0);
+      expect(result.isOk()).toBe(true);
+      expect(result.unwrap()).toEqual(node);
     });
 
     it('应该接受空config的CONTINUE_FROM_TRIGGER节点', () => {
@@ -256,8 +271,8 @@ describe('NodeValidator - Subgraph Node Validation', () => {
         outgoingEdgeIds: []
       };
       const result = validator.validateNode(node);
-      expect(result.valid).toBe(true);
-      expect(result.errors).toHaveLength(0);
+      expect(result.isOk()).toBe(true);
+      expect(result.unwrap()).toEqual(node);
     });
 
     it('应该拒绝包含额外配置的CONTINUE_FROM_TRIGGER节点', () => {
@@ -272,8 +287,10 @@ describe('NodeValidator - Subgraph Node Validation', () => {
         outgoingEdgeIds: []
       };
       const result = validator.validateNode(node);
-      expect(result.valid).toBe(false);
-      expect(result.errors.length).toBeGreaterThan(0);
+      expect(result.isErr()).toBe(true);
+      if (result.isErr()) {
+        expect(result.error.length).toBeGreaterThan(0);
+      }
     });
   });
 
@@ -288,8 +305,8 @@ describe('NodeValidator - Subgraph Node Validation', () => {
         outgoingEdgeIds: []
       };
       const result = validator.validateNode(node);
-      expect(result.valid).toBe(true);
-      expect(result.errors).toHaveLength(0);
+      expect(result.isOk()).toBe(true);
+      expect(result.unwrap()).toEqual(node);
     });
 
     it('应该拒绝有配置的CONTINUE_FROM_TRIGGER节点', () => {
@@ -302,8 +319,10 @@ describe('NodeValidator - Subgraph Node Validation', () => {
         outgoingEdgeIds: []
       };
       const result = validator.validateNode(node);
-      expect(result.valid).toBe(false);
-      expect(result.errors.length).toBeGreaterThan(0);
+      expect(result.isErr()).toBe(true);
+      if (result.isErr()) {
+        expect(result.error.length).toBeGreaterThan(0);
+      }
     });
   });
 });

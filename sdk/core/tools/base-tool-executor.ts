@@ -253,7 +253,7 @@ export abstract class BaseToolExecutor {
 
     // HttpError - 精确判断状态码
     if (error instanceof HttpError) {
-      return error.statusCode === 429 || (error.statusCode >= 500 && error.statusCode < 600);
+      return error.statusCode === 429 || (error.statusCode != null && error.statusCode >= 500 && error.statusCode < 600);
     }
 
     // NetworkError - 其他网络错误重试

@@ -1,5 +1,6 @@
 /**
  * Trigger验证器单元测试
+ * 使用Result类型进行错误处理
  */
 
 import { describe, it, expect } from '@jest/globals';
@@ -14,6 +15,7 @@ import {
 import { EventType } from '../../../types/events';
 import { TriggerActionType } from '../../../types/trigger';
 import { ValidationError } from '../../../types/errors';
+import type { Result } from '../../../types/result';
 
 describe('validateTriggerCondition', () => {
   it('应该验证有效的触发条件', () => {
@@ -23,7 +25,8 @@ describe('validateTriggerCondition', () => {
     };
 
     const result = validateTriggerCondition(validCondition);
-    expect(result.valid).toBe(true);
+    expect(result.isOk()).toBe(true);
+    expect(result.unwrap()).toEqual(validCondition);
   });
 
   it('应该验证只有必填字段的触发条件', () => {
@@ -32,7 +35,8 @@ describe('validateTriggerCondition', () => {
     };
 
     const result = validateTriggerCondition(minimalCondition);
-    expect(result.valid).toBe(true);
+    expect(result.isOk()).toBe(true);
+    expect(result.unwrap()).toEqual(minimalCondition);
   });
 
   it('应该拒绝无效的eventType', () => {
@@ -41,8 +45,10 @@ describe('validateTriggerCondition', () => {
     };
 
     const result = validateTriggerCondition(invalidCondition);
-    expect(result.valid).toBe(false);
-    expect(result.errors.length).toBeGreaterThan(0);
+    expect(result.isErr()).toBe(true);
+    if (result.isErr()) {
+      expect(result.error.length).toBeGreaterThan(0);
+    }
   });
 
   it('应该拒绝NODE_CUSTOM_EVENT缺少eventName', () => {
@@ -51,9 +57,13 @@ describe('validateTriggerCondition', () => {
     };
 
     const result = validateTriggerCondition(invalidCondition);
-    expect(result.valid).toBe(false);
-    expect(result.errors.length).toBeGreaterThan(0);
-    expect(result.errors[0].message).toContain('eventName is required when eventType is NODE_CUSTOM_EVENT');
+    expect(result.isErr()).toBe(true);
+    if (result.isErr()) {
+      const errors = result.error;
+      expect(errors.length).toBeGreaterThan(0);
+      const firstError = errors[0] as ValidationError;
+      expect(firstError.message).toContain('eventName is required when eventType is NODE_CUSTOM_EVENT');
+    }
   });
 
   it('应该接受NODE_CUSTOM_EVENT包含eventName', () => {
@@ -62,7 +72,9 @@ describe('validateTriggerCondition', () => {
       eventName: 'custom-event-name'
     };
 
-    expect(() => validateTriggerCondition(validCondition)).not.toThrow();
+    const result = validateTriggerCondition(validCondition);
+    expect(result.isOk()).toBe(true);
+    expect(result.unwrap()).toEqual(validCondition);
   });
 
   it('应该接受非NODE_CUSTOM_EVENT不包含eventName', () => {
@@ -70,7 +82,9 @@ describe('validateTriggerCondition', () => {
       eventType: EventType.NODE_STARTED
     };
 
-    expect(() => validateTriggerCondition(validCondition)).not.toThrow();
+    const result = validateTriggerCondition(validCondition);
+    expect(result.isOk()).toBe(true);
+    expect(result.unwrap()).toEqual(validCondition);
   });
 
   it('应该接受复杂的metadata', () => {
@@ -86,7 +100,9 @@ describe('validateTriggerCondition', () => {
       }
     };
 
-    expect(() => validateTriggerCondition(validCondition)).not.toThrow();
+    const result = validateTriggerCondition(validCondition);
+    expect(result.isOk()).toBe(true);
+    expect(result.unwrap()).toEqual(validCondition);
   });
 
   it('应该在错误消息中包含正确的字段路径', () => {
@@ -94,12 +110,13 @@ describe('validateTriggerCondition', () => {
       eventType: EventType.NODE_CUSTOM_EVENT
     };
 
-    try {
-      validateTriggerCondition(invalidCondition);
-      fail('应该抛出ValidationError');
-    } catch (error) {
-      expect(error).toBeInstanceOf(ValidationError);
-      expect((error as ValidationError).field).toBe('condition.eventName');
+    const result = validateTriggerCondition(invalidCondition);
+    expect(result.isErr()).toBe(true);
+    if (result.isErr()) {
+      const errors = result.error;
+      expect(errors.length).toBeGreaterThan(0);
+      const firstError = errors[0] as ValidationError;
+      expect(firstError.field).toBe('condition.eventName');
     }
   });
 });
@@ -111,7 +128,9 @@ describe('validateExecuteTriggeredSubgraphActionConfig', () => {
       waitForCompletion: true
     };
 
-    expect(() => validateExecuteTriggeredSubgraphActionConfig(validConfig)).not.toThrow();
+    const result = validateExecuteTriggeredSubgraphActionConfig(validConfig);
+    expect(result.isOk()).toBe(true);
+    expect(result.unwrap()).toEqual(validConfig);
   });
 
   it('应该验证只有必填字段的配置', () => {
@@ -119,7 +138,9 @@ describe('validateExecuteTriggeredSubgraphActionConfig', () => {
       triggeredWorkflowId: 'workflow-456'
     };
 
-    expect(() => validateExecuteTriggeredSubgraphActionConfig(minimalConfig)).not.toThrow();
+    const result = validateExecuteTriggeredSubgraphActionConfig(minimalConfig);
+    expect(result.isOk()).toBe(true);
+    expect(result.unwrap()).toEqual(minimalConfig);
   });
 
   it('应该拒绝缺少triggeredWorkflowId', () => {
@@ -127,7 +148,8 @@ describe('validateExecuteTriggeredSubgraphActionConfig', () => {
       waitForCompletion: false
     } as any;
 
-    expect(() => validateExecuteTriggeredSubgraphActionConfig(invalidConfig)).toThrow(ValidationError);
+    const result = validateExecuteTriggeredSubgraphActionConfig(invalidConfig);
+    expect(result.isErr()).toBe(true);
   });
 
   it('应该拒绝空的triggeredWorkflowId', () => {
@@ -135,8 +157,14 @@ describe('validateExecuteTriggeredSubgraphActionConfig', () => {
       triggeredWorkflowId: ''
     };
 
-    expect(() => validateExecuteTriggeredSubgraphActionConfig(invalidConfig)).toThrow(ValidationError);
-    expect(() => validateExecuteTriggeredSubgraphActionConfig(invalidConfig)).toThrow('Triggered workflow ID is required');
+    const result = validateExecuteTriggeredSubgraphActionConfig(invalidConfig);
+    expect(result.isErr()).toBe(true);
+    if (result.isErr()) {
+      const errors = result.error;
+      expect(errors.length).toBeGreaterThan(0);
+      const firstError = errors[0] as ValidationError;
+      expect(firstError.message).toContain('Triggered workflow ID is required');
+    }
   });
 
   it('应该接受waitForCompletion为false', () => {
@@ -145,7 +173,9 @@ describe('validateExecuteTriggeredSubgraphActionConfig', () => {
       waitForCompletion: false
     };
 
-    expect(() => validateExecuteTriggeredSubgraphActionConfig(validConfig)).not.toThrow();
+    const result = validateExecuteTriggeredSubgraphActionConfig(validConfig);
+    expect(result.isOk()).toBe(true);
+    expect(result.unwrap()).toEqual(validConfig);
   });
 
   it('应该在错误消息中包含正确的字段路径', () => {
@@ -153,12 +183,13 @@ describe('validateExecuteTriggeredSubgraphActionConfig', () => {
       triggeredWorkflowId: ''
     };
 
-    try {
-      validateExecuteTriggeredSubgraphActionConfig(invalidConfig);
-      fail('应该抛出ValidationError');
-    } catch (error) {
-      expect(error).toBeInstanceOf(ValidationError);
-      expect((error as ValidationError).field).toBe('action.parameters.triggeredWorkflowId');
+    const result = validateExecuteTriggeredSubgraphActionConfig(invalidConfig);
+    expect(result.isErr()).toBe(true);
+    if (result.isErr()) {
+      const errors = result.error;
+      expect(errors.length).toBeGreaterThan(0);
+      const firstError = errors[0] as ValidationError;
+      expect(firstError.field).toBe('action.parameters.triggeredWorkflowId');
     }
   });
 });
@@ -171,7 +202,9 @@ describe('validateTriggerAction', () => {
       metadata: { key: 'value' }
     };
 
-    expect(() => validateTriggerAction(validAction)).not.toThrow();
+    const result = validateTriggerAction(validAction);
+    expect(result.isOk()).toBe(true);
+    expect(result.unwrap()).toEqual(validAction);
   });
 
   it('应该验证只有必填字段的触发动作', () => {
@@ -180,7 +213,9 @@ describe('validateTriggerAction', () => {
       parameters: {}
     };
 
-    expect(() => validateTriggerAction(minimalAction)).not.toThrow();
+    const result = validateTriggerAction(minimalAction);
+    expect(result.isOk()).toBe(true);
+    expect(result.unwrap()).toEqual(minimalAction);
   });
 
   it('应该拒绝无效的action type', () => {
@@ -189,7 +224,8 @@ describe('validateTriggerAction', () => {
       parameters: {}
     };
 
-    expect(() => validateTriggerAction(invalidAction)).toThrow(ValidationError);
+    const result = validateTriggerAction(invalidAction);
+    expect(result.isErr()).toBe(true);
   });
 
   it('应该拒绝缺少parameters', () => {
@@ -197,7 +233,8 @@ describe('validateTriggerAction', () => {
       type: TriggerActionType.START_WORKFLOW
     } as any;
 
-    expect(() => validateTriggerAction(invalidAction)).toThrow(ValidationError);
+    const result = validateTriggerAction(invalidAction);
+    expect(result.isErr()).toBe(true);
   });
 
   it('应该验证EXECUTE_TRIGGERED_SUBGRAPH动作', () => {
@@ -209,7 +246,9 @@ describe('validateTriggerAction', () => {
       }
     };
 
-    expect(() => validateTriggerAction(validAction)).not.toThrow();
+    const result = validateTriggerAction(validAction);
+    expect(result.isOk()).toBe(true);
+    expect(result.unwrap()).toEqual(validAction);
   });
 
   it('应该拒绝EXECUTE_TRIGGERED_SUBGRAPH缺少triggeredWorkflowId', () => {
@@ -220,7 +259,8 @@ describe('validateTriggerAction', () => {
       }
     };
 
-    expect(() => validateTriggerAction(invalidAction)).toThrow(ValidationError);
+    const result = validateTriggerAction(invalidAction);
+    expect(result.isErr()).toBe(true);
   });
 
   it('应该接受复杂的parameters', () => {
@@ -236,7 +276,9 @@ describe('validateTriggerAction', () => {
       }
     };
 
-    expect(() => validateTriggerAction(validAction)).not.toThrow();
+    const result = validateTriggerAction(validAction);
+    expect(result.isOk()).toBe(true);
+    expect(result.unwrap()).toEqual(validAction);
   });
 
   it('应该在错误消息中包含正确的字段路径', () => {
@@ -247,12 +289,13 @@ describe('validateTriggerAction', () => {
       }
     };
 
-    try {
-      validateTriggerAction(invalidAction);
-      fail('应该抛出ValidationError');
-    } catch (error) {
-      expect(error).toBeInstanceOf(ValidationError);
-      expect((error as ValidationError).field).toBe('action.parameters.triggeredWorkflowId');
+    const result = validateTriggerAction(invalidAction);
+    expect(result.isErr()).toBe(true);
+    if (result.isErr()) {
+      const errors = result.error;
+      expect(errors.length).toBeGreaterThan(0);
+      const firstError = errors[0] as ValidationError;
+      expect(firstError.field).toBe('action.parameters.triggeredWorkflowId');
     }
   });
 });
@@ -275,7 +318,9 @@ describe('validateWorkflowTrigger', () => {
       metadata: { key: 'value' }
     };
 
-    expect(() => validateWorkflowTrigger(validTrigger)).not.toThrow();
+    const result = validateWorkflowTrigger(validTrigger);
+    expect(result.isOk()).toBe(true);
+    expect(result.unwrap()).toEqual(validTrigger);
   });
 
   it('应该验证只有必填字段的WorkflowTrigger', () => {
@@ -291,7 +336,9 @@ describe('validateWorkflowTrigger', () => {
       }
     };
 
-    expect(() => validateWorkflowTrigger(minimalTrigger)).not.toThrow();
+    const result = validateWorkflowTrigger(minimalTrigger);
+    expect(result.isOk()).toBe(true);
+    expect(result.unwrap()).toEqual(minimalTrigger);
   });
 
   it('应该拒绝缺少id', () => {
@@ -306,7 +353,8 @@ describe('validateWorkflowTrigger', () => {
       }
     } as any;
 
-    expect(() => validateWorkflowTrigger(invalidTrigger)).toThrow(ValidationError);
+    const result = validateWorkflowTrigger(invalidTrigger);
+    expect(result.isErr()).toBe(true);
   });
 
   it('应该拒绝空的id', () => {
@@ -322,8 +370,14 @@ describe('validateWorkflowTrigger', () => {
       }
     };
 
-    expect(() => validateWorkflowTrigger(invalidTrigger)).toThrow(ValidationError);
-    expect(() => validateWorkflowTrigger(invalidTrigger)).toThrow('Trigger ID is required');
+    const result = validateWorkflowTrigger(invalidTrigger);
+    expect(result.isErr()).toBe(true);
+    if (result.isErr()) {
+      const errors = result.error;
+      expect(errors.length).toBeGreaterThan(0);
+      const firstError = errors[0] as ValidationError;
+      expect(firstError.message).toContain('Trigger ID is required');
+    }
   });
 
   it('应该拒绝缺少name', () => {
@@ -338,7 +392,8 @@ describe('validateWorkflowTrigger', () => {
       }
     } as any;
 
-    expect(() => validateWorkflowTrigger(invalidTrigger)).toThrow(ValidationError);
+    const result = validateWorkflowTrigger(invalidTrigger);
+    expect(result.isErr()).toBe(true);
   });
 
   it('应该拒绝负数的maxTriggers', () => {
@@ -355,8 +410,14 @@ describe('validateWorkflowTrigger', () => {
       maxTriggers: -1
     };
 
-    expect(() => validateWorkflowTrigger(invalidTrigger)).toThrow(ValidationError);
-    expect(() => validateWorkflowTrigger(invalidTrigger)).toThrow('Max triggers must be a non-negative integer');
+    const result = validateWorkflowTrigger(invalidTrigger);
+    expect(result.isErr()).toBe(true);
+    if (result.isErr()) {
+      const errors = result.error;
+      expect(errors.length).toBeGreaterThan(0);
+      const firstError = errors[0] as ValidationError;
+      expect(firstError.message).toContain('Max triggers must be a non-negative integer');
+    }
   });
 
   it('应该接受maxTriggers为0（无限制）', () => {
@@ -373,7 +434,9 @@ describe('validateWorkflowTrigger', () => {
       maxTriggers: 0
     };
 
-    expect(() => validateWorkflowTrigger(validTrigger)).not.toThrow();
+    const result = validateWorkflowTrigger(validTrigger);
+    expect(result.isOk()).toBe(true);
+    expect(result.unwrap()).toEqual(validTrigger);
   });
 
   it('应该接受enabled为false', () => {
@@ -390,7 +453,9 @@ describe('validateWorkflowTrigger', () => {
       enabled: false
     };
 
-    expect(() => validateWorkflowTrigger(validTrigger)).not.toThrow();
+    const result = validateWorkflowTrigger(validTrigger);
+    expect(result.isOk()).toBe(true);
+    expect(result.unwrap()).toEqual(validTrigger);
   });
 
   it('应该在错误消息中包含正确的字段路径', () => {
@@ -406,12 +471,13 @@ describe('validateWorkflowTrigger', () => {
       }
     };
 
-    try {
-      validateWorkflowTrigger(invalidTrigger);
-      fail('应该抛出ValidationError');
-    } catch (error) {
-      expect(error).toBeInstanceOf(ValidationError);
-      expect((error as ValidationError).field).toBe('triggers.id');
+    const result = validateWorkflowTrigger(invalidTrigger);
+    expect(result.isErr()).toBe(true);
+    if (result.isErr()) {
+      const errors = result.error;
+      expect(errors.length).toBeGreaterThan(0);
+      const firstError = errors[0] as ValidationError;
+      expect(firstError.field).toBe('triggers.id');
     }
   });
 });
@@ -428,7 +494,9 @@ describe('validateTriggerReference', () => {
       }
     };
 
-    expect(() => validateTriggerReference(validReference)).not.toThrow();
+    const result = validateTriggerReference(validReference);
+    expect(result.isOk()).toBe(true);
+    expect(result.unwrap()).toEqual(validReference);
   });
 
   it('应该验证只有必填字段的TriggerReference', () => {
@@ -437,7 +505,9 @@ describe('validateTriggerReference', () => {
       triggerId: 'trigger-ref-2'
     };
 
-    expect(() => validateTriggerReference(minimalReference)).not.toThrow();
+    const result = validateTriggerReference(minimalReference);
+    expect(result.isOk()).toBe(true);
+    expect(result.unwrap()).toEqual(minimalReference);
   });
 
   it('应该拒绝缺少templateName', () => {
@@ -445,7 +515,8 @@ describe('validateTriggerReference', () => {
       triggerId: 'trigger-ref-3'
     } as any;
 
-    expect(() => validateTriggerReference(invalidReference)).toThrow(ValidationError);
+    const result = validateTriggerReference(invalidReference);
+    expect(result.isErr()).toBe(true);
   });
 
   it('应该拒绝空的templateName', () => {
@@ -454,8 +525,14 @@ describe('validateTriggerReference', () => {
       triggerId: 'trigger-ref-4'
     };
 
-    expect(() => validateTriggerReference(invalidReference)).toThrow(ValidationError);
-    expect(() => validateTriggerReference(invalidReference)).toThrow('Template name is required');
+    const result = validateTriggerReference(invalidReference);
+    expect(result.isErr()).toBe(true);
+    if (result.isErr()) {
+      const errors = result.error;
+      expect(errors.length).toBeGreaterThan(0);
+      const firstError = errors[0] as ValidationError;
+      expect(firstError.message).toContain('Template name is required');
+    }
   });
 
   it('应该拒绝缺少triggerId', () => {
@@ -463,7 +540,8 @@ describe('validateTriggerReference', () => {
       templateName: 'template-3'
     } as any;
 
-    expect(() => validateTriggerReference(invalidReference)).toThrow(ValidationError);
+    const result = validateTriggerReference(invalidReference);
+    expect(result.isErr()).toBe(true);
   });
 
   it('应该接受configOverride中的condition覆盖', () => {
@@ -478,7 +556,9 @@ describe('validateTriggerReference', () => {
       }
     };
 
-    expect(() => validateTriggerReference(validReference)).not.toThrow();
+    const result = validateTriggerReference(validReference);
+    expect(result.isOk()).toBe(true);
+    expect(result.unwrap()).toEqual(validReference);
   });
 
   it('应该接受configOverride中的action覆盖', () => {
@@ -493,7 +573,9 @@ describe('validateTriggerReference', () => {
       }
     };
 
-    expect(() => validateTriggerReference(validReference)).not.toThrow();
+    const result = validateTriggerReference(validReference);
+    expect(result.isOk()).toBe(true);
+    expect(result.unwrap()).toEqual(validReference);
   });
 
   it('应该在错误消息中包含正确的字段路径', () => {
@@ -502,12 +584,13 @@ describe('validateTriggerReference', () => {
       triggerId: 'trigger-ref-7'
     };
 
-    try {
-      validateTriggerReference(invalidReference);
-      fail('应该抛出ValidationError');
-    } catch (error) {
-      expect(error).toBeInstanceOf(ValidationError);
-      expect((error as ValidationError).field).toBe('triggers.templateName');
+    const result = validateTriggerReference(invalidReference);
+    expect(result.isErr()).toBe(true);
+    if (result.isErr()) {
+      const errors = result.error;
+      expect(errors.length).toBeGreaterThan(0);
+      const firstError = errors[0] as ValidationError;
+      expect(firstError.field).toBe('triggers.templateName');
     }
   });
 });
@@ -532,31 +615,61 @@ describe('validateTriggers', () => {
       }
     ];
 
-    expect(() => validateTriggers(validTriggers)).not.toThrow();
+    const result = validateTriggers(validTriggers);
+    expect(result.isOk()).toBe(true);
+    expect(result.unwrap()).toEqual(validTriggers);
   });
 
   it('应该验证空触发器数组', () => {
-    expect(() => validateTriggers([])).not.toThrow();
+    const result = validateTriggers([]);
+    expect(result.isOk()).toBe(true);
+    expect(result.unwrap()).toEqual([]);
   });
 
   it('应该拒绝非数组的triggers', () => {
-    expect(() => validateTriggers(null as any)).toThrow(ValidationError);
-    expect(() => validateTriggers(null as any)).toThrow('Triggers must be an array');
+    const result = validateTriggers(null as any);
+    expect(result.isErr()).toBe(true);
+    if (result.isErr()) {
+      const errors = result.error;
+      expect(errors.length).toBeGreaterThan(0);
+      const firstError = errors[0] as ValidationError;
+      expect(firstError.message).toContain('Triggers must be an array');
+    }
   });
 
   it('应该拒绝undefined的triggers', () => {
-    expect(() => validateTriggers(undefined as any)).toThrow(ValidationError);
-    expect(() => validateTriggers(undefined as any)).toThrow('Triggers must be an array');
+    const result = validateTriggers(undefined as any);
+    expect(result.isErr()).toBe(true);
+    if (result.isErr()) {
+      const errors = result.error;
+      expect(errors.length).toBeGreaterThan(0);
+      const firstError = errors[0] as ValidationError;
+      expect(firstError.message).toContain('Triggers must be an array');
+    }
   });
 
   it('应该拒绝对象类型的triggers', () => {
-    expect(() => validateTriggers({} as any)).toThrow(ValidationError);
-    expect(() => validateTriggers({} as any)).toThrow('Triggers must be an array');
+    const result = validateTriggers({} as any);
+    expect(result.isErr()).toBe(true);
+    if (result.isErr()) {
+      const errors = result.error;
+      expect(errors.length).toBeGreaterThan(0);
+      const firstError = errors[0] as ValidationError;
+      expect(firstError.message).toContain('Triggers must be an array');
+    }
   });
 
   it('应该拒绝字符串类型的triggers', () => {
-    expect(() => validateTriggers('invalid' as any)).toThrow(ValidationError);
-    expect(() => validateTriggers('invalid' as any)).toThrow('Triggers must be an array');
+    const result = validateTriggers('invalid' as any);
+    expect(result.isErr()).toBe(true);
+    if (result.isErr()) {
+      const errors = result.error;
+      expect(errors.length).toBeGreaterThan(0);
+      if (errors.length > 0) {
+        const firstError = errors[0] as ValidationError;
+        expect(firstError.message).toContain('Triggers must be an array');
+      }
+    }
   });
 
   it('应该跳过数组中的null元素', () => {
@@ -579,7 +692,9 @@ describe('validateTriggers', () => {
       }
     ];
 
-    expect(() => validateTriggers(triggersWithNull)).not.toThrow();
+    const result = validateTriggers(triggersWithNull);
+    expect(result.isOk()).toBe(true);
+    expect(result.unwrap()).toEqual(triggersWithNull);
   });
 
   it('应该跳过数组中的undefined元素', () => {
@@ -602,7 +717,9 @@ describe('validateTriggers', () => {
       }
     ];
 
-    expect(() => validateTriggers(triggersWithUndefined)).not.toThrow();
+    const result = validateTriggers(triggersWithUndefined);
+    expect(result.isOk()).toBe(true);
+    expect(result.unwrap()).toEqual(triggersWithUndefined);
   });
 
   it('应该拒绝重复的触发器ID', () => {
@@ -631,8 +748,14 @@ describe('validateTriggers', () => {
       }
     ];
 
-    expect(() => validateTriggers(triggersWithDuplicateId)).toThrow(ValidationError);
-    expect(() => validateTriggers(triggersWithDuplicateId)).toThrow('Trigger ID must be unique: trigger-1');
+    const result = validateTriggers(triggersWithDuplicateId);
+    expect(result.isErr()).toBe(true);
+    if (result.isErr()) {
+      const errors = result.error;
+      expect(errors.length).toBeGreaterThan(0);
+      const firstError = errors[0] as ValidationError;
+      expect(firstError.message).toContain('Trigger ID must be unique: trigger-1');
+    }
   });
 
   it('应该拒绝WorkflowTrigger和TriggerReference之间的重复ID', () => {
@@ -654,8 +777,16 @@ describe('validateTriggers', () => {
       }
     ];
 
-    expect(() => validateTriggers(triggersWithDuplicateId)).toThrow(ValidationError);
-    expect(() => validateTriggers(triggersWithDuplicateId)).toThrow('Trigger ID must be unique: trigger-1');
+    const result = validateTriggers(triggersWithDuplicateId);
+    expect(result.isErr()).toBe(true);
+    if (result.isErr()) {
+      const errors = result.error;
+      expect(errors.length).toBeGreaterThan(0);
+      if (errors.length > 0) {
+        const firstError = errors[0] as ValidationError;
+        expect(firstError.message).toContain('Trigger ID must be unique: trigger-1');
+      }
+    }
   });
 
   it('应该拒绝数组中包含无效的触发器', () => {
@@ -684,7 +815,8 @@ describe('validateTriggers', () => {
       }
     ];
 
-    expect(() => validateTriggers(invalidTriggers)).toThrow(ValidationError);
+    const result = validateTriggers(invalidTriggers);
+    expect(result.isErr()).toBe(true);
   });
 
   it('应该验证包含多个触发器的数组', () => {
@@ -721,7 +853,9 @@ describe('validateTriggers', () => {
       }
     ];
 
-    expect(() => validateTriggers(multipleTriggers)).not.toThrow();
+    const result = validateTriggers(multipleTriggers);
+    expect(result.isOk()).toBe(true);
+    expect(result.unwrap()).toEqual(multipleTriggers);
   });
 
   it('应该在错误消息中包含正确的字段路径', () => {
@@ -750,12 +884,15 @@ describe('validateTriggers', () => {
       }
     ];
 
-    try {
-      validateTriggers(invalidTriggers);
-      fail('应该抛出ValidationError');
-    } catch (error) {
-      expect(error).toBeInstanceOf(ValidationError);
-      expect((error as ValidationError).field).toBe('triggers[1].id');
+    const result = validateTriggers(invalidTriggers);
+    expect(result.isErr()).toBe(true);
+    if (result.isErr()) {
+      const errors = result.error;
+      expect(errors.length).toBeGreaterThan(0);
+      if (errors.length > 0) {
+        const firstError = errors[0] as ValidationError;
+        expect(firstError.field).toBe('triggers[1].id');
+      }
     }
   });
 });

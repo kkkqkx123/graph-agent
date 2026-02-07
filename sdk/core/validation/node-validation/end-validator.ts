@@ -7,6 +7,8 @@ import { z } from 'zod';
 import type { Node } from '../../../types/node';
 import { NodeType } from '../../../types/node';
 import { ValidationError } from '../../../types/errors';
+import type { Result } from '../../../types/result';
+import { ok, err } from '../../../utils/result-utils';
 
 /**
  * End节点配置schema（必须为空对象）
@@ -16,15 +18,16 @@ const endNodeConfigSchema = z.object({}).strict();
 /**
  * 验证End节点配置
  * @param node 节点定义
- * @throws ValidationError 当配置无效时抛出
+ * @returns 验证结果
  */
-export function validateEndNode(node: Node): void {
+export function validateEndNode(node: Node): Result<Node, ValidationError[]> {
   if (node.type !== NodeType.END) {
-    throw new ValidationError(`Invalid node type for end validator: ${node.type}`, `node.${node.id}`);
+    return err([new ValidationError(`Invalid node type for end validator: ${node.type}`, `node.${node.id}`)]);
   }
 
   const result = endNodeConfigSchema.safeParse(node.config || {});
   if (!result.success) {
-    throw new ValidationError('END node must have no configuration', `node.${node.id}.config`);
+    return err([new ValidationError('END node must have no configuration', `node.${node.id}.config`)]);
   }
+  return ok(node);
 }

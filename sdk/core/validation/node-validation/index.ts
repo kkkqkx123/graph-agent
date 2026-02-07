@@ -6,6 +6,8 @@
 import { NodeType } from '../../../types/node';
 import type { Node } from '../../../types/node';
 import { ValidationError } from '../../../types/errors';
+import type { Result } from '../../../types/result';
+import { ok, err } from '../../../utils/result-utils';
 
 export { validateForkNode } from './fork-validator';
 export { validateJoinNode } from './join-validator';
@@ -26,71 +28,56 @@ export { validateContinueFromTriggerNode } from './continue-from-trigger-validat
 /**
  * 根据节点类型验证节点配置
  * @param node 节点定义
- * @throws ValidationError 当配置无效时抛出
+ * @returns 验证结果
  */
-export function validateNodeByType(node: Node): void {
+export function validateNodeByType(node: Node): Result<Node, ValidationError[]> {
   switch (node.type) {
     case NodeType.START:
       const { validateStartNode } = require('./start-validator');
-      validateStartNode(node);
-      break;
+      return validateStartNode(node);
     case NodeType.END:
       const { validateEndNode } = require('./end-validator');
-      validateEndNode(node);
-      break;
+      return validateEndNode(node);
     case NodeType.FORK:
       const { validateForkNode } = require('./fork-validator');
-      validateForkNode(node);
-      break;
+      return validateForkNode(node);
     case NodeType.JOIN:
       const { validateJoinNode } = require('./join-validator');
-      validateJoinNode(node);
-      break;
+      return validateJoinNode(node);
     case NodeType.LOOP_START:
       const { validateLoopStartNode } = require('./loop-start-validator');
-      validateLoopStartNode(node);
-      break;
+      return validateLoopStartNode(node);
     case NodeType.LOOP_END:
       const { validateLoopEndNode } = require('./loop-end-validator');
-      validateLoopEndNode(node);
-      break;
+      return validateLoopEndNode(node);
     case NodeType.CODE:
       const { validateCodeNode } = require('./code-validator');
-      validateCodeNode(node);
-      break;
+      return validateCodeNode(node);
     case NodeType.CONTEXT_PROCESSOR:
       const { validateContextProcessorNode } = require('./context-processor-validator');
-      validateContextProcessorNode(node);
-      break;
+      return validateContextProcessorNode(node);
     case NodeType.ROUTE:
       const { validateRouteNode } = require('./route-validator');
-      validateRouteNode(node);
-      break;
+      return validateRouteNode(node);
     case NodeType.VARIABLE:
       const { validateVariableNode } = require('./variable-validator');
-      validateVariableNode(node);
-      break;
+      return validateVariableNode(node);
     case NodeType.LLM:
       const { validateLLMNode } = require('./llm-validator');
-      validateLLMNode(node);
-      break;
+      return validateLLMNode(node);
     case NodeType.USER_INTERACTION:
       const { validateUserInteractionNode } = require('./user-interaction-validator');
-      validateUserInteractionNode(node);
-      break;
+      return validateUserInteractionNode(node);
     case NodeType.SUBGRAPH:
       const { validateSubgraphNode } = require('./subgraph-validator');
-      validateSubgraphNode(node);
-      break;
+      return validateSubgraphNode(node);
     case NodeType.START_FROM_TRIGGER:
       const { validateStartFromTriggerNode } = require('./start-from-trigger-validator');
-      validateStartFromTriggerNode(node);
-      break;
+      return validateStartFromTriggerNode(node);
     case NodeType.CONTINUE_FROM_TRIGGER:
       const { validateContinueFromTriggerNode } = require('./continue-from-trigger-validator');
-      validateContinueFromTriggerNode(node);
-      break;
+      return validateContinueFromTriggerNode(node);
     default:
-      throw new ValidationError(`Unknown node type: ${node.type}`, `node.${node.id}`);
+      return err([new ValidationError(`Unknown node type: ${node.type}`, `node.${node.id}`)]);
   }
 }

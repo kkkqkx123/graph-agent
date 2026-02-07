@@ -211,17 +211,9 @@ export class WorkflowValidator {
 
       // 验证节点配置（使用节点验证函数）
       if (node.id && node.type) {
-        try {
-          validateNodeByType(node);
-        } catch (error) {
-          if (error instanceof ValidationError) {
-            errors.push(error);
-          } else {
-            errors.push(new ValidationError(
-              error instanceof Error ? error.message : String(error),
-              `${path}.config`
-            ));
-          }
+        const configResult = validateNodeByType(node);
+        if (configResult.isErr()) {
+          errors.push(...configResult.error);
         }
       }
 

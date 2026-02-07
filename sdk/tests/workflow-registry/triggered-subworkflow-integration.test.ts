@@ -110,8 +110,10 @@ describe('触发子工作流集成测试', () => {
 
       // 验证工作流定义
       const validationResult = validator.validate(triggeredWorkflow);
-      expect(validationResult.valid).toBe(true);
-      expect(validationResult.errors).toHaveLength(0);
+      expect(validationResult.isOk()).toBe(true);
+      if (validationResult.isErr()) {
+        expect(validationResult.error).toHaveLength(0);
+      }
 
       // 注册工作流
       expect(() => registry.register(triggeredWorkflow)).not.toThrow();
