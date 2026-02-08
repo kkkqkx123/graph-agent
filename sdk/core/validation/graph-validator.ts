@@ -774,69 +774,12 @@ export class GraphValidator {
       }
     }
 
-    // 检查节点边列表引用存在的边
-    for (const node of graph.nodes.values()) {
-      const originalNode = node.originalNode;
-      if (!originalNode) continue;
-
-      // 检查出边
-      for (const edgeId of originalNode.outgoingEdgeIds) {
-        if (!graph.hasEdge(edgeId)) {
-          errors.push(new ValidationError(
-            `节点(${node.id})的出边列表引用了不存在的边(${edgeId})`,
-            undefined, undefined, {
-            code: 'NODE_REFERENCES_MISSING_OUTGOING_EDGE',
-            nodeId: node.id,
-            edgeId: edgeId
-          }
-          ));
-        }
-      }
-
-      // 检查入边
-      for (const edgeId of originalNode.incomingEdgeIds) {
-        if (!graph.hasEdge(edgeId)) {
-          errors.push(new ValidationError(
-            `节点(${node.id})的入边列表引用了不存在的边(${edgeId})`,
-            undefined, undefined, {
-            code: 'NODE_REFERENCES_MISSING_INCOMING_EDGE',
-            nodeId: node.id,
-            edgeId: edgeId
-          }
-          ));
-        }
-      }
-    }
-
-    // 检查边与节点边列表的一致性
-    for (const edge of graph.edges.values()) {
-      const sourceNode = graph.getNode(edge.sourceNodeId);
-      const targetNode = graph.getNode(edge.targetNodeId);
-
-      if (sourceNode?.originalNode &&
-        !sourceNode.originalNode.outgoingEdgeIds.includes(edge.id)) {
-        errors.push(new ValidationError(
-          `边(${edge.id})的源节点(${edge.sourceNodeId})没有在出边列表中引用该边`,
-          undefined, undefined, {
-          code: 'SOURCE_NODE_MISSING_EDGE_REFERENCE',
-          edgeId: edge.id,
-          nodeId: edge.sourceNodeId
-        }
-        ));
-      }
-
-      if (targetNode?.originalNode &&
-        !targetNode.originalNode.incomingEdgeIds.includes(edge.id)) {
-        errors.push(new ValidationError(
-          `边(${edge.id})的目标节点(${edge.targetNodeId})没有在入边列表中引用该边`,
-          undefined, undefined, {
-          code: 'TARGET_NODE_MISSING_EDGE_REFERENCE',
-          edgeId: edge.id,
-          nodeId: edge.targetNodeId
-        }
-        ));
-      }
-    }
+    // 注意：不再验证 originalNode.outgoingEdgeIds 和 originalNode.incomingEdgeIds
+    // 原因：
+    // 1. GraphData 已经通过 adjacencyList 和 reverseAdjacencyList 维护了正确的拓扑结构
+    // 2. originalNode 应该保持不可变，它是原始工作流定义的引用
+    // 3. 边与节点的连接关系已经通过 edge.sourceNodeId 和 edge.targetNodeId 维护
+    // 4. 在子工作流合并等场景中，边ID会被重命名，但原始节点的边引用列表不应被修改
 
     return errors;
   }

@@ -841,4 +841,442 @@ describe('Workflow到Graph注册集成测试', () => {
       expect(() => registry.register(workflow)).toThrow('Graph build failed');
     });
   });
+
+  describe('场景6：FORK/JOIN节点ID去重处理', () => {
+    it('应该正确处理FORK节点中重复的pathId并生成全局唯一ID', () => {
+      const workflow: WorkflowDefinition = {
+        id: 'workflow-fork-dedup',
+        name: 'Fork Deduplication Workflow',
+        version: '1.0.0',
+        description: 'Test fork path ID deduplication',
+        nodes: [
+          {
+            id: 'node-start',
+            type: NodeType.START,
+            name: 'Start',
+            config: {},
+            outgoingEdgeIds: ['edge-start-fork'],
+            incomingEdgeIds: []
+          },
+          {
+            id: 'node-fork',
+            type: NodeType.FORK,
+            name: 'Fork Node',
+            config: {
+              forkStrategy: 'parallel',
+              forkPaths: [
+                { pathId: 'path1', childNodeId: 'node-branch1' },
+                { pathId: 'path2', childNodeId: 'node-branch2' }
+              ]
+            },
+            outgoingEdgeIds: ['edge-fork-branch1', 'edge-fork-branch2'],
+            incomingEdgeIds: ['edge-start-fork']
+          },
+          {
+            id: 'node-branch1',
+            type: NodeType.CODE,
+            name: 'Branch 1',
+            config: {
+              scriptName: 'branch1',
+              scriptType: 'javascript',
+              risk: 'low'
+            },
+            outgoingEdgeIds: ['edge-branch1-join'],
+            incomingEdgeIds: ['edge-fork-branch1']
+          },
+          {
+            id: 'node-branch2',
+            type: NodeType.CODE,
+            name: 'Branch 2',
+            config: {
+              scriptName: 'branch2',
+              scriptType: 'javascript',
+              risk: 'low'
+            },
+            outgoingEdgeIds: ['edge-branch2-join'],
+            incomingEdgeIds: ['edge-fork-branch2']
+          },
+          {
+            id: 'node-join',
+            type: NodeType.JOIN,
+            name: 'Join Node',
+            config: {
+              forkPathIds: ['path1', 'path2'],
+              mainPathId: 'path1',
+              joinStrategy: 'ALL_COMPLETED'
+            },
+            outgoingEdgeIds: ['edge-join-end'],
+            incomingEdgeIds: ['edge-branch1-join', 'edge-branch2-join']
+          },
+          {
+            id: 'node-end',
+            type: NodeType.END,
+            name: 'End',
+            config: {},
+            outgoingEdgeIds: [],
+            incomingEdgeIds: ['edge-join-end']
+          }
+        ],
+        edges: [
+          {
+            id: 'edge-start-fork',
+            sourceNodeId: 'node-start',
+            targetNodeId: 'node-fork',
+            type: EdgeType.DEFAULT
+          },
+          {
+            id: 'edge-fork-branch1',
+            sourceNodeId: 'node-fork',
+            targetNodeId: 'node-branch1',
+            type: EdgeType.DEFAULT
+          },
+          {
+            id: 'edge-fork-branch2',
+            sourceNodeId: 'node-fork',
+            targetNodeId: 'node-branch2',
+            type: EdgeType.DEFAULT
+          },
+          {
+            id: 'edge-branch1-join',
+            sourceNodeId: 'node-branch1',
+            targetNodeId: 'node-join',
+            type: EdgeType.DEFAULT
+          },
+          {
+            id: 'edge-branch2-join',
+            sourceNodeId: 'node-branch2',
+            targetNodeId: 'node-join',
+            type: EdgeType.DEFAULT
+          },
+          {
+            id: 'edge-join-end',
+            sourceNodeId: 'node-join',
+            targetNodeId: 'node-end',
+            type: EdgeType.DEFAULT
+          }
+        ],
+        config: {
+          timeout: 60000,
+          toolApproval: {
+            autoApprovedTools: []
+          }
+        },
+        metadata: {
+          author: 'test-author',
+          tags: ['fork', 'dedup']
+        },
+        availableTools: {
+          initial: new Set()
+        },
+        createdAt: Date.now(),
+        updatedAt: Date.now()
+      };
+
+      // 注册工作流
+      registry.register(workflow);
+
+      // 获取构建的Graph
+      const graph = graphRegistry.get('workflow-fork-dedup');
+      expect(graph).toBeDefined();
+
+      // 获取FORK节点
+      const forkNode = graph?.getNode('node-fork');
+      expect(forkNode).toBeDefined();
+      const forkConfig = forkNode?.originalNode?.config as any;
+
+      // 验证pathId已被转换为全局唯一ID
+      expect(forkConfig.forkPaths).toBeDefined();
+      expect(forkConfig.forkPaths).toHaveLength(2);
+      
+      const pathId1 = forkConfig.forkPaths[0].pathId;
+      const pathId2 = forkConfig.forkPaths[1].pathId;
+
+      // 验证pathId是全局唯一的（以path-开头）
+      expect(pathId1).toMatch(/^path-/);
+      expect(pathId2).toMatch(/^path-/);
+      
+      // 验证两个pathId不相同
+      expect(pathId1).not.toBe(pathId2);
+
+      // 获取JOIN节点
+      const joinNode = graph?.getNode('node-join');
+      expect(joinNode).toBeDefined();
+      const joinConfig = joinNode?.originalNode?.config as any;
+
+      // 验证forkPathIds已更新为全局唯一ID
+      expect(joinConfig.forkPathIds).toBeDefined();
+      expect(joinConfig.forkPathIds).toHaveLength(2);
+      expect(joinConfig.forkPathIds).toContain(pathId1);
+      expect(joinConfig.forkPathIds).toContain(pathId2);
+
+      // 验证mainPathId已更新为全局唯一ID
+      expect(joinConfig.mainPathId).toBeDefined();
+      expect(joinConfig.mainPathId).toBe(pathId1);
+    });
+
+    it('应该正确处理多个FORK节点使用不同pathId的情况', () => {
+      const workflow: WorkflowDefinition = {
+        id: 'workflow-multiple-fork',
+        name: 'Multiple Fork Workflow',
+        version: '1.0.0',
+        description: 'Test multiple fork nodes with different path IDs',
+        nodes: [
+          {
+            id: 'node-start',
+            type: NodeType.START,
+            name: 'Start',
+            config: {},
+            outgoingEdgeIds: ['edge-start-fork1'],
+            incomingEdgeIds: []
+          },
+          {
+            id: 'node-fork1',
+            type: NodeType.FORK,
+            name: 'Fork 1',
+            config: {
+              forkStrategy: 'parallel',
+              forkPaths: [
+                { pathId: 'path1', childNodeId: 'node-branch1a' },
+                { pathId: 'path2', childNodeId: 'node-branch1b' }
+              ]
+            },
+            outgoingEdgeIds: ['edge-fork1-branch1a', 'edge-fork1-branch1b'],
+            incomingEdgeIds: ['edge-start-fork1']
+          },
+          {
+            id: 'node-branch1a',
+            type: NodeType.CODE,
+            name: 'Branch 1A',
+            config: {
+              scriptName: 'branch1a',
+              scriptType: 'javascript',
+              risk: 'low'
+            },
+            outgoingEdgeIds: ['edge-branch1a-join1'],
+            incomingEdgeIds: ['edge-fork1-branch1a']
+          },
+          {
+            id: 'node-branch1b',
+            type: NodeType.CODE,
+            name: 'Branch 1B',
+            config: {
+              scriptName: 'branch1b',
+              scriptType: 'javascript',
+              risk: 'low'
+            },
+            outgoingEdgeIds: ['edge-branch1b-join1'],
+            incomingEdgeIds: ['edge-fork1-branch1b']
+          },
+          {
+            id: 'node-join1',
+            type: NodeType.JOIN,
+            name: 'Join 1',
+            config: {
+              forkPathIds: ['path1', 'path2'],
+              mainPathId: 'path1',
+              joinStrategy: 'ALL_COMPLETED'
+            },
+            outgoingEdgeIds: ['edge-join1-fork2'],
+            incomingEdgeIds: ['edge-branch1a-join1', 'edge-branch1b-join1']
+          },
+          {
+            id: 'node-fork2',
+            type: NodeType.FORK,
+            name: 'Fork 2',
+            config: {
+              forkStrategy: 'parallel',
+              forkPaths: [
+                { pathId: 'path3', childNodeId: 'node-branch2a' }, // 使用不同的pathId
+                { pathId: 'path4', childNodeId: 'node-branch2b' }  // 使用不同的pathId
+              ]
+            },
+            outgoingEdgeIds: ['edge-fork2-branch2a', 'edge-fork2-branch2b'],
+            incomingEdgeIds: ['edge-join1-fork2']
+          },
+          {
+            id: 'node-branch2a',
+            type: NodeType.CODE,
+            name: 'Branch 2A',
+            config: {
+              scriptName: 'branch2a',
+              scriptType: 'javascript',
+              risk: 'low'
+            },
+            outgoingEdgeIds: ['edge-branch2a-join2'],
+            incomingEdgeIds: ['edge-fork2-branch2a']
+          },
+          {
+            id: 'node-branch2b',
+            type: NodeType.CODE,
+            name: 'Branch 2B',
+            config: {
+              scriptName: 'branch2b',
+              scriptType: 'javascript',
+              risk: 'low'
+            },
+            outgoingEdgeIds: ['edge-branch2b-join2'],
+            incomingEdgeIds: ['edge-fork2-branch2b']
+          },
+          {
+            id: 'node-join2',
+            type: NodeType.JOIN,
+            name: 'Join 2',
+            config: {
+              forkPathIds: ['path3', 'path4'],
+              mainPathId: 'path3',
+              joinStrategy: 'ALL_COMPLETED'
+            },
+            outgoingEdgeIds: ['edge-join2-end'],
+            incomingEdgeIds: ['edge-branch2a-join2', 'edge-branch2b-join2']
+          },
+          {
+            id: 'node-end',
+            type: NodeType.END,
+            name: 'End',
+            config: {},
+            outgoingEdgeIds: [],
+            incomingEdgeIds: ['edge-join2-end']
+          }
+        ],
+        edges: [
+          {
+            id: 'edge-start-fork1',
+            sourceNodeId: 'node-start',
+            targetNodeId: 'node-fork1',
+            type: EdgeType.DEFAULT
+          },
+          {
+            id: 'edge-fork1-branch1a',
+            sourceNodeId: 'node-fork1',
+            targetNodeId: 'node-branch1a',
+            type: EdgeType.DEFAULT
+          },
+          {
+            id: 'edge-fork1-branch1b',
+            sourceNodeId: 'node-fork1',
+            targetNodeId: 'node-branch1b',
+            type: EdgeType.DEFAULT
+          },
+          {
+            id: 'edge-branch1a-join1',
+            sourceNodeId: 'node-branch1a',
+            targetNodeId: 'node-join1',
+            type: EdgeType.DEFAULT
+          },
+          {
+            id: 'edge-branch1b-join1',
+            sourceNodeId: 'node-branch1b',
+            targetNodeId: 'node-join1',
+            type: EdgeType.DEFAULT
+          },
+          {
+            id: 'edge-join1-fork2',
+            sourceNodeId: 'node-join1',
+            targetNodeId: 'node-fork2',
+            type: EdgeType.DEFAULT
+          },
+          {
+            id: 'edge-fork2-branch2a',
+            sourceNodeId: 'node-fork2',
+            targetNodeId: 'node-branch2a',
+            type: EdgeType.DEFAULT
+          },
+          {
+            id: 'edge-fork2-branch2b',
+            sourceNodeId: 'node-fork2',
+            targetNodeId: 'node-branch2b',
+            type: EdgeType.DEFAULT
+          },
+          {
+            id: 'edge-branch2a-join2',
+            sourceNodeId: 'node-branch2a',
+            targetNodeId: 'node-join2',
+            type: EdgeType.DEFAULT
+          },
+          {
+            id: 'edge-branch2b-join2',
+            sourceNodeId: 'node-branch2b',
+            targetNodeId: 'node-join2',
+            type: EdgeType.DEFAULT
+          },
+          {
+            id: 'edge-join2-end',
+            sourceNodeId: 'node-join2',
+            targetNodeId: 'node-end',
+            type: EdgeType.DEFAULT
+          }
+        ],
+        config: {
+          timeout: 60000,
+          toolApproval: {
+            autoApprovedTools: []
+          }
+        },
+        metadata: {
+          author: 'test-author',
+          tags: ['fork', 'multiple']
+        },
+        availableTools: {
+          initial: new Set()
+        },
+        createdAt: Date.now(),
+        updatedAt: Date.now()
+      };
+
+      // 注册工作流
+      registry.register(workflow);
+
+      // 获取构建的Graph
+      const graph = graphRegistry.get('workflow-multiple-fork');
+      expect(graph).toBeDefined();
+
+      // 获取第一个FORK节点
+      const fork1Node = graph?.getNode('node-fork1');
+      expect(fork1Node).toBeDefined();
+      const fork1Config = fork1Node?.originalNode?.config as any;
+
+      const fork1PathId1 = fork1Config.forkPaths[0].pathId;
+      const fork1PathId2 = fork1Config.forkPaths[1].pathId;
+
+      // 获取第二个FORK节点
+      const fork2Node = graph?.getNode('node-fork2');
+      expect(fork2Node).toBeDefined();
+      const fork2Config = fork2Node?.originalNode?.config as any;
+
+      const fork2PathId1 = fork2Config.forkPaths[0].pathId;
+      const fork2PathId2 = fork2Config.forkPaths[1].pathId;
+
+      // 验证所有pathId都是全局唯一的（以path-开头）
+      expect(fork1PathId1).toMatch(/^path-/);
+      expect(fork1PathId2).toMatch(/^path-/);
+      expect(fork2PathId1).toMatch(/^path-/);
+      expect(fork2PathId2).toMatch(/^path-/);
+
+      // 验证所有pathId都不相同
+      const allPathIds = [fork1PathId1, fork1PathId2, fork2PathId1, fork2PathId2];
+      const uniquePathIds = new Set(allPathIds);
+      expect(uniquePathIds.size).toBe(4);
+
+      // 获取第一个JOIN节点
+      const join1Node = graph?.getNode('node-join1');
+      expect(join1Node).toBeDefined();
+      const join1Config = join1Node?.originalNode?.config as any;
+
+      // 验证第一个JOIN节点的forkPathIds指向第一个FORK节点的全局ID
+      expect(join1Config.forkPathIds).toContain(fork1PathId1);
+      expect(join1Config.forkPathIds).toContain(fork1PathId2);
+      expect(join1Config.mainPathId).toBe(fork1PathId1);
+
+      // 获取第二个JOIN节点
+      const join2Node = graph?.getNode('node-join2');
+      expect(join2Node).toBeDefined();
+      const join2Config = join2Node?.originalNode?.config as any;
+
+      // 验证第二个JOIN节点的forkPathIds指向第二个FORK节点的全局ID
+      expect(join2Config.forkPathIds).toContain(fork2PathId1);
+      expect(join2Config.forkPathIds).toContain(fork2PathId2);
+      expect(join2Config.mainPathId).toBe(fork2PathId1);
+    });
+
+  });
 });

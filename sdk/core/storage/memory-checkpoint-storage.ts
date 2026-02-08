@@ -60,8 +60,12 @@ export class MemoryCheckpointStorage implements CheckpointStorage {
       );
     }
 
-    // 按时间戳降序排序
-    entries.sort(([, a], [, b]) => b.metadata.timestamp - a.metadata.timestamp);
+    // 按时间戳降序排序，时间戳相同时按ID降序排序（保证稳定性）
+    entries.sort(([idA, a], [idB, b]) => {
+      const timeDiff = b.metadata.timestamp - a.metadata.timestamp;
+      if (timeDiff !== 0) return timeDiff;
+      return idB.localeCompare(idA);
+    });
 
     // 应用分页
     const offset = options?.offset || 0;

@@ -139,10 +139,18 @@ export class CheckpointCoordinator {
     // 步骤2：验证 checkpoint 完整性和兼容性
     CheckpointCoordinator.validateCheckpoint(checkpoint);
 
-    // 步骤3：从 WorkflowRegistry 获取 WorkflowDefinition
+    // 步骤3：从 WorkflowRegistry 获取 WorkflowDefinition 和 Graph
     const workflowDefinition = workflowRegistry.get(checkpoint.workflowId);
     if (!workflowDefinition) {
       throw new NotFoundError(`Workflow not found`, 'Workflow', checkpoint.workflowId);
+    }
+
+    // 获取工作流图结构
+    // 设计目的：恢复后的 Thread 需要完整的图结构(graph中存储的是合并后的工作流，完成了命名冲突的处理)
+    // 来继续执行工作流（例如：查找节点、遍历边、执行图算法等）
+    const graph = workflowRegistry.getGraph(checkpoint.workflowId);
+    if (!graph) {
+      throw new NotFoundError(`Graph not found`, 'Graph', checkpoint.workflowId);
     }
 
     // 步骤4：恢复 Thread 状态
@@ -162,7 +170,9 @@ export class CheckpointCoordinator {
       errors: checkpoint.threadState.errors,
       metadata: checkpoint.metadata,
       forkJoinContext: checkpoint.threadState.forkJoinContext,
-      triggeredSubworkflowContext: checkpoint.threadState.triggeredSubworkflowContext
+      triggeredSubworkflowContext: checkpoint.threadState.triggeredSubworkflowContext,
+      variableScopes: checkpoint.threadState.variableScopes,
+      graph
     };
 
     // 步骤5：使用 VariableStateManager 恢复变量快照
@@ -242,7 +252,7 @@ export class CheckpointCoordinator {
 
     // 步骤14：恢复子Thread（方案3：主从分离模式）
     if (checkpoint.threadState.triggeredSubworkflowContext?.childThreadIds &&
-        checkpoint.threadState.triggeredSubworkflowContext.childThreadIds.length > 0) {
+      checkpoint.threadState.triggeredSubworkflowContext.childThreadIds.length > 0) {
       for (const childThreadId of checkpoint.threadState.triggeredSubworkflowContext.childThreadIds) {
         // 查找子Thread的Checkpoint
         const childCheckpointId = await this.findChildCheckpoint(childThreadId, checkpointStateManager);
@@ -284,7 +294,7 @@ export class CheckpointCoordinator {
       dependencies,
       {
         ...metadata,
-        description: `Node checkpoint for node ${nodeId}`,
+        description: metadata?.description || `Node checkpoint for node ${nodeId}`,
         customFields: {
           ...metadata?.customFields,
           nodeId

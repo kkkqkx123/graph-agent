@@ -150,6 +150,12 @@ export class GraphBuilder {
           }
           // 更新Join节点配置
           config.forkPathIds = globalPathIds;
+
+          // 更新mainPathId（如果存在）
+          // 设计目的：mainPathId必须指向forkPathIds中的一个值，当forkPathIds被更新为全局唯一ID后(避免重复)，mainPathId也必须更新
+          if (config?.mainPathId && pathIdMapping.has(config.mainPathId)) {
+            config.mainPathId = pathIdMapping.get(config.mainPathId)!;
+          }
         }
       }
     }
@@ -328,10 +334,11 @@ export class GraphBuilder {
     // 添加子工作流的节点（重命名ID）
     for (const node of subgraph.nodes.values()) {
       const newId = generateNamespacedNodeId(options.nodeIdPrefix || '', node.id);
+      
       const newNode: GraphNode = {
         ...node,
         id: newId,
-        originalNode: node.originalNode,
+        originalNode: node.originalNode, // 保持原始引用，不进行深拷贝
         workflowId: options.subworkflowId,
         parentWorkflowId: options.parentWorkflowId,
       };
@@ -382,9 +389,10 @@ export class GraphBuilder {
       const newStartNodeId = nodeIdMapping.get(subgraph.startNodeId);
       if (newStartNodeId) {
         for (const incomingEdge of incomingEdges) {
+          const newEdgeId = `${incomingEdge.id}_merged`;
           const newEdge: GraphEdge = {
             ...incomingEdge,
-            id: `${incomingEdge.id}_merged`,
+            id: newEdgeId,
             targetNodeId: newStartNodeId,
           };
           mainGraph.addEdge(newEdge);
@@ -399,9 +407,10 @@ export class GraphBuilder {
       const newEndNodeId = nodeIdMapping.get(endNodeId);
       if (newEndNodeId) {
         for (const outgoingEdge of outgoingEdges) {
+          const newEdgeId = `${outgoingEdge.id}_merged`;
           const newEdge: GraphEdge = {
             ...outgoingEdge,
-            id: `${outgoingEdge.id}_merged`,
+            id: newEdgeId,
             sourceNodeId: newEndNodeId,
           };
           mainGraph.addEdge(newEdge);
