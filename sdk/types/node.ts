@@ -126,19 +126,28 @@ export interface VariableNodeConfig {
 }
 
 /**
- * 分叉节点配置
+ * 分叉路径配置
+ * 每个分叉路径包含路径ID和对应的子节点ID
  */
-export interface ForkNodeConfig {
+export interface ForkPath {
   /**
-   * 分叉路径ID数组，与childNodeIds一一对应
+   * 分叉路径ID
    * 每个路径ID在工作流定义内部唯一
    * 图构建阶段会转换为全局唯一ID
    */
-  forkPathIds: ID[];
+  pathId: ID;
+  /** 子节点ID，该路径的起始节点 */
+  childNodeId: string;
+}
+
+/**
+ * 分叉节点配置
+ */
+export interface ForkNodeConfig {
+  /** 分叉路径数组，每个路径包含pathId和childNodeId */
+  forkPaths: ForkPath[];
   /** 分叉策略(串行、并行) */
   forkStrategy: 'serial' | 'parallel';
-  /** 子节点ID列表，与forkPathIds一一对应 */
-  childNodeIds: string[];
 }
 
 /**

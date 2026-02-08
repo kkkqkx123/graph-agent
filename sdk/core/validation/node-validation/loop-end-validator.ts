@@ -15,7 +15,10 @@ import { ok, err } from '../../../utils/result-utils';
  */
 const loopEndNodeConfigSchema = z.object({
   loopId: z.string().min(1, 'Loop ID is required'),
-  breakCondition: z.any().optional(),
+  breakCondition: z.object({
+    expression: z.string().min(1, 'Break condition expression is required'),
+    metadata: z.any().optional()
+  }).optional(),
   loopStartNodeId: z.string().optional()
 });
 

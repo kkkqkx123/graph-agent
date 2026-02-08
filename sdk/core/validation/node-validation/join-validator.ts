@@ -17,7 +17,7 @@ import { ok, err } from '../../../utils/result-utils';
  * - childThreadIds不在schema中定义，因为子线程ID是运行时动态值，
  *   在FORK节点执行时存储到执行上下文中，JOIN节点执行时从执行上下文读取。
  * - timeout 允许为 0（无超时）或正数。当为 0 时表示始终等待，不设置超时。
- * - forkPathIds 必须与配对的FORK节点完全一致（包括顺序）
+ * - forkPathIds 必须与配对的FORK节点的forkPaths中的pathId完全一致（包括顺序）
  * - mainPathId 指定主线程路径，必须是forkPathIds中的一个值
  */
 const joinNodeConfigSchema = z.object({

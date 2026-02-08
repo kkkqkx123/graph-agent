@@ -317,16 +317,15 @@ export class CheckpointCoordinator {
     }
 
     // 2. 获取FORK节点的所有路径
-    const forkPathIds = (forkNode.config as any)?.forkPathIds || [];
-    const childNodeIds = (forkNode.config as any)?.childNodeIds || [];
+    const forkPaths = (forkNode.config as any)?.forkPaths || [];
 
     // 3. 推断哪些路径已完成
     const completedPaths = new Set<string>();
     const pendingPaths = new Set<string>();
 
-    for (let i = 0; i < forkPathIds.length; i++) {
-      const pathId = forkPathIds[i];
-      const startNodeId = childNodeIds[i];
+    for (const forkPath of forkPaths) {
+      const pathId = forkPath.pathId;
+      const startNodeId = forkPath.childNodeId;
 
       if (nodeResults[startNodeId]) {
         completedPaths.add(pathId);

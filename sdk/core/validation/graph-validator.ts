@@ -283,45 +283,41 @@ export class GraphValidator {
     for (const node of graph.nodes.values()) {
       if (node.type === 'FORK' as NodeType) {
         const config = node.originalNode?.config as any;
-        const forkPathIds = config?.forkPathIds;
-        const childNodeIds = config?.childNodeIds;
+        const forkPaths = config?.forkPaths;
 
         // 验证Fork节点配置
-        if (!forkPathIds || !Array.isArray(forkPathIds) || forkPathIds.length === 0) {
+        if (!forkPaths || !Array.isArray(forkPaths) || forkPaths.length === 0) {
           errors.push(
-            new ValidationError(`FORK节点(${node.id})的forkPathIds必须是非空数组`, undefined, undefined, {
-              code: 'INVALID_FORK_PATH_IDS',
+            new ValidationError(`FORK节点(${node.id})的forkPaths必须是非空数组`, undefined, undefined, {
+              code: 'INVALID_FORK_PATHS',
               nodeId: node.id,
             })
           );
           continue;
         }
 
-        if (!childNodeIds || !Array.isArray(childNodeIds) || childNodeIds.length === 0) {
-          errors.push(
-            new ValidationError(`FORK节点(${node.id})的childNodeIds必须是非空数组`, undefined, undefined, {
-              code: 'INVALID_CHILD_NODE_IDS',
-              nodeId: node.id,
-            })
-          );
-          continue;
+        // 从forkPaths中提取pathId和childNodeId
+        const forkPathIds: ID[] = [];
+        const childNodeIds: string[] = [];
+        for (const forkPath of forkPaths) {
+          if (!forkPath.pathId || !forkPath.childNodeId) {
+            errors.push(
+              new ValidationError(`FORK节点(${node.id})的forkPaths中的每个元素必须包含pathId和childNodeId`, undefined, undefined, {
+                code: 'INVALID_FORK_PATH_ITEM',
+                nodeId: node.id,
+              })
+            );
+            continue;
+          }
+          forkPathIds.push(forkPath.pathId);
+          childNodeIds.push(forkPath.childNodeId);
         }
 
-        if (forkPathIds.length !== childNodeIds.length) {
-          errors.push(
-            new ValidationError(`FORK节点(${node.id})的forkPathIds长度必须等于childNodeIds长度`, undefined, undefined, {
-              code: 'FORK_PATH_IDS_LENGTH_MISMATCH',
-              nodeId: node.id,
-            })
-          );
-          continue;
-        }
-
-        // 检查forkPathIds在工作流定义内部是否唯一
+        // 检查pathId在工作流定义内部是否唯一
         for (const forkPathId of forkPathIds) {
           if (allForkPathIds.has(forkPathId)) {
             errors.push(
-              new ValidationError(`FORK节点(${node.id})的forkPathId(${forkPathId})在工作流定义内部不唯一`, undefined, undefined, {
+              new ValidationError(`FORK节点(${node.id})的pathId(${forkPathId})在工作流定义内部不唯一`, undefined, undefined, {
                 code: 'DUPLICATE_FORK_PATH_ID',
                 nodeId: node.id,
                 forkPathId,
@@ -332,11 +328,14 @@ export class GraphValidator {
           }
         }
 
-        // 使用forkPathIds的第一个元素作为配对标识符(因为配置中要求id顺序确定)
-        const pairId = forkPathIds[0];
+        // 使用forkPaths的第一个元素的pathId作为配对标识符
+        if (forkPathIds.length === 0) {
+          continue;
+        }
+        const pairId = forkPathIds[0]!;
         if (forkNodes.has(pairId)) {
           errors.push(
-            new ValidationError(`FORK节点(${node.id})的forkPathIds第一个元素(${pairId})已被其他FORK节点使用`, undefined, undefined, {
+            new ValidationError(`FORK节点(${node.id})的forkPaths第一个元素的pathId(${pairId})已被其他FORK节点使用`, undefined, undefined, {
               code: 'DUPLICATE_FORK_PAIR_ID',
               nodeId: node.id,
               pairId,

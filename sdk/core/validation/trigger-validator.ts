@@ -16,7 +16,9 @@ import { ok, err } from '../../utils/result-utils';
  * 触发条件schema
  */
 const triggerConditionSchema = z.object({
-  eventType: z.nativeEnum(EventType),
+  eventType: z.custom<EventType>((val): val is EventType =>
+    Object.values(EventType).includes(val as EventType)
+  ),
   eventName: z.string().optional(),
   metadata: z.record(z.string(), z.any()).optional()
 }).refine(
@@ -45,7 +47,9 @@ const executeTriggeredSubgraphActionConfigSchema = z.object({
  * 触发动作schema
  */
 const triggerActionSchema = z.object({
-  type: z.nativeEnum(TriggerActionType),
+  type: z.custom<TriggerActionType>((val): val is TriggerActionType =>
+    Object.values(TriggerActionType).includes(val as TriggerActionType)
+  ),
   parameters: z.record(z.string(), z.any()),
   metadata: z.record(z.string(), z.any()).optional()
 });
@@ -69,12 +73,16 @@ const workflowTriggerSchema = z.object({
  */
 const triggerConfigOverrideSchema = z.object({
   condition: z.object({
-    eventType: z.nativeEnum(EventType).optional(),
+    eventType: z.custom<EventType>((val): val is EventType =>
+      Object.values(EventType).includes(val as EventType)
+    ).optional(),
     eventName: z.string().optional(),
     metadata: z.record(z.string(), z.any()).optional()
   }).optional(),
   action: z.object({
-    type: z.nativeEnum(TriggerActionType).optional(),
+    type: z.custom<TriggerActionType>((val): val is TriggerActionType =>
+      Object.values(TriggerActionType).includes(val as TriggerActionType)
+    ).optional(),
     parameters: z.record(z.string(), z.any()).optional(),
     metadata: z.record(z.string(), z.any()).optional()
   }).optional(),

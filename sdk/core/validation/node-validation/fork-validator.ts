@@ -13,15 +13,22 @@ import { ok, err } from '../../../utils/result-utils';
 /**
  * Fork节点配置schema
  */
+const forkPathSchema = z.object({
+  pathId: z.string().min(1, 'Path ID is required'),
+  childNodeId: z.string().min(1, 'Child node ID is required')
+});
+
 const forkNodeConfigSchema = z.object({
-  forkPathIds: z.array(z.string()).min(1, 'Fork path IDs must be a non-empty array'),
-  forkStrategy: z.enum(['serial', 'parallel']),
-  childNodeIds: z.array(z.string()).min(1, 'Child node IDs must be a non-empty array')
+  forkPaths: z.array(forkPathSchema).min(1, 'Fork paths must be a non-empty array'),
+  forkStrategy: z.enum(['serial', 'parallel'])
 }).refine(
   (data) => {
-    return data.forkPathIds.length === data.childNodeIds.length;
+    // 验证pathId唯一性
+    const pathIds = data.forkPaths.map(p => p.pathId);
+    const uniquePathIds = new Set(pathIds);
+    return pathIds.length === uniquePathIds.size;
   },
-  { message: 'forkPathIds length must equal childNodeIds length', path: ['forkPathIds'] }
+  { message: 'Fork path IDs must be unique', path: ['forkPaths'] }
 );
 
 /**

@@ -39,9 +39,8 @@ export async function forkHandler(thread: Thread, node: Node, context?: any): Pr
 
   // Fork节点作为占位符，仅返回配置信息
   return {
-    forkPathIds: config.forkPathIds,
+    forkPaths: config.forkPaths,
     forkStrategy: config.forkStrategy,
-    childNodeIds: config.childNodeIds,
     message: 'Fork node is a placeholder. Actual fork operation is handled by ThreadExecutor and ThreadCoordinator.'
   };
 }

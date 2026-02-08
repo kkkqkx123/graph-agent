@@ -14,7 +14,9 @@ import type { Result } from '../../types/result';
  * Hook配置schema
  */
 const hookSchema = z.object({
-  hookType: z.nativeEnum(HookType),
+  hookType: z.custom<HookType>((val): val is HookType =>
+    Object.values(HookType).includes(val as HookType)
+  ),
   enabled: z.boolean().optional(),
   weight: z.number().optional(),
   condition: z.object({

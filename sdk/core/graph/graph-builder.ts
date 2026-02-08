@@ -108,7 +108,7 @@ export class GraphBuilder {
 
   /**
    * 处理Fork/Join Path ID全局唯一化
-   * 为每个forkPathIds中的ID生成全局唯一ID，确保Fork和Join节点使用相同的Path ID
+   * 为每个forkPaths中的pathId生成全局唯一ID，确保Fork和Join节点使用相同的Path ID
    * @param graph 图数据
    */
   private static processForkJoinPathIds(graph: GraphData): void {
@@ -118,17 +118,16 @@ export class GraphBuilder {
     for (const node of graph.nodes.values()) {
       if (node.type === 'FORK' as NodeType) {
         const config = node.originalNode?.config as any;
-        if (config?.forkPathIds && Array.isArray(config.forkPathIds)) {
-          const globalPathIds: ID[] = [];
-          for (const originalPathId of config.forkPathIds) {
+        if (config?.forkPaths && Array.isArray(config.forkPaths)) {
+          for (const forkPath of config.forkPaths) {
+            const originalPathId = forkPath.pathId;
             // 如果还没有生成全局ID，则生成一个新的
             if (!pathIdMapping.has(originalPathId)) {
               pathIdMapping.set(originalPathId, `path-${generateId()}`);
             }
-            globalPathIds.push(pathIdMapping.get(originalPathId)!);
+            // 更新forkPath中的pathId为全局唯一ID
+            forkPath.pathId = pathIdMapping.get(originalPathId)!;
           }
-          // 更新Fork节点配置
-          config.forkPathIds = globalPathIds;
         }
       }
     }

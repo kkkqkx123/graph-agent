@@ -164,9 +164,11 @@ describe('NodeValidator', () => {
         name: 'Fork',
         type: NodeType.FORK,
         config: {
-          forkPathIds: ['path-1', 'path-2'],
-          forkStrategy: 'serial',
-          childNodeIds: ['child-1', 'child-2']
+          forkPaths: [
+            { pathId: 'path-1', childNodeId: 'child-1' },
+            { pathId: 'path-2', childNodeId: 'child-2' }
+          ],
+          forkStrategy: 'serial'
         },
         incomingEdgeIds: [],
         outgoingEdgeIds: []
@@ -176,14 +178,13 @@ describe('NodeValidator', () => {
       expect(result.unwrap()).toEqual(node);
     });
 
-    it('should return error for FORK node without forkPathIds', () => {
+    it('should return error for FORK node without forkPaths', () => {
       const node: Node = {
         id: 'node-1',
         name: 'Fork',
         type: NodeType.FORK,
         config: {
-          forkStrategy: 'serial',
-          childNodeIds: ['child-1']
+          forkStrategy: 'serial'
         },
         incomingEdgeIds: [],
         outgoingEdgeIds: []
@@ -191,7 +192,7 @@ describe('NodeValidator', () => {
       const result = validator.validateNode(node);
       expect(result.isErr()).toBe(true);
       if (result.isErr()) {
-        expect(result.error.some(e => e.field?.includes('forkPathIds'))).toBe(true);
+        expect(result.error.some(e => e.field?.includes('forkPaths'))).toBe(true);
       }
     });
 
@@ -201,8 +202,9 @@ describe('NodeValidator', () => {
         name: 'Fork',
         type: NodeType.FORK,
         config: {
-          forkPathIds: ['path-1'],
-          childNodeIds: ['child-1']
+          forkPaths: [
+            { pathId: 'path-1', childNodeId: 'child-1' }
+          ]
         },
         incomingEdgeIds: [],
         outgoingEdgeIds: []
@@ -211,6 +213,28 @@ describe('NodeValidator', () => {
       expect(result.isErr()).toBe(true);
       if (result.isErr()) {
         expect(result.error.some(e => e.field?.includes('forkStrategy'))).toBe(true);
+      }
+    });
+
+    it('should return error for FORK node with duplicate pathId', () => {
+      const node: Node = {
+        id: 'node-1',
+        name: 'Fork',
+        type: NodeType.FORK,
+        config: {
+          forkPaths: [
+            { pathId: 'path-1', childNodeId: 'child-1' },
+            { pathId: 'path-1', childNodeId: 'child-2' }
+          ],
+          forkStrategy: 'serial'
+        },
+        incomingEdgeIds: [],
+        outgoingEdgeIds: []
+      };
+      const result = validator.validateNode(node);
+      expect(result.isErr()).toBe(true);
+      if (result.isErr()) {
+        expect(result.error.some(e => e.field?.includes('forkPaths'))).toBe(true);
       }
     });
   });

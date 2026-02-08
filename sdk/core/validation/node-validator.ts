@@ -17,7 +17,9 @@ import { validateNodeByType } from './node-validation';
  */
 const nodeSchema: z.ZodType<Node> = z.object({
   id: z.string().min(1, 'Node ID is required'),
-  type: z.nativeEnum(NodeType),
+  type: z.custom<NodeType>((val): val is NodeType =>
+    Object.values(NodeType).includes(val as NodeType)
+  ),
   name: z.string().min(1, 'Node name is required'),
   description: z.string().optional(),
   config: z.any(), // config将在后续验证中根据type进行验证

@@ -108,7 +108,9 @@ const toolMetadataSchema = z.object({
 const toolSchema = z.object({
   id: z.string().min(1, 'Tool ID is required'),
   name: z.string().min(1, 'Tool name is required'),
-  type: z.nativeEnum(ToolType),
+  type: z.custom<ToolType>((val): val is ToolType =>
+    Object.values(ToolType).includes(val as ToolType)
+  ),
   description: z.string().min(1, 'Tool description is required'),
   parameters: toolParametersSchema,
   metadata: toolMetadataSchema.optional(),

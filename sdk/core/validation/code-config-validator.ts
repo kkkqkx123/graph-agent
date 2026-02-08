@@ -62,7 +62,9 @@ const scriptMetadataSchema = z.object({
 const scriptSchema = z.object({
   id: z.string().min(1, 'Script ID is required'),
   name: z.string().min(1, 'Script name is required'),
-  type: z.nativeEnum(ScriptType),
+  type: z.custom<ScriptType>((val): val is ScriptType =>
+    Object.values(ScriptType).includes(val as ScriptType)
+  ),
   description: z.string().min(1, 'Script description is required'),
   content: z.string().optional(),
   filePath: z.string().optional(),
