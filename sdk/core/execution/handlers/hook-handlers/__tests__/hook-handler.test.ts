@@ -26,6 +26,11 @@ jest.mock('../utils', () => ({
   emitHookEvent: jest.fn()
 }));
 
+// Mock createCheckpoint
+jest.mock('../../checkpoint-handlers/checkpoint-utils', () => ({
+  createCheckpoint: jest.fn()
+}));
+
 describe('hook-handler', () => {
   let mockThread: Thread;
   let mockNode: Node;
@@ -720,6 +725,207 @@ describe('hook-handler', () => {
       await expect(
         executeHookFresh(context, HookType.BEFORE_EXECUTE, mockEmitEvent)
       ).resolves.toBeUndefined();
+    });
+  });
+
+  describe('检查点功能', () => {
+    it('应该在hook配置了createCheckpoint时创建检查点', async () => {
+      const { conditionEvaluator } = require('../../../../../utils/evalutor/condition-evaluator');
+      const { buildHookEvaluationContext, convertToEvaluationContext, generateHookEventData, emitHookEvent } = require('../utils');
+      const { createCheckpoint } = require('../../checkpoint-handlers/checkpoint-utils');
+
+      conditionEvaluator.evaluate.mockReturnValue(true);
+      buildHookEvaluationContext.mockReturnValue({ output: 'test' });
+      convertToEvaluationContext.mockReturnValue({});
+      generateHookEventData.mockReturnValue({ eventData: 'test' });
+      emitHookEvent.mockResolvedValue(undefined);
+      createCheckpoint.mockResolvedValue('checkpoint-1');
+
+      const mockCheckpointDependencies = {
+        threadRegistry: {
+          get: jest.fn().mockReturnValue({
+            thread: mockThread,
+            getThreadId: jest.fn().mockReturnValue('thread-1')
+          }),
+          register: jest.fn(),
+          delete: jest.fn(),
+          getAll: jest.fn().mockReturnValue([]),
+          clear: jest.fn(),
+          has: jest.fn().mockReturnValue(true)
+        } as any,
+        checkpointStateManager: {
+          create: jest.fn().mockResolvedValue('checkpoint-1')
+        } as any,
+        workflowRegistry: {} as any,
+        globalMessageStorage: {} as any
+      };
+
+      const hooks: NodeHook[] = [
+        {
+          hookType: HookType.BEFORE_EXECUTE,
+          eventName: 'checkpoint-event',
+          enabled: true,
+          createCheckpoint: true,
+          checkpointDescription: 'Hook checkpoint'
+        }
+      ];
+
+      const nodeWithHooks = {
+        ...mockNode,
+        hooks
+      };
+
+      const context: HookExecutionContext = {
+        thread: mockThread,
+        node: nodeWithHooks,
+        checkpointDependencies: mockCheckpointDependencies
+      };
+
+      await executeHook(context, HookType.BEFORE_EXECUTE, mockEmitEvent);
+
+      // 验证检查点被创建
+      expect(createCheckpoint).toHaveBeenCalledWith(
+        {
+          threadId: 'thread-1',
+          nodeId: 'node-1',
+          description: 'Hook checkpoint'
+        },
+        mockCheckpointDependencies
+      );
+    });
+
+    it('应该在hook没有配置createCheckpoint时不创建检查点', async () => {
+      const { conditionEvaluator } = require('../../../../../utils/evalutor/condition-evaluator');
+      const { buildHookEvaluationContext, convertToEvaluationContext, generateHookEventData, emitHookEvent } = require('../utils');
+      const { createCheckpoint } = require('../../checkpoint-handlers/checkpoint-utils');
+
+      conditionEvaluator.evaluate.mockReturnValue(true);
+      buildHookEvaluationContext.mockReturnValue({ output: 'test' });
+      convertToEvaluationContext.mockReturnValue({});
+      generateHookEventData.mockReturnValue({ eventData: 'test' });
+      emitHookEvent.mockResolvedValue(undefined);
+      createCheckpoint.mockResolvedValue('checkpoint-1');
+
+      const hooks: NodeHook[] = [
+        {
+          hookType: HookType.BEFORE_EXECUTE,
+          eventName: 'no-checkpoint-event',
+          enabled: true
+        }
+      ];
+
+      const nodeWithHooks = {
+        ...mockNode,
+        hooks
+      };
+
+      const context: HookExecutionContext = {
+        thread: mockThread,
+        node: nodeWithHooks
+      };
+
+      await executeHook(context, HookType.BEFORE_EXECUTE, mockEmitEvent);
+
+      // 验证检查点没有被创建
+      expect(createCheckpoint).not.toHaveBeenCalled();
+    });
+
+    it('应该在createCheckpoint为false时不创建检查点', async () => {
+      const { conditionEvaluator } = require('../../../../../utils/evalutor/condition-evaluator');
+      const { buildHookEvaluationContext, convertToEvaluationContext, generateHookEventData, emitHookEvent } = require('../utils');
+      const { createCheckpoint } = require('../../checkpoint-handlers/checkpoint-utils');
+
+      conditionEvaluator.evaluate.mockReturnValue(true);
+      buildHookEvaluationContext.mockReturnValue({ output: 'test' });
+      convertToEvaluationContext.mockReturnValue({});
+      generateHookEventData.mockReturnValue({ eventData: 'test' });
+      emitHookEvent.mockResolvedValue(undefined);
+      createCheckpoint.mockResolvedValue('checkpoint-1');
+
+      const hooks: NodeHook[] = [
+        {
+          hookType: HookType.BEFORE_EXECUTE,
+          eventName: 'disabled-checkpoint-event',
+          enabled: true,
+          createCheckpoint: false
+        }
+      ];
+
+      const nodeWithHooks = {
+        ...mockNode,
+        hooks
+      };
+
+      const context: HookExecutionContext = {
+        thread: mockThread,
+        node: nodeWithHooks
+      };
+
+      await executeHook(context, HookType.BEFORE_EXECUTE, mockEmitEvent);
+
+      // 验证检查点没有被创建
+      expect(createCheckpoint).not.toHaveBeenCalled();
+    });
+
+    it('应该在检查点创建失败时继续执行hook', async () => {
+      const { conditionEvaluator } = require('../../../../../utils/evalutor/condition-evaluator');
+      const { buildHookEvaluationContext, convertToEvaluationContext, generateHookEventData, emitHookEvent } = require('../utils');
+      const { createCheckpoint } = require('../../checkpoint-handlers/checkpoint-utils');
+
+      conditionEvaluator.evaluate.mockReturnValue(true);
+      buildHookEvaluationContext.mockReturnValue({ output: 'test' });
+      convertToEvaluationContext.mockReturnValue({});
+      generateHookEventData.mockReturnValue({ eventData: 'test' });
+      emitHookEvent.mockResolvedValue(undefined);
+      createCheckpoint.mockRejectedValue(new Error('Checkpoint creation failed'));
+
+      const mockCheckpointDependencies = {
+        threadRegistry: {
+          get: jest.fn().mockReturnValue({
+            thread: mockThread,
+            getThreadId: jest.fn().mockReturnValue('thread-1')
+          }),
+          register: jest.fn(),
+          delete: jest.fn(),
+          getAll: jest.fn().mockReturnValue([]),
+          clear: jest.fn(),
+          has: jest.fn().mockReturnValue(true)
+        } as any,
+        checkpointStateManager: {
+          create: jest.fn().mockRejectedValue(new Error('Checkpoint creation failed'))
+        } as any,
+        workflowRegistry: {} as any,
+        globalMessageStorage: {} as any
+      };
+
+      const hooks: NodeHook[] = [
+        {
+          hookType: HookType.BEFORE_EXECUTE,
+          eventName: 'checkpoint-event',
+          enabled: true,
+          createCheckpoint: true,
+          checkpointDescription: 'Hook checkpoint'
+        }
+      ];
+
+      const nodeWithHooks = {
+        ...mockNode,
+        hooks
+      };
+
+      const context: HookExecutionContext = {
+        thread: mockThread,
+        node: nodeWithHooks,
+        checkpointDependencies: mockCheckpointDependencies
+      };
+
+      // 应该不抛出错误
+      await expect(
+        executeHook(context, HookType.BEFORE_EXECUTE, mockEmitEvent)
+      ).resolves.toBeUndefined();
+
+      // 验证事件仍然被触发
+      expect(emitHookEvent).toHaveBeenCalled();
     });
   });
 });
