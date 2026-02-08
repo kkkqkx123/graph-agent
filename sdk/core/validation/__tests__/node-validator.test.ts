@@ -601,8 +601,8 @@ describe('NodeValidator', () => {
         type: NodeType.ROUTE,
         config: {
           routes: [
-            { condition: 'input.value > 10', targetNodeId: 'node-2' },
-            { condition: 'input.value <= 10', targetNodeId: 'node-3' }
+            { condition: { expression: 'input.value > 10' }, targetNodeId: 'node-2' },
+            { condition: { expression: 'input.value <= 10' }, targetNodeId: 'node-3' }
           ]
         },
         incomingEdgeIds: [],
@@ -655,7 +655,7 @@ describe('NodeValidator', () => {
         name: 'Route',
         type: NodeType.ROUTE,
         config: {
-          routes: [{ condition: 'input.value > 10' } as any]
+          routes: [{ condition: { expression: 'input.value > 10' } } as any]
         },
         incomingEdgeIds: [],
         outgoingEdgeIds: []

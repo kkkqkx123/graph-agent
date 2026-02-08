@@ -28,7 +28,7 @@ function evaluateRouteCondition(condition: Condition, thread: Thread): boolean {
     const context: EvaluationContext = {
       variables: thread.variableScopes.thread || {},
       input: thread.input || {},
-      output: thread.nodeResults[thread.nodeResults.length - 1]?.output || {}
+      output: thread.nodeResults[thread.nodeResults.length - 1]?.data || {}
     };
 
     return conditionEvaluator.evaluate(condition, context);

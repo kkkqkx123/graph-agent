@@ -22,6 +22,7 @@ export enum TriggerType {
 
 /**
  * 触发条件接口
+ * 由于是事件判断，不需要使用condition类型
  */
 export interface TriggerCondition {
   /** 事件类型 */

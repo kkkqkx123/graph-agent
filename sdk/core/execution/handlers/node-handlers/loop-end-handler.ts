@@ -5,6 +5,7 @@
 
 import type { Node, LoopEndNodeConfig } from '../../../../types/node';
 import type { Thread } from '../../../../types/thread';
+import type { Condition, EvaluationContext } from '../../../../types/condition';
 import { ExecutionError, NotFoundError } from '../../../../types/errors';
 import { conditionEvaluator } from '../../../../utils/evalutor/condition-evaluator';
 import { now } from '../../../../utils';
@@ -70,11 +71,11 @@ function clearLoopState(thread: Thread, loopId: string): void {
 /**
  * 评估中断条件
  */
-function evaluateBreakCondition(breakCondition: any, thread: Thread): boolean {
+function evaluateBreakCondition(breakCondition: Condition, thread: Thread): boolean {
   try {
     // 构建评估上下文
-    const context = {
-      variables: thread.variableScopes.thread,
+    const context: EvaluationContext = {
+      variables: thread.variableScopes.thread || {},
       input: thread.input || {},
       output: thread.output || {}
     };

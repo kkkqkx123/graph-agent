@@ -17,7 +17,10 @@ const hookSchema = z.object({
   hookType: z.nativeEnum(HookType),
   enabled: z.boolean().optional(),
   weight: z.number().optional(),
-  condition: z.string().optional(),
+  condition: z.object({
+    expression: z.string().min(1, 'Condition expression is required'),
+    metadata: z.any().optional()
+  }).optional(),
   eventName: z.string().min(1, 'Event name is required'),
   eventPayload: z.record(z.string(), z.any()).optional()
 });

@@ -33,8 +33,8 @@ describe('WorkflowBuilder', () => {
       expect(workflow.nodes[0].type).toBe(NodeType.START);
       expect(workflow.nodes[1].type).toBe(NodeType.END);
       expect(workflow.edges).toHaveLength(1);
-      expect(workflow.edges[0].from).toBe('start');
-      expect(workflow.edges[0].to).toBe('end');
+      expect(workflow.edges[0].sourceNodeId).toBe('start');
+      expect(workflow.edges[0].targetNodeId).toBe('end');
     });
   });
 
@@ -120,8 +120,8 @@ describe('WorkflowBuilder', () => {
       expect(routeNode?.type).toBe(NodeType.ROUTE);
       expect(routeNode?.config).toEqual({
         routes: [
-          { condition: '{{status}} === "success"', targetNodeId: 'success' },
-          { condition: '{{status}} === "failure"', targetNodeId: 'failure' }
+          { condition: { expression: '{{status}} === "success"' }, targetNodeId: 'success' },
+          { condition: { expression: '{{status}} === "failure"' }, targetNodeId: 'failure' }
         ],
         defaultTargetNodeId: 'default'
       });

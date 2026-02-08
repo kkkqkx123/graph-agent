@@ -52,12 +52,12 @@ describe('route-handler', () => {
         config: {
           routes: [
             {
-              condition: 'variables.status === "success"',
+              condition: { expression: 'variables.status === "success"' },
               targetNodeId: 'success-node',
               priority: 10
             },
             {
-              condition: 'variables.status === "failure"',
+              condition: { expression: 'variables.status === "failure"' },
               targetNodeId: 'failure-node',
               priority: 5
             }
@@ -72,7 +72,7 @@ describe('route-handler', () => {
 
       expect(result).toMatchObject({
         selectedRoute: {
-          condition: 'variables.status === "success"',
+          condition: { expression: 'variables.status === "success"' },
           targetNodeId: 'success-node',
           priority: 10
         },
@@ -92,12 +92,12 @@ describe('route-handler', () => {
         config: {
           routes: [
             {
-              condition: 'variables.status === "success"',
+              condition: { expression: 'variables.status === "success"' },
               targetNodeId: 'low-priority-node',
               priority: 1
             },
             {
-              condition: 'variables.status === "success"',
+              condition: { expression: 'variables.status === "success"' },
               targetNodeId: 'high-priority-node',
               priority: 10
             }
@@ -127,12 +127,12 @@ describe('route-handler', () => {
         config: {
           routes: [
             {
-              condition: 'variables.status === "success"',
+              condition: { expression: 'variables.status === "success"' },
               targetNodeId: 'success-node',
               priority: 10
             },
             {
-              condition: 'variables.status === "failure"',
+              condition: { expression: 'variables.status === "failure"' },
               targetNodeId: 'failure-node',
               priority: 5
             }
@@ -164,7 +164,7 @@ describe('route-handler', () => {
         config: {
           routes: [
             {
-              condition: 'variables.status === "success"',
+              condition: { expression: 'variables.status === "success"' },
               targetNodeId: 'success-node',
               priority: 10
             }
@@ -206,7 +206,7 @@ describe('route-handler', () => {
           config: {
             routes: [
               {
-                condition: 'variables.status === "success"',
+                condition: { expression: 'variables.status === "success"' },
                 targetNodeId: 'success-node',
                 priority: 10
               }
@@ -242,7 +242,7 @@ describe('route-handler', () => {
         config: {
           routes: [
             {
-              condition: 'variables.status === "success"',
+              condition: { expression: 'variables.status === "success"' },
               targetNodeId: 'success-node',
               priority: 10
             }
@@ -273,7 +273,7 @@ describe('route-handler', () => {
         config: {
           routes: [
             {
-              condition: 'variables.isActive === true',
+              condition: { expression: 'variables.isActive === true' },
               targetNodeId: 'active-node',
               priority: 10
             }
@@ -301,12 +301,12 @@ describe('route-handler', () => {
         config: {
           routes: [
             {
-              condition: 'variables.count > 10',
+              condition: { expression: 'variables.count > 10' },
               targetNodeId: 'greater-node',
               priority: 10
             },
             {
-              condition: 'variables.count <= 10',
+              condition: { expression: 'variables.count <= 10' },
               targetNodeId: 'lesser-node',
               priority: 5
             }
@@ -334,7 +334,7 @@ describe('route-handler', () => {
         config: {
           routes: [
             {
-              condition: 'variables.category === "premium"',
+              condition: { expression: 'variables.category === "premium"' },
               targetNodeId: 'premium-node',
               priority: 10
             }
@@ -363,7 +363,7 @@ describe('route-handler', () => {
         config: {
           routes: [
             {
-              condition: 'variables.score >= 80 && variables.passed === true',
+              condition: { expression: 'variables.score >= 80 && variables.passed === true' },
               targetNodeId: 'excellent-node',
               priority: 10
             }
@@ -391,12 +391,12 @@ describe('route-handler', () => {
         config: {
           routes: [
             {
-              condition: 'invalid.syntax.error',
+              condition: { expression: 'invalid.syntax.error' },
               targetNodeId: 'invalid-node',
               priority: 10
             },
             {
-              condition: 'variables.status === "success"',
+              condition: { expression: 'variables.status === "success"' },
               targetNodeId: 'success-node',
               priority: 5
             }
@@ -451,11 +451,11 @@ describe('route-handler', () => {
         config: {
           routes: [
             {
-              condition: 'variables.status === "success"',
+              condition: { expression: 'variables.status === "success"' },
               targetNodeId: 'no-priority-node'
             },
             {
-              condition: 'variables.status === "success"',
+              condition: { expression: 'variables.status === "success"' },
               targetNodeId: 'priority-node',
               priority: 10
             }
@@ -487,7 +487,7 @@ describe('route-handler', () => {
         config: {
           routes: [
             {
-              condition: 'true',
+              condition: { expression: 'true' },
               targetNodeId: 'always-node',
               priority: 10
             }

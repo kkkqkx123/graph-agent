@@ -243,12 +243,17 @@ export class WorkflowBuilder {
    */
   addRouteNode(
     id: string,
-    routes: Array<{ condition: string; targetNodeId: string; priority?: number }>,
+    routes: Array<{ condition: string | Condition; targetNodeId: string; priority?: number }>,
     defaultTargetNodeId?: string,
     name?: string
   ): this {
     const config = {
-      routes,
+      routes: routes.map(route => ({
+        ...route,
+        condition: typeof route.condition === 'string'
+          ? { expression: route.condition }
+          : route.condition
+      })),
       defaultTargetNodeId
     };
     return this.addNode(id, NodeType.ROUTE, config, name);

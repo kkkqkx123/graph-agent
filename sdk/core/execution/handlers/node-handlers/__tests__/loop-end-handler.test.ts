@@ -117,7 +117,7 @@ describe('loop-end-handler', () => {
 
       const config = {
         ...mockNode.config,
-        breakCondition: { operator: '==', left: 'item', right: 2 }
+        breakCondition: { expression: 'item == 2' }
       } as LoopEndNodeConfig;
 
       const node = { ...mockNode, config };
@@ -137,7 +137,7 @@ describe('loop-end-handler', () => {
 
       const config = {
         ...mockNode.config,
-        breakCondition: { operator: '==', left: 'item', right: 2 }
+        breakCondition: { expression: 'item == 2' }
       } as LoopEndNodeConfig;
 
       const node = { ...mockNode, config };
@@ -159,7 +159,7 @@ describe('loop-end-handler', () => {
 
       const config = {
         ...mockNode.config,
-        breakCondition: { operator: '==', left: 'item', right: 2 }
+        breakCondition: { expression: 'item == 2' }
       } as LoopEndNodeConfig;
 
       const node = { ...mockNode, config };
@@ -178,7 +178,7 @@ describe('loop-end-handler', () => {
 
       const config = {
         ...mockNode.config,
-        breakCondition: { operator: '==', left: 'threadVar', right: 'threadValue' }
+        breakCondition: { expression: 'threadVar == "threadValue"' }
       } as LoopEndNodeConfig;
 
       const node = { ...mockNode, config };
@@ -225,7 +225,7 @@ describe('loop-end-handler', () => {
 
       const config = {
         ...mockNode.config,
-        breakCondition: { operator: '==', left: 'item', right: 1 }
+        breakCondition: { expression: 'item == 1' }
       } as LoopEndNodeConfig;
 
       const node = { ...mockNode, config };
@@ -486,7 +486,7 @@ describe('loop-end-handler', () => {
 
       const config = {
         ...mockNode.config,
-        breakCondition: { operator: '==', left: 'item', right: 1 }
+        breakCondition: { expression: 'item == 1' }
       } as LoopEndNodeConfig;
 
       const node = { ...mockNode, config };

@@ -385,7 +385,7 @@ describe('hook-handler', () => {
       const { conditionEvaluator } = require('../../../../../utils/evalutor/condition-evaluator');
       const { buildHookEvaluationContext, convertToEvaluationContext, generateHookEventData, emitHookEvent } = require('../utils');
 
-      const mockCondition = 'output.result === "success"';
+      const mockCondition = { expression: 'output.result === "success"' };
       conditionEvaluator.evaluate.mockReturnValue(true);
       buildHookEvaluationContext.mockReturnValue({ output: { result: 'success' } });
       convertToEvaluationContext.mockReturnValue({});
@@ -415,7 +415,7 @@ describe('hook-handler', () => {
 
       // 验证条件评估器被调用
       expect(conditionEvaluator.evaluate).toHaveBeenCalledWith(
-        { expression: mockCondition },
+        mockCondition,
         {}
       );
       expect(emitHookEvent).toHaveBeenCalled();
@@ -435,7 +435,7 @@ describe('hook-handler', () => {
         {
           hookType: HookType.BEFORE_EXECUTE,
           eventName: 'conditional-event',
-          condition: 'output.result === "success"',
+          condition: { expression: 'output.result === "success"' },
           enabled: true
         }
       ];
@@ -473,7 +473,7 @@ describe('hook-handler', () => {
         {
           hookType: HookType.BEFORE_EXECUTE,
           eventName: 'conditional-event',
-          condition: 'invalid expression',
+          condition: { expression: 'invalid expression' },
           enabled: true
         },
         {

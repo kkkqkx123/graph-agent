@@ -311,8 +311,8 @@ describe('NodeTemplateBuilder', () => {
         .create('router', NodeType.ROUTE)
         .config({
           routes: [
-            { condition: '{{status}} === "success"', targetNodeId: 'success' },
-            { condition: '{{status}} === "failure"', targetNodeId: 'failure' }
+            { condition: { expression: '{{status}} === "success"' }, targetNodeId: 'success' },
+            { condition: { expression: '{{status}} === "failure"' }, targetNodeId: 'failure' }
           ],
           defaultTargetNodeId: 'default'
         } as any)

@@ -14,7 +14,7 @@ describe('validateHook', () => {
       eventName: 'test-event',
       enabled: true,
       weight: 10,
-      condition: 'data.value > 0',
+      condition: { expression: 'data.value > 0' },
       eventPayload: { key: 'value' }
     };
 
@@ -112,11 +112,10 @@ describe('validateHook', () => {
     expect(result.isOk()).toBe(true);
   });
 
-  it('应该接受空字符串condition', () => {
+  it('应该接受空condition', () => {
     const hook = {
       hookType: HookType.BEFORE_EXECUTE,
-      eventName: 'test-event',
-      condition: ''
+      eventName: 'test-event'
     };
 
     const result = validateHook(hook, nodeId);
@@ -332,7 +331,7 @@ describe('validateHooks', () => {
         eventName: 'complete-event-1',
         enabled: true,
         weight: 100,
-        condition: 'data.status === "ready"',
+        condition: { expression: 'data.status === "ready"' },
         eventPayload: { action: 'start', timestamp: Date.now() }
       },
       {
@@ -340,7 +339,7 @@ describe('validateHooks', () => {
         eventName: 'complete-event-2',
         enabled: false,
         weight: -50,
-        condition: 'data.error != null',
+        condition: { expression: 'data.error != null' },
         eventPayload: { action: 'handle-error', error: '${data.error}' }
       }
     ];

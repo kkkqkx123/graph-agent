@@ -15,7 +15,10 @@ import { ok, err } from '../../../utils/result-utils';
  */
 const routeNodeConfigSchema = z.object({
   routes: z.array(z.object({
-    condition: z.string().min(1, 'Route condition is required'),
+    condition: z.object({
+      expression: z.string().min(1, 'Route condition expression is required'),
+      metadata: z.any().optional()
+    }),
     targetNodeId: z.string().min(1, 'Target node ID is required'),
     priority: z.number().optional()
   })).min(1, 'Routes array cannot be empty'),
