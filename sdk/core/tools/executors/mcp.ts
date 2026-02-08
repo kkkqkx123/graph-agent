@@ -30,9 +30,9 @@ interface McpToolResult {
 }
 
 /**
- * MCP客户端类，使用stdio通信
+ * MCP会话类，管理MCP连接和协议交互
  */
-class StdioMcpClient {
+class McpSession {
   private process: ChildProcessWithoutNullStreams | null = null;
   private reader: Readable | null = null;
   private writer: Writable | null = null;
@@ -40,11 +40,13 @@ class StdioMcpClient {
   private messageIdCounter = 0;
   private pendingRequests = new Map<number, { resolve: (value: any) => void; reject: (error: any) => void }>();
   private eventEmitter = new EventEmitter();
+  private isInitialized = false;
+  private cleanupCallbacks: Array<() => Promise<void>> = [];
 
   constructor(private serverConfig: { command: string; args: string[]; env?: Record<string, string> }) { }
 
   /**
-   * 连接到MCP服务器
+   * 连接到MCP服务器并初始化会话
    */
   async connect(): Promise<boolean> {
     try {
@@ -77,9 +79,11 @@ class StdioMcpClient {
       // 初始化会话
       await this.initialize();
 
+      this.isInitialized = true;
       return true;
     } catch (error) {
       console.error(`Failed to connect to MCP server: ${error}`);
+      await this.cleanup();
       return false;
     }
   }
@@ -177,12 +181,19 @@ class StdioMcpClient {
     });
 
     this.sessionId = result.serverInfo?.name || 'unknown';
+    
+    // 发送initialized通知
+    await this.sendMessage('notifications/initialized', {});
   }
 
   /**
    * 列出可用的工具
    */
   async listTools(): Promise<McpToolDefinition[]> {
+    if (!this.isInitialized) {
+      throw new Error('Session not initialized');
+    }
+
     const result = await this.sendMessage('tools/list');
 
     if (result && Array.isArray(result.tools)) {
@@ -200,6 +211,10 @@ class StdioMcpClient {
    * 调用MCP工具
    */
   async callTool(toolName: string, argumentsMap: Record<string, any>): Promise<McpToolResult> {
+    if (!this.isInitialized) {
+      throw new Error('Session not initialized');
+    }
+
     const result = await this.sendMessage('tools/call', {
       name: toolName,
       arguments: argumentsMap
@@ -213,9 +228,37 @@ class StdioMcpClient {
   }
 
   /**
-   * 断开连接
+   * 添加清理回调
+   */
+  onCleanup(callback: () => Promise<void>): void {
+    this.cleanupCallbacks.push(callback);
+  }
+
+  /**
+   * 清理资源
+   */
+  private async cleanup(): Promise<void> {
+    // 执行所有清理回调
+    for (const callback of this.cleanupCallbacks) {
+      try {
+        await callback();
+      } catch (error) {
+        console.error('Error in cleanup callback:', error);
+      }
+    }
+    this.cleanupCallbacks = [];
+  }
+
+  /**
+   * 断开连接并清理资源
    */
   async disconnect(): Promise<void> {
+    if (!this.isInitialized) {
+      return;
+    }
+
+    await this.cleanup();
+
     if (this.writer) {
       try {
         // 发送退出通知
@@ -237,44 +280,70 @@ class StdioMcpClient {
       reject(new Error('Client disconnected'));
     }
     this.pendingRequests.clear();
+
+    this.isInitialized = false;
+    this.sessionId = null;
+  }
+
+  /**
+   * 获取会话ID
+   */
+  getSessionId(): string | null {
+    return this.sessionId;
+  }
+
+  /**
+   * 检查会话是否已初始化
+   */
+  isSessionInitialized(): boolean {
+    return this.isInitialized;
   }
 }
 
 /**
- * Stdio传输实现
+ * Stdio传输实现，使用MCP会话管理连接
  */
 class StdioTransport {
-  private client: StdioMcpClient | null = null;
+  private session: McpSession | null = null;
   private connectingPromise: Promise<boolean> | null = null;
+  private isDisposed = false;
 
   constructor(private config: { command: string; args: string[]; env?: Record<string, string> }) { }
 
   async execute<T = any>(url: string, options?: any): Promise<{ data: T; requestId?: string }> {
+    if (this.isDisposed) {
+      throw new Error('Transport has been disposed');
+    }
+
     // 在stdio传输中，URL通常是工具名
     const toolName = url;
     const parameters = options?.query || {}; // 参数通过query传递
 
-    // 确保客户端已连接
+    // 确保会话已连接
     await this.ensureConnected();
 
-    if (!this.client) {
+    if (!this.session || !this.session.isSessionInitialized()) {
       throw new Error('Failed to connect to MCP server');
     }
 
     // 调用MCP工具
-    const result = await this.client.callTool(toolName, parameters);
+    const result = await this.session.callTool(toolName, parameters);
 
     return {
       data: result as T,
-      requestId: 'stdio-transport'
+      requestId: this.session.getSessionId() || 'stdio-transport'
     };
   }
 
   /**
-   * 确保客户端已连接
+   * 确保会话已连接
    */
   private async ensureConnected(): Promise<void> {
-    if (this.client) {
+    if (this.isDisposed) {
+      throw new Error('Transport has been disposed');
+    }
+
+    if (this.session?.isSessionInitialized()) {
       return; // 已经连接
     }
 
@@ -293,11 +362,11 @@ class StdioTransport {
    * 连接到MCP服务器
    */
   private async connect(): Promise<boolean> {
-    this.client = new StdioMcpClient(this.config);
-    const connected = await this.client.connect();
+    this.session = new McpSession(this.config);
+    const connected = await this.session.connect();
 
     if (!connected) {
-      this.client = null;
+      this.session = null;
       return false;
     }
 
@@ -308,10 +377,28 @@ class StdioTransport {
    * 断开连接
    */
   async disconnect(): Promise<void> {
-    if (this.client) {
-      await this.client.disconnect();
-      this.client = null;
+    if (this.session) {
+      await this.session.disconnect();
+      this.session = null;
     }
+  }
+
+  /**
+   * 释放资源
+   */
+  async dispose(): Promise<void> {
+    this.isDisposed = true;
+    await this.disconnect();
+  }
+
+  /**
+   * 获取会话状态
+   */
+  getSessionStatus(): { isConnected: boolean; sessionId: string | null } {
+    return {
+      isConnected: this.session?.isSessionInitialized() || false,
+      sessionId: this.session?.getSessionId() || null
+    };
   }
 }
 
@@ -356,7 +443,8 @@ export class McpToolExecutor extends BaseToolExecutor {
       return {
         serverName,
         toolName: mcpToolName,
-        result
+        result,
+        sessionStatus: transport.getSessionStatus()
       };
     } catch (error) {
       if (error instanceof NetworkError || error instanceof ConfigurationError) {
@@ -423,7 +511,7 @@ export class McpToolExecutor extends BaseToolExecutor {
    */
   async closeAll(): Promise<void> {
     const disconnectPromises = Array.from(this.transports.values()).map(transport =>
-      transport.disconnect ? transport.disconnect() : Promise.resolve()
+      transport.dispose()
     );
     await Promise.all(disconnectPromises);
     this.transports.clear();
@@ -434,9 +522,20 @@ export class McpToolExecutor extends BaseToolExecutor {
    */
   async closeTransport(serverName: string): Promise<void> {
     const transport = this.transports.get(serverName);
-    if (transport && transport.disconnect) {
-      await transport.disconnect();
+    if (transport) {
+      await transport.dispose();
     }
     this.transports.delete(serverName);
+  }
+
+  /**
+   * 获取所有会话状态
+   */
+  getAllSessionStatus(): Map<string, { isConnected: boolean; sessionId: string | null }> {
+    const status = new Map<string, { isConnected: boolean; sessionId: string | null }>();
+    for (const [serverName, transport] of this.transports) {
+      status.set(serverName, transport.getSessionStatus());
+    }
+    return status;
   }
 }

@@ -72,7 +72,10 @@ export class EnableTriggerCommand extends BaseCommand<void> {
     try {
       const validation = this.validate();
       if (!validation.valid) {
-        return failure(validation.errors.join(', '), Date.now() - startTime);
+        return failure({
+          message: validation.errors.join(', '),
+          code: 'VALIDATION_ERROR'
+        }, Date.now() - startTime);
       }
 
       const triggerManager = await this.getTriggerManager(this.params.threadId);
@@ -81,7 +84,15 @@ export class EnableTriggerCommand extends BaseCommand<void> {
       return success(undefined, Date.now() - startTime);
     } catch (error) {
       return failure(
-        error instanceof Error ? error.message : 'Unknown error occurred',
+        {
+          message: error instanceof Error ? error.message : 'Unknown error occurred',
+          code: 'EXECUTION_ERROR',
+          cause: error instanceof Error ? {
+            name: error.name,
+            message: error.message,
+            stack: error.stack
+          } : undefined
+        },
         Date.now() - startTime
       );
     }

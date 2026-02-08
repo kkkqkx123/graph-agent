@@ -3,9 +3,18 @@
  * 导出所有工具函数和类型
  */
 
-// Result类型
-export { ok, err, tryCatch, tryCatchAsync, all, any } from './result';
-export type { Result, Ok, Err } from './result';
+// Result类型 - 从核心层导入
+export { ok, err, tryCatch, tryCatchAsync, all, any } from '../../utils/result-utils';
+export type { Result, Ok, Err } from '../../types/result';
+
+// 错误处理工具
+export {
+  convertSDKErrorToAPIError,
+  handleUnknownError,
+  isRetryableError,
+  isClientError,
+  isServerError
+} from './error-utils';
 
 // Observable类型
 export {

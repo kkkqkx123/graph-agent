@@ -5,7 +5,8 @@
  */
 
 import type { ThreadResult, ThreadOptions } from '../../types/thread';
-import { ok, err, Result } from '../utils/result';
+import { ok, err } from '../../utils/result-utils';
+import type { Result } from '../../types/result';
 import { Observable, Observer, create } from '../utils/observable';
 
 /**

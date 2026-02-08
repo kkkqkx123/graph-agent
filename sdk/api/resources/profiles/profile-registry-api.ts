@@ -8,6 +8,7 @@ import { ProfileManager } from '../../../core/llm/profile-manager';
 import type { LLMProfile, LLMProvider } from '../../../types/llm';
 import { ValidationError, NotFoundError, SDKError, ErrorCode } from '../../../types/errors';
 import { GenericResourceAPI } from '../generic-resource-api';
+import { getErrorMessage } from '../../types/execution-result';
 
 /**
  * Profile模板类型
@@ -320,7 +321,7 @@ export class LLMProfileRegistryAPI extends GenericResourceAPI<LLMProfile, string
   async exportAllProfiles(): Promise<string> {
     const result = await this.getAll();
     if (!result.success) {
-      throw new Error(result.error || 'Failed to get profiles for export');
+      throw new Error(getErrorMessage(result) || 'Failed to get profiles for export');
     }
     const exportData = result.data.map(profile => ({
       ...profile,

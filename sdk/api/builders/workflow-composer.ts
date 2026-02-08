@@ -6,7 +6,8 @@
 import type { WorkflowDefinition } from '../../types/workflow';
 import type { ThreadResult } from '../../types/thread';
 import { Observable, create } from '../utils/observable';
-import { ok, err, Result } from '../utils/result';
+import { ok, err } from '../../utils/result-utils';
+import type { Result } from '../../types/result';
 
 /**
  * 工作流组合类型

@@ -18,7 +18,9 @@ export type { SDKOptions, SDKDependencies } from './api/types';
 export type { AllAPIs } from './api/core/api-factory';
 
 // Export common utilities
-export * from './api/utils/result';
+// Result类型 - 从核心层导入
+export { ok, err, tryCatch, tryCatchAsync, all, any } from './utils/result-utils';
+export type { Result, Ok, Err } from './types/result';
 export * from './api/utils/observable';
 
 // Export execution result types

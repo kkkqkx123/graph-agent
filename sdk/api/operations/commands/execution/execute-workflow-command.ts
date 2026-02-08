@@ -44,7 +44,10 @@ export class ExecuteWorkflowCommand extends BaseCommand<ThreadResult> {
       } else if (this.params.workflowId) {
         workflowId = this.params.workflowId;
       } else {
-        return failure<ThreadResult>('必须提供workflowId或workflowDefinition', this.getExecutionTime());
+        return failure<ThreadResult>({
+          message: '必须提供workflowId或workflowDefinition',
+          code: 'VALIDATION_ERROR'
+        }, this.getExecutionTime());
       }
 
       // 执行工作流
@@ -52,7 +55,15 @@ export class ExecuteWorkflowCommand extends BaseCommand<ThreadResult> {
       return success(result, this.getExecutionTime());
     } catch (error) {
       return failure<ThreadResult>(
-        error instanceof Error ? error.message : String(error),
+        {
+          message: error instanceof Error ? error.message : String(error),
+          code: 'EXECUTION_ERROR',
+          cause: error instanceof Error ? {
+            name: error.name,
+            message: error.message,
+            stack: error.stack
+          } : undefined
+        },
         this.getExecutionTime()
       );
     }

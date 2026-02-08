@@ -23,7 +23,15 @@ export class CancelThreadCommand extends BaseCommand<void> {
       return success<void>(undefined, this.getExecutionTime());
     } catch (error) {
       return failure<void>(
-        error instanceof Error ? error.message : String(error),
+        {
+          message: error instanceof Error ? error.message : String(error),
+          code: 'EXECUTION_ERROR',
+          cause: error instanceof Error ? {
+            name: error.name,
+            message: error.message,
+            stack: error.stack
+          } : undefined
+        },
         this.getExecutionTime()
       );
     }

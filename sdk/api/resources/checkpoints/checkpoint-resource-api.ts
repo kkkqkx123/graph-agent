@@ -11,6 +11,7 @@ import { MemoryCheckpointStorage } from '../../../core/storage/memory-checkpoint
 import { CheckpointCoordinator } from '../../../core/execution/coordinators/checkpoint-coordinator';
 import { globalMessageStorage } from '../../../core/services/global-message-storage';
 import { SingletonRegistry } from '../../../core/execution/context/singleton-registry';
+import { getErrorMessage } from '../../types/execution-result';
 
 /**
  * CheckpointResourceAPI - 检查点资源管理API
@@ -172,7 +173,7 @@ export class CheckpointResourceAPI extends GenericResourceAPI<Checkpoint, string
   async getThreadCheckpoints(threadId: string): Promise<Checkpoint[]> {
     const result = await this.getAll({ threadId });
     if (!result.success) {
-      throw new Error(result.error || 'Failed to get thread checkpoints');
+      throw new Error(getErrorMessage(result) || 'Failed to get thread checkpoints');
     }
     return result.data;
   }
@@ -204,7 +205,7 @@ export class CheckpointResourceAPI extends GenericResourceAPI<Checkpoint, string
   }> {
     const result = await this.getAll();
     if (!result.success) {
-      throw new Error(result.error || 'Failed to get checkpoint statistics');
+      throw new Error(getErrorMessage(result) || 'Failed to get checkpoint statistics');
     }
     const checkpoints = result.data;
     

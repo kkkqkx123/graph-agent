@@ -8,6 +8,7 @@ import { threadRegistry as globalThreadRegistry, type ThreadRegistry } from '../
 import type { Thread, ThreadResult, ThreadStatus } from '../../../types/thread';
 import type { ThreadFilter, ThreadSummary } from '../../types/registry-types';
 import { GenericResourceAPI } from '../generic-resource-api';
+import { getErrorMessage } from '../../types/execution-result';
 
 
 /**
@@ -124,7 +125,7 @@ export class ThreadRegistryAPI extends GenericResourceAPI<Thread, string, Thread
   async getThreadSummaries(filter?: ThreadFilter): Promise<ThreadSummary[]> {
     const result = await this.getAll(filter);
     if (!result.success) {
-      throw new Error(result.error || 'Failed to get thread summaries');
+      throw new Error(getErrorMessage(result) || 'Failed to get thread summaries');
     }
     const threads = result.data;
 
@@ -149,7 +150,7 @@ export class ThreadRegistryAPI extends GenericResourceAPI<Thread, string, Thread
   async getThreadStatus(threadId: string): Promise<ThreadStatus | null> {
     const result = await this.get(threadId);
     if (!result.success) {
-      throw new Error(result.error || 'Failed to get thread status');
+      throw new Error(getErrorMessage(result) || 'Failed to get thread status');
     }
     const thread = result.data;
     if (!thread) {
@@ -166,7 +167,7 @@ export class ThreadRegistryAPI extends GenericResourceAPI<Thread, string, Thread
   async getThreadResult(threadId: string): Promise<ThreadResult | null> {
     const result = await this.get(threadId);
     if (!result.success) {
-      throw new Error(result.error || 'Failed to get thread result');
+      throw new Error(getErrorMessage(result) || 'Failed to get thread result');
     }
     const thread = result.data;
     if (!thread) {
@@ -200,7 +201,7 @@ export class ThreadRegistryAPI extends GenericResourceAPI<Thread, string, Thread
   }> {
     const result = await this.getAll();
     if (!result.success) {
-      throw new Error(result.error || 'Failed to get thread statistics');
+      throw new Error(getErrorMessage(result) || 'Failed to get thread statistics');
     }
     const threads = result.data;
     const byStatus: Record<ThreadStatus, number> = {

@@ -242,8 +242,18 @@ export type {
 // ============================================================================
 // 工具函数
 // ============================================================================
-export { ok, err, tryCatch, tryCatchAsync, all, any } from './utils/result';
-export type { Result, Ok, Err } from './utils/result';
+// Result类型 - 从核心层导入
+export { ok, err, tryCatch, tryCatchAsync, all, any } from '../utils/result-utils';
+export type { Result, Ok, Err } from '../types/result';
+
+// 错误处理工具
+export {
+  convertSDKErrorToAPIError,
+  handleUnknownError,
+  isRetryableError,
+  isClientError,
+  isServerError
+} from './utils/error-utils';
 
 // ============================================================================
 // Observable响应式编程

@@ -9,6 +9,7 @@
 
 import type { ExecutionResult } from '../types/execution-result';
 import { success, failure } from '../types/execution-result';
+import { handleUnknownError } from '../utils/error-utils';
 
 /**
  * 通用资源API基类
@@ -124,7 +125,10 @@ export abstract class GenericResourceAPI<T, ID extends string | number, Filter =
       const validation = this.validateResource(resource);
       if (!validation.valid) {
         return failure(
-          `Validation failed: ${validation.errors.join(', ')}`,
+          {
+            message: `Validation failed: ${validation.errors.join(', ')}`,
+            code: 'VALIDATION_ERROR'
+          },
           Date.now() - startTime
         );
       }
@@ -150,7 +154,10 @@ export abstract class GenericResourceAPI<T, ID extends string | number, Filter =
       const validation = this.validateUpdate(updates);
       if (!validation.valid) {
         return failure(
-          `Validation failed: ${validation.errors.join(', ')}`,
+          {
+            message: `Validation failed: ${validation.errors.join(', ')}`,
+            code: 'VALIDATION_ERROR'
+          },
           Date.now() - startTime
         );
       }
@@ -250,8 +257,31 @@ export abstract class GenericResourceAPI<T, ID extends string | number, Filter =
    * @returns 执行结果
    */
   protected handleError(error: unknown, operation: string, startTime: number): ExecutionResult<any> {
-    const errorMessage = error instanceof Error ? error.message : String(error);
-    return failure(errorMessage, Date.now() - startTime);
+    try {
+      // 使用错误转换工具将任意错误转换为APIError
+      const apiError = handleUnknownError(error);
+      
+      // 返回包含详细错误信息的失败结果
+      return failure({
+        message: apiError.message,
+        code: apiError.code,
+        details: apiError.details,
+        timestamp: apiError.timestamp,
+        requestId: apiError.requestId,
+        cause: apiError.cause ? {
+          name: apiError.cause.name,
+          message: apiError.cause.message,
+          stack: apiError.cause.stack
+        } : undefined
+      }, Date.now() - startTime);
+    } catch (handlerError) {
+      // 错误处理器本身出错时的回退机制
+      return failure({
+        message: error instanceof Error ? error.message : String(error),
+        code: 'INTERNAL_ERROR',
+        timestamp: Date.now()
+      }, Date.now() - startTime);
+    }
   }
 
 }

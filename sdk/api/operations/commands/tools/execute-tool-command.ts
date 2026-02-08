@@ -33,7 +33,10 @@ export class ExecuteToolCommand extends BaseCommand<ToolExecutionResult> {
       const validation = toolService.validateParameters(this.toolName, this.parameters);
       if (!validation.valid) {
         return failure<ToolExecutionResult>(
-          `参数验证失败: ${validation.errors.join(', ')}`,
+          {
+            message: `参数验证失败: ${validation.errors.join(', ')}`,
+            code: 'VALIDATION_ERROR'
+          },
           Date.now() - startTime
         );
       }

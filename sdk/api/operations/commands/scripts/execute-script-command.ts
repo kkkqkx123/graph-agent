@@ -36,7 +36,10 @@ export class ExecuteScriptCommand extends BaseCommand<ScriptExecutionResult> {
       const validation = codeService.validateScript(this.scriptName);
       if (!validation.valid) {
         return failure<ScriptExecutionResult>(
-          `脚本验证失败: ${validation.errors.join(', ')}`,
+          {
+            message: `脚本验证失败: ${validation.errors.join(', ')}`,
+            code: 'VALIDATION_ERROR'
+          },
           Date.now() - startTime
         );
       }

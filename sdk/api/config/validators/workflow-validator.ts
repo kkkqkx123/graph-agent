@@ -7,7 +7,8 @@
 import type { WorkflowDefinition } from '../../../types/workflow';
 import type { ConfigFile } from '../types';
 import { ConfigType } from '../types';
-import { ok, err, type Result } from '../../utils/result';
+import { ok, err } from '../../../utils/result-utils';
+import type { Result } from '../../../types/result';
 import { ValidationError } from '../../../types/errors';
 import { WorkflowValidator } from '../../../core/validation/workflow-validator';
 

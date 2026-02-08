@@ -7,7 +7,8 @@
 import type { NodeTemplate } from '../../../types/node-template';
 import type { ConfigFile } from '../types';
 import { ConfigType } from '../types';
-import { ok, err, type Result } from '../../utils/result';
+import { ok, err } from '../../../utils/result-utils';
+import type { Result } from '../../../types/result';
 import { ValidationError } from '../../../types/errors';
 import { NodeValidator } from '../../../core/validation/node-validator';
 import { NodeType } from '../../../types/node';

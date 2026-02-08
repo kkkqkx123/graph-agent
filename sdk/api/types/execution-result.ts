@@ -17,8 +17,24 @@ export interface ExecutionSuccess<T> {
  */
 export interface ExecutionFailure {
   success: false;
-  error: string;
+  error: ExecutionError;
   executionTime: number;
+}
+
+/**
+ * 执行错误信息
+ */
+export interface ExecutionError {
+  message: string;
+  code?: string;
+  details?: Record<string, any>;
+  timestamp?: number;
+  requestId?: string;
+  cause?: {
+    name: string;
+    message: string;
+    stack?: string;
+  };
 }
 
 /**
@@ -40,7 +56,7 @@ export function success<T>(data: T, executionTime: number): ExecutionResult<T> {
 /**
  * 创建失败结果
  */
-export function failure<T>(error: string, executionTime: number): ExecutionResult<T> {
+export function failure<T>(error: ExecutionError, executionTime: number): ExecutionResult<T> {
   return {
     success: false,
     error,
@@ -72,6 +88,14 @@ export function getData<T>(result: ExecutionResult<T>): T | null {
 /**
  * 获取错误信息（如果失败）
  */
-export function getError<T>(result: ExecutionResult<T>): string | null {
+export function getError<T>(result: ExecutionResult<T>): ExecutionError | null {
   return isFailure(result) ? result.error : null;
+}
+
+/**
+ * 获取错误消息（如果失败）
+ */
+export function getErrorMessage<T>(result: ExecutionResult<T>): string | null {
+  if (!isFailure(result)) return null;
+  return result.error.message;
 }

@@ -81,7 +81,10 @@ export class RestoreFromCheckpointCommand extends BaseCommand<Thread> {
     try {
       const validation = this.validate();
       if (!validation.valid) {
-        return failure(validation.errors.join(', '), Date.now() - startTime);
+        return failure({
+          message: validation.errors.join(', '),
+          code: 'VALIDATION_ERROR'
+        }, Date.now() - startTime);
       }
 
       try {
@@ -104,18 +107,27 @@ export class RestoreFromCheckpointCommand extends BaseCommand<Thread> {
         return success(threadContext.thread, Date.now() - startTime);
       } catch (error) {
         if (error instanceof Error && error.message.includes('not found')) {
-          return failure(
-            new NotFoundError(`Checkpoint not found: ${this.params.checkpointId}`, 'checkpoint', this.params.checkpointId).message,
-            Date.now() - startTime
-          );
+          const notFoundError = new NotFoundError(`Checkpoint not found: ${this.params.checkpointId}`, 'checkpoint', this.params.checkpointId);
+          return failure({
+            message: notFoundError.message,
+            code: 'NOT_FOUND',
+            details: {
+              checkpointId: this.params.checkpointId
+            }
+          }, Date.now() - startTime);
         }
         throw error;
       }
     } catch (error) {
-      return failure(
-        error instanceof Error ? error.message : 'Unknown error occurred',
-        Date.now() - startTime
-      );
+      return failure({
+        message: error instanceof Error ? error.message : 'Unknown error occurred',
+        code: 'EXECUTION_ERROR',
+        cause: error instanceof Error ? {
+          name: error.name,
+          message: error.message,
+          stack: error.stack
+        } : undefined
+      }, Date.now() - startTime);
     }
   }
 }
