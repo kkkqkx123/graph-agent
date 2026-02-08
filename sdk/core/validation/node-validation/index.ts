@@ -1,6 +1,8 @@
 /**
  * 节点验证函数模块
  * 提供所有节点类型的验证函数
+ * 
+ * subgraph节点在执行阶段不存在，故不需要任何处理
  */
 
 import { NodeType } from '../../../types/node';

@@ -35,12 +35,7 @@ export async function forkHandler(thread: Thread, node: Node, context?: any): Pr
     };
   }
 
-  const config = node.config as ForkNodeConfig;
-
-  // Fork节点作为占位符，仅返回配置信息
-  return {
-    forkPaths: config.forkPaths,
-    forkStrategy: config.forkStrategy,
-    message: 'Fork node is a placeholder. Actual fork operation is handled by ThreadExecutor and ThreadCoordinator.'
-  };
+  // Fork节点作为占位符，实际Fork操作由ThreadExecutor调用ThreadOperationCoordinator处理
+  // 配置参数从node.config中读取，不需要返回配置信息
+  return {};
 }

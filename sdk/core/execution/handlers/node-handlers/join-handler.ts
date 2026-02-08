@@ -40,15 +40,7 @@ export async function joinHandler(thread: Thread, node: Node, context?: any): Pr
     };
   }
 
-  const config = node.config as JoinNodeConfig;
-
-  // Join节点作为占位符，仅返回配置信息
-  return {
-    forkPathIds: config.forkPathIds,
-    joinStrategy: config.joinStrategy,
-    threshold: config.threshold,
-    timeout: config.timeout ?? 0,  // 默认 0 表示无超时
-    mainPathId: config.mainPathId,
-    message: 'Join node is a placeholder. Actual join operation is handled by ThreadExecutor and ThreadCoordinator.'
-  };
+  // Join节点作为占位符，实际Join操作由ThreadExecutor调用ThreadOperationCoordinator处理
+  // 配置参数从node.config中读取，不需要返回配置信息
+  return {};
 }
