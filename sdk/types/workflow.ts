@@ -10,6 +10,7 @@ import type { ID, Timestamp, Version, Metadata, VariableScope } from './common';
 import type { GraphAnalysisResult, Graph } from './graph';
 import type { WorkflowTrigger } from './trigger';
 import type { TriggerReference } from './trigger-template';
+import type { CheckpointMetadata } from './checkpoint';
 
 /**
  * 工作流状态枚举
@@ -32,6 +33,21 @@ export interface ToolApprovalConfig {
 }
 
 /**
+ * 检查点配置类型
+ * 定义检查点的创建策略和行为
+ */
+export interface CheckpointConfig {
+  /** 是否启用检查点（全局开关） */
+  enabled?: boolean;
+  /** 是否在节点执行前创建检查点（全局默认行为） */
+  checkpointBeforeNode?: boolean;
+  /** 是否在节点执行后创建检查点（全局默认行为） */
+  checkpointAfterNode?: boolean;
+  /** 默认检查点元数据 */
+  defaultMetadata?: CheckpointMetadata;
+}
+
+/**
  * 工作流配置类型
  * 定义工作流执行时的行为选项
  */
@@ -40,8 +56,10 @@ export interface WorkflowConfig {
   timeout?: number;
   /** 最大执行步数 */
   maxSteps?: number;
-  /** 是否启用检查点 */
+  /** 是否启用检查点（保留向后兼容） */
   enableCheckpoints?: boolean;
+  /** 检查点配置（新增） */
+  checkpointConfig?: CheckpointConfig;
   /** 重试策略配置 */
   retryPolicy?: {
     maxRetries?: number;

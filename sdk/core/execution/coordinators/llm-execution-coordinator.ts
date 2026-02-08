@@ -28,7 +28,9 @@ import { ToolCallExecutor } from '../executors/tool-call-executor';
 import { TokenUsageTracker } from '../token-usage-tracker';
 import { ExecutionError } from '../../../types/errors';
 import { generateId } from '../../../utils/id-utils';
-import type { CheckpointCoordinator } from './checkpoint-coordinator';
+import { CheckpointCoordinator } from './checkpoint-coordinator';
+import type { ExecutionContext } from '../context/execution-context';
+import { globalMessageStorage } from '../../services/global-message-storage';
 
 /**
  * LLM 执行参数
@@ -91,7 +93,7 @@ export class LLMExecutionCoordinator {
     private llmExecutor: LLMExecutor,
     private toolService: ToolService,
     private eventManager: EventManager,
-    private checkpointCoordinator?: CheckpointCoordinator
+    private executionContext?: ExecutionContext
   ) { }
 
   /**
@@ -403,11 +405,17 @@ export class LLMExecutionCoordinator {
       approved: false
     };
 
-    // 如果有检查点协调器，创建检查点以支持长时间审批
+    // 如果有执行上下文，创建检查点以支持长时间审批
     let checkpointId: string | undefined;
-    if (this.checkpointCoordinator) {
+    if (this.executionContext) {
       try {
-        checkpointId = await this.checkpointCoordinator.createCheckpoint(threadId, {
+        const dependencies = {
+          threadRegistry: this.executionContext.getThreadRegistry(),
+          checkpointStateManager: this.executionContext.getCheckpointStateManager(),
+          workflowRegistry: this.executionContext.getWorkflowRegistry(),
+          globalMessageStorage: globalMessageStorage
+        };
+        checkpointId = await CheckpointCoordinator.createCheckpoint(threadId, dependencies, {
           description: 'Waiting for tool approval',
           customFields: {
             toolApprovalState: {
@@ -462,10 +470,10 @@ export class LLMExecutionCoordinator {
       return approvalResult;
     } finally {
       // 清理检查点（如果存在）
-      if (checkpointId && this.checkpointCoordinator) {
+      if (checkpointId && this.executionContext) {
         try {
-          // 注意：这里需要实现删除检查点的方法
-          // 暂时跳过，因为 CheckpointCoordinator 可能没有删除方法
+          const checkpointStateManager = this.executionContext.getCheckpointStateManager();
+          await checkpointStateManager.delete(checkpointId);
         } catch (error) {
           console.warn('Failed to cleanup checkpoint:', error);
         }

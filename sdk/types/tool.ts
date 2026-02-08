@@ -77,6 +77,10 @@ export interface Tool {
   metadata?: ToolMetadata;
   /** 工具配置（类型特定） */
   config?: ToolConfig;
+  /** 工具调用时是否创建检查点（新增） */
+  createCheckpoint?: boolean | 'before' | 'after' | 'both';
+  /** 检查点描述模板（新增） */
+  checkpointDescriptionTemplate?: string;
 }
 
 /**

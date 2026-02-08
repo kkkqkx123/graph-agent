@@ -32,6 +32,10 @@ import { NodeType } from '../../../types/node';
 import { now, diffTimestamp } from '../../../utils';
 import { getNodeHandler } from '../handlers/node-handlers';
 import { SUBGRAPH_METADATA_KEYS, SubgraphBoundaryType } from '../../../types/subgraph';
+import type { CheckpointDependencies } from '../handlers/checkpoint-handlers/checkpoint-utils';
+import { createCheckpoint } from '../handlers/checkpoint-handlers/checkpoint-utils';
+import { resolveCheckpointConfig } from '../handlers/checkpoint-handlers/checkpoint-config-resolver';
+import { CheckpointTriggerType } from '../../../types/checkpoint';
 
 /**
  * 节点执行协调器
@@ -41,7 +45,9 @@ export class NodeExecutionCoordinator {
     private eventManager: EventManager,
     private llmCoordinator: LLMExecutionCoordinator,
     private userInteractionHandler?: UserInteractionHandler,
-    private humanRelayHandler?: HumanRelayHandler
+    private humanRelayHandler?: HumanRelayHandler,
+    private checkpointDependencies?: CheckpointDependencies,
+    private globalCheckpointConfig?: any
   ) { }
 
   /**
@@ -75,31 +81,108 @@ export class NodeExecutionCoordinator {
       };
       await this.eventManager.emit(nodeStartedEvent);
 
-      // 步骤2：执行BEFORE_EXECUTE类型的Hook
+      // 步骤2：节点执行前创建检查点（如果配置了）
+      if (this.checkpointDependencies) {
+        const configResult = resolveCheckpointConfig(
+          this.globalCheckpointConfig,
+          node,
+          undefined,
+          undefined,
+          undefined,
+          {
+            triggerType: CheckpointTriggerType.NODE_BEFORE_EXECUTE,
+            nodeId
+          }
+        );
+
+        if (configResult.shouldCreate) {
+          try {
+            await createCheckpoint(
+              {
+                threadId: threadContext.getThreadId(),
+                nodeId,
+                description: configResult.description || `Before node: ${node.name}`
+              },
+              this.checkpointDependencies
+            );
+          } catch (error) {
+            console.error(
+              `Failed to create checkpoint before node "${node.name}":`,
+              error
+            );
+            // 检查点创建失败不应影响节点执行
+          }
+        }
+      }
+
+      // 步骤3：执行BEFORE_EXECUTE类型的Hook
       if (node.hooks && node.hooks.length > 0) {
         await executeHook(
-          { thread: threadContext.thread, node },
+          {
+            thread: threadContext.thread,
+            node,
+            checkpointDependencies: this.checkpointDependencies
+          },
           HookType.BEFORE_EXECUTE,
           (event) => this.eventManager.emit(event)
         );
       }
 
-      // 步骤3：执行节点逻辑
+      // 步骤4：执行节点逻辑
       const nodeResult = await this.executeNodeLogic(threadContext, node);
 
-      // 步骤4：记录节点执行结果
+      // 步骤5：记录节点执行结果
       threadContext.addNodeResult(nodeResult);
 
-      // 步骤5：执行AFTER_EXECUTE类型的Hook
+      // 步骤6：执行AFTER_EXECUTE类型的Hook
       if (node.hooks && node.hooks.length > 0) {
         await executeHook(
-          { thread: threadContext.thread, node, result: nodeResult },
+          {
+            thread: threadContext.thread,
+            node,
+            result: nodeResult,
+            checkpointDependencies: this.checkpointDependencies
+          },
           HookType.AFTER_EXECUTE,
           (event) => this.eventManager.emit(event)
         );
       }
 
-      // 步骤6：触发节点完成事件
+      // 步骤7：节点执行后创建检查点（如果配置了）
+      if (this.checkpointDependencies) {
+        const configResult = resolveCheckpointConfig(
+          this.globalCheckpointConfig,
+          node,
+          undefined,
+          undefined,
+          undefined,
+          {
+            triggerType: CheckpointTriggerType.NODE_AFTER_EXECUTE,
+            nodeId
+          }
+        );
+
+        if (configResult.shouldCreate) {
+          try {
+            await createCheckpoint(
+              {
+                threadId: threadContext.getThreadId(),
+                nodeId,
+                description: configResult.description || `After node: ${node.name}`
+              },
+              this.checkpointDependencies
+            );
+          } catch (error) {
+            console.error(
+              `Failed to create checkpoint after node "${node.name}":`,
+              error
+            );
+            // 检查点创建失败不应影响节点执行
+          }
+        }
+      }
+
+      // 步骤8：触发节点完成事件
       if (nodeResult.status === 'COMPLETED') {
         const nodeCompletedEvent: NodeCompletedEvent = {
           type: EventType.NODE_COMPLETED,

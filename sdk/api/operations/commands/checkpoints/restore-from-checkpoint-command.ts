@@ -26,35 +26,20 @@ export interface RestoreFromCheckpointParams {
  * RestoreFromCheckpointCommand - 从检查点恢复线程
  */
 export class RestoreFromCheckpointCommand extends BaseCommand<Thread> {
-  private coordinator: CheckpointCoordinator;
   private stateManager: CheckpointStateManager;
 
   constructor(
     private readonly params: RestoreFromCheckpointParams,
-    coordinator?: CheckpointCoordinator,
     stateManager?: CheckpointStateManager
   ) {
     super();
 
-    if (coordinator && stateManager) {
-      this.coordinator = coordinator;
+    if (stateManager) {
       this.stateManager = stateManager;
     } else {
       // 创建默认的检查点管理组件
       const storage = new MemoryCheckpointStorage();
       this.stateManager = new CheckpointStateManager(storage);
-
-      // 从SingletonRegistry获取全局服务
-      SingletonRegistry.initialize();
-      const threadRegistry = SingletonRegistry.get<any>('threadRegistry');
-      const workflowRegistry = SingletonRegistry.get<any>('workflowRegistry');
-
-      this.coordinator = new CheckpointCoordinator(
-        this.stateManager,
-        threadRegistry,
-        workflowRegistry,
-        globalMessageStorage
-      );
     }
   }
 
@@ -100,7 +85,22 @@ export class RestoreFromCheckpointCommand extends BaseCommand<Thread> {
       }
 
       try {
-        const threadContext = await this.coordinator.restoreFromCheckpoint(this.params.checkpointId);
+        // 从SingletonRegistry获取全局服务
+        SingletonRegistry.initialize();
+        const threadRegistry = SingletonRegistry.get<any>('threadRegistry');
+        const workflowRegistry = SingletonRegistry.get<any>('workflowRegistry');
+
+        const dependencies = {
+          threadRegistry,
+          checkpointStateManager: this.stateManager,
+          workflowRegistry,
+          globalMessageStorage
+        };
+
+        const threadContext = await CheckpointCoordinator.restoreFromCheckpoint(
+          this.params.checkpointId,
+          dependencies
+        );
         return success(threadContext.thread, Date.now() - startTime);
       } catch (error) {
         if (error instanceof Error && error.message.includes('not found')) {

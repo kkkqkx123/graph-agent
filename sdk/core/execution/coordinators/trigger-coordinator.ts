@@ -32,8 +32,12 @@ import { EventType } from '../../../types/events';
 import { now } from '../../../utils';
 import type { ThreadRegistry } from '../../services/thread-registry';
 import type { WorkflowRegistry } from '../../services/workflow-registry';
+import type { GlobalMessageStorage } from '../../services/global-message-storage';
 import { TriggerStateManager, type TriggerRuntimeState } from '../managers/trigger-state-manager';
+import { CheckpointStateManager } from '../managers/checkpoint-state-manager';
 import { convertToTrigger } from '../../../types/trigger';
+import { createCheckpoint } from '../handlers/checkpoint-handlers/checkpoint-utils';
+import type { CheckpointDependencies } from '../handlers/checkpoint-handlers/checkpoint-utils';
 
 /**
  * TriggerCoordinator - 触发器协调器
@@ -54,15 +58,21 @@ export class TriggerCoordinator {
   private threadRegistry: ThreadRegistry;
   private workflowRegistry: WorkflowRegistry;
   private stateManager: TriggerStateManager;
+  private checkpointStateManager?: CheckpointStateManager;
+  private globalMessageStorage?: GlobalMessageStorage;
 
   constructor(
     threadRegistry: ThreadRegistry,
     workflowRegistry: WorkflowRegistry,
-    stateManager: TriggerStateManager
+    stateManager: TriggerStateManager,
+    checkpointStateManager?: CheckpointStateManager,
+    globalMessageStorage?: GlobalMessageStorage
   ) {
     this.threadRegistry = threadRegistry;
     this.workflowRegistry = workflowRegistry;
     this.stateManager = stateManager;
+    this.checkpointStateManager = checkpointStateManager;
+    this.globalMessageStorage = globalMessageStorage;
   }
 
   /**
@@ -247,6 +257,32 @@ export class TriggerCoordinator {
    * @param trigger 触发器
    */
   private async executeTrigger(trigger: Trigger): Promise<void> {
+    // 触发前创建检查点（如果配置了）
+    if (trigger.createCheckpoint && this.checkpointStateManager && this.globalMessageStorage && trigger.threadId) {
+      try {
+        const dependencies: CheckpointDependencies = {
+          threadRegistry: this.threadRegistry,
+          checkpointStateManager: this.checkpointStateManager,
+          workflowRegistry: this.workflowRegistry,
+          globalMessageStorage: this.globalMessageStorage
+        };
+
+        await createCheckpoint(
+          {
+            threadId: trigger.threadId,
+            description: trigger.checkpointDescription || `Trigger: ${trigger.name}`
+          },
+          dependencies
+        );
+      } catch (error) {
+        console.error(
+          `Failed to create checkpoint for trigger "${trigger.name}":`,
+          error
+        );
+        // 检查点创建失败不应影响触发器执行
+      }
+    }
+
     // 使用 trigger handler 函数执行触发动作
     const handler = getTriggerHandler(trigger.action.type);
 

@@ -17,25 +17,35 @@ import { ExecutionContext } from '../context/execution-context';
 import { generateId, now } from '../../../utils';
 
 /**
- * 检查点协调器
+ * 检查点依赖项
+ */
+export interface CheckpointDependencies {
+  threadRegistry: ThreadRegistry;
+  checkpointStateManager: CheckpointStateManager;
+  workflowRegistry: WorkflowRegistry;
+  globalMessageStorage: GlobalMessageStorage;
+}
+
+/**
+ * 检查点协调器（完全无状态）
  */
 export class CheckpointCoordinator {
-  constructor(
-    private checkpointStateManager: CheckpointStateManager,
-    private threadRegistry: ThreadRegistry,
-    private workflowRegistry: WorkflowRegistry,
-    private globalMessageStorage: GlobalMessageStorage
-  ) { }
-
   /**
-   * 创建检查点
+   * 创建检查点（静态方法）
    * @param threadId 线程ID
+   * @param dependencies 依赖项
    * @param metadata 检查点元数据
    * @returns 检查点ID
    */
-  async createCheckpoint(threadId: string, metadata?: CheckpointMetadata): Promise<string> {
+  static async createCheckpoint(
+    threadId: string,
+    dependencies: CheckpointDependencies,
+    metadata?: CheckpointMetadata
+  ): Promise<string> {
+    const { threadRegistry, checkpointStateManager, workflowRegistry, globalMessageStorage } = dependencies;
+
     // 步骤1：从 ThreadRegistry 获取 ThreadContext 对象
-    const threadContext = this.threadRegistry.get(threadId);
+    const threadContext = threadRegistry.get(threadId);
     if (!threadContext) {
       throw new NotFoundError(`ThreadContext not found`, 'ThreadContext', threadId);
     }
@@ -57,13 +67,13 @@ export class CheckpointCoordinator {
     const conversationManager = threadContext.getConversationManager();
 
     // 存储完整消息历史到全局存储
-    this.globalMessageStorage.storeMessages(
+    globalMessageStorage.storeMessages(
       threadId,
       conversationManager.getAllMessages()
     );
 
     // 增加引用计数，防止消息被过早删除
-    this.globalMessageStorage.addReference(threadId);
+    globalMessageStorage.addReference(threadId);
 
     // 只保存索引状态和Token统计
     const conversationState = {
@@ -103,26 +113,32 @@ export class CheckpointCoordinator {
     };
 
     // 步骤5：调用 CheckpointStateManager 创建检查点
-    return await this.checkpointStateManager.create(checkpoint);
+    return await checkpointStateManager.create(checkpoint);
   }
 
   /**
-   * 从检查点恢复 ThreadContext 状态
+   * 从检查点恢复 ThreadContext 状态（静态方法）
    * @param checkpointId 检查点ID
+   * @param dependencies 依赖项
    * @returns 恢复的 ThreadContext 对象
    */
-  async restoreFromCheckpoint(checkpointId: string): Promise<ThreadContext> {
+  static async restoreFromCheckpoint(
+    checkpointId: string,
+    dependencies: CheckpointDependencies
+  ): Promise<ThreadContext> {
+    const { threadRegistry, checkpointStateManager, workflowRegistry, globalMessageStorage } = dependencies;
+
     // 步骤1：从 CheckpointStateManager 加载检查点
-    const checkpoint = await this.checkpointStateManager.get(checkpointId);
+    const checkpoint = await checkpointStateManager.get(checkpointId);
     if (!checkpoint) {
       throw new NotFoundError(`Checkpoint not found`, 'Checkpoint', checkpointId);
     }
 
     // 步骤2：验证 checkpoint 完整性和兼容性
-    this.validateCheckpoint(checkpoint);
+    CheckpointCoordinator.validateCheckpoint(checkpoint);
 
     // 步骤3：从 WorkflowRegistry 获取 WorkflowDefinition
-    const workflowDefinition = this.workflowRegistry.get(checkpoint.workflowId);
+    const workflowDefinition = workflowRegistry.get(checkpoint.workflowId);
     if (!workflowDefinition) {
       throw new NotFoundError(`Workflow not found`, 'Workflow', checkpoint.workflowId);
     }
@@ -153,7 +169,7 @@ export class CheckpointCoordinator {
     });
 
     // 步骤6：从全局存储获取完整消息历史
-    const messageHistory = this.globalMessageStorage.getMessages(checkpoint.threadId);
+    const messageHistory = globalMessageStorage.getMessages(checkpoint.threadId);
     if (!messageHistory) {
       throw new NotFoundError(`Message history not found`, 'MessageHistory', checkpoint.threadId);
     }
@@ -180,8 +196,8 @@ export class CheckpointCoordinator {
     const threadContext = new ThreadContext(
       thread as Thread,
       conversationManager,
-      this.threadRegistry,
-      this.workflowRegistry,
+      threadRegistry,
+      workflowRegistry,
       executionContext.getEventManager(),
       executionContext.getToolService(),
       executionContext.getLlmExecutor()
@@ -193,15 +209,43 @@ export class CheckpointCoordinator {
     }
 
     // 步骤11：注册到 ThreadRegistry
-    this.threadRegistry.register(threadContext);
+    threadRegistry.register(threadContext);
 
     return threadContext;
   }
 
   /**
-   * 验证检查点完整性和兼容性
+   * 创建节点级别检查点（静态方法）
+   * @param threadId 线程ID
+   * @param nodeId 节点ID
+   * @param metadata 检查点元数据
+   * @param dependencies 依赖项
+   * @returns 检查点ID
    */
-  private validateCheckpoint(checkpoint: Checkpoint): void {
+  static async createNodeCheckpoint(
+    threadId: string,
+    nodeId: string,
+    dependencies: CheckpointDependencies,
+    metadata?: CheckpointMetadata
+  ): Promise<string> {
+    return CheckpointCoordinator.createCheckpoint(
+      threadId,
+      dependencies,
+      {
+        ...metadata,
+        description: `Node checkpoint for node ${nodeId}`,
+        customFields: {
+          ...metadata?.customFields,
+          nodeId
+        }
+      }
+    );
+  }
+
+  /**
+   * 验证检查点完整性和兼容性（静态私有方法）
+   */
+  private static validateCheckpoint(checkpoint: Checkpoint): void {
     // 验证必需字段
     if (!checkpoint.id || !checkpoint.threadId || !checkpoint.workflowId) {
       throw new Error('Invalid checkpoint: missing required fields');
@@ -216,23 +260,5 @@ export class CheckpointCoordinator {
     if (!threadState.status || !threadState.currentNodeId) {
       throw new Error('Invalid checkpoint: incomplete thread state');
     }
-  }
-
-  /**
-   * 创建节点级别检查点
-   * @param threadId 线程ID
-   * @param nodeId 节点ID
-   * @param metadata 检查点元数据
-   * @returns 检查点ID
-   */
-  async createNodeCheckpoint(threadId: string, nodeId: string, metadata?: CheckpointMetadata): Promise<string> {
-    return this.createCheckpoint(threadId, {
-      ...metadata,
-      description: `Node checkpoint for node ${nodeId}`,
-      customFields: {
-        ...metadata?.customFields,
-        nodeId
-      }
-    });
   }
 }

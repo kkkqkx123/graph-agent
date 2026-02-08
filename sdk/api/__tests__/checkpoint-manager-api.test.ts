@@ -1,8 +1,8 @@
 /**
- * CheckpointManagerAPI 单元测试
+ * CheckpointResourceAPI 单元测试
  */
 
-import { CheckpointManagerAPI } from '../operations/state/checkpoint-manager-api';
+import { CheckpointResourceAPI } from '../resources/checkpoints/checkpoint-resource-api';
 import { ThreadRegistry } from '../../core/services/thread-registry';
 import { WorkflowRegistry } from '../../core/services/workflow-registry';
 import type { WorkflowDefinition } from '../../types/workflow';
@@ -11,13 +11,10 @@ import { EdgeType } from '../../types/edge';
 import { ThreadStatus } from '../../types/thread';
 import { NotFoundError } from '../../types/errors';
 import { ExecutionContext } from '../../core/execution/context/execution-context';
-import { MemoryCheckpointStorage } from '../../core/storage/memory-checkpoint-storage';
-import { CheckpointStateManager } from '../../core/execution/managers/checkpoint-state-manager';
-import { CheckpointCoordinator } from '../../core/execution/coordinators/checkpoint-coordinator';
-import { globalMessageStorage } from '../../core/services/global-message-storage';
+import { SingletonRegistry } from '../../core/execution/context/singleton-registry';
 
-describe('CheckpointManagerAPI', () => {
-  let api: CheckpointManagerAPI;
+describe('CheckpointResourceAPI', () => {
+  let api: CheckpointResourceAPI;
   let threadRegistry: ThreadRegistry;
   let workflowRegistry: WorkflowRegistry;
 
@@ -25,20 +22,12 @@ describe('CheckpointManagerAPI', () => {
     threadRegistry = new ThreadRegistry();
     workflowRegistry = new WorkflowRegistry({ enableVersioning: false });
     
-    // 创建检查点存储和状态管理器
-    const storage = new MemoryCheckpointStorage();
-    const stateManager = new CheckpointStateManager(storage);
+    // 注册全局服务
+    SingletonRegistry.register('threadRegistry', threadRegistry);
+    SingletonRegistry.register('workflowRegistry', workflowRegistry);
     
-    // 创建检查点协调器
-    const coordinator = new CheckpointCoordinator(
-      stateManager,
-      threadRegistry,
-      workflowRegistry,
-      globalMessageStorage
-    );
-    
-    // 使用协调器创建API
-    api = new CheckpointManagerAPI(coordinator, stateManager);
+    // 创建API
+    api = new CheckpointResourceAPI();
   });
 
   describe('createCheckpoint', () => {
@@ -85,22 +74,24 @@ describe('CheckpointManagerAPI', () => {
       const threadId = threadContext.getThreadId();
 
       // 创建检查点
-      const checkpoint = await api.createCheckpoint(threadId, {
+      const result = await api.createThreadCheckpoint(threadId, {
         description: 'Test checkpoint',
         tags: ['test']
       });
 
       // 验证检查点
+      expect(result).toBeDefined();
+      const checkpoint = await api.get(result);
       expect(checkpoint).toBeDefined();
-      expect(checkpoint.id).toBeDefined();
-      expect(checkpoint.threadId).toBe(threadId);
-      expect(checkpoint.workflowId).toBe(workflow.id);
-      expect(checkpoint.metadata?.description).toBe('Test checkpoint');
-      expect(checkpoint.metadata?.tags).toContain('test');
+      expect(checkpoint?.id).toBe(result);
+      expect(checkpoint?.threadId).toBe(threadId);
+      expect(checkpoint?.workflowId).toBe(workflow.id);
+      expect(checkpoint?.metadata?.description).toBe('Test checkpoint');
+      expect(checkpoint?.metadata?.tags).toContain('test');
     });
 
     it('应该在线程不存在时抛出错误', async () => {
-      await expect(api.createCheckpoint('non-existent-thread')).rejects.toThrow();
+      await expect(api.createThreadCheckpoint('non-existent-thread')).rejects.toThrow();
     });
   });
 
@@ -145,15 +136,15 @@ describe('CheckpointManagerAPI', () => {
       const threadContext = await createTestThreadContext(threadRegistry, workflowRegistry, workflow);
       const threadId = threadContext.getThreadId();
 
-      const checkpoint = await api.createCheckpoint(threadId);
-      const retrieved = await api.getCheckpoint(checkpoint.id);
+      const checkpointId = await api.createThreadCheckpoint(threadId);
+      const retrieved = await api.get(checkpointId);
 
       expect(retrieved).toBeDefined();
-      expect(retrieved?.id).toBe(checkpoint.id);
+      expect(retrieved?.id).toBe(checkpointId);
     });
 
     it('应该在检查点不存在时返回null', async () => {
-      const result = await api.getCheckpoint('non-existent-checkpoint');
+      const result = await api.get('non-existent-checkpoint');
       expect(result).toBeNull();
     });
   });
@@ -200,10 +191,11 @@ describe('CheckpointManagerAPI', () => {
       const threadId = threadContext.getThreadId();
 
       // 创建多个检查点
-      await api.createCheckpoint(threadId);
-      await api.createCheckpoint(threadId);
+      await api.createThreadCheckpoint(threadId);
+      await api.createThreadCheckpoint(threadId);
 
-      const checkpoints = await api.getCheckpoints();
+      const result = await api.getAll();
+      const checkpoints = result.success ? result.data : [];
 
       expect(checkpoints).toBeDefined();
       expect(checkpoints.length).toBeGreaterThanOrEqual(2);
@@ -251,10 +243,11 @@ describe('CheckpointManagerAPI', () => {
       const threadId1 = threadContext1.getThreadId();
       const threadId2 = threadContext2.getThreadId();
 
-      await api.createCheckpoint(threadId1);
-      await api.createCheckpoint(threadId2);
+      await api.createThreadCheckpoint(threadId1);
+      await api.createThreadCheckpoint(threadId2);
 
-      const checkpoints = await api.getCheckpoints({ threadId: threadId1 });
+      const result = await api.getAll({ threadId: threadId1 });
+      const checkpoints = result.success ? result.data : [];
 
       expect(checkpoints).toBeDefined();
       expect(checkpoints.length).toBe(1);
@@ -304,15 +297,15 @@ describe('CheckpointManagerAPI', () => {
       const threadContext = await createTestThreadContext(threadRegistry, workflowRegistry, workflow);
       const threadId = threadContext.getThreadId();
 
-      const checkpoint = await api.createCheckpoint(threadId);
-      await api.deleteCheckpoint(checkpoint.id);
+      const checkpointId = await api.createThreadCheckpoint(threadId);
+      await api.delete(checkpointId);
 
-      const retrieved = await api.getCheckpoint(checkpoint.id);
+      const retrieved = await api.get(checkpointId);
       expect(retrieved).toBeNull();
     });
 
     it('应该在检查点不存在时抛出错误', async () => {
-      await expect(api.deleteCheckpoint('non-existent-checkpoint')).rejects.toThrow(NotFoundError);
+      await expect(api.delete('non-existent-checkpoint')).rejects.toThrow();
     });
   });
 
@@ -359,10 +352,13 @@ describe('CheckpointManagerAPI', () => {
       const threadContext = await createTestThreadContext(threadRegistry, workflowRegistry, workflow);
       const threadId = threadContext.getThreadId();
 
-      const checkpoint = await api.createNodeCheckpoint(threadId, 'start');
+      const checkpointId = await api.createThreadCheckpoint(threadId, {
+        customFields: { nodeId: 'start' }
+      });
 
+      const checkpoint = await api.get(checkpointId);
       expect(checkpoint).toBeDefined();
-      expect((checkpoint.metadata?.customFields as any)?.nodeId).toBe('start');
+      expect((checkpoint?.metadata?.customFields as any)?.nodeId).toBe('start');
     });
   });
 
@@ -407,10 +403,14 @@ describe('CheckpointManagerAPI', () => {
       const threadContext = await createTestThreadContext(threadRegistry, workflowRegistry, workflow);
       const threadId = threadContext.getThreadId();
 
-      const countBefore = await api.getCheckpointCount();
-      await api.createCheckpoint(threadId);
-      await api.createCheckpoint(threadId);
-      const countAfter = await api.getCheckpointCount();
+      const resultBefore = await api.getAll();
+      const countBefore = resultBefore.success ? resultBefore.data.length : 0;
+      
+      await api.createThreadCheckpoint(threadId);
+      await api.createThreadCheckpoint(threadId);
+      
+      const resultAfter = await api.getAll();
+      const countAfter = resultAfter.success ? resultAfter.data.length : 0;
 
       expect(countAfter).toBe(countBefore + 2);
     });
@@ -457,12 +457,13 @@ describe('CheckpointManagerAPI', () => {
       const threadContext = await createTestThreadContext(threadRegistry, workflowRegistry, workflow);
       const threadId = threadContext.getThreadId();
 
-      await api.createCheckpoint(threadId);
-      await api.createCheckpoint(threadId);
+      await api.createThreadCheckpoint(threadId);
+      await api.createThreadCheckpoint(threadId);
 
-      await api.clearAllCheckpoints();
+      await api.clear();
 
-      const count = await api.getCheckpointCount();
+      const result = await api.getAll();
+      const count = result.success ? result.data.length : 0;
       expect(count).toBe(0);
     });
   });

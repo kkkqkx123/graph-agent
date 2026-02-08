@@ -16,10 +16,13 @@
 
 import type { ToolService } from '../../services/tool-service';
 import type { EventManager } from '../../services/event-manager';
+import type { Tool } from '../../../types/tool';
 import { safeEmit } from '../utils/event/event-emitter';
 import { EventType } from '../../../types/events';
 import { now } from '../../../utils';
 import type { ConversationManager } from '../managers/conversation-manager';
+import type { CheckpointDependencies } from '../handlers/checkpoint-handlers/checkpoint-utils';
+import { createCheckpoint } from '../handlers/checkpoint-handlers/checkpoint-utils';
 
 /**
  * 工具执行结果
@@ -45,7 +48,8 @@ export interface ToolExecutionResult {
 export class ToolCallExecutor {
   constructor(
     private toolService: ToolService,
-    private eventManager?: EventManager
+    private eventManager?: EventManager,
+    private checkpointDependencies?: CheckpointDependencies
   ) { }
 
   /**
@@ -94,6 +98,37 @@ export class ToolCallExecutor {
     nodeId?: string
   ): Promise<ToolExecutionResult> {
     const startTime = Date.now();
+
+    // 获取工具配置
+    let toolConfig: Tool | undefined;
+    try {
+      toolConfig = this.toolService.getTool(toolCall.name);
+    } catch (error) {
+      // 工具不存在，继续执行
+    }
+
+    // 工具调用前创建检查点（如果配置了）
+    if (toolConfig?.createCheckpoint && this.checkpointDependencies && threadId) {
+      const checkpointConfig = toolConfig.createCheckpoint;
+      if (checkpointConfig === true || checkpointConfig === 'before' || checkpointConfig === 'both') {
+        try {
+          await createCheckpoint(
+            {
+              threadId,
+              toolName: toolCall.name,
+              description: toolConfig.checkpointDescriptionTemplate || `Before tool: ${toolCall.name}`
+            },
+            this.checkpointDependencies
+          );
+        } catch (error) {
+          console.error(
+            `Failed to create checkpoint before tool "${toolCall.name}":`,
+            error
+          );
+          // 检查点创建失败不应影响工具执行
+        }
+      }
+    }
 
     // 触发工具调用开始事件
     if (this.eventManager) {
@@ -144,6 +179,29 @@ export class ToolCallExecutor {
           content: toolMessage.content,
           toolCalls: undefined // tool message doesn't have toolCalls
         });
+      }
+
+      // 工具调用后创建检查点（如果配置了）
+      if (toolConfig?.createCheckpoint && this.checkpointDependencies && threadId) {
+        const checkpointConfig = toolConfig.createCheckpoint;
+        if (checkpointConfig === 'after' || checkpointConfig === 'both') {
+          try {
+            await createCheckpoint(
+              {
+                threadId,
+                toolName: toolCall.name,
+                description: toolConfig.checkpointDescriptionTemplate || `After tool: ${toolCall.name}`
+              },
+              this.checkpointDependencies
+            );
+          } catch (error) {
+            console.error(
+              `Failed to create checkpoint after tool "${toolCall.name}":`,
+              error
+            );
+            // 检查点创建失败不应影响工具执行
+          }
+        }
       }
 
       // 触发工具调用完成事件

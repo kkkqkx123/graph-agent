@@ -89,6 +89,10 @@ export interface NodeHook {
   enabled?: boolean;
   /** 权重（数字越大优先级越高） */
   weight?: number;
+  /** Hook触发时是否创建检查点（新增） */
+  createCheckpoint?: boolean;
+  /** 检查点描述（新增） */
+  checkpointDescription?: string;
 }
 
 /**
@@ -531,4 +535,8 @@ export interface Node {
   properties?: NodeProperty[];
   /** 可选的Hook配置数组 */
   hooks?: NodeHook[];
+  /** 节点执行前是否创建检查点（新增，优先级高于全局配置） */
+  checkpointBeforeExecute?: boolean;
+  /** 节点执行后是否创建检查点（新增，优先级高于全局配置） */
+  checkpointAfterExecute?: boolean;
 }

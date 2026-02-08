@@ -9,6 +9,9 @@ import { HookType } from '../../../../types/node';
 import type { Thread } from '../../../../types/thread';
 import type { NodeExecutionResult } from '../../../../types/thread';
 import type { NodeCustomEvent } from '../../../../types/events';
+import type { CheckpointDependencies } from '../checkpoint-handlers/checkpoint-utils';
+import { createCheckpoint } from '../checkpoint-handlers/checkpoint-utils';
+import { CheckpointTriggerType } from '../../../../types/checkpoint';
 
 /**
  * Hook执行上下文接口
@@ -20,6 +23,8 @@ export interface HookExecutionContext {
   node: Node;
   /** 节点执行结果（AFTER_EXECUTE时可用） */
   result?: NodeExecutionResult;
+  /** 检查点依赖项（可选） */
+  checkpointDependencies?: CheckpointDependencies;
 }
 
 /**
@@ -91,6 +96,26 @@ async function executeSingleHook(
 
       if (!result) {
         return;
+      }
+    }
+
+    // Hook触发前创建检查点（如果配置了）
+    if (hook.createCheckpoint && context.checkpointDependencies) {
+      try {
+        await createCheckpoint(
+          {
+            threadId: context.thread.id,
+            nodeId: context.node.id,
+            description: hook.checkpointDescription || `Hook: ${hook.eventName}`
+          },
+          context.checkpointDependencies
+        );
+      } catch (error) {
+        console.error(
+          `Failed to create checkpoint for hook "${hook.eventName}" on node "${context.node.id}":`,
+          error
+        );
+        // 检查点创建失败不应影响Hook执行
       }
     }
 

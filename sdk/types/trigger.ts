@@ -112,6 +112,10 @@ export interface Trigger {
   updatedAt: Timestamp;
   /** 触发器元数据 */
   metadata?: Metadata;
+  /** 触发时是否创建检查点（新增） */
+  createCheckpoint?: boolean;
+  /** 检查点描述（新增） */
+  checkpointDescription?: string;
 }
 
 /**
@@ -155,6 +159,10 @@ export interface WorkflowTrigger {
   maxTriggers?: number;
   /** 触发器元数据 */
   metadata?: Metadata;
+  /** 触发时是否创建检查点（新增） */
+  createCheckpoint?: boolean;
+  /** 检查点描述（新增） */
+  checkpointDescription?: string;
 }
 
 /**

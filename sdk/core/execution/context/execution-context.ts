@@ -13,7 +13,6 @@
  * - ThreadRegistry: 线程注册表
  * - EventManager: 事件管理器
  * - CheckpointStateManager: 检查点状态管理器（有状态服务）
- * - CheckpointCoordinator: 检查点协调器（无状态服务）
  * - ThreadLifecycleManager: 生命周期管理器（原子操作）
  * - ThreadLifecycleCoordinator: 生命周期协调器（流程编排）
  *
@@ -89,16 +88,10 @@ export class ExecutionContext {
     const checkpointStorage = new MemoryCheckpointStorage();
     const checkpointStateManager = new CheckpointStateManager(checkpointStorage);
     this.componentRegistry.register('checkpointStateManager', checkpointStateManager);
-    
-    // 3. CheckpointCoordinator 依赖 CheckpointStateManager、ThreadRegistry、WorkflowRegistry、GlobalMessageStorage
-    const checkpointCoordinator = new CheckpointCoordinator(
-      checkpointStateManager,
-      threadRegistry,
-      workflowRegistry,
-      globalMessageStorage
-    );
-    this.componentRegistry.register('checkpointCoordinator', checkpointCoordinator);
-    
+
+    // 3. CheckpointCoordinator 是完全无状态的静态类，不需要实例化
+    // 使用 CheckpointCoordinator.createCheckpoint() 和 CheckpointCoordinator.restoreFromCheckpoint() 静态方法
+
     // 4. ThreadLifecycleManager 依赖 EventManager
     const lifecycleManager = new ThreadLifecycleManager(eventManager);
     this.componentRegistry.register('lifecycleManager', lifecycleManager);
@@ -154,15 +147,6 @@ export class ExecutionContext {
   getCheckpointStateManager(): CheckpointStateManager {
     this.ensureInitialized();
     return this.componentRegistry.get('checkpointStateManager');
-  }
-  
-  /**
-   * 获取 CheckpointCoordinator
-   * @returns CheckpointCoordinator 实例
-   */
-  getCheckpointCoordinator(): CheckpointCoordinator {
-    this.ensureInitialized();
-    return this.componentRegistry.get('checkpointCoordinator');
   }
 
   /**
@@ -286,9 +270,9 @@ export class ExecutionContext {
 
     // 定义需要清理的组件及其清理顺序（按依赖关系的逆序）
     // 注意：不包含全局单例（eventManager、workflowRegistry、threadRegistry、toolService、llmExecutor）
+    // 注意：不包含checkpointCoordinator，因为它是完全无状态的静态类
     const cleanupOrder: string[] = [
       'lifecycleCoordinator',     // 依赖其他所有组件
-      'checkpointCoordinator',    // 依赖checkpointStateManager、threadRegistry、workflowRegistry、globalMessageStorage
       'lifecycleManager',         // 依赖eventManager
       'checkpointStateManager'    // 依赖checkpointStorage
     ];
@@ -321,10 +305,11 @@ export class ExecutionContext {
    */
   getLifecycleManagers(): Array<{ name: string; manager: LifecycleCapable }> {
     // 只返回由ExecutionContext创建的组件，不包括全局单例
-    const managedComponents = ['checkpointStateManager', 'checkpointCoordinator', 'lifecycleManager', 'lifecycleCoordinator'];
-    
+    // 注意：不包含checkpointCoordinator，因为它是完全无状态的静态类
+    const managedComponents = ['checkpointStateManager', 'lifecycleManager', 'lifecycleCoordinator'];
+
     const componentsMap = this.componentRegistry.getAllComponents();
-    
+
     return this.lifecycleManager.getLifecycleCapableComponents(componentsMap, managedComponents);
   }
 
@@ -373,7 +358,7 @@ export class ExecutionContext {
   static createForTesting(customSingletons?: Map<string, any>): ExecutionContext {
     // 重置 SingletonRegistry 以确保干净状态
     SingletonRegistry.reset();
-    
+
     // 如果提供了自定义单例，临时注册到SingletonRegistry
     if (customSingletons && customSingletons.size > 0) {
       for (const [key, instance] of customSingletons.entries()) {

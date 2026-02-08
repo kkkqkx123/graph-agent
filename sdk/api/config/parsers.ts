@@ -77,8 +77,8 @@ export function parseBatchWorkflows(
   if (contents.length !== formats.length) {
     throw new Error('contents 和 formats 数组长度必须一致');
   }
-  return contents.map((content, index) => 
-    parseWorkflow(content, formats[index], parameters?.[index])
+  return contents.map((content, index) =>
+    parseWorkflow(content, formats[index]!, parameters?.[index])
   );
 }
 
@@ -109,8 +109,8 @@ export function parseBatchNodeTemplates(
   if (contents.length !== formats.length) {
     throw new Error('contents 和 formats 数组长度必须一致');
   }
-  return contents.map((content, index) => 
-    parseNodeTemplate(content, formats[index])
+  return contents.map((content, index) =>
+    parseNodeTemplate(content, formats[index]!)
   );
 }
 
@@ -141,8 +141,8 @@ export function parseBatchTriggerTemplates(
   if (contents.length !== formats.length) {
     throw new Error('contents 和 formats 数组长度必须一致');
   }
-  return contents.map((content, index) => 
-    parseTriggerTemplate(content, formats[index])
+  return contents.map((content, index) =>
+    parseTriggerTemplate(content, formats[index]!)
   );
 }
 
@@ -173,7 +173,7 @@ export function parseBatchScripts(
   if (contents.length !== formats.length) {
     throw new Error('contents 和 formats 数组长度必须一致');
   }
-  return contents.map((content, index) => 
-    parseScript(content, formats[index])
+  return contents.map((content, index) =>
+    parseScript(content, formats[index]!)
   );
 }

@@ -35,6 +35,10 @@ export interface TriggerTemplate {
   createdAt: Timestamp;
   /** 更新时间 */
   updatedAt: Timestamp;
+  /** 触发时是否创建检查点（新增） */
+  createCheckpoint?: boolean;
+  /** 检查点描述模板（新增） */
+  checkpointDescriptionTemplate?: string;
 }
 
 /**

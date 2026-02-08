@@ -17,7 +17,6 @@ import { SingletonRegistry } from '../../../core/execution/context/singleton-reg
  */
 export class CheckpointResourceAPI extends GenericResourceAPI<Checkpoint, string, CheckpointFilter> {
   private stateManager: CheckpointStateManager;
-  private coordinator: CheckpointCoordinator;
 
   constructor() {
     super();
@@ -25,18 +24,6 @@ export class CheckpointResourceAPI extends GenericResourceAPI<Checkpoint, string
     // 创建默认的检查点管理组件
     const storage = new MemoryCheckpointStorage();
     this.stateManager = new CheckpointStateManager(storage);
-
-    // 从SingletonRegistry获取全局服务
-    SingletonRegistry.initialize();
-    const threadRegistry = SingletonRegistry.get<any>('threadRegistry');
-    const workflowRegistry = SingletonRegistry.get<any>('workflowRegistry');
-
-    this.coordinator = new CheckpointCoordinator(
-      this.stateManager,
-      threadRegistry,
-      workflowRegistry,
-      globalMessageStorage
-    );
   }
 
   // ============================================================================
@@ -139,7 +126,19 @@ export class CheckpointResourceAPI extends GenericResourceAPI<Checkpoint, string
    * @returns 检查点ID
    */
   async createThreadCheckpoint(threadId: string, metadata?: CheckpointMetadata): Promise<string> {
-    const checkpointId = await this.coordinator.createCheckpoint(threadId, metadata);
+    // 从SingletonRegistry获取全局服务
+    SingletonRegistry.initialize();
+    const threadRegistry = SingletonRegistry.get<any>('threadRegistry');
+    const workflowRegistry = SingletonRegistry.get<any>('workflowRegistry');
+
+    const dependencies = {
+      threadRegistry,
+      checkpointStateManager: this.stateManager,
+      workflowRegistry,
+      globalMessageStorage
+    };
+
+    const checkpointId = await CheckpointCoordinator.createCheckpoint(threadId, dependencies, metadata);
     return checkpointId;
   }
 
@@ -149,8 +148,20 @@ export class CheckpointResourceAPI extends GenericResourceAPI<Checkpoint, string
    * @returns 恢复的线程ID
    */
   async restoreFromCheckpoint(checkpointId: string): Promise<string> {
-    const threadId = await this.coordinator.restoreFromCheckpoint(checkpointId);
-    return threadId.getThreadId();
+    // 从SingletonRegistry获取全局服务
+    SingletonRegistry.initialize();
+    const threadRegistry = SingletonRegistry.get<any>('threadRegistry');
+    const workflowRegistry = SingletonRegistry.get<any>('workflowRegistry');
+
+    const dependencies = {
+      threadRegistry,
+      checkpointStateManager: this.stateManager,
+      workflowRegistry,
+      globalMessageStorage
+    };
+
+    const threadContext = await CheckpointCoordinator.restoreFromCheckpoint(checkpointId, dependencies);
+    return threadContext.getThreadId();
   }
 
   /**
@@ -218,13 +229,5 @@ export class CheckpointResourceAPI extends GenericResourceAPI<Checkpoint, string
    */
   getStateManager(): CheckpointStateManager {
     return this.stateManager;
-  }
-
-  /**
-   * 获取底层CheckpointCoordinator实例
-   * @returns CheckpointCoordinator实例
-   */
-  getCoordinator(): CheckpointCoordinator {
-    return this.coordinator;
   }
 }

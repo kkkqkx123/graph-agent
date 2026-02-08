@@ -103,7 +103,6 @@ const mockExecutionContext = {
 (ExecutionContext as any).createDefault = jest.fn().mockReturnValue(mockExecutionContext);
 
 describe('CheckpointCoordinator', () => {
-  let coordinator: CheckpointCoordinator;
   let mockCheckpointStateManager: jest.Mocked<CheckpointStateManager>;
   let mockThreadRegistry: jest.Mocked<ThreadRegistry>;
   let mockWorkflowRegistry: jest.Mocked<WorkflowRegistry>;
@@ -228,19 +227,11 @@ describe('CheckpointCoordinator', () => {
       createdAt: Date.now(),
       updatedAt: Date.now()
     } as WorkflowDefinition;
-
-    // 创建协调器实例
-    coordinator = new CheckpointCoordinator(
-      mockCheckpointStateManager,
-      mockThreadRegistry,
-      mockWorkflowRegistry,
-      mockGlobalMessageStorage
-    );
   });
 
-  describe('构造函数', () => {
-    it('应该正确初始化协调器', () => {
-      expect(coordinator).toBeInstanceOf(CheckpointCoordinator);
+  describe('静态方法', () => {
+    it('应该正确导出CheckpointCoordinator类', () => {
+      expect(CheckpointCoordinator).toBeDefined();
     });
   });
 
