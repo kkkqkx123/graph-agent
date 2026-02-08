@@ -19,20 +19,27 @@
 
 ## 核心组件
 
-### 1. ConfigManager
-统一配置管理器，提供所有配置类型的统一管理接口。
+### 1. 纯函数式解析接口（推荐使用）
+提供无状态的纯函数式配置解析接口：
+- **parseWorkflow()**：解析工作流配置
+- **parseNodeTemplate()**：解析节点模板配置
+- **parseTriggerTemplate()**：解析触发器模板配置
+- **parseScript()**：解析脚本配置
+- **parseBatchWorkflows()**：批量解析工作流配置
+- **parseBatchNodeTemplates()**：批量解析节点模板配置
+- **parseBatchTriggerTemplates()**：批量解析触发器模板配置
+- **parseBatchScripts()**：批量解析脚本配置
 
-### 2. ConfigLoader系列
-- **WorkflowLoader**：工作流配置加载器
-- **NodeTemplateLoader**：节点模板配置加载器
-- **TriggerTemplateLoader**：触发器模板配置加载器
-- **ScriptLoader**：脚本配置加载器
-
-### 3. ConfigValidator系列
-- **WorkflowConfigValidator**：工作流配置验证器
-- **NodeTemplateConfigValidator**：节点模板配置验证器
-- **TriggerTemplateConfigValidator**：触发器模板配置验证器
-- **ScriptConfigValidator**：脚本配置验证器
+### 2. 配置验证函数
+提供单个和批量配置验证功能：
+- **validateWorkflowConfig()**：验证单个工作流配置
+- **validateNodeTemplateConfig()**：验证单个节点模板配置
+- **validateTriggerTemplateConfig()**：验证单个触发器模板配置
+- **validateScriptConfig()**：验证单个脚本配置
+- **validateBatchWorkflows()**：批量验证工作流配置
+- **validateBatchNodeTemplates()**：批量验证节点模板配置
+- **validateBatchTriggerTemplates()**：批量验证触发器模板配置
+- **validateBatchScripts()**：批量验证脚本配置
 
 ### 4. ConfigParser
 主配置解析器，整合了TOML/JSON解析、验证和转换功能。
@@ -493,6 +500,42 @@ const scripts = await configManager.scripts.loadBatchAndRegister([
 ]);
 ```
 
+### 批量验证配置
+
+```typescript
+import {
+  validateBatchWorkflows,
+  validateBatchNodeTemplates,
+  validateBatchTriggerTemplates,
+  validateBatchScripts
+} from '@modular-agent/sdk/api/config';
+
+// 批量验证工作流配置
+const workflowConfigs = [workflowConfig1, workflowConfig2, workflowConfig3];
+const validationResult = validateBatchWorkflows(workflowConfigs);
+
+if (validationResult.isOk()) {
+  console.log('所有工作流配置验证通过', validationResult.value);
+} else {
+  console.error('部分工作流配置验证失败:', validationResult.error);
+  validationResult.error.forEach((errors, index) => {
+    console.error(`配置 ${index + 1} 错误:`, errors);
+  });
+}
+
+// 批量验证节点模板配置
+const nodeTemplateConfigs = [nodeTemplateConfig1, nodeTemplateConfig2];
+const nodeTemplateResult = validateBatchNodeTemplates(nodeTemplateConfigs);
+
+// 批量验证触发器模板配置
+const triggerTemplateConfigs = [triggerTemplateConfig1, triggerTemplateConfig2];
+const triggerTemplateResult = validateBatchTriggerTemplates(triggerTemplateConfigs);
+
+// 批量验证脚本配置
+const scriptConfigs = [scriptConfig1, scriptConfig2, scriptConfig3];
+const scriptResult = validateBatchScripts(scriptConfigs);
+```
+
 ### 从目录批量加载所有配置
 
 ```typescript
@@ -587,10 +630,10 @@ const summary = configManager.getSummary();
 console.log('配置摘要:', summary);
 // 输出:
 // {
-//   workflows: { count: 0, loader: 'WorkflowLoader' },
-//   nodeTemplates: { count: 5, loader: 'NodeTemplateLoader' },
-//   triggerTemplates: { count: 3, loader: 'TriggerTemplateLoader' },
-//   scripts: { count: 10, loader: 'ScriptLoader' }
+//   workflows: { count: 0, parser: 'parseWorkflow' },
+//   nodeTemplates: { count: 5, parser: 'parseNodeTemplate' },
+//   triggerTemplates: { count: 3, parser: 'parseTriggerTemplate' },
+//   scripts: { count: 10, parser: 'parseScript' }
 // }
 ```
 
@@ -646,21 +689,16 @@ pnpm add toml
 
 ```
 sdk/api/config/
-├── loaders/                      # 配置加载器
-│   ├── base-loader.ts            # 基础加载器抽象类
-│   ├── workflow-loader.ts        # 工作流配置加载器
-│   ├── node-template-loader.ts   # 节点模板配置加载器
-│   ├── trigger-template-loader.ts # 触发器模板配置加载器
-│   └── script-loader.ts          # 脚本配置加载器
 ├── validators/                   # 配置验证器
 │   ├── base-validator.ts         # 基础验证器抽象类
 │   ├── workflow-validator.ts     # 工作流配置验证器
 │   ├── node-template-validator.ts # 节点模板配置验证器
 │   ├── trigger-template-validator.ts # 触发器模板配置验证器
-│   └── script-validator.ts       # 脚本配置验证器
+│   ├── script-validator.ts       # 脚本配置验证器
+│   └── batch-validators.ts       # 批量验证函数
 ├── config-parser.ts              # 通用配置解析器
 ├── config-transformer.ts         # 通用配置转换器
-├── config-manager.ts             # 统一配置管理器
+├── parsers.ts                    # 纯函数式配置解析接口
 ├── types.ts                      # 类型定义
 ├── json-parser.ts                # JSON解析器
 ├── toml-parser.ts                # TOML解析器

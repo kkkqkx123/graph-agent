@@ -64,18 +64,6 @@ export {
   parseBatchScripts
 } from './parsers';
 
-// 加载器类（已弃用，请使用上面的函数）
-/** @deprecated 请使用 parseWorkflow、parseNodeTemplate 等函数 */
-export { BaseConfigLoader } from './loaders/base-loader';
-/** @deprecated 请使用 parseWorkflow 函数 */
-export { WorkflowLoader } from './loaders/workflow-loader';
-/** @deprecated 请使用 parseNodeTemplate 函数 */
-export { NodeTemplateLoader } from './loaders/node-template-loader';
-/** @deprecated 请使用 parseTriggerTemplate 函数 */
-export { TriggerTemplateLoader } from './loaders/trigger-template-loader';
-/** @deprecated 请使用 parseScript 函数 */
-export { ScriptLoader } from './loaders/script-loader';
-
 // 验证器
 // 验证工具函数导出
 export {
@@ -93,3 +81,11 @@ export { validateWorkflowConfig } from './validators/workflow-validator';
 export { validateNodeTemplateConfig } from './validators/node-template-validator';
 export { validateTriggerTemplateConfig } from './validators/trigger-template-validator';
 export { validateScriptConfig } from './validators/script-validator';
+
+// 批量验证函数导出
+export {
+  validateBatchWorkflows,
+  validateBatchNodeTemplates,
+  validateBatchTriggerTemplates,
+  validateBatchScripts
+} from './validators/batch-validators';

@@ -36,76 +36,39 @@ export const configManager = new ConfigManager();
 
 **现在**：完全移除，文件 I/O 由应用层处理
 
-### 2. Loader 类改造
+### 2. 纯函数式解析接口
 
-**之前**：包含文件读取、注册和查询方法
-```typescript
-export class NodeTemplateLoader extends BaseConfigLoader {
-  async loadFromFile(filePath: string): Promise<ParsedConfig> {
-    const content = await fs.readFile(filePath, 'utf-8'); // SDK 层读取文件
-    return this.parse(content, format);
-  }
-  
-  async loadAndRegister(filePath: string): Promise<NodeTemplate> {
-    const template = await this.loadFromFile(filePath);
-    nodeTemplateRegistry.register(template); // 直接操作注册表
-    return template;
-  }
-}
-```
-
-**现在**：仅提供解析接口，接收内容字符串
+**之前**：使用有状态的 Loader 类
 ```typescript
 export class NodeTemplateLoader extends BaseConfigLoader {
   parseTemplate(content: string, format: ConfigFormat): NodeTemplate {
     const config = this.parseFromContent(content, format);
     return config.config as NodeTemplate;
   }
-  
-  parseBatchTemplates(contents: string[], formats: ConfigFormat[]): NodeTemplate[] {
-    const configs = this.parseBatch(contents, formats);
-    return configs.map(c => c.config as NodeTemplate);
-  }
 }
 ```
 
-### 3. BaseConfigLoader 简化
-
-**之前**：包含文件格式检测和文件读取
+**现在**：使用纯函数式接口
 ```typescript
-export abstract class BaseConfigLoader<T extends ConfigType> {
-  async loadFromFile(filePath: string): Promise<ParsedConfig<T>> {
-    const content = await fs.readFile(filePath, 'utf-8');
-    const format = this.detectFormat(filePath);
-    return this.parser.parse(content, format, this.configType);
-  }
-  
-  protected detectFormat(filePath: string): ConfigFormat {
-    // 根据文件扩展名检测格式
-  }
+export function parseNodeTemplate(
+  content: string,
+  format: ConfigFormat
+): NodeTemplate {
+  const config = nodeTemplateParser.parse(content, format, ConfigType.NODE_TEMPLATE);
+  return config.config as NodeTemplate;
 }
 ```
 
-**现在**：仅提供内容解析
-```typescript
-export abstract class BaseConfigLoader<T extends ConfigType> {
-  parseFromContent(content: string, format: ConfigFormat): ParsedConfig<T> {
-    return this.parser.parse(content, format, this.configType);
-  }
-  
-  parseBatch(contents: string[], formats: ConfigFormat[]): ParsedConfig<T>[] {
-    return contents.map((content, index) => 
-      this.parseFromContent(content, formats[index]!)
-    );
-  }
-}
-```
-
-### 4. 导出变更
+### 3. 导出变更
 
 **移除的导出**：
 - `ConfigManager` 类
 - `configManager` 单例实例
+- `BaseConfigLoader` 抽象类
+- `WorkflowLoader` - 工作流加载器类
+- `NodeTemplateLoader` - 节点模板加载器类
+- `TriggerTemplateLoader` - 触发器模板加载器类
+- `ScriptLoader` - 脚本加载器类
 - `scanConfigFiles()` - 文件扫描函数
 - `scanConfigFilesFromDirectories()` - 多目录扫描函数
 - `exportConfigsToDirectory()` - 文件导出函数
@@ -115,10 +78,22 @@ export abstract class BaseConfigLoader<T extends ConfigType> {
 **保留的导出**：
 - `ConfigParser` - 配置解析器
 - `ConfigTransformer` - 配置转换器
-- `WorkflowLoader` - 工作流解析器
-- `NodeTemplateLoader` - 节点模板解析器
-- `TriggerTemplateLoader` - 触发器模板解析器
-- `ScriptLoader` - 脚本解析器
+- `parseWorkflow()` - 工作流解析函数
+- `parseNodeTemplate()` - 节点模板解析函数
+- `parseTriggerTemplate()` - 触发器模板解析函数
+- `parseScript()` - 脚本解析函数
+- `parseBatchWorkflows()` - 批量工作流解析函数
+- `parseBatchNodeTemplates()` - 批量节点模板解析函数
+- `parseBatchTriggerTemplates()` - 批量触发器模板解析函数
+- `parseBatchScripts()` - 批量脚本解析函数
+- `validateWorkflowConfig()` - 验证工作流配置
+- `validateNodeTemplateConfig()` - 验证节点模板配置
+- `validateTriggerTemplateConfig()` - 验证触发器模板配置
+- `validateScriptConfig()` - 验证脚本配置
+- `validateBatchWorkflows()` - 批量验证工作流配置
+- `validateBatchNodeTemplates()` - 批量验证节点模板配置
+- `validateBatchTriggerTemplates()` - 批量验证触发器模板配置
+- `validateBatchScripts()` - 批量验证脚本配置
 - `parseJson()` / `stringifyJson()` - JSON 解析工具
 - `parseToml()` - TOML 解析工具
 
@@ -129,17 +104,14 @@ export abstract class BaseConfigLoader<T extends ConfigType> {
 ```typescript
 import { sdk } from '@modular-agent/sdk';
 import {
-  WorkflowLoader,
-  NodeTemplateLoader,
+  parseWorkflow,
+  parseNodeTemplate,
   ConfigFormat
 } from '@modular-agent/sdk/api/config';
 import * as fs from 'fs/promises';
 import * as path from 'path';
 
 class AppConfigManager {
-  private workflowLoader = new WorkflowLoader();
-  private nodeTemplateLoader = new NodeTemplateLoader();
-  
   private detectFormat(filePath: string): ConfigFormat {
     const ext = path.extname(filePath).toLowerCase();
     return ext === '.toml' ? ConfigFormat.TOML : ConfigFormat.JSON;
@@ -148,7 +120,7 @@ class AppConfigManager {
   async loadAndRegisterConfigs(configDir: string): Promise<void> {
     // 1. 应用层扫描目录
     const files = await fs.readdir(configDir);
-    const workflowFiles = files.filter(f => 
+    const workflowFiles = files.filter(f =>
       (f.endsWith('.json') || f.endsWith('.toml')) && !f.includes('template')
     );
     
@@ -158,8 +130,8 @@ class AppConfigManager {
       const content = await fs.readFile(filePath, 'utf-8');
       const format = this.detectFormat(filePath);
       
-      // 3. SDK 层解析配置内容
-      const workflow = this.workflowLoader.parseAndTransform(content, format);
+      // 3. SDK 层解析配置内容（纯函数）
+      const workflow = parseWorkflow(content, format);
       
       // 4. 应用层注册配置
       await sdk.workflows.register(workflow);
@@ -189,9 +161,7 @@ const workflow = parser.transformToWorkflow(parsedConfig.config);
 ### 批量解析配置
 
 ```typescript
-import { NodeTemplateLoader, ConfigFormat } from '@modular-agent/sdk/api/config';
-
-const loader = new NodeTemplateLoader();
+import { parseBatchNodeTemplates, ConfigFormat } from '@modular-agent/sdk/api/config';
 
 // 应用层读取多个文件内容
 const contents = [
@@ -200,13 +170,39 @@ const contents = [
 ];
 const formats = [ConfigFormat.JSON, ConfigFormat.JSON];
 
-// SDK 层批量解析
-const templates = loader.parseBatchTemplates(contents, formats);
+// SDK 层批量解析（纯函数）
+const templates = parseBatchNodeTemplates(contents, formats);
 
 // 应用层注册
 templates.forEach(template => {
   sdk.nodeTemplates.register(template);
 });
+```
+
+### 批量验证配置
+
+```typescript
+import {
+  validateBatchWorkflows,
+  validateBatchNodeTemplates
+} from '@modular-agent/sdk/api/config';
+
+// 批量验证工作流配置
+const workflowConfigs = [workflowConfig1, workflowConfig2, workflowConfig3];
+const validationResult = validateBatchWorkflows(workflowConfigs);
+
+if (validationResult.isOk()) {
+  console.log('所有工作流配置验证通过', validationResult.value);
+} else {
+  console.error('部分工作流配置验证失败:', validationResult.error);
+  validationResult.error.forEach((errors, index) => {
+    console.error(`配置 ${index + 1} 错误:`, errors);
+  });
+}
+
+// 批量验证节点模板配置
+const nodeTemplateConfigs = [nodeTemplateConfig1, nodeTemplateConfig2];
+const nodeTemplateResult = validateBatchNodeTemplates(nodeTemplateConfigs);
 ```
 
 ## 迁移指南
@@ -222,17 +218,16 @@ const result = await configManager.loadFromDirectory('./configs');
 
 **新代码**：
 ```typescript
-import { WorkflowLoader, ConfigFormat } from '@modular-agent/sdk/api/config';
+import { parseWorkflow, ConfigFormat } from '@modular-agent/sdk/api/config';
 import * as fs from 'fs/promises';
 import * as path from 'path';
 
-const loader = new WorkflowLoader();
 const files = await fs.readdir('./configs');
 
 for (const file of files) {
   const content = await fs.readFile(path.join('./configs', file), 'utf-8');
   const format = file.endsWith('.toml') ? ConfigFormat.TOML : ConfigFormat.JSON;
-  const workflow = loader.parseAndTransform(content, format);
+  const workflow = parseWorkflow(content, format);
   await sdk.workflows.register(workflow);
 }
 ```
@@ -249,12 +244,11 @@ const template = await loader.loadFromFile('./template.json');
 
 **新代码**：
 ```typescript
-import { NodeTemplateLoader, ConfigFormat } from '@modular-agent/sdk/api/config';
+import { parseNodeTemplate, ConfigFormat } from '@modular-agent/sdk/api/config';
 import * as fs from 'fs/promises';
 
-const loader = new NodeTemplateLoader();
 const content = await fs.readFile('./template.json', 'utf-8');
-const template = loader.parseTemplate(content, ConfigFormat.JSON);
+const template = parseNodeTemplate(content, ConfigFormat.JSON);
 ```
 
 ### 如果之前使用了 `loader.loadAndRegister()`
@@ -269,13 +263,12 @@ await loader.loadAndRegister('./template.json');
 
 **新代码**：
 ```typescript
-import { NodeTemplateLoader, ConfigFormat } from '@modular-agent/sdk/api/config';
+import { parseNodeTemplate, ConfigFormat } from '@modular-agent/sdk/api/config';
 import { sdk } from '@modular-agent/sdk';
 import * as fs from 'fs/promises';
 
-const loader = new NodeTemplateLoader();
 const content = await fs.readFile('./template.json', 'utf-8');
-const template = loader.parseTemplate(content, ConfigFormat.JSON);
+const template = parseNodeTemplate(content, ConfigFormat.JSON);
 sdk.nodeTemplates.register(template); // 应用层控制注册
 ```
 
@@ -299,5 +292,5 @@ sdk.nodeTemplates.register(template); // 应用层控制注册
 
 ## 相关文件
 
-- `sdk/api/config/loaders/*.ts` - 无状态配置解析器
+- `sdk/api/config/parsers.ts` - 纯函数式配置解析接口
 - `apps/web-app/src/config-manager.ts` - 应用层配置管理完整示例
