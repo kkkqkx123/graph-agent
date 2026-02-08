@@ -1,0 +1,24 @@
+/**
+ * TriggerTemplate配置处理函数
+ * 提供TriggerTemplate配置的验证功能
+ * 所有函数都是无状态的纯函数
+ */
+
+import type { ParsedConfig } from '../types';
+import { ConfigType } from '../types';
+import type { Result } from '../../../types/result';
+import { ValidationError } from '../../../types/errors';
+import { validateTriggerTemplateConfig } from '../validators/trigger-template-validator';
+import { ok } from '../../../utils/result-utils';
+
+/**
+ * 验证TriggerTemplate配置
+ * @param config 解析后的配置对象
+ * @returns 验证结果
+ */
+export function validateTriggerTemplate(config: ParsedConfig<ConfigType.TRIGGER_TEMPLATE>): Result<ParsedConfig<ConfigType.TRIGGER_TEMPLATE>, ValidationError[]> {
+  const result = validateTriggerTemplateConfig(config.config);
+  
+  // 使用 andThen 进行类型转换
+  return result.andThen(() => ok(config)) as Result<ParsedConfig<ConfigType.TRIGGER_TEMPLATE>, ValidationError[]>;
+}

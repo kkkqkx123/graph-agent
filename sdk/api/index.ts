@@ -51,7 +51,7 @@ export { NodeRegistryAPI } from './resources/templates/node-template-registry-ap
 export { TriggerTemplateRegistryAPI } from './resources/templates/trigger-template-registry-api';
 export { ToolRegistryAPI } from './resources/tools/tool-registry-api';
 export { ScriptRegistryAPI } from './resources/scripts/script-registry-api';
-export { LLMProfileRegistryAPI as ProfileRegistryAPI } from './resources/profiles/profile-registry-api';
+export { LLMProfileRegistryAPI as ProfileRegistryAPI } from './resources/llm/llm-profile-registry-api';
 
 // 新增资源管理API
 export { CheckpointResourceAPI } from './resources/checkpoints/checkpoint-resource-api';
@@ -332,4 +332,4 @@ export {
 // ============================================================================
 // Profile模板类型
 // ============================================================================
-export type { LLMProfileTemplate as ProfileTemplate } from './resources/profiles/profile-registry-api';
+export type { LLMProfileTemplate as ProfileTemplate } from './resources/llm/llm-profile-registry-api';

@@ -51,7 +51,7 @@ import { NodeRegistryAPI } from './templates/node-template-registry-api';
 import { TriggerTemplateRegistryAPI } from './templates/trigger-template-registry-api';
 
 // Profile资源管理
-import { LLMProfileRegistryAPI } from './profiles/profile-registry-api';
+import { LLMProfileRegistryAPI } from './llm/llm-profile-registry-api';
 
 // 配置资源管理
 import { ConfigurationAPI } from './configuration/configuration-api';

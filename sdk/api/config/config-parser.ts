@@ -1,32 +1,35 @@
 /**
  * 配置解析器主类
- * 整合TOML/JSON解析、验证和转换功能
+ * 整合TOML/JSON解析、验证功能
  *
  * 设计原则：
- * - 配置验证直接使用 sdk/core/validation 中的 WorkflowValidator
- * - api/config 层只负责配置文件的解析和转换，不实现新的验证逻辑
+ * - 使用纯函数处理器架构，所有处理逻辑都是无状态的纯函数
+ * - api/config 层只负责配置内容的解析，不实现文件I/O操作
+ * - 验证逻辑委托给processors中的纯函数，纯函数再委托给core层的验证器
+ * - ConfigParser是通用模块，不包含任何特定配置类型的业务逻辑
+ * - 支持多种配置类型：WORKFLOW, NODE_TEMPLATE, TRIGGER_TEMPLATE, SCRIPT, LLM_PROFILE
  */
 
 import type { ParsedConfig, IConfigParser } from './types';
 import { ConfigFormat, ConfigType } from './types';
 import type { WorkflowDefinition } from '../../types/workflow';
 import { parseToml } from './toml-parser';
-import { parseJson, stringifyJson } from './json-parser';
-import { ConfigTransformer } from './config-transformer';
+import { parseJson } from './json-parser';
 import { ConfigurationError } from '../../types/errors';
-import { WorkflowValidator } from '../../core/validation/workflow-validator';
-import * as path from 'path';
+import {
+  validateWorkflow,
+  validateNodeTemplate,
+  validateScript,
+  validateTriggerTemplate,
+  validateLLMProfile
+} from './processors';
 
 /**
  * 配置解析器类
  */
 export class ConfigParser implements IConfigParser {
-  private transformer: ConfigTransformer;
-  private workflowValidator: WorkflowValidator;
-
   constructor() {
-    this.transformer = new ConfigTransformer();
-    this.workflowValidator = new WorkflowValidator();
+    // Handler通过注册表管理，无需在构造函数中初始化
   }
 
   /**
@@ -66,55 +69,65 @@ export class ConfigParser implements IConfigParser {
   }
 
   /**
-   * 从文件路径加载并解析配置
-   * @param filePath 文件路径
-   * @returns 解析后的配置对象
+   * 验证配置的有效性
+   * 使用对应的纯函数进行验证
+   * @param config 解析后的配置
+   * @returns 验证结果
    */
-  async loadFromFile<T extends ConfigType = ConfigType.WORKFLOW>(
-    filePath: string,
-    configType?: T
-  ): Promise<ParsedConfig<T>> {
-    const fs = await import('fs/promises');
-
-    try {
-      // 读取文件内容
-      const content = await fs.readFile(filePath, 'utf-8');
-
-      // 根据文件扩展名检测格式
-      const format = this.detectFormat(filePath);
-
-      // 解析配置
-      return this.parse(content, format, configType);
-    } catch (error) {
-      if (error instanceof ConfigurationError) {
-        throw error;
-      }
-      if (error instanceof Error) {
+  validate<T extends ConfigType>(config: ParsedConfig<T>) {
+    switch (config.configType) {
+      case ConfigType.WORKFLOW:
+        return validateWorkflow(config as ParsedConfig<ConfigType.WORKFLOW>);
+      case ConfigType.NODE_TEMPLATE:
+        return validateNodeTemplate(config as ParsedConfig<ConfigType.NODE_TEMPLATE>);
+      case ConfigType.SCRIPT:
+        return validateScript(config as ParsedConfig<ConfigType.SCRIPT>);
+      case ConfigType.TRIGGER_TEMPLATE:
+        return validateTriggerTemplate(config as ParsedConfig<ConfigType.TRIGGER_TEMPLATE>);
+      case ConfigType.LLM_PROFILE:
+        return validateLLMProfile(config as ParsedConfig<ConfigType.LLM_PROFILE>);
+      default:
         throw new ConfigurationError(
-          `加载配置文件失败: ${error.message}`,
-          filePath,
-          { originalError: error.message }
+          `未找到配置类型 ${config.configType} 的处理器`,
+          config.configType
         );
-      }
-      throw new ConfigurationError('加载配置文件失败: 未知错误');
     }
   }
 
   /**
-   * 验证配置的有效性
-   * 使用 WorkflowValidator 进行验证
-   * @param config 解析后的配置
-   * @returns 验证结果
+   * 解析并验证配置（通用方法）
+   * @param content 配置文件内容
+   * @param format 配置格式
+   * @param configType 配置类型
+   * @returns 验证后的配置对象
    */
-  validate(config: ParsedConfig<ConfigType.WORKFLOW>) {
-    return this.workflowValidator.validate(config.config);
+  parseAndValidate<T extends ConfigType>(
+    content: string,
+    format: ConfigFormat,
+    configType: T
+  ): ParsedConfig<T> {
+    // 解析配置
+    const parsedConfig = this.parse(content, format, configType);
+
+    // 验证配置
+    const validationResult = this.validate(parsedConfig);
+    if (validationResult.isErr()) {
+      const errorMessages = validationResult.error.map(err => err.message).join('\n');
+      throw new ConfigurationError(
+        `配置验证失败:\n${errorMessages}`,
+        undefined,
+        { errors: validationResult.error }
+      );
+    }
+
+    return parsedConfig;
   }
 
   /**
-   * 解析并转换为WorkflowDefinition
+   * 解析并转换配置为WorkflowDefinition
    * @param content 配置文件内容
    * @param format 配置格式
-   * @param parameters 运行时参数
+   * @param parameters 运行时参数（可选）
    * @returns WorkflowDefinition
    */
   parseAndTransform(
@@ -122,138 +135,14 @@ export class ConfigParser implements IConfigParser {
     format: ConfigFormat,
     parameters?: Record<string, any>
   ): WorkflowDefinition {
+    const { ConfigTransformer } = require('./config-transformer');
+    const { transformWorkflow } = require('./processors/workflow');
+    
     // 解析配置
-    const parsedConfig = this.parse(content, format);
-
-    // 验证配置
-    const validationResult = this.validate(parsedConfig);
-    if (validationResult.isErr()) {
-      const errorMessages = validationResult.error.map(err => err.message).join('\n');
-      throw new ConfigurationError(
-        `配置验证失败:\n${errorMessages}`,
-        undefined,
-        { errors: validationResult.error }
-      );
-    }
-
+    const parsedConfig = this.parse(content, format, ConfigType.WORKFLOW);
+    
     // 转换为WorkflowDefinition
-    return this.transformer.transformToWorkflow(parsedConfig.config, parameters);
+    return transformWorkflow(parsedConfig, parameters);
   }
 
-  /**
-   * 从文件加载并转换为WorkflowDefinition
-   * @param filePath 文件路径
-   * @param parameters 运行时参数
-   * @returns WorkflowDefinition
-   */
-  async loadAndTransform(
-    filePath: string,
-    parameters?: Record<string, any>
-  ): Promise<WorkflowDefinition> {
-    // 加载配置
-    const parsedConfig = await this.loadFromFile(filePath);
-
-    // 验证配置
-    const validationResult = this.validate(parsedConfig);
-    if (validationResult.isErr()) {
-      const errorMessages = validationResult.error.map(err => err.message).join('\n');
-      throw new ConfigurationError(
-        `配置验证失败:\n${errorMessages}`,
-        undefined,
-        { errors: validationResult.error }
-      );
-    }
-
-    // 转换为WorkflowDefinition
-    return this.transformer.transformToWorkflow(parsedConfig.config, parameters);
-  }
-
-  /**
-   * 将WorkflowDefinition导出为配置文件
-   * @param workflowDef 工作流定义
-   * @param format 配置格式
-   * @returns 配置文件内容字符串
-   */
-  exportWorkflow(workflowDef: WorkflowDefinition, format: ConfigFormat): string {
-    // 转换为配置文件格式
-    const configFile = this.transformer.transformFromWorkflow(workflowDef);
-
-    // 根据格式序列化
-    switch (format) {
-      case ConfigFormat.JSON:
-        return stringifyJson(configFile, true);
-      case ConfigFormat.TOML:
-        throw new ConfigurationError(
-          'TOML格式不支持导出，请使用JSON格式',
-          format,
-          { suggestion: '使用 ConfigFormat.JSON 代替' }
-        );
-      default:
-        throw new ConfigurationError(
-          `不支持的配置格式: ${format}`,
-          format
-        );
-    }
-  }
-
-  /**
-   * 将WorkflowDefinition保存为配置文件
-   * @param workflowDef 工作流定义
-   * @param filePath 文件路径
-   */
-  async saveWorkflow(workflowDef: WorkflowDefinition, filePath: string): Promise<void> {
-    const fs = await import('fs/promises');
-
-    try {
-      // 根据文件扩展名检测格式
-      const format = this.detectFormat(filePath);
-
-      // 导出配置
-      const content = this.exportWorkflow(workflowDef, format);
-
-      // 保存文件
-      await fs.writeFile(filePath, content, 'utf-8');
-    } catch (error) {
-      if (error instanceof ConfigurationError) {
-        throw error;
-      }
-      if (error instanceof Error) {
-        throw new ConfigurationError(
-          `保存配置文件失败: ${error.message}`,
-          filePath,
-          { originalError: error.message }
-        );
-      }
-      throw new ConfigurationError('保存配置文件失败: 未知错误');
-    }
-  }
-
-  /**
-   * 根据文件扩展名检测配置格式
-   * @param filePath 文件路径
-   * @returns 配置格式
-   */
-  private detectFormat(filePath: string): ConfigFormat {
-    const ext = path.extname(filePath).toLowerCase();
-
-    switch (ext) {
-      case '.toml':
-        return ConfigFormat.TOML;
-      case '.json':
-        return ConfigFormat.JSON;
-      default:
-        throw new ConfigurationError(
-          `无法识别的配置文件扩展名: ${ext}`,
-          ext
-        );
-    }
-  }
-
-  /**
-   * 获取转换器实例
-   * @returns 配置转换器
-   */
-  getTransformer(): ConfigTransformer {
-    return this.transformer;
-  }
 }

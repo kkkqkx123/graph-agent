@@ -5,9 +5,11 @@
  * 设计原则：
  * - 配置验证使用 sdk/core/validation 中的 WorkflowValidator
  * - 验证结果使用 Result<WorkflowDefinition, ValidationError[]> 类型
+ * - 文件 I/O 操作由应用层负责，不委托给 ConfigParser
  */
 
 import { ConfigParser, ConfigFormat } from '../../config';
+import { loadConfigContent } from '../../config/config-utils';
 import type { WorkflowDefinition } from '../../../types/workflow';
 import type { Result } from '../../../types/result';
 import type { ValidationError } from '../../../types/errors';
@@ -32,7 +34,9 @@ export class ConfigurationAPI {
     filePath: string,
     parameters?: Record<string, any>
   ): Promise<string> {
-    const workflowDef = await this.parser.loadAndTransform(filePath, parameters);
+    // 应用层负责文件读取
+    const { content, format } = await loadConfigContent(filePath);
+    const workflowDef = this.parser.parseAndTransform(content, format, parameters);
     
     // 注册到工作流注册表
     const { workflowRegistry } = await import('../../../core/services/workflow-registry');
@@ -68,8 +72,18 @@ export class ConfigurationAPI {
    * @returns 验证结果
    */
   async validateConfigFile(filePath: string): Promise<Result<WorkflowDefinition, ValidationError[]>> {
-    const parsedConfig = await this.parser.loadFromFile(filePath);
-    return this.parser.validate(parsedConfig);
+    // 应用层负责文件读取
+    const { content, format } = await loadConfigContent(filePath);
+    const parsedConfig = this.parser.parse(content, format);
+    const validationResult = this.parser.validate(parsedConfig);
+    
+    // 转换为 WorkflowDefinition 类型
+    if (validationResult.isOk()) {
+      const { ok } = await import('../../../utils/result-utils');
+      return ok(validationResult.value.config as WorkflowDefinition);
+    } else {
+      return validationResult as any;
+    }
   }
 
   /**
@@ -80,7 +94,15 @@ export class ConfigurationAPI {
    */
   validateConfigContent(content: string, format: ConfigFormat): Result<WorkflowDefinition, ValidationError[]> {
     const parsedConfig = this.parser.parse(content, format);
-    return this.parser.validate(parsedConfig);
+    const validationResult = this.parser.validate(parsedConfig);
+    
+    // 转换为 WorkflowDefinition 类型
+    if (validationResult.isOk()) {
+      const { ok } = require('../../../utils/result-utils');
+      return ok(validationResult.value.config as WorkflowDefinition);
+    } else {
+      return validationResult as any;
+    }
   }
 
   /**
@@ -93,7 +115,9 @@ export class ConfigurationAPI {
     filePath: string,
     parameters?: Record<string, any>
   ): Promise<WorkflowDefinition> {
-    return this.parser.loadAndTransform(filePath, parameters);
+    // 应用层负责文件读取
+    const { content, format } = await loadConfigContent(filePath);
+    return this.parser.parseAndTransform(content, format, parameters);
   }
 
   /**
@@ -124,7 +148,11 @@ export class ConfigurationAPI {
       throw new Error(`工作流不存在: ${workflowId}`);
     }
     
-    await this.parser.saveWorkflow(workflowDef, filePath);
+    // 应用层负责文件写入
+    const fs = await import('fs/promises');
+    const { exportWorkflow } = await import('../../config/processors/workflow');
+    const content = exportWorkflow(workflowDef, ConfigFormat.JSON);
+    await fs.writeFile(filePath, content, 'utf-8');
   }
 
   /**
@@ -141,7 +169,9 @@ export class ConfigurationAPI {
       throw new Error(`工作流不存在: ${workflowId}`);
     }
     
-    return this.parser.exportWorkflow(workflowDef, format);
+    // 使用 processors 中的导出函数
+    const { exportWorkflow } = require('../../config/processors/workflow');
+    return exportWorkflow(workflowDef, format);
   }
 
   /**

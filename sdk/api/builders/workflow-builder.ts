@@ -492,7 +492,11 @@ export class WorkflowBuilder {
     parameters?: Record<string, any>
   ): Promise<WorkflowBuilder> {
     const parser = new ConfigParser();
-    const workflowDef = await parser.loadAndTransform(filePath, parameters);
+    const { loadConfigContent } = await import('../config/config-utils');
+    
+    // 应用层负责文件读取
+    const { content, format } = await loadConfigContent(filePath);
+    const workflowDef = parser.parseAndTransform(content, format, parameters);
     
     const builder = new WorkflowBuilder(workflowDef.id);
     // 填充builder的内部状态

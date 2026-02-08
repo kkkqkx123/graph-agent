@@ -12,7 +12,7 @@ import { WorkflowRegistryAPI } from '../resources/workflows/workflow-registry-ap
 import { ToolRegistryAPI } from '../resources/tools/tool-registry-api';
 import { ThreadRegistryAPI } from '../resources/threads/thread-registry-api';
 import { ScriptRegistryAPI } from '../resources/scripts/script-registry-api';
-import { LLMProfileRegistryAPI } from '../resources/profiles/profile-registry-api';
+import { LLMProfileRegistryAPI } from '../resources/llm/llm-profile-registry-api';
 import { NodeRegistryAPI } from '../resources/templates/node-template-registry-api';
 import { TriggerTemplateRegistryAPI } from '../resources/templates/trigger-template-registry-api';
 

@@ -21,6 +21,7 @@ import type { WorkflowDefinition } from '../../types/workflow';
 import type { NodeTemplate } from '../../types/node-template';
 import type { TriggerTemplate } from '../../types/trigger-template';
 import type { Script } from '../../types/code';
+import type { LLMProfile } from '../../types/llm';
 
 /**
  * 配置格式枚举
@@ -73,13 +74,21 @@ export type TriggerTemplateConfigFile = TriggerTemplate;
 export type ScriptConfigFile = Script;
 
 /**
+ * LLM Profile配置文件格式
+ *
+ * 说明：直接复用 LLMProfile 类型，完全一致
+ */
+export type LLMProfileConfigFile = LLMProfile;
+
+/**
  * 配置类型枚举
  */
 export enum ConfigType {
   WORKFLOW = 'workflow',
   NODE_TEMPLATE = 'node_template',
   TRIGGER_TEMPLATE = 'trigger_template',
-  SCRIPT = 'script'
+  SCRIPT = 'script',
+  LLM_PROFILE = 'llm_profile'
 }
 
 /**
@@ -89,7 +98,8 @@ export type ConfigFile =
   | WorkflowConfigFile
   | NodeTemplateConfigFile
   | TriggerTemplateConfigFile
-  | ScriptConfigFile;
+  | ScriptConfigFile
+  | LLMProfileConfigFile;
 
 /**
  * 解析后的配置对象（通用版本）
@@ -104,6 +114,7 @@ export interface ParsedConfig<T extends ConfigType = ConfigType> {
            T extends ConfigType.NODE_TEMPLATE ? NodeTemplateConfigFile :
            T extends ConfigType.TRIGGER_TEMPLATE ? TriggerTemplateConfigFile :
            T extends ConfigType.SCRIPT ? ScriptConfigFile :
+           T extends ConfigType.LLM_PROFILE ? LLMProfileConfigFile :
            ConfigFile;
   /** 原始内容 */
   rawContent: string;
@@ -114,9 +125,14 @@ export type ParsedWorkflowConfig = ParsedConfig<ConfigType.WORKFLOW>;
 export type ParsedNodeTemplateConfig = ParsedConfig<ConfigType.NODE_TEMPLATE>;
 export type ParsedTriggerTemplateConfig = ParsedConfig<ConfigType.TRIGGER_TEMPLATE>;
 export type ParsedScriptConfig = ParsedConfig<ConfigType.SCRIPT>;
+export type ParsedLLMProfileConfig = ParsedConfig<ConfigType.LLM_PROFILE>;
 
 /**
  * 配置解析器接口
+ *
+ * 设计原则：
+ * - 只负责配置内容的解析和验证，不涉及文件I/O操作
+ * - 文件读取等I/O操作由应用层负责
  */
 export interface IConfigParser {
   /**
@@ -133,15 +149,24 @@ export interface IConfigParser {
   ): ParsedConfig<T>;
 
   /**
-   * 从文件路径加载并解析配置
-   * @param filePath 文件路径
-   * @param configType 配置类型（可选，默认为WORKFLOW）
-   * @returns 解析后的配置对象
+   * 验证配置的有效性
+   * @param config 解析后的配置
+   * @returns 验证结果
    */
-  loadFromFile<T extends ConfigType = ConfigType.WORKFLOW>(
-    filePath: string,
-    configType?: T
-  ): Promise<ParsedConfig<T>>;
+  validate<T extends ConfigType>(config: ParsedConfig<T>): any;
+
+  /**
+   * 解析并验证配置（通用方法）
+   * @param content 配置文件内容
+   * @param format 配置格式
+   * @param configType 配置类型
+   * @returns 验证后的配置对象
+   */
+  parseAndValidate<T extends ConfigType>(
+    content: string,
+    format: ConfigFormat,
+    configType: T
+  ): ParsedConfig<T>;
 }
 
 /**
