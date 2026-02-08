@@ -6,6 +6,8 @@
 import { ExecutionError } from '../../../../types/errors';
 import type { Node, RouteNodeConfig } from '../../../../types/node';
 import type { Thread } from '../../../../types/thread';
+import type { Condition, EvaluationContext } from '../../../../types/condition';
+import { conditionEvaluator } from '../../../../utils/evalutor/condition-evaluator';
 
 /**
  * 检查节点是否可以执行
@@ -20,13 +22,18 @@ function canExecute(thread: Thread, node: Node): boolean {
 /**
  * 评估路由条件
  */
-function evaluateRouteCondition(condition: string, thread: Thread): boolean {
+function evaluateRouteCondition(condition: Condition, thread: Thread): boolean {
   try {
-    // 简单的条件评估，实际应该使用条件评估器
-    const func = new Function('variables', `return ${condition}`);
-    return func(thread.variableScopes.thread);
+    // 构建评估上下文
+    const context: EvaluationContext = {
+      variables: thread.variableScopes.thread || {},
+      input: thread.input || {},
+      output: thread.nodeResults[thread.nodeResults.length - 1]?.output || {}
+    };
+
+    return conditionEvaluator.evaluate(condition, context);
   } catch (error) {
-    console.error(`Failed to evaluate route condition: ${condition}`, error);
+    console.error(`Failed to evaluate route condition: ${condition.expression}`, error);
     return false;
   }
 }

@@ -9,6 +9,7 @@
 
 import type { ProcessedWorkflowDefinition } from '../../types/workflow';
 import type { Thread, ThreadOptions, ThreadStatus } from '../../types/thread';
+import { ThreadType } from '../../types/thread';
 import { ConversationManager } from './managers/conversation-manager';
 import { ThreadContext } from './context/thread-context';
 import { NodeType } from '../../types/node';
@@ -276,9 +277,14 @@ export class ThreadBuilder {
       startTime: now,
       endTime: undefined,
       errors: [],
+      threadType: ThreadType.TRIGGERED_SUBWORKFLOW,
+      triggeredSubworkflowContext: {
+        parentThreadId: sourceThread.id,
+        childThreadIds: [],
+        triggeredSubworkflowId: ''
+      },
       metadata: {
         ...sourceThread.metadata,
-        parentThreadId: sourceThread.id,
         // 清除构建路径标识，因为是新线程
         buildPath: undefined
       }
@@ -348,12 +354,13 @@ export class ThreadBuilder {
       startTime: now,
       endTime: undefined,
       errors: [],
+      threadType: ThreadType.FORK_JOIN,
+      forkJoinContext: {
+        forkId: forkConfig.forkId,
+        forkPathId: forkConfig.forkPathId
+      },
       metadata: {
         ...parentThread.metadata,
-        parentThreadId: parentThread.id,
-        forkId: forkConfig.forkId,
-        // Fork路径ID，用于Join时识别主线程
-        forkPathId: forkConfig.forkPathId,
         // 清除构建路径标识，因为是新线程
         buildPath: undefined
       }

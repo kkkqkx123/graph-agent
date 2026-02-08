@@ -31,6 +31,42 @@ export enum ThreadStatus {
 }
 
 /**
+ * 线程类型枚举
+ */
+export enum ThreadType {
+  /** 主线程 */
+  MAIN = 'MAIN',
+  /** FORK/JOIN子线程 */
+  FORK_JOIN = 'FORK_JOIN',
+  /** Triggered子工作流线程 */
+  TRIGGERED_SUBWORKFLOW = 'TRIGGERED_SUBWORKFLOW'
+}
+
+/**
+ * FORK/JOIN上下文
+ * 用于FORK/JOIN场景的线程关系管理
+ */
+export interface ForkJoinContext {
+  /** Fork操作ID */
+  forkId: string;
+  /** Fork路径ID（用于Join时识别主线程） */
+  forkPathId: string;
+}
+
+/**
+ * Triggered子工作流上下文
+ * 用于Triggered子工作流场景的线程关系管理
+ */
+export interface TriggeredSubworkflowContext {
+  /** 父线程ID */
+  parentThreadId: ID;
+  /** 子线程ID数组 */
+  childThreadIds: ID[];
+  /** 触发的子工作流ID */
+  triggeredSubworkflowId: ID;
+}
+
+/**
  * 线程变量类型
  */
 export interface ThreadVariable {
@@ -69,17 +105,7 @@ export interface ThreadMetadata {
   creator?: string;
   /** 标签数组 */
   tags?: string[];
-  
-  // ========== Fork/Join 关系 ==========
-  /** 父线程ID（用于fork场景） */
-  parentThreadId?: ID;
-  /** 子线程ID数组（用于fork场景） */
-  childThreadIds?: ID[];
-  /** Fork路径ID（用于Join时识别主线程） */
-  forkPathId?: string;
-  /** Fork操作ID */
-  forkId?: string;
-  
+
   // ========== 预处理信息 ==========
   /** 是否为预处理构建 */
   isPreprocessed?: boolean;
@@ -87,7 +113,7 @@ export interface ThreadMetadata {
   processedAt?: Timestamp;
   /** 是否包含子图 */
   hasSubgraphs?: boolean;
-  
+
   // ========== 工作流快照 ==========
   /** 工作流配置快照 */
   workflowConfig?: WorkflowConfig;
@@ -103,7 +129,7 @@ export interface ThreadMetadata {
   topologicalOrder?: ID[];
   /** 构建路径标识 */
   buildPath?: 'processed' | 'definition';
-  
+
   // ========== 运行时配置 ==========
   /** 错误处理配置 */
   errorHandling?: ErrorHandlingConfig;
@@ -277,6 +303,16 @@ export interface Thread {
   shouldPause?: boolean;
   /** 停止标志（运行时控制）*/
   shouldStop?: boolean;
+  
+  // ========== Thread类型和关系管理 ==========
+  /** 线程类型 */
+  threadType?: ThreadType;
+  
+  /** FORK/JOIN上下文（仅当threadType为FORK_JOIN时存在） */
+  forkJoinContext?: ForkJoinContext;
+  
+  /** Triggered子工作流上下文（仅当threadType为TRIGGERED_SUBWORKFLOW时存在） */
+  triggeredSubworkflowContext?: TriggeredSubworkflowContext;
 }
 
 /**

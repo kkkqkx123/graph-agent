@@ -202,7 +202,7 @@ export async function join(
     if (parentThreadContext) {
       // 找到对应mainPathId的子线程
       const mainThread = completedThreads.find(thread =>
-        thread.metadata?.forkPathId === mainPathId
+        thread.forkJoinContext?.forkPathId === mainPathId
       );
       
       if (!mainThread) {

@@ -649,6 +649,148 @@ export class ThreadContext implements LifecycleCapable {
     return this.executionState.isExecutingSubgraph();
   }
 
+  // ========== Thread类型和关系管理方法 ==========
+
+  /**
+   * 获取线程类型
+   * @returns 线程类型
+   */
+  getThreadType(): string {
+    return this.thread.threadType || 'MAIN';
+  }
+
+  /**
+   * 设置线程类型
+   * @param threadType 线程类型
+   */
+  setThreadType(threadType: string): void {
+    this.thread.threadType = threadType as any;
+  }
+
+  /**
+   * 获取Fork ID（用于FORK/JOIN场景）
+   * @returns Fork ID，如果没有则返回undefined
+   */
+  getForkId(): string | undefined {
+    return this.thread.forkJoinContext?.forkId;
+  }
+
+  /**
+   * 设置Fork ID（用于FORK/JOIN场景）
+   * @param forkId Fork ID
+   */
+  setForkId(forkId: string): void {
+    if (!this.thread.forkJoinContext) {
+      this.thread.forkJoinContext = { forkId, forkPathId: '' };
+    }
+    this.thread.forkJoinContext.forkId = forkId;
+  }
+
+  /**
+   * 获取Fork路径ID（用于FORK/JOIN场景）
+   * @returns Fork路径ID，如果没有则返回undefined
+   */
+  getForkPathId(): string | undefined {
+    return this.thread.forkJoinContext?.forkPathId;
+  }
+
+  /**
+   * 设置Fork路径ID（用于FORK/JOIN场景）
+   * @param forkPathId Fork路径ID
+   */
+  setForkPathId(forkPathId: string): void {
+    if (!this.thread.forkJoinContext) {
+      this.thread.forkJoinContext = { forkId: '', forkPathId };
+    }
+    this.thread.forkJoinContext.forkPathId = forkPathId;
+  }
+
+  /**
+   * 获取子Thread ID列表
+   * @returns 子Thread ID数组
+   */
+  getChildThreadIds(): ID[] {
+    return this.thread.triggeredSubworkflowContext?.childThreadIds || [];
+  }
+
+  /**
+   * 注册子Thread
+   * @param childThreadId 子Thread ID
+   */
+  registerChildThread(childThreadId: ID): void {
+    if (!this.thread.triggeredSubworkflowContext) {
+      this.thread.triggeredSubworkflowContext = {
+        parentThreadId: '',
+        childThreadIds: [],
+        triggeredSubworkflowId: ''
+      };
+    }
+    if (!this.thread.triggeredSubworkflowContext.childThreadIds) {
+      this.thread.triggeredSubworkflowContext.childThreadIds = [];
+    }
+    if (!this.thread.triggeredSubworkflowContext.childThreadIds.includes(childThreadId)) {
+      this.thread.triggeredSubworkflowContext.childThreadIds.push(childThreadId);
+    }
+  }
+
+  /**
+   * 注销子Thread
+   * @param childThreadId 子Thread ID
+   */
+  unregisterChildThread(childThreadId: ID): void {
+    if (this.thread.triggeredSubworkflowContext?.childThreadIds) {
+      this.thread.triggeredSubworkflowContext.childThreadIds = this.thread.triggeredSubworkflowContext.childThreadIds.filter(
+        (id: ID) => id !== childThreadId
+      );
+    }
+  }
+
+  /**
+   * 获取父Thread ID
+   * @returns 父Thread ID，如果没有则返回undefined
+   */
+  getParentThreadId(): ID | undefined {
+    return this.thread.triggeredSubworkflowContext?.parentThreadId;
+  }
+
+  /**
+   * 设置父Thread ID
+   * @param parentThreadId 父Thread ID
+   */
+  setParentThreadId(parentThreadId: ID): void {
+    if (!this.thread.triggeredSubworkflowContext) {
+      this.thread.triggeredSubworkflowContext = {
+        parentThreadId,
+        childThreadIds: [],
+        triggeredSubworkflowId: ''
+      };
+    }
+    this.thread.triggeredSubworkflowContext.parentThreadId = parentThreadId;
+  }
+
+  /**
+   * 获取触发的子工作流ID（用于Triggered子工作流）
+   * @returns 子工作流ID，如果没有则返回undefined
+   */
+  getTriggeredSubworkflowId(): ID | undefined {
+    return this.thread.triggeredSubworkflowContext?.triggeredSubworkflowId;
+  }
+
+  /**
+   * 设置触发的子工作流ID（用于Triggered子工作流）
+   * @param subworkflowId 子工作流ID
+   */
+  setTriggeredSubworkflowId(subworkflowId: ID): void {
+    if (!this.thread.triggeredSubworkflowContext) {
+      this.thread.triggeredSubworkflowContext = {
+        parentThreadId: '',
+        childThreadIds: [],
+        triggeredSubworkflowId: subworkflowId
+      };
+    }
+    this.thread.triggeredSubworkflowContext.triggeredSubworkflowId = subworkflowId;
+  }
+
   /**
    * 获取当前子图上下文
    * @returns 当前子图上下文

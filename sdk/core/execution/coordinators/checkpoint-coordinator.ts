@@ -95,7 +95,9 @@ export class CheckpointCoordinator {
       nodeResults: nodeResultsRecord,
       errors: thread.errors,
       conversationState, // 使用新的索引状态
-      triggerStates: triggerStateSnapshot.size > 0 ? triggerStateSnapshot : undefined // 保存触发器状态
+      triggerStates: triggerStateSnapshot.size > 0 ? triggerStateSnapshot : undefined, // 保存触发器状态
+      forkJoinContext: thread.forkJoinContext, // 保存FORK/JOIN上下文
+      triggeredSubworkflowContext: thread.triggeredSubworkflowContext // 保存Triggered子工作流上下文
     };
 
     // 步骤3：生成唯一 checkpointId 和 timestamp
@@ -158,7 +160,9 @@ export class CheckpointCoordinator {
       nodeResults: nodeResultsArray,
       startTime: checkpoint.timestamp,
       errors: checkpoint.threadState.errors,
-      metadata: checkpoint.metadata
+      metadata: checkpoint.metadata,
+      forkJoinContext: checkpoint.threadState.forkJoinContext,
+      triggeredSubworkflowContext: checkpoint.threadState.triggeredSubworkflowContext
     };
 
     // 步骤5：使用 VariableStateManager 恢复变量快照
@@ -208,7 +212,54 @@ export class CheckpointCoordinator {
       threadContext.restoreTriggerState(checkpoint.threadState.triggerStates);
     }
 
-    // 步骤11：注册到 ThreadRegistry
+    // 步骤11：恢复FORK/JOIN上下文（如果存在）
+    if (checkpoint.threadState.forkJoinContext) {
+      threadContext.setForkId(checkpoint.threadState.forkJoinContext.forkId);
+      threadContext.setForkPathId(checkpoint.threadState.forkJoinContext.forkPathId);
+    }
+
+    // 步骤12：恢复Triggered子工作流上下文（如果存在）
+    if (checkpoint.threadState.triggeredSubworkflowContext) {
+      threadContext.setParentThreadId(checkpoint.threadState.triggeredSubworkflowContext.parentThreadId);
+      threadContext.setTriggeredSubworkflowId(checkpoint.threadState.triggeredSubworkflowContext.triggeredSubworkflowId);
+    }
+
+    // 步骤13：推断FORK/JOIN状态（如果需要）
+    // 注意：FORK/JOIN状态不需要保存到Checkpoint中，可以在恢复时从图结构和执行序列推断
+    // 如果当前节点是JOIN节点，可以推断哪些分支已完成
+    if (thread.graph) {
+      const currentNode = thread.graph.getNode(checkpoint.threadState.currentNodeId);
+      if (currentNode && currentNode.type === 'JOIN') {
+        const forkJoinState = this.inferForkJoinState(
+          checkpoint.threadState.currentNodeId,
+          checkpoint.threadState.nodeResults,
+          thread.graph
+        );
+        // 这里可以根据推断的状态进行相应的处理
+        // 例如：记录日志或更新某些状态
+      }
+    }
+
+    // 步骤14：恢复子Thread（方案3：主从分离模式）
+    if (checkpoint.threadState.triggeredSubworkflowContext?.childThreadIds &&
+        checkpoint.threadState.triggeredSubworkflowContext.childThreadIds.length > 0) {
+      for (const childThreadId of checkpoint.threadState.triggeredSubworkflowContext.childThreadIds) {
+        // 查找子Thread的Checkpoint
+        const childCheckpointId = await this.findChildCheckpoint(childThreadId, checkpointStateManager);
+        if (childCheckpointId) {
+          // 恢复子Thread
+          const childContext = await this.restoreFromCheckpoint(childCheckpointId, dependencies);
+          // 重建父子关系
+          childContext.setParentThreadId(threadContext.getThreadId());
+          // 注册到ThreadRegistry
+          threadRegistry.register(childContext);
+          // 在主Thread中注册子Thread
+          threadContext.registerChildThread(childThreadId);
+        }
+      }
+    }
+
+    // 步骤12：注册到 ThreadRegistry
     threadRegistry.register(threadContext);
 
     return threadContext;
@@ -240,6 +291,70 @@ export class CheckpointCoordinator {
         }
       }
     );
+  }
+
+  /**
+   * 推断FORK/JOIN状态（静态私有方法）
+   * 从图结构和执行序列推断并行分支的完成状态
+   *
+   * @param forkNodeId FORK节点ID
+   * @param nodeResults 节点执行结果
+   * @param graph 工作流图
+   * @returns 已完成和未完成的路径集合
+   */
+  private static inferForkJoinState(
+    forkNodeId: string,
+    nodeResults: Record<string, any>,
+    graph: any
+  ): {
+    completedPaths: Set<string>;
+    pendingPaths: Set<string>;
+  } {
+    // 1. 获取FORK节点
+    const forkNode = graph.getNode(forkNodeId);
+    if (!forkNode || forkNode.type !== 'FORK') {
+      return { completedPaths: new Set(), pendingPaths: new Set() };
+    }
+
+    // 2. 获取FORK节点的所有路径
+    const forkPathIds = (forkNode.config as any)?.forkPathIds || [];
+    const childNodeIds = (forkNode.config as any)?.childNodeIds || [];
+
+    // 3. 推断哪些路径已完成
+    const completedPaths = new Set<string>();
+    const pendingPaths = new Set<string>();
+
+    for (let i = 0; i < forkPathIds.length; i++) {
+      const pathId = forkPathIds[i];
+      const startNodeId = childNodeIds[i];
+
+      if (nodeResults[startNodeId]) {
+        completedPaths.add(pathId);
+      } else {
+        pendingPaths.add(pathId);
+      }
+    }
+
+    return { completedPaths, pendingPaths };
+  }
+
+  /**
+   * 查找子Thread的Checkpoint ID（静态私有方法）
+   * @param childThreadId 子Thread ID
+   * @param checkpointStateManager Checkpoint状态管理器
+   * @returns Checkpoint ID，如果找不到则返回undefined
+   */
+  private static async findChildCheckpoint(
+    childThreadId: string,
+    checkpointStateManager: CheckpointStateManager
+  ): Promise<string | undefined> {
+    // 获取该Thread的所有Checkpoint
+    const checkpointIds = await checkpointStateManager.list({ threadId: childThreadId });
+    if (checkpointIds.length === 0) {
+      return undefined;
+    }
+    // 返回最新的Checkpoint（第一个）
+    return checkpointIds[0];
   }
 
   /**

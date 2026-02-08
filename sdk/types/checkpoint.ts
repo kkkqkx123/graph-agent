@@ -66,6 +66,17 @@ export interface ThreadStateSnapshot {
   };
   /** 触发器状态快照（用于恢复 TriggerStateManager） */
   triggerStates?: Map<ID, TriggerRuntimeState>;
+  /** FORK/JOIN上下文（主从分离模式） */
+  forkJoinContext?: {
+    forkId: string;
+    forkPathId: string;
+  };
+  /** Triggered子工作流上下文（主从分离模式） */
+  triggeredSubworkflowContext?: {
+    parentThreadId: ID;
+    childThreadIds: ID[];
+    triggeredSubworkflowId: ID;
+  };
 }
 
 /**

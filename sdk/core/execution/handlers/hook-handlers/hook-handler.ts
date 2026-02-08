@@ -83,7 +83,7 @@ async function executeSingleHook(
       let result: boolean;
       try {
         result = conditionEvaluator.evaluate(
-          { expression: hook.condition },
+          hook.condition,
           convertToEvaluationContext(evalContext)
         );
       } catch (error) {

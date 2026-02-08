@@ -80,7 +80,7 @@ export interface NodeHook {
   /** Hook类型 */
   hookType: HookType;
   /** 触发条件表达式（可选） */
-  condition?: string;
+  condition?: Condition;
   /** 要触发的自定义事件名称 */
   eventName: string;
   /** 事件载荷生成逻辑（可选） */
@@ -241,7 +241,7 @@ export interface RouteNodeConfig {
   /** 路由规则数组 */
   routes: Array<{
     /** 条件表达式 */
-    condition: string;
+    condition: Condition;
     /** 目标节点ID */
     targetNodeId: string;
     /** 优先级 */
@@ -360,7 +360,7 @@ export interface LoopStartNodeConfig {
 
 /**
  * 循环结束节点配置
- * 
+ *
  * 说明：检查循环条件和中断条件，决定是否继续迭代
  * - loopId 唯一标识循环，用于检索 LOOP_START 中初始化的循环状态
  * - 循环状态（iterable、iterationCount 等）已在 LOOP_START 中初始化并存储，无需重复定义
@@ -370,7 +370,7 @@ export interface LoopEndNodeConfig {
   /** 循环ID（与LOOP_START节点完全一致，用于标识和检索循环状态） */
   loopId: string;
   /** 中断条件表达式（可选，满足时立即退出循环） */
-  breakCondition?: any;
+  breakCondition?: Condition;
   /** LOOP_START节点ID（用于跳转到下一迭代） */
   loopStartNodeId?: string;
 }
