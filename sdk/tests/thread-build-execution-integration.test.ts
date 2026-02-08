@@ -146,7 +146,6 @@ describe('Thread构建到执行实例创建集成测试', () => {
       expect(graphRegistry.has(workflowId)).toBe(true);
       const graph = graphRegistry.get(workflowId);
       expect(graph).toBeDefined();
-      expect(graph?.isReadOnly()).toBe(true);
 
       // 步骤5：使用ThreadBuilder构建ThreadContext
       const threadOptions: ThreadOptions = {

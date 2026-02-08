@@ -2,6 +2,11 @@
  * GraphRegistry - 图注册器
  * 负责图结构的注册、查询和缓存管理
  * 作为全局单例，提供统一的图访问接口
+ *
+ * 设计说明：
+ * - 图在注册后应该是不可变的，由 GraphBuilder 确保构建完成
+ * - 运行时不应该修改图结构
+ * - 通过架构设计保证不可变性，而非运行时检查
  */
 import type { GraphData } from '../entities/graph-data';
 import type { ID } from '../../types/common';
@@ -12,11 +17,14 @@ export class GraphRegistry {
   /**
    * 注册图结构
    * @param workflowId 工作流ID
-   * @param graph 图数据结构
+   * @param graph 图数据结构（应该是构建完成的不可变实例）
    */
   register(workflowId: string, graph: GraphData): void {
-    // 标记为只读后注册，确保运行时不可修改
-    graph.markAsReadOnly();
+    // 验证图对象不为空
+    if (!graph) {
+      throw new Error('Graph cannot be null or undefined');
+    }
+    // 直接注册图，依赖 GraphBuilder 确保图已构建完成且不可变
     this.graphs.set(workflowId, graph);
   }
   

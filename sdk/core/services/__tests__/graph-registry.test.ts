@@ -31,13 +31,14 @@ describe('GraphRegistry', () => {
       expect(graphRegistry.get(workflowId)).toBe(graph);
     });
 
-    it('应该标记图为只读状态', () => {
+    it('应该成功注册图结构', () => {
       const workflowId = 'workflow-1';
       const graph = new GraphData();
 
       graphRegistry.register(workflowId, graph);
 
-      expect(graph.isReadOnly()).toBe(true);
+      expect(graphRegistry.has(workflowId)).toBe(true);
+      expect(graphRegistry.get(workflowId)).toBe(graph);
     });
 
     it('应该覆盖已存在的图结构', () => {
@@ -49,7 +50,6 @@ describe('GraphRegistry', () => {
       graphRegistry.register(workflowId, graph2);
 
       expect(graphRegistry.get(workflowId)).toBe(graph2);
-      expect(graph2.isReadOnly()).toBe(true);
     });
 
     it('应该处理空工作流ID', () => {
@@ -78,14 +78,14 @@ describe('GraphRegistry', () => {
       expect(graphRegistry.get('non-existent')).toBeUndefined();
     });
 
-    it('应该返回只读的图结构', () => {
+    it('应该返回已注册的图结构', () => {
       const workflowId = 'workflow-1';
       const graph = new GraphData();
 
       graphRegistry.register(workflowId, graph);
       const result = graphRegistry.get(workflowId);
 
-      expect(result!.isReadOnly()).toBe(true);
+      expect(result).toBe(graph);
     });
   });
 
@@ -134,22 +134,15 @@ describe('GraphRegistry', () => {
   });
 
   describe('集成测试 - 图操作', () => {
-    it('应该正确处理图的只读状态', () => {
+    it('应该正确处理图的注册和查询', () => {
       const workflowId = 'workflow-1';
       const graph = new GraphData();
 
-      // 注册前可以修改图
-      expect(graph.isReadOnly()).toBe(false);
-
       graphRegistry.register(workflowId, graph);
 
-      // 注册后图变为只读
-      expect(graph.isReadOnly()).toBe(true);
-
-      // 尝试修改只读图应该抛出错误
-      expect(() => {
-        graph.addNode({ id: 'node-1', type: NodeType.START, name: 'Start Node', workflowId: 'workflow-1' });
-      }).toThrow(ConfigurationError);
+      // 获取的图应该是同一个实例
+      const retrievedGraph = graphRegistry.get(workflowId);
+      expect(retrievedGraph).toBe(graph);
     });
 
     it('应该支持多个工作流的图管理', () => {
@@ -163,8 +156,6 @@ describe('GraphRegistry', () => {
 
       expect(graphRegistry.get(workflowId1)).toBe(graph1);
       expect(graphRegistry.get(workflowId2)).toBe(graph2);
-      expect(graph1.isReadOnly()).toBe(true);
-      expect(graph2.isReadOnly()).toBe(true);
     });
 
     it('应该正确处理图的查询操作', () => {
@@ -173,9 +164,9 @@ describe('GraphRegistry', () => {
 
       graphRegistry.register(workflowId, graph);
 
-      // 获取的图应该仍然是只读的
+      // 获取的图应该是同一个实例
       const retrievedGraph = graphRegistry.get(workflowId);
-      expect(retrievedGraph!.isReadOnly()).toBe(true);
+      expect(retrievedGraph).toBe(graph);
 
       // 再次获取应该返回同一个实例
       const sameGraph = graphRegistry.get(workflowId);
@@ -219,7 +210,6 @@ describe('GraphRegistry', () => {
         expect(graphRegistry.has(workflowId)).toBe(true);
         const graph = graphRegistry.get(workflowId);
         expect(graph).toBeDefined();
-        expect(graph!.isReadOnly()).toBe(true);
       }
 
       // 清理后应该都没有了
@@ -322,7 +312,6 @@ describe('GraphRegistry', () => {
 
       // 注册表中的图应该仍然可用
       expect(graphRegistry.get(workflowId)).toBe(savedGraph);
-      expect(savedGraph!.isReadOnly()).toBe(true);
 
       // 清理后应该释放所有引用
       graphRegistry.clear();

@@ -146,7 +146,6 @@ describe('Graph注册到Thread构建集成测试', () => {
       expect(graphRegistry.has(workflowId)).toBe(true);
       const graph = graphRegistry.get(workflowId);
       expect(graph).toBeDefined();
-      expect(graph?.isReadOnly()).toBe(true);
 
       // 步骤5：使用ThreadBuilder构建ThreadContext
       const threadOptions: ThreadOptions = {
@@ -165,8 +164,6 @@ describe('Graph注册到Thread构建集成测试', () => {
       // 步骤7：验证ThreadContext包含正确的图引用
       const thread = threadContext.thread;
       expect(thread.graph).toBe(graph); // 应该是同一个图实例
-      // Graph接口没有isReadOnly方法，只检查GraphData实例
-      expect(graph?.isReadOnly()).toBe(true);
 
       // 步骤8：验证元数据正确传递
       expect(thread.metadata?.workflowConfig).toEqual(processedWorkflow?.config);

@@ -3,18 +3,23 @@
  *
  * 设计说明：
  * - GraphData 是Graph接口的实现类
- * - 提供图的基本数据存储和操作功能
+ * - 提供图的基本数据存储和查询功能
  * - 作为核心实体，放在core/entities目录
  *
  * 核心职责：
- * - 存储和管理图的节点、边及邻接关系
+ * - 存储图的节点、边及邻接关系
  * - 提供图的查询和遍历方法
- * - 支持图的克隆操作
+ * - 作为无状态数据结构，不包含状态管理逻辑
  *
  * 使用场景：
  * - 工作流定义的图结构表示
- * - Thread 执行时的图数据
+ * - Thread 执行时的图数据（不可变）
  * - 图验证和分析
+ *
+ * 注意事项：
+ * - GraphData 是无状态的数据结构，构建完成后不应被修改
+ * - 图的构建由 GraphBuilder 负责
+ * - 运行时通过 GraphRegistry 管理，确保不可变性
  */
 
 import { ConfigurationError } from '../../types/errors';
@@ -47,8 +52,6 @@ export class GraphData implements Graph {
   public startNodeId?: ID;
   /** 结束节点ID集合 */
   public endNodeIds: Set<ID>;
-  /** 只读标记 */
-  private _isReadOnly: boolean = false;
 
   constructor() {
     this.nodes = new Map();
@@ -59,28 +62,10 @@ export class GraphData implements Graph {
   }
 
   /**
-   * 标记图为只读状态
-   * 调用后禁止任何修改操作
-   */
-  markAsReadOnly(): void {
-    this._isReadOnly = true;
-  }
-
-  /**
-   * 检查是否为只读状态
-   * @returns 是否只读
-   */
-  isReadOnly(): boolean {
-    return this._isReadOnly;
-  }
-
-  /**
    * 添加节点
+   * 注意：此方法仅用于构建阶段，运行时不应调用
    */
   addNode(node: GraphNode): void {
-    if (this._isReadOnly) {
-      throw new ConfigurationError('Cannot modify read-only graph', 'readonly');
-    }
     this.nodes.set(node.id, node);
     // 初始化邻接表
     if (!this.adjacencyList.has(node.id)) {
@@ -93,11 +78,9 @@ export class GraphData implements Graph {
 
   /**
    * 添加边
+   * 注意：此方法仅用于构建阶段，运行时不应调用
    */
   addEdge(edge: GraphEdge): void {
-    if (this._isReadOnly) {
-      throw new ConfigurationError('Cannot modify read-only graph', 'readonly');
-    }
     this.edges.set(edge.id, edge);
     // 更新正向邻接表
     if (!this.adjacencyList.has(edge.sourceNodeId)) {
