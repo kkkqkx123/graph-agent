@@ -148,7 +148,7 @@ describe('GraphRegistry', () => {
 
       // 尝试修改只读图应该抛出错误
       expect(() => {
-        graph.addNode({ id: 'node-1', type: NodeType.START, name: 'Start Node', workflowId: 'workflow-1', metadata: {} });
+        graph.addNode({ id: 'node-1', type: NodeType.START, name: 'Start Node', workflowId: 'workflow-1' });
       }).toThrow(ConfigurationError);
     });
 

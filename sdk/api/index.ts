@@ -310,9 +310,7 @@ export {
 export {
   parseJson,
   stringifyJson,
-  validateJsonSyntax,
-  loadJsonFromFile,
-  saveJsonToFile
+  validateJsonSyntax
 } from './config';
 
 // TOML解析函数

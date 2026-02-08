@@ -19,6 +19,7 @@ describe('CodeRegistry', () => {
     type,
     description: `Test script ${name}`,
     content: 'echo "Hello World"',
+    enabled: true,
     options: {
       timeout: 5000,
       retries: 3,
@@ -41,6 +42,7 @@ describe('CodeRegistry', () => {
     type,
     description: `Test script ${name}`,
     filePath: '/path/to/script.sh',
+    enabled: true,
     options: {
       timeout: 5000,
       retries: 3,

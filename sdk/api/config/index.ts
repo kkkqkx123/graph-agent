@@ -3,8 +3,11 @@
  * 导出所有配置解析相关的类和类型
  *
  * 设计原则：
+ * - 无状态设计，所有函数都是纯函数
  * - 配置验证使用 sdk/core/validation 中的 WorkflowValidator
- * - 本模块只负责配置文件的解析和转换
+ * - 本模块只负责配置内容的解析和转换
+ * - 不涉及文件 I/O，文件读取由应用层负责
+ * - 不直接操作注册表，配置注册由应用层负责
  * - 支持多种配置类型：工作流、节点模板、触发器模板、脚本
  */
 
@@ -35,9 +38,7 @@ export { ConfigParser } from './config-parser';
 export {
   parseJson,
   stringifyJson,
-  validateJsonSyntax,
-  loadJsonFromFile,
-  saveJsonToFile
+  validateJsonSyntax
 } from './json-parser';
 
 // TOML解析函数
@@ -49,15 +50,30 @@ export {
 // 转换器
 export { ConfigTransformer } from './config-transformer';
 
-// 配置管理器
-export { ConfigManager, configManager } from './config-manager';
-export type { LoadFromDirectoryOptions, LoadFromDirectoryResult } from './config-manager';
+// 配置解析函数（推荐使用）
+export {
+  parseWorkflow,
+  validateWorkflow,
+  parseWorkflowConfig,
+  parseBatchWorkflows,
+  parseNodeTemplate,
+  parseBatchNodeTemplates,
+  parseTriggerTemplate,
+  parseBatchTriggerTemplates,
+  parseScript,
+  parseBatchScripts
+} from './parsers';
 
-// 加载器
+// 加载器类（已弃用，请使用上面的函数）
+/** @deprecated 请使用 parseWorkflow、parseNodeTemplate 等函数 */
 export { BaseConfigLoader } from './loaders/base-loader';
+/** @deprecated 请使用 parseWorkflow 函数 */
 export { WorkflowLoader } from './loaders/workflow-loader';
+/** @deprecated 请使用 parseNodeTemplate 函数 */
 export { NodeTemplateLoader } from './loaders/node-template-loader';
+/** @deprecated 请使用 parseTriggerTemplate 函数 */
 export { TriggerTemplateLoader } from './loaders/trigger-template-loader';
+/** @deprecated 请使用 parseScript 函数 */
 export { ScriptLoader } from './loaders/script-loader';
 
 // 验证器

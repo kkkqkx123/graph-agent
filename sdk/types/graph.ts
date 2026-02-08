@@ -20,8 +20,6 @@ export interface GraphNode {
   name: string;
   /** 可选的节点描述 */
   description?: string;
-  /** 可选的元数据（用户可设置） */
-  metadata?: Metadata;
   /** 内部元数据（系统内部使用，用户不可设置，避免数据注入漏洞）【在node定义中不存在，仅在graph阶段才存在】 */
   internalMetadata?: Metadata;
   /** 原始节点引用（用于访问完整节点配置） */
@@ -51,8 +49,6 @@ export interface GraphEdge {
   description?: string;
   /** 边权重，用于多条条件边同时满足时的排序 */
   weight?: number;
-  /** 可选的元数据 */
-  metadata?: Metadata;
   /** 原始边引用（用于访问完整边配置） */
   originalEdge?: Edge;
 }
