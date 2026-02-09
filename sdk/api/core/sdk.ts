@@ -9,6 +9,8 @@
  */
 
 import { APIFactory, type SDKAPIConfig } from './api-factory';
+import { APIDependencies } from './api-dependencies';
+import { SDKAPIDependencies } from './sdk-api-dependencies';
 import { getData } from '../types/execution-result';
 import type { SDKOptions, SDKDependencies } from '../types';
 
@@ -245,3 +247,6 @@ class SDK {
  * 提供统一的API入口，整合所有功能模块
  */
 export const sdk = new SDK();
+
+// 导出依赖接口和实现
+export { APIDependencies, SDKAPIDependencies };

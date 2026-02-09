@@ -23,7 +23,6 @@ import { GenericResourceAPI } from '../generic-resource-api';
 import type { ExecutionResult } from '../../types/execution-result';
 import { success, failure } from '../../types/execution-result';
 import type { UserInteractionHandler, UserInteractionRequest } from '../../../types/interaction';
-import type { EventManager } from '../../../core/services/event-manager';
 import { EventType } from '../../../types/events';
 import type {
   UserInteractionRequestedEvent,
@@ -32,7 +31,7 @@ import type {
   UserInteractionFailedEvent
 } from '../../../types/events';
 import { ExecutionError } from '../../../types/errors';
-import { SingletonRegistry } from '../../../core/execution/context/singleton-registry';
+import type { APIDependencies } from '../../core/api-dependencies';
 
 /**
  * 用户交互配置
@@ -64,14 +63,13 @@ export interface UserInteractionFilter {
  * 用户交互资源管理API
  */
 export class UserInteractionResourceAPI extends GenericResourceAPI<UserInteractionConfig, string, UserInteractionFilter> {
-  private eventManager: EventManager;
+  private dependencies: APIDependencies;
   private userInteractionHandler?: UserInteractionHandler;
   private configs: Map<string, UserInteractionConfig> = new Map();
 
-  constructor() {
+  constructor(dependencies: APIDependencies) {
     super();
-    // 从SingletonRegistry获取EventManager
-    this.eventManager = SingletonRegistry.get<EventManager>('eventManager');
+    this.dependencies = dependencies;
   }
 
   // ============================================================================
@@ -223,7 +221,7 @@ export class UserInteractionResourceAPI extends GenericResourceAPI<UserInteracti
    * @param listener 事件监听器
    */
   onInteractionRequested(listener: (event: UserInteractionRequestedEvent) => void): void {
-    this.eventManager.on(EventType.USER_INTERACTION_REQUESTED, listener);
+    this.dependencies.getEventManager().on(EventType.USER_INTERACTION_REQUESTED, listener);
   }
 
   /**
@@ -231,7 +229,7 @@ export class UserInteractionResourceAPI extends GenericResourceAPI<UserInteracti
    * @param listener 事件监听器
    */
   offInteractionRequested(listener: (event: UserInteractionRequestedEvent) => void): void {
-    this.eventManager.off(EventType.USER_INTERACTION_REQUESTED, listener);
+    this.dependencies.getEventManager().off(EventType.USER_INTERACTION_REQUESTED, listener);
   }
 
   /**
@@ -239,7 +237,7 @@ export class UserInteractionResourceAPI extends GenericResourceAPI<UserInteracti
    * @param listener 事件监听器
    */
   onInteractionResponded(listener: (event: UserInteractionRespondedEvent) => void): void {
-    this.eventManager.on(EventType.USER_INTERACTION_RESPONDED, listener);
+    this.dependencies.getEventManager().on(EventType.USER_INTERACTION_RESPONDED, listener);
   }
 
   /**
@@ -247,7 +245,7 @@ export class UserInteractionResourceAPI extends GenericResourceAPI<UserInteracti
    * @param listener 事件监听器
    */
   offInteractionResponded(listener: (event: UserInteractionRespondedEvent) => void): void {
-    this.eventManager.off(EventType.USER_INTERACTION_RESPONDED, listener);
+    this.dependencies.getEventManager().off(EventType.USER_INTERACTION_RESPONDED, listener);
   }
 
   /**
@@ -255,7 +253,7 @@ export class UserInteractionResourceAPI extends GenericResourceAPI<UserInteracti
    * @param listener 事件监听器
    */
   onInteractionProcessed(listener: (event: UserInteractionProcessedEvent) => void): void {
-    this.eventManager.on(EventType.USER_INTERACTION_PROCESSED, listener);
+    this.dependencies.getEventManager().on(EventType.USER_INTERACTION_PROCESSED, listener);
   }
 
   /**
@@ -263,7 +261,7 @@ export class UserInteractionResourceAPI extends GenericResourceAPI<UserInteracti
    * @param listener 事件监听器
    */
   offInteractionProcessed(listener: (event: UserInteractionProcessedEvent) => void): void {
-    this.eventManager.off(EventType.USER_INTERACTION_PROCESSED, listener);
+    this.dependencies.getEventManager().off(EventType.USER_INTERACTION_PROCESSED, listener);
   }
 
   /**
@@ -271,7 +269,7 @@ export class UserInteractionResourceAPI extends GenericResourceAPI<UserInteracti
    * @param listener 事件监听器
    */
   onInteractionFailed(listener: (event: UserInteractionFailedEvent) => void): void {
-    this.eventManager.on(EventType.USER_INTERACTION_FAILED, listener);
+    this.dependencies.getEventManager().on(EventType.USER_INTERACTION_FAILED, listener);
   }
 
   /**
@@ -279,7 +277,7 @@ export class UserInteractionResourceAPI extends GenericResourceAPI<UserInteracti
    * @param listener 事件监听器
    */
   offInteractionFailed(listener: (event: UserInteractionFailedEvent) => void): void {
-    this.eventManager.off(EventType.USER_INTERACTION_FAILED, listener);
+    this.dependencies.getEventManager().off(EventType.USER_INTERACTION_FAILED, listener);
   }
 
   // ============================================================================

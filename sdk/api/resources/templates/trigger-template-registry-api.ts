@@ -9,8 +9,8 @@ import type {
   TriggerTemplateSummary,
   TriggerTemplateFilter
 } from '../../../types/trigger-template';
-import { triggerTemplateRegistry, type TriggerTemplateRegistry } from '../../../core/services/trigger-template-registry';
 import { GenericResourceAPI } from '../generic-resource-api';
+import type { APIDependencies } from '../../core/api-dependencies';
 
 
 /**
@@ -23,11 +23,11 @@ import { GenericResourceAPI } from '../generic-resource-api';
  * - 新增缓存、日志、验证等增强功能
  */
 export class TriggerTemplateRegistryAPI extends GenericResourceAPI<TriggerTemplate, string, TriggerTemplateFilter> {
-  private registry: TriggerTemplateRegistry;
+  private dependencies: APIDependencies;
 
-  constructor(registry?: TriggerTemplateRegistry) {
+  constructor(dependencies: APIDependencies) {
     super();
-    this.registry = registry || triggerTemplateRegistry;
+    this.dependencies = dependencies;
   }
 
   /**
@@ -36,7 +36,7 @@ export class TriggerTemplateRegistryAPI extends GenericResourceAPI<TriggerTempla
    * @returns 触发器模板，如果不存在则返回null
    */
   protected async getResource(id: string): Promise<TriggerTemplate | null> {
-    const template = this.registry.get(id);
+    const template = this.dependencies.getTriggerTemplateRegistry().get(id);
     return template || null;
   }
 
@@ -45,7 +45,7 @@ export class TriggerTemplateRegistryAPI extends GenericResourceAPI<TriggerTempla
    * @returns 触发器模板数组
    */
   protected async getAllResources(): Promise<TriggerTemplate[]> {
-    return this.registry.list();
+    return this.dependencies.getTriggerTemplateRegistry().list();
   }
 
   /**
@@ -53,7 +53,7 @@ export class TriggerTemplateRegistryAPI extends GenericResourceAPI<TriggerTempla
    * @param resource 触发器模板
    */
   protected async createResource(resource: TriggerTemplate): Promise<void> {
-    this.registry.register(resource);
+    this.dependencies.getTriggerTemplateRegistry().register(resource);
   }
 
   /**
@@ -62,7 +62,7 @@ export class TriggerTemplateRegistryAPI extends GenericResourceAPI<TriggerTempla
    * @param updates 更新内容
    */
   protected async updateResource(id: string, updates: Partial<TriggerTemplate>): Promise<void> {
-    this.registry.update(id, updates);
+    this.dependencies.getTriggerTemplateRegistry().update(id, updates);
   }
 
   /**
@@ -70,7 +70,7 @@ export class TriggerTemplateRegistryAPI extends GenericResourceAPI<TriggerTempla
    * @param id 触发器模板名称
    */
   protected async deleteResource(id: string): Promise<void> {
-    this.registry.unregister(id);
+    this.dependencies.getTriggerTemplateRegistry().unregister(id);
   }
 
   /**
@@ -83,7 +83,7 @@ export class TriggerTemplateRegistryAPI extends GenericResourceAPI<TriggerTempla
     let templates = resources;
 
     if (filter.keyword) {
-      templates = this.registry.search(filter.keyword);
+      templates = this.dependencies.getTriggerTemplateRegistry().search(filter.keyword);
     }
 
     if (filter.category) {
@@ -140,7 +140,7 @@ export class TriggerTemplateRegistryAPI extends GenericResourceAPI<TriggerTempla
    * @returns 匹配的触发器模板数组
    */
   searchTemplates(keyword: string): TriggerTemplate[] {
-    return this.registry.search(keyword);
+    return this.dependencies.getTriggerTemplateRegistry().search(keyword);
   }
 
   /**
@@ -150,7 +150,7 @@ export class TriggerTemplateRegistryAPI extends GenericResourceAPI<TriggerTempla
    * @throws NotFoundError 如果触发器模板不存在
    */
   exportTemplate(name: string): string {
-    return this.registry.export(name);
+    return this.dependencies.getTriggerTemplateRegistry().export(name);
   }
 
   /**
@@ -160,7 +160,7 @@ export class TriggerTemplateRegistryAPI extends GenericResourceAPI<TriggerTempla
    * @throws ValidationError 如果JSON无效或触发器配置无效
    */
   importTemplate(json: string): string {
-    return this.registry.import(json);
+    return this.dependencies.getTriggerTemplateRegistry().import(json);
   }
 
   /**
@@ -193,4 +193,4 @@ export class TriggerTemplateRegistryAPI extends GenericResourceAPI<TriggerTempla
 /**
  * 全局触发器模板注册表 API 实例
  */
-export const triggerTemplateRegistryAPI = new TriggerTemplateRegistryAPI();
+// 移除全局实例，由APIFactory管理

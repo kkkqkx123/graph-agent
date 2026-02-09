@@ -9,6 +9,7 @@ import type { Thread, ThreadResult, ThreadStatus } from '../../../types/thread';
 import type { ThreadFilter, ThreadSummary } from '../../types/registry-types';
 import { GenericResourceAPI } from '../generic-resource-api';
 import { getErrorMessage } from '../../types/execution-result';
+import type { APIDependencies } from '../../core/api-dependencies';
 
 
 /**
@@ -22,16 +23,15 @@ import { getErrorMessage } from '../../types/execution-result';
  * - 新增缓存、日志、验证等增强功能
  */
 export class ThreadRegistryAPI extends GenericResourceAPI<Thread, string, ThreadFilter> {
-  private registry: ThreadRegistry;
+  private dependencies: APIDependencies;
 
   /**
    * 创建 ThreadRegistryAPI 实例
-   * @param threadRegistry 线程注册表（可选，默认使用全局单例）
-   * @param options 配置选项（可选）
+   * @param dependencies API依赖项
    */
-  constructor(threadRegistry?: ThreadRegistry) {
+  constructor(dependencies: APIDependencies) {
     super();
-    this.registry = threadRegistry || globalThreadRegistry;
+    this.dependencies = dependencies;
   }
 
   /**
@@ -40,7 +40,7 @@ export class ThreadRegistryAPI extends GenericResourceAPI<Thread, string, Thread
    * @returns 线程实例，如果不存在则返回null
    */
   protected async getResource(id: string): Promise<Thread | null> {
-    const threadContext = this.registry.get(id);
+    const threadContext = this.dependencies.getThreadRegistry().get(id);
     if (!threadContext) {
       return null;
     }
@@ -52,7 +52,7 @@ export class ThreadRegistryAPI extends GenericResourceAPI<Thread, string, Thread
    * @returns 线程实例数组
    */
   protected async getAllResources(): Promise<Thread[]> {
-    return this.registry.getAll().map(ctx => ctx.thread);
+    return this.dependencies.getThreadRegistry().getAll().map(ctx => ctx.thread);
   }
 
   /**
@@ -79,7 +79,7 @@ export class ThreadRegistryAPI extends GenericResourceAPI<Thread, string, Thread
    * @param id 线程ID
    */
   protected async deleteResource(id: string): Promise<void> {
-    this.registry.delete(id);
+    this.dependencies.getThreadRegistry().delete(id);
   }
 
   /**
@@ -238,6 +238,6 @@ export class ThreadRegistryAPI extends GenericResourceAPI<Thread, string, Thread
    * @returns ThreadRegistry实例
    */
   getRegistry(): ThreadRegistry {
-    return this.registry;
+    return this.dependencies.getThreadRegistry();
   }
 }

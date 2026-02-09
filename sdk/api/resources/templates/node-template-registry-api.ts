@@ -4,7 +4,6 @@
  * 重构版本：继承GenericResourceAPI，提高代码复用性和一致性
  */
 
-import { nodeTemplateRegistry, type NodeTemplateRegistry } from '../../../core/services/node-template-registry';
 import type { NodeTemplate } from '../../../types/node-template';
 import type { NodeTemplateFilter, NodeTemplateSummary } from '../../types/registry-types';
 import { ValidationError } from '../../../types/errors';
@@ -12,6 +11,7 @@ import type { Result } from '../../../types/result';
 import { ok, err } from '../../../utils/result-utils';
 import { NodeType } from '../../../types/node';
 import { GenericResourceAPI } from '../generic-resource-api';
+import type { APIDependencies } from '../../core/api-dependencies';
 
 
 /**
@@ -24,11 +24,11 @@ import { GenericResourceAPI } from '../generic-resource-api';
  * - 新增缓存、日志、验证等增强功能
  */
 export class NodeRegistryAPI extends GenericResourceAPI<NodeTemplate, string, NodeTemplateFilter> {
-  private registry: NodeTemplateRegistry;
+  private dependencies: APIDependencies;
 
-  constructor() {
+  constructor(dependencies: APIDependencies) {
     super();
-    this.registry = nodeTemplateRegistry;
+    this.dependencies = dependencies;
   }
 
   /**
@@ -37,7 +37,7 @@ export class NodeRegistryAPI extends GenericResourceAPI<NodeTemplate, string, No
    * @returns 节点模板，如果不存在则返回null
    */
   protected async getResource(id: string): Promise<NodeTemplate | null> {
-    const template = this.registry.get(id);
+    const template = this.dependencies.getNodeTemplateRegistry().get(id);
     return template || null;
   }
 
@@ -46,7 +46,7 @@ export class NodeRegistryAPI extends GenericResourceAPI<NodeTemplate, string, No
    * @returns 节点模板数组
    */
   protected async getAllResources(): Promise<NodeTemplate[]> {
-    return this.registry.list();
+    return this.dependencies.getNodeTemplateRegistry().list();
   }
 
   /**
@@ -54,7 +54,7 @@ export class NodeRegistryAPI extends GenericResourceAPI<NodeTemplate, string, No
    * @param resource 节点模板
    */
   protected async createResource(resource: NodeTemplate): Promise<void> {
-    this.registry.register(resource);
+    this.dependencies.getNodeTemplateRegistry().register(resource);
   }
 
   /**
@@ -63,7 +63,7 @@ export class NodeRegistryAPI extends GenericResourceAPI<NodeTemplate, string, No
    * @param updates 更新内容
    */
   protected async updateResource(id: string, updates: Partial<NodeTemplate>): Promise<void> {
-    this.registry.update(id, updates);
+    this.dependencies.getNodeTemplateRegistry().update(id, updates);
   }
 
   /**
@@ -71,7 +71,7 @@ export class NodeRegistryAPI extends GenericResourceAPI<NodeTemplate, string, No
    * @param id 节点模板名称
    */
   protected async deleteResource(id: string): Promise<void> {
-    this.registry.unregister(id);
+    this.dependencies.getNodeTemplateRegistry().unregister(id);
   }
 
   /**
@@ -106,7 +106,7 @@ export class NodeRegistryAPI extends GenericResourceAPI<NodeTemplate, string, No
    * @returns 节点模板摘要数组
    */
   async getTemplateSummaries(filter?: NodeTemplateFilter): Promise<NodeTemplateSummary[]> {
-    const summaries = this.registry.listSummaries();
+    const summaries = this.dependencies.getNodeTemplateRegistry().listSummaries();
 
     if (!filter) {
       return summaries;
@@ -137,7 +137,7 @@ export class NodeRegistryAPI extends GenericResourceAPI<NodeTemplate, string, No
    * @returns 节点模板数组
    */
   async getTemplatesByType(type: string): Promise<NodeTemplate[]> {
-    return this.registry.listByType(type as any);
+    return this.dependencies.getNodeTemplateRegistry().listByType(type as any);
   }
 
   /**
@@ -146,7 +146,7 @@ export class NodeRegistryAPI extends GenericResourceAPI<NodeTemplate, string, No
    * @returns 节点模板数组
    */
   async getTemplatesByTags(tags: string[]): Promise<NodeTemplate[]> {
-    return this.registry.listByTags(tags);
+    return this.dependencies.getNodeTemplateRegistry().listByTags(tags);
   }
 
   /**
@@ -155,7 +155,7 @@ export class NodeRegistryAPI extends GenericResourceAPI<NodeTemplate, string, No
    * @returns 节点模板数组
    */
   async getTemplatesByCategory(category: string): Promise<NodeTemplate[]> {
-    return this.registry.listByCategory(category);
+    return this.dependencies.getNodeTemplateRegistry().listByCategory(category);
   }
 
   /**
@@ -164,7 +164,7 @@ export class NodeRegistryAPI extends GenericResourceAPI<NodeTemplate, string, No
    * @returns 节点模板数组
    */
   async searchTemplates(keyword: string): Promise<NodeTemplate[]> {
-    return this.registry.search(keyword);
+    return this.dependencies.getNodeTemplateRegistry().search(keyword);
   }
 
   /**
@@ -238,7 +238,7 @@ export class NodeRegistryAPI extends GenericResourceAPI<NodeTemplate, string, No
    * @returns JSON字符串
    */
   async exportTemplate(name: string): Promise<string> {
-    return this.registry.export(name);
+    return this.dependencies.getNodeTemplateRegistry().export(name);
   }
 
   /**
@@ -247,7 +247,7 @@ export class NodeRegistryAPI extends GenericResourceAPI<NodeTemplate, string, No
    * @returns 节点模板名称
    */
   async importTemplate(json: string): Promise<string> {
-    const name = this.registry.import(json);
+    const name = this.dependencies.getNodeTemplateRegistry().import(json);
     return name;
   }
 }

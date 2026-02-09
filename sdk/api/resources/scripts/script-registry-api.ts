@@ -10,12 +10,12 @@ import {
   validateEnum
 } from '../../validation/validation-strategy';
 
-import { codeService } from '../../../core/services/code-service';
 import type { Script } from '../../../types/code';
 import { ScriptType } from '../../../types/code';
 import type { ScriptFilter, ScriptRegistrationConfig } from '../../types/code-types';
 import { NotFoundError } from '../../../types/errors';
 import { GenericResourceAPI } from '../generic-resource-api';
+import type { APIDependencies } from '../../core/api-dependencies';
 
 /**
  * ScriptRegistryAPI - 脚本资源管理API
@@ -28,10 +28,11 @@ import { GenericResourceAPI } from '../generic-resource-api';
  * - 保持向后兼容性
  */
 export class ScriptRegistryAPI extends GenericResourceAPI<Script, string, ScriptFilter> {
-  private codeService = codeService;
+  private dependencies: APIDependencies;
 
-  constructor() {
+  constructor(dependencies: APIDependencies) {
     super();
+    this.dependencies = dependencies;
   }
 
   /**
@@ -41,7 +42,7 @@ export class ScriptRegistryAPI extends GenericResourceAPI<Script, string, Script
    */
   protected async getResource(id: string): Promise<Script | null> {
     try {
-      return this.codeService.getScript(id);
+      return this.dependencies.getCodeService().getScript(id);
     } catch (error) {
       if (error instanceof NotFoundError) {
         return null;
@@ -55,7 +56,7 @@ export class ScriptRegistryAPI extends GenericResourceAPI<Script, string, Script
    * @returns 脚本定义数组
    */
   protected async getAllResources(): Promise<Script[]> {
-    return this.codeService.listScripts();
+    return this.dependencies.getCodeService().listScripts();
   }
 
   /**
@@ -63,7 +64,7 @@ export class ScriptRegistryAPI extends GenericResourceAPI<Script, string, Script
    * @param script 脚本定义
    */
   protected async createResource(script: Script): Promise<void> {
-    this.codeService.registerScript(script);
+    this.dependencies.getCodeService().registerScript(script);
   }
 
   /**
@@ -72,7 +73,7 @@ export class ScriptRegistryAPI extends GenericResourceAPI<Script, string, Script
    * @param updates 更新内容
    */
   protected async updateResource(id: string, updates: Partial<Script>): Promise<void> {
-    this.codeService.updateScript(id, updates);
+    this.dependencies.getCodeService().updateScript(id, updates);
   }
 
   /**
@@ -80,14 +81,14 @@ export class ScriptRegistryAPI extends GenericResourceAPI<Script, string, Script
    * @param id 脚本名称
    */
   protected async deleteResource(id: string): Promise<void> {
-    this.codeService.unregisterScript(id);
+    this.dependencies.getCodeService().unregisterScript(id);
   }
 
   /**
    * 清空所有脚本
    */
   protected override async clearResources(): Promise<void> {
-    this.codeService.clearScripts();
+    this.dependencies.getCodeService().clearScripts();
   }
 
   /**
@@ -191,7 +192,7 @@ export class ScriptRegistryAPI extends GenericResourceAPI<Script, string, Script
    * @returns 脚本定义数组
    */
   async searchScripts(query: string): Promise<Script[]> {
-    return this.codeService.searchScripts(query);
+    return this.dependencies.getCodeService().searchScripts(query);
   }
 
   /**
@@ -200,7 +201,7 @@ export class ScriptRegistryAPI extends GenericResourceAPI<Script, string, Script
    * @returns 验证结果
    */
   async validateScript(scriptName: string): Promise<{ valid: boolean; errors: string[] }> {
-    return this.codeService.validateScript(scriptName);
+    return this.dependencies.getCodeService().validateScript(scriptName);
   }
 
   /**
@@ -208,7 +209,7 @@ export class ScriptRegistryAPI extends GenericResourceAPI<Script, string, Script
    * @returns CodeService实例
    */
   getService() {
-    return this.codeService;
+    return this.dependencies.getCodeService();
   }
 
   /**
@@ -216,7 +217,7 @@ export class ScriptRegistryAPI extends GenericResourceAPI<Script, string, Script
    * @param scriptName 脚本名称
    */
   async enableScript(scriptName: string): Promise<void> {
-    this.codeService.enableScript(scriptName);
+    this.dependencies.getCodeService().enableScript(scriptName);
   }
 
   /**
@@ -224,7 +225,7 @@ export class ScriptRegistryAPI extends GenericResourceAPI<Script, string, Script
    * @param scriptName 脚本名称
    */
   async disableScript(scriptName: string): Promise<void> {
-    this.codeService.disableScript(scriptName);
+    this.dependencies.getCodeService().disableScript(scriptName);
   }
 
   /**
@@ -233,6 +234,6 @@ export class ScriptRegistryAPI extends GenericResourceAPI<Script, string, Script
    * @returns 是否启用
    */
   async isScriptEnabled(scriptName: string): Promise<boolean> {
-    return this.codeService.isScriptEnabled(scriptName);
+    return this.dependencies.getCodeService().isScriptEnabled(scriptName);
   }
 }

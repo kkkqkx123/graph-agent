@@ -9,11 +9,11 @@ import {
   validateObject
 } from '../../validation/validation-strategy';
 
-import { toolService } from '../../../core/services/tool-service';
 import type { Tool } from '../../../types/tool';
 import type { ToolFilter } from '../../types/tools-types';
 import { NotFoundError } from '../../../types/errors';
 import { GenericResourceAPI } from '../generic-resource-api';
+import type { APIDependencies } from '../../core/api-dependencies';
 
 /**
  * ToolRegistryAPI - 工具资源管理API
@@ -26,10 +26,11 @@ import { GenericResourceAPI } from '../generic-resource-api';
  * - 保持向后兼容性
  */
 export class ToolRegistryAPI extends GenericResourceAPI<Tool, string, ToolFilter> {
-  private toolService = toolService;
+  private dependencies: APIDependencies;
 
-  constructor() {
+  constructor(dependencies: APIDependencies) {
     super();
+    this.dependencies = dependencies;
   }
 
   /**
@@ -39,7 +40,7 @@ export class ToolRegistryAPI extends GenericResourceAPI<Tool, string, ToolFilter
    */
   protected async getResource(id: string): Promise<Tool | null> {
     try {
-      return this.toolService.getTool(id);
+      return this.dependencies.getToolService().getTool(id);
     } catch (error) {
       if (error instanceof NotFoundError) {
         return null;
@@ -53,7 +54,7 @@ export class ToolRegistryAPI extends GenericResourceAPI<Tool, string, ToolFilter
    * @returns 工具定义数组
    */
   protected async getAllResources(): Promise<Tool[]> {
-    return this.toolService.listTools();
+    return this.dependencies.getToolService().listTools();
   }
 
   /**
@@ -61,7 +62,7 @@ export class ToolRegistryAPI extends GenericResourceAPI<Tool, string, ToolFilter
    * @param tool 工具定义
    */
   protected async createResource(tool: Tool): Promise<void> {
-    this.toolService.registerTool(tool);
+    this.dependencies.getToolService().registerTool(tool);
   }
 
   /**
@@ -91,14 +92,14 @@ export class ToolRegistryAPI extends GenericResourceAPI<Tool, string, ToolFilter
    * @param id 工具名称
    */
   protected async deleteResource(id: string): Promise<void> {
-    this.toolService.unregisterTool(id);
+    this.dependencies.getToolService().unregisterTool(id);
   }
 
   /**
    * 清空所有工具
    */
   protected override async clearResources(): Promise<void> {
-    this.toolService.clear();
+    this.dependencies.getToolService().clear();
   }
 
   /**
@@ -179,7 +180,7 @@ export class ToolRegistryAPI extends GenericResourceAPI<Tool, string, ToolFilter
    * @returns 工具定义数组
    */
   async searchTools(query: string): Promise<Tool[]> {
-    return this.toolService.searchTools(query);
+    return this.dependencies.getToolService().searchTools(query);
   }
 
   /**
@@ -192,7 +193,7 @@ export class ToolRegistryAPI extends GenericResourceAPI<Tool, string, ToolFilter
     toolName: string,
     parameters: Record<string, any>
   ): Promise<{ valid: boolean; errors: string[] }> {
-    return this.toolService.validateParameters(toolName, parameters);
+    return this.dependencies.getToolService().validateParameters(toolName, parameters);
   }
 
   /**
@@ -200,6 +201,6 @@ export class ToolRegistryAPI extends GenericResourceAPI<Tool, string, ToolFilter
    * @returns ToolService实例
    */
   getService() {
-    return this.toolService;
+    return this.dependencies.getToolService();
   }
 }

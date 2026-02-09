@@ -11,19 +11,19 @@ import {
 } from '../../validation/validation-strategy';
 
 import { GenericResourceAPI } from '../generic-resource-api';
-import { workflowRegistry, type WorkflowRegistry } from '../../../core/services/workflow-registry';
 import type { WorkflowDefinition } from '../../../types/workflow';
 import type { WorkflowFilter, WorkflowSummary } from '../../types/registry-types';
+import type { APIDependencies } from '../../core/api-dependencies';
 
 /**
  * WorkflowRegistryAPI - 工作流管理API
  */
 export class WorkflowRegistryAPI extends GenericResourceAPI<WorkflowDefinition, string, WorkflowFilter> {
-  private registry: WorkflowRegistry;
+  private dependencies: APIDependencies;
 
-  constructor() {
+  constructor(dependencies: APIDependencies) {
     super();
-    this.registry = workflowRegistry;
+    this.dependencies = dependencies;
   }
 
   // ============================================================================
@@ -34,14 +34,14 @@ export class WorkflowRegistryAPI extends GenericResourceAPI<WorkflowDefinition, 
    * 从注册表获取工作流
    */
   protected async getResource(id: string): Promise<WorkflowDefinition | null> {
-    return this.registry.get(id) || null;
+    return this.dependencies.getWorkflowRegistry().get(id) || null;
   }
 
   /**
    * 从注册表获取所有工作流
    */
   protected async getAllResources(): Promise<WorkflowDefinition[]> {
-    const summaries = this.registry.list();
+    const summaries = this.dependencies.getWorkflowRegistry().list();
     const workflows: WorkflowDefinition[] = [];
     for (const summary of summaries) {
       const workflow = this.registry.get(summary.id);
@@ -56,26 +56,26 @@ export class WorkflowRegistryAPI extends GenericResourceAPI<WorkflowDefinition, 
    * 创建工作流
    */
   protected async createResource(workflow: WorkflowDefinition): Promise<void> {
-    this.registry.register(workflow);
+    this.dependencies.getWorkflowRegistry().register(workflow);
   }
 
   /**
    * 更新工作流
    */
   protected async updateResource(id: string, updates: Partial<WorkflowDefinition>): Promise<void> {
-    const existing = this.registry.get(id);
+    const existing = this.dependencies.getWorkflowRegistry().get(id);
     if (!existing) {
       throw new Error(`Workflow not found: ${id}`);
     }
     const updated = { ...existing, ...updates };
-    this.registry.update(updated);
+    this.dependencies.getWorkflowRegistry().update(updated);
   }
 
   /**
    * 删除工作流
    */
   protected async deleteResource(id: string): Promise<void> {
-    this.registry.unregister(id);
+    this.dependencies.getWorkflowRegistry().unregister(id);
   }
 
   /**
@@ -111,7 +111,7 @@ export class WorkflowRegistryAPI extends GenericResourceAPI<WorkflowDefinition, 
    * 清空所有工作流
    */
   protected override async clearResources(): Promise<void> {
-    this.registry.clear();
+    this.dependencies.getWorkflowRegistry().clear();
   }
 
   /**
@@ -179,7 +179,7 @@ export class WorkflowRegistryAPI extends GenericResourceAPI<WorkflowDefinition, 
    * @returns 工作流摘要数组
    */
   async getWorkflowSummaries(filter?: WorkflowFilter): Promise<WorkflowSummary[]> {
-    const summaries = this.registry.list();
+    const summaries = this.dependencies.getWorkflowRegistry().list();
 
     if (!filter) {
       return summaries;
@@ -217,7 +217,7 @@ export class WorkflowRegistryAPI extends GenericResourceAPI<WorkflowDefinition, 
    * @returns 工作流定义，如果不存在则返回null
    */
   async getWorkflowByName(name: string): Promise<WorkflowDefinition | null> {
-    const workflow = this.registry.getByName(name);
+    const workflow = this.dependencies.getWorkflowRegistry().getByName(name);
     if (workflow) {
       // 缓存更新逻辑（如果需要缓存，可以在这里实现）
     }
@@ -230,7 +230,7 @@ export class WorkflowRegistryAPI extends GenericResourceAPI<WorkflowDefinition, 
    * @returns 工作流定义数组
    */
   async getWorkflowsByTags(tags: string[]): Promise<WorkflowDefinition[]> {
-    return this.registry.getByTags(tags);
+    return this.dependencies.getWorkflowRegistry().getByTags(tags);
   }
 
   /**
@@ -239,7 +239,7 @@ export class WorkflowRegistryAPI extends GenericResourceAPI<WorkflowDefinition, 
    * @returns 工作流定义数组
    */
   async getWorkflowsByCategory(category: string): Promise<WorkflowDefinition[]> {
-    return this.registry.getByCategory(category);
+    return this.dependencies.getWorkflowRegistry().getByCategory(category);
   }
 
   /**
@@ -248,7 +248,7 @@ export class WorkflowRegistryAPI extends GenericResourceAPI<WorkflowDefinition, 
    * @returns 工作流定义数组
    */
   async getWorkflowsByAuthor(author: string): Promise<WorkflowDefinition[]> {
-    return this.registry.getByAuthor(author);
+    return this.dependencies.getWorkflowRegistry().getByAuthor(author);
   }
 
   /**
@@ -257,7 +257,7 @@ export class WorkflowRegistryAPI extends GenericResourceAPI<WorkflowDefinition, 
    * @returns 工作流摘要数组
    */
   async searchWorkflows(keyword: string): Promise<WorkflowSummary[]> {
-    return this.registry.search(keyword);
+    return this.dependencies.getWorkflowRegistry().search(keyword);
   }
 
   /**
@@ -266,7 +266,7 @@ export class WorkflowRegistryAPI extends GenericResourceAPI<WorkflowDefinition, 
    * @returns JSON字符串
    */
   async exportWorkflow(workflowId: string): Promise<string> {
-    return this.registry.export(workflowId);
+    return this.dependencies.getWorkflowRegistry().export(workflowId);
   }
 
   /**
@@ -275,9 +275,9 @@ export class WorkflowRegistryAPI extends GenericResourceAPI<WorkflowDefinition, 
    * @returns 工作流ID
    */
   async importWorkflow(json: string): Promise<string> {
-    const workflowId = this.registry.import(json);
+    const workflowId = this.dependencies.getWorkflowRegistry().import(json);
     // 更新缓存
-    const workflow = this.registry.get(workflowId);
+    const workflow = this.dependencies.getWorkflowRegistry().get(workflowId);
     if (workflow) {
       // 缓存更新逻辑（如果需要缓存，可以在这里实现）
     }
@@ -290,7 +290,7 @@ export class WorkflowRegistryAPI extends GenericResourceAPI<WorkflowDefinition, 
    * @returns 版本信息数组
    */
   async getWorkflowVersions(workflowId: string): Promise<any[]> {
-    return this.registry.getVersions(workflowId);
+    return this.dependencies.getWorkflowRegistry().getVersions(workflowId);
   }
 
   /**
@@ -299,9 +299,9 @@ export class WorkflowRegistryAPI extends GenericResourceAPI<WorkflowDefinition, 
    * @param version 版本号
    */
   async rollbackWorkflow(workflowId: string, version: string): Promise<void> {
-    this.registry.rollback(workflowId, version);
+    this.dependencies.getWorkflowRegistry().rollback(workflowId, version);
     // 更新缓存
-    const workflow = this.registry.get(workflowId);
+    const workflow = this.dependencies.getWorkflowRegistry().get(workflowId);
     if (workflow) {
       // 缓存更新逻辑（如果需要缓存，可以在这里实现）
     }
@@ -313,7 +313,7 @@ export class WorkflowRegistryAPI extends GenericResourceAPI<WorkflowDefinition, 
    * @returns 处理后的工作流定义，如果不存在则返回null
    */
   async getProcessedWorkflow(workflowId: string): Promise<any | null> {
-    const processed = this.registry.getProcessed(workflowId);
+    const processed = this.dependencies.getWorkflowRegistry().getProcessed(workflowId);
     return processed || null;
   }
 
@@ -323,7 +323,7 @@ export class WorkflowRegistryAPI extends GenericResourceAPI<WorkflowDefinition, 
    * @returns 处理后的工作流定义
    */
   async preprocessAndStoreWorkflow(workflow: any): Promise<any> {
-    const processed = await this.registry.preprocessAndStore(workflow);
+    const processed = await this.dependencies.getWorkflowRegistry().preprocessAndStore(workflow);
     // 更新缓存
     // 缓存更新逻辑（如果需要缓存，可以在这里实现）
     return processed;
@@ -335,7 +335,7 @@ export class WorkflowRegistryAPI extends GenericResourceAPI<WorkflowDefinition, 
    * @returns 图结构，如果不存在则返回null
    */
   async getWorkflowGraph(workflowId: string): Promise<any | null> {
-    const graph = this.registry.getGraph(workflowId);
+    const graph = this.dependencies.getWorkflowRegistry().getGraph(workflowId);
     return graph || null;
   }
 
@@ -350,7 +350,7 @@ export class WorkflowRegistryAPI extends GenericResourceAPI<WorkflowDefinition, 
     subgraphNodeId: string,
     childWorkflowId: string
   ): Promise<void> {
-    this.registry.registerSubgraphRelationship(parentWorkflowId, subgraphNodeId, childWorkflowId);
+    this.dependencies.getWorkflowRegistry().registerSubgraphRelationship(parentWorkflowId, subgraphNodeId, childWorkflowId);
   }
 
   /**
@@ -359,7 +359,7 @@ export class WorkflowRegistryAPI extends GenericResourceAPI<WorkflowDefinition, 
    * @returns 层次结构信息
    */
   async getWorkflowHierarchy(workflowId: string): Promise<any> {
-    return this.registry.getWorkflowHierarchy(workflowId);
+    return this.dependencies.getWorkflowRegistry().getWorkflowHierarchy(workflowId);
   }
 
   /**
@@ -368,7 +368,7 @@ export class WorkflowRegistryAPI extends GenericResourceAPI<WorkflowDefinition, 
    * @returns 父工作流ID或null
    */
   async getParentWorkflow(workflowId: string): Promise<string | null> {
-    return this.registry.getParentWorkflow(workflowId);
+    return this.dependencies.getWorkflowRegistry().getParentWorkflow(workflowId);
   }
 
   /**
@@ -377,14 +377,14 @@ export class WorkflowRegistryAPI extends GenericResourceAPI<WorkflowDefinition, 
    * @returns 子工作流ID数组
    */
   async getChildWorkflows(workflowId: string): Promise<string[]> {
-    return this.registry.getChildWorkflows(workflowId);
+    return this.dependencies.getWorkflowRegistry().getChildWorkflows(workflowId);
   }
 
   /**
    * 获取底层WorkflowRegistry实例
    * @returns WorkflowRegistry实例
    */
-  getRegistry(): WorkflowRegistry {
-    return this.registry;
+  getRegistry() {
+    return this.dependencies.getWorkflowRegistry();
   }
 }

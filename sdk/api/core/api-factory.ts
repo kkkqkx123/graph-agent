@@ -17,6 +17,7 @@ import { NodeRegistryAPI } from '../resources/templates/node-template-registry-a
 import { TriggerTemplateRegistryAPI } from '../resources/templates/trigger-template-registry-api';
 import { UserInteractionResourceAPI } from '../resources/user-interaction/user-interaction-resource-api';
 import { HumanRelayResourceAPI } from '../resources/human-relay/human-relay-resource-api';
+import { SDKAPIDependencies } from './sdk-api-dependencies';
 
 /**
  * SDK API配置接口
@@ -74,6 +75,7 @@ export class APIFactory {
   private static instance: APIFactory;
   private config: SDKAPIConfig = {};
   private apiInstances: Partial<AllAPIs> = {};
+  private dependencies: SDKAPIDependencies = new SDKAPIDependencies();
 
   private constructor() { }
 
@@ -120,7 +122,7 @@ export class APIFactory {
    */
   public createWorkflowAPI(): WorkflowRegistryAPI {
     if (!this.apiInstances.workflows) {
-      this.apiInstances.workflows = new WorkflowRegistryAPI();
+      this.apiInstances.workflows = new WorkflowRegistryAPI(this.dependencies);
     }
     return this.apiInstances.workflows;
   }
@@ -132,7 +134,7 @@ export class APIFactory {
    */
   public createToolAPI(): ToolRegistryAPI {
     if (!this.apiInstances.tools) {
-      this.apiInstances.tools = new ToolRegistryAPI();
+      this.apiInstances.tools = new ToolRegistryAPI(this.dependencies);
     }
     return this.apiInstances.tools;
   }
@@ -144,7 +146,7 @@ export class APIFactory {
    */
   public createThreadAPI(): ThreadRegistryAPI {
     if (!this.apiInstances.threads) {
-      this.apiInstances.threads = new ThreadRegistryAPI();
+      this.apiInstances.threads = new ThreadRegistryAPI(this.dependencies);
     }
     return this.apiInstances.threads;
   }
@@ -156,7 +158,7 @@ export class APIFactory {
    */
   public createScriptAPI(): ScriptRegistryAPI {
     if (!this.apiInstances.scripts) {
-      this.apiInstances.scripts = new ScriptRegistryAPI();
+      this.apiInstances.scripts = new ScriptRegistryAPI(this.dependencies);
     }
     return this.apiInstances.scripts;
   }
@@ -168,7 +170,7 @@ export class APIFactory {
    */
   public createProfileAPI(): LLMProfileRegistryAPI {
     if (!this.apiInstances.profiles) {
-      this.apiInstances.profiles = new LLMProfileRegistryAPI();
+      this.apiInstances.profiles = new LLMProfileRegistryAPI(this.dependencies);
     }
     return this.apiInstances.profiles;
   }
@@ -180,7 +182,7 @@ export class APIFactory {
    */
   public createNodeTemplateAPI(): NodeRegistryAPI {
     if (!this.apiInstances.nodeTemplates) {
-      this.apiInstances.nodeTemplates = new NodeRegistryAPI();
+      this.apiInstances.nodeTemplates = new NodeRegistryAPI(this.dependencies);
     }
     return this.apiInstances.nodeTemplates;
   }
@@ -192,7 +194,7 @@ export class APIFactory {
    */
   public createTriggerTemplateAPI(): TriggerTemplateRegistryAPI {
     if (!this.apiInstances.triggerTemplates) {
-      this.apiInstances.triggerTemplates = new TriggerTemplateRegistryAPI();
+      this.apiInstances.triggerTemplates = new TriggerTemplateRegistryAPI(this.dependencies);
     }
     return this.apiInstances.triggerTemplates;
   }
@@ -203,7 +205,7 @@ export class APIFactory {
    */
   public createUserInteractionAPI(): UserInteractionResourceAPI {
     if (!this.apiInstances.userInteractions) {
-      this.apiInstances.userInteractions = new UserInteractionResourceAPI();
+      this.apiInstances.userInteractions = new UserInteractionResourceAPI(this.dependencies);
     }
     return this.apiInstances.userInteractions;
   }
@@ -214,7 +216,7 @@ export class APIFactory {
    */
   public createHumanRelayAPI(): HumanRelayResourceAPI {
     if (!this.apiInstances.humanRelay) {
-      this.apiInstances.humanRelay = new HumanRelayResourceAPI();
+      this.apiInstances.humanRelay = new HumanRelayResourceAPI(this.dependencies);
     }
     return this.apiInstances.humanRelay;
   }
