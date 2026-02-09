@@ -1,171 +1,203 @@
 # Core层修改需求分析
 
-## 1. 问题背景
+## 背景
+基于对API层架构分析文档的深入理解，以及对当前代码架构的实际分析，本文档明确了Core层需要进行的正确修改。
 
-基于对 `docs/api-layer-architecture-analysis.md` 文档的分析，当前API层存在以下核心问题：
+## 问题本质
 
-- **直接暴露Core内部类型**：API层直接返回 `Checkpoint`、`LLMProfile` 等Core内部类型
-- **缺乏DTO隔离**：没有专门的API层数据传输对象，导致敏感信息（如apiKey）可能泄露
-- **依赖管理混乱**：API层混合使用全局单例和直接实例化Core组件
-- **接口不稳定**：Core内部模型变更会直接影响API接口
+### SDK项目特性
+- 这是一个**SDK项目**，不是后端服务
+- SDK需要**暴露内部类型**供用户使用，而不是隐藏实现细节
+- **DTO模式完全不适用**，因为会破坏SDK的灵活性和可用性
 
-## 2. 架构现状深度分析
+### 真正的设计目标
+- **严格约束实例获取方式**
+- **保证API层不会以错误的方式获取各类实例**
+- **规范化依赖管理**
 
-### 2.1 Core层真实架构
+## 当前架构分析
 
-通过深入分析代码，发现Core层实际上具有清晰的分层结构：
+### 实例类型分类
+1. **全局单例服务**（通过`SingletonRegistry`管理）
+   - `eventManager`, `workflowRegistry`, `threadRegistry`
+   - `toolService`, `llmExecutor`, `graphRegistry`
+   - 特点：无状态或共享状态，全局唯一
 
-#### 全局单例服务（通过 `SingletonRegistry` 管理）
-- `eventManager`：事件管理器
-- `workflowRegistry`：工作流注册表  
-- `threadRegistry`：线程注册表
-- `toolService`：工具服务
-- `llmExecutor`：LLM执行器
-- `graphRegistry`：图注册表
+2. **有状态执行组件**（通过`ExecutionContext`管理）
+   - `CheckpointStateManager`（有状态）
+   - `ThreadLifecycleManager`（有状态）
+   - `ThreadLifecycleCoordinator`（协调器）
+   - 特点：每个执行上下文独立实例
 
-这些是真正的无状态/共享状态服务，适合全局单例模式。
+3. **静态工具类**
+   - `CheckpointCoordinator`
+   - 特点：完全无状态，只提供静态方法
 
-#### 有状态执行组件（通过 `ExecutionContext` 管理）
-- `CheckpointStateManager`：检查点状态管理器（有状态）
-- `ThreadLifecycleManager`：线程生命周期管理器（有状态）
-- `ThreadLifecycleCoordinator`：线程生命周期协调器（协调器）
+### API层当前问题
+- 直接导入和使用全局单例（如`workflowRegistry`）
+- 直接实例化有状态组件（如`new CheckpointStateManager()`）
+- 混合使用多种依赖获取方式
+- 无法保证实例获取的正确性和一致性
 
-这些组件维护执行时的状态，不适合全局单例。
+## 正确的修改方案
 
-### 2.2 API层当前问题
+### 核心原则
+**通过严格的依赖注入机制，约束API层只能通过正确的方式获取实例**
 
-1. **依赖获取方式不统一**：
-   - `WorkflowRegistryAPI` 直接使用全局单例 `workflowRegistry`
-   - `LLMProfileRegistryAPI` 直接实例化 `ProfileManager`
-   - `CheckpointResourceAPI` 直接实例化 `CheckpointStateManager` 和 `MemoryCheckpointStorage`
+### 具体实施步骤
 
-2. **违反单例/多实例分离原则**：
-   - 混淆了全局单例服务和有状态组件的概念
-   - 导致无法正确区分有状态类和无状态类
-
-3. **安全风险**：
-   - 直接暴露包含敏感信息的Core内部类型
-   - 如 `LLMProfile` 包含 `apiKey`，`Checkpoint` 包含完整的 `threadState`
-
-## 3. 正确的修改方案
-
-### 3.1 核心原则
-
-**尊重现有架构，区分单例服务和有状态组件，为API层提供统一的依赖获取机制**
-
-### 3.2 具体解决方案
-
-#### 3.2.1 创建API专用的ExecutionContext工厂
-
+#### 1. 创建API层专用依赖接口
 ```typescript
-// sdk/api/core/api-execution-context.ts
-export class APIExecutionContext {
-  private static instance: ExecutionContext;
-  
-  static getInstance(): ExecutionContext {
-    if (!this.instance) {
-      this.instance = ExecutionContext.createDefault();
-    }
-    return this.instance;
-  }
+// sdk/api/core/api-dependencies.ts
+export interface APIDependencies {
+  getWorkflowRegistry(): WorkflowRegistry;
+  getThreadRegistry(): ThreadRegistry;
+  getCheckpointStateManager(): CheckpointStateManager;
+  getEventManager(): EventManager;
+  getToolService(): ToolService;
+  getLlmExecutor(): LLMExecutor;
+  getGraphRegistry(): GraphRegistry;
+  // ... 其他依赖方法
 }
 ```
 
-#### 3.2.2 重构API层使用ExecutionContext
-
+#### 2. 实现依赖容器
 ```typescript
-// CheckpointResourceAPI重构示例
-export class CheckpointResourceAPI extends GenericResourceAPI<Checkpoint, string, CheckpointFilter> {
+// sdk/api/core/api-dependencies.ts
+export class SDKAPIDependencies implements APIDependencies {
   private executionContext: ExecutionContext;
-
-  constructor(executionContext: ExecutionContext = APIExecutionContext.getInstance()) {
-    super();
-    this.executionContext = executionContext;
-  }
-
-  // 使用executionContext获取所有依赖
-  protected async getResource(id: string): Promise<Checkpoint | null> {
-    const stateManager = this.executionContext.getCheckpointStateManager();
-    return stateManager.get(id) || null;
-  }
-}
-```
-
-#### 3.2.3 保持架构分离
-
-- **单例服务**：继续通过 `SingletonRegistry` 管理
-- **有状态组件**：通过 `ExecutionContext` 管理  
-- **API层**：通过 `APIExecutionContext` 获取统一的执行上下文
-
-#### 3.2.4 添加DTO转换层
-
-在API方法中添加DTO转换，防止敏感信息泄露：
-
-```typescript
-// Profile API DTO转换示例
-async getDefaultProfile(): Promise<ProfileSummaryDTO | null> {
-  const profile = this.executionContext.getWorkflowRegistry().getDefaultProfile();
-  if (!profile) return null;
   
-  return {
-    id: profile.id,
-    name: profile.name,
-    provider: profile.provider,
-    model: profile.model,
-    isDefault: true
-    // 不包含apiKey等敏感信息
-  };
+  constructor() {
+    this.executionContext = ExecutionContext.createDefault();
+  }
+  
+  getWorkflowRegistry(): WorkflowRegistry {
+    return this.executionContext.getWorkflowRegistry();
+  }
+  
+  getThreadRegistry(): ThreadRegistry {
+    return this.executionContext.getThreadRegistry();
+  }
+  
+  getCheckpointStateManager(): CheckpointStateManager {
+    return this.executionContext.getCheckpointStateManager();
+  }
+  
+  // ... 其他实现方法
 }
 ```
 
-### 3.3 为什么这个方案正确？
-
-1. **尊重现有架构**：
-   - 保持 `SingletonRegistry` 专门管理单例服务
-   - 保持 `ExecutionContext` 管理有状态组件
-   - 不混淆单例和多实例的概念
-
-2. **解决依赖管理问题**：
-   - API层通过统一的 `APIExecutionContext` 获取所有依赖
-   - 避免直接实例化Core组件
-   - 支持测试时注入Mock的ExecutionContext
-
-3. **保持类型安全**：
-   - `ExecutionContext` 提供类型安全的get方法
-   - 不需要额外的接口抽象层
-
-4. **支持安全隔离**：
-   - 通过DTO层防止敏感信息泄露
-   - API层不直接暴露Core内部类型
-
-## 4. 实施步骤
-
-### 阶段1：创建APIExecutionContext（1天）
-- 创建 `sdk/api/core/api-execution-context.ts`
-- 提供单例的ExecutionContext实例
-
-### 阶段2：重构所有ResourceAPI（3-5天）
-- 修改构造函数接受ExecutionContext参数
-- 使用ExecutionContext获取所有依赖
-- 移除直接实例化代码
-
-### 阶段3：重构APIFactory（1天）
-- APIFactory使用APIExecutionContext
-- 注入ExecutionContext到各个API实例
-
-### 阶段4：添加DTO转换（2-3天）
-- 创建相应的DTO类型定义
-- 在所有API方法中添加DTO转换逻辑
-- 确保敏感信息不被暴露
-
-## 5. 最终架构
-
-```
-API Layer → APIExecutionContext → ExecutionContext
-                                 ├── SingletonRegistry (单例服务)
-                                 └── ComponentRegistry (有状态组件)
-                                          ↓
-                                       DTO Layer (安全过滤)
+#### 3. 重构所有ResourceAPI
+```typescript
+// sdk/api/resources/workflows/workflow-registry-api.ts
+export class WorkflowRegistryAPI extends GenericResourceAPI<WorkflowDefinition, string, WorkflowFilter> {
+  constructor(private readonly dependencies: APIDependencies) {
+    super();
+  }
+  
+  protected async getResource(id: string): Promise<WorkflowDefinition | null> {
+    return this.dependencies.getWorkflowRegistry().get(id) || null;
+  }
+  
+  protected async getAllResources(): Promise<WorkflowDefinition[]> {
+    const summaries = this.dependencies.getWorkflowRegistry().list();
+    const workflows: WorkflowDefinition[] = [];
+    for (const summary of summaries) {
+      const workflow = this.dependencies.getWorkflowRegistry().get(summary.id);
+      if (workflow) {
+        workflows.push(workflow);
+      }
+    }
+    return workflows;
+  }
+  
+  // ... 其他方法使用dependencies获取实例
+}
 ```
 
-这种方案完全尊重现有的单例/多实例分离设计，同时解决了API层架构分析文档中的所有问题，是最符合当前代码实际情况的正确解决方案。
+#### 4. 重构APIFactory
+```typescript
+// sdk/api/core/api-factory.ts
+export class APIFactory {
+  private static instance: APIFactory;
+  private config: SDKAPIConfig = {};
+  private apiInstances: Partial<AllAPIs> = {};
+  private dependencies: APIDependencies = new SDKAPIDependencies();
+
+  private constructor() { }
+
+  public static getInstance(): APIFactory {
+    if (!APIFactory.instance) {
+      APIFactory.instance = new APIFactory();
+    }
+    return APIFactory.instance;
+  }
+
+  public createWorkflowAPI(): WorkflowRegistryAPI {
+    if (!this.apiInstances.workflows) {
+      this.apiInstances.workflows = new WorkflowRegistryAPI(this.dependencies);
+    }
+    return this.apiInstances.workflows;
+  }
+
+  // ... 其他create方法同样注入dependencies
+}
+```
+
+### 实例获取规则
+
+| 实例类型 | 正确获取方式 | 错误方式 |
+|---------|-------------|----------|
+| 全局单例服务 | `dependencies.getXXX()` | 直接导入、直接实例化 |
+| 有状态组件 | `dependencies.getXXX()` | 直接实例化 |
+| 静态工具类 | 静态方法调用 | 实例化 |
+
+## 方案优势
+
+### 1. 符合SDK特性
+- **保持类型暴露**：SDK用户仍然可以访问所有内部类型
+- **不影响灵活性**：用户可以直接使用Core组件，只是API层被规范化
+- **保持向后兼容**：现有用户代码不受影响
+
+### 2. 解决根本问题
+- **严格约束**：API层只能通过`dependencies.getXXX()`获取实例
+- **防止错误**：无法直接实例化有状态组件
+- **统一管理**：所有依赖获取方式一致
+
+### 3. 保持架构清晰
+- **尊重现有设计**：不破坏`SingletonRegistry`和`ExecutionContext`的分离
+- **职责明确**：单例服务 vs 有状态组件的界限清晰
+- **扩展性好**：新增依赖只需在接口中添加方法
+
+### 4. 支持测试
+- **易于Mock**：可以注入Mock的`APIDependencies`进行单元测试
+- **隔离性好**：测试时不会影响全局单例状态
+- **可预测性**：依赖关系明确，测试行为可预测
+
+## 实施计划
+
+### 阶段1：基础设施
+- 创建`sdk/api/core/api-dependencies.ts`
+- 定义`APIDependencies`接口和`SDKAPIDependencies`实现
+
+### 阶段2：重构ResourceAPI
+- 按模块逐步重构所有ResourceAPI
+- 修改构造函数接受`APIDependencies`参数
+- 更新所有实例获取代码
+
+### 阶段3：重构APIFactory
+- 更新APIFactory使用`SDKAPIDependencies`
+- 确保所有API实例正确注入依赖
+
+### 阶段4：测试和验证
+- 更新所有相关测试
+- 验证功能完整性
+
+## 预期效果
+
+- **API层**：只能通过`dependencies.getXXX()`获取实例，无法直接访问Core内部
+- **Core层**：保持现有架构不变，无需任何修改
+- **依赖管理**：完全规范化，消除混乱的依赖获取方式
+- **SDK特性**：保持类型暴露和用户灵活性，不影响现有用户代码
+
+这种方案完全符合设计意图：**严格约束实例获取方式，保证API层不会以错误方式获取各类实例**，同时保持SDK项目的特性和灵活性。
