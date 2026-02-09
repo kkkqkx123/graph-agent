@@ -8,16 +8,16 @@
  * - 父子线程关系的正确重建
  */
 
-import { WorkflowRegistry } from '../../core/services/workflow-registry';
-import { ThreadBuilder } from '../../core/execution/thread-builder';
-import { CheckpointCoordinator } from '../../core/execution/coordinators/checkpoint-coordinator';
-import { CheckpointStateManager } from '../../core/execution/managers/checkpoint-state-manager';
-import { MemoryCheckpointStorage } from '../../core/storage/memory-checkpoint-storage';
-import { GlobalMessageStorage } from '../../core/services/global-message-storage';
-import { ThreadRegistry } from '../../core/services/thread-registry';
-import { NodeType } from '../../types/node';
-import { EdgeType } from '../../types/edge';
-import type { WorkflowDefinition } from '../../types/workflow';
+import { WorkflowRegistry } from '../../../core/services/workflow-registry';
+import { ThreadBuilder } from '../../../core/execution/thread-builder';
+import { CheckpointCoordinator } from '../../../core/execution/coordinators/checkpoint-coordinator';
+import { CheckpointStateManager } from '../../../core/execution/managers/checkpoint-state-manager';
+import { MemoryCheckpointStorage } from '../../../core/storage/memory-checkpoint-storage';
+import { GlobalMessageStorage } from '../../../core/services/global-message-storage';
+import { ThreadRegistry } from '../../../core/services/thread-registry';
+import { NodeType } from '../../../types/node';
+import { EdgeType } from '../../../types/edge';
+import type { WorkflowDefinition } from '../../../types/workflow';
 
 describe('复杂工作流结构检查点集成测试', () => {
   let workflowRegistry: WorkflowRegistry;
@@ -28,11 +28,11 @@ describe('复杂工作流结构检查点集成测试', () => {
 
   beforeAll(async () => {
     // 注册测试脚本
-    const { codeService } = await import('../../core/services/code-service');
-    const { ScriptType } = await import('../../types/code');
-    const { generateId } = await import('../../utils/id-utils');
+    const { codeService } = await import('../../../core/services/code-service');
+    const { ScriptType } = await import('../../../types/code');
+    const { generateId } = await import('../../../utils/id-utils');
 
-    const javascriptExecutor: import('../../types/code').ScriptExecutor = {
+    const javascriptExecutor: import('../../../types/code').ScriptExecutor = {
       async execute(script, options) {
         try {
           const result = eval(script.content || '');
@@ -93,9 +93,6 @@ describe('复杂工作流结构检查点集成测试', () => {
 
   beforeEach(() => {
     workflowRegistry = new WorkflowRegistry({
-      enableVersioning: true,
-      enablePreprocessing: true,
-      maxVersions: 5,
       maxRecursionDepth: 3
     });
 
@@ -437,7 +434,7 @@ describe('复杂工作流结构检查点集成测试', () => {
       // 模拟设置 triggeredSubworkflowContext（在触发子工作流后）
       const parentThreadId = threadContext.getThreadId();
       const childThreadId = `child-thread-${Date.now()}`;
-      
+
       threadContext.setParentThreadId(parentThreadId);
       threadContext.setTriggeredSubworkflowId('subworkflow-1');
 
@@ -503,7 +500,7 @@ describe('复杂工作流结构检查点集成测试', () => {
       workflowRegistry.register(childWorkflow);
 
       const childThreadContext = await threadBuilder.build(childWorkflowId);
-      
+
       // 设置父子关系
       childThreadContext.setParentThreadId(parentThreadContext.getThreadId());
       parentThreadContext.thread.triggeredSubworkflowContext = {
@@ -568,11 +565,11 @@ describe('复杂工作流结构检查点集成测试', () => {
       // 同时设置 forkJoinContext 和 triggeredSubworkflowContext
       threadContext.setForkId(`${workflowId}-fork-join`);
       threadContext.setForkPathId('path1');
-      
+
       const childThreadId = `child-thread-${Date.now()}`;
       threadContext.setParentThreadId(threadContext.getThreadId());
       threadContext.setTriggeredSubworkflowId('subworkflow-1');
-      
+
       threadContext.thread.triggeredSubworkflowContext = {
         parentThreadId: threadContext.getThreadId(),
         childThreadIds: [childThreadId],

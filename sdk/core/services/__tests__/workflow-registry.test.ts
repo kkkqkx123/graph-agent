@@ -14,9 +14,6 @@ describe('WorkflowRegistry', () => {
     // 创建新的 WorkflowRegistry 实例以避免测试间干扰
     // 禁用预处理以简化测试
     registry = new WorkflowRegistry({
-      enableVersioning: true,
-      enablePreprocessing: false,
-      maxVersions: 10,
       maxRecursionDepth: 10
     });
   });
@@ -181,36 +178,6 @@ describe('WorkflowRegistry', () => {
     });
   });
 
-  describe('getVersion - 获取特定版本的工作流定义', () => {
-    it('应该返回指定版本的工作流定义', () => {
-      const workflow = createValidWorkflow('workflow-1', 'Test Workflow');
-      workflow.version = '1.0.0';
-
-      registry.register(workflow);
-
-      const result = registry.getVersion('workflow-1', '1.0.0');
-
-      expect(result).toBeDefined();
-      expect(result?.version).toBe('1.0.0');
-    });
-
-    it('应该返回 undefined 当版本不存在', () => {
-      const workflow = createValidWorkflow('workflow-1', 'Test Workflow');
-      workflow.version = '1.0.0';
-
-      registry.register(workflow);
-
-      const result = registry.getVersion('workflow-1', '2.0.0');
-
-      expect(result).toBeUndefined();
-    });
-
-    it('应该返回 undefined 当工作流不存在', () => {
-      const result = registry.getVersion('non-existent-workflow', '1.0.0');
-
-      expect(result).toBeUndefined();
-    });
-  });
 
   describe('getByName - 按名称获取工作流定义', () => {
     it('应该返回指定名称的工作流定义', () => {
@@ -379,96 +346,7 @@ describe('WorkflowRegistry', () => {
     });
   });
 
-  describe('update - 更新工作流定义', () => {
-    it('应该成功更新工作流定义', () => {
-      const workflow = createValidWorkflow('workflow-1', 'Test Workflow');
 
-      registry.register(workflow);
-
-      const updatedWorkflow = {
-        ...workflow,
-        description: 'Updated description',
-        version: '2.0.0'
-      };
-
-      registry.update(updatedWorkflow);
-
-      const result = registry.get('workflow-1');
-      expect(result?.description).toBe('Updated description');
-      expect(result?.version).toBe('2.0.0');
-    });
-
-    it('应该抛出 ValidationError 当工作流不存在', () => {
-      const workflow = createValidWorkflow('non-existent-workflow', 'Test Workflow');
-
-      expect(() => {
-        registry.update(workflow);
-      }).toThrow(ValidationError);
-    });
-
-    it('应该抛出 ValidationError 当更新后的工作流无效', () => {
-      const workflow = createValidWorkflow('workflow-1', 'Test Workflow');
-
-      registry.register(workflow);
-
-      const invalidWorkflow = {
-        ...workflow,
-        nodes: []
-      };
-
-      expect(() => {
-        registry.update(invalidWorkflow);
-      }).toThrow(ValidationError);
-    });
-  });
-
-  describe('updateMetadata - 更新工作流元数据', () => {
-    it('应该成功更新工作流元数据', () => {
-      const workflow = createValidWorkflow('workflow-1', 'Test Workflow');
-
-      registry.register(workflow);
-
-      registry.updateMetadata('workflow-1', {
-        author: 'new-author',
-        tags: ['new-tag']
-      });
-
-      const result = registry.get('workflow-1');
-      expect(result?.metadata?.author).toBe('new-author');
-      expect(result?.metadata?.tags).toEqual(['new-tag']);
-    });
-
-    it('应该抛出 ValidationError 当工作流不存在', () => {
-      expect(() => {
-        registry.updateMetadata('non-existent-workflow', { author: 'new-author' });
-      }).toThrow(ValidationError);
-    });
-  });
-
-  describe('updateConfig - 更新工作流配置', () => {
-    it('应该成功更新工作流配置', () => {
-      const workflow = createValidWorkflow('workflow-1', 'Test Workflow');
-
-      registry.register(workflow);
-
-      const newConfig = {
-        timeout: 120000,
-        maxSteps: 2000,
-        enableCheckpoints: true
-      };
-
-      registry.updateConfig('workflow-1', newConfig);
-
-      const result = registry.get('workflow-1');
-      expect(result?.config).toEqual(newConfig);
-    });
-
-    it('应该抛出 ValidationError 当工作流不存在', () => {
-      expect(() => {
-        registry.updateConfig('non-existent-workflow', { timeout: 120000 });
-      }).toThrow(ValidationError);
-    });
-  });
 
   describe('unregister - 删除工作流定义', () => {
     it('应该成功删除工作流定义', () => {
@@ -523,62 +401,6 @@ describe('WorkflowRegistry', () => {
     });
   });
 
-  describe('getVersions - 获取工作流的所有版本', () => {
-    it('应该返回工作流的所有版本', () => {
-      const workflow = createValidWorkflow('workflow-1', 'Test Workflow');
-      workflow.version = '1.0.0';
-
-      registry.register(workflow);
-
-      workflow.version = '2.0.0';
-      registry.update(workflow);
-
-      const versions = registry.getVersions('workflow-1');
-
-      expect(versions.length).toBeGreaterThanOrEqual(1);
-    });
-
-    it('应该返回空数组当工作流不存在', () => {
-      const versions = registry.getVersions('non-existent-workflow');
-
-      expect(versions).toEqual([]);
-    });
-  });
-
-  describe('rollback - 回滚到指定版本', () => {
-    it('应该成功回滚到指定版本', () => {
-      const workflow = createValidWorkflow('workflow-1', 'Test Workflow');
-      workflow.version = '1.0.0';
-
-      registry.register(workflow);
-
-      workflow.version = '2.0.0';
-      workflow.description = 'Updated';
-      registry.update(workflow);
-
-      registry.rollback('workflow-1', '1.0.0');
-
-      const result = registry.get('workflow-1');
-      expect(result?.version).toBe('1.0.0');
-    });
-
-    it('应该抛出 ValidationError 当版本不存在', () => {
-      const workflow = createValidWorkflow('workflow-1', 'Test Workflow');
-      workflow.version = '1.0.0';
-
-      registry.register(workflow);
-
-      expect(() => {
-        registry.rollback('workflow-1', '2.0.0');
-      }).toThrow(ValidationError);
-    });
-
-    it('应该抛出 ValidationError 当工作流不存在', () => {
-      expect(() => {
-        registry.rollback('non-existent-workflow', '1.0.0');
-      }).toThrow(ValidationError);
-    });
-  });
 
   describe('validate - 验证工作流定义', () => {
     it('应该返回 valid: true 当工作流有效', () => {
@@ -755,16 +577,9 @@ describe('WorkflowRegistry', () => {
       const retrieved = registry.get('workflow-1');
       expect(retrieved).toEqual(workflow);
 
-      // 3. 更新工作流
-      const updatedWorkflow = {
-        ...workflow,
-        description: 'Updated description',
-        version: '2.0.0'
-      };
-      registry.update(updatedWorkflow);
-
-      const updated = registry.get('workflow-1');
-      expect(updated?.description).toBe('Updated description');
+      // 3. 验证工作流注册
+      const registered = registry.get('workflow-1');
+      expect(registered?.description).toBe('Test workflow');
 
       // 4. 搜索工作流
       const searchResults = registry.search('updated');
@@ -796,26 +611,5 @@ describe('WorkflowRegistry', () => {
       expect(registry.has('workflow-3')).toBe(true);
     });
 
-    it('应该支持版本管理', () => {
-      const workflow = createValidWorkflow('workflow-1', 'Test Workflow');
-      workflow.version = '1.0.0';
-
-      registry.register(workflow);
-
-      // 更新到新版本
-      workflow.version = '2.0.0';
-      workflow.description = 'Updated';
-      registry.update(workflow);
-
-      // 获取所有版本
-      const versions = registry.getVersions('workflow-1');
-      expect(versions.length).toBeGreaterThanOrEqual(1);
-
-      // 回滚到旧版本
-      registry.rollback('workflow-1', '1.0.0');
-
-      const rolledBack = registry.get('workflow-1');
-      expect(rolledBack?.version).toBe('1.0.0');
-    });
   });
 });

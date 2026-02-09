@@ -130,9 +130,6 @@ describe.skip('工作流执行引擎完整执行和生命周期管理集成测�
   beforeEach(async () => {
     // 创建新的实例以避免测试间干扰
     workflowRegistry = new WorkflowRegistry({
-      enableVersioning: true,
-      enablePreprocessing: true,
-      maxVersions: 5,
       maxRecursionDepth: 3
     });
 

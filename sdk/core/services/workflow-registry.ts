@@ -9,7 +9,6 @@
 import type {
   WorkflowDefinition,
   WorkflowMetadata,
-  WorkflowConfig,
   ProcessedWorkflowDefinition,
   SubgraphMergeLog,
   PreprocessValidationResult,
@@ -58,26 +57,16 @@ export interface WorkflowVersion {
  */
 class WorkflowRegistry {
   private workflows: Map<string, WorkflowDefinition> = new Map();
-  private versions: Map<string, WorkflowVersion[]> = new Map();
   private processedWorkflows: Map<string, ProcessedWorkflowDefinition> = new Map();
   private graphCache: Map<string, GraphData> = new Map();
   private workflowRelationships: Map<string, WorkflowRelationship> = new Map();
   private validator: WorkflowValidator;
-  private enableVersioning: boolean;
-  private maxVersions: number;
-  private enablePreprocessing: boolean;
   private maxRecursionDepth: number;
 
   constructor(options: {
-    enableVersioning?: boolean;
-    maxVersions?: number;
-    enablePreprocessing?: boolean;
     maxRecursionDepth?: number;
   } = {}) {
     this.validator = new WorkflowValidator();
-    this.enableVersioning = options.enableVersioning ?? true;
-    this.maxVersions = options.maxVersions ?? 10;
-    this.enablePreprocessing = options.enablePreprocessing ?? true;
     this.maxRecursionDepth = options.maxRecursionDepth ?? 10;
   }
 
@@ -107,15 +96,9 @@ class WorkflowRegistry {
     // 保存工作流定义
     this.workflows.set(workflow.id, workflow);
 
-    // 如果启用预处理，进行图构建和验证
-    if (this.enablePreprocessing) {
-      this.preprocessWorkflow(workflow);
-    }
+    // 进行图构建和验证（预处理总是启用的）
+    this.preprocessWorkflow(workflow);
 
-    // 如果启用版本管理，保存初始版本
-    if (this.enableVersioning) {
-      this.saveVersion(workflow);
-    }
   }
 
   /**
@@ -138,25 +121,6 @@ class WorkflowRegistry {
     return this.workflows.get(workflowId);
   }
 
-  /**
-   * 获取特定版本的工作流定义
-   * @param workflowId 工作流ID
-   * @param version 版本号
-   * @returns 工作流定义，如果不存在则返回undefined
-   */
-  getVersion(workflowId: string, version: string): WorkflowDefinition | undefined {
-    if (!this.enableVersioning) {
-      return this.get(workflowId);
-    }
-
-    const versions = this.versions.get(workflowId);
-    if (!versions) {
-      return undefined;
-    }
-
-    const versionInfo = versions.find(v => v.version === version);
-    return versionInfo?.workflow;
-  }
 
   /**
    * 按名称获取工作流定义
@@ -252,100 +216,6 @@ class WorkflowRegistry {
     );
   }
 
-  /**
-   * 更新工作流定义
-   * @param workflow 工作流定义
-   * @throws ValidationError 如果工作流定义无效或不存在
-   */
-  update(workflow: WorkflowDefinition): void {
-    // 验证工作流定义
-    const validationResult = this.validate(workflow);
-    if (!validationResult.valid) {
-      throw new ValidationError(
-        `Workflow validation failed: ${validationResult.errors.join(', ')}`,
-        'workflow'
-      );
-    }
-
-    // 检查工作流是否存在
-    if (!this.workflows.has(workflow.id)) {
-      throw new ValidationError(
-        `Workflow with ID '${workflow.id}' does not exist`,
-        'workflow.id'
-      );
-    }
-
-    // 如果启用版本管理，保存旧版本
-    if (this.enableVersioning) {
-      const oldWorkflow = this.workflows.get(workflow.id);
-      if (oldWorkflow) {
-        this.saveVersion(oldWorkflow);
-      }
-    }
-
-    // 更新工作流定义
-    this.workflows.set(workflow.id, workflow);
-
-    // 清除预处理缓存
-    if (this.enablePreprocessing) {
-      this.clearPreprocessCache(workflow.id);
-      // 重新预处理
-      this.preprocessWorkflow(workflow);
-    }
-  }
-
-  /**
-   * 更新工作流元数据
-   * @param workflowId 工作流ID
-   * @param metadata 元数据
-   * @throws ValidationError 如果工作流不存在
-   */
-  updateMetadata(workflowId: string, metadata: Partial<WorkflowMetadata>): void {
-    const workflow = this.workflows.get(workflowId);
-    if (!workflow) {
-      throw new ValidationError(
-        `Workflow with ID '${workflowId}' does not exist`,
-        'workflowId'
-      );
-    }
-
-    // 如果启用版本管理，保存旧版本
-    if (this.enableVersioning) {
-      this.saveVersion(workflow);
-    }
-
-    // 更新元数据
-    workflow.metadata = {
-      ...workflow.metadata,
-      ...metadata
-    };
-    workflow.updatedAt = now();
-  }
-
-  /**
-   * 更新工作流配置
-   * @param workflowId 工作流ID
-   * @param config 配置
-   * @throws ValidationError 如果工作流不存在
-   */
-  updateConfig(workflowId: string, config: WorkflowConfig): void {
-    const workflow = this.workflows.get(workflowId);
-    if (!workflow) {
-      throw new ValidationError(
-        `Workflow with ID '${workflowId}' does not exist`,
-        'workflowId'
-      );
-    }
-
-    // 如果启用版本管理，保存旧版本
-    if (this.enableVersioning) {
-      this.saveVersion(workflow);
-    }
-
-    // 更新配置
-    workflow.config = config;
-    workflow.updatedAt = now();
-  }
 
   /**
    * 移除工作流定义
@@ -353,7 +223,6 @@ class WorkflowRegistry {
    */
   unregister(workflowId: string): void {
     this.workflows.delete(workflowId);
-    this.versions.delete(workflowId);
     this.clearPreprocessCache(workflowId);
 
     // 从全局GraphRegistry中移除对应的图
@@ -375,63 +244,9 @@ class WorkflowRegistry {
    */
   clear(): void {
     this.workflows.clear();
-    this.versions.clear();
     this.processedWorkflows.clear();
     this.graphCache.clear();
     this.workflowRelationships.clear();
-  }
-
-  /**
-   * 获取工作流的所有版本
-   * @param workflowId 工作流ID
-   * @returns 版本信息列表
-   */
-  getVersions(workflowId: string): WorkflowVersion[] {
-    if (!this.enableVersioning) {
-      const workflow = this.workflows.get(workflowId);
-      if (!workflow) {
-        return [];
-      }
-      return [{
-        version: workflow.version,
-        createdAt: workflow.createdAt,
-        workflow
-      }];
-    }
-
-    return this.versions.get(workflowId) || [];
-  }
-
-  /**
-   * 回滚到指定版本
-   * @param workflowId 工作流ID
-   * @param version 版本号
-   * @throws ValidationError 如果工作流或版本不存在
-   */
-  rollback(workflowId: string, version: string): void {
-    if (!this.enableVersioning) {
-      throw new ValidationError(
-        'Version management is not enabled',
-        'versioning'
-      );
-    }
-
-    const versionInfo = this.getVersion(workflowId, version);
-    if (!versionInfo) {
-      throw new ValidationError(
-        `Version '${version}' of workflow '${workflowId}' does not exist`,
-        'version'
-      );
-    }
-
-    // 保存当前版本
-    const currentWorkflow = this.workflows.get(workflowId);
-    if (currentWorkflow) {
-      this.saveVersion(currentWorkflow);
-    }
-
-    // 恢复到指定版本
-    this.workflows.set(workflowId, versionInfo);
   }
 
   /**
@@ -497,42 +312,6 @@ class WorkflowRegistry {
     return this.workflows.size;
   }
 
-  /**
-   * 保存工作流版本
-   * @param workflow 工作流定义
-   */
-  private saveVersion(workflow: WorkflowDefinition): void {
-    if (!this.enableVersioning) {
-      return;
-    }
-
-    let versions = this.versions.get(workflow.id);
-    if (!versions) {
-      versions = [];
-      this.versions.set(workflow.id, versions);
-    }
-
-    // 检查版本是否已存在
-    const existingVersion = versions.find(v => v.version === workflow.version);
-    if (existingVersion) {
-      return;
-    }
-
-    // 添加新版本
-    versions.push({
-      version: workflow.version,
-      createdAt: workflow.createdAt,
-      workflow: { ...workflow }
-    });
-
-    // 按创建时间排序
-    versions.sort((a, b) => a.createdAt - b.createdAt);
-
-    // 限制版本数量
-    if (versions.length > this.maxVersions) {
-      versions.splice(0, versions.length - this.maxVersions);
-    }
-  }
 
   /**
    * 导出工作流定义为JSON字符串
@@ -986,7 +765,6 @@ class WorkflowRegistry {
  * 全局工作流注册器单例实例
  */
 export const workflowRegistry = new WorkflowRegistry({
-  enablePreprocessing: true,
   maxRecursionDepth: 10
 });
 

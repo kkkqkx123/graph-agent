@@ -30,9 +30,6 @@ describe('Workflow加载与注册集成测试', () => {
   beforeEach(() => {
     // 创建新的实例以避免测试间干扰
     registry = new WorkflowRegistry({
-      enableVersioning: true,
-      enablePreprocessing: true,
-      maxVersions: 10,
       maxRecursionDepth: 10
     });
     validator = new WorkflowValidator();
@@ -1145,58 +1142,4 @@ describe('Workflow加载与注册集成测试', () => {
     });
   });
 
-  describe('场景8：版本管理集成测试', () => {
-    it('应该正确管理工作流版本', () => {
-      const workflow = createBaseWorkflow('workflow-version', 'Version Workflow');
-      workflow.version = '1.0.0';
-
-      registry.register(workflow);
-
-      // 更新到新版本
-      const updatedWorkflow: WorkflowDefinition = {
-        ...workflow,
-        version: '2.0.0',
-        description: 'Updated',
-        updatedAt: Date.now()
-      };
-      registry.update(updatedWorkflow);
-
-      // 验证版本历史
-      const versions = registry.getVersions('workflow-version');
-      expect(versions.length).toBeGreaterThanOrEqual(1);
-
-      // 验证可以获取特定版本
-      const v1 = registry.getVersion('workflow-version', '1.0.0');
-      expect(v1).toBeDefined();
-      expect(v1?.version).toBe('1.0.0');
-
-      // 验证当前版本
-      const current = registry.get('workflow-version');
-      expect(current?.version).toBe('2.0.0');
-    });
-
-    it('应该支持版本回滚', () => {
-      const workflow = createBaseWorkflow('workflow-rollback', 'Rollback Workflow');
-      workflow.version = '1.0.0';
-
-      registry.register(workflow);
-
-      // 更新到新版本
-      const updatedWorkflow: WorkflowDefinition = {
-        ...workflow,
-        version: '2.0.0',
-        description: 'Updated',
-        updatedAt: Date.now()
-      };
-      registry.update(updatedWorkflow);
-
-      // 回滚到旧版本
-      registry.rollback('workflow-rollback', '1.0.0');
-
-      // 验证回滚成功
-      const rolledBack = registry.get('workflow-rollback');
-      expect(rolledBack?.version).toBe('1.0.0');
-      expect(rolledBack?.description).toBe('Test workflow');
-    });
-  });
 });

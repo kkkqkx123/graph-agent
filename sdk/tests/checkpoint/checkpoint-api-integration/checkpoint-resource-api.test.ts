@@ -24,7 +24,7 @@ describe('检查点资源API集成测试', () => {
 
   beforeEach(() => {
     threadRegistry = new ThreadRegistry();
-    workflowRegistry = new WorkflowRegistry({ enableVersioning: false });
+    workflowRegistry = new WorkflowRegistry();
 
     // 注册全局服务
     SingletonRegistry.register('threadRegistry', threadRegistry);

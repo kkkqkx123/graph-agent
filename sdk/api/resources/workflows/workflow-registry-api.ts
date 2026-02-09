@@ -44,7 +44,7 @@ export class WorkflowRegistryAPI extends GenericResourceAPI<WorkflowDefinition, 
     const summaries = this.dependencies.getWorkflowRegistry().list();
     const workflows: WorkflowDefinition[] = [];
     for (const summary of summaries) {
-      const workflow = this.registry.get(summary.id);
+      const workflow = this.dependencies.getWorkflowRegistry().get(summary.id);
       if (workflow) {
         workflows.push(workflow);
       }
@@ -59,23 +59,20 @@ export class WorkflowRegistryAPI extends GenericResourceAPI<WorkflowDefinition, 
     this.dependencies.getWorkflowRegistry().register(workflow);
   }
 
-  /**
-   * 更新工作流
-   */
-  protected async updateResource(id: string, updates: Partial<WorkflowDefinition>): Promise<void> {
-    const existing = this.dependencies.getWorkflowRegistry().get(id);
-    if (!existing) {
-      throw new Error(`Workflow not found: ${id}`);
-    }
-    const updated = { ...existing, ...updates };
-    this.dependencies.getWorkflowRegistry().update(updated);
-  }
 
   /**
    * 删除工作流
    */
   protected async deleteResource(id: string): Promise<void> {
     this.dependencies.getWorkflowRegistry().unregister(id);
+  }
+
+  /**
+   * 更新工作流
+   * 注意：工作流现在是不可变的，不支持更新操作
+   */
+  protected async updateResource(id: string, updates: Partial<WorkflowDefinition>): Promise<void> {
+    throw new Error(`Workflow update is not supported. Workflows are immutable. To modify a workflow, unregister the existing workflow and register a new one with a different ID.`);
   }
 
   /**
@@ -284,28 +281,6 @@ export class WorkflowRegistryAPI extends GenericResourceAPI<WorkflowDefinition, 
     return workflowId;
   }
 
-  /**
-   * 获取工作流的所有版本
-   * @param workflowId 工作流ID
-   * @returns 版本信息数组
-   */
-  async getWorkflowVersions(workflowId: string): Promise<any[]> {
-    return this.dependencies.getWorkflowRegistry().getVersions(workflowId);
-  }
-
-  /**
-   * 回滚到指定版本
-   * @param workflowId 工作流ID
-   * @param version 版本号
-   */
-  async rollbackWorkflow(workflowId: string, version: string): Promise<void> {
-    this.dependencies.getWorkflowRegistry().rollback(workflowId, version);
-    // 更新缓存
-    const workflow = this.dependencies.getWorkflowRegistry().get(workflowId);
-    if (workflow) {
-      // 缓存更新逻辑（如果需要缓存，可以在这里实现）
-    }
-  }
 
   /**
    * 获取处理后的工作流定义

@@ -13,7 +13,7 @@ describe('ThreadExecutorAPI', () => {
   let workflowRegistry: WorkflowRegistry;
 
   beforeEach(() => {
-    workflowRegistry = new WorkflowRegistry({ enableVersioning: false });
+    workflowRegistry = new WorkflowRegistry();
     api = new ThreadExecutorAPI(workflowRegistry);
   });
 

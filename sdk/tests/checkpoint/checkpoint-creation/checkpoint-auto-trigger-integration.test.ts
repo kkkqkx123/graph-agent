@@ -7,18 +7,18 @@
  * - 不同触发类型的检查点创建
  */
 
-import { WorkflowRegistry } from '../../core/services/workflow-registry';
-import { ThreadBuilder } from '../../core/execution/thread-builder';
-import { CheckpointCoordinator } from '../../core/execution/coordinators/checkpoint-coordinator';
-import { CheckpointStateManager } from '../../core/execution/managers/checkpoint-state-manager';
-import { MemoryCheckpointStorage } from '../../core/storage/memory-checkpoint-storage';
-import { GlobalMessageStorage } from '../../core/services/global-message-storage';
-import { ThreadRegistry } from '../../core/services/thread-registry';
-import { NodeType, HookType } from '../../types/node';
-import { EdgeType } from '../../types/edge';
-import { CheckpointTriggerType } from '../../types/checkpoint';
-import type { WorkflowDefinition } from '../../types/workflow';
-import type { Node } from '../../types/node';
+import { WorkflowRegistry } from '../../../core/services/workflow-registry';
+import { ThreadBuilder } from '../../../core/execution/thread-builder';
+import { CheckpointCoordinator } from '../../../core/execution/coordinators/checkpoint-coordinator';
+import { CheckpointStateManager } from '../../../core/execution/managers/checkpoint-state-manager';
+import { MemoryCheckpointStorage } from '../../../core/storage/memory-checkpoint-storage';
+import { GlobalMessageStorage } from '../../../core/services/global-message-storage';
+import { ThreadRegistry } from '../../../core/services/thread-registry';
+import { NodeType, HookType } from '../../../types/node';
+import { EdgeType } from '../../../types/edge';
+import { CheckpointTriggerType } from '../../../types/checkpoint';
+import type { WorkflowDefinition } from '../../../types/workflow';
+import type { Node } from '../../../types/node';
 
 describe('检查点自动触发机制集成测试', () => {
   let workflowRegistry: WorkflowRegistry;
@@ -29,11 +29,11 @@ describe('检查点自动触发机制集成测试', () => {
 
   beforeAll(async () => {
     // 注册测试脚本
-    const { codeService } = await import('../../core/services/code-service');
-    const { ScriptType } = await import('../../types/code');
-    const { generateId } = await import('../../utils/id-utils');
+    const { codeService } = await import('../../../core/services/code-service');
+    const { ScriptType } = await import('../../../types/code');
+    const { generateId } = await import('../../../utils/id-utils');
 
-    const javascriptExecutor: import('../../types/code').ScriptExecutor = {
+    const javascriptExecutor: import('../../../types/code').ScriptExecutor = {
       async execute(script, options) {
         try {
           const result = eval(script.content || '');
@@ -90,9 +90,6 @@ describe('检查点自动触发机制集成测试', () => {
 
   beforeEach(() => {
     workflowRegistry = new WorkflowRegistry({
-      enableVersioning: true,
-      enablePreprocessing: true,
-      maxVersions: 5,
       maxRecursionDepth: 3
     });
 
@@ -242,7 +239,7 @@ describe('检查点自动触发机制集成测试', () => {
 
       // 验证检查点元数据
       const checkpointData = await checkpointStorage.load(checkpointId);
-      const { deserializeCheckpoint } = await import('../../core/execution/utils/checkpoint-serializer');
+      const { deserializeCheckpoint } = await import('../../../core/execution/utils/checkpoint-serializer');
       const checkpoint = deserializeCheckpoint(checkpointData!);
 
       expect(checkpoint.metadata?.description).toContain('Auto-triggered checkpoint');
@@ -311,9 +308,9 @@ describe('检查点自动触发机制集成测试', () => {
       };
 
       // 测试配置解析器
-      const { resolveCheckpointConfig } = await import('../../core/execution/handlers/checkpoint-handlers/checkpoint-config-resolver');
+      const { resolveCheckpointConfig } = await import('../../../core/execution/handlers/checkpoint-handlers/checkpoint-config-resolver');
       const nodeConfig = workflow.nodes.find(n => n.id === `${workflowId}-process`);
-      
+
       const result = resolveCheckpointConfig(
         workflow.config?.checkpointConfig,
         nodeConfig,
@@ -353,9 +350,9 @@ describe('检查点自动触发机制集成测试', () => {
       };
 
       // 测试配置解析器
-      const { resolveCheckpointConfig } = await import('../../core/execution/handlers/checkpoint-handlers/checkpoint-config-resolver');
+      const { resolveCheckpointConfig } = await import('../../../core/execution/handlers/checkpoint-handlers/checkpoint-config-resolver');
       const nodeConfig = workflow.nodes.find(n => n.id === `${workflowId}-process`);
-      
+
       const result = resolveCheckpointConfig(
         workflow.config?.checkpointConfig,
         nodeConfig,
@@ -398,7 +395,7 @@ describe('检查点自动触发机制集成测试', () => {
       };
 
       // 测试配置解析器
-      const { resolveCheckpointConfig } = await import('../../core/execution/handlers/checkpoint-handlers/checkpoint-config-resolver');
+      const { resolveCheckpointConfig } = await import('../../../core/execution/handlers/checkpoint-handlers/checkpoint-config-resolver');
       const nodeConfig = workflow.nodes.find(n => n.id === `${workflowId}-process`);
       const hookConfig = {
         hookType: HookType.BEFORE_EXECUTE,
@@ -406,7 +403,7 @@ describe('检查点自动触发机制集成测试', () => {
         createCheckpoint: false, // Hook 配置禁用检查点
         checkpointDescription: 'Hook checkpoint'
       };
-      
+
       const result = resolveCheckpointConfig(
         workflow.config?.checkpointConfig,
         nodeConfig,
@@ -446,7 +443,7 @@ describe('检查点自动触发机制集成测试', () => {
       };
 
       // 测试配置解析器
-      const { resolveCheckpointConfig } = await import('../../core/execution/handlers/checkpoint-handlers/checkpoint-config-resolver');
+      const { resolveCheckpointConfig } = await import('../../../core/execution/handlers/checkpoint-handlers/checkpoint-config-resolver');
       const nodeConfig = workflow.nodes.find(n => n.id === `${workflowId}-process`);
       const hookConfig = {
         hookType: HookType.AFTER_EXECUTE,
@@ -454,7 +451,7 @@ describe('检查点自动触发机制集成测试', () => {
         createCheckpoint: true, // Hook 配置启用检查点
         checkpointDescription: 'Hook enabled checkpoint'
       };
-      
+
       const result = resolveCheckpointConfig(
         workflow.config?.checkpointConfig,
         nodeConfig,

@@ -133,7 +133,7 @@ describe('检查点存储适配器兼容性集成测试', () => {
   });
 
   beforeEach(() => {
-    workflowRegistry = new WorkflowRegistry({ enableVersioning: false });
+    workflowRegistry = new WorkflowRegistry();
     threadRegistry = new ThreadRegistry();
     globalMessageStorage = new GlobalMessageStorage();
   });

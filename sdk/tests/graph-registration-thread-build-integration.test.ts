@@ -28,9 +28,6 @@ describe('Graph注册到Thread构建集成测试', () => {
   beforeEach(() => {
     // 创建新的实例以避免测试间干扰
     workflowRegistry = new WorkflowRegistry({
-      enableVersioning: true,
-      enablePreprocessing: true,
-      maxVersions: 5,
       maxRecursionDepth: 3
     });
 

@@ -79,7 +79,7 @@ describe('检查点清理策略集成测试', () => {
   });
 
   beforeEach(() => {
-    workflowRegistry = new WorkflowRegistry({ enableVersioning: false });
+    workflowRegistry = new WorkflowRegistry();
     threadRegistry = new ThreadRegistry();
     globalMessageStorage = new GlobalMessageStorage();
     checkpointStorage = new MemoryCheckpointStorage();

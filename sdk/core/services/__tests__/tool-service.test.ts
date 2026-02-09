@@ -5,7 +5,7 @@
 import { ToolService } from '../tool-service';
 import type { Tool } from '../../../types/tool';
 import { ToolType } from '../../../types/tool';
-import { NotFoundError, ToolError } from '../../../types/errors';
+import { NotFoundError } from '../../../types/errors';
 
 describe('ToolService', () => {
   let service: ToolService;
@@ -187,7 +187,7 @@ describe('ToolService', () => {
 
       service.registerTool(statelessTool);
       const result = await service.execute('error-tool', { input: 'test' });
-      
+
       expect(result.success).toBe(false);
       expect(result.error).toContain('Stateless tool execution failed: Execution failed');
     });

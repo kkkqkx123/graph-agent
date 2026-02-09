@@ -24,9 +24,6 @@ describe('触发子工作流集成测试', () => {
 
   beforeEach(() => {
     registry = new WorkflowRegistry({
-      enableVersioning: true,
-      enablePreprocessing: true,
-      maxVersions: 10,
       maxRecursionDepth: 10
     });
     validator = new WorkflowValidator();
@@ -720,100 +717,4 @@ describe('触发子工作流集成测试', () => {
     });
   });
 
-  describe('场景4：触发子工作流的更新与版本管理', () => {
-    it('应该支持触发子工作流的更新', () => {
-      const triggeredWorkflow: WorkflowDefinition = {
-        id: 'triggered-versioned',
-        name: 'Triggered Versioned',
-        version: '1.0.0',
-        description: 'Original version',
-        variables: [],
-        triggers: [],
-        nodes: [
-          {
-            id: 'start',
-            type: NodeType.START_FROM_TRIGGER,
-            name: 'Start',
-            config: {},
-            outgoingEdgeIds: ['edge-1'],
-            incomingEdgeIds: []
-          },
-          {
-            id: 'process',
-            type: NodeType.LLM,
-            name: 'Process',
-            config: {
-              profileId: 'test-profile',
-              prompt: 'Original prompt'
-            },
-            outgoingEdgeIds: ['edge-2'],
-            incomingEdgeIds: ['edge-1']
-          },
-          {
-            id: 'end',
-            type: NodeType.CONTINUE_FROM_TRIGGER,
-            name: 'End',
-            config: {},
-            outgoingEdgeIds: [],
-            incomingEdgeIds: ['edge-2']
-          }
-        ],
-        edges: [
-          {
-            id: 'edge-1',
-            sourceNodeId: 'start',
-            targetNodeId: 'process',
-            type: EdgeType.DEFAULT
-          },
-          {
-            id: 'edge-2',
-            sourceNodeId: 'process',
-            targetNodeId: 'end',
-            type: EdgeType.DEFAULT
-          }
-        ],
-        config: {
-          toolApproval: {
-            autoApprovedTools: []
-          }
-        },
-        createdAt: Date.now(),
-        updatedAt: Date.now()
-      };
-
-      // 注册工作流
-      registry.register(triggeredWorkflow);
-
-      // 更新工作流
-      const updatedWorkflow: WorkflowDefinition = {
-        ...triggeredWorkflow,
-        version: '2.0.0',
-        description: 'Updated version',
-        nodes: [
-          ...triggeredWorkflow.nodes.map(node => {
-            if (node.id === 'process') {
-              return {
-                ...node,
-                config: {
-                  ...node.config,
-                  prompt: 'Updated prompt'
-                }
-              };
-            }
-            return node;
-          })
-        ],
-        updatedAt: Date.now()
-      };
-
-      registry.update(updatedWorkflow);
-
-      // 验证更新
-      const updated = registry.get('triggered-versioned');
-      expect(updated?.version).toBe('2.0.0');
-      expect(updated?.description).toBe('Updated version');
-      const processNode = updated?.nodes.find(n => n.id === 'process');
-      expect((processNode?.config as any).prompt).toBe('Updated prompt');
-    });
-  });
 });

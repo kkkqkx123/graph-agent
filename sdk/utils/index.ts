@@ -6,6 +6,6 @@
 // 通用工具函数
 export { generateId, isValidId, validateId } from "./id-utils";
 export { now, timestampFromDate, timestampToDate, timestampToISOString, nowWithTimezone, diffTimestamp, formatDuration } from "./timestamp-utils";
-export { initialVersion, parseVersion, nextMajorVersion, nextMinorVersion, nextPatchVersion, compareVersion, autoIncrementVersion, parseFullVersion } from "./version-utils";
+export { initialVersion } from "./version-utils";
 export { emptyMetadata, getMetadata, setMetadata, deleteMetadata, hasMetadata, mergeMetadata } from "./metadata-utils";
 export { encodeText, encodeObject, estimateTokensFallback, resetEncoder } from "./token-encoder";

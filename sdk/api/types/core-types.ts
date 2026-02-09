@@ -11,10 +11,6 @@ import type { ExecutionContext } from '../../core/execution/context/execution-co
  * SDK配置选项
  */
 export interface SDKOptions {
-  /** 是否启用版本管理 */
-  enableVersioning?: boolean;
-  /** 最大版本数 */
-  maxVersions?: number;
   /** 自定义WorkflowRegistry */
   workflowRegistry?: any;
   /** 自定义ThreadRegistry */
