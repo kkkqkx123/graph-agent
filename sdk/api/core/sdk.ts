@@ -107,6 +107,20 @@ class SDK {
   }
 
   /**
+   * 获取用户交互API
+   */
+  get userInteractions() {
+    return this.factory.createUserInteractionAPI();
+  }
+
+  /**
+   * 获取HumanRelay API
+   */
+  get humanRelay() {
+    return this.factory.createHumanRelayAPI();
+  }
+
+  /**
    * 获取API工厂实例
    */
   getFactory(): APIFactory {
@@ -141,6 +155,8 @@ class SDK {
       { name: 'nodeTemplates', check: async () => getData(await this.nodeTemplates.count()) },
       { name: 'triggerTemplates', check: async () => getData(await this.triggerTemplates.count()) },
       { name: 'profiles', check: async () => getData(await this.profiles.count()) },
+      { name: 'userInteractions', check: async () => getData(await this.userInteractions.getConfigCount()) },
+      { name: 'humanRelay', check: async () => getData(await this.humanRelay.getConfigCount()) },
     ];
 
     let overallStatus: 'healthy' | 'degraded' | 'unhealthy' = 'healthy';
@@ -206,6 +222,18 @@ class SDK {
       await this.profiles.clear();
     } catch (error) {
       console.error('清理profiles资源失败:', error);
+    }
+
+    try {
+      await this.userInteractions.clear();
+    } catch (error) {
+      console.error('清理userInteractions资源失败:', error);
+    }
+
+    try {
+      await this.humanRelay.clear();
+    } catch (error) {
+      console.error('清理humanRelay资源失败:', error);
     }
 
     console.log('SDK实例已销毁');

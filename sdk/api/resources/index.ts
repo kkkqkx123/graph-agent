@@ -53,6 +53,12 @@ import { TriggerTemplateRegistryAPI } from './templates/trigger-template-registr
 // Profile资源管理
 import { LLMProfileRegistryAPI } from './llm/llm-profile-registry-api';
 
+// 用户交互资源管理
+import { UserInteractionResourceAPI, type UserInteractionConfig, type UserInteractionFilter } from './user-interaction/user-interaction-resource-api';
+
+// Human Relay资源管理
+import { HumanRelayResourceAPI, type HumanRelayConfig, type HumanRelayFilter } from './human-relay/human-relay-resource-api';
+
 // 配置资源管理
 import { ConfigurationAPI } from './configuration/configuration-api';
 
@@ -70,6 +76,8 @@ export { ScriptRegistryAPI };
 export { NodeRegistryAPI };
 export { TriggerTemplateRegistryAPI };
 export { LLMProfileRegistryAPI };
+export { UserInteractionResourceAPI, type UserInteractionConfig, type UserInteractionFilter };
+export { HumanRelayResourceAPI, type HumanRelayConfig, type HumanRelayFilter };
 export { ConfigurationAPI };
 
 /**
@@ -89,6 +97,8 @@ export function createResourceAPIs() {
     nodeTemplates: new NodeRegistryAPI(),
     triggerTemplates: new TriggerTemplateRegistryAPI(),
     profiles: new LLMProfileRegistryAPI(),
+    userInteractions: new UserInteractionResourceAPI(),
+    humanRelay: new HumanRelayResourceAPI(),
     configuration: new ConfigurationAPI()
   };
 }

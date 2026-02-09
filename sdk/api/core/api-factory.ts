@@ -15,6 +15,8 @@ import { ScriptRegistryAPI } from '../resources/scripts/script-registry-api';
 import { LLMProfileRegistryAPI } from '../resources/llm/llm-profile-registry-api';
 import { NodeRegistryAPI } from '../resources/templates/node-template-registry-api';
 import { TriggerTemplateRegistryAPI } from '../resources/templates/trigger-template-registry-api';
+import { UserInteractionResourceAPI } from '../resources/user-interaction/user-interaction-resource-api';
+import { HumanRelayResourceAPI } from '../resources/human-relay/human-relay-resource-api';
 
 /**
  * SDK API配置接口
@@ -41,6 +43,10 @@ export interface AllAPIs {
   nodeTemplates: NodeRegistryAPI;
   /** 触发器模板API */
   triggerTemplates: TriggerTemplateRegistryAPI;
+  /** 用户交互API */
+  userInteractions: UserInteractionResourceAPI;
+  /** Human Relay API */
+  humanRelay: HumanRelayResourceAPI;
 }
 
 /**
@@ -192,6 +198,28 @@ export class APIFactory {
   }
 
   /**
+   * 创建用户交互API
+   * @returns UserInteractionResourceAPI实例
+   */
+  public createUserInteractionAPI(): UserInteractionResourceAPI {
+    if (!this.apiInstances.userInteractions) {
+      this.apiInstances.userInteractions = new UserInteractionResourceAPI();
+    }
+    return this.apiInstances.userInteractions;
+  }
+
+  /**
+   * 创建Human Relay API
+   * @returns HumanRelayResourceAPI实例
+   */
+  public createHumanRelayAPI(): HumanRelayResourceAPI {
+    if (!this.apiInstances.humanRelay) {
+      this.apiInstances.humanRelay = new HumanRelayResourceAPI();
+    }
+    return this.apiInstances.humanRelay;
+  }
+
+  /**
    * 创建所有API实例
    * @param options 可选配置（覆盖全局配置）
    * @returns 所有API实例
@@ -204,7 +232,9 @@ export class APIFactory {
       scripts: this.createScriptAPI(),
       profiles: this.createProfileAPI(),
       nodeTemplates: this.createNodeTemplateAPI(),
-      triggerTemplates: this.createTriggerTemplateAPI()
+      triggerTemplates: this.createTriggerTemplateAPI(),
+      userInteractions: this.createUserInteractionAPI(),
+      humanRelay: this.createHumanRelayAPI()
     };
   }
 
