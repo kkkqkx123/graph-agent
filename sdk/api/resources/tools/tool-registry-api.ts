@@ -140,23 +140,31 @@ export class ToolRegistryAPI extends GenericResourceAPI<Tool, string, ToolFilter
     const errors: string[] = [];
 
     // 使用简化验证工具验证必需字段
-    const requiredErrors = validateRequiredFields(tool, ['name', 'type', 'description'], 'tool');
-    errors.push(...requiredErrors.map(error => error.message));
+    const requiredResult = validateRequiredFields(tool, ['name', 'type', 'description'], 'tool');
+    if (requiredResult.isErr()) {
+      errors.push(...requiredResult.unwrapOrElse(err => err.map(error => error.message)));
+    }
 
     // 验证参数对象
-    const objectErrors = validateObject(tool.parameters, '工具参数');
-    errors.push(...objectErrors.map(error => error.message));
+    const objectResult = validateObject(tool.parameters, '工具参数');
+    if (objectResult.isErr()) {
+      errors.push(...objectResult.unwrapOrElse(err => err.map(error => error.message)));
+    }
 
     // 验证名称长度
     if (tool.name) {
-      const nameErrors = validateStringLength(tool.name, '工具名称', 1, 100);
-      errors.push(...nameErrors.map(error => error.message));
+      const nameResult = validateStringLength(tool.name, '工具名称', 1, 100);
+      if (nameResult.isErr()) {
+        errors.push(...nameResult.unwrapOrElse(err => err.map(error => error.message)));
+      }
     }
 
     // 验证描述长度
     if (tool.description) {
-      const descriptionErrors = validateStringLength(tool.description, '工具描述', 1, 500);
-      errors.push(...descriptionErrors.map(error => error.message));
+      const descriptionResult = validateStringLength(tool.description, '工具描述', 1, 500);
+      if (descriptionResult.isErr()) {
+        errors.push(...descriptionResult.unwrapOrElse(err => err.map(error => error.message)));
+      }
     }
 
     return {

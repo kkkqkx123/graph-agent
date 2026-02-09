@@ -1,9 +1,11 @@
 /**
  * 函数式验证器
- * 提供统一的验证函数，返回 ValidationError[] 数组
+ * 提供统一的验证函数，返回 Result<T, ValidationError[]> 类型
  */
 
 import { ValidationError } from '../../types/errors';
+import type { Result } from '../../types/result';
+import { ok, err } from '../../utils/result-utils';
 
 /**
  * 验证必需字段
@@ -16,7 +18,7 @@ export function validateRequiredFields<T>(
   data: T,
   fields: (keyof T)[],
   fieldName: string
-): ValidationError[] {
+): Result<T, ValidationError[]> {
   const errors: ValidationError[] = [];
   
   for (const field of fields) {
@@ -30,7 +32,11 @@ export function validateRequiredFields<T>(
     }
   }
   
-  return errors;
+  if (errors.length === 0) {
+    return ok(data);
+  } else {
+    return err(errors);
+  }
 }
 
 /**
@@ -46,7 +52,7 @@ export function validateStringLength(
   fieldName: string,
   min: number,
   max: number
-): ValidationError[] {
+): Result<string, ValidationError[]> {
   const errors: ValidationError[] = [];
   
   if (typeof value !== 'string') {
@@ -55,7 +61,7 @@ export function validateStringLength(
       fieldName,
       value
     ));
-    return errors;
+    return err(errors);
   }
   
   if (value.length < min) {
@@ -73,7 +79,11 @@ export function validateStringLength(
     ));
   }
   
-  return errors;
+  if (errors.length === 0) {
+    return ok(value);
+  } else {
+    return err(errors);
+  }
 }
 
 /**
@@ -89,7 +99,7 @@ export function validateNumberRange(
   fieldName: string,
   min: number,
   max: number
-): ValidationError[] {
+): Result<number, ValidationError[]> {
   const errors: ValidationError[] = [];
   
   if (typeof value !== 'number' || isNaN(value)) {
@@ -98,7 +108,7 @@ export function validateNumberRange(
       fieldName,
       value
     ));
-    return errors;
+    return err(errors);
   }
   
   if (value < min) {
@@ -116,7 +126,11 @@ export function validateNumberRange(
     ));
   }
   
-  return errors;
+  if (errors.length === 0) {
+    return ok(value);
+  } else {
+    return err(errors);
+  }
 }
 
 /**
@@ -125,7 +139,7 @@ export function validateNumberRange(
  * @param fieldName 字段名称
  * @returns 验证错误数组
  */
-export function validatePositiveNumber(value: number, fieldName: string): ValidationError[] {
+export function validatePositiveNumber(value: number, fieldName: string): Result<number, ValidationError[]> {
   const errors: ValidationError[] = [];
   
   if (typeof value !== 'number' || isNaN(value)) {
@@ -134,7 +148,7 @@ export function validatePositiveNumber(value: number, fieldName: string): Valida
       fieldName,
       value
     ));
-    return errors;
+    return err(errors);
   }
   
   if (value < 0) {
@@ -145,7 +159,11 @@ export function validatePositiveNumber(value: number, fieldName: string): Valida
     ));
   }
   
-  return errors;
+  if (errors.length === 0) {
+    return ok(value);
+  } else {
+    return err(errors);
+  }
 }
 
 /**
@@ -154,7 +172,7 @@ export function validatePositiveNumber(value: number, fieldName: string): Valida
  * @param fieldName 字段名称
  * @returns 验证错误数组
  */
-export function validateObject(value: any, fieldName: string): ValidationError[] {
+export function validateObject(value: any, fieldName: string): Result<any, ValidationError[]> {
   const errors: ValidationError[] = [];
   
   if (value === null || value === undefined) {
@@ -171,7 +189,11 @@ export function validateObject(value: any, fieldName: string): ValidationError[]
     ));
   }
   
-  return errors;
+  if (errors.length === 0) {
+    return ok(value);
+  } else {
+    return err(errors);
+  }
 }
 
 /**
@@ -185,7 +207,7 @@ export function validateArray(
   value: any[],
   fieldName: string,
   minLength: number = 1
-): ValidationError[] {
+): Result<any[], ValidationError[]> {
   const errors: ValidationError[] = [];
   
   if (!Array.isArray(value)) {
@@ -202,7 +224,11 @@ export function validateArray(
     ));
   }
   
-  return errors;
+  if (errors.length === 0) {
+    return ok(value);
+  } else {
+    return err(errors);
+  }
 }
 
 /**
@@ -211,7 +237,7 @@ export function validateArray(
  * @param fieldName 字段名称
  * @returns 验证错误数组
  */
-export function validateBoolean(value: any, fieldName: string): ValidationError[] {
+export function validateBoolean(value: any, fieldName: string): Result<boolean, ValidationError[]> {
   const errors: ValidationError[] = [];
   
   if (typeof value !== 'boolean') {
@@ -222,7 +248,11 @@ export function validateBoolean(value: any, fieldName: string): ValidationError[
     ));
   }
   
-  return errors;
+  if (errors.length === 0) {
+    return ok(value);
+  } else {
+    return err(errors);
+  }
 }
 
 /**
@@ -238,7 +268,7 @@ export function validatePattern(
   fieldName: string,
   regex: RegExp,
   message?: string
-): ValidationError[] {
+): Result<string, ValidationError[]> {
   const errors: ValidationError[] = [];
   
   if (typeof value !== 'string') {
@@ -247,7 +277,7 @@ export function validatePattern(
       fieldName,
       value
     ));
-    return errors;
+    return err(errors);
   }
   
   if (!regex.test(value)) {
@@ -258,7 +288,11 @@ export function validatePattern(
     ));
   }
   
-  return errors;
+  if (errors.length === 0) {
+    return ok(value);
+  } else {
+    return err(errors);
+  }
 }
 
 /**
@@ -272,7 +306,7 @@ export function validateEnum<T>(
   value: T,
   fieldName: string,
   enumValues: T[]
-): ValidationError[] {
+): Result<T, ValidationError[]> {
   const errors: ValidationError[] = [];
   
   if (!enumValues.includes(value)) {
@@ -283,7 +317,11 @@ export function validateEnum<T>(
     ));
   }
   
-  return errors;
+  if (errors.length === 0) {
+    return ok(value);
+  } else {
+    return err(errors);
+  }
 }
 
 /**
@@ -297,9 +335,9 @@ export function mergeValidationErrors(...errorsArrays: ValidationError[][]): Val
 
 /**
  * 检查验证是否通过
- * @param errors 验证错误数组
+ * @param result 验证结果
  * @returns 是否验证通过
  */
-export function isValid(errors: ValidationError[]): boolean {
-  return errors.length === 0;
+export function isValid<T>(result: Result<T, ValidationError[]>): boolean {
+  return result.isOk();
 }

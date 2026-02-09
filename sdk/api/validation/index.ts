@@ -7,7 +7,6 @@
 export {
   ValidationErrorCode,
   ValidationErrorDetail,
-  ValidationResult,
   createValidationSuccess,
   createValidationFailure,
   createValidationError,

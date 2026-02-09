@@ -5,6 +5,8 @@
  */
 
 import { ErrorCode, ValidationError } from '../../types/errors';
+import type { Result } from '../../types/result';
+import { ok, err } from '../../utils/result-utils';
 
 /**
  * 验证错误代码
@@ -108,30 +110,25 @@ export function toValidationError(detail: ValidationErrorDetail): ValidationErro
 /**
  * 将验证结果转换为ValidationError数组
  */
-export function toValidationErrors(result: ValidationResult): ValidationError[] {
-  return result.errors.map(error => toValidationError(error));
-}
-
-/**
- * 验证结果接口
- */
-export interface ValidationResult {
-  /** 是否验证通过 */
-  valid: boolean;
-  /** 错误详情列表 */
-  errors: ValidationErrorDetail[];
+export function toValidationErrors(result: Result<boolean, ValidationErrorDetail[]>): ValidationError[] {
+  if (result.isOk()) {
+    return [];
+  } else {
+    const errors = result.unwrapOrElse(err => err);
+    return errors.map((error: ValidationErrorDetail) => toValidationError(error));
+  }
 }
 
 /**
  * 创建验证成功结果
  */
-export function createValidationSuccess(): ValidationResult {
-  return { valid: true, errors: [] };
+export function createValidationSuccess(): Result<boolean, ValidationErrorDetail[]> {
+  return ok(true);
 }
 
 /**
  * 创建验证失败结果
  */
-export function createValidationFailure(errors: ValidationErrorDetail[]): ValidationResult {
-  return { valid: false, errors };
+export function createValidationFailure(errors: ValidationErrorDetail[]): Result<boolean, ValidationErrorDetail[]> {
+  return err(errors);
 }

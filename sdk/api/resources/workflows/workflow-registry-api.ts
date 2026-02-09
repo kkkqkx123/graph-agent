@@ -127,30 +127,40 @@ export class WorkflowRegistryAPI extends GenericResourceAPI<WorkflowDefinition, 
     const errors: string[] = [];
 
     // 使用简化验证工具验证必需字段
-    const requiredErrors = validateRequiredFields(workflow, ['id', 'name', 'version'], 'workflow');
-    errors.push(...requiredErrors.map(error => error.message));
+    const requiredResult = validateRequiredFields(workflow, ['id', 'name', 'version'], 'workflow');
+    if (requiredResult.isErr()) {
+      errors.push(...requiredResult.unwrapOrElse(err => err.map(error => error.message)));
+    }
 
     // 验证节点数组
-    const arrayErrors = validateArray(workflow.nodes, '工作流节点', 1);
-    errors.push(...arrayErrors.map(error => error.message));
+    const arrayResult = validateArray(workflow.nodes, '工作流节点', 1);
+    if (arrayResult.isErr()) {
+      errors.push(...arrayResult.unwrapOrElse(err => err.map(error => error.message)));
+    }
 
     // 验证ID长度
     if (workflow.id) {
-      const idErrors = validateStringLength(workflow.id, '工作流ID', 1, 100);
-      errors.push(...idErrors.map(error => error.message));
+      const idResult = validateStringLength(workflow.id, '工作流ID', 1, 100);
+      if (idResult.isErr()) {
+        errors.push(...idResult.unwrapOrElse(err => err.map(error => error.message)));
+      }
     }
 
     // 验证名称长度
     if (workflow.name) {
-      const nameErrors = validateStringLength(workflow.name, '工作流名称', 1, 200);
-      errors.push(...nameErrors.map(error => error.message));
+      const nameResult = validateStringLength(workflow.name, '工作流名称', 1, 200);
+      if (nameResult.isErr()) {
+        errors.push(...nameResult.unwrapOrElse(err => err.map(error => error.message)));
+      }
     }
 
     // 验证版本格式（简单验证）
     if (workflow.version) {
       const versionPattern = /^[0-9]+\.[0-9]+\.[0-9]+$/;
-      const versionErrors = validatePattern(workflow.version, '工作流版本', versionPattern, '工作流版本格式不正确，应为x.y.z格式');
-      errors.push(...versionErrors.map(error => error.message));
+      const versionResult = validatePattern(workflow.version, '工作流版本', versionPattern, '工作流版本格式不正确，应为x.y.z格式');
+      if (versionResult.isErr()) {
+        errors.push(...versionResult.unwrapOrElse(err => err.map(error => error.message)));
+      }
     }
 
     return {

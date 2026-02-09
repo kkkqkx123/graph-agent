@@ -4,6 +4,8 @@
  */
 
 import { ValidationError } from '../../types/errors';
+import type { Result } from '../../types/result';
+import { ok, err } from '../../utils/result-utils';
 
 /**
  * 验证对象结构完整性
@@ -16,7 +18,7 @@ export function validateObjectStructure<T extends Record<string, any>>(
   obj: T,
   requiredKeys: (keyof T)[],
   fieldName: string
-): ValidationError[] {
+): Result<T, ValidationError[]> {
   const errors: ValidationError[] = [];
   
   if (obj === null || obj === undefined) {
@@ -25,7 +27,7 @@ export function validateObjectStructure<T extends Record<string, any>>(
       fieldName,
       obj
     ));
-    return errors;
+    return err(errors);
   }
   
   if (typeof obj !== 'object' || Array.isArray(obj)) {
@@ -34,7 +36,7 @@ export function validateObjectStructure<T extends Record<string, any>>(
       fieldName,
       obj
     ));
-    return errors;
+    return err(errors);
   }
   
   for (const key of requiredKeys) {
@@ -47,7 +49,11 @@ export function validateObjectStructure<T extends Record<string, any>>(
     }
   }
   
-  return errors;
+  if (errors.length === 0) {
+    return ok(obj);
+  } else {
+    return err(errors);
+  }
 }
 
 /**
@@ -59,9 +65,9 @@ export function validateObjectStructure<T extends Record<string, any>>(
  */
 export function validateNestedObject<T extends Record<string, any>>(
   obj: T,
-  validators: { [K in keyof T]?: (value: T[K], fieldPath: string) => ValidationError[] },
+  validators: { [K in keyof T]?: (value: T[K], fieldPath: string) => Result<T[K], ValidationError[]> },
   fieldName: string
-): ValidationError[] {
+): Result<T, ValidationError[]> {
   const errors: ValidationError[] = [];
   
   if (obj === null || obj === undefined) {
@@ -70,19 +76,25 @@ export function validateNestedObject<T extends Record<string, any>>(
       fieldName,
       obj
     ));
-    return errors;
+    return err(errors);
   }
   
   for (const [key, validator] of Object.entries(validators)) {
     if (validator) {
       const fieldPath = `${fieldName}.${key}`;
       const value = obj[key as keyof T];
-      const fieldErrors = validator(value, fieldPath);
-      errors.push(...fieldErrors);
+      const fieldResult = validator(value, fieldPath);
+      if (fieldResult.isErr()) {
+        errors.push(...fieldResult.unwrapOrElse((err: ValidationError[]) => err));
+      }
     }
   }
   
-  return errors;
+  if (errors.length === 0) {
+    return ok(obj);
+  } else {
+    return err(errors);
+  }
 }
 
 /**
@@ -95,10 +107,10 @@ export function validateNestedObject<T extends Record<string, any>>(
  */
 export function validateArrayElements<T>(
   array: T[],
-  elementValidator: (element: T, index: number, fieldPath: string) => ValidationError[],
+  elementValidator: (element: T, index: number, fieldPath: string) => Result<T, ValidationError[]>,
   fieldName: string,
   minLength: number = 1
-): ValidationError[] {
+): Result<T[], ValidationError[]> {
   const errors: ValidationError[] = [];
   
   if (!Array.isArray(array)) {
@@ -107,7 +119,7 @@ export function validateArrayElements<T>(
       fieldName,
       array
     ));
-    return errors;
+    return err(errors);
   }
   
   if (array.length < minLength) {
@@ -121,11 +133,17 @@ export function validateArrayElements<T>(
   for (let i = 0; i < array.length; i++) {
     const element = array[i]!; // 使用非空断言，因为数组索引访问不会返回 undefined
     const fieldPath = `${fieldName}[${i}]`;
-    const elementErrors = elementValidator(element, i, fieldPath);
-    errors.push(...elementErrors);
+    const elementResult = elementValidator(element, i, fieldPath);
+    if (elementResult.isErr()) {
+      errors.push(...elementResult.unwrapOrElse((err: ValidationError[]) => err));
+    }
   }
   
-  return errors;
+  if (errors.length === 0) {
+    return ok(array);
+  } else {
+    return err(errors);
+  }
 }
 
 /**
@@ -141,7 +159,7 @@ export function validateCondition(
   message: string,
   fieldName: string,
   value?: any
-): ValidationError[] {
+): Result<boolean, ValidationError[]> {
   const errors: ValidationError[] = [];
   
   if (!condition()) {
@@ -152,7 +170,11 @@ export function validateCondition(
     ));
   }
   
-  return errors;
+  if (errors.length === 0) {
+    return ok(true);
+  } else {
+    return err(errors);
+  }
 }
 
 /**
@@ -166,9 +188,9 @@ export function validateExclusiveFields<T extends Record<string, any>>(
   obj: T,
   exclusiveFields: (keyof T)[],
   fieldName: string
-): ValidationError[] {
+): Result<T, ValidationError[]> {
   const errors: ValidationError[] = [];
-  const presentFields = exclusiveFields.filter(field => 
+  const presentFields = exclusiveFields.filter(field =>
     obj[field] !== null && obj[field] !== undefined && obj[field] !== ''
   );
   
@@ -180,7 +202,11 @@ export function validateExclusiveFields<T extends Record<string, any>>(
     ));
   }
   
-  return errors;
+  if (errors.length === 0) {
+    return ok(obj);
+  } else {
+    return err(errors);
+  }
 }
 
 /**
@@ -196,15 +222,15 @@ export function validateDependentField<T extends Record<string, any>>(
   dependentField: keyof T,
   requiredField: keyof T,
   fieldName: string
-): ValidationError[] {
+): Result<T, ValidationError[]> {
   const errors: ValidationError[] = [];
   
-  const hasDependentField = obj[dependentField] !== null && 
-                           obj[dependentField] !== undefined && 
+  const hasDependentField = obj[dependentField] !== null &&
+                           obj[dependentField] !== undefined &&
                            obj[dependentField] !== '';
   
-  const hasRequiredField = obj[requiredField] !== null && 
-                          obj[requiredField] !== undefined && 
+  const hasRequiredField = obj[requiredField] !== null &&
+                          obj[requiredField] !== undefined &&
                           obj[requiredField] !== '';
   
   if (hasDependentField && !hasRequiredField) {
@@ -215,7 +241,11 @@ export function validateDependentField<T extends Record<string, any>>(
     ));
   }
   
-  return errors;
+  if (errors.length === 0) {
+    return ok(obj);
+  } else {
+    return err(errors);
+  }
 }
 
 /**
@@ -229,7 +259,7 @@ export function validateDateRange(
   startDate: Date,
   endDate: Date,
   fieldName: string
-): ValidationError[] {
+): Result<{ startDate: Date; endDate: Date }, ValidationError[]> {
   const errors: ValidationError[] = [];
   
   if (!(startDate instanceof Date) || isNaN(startDate.getTime())) {
@@ -256,7 +286,11 @@ export function validateDateRange(
     ));
   }
   
-  return errors;
+  if (errors.length === 0) {
+    return ok({ startDate, endDate });
+  } else {
+    return err(errors);
+  }
 }
 
 /**
@@ -270,7 +304,7 @@ export function validateFileType(
   file: { type?: string; name?: string },
   allowedTypes: string[],
   fieldName: string
-): ValidationError[] {
+): Result<{ type?: string; name?: string }, ValidationError[]> {
   const errors: ValidationError[] = [];
   
   if (!file || !file.type) {
@@ -279,7 +313,7 @@ export function validateFileType(
       fieldName,
       file
     ));
-    return errors;
+    return err(errors);
   }
   
   if (!allowedTypes.includes(file.type)) {
@@ -291,7 +325,11 @@ export function validateFileType(
     ));
   }
   
-  return errors;
+  if (errors.length === 0) {
+    return ok(file);
+  } else {
+    return err(errors);
+  }
 }
 
 /**
@@ -305,7 +343,7 @@ export function validateFileSize(
   file: { size?: number },
   maxSize: number,
   fieldName: string
-): ValidationError[] {
+): Result<{ size?: number }, ValidationError[]> {
   const errors: ValidationError[] = [];
   
   if (!file || typeof file.size !== 'number') {
@@ -314,7 +352,7 @@ export function validateFileSize(
       fieldName,
       file
     ));
-    return errors;
+    return err(errors);
   }
   
   if (file.size > maxSize) {
@@ -327,5 +365,9 @@ export function validateFileSize(
     ));
   }
   
-  return errors;
+  if (errors.length === 0) {
+    return ok(file);
+  } else {
+    return err(errors);
+  }
 }

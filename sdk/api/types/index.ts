@@ -68,6 +68,3 @@ export type {
   TriggerTemplateFilter,
   TriggerTemplateSummary
 } from '../../types/trigger-template';
-
-// 注意：ValidationResult 已从 types/errors.ts 导入，此处不再重复定义
-// 使用方式：import type { ValidationResult } from '../types/errors'

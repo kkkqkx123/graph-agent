@@ -306,31 +306,41 @@ export class HumanRelayResourceAPI extends GenericResourceAPI<HumanRelayConfig, 
     const errors: string[] = [];
 
     // 使用简化验证工具验证必需字段
-    const requiredErrors = validateRequiredFields(config, ['id', 'name'], 'config');
-    errors.push(...requiredErrors.map(error => error.message));
+    const requiredResult = validateRequiredFields(config, ['id', 'name'], 'config');
+    if (requiredResult.isErr()) {
+      errors.push(...requiredResult.error.map(error => error.message));
+    }
 
     // 验证ID长度
     if (config.id) {
-      const idErrors = validateStringLength(config.id, '配置ID', 1, 100);
-      errors.push(...idErrors.map(error => error.message));
+      const idResult = validateStringLength(config.id, '配置ID', 1, 100);
+      if (idResult.isErr()) {
+        errors.push(...idResult.error.map(error => error.message));
+      }
     }
 
     // 验证名称长度
     if (config.name) {
-      const nameErrors = validateStringLength(config.name, '配置名称', 1, 200);
-      errors.push(...nameErrors.map(error => error.message));
+      const nameResult = validateStringLength(config.name, '配置名称', 1, 200);
+      if (nameResult.isErr()) {
+        errors.push(...nameResult.error.map(error => error.message));
+      }
     }
 
     // 验证超时时间（如果提供）
     if (config.defaultTimeout !== undefined) {
-      const timeoutErrors = validatePositiveNumber(config.defaultTimeout, '默认超时时间');
-      errors.push(...timeoutErrors.map(error => error.message));
+      const timeoutResult = validatePositiveNumber(config.defaultTimeout, '默认超时时间');
+      if (timeoutResult.isErr()) {
+        errors.push(...timeoutResult.error.map(error => error.message));
+      }
     }
 
     // 验证enabled字段（如果提供）
     if (config.enabled !== undefined) {
-      const enabledErrors = validateBoolean(config.enabled, 'enabled');
-      errors.push(...enabledErrors.map(error => error.message));
+      const enabledResult = validateBoolean(config.enabled, 'enabled');
+      if (enabledResult.isErr()) {
+        errors.push(...enabledResult.error.map(error => error.message));
+      }
     }
 
     return {
@@ -353,20 +363,26 @@ export class HumanRelayResourceAPI extends GenericResourceAPI<HumanRelayConfig, 
 
     // 验证名称（如果提供）
     if (updates.name !== undefined) {
-      const nameErrors = validateStringLength(updates.name, '配置名称', 1, 200);
-      errors.push(...nameErrors.map(error => error.message));
+      const nameResult = validateStringLength(updates.name, '配置名称', 1, 200);
+      if (nameResult.isErr()) {
+        errors.push(...nameResult.error.map(error => error.message));
+      }
     }
 
     // 验证超时时间（如果提供）
     if (updates.defaultTimeout !== undefined) {
-      const timeoutErrors = validatePositiveNumber(updates.defaultTimeout, '默认超时时间');
-      errors.push(...timeoutErrors.map(error => error.message));
+      const timeoutResult = validatePositiveNumber(updates.defaultTimeout, '默认超时时间');
+      if (timeoutResult.isErr()) {
+        errors.push(...timeoutResult.error.map(error => error.message));
+      }
     }
 
     // 验证enabled字段（如果提供）
     if (updates.enabled !== undefined) {
-      const enabledErrors = validateBoolean(updates.enabled, 'enabled');
-      errors.push(...enabledErrors.map(error => error.message));
+      const enabledResult = validateBoolean(updates.enabled, 'enabled');
+      if (enabledResult.isErr()) {
+        errors.push(...enabledResult.error.map(error => error.message));
+      }
     }
 
     return {

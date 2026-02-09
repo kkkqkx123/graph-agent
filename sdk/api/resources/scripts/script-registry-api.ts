@@ -136,8 +136,10 @@ export class ScriptRegistryAPI extends GenericResourceAPI<Script, string, Script
     const errors: string[] = [];
 
     // 使用简化验证工具验证必需字段
-    const requiredErrors = validateRequiredFields(script, ['name', 'type', 'description'], 'script');
-    errors.push(...requiredErrors.map(error => error.message));
+    const requiredResult = validateRequiredFields(script, ['name', 'type', 'description'], 'script');
+    if (requiredResult.isErr()) {
+      errors.push(...requiredResult.unwrapOrElse(err => err.map(error => error.message)));
+    }
 
     // 验证内容或文件路径至少提供一个
     if (!script.content && !script.filePath) {
@@ -146,27 +148,35 @@ export class ScriptRegistryAPI extends GenericResourceAPI<Script, string, Script
 
     // 验证名称长度
     if (script.name) {
-      const nameErrors = validateStringLength(script.name, '脚本名称', 1, 100);
-      errors.push(...nameErrors.map(error => error.message));
+      const nameResult = validateStringLength(script.name, '脚本名称', 1, 100);
+      if (nameResult.isErr()) {
+        errors.push(...nameResult.unwrapOrElse(err => err.map(error => error.message)));
+      }
     }
 
     // 验证描述长度
     if (script.description) {
-      const descriptionErrors = validateStringLength(script.description, '脚本描述', 1, 500);
-      errors.push(...descriptionErrors.map(error => error.message));
+      const descriptionResult = validateStringLength(script.description, '脚本描述', 1, 500);
+      if (descriptionResult.isErr()) {
+        errors.push(...descriptionResult.unwrapOrElse(err => err.map(error => error.message)));
+      }
     }
 
     // 验证 enabled 字段（如果提供）
     if (script.enabled !== undefined) {
-      const enabledErrors = validateBoolean(script.enabled, 'enabled');
-      errors.push(...enabledErrors.map(error => error.message));
+      const enabledResult = validateBoolean(script.enabled, 'enabled');
+      if (enabledResult.isErr()) {
+        errors.push(...enabledResult.unwrapOrElse(err => err.map(error => error.message)));
+      }
     }
 
     // 验证类型枚举值
     if (script.type) {
       const validTypes = ['javascript', 'typescript', 'python', 'shell'];
-      const typeErrors = validateEnum(script.type, '脚本类型', validTypes);
-      errors.push(...typeErrors.map(error => error.message));
+      const typeResult = validateEnum(script.type, '脚本类型', validTypes);
+      if (typeResult.isErr()) {
+        errors.push(...typeResult.unwrapOrElse(err => err.map(error => error.message)));
+      }
     }
 
     return {
