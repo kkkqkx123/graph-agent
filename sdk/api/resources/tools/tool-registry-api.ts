@@ -7,7 +7,7 @@ import {
   validateRequiredFields,
   validateStringLength,
   validateObject
-} from '../../validation/common-validators';
+} from '../../validation/validation-strategy';
 
 import { toolService } from '../../../core/services/tool-service';
 import type { Tool } from '../../../types/tool';

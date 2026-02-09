@@ -8,7 +8,7 @@ import {
   validateStringLength,
   validateArray,
   validatePattern
-} from '../../validation/common-validators';
+} from '../../validation/validation-strategy';
 
 import { GenericResourceAPI } from '../generic-resource-api';
 import { workflowRegistry, type WorkflowRegistry } from '../../../core/services/workflow-registry';

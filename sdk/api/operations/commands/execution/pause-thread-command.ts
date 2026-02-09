@@ -3,7 +3,6 @@
  */
 
 import { BaseCommand, CommandMetadata, CommandValidationResult, validationSuccess, validationFailure } from '../../../types/command';
-import { success, failure, ExecutionResult } from '../../../types/execution-result';
 import { ThreadLifecycleCoordinator } from '../../../../core/execution/coordinators/thread-lifecycle-coordinator';
 
 /**
@@ -17,24 +16,8 @@ export class PauseThreadCommand extends BaseCommand<void> {
     super();
   }
 
-  async execute(): Promise<ExecutionResult<void>> {
-    try {
-      await this.lifecycleCoordinator.pauseThread(this.threadId);
-      return success<void>(undefined, this.getExecutionTime());
-    } catch (error) {
-      return failure<void>(
-        {
-          message: error instanceof Error ? error.message : String(error),
-          code: 'EXECUTION_ERROR',
-          cause: error instanceof Error ? {
-            name: error.name,
-            message: error.message,
-            stack: error.stack
-          } : undefined
-        },
-        this.getExecutionTime()
-      );
-    }
+  protected async executeInternal(): Promise<void> {
+    await this.lifecycleCoordinator.pauseThread(this.threadId);
   }
 
   validate(): CommandValidationResult {

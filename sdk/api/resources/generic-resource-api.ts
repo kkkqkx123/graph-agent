@@ -187,6 +187,22 @@ export abstract class GenericResourceAPI<T, ID extends string | number, Filter =
 
 
   /**
+   * 检查资源是否存在
+   * @param id 资源ID
+   * @returns 执行结果
+   */
+  async has(id: ID): Promise<ExecutionResult<boolean>> {
+    const startTime = Date.now();
+    
+    try {
+      const resource = await this.getResource(id);
+      return success(resource !== null, Date.now() - startTime);
+    } catch (error) {
+      return this.handleError(error, 'HAS', startTime);
+    }
+  }
+
+  /**
    * 获取资源数量
    * @returns 执行结果
    */

@@ -3,10 +3,8 @@
  */
 
 import { BaseCommand, CommandMetadata, CommandValidationResult, validationSuccess, validationFailure } from '../../../types/command';
-import { success, failure, ExecutionResult } from '../../../types/execution-result';
 import type { ScriptOptions } from '../../../types/code-types';
 import type { ScriptExecutionResult } from '../../../../types/code';
-import { ScriptType } from '../../../../types/code';
 import { codeService } from '../../../../core/services/code-service';
 
 /**
@@ -20,7 +18,7 @@ export class ExecuteScriptCommand extends BaseCommand<ScriptExecutionResult> {
     super();
   }
 
-  async execute(): Promise<ExecutionResult<ScriptExecutionResult>> {
+  protected async executeInternal(): Promise<ScriptExecutionResult> {
     const startTime = Date.now();
     const executionOptions = {
       timeout: this.options?.timeout,
@@ -31,46 +29,22 @@ export class ExecuteScriptCommand extends BaseCommand<ScriptExecutionResult> {
       sandbox: this.options?.sandbox
     };
 
-    try {
-      // 验证脚本
-      const validation = codeService.validateScript(this.scriptName);
-      if (!validation.valid) {
-        return failure<ScriptExecutionResult>(
-          {
-            message: `脚本验证失败: ${validation.errors.join(', ')}`,
-            code: 'VALIDATION_ERROR'
-          },
-          Date.now() - startTime
-        );
-      }
-
-      // 执行脚本
-      const result = await codeService.execute(this.scriptName, executionOptions);
-      const executionTime = Date.now() - startTime;
-
-      const executionResult: ScriptExecutionResult = {
-        ...result,
-        executionTime
-      };
-
-      return success(executionResult, executionTime);
-    } catch (error) {
-      const executionTime = Date.now() - startTime;
-      const errorMessage = error instanceof Error ? error.message : '未知错误';
-
-      const executionResult: ScriptExecutionResult = {
-        success: false,
-        scriptName: this.scriptName,
-        scriptType: ScriptType.SHELL,
-        stdout: undefined,
-        stderr: errorMessage,
-        exitCode: 1,
-        executionTime,
-        error: errorMessage
-      };
-
-      return success(executionResult, executionTime);
+    // 验证脚本
+    const validation = codeService.validateScript(this.scriptName);
+    if (!validation.valid) {
+      throw new Error(`脚本验证失败: ${validation.errors.join(', ')}`);
     }
+
+    // 执行脚本
+    const result = await codeService.execute(this.scriptName, executionOptions);
+    const executionTime = Date.now() - startTime;
+
+    const executionResult: ScriptExecutionResult = {
+      ...result,
+      executionTime
+    };
+
+    return executionResult;
   }
 
   validate(): CommandValidationResult {

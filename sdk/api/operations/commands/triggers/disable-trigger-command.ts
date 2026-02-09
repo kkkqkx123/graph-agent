@@ -4,10 +4,8 @@
 
 import { BaseCommand } from '../../../types/command';
 import { CommandValidationResult } from '../../../types/command';
-import { threadRegistry, type ThreadRegistry } from '../../../../core/services/thread-registry';
+import { type ThreadRegistry } from '../../../../core/services/thread-registry';
 import { NotFoundError } from '../../../../types/errors';
-import type { ExecutionResult } from '../../../types/execution-result';
-import { success, failure } from '../../../types/execution-result';
 
 /**
  * 禁用触发器参数
@@ -50,11 +48,11 @@ export class DisableTriggerCommand extends BaseCommand<void> {
     const errors: string[] = [];
 
     if (!this.params.threadId || this.params.threadId.trim() === '') {
-      errors.push('threadId is required and cannot be empty');
+      errors.push('线程ID不能为空');
     }
 
     if (!this.params.triggerId || this.params.triggerId.trim() === '') {
-      errors.push('triggerId is required and cannot be empty');
+      errors.push('触发器ID不能为空');
     }
 
     return {
@@ -66,36 +64,9 @@ export class DisableTriggerCommand extends BaseCommand<void> {
   /**
    * 执行命令
    */
-  async execute(): Promise<ExecutionResult<void>> {
-    const startTime = Date.now();
-
-    try {
-      const validation = this.validate();
-      if (!validation.valid) {
-        return failure({
-          message: validation.errors.join(', '),
-          code: 'VALIDATION_ERROR'
-        }, Date.now() - startTime);
-      }
-
-      const triggerManager = await this.getTriggerManager(this.params.threadId);
-      triggerManager.disable(this.params.triggerId);
-
-      return success(undefined, Date.now() - startTime);
-    } catch (error) {
-      return failure(
-        {
-          message: error instanceof Error ? error.message : 'Unknown error occurred',
-          code: 'EXECUTION_ERROR',
-          cause: error instanceof Error ? {
-            name: error.name,
-            message: error.message,
-            stack: error.stack
-          } : undefined
-        },
-        Date.now() - startTime
-      );
-    }
+  protected async executeInternal(): Promise<void> {
+    const triggerManager = await this.getTriggerManager(this.params.threadId);
+    triggerManager.disable(this.params.triggerId);
   }
 
   /**

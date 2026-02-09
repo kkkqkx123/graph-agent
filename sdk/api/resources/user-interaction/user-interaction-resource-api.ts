@@ -17,7 +17,7 @@ import {
   validateRequiredFields,
   validateStringLength,
   validatePositiveNumber
-} from '../../validation/common-validators';
+} from '../../validation/validation-strategy';
 
 import { GenericResourceAPI } from '../generic-resource-api';
 import type { ExecutionResult } from '../../types/execution-result';

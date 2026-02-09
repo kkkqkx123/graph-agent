@@ -3,7 +3,6 @@
  */
 
 import { BaseCommand, CommandMetadata, CommandValidationResult, validationSuccess, validationFailure } from '../../../types/command';
-import { success, failure, ExecutionResult } from '../../../types/execution-result';
 import type { ThreadResult } from '../../../../types/thread';
 import { ThreadLifecycleCoordinator } from '../../../../core/execution/coordinators/thread-lifecycle-coordinator';
 
@@ -18,24 +17,9 @@ export class ResumeThreadCommand extends BaseCommand<ThreadResult> {
     super();
   }
 
-  async execute(): Promise<ExecutionResult<ThreadResult>> {
-    try {
-      const result = await this.lifecycleCoordinator.resumeThread(this.threadId);
-      return success(result, this.getExecutionTime());
-    } catch (error) {
-      return failure<ThreadResult>(
-        {
-          message: error instanceof Error ? error.message : String(error),
-          code: 'EXECUTION_ERROR',
-          cause: error instanceof Error ? {
-            name: error.name,
-            message: error.message,
-            stack: error.stack
-          } : undefined
-        },
-        this.getExecutionTime()
-      );
-    }
+  protected async executeInternal(): Promise<ThreadResult> {
+    const result = await this.lifecycleCoordinator.resumeThread(this.threadId);
+    return result;
   }
 
   validate(): CommandValidationResult {

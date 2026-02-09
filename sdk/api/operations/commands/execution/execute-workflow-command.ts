@@ -3,7 +3,6 @@
  */
 
 import { BaseCommand, CommandMetadata, CommandValidationResult, validationSuccess, validationFailure } from '../../../types/command';
-import { success, failure, ExecutionResult } from '../../../types/execution-result';
 import type { ThreadResult, ThreadOptions } from '../../../../types/thread';
 import type { WorkflowDefinition } from '../../../../types/workflow';
 import { ThreadLifecycleCoordinator } from '../../../../core/execution/coordinators/thread-lifecycle-coordinator';
@@ -33,40 +32,22 @@ export class ExecuteWorkflowCommand extends BaseCommand<ThreadResult> {
     super();
   }
 
-  async execute(): Promise<ExecutionResult<ThreadResult>> {
-    try {
-      let workflowId: string;
+  protected async executeInternal(): Promise<ThreadResult> {
+    let workflowId: string;
 
-      // 如果提供了工作流定义，先注册
-      if (this.params.workflowDefinition) {
-        this.workflowRegistry.register(this.params.workflowDefinition);
-        workflowId = this.params.workflowDefinition.id;
-      } else if (this.params.workflowId) {
-        workflowId = this.params.workflowId;
-      } else {
-        return failure<ThreadResult>({
-          message: '必须提供workflowId或workflowDefinition',
-          code: 'VALIDATION_ERROR'
-        }, this.getExecutionTime());
-      }
-
-      // 执行工作流
-      const result = await this.lifecycleCoordinator.execute(workflowId, this.params.options || {});
-      return success(result, this.getExecutionTime());
-    } catch (error) {
-      return failure<ThreadResult>(
-        {
-          message: error instanceof Error ? error.message : String(error),
-          code: 'EXECUTION_ERROR',
-          cause: error instanceof Error ? {
-            name: error.name,
-            message: error.message,
-            stack: error.stack
-          } : undefined
-        },
-        this.getExecutionTime()
-      );
+    // 如果提供了工作流定义，先注册
+    if (this.params.workflowDefinition) {
+      this.workflowRegistry.register(this.params.workflowDefinition);
+      workflowId = this.params.workflowDefinition.id;
+    } else if (this.params.workflowId) {
+      workflowId = this.params.workflowId;
+    } else {
+      throw new Error('必须提供workflowId或workflowDefinition');
     }
+
+    // 执行工作流
+    const result = await this.lifecycleCoordinator.execute(workflowId, this.params.options || {});
+    return result;
   }
 
   validate(): CommandValidationResult {

@@ -3,7 +3,6 @@
  */
 
 import { BaseCommand, CommandMetadata, CommandValidationResult, validationSuccess, validationFailure } from '../../../types/command';
-import { success, failure, ExecutionResult } from '../../../types/execution-result';
 import type { LLMRequest, LLMResult } from '../../../../types/llm';
 import { LLMWrapper } from '../../../../core/llm/wrapper';
 
@@ -18,26 +17,11 @@ export class GenerateBatchCommand extends BaseCommand<LLMResult[]> {
     super();
   }
 
-  async execute(): Promise<ExecutionResult<LLMResult[]>> {
-    try {
-      const results = await Promise.all(
-        this.requests.map(request => this.llmWrapper.generate(request))
-      );
-      return success(results, this.getExecutionTime());
-    } catch (error) {
-      return failure<LLMResult[]>(
-        {
-          message: error instanceof Error ? error.message : String(error),
-          code: 'EXECUTION_ERROR',
-          cause: error instanceof Error ? {
-            name: error.name,
-            message: error.message,
-            stack: error.stack
-          } : undefined
-        },
-        this.getExecutionTime()
-      );
-    }
+  protected async executeInternal(): Promise<LLMResult[]> {
+    const results = await Promise.all(
+      this.requests.map(request => this.llmWrapper.generate(request))
+    );
+    return results;
   }
 
   validate(): CommandValidationResult {

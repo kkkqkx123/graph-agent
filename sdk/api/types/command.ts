@@ -4,6 +4,7 @@
  */
 
 import type { ExecutionResult } from './execution-result';
+import { handleUnknownError } from '../utils/error-utils';
 
 /**
  * 命令元数据
@@ -83,9 +84,22 @@ export abstract class BaseCommand<T> implements Command<T> {
   protected readonly startTime: number = Date.now();
 
   /**
-   * 执行命令
+   * 执行命令 - 统一错误处理入口
    */
-  abstract execute(): Promise<ExecutionResult<T>>;
+  async execute(): Promise<ExecutionResult<T>> {
+    const startTime = Date.now();
+    try {
+      const result = await this.executeInternal();
+      return this.success(result, Date.now() - startTime);
+    } catch (error) {
+      return this.handleError(error, startTime);
+    }
+  }
+
+  /**
+   * 内部执行方法 - 子类实现具体的执行逻辑
+   */
+  protected abstract executeInternal(): Promise<T>;
 
   /**
    * 撤销命令（默认不支持）
@@ -110,6 +124,62 @@ export abstract class BaseCommand<T> implements Command<T> {
   protected getExecutionTime(): number {
     return Date.now() - this.startTime;
   }
+
+  /**
+   * 统一错误处理方法
+   * @param error 错误对象
+   * @param startTime 开始时间
+   * @returns 执行结果
+   */
+  protected handleError(error: unknown, startTime: number): ExecutionResult<any> {
+    try {
+      // 使用错误转换工具将任意错误转换为APIError
+      const apiError = handleUnknownError(error);
+      
+      // 返回包含详细错误信息的失败结果
+      return this.failure({
+        message: apiError.message,
+        code: apiError.code,
+        details: apiError.details,
+        timestamp: apiError.timestamp,
+        requestId: apiError.requestId,
+        cause: apiError.cause ? {
+          name: apiError.cause.name,
+          message: apiError.cause.message,
+          stack: apiError.cause.stack
+        } : undefined
+      }, Date.now() - startTime);
+    } catch (handlerError) {
+      // 错误处理器本身出错时的回退机制
+      return this.failure({
+        message: error instanceof Error ? error.message : String(error),
+        code: 'INTERNAL_ERROR',
+        timestamp: Date.now()
+      }, Date.now() - startTime);
+    }
+  }
+
+  /**
+   * 创建成功结果
+   */
+  protected success<T>(data: T, executionTime: number): ExecutionResult<T> {
+    return {
+      success: true,
+      data,
+      executionTime
+    };
+  }
+
+  /**
+   * 创建失败结果
+   */
+  protected failure<T>(error: any, executionTime: number): ExecutionResult<T> {
+    return {
+      success: false,
+      error,
+      executionTime
+    };
+  }
 }
 
 /**
@@ -124,9 +194,22 @@ export interface SyncCommand<T> extends Command<T> {
  * 抽象同步命令基类
  */
 export abstract class BaseSyncCommand<T> extends BaseCommand<T> implements SyncCommand<T> {
-  async execute(): Promise<ExecutionResult<T>> {
+  /**
+   * 异步执行 - 调用同步执行方法
+   */
+  override async execute(): Promise<ExecutionResult<T>> {
     return this.executeSync();
   }
 
+  /**
+   * 同步执行方法 - 子类实现具体的执行逻辑
+   */
   abstract executeSync(): ExecutionResult<T>;
+
+  /**
+   * 内部执行方法 - 同步命令不需要实现
+   */
+  protected async executeInternal(): Promise<T> {
+    throw new Error('Sync commands should implement executeSync() instead of executeInternal()');
+  }
 }

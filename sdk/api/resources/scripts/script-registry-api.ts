@@ -8,7 +8,7 @@ import {
   validateStringLength,
   validateBoolean,
   validateEnum
-} from '../../validation/common-validators';
+} from '../../validation/validation-strategy';
 
 import { codeService } from '../../../core/services/code-service';
 import type { Script } from '../../../types/code';

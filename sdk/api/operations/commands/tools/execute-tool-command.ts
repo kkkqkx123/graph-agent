@@ -3,7 +3,6 @@
  */
 
 import { BaseCommand, CommandMetadata, CommandValidationResult, validationSuccess, validationFailure } from '../../../types/command';
-import { success, failure, ExecutionResult } from '../../../types/execution-result';
 import type { ToolOptions, ToolExecutionResult } from '../../../types/tools-types';
 import { toolService } from '../../../../core/services/tool-service';
 
@@ -19,7 +18,7 @@ export class ExecuteToolCommand extends BaseCommand<ToolExecutionResult> {
     super();
   }
 
-  async execute(): Promise<ExecutionResult<ToolExecutionResult>> {
+  protected async executeInternal(): Promise<ToolExecutionResult> {
     const startTime = Date.now();
     const executionOptions = {
       timeout: this.options?.timeout,
@@ -28,44 +27,24 @@ export class ExecuteToolCommand extends BaseCommand<ToolExecutionResult> {
       enableLogging: this.options?.enableLogging ?? true
     };
 
-    try {
-      // 验证工具参数
-      const validation = toolService.validateParameters(this.toolName, this.parameters);
-      if (!validation.valid) {
-        return failure<ToolExecutionResult>(
-          {
-            message: `参数验证失败: ${validation.errors.join(', ')}`,
-            code: 'VALIDATION_ERROR'
-          },
-          Date.now() - startTime
-        );
-      }
-
-      // 执行工具
-      const result = await toolService.execute(this.toolName, this.parameters, executionOptions);
-      const executionTime = Date.now() - startTime;
-
-      const executionResult: ToolExecutionResult = {
-        success: true,
-        result: result.result,
-        executionTime,
-        toolName: this.toolName
-      };
-
-      return success(executionResult, executionTime);
-    } catch (error) {
-      const executionTime = Date.now() - startTime;
-      const errorMessage = error instanceof Error ? error.message : '未知错误';
-
-      const executionResult: ToolExecutionResult = {
-        success: false,
-        error: errorMessage,
-        executionTime,
-        toolName: this.toolName
-      };
-
-      return success(executionResult, executionTime);
+    // 验证工具参数
+    const validation = toolService.validateParameters(this.toolName, this.parameters);
+    if (!validation.valid) {
+      throw new Error(`参数验证失败: ${validation.errors.join(', ')}`);
     }
+
+    // 执行工具
+    const result = await toolService.execute(this.toolName, this.parameters, executionOptions);
+    const executionTime = Date.now() - startTime;
+
+    const executionResult: ToolExecutionResult = {
+      success: true,
+      result: result.result,
+      executionTime,
+      toolName: this.toolName
+    };
+
+    return executionResult;
   }
 
   validate(): CommandValidationResult {

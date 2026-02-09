@@ -1,31 +1,48 @@
 /**
- * 简化验证工具
- * 提供统一的验证函数，返回 ValidationError[] 数组
+ * 高级验证工具
+ * 提供更复杂的验证场景和组合验证功能
  */
 
 import { ValidationError } from '../../types/errors';
 
 /**
- * 验证必需字段
- * @param data 数据对象
- * @param fields 必需字段列表
- * @param fieldName 字段名称（用于错误信息）
+ * 验证对象结构完整性
+ * @param obj 待验证的对象
+ * @param requiredKeys 必需键列表
+ * @param fieldName 字段名称
  * @returns 验证错误数组
  */
-export function validateRequiredFields<T>(
-  data: T,
-  fields: (keyof T)[],
+export function validateObjectStructure<T extends Record<string, any>>(
+  obj: T,
+  requiredKeys: (keyof T)[],
   fieldName: string
 ): ValidationError[] {
   const errors: ValidationError[] = [];
   
-  for (const field of fields) {
-    const value = data[field];
-    if (value === null || value === undefined || value === '') {
+  if (obj === null || obj === undefined) {
+    errors.push(new ValidationError(
+      `${fieldName}不能为空`,
+      fieldName,
+      obj
+    ));
+    return errors;
+  }
+  
+  if (typeof obj !== 'object' || Array.isArray(obj)) {
+    errors.push(new ValidationError(
+      `${fieldName}必须是有效的对象`,
+      fieldName,
+      obj
+    ));
+    return errors;
+  }
+  
+  for (const key of requiredKeys) {
+    if (!(key in obj)) {
       errors.push(new ValidationError(
-        `${String(field)}不能为空`,
-        `${fieldName}.${String(field)}`,
-        value
+        `${String(key)}字段是必需的`,
+        `${fieldName}.${String(key)}`,
+        undefined
       ));
     }
   }
@@ -34,225 +51,102 @@ export function validateRequiredFields<T>(
 }
 
 /**
- * 验证字符串长度
- * @param value 字符串值
+ * 验证嵌套对象
+ * @param obj 待验证的对象
+ * @param validators 字段验证器映射
  * @param fieldName 字段名称
- * @param min 最小长度
- * @param max 最大长度
  * @returns 验证错误数组
  */
-export function validateStringLength(
-  value: string,
-  fieldName: string,
-  min: number,
-  max: number
+export function validateNestedObject<T extends Record<string, any>>(
+  obj: T,
+  validators: { [K in keyof T]?: (value: T[K], fieldPath: string) => ValidationError[] },
+  fieldName: string
 ): ValidationError[] {
   const errors: ValidationError[] = [];
   
-  if (typeof value !== 'string') {
-    errors.push(new ValidationError(
-      `${fieldName}必须是字符串`,
-      fieldName,
-      value
-    ));
-    return errors;
-  }
-  
-  if (value.length < min) {
-    errors.push(new ValidationError(
-      `${fieldName}长度不能少于${min}`,
-      fieldName,
-      value
-    ));
-  }
-  if (value.length > max) {
-    errors.push(new ValidationError(
-      `${fieldName}长度不能超过${max}`,
-      fieldName,
-      value
-    ));
-  }
-  
-  return errors;
-}
-
-/**
- * 验证正数
- * @param value 数值
- * @param fieldName 字段名称
- * @returns 验证错误数组
- */
-export function validatePositiveNumber(value: number, fieldName: string): ValidationError[] {
-  const errors: ValidationError[] = [];
-  
-  if (typeof value !== 'number' || isNaN(value)) {
-    errors.push(new ValidationError(
-      `${fieldName}必须是数字`,
-      fieldName,
-      value
-    ));
-    return errors;
-  }
-  
-  if (value < 0) {
-    errors.push(new ValidationError(
-      `${fieldName}不能为负数`,
-      fieldName,
-      value
-    ));
-  }
-  
-  return errors;
-}
-
-/**
- * 验证数值范围
- * @param value 数值
- * @param fieldName 字段名称
- * @param min 最小值
- * @param max 最大值
- * @returns 验证错误数组
- */
-export function validateNumberRange(
-  value: number,
-  fieldName: string,
-  min: number,
-  max: number
-): ValidationError[] {
-  const errors: ValidationError[] = [];
-  
-  if (typeof value !== 'number' || isNaN(value)) {
-    errors.push(new ValidationError(
-      `${fieldName}必须是数字`,
-      fieldName,
-      value
-    ));
-    return errors;
-  }
-  
-  if (value < min) {
-    errors.push(new ValidationError(
-      `${fieldName}不能小于${min}`,
-      fieldName,
-      value
-    ));
-  }
-  if (value > max) {
-    errors.push(new ValidationError(
-      `${fieldName}不能大于${max}`,
-      fieldName,
-      value
-    ));
-  }
-  
-  return errors;
-}
-
-/**
- * 验证对象结构
- * @param value 对象值
- * @param fieldName 字段名称
- * @returns 验证错误数组
- */
-export function validateObject(value: any, fieldName: string): ValidationError[] {
-  const errors: ValidationError[] = [];
-  
-  if (value === null || value === undefined) {
+  if (obj === null || obj === undefined) {
     errors.push(new ValidationError(
       `${fieldName}不能为空`,
       fieldName,
-      value
+      obj
     ));
-  } else if (typeof value !== 'object' || Array.isArray(value)) {
-    errors.push(new ValidationError(
-      `${fieldName}必须是有效的对象`,
-      fieldName,
-      value
-    ));
+    return errors;
+  }
+  
+  for (const [key, validator] of Object.entries(validators)) {
+    if (validator) {
+      const fieldPath = `${fieldName}.${key}`;
+      const value = obj[key as keyof T];
+      const fieldErrors = validator(value, fieldPath);
+      errors.push(...fieldErrors);
+    }
   }
   
   return errors;
 }
 
 /**
- * 验证数组
- * @param value 数组值
+ * 验证数组元素
+ * @param array 待验证的数组
+ * @param elementValidator 元素验证器
  * @param fieldName 字段名称
  * @param minLength 最小长度
  * @returns 验证错误数组
  */
-export function validateArray(
-  value: any[],
+export function validateArrayElements<T>(
+  array: T[],
+  elementValidator: (element: T, index: number, fieldPath: string) => ValidationError[],
   fieldName: string,
   minLength: number = 1
 ): ValidationError[] {
   const errors: ValidationError[] = [];
   
-  if (!Array.isArray(value)) {
+  if (!Array.isArray(array)) {
     errors.push(new ValidationError(
       `${fieldName}必须是数组`,
       fieldName,
-      value
-    ));
-  } else if (value.length < minLength) {
-    errors.push(new ValidationError(
-      `${fieldName}至少需要${minLength}个元素`,
-      fieldName,
-      value
-    ));
-  }
-  
-  return errors;
-}
-
-/**
- * 验证布尔值
- * @param value 布尔值
- * @param fieldName 字段名称
- * @returns 验证错误数组
- */
-export function validateBoolean(value: any, fieldName: string): ValidationError[] {
-  const errors: ValidationError[] = [];
-  
-  if (typeof value !== 'boolean') {
-    errors.push(new ValidationError(
-      `${fieldName}必须是布尔值`,
-      fieldName,
-      value
-    ));
-  }
-  
-  return errors;
-}
-
-/**
- * 验证正则表达式匹配
- * @param value 字符串值
- * @param fieldName 字段名称
- * @param regex 正则表达式
- * @param message 自定义错误消息
- * @returns 验证错误数组
- */
-export function validatePattern(
-  value: string,
-  fieldName: string,
-  regex: RegExp,
-  message?: string
-): ValidationError[] {
-  const errors: ValidationError[] = [];
-  
-  if (typeof value !== 'string') {
-    errors.push(new ValidationError(
-      `${fieldName}必须是字符串`,
-      fieldName,
-      value
+      array
     ));
     return errors;
   }
   
-  if (!regex.test(value)) {
+  if (array.length < minLength) {
     errors.push(new ValidationError(
-      message || `${fieldName}格式不正确`,
+      `${fieldName}至少需要${minLength}个元素`,
+      fieldName,
+      array
+    ));
+  }
+  
+  for (let i = 0; i < array.length; i++) {
+    const element = array[i]!; // 使用非空断言，因为数组索引访问不会返回 undefined
+    const fieldPath = `${fieldName}[${i}]`;
+    const elementErrors = elementValidator(element, i, fieldPath);
+    errors.push(...elementErrors);
+  }
+  
+  return errors;
+}
+
+/**
+ * 验证条件约束
+ * @param condition 条件函数
+ * @param message 错误消息
+ * @param fieldName 字段名称
+ * @param value 字段值
+ * @returns 验证错误数组
+ */
+export function validateCondition(
+  condition: () => boolean,
+  message: string,
+  fieldName: string,
+  value?: any
+): ValidationError[] {
+  const errors: ValidationError[] = [];
+  
+  if (!condition()) {
+    errors.push(new ValidationError(
+      message,
       fieldName,
       value
     ));
@@ -262,24 +156,174 @@ export function validatePattern(
 }
 
 /**
- * 验证枚举值
- * @param value 值
+ * 验证互斥字段
+ * @param obj 待验证的对象
+ * @param exclusiveFields 互斥字段列表
  * @param fieldName 字段名称
- * @param enumValues 枚举值数组
  * @returns 验证错误数组
  */
-export function validateEnum<T>(
-  value: T,
-  fieldName: string,
-  enumValues: T[]
+export function validateExclusiveFields<T extends Record<string, any>>(
+  obj: T,
+  exclusiveFields: (keyof T)[],
+  fieldName: string
+): ValidationError[] {
+  const errors: ValidationError[] = [];
+  const presentFields = exclusiveFields.filter(field => 
+    obj[field] !== null && obj[field] !== undefined && obj[field] !== ''
+  );
+  
+  if (presentFields.length > 1) {
+    errors.push(new ValidationError(
+      `字段 ${presentFields.join(', ')} 不能同时存在`,
+      fieldName,
+      obj
+    ));
+  }
+  
+  return errors;
+}
+
+/**
+ * 验证依赖字段
+ * @param obj 待验证的对象
+ * @param dependentField 依赖字段
+ * @param requiredField 必需字段
+ * @param fieldName 字段名称
+ * @returns 验证错误数组
+ */
+export function validateDependentField<T extends Record<string, any>>(
+  obj: T,
+  dependentField: keyof T,
+  requiredField: keyof T,
+  fieldName: string
 ): ValidationError[] {
   const errors: ValidationError[] = [];
   
-  if (!enumValues.includes(value)) {
+  const hasDependentField = obj[dependentField] !== null && 
+                           obj[dependentField] !== undefined && 
+                           obj[dependentField] !== '';
+  
+  const hasRequiredField = obj[requiredField] !== null && 
+                          obj[requiredField] !== undefined && 
+                          obj[requiredField] !== '';
+  
+  if (hasDependentField && !hasRequiredField) {
     errors.push(new ValidationError(
-      `${fieldName}必须是以下值之一: ${enumValues.join(', ')}`,
+      `当 ${String(dependentField)} 存在时，${String(requiredField)} 字段是必需的`,
       fieldName,
-      value
+      obj
+    ));
+  }
+  
+  return errors;
+}
+
+/**
+ * 验证日期范围
+ * @param startDate 开始日期
+ * @param endDate 结束日期
+ * @param fieldName 字段名称
+ * @returns 验证错误数组
+ */
+export function validateDateRange(
+  startDate: Date,
+  endDate: Date,
+  fieldName: string
+): ValidationError[] {
+  const errors: ValidationError[] = [];
+  
+  if (!(startDate instanceof Date) || isNaN(startDate.getTime())) {
+    errors.push(new ValidationError(
+      `${fieldName}.startDate 必须是有效的日期`,
+      `${fieldName}.startDate`,
+      startDate
+    ));
+  }
+  
+  if (!(endDate instanceof Date) || isNaN(endDate.getTime())) {
+    errors.push(new ValidationError(
+      `${fieldName}.endDate 必须是有效的日期`,
+      `${fieldName}.endDate`,
+      endDate
+    ));
+  }
+  
+  if (errors.length === 0 && startDate > endDate) {
+    errors.push(new ValidationError(
+      `${fieldName}.startDate 不能晚于 ${fieldName}.endDate`,
+      fieldName,
+      { startDate, endDate }
+    ));
+  }
+  
+  return errors;
+}
+
+/**
+ * 验证文件类型
+ * @param file 文件对象
+ * @param allowedTypes 允许的文件类型
+ * @param fieldName 字段名称
+ * @returns 验证错误数组
+ */
+export function validateFileType(
+  file: { type?: string; name?: string },
+  allowedTypes: string[],
+  fieldName: string
+): ValidationError[] {
+  const errors: ValidationError[] = [];
+  
+  if (!file || !file.type) {
+    errors.push(new ValidationError(
+      `${fieldName} 必须是有效的文件`,
+      fieldName,
+      file
+    ));
+    return errors;
+  }
+  
+  if (!allowedTypes.includes(file.type)) {
+    const extension = file.name?.split('.').pop() || 'unknown';
+    errors.push(new ValidationError(
+      `${fieldName} 类型 ${file.type} (${extension}) 不被允许，允许的类型: ${allowedTypes.join(', ')}`,
+      fieldName,
+      file
+    ));
+  }
+  
+  return errors;
+}
+
+/**
+ * 验证文件大小
+ * @param file 文件对象
+ * @param maxSize 最大文件大小（字节）
+ * @param fieldName 字段名称
+ * @returns 验证错误数组
+ */
+export function validateFileSize(
+  file: { size?: number },
+  maxSize: number,
+  fieldName: string
+): ValidationError[] {
+  const errors: ValidationError[] = [];
+  
+  if (!file || typeof file.size !== 'number') {
+    errors.push(new ValidationError(
+      `${fieldName} 必须是有效的文件`,
+      fieldName,
+      file
+    ));
+    return errors;
+  }
+  
+  if (file.size > maxSize) {
+    const sizeInMB = (file.size / (1024 * 1024)).toFixed(2);
+    const maxSizeInMB = (maxSize / (1024 * 1024)).toFixed(2);
+    errors.push(new ValidationError(
+      `${fieldName} 大小 ${sizeInMB}MB 超过限制 ${maxSizeInMB}MB`,
+      fieldName,
+      file
     ));
   }
   
