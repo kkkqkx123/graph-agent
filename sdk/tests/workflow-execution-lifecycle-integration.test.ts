@@ -11,16 +11,10 @@
  */
 
 import { WorkflowRegistry } from '../core/services/workflow-registry';
-import { ThreadExecutor } from '../core/execution/thread-executor';
-import { ThreadLifecycleCoordinator } from '../core/execution/coordinators/thread-lifecycle-coordinator';
-import { ThreadBuilder } from '../core/execution/thread-builder';
 import { ExecutionContext } from '../core/execution/context/execution-context';
 import { NodeType } from '../types/node';
 import { EdgeType } from '../types/edge';
-import { ThreadStatus } from '../types/thread';
-import { ValidationError } from '../types/errors';
 import type { WorkflowDefinition } from '../types/workflow';
-import type { ThreadOptions, ThreadResult } from '../types/thread';
 
 describe.skip('工作流执行引擎完整执行和生命周期管理集成测试', () => {
   let workflowRegistry: WorkflowRegistry;

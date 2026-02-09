@@ -158,10 +158,10 @@ export class ThreadBuilder {
       }
     };
 
-    // 步骤3：从 WorkflowDefinition 初始化变量
+    // 步骤4：从 WorkflowDefinition 初始化变量
     this.variableCoordinator.initializeFromWorkflow(thread as Thread, processedWorkflow.variables || []);
 
-    // 步骤4：创建 ConversationManager 实例
+    // 步骤5：创建 ConversationManager 实例
     const conversationManager = new ConversationManager({
       tokenLimit: options.tokenLimit || 4000,
       eventManager: this.executionContext.getEventManager(),
@@ -171,7 +171,7 @@ export class ThreadBuilder {
       availableTools: processedWorkflow.availableTools
     });
 
-    // 步骤5：创建 ThreadContext
+    // 步骤6：创建 ThreadContext
     const threadContext = new ThreadContext(
       thread as Thread,
       conversationManager,
@@ -182,10 +182,10 @@ export class ThreadBuilder {
       this.executionContext.get('llmExecutor')
     );
 
-    // 步骤6：初始化变量
+    // 步骤7：初始化变量
     threadContext.initializeVariables();
 
-    // 步骤7：注册工作流触发器到 ThreadContext 的 TriggerManager
+    // 步骤8：注册工作流触发器到 ThreadContext 的 TriggerManager
     this.registerWorkflowTriggers(threadContext, processedWorkflow);
 
     return threadContext;

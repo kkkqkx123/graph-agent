@@ -8,27 +8,27 @@
  * - 与其他服务的集成
  */
 
-import { CheckpointResourceAPI } from '../../api/resources/checkpoints/checkpoint-resource-api';
-import { ThreadRegistry } from '../../core/services/thread-registry';
-import { WorkflowRegistry } from '../../core/services/workflow-registry';
-import { SingletonRegistry } from '../../core/execution/context/singleton-registry';
-import type { WorkflowDefinition } from '../../types/workflow';
-import { NodeType } from '../../types/node';
-import { EdgeType } from '../../types/edge';
-import { ThreadStatus } from '../../types/thread';
+import { CheckpointResourceAPI } from '../../../api/resources/checkpoints/checkpoint-resource-api';
+import { ThreadRegistry } from '../../../core/services/thread-registry';
+import { WorkflowRegistry } from '../../../core/services/workflow-registry';
+import { SingletonRegistry } from '../../../core/execution/context/singleton-registry';
+import type { WorkflowDefinition } from '../../../types/workflow';
+import { NodeType } from '../../../types/node';
+import { EdgeType } from '../../../types/edge';
+import { ThreadStatus } from '../../../types/thread';
 
 // 模拟外部系统
 class MockMonitoringService {
   events: any[] = [];
-  
+
   recordEvent(event: any) {
     this.events.push(event);
   }
-  
+
   getEvents() {
     return this.events;
   }
-  
+
   clear() {
     this.events = [];
   }
@@ -36,15 +36,15 @@ class MockMonitoringService {
 
 class MockLoggingService {
   logs: any[] = [];
-  
+
   log(level: string, message: string, data?: any) {
     this.logs.push({ level, message, data, timestamp: Date.now() });
   }
-  
+
   getLogs() {
     return this.logs;
   }
-  
+
   clear() {
     this.logs = [];
   }
@@ -52,15 +52,15 @@ class MockLoggingService {
 
 class MockAlertingService {
   alerts: any[] = [];
-  
+
   triggerAlert(alert: any) {
     this.alerts.push(alert);
   }
-  
+
   getAlerts() {
     return this.alerts;
   }
-  
+
   clear() {
     this.alerts = [];
   }
@@ -77,16 +77,16 @@ describe('检查点外部系统集成测试', () => {
   beforeEach(() => {
     threadRegistry = new ThreadRegistry();
     workflowRegistry = new WorkflowRegistry({ enableVersioning: false });
-    
+
     // 注册全局服务
     SingletonRegistry.register('threadRegistry', threadRegistry);
     SingletonRegistry.register('workflowRegistry', workflowRegistry);
-    
+
     // 创建外部服务
     monitoringService = new MockMonitoringService();
     loggingService = new MockLoggingService();
     alertingService = new MockAlertingService();
-    
+
     // 创建API
     api = new CheckpointResourceAPI();
   });
@@ -162,10 +162,10 @@ describe('检查点外部系统集成测试', () => {
     workflowRegistry: WorkflowRegistry,
     workflow: WorkflowDefinition
   ) => {
-    const { ThreadContext } = await import('../../core/execution/context/thread-context');
-    const { ConversationManager } = await import('../../core/execution/managers/conversation-manager');
-    const { generateId } = await import('../../utils');
-    const { GraphBuilder } = await import('../../core/graph/graph-builder');
+    const { ThreadContext } = await import('../../../core/execution/context/thread-context');
+    const { ConversationManager } = await import('../../../core/execution/managers/conversation-manager');
+    const { generateId } = await import('../../../utils');
+    const { GraphBuilder } = await import('../../../core/graph/graph-builder');
 
     const conversationManager = new ConversationManager();
     const graph = GraphBuilder.build(workflow);
@@ -192,7 +192,7 @@ describe('检查点外部系统集成测试', () => {
       errors: []
     };
 
-    const executionContext = await import('../../core/execution/context/execution-context');
+    const executionContext = await import('../../../core/execution/context/execution-context');
     const threadContext = new ThreadContext(
       thread,
       conversationManager,
@@ -249,7 +249,7 @@ describe('检查点外部系统集成测试', () => {
       // 验证监控事件
       const events = monitoringService.getEvents();
       expect(events).toHaveLength(2);
-      
+
       const createEvent = events.find(e => e.type === 'CHECKPOINT_CREATED');
       expect(createEvent).toBeDefined();
       expect(createEvent?.checkpointId).toBe(checkpointId);
@@ -303,11 +303,11 @@ describe('检查点外部系统集成测试', () => {
           }
           return result;
         } catch (error) {
-         loggingService.log('ERROR', 'Failed to retrieve checkpoint', {
-           checkpointId: args[0],
-           error: error instanceof Error ? error.message : String(error)
-         });
-         throw error;
+          loggingService.log('ERROR', 'Failed to retrieve checkpoint', {
+            checkpointId: args[0],
+            error: error instanceof Error ? error.message : String(error)
+          });
+          throw error;
         }
       };
 
@@ -352,7 +352,7 @@ describe('检查点外部系统集成测试', () => {
       api.createThreadCheckpoint = async (...args) => {
         try {
           const result = await originalCreate.apply(api, args);
-          
+
           // 检查检查点大小是否过大（模拟性能告警）
           const checkpoint = await api.get(result);
           if (checkpoint && JSON.stringify(checkpoint).length > 1000000) { // 1MB
@@ -364,7 +364,7 @@ describe('检查点外部系统集成测试', () => {
               size: JSON.stringify(checkpoint).length
             });
           }
-          
+
           return result;
         } catch (error) {
           alertingService.triggerAlert({
@@ -375,7 +375,7 @@ describe('检查点外部系统集成测试', () => {
             error: error instanceof Error ? error.message : String(error)
           });
           throw error;
-          }
+        }
       };
 
       // 创建正常大小的检查点
@@ -387,7 +387,7 @@ describe('检查点外部系统集成测试', () => {
       const largeInput = {
         largeArray: Array.from({ length: 10000 }, (_, i) => `item-${i}`)
       };
-      
+
       // 修改线程输入以创建大型检查点
       threadContext.thread.input = largeInput;
       const largeCheckpointId = await api.createThreadCheckpoint(threadContext.getThreadId(), {
@@ -396,7 +396,7 @@ describe('检查点外部系统集成测试', () => {
 
       // 验证告警
       const alerts = alertingService.getAlerts();
-      
+
       // 应该有一个关于大型检查点的告警
       const largeCheckpointAlert = alerts.find(a => a.type === 'LARGE_CHECKPOINT');
       expect(largeCheckpointAlert).toBeDefined();
@@ -429,14 +429,14 @@ describe('检查点外部系统集成测试', () => {
         const result = await originalCreate.apply(api, args);
         const duration = Date.now() - startTime;
         metrics.createDuration.push(duration);
-        
+
         // 记录存储大小
         const checkpoint = await api.get(result);
         if (checkpoint) {
           const size = JSON.stringify(checkpoint).length;
           metrics.storageSize.push(size);
         }
-        
+
         return result;
       };
 
@@ -452,7 +452,7 @@ describe('检查点外部系统集成测试', () => {
       // 执行多次检查点操作
       const numOperations = 5;
       const checkpointIds: string[] = [];
-      
+
       for (let i = 0; i < numOperations; i++) {
         const checkpointId = await api.createThreadCheckpoint(threadContext.getThreadId(), {
           description: `Metrics test ${i}`
@@ -520,7 +520,7 @@ describe('检查点外部系统集成测试', () => {
 
       // 验证审计日志
       expect(auditLogs).toHaveLength(2);
-      
+
       const createAudit = auditLogs.find(log => log.eventType === 'CHECKPOINT_CREATED');
       expect(createAudit).toBeDefined();
       expect(createAudit?.threadId).toBe(threadContext.getThreadId());

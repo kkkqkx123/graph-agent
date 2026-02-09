@@ -8,16 +8,16 @@
  * - 最少保留数量保护机制
  */
 
-import { CheckpointStateManager } from '../../core/execution/managers/checkpoint-state-manager';
-import { MemoryCheckpointStorage } from '../../core/storage/memory-checkpoint-storage';
-import { GlobalMessageStorage } from '../../core/services/global-message-storage';
-import { ThreadRegistry } from '../../core/services/thread-registry';
-import { WorkflowRegistry } from '../../core/services/workflow-registry';
-import { ThreadBuilder } from '../../core/execution/thread-builder';
-import { CheckpointCoordinator } from '../../core/execution/coordinators/checkpoint-coordinator';
-import type { CleanupPolicy } from '../../types/checkpoint-storage';
-import { NodeType } from '../../types/node';
-import { EdgeType } from '../../types/edge';
+import { CheckpointStateManager } from '../../../core/execution/managers/checkpoint-state-manager';
+import { MemoryCheckpointStorage } from '../../../core/storage/memory-checkpoint-storage';
+import { GlobalMessageStorage } from '../../../core/services/global-message-storage';
+import { ThreadRegistry } from '../../../core/services/thread-registry';
+import { WorkflowRegistry } from '../../../core/services/workflow-registry';
+import { ThreadBuilder } from '../../../core/execution/thread-builder';
+import { CheckpointCoordinator } from '../../../core/execution/coordinators/checkpoint-coordinator';
+import type { CleanupPolicy } from '../../../types/checkpoint-storage';
+import { NodeType } from '../../../types/node';
+import { EdgeType } from '../../../types/edge';
 
 describe('检查点清理策略集成测试', () => {
   let workflowRegistry: WorkflowRegistry;
@@ -28,11 +28,11 @@ describe('检查点清理策略集成测试', () => {
 
   beforeAll(async () => {
     // 注册测试脚本
-    const { codeService } = await import('../../core/services/code-service');
-    const { ScriptType } = await import('../../types/code');
-    const { generateId } = await import('../../utils/id-utils');
+    const { codeService } = await import('../../../core/services/code-service');
+    const { ScriptType } = await import('../../../types/code');
+    const { generateId } = await import('../../../utils/id-utils');
 
-    const javascriptExecutor: import('../../types/code').ScriptExecutor = {
+    const javascriptExecutor: import('../../../types/code').ScriptExecutor = {
       async execute(script, options) {
         try {
           const result = eval(script.content || '');
@@ -182,7 +182,7 @@ describe('检查点清理策略集成测试', () => {
         { description: `Checkpoint ${i + 1} for cleanup test` }
       );
       checkpointIds.push(checkpointId);
-      
+
       // 模拟时间间隔
       if (i < count - 1) {
         await new Promise(resolve => setTimeout(resolve, intervalMs));
@@ -196,23 +196,23 @@ describe('检查点清理策略集成测试', () => {
     it('应该正确清理超过保留时间的检查点', async () => {
       // 创建3个检查点，间隔2秒
       const checkpointIds = await createMultipleCheckpoints('time-cleanup-test', 3, 2000);
-      
+
       // 设置清理策略：保留1秒，最少保留1个
       const cleanupPolicy: CleanupPolicy = {
         type: 'time',
         retentionDays: 0, // 0天
         minRetention: 1
       };
-      
+
       checkpointStateManager.setCleanupPolicy(cleanupPolicy);
-      
+
       // 执行清理
       const cleanupResult = await checkpointStateManager.executeCleanup();
-      
+
       // 验证结果
       expect(cleanupResult.deletedCount).toBe(2); // 删除前2个（最旧的）
       expect(cleanupResult.remainingCount).toBe(1); // 保留最新的1个
-      
+
       // 验证保留的检查点存在
       const remainingIds = await checkpointStateManager.list();
       expect(remainingIds).toHaveLength(1);
@@ -222,19 +222,19 @@ describe('检查点清理策略集成测试', () => {
     it('应该尊重最少保留数量配置', async () => {
       // 创建2个检查点
       const checkpointIds = await createMultipleCheckpoints('min-retention-test', 2, 1000);
-      
+
       // 设置清理策略：保留0天，最少保留2个
       const cleanupPolicy: CleanupPolicy = {
         type: 'time',
         retentionDays: 0,
         minRetention: 2
       };
-      
+
       checkpointStateManager.setCleanupPolicy(cleanupPolicy);
-      
+
       // 执行清理
       const cleanupResult = await checkpointStateManager.executeCleanup();
-      
+
       // 验证结果：不应该删除任何检查点，因为minRetention=2
       expect(cleanupResult.deletedCount).toBe(0);
       expect(cleanupResult.remainingCount).toBe(2);
@@ -245,23 +245,23 @@ describe('检查点清理策略集成测试', () => {
     it('应该正确限制最大检查点数量', async () => {
       // 创建5个检查点
       const checkpointIds = await createMultipleCheckpoints('count-cleanup-test', 5, 500);
-      
+
       // 设置清理策略：最大3个，最少保留1个
       const cleanupPolicy: CleanupPolicy = {
         type: 'count',
         maxCount: 3,
         minRetention: 1
       };
-      
+
       checkpointStateManager.setCleanupPolicy(cleanupPolicy);
-      
+
       // 执行清理
       const cleanupResult = await checkpointStateManager.executeCleanup();
-      
+
       // 验证结果
       expect(cleanupResult.deletedCount).toBe(2); // 删除最旧的2个
       expect(cleanupResult.remainingCount).toBe(3); // 保留最新的3个
-      
+
       // 验证保留的检查点是最新的3个
       const remainingIds = await checkpointStateManager.list();
       expect(remainingIds).toHaveLength(3);
@@ -271,18 +271,18 @@ describe('检查点清理策略集成测试', () => {
     it('应该在检查点数量未超过限制时不执行清理', async () => {
       // 创建2个检查点
       await createMultipleCheckpoints('count-no-cleanup-test', 2, 500);
-      
+
       // 设置清理策略：最大5个
       const cleanupPolicy: CleanupPolicy = {
         type: 'count',
         maxCount: 5
       };
-      
+
       checkpointStateManager.setCleanupPolicy(cleanupPolicy);
-      
+
       // 执行清理
       const cleanupResult = await checkpointStateManager.executeCleanup();
-      
+
       // 验证结果：不应该删除任何检查点
       expect(cleanupResult.deletedCount).toBe(0);
       expect(cleanupResult.remainingCount).toBe(2);
@@ -293,7 +293,7 @@ describe('检查点清理策略集成测试', () => {
     it('应该正确限制存储空间使用', async () => {
       // 创建3个检查点（每个大约几KB）
       const checkpointIds = await createMultipleCheckpoints('size-cleanup-test', 3, 500);
-      
+
       // 获取当前总大小
       let totalSize = 0;
       for (const checkpointId of checkpointIds) {
@@ -302,19 +302,19 @@ describe('检查点清理策略集成测试', () => {
           totalSize += data.length;
         }
       }
-      
+
       // 设置清理策略：最大空间为总大小的60%，最少保留1个
       const cleanupPolicy: CleanupPolicy = {
         type: 'size',
         maxSizeBytes: Math.floor(totalSize * 0.6),
         minRetention: 1
       };
-      
+
       checkpointStateManager.setCleanupPolicy(cleanupPolicy);
-      
+
       // 执行清理
       const cleanupResult = await checkpointStateManager.executeCleanup();
-      
+
       // 验证结果：应该删除一些检查点以满足空间限制
       expect(cleanupResult.deletedCount).toBeGreaterThanOrEqual(1);
       expect(cleanupResult.remainingCount).toBeLessThan(3);
@@ -329,12 +329,12 @@ describe('检查点清理策略集成测试', () => {
         type: 'time',
         retentionDays: 1
       };
-      
+
       checkpointStateManager.setCleanupPolicy(cleanupPolicy);
-      
+
       // 执行清理
       const cleanupResult = await checkpointStateManager.executeCleanup();
-      
+
       // 验证结果
       expect(cleanupResult.deletedCount).toBe(0);
       expect(cleanupResult.remainingCount).toBe(0);
@@ -344,24 +344,24 @@ describe('检查点清理策略集成测试', () => {
     it('应该支持动态切换清理策略', async () => {
       // 创建3个检查点
       await createMultipleCheckpoints('strategy-switch-test', 3, 500);
-      
+
       // 先使用数量策略
       let cleanupPolicy: CleanupPolicy = {
         type: 'count',
         maxCount: 2
       };
-      
+
       checkpointStateManager.setCleanupPolicy(cleanupPolicy);
       let cleanupResult = await checkpointStateManager.executeCleanup();
       expect(cleanupResult.remainingCount).toBe(2);
-      
+
       // 切换到时间策略
       cleanupPolicy = {
         type: 'time',
         retentionDays: 0,
         minRetention: 1
       };
-      
+
       checkpointStateManager.setCleanupPolicy(cleanupPolicy);
       cleanupResult = await checkpointStateManager.executeCleanup();
       expect(cleanupResult.remainingCount).toBe(1);

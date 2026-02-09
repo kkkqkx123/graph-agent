@@ -680,8 +680,8 @@ describe('Thread构建到执行实例创建集成测试', () => {
       expect(copiedThreadContext.thread.variableScopes.subgraph).toEqual([]); // 子图作用域清空
       expect(copiedThreadContext.thread.variableScopes.loop).toEqual([]); // 循环作用域清空
 
-      // 验证元数据正确设置
-      expect(copiedThreadContext.thread.metadata?.parentThreadId).toBe(originalThreadContext.getThreadId());
+      // 验证元数据正确设置（副本线程应该是子线程）
+      expect(copiedThreadContext.thread.triggeredSubworkflowContext?.parentThreadId).toBe(originalThreadContext.getThreadId());
     });
   });
 

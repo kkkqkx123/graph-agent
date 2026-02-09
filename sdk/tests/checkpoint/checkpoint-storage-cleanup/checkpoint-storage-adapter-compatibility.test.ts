@@ -7,23 +7,22 @@
  * - 存储接口一致性验证
  */
 
-import { CheckpointStateManager } from '../../core/execution/managers/checkpoint-state-manager';
-import { MemoryCheckpointStorage } from '../../core/storage/memory-checkpoint-storage';
-import { GlobalMessageStorage } from '../../core/services/global-message-storage';
-import { ThreadRegistry } from '../../core/services/thread-registry';
-import { WorkflowRegistry } from '../../core/services/workflow-registry';
-import { ThreadBuilder } from '../../core/execution/thread-builder';
-import { CheckpointCoordinator } from '../../core/execution/coordinators/checkpoint-coordinator';
-import type { CheckpointStorage } from '../../types/checkpoint-storage';
-import type { Checkpoint } from '../../types/checkpoint';
-import { NodeType } from '../../types/node';
-import { EdgeType } from '../../types/edge';
+import { CheckpointStateManager } from '../../../core/execution/managers/checkpoint-state-manager';
+import { MemoryCheckpointStorage } from '../../../core/storage/memory-checkpoint-storage';
+import { GlobalMessageStorage } from '../../../core/services/global-message-storage';
+import { ThreadRegistry } from '../../../core/services/thread-registry';
+import { WorkflowRegistry } from '../../../core/services/workflow-registry';
+import { ThreadBuilder } from '../../../core/execution/thread-builder';
+import { CheckpointCoordinator } from '../../../core/execution/coordinators/checkpoint-coordinator';
+import type { CheckpointStorage } from '../../../types/checkpoint-storage';
+import { NodeType } from '../../../types/node';
+import { EdgeType } from '../../../types/edge';
 
 // 自定义存储实现用于测试
 class TestCheckpointStorage implements CheckpointStorage {
-  private data = new Map<string, { data: Uint8Array; metadata: import('../../types/checkpoint-storage').CheckpointStorageMetadata }>();
+  private data = new Map<string, { data: Uint8Array; metadata: import('../../../types/checkpoint-storage').CheckpointStorageMetadata }>();
 
-  async save(checkpointId: string, data: Uint8Array, metadata: import('../../types/checkpoint-storage').CheckpointStorageMetadata): Promise<void> {
+  async save(checkpointId: string, data: Uint8Array, metadata: import('../../../types/checkpoint-storage').CheckpointStorageMetadata): Promise<void> {
     this.data.set(checkpointId, { data, metadata });
   }
 
@@ -35,7 +34,7 @@ class TestCheckpointStorage implements CheckpointStorage {
     this.data.delete(checkpointId);
   }
 
-  async list(options?: import('../../types/checkpoint-storage').CheckpointListOptions): Promise<string[]> {
+  async list(options?: import('../../../types/checkpoint-storage').CheckpointListOptions): Promise<string[]> {
     let entries = Array.from(this.data.entries());
 
     if (options?.threadId) {
@@ -83,11 +82,11 @@ describe('检查点存储适配器兼容性集成测试', () => {
 
   beforeAll(async () => {
     // 注册测试脚本
-    const { codeService } = await import('../../core/services/code-service');
-    const { ScriptType } = await import('../../types/code');
-    const { generateId } = await import('../../utils/id-utils');
+    const { codeService } = await import('../../../core/services/code-service');
+    const { ScriptType } = await import('../../../types/code');
+    const { generateId } = await import('../../../utils/id-utils');
 
-    const javascriptExecutor: import('../../types/code').ScriptExecutor = {
+    const javascriptExecutor: import('../../../types/code').ScriptExecutor = {
       async execute(script, options) {
         try {
           const result = eval(script.content || '');
@@ -209,7 +208,7 @@ describe('检查点存储适配器兼容性集成测试', () => {
     it('应该正确支持MemoryCheckpointStorage的所有操作', async () => {
       const storage = new MemoryCheckpointStorage();
       const stateManager = new CheckpointStateManager(storage);
-      
+
       const workflow = createTestWorkflow('memory-test');
       workflowRegistry.register(workflow);
 
@@ -252,7 +251,7 @@ describe('检查点存储适配器兼容性集成测试', () => {
     it('应该正确支持自定义存储实现', async () => {
       const storage = new TestCheckpointStorage();
       const stateManager = new CheckpointStateManager(storage);
-      
+
       const workflow = createTestWorkflow('custom-test');
       workflowRegistry.register(workflow);
 
@@ -281,7 +280,7 @@ describe('检查点存储适配器兼容性集成测试', () => {
       const loadedData = await storage.load(checkpointId);
       expect(loadedData).not.toBeNull();
 
-      const { deserializeCheckpoint } = await import('../../core/execution/utils/checkpoint-serializer');
+      const { deserializeCheckpoint } = await import('../../../core/execution/utils/checkpoint-serializer');
       const checkpoint = deserializeCheckpoint(loadedData!);
       expect(checkpoint.id).toBe(checkpointId);
       expect(checkpoint.threadId).toBe(threadContext.getThreadId());
@@ -304,7 +303,7 @@ describe('检查点存储适配器兼容性集成测试', () => {
     it('应该保持序列化格式的向后兼容性', async () => {
       const storage = new MemoryCheckpointStorage();
       const stateManager = new CheckpointStateManager(storage);
-      
+
       const workflow = createTestWorkflow('serialization-test');
       workflowRegistry.register(workflow);
 
@@ -323,7 +322,7 @@ describe('检查点存储适配器兼容性集成测试', () => {
       const checkpointId = await CheckpointCoordinator.createCheckpoint(
         threadContext.getThreadId(),
         dependencies,
-        { 
+        {
           description: 'Serialization compatibility test',
           tags: ['test', 'serialization'],
           customFields: {
@@ -338,16 +337,16 @@ describe('检查点存储适配器兼容性集成测试', () => {
 
       // 验证序列化和反序列化的完整性
       const loadedData = await storage.load(checkpointId);
-      const { deserializeCheckpoint } = await import('../../core/execution/utils/checkpoint-serializer');
+      const { deserializeCheckpoint } = await import('../../../core/execution/utils/checkpoint-serializer');
       const checkpoint = deserializeCheckpoint(loadedData!);
 
       expect(checkpoint.metadata?.description).toBe('Serialization compatibility test');
       expect(checkpoint.metadata?.tags).toEqual(['test', 'serialization']);
-      expect(checkpoint.metadata?.customFields?.numberField).toBe(42);
-      expect(checkpoint.metadata?.customFields?.stringField).toBe('test-value');
-      expect(checkpoint.metadata?.customFields?.booleanField).toBe(true);
-      expect(checkpoint.metadata?.customFields?.arrayField).toEqual([1, 2, 3]);
-      expect(checkpoint.metadata?.customFields?.objectField).toEqual({ nested: 'value' });
+      expect(checkpoint.metadata?.customFields?.['numberField']).toBe(42);
+      expect(checkpoint.metadata?.customFields?.['stringField']).toBe('test-value');
+      expect(checkpoint.metadata?.customFields?.['booleanField']).toBe(true);
+      expect(checkpoint.metadata?.customFields?.['arrayField']).toEqual([1, 2, 3]);
+      expect(checkpoint.metadata?.customFields?.['objectField']).toEqual({ nested: 'value' });
     });
   });
 });

@@ -318,10 +318,13 @@ describe('检查点恢复生命周期集成测试', () => {
     });
 
     it('应该在工作流不存在时抛出适当的错误', async () => {
-      // 创建一个检查点但不注册对应的工作流
-      const workflowId = 'non-existent-workflow';
-      const workflow = createSimpleWorkflow(workflowId, 'Non-existent Workflow');
+      const workflowId = 'workflow-not-found-test';
+      const workflow = createSimpleWorkflow(workflowId, 'Workflow Not Found Test');
 
+      // 步骤1: 先注册工作流
+      workflowRegistry.register(workflow);
+
+      // 步骤2: 构建 ThreadContext
       const threadBuilder = new ThreadBuilder(workflowRegistry);
       const threadContext = await threadBuilder.build(workflowId, {
         input: { test: 'value' }
@@ -336,12 +339,16 @@ describe('检查点恢复生命周期集成测试', () => {
         globalMessageStorage
       };
 
+      // 步骤3: 创建检查点
       const checkpointId = await CheckpointCoordinator.createCheckpoint(
         threadContext.getThreadId(),
         dependencies
       );
 
-      // 不注册工作流，直接尝试恢复
+      // 步骤4: 从 registry 中移除工作流（模拟工作流被删除的情况）
+      workflowRegistry.unregister(workflowId);
+
+      // 步骤5: 尝试从检查点恢复，应该抛出工作流未找到的错误
       await expect(
         CheckpointCoordinator.restoreFromCheckpoint(checkpointId, dependencies)
       ).rejects.toThrow('Workflow not found');

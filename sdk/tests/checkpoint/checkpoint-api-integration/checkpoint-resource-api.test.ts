@@ -8,14 +8,14 @@
  * - 错误处理
  */
 
-import { CheckpointResourceAPI } from '../../api/resources/checkpoints/checkpoint-resource-api';
-import { ThreadRegistry } from '../../core/services/thread-registry';
-import { WorkflowRegistry } from '../../core/services/workflow-registry';
-import { SingletonRegistry } from '../../core/execution/context/singleton-registry';
-import type { WorkflowDefinition } from '../../types/workflow';
-import { NodeType } from '../../types/node';
-import { EdgeType } from '../../types/edge';
-import { ThreadStatus } from '../../types/thread';
+import { CheckpointResourceAPI } from '../../../api/resources/checkpoints/checkpoint-resource-api';
+import { ThreadRegistry } from '../../../core/services/thread-registry';
+import { WorkflowRegistry } from '../../../core/services/workflow-registry';
+import { SingletonRegistry } from '../../../core/execution/context/singleton-registry';
+import type { WorkflowDefinition } from '../../../types/workflow';
+import { NodeType } from '../../../types/node';
+import { EdgeType } from '../../../types/edge';
+import { ThreadStatus } from '../../../types/thread';
 
 describe('检查点资源API集成测试', () => {
   let api: CheckpointResourceAPI;
@@ -25,11 +25,11 @@ describe('检查点资源API集成测试', () => {
   beforeEach(() => {
     threadRegistry = new ThreadRegistry();
     workflowRegistry = new WorkflowRegistry({ enableVersioning: false });
-    
+
     // 注册全局服务
     SingletonRegistry.register('threadRegistry', threadRegistry);
     SingletonRegistry.register('workflowRegistry', workflowRegistry);
-    
+
     // 创建API
     api = new CheckpointResourceAPI();
   });
@@ -99,10 +99,10 @@ describe('检查点资源API集成测试', () => {
     workflowRegistry: WorkflowRegistry,
     workflow: WorkflowDefinition
   ) => {
-    const { ThreadContext } = await import('../../core/execution/context/thread-context');
-    const { ConversationManager } = await import('../../core/execution/managers/conversation-manager');
-    const { generateId } = await import('../../utils');
-    const { GraphBuilder } = await import('../../core/graph/graph-builder');
+    const { ThreadContext } = await import('../../../core/execution/context/thread-context');
+    const { ConversationManager } = await import('../../../core/execution/managers/conversation-manager');
+    const { generateId } = await import('../../../utils');
+    const { GraphBuilder } = await import('../../../core/graph/graph-builder');
 
     const conversationManager = new ConversationManager();
     const graph = GraphBuilder.build(workflow);
@@ -129,7 +129,7 @@ describe('检查点资源API集成测试', () => {
       errors: []
     };
 
-    const executionContext = await import('../../core/execution/context/execution-context');
+    const executionContext = await import('../../../core/execution/context/execution-context');
     const threadContext = new ThreadContext(
       thread,
       conversationManager,
@@ -330,7 +330,7 @@ describe('检查点资源API集成测试', () => {
       const allResult = await api.getAll();
       expect(allResult.success).toBe(true);
       const allCheckpointsData = allResult.success ? (allResult as any).data || [] : [];
-      
+
       let allCheckpoints: any[] = [];
       for (let page = 0; page < totalPages; page++) {
         const offset = page * pageSize;

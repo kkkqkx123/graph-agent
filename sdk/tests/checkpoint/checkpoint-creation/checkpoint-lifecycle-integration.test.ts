@@ -7,18 +7,18 @@
  * - 检查点恢复后工作流能正常继续执行
  */
 
-import { WorkflowRegistry } from '../../core/services/workflow-registry';
-import { ThreadBuilder } from '../../core/execution/thread-builder';
-import { ThreadContext } from '../../core/execution/context/thread-context';
-import { CheckpointCoordinator } from '../../core/execution/coordinators/checkpoint-coordinator';
-import { CheckpointStateManager } from '../../core/execution/managers/checkpoint-state-manager';
-import { MemoryCheckpointStorage } from '../../core/storage/memory-checkpoint-storage';
-import { GlobalMessageStorage } from '../../core/services/global-message-storage';
-import { ThreadRegistry } from '../../core/services/thread-registry';
-import { NodeType } from '../../types/node';
-import { EdgeType } from '../../types/edge';
-import { ThreadStatus } from '../../types/thread';
-import type { WorkflowDefinition } from '../../types/workflow';
+import { WorkflowRegistry } from '../../../core/services/workflow-registry';
+import { ThreadBuilder } from '../../../core/execution/thread-builder';
+import { ThreadContext } from '../../../core/execution/context/thread-context';
+import { CheckpointCoordinator } from '../../../core/execution/coordinators/checkpoint-coordinator';
+import { CheckpointStateManager } from '../../../core/execution/managers/checkpoint-state-manager';
+import { MemoryCheckpointStorage } from '../../../core/storage/memory-checkpoint-storage';
+import { GlobalMessageStorage } from '../../../core/services/global-message-storage';
+import { ThreadRegistry } from '../../../core/services/thread-registry';
+import { NodeType } from '../../../types/node';
+import { EdgeType } from '../../../types/edge';
+import { ThreadStatus } from '../../../types/thread';
+import type { WorkflowDefinition } from '../../../types/workflow';
 
 describe('检查点生命周期集成测试', () => {
   let workflowRegistry: WorkflowRegistry;
@@ -29,12 +29,12 @@ describe('检查点生命周期集成测试', () => {
 
   beforeAll(async () => {
     // 注册测试脚本到 code-service
-    const { codeService } = await import('../../core/services/code-service');
-    const { ScriptType } = await import('../../types/code');
-    const { generateId } = await import('../../utils/id-utils');
+    const { codeService } = await import('../../../core/services/code-service');
+    const { ScriptType } = await import('../../../types/code');
+    const { generateId } = await import('../../../utils/id-utils');
 
     // 创建 JavaScript 执行器
-    const javascriptExecutor: import('../../types/code').ScriptExecutor = {
+    const javascriptExecutor: import('../../../types/code').ScriptExecutor = {
       async execute(script, options) {
         try {
           const result = eval(script.content || '');
@@ -294,7 +294,7 @@ describe('检查点生命周期集成测试', () => {
       expect(checkpointData).not.toBeNull();
 
       // 反序列化检查点
-      const { deserializeCheckpoint } = await import('../../core/execution/utils/checkpoint-serializer');
+      const { deserializeCheckpoint } = await import('../../../core/execution/utils/checkpoint-serializer');
       const checkpoint = deserializeCheckpoint(checkpointData!);
 
       // 验证 ThreadStateSnapshot 的完整性
