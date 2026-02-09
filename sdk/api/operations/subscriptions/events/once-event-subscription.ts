@@ -3,8 +3,8 @@
  */
 
 import { BaseSubscription, SubscriptionMetadata } from '../../../types/subscription';
-import { eventManager, type EventManager } from '../../../../core/services/event-manager';
 import type { EventType, EventListener, BaseEvent } from '../../../../types/events';
+import type { APIDependencies } from '../../../core/api-dependencies';
 
 /**
  * 注册一次性事件监听器参数
@@ -22,7 +22,7 @@ export interface OnceEventParams {
 export class OnceEventSubscription extends BaseSubscription {
   constructor(
     private readonly params: OnceEventParams,
-    private readonly eventManager: EventManager = eventManager
+    private readonly dependencies: APIDependencies
   ) {
     super();
   }
@@ -31,7 +31,7 @@ export class OnceEventSubscription extends BaseSubscription {
    * 订阅事件
    */
   subscribe(): () => void {
-    return this.eventManager.once(this.params.eventType, this.params.listener);
+    return this.dependencies.getEventManager().once(this.params.eventType, this.params.listener);
   }
 
   /**

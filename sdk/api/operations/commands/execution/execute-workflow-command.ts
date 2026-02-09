@@ -6,7 +6,7 @@ import { BaseCommand, CommandMetadata, CommandValidationResult, validationSucces
 import type { ThreadResult, ThreadOptions } from '../../../../types/thread';
 import type { WorkflowDefinition } from '../../../../types/workflow';
 import { ThreadLifecycleCoordinator } from '../../../../core/execution/coordinators/thread-lifecycle-coordinator';
-import { workflowRegistry, type WorkflowRegistry } from '../../../../core/services/workflow-registry';
+import type { APIDependencies } from '../../../core/api-dependencies';
 
 /**
  * 执行工作流命令参数
@@ -27,7 +27,7 @@ export class ExecuteWorkflowCommand extends BaseCommand<ThreadResult> {
   constructor(
     private readonly params: ExecuteWorkflowParams,
     private readonly lifecycleCoordinator: ThreadLifecycleCoordinator,
-    private readonly workflowRegistry: WorkflowRegistry = workflowRegistry
+    private readonly dependencies: APIDependencies
   ) {
     super();
   }
@@ -37,7 +37,7 @@ export class ExecuteWorkflowCommand extends BaseCommand<ThreadResult> {
 
     // 如果提供了工作流定义，先注册
     if (this.params.workflowDefinition) {
-      this.workflowRegistry.register(this.params.workflowDefinition);
+      this.dependencies.getWorkflowRegistry().register(this.params.workflowDefinition);
       workflowId = this.params.workflowDefinition.id;
     } else if (this.params.workflowId) {
       workflowId = this.params.workflowId;

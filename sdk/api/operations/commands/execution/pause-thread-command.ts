@@ -11,7 +11,7 @@ import { ThreadLifecycleCoordinator } from '../../../../core/execution/coordinat
 export class PauseThreadCommand extends BaseCommand<void> {
   constructor(
     private readonly threadId: string,
-    private readonly lifecycleCoordinator: ThreadLifecycleCoordinator
+    private readonly lifecycleCoordinator: ThreadLifecycleCoordinator,
   ) {
     super();
   }

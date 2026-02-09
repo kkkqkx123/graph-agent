@@ -4,8 +4,8 @@
 
 import { BaseCommand } from '../../../types/command';
 import { CommandValidationResult } from '../../../types/command';
-import { threadRegistry, type ThreadRegistry } from '../../../../core/services/thread-registry';
 import { NotFoundError } from '../../../../types/errors';
+import type { APIDependencies } from '../../../core/api-dependencies';
 
 /**
  * 启用触发器参数
@@ -23,7 +23,7 @@ export interface EnableTriggerParams {
 export class EnableTriggerCommand extends BaseCommand<void> {
   constructor(
     private readonly params: EnableTriggerParams,
-    private readonly threadRegistry: ThreadRegistry = threadRegistry
+    private readonly dependencies: APIDependencies
   ) {
     super();
   }
@@ -73,7 +73,7 @@ export class EnableTriggerCommand extends BaseCommand<void> {
    * 获取触发器管理器
    */
   private async getTriggerManager(threadId: string) {
-    const threadContext = this.threadRegistry.get(threadId);
+    const threadContext = this.dependencies.getThreadRegistry().get(threadId);
     if (!threadContext) {
       throw new NotFoundError(`Thread not found: ${threadId}`, 'thread', threadId);
     }

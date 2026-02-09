@@ -3,8 +3,8 @@
  */
 
 import { BaseSubscription, SubscriptionMetadata } from '../../../types/subscription';
-import { eventManager, type EventManager } from '../../../../core/services/event-manager';
 import type { EventType, EventListener, BaseEvent } from '../../../../types/events';
+import type { APIDependencies } from '../../../core/api-dependencies';
 
 /**
  * 注册事件监听器参数
@@ -22,7 +22,7 @@ export interface OnEventParams {
 export class OnEventSubscription extends BaseSubscription {
   constructor(
     private readonly params: OnEventParams,
-    private readonly eventManager: EventManager = eventManager
+    private readonly dependencies: APIDependencies
   ) {
     super();
   }
@@ -31,7 +31,7 @@ export class OnEventSubscription extends BaseSubscription {
    * 订阅事件
    */
   subscribe(): () => void {
-    return this.eventManager.on(this.params.eventType, this.params.listener);
+    return this.dependencies.getEventManager().on(this.params.eventType, this.params.listener);
   }
 
   /**

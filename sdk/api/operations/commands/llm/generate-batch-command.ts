@@ -12,7 +12,7 @@ import { LLMWrapper } from '../../../../core/llm/wrapper';
 export class GenerateBatchCommand extends BaseCommand<LLMResult[]> {
   constructor(
     private readonly requests: LLMRequest[],
-    private readonly llmWrapper: LLMWrapper
+    private readonly llmWrapper: LLMWrapper,
   ) {
     super();
   }

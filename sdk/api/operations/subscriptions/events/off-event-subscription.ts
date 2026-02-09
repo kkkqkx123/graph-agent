@@ -3,8 +3,8 @@
  */
 
 import { BaseSubscription, SubscriptionMetadata } from '../../../types/subscription';
-import { eventManager, type EventManager } from '../../../../core/services/event-manager';
 import type { EventType, EventListener, BaseEvent } from '../../../../types/events';
+import type { APIDependencies } from '../../../core/api-dependencies';
 
 /**
  * 取消事件监听器参数
@@ -22,7 +22,7 @@ export interface OffEventParams {
 export class OffEventSubscription extends BaseSubscription {
   constructor(
     private readonly params: OffEventParams,
-    private readonly eventManager: EventManager = eventManager
+    private readonly dependencies: APIDependencies
   ) {
     super();
   }
@@ -31,7 +31,7 @@ export class OffEventSubscription extends BaseSubscription {
    * 取消订阅
    */
   subscribe(): () => void {
-    this.eventManager.off(this.params.eventType, this.params.listener);
+    this.dependencies.getEventManager().off(this.params.eventType, this.params.listener);
     return () => { }; // 已经取消，返回空函数
   }
 

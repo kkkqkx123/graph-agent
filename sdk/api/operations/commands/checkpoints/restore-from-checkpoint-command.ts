@@ -5,11 +5,9 @@
 import { BaseCommand } from '../../../types/command';
 import { CommandValidationResult, validationSuccess, validationFailure } from '../../../types/command';
 import { CheckpointCoordinator } from '../../../../core/execution/coordinators/checkpoint-coordinator';
-import { CheckpointStateManager } from '../../../../core/execution/managers/checkpoint-state-manager';
 import type { Thread } from '../../../../types/thread';
-import { MemoryCheckpointStorage } from '../../../../core/storage/memory-checkpoint-storage';
 import { globalMessageStorage } from '../../../../core/services/global-message-storage';
-import { SingletonRegistry } from '../../../../core/execution/context/singleton-registry';
+import type { APIDependencies } from '../../../core/api-dependencies';
 
 /**
  * 从检查点恢复参数
@@ -23,21 +21,11 @@ export interface RestoreFromCheckpointParams {
  * RestoreFromCheckpointCommand - 从检查点恢复线程
  */
 export class RestoreFromCheckpointCommand extends BaseCommand<Thread> {
-  private stateManager: CheckpointStateManager;
-
   constructor(
     private readonly params: RestoreFromCheckpointParams,
-    stateManager?: CheckpointStateManager
+    private readonly dependencies: APIDependencies
   ) {
     super();
-
-    if (stateManager) {
-      this.stateManager = stateManager;
-    } else {
-      // 创建默认的检查点管理组件
-      const storage = new MemoryCheckpointStorage();
-      this.stateManager = new CheckpointStateManager(storage);
-    }
   }
 
   /**
@@ -70,15 +58,10 @@ export class RestoreFromCheckpointCommand extends BaseCommand<Thread> {
    * 执行命令
    */
   protected async executeInternal(): Promise<Thread> {
-    // 从SingletonRegistry获取全局服务
-    SingletonRegistry.initialize();
-    const threadRegistry = SingletonRegistry.get<any>('threadRegistry');
-    const workflowRegistry = SingletonRegistry.get<any>('workflowRegistry');
-
     const dependencies = {
-      threadRegistry,
-      checkpointStateManager: this.stateManager,
-      workflowRegistry,
+      threadRegistry: this.dependencies.getThreadRegistry(),
+      checkpointStateManager: this.dependencies.getCheckpointStateManager(),
+      workflowRegistry: this.dependencies.getWorkflowRegistry(),
       globalMessageStorage
     };
 

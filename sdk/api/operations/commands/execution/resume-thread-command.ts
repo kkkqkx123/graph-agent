@@ -12,7 +12,7 @@ import { ThreadLifecycleCoordinator } from '../../../../core/execution/coordinat
 export class ResumeThreadCommand extends BaseCommand<ThreadResult> {
   constructor(
     private readonly threadId: string,
-    private readonly lifecycleCoordinator: ThreadLifecycleCoordinator
+    private readonly lifecycleCoordinator: ThreadLifecycleCoordinator,
   ) {
     super();
   }

@@ -4,7 +4,7 @@
 
 import { BaseCommand, CommandMetadata, CommandValidationResult, validationSuccess, validationFailure } from '../../../types/command';
 import type { ToolOptions, ToolExecutionResult } from '../../../types/tools-types';
-import { toolService } from '../../../../core/services/tool-service';
+import type { APIDependencies } from '../../../core/api-dependencies';
 
 /**
  * 执行工具命令
@@ -13,7 +13,8 @@ export class ExecuteToolCommand extends BaseCommand<ToolExecutionResult> {
   constructor(
     private readonly toolName: string,
     private readonly parameters: Record<string, any>,
-    private readonly options?: ToolOptions
+    private readonly options: ToolOptions | undefined,
+    private readonly dependencies: APIDependencies
   ) {
     super();
   }
@@ -28,13 +29,13 @@ export class ExecuteToolCommand extends BaseCommand<ToolExecutionResult> {
     };
 
     // 验证工具参数
-    const validation = toolService.validateParameters(this.toolName, this.parameters);
+    const validation = this.dependencies.getToolService().validateParameters(this.toolName, this.parameters);
     if (!validation.valid) {
       throw new Error(`参数验证失败: ${validation.errors.join(', ')}`);
     }
 
     // 执行工具
-    const result = await toolService.execute(this.toolName, this.parameters, executionOptions);
+    const result = await this.dependencies.getToolService().execute(this.toolName, this.parameters, executionOptions);
     const executionTime = Date.now() - startTime;
 
     const executionResult: ToolExecutionResult = {

@@ -5,7 +5,7 @@
 import { BaseCommand, CommandMetadata, CommandValidationResult, validationSuccess, validationFailure } from '../../../types/command';
 import type { ScriptOptions } from '../../../types/code-types';
 import type { ScriptExecutionResult } from '../../../../types/code';
-import { codeService } from '../../../../core/services/code-service';
+import type { APIDependencies } from '../../../core/api-dependencies';
 
 /**
  * 执行脚本命令
@@ -13,7 +13,8 @@ import { codeService } from '../../../../core/services/code-service';
 export class ExecuteScriptCommand extends BaseCommand<ScriptExecutionResult> {
   constructor(
     private readonly scriptName: string,
-    private readonly options?: ScriptOptions
+    private readonly options: ScriptOptions | undefined,
+    private readonly dependencies: APIDependencies
   ) {
     super();
   }
@@ -30,13 +31,13 @@ export class ExecuteScriptCommand extends BaseCommand<ScriptExecutionResult> {
     };
 
     // 验证脚本
-    const validation = codeService.validateScript(this.scriptName);
+    const validation = this.dependencies.getCodeService().validateScript(this.scriptName);
     if (!validation.valid) {
       throw new Error(`脚本验证失败: ${validation.errors.join(', ')}`);
     }
 
     // 执行脚本
-    const result = await codeService.execute(this.scriptName, executionOptions);
+    const result = await this.dependencies.getCodeService().execute(this.scriptName, executionOptions);
     const executionTime = Date.now() - startTime;
 
     const executionResult: ScriptExecutionResult = {
