@@ -122,7 +122,7 @@ export abstract class GenericResourceAPI<T, ID extends string | number, Filter =
     
     try {
       // 验证资源（始终启用）
-      const validation = this.validateResource(resource);
+      const validation = await this.validateResource(resource);
       if (!validation.valid) {
         return failure(
           {
@@ -151,7 +151,7 @@ export abstract class GenericResourceAPI<T, ID extends string | number, Filter =
     
     try {
       // 验证更新内容（始终启用）
-      const validation = this.validateUpdate(updates);
+      const validation = await this.validateUpdate(updates);
       if (!validation.valid) {
         return failure(
           {
@@ -232,9 +232,13 @@ export abstract class GenericResourceAPI<T, ID extends string | number, Filter =
   /**
    * 验证资源（子类可以重写）
    * @param resource 资源对象
+   * @param context 验证上下文
    * @returns 验证结果
    */
-  protected validateResource(resource: T): { valid: boolean; errors: string[] } {
+  protected async validateResource(
+    resource: T,
+    context?: any
+  ): Promise<{ valid: boolean; errors: string[] }> {
     // 默认实现：子类可以重写此方法
     return { valid: true, errors: [] };
   }
@@ -242,9 +246,13 @@ export abstract class GenericResourceAPI<T, ID extends string | number, Filter =
   /**
    * 验证更新内容（子类可以重写）
    * @param updates 更新内容
+   * @param context 验证上下文
    * @returns 验证结果
    */
-  protected validateUpdate(updates: Partial<T>): { valid: boolean; errors: string[] } {
+  protected async validateUpdate(
+    updates: Partial<T>,
+    context?: any
+  ): Promise<{ valid: boolean; errors: string[] }> {
     // 默认实现：子类可以重写此方法
     return { valid: true, errors: [] };
   }

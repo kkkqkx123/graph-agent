@@ -3,6 +3,13 @@
  * 继承GenericResourceAPI，提供统一的CRUD操作
  */
 
+import {
+  validateRequiredFields,
+  validateStringLength,
+  validateArray,
+  validatePattern
+} from '../../validation/common-validators';
+
 import { GenericResourceAPI } from '../generic-resource-api';
 import { workflowRegistry, type WorkflowRegistry } from '../../../core/services/workflow-registry';
 import type { WorkflowDefinition } from '../../../types/workflow';
@@ -109,24 +116,41 @@ export class WorkflowRegistryAPI extends GenericResourceAPI<WorkflowDefinition, 
 
   /**
    * 验证工作流
+   * @param workflow 工作流定义
+   * @param context 验证上下文
+   * @returns 验证结果
    */
-  protected override validateResource(workflow: WorkflowDefinition): { valid: boolean; errors: string[] } {
+  protected override async validateResource(
+    workflow: WorkflowDefinition,
+    context?: any
+  ): Promise<{ valid: boolean; errors: string[] }> {
     const errors: string[] = [];
 
-    if (!workflow.id) {
-      errors.push('Workflow ID is required');
+    // 使用简化验证工具验证必需字段
+    const requiredErrors = validateRequiredFields(workflow, ['id', 'name', 'version'], 'workflow');
+    errors.push(...requiredErrors.map(error => error.message));
+
+    // 验证节点数组
+    const arrayErrors = validateArray(workflow.nodes, '工作流节点', 1);
+    errors.push(...arrayErrors.map(error => error.message));
+
+    // 验证ID长度
+    if (workflow.id) {
+      const idErrors = validateStringLength(workflow.id, '工作流ID', 1, 100);
+      errors.push(...idErrors.map(error => error.message));
     }
 
-    if (!workflow.name) {
-      errors.push('Workflow name is required');
+    // 验证名称长度
+    if (workflow.name) {
+      const nameErrors = validateStringLength(workflow.name, '工作流名称', 1, 200);
+      errors.push(...nameErrors.map(error => error.message));
     }
 
-    if (!workflow.version) {
-      errors.push('Workflow version is required');
-    }
-
-    if (!workflow.nodes || workflow.nodes.length === 0) {
-      errors.push('Workflow must have at least one node');
+    // 验证版本格式（简单验证）
+    if (workflow.version) {
+      const versionPattern = /^[0-9]+\.[0-9]+\.[0-9]+$/;
+      const versionErrors = validatePattern(workflow.version, '工作流版本', versionPattern, '工作流版本格式不正确，应为x.y.z格式');
+      errors.push(...versionErrors.map(error => error.message));
     }
 
     return {

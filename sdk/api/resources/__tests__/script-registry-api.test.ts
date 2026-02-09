@@ -3,7 +3,7 @@
  * 测试重构后的 ScriptRegistryAPI 功能
  */
 
-import { ScriptRegistryAPI } from '../scripts/script-registry-api-v2';
+import { ScriptRegistryAPI } from '../scripts/script-registry-api';
 import type { Script } from '../../../types/code';
 import { ScriptType } from '../../../types/code';
 import type { ScriptFilter } from '../../types/code-types';
@@ -17,12 +17,7 @@ describe('ScriptRegistryAPI V2', () => {
 
   beforeEach(() => {
     // 创建新的 API 实例
-    api = new ScriptRegistryAPI({
-      enableCache: true,
-      cacheTTL: 60000,
-      enableValidation: true,
-      enableLogging: false
-    });
+    api = new ScriptRegistryAPI();
 
     // 创建模拟脚本（使用时间戳确保唯一性）
     const timestamp = Date.now();

@@ -3,7 +3,7 @@
  * 测试重构后的 ToolRegistryAPI 功能
  */
 
-import { ToolRegistryAPI } from '../tools/tool-registry-api-v2';
+import { ToolRegistryAPI } from '../tools/tool-registry-api';
 import type { Tool } from '../../../types/tool';
 import { ToolType } from '../../../types/tool';
 import type { ToolFilter } from '../../types/tools-types';
@@ -17,12 +17,7 @@ describe('ToolRegistryAPI V2', () => {
 
   beforeEach(() => {
     // 创建新的 API 实例
-    api = new ToolRegistryAPI({
-      enableCache: true,
-      cacheTTL: 60000,
-      enableValidation: true,
-      enableLogging: false
-    });
+    api = new ToolRegistryAPI();
 
     // 创建模拟工具
     mockTool1 = {
@@ -151,72 +146,6 @@ describe('ToolRegistryAPI V2', () => {
     });
   });
 
-  // ==================== 缓存功能测试 ====================
-
-  describe('缓存功能', () => {
-    test('应该能够缓存工具', async () => {
-      await api.registerTool(mockTool1);
-      
-      // 第一次获取
-      const tool1 = await api.getTool(mockTool1.name);
-      
-      // 第二次获取应该从缓存读取
-      const tool2 = await api.getTool(mockTool1.name);
-      
-      expect(tool1).toEqual(tool2);
-    });
-
-    test('应该能够获取缓存统计信息', async () => {
-      await api.registerTool(mockTool1);
-      
-      // 触发缓存
-      await api.getTool(mockTool1.name);
-      
-      const stats = api.getCacheStats();
-      expect(stats.size).toBeGreaterThan(0);
-    });
-
-    test('应该能够手动清理缓存', async () => {
-      await api.registerTool(mockTool1);
-      
-      // 触发缓存
-      await api.getTool(mockTool1.name);
-      
-      // 清理缓存
-      api.clearCache();
-      
-      const stats = api.getCacheStats();
-      expect(stats.size).toBe(0);
-    });
-
-    test('更新工具应该使缓存失效', async () => {
-      await api.registerTool(mockTool1);
-      
-      // 触发缓存
-      await api.getTool(mockTool1.name);
-      
-      // 更新工具
-      await api.updateTool(mockTool1.name, { description: 'Updated' });
-      
-      // 缓存应该被清理
-      const stats = api.getCacheStats();
-      expect(stats.size).toBe(0);
-    });
-
-    test('删除工具应该使缓存失效', async () => {
-      await api.registerTool(mockTool1);
-      
-      // 触发缓存
-      await api.getTool(mockTool1.name);
-      
-      // 删除工具
-      await api.unregisterTool(mockTool1.name);
-      
-      // 缓存应该被清理
-      const stats = api.getCacheStats();
-      expect(stats.size).toBe(0);
-    });
-  });
 
   // ==================== 过滤功能测试 ====================
 
@@ -389,52 +318,6 @@ describe('ToolRegistryAPI V2', () => {
 
   // ==================== 配置选项测试 ====================
 
-  describe('配置选项', () => {
-    test('应该能够禁用缓存', async () => {
-      const noCacheApi = new ToolRegistryAPI({ enableCache: false });
-      
-      await noCacheApi.registerTool(mockTool1);
-      await noCacheApi.getTool(mockTool1.name);
-      
-      const stats = noCacheApi.getCacheStats();
-      expect(stats.size).toBe(0);
-    });
-
-    test('应该能够禁用验证', async () => {
-      const noValidationApi = new ToolRegistryAPI({ enableValidation: false });
-      
-      // 创建一个有效的工具（因为 ToolRegistry 的验证在底层服务中）
-      const validTool = {
-        id: 'valid-tool',
-        name: 'valid-tool',
-        type: ToolType.REST,
-        description: 'Valid tool',
-        parameters: {
-          properties: {},
-          required: []
-        }
-      } as Tool;
-      
-      const result = await noValidationApi.create(validTool);
-      expect(result.success).toBe(true);
-    });
-
-    test('应该能够设置自定义缓存 TTL', async () => {
-      const customTTLApi = new ToolRegistryAPI({ cacheTTL: 1000 });
-      
-      await customTTLApi.registerTool(mockTool1);
-      await customTTLApi.getTool(mockTool1.name);
-      
-      // 等待缓存过期
-      await new Promise(resolve => setTimeout(resolve, 1100));
-      
-      // 手动清理过期缓存
-      customTTLApi.clearCache();
-      
-      const stats = customTTLApi.getCacheStats();
-      expect(stats.size).toBe(0);
-    });
-  });
 
   // ==================== 高级功能测试 ====================
 

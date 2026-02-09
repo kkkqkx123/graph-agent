@@ -13,6 +13,13 @@
  * - 支持处理器的动态注册和替换
  */
 
+import {
+  validateRequiredFields,
+  validateStringLength,
+  validatePositiveNumber,
+  validateBoolean
+} from '../../validation/common-validators';
+
 import { GenericResourceAPI } from '../generic-resource-api';
 import type { ExecutionResult } from '../../types/execution-result';
 import { success, failure } from '../../types/execution-result';
@@ -289,21 +296,41 @@ export class HumanRelayResourceAPI extends GenericResourceAPI<HumanRelayConfig, 
   /**
    * 验证Human Relay配置
    * @param config 配置对象
+   * @param context 验证上下文
    * @returns 验证结果
    */
-  protected override validateResource(config: HumanRelayConfig): { valid: boolean; errors: string[] } {
+  protected override async validateResource(
+    config: HumanRelayConfig,
+    context?: any
+  ): Promise<{ valid: boolean; errors: string[] }> {
     const errors: string[] = [];
 
-    if (!config.id) {
-      errors.push('配置ID不能为空');
+    // 使用简化验证工具验证必需字段
+    const requiredErrors = validateRequiredFields(config, ['id', 'name'], 'config');
+    errors.push(...requiredErrors.map(error => error.message));
+
+    // 验证ID长度
+    if (config.id) {
+      const idErrors = validateStringLength(config.id, '配置ID', 1, 100);
+      errors.push(...idErrors.map(error => error.message));
     }
 
-    if (!config.name) {
-      errors.push('配置名称不能为空');
+    // 验证名称长度
+    if (config.name) {
+      const nameErrors = validateStringLength(config.name, '配置名称', 1, 200);
+      errors.push(...nameErrors.map(error => error.message));
     }
 
-    if (config.defaultTimeout !== undefined && config.defaultTimeout < 0) {
-      errors.push('默认超时时间不能为负数');
+    // 验证超时时间（如果提供）
+    if (config.defaultTimeout !== undefined) {
+      const timeoutErrors = validatePositiveNumber(config.defaultTimeout, '默认超时时间');
+      errors.push(...timeoutErrors.map(error => error.message));
+    }
+
+    // 验证enabled字段（如果提供）
+    if (config.enabled !== undefined) {
+      const enabledErrors = validateBoolean(config.enabled, 'enabled');
+      errors.push(...enabledErrors.map(error => error.message));
     }
 
     return {
@@ -315,17 +342,31 @@ export class HumanRelayResourceAPI extends GenericResourceAPI<HumanRelayConfig, 
   /**
    * 验证Human Relay配置更新
    * @param updates 更新内容
+   * @param context 验证上下文
    * @returns 验证结果
    */
-  protected override validateUpdate(updates: Partial<HumanRelayConfig>): { valid: boolean; errors: string[] } {
+  protected override async validateUpdate(
+    updates: Partial<HumanRelayConfig>,
+    context?: any
+  ): Promise<{ valid: boolean; errors: string[] }> {
     const errors: string[] = [];
 
-    if (updates.name !== undefined && !updates.name) {
-      errors.push('配置名称不能为空');
+    // 验证名称（如果提供）
+    if (updates.name !== undefined) {
+      const nameErrors = validateStringLength(updates.name, '配置名称', 1, 200);
+      errors.push(...nameErrors.map(error => error.message));
     }
 
-    if (updates.defaultTimeout !== undefined && updates.defaultTimeout < 0) {
-      errors.push('默认超时时间不能为负数');
+    // 验证超时时间（如果提供）
+    if (updates.defaultTimeout !== undefined) {
+      const timeoutErrors = validatePositiveNumber(updates.defaultTimeout, '默认超时时间');
+      errors.push(...timeoutErrors.map(error => error.message));
+    }
+
+    // 验证enabled字段（如果提供）
+    if (updates.enabled !== undefined) {
+      const enabledErrors = validateBoolean(updates.enabled, 'enabled');
+      errors.push(...enabledErrors.map(error => error.message));
     }
 
     return {

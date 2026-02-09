@@ -3,6 +3,12 @@
  * 封装ToolService，提供工具注册、查询功能
  */
 
+import {
+  validateRequiredFields,
+  validateStringLength,
+  validateObject
+} from '../../validation/common-validators';
+
 import { toolService } from '../../../core/services/tool-service';
 import type { Tool } from '../../../types/tool';
 import type { ToolFilter } from '../../types/tools-types';
@@ -124,25 +130,33 @@ export class ToolRegistryAPI extends GenericResourceAPI<Tool, string, ToolFilter
   /**
    * 验证工具定义
    * @param tool 工具定义
+   * @param context 验证上下文
    * @returns 验证结果
    */
-  protected override validateResource(tool: Tool): { valid: boolean; errors: string[] } {
+  protected override async validateResource(
+    tool: Tool,
+    context?: any
+  ): Promise<{ valid: boolean; errors: string[] }> {
     const errors: string[] = [];
 
-    if (!tool.name || tool.name.trim() === '') {
-      errors.push('工具名称不能为空');
+    // 使用简化验证工具验证必需字段
+    const requiredErrors = validateRequiredFields(tool, ['name', 'type', 'description'], 'tool');
+    errors.push(...requiredErrors.map(error => error.message));
+
+    // 验证参数对象
+    const objectErrors = validateObject(tool.parameters, '工具参数');
+    errors.push(...objectErrors.map(error => error.message));
+
+    // 验证名称长度
+    if (tool.name) {
+      const nameErrors = validateStringLength(tool.name, '工具名称', 1, 100);
+      errors.push(...nameErrors.map(error => error.message));
     }
 
-    if (!tool.type || tool.type.trim() === '') {
-      errors.push('工具类型不能为空');
-    }
-
-    if (!tool.description || tool.description.trim() === '') {
-      errors.push('工具描述不能为空');
-    }
-
-    if (!tool.parameters || typeof tool.parameters !== 'object') {
-      errors.push('工具参数定义无效');
+    // 验证描述长度
+    if (tool.description) {
+      const descriptionErrors = validateStringLength(tool.description, '工具描述', 1, 500);
+      errors.push(...descriptionErrors.map(error => error.message));
     }
 
     return {

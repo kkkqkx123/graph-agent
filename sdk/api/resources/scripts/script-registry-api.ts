@@ -3,6 +3,13 @@
  * 封装CodeService，提供脚本注册、查询功能
  */
 
+import {
+  validateRequiredFields,
+  validateStringLength,
+  validateBoolean,
+  validateEnum
+} from '../../validation/common-validators';
+
 import { codeService } from '../../../core/services/code-service';
 import type { Script } from '../../../types/code';
 import { ScriptType } from '../../../types/code';
@@ -119,30 +126,47 @@ export class ScriptRegistryAPI extends GenericResourceAPI<Script, string, Script
   /**
    * 验证脚本定义
    * @param script 脚本定义
+   * @param context 验证上下文
    * @returns 验证结果
    */
-  protected override validateResource(script: Script): { valid: boolean; errors: string[] } {
+  protected override async validateResource(
+    script: Script,
+    context?: any
+  ): Promise<{ valid: boolean; errors: string[] }> {
     const errors: string[] = [];
 
-    if (!script.name || script.name.trim() === '') {
-      errors.push('脚本名称不能为空');
-    }
+    // 使用简化验证工具验证必需字段
+    const requiredErrors = validateRequiredFields(script, ['name', 'type', 'description'], 'script');
+    errors.push(...requiredErrors.map(error => error.message));
 
-    if (!script.type || script.type.trim() === '') {
-      errors.push('脚本类型不能为空');
-    }
-
+    // 验证内容或文件路径至少提供一个
     if (!script.content && !script.filePath) {
       errors.push('脚本内容或文件路径必须提供其中一个');
     }
 
-    if (!script.description || script.description.trim() === '') {
-      errors.push('脚本描述不能为空');
+    // 验证名称长度
+    if (script.name) {
+      const nameErrors = validateStringLength(script.name, '脚本名称', 1, 100);
+      errors.push(...nameErrors.map(error => error.message));
+    }
+
+    // 验证描述长度
+    if (script.description) {
+      const descriptionErrors = validateStringLength(script.description, '脚本描述', 1, 500);
+      errors.push(...descriptionErrors.map(error => error.message));
     }
 
     // 验证 enabled 字段（如果提供）
-    if (script.enabled !== undefined && typeof script.enabled !== 'boolean') {
-      errors.push('enabled 字段必须是布尔值');
+    if (script.enabled !== undefined) {
+      const enabledErrors = validateBoolean(script.enabled, 'enabled');
+      errors.push(...enabledErrors.map(error => error.message));
+    }
+
+    // 验证类型枚举值
+    if (script.type) {
+      const validTypes = ['javascript', 'typescript', 'python', 'shell'];
+      const typeErrors = validateEnum(script.type, '脚本类型', validTypes);
+      errors.push(...typeErrors.map(error => error.message));
     }
 
     return {
