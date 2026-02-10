@@ -476,13 +476,6 @@ describe('WorkflowRegistry', () => {
         depth: 1
       });
       
-      // 同时设置引用关系映射以确保快速检查生效
-      (registry as any).referenceRelations.set('child-workflow', [{
-        sourceWorkflowId: 'parent-workflow',
-        targetWorkflowId: 'child-workflow',
-        referenceType: 'subgraph',
-        isRuntime: false
-      }]);
 
       expect(() => {
         registry.unregister('child-workflow');

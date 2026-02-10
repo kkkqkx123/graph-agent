@@ -79,26 +79,6 @@ function checkSubgraphReferences(
     }
   }
 
-  // 检查哪些工作流引用了当前工作流作为子工作流
-  const allWorkflows = workflowRegistry.list();
-  for (const summary of allWorkflows) {
-    const workflow = workflowRegistry.get(summary.id);
-    if (!workflow || workflow.id === workflowId) continue;
-    
-    const childWorkflowIds = workflowRegistry.getChildWorkflows(workflow.id);
-    if (childWorkflowIds.includes(workflowId)) {
-      references.push({
-        type: 'subgraph',
-        sourceId: workflow.id,
-        sourceName: workflow.name,
-        isRuntimeReference: false,
-        details: {
-          relationshipType: 'referenced-by',
-          depth: workflowRegistry.getWorkflowHierarchy(workflow.id).depth
-        }
-      });
-    }
-  }
 
   return references;
 }

@@ -142,8 +142,15 @@ class WorkflowRegistry {
    * @returns 是否有引用
    */
   hasReferences(workflowId: string): boolean {
-    return this.referenceRelations.has(workflowId) &&
+    // 检查 referenceRelations 中的引用（如 trigger、thread 等）
+    const hasReferenceRelations = this.referenceRelations.has(workflowId) &&
       this.referenceRelations.get(workflowId)!.length > 0;
+    
+    // 检查 workflowRelationships 中的父子关系
+    const hasParentRelationship = this.workflowRelationships.has(workflowId) &&
+      this.workflowRelationships.get(workflowId)?.parentWorkflowId !== undefined;
+    
+    return hasReferenceRelations || hasParentRelationship;
   }
 
   /**
@@ -850,18 +857,6 @@ class WorkflowRegistry {
       });
     }
 
-    // 3. 添加引用关系记录
-    this.addReferenceRelation({
-      sourceWorkflowId: parentWorkflowId,
-      targetWorkflowId: childWorkflowId,
-      referenceType: 'subgraph',
-      isRuntime: false,
-      sourceReferenceId: subgraphNodeId,
-      details: {
-        nodeId: subgraphNodeId,
-        createdAt: Date.now()
-      }
-    });
   }
 
   /**
