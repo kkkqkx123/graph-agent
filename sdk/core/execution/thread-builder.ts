@@ -9,7 +9,7 @@
 
 import type { ProcessedWorkflowDefinition } from '../../types/workflow';
 import type { Thread, ThreadOptions, ThreadStatus } from '../../types/thread';
-import { ThreadType } from '../../types/thread';
+import { ThreadType, ErrorHandlingStrategy } from '../../types/thread';
 import { ConversationManager } from './managers/conversation-manager';
 import { ThreadContext } from './context/thread-context';
 import { NodeType } from '../../types/node';
@@ -138,7 +138,7 @@ export class ThreadBuilder {
       nodeResults: [],
       startTime: now,
       errors: [],
-      errorHandling: processedWorkflow.config?.errorHandling
+      errorHandling: processedWorkflow.config?.errorHandling || { strategy: ErrorHandlingStrategy.STOP_ON_ERROR }
     };
 
     // 步骤4：从 WorkflowDefinition 初始化变量

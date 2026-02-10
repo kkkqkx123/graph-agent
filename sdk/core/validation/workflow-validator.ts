@@ -34,6 +34,7 @@ import { validateNodeByType } from './node-validation';
 import { validateHooks } from './hook-validator';
 import { validateTriggers } from './trigger-validator';
 import { SelfReferenceValidationStrategy } from './strategies/self-reference-validation-strategy';
+import { ErrorHandlingStrategy } from '../../types/thread';
 
 /**
  * 工作流变量schema
@@ -61,9 +62,10 @@ const retryPolicySchema = z.object({
  * 错误处理策略schema
  */
 const errorHandlingSchema = z.object({
-  stopOnError: z.boolean().optional(),
-  continueOnError: z.boolean().optional(),
-  fallbackNodeId: z.string().optional()
+  strategy: z.custom<ErrorHandlingStrategy>(
+    (val): val is ErrorHandlingStrategy =>
+      Object.values(ErrorHandlingStrategy).includes(val as ErrorHandlingStrategy)
+  )
 });
 
 /**

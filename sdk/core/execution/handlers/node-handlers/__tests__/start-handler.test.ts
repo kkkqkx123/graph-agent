@@ -6,7 +6,7 @@ import { startHandler } from '../start-handler';
 import type { Node, StartNodeConfig } from '../../../../../types/node';
 import { NodeType } from '../../../../../types/node';
 import type { Thread } from '../../../../../types/thread';
-import { ThreadStatus } from '../../../../../types/thread';
+import { ThreadStatus, ErrorHandlingStrategy } from '../../../../../types/thread';
 
 describe('start-handler', () => {
   let mockThread: Thread;
@@ -209,7 +209,7 @@ describe('start-handler', () => {
   describe('边界情况测试', () => {
     it('应该处理带有errorHandling的Thread', async () => {
       mockThread.errorHandling = {
-        stopOnError: true
+        strategy: ErrorHandlingStrategy.STOP_ON_ERROR
       };
       
       const result = await startHandler(mockThread, mockNode);
@@ -217,7 +217,7 @@ describe('start-handler', () => {
       expect(result.message).toBe('Workflow started');
       // start-handler不应该修改errorHandling，应该保留原有的errorHandling
       expect(mockThread.errorHandling).toEqual({
-        stopOnError: true
+        strategy: ErrorHandlingStrategy.STOP_ON_ERROR
       });
     });
 

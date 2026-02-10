@@ -18,6 +18,7 @@
 import { ThreadContext } from '../context/thread-context';
 import type { Node } from '../../../types/node';
 import type { NodeExecutionResult } from '../../../types/thread';
+import { ErrorHandlingStrategy } from '../../../types/thread';
 import type { EventManager } from '../../services/event-manager';
 import { EventType } from '../../../types/events';
 import type { ErrorEvent } from '../../../types/events';
@@ -52,35 +53,38 @@ export async function handleNodeFailure(
 
     // 步骤3：根据错误处理策略决定后续操作
     const errorHandling = threadContext.thread.errorHandling;
+    
+    if (!errorHandling) {
+      // 默认行为：停止执行，状态由外部管理
+      return;
+    }
 
-    if (errorHandling) {
-      if (errorHandling.stopOnError) {
+    switch (errorHandling.strategy) {
+      case ErrorHandlingStrategy.STOP_ON_ERROR:
         // 停止执行，状态由外部管理
         return;
-      } else if (errorHandling.continueOnError) {
-        // 继续执行
-        const fallbackNodeId = errorHandling.fallbackNodeId;
-        if (fallbackNodeId) {
-          threadContext.setCurrentNodeId(fallbackNodeId);
-        } else {
-          // 没有回退节点，尝试路由到下一个节点
-          const navigator = threadContext.getNavigator();
-          const currentNodeId = node.id;
-          const lastResult = threadContext.getNodeResults()[threadContext.getNodeResults().length - 1];
-          const nextNodeId = navigator.selectNextNodeWithContext(
-            currentNodeId,
-            threadContext.thread,
-            node.type,
-            lastResult
-          );
-          if (nextNodeId) {
-            threadContext.setCurrentNodeId(nextNodeId);
-          }
+
+      case ErrorHandlingStrategy.CONTINUE_ON_ERROR:
+        // 继续执行，路由到下一个节点
+        const navigator = threadContext.getNavigator();
+        const currentNodeId = node.id;
+        const lastResult = threadContext.getNodeResults()[threadContext.getNodeResults().length - 1];
+        const nextNodeId = navigator.selectNextNodeWithContext(
+          currentNodeId,
+          threadContext.thread,
+          node.type,
+          lastResult
+        );
+        if (nextNodeId) {
+          threadContext.setCurrentNodeId(nextNodeId);
         }
-      }
+        break;
+
+      default:
+        // 未知策略，默认停止执行
+        return;
     }
-    // 默认行为：停止执行，状态由外部管理
-  }
+}
 
 /**
  * 处理执行错误
@@ -108,4 +112,4 @@ export async function handleExecutionError(
     await eventManager.emit(errorEvent);
 
     // 状态由外部管理
-  }
+}

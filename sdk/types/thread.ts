@@ -82,15 +82,44 @@ export interface ThreadVariable {
 }
 
 /**
+ * 错误处理策略枚举
+ */
+export enum ErrorHandlingStrategy {
+  /** 遇到错误时停止执行（默认） */
+  STOP_ON_ERROR = 'STOP_ON_ERROR',
+  /** 遇到错误时继续执行，路由到下一个节点 */
+  CONTINUE_ON_ERROR = 'CONTINUE_ON_ERROR'
+}
+
+/**
  * 错误处理配置
+ *
+ * 说明：
+ * - 错误事件触发后，工作流的触发器机制会自动处理
+ * - 可以在工作流定义中配置监听 ERROR 事件的触发器
+ * - 触发器动作类型为 EXECUTE_TRIGGERED_SUBGRAPH
+ * - 触发器参数中指定错误处理子工作流ID
+ *
+ * 示例配置：
+ * ```typescript
+ * workflow.triggers = [{
+ *   id: 'error-handler-trigger',
+ *   name: 'Error Handler',
+ *   condition: {
+ *     eventType: EventType.ERROR
+ *   },
+ *   action: {
+ *     type: TriggerActionType.EXECUTE_TRIGGERED_SUBGRAPH,
+ *     parameters: {
+ *       triggeredWorkflowId: 'error-handling-workflow-id'
+ *     }
+ *   }
+ * }]
+ * ```
  */
 export interface ErrorHandlingConfig {
-  /** 遇到错误时停止执行 */
-  stopOnError?: boolean;
-  /** 遇到错误时继续执行 */
-  continueOnError?: boolean;
-  /** 回退节点ID */
-  fallbackNodeId?: ID;
+  /** 错误处理策略 */
+  strategy: ErrorHandlingStrategy;
 }
 
 /**

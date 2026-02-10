@@ -6,7 +6,7 @@ import { endHandler } from '../end-handler';
 import type { Node, EndNodeConfig } from '../../../../../types/node';
 import { NodeType } from '../../../../../types/node';
 import type { Thread } from '../../../../../types/thread';
-import { ThreadStatus } from '../../../../../types/thread';
+import { ThreadStatus, ErrorHandlingStrategy } from '../../../../../types/thread';
 
 // Mock utils functions
 jest.mock('../../../../../utils', () => ({
@@ -93,7 +93,6 @@ describe('end-handler', () => {
           nodeId: 'previous-node',
           nodeType: 'VARIABLE',
           status: 'COMPLETED',
-          data: { result: 'from-last-node', value: 123 },
           timestamp: 800
         }
       ];
@@ -118,9 +117,9 @@ describe('end-handler', () => {
   describe('执行条件测试', () => {
     it('应该在RUNNING状态下正常执行', async () => {
       mockThread.status = ThreadStatus.RUNNING;
-      
+
       const result = await endHandler(mockThread, mockNode);
-      
+
       expect(result.message).toBe('Workflow completed');
     });
 
@@ -137,9 +136,9 @@ describe('end-handler', () => {
       for (const status of nonRunnableStates) {
         mockThread.status = status;
         mockThread.nodeResults = []; // 确保没有执行过
-        
+
         const result = await endHandler(mockThread, mockNode);
-        
+
         expect(result).toMatchObject({
           nodeId: 'end-node-1',
           nodeType: 'END',
@@ -147,7 +146,7 @@ describe('end-handler', () => {
           step: 1,
           executionTime: 0
         });
-        
+
         // 验证Thread状态未改变
         expect(mockThread.status).toBe(status);
         expect(mockThread.nodeResults).toHaveLength(0);
@@ -157,10 +156,10 @@ describe('end-handler', () => {
     it('应该在已经执行过的情况下跳过执行', async () => {
       // 先执行一次
       await endHandler(mockThread, mockNode);
-      
+
       // 再次执行应该被跳过
       const result = await endHandler(mockThread, mockNode);
-      
+
       expect(result).toMatchObject({
         nodeId: 'end-node-1',
         nodeType: 'END',
@@ -168,7 +167,7 @@ describe('end-handler', () => {
         step: 2, // step应该是2，因为已经有1个结果
         executionTime: 0
       });
-      
+
       // 验证Thread状态未改变（除了step计数）
       expect(mockThread.nodeResults).toHaveLength(1); // 结果数组长度应该仍然是1
     });
@@ -183,7 +182,6 @@ describe('end-handler', () => {
           nodeId: 'previous-node',
           nodeType: 'VARIABLE',
           status: 'COMPLETED',
-          data: { shouldNotBeUsed: true },
           timestamp: 800
         }
       ];
@@ -202,7 +200,6 @@ describe('end-handler', () => {
           nodeId: 'previous-node',
           nodeType: 'VARIABLE',
           status: 'COMPLETED',
-          data: { lastNodeData: 'used' },
           timestamp: 800
         }
       ];
@@ -220,7 +217,6 @@ describe('end-handler', () => {
           nodeId: 'previous-node',
           nodeType: 'VARIABLE',
           status: 'COMPLETED',
-          data: { lastNodeData: 'used' },
           timestamp: 800
         }
       ];
@@ -261,23 +257,23 @@ describe('end-handler', () => {
 
     it('应该处理带有errorHandling的Thread', async () => {
       mockThread.errorHandling = {
-        stopOnError: true
+        strategy: ErrorHandlingStrategy.STOP_ON_ERROR
       };
-      
+
       const result = await endHandler(mockThread, mockNode);
-      
+
       expect(result.message).toBe('Workflow completed');
       expect(mockThread.errorHandling).toEqual({
-        stopOnError: true
+        strategy: ErrorHandlingStrategy.STOP_ON_ERROR
       });
     });
 
     it('应该正确计算executionTime', async () => {
       mockThread.startTime = 200;
       (require('../../../../../utils').now as jest.Mock).mockReturnValue(1500);
-      
+
       const result = await endHandler(mockThread, mockNode);
-      
+
       expect(result.executionTime).toBe(1300); // 1500 - 200 = 1300
     });
   });

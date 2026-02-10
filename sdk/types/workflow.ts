@@ -11,6 +11,7 @@ import type { GraphAnalysisResult, Graph } from './graph';
 import type { WorkflowTrigger } from './trigger';
 import type { TriggerReference } from './trigger-template';
 import type { CheckpointMetadata } from './checkpoint';
+import type { ErrorHandlingConfig } from './thread';
 
 /**
  * 工作流状态枚举
@@ -67,11 +68,7 @@ export interface WorkflowConfig {
     backoffMultiplier?: number;
   };
   /** 错误处理策略 */
-  errorHandling?: {
-    stopOnError?: boolean;
-    continueOnError?: boolean;
-    fallbackNodeId?: ID;
-  };
+  errorHandling?: ErrorHandlingConfig;
   /** 工具审批配置 */
   toolApproval?: ToolApprovalConfig;
 }
