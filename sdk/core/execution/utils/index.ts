@@ -88,3 +88,5 @@ export {
   VariableAccessor,
   VariableNamespace
 } from './variable-accessor';
+
+export { checkWorkflowReferences } from "./workflow-reference-checker";

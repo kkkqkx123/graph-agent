@@ -15,7 +15,7 @@ import type {
   WorkflowRelationship,
   WorkflowHierarchy
 } from '../../types/workflow';
-import type { WorkflowReferenceInfo, WorkflowReferenceRelation, WorkflowReferenceType } from '../../types/workflow-reference';
+import type { WorkflowReference, WorkflowReferenceInfo, WorkflowReferenceRelation, WorkflowReferenceType } from '../../types/workflow-reference';
 import type { GraphBuildOptions } from '../../types';
 import type { ID } from '../../types/common';
 import type { Node } from '../../types/node';
@@ -30,7 +30,7 @@ import { triggerTemplateRegistry } from './trigger-template-registry';
 import type { TriggerReference } from '../../types/trigger-template';
 import type { WorkflowTrigger } from '../../types/trigger';
 import { graphRegistry } from './graph-registry';
-import { checkWorkflowReferences } from '../../utils/workflow-reference-checker';
+import { checkWorkflowReferences } from '../execution/utils/workflow-reference-checker';
 
 /**
  * 工作流摘要信息
@@ -143,7 +143,7 @@ class WorkflowRegistry {
    */
   hasReferences(workflowId: string): boolean {
     return this.referenceRelations.has(workflowId) &&
-           this.referenceRelations.get(workflowId)!.length > 0;
+      this.referenceRelations.get(workflowId)!.length > 0;
   }
 
   /**
@@ -161,6 +161,25 @@ class WorkflowRegistry {
    */
   clearReferenceRelations(workflowId: string): void {
     this.referenceRelations.delete(workflowId);
+  }
+
+  /**
+   * 格式化引用详情信息
+   * @param references 引用列表
+   * @returns 格式化的引用详情字符串
+   */
+  private formatReferenceDetails(references: WorkflowReference[]): string {
+    if (references.length === 0) {
+      return '  No references found.';
+    }
+
+    return references.map((ref, index) => {
+      const details = Object.entries(ref.details)
+        .map(([key, value]) => `${key}: ${value}`)
+        .join(', ');
+      
+      return `  ${index + 1}. [${ref.type}] ${ref.sourceName} (${ref.sourceId}) - ${ref.isRuntimeReference ? 'Runtime' : 'Static'}${details ? ` - ${details}` : ''}`;
+    }).join('\n');
   }
 
   /**
@@ -344,18 +363,30 @@ class WorkflowRegistry {
     const shouldCheck = options?.checkReferences !== false;
 
     if (shouldCheck) {
-      const referenceInfo = this.checkWorkflowReferences(workflowId);
-      if (referenceInfo.hasReferences && !options?.force) {
-        throw new ValidationError(
-          `Cannot delete workflow '${workflowId}': it is referenced by ${referenceInfo.references.length} other components. ` +
-          `Use force=true to override, or check references first.`,
-          'workflow.delete.referenced'
-        );
-      }
+      // 快速检查：使用引用关系映射进行快速过滤
+      if (this.hasReferences(workflowId)) {
+        // 详细检查：仅当有引用时才执行完整检查
+        const referenceInfo = this.checkWorkflowReferences(workflowId);
+        if (referenceInfo.hasReferences && !options?.force) {
+          // 构建详细的引用信息
+          const referenceDetails = this.formatReferenceDetails(referenceInfo.references);
+          throw new ValidationError(
+            `Cannot delete workflow '${workflowId}': it is referenced by ${referenceInfo.references.length} other components.\n\n` +
+            `References:\n${referenceDetails}\n\n` +
+            `Use force=true to override, or check references first.`,
+            'workflow.delete.referenced',
+            { references: referenceInfo.references }
+          );
+        }
 
-      if (referenceInfo.stats.runtimeReferences > 0 && options?.force) {
-        console.warn(`Force deleting workflow '${workflowId}' with ${referenceInfo.stats.runtimeReferences} active references`);
+        if (referenceInfo.stats.runtimeReferences > 0 && options?.force) {
+          // 构建详细的运行时引用信息
+          const runtimeReferences = referenceInfo.references.filter(ref => ref.isRuntimeReference);
+          const runtimeDetails = this.formatReferenceDetails(runtimeReferences);
+          console.warn(`Force deleting workflow '${workflowId}' with ${referenceInfo.stats.runtimeReferences} active references:\n${runtimeDetails}`);
+        }
       }
+      // 如果没有引用关系，直接跳过详细检查，提高性能
     }
 
     this.workflows.delete(workflowId);

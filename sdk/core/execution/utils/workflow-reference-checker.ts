@@ -3,13 +3,13 @@
  * 提供工作流引用检查功能，用于安全删除和更新操作
  */
 
-import type { WorkflowRegistry } from '../core/services/workflow-registry';
-import type { ThreadRegistry } from '../core/services/thread-registry';
-import type { ThreadContext } from '../core/execution/context/thread-context';
-import type { WorkflowTrigger } from '../types/trigger';
-import { TriggerActionType } from '../types/trigger';
-import type { TriggerReference } from '../types/trigger-template';
-import type { WorkflowReference, WorkflowReferenceInfo } from '../types/workflow-reference';
+import type { WorkflowRegistry } from '../../services/workflow-registry';
+import type { ThreadRegistry } from '../../services/thread-registry';
+import type { ThreadContext } from '../context/thread-context';
+import type { WorkflowTrigger } from '../../../types/trigger';
+import { TriggerActionType } from '../../../types/trigger';
+import type { TriggerReference } from '../../../types/trigger-template';
+import type { WorkflowReference, WorkflowReferenceInfo } from '../../../types/workflow-reference';
 
 /**
  * 检查工作流是否被引用
@@ -135,7 +135,7 @@ function checkThreadReferences(
   workflowId: string
 ): WorkflowReference[] {
   const references: WorkflowReference[] = [];
-  
+
   // 快速检查：使用活跃工作流集合进行快速过滤
   if (!threadRegistry.isWorkflowActive(workflowId)) {
     return references;

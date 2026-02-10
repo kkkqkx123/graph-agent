@@ -2,7 +2,6 @@
  * 版本工具函数单元测试
  */
 
-import { describe, it, expect } from '@jest/globals';
 import {
   initialVersion,
   parseVersion,

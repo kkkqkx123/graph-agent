@@ -3,9 +3,9 @@
  */
 
 import { checkWorkflowReferences } from '../workflow-reference-checker';
-import type { WorkflowRegistry } from '../../core/services/workflow-registry';
-import type { ThreadRegistry } from '../../core/services/thread-registry';
-import type { ThreadContext } from '../../core/execution/context/thread-context';
+import type { WorkflowRegistry } from '../../../services/workflow-registry';
+import type { ThreadRegistry } from '../../../services/thread-registry';
+import type { ThreadContext } from '../../context/thread-context';
 
 // Mock dependencies
 const mockWorkflowRegistry = {
@@ -37,7 +37,7 @@ describe('checkWorkflowReferences', () => {
       mockThreadRegistry.isWorkflowActive.mockReturnValue(false);
 
       const result = checkWorkflowReferences(mockWorkflowRegistry, mockThreadRegistry, 'test-workflow');
-      
+
       expect(result.hasReferences).toBe(false);
       expect(result.references).toHaveLength(0);
       expect(result.canSafelyDelete).toBe(true);
@@ -52,7 +52,7 @@ describe('checkWorkflowReferences', () => {
     it('should detect subgraph references', () => {
       mockWorkflowRegistry.getParentWorkflow.mockReturnValue('parent-workflow');
       mockWorkflowRegistry.getWorkflowHierarchy.mockReturnValue({ depth: 1 });
-      
+
       mockWorkflowRegistry.get.mockReturnValue({
         id: 'parent-workflow',
         name: 'Parent Workflow',
@@ -62,13 +62,13 @@ describe('checkWorkflowReferences', () => {
         createdAt: Date.now(),
         updatedAt: Date.now()
       });
-      
+
       mockWorkflowRegistry.list.mockReturnValue([]);
       mockThreadRegistry.getAll.mockReturnValue([]);
       mockThreadRegistry.isWorkflowActive.mockReturnValue(false);
 
       const result = checkWorkflowReferences(mockWorkflowRegistry, mockThreadRegistry, 'test-workflow');
-      
+
       expect(result.hasReferences).toBe(true);
       expect(result.references).toHaveLength(1);
       expect(result.references[0]).toEqual({
@@ -87,7 +87,7 @@ describe('checkWorkflowReferences', () => {
     it('should detect thread references', () => {
       mockWorkflowRegistry.list.mockReturnValue([]);
       mockWorkflowRegistry.workflowRelationships.clear();
-      
+
       const mockThreadContext = {
         getWorkflowId: () => 'test-workflow',
         getThreadId: () => 'thread-1',
@@ -96,12 +96,12 @@ describe('checkWorkflowReferences', () => {
         getTriggeredSubworkflowId: () => undefined,
         getSubgraphStack: () => []
       } as unknown as ThreadContext;
-      
+
       mockThreadRegistry.getAll.mockReturnValue([mockThreadContext]);
       mockThreadRegistry.isWorkflowActive.mockReturnValue(true);
 
       const result = checkWorkflowReferences(mockWorkflowRegistry, mockThreadRegistry, 'test-workflow');
-      
+
       expect(result.hasReferences).toBe(true);
       expect(result.references).toHaveLength(1);
       expect(result.references[0]!.type).toBe('thread');
@@ -112,7 +112,7 @@ describe('checkWorkflowReferences', () => {
     it('should detect triggered subworkflow thread references', () => {
       mockWorkflowRegistry.list.mockReturnValue([]);
       mockWorkflowRegistry.workflowRelationships.clear();
-      
+
       const mockThreadContext = {
         getWorkflowId: () => 'other-workflow',
         getThreadId: () => 'thread-1',
@@ -121,12 +121,12 @@ describe('checkWorkflowReferences', () => {
         getTriggeredSubworkflowId: () => 'test-workflow',
         getSubgraphStack: () => []
       } as unknown as ThreadContext;
-      
+
       mockThreadRegistry.getAll.mockReturnValue([mockThreadContext]);
       mockThreadRegistry.isWorkflowActive.mockReturnValue(true);
 
       const result = checkWorkflowReferences(mockWorkflowRegistry, mockThreadRegistry, 'test-workflow');
-      
+
       expect(result.hasReferences).toBe(true);
       expect(result.references).toHaveLength(1);
       expect(result.references[0]!.type).toBe('thread');
