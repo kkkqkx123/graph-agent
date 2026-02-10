@@ -9,12 +9,17 @@
  * 4. 支持多实例执行环境
  *
  * 管理的组件：
- * - WorkflowRegistry: 工作流注册器
- * - ThreadRegistry: 线程注册表
- * - EventManager: 事件管理器
+ * - WorkflowRegistry: 工作流注册器（全局单例）
+ * - ThreadRegistry: 线程注册表（全局单例）
+ * - EventManager: 事件管理器（全局单例）
  * - CheckpointStateManager: 检查点状态管理器（有状态服务）
  * - ThreadLifecycleManager: 生命周期管理器（原子操作）
- * - ThreadLifecycleCoordinator: 生命周期协调器（流程编排）
+ * - ThreadCascadeManager: 级联管理器（管理父子线程关系）
+ * - ThreadLifecycleCoordinator: 生命周期协调器（有状态，流程编排）
+ *
+ * Coordinator 管理策略：
+ * - 有状态 Coordinator（如 ThreadLifecycleCoordinator）：由 ExecutionContext 管理实例
+ * - 无状态 Coordinator（如 CheckpointCoordinator）：使用静态方法，不注册到 ComponentRegistry
  *
  * 职责：
  * - 管理执行组件的创建和访问
@@ -34,12 +39,11 @@ import type { WorkflowRegistry } from '../../services/workflow-registry';
 import type { ThreadRegistry } from '../../services/thread-registry';
 import type { EventManager } from '../../services/event-manager';
 import { CheckpointStateManager } from '../managers/checkpoint-state-manager';
-import { CheckpointCoordinator } from '../coordinators/checkpoint-coordinator';
 import { ThreadLifecycleManager } from '../managers/thread-lifecycle-manager';
+import { ThreadCascadeManager } from '../managers/thread-cascade-manager';
 import { ThreadLifecycleCoordinator } from '../coordinators/thread-lifecycle-coordinator';
 import type { LifecycleCapable } from '../managers/lifecycle-capable';
 import { MemoryCheckpointStorage } from '../../storage/memory-checkpoint-storage';
-import { globalMessageStorage } from '../../services/global-message-storage';
 
 /**
  * 执行上下文 - 轻量级依赖注入容器
@@ -99,7 +103,11 @@ export class ExecutionContext {
     const lifecycleManager = new ThreadLifecycleManager(eventManager);
     this.componentRegistry.register('lifecycleManager', lifecycleManager);
 
-    // 5. ThreadLifecycleCoordinator 依赖 ExecutionContext
+    // 5. ThreadCascadeManager 依赖 ThreadRegistry 和 ThreadLifecycleManager
+    const cascadeManager = new ThreadCascadeManager(threadRegistry, lifecycleManager);
+    this.componentRegistry.register('cascadeManager', cascadeManager);
+
+    // 6. ThreadLifecycleCoordinator 依赖 ExecutionContext
     const lifecycleCoordinator = new ThreadLifecycleCoordinator(this);
     this.componentRegistry.register('lifecycleCoordinator', lifecycleCoordinator);
 
@@ -190,6 +198,15 @@ export class ExecutionContext {
   }
 
   /**
+   * 获取 ThreadCascadeManager
+   * @returns ThreadCascadeManager 实例
+   */
+  getCascadeManager(): any {
+    this.ensureInitialized();
+    return this.componentRegistry.getAny('cascadeManager');
+  }
+
+  /**
    * 获取 GraphRegistry
    * @returns GraphRegistry 实例
    */
@@ -276,8 +293,9 @@ export class ExecutionContext {
     // 注意：不包含checkpointCoordinator，因为它是完全无状态的静态类
     const cleanupOrder: string[] = [
       'lifecycleCoordinator',     // 依赖其他所有组件
-      'lifecycleManager',         // 依赖eventManager
-      'checkpointStateManager'    // 依赖checkpointStorage
+      'cascadeManager',           // 依赖 ThreadRegistry 和 ThreadLifecycleManager
+      'lifecycleManager',         // 依赖 eventManager
+      'checkpointStateManager'    // 依赖 checkpointStorage
     ];
 
     // 获取组件映射用于清理
@@ -309,7 +327,7 @@ export class ExecutionContext {
   getLifecycleManagers(): Array<{ name: string; manager: LifecycleCapable }> {
     // 只返回由ExecutionContext创建的组件，不包括全局单例
     // 注意：不包含checkpointCoordinator，因为它是完全无状态的静态类
-    const managedComponents = ['checkpointStateManager', 'lifecycleManager', 'lifecycleCoordinator'];
+    const managedComponents = ['checkpointStateManager', 'lifecycleManager', 'cascadeManager', 'lifecycleCoordinator'];
 
     const componentsMap = this.componentRegistry.getAllComponents();
 

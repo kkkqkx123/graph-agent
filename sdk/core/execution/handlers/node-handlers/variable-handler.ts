@@ -215,12 +215,7 @@ export async function variableHandler(thread: Thread, node: Node, context?: any)
     nodeId: node.id,
     nodeType: node.type,
     status: 'COMPLETED',
-    timestamp: now(),
-    data: {
-      variableName: config.variableName,
-      value: typedResult,
-      type: config.variableType
-    }
+    timestamp: now()
   });
 
   // 返回执行结果

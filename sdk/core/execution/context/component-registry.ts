@@ -7,7 +7,6 @@ import type { WorkflowRegistry } from '../../services/workflow-registry';
 import type { ThreadRegistry } from '../../services/thread-registry';
 import type { EventManager } from '../../services/event-manager';
 import { CheckpointStateManager } from '../managers/checkpoint-state-manager';
-import { CheckpointCoordinator } from '../coordinators/checkpoint-coordinator';
 import { ThreadLifecycleManager } from '../managers/thread-lifecycle-manager';
 import { ThreadLifecycleCoordinator } from '../coordinators/thread-lifecycle-coordinator';
 
@@ -19,7 +18,6 @@ export interface ComponentMap {
   threadRegistry: ThreadRegistry;
   eventManager: EventManager;
   checkpointStateManager: CheckpointStateManager;
-  checkpointCoordinator: CheckpointCoordinator;
   lifecycleManager: ThreadLifecycleManager;
   lifecycleCoordinator: ThreadLifecycleCoordinator;
   toolService: any;

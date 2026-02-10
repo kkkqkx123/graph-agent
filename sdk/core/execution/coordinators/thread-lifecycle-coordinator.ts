@@ -45,15 +45,12 @@ import { emit } from '../utils/event/event-emitter';
  * 负责高层的流程编排和协调，组织多个组件完成复杂的Thread生命周期操作
  */
 export class ThreadLifecycleCoordinator {
-  private lifecycleManager?: ThreadLifecycleManager;
-  private cascadeManager?: ThreadCascadeManager;
   private executionContext: ExecutionContext;
 
   constructor(
     executionContext?: ExecutionContext
   ) {
     this.executionContext = executionContext || ExecutionContext.createDefault();
-    // 延迟初始化 lifecycleManager，避免循环依赖
   }
 
   /**
@@ -61,10 +58,7 @@ export class ThreadLifecycleCoordinator {
    * @returns ThreadLifecycleManager 实例
    */
   private getLifecycleManager(): ThreadLifecycleManager {
-    if (!this.lifecycleManager) {
-      this.lifecycleManager = new ThreadLifecycleManager(this.executionContext.getEventManager());
-    }
-    return this.lifecycleManager;
+    return this.executionContext.getThreadLifecycleManager();
   }
 
   /**
@@ -208,13 +202,7 @@ export class ThreadLifecycleCoordinator {
    * @returns ThreadCascadeManager 实例
    */
   private getCascadeManager(): ThreadCascadeManager {
-    if (!this.cascadeManager) {
-      this.cascadeManager = new ThreadCascadeManager(
-        this.executionContext.getThreadRegistry(),
-        this.getLifecycleManager()
-      );
-    }
-    return this.cascadeManager;
+    return this.executionContext.getCascadeManager();
   }
 
   /**

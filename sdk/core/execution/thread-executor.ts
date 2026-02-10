@@ -39,7 +39,6 @@ import {
 import { LLMExecutionCoordinator } from './coordinators/llm-execution-coordinator';
 import { ThreadBuilder } from './thread-builder';
 import { ExecutionContext } from './context/execution-context';
-import { EventType } from '../../types/events';
 
 /**
  * ThreadExecutor - Thread 执行器
