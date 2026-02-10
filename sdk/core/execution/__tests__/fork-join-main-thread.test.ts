@@ -53,7 +53,7 @@ describe('Fork/Join 主线程上下文处理', () => {
       const childThreadContext = await threadBuilder.createFork(parentThreadContext, forkConfig);
 
       // 验证forkPathId已存储
-      expect(childThreadContext.thread.metadata?.forkPathId).toBe('path-1');
+      expect(childThreadContext.thread.forkJoinContext?.forkPathId).toBe('path-1');
     });
 
     it('应该为不同的子线程存储不同的forkPathId', async () => {
@@ -78,8 +78,8 @@ describe('Fork/Join 主线程上下文处理', () => {
       const child2 = await threadBuilder.createFork(parentThreadContext, forkConfig2);
 
       // 验证不同的forkPathId
-      expect(child1.thread.metadata?.forkPathId).toBe('path-1');
-      expect(child2.thread.metadata?.forkPathId).toBe('path-2');
+      expect(child1.thread.forkJoinContext?.forkPathId).toBe('path-1');
+      expect(child2.thread.forkJoinContext?.forkPathId).toBe('path-2');
     });
   });
 
@@ -91,11 +91,11 @@ describe('Fork/Join 主线程上下文处理', () => {
 
       // 创建子线程
       const child1 = createMockThreadContext('child-1', executionContext);
-      child1.thread.metadata = { forkPathId: 'path-1' };
+      child1.thread.forkJoinContext = { forkId: 'test-fork', forkPathId: 'path-1' };
       child1.thread.status = ThreadStatus.COMPLETED;
 
       const child2 = createMockThreadContext('child-2', executionContext);
-      child2.thread.metadata = { forkPathId: 'path-2' };
+      child2.thread.forkJoinContext = { forkId: 'test-fork', forkPathId: 'path-2' };
       child2.thread.status = ThreadStatus.COMPLETED;
 
       executionContext.getThreadRegistry().register(child1);
@@ -137,11 +137,11 @@ describe('Fork/Join 主线程上下文处理', () => {
 
       // 创建子线程
       const child1 = createMockThreadContext('child-1', executionContext);
-      child1.thread.metadata = { forkPathId: 'path-1' };
+      child1.thread.forkJoinContext = { forkId: 'test-fork', forkPathId: 'path-1' };
       child1.thread.status = ThreadStatus.COMPLETED;
 
       const child2 = createMockThreadContext('child-2', executionContext);
-      child2.thread.metadata = { forkPathId: 'path-2' };
+      child2.thread.forkJoinContext = { forkId: 'test-fork', forkPathId: 'path-2' };
       child2.thread.status = ThreadStatus.COMPLETED;
 
       executionContext.getThreadRegistry().register(child1);
@@ -182,7 +182,7 @@ describe('Fork/Join 主线程上下文处理', () => {
 
       // 创建子线程
       const child1 = createMockThreadContext('child-1', executionContext);
-      child1.thread.metadata = { forkPathId: 'path-1' };
+      child1.thread.forkJoinContext = { forkId: 'test-fork', forkPathId: 'path-1' };
       child1.thread.status = ThreadStatus.COMPLETED;
 
       executionContext.getThreadRegistry().register(child1);

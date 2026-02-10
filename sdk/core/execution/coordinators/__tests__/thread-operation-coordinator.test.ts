@@ -180,7 +180,8 @@ describe('ThreadOperationCoordinator', () => {
 
       const forkConfig: ForkConfig = {
         forkId: 'test-fork',
-        forkStrategy: 'parallel'
+        forkStrategy: 'parallel',
+        forkPathId: 'test-path-1'
       };
 
       const result = await coordinator.fork(parentThreadId, forkConfig);
@@ -192,7 +193,8 @@ describe('ThreadOperationCoordinator', () => {
     it('应该抛出 NotFoundError 当父线程不存在', async () => {
       const nonExistentThreadId = 'non-existent-thread';
       const forkConfig: ForkConfig = {
-        forkId: 'test-fork'
+        forkId: 'test-fork',
+        forkPathId: 'test-path-1'
       };
 
       await expect(coordinator.fork(nonExistentThreadId, forkConfig)).rejects.toThrow(NotFoundError);
@@ -228,7 +230,8 @@ describe('ThreadOperationCoordinator', () => {
       mockThreadRegistry.register(mockThreadContext);
 
       const forkConfig: ForkConfig = {
-        forkId: 'test-fork'
+        forkId: 'test-fork',
+        forkPathId: 'test-path-1'
       };
 
       await expect(coordinator.fork(parentThreadId, forkConfig)).resolves.toBeDefined();
@@ -435,7 +438,8 @@ describe('ThreadOperationCoordinator', () => {
 
       // 对于已完成线程的 fork 操作应该不会抛出错误
       const forkConfig: ForkConfig = {
-        forkId: 'test-fork'
+        forkId: 'test-fork',
+        forkPathId: 'test-path-1'
       };
       await expect(coordinator.fork(threadId, forkConfig)).resolves.toBeDefined();
     });

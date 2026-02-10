@@ -598,7 +598,8 @@ describe('ThreadBuilder', () => {
 
       const forkConfig = {
         forkId: 'test-fork',
-        startNodeId: 'fork-start'
+        startNodeId: 'fork-start',
+        forkPathId: 'test-path-1'
       };
 
       // 执行测试
@@ -618,9 +619,10 @@ describe('ThreadBuilder', () => {
       expect(forkThread.variableScopes.subgraph).toEqual([]); // 清空
       expect(forkThread.variableScopes.loop).toEqual([]); // 清空
 
-      // 验证元数据
-      expect(forkThread.metadata?.parentThreadId).toBe('parent-thread');
-      expect(forkThread.metadata?.forkId).toBe('test-fork');
+      // 验证Fork/Join上下文
+      expect(forkThread.threadType).toBe('FORK_JOIN');
+      expect(forkThread.forkJoinContext?.forkId).toBe('test-fork');
+      expect(forkThread.forkJoinContext?.forkPathId).toBeDefined();
     });
   });
 

@@ -16,7 +16,7 @@ describe('ToolRegistry', () => {
     mockTool = {
       id: 'test-tool-1',
       name: 'test-tool',
-      type: ToolType.BUILTIN,
+      type: ToolType.STATELESS,
       description: 'Test tool',
       parameters: {
         properties: {
@@ -144,11 +144,11 @@ describe('ToolRegistry', () => {
         ...mockTool,
         id: 'test-tool-2',
         name: 'test-tool-2',
-        type: ToolType.NATIVE
+        type: ToolType.STATEFUL
       });
-      const builtinTools = registry.listByType(ToolType.BUILTIN);
-      expect(builtinTools).toHaveLength(1);
-      expect(builtinTools[0]?.type).toBe(ToolType.BUILTIN);
+      const statelessTools = registry.listByType(ToolType.STATELESS);
+      expect(statelessTools).toHaveLength(1);
+      expect(statelessTools[0]?.type).toBe(ToolType.STATELESS);
     });
   });
 

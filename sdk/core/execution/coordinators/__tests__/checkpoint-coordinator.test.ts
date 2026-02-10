@@ -2,7 +2,7 @@
  * CheckpointCoordinator 单元测试
  */
 
-import { CheckpointCoordinator } from '../checkpoint-coordinator';
+import { CheckpointCoordinator, CheckpointDependencies } from '../checkpoint-coordinator';
 import { CheckpointStateManager } from '../../managers/checkpoint-state-manager';
 import { ThreadContext } from '../../context/thread-context';
 import { ConversationManager } from '../../managers/conversation-manager';
@@ -111,6 +111,7 @@ describe('CheckpointCoordinator', () => {
   let mockConversationManager: jest.Mocked<ConversationManager>;
   let mockThread: Thread;
   let mockWorkflowDefinition: WorkflowDefinition;
+  let dependencies: CheckpointDependencies;
 
   beforeEach(() => {
     // 重置所有 mock
@@ -140,7 +141,8 @@ describe('CheckpointCoordinator', () => {
       unregister: jest.fn(),
       clear: jest.fn(),
       has: jest.fn(),
-      size: jest.fn()
+      size: jest.fn(),
+      getGraph: jest.fn()
     } as any;
 
     mockGlobalMessageStorage = {
@@ -227,6 +229,14 @@ describe('CheckpointCoordinator', () => {
       createdAt: Date.now(),
       updatedAt: Date.now()
     } as WorkflowDefinition;
+
+    // 创建依赖项对象
+    dependencies = {
+      threadRegistry: mockThreadRegistry as any,
+      checkpointStateManager: mockCheckpointStateManager as any,
+      workflowRegistry: mockWorkflowRegistry as any,
+      globalMessageStorage: mockGlobalMessageStorage as any
+    };
   });
 
   describe('静态方法', () => {
@@ -261,7 +271,7 @@ describe('CheckpointCoordinator', () => {
       mockCheckpointStateManager.create.mockResolvedValue('checkpoint-1');
 
       // 执行测试
-      const checkpointId = await coordinator.createCheckpoint('thread-1', {
+      const checkpointId = await CheckpointCoordinator.createCheckpoint('thread-1', dependencies, {
         description: 'Test checkpoint',
         creator: 'test-user'
       });
@@ -306,7 +316,7 @@ describe('CheckpointCoordinator', () => {
       mockCheckpointStateManager.create.mockResolvedValue('checkpoint-1');
 
       // 执行测试
-      const checkpointId = await coordinator.createCheckpoint('thread-1');
+      const checkpointId = await CheckpointCoordinator.createCheckpoint('thread-1', dependencies);
 
       // 验证结果
       expect(checkpointId).toBe('checkpoint-1');
@@ -328,7 +338,7 @@ describe('CheckpointCoordinator', () => {
       mockCheckpointStateManager.create.mockResolvedValue('checkpoint-1');
 
       // 执行测试
-      await coordinator.createCheckpoint('thread-1');
+      await CheckpointCoordinator.createCheckpoint('thread-1', dependencies);
 
       // 验证调用
       expect(mockCheckpointStateManager.create).toHaveBeenCalledWith(
@@ -367,7 +377,7 @@ describe('CheckpointCoordinator', () => {
       mockCheckpointStateManager.create.mockResolvedValue('checkpoint-1');
 
       // 执行测试
-      await coordinator.createCheckpoint('thread-1');
+      await CheckpointCoordinator.createCheckpoint('thread-1', dependencies);
 
       // 验证触发器状态被保存
       expect(mockCheckpointStateManager.create).toHaveBeenCalledWith(
@@ -385,11 +395,11 @@ describe('CheckpointCoordinator', () => {
 
       // 执行测试并验证错误
       await expect(
-        coordinator.createCheckpoint('non-existent-thread')
+        CheckpointCoordinator.createCheckpoint('non-existent-thread', dependencies)
       ).rejects.toThrow(NotFoundError);
 
       await expect(
-        coordinator.createCheckpoint('non-existent-thread')
+        CheckpointCoordinator.createCheckpoint('non-existent-thread', dependencies)
       ).rejects.toThrow('ThreadContext not found');
     });
   });
@@ -454,6 +464,9 @@ describe('CheckpointCoordinator', () => {
       // 设置 mock 返回值
       mockCheckpointStateManager.get.mockResolvedValue(mockCheckpoint);
       mockWorkflowRegistry.get.mockReturnValue(mockWorkflowDefinition);
+      mockWorkflowRegistry.getGraph.mockReturnValue({
+        getNode: jest.fn()
+      } as any);
       mockGlobalMessageStorage.getMessages.mockReturnValue([
         { role: 'user', content: 'test message' } as LLMMessage
       ]);
@@ -469,7 +482,7 @@ describe('CheckpointCoordinator', () => {
       );
 
       // 执行测试
-      const restoredContext = await coordinator.restoreFromCheckpoint('checkpoint-1');
+      const restoredContext = await CheckpointCoordinator.restoreFromCheckpoint('checkpoint-1', dependencies);
 
       // 验证结果
       expect(restoredContext).toBe(mockThreadContext);
@@ -487,11 +500,11 @@ describe('CheckpointCoordinator', () => {
 
       // 执行测试并验证错误
       await expect(
-        coordinator.restoreFromCheckpoint('non-existent-checkpoint')
+        CheckpointCoordinator.restoreFromCheckpoint('non-existent-checkpoint', dependencies)
       ).rejects.toThrow(NotFoundError);
 
       await expect(
-        coordinator.restoreFromCheckpoint('non-existent-checkpoint')
+        CheckpointCoordinator.restoreFromCheckpoint('non-existent-checkpoint', dependencies)
       ).rejects.toThrow('Checkpoint not found');
     });
 
@@ -502,11 +515,11 @@ describe('CheckpointCoordinator', () => {
 
       // 执行测试并验证错误
       await expect(
-        coordinator.restoreFromCheckpoint('checkpoint-1')
+        CheckpointCoordinator.restoreFromCheckpoint('checkpoint-1', dependencies)
       ).rejects.toThrow(NotFoundError);
 
       await expect(
-        coordinator.restoreFromCheckpoint('checkpoint-1')
+        CheckpointCoordinator.restoreFromCheckpoint('checkpoint-1', dependencies)
       ).rejects.toThrow('Workflow not found');
     });
 
@@ -514,15 +527,18 @@ describe('CheckpointCoordinator', () => {
       // 设置 mock 返回值
       mockCheckpointStateManager.get.mockResolvedValue(mockCheckpoint);
       mockWorkflowRegistry.get.mockReturnValue(mockWorkflowDefinition);
+      mockWorkflowRegistry.getGraph.mockReturnValue({
+        getNode: jest.fn()
+      } as any);
       mockGlobalMessageStorage.getMessages.mockReturnValue(undefined);
 
       // 执行测试并验证错误
       await expect(
-        coordinator.restoreFromCheckpoint('checkpoint-1')
+        CheckpointCoordinator.restoreFromCheckpoint('checkpoint-1', dependencies)
       ).rejects.toThrow(NotFoundError);
 
       await expect(
-        coordinator.restoreFromCheckpoint('checkpoint-1')
+        CheckpointCoordinator.restoreFromCheckpoint('checkpoint-1', dependencies)
       ).rejects.toThrow('Message history not found');
     });
 
@@ -530,6 +546,9 @@ describe('CheckpointCoordinator', () => {
       // 设置 mock 返回值
       mockCheckpointStateManager.get.mockResolvedValue(mockCheckpoint);
       mockWorkflowRegistry.get.mockReturnValue(mockWorkflowDefinition);
+      mockWorkflowRegistry.getGraph.mockReturnValue({
+        getNode: jest.fn()
+      } as any);
       mockGlobalMessageStorage.getMessages.mockReturnValue([
         { role: 'user', content: 'test message' } as LLMMessage
       ]);
@@ -545,7 +564,7 @@ describe('CheckpointCoordinator', () => {
       );
 
       // 执行测试
-      await coordinator.restoreFromCheckpoint('checkpoint-1');
+      await CheckpointCoordinator.restoreFromCheckpoint('checkpoint-1', dependencies);
 
       // 验证 ConversationManager 构造函数被调用
       expect(ConversationManager).toHaveBeenCalled();
@@ -565,6 +584,9 @@ describe('CheckpointCoordinator', () => {
       // 设置 mock 返回值
       mockCheckpointStateManager.get.mockResolvedValue(mockCheckpoint);
       mockWorkflowRegistry.get.mockReturnValue(mockWorkflowDefinition);
+      mockWorkflowRegistry.getGraph.mockReturnValue({
+        getNode: jest.fn()
+      } as any);
       mockGlobalMessageStorage.getMessages.mockReturnValue([]);
 
       // Mock ExecutionContext
@@ -578,7 +600,7 @@ describe('CheckpointCoordinator', () => {
       );
 
       // 执行测试
-      await coordinator.restoreFromCheckpoint('checkpoint-1');
+      await CheckpointCoordinator.restoreFromCheckpoint('checkpoint-1', dependencies);
 
       // 验证触发器状态恢复
       expect(mockThreadContext.restoreTriggerState).toHaveBeenCalledWith(triggerStates);
@@ -588,6 +610,9 @@ describe('CheckpointCoordinator', () => {
       // 设置 mock 返回值
       mockCheckpointStateManager.get.mockResolvedValue(mockCheckpoint);
       mockWorkflowRegistry.get.mockReturnValue(mockWorkflowDefinition);
+      mockWorkflowRegistry.getGraph.mockReturnValue({
+        getNode: jest.fn()
+      } as any);
       mockGlobalMessageStorage.getMessages.mockReturnValue([]);
 
       // Mock ExecutionContext
@@ -601,7 +626,7 @@ describe('CheckpointCoordinator', () => {
       );
 
       // 执行测试
-      await coordinator.restoreFromCheckpoint('checkpoint-1');
+      await CheckpointCoordinator.restoreFromCheckpoint('checkpoint-1', dependencies);
 
       // 验证 ThreadContext 构造函数被调用
       expect(ThreadContext).toHaveBeenCalled();
@@ -642,6 +667,9 @@ describe('CheckpointCoordinator', () => {
       // 设置 mock 返回值
       mockCheckpointStateManager.get.mockResolvedValue(invalidCheckpoint);
       mockWorkflowRegistry.get.mockReturnValue(mockWorkflowDefinition);
+      mockWorkflowRegistry.getGraph.mockReturnValue({
+        getNode: jest.fn()
+      } as any);
       mockGlobalMessageStorage.getMessages.mockReturnValue([]);
 
       // Mock ExecutionContext
@@ -656,7 +684,7 @@ describe('CheckpointCoordinator', () => {
 
       // 执行测试 - 应该成功（检查点有效）
       await expect(
-        coordinator.restoreFromCheckpoint('checkpoint-1')
+        CheckpointCoordinator.restoreFromCheckpoint('checkpoint-1', dependencies)
       ).resolves.toBeDefined();
     });
 
@@ -689,7 +717,7 @@ describe('CheckpointCoordinator', () => {
 
       // 执行测试并验证错误
       await expect(
-        coordinator.restoreFromCheckpoint('checkpoint-1')
+        CheckpointCoordinator.restoreFromCheckpoint('checkpoint-1', dependencies)
       ).rejects.toThrow('Invalid checkpoint: missing required fields');
     });
 
@@ -708,7 +736,7 @@ describe('CheckpointCoordinator', () => {
 
       // 执行测试并验证错误
       await expect(
-        coordinator.restoreFromCheckpoint('checkpoint-1')
+        CheckpointCoordinator.restoreFromCheckpoint('checkpoint-1', dependencies)
       ).rejects.toThrow('Invalid checkpoint: missing thread state');
     });
 
@@ -741,7 +769,7 @@ describe('CheckpointCoordinator', () => {
 
       // 执行测试并验证错误
       await expect(
-        coordinator.restoreFromCheckpoint('checkpoint-1')
+        CheckpointCoordinator.restoreFromCheckpoint('checkpoint-1', dependencies)
       ).rejects.toThrow('Invalid checkpoint: incomplete thread state');
     });
   });
@@ -762,18 +790,18 @@ describe('CheckpointCoordinator', () => {
       mockCheckpointStateManager.create.mockResolvedValue('checkpoint-1');
 
       // 执行测试
-      const checkpointId = await coordinator.createNodeCheckpoint('thread-1', 'node-1', {
+      const checkpointId = await CheckpointCoordinator.createNodeCheckpoint('thread-1', 'node-1', dependencies, {
         description: 'Node checkpoint'
       });
 
       // 验证结果
       expect(checkpointId).toBe('checkpoint-1');
 
-      // 验证调用
+      // 验证调用 - description 会被保留（因为 metadata?.description 有值）
       expect(mockCheckpointStateManager.create).toHaveBeenCalledWith(
         expect.objectContaining({
           metadata: expect.objectContaining({
-            description: 'Node checkpoint for node node-1',
+            description: 'Node checkpoint',
             customFields: expect.objectContaining({
               nodeId: 'node-1'
             })
@@ -797,7 +825,7 @@ describe('CheckpointCoordinator', () => {
       mockCheckpointStateManager.create.mockResolvedValue('checkpoint-1');
 
       // 执行测试
-      const checkpointId = await coordinator.createNodeCheckpoint('thread-1', 'node-1', {
+      const checkpointId = await CheckpointCoordinator.createNodeCheckpoint('thread-1', 'node-1', dependencies, {
         description: 'Custom description',
         customFields: {
           customKey: 'customValue'
@@ -807,11 +835,11 @@ describe('CheckpointCoordinator', () => {
       // 验证结果
       expect(checkpointId).toBe('checkpoint-1');
 
-      // 验证调用
+      // 验证调用 - description 会被保留（因为 metadata?.description 有值）
       expect(mockCheckpointStateManager.create).toHaveBeenCalledWith(
         expect.objectContaining({
           metadata: expect.objectContaining({
-            description: 'Node checkpoint for node node-1',
+            description: 'Custom description',
             customFields: expect.objectContaining({
               customKey: 'customValue',
               nodeId: 'node-1'
@@ -836,7 +864,7 @@ describe('CheckpointCoordinator', () => {
       mockCheckpointStateManager.create.mockResolvedValue('checkpoint-1');
 
       // 执行测试
-      const checkpointId = await coordinator.createNodeCheckpoint('thread-1', 'node-1');
+      const checkpointId = await CheckpointCoordinator.createNodeCheckpoint('thread-1', 'node-1', dependencies);
 
       // 验证结果
       expect(checkpointId).toBe('checkpoint-1');

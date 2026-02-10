@@ -25,3 +25,5 @@ export {
   ConversationManagerOptions,
   ConversationState
 } from "./conversation-manager";
+
+export { WorkflowReferenceManager } from "./workflow-reference-manager";

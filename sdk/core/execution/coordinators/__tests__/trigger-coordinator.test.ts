@@ -5,7 +5,7 @@
 import { TriggerCoordinator } from '../trigger-coordinator';
 import { ThreadRegistry } from '../../../services/thread-registry';
 import { WorkflowRegistry } from '../../../services/workflow-registry';
-import { TriggerStateManager, type TriggerRuntimeState } from '../../managers/trigger-state-manager';
+import { TriggerStateManager } from '../../managers/trigger-state-manager';
 import { EventType } from '../../../../types/events';
 import { ValidationError, ExecutionError } from '../../../../types/errors';
 import { TriggerActionType, TriggerStatus, TriggerType } from '../../../../types/trigger';

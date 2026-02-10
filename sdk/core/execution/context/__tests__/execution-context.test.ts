@@ -60,7 +60,6 @@ describe('ExecutionContext', () => {
       expect(executionContext.getWorkflowRegistry()).toBeDefined();
       expect(executionContext.getThreadRegistry()).toBeDefined();
       expect(executionContext.getCheckpointStateManager()).toBeDefined();
-      expect(executionContext.getCheckpointCoordinator()).toBeDefined();
       expect(executionContext.getThreadLifecycleManager()).toBeDefined();
       expect(executionContext.getLifecycleCoordinator()).toBeDefined();
       expect(executionContext.getToolService()).toBeDefined();
@@ -148,11 +147,6 @@ describe('ExecutionContext', () => {
       expect(checkpointStateManager).toBeInstanceOf(CheckpointStateManager);
     });
 
-    it('should get CheckpointCoordinator correctly', () => {
-      const checkpointCoordinator = executionContext.getCheckpointCoordinator();
-      expect(checkpointCoordinator).toBeInstanceOf(CheckpointCoordinator);
-    });
-
     it('should get ThreadLifecycleManager correctly', () => {
       const lifecycleManager = executionContext.getThreadLifecycleManager();
       expect(lifecycleManager).toBeInstanceOf(ThreadLifecycleManager);
@@ -210,7 +204,6 @@ describe('ExecutionContext', () => {
       
       // Verify components are created
       const checkpointStateManager = executionContext.getCheckpointStateManager();
-      const checkpointCoordinator = executionContext.getCheckpointCoordinator();
       
       // Spy on cleanup methods
       const cleanupSpy1 = jest.spyOn(checkpointStateManager, 'cleanup');

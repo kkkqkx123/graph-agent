@@ -443,6 +443,70 @@ describe('WorkflowRegistry', () => {
     });
   });
 
+  describe('hasReferences - 检查工作流引用', () => {
+    it('应该返回 false 当工作流没有引用', () => {
+      const workflow = createValidWorkflow('test-workflow', 'Test Workflow');
+      registry.register(workflow);
+
+      const result = registry.hasReferences('test-workflow');
+      
+      expect(result).toBe(false);
+    });
+
+    it('应该返回 true 当工作流有父工作流引用', () => {
+      const workflow = createValidWorkflow('test-workflow', 'Test Workflow');
+      registry.register(workflow);
+      
+      // 模拟父子关系
+      (registry as any).workflowRelationships.set('test-workflow', {
+        workflowId: 'test-workflow',
+        parentWorkflowId: 'parent-workflow',
+        childWorkflowIds: new Set(),
+        referencedBy: new Map(),
+        depth: 1
+      });
+
+      const result = registry.hasReferences('test-workflow');
+      
+      expect(result).toBe(true);
+    });
+
+    it('应该返回 true 当工作流有 referenceRelations 引用', () => {
+      const workflow = createValidWorkflow('test-workflow', 'Test Workflow');
+      registry.register(workflow);
+      
+      // 模拟引用关系
+      (registry as any).referenceRelations.set('test-workflow', [{
+        sourceWorkflowId: 'other-workflow',
+        targetWorkflowId: 'test-workflow',
+        referenceType: 'trigger',
+        isRuntime: false
+      }]);
+
+      const result = registry.hasReferences('test-workflow');
+      
+      expect(result).toBe(true);
+    });
+
+    it('应该返回 false 当工作流不存在', () => {
+      const result = registry.hasReferences('non-existent-workflow');
+      
+      expect(result).toBe(false);
+    });
+
+    it('应该返回 false 当引用关系为空数组', () => {
+      const workflow = createValidWorkflow('test-workflow', 'Test Workflow');
+      registry.register(workflow);
+      
+      // 设置空引用关系
+      (registry as any).referenceRelations.set('test-workflow', []);
+
+      const result = registry.hasReferences('test-workflow');
+      
+      expect(result).toBe(false);
+    });
+  });
+
   describe('unregister - 删除工作流定义', () => {
     it('应该成功删除工作流定义', () => {
       const workflow = createValidWorkflow('workflow-1', 'Test Workflow');

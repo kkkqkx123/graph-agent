@@ -9,7 +9,7 @@ import { threadRegistry } from '../../../services/thread-registry';
 import { eventManager } from '../../../services/event-manager';
 import { workflowRegistry } from '../../../services/workflow-registry';
 import { toolService } from '../../../services/tool-service';
-import { ThreadStatus } from '../../../../types/thread';
+import { ThreadStatus, ThreadType } from '../../../../types/thread';
 import { generateId, now } from '../../../../utils';
 import type { Thread } from '../../../../types/thread';
 import type { Graph } from '../../../../types/graph';
@@ -36,16 +36,25 @@ describe('ThreadCascadeManager', () => {
     childThread2 = createMockThread('child-thread-2');
 
     // 设置父子关系
-    parentThread.metadata = {
-      childThreadIds: [childThread1.id, childThread2.id]
+    parentThread.threadType = ThreadType.TRIGGERED_SUBWORKFLOW;
+    parentThread.triggeredSubworkflowContext = {
+      parentThreadId: '', // 根线程无父线程
+      childThreadIds: [childThread1.id, childThread2.id],
+      triggeredSubworkflowId: generateId()
     };
 
-    childThread1.metadata = {
-      parentThreadId: parentThread.id
+    childThread1.threadType = ThreadType.TRIGGERED_SUBWORKFLOW;
+    childThread1.triggeredSubworkflowContext = {
+      parentThreadId: parentThread.id,
+      childThreadIds: [],
+      triggeredSubworkflowId: generateId()
     };
 
-    childThread2.metadata = {
-      parentThreadId: parentThread.id
+    childThread2.threadType = ThreadType.TRIGGERED_SUBWORKFLOW;
+    childThread2.triggeredSubworkflowContext = {
+      parentThreadId: parentThread.id,
+      childThreadIds: [],
+      triggeredSubworkflowId: generateId()
     };
 
     // 注册线程到registry
@@ -104,7 +113,9 @@ describe('ThreadCascadeManager', () => {
     });
 
     it('应该在没有子线程时返回0', async () => {
-      parentThread.metadata = { childThreadIds: [] };
+      if (parentThread.triggeredSubworkflowContext) {
+        parentThread.triggeredSubworkflowContext.childThreadIds = [];
+      }
 
       const cancelledCount = await cascadeManager.cascadeCancel(parentThread.id);
 
@@ -125,7 +136,9 @@ describe('ThreadCascadeManager', () => {
     });
 
     it('应该在没有子线程时返回空Map', () => {
-      parentThread.metadata = { childThreadIds: [] };
+      if (parentThread.triggeredSubworkflowContext) {
+        parentThread.triggeredSubworkflowContext.childThreadIds = [];
+      }
 
       const statusMap = cascadeManager.getChildThreadsStatus(parentThread.id);
 
@@ -206,7 +219,9 @@ describe('ThreadCascadeManager', () => {
     });
 
     it('应该在没有子线程时返回空数组', () => {
-      parentThread.metadata = { childThreadIds: [] };
+      if (parentThread.triggeredSubworkflowContext) {
+        parentThread.triggeredSubworkflowContext.childThreadIds = [];
+      }
 
       const descendants = cascadeManager.getAllDescendantThreadIds(parentThread.id);
 

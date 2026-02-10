@@ -47,7 +47,6 @@ describe('execute-triggered-subgraph-handler', () => {
       getEventManager: jest.fn(),
       getLifecycleCoordinator: jest.fn(),
       getCheckpointStateManager: jest.fn(),
-      getCheckpointCoordinator: jest.fn(),
       getThreadLifecycleManager: jest.fn(),
       getSingletonRegistry: jest.fn(),
       getGlobalMessageStorage: jest.fn(),

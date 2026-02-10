@@ -1,7 +1,8 @@
 /**
  * WorkflowRegistry - 工作流注册器
- * 负责工作流定义的注册、查询、更新、移除和缓存管理
- * 集成图构建和预处理功能
+ * 负责工作流定义的注册、查询和管理
+ * 预处理逻辑委托给 processWorkflow 函数
+ * 引用管理委托给 WorkflowReferenceManager
  *
  * 本模块导出全局单例实例，不导出类定义
  */
@@ -10,27 +11,16 @@ import type {
   WorkflowDefinition,
   WorkflowMetadata,
   ProcessedWorkflowDefinition,
-  SubgraphMergeLog,
-  PreprocessValidationResult,
   WorkflowRelationship,
   WorkflowHierarchy
 } from '../../types/workflow';
-import type { WorkflowReference, WorkflowReferenceInfo, WorkflowReferenceRelation, WorkflowReferenceType } from '../../types/workflow-reference';
-import type { GraphBuildOptions } from '../../types';
+import type { WorkflowReferenceInfo, WorkflowReferenceRelation, WorkflowReferenceType } from '../../types/workflow-reference';
 import type { ID } from '../../types/common';
-import type { Node } from '../../types/node';
-import { WorkflowValidator } from '../validation/workflow-validator';
-import { GraphBuilder } from '../graph/graph-builder';
-import { GraphValidator } from '../validation/graph-validator';
+import { processWorkflow, type ProcessOptions } from '../graph/workflow-processor';
+import { WorkflowReferenceManager } from '../execution/managers/workflow-reference-manager';
 import { GraphData } from '../entities/graph-data';
 import { ValidationError } from '../../types/errors';
-import { now } from '../../utils';
-import { nodeTemplateRegistry } from './node-template-registry';
-import { triggerTemplateRegistry } from './trigger-template-registry';
-import type { TriggerReference } from '../../types/trigger-template';
-import type { WorkflowTrigger } from '../../types/trigger';
 import { graphRegistry } from './graph-registry';
-import { checkWorkflowReferences } from '../execution/utils/workflow-reference-checker';
 
 /**
  * 工作流摘要信息
@@ -60,18 +50,17 @@ export interface WorkflowVersion {
 class WorkflowRegistry {
   private workflows: Map<string, WorkflowDefinition> = new Map();
   private processedWorkflows: Map<string, ProcessedWorkflowDefinition> = new Map();
-  private graphCache: Map<string, GraphData> = new Map();
   private workflowRelationships: Map<string, WorkflowRelationship> = new Map();
   private activeWorkflows: Set<string> = new Set();
-  private referenceRelations: Map<string, WorkflowReferenceRelation[]> = new Map();
-  private validator: WorkflowValidator;
+  private referenceManager: WorkflowReferenceManager;
   private maxRecursionDepth: number;
 
   constructor(options: {
     maxRecursionDepth?: number;
+    threadRegistry?: any;
   } = {}) {
-    this.validator = new WorkflowValidator();
     this.maxRecursionDepth = options.maxRecursionDepth ?? 10;
+    this.referenceManager = new WorkflowReferenceManager(this, options.threadRegistry);
   }
 
   /**
@@ -104,11 +93,7 @@ class WorkflowRegistry {
    * @param relation 引用关系
    */
   addReferenceRelation(relation: WorkflowReferenceRelation): void {
-    const key = relation.targetWorkflowId;
-    if (!this.referenceRelations.has(key)) {
-      this.referenceRelations.set(key, []);
-    }
-    this.referenceRelations.get(key)!.push(relation);
+    this.referenceManager.addReferenceRelation(relation);
   }
 
   /**
@@ -122,18 +107,7 @@ class WorkflowRegistry {
     targetWorkflowId: string,
     referenceType: WorkflowReferenceType
   ): void {
-    const relations = this.referenceRelations.get(targetWorkflowId);
-    if (relations) {
-      const filtered = relations.filter((rel: WorkflowReferenceRelation) =>
-        !(rel.sourceWorkflowId === sourceWorkflowId &&
-          rel.referenceType === referenceType)
-      );
-      if (filtered.length === 0) {
-        this.referenceRelations.delete(targetWorkflowId);
-      } else {
-        this.referenceRelations.set(targetWorkflowId, filtered);
-      }
-    }
+    this.referenceManager.removeReferenceRelation(sourceWorkflowId, targetWorkflowId, referenceType);
   }
 
   /**
@@ -142,15 +116,7 @@ class WorkflowRegistry {
    * @returns 是否有引用
    */
   hasReferences(workflowId: string): boolean {
-    // 检查 referenceRelations 中的引用（如 trigger、thread 等）
-    const hasReferenceRelations = this.referenceRelations.has(workflowId) &&
-      this.referenceRelations.get(workflowId)!.length > 0;
-    
-    // 检查 workflowRelationships 中的父子关系
-    const hasParentRelationship = this.workflowRelationships.has(workflowId) &&
-      this.workflowRelationships.get(workflowId)?.parentWorkflowId !== undefined;
-    
-    return hasReferenceRelations || hasParentRelationship;
+    return this.referenceManager.hasReferences(workflowId);
   }
 
   /**
@@ -159,7 +125,7 @@ class WorkflowRegistry {
    * @returns 引用关系列表
    */
   getReferenceRelations(workflowId: string): WorkflowReferenceRelation[] {
-    return this.referenceRelations.get(workflowId) || [];
+    return this.referenceManager.getReferenceRelations(workflowId);
   }
 
   /**
@@ -167,26 +133,7 @@ class WorkflowRegistry {
    * @param workflowId 工作流ID
    */
   clearReferenceRelations(workflowId: string): void {
-    this.referenceRelations.delete(workflowId);
-  }
-
-  /**
-   * 格式化引用详情信息
-   * @param references 引用列表
-   * @returns 格式化的引用详情字符串
-   */
-  private formatReferenceDetails(references: WorkflowReference[]): string {
-    if (references.length === 0) {
-      return '  No references found.';
-    }
-
-    return references.map((ref, index) => {
-      const details = Object.entries(ref.details)
-        .map(([key, value]) => `${key}: ${value}`)
-        .join(', ');
-      
-      return `  ${index + 1}. [${ref.type}] ${ref.sourceName} (${ref.sourceId}) - ${ref.isRuntimeReference ? 'Runtime' : 'Static'}${details ? ` - ${details}` : ''}`;
-    }).join('\n');
+    this.referenceManager.clearReferenceRelations(workflowId);
   }
 
   /**
@@ -222,10 +169,6 @@ class WorkflowRegistry {
 
     // 保存工作流定义
     this.workflows.set(workflow.id, workflow);
-
-    // 进行图构建和验证（预处理总是启用的）
-    this.preprocessWorkflow(workflow);
-
   }
 
   /**
@@ -350,9 +293,7 @@ class WorkflowRegistry {
    * @returns 引用信息
    */
   checkWorkflowReferences(workflowId: string): WorkflowReferenceInfo {
-    // 从全局作用域获取threadRegistry，避免参数传递
-    const { threadRegistry } = require('./thread-registry');
-    return checkWorkflowReferences(this, threadRegistry, workflowId);
+    return this.referenceManager.checkWorkflowReferences(workflowId);
   }
 
   /**
@@ -370,34 +311,24 @@ class WorkflowRegistry {
     const shouldCheck = options?.checkReferences !== false;
 
     if (shouldCheck) {
-      // 快速检查：使用引用关系映射进行快速过滤
-      if (this.hasReferences(workflowId)) {
-        // 详细检查：仅当有引用时才执行完整检查
-        const referenceInfo = this.checkWorkflowReferences(workflowId);
-        if (referenceInfo.hasReferences && !options?.force) {
-          // 构建详细的引用信息
-          const referenceDetails = this.formatReferenceDetails(referenceInfo.references);
-          throw new ValidationError(
-            `Cannot delete workflow '${workflowId}': it is referenced by ${referenceInfo.references.length} other components.\n\n` +
-            `References:\n${referenceDetails}\n\n` +
-            `Use force=true to override, or check references first.`,
-            'workflow.delete.referenced',
-            { references: referenceInfo.references }
-          );
-        }
-
-        if (referenceInfo.stats.runtimeReferences > 0 && options?.force) {
-          // 构建详细的运行时引用信息
-          const runtimeReferences = referenceInfo.references.filter(ref => ref.isRuntimeReference);
-          const runtimeDetails = this.formatReferenceDetails(runtimeReferences);
-          console.warn(`Force deleting workflow '${workflowId}' with ${referenceInfo.stats.runtimeReferences} active references:\n${runtimeDetails}`);
-        }
+      const checkResult = this.referenceManager.canSafelyDelete(workflowId, options);
+      if (!checkResult.canDelete) {
+        throw new ValidationError(
+          checkResult.details,
+          'workflow.delete.referenced'
+        );
       }
-      // 如果没有引用关系，直接跳过详细检查，提高性能
+
+      if (options?.force && checkResult.details.includes('active references')) {
+        console.warn(checkResult.details);
+      }
     }
 
     this.workflows.delete(workflowId);
-    this.clearPreprocessCache(workflowId);
+    this.processedWorkflows.delete(workflowId);
+
+    // 清理引用关系
+    this.referenceManager.cleanupWorkflowReferences(workflowId);
 
     // 从全局GraphRegistry中移除对应的图
     graphRegistry.delete(workflowId);
@@ -419,12 +350,14 @@ class WorkflowRegistry {
   clear(): void {
     this.workflows.clear();
     this.processedWorkflows.clear();
-    this.graphCache.clear();
     this.workflowRelationships.clear();
+    this.activeWorkflows.clear();
+    // 重新创建引用管理器，不传递 threadRegistry
+    this.referenceManager = new WorkflowReferenceManager(this, null as any);
   }
 
   /**
-   * 验证工作流定义
+   * 验证工作流定义（基本验证）
    * @param workflow 工作流定义
    * @returns 验证结果
    */
@@ -446,12 +379,6 @@ class WorkflowRegistry {
 
     if (!workflow.edges) {
       errors.push('Workflow edges are required');
-    }
-
-    // 使用 WorkflowValidator 进行详细验证
-    const validatorResult = this.validator.validate(workflow);
-    if (validatorResult.isErr()) {
-      errors.push(...validatorResult.error.map(e => e.message));
     }
 
     return {
@@ -546,17 +473,23 @@ class WorkflowRegistry {
       return existing;
     }
 
-    // 调用私有预处理方法
-    this.preprocessWorkflow(workflow);
+    // 调用 processWorkflow 进行预处理
+    const processOptions: ProcessOptions = {
+      workflowRegistry: this,
+      maxRecursionDepth: this.maxRecursionDepth,
+      validate: true,
+      computeTopologicalOrder: true,
+      detectCycles: true,
+      analyzeReachability: true,
+    };
 
-    // 返回预处理结果
-    const processed = this.processedWorkflows.get(workflow.id);
-    if (!processed) {
-      throw new ValidationError(
-        `Failed to preprocess workflow with ID '${workflow.id}'`,
-        'workflow.id'
-      );
-    }
+    const processed = processWorkflow(workflow, processOptions);
+
+    // 缓存处理结果
+    this.processedWorkflows.set(workflow.id, processed);
+
+    // 注册到全局 GraphRegistry（processed.graph 是 Graph 接口，需要转换为 GraphData）
+    graphRegistry.register(workflow.id, processed.graph as GraphData);
 
     return processed;
   }
@@ -567,257 +500,9 @@ class WorkflowRegistry {
    * @returns 图结构（GraphData类型），如果不存在则返回undefined
    */
   getGraph(workflowId: string): GraphData | undefined {
-    return this.graphCache.get(workflowId);
-  }
-
-  /**
-   * 预处理工作流
-   * 构建图结构、验证图、分析图
-   * @param workflow 工作流定义
-   * @throws ValidationError 如果预处理失败
-   */
-  private preprocessWorkflow(workflow: WorkflowDefinition): void {
-    // 展开节点引用
-    const expandedNodes = this.expandNodeReferences(workflow.nodes);
-
-    // 展开触发器引用
-    const expandedTriggers = this.expandTriggerReferences(workflow.triggers || []);
-
-    // 创建展开后的工作流定义
-    const expandedWorkflow: WorkflowDefinition = {
-      ...workflow,
-      nodes: expandedNodes,
-      triggers: expandedTriggers
-    };
-
-    // 构建图
-    const buildOptions: GraphBuildOptions = {
-      validate: true,
-      computeTopologicalOrder: true,
-      detectCycles: true,
-      analyzeReachability: true,
-      maxRecursionDepth: this.maxRecursionDepth,
-      workflowRegistry: this,
-    };
-
-    const buildResult = GraphBuilder.buildAndValidate(expandedWorkflow, buildOptions);
-    if (!buildResult.isValid) {
-      throw new ValidationError(
-        `Graph build failed: ${buildResult.errors.join(', ')}`,
-        'workflow.graph'
-      );
-    }
-
-    // 处理子工作流
-    const subgraphMergeLogs: SubgraphMergeLog[] = [];
-    let hasSubgraphs = false;
-    const subworkflowIds = new Set<ID>();
-
-    const subgraphResult = GraphBuilder.processSubgraphs(
-      buildResult.graph,
-      this,
-      this.maxRecursionDepth
-    );
-
-    if (!subgraphResult.success) {
-      throw new ValidationError(
-        `Subgraph processing failed: ${subgraphResult.errors.join(', ')}`,
-        'workflow.subgraphs'
-      );
-    }
-
-    // 记录子工作流信息
-    if (subgraphResult.subworkflowIds.length > 0) {
-      hasSubgraphs = true;
-      subgraphResult.subworkflowIds.forEach(id => subworkflowIds.add(id));
-
-      // 为每个子工作流创建合并日志
-      for (const subworkflowId of subgraphResult.subworkflowIds) {
-        const subworkflow = this.get(subworkflowId);
-        if (subworkflow) {
-          // 查找对应的SUBGRAPH节点
-          const subgraphNode = workflow.nodes.find(
-            node => node.type === 'SUBGRAPH' &&
-              (node.config as any)?.subgraphId === subworkflowId
-          );
-
-          if (subgraphNode) {
-            const mergeLog: SubgraphMergeLog = {
-              subworkflowId,
-              subworkflowName: subworkflow.name,
-              subgraphNodeId: subgraphNode.id,
-              nodeIdMapping: subgraphResult.nodeIdMapping,
-              edgeIdMapping: subgraphResult.edgeIdMapping,
-              inputMapping: new Map(Object.entries((subgraphNode.config as any)?.inputMapping || {})),
-              outputMapping: new Map(Object.entries((subgraphNode.config as any)?.outputMapping || {})),
-              mergedAt: now(),
-            };
-            subgraphMergeLogs.push(mergeLog);
-          }
-        }
-      }
-    }
-
-    // 验证图
-    const validationResult = GraphValidator.validate(buildResult.graph);
-    if (validationResult.isErr()) {
-      const errors = validationResult.error.map(e => e.message).join(', ');
-      throw new ValidationError(
-        `Graph validation failed: ${errors}`,
-        'workflow.graph'
-      );
-    }
-
-    // 分析图
-    const graphAnalysis = GraphValidator.analyze(buildResult.graph);
-
-    // 创建预处理验证结果
-    const preprocessValidation: PreprocessValidationResult = {
-      isValid: true,
-      errors: [],
-      warnings: [],
-      validatedAt: now(),
-    };
-
-    // 创建处理后的工作流定义
-    const processedWorkflow: ProcessedWorkflowDefinition = {
-      ...expandedWorkflow,
-      triggers: expandedTriggers, // 显式使用已展开的触发器
-      graph: buildResult.graph,
-      graphAnalysis,
-      validationResult: preprocessValidation,
-      subgraphMergeLogs,
-      processedAt: now(),
-      hasSubgraphs,
-      subworkflowIds,
-      topologicalOrder: graphAnalysis.topologicalSort.sortedNodes,
-    };
-
-    // 注册到全局 GraphRegistry
-    graphRegistry.register(workflow.id, buildResult.graph);
-
-    // 缓存处理后的工作流和图
-    this.processedWorkflows.set(workflow.id, processedWorkflow);
-    this.graphCache.set(workflow.id, buildResult.graph);
-  }
-
-  /**
-   * 展开节点引用
-   * 将工作流中的节点引用展开为完整的节点定义
-   * @param nodes 节点数组（可能包含节点引用）
-   * @returns 展开后的节点数组
-   * @throws ValidationError 如果节点模板不存在
-   */
-  private expandNodeReferences(nodes: Node[]): Node[] {
-    const expandedNodes: Node[] = [];
-
-    for (const node of nodes) {
-      // 检查是否为节点引用
-      if (this.isNodeReference(node)) {
-        const config = node.config as any;
-        const templateName = config.templateName;
-        const nodeId = config.nodeId;
-        const nodeName = config.nodeName;
-        const configOverride = config.configOverride;
-
-        // 获取节点模板
-        const template = nodeTemplateRegistry.get(templateName);
-        if (!template) {
-          throw new ValidationError(
-            `Node template not found: ${templateName}`,
-            `node.${node.id}.config.templateName`
-          );
-        }
-
-        // 合并配置覆盖
-        const mergedConfig = configOverride
-          ? { ...template.config, ...configOverride }
-          : template.config;
-
-        // 创建展开后的节点
-        const expandedNode: Node = {
-          id: nodeId,
-          type: template.type,
-          name: nodeName || template.name,
-          config: mergedConfig,
-          description: template.description,
-          metadata: template.metadata,
-          outgoingEdgeIds: node.outgoingEdgeIds,
-          incomingEdgeIds: node.incomingEdgeIds
-        };
-
-        expandedNodes.push(expandedNode);
-      } else {
-        // 普通节点，直接添加
-        expandedNodes.push(node);
-      }
-    }
-
-    return expandedNodes;
-  }
-
-  /**
-   * 检查节点是否为节点引用
-   * @param node 节点定义
-   * @returns 是否为节点引用
-   */
-  private isNodeReference(node: Node): boolean {
-    // 通过检查config中是否包含templateName字段来判断
-    const config = node.config as any;
-    return config && typeof config === 'object' && 'templateName' in config;
-  }
-
-  /**
-   * 展开触发器引用
-   * 将工作流中的触发器引用展开为完整的触发器定义
-   * @param triggers 触发器数组（可能包含触发器引用）
-   * @returns 展开后的触发器数组
-   * @throws ValidationError 如果触发器模板不存在
-   */
-  private expandTriggerReferences(triggers: (WorkflowTrigger | TriggerReference)[]): WorkflowTrigger[] {
-    const expandedTriggers: WorkflowTrigger[] = [];
-
-    for (const trigger of triggers) {
-      // 检查是否为触发器引用
-      if (this.isTriggerReference(trigger)) {
-        const reference = trigger as TriggerReference;
-
-        // 使用 TriggerTemplateRegistry 的转换方法
-        const workflowTrigger = triggerTemplateRegistry.convertToWorkflowTrigger(
-          reference.templateName,
-          reference.triggerId,
-          reference.triggerName,
-          reference.configOverride
-        );
-
-        expandedTriggers.push(workflowTrigger);
-      } else {
-        // 普通触发器，直接添加
-        expandedTriggers.push(trigger as WorkflowTrigger);
-      }
-    }
-
-    return expandedTriggers;
-  }
-
-  /**
-   * 检查触发器是否为触发器引用
-   * @param trigger 触发器定义
-   * @returns 是否为触发器引用
-   */
-  private isTriggerReference(trigger: WorkflowTrigger | TriggerReference): boolean {
-    // 通过检查是否包含 templateName 字段来判断
-    const triggerObj = trigger as any;
-    return triggerObj && typeof triggerObj === 'object' && 'templateName' in triggerObj;
-  }
-
-  /**
-   * 清除工作流的预处理缓存
-   * @param workflowId 工作流ID
-   */
-  private clearPreprocessCache(workflowId: string): void {
-    this.processedWorkflows.delete(workflowId);
-    this.graphCache.delete(workflowId);
+    const processed = this.getProcessed(workflowId);
+    // processed.graph 是 Graph 接口，需要转换为 GraphData
+    return processed?.graph as GraphData | undefined;
   }
 
   /**

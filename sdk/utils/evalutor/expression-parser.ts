@@ -46,8 +46,19 @@ export function parseExpression(expression: string): { variablePath: string; ope
 
   const trimmed = expression.trim();
 
+  // 处理纯布尔值表达式（true 或 false）
+  if (trimmed === 'true' || trimmed === 'false') {
+    return {
+      variablePath: '',
+      operator: '==',
+      value: trimmed === 'true'
+    };
+  }
+
   // 尝试匹配各种运算符
   const operators = [
+    { pattern: /(.+?)\s*===\s*(.+)/, op: '==' },
+    { pattern: /(.+?)\s*!==\s*(.+)/, op: '!=' },
     { pattern: /(.+?)\s*==\s*(.+)/, op: '==' },
     { pattern: /(.+?)\s*!=\s*(.+)/, op: '!=' },
     { pattern: /(.+?)\s*>=\s*(.+)/, op: '>=' },
@@ -243,6 +254,11 @@ export class ExpressionEvaluator {
     condition: { variablePath: string; operator: string; value: any },
     context: EvaluationContext
   ): boolean {
+    // 处理纯布尔值表达式（variablePath 为空）
+    if (!condition.variablePath) {
+      return condition.value === true;
+    }
+
     const variableValue = this.getVariableValue(condition.variablePath, context);
 
     // 处理变量引用

@@ -9,11 +9,10 @@
  * - 通过架构设计保证不可变性，而非运行时检查
  */
 import type { GraphData } from '../entities/graph-data';
-import type { ID } from '../../types/common';
 
 export class GraphRegistry {
   private graphs: Map<string, GraphData> = new Map();
-  
+
   /**
    * 注册图结构
    * @param workflowId 工作流ID
@@ -27,7 +26,7 @@ export class GraphRegistry {
     // 直接注册图，依赖 GraphBuilder 确保图已构建完成且不可变
     this.graphs.set(workflowId, graph);
   }
-  
+
   /**
    * 获取图结构
    * @param workflowId 工作流ID
@@ -36,7 +35,7 @@ export class GraphRegistry {
   get(workflowId: string): GraphData | undefined {
     return this.graphs.get(workflowId);
   }
-  
+
   /**
    * 检查图是否存在
    * @param workflowId 工作流ID
@@ -45,7 +44,7 @@ export class GraphRegistry {
   has(workflowId: string): boolean {
     return this.graphs.has(workflowId);
   }
-  
+
   /**
    * 删除指定工作流的图结构
    * @param workflowId 工作流ID

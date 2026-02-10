@@ -37,7 +37,8 @@ export class ThreadCascadeManager {
       return 0;
     }
 
-    const childThreadIds = parentContext.getMetadata()?.childThreadIds as string[] || [];
+    // 从 triggeredSubworkflowContext 获取子线程ID列表
+    const childThreadIds = parentContext.thread.triggeredSubworkflowContext?.childThreadIds || [];
     if (childThreadIds.length === 0) {
       return 0;
     }
@@ -97,7 +98,8 @@ export class ThreadCascadeManager {
       return new Map();
     }
 
-    const childThreadIds = parentContext.getMetadata()?.childThreadIds as string[] || [];
+    // 从 triggeredSubworkflowContext 获取子线程ID列表
+    const childThreadIds = parentContext.thread.triggeredSubworkflowContext?.childThreadIds || [];
     const statusMap = new Map<string, string>();
 
     for (const childThreadId of childThreadIds) {
@@ -162,7 +164,8 @@ export class ThreadCascadeManager {
       return 0;
     }
 
-    const parentThreadId = context.getMetadata()?.parentThreadId;
+    // 从 triggeredSubworkflowContext 获取父线程ID
+    const parentThreadId = context.thread.triggeredSubworkflowContext?.parentThreadId;
     if (!parentThreadId) {
       return 1;
     }
@@ -172,7 +175,7 @@ export class ThreadCascadeManager {
 
   /**
    * 获取所有后代线程ID
-   * 
+   *
    * @param threadId 线程ID
    * @returns 所有后代线程ID数组
    */
@@ -182,7 +185,8 @@ export class ThreadCascadeManager {
       return [];
     }
 
-    const childThreadIds = context.getMetadata()?.childThreadIds as string[] || [];
+    // 从 triggeredSubworkflowContext 获取子线程ID列表
+    const childThreadIds = context.thread.triggeredSubworkflowContext?.childThreadIds || [];
     const allDescendants: string[] = [...childThreadIds];
 
     // 递归获取所有子线程的后代
