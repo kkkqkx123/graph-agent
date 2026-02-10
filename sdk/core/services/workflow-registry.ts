@@ -849,6 +849,19 @@ class WorkflowRegistry {
         depth: this.calculateDepth(parentWorkflowId) + 1
       });
     }
+
+    // 3. 添加引用关系记录
+    this.addReferenceRelation({
+      sourceWorkflowId: parentWorkflowId,
+      targetWorkflowId: childWorkflowId,
+      referenceType: 'subgraph',
+      isRuntime: false,
+      sourceReferenceId: subgraphNodeId,
+      details: {
+        nodeId: subgraphNodeId,
+        createdAt: Date.now()
+      }
+    });
   }
 
   /**

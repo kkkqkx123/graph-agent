@@ -155,17 +155,19 @@ describe('Workflow到Graph注册集成测试', () => {
       const initialGraph = graphRegistry.get('workflow-update');
       expect(initialGraph).toBeDefined();
 
-      // 更新工作流
+      // 创建新版本工作流（遵循不可变原则）
       const updatedWorkflow: WorkflowDefinition = {
         ...workflow,
-        description: 'Updated description',
         version: '2.0.0',
+        description: 'Updated description',
         updatedAt: Date.now()
       };
 
-      registry.update(updatedWorkflow);
+      // 删除旧版本并注册新版本
+      registry.unregister('workflow-update');
+      registry.register(updatedWorkflow);
 
-      // 验证更新成功
+      // 验证新版本已注册
       const registered = registry.get('workflow-update');
       expect(registered?.description).toBe('Updated description');
       expect(registered?.version).toBe('2.0.0');

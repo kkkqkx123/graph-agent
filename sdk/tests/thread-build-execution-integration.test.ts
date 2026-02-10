@@ -432,15 +432,17 @@ describe('Thread构建到执行实例创建集成测试', () => {
       const initialThreadContext = await threadBuilder.build(workflowId);
       expect(initialThreadContext.thread.graph).toBe(initialGraph);
 
-      // 更新工作流
+      // 创建新版本工作流（遵循不可变原则）
       const updatedWorkflow: WorkflowDefinition = {
         ...workflow,
-        description: 'Updated description',
         version: '2.0.0',
+        description: 'Updated description',
         updatedAt: Date.now()
       };
 
-      workflowRegistry.update(updatedWorkflow);
+      // 删除旧版本并注册新版本
+      workflowRegistry.unregister(workflowId);
+      workflowRegistry.register(updatedWorkflow);
 
       // 验证Graph已更新
       const updatedGraph = graphRegistry.get(workflowId);

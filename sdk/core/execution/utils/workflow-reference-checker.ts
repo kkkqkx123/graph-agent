@@ -60,8 +60,9 @@ function checkSubgraphReferences(
   workflowId: string
 ): WorkflowReference[] {
   const references: WorkflowReference[] = [];
+  
+  // 检查父工作流引用（当前工作流作为子工作流被引用）
   const parentWorkflowId = workflowRegistry.getParentWorkflow(workflowId);
-
   if (parentWorkflowId) {
     const parentWorkflow = workflowRegistry.get(parentWorkflowId);
     if (parentWorkflow) {
@@ -73,6 +74,27 @@ function checkSubgraphReferences(
         details: {
           relationshipType: 'parent-child',
           depth: workflowRegistry.getWorkflowHierarchy(workflowId).depth
+        }
+      });
+    }
+  }
+
+  // 检查哪些工作流引用了当前工作流作为子工作流
+  const allWorkflows = workflowRegistry.list();
+  for (const summary of allWorkflows) {
+    const workflow = workflowRegistry.get(summary.id);
+    if (!workflow || workflow.id === workflowId) continue;
+    
+    const childWorkflowIds = workflowRegistry.getChildWorkflows(workflow.id);
+    if (childWorkflowIds.includes(workflowId)) {
+      references.push({
+        type: 'subgraph',
+        sourceId: workflow.id,
+        sourceName: workflow.name,
+        isRuntimeReference: false,
+        details: {
+          relationshipType: 'referenced-by',
+          depth: workflowRegistry.getWorkflowHierarchy(workflow.id).depth
         }
       });
     }
