@@ -111,9 +111,9 @@ describe('ThreadExecutor', () => {
       const result = await executor.executeThread(threadContext);
 
       // 验证结果
-      expect(result.success).toBe(true);
+      expect(result.metadata.status).toBe(ThreadStatus.COMPLETED);
       expect(result.threadId).toBe('test-thread');
-      expect(result.error).toBeUndefined();
+      expect(result.metadata.errorCount).toBe(0);
       expect(result.executionTime).toBeGreaterThanOrEqual(0);
       
       // 验证线程状态已更新为完成
@@ -138,9 +138,9 @@ describe('ThreadExecutor', () => {
       // 执行测试
       const result = await executor.executeThread(threadContext);
 
-      // 验证结果
-      expect(result.success).toBe(false);
-      expect(result.error).toBeDefined();
+      // 验证结果 - 节点失败时，线程状态保持不变（由外部管理）
+      // 错误已被记录到 errors 数组
+      expect(result.metadata.errorCount).toBe(1);
     });
 
     it('应该在遇到END节点时完成执行', async () => {
@@ -162,7 +162,7 @@ describe('ThreadExecutor', () => {
       const result = await executor.executeThread(threadContext);
 
       // 验证结果
-      expect(result.success).toBe(true);
+      expect(result.metadata.status).toBe(ThreadStatus.COMPLETED);
       expect(threadContext.thread.status).toBe(ThreadStatus.COMPLETED);
     });
 
@@ -190,8 +190,8 @@ describe('ThreadExecutor', () => {
       // 执行测试
       const result = await executor.executeThread(threadContext);
 
-      // 验证结果
-      expect(result.success).toBe(true);
+      // 验证结果 - 跳过节点后完成应该是成功
+      expect(result.metadata.status).toBe(ThreadStatus.COMPLETED);
     });
 
     it('应该在执行过程中遇到错误时处理错误', async () => {
@@ -203,9 +203,8 @@ describe('ThreadExecutor', () => {
       // 执行测试
       const result = await executor.executeThread(threadContext);
 
-      // 验证结果
-      expect(result.success).toBe(false);
-      expect(result.error).toBeDefined();
+      // 验证结果 - 捕获的异常应该被记录到 errors 数组
+      expect(result.metadata.errorCount).toBeGreaterThan(0);
     });
 
     it('应该在需要暂停时停止执行', async () => {
@@ -216,7 +215,7 @@ describe('ThreadExecutor', () => {
       const result = await executor.executeThread(threadContext);
 
       // 验证结果 - 应该在没有执行任何节点的情况下返回
-      expect(result.success).toBe(false);
+      expect(result.metadata.status).toBe(ThreadStatus.CREATED);
       expect(result.nodeResults).toHaveLength(0);
     });
 
@@ -228,7 +227,7 @@ describe('ThreadExecutor', () => {
       const result = await executor.executeThread(threadContext);
 
       // 验证结果 - 应该在没有执行任何节点的情况下返回
-      expect(result.success).toBe(false);
+      expect(result.metadata.status).toBe(ThreadStatus.CREATED);
       expect(result.nodeResults).toHaveLength(0);
     });
   });

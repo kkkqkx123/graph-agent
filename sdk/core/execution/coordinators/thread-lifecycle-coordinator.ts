@@ -92,12 +92,16 @@ export class ThreadLifecycleCoordinator {
     const result = await threadExecutor.executeThread(threadContext);
 
     // 步骤 5：根据执行结果更新 Thread 状态
-    const isSuccess = !result.error && threadContext.getStatus() === 'COMPLETED';
+    const status = result.metadata?.status;
+    const isSuccess = status === ThreadStatus.COMPLETED;
 
     if (isSuccess) {
       await this.getLifecycleManager().completeThread(threadContext.thread, result);
     } else {
-      await this.getLifecycleManager().failThread(threadContext.thread, result.error || new Error('Execution failed'));
+      // 从 errors 数组获取第一个错误
+      const errors = threadContext.getErrors();
+      const lastError = errors.length > 0 ? errors[errors.length - 1] : new Error('Execution failed');
+      await this.getLifecycleManager().failThread(threadContext.thread, lastError);
     }
 
     return result;

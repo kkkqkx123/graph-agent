@@ -96,10 +96,17 @@ describe('ThreadLifecycleManager', () => {
 
       await lifecycleManager.completeThread(mockThread, {
         threadId: mockThread.id,
-        success: true,
         output: {},
         executionTime: 1000,
-        nodeResults: []
+        nodeResults: [],
+        metadata: {
+          status: ThreadStatus.COMPLETED,
+          startTime: Date.now(),
+          endTime: Date.now(),
+          executionTime: 1000,
+          nodeCount: 0,
+          errorCount: 0
+        }
       });
 
       expect(mockThread.status).toBe(ThreadStatus.COMPLETED);

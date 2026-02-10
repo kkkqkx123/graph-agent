@@ -6,9 +6,6 @@
 
 import type { ID, Timestamp, Version, Metadata, VariableScope } from './common';
 import type { Graph } from './graph';
-import type { WorkflowConfig, WorkflowMetadata } from './workflow';
-import type { GraphAnalysisResult } from './graph';
-import type { PreprocessValidationResult, SubgraphMergeLog } from './workflow';
 
 /**
  * 线程状态枚举
@@ -118,7 +115,6 @@ export interface NodeExecutionResult {
    * - Hook 可以修改此字段（可选操作）
    *
    * 示例：
-   * - TOOL 节点：包含工具调用参数和结果
    * - CODE 节点：包含脚本执行结果
    * - LOOP 节点：包含循环状态信息
    * - ROUTE 节点：包含路由决策信息
@@ -264,14 +260,14 @@ export interface Thread {
   shouldPause?: boolean;
   /** 停止标志（运行时控制）*/
   shouldStop?: boolean;
-  
+
   // ========== Thread类型和关系管理 ==========
   /** 线程类型 */
   threadType?: ThreadType;
-  
+
   /** FORK/JOIN上下文（仅当threadType为FORK_JOIN时存在） */
   forkJoinContext?: ForkJoinContext;
-  
+
   /** Triggered子工作流上下文（仅当threadType为TRIGGERED_SUBWORKFLOW时存在） */
   triggeredSubworkflowContext?: TriggeredSubworkflowContext;
 }
@@ -300,20 +296,39 @@ export interface ThreadOptions {
 
 /**
  * 线程执行结果类型
+ *
+ * 设计原则：
+ * - 使用 status 字段表示执行状态，而非冗余的 success 字段
+ * - 错误通过 errors 数组存储，metadata 中提供错误计数
+ * - 调用方通过 status 判断成功/失败
  */
 export interface ThreadResult {
   /** 线程ID */
   threadId: ID;
-  /** 是否成功 */
-  success: boolean;
   /** 输出数据 */
   output: Record<string, any>;
-  /** 错误信息（如果有） */
-  error?: any;
   /** 执行时间（毫秒） */
   executionTime: Timestamp;
   /** 节点执行结果数组 */
   nodeResults: NodeExecutionResult[];
   /** 执行元数据 */
-  metadata?: Metadata;
+  metadata: ThreadResultMetadata;
+}
+
+/**
+ * 线程执行结果元数据
+ */
+export interface ThreadResultMetadata {
+  /** 线程状态 */
+  status: ThreadStatus;
+  /** 开始时间 */
+  startTime: Timestamp;
+  /** 结束时间 */
+  endTime: Timestamp;
+  /** 执行时间（毫秒） */
+  executionTime: Timestamp;
+  /** 节点数量 */
+  nodeCount: number;
+  /** 错误数量 */
+  errorCount: number;
 }

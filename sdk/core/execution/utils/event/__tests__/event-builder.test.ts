@@ -97,10 +97,17 @@ describe('EventBuilder', () => {
     it('应该创建正确的THREAD_COMPLETED事件', () => {
       const result: ThreadResult = {
         threadId: 'thread-123',
-        success: true,
         output: { result: 'success' },
         executionTime: 1500,
-        nodeResults: []
+        nodeResults: [],
+        metadata: {
+          status: ThreadStatus.COMPLETED,
+          startTime: 1234567890,
+          endTime: 1234569390,
+          executionTime: 1500,
+          nodeCount: 0,
+          errorCount: 0
+        }
       };
 
       const event = eventBuilder.buildThreadCompletedEvent(mockThread, result);
@@ -118,10 +125,17 @@ describe('EventBuilder', () => {
     it('应该处理不同的executionTime值', () => {
       const result: ThreadResult = {
         threadId: 'thread-123',
-        success: true,
         output: {},
         executionTime: 5000,
-        nodeResults: []
+        nodeResults: [],
+        metadata: {
+          status: ThreadStatus.COMPLETED,
+          startTime: 1234567890,
+          endTime: 1234572890,
+          executionTime: 5000,
+          nodeCount: 0,
+          errorCount: 0
+        }
       };
 
       const event = eventBuilder.buildThreadCompletedEvent(mockThread, result);

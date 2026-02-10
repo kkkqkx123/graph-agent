@@ -134,7 +134,7 @@ export class ThreadExecutor implements SubgraphContextFactory {
       return this.createThreadResult(threadContext);
     } catch (error) {
       await handleExecutionError(threadContext, error, this.eventManager);
-      return this.createThreadResult(threadContext, error);
+      return this.createThreadResult(threadContext);
     }
   }
 
@@ -207,23 +207,21 @@ export class ThreadExecutor implements SubgraphContextFactory {
    * @param error 错误信息（可选）
    * @returns Thread 执行结果
    */
-  private createThreadResult(threadContext: ThreadContext, error?: any): ThreadResult {
+  private createThreadResult(threadContext: ThreadContext): ThreadResult {
     const endTime = now();
     const startTime = threadContext.getStartTime();
     const executionTime = diffTimestamp(startTime, endTime);
 
-    // 获取Thread状态
+    // 获取线程状态
     const status = threadContext.getStatus();
-    const isSuccess = !error && status === ThreadStatus.COMPLETED;
 
     return {
       threadId: threadContext.getThreadId(),
-      success: isSuccess,
       output: threadContext.getOutput(),
-      error,
       executionTime,
       nodeResults: threadContext.getNodeResults(),
       metadata: {
+        status: status as ThreadStatus,
         startTime,
         endTime,
         executionTime,

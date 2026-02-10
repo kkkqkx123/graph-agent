@@ -172,11 +172,17 @@ export class ThreadRegistryAPI extends GenericResourceAPI<Thread, string, Thread
 
     return {
       threadId: thread.id,
-      success: thread.status === 'COMPLETED',
       output: thread.output,
-      error: thread.errors.length > 0 ? thread.errors[0] : undefined,
       executionTime: thread.endTime ? thread.endTime - thread.startTime : 0,
-      nodeResults: thread.nodeResults
+      nodeResults: thread.nodeResults,
+      metadata: {
+        status: thread.status as ThreadStatus,
+        startTime: thread.startTime,
+        endTime: thread.endTime || 0,
+        executionTime: thread.endTime ? thread.endTime - thread.startTime : 0,
+        nodeCount: thread.nodeResults.length,
+        errorCount: thread.errors.length
+      }
     };
   }
 
