@@ -68,11 +68,93 @@ export class WorkflowRegistryAPI extends GenericResourceAPI<WorkflowDefinition, 
   }
 
   /**
-   * 更新工作流
-   * 注意：工作流现在是不可变的，不支持更新操作
+   * 更新工作流 - 创建新版本实例
+   * 基于不可变原则，通过创建新工作流实例实现版本更新
    */
-  protected async updateResource(id: string, updates: Partial<WorkflowDefinition>): Promise<void> {
-    throw new Error(`Workflow update is not supported. Workflows are immutable. To modify a workflow, unregister the existing workflow and register a new one with a different ID.`);
+  protected async updateResource(
+    id: string,
+    updates: Partial<WorkflowDefinition>
+  ): Promise<void> {
+    // 直接调用createVersionedUpdate实现update操作
+    await this.createVersionedUpdate(id, updates, {
+      keepOriginal: false,
+      force: false
+    });
+  }
+
+  /**
+   * 创建版本化更新
+   * 基于不可变原则，通过创建新工作流实例实现版本更新
+   */
+  async createVersionedUpdate(
+    id: string,
+    updates: Partial<WorkflowDefinition>,
+    options?: {
+      versionStrategy?: 'patch' | 'minor' | 'major';
+      keepOriginal?: boolean;
+      force?: boolean;
+    }
+  ): Promise<string> {
+    const existingWorkflow = await this.getResource(id);
+    if (!existingWorkflow) {
+      throw new Error(`Workflow with ID '${id}' not found`);
+    }
+
+    // 使用版本工具类自动递增版本
+    const strategy = options?.versionStrategy ?? 'patch';
+    const newVersion = this.autoIncrementVersion(existingWorkflow.version, strategy);
+
+    // 创建全新的工作流实例（与之前完全无关）
+    const newWorkflow: WorkflowDefinition = {
+      ...existingWorkflow,
+      ...updates,
+      version: newVersion,
+      updatedAt: Date.now()
+    };
+
+    // 注册新版本的工作流
+    await this.createResource(newWorkflow);
+
+    // 可选：是否保留原版本
+    if (options?.keepOriginal === false) {
+      // 直接调用workflowRegistry的unregister方法，让其内部处理引用检查
+      this.dependencies.getWorkflowRegistry().unregister(id, {
+        force: options?.force,
+        checkReferences: true
+      });
+    }
+
+    return newWorkflow.id;
+  }
+
+  /**
+   * 自动递增版本号
+   * @param currentVersion 当前版本号
+   * @param strategy 版本策略
+   * @returns 递增后的版本号
+   */
+  private autoIncrementVersion(currentVersion: string, strategy: 'patch' | 'minor' | 'major'): string {
+    const parts = currentVersion.split('.').map(Number);
+    let major = parts[0] || 0;
+    let minor = parts[1] || 0;
+    let patch = parts[2] || 0;
+
+    switch (strategy) {
+      case 'major':
+        major += 1;
+        minor = 0;
+        patch = 0;
+        break;
+      case 'minor':
+        minor += 1;
+        patch = 0;
+        break;
+      case 'patch':
+        patch += 1;
+        break;
+    }
+
+    return `${major}.${minor}.${patch}`;
   }
 
   /**

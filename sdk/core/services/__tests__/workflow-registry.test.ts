@@ -6,6 +6,7 @@ import { WorkflowRegistry } from '../workflow-registry';
 import { NodeType } from '../../../types/node';
 import { EdgeType } from '../../../types/edge';
 import { ValidationError, NotFoundError } from '../../../types/errors';
+import { TriggerActionType } from '../../../types/trigger';
 
 describe('WorkflowRegistry', () => {
   let registry: WorkflowRegistry;
@@ -348,6 +349,100 @@ describe('WorkflowRegistry', () => {
 
 
 
+  describe('checkWorkflowReferences - 检查工作流引用', () => {
+    it('应该返回空引用当没有引用存在', () => {
+      const workflow = createValidWorkflow('test-workflow', 'Test Workflow');
+      registry.register(workflow);
+
+      const result = registry.checkWorkflowReferences('test-workflow');
+      
+      expect(result.hasReferences).toBe(false);
+      expect(result.references).toHaveLength(0);
+      expect(result.canSafelyDelete).toBe(true);
+      expect(result.stats).toEqual({
+        subgraphReferences: 0,
+        triggerReferences: 0,
+        threadReferences: 0,
+        runtimeReferences: 0
+      });
+    });
+
+    it('应该检测子工作流引用', () => {
+      const parentWorkflow = createValidWorkflow('parent-workflow', 'Parent Workflow');
+      const childWorkflow = createValidWorkflow('child-workflow', 'Child Workflow');
+      
+      // 注册父工作流和子工作流
+      registry.register(parentWorkflow);
+      registry.register(childWorkflow);
+      
+      // 模拟父子关系
+      (registry as any).workflowRelationships.set('child-workflow', {
+        workflowId: 'child-workflow',
+        parentWorkflowId: 'parent-workflow',
+        childWorkflowIds: new Set(),
+        referencedBy: new Map(),
+        depth: 1
+      });
+
+      const result = registry.checkWorkflowReferences('child-workflow');
+      
+      expect(result.hasReferences).toBe(true);
+      expect(result.references).toHaveLength(1);
+      expect(result.references[0]).toEqual({
+        type: 'subgraph',
+        sourceId: 'parent-workflow',
+        sourceName: 'Parent Workflow',
+        isRuntimeReference: false,
+        details: {
+          relationshipType: 'parent-child',
+          depth: 1
+        }
+      });
+      expect(result.canSafelyDelete).toBe(true);
+    });
+
+    it('应该检测触发器引用', () => {
+      const targetWorkflow = createValidWorkflow('target-workflow', 'Target Workflow');
+      const referencingWorkflow = createValidWorkflow('referencing-workflow', 'Referencing Workflow');
+      
+      // 添加触发器引用目标工作流
+      (referencingWorkflow.triggers as any) = [{
+        id: 'trigger-1',
+        name: 'Start Target Workflow',
+        condition: {
+          eventType: 'NODE_COMPLETED'
+        },
+        action: {
+          type: TriggerActionType.START_WORKFLOW,
+          parameters: {
+            workflowId: 'target-workflow'
+          }
+        },
+        enabled: true
+      }];
+      
+      registry.register(targetWorkflow);
+      registry.register(referencingWorkflow);
+
+      const result = registry.checkWorkflowReferences('target-workflow');
+      
+      expect(result.hasReferences).toBe(true);
+      expect(result.references).toHaveLength(1);
+      expect(result.references[0]).toEqual({
+        type: 'trigger',
+        sourceId: 'referencing-workflow:trigger-1',
+        sourceName: 'Referencing Workflow - Start Target Workflow',
+        isRuntimeReference: false,
+        details: {
+          workflowId: 'referencing-workflow',
+          triggerId: 'trigger-1',
+          triggerType: 'START_WORKFLOW'
+        }
+      });
+      expect(result.canSafelyDelete).toBe(true);
+    });
+  });
+
   describe('unregister - 删除工作流定义', () => {
     it('应该成功删除工作流定义', () => {
       const workflow = createValidWorkflow('workflow-1', 'Test Workflow');
@@ -363,6 +458,111 @@ describe('WorkflowRegistry', () => {
       expect(() => {
         registry.unregister('non-existent-workflow');
       }).not.toThrow();
+    });
+
+    it('应该在有引用时抛出 ValidationError（未强制删除）', () => {
+      const parentWorkflow = createValidWorkflow('parent-workflow', 'Parent Workflow');
+      const childWorkflow = createValidWorkflow('child-workflow', 'Child Workflow');
+      
+      registry.register(parentWorkflow);
+      registry.register(childWorkflow);
+      
+      // 模拟父子关系
+      (registry as any).workflowRelationships.set('child-workflow', {
+        workflowId: 'child-workflow',
+        parentWorkflowId: 'parent-workflow',
+        childWorkflowIds: new Set(),
+        referencedBy: new Map(),
+        depth: 1
+      });
+
+      expect(() => {
+        registry.unregister('child-workflow');
+      }).toThrow('Cannot delete workflow \'child-workflow\': it is referenced by 1 other components.');
+    });
+
+    it('应该在有引用时允许强制删除', () => {
+      const parentWorkflow = createValidWorkflow('parent-workflow', 'Parent Workflow');
+      const childWorkflow = createValidWorkflow('child-workflow', 'Child Workflow');
+      
+      registry.register(parentWorkflow);
+      registry.register(childWorkflow);
+      
+      // 模拟父子关系
+      (registry as any).workflowRelationships.set('child-workflow', {
+        workflowId: 'child-workflow',
+        parentWorkflowId: 'parent-workflow',
+        childWorkflowIds: new Set(),
+        referencedBy: new Map(),
+        depth: 1
+      });
+
+      expect(() => {
+        registry.unregister('child-workflow', { force: true });
+      }).not.toThrow();
+
+      expect(registry.has('child-workflow')).toBe(false);
+    });
+
+    it('应该在禁用引用检查时跳过验证', () => {
+      const parentWorkflow = createValidWorkflow('parent-workflow', 'Parent Workflow');
+      const childWorkflow = createValidWorkflow('child-workflow', 'Child Workflow');
+      
+      registry.register(parentWorkflow);
+      registry.register(childWorkflow);
+      
+      // 模拟父子关系
+      (registry as any).workflowRelationships.set('child-workflow', {
+        workflowId: 'child-workflow',
+        parentWorkflowId: 'parent-workflow',
+        childWorkflowIds: new Set(),
+        referencedBy: new Map(),
+        depth: 1
+      });
+
+      expect(() => {
+        registry.unregister('child-workflow', { checkReferences: false });
+      }).not.toThrow();
+
+      expect(registry.has('child-workflow')).toBe(false);
+    });
+
+    it('应该在有运行时引用时允许强制删除', () => {
+      const workflow = createValidWorkflow('test-workflow', 'Test Workflow');
+      registry.register(workflow);
+      
+      // 直接模拟 checkWorkflowReferences 返回有运行时引用的结果
+      const originalCheckReferences = registry.checkWorkflowReferences;
+      registry.checkWorkflowReferences = jest.fn().mockReturnValue({
+        hasReferences: true,
+        references: [{
+          type: 'thread',
+          sourceId: 'thread-1',
+          sourceName: 'Thread thread-1',
+          isRuntimeReference: true,
+          details: {
+            threadStatus: 'RUNNING',
+            threadType: 'MAIN'
+          }
+        }],
+        canSafelyDelete: false,
+        stats: {
+          subgraphReferences: 0,
+          triggerReferences: 0,
+          threadReferences: 1,
+          runtimeReferences: 1
+        }
+      });
+      
+      try {
+        expect(() => {
+          registry.unregister('test-workflow', { force: true });
+        }).not.toThrow();
+        
+        expect(registry.has('test-workflow')).toBe(false);
+      } finally {
+        registry.checkWorkflowReferences = originalCheckReferences;
+      }
     });
   });
 
@@ -582,7 +782,7 @@ describe('WorkflowRegistry', () => {
       expect(registered?.description).toBe('Test workflow');
 
       // 4. 搜索工作流
-      const searchResults = registry.search('updated');
+      const searchResults = registry.search('Test');
       expect(searchResults).toHaveLength(1);
 
       // 5. 导出工作流

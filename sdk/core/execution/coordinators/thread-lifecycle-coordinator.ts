@@ -21,12 +21,9 @@
 import { NotFoundError } from '../../../types/errors';
 import type { ThreadOptions, ThreadResult } from '../../../types/thread';
 import { ThreadStatus } from '../../../types/thread';
-import { type ThreadRegistry } from '../../services/thread-registry';
 import { ThreadBuilder } from '../thread-builder';
 import { ThreadExecutor } from '../thread-executor';
 import { ThreadLifecycleManager } from '../managers/thread-lifecycle-manager';
-import type { EventManager } from '../../services/event-manager';
-import type { WorkflowRegistry } from '../../services/workflow-registry';
 import {
   waitForThreadPaused,
   waitForThreadCancelled
@@ -226,19 +223,19 @@ export class ThreadLifecycleCoordinator {
     if (!threadContext) {
       throw new Error(`ThreadContext not found for threadId: ${threadId}`);
     }
-    
+
     // 验证状态转换合法性
     const { validateTransition } = await import('../utils/thread-state-validator');
     validateTransition(threadId, threadContext.getStatus() as ThreadStatus, status);
-    
+
     // 直接设置状态
     threadContext.setStatus(status);
-    
+
     // 如果是终止状态，设置结束时间并清理
     if ([ThreadStatus.COMPLETED, ThreadStatus.FAILED, ThreadStatus.CANCELLED, ThreadStatus.TIMEOUT].includes(status)) {
       threadContext.setEndTime(now());
       globalMessageStorage.removeReference(threadId);
-      
+
       // 触发相应的终止事件
       let event;
       switch (status) {
@@ -252,7 +249,7 @@ export class ThreadLifecycleCoordinator {
           event = buildThreadCancelledEvent(threadContext.thread, 'forced_cancel');
           break;
       }
-      
+
       if (event) {
         await emit(this.executionContext.getEventManager(), event);
       }
@@ -277,16 +274,16 @@ export class ThreadLifecycleCoordinator {
     if (!threadContext) {
       throw new Error(`ThreadContext not found for threadId: ${threadId}`);
     }
-    
+
     // 设置状态
     threadContext.setStatus(ThreadStatus.CANCELLED);
-    
+
     // 设置结束时间
     threadContext.setEndTime(now());
-    
+
     // 清理全局消息存储
     globalMessageStorage.removeReference(threadId);
-    
+
     // 触发取消事件
     const cancelledEvent = buildThreadCancelledEvent(threadContext.thread, reason || 'forced_cancel');
     await emit(this.executionContext.getEventManager(), cancelledEvent);

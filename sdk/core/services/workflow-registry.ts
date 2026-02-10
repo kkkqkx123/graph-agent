@@ -15,6 +15,7 @@ import type {
   WorkflowRelationship,
   WorkflowHierarchy
 } from '../../types/workflow';
+import type { WorkflowReferenceInfo, WorkflowReferenceRelation, WorkflowReferenceType } from '../../types/workflow-reference';
 import type { GraphBuildOptions } from '../../types';
 import type { ID } from '../../types/common';
 import type { Node } from '../../types/node';
@@ -29,6 +30,7 @@ import { triggerTemplateRegistry } from './trigger-template-registry';
 import type { TriggerReference } from '../../types/trigger-template';
 import type { WorkflowTrigger } from '../../types/trigger';
 import { graphRegistry } from './graph-registry';
+import { checkWorkflowReferences } from '../../utils/workflow-reference-checker';
 
 /**
  * 工作流摘要信息
@@ -60,6 +62,8 @@ class WorkflowRegistry {
   private processedWorkflows: Map<string, ProcessedWorkflowDefinition> = new Map();
   private graphCache: Map<string, GraphData> = new Map();
   private workflowRelationships: Map<string, WorkflowRelationship> = new Map();
+  private activeWorkflows: Set<string> = new Set();
+  private referenceRelations: Map<string, WorkflowReferenceRelation[]> = new Map();
   private validator: WorkflowValidator;
   private maxRecursionDepth: number;
 
@@ -68,6 +72,103 @@ class WorkflowRegistry {
   } = {}) {
     this.validator = new WorkflowValidator();
     this.maxRecursionDepth = options.maxRecursionDepth ?? 10;
+  }
+
+  /**
+   * 添加活跃工作流
+   * @param workflowId 工作流ID
+   */
+  addActiveWorkflow(workflowId: string): void {
+    this.activeWorkflows.add(workflowId);
+  }
+
+  /**
+   * 移除活跃工作流
+   * @param workflowId 工作流ID
+   */
+  removeActiveWorkflow(workflowId: string): void {
+    this.activeWorkflows.delete(workflowId);
+  }
+
+  /**
+   * 检查工作流是否活跃
+   * @param workflowId 工作流ID
+   * @returns 是否活跃
+   */
+  isWorkflowActive(workflowId: string): boolean {
+    return this.activeWorkflows.has(workflowId);
+  }
+
+  /**
+   * 添加工作流引用关系
+   * @param relation 引用关系
+   */
+  addReferenceRelation(relation: WorkflowReferenceRelation): void {
+    const key = relation.targetWorkflowId;
+    if (!this.referenceRelations.has(key)) {
+      this.referenceRelations.set(key, []);
+    }
+    this.referenceRelations.get(key)!.push(relation);
+  }
+
+  /**
+   * 移除工作流引用关系
+   * @param sourceWorkflowId 源工作流ID
+   * @param targetWorkflowId 目标工作流ID
+   * @param referenceType 引用类型
+   */
+  removeReferenceRelation(
+    sourceWorkflowId: string,
+    targetWorkflowId: string,
+    referenceType: WorkflowReferenceType
+  ): void {
+    const relations = this.referenceRelations.get(targetWorkflowId);
+    if (relations) {
+      const filtered = relations.filter((rel: WorkflowReferenceRelation) =>
+        !(rel.sourceWorkflowId === sourceWorkflowId &&
+          rel.referenceType === referenceType)
+      );
+      if (filtered.length === 0) {
+        this.referenceRelations.delete(targetWorkflowId);
+      } else {
+        this.referenceRelations.set(targetWorkflowId, filtered);
+      }
+    }
+  }
+
+  /**
+   * 检查工作流是否有引用
+   * @param workflowId 工作流ID
+   * @returns 是否有引用
+   */
+  hasReferences(workflowId: string): boolean {
+    return this.referenceRelations.has(workflowId) &&
+           this.referenceRelations.get(workflowId)!.length > 0;
+  }
+
+  /**
+   * 获取工作流引用关系
+   * @param workflowId 工作流ID
+   * @returns 引用关系列表
+   */
+  getReferenceRelations(workflowId: string): WorkflowReferenceRelation[] {
+    return this.referenceRelations.get(workflowId) || [];
+  }
+
+  /**
+   * 清空工作流引用关系
+   * @param workflowId 工作流ID
+   */
+  clearReferenceRelations(workflowId: string): void {
+    this.referenceRelations.delete(workflowId);
+  }
+
+  /**
+   * 获取所有活跃工作流ID
+   * @returns 活跃工作流ID数组
+   */
+  getActiveWorkflows(): string[] {
+    return Array.from(this.activeWorkflows);
   }
 
   /**
@@ -218,10 +319,45 @@ class WorkflowRegistry {
 
 
   /**
+   * 检查工作流引用
+   * @param workflowId 工作流ID
+   * @returns 引用信息
+   */
+  checkWorkflowReferences(workflowId: string): WorkflowReferenceInfo {
+    // 从全局作用域获取threadRegistry，避免参数传递
+    const { threadRegistry } = require('./thread-registry');
+    return checkWorkflowReferences(this, threadRegistry, workflowId);
+  }
+
+  /**
    * 移除工作流定义
    * @param workflowId 工作流ID
+   * @param options 删除选项
    */
-  unregister(workflowId: string): void {
+  unregister(
+    workflowId: string,
+    options?: {
+      force?: boolean;
+      checkReferences?: boolean;
+    }
+  ): void {
+    const shouldCheck = options?.checkReferences !== false;
+
+    if (shouldCheck) {
+      const referenceInfo = this.checkWorkflowReferences(workflowId);
+      if (referenceInfo.hasReferences && !options?.force) {
+        throw new ValidationError(
+          `Cannot delete workflow '${workflowId}': it is referenced by ${referenceInfo.references.length} other components. ` +
+          `Use force=true to override, or check references first.`,
+          'workflow.delete.referenced'
+        );
+      }
+
+      if (referenceInfo.stats.runtimeReferences > 0 && options?.force) {
+        console.warn(`Force deleting workflow '${workflowId}' with ${referenceInfo.stats.runtimeReferences} active references`);
+      }
+    }
+
     this.workflows.delete(workflowId);
     this.clearPreprocessCache(workflowId);
 

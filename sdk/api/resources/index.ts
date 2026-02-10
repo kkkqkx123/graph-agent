@@ -62,6 +62,9 @@ import { HumanRelayResourceAPI, type HumanRelayConfig, type HumanRelayFilter } f
 // 配置资源管理
 import { ConfigurationAPI } from './configuration/configuration-api';
 
+// 配置依赖接口
+import type { APIDependencies } from '../core/api-dependencies';
+
 // 重新导出所有资源管理API
 export { GenericResourceAPI };
 export { CheckpointResourceAPI };
@@ -83,22 +86,22 @@ export { ConfigurationAPI };
 /**
  * 创建所有资源管理API实例的工厂函数
  */
-export function createResourceAPIs() {
+export function createResourceAPIs(dependencies: APIDependencies) {
   return {
     checkpoints: new CheckpointResourceAPI(),
     messages: new MessageResourceAPI(),
     variables: new VariableResourceAPI(),
     triggers: new TriggerResourceAPI(),
     events: new EventResourceAPI(),
-    workflows: new WorkflowRegistryAPI(),
-    threads: new ThreadRegistryAPI(),
-    tools: new ToolRegistryAPI(),
-    scripts: new ScriptRegistryAPI(),
-    nodeTemplates: new NodeRegistryAPI(),
-    triggerTemplates: new TriggerTemplateRegistryAPI(),
-    profiles: new LLMProfileRegistryAPI(),
-    userInteractions: new UserInteractionResourceAPI(),
-    humanRelay: new HumanRelayResourceAPI(),
+    workflows: new WorkflowRegistryAPI(dependencies),
+    threads: new ThreadRegistryAPI(dependencies),
+    tools: new ToolRegistryAPI(dependencies),
+    scripts: new ScriptRegistryAPI(dependencies),
+    nodeTemplates: new NodeRegistryAPI(dependencies),
+    triggerTemplates: new TriggerTemplateRegistryAPI(dependencies),
+    profiles: new LLMProfileRegistryAPI(dependencies),
+    userInteractions: new UserInteractionResourceAPI(dependencies),
+    humanRelay: new HumanRelayResourceAPI(dependencies),
     configuration: new ConfigurationAPI()
   };
 }

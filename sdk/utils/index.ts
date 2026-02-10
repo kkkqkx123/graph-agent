@@ -7,5 +7,6 @@
 export { generateId, isValidId, validateId } from "./id-utils";
 export { now, timestampFromDate, timestampToDate, timestampToISOString, nowWithTimezone, diffTimestamp, formatDuration } from "./timestamp-utils";
 export { initialVersion } from "./version-utils";
+export { checkWorkflowReferences } from "./workflow-reference-checker";
 export { emptyMetadata, getMetadata, setMetadata, deleteMetadata, hasMetadata, mergeMetadata } from "./metadata-utils";
 export { encodeText, encodeObject, estimateTokensFallback, resetEncoder } from "./token-encoder";

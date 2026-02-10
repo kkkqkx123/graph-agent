@@ -849,4 +849,53 @@ export class ThreadContext implements LifecycleCapable {
   addDynamicTools(toolIds: string[]): void {
     toolIds.forEach(id => this.availableTools.add(id));
   }
+
+  /**
+   * 获取活跃的子工作流ID列表
+   * 包括触发的子工作流和子图执行栈中的工作流
+   * @returns 活跃子工作流ID数组
+   */
+  getActiveSubworkflowIds(): string[] {
+    const subworkflows = new Set<string>();
+    
+    // 1. 检查触发的子工作流
+    const triggeredId = this.getTriggeredSubworkflowId();
+    if (triggeredId) subworkflows.add(triggeredId);
+    
+    // 2. 检查子图执行栈中的工作流
+    const subgraphStack = this.executionState.getSubgraphStack();
+    for (const context of subgraphStack) {
+      subworkflows.add(context.workflowId);
+    }
+    
+    return Array.from(subworkflows);
+  }
+
+  /**
+   * 检查是否引用指定工作流
+   * @param workflowId 目标工作流ID
+   * @returns 是否引用
+   */
+  isReferencingWorkflow(workflowId: string): boolean {
+    // 1. 检查主工作流
+    if (this.getWorkflowId() === workflowId) {
+      return true;
+    }
+    
+    // 2. 检查触发的子工作流
+    const triggeredId = this.getTriggeredSubworkflowId();
+    if (triggeredId === workflowId) {
+      return true;
+    }
+    
+    // 3. 检查子图执行栈中的工作流
+    const subgraphStack = this.executionState.getSubgraphStack();
+    for (const context of subgraphStack) {
+      if (context.workflowId === workflowId) {
+        return true;
+      }
+    }
+    
+    return false;
+  }
 }
