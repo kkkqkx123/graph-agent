@@ -340,7 +340,7 @@ describe('GraphNavigator', () => {
 
       const lastNodeResult = {
         nodeId: 'route',
-        data: { selectedNode: 'llm1' },
+        selectedNode: 'llm1',
       };
 
       const result = navigator.selectNextNodeWithContext(

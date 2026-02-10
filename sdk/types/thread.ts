@@ -105,25 +105,6 @@ export interface NodeExecutionResult {
   status: 'PENDING' | 'RUNNING' | 'COMPLETED' | 'FAILED' | 'SKIPPED' | 'CANCELLED';
   /** 执行步骤序号 */
   step: number;
-  /**
-   * 执行数据（用于追踪和调试）
-   *
-   * 说明：记录节点执行时的相关数据
-   * - 用于执行追踪和调试
-   * - 不参与表达式解析
-   * - 可选字段，某些节点类型可能不需要
-   * - Hook 可以修改此字段（可选操作）
-   *
-   * 示例：
-   * - CODE 节点：包含脚本执行结果
-   * - LOOP 节点：包含循环状态信息
-   * - ROUTE 节点：包含路由决策信息
-   *
-   * 注意：此字段与 Thread.output 不同
-   * - NodeExecutionResult.data: 单个节点的执行数据（用于追踪）
-   * - Thread.output: 整个工作流的最终输出（用于返回结果）
-   */
-  data?: any;
   /** 错误信息 */
   error?: any;
   /** 执行时间（毫秒） */
@@ -234,10 +215,6 @@ export interface Thread {
    * {{output.result}}  // 'Task completed'
    * {{output.data.count}}  // 10
    * ```
-   *
-   * 注意：此字段与 NodeExecutionResult.data 的区别
-   * - Thread.output: 整个工作流的最终输出
-   * - NodeExecutionResult.data: 单个节点的执行数据
    *
    * 注意：此字段与 variables 的区别
    * - Thread.output: 工作流的最终输出，只读

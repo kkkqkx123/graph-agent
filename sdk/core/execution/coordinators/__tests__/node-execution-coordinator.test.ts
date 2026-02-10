@@ -549,7 +549,6 @@ describe('NodeExecutionCoordinator', () => {
       expect(result.nodeType).toBe(NodeType.LLM);
       expect(result.status).toBe('COMPLETED');
       expect(result.step).toBe(1);
-      expect(result.data).toBeUndefined(); // 因为 output.status 存在
       expect(result.startTime).toBeDefined();
       expect(result.endTime).toBeDefined();
       expect(result.executionTime).toBeGreaterThanOrEqual(0);

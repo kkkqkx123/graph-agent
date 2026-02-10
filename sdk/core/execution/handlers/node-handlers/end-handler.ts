@@ -42,20 +42,8 @@ export async function endHandler(thread: Thread, node: Node, context?: any): Pro
   }
 
   // 收集Thread输出
-  let output: any = {};
-
-  // 优先级1：Thread的output（即使为空对象）
-  if (thread.output !== undefined && thread.output !== null) {
-    output = thread.output;
-  } else {
-    // 优先级2：最后一个节点的data
-    if (thread.nodeResults && thread.nodeResults.length > 0) {
-      const lastResult = thread.nodeResults[thread.nodeResults.length - 1];
-      if (lastResult && lastResult.data) {
-        output = lastResult.data;
-      }
-    }
-  }
+  // 使用 thread.output 作为工作流最终输出（由节点或END节点显式设置）
+  const output = thread.output || {};
 
   // 设置Thread输出（不修改状态，状态由ThreadLifecycleManager管理）
   thread.output = output;

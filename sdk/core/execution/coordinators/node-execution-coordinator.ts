@@ -189,7 +189,7 @@ export class NodeExecutionCoordinator {
           threadId: threadContext.getThreadId(),
           workflowId: threadContext.getWorkflowId(),
           nodeId,
-          output: nodeResult.data,
+          output: threadContext.thread.output,
           executionTime: nodeResult.executionTime || 0,
           timestamp: now()
         };
@@ -337,7 +337,6 @@ export class NodeExecutionCoordinator {
       nodeType: node.type,
       status: output.status || 'COMPLETED',
       step: threadContext.thread.nodeResults.length + 1,
-      data: output.status ? undefined : output,
       startTime,
       endTime,
       executionTime: diffTimestamp(startTime, endTime)

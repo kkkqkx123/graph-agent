@@ -35,7 +35,7 @@ export function buildHookEvaluationContext(context: HookExecutionContext): HookE
   const { thread, node, result } = context;
 
   return {
-    output: result?.data,
+    output: thread.output,
     status: result?.status || 'PENDING',
     executionTime: result?.executionTime || 0,
     error: result?.error,

@@ -180,11 +180,11 @@ export class GraphNavigator {
   ): string | null {
     // 处理ROUTE节点的特殊逻辑
     if (currentNodeType === 'ROUTE' as NodeType) {
-      // ROUTE节点使用自己的路由决策，从执行结果中获取selectedNode
+      // ROUTE节点使用自己的路由决策，从处理器返回的输出中获取selectedNode
+      // 路由处理器返回: { status: 'COMPLETED', selectedNode: nodeId }
       if (lastNodeResult && lastNodeResult.nodeId === currentNodeId &&
-        lastNodeResult.data && typeof lastNodeResult.data === 'object' &&
-        'selectedNode' in lastNodeResult.data) {
-        return lastNodeResult.data.selectedNode as string;
+        typeof lastNodeResult.selectedNode === 'string') {
+        return lastNodeResult.selectedNode;
       }
       return null;
     }

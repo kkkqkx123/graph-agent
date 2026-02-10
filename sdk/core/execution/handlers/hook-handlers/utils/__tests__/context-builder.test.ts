@@ -37,20 +37,22 @@ describe('context-builder', () => {
         }
       } as any;
 
+      const mockThread2 = {
+        ...mockThread,
+        output: { generatedText: 'Generated text' }
+      };
+
       const mockResult: NodeExecutionResult = {
         nodeId: 'node-1',
         nodeType: 'LLM_NODE',
         step: 1,
         status: 'COMPLETED',
-        data: {
-          output: 'Generated text'
-        },
         executionTime: 1500,
         error: null
       };
 
       const context: HookExecutionContext = {
-        thread: mockThread,
+        thread: mockThread2,
         node: mockNode,
         result: mockResult
       };
@@ -60,11 +62,11 @@ describe('context-builder', () => {
 
       // 验证结果
       expect(result).toEqual({
-        output: mockResult.data,
+        output: mockThread2.output,
         status: mockResult.status,
         executionTime: mockResult.executionTime,
         error: mockResult.error,
-        variables: mockThread.variableScopes.thread,
+        variables: mockThread2.variableScopes.thread,
         config: mockNode.config,
         metadata: mockNode.metadata
       });
@@ -123,7 +125,6 @@ describe('context-builder', () => {
         nodeType: 'LLM_NODE',
         step: 1,
         status: 'FAILED',
-        data: null,
         executionTime: 500,
         error: mockError
       };
@@ -174,7 +175,6 @@ describe('context-builder', () => {
         nodeType: 'LLM_NODE',
         step: 1,
         status: 'COMPLETED',
-        data: complexData,
         executionTime: 1000,
         error: null
       };

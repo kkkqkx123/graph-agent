@@ -28,7 +28,7 @@ function evaluateRouteCondition(condition: Condition, thread: Thread): boolean {
     const context: EvaluationContext = {
       variables: thread.variableScopes.thread || {},
       input: thread.input || {},
-      output: thread.nodeResults[thread.nodeResults.length - 1]?.data || {}
+      output: thread.output || {}
     };
 
     return conditionEvaluator.evaluate(condition, context);
@@ -66,8 +66,8 @@ export async function routeHandler(thread: Thread, node: Node, context?: any): P
   for (const route of sortedRoutes) {
     if (evaluateRouteCondition(route.condition, thread)) {
       return {
-        selectedRoute: route,
-        targetNodeId: route.targetNodeId
+        status: 'COMPLETED',
+        selectedNode: route.targetNodeId
       };
     }
   }
@@ -75,9 +75,8 @@ export async function routeHandler(thread: Thread, node: Node, context?: any): P
   // 没有匹配的路由，使用默认目标
   if (config.defaultTargetNodeId) {
     return {
-      selectedRoute: null,
-      targetNodeId: config.defaultTargetNodeId,
-      message: 'No route matched, using default target'
+      status: 'COMPLETED',
+      selectedNode: config.defaultTargetNodeId
     };
   }
 

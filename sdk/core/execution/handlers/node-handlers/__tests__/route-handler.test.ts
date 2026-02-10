@@ -70,12 +70,8 @@ describe('route-handler', () => {
       const result = await routeHandler(mockThread, mockNode);
 
       expect(result).toMatchObject({
-        selectedRoute: {
-          condition: { expression: 'variables.status === "success"' },
-          targetNodeId: 'success-node',
-          priority: 10
-        },
-        targetNodeId: 'success-node'
+        status: 'COMPLETED',
+        selectedNode: 'success-node'
       });
     });
 
@@ -110,8 +106,7 @@ describe('route-handler', () => {
       const result = await routeHandler(mockThread, mockNode);
 
       // 应该选择高优先级的路由
-      expect(result.targetNodeId).toBe('high-priority-node');
-      expect(result.selectedRoute?.priority).toBe(10);
+      expect(result.selectedNode).toBe('high-priority-node');
     });
 
     it('应该在所有路由都不匹配时使用默认目标', async () => {
@@ -145,9 +140,8 @@ describe('route-handler', () => {
       const result = await routeHandler(mockThread, mockNode);
 
       expect(result).toMatchObject({
-        selectedRoute: null,
-        targetNodeId: 'default-node',
-        message: 'No route matched, using default target'
+        status: 'COMPLETED',
+        selectedNode: 'default-node'
       });
     });
 
@@ -254,8 +248,7 @@ describe('route-handler', () => {
 
       const result = await routeHandler(mockThread, mockNode);
 
-      expect(result.targetNodeId).toBe('success-node');
-      expect(result.selectedRoute).toBeDefined();
+      expect(result.selectedNode).toBe('success-node');
     });
   });
 
@@ -285,7 +278,7 @@ describe('route-handler', () => {
 
       const result = await routeHandler(mockThread, mockNode);
 
-      expect(result.targetNodeId).toBe('active-node');
+      expect(result.selectedNode).toBe('active-node');
     });
 
     it('应该正确评估数值比较条件', async () => {
@@ -318,7 +311,7 @@ describe('route-handler', () => {
 
       const result = await routeHandler(mockThread, mockNode);
 
-      expect(result.targetNodeId).toBe('greater-node');
+      expect(result.selectedNode).toBe('greater-node');
     });
 
     it('应该正确评估字符串比较条件', async () => {
@@ -346,7 +339,7 @@ describe('route-handler', () => {
 
       const result = await routeHandler(mockThread, mockNode);
 
-      expect(result.targetNodeId).toBe('premium-node');
+      expect(result.selectedNode).toBe('premium-node');
     });
 
     it('应该正确评估复杂条件表达式', async () => {
@@ -375,7 +368,7 @@ describe('route-handler', () => {
 
       const result = await routeHandler(mockThread, mockNode);
 
-      expect(result.targetNodeId).toBe('excellent-node');
+      expect(result.selectedNode).toBe('excellent-node');
     });
 
     it('应该在条件评估失败时返回false并继续评估其他路由', async () => {
@@ -409,7 +402,7 @@ describe('route-handler', () => {
       const result = await routeHandler(mockThread, mockNode);
 
       // 应该跳过无效的条件，匹配第二个条件
-      expect(result.targetNodeId).toBe('success-node');
+      expect(result.selectedNode).toBe('success-node');
     });
   });
 
@@ -432,9 +425,8 @@ describe('route-handler', () => {
       const result = await routeHandler(mockThread, mockNode);
 
       expect(result).toMatchObject({
-        selectedRoute: null,
-        targetNodeId: 'default-node',
-        message: 'No route matched, using default target'
+        status: 'COMPLETED',
+        selectedNode: 'default-node'
       });
     });
 
@@ -468,7 +460,7 @@ describe('route-handler', () => {
       const result = await routeHandler(mockThread, mockNode);
 
       // 有优先级的路由应该优先
-      expect(result.targetNodeId).toBe('priority-node');
+      expect(result.selectedNode).toBe('priority-node');
     });
 
     it('应该正确处理空的variableScopes', async () => {
@@ -499,7 +491,7 @@ describe('route-handler', () => {
 
       const result = await routeHandler(mockThread, mockNode);
 
-      expect(result.targetNodeId).toBe('always-node');
+      expect(result.selectedNode).toBe('always-node');
     });
   });
 });

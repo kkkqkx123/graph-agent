@@ -87,8 +87,7 @@ describe('code-handler', () => {
         step: 1,
         nodeId: 'code-node-1',
         nodeType: NodeType.CODE,
-        status: 'COMPLETED',
-        data: mockResult
+        status: 'COMPLETED'
       });
       expect(executionResult.timestamp).toBeDefined();
     });
