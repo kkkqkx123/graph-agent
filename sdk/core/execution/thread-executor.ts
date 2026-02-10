@@ -337,12 +337,6 @@ export class ThreadExecutor implements SubgraphContextFactory {
       input
     });
 
-    // 设置元数据
-    subgraphContext.setMetadata({
-      ...subgraphContext.getMetadata(),
-      ...metadata
-    });
-
     return subgraphContext;
   }
 }

@@ -33,8 +33,7 @@ describe('route-handler', () => {
       output: {},
       nodeResults: [],
       startTime: 0,
-      errors: [],
-      metadata: {}
+      errors: []
     };
   });
 

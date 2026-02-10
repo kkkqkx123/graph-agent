@@ -82,8 +82,7 @@ describe('context-builder', () => {
       const mockNode = {
         id: 'node-1',
         type: 'LLM_NODE',
-        config: {},
-        metadata: {}
+        config: {}
       } as any;
 
       const context: HookExecutionContext = {
@@ -99,8 +98,7 @@ describe('context-builder', () => {
         executionTime: 0,
         error: undefined,
         variables: {},
-        config: {},
-        metadata: {}
+        config: {}
       });
     });
 
@@ -116,8 +114,7 @@ describe('context-builder', () => {
       const mockNode = {
         id: 'node-1',
         type: 'LLM_NODE',
-        config: {},
-        metadata: {}
+        config: {}
       } as any;
 
       const mockError = new Error('Test error');
@@ -145,8 +142,7 @@ describe('context-builder', () => {
         executionTime: 500,
         error: mockError,
         variables: {},
-        config: {},
-        metadata: {}
+        config: {}
       });
     });
 
@@ -162,8 +158,7 @@ describe('context-builder', () => {
       const mockNode = {
         id: 'node-1',
         type: 'LLM_NODE',
-        config: {},
-        metadata: {}
+        config: {}
       } as any;
 
       const complexData = {
@@ -233,8 +228,7 @@ describe('context-builder', () => {
         executionTime: 300,
         error: mockError,
         variables: {},
-        config: {},
-        metadata: {}
+        config: {}
       };
 
       const result = convertToEvaluationContext(hookContext);
@@ -250,8 +244,7 @@ describe('context-builder', () => {
         executionTime: 500,
         error: undefined,
         variables: {},
-        config: {},
-        metadata: {}
+        config: {}
       };
 
       const result = convertToEvaluationContext(hookContext);
@@ -267,8 +260,7 @@ describe('context-builder', () => {
         executionTime: 100,
         error: undefined,
         variables: {},
-        config: {},
-        metadata: {}
+        config: {}
       };
 
       const result = convertToEvaluationContext(hookContext);

@@ -251,8 +251,7 @@ function createMockThreadContext(threadId: string, context: ExecutionContext): T
     output: {},
     nodeResults: [],
     startTime: Date.now(),
-    errors: [],
-    metadata: {}
+    errors: []
   };
 
   const conversationManager = new ConversationManager();

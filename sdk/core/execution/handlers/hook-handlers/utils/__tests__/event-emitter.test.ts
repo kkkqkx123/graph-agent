@@ -73,8 +73,7 @@ describe('event-emitter', () => {
       const mockNode = {
         id: 'node-1',
         type: 'LLM_NODE',
-        config: {},
-        metadata: {}
+        config: {}
       } as any;
 
       const context: HookExecutionContext = {
@@ -119,8 +118,7 @@ describe('event-emitter', () => {
       const mockNode = {
         id: 'node-1',
         type: 'LLM_NODE',
-        config: {},
-        metadata: {}
+        config: {}
       } as any;
 
       const context: HookExecutionContext = {
@@ -149,8 +147,7 @@ describe('event-emitter', () => {
       const mockNode = {
         id: 'node-1',
         type: 'LLM_NODE',
-        config: {},
-        metadata: {}
+        config: {}
       } as any;
 
       const context: HookExecutionContext = {
@@ -214,8 +211,7 @@ describe('event-emitter', () => {
       const mockNode = {
         id: 'node-1',
         type: 'LLM_NODE',
-        config: {},
-        metadata: {}
+        config: {}
       } as any;
 
       const context: HookExecutionContext = {

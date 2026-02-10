@@ -577,10 +577,8 @@ describe('Thread构建到执行实例创建集成测试', () => {
       // 验证输入正确传递
       expect(threadContext.thread.input).toEqual(threadOptions.input);
 
-      // 验证元数据正确设置
-      expect(threadContext.thread.metadata?.creator).toBe('test-creator');
-      expect(threadContext.thread.metadata?.tags).toEqual(['tag1', 'tag2']);
-      expect(threadContext.thread.metadata?.isPreprocessed).toBe(true);
+      // 验证错误处理配置正确设置
+      expect(threadContext.thread.errorHandling).toBeDefined();
 
       // 验证ConversationManager配置
       const conversationManager = threadContext.conversationManager;
@@ -598,9 +596,7 @@ describe('Thread构建到执行实例创建集成测试', () => {
 
       // 验证默认值
       expect(threadContext.thread.input).toEqual({});
-      expect(threadContext.thread.metadata?.creator).toBeUndefined();
-      expect(threadContext.thread.metadata?.tags).toBeUndefined();
-      expect(threadContext.thread.metadata?.isPreprocessed).toBe(true);
+      expect(threadContext.thread.errorHandling).toBeDefined();
     });
   });
 

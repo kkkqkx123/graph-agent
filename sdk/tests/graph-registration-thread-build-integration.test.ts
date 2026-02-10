@@ -162,10 +162,8 @@ describe('Graph注册到Thread构建集成测试', () => {
       const thread = threadContext.thread;
       expect(thread.graph).toBe(graph); // 应该是同一个图实例
 
-      // 步骤8：验证元数据正确传递
-      expect(thread.metadata?.workflowConfig).toEqual(processedWorkflow?.config);
-      expect(thread.metadata?.workflowMetadata).toEqual(processedWorkflow?.metadata);
-      expect(thread.metadata?.buildPath).toBe('processed');
+      // 步骤8：验证错误处理配置正确传递
+      expect(thread.errorHandling).toBeDefined();
     });
 
     it('应该支持复杂工作流的Graph注册和Thread构建', async () => {
@@ -482,10 +480,8 @@ describe('Graph注册到Thread构建集成测试', () => {
       // 验证输入正确传递
       expect(threadContext.thread.input).toEqual(threadOptions.input);
 
-      // 验证元数据正确设置
-      expect(threadContext.thread.metadata?.creator).toBe('test-creator');
-      expect(threadContext.thread.metadata?.tags).toEqual(['tag1', 'tag2']);
-      expect(threadContext.thread.metadata?.isPreprocessed).toBe(true);
+      // 验证错误处理配置正确设置
+      expect(threadContext.thread.errorHandling).toBeDefined();
 
       // 验证ConversationManager配置
       const conversationManager = threadContext.conversationManager;
@@ -503,9 +499,7 @@ describe('Graph注册到Thread构建集成测试', () => {
 
       // 验证默认值
       expect(threadContext.thread.input).toEqual({});
-      expect(threadContext.thread.metadata?.creator).toBeUndefined();
-      expect(threadContext.thread.metadata?.tags).toBeUndefined();
-      expect(threadContext.thread.metadata?.isPreprocessed).toBe(true);
+      expect(threadContext.thread.errorHandling).toBeDefined();
     });
   });
 

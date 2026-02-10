@@ -25,10 +25,6 @@ class MockThreadContext {
   getStatus(): string {
     return this.status;
   }
-
-  getMetadata(): any {
-    return this.thread.metadata;
-  }
 }
 
 // Mock ThreadRegistry 类

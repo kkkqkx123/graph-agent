@@ -25,8 +25,7 @@ describe('skip-node-handler', () => {
       parameters: {
         threadId,
         nodeId
-      },
-      metadata: {}
+      }
     };
 
     // Mock ExecutionContext

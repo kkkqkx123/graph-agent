@@ -27,8 +27,7 @@ describe('set-variable-handler', () => {
           message: 'Hello World',
           enabled: true
         }
-      },
-      metadata: {}
+      }
     };
 
     // Mock ExecutionContext

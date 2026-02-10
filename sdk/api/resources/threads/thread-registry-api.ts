@@ -105,14 +105,6 @@ export class ThreadRegistryAPI extends GenericResourceAPI<Thread, string, Thread
       if (filter.startTimeTo && thread.startTime > filter.startTimeTo) {
         return false;
       }
-      if (filter.tags && thread.metadata?.tags) {
-        if (!filter.tags.every(tag => thread.metadata?.tags?.includes(tag))) {
-          return false;
-        }
-      }
-      if (filter.creator && thread.metadata?.creator !== filter.creator) {
-        return false;
-      }
       return true;
     });
   }
@@ -137,8 +129,7 @@ export class ThreadRegistryAPI extends GenericResourceAPI<Thread, string, Thread
       currentNodeId: thread.currentNodeId,
       startTime: thread.startTime,
       endTime: thread.endTime,
-      executionTime: thread.endTime ? thread.endTime - thread.startTime : undefined,
-      metadata: thread.metadata
+      executionTime: thread.endTime ? thread.endTime - thread.startTime : undefined
     }));
   }
 
@@ -185,8 +176,7 @@ export class ThreadRegistryAPI extends GenericResourceAPI<Thread, string, Thread
       output: thread.output,
       error: thread.errors.length > 0 ? thread.errors[0] : undefined,
       executionTime: thread.endTime ? thread.endTime - thread.startTime : 0,
-      nodeResults: thread.nodeResults,
-      metadata: thread.metadata
+      nodeResults: thread.nodeResults
     };
   }
 

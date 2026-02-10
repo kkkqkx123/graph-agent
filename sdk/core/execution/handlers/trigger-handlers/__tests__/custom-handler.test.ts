@@ -16,8 +16,7 @@ describe('custom-handler', () => {
       type: TriggerActionType.CUSTOM,
       parameters: {
         handler: jest.fn()
-      },
-      metadata: {}
+      }
     };
   });
 

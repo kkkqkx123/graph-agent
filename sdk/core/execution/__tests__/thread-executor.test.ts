@@ -452,8 +452,7 @@ describe('ThreadExecutor', () => {
       const metadata = { customField: 'value' };
 
       const mockSubgraphContext = {
-        setMetadata: jest.fn(),
-        getMetadata: jest.fn().mockReturnValue({})
+        thread: {}
       };
 
       threadBuilder.build.mockResolvedValue(mockSubgraphContext);
@@ -461,10 +460,6 @@ describe('ThreadExecutor', () => {
       const result = await executor.buildSubgraphContext(subgraphId, input, metadata);
 
       expect(threadBuilder.build).toHaveBeenCalledWith(subgraphId, { input });
-      expect(mockSubgraphContext.setMetadata).toHaveBeenCalledWith({
-        ...mockSubgraphContext.getMetadata(),
-        ...metadata
-      });
       expect(result).toBe(mockSubgraphContext);
     });
   });
@@ -497,7 +492,6 @@ export function createMockThreadContext(): ThreadContext {
     nodeResults: [],
     startTime: Date.now(),
     errors: [],
-    metadata: {},
     shouldPause: false,
     shouldStop: false
   };

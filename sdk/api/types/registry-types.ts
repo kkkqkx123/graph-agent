@@ -37,10 +37,6 @@ export interface ThreadFilter {
   startTimeFrom?: number;
   /** 创建时间范围（结束时间戳） */
   startTimeTo?: number;
-  /** 标签数组 */
-  tags?: string[];
-  /** 创建者 */
-  creator?: string;
 }
 
 /**
@@ -83,8 +79,6 @@ export interface ThreadSummary {
   endTime?: number;
   /** 执行时间（毫秒） */
   executionTime?: number;
-  /** 元数据 */
-  metadata?: any;
 }
 
 /**

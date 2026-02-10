@@ -18,8 +18,7 @@ describe('send-notification-handler', () => {
         message: 'Test notification message',
         recipients: ['user1@example.com', 'user2@example.com'],
         level: 'info'
-      },
-      metadata: {}
+      }
     };
   });
 

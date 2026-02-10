@@ -38,8 +38,7 @@ describe('end-handler', () => {
       output: {},
       nodeResults: [],
       startTime: 500, // 设置开始时间为500
-      errors: [],
-      metadata: {}
+      errors: []
     };
 
     // 初始化mock node
@@ -260,18 +259,16 @@ describe('end-handler', () => {
       expect(result.output).toEqual({});
     });
 
-    it('应该处理带有metadata的Thread', async () => {
-      mockThread.metadata = {
-        creator: 'test-user',
-        tags: ['test']
+    it('应该处理带有errorHandling的Thread', async () => {
+      mockThread.errorHandling = {
+        stopOnError: true
       };
       
       const result = await endHandler(mockThread, mockNode);
       
       expect(result.message).toBe('Workflow completed');
-      expect(mockThread.metadata).toEqual({
-        creator: 'test-user',
-        tags: ['test']
+      expect(mockThread.errorHandling).toEqual({
+        stopOnError: true
       });
     });
 

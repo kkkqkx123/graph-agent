@@ -22,8 +22,7 @@ describe('pause-thread-handler', () => {
       type: TriggerActionType.PAUSE_THREAD,
       parameters: {
         threadId
-      },
-      metadata: {}
+      }
     };
 
     // Mock ExecutionContext

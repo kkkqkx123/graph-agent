@@ -77,6 +77,8 @@ export interface ThreadStateSnapshot {
     childThreadIds: ID[];
     triggeredSubworkflowId: ID;
   };
+  /** 错误处理配置（用于恢复 Thread.errorHandling） */
+  errorHandling?: import('./thread').ErrorHandlingConfig;
 }
 
 /**

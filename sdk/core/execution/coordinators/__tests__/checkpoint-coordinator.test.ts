@@ -205,8 +205,7 @@ describe('CheckpointCoordinator', () => {
         } as NodeExecutionResult
       ],
       startTime: Date.now(),
-      errors: [],
-      metadata: {}
+      errors: []
     } as Thread;
 
     // 创建 mock ThreadContext

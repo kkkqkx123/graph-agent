@@ -147,7 +147,6 @@ describe('ThreadBuilder', () => {
         variables: [],
         triggers: [],
         config: {},
-        metadata: {},
         createdAt: Date.now(),
         updatedAt: Date.now(),
         availableTools: { initial: new Set() },
@@ -257,7 +256,6 @@ describe('ThreadBuilder', () => {
         variables: [],
         triggers: [],
         config: {},
-        metadata: {},
         createdAt: Date.now(),
         updatedAt: Date.now(),
         availableTools: { initial: new Set() },
@@ -322,7 +320,6 @@ describe('ThreadBuilder', () => {
         variables: [],
         triggers: [],
         config: {},
-        metadata: {},
         createdAt: Date.now(),
         updatedAt: Date.now(),
         availableTools: { initial: new Set() },
@@ -395,7 +392,6 @@ describe('ThreadBuilder', () => {
         variables: [],
         triggers: [],
         config: {},
-        metadata: {},
         createdAt: Date.now(),
         updatedAt: Date.now(),
         availableTools: { initial: new Set() },
@@ -463,8 +459,7 @@ describe('ThreadBuilder', () => {
           output: {},
           nodeResults: [],
           startTime: new Date().toISOString(),
-          errors: [],
-          metadata: {}
+          errors: []
         },
         conversationManager: {
           clone: jest.fn().mockReturnValue({
@@ -525,8 +520,7 @@ describe('ThreadBuilder', () => {
           output: {},
           nodeResults: [{ nodeId: 'start', status: 'COMPLETED' }],
           startTime: new Date().toISOString(),
-          errors: [],
-          metadata: { customField: 'value' }
+          errors: []
         },
         conversationManager: {
           clone: jest.fn().mockReturnValue({
@@ -581,8 +575,7 @@ describe('ThreadBuilder', () => {
           output: {},
           nodeResults: [],
           startTime: new Date().toISOString(),
-          errors: [],
-          metadata: { customField: 'value' }
+          errors: []
         },
         conversationManager: {
           clone: jest.fn().mockReturnValue({

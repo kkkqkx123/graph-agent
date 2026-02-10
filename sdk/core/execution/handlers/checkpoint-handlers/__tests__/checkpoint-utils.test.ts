@@ -70,8 +70,7 @@ describe('CheckpointUtils', () => {
       output: { test: 'output' },
       nodeResults: [],
       startTime: Date.now(),
-      errors: [],
-      metadata: {}
+      errors: []
     };
 
     // 创建 mock ConversationManager

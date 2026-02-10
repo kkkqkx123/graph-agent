@@ -69,7 +69,6 @@ describe('ThreadContext', () => {
       errors: [],
       startTime: Date.now(),
       endTime: undefined,
-      metadata: {},
       contextData: {},
       shouldPause: false,
       shouldStop: false
@@ -160,16 +159,6 @@ describe('ThreadContext', () => {
       
       expect(threadContext.getOutput()).toEqual(output);
       expect(mockThread.output).toEqual(output);
-    });
-  });
-
-  describe('metadata management', () => {
-    it('should get and set metadata correctly', () => {
-      const metadata = { key: 'value' };
-      threadContext.setMetadata(metadata);
-      
-      expect(threadContext.getMetadata()).toEqual(metadata);
-      expect(mockThread.metadata).toEqual(metadata);
     });
   });
 

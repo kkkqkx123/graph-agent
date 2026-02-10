@@ -43,8 +43,7 @@ describe('code-handler', () => {
       output: {},
       nodeResults: [],
       startTime: 0,
-      errors: [],
-      metadata: {}
+      errors: []
     };
 
     // 重置mock

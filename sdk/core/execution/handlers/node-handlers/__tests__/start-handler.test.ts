@@ -32,8 +32,7 @@ describe('start-handler', () => {
       output: {},
       nodeResults: [],
       startTime: 0,
-      errors: [],
-      metadata: {}
+      errors: []
     };
 
     // 初始化mock node
@@ -208,19 +207,17 @@ describe('start-handler', () => {
   });
 
   describe('边界情况测试', () => {
-    it('应该处理带有metadata的Thread', async () => {
-      mockThread.metadata = {
-        creator: 'test-user',
-        tags: ['test']
+    it('应该处理带有errorHandling的Thread', async () => {
+      mockThread.errorHandling = {
+        stopOnError: true
       };
       
       const result = await startHandler(mockThread, mockNode);
       
       expect(result.message).toBe('Workflow started');
-      // start-handler不应该修改metadata，应该保留原有的metadata
-      expect(mockThread.metadata).toEqual({
-        creator: 'test-user',
-        tags: ['test']
+      // start-handler不应该修改errorHandling，应该保留原有的errorHandling
+      expect(mockThread.errorHandling).toEqual({
+        stopOnError: true
       });
     });
 

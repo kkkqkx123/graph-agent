@@ -96,8 +96,7 @@ describe('payload-generator', () => {
         executionTime: 500,
         error: new Error('Test error'),
         variables: {},
-        config: {},
-        metadata: {}
+        config: {}
       };
 
       const hook: NodeHook = {

@@ -295,22 +295,6 @@ export class ThreadContext implements LifecycleCapable {
 
 
   /**
-   * 获取 Thread 元数据
-   * @returns Thread 元数据
-   */
-  getMetadata(): any {
-    return this.thread.metadata;
-  }
-
-  /**
-   * 设置 Thread 元数据
-   * @param metadata 元数据
-   */
-  setMetadata(metadata: any): void {
-    this.thread.metadata = metadata;
-  }
-
-  /**
    * 获取 Thread 变量值
    * @param name 变量名称
    * @returns 变量值

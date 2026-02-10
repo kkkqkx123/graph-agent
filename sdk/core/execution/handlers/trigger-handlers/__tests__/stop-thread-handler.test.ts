@@ -22,8 +22,7 @@ describe('stop-thread-handler', () => {
       type: TriggerActionType.STOP_THREAD,
       parameters: {
         threadId
-      },
-      metadata: {}
+      }
     };
 
     // Mock ExecutionContext
@@ -377,8 +376,7 @@ describe('stop-thread-handler', () => {
       // 测试暂停操作（使用相同的协调器）
       const pauseAction = {
         type: TriggerActionType.PAUSE_THREAD,
-        parameters: { threadId },
-        metadata: {}
+        parameters: { threadId }
       };
 
       await import('../pause-thread-handler').then(({ pauseThreadHandler }) => 
@@ -390,8 +388,7 @@ describe('stop-thread-handler', () => {
       // 测试恢复操作（使用相同的协调器）
       const resumeAction = {
         type: TriggerActionType.RESUME_THREAD,
-        parameters: { threadId },
-        metadata: {}
+        parameters: { threadId }
       };
 
       await import('../resume-thread-handler').then(({ resumeThreadHandler }) => 

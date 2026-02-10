@@ -35,8 +35,7 @@ describe('execute-triggered-subgraph-handler', () => {
       parameters: {
         triggeredWorkflowId,
         waitForCompletion: true
-      },
-      metadata: {}
+      }
     };
 
     // Mock ExecutionContext

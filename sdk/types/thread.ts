@@ -97,45 +97,6 @@ export interface ErrorHandlingConfig {
 }
 
 /**
- * 线程元数据类型
- */
-export interface ThreadMetadata {
-  // ========== 用户元数据 ==========
-  /** 创建者 */
-  creator?: string;
-  /** 标签数组 */
-  tags?: string[];
-
-  // ========== 预处理信息 ==========
-  /** 是否为预处理构建 */
-  isPreprocessed?: boolean;
-  /** 预处理时间戳 */
-  processedAt?: Timestamp;
-  /** 是否包含子图 */
-  hasSubgraphs?: boolean;
-
-  // ========== 工作流快照 ==========
-  /** 工作流配置快照 */
-  workflowConfig?: WorkflowConfig;
-  /** 工作流元数据快照 */
-  workflowMetadata?: WorkflowMetadata;
-  /** 图分析结果（仅预处理路径） */
-  graphAnalysis?: GraphAnalysisResult;
-  /** 预处理验证结果（仅预处理路径） */
-  preprocessValidation?: PreprocessValidationResult;
-  /** 子图合并日志（仅预处理路径） */
-  subgraphMergeLogs?: SubgraphMergeLog[];
-  /** 拓扑排序结果（仅预处理路径） */
-  topologicalOrder?: ID[];
-  /** 构建路径标识 */
-  buildPath?: 'processed' | 'definition';
-
-  // ========== 运行时配置 ==========
-  /** 错误处理配置 */
-  errorHandling?: ErrorHandlingConfig;
-}
-
-/**
  * 节点执行结果类型
  */
 export interface NodeExecutionResult {
@@ -295,8 +256,8 @@ export interface Thread {
   endTime?: Timestamp;
   /** 错误信息数组 */
   errors: any[];
-  /** 线程元数据 */
-  metadata?: ThreadMetadata;
+  /** 错误处理配置 */
+  errorHandling?: ErrorHandlingConfig;
   /** 上下文数据（用于存储 Conversation 等实例） */
   contextData?: Record<string, any>;
   /** 暂停标志（运行时控制）*/

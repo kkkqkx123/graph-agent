@@ -138,24 +138,7 @@ export class ThreadBuilder {
       nodeResults: [],
       startTime: now,
       errors: [],
-      metadata: {
-        creator: options.input?.['creator'],
-        tags: options.input?.['tags'],
-        // 预处理信息
-        isPreprocessed: true,
-        processedAt: processedWorkflow.processedAt,
-        hasSubgraphs: processedWorkflow.hasSubgraphs,
-        // 完整传递工作流配置和元数据
-        workflowConfig: processedWorkflow.config,
-        workflowMetadata: processedWorkflow.metadata,
-        // 传递预处理信息
-        graphAnalysis: processedWorkflow.graphAnalysis,
-        preprocessValidation: processedWorkflow.validationResult,
-        subgraphMergeLogs: processedWorkflow.subgraphMergeLogs,
-        topologicalOrder: processedWorkflow.topologicalOrder,
-        // 构建路径标识
-        buildPath: 'processed'
-      }
+      errorHandling: processedWorkflow.config?.errorHandling
     };
 
     // 步骤4：从 WorkflowDefinition 初始化变量
@@ -283,11 +266,7 @@ export class ThreadBuilder {
         childThreadIds: [],
         triggeredSubworkflowId: ''
       },
-      metadata: {
-        ...sourceThread.metadata,
-        // 清除构建路径标识，因为是新线程
-        buildPath: undefined
-      }
+      errorHandling: sourceThread.errorHandling
     };
 
     // 复制 ConversationManager 实例
@@ -359,11 +338,7 @@ export class ThreadBuilder {
         forkId: forkConfig.forkId,
         forkPathId: forkConfig.forkPathId
       },
-      metadata: {
-        ...parentThread.metadata,
-        // 清除构建路径标识，因为是新线程
-        buildPath: undefined
-      }
+      errorHandling: parentThread.errorHandling
     };
 
     // 复制 ConversationManager 实例
