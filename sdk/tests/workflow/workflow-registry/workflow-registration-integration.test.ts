@@ -10,18 +10,18 @@
  * - 异常路径处理
  */
 
-import { WorkflowRegistry } from '../../core/services/workflow-registry';
-import { WorkflowValidator } from '../../core/validation/workflow-validator';
-import { nodeTemplateRegistry } from '../../core/services/node-template-registry';
-import { triggerTemplateRegistry } from '../../core/services/trigger-template-registry';
-import { graphRegistry } from '../../core/services/graph-registry';
-import { NodeType } from '../../types/node';
-import { EdgeType } from '../../types/edge';
-import { TriggerActionType } from '../../types/trigger';
-import type { WorkflowDefinition, ProcessedWorkflowDefinition } from '../../types/workflow';
-import type { NodeTemplate, TriggerTemplate } from '../../types';
-import type { WorkflowTrigger } from '../../types/trigger';
-import { ValidationError } from '../../types/errors';
+import { WorkflowRegistry } from '../../../core/services/workflow-registry';
+import { WorkflowValidator } from '../../../core/validation/workflow-validator';
+import { nodeTemplateRegistry } from '../../../core/services/node-template-registry';
+import { triggerTemplateRegistry } from '../../../core/services/trigger-template-registry';
+import { graphRegistry } from '../../../core/services/graph-registry';
+import { NodeType } from '../../../types/node';
+import { EdgeType } from '../../../types/edge';
+import { TriggerActionType } from '../../../types/trigger';
+import type { WorkflowDefinition, ProcessedWorkflowDefinition } from '../../../types/workflow';
+import type { NodeTemplate, TriggerTemplate } from '../../../types';
+import type { WorkflowTrigger } from '../../../types/trigger';
+import { ValidationError } from '../../../types/errors';
 
 describe('Workflow加载与注册集成测试', () => {
   let registry: WorkflowRegistry;
@@ -223,21 +223,23 @@ describe('Workflow加载与注册集成测试', () => {
       expect(processed?.topologicalOrder).toHaveLength(4);
     });
 
-    it('应该支持工作流更新并重新预处理', () => {
+    it('应该支持创建工作流新版本', () => {
       const workflow = createBaseWorkflow('workflow-update', 'Update Workflow');
       registry.register(workflow);
 
-      // 更新工作流
+      // 创建新版本工作流（遵循不可变原则）
       const updatedWorkflow: WorkflowDefinition = {
         ...workflow,
-        description: 'Updated description',
         version: '2.0.0',
+        description: 'Updated description',
         updatedAt: Date.now()
       };
 
-      registry.update(updatedWorkflow);
+      // 删除旧版本并注册新版本
+      registry.unregister('workflow-update');
+      registry.register(updatedWorkflow);
 
-      // 验证更新成功
+      // 验证新版本已注册
       const registered = registry.get('workflow-update');
       expect(registered?.description).toBe('Updated description');
       expect(registered?.version).toBe('2.0.0');
@@ -1056,7 +1058,7 @@ describe('Workflow加载与注册集成测试', () => {
       expect(processed2).toBe(processed1);
     });
 
-    it('应该在更新时清除缓存', () => {
+    it('应该在注册新版本时清除旧版本缓存', () => {
       const workflow = createBaseWorkflow('workflow-cache-update', 'Cache Update Workflow');
       registry.register(workflow);
 
@@ -1064,14 +1066,17 @@ describe('Workflow加载与注册集成测试', () => {
       const processed1 = registry.getProcessed('workflow-cache-update');
       expect(processed1).toBeDefined();
 
-      // 更新工作流
+      // 创建新版本工作流（遵循不可变原则）
       const updatedWorkflow: WorkflowDefinition = {
         ...workflow,
-        description: 'Updated',
         version: '2.0.0',
+        description: 'Updated',
         updatedAt: Date.now()
       };
-      registry.update(updatedWorkflow);
+
+      // 删除旧版本并注册新版本
+      registry.unregister('workflow-cache-update');
+      registry.register(updatedWorkflow);
 
       // 获取新的预处理结果
       const processed2 = registry.getProcessed('workflow-cache-update');

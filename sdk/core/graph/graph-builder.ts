@@ -13,7 +13,6 @@ import type {
   GraphBuildOptions,
   SubgraphMergeOptions,
   SubgraphMergeResult,
-  Graph,
 } from '../../types';
 import { GraphData } from '../entities/graph-data';
 import { GraphValidator } from '../validation/graph-validator';
@@ -334,7 +333,7 @@ export class GraphBuilder {
     // 添加子工作流的节点（重命名ID）
     for (const node of subgraph.nodes.values()) {
       const newId = generateNamespacedNodeId(options.nodeIdPrefix || '', node.id);
-      
+
       const newNode: GraphNode = {
         ...node,
         id: newId,

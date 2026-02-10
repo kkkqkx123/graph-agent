@@ -8,15 +8,15 @@
  * - 触发子工作流的错误路径处理
  */
 
-import { WorkflowRegistry } from '../../core/services/workflow-registry';
-import { WorkflowValidator } from '../../core/validation/workflow-validator';
-import { graphRegistry } from '../../core/services/graph-registry';
-import { NodeType } from '../../types/node';
-import { EdgeType } from '../../types/edge';
-import { TriggerActionType } from '../../types/trigger';
-import type { WorkflowDefinition } from '../../types/workflow';
-import { ValidationError } from '../../types/errors';
-import { EventType } from '../../types';
+import { WorkflowRegistry } from '../../../core/services/workflow-registry';
+import { WorkflowValidator } from '../../../core/validation/workflow-validator';
+import { graphRegistry } from '../../../core/services/graph-registry';
+import { NodeType } from '../../../types/node';
+import { EdgeType } from '../../../types/edge';
+import { TriggerActionType } from '../../../types/trigger';
+import type { WorkflowDefinition } from '../../../types/workflow';
+import { ValidationError } from '../../../types/errors';
+import { EventType } from '../../../types';
 
 describe('触发子工作流集成测试', () => {
   let registry: WorkflowRegistry;
